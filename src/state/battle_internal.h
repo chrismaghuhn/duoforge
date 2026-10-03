@@ -54,6 +54,8 @@ typedef struct dfi_move_slot {
 #define DFI_TERRAIN_NONE 0u
 #define DFI_TERRAIN_GRASSY 1u
 #define DFI_TERRAIN_PSYCHIC 2u /* Team C: Psychic Surge */
+#define DFI_TERRAIN_ELECTRIC 3u /* POOL (step G25): Electric Surge, Electric Terrain */
+#define DFI_TERRAIN_MISTY 4u    /* POOL (step G25): Misty Terrain */
 #define DFI_FIELD_TURNS_MAX 5u  /* weather, terrain and Trick Room */
 #define DFI_SCREEN_TURNS_MAX 8u /* Reflect and Light Screen with Light Clay */
 #define DFI_TAILWIND_TURNS_MAX 4u
@@ -184,16 +186,18 @@ typedef struct dfi_side {
     uint8_t tailwind_turns;
 } dfi_side;
 
-/* The POOL state tail (docs/decisions/0015 section 7, "v3 + pool tail rev 2"): the room that the pool mechanics need
+/* The POOL state tail (docs/decisions/0015 section 7, "v3 + pool tail rev 4"): the room that the pool mechanics need
  * beyond the schema-3 state (Encore, Throat Chop, Heal Block, Soak and Wide Guard of rev 1; the volatile, side and
- * field conditions and the per-member overrides that decision 0018 declares as view fields, rev 2) and nothing else.
+ * field conditions and the per-member overrides that decision 0018 declares as view fields, rev 2; the Protect
+ * variant, rev 3; the move result, the single-turn markers, the hits taken, the ability state, the lock counter, Quick
+ * Guard, the second type and the member flags, rev 4) and nothing else.
  * It is part of the state only under the two POOL kinds (encode, decode, digest, equal, invariants); under the four
  * other kinds it is absent: all zero in memory (an invariant) and not in the encoding. Of the fields that rev 2
  * adds, only item_now is written so far (Knock Off, step G16). Every field is a plain byte or an aligned u16, so the structs have no padding and no pointer, and
  * their size is fixed (static asserts in codec/state_codec.h).
  *
  * The bounds below are those of the pinned data and of the research, not mechanics: a step that finds one wrong
- * changes the revision (0x0303) and says so. */
+ * changes the revision (0x0403) and says so. */
 /* rev 1 */
 #define DFI_TAIL_MOVE_MAX 5u          /* last_move: 0 none, 1..4 move slot + 1, 5 Struggle */
 #define DFI_TAIL_ENCORE_SLOT_MAX 4u   /* encore_slot: 0 none, 1..4 move slot + 1 */
@@ -215,6 +219,38 @@ typedef struct dfi_side {
 #define DFI_PROTECT_PLAIN 0u
 #define DFI_PROTECT_SPIKY_SHIELD 1u
 #define DFI_TAIL_PROTECT_KIND_MAX 1u
+/* rev 4, per position (decision 0015 section 7, the audit of tail-rev4-proposal.md section 4.1; no mechanic writes them yet).
+ * move_result: two bits for this turn (0-1) and two for the last turn (2-3), each DFI_MOVE_RESULT_*; the pin's
+ * moveThisTurnResult and moveLastTurnResult (Stomping Tantrum reads `=== false`, so null must not count as a failure). */
+#define DFI_MOVE_RESULT_UNDEFINED 0u
+#define DFI_MOVE_RESULT_TRUE 1u
+#define DFI_MOVE_RESULT_FALSE 2u
+#define DFI_MOVE_RESULT_NULL 3u
+#define DFI_TAIL_MOVE_RESULT_MASK 0x0Fu /* bits 4-7 are zero */
+#define DFI_MOVE_RESULT_LAST_SHIFT 2u
+/* single_turn: one-turn volatiles that the position's flags byte (full) cannot hold; both end in the residual of the turn, on
+ * switch-out and on faint. RAGE_POWDER belongs to the Follow Me flag (the move that set it also sets that flag). */
+#define DFI_SINGLE_TURN_RAGE_POWDER 1u
+#define DFI_SINGLE_TURN_ROOST 2u
+#define DFI_TAIL_SINGLE_TURN_MASK 3u    /* bits 2-7 are free and zero */
+#define DFI_TAIL_HITS_TAKEN_MAX 6u      /* Rage Fist: power 50 + 50 * n is capped at 350 */
+#define DFI_TAIL_ABILITY_STATE_MAX 6u   /* Supreme Overlord 0-5 fallen allies, Protean 0/1, Illusion roster index + 1 */
+#define DFI_TAIL_LOCK_TURNS_MAX 3u      /* lockedmove (Outrage, Thrash, Petal Dance): 2 or 3 turns */
+/* rev 4, per side and per roster member */
+#define DFI_TAIL_QUICK_GUARD_MAX 1u     /* set by Quick Guard, ends in the residual of the turn */
+/* hazard_order: the creation order of the hazards that are up on the side (the pin's effectOrder, sim/battle.ts:994-1000), which
+ * is the order of the switch-in handlers. Two bits per slot, slot 0 in bits 1:0 (the first created) to slot 3 in bits 7:6; a slot
+ * holds a DFI_HAZARD_* kind. With n kinds up (layers > 0) the first n slots are exactly those kinds, each once, and the others
+ * are 0; n = 0 is the byte 0. A new kind takes slot n, more layers keep their slot, an ended kind leaves and the later ones
+ * shift down, a kind that is put up again goes last. No engine reader yet (step G37 sets and reads it). */
+#define DFI_HAZARD_STEALTH_ROCK 0u
+#define DFI_HAZARD_SPIKES 1u
+#define DFI_HAZARD_TOXIC_SPIKES 2u
+#define DFI_HAZARD_STICKY_WEB 3u
+#define DFI_HAZARD_KIND_COUNT 4u
+#define DFI_TAIL_TYPE2_TYPELESS 255u    /* type2: 0 none, 1..DFI_TYPE_COUNT = type id + 1, 255 = the type is gone (Burn Up, Double Shock) */
+#define DFI_TAIL_MEMBER_FLAG_HERO_SHOWN 1u /* member flags: Zero to Hero's message was shown (bits 1-7 are free and zero) */
+#define DFI_TAIL_MEMBER_FLAGS_MASK 1u
 /* rev 2, per side and per field */
 #define DFI_TAIL_AURORA_VEIL_MAX 8u   /* 5 turns, 8 with Light Clay */
 #define DFI_TAIL_TOXIC_SPIKES_MAX 2u
@@ -255,7 +291,11 @@ typedef struct dfi_tail_pos {
     uint8_t glaive_rush;       /* 0/1: hit as vulnerable until it moves again */
     uint8_t protect_kind;      /* tail rev 3 (step G20): which Protect variant the DFI_VOL_PROTECT volatile is, DFI_PROTECT_*;
                                 * nonzero only while the volatile is up (it ends with it, in the residual) */
-    uint8_t pad;               /* always 0: the u16 fields above align the struct, so the odd byte count needs it */
+    uint8_t move_result;       /* tail rev 4: this turn's and last turn's result of the occupant's move, DFI_MOVE_RESULT_* in two bits each */
+    uint8_t single_turn;       /* tail rev 4: DFI_SINGLE_TURN_* bits of the one-turn volatiles that the flags byte has no room for */
+    uint8_t hits_taken;        /* tail rev 4: damaging hits the occupant has taken since it came in, 0..DFI_TAIL_HITS_TAKEN_MAX (Rage Fist) */
+    uint8_t ability_state;     /* tail rev 4: the state of the occupant's current ability, 0..DFI_TAIL_ABILITY_STATE_MAX (its meaning goes with the ability) */
+    uint8_t lock_turns;        /* tail rev 4: the turns that a lockedmove volatile has left, 0..DFI_TAIL_LOCK_TURNS_MAX */
 } dfi_tail_pos;
 
 typedef struct dfi_tail_side {
@@ -269,10 +309,14 @@ typedef struct dfi_tail_side {
     uint8_t stealth_rock;                      /* 0/1 */
     uint8_t spikes;                            /* layers */
     uint8_t sticky_web;                        /* 0/1 */
+    uint8_t quick_guard;                       /* tail rev 4: 0/1, this turn only */
     uint8_t soak_type[DUOFORGE_MAX_ROSTER];    /* per roster member: 0 none, else type id + 1 (the type Soak set) */
     uint8_t item_now[DUOFORGE_MAX_ROSTER];     /* per roster member: 0 = as the member says, 1..254 = item id + 1,
                                                 * DFI_TAIL_ITEM_NONE = holds nothing (Trick, Knock Off) */
     uint8_t toxic_stage[DUOFORGE_MAX_ROSTER];  /* per roster member: the toxic counter, 0 = none */
+    uint8_t type2[DUOFORGE_MAX_ROSTER];        /* tail rev 4, per roster member: 0 none, type id + 1, DFI_TAIL_TYPE2_TYPELESS (Burn Up, Double Shock) */
+    uint8_t member_flags[DUOFORGE_MAX_ROSTER]; /* tail rev 4, per roster member: DFI_TAIL_MEMBER_FLAG_* (Zero to Hero's message shown) */
+    uint8_t hazard_order;                      /* tail rev 4: the creation order of the hazards that are up, 2 bits per slot (see above) */
 } dfi_tail_side;
 
 typedef struct dfi_pool_tail {

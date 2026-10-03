@@ -113,6 +113,26 @@ def columns(feature_names=features.FEATURE_NAMES, slot_names=features.SLOT_FEATU
     )
 
 
+def input_sources(cfg, cols, feature_names, slot_names):
+    """For every row of input_rows, the set of observation columns (indices into feature_names) that feed it: one
+    for a row of its own, every member's (both sides) for a shared member row, every position's for a shared
+    position row, none for the rows of embeddings, earlier layers and option features."""
+    e, dm, dp, do = cfg["embed"], cfg["member"], cfg["position"], cfg["option"]
+
+    def fixed(n):
+        return [set() for _ in range(n)]
+
+    member = [set(int(i) for i in cols.member[:, :, k].ravel()) for k in range(cols.member.shape[2])]
+    position = [set(int(i) for i in cols.position[:, :, k].ravel()) for k in range(cols.position.shape[2])]
+    return {
+        ("member1",): fixed(5 * e + NATURE_DIM) + member + fixed(2),
+        ("position",): position + fixed(1) + fixed(dm),
+        ("torso", 0): ([{int(i)} for i in cols.glob] + [{int(i)} for i in cols.side.reshape(-1)]
+                       + fixed(4 * dp) + fixed(4 * dm)),
+        ("option1",): fixed(len(cols.slot_scalar)) + fixed(e + 2 * dm + do),
+    }
+
+
 def decode(obs, index, table):
     """The integer ids at obs[..., index] of a table scaled by the encoder."""
     return np.rint(np.asarray(obs)[..., index].astype(np.float64) * _SCALES[table]).astype(np.int64)

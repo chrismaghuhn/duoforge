@@ -22,6 +22,10 @@
  */
 #include <duoforge/duoforge.h>
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #define DUOFORGE_BATCH_MAX_ENVS    65536u
 #define DUOFORGE_BATCH_MAX_WORKERS 256u
 /* The candidate index of a player without a request (duoforge_batch_step_indices). */
@@ -135,6 +139,12 @@ duoforge_status duoforge_batch_step_query(duoforge_batch *batch, uint32_t flags,
                                           uint32_t *episode_results, duoforge_status *statuses,
                                           duoforge_step_result *results);
 
+/* The view extension of every environment's players, in parallel (decision
+   0018): out[2 * env + p] = duoforge_battle_observe_ext of player p. A failing
+   environment leaves its entries unspecified; the call returns the status of
+   the lowest failing environment. */
+duoforge_status duoforge_batch_observe_ext(duoforge_batch *batch, duoforge_observation_ext *out);
+
 /* Resets every TERMINAL environment to its next episode, in parallel. */
 duoforge_status duoforge_batch_reset_terminal(duoforge_batch *batch);
 
@@ -166,5 +176,9 @@ duoforge_status duoforge_batch_reset_setups(duoforge_batch *batch, uint32_t coun
    E_INVARIANT). Writes episodes[env * episodes + k] when the array is given. */
 duoforge_status duoforge_batch_play_random(duoforge_batch *batch, uint32_t episodes, uint32_t max_steps,
                                            duoforge_batch_episode *records);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif

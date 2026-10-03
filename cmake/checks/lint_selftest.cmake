@@ -84,8 +84,8 @@ _lint_case("${_fix}/banned_token.c" banned-token 1)
 _lint_case("${_fix}/banned_suffix.c" long-suffix 1)
 _lint_case("${_fix}/cast_paren.c" result-cast 1)
 
-# 3. Floating point is banned everywhere except src/state/tiebreak.c, and even
-# there every other banned token still applies.
+# 3. Floating point is banned everywhere except src/state/tiebreak.c and the
+# encoder's two files, and even there every other banned token still applies.
 file(MAKE_DIRECTORY "${WORK}/fp/src/state")
 file(WRITE "${WORK}/fp/src/state/tiebreak.c" "static double fixture_fp;
 static float fixture_fp2;
@@ -99,6 +99,26 @@ file(WRITE "${WORK}/fp/src/state/other.c" "static double fixture_fp;
 static float fixture_fp2;
 ")
 _lint_case("${WORK}/fp/src/state/other.c" banned-token 2 "${WORK}/fp")
+# The encoder's two files (decision 0021) have the same exception, and nothing more:
+# a float elsewhere, batch.c included, still fails.
+file(MAKE_DIRECTORY "${WORK}/fp/src/encode" "${WORK}/fp/src/batch" "${WORK}/fp/include/duoforge")
+file(WRITE "${WORK}/fp/src/encode/encode.c" "static double fixture_fp;
+static float fixture_fp2;
+")
+_lint_case("${WORK}/fp/src/encode/encode.c" CLEAN 0 "${WORK}/fp")
+file(WRITE "${WORK}/fp/src/encode/encode.c" "static float fixture_fp;
+static long fixture_long;
+")
+_lint_case("${WORK}/fp/src/encode/encode.c" banned-token 1 "${WORK}/fp")
+file(WRITE "${WORK}/fp/include/duoforge/duoforge_encode.h" "void fixture(float *obs);
+")
+_lint_case("${WORK}/fp/include/duoforge/duoforge_encode.h" CLEAN 0 "${WORK}/fp")
+file(WRITE "${WORK}/fp/src/batch/batch.c" "static float fixture_fp;
+")
+_lint_case("${WORK}/fp/src/batch/batch.c" banned-token 1 "${WORK}/fp")
+file(WRITE "${WORK}/fp/src/encode/other.c" "static float fixture_fp;
+")
+_lint_case("${WORK}/fp/src/encode/other.c" banned-token 1 "${WORK}/fp")
 
 if(_bad)
     message(FATAL_ERROR "LINT_SELFTEST FAILED")

@@ -1,5 +1,5 @@
-"""duoforge.python.features_ext: encoder 3, the block of decision 0018
-section 10.
+"""duoforge.python.features_ext: encoders 3 and 4, the block of decision
+0018 sections 10 and 10.2 (encoder 4 appends 8 columns of tail revision 4).
 
 The first 607 columns are encoder 2's, byte for byte; the 235 columns of the
 block follow the 0018 templates, each column belongs to one feature bit, and
@@ -33,7 +33,7 @@ CAMPAIGN = os.path.join("tools", "cloud", "aws_fuzz", "campaigns", "weather-sand
 _STATUS = ("NONE", "BURN", "FREEZE", "PARALYSIS", "SLEEP", "POISON")
 VOLATILES = ("substitute", "taunt", "imprison", "leech_seed", "yawn", "focus_energy", "dragon_cheer", "must_recharge",
              "partial_trap", "glaive_rush", "destiny_bond", "curse", "no_retreat", "salt_cure", "charge", "heal_block",
-             "throat_chop", "rage_powder", "type_changed", "illusion_up")
+             "throat_chop", "rage_powder", "type_changed", "illusion_up", "roost")
 
 
 def _mask(*names):
@@ -59,11 +59,15 @@ GUARDS = ("DUOFORGE_SIDE_GUARD_WIDE_GUARD", "DUOFORGE_SIDE_GUARD_QUICK_GUARD")  
 
 
 def _position_values(s, k):
-    """(volatile bits, ability_now, type_now, encore slot, disable slot, stockpile, perish) of position k of side s."""
+    """(volatile bits, ability_now, type_now, encore slot, disable slot, stockpile, perish, move_failed) of position k
+    of side s; Roost on side 0 position 1 and side 1 position 0, move_failed on the other two."""
     bits = (1 << (s * 2 + k)) | C["DUOFORGE_POSITION_EXT_MUST_RECHARGE"]
     if s == 1:
         bits |= C["DUOFORGE_POSITION_EXT_TYPE_CHANGED"]
-    return bits, 17 + k + 10 * s, (7, 3) if s == 1 else (0, 0), 1 + s + 2 * k, 4 - s - 2 * k, 1 + s, 3 - s - k
+    if s != k:
+        bits |= C["DUOFORGE_POSITION_EXT_ROOST"]
+    return (bits, 17 + k + 10 * s, (7, 3) if s == 1 else (0, 0), 1 + s + 2 * k, 4 - s - 2 * k, 1 + s, 3 - s - k,
+            int(s == k))
 
 
 def _member_values(s, r):
@@ -87,8 +91,9 @@ def _records(observations, supported=ALL):
         sides["guard_flags"][:, s] = C[GUARDS[s]]
         pos = sides["positions"]
         for k in range(2):
-            bits, ability, types, encore, disable, stockpile, perish = _position_values(s, k)
+            bits, ability, types, encore, disable, stockpile, perish, failed = _position_values(s, k)
             pos["volatiles"][:, s, k] = bits
+            pos["move_failed"][:, s, k] = failed
             pos["ability_now"][:, s, k] = ability
             pos["type_now"][:, s, k] = types
             pos["encore_slot"][:, s, k] = encore
@@ -124,11 +129,13 @@ class FeaturesExtTest(unittest.TestCase):
         cls.ctx.close()
 
     def test_layout_appends_the_block(self):
-        self.assertEqual((features.ENCODER, features.ENCODERS), (3, (1, 2, 3)))
-        self.assertEqual((features.BASE_OBS_SIZE, features.EXT_SIZE, features.OBS_SIZE), (607, 235, 842))
-        self.assertEqual(len(set(features.FEATURE_NAMES)), 842)
-        self.assertEqual([features.obs_size(v) for v in (1, 2, 3)], [607, 607, 842])
-        self.assertEqual(features.feature_names(3), features.FEATURE_NAMES)
+        self.assertEqual((features.ENCODER, features.ENCODERS), (4, (1, 2, 3, 4)))
+        self.assertEqual((features.BASE_OBS_SIZE, features.EXT3_SIZE, features.EXT_SIZE, features.OBS_SIZE),
+                         (607, 235, 243, 850))
+        self.assertEqual(len(set(features.FEATURE_NAMES)), 850)
+        self.assertEqual([features.obs_size(v) for v in (1, 2, 3, 4)], [607, 607, 842, 850])
+        self.assertEqual(features.feature_names(4), features.FEATURE_NAMES)
+        self.assertEqual(features.feature_names(3), features.FEATURE_NAMES[:842])
         self.assertEqual(features.feature_names(2), features.FEATURE_NAMES[:607])
         self.assertEqual(features.feature_names(1), features.FEATURE_NAMES[:607])
         ext = features.FEATURE_NAMES[607:]
@@ -137,14 +144,17 @@ class FeaturesExtTest(unittest.TestCase):
         side = ("aurora_veil_turns", "stealth_rock", "spikes", "toxic_spikes", "sticky_web", "wide_guard", "quick_guard")
         self.assertEqual(ext[5:12], tuple(f"ext.own.{n}" for n in side))
         self.assertEqual(ext[5 + 115:12 + 115], tuple(f"ext.foe.{n}" for n in side))
-        position = ([f"volatile.{n}" for n in VOLATILES] + ["encore.none"] + [f"encore.slot{k}" for k in range(4)]
+        position = ([f"volatile.{n}" for n in VOLATILES[:20]] + ["encore.none"] + [f"encore.slot{k}" for k in range(4)]
                     + ["disable.none"] + [f"disable.slot{k}" for k in range(4)]
                     + ["stockpile", "perish", "ability_changed", "ability_now", "type_now0", "type_now1"])
         self.assertEqual(ext[12:48], tuple(f"ext.own.pos0.{n}" for n in position))
         self.assertEqual(ext[48:84], tuple(f"ext.own.pos1.{n}" for n in position))
         member = ("tox", "forme_changed", "forme", "item_changed", "item_removed", "item_now")
         self.assertEqual(ext[84:90], tuple(f"ext.own.mem0.{n}" for n in member))
-        self.assertEqual(ext[-6:], tuple(f"ext.foe.mem5.{n}" for n in member))
+        self.assertEqual(ext[229:235], tuple(f"ext.foe.mem5.{n}" for n in member))
+        # Encoder 4 appends, per side and position, the Roost volatile and move_failed.
+        self.assertEqual(ext[235:], tuple(f"ext.{o}.pos{k}.{n}" for o in ("own", "foe") for k in range(2)
+                                          for n in ("volatile.roost", "move_failed")))
 
     def test_every_column_has_one_feature_bit(self):
         bits = features.EXT_COLUMN_FEATURES
@@ -161,6 +171,10 @@ class FeaturesExtTest(unittest.TestCase):
         for name, feature in want.items():
             self.assertEqual(int(bits[COL[name] - features.BASE_OBS_SIZE]), BIT[feature], name)
         self.assertEqual(features.BASE_VALUE_FEATURES, _mask(*BASE_BITS))
+        self.assertEqual({int(b) for b in bits[235:]}, {BIT["ROOST"], BIT["MOVE_FAILED"]})
+        self.assertEqual((features.version_features(1), features.version_features(2)), (0, 0))
+        self.assertEqual(features.version_features(3), (1 << 40) - 1)
+        self.assertEqual(features.version_features(4), ALL)
 
     def test_closure_battles_keep_encoder_2_and_an_empty_block(self):
         # Under CLOSURE the records have revision 0: the first 607 columns are encoder 2's, and the block is that of
@@ -180,7 +194,7 @@ class FeaturesExtTest(unittest.TestCase):
                 ob, d = batch.observations.reshape(-1), batch.domains.reshape(-1)
                 for mask in (0, ALL):
                     obs, slots, pairs = features.encode_batch(ob, d, ext.reshape(-1), mask)
-                    self.assertEqual(obs.shape, (2 * ENVS, 842))
+                    self.assertEqual(obs.shape, (2 * ENVS, features.OBS_SIZE))
                     on = sorted(set((np.flatnonzero(obs[:, 607:].any(axis=0)) + 607).tolist()))
                     self.assertEqual(on, empty_columns if mask else [])
                     self.assertTrue((obs[:, empty_columns] == (1.0 if mask else 0.0)).all())
@@ -214,7 +228,7 @@ class FeaturesExtTest(unittest.TestCase):
                                  ((1.0, 0.0) if s == 0 else (0.0, 1.0)))
                 for k in range(2):
                     p = f"ext.{o}.pos{k}."
-                    bits, ability, types, encore, disable, stockpile, perish = _position_values(s, k)
+                    bits, ability, types, encore, disable, stockpile, perish, failed = _position_values(s, k)
                     on = {name for name in COL if name.startswith(p + "volatile.") and row[COL[name]] != 0}
                     self.assertEqual(on, {p + "volatile." + VOLATILES[b] for b in range(len(VOLATILES)) if bits >> b & 1})
                     self.assertEqual([row[COL[p + f"encore.{x}"]] for x in slots], [float(i == encore) for i in range(5)])
@@ -225,6 +239,7 @@ class FeaturesExtTest(unittest.TestCase):
                     self.assertEqual(row[COL[p + "ability_now"]], np.float32(ability / 255))
                     self.assertEqual((row[COL[p + "type_now0"]], row[COL[p + "type_now1"]]),
                                      (np.float32(types[0] / 18), np.float32(types[1] / 18)))
+                    self.assertEqual(row[COL[p + "move_failed"]], float(failed))
                 for r in range(6):
                     m = f"ext.{o}.mem{r}."
                     forme, item = _member_values(s, r)
@@ -330,6 +345,13 @@ class FeaturesExtTest(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "ext_supported"):
                 features.encode_batch(ob, d, None, bad)
 
+    def test_a_viewer_other_than_0_or_1_raises(self):
+        # The viewer indexes the sides: anything else is a malformed observation, refused as one (not an IndexError).
+        ob = self.obs.copy()
+        ob["player"][0] = 2
+        with self.assertRaisesRegex(ValueError, "player 2"):
+            features.encode_batch(ob, self.domains, None, 0)
+
     def test_records_of_another_boundary_raise(self):
         ob, d = self.obs, self.domains
         ext = _records(ob)
@@ -352,13 +374,15 @@ class FeaturesExtTest(unittest.TestCase):
                  ("toxic_spikes", lambda e: e["sides"]["toxic_spikes"].__setitem__((0, 1), 3)),
                  ("sticky_web", lambda e: e["sides"]["sticky_web"].__setitem__((0, 1), 2)),
                  ("guard_flags", lambda e: e["sides"]["guard_flags"].__setitem__((0, 1), 4)),
-                 ("volatiles", lambda e: e["sides"]["positions"]["volatiles"].__setitem__((0, 1, 1), 1 << 20)),
+                 ("volatiles", lambda e: e["sides"]["positions"]["volatiles"].__setitem__(
+                     (0, 1, 1), e["sides"]["positions"]["volatiles"][0, 1, 1] | (1 << 21))),  # bit 21: none yet
                  ("encore_slot", lambda e: e["sides"]["positions"]["encore_slot"].__setitem__((0, 1, 1), 5)),
                  ("disable_slot", lambda e: e["sides"]["positions"]["disable_slot"].__setitem__((0, 1, 1), 5)),
                  ("stockpile", lambda e: e["sides"]["positions"]["stockpile"].__setitem__((0, 1, 1), 4)),
                  ("perish", lambda e: e["sides"]["positions"]["perish"].__setitem__((0, 1, 1), 4)),
                  ("type_now", lambda e: e["sides"]["positions"]["type_now"].__setitem__((0, 1, 1, 0), 19)),
                  ("ability_now", lambda e: e["sides"]["positions"]["ability_now"].__setitem__((0, 1, 1), 256)),
+                 ("move_failed", lambda e: e["sides"]["positions"]["move_failed"].__setitem__((0, 1, 1), 2)),
                  # side 0 has no TYPE_CHANGED volatile in _records: a type there contradicts it
                  ("TYPE_CHANGED", lambda e: e["sides"]["positions"]["type_now"].__setitem__((0, 0, 0, 0), 5)))
         for field, edit in cases:
@@ -376,7 +400,8 @@ class FeaturesExtTest(unittest.TestCase):
         from python.tests import _reference_features as reference
         ob, d = self.obs, self.domains
         part = features.encode_batch(ob, d, _records(ob), ALL)[0]
-        self.assertIs(features.as_encoder(part, ob, 3), part)
+        self.assertIs(features.as_encoder(part, ob, 4), part)
+        self.assertTrue(np.array_equal(features.as_encoder(part, ob, 3), part[:, :842]))
         self.assertTrue(np.array_equal(features.as_encoder(part, ob, 2), part[:, :607]))
         old = features.as_encoder(part, ob, 1)
         for n in range(ob.shape[0]):
@@ -386,6 +411,7 @@ class FeaturesExtTest(unittest.TestCase):
             odd = ob.copy()
             odd[field] = C[value]
             new = features.encode_batch(odd, d, None, _mask(bit))[0]
+            self.assertTrue(np.array_equal(features.as_encoder(new, odd, 3), new[:, :842]))  # encoder 3 knows them
             for version in (1, 2):
                 with self.assertRaisesRegex(ValueError, field):
                     features.as_encoder(new, odd, version)
@@ -407,6 +433,7 @@ class FeaturesExtTest(unittest.TestCase):
         slots = features.encode_batch(ob, recharge)[1]
         self.assertEqual(slots[n, s, i, features.SLOT_FEATURE_NAMES.index("move_slot")], 1.25)
         self.assertIs(features.slots_as_encoder(slots, 3), slots)
+        self.assertIs(features.slots_as_encoder(slots, 4), slots)
         for version in (1, 2):
             with self.assertRaisesRegex(ValueError, "Recharge"):
                 features.slots_as_encoder(slots, version)

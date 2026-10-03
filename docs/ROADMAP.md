@@ -168,6 +168,10 @@ A second reference point (owner, 2026-10-03): nessie123 (Smogon, 2026-09-28) was
 
 The search must stay deterministic given its seeds.
 
+Status of stage 1 (spec `docs/superpowers/specs/2026-10-03-m12-search-stage1-design.md`, decision 0022, plan `docs/superpowers/plans/2026-10-03-m12-search-stage1.md`):
+- In review: the matrix game and the decision keys (plan PR C, #199).
+- In review: the library's leaf expansion and search seeds (plan PR A, on top of decision 0021's encoder).
+
 Exit:
 - The Elo gain over the raw policy on the ladder, at a fixed time per move.
 - A report like the learning reports in `docs/learning/`.

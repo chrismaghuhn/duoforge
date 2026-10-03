@@ -275,7 +275,7 @@ Model v1 stays loadable, trainable and playable. The ladder plays v1 and v2 chec
 `params-<update>.npz` holds the parameter arrays (the flattened tree paths, as today) and a `config` JSON with:
 - `format: 2` and the model configuration (version and dimensions);
 - the key `"encoder"` (9.4), `FEATURE_NAMES` and `SLOT_FEATURE_NAMES`;
-- the data kind and the context fingerprint, in hex. After part 2 it also holds the names of every id of the kind's tables.
+- the data kind and the context fingerprint, in hex, and under `"ids"` the names of every id of the embedded tables (`checkpoint.ids_of`; added 2026-10-03).
 - the team pool: ids, sha256 and weights;
 - the update and the decision count;
 - the training configuration.
@@ -373,7 +373,7 @@ Model v1 stays loadable, trainable and playable. The ladder plays v1 and v2 chec
 - the league: the snapshot pool, the slots, the draining slot and the statistics;
 - the NumPy generator state and the JAX key;
 - the team pool: ids, sha256 and weights;
-- the data kind and the fingerprint (after part 2, also the names);
+- the data kind, the fingerprint and the names of every embedded id (`"ids"`, `checkpoint.ids_of`);
 - the model configuration and the encoder layout.
 
 It is written atomically: to a temporary file, then fsync, then a rename over `state.npz`, after moving the old one to `state.prev.npz`. Writes happen:
@@ -394,7 +394,7 @@ It is written atomically: to a temporary file, then fsync, then a rename over `s
   - a team file whose sha256 changed under the same id;
   - a model configuration that differs without a widening rule;
   - an observation layout that drops a column;
-  - a data kind whose names do not keep the old ids. Before part 2 exists, the fingerprint must be equal.
+  - tables whose names do not keep the old ids (`checkpoint.check_ids`, when the fingerprint differs). A run state without names needs the same fingerprint.
 - **Tests:**
   - the state round-trips;
   - the counters continue;
@@ -464,7 +464,7 @@ Every refusal is explicit and names its cause. Nothing is clipped, skipped or re
   - a library refusal names the team and the status;
   - a changed file on resume is refused.
 - **Model:** an id beyond capacity; a dropped column; a configuration mismatch.
-- **Run:** a resume without a state; a data kind that does not keep the old ids.
+- **Run:** a resume without a state; another data kind; tables whose names do not keep the old ids, or a state without names under another fingerprint (`checkpoint.check_ids`).
 - **Batch:** a failing environment is reported with its index and status.
 
 ## 17. Not in this work

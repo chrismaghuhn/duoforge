@@ -30,16 +30,17 @@ POS_SIZE = 21
 KNOW_SIZE = 7
 MEMBER_SIZE = 48
 STATE_SIZE = HEADER_SIZE + 2 * SIDE_SIZE
-# The POOL state tail (decision 0015 section 7): schema 0x0303 = "v3 + pool tail rev 3", 248 bytes after the 1009.
-# Rev 1 (0x0103, 42 bytes) and rev 2 (0x0203, the same size, the byte at +26 of a position reserved) are no schema of any
-# kind any more: they are refused as unknown, there is no migration.
+# The POOL state tail (decision 0015 section 7): schema 0x0403 = "v3 + pool tail rev 4", 288 bytes after the 1009.
+# Rev 1 (0x0103, 42 bytes), rev 2 (0x0203, 248 bytes) and rev 3 (0x0303, 248 bytes, protect_kind at +26 of a position) are
+# no schema of any kind any more: they are refused as unknown, there is no migration.
 SCHEMA_POOL_TAIL_REV1 = 0x0103
 SCHEMA_POOL_TAIL_REV2 = 0x0203
 SCHEMA_POOL_TAIL_REV3 = 0x0303
+SCHEMA_POOL_TAIL_REV4 = 0x0403
 TAIL_FIELD_SIZE = 8                 # gravity_turns, then 7 reserved bytes
-TAIL_SIDE_SIZE = 120                # 6 side bytes + 2 reserved, 2 positions of 32, 6 members of 8
-TAIL_POS_SIZE = 32
-TAIL_MEMBER_SIZE = 8
+TAIL_SIDE_SIZE = 140                # 8 side bytes (no reserved byte), 2 positions of 36, 6 members of 10
+TAIL_POS_SIZE = 36
+TAIL_MEMBER_SIZE = 10
 TAIL_SIZE = TAIL_FIELD_SIZE + 2 * TAIL_SIDE_SIZE
 POOL_STATE_SIZE = STATE_SIZE + TAIL_SIZE
 TAIL_MOVE_MAX = 5
@@ -58,6 +59,15 @@ TAIL_YAWN_MAX = 2
 TAIL_STOCKPILE_MAX = 3
 TAIL_FLAG_MAX = 1
 TAIL_PROTECT_KIND_MAX = 1           # rev 3: 0 Protect and Detect, 1 Spiky Shield (Baneful Bunker would be 2)
+TAIL_MOVE_RESULT_MASK = 0x0F        # rev 4: two bits this turn, two bits last turn (0 undefined, 1 true, 2 false, 3 null)
+TAIL_SINGLE_TURN_MASK = 3           # rev 4: bit 0 RAGE_POWDER (needs the Follow Me flag), bit 1 ROOST
+SINGLE_TURN_RAGE_POWDER = 1
+TAIL_HITS_TAKEN_MAX = 6
+TAIL_ABILITY_STATE_MAX = 6
+TAIL_LOCK_TURNS_MAX = 3
+TAIL_QUICK_GUARD_MAX = 1
+TAIL_TYPE2_TYPELESS = 255
+TAIL_MEMBER_FLAGS_MASK = 1          # rev 4: bit 0 HERO_SHOWN
 TAIL_AURORA_VEIL_MAX = 8
 TAIL_TOXIC_SPIKES_MAX = 2
 TAIL_STEALTH_ROCK_MAX = 1
@@ -70,12 +80,18 @@ TAIL_TOXIC_STATUS = 6               # DUOFORGE_AILMENT_TOX: no state has it yet 
 # What the pool tables hold (decision 0015 section 2, tests/test_pool_tables.c): the bounds of the member overrides.
 POOL_FORME_COUNT, POOL_MOVE_COUNT, POOL_ITEM_COUNT, POOL_ABILITY_COUNT = 346, 511, 166, 215
 # The byte fields of a position's tail in their encoded order (offset 0 to 21), then two u16: substitute_hp at 22 and
-# trap_move at 24, then (rev 3) protect_kind at 26 and 5 reserved bytes.
+# trap_move at 24, then (rev 3) protect_kind at 26, (rev 4) move_result, single_turn, hits_taken, ability_state and lock_turns
+# at 27 to 31 and 4 reserved bytes.
 TAIL_POS_BYTE_FIELDS = ['last_move', 'encore_slot', 'encore_turns', 'throat_chop', 'heal_block', 'perish', 'taunt',
                         'disable_slot', 'disable_turns', 'imprison', 'must_recharge', 'trap_turns', 'trap_source',
                         'trap_band', 'leech_seed', 'yawn', 'focus_energy', 'stockpile', 'stockpile_def',
                         'stockpile_spd', 'charge', 'glaive_rush']
-TAIL_SIDE_BYTE_FIELDS = ['wide_guard', 'aurora_veil', 'toxic_spikes', 'stealth_rock', 'spikes', 'sticky_web']
+TAIL_POS_REV4_FIELDS = ['move_result', 'single_turn', 'hits_taken', 'ability_state', 'lock_turns']
+TAIL_SIDE_BYTE_FIELDS = ['wide_guard', 'aurora_veil', 'toxic_spikes', 'stealth_rock', 'spikes', 'sticky_web', 'quick_guard',
+                         'hazard_order']
+# hazard_order (rev 4): the creation order of the hazards that are up, 2 bits per slot (slot 0 in bits 1:0); the kind codes
+HAZARD_STEALTH_ROCK, HAZARD_SPIKES, HAZARD_TOXIC_SPIKES, HAZARD_STICKY_WEB = 0, 1, 2, 3
+TAIL_MEMBER_LIST_FIELDS = ('ability_now', 'forme_now', 'soak', 'item_now', 'toxic_stage', 'type2', 'member_flags')
 TYPE_COUNT = 18
 assert STATE_SIZE == 1009 and QUEUE_OFF + QUEUE_CAP * QUEUE_REC_SIZE == HEADER_SIZE
 MAX_ROSTER = 6
@@ -265,7 +281,7 @@ KD = TeamCContext(KIND_TEAM_C_DEV, 6, 4)
 # which tests/test_pool_tables.c recomputes from the pool canonical bytes: the
 # pool layout over the pool data, then the family columns, the handler columns
 # and the moves and abilities that each forme may have.
-POOL_TABLE_HASH = bytes.fromhex('ec064caf0e50aa9d6773ef4344161829a5d2ada38803d9f195b9a35f2a6ab51a')
+POOL_TABLE_HASH = bytes.fromhex('fb0826fe95708eedd5e5a858afdca556b84cf04da823687f587472b3328db750')
 KIND_POOL, KIND_POOL_DEV = 6, 7
 
 
@@ -342,13 +358,15 @@ def empty_tail_pos():
     p['substitute_hp'] = 0
     p['trap_move'] = 0
     p['protect_kind'] = 0
+    for f in TAIL_POS_REV4_FIELDS:
+        p[f] = 0
     return p
 
 
 def empty_tail_side():
     s = {f: 0 for f in TAIL_SIDE_BYTE_FIELDS}
     s['pos'] = [empty_tail_pos(), empty_tail_pos()]
-    for f in ('ability_now', 'forme_now', 'soak', 'item_now', 'toxic_stage'):
+    for f in TAIL_MEMBER_LIST_FIELDS:
         s[f] = [0] * MAX_ROSTER
     return s
 
@@ -358,7 +376,7 @@ def empty_tail():
 
 
 def empty_state(ctx):
-    # 'tailed': the state carries the POOL tail (schema 0x0303); 'tail': the field block and the two sides, all zero
+    # 'tailed': the state carries the POOL tail (schema 0x0403); 'tail': the field block and the two sides, all zero
     # unless a test sets them.
     return {'tailed': has_pool_tail(ctx), 'tail': empty_tail(),
             'fp': ctx.fingerprint(), 'rng_state': 0, 'rng_inc': 0, 'draws': 0, 'next': 1,
@@ -878,8 +896,18 @@ def tail_is_zero(tail):
     def side_zero(ts):
         return (all(ts[f] == 0 for f in TAIL_SIDE_BYTE_FIELDS)
                 and all(v == 0 for p in ts['pos'] for v in p.values())
-                and all(v == 0 for f in ('ability_now', 'forme_now', 'soak', 'item_now', 'toxic_stage') for v in ts[f]))
+                and all(v == 0 for f in TAIL_MEMBER_LIST_FIELDS for v in ts[f]))
     return tail['gravity'] == 0 and all(side_zero(ts) for ts in tail['sides'])
+
+
+def hazard_order_valid(ts):
+    """Rev 4: with n hazard kinds up (layers > 0) the first n slots of hazard_order are exactly those kinds, each once, and the
+    other slots are zero (n = 0 is the byte 0)."""
+    present = {k for k, f in ((HAZARD_STEALTH_ROCK, 'stealth_rock'), (HAZARD_SPIKES, 'spikes'),
+                              (HAZARD_TOXIC_SPIKES, 'toxic_spikes'), (HAZARD_STICKY_WEB, 'sticky_web')) if ts[f] != 0}
+    slots = [(ts['hazard_order'] >> (2 * i)) & 3 for i in range(4)]
+    n = len(present)
+    return set(slots[:n]) == present and len(set(slots[:n])) == n and all(v == 0 for v in slots[n:])
 
 
 def tail_pos_valid(ctx, tp, flat, mem, slot_flags=0):
@@ -908,6 +936,13 @@ def tail_pos_valid(ctx, tp, flat, mem, slot_flags=0):
         return False
     if not (tp['protect_kind'] <= TAIL_PROTECT_KIND_MAX and (tp['protect_kind'] == 0 or slot_flags & VOL_PROTECT)):
         return False
+    # Rev 4: the move result is two two-bit values, the single-turn markers are the two defined bits (Rage Powder's belongs to
+    # the Follow Me flag), the counters and the ability state have their bounds.
+    if not (tp['move_result'] & ~TAIL_MOVE_RESULT_MASK == 0 and tp['single_turn'] & ~TAIL_SINGLE_TURN_MASK == 0
+            and (tp['single_turn'] & SINGLE_TURN_RAGE_POWDER == 0 or slot_flags & VOL_FOLLOW_ME)
+            and tp['hits_taken'] <= TAIL_HITS_TAKEN_MAX and tp['ability_state'] <= TAIL_ABILITY_STATE_MAX
+            and tp['lock_turns'] <= TAIL_LOCK_TURNS_MAX):
+        return False
     return (tp['stockpile'] <= TAIL_STOCKPILE_MAX and tp['stockpile_def'] <= tp['stockpile']
             and tp['stockpile_spd'] <= tp['stockpile'])
 
@@ -926,7 +961,8 @@ def check_tail(ctx, st):
         ts, sd = tail['sides'][s], st['sides'][s]
         if (ts['wide_guard'] > TAIL_WIDE_GUARD_MAX or ts['aurora_veil'] > TAIL_AURORA_VEIL_MAX
                 or ts['toxic_spikes'] > TAIL_TOXIC_SPIKES_MAX or ts['stealth_rock'] > TAIL_STEALTH_ROCK_MAX
-                or ts['spikes'] > TAIL_SPIKES_MAX or ts['sticky_web'] > TAIL_STICKY_WEB_MAX):
+                or ts['spikes'] > TAIL_SPIKES_MAX or ts['sticky_web'] > TAIL_STICKY_WEB_MAX
+                or ts['quick_guard'] > TAIL_QUICK_GUARD_MAX or not hazard_order_valid(ts)):
             return 'TAIL_SIDE'
         for p in range(2):
             tp = ts['pos'][p]
@@ -940,7 +976,8 @@ def check_tail(ctx, st):
                 return 'TAIL_POSITION'
         for m in range(MAX_ROSTER):
             ab, fo, ty, it, tx = ts['ability_now'][m], ts['forme_now'][m], ts['soak'][m], ts['item_now'][m], ts['toxic_stage'][m]
-            if ab == 0 and fo == 0 and ty == 0 and it == 0 and tx == 0:
+            t2, mf = ts['type2'][m], ts['member_flags'][m]
+            if ab == 0 and fo == 0 and ty == 0 and it == 0 and tx == 0 and t2 == 0 and mf == 0:
                 continue
             if m >= sd['member_count']:
                 return 'TAIL_MEMBER'
@@ -953,6 +990,10 @@ def check_tail(ctx, st):
             if fo > POOL_FORME_COUNT:
                 return 'TAIL_MEMBER'
             if it != 0 and it != TAIL_ITEM_NONE and it > POOL_ITEM_COUNT:
+                return 'TAIL_MEMBER'
+            if t2 != 0 and ((t2 > TYPE_COUNT and t2 != TAIL_TYPE2_TYPELESS) or not on_field):
+                return 'TAIL_MEMBER'
+            if mf & ~TAIL_MEMBER_FLAGS_MASK != 0:
                 return 'TAIL_MEMBER'
             if tx != 0 and (tx > TAIL_TOXIC_STAGE_MAX or not on_field or mem['status'] != TAIL_TOXIC_STATUS):
                 return 'TAIL_MEMBER'
@@ -968,7 +1009,7 @@ QUEUE_BYTE_FIELDS = ['kind', 'side', 'slot', 'move_slot', 'target', 'reserve']
 
 
 def encode(st):
-    schema, size = (SCHEMA_POOL_TAIL_REV3, POOL_STATE_SIZE) if st['tailed'] else (SCHEMA, STATE_SIZE)
+    schema, size = (SCHEMA_POOL_TAIL_REV4, POOL_STATE_SIZE) if st['tailed'] else (SCHEMA, STATE_SIZE)
     b = bytearray(MAGIC + struct.pack('<HHII', KIND_BATTLE_STATE, schema, SEMANTICS, size))
     b += st['fp']
     b += struct.pack('<QQQI', st['rng_state'], st['rng_inc'], st['draws'], st['next'])
@@ -1004,30 +1045,30 @@ def encode(st):
 
 
 def tail_bytes(tail):
-    """The 248 encoded bytes of a tail (the layout of src/codec/state_codec.h), reserved bytes zero."""
+    """The 288 encoded bytes of a tail (the layout of src/codec/state_codec.h), reserved bytes zero."""
     out = bytearray([tail['gravity']]) + bytes(TAIL_FIELD_SIZE - 1)
     for ts in tail['sides']:
-        out += bytes([ts[f] for f in TAIL_SIDE_BYTE_FIELDS]) + bytes(2)
+        out += bytes([ts[f] for f in TAIL_SIDE_BYTE_FIELDS])
         for tp in ts['pos']:
             out += bytes([tp[f] for f in TAIL_POS_BYTE_FIELDS])
-            out += struct.pack('<HH', tp['substitute_hp'], tp['trap_move']) + bytes([tp['protect_kind']]) + bytes(5)
+            out += struct.pack('<HH', tp['substitute_hp'], tp['trap_move']) + bytes([tp['protect_kind']])
+            out += bytes([tp[f] for f in TAIL_POS_REV4_FIELDS]) + bytes(4)
         for m in range(MAX_ROSTER):
             out += struct.pack('<HH', ts['ability_now'][m], ts['forme_now'][m])
-            out += bytes([ts['soak'][m], ts['item_now'][m], ts['toxic_stage'][m], 0])
+            out += bytes([ts['soak'][m], ts['item_now'][m], ts['toxic_stage'][m], ts['type2'][m], ts['member_flags'][m], 0])
     assert len(out) == TAIL_SIZE
     return bytes(out)
 
 
 def tail_reserved_offsets():
-    """The offsets (within the tail) of the 43 reserved bytes."""
+    """The offsets (within the tail) of the 35 reserved bytes."""
     offs = list(range(1, TAIL_FIELD_SIZE))
     for s in range(2):
         so = TAIL_FIELD_SIZE + TAIL_SIDE_SIZE * s
-        offs += [so + 6, so + 7]
         for p in range(2):
-            offs += [so + 8 + TAIL_POS_SIZE * p + 27 + i for i in range(5)]
-        offs += [so + 72 + TAIL_MEMBER_SIZE * m + 7 for m in range(MAX_ROSTER)]
-    assert len(offs) == 43
+            offs += [so + 8 + TAIL_POS_SIZE * p + 32 + i for i in range(4)]
+        offs += [so + 80 + TAIL_MEMBER_SIZE * m + 9 for m in range(MAX_ROSTER)]
+    assert len(offs) == 35
     return offs
 
 
@@ -1047,17 +1088,21 @@ def parse_tail(b):
             tp = {f: b[po + i] for i, f in enumerate(TAIL_POS_BYTE_FIELDS)}
             tp['substitute_hp'], tp['trap_move'] = struct.unpack_from('<HH', b, po + 22)
             tp['protect_kind'] = b[po + 26]
+            for i, f in enumerate(TAIL_POS_REV4_FIELDS):
+                tp[f] = b[po + 27 + i]
             ts['pos'].append(tp)
-        for f in ('ability_now', 'forme_now', 'soak', 'item_now', 'toxic_stage'):
+        for f in TAIL_MEMBER_LIST_FIELDS:
             ts[f] = []
         for m in range(MAX_ROSTER):
-            mo = so + 72 + TAIL_MEMBER_SIZE * m
+            mo = so + 80 + TAIL_MEMBER_SIZE * m
             ab, fo = struct.unpack_from('<HH', b, mo)
             ts['ability_now'].append(ab)
             ts['forme_now'].append(fo)
             ts['soak'].append(b[mo + 4])
             ts['item_now'].append(b[mo + 5])
             ts['toxic_stage'].append(b[mo + 6])
+            ts['type2'].append(b[mo + 7])
+            ts['member_flags'].append(b[mo + 8])
         tail['sides'].append(ts)
     return tail
 
@@ -1121,15 +1166,15 @@ def decode(ctx, b):
     if bytes(b[0:8]) != MAGIC:
         return 'MALFORMED', None
     kind, schema, semantics, total = struct.unpack_from('<HHII', b, 8)
-    # Rev 1 (0x0103) and rev 2 (0x0203) of the tail are refused here like every schema that is not v3 or v3 + pool tail
-    # rev 3.
-    if kind != KIND_BATTLE_STATE or schema not in (SCHEMA, SCHEMA_POOL_TAIL_REV3):
+    # Rev 1 (0x0103), rev 2 (0x0203) and rev 3 (0x0303) of the tail are refused here like every schema that is not v3 or
+    # v3 + pool tail rev 4.
+    if kind != KIND_BATTLE_STATE or schema not in (SCHEMA, SCHEMA_POOL_TAIL_REV4):
         return 'SCHEMA_MISMATCH', None
     if semantics != SEMANTICS:
         return 'SEMANTICS_MISMATCH', None
     if total != size:
         return 'MALFORMED', None
-    tailed = schema == SCHEMA_POOL_TAIL_REV3
+    tailed = schema == SCHEMA_POOL_TAIL_REV4
     if size != (POOL_STATE_SIZE if tailed else STATE_SIZE):
         return 'MALFORMED', None
     if bytes(b[20:52]) != ctx.fingerprint():
@@ -1777,24 +1822,33 @@ def tail_example():
     t = empty_tail()
     t['gravity'] = 5
     a, c = t['sides']
-    a.update(wide_guard=1, aurora_veil=8, toxic_spikes=2, stealth_rock=1, spikes=3, sticky_web=1)
+    # all four hazards up, created in the order Spikes, Stealth Rock, Sticky Web, Toxic Spikes: 1 | 0 << 2 | 3 << 4 | 2 << 6
+    a.update(wide_guard=1, aurora_veil=8, toxic_spikes=2, stealth_rock=1, spikes=3, sticky_web=1, quick_guard=1,
+             hazard_order=HAZARD_SPIKES | (HAZARD_STEALTH_ROCK << 2) | (HAZARD_STICKY_WEB << 4) | (HAZARD_TOXIC_SPIKES << 6))
     a['pos'][0] = tail_pos(last_move=1, encore_slot=2, encore_turns=3, throat_chop=2, heal_block=5, perish=3, taunt=4,
                            disable_slot=3, disable_turns=5, imprison=1, trap_turns=6, trap_source=3, trap_band=1,
                            leech_seed=4, yawn=2, focus_energy=1, stockpile=3, stockpile_def=2, stockpile_spd=3,
-                           charge=1, substitute_hp=20, trap_move=37)
+                           charge=1, substitute_hp=20, trap_move=37, move_result=6, single_turn=2, hits_taken=6,
+                           ability_state=6, lock_turns=3)
     a['pos'][1] = tail_pos(last_move=5, throat_chop=1, heal_block=2, perish=1, taunt=1, must_recharge=1, stockpile=1,
-                           stockpile_def=1, glaive_rush=1, substitute_hp=1)
+                           stockpile_def=1, glaive_rush=1, substitute_hp=1, move_result=15, hits_taken=1, ability_state=1,
+                           lock_turns=1)
     a['ability_now'][:2] = [5, POOL_ABILITY_COUNT]
     a['forme_now'][:3] = [300, POOL_FORME_COUNT, 1]
     a['soak'][:2] = [5, 18]
     a['item_now'][:4] = [12, TAIL_ITEM_NONE, POOL_ITEM_COUNT, 1]
-    c.update(spikes=1)
-    c['pos'][0] = tail_pos(last_move=4, encore_slot=4, encore_turns=1, heal_block=3, leech_seed=1, yawn=1)
-    c['pos'][1] = tail_pos(trap_turns=1, trap_source=3, trap_move=511)
+    a['type2'][:2] = [TYPE_COUNT, TAIL_TYPE2_TYPELESS]
+    a['member_flags'][:3] = [1, 0, 1]
+    c.update(spikes=1, hazard_order=HAZARD_SPIKES)
+    c['pos'][0] = tail_pos(last_move=4, encore_slot=4, encore_turns=1, heal_block=3, leech_seed=1, yawn=1, move_result=4,
+                           hits_taken=3)
+    c['pos'][1] = tail_pos(trap_turns=1, trap_source=3, trap_move=511, move_result=9, single_turn=2)
     c['ability_now'][0] = 1
     c['forme_now'][5] = 7
     c['soak'][0] = 1
     c['item_now'][5] = 100
+    c['type2'][0] = 1
+    c['member_flags'][5] = 1
     return t
 
 
@@ -1826,7 +1880,7 @@ def print_pool_tail():
     example = tail_example()
     base_tail = tail_bytes(example)
     assert tail_outcome(base_tail) == 'OK' and len(base_tail) == TAIL_SIZE
-    head = MAGIC + struct.pack('<HHII', KIND_BATTLE_STATE, SCHEMA_POOL_TAIL_REV3, SEMANTICS, POOL_STATE_SIZE)
+    head = MAGIC + struct.pack('<HHII', KIND_BATTLE_STATE, SCHEMA_POOL_TAIL_REV4, SEMANTICS, POOL_STATE_SIZE)
     print('pool_tail envelope %s' % head.hex())
     print('pool_tail example %s' % base_tail.hex())
     reserved = set(tail_reserved_offsets())
@@ -1853,11 +1907,12 @@ def print_pool_tail():
         st['tailed'] = tailed
         b = bytearray(encode(st))
         print('pool_tail wrong-schema %s tailed=%s %s' % (label, tailed, decode(ctx, b)))
-    # Rev 1 (0x0103), rev 2 (0x0203) and schema 4 are unknown schemas of every kind: an artifact that carries them is refused.
+    # Rev 1 (0x0103), rev 2 (0x0203), rev 3 (0x0303) and schema 4 are unknown schemas of every kind: an artifact that carries
+    # them is refused.
     for label, ctx, tailed in (('KP', KP, False), ('C1', C1, True)):
         st = empty_state(ctx)
         st['tailed'] = tailed
-        for schema in (SCHEMA_POOL_TAIL_REV1, SCHEMA_POOL_TAIL_REV2, 4):
+        for schema in (SCHEMA_POOL_TAIL_REV1, SCHEMA_POOL_TAIL_REV2, SCHEMA_POOL_TAIL_REV3, 4):
             b = bytearray(encode(st))
             struct.pack_into('<H', b, 10, schema)
             print('pool_tail schema %#06x %s tailed=%s %s' % (schema, label, tailed, decode(ctx, b)))

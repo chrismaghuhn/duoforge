@@ -362,6 +362,36 @@ function sampling() {
     // Only the flags changed: the same.
     ({side} = sampledSide({active: [req({}), req({})]}, () => true, (s) => { s.pokemon[1].maybeTrapped = true; }));
     check('flags that changed alone give no sample either', domainSample(side) === null && side.pokemon[1].maybeTrapped === false);
+    // A hidden trap (Shadow Tag, step G41): the refusal of a switch of the last active Pokemon turns its `maybeTrapped` into
+    // `trapped: true` and gives the request a new rqid; the flag of the Pokemon is cleared. That change alone keeps the sample
+    // (the refused texts are refused either way) and the request is put back; anything more drops it.
+    const hidden = () => ({rqid: 3, active: [req({}), req({maybeTrapped: true})]});
+    const resolve = (s, text, extra) => {
+        if (/switch/.test(text)) {
+            s.activeRequest.active[1].trapped = true;
+            delete s.activeRequest.active[1].maybeTrapped;
+            s.activeRequest.rqid = 4;
+            s.pokemon[1].maybeTrapped = false;
+            if (extra) extra(s);
+        }
+    };
+    const trappedRequest = hidden();
+    ({side} = sampledSide(trappedRequest, (t) => !/switch/.test(t), (s, text) => resolve(s, text)));
+    side.pokemon[1].maybeTrapped = true;
+    const trappedBefore = JSON.stringify(trappedRequest);
+    const sample = domainSample(side);
+    check('a maybeTrapped that became trapped keeps the sample', Array.isArray(sample) && sample.length > 0 && sample.every((t) => !/switch/.test(t)));
+    check('and the request and the flag are as they were', JSON.stringify(side.activeRequest) === trappedBefore && side.pokemon[1].maybeTrapped === true);
+    ({side} = sampledSide(hidden(), (t) => !/switch/.test(t), (s, text) => resolve(s, text, (x) => { x.activeRequest.active[0].moves[1].disabled = true; })));
+    side.pokemon[1].maybeTrapped = true;
+    check('any other change with it drops the sample', domainSample(side) === null);
+    ({side} = sampledSide(hidden(), (t) => !/switch/.test(t), (s, text) => resolve(s, text, (x) => { x.pokemon[0].maybeLocked = false; })));
+    side.pokemon[1].maybeTrapped = true;
+    check('a flag of another kind changing with it drops the sample', domainSample(side) === null);
+    ({side} = sampledSide({active: [req({}), req({})]}, () => true, (s, text) => {
+        if (/switch/.test(text)) s.activeRequest.active[1].trapped = true; // trapped for sure with no maybeTrapped before
+    }));
+    check('a trapped that was not maybeTrapped drops the sample', domainSample(side) === null);
     // Team preview is a request like the others.
     ({side} = standIn('teampreview', {teamPreview: true}, {pokemon: mons([])}, (t) => t.startsWith('team 1')));
     const picks = domainSample(side);

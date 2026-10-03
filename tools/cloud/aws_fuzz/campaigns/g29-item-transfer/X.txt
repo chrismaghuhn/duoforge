@@ -1,0 +1,59 @@
+Gholdengo @ Choice Scarf
+Ability: Good as Gold
+Level: 50
+EVs: 17 HP / 2 Def / 17 SpA / 16 SpD / 14 Spe
+Modest Nature
+- Trick
+- Make It Rain
+- Shadow Ball
+- Protect
+
+Farigiraf (F) @ Leftovers
+Ability: Armor Tail
+Level: 50
+EVs: 32 HP / 14 Def / 20 SpD
+Bold Nature
+- Trick
+- Psychic
+- Protect
+- Expanding Force
+
+Grimmsnarl (M) @ Life Orb
+Ability: Prankster
+Level: 50
+EVs: 31 HP / 20 Def / 15 SpD
+Sassy Nature
+- Trick
+- Spirit Break
+- Light Screen
+- Reflect
+
+Sneasler (M) @ Sitrus Berry
+Ability: Unburden
+Level: 50
+EVs: 2 HP / 32 Atk / 32 Spe
+Adamant Nature
+- Switcheroo
+- Close Combat
+- Dire Claw
+- Fake Out
+
+Arcanine-Hisui (M)
+Ability: Rock Head
+Level: 50
+EVs: 32 HP / 32 Atk / 2 Spe
+Adamant Nature
+- Covet
+- Thief
+- Flare Blitz
+- Protect
+
+Swalot (M) @ Focus Sash
+Ability: Sticky Hold
+Level: 50
+EVs: 32 HP / 32 Atk / 2 SpD
+Adamant Nature
+- Thief
+- Poison Jab
+- Ice Punch
+- Knock Off

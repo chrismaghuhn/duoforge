@@ -158,16 +158,23 @@ class WideningTest(unittest.TestCase):
                 # Equal up to float32 rounding: a longer dot product may sum in another order.
                 np.testing.assert_allclose(np.asarray(x), np.asarray(y), rtol=1e-6, atol=1e-6)
 
-    def test_encoder_2_network_widens_to_encoder_3(self):
-        # A network of encoder 2 (the 607 columns before encoder 3's block) widened by name to encoder 3: every
-        # layer that reads encoder columns keeps its old rows exactly and gets zero rows for the block, so it gives
-        # the same outputs wherever the block is zero (every kind but POOL; any battle under mask 0). Model v2
-        # places the block's columns inside its layer inputs, so their products are summed in another order:
-        # equal up to f32 rounding (measured: at most 1.5e-6 relative on the log-probabilities).
-        from duoforge_learn import checkpoint
-        old_names = list(features.feature_names(2))
+    def test_older_networks_widen_to_the_current_encoder(self):
+        # A network of encoder 2 (the 607 columns before encoder 3's block) or 3 (without encoder 4's appended
+        # columns) widened by name to the current encoder: every layer that reads encoder columns keeps its old rows
+        # exactly and gets zero rows for the new ones, so it gives the same outputs wherever those columns are zero
+        # (every kind but POOL; any battle under mask 0). Model v2 places new columns inside its layer inputs, so
+        # their products are summed in another order: equal up to f32 rounding (measured: at most 1.5e-6 relative
+        # on the log-probabilities).
         obs, slots, mask = self.turn
         self.assertFalse(obs[:, features.BASE_OBS_SIZE:].any())
+        for version in (2, 3):
+            with self.subTest(encoder=version):
+                self._widened_from(version, obs, slots, mask)
+
+    def _widened_from(self, version, obs, slots, mask):
+        from duoforge_learn import checkpoint
+        old_names = list(features.feature_names(version))
+        new_columns = features.OBS_SIZE - features.obs_size(version)
         for cfg in (dict(policy.V1_DEFAULT), policy.v2_config("S")):
             old = policy.make(cfg, old_names, features.SLOT_FEATURE_NAMES)
             params = old.init(self.jax.random.PRNGKey(7))
@@ -184,8 +191,9 @@ class WideningTest(unittest.TestCase):
                 added = [i for label, i in index.items() if label not in set(labels)]
                 self.assertFalse(w_new[added].any(), path)
                 added_rows += len(added)
-            self.assertGreaterEqual(added_rows, features.EXT_SIZE if cfg["version"] == 1 else 5 + 7 + 36 + 6)
-            before = old.apply(params, obs[:, :features.BASE_OBS_SIZE], slots, mask)
+            # v1 reads every column in t1; v2 at least one row per new position column (shared by the positions).
+            self.assertGreaterEqual(added_rows, new_columns if cfg["version"] == 1 else 2)
+            before = old.apply(params, obs[:, :features.obs_size(version)], slots, mask)
             after = policy.make(cfg).apply(wide, obs, slots, mask)
             for x, y in zip(before, after):
                 np.testing.assert_allclose(np.asarray(x), np.asarray(y), rtol=1e-5, atol=1e-6)
@@ -428,6 +436,51 @@ class ResumeTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "does not support"):
             _run(["--resume", self.out, "--updates", "4"])
 
+    def test_resume_under_other_tables_checks_the_ids(self):
+        # Spec 12.4: tables that only grew keep every embedded id, so the run resumes and logs the new fingerprint;
+        # a moved id is refused, naming it. The run state and every snapshot carry the id tables.
+        import glob
+        import os
+        from duoforge_learn import checkpoint, runstate
+        self.assertEqual(_run(["--envs", "8", "--updates", "1", "--out", self.out] + _SMALL), 0)
+        state = runstate.load_state(self.out)
+        with duoforge.Context() as ctx:
+            self.assertEqual(state["ids"], checkpoint.ids_of(ctx))
+        for path in glob.glob(os.path.join(self.out, "params-*.npz")):
+            self.assertEqual(checkpoint.load(path)[1]["ids"], state["ids"])
+        real = state["data"]["fingerprint"]
+        state["data"]["fingerprint"] = "00" * 32
+        state["ids"] = {k: v[:-1] for k, v in state["ids"].items()}  # as if the tables grew since
+        runstate.save_state(self.out, state)
+        self.assertEqual(_run(["--resume", self.out, "--updates", "2"]), 0)
+        resume = [r for r in _log(self.out) if "resume" in r][-1]["resume"]
+        self.assertEqual(resume["data"], ["00" * 32, real])
+        state = runstate.load_state(self.out)
+        self.assertEqual(state["data"]["fingerprint"], real)
+        with duoforge.Context() as ctx:
+            self.assertEqual(state["ids"], checkpoint.ids_of(ctx))  # the resumed run keeps the current names
+        moves = state["ids"]["move"]
+        moves[1], moves[2] = moves[2], moves[1]
+        state["data"]["fingerprint"] = "00" * 32
+        runstate.save_state(self.out, state)
+        with self.assertRaisesRegex(SystemExit, "move id 1"):
+            _run(["--resume", self.out, "--updates", "3"])
+
+    def test_resume_without_names_under_other_tables_is_refused(self):
+        # A run state from before the names (2026-10-03) can only be checked under its own fingerprint.
+        from duoforge_learn import runstate
+        self.assertEqual(_run(["--envs", "8", "--updates", "1", "--out", self.out] + _SMALL), 0)
+        state = runstate.load_state(self.out)
+        del state["ids"]
+        runstate.save_state(self.out, state)
+        self.assertEqual(_run(["--resume", self.out, "--updates", "2"]), 0)  # same tables: no check needed
+        state = runstate.load_state(self.out)
+        del state["ids"]
+        state["data"]["fingerprint"] = "00" * 32
+        runstate.save_state(self.out, state)
+        with self.assertRaisesRegex(SystemExit, "no id tables"):
+            _run(["--resume", self.out, "--updates", "3"])
+
     def test_refused_option_names_itself(self):
         self.assertEqual(_run(["--envs", "8", "--updates", "1", "--out", self.out] + _SMALL), 0)
         with self.assertRaisesRegex(SystemExit, "learning_rate"):
@@ -521,16 +574,23 @@ class ResumeTest(unittest.TestCase):
         self.assertEqual(records[-1]["update"], 4)
         self.assertIn("vs_previous", records[-1])
 
-    def test_resume_of_an_encoder_2_run_continues_on_encoder_3(self):
-        # A run of encoder 2 (607 columns, no mask) resumes on encoder 3: parameters, Adam moments, league
-        # snapshots and the evaluation opponent widen by name, the mask stays 0, and the resume says so.
+    def test_resume_of_an_encoder_2_run_continues_on_the_current_encoder(self):
+        self._resume_from(2)
+
+    def test_resume_of_an_encoder_3_run_continues_on_the_current_encoder(self):
+        self._resume_from(3)
+
+    def _resume_from(self, version):
+        # A run of an older encoder (encoder 2: 607 columns, no mask; encoder 3: without encoder 4's columns, its
+        # mask) resumes on the current encoder: parameters, Adam moments, league snapshots and the evaluation
+        # opponent widen by name, the mask stays, and the resume says so.
         import os
         import jax
         from duoforge_learn import checkpoint, ppo, runstate
         self.assertEqual(_run(["--envs", "8", "--updates", "2", "--eval-every", "1", "--out", self.out]
                               + [a for a in _SMALL if a not in ("--eval-every", "100")]), 0)
-        keep = np.arange(features.BASE_OBS_SIZE)
-        old_names = list(features.feature_names(2))
+        keep = np.arange(features.obs_size(version))
+        old_names = list(features.feature_names(version))
 
         def narrow(tree):
             out = jax.tree_util.tree_map(np.asarray, tree)
@@ -545,25 +605,28 @@ class ResumeTest(unittest.TestCase):
                                      is_leaf=lambda n: jax.tree_util.tree_structure(n) == like)
         state["params"] = narrow(state["params"])
         state["opt_leaves"] = jax.tree_util.tree_leaves(opt)
-        state["features"], state["encoder"] = old_names, 2
-        state.pop("ext_supported")
+        state["features"], state["encoder"] = old_names, version
+        if version == 2:
+            state.pop("ext_supported")
         runstate.save_state(self.out, state)
         for f in os.listdir(self.out):
             if f.startswith("params-") and f.endswith(".npz"):
                 params, config = checkpoint.load(os.path.join(self.out, f))
-                config = {k: v for k, v in config.items() if k != "ext_supported"}
-                checkpoint.save(os.path.join(self.out, f), narrow(params), dict(config, features=old_names, encoder=2))
+                if version == 2:
+                    config = {k: v for k, v in config.items() if k != "ext_supported"}
+                checkpoint.save(os.path.join(self.out, f), narrow(params),
+                                dict(config, features=old_names, encoder=version))
         self.assertEqual(_run(["--resume", self.out, "--updates", "4", "--slot-refresh", "1"]), 0)
         records = [r for r in _log(self.out) if "update" in r]
         self.assertEqual(records[-1]["update"], 4)
         self.assertIn("vs_previous", records[-1])
         resume = [r for r in _log(self.out) if "resume" in r][0]["resume"]
-        self.assertEqual(resume["encoder"], [2, 3])
+        self.assertEqual(resume["encoder"], [version, features.ENCODER])
         state = runstate.load_state(self.out)
-        self.assertEqual((state["encoder"], state["ext_supported"]), (3, 0))
+        self.assertEqual((state["encoder"], state["ext_supported"]), (features.ENCODER, 0))  # CLOSURE: 0 either way
         self.assertEqual(state["features"], list(features.FEATURE_NAMES))
         params, config = checkpoint.load_current(os.path.join(self.out, "params-0.npz"))  # narrowed above
-        self.assertEqual((config["encoder"], params["t1"]["w"].shape[0]), (3, features.OBS_SIZE))
+        self.assertEqual((config["encoder"], params["t1"]["w"].shape[0]), (features.ENCODER, features.OBS_SIZE))
 
     def test_sigterm_leaves_a_loadable_state(self):
         import os
@@ -712,8 +775,10 @@ class RegistryTrainingTest(unittest.TestCase):
             shutil.rmtree(out, ignore_errors=True)
 
 
-# Encoder 3 (842 columns) since 2026-10-03: its block feeds the global, side, position and member layers.
-PRESET_COUNTS = {"S": 392303, "M": 2089999, "L": 7901839}
+# Encoder 4 (850 columns) since 2026-10-03: encoder 3's block feeds the global, side, position and member layers,
+# and encoder 4's two position columns add 2 x position rows to the position layer (encoder 3: S 392303, M 2089999,
+# L 7901839).
+PRESET_COUNTS = {"S": 392431, "M": 2090255, "L": 7902351}
 
 
 if __name__ == "__main__":

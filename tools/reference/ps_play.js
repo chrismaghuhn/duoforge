@@ -90,6 +90,8 @@
 // as they were, so the battle goes on as if there had been no sample, and a
 // sample whose request changed while it was taken is dropped: it is no set of
 // choices of one request. Such samples are counted, in request_changed.
+// The one exception is a hidden trap: the refusal of a switch of the last active Pokemon turns its `maybeTrapped` into `trapped`
+// (Shadow Tag, step G41); that change alone keeps the sample.
 'use strict';
 
 const path = require('path');
@@ -354,15 +356,53 @@ function restoreRequest(side, snapshot) {
     });
 }
 
+// The one change of a request that is no change of the set of choices (step G41, Shadow Tag): a switch of the last active
+// Pokemon that a hidden trap refuses is answered with [Unavailable choice] and an updated request (sim/side.ts:527-534,
+// 984-1000), where that Pokemon's `maybeTrapped` has become `trapped: true` (sim/pokemon.ts:1112-1134). Exactly that and
+// nothing else: the same keys and values elsewhere, a new `rqid` aside, and in the Pokemon's flags `maybeTrapped` going from
+// true to false for the Pokemon whose entry changed that way. Every other change stays a changed request.
+function onlyMaybeTrappedResolved(snapshot, after) {
+    const a = JSON.parse(snapshot.json);
+    const b = JSON.parse(after.json);
+    if (!Array.isArray(a.active) || !Array.isArray(b.active) || a.active.length !== b.active.length) return false;
+    let resolved = 0;
+    for (let i = 0; i < a.active.length; i++) {
+        const x = a.active[i];
+        const y = b.active[i];
+        if (x && y && x.maybeTrapped === true && x.trapped === undefined && y.trapped === true && y.maybeTrapped === undefined) {
+            const x2 = {...x};
+            const y2 = {...y};
+            delete x2.maybeTrapped;
+            delete y2.trapped;
+            if (JSON.stringify(x2) !== JSON.stringify(y2)) return false;
+            a.active[i] = x2;
+            b.active[i] = y2;
+            resolved++;
+        }
+    }
+    if (resolved === 0) return false;
+    delete a.rqid;
+    delete b.rqid;
+    if (JSON.stringify(a) !== JSON.stringify(b)) return false;
+    for (let i = 0; i < snapshot.flags.length; i++) {
+        const [mt0, md0, ml0] = snapshot.flags[i];
+        const [mt1, md1, ml1] = after.flags[i];
+        if (md0 !== md1 || ml0 !== ml1 || (mt0 !== mt1 && !(mt0 === true && mt1 === false))) return false;
+    }
+    return true;
+}
+
 // The texts that Showdown accepts for the request of `side`, in the order of enumerate(side); null when the request
-// changed while they were judged (it is put back either way).
+// changed while they were judged (it is put back either way). The change of onlyMaybeTrappedResolved does not make a
+// sample null: the refused switches are refused with or without it.
 function domainSample(side) {
     const snapshot = snapshotRequest(side);
     const accepted = enumerate(side).filter((text) => trial(side, text));
     const after = snapshotRequest(side);
     if (after.json === snapshot.json && JSON.stringify(after.flags) === JSON.stringify(snapshot.flags)) return accepted;
+    const resolved = onlyMaybeTrappedResolved(snapshot, after);
     restoreRequest(side, snapshot);
-    return null;
+    return resolved ? accepted : null;
 }
 
 // ---------------------------------------------------------------- the request

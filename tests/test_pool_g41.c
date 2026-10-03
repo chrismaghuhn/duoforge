@@ -1,19 +1,29 @@
 /*
- * duoforge.state.pool_g41 (white-box): step G41 of the content expansion, Shadow Tag.
+ * duoforge.state.pool_g41 (white-box): step G41 of the content expansion, Shadow Tag (and Gengarite, the stone of the only forme
+ * that has it).
  *
  * Shadow Tag (data/abilities.ts:4156-4173) traps every adjacent foe that is not a holder itself and not a Ghost type: at the TURN
- * boundary the foe's request refuses every switch (src/combat/turn.c dfi_switch_trapped, read by src/state/request.c). It shows no
- * line and keeps no state, so the recorded battles cannot show it: this test builds the board from a recorded POOL battle
- * (the team step played, the leads in) and sets the abilities and types in the state, then asks the real request builder for the
- * complete joint domain of each player and looks for a switch in it.
+ * boundary the foe's request refuses every switch (src/combat/turn.c dfi_switch_trapped, read by src/state/request.c). It shows
+ * no line and keeps no state, so the recorded battles replay it without showing it (a planned switch of a trapped Pokemon is
+ * turned into a move by the recorder, as the request says it is trapped): this test replays them to the interesting turns and
+ * asks the real request builder for the complete joint domain of each player.
  *
- *   - nobody has Shadow Tag: both players are offered switches (the base of every case below);
- *   - a Shadow Tag holder in one slot of side 1: both Pokemon of side 0 take no switch, and side 1, which has none to fear, does;
- *   - a holder is not trapped by the other side's holder: with a holder on each side, nobody is trapped;
- *   - a Ghost type is not trapped, but Soak's Water makes it trappable again; a Pokemon of the same side does not trap;
- *   - a holder at 0 HP traps nobody; the ability that counts is the current one (the tail's ability_now, a Trace copy);
- *   - the boundary of a replacement is free (the same state at a REPLACEMENT boundary offers a switch to the slot that needs one);
- *   - Shed Shell and Run Away, which would free the holder, are not marked (so the trap rule never meets them).
+ *   - g41_shadow_tag: nobody is trapped before the Gengar has Mega Evolved; at turn 2 both Pokemon of side 1 are, side 0 is not;
+ *     the pivot of a U-turn at the boundary in between is free;
+ *   - g41_shadow_tag_ghost: the Ghost and Steel type is free, its partner is not, and the partner's U-turn pivots;
+ *   - g41_shadow_tag_soak: Soak makes the Dragon and Ghost type a Water type, trapped from the next turn;
+ *   - g41_shadow_tag_trace: a Trace copy of Shadow Tag traps the Kingambit beside the Gengar (the Gengar is a holder and exempt),
+ *     and the Staraptor beside the Gardevoir (a holder through the copy) is trapped by the Gengar.
+ *
+ * Why the exclusion leaks nothing (decision 0007: the open team sheets and the lines are public): the trap is a function of the
+ * foes' current abilities and the types of the Pokemon, all of them public. The Mega forme and its single ability are known from
+ * the Mega Stone on the sheet and the `-mega` line, a Trace copy is a `-ability` line, a type change is a `-start|typechange`
+ * line. The pin tells the last active Pokemon only `maybeTrapped` and refuses the switch ([Unavailable choice], sim/side.ts:
+ * 527-534, 984-1000); the engine's domain simply has no switch, and the differential harness (tools/reference/ps_play.js) treats
+ * that refusal as consistent.
+ *
+ * The rows that would free the holder, or move or suppress the ability, are unmarked, so no battle has them: the guard below names
+ * each of them, and marking any of them fails here until dfi_switch_trapped reads it.
  */
 #include <stdio.h>
 #include <string.h>
@@ -57,31 +67,81 @@ static void build_setup(const df_conf_battle *cb, duoforge_battle_setup *s)
     }
 }
 
-static void team_bundle(const df_conf_step *st, const duoforge_battle *b, duoforge_decision_bundle *bd)
+static void bundle_of(const df_conf_step *st, const duoforge_battle *b, duoforge_decision_bundle *bd)
 {
     memset(bd, 0, sizeof *bd);
     bd->epoch = b->request_epoch;
     bd->response_mask = (uint8_t)(st->answered0 | (st->answered1 << 1u)); /* wide-operands-reviewed */
     for (uint32_t s = 0; s < 2u; ++s) {
+        if ((s == 0u && !st->answered0) || (s == 1u && !st->answered1)) {
+            continue;
+        }
         duoforge_side_choice *r = &bd->responses[s];
         r->epoch = b->request_epoch;
         r->side = (uint8_t)s;
-        r->kind = (uint8_t)DUOFORGE_CHOICE_TEAM_SELECTION;
-        r->pick_count = 4u;
-        for (uint32_t i = 0; i < 4u; ++i) {
-            r->picks[i] = st->picks[s][i];
+        if (st->team) {
+            r->kind = (uint8_t)DUOFORGE_CHOICE_TEAM_SELECTION;
+            r->pick_count = 4u;
+            for (uint32_t i = 0; i < 4u; ++i) {
+                r->picks[i] = st->picks[s][i];
+            }
+        } else {
+            r->kind = (uint8_t)DUOFORGE_CHOICE_SLOTS;
+            for (uint32_t k = 0; k < 2u; ++k) {
+                const df_conf_cmd *c = &st->cmds[s][k];
+                r->slots[k] = (duoforge_slot_command){c->kind, c->move_slot, c->target, c->mega, c->reserve, {0u, 0u, 0u}};
+            }
         }
     }
 }
 
-/* Whether any candidate of `player`'s joint domain has a switch in a slot, and how many candidates there are. */
-static bool offers_switch(df_test *t, const duoforge_context *ctx, const duoforge_battle *b, uint32_t player,
-                          uint32_t slot, uint32_t *count)
+static const df_conf_battle *find(const char *name)
+{
+    for (size_t i = 0; i < sizeof conf_battles / sizeof conf_battles[0]; ++i) {
+        if (strcmp(conf_battles[i].name, name) == 0) {
+            return &conf_battles[i];
+        }
+    }
+    return NULL;
+}
+
+/* The recorded battle `name` replayed for its first `steps` steps (step 0 is the team step). */
+static duoforge_battle *replay(df_test *t, const duoforge_context *ctx, const char *name, uint32_t steps)
+{
+    const df_conf_battle *cb = find(name);
+    if (!DF_CHECK(t, cb != NULL && steps <= cb->step_count)) {
+        return NULL;
+    }
+    duoforge_battle_setup setup;
+    build_setup(cb, &setup);
+    duoforge_battle *b = NULL;
+    if (!DF_CHECK(t, duoforge_battle_create(ctx, &setup, &b) == DUOFORGE_OK && b != NULL)) {
+        return NULL;
+    }
+    for (uint32_t si = 0u; si < steps; ++si) {
+        const df_conf_step *st = &cb->steps[si];
+        duoforge_decision_bundle bd;
+        bundle_of(st, b, &bd);
+        duoforge_step_result res;
+        uint32_t used = 0xFFFFFFFFu;
+        const duoforge_status status =
+            dfi_battle_step_tape(ctx, b, &bd, &conf_tape[st->tape_off], st->tape_len, &used, &res);
+        if (!DF_CHECK(t, status == DUOFORGE_OK && used == st->tape_len)) {
+            fprintf(stderr, "  %s step %u: %s\n", name, si, duoforge_status_name(status));
+            duoforge_battle_destroy(b);
+            return NULL;
+        }
+    }
+    return b;
+}
+
+/* Whether any candidate of `player`'s joint domain has a switch in `slot` (and that there are candidates at all). */
+static bool offers_switch(df_test *t, const duoforge_context *ctx, const duoforge_battle *b, uint32_t player, uint32_t slot)
 {
     static duoforge_side_choice buf[4096];
     uint32_t n = 0u;
     DF_CHECK(t, duoforge_battle_candidates(ctx, b, player, buf, 4096u, &n) == DUOFORGE_OK);
-    *count = n;
+    DF_CHECK(t, n != 0u);
     for (uint32_t i = 0u; i < n && i < 4096u; ++i) {
         if (buf[i].slots[slot].kind == DUOFORGE_SLOT_SWITCH) {
             return true;
@@ -90,114 +150,91 @@ static bool offers_switch(df_test *t, const duoforge_context *ctx, const duoforg
     return false;
 }
 
-static uint32_t occupant_of(const duoforge_battle *b, uint32_t side, uint32_t slot)
+/* The state after `steps` steps is a TURN boundary where flat position `p` is trapped (or not): the predicate and the domain
+ * agree, both for the position and for the moves, which stay offered. */
+static void expect_turn(df_test *t, const duoforge_context *ctx, const char *name, uint32_t steps, const bool trapped[4])
 {
-    return b->sides[side].positions[slot].occupant;
+    duoforge_battle *b = replay(t, ctx, name, steps);
+    if (b == NULL) {
+        return;
+    }
+    DF_CHECK_EQ_U64(t, b->boundary_kind, DUOFORGE_BOUNDARY_TURN);
+    for (uint32_t flat = 0u; flat < 4u; ++flat) {
+        DF_CHECK_EQ_U64(t, dfi_switch_trapped(b, flat) ? 1u : 0u, trapped[flat] ? 1u : 0u);
+        DF_CHECK_EQ_U64(t, offers_switch(t, ctx, b, flat / 2u, flat % 2u) ? 1u : 0u, trapped[flat] ? 0u : 1u);
+    }
+    duoforge_battle_destroy(b);
 }
 
-static void give_tag(duoforge_battle *b, uint32_t side, uint32_t slot)
+/* The state after `steps` steps is a PIVOT boundary of side `side` at `slot`: the switch is offered although the Pokemon is trapped. */
+static void expect_pivot_free(df_test *t, const duoforge_context *ctx, const char *name, uint32_t steps, uint32_t side,
+                              uint32_t slot, bool trapped_at_turn)
 {
-    b->sides[side].members[occupant_of(b, side, slot)].ability = (uint8_t)(1u + DFI_ABILITY_SHADOWTAG);
+    duoforge_battle *b = replay(t, ctx, name, steps);
+    if (b == NULL) {
+        return;
+    }
+    DF_CHECK_EQ_U64(t, b->boundary_kind, DUOFORGE_BOUNDARY_PIVOT);
+    DF_CHECK_EQ_U64(t, dfi_switch_trapped(b, side * 2u + slot) ? 1u : 0u, trapped_at_turn ? 1u : 0u);
+    DF_CHECK(t, offers_switch(t, ctx, b, side, slot));
+    duoforge_battle_destroy(b);
 }
 
 static void check_domain(df_test *t)
 {
     duoforge_context *ctx = df_make_context(&df_config_pool);
-    const df_conf_battle *cb = &conf_battles[0];
-    duoforge_battle_setup setup;
-    build_setup(cb, &setup);
-    duoforge_battle *b0 = NULL;
-    if (!DF_CHECK(t, duoforge_battle_create(ctx, &setup, &b0) == DUOFORGE_OK && b0 != NULL)) {
-        return;
-    }
-    duoforge_decision_bundle bd;
-    team_bundle(&cb->steps[0], b0, &bd);
-    uint32_t used = 0u;
-    duoforge_step_result res;
-    DF_CHECK(t, dfi_battle_step_tape(ctx, b0, &bd, &conf_tape[cb->steps[0].tape_off], cb->steps[0].tape_len, &used, &res) ==
-                    DUOFORGE_OK);
-    DF_CHECK_EQ_U64(t, b0->boundary_kind, DUOFORGE_BOUNDARY_TURN);
-    uint32_t n = 0u;
-    /* the base: nobody has Shadow Tag, so everybody may switch */
-    for (uint32_t p = 0u; p < 2u; ++p) {
-        for (uint32_t slot = 0u; slot < 2u; ++slot) {
-            DF_CHECK(t, offers_switch(t, ctx, b0, p, slot, &n));
-            DF_CHECK(t, !dfi_switch_trapped(b0, p * 2u + slot));
-        }
-    }
-    duoforge_battle *b = NULL;
-    /* a holder in slot 1 of side 1: side 0 is trapped in both slots, side 1 is free (a holder is exempt) */
-    DF_CHECK(t, duoforge_battle_clone(ctx, b0, &b) == DUOFORGE_OK);
-    give_tag(b, 1u, 1u);
-    for (uint32_t slot = 0u; slot < 2u; ++slot) {
-        DF_CHECK(t, dfi_switch_trapped(b, slot));
-        DF_CHECK(t, !offers_switch(t, ctx, b, 0u, slot, &n));
-        DF_CHECK(t, n != 0u); /* the moves are still offered */
-        DF_CHECK(t, !dfi_switch_trapped(b, 2u + slot));
-        DF_CHECK(t, offers_switch(t, ctx, b, 1u, slot, &n));
-    }
-    /* a holder at 0 HP traps nobody (the foe's handler does not run for a Pokemon that is down) */
-    b->sides[1].members[occupant_of(b, 1u, 1u)].hp = 0u;
-    DF_CHECK(t, !dfi_switch_trapped(b, 0u));
-    b->sides[1].members[occupant_of(b, 1u, 1u)].hp = 1u;
-    DF_CHECK(t, dfi_switch_trapped(b, 0u));
-    /* a holder on each side: neither is trapped, and neither holder traps the other's partner... both sides' non-holders are
-     * trapped by the other side's holder */
-    give_tag(b, 0u, 0u);
-    DF_CHECK(t, !dfi_switch_trapped(b, 0u));  /* the holder is exempt */
-    DF_CHECK(t, dfi_switch_trapped(b, 1u));   /* its partner is trapped by side 1's holder */
-    DF_CHECK(t, dfi_switch_trapped(b, 2u));   /* side 1's slot 0 is trapped by side 0's holder */
-    DF_CHECK(t, !dfi_switch_trapped(b, 3u));  /* the holder is exempt */
-    /* a Ghost type is not trapped: slot 0 of side 0 becomes a Ghost forme, slot 1 stays */
-    duoforge_battle *g = NULL;
-    DF_CHECK(t, duoforge_battle_clone(ctx, b0, &g) == DUOFORGE_OK);
-    give_tag(g, 1u, 0u);
-    uint32_t ghost = DFI_POOL_FORME_COUNT;
-    for (uint32_t f = 0u; f < DFI_POOL_FORME_COUNT && ghost == DFI_POOL_FORME_COUNT; ++f) {
-        if (dfi_pool_formes[f].is_mega == 0u &&
-            (dfi_pool_formes[f].types[0] == DFI_TYPE_GHOST || dfi_pool_formes[f].types[1] == DFI_TYPE_GHOST)) {
-            ghost = f;
-        }
-    }
-    if (DF_CHECK(t, ghost != DFI_POOL_FORME_COUNT)) {
-        const uint32_t occ = occupant_of(g, 0u, 0u);
-        g->sides[0].members[occ].species_id = (uint16_t)ghost;
-        DF_CHECK(t, !dfi_switch_trapped(g, 0u));
-        DF_CHECK(t, offers_switch(t, ctx, g, 0u, 0u, &n));
-        DF_CHECK(t, dfi_switch_trapped(g, 1u));
-        DF_CHECK(t, !offers_switch(t, ctx, g, 0u, 1u, &n));
-        /* Soak makes it a single Water type: trapped again */
-        g->tail.sides[0].soak_type[occ] = (uint8_t)(DFI_TYPE_WATER + 1u);
-        DF_CHECK(t, dfi_switch_trapped(g, 0u));
-        DF_CHECK(t, !offers_switch(t, ctx, g, 0u, 0u, &n));
-    }
-    /* the current ability: a Trace copy of Shadow Tag (ability_now) makes a holder of a member whose own ability is another */
-    duoforge_battle *c = NULL;
-    DF_CHECK(t, duoforge_battle_clone(ctx, b0, &c) == DUOFORGE_OK);
-    c->tail.sides[1].ability_now[occupant_of(c, 1u, 0u)] = (uint16_t)(1u + DFI_ABILITY_SHADOWTAG);
-    DF_CHECK(t, dfi_switch_trapped(c, 0u));
-    DF_CHECK(t, dfi_switch_trapped(c, 1u));
-    /* a pivot (and a replacement) is free: the same trapped board at a PIVOT boundary of slot 0 takes the switch */
-    DF_CHECK(t, !offers_switch(t, ctx, c, 0u, 0u, &n));
-    c->boundary_kind = (uint8_t)DUOFORGE_BOUNDARY_PIVOT;
-    c->sides[0].requested_slots = 1u;
-    c->sides[1].requested_slots = 0u;
-    DF_CHECK(t, offers_switch(t, ctx, c, 0u, 0u, &n));
-    duoforge_battle_destroy(c);
-    duoforge_battle_destroy(g);
-    duoforge_battle_destroy(b);
-    duoforge_battle_destroy(b0);
+    /* flat 0, 1: side 0 slots 0, 1; flat 2, 3: side 1 */
+    static const bool none[4] = {false, false, false, false};
+    static const bool side1_both[4] = {false, false, true, true};
+    static const bool ghost_free[4] = {false, false, false, true};
+    static const bool trace[4] = {false, true, false, true};
+    static const bool soak[4] = {false, false, true, true};
+    /* before the Mega Evolution nobody is trapped (the traps are computed at the start of a turn) */
+    expect_turn(t, ctx, "g41_shadow_tag", 1u, none);
+    /* turn 1's U-turn: the pivot boundary of side 1's slot 1 is free; turn 2: both are trapped, side 0 is not */
+    expect_pivot_free(t, ctx, "g41_shadow_tag", 2u, 1u, 1u, true);
+    expect_turn(t, ctx, "g41_shadow_tag", 3u, side1_both);
+    /* the Ghost and Steel Gholdengo is free at turn 2, the Staraptor beside it is not, and its U-turn pivots */
+    expect_turn(t, ctx, "g41_shadow_tag_ghost", 2u, ghost_free);
+    expect_pivot_free(t, ctx, "g41_shadow_tag_ghost", 4u, 1u, 1u, true);
+    /* Soak: the Dragon and Ghost type is free at turn 1 and a Water type from turn 2 */
+    expect_turn(t, ctx, "g41_shadow_tag_soak", 1u, none);
+    expect_turn(t, ctx, "g41_shadow_tag_soak", 2u, soak);
+    /* a Trace copy of Shadow Tag: the holder (own or copied) is exempt, the Pokemon beside a holder is trapped by the other */
+    expect_turn(t, ctx, "g41_shadow_tag_trace", 6u, trace);
+    /* the Gardevoir has fainted and a Milotic has come in: nothing is copied any more, the Kingambit's side is free and the foes are
+     * trapped by the Gengar alone (the trap is recomputed at every TURN boundary) */
+    expect_turn(t, ctx, "g41_shadow_tag_trace", 9u, soak);
     duoforge_context_destroy(ctx);
 }
 
+/* What would free the holder, or move, copy, take away or hide the ability, or trap in another way, is not marked: no battle has
+ * it, and the trap rule reads none of it. Each is named, so that marking any of them fails here until dfi_switch_trapped reads it
+ * (Shed Shell and Run Away free their holder, onTrapPokemon at priority -10 after Shadow Tag's; Skill Swap, Role Play, Entrainment,
+ * Simple Beam, Worry Seed, Wandering Spirit and Mummy move or replace an ability; Gastro Acid suppresses it; Neutralizing Gas is not
+ * in the pool; Illusion hides the Pokemon whose types and ability count; Mean Look and Block trap in their own way). Trace is
+ * marked and is public (the `-ability` line); a type change is Soak's (marked, public). */
 static void check_marks(df_test *t)
 {
     DF_CHECK(t, dfi_support.abilities[DFI_ABILITY_SHADOWTAG] != 0u);
     DF_CHECK_EQ_U64(t, dfi_pool_ability_handler[DFI_ABILITY_SHADOWTAG], DFI_HANDLER_NONE);
-    /* what would free the holder is not marked: marking either needs the trap rule to read it (the Champions runaway and
-     * the item's onTrapPokemon at priority -10) */
-    DF_CHECK(t, dfi_support.abilities[DFI_ABILITY_RUNAWAY] == 0u);
+    DF_CHECK(t, dfi_support.items[DFI_ITEM_GENGARITE] != 0u);
+    DF_CHECK(t, dfi_support.abilities[DFI_ABILITY_CURSEDBODY] != 0u); /* Gengar's own ability: the base of the Mega */
+    DF_CHECK(t, dfi_support.abilities[DFI_ABILITY_TRACE] != 0u);
+    DF_CHECK(t, dfi_support.moves[DFI_MOVE_SOAK] != 0u);
     DF_CHECK(t, dfi_support.items[DFI_ITEM_SHEDSHELL] == 0u);
+    DF_CHECK(t, dfi_support.abilities[DFI_ABILITY_RUNAWAY] == 0u);
+    DF_CHECK(t, dfi_support.abilities[DFI_ABILITY_ILLUSION] == 0u);
+    DF_CHECK(t, dfi_support.abilities[DFI_ABILITY_WANDERINGSPIRIT] == 0u);
+    DF_CHECK(t, dfi_support.abilities[DFI_ABILITY_MUMMY] == 0u);
+    DF_CHECK(t, dfi_support.moves[DFI_MOVE_SKILLSWAP] == 0u);
+    DF_CHECK(t, dfi_support.moves[DFI_MOVE_ROLEPLAY] == 0u);
+    DF_CHECK(t, dfi_support.moves[DFI_MOVE_ENTRAINMENT] == 0u);
+    DF_CHECK(t, dfi_support.moves[DFI_MOVE_GASTROACID] == 0u);
+    DF_CHECK(t, dfi_support.moves[DFI_MOVE_SIMPLEBEAM] == 0u);
+    DF_CHECK(t, dfi_support.moves[DFI_MOVE_WORRYSEED] == 0u);
+    DF_CHECK(t, dfi_support.moves[DFI_MOVE_MEANLOOK] == 0u);
+    DF_CHECK(t, dfi_support.moves[DFI_MOVE_BLOCK] == 0u);
 }
 
 int main(void)
