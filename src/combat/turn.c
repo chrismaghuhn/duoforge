@@ -4210,7 +4210,10 @@ static duoforge_status dfi_run_entries(dfi_run *r, uint32_t entering)
      * 8), so the ability of one Pokemon comes before its own herb. */
     for (uint32_t i = 0u; i < n; ++i) {
         const dfi_member *m = dfi_at(b, list[i]);
-        if (((entering >> list[i]) & 1u) != 0u && m->hp != 0u && dfi_ability(b, m, DFI_ABILITY_HOSPITALITY)) {
+        /* The handler of the sheet's ability: a Trace holder that copied it ran it at once (dfi_trace), and the SwitchIn
+         * handlers were collected before. */
+        if (((entering >> list[i]) & 1u) != 0u && m->hp != 0u && dfi_ability(b, m, DFI_ABILITY_HOSPITALITY) &&
+            m->ability == 1u + DFI_ABILITY_HOSPITALITY) {
             dfi_hospitality(r, list[i]);
         }
         dfi_white_herb(r, list[i]);

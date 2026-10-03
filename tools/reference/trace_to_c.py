@@ -713,8 +713,7 @@ NOPOS = 0xFF
 # one of the two tables before its traces convert. Spiky Shield (step G20, POOL) is Protect's bit: its own volatile
 # is the Protect volatile of the engine, with the variant in the tail (never both at once).
 COMPARED_VOLATILES = (('protect', 1), ('spikyshield', 1), ('flashfire', 2), ('twoturnmove', 4), ('choicelock', 8), ('unburden', 16),
-                      ('helpinghand', 32), ('followme', 64), ('flinch', 128),
-                      ('ragepowder', 64))  # step G30: Rage Powder shares the position's Follow Me bit with Follow Me
+                      ('helpinghand', 32), ('followme', 64), ('flinch', 128))
 IGNORED_VOLATILES = {
     # data/conditions.ts stall: compared as df_conf_mon.stall (its presence).
     'stall': 'the stall field',
@@ -727,6 +726,9 @@ IGNORED_VOLATILES = {
     # can stand without it, from the locked turn to the residual, and the lock
     # is then the one remembered (two_turn_lock).
     'electroshot': 'the locked slot and target',
+    # Step G30: Rage Powder shares the position's Follow Me bit, so the engine's state compares as no Follow Me: its presence
+    # is the extension's RAGE_POWDER bit, read after every step by duoforge.state.pool_g30.
+    'ragepowder': 'the extension bit RAGE_POWDER',
     'solarbeam': 'the locked slot and target',  # step G30: the same two-turn lock
     # Pool step G8 (the POOL tail, decision 0015 section 7). Their turns are not a field of the state record; each
     # shows in the steps that the comparison already covers: the moves of the next request (disabled slots, the

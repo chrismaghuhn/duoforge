@@ -69,9 +69,9 @@
 #define POOL_ABILITIES 215u
 
 /* The rows that the tables do not model, pinned (the generator reports the same counts). */
-#define UNMODELED_MOVES 299u /* 300 before step G20 modelled Spiky Shield; 301 before it modelled Aurora Veil; 303 before step G19 modelled Coaching and Glaive Rush; 305u before step G15 modelled Expanding Force; 306 before step G16 modelled Knock Off; 313 before step G17 modelled the seven recharge moves; 319 before step G13 modelled Detect, Light of Ruin and the poison secondaries (Cross Poison, Gunk Shot, Poison Jab, Sludge Bomb); 324 before step G10 */
+#define UNMODELED_MOVES 296u /* 299 before step G30 modelled Rage Powder, Psychic Fangs and Solar Beam; 300 before step G20 modelled Spiky Shield; 301 before it modelled Aurora Veil; 303 before step G19 modelled Coaching and Glaive Rush; 305u before step G15 modelled Expanding Force; 306 before step G16 modelled Knock Off; 313 before step G17 modelled the seven recharge moves; 319 before step G13 modelled Detect, Light of Ruin and the poison secondaries (Cross Poison, Gunk Shot, Poison Jab, Sludge Bomb); 324 before step G10 */
 #define UNMODELED_ITEMS 39u /* one fewer since step G15 modelled Psychic Seed; five fewer since step G23-A found the Mega of a stone from (forme, stone): the second Mega Stones are data of their link */
-#define UNMODELED_ABILITIES 172u /* 178 before step G22 made six abilities engine rows; 179 before step G23-C made Levitate an engine row; 180 before step AC1 made Trace an engine row; 181 before step G16 made Sticky Hold an engine row; 184 before step G14 made Rough Skin, Poison Touch and Thermal Exchange engine rows */
+#define UNMODELED_ABILITIES 168u /* 172 before step G30 made Flame Body, Clear Body, Hospitality and Overcoat engine rows; 178 before step G22 made six abilities engine rows; 179 before step G23-C made Levitate an engine row; 180 before step AC1 made Trace an engine row; 181 before step G16 made Sticky Hold an engine row; 184 before step G14 made Rough Skin, Poison Touch and Thermal Exchange engine rows */
 
 /* How many rows of the manifest are marked and half modelled: marked, and with the UNMODELED handler or a list of
  * unmodelled features (decision 0015 section 4.2). A step marks only what it fully models. */
@@ -731,7 +731,8 @@ int main(void)
             sound += (dfi_pool_move_flags2[i] & DFI_MOVE_FLAG2_SOUND) != 0u ? 1u : 0u;
             heal += (dfi_pool_move_flags2[i] & DFI_MOVE_FLAG2_HEAL) != 0u ? 1u : 0u;
             other += (dfi_pool_move_flags2[i] &
-                      ~(uint32_t)(DFI_MOVE_FLAG2_SOUND | DFI_MOVE_FLAG2_HEAL | DFI_MOVE_FLAG2_THAWS_TARGET | DFI_MOVE_FLAG2_RECHARGE)) != 0u
+                      ~(uint32_t)(DFI_MOVE_FLAG2_SOUND | DFI_MOVE_FLAG2_HEAL | DFI_MOVE_FLAG2_THAWS_TARGET | DFI_MOVE_FLAG2_RECHARGE |
+                                    DFI_MOVE_FLAG2_POWDER)) != 0u
                          ? 1u
                          : 0u;
         }
@@ -1177,7 +1178,10 @@ int main(void)
                                 /* step G22: the weather Speed abilities, Inner Focus and Liquid Voice, by id */
                                 id == DFI_ABILITY_SANDRUSH || id == DFI_ABILITY_SWIFTSWIM ||
                                 id == DFI_ABILITY_SLUSHRUSH || id == DFI_ABILITY_CHLOROPHYLL ||
-                                id == DFI_ABILITY_INNERFOCUS || id == DFI_ABILITY_LIQUIDVOICE;
+                                id == DFI_ABILITY_INNERFOCUS || id == DFI_ABILITY_LIQUIDVOICE ||
+                                /* step G30: Flame Body, Clear Body, Hospitality and Overcoat, by id */
+                                id == DFI_ABILITY_FLAMEBODY || id == DFI_ABILITY_CLEARBODY ||
+                                id == DFI_ABILITY_HOSPITALITY || id == DFI_ABILITY_OVERCOAT;
             DF_CHECK_EQ_U64(&t, dfi_support.abilities[id] != 0u ? 1u : 0u, (setter || engine) ? 1u : 0u);
             DF_CHECK_EQ_U64(&t, dfi_pool_ability_family[id].family,
                             setter ? DFI_ABILITY_FAMILY_WEATHER_SETTER : DFI_ABILITY_FAMILY_NONE);
@@ -1225,7 +1229,12 @@ int main(void)
                                                 DFI_MOVE_CRUNCH, DFI_MOVE_BUGBUZZ, DFI_MOVE_DRAINPUNCH, DFI_MOVE_NUZZLE,
                                                 DFI_MOVE_EXPANDINGFORCE,
                                                 DFI_MOVE_COACHING, DFI_MOVE_GLAIVERUSH, DFI_MOVE_AURORAVEIL,
-                                                DFI_MOVE_SPIKYSHIELD};
+                                                DFI_MOVE_SPIKYSHIELD,
+                                                /* step G30 */
+                                                DFI_MOVE_RAGEPOWDER, DFI_MOVE_SLEEPPOWDER, DFI_MOVE_STUNSPORE,
+                                                DFI_MOVE_POISONPOWDER, DFI_MOVE_PSYCHICFANGS, DFI_MOVE_SOLARBEAM,
+                                                DFI_MOVE_MATCHAGOTCHA, DFI_MOVE_GIGADRAIN, DFI_MOVE_ENERGYBALL,
+                                                DFI_MOVE_PLAYROUGH};
         uint32_t marked_count = 0u;
         for (uint32_t id = DFI_EXT_MOVE_COUNT; id < DFI_POOL_MOVE_COUNT; ++id) {
             bool want = false;
@@ -1240,12 +1249,13 @@ int main(void)
                              id == DFI_MOVE_FIRSTIMPRESSION || id == DFI_MOVE_LOWKICK || id == DFI_MOVE_SOAK ||
                              id == DFI_MOVE_ENCORE || id == DFI_MOVE_SANDSTORM || id == DFI_MOVE_SNOWSCAPE ||
                              id == DFI_MOVE_KNOCKOFF || id == DFI_MOVE_EXPANDINGFORCE || id == DFI_MOVE_GLAIVERUSH || id == DFI_MOVE_AURORAVEIL || id == DFI_MOVE_SPIKYSHIELD ||
+                             id == DFI_MOVE_RAGEPOWDER || id == DFI_MOVE_PSYCHICFANGS || id == DFI_MOVE_SOLARBEAM ||
                              (id == DFI_MOVE_WIDEGUARD && dfi_pool_moves[id].special == DFI_SPECIAL_WIDE_GUARD) ||
                              (id == DFI_MOVE_DETECT && dfi_pool_moves[id].special == DFI_SPECIAL_PROTECT));
             DF_CHECK(&t, !want || dfi_pool_moves[id].special != DFI_SPECIAL_UNMODELED);
             marked_count += dfi_support.moves[id] != 0u ? 1u : 0u;
         }
-        DF_CHECK_EQ_U64(&t, marked_count, 79u);
+        DF_CHECK_EQ_U64(&t, marked_count, 89u); /* the ten of step G30 */
     }
 
     /* Step AC1: Trace copies the ability of a foe unless that has the pin's notrace flag. The turn code excludes only
