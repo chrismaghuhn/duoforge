@@ -132,7 +132,11 @@
  * Mach Punch (priority +1) and Drain Punch (drain 1/2), recorded as g21_* under the POOL kind. Shell Smash (the pin
  * orders its boosts Defense, Special Defense, Attack, Special Attack, Speed, the engine in stat order), Earthquake,
  * Ancient Power, Blizzard, Dual Wingbeat, Feint, Life Dew, Acrobatics, Terrain Pulse and Expert Belt stay unmarked: each needs
- * logic that no column or handler has (docs/decisions/0015-content-expansion-pool.md, step G21). */
+ * logic that no column or handler has (docs/decisions/0015-content-expansion-pool.md, step G21).
+ * Step G26 marks Perish Song (the perish counter of the state tail, set on every active Pokemon without it; the residual
+ * handler at order 24 shows the count and at 0 faints the holder; the volatile id DUOFORGE_VOLATILE_PERISH = 5), with the
+ * view bit 4 (perish of the position, public). Soundproof stays unmarked (it would stop the move), and a Heal Block that
+ * ends in the same residual as a Perish count is refused (E_UNSUPPORTED). Recorded as g26_* under the POOL kind. */
 const dfi_support_manifest dfi_support = {
     .turn_core = 1u,
     .switching = 1u,
@@ -269,6 +273,8 @@ const dfi_support_manifest dfi_support = {
             [DFI_MOVE_DRAINPUNCH] = 1u,
             [DFI_MOVE_NUZZLE] = 1u,
             [DFI_MOVE_AURORAVEIL] = 1u,
+            /* Step G26: Perish Song (the perish counter of the tail, the residual at order 24, view bit 4). */
+            [DFI_MOVE_PERISHSONG] = 1u,
         },
     .abilities =
         {
@@ -377,7 +383,8 @@ const dfi_support_manifest dfi_support = {
      * position's volatiles, public, verified against the g17 battles step by step in duoforge.state.pool_g17). Step G19: Glaive Rush (bit 20:
      * GLAIVE_RUSH of the position's volatiles, public, verified against the g19 battles in duoforge.state.pool_g19). Step G20:
      * Aurora Veil (bit 3: aurora_veil_turns of the side, public, verified against the g20_aurora_veil battles step by step
-     * in duoforge.state.pool_g20). */
+     * in duoforge.state.pool_g20). Step G26: Perish Song (bit 4: perish of the position, public: the count that the game
+     * announced, 3 to 1, verified against the g26 battles step by step in duoforge.state.pool_g26). */
     /* Step Sandstorm and Snowscape: bits 0 and 1, the weather values of the old observation's weather field (the
      * -weather lines of Sand Stream, Snow Warning and the two moves, verified step by step in duoforge.state.pool_weather).
      * Step AC1: the ability change of Trace (bit 2: position_ext.ability_now, public, verified against the ac1 battles in
@@ -394,5 +401,6 @@ const dfi_support_manifest dfi_support = {
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_WEATHER_SNOW) |
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_ITEM_CHANGE) |
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_ABILITY_CHANGE) |
-                         ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_AURORA_VEIL),
+                         ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_AURORA_VEIL) |
+                         ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_PERISH),
 };

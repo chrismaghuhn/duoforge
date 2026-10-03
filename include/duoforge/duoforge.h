@@ -35,7 +35,7 @@ extern "C" {
 #define DUOFORGE_VERSION_MAJOR 0
 #define DUOFORGE_VERSION_MINOR 32
 #define DUOFORGE_VERSION_PATCH 0
-#define DUOFORGE_VERSION_STRING "0.32.0"
+#define DUOFORGE_VERSION_STRING "0.33.0"
 
 /* Identifiers of the artifacts that exist now (registry: decisions 0002, 0005, 0006). */
 #define DUOFORGE_SEMANTICS_ID           3u   /* "duoforge-m3-closure" */
@@ -868,7 +868,9 @@ duoforge_status duoforge_battle_observe_ext(const duoforge_context *ctx, const d
 #define DUOFORGE_EVENT_ABILITY         34u /* [-ability] position, id2: ability + 1. POOL kinds, cause ABILITY (Trace copying
                                                a foe's): other is the foe, id2 the copied ability + 1 */
 #define DUOFORGE_EVENT_ACTIVATE        35u /* [-activate] position; cause ABILITY + id2 (Lightning Rod, Emergency Exit) or MOVE + id2 (Struggle);
-                                                    Flower Veil's [-block] too: position the protected Pokemon, other the holder ([of]) */
+                                                    Flower Veil's [-block] too: position the protected Pokemon, other the holder ([of]);
+                                                    POOL kinds: [-fieldactivate|move: Perish Song] is cause MOVE, id2 the move, position
+                                                    and other DUOFORGE_NO_POSITION */
 #define DUOFORGE_EVENT_UPKEEP          36u /* [upkeep] the end-of-turn effects are done */
 #define DUOFORGE_EVENT_RESULT          37u /* [win] or [tie] detail: DUOFORGE_RESULT_* */
 #define DUOFORGE_EVENT_SINGLE_TURN     38u /* [-singleturn] position (Team C): id: the move; other: the user ([of]) for
@@ -921,6 +923,9 @@ duoforge_status duoforge_battle_observe_ext(const duoforge_context *ctx, const d
 #define DUOFORGE_VOLATILE_ENCORE     2u /* VOLATILE_START / VOLATILE_END: Encore (-start|X|Encore, -end|X|Encore) */
 #define DUOFORGE_VOLATILE_MUST_RECHARGE 3u /* VOLATILE_START: -mustrecharge|X (a recharge move hit); no END, it ends with the
                                               [cant] recharge line or with the occupant */
+#define DUOFORGE_VOLATILE_PERISH     5u /* VOLATILE_START: -start|X|perishN (Perish Song): amount N, 3 to 0, one line per count
+                                              in the residual; at 0 the holder faints (a FAINT event follows the UPKEEP). No
+                                              END; the cast itself shows nothing (its -start perish3 is [silent]) */
 #define DUOFORGE_FIELD_GRASSY_TERRAIN 1u
 #define DUOFORGE_FIELD_TRICK_ROOM     2u
 #define DUOFORGE_FIELD_PSYCHIC_TERRAIN 3u /* Team C */

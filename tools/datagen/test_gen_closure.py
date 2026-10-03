@@ -499,6 +499,19 @@ GLAIVE_RUSH = move_entry(
     '\tonBeforeMovePriority: 100,', '\tonBeforeMove(pokemon) {',
     "\t\tthis.debug('removing Glaive Rush drawback before attack');", "\t\tpokemon.removeVolatile('glaiverush');", '\t},', '},',
     category='Physical', base_power=120, pp=5, type_='Dragon', flags='contact: 1, protect: 1, mirror: 1, metronome: 1')
+PERISH_SONG = move_entry(
+    'perishsong', 'Perish Song', 'onHitField(target, source, move) {', '\tlet result = false;', '\tlet message = false;',
+    '\tfor (const pokemon of this.getAllActive()) {',
+    "\t\tif (this.runEvent('Invulnerability', pokemon, source, move) === false) {",
+    "\t\t\tthis.add('-miss', source, pokemon);", '\t\t\tresult = true;',
+    "\t\t} else if (this.runEvent('TryHit', pokemon, source, move) === null) {", '\t\t\tresult = true;',
+    "\t\t} else if (!pokemon.volatiles['perishsong']) {", "\t\t\tpokemon.addVolatile('perishsong');",
+    "\t\t\tthis.add('-start', pokemon, 'perish3', '[silent]');", '\t\t\tresult = true;', '\t\t\tmessage = true;',
+    '\t\t}', '\t}', '\tif (!result) return false;', "\tif (message) this.add('-fieldactivate', 'move: Perish Song');", '},',
+    'condition: {', '\tduration: 4,', '\tonEnd(target) {', "\t\tthis.add('-start', target, 'perish0');", '\t\ttarget.faint();', '\t},',
+    '\tonResidualOrder: 24,', '\tonResidual(pokemon) {', "\t\tconst duration = pokemon.volatiles['perishsong'].duration;",
+    "\t\tthis.add('-start', pokemon, `perish${duration}`);", '\t},', '},', pp=5, flags='sound: 1, distance: 1, bypasssub: 1, metronome: 1',
+    target='all', type_='Normal')
 COACHING = move_entry('coaching', 'Coaching', 'boosts: {', '\tatk: 1,', '\tdef: 1,', '},', target='adjacentAlly', type_='Fighting',
                       flags='bypasssub: 1, allyanim: 1, metronome: 1')
 
@@ -599,22 +612,24 @@ class PoolMoves(unittest.TestCase):
         seven = len(gen_closure.SPECIAL_IDS_C) + len(gen_closure.G2_HANDLERS)
         self.assertEqual(gen_closure.SPECIAL_IDS_P[len(gen_closure.SPECIAL_IDS_C):seven], gen_closure.G2_HANDLERS)
         # UNMODELED (decision 0015 section 4.2) follows them, as the last id.
-        self.assertEqual(gen_closure.SPECIAL_IDS_P[seven:], ['SANDSTORM', 'SNOWSCAPE', 'KNOCK_OFF', 'EXPANDING_FORCE', 'GLAIVE_RUSH', 'AURORA_VEIL', 'UNMODELED'])
+        self.assertEqual(gen_closure.SPECIAL_IDS_P[seven:], ['SANDSTORM', 'SNOWSCAPE', 'KNOCK_OFF', 'EXPANDING_FORCE', 'GLAIVE_RUSH', 'AURORA_VEIL', 'PERISH_SONG', 'UNMODELED'])
         self.assertEqual(len(gen_closure.G2_HANDLERS), 7)
         # Step G16: Knock Off's handler is 24 in the tables; step G15's Expanding Force is 25, step G19's Glaive Rush 26,
-        # step G20's Aurora Veil 27 and UNMODELED 28.
+        # step G20's Aurora Veil 27, step G26's Perish Song 28 and UNMODELED 29.
         self.assertEqual(gen_closure.G16_HANDLERS, ['KNOCK_OFF'])
         self.assertEqual(gen_closure.G20_HANDLERS, ['AURORA_VEIL'])
         self.assertEqual(gen_closure.SPECIAL_IDS_P.index('KNOCK_OFF'), 24)
         self.assertEqual(gen_closure.SPECIAL_IDS_P.index('EXPANDING_FORCE'), 25)
         self.assertEqual(gen_closure.SPECIAL_IDS_P.index('GLAIVE_RUSH'), 26)  # step G19
         self.assertEqual(gen_closure.SPECIAL_IDS_P.index('AURORA_VEIL'), 27)
-        self.assertEqual(gen_closure.SPECIAL_IDS_P.index('UNMODELED'), 28)
+        self.assertEqual(gen_closure.G26_HANDLERS, ['PERISH_SONG'])
+        self.assertEqual(gen_closure.SPECIAL_IDS_P.index('PERISH_SONG'), 28)
+        self.assertEqual(gen_closure.SPECIAL_IDS_P.index('UNMODELED'), 29)
         # Scald and Recover became data in step G10: their ids stay defined and no move maps to them.
         self.assertEqual({v[0] for k, v in gen_closure.SPECIAL_P.items() if k not in gen_closure.SPECIAL_C},
                          (set(gen_closure.G2_HANDLERS) - {'SCALD', 'RECOVER'}) | set(gen_closure.WEATHER_HANDLERS) |
                          set(gen_closure.G16_HANDLERS) | set(gen_closure.G15_HANDLERS) | set(gen_closure.G19_HANDLERS) |
-                         set(gen_closure.G20_HANDLERS))
+                         set(gen_closure.G20_HANDLERS) | set(gen_closure.G26_HANDLERS))
 
     def test_aurora_veil_is_a_handler_whose_onTry_and_condition_are_the_pinned_text(self):
         rec = parse_pool('auroraveil', AURORA_VEIL)
@@ -631,6 +646,22 @@ class PoolMoves(unittest.TestCase):
         # Outside the pool mode the move is refused for its callback.
         for ext in (False, True):
             self.refused('auroraveil', AURORA_VEIL, 'callback onTry is not mapped to a handler', pool=False, ext=ext)
+
+    def test_perish_song_is_a_handler_whose_onHitField_and_condition_are_the_pinned_text(self):
+        rec = parse_pool('perishsong', PERISH_SONG)
+        self.assertEqual(rec['special'], gen_closure.SPECIAL_IDS_P.index('PERISH_SONG'))
+        self.assertEqual((rec['side_condition'], rec['sec_kind'], rec['primary_status'], rec['pseudo_weather']), (0, 0, 0, 0))
+        self.assertEqual(rec['target_class'], gen_closure.TARGET_CLASS_POOL['all'])
+        for old, new in (('duration: 4,', 'duration: 3,'), ('onResidualOrder: 24,', 'onResidualOrder: 25,'),
+                         ("'perish0'", "'perish1'"), ('target.faint();', 'target.damage(1);')):
+            self.refused('perishsong', PERISH_SONG.replace(old, new), 'the condition is not the pinned text')
+        for old, new in (('message = true;', 'message = false;'), ('result = true;', 'result = false;'),
+                         ("=== null", "=== undefined")):
+            self.refused('perishsong', PERISH_SONG.replace(old, new, 1), 'onHitField is not the pinned text')
+        self.refused('perishsong', PERISH_SONG.replace('\t\tduration: 4,\n', ''), 'the condition is not the pinned text')
+        # Outside the pool mode the move is refused for its callback.
+        for ext in (False, True):
+            self.refused('perishsong', PERISH_SONG, 'callback onHitField is not mapped to a handler', pool=False, ext=ext)
 
     def test_the_aurora_veil_condition_that_the_engine_hard_codes_is_checked(self):
         (mid, needed), = gen_closure.G20_CONDITION_FACTS
@@ -738,7 +769,7 @@ class PoolMoves(unittest.TestCase):
         self.assertEqual([s[0] for s in gen_closure.SETS_G2], ['pelipper', 'arcaninehisui', 'annihilape', 'floetteeternal'])
         # Every handler move is one of the rows, and every set move is a pool move or one of the rows.
         self.assertTrue({k for k in gen_closure.SPECIAL_P if k not in gen_closure.SPECIAL_C} <=
-                        set(gen_closure.G2_MOVES) | {'sandstorm', 'snowscape', 'knockoff', 'expandingforce', 'glaiverush', 'auroraveil'})
+                        set(gen_closure.G2_MOVES) | {'sandstorm', 'snowscape', 'knockoff', 'expandingforce', 'glaiverush', 'auroraveil', 'perishsong'})
         self.assertEqual(gen_closure.WEATHER_HANDLERS, ['SANDSTORM', 'SNOWSCAPE'])
         for _sp, _ab, item, moves, _mega in gen_closure.SETS_G2:
             self.assertTrue(item in gen_closure.G2_ITEMS or item not in gen_closure.POOL_ITEMS)

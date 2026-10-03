@@ -15,7 +15,7 @@
  * sim/battle.ts:501-503).
  *
  * The order in which a Pokemon's volatiles were added is not stored. The engine builds them in one fixed order (the
- * duration counters, Heal Block, Throat Chop, Encore). That is the reference's order, or it changes nothing, in these
+ * duration counters, Heal Block, Throat Chop, Encore, Perish Song). That is the reference's order, or it changes nothing, in these
  * cases (proved by tests/test_residual_order.c against its own model of the reference's selection sort):
  *   - the Pokemon has volatile handlers of one sort key only (the duration counters have one: no order, sub-order 2),
  *     so their order is the order of equal entries and shows nowhere;
@@ -45,6 +45,7 @@
 #define DFI_RES_POISON 8u
 #define DFI_RES_WHITE_HERB 9u
 #define DFI_RES_ENCORE 10u /* Encore: order 16, a callback with a duration (step G9) */
+#define DFI_RES_PERISH 11u /* Perish Song: order 24, a callback with a duration (step G26) */
 #define DFI_RES_NO_ORDER 0xFFFFFFFFu
 
 /* The exact test's bounds: the lists of the engine have at most 3 + 3 * 2 + 14 * 4 entries, a few draws and a few
@@ -81,7 +82,7 @@ static inline uint32_t dfi_residual_compare(const dfi_residual_entry *a, const d
 /* A handler of one of a Pokemon's volatiles (the part of its list whose order is not stored). */
 static inline bool dfi_residual_is_volatile(const dfi_residual_entry *e)
 {
-    return e->kind == DFI_RES_DURATION || e->kind == DFI_RES_ENCORE;
+    return e->kind == DFI_RES_DURATION || e->kind == DFI_RES_ENCORE || e->kind == DFI_RES_PERISH;
 }
 
 /* The cheap test: true when the list is one whose result could depend on the order in which a Pokemon's volatiles were

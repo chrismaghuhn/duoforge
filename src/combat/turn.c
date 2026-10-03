@@ -2234,6 +2234,58 @@ static duoforge_status dfi_run_aurora_veil(dfi_run *r, uint32_t user)
     return DUOFORGE_OK;
 }
 
+/* Perish Song (step G26, POOL data, data/moves.ts:13233-13277; the Champions mod has no entry; the volatile's counter is
+ * the position's `perish` of the state tail: the duration, 4 when it is added). A field move (target `all`): its
+ * onHitField (:13242-13260) goes over every Pokemon that is active and has not fainted, in side and slot order
+ * (Battle.getAllActive). One that already has the volatile is left alone and counts for nothing; one whose TryHit is
+ * stopped counts as hit (result = true) and gets nothing: of the abilities of a battle only Good as Gold (data/
+ * abilities.ts:1630-1641, onTryHit: a status move of another Pokemon, -immune [from] ability: Good as Gold) stops it,
+ * the user's own never does (target !== source); Soundproof (:4436-4452, a sound move) is unmarked, the other marked
+ * abilities with an onTryHit read a type that Perish Song (Normal) is not (Flash Fire, Lightning Rod) or a priority
+ * above 0 (Armor Tail; Psychic Terrain: refused below), Protect and Wide Guard let a move without the protect flag
+ * through (checkMoveBypassesProtect, sim/battle.ts:1300-1309), and no semi-invulnerable move is marked, so the
+ * Invulnerability event misses nothing. A Pokemon that gets the volatile shows nothing now (-start perish3 is [silent];
+ * the first count is the residual's); if at least one did, -fieldactivate|move: Perish Song follows. A move that did
+ * nothing (every active Pokemon has it already) fails with -fail and [still] (moveHit, sim/battle-actions.ts:1302-1308).
+ * The hit loop's Update does not run, as for the other field moves. */
+static duoforge_status dfi_run_perish_song(dfi_run *r, uint32_t user, const dfi_move_data *md)
+{
+    struct duoforge_battle *b = r->b;
+    if (dfi_move_priority(b, dfi_at(b, user), md) > DFI_PRIORITY_BIAS) {
+        return DUOFORGE_E_UNSUPPORTED; /* Prankster's +1 meets Psychic Terrain's and Armor Tail's TryHit and TryMove */
+    }
+    bool result = false;
+    bool message = false;
+    for (uint32_t flat = 0u; flat < DFI_POSITIONS; ++flat) {
+        const dfi_member *t = dfi_at(b, flat);
+        if (t == NULL || t->hp == 0u) {
+            continue;
+        }
+        if (flat != user && dfi_ability(b, t, DFI_ABILITY_GOODASGOLD)) {
+            dfi_immune(r, flat, 1u + DFI_ABILITY_GOODASGOLD);
+            result = true;
+            continue;
+        }
+        dfi_tail_pos *tail = &b->tail.sides[flat / 2u].positions[flat % 2u];
+        if (tail->perish == 0u) {
+            tail->perish = (uint8_t)DFI_TAIL_PERISH_MAX;
+            result = true;
+            message = true;
+        }
+    }
+    if (!result) {
+        dfi_fail_still(r, user);
+        return DUOFORGE_OK;
+    }
+    if (message) {
+        /* -fieldactivate|move: Perish Song: the ACTIVATE event of the move, with no position */
+        const duoforge_event e = dfi_ev(DUOFORGE_EVENT_ACTIVATE, DUOFORGE_NO_POSITION, DUOFORGE_CAUSE_MOVE,
+                                        DFI_MOVE_PERISHSONG, DUOFORGE_NO_POSITION);
+        dfi_emit(r, &e);
+    }
+    return DUOFORGE_OK;
+}
+
 /* Nothing to hit: [notarget] on the last move line, then -fail. */
 static duoforge_status dfi_no_target(dfi_run *r, uint32_t user)
 {
@@ -2839,6 +2891,9 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
     }
     if (md->special == DFI_SPECIAL_AURORA_VEIL) {
         return dfi_run_aurora_veil(r, user);
+    }
+    if (md->special == DFI_SPECIAL_PERISH_SONG) {
+        return dfi_run_perish_song(r, user, md);
     }
     if (md->special == DFI_SPECIAL_FOLLOW_ME) {
         return dfi_run_follow_me(r, user);
@@ -3992,8 +4047,8 @@ static uint8_t *dfi_side_turns(struct duoforge_battle *b, uint32_t s, uint32_t k
 }
 /* Trick Room, weather and terrain; four conditions per side (step G20 added Aurora Veil); per position
  * (DFI_RES_PER_POSITION) a status (burn or poison), the volatiles' handlers (seven duration ends: Protect, the stall
- * counter, flinch, a charge, Helping Hand, Follow Me and mustrecharge; Heal Block, Throat Chop and Encore), an item
- * (Leftovers or White Herb) and Grassy Terrain. */
+ * counter, flinch, a charge, Helping Hand, Follow Me and mustrecharge; Heal Block, Throat Chop, Encore and Perish Song),
+ * an item (Leftovers or White Herb) and Grassy Terrain. */
 #define DFI_RES_PER_POSITION 14u
 #define DFI_RES_MAX (3u + 4u * DUOFORGE_SIDE_COUNT + DFI_RES_PER_POSITION * DFI_POSITIONS)
 _Static_assert(DFI_RES_MAX <= DFI_RES_MODEL_MAX, "the exact test of residual_order.h must hold the whole list");
@@ -4074,6 +4129,8 @@ static duoforge_status dfi_residual_events(dfi_run *r)
     }
     dfi_residual_entry list[DFI_RES_MAX];
     uint32_t n = 0u;
+    bool perish_listed = false;
+    bool heal_block_ends = false;
     if (b->trick_room_turns != 0u) {
         list[n] = (dfi_residual_entry){DFI_RES_FIELD_END, 0u, 27u, 0u, 1u, false};
         n += 1u;
@@ -4144,6 +4201,19 @@ static duoforge_status dfi_residual_events(dfi_run *r)
             list[n] = (dfi_residual_entry){DFI_RES_ENCORE, flat, 16u, speed, 2u, true};
             n += 1u;
         }
+        /* Perish Song (order 24, data/moves.ts:13261-13272; step G26): a volatile with a duration and a callback, so a
+         * handler of the sort whose tie is a drawn shuffle, like Encore's. Its turn comes after Heal Block's (20) and
+         * Throat Chop's (22) duration handlers, which the engine runs in a block of their own after the callbacks:
+         * a Heal Block that ends in the same residual would print its line after the counts, so that case is refused
+         * below. */
+        if (b->tail.sides[flat / 2u].positions[flat % 2u].perish != 0u) {
+            list[n] = (dfi_residual_entry){DFI_RES_PERISH, flat, 24u, speed, 2u, true};
+            n += 1u;
+            perish_listed = true;
+        }
+        if (b->tail.sides[flat / 2u].positions[flat % 2u].heal_block_turns == 1u) {
+            heal_block_ends = true;
+        }
         if (dfi_holds(r->b, m, DFI_ITEM_LEFTOVERS)) {
             list[n] = (dfi_residual_entry){DFI_RES_LEFTOVERS, flat, 5u, speed, 4u, true};
             n += 1u;
@@ -4161,10 +4231,10 @@ static duoforge_status dfi_residual_events(dfi_run *r)
     /* The order in which a Pokemon's volatiles were added is not stored: the engine lists them in one fixed order, which
      * is the reference's or changes nothing except in the cases of dfi_residual_order_ambiguous (combat/
      * residual_order.h); those it refuses. */
-    if (dfi_residual_order_ambiguous(list, n)) {
+    if (dfi_residual_order_ambiguous(list, n) || (perish_listed && heal_block_ends)) {
         return DUOFORGE_E_UNSUPPORTED;
     }
-    uint32_t early = 0u; /* the callbacks of orders 1 to 10 */
+    uint32_t early = 0u; /* the callbacks of orders 1 to 24 (the weather, the statuses, Leftovers, Encore, Perish Song) */
     uint32_t herbs = 0u; /* White Herb's, order 29 */
     for (uint32_t i = 0u; i < n; ++i) {
         if (list[i].kind == DFI_RES_WHITE_HERB) {
@@ -4202,8 +4272,13 @@ static duoforge_status dfi_residual_events(dfi_run *r)
     if (st != DUOFORGE_OK) {
         return st;
     }
-    for (uint32_t i = 0u; i < early; ++i) {
+    /* The sorted prefix holds the callbacks and, between Encore's (16) and Perish Song's (24), the duration handlers of
+     * Heal Block (20) and Throat Chop (22), which run in their block below. */
+    for (uint32_t i = 0u; i < herbs_from; ++i) {
         const dfi_residual_entry *e = &list[i];
+        if (!e->callback) {
+            continue;
+        }
         if (e->kind == DFI_RES_WEATHER) {
             /* The duration counts down first; at 0 the weather ends. */
             b->weather_turns = (uint8_t)((uint32_t)b->weather_turns - 1u); /* wide-operands-reviewed: >= 1 */
@@ -4235,6 +4310,37 @@ static duoforge_status dfi_residual_events(dfi_run *r)
         dfi_member *m = dfi_at(b, e->flat);
         if (m->hp == 0u) {
             continue; /* the holder fainted */
+        }
+        if (e->kind == DFI_RES_PERISH) {
+            /* fieldEvent (sim/battle.ts:484-575): the duration goes down; at 0 onEnd shows -start|X|perish0 and
+             * faints the holder (target.faint(): queued, hp 0) and the loop goes on with no faintMessages; otherwise
+             * onResidual shows the count (-start|X|perishN) and the faintMessages that follows every callback
+             * processes the faints that earlier handlers queued (and may end the battle). */
+            dfi_tail_pos *tail = &b->tail.sides[e->flat / 2u].positions[e->flat % 2u];
+            if (tail->perish == 0u) {
+                continue; /* removed by an earlier handler */
+            }
+            tail->perish = (uint8_t)((uint32_t)tail->perish - 1u); /* wide-operands-reviewed: >= 1 */
+            duoforge_event ev = dfi_event_make(DUOFORGE_EVENT_VOLATILE_START, e->flat);
+            ev.detail = (uint8_t)DUOFORGE_VOLATILE_PERISH;
+            ev.amount = tail->perish; /* 0 to 3 */
+            dfi_emit(r, &ev);
+            if (tail->perish == 0u) {
+                m->hp = 0u;
+                if (dfi_support.switching == 0u) {
+                    return DUOFORGE_E_UNSUPPORTED;
+                }
+                if (r->faint_count < DFI_POSITIONS) {
+                    r->faint_queue[r->faint_count] = e->flat;
+                    r->faint_count += 1u;
+                }
+                continue;
+            }
+            dfi_process_faints(r);
+            if (r->ended) {
+                return DUOFORGE_OK;
+            }
+            continue;
         }
         if (e->kind == DFI_RES_ENCORE) {
             /* fieldEvent: the duration goes down and at 0 the volatile ends (-end|X|Encore, onEnd); otherwise the

@@ -559,6 +559,78 @@ function checkG19(dex) {
     expect('glaiverush onStart is silent', logs, ['-singlemove:POKEMON:Glaive Rush:[silent]']);
 }
 
+// Step G26, Perish Song: the pinned facts that the engine hard-codes (decision 0015, item 5o), called on the pinned
+// handlers. The Champions mod has no entry of Perish Song (data/mods/champions/moves.ts is hashed by the generator).
+function checkG26(dex) {
+    const move = dex.moves.get('perishsong');
+    expect('perish song', [move.basePower, move.accuracy, move.category, move.type, move.target, move.pp, move.priority],
+        [0, true, 'Status', 'Normal', 'all', 5, 0]);
+    // No protect flag: Protect and Wide Guard let it through (checkMoveBypassesProtect), and bypasssub: Substitute does not stop it.
+    expect('perish song flags', Object.keys(move.flags).sort(), ['bypasssub', 'distance', 'metronome', 'sound']);
+    const c = move.condition;
+    expect('perishsong condition', [c.duration, c.onResidualOrder, c.onResidualPriority, c.onResidualSubOrder], [4, 24, undefined, undefined]);
+    // The residual order 24 belongs to Perish Song alone among the entries that the engine's residual list has (the others
+    // with an order at or above 23 are moves that no row models).
+    const orders = [];
+    for (const table of [dex.data.Moves, dex.data.Abilities, dex.data.Items, dex.data.Conditions]) {
+        for (const [id, entry] of Object.entries(table)) {
+            if (entry.condition && entry.condition.onResidualOrder === 24) orders.push(id);
+            if (entry.onResidualOrder === 24) orders.push(id);
+        }
+    }
+    expect('entries with onResidualOrder 24', orders, ['perishsong']);
+    // The condition's callbacks: the count is the duration after the decrement of fieldEvent, the end shows perish0 and faints.
+    const logs = [];
+    const self = {add: (...a) => logs.push(a.map((x) => (typeof x === 'string' ? x : 'POKEMON')).join(':'))};
+    let fainted = 0;
+    c.onEnd.call(self, {faint() { fainted += 1; }});
+    expect('perishsong onEnd', [logs, fainted], [['-start:POKEMON:perish0'], 1]);
+    logs.length = 0;
+    c.onResidual.call(self, {volatiles: {perishsong: {duration: 3}}});
+    c.onResidual.call(self, {volatiles: {perishsong: {duration: 1}}});
+    expect('perishsong onResidual', logs, ['-start:POKEMON:perish3', '-start:POKEMON:perish1']);
+    // onHitField over the active Pokemon: what a Pokemon with and without the volatile, with a TryHit that stops it and
+    // with none left to take it, gets.
+    const run = (mons, tryHit) => {
+        const out = [];
+        const battle = {
+            getAllActive: () => mons,
+            runEvent: (name, pokemon) => (name === 'Invulnerability' ? true : tryHit(pokemon)),
+            add: (...a) => out.push(a.map((x) => (typeof x === 'string' ? x : 'POKEMON')).join(':')),
+        };
+        const result = move.onHitField.call(battle, {}, {}, move);
+        return {result, out, added: mons.map((m) => m.added || 0)};
+    };
+    const mon = (has) => {
+        const m = {volatiles: has ? {perishsong: {}} : {}, added: 0, addVolatile(id) { m.added += 1; m.volatiles[id] = {}; }};
+        return m;
+    };
+    expect('perish song on two fresh Pokemon', run([mon(false), mon(false)], () => true),
+        {result: undefined, out: ['-start:POKEMON:perish3:[silent]', '-start:POKEMON:perish3:[silent]', '-fieldactivate:move: Perish Song'], added: [1, 1]});
+    expect('perish song on a fresh and an infected Pokemon', run([mon(true), mon(false)], () => true),
+        {result: undefined, out: ['-start:POKEMON:perish3:[silent]', '-fieldactivate:move: Perish Song'], added: [0, 1]});
+    expect('perish song on infected Pokemon only', run([mon(true), mon(true)], () => true),
+        {result: false, out: [], added: [0, 0]});
+    const stopped = [mon(false), mon(false)];
+    expect('perish song with a TryHit that stops the first', run(stopped, (p) => (p === stopped[0] ? null : true)),
+        {result: undefined, out: ['-start:POKEMON:perish3:[silent]', '-fieldactivate:move: Perish Song'], added: [0, 1]});
+    const all = [mon(false)];
+    expect('perish song with every TryHit stopped is no failure', run(all, () => null),
+        {result: undefined, out: [], added: [0]});
+    // Good as Gold is the one marked ability that stops it (a status move of another Pokemon); the user's own does not.
+    const gold = dex.abilities.get('goodasgold');
+    const goldLogs = [];
+    const goldSelf = {add: (...a) => goldLogs.push(a.map((x) => (typeof x === 'string' ? x : 'POKEMON')).join(':'))};
+    const other = {}, user = {};
+    expect('Good as Gold against a Perish Song of another', [gold.onTryHit.call(goldSelf, other, user, move), goldLogs],
+        [null, ['-immune:POKEMON:[from] ability: Good as Gold']]);
+    expect('Good as Gold against its own Perish Song', gold.onTryHit.call(goldSelf, user, user, move), undefined);
+    // Soundproof would stop it too (a sound move of another Pokemon): the ability is not marked.
+    const proof = dex.abilities.get('soundproof');
+    expect('Soundproof', [proof.onTryHit.call({add() {}}, other, user, move)], [null]);
+    return 1;
+}
+
 function checkG10Moves(dex) {
     const move = (id) => dex.moves.get(id);
     const power = (m, weight) => call(m.basePowerCallback, battle(m), [{}, {getWeight() { return weight; }}]);
@@ -1149,6 +1221,7 @@ function main() {
     checkEncore(dex, repo);
     checkRecharge(dex);
     checkG19(dex);
+    checkG26(dex);
     const abilities = checkAbilities(dex, abilityRows, moveIds, unmodeledAbilities, unmodeledMoves);
     // "All 18": a booster and a resist berry for each type, and nothing else in the families.
     expect('type boosters', items.TYPE_BOOSTER, 18);

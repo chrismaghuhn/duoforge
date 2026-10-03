@@ -677,6 +677,7 @@ CAUSE = {'NONE': 0, 'MOVE': 1, 'ITEM': 2, 'ABILITY': 3, 'RECOIL': 4, 'DRAIN': 5,
 VOLATILE_HEAL_BLOCK = 1  # DUOFORGE_VOLATILE_HEAL_BLOCK: the detail of VOLATILE_START and VOLATILE_END
 VOLATILE_ENCORE = 2      # DUOFORGE_VOLATILE_ENCORE (step G9)
 VOLATILE_MUST_RECHARGE = 3  # DUOFORGE_VOLATILE_MUST_RECHARGE (step G17)
+VOLATILE_PERISH = 5  # DUOFORGE_VOLATILE_PERISH (step G26)
 MOVE_SLOT_RECHARGE = 5   # DUOFORGE_MOVE_SLOT_RECHARGE (step G17)
 # DUOFORGE_TYPE_*: the alphabetical type ids, the detail of TYPE_CHANGE
 TYPE_IDS = {name: i for i, name in enumerate(
@@ -720,6 +721,9 @@ IGNORED_VOLATILES = {
     # Pool step G19 (Glaive Rush): `-singlemove|X|Glaive Rush|[silent]` is not shown; the volatile shows in the accuracy
     # draws that are missing (the moves against it cannot miss) and in the doubled damage of every move that hits it.
     'glaiverush': 'the damage of the moves against it and the accuracy draws that it removes',
+    # Pool step G26 (Perish Song): the counter is not a field of the record; the count lines (`-start|X|perishN`) and
+    # the faint at the end show it, and the view's perish field is checked against them.
+    'perishsong': 'the count lines and the faint',
 }
 HP_EXACT, HP_PERCENT = 1, 2
 HP_FLAGS_EV = {'': 0, 'r': 1, 'y': 2, 'g': 3}
@@ -914,6 +918,11 @@ def step_events(log, viewer, roster_of, maxhp, tables):
             if len(args) != 2 or not args[1].startswith('ability: ') or of == NOPOS:
                 raise ConversionError('block-line', 'trace_to_c: unknown -block %r' % line, detail=args[1] if len(args) > 1 else '')
             e = ev_tuple(EV['ACTIVATE'], ev_pos(args[0]), of, CAUSE['ABILITY'], 0, tables['ABILITY'][key(args[1][9:])] + 1)
+        elif kind == '-fieldactivate':
+            # Perish Song (step G26): `-fieldactivate|move: Perish Song`, an ACTIVATE of the move with no position.
+            if args != ['move: Perish Song']:
+                raise ConversionError('fieldactivate-line', 'trace_to_c: unknown -fieldactivate %r' % line, detail=line)
+            e = ev_tuple(EV['ACTIVATE'], NOPOS, NOPOS, CAUSE['MOVE'], 0, tables['MOVE'][key('Perish Song')])
         elif kind == '-activate':
             pos = ev_pos(args[0])
             what = args[1]
@@ -953,6 +962,11 @@ def step_events(log, viewer, roster_of, maxhp, tables):
                 e = ev_tuple(EV['CONFUSION_START' if kind == '-start' else 'CONFUSION_END'], ev_pos(args[0]))
             elif what == 'ability: Flash Fire' and kind == '-start':
                 e = ev_tuple(EV['FLASH_FIRE'], ev_pos(args[0]))
+            elif re.fullmatch(r'perish[0-3]', what) and kind == '-start' and len(args) == 2:
+                # Perish Song (step G26, data/moves.ts:13261-13272): the residual's count line, N = 3, 2, 1, and perish0
+                # from onEnd (the holder faints after the upkeep line). The cast's own `-start|X|perish3|[silent]` is
+                # not shown and never reaches this point.
+                e = ev_tuple(EV['VOLATILE_START'], ev_pos(args[0]), detail=VOLATILE_PERISH, amount=int(what[6]))
             elif what == 'move: Heal Block':
                 e = ev_tuple(EV['VOLATILE_START' if kind == '-start' else 'VOLATILE_END'], ev_pos(args[0]),
                              detail=VOLATILE_HEAL_BLOCK)
