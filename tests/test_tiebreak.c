@@ -260,7 +260,7 @@ int main(void)
     DF_CHECK_EQ_U64(&t, counts.ambiguous, 0u);
 #if defined(DF_CONFORMANCE_POOL_DATA)
     DF_CHECK_EQ_U64(&t, battles, 262u);
-    DF_CHECK_EQ_U64(&t, counts.stops, 0u);
+    DF_CHECK_EQ_U64(&t, counts.stops, 1460u);
 #else
     /* Every kind of decision of the pin is among the stops (the pool battles are too few for that). */
     DF_CHECK(&t, counts.by_stage[1] > 0u && counts.by_stage[2] > 0u && counts.by_stage[3] > 0u &&
