@@ -117,7 +117,11 @@ class ZeroColumnsJaxTest(unittest.TestCase):
         slots = rng.random((n, 2, 32, features.SLOT_FEATURES)).astype(np.float32)
         mask = rng.random((n, 32, 32)) < 0.5
         mask[:, 0, 0] = True
-        for a, b in zip(net.apply(params, obs, slots, mask), net.apply(zeroed, obs, slots, mask)):
+        # the claim itself: with the new columns set to anything, the zeroed network answers as the original did
+        # with them at 0 (a zero_columns that changed nothing would fail here)
+        lit = obs.copy()
+        lit[:, [features.FEATURE_NAMES.index(c) for c in new]] = rng.random((n, len(new))).astype(np.float32)
+        for a, b in zip(net.apply(params, obs, slots, mask), net.apply(zeroed, lit, slots, mask)):
             np.testing.assert_allclose(np.asarray(a), np.asarray(b), rtol=1e-6, atol=1e-6)
 
     def test_v1(self):
@@ -249,6 +253,8 @@ class InitTest(unittest.TestCase):
         _, bc_cfg = checkpoint.load(str(self.ckpt))
         self.assertEqual(c0["model"], bc_cfg["model"])
         self.assertEqual(c0["data"]["kind"], "pool")
+        # the run records the checkpoint's model, never the parser's default preset (S) for an M network
+        self.assertEqual((c0["train"]["model"], c0["train"]["preset"]), ("v2", None))
 
     def refused(self, name, *extra):
         with self.assertRaises(SystemExit) as caught:
@@ -391,6 +397,15 @@ class TrainerTest(unittest.TestCase):
             with self.assertRaises(SystemExit):
                 bc.main(["--data", str(self.data), "--out", str(self.tmp / f"fw{factor}"), "--epochs", "1",
                          "--format-weight", f"gen9championsvgc2026regmc={factor}"])
+
+    def test_format_weight_overlap_and_no_rows_refused(self):
+        from duoforge_learn import bc
+        with self.assertRaisesRegex(SystemExit, "overlap"):
+            bc.main(["--data", str(self.data), "--out", str(self.tmp / "fw-overlap"), "--epochs", "1",
+                     "--format-weight", "gen9championsvgc2026regmc=0.5", "--format-weight", "gen9champions=2"])
+        with self.assertRaisesRegex(ValueError, "no rows"):
+            bc.main(["--data", str(self.data), "--out", str(self.tmp / "fw-none"), "--epochs", "1",
+                     "--format-weight", "gen9championsvgc2026regmb=0.5"])
 
     def test_empty_validation_is_refused(self):
         from . import test_bc_numpy as fixture

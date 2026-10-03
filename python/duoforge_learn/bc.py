@@ -71,6 +71,10 @@ def _format_weights(items):
         if not float(factor) > 0:
             raise SystemExit(f"--format-weight {item!r}: the factor must be above 0 (a batch of weight 0 has no loss)")
         out[prefix] = float(factor)
+    for a in out:
+        for b in out:
+            if a != b and b.startswith(a):
+                raise SystemExit(f"--format-weight prefixes {a!r} and {b!r} overlap: a row would match both")
     return out
 
 
@@ -165,6 +169,9 @@ def train(args):
         mask = bc_data.bc_mask(context)
         rows = _rows(args, context, mask, dirs, format_weights)
         bc_data.check_labels(rows)
+        for prefix in format_weights:
+            if not np.char.startswith(rows.fmt.astype(str), prefix).any():
+                raise ValueError(f"--format-weight {prefix!r} matches no rows of the datasets")
         fingerprint, ids = context.fingerprint().hex(), checkpoint.ids_of(context)
     finally:
         context.close()

@@ -246,9 +246,12 @@ def _load_init(args):
         params, config = checkpoint.load_current(args.init)
     except ValueError as err:
         raise SystemExit(f"--init {args.init}: {err}") from None
-    if any(k in args._given for k in ("model", "preset") + _DIMS) and model_config(args) != config["model"]:
-        raise SystemExit(f"--init {args.init}: the checkpoint's model {config['model']} differs from the given "
-                         f"{model_config(args)}")
+    if any(k in args._given for k in ("model", "preset") + _DIMS):
+        if model_config(args) != config["model"]:
+            raise SystemExit(f"--init {args.init}: the checkpoint's model {config['model']} differs from the given "
+                             f"{model_config(args)}")
+    else:
+        args.preset = None  # the model is the checkpoint's (its config), not the parser's default preset
     args.model = "v2" if config["model"]["version"] == 2 else "v1"
     kind = config["data"]["kind"]
     if "data_kind" in args._given and args.data_kind != kind:
