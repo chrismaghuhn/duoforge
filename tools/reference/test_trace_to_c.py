@@ -585,6 +585,50 @@ class Library(unittest.TestCase):
             self.assertIsNone(trace_to_c.heal_block_end_tie(dict(d, group=['H:protect:p1a:end', 'H:stall:p1a:end']),
                                                             trace['steps'][k]['log']))
 
+    def test_a_protect_and_stall_tie_is_kept_only_when_the_battle_ends_and_the_holder_stands(self):
+        """The residual tie of one Pokemon's Protect volatile and its stall counter (every Protect turn has one) is kept
+        as an entry that states the outcome (0: the stall counter ran first, 1: Protect's volatile did, whatever the
+        group's pre-shuffle order) when the battle ended in the step and the holder has not fainted; any other time it
+        is no entry here (the drop rule takes it), and a kept one never reaches the drop rule."""
+        def draw(group, value, start=3):
+            return {'site': 'SPEED_TIE', 'context': 'field:Residual', 'lo': start, 'hi': start + 2, 'value': value,
+                    'group': group, 'start': start}
+
+        def after(ended, p1a_fainted=False):
+            side = lambda fainted: {'active': [0, 1], 'pokemon': [{'fainted': fainted}, {'fainted': False}]}
+            return {'ended': ended, 'sides': [side(p1a_fainted), side(False)]}
+
+        stall_first = ['H:stall:p1a:end', 'H:protect:p1a:end']
+        protect_first = ['H:protect:p1a:end', 'H:stall:p1a:end']
+        spec = trace_to_c.SITES['SPEED_TIE']
+        # the draw keeps the order (value = start) or swaps it, from either pre-shuffle order
+        self.assertEqual(trace_to_c.no_order_end_tie(draw(stall_first, 3), after(True)), (spec, 0, 2, 0))
+        self.assertEqual(trace_to_c.no_order_end_tie(draw(stall_first, 4), after(True)), (spec, 0, 2, 1))
+        self.assertEqual(trace_to_c.no_order_end_tie(draw(protect_first, 3), after(True)), (spec, 0, 2, 1))
+        self.assertEqual(trace_to_c.no_order_end_tie(draw(protect_first, 4), after(True)), (spec, 0, 2, 0))
+        # Spiky Shield's volatile is the same handler
+        self.assertEqual(trace_to_c.no_order_end_tie(draw(['H:stall:p2b:end', 'H:spikyshield:p2b:end'], 4), after(True)),
+                         (spec, 0, 2, 1))
+        # no end, or a holder that fainted: no entry
+        self.assertIsNone(trace_to_c.no_order_end_tie(draw(stall_first, 4), after(False)))
+        self.assertIsNone(trace_to_c.no_order_end_tie(draw(stall_first, 4), after(True, p1a_fainted=True)))
+        self.assertIsNone(trace_to_c.no_order_end_tie(draw(stall_first, 4), None))
+        # a bigger group, two holders, other handlers, other contexts and sites are not this rule's
+        for group in (stall_first + ['H:helpinghand:p1a:end'], ['H:stall:p1a:end', 'H:protect:p1b:end'],
+                      ['H:stall:p1a:end', 'H:leftovers:p1a:cb'], ['H:stall:p1a:end', 'H:stall:p1b:end']):
+            self.assertIsNone(trace_to_c.no_order_end_tie(draw(group, 4), after(True)), group)
+        self.assertIsNone(trace_to_c.no_order_end_tie(dict(draw(stall_first, 4), context='event:Accuracy'), after(True)))
+        # a shuffle that is not random(start, start + 2) is an error and never an entry
+        with self.assertRaises(trace_to_c.ConversionError) as ctx:
+            trace_to_c.no_order_end_tie(dict(draw(stall_first, 4), hi=6), after(True))
+        self.assertEqual(ctx.exception.rule, 'no-order-end-shuffle')
+        # the drop rule drops the tie the rule does not keep, and refuses one that it keeps
+        before = after(False)
+        self.assertEqual(trace_to_c.drop_reason(draw(stall_first, 4), before, after(False)), 'residual tie of duration counters')
+        with self.assertRaises(trace_to_c.ConversionError) as ctx:
+            trace_to_c.drop_reason(draw(stall_first, 4), before, after(True))
+        self.assertEqual(ctx.exception.rule, 'no-order-end-tie')
+
     # ---- the weather step (Sandstorm, Snowscape; decision 0018, view bits 0 and 1) ----
     WEATHER_BATTLES = ('w1_sand_stream', 'w2_sandstorm_move', 'w3_snow_warning', 'w4_snowscape_move',
                        'w5_sand_tie_four', 'w5_sand_tie_pairs', 'w5_sand_tie_mixed', 'w6_sand_residual_order',

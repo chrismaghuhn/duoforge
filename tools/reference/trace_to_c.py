@@ -46,7 +46,11 @@ checks its precondition and fails loudly otherwise:
                     that both end in the step are kept (their two -end lines
                     show the order; see heal_block_end_tie); the tie of Heal
                     Blocks of which fewer than two end shows no order and is
-                    dropped, which needs the step's log (drop_reason)
+                    dropped, which needs the step's log (drop_reason). The tie
+                    of one Pokemon's Protect volatile and its stall counter
+                    (every Protect turn has one) is kept only when the battle
+                    ends in the step and that Pokemon still stands: the order
+                    shows then in the volatile it keeps (see no_order_end_tie)
   SPEED_TIE event:Accuracy
                     only between No Guard handlers (data/abilities.ts noguard):
                     onAnyAccuracy returns true when its holder is the source
@@ -286,6 +290,45 @@ def heal_block_end_tie(d, log):
     return (SITES['SPEED_TIE'], 0, 2, 0 if flat(first) < flat(other) else 1)
 
 
+NO_ORDER_PAIR = (['protect', 'stall'], ['spikyshield', 'stall'])
+
+
+def standing(after, holder):
+    """Whether the Pokemon in the slot `holder` ('p1a', ...) has not fainted in the state `after`."""
+    side = after['sides'][int(holder[1]) - 1]
+    i = side['active']['ab'.index(holder[2])]
+    return i is not None and 0 <= i < len(side['pokemon']) and not side['pokemon'][i]['fainted']
+
+
+def no_order_end_tie(d, after):
+    """The residual tie between a Pokemon's Protect volatile (or Spiky Shield's) and its stall counter, the two no-order
+    duration handlers that every Protect turn adds (equal keys: one holder, one Speed, one sub-order). The reference
+    shuffles the pair with one draw random(start, start + 2) and shows nothing of the outcome, except in one case: the
+    battle ends at the faint point after the stall counter (which does not end), and the volatile of a Pokemon that
+    still stands then shows which of the two ran first (24 of 24 survivors kept Protect when the stall counter ran
+    first, 17 of 18 had lost it when Protect's own handler did; src/combat/turn.c dfi_residual_pair_draws). So the
+    draw is kept when the battle ended in the step and the group is exactly that pair of a standing holder. The group
+    is the pre-shuffle order of the reference's handler list, which the state does not hold, so the entry states the
+    outcome like side_end_tie does: (SPEED_TIE, 0, 2, 0 when the stall counter ran first, 1 when Protect's volatile
+    did), which is the engine's draw whatever its own pre-shuffle order. `after` is the state after the step. A group
+    of more than the pair (an equal-Speed neighbour, Helping Hand) is dropped here and the engine refuses it; a
+    shuffle that is not random(start, start + 2) is an error. None for any other draw."""
+    if d['site'] != 'SPEED_TIE' or d.get('context') != 'field:Residual' or after is None or not after.get('ended'):
+        return None
+    group = d['group']
+    parts = [g.split(':') for g in group]
+    if len(group) != 2 or any(len(x) != 4 or x[0] != 'H' or x[3] != 'end' for x in parts):
+        return None
+    if sorted(x[1] for x in parts) not in NO_ORDER_PAIR or parts[0][2] != parts[1][2]:
+        return None
+    if not standing(after, parts[0][2]):
+        return None
+    if d['hi'] - d['lo'] != 2 or d['lo'] != d['start']:
+        raise ConversionError('no-order-end-shuffle', 'trace_to_c: unexpected no-order shuffle %s' % d)
+    first = parts[0] if d['value'] == d['start'] else parts[1]  # random(start, start + 2): start keeps the order
+    return (SITES['SPEED_TIE'], 0, 2, 0 if first[1] == 'stall' else 1)
+
+
 def tie_effects(group):
     """The effect ids of the handler entries ('H:<effect>:<holder>:<cb|end>')
     of a tie group, sorted: the detail of the errors about such a tie."""
@@ -414,6 +457,9 @@ def drop_reason(d, state, after=None, log=None):
             if side_end_tie(d, state) is not None:
                 raise ConversionError('side-end-tie',
                                       'trace_to_c: ending side conditions reach drop_reason: %s' % group)
+            if no_order_end_tie(d, after) is not None:
+                raise ConversionError('no-order-end-tie',
+                                      'trace_to_c: a kept no-order tie reaches drop_reason: %s' % group)
             return 'residual tie of duration counters'
         if all(g.startswith('H:') and g.endswith(':cb') for g in group):
             return None  # callbacks (burn, Grassy Terrain): the engine draws
@@ -1192,6 +1238,8 @@ def convert_battle(name, spec, trace, tables):
             ends = side_end_tie(d, state)
             if ends is None:
                 ends = heal_block_end_tie(d, step['log'])
+            if ends is None:
+                ends = no_order_end_tie(d, step['state'])
             if ends is not None:
                 tape.append(ends)
             elif drop_reason(d, state, step['state'], step['log']) is None:

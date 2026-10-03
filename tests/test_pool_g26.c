@@ -14,6 +14,8 @@
  *                       a second cast that infects only the newcomer, the faints before the upkeep line
  *   g26_perish_recast   a cast that fails (everybody has it), a tie of two holders of the same Speed
  *   g26_perish_end      two cycles; the last Pokemon of both sides faint together and the last to faint wins
+ *   g26_perish_survivor_a, _b   a Pokemon that the second cast did not infect (Good as Gold) wins with Protect: the battle ends at
+ *                       the faint point of its stall counter and the tie with Protect's volatile decides whether it keeps Protect
  */
 #include <stdio.h>
 #include <string.h>
@@ -158,9 +160,29 @@ static const struct {
     {"g26_perish_end", 7u, {2u, 2u, 2u, 2u}},
     {"g26_perish_end", 8u, {1u, 1u, 1u, 1u}},
     {"g26_perish_end", 9u, {0u, 0u, 0u, 0u}},
+    {"g26_perish_survivor_a", 0u, {0u, 0u, 0u, 0u}},
+    {"g26_perish_survivor_a", 1u, {3u, 3u, 3u, 3u}},
+    {"g26_perish_survivor_a", 2u, {2u, 2u, 2u, 2u}},
+    {"g26_perish_survivor_a", 3u, {1u, 1u, 1u, 1u}},
+    {"g26_perish_survivor_a", 4u, {0u, 0u, 0u, 0u}},
+    {"g26_perish_survivor_a", 5u, {0u, 0u, 0u, 0u}},
+    {"g26_perish_survivor_a", 6u, {0u, 3u, 3u, 3u}},
+    {"g26_perish_survivor_a", 7u, {0u, 2u, 2u, 2u}},
+    {"g26_perish_survivor_a", 8u, {0u, 1u, 1u, 1u}},
+    {"g26_perish_survivor_a", 9u, {0u, 0u, 0u, 0u}},
+    {"g26_perish_survivor_b", 0u, {0u, 0u, 0u, 0u}},
+    {"g26_perish_survivor_b", 1u, {3u, 3u, 3u, 3u}},
+    {"g26_perish_survivor_b", 2u, {2u, 2u, 2u, 2u}},
+    {"g26_perish_survivor_b", 3u, {1u, 1u, 1u, 1u}},
+    {"g26_perish_survivor_b", 4u, {0u, 0u, 0u, 0u}},
+    {"g26_perish_survivor_b", 5u, {0u, 0u, 0u, 0u}},
+    {"g26_perish_survivor_b", 6u, {0u, 3u, 3u, 3u}},
+    {"g26_perish_survivor_b", 7u, {0u, 2u, 2u, 2u}},
+    {"g26_perish_survivor_b", 8u, {0u, 1u, 1u, 1u}},
+    {"g26_perish_survivor_b", 9u, {0u, 0u, 0u, 0u}},
 };
 
-static const char *const names[] = {"g26_perish_song", "g26_perish_recast", "g26_perish_end"};
+static const char *const names[] = {"g26_perish_song", "g26_perish_recast", "g26_perish_end", "g26_perish_survivor_a", "g26_perish_survivor_b"};
 
 static const uint8_t *row_of(const char *battle, uint32_t step)
 {
@@ -279,7 +301,7 @@ static void check_heal_block_refusal(df_test *t, const duoforge_context *ctx)
  *   - one side's Tailwind ends in this residual and the other's does not, with faints still queued (the faints come after
  *     the one that does not end: before or after the other's end line by the shuffle);
  *   - neither ends, and the first one's faint point ends the battle (which side's counter ran is the shuffle's).
- * With the Tailwind of one side only, the order is fixed and the battle ends there (as g26_perish_end does).
+ * With one side's Tailwind only, the order is fixed and the battle ends there (g26_perish_end's last turn).
  * g26_perish_end before its last turn (four counts at 1, the last four Pokemon faint), the Tailwinds set by hand. */
 static duoforge_status tailwind_case(df_test *t, const duoforge_context *ctx, duoforge_battle *b, const df_conf_step *st,
                                      uint8_t side0, uint8_t side1)
@@ -320,14 +342,18 @@ static void check_side_condition_refusals(df_test *t, const duoforge_context *ct
 
 /* The handlers of the volatiles that have no order (the stall counter, a charge, Protect's and Helping Hand's duration)
  * run last, in Speed order, and a faint point at one that does not end can end the battle: the handlers after it have not
- * run and keep their counters. Which of two handlers of one standing Pokemon came first is a shuffle that the conversion
- * drops, so a battle that ends there with such a survivor is refused (the same for two Pokemon of equal Speed: only the
- * differential campaigns reach that case).
+ * run and keep their counters. The tie between a Pokemon's Protect volatile and its stall counter is a shuffle of the
+ * reference that shows only then, in the volatile that a Pokemon still standing keeps: the engine draws it (the tape's
+ * entry states which ran first: 0 the stall counter, 1 Protect's volatile) when the battle ends in the residual and such a
+ * Pokemon stands (dfi_residual_pair_draws). Anything else that the order would show is refused (a survivor with another
+ * handler too, two Pokemon of equal Speed: only the differential campaigns reach the second).
  * g26_perish_end before its last turn, with one side not infected, so that it survives while the other's counts end:
  * that turn Politoed (side 1) uses Protect, a stall counter that does not end (and Protect's own volatile), and
- * Staraptor (side 0, in its Tailwind, which ends in this residual) has Helping Hand's volatile. */
+ * Staraptor (side 0, in its Tailwind, which ends in this residual) has Helping Hand's volatile. `pair_value` is the
+ * tape's entry for the pair's draw, appended to the recorded tape (UINT32_MAX: none); the Protect flag of Politoed after
+ * the step goes to *protect_after. */
 static duoforge_status no_order_case(df_test *t, const duoforge_context *ctx, duoforge_battle *b, const df_conf_step *st,
-                                     uint32_t survivors)
+                                     uint32_t survivors, uint32_t pair_value, uint32_t *protect_after)
 {
     duoforge_decision_bundle bd;
     bundle_of(st, b, &bd);
@@ -340,9 +366,23 @@ static duoforge_status no_order_case(df_test *t, const duoforge_context *ctx, du
     for (uint32_t p = 0u; p < 2u; ++p) {
         c->tail.sides[survivors].positions[p].perish = 0u; /* this side is not infected: it survives */
     }
+    dfi_tape_entry tape[256];
+    uint32_t len = st->tape_len;
+    if (!DF_CHECK(t, len + 1u <= sizeof tape / sizeof tape[0])) {
+        duoforge_battle_destroy(c);
+        return DUOFORGE_E_INVARIANT;
+    }
+    for (uint32_t k = 0u; k < len; ++k) {
+        tape[k] = conf_tape[st->tape_off + k];
+    }
+    if (pair_value != UINT32_MAX) {
+        tape[len] = (dfi_tape_entry){(uint32_t)DFI_SITE_SPEED_TIE, 0u, 2u, pair_value};
+        len += 1u;
+    }
     duoforge_step_result res;
     uint32_t used = 0u;
-    const duoforge_status s = dfi_battle_step_tape(ctx, c, &bd, &conf_tape[st->tape_off], st->tape_len, &used, &res);
+    const duoforge_status s = dfi_battle_step_tape(ctx, c, &bd, tape, len, &used, &res);
+    *protect_after = ((uint32_t)c->sides[1].positions[0].flags & DFI_VOL_PROTECT) != 0u ? 1u : 0u;
     duoforge_battle_destroy(c);
     return s;
 }
@@ -358,12 +398,18 @@ static void check_no_order_faint_point(df_test *t, const duoforge_context *ctx)
         return;
     }
     const df_conf_step *st = &cb->steps[9];
-    /* Side 1 survives: Politoed's stall counter does not end, its Protect volatile does, and the faint point of the first
-     * ends the battle: which of the two ran first is the shuffle's, so refused. */
-    DF_CHECK_EQ_U64(t, no_order_case(t, ctx, b, st, 1u), DUOFORGE_E_UNSUPPORTED);
+    uint32_t keeps = 9u;
+    /* Side 1 survives: Politoed's stall counter does not end and Protect's volatile does, and the faint point of the first
+     * ends the battle. Without the tape's entry for their tie the step cannot be made; with it the survivor keeps Protect
+     * when the stall counter ran first (0) and loses it when Protect's own handler did (1). */
+    DF_CHECK(t, no_order_case(t, ctx, b, st, 1u, UINT32_MAX, &keeps) != DUOFORGE_OK);
+    DF_CHECK_EQ_U64(t, no_order_case(t, ctx, b, st, 1u, 0u, &keeps), DUOFORGE_OK);
+    DF_CHECK_EQ_U64(t, keeps, 1u);
+    DF_CHECK_EQ_U64(t, no_order_case(t, ctx, b, st, 1u, 1u, &keeps), DUOFORGE_OK);
+    DF_CHECK_EQ_U64(t, keeps, 0u);
     /* Side 0 survives, Politoed's four counts end with the others: its stall counter's faint point ends the battle, the
-     * Staraptor's Helping Hand (of another Speed) is not a tie, and the order is the Speed's */
-    DF_CHECK_EQ_U64(t, no_order_case(t, ctx, b, st, 0u), DUOFORGE_OK);
+     * Staraptor's Helping Hand (of another Speed) is not a pair and not a tie, and the order is the Speed's: no draw. */
+    DF_CHECK_EQ_U64(t, no_order_case(t, ctx, b, st, 0u, UINT32_MAX, &keeps), DUOFORGE_OK);
     duoforge_battle_destroy(b);
 }
 
