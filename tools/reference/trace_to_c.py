@@ -467,6 +467,17 @@ def drop_reason(d, state, after=None, log=None):
         # the equal-speed holders (one on each side, say) run in: one order, one value. Aura Break (3072) is in no
         # pool forme's abilities.
         return 'Fairy Aura handlers whose order changes nothing'
+    if site == 'SPEED_TIE' and ctx in ('event:BeforeMove', 'event:ModifyMove'):
+        # The BeforeMove handlers (data/moves.ts:8307 and :19410, both priority 6) and the ModifyMove handlers (:8314 and
+        # :19417) of one Pokemon that holds both Heal Block and Throat Chop: each stops the move only if the move has
+        # its own flag (heal, sound), with its own line, and no move of the pool has both (build_pool fails for one,
+        # tests/test_pool_tables.c checks it), so whichever runs first, the same moves are stopped with the same line.
+        # Any other BeforeMove or ModifyMove tie is a handler that has not been looked at.
+        parts = [g.split(':') for g in group or []]
+        if (len(parts) == 2 and all(len(x) == 4 and x[0] == 'H' and x[3] == 'cb' for x in parts)
+                and sorted(x[1] for x in parts) == ['healblock', 'throatchop'] and parts[0][2] == parts[1][2]):
+            return '%s tie of Heal Block and Throat Chop of one Pokemon: no move has both flags' % ctx[6:]
+        raise ConversionError('tie-context', 'trace_to_c: unhandled tie context %s' % ctx, detail=ctx)
     if site == 'SPEED_TIE' and ctx != 'queue':
         raise ConversionError('tie-context', 'trace_to_c: unhandled tie context %s' % ctx, detail=ctx)
     if site == 'INSERT_TIE':
