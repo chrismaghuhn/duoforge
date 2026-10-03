@@ -33,9 +33,9 @@ extern "C" {
 #endif
 
 #define DUOFORGE_VERSION_MAJOR 0
-#define DUOFORGE_VERSION_MINOR 32
+#define DUOFORGE_VERSION_MINOR 34
 #define DUOFORGE_VERSION_PATCH 0
-#define DUOFORGE_VERSION_STRING "0.32.0"
+#define DUOFORGE_VERSION_STRING "0.34.0"
 
 /* Identifiers of the artifacts that exist now (registry: decisions 0002, 0005, 0006). */
 #define DUOFORGE_SEMANTICS_ID           3u   /* "duoforge-m3-closure" */
@@ -89,6 +89,15 @@ const char *duoforge_status_name(duoforge_status status);
 #define DUOFORGE_TARGET_CLASS_ALLY_SIDE             8u
 #define DUOFORGE_TARGET_CLASS_ALL                   9u
 #define DUOFORGE_TARGET_CLASS_COUNT                 9u
+/* The classes of the pool rows that a synthetic table never has and that the request API never resolves; they appear in
+   duoforge_move_static.target_class only (decision 0020). DUOFORGE_TARGET_CLASS_COUNT stays 9 for the request API. */
+#define DUOFORGE_TARGET_CLASS_RANDOM_NORMAL         10u /* Struggle: a random foe, never selectable */
+#define DUOFORGE_TARGET_CLASS_ALL_ADJACENT          11u /* every adjacent Pokemon, foes and ally (Earthquake) */
+#define DUOFORGE_TARGET_CLASS_SCRIPTED              12u /* the target is the last attacker (Counter, Mirror Coat) */
+#define DUOFORGE_TARGET_CLASS_ALLY_TEAM             13u /* the user's whole party (Heal Bell) */
+#define DUOFORGE_TARGET_CLASS_ALLIES                14u /* the user and its ally (Life Dew) */
+#define DUOFORGE_TARGET_CLASS_FOE_SIDE              15u /* the foes' side of the field (Spikes) */
+#define DUOFORGE_TARGET_CLASS_STATIC_COUNT          15u /* the largest target_class of duoforge_move_static */
 #define DUOFORGE_TARGET_NONE 0xFFu /* selector value for classes without a choosable target */
 
 /* ---- decision boundaries (decision 0005 section 1) ---- */
@@ -340,6 +349,119 @@ duoforge_status duoforge_data_forme_moves(const duoforge_context *ctx, uint32_t 
    allows each item once per side); every nature below duoforge_data_count(
    NATURE) is legal; Stat Points are at most DUOFORGE_STAT_POINTS_MAX per stat
    and DUOFORGE_STAT_POINTS_TOTAL_MAX in all. */
+
+/* ---- static features of the data rows (decision 0020) ----
+   What a learner may know about a forme, move, item, ability or nature without a
+   battle: pure functions of (kind, id), read from the same generated tables that
+   setup and the turn code read, never computed from anything else. The same contract
+   as duoforge_data_forme_info: a NULL pointer is E_NULL_ARGUMENT; an id at or beyond
+   duoforge_data_count of the context's kind is E_INVALID_ARGUMENT; a SYNTHETIC
+   context (no tables) is E_UNSUPPORTED (checks in that order); `out` is untouched on
+   an error. The structs hold uint32_t fields (see priority for a negative value), unused entries
+   are zero and an id that is not there is DUOFORGE_DATA_NONE; there is no
+   allocation and no pointer into the tables. Every row answers, modelled or not:
+   whether the engine can play a row is duoforge_data_supported, not a part of
+   these. One call per id; a learner builds its own arrays at start-up. */
+
+/* A forme: its types, base stats and weight. A Mega forme is a row like any
+   other, so its types and stats are the post-Mega ones. 44 bytes. */
+typedef struct duoforge_forme_static {
+    uint32_t types[2];        /* DUOFORGE_TYPE_*; the second is DUOFORGE_DATA_NONE for a single type */
+    uint32_t base_stats[6];   /* HP, Atk, Def, SpA, SpD, Spe */
+    uint32_t weight_hg;       /* in hectograms (weight in kg times 10) */
+    uint32_t default_ability; /* an ability id: a Mega forme's own, otherwise the first legal one (forme_info lists all) */
+    uint32_t is_mega;         /* 1 for a Mega forme */
+} duoforge_forme_static;
+duoforge_status duoforge_data_forme_static(const duoforge_context *ctx, uint32_t species_id, duoforge_forme_static *out);
+
+/* duoforge_move_static.category */
+#define DUOFORGE_MOVE_CATEGORY_PHYSICAL 0u
+#define DUOFORGE_MOVE_CATEGORY_SPECIAL  1u
+#define DUOFORGE_MOVE_CATEGORY_STATUS   2u
+
+/* duoforge_move_static.flags: one bit per Showdown flag name of the move, plus POWER_RULE; additive only. They are
+   data about the move, not support: that a flag is reported says nothing about whether the engine implements what
+   reads it (Bulletproof, Mega Launcher and the rest stay unmarked until a step gives them a reader). */
+#define DUOFORGE_MOVE_STATIC_FLAG_CONTACT    0x001u
+#define DUOFORGE_MOVE_STATIC_FLAG_SOUND      0x002u
+#define DUOFORGE_MOVE_STATIC_FLAG_PUNCH      0x004u
+#define DUOFORGE_MOVE_STATIC_FLAG_BITE       0x008u
+#define DUOFORGE_MOVE_STATIC_FLAG_BULLET     0x010u
+#define DUOFORGE_MOVE_STATIC_FLAG_PULSE      0x020u
+#define DUOFORGE_MOVE_STATIC_FLAG_SLICING    0x040u
+#define DUOFORGE_MOVE_STATIC_FLAG_WIND       0x080u
+#define DUOFORGE_MOVE_STATIC_FLAG_DANCE      0x100u
+#define DUOFORGE_MOVE_STATIC_FLAG_POWDER     0x200u
+#define DUOFORGE_MOVE_STATIC_FLAG_POWER_RULE 0x400u /* base_power is not the damage: a callback computes the power
+                                                       (Low Kick, Last Respects); base_power is the pin's basePower, 0 then */
+
+/* A move. 64 bytes. */
+typedef struct duoforge_move_static {
+    uint32_t type;             /* DUOFORGE_TYPE_* */
+    uint32_t category;         /* DUOFORGE_MOVE_CATEGORY_* */
+    uint32_t base_power;       /* the pin's basePower */
+    uint32_t accuracy;         /* percent; 0 means the move never misses */
+    uint32_t pp;               /* Champions PP after the cap and calculatePP: what a member starts with */
+    uint32_t priority;         /* the pin's priority, -7 to +5, unbiased: a negative value is its 32-bit two's complement
+                                  (0xFFFFFFF9 for -7); the library has no negative-capable field type, a caller casts */
+    uint32_t target_class;     /* DUOFORGE_TARGET_CLASS_* 1..DUOFORGE_TARGET_CLASS_STATIC_COUNT; the request API does
+                                  not resolve 10..15 */
+    uint32_t flags;            /* DUOFORGE_MOVE_STATIC_FLAG_* */
+    uint32_t crit_stage;       /* the critical-hit stage: 0 normal, 1 high (the pin's critRatio minus 1) */
+    uint32_t drain[2];         /* numerator, denominator of the damage dealt; 0 and 0 for none */
+    uint32_t recoil[2];        /* the same for recoil */
+    uint32_t secondary_chance; /* percent of the secondary effect, 0 for none; its kind stays internal */
+    uint32_t hits_min;         /* the pin's multihit: 2 and 5 for Bullet Seed, 2 and 2 for Dual Wingbeat, 3 and 3 for
+                                  Triple Axel, 1 and 1 for a single hit */
+    uint32_t hits_max;
+} duoforge_move_static;
+duoforge_status duoforge_data_move_static(const duoforge_context *ctx, uint32_t move_id, duoforge_move_static *out);
+
+/* duoforge_item_static.family, as the generated family column of the tables */
+#define DUOFORGE_ITEM_FAMILY_NONE         0u
+#define DUOFORGE_ITEM_FAMILY_TYPE_BOOSTER 1u /* family_type: the type whose moves it strengthens */
+#define DUOFORGE_ITEM_FAMILY_RESIST_BERRY 2u /* family_type: the type whose super effective hit it weakens */
+
+/* An item. Everything else about an item is code, not data: it stays an id. 16 bytes. */
+typedef struct duoforge_item_static {
+    uint32_t family;        /* DUOFORGE_ITEM_FAMILY_* */
+    uint32_t family_type;   /* DUOFORGE_TYPE_*; DUOFORGE_DATA_NONE without a family */
+    uint32_t is_mega_stone; /* 1 for a Mega Stone of the tables */
+    uint32_t mega_species;  /* the Mega forme it enables (a forme id), DUOFORGE_DATA_NONE if is_mega_stone is 0 */
+} duoforge_item_static;
+duoforge_status duoforge_data_item_static(const duoforge_context *ctx, uint32_t item_id, duoforge_item_static *out);
+
+/* duoforge_ability_static.family */
+#define DUOFORGE_ABILITY_FAMILY_NONE           0u
+#define DUOFORGE_ABILITY_FAMILY_ATE            1u /* family_param: the type that it turns Normal moves into */
+#define DUOFORGE_ABILITY_FAMILY_PINCH          2u /* family_param: the type that it strengthens at a third of the HP */
+#define DUOFORGE_ABILITY_FAMILY_WEATHER_SETTER 3u /* family_param: DUOFORGE_WEATHER_* */
+#define DUOFORGE_ABILITY_FAMILY_TERRAIN_SETTER 4u /* family_param: DUOFORGE_TERRAIN_* */
+
+/* An ability. 8 bytes. */
+typedef struct duoforge_ability_static {
+    uint32_t family;       /* DUOFORGE_ABILITY_FAMILY_* */
+    uint32_t family_param; /* see the family; DUOFORGE_DATA_NONE without a family */
+} duoforge_ability_static;
+duoforge_status duoforge_data_ability_static(const duoforge_context *ctx, uint32_t ability_id,
+                                             duoforge_ability_static *out);
+
+/* A nature (the same 25 under every kind): the stat it raises and the one it lowers, as the stat indices of the
+   public arrays (stat_points, base_stats: 0 HP, 1 Atk, 2 Def, 3 SpA, 4 SpD, 5 Spe; never HP). Both are
+   DUOFORGE_DATA_NONE for a neutral nature. 8 bytes. A nature id at or beyond duoforge_data_count(NATURE) is
+   E_INVALID_ARGUMENT, as above. */
+typedef struct duoforge_nature_static {
+    uint32_t raised_stat;
+    uint32_t lowered_stat;
+} duoforge_nature_static;
+duoforge_status duoforge_data_nature_static(const duoforge_context *ctx, uint32_t nature_id,
+                                            duoforge_nature_static *out);
+
+/* The pinned type chart: the multiplier of an attack of attack_type on a defender of defend_type as the fraction
+   *out_num / *out_den: 0/1 (immune), 1/2, 1/1 or 2/1. A type that is not a DUOFORGE_TYPE_* (0..17) is
+   E_INVALID_ARGUMENT; the chart is the same under every kind with tables. Both outputs are untouched on an error. */
+duoforge_status duoforge_data_type_effect(const duoforge_context *ctx, uint32_t attack_type, uint32_t defend_type,
+                                          uint32_t *out_num, uint32_t *out_den);
 
 /* ---- owned battle state: opaque, pointer-free, bound to a context by
    fingerprint (not by pointer); every call checks the fingerprint ---- */

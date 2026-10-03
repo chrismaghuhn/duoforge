@@ -279,8 +279,9 @@ class PoolRows(unittest.TestCase):
     def test_the_canonical_size(self):
         n_f, n_m, n_i, n_a = len(Rows.formes), len(Rows.moves), len(Rows.items), len(Rows.abilities)
         want = (12 + n_f * 26 + n_m * 29 + n_i * 4 + 18 * 18 + 18 + 25 * 2 + n_i * 2 + n_a * 2 + n_i + n_a +
-                n_f * (define('DFI_POOL_LEARN_BYTES') + 1 + 3) + n_m + 2 * n_m)  # + the second flags byte of every move
-        # (step G8) and the heal fraction of every move (step G10)
+                n_f * (define('DFI_POOL_LEARN_BYTES') + 1 + 3) + n_m + 2 * n_m + 4 * n_m + 2 * n_m)  # + the second flags byte of every move
+        # (step G8), the heal fraction of every move (step G10), then the static flags (4 bytes) and the hit counts
+        # (2 bytes) of every move (decision 0020)
         self.assertEqual(define('DFI_POOL_CANONICAL_SIZE'), want)
 
 
