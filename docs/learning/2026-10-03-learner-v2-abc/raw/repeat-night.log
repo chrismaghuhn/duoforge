@@ -1,0 +1,15 @@
+2026-10-03 05:30:06 ab host 1 start
+2026-10-03 05:33:25 ab host 1 exit 0
+2026-10-03 05:33:25 ab scan 1 start
+2026-10-03 05:35:58 ab scan 1 exit 0
+2026-10-03 05:35:58 ab host 2 start
+2026-10-03 05:39:17 ab host 2 exit 0
+2026-10-03 05:39:17 ab scan 2 start
+2026-10-03 05:41:47 ab scan 2 exit 0
+2026-10-03 05:41:47 ab host 3 start
+2026-10-03 05:45:01 ab host 3 exit 0
+2026-10-03 05:45:01 ab scan 3 start
+2026-10-03 05:47:34 ab scan 3 exit 0
+2026-10-03 05:47:34 ingredients start
+2026-10-03 05:48:24 ingredients exit 0
+2026-10-03 05:48:24 done
