@@ -3,7 +3,7 @@
  "pin": "b2cb775b0616115b775534eaeff50300e1fc81fc",
  "spec": "g30_flame_body.json",
  "format": "gen9championsvgc2026regmc",
- "seed": "sodium,0000000000000000000000000000000000000000000000000000000000003013",
+ "seed": "sodium,0000000000000000000000000000000000000000000000000000000000003051",
  "start": {
   "log": [
    "|gametype|doubles",
@@ -111,7 +111,7 @@
        "pp": [
         12,
         16,
-        20,
+        16,
         8
        ],
        "volatiles": [],
@@ -433,7 +433,7 @@
      "context": "queue",
      "lo": 4,
      "hi": 6,
-     "value": 5,
+     "value": 4,
      "group": [
       "A:team:p1c:",
       "A:team:p2c:"
@@ -445,7 +445,7 @@
      "context": "queue",
      "lo": 6,
      "hi": 8,
-     "value": 6,
+     "value": 7,
      "group": [
       "A:team:p1undefined:",
       "A:team:p2undefined:"
@@ -570,7 +570,7 @@
         "pp": [
          12,
          16,
-         20,
+         16,
          8
         ],
         "volatiles": [],
@@ -792,7 +792,7 @@
      "context": "",
      "lo": 0,
      "hi": 100,
-     "value": 29
+     "value": 71
     },
     {
      "site": "CRIT",
@@ -806,28 +806,28 @@
      "context": "",
      "lo": 0,
      "hi": 16,
-     "value": 10
+     "value": 1
     },
     {
      "site": "FLAME_BODY",
      "context": "DamagingHit",
      "lo": 0,
      "hi": 10,
-     "value": 1
+     "value": 3
     },
     {
      "site": "ACCURACY",
      "context": "",
      "lo": 0,
      "hi": 100,
-     "value": 12
+     "value": 5
     },
     {
      "site": "CRIT",
      "context": "",
      "lo": 0,
      "hi": 24,
-     "value": 20
+     "value": 18
     },
     {
      "site": "DAMAGE_ROLL",
@@ -841,42 +841,42 @@
      "context": "",
      "lo": 0,
      "hi": 100,
-     "value": 45
+     "value": 31
     },
     {
      "site": "ACCURACY",
      "context": "",
      "lo": 0,
      "hi": 100,
-     "value": 0
+     "value": 93
     },
     {
      "site": "CRIT",
      "context": "",
      "lo": 0,
      "hi": 24,
-     "value": 16
+     "value": 2
     },
     {
      "site": "DAMAGE_ROLL",
      "context": "",
      "lo": 0,
      "hi": 16,
-     "value": 12
+     "value": 15
     },
     {
      "site": "SECONDARY",
      "context": "",
      "lo": 0,
      "hi": 100,
-     "value": 10
+     "value": 71
     },
     {
      "site": "FLAME_BODY",
      "context": "DamagingHit",
      "lo": 0,
      "hi": 10,
-     "value": 4
+     "value": 5
     }
    ],
    "log": [
@@ -887,27 +887,23 @@
     "|move|p1a: Rillaboom|Wood Hammer|p2a: Volcarona",
     "|-resisted|p2a: Volcarona|2",
     "|split|p2",
-    "|-damage|p2a: Volcarona|152/192",
-    "|-damage|p2a: Volcarona|79/100",
-    "|-status|p1a: Rillaboom|brn|[from] ability: Flame Body|[of] p2a: Volcarona",
+    "|-damage|p2a: Volcarona|147/192",
+    "|-damage|p2a: Volcarona|76/100",
     "|split|p1",
-    "|-damage|p1a: Rillaboom|180/193 brn|[from] Recoil",
-    "|-damage|p1a: Rillaboom|93/100 brn|[from] Recoil",
+    "|-damage|p1a: Rillaboom|178/193|[from] Recoil",
+    "|-damage|p1a: Rillaboom|92/100|[from] Recoil",
     "|move|p2b: Chandelure|Shadow Ball|p1a: Rillaboom",
     "|split|p1",
-    "|-damage|p1a: Rillaboom|84/193 brn",
-    "|-damage|p1a: Rillaboom|43/100 brn",
+    "|-damage|p1a: Rillaboom|82/193",
+    "|-damage|p1a: Rillaboom|42/100",
     "|move|p1b: Incineroar|Flare Blitz|p2b: Chandelure",
     "|-resisted|p2b: Chandelure|1",
     "|split|p2",
-    "|-damage|p2b: Chandelure|124/167",
+    "|-damage|p2b: Chandelure|125/167",
     "|-damage|p2b: Chandelure|74/100",
     "|split|p1",
     "|-damage|p1b: Incineroar|188/202|[from] Recoil",
     "|-damage|p1b: Incineroar|93/100|[from] Recoil",
-    "|split|p1",
-    "|-damage|p1a: Rillaboom|72/193 brn|[from] brn",
-    "|-damage|p1a: Rillaboom|37/100 brn|[from] brn",
     "|upkeep",
     "|turn|2"
    ],
@@ -952,10 +948,10 @@
         "set_species": "Rillaboom",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 72,
+        "hp": 82,
         "maxhp": 193,
         "item": "",
-        "status": "brn",
+        "status": "",
         "status_time": 0,
         "confusion": 0,
         "fainted": false,
@@ -1001,7 +997,7 @@
         "pp": [
          12,
          15,
-         20,
+         16,
          8
         ],
         "volatiles": [],
@@ -1096,7 +1092,7 @@
         "set_species": "Volcarona",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 152,
+        "hp": 147,
         "maxhp": 192,
         "item": "",
         "status": "",
@@ -1126,7 +1122,7 @@
         "set_species": "Chandelure",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 124,
+        "hp": 125,
         "maxhp": 167,
         "item": "",
         "status": "",
@@ -1223,7 +1219,7 @@
      "context": "",
      "lo": 0,
      "hi": 100,
-     "value": 31
+     "value": 89
     },
     {
      "site": "CRIT",
@@ -1237,77 +1233,77 @@
      "context": "",
      "lo": 0,
      "hi": 16,
-     "value": 7
+     "value": 2
     },
     {
      "site": "FLAME_BODY",
      "context": "DamagingHit",
      "lo": 0,
      "hi": 10,
-     "value": 9
+     "value": 1
     },
     {
      "site": "ACCURACY",
      "context": "",
      "lo": 0,
      "hi": 100,
-     "value": 9
+     "value": 91
     },
     {
      "site": "CRIT",
      "context": "",
      "lo": 0,
      "hi": 24,
-     "value": 4
+     "value": 19
     },
     {
      "site": "DAMAGE_ROLL",
      "context": "",
      "lo": 0,
      "hi": 16,
-     "value": 11
+     "value": 8
     },
     {
      "site": "SECONDARY",
      "context": "",
      "lo": 0,
      "hi": 100,
-     "value": 67
+     "value": 68
     },
     {
      "site": "ACCURACY",
      "context": "",
      "lo": 0,
      "hi": 100,
-     "value": 97
+     "value": 61
     },
     {
      "site": "CRIT",
      "context": "",
      "lo": 0,
      "hi": 24,
-     "value": 21
+     "value": 17
     },
     {
      "site": "DAMAGE_ROLL",
      "context": "",
      "lo": 0,
      "hi": 16,
-     "value": 10
-    },
-    {
-     "site": "SECONDARY",
-     "context": "",
-     "lo": 0,
-     "hi": 100,
-     "value": 99
-    },
-    {
-     "site": "FLAME_BODY",
-     "context": "DamagingHit",
-     "lo": 0,
-     "hi": 10,
      "value": 3
+    },
+    {
+     "site": "SECONDARY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 78
+    },
+    {
+     "site": "FLAME_BODY",
+     "context": "DamagingHit",
+     "lo": 0,
+     "hi": 10,
+     "value": 5
     }
    ],
    "log": [
@@ -1318,8 +1314,9 @@
     "|move|p1a: Rillaboom|Grassy Glide|p2b: Chandelure",
     "|-resisted|p2b: Chandelure|1",
     "|split|p2",
-    "|-damage|p2b: Chandelure|109/167",
-    "|-damage|p2b: Chandelure|65/100",
+    "|-damage|p2b: Chandelure|93/167",
+    "|-damage|p2b: Chandelure|55/100",
+    "|-status|p1a: Rillaboom|brn|[from] ability: Flame Body|[of] p2b: Chandelure",
     "|move|p2b: Chandelure|Shadow Ball|p1a: Rillaboom",
     "|split|p1",
     "|-damage|p1a: Rillaboom|0 fnt",
@@ -1327,11 +1324,11 @@
     "|faint|p1a: Rillaboom",
     "|move|p1b: Incineroar|Flare Blitz|p2a: Volcarona",
     "|split|p2",
-    "|-damage|p2a: Volcarona|38/192",
-    "|-damage|p2a: Volcarona|19/100",
+    "|-damage|p2a: Volcarona|24/192",
+    "|-damage|p2a: Volcarona|12/100",
     "|split|p1",
-    "|-damage|p1b: Incineroar|150/202|[from] Recoil",
-    "|-damage|p1b: Incineroar|74/100|[from] Recoil",
+    "|-damage|p1b: Incineroar|147/202|[from] Recoil",
+    "|-damage|p1b: Incineroar|72/100|[from] Recoil",
     "|upkeep"
    ],
    "state": {
@@ -1392,7 +1389,7 @@
         "set_species": "Incineroar",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 150,
+        "hp": 147,
         "maxhp": 202,
         "item": "",
         "status": "",
@@ -1411,7 +1408,7 @@
         "pp": [
          12,
          14,
-         20,
+         16,
          8
         ],
         "volatiles": [],
@@ -1493,7 +1490,7 @@
         "set_species": "Volcarona",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 38,
+        "hp": 24,
         "maxhp": 192,
         "item": "",
         "status": "",
@@ -1523,7 +1520,7 @@
         "set_species": "Chandelure",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 109,
+        "hp": 93,
         "maxhp": 167,
         "item": "",
         "status": "",
@@ -1685,7 +1682,7 @@
         "set_species": "Incineroar",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 150,
+        "hp": 147,
         "maxhp": 202,
         "item": "",
         "status": "",
@@ -1704,7 +1701,7 @@
         "pp": [
          12,
          14,
-         20,
+         16,
          8
         ],
         "volatiles": [],
@@ -1802,7 +1799,7 @@
         "set_species": "Volcarona",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 38,
+        "hp": 24,
         "maxhp": 192,
         "item": "",
         "status": "",
@@ -1832,7 +1829,7 @@
         "set_species": "Chandelure",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 109,
+        "hp": 93,
         "maxhp": 167,
         "item": "",
         "status": "",
@@ -1920,44 +1917,114 @@
   },
   {
    "input": {
-    "p1": "move 1, move 2 1",
+    "p1": "move 1, move 3",
     "p2": "move 1, move 1 1"
    },
    "draws": [
+    {
+     "site": "RANDOM_TARGET",
+     "context": "resolve",
+     "lo": 0,
+     "hi": 2,
+     "value": 0
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 1
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 0
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 0
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 1
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 1
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "execute:allAdjacentFoes",
+     "lo": 0,
+     "hi": 2,
+     "value": 0
+    },
     {
      "site": "ACCURACY",
      "context": "",
      "lo": 0,
      "hi": 100,
-     "value": 90
+     "value": 94
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 70
     },
     {
      "site": "CRIT",
      "context": "",
      "lo": 0,
      "hi": 24,
-     "value": 9
+     "value": 0
     },
     {
      "site": "DAMAGE_ROLL",
      "context": "",
      "lo": 0,
      "hi": 16,
-     "value": 15
+     "value": 7
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 4
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 3
     },
     {
      "site": "SECONDARY",
      "context": "",
      "lo": 0,
      "hi": 100,
-     "value": 76
+     "value": 35
     },
     {
-     "site": "FLAME_BODY",
-     "context": "DamagingHit",
+     "site": "SECONDARY",
+     "context": "",
      "lo": 0,
-     "hi": 10,
-     "value": 5
+     "hi": 100,
+     "value": 19
     },
     {
      "site": "SPEED_TIE",
@@ -1981,14 +2048,17 @@
     "|-boost|p2a: Volcarona|spe|1",
     "|move|p2b: Chandelure|Shadow Ball|p1a: Kingambit",
     "|-activate|p1a: Kingambit|move: Protect",
-    "|move|p1b: Incineroar|Flare Blitz|p2a: Volcarona",
+    "|move|p1b: Incineroar|Snarl|p2a: Volcarona|[spread] p2a,p2b",
+    "|-crit|p2a: Volcarona",
+    "|-supereffective|p2b: Chandelure|1",
     "|split|p2",
     "|-damage|p2a: Volcarona|0 fnt",
     "|-damage|p2a: Volcarona|0 fnt",
+    "|split|p2",
+    "|-damage|p2b: Chandelure|49/167",
+    "|-damage|p2b: Chandelure|29/100",
+    "|-unboost|p2b: Chandelure|spa|1",
     "|faint|p2a: Volcarona",
-    "|split|p1",
-    "|-damage|p1b: Incineroar|137/202|[from] Recoil",
-    "|-damage|p1b: Incineroar|67/100|[from] Recoil",
     "|upkeep"
    ],
    "state": {
@@ -2048,7 +2118,7 @@
         "set_species": "Incineroar",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 137,
+        "hp": 147,
         "maxhp": 202,
         "item": "",
         "status": "",
@@ -2066,8 +2136,8 @@
         ],
         "pp": [
          12,
-         13,
-         20,
+         14,
+         15,
          8
         ],
         "volatiles": [],
@@ -2182,7 +2252,7 @@
         "set_species": "Chandelure",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 109,
+        "hp": 49,
         "maxhp": 167,
         "item": "",
         "status": "",
@@ -2192,7 +2262,7 @@
         "boosts": [
          -1,
          0,
-         0,
+         -1,
          0,
          0,
          0,
@@ -2278,7 +2348,7 @@
      "context": "each:Update",
      "lo": 2,
      "hi": 4,
-     "value": 3,
+     "value": 2,
      "group": [
       "P:p2a:0:",
       "P:p1a:0:"
@@ -2383,7 +2453,7 @@
         "set_species": "Incineroar",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 137,
+        "hp": 147,
         "maxhp": 202,
         "item": "",
         "status": "",
@@ -2401,8 +2471,8 @@
         ],
         "pp": [
          12,
-         13,
-         20,
+         14,
+         15,
          8
         ],
         "volatiles": [],
@@ -2524,7 +2594,7 @@
         "set_species": "Chandelure",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 109,
+        "hp": 49,
         "maxhp": 167,
         "item": "",
         "status": "",
@@ -2534,7 +2604,7 @@
         "boosts": [
          -1,
          0,
-         0,
+         -1,
          0,
          0,
          0,

@@ -1892,10 +1892,10 @@ static const df_tb_stop tb_g30_clear_body[] = {
 static const df_tb_stop tb_g30_flame_body[] = {
     {0u, 0u, 1u, 3u, {6u, 6u}, {1135u, 1099u}, {0x4059000000000000ull, 0x4059000000000000ull}},
     {1u, 0u, 1u, 3u, {4u, 4u}, {796u, 760u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
-    {2u, 0u, 2u, 2u, {4u, 4u}, {661u, 677u}, {0x404b880008f724dfull, 0x404d739665dade71ull}},
-    {3u, 0u, 2u, 1u, {3u, 4u}, {551u, 548u}, {0x4046dad3389b7570ull, 0x4047c14dd6c7f677ull}},
-    {5u, 0u, 1u, 2u, {3u, 3u}, {538u, 510u}, {0x4046518806c252cdull, 0x40461b14f339bd93ull}},
-    {6u, 0u, 1u, 2u, {3u, 3u}, {538u, 510u}, {0x4046518806c252cdull, 0x40461b14f339bd93ull}},
+    {2u, 0u, 2u, 2u, {4u, 4u}, {671u, 673u}, {0x404bf68919531c08ull, 0x404d48ce6f64a9a5ull}},
+    {3u, 0u, 2u, 1u, {3u, 4u}, {548u, 518u}, {0x4046bb24547d0afcull, 0x4046595b770ed180ull}},
+    {5u, 0u, 1u, 2u, {3u, 3u}, {548u, 450u}, {0x4046bb24547d0afcull, 0x40431c9d6198c84dull}},
+    {6u, 0u, 1u, 2u, {3u, 3u}, {548u, 450u}, {0x4046bb24547d0afcull, 0x40431c9d6198c84dull}},
 };
 static const df_tb_stop tb_g30_flame_body_ko[] = {
     {0u, 0u, 1u, 3u, {6u, 6u}, {1135u, 1047u}, {0x4059000000000000ull, 0x4059000000000000ull}},
