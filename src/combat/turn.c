@@ -1469,11 +1469,21 @@ static duoforge_status dfi_get_damage(dfi_run *r, uint32_t user, uint32_t target
         mlist[mods] = 2048u;
         mods += 1u;
     }
+    /* Friend Guard (step G35, data/abilities.ts:1533-1540, onAnyModifyDamage, breakable and Mold Breaker is not marked): the
+     * target's partner, when it stands and holds the ability, weakens every hit on the target by x0.75 (3072/4096). The handler
+     * is any Pokemon's, so the attacker's own partner is a holder too when it is the one hit (a spread move on an ally), and the
+     * holder itself is not weakened (target !== holder). A fainted holder does not run (runEvent skips the fainted). */
+    const dfi_member *partner = dfi_at(r->b, target ^ 1u);
+    if (partner != NULL && partner->hp != 0u && dfi_ability(r->b, partner, DFI_ABILITY_FRIENDGUARD)) {
+        ok = ok && dfi_chain_modify(chain, 3072u, &chain);
+        mlist[mods] = 3072u;
+        mods += 1u;
+    }
     /* The handlers have no order and priority 0, so runEvent sorts them by their holders' speed, then by subOrder (a screen, a
      * side condition, has no speed and is last); this build does not compute that order (a follow-up, combat/damage_chain.h), so
      * the modifiers must chain to one value in every order. Pairs and triples of Life Orb, Expert Belt, a resist berry, a screen,
-     * Solid Rock and Multiscale do (checked by dfi_mods_commute at its own test, tests/test_pool_g34.c, and here for every hit); the
-     * combinations that do not (Glaive Rush's x2 with three others, an Expert Belt with a berry and Glaive Rush, a
+     * Solid Rock, Multiscale and Friend Guard do (checked by dfi_mods_commute at its own test, tests/test_pool_g34.c, and here for
+     * every hit); the combinations that do not (Glaive Rush's x2 with three others, an Expert Belt with a berry and Glaive Rush, a
      * Solid Rock with them) are E_UNSUPPORTED. */
     if (mods >= 3u && !dfi_mods_commute(mlist, mods)) {
         return DUOFORGE_E_UNSUPPORTED;
@@ -2152,6 +2162,39 @@ static duoforge_status dfi_sand_damage(dfi_run *r)
                       DUOFORGE_NO_POSITION);
         if (st != DUOFORGE_OK) {
             return st;
+        }
+    }
+    return DUOFORGE_OK;
+}
+
+/* eachEvent('Weather') under rain (step G35, the onWeather of Rain Dish, data/abilities.ts:3759-3765): every active Pokemon
+ * that has not fainted and holds Rain Dish heals baseMaxhp / 16 (at least 1) as [-heal] [from] ability: Rain Dish, in
+ * eachEvent's order; a full-HP holder prints nothing (Battle.heal returns early) but is still in the sort, so two holders
+ * that are tied in speed draw whatever their HP (the group is shuffled as a whole; the converter keeps the draws of two
+ * holders, trace_to_c.py drop_reason). Primordial Sea is not in the format. */
+static duoforge_status dfi_rain_dish(dfi_run *r)
+{
+    uint32_t bearers = 0u;
+    for (uint32_t flat = 0u; flat < DFI_POSITIONS; ++flat) {
+        const dfi_member *m = dfi_at(r->b, flat);
+        if (m != NULL && m->hp != 0u && dfi_ability(r->b, m, DFI_ABILITY_RAINDISH)) {
+            bearers |= 1u << flat;
+        }
+    }
+    if (bearers == 0u) {
+        return DUOFORGE_OK;
+    }
+    uint32_t list[DFI_POSITIONS] = {0u, 0u, 0u, 0u};
+    uint32_t n = 0u;
+    const duoforge_status st = dfi_each_order(r, bearers, list, &n);
+    if (st != DUOFORGE_OK) {
+        return st;
+    }
+    for (uint32_t i = 0u; i < n; ++i) {
+        const uint32_t flat = list[i];
+        if (((bearers >> flat) & 1u) != 0u) {
+            dfi_heal(r, flat, (uint32_t)dfi_at(r->b, flat)->hp_max / 16u, DUOFORGE_CAUSE_ABILITY,
+                     1u + DFI_ABILITY_RAINDISH, DUOFORGE_NO_POSITION);
         }
     }
     return DUOFORGE_OK;
@@ -4946,6 +4989,11 @@ static duoforge_status dfi_residual_events(dfi_run *r)
                 dfi_emit(r, &w); /* -weather|...|[upkeep] */
                 if (b->weather == DFI_WEATHER_SAND) {
                     st = dfi_sand_damage(r); /* eachEvent('Weather'): Sandstorm's onWeather */
+                    if (st != DUOFORGE_OK) {
+                        return st;
+                    }
+                } else if (b->weather == DFI_WEATHER_RAIN) {
+                    st = dfi_rain_dish(r); /* eachEvent('Weather'): Rain Dish's onWeather */
                     if (st != DUOFORGE_OK) {
                         return st;
                     }
