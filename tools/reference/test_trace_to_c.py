@@ -1081,7 +1081,9 @@ class Library(unittest.TestCase):
         rock, spikes, toxic spikes and sticky web of side 0, then of side 1, after each step of the G37 battles) must be
         exactly what these lines give for the committed traces, and what the reference's own state (the key `hazards` of the
         harness, in creation order) holds: the engine's tail and view are checked against the game and not against
-        themselves. The creation order of every recorded side is the engine's fixed order (dfi_hazard_order). The damage
+        themselves. The last two numbers of a row are the creation order of each side (tail rev 4, hazard_order: two bits per
+        slot, a new kind appended, an absorbed one removed, so one put up again goes last), the order of the first
+        `-sidestart` lines that the protocol shows. The damage
         names the hazard as its source (`[from] Stealth Rock`, `[from] Spikes`): the cause is the move's, with its id."""
         names_ = ('stealthrock', 'spikes', 'toxicspikes', 'stickyweb')
         lines_of = {'move: Stealth Rock': 0, 'Spikes': 1, 'move: Spikes': 1, 'move: Toxic Spikes': 2, 'move: Sticky Web': 3}
@@ -1089,7 +1091,7 @@ class Library(unittest.TestCase):
         with open(os.path.join(ROOT, 'tests', 'test_pool_g37.c'), encoding='utf-8') as f:
             source = f.read()
         rows = {}
-        for m in re.finditer(r'\{"(g37_\w+)", (\d+)u, \{((?:\d+u(?:, )?){8})\}\}', source):
+        for m in re.finditer(r'\{"(g37_\w+)", (\d+)u, \{((?:\d+u(?:, )?){10})\}\}', source):
             rows[(m.group(1), int(m.group(2)))] = tuple(int(x[:-1]) for x in m.group(3).split(', '))
         names = sorted({n for n, _ in rows})
         listed = re.search(r'names\[\] = \{(.*?)\};', source, re.S).group(1)
@@ -1101,24 +1103,28 @@ class Library(unittest.TestCase):
             with open(os.path.join(ROOT, 'tests', 'reference', 'traces', name + '.json'), encoding='utf-8') as f:
                 trace = json.load(f)
             layers = [[0] * 4, [0] * 4]
+            created = [[], []]
             for k, step in enumerate(trace['steps']):
                 for line in [l for l in step['log'] if not l.startswith('|split')]:
                     part = line.split('|')
                     if len(part) > 3 and part[1] == '-sidestart' and part[3] in lines_of:
                         side, kind = int(part[2][1]) - 1, lines_of[part[3]]
                         self.assertLess(layers[side][kind], most[kind], '%s step %d: a hazard above its last layer' % (name, k))
+                        if layers[side][kind] == 0:
+                            created[side].append(kind)
                         layers[side][kind] += 1
                     elif len(part) > 3 and part[1] == '-sideend' and part[3] == 'move: Toxic Spikes':
                         self.assertEqual(len(part), 5)  # [of] the Pokemon that absorbed them
                         layers[int(part[2][1]) - 1][2] = 0
-                derived[(name, k)] = tuple(layers[0] + layers[1])
+                        created[int(part[2][1]) - 1].remove(2)
+                orders = tuple(sum(kind << (2 * slot) for slot, kind in enumerate(c)) for c in created)
+                derived[(name, k)] = tuple(layers[0] + layers[1]) + orders
                 # the reference's own state, in creation order
                 state = [dict(side.get('hazards', [])) for side in step['state']['sides']]
-                self.assertEqual(tuple(state[0].get(n, 0) for n in names_) + tuple(state[1].get(n, 0) for n in names_),
+                ref_orders = tuple(sum(names_.index(h[0]) << (2 * slot) for slot, h in enumerate(side.get('hazards', [])))
+                                   for side in step['state']['sides'])
+                self.assertEqual(tuple(state[0].get(n, 0) for n in names_) + tuple(state[1].get(n, 0) for n in names_) + ref_orders,
                                  derived[(name, k)], '%s step %d: the lines and the state of the reference differ' % (name, k))
-                for side in step['state']['sides']:
-                    order = [h[0] for h in side.get('hazards', [])]
-                    self.assertEqual(order, sorted(order, key=names_.index), '%s step %d: creation order %s' % (name, k, order))
         self.assertEqual(rows, derived)
         for kind in range(4):
             self.assertTrue(any(v[kind] or v[4 + kind] for v in derived.values()), names_[kind])

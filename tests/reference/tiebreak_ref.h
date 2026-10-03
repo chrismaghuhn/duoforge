@@ -2548,6 +2548,25 @@ static const df_tb_stop tb_g37_hazards_a[] = {
     {9u, 0u, 1u, 2u, {4u, 4u}, {723u, 532u}, {0x4050aaaaaaaaaaabull, 0x40470a945513817dull}},
     {10u, 0u, 1u, 2u, {4u, 4u}, {723u, 508u}, {0x4050aaaaaaaaaaabull, 0x40460d1d34202dd8ull}},
 };
+static const df_tb_stop tb_g37_order_a[] = {
+    {0u, 0u, 2u, 3u, {6u, 6u}, {1097u, 1132u}, {0x4059000000000000ull, 0x4059000000000000ull}},
+    {1u, 0u, 2u, 3u, {4u, 4u}, {723u, 758u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {2u, 0u, 2u, 3u, {4u, 4u}, {723u, 758u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {3u, 0u, 2u, 3u, {4u, 4u}, {723u, 758u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {6u, 0u, 2u, 3u, {4u, 4u}, {723u, 758u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {8u, 0u, 1u, 2u, {4u, 4u}, {723u, 648u}, {0x4050aaaaaaaaaaabull, 0x404cb136eae0bd40ull}},
+    {9u, 0u, 1u, 2u, {4u, 4u}, {723u, 624u}, {0x4050aaaaaaaaaaabull, 0x404bb3bfc9ed699cull}},
+};
+static const df_tb_stop tb_g37_order_b[] = {
+    {0u, 0u, 2u, 3u, {6u, 6u}, {1097u, 1119u}, {0x4059000000000000ull, 0x4059000000000000ull}},
+    {1u, 0u, 2u, 3u, {4u, 4u}, {723u, 747u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {2u, 0u, 2u, 3u, {4u, 4u}, {723u, 747u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {3u, 0u, 2u, 3u, {4u, 4u}, {723u, 747u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {6u, 0u, 1u, 2u, {4u, 4u}, {723u, 657u}, {0x4050aaaaaaaaaaabull, 0x404d4a14acea85d0ull}},
+    {9u, 0u, 1u, 2u, {4u, 4u}, {723u, 546u}, {0x4050aaaaaaaaaaabull, 0x40482dcb20e4dd81ull}},
+    {10u, 0u, 1u, 2u, {4u, 4u}, {723u, 524u}, {0x4050aaaaaaaaaaabull, 0x40472a7e480656abull}},
+    {11u, 0u, 1u, 2u, {4u, 4u}, {723u, 502u}, {0x4050aaaaaaaaaaabull, 0x404627316f27cfd5ull}},
+};
 static const df_tb_stop tb_g37_sticky_web[] = {
     {0u, 0u, 2u, 3u, {6u, 6u}, {1097u, 1127u}, {0x4059000000000000ull, 0x4059000000000000ull}},
     {1u, 0u, 2u, 3u, {4u, 4u}, {723u, 753u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
@@ -4176,6 +4195,8 @@ static const df_tb_battle tb_battles[] = {
     {"g36_toxic_mirror_a", 6u, tb_g36_toxic_mirror_a, sizeof tb_g36_toxic_mirror_a / sizeof tb_g36_toxic_mirror_a[0]},
     {"g36_toxic_mirror_b", 6u, tb_g36_toxic_mirror_b, sizeof tb_g36_toxic_mirror_b / sizeof tb_g36_toxic_mirror_b[0]},
     {"g37_hazards_a", 10u, tb_g37_hazards_a, sizeof tb_g37_hazards_a / sizeof tb_g37_hazards_a[0]},
+    {"g37_order_a", 9u, tb_g37_order_a, sizeof tb_g37_order_a / sizeof tb_g37_order_a[0]},
+    {"g37_order_b", 11u, tb_g37_order_b, sizeof tb_g37_order_b / sizeof tb_g37_order_b[0]},
     {"g37_sticky_web", 8u, tb_g37_sticky_web, sizeof tb_g37_sticky_web / sizeof tb_g37_sticky_web[0]},
     {"g37_toxic_debris", 10u, tb_g37_toxic_debris, sizeof tb_g37_toxic_debris / sizeof tb_g37_toxic_debris[0]},
     {"g37_toxic_spikes", 10u, tb_g37_toxic_spikes, sizeof tb_g37_toxic_spikes / sizeof tb_g37_toxic_spikes[0]},
@@ -4308,7 +4329,7 @@ static const df_tb_battle tb_battles[] = {
     {"w8_sand_soak", 7u, tb_w8_sand_soak, sizeof tb_w8_sand_soak / sizeof tb_w8_sand_soak[0]},
 };
 
-/* 3012 stops: 139 of an ended battle; decided by the count 826,
- * the HP percentage 989, the total HP 1006, a tie 52;
- * winners: side 0 1507, side 1 1453, tie 52 */
+/* 3027 stops: 139 of an ended battle; decided by the count 826,
+ * the HP percentage 995, the total HP 1015, a tie 52;
+ * winners: side 0 1513, side 1 1462, tie 52 */
 #endif

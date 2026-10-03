@@ -1735,14 +1735,15 @@ static duoforge_status dfi_try_status(dfi_run *r, uint32_t flat, uint32_t status
  * kind). Heavy-Duty Boots are Past in the format, so no holder skips them.
  *
  * Their SwitchIn handlers sort by priority, speed, sub-order and then by effectOrder, the order in which the conditions were
- * created (sim/battle.ts:994-1000: "they should activate in the order they were created"). The tail keeps the layers and not
- * that order, so the engine keeps the hazards of a side in one fixed order, dfi_hazard_order, which is the creation order
- * in every state it can reach: a hazard is added only when every hazard already on the side comes before it in that order,
- * otherwise the move is E_UNSUPPORTED (the order of the two would decide the order of their lines). A hazard that
- * a Poison type absorbed (Toxic Spikes) and a later one are a new creation, so the same rule applies. A state decoded
- * from an artifact is read as having been created in that order. */
-static const uint8_t dfi_hazard_order[4] = {DUOFORGE_SIDE_STEALTH_ROCK, DUOFORGE_SIDE_SPIKES, DUOFORGE_SIDE_TOXIC_SPIKES,
-                                            DUOFORGE_SIDE_STICKY_WEB};
+ * created (sim/battle.ts:994-1000: "they should activate in the order they were created"). The tail's side field hazard_order
+ * (rev 4) keeps that order: a new kind (layers 0 to 1) takes the next slot, a further layer of Spikes or Toxic Spikes keeps
+ * its slot (onSideRestart does not make a new state), an ended kind (Toxic Spikes absorbed) leaves and the later ones move
+ * down, a kind that is put up again goes last. The kind codes DFI_HAZARD_* are the DUOFORGE_SIDE_* values minus 5. */
+#define DFI_HAZARD_OF_SIDE(kind) ((kind) - DUOFORGE_SIDE_STEALTH_ROCK)
+_Static_assert(DUOFORGE_SIDE_STEALTH_ROCK + DFI_HAZARD_STEALTH_ROCK == 5u && DUOFORGE_SIDE_SPIKES - DUOFORGE_SIDE_STEALTH_ROCK == DFI_HAZARD_SPIKES &&
+                   DUOFORGE_SIDE_TOXIC_SPIKES - DUOFORGE_SIDE_STEALTH_ROCK == DFI_HAZARD_TOXIC_SPIKES &&
+                   DUOFORGE_SIDE_STICKY_WEB - DUOFORGE_SIDE_STEALTH_ROCK == DFI_HAZARD_STICKY_WEB,
+               "the hazard kinds of the tail's order are the side values minus the first");
 
 static uint8_t *dfi_hazard_layers(struct duoforge_battle *b, uint32_t side, uint32_t kind)
 {
@@ -1760,6 +1761,31 @@ static bool dfi_side_has_hazard(const struct duoforge_battle *b, uint32_t side)
     return ts->stealth_rock != 0u || ts->spikes != 0u || ts->toxic_spikes != 0u || ts->sticky_web != 0u;
 }
 
+/* The number of hazard kinds that are up on the side. */
+static uint32_t dfi_hazard_count(const struct duoforge_battle *b, uint32_t side)
+{
+    const dfi_tail_side *ts = &b->tail.sides[side];
+    return (ts->stealth_rock != 0u ? 1u : 0u) + (ts->spikes != 0u ? 1u : 0u) + (ts->toxic_spikes != 0u ? 1u : 0u) +
+           (ts->sticky_web != 0u ? 1u : 0u);
+}
+
+/* The hazard that an ended condition leaves: its slot goes and the later ones move down (the layers are cleared by the caller). */
+static void dfi_hazard_remove(struct duoforge_battle *b, uint32_t side, uint32_t kind)
+{
+    dfi_tail_side *ts = &b->tail.sides[side];
+    const uint32_t n = dfi_hazard_count(b, side);
+    uint32_t order = 0u;
+    uint32_t put = 0u;
+    for (uint32_t i = 0u; i < n; ++i) {
+        const uint32_t slot = ((uint32_t)ts->hazard_order >> (2u * i)) & 3u;
+        if (slot != DFI_HAZARD_OF_SIDE(kind)) {
+            order |= slot << (2u * put);
+            put += 1u;
+        }
+    }
+    ts->hazard_order = (uint8_t)order; /* wide-operands-reviewed: 4 slots of 2 bits */
+}
+
 /* side.addSideCondition of a hazard (sim/side.ts:413-443): *added is false when the condition is at its last layer (Stealth
  * Rock and Sticky Web have no onSideRestart: addSideCondition returns false; Spikes stop at 3 layers and Toxic Spikes at 2) and
  * the caller shows what a failure shows. A new layer shows -sidestart again (SIDE_START, amount the hazard). */
@@ -1773,14 +1799,10 @@ static duoforge_status dfi_add_hazard(dfi_run *r, uint32_t side, uint32_t kind, 
         return DUOFORGE_OK;
     }
     if (*layers == 0u) {
-        bool after = false;
-        for (uint32_t i = 0u; i < 4u; ++i) {
-            if (dfi_hazard_order[i] == kind) {
-                after = true;
-            } else if (after && *dfi_hazard_layers(r->b, side, dfi_hazard_order[i]) != 0u) {
-                return DUOFORGE_E_UNSUPPORTED; /* a hazard that the game's order puts after this one is already there */
-            }
-        }
+        /* a new condition has the newest effectOrder: the next slot of the creation order */
+        dfi_tail_side *ts = &r->b->tail.sides[side];
+        const uint32_t n = dfi_hazard_count(r->b, side);
+        ts->hazard_order = (uint8_t)((uint32_t)ts->hazard_order | (DFI_HAZARD_OF_SIDE(kind) << (2u * n))); /* wide-operands-reviewed: n <= 3 */
     }
     *layers = (uint8_t)((uint32_t)*layers + 1u); /* wide-operands-reviewed: <= 3 */
     duoforge_event e = dfi_event_make(DUOFORGE_EVENT_SIDE_START, DUOFORGE_NO_POSITION);
@@ -1803,10 +1825,12 @@ static duoforge_status dfi_hazards_enter(dfi_run *r, uint32_t flat)
     const uint32_t source = (1u - side) * 2u;
     const dfi_member *m = dfi_at(b, flat);
     dfi_tail_side *ts = &b->tail.sides[side];
-    for (uint32_t i = 0u; i < 4u; ++i) {
-        const uint32_t kind = dfi_hazard_order[i];
+    const uint32_t order = ts->hazard_order; /* the handlers are collected before the first runs */
+    const uint32_t n = dfi_hazard_count(b, side);
+    for (uint32_t i = 0u; i < n; ++i) {
+        const uint32_t kind = DUOFORGE_SIDE_STEALTH_ROCK + ((order >> (2u * i)) & 3u);
         if (*dfi_hazard_layers(b, side, kind) == 0u) {
-            continue;
+            continue; /* removed by an earlier handler */
         }
         duoforge_status st = DUOFORGE_OK;
         if (kind == DUOFORGE_SIDE_STEALTH_ROCK) {
@@ -1827,6 +1851,7 @@ static duoforge_status dfi_hazards_enter(dfi_run *r, uint32_t flat)
             if (dfi_grounded(b, m)) {
                 if (dfi_has_type(b, m, DFI_TYPE_POISON)) {
                     /* -sideend|side|move: Toxic Spikes|[of] the Pokemon, and the condition is gone */
+                    dfi_hazard_remove(b, side, kind);
                     ts->toxic_spikes = 0u;
                     duoforge_event e = dfi_event_make(DUOFORGE_EVENT_SIDE_END, DUOFORGE_NO_POSITION);
                     e.detail = (uint8_t)side;

@@ -94,53 +94,73 @@ static const df_conf_battle *find(const char *name)
     return NULL;
 }
 
-/* The hazards of each side after each step: stealth_rock, spikes, toxic_spikes and sticky_web of side 0, then of side 1. */
+/* The hazards of each side after each step: stealth_rock, spikes, toxic_spikes and sticky_web of side 0, then of side 1, then the creation order (hazard_order) of side 0 and of side 1. */
 static const struct {
     const char *battle;
     uint32_t step;
-    uint32_t layers[8];
+    uint32_t layers[10];
 } hazard_rows[] = {
-    {"g37_hazards_a", 0u, {0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u}},
-    {"g37_hazards_a", 1u, {0u, 0u, 0u, 0u, 1u, 0u, 0u, 0u}},
-    {"g37_hazards_a", 2u, {0u, 0u, 0u, 0u, 1u, 1u, 0u, 0u}},
-    {"g37_hazards_a", 3u, {0u, 0u, 0u, 0u, 1u, 2u, 1u, 0u}},
-    {"g37_hazards_a", 4u, {0u, 0u, 0u, 0u, 1u, 3u, 2u, 0u}},
-    {"g37_hazards_a", 5u, {0u, 0u, 0u, 0u, 1u, 3u, 2u, 1u}},
-    {"g37_hazards_a", 6u, {0u, 0u, 0u, 0u, 1u, 3u, 2u, 1u}},
-    {"g37_hazards_a", 7u, {0u, 0u, 0u, 0u, 1u, 3u, 2u, 1u}},
-    {"g37_hazards_a", 8u, {0u, 0u, 0u, 0u, 1u, 3u, 2u, 1u}},
-    {"g37_hazards_a", 9u, {0u, 0u, 0u, 0u, 1u, 3u, 2u, 1u}},
-    {"g37_sticky_web", 0u, {0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u}},
-    {"g37_sticky_web", 1u, {0u, 0u, 0u, 0u, 0u, 0u, 0u, 1u}},
-    {"g37_sticky_web", 2u, {0u, 0u, 0u, 0u, 0u, 0u, 0u, 1u}},
-    {"g37_sticky_web", 3u, {0u, 0u, 0u, 0u, 0u, 0u, 0u, 1u}},
-    {"g37_sticky_web", 4u, {0u, 0u, 0u, 0u, 0u, 0u, 0u, 1u}},
-    {"g37_sticky_web", 5u, {0u, 0u, 0u, 0u, 0u, 0u, 0u, 1u}},
-    {"g37_sticky_web", 6u, {0u, 0u, 0u, 0u, 0u, 0u, 0u, 1u}},
-    {"g37_sticky_web", 7u, {0u, 0u, 0u, 0u, 0u, 0u, 0u, 1u}},
-    {"g37_toxic_debris", 0u, {0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u}},
-    {"g37_toxic_debris", 1u, {1u, 0u, 0u, 0u, 0u, 0u, 0u, 0u}},
-    {"g37_toxic_debris", 2u, {1u, 0u, 1u, 0u, 0u, 0u, 0u, 0u}},
-    {"g37_toxic_debris", 3u, {1u, 0u, 2u, 0u, 0u, 0u, 0u, 0u}},
-    {"g37_toxic_debris", 4u, {1u, 0u, 2u, 0u, 0u, 0u, 0u, 0u}},
-    {"g37_toxic_debris", 5u, {1u, 0u, 2u, 0u, 0u, 0u, 0u, 0u}},
-    {"g37_toxic_debris", 6u, {1u, 0u, 2u, 0u, 0u, 0u, 0u, 0u}},
-    {"g37_toxic_debris", 7u, {1u, 0u, 0u, 0u, 0u, 0u, 0u, 0u}},
-    {"g37_toxic_debris", 8u, {1u, 0u, 1u, 0u, 0u, 0u, 0u, 0u}},
-    {"g37_toxic_debris", 9u, {1u, 0u, 2u, 0u, 0u, 0u, 0u, 0u}},
-    {"g37_toxic_spikes", 0u, {0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u}},
-    {"g37_toxic_spikes", 1u, {0u, 0u, 0u, 0u, 0u, 0u, 2u, 0u}},
-    {"g37_toxic_spikes", 2u, {0u, 0u, 0u, 0u, 0u, 0u, 2u, 0u}},
-    {"g37_toxic_spikes", 3u, {0u, 0u, 0u, 0u, 0u, 0u, 2u, 0u}},
-    {"g37_toxic_spikes", 4u, {0u, 0u, 0u, 0u, 0u, 0u, 2u, 0u}},
-    {"g37_toxic_spikes", 5u, {0u, 0u, 0u, 0u, 0u, 0u, 2u, 0u}},
-    {"g37_toxic_spikes", 6u, {0u, 0u, 0u, 0u, 0u, 0u, 2u, 0u}},
-    {"g37_toxic_spikes", 7u, {0u, 0u, 0u, 0u, 0u, 0u, 2u, 0u}},
-    {"g37_toxic_spikes", 8u, {0u, 0u, 0u, 0u, 0u, 0u, 2u, 0u}},
-    {"g37_toxic_spikes", 9u, {0u, 0u, 0u, 0u, 0u, 0u, 2u, 0u}},
+    {"g37_hazards_a", 0u, {0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u}},
+    {"g37_hazards_a", 1u, {0u, 0u, 0u, 0u, 1u, 0u, 0u, 0u, 0u, 0u}},
+    {"g37_hazards_a", 2u, {0u, 0u, 0u, 0u, 1u, 1u, 0u, 0u, 0u, 4u}},
+    {"g37_hazards_a", 3u, {0u, 0u, 0u, 0u, 1u, 2u, 1u, 0u, 0u, 36u}},
+    {"g37_hazards_a", 4u, {0u, 0u, 0u, 0u, 1u, 3u, 2u, 0u, 0u, 36u}},
+    {"g37_hazards_a", 5u, {0u, 0u, 0u, 0u, 1u, 3u, 2u, 1u, 0u, 228u}},
+    {"g37_hazards_a", 6u, {0u, 0u, 0u, 0u, 1u, 3u, 2u, 1u, 0u, 228u}},
+    {"g37_hazards_a", 7u, {0u, 0u, 0u, 0u, 1u, 3u, 2u, 1u, 0u, 228u}},
+    {"g37_hazards_a", 8u, {0u, 0u, 0u, 0u, 1u, 3u, 2u, 1u, 0u, 228u}},
+    {"g37_hazards_a", 9u, {0u, 0u, 0u, 0u, 1u, 3u, 2u, 1u, 0u, 228u}},
+    {"g37_order_a", 0u, {0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u}},
+    {"g37_order_a", 1u, {0u, 0u, 0u, 0u, 0u, 1u, 0u, 0u, 0u, 1u}},
+    {"g37_order_a", 2u, {0u, 0u, 0u, 0u, 1u, 1u, 0u, 0u, 0u, 1u}},
+    {"g37_order_a", 3u, {0u, 0u, 0u, 0u, 1u, 1u, 1u, 0u, 0u, 33u}},
+    {"g37_order_a", 4u, {0u, 0u, 0u, 0u, 1u, 1u, 2u, 0u, 0u, 33u}},
+    {"g37_order_a", 5u, {0u, 0u, 0u, 0u, 1u, 1u, 2u, 1u, 0u, 225u}},
+    {"g37_order_a", 6u, {0u, 0u, 0u, 0u, 1u, 1u, 2u, 1u, 0u, 225u}},
+    {"g37_order_a", 7u, {0u, 0u, 0u, 0u, 1u, 1u, 2u, 1u, 0u, 225u}},
+    {"g37_order_a", 8u, {0u, 0u, 0u, 0u, 1u, 1u, 2u, 1u, 0u, 225u}},
+    {"g37_order_b", 0u, {0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u}},
+    {"g37_order_b", 1u, {0u, 0u, 0u, 0u, 0u, 0u, 2u, 0u, 0u, 2u}},
+    {"g37_order_b", 2u, {0u, 0u, 0u, 0u, 1u, 0u, 2u, 0u, 0u, 2u}},
+    {"g37_order_b", 3u, {0u, 0u, 0u, 0u, 1u, 1u, 2u, 0u, 0u, 18u}},
+    {"g37_order_b", 4u, {0u, 0u, 0u, 0u, 1u, 1u, 2u, 0u, 0u, 18u}},
+    {"g37_order_b", 5u, {0u, 0u, 0u, 0u, 1u, 1u, 0u, 0u, 0u, 4u}},
+    {"g37_order_b", 6u, {0u, 0u, 0u, 0u, 1u, 1u, 1u, 0u, 0u, 36u}},
+    {"g37_order_b", 7u, {0u, 0u, 0u, 0u, 1u, 1u, 1u, 0u, 0u, 36u}},
+    {"g37_order_b", 8u, {0u, 0u, 0u, 0u, 1u, 1u, 1u, 0u, 0u, 36u}},
+    {"g37_order_b", 9u, {0u, 0u, 0u, 0u, 1u, 1u, 1u, 0u, 0u, 36u}},
+    {"g37_order_b", 10u, {0u, 0u, 0u, 0u, 1u, 1u, 1u, 1u, 0u, 228u}},
+    {"g37_sticky_web", 0u, {0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u}},
+    {"g37_sticky_web", 1u, {0u, 0u, 0u, 0u, 0u, 0u, 0u, 1u, 0u, 3u}},
+    {"g37_sticky_web", 2u, {0u, 0u, 0u, 0u, 0u, 0u, 0u, 1u, 0u, 3u}},
+    {"g37_sticky_web", 3u, {0u, 0u, 0u, 0u, 0u, 0u, 0u, 1u, 0u, 3u}},
+    {"g37_sticky_web", 4u, {0u, 0u, 0u, 0u, 0u, 0u, 0u, 1u, 0u, 3u}},
+    {"g37_sticky_web", 5u, {0u, 0u, 0u, 0u, 0u, 0u, 0u, 1u, 0u, 3u}},
+    {"g37_sticky_web", 6u, {0u, 0u, 0u, 0u, 0u, 0u, 0u, 1u, 0u, 3u}},
+    {"g37_sticky_web", 7u, {0u, 0u, 0u, 0u, 0u, 0u, 0u, 1u, 0u, 3u}},
+    {"g37_toxic_debris", 0u, {0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u}},
+    {"g37_toxic_debris", 1u, {1u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u}},
+    {"g37_toxic_debris", 2u, {1u, 0u, 1u, 0u, 0u, 0u, 0u, 0u, 8u, 0u}},
+    {"g37_toxic_debris", 3u, {1u, 0u, 2u, 0u, 0u, 0u, 0u, 0u, 8u, 0u}},
+    {"g37_toxic_debris", 4u, {1u, 0u, 2u, 0u, 0u, 0u, 0u, 0u, 8u, 0u}},
+    {"g37_toxic_debris", 5u, {1u, 0u, 2u, 0u, 0u, 0u, 0u, 0u, 8u, 0u}},
+    {"g37_toxic_debris", 6u, {1u, 0u, 2u, 0u, 0u, 0u, 0u, 0u, 8u, 0u}},
+    {"g37_toxic_debris", 7u, {1u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u}},
+    {"g37_toxic_debris", 8u, {1u, 0u, 1u, 0u, 0u, 0u, 0u, 0u, 8u, 0u}},
+    {"g37_toxic_debris", 9u, {1u, 0u, 2u, 0u, 0u, 0u, 0u, 0u, 8u, 0u}},
+    {"g37_toxic_spikes", 0u, {0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u}},
+    {"g37_toxic_spikes", 1u, {0u, 0u, 0u, 0u, 0u, 0u, 2u, 0u, 0u, 2u}},
+    {"g37_toxic_spikes", 2u, {0u, 0u, 0u, 0u, 0u, 0u, 2u, 0u, 0u, 2u}},
+    {"g37_toxic_spikes", 3u, {0u, 0u, 0u, 0u, 0u, 0u, 2u, 0u, 0u, 2u}},
+    {"g37_toxic_spikes", 4u, {0u, 0u, 0u, 0u, 0u, 0u, 2u, 0u, 0u, 2u}},
+    {"g37_toxic_spikes", 5u, {0u, 0u, 0u, 0u, 0u, 0u, 2u, 0u, 0u, 2u}},
+    {"g37_toxic_spikes", 6u, {0u, 0u, 0u, 0u, 0u, 0u, 2u, 0u, 0u, 2u}},
+    {"g37_toxic_spikes", 7u, {0u, 0u, 0u, 0u, 0u, 0u, 2u, 0u, 0u, 2u}},
+    {"g37_toxic_spikes", 8u, {0u, 0u, 0u, 0u, 0u, 0u, 2u, 0u, 0u, 2u}},
+    {"g37_toxic_spikes", 9u, {0u, 0u, 0u, 0u, 0u, 0u, 2u, 0u, 0u, 2u}},
 };
 
-static const char *const names[] = {"g37_hazards_a", "g37_sticky_web", "g37_toxic_debris", "g37_toxic_spikes"};
+static const char *const names[] = {"g37_hazards_a", "g37_order_a", "g37_order_b", "g37_sticky_web", "g37_toxic_debris", "g37_toxic_spikes"};
 
 int main(void)
 {
@@ -188,10 +208,10 @@ int main(void)
                                   DUOFORGE_OK)) {
                 break;
             }
-            uint32_t want[8] = {0xFFu, 0u, 0u, 0u, 0u, 0u, 0u, 0u};
+            uint32_t want[10] = {0xFFu, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u};
             for (size_t r = 0u; r < sizeof hazard_rows / sizeof hazard_rows[0]; ++r) {
                 if (strcmp(hazard_rows[r].battle, names[n]) == 0 && hazard_rows[r].step == si) {
-                    for (uint32_t k = 0u; k < 8u; ++k) {
+                    for (uint32_t k = 0u; k < 10u; ++k) {
                         want[k] = hazard_rows[r].layers[k];
                     }
                 }
@@ -205,6 +225,7 @@ int main(void)
                 DF_CHECK_EQ_U64(&t, b->tail.sides[s].spikes, want[s * 4u + 1u]);
                 DF_CHECK_EQ_U64(&t, b->tail.sides[s].toxic_spikes, want[s * 4u + 2u]);
                 DF_CHECK_EQ_U64(&t, b->tail.sides[s].sticky_web, want[s * 4u + 3u]);
+                DF_CHECK_EQ_U64(&t, b->tail.sides[s].hazard_order, want[8u + s]); /* the reference's creation order */
                 for (uint32_t k = 0u; k < 4u; ++k) {
                     kinds_seen[k] += want[s * 4u + k] != 0u ? 1u : 0u;
                 }
