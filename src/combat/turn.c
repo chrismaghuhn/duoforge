@@ -2267,8 +2267,8 @@ static duoforge_status dfi_rain_dish(dfi_run *r)
 }
 
 /* eachEvent('Weather') under sun (step G39, the onWeather of Solar Power, data/abilities.ts:4396-4413): every active Pokemon
- * that has not fainted and holds Solar Power takes baseMaxhp / 8 (at least 1) as -damage [from] ability: Solar Power (no
- * [of]: the source is the holder itself), in eachEvent's order; two holders at one Speed draw the order as Rain Dish's do
+ * that has not fainted and holds Solar Power takes baseMaxhp / 8 (at least 1) as -damage [from] ability: Solar Power [of] the holder
+ * itself (damage(..., target, target): the source is printed, the pin's line has it), in eachEvent's order; two holders at one Speed draw the order as Rain Dish's do
  * (dfi_rain_dish). Desolate Land is not a weather of the state. */
 static duoforge_status dfi_solar_power(dfi_run *r)
 {
@@ -2295,8 +2295,7 @@ static duoforge_status dfi_solar_power(dfi_run *r)
             continue;
         }
         const uint32_t damage = (uint32_t)m->hp_max / 8u;
-        st = dfi_deal(r, flat, damage == 0u ? 1u : damage, DUOFORGE_CAUSE_ABILITY, 1u + DFI_ABILITY_SOLARPOWER,
-                      DUOFORGE_NO_POSITION);
+        st = dfi_deal(r, flat, damage == 0u ? 1u : damage, DUOFORGE_CAUSE_ABILITY, 1u + DFI_ABILITY_SOLARPOWER, flat);
         if (st != DUOFORGE_OK) {
             return st;
         }
@@ -4472,14 +4471,17 @@ static duoforge_status dfi_run_switch(dfi_run *r, const dfi_queue_record *q)
      * the abilities' End events and clearVolatile): Regenerator (step G39, data/abilities.ts:3833-3841 with the Champions
      * override, data/mods/champions/abilities.ts:63-70) heals the holder by floor(baseMaxhp / 3), Pokemon.heal: no TryHeal
      * event (Heal Block does not stop it) and nothing at full HP. The Champions line is `-heal|holder|hp|[from] ability:
-     * Regenerator|[silent]`, which the converter does not show (NOT_EVENTS and the [silent] rule of trace_to_c.py), so the engine emits no event either: the new
-     * HP is in the member's state (the owner's own view) and the opponent sees it at the member's next switch-in. */
+     * Regenerator|[silent]`: silent only in that no client shows a message, the line is in the protocol with the holder's
+     * new HP, so the opponent's display of the member (the knowledge fold of the events) follows it: the HEAL event, cause
+     * ABILITY Regenerator, before the SWITCH event (the converter keeps this one [silent] line, trace_to_c.py). */
     if (leaving != NULL && leaving->hp != 0u && dfi_ability(b, leaving, DFI_ABILITY_REGENERATOR)) {
         dfi_member *lm = dfi_at(b, side * 2u + slot);
         if (lm->hp < lm->hp_max) {
             const uint32_t healed = (uint32_t)lm->hp_max / 3u;
             const uint32_t hp = (uint32_t)lm->hp + (healed == 0u ? 1u : healed);
             lm->hp = (uint16_t)(hp > lm->hp_max ? lm->hp_max : hp); /* wide-operands-reviewed: <= hp_max */
+            dfi_emit_hp(r, dfi_ev(DUOFORGE_EVENT_HEAL, side * 2u + slot, DUOFORGE_CAUSE_ABILITY, 1u + DFI_ABILITY_REGENERATOR,
+                                  DUOFORGE_NO_POSITION));
         }
     }
     if (leaving != NULL && leaving->hp != 0u) {

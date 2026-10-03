@@ -911,7 +911,9 @@ def step_events(log, viewer, roster_of, maxhp, tables):
         if kind in NOT_EVENTS or kind.startswith('t:'):
             continue
         attrs = [x for x in parts[2:] if x.startswith('[')]
-        if '[silent]' in attrs:
+        # Regenerator's heal (step G39, the Champions mod) is the one [silent] line that shows: no client prints a message, but the line
+        # carries the holder's new HP, which the opponent's display of the member follows.
+        if '[silent]' in attrs and not (kind == '-heal' and '[from] ability: Regenerator' in attrs):
             continue
         args = [x for x in parts[2:] if not x.startswith('[')]
         e = None
