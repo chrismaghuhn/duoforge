@@ -139,6 +139,7 @@ jobs:
           fi
           grep -c -E 'Test +#[0-9]+: duoforge\.reference\.trace\.' ctest.log
           grep -E 'Test +#[0-9]+: duoforge\.python\.learn ' ctest.log
+          grep -E 'Test +#[0-9]+: duoforge\.python\.learn_v2 ' ctest.log
 
   linux-sanitizers:
     name: Linux / gcc / ASan+UBSan
@@ -293,9 +294,9 @@ jobs:
         run: cmake --build build --parallel
       - name: Test
         run: ctest --test-dir build --output-on-failure --no-tests=error --timeout 120 --parallel 4 2>&1 | tee ctest.log
-      - name: No Python or reference test skipped (the JAX test is Linux-only)
+      - name: No Python or reference test skipped (the JAX tests are Linux-only)
         run: |
-          if grep -E '\*\*\*Skipped' ctest.log | grep -E 'duoforge\.(python|reference)\.' | grep -v 'duoforge\.python\.learn '; then
+          if grep -E '\*\*\*Skipped' ctest.log | grep -E 'duoforge\.(python|reference)\.' | grep -v -E 'duoforge\.python\.learn(_v2)? '; then
             echo "Python or reference tests were skipped"
             exit 1
           fi

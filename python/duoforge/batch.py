@@ -64,7 +64,8 @@ class Batch:
         self.context = context
         self.envs = int(setups.shape[0])
         self.seed = uint(seed, 64, "seed")
-        self.setups = setups.copy()  # what the environments run, for records of this batch
+        self._setups = setups.copy()  # what the environments run, for records of this batch
+        self.setups = self._setups.view()  # read-only to callers; reset_setups updates it
         self.setups.flags.writeable = False
         config = np.zeros((), dtype=_layout.BATCH_CONFIG)
         config["env_count"] = self.envs
@@ -154,6 +155,27 @@ class Batch:
         """Resets one environment to `episode` (the seed derivation's battle)."""
         self._check(self._lib.duoforge_batch_reset(self._live(), self._env(env), uint(episode, 32, "episode")))
 
+    def reset_setups(self, envs, episodes, setups):
+        """Resets environments envs (uint32, (K,)) to episodes (uint32, (K,))
+        with new setups (SETUP, (K,)), which become theirs; atomic per
+        environment. A refused entry raises DuoforgeError whose statuses are
+        the K per-entry statuses; the other entries are applied."""
+        if not isinstance(envs, np.ndarray) or envs.ndim != 1:
+            raise TypeError("envs must be a one-dimensional ndarray of uint32")
+        k = envs.shape[0]
+        _require(envs, np.dtype(np.uint32), (k,), "envs")
+        _require(episodes, np.dtype(np.uint32), (k,), "episodes")
+        _require(setups, _layout.SETUP, (k,), "setups")
+        statuses = np.zeros(k, dtype=np.uint32)
+        st = self._lib.duoforge_batch_reset_setups(self._live(), k, ptr(envs), ptr(episodes), ptr(setups),
+                                                   ptr(statuses))
+        if st != 0 and not statuses.any():
+            statuses[:] = st  # refused before any change: a duplicate or out-of-range environment
+        applied = statuses == 0
+        self._setups[envs[applied]] = setups[applied]
+        if st != 0:
+            raise DuoforgeError(status_name(st), statuses)
+
     def reset_terminal(self):
         """Resets every TERMINAL environment to its next episode."""
         self._check(self._lib.duoforge_batch_reset_terminal(self._live()))
@@ -175,6 +197,15 @@ class Batch:
         """DUOFORGE_RESULT_* of the environment's battle, 0 before TERMINAL."""
         out = ctypes.c_uint32()
         self._check(self._lib.duoforge_battle_result(self.context.handle, self._battle(env), ctypes.byref(out)))
+        return out.value
+
+    def tiebreak(self, env):
+        """DUOFORGE_RESULT_* the pinned reference's tiebreak gives the
+        environment's battle as it stands (duoforge_battle_tiebreak); its own
+        result at TERMINAL. DuoforgeError E_UNSUPPORTED where the reference's
+        bench order would decide."""
+        out = ctypes.c_uint32()
+        self._check(self._lib.duoforge_battle_tiebreak(self.context.handle, self._battle(env), ctypes.byref(out)))
         return out.value
 
     def digest(self, env):
