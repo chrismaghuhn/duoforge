@@ -709,11 +709,11 @@ function checkG10Moves(dex) {
 }
 
 // The callbacks that change the priority of a move or the Speed of a Pokemon, on the entry or on its own condition
-// (Unburden's volatile). The engine implements Prankster (+1 for a status move), Unburden (x2 Speed without an item)
+// (Unburden's volatile). The engine implements Prankster (+1 for a status move), Gale Wings (+1 for a Flying move at full HP, step G34), Unburden (x2 Speed without an item)
 // and Choice Scarf (x1.5 Speed); every other modelled row has none.
 const ORDER_CALLBACKS = ['onModifyPriority', 'onFractionalPriority', 'onModifySpe'];
 const ENGINE_ORDER = {
-    ability: {prankster: ['onModifyPriority'], unburden: ['condition.onModifySpe'], sandrush: ['onModifySpe'],
+    ability: {prankster: ['onModifyPriority'], galewings: ['onModifyPriority'], unburden: ['condition.onModifySpe'], sandrush: ['onModifySpe'],
         swiftswim: ['onModifySpe'], slushrush: ['onModifySpe'], chlorophyll: ['onModifySpe']},
     item: {choicescarf: ['onModifySpe']},
 };
@@ -912,10 +912,11 @@ function checkFormes(dex, validator, rows, moves, abilities) {
 // The UNMODELED markers of gen_closure.py --pool, re-derived from the pinned data in this file's own words: the
 // special column of a move, the handler column of an item and of an ability, and the lists of unmodelled features.
 // implemented in the turn code by id (G4: Focus Sash, Rock Head; G12: Floettite, Flower Veil, Fairy Aura)
-const ENGINE_ROWS = {items: ['focussash', 'floettite', 'psychicseed', 'expertbelt'],
+const ENGINE_ROWS = {items: ['focussash', 'floettite', 'psychicseed', 'expertbelt', 'widelens'],
     abilities: ['rockhead', 'flowerveil', 'fairyaura', 'roughskin', 'poisontouch', 'thermalexchange', 'stickyhold', 'trace',
         'levitate', 'sandrush', 'swiftswim', 'slushrush', 'chlorophyll', 'innerfocus', 'liquidvoice',
-        'flamebody', 'clearbody', 'hospitality', 'overcoat']};
+        'flamebody', 'clearbody', 'hospitality', 'overcoat',
+        'compoundeyes', 'ironfist', 'sharpness', 'solidrock', 'technician', 'multiscale', 'galewings']};
 const ENGINE_TARGETS = new Set(['normal', 'any', 'adjacentAlly', 'adjacentFoe', 'self', 'allAdjacentFoes', 'allySide', 'all',
     'randomNormal', 'allAdjacent']);
 // The fields of a move that the tables model (gen_closure.py DATA_KEYS and IGNORED_KEYS), nothing else.

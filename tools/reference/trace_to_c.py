@@ -486,7 +486,11 @@ def drop_reason(d, state, after=None, log=None):
         # never reaches a conversion): checked here over every subset of the group that one hit can have (one screen at
         # most; Life Orb or Expert Belt, one item; Solid Rock or Multiscale, one ability).
         values = modify_damage_values()
-        if all(k in values for k in kinds):
+        # A hit has one handler of each kind (the attacker's item and ability, the target's berry and ability, the screen of
+        # the target's side), so a group with the same handler twice, or with two resist berries, is not a state the
+        # analysis covers: it stays refused, as before step G34.
+        berries = [g.split(':')[1] for g in group if g.split(':')[1].endswith('berry')]
+        if all(k in values for k in kinds) and len(group) == len(kinds) and len(berries) <= 1:
             if any(not modifiers_commute(sub) for sub in modifier_subsets(sorted(kinds), values)):
                 raise ConversionError('modifydamage-tie', 'trace_to_c: ModifyDamage tie with modifiers that do not commute: %s' % group,
                                       detail=tie_effects(group))
