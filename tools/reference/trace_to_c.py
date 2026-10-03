@@ -914,16 +914,24 @@ def step_events(log, viewer, roster_of, maxhp, tables):
         elif kind == '-immune':
             cause, id2, _ = ev_cause(attrs, tables)
             e = ev_tuple(EV['IMMUNE'], ev_pos(args[0]), NOPOS, cause, 0, id2)
+        elif kind == '-fail' and len(args) == 3 and args[1] == 'unboost':
+            # Inner Focus (step G22, data/abilities.ts:2157-2162): `-fail|X|unboost|atk|[from] ability: Inner Focus|[of] X`,
+            # an Intimidate drop that the ability deleted: a FAIL with the ability as its cause and the holder in `other`.
+            # Clear Body's line has no stat (the next branch); anything else is refused, never mapped.
+            cause, id2, other = ev_cause(attrs, tables)
+            if args[2] != 'atk' or cause != CAUSE['ABILITY'] or other == NOPOS:
+                raise ConversionError('fail-line', 'trace_to_c: unknown -fail %r' % line, detail=line)
+            e = ev_tuple(EV['FAIL'], ev_pos(args[0]), other, cause, 0, id2)
         elif kind == '-fail':
             # `-fail|X|heal` (a heal move at full HP) is a plain FAIL: the event has no field for the reason, which
             # for a status is the ailment the target already has.
             if len(args) > 1 and args[1] == 'unboost':
-                # Clear Body (step G30): -fail|X|unboost|[from] ability: Clear Body|[of] X is the ability's ACTIVATE event
-                # with the holder as its position and as `other` (nothing but a stat drop that an ability or a move names).
+                # Clear Body (step G30): -fail|X|unboost|[from] ability: Clear Body|[of] X is a FAIL with the ability as its cause
+                # and the holder in `other`, as Inner Focus's line above (which names the stat).
                 cause, id2, other = ev_cause(attrs, tables)
                 if cause != CAUSE['ABILITY'] or other == NOPOS:
                     raise ConversionError('fail-line', 'trace_to_c: unknown -fail unboost %r' % line, detail='unboost')
-                e = ev_tuple(EV['ACTIVATE'], ev_pos(args[0]), other, CAUSE['ABILITY'], 0, id2)
+                e = ev_tuple(EV['FAIL'], ev_pos(args[0]), other, cause, 0, id2)
             else:
                 e = ev_tuple(EV['FAIL'], ev_pos(args[0]),
                              detail=AILMENT[args[1]] if len(args) > 1 and args[1] != 'heal' else 0)
