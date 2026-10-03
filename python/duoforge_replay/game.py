@@ -117,6 +117,8 @@ def _prepass(replay_id, format_id, log, data):
         raise Skip("skip:two-games")  # a Bo3 log that holds a second game's lines: one game per row
     sheets = tuple(teams.unpack(packed[s]) for s in (0, 1))
     _check_names(sheets[0] + sheets[1], data)
+    for s in sheets[0] + sheets[1]:
+        s["species"] = data.canonical(s["species"])  # a cosmetic alias (#118) as the tables name its row
     for s in (0, 1):
         try:
             data.team(teams.to_text(sheets[s]))  # what the tracker parses: a refusal is a skip, not a SystemExit

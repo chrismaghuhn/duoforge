@@ -16,6 +16,7 @@ Team C ids as their prefix, then the rows the expansion adds), for the M11
 replay pipeline (python/duoforge_replay), whose games use every name of
 the tables.
 """
+import re
 import sys
 from pathlib import Path
 
@@ -44,6 +45,7 @@ class Data:
         import duoforge
         from duoforge import _layout, data as api
         self.kind = kind
+        self._ctx = None  # the context of the alias lookups (_context)
         self.tables = trace_to_c.load_tables(str(Path(root)), kind == "pool")
         with duoforge.Context(data_kind=_layout.CONSTANTS[_KINDS[kind]]) as context:
             self.counts = {"FORME": api.count(context, api.TABLE_SPECIES), "MOVE": api.count(context, api.TABLE_MOVE),
@@ -77,12 +79,46 @@ class Data:
         return trace_to_c.parse_team(text, self.tables)
 
     def forme(self, name):
-        """The forme id of a species name ("Charizard-Mega-Y" as well); ValueError outside the closure."""
+        """The forme id of a species name ("Charizard-Mega-Y" as well). A name the converter's tables lack is looked up
+        with the library's duoforge_data_find, which maps the POOL tables' cosmetic aliases (#118: "Vivillon-Pokeball",
+        "Sinistcha-Masterpiece") to their base row. ValueError for a name neither knows."""
         key = trace_to_c.key(name)
         forme = self.tables["FORME"].get(key) if key != "COUNT" else None  # DFI_FORME_COUNT is no forme
         if forme is None:
-            raise ValueError(f"{name!r} is not a forme of the closure")
+            forme = self._find(name)
+        if forme is None:
+            raise ValueError(f"{name!r} is not a forme of the {self.kind} tables")
         return forme
+
+    def canonical(self, name):
+        """The tables' name of the row a species name or alias finds (its Showdown id, "vivillon"): what parse_team and
+        the converter read. ValueError for a name neither knows."""
+        import duoforge
+        from duoforge import data as api
+        forme = self.forme(name)
+        if self.tables["FORME"].get(trace_to_c.key(name)) == forme:
+            return name
+        return api.name(self._context(), api.TABLE_SPECIES, forme)
+
+    def _context(self):
+        """A context of this kind, opened on the first alias lookup and kept for the next ones."""
+        if self._ctx is None:
+            import duoforge
+            from duoforge import _layout
+            self._ctx = duoforge.Context(data_kind=_layout.CONSTANTS[_KINDS[self.kind]])
+        return self._ctx
+
+    def _find(self, name):
+        """The library's row of a name (duoforge_data_find over its Showdown id), or None."""
+        from duoforge import data as api
+        from duoforge.errors import DuoforgeError
+        ident = re.sub(r"[^a-z0-9]", "", name.lower())
+        if not ident:
+            return None
+        try:
+            return api.find(self._context(), api.TABLE_SPECIES, ident)
+        except DuoforgeError:
+            return None
 
     def pp_max(self, move_id):
         return self._pp_max[move_id]

@@ -176,6 +176,59 @@ class DataTest(unittest.TestCase):
             pool.target_type(0)
 
 
+class AliasTest(unittest.TestCase):
+    """The cosmetic aliases of the POOL tables (#118) through the library's find (BC spec section 5)."""
+
+    @classmethod
+    def setUpClass(cls):
+        from duoforge_replay import prior
+        cls.pool = data.load(kind="pool")
+        cls.prior = prior.Prior({"version": 1, "pastes": 0, "skipped": {}, "levels": [{}, {}, {}, {}]})
+        cls.log = FIXTURE.read_text(encoding="utf-8").splitlines()
+
+    def run_game(self, lines_):
+        from duoforge_replay import game
+        return game.process("fixture-alias", "gen9championsvgc2026regmcbo3", chr(10).join(lines_), self.pool,
+                            self.prior, _Stats())
+
+    def with_species(self, species):
+        """The committed log with p2's Politoed (nickname kept) shown as `species`, genderless (Sinistcha), on its
+        sheet and in its details."""
+        out = []
+        for line in self.log:
+            if line.startswith("|showteam|p2|"):
+                line = line.replace("|showteam|p2|Politoed||", f"|showteam|p2|Politoed|{species}|")
+                line = line.replace("Protect|Modest||M|||50|]Farigiraf", "Protect|Modest|||||50|]Farigiraf")
+            elif line.startswith(("|poke|p2|Politoed,", "|switch|p2a: Politoed|", "|switch|p2b: Politoed|")):
+                line = line.replace("|Politoed, L50, M", f"|{species}, L50")
+            out.append(line)
+        return out
+
+    def test_alias_resolves_to_its_base(self):
+        self.assertEqual(self.pool.forme("Vivillon-Pokeball"), self.pool.forme("Vivillon"))
+        self.assertEqual(self.pool.forme("Sinistcha-Masterpiece"), self.pool.forme("Sinistcha"))
+        self.assertEqual(self.pool.forme(self.pool.canonical("Vivillon-Pokeball")), self.pool.forme("Vivillon"))
+        with self.assertRaises(ValueError):
+            self.pool.forme("Vivillon-Nonsense")
+
+    def test_unknown_alias_stays_a_name_skip(self):
+        from duoforge_replay import game
+        with self.assertRaises(game.Skip) as caught:
+            self.run_game(self.with_species("Vivillon-Nonsense"))
+        self.assertEqual(caught.exception.reason, "name:FORME Vivillon-Nonsense")
+
+    def test_alias_game_runs(self):
+        result = self.run_game(self.with_species("Sinistcha-Masterpiece"))
+        self.assertFalse([k for k in result.counters if "name:" in k or k.startswith("internal:")], result.counters)
+        self.assertGreater(result.counters["points.written"], 4)
+        # the alias in the |switch| details folds as its base forme: no stop the plain log does not have
+        stops = lambda c: {k: v for k, v in c.items() if k.startswith("perspectives.stopped.")}
+        self.assertEqual(stops(result.counters), stops(self.run_game(self.log).counters))
+        sinistcha = self.pool.forme("Sinistcha")
+        species = {int(m["species_id"]) for r in result.rows for m in r.observation["sides"][1]["members"]}
+        self.assertIn(sinistcha, species)
+
+
 class _View:
     """What lines.check reads of a tracker: the data and, per protocol ident, the sheet and current ability."""
 
