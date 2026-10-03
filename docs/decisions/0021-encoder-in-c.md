@@ -19,7 +19,7 @@ Status: the owner approved the design (2026-10-03: "ja kannst" to the draft; "k√
    `Batch.query_encoded` and `selfplay.Observation` use the fused query. The live tracker keeps the reference for now.
 2. **Byte equality.**
    - For every version (1 to 4) and every view-extension mask, the C encoder gives the bytes of `features.encode_batch` with `as_encoder` and `slots_as_encoder`.
-   - It refuses exactly the rows the reference refuses: `E_UNSUPPORTED` for a value the version or mask cannot show, `E_INVALID_ARGUMENT` for malformed input, `E_NULL_ARGUMENT` for a missing pointer or missing records. A refused row is all zero.
+   - It refuses exactly the rows the reference refuses, with one intended difference: a mask with a bit outside the version's features is refused up front (`Observation` refuses it too), where `encode_batch` with `as_encoder` would accept it. Refusal classes: `E_UNSUPPORTED` for a value the version or mask cannot show, `E_INVALID_ARGUMENT` for malformed input, `E_NULL_ARGUMENT` for a missing pointer or missing records. A refused row is all zero.
    - The checks run in the reference's order.
    - Any difference is a bug on one side, and the two sides change together.
 3. **Encoder refusals are not engine refusals.**

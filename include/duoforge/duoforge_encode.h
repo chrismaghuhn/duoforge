@@ -37,10 +37,6 @@
 
 #ifdef __cplusplus
 extern "C" {
-#ifdef __cplusplus
-}
-#endif
-
 #endif
 
 #define DUOFORGE_ENCODER_MIN 1u
@@ -66,7 +62,10 @@ duoforge_status duoforge_encode(uint32_t version, uint64_t ext_supported, const 
    duoforge_encode into row 2 * env + p of obs, slots and pair_mask.
    statuses[env] (not NULL) receives the environment's outcome, the encoder's
    refusals included; they are never a battle's. The call returns the status
-   of the lowest failing environment. The battles are not changed. */
+   of the lowest failing environment. The battles are not changed. A failing
+   environment's rows are all zero, and once player 0 fails, player 1's
+   request, observation and domain are not refreshed either; statuses[env] is
+   the query's or the encoder's code (query again to tell them apart). */
 duoforge_status duoforge_batch_query_encoded(duoforge_batch *batch, uint32_t version, uint64_t ext_supported,
                                              duoforge_request *requests, duoforge_observation *observations,
                                              duoforge_factored_domain *domains, float *obs, float *slots,

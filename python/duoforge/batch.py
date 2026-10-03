@@ -224,7 +224,7 @@ class Batch:
             out = np.zeros((self.envs, 2), dtype=_layout.OBSERVATION_EXT)
         else:
             _require(out, _layout.OBSERVATION_EXT, (self.envs, 2), "out")
-        self._check(self._lib.duoforge_batch_observe_ext(self._live(), ptr(out)), per_env=True)
+        self._check(self._lib.duoforge_batch_observe_ext(self._live(), ptr(out)))  # its statuses are not the step's
         return out
 
     def query_encoded(self, version, ext_supported=0):
@@ -241,6 +241,7 @@ class Batch:
         query_factored() does."""
         from . import features
         size = features.obs_size(version)  # ValueError for an unknown version
+        ext_supported = features._mask_of(ext_supported)  # as the reference: a bool or another type is no mask
         key = ("encoded", int(version))
         if key not in self._buffers:
             self._buffers[key] = (np.zeros((self.envs, 2, size), dtype=np.float32),

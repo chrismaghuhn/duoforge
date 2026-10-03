@@ -156,6 +156,32 @@ int main(void)
         DF_CHECK(&t, duoforge_encode(2u, 0u, &bad, d, NULL, row_obs, row_slots, row_pairs) == DUOFORGE_E_UNSUPPORTED);
         DF_CHECK(&t, duoforge_encode(4u, UINT64_C(1) << DUOFORGE_VIEWEXT_FEATURE_WEATHER_SAND, &bad, d, NULL, row_obs,
                                      row_slots, row_pairs) == DUOFORGE_OK);
+        /* two faults: the reference's check order decides the class (records before the global one-hots,
+           the global one-hots before the sides, locations before statuses) */
+        static duoforge_observation_ext x;
+        memset(&x, 0, sizeof x);
+        x.revision = DUOFORGE_OBSERVATION_EXT_REVISION;
+        x.player = ob->player;
+        x.epoch = ob->epoch;
+        x.supported = 0u; /* lacks the mask's bit: unsupported */
+        bad = *ob;
+        bad.weather = 9u; /* malformed, but checked after the records */
+        DF_CHECK(&t, duoforge_encode(4u, record_bit, &bad, d, &x, row_obs, row_slots, row_pairs) ==
+                         DUOFORGE_E_UNSUPPORTED);
+        x.supported = record_bit;
+        x.field.gravity_turns = 6u; /* out of range: malformed, before the weather's unsupported Sand */
+        bad.weather = DUOFORGE_WEATHER_SAND;
+        DF_CHECK(&t, duoforge_encode(4u, record_bit, &bad, d, &x, row_obs, row_slots, row_pairs) ==
+                         DUOFORGE_E_INVALID_ARGUMENT);
+        bad = *ob;
+        bad.weather = DUOFORGE_WEATHER_SAND;       /* unsupported, in the global part */
+        bad.sides[0].members[0].location = 9u;     /* malformed, in a side: later */
+        DF_CHECK(&t, duoforge_encode(4u, 0u, &bad, d, NULL, row_obs, row_slots, row_pairs) == DUOFORGE_E_UNSUPPORTED);
+        bad = *ob;
+        bad.sides[bad.player].members[1].status = DUOFORGE_AILMENT_TOX; /* unsupported, statuses after locations */
+        bad.sides[bad.player].members[5].location = 9u;                 /* malformed */
+        DF_CHECK(&t, duoforge_encode(4u, 0u, &bad, d, NULL, row_obs, row_slots, row_pairs) ==
+                         DUOFORGE_E_INVALID_ARGUMENT);
         DF_CHECK(&t, duoforge_batch_query_encoded(b, 0u, 0u, NULL, NULL, NULL, one.obs, one.slots, one.pairs,
                                                   one.statuses) == DUOFORGE_E_INVALID_ARGUMENT);
         DF_CHECK(&t, duoforge_batch_query_encoded(b, 4u, 0u, NULL, NULL, NULL, NULL, one.slots, one.pairs,

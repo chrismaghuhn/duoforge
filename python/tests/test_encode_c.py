@@ -21,7 +21,7 @@ from duoforge import _layout, features, teams
 from duoforge._lib import load_library, ptr
 from duoforge_learn.selfplay import SelfPlay
 
-from test_features_ext import _records
+from python.tests.test_features_ext import _records
 
 C = _layout.CONSTANTS
 SEED = 0x2026100300000400
