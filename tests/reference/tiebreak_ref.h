@@ -2604,10 +2604,10 @@ static const df_tb_stop tb_g39_solar_power[] = {
 static const df_tb_stop tb_g39_static_limber[] = {
     {0u, 0u, 1u, 3u, {6u, 6u}, {1159u, 1103u}, {0x4059000000000000ull, 0x4059000000000000ull}},
     {1u, 0u, 1u, 3u, {4u, 4u}, {788u, 743u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
-    {2u, 0u, 2u, 2u, {4u, 4u}, {718u, 682u}, {0x404e5f4bcdc0c20full, 0x404e60be82fa0be8ull}},
-    {3u, 0u, 2u, 2u, {4u, 4u}, {653u, 652u}, {0x404b9f6786b6cb95ull, 0x404d23e999c9e35bull}},
-    {5u, 0u, 2u, 2u, {4u, 4u}, {618u, 597u}, {0x404a2462c2ec81f3ull, 0x404aab7a279270a9ull}},
-    {6u, 0u, 1u, 2u, {4u, 4u}, {602u, 567u}, {0x4049771ec130f293ull, 0x4049376257332f2dull}},
+    {2u, 0u, 2u, 2u, {4u, 4u}, {710u, 682u}, {0x404e08a9cce2fa5full, 0x404e60be82fa0be8ull}},
+    {3u, 0u, 2u, 2u, {4u, 4u}, {645u, 652u}, {0x404b48c585d903e5ull, 0x404d23e999c9e35bull}},
+    {5u, 0u, 2u, 2u, {4u, 4u}, {610u, 597u}, {0x4049cdc0c20eba43ull, 0x404aab7a279270a9ull}},
+    {6u, 0u, 2u, 2u, {4u, 4u}, {594u, 567u}, {0x4049207cc0532ae1ull, 0x4049376257332f2dull}},
 };
 static const df_tb_stop tb_g39_sturdy[] = {
     {0u, 0u, 1u, 3u, {6u, 6u}, {1130u, 1070u}, {0x4059000000000000ull, 0x4059000000000000ull}},
@@ -4357,5 +4357,5 @@ static const df_tb_battle tb_battles[] = {
 
 /* 3041 stops: 139 of an ended battle; decided by the count 831,
  * the HP percentage 1006, the total HP 1013, a tie 52;
- * winners: side 0 1534, side 1 1455, tie 52 */
+ * winners: side 0 1533, side 1 1456, tie 52 */
 #endif

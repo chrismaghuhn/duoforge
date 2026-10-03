@@ -287,7 +287,7 @@
        ],
        "pp": [
         12,
-        8
+        16
        ],
        "volatiles": [],
        "locked": null
@@ -705,7 +705,7 @@
         ],
         "pp": [
          12,
-         8
+         16
         ],
         "volatiles": [],
         "locked": null
@@ -772,7 +772,7 @@
   {
    "input": {
     "p1": "move 1 1, move 1 -1",
-    "p2": "move 1 1, move 1 1"
+    "p2": "move 1 1, move 2 1"
    },
    "draws": [
     {
@@ -921,11 +921,11 @@
      "value": 0
     },
     {
-     "site": "STATIC",
-     "context": "DamagingHit",
+     "site": "SECONDARY",
+     "context": "",
      "lo": 0,
-     "hi": 10,
-     "value": 3
+     "hi": 100,
+     "value": 34
     },
     {
      "site": "SPEED_TIE",
@@ -1047,10 +1047,10 @@
     "|split|p1",
     "|-damage|p1a: Ampharos|179/197",
     "|-damage|p1a: Ampharos|90/100",
-    "|move|p2b: Incineroar|Darkest Lariat|p1a: Ampharos",
+    "|move|p2b: Incineroar|Flamethrower|p1a: Ampharos",
     "|split|p1",
-    "|-damage|p1a: Ampharos|127/197",
-    "|-damage|p1a: Ampharos|64/100",
+    "|-damage|p1a: Ampharos|119/197",
+    "|-damage|p1a: Ampharos|60/100",
     "|move|p1a: Ampharos|Thunder Punch|p2a: Lopunny",
     "|-crit|p2a: Lopunny",
     "|split|p2",
@@ -1096,7 +1096,7 @@
         "set_species": "Ampharos",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 127,
+        "hp": 119,
         "maxhp": 197,
         "item": "lightclay",
         "status": "",
@@ -1275,8 +1275,8 @@
          0
         ],
         "pp": [
-         11,
-         8
+         12,
+         15
         ],
         "volatiles": [],
         "locked": null
@@ -1568,12 +1568,12 @@
     "|-singleturn|p1a: Ampharos|Helping Hand|[of] p1b: Swampert",
     "|move|p2a: Lopunny|Quick Attack|p1a: Ampharos",
     "|split|p1",
-    "|-damage|p1a: Ampharos|111/197",
-    "|-damage|p1a: Ampharos|56/100",
+    "|-damage|p1a: Ampharos|103/197",
+    "|-damage|p1a: Ampharos|52/100",
     "|move|p2b: Incineroar|Darkest Lariat|p1a: Ampharos",
     "|split|p1",
-    "|-damage|p1a: Ampharos|62/197",
-    "|-damage|p1a: Ampharos|31/100",
+    "|-damage|p1a: Ampharos|54/197",
+    "|-damage|p1a: Ampharos|27/100",
     "|-status|p2b: Incineroar|par|[from] ability: Static|[of] p1a: Ampharos",
     "|move|p1a: Ampharos|Thunder Punch|p2b: Incineroar",
     "|split|p2",
@@ -1619,7 +1619,7 @@
         "set_species": "Ampharos",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 62,
+        "hp": 54,
         "maxhp": 197,
         "item": "lightclay",
         "status": "",
@@ -1798,8 +1798,8 @@
          0
         ],
         "pp": [
-         10,
-         8
+         11,
+         15
         ],
         "volatiles": [],
         "locked": null
@@ -1938,8 +1938,8 @@
     "|-singleturn|p1a: Ampharos|Helping Hand|[of] p1b: Swampert",
     "|move|p2a: Lopunny|Quick Attack|p1a: Ampharos",
     "|split|p1",
-    "|-damage|p1a: Ampharos|46/197",
-    "|-damage|p1a: Ampharos|23/100",
+    "|-damage|p1a: Ampharos|38/197",
+    "|-damage|p1a: Ampharos|19/100",
     "|move|p1a: Ampharos|Thunder Punch|p2a: Lopunny",
     "|split|p2",
     "|-damage|p2a: Lopunny|83/172",
@@ -1985,7 +1985,7 @@
         "set_species": "Ampharos",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 46,
+        "hp": 38,
         "maxhp": 197,
         "item": "lightclay",
         "status": "",
@@ -2164,8 +2164,8 @@
          0
         ],
         "pp": [
-         10,
-         8
+         11,
+         15
         ],
         "volatiles": [],
         "locked": null
@@ -2304,8 +2304,8 @@
     "|-singleturn|p1a: Ampharos|Helping Hand|[of] p1b: Swampert",
     "|move|p2a: Lopunny|Quick Attack|p1a: Ampharos",
     "|split|p1",
-    "|-damage|p1a: Ampharos|27/197",
-    "|-damage|p1a: Ampharos|13/100",
+    "|-damage|p1a: Ampharos|19/197",
+    "|-damage|p1a: Ampharos|9/100",
     "|move|p1a: Ampharos|Thunder Punch|p2b: Incineroar",
     "|split|p2",
     "|-damage|p2b: Incineroar|145/202 par",
@@ -2351,7 +2351,7 @@
         "set_species": "Ampharos",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 27,
+        "hp": 19,
         "maxhp": 197,
         "item": "lightclay",
         "status": "",
@@ -2530,8 +2530,8 @@
          0
         ],
         "pp": [
-         10,
-         8
+         11,
+         15
         ],
         "volatiles": [],
         "locked": null
@@ -2670,8 +2670,8 @@
     "|-singleturn|p1a: Ampharos|Helping Hand|[of] p1b: Swampert",
     "|move|p2a: Lopunny|Quick Attack|p1a: Ampharos",
     "|split|p1",
-    "|-damage|p1a: Ampharos|11/197",
-    "|-damage|p1a: Ampharos|5/100",
+    "|-damage|p1a: Ampharos|3/197",
+    "|-damage|p1a: Ampharos|1/100",
     "|move|p1a: Ampharos|Thunder Punch|p2a: Lopunny",
     "|split|p2",
     "|-damage|p2a: Lopunny|53/172",
@@ -2717,7 +2717,7 @@
         "set_species": "Ampharos",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 11,
+        "hp": 3,
         "maxhp": 197,
         "item": "lightclay",
         "status": "",
@@ -2896,8 +2896,8 @@
          0
         ],
         "pp": [
-         10,
-         8
+         11,
+         15
         ],
         "volatiles": [],
         "locked": null
