@@ -302,6 +302,22 @@ def choice_scarf_slots(state):
     return slots
 
 
+_RESIST_BERRIES = []
+
+
+def resist_berries():
+    """The handler names (the item ids in lower case) of the RESIST_BERRY family of the generated pool tables
+    (src/data/pool_tables.c, dfi_pool_item_family): the items whose ModifyDamage modifier the engine models, one for all."""
+    if not _RESIST_BERRIES:
+        root = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', '..')
+        source = read_ascii(os.path.join(root, 'src', 'data', 'pool_tables.c'))
+        _RESIST_BERRIES.extend(sorted(m.lower() for m in re.findall(
+            r'\[DFI_ITEM_(\w+)\] = \{DFI_ITEM_FAMILY_RESIST_BERRY,', source)))
+        if not _RESIST_BERRIES:
+            raise ConversionError('resist-berry-family', 'trace_to_c: no RESIST_BERRY row in the pool tables')
+    return _RESIST_BERRIES
+
+
 def drop_reason(d, state, after=None, log=None):
     """Why draw `d` is not a tape entry, or None; `state` is the state before the step, `after` the one after
     it (an entering Pokemon stands in its slot there), `log` the step's protocol lines (needed for the residual tie of
@@ -412,11 +428,13 @@ def drop_reason(d, state, after=None, log=None):
         # category and to a side that has no screen, so it never adds a second 2732 to a hit.
         if all(g.startswith(('H:reflect:', 'H:lightscreen:', 'H:auroraveil:')) for g in group):
             return 'screen handlers of which at most one applies'
-        # The attacker's Life Orb and the target's Chople Berry (Team C) at
-        # one speed: every order of the ModifyDamage modifiers chains to the
-        # same value (the engine checks it at compile time, turn.c).
-        if sorted(g.split(':')[1] for g in group) == ['chopleberry', 'lifeorb']:
-            return 'Life Orb and Chople Berry, whose modifiers commute'
+        # The attacker's Life Orb and the target's resist berry (Chople Berry in Team C, the RESIST_BERRY family of the
+        # pool tables: one modifier, 2048) at one speed: every order of the ModifyDamage modifiers chains to the same
+        # value (the engine checks it at compile time, turn.c).
+        names = sorted(g.split(':')[1] for g in group)
+        if len(names) == 2 and 'lifeorb' in names and (set(names) - {'lifeorb'}) <= set(resist_berries()) and \
+                names != ['lifeorb', 'lifeorb']:
+            return 'Life Orb and a resist berry, whose modifiers commute'
         # Step G19: Glaive Rush's onSourceModifyDamage (x2) with the attacker's Life Orb, the target's resist berry and a
         # screen: every order of any three of the four chains to the same value; all four at once do not (3552 or 3551),
         # which the engine refuses (E_UNSUPPORTED) instead of drawing, so such a tie never reaches a conversion.

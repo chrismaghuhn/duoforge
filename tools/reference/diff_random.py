@@ -1077,6 +1077,35 @@ def within_extended(team, counts):
                and all(mv < counts['MOVE'] for mv in m['moves']) for m in team)
 
 
+_forme_sets = {}
+
+
+def forme_sets(root=None):
+    """[(set moves, ability id)] for each forme id, read from the generated pool tables (src/data/pool_tables.c,
+    dfi_pool_formes): the Team C set of a forme, which the CLOSURE and TEAM_C kinds hold a member to (dfi_forme_move_legal
+    and dfi_forme_ability_legal, src/state/closure_member.c). Only the lookup is here; the legality rule is the engine's."""
+    root = root or base.ROOT
+    if root not in _forme_sets:
+        source = trace_to_c.read_ascii(os.path.join(root, 'src', 'data', 'pool_tables.c'))
+        start = source.index('dfi_pool_formes[DFI_POOL_FORME_COUNT] = {')
+        rows = re.findall(r'\{\d+u, \d+u, \{[^}]*\}, \{[^}]*\}, (\d+)u, [^,]+, [^,]+, [^,]+, [^,]+, [^,]+, [^,]+, (\d+)u, \{([^}]*)\}\}',
+                          source[start:source.index('\n};', start)])
+        out = []
+        for ability, count, moves in rows:
+            ids = [int(x.strip().rstrip('u')) for x in moves.split(',')]
+            out.append((frozenset(ids[:int(count)]), int(ability)))
+        _forme_sets[root] = out
+    return _forme_sets[root]
+
+
+def within_sets(team, root=None):
+    """True iff every member of the parsed team (trace_to_c.parse_team) has only moves of its forme's set and its set
+    ability (member ability = ability id + 1)."""
+    rows = forme_sets(root)
+    return all(m['species'] < len(rows) and set(m['moves']) <= rows[m['species']][0] and
+               m['ability'] == rows[m['species']][1] + 1 for m in team)
+
+
 def team_data_kind(label, sets, tables_for=name_tables, counts=None):
     """The data kind of DATA_KINDS that holds every member of a team: the first one whose tables the converter reads the
     whole paste with, and for Team C data one whose ids are all extended ones (else the pool's). ValueError, with a
@@ -1097,6 +1126,8 @@ def team_data_kind(label, sets, tables_for=name_tables, counts=None):
             raise ValueError('%s: not a Showdown paste that the converter reads (%s: %s)' % (label, type(e).__name__, e)) from None
         if kind == 'team_c' and not within_extended(team, counts):
             continue  # the same tables as the pool's, with ids beyond Team C's
+        if kind != 'pool' and not within_sets(team):
+            continue  # CLOSURE and TEAM_C hold a member to its forme's set moves and ability, the pool to what it learns
         return kind
     raise ValueError('%s: %s is in none of the data kinds that the driver plays (%s)' % (
         label, unknown_name(sets, tables_for(DATA_KINDS[-1][1])), ', '.join(kind.upper() for kind, _ in DATA_KINDS)))

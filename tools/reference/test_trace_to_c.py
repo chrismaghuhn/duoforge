@@ -450,6 +450,26 @@ class Library(unittest.TestCase):
         self.assertTrue(all(len(step['tape']) + step['dropped'] == len(trace['steps'][k]['draws'])
                             for k, step in enumerate(data['steps'])))
 
+    def test_life_orb_ties_with_any_resist_berry_of_the_family_and_nothing_else(self):
+        """The AWS finding fz_9810000_780 (2026-10-03): a ModifyDamage tie of the attacker's Life Orb and the target's Occa
+        Berry. Every resist berry of the RESIST_BERRY family of the pool tables has the one modifier that Chople Berry
+        has, so the pair commutes; the family is read from the generated tables, not listed here."""
+        def tie(group):
+            return trace_to_c.drop_reason({'site': 'SPEED_TIE', 'context': 'event:ModifyDamage', 'group': group}, {})
+        family = trace_to_c.resist_berries()
+        self.assertGreaterEqual(len(family), 18)  # Chople Berry and the seventeen others (decision 0015)
+        for name in ('chopleberry', 'occaberry', 'chilanberry', 'yacheberry'):
+            self.assertIn(name, family)
+        for name in family:
+            for group in (['H:lifeorb:p1a:cb', 'H:%s:p2a:cb' % name], ['H:%s:p2b:cb' % name, 'H:lifeorb:p1b:cb']):
+                self.assertEqual(tie(group), 'Life Orb and a resist berry, whose modifiers commute')
+        for bad in (['H:lifeorb:p1a:cb', 'H:sitrusberry:p2a:cb'], ['H:lifeorb:p1a:cb', 'H:leftovers:p2a:cb'],
+                    ['H:occaberry:p1a:cb', 'H:chopleberry:p2a:cb'], ['H:lifeorb:p1a:cb', 'H:lifeorb:p2a:cb'],
+                    ['H:lifeorb:p1a:cb', 'H:occaberry:p2a:cb', 'H:chopleberry:p2b:cb']):
+            with self.subTest(group=bad), self.assertRaises(trace_to_c.ConversionError) as cm:
+                tie(bad)
+            self.assertEqual(cm.exception.rule, 'modifydamage-tie')
+
     def test_a_flower_veil_block_is_the_activate_event_of_the_ability_with_the_holder_in_other(self):
         """-block|protected|ability: Flower Veil|[of] holder (step G12): ACTIVATE at the protected Pokemon, cause ABILITY,
         the ability's id + 1, the holder in `other` (the ability's own activation has none); another -block is refused."""
