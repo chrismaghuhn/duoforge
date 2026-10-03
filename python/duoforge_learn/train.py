@@ -181,6 +181,10 @@ def _parser(suppress=False):
     add("--team-weights", default=None, help="sampling weights of the teams, comma-separated (default: equal)")
     add("--teams-root", default="data/teams", help="the team registry")
     add("--data-kind", choices=tuple(DATA_KINDS), default="closure", help="the data kind of the battles")
+    add("--init", default=None,
+        help="a checkpoint (format 2) a new run starts from, a behavior-cloning network (M11 BC spec section 8): "
+             "its model and data kind unless given, fresh optimizer, league and counters; a resume never re-applies "
+             "it")
     add("--ext-supported", type=lambda s: int(s, 0), default=None,
         help="the view-extension features the network reads (decision 0018), a mask of DUOFORGE_VIEWEXT_FEATURE_* "
              "bits (default: every feature the library supports under the data kind)")
@@ -196,6 +200,8 @@ def parse(argv):
     schedule.Schedule.parse(args.entropy)  # refuses a malformed schedule now
     if (args.out is None) == (args.resume is None):
         p.error("give --out for a new run or --resume for an existing one")
+    if args.init is not None and args.resume is not None:
+        p.error("--init starts a new run: a resume keeps the run's own parameters")
     if args.resume is None:
         if args.minutes <= 0 and args.updates <= 0:
             p.error("give --minutes or --updates")
@@ -222,6 +228,59 @@ def _merged(args, saved):
     merged.resume, merged.out = args.resume, args.resume
     merged._given = args._given
     return merged, changes
+
+
+def _load_init(args):
+    """(params, config) of --init, widened to the current encoder layout by name (checkpoint.load_current: old rows
+    exact, new rows zero); the run takes its model and data kind unless the command line gives them, and then they
+    must agree. SystemExit for anything it cannot take: an output inside the repository (a network that descends
+    from replay data, decision 0019), an unknown encoder, another model or kind."""
+    from duoforge_replay.dataset import refuse_repository
+    try:
+        refuse_repository(args.out)
+        raw = checkpoint.load(args.init)[1]
+        encoder = checkpoint.encoder_of(raw)
+        if encoder not in (2, features.ENCODER) or raw.get("format") != 2:
+            raise ValueError(f"a checkpoint of encoder {encoder} (format {raw.get('format')}) cannot start a run of "
+                             f"encoder {features.ENCODER}")
+        params, config = checkpoint.load_current(args.init)
+    except ValueError as err:
+        raise SystemExit(f"--init {args.init}: {err}") from None
+    if any(k in args._given for k in ("model", "preset") + _DIMS):
+        if model_config(args) != config["model"]:
+            raise SystemExit(f"--init {args.init}: the checkpoint's model {config['model']} differs from the given "
+                             f"{model_config(args)}")
+    else:
+        args.preset = None  # the model is the checkpoint's (its config), not the parser's default preset
+    args.model = "v2" if config["model"]["version"] == 2 else "v1"
+    kind = config["data"]["kind"]
+    if "data_kind" in args._given and args.data_kind != kind:
+        raise SystemExit(f"--init {args.init}: the checkpoint's data kind {kind} differs from --data-kind "
+                         f"{args.data_kind}")
+    args.data_kind = kind
+    return params, config
+
+
+def _init_mask(params, config, ext_supported, path):
+    """(params, info) of --init under the run's mask: every bit beyond the checkpoint's has its input rows zeroed
+    (checkpoint.zero_columns, exact: those columns were 0 while it learned); a mask without a bit the checkpoint
+    reads is refused."""
+    old = checkpoint.ext_supported_of(config)
+    if old & ~ext_supported:
+        raise SystemExit(f"--init {path}: the run's ext_supported {ext_supported:#x} lacks bits the checkpoint reads "
+                         f"({old:#x}): a narrower mask would drop features it relies on (or the library lacks them)")
+    extra = ext_supported & ~old
+    changes = {}
+    if extra:
+        try:
+            params = checkpoint.zero_columns(params, config, features.columns_of(extra))
+        except ValueError as err:
+            raise SystemExit(f"--init {path}: {err}") from None
+        changes["ext_supported"] = [old, ext_supported]
+    with open(path, "rb") as f:
+        import hashlib
+        sha = hashlib.sha256(f.read()).hexdigest()
+    return params, {"path": str(path), "sha256": sha, "ext_supported": old, "changes": changes}
 
 
 def _widen_state(params, opt_leaves, model_cfg, names, slot_names, tx):
@@ -330,7 +389,13 @@ def _run(args, pool, on_start, stop):
         if explicit is not None and explicit != stored:
             raise SystemExit(f"a resume cannot change ext_supported ({stored:#x} -> {explicit:#x})")
         args, changes = _merged(args, saved_state["train"])
+    init = _load_init(args) if saved_state is None and args.init is not None else None
     context = duoforge.Context(data_kind=DATA_KINDS[args.data_kind])
+    if init is not None and init[1]["data"]["fingerprint"] != context.fingerprint().hex():
+        try:  # other tables than the checkpoint's: every id its network embeds must still name the same row
+            checkpoint.check_ids(init[1], context)
+        except ValueError as err:
+            raise SystemExit(f"--init {args.init}: the context's tables differ from the checkpoint's: {err}") from None
     ids = checkpoint.ids_of(context)  # what the embedded ids mean (spec 12.4), kept in the run state
     pool = _pool_of_args(args, context) if pool is None else pool
     if saved_state is not None:
@@ -364,7 +429,8 @@ def _run(args, pool, on_start, stop):
             raise SystemExit(f"a run of encoder {encoder} cannot be widened to encoder {features.ENCODER}")
         changes["encoder"] = [encoder, features.ENCODER]
         encoder = features.ENCODER
-    model_cfg = saved_state["model"] if saved_state is not None else model_config(args)
+    model_cfg = (saved_state["model"] if saved_state is not None else init[1]["model"] if init is not None
+                 else model_config(args))
     if saved_state is None:
         print(json.dumps(train_config | {"devices": [str(d) for d in jax.devices()], "model": model_cfg}), flush=True)
 
@@ -393,6 +459,13 @@ def _run(args, pool, on_start, stop):
                    encoder=encoder, context=context, on_start=started, ext_supported=ext_supported,
                    on_end=lambda envs, rewards: state.end(envs, league.learner_results(state, envs, rewards)))
     ext_supported = env.ext_supported
+    if init is not None:
+        try:
+            init_params, init_info = _init_mask(init[0], init[1], ext_supported, args.init)
+        except SystemExit:
+            env.close()
+            raise
+        train_config["init"] = init_info
     sides[0] = env
     learner_rows = state.learner_rows()
     net = policy.make(model_cfg)
@@ -401,7 +474,7 @@ def _run(args, pool, on_start, stop):
     if saved_state is None:
         key = jax.random.fold_in(jax.random.PRNGKey(args.seed & 0xFFFFFFFF), args.seed >> 32)
         key, sub = jax.random.split(key)
-        params = net.init(sub)
+        params = net.init(sub) if init is None else jax.device_put(init_params)
         opt_state = tx.init(params)
         rng = np.random.default_rng(args.seed)
         update = decisions = episodes = last_eval = 0
@@ -456,6 +529,8 @@ def _run(args, pool, on_start, stop):
     start = time.perf_counter()
     saved_at = start
     with open(os.path.join(out, "log.jsonl"), "a", encoding="utf-8") as log:
+        if saved_state is None and init is not None:
+            log.write(json.dumps({"init": train_config["init"]}) + chr(10))
         if saved_state is not None:
             line = {"resume": changes, "at_update": update}
             if abandoned:

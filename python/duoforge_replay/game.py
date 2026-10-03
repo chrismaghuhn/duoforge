@@ -25,6 +25,11 @@ from duoforge_live.lines import line_kind
 from duoforge_live.tracker import SESSION_LINES
 
 from . import labels, superset
+
+# Reg M-B (BC spec section 11): the engine's POOL data is Reg M-C's, and two moves have other PP under Reg M-B
+# (Strength Sap and Wish: 10, not 5). A Reg M-B game whose sheets hold one is skipped.
+REGMB = "gen9championsvgc2026regmb"
+REGMB_PP = {"STRENGTHSAP", "WISH"}
 from .points import TEAM_SELECTION, Skip, find
 from .prior import LEVELS
 from .spectator import SpectatorTracker, feed_lines, hindsight, hindsight_picks, own_requested, walk
@@ -117,11 +122,23 @@ def _prepass(replay_id, format_id, log, data):
         raise Skip("skip:two-games")  # a Bo3 log that holds a second game's lines: one game per row
     sheets = tuple(teams.unpack(packed[s]) for s in (0, 1))
     _check_names(sheets[0] + sheets[1], data)
+    for s in sheets[0] + sheets[1]:
+        s["species"] = data.canonical(s["species"])  # a cosmetic alias (#118) as the tables name its row
+    parsed = []
     for s in (0, 1):
         try:
-            data.team(teams.to_text(sheets[s]))  # what the tracker parses: a refusal is a skip, not a SystemExit
+            parsed.append(data.team(teams.to_text(sheets[s])))  # what the tracker parses: a refusal is a skip
         except trace_to_c.ConversionError as e:
             raise Skip(f"sheet:{e.rule}") from None
+    if format_id.startswith(REGMB) and any(trace_to_c.key(m) in REGMB_PP for s in sheets[0] + sheets[1]
+                                           for m in s["moves"]):
+        raise Skip("skip:regmb-pp")  # BC spec 11: their PP under Reg M-B differ from the engine's (M-C) data
+    for sheet, mon in zip(sheets[0] + sheets[1], parsed[0] + parsed[1]):
+        issue = data.setup_issue(mon)
+        if issue is not None:
+            what, index = issue
+            name = sheet["moves"][index] if what == "move" else sheet["ability"] if what == "ability" else ""
+            raise Skip(f"skip:pool-illegal {sheet['species']} {what} {name}".rstrip())
     record = GameRecord(replay_id, format_id, bo3, tuple(ratings), winner, turns,
                         tuple(_hash8(_to_id(players.get(s, ""))) for s in (0, 1)),
                         tuple(_hash8(packed[s]) for s in (0, 1)))

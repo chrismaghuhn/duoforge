@@ -28,7 +28,8 @@ def main(argv=None):
     b.add_argument("--workers", type=int, default=1)
     b.add_argument("--limit-parts", type=int, default=None, help="write at most N more parts (a short run)")
     b.add_argument("--unit-lines", type=int, default=4096, help="lines per part of a JSON lines source")
-    b.add_argument("--format-prefix", default="gen9championsvgc2026regmc")
+    b.add_argument("--format-prefix", nargs="+", default=["gen9championsvgc2026regmc"],
+                   help="format id prefixes (several: Reg M-C and Reg M-B)")
     b.add_argument("--node", default="node")
     b.add_argument("--ps-dir", default=None)
     args = parser.parse_args(argv)

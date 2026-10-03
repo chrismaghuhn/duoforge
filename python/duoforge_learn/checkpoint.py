@@ -246,6 +246,45 @@ def widen(tree, config, feature_names, slot_names, capacities=None, fill="init",
     return out, new_config
 
 
+def _sources(cfg, feature_names, slot_names):
+    """The observation columns feeding each row of _rows (columns.input_sources; v1: one column per row of t1)."""
+    if cfg["version"] == 1:
+        return {("t1",): [{i} for i in range(len(feature_names))],
+                ("option_features",): [set() for _ in slot_names]}
+    return columns.input_sources(cfg, columns.columns(feature_names, slot_names), feature_names, slot_names)
+
+
+def zero_columns(tree, config, names):
+    """A copy of tree in which every input row fed by the feature columns `names` is 0 (M11 BC spec section 8): a
+    network that never saw those columns set starts identical when they come on, and learns them from zero.
+    Exact only when every column feeding a zeroed row is one of `names`: model v2 shares a row among every member's
+    (or position's) column of a field, and zeroing it under a column that was on before would change the outputs in
+    silence, so that is a ValueError naming such a column, as is a name that is not a feature column of config."""
+    features_ = list(config["features"])
+    index = {n: i for i, n in enumerate(features_)}
+    unknown = [n for n in names if n not in index]
+    if unknown:
+        raise ValueError(f"{unknown[0]!r} is not a feature column of the checkpoint")
+    marked = {index[n] for n in names}
+    cfg = config["model"]
+    labels = _rows(cfg, features_, config["slot_features"])
+    sources = _sources(cfg, features_, config["slot_features"])
+    out = _copy(tree)
+    for path, fed in sources.items():
+        rows = [r for r, cols in enumerate(fed) if cols & marked]
+        for r in rows:
+            outside = sorted(fed[r] - marked)
+            if outside:
+                raise ValueError(f"row {labels[path][r]!r} of layer {path} is also fed by {features_[outside[0]]!r}, "
+                                 "which is not being switched on: zeroing it would change the outputs")
+        if rows:
+            layer = _get(out, path)
+            w = np.array(layer["w"], copy=True)
+            w[rows] = 0
+            layer["w"] = w
+    return out
+
+
 # The 13 inputs the encoder added in #84 (Psychic Terrain, the three position flags of each of the four
 # positions), as indices of its 607 features; a 594-feature network gets zero rows there (decision 0016).
 WIDEN_594_COLUMNS = (12, 37, 38, 39, 61, 62, 63, 333, 334, 335, 357, 358, 359)

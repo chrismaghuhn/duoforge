@@ -115,6 +115,83 @@ class CheckpointTest(unittest.TestCase):
             self.assertTrue(np.array_equal(w[features.FEATURE_NAMES.index(n)], params["t1"]["w"][i]))
 
 
+def _v2_rows_tree(rng, cfg):
+    """The layers of a v2 network that read encoder columns (checkpoint._rows), with random weights: what
+    zero_columns touches, without JAX."""
+    rows = checkpoint._rows(cfg, features.FEATURE_NAMES, features.SLOT_FEATURE_NAMES)
+    tree = {}
+    for path, labels in rows.items():
+        node = tree
+        for k in path[:-1]:
+            node = node.setdefault(k, {})
+        node[path[-1]] = {"w": rng.standard_normal((len(labels), 3)).astype(np.float32),
+                          "b": rng.standard_normal(3).astype(np.float32)}
+    return tree, rows
+
+
+_V2 = {"version": 2, "embed": 4, "member": 4, "position": 4, "hidden": 8, "option": 4, "layers": 1}
+
+
+class ZeroColumnsTest(unittest.TestCase):
+    """checkpoint.zero_columns (M11 BC spec section 8): the input rows of named feature columns become 0."""
+
+    def test_columns_of_base_bits(self):
+        bits = features.FEATURE_BITS
+        self.assertEqual(features.columns_of(1 << bits["WEATHER_SAND"] | 1 << bits["WEATHER_SNOW"]),
+                         ["ext.global.weather_sand", "ext.global.weather_snow"])
+        self.assertEqual(features.columns_of(0), [])
+
+    def test_zero_columns_zeroes_only_the_named_rows(self):
+        for cfg in (_V2, {"version": 1, "hidden": 8, "option_hidden": 4}):
+            rng = np.random.default_rng(3)
+            if cfg["version"] == 1:
+                params = _v1_params(rng)
+                rows = {("t1",): list(features.FEATURE_NAMES)}
+            else:
+                params, rows = _v2_rows_tree(rng, cfg)
+            names = features.columns_of(1 << features.FEATURE_BITS["WIDE_GUARD"])
+            out = checkpoint.zero_columns(params, _config(model=cfg), names)
+            changed = 0
+            for path, labels in rows.items():
+                before, after = checkpoint._get(params, path)["w"], checkpoint._get(out, path)["w"]
+                for i in range(len(labels)):
+                    if not np.array_equal(before[i], after[i]):
+                        self.assertFalse(after[i].any(), (path, labels[i]))
+                        changed += 1
+                self.assertTrue(np.array_equal(checkpoint._get(params, path)["b"], checkpoint._get(out, path)["b"]))
+            self.assertGreater(changed, 0, cfg)
+            # the input is not changed in place
+            self.assertTrue(any(checkpoint._get(params, p)["w"].any() for p in rows))
+
+    def test_zero_columns_refuses_a_shared_row_fed_by_other_columns(self):
+        # model v2 shares one input row per member field for all twelve members: zeroing it for one member's column
+        # only would change the outputs of the other eleven in silence (Learner v2's review)
+        params, _ = _v2_rows_tree(np.random.default_rng(4), _V2)
+        with self.assertRaisesRegex(ValueError, "ext.own.mem1.tox"):
+            checkpoint.zero_columns(params, _config(model=_V2), ["ext.own.mem0.tox"])
+        out = checkpoint.zero_columns(params, _config(model=_V2), features.columns_of(1 << features.FEATURE_BITS["AILMENT_TOX"]))
+        self.assertIsNotNone(out)
+
+    def test_input_sources_match_input_rows(self):
+        cols = columns.columns(features.FEATURE_NAMES, features.SLOT_FEATURE_NAMES)
+        rows = columns.input_rows(_V2, cols, features.FEATURE_NAMES, features.SLOT_FEATURE_NAMES)
+        sources = columns.input_sources(_V2, cols, features.FEATURE_NAMES, features.SLOT_FEATURE_NAMES)
+        self.assertEqual({p: len(r) for p, r in rows.items()}, {p: len(s) for p, s in sources.items()})
+        for path, labels in rows.items():
+            for label, fed in zip(labels, sources[path]):
+                if label.startswith("#") or path == ("option1",):
+                    self.assertEqual(fed, set(), (path, label))
+                else:
+                    # every member (both sides: 12) or position (4) feeds its field's shared row; a torso row one column
+                    field = label.split(".")[-1]
+                    self.assertTrue(all(features.FEATURE_NAMES[i].split(".")[-1] == field for i in fed), (path, label))
+                    self.assertEqual(len(fed), {("member1",): 12, ("position",): 4}.get(path, 1), (path, label))
+
+    def test_zero_columns_unknown_name_raises(self):
+        with self.assertRaisesRegex(ValueError, "ext.nonsense"):
+            checkpoint.zero_columns(_v1_params(np.random.default_rng(1)), _config(), ["ext.nonsense"])
+
+
 class IdTablesTest(unittest.TestCase):
     """checkpoint.ids_of and check_ids (spec 12.4): the names behind the embedded ids, so that a checkpoint
     is never read under tables whose ids mean something else."""
@@ -529,6 +606,16 @@ class SuitePlayTest(unittest.TestCase):
         self.assertTrue(old.seen and new.seen)
         self.assertTrue(all((x[:, column] == 0.0).all() for x in old.seen))
         self.assertTrue(all((x[:, column] == 1.0).all() for x in new.seen))
+
+    def test_play_suite_scripted(self):
+        # M11 BC spec section 10: the scripted baseline on POOL as well as "random"; it beats a learner that only switches
+        pool = _ab_pool()
+        rows = suite.make_suite(2, 3, games=2)
+        switch = evaluate.Player(_StandIn("switch"), None, features.ENCODER, "switch")
+        with duoforge.Context(data_kind=_layout.CONSTANTS["DUOFORGE_DATA_KIND_POOL"]) as ctx:
+            records = evaluate.play_suite(ctx, pool, rows, switch, "scripted", workers=2, seed=5)
+        self.assertEqual(records.shape, rows.shape)
+        self.assertLess(evaluate.scores(records, 2)["score"], 0.5)
 
     def test_scores_count_ties_half(self):
         rec = np.zeros(4, dtype=evaluate.RECORD)
