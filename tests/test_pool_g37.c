@@ -100,6 +100,28 @@ static const struct {
     uint32_t step;
     uint32_t layers[10];
 } hazard_rows[] = {
+    {"g37_exit", 0u, {0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u}},
+    {"g37_exit", 1u, {0u, 0u, 0u, 0u, 1u, 0u, 0u, 0u, 0u, 0u}},
+    {"g37_exit", 2u, {0u, 0u, 0u, 0u, 1u, 1u, 0u, 0u, 0u, 4u}},
+    {"g37_exit", 3u, {0u, 0u, 0u, 0u, 1u, 2u, 0u, 0u, 0u, 4u}},
+    {"g37_exit", 4u, {0u, 0u, 0u, 0u, 1u, 3u, 0u, 0u, 0u, 4u}},
+    {"g37_exit", 5u, {0u, 0u, 0u, 0u, 1u, 3u, 0u, 0u, 0u, 4u}},
+    {"g37_exit", 6u, {0u, 0u, 0u, 0u, 1u, 3u, 0u, 0u, 0u, 4u}},
+    {"g37_exit", 7u, {0u, 0u, 0u, 0u, 1u, 3u, 0u, 0u, 0u, 4u}},
+    {"g37_exit", 8u, {0u, 0u, 0u, 0u, 1u, 3u, 0u, 0u, 0u, 4u}},
+    {"g37_exit", 9u, {0u, 0u, 0u, 0u, 1u, 3u, 0u, 0u, 0u, 4u}},
+    {"g37_exit", 10u, {0u, 0u, 0u, 0u, 1u, 3u, 0u, 1u, 0u, 52u}},
+    {"g37_exit", 11u, {0u, 0u, 0u, 0u, 1u, 3u, 0u, 1u, 0u, 52u}},
+    {"g37_flower_veil", 0u, {0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u}},
+    {"g37_flower_veil", 1u, {0u, 0u, 0u, 0u, 0u, 0u, 1u, 1u, 0u, 11u}},
+    {"g37_flower_veil", 2u, {0u, 0u, 0u, 0u, 0u, 0u, 2u, 1u, 0u, 11u}},
+    {"g37_flower_veil", 3u, {0u, 0u, 0u, 0u, 0u, 0u, 2u, 1u, 0u, 11u}},
+    {"g37_flower_veil", 4u, {0u, 0u, 0u, 0u, 0u, 0u, 2u, 1u, 0u, 11u}},
+    {"g37_flower_veil", 5u, {0u, 0u, 0u, 0u, 0u, 0u, 2u, 1u, 0u, 11u}},
+    {"g37_flower_veil", 6u, {0u, 0u, 0u, 0u, 0u, 0u, 2u, 1u, 0u, 11u}},
+    {"g37_flower_veil", 7u, {0u, 0u, 0u, 0u, 0u, 0u, 2u, 1u, 0u, 11u}},
+    {"g37_flower_veil", 8u, {0u, 0u, 0u, 0u, 0u, 0u, 2u, 1u, 0u, 11u}},
+    {"g37_flower_veil", 9u, {0u, 0u, 0u, 0u, 0u, 0u, 2u, 1u, 0u, 11u}},
     {"g37_hazard_faint", 0u, {0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u}},
     {"g37_hazard_faint", 1u, {0u, 0u, 0u, 0u, 1u, 0u, 0u, 0u, 0u, 0u}},
     {"g37_hazard_faint", 2u, {0u, 0u, 0u, 0u, 1u, 1u, 0u, 0u, 0u, 4u}},
@@ -172,7 +194,7 @@ static const struct {
     {"g37_toxic_spikes", 9u, {0u, 0u, 0u, 0u, 0u, 0u, 2u, 0u, 0u, 2u}},
 };
 
-static const char *const names[] = {"g37_hazard_faint", "g37_hazards_a", "g37_order_a", "g37_order_b", "g37_sticky_web", "g37_toxic_debris", "g37_toxic_spikes"};
+static const char *const names[] = {"g37_exit", "g37_flower_veil", "g37_hazard_faint", "g37_hazards_a", "g37_order_a", "g37_order_b", "g37_sticky_web", "g37_toxic_debris", "g37_toxic_spikes"};
 
 int main(void)
 {

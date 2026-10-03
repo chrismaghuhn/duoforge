@@ -1,0 +1,38 @@
+{
+  "name": "g37_exit",
+  "purpose": "Forretress sets Stealth Rock and three layers of Spikes; Golisopod (Emergency Exit) enters at full HP and stays above half; it comes back at 92 HP and the hazards take it to half or less: Emergency Exit and a switch request.",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,000000000000000000000000000000000000000000000000000000000000d701",
+  "teams": [
+    "Forretress (M) @ Leftovers\nAbility: Overcoat\nLevel: 50\nEVs: 32 HP / 32 Def / 2 SpD\nRelaxed Nature\n- Stealth Rock\n- Spikes\n- Toxic Spikes\n- Protect\n\nAriados (F) @ Black Glasses\nAbility: Swarm\nLevel: 50\nEVs: 32 HP / 2 Def / 32 Spe\nJolly Nature\n- Sticky Web\n- Toxic Spikes\n- Protect\n\nStaraptor (F) @ Sharp Beak\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 2 SpD / 32 Spe\nJolly Nature\n- Quick Attack\n- Protect\n\nSalamence (M) @ Silk Scarf\nAbility: Intimidate\nLevel: 50\nEVs: 2 HP / 32 SpA / 32 Spe\nTimid Nature\n- Protect\n\nRillaboom (M) @ Miracle Seed\nAbility: Grassy Surge\nLevel: 50\nEVs: 18 HP / 32 Atk / 2 Def / 6 SpD / 8 Spe\nAdamant Nature\n- Fake Out\n\nCeruledge (M) @ Grassy Seed\nAbility: Flash Fire\nLevel: 50\nEVs: 31 HP / 7 Atk / 24 Def / 3 SpD / 1 Spe\nAdamant Nature\n- Protect",
+    "Kingambit (M) @ Chople Berry\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 2 Atk / 32 SpD\nImpish Nature\n- Protect\n- Swords Dance\n\nMilotic (F) @ Mystic Water\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Coil\n- Protect\n\nGolisopod (M) @ Silk Scarf\nAbility: Emergency Exit\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Def\nAdamant Nature\n- Protect\n- First Impression\n\nSneasler (M) @ Silk Scarf\nAbility: Unburden\nLevel: 50\nEVs: 2 HP / 32 Atk / 32 Spe\nJolly Nature\n- Protect\n- Close Combat\n\nRillaboom (M) @ Miracle Seed\nAbility: Grassy Surge\nLevel: 50\nEVs: 18 HP / 32 Atk / 2 Def / 6 SpD / 8 Spe\nAdamant Nature\n- Fake Out\n\nGholdengo @ Life Orb\nAbility: Good as Gold\nLevel: 50\nEVs: 17 HP / 2 Def / 17 SpA / 16 SpD / 14 Spe\nModest Nature\n- Protect"
+  ],
+  "plan": {
+    "p1": [
+      "move 1, move 3",
+      "move 2, move 3",
+      "move 2, move 3",
+      "move 2, move 3",
+      "move 4, move 3",
+      "move 4, move 3",
+      "move 4, move 3",
+      "move 4, move 3",
+      "move 4, move 3",
+      "move 4, move 3"
+    ],
+    "p2": [
+      "move 2, move 1",
+      "move 2, move 1",
+      "move 2, move 1",
+      "move 2, move 1",
+      "move 2, switch 3",
+      "move 2, switch 3",
+      "move 2, switch 3",
+      "move 2, move 1",
+      "move 2, move 1",
+      "move 2, move 1"
+    ],
+    "max_steps": 12
+  }
+}
