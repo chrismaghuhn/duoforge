@@ -788,7 +788,7 @@ def ev_cause(attrs, tables):
                 cause, id2 = CAUSE['WEATHER'], WEATHER_CAUSE[what]
             elif what == 'Grassy Terrain':
                 cause = CAUSE['TERRAIN']
-            elif what in ('Parting Shot', 'Flip Turn', 'U-turn', 'Spiky Shield'):  # the move that made the switch (U-turn: pool tables)
+            elif what in ('Parting Shot', 'Flip Turn', 'U-turn', 'Volt Switch', 'Spiky Shield'):  # the move that made the switch (U-turn, Volt Switch: pool tables)
                 # Spiky Shield (step G20, POOL): `-damage|attacker|hp|[from] Spiky Shield|[of] holder`, the condition's own name
                 cause, id2 = CAUSE['MOVE'], tables['MOVE'][key(what)]
             elif what == 'lockedmove':

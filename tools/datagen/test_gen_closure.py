@@ -624,10 +624,12 @@ class PoolMoves(unittest.TestCase):
         self.assertEqual(gen_closure.SPECIAL_IDS_P[len(gen_closure.SPECIAL_IDS_C):seven], gen_closure.G2_HANDLERS)
         # UNMODELED (decision 0015 section 4.2) follows them, as the last id.
         self.assertEqual(gen_closure.SPECIAL_IDS_P[seven:], ['SANDSTORM', 'SNOWSCAPE', 'KNOCK_OFF', 'EXPANDING_FORCE', 'GLAIVE_RUSH', 'AURORA_VEIL', 'SPIKY_SHIELD',
-                          'SHELL_SMASH', 'ACROBATICS', 'BLIZZARD', 'FEINT', 'UNMODELED'])
+                          'SHELL_SMASH', 'ACROBATICS', 'BLIZZARD', 'FEINT', 'HP_POWER', 'BODY_PRESS', 'FOUL_PLAY', 'PSYSHOCK',
+                          'RAIN_DANCE', 'SUNNY_DAY', 'FREEZE_DRY', 'CLANGING_SCALES', 'UNMODELED'])
         self.assertEqual(len(gen_closure.G2_HANDLERS), 7)
         # Step G16: Knock Off's handler is 24 in the tables; step G15's Expanding Force is 25, step G19's Glaive Rush 26,
-        # step G20's Aurora Veil 27, the four of step G28 28 to 31 and UNMODELED 32.
+        # step G20's Aurora Veil 27, Spiky Shield 28, the four of step G28 29 to 32, the eight of step G32 33 to 40 and
+        # UNMODELED 41.
         self.assertEqual(gen_closure.G16_HANDLERS, ['KNOCK_OFF'])
         self.assertEqual(gen_closure.G20_HANDLERS, ['AURORA_VEIL'])
         self.assertEqual(gen_closure.G20_PROTECT_HANDLERS, ['SPIKY_SHIELD'])
@@ -637,12 +639,14 @@ class PoolMoves(unittest.TestCase):
         self.assertEqual(gen_closure.SPECIAL_IDS_P.index('AURORA_VEIL'), 27)
         self.assertEqual(gen_closure.SPECIAL_IDS_P.index('SPIKY_SHIELD'), 28)
         self.assertEqual([gen_closure.SPECIAL_IDS_P.index(h) for h in gen_closure.G28_HANDLERS], [29, 30, 31, 32])
-        self.assertEqual(gen_closure.SPECIAL_IDS_P.index('UNMODELED'), 33)
+        self.assertEqual([gen_closure.SPECIAL_IDS_P.index(h) for h in gen_closure.G32_HANDLERS], list(range(33, 41)))
+        self.assertEqual(gen_closure.SPECIAL_IDS_P.index('UNMODELED'), 41)
         # Scald and Recover became data in step G10: their ids stay defined and no move maps to them.
         self.assertEqual({v[0] for k, v in gen_closure.SPECIAL_P.items() if k not in gen_closure.SPECIAL_C},
                          (set(gen_closure.G2_HANDLERS) - {'SCALD', 'RECOVER'}) | set(gen_closure.WEATHER_HANDLERS) |
                          set(gen_closure.G16_HANDLERS) | set(gen_closure.G15_HANDLERS) | set(gen_closure.G19_HANDLERS) |
-                         set(gen_closure.G20_HANDLERS) | set(gen_closure.G20_PROTECT_HANDLERS) | set(gen_closure.G28_HANDLERS))
+                         set(gen_closure.G20_HANDLERS) | set(gen_closure.G20_PROTECT_HANDLERS) | set(gen_closure.G28_HANDLERS) |
+                         set(gen_closure.G32_HANDLERS))
 
     def test_aurora_veil_is_a_handler_whose_onTry_and_condition_are_the_pinned_text(self):
         rec = parse_pool('auroraveil', AURORA_VEIL)
@@ -946,11 +950,13 @@ class LenientMoves(unittest.TestCase):
         self.assertEqual(features, ['callback onHit', 'condition block', 'field multihit', 'primary status tox'])
 
     def test_a_target_class_is_encoded_and_unmodelled_when_the_turn_code_lacks_it(self):
-        # allAdjacent (Earthquake) is a class of the pool, code 11, which the turn code has since step G28; the others of the
-        # pool (code 12 to 15) have none.
+        # allAdjacent (Earthquake) is a class of the pool, code 11, which the turn code has since step G28, and allies (Life
+        # Dew) code 14 since step G32; the others of the pool (code 12, 13 and 15) have none.
         rec, features = lenient('plain', PLAIN.replace('target: "normal"', 'target: "allAdjacent"'))
         self.assertEqual((rec['target_class'], features), (11, []))
-        for name, code in (('scripted', 12), ('allyTeam', 13), ('allies', 14), ('foeSide', 15)):
+        rec, features = lenient('plain', PLAIN.replace('target: "normal"', 'target: "allies"'))
+        self.assertEqual((rec['target_class'], features), (14, []))
+        for name, code in (('scripted', 12), ('allyTeam', 13), ('foeSide', 15)):
             with self.subTest(name):
                 rec, features = lenient('plain', PLAIN.replace('target: "normal"', 'target: "%s"' % name))
                 self.assertEqual((rec['target_class'], features), (code, ['target %s' % name]))
@@ -963,7 +969,7 @@ class LenientMoves(unittest.TestCase):
         self.assertTrue(set(gen_closure.TARGET_CLASS_POOL) - set(gen_closure.TARGET_CLASS) == {
             'allAdjacent', 'scripted', 'allyTeam', 'allies', 'foeSide'})
         self.assertTrue(gen_closure.ENGINE_TARGETS <= set(gen_closure.TARGET_CLASS_POOL))
-        self.assertEqual(gen_closure.ENGINE_TARGETS - set(gen_closure.TARGET_CLASS), {'allAdjacent'})  # step G28
+        self.assertEqual(gen_closure.ENGINE_TARGETS - set(gen_closure.TARGET_CLASS), {'allAdjacent', 'allies'})  # G28, G32
 
     def test_what_the_generator_cannot_read_still_fails(self):
         self.refused('plain', PLAIN.replace('target: "normal"', 'target: "nowhere"'), 'unknown target class nowhere')
@@ -1387,6 +1393,65 @@ class MoveRules(unittest.TestCase):
         self.assertEqual(gen_closure.G2_OWNED_FIELDS['FEINT']['breaksProtect'], 'breaksProtect: true, // Breaking protection implemented in scripts.js')
         self.assertIn('expertbelt', gen_closure.ENGINE_ROWS['items'])
         self.assertEqual(gen_closure.SECONDARY_SELF_BOOST, 7)
+
+
+class SmallRules(unittest.TestCase):
+    """Step G32: what the engine hard-codes about the moves, abilities and the item of the batch is read from the pinned
+    entries (G32_FACTS, G32_WEATHER_FACTS, G32_ENTRY_FACTS); every fact is demanded."""
+
+    def moves(self, skip=(None, None)):
+        out = []
+        for mid, needed in gen_closure.G32_FACTS:
+            lines = ['\t%s: {' % mid]
+            for i, n in enumerate(needed):
+                if (mid, i) != skip:
+                    lines.append('\t\t' + n)
+                    lines.append('\t\t' + '}' * max(0, n.count('{') - n.count('}')))
+            lines.append('\t},')
+            out.append('\n'.join(lines))
+        return TextSource('data/moves.ts', '\n'.join(out))
+
+    def test_the_facts_of_the_pin_are_accepted(self):
+        gen_closure.check_g8_conditions(self.moves(), gen_closure.G32_FACTS)
+
+    def test_every_move_fact_is_demanded(self):
+        self.assertEqual([mid for mid, _ in gen_closure.G32_FACTS],
+                         ['eruption', 'waterspout', 'bodypress', 'foulplay', 'psyshock', 'raindance', 'sunnyday', 'freezedry',
+                          'clangingscales', 'voltswitch', 'lifedew'])
+        for mid, needed in gen_closure.G32_FACTS:
+            for i in range(len(needed)):
+                with self.subTest(mid=mid, fact=needed[i]), self.assertRaises(SystemExit) as cm:
+                    gen_closure.check_g8_conditions(self.moves((mid, i)), gen_closure.G32_FACTS)
+                self.assertIn('move %s: the condition no longer has' % mid, str(cm.exception.code))
+
+    def test_every_fact_of_the_ability_and_item_entries_is_demanded(self):
+        for kind, eid, champ, facts in gen_closure.G32_ENTRY_FACTS:
+            whole = TextSource('x.ts', entry(eid, *facts))
+            gen_closure.check_g32_entries(whole, whole, whole, whole, only=((kind, eid, champ, facts),))
+            for i in range(len(facts)):
+                short = TextSource('x.ts', entry(eid, *(facts[:i] + facts[i + 1:])))
+                with self.subTest(entry=eid, fact=facts[i]), self.assertRaises(SystemExit) as cm:
+                    gen_closure.check_g32_entries(short, short, short, short, only=((kind, eid, champ, facts),))
+                self.assertIn('the entry no longer has', str(cm.exception.code))
+
+    def test_the_weather_moves_are_handlers_with_their_weather_as_an_owned_field(self):
+        self.assertEqual(gen_closure.SPECIAL_P['raindance'], ('RAIN_DANCE', set()))
+        self.assertEqual(gen_closure.SPECIAL_P['sunnyday'], ('SUNNY_DAY', set()))
+        self.assertEqual(gen_closure.G2_OWNED_FIELDS['RAIN_DANCE'], {'weather': "weather: 'RainDance',"})
+        self.assertEqual(gen_closure.G2_OWNED_FIELDS['SUNNY_DAY'], {'weather': "weather: 'sunnyday',"})
+        self.assertEqual([c for c, _ in gen_closure.G32_WEATHER_FACTS], ['raindance', 'sunnyday'])
+
+    def test_the_rows_of_the_step(self):
+        self.assertEqual(gen_closure.G32_HANDLERS, ['HP_POWER', 'BODY_PRESS', 'FOUL_PLAY', 'PSYSHOCK', 'RAIN_DANCE', 'SUNNY_DAY',
+                                                    'FREEZE_DRY', 'CLANGING_SCALES'])
+        self.assertEqual(gen_closure.SPECIAL_P['eruption'], ('HP_POWER', {'basePowerCallback'}))
+        self.assertEqual(gen_closure.SPECIAL_P['waterspout'], ('HP_POWER', {'basePowerCallback'}))
+        self.assertEqual(gen_closure.SPECIAL_P['freezedry'], ('FREEZE_DRY', {'onEffectiveness'}))
+        self.assertEqual(gen_closure.ENGINE_PIVOT_MOVES, ('voltswitch',))
+        self.assertIn('allies', gen_closure.ENGINE_TARGETS)
+        self.assertIn('ejectbutton', gen_closure.ENGINE_ROWS['items'])
+        for ability in ('soundproof', 'unnerve', 'speedboost'):
+            self.assertIn(ability, gen_closure.ENGINE_ROWS['abilities'])
 
 
 if __name__ == '__main__':

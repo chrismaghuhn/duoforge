@@ -151,7 +151,12 @@
  * change in the pinned order, Defense and Special Defense first), Acrobatics (twice the power while the user holds no item),
  * Blizzard (never misses in snow, the freeze at 10 percent is data), Ancient Power (a secondary that raises the user's five
  * stats at 10 percent: a new secondary kind), Feint (removes the target's Protect and the Wide Guard of its side, and its stall
- * counter) and Expert Belt (4915/4096 for a super effective hit), recorded as g28_* under the POOL kind. */
+ * counter) and Expert Belt (4915/4096 for a super effective hit), recorded as g28_* under the POOL kind.
+ * Step G32 marks eleven moves, three abilities and an item whose rules are small: Eruption and Water Spout, Life Dew (the
+ * target class allies), Body Press, Foul Play and Psyshock (the stat overrides of the damage formula), Rain Dance and Sunny Day,
+ * Volt Switch (a pivot with a switch flag of its own), Clanging Scales (selfBoost), Freeze-Dry (Water is super effective), the
+ * abilities Soundproof, Unnerve (no berries for the foes; announced first at the switch-in) and Speed Boost (the residual), and the
+ * Champions Eject Button, recorded as g32_* under the POOL kind. */
 const dfi_support_manifest dfi_support = {
     .turn_core = 1u,
     .switching = 1u,
@@ -289,6 +294,20 @@ const dfi_support_manifest dfi_support = {
             [DFI_MOVE_NUZZLE] = 1u,
             [DFI_MOVE_AURORAVEIL] = 1u,
             [DFI_MOVE_SPIKYSHIELD] = 1u,
+            /* Step G32: Eruption and Water Spout (power by the user's HP), Life Dew (the user and its ally), Body Press, Foul Play
+             * and Psyshock (the stat overrides), Rain Dance and Sunny Day, Volt Switch (a pivot of its own), Clanging Scales (the
+             * user's Defense falls after the hit) and Freeze-Dry (Water takes it super effective). */
+            [DFI_MOVE_ERUPTION] = 1u,
+            [DFI_MOVE_WATERSPOUT] = 1u,
+            [DFI_MOVE_LIFEDEW] = 1u,
+            [DFI_MOVE_BODYPRESS] = 1u,
+            [DFI_MOVE_FOULPLAY] = 1u,
+            [DFI_MOVE_PSYSHOCK] = 1u,
+            [DFI_MOVE_RAINDANCE] = 1u,
+            [DFI_MOVE_SUNNYDAY] = 1u,
+            [DFI_MOVE_VOLTSWITCH] = 1u,
+            [DFI_MOVE_CLANGINGSCALES] = 1u,
+            [DFI_MOVE_FREEZEDRY] = 1u,
             /* Step G28: Shell Smash (its boosts in the pin's order), Acrobatics (doubled without an item), Blizzard (never misses
              * in snow), Ancient Power (a secondary that boosts its user), Feint (breaks Protect and Wide Guard). */
             [DFI_MOVE_SHELLSMASH] = 1u,
@@ -345,6 +364,9 @@ const dfi_support_manifest dfi_support = {
             [DFI_ABILITY_CHLOROPHYLL] = 1u,
             [DFI_ABILITY_INNERFOCUS] = 1u,
             [DFI_ABILITY_LIQUIDVOICE] = 1u,
+            [DFI_ABILITY_SOUNDPROOF] = 1u, /* step G32 */
+            [DFI_ABILITY_UNNERVE] = 1u,
+            [DFI_ABILITY_SPEEDBOOST] = 1u,
         },
     .items =
         {
@@ -368,6 +390,7 @@ const dfi_support_manifest dfi_support = {
             [DFI_ITEM_FLOETTITE] = 1u,
             [DFI_ITEM_PSYCHICSEED] = 1u,
             [DFI_ITEM_EXPERTBELT] = 1u, /* step G28 */
+            [DFI_ITEM_EJECTBUTTON] = 1u, /* step G32 */
             [DFI_ITEM_TYRANITARITE] = 1u,
             [DFI_ITEM_BAXCALIBRITE] = 1u,
             [DFI_ITEM_AERODACTYLITE] = 1u,

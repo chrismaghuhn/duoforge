@@ -29,7 +29,7 @@ CATEGORIES = {'Physical': 0, 'Special': 1, 'Status': 2}
 TARGETS = {'normal': 1, 'any': 2, 'adjacentAlly': 3, 'adjacentAllyOrSelf': 4, 'adjacentFoe': 5, 'self': 6,
            'allAdjacentFoes': 7, 'allySide': 8, 'all': 9, 'randomNormal': 10, 'allAdjacent': 11, 'scripted': 12,
            'allyTeam': 13, 'allies': 14, 'foeSide': 15}
-ENGINE_TARGETS = {1, 2, 3, 5, 6, 7, 8, 9, 10, 11}  # 11: allAdjacent, since step G28
+ENGINE_TARGETS = {1, 2, 3, 5, 6, 7, 8, 9, 10, 11, 14}  # 11: allAdjacent, since step G28; 14: allies, since step G32
 GENDER = {None: 0, 'M': 1, 'F': 2, 'N': 3}
 NONE16 = 0xFFFF
 
