@@ -85,6 +85,7 @@ class Rows:
     is_team: np.ndarray      # (N,) bool
     label_pairs: np.ndarray  # (N, 32, 32) bool, the label set of a decision (False for a team row)
     label_team: np.ndarray   # (N, 360) bool, the label set of a team selection (False for a decision)
+    reason: np.ndarray       # (N, 2) u8, the labels.* reason per slot
     z: np.ndarray            # (N,) f32, +1 won / -1 lost / 0 no winner
     has_z: np.ndarray        # (N,) bool
     weight: np.ndarray       # (N,) f32
@@ -156,12 +157,24 @@ def load(dirs, context, mask, format_weights=None, weights="rating"):
                           for r, f in zip(rating, fmt)], dtype=np.float32)
             val = np.array([split_key(g["sheets"][i]) for i in game], dtype=bool)
             chunks.append(Rows(obs=obs.astype(np.float32), slots=slots.astype(np.float32), mask=pair_mask,
-                               is_team=is_team, label_pairs=pairs, label_team=team, z=z, has_z=has_z, weight=w,
+                               is_team=is_team, label_pairs=pairs, label_team=team,
+                               reason=shard["label_reason"].astype(np.uint8), z=z, has_z=has_z, weight=w,
                                val=val, side=shard["side"].astype(np.uint8), fmt=fmt,
                                replay=g["replay_id"][game], point=shard["point"].astype(np.uint16)))
     if not chunks:
         raise ValueError(f"no rows in {list(map(str, dirs))}")
     return Rows(**{f.name: np.concatenate([getattr(c, f.name) for c in chunks]) for f in fields(Rows)})
+
+
+def check_labels(rows):
+    """ValueError naming the first row whose label set is empty (a decision without a pair inside its pair mask, a
+    team selection without a tuple): the labeler guarantees the logged choice is inside, so an empty set is a bug,
+    never a row to train on with -log 0."""
+    empty = np.where(rows.is_team, ~rows.label_team.any(axis=1), ~rows.label_pairs.reshape(len(rows), -1).any(axis=1))
+    if empty.any():
+        i = int(np.flatnonzero(empty)[0])
+        raise ValueError(f"replay {rows.replay[i]} point {int(rows.point[i])} side {int(rows.side[i])}: an empty label "
+                         f"set ({int(empty.sum())} rows)")
 
 
 def batches(rows, index, size, rng):
