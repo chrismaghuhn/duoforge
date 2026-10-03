@@ -177,6 +177,8 @@ duoforge_add_test(NAME duoforge.state.pool_ac1 SOURCES test_pool_ac1.c WHITEBOX 
 duoforge_add_test(NAME duoforge.state.pool_g16 SOURCES test_pool_g16.c WHITEBOX TIMEOUT 60)
 # Step G29: Trick, Switcheroo, Thief and Covet (the held item as item_now, the received-item and left-item events, the view).
 duoforge_add_test(NAME duoforge.state.pool_g29 SOURCES test_pool_g29.c WHITEBOX TIMEOUT 60)
+# Step G23-A: the Mega of a member is found from (base forme, stone): every Mega forme of the pool, the second Megas included.
+duoforge_add_test(NAME duoforge.state.mega_by_stone SOURCES test_mega_by_stone.c WHITEBOX TIMEOUT 60)
 # Step G20: Aurora Veil in the tail's side turns, in the damage modifier, in the residual and in the POOL view extension
 # (the side's aurora_veil_turns, bit 3).
 duoforge_add_test(NAME duoforge.state.pool_g20 SOURCES test_pool_g20.c WHITEBOX TIMEOUT 60)
@@ -190,7 +192,7 @@ foreach(_gen IN ITEMS
         "extended_tables.h=b2abef243fcbfdd87654940076b9fe2fe80b117d74893a7567741f26b9075a7d"
         "extended_tables.c=9e736fa467713283418c4edf8f56b8d844452e596ba422adbd52483d20f7cc17"
         "pool_tables.h=7f0e2f51608d185da1b27003718e3d201e4878a5b704199587e546f386df8d7b"
-        "pool_tables.c=d001794a894db8ca8c2c124cbd8740cd1ab73c1a2f1e93f1a80d23948cd9e607")
+        "pool_tables.c=3ebb99ac772194f2d4cabf815b7ca256eeb7464199440746dc160e4348fcda1c")
     string(REPLACE "=" ";" _parts "${_gen}")
     list(GET _parts 0 _file)
     list(GET _parts 1 _expected)

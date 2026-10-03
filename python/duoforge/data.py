@@ -92,6 +92,21 @@ def forme_moves(ctx, species_id):
     return list(buffer[:out.value])
 
 
+def mega_count(ctx, species_id):
+    """duoforge_data_mega_count: how many Mega Stones take the species to a Mega forme under the context's kind."""
+    out = ctypes.c_uint32()
+    check(load_library().duoforge_data_mega_count(_handle(ctx), uint(species_id, 32, "species_id"), ctypes.byref(out)))
+    return out.value
+
+
+def mega_at(ctx, species_id, index):
+    """duoforge_data_mega_at as a dict: the index-th Mega Stone of the species, in ascending item id."""
+    record = np.zeros((), dtype=_layout.MEGA_INFO)
+    check(load_library().duoforge_data_mega_at(_handle(ctx), uint(species_id, 32, "species_id"),
+                                               uint(index, 32, "index"), ptr(record)))
+    return _as_dict(record)
+
+
 def forme_static(ctx, species_id):
     """duoforge_data_forme_static as a dict: types, base_stats, weight_hg, default_ability, is_mega."""
     return _read(load_library().duoforge_data_forme_static, ctx, species_id, _layout.FORME_STATIC, "species_id")
