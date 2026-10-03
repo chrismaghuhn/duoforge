@@ -8,7 +8,7 @@
 # Nothing here creates a key, prints a token or reads a credential: the scripts only use the gcloud session that is
 # already signed in, and ask which project it is for.
 
-GW_PROJECT=project-d498a888-995e-4142-82a
+GW_PROJECT='project-d498a888-995e-4142-82a'
 GW_REGION=europe-west4
 GW_ALLOWED_ZONES='europe-west4-a europe-west4-b europe-west4-c'
 GW_DEFAULT_ZONE=europe-west4-a

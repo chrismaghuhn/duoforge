@@ -266,7 +266,7 @@ rd_main() {
     joined=$(printf '%s,' "${RD_ROUND_STATUSES[@]}")
     printf '{"round":"%s","head":"%s","campaigns":[%s]}\n' "$RD_ROUND_ID" "$RD_HEAD" "${joined%,}" > "$RD_STATE/round.json"
     rd_gcs_put "$RD_STATE/round.json" "watch/${RD_HEAD:0:12}/$RD_ROUND_ID/round.json" || true
-    rd_set_state done
+    rd_set_state "done"
     kill "$HB_PID" 2> /dev/null || true
     rd_log "round $RD_ROUND_ID finished"
 }
