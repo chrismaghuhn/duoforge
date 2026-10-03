@@ -383,7 +383,7 @@ def resist_berries():
 def modify_damage_values():
     """The ModifyDamage modifier (out of 4096) of each handler that the engine chains (turn.c dfi_get_damage): by handler name."""
     values = {'lifeorb': 5324, 'expertbelt': 4915, 'reflect': 2732, 'lightscreen': 2732, 'auroraveil': 2732, 'glaiverush': 8192,
-              'solidrock': 3072, 'multiscale': 2048, 'friendguard': 3072}
+              'solidrock': 3072, 'multiscale': 2048, 'friendguard': 3072, 'auraguard': 2048}
     values.update({berry: 2048 for berry in resist_berries()})
     return values
 
@@ -402,9 +402,9 @@ def modifiers_commute(mods):
 
 def modifier_subsets(kinds, values):
     """The modifier lists that one hit can have from the handlers `kinds`: any subset with one screen at most, one of Life Orb and
-    Expert Belt, and one of Solid Rock and Multiscale."""
+    Expert Belt, and one of Solid Rock, Multiscale and Aura Guard (Mega batch 2)."""
     import itertools
-    exclusive = (('reflect', 'lightscreen', 'auroraveil'), ('lifeorb', 'expertbelt'), ('solidrock', 'multiscale'))
+    exclusive = (('reflect', 'lightscreen', 'auroraveil'), ('lifeorb', 'expertbelt'), ('solidrock', 'multiscale', 'auraguard'))
     out = []
     for r in range(1, len(kinds) + 1):
         for sub in itertools.combinations(kinds, r):

@@ -466,6 +466,7 @@ const dfi_support_manifest dfi_support = {
             [DFI_ABILITY_ELECTRICSURGE] = 1u, /* step G25 */
             [DFI_ABILITY_FRIENDGUARD] = 1u,
             [DFI_ABILITY_MIRRORARMOR] = 1u, /* step G33 */
+            [DFI_ABILITY_AURAGUARD] = 1u, /* Mega batch 2 (the Mega ability of Lucario-Mega-Z) */
         },
     .items =
         {
@@ -509,6 +510,12 @@ const dfi_support_manifest dfi_support = {
             [DFI_ITEM_MALAMARITE] = 1u,
             [DFI_ITEM_SCEPTILITE] = 1u,
             [DFI_ITEM_SCRAFTINITE] = 1u,
+            /* Mega batch 2: Swampertite (Swift Swim), Metagrossite (Tough Claws), Lucarionite Z (Aura Guard) and Froslassite
+             * (Snow Warning); the base formes' abilities (Torrent, Clear Body, Inner Focus, Cursed Body since G27) are marked. */
+            [DFI_ITEM_SWAMPERTITE] = 1u,
+            [DFI_ITEM_METAGROSSITE] = 1u,
+            [DFI_ITEM_LUCARIONITEZ] = 1u,
+            [DFI_ITEM_FROSLASSITE] = 1u,
             [DFI_ITEM_BLACKBELT] = 1u,
             [DFI_ITEM_BLACKGLASSES] = 1u,
             [DFI_ITEM_CHARCOAL] = 1u,

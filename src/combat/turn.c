@@ -1574,6 +1574,15 @@ static duoforge_status dfi_get_damage(dfi_run *r, uint32_t user, uint32_t target
         mlist[mods] = 2048u;
         mods += 1u;
     }
+    /* Aura Guard (Mega batch 2, data/abilities.ts:310-319, onSourceModifyDamage of the target, breakable and Mold Breaker is
+     * not marked; the Champions mod has no entry): x0.5 (chainModify(0.5) = 2048/4096) on a move with the contact flag, like
+     * the contact half of Fluffy. It is the target's one ability, so with Solid Rock and Multiscale a hit has at most one of
+     * the three. */
+    if (dfi_ability(r->b, d, DFI_ABILITY_AURAGUARD) && (md->flags & DFI_MOVE_FLAG_CONTACT) != 0u) {
+        ok = ok && dfi_chain_modify(chain, 2048u, &chain);
+        mlist[mods] = 2048u;
+        mods += 1u;
+    }
     /* Friend Guard (step G35, data/abilities.ts:1533-1540, onAnyModifyDamage, breakable and Mold Breaker is not marked): the
      * target's partner, when it stands and holds the ability, weakens every hit on the target by x0.75 (3072/4096). The handler
      * is any Pokemon's, so the attacker's own partner is a holder too when it is the one hit (a spread move on an ally), and the
