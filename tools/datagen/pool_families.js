@@ -350,6 +350,34 @@ function checkWeather(dex, source) {
     expect('Weather Ball without weather', [none.type, none.basePower], ['Normal', 50]);
 }
 
+// Step G28, Expert Belt, Acrobatics, Blizzard, Shell Smash, Ancient Power and Feint: what the engine reads about them
+// (src/combat/turn.c), called on the pinned handlers and read from the pinned data.
+function checkG28(dex) {
+    const belt = dex.items.get('expertbelt');
+    for (const typeMod of [-2, -1, 0, 1, 2]) {
+        expect('Expert Belt at a type modifier of ' + typeMod,
+            call(belt.onModifyDamage, battle(belt), [100, {}, {getMoveHitData: () => ({typeMod})}, moveOf('Fire')]),
+            typeMod > 0 ? {chain: [4915, 4096]} : undefined);
+    }
+    const acrobatics = dex.moves.get('acrobatics');
+    expect('Acrobatics without an item', call(acrobatics.basePowerCallback, battle(acrobatics), [{item: ''}, {}, {basePower: 55}]), 110);
+    expect('Acrobatics with an item', call(acrobatics.basePowerCallback, battle(acrobatics), [{item: 'leftovers'}, {}, {basePower: 55}]), 55);
+    const blizzard = dex.moves.get('blizzard');
+    for (const [weather, never] of [['', false], ['sandstorm', false], ['raindance', false], ['sunnyday', false], ['snowscape', true]]) {
+        const move = {accuracy: 70};
+        call(blizzard.onModifyMove, {field: {isWeather: (list) => list.includes(weather)}}, [move]);
+        expect('Blizzard in ' + (weather || 'no weather'), move.accuracy, never ? true : 70);
+    }
+    const smash = dex.moves.get('shellsmash');
+    expect('the boosts of Shell Smash, in the order of the entry', Object.entries(smash.boosts),
+        [['def', -1], ['spd', -1], ['atk', 2], ['spa', 2], ['spe', 2]]);
+    const ancient = dex.moves.get('ancientpower');
+    expect('the secondary of Ancient Power', [ancient.secondary.chance, ancient.secondary.self],
+        [10, {boosts: {atk: 1, def: 1, spa: 1, spd: 1, spe: 1}}]);
+    const feint = dex.moves.get('feint');
+    expect('Feint', [feint.breaksProtect, feint.priority, feint.basePower, feint.flags.protect], [true, 2, 30, undefined]);
+}
+
 // Step G25, Electric Terrain, Misty Terrain, Rising Voltage, Terrain Pulse and the four terrain seeds: what the engine
 // reads about them (src/combat/turn.c), called on the pinned handlers.
 function checkTerrains(dex) {
@@ -638,6 +666,122 @@ function checkRecharge(dex) {
     expect('sucker punch', [sucker(attack, {}), sucker(attack, {mustrecharge: {}}), sucker(null, {})], [undefined, false, false]);
 }
 
+// Step G22, the weather Speed abilities, Inner Focus and Liquid Voice: the pinned facts that the engine hard-codes
+// (decision 0015, item 5s), called on the pinned handlers. The Champions mod overrides none of the six abilities (it has
+// no entry by their ids; the source of the generator hashes that file). `formes` are the rows of dfi_pool_forme_legal,
+// `itemIds` and `abilityIds` the ids of the pool's headers.
+function checkG22(dex, formes, itemIds, abilityIds) {
+    const ability = (id) => dex.abilities.get(id);
+    // Sand Rush, Swift Swim, Slush Rush, Chlorophyll: x2 Speed in their weather, and in no other, for every weather the
+    // handlers name. The engine reads rain, sun, sand and snow of its state; Hail is not in the format (the weather the
+    // handlers also accept is never up) and the Primal weathers are not states of the engine.
+    const weathers = ['', 'raindance', 'sunnyday', 'sandstorm', 'snowscape', 'hail', 'primordialsea', 'desolateland'];
+    const doubled = (id) => weathers.filter((w) => {
+        const pokemon = {effectiveWeather: () => w, hasItem: () => false};
+        const field = {isWeather: (names) => (Array.isArray(names) ? names : [names]).includes(w)};
+        const r = call(ability(id).onModifySpe, battle(ability(id), {field}), [100, pokemon]);
+        if (r !== undefined && r.chain !== 2) {
+            bad(id + ': onModifySpe gives ' + JSON.stringify(r.chain) + ', not x2');
+        }
+        return r !== undefined;
+    });
+    expect('Sand Rush doubles Speed in', doubled('sandrush'), ['sandstorm']);
+    expect('Swift Swim doubles Speed in', doubled('swiftswim'), ['raindance', 'primordialsea']);
+    expect('Slush Rush doubles Speed in', doubled('slushrush'), ['snowscape', 'hail']);
+    expect('Chlorophyll doubles Speed in', doubled('chlorophyll'), ['sunnyday', 'desolateland']);
+    for (const id of ['sandrush', 'swiftswim', 'slushrush', 'chlorophyll']) {
+        expect(id + ' has no other callback', Object.keys(dex.data.Abilities[id]).filter((k) => /^on/.test(k)).sort(),
+            id === 'sandrush' ? ['onImmunity', 'onModifySpe'] : ['onModifySpe']);
+    }
+    // Utility Umbrella (which makes effectiveWeather ignore sun and rain) is not in the pool, and the only ability of the
+    // pool that suppresses the weather (Cloud Nine; Air Lock has no row) stays unmarked (tests/test_pool_weather.c).
+    expect('Utility Umbrella is an item of the pool', itemIds.has('utilityumbrella'), false);
+    expect('abilities of the pool that suppress the weather',
+        [...abilityIds].filter((id) => dex.data.Abilities[id] && dex.data.Abilities[id].suppressWeather).sort(), ['cloudnine']);
+    // Sand Rush: immune to Sandstorm and to nothing else that runStatusImmunity asks.
+    const immune = (type) => call(ability('sandrush').onImmunity, battle(ability('sandrush')), [type, {}]);
+    expect('Sand Rush onImmunity', ['sandstorm', 'hail', 'brn', 'powder', 'trapped', 'psn'].map(immune),
+        [false, undefined, undefined, undefined, undefined, undefined]);
+    // Inner Focus: the flinch volatile is refused (null), no other; an Intimidate drop of Attack is deleted with
+    // -fail|holder|unboost|atk|[from] ability: Inner Focus|[of] holder, a drop by another effect or of another stat is not.
+    const focus = ability('innerfocus');
+    expect('Inner Focus flinch', call(focus.onTryAddVolatile, battle(focus), [{id: 'flinch'}, {}]), null);
+    expect('Inner Focus other volatiles', ['confusion', 'taunt', 'encore'].map(
+        (id) => call(focus.onTryAddVolatile, battle(focus), [{id}, {}])), [undefined, undefined, undefined]);
+    const boosted = (effectName, boost) => {
+        const logs = [];
+        const holder = {toString: () => 'HOLDER'};
+        const self = battle(focus, {add: (...a) => logs.push(a.map((x) => (typeof x === 'string' ? x : 'POKEMON')).join('|'))});
+        call(focus.onTryBoost, self, [boost, holder, {}, {name: effectName}]);
+        return {boost, logs};
+    };
+    expect('Inner Focus vs Intimidate Attack', boosted('Intimidate', {atk: -1}),
+        {boost: {}, logs: ['-fail|POKEMON|unboost|atk|[from] ability: Inner Focus|[of] HOLDER']});
+    expect('Inner Focus vs Intimidate Attack and Defense', boosted('Intimidate', {atk: -1, def: -1}).boost, {def: -1});
+    expect('Inner Focus vs Intimidate, Attack at the cap', boosted('Intimidate', {atk: 0}), {boost: {atk: 0}, logs: []});
+    expect('Inner Focus vs another effect', boosted('Snarl', {atk: -1}), {boost: {atk: -1}, logs: []});
+    expect('Inner Focus is breakable', focus.flags, {breakable: 1});
+    // Intimidate itself (the engine's entry code): one -ability line, a Substitute is -immune, else a boost of Attack by -1
+    // as a secondary effect of the ability.
+    const intimidate = ability('intimidate').onStart.toString().replace(/\s+/g, ' ');
+    expect('Intimidate onStart', /this\.boost\(\{ atk: -1 \}, target, pokemon, null, true\)/.test(intimidate), true);
+    // The Flower Veil race: no Inner Focus holder of the pool is a Grass type, so a Grass type that both abilities
+    // protect does not exist (the engine does not order the two TryBoost handlers).
+    const holders = formes.filter((f) => f.abilities.includes('innerfocus'));
+    expect('Grass types with Inner Focus', holders.filter((f) => dex.species.get(f.id).types.includes('Grass')).map((f) => f.id), []);
+    expect('Inner Focus has holders', holders.length > 0, true);
+    // Liquid Voice: a move with the sound flag becomes Water (not a Dynamaxed user's), nothing else changes; the
+    // priority puts it after the other ModifyType handlers; the sound flag is what the tables' flags2 SOUND bit holds.
+    const voice = ability('liquidvoice');
+    const typeAfter = (type, flags, volatiles) => {
+        const move = moveOf(type, {flags});
+        call(voice.onModifyType, battle(voice), [move, {volatiles: volatiles || {}}]);
+        return move.type;
+    };
+    expect('Liquid Voice', [typeAfter('Normal', {sound: 1}), typeAfter('Dark', {sound: 1}), typeAfter('Normal', {}),
+        typeAfter('Normal', {sound: 1}, {dynamax: {}})], ['Water', 'Water', 'Normal', 'Normal']);
+    expect('Liquid Voice onModifyTypePriority', voice.onModifyTypePriority, -1);
+    return 1;
+}
+
+// Step G32: what the engine reads about the new rows (src/combat/turn.c), called on the pinned handlers. Eruption and Water
+// Spout (power 150 x HP / maximum HP, then the engine floors it and clamps it to 1: sim/battle-actions.ts getDamage),
+// Freeze-Dry (Water is super effective), Soundproof (a sound move aimed at the holder by another Pokemon is -immune), Unnerve
+// (berries of the foes are not eaten while the holder stands) and Speed Boost (+1 Speed in the residual, not in the turn of
+// the switch-in). Eject Button is a text fact of the generator (G32_ENTRY_FACTS).
+function checkG32(dex) {
+    for (const id of ['eruption', 'waterspout']) {
+        const m = dex.moves.get(id);
+        expect(id + ' power', [200, 400, 1, 100].map((hp) => call(m.basePowerCallback, battle(m), [{hp, maxhp: 400}, {}, {basePower: 150}])),
+            [75, 150, 0.375, 37.5]);
+    }
+    const freeze = dex.moves.get('freezedry');
+    expect('Freeze-Dry onEffectiveness', ['Water', 'Grass', 'Ice', 'Fire'].map((t) => call(freeze.onEffectiveness, battle(freeze), [0, {}, t])),
+        [1, undefined, undefined, undefined]);
+    expect('Freeze-Dry in the Champions mod has no secondary', freeze.secondary === undefined || freeze.secondary === null, true);
+    const sound = dex.abilities.get('soundproof');
+    const probe = (flags, same) => {
+        const logs = [];
+        const holder = {};
+        const r = call(sound.onTryHit, battle(sound, {add: (...a) => logs.push(a.map((x) => (typeof x === 'string' ? x : 'POKEMON')).join('|'))}),
+            [holder, same ? holder : {}, moveOf('Normal', {flags})]);
+        return {r, logs};
+    };
+    expect('Soundproof vs a sound move', probe({sound: 1}, false), {r: null, logs: ['-immune|POKEMON|[from] ability: Soundproof']});
+    expect('Soundproof vs another move', probe({}, false), {logs: []});
+    expect('Soundproof vs its own sound move', probe({sound: 1}, true), {logs: []});
+    const unnerve = dex.abilities.get('unnerve');
+    expect('Unnerve', [true, false].map((unnerved) => call(unnerve.onFoeTryEatItem, battle(unnerve, {effectState: {unnerved}}), [])), [false, true]);
+    const boost = dex.abilities.get('speedboost');
+    expect('Speed Boost', [0, 1, 3].map((activeTurns) => {
+        const boosts = [];
+        call(boost.onResidual, battle(boost, {boost: (b) => boosts.push(b)}), [{activeTurns}]);
+        return boosts;
+    }), [[], [{spe: 1}], [{spe: 1}]]);
+    expect('Speed Boost residual order', [boost.onResidualOrder, boost.onResidualSubOrder], [28, 2]);
+    return 1;
+}
+
 // Step G19, Coaching and Glaive Rush: the pinned facts that the engine hard-codes (decision 0015, item 5i): Coaching's boosts,
 // target and flags, and Glaive Rush's self effect and condition (never-miss, double damage, the removal before the next move).
 function checkG19(dex) {
@@ -704,11 +848,12 @@ function checkG10Moves(dex) {
 }
 
 // The callbacks that change the priority of a move or the Speed of a Pokemon, on the entry or on its own condition
-// (Unburden's volatile). The engine implements Prankster (+1 for a status move), Unburden (x2 Speed without an item)
+// (Unburden's volatile). The engine implements Prankster (+1 for a status move), Gale Wings (+1 for a Flying move at full HP, step G34), Unburden (x2 Speed without an item)
 // and Choice Scarf (x1.5 Speed); every other modelled row has none.
 const ORDER_CALLBACKS = ['onModifyPriority', 'onFractionalPriority', 'onModifySpe'];
 const ENGINE_ORDER = {
-    ability: {prankster: ['onModifyPriority'], unburden: ['condition.onModifySpe']},
+    ability: {prankster: ['onModifyPriority'], galewings: ['onModifyPriority'], unburden: ['condition.onModifySpe'], sandrush: ['onModifySpe'],
+        swiftswim: ['onModifySpe'], slushrush: ['onModifySpe'], chlorophyll: ['onModifySpe']},
     item: {choicescarf: ['onModifySpe']},
 };
 function orderCallbacks(raw) {
@@ -907,16 +1052,19 @@ function checkFormes(dex, validator, rows, moves, abilities) {
 // The UNMODELED markers of gen_closure.py --pool, re-derived from the pinned data in this file's own words: the
 // special column of a move, the handler column of an item and of an ability, and the lists of unmodelled features.
 // implemented in the turn code by id (G4: Focus Sash, Rock Head; G12: Floettite, Flower Veil, Fairy Aura)
-const ENGINE_ROWS = {items: ['focussash', 'floettite', 'psychicseed', 'electricseed', 'mistyseed'],
-    abilities: ['rockhead', 'flowerveil', 'fairyaura', 'roughskin', 'poisontouch', 'thermalexchange', 'stickyhold', 'trace']};
+const ENGINE_ROWS = {items: ['focussash', 'floettite', 'psychicseed', 'electricseed', 'mistyseed', 'expertbelt', 'ejectbutton', 'widelens'],
+    abilities: ['rockhead', 'flowerveil', 'fairyaura', 'roughskin', 'poisontouch', 'thermalexchange', 'stickyhold', 'trace',
+        'levitate', 'sandrush', 'swiftswim', 'slushrush', 'chlorophyll', 'innerfocus', 'liquidvoice',
+        'flamebody', 'clearbody', 'hospitality', 'overcoat', 'soundproof', 'unnerve', 'speedboost',
+        'compoundeyes', 'ironfist', 'sharpness', 'solidrock', 'technician', 'multiscale', 'galewings', 'raindish', 'friendguard']};
 const ENGINE_TARGETS = new Set(['normal', 'any', 'adjacentAlly', 'adjacentFoe', 'self', 'allAdjacentFoes', 'allySide', 'all',
-    'randomNormal']);
+    'randomNormal', 'allAdjacent', 'allies']);
 // The fields of a move that the tables model (gen_closure.py DATA_KEYS and IGNORED_KEYS), nothing else.
 const MOVE_KEYS = new Set(['num', 'accuracy', 'basePower', 'category', 'name', 'pp', 'priority', 'flags', 'target', 'type',
     'critRatio', 'secondary', 'self', 'boosts', 'recoil', 'drain', 'status', 'volatileStatus', 'sideCondition',
     'pseudoWeather', 'selfSwitch', 'stallingMove', 'noPPBoosts', 'struggleRecoil', 'condition', 'contestType', 'zMove',
     'maxMove', 'isNonstandard', 'hasSheerForceBoost', 'inherit', 'thawsTarget', 'heal']);
-const MODELLED_STATUS = new Set(['brn', 'frz', 'par', 'slp', 'psn']);
+const MODELLED_STATUS = new Set(['brn', 'frz', 'par', 'slp', 'psn', 'tox']);
 const MODELLED_SIDE = new Set(['tailwind', 'reflect', 'lightscreen']);
 const STAT_NAMES = ['atk', 'def', 'spa', 'spd', 'spe', 'accuracy', 'evasion'];
 
@@ -929,7 +1077,7 @@ function isBoostBlock(b) {
 // effect each. The move's handler id (G2) or its place in the prefix is decided by the caller.
 // The pool rows that carry selfSwitch and that the turn code pivots with a flag of their own (dfi_pivot_moves): U-turn
 // (a G2 row); Flip Turn is a row of the prefix.
-const ENGINE_PIVOTS = ['uturn'];
+const ENGINE_PIVOTS = ['uturn', 'voltswitch'];
 // Step G13: the moves that are another move's handler under another name (gen_closure.py PROTECT_COPIES).
 const PROTECT_COPIES = {detect: 'protect'};
 function moveIsModelled(raw, id) {
@@ -967,7 +1115,7 @@ function moveIsModelled(raw, id) {
             return false;
         }
         if (effects[0] === 'status') {
-            if (!['brn', 'frz', 'par', 'slp', 'psn'].includes(sec.status)) { // step G13: a poison secondary is modelled (status 5)
+            if (!['brn', 'frz', 'par', 'slp', 'psn', 'tox'].includes(sec.status)) { // step G13: a poison secondary is modelled (status 5), step G36: a badly poisoning one (status 6)
                 return false;
             }
         } else if (effects[0] === 'volatileStatus') {
@@ -976,6 +1124,13 @@ function moveIsModelled(raw, id) {
             }
         } else if (effects[0] === 'boosts') {
             if (!isBoostBlock(sec.boosts)) {
+                return false;
+            }
+            vectors += 1;
+        } else if (effects[0] === 'self') {
+            // Step G28: a secondary whose own effect is a stat change of the user (Ancient Power).
+            if (sec.self === null || typeof sec.self !== 'object' || Object.keys(sec.self).length !== 1 ||
+                !isBoostBlock(sec.self.boosts)) {
                 return false;
             }
             vectors += 1;
@@ -1248,10 +1403,13 @@ function main() {
     checkFocusSash(dex, root);
     checkWeather(dex, source);
     checkTerrains(dex);
+    checkG28(dex);
     checkG10Moves(dex);
     checkEncore(dex, repo);
     checkRecharge(dex);
     checkG19(dex);
+    checkG32(dex);
+    checkG22(dex, formeRowsList, new Set(definedIds(headers, 'ITEM').values()), new Set(abilityIds.values()));
     const abilities = checkAbilities(dex, abilityRows, moveIds, unmodeledAbilities, unmodeledMoves);
     // "All 18": a booster and a resist berry for each type, and nothing else in the families.
     expect('type boosters', items.TYPE_BOOSTER, 18);

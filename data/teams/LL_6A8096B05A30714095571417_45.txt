@@ -1,0 +1,53 @@
+Salamence (M) @ Salamencite
+Ability: Intimidate
+Level: 50
+Naive Nature
+- Protect
+- Tailwind
+- Hyper Voice
+- Double-Edge
+
+Rillaboom (M) @ Miracle Seed
+Ability: Grassy Surge
+Level: 50
+Adamant Nature
+- Fake Out
+- High Horsepower
+- Wood Hammer
+- Grassy Glide
+
+Sneasler (M) @ White Herb
+Ability: Unburden
+Level: 50
+Adamant Nature
+- Protect
+- Fake Out
+- Close Combat
+- Dire Claw
+
+Kingambit (M) @ Occa Berry
+Ability: Defiant
+Level: 50
+Adamant Nature
+- Protect
+- Sucker Punch
+- Kowtow Cleave
+- Iron Head
+
+Floette-Eternal (F) @ Floettite
+Ability: Flower Veil
+Level: 50
+Bold Nature
+- Protect
+- Calm Mind
+- Dazzling Gleam
+- Moonblast
+
+Pelipper (M) @ Focus Sash
+Ability: Drizzle
+Level: 50
+Modest Nature
+- Wide Guard
+- Tailwind
+- Protect
+- Weather Ball

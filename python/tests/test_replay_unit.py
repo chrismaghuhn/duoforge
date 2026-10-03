@@ -42,6 +42,81 @@ def _define(header, name):
     return int(re.search(rf"#define {name} (\d+)u", header).group(1))
 
 
+# The generated rows as duoforge_live.data read them before decision 0020 (src/data/*_tables.c): the reference of
+# GeneratedRowsTest, which shows the library's data API answering the same for every row of both kinds.
+_ROW_KINDS = {"closure": ("closure_tables.h", "closure_tables.c", "DFI_", "dfi_closure_formes[DFI_FORME_COUNT] = {",
+                          "dfi_closure_moves[DFI_MOVE_COUNT] = {", "dfi_closure_items[DFI_ITEM_COUNT] = {"),
+              "pool": ("pool_tables.h", "pool_tables.c", "DFI_POOL_", "dfi_pool_formes[DFI_POOL_FORME_COUNT] = {",
+                       "dfi_pool_moves[DFI_POOL_MOVE_COUNT] = {", "dfi_pool_items[DFI_POOL_ITEM_COUNT] = {")}
+# dfi_forme_data: dex_num, weight_hg, types[2], base[6], ability, gender_rule, is_mega, base_forme, mega_forme, ...
+_FORME_ROW = re.compile(r"\{\d+u, \d+u, \{\w+, \w+\}, \{[^}]*\}, (\w+), \w+, \w+, (\w+), (\w+), \w+,")
+# dfi_move_data: type, category, base_power, accuracy, pp_base, pp_max, priority, target_class, ...
+_MOVE_ROW = re.compile(r"^    \{\d+u, \d+u, \d+u, \d+u, \d+u, (\d+)u, \d+u, (\d+)u,", re.M)
+# dfi_item_data: the forme that holds it as a Mega Stone, the Mega forme it reaches
+_ITEM_ROW = re.compile(r"^    \{(\w+), (\w+)\},", re.M)
+
+
+def _generated_rows(kind):
+    """(formes [(ability, base, mega)], moves [(pp_max, target class)], items [(holder, mega)]) of a kind's generated
+    rows; None for a NONE symbol or the closure's 0xFF."""
+    header_file, file, prefix, *starts = _ROW_KINDS[kind]
+    header = (data.ROOT / "src" / "data" / header_file).read_text(encoding="ascii")
+    source = (data.ROOT / "src" / "data" / file).read_text(encoding="ascii")
+
+    def value(token):
+        if token in ("DFI_CLOSURE_NONE", "DFI_FORME_NONE") or (kind == "closure" and token == "255u"):
+            return None
+        return int(token[:-1])
+
+    out = []
+    for table, start, row in zip(("FORME", "MOVE", "ITEM"), starts, (_FORME_ROW, _MOVE_ROW, _ITEM_ROW)):
+        a = source.index(start)
+        rows = row.findall(source[a:source.index("};", a)])
+        assert len(rows) == _define(header, f"{prefix}{table}_COUNT"), (kind, table)
+        out.append([tuple(value(x) if not x.isdigit() else int(x) for x in r) for r in rows])
+    return out
+
+
+class GeneratedRowsTest(unittest.TestCase):
+    """The data the fold reads (decision 0020): what the generated rows hold, row by row, for both kinds."""
+
+    def test_the_data_equals_the_generated_rows(self):
+        for kind in ("closure", "pool"):
+            d = data.load(kind=kind)
+            formes, moves, items = _generated_rows(kind)
+            self.assertEqual((d.counts["FORME"], d.counts["MOVE"], d.counts["ITEM"]), (len(formes), len(moves), len(items)))
+            for forme, (ability, base, mega) in enumerate(formes):
+                where = (kind, "forme", forme)
+                self.assertEqual(d.ability_of(forme), ability + 1, where)
+                self.assertEqual(d.base_forme(forme), base, where)
+                self.assertEqual(d.mega_forme(forme), mega, where)
+            for move, (pp_max, target_class) in enumerate(moves):
+                self.assertEqual(d.pp_max(move), pp_max, (kind, "move", move))
+                self.assertEqual(d.target_type(move), data.TARGET_TYPES[target_class], (kind, "move", move))
+            for item, (holder, mega) in enumerate(items):
+                where = (kind, "item", item)
+                for forme in range(len(formes)):
+                    expected = mega if holder is not None and mega is not None and holder == forme else None
+                    self.assertEqual(d.mega_of(forme, item + 1), expected, where + (forme,))
+                self.assertIsNone(d.mega_of(0, 0))
+
+
+    def test_a_checkout_the_library_does_not_match_is_refused(self):
+        # the ids are the converter's (the checkout's headers), the rows the library's: a DLL of other tables is an
+        # explicit error, never rows of the wrong ids
+        from unittest import mock
+        real = trace_to_c.load_tables
+
+        def swapped(root, pool):
+            tables = real(root, pool)
+            tables["MOVE"]["PROTECT"], tables["MOVE"]["TAILWIND"] = tables["MOVE"]["TAILWIND"], tables["MOVE"]["PROTECT"]
+            return tables
+
+        with mock.patch.object(trace_to_c, "load_tables", swapped):
+            with self.assertRaisesRegex(ValueError, "the library's MOVE names differ from the converter's tables"):
+                data.load(kind="pool")
+
+
 class DataTest(unittest.TestCase):
     """The POOL tables of the fold (Task 2)."""
 
@@ -52,7 +127,8 @@ class DataTest(unittest.TestCase):
         cls.header = (data.ROOT / "src" / "data" / "pool_tables.h").read_text(encoding="ascii")
 
     def test_pool_counts(self):
-        self.assertEqual(len(self.pool._formes), _define(self.header, "DFI_POOL_FORME_COUNT"))
+        self.assertEqual(self.pool.counts["FORME"], _define(self.header, "DFI_POOL_FORME_COUNT"))
+        self.assertEqual(self.pool.counts["ITEM"], _define(self.header, "DFI_POOL_ITEM_COUNT"))
         self.assertEqual(len(self.pool._pp_max), _define(self.header, "DFI_POOL_MOVE_COUNT"))
         self.assertEqual(len(self.pool._target_class), _define(self.header, "DFI_POOL_MOVE_COUNT"))
 
@@ -61,6 +137,21 @@ class DataTest(unittest.TestCase):
         self.assertEqual(self.pool.target_type(moves["TAILWIND"]), "allySide")
         self.assertEqual(self.pool.target_type(moves["PROTECT"]), "self")
         self.assertEqual(self.closure.target_type(moves["PROTECT"]), "self")
+
+    def test_each_stone_reaches_its_own_mega(self):
+        # G23 (#162): Charizardite X and Y take Charizard to two formes, Garchompite and Garchompite Z Garchomp
+        f, i, a = self.pool.tables["FORME"], self.pool.tables["ITEM"], self.pool.tables["ABILITY"]
+        for base, stone, mega in (("CHARIZARD", "CHARIZARDITEX", "CHARIZARDMEGAX"),
+                                  ("CHARIZARD", "CHARIZARDITEY", "CHARIZARDMEGAY"),
+                                  ("GARCHOMP", "GARCHOMPITE", "GARCHOMPMEGA"),
+                                  ("GARCHOMP", "GARCHOMPITEZ", "GARCHOMPMEGAZ")):
+            self.assertEqual(self.pool.mega_of(f[base], i[stone] + 1), f[mega], stone)
+            self.assertEqual(self.pool.base_forme(f[mega]), f[base], mega)
+            self.assertIsNone(self.pool.mega_of(f["SALAMENCE"], i[stone] + 1), stone)  # another forme's stone
+        self.assertEqual(self.pool.ability_of(f["CHARIZARDMEGAX"]), a["TOUGHCLAWS"] + 1)
+        self.assertEqual(self.pool.ability_of(f["CHARIZARDMEGAY"]), a["DROUGHT"] + 1)
+        self.assertEqual(self.pool.forme("Charizard-Mega-X"), f["CHARIZARDMEGAX"])
+        self.assertEqual(self.pool.forme("Garchomp-Mega-Z"), f["GARCHOMPMEGAZ"])
 
     def test_protect_pp(self):
         self.assertEqual(self.pool.pp_max(self.pool.tables["MOVE"]["PROTECT"]), 8)
@@ -156,6 +247,17 @@ class LinesTest(unittest.TestCase):
                 lines.check(line, view)
             self.assertEqual(caught.exception.reason, "line:-fail unboost")
 
+    def test_a_mega_folds_only_for_its_own_stone(self):
+        # G23: Garchompite Z reaches Garchomp-Mega-Z, Garchompite Garchomp-Mega
+        line_z = "|detailschange|p1a: Garchomp|Garchomp-Mega-Z, L50, M"
+        z = _View({"p1: Garchomp": ("GARCHOMP", "GARCHOMPITEZ", "ROUGHSKIN")})
+        plain = _View({"p1: Garchomp": ("GARCHOMP", "GARCHOMPITE", "ROUGHSKIN")})
+        self.assertEqual(lines.check(line_z, z), "fold")
+        self.assertEqual(lines.check("|detailschange|p1a: Garchomp|Garchomp-Mega, L50, M", plain), "fold")
+        with self.assertRaises(lines.Stop) as caught:
+            lines.check(line_z, plain)
+        self.assertEqual(caught.exception.reason, "feature:FORME_CHANGE")
+
     def test_fold_and_room_lines(self):
         self.assertEqual(lines.check("|-enditem|p1a: Staraptor|Sitrus Berry|[eat]", self.view), "fold")
         self.assertEqual(lines.check("|-ability|p1a: Staraptor|Intimidate|boost", self.view), "fold")
@@ -168,6 +270,22 @@ class LinesTest(unittest.TestCase):
     def test_turn_scoped(self):
         self.assertEqual(lines.check("|-singleturn|p1a: Staraptor|move: Rage Powder", self.view), "turn:RAGE_POWDER")
         self.assertEqual(lines.check("|-singleturn|p1a: Staraptor|Wide Guard", self.view), "turn:WIDE_GUARD")
+
+    def test_the_protect_variants_single_turn_line_folds(self):
+        # Spiky Shield, Baneful Bunker and Burning Bulwark print `move: Protect` (Protect and Detect print `Protect`).
+        self.assertEqual(lines.check("|-singleturn|p1a: Staraptor|move: Protect", self.view), "fold")
+        self.assertEqual(lines.check("|-singleturn|p1a: Staraptor|Protect", self.view), "fold")
+        self.assertEqual(self.stop("|-singleturn|p1a: Staraptor|move: Court Change"), "line:-singleturn move: Court Change")
+
+    def test_spiky_shield_damage_folds_with_a_known_source(self):
+        # `-damage|attacker|hp|[from] Spiky Shield|[of] holder`: the generic damage fold applies the HP; the converter's
+        # ev_cause knows the source (the cause MOVE with the move in id2 and the holder in other).
+        line = "|-damage|p2a: Gholdengo|87/100|[from] Spiky Shield|[of] p1a: Staraptor"
+        self.assertEqual(lines.check(line, self.view), "fold")
+        tables = self.view.data.tables
+        cause, id2, other = lines.trace_to_c.ev_cause(["[from] Spiky Shield", "[of] p1a: Staraptor"], tables)
+        self.assertEqual((cause, id2), (lines.trace_to_c.CAUSE["MOVE"], tables["MOVE"]["SPIKYSHIELD"]))
+        self.assertNotEqual(other, lines.trace_to_c.NOPOS)
 
     def test_guard_blocks_are_turn_scoped(self):
         self.assertEqual(lines.check("|-activate|p1a: Staraptor|move: Wide Guard", self.view), "turn:WIDE_GUARD")
@@ -550,6 +668,73 @@ class GameTest(unittest.TestCase):
         tracker.feed([line])
         self.assertEqual(tracker._positions[1][1].chain, 1)
         self.assertEqual(tracker._positions[1][1].stages, self.protected_farigiraf()._positions[1][1].stages)
+
+    def at_turn_3(self):
+        """A tracker of p1 fed up to |turn|3: Farigiraf (p2b) protected in turn 2, its chain is 1."""
+        from duoforge_live import teams
+        from duoforge_replay.spectator import SpectatorTracker
+        sheets = tuple(teams.unpack(line.split("|", 3)[3]) for line in self.log if line.startswith("|showteam|"))
+        tracker = SpectatorTracker(self.data, sheets, 0, None, lambda m, f: ([100] * 6, [0] * 6), self.log)
+        tracker.feed(self.log[:self.log.index("|turn|3") + 1])
+        self.assertEqual(tracker._positions[1][1].chain, 1)
+        return tracker
+
+    def test_feint_breaking_the_partners_guard_ends_only_the_targets_chain(self):
+        # G28 (sim/battle-actions.ts hitStepBreakProtect): Feint at Farigiraf, which protected the turn before and not
+        # now, breaks Politoed's Wide Guard. Farigiraf's stall volatile goes (chain 0, seen at a PIVOT of the turn);
+        # Politoed keeps the chain its Wide Guard added, and the side's guard is gone
+        tracker = self.at_turn_3()
+        tracker.feed(["|move|p2a: Politoed|Wide Guard|p2a: Politoed", "|-singleturn|p2a: Politoed|Wide Guard"])
+        self.assertEqual(tracker._positions[1][0].chain, 1)
+        self.assertIn("WIDE_GUARD", tracker._turn_scoped)
+        tracker.feed(["|move|p1a: Indeedee|Feint|p2b: Farigiraf", "|-activate|p2b: Farigiraf|move: Feint"])
+        self.assertEqual((tracker._positions[1][1].chain, tracker._positions[1][1].stall), (0, 0))
+        self.assertEqual(tracker._positions[1][0].chain, 1)
+        self.assertNotIn("WIDE_GUARD", tracker._turn_scoped)
+
+    def test_a_move_activation_is_no_emergency_exit(self):
+        # an ACTIVATE of a move whose id equals Emergency Exit's ability id + 1 (move 8, Muddy Water) asks no switch:
+        # only cause ABILITY names an ability
+        tracker = self.at_turn_3()
+        exit_id = self.data.tables["ABILITY"]["EMERGENCYEXIT"] + 1
+        self.assertEqual(self.data.tables["MOVE"]["MUDDYWATER"], exit_id)
+        tracker._event(trace_to_c.ev_tuple(trace_to_c.EV["ACTIVATE"], 2, trace_to_c.NOPOS, trace_to_c.CAUSE["MOVE"], 0,
+                                           exit_id))
+        self.assertEqual(tracker._positions[1][0].flag, 0)
+        tracker._event(trace_to_c.ev_tuple(trace_to_c.EV["ACTIVATE"], 2, trace_to_c.NOPOS, trace_to_c.CAUSE["ABILITY"], 0,
+                                           exit_id))
+        self.assertEqual(tracker._positions[1][0].flag, 1)
+
+    def charizard_mega(self, stone, forme):
+        """The committed log with Charizard (p2) holding `stone` and evolving into `forme`."""
+        out = []
+        for line in self.log:
+            if line.startswith("|showteam|p2|"):
+                line = line.replace("]Charizard||CharizarditeY|", f"]Charizard||{stone.replace(' ', '')}|")
+            elif line == "|detailschange|p2b: Charizard|Charizard-Mega-Y, L50, M":
+                line = f"|detailschange|p2b: Charizard|{forme}, L50, M"
+            elif line == "|-mega|p2b: Charizard|Charizard|Charizardite Y":
+                line = f"|-mega|p2b: Charizard|Charizard|{stone}"
+            out.append(line)
+        return out
+
+    def test_mega_x_folds_with_its_own_ability(self):
+        # G23: Charizardite X takes Charizard to Charizard-Mega-X (Tough Claws), not to the first Mega of the forme
+        from duoforge_live import teams
+        from duoforge_replay.spectator import SpectatorTracker
+        lines = self.charizard_mega("Charizardite X", "Charizard-Mega-X")
+        result = self.run_game(lines)
+        self.assertFalse([k for k in result.counters if k.startswith("perspectives.stopped.")], result.counters)
+        sheets = tuple(teams.unpack(line.split("|", 3)[3]) for line in lines if line.startswith("|showteam|"))
+        tracker = SpectatorTracker(self.data, sheets, 0, None, lambda m, f: ([100] * 6, [0] * 6), lines)
+        tracker.feed(lines[:lines.index("|-mega|p2b: Charizard|Charizard|Charizardite X") + 1])
+        charizard = tracker._member_of("p2b: Charizard")
+        self.assertEqual((charizard.is_mega, charizard.ability), (1, self.data.tables["ABILITY"]["TOUGHCLAWS"] + 1))
+
+    def test_a_mega_its_stone_does_not_reach_stops(self):
+        # Charizardite Y shown on the sheet, Charizard-Mega-X in the log: no Mega Evolution the stone makes
+        result = self.run_game(self.charizard_mega("Charizardite Y", "Charizard-Mega-X"))
+        self.assertEqual(result.counters["perspectives.stopped.feature:FORME_CHANGE"], 2, result.counters)
 
     def insert_after_in(self, lines, prefix, new):
         i = next(i for i, line in enumerate(lines) if line.startswith(prefix))

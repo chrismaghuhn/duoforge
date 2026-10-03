@@ -1,0 +1,28 @@
+{
+  "name": "g22_foreign_weather",
+  "purpose": "The Speed abilities in a weather that is not theirs change nothing: Basculegion (Swift Swim, 98 Speed) and Beartic (Slush Rush, 70) in the sun of Ninetales, Basculegion in the snow of Abomasnow after it, then Houndstone (Sand Rush, 88) and Venusaur (Chlorophyll, 100) in that snow: the foes at 101 to 120 Speed move before them as they do without weather.",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,0000000000000000000000000000000000000000000000000000000000002207",
+  "teams": [
+    "Basculegion (M) @ Sitrus Berry\nAbility: Swift Swim\nLevel: 50\nEVs: 32 HP / 2 Atk / 32 SpD\nCalm Nature\n- Liquidation\n- Protect\n\nBeartic (M) @ Never-Melt Ice\nAbility: Slush Rush\nLevel: 50\nEVs: 32 HP / 2 Atk / 32 SpD\nCalm Nature\n- Bulk Up\n- Protect\n\nHoundstone (M) @ Spell Tag\nAbility: Sand Rush\nLevel: 50\nEVs: 32 HP / 2 Def / 32 SpD\nCalm Nature\n- Snarl\n- Protect\n\nVenusaur (M) @ Miracle Seed\nAbility: Chlorophyll\nLevel: 50\nEVs: 32 HP / 32 SpD / 2 Def\nCalm Nature\n- Swords Dance\n- Protect\n\nMilotic (F) @ Leftovers\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Protect\n\nStaraptor (F) @ Staraptite\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 2 SpD / 32 Spe\nJolly Nature\n- Protect",
+    "Milotic (F) @ Leftovers\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Coil\n- Protect\n\nKingambit (M) @ Black Glasses\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 2 Atk / 32 Spe\nAdamant Nature\n- Swords Dance\n- Protect\n\nNinetales (M) @ Charcoal\nAbility: Drought\nLevel: 50\nEVs: 32 HP / 2 Def / 32 SpD\nCalm Nature\n- Protect\n- Flamethrower\n\nAbomasnow (M) @ Poison Barb\nAbility: Snow Warning\nLevel: 50\nEVs: 32 HP / 32 Spe / 2 Def\nCalm Nature\n- Protect\n- Ice Beam\n\nStaraptor (F) @ Staraptite\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 2 SpD / 32 Spe\nJolly Nature\n- Protect\n\nSalamence (M) @ Salamencite\nAbility: Intimidate\nLevel: 50\nEVs: 2 HP / 32 SpA / 32 Spe\nTimid Nature\n- Protect"
+  ],
+  "plan": {
+    "p1": [
+      "move 1 1, move 1",
+      "move 1 1, move 1",
+      "move 1 1, move 1",
+      "switch 3, switch 4",
+      "move 1, move 1"
+    ],
+    "p2": [
+      "move 1, move 1",
+      "move 1, switch 3",
+      "switch 4, move 2 1",
+      "move 1, move 2 1",
+      "move 2 1, move 2 1"
+    ],
+    "max_steps": 7
+  }
+}

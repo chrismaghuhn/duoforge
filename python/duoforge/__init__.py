@@ -2,11 +2,13 @@
 
 Python allocates, calls and views; every rule stays in the C engine.
 """
+from . import data
 from ._lib import library_path, load_library, status_name, version
 from .batch import Batch, factored_choice, factored_choices, joint_counts, joint_index, joint_indices
 from .context import Context, reference_setups
 from .errors import DuoforgeError, DuoforgeLibraryError
 from .policies import RandomPolicy, ScriptedPolicy, seeds
+from . import data, teams
 
 __all__ = [
     "Batch",
@@ -14,6 +16,7 @@ __all__ = [
     "DuoforgeError",
     "DuoforgeLibraryError",
     "RandomPolicy",
+    "data",
     "ScriptedPolicy",
     "factored_choice",
     "factored_choices",

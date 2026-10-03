@@ -228,8 +228,9 @@ static void check_view(df_test *t, const duoforge_context *ctx)
 
 /* What the step marks and what it leaves out: the sources of the terrains' effects that the engine does not model are
  * unmarked rows, so no battle holds one. Surge Surfer (Speed x2 in Electric Terrain), Mimicry (the type of the terrain),
- * Seed Sower and Grass Pelt (Grassy Terrain), Terrain Extender (eight turns), Steel Roller and Ice Spinner (they clear the
- * terrain) and Misty Explosion (x1.5 in Misty Terrain) read the terrain by a callback of their own. */
+ * Seed Sower and Grass Pelt (Grassy Terrain), Terrain Extender (eight turns), Ice Spinner (it clears the terrain) and Misty
+ * Explosion (x1.5 in Misty Terrain) read the terrain by a callback of their own. Steel Roller, which clears it too, is a
+ * handler since step G34, and since step G25 it ends all four terrains (its battles: g34_steel_roller*, g25_steel_roller_terrains). */
 static void check_marks(df_test *t)
 {
     static const uint32_t abilities[] = {DFI_ABILITY_SURGESURFER, DFI_ABILITY_MIMICRY, DFI_ABILITY_SEEDSOWER, DFI_ABILITY_GRASSPELT};
@@ -238,7 +239,7 @@ static void check_marks(df_test *t)
         DF_CHECK_EQ_U64(t, dfi_pool_ability_handler[abilities[i]], DFI_HANDLER_UNMODELED);
     }
     DF_CHECK_EQ_U64(t, dfi_support.items[DFI_ITEM_TERRAINEXTENDER], 0u);
-    DF_CHECK_EQ_U64(t, dfi_support.moves[DFI_MOVE_STEELROLLER], 0u);
+    DF_CHECK(t, dfi_support.moves[DFI_MOVE_STEELROLLER] != 0u && dfi_pool_moves[DFI_MOVE_STEELROLLER].special == DFI_SPECIAL_STEEL_ROLLER);
     DF_CHECK_EQ_U64(t, dfi_support.moves[DFI_MOVE_ICESPINNER], 0u);
     DF_CHECK_EQ_U64(t, dfi_support.moves[DFI_MOVE_MISTYEXPLOSION], 0u);
     /* The step's rows: both terrain moves, Rising Voltage and Terrain Pulse with their handlers, Electric Surge (a terrain

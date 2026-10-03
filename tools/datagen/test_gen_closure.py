@@ -505,7 +505,58 @@ GLAIVE_RUSH = move_entry(
 COACHING = move_entry('coaching', 'Coaching', 'boosts: {', '\tatk: 1,', '\tdef: 1,', '},', target='adjacentAlly', type_='Fighting',
                       flags='bypasssub: 1, allyanim: 1, metronome: 1')
 
+PROTECT_ONPREPARE = ['onPrepareHit(pokemon) {', "\treturn !!this.queue.willAct() && this.runEvent('StallMove', pokemon);", '},',
+                     'onHit(pokemon) {', "\tpokemon.addVolatile('stall');", '},']
+
+
+def protect_variant(mid, name, volatile, punish):
+    return move_entry(
+        mid, name, 'stallingMove: true,', "volatileStatus: '%s'," % volatile, *PROTECT_ONPREPARE, 'condition: {', '\tduration: 1,',
+        '\tonStart(target) {', "\t\tthis.add('-singleturn', target, 'move: Protect');", '\t},', '\tonTryHitPriority: 3,',
+        '\tonTryHit(target, source, move) {', '\t\tif (this.checkMoveBypassesProtect(move, source, target)) return;',
+        '\t\tif (move.smartTarget) {', '\t\t\tmove.smartTarget = false;', '\t\t} else {',
+        "\t\t\tthis.add('-activate', target, 'move: Protect');", '\t\t}',
+        "\t\tconst lockedmove = source.getVolatile('lockedmove');", '\t\tif (lockedmove) {',
+        '\t\t\t// Outrage counter is reset', "\t\t\tif (source.volatiles['lockedmove'].duration === 2) {",
+        "\t\t\t\tdelete source.volatiles['lockedmove'];", '\t\t\t}', '\t\t}',
+        '\t\tif (this.checkMoveMakesContact(move, source, target)) {', '\t\t\t' + punish, '\t\t}', '\t\treturn this.NOT_FAIL;',
+        '\t},', '\tonHit(target, source, move) {',
+        '\t\tif (move.isZOrMaxPowered && this.checkMoveMakesContact(move, source, target)) {', '\t\t\t' + punish, '\t\t}', '\t},',
+        '},', flags='noassist: 1, failcopycat: 1', target='self', type_='Grass')
+
+
+PROTECT_BASE = move_entry('protect', 'Protect', 'stallingMove: true,', "volatileStatus: 'protect',", *PROTECT_ONPREPARE,
+                          flags='noassist: 1, failcopycat: 1', target='self', type_='Normal')
+SPIKY_SHIELD = protect_variant('spikyshield', 'Spiky Shield', 'spikyshield', 'this.damage(source.baseMaxhp / 8, source, target);')
+
 PLAIN = move_entry('plain', 'Plain', category='Physical', base_power=50, flags='contact: 1')
+
+# ---- step G30: Rage Powder, Psychic Fangs, Solar Beam (handlers) and the four abilities of ENGINE_ROWS ----
+RAGE_POWDER = move_entry(
+    'ragepowder', 'Rage Powder', "volatileStatus: 'ragepowder',", 'onTry(source) {', '\treturn this.activePerHalf > 1;', '},',
+    'condition: {', '\tduration: 1,', '\tonStart(pokemon) {', "\t\tthis.add('-singleturn', pokemon, 'move: Rage Powder');", '\t},',
+    '\tonFoeRedirectTargetPriority: 1,', '\tonFoeRedirectTarget(target, source, source2, move) {',
+    '\t\tconst ragePowderUser = this.effectState.target;', '\t\tif (ragePowderUser.isSkyDropped()) return;', '',
+    "\t\tif (source.runStatusImmunity('powder') && this.validTarget(ragePowderUser, source, move.target)) {",
+    '\t\t\tif (move.smartTarget) move.smartTarget = false;', '\t\t\tthis.debug("Rage Powder redirected target of move");',
+    '\t\t\treturn ragePowderUser;', '\t\t}', '\t},', '},', pp=20, flags='noassist: 1, failcopycat: 1, powder: 1', target='self',
+    type_='Bug').replace('priority: 0', 'priority: 2')
+PSYCHIC_FANGS = move_entry(
+    'psychicfangs', 'Psychic Fangs', 'onTryHit(pokemon) {', '\t// will shatter screens through sub, before you hit',
+    "\tpokemon.side.removeSideCondition('reflect');", "\tpokemon.side.removeSideCondition('lightscreen');",
+    "\tpokemon.side.removeSideCondition('auroraveil');", '},', category='Physical', base_power=85,
+    flags='contact: 1, protect: 1, mirror: 1, metronome: 1, bite: 1', type_='Psychic')
+SOLAR_BEAM = move_entry(
+    'solarbeam', 'Solar Beam', 'onTryMove(attacker, defender, move) {', '\tif (attacker.removeVolatile(move.id)) {', '\t\treturn;', '\t}',
+    "\tthis.add('-prepare', attacker, move.name);",
+    "\tif (['sunnyday', 'desolateland'].includes(attacker.effectiveWeather(undefined, true))) {",
+    "\t\tthis.attrLastMove('[still]');", "\t\tthis.addMove('-anim', attacker, move.name, defender);", '\t\treturn;', '\t}',
+    "\tif (!this.runEvent('ChargeMove', attacker, defender, move)) {", '\t\treturn;', '\t}',
+    "\tattacker.addVolatile('twoturnmove', defender);", '\treturn null;', '},', 'onBasePower(basePower, pokemon, target) {',
+    "\tconst weakWeathers = ['raindance', 'primordialsea', 'sandstorm', 'hail', 'snowscape'];",
+    '\tif (weakWeathers.includes(pokemon.effectiveWeather())) {', "\t\tthis.debug('weakened by weather');",
+    '\t\treturn this.chainModify(0.5);', '\t}', '},', category='Special', base_power=120, pp=10,
+    flags='charge: 1, protect: 1, mirror: 1, metronome: 1, nosleeptalk: 1, failinstruct: 1', type_='Grass')
 
 
 def parse_pool(mid, text, pool=True, ext=True):
@@ -570,7 +621,9 @@ class PoolMoves(unittest.TestCase):
         self.assertEqual(parse_pool('recover', RECOVER)['flags2'], 2)
         both = move_entry('plain', 'Plain', category='Physical', base_power=50, flags='sound: 1, heal: 1')
         self.assertEqual(parse_pool('plain', both)['flags2'], 3)
-        self.assertEqual(parse_pool('icepunch', ICE_PUNCH)['flags2'], 0)
+        self.assertEqual(parse_pool('icepunch', ICE_PUNCH)['flags2'], 32)  # step G34: the punch flag is the byte's bit 32
+        slicing = move_entry('plain', 'Plain', category='Physical', base_power=50, flags='slicing: 1')
+        self.assertEqual(parse_pool('plain', slicing)['flags2'], 64)  # and slicing is bit 64
         # The CLOSURE and extended parses carry the value too (their bytes do not).
         self.assertEqual(parse_pool('plain', plain, pool=False, ext=False)['flags2'], 1)
 
@@ -602,24 +655,39 @@ class PoolMoves(unittest.TestCase):
         seven = len(gen_closure.SPECIAL_IDS_C) + len(gen_closure.G2_HANDLERS)
         self.assertEqual(gen_closure.SPECIAL_IDS_P[len(gen_closure.SPECIAL_IDS_C):seven], gen_closure.G2_HANDLERS)
         # UNMODELED (decision 0015 section 4.2) follows them, as the last id.
-        self.assertEqual(gen_closure.SPECIAL_IDS_P[seven:], ['SANDSTORM', 'SNOWSCAPE', 'KNOCK_OFF', 'EXPANDING_FORCE', 'GLAIVE_RUSH', 'AURORA_VEIL',
+        self.assertEqual(gen_closure.SPECIAL_IDS_P[seven:], ['SANDSTORM', 'SNOWSCAPE', 'KNOCK_OFF', 'EXPANDING_FORCE', 'GLAIVE_RUSH', 'AURORA_VEIL', 'SPIKY_SHIELD',
+                          'SHELL_SMASH', 'ACROBATICS', 'BLIZZARD', 'FEINT', 'RAGE_POWDER', 'PSYCHIC_FANGS', 'SOLAR_BEAM',
+                          'HP_POWER', 'BODY_PRESS', 'FOUL_PLAY', 'PSYSHOCK',
+                          'RAIN_DANCE', 'SUNNY_DAY', 'FREEZE_DRY', 'CLANGING_SCALES',
+                          'STEEL_ROLLER', 'CLANGOROUS_SOUL', 'BRICK_BREAK',
                           'ELECTRIC_TERRAIN', 'MISTY_TERRAIN', 'RISING_VOLTAGE', 'TERRAIN_PULSE', 'UNMODELED'])
         self.assertEqual(len(gen_closure.G2_HANDLERS), 7)
         # Step G16: Knock Off's handler is 24 in the tables; step G15's Expanding Force is 25, step G19's Glaive Rush 26,
-        # step G20's Aurora Veil 27, the four of step G25 28 to 31 and UNMODELED 32.
+        # step G20's Aurora Veil 27, Spiky Shield 28, the four of step G28 29 to 32, the eight of step G32 33 to 40 and
+        # the three of step G34 44 to 46, the four of step G25 47 to 50 and UNMODELED 51.
         self.assertEqual(gen_closure.G16_HANDLERS, ['KNOCK_OFF'])
         self.assertEqual(gen_closure.G20_HANDLERS, ['AURORA_VEIL'])
+        self.assertEqual(gen_closure.G20_PROTECT_HANDLERS, ['SPIKY_SHIELD'])
         self.assertEqual(gen_closure.SPECIAL_IDS_P.index('KNOCK_OFF'), 24)
         self.assertEqual(gen_closure.SPECIAL_IDS_P.index('EXPANDING_FORCE'), 25)
         self.assertEqual(gen_closure.SPECIAL_IDS_P.index('GLAIVE_RUSH'), 26)  # step G19
         self.assertEqual(gen_closure.SPECIAL_IDS_P.index('AURORA_VEIL'), 27)
-        self.assertEqual([gen_closure.SPECIAL_IDS_P.index(h) for h in gen_closure.G25_HANDLERS], [28, 29, 30, 31])
-        self.assertEqual(gen_closure.SPECIAL_IDS_P.index('UNMODELED'), 32)
+        self.assertEqual(gen_closure.SPECIAL_IDS_P.index('SPIKY_SHIELD'), 28)
+        self.assertEqual([gen_closure.SPECIAL_IDS_P.index(h) for h in gen_closure.G28_HANDLERS], [29, 30, 31, 32])
+        self.assertEqual(gen_closure.G30_HANDLERS, ['RAGE_POWDER', 'PSYCHIC_FANGS', 'SOLAR_BEAM'])  # step G30
+        self.assertEqual([gen_closure.SPECIAL_IDS_P.index(h) for h in gen_closure.G30_HANDLERS], [33, 34, 35])
+        self.assertEqual([gen_closure.SPECIAL_IDS_P.index(h) for h in gen_closure.G32_HANDLERS], list(range(36, 44)))
+        self.assertEqual(gen_closure.G34_HANDLERS, ['STEEL_ROLLER', 'CLANGOROUS_SOUL', 'BRICK_BREAK'])  # step G34
+        self.assertEqual([gen_closure.SPECIAL_IDS_P.index(h) for h in gen_closure.G34_HANDLERS], [44, 45, 46])
+        self.assertEqual([gen_closure.SPECIAL_IDS_P.index(h) for h in gen_closure.G25_HANDLERS], [47, 48, 49, 50])  # step G25
+        self.assertEqual(gen_closure.SPECIAL_IDS_P.index('UNMODELED'), 51)
         # Scald and Recover became data in step G10: their ids stay defined and no move maps to them.
         self.assertEqual({v[0] for k, v in gen_closure.SPECIAL_P.items() if k not in gen_closure.SPECIAL_C},
                          (set(gen_closure.G2_HANDLERS) - {'SCALD', 'RECOVER'}) | set(gen_closure.WEATHER_HANDLERS) |
                          set(gen_closure.G16_HANDLERS) | set(gen_closure.G15_HANDLERS) | set(gen_closure.G19_HANDLERS) |
-                         set(gen_closure.G20_HANDLERS) | set(gen_closure.G25_HANDLERS))
+                         set(gen_closure.G20_HANDLERS) | set(gen_closure.G20_PROTECT_HANDLERS) | set(gen_closure.G28_HANDLERS) |
+                         set(gen_closure.G30_HANDLERS) | set(gen_closure.G32_HANDLERS) | set(gen_closure.G34_HANDLERS) |
+                         set(gen_closure.G25_HANDLERS))
 
     def test_aurora_veil_is_a_handler_whose_onTry_and_condition_are_the_pinned_text(self):
         rec = parse_pool('auroraveil', AURORA_VEIL)
@@ -654,6 +722,99 @@ class PoolMoves(unittest.TestCase):
                 with self.assertRaises(SystemExit) as cm:
                     gen_closure.check_g8_conditions(entry(i), gen_closure.G20_CONDITION_FACTS)
                 self.assertIn('move auroraveil: the condition no longer has', str(cm.exception.code))
+
+    def test_spiky_shield_is_a_handler_whose_condition_is_the_pinned_text_and_the_rest_is_protects(self):
+        rec = parse_pool('spikyshield', PROTECT_BASE + '\n' + SPIKY_SHIELD)
+        self.assertEqual(rec['special'], gen_closure.SPECIAL_IDS_P.index('SPIKY_SHIELD'))
+        self.assertEqual((rec['side_condition'], rec['sec_kind'], rec['primary_status']), (0, 0, 0))
+        both = PROTECT_BASE + '\n'
+        # A punishment that is not the pinned one (a fraction, another effect), a callback that is not Protect's, a
+        # field that is not Protect's, and a volatile that is not its own are refused.
+        self.refused('spikyshield', both + SPIKY_SHIELD.replace('/ 8', '/ 16'), 'the condition is not the pinned text')
+        self.refused('spikyshield', both + SPIKY_SHIELD.replace('this.damage(source.baseMaxhp / 8, source, target);',
+                                                                 "source.trySetStatus('psn', target);"),
+                     'the condition is not the pinned text')
+        self.refused('spikyshield', both + SPIKY_SHIELD.replace("addVolatile('stall')", "addVolatile('stalls')"),
+                     'onHit is not that of protect')
+        self.refused('spikyshield', both + SPIKY_SHIELD.replace('flags: { noassist: 1, failcopycat: 1 }', 'flags: { noassist: 1 }'),
+                     'flags is not that of protect')
+        self.refused('spikyshield', both + SPIKY_SHIELD.replace("volatileStatus: 'spikyshield',", "volatileStatus: 'protect',"),
+                     "volatileStatus is not \"volatileStatus: 'spikyshield',\"")
+        # Outside the pool mode the callbacks are refused.
+        for ext in (False, True):
+            self.refused('spikyshield', both + SPIKY_SHIELD, 'callback onPrepareHit is not mapped to a handler', pool=False, ext=ext)
+
+    def lenient(self, mid, text):
+        """The whole-pool mode (the rows of step G30 are read in it: the flags of the pin are not all modelled)."""
+        base = TextSource('data/moves.ts', text)
+        return gen_closure.parse_move(mid, base, TextSource('data/mods/champions/moves.ts', ''), True, True, [])
+
+    def test_the_step_g30_handlers_are_read_from_the_pinned_text(self):
+        # Rage Powder: the volatile is the handler's, the powder flag is the second flags byte's bit 16 and the public static bit.
+        rage = self.lenient('ragepowder', RAGE_POWDER)
+        self.assertEqual(rage['special'], gen_closure.SPECIAL_IDS_P.index('RAGE_POWDER'))
+        self.assertEqual((rage['flags2'] & 16, rage['static_flags'] & 512, rage['priority']), (16, 512, 8 + 2))
+        with self.assertRaises(SystemExit) as cm:
+            self.lenient('ragepowder', RAGE_POWDER.replace('this.activePerHalf > 1', 'this.activePerHalf > 2'))
+        self.assertEqual(cm.exception.code, 'gen_closure: move ragepowder: onTry is not the pinned text')
+        with self.assertRaises(SystemExit) as cm:
+            self.lenient('ragepowder', RAGE_POWDER.replace("source.runStatusImmunity('powder') && ", ''))
+        self.assertEqual(cm.exception.code, 'gen_closure: move ragepowder: ' + 'the condition is not the pinned text')
+        with self.assertRaises(SystemExit) as cm:
+            self.lenient('ragepowder', RAGE_POWDER.replace("volatileStatus: 'ragepowder',", "volatileStatus: 'followme',"))
+        self.assertEqual(cm.exception.code, 'gen_closure: move ragepowder: ' + "volatileStatus is not \"volatileStatus: 'ragepowder',\"")
+        # Psychic Fangs: the three screens, in this order.
+        fangs = self.lenient('psychicfangs', PSYCHIC_FANGS)
+        self.assertEqual(fangs['special'], gen_closure.SPECIAL_IDS_P.index('PSYCHIC_FANGS'))
+        with self.assertRaises(SystemExit) as cm:
+            self.lenient('psychicfangs', PSYCHIC_FANGS.replace("\t\tpokemon.side.removeSideCondition('auroraveil');\n", ''))
+        self.assertEqual(cm.exception.code, 'gen_closure: move psychicfangs: ' + 'onTryHit is not the pinned text')
+        # Solar Beam: the charge with the sun and the weather's half.
+        beam = self.lenient('solarbeam', SOLAR_BEAM)
+        self.assertEqual(beam['special'], gen_closure.SPECIAL_IDS_P.index('SOLAR_BEAM'))
+        with self.assertRaises(SystemExit) as cm:
+            self.lenient('solarbeam', SOLAR_BEAM.replace("'desolateland'", "'raindance'"))
+        self.assertEqual(cm.exception.code, 'gen_closure: move solarbeam: onTryMove is not the pinned text')
+        with self.assertRaises(SystemExit) as cm:
+            self.lenient('solarbeam', SOLAR_BEAM.replace("'snowscape'", "'sunnyday'"))
+        self.assertEqual(cm.exception.code, 'gen_closure: move solarbeam: onBasePower is not the pinned text')
+        with self.assertRaises(SystemExit) as cm:
+            self.lenient('solarbeam', SOLAR_BEAM.replace('chainModify(0.5)', 'chainModify(0.25)'))
+        self.assertEqual(cm.exception.code, 'gen_closure: move solarbeam: onBasePower is not the pinned text')
+        # The pool mode alone knows them: outside it each callback is refused.
+        for mid, text, callback in (('ragepowder', RAGE_POWDER, 'onTry'), ('psychicfangs', PSYCHIC_FANGS, 'onTryHit'),
+                                    ('solarbeam', SOLAR_BEAM, 'onTryMove')):
+            self.refused(mid, text, 'callback %s is not mapped to a handler' % callback, pool=False, ext=True)
+
+    def test_the_abilities_that_step_g30_runs_by_id_are_checked_against_the_pin(self):
+        def entries(replace=None, skip=None):
+            lines = []
+            for aid, facts in gen_closure.G30_ABILITY_FACTS:
+                if aid == skip:
+                    continue
+                lines.append('\t%s: {' % aid)
+                for fact in facts:
+                    lines.append('\t\t' + (fact.replace(*replace) if replace and replace[0] in fact else fact))
+                lines.append('\t\tname: "X",')
+                lines.append('\t},')
+            return TextSource('data/abilities.ts', '\n'.join(lines))
+
+        none = TextSource('data/mods/champions/abilities.ts', '')
+        gen_closure.check_g30_facts(entries(), none)
+        with self.assertRaises(SystemExit) as cm:
+            gen_closure.check_g30_facts(entries(('randomChance(3, 10)', 'randomChance(1, 10)')), none)
+        self.assertIn('ability flamebody: the entry no longer has', str(cm.exception.code))
+        with self.assertRaises(SystemExit) as cm:
+            gen_closure.check_g30_facts(entries(('/ 4', '/ 8')), none)
+        self.assertIn('ability hospitality: the entry no longer has', str(cm.exception.code))
+        with self.assertRaises(SystemExit) as cm:
+            gen_closure.check_g30_facts(entries(skip='overcoat'), none)
+        self.assertEqual(str(cm.exception.code), 'gen_closure: ability overcoat not found')
+        # A Champions override of one of them would change what the engine reads.
+        override = TextSource('data/mods/champions/abilities.ts', '\tclearbody: {\n\t\tinherit: true,\n\t},')
+        with self.assertRaises(SystemExit) as cm:
+            gen_closure.check_g30_facts(entries(), override)
+        self.assertIn('the champions mod overrides the entry', str(cm.exception.code))
 
     def test_knock_off_is_a_handler_whose_callbacks_are_the_pinned_text(self):
         rec = parse_pool('knockoff', KNOCK_OFF)
@@ -743,7 +904,11 @@ class PoolMoves(unittest.TestCase):
         self.assertEqual([s[0] for s in gen_closure.SETS_G2], ['pelipper', 'arcaninehisui', 'annihilape', 'floetteeternal'])
         # Every handler move is one of the rows, and every set move is a pool move or one of the rows.
         self.assertTrue({k for k in gen_closure.SPECIAL_P if k not in gen_closure.SPECIAL_C} <=
-                        set(gen_closure.G2_MOVES) | {'sandstorm', 'snowscape', 'knockoff', 'expandingforce', 'glaiverush', 'auroraveil',
+                        set(gen_closure.G2_MOVES) | {'sandstorm', 'snowscape', 'knockoff', 'expandingforce', 'glaiverush', 'auroraveil', 'spikyshield',
+                                                                'shellsmash', 'acrobatics', 'blizzard', 'feint',
+                                                                'ragepowder', 'psychicfangs', 'solarbeam', 'eruption', 'waterspout',
+                                                                'bodypress', 'foulplay', 'psyshock', 'raindance', 'sunnyday', 'freezedry',
+                                                                'clangingscales', 'steelroller', 'clangoroussoul', 'brickbreak',
                                                                 'electricterrain', 'mistyterrain', 'risingvoltage', 'terrainpulse'})
         self.assertEqual(gen_closure.WEATHER_HANDLERS, ['SANDSTORM', 'SNOWSCAPE'])
         for _sp, _ab, item, moves, _mega in gen_closure.SETS_G2:
@@ -810,11 +975,19 @@ class G13Rows(unittest.TestCase):
                 with self.assertRaises(SystemExit) as cm:
                     parse_pool('poisonjab', POISON_JAB, pool=False, ext=ext)
                 self.assertEqual(cm.exception.code, 'gen_closure: move poisonjab: secondary status psn is not modelled')
-        # Anything else that the tables lack stays unmodelled (there is no toxic source).
+        # Badly poisoned is the pool's alone (step G36); a status that the tables lack stays unmodelled.
+        rec = parse_pool('poisonjab', POISON_JAB.replace("'psn'", "'tox'"))
+        self.assertEqual((rec['sec_chance'], rec['sec_kind'], rec['sec_param']), (30, 2, gen_closure.STATUS_P['tox']))
+        self.assertEqual(gen_closure.STATUS_P['tox'], 6)
+        for ext in (False, True):
+            with self.subTest(ext=ext):
+                with self.assertRaises(SystemExit) as cm:
+                    parse_pool('poisonjab', POISON_JAB.replace("'psn'", "'tox'"), pool=False, ext=ext)
+                self.assertEqual(cm.exception.code, 'gen_closure: move poisonjab: secondary status tox is not modelled')
         features = []
-        base = TextSource('data/moves.ts', POISON_JAB.replace("'psn'", "'tox'"))
+        base = TextSource('data/moves.ts', POISON_JAB.replace("'psn'", "'frostbite'"))
         gen_closure.parse_move('poisonjab', base, TextSource('data/mods/champions/moves.ts', ''), True, True, features)
-        self.assertEqual(features, ['secondary status tox'])
+        self.assertEqual(features, ['secondary status frostbite'])
 
 
 # ---- the whole legal pool (decision 0015 section 4.2): the lenient mode and what the tables model ----
@@ -846,6 +1019,34 @@ class LenientMoves(unittest.TestCase):
         text = with_line(PLAIN, "recoil: [1, 4],\n\t\tsecondary: { chance: 10, status: 'par', },")
         self.assertEqual(lenient('plain', text), (parse_pool('plain', text), []))
 
+    def test_the_static_flags_and_hit_counts_of_every_row_come_from_the_pin_text(self):
+        """Decision 0020 items 4 and 5: the static flags (one bit per Showdown flag name of the public set, plus POWER_RULE
+        for a basePowerCallback) and the hit counts (multihit: n, [min, max], 1 and 1 otherwise) of every row, modelled or
+        not, with their bits in include/duoforge/duoforge.h order."""
+        bits = gen_closure.STATIC_FLAG_BITS
+        self.assertEqual(sorted(bits.values()), [1, 2, 4, 8, 16, 32, 64, 128, 256, 512])
+        self.assertEqual(gen_closure.STATIC_FLAG_POWER_RULE, 1024)
+        for flag in bits:
+            text = move_entry('plain', 'Plain', category='Physical', base_power=50, flags='%s: 1, protect: 1' % flag)
+            rec, _features = lenient('plain', text)
+            self.assertEqual(rec['static_flags'], bits[flag], flag)
+        text = move_entry('plain', 'Plain', category='Physical', base_power=50,
+                          flags='contact: 1, protect: 1, punch: 1, mirror: 1, metronome: 1')
+        self.assertEqual(lenient('plain', text)[0]['static_flags'], bits['contact'] | bits['punch'])
+        self.assertEqual(lenient('plain', PLAIN)[0]['static_flags'], bits['contact'])
+        self.assertEqual(lenient('plain', PLAIN)[0]['hits'], [1, 1])
+        callback = with_line(PLAIN, 'basePowerCallback(pokemon, target) { return 1; },')
+        rec, features = lenient('plain', callback)
+        self.assertEqual(rec['static_flags'], bits['contact'] | gen_closure.STATIC_FLAG_POWER_RULE)
+        self.assertIn('callback basePowerCallback', features)  # the row stays UNMODELED: the column is data only
+        for line, hits in (('multihit: 2,', [2, 2]), ('multihit: 3,', [3, 3]), ('multihit: 10,', [10, 10]),
+                           ('multihit: [2, 5],', [2, 5])):
+            rec, features = lenient('plain', with_line(PLAIN, line))
+            self.assertEqual(rec['hits'], hits, line)
+            self.assertIn('field multihit', features)  # likewise
+        self.refused('plain', with_line(PLAIN, 'multihit: [5, 2],'), 'multihit [5, 2] is not 1 <= min <= max <= 255')
+        self.refused('plain', with_line(PLAIN, 'multihit: true,'), 'multihit is not "multihit: n," or "multihit: [min, max],"')
+
     def test_what_the_tables_do_not_model_is_a_feature_not_a_failure(self):
         cases = (
             ('callback onHit', with_line(PLAIN, 'onHit(target) { },')),
@@ -853,12 +1054,12 @@ class LenientMoves(unittest.TestCase):
             ('field multihit', with_line(PLAIN, 'multihit: 2,')),
             ('field ohko', with_line(PLAIN, 'ohko: true,')),
             ('condition block', with_line(PLAIN, 'condition: { },')),
-            ('primary status tox', with_line(PLAIN, "status: 'tox',")),
+            ('primary status frostbite', with_line(PLAIN, "status: 'frostbite',")),
             ('primary volatile confusion', with_line(PLAIN, "volatileStatus: 'confusion',")),
             ('side condition toxicspikes', with_line(PLAIN, "sideCondition: 'toxicspikes',")),
             ('pseudo weather gravity', with_line(PLAIN, "pseudoWeather: 'gravity',")),
             ('secondary', with_line(PLAIN, 'secondary: { chance: 10, onHit() { }, },')),
-            ('secondary self effect', with_line(PLAIN, 'secondary: { chance: 100, self: { boosts: { spe: 1, }, }, },')),
+            ('secondary self effect', with_line(PLAIN, "secondary: { chance: 100, self: { volatileStatus: 'lockedmove', }, },")),
             ('self effect', with_line(PLAIN, "self: { volatileStatus: 'lockedmove', },")),
             ('recharge flag', with_line(PLAIN, "self: { volatileStatus: 'mustrecharge', },")),
             ('primary boosts on a non-self target', with_line(PLAIN, 'boosts: { atk: -1, },')),
@@ -869,14 +1070,21 @@ class LenientMoves(unittest.TestCase):
                 self.assertEqual(features, [feature], text)
 
     def test_every_unmodelled_feature_of_a_move_is_listed(self):
-        text = with_line(PLAIN, "multihit: 2,\n\t\tonHit() { },\n\t\tcondition: { },\n\t\tstatus: 'tox',")
+        text = with_line(PLAIN, "multihit: 2,\n\t\tonHit() { },\n\t\tcondition: { },\n\t\tstatus: 'frostbite',")
         _rec, features = lenient('plain', text)
-        self.assertEqual(features, ['callback onHit', 'condition block', 'field multihit', 'primary status tox'])
+        self.assertEqual(features, ['callback onHit', 'condition block', 'field multihit', 'primary status frostbite'])
 
     def test_a_target_class_is_encoded_and_unmodelled_when_the_turn_code_lacks_it(self):
-        # allAdjacent (Earthquake) is a class of the pool: code 11, no turn code yet.
+        # allAdjacent (Earthquake) is a class of the pool, code 11, which the turn code has since step G28, and allies (Life
+        # Dew) code 14 since step G32; the others of the pool (code 12, 13 and 15) have none.
         rec, features = lenient('plain', PLAIN.replace('target: "normal"', 'target: "allAdjacent"'))
-        self.assertEqual((rec['target_class'], features), (11, ['target allAdjacent']))
+        self.assertEqual((rec['target_class'], features), (11, []))
+        rec, features = lenient('plain', PLAIN.replace('target: "normal"', 'target: "allies"'))
+        self.assertEqual((rec['target_class'], features), (14, []))
+        for name, code in (('scripted', 12), ('allyTeam', 13), ('foeSide', 15)):
+            with self.subTest(name):
+                rec, features = lenient('plain', PLAIN.replace('target: "normal"', 'target: "%s"' % name))
+                self.assertEqual((rec['target_class'], features), (code, ['target %s' % name]))
         # The classes of the closure stay modelled.
         for name in ('normal', 'any', 'self', 'allAdjacentFoes', 'allySide', 'all', 'adjacentFoe', 'adjacentAlly'):
             with self.subTest(name):
@@ -885,7 +1093,8 @@ class LenientMoves(unittest.TestCase):
         self.assertEqual(sorted(gen_closure.TARGET_CLASS_POOL_NAMES), [11, 12, 13, 14, 15])
         self.assertTrue(set(gen_closure.TARGET_CLASS_POOL) - set(gen_closure.TARGET_CLASS) == {
             'allAdjacent', 'scripted', 'allyTeam', 'allies', 'foeSide'})
-        self.assertTrue(gen_closure.ENGINE_TARGETS <= set(gen_closure.TARGET_CLASS))
+        self.assertTrue(gen_closure.ENGINE_TARGETS <= set(gen_closure.TARGET_CLASS_POOL))
+        self.assertEqual(gen_closure.ENGINE_TARGETS - set(gen_closure.TARGET_CLASS), {'allAdjacent', 'allies'})  # G28, G32
 
     def test_what_the_generator_cannot_read_still_fails(self):
         self.refused('plain', PLAIN.replace('target: "normal"', 'target: "nowhere"'), 'unknown target class nowhere')
@@ -1013,9 +1222,16 @@ class ItemAbilityFeatures(unittest.TestCase):
         self.assertEqual(gen_closure.HANDLER_IDS, ['NONE', 'UNMODELED'])
 
     def test_the_rows_that_a_step_implements_by_id_are_listed(self):
-        self.assertEqual(gen_closure.ENGINE_ROWS, {'items': ['focussash', 'floettite', 'psychicseed', 'electricseed', 'mistyseed'],
+        self.assertEqual(gen_closure.ENGINE_ROWS, {'items': ['focussash', 'floettite', 'psychicseed', 'electricseed', 'mistyseed', 'expertbelt',
+                                                           'ejectbutton', 'widelens'],
                                                    'abilities': ['rockhead', 'flowerveil', 'fairyaura', 'roughskin',
-                                                                 'poisontouch', 'thermalexchange', 'stickyhold', 'trace']})
+                                                                 'poisontouch', 'thermalexchange', 'stickyhold', 'trace',
+                                                                 'levitate', 'sandrush', 'swiftswim', 'slushrush',
+                                                                 'chlorophyll', 'innerfocus', 'liquidvoice',
+                                                                 'flamebody', 'clearbody', 'hospitality', 'overcoat', 'soundproof',
+                                                                 'unnerve', 'speedboost', 'compoundeyes', 'ironfist',
+                                                                 'sharpness', 'solidrock', 'technician', 'multiscale',
+                                                                 'galewings', 'raindish', 'friendguard']})
 
 
 class Bounds(unittest.TestCase):
@@ -1169,7 +1385,7 @@ class WeatherFacts(unittest.TestCase):
 
     def sources(self, drop=None, extra=None):
         cond = chr(10).join(entry(cid, *[f for f in facts if f != drop] + ([extra[1]] if extra and extra[0] == cid else []))
-                         for cid, facts in gen_closure.WEATHER_FACTS)
+                         for cid, facts in gen_closure.WEATHER_FACTS + gen_closure.G32_WEATHER_FACTS)
         ball = entry('weatherball', *[f for f in gen_closure.WEATHER_BALL_FACTS if f != drop])
         return TextSource('data/conditions.ts', cond), TextSource('data/moves.ts', ball)
 
@@ -1177,7 +1393,7 @@ class WeatherFacts(unittest.TestCase):
         gen_closure.check_weather_facts(*self.sources())
 
     def test_every_fact_is_demanded(self):
-        every = [f for _cid, facts in gen_closure.WEATHER_FACTS for f in facts] + list(gen_closure.WEATHER_BALL_FACTS)
+        every = [f for _cid, facts in gen_closure.WEATHER_FACTS + gen_closure.G32_WEATHER_FACTS for f in facts] + list(gen_closure.WEATHER_BALL_FACTS)
         self.assertGreaterEqual(len(every), 17)
         for fact in every:
             with self.subTest(fact=fact), self.assertRaises(SystemExit) as cm:
@@ -1253,6 +1469,154 @@ class PsychicTerrainFacts(unittest.TestCase):
                                                   ('mistyseed', 'mistyterrain', 'spd')))
         for seed in ('psychicseed', 'electricseed', 'mistyseed'):
             self.assertIn(seed, gen_closure.ENGINE_ROWS['items'])
+
+
+class MoveRules(unittest.TestCase):
+    """Step G28: what the engine hard-codes about Shell Smash, Acrobatics, Blizzard, Feint, Ancient Power and Expert Belt is read from
+    the pinned entries (G28_FACTS, G28_ITEM_FACTS); every fact is demanded, and Ancient Power's secondary is the new
+    secondary kind of the pool mode."""
+
+    def source(self, skip=(None, None)):
+        out = []
+        for mid, needed in gen_closure.G28_FACTS:
+            lines = ['\t%s: {' % mid]
+            for i, n in enumerate(needed):
+                if (mid, i) != skip:
+                    lines.append('\t\t' + n)
+                    lines.append('\t\t' + '}' * max(0, n.count('{') - n.count('}')))
+            lines.append('\t},')
+            out.append('\n'.join(lines))
+        return TextSource('data/moves.ts', '\n'.join(out))
+
+    def test_the_facts_of_the_pin_are_accepted(self):
+        gen_closure.check_g8_conditions(self.source(), gen_closure.G28_FACTS)
+        items = TextSource('data/items.ts', entry('expertbelt', *gen_closure.G28_ITEM_FACTS[0][1]))
+        gen_closure.check_g28_items(items)
+
+    def test_every_fact_is_demanded(self):
+        self.assertEqual([mid for mid, _ in gen_closure.G28_FACTS], ['shellsmash', 'acrobatics', 'blizzard', 'feint', 'grassyterrain', 'earthquake', 'ancientpower'])
+        for mid, needed in gen_closure.G28_FACTS:
+            for i in range(len(needed)):
+                with self.subTest(mid=mid, fact=needed[i]), self.assertRaises(SystemExit) as cm:
+                    gen_closure.check_g8_conditions(self.source((mid, i)), gen_closure.G28_FACTS)
+                self.assertIn('move %s: the condition no longer has' % mid, str(cm.exception.code))
+        with self.assertRaises(SystemExit) as cm:
+            gen_closure.check_g28_items(TextSource('data/items.ts', entry('expertbelt', 'name: "Expert Belt",')))
+        self.assertIn('item expertbelt: the entry no longer has', str(cm.exception.code))
+
+    def test_the_boost_order_of_shell_smash_is_the_pinned_one(self):
+        facts = dict(gen_closure.G28_FACTS)
+        self.assertIn('boosts: { def: -1, spd: -1, atk: 2, spa: 2, spe: 2, },', facts['shellsmash'])
+        self.assertEqual(gen_closure.G2_OWNED_FIELDS['SHELL_SMASH'], {'boosts': 'boosts: { def: -1, spd: -1, atk: 2, spa: 2, spe: 2, },'})
+
+    def test_a_secondary_that_boosts_the_user_is_a_kind_of_the_pool_mode(self):
+        text = move_entry('ancientpower', 'Ancient Power', 'secondary: {', '\tchance: 10,', '\tself: {', '\t\tboosts: {', '\t\t\tatk: 1,',
+                          '\t\t\tdef: 1,', '\t\t\tspa: 1,', '\t\t\tspd: 1,', '\t\t\tspe: 1,', '\t\t},', '\t},', '},',
+                          category='Special', base_power=60, pp=5, type_='Rock', flags='protect: 1, mirror: 1, metronome: 1')
+        rec = parse_pool('ancientpower', text)
+        self.assertEqual((rec['sec_kind'], rec['sec_chance'], rec['boost_role']), (7, 10, gen_closure.BOOST_ROLE['SECONDARY_SELF']))
+        self.assertEqual(rec['boosts'], [1, 1, 1, 1, 1, 0, 0])
+        self.assertEqual(rec['special'], 0)
+        # The CLOSURE and extended modes keep refusing it.
+        for ext in (False, True):
+            with self.subTest(ext=ext), self.assertRaises(SystemExit) as cm:
+                parse_pool('ancientpower', text, pool=False, ext=ext)
+            self.assertIn('secondary self effects are not supported', str(cm.exception.code))
+
+    def test_the_rows_of_the_step(self):
+        self.assertEqual(gen_closure.G28_HANDLERS, ['SHELL_SMASH', 'ACROBATICS', 'BLIZZARD', 'FEINT'])
+        self.assertEqual(gen_closure.SPECIAL_P['acrobatics'], ('ACROBATICS', {'basePowerCallback'}))
+        self.assertEqual(gen_closure.SPECIAL_P['blizzard'], ('BLIZZARD', {'onModifyMove'}))
+        self.assertEqual(gen_closure.G2_OWNED_FIELDS['FEINT']['breaksProtect'], 'breaksProtect: true, // Breaking protection implemented in scripts.js')
+        self.assertIn('expertbelt', gen_closure.ENGINE_ROWS['items'])
+        self.assertEqual(gen_closure.SECONDARY_SELF_BOOST, 7)
+
+
+class SmallRules(unittest.TestCase):
+    """Step G32: what the engine hard-codes about the moves, abilities and the item of the batch is read from the pinned
+    entries (G32_FACTS, G32_WEATHER_FACTS, G32_ENTRY_FACTS); every fact is demanded."""
+
+    def moves(self, skip=(None, None)):
+        out = []
+        for mid, needed in gen_closure.G32_FACTS:
+            lines = ['\t%s: {' % mid]
+            for i, n in enumerate(needed):
+                if (mid, i) != skip:
+                    lines.append('\t\t' + n)
+                    lines.append('\t\t' + '}' * max(0, n.count('{') - n.count('}')))
+            lines.append('\t},')
+            out.append('\n'.join(lines))
+        return TextSource('data/moves.ts', '\n'.join(out))
+
+    def test_the_facts_of_the_pin_are_accepted(self):
+        gen_closure.check_g8_conditions(self.moves(), gen_closure.G32_FACTS)
+
+    def test_every_move_fact_is_demanded(self):
+        self.assertEqual([mid for mid, _ in gen_closure.G32_FACTS],
+                         ['eruption', 'waterspout', 'bodypress', 'foulplay', 'psyshock', 'raindance', 'sunnyday', 'freezedry',
+                          'clangingscales', 'voltswitch', 'lifedew'])
+        for mid, needed in gen_closure.G32_FACTS:
+            for i in range(len(needed)):
+                with self.subTest(mid=mid, fact=needed[i]), self.assertRaises(SystemExit) as cm:
+                    gen_closure.check_g8_conditions(self.moves((mid, i)), gen_closure.G32_FACTS)
+                self.assertIn('move %s: the condition no longer has' % mid, str(cm.exception.code))
+
+    def test_every_fact_of_the_ability_and_item_entries_is_demanded(self):
+        for kind, eid, champ, facts in gen_closure.G32_ENTRY_FACTS:
+            whole = TextSource('x.ts', entry(eid, *facts))
+            gen_closure.check_g32_entries(whole, whole, whole, whole, only=((kind, eid, champ, facts),))
+            for i in range(len(facts)):
+                short = TextSource('x.ts', entry(eid, *(facts[:i] + facts[i + 1:])))
+                with self.subTest(entry=eid, fact=facts[i]), self.assertRaises(SystemExit) as cm:
+                    gen_closure.check_g32_entries(short, short, short, short, only=((kind, eid, champ, facts),))
+                self.assertIn('the entry no longer has', str(cm.exception.code))
+
+    def test_the_weather_moves_are_handlers_with_their_weather_as_an_owned_field(self):
+        self.assertEqual(gen_closure.SPECIAL_P['raindance'], ('RAIN_DANCE', set()))
+        self.assertEqual(gen_closure.SPECIAL_P['sunnyday'], ('SUNNY_DAY', set()))
+        self.assertEqual(gen_closure.G2_OWNED_FIELDS['RAIN_DANCE'], {'weather': "weather: 'RainDance',"})
+        self.assertEqual(gen_closure.G2_OWNED_FIELDS['SUNNY_DAY'], {'weather': "weather: 'sunnyday',"})
+        self.assertEqual([c for c, _ in gen_closure.G32_WEATHER_FACTS], ['raindance', 'sunnyday'])
+
+    def test_the_rows_of_the_step(self):
+        self.assertEqual(gen_closure.G32_HANDLERS, ['HP_POWER', 'BODY_PRESS', 'FOUL_PLAY', 'PSYSHOCK', 'RAIN_DANCE', 'SUNNY_DAY',
+                                                    'FREEZE_DRY', 'CLANGING_SCALES'])
+        self.assertEqual(gen_closure.SPECIAL_P['eruption'], ('HP_POWER', {'basePowerCallback'}))
+        self.assertEqual(gen_closure.SPECIAL_P['waterspout'], ('HP_POWER', {'basePowerCallback'}))
+        self.assertEqual(gen_closure.SPECIAL_P['freezedry'], ('FREEZE_DRY', {'onEffectiveness'}))
+        self.assertEqual(gen_closure.ENGINE_PIVOT_MOVES, ('voltswitch',))
+        self.assertIn('allies', gen_closure.ENGINE_TARGETS)
+        self.assertIn('ejectbutton', gen_closure.ENGINE_ROWS['items'])
+        for ability in ('soundproof', 'unnerve', 'speedboost'):
+            self.assertIn(ability, gen_closure.ENGINE_ROWS['abilities'])
+
+
+class SmallRulesG35(unittest.TestCase):
+    """Step G35: Friend Guard and Rain Dish are engine rows whose pinned texts are demanded whole (G35_ABILITY_FACTS)."""
+
+    def sources(self, skip=(None, None)):
+        abilities = []
+        for aid, facts in gen_closure.G34_ABILITY_FACTS + gen_closure.G35_ABILITY_FACTS:
+            kept = [f for i, f in enumerate(facts) if (aid, i) != skip]
+            abilities.append(entry(aid, *kept))
+        items = [entry(iid, *facts) for iid, facts in gen_closure.G34_ITEM_FACTS]
+        return (TextSource('data/abilities.ts', '\n'.join(abilities)), TextSource('data/mods/champions/abilities.ts', ''),
+                TextSource('data/items.ts', '\n'.join(items)), TextSource('data/mods/champions/items.ts', ''))
+
+    def test_the_facts_of_the_pin_are_accepted(self):
+        gen_closure.check_g34_facts(*self.sources())
+
+    def test_every_fact_is_demanded(self):
+        self.assertEqual([aid for aid, _ in gen_closure.G35_ABILITY_FACTS], ['friendguard', 'raindish'])
+        for aid, facts in gen_closure.G35_ABILITY_FACTS:
+            for i in range(len(facts)):
+                with self.subTest(ability=aid, fact=facts[i]), self.assertRaises(SystemExit) as cm:
+                    gen_closure.check_g34_facts(*self.sources((aid, i)))
+                self.assertIn('the entry no longer has', str(cm.exception.code))
+
+    def test_the_rows_of_the_step(self):
+        for ability in ('raindish', 'friendguard'):
+            self.assertIn(ability, gen_closure.ENGINE_ROWS['abilities'])
 
 
 class TerrainFacts(unittest.TestCase):

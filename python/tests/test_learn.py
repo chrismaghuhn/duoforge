@@ -47,18 +47,19 @@ class PipelineTest(unittest.TestCase):
         out = tempfile.mkdtemp(prefix="duoforge-learn-")
         try:
             code = train.main(["--envs", "8", "--workers", "2", "--rollout", "8", "--updates", "2", "--minutes", "0",
-                               "--eval-every", "1", "--eval-envs", "8", "--minibatch", "256", "--out", out])
+                               "--eval-every", "1", "--minibatch", "256", "--out", out])
             self.assertEqual(code, 0)
             with open(os.path.join(out, "log.jsonl"), encoding="utf-8") as f:
                 records = [json.loads(line) for line in f]
             self.assertEqual([r["update"] for r in records], [1, 2])
             for r in records:
                 self.assertTrue(all(math.isfinite(r[k]) for k in ("loss", "policy_loss", "value_loss", "entropy")))
-                self.assertTrue(all(0.0 <= r[k] <= 1.0 for k in ("vs_random", "vs_scripted", "vs_previous")))
+                self.assertTrue(all(0.0 <= r[k] <= 1.0 for k in ("vs_random", "vs_previous")))
+                self.assertEqual(len(r["vs_random_by_team"]), 2)
             self.assertTrue(os.path.isfile(os.path.join(out, "params-2.npz")))
             config = load(os.path.join(out, "params-2.npz"), obs_size=features.OBS_SIZE)[1]
             self.assertEqual(config["encoder"], features.ENCODER)  # its encoder version, for encoder_of
-            self.assertEqual(encoder_of(config), 2)
+            self.assertEqual(encoder_of(config), 3)
             with self.assertRaises(SystemExit):
                 train.main(["--updates", "1", "--minutes", "0", "--out", out])
         finally:
@@ -66,24 +67,34 @@ class PipelineTest(unittest.TestCase):
 
     def test_ladder_passes_each_checkpoint_its_encoder(self):
         # ladder.main gives every pair's evaluation the players' encoder
-        # versions: the untrained network and a checkpoint of this train 2,
-        # a checkpoint whose config names none 1; a version 3 raises.
+        # versions: the untrained network and a checkpoint of this train 3,
+        # a checkpoint whose config names none 1 (607 columns); a version 4
+        # raises.
         import jax
         from unittest import mock
         from duoforge_learn import evaluate, ladder
         out = tempfile.mkdtemp(prefix="duoforge-ladder-")
         try:
+            old = model.init(jax.random.PRNGKey(3), features.BASE_OBS_SIZE, features.SLOT_FEATURES, TEAM_ACTIONS)
             params = model.init(jax.random.PRNGKey(3), features.OBS_SIZE, features.SLOT_FEATURES, TEAM_ACTIONS)
-            train.save(os.path.join(out, "params-1.npz"), params, {"seed": 7})
+            train.save(os.path.join(out, "params-1.npz"), old, {"seed": 7})
             train.save(os.path.join(out, "params-2.npz"), params, {"seed": 7, "encoder": features.ENCODER})
-            fake = mock.Mock(return_value={"win_rate": 0.5, "episodes": 8})
-            with mock.patch.object(evaluate, "win_rate", fake):
-                self.assertEqual(ladder.main([out, "--pick", "2", "--envs", "8"]), 0)
-            pairs = sorted((c.kwargs["encoder"], c.kwargs["opponent_encoder"]) for c in fake.call_args_list)
-            self.assertEqual(pairs, [(1, 2), (2, 1), (2, 2)])  # init-update 1, init-update 2, update 1-update 2
-            train.save(os.path.join(out, "params-1.npz"), params, {"seed": 7, "encoder": 3})
-            with mock.patch.object(evaluate, "win_rate", fake), self.assertRaisesRegex(ValueError, "encoder 3"):
-                ladder.main([out, "--pick", "2", "--envs", "8"])
+            calls = []
+
+            def fake(context, pool, rows, learner, opponent, workers, seed, max_steps=1000):
+                calls.append((learner.name, learner.encoder, opponent.name, opponent.encoder))
+                rec = np.zeros(rows.shape[0], dtype=evaluate.RECORD)
+                for f in ("side0", "side1", "learner_seat"):
+                    rec[f] = rows[f]
+                return rec
+
+            with mock.patch.object(evaluate, "play_suite", fake):
+                self.assertEqual(ladder.main([out, "--pick", "2", "--games", "1"]), 0)
+            pairs = sorted((a, b) for la, a, lb, b in calls if la != lb)
+            self.assertEqual(pairs, [(1, 3), (3, 1), (3, 3)])  # init-update 1, init-update 2, update 1-update 2
+            train.save(os.path.join(out, "params-1.npz"), params, {"seed": 7, "encoder": 4})
+            with mock.patch.object(evaluate, "play_suite", fake), self.assertRaisesRegex(ValueError, "encoder 4"):
+                ladder.main([out, "--pick", "2", "--games", "1"])
         finally:
             shutil.rmtree(out, ignore_errors=True)
 

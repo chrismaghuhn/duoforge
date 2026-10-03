@@ -29,7 +29,7 @@ CATEGORIES = {'Physical': 0, 'Special': 1, 'Status': 2}
 TARGETS = {'normal': 1, 'any': 2, 'adjacentAlly': 3, 'adjacentAllyOrSelf': 4, 'adjacentFoe': 5, 'self': 6,
            'allAdjacentFoes': 7, 'allySide': 8, 'all': 9, 'randomNormal': 10, 'allAdjacent': 11, 'scripted': 12,
            'allyTeam': 13, 'allies': 14, 'foeSide': 15}
-ENGINE_TARGETS = {1, 2, 3, 5, 6, 7, 8, 9, 10}
+ENGINE_TARGETS = {1, 2, 3, 5, 6, 7, 8, 9, 10, 11, 14}  # 11: allAdjacent, since step G28; 14: allies, since step G32
 GENDER = {None: 0, 'M': 1, 'F': 2, 'N': 3}
 NONE16 = 0xFFFF
 
@@ -258,31 +258,30 @@ class PoolRows(unittest.TestCase):
             for text in listed.values():
                 self.assertTrue(all(part.strip() for part in text.split(';')))
 
-    def test_nothing_that_grounds_or_lifts_a_pokemon_is_modelled(self):
-        """The engine's isGrounded is "not a Flying type" (dfi_grounded, src/combat/turn.c), which Expanding Force (step
-        G15) reads for its user. The pin also reads Levitate and Eelevate, Air Balloon and Iron Ball, Gravity, Ingrain,
-        Magnet Rise, Telekinesis, Smack Down and Roost (sim/pokemon.ts:2148-2160): every one of them is an UNMODELED row,
-        so no battle has it; and no forme that learns Expanding Force is a Flying type, so no user of it is lifted."""
+    def test_nothing_that_grounds_or_lifts_a_pokemon_is_modelled_but_levitate(self):
+        """The engine's isGrounded is "not a Flying type and not a Levitate holder" (dfi_grounded, src/combat/turn.c;
+        Levitate since step G23-C), which Expanding Force (step G15) reads for its user. The pin also reads Eelevate, Air
+        Balloon and Iron Ball, Gravity, Ingrain, Magnet Rise, Telekinesis, Smack Down and Roost (sim/pokemon.ts:2148-2160):
+        every one of them is an UNMODELED row, so no battle has it; Levitate is an engine row."""
         def listed(kind, array):
             return {n.lower() for n in dict(re.findall(r'^\s*\[DFI_%s_([A-Z0-9]+)\] = "([^"]+)",$' % kind,
                                                        block('const char *const %s[' % array), re.M))}
-        for kind, array, ids, rows in (('ABILITY', 'dfi_pool_ability_unmodeled', ['levitate', 'eelevate'], Rows.abilities),
+        for kind, array, ids, rows in (('ABILITY', 'dfi_pool_ability_unmodeled', ['eelevate'], Rows.abilities),
                                        ('ITEM', 'dfi_pool_item_unmodeled', ['airballoon', 'ironball'], Rows.items),
                                        ('MOVE', 'dfi_pool_move_unmodeled',
                                         ['gravity', 'ingrain', 'magnetrise', 'telekinesis', 'smackdown', 'roost'],
                                         Rows.moves)):
             # a row of the pool is UNMODELED; an id that the format does not have (Telekinesis) needs no row
             self.assertEqual(sorted(set(ids) & set(rows) - listed(kind, array)), [], kind)
-        learners = [sp for sp in LEGAL['species'] if 'expandingforce' in (sp.get('moves') or [])]
-        self.assertGreaterEqual(len(learners), 29)
-        for sp in learners:
-            self.assertNotIn('Flying', sp['types'], sp['id'])
+        self.assertIn('[DFI_ABILITY_LEVITATE] = DFI_HANDLER_NONE,', block('const uint8_t dfi_pool_ability_handler['))
+        self.assertNotIn('levitate', listed('ABILITY', 'dfi_pool_ability_unmodeled'))
 
     def test_the_canonical_size(self):
         n_f, n_m, n_i, n_a = len(Rows.formes), len(Rows.moves), len(Rows.items), len(Rows.abilities)
         want = (12 + n_f * 26 + n_m * 29 + n_i * 4 + 18 * 18 + 18 + 25 * 2 + n_i * 2 + n_a * 2 + n_i + n_a +
-                n_f * (define('DFI_POOL_LEARN_BYTES') + 1 + 3) + n_m + 2 * n_m)  # + the second flags byte of every move
-        # (step G8) and the heal fraction of every move (step G10)
+                n_f * (define('DFI_POOL_LEARN_BYTES') + 1 + 3) + n_m + 2 * n_m + 4 * n_m + 2 * n_m)  # + the second flags byte of every move
+        # (step G8), the heal fraction of every move (step G10), then the static flags (4 bytes) and the hit counts
+        # (2 bytes) of every move (decision 0020)
         self.assertEqual(define('DFI_POOL_CANONICAL_SIZE'), want)
 
 

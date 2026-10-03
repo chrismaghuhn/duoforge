@@ -850,14 +850,14 @@ const dfi_move_data dfi_pool_moves[DFI_POOL_MOVE_COUNT] = {
     {13u, 2u, 0u, 0u, 20u, 20u, 8u, 6u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 1u, {6u, 8u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
     /* Acid Spray -- data/moves.ts:98-116 */
     {13u, 1u, 40u, 100u, 20u, 20u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 100u, 1u, 0u, 2u, {6u, 6u, 6u, 4u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
-    /* Acrobatics -- data/moves.ts:117-136  [unmodelled: callback basePowerCallback] */
-    {7u, 0u, 55u, 100u, 15u, 16u, 8u, 2u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    /* Acrobatics -- data/moves.ts:117-136 */
+    {7u, 0u, 55u, 100u, 15u, 16u, 8u, 2u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 30u},
     /* Acupressure -- data/moves.ts:137-167  [unmodelled: callback onHit; target adjacentAllyOrSelf] */
-    {12u, 2u, 0u, 0u, 30u, 20u, 8u, 4u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {12u, 2u, 0u, 0u, 30u, 20u, 8u, 4u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Aerial Ace -- data/moves.ts:168-180 */
     {7u, 0u, 60u, 0u, 20u, 20u, 8u, 2u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
     /* After You -- data/moves.ts:195-218  [unmodelled: callback onHit] */
-    {12u, 2u, 0u, 0u, 15u, 16u, 8u, 1u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {12u, 2u, 0u, 0u, 15u, 16u, 8u, 1u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Agility -- data/moves.ts:219-235 */
     {14u, 2u, 0u, 0u, 30u, 20u, 8u, 6u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 1u, {6u, 6u, 6u, 6u, 8u, 6u, 6u}, 0u, 0u, 0u, 0u},
     /* Air Cutter -- data/moves.ts:236-249 */
@@ -865,21 +865,21 @@ const dfi_move_data dfi_pool_moves[DFI_POOL_MOVE_COUNT] = {
     /* Air Slash -- data/moves.ts:250-266 */
     {7u, 1u, 75u, 95u, 15u, 16u, 8u, 2u, 1u, 2u, {0u, 0u}, {0u, 0u}, 30u, 3u, 1u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
     /* Alluring Voice -- data/moves.ts:282-301  [unmodelled: secondary] */
-    {4u, 1u, 80u, 100u, 10u, 12u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {4u, 1u, 80u, 100u, 10u, 12u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Ally Switch -- data/moves.ts:302-358  [unmodelled: callback onHit; callback onPrepareHit; condition block] */
-    {14u, 2u, 0u, 0u, 15u, 16u, 10u, 6u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {14u, 2u, 0u, 0u, 15u, 16u, 10u, 6u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Amnesia -- data/moves.ts:359-375 */
     {14u, 2u, 0u, 0u, 20u, 20u, 8u, 6u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 1u, {6u, 6u, 6u, 8u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
-    /* Ancient Power -- data/moves.ts:396-420  [unmodelled: secondary self effect] */
-    {15u, 1u, 60u, 100u, 5u, 8u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    /* Ancient Power -- data/moves.ts:396-420 */
+    {15u, 1u, 60u, 100u, 5u, 8u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 10u, 7u, 0u, 5u, {7u, 7u, 7u, 7u, 7u, 6u, 6u}, 0u, 0u, 0u, 0u},
     /* Apple Acid -- data/moves.ts:421-438, data/mods/champions/moves.ts:18-21 */
     {9u, 1u, 90u, 100u, 10u, 12u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 100u, 1u, 0u, 2u, {6u, 6u, 6u, 5u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
     /* Aqua Cutter -- data/moves.ts:439-452 */
     {17u, 0u, 70u, 100u, 20u, 20u, 8u, 1u, 2u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
     /* Aqua Ring -- data/moves.ts:466-489  [unmodelled: condition block; primary volatile aquaring] */
-    {17u, 2u, 0u, 0u, 20u, 20u, 8u, 6u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
-    /* Aqua Step -- data/moves.ts:490-510  [unmodelled: secondary self effect] */
-    {17u, 0u, 80u, 100u, 10u, 12u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {17u, 2u, 0u, 0u, 20u, 20u, 8u, 6u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
+    /* Aqua Step -- data/moves.ts:490-510 */
+    {17u, 0u, 80u, 100u, 10u, 12u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 100u, 7u, 0u, 5u, {6u, 6u, 6u, 6u, 7u, 6u, 6u}, 0u, 0u, 0u, 0u},
     /* Aqua Tail -- data/moves.ts:511-523 */
     {17u, 0u, 90u, 90u, 10u, 12u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
     /* Armor Cannon -- data/moves.ts:524-541 */
@@ -887,37 +887,37 @@ const dfi_move_data dfi_pool_moves[DFI_POOL_MOVE_COUNT] = {
     /* Aromatic Mist -- data/moves.ts:591-607 */
     {4u, 2u, 0u, 0u, 20u, 20u, 8u, 3u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 4u, {6u, 6u, 6u, 7u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
     /* Assurance -- data/moves.ts:643-662  [unmodelled: callback basePowerCallback] */
-    {1u, 0u, 60u, 100u, 10u, 12u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {1u, 0u, 60u, 100u, 10u, 12u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Attract -- data/moves.ts:706-761  [unmodelled: callback onTryImmunity; condition block; primary volatile attract] */
-    {12u, 2u, 0u, 100u, 15u, 16u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {12u, 2u, 0u, 100u, 15u, 16u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Aura Sphere -- data/moves.ts:762-774 */
     {5u, 1u, 80u, 0u, 20u, 20u, 8u, 2u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
-    /* Aura Wheel -- data/moves.ts:775-810  [unmodelled: callback onModifyType; callback onTry; secondary self effect] */
-    {3u, 0u, 110u, 100u, 10u, 12u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    /* Aura Wheel -- data/moves.ts:775-810  [unmodelled: callback onModifyType; callback onTry] */
+    {3u, 0u, 110u, 100u, 10u, 12u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Aurora Veil -- data/moves.ts:830-877 */
     {11u, 2u, 0u, 0u, 20u, 20u, 8u, 8u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 27u},
     /* Avalanche -- data/moves.ts:908-930  [unmodelled: callback basePowerCallback] */
-    {11u, 0u, 60u, 100u, 10u, 12u, 4u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {11u, 0u, 60u, 100u, 10u, 12u, 4u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Axe Kick -- data/moves.ts:931-950  [unmodelled: callback onMoveFail; field hasCrashDamage] */
-    {5u, 0u, 120u, 90u, 10u, 12u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {5u, 0u, 120u, 90u, 10u, 12u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Baby-Doll Eyes -- data/moves.ts:951-967  [unmodelled: primary boosts on a non-self target] */
-    {4u, 2u, 0u, 100u, 30u, 20u, 9u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {4u, 2u, 0u, 100u, 30u, 20u, 9u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Baneful Bunker -- data/moves.ts:985-1037, data/mods/champions/moves.ts:43-46  [unmodelled: callback onHit; callback onPrepareHit; condition block; primary volatile banefulbunker] */
-    {13u, 2u, 0u, 0u, 5u, 8u, 12u, 6u, 1u, 8u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {13u, 2u, 0u, 0u, 5u, 8u, 12u, 6u, 1u, 8u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Barb Barrage -- data/moves.ts:1038-1058  [unmodelled: callback onBasePower] */
-    {13u, 0u, 60u, 100u, 10u, 12u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {13u, 0u, 60u, 100u, 10u, 12u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Baton Pass -- data/moves.ts:1092-1118  [unmodelled: callback onHit; field selfSwitch copyvolatile; self effect] */
-    {12u, 2u, 0u, 0u, 40u, 20u, 8u, 6u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {12u, 2u, 0u, 0u, 40u, 20u, 8u, 6u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Beak Blast -- data/moves.ts:1119-1149, data/mods/champions/moves.ts:47-51  [unmodelled: callback onAfterMove; callback priorityChargeCallback; condition block] */
-    {7u, 0u, 120u, 100u, 5u, 8u, 5u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {7u, 0u, 120u, 100u, 5u, 8u, 5u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Beat Up -- data/moves.ts:1150-1172  [unmodelled: callback basePowerCallback; callback onModifyMove] */
-    {1u, 0u, 0u, 100u, 10u, 12u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
-    /* Belch -- data/moves.ts:1197-1215, data/mods/champions/moves.ts:52-55  [unmodelled: callback onTry; field onDisableMove] */
-    {13u, 1u, 120u, 90u, 10u, 12u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {1u, 0u, 0u, 100u, 10u, 12u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
+    /* Belch -- data/moves.ts:1197-1215, data/mods/champions/moves.ts:52-55  [unmodelled: callback onTry] */
+    {13u, 1u, 120u, 90u, 10u, 12u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Belly Drum -- data/moves.ts:1216-1236  [unmodelled: callback onHit] */
-    {12u, 2u, 0u, 0u, 10u, 12u, 8u, 6u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {12u, 2u, 0u, 0u, 10u, 12u, 8u, 6u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Bind -- data/moves.ts:1337-1350  [unmodelled: primary volatile partiallytrapped] */
-    {12u, 0u, 15u, 85u, 20u, 20u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {12u, 0u, 15u, 85u, 20u, 20u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Bite -- data/moves.ts:1351-1367 */
     {1u, 0u, 60u, 100u, 25u, 20u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 30u, 3u, 1u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
     /* Bitter Malice -- data/moves.ts:1381-1398 */
@@ -926,84 +926,84 @@ const dfi_move_data dfi_pool_moves[DFI_POOL_MOVE_COUNT] = {
     {6u, 1u, 150u, 90u, 5u, 8u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
     /* Blaze Kick -- data/moves.ts:1430-1447 */
     {6u, 0u, 85u, 90u, 10u, 12u, 8u, 1u, 2u, 3u, {0u, 0u}, {0u, 0u}, 10u, 2u, 1u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
-    /* Blizzard -- data/moves.ts:1491-1510  [unmodelled: callback onModifyMove] */
-    {11u, 1u, 110u, 70u, 5u, 8u, 8u, 7u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    /* Blizzard -- data/moves.ts:1491-1510 */
+    {11u, 1u, 110u, 70u, 5u, 8u, 8u, 7u, 1u, 2u, {0u, 0u}, {0u, 0u}, 10u, 2u, 2u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 31u},
     /* Block -- data/moves.ts:1511-1527  [unmodelled: callback onHit] */
-    {12u, 2u, 0u, 0u, 5u, 8u, 8u, 1u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
-    /* Body Press -- data/moves.ts:1572-1584  [unmodelled: field overrideOffensiveStat] */
-    {5u, 0u, 80u, 100u, 10u, 12u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {12u, 2u, 0u, 0u, 5u, 8u, 8u, 1u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
+    /* Body Press -- data/moves.ts:1572-1584 */
+    {5u, 0u, 80u, 100u, 10u, 12u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 37u},
     /* Body Slam -- data/moves.ts:1585-1601 */
     {12u, 0u, 85u, 100u, 15u, 16u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 30u, 2u, 3u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
     /* Bone Rush -- data/moves.ts:1674-1689, data/mods/champions/moves.ts:89-92  [unmodelled: field multihit] */
-    {10u, 0u, 30u, 90u, 10u, 12u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
-    /* Boomburst -- data/moves.ts:1690-1702  [unmodelled: target allAdjacent] */
-    {12u, 1u, 140u, 100u, 10u, 12u, 8u, 11u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {10u, 0u, 30u, 90u, 10u, 12u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
+    /* Boomburst -- data/moves.ts:1690-1702 */
+    {12u, 1u, 140u, 100u, 10u, 12u, 8u, 11u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
     /* Bounce -- data/moves.ts:1703-1747  [unmodelled: callback onTryMove; condition block] */
-    {7u, 0u, 85u, 85u, 5u, 8u, 8u, 2u, 1u, 7u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {7u, 0u, 85u, 85u, 5u, 8u, 8u, 2u, 1u, 7u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Breaking Swipe -- data/moves.ts:1789-1806 */
     {2u, 0u, 60u, 100u, 15u, 16u, 8u, 7u, 1u, 3u, {0u, 0u}, {0u, 0u}, 100u, 1u, 0u, 2u, {5u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
-    /* Brick Break -- data/moves.ts:1822-1840  [unmodelled: callback onTryHit] */
-    {5u, 0u, 75u, 100u, 15u, 16u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
-    /* Brutal Swing -- data/moves.ts:1859-1871  [unmodelled: target allAdjacent] */
-    {1u, 0u, 60u, 100u, 20u, 20u, 8u, 11u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    /* Brick Break -- data/moves.ts:1822-1840 */
+    {5u, 0u, 75u, 100u, 15u, 16u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 46u},
+    /* Brutal Swing -- data/moves.ts:1859-1871 */
+    {1u, 0u, 60u, 100u, 20u, 20u, 8u, 11u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
     /* Bug Bite -- data/moves.ts:1911-1934  [unmodelled: callback onHit] */
-    {0u, 0u, 60u, 100u, 20u, 20u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {0u, 0u, 60u, 100u, 20u, 20u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Bug Buzz -- data/moves.ts:1935-1953 */
     {0u, 1u, 90u, 100u, 10u, 12u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 10u, 1u, 0u, 2u, {6u, 6u, 6u, 5u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
-    /* Bulldoze -- data/moves.ts:1972-1990  [unmodelled: target allAdjacent] */
-    {10u, 0u, 60u, 100u, 20u, 20u, 8u, 11u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    /* Bulldoze -- data/moves.ts:1972-1990 */
+    {10u, 0u, 60u, 100u, 20u, 20u, 8u, 11u, 1u, 2u, {0u, 0u}, {0u, 0u}, 100u, 1u, 0u, 2u, {6u, 6u, 6u, 6u, 5u, 6u, 6u}, 0u, 0u, 0u, 0u},
     /* Bullet Punch -- data/moves.ts:1991-2003 */
     {16u, 0u, 40u, 100u, 30u, 20u, 9u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
     /* Bullet Seed -- data/moves.ts:2004-2019  [unmodelled: field multihit] */
-    {9u, 0u, 25u, 100u, 30u, 20u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {9u, 0u, 25u, 100u, 30u, 20u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Burning Jealousy -- data/moves.ts:2071-2091  [unmodelled: secondary] */
-    {6u, 1u, 70u, 100u, 5u, 8u, 8u, 7u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {6u, 1u, 70u, 100u, 5u, 8u, 8u, 7u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Burn Up -- data/moves.ts:2092-2117, data/mods/champions/moves.ts:109-112  [unmodelled: callback onTryMove; self effect] */
-    {6u, 1u, 130u, 100u, 5u, 8u, 8u, 1u, 1u, 130u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {6u, 1u, 130u, 100u, 5u, 8u, 8u, 1u, 1u, 130u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Calm Mind -- data/moves.ts:2136-2153 */
     {14u, 2u, 0u, 0u, 20u, 20u, 8u, 6u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 1u, {6u, 6u, 7u, 7u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
     /* Ceaseless Edge -- data/moves.ts:2220-2246  [unmodelled: callback onAfterHit; callback onAfterSubDamage; secondary] */
-    {1u, 0u, 65u, 90u, 15u, 16u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {1u, 0u, 65u, 90u, 15u, 16u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Charge -- data/moves.ts:2264-2317  [unmodelled: condition block; primary volatile charge] */
-    {3u, 2u, 0u, 0u, 20u, 20u, 8u, 6u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
-    /* Charge Beam -- data/moves.ts:2318-2338  [unmodelled: secondary self effect] */
-    {3u, 1u, 50u, 90u, 10u, 12u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {3u, 2u, 0u, 0u, 20u, 20u, 8u, 6u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
+    /* Charge Beam -- data/moves.ts:2318-2338 */
+    {3u, 1u, 50u, 90u, 10u, 12u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 70u, 7u, 0u, 5u, {6u, 6u, 7u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
     /* Charm -- data/moves.ts:2339-2355  [unmodelled: primary boosts on a non-self target] */
-    {4u, 2u, 0u, 100u, 20u, 20u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {4u, 2u, 0u, 100u, 20u, 20u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Chilling Water -- data/moves.ts:2377-2395 */
     {17u, 1u, 50u, 100u, 20u, 20u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 100u, 1u, 0u, 2u, {5u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
     /* Chilly Reception -- data/moves.ts:2396-2420  [unmodelled: callback priorityChargeCallback; condition block; field selfSwitch without a switch flag; field weather] */
-    {11u, 2u, 0u, 0u, 10u, 12u, 8u, 9u, 1u, 16u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {11u, 2u, 0u, 0u, 10u, 12u, 8u, 9u, 1u, 16u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Circle Throw -- data/moves.ts:2451-2464  [unmodelled: field forceSwitch] */
-    {5u, 0u, 60u, 90u, 10u, 12u, 2u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
-    /* Clanging Scales -- data/moves.ts:2480-2497  [unmodelled: field selfBoost] */
-    {2u, 1u, 110u, 100u, 5u, 8u, 8u, 7u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
-    /* Clangorous Soul -- data/moves.ts:2498-2526, data/mods/champions/moves.ts:121-124  [unmodelled: callback onHit; callback onTry; callback onTryHit] */
-    {2u, 2u, 0u, 0u, 5u, 8u, 8u, 6u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {5u, 0u, 60u, 90u, 10u, 12u, 2u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
+    /* Clanging Scales -- data/moves.ts:2480-2497 */
+    {2u, 1u, 110u, 100u, 5u, 8u, 8u, 7u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 43u},
+    /* Clangorous Soul -- data/moves.ts:2498-2526, data/mods/champions/moves.ts:121-124 */
+    {2u, 2u, 0u, 0u, 5u, 8u, 8u, 6u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 1u, {7u, 7u, 7u, 7u, 7u, 6u, 6u}, 0u, 0u, 0u, 45u},
     /* Clear Smog -- data/moves.ts:2554-2570  [unmodelled: callback onHit] */
-    {13u, 1u, 50u, 0u, 15u, 16u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {13u, 1u, 50u, 0u, 15u, 16u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Coaching -- data/moves.ts:2590-2605 */
     {5u, 2u, 0u, 0u, 10u, 12u, 8u, 3u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 4u, {7u, 7u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
     /* Comeuppance -- data/moves.ts:2681-2710  [unmodelled: callback damageCallback; callback onModifyTarget; callback onTry; target scripted] */
-    {1u, 0u, 0u, 100u, 10u, 12u, 8u, 12u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {1u, 0u, 0u, 100u, 10u, 12u, 8u, 12u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Confuse Ray -- data/moves.ts:2728-2742  [unmodelled: primary volatile confusion] */
-    {8u, 2u, 0u, 100u, 10u, 12u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {8u, 2u, 0u, 100u, 10u, 12u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Copycat -- data/moves.ts:2849-2873  [unmodelled: callback onHit; field callsMove] */
-    {12u, 2u, 0u, 0u, 20u, 20u, 8u, 6u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
-    /* Corrosive Gas -- data/moves.ts:2914-2934, data/mods/champions/moves.ts:149-152  [unmodelled: callback onHit; target allAdjacent] */
-    {13u, 2u, 0u, 100u, 40u, 20u, 8u, 11u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {12u, 2u, 0u, 0u, 20u, 20u, 8u, 6u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
+    /* Corrosive Gas -- data/moves.ts:2914-2934, data/mods/champions/moves.ts:149-152  [unmodelled: callback onHit] */
+    {13u, 2u, 0u, 100u, 40u, 20u, 8u, 11u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Cosmic Power -- data/moves.ts:2935-2952 */
     {14u, 2u, 0u, 0u, 20u, 20u, 8u, 6u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 1u, {6u, 7u, 6u, 7u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
     /* Cotton Guard -- data/moves.ts:2953-2969 */
     {9u, 2u, 0u, 0u, 10u, 12u, 8u, 6u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 1u, {6u, 9u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
     /* Cotton Spore -- data/moves.ts:2970-2986  [unmodelled: primary boosts on a non-self target] */
-    {9u, 2u, 0u, 100u, 40u, 20u, 8u, 7u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {9u, 2u, 0u, 100u, 40u, 20u, 8u, 7u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Counter -- data/moves.ts:2987-3031  [unmodelled: callback beforeTurnCallback; callback damageCallback; callback onTry; condition block; target scripted] */
-    {5u, 0u, 0u, 100u, 20u, 20u, 3u, 12u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {5u, 0u, 0u, 100u, 20u, 20u, 3u, 12u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Court Change -- data/moves.ts:3032-3098  [unmodelled: callback onHitField] */
-    {12u, 2u, 0u, 100u, 10u, 12u, 8u, 9u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {12u, 2u, 0u, 100u, 10u, 12u, 8u, 9u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Covet -- data/moves.ts:3099-3128  [unmodelled: callback onAfterHit] */
-    {12u, 0u, 60u, 100u, 25u, 20u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {12u, 0u, 60u, 100u, 25u, 20u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Crabhammer -- data/moves.ts:3129-3142, data/mods/champions/moves.ts:153-156 */
     {17u, 0u, 100u, 95u, 10u, 12u, 8u, 1u, 2u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
     /* Cross Chop -- data/moves.ts:3174-3187 */
@@ -1014,44 +1014,44 @@ const dfi_move_data dfi_pool_moves[DFI_POOL_MOVE_COUNT] = {
     {1u, 0u, 80u, 100u, 15u, 16u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 20u, 1u, 0u, 2u, {6u, 5u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
     /* Crush Claw -- data/moves.ts:3225-3243, data/mods/champions/moves.ts:157-160 */
     {12u, 0u, 75u, 95u, 10u, 12u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 50u, 1u, 0u, 2u, {6u, 5u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
-    /* Curse -- data/moves.ts:3266-3308, data/mods/champions/moves.ts:165-196  [unmodelled: callback onHit; callback onModifyMove; callback onTryHit; condition block; primary volatile undefined, // no inherit] */
-    {8u, 2u, 0u, 0u, 10u, 12u, 8u, 1u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    /* Curse -- data/moves.ts:3266-3308, data/mods/champions/moves.ts:165-196  [unmodelled: callback onHit; callback onModifyMove; callback onTryHit; condition block] */
+    {8u, 2u, 0u, 0u, 10u, 12u, 8u, 1u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Dark Pulse -- data/moves.ts:3338-3354 */
     {1u, 1u, 80u, 100u, 15u, 16u, 8u, 2u, 1u, 2u, {0u, 0u}, {0u, 0u}, 20u, 3u, 1u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
     /* Decorate -- data/moves.ts:3391-3406  [unmodelled: primary boosts on a non-self target] */
-    {4u, 2u, 0u, 0u, 15u, 16u, 8u, 1u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {4u, 2u, 0u, 0u, 15u, 16u, 8u, 1u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Defog -- data/moves.ts:3447-3481  [unmodelled: callback onHit] */
-    {7u, 2u, 0u, 0u, 15u, 16u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {7u, 2u, 0u, 0u, 15u, 16u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Destiny Bond -- data/moves.ts:3482-3525  [unmodelled: callback onPrepareHit; condition block; primary volatile destinybond] */
-    {8u, 2u, 0u, 0u, 5u, 8u, 8u, 6u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {8u, 2u, 0u, 0u, 5u, 8u, 8u, 6u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Detect -- data/moves.ts:3526-3547 */
     {5u, 2u, 0u, 0u, 5u, 8u, 12u, 6u, 1u, 8u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 8u},
     /* Dig -- data/moves.ts:3585-3628  [unmodelled: callback onTryMove; condition block] */
-    {10u, 0u, 80u, 100u, 10u, 12u, 8u, 1u, 1u, 7u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {10u, 0u, 80u, 100u, 10u, 12u, 8u, 1u, 1u, 7u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Disable -- data/moves.ts:3648-3716, data/mods/champions/moves.ts:228-239  [unmodelled: callback onTryHit; condition block; primary volatile disable] */
-    {12u, 2u, 0u, 100u, 20u, 20u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
-    /* Discharge -- data/moves.ts:3730-3746  [unmodelled: target allAdjacent] */
-    {3u, 1u, 80u, 100u, 15u, 16u, 8u, 11u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {12u, 2u, 0u, 100u, 20u, 20u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
+    /* Discharge -- data/moves.ts:3730-3746 */
+    {3u, 1u, 80u, 100u, 15u, 16u, 8u, 11u, 1u, 2u, {0u, 0u}, {0u, 0u}, 30u, 2u, 3u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
     /* Dive -- data/moves.ts:3747-3794  [unmodelled: callback onTryMove; condition block] */
-    {17u, 0u, 80u, 100u, 10u, 12u, 8u, 1u, 1u, 7u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {17u, 0u, 80u, 100u, 10u, 12u, 8u, 1u, 1u, 7u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Double Hit -- data/moves.ts:3893-3908  [unmodelled: field multihit] */
-    {12u, 0u, 35u, 90u, 10u, 12u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {12u, 0u, 35u, 90u, 10u, 12u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Double Shock -- data/moves.ts:3945-3969, data/mods/champions/moves.ts:256-259  [unmodelled: callback onTryMove; self effect] */
-    {3u, 0u, 120u, 100u, 5u, 8u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {3u, 0u, 120u, 100u, 5u, 8u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Double Team -- data/moves.ts:3985-4001 */
     {12u, 2u, 0u, 0u, 15u, 16u, 8u, 6u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 1u, {6u, 6u, 6u, 6u, 6u, 6u, 7u}, 0u, 0u, 0u, 0u},
     /* Dragon Cheer -- data/moves.ts:4056-4086, data/mods/champions/moves.ts:268-271  [unmodelled: condition block; primary volatile dragoncheer] */
-    {2u, 2u, 0u, 0u, 15u, 16u, 8u, 3u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {2u, 2u, 0u, 0u, 15u, 16u, 8u, 3u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Dragon Claw -- data/moves.ts:4087-4099, data/mods/champions/moves.ts:272-275 */
     {2u, 0u, 80u, 100u, 15u, 16u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
     /* Dragon Dance -- data/moves.ts:4100-4117 */
     {2u, 2u, 0u, 0u, 20u, 20u, 8u, 6u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 1u, {7u, 6u, 6u, 6u, 7u, 6u, 6u}, 0u, 0u, 0u, 0u},
     /* Dragon Darts -- data/moves.ts:4118-4132  [unmodelled: field multihit; field smartTarget] */
-    {2u, 0u, 50u, 100u, 10u, 12u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {2u, 0u, 50u, 100u, 10u, 12u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Dragon Rush -- data/moves.ts:4191-4207 */
     {2u, 0u, 100u, 75u, 10u, 12u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 20u, 3u, 1u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
     /* Dragon Tail -- data/moves.ts:4208-4221  [unmodelled: field forceSwitch] */
-    {2u, 0u, 60u, 90u, 10u, 12u, 2u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {2u, 0u, 60u, 90u, 10u, 12u, 2u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Draining Kiss -- data/moves.ts:4222-4235 */
     {4u, 1u, 50u, 100u, 10u, 12u, 8u, 1u, 1u, 3u, {0u, 0u}, {3u, 4u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
     /* Drain Punch -- data/moves.ts:4236-4249 */
@@ -1059,105 +1059,105 @@ const dfi_move_data dfi_pool_moves[DFI_POOL_MOVE_COUNT] = {
     /* Drill Peck -- data/moves.ts:4267-4279 */
     {7u, 0u, 80u, 100u, 20u, 20u, 8u, 2u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
     /* Dual Wingbeat -- data/moves.ts:4328-4341  [unmodelled: field multihit] */
-    {7u, 0u, 40u, 90u, 10u, 12u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {7u, 0u, 40u, 90u, 10u, 12u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Dynamic Punch -- data/moves.ts:4354-4370 */
     {5u, 0u, 100u, 50u, 5u, 8u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 100u, 3u, 2u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
     /* Earth Power -- data/moves.ts:4371-4389 */
     {10u, 1u, 90u, 100u, 10u, 12u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 10u, 1u, 0u, 2u, {6u, 6u, 6u, 5u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
-    /* Earthquake -- data/moves.ts:4390-4402  [unmodelled: target allAdjacent] */
-    {10u, 0u, 100u, 100u, 10u, 12u, 8u, 11u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    /* Earthquake -- data/moves.ts:4390-4402 */
+    {10u, 0u, 100u, 100u, 10u, 12u, 8u, 11u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
     /* Eerie Impulse -- data/moves.ts:4441-4457  [unmodelled: primary boosts on a non-self target] */
-    {3u, 2u, 0u, 100u, 15u, 16u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {3u, 2u, 0u, 100u, 15u, 16u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Eerie Spell -- data/moves.ts:4458-4482  [unmodelled: secondary] */
-    {14u, 1u, 80u, 100u, 5u, 8u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {14u, 1u, 80u, 100u, 5u, 8u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Electric Terrain -- data/moves.ts:4497-4555 */
-    {3u, 2u, 0u, 0u, 10u, 12u, 8u, 9u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 28u},
+    {3u, 2u, 0u, 0u, 10u, 12u, 8u, 9u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 47u},
     /* Electrify -- data/moves.ts:4556-4587, data/mods/champions/moves.ts:297-300  [unmodelled: callback onTryHit; condition block; primary volatile electrify] */
-    {3u, 2u, 0u, 0u, 20u, 20u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {3u, 2u, 0u, 0u, 20u, 20u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Electro Ball -- data/moves.ts:4588-4609  [unmodelled: callback basePowerCallback] */
-    {3u, 1u, 0u, 100u, 10u, 12u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {3u, 1u, 0u, 100u, 10u, 12u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Electroweb -- data/moves.ts:4660-4678 */
     {3u, 1u, 55u, 95u, 15u, 16u, 8u, 7u, 1u, 2u, {0u, 0u}, {0u, 0u}, 100u, 1u, 0u, 2u, {6u, 6u, 6u, 6u, 5u, 6u, 6u}, 0u, 0u, 0u, 0u},
     /* Endeavor -- data/moves.ts:4784-4804  [unmodelled: callback damageCallback; callback onTryImmunity] */
-    {12u, 0u, 0u, 100u, 5u, 8u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {12u, 0u, 0u, 100u, 5u, 8u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Endure -- data/moves.ts:4805-4839  [unmodelled: callback onHit; callback onPrepareHit; condition block; primary volatile endure] */
-    {12u, 2u, 0u, 0u, 10u, 12u, 12u, 6u, 1u, 8u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {12u, 2u, 0u, 0u, 10u, 12u, 12u, 6u, 1u, 8u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Energy Ball -- data/moves.ts:4840-4858 */
     {9u, 1u, 90u, 100u, 10u, 12u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 10u, 1u, 0u, 2u, {6u, 6u, 6u, 5u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
     /* Entrainment -- data/moves.ts:4859-4887  [unmodelled: callback onHit; callback onTryHit] */
-    {12u, 2u, 0u, 100u, 15u, 16u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
-    /* Eruption -- data/moves.ts:4888-4905  [unmodelled: callback basePowerCallback] */
-    {6u, 1u, 150u, 100u, 5u, 8u, 8u, 7u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {12u, 2u, 0u, 100u, 15u, 16u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
+    /* Eruption -- data/moves.ts:4888-4905 */
+    {6u, 1u, 150u, 100u, 5u, 8u, 8u, 7u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 36u},
     /* Expanding Force -- data/moves.ts:4943-4965 */
     {14u, 1u, 80u, 100u, 10u, 12u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 25u},
-    /* Explosion -- data/moves.ts:4966-4979  [unmodelled: field selfdestruct; target allAdjacent] */
-    {12u, 0u, 250u, 100u, 5u, 8u, 8u, 11u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    /* Explosion -- data/moves.ts:4966-4979  [unmodelled: field selfdestruct] */
+    {12u, 0u, 250u, 100u, 5u, 8u, 8u, 11u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Extrasensory -- data/moves.ts:4980-4996 */
     {14u, 1u, 80u, 100u, 20u, 20u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 10u, 3u, 1u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
     /* Facade -- data/moves.ts:5032-5049  [unmodelled: callback onBasePower] */
-    {12u, 0u, 70u, 100u, 20u, 20u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {12u, 0u, 70u, 100u, 20u, 20u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Fairy Lock -- data/moves.ts:5050-5073  [unmodelled: condition block; pseudo weather fairylock] */
-    {4u, 2u, 0u, 0u, 10u, 12u, 8u, 9u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {4u, 2u, 0u, 0u, 10u, 12u, 8u, 9u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Fake Tears -- data/moves.ts:5110-5126  [unmodelled: primary boosts on a non-self target] */
-    {1u, 2u, 0u, 100u, 20u, 20u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {1u, 2u, 0u, 100u, 20u, 20u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Feather Dance -- data/moves.ts:5156-5172  [unmodelled: primary boosts on a non-self target] */
-    {7u, 2u, 0u, 100u, 15u, 16u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
-    /* Feint -- data/moves.ts:5173-5187  [unmodelled: field breaksProtect] */
+    {7u, 2u, 0u, 100u, 15u, 16u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
+    /* Feint -- data/moves.ts:5173-5187 */
     {12u, 0u, 30u, 100u, 10u, 12u, 10u, 1u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
     /* Fell Stinger -- data/moves.ts:5202-5217  [unmodelled: callback onAfterMoveSecondarySelf] */
-    {0u, 0u, 50u, 100u, 25u, 20u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {0u, 0u, 50u, 100u, 25u, 20u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Fickle Beam -- data/moves.ts:5218-5236  [unmodelled: callback onBasePower] */
-    {2u, 1u, 80u, 100u, 5u, 8u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
-    /* Fiery Dance -- data/moves.ts:5237-5257  [unmodelled: secondary self effect] */
-    {6u, 1u, 80u, 100u, 10u, 12u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {2u, 1u, 80u, 100u, 5u, 8u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
+    /* Fiery Dance -- data/moves.ts:5237-5257 */
+    {6u, 1u, 80u, 100u, 10u, 12u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 50u, 7u, 0u, 5u, {6u, 6u, 7u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
     /* Final Gambit -- data/moves.ts:5301-5320  [unmodelled: callback damageCallback; field selfdestruct] */
-    {5u, 1u, 0u, 100u, 5u, 8u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {5u, 1u, 0u, 100u, 5u, 8u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Fire Blast -- data/moves.ts:5321-5337 */
     {6u, 1u, 110u, 85u, 5u, 8u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 10u, 2u, 1u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
     /* Fire Fang -- data/moves.ts:5338-5359  [unmodelled: field secondaries] */
-    {6u, 0u, 65u, 95u, 15u, 16u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {6u, 0u, 65u, 95u, 15u, 16u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Fire Lash -- data/moves.ts:5360-5378, data/mods/champions/moves.ts:378-381 */
     {6u, 0u, 90u, 100u, 15u, 16u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 100u, 1u, 0u, 2u, {6u, 5u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
     /* Fire Punch -- data/moves.ts:5442-5458 */
     {6u, 0u, 75u, 100u, 15u, 16u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 10u, 2u, 1u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
     /* Fire Spin -- data/moves.ts:5459-5472  [unmodelled: primary volatile partiallytrapped] */
-    {6u, 1u, 35u, 85u, 15u, 16u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {6u, 1u, 35u, 85u, 15u, 16u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Fissure -- data/moves.ts:5513-5528  [unmodelled: field ohko] */
-    {10u, 0u, 0u, 30u, 5u, 8u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {10u, 0u, 0u, 30u, 5u, 8u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Flail -- data/moves.ts:5529-5562  [unmodelled: callback basePowerCallback] */
-    {12u, 0u, 0u, 100u, 15u, 16u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
-    /* Flame Charge -- data/moves.ts:5587-5607  [unmodelled: secondary self effect] */
-    {6u, 0u, 50u, 100u, 20u, 20u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {12u, 0u, 0u, 100u, 15u, 16u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
+    /* Flame Charge -- data/moves.ts:5587-5607 */
+    {6u, 0u, 50u, 100u, 20u, 20u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 100u, 7u, 0u, 5u, {6u, 6u, 6u, 6u, 7u, 6u, 6u}, 0u, 0u, 0u, 0u},
     /* Flamethrower -- data/moves.ts:5608-5624 */
     {6u, 1u, 90u, 100u, 15u, 16u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 10u, 2u, 1u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
     /* Flatter -- data/moves.ts:5697-5714  [unmodelled: primary boosts on a non-self target; primary volatile confusion] */
-    {1u, 2u, 0u, 100u, 15u, 16u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {1u, 2u, 0u, 100u, 15u, 16u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Fling -- data/moves.ts:5733-5786  [unmodelled: callback onPrepareHit; condition block] */
-    {1u, 0u, 0u, 100u, 10u, 12u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {1u, 0u, 0u, 100u, 10u, 12u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Flower Trick -- data/moves.ts:5881-5893  [unmodelled: field willCrit] */
-    {9u, 0u, 70u, 0u, 10u, 12u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {9u, 0u, 70u, 0u, 10u, 12u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Fly -- data/moves.ts:5894-5934  [unmodelled: callback onTryMove; condition block] */
-    {7u, 0u, 90u, 95u, 15u, 16u, 8u, 2u, 1u, 7u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {7u, 0u, 90u, 95u, 15u, 16u, 8u, 2u, 1u, 7u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Flying Press -- data/moves.ts:5935-5951  [unmodelled: callback onEffectiveness] */
-    {5u, 0u, 100u, 95u, 10u, 12u, 8u, 2u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {5u, 0u, 100u, 95u, 10u, 12u, 8u, 2u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Focus Energy -- data/moves.ts:5971-6000  [unmodelled: condition block; primary volatile focusenergy] */
-    {12u, 2u, 0u, 0u, 30u, 20u, 8u, 6u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {12u, 2u, 0u, 0u, 30u, 20u, 8u, 6u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Focus Punch -- data/moves.ts:6001-6038  [unmodelled: callback beforeMoveCallback; callback priorityChargeCallback; condition block] */
-    {5u, 0u, 150u, 100u, 20u, 20u, 5u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {5u, 0u, 150u, 100u, 20u, 20u, 5u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Forest's Curse -- data/moves.ts:6125-6143  [unmodelled: callback onHit] */
-    {9u, 2u, 0u, 100u, 20u, 20u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
-    /* Foul Play -- data/moves.ts:6144-6157  [unmodelled: field overrideOffensivePokemon] */
-    {1u, 0u, 95u, 100u, 15u, 16u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
-    /* Freeze-Dry -- data/moves.ts:6158-6177, data/mods/champions/moves.ts:415-418  [unmodelled: callback onEffectiveness; secondary] */
-    {11u, 1u, 70u, 100u, 20u, 20u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {9u, 2u, 0u, 100u, 20u, 20u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
+    /* Foul Play -- data/moves.ts:6144-6157 */
+    {1u, 0u, 95u, 100u, 15u, 16u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 38u},
+    /* Freeze-Dry -- data/moves.ts:6158-6177, data/mods/champions/moves.ts:415-418 */
+    {11u, 1u, 70u, 100u, 20u, 20u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 42u},
     /* Frenzy Plant -- data/moves.ts:6242-6257 */
     {9u, 1u, 150u, 90u, 5u, 8u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
     /* Frost Breath -- data/moves.ts:6258-6271  [unmodelled: field willCrit] */
-    {11u, 1u, 60u, 90u, 10u, 12u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {11u, 1u, 60u, 90u, 10u, 12u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Future Sight -- data/moves.ts:6391-6425  [unmodelled: callback onTry; field ignoreImmunity] */
-    {14u, 1u, 120u, 100u, 10u, 12u, 8u, 1u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {14u, 1u, 120u, 100u, 10u, 12u, 8u, 1u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Gastro Acid -- data/moves.ts:6426-6460  [unmodelled: callback onTryHit; condition block; primary volatile gastroacid] */
-    {13u, 2u, 0u, 100u, 10u, 12u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {13u, 2u, 0u, 100u, 10u, 12u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Giga Drain -- data/moves.ts:6559-6572 */
     {9u, 1u, 75u, 100u, 10u, 12u, 8u, 1u, 1u, 2u, {0u, 0u}, {1u, 2u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
     /* Giga Impact -- data/moves.ts:6573-6588 */
@@ -1169,51 +1169,51 @@ const dfi_move_data dfi_pool_moves[DFI_POOL_MOVE_COUNT] = {
     /* Glare -- data/moves.ts:6679-6693 */
     {12u, 2u, 0u, 100u, 30u, 20u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 3u, 0u, 0u, 0u},
     /* Grassy Terrain -- data/moves.ts:7673-7730  [unmodelled: condition block; field terrain] */
-    {9u, 2u, 0u, 0u, 10u, 12u, 8u, 9u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {9u, 2u, 0u, 0u, 10u, 12u, 8u, 9u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Grav Apple -- data/moves.ts:7731-7753, data/mods/champions/moves.ts:464-467  [unmodelled: callback onBasePower] */
-    {9u, 0u, 90u, 100u, 10u, 12u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {9u, 0u, 90u, 100u, 10u, 12u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Gravity -- data/moves.ts:7754-7842  [unmodelled: condition block; pseudo weather gravity] */
-    {14u, 2u, 0u, 0u, 5u, 8u, 8u, 9u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {14u, 2u, 0u, 0u, 5u, 8u, 8u, 9u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Growth -- data/moves.ts:7860-7882, data/mods/champions/moves.ts:472-475  [unmodelled: callback onModifyMove] */
-    {9u, 2u, 0u, 0u, 20u, 20u, 8u, 6u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {9u, 2u, 0u, 0u, 20u, 20u, 8u, 6u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Guard Split -- data/moves.ts:7949-7971  [unmodelled: callback onHit] */
-    {14u, 2u, 0u, 0u, 10u, 12u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {14u, 2u, 0u, 0u, 10u, 12u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Guard Swap -- data/moves.ts:7972-8000  [unmodelled: callback onHit] */
-    {14u, 2u, 0u, 0u, 10u, 12u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {14u, 2u, 0u, 0u, 10u, 12u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Guillotine -- data/moves.ts:8001-8016  [unmodelled: field ohko] */
-    {12u, 0u, 0u, 30u, 5u, 8u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {12u, 0u, 0u, 30u, 5u, 8u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Gunk Shot -- data/moves.ts:8017-8033 */
     {13u, 0u, 120u, 80u, 5u, 8u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 30u, 2u, 5u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
     /* Gyro Ball -- data/moves.ts:8047-8068  [unmodelled: callback basePowerCallback] */
-    {16u, 0u, 0u, 100u, 5u, 8u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {16u, 0u, 0u, 100u, 5u, 8u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Hammer Arm -- data/moves.ts:8085-8102 */
     {5u, 0u, 100u, 90u, 10u, 12u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 3u, {6u, 6u, 6u, 6u, 5u, 6u, 6u}, 0u, 0u, 0u, 0u},
     /* Hard Press -- data/moves.ts:8137-8155  [unmodelled: callback basePowerCallback] */
-    {16u, 0u, 0u, 100u, 10u, 12u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {16u, 0u, 0u, 100u, 10u, 12u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Haze -- data/moves.ts:8156-8175  [unmodelled: callback onHitField] */
-    {11u, 2u, 0u, 0u, 30u, 20u, 8u, 9u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {11u, 2u, 0u, 0u, 30u, 20u, 8u, 9u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Headlong Rush -- data/moves.ts:8208-8225 */
     {10u, 0u, 120u, 100u, 5u, 8u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 3u, {6u, 5u, 6u, 5u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
     /* Heal Bell -- data/moves.ts:8240-8272  [unmodelled: callback onHit; target allyTeam] */
-    {12u, 2u, 0u, 0u, 5u, 8u, 8u, 13u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {12u, 2u, 0u, 0u, 5u, 8u, 8u, 13u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Healing Wish -- data/moves.ts:8348-8382  [unmodelled: callback onTryHit; condition block; field selfdestruct; field slotCondition] */
-    {14u, 2u, 0u, 0u, 10u, 12u, 8u, 6u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {14u, 2u, 0u, 0u, 10u, 12u, 8u, 6u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Heal Pulse -- data/moves.ts:8399-8428  [unmodelled: callback onHit] */
-    {14u, 2u, 0u, 0u, 10u, 12u, 8u, 2u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {14u, 2u, 0u, 0u, 10u, 12u, 8u, 2u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Heat Crash -- data/moves.ts:8476-8515  [unmodelled: callback basePowerCallback; callback onTryHit] */
-    {6u, 0u, 0u, 100u, 10u, 12u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {6u, 0u, 0u, 100u, 10u, 12u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Heavy Slam -- data/moves.ts:8533-8572  [unmodelled: callback basePowerCallback; callback onTryHit] */
-    {16u, 0u, 0u, 100u, 10u, 12u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {16u, 0u, 0u, 100u, 10u, 12u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Hex -- data/moves.ts:8607-8627  [unmodelled: callback basePowerCallback] */
-    {8u, 1u, 65u, 100u, 10u, 12u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {8u, 1u, 65u, 100u, 10u, 12u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* High Jump Kick -- data/moves.ts:8898-8914  [unmodelled: callback onMoveFail; field hasCrashDamage] */
-    {5u, 0u, 130u, 90u, 10u, 12u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {5u, 0u, 130u, 90u, 10u, 12u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Horn Drill -- data/moves.ts:8979-8994  [unmodelled: field ohko] */
-    {12u, 0u, 0u, 30u, 5u, 8u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {12u, 0u, 0u, 30u, 5u, 8u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Horn Leech -- data/moves.ts:8995-9008 */
     {9u, 0u, 75u, 100u, 10u, 12u, 8u, 1u, 1u, 3u, {0u, 0u}, {1u, 2u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
-    /* Howl -- data/moves.ts:9009-9025, data/mods/champions/moves.ts:512-515  [unmodelled: primary boosts on a non-self target; target allies] */
-    {12u, 2u, 0u, 0u, 40u, 20u, 8u, 14u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    /* Howl -- data/moves.ts:9009-9025, data/mods/champions/moves.ts:512-515  [unmodelled: primary boosts on a non-self target] */
+    {12u, 2u, 0u, 0u, 40u, 20u, 8u, 14u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Hydro Cannon -- data/moves.ts:9055-9070 */
     {17u, 1u, 150u, 90u, 5u, 8u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
     /* Hydro Pump -- data/moves.ts:9071-9083 */
@@ -1221,61 +1221,61 @@ const dfi_move_data dfi_pool_moves[DFI_POOL_MOVE_COUNT] = {
     /* Hyper Beam -- data/moves.ts:9113-9128 */
     {12u, 1u, 150u, 90u, 5u, 8u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
     /* Ice Fang -- data/moves.ts:9347-9368  [unmodelled: field secondaries] */
-    {11u, 0u, 65u, 95u, 15u, 16u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {11u, 0u, 65u, 95u, 15u, 16u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Ice Hammer -- data/moves.ts:9369-9386 */
     {11u, 0u, 100u, 90u, 10u, 12u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 3u, {6u, 6u, 6u, 6u, 5u, 6u, 6u}, 0u, 0u, 0u, 0u},
     /* Ice Shard -- data/moves.ts:9404-9416 */
     {11u, 0u, 40u, 100u, 30u, 20u, 9u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
     /* Ice Spinner -- data/moves.ts:9417-9436  [unmodelled: callback onAfterHit; callback onAfterSubDamage] */
-    {11u, 0u, 80u, 100u, 15u, 16u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {11u, 0u, 80u, 100u, 15u, 16u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Icicle Crash -- data/moves.ts:9437-9453 */
     {11u, 0u, 85u, 90u, 10u, 12u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 30u, 3u, 1u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
     /* Icicle Spear -- data/moves.ts:9454-9469  [unmodelled: field multihit] */
-    {11u, 0u, 25u, 100u, 30u, 20u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {11u, 0u, 25u, 100u, 30u, 20u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Icy Wind -- data/moves.ts:9470-9488 */
     {11u, 1u, 55u, 95u, 15u, 16u, 8u, 7u, 1u, 2u, {0u, 0u}, {0u, 0u}, 100u, 1u, 0u, 2u, {6u, 6u, 6u, 6u, 5u, 6u, 6u}, 0u, 0u, 0u, 0u},
     /* Imprison -- data/moves.ts:9489-9523  [unmodelled: condition block; primary volatile imprison] */
-    {14u, 2u, 0u, 0u, 10u, 12u, 8u, 6u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {14u, 2u, 0u, 0u, 10u, 12u, 8u, 6u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Infernal Parade -- data/moves.ts:9543-9562, data/mods/champions/moves.ts:541-544  [unmodelled: callback basePowerCallback] */
-    {8u, 1u, 65u, 100u, 15u, 16u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {8u, 1u, 65u, 100u, 15u, 16u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Inferno -- data/moves.ts:9563-9579 */
     {6u, 1u, 100u, 50u, 5u, 8u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 100u, 2u, 1u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
     /* Infestation -- data/moves.ts:9595-9608  [unmodelled: primary volatile partiallytrapped] */
-    {0u, 1u, 20u, 100u, 20u, 20u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {0u, 1u, 20u, 100u, 20u, 20u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Ingrain -- data/moves.ts:9609-9640  [unmodelled: condition block; primary volatile ingrain] */
-    {9u, 2u, 0u, 0u, 20u, 20u, 8u, 6u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {9u, 2u, 0u, 0u, 20u, 20u, 8u, 6u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Instruct -- data/moves.ts:9641-9674  [unmodelled: callback onHit] */
-    {14u, 2u, 0u, 0u, 15u, 16u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {14u, 2u, 0u, 0u, 15u, 16u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Iron Defense -- data/moves.ts:9705-9721 */
     {16u, 2u, 0u, 0u, 15u, 16u, 8u, 6u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 1u, {6u, 8u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
     /* Iron Tail -- data/moves.ts:9739-9757 */
     {16u, 0u, 100u, 75u, 15u, 16u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 30u, 1u, 0u, 2u, {6u, 5u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
     /* Jaw Lock -- data/moves.ts:9789-9804  [unmodelled: callback onHit] */
-    {1u, 0u, 80u, 100u, 10u, 12u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {1u, 0u, 80u, 100u, 10u, 12u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Jet Punch -- data/moves.ts:9805-9817 */
     {17u, 0u, 60u, 100u, 15u, 16u, 9u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
     /* King's Shield -- data/moves.ts:9905-9958, data/mods/champions/moves.ts:564-568  [unmodelled: callback onHit; callback onPrepareHit; condition block; primary volatile kingsshield] */
-    {16u, 2u, 0u, 0u, 5u, 8u, 12u, 6u, 1u, 8u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {16u, 2u, 0u, 0u, 5u, 8u, 12u, 6u, 1u, 8u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Knock Off -- data/moves.ts:9959-9984 */
     {1u, 0u, 65u, 100u, 20u, 20u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 24u},
     /* Lash Out -- data/moves.ts:10048-10065  [unmodelled: callback onBasePower] */
-    {1u, 0u, 75u, 100u, 5u, 8u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {1u, 0u, 75u, 100u, 5u, 8u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Last Resort -- data/moves.ts:10066-10090  [unmodelled: callback onTry] */
-    {12u, 0u, 140u, 100u, 5u, 8u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
-    /* Lava Plume -- data/moves.ts:10106-10122  [unmodelled: target allAdjacent] */
-    {6u, 1u, 80u, 100u, 15u, 16u, 8u, 11u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {12u, 0u, 140u, 100u, 5u, 8u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
+    /* Lava Plume -- data/moves.ts:10106-10122 */
+    {6u, 1u, 80u, 100u, 15u, 16u, 8u, 11u, 1u, 2u, {0u, 0u}, {0u, 0u}, 30u, 2u, 1u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
     /* Leaf Blade -- data/moves.ts:10136-10149 */
     {9u, 0u, 90u, 100u, 15u, 16u, 8u, 1u, 2u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
     /* Leaf Storm -- data/moves.ts:10150-10167 */
     {9u, 1u, 130u, 90u, 5u, 8u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 3u, {6u, 6u, 4u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
     /* Leech Seed -- data/moves.ts:10202-10236  [unmodelled: callback onTryImmunity; condition block; primary volatile leechseed] */
-    {9u, 2u, 0u, 90u, 10u, 12u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
-    /* Life Dew -- data/moves.ts:10286-10298  [unmodelled: target allies] */
-    {17u, 2u, 0u, 0u, 10u, 12u, 8u, 14u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {9u, 2u, 0u, 90u, 10u, 12u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
+    /* Life Dew -- data/moves.ts:10286-10298 */
+    {17u, 2u, 0u, 0u, 10u, 12u, 8u, 14u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
     /* Light of Ruin -- data/moves.ts:10299-10314, data/mods/champions/moves.ts:581-584 */
     {4u, 1u, 140u, 90u, 5u, 8u, 8u, 1u, 1u, 2u, {1u, 2u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
     /* Lock-On -- data/moves.ts:10394-10425  [unmodelled: callback onHit; callback onTryHit; condition block] */
-    {12u, 2u, 0u, 0u, 5u, 8u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {12u, 2u, 0u, 0u, 5u, 8u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Low Sweep -- data/moves.ts:10482-10500 */
     {5u, 0u, 65u, 100u, 20u, 20u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 100u, 1u, 0u, 2u, {6u, 6u, 6u, 6u, 5u, 6u, 6u}, 0u, 0u, 0u, 0u},
     /* Lumina Crash -- data/moves.ts:10529-10546 */
@@ -1285,51 +1285,51 @@ const dfi_move_data dfi_pool_moves[DFI_POOL_MOVE_COUNT] = {
     /* Mach Punch -- data/moves.ts:10645-10657 */
     {5u, 0u, 40u, 100u, 30u, 20u, 9u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
     /* Magic Powder -- data/moves.ts:10738-10753  [unmodelled: callback onHit] */
-    {14u, 2u, 0u, 100u, 20u, 20u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {14u, 2u, 0u, 100u, 20u, 20u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Magic Room -- data/moves.ts:10754-10797  [unmodelled: condition block; pseudo weather magicroom] */
-    {14u, 2u, 0u, 0u, 10u, 12u, 8u, 9u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {14u, 2u, 0u, 0u, 10u, 12u, 8u, 9u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Magnetic Flux -- data/moves.ts:10826-10852  [unmodelled: callback onHitSide] */
-    {3u, 2u, 0u, 0u, 20u, 20u, 8u, 8u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {3u, 2u, 0u, 0u, 20u, 20u, 8u, 8u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Magnet Rise -- data/moves.ts:10853-10889  [unmodelled: callback onTry; condition block; primary volatile magnetrise] */
-    {3u, 2u, 0u, 0u, 10u, 12u, 8u, 6u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {3u, 2u, 0u, 0u, 10u, 12u, 8u, 6u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Matcha Gotcha -- data/moves.ts:11027-11044 */
     {9u, 1u, 80u, 90u, 15u, 16u, 8u, 7u, 1u, 130u, {0u, 0u}, {1u, 2u}, 20u, 2u, 1u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
     /* Mean Look -- data/moves.ts:11492-11508  [unmodelled: callback onHit] */
-    {12u, 2u, 0u, 0u, 5u, 8u, 8u, 1u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {12u, 2u, 0u, 0u, 5u, 8u, 8u, 1u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Megahorn -- data/moves.ts:11581-11593 */
     {0u, 0u, 120u, 85u, 10u, 12u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
     /* Mega Kick -- data/moves.ts:11594-11606 */
     {12u, 0u, 120u, 75u, 5u, 8u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
     /* Memento -- data/moves.ts:11620-11638  [unmodelled: field selfdestruct; primary boosts on a non-self target] */
-    {1u, 2u, 0u, 100u, 10u, 12u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {1u, 2u, 0u, 100u, 10u, 12u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Metal Burst -- data/moves.ts:11655-11684  [unmodelled: callback damageCallback; callback onModifyTarget; callback onTry; target scripted] */
-    {16u, 0u, 0u, 100u, 10u, 12u, 8u, 12u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {16u, 0u, 0u, 100u, 10u, 12u, 8u, 12u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Metal Sound -- data/moves.ts:11706-11722  [unmodelled: primary boosts on a non-self target] */
-    {16u, 2u, 0u, 85u, 40u, 20u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {16u, 2u, 0u, 85u, 40u, 20u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Meteor Assault -- data/moves.ts:11723-11738, data/mods/champions/moves.ts:635-639 */
     {5u, 0u, 170u, 100u, 5u, 8u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
     /* Meteor Beam -- data/moves.ts:11739-11762  [unmodelled: callback onTryMove] */
-    {15u, 1u, 120u, 90u, 10u, 12u, 8u, 1u, 1u, 6u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
-    /* Meteor Mash -- data/moves.ts:11763-11783  [unmodelled: secondary self effect] */
-    {16u, 0u, 90u, 90u, 10u, 12u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {15u, 1u, 120u, 90u, 10u, 12u, 8u, 1u, 1u, 6u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
+    /* Meteor Mash -- data/moves.ts:11763-11783 */
+    {16u, 0u, 90u, 90u, 10u, 12u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 20u, 7u, 0u, 5u, {7u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
     /* Milk Drink -- data/moves.ts:11823-11837, data/mods/champions/moves.ts:648-651  [unmodelled: target adjacentAllyOrSelf] */
-    {12u, 2u, 0u, 0u, 5u, 8u, 8u, 4u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {12u, 2u, 0u, 0u, 5u, 8u, 8u, 4u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Minimize -- data/moves.ts:11917-11949  [unmodelled: condition block; primary volatile minimize] */
-    {12u, 2u, 0u, 0u, 10u, 12u, 8u, 6u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {12u, 2u, 0u, 0u, 10u, 12u, 8u, 6u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Mirror Coat -- data/moves.ts:11983-12026  [unmodelled: callback beforeTurnCallback; callback damageCallback; callback onTry; condition block; target scripted] */
-    {14u, 1u, 0u, 100u, 20u, 20u, 3u, 12u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
-    /* Misty Explosion -- data/moves.ts:12132-12150  [unmodelled: callback onBasePower; field selfdestruct; target allAdjacent] */
-    {4u, 1u, 100u, 100u, 5u, 8u, 8u, 11u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {14u, 1u, 0u, 100u, 20u, 20u, 3u, 12u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
+    /* Misty Explosion -- data/moves.ts:12132-12150  [unmodelled: callback onBasePower; field selfdestruct] */
+    {4u, 1u, 100u, 100u, 5u, 8u, 8u, 11u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Misty Terrain -- data/moves.ts:12151-12208 */
-    {4u, 2u, 0u, 0u, 10u, 12u, 8u, 9u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 29u},
+    {4u, 2u, 0u, 0u, 10u, 12u, 8u, 9u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 48u},
     /* Moonblast -- data/moves.ts:12209-12227, data/mods/champions/moves.ts:664-672 */
     {4u, 1u, 95u, 100u, 15u, 16u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 10u, 1u, 0u, 2u, {6u, 6u, 5u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
     /* Moonlight -- data/moves.ts:12242-12277  [unmodelled: callback onHit] */
-    {4u, 2u, 0u, 0u, 5u, 8u, 8u, 6u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {4u, 2u, 0u, 0u, 5u, 8u, 8u, 6u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Morning Sun -- data/moves.ts:12278-12313  [unmodelled: callback onHit] */
-    {12u, 2u, 0u, 0u, 5u, 8u, 8u, 6u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {12u, 2u, 0u, 0u, 5u, 8u, 8u, 6u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Mortal Spin -- data/moves.ts:12314-12361  [unmodelled: callback onAfterHit; callback onAfterSubDamage] */
-    {13u, 0u, 30u, 100u, 15u, 16u, 8u, 7u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {13u, 0u, 30u, 100u, 15u, 16u, 8u, 7u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Mountain Gale -- data/moves.ts:12362-12377, data/mods/champions/moves.ts:677-680 */
     {11u, 0u, 120u, 85u, 10u, 12u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 30u, 3u, 1u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
     /* Mud Shot -- data/moves.ts:12417-12435 */
@@ -1341,121 +1341,121 @@ const dfi_move_data dfi_pool_moves[DFI_POOL_MOVE_COUNT] = {
     /* Night Daze -- data/moves.ts:12677-12695, data/mods/champions/moves.ts:685-688 */
     {1u, 1u, 90u, 95u, 10u, 12u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 40u, 1u, 0u, 2u, {6u, 6u, 6u, 6u, 6u, 5u, 6u}, 0u, 0u, 0u, 0u},
     /* Night Shade -- data/moves.ts:12725-12738  [unmodelled: field damage] */
-    {8u, 1u, 0u, 100u, 15u, 16u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {8u, 1u, 0u, 100u, 15u, 16u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Night Slash -- data/moves.ts:12739-12752, data/mods/champions/moves.ts:689-692 */
     {1u, 0u, 70u, 100u, 20u, 20u, 8u, 1u, 2u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
     /* Noble Roar -- data/moves.ts:12769-12786  [unmodelled: primary boosts on a non-self target] */
-    {12u, 2u, 0u, 100u, 30u, 20u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {12u, 2u, 0u, 100u, 30u, 20u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* No Retreat -- data/moves.ts:12787-12820  [unmodelled: callback onTry; condition block; primary volatile noretreat] */
-    {5u, 2u, 0u, 0u, 5u, 8u, 8u, 6u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {5u, 2u, 0u, 0u, 5u, 8u, 8u, 6u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Nuzzle -- data/moves.ts:12841-12857 */
     {3u, 0u, 20u, 100u, 20u, 20u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 100u, 2u, 3u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
     /* Octolock -- data/moves.ts:12960-12994, data/mods/champions/moves.ts:705-708  [unmodelled: callback onTryImmunity; condition block; primary volatile octolock] */
-    {5u, 2u, 0u, 100u, 15u, 16u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {5u, 2u, 0u, 100u, 15u, 16u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Outrage -- data/moves.ts:13082-13097  [unmodelled: self effect] */
-    {2u, 0u, 120u, 100u, 10u, 12u, 8u, 10u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {2u, 0u, 120u, 100u, 10u, 12u, 8u, 10u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Overdrive -- data/moves.ts:13098-13109 */
     {3u, 1u, 80u, 100u, 10u, 12u, 8u, 7u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
     /* Overheat -- data/moves.ts:13110-13127 */
     {6u, 1u, 130u, 90u, 5u, 8u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 3u, {6u, 6u, 4u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
     /* Pain Split -- data/moves.ts:13128-13150  [unmodelled: callback onHit] */
-    {12u, 2u, 0u, 0u, 20u, 20u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
-    /* Parabolic Charge -- data/moves.ts:13151-13164  [unmodelled: target allAdjacent] */
-    {3u, 1u, 65u, 100u, 20u, 20u, 8u, 11u, 1u, 2u, {0u, 0u}, {1u, 2u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {12u, 2u, 0u, 0u, 20u, 20u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
+    /* Parabolic Charge -- data/moves.ts:13151-13164 */
+    {3u, 1u, 65u, 100u, 20u, 20u, 8u, 11u, 1u, 2u, {0u, 0u}, {1u, 2u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
     /* Payback -- data/moves.ts:13186-13206  [unmodelled: callback basePowerCallback] */
-    {1u, 0u, 50u, 100u, 10u, 12u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {1u, 0u, 50u, 100u, 10u, 12u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Perish Song -- data/moves.ts:13233-13277  [unmodelled: callback onHitField; condition block] */
-    {12u, 2u, 0u, 0u, 5u, 8u, 8u, 9u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
-    /* Petal Blizzard -- data/moves.ts:13278-13290  [unmodelled: target allAdjacent] */
-    {9u, 0u, 90u, 100u, 15u, 16u, 8u, 11u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {12u, 2u, 0u, 0u, 5u, 8u, 8u, 9u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
+    /* Petal Blizzard -- data/moves.ts:13278-13290 */
+    {9u, 0u, 90u, 100u, 15u, 16u, 8u, 11u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
     /* Petal Dance -- data/moves.ts:13291-13306  [unmodelled: self effect] */
-    {9u, 1u, 120u, 100u, 10u, 12u, 8u, 10u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {9u, 1u, 120u, 100u, 10u, 12u, 8u, 10u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Phantom Force -- data/moves.ts:13307-13335  [unmodelled: callback onTryMove; condition block; field breaksProtect] */
-    {8u, 0u, 90u, 100u, 10u, 12u, 8u, 1u, 1u, 5u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {8u, 0u, 90u, 100u, 10u, 12u, 8u, 1u, 1u, 5u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Pin Missile -- data/moves.ts:13372-13387  [unmodelled: field multihit] */
-    {0u, 0u, 25u, 95u, 20u, 20u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {0u, 0u, 25u, 95u, 20u, 20u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Play Rough -- data/moves.ts:13420-13438 */
     {4u, 0u, 90u, 90u, 10u, 12u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 10u, 1u, 0u, 2u, {5u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
     /* Pluck -- data/moves.ts:13439-13462  [unmodelled: callback onHit] */
-    {7u, 0u, 60u, 100u, 20u, 20u, 8u, 2u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
-    /* Poison Fang -- data/moves.ts:13463-13479  [unmodelled: secondary status tox] */
-    {13u, 0u, 50u, 100u, 15u, 16u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {7u, 0u, 60u, 100u, 20u, 20u, 8u, 2u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
+    /* Poison Fang -- data/moves.ts:13463-13479 */
+    {13u, 0u, 50u, 100u, 15u, 16u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 50u, 2u, 6u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
     /* Poison Jab -- data/moves.ts:13495-13511 */
     {13u, 0u, 80u, 100u, 20u, 20u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 30u, 2u, 5u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
     /* Poison Powder -- data/moves.ts:13512-13526 */
     {13u, 2u, 0u, 75u, 35u, 20u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 5u, 0u, 0u, 0u},
     /* Pollen Puff -- data/moves.ts:13562-13594  [unmodelled: callback onHit; callback onTryHit; callback onTryMove] */
-    {0u, 1u, 90u, 100u, 15u, 16u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {0u, 1u, 90u, 100u, 15u, 16u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Poltergeist -- data/moves.ts:13595-13612  [unmodelled: callback onTry; callback onTryHit] */
-    {8u, 0u, 110u, 90u, 5u, 8u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {8u, 0u, 110u, 90u, 5u, 8u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Population Bomb -- data/moves.ts:13613-13626  [unmodelled: field multiaccuracy; field multihit] */
-    {12u, 0u, 20u, 90u, 10u, 12u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {12u, 0u, 20u, 90u, 10u, 12u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Pounce -- data/moves.ts:13627-13645 */
     {0u, 0u, 50u, 100u, 20u, 20u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 100u, 1u, 0u, 2u, {6u, 6u, 6u, 6u, 5u, 6u, 6u}, 0u, 0u, 0u, 0u},
     /* Power Gem -- data/moves.ts:13707-13719 */
     {15u, 1u, 80u, 100u, 20u, 20u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
     /* Power Split -- data/moves.ts:13759-13781  [unmodelled: callback onHit] */
-    {14u, 2u, 0u, 0u, 10u, 12u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {14u, 2u, 0u, 0u, 10u, 12u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Power Swap -- data/moves.ts:13782-13810  [unmodelled: callback onHit] */
-    {14u, 2u, 0u, 0u, 10u, 12u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {14u, 2u, 0u, 0u, 10u, 12u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Power Trick -- data/moves.ts:13811-13850  [unmodelled: condition block; primary volatile powertrick] */
-    {14u, 2u, 0u, 0u, 10u, 12u, 8u, 6u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {14u, 2u, 0u, 0u, 10u, 12u, 8u, 6u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Power Trip -- data/moves.ts:13851-13870  [unmodelled: callback basePowerCallback] */
-    {1u, 0u, 20u, 100u, 10u, 12u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {1u, 0u, 20u, 100u, 10u, 12u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Power Whip -- data/moves.ts:13893-13905 */
     {9u, 0u, 120u, 85u, 10u, 12u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
-    /* Psychic Fangs -- data/moves.ts:14060-14078  [unmodelled: callback onTryHit] */
-    {14u, 0u, 85u, 100u, 10u, 12u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    /* Psychic Fangs -- data/moves.ts:14060-14078 */
+    {14u, 0u, 85u, 100u, 10u, 12u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 34u},
     /* Psychic Terrain -- data/moves.ts:14095-14154  [unmodelled: condition block; field terrain] */
-    {14u, 2u, 0u, 0u, 10u, 12u, 8u, 9u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {14u, 2u, 0u, 0u, 10u, 12u, 8u, 9u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Psycho Cut -- data/moves.ts:14173-14186 */
     {14u, 0u, 70u, 100u, 20u, 20u, 8u, 1u, 2u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
     /* Psych Up -- data/moves.ts:14211-14243  [unmodelled: callback onHit] */
-    {12u, 2u, 0u, 0u, 10u, 12u, 8u, 1u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
-    /* Psyshield Bash -- data/moves.ts:14244-14263, data/mods/champions/moves.ts:781-784  [unmodelled: secondary self effect] */
-    {14u, 0u, 90u, 90u, 10u, 12u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
-    /* Psyshock -- data/moves.ts:14264-14277  [unmodelled: field overrideDefensiveStat] */
-    {14u, 1u, 80u, 100u, 10u, 12u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {12u, 2u, 0u, 0u, 10u, 12u, 8u, 1u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
+    /* Psyshield Bash -- data/moves.ts:14244-14263, data/mods/champions/moves.ts:781-784 */
+    {14u, 0u, 90u, 90u, 10u, 12u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 100u, 7u, 0u, 5u, {6u, 7u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
+    /* Psyshock -- data/moves.ts:14264-14277 */
+    {14u, 1u, 80u, 100u, 10u, 12u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 39u},
     /* Pyro Ball -- data/moves.ts:14438-14453 */
     {6u, 0u, 120u, 90u, 5u, 8u, 8u, 1u, 1u, 130u, {0u, 0u}, {0u, 0u}, 10u, 2u, 1u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
     /* Quash -- data/moves.ts:14454-14475  [unmodelled: callback onHit] */
-    {1u, 2u, 0u, 100u, 15u, 16u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {1u, 2u, 0u, 100u, 15u, 16u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Quick Attack -- data/moves.ts:14476-14488 */
     {12u, 0u, 40u, 100u, 30u, 20u, 9u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
     /* Quick Guard -- data/moves.ts:14489-14531  [unmodelled: callback onHitSide; callback onTry; condition block; side condition quickguard] */
-    {5u, 2u, 0u, 0u, 15u, 16u, 11u, 8u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {5u, 2u, 0u, 0u, 15u, 16u, 11u, 8u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Quiver Dance -- data/moves.ts:14532-14550 */
     {0u, 2u, 0u, 0u, 20u, 20u, 8u, 6u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 1u, {6u, 6u, 7u, 7u, 7u, 6u, 6u}, 0u, 0u, 0u, 0u},
     /* Rage Fist -- data/moves.ts:14583-14597, data/mods/champions/moves.ts:793-796  [unmodelled: callback basePowerCallback] */
-    {8u, 0u, 50u, 100u, 10u, 12u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
-    /* Rage Powder -- data/moves.ts:14598-14632  [unmodelled: callback onTry; condition block; primary volatile ragepowder] */
-    {0u, 2u, 0u, 0u, 20u, 20u, 10u, 6u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {8u, 0u, 50u, 100u, 10u, 12u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
+    /* Rage Powder -- data/moves.ts:14598-14632 */
+    {0u, 2u, 0u, 0u, 20u, 20u, 10u, 6u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 33u},
     /* Raging Bull -- data/moves.ts:14633-14663  [unmodelled: callback onModifyType; callback onTryHit] */
-    {12u, 0u, 90u, 100u, 10u, 12u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {12u, 0u, 90u, 100u, 10u, 12u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Raging Fury -- data/moves.ts:14664-14678  [unmodelled: self effect] */
-    {6u, 0u, 120u, 100u, 10u, 12u, 8u, 10u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
-    /* Rain Dance -- data/moves.ts:14679-14693  [unmodelled: field weather] */
-    {17u, 2u, 0u, 0u, 5u, 8u, 8u, 9u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
-    /* Rapid Spin -- data/moves.ts:14694-14746  [unmodelled: callback onAfterHit; callback onAfterSubDamage; secondary self effect] */
-    {12u, 0u, 50u, 100u, 40u, 20u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {6u, 0u, 120u, 100u, 10u, 12u, 8u, 10u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
+    /* Rain Dance -- data/moves.ts:14679-14693 */
+    {17u, 2u, 0u, 0u, 5u, 8u, 8u, 9u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 40u},
+    /* Rapid Spin -- data/moves.ts:14694-14746  [unmodelled: callback onAfterHit; callback onAfterSubDamage] */
+    {12u, 0u, 50u, 100u, 40u, 20u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Razor Shell -- data/moves.ts:14761-14779 */
     {17u, 0u, 75u, 95u, 10u, 12u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 50u, 1u, 0u, 2u, {6u, 5u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
     /* Recycle -- data/moves.ts:14821-14841  [unmodelled: callback onHit] */
-    {12u, 2u, 0u, 0u, 10u, 12u, 8u, 6u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {12u, 2u, 0u, 0u, 10u, 12u, 8u, 6u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Reflect Type -- data/moves.ts:14883-14914  [unmodelled: callback onHit] */
-    {12u, 2u, 0u, 0u, 15u, 16u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {12u, 2u, 0u, 0u, 15u, 16u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Rest -- data/moves.ts:14957-14994  [unmodelled: callback onHit; callback onTry] */
-    {14u, 2u, 0u, 0u, 5u, 8u, 8u, 6u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {14u, 2u, 0u, 0u, 5u, 8u, 8u, 6u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Reversal -- data/moves.ts:15077-15109  [unmodelled: callback basePowerCallback] */
-    {5u, 0u, 0u, 100u, 15u, 16u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {5u, 0u, 0u, 100u, 15u, 16u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Revival Blessing -- data/moves.ts:15110-15136  [unmodelled: callback onTryHit; condition block; field selfSwitch without a switch flag; field slotCondition] */
-    {12u, 2u, 0u, 0u, 1u, 1u, 8u, 6u, 1u, 48u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {12u, 2u, 0u, 0u, 1u, 1u, 8u, 6u, 1u, 48u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Rising Voltage -- data/moves.ts:15137-15156 */
-    {3u, 1u, 70u, 100u, 20u, 20u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 30u},
+    {3u, 1u, 70u, 100u, 20u, 20u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 49u},
     /* Roar -- data/moves.ts:15157-15171  [unmodelled: field forceSwitch] */
-    {12u, 2u, 0u, 0u, 20u, 20u, 2u, 1u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {12u, 2u, 0u, 0u, 20u, 20u, 2u, 1u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Rock Blast -- data/moves.ts:15188-15203  [unmodelled: field multihit] */
-    {15u, 0u, 25u, 90u, 10u, 12u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {15u, 0u, 25u, 90u, 10u, 12u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Rock Polish -- data/moves.ts:15222-15238 */
     {15u, 2u, 0u, 0u, 20u, 20u, 8u, 6u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 1u, {6u, 6u, 6u, 6u, 8u, 6u, 6u}, 0u, 0u, 0u, 0u},
     /* Rock Tomb -- data/moves.ts:15288-15306 */
@@ -1463,59 +1463,59 @@ const dfi_move_data dfi_pool_moves[DFI_POOL_MOVE_COUNT] = {
     /* Rock Wrecker -- data/moves.ts:15307-15322 */
     {15u, 0u, 150u, 90u, 5u, 8u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
     /* Role Play -- data/moves.ts:15323-15344  [unmodelled: callback onHit; callback onTryHit] */
-    {14u, 2u, 0u, 0u, 10u, 12u, 8u, 1u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {14u, 2u, 0u, 0u, 10u, 12u, 8u, 1u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Roost -- data/moves.ts:15428-15463  [unmodelled: condition block; self effect] */
-    {7u, 2u, 0u, 0u, 5u, 8u, 8u, 6u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {7u, 2u, 0u, 0u, 5u, 8u, 8u, 6u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Round -- data/moves.ts:15498-15526  [unmodelled: callback basePowerCallback; callback onTry] */
-    {12u, 1u, 60u, 100u, 15u, 16u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {12u, 1u, 60u, 100u, 15u, 16u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Sacred Sword -- data/moves.ts:15560-15574  [unmodelled: field ignoreDefensive; field ignoreEvasion] */
-    {5u, 0u, 90u, 100u, 15u, 16u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {5u, 0u, 90u, 100u, 15u, 16u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Safeguard -- data/moves.ts:15575-15631  [unmodelled: condition block; side condition safeguard] */
-    {12u, 2u, 0u, 0u, 25u, 20u, 8u, 8u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {12u, 2u, 0u, 0u, 25u, 20u, 8u, 8u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Salt Cure -- data/moves.ts:15632-15660, data/mods/champions/moves.ts:838-846  [unmodelled: condition block; secondary volatile saltcure] */
-    {15u, 0u, 40u, 100u, 15u, 16u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {15u, 0u, 40u, 100u, 15u, 16u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Sandstorm -- data/moves.ts:15699-15713, data/mods/champions/moves.ts:855-858 */
     {15u, 2u, 0u, 0u, 5u, 8u, 8u, 9u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 22u},
     /* Sand Tomb -- data/moves.ts:15714-15727  [unmodelled: primary volatile partiallytrapped] */
-    {10u, 0u, 35u, 85u, 15u, 16u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {10u, 0u, 35u, 85u, 15u, 16u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Scale Shot -- data/moves.ts:15779-15799  [unmodelled: field multihit; field selfBoost] */
-    {2u, 0u, 25u, 90u, 20u, 20u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {2u, 0u, 25u, 90u, 20u, 20u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Scary Face -- data/moves.ts:15800-15816  [unmodelled: primary boosts on a non-self target] */
-    {12u, 2u, 0u, 100u, 10u, 12u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {12u, 2u, 0u, 100u, 10u, 12u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Scorching Sands -- data/moves.ts:15817-15833 */
     {10u, 1u, 70u, 100u, 10u, 12u, 8u, 1u, 1u, 130u, {0u, 0u}, {0u, 0u}, 30u, 2u, 1u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
     /* Screech -- data/moves.ts:15847-15863  [unmodelled: primary boosts on a non-self target] */
-    {12u, 2u, 0u, 85u, 40u, 20u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {12u, 2u, 0u, 85u, 40u, 20u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Seed Bomb -- data/moves.ts:15959-15971 */
     {9u, 0u, 80u, 100u, 15u, 16u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
     /* Seismic Toss -- data/moves.ts:15991-16005  [unmodelled: field damage] */
-    {5u, 0u, 0u, 100u, 20u, 20u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
-    /* Self-Destruct -- data/moves.ts:16006-16019  [unmodelled: field selfdestruct; target allAdjacent] */
-    {12u, 0u, 200u, 100u, 5u, 8u, 8u, 11u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {5u, 0u, 0u, 100u, 20u, 20u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
+    /* Self-Destruct -- data/moves.ts:16006-16019  [unmodelled: field selfdestruct] */
+    {12u, 0u, 200u, 100u, 5u, 8u, 8u, 11u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Shadow Punch -- data/moves.ts:16102-16114 */
     {8u, 0u, 60u, 0u, 20u, 20u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
     /* Shed Tail -- data/moves.ts:16161-16197  [unmodelled: callback onHit; callback onTryHit; field selfSwitch shedtail; primary volatile substitute; self effect] */
-    {12u, 2u, 0u, 0u, 10u, 12u, 8u, 6u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {12u, 2u, 0u, 0u, 10u, 12u, 8u, 6u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Sheer Cold -- data/moves.ts:16198-16213  [unmodelled: field ohko] */
-    {11u, 1u, 0u, 30u, 5u, 8u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {11u, 1u, 0u, 30u, 5u, 8u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Shell Side Arm -- data/moves.ts:16214-16254  [unmodelled: callback onAfterSubDamage; callback onHit; callback onModifyMove; callback onPrepareHit] */
-    {13u, 1u, 90u, 100u, 10u, 12u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {13u, 1u, 90u, 100u, 10u, 12u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Shell Smash -- data/moves.ts:16255-16275 */
-    {12u, 2u, 0u, 0u, 15u, 16u, 8u, 6u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 1u, {8u, 5u, 8u, 5u, 8u, 6u, 6u}, 0u, 0u, 0u, 0u},
+    {12u, 2u, 0u, 0u, 15u, 16u, 8u, 6u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 1u, {8u, 5u, 8u, 5u, 8u, 6u, 6u}, 0u, 0u, 0u, 29u},
     /* Shelter -- data/moves.ts:16315-16329 */
     {16u, 2u, 0u, 0u, 10u, 12u, 8u, 6u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 1u, {6u, 8u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
     /* Shift Gear -- data/moves.ts:16330-16347 */
     {16u, 2u, 0u, 0u, 10u, 12u, 8u, 6u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 1u, {7u, 6u, 6u, 6u, 8u, 6u, 6u}, 0u, 0u, 0u, 0u},
     /* Simple Beam -- data/moves.ts:16482-16504  [unmodelled: callback onHit; callback onTryHit] */
-    {12u, 2u, 0u, 100u, 15u, 16u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {12u, 2u, 0u, 100u, 15u, 16u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Sing -- data/moves.ts:16505-16519 */
     {12u, 2u, 0u, 55u, 15u, 16u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 4u, 0u, 0u, 0u},
     /* Skill Swap -- data/moves.ts:16590-16606  [unmodelled: callback onHit] */
-    {14u, 2u, 0u, 0u, 10u, 12u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {14u, 2u, 0u, 0u, 10u, 12u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Skitter Smack -- data/moves.ts:16607-16624 */
     {0u, 0u, 70u, 90u, 10u, 12u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 100u, 1u, 0u, 2u, {6u, 6u, 5u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
     /* Sky Attack -- data/moves.ts:16651-16679  [unmodelled: callback onTryMove] */
-    {7u, 0u, 140u, 90u, 5u, 8u, 8u, 2u, 2u, 6u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {7u, 0u, 140u, 90u, 5u, 8u, 8u, 2u, 2u, 6u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Slack Off -- data/moves.ts:16809-16823 */
     {12u, 2u, 0u, 0u, 5u, 8u, 8u, 6u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
     /* Slash -- data/moves.ts:16837-16850, data/mods/champions/moves.ts:903-906 */
@@ -1523,171 +1523,171 @@ const dfi_move_data dfi_pool_moves[DFI_POOL_MOVE_COUNT] = {
     /* Sleep Powder -- data/moves.ts:16851-16865 */
     {9u, 2u, 0u, 75u, 15u, 16u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 4u, 0u, 0u, 0u},
     /* Sleep Talk -- data/moves.ts:16866-16902  [unmodelled: callback onHit; callback onTry; field callsMove; field sleepUsable] */
-    {12u, 2u, 0u, 0u, 10u, 12u, 8u, 6u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {12u, 2u, 0u, 0u, 10u, 12u, 8u, 6u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Sludge Bomb -- data/moves.ts:16920-16936 */
     {13u, 1u, 90u, 100u, 10u, 12u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 30u, 2u, 5u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
-    /* Sludge Wave -- data/moves.ts:16937-16953  [unmodelled: target allAdjacent] */
-    {13u, 1u, 95u, 100u, 10u, 12u, 8u, 11u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    /* Sludge Wave -- data/moves.ts:16937-16953 */
+    {13u, 1u, 95u, 100u, 10u, 12u, 8u, 11u, 1u, 2u, {0u, 0u}, {0u, 0u}, 10u, 2u, 5u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
     /* Smack Down -- data/moves.ts:16954-16999  [unmodelled: condition block; primary volatile smackdown] */
-    {15u, 0u, 50u, 100u, 15u, 16u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {15u, 0u, 50u, 100u, 15u, 16u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Smart Strike -- data/moves.ts:17000-17012 */
     {16u, 0u, 70u, 0u, 10u, 12u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
     /* Snap Trap -- data/moves.ts:17071-17084, data/mods/champions/moves.ts:919-923  [unmodelled: primary volatile partiallytrapped] */
-    {16u, 0u, 35u, 100u, 15u, 16u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {16u, 0u, 35u, 100u, 15u, 16u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Snipe Shot -- data/moves.ts:17138-17151, data/mods/champions/moves.ts:924-927  [unmodelled: field tracksTarget] */
-    {17u, 1u, 85u, 100u, 15u, 16u, 8u, 1u, 2u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {17u, 1u, 85u, 100u, 15u, 16u, 8u, 1u, 2u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Snore -- data/moves.ts:17152-17172  [unmodelled: callback onTry; field sleepUsable] */
-    {12u, 1u, 50u, 100u, 15u, 16u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {12u, 1u, 50u, 100u, 15u, 16u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Snowscape -- data/moves.ts:17173-17185, data/mods/champions/moves.ts:928-931 */
     {11u, 2u, 0u, 0u, 5u, 8u, 8u, 9u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 23u},
-    /* Solar Beam -- data/moves.ts:17224-17259  [unmodelled: callback onBasePower; callback onTryMove] */
-    {9u, 1u, 120u, 100u, 10u, 12u, 8u, 1u, 1u, 6u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    /* Solar Beam -- data/moves.ts:17224-17259 */
+    {9u, 1u, 120u, 100u, 10u, 12u, 8u, 1u, 1u, 6u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 35u},
     /* Solar Blade -- data/moves.ts:17260-17295  [unmodelled: callback onBasePower; callback onTryMove] */
-    {9u, 0u, 125u, 100u, 10u, 12u, 8u, 1u, 1u, 7u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
-    /* Sparkling Aria -- data/moves.ts:17357-17388  [unmodelled: callback onAfterMove; secondary volatile sparklingaria; target allAdjacent] */
-    {17u, 1u, 90u, 100u, 10u, 12u, 8u, 11u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {9u, 0u, 125u, 100u, 10u, 12u, 8u, 1u, 1u, 7u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
+    /* Sparkling Aria -- data/moves.ts:17357-17388  [unmodelled: callback onAfterMove; secondary volatile sparklingaria] */
+    {17u, 1u, 90u, 100u, 10u, 12u, 8u, 11u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Speed Swap -- data/moves.ts:17430-17449  [unmodelled: callback onHit] */
-    {14u, 2u, 0u, 0u, 10u, 12u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {14u, 2u, 0u, 0u, 10u, 12u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Spicy Extract -- data/moves.ts:17450-17465  [unmodelled: primary boosts on a non-self target] */
-    {9u, 2u, 0u, 0u, 15u, 16u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {9u, 2u, 0u, 0u, 15u, 16u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Spikes -- data/moves.ts:17500-17531  [unmodelled: condition block; side condition spikes; target foeSide] */
-    {10u, 2u, 0u, 0u, 20u, 20u, 8u, 15u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
-    /* Spiky Shield -- data/moves.ts:17532-17584, data/mods/champions/moves.ts:940-943  [unmodelled: callback onHit; callback onPrepareHit; condition block; primary volatile spikyshield] */
-    {9u, 2u, 0u, 0u, 5u, 8u, 12u, 6u, 1u, 8u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {10u, 2u, 0u, 0u, 20u, 20u, 8u, 15u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
+    /* Spiky Shield -- data/moves.ts:17532-17584, data/mods/champions/moves.ts:940-943 */
+    {9u, 2u, 0u, 0u, 5u, 8u, 12u, 6u, 1u, 8u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 28u},
     /* Spirit Shackle -- data/moves.ts:17620-17638, data/mods/champions/moves.ts:949-952  [unmodelled: secondary] */
-    {8u, 0u, 90u, 100u, 10u, 12u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {8u, 0u, 90u, 100u, 10u, 12u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Spite -- data/moves.ts:17639-17661  [unmodelled: callback onHit] */
-    {8u, 2u, 0u, 100u, 10u, 12u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {8u, 2u, 0u, 100u, 10u, 12u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Spit Up -- data/moves.ts:17662-17684  [unmodelled: callback basePowerCallback; callback onAfterMove; callback onTry] */
-    {12u, 1u, 0u, 100u, 10u, 12u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {12u, 1u, 0u, 100u, 10u, 12u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Stealth Rock -- data/moves.ts:17814-17839  [unmodelled: condition block; side condition stealthrock; target foeSide] */
-    {15u, 2u, 0u, 0u, 20u, 20u, 8u, 15u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {15u, 2u, 0u, 0u, 20u, 20u, 8u, 15u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Steel Beam -- data/moves.ts:17876-17892  [unmodelled: callback onMoveFail; field mindBlownRecoil] */
-    {16u, 1u, 140u, 95u, 5u, 8u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
-    /* Steel Roller -- data/moves.ts:17893-17913  [unmodelled: callback onAfterSubDamage; callback onHit; callback onTry] */
-    {16u, 0u, 130u, 100u, 5u, 8u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
-    /* Steel Wing -- data/moves.ts:17914-17934  [unmodelled: secondary self effect] */
-    {16u, 0u, 70u, 90u, 25u, 20u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {16u, 1u, 140u, 95u, 5u, 8u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
+    /* Steel Roller -- data/moves.ts:17893-17913 */
+    {16u, 0u, 130u, 100u, 5u, 8u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 44u},
+    /* Steel Wing -- data/moves.ts:17914-17934 */
+    {16u, 0u, 70u, 90u, 25u, 20u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 10u, 7u, 0u, 5u, {6u, 7u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
     /* Sticky Web -- data/moves.ts:17935-17959  [unmodelled: condition block; side condition stickyweb; target foeSide] */
-    {0u, 2u, 0u, 0u, 20u, 20u, 8u, 15u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {0u, 2u, 0u, 0u, 20u, 20u, 8u, 15u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Stockpile -- data/moves.ts:17960-18012  [unmodelled: callback onTry; condition block; primary volatile stockpile] */
-    {12u, 2u, 0u, 0u, 20u, 20u, 8u, 6u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {12u, 2u, 0u, 0u, 20u, 20u, 8u, 6u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Stomping Tantrum -- data/moves.ts:18049-18068  [unmodelled: callback basePowerCallback] */
-    {10u, 0u, 75u, 100u, 10u, 12u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {10u, 0u, 75u, 100u, 10u, 12u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Stone Axe -- data/moves.ts:18069-18095  [unmodelled: callback onAfterHit; callback onAfterSubDamage; secondary] */
-    {15u, 0u, 65u, 90u, 15u, 16u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {15u, 0u, 65u, 90u, 15u, 16u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Stone Edge -- data/moves.ts:18096-18109 */
     {15u, 0u, 100u, 80u, 5u, 8u, 8u, 1u, 2u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
     /* Stored Power -- data/moves.ts:18110-18129  [unmodelled: callback basePowerCallback] */
-    {14u, 1u, 20u, 100u, 10u, 12u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {14u, 1u, 20u, 100u, 10u, 12u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Storm Throw -- data/moves.ts:18130-18144, data/mods/champions/moves.ts:969-972  [unmodelled: field willCrit] */
-    {5u, 0u, 60u, 100u, 10u, 12u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {5u, 0u, 60u, 100u, 10u, 12u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Strength Sap -- data/moves.ts:18174-18193, data/mods/champions/moves.ts:981-984  [unmodelled: callback onHit] */
-    {9u, 2u, 0u, 100u, 5u, 8u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {9u, 2u, 0u, 100u, 5u, 8u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* String Shot -- data/moves.ts:18194-18210  [unmodelled: primary boosts on a non-self target] */
-    {0u, 2u, 0u, 95u, 40u, 20u, 8u, 7u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {0u, 2u, 0u, 95u, 40u, 20u, 8u, 7u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Struggle Bug -- data/moves.ts:18233-18251 */
     {0u, 1u, 50u, 100u, 20u, 20u, 8u, 7u, 1u, 2u, {0u, 0u}, {0u, 0u}, 100u, 1u, 0u, 2u, {6u, 6u, 5u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
-    /* Stuff Cheeks -- data/moves.ts:18252-18273, data/mods/champions/moves.ts:985-988  [unmodelled: callback onHit; callback onTry; field onDisableMove] */
-    {12u, 2u, 0u, 0u, 10u, 12u, 8u, 6u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    /* Stuff Cheeks -- data/moves.ts:18252-18273, data/mods/champions/moves.ts:985-988  [unmodelled: callback onHit; callback onTry] */
+    {12u, 2u, 0u, 0u, 10u, 12u, 8u, 6u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Stun Spore -- data/moves.ts:18274-18288 */
     {9u, 2u, 0u, 75u, 30u, 20u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 3u, 0u, 0u, 0u},
     /* Substitute -- data/moves.ts:18304-18380  [unmodelled: callback onHit; callback onTryHit; condition block; primary volatile substitute] */
-    {12u, 2u, 0u, 0u, 10u, 12u, 8u, 6u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
-    /* Sunny Day -- data/moves.ts:18416-18430  [unmodelled: field weather] */
-    {6u, 2u, 0u, 0u, 5u, 8u, 8u, 9u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {12u, 2u, 0u, 0u, 10u, 12u, 8u, 6u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
+    /* Sunny Day -- data/moves.ts:18416-18430 */
+    {6u, 2u, 0u, 0u, 5u, 8u, 8u, 9u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 41u},
     /* Supercell Slam -- data/moves.ts:18445-18460  [unmodelled: callback onMoveFail; field hasCrashDamage] */
-    {3u, 0u, 100u, 95u, 15u, 16u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {3u, 0u, 100u, 95u, 15u, 16u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Super Fang -- data/moves.ts:18461-18476  [unmodelled: callback damageCallback] */
-    {12u, 0u, 0u, 90u, 10u, 12u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {12u, 0u, 0u, 90u, 10u, 12u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Superpower -- data/moves.ts:18477-18495 */
     {5u, 0u, 120u, 100u, 5u, 8u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 3u, {5u, 5u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
-    /* Surf -- data/moves.ts:18526-18538  [unmodelled: target allAdjacent] */
-    {17u, 1u, 90u, 100u, 15u, 16u, 8u, 11u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    /* Surf -- data/moves.ts:18526-18538 */
+    {17u, 1u, 90u, 100u, 15u, 16u, 8u, 11u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
     /* Swagger -- data/moves.ts:18555-18572  [unmodelled: primary boosts on a non-self target; primary volatile confusion] */
-    {12u, 2u, 0u, 85u, 15u, 16u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {12u, 2u, 0u, 85u, 15u, 16u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Swallow -- data/moves.ts:18573-18598  [unmodelled: callback onHit; callback onTry] */
-    {12u, 2u, 0u, 0u, 10u, 12u, 8u, 6u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {12u, 2u, 0u, 0u, 10u, 12u, 8u, 6u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Sweet Kiss -- data/moves.ts:18599-18613  [unmodelled: primary volatile confusion] */
-    {4u, 2u, 0u, 75u, 10u, 12u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {4u, 2u, 0u, 75u, 10u, 12u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Sweet Scent -- data/moves.ts:18614-18630  [unmodelled: primary boosts on a non-self target] */
-    {12u, 2u, 0u, 100u, 20u, 20u, 8u, 7u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {12u, 2u, 0u, 100u, 20u, 20u, 8u, 7u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Switcheroo -- data/moves.ts:18644-18690  [unmodelled: callback onHit; callback onTryImmunity] */
-    {1u, 2u, 0u, 100u, 10u, 12u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {1u, 2u, 0u, 100u, 10u, 12u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Synthesis -- data/moves.ts:18725-18760  [unmodelled: callback onHit] */
-    {9u, 2u, 0u, 0u, 5u, 8u, 8u, 6u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {9u, 2u, 0u, 0u, 5u, 8u, 8u, 6u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Syrup Bomb -- data/moves.ts:18761-18795, data/mods/champions/moves.ts:1005-1008  [unmodelled: condition block; secondary volatile syrupbomb] */
-    {9u, 1u, 60u, 90u, 10u, 12u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {9u, 1u, 60u, 90u, 10u, 12u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Tail Slap -- data/moves.ts:18842-18857  [unmodelled: field multihit] */
-    {12u, 0u, 25u, 85u, 10u, 12u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {12u, 0u, 25u, 85u, 10u, 12u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Taunt -- data/moves.ts:18974-19016  [unmodelled: condition block; primary volatile taunt] */
-    {1u, 2u, 0u, 100u, 20u, 20u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {1u, 2u, 0u, 100u, 20u, 20u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Tearful Look -- data/moves.ts:19017-19034  [unmodelled: primary boosts on a non-self target] */
-    {12u, 2u, 0u, 0u, 20u, 20u, 8u, 1u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {12u, 2u, 0u, 0u, 20u, 20u, 8u, 1u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Teatime -- data/moves.ts:19035-19065  [unmodelled: callback onHitField] */
-    {12u, 2u, 0u, 0u, 10u, 12u, 8u, 9u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
-    /* Teeter Dance -- data/moves.ts:19099-19113  [unmodelled: primary volatile confusion; target allAdjacent] */
-    {12u, 2u, 0u, 100u, 20u, 20u, 8u, 11u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {12u, 2u, 0u, 0u, 10u, 12u, 8u, 9u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
+    /* Teeter Dance -- data/moves.ts:19099-19113  [unmodelled: primary volatile confusion] */
+    {12u, 2u, 0u, 100u, 20u, 20u, 8u, 11u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Temper Flare -- data/moves.ts:19185-19203  [unmodelled: callback basePowerCallback] */
-    {6u, 0u, 75u, 100u, 10u, 12u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {6u, 0u, 75u, 100u, 10u, 12u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Terrain Pulse -- data/moves.ts:19265-19301 */
-    {12u, 1u, 50u, 100u, 10u, 12u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 31u},
+    {12u, 1u, 50u, 100u, 10u, 12u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 50u},
     /* Thief -- data/moves.ts:19302-19330  [unmodelled: callback onAfterHit] */
-    {1u, 0u, 60u, 100u, 25u, 20u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {1u, 0u, 60u, 100u, 25u, 20u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Thrash -- data/moves.ts:19373-19388  [unmodelled: self effect] */
-    {12u, 0u, 120u, 100u, 10u, 12u, 8u, 10u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {12u, 0u, 120u, 100u, 10u, 12u, 8u, 10u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Thunder -- data/moves.ts:19438-19466  [unmodelled: callback onModifyMove] */
-    {3u, 1u, 110u, 70u, 10u, 12u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {3u, 1u, 110u, 70u, 10u, 12u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Thunder Fang -- data/moves.ts:19517-19538  [unmodelled: field secondaries] */
-    {3u, 0u, 65u, 95u, 15u, 16u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {3u, 0u, 65u, 95u, 15u, 16u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Thunder Punch -- data/moves.ts:19557-19573 */
     {3u, 0u, 75u, 100u, 15u, 16u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 10u, 2u, 3u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
     /* Thunder Wave -- data/moves.ts:19591-19606  [unmodelled: field ignoreImmunity] */
-    {3u, 2u, 0u, 90u, 20u, 20u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {3u, 2u, 0u, 90u, 20u, 20u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Tickle -- data/moves.ts:19607-19624  [unmodelled: primary boosts on a non-self target] */
-    {12u, 2u, 0u, 100u, 20u, 20u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {12u, 2u, 0u, 100u, 20u, 20u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Tidy Up -- data/moves.ts:19625-19654  [unmodelled: callback onHit] */
-    {12u, 2u, 0u, 0u, 10u, 12u, 8u, 6u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {12u, 2u, 0u, 0u, 10u, 12u, 8u, 6u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Topsy-Turvy -- data/moves.ts:19655-19679  [unmodelled: callback onHit] */
-    {1u, 2u, 0u, 0u, 20u, 20u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
-    /* Torch Song -- data/moves.ts:19680-19700  [unmodelled: secondary self effect] */
-    {6u, 1u, 80u, 100u, 10u, 12u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {1u, 2u, 0u, 0u, 20u, 20u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
+    /* Torch Song -- data/moves.ts:19680-19700 */
+    {6u, 1u, 80u, 100u, 10u, 12u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 100u, 7u, 0u, 5u, {6u, 6u, 7u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
     /* Torment -- data/moves.ts:19701-19732  [unmodelled: condition block; primary volatile torment] */
-    {1u, 2u, 0u, 100u, 15u, 16u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
-    /* Toxic -- data/moves.ts:19733-19748  [unmodelled: primary status tox] */
-    {13u, 2u, 0u, 90u, 10u, 12u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {1u, 2u, 0u, 100u, 15u, 16u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
+    /* Toxic -- data/moves.ts:19733-19748 */
+    {13u, 2u, 0u, 90u, 10u, 12u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 6u, 0u, 0u, 0u},
     /* Toxic Spikes -- data/moves.ts:19749-19788  [unmodelled: condition block; side condition toxicspikes; target foeSide] */
-    {13u, 2u, 0u, 0u, 20u, 20u, 8u, 15u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {13u, 2u, 0u, 0u, 20u, 20u, 8u, 15u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Toxic Thread -- data/moves.ts:19789-19806, data/mods/champions/moves.ts:1065-1070  [unmodelled: primary boosts on a non-self target] */
-    {13u, 2u, 0u, 100u, 20u, 20u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
-    /* Trailblaze -- data/moves.ts:19807-19827  [unmodelled: secondary self effect] */
-    {9u, 0u, 50u, 100u, 20u, 20u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {13u, 2u, 0u, 100u, 20u, 20u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
+    /* Trailblaze -- data/moves.ts:19807-19827 */
+    {9u, 0u, 50u, 100u, 20u, 20u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 100u, 7u, 0u, 5u, {6u, 6u, 6u, 6u, 7u, 6u, 6u}, 0u, 0u, 0u, 0u},
     /* Transform -- data/moves.ts:19828-19844  [unmodelled: callback onHit] */
-    {12u, 2u, 0u, 0u, 10u, 12u, 8u, 1u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {12u, 2u, 0u, 0u, 10u, 12u, 8u, 1u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Tri Attack -- data/moves.ts:19845-19864  [unmodelled: secondary] */
-    {12u, 1u, 80u, 100u, 10u, 12u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {12u, 1u, 80u, 100u, 10u, 12u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Trick -- data/moves.ts:19865-19911  [unmodelled: callback onHit; callback onTryImmunity] */
-    {14u, 2u, 0u, 100u, 10u, 12u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {14u, 2u, 0u, 100u, 10u, 12u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Trick-or-Treat -- data/moves.ts:19912-19939, data/mods/champions/moves.ts:1071-1074  [unmodelled: callback onHit] */
-    {8u, 2u, 0u, 100u, 20u, 20u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {8u, 2u, 0u, 100u, 20u, 20u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Triple Arrows -- data/moves.ts:19981-20004  [unmodelled: field secondaries] */
-    {5u, 0u, 90u, 100u, 10u, 12u, 8u, 1u, 2u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {5u, 0u, 90u, 100u, 10u, 12u, 8u, 1u, 2u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Triple Axel -- data/moves.ts:20005-20023  [unmodelled: callback basePowerCallback; field multiaccuracy; field multihit] */
-    {11u, 0u, 20u, 90u, 10u, 12u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {11u, 0u, 20u, 90u, 10u, 12u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Trop Kick -- data/moves.ts:20057-20075, data/mods/champions/moves.ts:1084-1087 */
     {9u, 0u, 85u, 100u, 15u, 16u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 100u, 1u, 0u, 2u, {5u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
     /* Twin Beam -- data/moves.ts:20121-20134  [unmodelled: field multihit] */
-    {14u, 1u, 40u, 100u, 10u, 12u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {14u, 1u, 40u, 100u, 10u, 12u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Upper Hand -- data/moves.ts:20187-20209  [unmodelled: callback onTry] */
-    {5u, 0u, 65u, 100u, 15u, 16u, 11u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {5u, 0u, 65u, 100u, 15u, 16u, 11u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Uproar -- data/moves.ts:20210-20267  [unmodelled: callback onTryHit; condition block; self effect] */
-    {12u, 1u, 90u, 100u, 10u, 12u, 8u, 10u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {12u, 1u, 90u, 100u, 10u, 12u, 8u, 10u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Vacuum Wave -- data/moves.ts:20282-20294 */
     {5u, 1u, 40u, 100u, 30u, 20u, 9u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
     /* Venoshock -- data/moves.ts:20357-20374  [unmodelled: callback onBasePower] */
-    {13u, 1u, 65u, 100u, 10u, 12u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
-    /* Volt Switch -- data/moves.ts:20432-20445  [unmodelled: field selfSwitch without a switch flag] */
-    {3u, 1u, 70u, 100u, 20u, 20u, 8u, 1u, 1u, 18u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {13u, 1u, 65u, 100u, 10u, 12u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
+    /* Volt Switch -- data/moves.ts:20432-20445 */
+    {3u, 1u, 70u, 100u, 20u, 20u, 8u, 1u, 1u, 18u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
     /* Volt Tackle -- data/moves.ts:20446-20463 */
     {3u, 0u, 120u, 100u, 15u, 16u, 8u, 1u, 1u, 3u, {33u, 100u}, {0u, 0u}, 10u, 2u, 3u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
     /* Waterfall -- data/moves.ts:20488-20504 */
@@ -1695,29 +1695,29 @@ const dfi_move_data dfi_pool_moves[DFI_POOL_MOVE_COUNT] = {
     /* Water Pulse -- data/moves.ts:20589-20605 */
     {17u, 1u, 60u, 100u, 20u, 20u, 8u, 2u, 1u, 2u, {0u, 0u}, {0u, 0u}, 20u, 3u, 2u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
     /* Water Shuriken -- data/moves.ts:20606-20626  [unmodelled: callback basePowerCallback; field multihit] */
-    {17u, 1u, 15u, 100u, 20u, 20u, 9u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
-    /* Water Spout -- data/moves.ts:20661-20678  [unmodelled: callback basePowerCallback] */
-    {17u, 1u, 150u, 100u, 5u, 8u, 8u, 7u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {17u, 1u, 15u, 100u, 20u, 20u, 9u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
+    /* Water Spout -- data/moves.ts:20661-20678 */
+    {17u, 1u, 150u, 100u, 5u, 8u, 8u, 7u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 36u},
     /* Whirlpool -- data/moves.ts:20746-20759  [unmodelled: primary volatile partiallytrapped] */
-    {17u, 1u, 35u, 85u, 15u, 16u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {17u, 1u, 35u, 85u, 15u, 16u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Whirlwind -- data/moves.ts:20760-20774  [unmodelled: field forceSwitch] */
-    {12u, 2u, 0u, 0u, 20u, 20u, 2u, 1u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {12u, 2u, 0u, 0u, 20u, 20u, 2u, 1u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Wild Charge -- data/moves.ts:20873-20886 */
     {3u, 0u, 90u, 100u, 15u, 16u, 8u, 1u, 1u, 3u, {1u, 4u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
     /* Will-O-Wisp -- data/moves.ts:20887-20901 */
     {6u, 2u, 0u, 85u, 15u, 16u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 1u, 0u, 0u, 0u},
     /* Wish -- data/moves.ts:20915-20951, data/mods/champions/moves.ts:1132-1135  [unmodelled: condition block; field slotCondition] */
-    {12u, 2u, 0u, 0u, 5u, 8u, 8u, 6u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {12u, 2u, 0u, 0u, 5u, 8u, 8u, 6u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Wonder Room -- data/moves.ts:20969-21017  [unmodelled: condition block; pseudo weather wonderroom] */
-    {14u, 2u, 0u, 0u, 10u, 12u, 8u, 9u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {14u, 2u, 0u, 0u, 10u, 12u, 8u, 9u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Worry Seed -- data/moves.ts:21050-21080  [unmodelled: callback onHit; callback onTryHit; callback onTryImmunity] */
-    {9u, 2u, 0u, 100u, 10u, 12u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {9u, 2u, 0u, 100u, 10u, 12u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Wrap -- data/moves.ts:21081-21094  [unmodelled: primary volatile partiallytrapped] */
-    {12u, 0u, 15u, 90u, 20u, 20u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {12u, 0u, 15u, 90u, 20u, 20u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* X-Scissor -- data/moves.ts:21118-21130 */
     {0u, 0u, 80u, 100u, 15u, 16u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
     /* Yawn -- data/moves.ts:21131-21162  [unmodelled: callback onTryHit; condition block; primary volatile yawn] */
-    {12u, 2u, 0u, 0u, 10u, 12u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 32u},
+    {12u, 2u, 0u, 0u, 10u, 12u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Zen Headbutt -- data/moves.ts:21180-21196 */
     {14u, 0u, 80u, 90u, 15u, 16u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 20u, 3u, 1u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
     /* Zing Zap -- data/moves.ts:21197-21213 */
@@ -1825,7 +1825,7 @@ const dfi_pool_item_data dfi_pool_items[DFI_POOL_ITEM_COUNT] = {
     {DFI_FORME_NONE, DFI_FORME_NONE},
     /* Focus Sash -- data/items.ts:2269-2285 */
     {DFI_FORME_NONE, DFI_FORME_NONE},
-    /* Expert Belt -- data/items.ts:1901-1914  [unmodelled: callback onModifyDamage] */
+    /* Expert Belt -- data/items.ts:1901-1914 */
     {DFI_FORME_NONE, DFI_FORME_NONE},
     /* Floettite -- data/items.ts:2189-2201, data/mods/champions/items.ts:342-345 */
     {26u, 27u},
@@ -1833,7 +1833,7 @@ const dfi_pool_item_data dfi_pool_items[DFI_POOL_ITEM_COUNT] = {
     {167u, 168u},
     /* Absolite -- data/items.ts:34-45, data/mods/champions/items.ts:10-13 */
     {142u, 143u},
-    /* Absolite Z -- data/items.ts:46-57, data/mods/champions/items.ts:14-17  [unmodelled: second Mega forme absolmegaz of absol] */
+    /* Absolite Z -- data/items.ts:46-57, data/mods/champions/items.ts:14-17 */
     {142u, 144u},
     /* Aerodactylite -- data/items.ts:135-146, data/mods/champions/items.ts:34-37 */
     {78u, 79u},
@@ -1873,7 +1873,7 @@ const dfi_pool_item_data dfi_pool_items[DFI_POOL_ITEM_COUNT] = {
     {132u, 133u},
     /* Chandelurite -- data/items.ts:761-772, data/mods/champions/items.ts:134-137 */
     {216u, 217u},
-    /* Charizardite X -- data/items.ts:788-799, data/mods/champions/items.ts:138-141  [unmodelled: second Mega forme charizardmegax of charizard] */
+    /* Charizardite X -- data/items.ts:788-799, data/mods/champions/items.ts:138-141 */
     {13u, 30u},
     /* Cheri Berry -- data/items.ts:836-856  [unmodelled: callback onEat; callback onUpdate] */
     {DFI_FORME_NONE, DFI_FORME_NONE},
@@ -1899,7 +1899,7 @@ const dfi_pool_item_data dfi_pool_items[DFI_POOL_ITEM_COUNT] = {
     {289u, 290u},
     /* Eelektrossite -- data/items.ts:1657-1668, data/mods/champions/items.ts:262-265 */
     {214u, 215u},
-    /* Eject Button -- data/items.ts:1680-1704, data/mods/champions/items.ts:266-281  [unmodelled: callback onAfterMoveSecondary; callback onAfterMoveSecondaryPriority] */
+    /* Eject Button -- data/items.ts:1680-1704, data/mods/champions/items.ts:266-281 */
     {DFI_FORME_NONE, DFI_FORME_NONE},
     /* Electric Seed -- data/items.ts:1799-1821 */
     {DFI_FORME_NONE, DFI_FORME_NONE},
@@ -1919,7 +1919,7 @@ const dfi_pool_item_data dfi_pool_items[DFI_POOL_ITEM_COUNT] = {
     {175u, 176u},
     /* Garchompite -- data/items.ts:2406-2417, data/mods/champions/items.ts:374-377 */
     {159u, 160u},
-    /* Garchompite Z -- data/items.ts:2418-2429, data/mods/champions/items.ts:378-381  [unmodelled: second Mega forme garchompmegaz of garchomp] */
+    /* Garchompite Z -- data/items.ts:2418-2429, data/mods/champions/items.ts:378-381 */
     {159u, 161u},
     /* Gardevoirite -- data/items.ts:2430-2441, data/mods/champions/items.ts:382-385 */
     {117u, 118u},
@@ -1961,7 +1961,7 @@ const dfi_pool_item_data dfi_pool_items[DFI_POOL_ITEM_COUNT] = {
     {156u, 157u},
     /* Lucarionite -- data/items.ts:3497-3508, data/mods/champions/items.ts:550-553 */
     {162u, 163u},
-    /* Lucarionite Z -- data/items.ts:3509-3520, data/mods/champions/items.ts:554-557  [unmodelled: second Mega forme lucariomegaz of lucario] */
+    /* Lucarionite Z -- data/items.ts:3509-3520, data/mods/champions/items.ts:554-557 */
     {162u, 164u},
     /* Lum Berry -- data/items.ts:3537-3560  [unmodelled: callback onAfterSetStatus; callback onAfterSetStatusPriority; callback onEat; callback onUpdate] */
     {DFI_FORME_NONE, DFI_FORME_NONE},
@@ -2005,7 +2005,7 @@ const dfi_pool_item_data dfi_pool_items[DFI_POOL_ITEM_COUNT] = {
     {234u, 235u},
     /* Quick Claw -- data/items.ts:4989-5005  [unmodelled: callback onFractionalPriority; callback onFractionalPriorityPriority] */
     {DFI_FORME_NONE, DFI_FORME_NONE},
-    /* Raichunite X -- data/items.ts:5035-5046, data/mods/champions/items.ts:762-765  [unmodelled: second Mega forme raichumegax of raichu] */
+    /* Raichunite X -- data/items.ts:5035-5046, data/mods/champions/items.ts:762-765 */
     {5u, 39u},
     /* Rawst Berry -- data/items.ts:5068-5088  [unmodelled: callback onEat; callback onUpdate] */
     {DFI_FORME_NONE, DFI_FORME_NONE},
@@ -2051,7 +2051,7 @@ const dfi_pool_item_data dfi_pool_items[DFI_POOL_ITEM_COUNT] = {
     {28u, 29u},
     /* Victreebelite -- data/items.ts:7481-7492, data/mods/champions/items.ts:1002-1005 */
     {53u, 54u},
-    /* Wide Lens -- data/items.ts:7713-7727  [unmodelled: callback onSourceModifyAccuracy; callback onSourceModifyAccuracyPriority] */
+    /* Wide Lens -- data/items.ts:7713-7727 */
     {DFI_FORME_NONE, DFI_FORME_NONE},
     /* Wise Glasses -- data/items.ts:7754-7768  [unmodelled: callback onBasePower; callback onBasePowerPriority] */
     {DFI_FORME_NONE, DFI_FORME_NONE},
@@ -2079,10 +2079,10 @@ const dfi_pool_item_data dfi_pool_items[DFI_POOL_ITEM_COUNT] = {
  *   bigpecks -- data/abilities.ts:445-459  [unmodelled: callback onTryBoost]
  *   bulletproof -- data/abilities.ts:480-491  [unmodelled: callback onTryHit]
  *   cheekpouch -- data/abilities.ts:492-500  [unmodelled: callback onEatItem]
- *   chlorophyll -- data/abilities.ts:512-522  [unmodelled: callback onModifySpe]
- *   clearbody -- data/abilities.ts:523-542  [unmodelled: callback onTryBoost]
+ *   chlorophyll -- data/abilities.ts:512-522
+ *   clearbody -- data/abilities.ts:523-542
  *   cloudnine -- data/abilities.ts:543-562  [unmodelled: callback onEnd; callback onStart; callback onSwitchIn; field suppressWeather]
- *   compoundeyes -- data/abilities.ts:666-677  [unmodelled: callback onSourceModifyAccuracy; callback onSourceModifyAccuracyPriority]
+ *   compoundeyes -- data/abilities.ts:666-677
  *   corrosion -- data/abilities.ts:691-697  [unmodelled: read by id in sim/pokemon.ts]
  *   cudchew -- data/abilities.ts:742-771  [unmodelled: callback onEatItem; callback onResidual; callback onResidualOrder; callback onResidualSubOrder; read by id in data/moves.ts]
  *   curiousmedicine -- data/abilities.ts:772-783  [unmodelled: callback onStart]
@@ -2100,14 +2100,14 @@ const dfi_pool_item_data dfi_pool_items[DFI_POOL_ITEM_COUNT] = {
  *   electromorphosis -- data/abilities.ts:1188-1197  [unmodelled: callback onDamagingHit; callback onDamagingHitOrder]
  *   filter -- data/abilities.ts:1283-1294  [unmodelled: callback onSourceModifyDamage]
  *   firemane -- data/abilities.ts:1295-1315, data/mods/champions/abilities.ts:30-33  [unmodelled: callback onModifyAtk; callback onModifyAtkPriority; callback onModifySpA; callback onModifySpAPriority]
- *   flamebody -- data/abilities.ts:1316-1328  [unmodelled: callback onDamagingHit]
+ *   flamebody -- data/abilities.ts:1316-1328
  *   fluffy -- data/abilities.ts:1458-1469  [unmodelled: callback onSourceModifyDamage]
  *   forecast -- data/abilities.ts:1470-1503  [unmodelled: callback onStart; callback onSwitchInPriority; callback onWeatherChange]
  *   forewarn -- data/abilities.ts:1504-1532  [unmodelled: callback onStart]
- *   friendguard -- data/abilities.ts:1533-1544  [unmodelled: callback onAnyModifyDamage]
+ *   friendguard -- data/abilities.ts:1533-1544
  *   frisk -- data/abilities.ts:1545-1557  [unmodelled: callback onStart]
  *   furcoat -- data/abilities.ts:1578-1587  [unmodelled: callback onModifyDef; callback onModifyDefPriority]
- *   galewings -- data/abilities.ts:1588-1596  [unmodelled: callback onModifyPriority]
+ *   galewings -- data/abilities.ts:1588-1596
  *   gluttony -- data/abilities.ts:1618-1629  [unmodelled: callback onDamage; callback onStart; read by id in data/abilities.ts; read by id in data/items.ts]
  *   gooey -- data/abilities.ts:1642-1653  [unmodelled: callback onDamagingHit]
  *   grasspelt -- data/abilities.ts:1697-1706  [unmodelled: callback onModifyDef; callback onModifyDefPriority]
@@ -2117,7 +2117,7 @@ const dfi_pool_item_data dfi_pool_items[DFI_POOL_ITEM_COUNT] = {
  *   healer -- data/abilities.ts:1817-1832, data/mods/champions/abilities.ts:34-44  [unmodelled: callback onResidual; callback onResidualOrder; callback onResidualSubOrder]
  *   heatproof -- data/abilities.ts:1833-1857  [unmodelled: callback onDamage; callback onSourceModifyAtk; callback onSourceModifyAtkPriority; callback onSourceModifySpA; callback onSourceModifySpAPriority]
  *   heavymetal -- data/abilities.ts:1858-1867  [unmodelled: callback onModifyWeight; callback onModifyWeightPriority]
- *   hospitality -- data/abilities.ts:1874-1885  [unmodelled: callback onStart; callback onSwitchInPriority]
+ *   hospitality -- data/abilities.ts:1874-1885
  *   hugepower -- data/abilities.ts:1886-1895  [unmodelled: callback onModifyAtk; callback onModifyAtkPriority]
  *   hungerswitch -- data/abilities.ts:1896-1907  [unmodelled: callback onResidual; callback onResidualOrder]
  *   hustle -- data/abilities.ts:1908-1924  [unmodelled: callback onModifyAtk; callback onModifyAtkPriority; callback onSourceModifyAccuracy; callback onSourceModifyAccuracyPriority]
@@ -2130,19 +2130,19 @@ const dfi_pool_item_data dfi_pool_items[DFI_POOL_ITEM_COUNT] = {
  *   imposter -- data/abilities.ts:2115-2130  [unmodelled: callback onSwitchIn; read by id in data/moves.ts]
  *   infiltrator -- data/abilities.ts:2131-2139  [unmodelled: callback onModifyMove; read by id in data/conditions.ts]
  *   innardsout -- data/abilities.ts:2140-2152  [unmodelled: callback onDamagingHit; callback onDamagingHitOrder]
- *   innerfocus -- data/abilities.ts:2153-2167  [unmodelled: callback onTryAddVolatile; callback onTryBoost]
+ *   innerfocus -- data/abilities.ts:2153-2167
  *   insomnia -- data/abilities.ts:2168-2192  [unmodelled: callback onSetStatus; callback onTryAddVolatile; callback onUpdate; read by id in data/moves.ts]
- *   ironfist -- data/abilities.ts:2236-2248  [unmodelled: callback onBasePower; callback onBasePowerPriority]
+ *   ironfist -- data/abilities.ts:2236-2248
  *   justified -- data/abilities.ts:2249-2259  [unmodelled: callback onDamagingHit]
  *   keeneye -- data/abilities.ts:2260-2277  [unmodelled: callback onModifyMove; callback onTryBoost]
  *   klutz -- data/abilities.ts:2278-2290  [unmodelled: callback onStart; callback onSwitchInPriority; read by id in sim/pokemon.ts]
  *   leafguard -- data/abilities.ts:2291-2310  [unmodelled: callback onSetStatus; callback onTryAddVolatile]
- *   levitate -- data/abilities.ts:2311-2317  [unmodelled: read by id in data/moves.ts; read by id in sim/pokemon.ts]
+ *   levitate -- data/abilities.ts:2311-2317
  *   libero -- data/abilities.ts:2318-2333  [unmodelled: callback onPrepareHit]
  *   lightmetal -- data/abilities.ts:2334-2342  [unmodelled: callback onModifyWeight]
  *   limber -- data/abilities.ts:2368-2386  [unmodelled: callback onSetStatus; callback onUpdate]
  *   liquidooze -- data/abilities.ts:2402-2415  [unmodelled: callback onSourceTryHeal]
- *   liquidvoice -- data/abilities.ts:2416-2427  [unmodelled: callback onModifyType; callback onModifyTypePriority]
+ *   liquidvoice -- data/abilities.ts:2416-2427
  *   longreach -- data/abilities.ts:2428-2436  [unmodelled: callback onModifyMove]
  *   magicbounce -- data/abilities.ts:2437-2464  [unmodelled: callback onAllyTryHitSide; callback onTryHit; callback onTryHitPriority]
  *   magicguard -- data/abilities.ts:2465-2476  [unmodelled: callback onDamage; read by id in data/items.ts]
@@ -2159,12 +2159,12 @@ const dfi_pool_item_data dfi_pool_items[DFI_POOL_ITEM_COUNT] = {
  *   moody -- data/abilities.ts:2701-2734  [unmodelled: callback onResidual; callback onResidualOrder; callback onResidualSubOrder]
  *   motordrive -- data/abilities.ts:2735-2748  [unmodelled: callback onTryHit]
  *   moxie -- data/abilities.ts:2749-2759  [unmodelled: callback onSourceAfterFaint]
- *   multiscale -- data/abilities.ts:2760-2771  [unmodelled: callback onSourceModifyDamage]
+ *   multiscale -- data/abilities.ts:2760-2771
  *   mummy -- data/abilities.ts:2779-2793  [unmodelled: callback onDamagingHit; read by id in sim/pokemon.ts]
  *   naturalcure -- data/abilities.ts:2811-2893, data/mods/champions/abilities.ts:49-58  [unmodelled: callback onCheckShow; callback onSwitchOut; read by id in sim/battle.ts]
  *   oblivious -- data/abilities.ts:3008-3040  [unmodelled: callback onImmunity; callback onTryBoost; callback onTryHit; callback onUpdate]
  *   opportunist -- data/abilities.ts:3041-3087  [unmodelled: callback onAnyAfterMega; callback onAnyAfterMove; callback onAnyAfterTerastallization; callback onAnySwitchIn; callback onAnySwitchInPriority; callback onEnd; callback onFoeAfterBoost; callback onResidual; callback onResidualOrder]
- *   overcoat -- data/abilities.ts:3108-3123  [unmodelled: callback onImmunity; callback onTryHit; callback onTryHitPriority]
+ *   overcoat -- data/abilities.ts:3108-3123
  *   owntempo -- data/abilities.ts:3144-3169  [unmodelled: callback onHit; callback onTryAddVolatile; callback onTryBoost; callback onUpdate]
  *   parentalbond -- data/abilities.ts:3170-3188  [unmodelled: callback onPrepareHit; callback onSourceModifySecondaries; read by id in data/mods/champions/scripts.ts; read by id in sim/battle-actions.ts]
  *   pickpocket -- data/abilities.ts:3239-3261  [unmodelled: callback onAfterMoveSecondary]
@@ -2182,7 +2182,7 @@ const dfi_pool_item_data dfi_pool_items[DFI_POOL_ITEM_COUNT] = {
  *   queenlymajesty -- data/abilities.ts:3716-3734  [unmodelled: callback onFoeTryMove]
  *   quickdraw -- data/abilities.ts:3735-3747  [unmodelled: callback onFractionalPriority; callback onFractionalPriorityPriority]
  *   quickfeet -- data/abilities.ts:3748-3758  [unmodelled: callback onModifySpe; read by id in data/conditions.ts]
- *   raindish -- data/abilities.ts:3759-3770  [unmodelled: callback onWeather]
+ *   raindish -- data/abilities.ts:3759-3770
  *   rattled -- data/abilities.ts:3771-3786  [unmodelled: callback onAfterBoost; callback onDamagingHit]
  *   receiver -- data/abilities.ts:3787-3798  [unmodelled: callback onAllyFaint]
  *   reckless -- data/abilities.ts:3799-3811  [unmodelled: callback onBasePower; callback onBasePowerPriority]
@@ -2192,7 +2192,7 @@ const dfi_pool_item_data dfi_pool_items[DFI_POOL_ITEM_COUNT] = {
  *   roughskin -- data/abilities.ts:3938-3949
  *   runaway -- data/abilities.ts:3950-3955, data/mods/champions/abilities.ts:71-81  [unmodelled: callback onMaybeTrapPokemon; callback onMaybeTrapPokemonPriority; callback onTrapPokemon; callback onTrapPokemonPriority]
  *   sandforce -- data/abilities.ts:3956-3973  [unmodelled: callback onBasePower; callback onBasePowerPriority; callback onImmunity]
- *   sandrush -- data/abilities.ts:3974-3987  [unmodelled: callback onImmunity; callback onModifySpe]
+ *   sandrush -- data/abilities.ts:3974-3987
  *   sandspit -- data/abilities.ts:3988-3996  [unmodelled: callback onDamagingHit]
  *   sandstream -- data/abilities.ts:3997-4005
  *   sandveil -- data/abilities.ts:4006-4022  [unmodelled: callback onImmunity; callback onModifyAccuracy; callback onModifyAccuracyPriority]
@@ -2201,20 +2201,20 @@ const dfi_pool_item_data dfi_pool_items[DFI_POOL_ITEM_COUNT] = {
  *   screencleaner -- data/abilities.ts:4099-4118  [unmodelled: callback onStart]
  *   seedsower -- data/abilities.ts:4119-4127  [unmodelled: callback onDamagingHit]
  *   shadowtag -- data/abilities.ts:4156-4173  [unmodelled: callback onFoeMaybeTrapPokemon; callback onFoeTrapPokemon]
- *   sharpness -- data/abilities.ts:4174-4186  [unmodelled: callback onBasePower; callback onBasePowerPriority]
+ *   sharpness -- data/abilities.ts:4174-4186
  *   shedskin -- data/abilities.ts:4187-4201  [unmodelled: callback onResidual; callback onResidualOrder; callback onResidualSubOrder]
  *   sheerforce -- data/abilities.ts:4202-4221  [unmodelled: callback onBasePower; callback onBasePowerPriority; callback onModifyMove; read by id in data/abilities.ts; read by id in data/mods/champions/scripts.ts; read by id in sim/battle-actions.ts]
  *   shellarmor -- data/abilities.ts:4222-4228  [unmodelled: callback onCriticalHit]
  *   shielddust -- data/abilities.ts:4229-4238  [unmodelled: callback onModifySecondaries; read by id in data/abilities.ts]
  *   skilllink -- data/abilities.ts:4297-4310  [unmodelled: callback onModifyMove]
- *   slushrush -- data/abilities.ts:4347-4357  [unmodelled: callback onModifySpe]
+ *   slushrush -- data/abilities.ts:4347-4357
  *   sniper -- data/abilities.ts:4358-4369  [unmodelled: callback onModifyDamage]
  *   snowcloak -- data/abilities.ts:4370-4386  [unmodelled: callback onImmunity; callback onModifyAccuracy; callback onModifyAccuracyPriority]
  *   snowwarning -- data/abilities.ts:4387-4395
  *   solarpower -- data/abilities.ts:4396-4413  [unmodelled: callback onModifySpA; callback onModifySpAPriority; callback onWeather]
- *   solidrock -- data/abilities.ts:4414-4425  [unmodelled: callback onSourceModifyDamage]
- *   soundproof -- data/abilities.ts:4436-4452  [unmodelled: callback onAllyTryHitSide; callback onTryHit; read by id in data/moves.ts]
- *   speedboost -- data/abilities.ts:4453-4465  [unmodelled: callback onResidual; callback onResidualOrder; callback onResidualSubOrder]
+ *   solidrock -- data/abilities.ts:4414-4425
+ *   soundproof -- data/abilities.ts:4436-4452
+ *   speedboost -- data/abilities.ts:4453-4465
  *   spicyspray -- data/abilities.ts:4466-4475, data/mods/champions/abilities.ts:82-85  [unmodelled: callback onDamagingHit]
  *   stakeout -- data/abilities.ts:4476-4495  [unmodelled: callback onModifyAtk; callback onModifyAtkPriority; callback onModifySpA; callback onModifySpAPriority]
  *   stall -- data/abilities.ts:4496-4502  [unmodelled: callback onFractionalPriority; read by id in data/conditions.ts; read by id in data/moves.ts; read by id in sim/battle-actions.ts]
@@ -2233,18 +2233,18 @@ const dfi_pool_item_data dfi_pool_items[DFI_POOL_ITEM_COUNT] = {
  *   supremeoverlord -- data/abilities.ts:4730-4754  [unmodelled: callback onBasePower; callback onBasePowerPriority; callback onEnd; callback onStart]
  *   surgesurfer -- data/abilities.ts:4755-4765  [unmodelled: callback onModifySpe]
  *   sweetveil -- data/abilities.ts:4786-4807  [unmodelled: callback onAllySetStatus; callback onAllyTryAddVolatile]
- *   swiftswim -- data/abilities.ts:4808-4818  [unmodelled: callback onModifySpe]
+ *   swiftswim -- data/abilities.ts:4808-4818
  *   symbiosis -- data/abilities.ts:4837-4856  [unmodelled: callback onAllyAfterUseItem]
  *   synchronize -- data/abilities.ts:4857-4871  [unmodelled: callback onAfterSetStatus; read by id in data/moves.ts]
  *   tangledfeet -- data/abilities.ts:4890-4903  [unmodelled: callback onModifyAccuracy; callback onModifyAccuracyPriority]
- *   technician -- data/abilities.ts:4916-4930  [unmodelled: callback onBasePower; callback onBasePowerPriority]
+ *   technician -- data/abilities.ts:4916-4930
  *   telepathy -- data/abilities.ts:4931-4942  [unmodelled: callback onTryHit]
  *   thermalexchange -- data/abilities.ts:4990-5013
  *   thickfat -- data/abilities.ts:5014-5033  [unmodelled: callback onSourceModifyAtk; callback onSourceModifyAtkPriority; callback onSourceModifySpA; callback onSourceModifySpAPriority]
  *   toxicdebris -- data/abilities.ts:5104-5117  [unmodelled: callback onDamagingHit]
  *   trace -- data/abilities.ts:5118-5151
  *   unaware -- data/abilities.ts:5214-5234  [unmodelled: callback onAnyModifyBoost]
- *   unnerve -- data/abilities.ts:5258-5275  [unmodelled: callback onEnd; callback onFoeTryEatItem; callback onStart; callback onSwitchInPriority]
+ *   unnerve -- data/abilities.ts:5258-5275
  *   unseenfist -- data/abilities.ts:5276-5284, data/mods/champions/abilities.ts:86-95  [unmodelled: callback onHitProtect; callback onModifyMove]
  *   vitalspirit -- data/abilities.ts:5315-5339  [unmodelled: callback onSetStatus; callback onTryAddVolatile; callback onUpdate; read by id in data/moves.ts]
  *   voltabsorb -- data/abilities.ts:5340-5353  [unmodelled: callback onTryHit]
@@ -2699,11 +2699,11 @@ const uint8_t dfi_pool_item_handler[DFI_POOL_ITEM_COUNT] = {
     [DFI_ITEM_WACANBERRY] = DFI_HANDLER_NONE,
     [DFI_ITEM_YACHEBERRY] = DFI_HANDLER_NONE,
     [DFI_ITEM_FOCUSSASH] = DFI_HANDLER_NONE,
-    [DFI_ITEM_EXPERTBELT] = DFI_HANDLER_UNMODELED,
+    [DFI_ITEM_EXPERTBELT] = DFI_HANDLER_NONE,
     [DFI_ITEM_FLOETTITE] = DFI_HANDLER_NONE,
     [DFI_ITEM_ABOMASITE] = DFI_HANDLER_NONE,
     [DFI_ITEM_ABSOLITE] = DFI_HANDLER_NONE,
-    [DFI_ITEM_ABSOLITEZ] = DFI_HANDLER_UNMODELED,
+    [DFI_ITEM_ABSOLITEZ] = DFI_HANDLER_NONE,
     [DFI_ITEM_AERODACTYLITE] = DFI_HANDLER_NONE,
     [DFI_ITEM_AGGRONITE] = DFI_HANDLER_NONE,
     [DFI_ITEM_AIRBALLOON] = DFI_HANDLER_UNMODELED,
@@ -2723,7 +2723,7 @@ const uint8_t dfi_pool_item_handler[DFI_POOL_ITEM_COUNT] = {
     [DFI_ITEM_BRIGHTPOWDER] = DFI_HANDLER_UNMODELED,
     [DFI_ITEM_CAMERUPTITE] = DFI_HANDLER_NONE,
     [DFI_ITEM_CHANDELURITE] = DFI_HANDLER_NONE,
-    [DFI_ITEM_CHARIZARDITEX] = DFI_HANDLER_UNMODELED,
+    [DFI_ITEM_CHARIZARDITEX] = DFI_HANDLER_NONE,
     [DFI_ITEM_CHERIBERRY] = DFI_HANDLER_UNMODELED,
     [DFI_ITEM_CHESNAUGHTITE] = DFI_HANDLER_NONE,
     [DFI_ITEM_CHESTOBERRY] = DFI_HANDLER_UNMODELED,
@@ -2736,7 +2736,7 @@ const uint8_t dfi_pool_item_handler[DFI_POOL_ITEM_COUNT] = {
     [DFI_ITEM_DRAGONINITE] = DFI_HANDLER_NONE,
     [DFI_ITEM_DRAMPANITE] = DFI_HANDLER_NONE,
     [DFI_ITEM_EELEKTROSSITE] = DFI_HANDLER_NONE,
-    [DFI_ITEM_EJECTBUTTON] = DFI_HANDLER_UNMODELED,
+    [DFI_ITEM_EJECTBUTTON] = DFI_HANDLER_NONE,
     [DFI_ITEM_ELECTRICSEED] = DFI_HANDLER_NONE,
     [DFI_ITEM_EMBOARITE] = DFI_HANDLER_NONE,
     [DFI_ITEM_EXCADRITE] = DFI_HANDLER_NONE,
@@ -2746,7 +2746,7 @@ const uint8_t dfi_pool_item_handler[DFI_POOL_ITEM_COUNT] = {
     [DFI_ITEM_FROSLASSITE] = DFI_HANDLER_NONE,
     [DFI_ITEM_GALLADITE] = DFI_HANDLER_NONE,
     [DFI_ITEM_GARCHOMPITE] = DFI_HANDLER_NONE,
-    [DFI_ITEM_GARCHOMPITEZ] = DFI_HANDLER_UNMODELED,
+    [DFI_ITEM_GARCHOMPITEZ] = DFI_HANDLER_NONE,
     [DFI_ITEM_GARDEVOIRITE] = DFI_HANDLER_NONE,
     [DFI_ITEM_GENGARITE] = DFI_HANDLER_NONE,
     [DFI_ITEM_GLALITITE] = DFI_HANDLER_NONE,
@@ -2767,7 +2767,7 @@ const uint8_t dfi_pool_item_handler[DFI_POOL_ITEM_COUNT] = {
     [DFI_ITEM_LIGHTBALL] = DFI_HANDLER_UNMODELED,
     [DFI_ITEM_LOPUNNITE] = DFI_HANDLER_NONE,
     [DFI_ITEM_LUCARIONITE] = DFI_HANDLER_NONE,
-    [DFI_ITEM_LUCARIONITEZ] = DFI_HANDLER_UNMODELED,
+    [DFI_ITEM_LUCARIONITEZ] = DFI_HANDLER_NONE,
     [DFI_ITEM_LUMBERRY] = DFI_HANDLER_UNMODELED,
     [DFI_ITEM_MALAMARITE] = DFI_HANDLER_NONE,
     [DFI_ITEM_MANECTITE] = DFI_HANDLER_NONE,
@@ -2789,7 +2789,7 @@ const uint8_t dfi_pool_item_handler[DFI_POOL_ITEM_COUNT] = {
     [DFI_ITEM_PSYCHICSEED] = DFI_HANDLER_NONE,
     [DFI_ITEM_PYROARITE] = DFI_HANDLER_NONE,
     [DFI_ITEM_QUICKCLAW] = DFI_HANDLER_UNMODELED,
-    [DFI_ITEM_RAICHUNITEX] = DFI_HANDLER_UNMODELED,
+    [DFI_ITEM_RAICHUNITEX] = DFI_HANDLER_NONE,
     [DFI_ITEM_RAWSTBERRY] = DFI_HANDLER_UNMODELED,
     [DFI_ITEM_REDCARD] = DFI_HANDLER_UNMODELED,
     [DFI_ITEM_SABLENITE] = DFI_HANDLER_NONE,
@@ -2812,7 +2812,7 @@ const uint8_t dfi_pool_item_handler[DFI_POOL_ITEM_COUNT] = {
     [DFI_ITEM_TYRANITARITE] = DFI_HANDLER_NONE,
     [DFI_ITEM_VENUSAURITE] = DFI_HANDLER_NONE,
     [DFI_ITEM_VICTREEBELITE] = DFI_HANDLER_NONE,
-    [DFI_ITEM_WIDELENS] = DFI_HANDLER_UNMODELED,
+    [DFI_ITEM_WIDELENS] = DFI_HANDLER_NONE,
     [DFI_ITEM_WISEGLASSES] = DFI_HANDLER_UNMODELED,
     [DFI_ITEM_ZOOMLENS] = DFI_HANDLER_UNMODELED,
 };
@@ -2858,10 +2858,10 @@ const uint8_t dfi_pool_ability_handler[DFI_POOL_ABILITY_COUNT] = {
     [DFI_ABILITY_BIGPECKS] = DFI_HANDLER_UNMODELED,
     [DFI_ABILITY_BULLETPROOF] = DFI_HANDLER_UNMODELED,
     [DFI_ABILITY_CHEEKPOUCH] = DFI_HANDLER_UNMODELED,
-    [DFI_ABILITY_CHLOROPHYLL] = DFI_HANDLER_UNMODELED,
-    [DFI_ABILITY_CLEARBODY] = DFI_HANDLER_UNMODELED,
+    [DFI_ABILITY_CHLOROPHYLL] = DFI_HANDLER_NONE,
+    [DFI_ABILITY_CLEARBODY] = DFI_HANDLER_NONE,
     [DFI_ABILITY_CLOUDNINE] = DFI_HANDLER_UNMODELED,
-    [DFI_ABILITY_COMPOUNDEYES] = DFI_HANDLER_UNMODELED,
+    [DFI_ABILITY_COMPOUNDEYES] = DFI_HANDLER_NONE,
     [DFI_ABILITY_CORROSION] = DFI_HANDLER_UNMODELED,
     [DFI_ABILITY_CUDCHEW] = DFI_HANDLER_UNMODELED,
     [DFI_ABILITY_CURIOUSMEDICINE] = DFI_HANDLER_UNMODELED,
@@ -2879,14 +2879,14 @@ const uint8_t dfi_pool_ability_handler[DFI_POOL_ABILITY_COUNT] = {
     [DFI_ABILITY_ELECTROMORPHOSIS] = DFI_HANDLER_UNMODELED,
     [DFI_ABILITY_FILTER] = DFI_HANDLER_UNMODELED,
     [DFI_ABILITY_FIREMANE] = DFI_HANDLER_UNMODELED,
-    [DFI_ABILITY_FLAMEBODY] = DFI_HANDLER_UNMODELED,
+    [DFI_ABILITY_FLAMEBODY] = DFI_HANDLER_NONE,
     [DFI_ABILITY_FLUFFY] = DFI_HANDLER_UNMODELED,
     [DFI_ABILITY_FORECAST] = DFI_HANDLER_UNMODELED,
     [DFI_ABILITY_FOREWARN] = DFI_HANDLER_UNMODELED,
-    [DFI_ABILITY_FRIENDGUARD] = DFI_HANDLER_UNMODELED,
+    [DFI_ABILITY_FRIENDGUARD] = DFI_HANDLER_NONE,
     [DFI_ABILITY_FRISK] = DFI_HANDLER_UNMODELED,
     [DFI_ABILITY_FURCOAT] = DFI_HANDLER_UNMODELED,
-    [DFI_ABILITY_GALEWINGS] = DFI_HANDLER_UNMODELED,
+    [DFI_ABILITY_GALEWINGS] = DFI_HANDLER_NONE,
     [DFI_ABILITY_GLUTTONY] = DFI_HANDLER_UNMODELED,
     [DFI_ABILITY_GOOEY] = DFI_HANDLER_UNMODELED,
     [DFI_ABILITY_GRASSPELT] = DFI_HANDLER_UNMODELED,
@@ -2896,7 +2896,7 @@ const uint8_t dfi_pool_ability_handler[DFI_POOL_ABILITY_COUNT] = {
     [DFI_ABILITY_HEALER] = DFI_HANDLER_UNMODELED,
     [DFI_ABILITY_HEATPROOF] = DFI_HANDLER_UNMODELED,
     [DFI_ABILITY_HEAVYMETAL] = DFI_HANDLER_UNMODELED,
-    [DFI_ABILITY_HOSPITALITY] = DFI_HANDLER_UNMODELED,
+    [DFI_ABILITY_HOSPITALITY] = DFI_HANDLER_NONE,
     [DFI_ABILITY_HUGEPOWER] = DFI_HANDLER_UNMODELED,
     [DFI_ABILITY_HUNGERSWITCH] = DFI_HANDLER_UNMODELED,
     [DFI_ABILITY_HUSTLE] = DFI_HANDLER_UNMODELED,
@@ -2909,19 +2909,19 @@ const uint8_t dfi_pool_ability_handler[DFI_POOL_ABILITY_COUNT] = {
     [DFI_ABILITY_IMPOSTER] = DFI_HANDLER_UNMODELED,
     [DFI_ABILITY_INFILTRATOR] = DFI_HANDLER_UNMODELED,
     [DFI_ABILITY_INNARDSOUT] = DFI_HANDLER_UNMODELED,
-    [DFI_ABILITY_INNERFOCUS] = DFI_HANDLER_UNMODELED,
+    [DFI_ABILITY_INNERFOCUS] = DFI_HANDLER_NONE,
     [DFI_ABILITY_INSOMNIA] = DFI_HANDLER_UNMODELED,
-    [DFI_ABILITY_IRONFIST] = DFI_HANDLER_UNMODELED,
+    [DFI_ABILITY_IRONFIST] = DFI_HANDLER_NONE,
     [DFI_ABILITY_JUSTIFIED] = DFI_HANDLER_UNMODELED,
     [DFI_ABILITY_KEENEYE] = DFI_HANDLER_UNMODELED,
     [DFI_ABILITY_KLUTZ] = DFI_HANDLER_UNMODELED,
     [DFI_ABILITY_LEAFGUARD] = DFI_HANDLER_UNMODELED,
-    [DFI_ABILITY_LEVITATE] = DFI_HANDLER_UNMODELED,
+    [DFI_ABILITY_LEVITATE] = DFI_HANDLER_NONE,
     [DFI_ABILITY_LIBERO] = DFI_HANDLER_UNMODELED,
     [DFI_ABILITY_LIGHTMETAL] = DFI_HANDLER_UNMODELED,
     [DFI_ABILITY_LIMBER] = DFI_HANDLER_UNMODELED,
     [DFI_ABILITY_LIQUIDOOZE] = DFI_HANDLER_UNMODELED,
-    [DFI_ABILITY_LIQUIDVOICE] = DFI_HANDLER_UNMODELED,
+    [DFI_ABILITY_LIQUIDVOICE] = DFI_HANDLER_NONE,
     [DFI_ABILITY_LONGREACH] = DFI_HANDLER_UNMODELED,
     [DFI_ABILITY_MAGICBOUNCE] = DFI_HANDLER_UNMODELED,
     [DFI_ABILITY_MAGICGUARD] = DFI_HANDLER_UNMODELED,
@@ -2938,12 +2938,12 @@ const uint8_t dfi_pool_ability_handler[DFI_POOL_ABILITY_COUNT] = {
     [DFI_ABILITY_MOODY] = DFI_HANDLER_UNMODELED,
     [DFI_ABILITY_MOTORDRIVE] = DFI_HANDLER_UNMODELED,
     [DFI_ABILITY_MOXIE] = DFI_HANDLER_UNMODELED,
-    [DFI_ABILITY_MULTISCALE] = DFI_HANDLER_UNMODELED,
+    [DFI_ABILITY_MULTISCALE] = DFI_HANDLER_NONE,
     [DFI_ABILITY_MUMMY] = DFI_HANDLER_UNMODELED,
     [DFI_ABILITY_NATURALCURE] = DFI_HANDLER_UNMODELED,
     [DFI_ABILITY_OBLIVIOUS] = DFI_HANDLER_UNMODELED,
     [DFI_ABILITY_OPPORTUNIST] = DFI_HANDLER_UNMODELED,
-    [DFI_ABILITY_OVERCOAT] = DFI_HANDLER_UNMODELED,
+    [DFI_ABILITY_OVERCOAT] = DFI_HANDLER_NONE,
     [DFI_ABILITY_OWNTEMPO] = DFI_HANDLER_UNMODELED,
     [DFI_ABILITY_PARENTALBOND] = DFI_HANDLER_UNMODELED,
     [DFI_ABILITY_PICKPOCKET] = DFI_HANDLER_UNMODELED,
@@ -2961,7 +2961,7 @@ const uint8_t dfi_pool_ability_handler[DFI_POOL_ABILITY_COUNT] = {
     [DFI_ABILITY_QUEENLYMAJESTY] = DFI_HANDLER_UNMODELED,
     [DFI_ABILITY_QUICKDRAW] = DFI_HANDLER_UNMODELED,
     [DFI_ABILITY_QUICKFEET] = DFI_HANDLER_UNMODELED,
-    [DFI_ABILITY_RAINDISH] = DFI_HANDLER_UNMODELED,
+    [DFI_ABILITY_RAINDISH] = DFI_HANDLER_NONE,
     [DFI_ABILITY_RATTLED] = DFI_HANDLER_UNMODELED,
     [DFI_ABILITY_RECEIVER] = DFI_HANDLER_UNMODELED,
     [DFI_ABILITY_RECKLESS] = DFI_HANDLER_UNMODELED,
@@ -2971,7 +2971,7 @@ const uint8_t dfi_pool_ability_handler[DFI_POOL_ABILITY_COUNT] = {
     [DFI_ABILITY_ROUGHSKIN] = DFI_HANDLER_NONE,
     [DFI_ABILITY_RUNAWAY] = DFI_HANDLER_UNMODELED,
     [DFI_ABILITY_SANDFORCE] = DFI_HANDLER_UNMODELED,
-    [DFI_ABILITY_SANDRUSH] = DFI_HANDLER_UNMODELED,
+    [DFI_ABILITY_SANDRUSH] = DFI_HANDLER_NONE,
     [DFI_ABILITY_SANDSPIT] = DFI_HANDLER_UNMODELED,
     [DFI_ABILITY_SANDSTREAM] = DFI_HANDLER_NONE,
     [DFI_ABILITY_SANDVEIL] = DFI_HANDLER_UNMODELED,
@@ -2980,20 +2980,20 @@ const uint8_t dfi_pool_ability_handler[DFI_POOL_ABILITY_COUNT] = {
     [DFI_ABILITY_SCREENCLEANER] = DFI_HANDLER_UNMODELED,
     [DFI_ABILITY_SEEDSOWER] = DFI_HANDLER_UNMODELED,
     [DFI_ABILITY_SHADOWTAG] = DFI_HANDLER_UNMODELED,
-    [DFI_ABILITY_SHARPNESS] = DFI_HANDLER_UNMODELED,
+    [DFI_ABILITY_SHARPNESS] = DFI_HANDLER_NONE,
     [DFI_ABILITY_SHEDSKIN] = DFI_HANDLER_UNMODELED,
     [DFI_ABILITY_SHEERFORCE] = DFI_HANDLER_UNMODELED,
     [DFI_ABILITY_SHELLARMOR] = DFI_HANDLER_UNMODELED,
     [DFI_ABILITY_SHIELDDUST] = DFI_HANDLER_UNMODELED,
     [DFI_ABILITY_SKILLLINK] = DFI_HANDLER_UNMODELED,
-    [DFI_ABILITY_SLUSHRUSH] = DFI_HANDLER_UNMODELED,
+    [DFI_ABILITY_SLUSHRUSH] = DFI_HANDLER_NONE,
     [DFI_ABILITY_SNIPER] = DFI_HANDLER_UNMODELED,
     [DFI_ABILITY_SNOWCLOAK] = DFI_HANDLER_UNMODELED,
     [DFI_ABILITY_SNOWWARNING] = DFI_HANDLER_NONE,
     [DFI_ABILITY_SOLARPOWER] = DFI_HANDLER_UNMODELED,
-    [DFI_ABILITY_SOLIDROCK] = DFI_HANDLER_UNMODELED,
-    [DFI_ABILITY_SOUNDPROOF] = DFI_HANDLER_UNMODELED,
-    [DFI_ABILITY_SPEEDBOOST] = DFI_HANDLER_UNMODELED,
+    [DFI_ABILITY_SOLIDROCK] = DFI_HANDLER_NONE,
+    [DFI_ABILITY_SOUNDPROOF] = DFI_HANDLER_NONE,
+    [DFI_ABILITY_SPEEDBOOST] = DFI_HANDLER_NONE,
     [DFI_ABILITY_SPICYSPRAY] = DFI_HANDLER_UNMODELED,
     [DFI_ABILITY_STAKEOUT] = DFI_HANDLER_UNMODELED,
     [DFI_ABILITY_STALL] = DFI_HANDLER_UNMODELED,
@@ -3012,18 +3012,18 @@ const uint8_t dfi_pool_ability_handler[DFI_POOL_ABILITY_COUNT] = {
     [DFI_ABILITY_SUPREMEOVERLORD] = DFI_HANDLER_UNMODELED,
     [DFI_ABILITY_SURGESURFER] = DFI_HANDLER_UNMODELED,
     [DFI_ABILITY_SWEETVEIL] = DFI_HANDLER_UNMODELED,
-    [DFI_ABILITY_SWIFTSWIM] = DFI_HANDLER_UNMODELED,
+    [DFI_ABILITY_SWIFTSWIM] = DFI_HANDLER_NONE,
     [DFI_ABILITY_SYMBIOSIS] = DFI_HANDLER_UNMODELED,
     [DFI_ABILITY_SYNCHRONIZE] = DFI_HANDLER_UNMODELED,
     [DFI_ABILITY_TANGLEDFEET] = DFI_HANDLER_UNMODELED,
-    [DFI_ABILITY_TECHNICIAN] = DFI_HANDLER_UNMODELED,
+    [DFI_ABILITY_TECHNICIAN] = DFI_HANDLER_NONE,
     [DFI_ABILITY_TELEPATHY] = DFI_HANDLER_UNMODELED,
     [DFI_ABILITY_THERMALEXCHANGE] = DFI_HANDLER_NONE,
     [DFI_ABILITY_THICKFAT] = DFI_HANDLER_UNMODELED,
     [DFI_ABILITY_TOXICDEBRIS] = DFI_HANDLER_UNMODELED,
     [DFI_ABILITY_TRACE] = DFI_HANDLER_NONE,
     [DFI_ABILITY_UNAWARE] = DFI_HANDLER_UNMODELED,
-    [DFI_ABILITY_UNNERVE] = DFI_HANDLER_UNMODELED,
+    [DFI_ABILITY_UNNERVE] = DFI_HANDLER_NONE,
     [DFI_ABILITY_UNSEENFIST] = DFI_HANDLER_UNMODELED,
     [DFI_ABILITY_VITALSPIRIT] = DFI_HANDLER_UNMODELED,
     [DFI_ABILITY_VOLTABSORB] = DFI_HANDLER_UNMODELED,
@@ -4091,7 +4091,7 @@ const uint8_t dfi_pool_move_flags2[DFI_POOL_MOVE_COUNT] = {
     [DFI_MOVE_COIL] = 0u, /* Coil */
     [DFI_MOVE_ICEBEAM] = 0u, /* Ice Beam */
     [DFI_MOVE_HYPNOSIS] = 0u, /* Hypnosis */
-    [DFI_MOVE_BITTERBLADE] = DFI_MOVE_FLAG2_HEAL, /* Bitter Blade */
+    [DFI_MOVE_BITTERBLADE] = DFI_MOVE_FLAG2_HEAL | DFI_MOVE_FLAG2_SLICING, /* Bitter Blade */
     [DFI_MOVE_SHADOWSNEAK] = 0u, /* Shadow Sneak */
     [DFI_MOVE_SWORDSDANCE] = 0u, /* Swords Dance */
     [DFI_MOVE_ZAPCANNON] = 0u, /* Zap Cannon */
@@ -4116,14 +4116,14 @@ const uint8_t dfi_pool_move_flags2[DFI_POOL_MOVE_COUNT] = {
     [DFI_MOVE_LIGHTSCREEN] = 0u, /* Light Screen */
     [DFI_MOVE_PARTINGSHOT] = DFI_MOVE_FLAG2_SOUND, /* Parting Shot */
     [DFI_MOVE_STRUGGLE] = 0u, /* Struggle */
-    [DFI_MOVE_DIRECLAW] = 0u, /* Dire Claw */
+    [DFI_MOVE_DIRECLAW] = DFI_MOVE_FLAG2_SLICING, /* Dire Claw */
     [DFI_MOVE_FLAREBLITZ] = 0u, /* Flare Blitz */
     [DFI_MOVE_DARKESTLARIAT] = 0u, /* Darkest Lariat */
     [DFI_MOVE_HYPERVOICE] = DFI_MOVE_FLAG2_SOUND, /* Hyper Voice */
     [DFI_MOVE_DRACOMETEOR] = 0u, /* Draco Meteor */
     [DFI_MOVE_FOLLOWME] = 0u, /* Follow Me */
     [DFI_MOVE_HELPINGHAND] = 0u, /* Helping Hand */
-    [DFI_MOVE_KOWTOWCLEAVE] = 0u, /* Kowtow Cleave */
+    [DFI_MOVE_KOWTOWCLEAVE] = DFI_MOVE_FLAG2_SLICING, /* Kowtow Cleave */
     [DFI_MOVE_SUCKERPUNCH] = 0u, /* Sucker Punch */
     [DFI_MOVE_LASTRESPECTS] = 0u, /* Last Respects */
     [DFI_MOVE_WAVECRASH] = 0u, /* Wave Crash */
@@ -4143,8 +4143,8 @@ const uint8_t dfi_pool_move_flags2[DFI_POOL_MOVE_COUNT] = {
     [DFI_MOVE_FIRSTIMPRESSION] = 0u, /* First Impression */
     [DFI_MOVE_BULKUP] = 0u, /* Bulk Up */
     [DFI_MOVE_LIQUIDATION] = 0u, /* Liquidation */
-    [DFI_MOVE_ICEPUNCH] = 0u, /* Ice Punch */
-    [DFI_MOVE_SHADOWCLAW] = 0u, /* Shadow Claw */
+    [DFI_MOVE_ICEPUNCH] = DFI_MOVE_FLAG2_PUNCH, /* Ice Punch */
+    [DFI_MOVE_SHADOWCLAW] = DFI_MOVE_FLAG2_SLICING, /* Shadow Claw */
     [DFI_MOVE_RECOVER] = DFI_MOVE_FLAG2_HEAL, /* Recover */
     [DFI_MOVE_SOAK] = 0u, /* Soak */
     [DFI_MOVE_PSYCHICNOISE] = DFI_MOVE_FLAG2_SOUND, /* Psychic Noise */
@@ -4156,17 +4156,17 @@ const uint8_t dfi_pool_move_flags2[DFI_POOL_MOVE_COUNT] = {
     [DFI_MOVE_ACIDSPRAY] = 0u, /* Acid Spray */
     [DFI_MOVE_ACROBATICS] = 0u, /* Acrobatics */
     [DFI_MOVE_ACUPRESSURE] = 0u, /* Acupressure */
-    [DFI_MOVE_AERIALACE] = 0u, /* Aerial Ace */
+    [DFI_MOVE_AERIALACE] = DFI_MOVE_FLAG2_SLICING, /* Aerial Ace */
     [DFI_MOVE_AFTERYOU] = 0u, /* After You */
     [DFI_MOVE_AGILITY] = 0u, /* Agility */
-    [DFI_MOVE_AIRCUTTER] = 0u, /* Air Cutter */
-    [DFI_MOVE_AIRSLASH] = 0u, /* Air Slash */
+    [DFI_MOVE_AIRCUTTER] = DFI_MOVE_FLAG2_SLICING, /* Air Cutter */
+    [DFI_MOVE_AIRSLASH] = DFI_MOVE_FLAG2_SLICING, /* Air Slash */
     [DFI_MOVE_ALLURINGVOICE] = DFI_MOVE_FLAG2_SOUND, /* Alluring Voice */
     [DFI_MOVE_ALLYSWITCH] = 0u, /* Ally Switch */
     [DFI_MOVE_AMNESIA] = 0u, /* Amnesia */
     [DFI_MOVE_ANCIENTPOWER] = 0u, /* Ancient Power */
     [DFI_MOVE_APPLEACID] = 0u, /* Apple Acid */
-    [DFI_MOVE_AQUACUTTER] = 0u, /* Aqua Cutter */
+    [DFI_MOVE_AQUACUTTER] = DFI_MOVE_FLAG2_SLICING, /* Aqua Cutter */
     [DFI_MOVE_AQUARING] = 0u, /* Aqua Ring */
     [DFI_MOVE_AQUASTEP] = 0u, /* Aqua Step */
     [DFI_MOVE_AQUATAIL] = 0u, /* Aqua Tail */
@@ -4205,12 +4205,12 @@ const uint8_t dfi_pool_move_flags2[DFI_POOL_MOVE_COUNT] = {
     [DFI_MOVE_BUGBITE] = 0u, /* Bug Bite */
     [DFI_MOVE_BUGBUZZ] = DFI_MOVE_FLAG2_SOUND, /* Bug Buzz */
     [DFI_MOVE_BULLDOZE] = 0u, /* Bulldoze */
-    [DFI_MOVE_BULLETPUNCH] = 0u, /* Bullet Punch */
+    [DFI_MOVE_BULLETPUNCH] = DFI_MOVE_FLAG2_PUNCH, /* Bullet Punch */
     [DFI_MOVE_BULLETSEED] = 0u, /* Bullet Seed */
     [DFI_MOVE_BURNINGJEALOUSY] = 0u, /* Burning Jealousy */
     [DFI_MOVE_BURNUP] = 0u, /* Burn Up */
     [DFI_MOVE_CALMMIND] = 0u, /* Calm Mind */
-    [DFI_MOVE_CEASELESSEDGE] = 0u, /* Ceaseless Edge */
+    [DFI_MOVE_CEASELESSEDGE] = DFI_MOVE_FLAG2_SLICING, /* Ceaseless Edge */
     [DFI_MOVE_CHARGE] = 0u, /* Charge */
     [DFI_MOVE_CHARGEBEAM] = 0u, /* Charge Beam */
     [DFI_MOVE_CHARM] = 0u, /* Charm */
@@ -4227,15 +4227,15 @@ const uint8_t dfi_pool_move_flags2[DFI_POOL_MOVE_COUNT] = {
     [DFI_MOVE_CORROSIVEGAS] = 0u, /* Corrosive Gas */
     [DFI_MOVE_COSMICPOWER] = 0u, /* Cosmic Power */
     [DFI_MOVE_COTTONGUARD] = 0u, /* Cotton Guard */
-    [DFI_MOVE_COTTONSPORE] = 0u, /* Cotton Spore */
+    [DFI_MOVE_COTTONSPORE] = DFI_MOVE_FLAG2_POWDER, /* Cotton Spore */
     [DFI_MOVE_COUNTER] = 0u, /* Counter */
     [DFI_MOVE_COURTCHANGE] = 0u, /* Court Change */
     [DFI_MOVE_COVET] = 0u, /* Covet */
     [DFI_MOVE_CRABHAMMER] = 0u, /* Crabhammer */
     [DFI_MOVE_CROSSCHOP] = 0u, /* Cross Chop */
-    [DFI_MOVE_CROSSPOISON] = 0u, /* Cross Poison */
+    [DFI_MOVE_CROSSPOISON] = DFI_MOVE_FLAG2_SLICING, /* Cross Poison */
     [DFI_MOVE_CRUNCH] = 0u, /* Crunch */
-    [DFI_MOVE_CRUSHCLAW] = 0u, /* Crush Claw */
+    [DFI_MOVE_CRUSHCLAW] = DFI_MOVE_FLAG2_SLICING, /* Crush Claw */
     [DFI_MOVE_CURSE] = 0u, /* Curse */
     [DFI_MOVE_DARKPULSE] = 0u, /* Dark Pulse */
     [DFI_MOVE_DECORATE] = 0u, /* Decorate */
@@ -4247,19 +4247,19 @@ const uint8_t dfi_pool_move_flags2[DFI_POOL_MOVE_COUNT] = {
     [DFI_MOVE_DISCHARGE] = 0u, /* Discharge */
     [DFI_MOVE_DIVE] = 0u, /* Dive */
     [DFI_MOVE_DOUBLEHIT] = 0u, /* Double Hit */
-    [DFI_MOVE_DOUBLESHOCK] = 0u, /* Double Shock */
+    [DFI_MOVE_DOUBLESHOCK] = DFI_MOVE_FLAG2_PUNCH, /* Double Shock */
     [DFI_MOVE_DOUBLETEAM] = 0u, /* Double Team */
     [DFI_MOVE_DRAGONCHEER] = DFI_MOVE_FLAG2_SOUND, /* Dragon Cheer */
-    [DFI_MOVE_DRAGONCLAW] = 0u, /* Dragon Claw */
+    [DFI_MOVE_DRAGONCLAW] = DFI_MOVE_FLAG2_SLICING, /* Dragon Claw */
     [DFI_MOVE_DRAGONDANCE] = 0u, /* Dragon Dance */
     [DFI_MOVE_DRAGONDARTS] = 0u, /* Dragon Darts */
     [DFI_MOVE_DRAGONRUSH] = 0u, /* Dragon Rush */
     [DFI_MOVE_DRAGONTAIL] = 0u, /* Dragon Tail */
     [DFI_MOVE_DRAININGKISS] = DFI_MOVE_FLAG2_HEAL, /* Draining Kiss */
-    [DFI_MOVE_DRAINPUNCH] = DFI_MOVE_FLAG2_HEAL, /* Drain Punch */
+    [DFI_MOVE_DRAINPUNCH] = DFI_MOVE_FLAG2_HEAL | DFI_MOVE_FLAG2_PUNCH, /* Drain Punch */
     [DFI_MOVE_DRILLPECK] = 0u, /* Drill Peck */
     [DFI_MOVE_DUALWINGBEAT] = 0u, /* Dual Wingbeat */
-    [DFI_MOVE_DYNAMICPUNCH] = 0u, /* Dynamic Punch */
+    [DFI_MOVE_DYNAMICPUNCH] = DFI_MOVE_FLAG2_PUNCH, /* Dynamic Punch */
     [DFI_MOVE_EARTHPOWER] = 0u, /* Earth Power */
     [DFI_MOVE_EARTHQUAKE] = 0u, /* Earthquake */
     [DFI_MOVE_EERIEIMPULSE] = 0u, /* Eerie Impulse */
@@ -4288,7 +4288,7 @@ const uint8_t dfi_pool_move_flags2[DFI_POOL_MOVE_COUNT] = {
     [DFI_MOVE_FIREBLAST] = 0u, /* Fire Blast */
     [DFI_MOVE_FIREFANG] = 0u, /* Fire Fang */
     [DFI_MOVE_FIRELASH] = 0u, /* Fire Lash */
-    [DFI_MOVE_FIREPUNCH] = 0u, /* Fire Punch */
+    [DFI_MOVE_FIREPUNCH] = DFI_MOVE_FLAG2_PUNCH, /* Fire Punch */
     [DFI_MOVE_FIRESPIN] = 0u, /* Fire Spin */
     [DFI_MOVE_FISSURE] = 0u, /* Fissure */
     [DFI_MOVE_FLAIL] = 0u, /* Flail */
@@ -4300,7 +4300,7 @@ const uint8_t dfi_pool_move_flags2[DFI_POOL_MOVE_COUNT] = {
     [DFI_MOVE_FLY] = 0u, /* Fly */
     [DFI_MOVE_FLYINGPRESS] = 0u, /* Flying Press */
     [DFI_MOVE_FOCUSENERGY] = 0u, /* Focus Energy */
-    [DFI_MOVE_FOCUSPUNCH] = 0u, /* Focus Punch */
+    [DFI_MOVE_FOCUSPUNCH] = DFI_MOVE_FLAG2_PUNCH, /* Focus Punch */
     [DFI_MOVE_FORESTSCURSE] = 0u, /* Forest's Curse */
     [DFI_MOVE_FOULPLAY] = 0u, /* Foul Play */
     [DFI_MOVE_FREEZEDRY] = 0u, /* Freeze-Dry */
@@ -4322,10 +4322,10 @@ const uint8_t dfi_pool_move_flags2[DFI_POOL_MOVE_COUNT] = {
     [DFI_MOVE_GUILLOTINE] = 0u, /* Guillotine */
     [DFI_MOVE_GUNKSHOT] = 0u, /* Gunk Shot */
     [DFI_MOVE_GYROBALL] = 0u, /* Gyro Ball */
-    [DFI_MOVE_HAMMERARM] = 0u, /* Hammer Arm */
+    [DFI_MOVE_HAMMERARM] = DFI_MOVE_FLAG2_PUNCH, /* Hammer Arm */
     [DFI_MOVE_HARDPRESS] = 0u, /* Hard Press */
     [DFI_MOVE_HAZE] = 0u, /* Haze */
-    [DFI_MOVE_HEADLONGRUSH] = 0u, /* Headlong Rush */
+    [DFI_MOVE_HEADLONGRUSH] = DFI_MOVE_FLAG2_PUNCH, /* Headlong Rush */
     [DFI_MOVE_HEALBELL] = DFI_MOVE_FLAG2_SOUND, /* Heal Bell */
     [DFI_MOVE_HEALINGWISH] = DFI_MOVE_FLAG2_HEAL, /* Healing Wish */
     [DFI_MOVE_HEALPULSE] = DFI_MOVE_FLAG2_HEAL, /* Heal Pulse */
@@ -4340,7 +4340,7 @@ const uint8_t dfi_pool_move_flags2[DFI_POOL_MOVE_COUNT] = {
     [DFI_MOVE_HYDROPUMP] = 0u, /* Hydro Pump */
     [DFI_MOVE_HYPERBEAM] = DFI_MOVE_FLAG2_RECHARGE, /* Hyper Beam */
     [DFI_MOVE_ICEFANG] = 0u, /* Ice Fang */
-    [DFI_MOVE_ICEHAMMER] = 0u, /* Ice Hammer */
+    [DFI_MOVE_ICEHAMMER] = DFI_MOVE_FLAG2_PUNCH, /* Ice Hammer */
     [DFI_MOVE_ICESHARD] = 0u, /* Ice Shard */
     [DFI_MOVE_ICESPINNER] = 0u, /* Ice Spinner */
     [DFI_MOVE_ICICLECRASH] = 0u, /* Icicle Crash */
@@ -4355,13 +4355,13 @@ const uint8_t dfi_pool_move_flags2[DFI_POOL_MOVE_COUNT] = {
     [DFI_MOVE_IRONDEFENSE] = 0u, /* Iron Defense */
     [DFI_MOVE_IRONTAIL] = 0u, /* Iron Tail */
     [DFI_MOVE_JAWLOCK] = 0u, /* Jaw Lock */
-    [DFI_MOVE_JETPUNCH] = 0u, /* Jet Punch */
+    [DFI_MOVE_JETPUNCH] = DFI_MOVE_FLAG2_PUNCH, /* Jet Punch */
     [DFI_MOVE_KINGSSHIELD] = 0u, /* King's Shield */
     [DFI_MOVE_KNOCKOFF] = 0u, /* Knock Off */
     [DFI_MOVE_LASHOUT] = 0u, /* Lash Out */
     [DFI_MOVE_LASTRESORT] = 0u, /* Last Resort */
     [DFI_MOVE_LAVAPLUME] = 0u, /* Lava Plume */
-    [DFI_MOVE_LEAFBLADE] = 0u, /* Leaf Blade */
+    [DFI_MOVE_LEAFBLADE] = DFI_MOVE_FLAG2_SLICING, /* Leaf Blade */
     [DFI_MOVE_LEAFSTORM] = 0u, /* Leaf Storm */
     [DFI_MOVE_LEECHSEED] = 0u, /* Leech Seed */
     [DFI_MOVE_LIFEDEW] = DFI_MOVE_FLAG2_HEAL, /* Life Dew */
@@ -4370,8 +4370,8 @@ const uint8_t dfi_pool_move_flags2[DFI_POOL_MOVE_COUNT] = {
     [DFI_MOVE_LOWSWEEP] = 0u, /* Low Sweep */
     [DFI_MOVE_LUMINACRASH] = 0u, /* Lumina Crash */
     [DFI_MOVE_LUNGE] = 0u, /* Lunge */
-    [DFI_MOVE_MACHPUNCH] = 0u, /* Mach Punch */
-    [DFI_MOVE_MAGICPOWDER] = 0u, /* Magic Powder */
+    [DFI_MOVE_MACHPUNCH] = DFI_MOVE_FLAG2_PUNCH, /* Mach Punch */
+    [DFI_MOVE_MAGICPOWDER] = DFI_MOVE_FLAG2_POWDER, /* Magic Powder */
     [DFI_MOVE_MAGICROOM] = 0u, /* Magic Room */
     [DFI_MOVE_MAGNETICFLUX] = 0u, /* Magnetic Flux */
     [DFI_MOVE_MAGNETRISE] = 0u, /* Magnet Rise */
@@ -4384,7 +4384,7 @@ const uint8_t dfi_pool_move_flags2[DFI_POOL_MOVE_COUNT] = {
     [DFI_MOVE_METALSOUND] = DFI_MOVE_FLAG2_SOUND, /* Metal Sound */
     [DFI_MOVE_METEORASSAULT] = DFI_MOVE_FLAG2_RECHARGE, /* Meteor Assault */
     [DFI_MOVE_METEORBEAM] = 0u, /* Meteor Beam */
-    [DFI_MOVE_METEORMASH] = 0u, /* Meteor Mash */
+    [DFI_MOVE_METEORMASH] = DFI_MOVE_FLAG2_PUNCH, /* Meteor Mash */
     [DFI_MOVE_MILKDRINK] = DFI_MOVE_FLAG2_HEAL, /* Milk Drink */
     [DFI_MOVE_MINIMIZE] = 0u, /* Minimize */
     [DFI_MOVE_MIRRORCOAT] = 0u, /* Mirror Coat */
@@ -4400,7 +4400,7 @@ const uint8_t dfi_pool_move_flags2[DFI_POOL_MOVE_COUNT] = {
     [DFI_MOVE_MYSTICALFIRE] = 0u, /* Mystical Fire */
     [DFI_MOVE_NIGHTDAZE] = 0u, /* Night Daze */
     [DFI_MOVE_NIGHTSHADE] = 0u, /* Night Shade */
-    [DFI_MOVE_NIGHTSLASH] = 0u, /* Night Slash */
+    [DFI_MOVE_NIGHTSLASH] = DFI_MOVE_FLAG2_SLICING, /* Night Slash */
     [DFI_MOVE_NOBLEROAR] = DFI_MOVE_FLAG2_SOUND, /* Noble Roar */
     [DFI_MOVE_NORETREAT] = 0u, /* No Retreat */
     [DFI_MOVE_NUZZLE] = 0u, /* Nuzzle */
@@ -4420,10 +4420,10 @@ const uint8_t dfi_pool_move_flags2[DFI_POOL_MOVE_COUNT] = {
     [DFI_MOVE_PLUCK] = 0u, /* Pluck */
     [DFI_MOVE_POISONFANG] = 0u, /* Poison Fang */
     [DFI_MOVE_POISONJAB] = 0u, /* Poison Jab */
-    [DFI_MOVE_POISONPOWDER] = 0u, /* Poison Powder */
+    [DFI_MOVE_POISONPOWDER] = DFI_MOVE_FLAG2_POWDER, /* Poison Powder */
     [DFI_MOVE_POLLENPUFF] = 0u, /* Pollen Puff */
     [DFI_MOVE_POLTERGEIST] = 0u, /* Poltergeist */
-    [DFI_MOVE_POPULATIONBOMB] = 0u, /* Population Bomb */
+    [DFI_MOVE_POPULATIONBOMB] = DFI_MOVE_FLAG2_SLICING, /* Population Bomb */
     [DFI_MOVE_POUNCE] = 0u, /* Pounce */
     [DFI_MOVE_POWERGEM] = 0u, /* Power Gem */
     [DFI_MOVE_POWERSPLIT] = 0u, /* Power Split */
@@ -4433,7 +4433,7 @@ const uint8_t dfi_pool_move_flags2[DFI_POOL_MOVE_COUNT] = {
     [DFI_MOVE_POWERWHIP] = 0u, /* Power Whip */
     [DFI_MOVE_PSYCHICFANGS] = 0u, /* Psychic Fangs */
     [DFI_MOVE_PSYCHICTERRAIN] = 0u, /* Psychic Terrain */
-    [DFI_MOVE_PSYCHOCUT] = 0u, /* Psycho Cut */
+    [DFI_MOVE_PSYCHOCUT] = DFI_MOVE_FLAG2_SLICING, /* Psycho Cut */
     [DFI_MOVE_PSYCHUP] = 0u, /* Psych Up */
     [DFI_MOVE_PSYSHIELDBASH] = 0u, /* Psyshield Bash */
     [DFI_MOVE_PSYSHOCK] = 0u, /* Psyshock */
@@ -4442,13 +4442,13 @@ const uint8_t dfi_pool_move_flags2[DFI_POOL_MOVE_COUNT] = {
     [DFI_MOVE_QUICKATTACK] = 0u, /* Quick Attack */
     [DFI_MOVE_QUICKGUARD] = 0u, /* Quick Guard */
     [DFI_MOVE_QUIVERDANCE] = 0u, /* Quiver Dance */
-    [DFI_MOVE_RAGEFIST] = 0u, /* Rage Fist */
-    [DFI_MOVE_RAGEPOWDER] = 0u, /* Rage Powder */
+    [DFI_MOVE_RAGEFIST] = DFI_MOVE_FLAG2_PUNCH, /* Rage Fist */
+    [DFI_MOVE_RAGEPOWDER] = DFI_MOVE_FLAG2_POWDER, /* Rage Powder */
     [DFI_MOVE_RAGINGBULL] = 0u, /* Raging Bull */
     [DFI_MOVE_RAGINGFURY] = 0u, /* Raging Fury */
     [DFI_MOVE_RAINDANCE] = 0u, /* Rain Dance */
     [DFI_MOVE_RAPIDSPIN] = 0u, /* Rapid Spin */
-    [DFI_MOVE_RAZORSHELL] = 0u, /* Razor Shell */
+    [DFI_MOVE_RAZORSHELL] = DFI_MOVE_FLAG2_SLICING, /* Razor Shell */
     [DFI_MOVE_RECYCLE] = 0u, /* Recycle */
     [DFI_MOVE_REFLECTTYPE] = 0u, /* Reflect Type */
     [DFI_MOVE_REST] = DFI_MOVE_FLAG2_HEAL, /* Rest */
@@ -4463,7 +4463,7 @@ const uint8_t dfi_pool_move_flags2[DFI_POOL_MOVE_COUNT] = {
     [DFI_MOVE_ROLEPLAY] = 0u, /* Role Play */
     [DFI_MOVE_ROOST] = DFI_MOVE_FLAG2_HEAL, /* Roost */
     [DFI_MOVE_ROUND] = DFI_MOVE_FLAG2_SOUND, /* Round */
-    [DFI_MOVE_SACREDSWORD] = 0u, /* Sacred Sword */
+    [DFI_MOVE_SACREDSWORD] = DFI_MOVE_FLAG2_SLICING, /* Sacred Sword */
     [DFI_MOVE_SAFEGUARD] = 0u, /* Safeguard */
     [DFI_MOVE_SALTCURE] = 0u, /* Salt Cure */
     [DFI_MOVE_SANDSTORM] = 0u, /* Sandstorm */
@@ -4475,7 +4475,7 @@ const uint8_t dfi_pool_move_flags2[DFI_POOL_MOVE_COUNT] = {
     [DFI_MOVE_SEEDBOMB] = 0u, /* Seed Bomb */
     [DFI_MOVE_SEISMICTOSS] = 0u, /* Seismic Toss */
     [DFI_MOVE_SELFDESTRUCT] = 0u, /* Self-Destruct */
-    [DFI_MOVE_SHADOWPUNCH] = 0u, /* Shadow Punch */
+    [DFI_MOVE_SHADOWPUNCH] = DFI_MOVE_FLAG2_PUNCH, /* Shadow Punch */
     [DFI_MOVE_SHEDTAIL] = 0u, /* Shed Tail */
     [DFI_MOVE_SHEERCOLD] = 0u, /* Sheer Cold */
     [DFI_MOVE_SHELLSIDEARM] = 0u, /* Shell Side Arm */
@@ -4488,8 +4488,8 @@ const uint8_t dfi_pool_move_flags2[DFI_POOL_MOVE_COUNT] = {
     [DFI_MOVE_SKITTERSMACK] = 0u, /* Skitter Smack */
     [DFI_MOVE_SKYATTACK] = 0u, /* Sky Attack */
     [DFI_MOVE_SLACKOFF] = DFI_MOVE_FLAG2_HEAL, /* Slack Off */
-    [DFI_MOVE_SLASH] = 0u, /* Slash */
-    [DFI_MOVE_SLEEPPOWDER] = 0u, /* Sleep Powder */
+    [DFI_MOVE_SLASH] = DFI_MOVE_FLAG2_SLICING, /* Slash */
+    [DFI_MOVE_SLEEPPOWDER] = DFI_MOVE_FLAG2_POWDER, /* Sleep Powder */
     [DFI_MOVE_SLEEPTALK] = 0u, /* Sleep Talk */
     [DFI_MOVE_SLUDGEBOMB] = 0u, /* Sludge Bomb */
     [DFI_MOVE_SLUDGEWAVE] = 0u, /* Sludge Wave */
@@ -4500,7 +4500,7 @@ const uint8_t dfi_pool_move_flags2[DFI_POOL_MOVE_COUNT] = {
     [DFI_MOVE_SNORE] = DFI_MOVE_FLAG2_SOUND, /* Snore */
     [DFI_MOVE_SNOWSCAPE] = 0u, /* Snowscape */
     [DFI_MOVE_SOLARBEAM] = 0u, /* Solar Beam */
-    [DFI_MOVE_SOLARBLADE] = 0u, /* Solar Blade */
+    [DFI_MOVE_SOLARBLADE] = DFI_MOVE_FLAG2_SLICING, /* Solar Blade */
     [DFI_MOVE_SPARKLINGARIA] = DFI_MOVE_FLAG2_SOUND, /* Sparkling Aria */
     [DFI_MOVE_SPEEDSWAP] = 0u, /* Speed Swap */
     [DFI_MOVE_SPICYEXTRACT] = 0u, /* Spicy Extract */
@@ -4516,7 +4516,7 @@ const uint8_t dfi_pool_move_flags2[DFI_POOL_MOVE_COUNT] = {
     [DFI_MOVE_STICKYWEB] = 0u, /* Sticky Web */
     [DFI_MOVE_STOCKPILE] = 0u, /* Stockpile */
     [DFI_MOVE_STOMPINGTANTRUM] = 0u, /* Stomping Tantrum */
-    [DFI_MOVE_STONEAXE] = 0u, /* Stone Axe */
+    [DFI_MOVE_STONEAXE] = DFI_MOVE_FLAG2_SLICING, /* Stone Axe */
     [DFI_MOVE_STONEEDGE] = 0u, /* Stone Edge */
     [DFI_MOVE_STOREDPOWER] = 0u, /* Stored Power */
     [DFI_MOVE_STORMTHROW] = 0u, /* Storm Throw */
@@ -4524,7 +4524,7 @@ const uint8_t dfi_pool_move_flags2[DFI_POOL_MOVE_COUNT] = {
     [DFI_MOVE_STRINGSHOT] = 0u, /* String Shot */
     [DFI_MOVE_STRUGGLEBUG] = 0u, /* Struggle Bug */
     [DFI_MOVE_STUFFCHEEKS] = 0u, /* Stuff Cheeks */
-    [DFI_MOVE_STUNSPORE] = 0u, /* Stun Spore */
+    [DFI_MOVE_STUNSPORE] = DFI_MOVE_FLAG2_POWDER, /* Stun Spore */
     [DFI_MOVE_SUBSTITUTE] = 0u, /* Substitute */
     [DFI_MOVE_SUNNYDAY] = 0u, /* Sunny Day */
     [DFI_MOVE_SUPERCELLSLAM] = 0u, /* Supercell Slam */
@@ -4549,7 +4549,7 @@ const uint8_t dfi_pool_move_flags2[DFI_POOL_MOVE_COUNT] = {
     [DFI_MOVE_THRASH] = 0u, /* Thrash */
     [DFI_MOVE_THUNDER] = 0u, /* Thunder */
     [DFI_MOVE_THUNDERFANG] = 0u, /* Thunder Fang */
-    [DFI_MOVE_THUNDERPUNCH] = 0u, /* Thunder Punch */
+    [DFI_MOVE_THUNDERPUNCH] = DFI_MOVE_FLAG2_PUNCH, /* Thunder Punch */
     [DFI_MOVE_THUNDERWAVE] = 0u, /* Thunder Wave */
     [DFI_MOVE_TICKLE] = 0u, /* Tickle */
     [DFI_MOVE_TIDYUP] = 0u, /* Tidy Up */
@@ -4586,7 +4586,7 @@ const uint8_t dfi_pool_move_flags2[DFI_POOL_MOVE_COUNT] = {
     [DFI_MOVE_WONDERROOM] = 0u, /* Wonder Room */
     [DFI_MOVE_WORRYSEED] = 0u, /* Worry Seed */
     [DFI_MOVE_WRAP] = 0u, /* Wrap */
-    [DFI_MOVE_XSCISSOR] = 0u, /* X-Scissor */
+    [DFI_MOVE_XSCISSOR] = DFI_MOVE_FLAG2_SLICING, /* X-Scissor */
     [DFI_MOVE_YAWN] = 0u, /* Yawn */
     [DFI_MOVE_ZENHEADBUTT] = 0u, /* Zen Headbutt */
     [DFI_MOVE_ZINGZAP] = 0u, /* Zing Zap */
@@ -4595,7 +4595,778 @@ const uint8_t dfi_pool_move_flags2[DFI_POOL_MOVE_COUNT] = {
 /* The heal fraction of the moves that heal by one (step G10): numerator, denominator. */
 const uint8_t dfi_pool_move_heal[DFI_POOL_MOVE_COUNT][2] = {
     [DFI_MOVE_RECOVER] = {1u, 2u}, /* Recover */
+    [DFI_MOVE_LIFEDEW] = {1u, 4u}, /* Life Dew */
     [DFI_MOVE_SLACKOFF] = {1u, 2u}, /* Slack Off */
+};
+
+/* The static flags of every move (decision 0020): the public bit set, see duoforge.h. */
+const uint32_t dfi_pool_move_static_flags[DFI_POOL_MOVE_COUNT] = {
+    [DFI_MOVE_WOODHAMMER] = 0x1u, /* Wood Hammer */
+    [DFI_MOVE_GRASSYGLIDE] = 0x1u, /* Grassy Glide */
+    [DFI_MOVE_FAKEOUT] = 0x1u, /* Fake Out */
+    [DFI_MOVE_HIGHHORSEPOWER] = 0x1u, /* High Horsepower */
+    [DFI_MOVE_BRAVEBIRD] = 0x1u, /* Brave Bird */
+    [DFI_MOVE_CLOSECOMBAT] = 0x1u, /* Close Combat */
+    [DFI_MOVE_TAILWIND] = 0x80u, /* Tailwind */
+    [DFI_MOVE_BITTERBLADE] = 0x41u, /* Bitter Blade */
+    [DFI_MOVE_SHADOWSNEAK] = 0x1u, /* Shadow Sneak */
+    [DFI_MOVE_SWORDSDANCE] = 0x100u, /* Swords Dance */
+    [DFI_MOVE_ZAPCANNON] = 0x10u, /* Zap Cannon */
+    [DFI_MOVE_FOCUSBLAST] = 0x10u, /* Focus Blast */
+    [DFI_MOVE_SHADOWBALL] = 0x10u, /* Shadow Ball */
+    [DFI_MOVE_WEATHERBALL] = 0x10u, /* Weather Ball */
+    [DFI_MOVE_LEECHLIFE] = 0x1u, /* Leech Life */
+    [DFI_MOVE_IRONHEAD] = 0x1u, /* Iron Head */
+    [DFI_MOVE_DRILLRUN] = 0x1u, /* Drill Run */
+    [DFI_MOVE_DRAGONPULSE] = 0x20u, /* Dragon Pulse */
+    [DFI_MOVE_SNARL] = 0x2u, /* Snarl */
+    [DFI_MOVE_GRASSKNOT] = 0x401u, /* Grass Knot */
+    [DFI_MOVE_HEATWAVE] = 0x80u, /* Heat Wave */
+    [DFI_MOVE_HURRICANE] = 0x80u, /* Hurricane */
+    [DFI_MOVE_SPIRITBREAK] = 0x1u, /* Spirit Break */
+    [DFI_MOVE_PARTINGSHOT] = 0x2u, /* Parting Shot */
+    [DFI_MOVE_STRUGGLE] = 0x1u, /* Struggle */
+    [DFI_MOVE_DIRECLAW] = 0x41u, /* Dire Claw */
+    [DFI_MOVE_FLAREBLITZ] = 0x1u, /* Flare Blitz */
+    [DFI_MOVE_DARKESTLARIAT] = 0x1u, /* Darkest Lariat */
+    [DFI_MOVE_HYPERVOICE] = 0x2u, /* Hyper Voice */
+    [DFI_MOVE_KOWTOWCLEAVE] = 0x41u, /* Kowtow Cleave */
+    [DFI_MOVE_SUCKERPUNCH] = 0x1u, /* Sucker Punch */
+    [DFI_MOVE_LASTRESPECTS] = 0x400u, /* Last Respects */
+    [DFI_MOVE_WAVECRASH] = 0x1u, /* Wave Crash */
+    [DFI_MOVE_AQUAJET] = 0x1u, /* Aqua Jet */
+    [DFI_MOVE_FLIPTURN] = 0x1u, /* Flip Turn */
+    [DFI_MOVE_UTURN] = 0x1u, /* U-turn */
+    [DFI_MOVE_THROATCHOP] = 0x1u, /* Throat Chop */
+    [DFI_MOVE_DOUBLEEDGE] = 0x1u, /* Double-Edge */
+    [DFI_MOVE_EXTREMESPEED] = 0x1u, /* Extreme Speed */
+    [DFI_MOVE_HEADSMASH] = 0x1u, /* Head Smash */
+    [DFI_MOVE_FIRSTIMPRESSION] = 0x1u, /* First Impression */
+    [DFI_MOVE_LIQUIDATION] = 0x1u, /* Liquidation */
+    [DFI_MOVE_ICEPUNCH] = 0x5u, /* Ice Punch */
+    [DFI_MOVE_SHADOWCLAW] = 0x41u, /* Shadow Claw */
+    [DFI_MOVE_PSYCHICNOISE] = 0x2u, /* Psychic Noise */
+    [DFI_MOVE_LOWKICK] = 0x401u, /* Low Kick */
+    [DFI_MOVE_ACCELEROCK] = 0x1u, /* Accelerock */
+    [DFI_MOVE_ACIDSPRAY] = 0x10u, /* Acid Spray */
+    [DFI_MOVE_ACROBATICS] = 0x401u, /* Acrobatics */
+    [DFI_MOVE_AERIALACE] = 0x41u, /* Aerial Ace */
+    [DFI_MOVE_AIRCUTTER] = 0xc0u, /* Air Cutter */
+    [DFI_MOVE_AIRSLASH] = 0x40u, /* Air Slash */
+    [DFI_MOVE_ALLURINGVOICE] = 0x2u, /* Alluring Voice */
+    [DFI_MOVE_AQUACUTTER] = 0x40u, /* Aqua Cutter */
+    [DFI_MOVE_AQUASTEP] = 0x101u, /* Aqua Step */
+    [DFI_MOVE_AQUATAIL] = 0x1u, /* Aqua Tail */
+    [DFI_MOVE_ASSURANCE] = 0x401u, /* Assurance */
+    [DFI_MOVE_AURASPHERE] = 0x30u, /* Aura Sphere */
+    [DFI_MOVE_AVALANCHE] = 0x401u, /* Avalanche */
+    [DFI_MOVE_AXEKICK] = 0x1u, /* Axe Kick */
+    [DFI_MOVE_BEAKBLAST] = 0x10u, /* Beak Blast */
+    [DFI_MOVE_BEATUP] = 0x400u, /* Beat Up */
+    [DFI_MOVE_BIND] = 0x1u, /* Bind */
+    [DFI_MOVE_BITE] = 0x9u, /* Bite */
+    [DFI_MOVE_BLAZEKICK] = 0x1u, /* Blaze Kick */
+    [DFI_MOVE_BLIZZARD] = 0x80u, /* Blizzard */
+    [DFI_MOVE_BODYPRESS] = 0x1u, /* Body Press */
+    [DFI_MOVE_BODYSLAM] = 0x1u, /* Body Slam */
+    [DFI_MOVE_BOOMBURST] = 0x2u, /* Boomburst */
+    [DFI_MOVE_BOUNCE] = 0x1u, /* Bounce */
+    [DFI_MOVE_BREAKINGSWIPE] = 0x1u, /* Breaking Swipe */
+    [DFI_MOVE_BRICKBREAK] = 0x1u, /* Brick Break */
+    [DFI_MOVE_BRUTALSWING] = 0x1u, /* Brutal Swing */
+    [DFI_MOVE_BUGBITE] = 0x1u, /* Bug Bite */
+    [DFI_MOVE_BUGBUZZ] = 0x2u, /* Bug Buzz */
+    [DFI_MOVE_BULLETPUNCH] = 0x5u, /* Bullet Punch */
+    [DFI_MOVE_BULLETSEED] = 0x10u, /* Bullet Seed */
+    [DFI_MOVE_CEASELESSEDGE] = 0x41u, /* Ceaseless Edge */
+    [DFI_MOVE_CIRCLETHROW] = 0x1u, /* Circle Throw */
+    [DFI_MOVE_CLANGINGSCALES] = 0x2u, /* Clanging Scales */
+    [DFI_MOVE_CLANGOROUSSOUL] = 0x102u, /* Clangorous Soul */
+    [DFI_MOVE_COMEUPPANCE] = 0x1u, /* Comeuppance */
+    [DFI_MOVE_COTTONSPORE] = 0x200u, /* Cotton Spore */
+    [DFI_MOVE_COUNTER] = 0x1u, /* Counter */
+    [DFI_MOVE_COVET] = 0x1u, /* Covet */
+    [DFI_MOVE_CRABHAMMER] = 0x1u, /* Crabhammer */
+    [DFI_MOVE_CROSSCHOP] = 0x1u, /* Cross Chop */
+    [DFI_MOVE_CROSSPOISON] = 0x41u, /* Cross Poison */
+    [DFI_MOVE_CRUNCH] = 0x9u, /* Crunch */
+    [DFI_MOVE_CRUSHCLAW] = 0x41u, /* Crush Claw */
+    [DFI_MOVE_DARKPULSE] = 0x20u, /* Dark Pulse */
+    [DFI_MOVE_DIG] = 0x1u, /* Dig */
+    [DFI_MOVE_DIVE] = 0x1u, /* Dive */
+    [DFI_MOVE_DOUBLEHIT] = 0x1u, /* Double Hit */
+    [DFI_MOVE_DOUBLESHOCK] = 0x5u, /* Double Shock */
+    [DFI_MOVE_DRAGONCHEER] = 0x2u, /* Dragon Cheer */
+    [DFI_MOVE_DRAGONCLAW] = 0x41u, /* Dragon Claw */
+    [DFI_MOVE_DRAGONDANCE] = 0x100u, /* Dragon Dance */
+    [DFI_MOVE_DRAGONRUSH] = 0x1u, /* Dragon Rush */
+    [DFI_MOVE_DRAGONTAIL] = 0x1u, /* Dragon Tail */
+    [DFI_MOVE_DRAININGKISS] = 0x1u, /* Draining Kiss */
+    [DFI_MOVE_DRAINPUNCH] = 0x5u, /* Drain Punch */
+    [DFI_MOVE_DRILLPECK] = 0x1u, /* Drill Peck */
+    [DFI_MOVE_DUALWINGBEAT] = 0x1u, /* Dual Wingbeat */
+    [DFI_MOVE_DYNAMICPUNCH] = 0x5u, /* Dynamic Punch */
+    [DFI_MOVE_EERIESPELL] = 0x2u, /* Eerie Spell */
+    [DFI_MOVE_ELECTROBALL] = 0x410u, /* Electro Ball */
+    [DFI_MOVE_ENDEAVOR] = 0x1u, /* Endeavor */
+    [DFI_MOVE_ENERGYBALL] = 0x10u, /* Energy Ball */
+    [DFI_MOVE_ERUPTION] = 0x400u, /* Eruption */
+    [DFI_MOVE_FACADE] = 0x1u, /* Facade */
+    [DFI_MOVE_FEATHERDANCE] = 0x100u, /* Feather Dance */
+    [DFI_MOVE_FELLSTINGER] = 0x1u, /* Fell Stinger */
+    [DFI_MOVE_FIERYDANCE] = 0x100u, /* Fiery Dance */
+    [DFI_MOVE_FIREFANG] = 0x9u, /* Fire Fang */
+    [DFI_MOVE_FIRELASH] = 0x1u, /* Fire Lash */
+    [DFI_MOVE_FIREPUNCH] = 0x5u, /* Fire Punch */
+    [DFI_MOVE_FLAIL] = 0x401u, /* Flail */
+    [DFI_MOVE_FLAMECHARGE] = 0x1u, /* Flame Charge */
+    [DFI_MOVE_FLY] = 0x1u, /* Fly */
+    [DFI_MOVE_FLYINGPRESS] = 0x1u, /* Flying Press */
+    [DFI_MOVE_FOCUSPUNCH] = 0x5u, /* Focus Punch */
+    [DFI_MOVE_FOULPLAY] = 0x1u, /* Foul Play */
+    [DFI_MOVE_GIGAIMPACT] = 0x1u, /* Giga Impact */
+    [DFI_MOVE_GLAIVERUSH] = 0x1u, /* Glaive Rush */
+    [DFI_MOVE_GUILLOTINE] = 0x1u, /* Guillotine */
+    [DFI_MOVE_GYROBALL] = 0x411u, /* Gyro Ball */
+    [DFI_MOVE_HAMMERARM] = 0x5u, /* Hammer Arm */
+    [DFI_MOVE_HARDPRESS] = 0x401u, /* Hard Press */
+    [DFI_MOVE_HEADLONGRUSH] = 0x5u, /* Headlong Rush */
+    [DFI_MOVE_HEALBELL] = 0x2u, /* Heal Bell */
+    [DFI_MOVE_HEALPULSE] = 0x20u, /* Heal Pulse */
+    [DFI_MOVE_HEATCRASH] = 0x401u, /* Heat Crash */
+    [DFI_MOVE_HEAVYSLAM] = 0x401u, /* Heavy Slam */
+    [DFI_MOVE_HEX] = 0x400u, /* Hex */
+    [DFI_MOVE_HIGHJUMPKICK] = 0x1u, /* High Jump Kick */
+    [DFI_MOVE_HORNDRILL] = 0x1u, /* Horn Drill */
+    [DFI_MOVE_HORNLEECH] = 0x1u, /* Horn Leech */
+    [DFI_MOVE_HOWL] = 0x2u, /* Howl */
+    [DFI_MOVE_ICEFANG] = 0x9u, /* Ice Fang */
+    [DFI_MOVE_ICEHAMMER] = 0x5u, /* Ice Hammer */
+    [DFI_MOVE_ICESPINNER] = 0x1u, /* Ice Spinner */
+    [DFI_MOVE_ICYWIND] = 0x80u, /* Icy Wind */
+    [DFI_MOVE_INFERNALPARADE] = 0x400u, /* Infernal Parade */
+    [DFI_MOVE_INFESTATION] = 0x1u, /* Infestation */
+    [DFI_MOVE_IRONTAIL] = 0x1u, /* Iron Tail */
+    [DFI_MOVE_JAWLOCK] = 0x9u, /* Jaw Lock */
+    [DFI_MOVE_JETPUNCH] = 0x5u, /* Jet Punch */
+    [DFI_MOVE_KNOCKOFF] = 0x1u, /* Knock Off */
+    [DFI_MOVE_LASHOUT] = 0x1u, /* Lash Out */
+    [DFI_MOVE_LASTRESORT] = 0x1u, /* Last Resort */
+    [DFI_MOVE_LEAFBLADE] = 0x41u, /* Leaf Blade */
+    [DFI_MOVE_LOWSWEEP] = 0x1u, /* Low Sweep */
+    [DFI_MOVE_LUNGE] = 0x1u, /* Lunge */
+    [DFI_MOVE_MACHPUNCH] = 0x5u, /* Mach Punch */
+    [DFI_MOVE_MAGICPOWDER] = 0x200u, /* Magic Powder */
+    [DFI_MOVE_MEGAHORN] = 0x1u, /* Megahorn */
+    [DFI_MOVE_MEGAKICK] = 0x1u, /* Mega Kick */
+    [DFI_MOVE_METALSOUND] = 0x2u, /* Metal Sound */
+    [DFI_MOVE_METEORMASH] = 0x5u, /* Meteor Mash */
+    [DFI_MOVE_MORTALSPIN] = 0x1u, /* Mortal Spin */
+    [DFI_MOVE_NIGHTSLASH] = 0x41u, /* Night Slash */
+    [DFI_MOVE_NOBLEROAR] = 0x2u, /* Noble Roar */
+    [DFI_MOVE_NUZZLE] = 0x1u, /* Nuzzle */
+    [DFI_MOVE_OUTRAGE] = 0x1u, /* Outrage */
+    [DFI_MOVE_OVERDRIVE] = 0x2u, /* Overdrive */
+    [DFI_MOVE_PAYBACK] = 0x401u, /* Payback */
+    [DFI_MOVE_PERISHSONG] = 0x2u, /* Perish Song */
+    [DFI_MOVE_PETALBLIZZARD] = 0x80u, /* Petal Blizzard */
+    [DFI_MOVE_PETALDANCE] = 0x101u, /* Petal Dance */
+    [DFI_MOVE_PHANTOMFORCE] = 0x1u, /* Phantom Force */
+    [DFI_MOVE_PLAYROUGH] = 0x1u, /* Play Rough */
+    [DFI_MOVE_PLUCK] = 0x1u, /* Pluck */
+    [DFI_MOVE_POISONFANG] = 0x9u, /* Poison Fang */
+    [DFI_MOVE_POISONJAB] = 0x1u, /* Poison Jab */
+    [DFI_MOVE_POISONPOWDER] = 0x200u, /* Poison Powder */
+    [DFI_MOVE_POLLENPUFF] = 0x10u, /* Pollen Puff */
+    [DFI_MOVE_POPULATIONBOMB] = 0x41u, /* Population Bomb */
+    [DFI_MOVE_POUNCE] = 0x1u, /* Pounce */
+    [DFI_MOVE_POWERTRIP] = 0x401u, /* Power Trip */
+    [DFI_MOVE_POWERWHIP] = 0x1u, /* Power Whip */
+    [DFI_MOVE_PSYCHICFANGS] = 0x9u, /* Psychic Fangs */
+    [DFI_MOVE_PSYCHOCUT] = 0x40u, /* Psycho Cut */
+    [DFI_MOVE_PSYSHIELDBASH] = 0x1u, /* Psyshield Bash */
+    [DFI_MOVE_PYROBALL] = 0x10u, /* Pyro Ball */
+    [DFI_MOVE_QUICKATTACK] = 0x1u, /* Quick Attack */
+    [DFI_MOVE_QUIVERDANCE] = 0x100u, /* Quiver Dance */
+    [DFI_MOVE_RAGEFIST] = 0x405u, /* Rage Fist */
+    [DFI_MOVE_RAGEPOWDER] = 0x200u, /* Rage Powder */
+    [DFI_MOVE_RAGINGBULL] = 0x1u, /* Raging Bull */
+    [DFI_MOVE_RAPIDSPIN] = 0x1u, /* Rapid Spin */
+    [DFI_MOVE_RAZORSHELL] = 0x41u, /* Razor Shell */
+    [DFI_MOVE_REVERSAL] = 0x401u, /* Reversal */
+    [DFI_MOVE_RISINGVOLTAGE] = 0x400u, /* Rising Voltage */
+    [DFI_MOVE_ROAR] = 0x2u, /* Roar */
+    [DFI_MOVE_ROCKBLAST] = 0x10u, /* Rock Blast */
+    [DFI_MOVE_ROCKWRECKER] = 0x10u, /* Rock Wrecker */
+    [DFI_MOVE_ROUND] = 0x402u, /* Round */
+    [DFI_MOVE_SACREDSWORD] = 0x41u, /* Sacred Sword */
+    [DFI_MOVE_SANDSTORM] = 0x80u, /* Sandstorm */
+    [DFI_MOVE_SCREECH] = 0x2u, /* Screech */
+    [DFI_MOVE_SEEDBOMB] = 0x10u, /* Seed Bomb */
+    [DFI_MOVE_SEISMICTOSS] = 0x1u, /* Seismic Toss */
+    [DFI_MOVE_SHADOWPUNCH] = 0x5u, /* Shadow Punch */
+    [DFI_MOVE_SING] = 0x2u, /* Sing */
+    [DFI_MOVE_SKITTERSMACK] = 0x1u, /* Skitter Smack */
+    [DFI_MOVE_SLASH] = 0x41u, /* Slash */
+    [DFI_MOVE_SLEEPPOWDER] = 0x200u, /* Sleep Powder */
+    [DFI_MOVE_SLUDGEBOMB] = 0x10u, /* Sludge Bomb */
+    [DFI_MOVE_SMARTSTRIKE] = 0x1u, /* Smart Strike */
+    [DFI_MOVE_SNAPTRAP] = 0x1u, /* Snap Trap */
+    [DFI_MOVE_SNORE] = 0x2u, /* Snore */
+    [DFI_MOVE_SOLARBLADE] = 0x41u, /* Solar Blade */
+    [DFI_MOVE_SPARKLINGARIA] = 0x2u, /* Sparkling Aria */
+    [DFI_MOVE_SPITUP] = 0x400u, /* Spit Up */
+    [DFI_MOVE_STEELROLLER] = 0x1u, /* Steel Roller */
+    [DFI_MOVE_STEELWING] = 0x1u, /* Steel Wing */
+    [DFI_MOVE_STOMPINGTANTRUM] = 0x401u, /* Stomping Tantrum */
+    [DFI_MOVE_STONEAXE] = 0x41u, /* Stone Axe */
+    [DFI_MOVE_STOREDPOWER] = 0x400u, /* Stored Power */
+    [DFI_MOVE_STORMTHROW] = 0x1u, /* Storm Throw */
+    [DFI_MOVE_STUNSPORE] = 0x200u, /* Stun Spore */
+    [DFI_MOVE_SUPERCELLSLAM] = 0x1u, /* Supercell Slam */
+    [DFI_MOVE_SUPERFANG] = 0x1u, /* Super Fang */
+    [DFI_MOVE_SUPERPOWER] = 0x1u, /* Superpower */
+    [DFI_MOVE_SYRUPBOMB] = 0x10u, /* Syrup Bomb */
+    [DFI_MOVE_TAILSLAP] = 0x1u, /* Tail Slap */
+    [DFI_MOVE_TEETERDANCE] = 0x100u, /* Teeter Dance */
+    [DFI_MOVE_TEMPERFLARE] = 0x401u, /* Temper Flare */
+    [DFI_MOVE_TERRAINPULSE] = 0x20u, /* Terrain Pulse */
+    [DFI_MOVE_THIEF] = 0x1u, /* Thief */
+    [DFI_MOVE_THRASH] = 0x1u, /* Thrash */
+    [DFI_MOVE_THUNDERFANG] = 0x9u, /* Thunder Fang */
+    [DFI_MOVE_THUNDERPUNCH] = 0x5u, /* Thunder Punch */
+    [DFI_MOVE_TORCHSONG] = 0x2u, /* Torch Song */
+    [DFI_MOVE_TRAILBLAZE] = 0x1u, /* Trailblaze */
+    [DFI_MOVE_TRIPLEAXEL] = 0x401u, /* Triple Axel */
+    [DFI_MOVE_TROPKICK] = 0x1u, /* Trop Kick */
+    [DFI_MOVE_UPPERHAND] = 0x1u, /* Upper Hand */
+    [DFI_MOVE_UPROAR] = 0x2u, /* Uproar */
+    [DFI_MOVE_VOLTTACKLE] = 0x1u, /* Volt Tackle */
+    [DFI_MOVE_WATERFALL] = 0x1u, /* Waterfall */
+    [DFI_MOVE_WATERPULSE] = 0x20u, /* Water Pulse */
+    [DFI_MOVE_WATERSHURIKEN] = 0x400u, /* Water Shuriken */
+    [DFI_MOVE_WATERSPOUT] = 0x400u, /* Water Spout */
+    [DFI_MOVE_WHIRLWIND] = 0x80u, /* Whirlwind */
+    [DFI_MOVE_WILDCHARGE] = 0x1u, /* Wild Charge */
+    [DFI_MOVE_WRAP] = 0x1u, /* Wrap */
+    [DFI_MOVE_XSCISSOR] = 0x41u, /* X-Scissor */
+    [DFI_MOVE_ZENHEADBUTT] = 0x1u, /* Zen Headbutt */
+    [DFI_MOVE_ZINGZAP] = 0x1u, /* Zing Zap */
+};
+
+/* The hit counts of every move (decision 0020): minimum and maximum, 1 and 1 for a single hit. */
+const uint8_t dfi_pool_move_static_hits[DFI_POOL_MOVE_COUNT][2] = {
+    [DFI_MOVE_WOODHAMMER] = {1u, 1u}, /* Wood Hammer */
+    [DFI_MOVE_GRASSYGLIDE] = {1u, 1u}, /* Grassy Glide */
+    [DFI_MOVE_FAKEOUT] = {1u, 1u}, /* Fake Out */
+    [DFI_MOVE_HIGHHORSEPOWER] = {1u, 1u}, /* High Horsepower */
+    [DFI_MOVE_BRAVEBIRD] = {1u, 1u}, /* Brave Bird */
+    [DFI_MOVE_CLOSECOMBAT] = {1u, 1u}, /* Close Combat */
+    [DFI_MOVE_TAILWIND] = {1u, 1u}, /* Tailwind */
+    [DFI_MOVE_PROTECT] = {1u, 1u}, /* Protect */
+    [DFI_MOVE_MUDDYWATER] = {1u, 1u}, /* Muddy Water */
+    [DFI_MOVE_COIL] = {1u, 1u}, /* Coil */
+    [DFI_MOVE_ICEBEAM] = {1u, 1u}, /* Ice Beam */
+    [DFI_MOVE_HYPNOSIS] = {1u, 1u}, /* Hypnosis */
+    [DFI_MOVE_BITTERBLADE] = {1u, 1u}, /* Bitter Blade */
+    [DFI_MOVE_SHADOWSNEAK] = {1u, 1u}, /* Shadow Sneak */
+    [DFI_MOVE_SWORDSDANCE] = {1u, 1u}, /* Swords Dance */
+    [DFI_MOVE_ZAPCANNON] = {1u, 1u}, /* Zap Cannon */
+    [DFI_MOVE_FOCUSBLAST] = {1u, 1u}, /* Focus Blast */
+    [DFI_MOVE_MAKEITRAIN] = {1u, 1u}, /* Make It Rain */
+    [DFI_MOVE_SHADOWBALL] = {1u, 1u}, /* Shadow Ball */
+    [DFI_MOVE_NASTYPLOT] = {1u, 1u}, /* Nasty Plot */
+    [DFI_MOVE_WEATHERBALL] = {1u, 1u}, /* Weather Ball */
+    [DFI_MOVE_LEECHLIFE] = {1u, 1u}, /* Leech Life */
+    [DFI_MOVE_IRONHEAD] = {1u, 1u}, /* Iron Head */
+    [DFI_MOVE_DRILLRUN] = {1u, 1u}, /* Drill Run */
+    [DFI_MOVE_DRAGONPULSE] = {1u, 1u}, /* Dragon Pulse */
+    [DFI_MOVE_ELECTROSHOT] = {1u, 1u}, /* Electro Shot */
+    [DFI_MOVE_SNARL] = {1u, 1u}, /* Snarl */
+    [DFI_MOVE_PSYCHIC] = {1u, 1u}, /* Psychic */
+    [DFI_MOVE_GRASSKNOT] = {1u, 1u}, /* Grass Knot */
+    [DFI_MOVE_TRICKROOM] = {1u, 1u}, /* Trick Room */
+    [DFI_MOVE_HEATWAVE] = {1u, 1u}, /* Heat Wave */
+    [DFI_MOVE_HURRICANE] = {1u, 1u}, /* Hurricane */
+    [DFI_MOVE_SPIRITBREAK] = {1u, 1u}, /* Spirit Break */
+    [DFI_MOVE_REFLECT] = {1u, 1u}, /* Reflect */
+    [DFI_MOVE_LIGHTSCREEN] = {1u, 1u}, /* Light Screen */
+    [DFI_MOVE_PARTINGSHOT] = {1u, 1u}, /* Parting Shot */
+    [DFI_MOVE_STRUGGLE] = {1u, 1u}, /* Struggle */
+    [DFI_MOVE_DIRECLAW] = {1u, 1u}, /* Dire Claw */
+    [DFI_MOVE_FLAREBLITZ] = {1u, 1u}, /* Flare Blitz */
+    [DFI_MOVE_DARKESTLARIAT] = {1u, 1u}, /* Darkest Lariat */
+    [DFI_MOVE_HYPERVOICE] = {1u, 1u}, /* Hyper Voice */
+    [DFI_MOVE_DRACOMETEOR] = {1u, 1u}, /* Draco Meteor */
+    [DFI_MOVE_FOLLOWME] = {1u, 1u}, /* Follow Me */
+    [DFI_MOVE_HELPINGHAND] = {1u, 1u}, /* Helping Hand */
+    [DFI_MOVE_KOWTOWCLEAVE] = {1u, 1u}, /* Kowtow Cleave */
+    [DFI_MOVE_SUCKERPUNCH] = {1u, 1u}, /* Sucker Punch */
+    [DFI_MOVE_LASTRESPECTS] = {1u, 1u}, /* Last Respects */
+    [DFI_MOVE_WAVECRASH] = {1u, 1u}, /* Wave Crash */
+    [DFI_MOVE_AQUAJET] = {1u, 1u}, /* Aqua Jet */
+    [DFI_MOVE_FLIPTURN] = {1u, 1u}, /* Flip Turn */
+    [DFI_MOVE_UTURN] = {1u, 1u}, /* U-turn */
+    [DFI_MOVE_ROCKSLIDE] = {1u, 1u}, /* Rock Slide */
+    [DFI_MOVE_THROATCHOP] = {1u, 1u}, /* Throat Chop */
+    [DFI_MOVE_ENCORE] = {1u, 1u}, /* Encore */
+    [DFI_MOVE_DOUBLEEDGE] = {1u, 1u}, /* Double-Edge */
+    [DFI_MOVE_THUNDERBOLT] = {1u, 1u}, /* Thunderbolt */
+    [DFI_MOVE_SCALD] = {1u, 1u}, /* Scald */
+    [DFI_MOVE_WIDEGUARD] = {1u, 1u}, /* Wide Guard */
+    [DFI_MOVE_FLASHCANNON] = {1u, 1u}, /* Flash Cannon */
+    [DFI_MOVE_EXTREMESPEED] = {1u, 1u}, /* Extreme Speed */
+    [DFI_MOVE_HEADSMASH] = {1u, 1u}, /* Head Smash */
+    [DFI_MOVE_FIRSTIMPRESSION] = {1u, 1u}, /* First Impression */
+    [DFI_MOVE_BULKUP] = {1u, 1u}, /* Bulk Up */
+    [DFI_MOVE_LIQUIDATION] = {1u, 1u}, /* Liquidation */
+    [DFI_MOVE_ICEPUNCH] = {1u, 1u}, /* Ice Punch */
+    [DFI_MOVE_SHADOWCLAW] = {1u, 1u}, /* Shadow Claw */
+    [DFI_MOVE_RECOVER] = {1u, 1u}, /* Recover */
+    [DFI_MOVE_SOAK] = {1u, 1u}, /* Soak */
+    [DFI_MOVE_PSYCHICNOISE] = {1u, 1u}, /* Psychic Noise */
+    [DFI_MOVE_DRUMBEATING] = {1u, 1u}, /* Drum Beating */
+    [DFI_MOVE_LOWKICK] = {1u, 1u}, /* Low Kick */
+    [DFI_MOVE_DAZZLINGGLEAM] = {1u, 1u}, /* Dazzling Gleam */
+    [DFI_MOVE_ACCELEROCK] = {1u, 1u}, /* Accelerock */
+    [DFI_MOVE_ACIDARMOR] = {1u, 1u}, /* Acid Armor */
+    [DFI_MOVE_ACIDSPRAY] = {1u, 1u}, /* Acid Spray */
+    [DFI_MOVE_ACROBATICS] = {1u, 1u}, /* Acrobatics */
+    [DFI_MOVE_ACUPRESSURE] = {1u, 1u}, /* Acupressure */
+    [DFI_MOVE_AERIALACE] = {1u, 1u}, /* Aerial Ace */
+    [DFI_MOVE_AFTERYOU] = {1u, 1u}, /* After You */
+    [DFI_MOVE_AGILITY] = {1u, 1u}, /* Agility */
+    [DFI_MOVE_AIRCUTTER] = {1u, 1u}, /* Air Cutter */
+    [DFI_MOVE_AIRSLASH] = {1u, 1u}, /* Air Slash */
+    [DFI_MOVE_ALLURINGVOICE] = {1u, 1u}, /* Alluring Voice */
+    [DFI_MOVE_ALLYSWITCH] = {1u, 1u}, /* Ally Switch */
+    [DFI_MOVE_AMNESIA] = {1u, 1u}, /* Amnesia */
+    [DFI_MOVE_ANCIENTPOWER] = {1u, 1u}, /* Ancient Power */
+    [DFI_MOVE_APPLEACID] = {1u, 1u}, /* Apple Acid */
+    [DFI_MOVE_AQUACUTTER] = {1u, 1u}, /* Aqua Cutter */
+    [DFI_MOVE_AQUARING] = {1u, 1u}, /* Aqua Ring */
+    [DFI_MOVE_AQUASTEP] = {1u, 1u}, /* Aqua Step */
+    [DFI_MOVE_AQUATAIL] = {1u, 1u}, /* Aqua Tail */
+    [DFI_MOVE_ARMORCANNON] = {1u, 1u}, /* Armor Cannon */
+    [DFI_MOVE_AROMATICMIST] = {1u, 1u}, /* Aromatic Mist */
+    [DFI_MOVE_ASSURANCE] = {1u, 1u}, /* Assurance */
+    [DFI_MOVE_ATTRACT] = {1u, 1u}, /* Attract */
+    [DFI_MOVE_AURASPHERE] = {1u, 1u}, /* Aura Sphere */
+    [DFI_MOVE_AURAWHEEL] = {1u, 1u}, /* Aura Wheel */
+    [DFI_MOVE_AURORAVEIL] = {1u, 1u}, /* Aurora Veil */
+    [DFI_MOVE_AVALANCHE] = {1u, 1u}, /* Avalanche */
+    [DFI_MOVE_AXEKICK] = {1u, 1u}, /* Axe Kick */
+    [DFI_MOVE_BABYDOLLEYES] = {1u, 1u}, /* Baby-Doll Eyes */
+    [DFI_MOVE_BANEFULBUNKER] = {1u, 1u}, /* Baneful Bunker */
+    [DFI_MOVE_BARBBARRAGE] = {1u, 1u}, /* Barb Barrage */
+    [DFI_MOVE_BATONPASS] = {1u, 1u}, /* Baton Pass */
+    [DFI_MOVE_BEAKBLAST] = {1u, 1u}, /* Beak Blast */
+    [DFI_MOVE_BEATUP] = {1u, 1u}, /* Beat Up */
+    [DFI_MOVE_BELCH] = {1u, 1u}, /* Belch */
+    [DFI_MOVE_BELLYDRUM] = {1u, 1u}, /* Belly Drum */
+    [DFI_MOVE_BIND] = {1u, 1u}, /* Bind */
+    [DFI_MOVE_BITE] = {1u, 1u}, /* Bite */
+    [DFI_MOVE_BITTERMALICE] = {1u, 1u}, /* Bitter Malice */
+    [DFI_MOVE_BLASTBURN] = {1u, 1u}, /* Blast Burn */
+    [DFI_MOVE_BLAZEKICK] = {1u, 1u}, /* Blaze Kick */
+    [DFI_MOVE_BLIZZARD] = {1u, 1u}, /* Blizzard */
+    [DFI_MOVE_BLOCK] = {1u, 1u}, /* Block */
+    [DFI_MOVE_BODYPRESS] = {1u, 1u}, /* Body Press */
+    [DFI_MOVE_BODYSLAM] = {1u, 1u}, /* Body Slam */
+    [DFI_MOVE_BONERUSH] = {2u, 5u}, /* Bone Rush */
+    [DFI_MOVE_BOOMBURST] = {1u, 1u}, /* Boomburst */
+    [DFI_MOVE_BOUNCE] = {1u, 1u}, /* Bounce */
+    [DFI_MOVE_BREAKINGSWIPE] = {1u, 1u}, /* Breaking Swipe */
+    [DFI_MOVE_BRICKBREAK] = {1u, 1u}, /* Brick Break */
+    [DFI_MOVE_BRUTALSWING] = {1u, 1u}, /* Brutal Swing */
+    [DFI_MOVE_BUGBITE] = {1u, 1u}, /* Bug Bite */
+    [DFI_MOVE_BUGBUZZ] = {1u, 1u}, /* Bug Buzz */
+    [DFI_MOVE_BULLDOZE] = {1u, 1u}, /* Bulldoze */
+    [DFI_MOVE_BULLETPUNCH] = {1u, 1u}, /* Bullet Punch */
+    [DFI_MOVE_BULLETSEED] = {2u, 5u}, /* Bullet Seed */
+    [DFI_MOVE_BURNINGJEALOUSY] = {1u, 1u}, /* Burning Jealousy */
+    [DFI_MOVE_BURNUP] = {1u, 1u}, /* Burn Up */
+    [DFI_MOVE_CALMMIND] = {1u, 1u}, /* Calm Mind */
+    [DFI_MOVE_CEASELESSEDGE] = {1u, 1u}, /* Ceaseless Edge */
+    [DFI_MOVE_CHARGE] = {1u, 1u}, /* Charge */
+    [DFI_MOVE_CHARGEBEAM] = {1u, 1u}, /* Charge Beam */
+    [DFI_MOVE_CHARM] = {1u, 1u}, /* Charm */
+    [DFI_MOVE_CHILLINGWATER] = {1u, 1u}, /* Chilling Water */
+    [DFI_MOVE_CHILLYRECEPTION] = {1u, 1u}, /* Chilly Reception */
+    [DFI_MOVE_CIRCLETHROW] = {1u, 1u}, /* Circle Throw */
+    [DFI_MOVE_CLANGINGSCALES] = {1u, 1u}, /* Clanging Scales */
+    [DFI_MOVE_CLANGOROUSSOUL] = {1u, 1u}, /* Clangorous Soul */
+    [DFI_MOVE_CLEARSMOG] = {1u, 1u}, /* Clear Smog */
+    [DFI_MOVE_COACHING] = {1u, 1u}, /* Coaching */
+    [DFI_MOVE_COMEUPPANCE] = {1u, 1u}, /* Comeuppance */
+    [DFI_MOVE_CONFUSERAY] = {1u, 1u}, /* Confuse Ray */
+    [DFI_MOVE_COPYCAT] = {1u, 1u}, /* Copycat */
+    [DFI_MOVE_CORROSIVEGAS] = {1u, 1u}, /* Corrosive Gas */
+    [DFI_MOVE_COSMICPOWER] = {1u, 1u}, /* Cosmic Power */
+    [DFI_MOVE_COTTONGUARD] = {1u, 1u}, /* Cotton Guard */
+    [DFI_MOVE_COTTONSPORE] = {1u, 1u}, /* Cotton Spore */
+    [DFI_MOVE_COUNTER] = {1u, 1u}, /* Counter */
+    [DFI_MOVE_COURTCHANGE] = {1u, 1u}, /* Court Change */
+    [DFI_MOVE_COVET] = {1u, 1u}, /* Covet */
+    [DFI_MOVE_CRABHAMMER] = {1u, 1u}, /* Crabhammer */
+    [DFI_MOVE_CROSSCHOP] = {1u, 1u}, /* Cross Chop */
+    [DFI_MOVE_CROSSPOISON] = {1u, 1u}, /* Cross Poison */
+    [DFI_MOVE_CRUNCH] = {1u, 1u}, /* Crunch */
+    [DFI_MOVE_CRUSHCLAW] = {1u, 1u}, /* Crush Claw */
+    [DFI_MOVE_CURSE] = {1u, 1u}, /* Curse */
+    [DFI_MOVE_DARKPULSE] = {1u, 1u}, /* Dark Pulse */
+    [DFI_MOVE_DECORATE] = {1u, 1u}, /* Decorate */
+    [DFI_MOVE_DEFOG] = {1u, 1u}, /* Defog */
+    [DFI_MOVE_DESTINYBOND] = {1u, 1u}, /* Destiny Bond */
+    [DFI_MOVE_DETECT] = {1u, 1u}, /* Detect */
+    [DFI_MOVE_DIG] = {1u, 1u}, /* Dig */
+    [DFI_MOVE_DISABLE] = {1u, 1u}, /* Disable */
+    [DFI_MOVE_DISCHARGE] = {1u, 1u}, /* Discharge */
+    [DFI_MOVE_DIVE] = {1u, 1u}, /* Dive */
+    [DFI_MOVE_DOUBLEHIT] = {2u, 2u}, /* Double Hit */
+    [DFI_MOVE_DOUBLESHOCK] = {1u, 1u}, /* Double Shock */
+    [DFI_MOVE_DOUBLETEAM] = {1u, 1u}, /* Double Team */
+    [DFI_MOVE_DRAGONCHEER] = {1u, 1u}, /* Dragon Cheer */
+    [DFI_MOVE_DRAGONCLAW] = {1u, 1u}, /* Dragon Claw */
+    [DFI_MOVE_DRAGONDANCE] = {1u, 1u}, /* Dragon Dance */
+    [DFI_MOVE_DRAGONDARTS] = {2u, 2u}, /* Dragon Darts */
+    [DFI_MOVE_DRAGONRUSH] = {1u, 1u}, /* Dragon Rush */
+    [DFI_MOVE_DRAGONTAIL] = {1u, 1u}, /* Dragon Tail */
+    [DFI_MOVE_DRAININGKISS] = {1u, 1u}, /* Draining Kiss */
+    [DFI_MOVE_DRAINPUNCH] = {1u, 1u}, /* Drain Punch */
+    [DFI_MOVE_DRILLPECK] = {1u, 1u}, /* Drill Peck */
+    [DFI_MOVE_DUALWINGBEAT] = {2u, 2u}, /* Dual Wingbeat */
+    [DFI_MOVE_DYNAMICPUNCH] = {1u, 1u}, /* Dynamic Punch */
+    [DFI_MOVE_EARTHPOWER] = {1u, 1u}, /* Earth Power */
+    [DFI_MOVE_EARTHQUAKE] = {1u, 1u}, /* Earthquake */
+    [DFI_MOVE_EERIEIMPULSE] = {1u, 1u}, /* Eerie Impulse */
+    [DFI_MOVE_EERIESPELL] = {1u, 1u}, /* Eerie Spell */
+    [DFI_MOVE_ELECTRICTERRAIN] = {1u, 1u}, /* Electric Terrain */
+    [DFI_MOVE_ELECTRIFY] = {1u, 1u}, /* Electrify */
+    [DFI_MOVE_ELECTROBALL] = {1u, 1u}, /* Electro Ball */
+    [DFI_MOVE_ELECTROWEB] = {1u, 1u}, /* Electroweb */
+    [DFI_MOVE_ENDEAVOR] = {1u, 1u}, /* Endeavor */
+    [DFI_MOVE_ENDURE] = {1u, 1u}, /* Endure */
+    [DFI_MOVE_ENERGYBALL] = {1u, 1u}, /* Energy Ball */
+    [DFI_MOVE_ENTRAINMENT] = {1u, 1u}, /* Entrainment */
+    [DFI_MOVE_ERUPTION] = {1u, 1u}, /* Eruption */
+    [DFI_MOVE_EXPANDINGFORCE] = {1u, 1u}, /* Expanding Force */
+    [DFI_MOVE_EXPLOSION] = {1u, 1u}, /* Explosion */
+    [DFI_MOVE_EXTRASENSORY] = {1u, 1u}, /* Extrasensory */
+    [DFI_MOVE_FACADE] = {1u, 1u}, /* Facade */
+    [DFI_MOVE_FAIRYLOCK] = {1u, 1u}, /* Fairy Lock */
+    [DFI_MOVE_FAKETEARS] = {1u, 1u}, /* Fake Tears */
+    [DFI_MOVE_FEATHERDANCE] = {1u, 1u}, /* Feather Dance */
+    [DFI_MOVE_FEINT] = {1u, 1u}, /* Feint */
+    [DFI_MOVE_FELLSTINGER] = {1u, 1u}, /* Fell Stinger */
+    [DFI_MOVE_FICKLEBEAM] = {1u, 1u}, /* Fickle Beam */
+    [DFI_MOVE_FIERYDANCE] = {1u, 1u}, /* Fiery Dance */
+    [DFI_MOVE_FINALGAMBIT] = {1u, 1u}, /* Final Gambit */
+    [DFI_MOVE_FIREBLAST] = {1u, 1u}, /* Fire Blast */
+    [DFI_MOVE_FIREFANG] = {1u, 1u}, /* Fire Fang */
+    [DFI_MOVE_FIRELASH] = {1u, 1u}, /* Fire Lash */
+    [DFI_MOVE_FIREPUNCH] = {1u, 1u}, /* Fire Punch */
+    [DFI_MOVE_FIRESPIN] = {1u, 1u}, /* Fire Spin */
+    [DFI_MOVE_FISSURE] = {1u, 1u}, /* Fissure */
+    [DFI_MOVE_FLAIL] = {1u, 1u}, /* Flail */
+    [DFI_MOVE_FLAMECHARGE] = {1u, 1u}, /* Flame Charge */
+    [DFI_MOVE_FLAMETHROWER] = {1u, 1u}, /* Flamethrower */
+    [DFI_MOVE_FLATTER] = {1u, 1u}, /* Flatter */
+    [DFI_MOVE_FLING] = {1u, 1u}, /* Fling */
+    [DFI_MOVE_FLOWERTRICK] = {1u, 1u}, /* Flower Trick */
+    [DFI_MOVE_FLY] = {1u, 1u}, /* Fly */
+    [DFI_MOVE_FLYINGPRESS] = {1u, 1u}, /* Flying Press */
+    [DFI_MOVE_FOCUSENERGY] = {1u, 1u}, /* Focus Energy */
+    [DFI_MOVE_FOCUSPUNCH] = {1u, 1u}, /* Focus Punch */
+    [DFI_MOVE_FORESTSCURSE] = {1u, 1u}, /* Forest's Curse */
+    [DFI_MOVE_FOULPLAY] = {1u, 1u}, /* Foul Play */
+    [DFI_MOVE_FREEZEDRY] = {1u, 1u}, /* Freeze-Dry */
+    [DFI_MOVE_FRENZYPLANT] = {1u, 1u}, /* Frenzy Plant */
+    [DFI_MOVE_FROSTBREATH] = {1u, 1u}, /* Frost Breath */
+    [DFI_MOVE_FUTURESIGHT] = {1u, 1u}, /* Future Sight */
+    [DFI_MOVE_GASTROACID] = {1u, 1u}, /* Gastro Acid */
+    [DFI_MOVE_GIGADRAIN] = {1u, 1u}, /* Giga Drain */
+    [DFI_MOVE_GIGAIMPACT] = {1u, 1u}, /* Giga Impact */
+    [DFI_MOVE_GIGATONHAMMER] = {1u, 1u}, /* Gigaton Hammer */
+    [DFI_MOVE_GLAIVERUSH] = {1u, 1u}, /* Glaive Rush */
+    [DFI_MOVE_GLARE] = {1u, 1u}, /* Glare */
+    [DFI_MOVE_GRASSYTERRAIN] = {1u, 1u}, /* Grassy Terrain */
+    [DFI_MOVE_GRAVAPPLE] = {1u, 1u}, /* Grav Apple */
+    [DFI_MOVE_GRAVITY] = {1u, 1u}, /* Gravity */
+    [DFI_MOVE_GROWTH] = {1u, 1u}, /* Growth */
+    [DFI_MOVE_GUARDSPLIT] = {1u, 1u}, /* Guard Split */
+    [DFI_MOVE_GUARDSWAP] = {1u, 1u}, /* Guard Swap */
+    [DFI_MOVE_GUILLOTINE] = {1u, 1u}, /* Guillotine */
+    [DFI_MOVE_GUNKSHOT] = {1u, 1u}, /* Gunk Shot */
+    [DFI_MOVE_GYROBALL] = {1u, 1u}, /* Gyro Ball */
+    [DFI_MOVE_HAMMERARM] = {1u, 1u}, /* Hammer Arm */
+    [DFI_MOVE_HARDPRESS] = {1u, 1u}, /* Hard Press */
+    [DFI_MOVE_HAZE] = {1u, 1u}, /* Haze */
+    [DFI_MOVE_HEADLONGRUSH] = {1u, 1u}, /* Headlong Rush */
+    [DFI_MOVE_HEALBELL] = {1u, 1u}, /* Heal Bell */
+    [DFI_MOVE_HEALINGWISH] = {1u, 1u}, /* Healing Wish */
+    [DFI_MOVE_HEALPULSE] = {1u, 1u}, /* Heal Pulse */
+    [DFI_MOVE_HEATCRASH] = {1u, 1u}, /* Heat Crash */
+    [DFI_MOVE_HEAVYSLAM] = {1u, 1u}, /* Heavy Slam */
+    [DFI_MOVE_HEX] = {1u, 1u}, /* Hex */
+    [DFI_MOVE_HIGHJUMPKICK] = {1u, 1u}, /* High Jump Kick */
+    [DFI_MOVE_HORNDRILL] = {1u, 1u}, /* Horn Drill */
+    [DFI_MOVE_HORNLEECH] = {1u, 1u}, /* Horn Leech */
+    [DFI_MOVE_HOWL] = {1u, 1u}, /* Howl */
+    [DFI_MOVE_HYDROCANNON] = {1u, 1u}, /* Hydro Cannon */
+    [DFI_MOVE_HYDROPUMP] = {1u, 1u}, /* Hydro Pump */
+    [DFI_MOVE_HYPERBEAM] = {1u, 1u}, /* Hyper Beam */
+    [DFI_MOVE_ICEFANG] = {1u, 1u}, /* Ice Fang */
+    [DFI_MOVE_ICEHAMMER] = {1u, 1u}, /* Ice Hammer */
+    [DFI_MOVE_ICESHARD] = {1u, 1u}, /* Ice Shard */
+    [DFI_MOVE_ICESPINNER] = {1u, 1u}, /* Ice Spinner */
+    [DFI_MOVE_ICICLECRASH] = {1u, 1u}, /* Icicle Crash */
+    [DFI_MOVE_ICICLESPEAR] = {2u, 5u}, /* Icicle Spear */
+    [DFI_MOVE_ICYWIND] = {1u, 1u}, /* Icy Wind */
+    [DFI_MOVE_IMPRISON] = {1u, 1u}, /* Imprison */
+    [DFI_MOVE_INFERNALPARADE] = {1u, 1u}, /* Infernal Parade */
+    [DFI_MOVE_INFERNO] = {1u, 1u}, /* Inferno */
+    [DFI_MOVE_INFESTATION] = {1u, 1u}, /* Infestation */
+    [DFI_MOVE_INGRAIN] = {1u, 1u}, /* Ingrain */
+    [DFI_MOVE_INSTRUCT] = {1u, 1u}, /* Instruct */
+    [DFI_MOVE_IRONDEFENSE] = {1u, 1u}, /* Iron Defense */
+    [DFI_MOVE_IRONTAIL] = {1u, 1u}, /* Iron Tail */
+    [DFI_MOVE_JAWLOCK] = {1u, 1u}, /* Jaw Lock */
+    [DFI_MOVE_JETPUNCH] = {1u, 1u}, /* Jet Punch */
+    [DFI_MOVE_KINGSSHIELD] = {1u, 1u}, /* King's Shield */
+    [DFI_MOVE_KNOCKOFF] = {1u, 1u}, /* Knock Off */
+    [DFI_MOVE_LASHOUT] = {1u, 1u}, /* Lash Out */
+    [DFI_MOVE_LASTRESORT] = {1u, 1u}, /* Last Resort */
+    [DFI_MOVE_LAVAPLUME] = {1u, 1u}, /* Lava Plume */
+    [DFI_MOVE_LEAFBLADE] = {1u, 1u}, /* Leaf Blade */
+    [DFI_MOVE_LEAFSTORM] = {1u, 1u}, /* Leaf Storm */
+    [DFI_MOVE_LEECHSEED] = {1u, 1u}, /* Leech Seed */
+    [DFI_MOVE_LIFEDEW] = {1u, 1u}, /* Life Dew */
+    [DFI_MOVE_LIGHTOFRUIN] = {1u, 1u}, /* Light of Ruin */
+    [DFI_MOVE_LOCKON] = {1u, 1u}, /* Lock-On */
+    [DFI_MOVE_LOWSWEEP] = {1u, 1u}, /* Low Sweep */
+    [DFI_MOVE_LUMINACRASH] = {1u, 1u}, /* Lumina Crash */
+    [DFI_MOVE_LUNGE] = {1u, 1u}, /* Lunge */
+    [DFI_MOVE_MACHPUNCH] = {1u, 1u}, /* Mach Punch */
+    [DFI_MOVE_MAGICPOWDER] = {1u, 1u}, /* Magic Powder */
+    [DFI_MOVE_MAGICROOM] = {1u, 1u}, /* Magic Room */
+    [DFI_MOVE_MAGNETICFLUX] = {1u, 1u}, /* Magnetic Flux */
+    [DFI_MOVE_MAGNETRISE] = {1u, 1u}, /* Magnet Rise */
+    [DFI_MOVE_MATCHAGOTCHA] = {1u, 1u}, /* Matcha Gotcha */
+    [DFI_MOVE_MEANLOOK] = {1u, 1u}, /* Mean Look */
+    [DFI_MOVE_MEGAHORN] = {1u, 1u}, /* Megahorn */
+    [DFI_MOVE_MEGAKICK] = {1u, 1u}, /* Mega Kick */
+    [DFI_MOVE_MEMENTO] = {1u, 1u}, /* Memento */
+    [DFI_MOVE_METALBURST] = {1u, 1u}, /* Metal Burst */
+    [DFI_MOVE_METALSOUND] = {1u, 1u}, /* Metal Sound */
+    [DFI_MOVE_METEORASSAULT] = {1u, 1u}, /* Meteor Assault */
+    [DFI_MOVE_METEORBEAM] = {1u, 1u}, /* Meteor Beam */
+    [DFI_MOVE_METEORMASH] = {1u, 1u}, /* Meteor Mash */
+    [DFI_MOVE_MILKDRINK] = {1u, 1u}, /* Milk Drink */
+    [DFI_MOVE_MINIMIZE] = {1u, 1u}, /* Minimize */
+    [DFI_MOVE_MIRRORCOAT] = {1u, 1u}, /* Mirror Coat */
+    [DFI_MOVE_MISTYEXPLOSION] = {1u, 1u}, /* Misty Explosion */
+    [DFI_MOVE_MISTYTERRAIN] = {1u, 1u}, /* Misty Terrain */
+    [DFI_MOVE_MOONBLAST] = {1u, 1u}, /* Moonblast */
+    [DFI_MOVE_MOONLIGHT] = {1u, 1u}, /* Moonlight */
+    [DFI_MOVE_MORNINGSUN] = {1u, 1u}, /* Morning Sun */
+    [DFI_MOVE_MORTALSPIN] = {1u, 1u}, /* Mortal Spin */
+    [DFI_MOVE_MOUNTAINGALE] = {1u, 1u}, /* Mountain Gale */
+    [DFI_MOVE_MUDSHOT] = {1u, 1u}, /* Mud Shot */
+    [DFI_MOVE_MUDSLAP] = {1u, 1u}, /* Mud-Slap */
+    [DFI_MOVE_MYSTICALFIRE] = {1u, 1u}, /* Mystical Fire */
+    [DFI_MOVE_NIGHTDAZE] = {1u, 1u}, /* Night Daze */
+    [DFI_MOVE_NIGHTSHADE] = {1u, 1u}, /* Night Shade */
+    [DFI_MOVE_NIGHTSLASH] = {1u, 1u}, /* Night Slash */
+    [DFI_MOVE_NOBLEROAR] = {1u, 1u}, /* Noble Roar */
+    [DFI_MOVE_NORETREAT] = {1u, 1u}, /* No Retreat */
+    [DFI_MOVE_NUZZLE] = {1u, 1u}, /* Nuzzle */
+    [DFI_MOVE_OCTOLOCK] = {1u, 1u}, /* Octolock */
+    [DFI_MOVE_OUTRAGE] = {1u, 1u}, /* Outrage */
+    [DFI_MOVE_OVERDRIVE] = {1u, 1u}, /* Overdrive */
+    [DFI_MOVE_OVERHEAT] = {1u, 1u}, /* Overheat */
+    [DFI_MOVE_PAINSPLIT] = {1u, 1u}, /* Pain Split */
+    [DFI_MOVE_PARABOLICCHARGE] = {1u, 1u}, /* Parabolic Charge */
+    [DFI_MOVE_PAYBACK] = {1u, 1u}, /* Payback */
+    [DFI_MOVE_PERISHSONG] = {1u, 1u}, /* Perish Song */
+    [DFI_MOVE_PETALBLIZZARD] = {1u, 1u}, /* Petal Blizzard */
+    [DFI_MOVE_PETALDANCE] = {1u, 1u}, /* Petal Dance */
+    [DFI_MOVE_PHANTOMFORCE] = {1u, 1u}, /* Phantom Force */
+    [DFI_MOVE_PINMISSILE] = {2u, 5u}, /* Pin Missile */
+    [DFI_MOVE_PLAYROUGH] = {1u, 1u}, /* Play Rough */
+    [DFI_MOVE_PLUCK] = {1u, 1u}, /* Pluck */
+    [DFI_MOVE_POISONFANG] = {1u, 1u}, /* Poison Fang */
+    [DFI_MOVE_POISONJAB] = {1u, 1u}, /* Poison Jab */
+    [DFI_MOVE_POISONPOWDER] = {1u, 1u}, /* Poison Powder */
+    [DFI_MOVE_POLLENPUFF] = {1u, 1u}, /* Pollen Puff */
+    [DFI_MOVE_POLTERGEIST] = {1u, 1u}, /* Poltergeist */
+    [DFI_MOVE_POPULATIONBOMB] = {10u, 10u}, /* Population Bomb */
+    [DFI_MOVE_POUNCE] = {1u, 1u}, /* Pounce */
+    [DFI_MOVE_POWERGEM] = {1u, 1u}, /* Power Gem */
+    [DFI_MOVE_POWERSPLIT] = {1u, 1u}, /* Power Split */
+    [DFI_MOVE_POWERSWAP] = {1u, 1u}, /* Power Swap */
+    [DFI_MOVE_POWERTRICK] = {1u, 1u}, /* Power Trick */
+    [DFI_MOVE_POWERTRIP] = {1u, 1u}, /* Power Trip */
+    [DFI_MOVE_POWERWHIP] = {1u, 1u}, /* Power Whip */
+    [DFI_MOVE_PSYCHICFANGS] = {1u, 1u}, /* Psychic Fangs */
+    [DFI_MOVE_PSYCHICTERRAIN] = {1u, 1u}, /* Psychic Terrain */
+    [DFI_MOVE_PSYCHOCUT] = {1u, 1u}, /* Psycho Cut */
+    [DFI_MOVE_PSYCHUP] = {1u, 1u}, /* Psych Up */
+    [DFI_MOVE_PSYSHIELDBASH] = {1u, 1u}, /* Psyshield Bash */
+    [DFI_MOVE_PSYSHOCK] = {1u, 1u}, /* Psyshock */
+    [DFI_MOVE_PYROBALL] = {1u, 1u}, /* Pyro Ball */
+    [DFI_MOVE_QUASH] = {1u, 1u}, /* Quash */
+    [DFI_MOVE_QUICKATTACK] = {1u, 1u}, /* Quick Attack */
+    [DFI_MOVE_QUICKGUARD] = {1u, 1u}, /* Quick Guard */
+    [DFI_MOVE_QUIVERDANCE] = {1u, 1u}, /* Quiver Dance */
+    [DFI_MOVE_RAGEFIST] = {1u, 1u}, /* Rage Fist */
+    [DFI_MOVE_RAGEPOWDER] = {1u, 1u}, /* Rage Powder */
+    [DFI_MOVE_RAGINGBULL] = {1u, 1u}, /* Raging Bull */
+    [DFI_MOVE_RAGINGFURY] = {1u, 1u}, /* Raging Fury */
+    [DFI_MOVE_RAINDANCE] = {1u, 1u}, /* Rain Dance */
+    [DFI_MOVE_RAPIDSPIN] = {1u, 1u}, /* Rapid Spin */
+    [DFI_MOVE_RAZORSHELL] = {1u, 1u}, /* Razor Shell */
+    [DFI_MOVE_RECYCLE] = {1u, 1u}, /* Recycle */
+    [DFI_MOVE_REFLECTTYPE] = {1u, 1u}, /* Reflect Type */
+    [DFI_MOVE_REST] = {1u, 1u}, /* Rest */
+    [DFI_MOVE_REVERSAL] = {1u, 1u}, /* Reversal */
+    [DFI_MOVE_REVIVALBLESSING] = {1u, 1u}, /* Revival Blessing */
+    [DFI_MOVE_RISINGVOLTAGE] = {1u, 1u}, /* Rising Voltage */
+    [DFI_MOVE_ROAR] = {1u, 1u}, /* Roar */
+    [DFI_MOVE_ROCKBLAST] = {2u, 5u}, /* Rock Blast */
+    [DFI_MOVE_ROCKPOLISH] = {1u, 1u}, /* Rock Polish */
+    [DFI_MOVE_ROCKTOMB] = {1u, 1u}, /* Rock Tomb */
+    [DFI_MOVE_ROCKWRECKER] = {1u, 1u}, /* Rock Wrecker */
+    [DFI_MOVE_ROLEPLAY] = {1u, 1u}, /* Role Play */
+    [DFI_MOVE_ROOST] = {1u, 1u}, /* Roost */
+    [DFI_MOVE_ROUND] = {1u, 1u}, /* Round */
+    [DFI_MOVE_SACREDSWORD] = {1u, 1u}, /* Sacred Sword */
+    [DFI_MOVE_SAFEGUARD] = {1u, 1u}, /* Safeguard */
+    [DFI_MOVE_SALTCURE] = {1u, 1u}, /* Salt Cure */
+    [DFI_MOVE_SANDSTORM] = {1u, 1u}, /* Sandstorm */
+    [DFI_MOVE_SANDTOMB] = {1u, 1u}, /* Sand Tomb */
+    [DFI_MOVE_SCALESHOT] = {2u, 5u}, /* Scale Shot */
+    [DFI_MOVE_SCARYFACE] = {1u, 1u}, /* Scary Face */
+    [DFI_MOVE_SCORCHINGSANDS] = {1u, 1u}, /* Scorching Sands */
+    [DFI_MOVE_SCREECH] = {1u, 1u}, /* Screech */
+    [DFI_MOVE_SEEDBOMB] = {1u, 1u}, /* Seed Bomb */
+    [DFI_MOVE_SEISMICTOSS] = {1u, 1u}, /* Seismic Toss */
+    [DFI_MOVE_SELFDESTRUCT] = {1u, 1u}, /* Self-Destruct */
+    [DFI_MOVE_SHADOWPUNCH] = {1u, 1u}, /* Shadow Punch */
+    [DFI_MOVE_SHEDTAIL] = {1u, 1u}, /* Shed Tail */
+    [DFI_MOVE_SHEERCOLD] = {1u, 1u}, /* Sheer Cold */
+    [DFI_MOVE_SHELLSIDEARM] = {1u, 1u}, /* Shell Side Arm */
+    [DFI_MOVE_SHELLSMASH] = {1u, 1u}, /* Shell Smash */
+    [DFI_MOVE_SHELTER] = {1u, 1u}, /* Shelter */
+    [DFI_MOVE_SHIFTGEAR] = {1u, 1u}, /* Shift Gear */
+    [DFI_MOVE_SIMPLEBEAM] = {1u, 1u}, /* Simple Beam */
+    [DFI_MOVE_SING] = {1u, 1u}, /* Sing */
+    [DFI_MOVE_SKILLSWAP] = {1u, 1u}, /* Skill Swap */
+    [DFI_MOVE_SKITTERSMACK] = {1u, 1u}, /* Skitter Smack */
+    [DFI_MOVE_SKYATTACK] = {1u, 1u}, /* Sky Attack */
+    [DFI_MOVE_SLACKOFF] = {1u, 1u}, /* Slack Off */
+    [DFI_MOVE_SLASH] = {1u, 1u}, /* Slash */
+    [DFI_MOVE_SLEEPPOWDER] = {1u, 1u}, /* Sleep Powder */
+    [DFI_MOVE_SLEEPTALK] = {1u, 1u}, /* Sleep Talk */
+    [DFI_MOVE_SLUDGEBOMB] = {1u, 1u}, /* Sludge Bomb */
+    [DFI_MOVE_SLUDGEWAVE] = {1u, 1u}, /* Sludge Wave */
+    [DFI_MOVE_SMACKDOWN] = {1u, 1u}, /* Smack Down */
+    [DFI_MOVE_SMARTSTRIKE] = {1u, 1u}, /* Smart Strike */
+    [DFI_MOVE_SNAPTRAP] = {1u, 1u}, /* Snap Trap */
+    [DFI_MOVE_SNIPESHOT] = {1u, 1u}, /* Snipe Shot */
+    [DFI_MOVE_SNORE] = {1u, 1u}, /* Snore */
+    [DFI_MOVE_SNOWSCAPE] = {1u, 1u}, /* Snowscape */
+    [DFI_MOVE_SOLARBEAM] = {1u, 1u}, /* Solar Beam */
+    [DFI_MOVE_SOLARBLADE] = {1u, 1u}, /* Solar Blade */
+    [DFI_MOVE_SPARKLINGARIA] = {1u, 1u}, /* Sparkling Aria */
+    [DFI_MOVE_SPEEDSWAP] = {1u, 1u}, /* Speed Swap */
+    [DFI_MOVE_SPICYEXTRACT] = {1u, 1u}, /* Spicy Extract */
+    [DFI_MOVE_SPIKES] = {1u, 1u}, /* Spikes */
+    [DFI_MOVE_SPIKYSHIELD] = {1u, 1u}, /* Spiky Shield */
+    [DFI_MOVE_SPIRITSHACKLE] = {1u, 1u}, /* Spirit Shackle */
+    [DFI_MOVE_SPITE] = {1u, 1u}, /* Spite */
+    [DFI_MOVE_SPITUP] = {1u, 1u}, /* Spit Up */
+    [DFI_MOVE_STEALTHROCK] = {1u, 1u}, /* Stealth Rock */
+    [DFI_MOVE_STEELBEAM] = {1u, 1u}, /* Steel Beam */
+    [DFI_MOVE_STEELROLLER] = {1u, 1u}, /* Steel Roller */
+    [DFI_MOVE_STEELWING] = {1u, 1u}, /* Steel Wing */
+    [DFI_MOVE_STICKYWEB] = {1u, 1u}, /* Sticky Web */
+    [DFI_MOVE_STOCKPILE] = {1u, 1u}, /* Stockpile */
+    [DFI_MOVE_STOMPINGTANTRUM] = {1u, 1u}, /* Stomping Tantrum */
+    [DFI_MOVE_STONEAXE] = {1u, 1u}, /* Stone Axe */
+    [DFI_MOVE_STONEEDGE] = {1u, 1u}, /* Stone Edge */
+    [DFI_MOVE_STOREDPOWER] = {1u, 1u}, /* Stored Power */
+    [DFI_MOVE_STORMTHROW] = {1u, 1u}, /* Storm Throw */
+    [DFI_MOVE_STRENGTHSAP] = {1u, 1u}, /* Strength Sap */
+    [DFI_MOVE_STRINGSHOT] = {1u, 1u}, /* String Shot */
+    [DFI_MOVE_STRUGGLEBUG] = {1u, 1u}, /* Struggle Bug */
+    [DFI_MOVE_STUFFCHEEKS] = {1u, 1u}, /* Stuff Cheeks */
+    [DFI_MOVE_STUNSPORE] = {1u, 1u}, /* Stun Spore */
+    [DFI_MOVE_SUBSTITUTE] = {1u, 1u}, /* Substitute */
+    [DFI_MOVE_SUNNYDAY] = {1u, 1u}, /* Sunny Day */
+    [DFI_MOVE_SUPERCELLSLAM] = {1u, 1u}, /* Supercell Slam */
+    [DFI_MOVE_SUPERFANG] = {1u, 1u}, /* Super Fang */
+    [DFI_MOVE_SUPERPOWER] = {1u, 1u}, /* Superpower */
+    [DFI_MOVE_SURF] = {1u, 1u}, /* Surf */
+    [DFI_MOVE_SWAGGER] = {1u, 1u}, /* Swagger */
+    [DFI_MOVE_SWALLOW] = {1u, 1u}, /* Swallow */
+    [DFI_MOVE_SWEETKISS] = {1u, 1u}, /* Sweet Kiss */
+    [DFI_MOVE_SWEETSCENT] = {1u, 1u}, /* Sweet Scent */
+    [DFI_MOVE_SWITCHEROO] = {1u, 1u}, /* Switcheroo */
+    [DFI_MOVE_SYNTHESIS] = {1u, 1u}, /* Synthesis */
+    [DFI_MOVE_SYRUPBOMB] = {1u, 1u}, /* Syrup Bomb */
+    [DFI_MOVE_TAILSLAP] = {2u, 5u}, /* Tail Slap */
+    [DFI_MOVE_TAUNT] = {1u, 1u}, /* Taunt */
+    [DFI_MOVE_TEARFULLOOK] = {1u, 1u}, /* Tearful Look */
+    [DFI_MOVE_TEATIME] = {1u, 1u}, /* Teatime */
+    [DFI_MOVE_TEETERDANCE] = {1u, 1u}, /* Teeter Dance */
+    [DFI_MOVE_TEMPERFLARE] = {1u, 1u}, /* Temper Flare */
+    [DFI_MOVE_TERRAINPULSE] = {1u, 1u}, /* Terrain Pulse */
+    [DFI_MOVE_THIEF] = {1u, 1u}, /* Thief */
+    [DFI_MOVE_THRASH] = {1u, 1u}, /* Thrash */
+    [DFI_MOVE_THUNDER] = {1u, 1u}, /* Thunder */
+    [DFI_MOVE_THUNDERFANG] = {1u, 1u}, /* Thunder Fang */
+    [DFI_MOVE_THUNDERPUNCH] = {1u, 1u}, /* Thunder Punch */
+    [DFI_MOVE_THUNDERWAVE] = {1u, 1u}, /* Thunder Wave */
+    [DFI_MOVE_TICKLE] = {1u, 1u}, /* Tickle */
+    [DFI_MOVE_TIDYUP] = {1u, 1u}, /* Tidy Up */
+    [DFI_MOVE_TOPSYTURVY] = {1u, 1u}, /* Topsy-Turvy */
+    [DFI_MOVE_TORCHSONG] = {1u, 1u}, /* Torch Song */
+    [DFI_MOVE_TORMENT] = {1u, 1u}, /* Torment */
+    [DFI_MOVE_TOXIC] = {1u, 1u}, /* Toxic */
+    [DFI_MOVE_TOXICSPIKES] = {1u, 1u}, /* Toxic Spikes */
+    [DFI_MOVE_TOXICTHREAD] = {1u, 1u}, /* Toxic Thread */
+    [DFI_MOVE_TRAILBLAZE] = {1u, 1u}, /* Trailblaze */
+    [DFI_MOVE_TRANSFORM] = {1u, 1u}, /* Transform */
+    [DFI_MOVE_TRIATTACK] = {1u, 1u}, /* Tri Attack */
+    [DFI_MOVE_TRICK] = {1u, 1u}, /* Trick */
+    [DFI_MOVE_TRICKORTREAT] = {1u, 1u}, /* Trick-or-Treat */
+    [DFI_MOVE_TRIPLEARROWS] = {1u, 1u}, /* Triple Arrows */
+    [DFI_MOVE_TRIPLEAXEL] = {3u, 3u}, /* Triple Axel */
+    [DFI_MOVE_TROPKICK] = {1u, 1u}, /* Trop Kick */
+    [DFI_MOVE_TWINBEAM] = {2u, 2u}, /* Twin Beam */
+    [DFI_MOVE_UPPERHAND] = {1u, 1u}, /* Upper Hand */
+    [DFI_MOVE_UPROAR] = {1u, 1u}, /* Uproar */
+    [DFI_MOVE_VACUUMWAVE] = {1u, 1u}, /* Vacuum Wave */
+    [DFI_MOVE_VENOSHOCK] = {1u, 1u}, /* Venoshock */
+    [DFI_MOVE_VOLTSWITCH] = {1u, 1u}, /* Volt Switch */
+    [DFI_MOVE_VOLTTACKLE] = {1u, 1u}, /* Volt Tackle */
+    [DFI_MOVE_WATERFALL] = {1u, 1u}, /* Waterfall */
+    [DFI_MOVE_WATERPULSE] = {1u, 1u}, /* Water Pulse */
+    [DFI_MOVE_WATERSHURIKEN] = {2u, 5u}, /* Water Shuriken */
+    [DFI_MOVE_WATERSPOUT] = {1u, 1u}, /* Water Spout */
+    [DFI_MOVE_WHIRLPOOL] = {1u, 1u}, /* Whirlpool */
+    [DFI_MOVE_WHIRLWIND] = {1u, 1u}, /* Whirlwind */
+    [DFI_MOVE_WILDCHARGE] = {1u, 1u}, /* Wild Charge */
+    [DFI_MOVE_WILLOWISP] = {1u, 1u}, /* Will-O-Wisp */
+    [DFI_MOVE_WISH] = {1u, 1u}, /* Wish */
+    [DFI_MOVE_WONDERROOM] = {1u, 1u}, /* Wonder Room */
+    [DFI_MOVE_WORRYSEED] = {1u, 1u}, /* Worry Seed */
+    [DFI_MOVE_WRAP] = {1u, 1u}, /* Wrap */
+    [DFI_MOVE_XSCISSOR] = {1u, 1u}, /* X-Scissor */
+    [DFI_MOVE_YAWN] = {1u, 1u}, /* Yawn */
+    [DFI_MOVE_ZENHEADBUTT] = {1u, 1u}, /* Zen Headbutt */
+    [DFI_MOVE_ZINGZAP] = {1u, 1u}, /* Zing Zap */
 };
 
 /* Cosmetic formes: a name for the row of the base forme (decision 0015 section 4.2). */
@@ -5912,17 +6683,14 @@ const char *const dfi_pool_nature_names[DFI_NATURE_COUNT] = {
 
 /* The unmodelled features of the rows that have any (NULL: modelled). */
 const char *const dfi_pool_move_unmodeled[DFI_POOL_MOVE_COUNT] = {
-    [DFI_MOVE_ACROBATICS] = "callback basePowerCallback",
     [DFI_MOVE_ACUPRESSURE] = "callback onHit; target adjacentAllyOrSelf",
     [DFI_MOVE_AFTERYOU] = "callback onHit",
     [DFI_MOVE_ALLURINGVOICE] = "secondary",
     [DFI_MOVE_ALLYSWITCH] = "callback onHit; callback onPrepareHit; condition block",
-    [DFI_MOVE_ANCIENTPOWER] = "secondary self effect",
     [DFI_MOVE_AQUARING] = "condition block; primary volatile aquaring",
-    [DFI_MOVE_AQUASTEP] = "secondary self effect",
     [DFI_MOVE_ASSURANCE] = "callback basePowerCallback",
     [DFI_MOVE_ATTRACT] = "callback onTryImmunity; condition block; primary volatile attract",
-    [DFI_MOVE_AURAWHEEL] = "callback onModifyType; callback onTry; secondary self effect",
+    [DFI_MOVE_AURAWHEEL] = "callback onModifyType; callback onTry",
     [DFI_MOVE_AVALANCHE] = "callback basePowerCallback",
     [DFI_MOVE_AXEKICK] = "callback onMoveFail; field hasCrashDamage",
     [DFI_MOVE_BABYDOLLEYES] = "primary boosts on a non-self target",
@@ -5931,46 +6699,36 @@ const char *const dfi_pool_move_unmodeled[DFI_POOL_MOVE_COUNT] = {
     [DFI_MOVE_BATONPASS] = "callback onHit; field selfSwitch copyvolatile; self effect",
     [DFI_MOVE_BEAKBLAST] = "callback onAfterMove; callback priorityChargeCallback; condition block",
     [DFI_MOVE_BEATUP] = "callback basePowerCallback; callback onModifyMove",
-    [DFI_MOVE_BELCH] = "callback onTry; field onDisableMove",
+    [DFI_MOVE_BELCH] = "callback onTry",
     [DFI_MOVE_BELLYDRUM] = "callback onHit",
     [DFI_MOVE_BIND] = "primary volatile partiallytrapped",
-    [DFI_MOVE_BLIZZARD] = "callback onModifyMove",
     [DFI_MOVE_BLOCK] = "callback onHit",
-    [DFI_MOVE_BODYPRESS] = "field overrideOffensiveStat",
     [DFI_MOVE_BONERUSH] = "field multihit",
-    [DFI_MOVE_BOOMBURST] = "target allAdjacent",
     [DFI_MOVE_BOUNCE] = "callback onTryMove; condition block",
-    [DFI_MOVE_BRICKBREAK] = "callback onTryHit",
-    [DFI_MOVE_BRUTALSWING] = "target allAdjacent",
     [DFI_MOVE_BUGBITE] = "callback onHit",
-    [DFI_MOVE_BULLDOZE] = "target allAdjacent",
     [DFI_MOVE_BULLETSEED] = "field multihit",
     [DFI_MOVE_BURNINGJEALOUSY] = "secondary",
     [DFI_MOVE_BURNUP] = "callback onTryMove; self effect",
     [DFI_MOVE_CEASELESSEDGE] = "callback onAfterHit; callback onAfterSubDamage; secondary",
     [DFI_MOVE_CHARGE] = "condition block; primary volatile charge",
-    [DFI_MOVE_CHARGEBEAM] = "secondary self effect",
     [DFI_MOVE_CHARM] = "primary boosts on a non-self target",
     [DFI_MOVE_CHILLYRECEPTION] = "callback priorityChargeCallback; condition block; field selfSwitch without a switch flag; field weather",
     [DFI_MOVE_CIRCLETHROW] = "field forceSwitch",
-    [DFI_MOVE_CLANGINGSCALES] = "field selfBoost",
-    [DFI_MOVE_CLANGOROUSSOUL] = "callback onHit; callback onTry; callback onTryHit",
     [DFI_MOVE_CLEARSMOG] = "callback onHit",
     [DFI_MOVE_COMEUPPANCE] = "callback damageCallback; callback onModifyTarget; callback onTry; target scripted",
     [DFI_MOVE_CONFUSERAY] = "primary volatile confusion",
     [DFI_MOVE_COPYCAT] = "callback onHit; field callsMove",
-    [DFI_MOVE_CORROSIVEGAS] = "callback onHit; target allAdjacent",
+    [DFI_MOVE_CORROSIVEGAS] = "callback onHit",
     [DFI_MOVE_COTTONSPORE] = "primary boosts on a non-self target",
     [DFI_MOVE_COUNTER] = "callback beforeTurnCallback; callback damageCallback; callback onTry; condition block; target scripted",
     [DFI_MOVE_COURTCHANGE] = "callback onHitField",
     [DFI_MOVE_COVET] = "callback onAfterHit",
-    [DFI_MOVE_CURSE] = "callback onHit; callback onModifyMove; callback onTryHit; condition block; primary volatile undefined, // no inherit",
+    [DFI_MOVE_CURSE] = "callback onHit; callback onModifyMove; callback onTryHit; condition block",
     [DFI_MOVE_DECORATE] = "primary boosts on a non-self target",
     [DFI_MOVE_DEFOG] = "callback onHit",
     [DFI_MOVE_DESTINYBOND] = "callback onPrepareHit; condition block; primary volatile destinybond",
     [DFI_MOVE_DIG] = "callback onTryMove; condition block",
     [DFI_MOVE_DISABLE] = "callback onTryHit; condition block; primary volatile disable",
-    [DFI_MOVE_DISCHARGE] = "target allAdjacent",
     [DFI_MOVE_DIVE] = "callback onTryMove; condition block",
     [DFI_MOVE_DOUBLEHIT] = "field multihit",
     [DFI_MOVE_DOUBLESHOCK] = "callback onTryMove; self effect",
@@ -5978,7 +6736,6 @@ const char *const dfi_pool_move_unmodeled[DFI_POOL_MOVE_COUNT] = {
     [DFI_MOVE_DRAGONDARTS] = "field multihit; field smartTarget",
     [DFI_MOVE_DRAGONTAIL] = "field forceSwitch",
     [DFI_MOVE_DUALWINGBEAT] = "field multihit",
-    [DFI_MOVE_EARTHQUAKE] = "target allAdjacent",
     [DFI_MOVE_EERIEIMPULSE] = "primary boosts on a non-self target",
     [DFI_MOVE_EERIESPELL] = "secondary",
     [DFI_MOVE_ELECTRIFY] = "callback onTryHit; condition block; primary volatile electrify",
@@ -5986,22 +6743,18 @@ const char *const dfi_pool_move_unmodeled[DFI_POOL_MOVE_COUNT] = {
     [DFI_MOVE_ENDEAVOR] = "callback damageCallback; callback onTryImmunity",
     [DFI_MOVE_ENDURE] = "callback onHit; callback onPrepareHit; condition block; primary volatile endure",
     [DFI_MOVE_ENTRAINMENT] = "callback onHit; callback onTryHit",
-    [DFI_MOVE_ERUPTION] = "callback basePowerCallback",
-    [DFI_MOVE_EXPLOSION] = "field selfdestruct; target allAdjacent",
+    [DFI_MOVE_EXPLOSION] = "field selfdestruct",
     [DFI_MOVE_FACADE] = "callback onBasePower",
     [DFI_MOVE_FAIRYLOCK] = "condition block; pseudo weather fairylock",
     [DFI_MOVE_FAKETEARS] = "primary boosts on a non-self target",
     [DFI_MOVE_FEATHERDANCE] = "primary boosts on a non-self target",
-    [DFI_MOVE_FEINT] = "field breaksProtect",
     [DFI_MOVE_FELLSTINGER] = "callback onAfterMoveSecondarySelf",
     [DFI_MOVE_FICKLEBEAM] = "callback onBasePower",
-    [DFI_MOVE_FIERYDANCE] = "secondary self effect",
     [DFI_MOVE_FINALGAMBIT] = "callback damageCallback; field selfdestruct",
     [DFI_MOVE_FIREFANG] = "field secondaries",
     [DFI_MOVE_FIRESPIN] = "primary volatile partiallytrapped",
     [DFI_MOVE_FISSURE] = "field ohko",
     [DFI_MOVE_FLAIL] = "callback basePowerCallback",
-    [DFI_MOVE_FLAMECHARGE] = "secondary self effect",
     [DFI_MOVE_FLATTER] = "primary boosts on a non-self target; primary volatile confusion",
     [DFI_MOVE_FLING] = "callback onPrepareHit; condition block",
     [DFI_MOVE_FLOWERTRICK] = "field willCrit",
@@ -6010,8 +6763,6 @@ const char *const dfi_pool_move_unmodeled[DFI_POOL_MOVE_COUNT] = {
     [DFI_MOVE_FOCUSENERGY] = "condition block; primary volatile focusenergy",
     [DFI_MOVE_FOCUSPUNCH] = "callback beforeMoveCallback; callback priorityChargeCallback; condition block",
     [DFI_MOVE_FORESTSCURSE] = "callback onHit",
-    [DFI_MOVE_FOULPLAY] = "field overrideOffensivePokemon",
-    [DFI_MOVE_FREEZEDRY] = "callback onEffectiveness; secondary",
     [DFI_MOVE_FROSTBREATH] = "field willCrit",
     [DFI_MOVE_FUTURESIGHT] = "callback onTry; field ignoreImmunity",
     [DFI_MOVE_GASTROACID] = "callback onTryHit; condition block; primary volatile gastroacid",
@@ -6033,7 +6784,7 @@ const char *const dfi_pool_move_unmodeled[DFI_POOL_MOVE_COUNT] = {
     [DFI_MOVE_HEX] = "callback basePowerCallback",
     [DFI_MOVE_HIGHJUMPKICK] = "callback onMoveFail; field hasCrashDamage",
     [DFI_MOVE_HORNDRILL] = "field ohko",
-    [DFI_MOVE_HOWL] = "primary boosts on a non-self target; target allies",
+    [DFI_MOVE_HOWL] = "primary boosts on a non-self target",
     [DFI_MOVE_ICEFANG] = "field secondaries",
     [DFI_MOVE_ICESPINNER] = "callback onAfterHit; callback onAfterSubDamage",
     [DFI_MOVE_ICICLESPEAR] = "field multihit",
@@ -6046,9 +6797,7 @@ const char *const dfi_pool_move_unmodeled[DFI_POOL_MOVE_COUNT] = {
     [DFI_MOVE_KINGSSHIELD] = "callback onHit; callback onPrepareHit; condition block; primary volatile kingsshield",
     [DFI_MOVE_LASHOUT] = "callback onBasePower",
     [DFI_MOVE_LASTRESORT] = "callback onTry",
-    [DFI_MOVE_LAVAPLUME] = "target allAdjacent",
     [DFI_MOVE_LEECHSEED] = "callback onTryImmunity; condition block; primary volatile leechseed",
-    [DFI_MOVE_LIFEDEW] = "target allies",
     [DFI_MOVE_LOCKON] = "callback onHit; callback onTryHit; condition block",
     [DFI_MOVE_MAGICPOWDER] = "callback onHit",
     [DFI_MOVE_MAGICROOM] = "condition block; pseudo weather magicroom",
@@ -6059,11 +6808,10 @@ const char *const dfi_pool_move_unmodeled[DFI_POOL_MOVE_COUNT] = {
     [DFI_MOVE_METALBURST] = "callback damageCallback; callback onModifyTarget; callback onTry; target scripted",
     [DFI_MOVE_METALSOUND] = "primary boosts on a non-self target",
     [DFI_MOVE_METEORBEAM] = "callback onTryMove",
-    [DFI_MOVE_METEORMASH] = "secondary self effect",
     [DFI_MOVE_MILKDRINK] = "target adjacentAllyOrSelf",
     [DFI_MOVE_MINIMIZE] = "condition block; primary volatile minimize",
     [DFI_MOVE_MIRRORCOAT] = "callback beforeTurnCallback; callback damageCallback; callback onTry; condition block; target scripted",
-    [DFI_MOVE_MISTYEXPLOSION] = "callback onBasePower; field selfdestruct; target allAdjacent",
+    [DFI_MOVE_MISTYEXPLOSION] = "callback onBasePower; field selfdestruct",
     [DFI_MOVE_MOONLIGHT] = "callback onHit",
     [DFI_MOVE_MORNINGSUN] = "callback onHit",
     [DFI_MOVE_MORTALSPIN] = "callback onAfterHit; callback onAfterSubDamage",
@@ -6073,15 +6821,12 @@ const char *const dfi_pool_move_unmodeled[DFI_POOL_MOVE_COUNT] = {
     [DFI_MOVE_OCTOLOCK] = "callback onTryImmunity; condition block; primary volatile octolock",
     [DFI_MOVE_OUTRAGE] = "self effect",
     [DFI_MOVE_PAINSPLIT] = "callback onHit",
-    [DFI_MOVE_PARABOLICCHARGE] = "target allAdjacent",
     [DFI_MOVE_PAYBACK] = "callback basePowerCallback",
     [DFI_MOVE_PERISHSONG] = "callback onHitField; condition block",
-    [DFI_MOVE_PETALBLIZZARD] = "target allAdjacent",
     [DFI_MOVE_PETALDANCE] = "self effect",
     [DFI_MOVE_PHANTOMFORCE] = "callback onTryMove; condition block; field breaksProtect",
     [DFI_MOVE_PINMISSILE] = "field multihit",
     [DFI_MOVE_PLUCK] = "callback onHit",
-    [DFI_MOVE_POISONFANG] = "secondary status tox",
     [DFI_MOVE_POLLENPUFF] = "callback onHit; callback onTryHit; callback onTryMove",
     [DFI_MOVE_POLTERGEIST] = "callback onTry; callback onTryHit",
     [DFI_MOVE_POPULATIONBOMB] = "field multiaccuracy; field multihit",
@@ -6089,19 +6834,14 @@ const char *const dfi_pool_move_unmodeled[DFI_POOL_MOVE_COUNT] = {
     [DFI_MOVE_POWERSWAP] = "callback onHit",
     [DFI_MOVE_POWERTRICK] = "condition block; primary volatile powertrick",
     [DFI_MOVE_POWERTRIP] = "callback basePowerCallback",
-    [DFI_MOVE_PSYCHICFANGS] = "callback onTryHit",
     [DFI_MOVE_PSYCHICTERRAIN] = "condition block; field terrain",
     [DFI_MOVE_PSYCHUP] = "callback onHit",
-    [DFI_MOVE_PSYSHIELDBASH] = "secondary self effect",
-    [DFI_MOVE_PSYSHOCK] = "field overrideDefensiveStat",
     [DFI_MOVE_QUASH] = "callback onHit",
     [DFI_MOVE_QUICKGUARD] = "callback onHitSide; callback onTry; condition block; side condition quickguard",
     [DFI_MOVE_RAGEFIST] = "callback basePowerCallback",
-    [DFI_MOVE_RAGEPOWDER] = "callback onTry; condition block; primary volatile ragepowder",
     [DFI_MOVE_RAGINGBULL] = "callback onModifyType; callback onTryHit",
     [DFI_MOVE_RAGINGFURY] = "self effect",
-    [DFI_MOVE_RAINDANCE] = "field weather",
-    [DFI_MOVE_RAPIDSPIN] = "callback onAfterHit; callback onAfterSubDamage; secondary self effect",
+    [DFI_MOVE_RAPIDSPIN] = "callback onAfterHit; callback onAfterSubDamage",
     [DFI_MOVE_RECYCLE] = "callback onHit",
     [DFI_MOVE_REFLECTTYPE] = "callback onHit",
     [DFI_MOVE_REST] = "callback onHit; callback onTry",
@@ -6120,7 +6860,7 @@ const char *const dfi_pool_move_unmodeled[DFI_POOL_MOVE_COUNT] = {
     [DFI_MOVE_SCARYFACE] = "primary boosts on a non-self target",
     [DFI_MOVE_SCREECH] = "primary boosts on a non-self target",
     [DFI_MOVE_SEISMICTOSS] = "field damage",
-    [DFI_MOVE_SELFDESTRUCT] = "field selfdestruct; target allAdjacent",
+    [DFI_MOVE_SELFDESTRUCT] = "field selfdestruct",
     [DFI_MOVE_SHEDTAIL] = "callback onHit; callback onTryHit; field selfSwitch shedtail; primary volatile substitute; self effect",
     [DFI_MOVE_SHEERCOLD] = "field ohko",
     [DFI_MOVE_SHELLSIDEARM] = "callback onAfterSubDamage; callback onHit; callback onModifyMove; callback onPrepareHit",
@@ -6128,25 +6868,20 @@ const char *const dfi_pool_move_unmodeled[DFI_POOL_MOVE_COUNT] = {
     [DFI_MOVE_SKILLSWAP] = "callback onHit",
     [DFI_MOVE_SKYATTACK] = "callback onTryMove",
     [DFI_MOVE_SLEEPTALK] = "callback onHit; callback onTry; field callsMove; field sleepUsable",
-    [DFI_MOVE_SLUDGEWAVE] = "target allAdjacent",
     [DFI_MOVE_SMACKDOWN] = "condition block; primary volatile smackdown",
     [DFI_MOVE_SNAPTRAP] = "primary volatile partiallytrapped",
     [DFI_MOVE_SNIPESHOT] = "field tracksTarget",
     [DFI_MOVE_SNORE] = "callback onTry; field sleepUsable",
-    [DFI_MOVE_SOLARBEAM] = "callback onBasePower; callback onTryMove",
     [DFI_MOVE_SOLARBLADE] = "callback onBasePower; callback onTryMove",
-    [DFI_MOVE_SPARKLINGARIA] = "callback onAfterMove; secondary volatile sparklingaria; target allAdjacent",
+    [DFI_MOVE_SPARKLINGARIA] = "callback onAfterMove; secondary volatile sparklingaria",
     [DFI_MOVE_SPEEDSWAP] = "callback onHit",
     [DFI_MOVE_SPICYEXTRACT] = "primary boosts on a non-self target",
     [DFI_MOVE_SPIKES] = "condition block; side condition spikes; target foeSide",
-    [DFI_MOVE_SPIKYSHIELD] = "callback onHit; callback onPrepareHit; condition block; primary volatile spikyshield",
     [DFI_MOVE_SPIRITSHACKLE] = "secondary",
     [DFI_MOVE_SPITE] = "callback onHit",
     [DFI_MOVE_SPITUP] = "callback basePowerCallback; callback onAfterMove; callback onTry",
     [DFI_MOVE_STEALTHROCK] = "condition block; side condition stealthrock; target foeSide",
     [DFI_MOVE_STEELBEAM] = "callback onMoveFail; field mindBlownRecoil",
-    [DFI_MOVE_STEELROLLER] = "callback onAfterSubDamage; callback onHit; callback onTry",
-    [DFI_MOVE_STEELWING] = "secondary self effect",
     [DFI_MOVE_STICKYWEB] = "condition block; side condition stickyweb; target foeSide",
     [DFI_MOVE_STOCKPILE] = "callback onTry; condition block; primary volatile stockpile",
     [DFI_MOVE_STOMPINGTANTRUM] = "callback basePowerCallback",
@@ -6155,12 +6890,10 @@ const char *const dfi_pool_move_unmodeled[DFI_POOL_MOVE_COUNT] = {
     [DFI_MOVE_STORMTHROW] = "field willCrit",
     [DFI_MOVE_STRENGTHSAP] = "callback onHit",
     [DFI_MOVE_STRINGSHOT] = "primary boosts on a non-self target",
-    [DFI_MOVE_STUFFCHEEKS] = "callback onHit; callback onTry; field onDisableMove",
+    [DFI_MOVE_STUFFCHEEKS] = "callback onHit; callback onTry",
     [DFI_MOVE_SUBSTITUTE] = "callback onHit; callback onTryHit; condition block; primary volatile substitute",
-    [DFI_MOVE_SUNNYDAY] = "field weather",
     [DFI_MOVE_SUPERCELLSLAM] = "callback onMoveFail; field hasCrashDamage",
     [DFI_MOVE_SUPERFANG] = "callback damageCallback",
-    [DFI_MOVE_SURF] = "target allAdjacent",
     [DFI_MOVE_SWAGGER] = "primary boosts on a non-self target; primary volatile confusion",
     [DFI_MOVE_SWALLOW] = "callback onHit; callback onTry",
     [DFI_MOVE_SWEETKISS] = "primary volatile confusion",
@@ -6172,7 +6905,7 @@ const char *const dfi_pool_move_unmodeled[DFI_POOL_MOVE_COUNT] = {
     [DFI_MOVE_TAUNT] = "condition block; primary volatile taunt",
     [DFI_MOVE_TEARFULLOOK] = "primary boosts on a non-self target",
     [DFI_MOVE_TEATIME] = "callback onHitField",
-    [DFI_MOVE_TEETERDANCE] = "primary volatile confusion; target allAdjacent",
+    [DFI_MOVE_TEETERDANCE] = "primary volatile confusion",
     [DFI_MOVE_TEMPERFLARE] = "callback basePowerCallback",
     [DFI_MOVE_THIEF] = "callback onAfterHit",
     [DFI_MOVE_THRASH] = "self effect",
@@ -6182,12 +6915,9 @@ const char *const dfi_pool_move_unmodeled[DFI_POOL_MOVE_COUNT] = {
     [DFI_MOVE_TICKLE] = "primary boosts on a non-self target",
     [DFI_MOVE_TIDYUP] = "callback onHit",
     [DFI_MOVE_TOPSYTURVY] = "callback onHit",
-    [DFI_MOVE_TORCHSONG] = "secondary self effect",
     [DFI_MOVE_TORMENT] = "condition block; primary volatile torment",
-    [DFI_MOVE_TOXIC] = "primary status tox",
     [DFI_MOVE_TOXICSPIKES] = "condition block; side condition toxicspikes; target foeSide",
     [DFI_MOVE_TOXICTHREAD] = "primary boosts on a non-self target",
-    [DFI_MOVE_TRAILBLAZE] = "secondary self effect",
     [DFI_MOVE_TRANSFORM] = "callback onHit",
     [DFI_MOVE_TRIATTACK] = "secondary",
     [DFI_MOVE_TRICK] = "callback onHit; callback onTryImmunity",
@@ -6198,9 +6928,7 @@ const char *const dfi_pool_move_unmodeled[DFI_POOL_MOVE_COUNT] = {
     [DFI_MOVE_UPPERHAND] = "callback onTry",
     [DFI_MOVE_UPROAR] = "callback onTryHit; condition block; self effect",
     [DFI_MOVE_VENOSHOCK] = "callback onBasePower",
-    [DFI_MOVE_VOLTSWITCH] = "field selfSwitch without a switch flag",
     [DFI_MOVE_WATERSHURIKEN] = "callback basePowerCallback; field multihit",
-    [DFI_MOVE_WATERSPOUT] = "callback basePowerCallback",
     [DFI_MOVE_WHIRLPOOL] = "primary volatile partiallytrapped",
     [DFI_MOVE_WHIRLWIND] = "field forceSwitch",
     [DFI_MOVE_WISH] = "condition block; field slotCondition",
@@ -6211,20 +6939,15 @@ const char *const dfi_pool_move_unmodeled[DFI_POOL_MOVE_COUNT] = {
 };
 
 const char *const dfi_pool_item_unmodeled[DFI_POOL_ITEM_COUNT] = {
-    [DFI_ITEM_EXPERTBELT] = "callback onModifyDamage",
-    [DFI_ITEM_ABSOLITEZ] = "second Mega forme absolmegaz of absol",
     [DFI_ITEM_AIRBALLOON] = "callback onAfterSubDamage; callback onDamagingHit; callback onStart; read by id in sim/pokemon.ts",
     [DFI_ITEM_ASPEARBERRY] = "callback onEat; callback onUpdate",
     [DFI_ITEM_BIGROOT] = "callback onTryHeal; callback onTryHealPriority",
     [DFI_ITEM_BINDINGBAND] = "read by id in data/conditions.ts",
     [DFI_ITEM_BRIGHTPOWDER] = "callback onModifyAccuracy; callback onModifyAccuracyPriority",
-    [DFI_ITEM_CHARIZARDITEX] = "second Mega forme charizardmegax of charizard",
     [DFI_ITEM_CHERIBERRY] = "callback onEat; callback onUpdate",
     [DFI_ITEM_CHESTOBERRY] = "callback onEat; callback onUpdate",
     [DFI_ITEM_DAMPROCK] = "read by id in data/conditions.ts",
-    [DFI_ITEM_EJECTBUTTON] = "callback onAfterMoveSecondary; callback onAfterMoveSecondaryPriority",
     [DFI_ITEM_FOCUSBAND] = "callback onDamage; callback onDamagePriority",
-    [DFI_ITEM_GARCHOMPITEZ] = "second Mega forme garchompmegaz of garchomp",
     [DFI_ITEM_HEATROCK] = "read by id in data/conditions.ts",
     [DFI_ITEM_ICYROCK] = "read by id in data/conditions.ts",
     [DFI_ITEM_IRONBALL] = "callback onEffectiveness; callback onModifySpe; read by id in data/moves.ts; read by id in sim/pokemon.ts",
@@ -6232,7 +6955,6 @@ const char *const dfi_pool_item_unmodeled[DFI_POOL_ITEM_COUNT] = {
     [DFI_ITEM_LEEK] = "callback onModifyCritRatio",
     [DFI_ITEM_LEPPABERRY] = "callback onEat; callback onUpdate; read by id in data/items.ts; read by id in data/moves.ts; read by id in sim/pokemon.ts",
     [DFI_ITEM_LIGHTBALL] = "callback onModifyAtk; callback onModifyAtkPriority; callback onModifySpA; callback onModifySpAPriority",
-    [DFI_ITEM_LUCARIONITEZ] = "second Mega forme lucariomegaz of lucario",
     [DFI_ITEM_LUMBERRY] = "callback onAfterSetStatus; callback onAfterSetStatusPriority; callback onEat; callback onUpdate",
     [DFI_ITEM_MENTALHERB] = "callback onUpdate; read by id in data/mods/champions/moves.ts",
     [DFI_ITEM_METRONOME] = "callback onStart; condition block; read by id in data/moves.ts; read by id in sim/pokemon.ts",
@@ -6242,7 +6964,6 @@ const char *const dfi_pool_item_unmodeled[DFI_POOL_ITEM_COUNT] = {
     [DFI_ITEM_PECHABERRY] = "callback onEat; callback onUpdate",
     [DFI_ITEM_PERSIMBERRY] = "callback onEat; callback onUpdate",
     [DFI_ITEM_QUICKCLAW] = "callback onFractionalPriority; callback onFractionalPriorityPriority",
-    [DFI_ITEM_RAICHUNITEX] = "second Mega forme raichumegax of raichu",
     [DFI_ITEM_RAWSTBERRY] = "callback onEat; callback onUpdate",
     [DFI_ITEM_REDCARD] = "callback onAfterMoveSecondary; read by id in sim/pokemon.ts",
     [DFI_ITEM_SCOPELENS] = "callback onModifyCritRatio",
@@ -6250,7 +6971,6 @@ const char *const dfi_pool_item_unmodeled[DFI_POOL_ITEM_COUNT] = {
     [DFI_ITEM_SHELLBELL] = "callback onAfterMoveSecondarySelf; callback onAfterMoveSecondarySelfPriority",
     [DFI_ITEM_SMOOTHROCK] = "read by id in data/conditions.ts",
     [DFI_ITEM_TERRAINEXTENDER] = "read by id in data/moves.ts",
-    [DFI_ITEM_WIDELENS] = "callback onSourceModifyAccuracy; callback onSourceModifyAccuracyPriority",
     [DFI_ITEM_WISEGLASSES] = "callback onBasePower; callback onBasePowerPriority",
     [DFI_ITEM_ZOOMLENS] = "callback onSourceModifyAccuracy; callback onSourceModifyAccuracyPriority",
 };
@@ -6267,10 +6987,7 @@ const char *const dfi_pool_ability_unmodeled[DFI_POOL_ABILITY_COUNT] = {
     [DFI_ABILITY_BIGPECKS] = "callback onTryBoost",
     [DFI_ABILITY_BULLETPROOF] = "callback onTryHit",
     [DFI_ABILITY_CHEEKPOUCH] = "callback onEatItem",
-    [DFI_ABILITY_CHLOROPHYLL] = "callback onModifySpe",
-    [DFI_ABILITY_CLEARBODY] = "callback onTryBoost",
     [DFI_ABILITY_CLOUDNINE] = "callback onEnd; callback onStart; callback onSwitchIn; field suppressWeather",
-    [DFI_ABILITY_COMPOUNDEYES] = "callback onSourceModifyAccuracy; callback onSourceModifyAccuracyPriority",
     [DFI_ABILITY_CORROSION] = "read by id in sim/pokemon.ts",
     [DFI_ABILITY_CUDCHEW] = "callback onEatItem; callback onResidual; callback onResidualOrder; callback onResidualSubOrder; read by id in data/moves.ts",
     [DFI_ABILITY_CURIOUSMEDICINE] = "callback onStart",
@@ -6287,14 +7004,11 @@ const char *const dfi_pool_ability_unmodeled[DFI_POOL_ABILITY_COUNT] = {
     [DFI_ABILITY_ELECTROMORPHOSIS] = "callback onDamagingHit; callback onDamagingHitOrder",
     [DFI_ABILITY_FILTER] = "callback onSourceModifyDamage",
     [DFI_ABILITY_FIREMANE] = "callback onModifyAtk; callback onModifyAtkPriority; callback onModifySpA; callback onModifySpAPriority",
-    [DFI_ABILITY_FLAMEBODY] = "callback onDamagingHit",
     [DFI_ABILITY_FLUFFY] = "callback onSourceModifyDamage",
     [DFI_ABILITY_FORECAST] = "callback onStart; callback onSwitchInPriority; callback onWeatherChange",
     [DFI_ABILITY_FOREWARN] = "callback onStart",
-    [DFI_ABILITY_FRIENDGUARD] = "callback onAnyModifyDamage",
     [DFI_ABILITY_FRISK] = "callback onStart",
     [DFI_ABILITY_FURCOAT] = "callback onModifyDef; callback onModifyDefPriority",
-    [DFI_ABILITY_GALEWINGS] = "callback onModifyPriority",
     [DFI_ABILITY_GLUTTONY] = "callback onDamage; callback onStart; read by id in data/abilities.ts; read by id in data/items.ts",
     [DFI_ABILITY_GOOEY] = "callback onDamagingHit",
     [DFI_ABILITY_GRASSPELT] = "callback onModifyDef; callback onModifyDefPriority",
@@ -6304,7 +7018,6 @@ const char *const dfi_pool_ability_unmodeled[DFI_POOL_ABILITY_COUNT] = {
     [DFI_ABILITY_HEALER] = "callback onResidual; callback onResidualOrder; callback onResidualSubOrder",
     [DFI_ABILITY_HEATPROOF] = "callback onDamage; callback onSourceModifyAtk; callback onSourceModifyAtkPriority; callback onSourceModifySpA; callback onSourceModifySpAPriority",
     [DFI_ABILITY_HEAVYMETAL] = "callback onModifyWeight; callback onModifyWeightPriority",
-    [DFI_ABILITY_HOSPITALITY] = "callback onStart; callback onSwitchInPriority",
     [DFI_ABILITY_HUGEPOWER] = "callback onModifyAtk; callback onModifyAtkPriority",
     [DFI_ABILITY_HUNGERSWITCH] = "callback onResidual; callback onResidualOrder",
     [DFI_ABILITY_HUSTLE] = "callback onModifyAtk; callback onModifyAtkPriority; callback onSourceModifyAccuracy; callback onSourceModifyAccuracyPriority",
@@ -6317,19 +7030,15 @@ const char *const dfi_pool_ability_unmodeled[DFI_POOL_ABILITY_COUNT] = {
     [DFI_ABILITY_IMPOSTER] = "callback onSwitchIn; read by id in data/moves.ts",
     [DFI_ABILITY_INFILTRATOR] = "callback onModifyMove; read by id in data/conditions.ts",
     [DFI_ABILITY_INNARDSOUT] = "callback onDamagingHit; callback onDamagingHitOrder",
-    [DFI_ABILITY_INNERFOCUS] = "callback onTryAddVolatile; callback onTryBoost",
     [DFI_ABILITY_INSOMNIA] = "callback onSetStatus; callback onTryAddVolatile; callback onUpdate; read by id in data/moves.ts",
-    [DFI_ABILITY_IRONFIST] = "callback onBasePower; callback onBasePowerPriority",
     [DFI_ABILITY_JUSTIFIED] = "callback onDamagingHit",
     [DFI_ABILITY_KEENEYE] = "callback onModifyMove; callback onTryBoost",
     [DFI_ABILITY_KLUTZ] = "callback onStart; callback onSwitchInPriority; read by id in sim/pokemon.ts",
     [DFI_ABILITY_LEAFGUARD] = "callback onSetStatus; callback onTryAddVolatile",
-    [DFI_ABILITY_LEVITATE] = "read by id in data/moves.ts; read by id in sim/pokemon.ts",
     [DFI_ABILITY_LIBERO] = "callback onPrepareHit",
     [DFI_ABILITY_LIGHTMETAL] = "callback onModifyWeight",
     [DFI_ABILITY_LIMBER] = "callback onSetStatus; callback onUpdate",
     [DFI_ABILITY_LIQUIDOOZE] = "callback onSourceTryHeal",
-    [DFI_ABILITY_LIQUIDVOICE] = "callback onModifyType; callback onModifyTypePriority",
     [DFI_ABILITY_LONGREACH] = "callback onModifyMove",
     [DFI_ABILITY_MAGICBOUNCE] = "callback onAllyTryHitSide; callback onTryHit; callback onTryHitPriority",
     [DFI_ABILITY_MAGICGUARD] = "callback onDamage; read by id in data/items.ts",
@@ -6346,12 +7055,10 @@ const char *const dfi_pool_ability_unmodeled[DFI_POOL_ABILITY_COUNT] = {
     [DFI_ABILITY_MOODY] = "callback onResidual; callback onResidualOrder; callback onResidualSubOrder",
     [DFI_ABILITY_MOTORDRIVE] = "callback onTryHit",
     [DFI_ABILITY_MOXIE] = "callback onSourceAfterFaint",
-    [DFI_ABILITY_MULTISCALE] = "callback onSourceModifyDamage",
     [DFI_ABILITY_MUMMY] = "callback onDamagingHit; read by id in sim/pokemon.ts",
     [DFI_ABILITY_NATURALCURE] = "callback onCheckShow; callback onSwitchOut; read by id in sim/battle.ts",
     [DFI_ABILITY_OBLIVIOUS] = "callback onImmunity; callback onTryBoost; callback onTryHit; callback onUpdate",
     [DFI_ABILITY_OPPORTUNIST] = "callback onAnyAfterMega; callback onAnyAfterMove; callback onAnyAfterTerastallization; callback onAnySwitchIn; callback onAnySwitchInPriority; callback onEnd; callback onFoeAfterBoost; callback onResidual; callback onResidualOrder",
-    [DFI_ABILITY_OVERCOAT] = "callback onImmunity; callback onTryHit; callback onTryHitPriority",
     [DFI_ABILITY_OWNTEMPO] = "callback onHit; callback onTryAddVolatile; callback onTryBoost; callback onUpdate",
     [DFI_ABILITY_PARENTALBOND] = "callback onPrepareHit; callback onSourceModifySecondaries; read by id in data/mods/champions/scripts.ts; read by id in sim/battle-actions.ts",
     [DFI_ABILITY_PICKPOCKET] = "callback onAfterMoveSecondary",
@@ -6368,7 +7075,6 @@ const char *const dfi_pool_ability_unmodeled[DFI_POOL_ABILITY_COUNT] = {
     [DFI_ABILITY_QUEENLYMAJESTY] = "callback onFoeTryMove",
     [DFI_ABILITY_QUICKDRAW] = "callback onFractionalPriority; callback onFractionalPriorityPriority",
     [DFI_ABILITY_QUICKFEET] = "callback onModifySpe; read by id in data/conditions.ts",
-    [DFI_ABILITY_RAINDISH] = "callback onWeather",
     [DFI_ABILITY_RATTLED] = "callback onAfterBoost; callback onDamagingHit",
     [DFI_ABILITY_RECEIVER] = "callback onAllyFaint",
     [DFI_ABILITY_RECKLESS] = "callback onBasePower; callback onBasePowerPriority",
@@ -6377,7 +7083,6 @@ const char *const dfi_pool_ability_unmodeled[DFI_POOL_ABILITY_COUNT] = {
     [DFI_ABILITY_RIVALRY] = "callback onBasePower; callback onBasePowerPriority",
     [DFI_ABILITY_RUNAWAY] = "callback onMaybeTrapPokemon; callback onMaybeTrapPokemonPriority; callback onTrapPokemon; callback onTrapPokemonPriority",
     [DFI_ABILITY_SANDFORCE] = "callback onBasePower; callback onBasePowerPriority; callback onImmunity",
-    [DFI_ABILITY_SANDRUSH] = "callback onImmunity; callback onModifySpe",
     [DFI_ABILITY_SANDSPIT] = "callback onDamagingHit",
     [DFI_ABILITY_SANDVEIL] = "callback onImmunity; callback onModifyAccuracy; callback onModifyAccuracyPriority",
     [DFI_ABILITY_SAPSIPPER] = "callback onAllyTryHitSide; callback onTryHit; callback onTryHitPriority; read by id in data/moves.ts",
@@ -6385,19 +7090,14 @@ const char *const dfi_pool_ability_unmodeled[DFI_POOL_ABILITY_COUNT] = {
     [DFI_ABILITY_SCREENCLEANER] = "callback onStart",
     [DFI_ABILITY_SEEDSOWER] = "callback onDamagingHit",
     [DFI_ABILITY_SHADOWTAG] = "callback onFoeMaybeTrapPokemon; callback onFoeTrapPokemon",
-    [DFI_ABILITY_SHARPNESS] = "callback onBasePower; callback onBasePowerPriority",
     [DFI_ABILITY_SHEDSKIN] = "callback onResidual; callback onResidualOrder; callback onResidualSubOrder",
     [DFI_ABILITY_SHEERFORCE] = "callback onBasePower; callback onBasePowerPriority; callback onModifyMove; read by id in data/abilities.ts; read by id in data/mods/champions/scripts.ts; read by id in sim/battle-actions.ts",
     [DFI_ABILITY_SHELLARMOR] = "callback onCriticalHit",
     [DFI_ABILITY_SHIELDDUST] = "callback onModifySecondaries; read by id in data/abilities.ts",
     [DFI_ABILITY_SKILLLINK] = "callback onModifyMove",
-    [DFI_ABILITY_SLUSHRUSH] = "callback onModifySpe",
     [DFI_ABILITY_SNIPER] = "callback onModifyDamage",
     [DFI_ABILITY_SNOWCLOAK] = "callback onImmunity; callback onModifyAccuracy; callback onModifyAccuracyPriority",
     [DFI_ABILITY_SOLARPOWER] = "callback onModifySpA; callback onModifySpAPriority; callback onWeather",
-    [DFI_ABILITY_SOLIDROCK] = "callback onSourceModifyDamage",
-    [DFI_ABILITY_SOUNDPROOF] = "callback onAllyTryHitSide; callback onTryHit; read by id in data/moves.ts",
-    [DFI_ABILITY_SPEEDBOOST] = "callback onResidual; callback onResidualOrder; callback onResidualSubOrder",
     [DFI_ABILITY_SPICYSPRAY] = "callback onDamagingHit",
     [DFI_ABILITY_STAKEOUT] = "callback onModifyAtk; callback onModifyAtkPriority; callback onModifySpA; callback onModifySpAPriority",
     [DFI_ABILITY_STALL] = "callback onFractionalPriority; read by id in data/conditions.ts; read by id in data/moves.ts; read by id in sim/battle-actions.ts",
@@ -6415,16 +7115,13 @@ const char *const dfi_pool_ability_unmodeled[DFI_POOL_ABILITY_COUNT] = {
     [DFI_ABILITY_SUPREMEOVERLORD] = "callback onBasePower; callback onBasePowerPriority; callback onEnd; callback onStart",
     [DFI_ABILITY_SURGESURFER] = "callback onModifySpe",
     [DFI_ABILITY_SWEETVEIL] = "callback onAllySetStatus; callback onAllyTryAddVolatile",
-    [DFI_ABILITY_SWIFTSWIM] = "callback onModifySpe",
     [DFI_ABILITY_SYMBIOSIS] = "callback onAllyAfterUseItem",
     [DFI_ABILITY_SYNCHRONIZE] = "callback onAfterSetStatus; read by id in data/moves.ts",
     [DFI_ABILITY_TANGLEDFEET] = "callback onModifyAccuracy; callback onModifyAccuracyPriority",
-    [DFI_ABILITY_TECHNICIAN] = "callback onBasePower; callback onBasePowerPriority",
     [DFI_ABILITY_TELEPATHY] = "callback onTryHit",
     [DFI_ABILITY_THICKFAT] = "callback onSourceModifyAtk; callback onSourceModifyAtkPriority; callback onSourceModifySpA; callback onSourceModifySpAPriority",
     [DFI_ABILITY_TOXICDEBRIS] = "callback onDamagingHit",
     [DFI_ABILITY_UNAWARE] = "callback onAnyModifyBoost",
-    [DFI_ABILITY_UNNERVE] = "callback onEnd; callback onFoeTryEatItem; callback onStart; callback onSwitchInPriority",
     [DFI_ABILITY_UNSEENFIST] = "callback onHitProtect; callback onModifyMove",
     [DFI_ABILITY_VITALSPIRIT] = "callback onSetStatus; callback onTryAddVolatile; callback onUpdate; read by id in data/moves.ts",
     [DFI_ABILITY_VOLTABSORB] = "callback onTryHit",
@@ -6437,10 +7134,10 @@ const char *const dfi_pool_ability_unmodeled[DFI_POOL_ABILITY_COUNT] = {
 };
 
 const uint8_t dfi_pool_table_hash[32] = {
-    0x7du, 0xcdu, 0xe2u, 0xafu, 0x18u, 0x3fu, 0xe9u, 0xf8u,
-    0xd3u, 0x3au, 0xdau, 0x12u, 0x09u, 0xb6u, 0x3bu, 0x58u,
-    0xb7u, 0x9du, 0xacu, 0xc5u, 0x2au, 0x27u, 0x80u, 0x91u,
-    0x79u, 0xe1u, 0x3du, 0xe8u, 0x2eu, 0xfdu, 0xb6u, 0xd6u,
+    0x4au, 0x69u, 0x11u, 0x90u, 0x66u, 0xefu, 0x49u, 0x27u,
+    0x58u, 0x7fu, 0x1du, 0x6eu, 0x54u, 0xc4u, 0xf0u, 0x1cu,
+    0xe9u, 0x68u, 0x9bu, 0x48u, 0x8cu, 0xf3u, 0x18u, 0x21u,
+    0x1cu, 0xf8u, 0x39u, 0x42u, 0x84u, 0x32u, 0xb2u, 0x38u,
 };
 
 static size_t dfi_pool_put_u16(uint8_t *out, size_t n, uint32_t v)
@@ -6647,6 +7344,17 @@ size_t dfi_pool_canonical_bytes(uint8_t *out, size_t capacity)
     for (uint32_t i = 0u; i < DFI_POOL_MOVE_COUNT; ++i) {
         out[n++] = dfi_pool_move_heal[i][0];
         out[n++] = dfi_pool_move_heal[i][1];
+    }
+    for (uint32_t i = 0u; i < DFI_POOL_MOVE_COUNT; ++i) {
+        const uint32_t v = dfi_pool_move_static_flags[i];
+        out[n++] = (uint8_t)(v & 0xFFu);          /* wide-operands-reviewed */
+        out[n++] = (uint8_t)((v >> 8u) & 0xFFu);  /* wide-operands-reviewed */
+        out[n++] = (uint8_t)((v >> 16u) & 0xFFu); /* wide-operands-reviewed */
+        out[n++] = (uint8_t)((v >> 24u) & 0xFFu); /* wide-operands-reviewed */
+    }
+    for (uint32_t i = 0u; i < DFI_POOL_MOVE_COUNT; ++i) {
+        out[n++] = dfi_pool_move_static_hits[i][0];
+        out[n++] = dfi_pool_move_static_hits[i][1];
     }
     return n;
 }

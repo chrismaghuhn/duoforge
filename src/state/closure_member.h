@@ -30,13 +30,17 @@ bool dfi_gender_legal(uint32_t gender_rule, uint32_t gender);
  * the invariants (an ability is bounded through its forme). The first four
  * kinds take a member's moves and ability from the forme's set; the POOL
  * kinds from the moves it learns and the abilities it may have. */
+/* Badly poisoned (POOL only: Toxic and Poison Fang's secondary, step G36); the public ailment DUOFORGE_AILMENT_TOX has the
+ * same value. Its counter is the tail's toxic_stage of the member. */
+#define DFI_STATUS_TOX 6u
+
 typedef struct dfi_kind_limits {
     uint32_t forme_count;     /* species ids below this */
     uint32_t move_count;      /* move ids below this */
     uint32_t item_count;      /* an item is 1 + its id, so at most this */
     uint32_t ability_count;   /* ability ids below this (an ability is 1 + its id) */
-    uint32_t switch_flag_max; /* DFI_SWITCH_FAINTED; DFI_SWITCH_FLIP_TURN for TEAM_C; DFI_SWITCH_UTURN for POOL */
-    uint32_t status_max;      /* DFI_STATUS_SLP; DFI_STATUS_PSN for TEAM_C and POOL */
+    uint32_t switch_flag_max; /* DFI_SWITCH_FAINTED; DFI_SWITCH_FLIP_TURN for TEAM_C; DFI_SWITCH_VOLT_SWITCH for POOL */
+    uint32_t status_max;      /* DFI_STATUS_SLP; DFI_STATUS_PSN for TEAM_C; DFI_STATUS_TOX for POOL (Toxic, step G36) */
     uint32_t vol_flags_mask;  /* DFI_VOL_* bits a position may carry: TEAM_C and POOL add the choice lock */
     uint32_t terrain_max;     /* DFI_TERRAIN_GRASSY; DFI_TERRAIN_PSYCHIC for TEAM_C; DFI_TERRAIN_MISTY for POOL */
     uint32_t weather_max;     /* DFI_WEATHER_SUN; DFI_WEATHER_SNOW for POOL (Sandstorm and Snowscape) */
@@ -56,7 +60,7 @@ typedef struct dfi_pivot_move {
     uint8_t flag; /* DFI_SWITCH_* */
     uint16_t move; /* the move id of the pool tables: a u16, as everywhere (the pool has 511 moves; Volt Switch is above 255) */
 } dfi_pivot_move;
-#define DFI_PIVOT_MOVE_COUNT 2u
+#define DFI_PIVOT_MOVE_COUNT 3u
 extern const dfi_pivot_move dfi_pivot_moves[DFI_PIVOT_MOVE_COUNT];
 
 /* The entry for a move, or NULL when the move does not pivot with a flag of its own. */
@@ -88,6 +92,12 @@ bool dfi_forme_ability_legal(const dfi_kind_limits *lim, uint32_t species, uint3
  * (a member holds it as item 1 + this id). */
 uint32_t dfi_forme_stone(uint32_t species);
 
+/* The Mega forme that a member of base forme `species` reaches holding `item` (1 + the item id, 0 for none), or
+ * DFI_FORME_NONE when the item is no Mega Stone of the forme. The Mega comes from the pair (forme, stone): the base
+ * forme's own link when the stone is the stone of that link (dfi_forme_stone), else the stone's own row (a base forme
+ * with a second Mega, Charizard-Mega-X, or a stone that two base formes share, Meowsticite). O(1), no heap. */
+uint32_t dfi_mega_of(uint32_t species, uint32_t item);
+
 /* Stat Points: each stat at most DUOFORGE_STAT_POINTS_MAX and their sum at
  * most DUOFORGE_STAT_POINTS_TOTAL_MAX. */
 bool dfi_stat_points_valid(const uint32_t *sp);
@@ -103,6 +113,8 @@ bool dfi_manifest_item(const dfi_support_manifest *s, uint32_t item);
 /* Mega Evolution of the base forme `species`: it has a Mega forme, the
  * manifest marks Mega Evolution and the ability the Mega forme brings. */
 bool dfi_manifest_mega(const dfi_support_manifest *s, uint32_t species);
+/* The same for the Mega that the stone `item` (1 + its id) takes the base forme `species` to (dfi_mega_of). */
+bool dfi_manifest_mega_of(const dfi_support_manifest *s, uint32_t species, uint32_t item);
 
 /* Validation of one registered member of a combat setup (the side rules,
  * Species Clause and Item Clause, are separate). */

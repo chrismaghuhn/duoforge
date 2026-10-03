@@ -606,6 +606,103 @@ static uint32_t find_id(df_test *t, const kase *c, uint32_t table, const char *n
     return id;
 }
 
+/* ----------------------------------------------------------- Mega by stone */
+
+/* The Mega formes of a species, one per stone (duoforge_data_mega_count and _at): the count, the ascending stone ids,
+ * the old single link as the first one that the forme's row has, and the refusals; and the pairs that the single link
+ * cannot give (a second Mega, a stone of two species). */
+static void test_mega_by_stone(df_test *t, const kase *c)
+{
+    const uint32_t S = DUOFORGE_DATA_TABLE_SPECIES;
+    const uint32_t count = c->n[S];
+    uint32_t reached[DFI_POOL_FORME_COUNT] = {0};
+    for (uint32_t sp = 0u; sp < count; ++sp) {
+        uint32_t n = 0xFFFFFFFFu;
+        if (!DF_CHECK(t, duoforge_data_mega_count(c->ctx, sp, &n) == DUOFORGE_OK)) {
+            continue;
+        }
+        const duoforge_forme_info *in = &c->info[sp];
+        DF_CHECK(t, in->is_mega == 0u || n == 0u); /* a Mega forme reaches none */
+        DF_CHECK(t, in->mega_species == DUOFORGE_DATA_NONE || n >= 1u); /* the single link is one of them */
+        bool single_listed = in->mega_species == DUOFORGE_DATA_NONE;
+        uint32_t last = 0u;
+        for (uint32_t i = 0u; i < n; ++i) {
+            duoforge_mega_info mi;
+            if (!DF_CHECK(t, duoforge_data_mega_at(c->ctx, sp, i, &mi) == DUOFORGE_OK)) {
+                continue;
+            }
+            DF_CHECK(t, mi.base_species == sp && mi.stone < c->n[DUOFORGE_DATA_TABLE_ITEM] && mi.mega_species < count);
+            DF_CHECK(t, i == 0u || mi.stone > last); /* ascending item id */
+            last = mi.stone;
+            DF_CHECK(t, c->info[mi.mega_species].is_mega == 1u && c->info[mi.mega_species].base_species == sp);
+            DF_CHECK(t, mi.mega_ability == dfi_pool_formes[mi.mega_species].ability);
+            if (in->mega_species != DUOFORGE_DATA_NONE && mi.mega_species == in->mega_species) {
+                single_listed = single_listed || mi.stone == in->mega_stone;
+                DF_CHECK(t, mi.stone == in->mega_stone && mi.mega_ability == in->mega_ability &&
+                                mi.supported == in->mega_supported); /* the old fields say the same of the first one */
+            }
+            reached[mi.mega_species] += 1u;
+        }
+        DF_CHECK(t, single_listed);
+        duoforge_mega_info mi = {0xDEADu, 0xDEADu, 0xDEADu, 0xDEADu, 0xDEADu};
+        const duoforge_mega_info before = mi;
+        DF_CHECK(t, duoforge_data_mega_at(c->ctx, sp, n, &mi) == DUOFORGE_E_INVALID_ARGUMENT &&
+                        memcmp(&mi, &before, sizeof mi) == 0);
+    }
+    /* Every Mega forme of the kind is reached by exactly one stone, and only by its own. */
+    for (uint32_t f = 0u; f < count; ++f) {
+        DF_CHECK(t, c->info[f].is_mega == 0u || reached[f] == 1u);
+    }
+    /* The refusals. */
+    duoforge_mega_info mi = {0xDEADu, 0xDEADu, 0xDEADu, 0xDEADu, 0xDEADu};
+    const duoforge_mega_info before = mi;
+    uint32_t n = 0xDEADu;
+    DF_CHECK(t, duoforge_data_mega_count(NULL, 0u, &n) == DUOFORGE_E_NULL_ARGUMENT && n == 0xDEADu);
+    DF_CHECK(t, duoforge_data_mega_count(c->ctx, 0u, NULL) == DUOFORGE_E_NULL_ARGUMENT);
+    DF_CHECK(t, duoforge_data_mega_count(c->ctx, count, &n) == DUOFORGE_E_INVALID_ARGUMENT && n == 0xDEADu);
+    DF_CHECK(t, duoforge_data_mega_count(c->ctx, 0xFFFFFFFFu, &n) == DUOFORGE_E_INVALID_ARGUMENT && n == 0xDEADu);
+    DF_CHECK(t, duoforge_data_mega_at(NULL, 0u, 0u, &mi) == DUOFORGE_E_NULL_ARGUMENT);
+    DF_CHECK(t, duoforge_data_mega_at(c->ctx, 0u, 0u, NULL) == DUOFORGE_E_NULL_ARGUMENT);
+    DF_CHECK(t, duoforge_data_mega_at(c->ctx, count, 0u, &mi) == DUOFORGE_E_INVALID_ARGUMENT &&
+                    memcmp(&mi, &before, sizeof mi) == 0);
+    DF_CHECK(t, duoforge_data_mega_at(c->ctx, 0u, 0xFFFFFFFFu, &mi) == DUOFORGE_E_INVALID_ARGUMENT &&
+                    memcmp(&mi, &before, sizeof mi) == 0);
+    /* By name: a second Mega and a shared stone exist only under the POOL kinds. */
+    const uint32_t charizard = find_id(t, c, S, "charizard");
+    const uint32_t staraptor = find_id(t, c, S, "staraptor");
+    uint32_t cc = 0u;
+    DF_CHECK(t, duoforge_data_mega_count(c->ctx, charizard, &cc) == DUOFORGE_OK);
+    DF_CHECK(t, cc == (c->pool_rules ? 2u : 1u));
+    duoforge_mega_info star = {0};
+    DF_CHECK(t, duoforge_data_mega_at(c->ctx, staraptor, 0u, &star) == DUOFORGE_OK && star.stone == c->info[staraptor].mega_stone &&
+                    star.mega_species == c->info[staraptor].mega_species);
+    if (c->pool_rules) {
+        const uint32_t I = DUOFORGE_DATA_TABLE_ITEM;
+        const uint32_t megax = find_id(t, c, S, "charizardmegax"), megay = find_id(t, c, S, "charizardmegay");
+        duoforge_mega_info a = {0}, b2 = {0};
+        DF_CHECK(t, duoforge_data_mega_at(c->ctx, charizard, 0u, &a) == DUOFORGE_OK &&
+                        duoforge_data_mega_at(c->ctx, charizard, 1u, &b2) == DUOFORGE_OK);
+        DF_CHECK(t, a.stone == find_id(t, c, I, "charizarditey") && a.mega_species == megay); /* ascending item id */
+        DF_CHECK(t, b2.stone == find_id(t, c, I, "charizarditex") && b2.mega_species == megax);
+        DF_CHECK(t, c->info[charizard].mega_species == megay); /* the single link keeps its meaning: the first Mega of the pool */
+        /* Meowsticite: one stone, two species, each with its own Mega. */
+        const uint32_t m_m = find_id(t, c, S, "meowstic"), m_f = find_id(t, c, S, "meowsticf");
+        duoforge_mega_info mm = {0}, mf = {0};
+        DF_CHECK(t, duoforge_data_mega_at(c->ctx, m_m, 0u, &mm) == DUOFORGE_OK &&
+                        duoforge_data_mega_at(c->ctx, m_f, 0u, &mf) == DUOFORGE_OK);
+        DF_CHECK(t, mm.stone == find_id(t, c, I, "meowsticite") && mf.stone == mm.stone);
+        DF_CHECK(t, mm.mega_species == find_id(t, c, S, "meowsticmmega") && mf.mega_species == find_id(t, c, S, "meowsticfmega"));
+        /* The support flag is the pair's own: over a manifest without Tough Claws Mega-X is unsupported, Mega-Y is not. */
+        dfi_support_manifest claws = dfi_support;
+        claws.abilities[DFI_ABILITY_TOUGHCLAWS] = 0u;
+        const dfi_kind_limits lim = dfi_kind_limits_of(c->kind);
+        duoforge_mega_info y = {0}, x = {0};
+        dfi_data_mega_at(&lim, &claws, charizard, 0u, &y);
+        dfi_data_mega_at(&lim, &claws, charizard, 1u, &x);
+        DF_CHECK(t, y.supported == 1u && x.supported == 0u);
+    }
+}
+
 /* Facts that follow from the decisions and the pinned data, by name. */
 static void test_known_facts(df_test *t, const kase *c)
 {
@@ -697,7 +794,8 @@ static void test_support(df_test *t, const kase *c)
         DF_CHECK(t, api_supported(t, c, DUOFORGE_DATA_TABLE_MOVE, DFI_MOVE_ENCORE));
         DF_CHECK(t, api_supported(t, c, DUOFORGE_DATA_TABLE_MOVE, DFI_MOVE_WIDEGUARD)); /* step G7 */
         DF_CHECK(t, api_supported(t, c, DUOFORGE_DATA_TABLE_ITEM, DFI_ITEM_FLOETTITE)); /* step G12 */
-        DF_CHECK(t, !api_supported(t, c, DUOFORGE_DATA_TABLE_ITEM, DFI_ITEM_EXPERTBELT));
+        DF_CHECK(t, api_supported(t, c, DUOFORGE_DATA_TABLE_ITEM, DFI_ITEM_EXPERTBELT)); /* step G28 */
+        DF_CHECK(t, !api_supported(t, c, DUOFORGE_DATA_TABLE_ITEM, DFI_ITEM_SCOPELENS));
     }
 }
 
@@ -773,9 +871,17 @@ static bool oracle_member_supported(df_test *t, const kase *c, const duoforge_me
     if (m->item != 0u && !api_supported(t, c, DUOFORGE_DATA_TABLE_ITEM, m->item - 1u)) {
         return false;
     }
-    if (in->mega_stone != DUOFORGE_DATA_NONE && m->item == in->mega_stone + 1u && in->mega_supported == 0u) {
-        return false;
+    /* A Mega Stone of the forme: Mega Evolution through that stone has to be supported (one stone each, from the API). */
+    uint32_t stones = 0u;
+    DF_CHECK(t, duoforge_data_mega_count(c->ctx, m->species_id, &stones) == DUOFORGE_OK);
+    for (uint32_t i = 0u; i < stones; ++i) {
+        duoforge_mega_info mi;
+        DF_CHECK(t, duoforge_data_mega_at(c->ctx, m->species_id, i, &mi) == DUOFORGE_OK);
+        if (m->item == mi.stone + 1u && mi.supported == 0u) {
+            return false;
+        }
     }
+    (void)in;
     return true;
 }
 
@@ -1392,6 +1498,7 @@ int main(void)
         test_aliases(&t, c);
         test_forme_info(&t, c);
         test_known_facts(&t, c);
+        test_mega_by_stone(&t, c);
         test_support(&t, c);
         test_random_setups(&t, c, k);
         test_exhaustive(&t, c);

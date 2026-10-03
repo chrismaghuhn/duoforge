@@ -11,6 +11,7 @@
 
 #include "data/pool_tables.h"
 #include "state/battle_internal.h"
+#include "state/closure_member.h"
 
 static void print_event(FILE *out, const char *label, const duoforge_event *e)
 {
@@ -97,7 +98,7 @@ unsigned df_conf_compare_observation(FILE *out, const duoforge_context *ctx, con
                 const df_conf_member *set = &cb->members[s][m];
                 uint32_t ability = set->ability;
                 if (e->mega != 0u) {
-                    ability = 1u + dfi_pool_formes[dfi_pool_formes[set->species].mega_forme].ability;
+                    ability = 1u + dfi_pool_formes[dfi_mega_of(set->species, set->item)].ability; /* the Mega of (forme, stone) */
                 }
                 bool ok = v->status == status && v->is_mega == e->mega && v->item_used == used && v->ability == ability;
                 for (uint32_t k = 0; k < v->move_count && k < 4u; ++k) {
@@ -312,7 +313,11 @@ unsigned df_conf_compare_state(FILE *out, const duoforge_context *ctx, const duo
                 const uint32_t choice = ((uint32_t)pos->flags & DFI_VOL_CHOICE_LOCK) != 0u ? 8u : 0u;
                 const uint32_t unburden = ((uint32_t)pos->flags & DFI_VOL_UNBURDEN) != 0u ? 16u : 0u;
                 const uint32_t helping = ((uint32_t)pos->flags & DFI_VOL_HELPING_HAND) != 0u ? 32u : 0u;
-                const uint32_t follow = ((uint32_t)pos->flags & DFI_VOL_FOLLOW_ME) != 0u ? 64u : 0u;
+                /* Step G30: the bit of a Rage Powder user is not Follow Me's (its volatile is not compared here: the extension's
+                 * RAGE_POWDER bit is, in duoforge.state.pool_g30). */
+                const bool rage_powder = pos != NULL && ((uint32_t)pos->flags & DFI_VOL_FOLLOW_ME) != 0u &&
+                                         dfi_last_move_id(b, s * 2u + (uint32_t)(pos - b->sides[s].positions)) == DFI_MOVE_RAGEPOWDER;
+                const uint32_t follow = ((uint32_t)pos->flags & DFI_VOL_FOLLOW_ME) != 0u && !rage_powder ? 64u : 0u;
                 const uint32_t flinch = ((uint32_t)pos->flags & DFI_VOL_FLINCH) != 0u ? 128u : 0u;
                 if (lslot != e->locked_slot || ltarget != e->locked_target || choice != (e->vols & 8u) ||
                     unburden != (e->vols & 16u) || helping != (e->vols & 32u) || follow != (e->vols & 64u) ||
