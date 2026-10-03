@@ -390,6 +390,10 @@ static void contract(df_test *t, const duoforge_context *ctx, const duoforge_con
     DF_CHECK(t, duoforge_data_nature_static(synthetic, 0u, &nat) == DUOFORGE_E_UNSUPPORTED);
     DF_CHECK(t, duoforge_data_type_effect(synthetic, 0u, 0u, &a, &b) == DUOFORGE_E_UNSUPPORTED);
     DF_CHECK(t, duoforge_data_type_effect(synthetic, 99u, 99u, &a, &b) == DUOFORGE_E_UNSUPPORTED);
+    DF_CHECK(t, duoforge_data_move_static(synthetic, 0xFFFFFFFFu, &mv) == DUOFORGE_E_UNSUPPORTED);
+    DF_CHECK(t, duoforge_data_item_static(synthetic, 0xFFFFFFFFu, &it) == DUOFORGE_E_UNSUPPORTED);
+    DF_CHECK(t, duoforge_data_ability_static(synthetic, 0xFFFFFFFFu, &ab) == DUOFORGE_E_UNSUPPORTED);
+    DF_CHECK(t, duoforge_data_nature_static(synthetic, 0xFFFFFFFFu, &nat) == DUOFORGE_E_UNSUPPORTED);
     DF_CHECK(t, duoforge_data_forme_static(NULL, 0u, NULL) == DUOFORGE_E_NULL_ARGUMENT);
     DF_CHECK(t, memcmp(&fo, &fo_ref, sizeof fo) == 0 && memcmp(&mv, &mv_ref, sizeof mv) == 0 &&
                     memcmp(&it, &it_ref, sizeof it) == 0 && memcmp(&ab, &ab_ref, sizeof ab) == 0 &&
