@@ -169,6 +169,7 @@ static duoforge_status dfi_slot_candidates(const duoforge_context *ctx, const st
              * move; with no move left the slot gets Struggle, as for any disabled move. */
             if ((uint32_t)b->tail.sides[s].positions[slot].disable_slot == k + 1u) {
                 continue;
+            }
             /* A foe's Imprison (step G38, POOL kinds, data/moves.ts:9504-9510): onFoeDisableMove disables, as a hidden
              * disable, every move that the imprisoner knows (Struggle aside), in endTurn; the player's choice of such a
              * move is rejected (sim/side.ts:718-737), so the move is not offered, and with no move left the slot gets
