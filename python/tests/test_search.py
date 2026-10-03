@@ -7,9 +7,11 @@ docs/superpowers/specs/2026-10-03-m12-search-stage1-design.md).
   inside a round, a pinned table
   digest on the CPU, the decisions that are not searched, M' = 1 for a foe
   without a request, the encoder probe and the reproduction data.
+- SearchPlayer in play_suite (plan task 10): the step and the seats, K = 1
+  reproduces the raw network, the cut-off leaves use the tiebreak.
 
-The NumPy parts are in test_search_numpy.py. Teams A and B under POOL, at
-fixed init keys, on the CPU.
+The NumPy parts are in test_search_numpy.py. Teams A and B (the arena: A, B
+and C) under POOL, at fixed init keys, on the CPU.
 """
 import hashlib
 import unittest
@@ -20,7 +22,7 @@ import numpy as np
 import duoforge
 from duoforge import _layout, features
 from duoforge.context import reference_setups
-from duoforge_search import SearchError, lookahead, seeds
+from duoforge_search import SearchError, arena, lookahead, seeds
 
 C = _layout.CONSTANTS
 SEED = 0x2026100300000231
@@ -298,6 +300,93 @@ class LookaheadKinds(unittest.TestCase):
                     with self.assertRaises(ValueError):  # twice, past the roots, no seat, one seat short
                         look.decide(roots, envs, seats, [1] * len(envs), [False] * len(envs))
                 self.assertEqual(look.decide(roots, [], [], [], [])[1], [])
+
+
+class ArenaSearch(unittest.TestCase):
+    """SearchPlayer in play_suite (plan task 10), over Teams A, B and C."""
+
+    @classmethod
+    def setUpClass(cls):
+        from duoforge import teams
+        from duoforge_learn import evaluate, suite
+        cls.evaluate = evaluate
+        cls.model, cls.params = _v2s()
+        cls.ctx = duoforge.Context(C["DUOFORGE_DATA_KIND_POOL"])
+        cls.pool = teams.load(cls.ctx, ["A", "B", "C"])
+        cls.rows = suite.make_suite(3, SEED, games=2)[:32]
+        with duoforge.Batch(cls.ctx, reference_setups([0]), 1, SEED) as b:
+            cls.mask = int(b.observe_ext()[0, 0]["supported"])
+        cls.raw = evaluate.Player(cls.model, cls.params, 4, "R", ext_supported=cls.mask)
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.ctx.close()
+
+    def _searcher(self, max_steps, **change):
+        args = dict(k=1, m=2, s=2, capacity=128, workers=2)
+        args.update(change)
+        look = lookahead.Lookahead(self.ctx, self.model, self.params, 4, self.mask, **args)
+        return look, arena.SearchPlayer(look, "N", ARENA_SEED, max_steps)
+
+    def _play(self, learner, max_steps, rows=None):
+        rows = self.rows if rows is None else rows
+        return self.evaluate.play_suite(self.ctx, self.pool, rows, learner, self.raw, 2, ARENA_SEED,
+                                        max_steps=max_steps)
+
+    def test_play_suite_passes_step_and_seats(self):
+        seen = []
+        player = self.evaluate.Player
+
+        class Recording(player):
+            def indices(inner, batch, choices, step=None, seats=None):
+                seen.append((inner.name, step, seats.copy()))
+                return super().indices(batch, choices, step, seats)
+
+        rows = self.rows[:8]
+        learner = Recording(self.model, self.params, 4, "learner", ext_supported=self.mask)
+        opponent = Recording(self.model, self.params, 4, "opponent", ext_supported=self.mask)
+        records = self.evaluate.play_suite(self.ctx, self.pool, rows, learner, opponent, 2, ARENA_SEED, max_steps=4)
+        np.testing.assert_array_equal(records, self._play(self.raw, 4, rows))  # the keywords change no game
+        seat = rows["learner_seat"].astype(np.int64)
+        steps = [step for name, step, _ in seen if name == "opponent"]
+        self.assertEqual(steps, list(range(len(steps))))
+        self.assertGreater(len(steps), 1)
+        for name, step, seats in seen:
+            want = seat if name == "learner" else 1 - seat
+            ok = seats >= 0
+            self.assertTrue(ok.any())
+            np.testing.assert_array_equal(seats[ok], want[ok])
+        with self.assertRaises(ValueError):  # a searcher cannot play without them
+            arena.SearchPlayer(None, "N", ARENA_SEED, 4).indices(None, None)
+
+    def test_k1_reproduces_the_raw_network(self):
+        # Plan Review Focus 4: K = 1 plays the raw network's argmax, so N against R is R against R, record for record.
+        look, searcher = self._searcher(30)
+        with look:
+            mine = self._play(searcher, 30)
+        np.testing.assert_array_equal(mine, self._play(self.raw, 30))
+        records = [r for game in searcher.records.values() for r in game]
+        self.assertEqual({r["kind"] for r in records} >= {"team", "searched"}, True)
+        searched = [r for r in records if r["kind"] == "searched"]
+        self.assertTrue(all(r["k"] == 1 and not r["changed"] for r in searched))
+        self.assertEqual(sorted(searcher.records), sorted({r["env"] for r in records}))
+        for r in records:  # every game at episode 1 of play_suite's batch
+            key = seeds.decision_keys(ARENA_SEED, [r["env"]], [1], [r["epoch"]], [r["seat"]])
+            self.assertEqual(r["key"], int(key[0]))
+
+    def test_last_step_leaves_use_the_tiebreak(self):
+        # Plan Review Focus 3: at the arena's last step every leaf that is neither refused nor TERMINAL is scored
+        # by the tiebreak, at no other step; the step is the arena loop's own.
+        look, searcher = self._searcher(3, k=2)
+        with look:
+            self._play(searcher, 3)
+        searched = [r for game in searcher.records.values() for r in game if r["kind"] == "searched"]
+        self.assertTrue(any(r["step"] == 2 for r in searched) and any(r["step"] < 2 for r in searched))
+        for r in searched:
+            leaves = r["leaves"]
+            open_leaves = r["k"] * r["m"] * r["s"] - leaves["refused"] - leaves["terminal"]
+            self.assertEqual(r["last_step"], r["step"] == 2)
+            self.assertEqual(leaves["cut_off"], open_leaves if r["step"] == 2 else 0)
 
 
 # One decision's 3 x 3 table (S = 4, capacity 256) at v2-S init key 7, float64 bytes, on the CPU with JAX

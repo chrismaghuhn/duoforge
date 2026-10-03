@@ -33,7 +33,12 @@ class Player:
         self.model, self.params, self.encoder, self.name = model, params, encoder, name
         self.ext_supported = ext_supported
 
-    def indices(self, batch, choices):
+    def indices(self, batch, choices, step=None, seats=None):
+        """The candidate index of the most likely action of every requested
+        seat (E, 2). play_suite also passes step, its loop index, and seats,
+        this player's seat in every game (-1 where it decides nothing); a
+        player that searches needs them (duoforge_search.arena), a greedy
+        one ignores them."""
         return _greedy_indices(self.params, self.model.act, batch, choices, self.encoder, self.ext_supported)
 
 
@@ -43,7 +48,11 @@ def play_suite(context, pool, rows, learner, opponent, workers, seed, max_steps=
     environment per row at episode 1 of a batch seeded with seed. A game
     still running after max_steps steps is marked unfinished and scored by
     the reference's tiebreak (Batch.tiebreak); one the tiebreak cannot
-    resolve counts as the learner's loss, marked unresolved."""
+    resolve counts as the learner's loss, marked unresolved. Every call of
+    a player's indices passes step, the loop index t (the last is
+    max_steps - 1), and seats, the player's seat in every game, -1 where it
+    decides nothing (a game the engine refused, or the learner's seat
+    without a request)."""
     n = rows.shape[0]
     seat = rows["learner_seat"].astype(np.int64)
     every = np.arange(n)
@@ -64,17 +73,21 @@ def play_suite(context, pool, rows, learner, opponent, workers, seed, max_steps=
             raise ValueError(f"unknown opponent {opponent!r}")
         choices = np.zeros((n, 2), dtype=_layout.FACTORED_CHOICE)
         dead = np.zeros(n, dtype=bool)  # games the engine refused to step (E_UNSUPPORTED): the learner's loss
-        for _ in range(max_steps):
+        for t in range(max_steps):
             batch.query()
             batch.query_factored()
             requested = (batch.requests["requested"] != 0) & ~dead[:, None]
             if not requested.any():
                 break
-            indices = other.choose(batch) if opponent in ("random", "scripted") else other.indices(batch, choices)
             mine = requested[every, seat]
+            if opponent in ("random", "scripted"):
+                indices = other.choose(batch)
+            else:
+                indices = other.indices(batch, choices, step=t, seats=np.where(dead, -1, 1 - seat))
             if mine.any():
                 e = every[mine]
-                indices[e, seat[mine]] = learner.indices(batch, choices)[e, seat[mine]]
+                indices[e, seat[mine]] = learner.indices(batch, choices, step=t,
+                                                         seats=np.where(mine, seat, -1))[e, seat[mine]]
             indices[dead] = _layout.NO_CHOICE
             try:
                 batch.step(indices, active=~dead if dead.any() else None)
