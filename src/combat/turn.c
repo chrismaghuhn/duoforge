@@ -2033,8 +2033,7 @@ static duoforge_status dfi_before_move(dfi_run *r, uint32_t user, uint32_t move_
      * is not stopped: no marked move has it): the move that the volatile bars shows `cant|X|Disable|move` and uses no PP. */
     {
         const dfi_tail_pos *tail = &r->b->tail.sides[user / 2u].positions[user % 2u];
-        if (tail->disable_slot != 0u && move_id != DFI_MOVE_STRUGGLE &&
-            dfi_move_of(m, (uint32_t)tail->disable_slot - 1u) == move_id) {
+        if (tail->disable_slot != 0u && dfi_move_of(m, (uint32_t)tail->disable_slot - 1u) == move_id) {
             duoforge_event e = dfi_ev(DUOFORGE_EVENT_CANT, user, DUOFORGE_CAUSE_DISABLE, 0u, DUOFORGE_NO_POSITION);
             e.id = (uint16_t)move_id;
             dfi_emit(r, &e); /* [cant] Disable|move */

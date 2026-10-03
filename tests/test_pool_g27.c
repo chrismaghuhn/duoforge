@@ -120,6 +120,14 @@ static const struct {
     {"g27_disable_b", 5u, {0u, 0u, 0u, 1u}},
     {"g27_disable_b", 6u, {0u, 0u, 0u, 0u}},
     {"g27_disable_b", 7u, {0u, 0u, 0u, 0u}},
+    {"g27_disable_heal_block", 0u, {0u, 0u, 0u, 0u}},
+    {"g27_disable_heal_block", 1u, {0u, 0u, 0u, 0u}},
+    {"g27_disable_heal_block", 2u, {0u, 0u, 0u, 1u}},
+    {"g27_disable_heal_block", 3u, {0u, 0u, 0u, 1u}},
+    {"g27_disable_heal_block", 4u, {0u, 0u, 0u, 1u}},
+    {"g27_disable_heal_block", 5u, {0u, 0u, 0u, 0u}},
+    {"g27_disable_heal_block", 6u, {0u, 0u, 0u, 0u}},
+    {"g27_disable_heal_block", 7u, {0u, 0u, 0u, 0u}},
     {"g27_disable_lock", 0u, {0u, 0u, 0u, 0u}},
     {"g27_disable_lock", 1u, {0u, 0u, 0u, 0u}},
     {"g27_disable_lock", 2u, {0u, 0u, 1u, 0u}},
@@ -146,6 +154,18 @@ static const struct {
     {"g27_disable_pair_b", 6u, {1u, 0u, 1u, 0u}},
     {"g27_disable_pair_b", 7u, {1u, 0u, 1u, 0u}},
     {"g27_disable_pair_b", 8u, {0u, 0u, 0u, 0u}},
+    {"g27_disable_pp", 0u, {0u, 0u, 0u, 0u}},
+    {"g27_disable_pp", 1u, {0u, 0u, 0u, 0u}},
+    {"g27_disable_pp", 2u, {0u, 0u, 0u, 0u}},
+    {"g27_disable_pp", 3u, {0u, 0u, 0u, 0u}},
+    {"g27_disable_pp", 4u, {0u, 0u, 0u, 0u}},
+    {"g27_disable_pp", 5u, {0u, 0u, 0u, 0u}},
+    {"g27_disable_pp", 6u, {0u, 0u, 0u, 0u}},
+    {"g27_disable_pp", 7u, {0u, 0u, 0u, 0u}},
+    {"g27_disable_pp", 8u, {0u, 0u, 0u, 0u}},
+    {"g27_disable_pp", 9u, {0u, 0u, 0u, 0u}},
+    {"g27_disable_pp", 10u, {0u, 0u, 0u, 0u}},
+    {"g27_disable_pp", 11u, {0u, 0u, 0u, 0u}},
     {"g27_disable_switch", 0u, {0u, 0u, 0u, 0u}},
     {"g27_disable_switch", 1u, {0u, 0u, 0u, 0u}},
     {"g27_disable_switch", 2u, {0u, 0u, 1u, 0u}},
@@ -155,7 +175,7 @@ static const struct {
     {"g27_disable_switch", 6u, {0u, 0u, 0u, 1u}},
 };
 
-static const char *const names[] = {"g27_cursed_body_a", "g27_disable_b", "g27_disable_lock", "g27_disable_pair_a", "g27_disable_pair_b", "g27_disable_switch"};
+static const char *const names[] = {"g27_cursed_body_a", "g27_disable_b", "g27_disable_heal_block", "g27_disable_lock", "g27_disable_pair_a", "g27_disable_pair_b", "g27_disable_pp", "g27_disable_switch"};
 
 int main(void)
 {
@@ -233,6 +253,11 @@ int main(void)
                     /* Encore's slot (step G9, checked by duoforge.state.pool_g9) is in the battle that has both. */
                     exp.sides[flat / 2u].positions[flat % 2u].encore_slot =
                         b->tail.sides[flat / 2u].positions[flat % 2u].encore_slot;
+                    /* Heal Block's bit (step G8, checked by duoforge.state.pool_g8) is in the battle that has it end with a Disable. */
+                    exp.sides[flat / 2u].positions[flat % 2u].volatiles =
+                        b->tail.sides[flat / 2u].positions[flat % 2u].heal_block_turns != 0u
+                            ? (uint32_t)DUOFORGE_POSITION_EXT_HEAL_BLOCK
+                            : 0u;
                 }
                 if (!DF_CHECK(&t, memcmp(&ext[viewer], &exp, sizeof exp) == 0)) {
                     fprintf(stderr, "  %s step %u viewer %u: the extension differs from the protocol's\n", names[n], si,
