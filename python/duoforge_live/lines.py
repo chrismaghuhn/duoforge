@@ -9,6 +9,10 @@ first:
 
 - room: a line of the room, not of the battle (None);
 - fold: a line the tracker folds ("fold");
+- keep: a line that changes no field and that the converter does not read
+  ("keep"): a stat drop that the holder's own ability stopped (Intimidate
+  against Inner Focus or Clear Body). The tracker keeps it with the step's
+  lines and folds nothing;
 - feature: an effect of decision 0018 section 6.1. It is folded only when the
   library supports its DUOFORGE_VIEWEXT_FEATURE_* bit; otherwise Stop
   ("feature:<NAME>"). The single-turn features of a PIVOT boundary (Rage
@@ -190,6 +194,22 @@ def _unknown(kind, effect=None):
     raise Stop(f"line:{kind}" + (f" {effect}" if effect else ""))
 
 
+def _kept_drop(args, attrs, view):
+    """-fail|X|unboost[|stat]|[from] ability: A|[of] X: X's own ability A stopped a drop (Intimidate against Inner
+    Focus, Scrappy, Oblivious, Own Tempo or Hyper Cutter, which name the stat; any drop against Clear Body or White
+    Smoke, which do not; data/abilities.ts onTryBoost). The stat stays: no field changes ("keep"). Any other form
+    stops."""
+    froms = _froms(attrs)
+    of = [a[len("[of] "):] for a in attrs if a.startswith("[of] ")]
+    stats = args[2:]
+    if (len(froms) == 1 and froms[0].startswith("ability: ") and of == [args[0]] and len(stats) <= 1
+            and all(s in trace_to_c.EV_STATS for s in stats)):
+        ability = view.data.tables["ABILITY"].get(trace_to_c.key(froms[0][len("ability: "):]))
+        if ability is not None and ability + 1 == view.ability_now(args[0]):
+            return "keep"
+    _unknown("-fail", "unboost")
+
+
 def _froms(attrs):
     return [a[len("[from] "):] for a in attrs if a.startswith("[from] ") or a.startswith("[from]")]
 
@@ -231,6 +251,8 @@ def check(line, view):
         if len(args) > 1 and args[1] in SILENT_MOVES:
             _unknown(kind, args[1])
         return "fold"
+    if kind == "-fail" and len(args) > 1 and args[1] == "unboost":
+        return _kept_drop(args, attrs, view)
     if kind in GENERIC:
         return "fold"
     if kind == "-clearnegativeboost" and attrs == ["[silent]"]:

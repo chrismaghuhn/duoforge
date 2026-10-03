@@ -1596,6 +1596,26 @@ class TeamFiles(unittest.TestCase):
         # One member that is not in the closure tables makes the team Team C data; with the rest of team A's sets too.
         self.assertEqual(rnd.team_data_kind('t', sets_a[:5] + sets_c[:1]), 'team_c')
 
+    def test_the_closure_and_team_c_kinds_hold_a_member_to_its_set_moves_and_ability(self):
+        """The AWS finding of 2026-10-03: PP_62AA4EF34EE42F01 has only extended ids, but its Golisopod runs Sucker Punch, which
+        is not in the Team C set of Golisopod (Leech Life, Iron Head, Drill Run, Protect), so TEAM_C refused the team at
+        create (12 battles of registry-mix size). The kind is Team C only when every move is a set move and the ability is
+        the set ability; the pool takes the rest."""
+        path = os.path.join(ROOT, 'data', 'teams', 'PP_62AA4EF34EE42F01.txt')
+        sets = rnd.read_team_file(path)
+        golisopod = [i for i, s in enumerate(sets) if s.startswith('Golisopod')][0]
+        self.assertIn('- Sucker Punch', sets[golisopod])
+        self.assertEqual(rnd.team_data_kind('PP_62AA', sets), 'pool')
+        fixed = list(sets)
+        fixed[golisopod] = sets[golisopod].replace('- Sucker Punch', '- Leech Life')
+        # the set move: the team is all closure names again, so closure data
+        self.assertEqual(rnd.team_data_kind('PP_62AA', fixed), 'closure')
+        # a team of the registry that is all set moves and set abilities keeps its kind, and so do teams A and C
+        self.assertEqual(rnd.team_data_kind('PP_470A', rnd.read_team_file(
+            os.path.join(ROOT, 'data', 'teams', 'PP_470A6EC2468AF8A4.txt'))), 'closure')
+        self.assertEqual(rnd.team_data_kind('t', rnd.read_team_file(TEAM_A)), 'closure')
+        self.assertEqual(rnd.team_data_kind('t', rnd.read_team_file(TEAM_C)), 'team_c')
+
     def test_a_team_file_that_equals_team_a_derives_the_same_battles_as_team_a(self):
         path = self.write('d.txt', read_text(TEAM_A))
         teams = rnd.check_teams([('D', path)])

@@ -122,7 +122,8 @@ unsigned df_conf_compare_observation(FILE *out, const duoforge_context *ctx, con
                 /* The locked target only for the own side and only while a
                  * two-turn move charges (a choice lock has none); Protect,
                  * Flash Fire, a charged move and the stall counter as
-                 * Showdown's volatiles. */
+                 * Showdown's volatiles; Unburden's only while the item is gone (the volatile of a holder of its own Mega
+                 * Stone, set by a Knock Off that the stone refused, doubles no Speed and shows nothing). */
                 const uint32_t target =
                     (s == viewer && (e->vols & 4u) != 0u) ? e->locked_target : DUOFORGE_TARGET_NONE;
                 bool ok = memcmp(pv->stages, e->stages, 7u) == 0 && pv->confused == (e->confusion != 0u ? 1u : 0u) &&
@@ -130,7 +131,7 @@ unsigned df_conf_compare_observation(FILE *out, const duoforge_context *ctx, con
                           pv->protecting == ((e->vols & 1u) != 0u ? 1u : 0u) &&
                           pv->flash_fire == ((e->vols & 2u) != 0u ? 1u : 0u) &&
                           pv->charging == ((e->vols & 4u) != 0u ? 1u : 0u) &&
-                          pv->reserved == (((e->vols & 16u) != 0u ? DUOFORGE_POSITION_FLAG_UNBURDEN : 0u) |
+                          pv->reserved == (((e->vols & 16u) != 0u && e->held == 0u ? DUOFORGE_POSITION_FLAG_UNBURDEN : 0u) |
                                            ((e->vols & 32u) != 0u ? DUOFORGE_POSITION_FLAG_HELPING_HAND : 0u) |
                                            ((e->vols & 64u) != 0u ? DUOFORGE_POSITION_FLAG_FOLLOW_ME : 0u)) &&
                           (pv->protect_chain != 0u) == (e->stall != 0u);

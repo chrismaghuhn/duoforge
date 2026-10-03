@@ -364,9 +364,11 @@ def parse_move(mid, base, champ, ext=False, pool=False, unmodeled=None):
 
     flags = 0
     flags2 = 0
+    static_flags = 0  # decision 0020: the public static flags of every row, from the pin's flags object (pool tables only)
     flag_bits = FLAG_BITS_C if ext else FLAG_BITS
     for fl in re.findall(r'(\w+): 1', f['flags'][1]):
         flags2 |= FLAGS2_BITS.get(fl, 0)
+        static_flags |= STATIC_FLAG_BITS.get(fl, 0)
         if fl in flag_bits:
             flags |= flag_bits[fl]
         elif lenient:
@@ -408,8 +410,18 @@ def parse_move(mid, base, champ, ext=False, pool=False, unmodeled=None):
     for what, table, key in (('type', TYPES, 'type'), ('category', CATEGORIES, 'category')):
         if get(key) not in table:
             fail('move %s: unknown %s %s' % (mid, what, get(key)))
+    if 'basePowerCallback' in f and f['basePowerCallback'][0]:
+        static_flags |= STATIC_FLAG_POWER_RULE
+    hits = [1, 1]  # the pin's multihit: 1/1 for a single hit (decision 0020 item 4)
+    if 'multihit' in f:
+        mh = re.fullmatch(r'multihit: (?:(\d+)|\[(\d+), (\d+)\]),', norm(f['multihit'][1]))
+        if mh is None:
+            fail('move %s: multihit is not "multihit: n," or "multihit: [min, max],"' % mid)
+        hits = [int(mh.group(1)), int(mh.group(1))] if mh.group(1) else [int(mh.group(2)), int(mh.group(3))]
+        if not 1 <= hits[0] <= hits[1] <= 255:
+            fail('move %s: multihit %s is not 1 <= min <= max <= 255' % (mid, hits))
     rec = {
-        'id': mid, 'name': get('name'), 'refs': refs,
+        'id': mid, 'name': get('name'), 'refs': refs, 'static_flags': static_flags, 'hits': hits,
         'type': TYPES.index(get('type')), 'category': CATEGORIES[get('category')],
         'base_power': get('basePower'), 'accuracy': 0 if acc is True else acc, 'pp_base': pp_base, 'pp_max': pp_max,
         'priority': get('priority') + 8, 'target_class': target_class,
@@ -1421,6 +1433,12 @@ G8_SECONDARIES = {
     "secondary: { chance: 100, volatileStatus: 'healblock', },": (SECONDARY_HEAL_BLOCK, False),
 }
 FLAGS2_BITS = {'sound': 1, 'heal': 2}
+# Decision 0020: the public static flags of a move (DUOFORGE_MOVE_STATIC_FLAG_*, include/duoforge/duoforge.h), one bit per
+# Showdown flag name, additive only; the generated column dfi_pool_move_static_flags holds them for every pool row and has
+# no engine reader. POWER_RULE is not a flag of the pin: the move has a basePowerCallback (its basePower is not the damage).
+STATIC_FLAG_BITS = {'contact': 1, 'sound': 2, 'punch': 4, 'bite': 8, 'bullet': 16, 'pulse': 32, 'slicing': 64,
+                    'wind': 128, 'dance': 256, 'powder': 512}
+STATIC_FLAG_POWER_RULE = 1024
 FLAG2_RECHARGE = 8  # step G17: flags.recharge with self: {volatileStatus: 'mustrecharge'} (data/moves.ts, Hyper Beam 9113-9128)
 RECHARGE_SELF = "self: { volatileStatus: 'mustrecharge', },"
 FLAG2_THAWS_TARGET = 4  # step G10: thawsTarget (data/moves.ts:15770), the move cures a frozen target after the secondaries
@@ -2343,10 +2361,15 @@ def build_pool(root, repo, dx):
             feats = entry_features(items_ts, champ_items, it['id'], INERT_ITEM_KEYS, stone=it['stone'] is not None,
                                    readers=readers)
             if it['stone'] is not None:
+                # Mega by stone (step G23-A): the Mega that a stone takes a base forme to is the base forme's own link or,
+                # failing that, the stone's own row (its first pair): the engine finds it from (forme, stone)
+                # (dfi_mega_of). A pair that neither names would be unreachable, and the build fails here.
+                first = (forme_index[it['stones'][0][0]], forme_index[it['stones'][0][1]])
                 for base, mega in it['stones']:
                     primary = formes[forme_index[base]]['mega_forme']
-                    if primary != forme_index[mega]:
-                        feats.append('second Mega forme %s of %s' % (mega, base))
+                    if primary != forme_index[mega] and (forme_index[base], forme_index[mega]) != first:
+                        fail('stone %s: the Mega %s of %s is neither the link of its base forme nor the first pair of '
+                             'the stone' % (it['id'], mega, base))
         it['unmodeled'] = sorted(set(feats))
     for i, (ab, col) in enumerate(zip(abilities, ability_family)):
         if i < n_ext_abilities or col['family'] != 'NONE' or ab['id'] in ENGINE_ROWS['abilities']:
@@ -2431,6 +2454,22 @@ def heal_bytes(d):
     return bytes(b)
 
 
+def static_flags_bytes(d):
+    """The static flags of every move (decision 0020), in id order, 4 bytes little-endian each, in the canonical pool bytes."""
+    b = bytearray()
+    for m in d['moves']:
+        b.extend(m['static_flags'].to_bytes(4, 'little'))
+    return bytes(b)
+
+
+def static_hits_bytes(d):
+    """The hit counts (minimum, maximum) of every move (decision 0020), in id order, in the canonical pool bytes."""
+    b = bytearray()
+    for m in d['moves']:
+        b.extend(m['hits'])
+    return bytes(b)
+
+
 def canonical_pool(d):
     """The canonical pool bytes hashed into the context fingerprint of the POOL kinds (the pool layout): the six
     counts, a row per forme (the forme links are u16: the pool has more than 255 formes), per move (the closure's
@@ -2467,7 +2506,7 @@ def canonical_pool(d):
     b.extend(d['immunity'])
     for n in d['natures']:
         b.extend([n['plus'], n['minus']])
-    return bytes(b) + family_bytes(d) + handler_bytes(d) + forme_legal_bytes(d) + flags2_bytes(d) + heal_bytes(d)
+    return bytes(b) + family_bytes(d) + handler_bytes(d) + forme_legal_bytes(d) + flags2_bytes(d) + heal_bytes(d) +         static_flags_bytes(d) + static_hits_bytes(d)
 
 
 def closure_projection(rows, key):
@@ -2753,6 +2792,12 @@ extern const uint8_t dfi_pool_move_flags2[DFI_POOL_MOVE_COUNT];
 /* The heal fraction of every move (step G10, heal: [numerator, denominator] in the pin; 0 and 0 for none), by move id;
  * the very last part of the canonical pool bytes. */
 extern const uint8_t dfi_pool_move_heal[DFI_POOL_MOVE_COUNT][2];
+/* Decision 0020: the static flags of every move (DUOFORGE_MOVE_STATIC_FLAG_*: one bit per Showdown flag name, plus
+ * POWER_RULE for a move with a basePowerCallback) and its hit counts (the pin's multihit; 1 and 1 for a single hit), by
+ * move id, for every row, modelled or not. The engine reads neither: they are data for duoforge_data_move_static, and the
+ * last parts of the canonical pool bytes. */
+extern const uint32_t dfi_pool_move_static_flags[DFI_POOL_MOVE_COUNT];
+extern const uint8_t dfi_pool_move_static_hits[DFI_POOL_MOVE_COUNT][2];
 extern const dfi_pool_alias dfi_pool_forme_aliases[DFI_POOL_ALIAS_COUNT];
 
 /* ---- names ----
@@ -2877,6 +2922,15 @@ size_t dfi_pool_canonical_bytes(uint8_t *out, size_t capacity);
     for m in dp['moves']:
         if m.get('heal', [0, 0]) != [0, 0]:
             c.append('    [DFI_MOVE_%s] = {%du, %du}, /* %s */' % (m['id'].upper(), m['heal'][0], m['heal'][1], m['name']))
+    c += ['};', '', '/* The static flags of every move (decision 0020): the public bit set, see duoforge.h. */',
+          'const uint32_t dfi_pool_move_static_flags[DFI_POOL_MOVE_COUNT] = {']
+    for m in dp['moves']:
+        if m['static_flags']:
+            c.append('    [DFI_MOVE_%s] = 0x%xu, /* %s */' % (m['id'].upper(), m['static_flags'], m['name']))
+    c += ['};', '', '/* The hit counts of every move (decision 0020): minimum and maximum, 1 and 1 for a single hit. */',
+          'const uint8_t dfi_pool_move_static_hits[DFI_POOL_MOVE_COUNT][2] = {']
+    for m in dp['moves']:
+        c.append('    [DFI_MOVE_%s] = {%du, %du}, /* %s */' % (m['id'].upper(), m['hits'][0], m['hits'][1], m['name']))
     c += ['};', '', '/* Cosmetic formes: a name for the row of the base forme (decision 0015 section 4.2). */',
           'const dfi_pool_alias dfi_pool_forme_aliases[DFI_POOL_ALIAS_COUNT] = {']
     for alias, base in dp['aliases']:
@@ -3107,6 +3161,17 @@ size_t dfi_pool_canonical_bytes(uint8_t *out, size_t capacity)
     for (uint32_t i = 0u; i < DFI_POOL_MOVE_COUNT; ++i) {
         out[n++] = dfi_pool_move_heal[i][0];
         out[n++] = dfi_pool_move_heal[i][1];
+    }
+    for (uint32_t i = 0u; i < DFI_POOL_MOVE_COUNT; ++i) {
+        const uint32_t v = dfi_pool_move_static_flags[i];
+        out[n++] = (uint8_t)(v & 0xFFu);          /* wide-operands-reviewed */
+        out[n++] = (uint8_t)((v >> 8u) & 0xFFu);  /* wide-operands-reviewed */
+        out[n++] = (uint8_t)((v >> 16u) & 0xFFu); /* wide-operands-reviewed */
+        out[n++] = (uint8_t)((v >> 24u) & 0xFFu); /* wide-operands-reviewed */
+    }
+    for (uint32_t i = 0u; i < DFI_POOL_MOVE_COUNT; ++i) {
+        out[n++] = dfi_pool_move_static_hits[i][0];
+        out[n++] = dfi_pool_move_static_hits[i][1];
     }
     return n;
 }
