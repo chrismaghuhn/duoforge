@@ -552,8 +552,8 @@ duoforge_status duoforge_battle_step(const duoforge_context *ctx, duoforge_battl
 #define DUOFORGE_TERRAIN_NONE   0u
 #define DUOFORGE_TERRAIN_GRASSY 1u
 #define DUOFORGE_TERRAIN_PSYCHIC 2u /* Team C (Psychic Surge) */
-#define DUOFORGE_TERRAIN_ELECTRIC 3u /* POOL (decision 0018): not produced yet */
-#define DUOFORGE_TERRAIN_MISTY    4u /* POOL: not produced yet */
+#define DUOFORGE_TERRAIN_ELECTRIC 3u /* POOL (decision 0018): Electric Terrain (step G25) */
+#define DUOFORGE_TERRAIN_MISTY    4u /* POOL: Misty Terrain (step G25) */
 #define DUOFORGE_MOVE_SLOT_NONE 0xFFu /* position view: no locked move */
 
 typedef struct duoforge_member_view {
@@ -924,6 +924,8 @@ duoforge_status duoforge_battle_observe_ext(const duoforge_context *ctx, const d
 #define DUOFORGE_FIELD_GRASSY_TERRAIN 1u
 #define DUOFORGE_FIELD_TRICK_ROOM     2u
 #define DUOFORGE_FIELD_PSYCHIC_TERRAIN 3u /* Team C */
+#define DUOFORGE_FIELD_ELECTRIC_TERRAIN 4u /* POOL kinds (step G25): FIELD_START / FIELD_END detail */
+#define DUOFORGE_FIELD_MISTY_TERRAIN   5u /* POOL kinds (step G25) */
 #define DUOFORGE_SIDE_TAILWIND     1u
 #define DUOFORGE_SIDE_REFLECT      2u
 #define DUOFORGE_SIDE_LIGHT_SCREEN 3u
