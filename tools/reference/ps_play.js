@@ -33,6 +33,7 @@
 //   move          per slot: "pass" for an empty or fainted slot; else with
 //                 probability switch_weight a switch to a random standing
 //                 reserve (not when the request says the Pokemon is trapped,
+//                 nor when the Pokemon's own `trapped` flag is set: a hidden trap,
 //                 and not one the other slot takes); else a random enabled
 //                 move of the request, with a random target among
 //                 [1, 2, -1, -2] that battle.validTargetLoc allows for the
@@ -209,7 +210,10 @@ function drawMove(side, rng, policy) {
         if (!pokemon || pokemon.fainted) return 'pass';
         const req = request.active[slot];
         const wantSwitch = rng.chance(policy.switch_weight);
-        if (wantSwitch && free.length && !req.trapped) {
+        // The request tells a Pokemon that is trapped for sure, not one that Shadow Tag holds in secret: the request of the
+        // last active Pokemon has only `maybeTrapped` then (sim/pokemon.ts getMoveRequestData), and the server refuses the
+        // switch. The Pokemon's own flag is read as well (`true` or 'hidden'), so that such a switch is never drawn.
+        if (wantSwitch && free.length && !req.trapped && !pokemon.trapped) {
             return `switch ${free.splice(rng.below(free.length), 1)[0] + 1}`;
         }
         const moves = enabledMoves(req);
