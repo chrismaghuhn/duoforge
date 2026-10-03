@@ -1,0 +1,53 @@
+Gholdengo @ Grassy Seed
+Ability: Good as Gold
+Level: 50
+Modest Nature
+- Protect
+- Make It Rain
+- Nasty Plot
+- Shadow Ball
+
+Rillaboom (M) @ Occa Berry
+Ability: Grassy Surge
+Level: 50
+Adamant Nature
+- Fake Out
+- High Horsepower
+- Wood Hammer
+- Grassy Glide
+
+Raichu (M) @ Raichunite Y
+Ability: Lightning Rod
+Level: 50
+Timid Nature
+- Protect
+- Fake Out
+- Zap Cannon
+- Focus Blast
+
+Arcanine-Hisui (M) @ Focus Sash
+Ability: Rock Head
+Level: 50
+Jolly Nature
+- Extreme Speed
+- Head Smash
+- Flare Blitz
+- Protect
+
+Kingambit (M) @ Chople Berry
+Ability: Defiant
+Level: 50
+Adamant Nature
+- Kowtow Cleave
+- Sucker Punch
+- Low Kick
+- Protect
+
+Salamence (M) @ Salamencite
+Ability: Intimidate
+Level: 50
+Timid Nature
+- Protect
+- Hyper Voice
+- Draco Meteor
+- Tailwind

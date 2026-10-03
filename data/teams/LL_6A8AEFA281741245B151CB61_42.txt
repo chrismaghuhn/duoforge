@@ -1,0 +1,53 @@
+Rillaboom (M) @ Sitrus Berry
+Ability: Grassy Surge
+Level: 50
+Adamant Nature
+- Fake Out
+- Grassy Glide
+- Wood Hammer
+- U-turn
+
+Sneasler (M) @ Grassy Seed
+Ability: Unburden
+Level: 50
+Adamant Nature
+- Dire Claw
+- Close Combat
+- Rock Slide
+- Protect
+
+Incineroar (M) @ Leftovers
+Ability: Intimidate
+Level: 50
+Impish Nature
+- Throat Chop
+- Flare Blitz
+- Fake Out
+- Parting Shot
+
+Salamence (M) @ Salamencite
+Ability: Intimidate
+Level: 50
+Timid Nature
+- Protect
+- Flamethrower
+- Draco Meteor
+- Hyper Voice
+
+Kingambit (M) @ Chople Berry
+Ability: Defiant
+Level: 50
+Adamant Nature
+- Sucker Punch
+- Iron Head
+- Low Kick
+- Kowtow Cleave
+
+Basculegion (M) @ Focus Sash
+Ability: Adaptability
+Level: 50
+Adamant Nature
+- Protect
+- Liquidation
+- Last Respects
+- Aqua Jet

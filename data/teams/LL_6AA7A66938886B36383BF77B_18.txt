@@ -1,0 +1,53 @@
+Sylveon (M) @ Fairy Feather
+Ability: Pixilate
+Level: 50
+Modest Nature
+- Hyper Voice
+- Hyper Beam
+- Calm Mind
+- Detect
+
+Staraptor (M) @ Staraptite
+Ability: Intimidate
+Level: 50
+Adamant Nature
+- Close Combat
+- Brave Bird
+- Tailwind
+- Protect
+
+Raichu (M) @ Raichunite Y
+Ability: Lightning Rod
+Level: 50
+Timid Nature
+- Fake Out
+- Zap Cannon
+- Focus Blast
+- Protect
+
+Gholdengo @ Life Orb
+Ability: Good as Gold
+Level: 50
+Timid Nature
+- Make It Rain
+- Protect
+- Shadow Ball
+- Nasty Plot
+
+Farigiraf (M) @ Sitrus Berry
+Ability: Armor Tail
+Level: 50
+Calm Nature
+- Trick Room
+- Protect
+- Psychic
+- Helping Hand
+
+Incineroar (M) @ Rocky Helmet
+Ability: Intimidate
+Level: 50
+Careful Nature
+- Flare Blitz
+- Throat Chop
+- Fake Out
+- Parting Shot

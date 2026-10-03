@@ -1,0 +1,53 @@
+Pelipper (M) @ Focus Sash
+Ability: Drizzle
+Level: 50
+Modest Nature
+- Wide Guard
+- Weather Ball
+- Hurricane
+- Tailwind
+
+Golisopod (M) @ Golisopite
+Ability: Emergency Exit
+Level: 50
+Adamant Nature
+- Swords Dance
+- Iron Head
+- Leech Life
+- Aqua Jet
+
+Basculegion (M) @ Choice Scarf
+Ability: Adaptability
+Level: 50
+Adamant Nature
+- Last Respects
+- Wave Crash
+- Flip Turn
+- Aqua Jet
+
+Archaludon (M) @ Leftovers
+Ability: Stamina
+Level: 50
+Calm Nature
+- Electro Shot
+- Flash Cannon
+- Dragon Pulse
+- Protect
+
+Grimmsnarl (M) @ Light Clay
+Ability: Prankster
+Level: 50
+Sassy Nature
+- Light Screen
+- Reflect
+- Spirit Break
+- Parting Shot
+
+Salamence (M) @ Salamencite
+Ability: Intimidate
+Level: 50
+Timid Nature
+- Hyper Voice
+- Protect
+- Draco Meteor
+- Hydro Pump

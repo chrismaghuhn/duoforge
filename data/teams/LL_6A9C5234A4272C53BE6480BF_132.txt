@@ -1,0 +1,53 @@
+Basculegion (M) @ Choice Scarf
+Ability: Adaptability
+Level: 50
+Jolly Nature
+- Aqua Jet
+- Flip Turn
+- Last Respects
+- Wave Crash
+
+Pelipper (M) @ Focus Sash
+Ability: Drizzle
+Level: 50
+Modest Nature
+- Hurricane
+- Weather Ball
+- Tailwind
+- Protect
+
+Golisopod (M) @ Golisopite
+Ability: Emergency Exit
+Level: 50
+Adamant Nature
+- Sucker Punch
+- Protect
+- Leech Life
+- Iron Head
+
+Incineroar (M) @ Sitrus Berry
+Ability: Intimidate
+Level: 50
+Careful Nature
+- Fake Out
+- Flare Blitz
+- Throat Chop
+- Parting Shot
+
+Archaludon (M) @ Leftovers
+Ability: Stamina
+Level: 50
+Modest Nature
+- Electro Shot
+- Draco Meteor
+- Flash Cannon
+- Protect
+
+Rillaboom (M) @ Miracle Seed
+Ability: Grassy Surge
+Level: 50
+Adamant Nature
+- Wood Hammer
+- U-turn
+- Grassy Glide
+- Fake Out

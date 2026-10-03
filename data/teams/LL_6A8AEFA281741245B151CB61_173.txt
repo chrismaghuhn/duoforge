@@ -1,0 +1,53 @@
+Grimmsnarl (M) @ Light Clay
+Ability: Prankster
+Level: 50
+Impish Nature
+- Reflect
+- Light Screen
+- Parting Shot
+- Spirit Break
+
+Archaludon (M) @ Leftovers
+Ability: Stamina
+Level: 50
+Calm Nature
+- Electro Shot
+- Protect
+- Dragon Pulse
+- Aura Sphere
+
+Pelipper (M) @ Sitrus Berry
+Ability: Drizzle
+Level: 50
+Bold Nature
+- Hurricane
+- Weather Ball
+- Tailwind
+- Wide Guard
+
+Sneasler (M) @ Focus Sash
+Ability: Unburden
+Level: 50
+Jolly Nature
+- Close Combat
+- Dire Claw
+- Fake Out
+- Coaching
+
+Salamence (M) @ Salamencite
+Ability: Intimidate
+Level: 50
+Hasty Nature
+- Protect
+- Hyper Voice
+- Double-Edge
+- Dragon Claw
+
+Golisopod (M) @ Golisopite
+Ability: Emergency Exit
+Level: 50
+Brave Nature
+- Protect
+- Swords Dance
+- Leech Life
+- Iron Head

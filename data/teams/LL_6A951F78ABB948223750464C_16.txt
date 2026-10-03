@@ -1,0 +1,53 @@
+Staraptor (M) @ Staraptite
+Ability: Intimidate
+Level: 50
+Jolly Nature
+- Brave Bird
+- Close Combat
+- Protect
+- Tailwind
+
+Arcanine-Hisui (M) @ Focus Sash
+Ability: Rock Head
+Level: 50
+Adamant Nature
+- Head Smash
+- Flare Blitz
+- Extreme Speed
+- Protect
+
+Raichu (M) @ Raichunite Y
+Ability: Lightning Rod
+Level: 50
+Timid Nature
+- Zap Cannon
+- Focus Blast
+- Fake Out
+- Protect
+
+Sylveon (M) @ Fairy Feather
+Ability: Pixilate
+Level: 50
+Modest Nature
+- Hyper Voice
+- Quick Attack
+- Hyper Beam
+- Protect
+
+Basculegion (M) @ Life Orb
+Ability: Adaptability
+Level: 50
+Adamant Nature
+- Protect
+- Aqua Jet
+- Last Respects
+- Wave Crash
+
+Farigiraf (M) @ Sitrus Berry
+Ability: Armor Tail
+Level: 50
+Relaxed Nature
+- Trick Room
+- Protect
+- Psychic
+- Thunderbolt

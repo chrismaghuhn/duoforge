@@ -1,0 +1,53 @@
+Indeedee-F (F) @ Colbur Berry
+Ability: Psychic Surge
+Level: 50
+Bold Nature
+- Psychic
+- Helping Hand
+- Follow Me
+- Trick Room
+
+Basculegion (M) @ Choice Scarf
+Ability: Adaptability
+Level: 50
+Jolly Nature
+- Aqua Jet
+- Wave Crash
+- Flip Turn
+- Last Respects
+
+Gardevoir (M) @ Gardevoirite
+Ability: Trace
+Level: 50
+Modest Nature
+- Hyper Voice
+- Protect
+- Expanding Force
+- Trick Room
+
+Pelipper (M) @ Focus Sash
+Ability: Drizzle
+Level: 50
+Modest Nature
+- Tailwind
+- Hurricane
+- Weather Ball
+- Wide Guard
+
+Golisopod (M) @ Golisopite
+Ability: Emergency Exit
+Level: 50
+Adamant Nature
+- Leech Life
+- Protect
+- Iron Head
+- Rock Slide
+
+Sneasler (M) @ Psychic Seed
+Ability: Unburden
+Level: 50
+Jolly Nature
+- Fake Out
+- Rock Slide
+- Dire Claw
+- Close Combat

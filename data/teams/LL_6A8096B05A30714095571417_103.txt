@@ -1,0 +1,53 @@
+Salamence (M) @ Salamencite
+Ability: Intimidate
+Level: 50
+Timid Nature
+- Draco Meteor
+- Hyper Voice
+- Tailwind
+- Protect
+
+Rillaboom (M) @ Sitrus Berry
+Ability: Grassy Surge
+Level: 50
+Adamant Nature
+- Wood Hammer
+- Grassy Glide
+- U-turn
+- Fake Out
+
+Basculegion (M) @ Mystic Water
+Ability: Adaptability
+Level: 50
+Adamant Nature
+- Wave Crash
+- Last Respects
+- Protect
+- Aqua Jet
+
+Sneasler (M) @ Grassy Seed
+Ability: Unburden
+Level: 50
+Adamant Nature
+- Dire Claw
+- Close Combat
+- Fake Out
+- Protect
+
+Arcanine-Hisui (M) @ Focus Sash
+Ability: Rock Head
+Level: 50
+Jolly Nature
+- Flare Blitz
+- Head Smash
+- Extreme Speed
+- Protect
+
+Gholdengo @ Life Orb
+Ability: Good as Gold
+Level: 50
+Timid Nature
+- Make It Rain
+- Shadow Ball
+- Nasty Plot
+- Protect

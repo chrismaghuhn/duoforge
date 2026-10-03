@@ -1,0 +1,53 @@
+Gholdengo @ Life Orb
+Ability: Good as Gold
+Level: 50
+Modest Nature
+- Make It Rain
+- Shadow Ball
+- Nasty Plot
+- Protect
+
+Raichu (M) @ Raichunite Y
+Ability: Lightning Rod
+Level: 50
+Timid Nature
+- Zap Cannon
+- Focus Blast
+- Fake Out
+- Protect
+
+Rillaboom (M) @ Miracle Seed
+Ability: Grassy Surge
+Level: 50
+Adamant Nature
+- Wood Hammer
+- Grassy Glide
+- Fake Out
+- High Horsepower
+
+Arcanine-Hisui (M) @ Focus Sash
+Ability: Rock Head
+Level: 50
+Jolly Nature
+- Flare Blitz
+- Head Smash
+- Extreme Speed
+- Protect
+
+Floette-Eternal (F) @ Floettite
+Ability: Flower Veil
+Level: 50
+Timid Nature
+- Moonblast
+- Dazzling Gleam
+- Calm Mind
+- Protect
+
+Farigiraf (M) @ Grassy Seed
+Ability: Armor Tail
+Level: 50
+Bold Nature
+- Psychic
+- Thunderbolt
+- Nasty Plot
+- Trick Room

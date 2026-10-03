@@ -1,0 +1,53 @@
+Gardevoir (M) @ Gardevoirite
+Ability: Trace
+Level: 50
+Modest Nature
+- Hyper Voice
+- Expanding Force
+- Calm Mind
+- Protect
+
+Sneasler (M) @ Psychic Seed
+Ability: Unburden
+Level: 50
+Adamant Nature
+- Close Combat
+- Dire Claw
+- Rock Tomb
+- Protect
+
+Gholdengo @ Life Orb
+Ability: Good as Gold
+Level: 50
+Timid Nature
+- Shadow Ball
+- Make It Rain
+- Protect
+- Nasty Plot
+
+Salamence (M) @ Salamencite
+Ability: Intimidate
+Level: 50
+Timid Nature
+- Hyper Voice
+- Draco Meteor
+- Flamethrower
+- Protect
+
+Indeedee-F (F) @ Colbur Berry
+Ability: Psychic Surge
+Level: 50
+Calm Nature
+- Psychic
+- Follow Me
+- Trick Room
+- Helping Hand
+
+Incineroar (M) @ Sitrus Berry
+Ability: Intimidate
+Level: 50
+Impish Nature
+- Flare Blitz
+- Fake Out
+- Darkest Lariat
+- Parting Shot

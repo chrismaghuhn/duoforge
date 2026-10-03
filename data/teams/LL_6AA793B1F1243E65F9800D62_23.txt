@@ -1,0 +1,53 @@
+Salamence (M) @ Salamencite
+Ability: Intimidate
+Level: 50
+Naive Nature
+- Double-Edge
+- Hyper Voice
+- Tailwind
+- Protect
+
+Rillaboom (M) @ Sitrus Berry
+Ability: Grassy Surge
+Level: 50
+Adamant Nature
+- Grassy Glide
+- Wood Hammer
+- Fake Out
+- U-turn
+
+Incineroar (M) @ Chople Berry
+Ability: Intimidate
+Level: 50
+Adamant Nature
+- Flare Blitz
+- Fake Out
+- Parting Shot
+- Protect
+
+Kingambit (M) @ Focus Sash
+Ability: Defiant
+Level: 50
+Adamant Nature
+- Kowtow Cleave
+- Iron Head
+- Sucker Punch
+- Protect
+
+Gholdengo @ Life Orb
+Ability: Good as Gold
+Level: 50
+Modest Nature
+- Make It Rain
+- Nasty Plot
+- Shadow Ball
+- Protect
+
+Milotic (M) @ Leftovers
+Ability: Competitive
+Level: 50
+Bold Nature
+- Scald
+- Ice Beam
+- Recover
+- Protect
