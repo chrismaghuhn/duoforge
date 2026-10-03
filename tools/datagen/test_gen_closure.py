@@ -1226,7 +1226,7 @@ class ItemAbilityFeatures(unittest.TestCase):
                                                                  'flamebody', 'clearbody', 'hospitality', 'overcoat', 'soundproof',
                                                                  'unnerve', 'speedboost', 'compoundeyes', 'ironfist',
                                                                  'sharpness', 'solidrock', 'technician', 'multiscale',
-                                                                 'galewings', 'mirrorarmor']})
+                                                                 'galewings', 'raindish', 'friendguard', 'mirrorarmor']})
 
 
 class Bounds(unittest.TestCase):
@@ -1576,6 +1576,34 @@ class SmallRules(unittest.TestCase):
         self.assertIn('allies', gen_closure.ENGINE_TARGETS)
         self.assertIn('ejectbutton', gen_closure.ENGINE_ROWS['items'])
         for ability in ('soundproof', 'unnerve', 'speedboost'):
+            self.assertIn(ability, gen_closure.ENGINE_ROWS['abilities'])
+
+
+class SmallRulesG35(unittest.TestCase):
+    """Step G35: Friend Guard and Rain Dish are engine rows whose pinned texts are demanded whole (G35_ABILITY_FACTS)."""
+
+    def sources(self, skip=(None, None)):
+        abilities = []
+        for aid, facts in gen_closure.G34_ABILITY_FACTS + gen_closure.G35_ABILITY_FACTS:
+            kept = [f for i, f in enumerate(facts) if (aid, i) != skip]
+            abilities.append(entry(aid, *kept))
+        items = [entry(iid, *facts) for iid, facts in gen_closure.G34_ITEM_FACTS]
+        return (TextSource('data/abilities.ts', '\n'.join(abilities)), TextSource('data/mods/champions/abilities.ts', ''),
+                TextSource('data/items.ts', '\n'.join(items)), TextSource('data/mods/champions/items.ts', ''))
+
+    def test_the_facts_of_the_pin_are_accepted(self):
+        gen_closure.check_g34_facts(*self.sources())
+
+    def test_every_fact_is_demanded(self):
+        self.assertEqual([aid for aid, _ in gen_closure.G35_ABILITY_FACTS], ['friendguard', 'raindish'])
+        for aid, facts in gen_closure.G35_ABILITY_FACTS:
+            for i in range(len(facts)):
+                with self.subTest(ability=aid, fact=facts[i]), self.assertRaises(SystemExit) as cm:
+                    gen_closure.check_g34_facts(*self.sources((aid, i)))
+                self.assertIn('the entry no longer has', str(cm.exception.code))
+
+    def test_the_rows_of_the_step(self):
+        for ability in ('raindish', 'friendguard'):
             self.assertIn(ability, gen_closure.ENGINE_ROWS['abilities'])
 
 

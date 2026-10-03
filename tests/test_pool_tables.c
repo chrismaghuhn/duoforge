@@ -45,7 +45,7 @@
 #include "state/closure_member.h"
 #include "support/check.h"
 
-#define POOL_HASH_HEX "50089c2c5f55bc41e5f1e3b8fdefad6dfdcc663128ad401fe4e9e60573f3d244"
+#define POOL_HASH_HEX "e2e380517353150b613d170bfc6358435671bdd403a91f897afe8a685d36c205"
 /* SHA-256 of the closure-layout bytes of the rows of the steps (P1 and G2: 28 formes, 72 moves, 52 items, 29
  * abilities). The whole-pool step must not move one of them (decision 0015 section 4.2); the pool generator before it
  * produced the same bytes. Step G10 moved two of them on purpose: Scald and Recover are data now (the thaw bit and
@@ -71,7 +71,7 @@
 /* The rows that the tables do not model, pinned (the generator reports the same counts). */
 #define UNMODELED_MOVES 254u /* 257 before step G33 modelled Dual Wingbeat, Triple Axel and Twin Beam; 260 before step G34 (262 before step G36 modelled Toxic and Poison Fang); 262 before step G34 modelled Steel Roller, Clangorous Soul and Brick Break (the other four rows of the step were already modelled); 273 before step G32 modelled Eruption, Water Spout, Life Dew, Body Press, Foul Play, Psyshock, Rain Dance, Sunny Day, Volt Switch, Clanging Scales and Freeze-Dry; 276 before step G30 modelled Rage Powder, Psychic Fangs and Solar Beam; 299 before step G28 modelled Acrobatics, Blizzard, Feint and the rows of the new secondary self boost (Ancient Power, Aqua Step, Charge Beam, Fiery Dance, Flame Charge, Meteor Mash, Psyshield Bash, Steel Wing, Torch Song, Trailblaze) and the allAdjacent moves; 300 before step G20 modelled Spiky Shield; 301 before it modelled Aurora Veil; 303 before step G19 modelled Coaching and Glaive Rush; 305u before step G15 modelled Expanding Force; 306 before step G16 modelled Knock Off; 313 before step G17 modelled the seven recharge moves; 319 before step G13 modelled Detect, Light of Ruin and the poison secondaries (Cross Poison, Gunk Shot, Poison Jab, Sludge Bomb); 324 before step G10 */
 #define UNMODELED_ITEMS 36u /* one fewer since step G34 modelled Wide Lens; one fewer since step G32 modelled Eject Button; one fewer since step G28 modelled Expert Belt; five fewer since step G23-A found the Mega of a stone from (forme, stone); one fewer since step G15 modelled Psychic Seed */
-#define UNMODELED_ABILITIES 157u /* 158 before step G33 made Mirror Armor an engine row; 165 before step G34 made Compound Eyes, Iron Fist, Sharpness, Solid Rock, Technician, Multiscale and Gale Wings engine rows; 168 before step G32 made Soundproof, Unnerve and Speed Boost engine rows; 172 before step G30 made Flame Body, Clear Body, Hospitality and Overcoat engine rows; 178 before step G22 made six abilities engine rows; 179 before step G23-C made Levitate an engine row; 180 before step AC1 made Trace an engine row; 181 before step G16 made Sticky Hold an engine row; 184 before step G14 made Rough Skin, Poison Touch and Thermal Exchange engine rows */
+#define UNMODELED_ABILITIES 155u /* 156 before step G33 made Mirror Armor an engine row; 158 before step G35 made Rain Dish and Friend Guard engine rows; 165 before step G34 made Compound Eyes, Iron Fist, Sharpness, Solid Rock, Technician, Multiscale and Gale Wings engine rows; 168 before step G32 made Soundproof, Unnerve and Speed Boost engine rows; 172 before step G30 made Flame Body, Clear Body, Hospitality and Overcoat engine rows; 178 before step G22 made six abilities engine rows; 179 before step G23-C made Levitate an engine row; 180 before step AC1 made Trace an engine row; 181 before step G16 made Sticky Hold an engine row; 184 before step G14 made Rough Skin, Poison Touch and Thermal Exchange engine rows */
 
 /* How many rows of the manifest are marked and half modelled: marked, and with the UNMODELED handler or a list of
  * unmodelled features (decision 0015 section 4.2). A step marks only what it fully models. */
@@ -1252,6 +1252,8 @@ int main(void)
                                 id == DFI_ABILITY_SHARPNESS || id == DFI_ABILITY_SOLIDROCK ||
                                 id == DFI_ABILITY_TECHNICIAN || id == DFI_ABILITY_MULTISCALE ||
                                 id == DFI_ABILITY_GALEWINGS ||
+                                /* step G35: Rain Dish and Friend Guard, by id */
+                                id == DFI_ABILITY_RAINDISH || id == DFI_ABILITY_FRIENDGUARD ||
                                 /* step G33: Mirror Armor, by id */
                                 id == DFI_ABILITY_MIRRORARMOR;
             DF_CHECK_EQ_U64(&t, dfi_support.abilities[id] != 0u ? 1u : 0u, (setter || engine) ? 1u : 0u);
@@ -1319,6 +1321,11 @@ int main(void)
                                                 DFI_MOVE_ELECTROWEB,
                                                 /* step G36 */
                                                 DFI_MOVE_TOXIC, DFI_MOVE_POISONFANG,
+                                                /* step G35 (Gigaton Hammer is deferred) */
+                                                DFI_MOVE_THUNDERPUNCH, DFI_MOVE_XSCISSOR, DFI_MOVE_LUMINACRASH,
+                                                DFI_MOVE_OVERDRIVE, DFI_MOVE_SCORCHINGSANDS, DFI_MOVE_LEAFBLADE,
+                                                DFI_MOVE_BOOMBURST, DFI_MOVE_SLUDGEWAVE, DFI_MOVE_VOLTTACKLE,
+                                                DFI_MOVE_DISCHARGE,
                                                 /* step G33 */
                                                 DFI_MOVE_DUALWINGBEAT, DFI_MOVE_TRIPLEAXEL, DFI_MOVE_TWINBEAM};
         uint32_t marked_count = 0u;
@@ -1349,7 +1356,7 @@ int main(void)
             DF_CHECK(&t, !want || dfi_pool_moves[id].special != DFI_SPECIAL_UNMODELED);
             marked_count += dfi_support.moves[id] != 0u ? 1u : 0u;
         }
-        DF_CHECK_EQ_U64(&t, marked_count, 118u); /* the three of step G33, Toxic and Poison Fang (G36), the ten of step G30, the eleven of step G32 and the seven of step G34 */
+        DF_CHECK_EQ_U64(&t, marked_count, 128u); /* the three of step G33, the ten of step G35, Toxic and Poison Fang (G36), the ten of step G30, the eleven of step G32 and the seven of step G34 */
     }
 
     /* Step AC1: Trace copies the ability of a foe unless that has the pin's notrace flag. The turn code excludes only

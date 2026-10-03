@@ -323,7 +323,7 @@ def resist_berries():
 def modify_damage_values():
     """The ModifyDamage modifier (out of 4096) of each handler that the engine chains (turn.c dfi_get_damage): by handler name."""
     values = {'lifeorb': 5324, 'expertbelt': 4915, 'reflect': 2732, 'lightscreen': 2732, 'auroraveil': 2732, 'glaiverush': 8192,
-              'solidrock': 3072, 'multiscale': 2048}
+              'solidrock': 3072, 'multiscale': 2048, 'friendguard': 3072}
     values.update({berry: 2048 for berry in resist_berries()})
     return values
 
@@ -367,7 +367,8 @@ def drop_reason(d, state, after=None, log=None):
         # only between two Pokemon that take the damage (the engine draws then, among the tied group); a group with
         # at most one damaged Pokemon shows no order. Any other handler of the event is not modelled. (Under another
         # weather no Pokemon has a Weather handler: the general rule below drops the tie.)
-        ids = sorted(set(x for g in group for x in g.split(':', 3)[3].split('+') if x))
+        # A Rain Dish holder (step G35) has its own onWeather under every weather, which does nothing outside rain.
+        ids = sorted(set(x for g in group for x in g.split(':', 3)[3].split('+') if x and x != 'raindish'))
         if ids != ['sandstorm']:
             raise ConversionError('weather-tie-handlers', 'trace_to_c: Weather tie with handlers %s: %s' % (ids, group),
                                   detail='+'.join(ids))
@@ -401,6 +402,12 @@ def drop_reason(d, state, after=None, log=None):
         # Trace's onUpdate (step AC1) returns unless its holder is still seeking after an onStart that found no foe to
         # copy, which the engine refuses (E_UNSUPPORTED): until then it does nothing either, so it is not a holder.
         inert = {'thermalexchange', 'trace'}
+        # Rain Dish's onWeather (step G35, data/abilities.ts:3759) heals only in rain (RainDance; Primordial Sea is not in the
+        # format): under any other weather its holder has the handler and it does nothing, so it is not a holder. The weather is
+        # the one of the upkeep, which is the one the step ends with (after) or, without it, the one it started with.
+        if ctx == 'each:Weather' and any('raindish' in g.split(':', 3)[3].split('+') for g in group) \
+                and placed['weather'] != 'raindance':
+            inert = inert | {'raindish'}
         ids = [x for g in group for x in g.split(':', 3)[3].split('+') if x and x not in inert]
         if not all(x in EACH_HANDLERS for x in ids):
             raise ConversionError('each-tie-handlers',
@@ -481,7 +488,8 @@ def drop_reason(d, state, after=None, log=None):
         if 'glaiverush' in kinds and all(k in ('glaiverush', 'lifeorb', 'reflect', 'lightscreen') or k.endswith('berry')
                                          for k in kinds):
             return 'Glaive Rush and the other ModifyDamage modifiers, which commute (all four at once is refused)'
-        # Step G34: Solid Rock (x0.75), Multiscale (x0.5) and Expert Belt (x1.2) join the handlers. Every handler that is
+        # Step G34: Solid Rock (x0.75), Multiscale (x0.5) and Expert Belt (x1.2) join the handlers (step G35 adds Friend Guard: x0.75, held by the target's partner,
+        # onAnyModifyDamage, data/abilities.ts:1533). Every handler that is
         # tied is one of the known modifiers, and every order of the modifiers that can apply together chains to the same
         # value (the engine's dfi_mods_commute; a combination that does not is refused by the engine, E_UNSUPPORTED, and
         # never reaches a conversion): checked here over every subset of the group that one hit can have (one screen at
@@ -491,7 +499,12 @@ def drop_reason(d, state, after=None, log=None):
         # the target's side), so a group with the same handler twice, or with two resist berries, is not a state the
         # analysis covers: it stays refused, as before step G34.
         berries = [g.split(':')[1] for g in group if g.split(':')[1].endswith('berry')]
-        if all(k in values for k in kinds) and len(group) == len(kinds) and len(berries) <= 1:
+        # Friend Guard (step G35) may be twice in a group (holders on both sides, or two on one side): the handler of a holder
+        # applies only to its allies other than itself, so at most one of the handlers applies to a given hit, and the order of
+        # the handlers decides nothing.
+        names = [g.split(':')[1] for g in group]
+        friend_guard_extra = max(0, names.count('friendguard') - 1)
+        if all(k in values for k in kinds) and len(group) - friend_guard_extra == len(kinds) and len(berries) <= 1:
             if any(not modifiers_commute(sub) for sub in modifier_subsets(sorted(kinds), values)):
                 raise ConversionError('modifydamage-tie', 'trace_to_c: ModifyDamage tie with modifiers that do not commute: %s' % group,
                                       detail=tie_effects(group))
@@ -557,8 +570,8 @@ def drop_reason(d, state, after=None, log=None):
     return None
 
 
-# The items whose each-event handlers (Update, TerrainChange) act on their holder alone.
-EACH_HANDLERS = frozenset(('sitrusberry', 'grassyseed', 'psychicseed'))
+# The items and abilities whose each-event handlers (Update, TerrainChange, Weather: Rain Dish, step G35) act on their holder alone.
+EACH_HANDLERS = frozenset(('sitrusberry', 'grassyseed', 'psychicseed', 'raindish'))
 
 
 def site_of(d):

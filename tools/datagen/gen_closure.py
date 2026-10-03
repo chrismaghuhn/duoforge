@@ -1467,6 +1467,16 @@ G34_ABILITY_FACTS = (
     ('galewings', ("onModifyPriority(priority, pokemon, target, move) { if (move?.type === 'Flying' && pokemon.hp === pokemon.maxhp) "
                    "return priority + 1; },",)),
 )
+# Step G35: Friend Guard (the target's partner weakens every hit on it: a ModifyDamage modifier, 3072 of the chain) and Rain Dish (a
+# sixteenth of the HP in rain, eachEvent('Weather')) are engine rows (ENGINE_ROWS) read by id; the pinned texts they hard-code are
+# checked here, the Champions mod overriding neither. Mold Breaker (Friend Guard is breakable) is not marked.
+G35_ABILITY_FACTS = (
+    ('friendguard', ("onAnyModifyDamage(damage, source, target, move) { if (target !== this.effectState.target && "
+                     "target.isAlly(this.effectState.target)) { this.debug('Friend Guard weaken'); return this.chainModify(0.75); } },",
+                     'flags: { breakable: 1 },')),
+    ('raindish', ("onWeather(target, source, effect) { if (target.effectiveWeather() !== effect.id) return; "
+                  "if (effect.id === 'raindance' || effect.id === 'primordialsea') { this.heal(target.baseMaxhp / 16); } },",)),
+)
 G34_ITEM_FACTS = (
     ('widelens', ('onSourceModifyAccuracyPriority: -2,',
                   "onSourceModifyAccuracy(accuracy) { if (typeof accuracy === 'number') { return this.chainModify([4505, 4096]); } },")),
@@ -1822,7 +1832,7 @@ ENGINE_ROWS = {'items': ['focussash', 'floettite', 'psychicseed', 'expertbelt', 
                              'stickyhold', 'trace', 'levitate', 'sandrush', 'swiftswim', 'slushrush', 'chlorophyll',
                              'innerfocus', 'liquidvoice', 'flamebody', 'clearbody', 'hospitality', 'overcoat',
                              'soundproof', 'unnerve', 'speedboost', 'compoundeyes', 'ironfist', 'sharpness', 'solidrock',
-                             'technician', 'multiscale', 'galewings', 'mirrorarmor']}
+                             'technician', 'multiscale', 'galewings', 'raindish', 'friendguard', 'mirrorarmor']}
 # The moves of the whole pool that the turn code pivots with a switch flag of their own (dfi_pivot_moves,
 # src/state/closure_member.c) beyond Flip Turn and U-turn, which are rows of the steps. Empty: Volt Switch comes with the
 # step that gives it a flag value, and adds its id here.
@@ -2450,9 +2460,9 @@ def check_g28_items(items_ts, only=None):
 
 
 def check_g34_facts(abil_ts, champ_abil, items_ts, champ_items):
-    """Step G34: every fact of G34_ABILITY_FACTS and G34_ITEM_FACTS is in the pinned entry, whitespace aside, and the
+    """Steps G34 and G35: every fact of G34_ABILITY_FACTS, G35_ABILITY_FACTS and G34_ITEM_FACTS is in the pinned entry, whitespace aside, and the
     Champions mod has no entry of its own for it (an override would change what the engine reads)."""
-    for kind, facts_by_id, src, champ in (('ability', G34_ABILITY_FACTS, abil_ts, champ_abil),
+    for kind, facts_by_id, src, champ in (('ability', G34_ABILITY_FACTS + G35_ABILITY_FACTS, abil_ts, champ_abil),
                                           ('item', G34_ITEM_FACTS, items_ts, champ_items)):
         for rid, facts in facts_by_id:
             e = src.entry(rid)
