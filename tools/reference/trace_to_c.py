@@ -76,9 +76,10 @@ checks its precondition and fails loudly otherwise:
   INSERT_TIE        (Encore) the index of a replaced action among the moves
                     that tie it is a tape entry as well, unless the tied
                     actions are runSwitch entries (above)
-  RANDOM_TARGET execute:allAdjacentFoes, execute:allAdjacent
+  RANDOM_TARGET execute:allAdjacentFoes, execute:allAdjacent, execute:allies
                     always: the main target of a spread move only labels
-                    the protocol line; the move hits every adjacent foe (and, for allAdjacent, the ally)
+                    the protocol line; the move hits every adjacent foe (and, for allAdjacent, the ally); for allies (Life Dew,
+                    step G32) runMove aims the move at its user afterwards (sim/battle-actions.ts:419), so the draw decides nothing
 
 Shuffle draws (SPEED_TIE queue) are made relative to the shuffled group:
 random(i, n) with i and n counted from the group's first index.
@@ -500,7 +501,7 @@ def drop_reason(d, state, after=None, log=None):
         raise ConversionError('insert-tie', 'trace_to_c: insert tie in %s' % group)
     if site == 'RANDOM_TARGET' and ctx in ('action-speed', 'resolve'):
         return 'target computed for priority'
-    if site == 'RANDOM_TARGET' and ctx in ('execute:allAdjacentFoes', 'execute:allAdjacent'):
+    if site == 'RANDOM_TARGET' and ctx in ('execute:allAdjacentFoes', 'execute:allAdjacent', 'execute:allies'):
         return 'main target of a spread move'
     if site == 'UNKNOWN':
         raise ConversionError('unclassified-draw', 'trace_to_c: unclassified draw', detail=ctx)
@@ -793,7 +794,7 @@ def ev_cause(attrs, tables):
                 cause, id2 = CAUSE['WEATHER'], WEATHER_CAUSE[what]
             elif what == 'Grassy Terrain':
                 cause = CAUSE['TERRAIN']
-            elif what in ('Parting Shot', 'Flip Turn', 'U-turn', 'Spiky Shield'):  # the move that made the switch (U-turn: pool tables)
+            elif what in ('Parting Shot', 'Flip Turn', 'U-turn', 'Volt Switch', 'Spiky Shield'):  # the move that made the switch (U-turn, Volt Switch: pool tables)
                 # Spiky Shield (step G20, POOL): `-damage|attacker|hp|[from] Spiky Shield|[of] holder`, the condition's own name
                 cause, id2 = CAUSE['MOVE'], tables['MOVE'][key(what)]
             elif what == 'lockedmove':

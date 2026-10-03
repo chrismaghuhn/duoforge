@@ -643,6 +643,44 @@ function checkG22(dex, formes, itemIds, abilityIds) {
     return 1;
 }
 
+// Step G32: what the engine reads about the new rows (src/combat/turn.c), called on the pinned handlers. Eruption and Water
+// Spout (power 150 x HP / maximum HP, then the engine floors it and clamps it to 1: sim/battle-actions.ts getDamage),
+// Freeze-Dry (Water is super effective), Soundproof (a sound move aimed at the holder by another Pokemon is -immune), Unnerve
+// (berries of the foes are not eaten while the holder stands) and Speed Boost (+1 Speed in the residual, not in the turn of
+// the switch-in). Eject Button is a text fact of the generator (G32_ENTRY_FACTS).
+function checkG32(dex) {
+    for (const id of ['eruption', 'waterspout']) {
+        const m = dex.moves.get(id);
+        expect(id + ' power', [200, 400, 1, 100].map((hp) => call(m.basePowerCallback, battle(m), [{hp, maxhp: 400}, {}, {basePower: 150}])),
+            [75, 150, 0.375, 37.5]);
+    }
+    const freeze = dex.moves.get('freezedry');
+    expect('Freeze-Dry onEffectiveness', ['Water', 'Grass', 'Ice', 'Fire'].map((t) => call(freeze.onEffectiveness, battle(freeze), [0, {}, t])),
+        [1, undefined, undefined, undefined]);
+    expect('Freeze-Dry in the Champions mod has no secondary', freeze.secondary === undefined || freeze.secondary === null, true);
+    const sound = dex.abilities.get('soundproof');
+    const probe = (flags, same) => {
+        const logs = [];
+        const holder = {};
+        const r = call(sound.onTryHit, battle(sound, {add: (...a) => logs.push(a.map((x) => (typeof x === 'string' ? x : 'POKEMON')).join('|'))}),
+            [holder, same ? holder : {}, moveOf('Normal', {flags})]);
+        return {r, logs};
+    };
+    expect('Soundproof vs a sound move', probe({sound: 1}, false), {r: null, logs: ['-immune|POKEMON|[from] ability: Soundproof']});
+    expect('Soundproof vs another move', probe({}, false), {logs: []});
+    expect('Soundproof vs its own sound move', probe({sound: 1}, true), {logs: []});
+    const unnerve = dex.abilities.get('unnerve');
+    expect('Unnerve', [true, false].map((unnerved) => call(unnerve.onFoeTryEatItem, battle(unnerve, {effectState: {unnerved}}), [])), [false, true]);
+    const boost = dex.abilities.get('speedboost');
+    expect('Speed Boost', [0, 1, 3].map((activeTurns) => {
+        const boosts = [];
+        call(boost.onResidual, battle(boost, {boost: (b) => boosts.push(b)}), [{activeTurns}]);
+        return boosts;
+    }), [[], [{spe: 1}], [{spe: 1}]]);
+    expect('Speed Boost residual order', [boost.onResidualOrder, boost.onResidualSubOrder], [28, 2]);
+    return 1;
+}
+
 // Step G19, Coaching and Glaive Rush: the pinned facts that the engine hard-codes (decision 0015, item 5i): Coaching's boosts,
 // target and flags, and Glaive Rush's self effect and condition (never-miss, double damage, the removal before the next move).
 function checkG19(dex) {
@@ -912,12 +950,12 @@ function checkFormes(dex, validator, rows, moves, abilities) {
 // The UNMODELED markers of gen_closure.py --pool, re-derived from the pinned data in this file's own words: the
 // special column of a move, the handler column of an item and of an ability, and the lists of unmodelled features.
 // implemented in the turn code by id (G4: Focus Sash, Rock Head; G12: Floettite, Flower Veil, Fairy Aura)
-const ENGINE_ROWS = {items: ['focussash', 'floettite', 'psychicseed', 'expertbelt'],
+const ENGINE_ROWS = {items: ['focussash', 'floettite', 'psychicseed', 'expertbelt', 'ejectbutton'],
     abilities: ['rockhead', 'flowerveil', 'fairyaura', 'roughskin', 'poisontouch', 'thermalexchange', 'stickyhold', 'trace',
         'levitate', 'sandrush', 'swiftswim', 'slushrush', 'chlorophyll', 'innerfocus', 'liquidvoice',
-        'flamebody', 'clearbody', 'hospitality', 'overcoat']};
+        'flamebody', 'clearbody', 'hospitality', 'overcoat', 'soundproof', 'unnerve', 'speedboost']};
 const ENGINE_TARGETS = new Set(['normal', 'any', 'adjacentAlly', 'adjacentFoe', 'self', 'allAdjacentFoes', 'allySide', 'all',
-    'randomNormal', 'allAdjacent']);
+    'randomNormal', 'allAdjacent', 'allies']);
 // The fields of a move that the tables model (gen_closure.py DATA_KEYS and IGNORED_KEYS), nothing else.
 const MOVE_KEYS = new Set(['num', 'accuracy', 'basePower', 'category', 'name', 'pp', 'priority', 'flags', 'target', 'type',
     'critRatio', 'secondary', 'self', 'boosts', 'recoil', 'drain', 'status', 'volatileStatus', 'sideCondition',
@@ -936,7 +974,7 @@ function isBoostBlock(b) {
 // effect each. The move's handler id (G2) or its place in the prefix is decided by the caller.
 // The pool rows that carry selfSwitch and that the turn code pivots with a flag of their own (dfi_pivot_moves): U-turn
 // (a G2 row); Flip Turn is a row of the prefix.
-const ENGINE_PIVOTS = ['uturn'];
+const ENGINE_PIVOTS = ['uturn', 'voltswitch'];
 // Step G13: the moves that are another move's handler under another name (gen_closure.py PROTECT_COPIES).
 const PROTECT_COPIES = {detect: 'protect'};
 function moveIsModelled(raw, id) {
@@ -1266,6 +1304,7 @@ function main() {
     checkEncore(dex, repo);
     checkRecharge(dex);
     checkG19(dex);
+    checkG32(dex);
     checkG22(dex, formeRowsList, new Set(definedIds(headers, 'ITEM').values()), new Set(abilityIds.values()));
     const abilities = checkAbilities(dex, abilityRows, moveIds, unmodeledAbilities, unmodeledMoves);
     // "All 18": a booster and a resist berry for each type, and nothing else in the families.
