@@ -204,36 +204,46 @@ typedef struct dfi_query_job {
     duoforge_status *statuses;
 } dfi_query_job;
 
+duoforge_status dfi_batch_query_player(const duoforge_context *ctx, const duoforge_battle *battle, uint32_t p,
+                                       duoforge_request *request, duoforge_observation *observation,
+                                       duoforge_side_choice *candidates, uint32_t *count,
+                                       duoforge_factored_domain *domain)
+{
+    duoforge_status st = DUOFORGE_OK;
+    if (request != NULL) {
+        st = duoforge_battle_request(ctx, battle, p, request);
+    }
+    if (st == DUOFORGE_OK && observation != NULL) {
+        st = duoforge_battle_observe(ctx, battle, p, observation);
+    }
+    if (st == DUOFORGE_OK && count != NULL) {
+        uint32_t n = 0u;
+        if (candidates != NULL) {
+            st = duoforge_battle_candidates(ctx, battle, p, candidates, DUOFORGE_MAX_CANDIDATES, &n);
+        } else {
+            duoforge_request rq;
+            st = duoforge_battle_request(ctx, battle, p, &rq);
+            n = rq.candidate_count;
+        }
+        *count = n;
+    }
+    if (st == DUOFORGE_OK && domain != NULL) {
+        st = duoforge_battle_factored(ctx, battle, p, domain);
+    }
+    return st;
+}
+
 /* The query outputs of environment `e`; its status. */
 static duoforge_status dfi_query_env(const dfi_query_job *j, uint32_t e)
 {
-    const duoforge_context *ctx = j->b->ctx;
-    const duoforge_battle *battle = j->b->env[e].battle;
     duoforge_status st = DUOFORGE_OK;
     for (uint32_t p = 0u; p < DUOFORGE_SIDE_COUNT && st == DUOFORGE_OK; ++p) {
         const size_t at = (size_t)e * DUOFORGE_SIDE_COUNT + p;
-        if (j->requests != NULL) {
-            st = duoforge_battle_request(ctx, battle, p, &j->requests[at]);
-        }
-        if (st == DUOFORGE_OK && j->observations != NULL) {
-            st = duoforge_battle_observe(ctx, battle, p, &j->observations[at]);
-        }
-        if (st == DUOFORGE_OK && j->counts != NULL) {
-            duoforge_side_choice *out =
-                j->candidates != NULL ? &j->candidates[at * DUOFORGE_MAX_CANDIDATES] : NULL;
-            uint32_t n = 0u;
-            if (out != NULL) {
-                st = duoforge_battle_candidates(ctx, battle, p, out, DUOFORGE_MAX_CANDIDATES, &n);
-            } else {
-                duoforge_request rq;
-                st = duoforge_battle_request(ctx, battle, p, &rq);
-                n = rq.candidate_count;
-            }
-            j->counts[at] = n;
-        }
-        if (st == DUOFORGE_OK && j->domains != NULL) {
-            st = duoforge_battle_factored(ctx, battle, p, &j->domains[at]);
-        }
+        st = dfi_batch_query_player(
+            j->b->ctx, j->b->env[e].battle, p, j->requests != NULL ? &j->requests[at] : NULL,
+            j->observations != NULL ? &j->observations[at] : NULL,
+            j->candidates != NULL ? &j->candidates[at * DUOFORGE_MAX_CANDIDATES] : NULL,
+            j->counts != NULL ? &j->counts[at] : NULL, j->domains != NULL ? &j->domains[at] : NULL);
     }
     return st;
 }

@@ -583,14 +583,9 @@ static duoforge_status dfi_encode_env(void *arg, uint32_t env, const duoforge_co
         duoforge_observation_ext ext;
         duoforge_observation *ob = j->observations != NULL ? &j->observations[at] : &own_observation;
         duoforge_factored_domain *d = j->domains != NULL ? &j->domains[at] : &own_domain;
-        if (st == DUOFORGE_OK && j->requests != NULL) {
-            st = duoforge_battle_request(ctx, battle, p, &j->requests[at]);
-        }
-        if (st == DUOFORGE_OK) {
-            st = duoforge_battle_observe(ctx, battle, p, ob);
-        }
-        if (st == DUOFORGE_OK) {
-            st = duoforge_battle_factored(ctx, battle, p, d);
+        if (st == DUOFORGE_OK) { /* the query of duoforge_batch_query_factored */
+            st = dfi_batch_query_player(ctx, battle, p, j->requests != NULL ? &j->requests[at] : NULL, ob, NULL, NULL,
+                                        d);
         }
         if (st == DUOFORGE_OK && records) {
             st = duoforge_battle_observe_ext(ctx, battle, p, &ext);

@@ -15,4 +15,12 @@ typedef duoforge_status (*dfi_batch_env_fn)(void *arg, uint32_t env, const duofo
 
 duoforge_status dfi_batch_each(duoforge_batch *batch, dfi_batch_env_fn fn, void *arg, duoforge_status *statuses);
 
+/* The query of one player in the order every batch query uses (request,
+   observation, candidates with their count, factored domain); each output may
+   be NULL (skipped); candidates need count. */
+duoforge_status dfi_batch_query_player(const duoforge_context *ctx, const duoforge_battle *battle, uint32_t p,
+                                       duoforge_request *request, duoforge_observation *observation,
+                                       duoforge_side_choice *candidates, uint32_t *count,
+                                       duoforge_factored_domain *domain);
+
 #endif

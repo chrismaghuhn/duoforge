@@ -609,6 +609,19 @@ def _fail_env_once(method, env):
     return wrapped
 
 
+class OneQueryPerStepTest(unittest.TestCase):
+    def test_step_answers_the_last_observe(self):
+        # observe() refreshes requests and domains (one query per step, decision 0021); a step without it refuses.
+        env = SelfPlay(4, 1, 0x2026100300000600)
+        try:
+            env.step(_first_legal(env.observe()))
+            with self.assertRaisesRegex(RuntimeError, "observe"):
+                env.step(np.zeros((4, 2), dtype=np.int64))
+            env.step(_first_legal(env.observe()))
+        finally:
+            env.close()
+
+
 class EngineUnsupportedTest(unittest.TestCase):
     def test_selfplay_ends_an_unsupported_environment_as_unresolved(self):
         from unittest import mock

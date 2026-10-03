@@ -152,7 +152,7 @@ class EncodeCTest(unittest.TestCase):
         # every field set, and empty records (revision 0: the "none" of Encore and Disable)
         for ext in (_records(ob), np.zeros(ob.shape, dtype=_layout.OBSERVATION_EXT)):
             for version in (3, 4):
-                for mask in masks_for(version, features.ALL_FEATURES, rng, count=6):
+                for mask in masks_for(version, features.ALL_FEATURES, rng, count=32):
                     want, err = reference(version, mask, ob, d, ext)
                     self.assertIsNone(err)
                     for row in range(ob.shape[0]):
@@ -206,7 +206,10 @@ class EncodeCTest(unittest.TestCase):
             ("d", ("slots", "mega"), (0, 1, 2)), ("d", ("slots", "reserve"), (0, 5, 6, 255)),
             ("d", ("allowed",), (0, 1, 0xFFFFFFFF)),
             ("x", ("sides", "members", "forme"), (0, 1, 65535)), ("x", ("sides", "members", "item_now"), (0, 1, 254, 255)),
-            ("x", ("sides", "aurora_veil_turns"), (0, 8, 9)),
+            ("x", ("sides", "aurora_veil_turns"), (0, 8, 9)), ("x", ("sides", "stealth_rock"), (1, 2)),
+            ("x", ("sides", "toxic_spikes"), (2, 3)), ("x", ("sides", "sticky_web"), (1, 2)),
+            ("x", ("sides", "positions", "disable_slot"), (0, 4, 5)),
+            ("x", ("sides", "positions", "stockpile"), (3, 4)), ("x", ("sides", "positions", "perish"), (3, 4)),
         ]
         agreements = {"accept": 0, "refuse": 0}
         for trial in range(3000):
@@ -243,14 +246,16 @@ class EncodeCTest(unittest.TestCase):
             pool = teams.load(ctx, ["A", "B", "C", *SAND_TEAMS])
             n = len(pool.ids)
             setups = pool.setups(np.arange(ENVS) % n, (np.arange(ENVS) + 1) % n)
-            with duoforge.Batch(ctx, setups, 1, SEED) as one, duoforge.Batch(ctx, setups, 4, SEED) as four:
+            # 1, 2, 3 (16 environments split unevenly) and 8 workers against one
+            others = [duoforge.Batch(ctx, setups, w, SEED) for w in (2, 3, 8)]
+            with duoforge.Batch(ctx, setups, 1, SEED) as one, others[0], others[1], others[2]:
                 policy = duoforge.RandomPolicy(SEED, ENVS)
                 policy.start_episodes(np.arange(ENVS), np.zeros(ENVS, dtype=np.uint64))
                 mask = int(one.observe_ext()[0, 0]["supported"]) & features.version_features(4)
                 for _ in range(12):
                     a = [x.copy() for x in one.query_encoded(4, mask)]
-                    b = [x.copy() for x in four.query_encoded(4, mask)]
-                    self.assert_same(a, b, "workers 1 and 4")
+                    for other in others:
+                        self.assert_same(a, other.query_encoded(4, mask), "workers 1 and more")
                     ext = one.observe_ext()
                     for e in range(ENVS):
                         for p in range(2):
@@ -261,8 +266,32 @@ class EncodeCTest(unittest.TestCase):
                         break
                     choices = policy.choose_factored(one)
                     one.step_factored(choices)
-                    four.query_factored()
-                    four.step_factored(choices)
+                    for other in others:
+                        other.step_factored(choices)
+
+    def test_recorded_rows_match_the_reference(self):
+        # Rows the replay pipeline (decision 0019) makes from a committed spectator log: tracker observations, not a
+        # battle's, so they reach the encoder through duoforge_encode. No records: the tracker keeps none.
+        from duoforge_live import data
+        from duoforge_replay import game, prior
+        from python.tests.test_replay_unit import FIXTURE, _Stats
+        result = game.process("fixture-1", "gen9championsvgc2026regmcbo3", FIXTURE.read_text(encoding="utf-8"),
+                              data.load(kind="pool"),
+                              prior.Prior({"version": 1, "pastes": 0, "skipped": {}, "levels": [{}, {}, {}, {}]}),
+                              _Stats())
+        self.assertGreater(len(result.rows), 10)
+        for row in result.rows:
+            for version in VERSIONS:
+                masks = (0,) if version < 3 else (0, features.BASE_VALUE_FEATURES)
+                for mask in masks:
+                    ob, d = np.array(row.observation).reshape(1), np.array(row.domain).reshape(1)
+                    want, err = reference(version, mask, ob, d, None)
+                    st, *got = c_encode(version, mask, ob[0], d[0], None)
+                    if err is not None:
+                        self.assertNotEqual(st, 0)
+                    else:
+                        self.assertEqual(st, 0)
+                        self.assert_same(got, (want[0][0], want[1][0], want[2][0]), f"row {row.point} v{version}")
 
     def test_refused_encode_stops_self_play_and_ends_no_episode(self):
         # A network of encoder 2 cannot show Sand: the encode refuses, observe() raises the reference's ValueError,

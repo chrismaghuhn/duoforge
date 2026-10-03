@@ -136,15 +136,22 @@ class SelfPlay:
         self.unresolved = 0  # cut-offs the tiebreak could not resolve (a loss for both seats)
         self.engine_unsupported = 0  # steps the engine refused (E_UNSUPPORTED): episode ended, a loss for both
         self._choices = np.zeros((envs, 2), dtype=_layout.FACTORED_CHOICE)
+        self._observed = False  # step() answers the boundary of the last observe()
         self.batch.query_factored()
 
     def observe(self):
-        return Observation(self.batch, self.encoder, self.ext_supported)
+        """The inputs of the current boundary; it also refreshes the batch's
+        requests and domains (Batch.query_encoded), which step() answers."""
+        o = Observation(self.batch, self.encoder, self.ext_supported)
+        self._observed = True
+        return o
 
     def step(self, actions):
         """Plays one batch step; returns (rewards (E,2) float32, done (E,)
         bool): an environment whose episode ended has its seats' rewards and
         starts its next episode with its next pairing."""
+        if not self._observed:
+            raise RuntimeError("step() answers the boundary of observe(): call observe() first")
         b = self.batch
         choices_of(b, actions, self._choices)
         failed = np.zeros(b.envs, dtype=bool)
@@ -185,7 +192,7 @@ class SelfPlay:
             if self.on_start is not None:
                 self.on_start(envs, self.episodes[envs].copy())
         self._steps[done] = 0
-        b.query_factored()
+        self._observed = False  # the next observe() queries the new boundary (one query per step)
         return rewards, done
 
     def close(self):
