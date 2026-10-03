@@ -1,0 +1,53 @@
+{
+  "name": "fz_2501_26_prefix",
+  "purpose": "Corpus (defect): case fz_2501_26 of run 2501 (tools/reference/diff_driver.py random), team F against team F, found as DIVERGENCE step DUOFORGE_E_INVARIANT. The shortest prefix that showed it, 10 of 33 choices; it passes now, fixed by G25 (Terrain Pulse in Electric Terrain is drawn to Lightning Rod).",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,8debd53ff36c01a2f86ae24040179212f7990e8e122e9aa31d5cb680ac162a61",
+  "teams": [
+    "Blastoise (M) @ Mystic Water\nAbility: Torrent\nLevel: 50\nEVs: 32 HP / 2 SpD / 32 SpA\nModest Nature\n- Terrain Pulse\n- Waterfall\n- Dark Pulse\n- Protect\n\nMilotic (F) @ Sitrus Berry\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Hypnosis\n- Coil\n- Scald\n- Protect\n\nAnnihilape (M) @ Leftovers\nAbility: Defiant\nLevel: 50\nEVs: 2 HP / 32 Atk / 32 Spe\nJolly Nature\n- Protect\n\nAurorus (F) @ Light Clay\nAbility: Refrigerate\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Def\nModest Nature\n- Weather Ball\n- Protect\n\nRaichu (F) @ Electric Seed\nAbility: Lightning Rod\nLevel: 50\nEVs: 29 HP / 5 Def / 32 Spe\nTimid Nature\n- Electric Terrain\n- Rising Voltage\n- Nuzzle\n- Protect\n\nPincurchin (M) @ Charcoal\nAbility: Electric Surge\nLevel: 50\nEVs: 32 HP / 32 Def / 2 SpA\nBold Nature\n- Rising Voltage\n- Electric Terrain\n- Thunderbolt\n- Protect",
+    "Raichu (F) @ Electric Seed\nAbility: Lightning Rod\nLevel: 50\nEVs: 29 HP / 5 Def / 32 Spe\nTimid Nature\n- Electric Terrain\n- Rising Voltage\n- Nuzzle\n- Protect\n\nAnnihilape (M) @ Leftovers\nAbility: Defiant\nLevel: 50\nEVs: 2 HP / 32 Atk / 32 Spe\nJolly Nature\n- Protect\n\nPincurchin (M) @ Charcoal\nAbility: Electric Surge\nLevel: 50\nEVs: 32 HP / 32 Def / 2 SpA\nBold Nature\n- Rising Voltage\n- Electric Terrain\n- Thunderbolt\n- Protect\n\nAurorus (F) @ Light Clay\nAbility: Refrigerate\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Def\nModest Nature\n- Weather Ball\n- Protect\n\nMilotic (F) @ Sitrus Berry\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Hypnosis\n- Coil\n- Scald\n- Protect\n\nBlastoise (M) @ Mystic Water\nAbility: Torrent\nLevel: 50\nEVs: 32 HP / 2 SpD / 32 SpA\nModest Nature\n- Terrain Pulse\n- Waterfall\n- Dark Pulse\n- Protect"
+  ],
+  "choices": [
+    {
+      "p1": "team 5613",
+      "p2": "team 3456"
+    },
+    {
+      "p1": "switch 4, move 1 2",
+      "p2": "move 1 1, move 2"
+    },
+    {
+      "p1": "move 1, move 2",
+      "p2": "move 2, move 1 2"
+    },
+    {
+      "p1": "move 1, switch 3",
+      "p2": "move 4, move 1 -1"
+    },
+    {
+      "p1": "move 1, move 1 1",
+      "p2": "move 4, move 2"
+    },
+    {
+      "p1": "move 1, move 1 1",
+      "p2": "move 1 -2, move 1 2"
+    },
+    {
+      "p1": "switch 4, move 4",
+      "p2": "move 3 1, move 2"
+    },
+    {
+      "p1": "move 4, move 4",
+      "p2": "move 1 1, move 1 -1"
+    },
+    {
+      "p1": "move 2 2, move 3 2",
+      "p2": "move 3 2, move 2"
+    },
+    {
+      "p1": "move 1, move 1 2",
+      "p2": "switch 4, move 2"
+    }
+  ]
+}
