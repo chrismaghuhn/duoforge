@@ -169,6 +169,8 @@ duoforge_add_test(NAME duoforge.state.pool_ac1 SOURCES test_pool_ac1.c WHITEBOX 
 # Step G16: Knock Off in the tail's item_now, in the ITEM_END event with the cause ITEM_TAKEN, in what reads the held item and in the
 # POOL view extension (the member's item_now, bit 11).
 duoforge_add_test(NAME duoforge.state.pool_g16 SOURCES test_pool_g16.c WHITEBOX TIMEOUT 60)
+# Step G23-A: the Mega of a member is found from (base forme, stone): every Mega forme of the pool, the second Megas included.
+duoforge_add_test(NAME duoforge.state.mega_by_stone SOURCES test_mega_by_stone.c WHITEBOX TIMEOUT 60)
 # Step G20: Aurora Veil in the tail's side turns, in the damage modifier, in the residual and in the POOL view extension
 # (the side's aurora_veil_turns, bit 3).
 duoforge_add_test(NAME duoforge.state.pool_g20 SOURCES test_pool_g20.c WHITEBOX TIMEOUT 60)

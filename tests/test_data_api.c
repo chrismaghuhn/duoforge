@@ -692,6 +692,14 @@ static void test_mega_by_stone(df_test *t, const kase *c)
                         duoforge_data_mega_at(c->ctx, m_f, 0u, &mf) == DUOFORGE_OK);
         DF_CHECK(t, mm.stone == find_id(t, c, I, "meowsticite") && mf.stone == mm.stone);
         DF_CHECK(t, mm.mega_species == find_id(t, c, S, "meowsticmmega") && mf.mega_species == find_id(t, c, S, "meowsticfmega"));
+        /* The support flag is the pair's own: over a manifest without Tough Claws Mega-X is unsupported, Mega-Y is not. */
+        dfi_support_manifest claws = dfi_support;
+        claws.abilities[DFI_ABILITY_TOUGHCLAWS] = 0u;
+        const dfi_kind_limits lim = dfi_kind_limits_of(c->kind);
+        duoforge_mega_info y, x;
+        dfi_data_mega_at(&lim, &claws, charizard, 0u, &y);
+        dfi_data_mega_at(&lim, &claws, charizard, 1u, &x);
+        DF_CHECK(t, y.supported == 1u && x.supported == 0u);
     }
 }
 

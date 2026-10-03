@@ -1467,6 +1467,12 @@ int main(void)
         DF_CHECK(&t, !dfi_manifest_mega_of(&dfi_support, DFI_FORME_CHARIZARD, 1u + DFI_ITEM_LEFTOVERS));
         DF_CHECK(&t, !dfi_manifest_mega_of(&dfi_support, DFI_FORME_ABSOL, 1u + DFI_ITEM_ABSOLITEZ)); /* Sharpness is not marked */
         DF_CHECK(&t, dfi_support.items[DFI_ITEM_CHARIZARDITEX] == 0u && dfi_support.items[DFI_ITEM_ABSOLITEZ] == 0u);
+        /* The support is that of the pair's own Mega ability: with Tough Claws unmarked Charizardite X is unsupported and
+         * Charizardite Y (Drought) is not. */
+        dfi_support_manifest claws = dfi_support;
+        claws.abilities[DFI_ABILITY_TOUGHCLAWS] = 0u;
+        DF_CHECK(&t, !dfi_manifest_mega_of(&claws, DFI_FORME_CHARIZARD, 1u + DFI_ITEM_CHARIZARDITEX));
+        DF_CHECK(&t, dfi_manifest_mega_of(&claws, DFI_FORME_CHARIZARD, 1u + DFI_ITEM_CHARIZARDITEY));
     }
 
     return df_test_end(&t);
