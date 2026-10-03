@@ -275,7 +275,7 @@ Model v1 stays loadable, trainable and playable. The ladder plays v1 and v2 chec
 `params-<update>.npz` holds the parameter arrays (the flattened tree paths, as today) and a `config` JSON with:
 - `format: 2` and the model configuration (version and dimensions);
 - the key `"encoder"` (9.4), `FEATURE_NAMES` and `SLOT_FEATURE_NAMES`;
-- the data kind and the context fingerprint, in hex. After part 2 it also holds the names of every id of the kind's tables.
+- the data kind and the context fingerprint, in hex, and under `"ids"` the names of every id of the embedded tables (`checkpoint.ids_of`; added 2026-10-03).
 - the team pool: ids, sha256 and weights;
 - the update and the decision count;
 - the training configuration.
@@ -394,7 +394,7 @@ It is written atomically: to a temporary file, then fsync, then a rename over `s
   - a team file whose sha256 changed under the same id;
   - a model configuration that differs without a widening rule;
   - an observation layout that drops a column;
-  - a data kind whose names do not keep the old ids. Before part 2 exists, the fingerprint must be equal.
+  - tables whose names do not keep the old ids (`checkpoint.check_ids`, when the fingerprint differs). A run state without names needs the same fingerprint.
 - **Tests:**
   - the state round-trips;
   - the counters continue;
