@@ -177,6 +177,8 @@ duoforge_add_test(NAME duoforge.state.pool_ac1 SOURCES test_pool_ac1.c WHITEBOX 
 # Step G16: Knock Off in the tail's item_now, in the ITEM_END event with the cause ITEM_TAKEN, in what reads the held item and in the
 # POOL view extension (the member's item_now, bit 11).
 duoforge_add_test(NAME duoforge.state.pool_g16 SOURCES test_pool_g16.c WHITEBOX TIMEOUT 60)
+# Step G29: Trick, Switcheroo, Thief and Covet (the held item as item_now, the received-item and left-item events, the view).
+duoforge_add_test(NAME duoforge.state.pool_g29 SOURCES test_pool_g29.c WHITEBOX TIMEOUT 60)
 # Step G23-A: the Mega of a member is found from (base forme, stone): every Mega forme of the pool, the second Megas included.
 duoforge_add_test(NAME duoforge.state.mega_by_stone SOURCES test_mega_by_stone.c WHITEBOX TIMEOUT 60)
 # Step G20: Aurora Veil in the tail's side turns, in the damage modifier, in the residual and in the POOL view extension
@@ -212,8 +214,8 @@ foreach(_gen IN ITEMS
         "closure_tables.c=490de42298e34cfd38192d979fd022367bf53693a5fa1855f1cc6ad034d8450a"
         "extended_tables.h=b2abef243fcbfdd87654940076b9fe2fe80b117d74893a7567741f26b9075a7d"
         "extended_tables.c=9e736fa467713283418c4edf8f56b8d844452e596ba422adbd52483d20f7cc17"
-        "pool_tables.h=b13e2e276ee02c31dfdcee49d0d4c1a9453698495fa64e28e7282b4a17d75566"
-        "pool_tables.c=1ec29b9818dc8012292aad195ea09052cd78feb78bacd69901ad14c9da467612")
+        "pool_tables.h=b4c39d7874dfd4271eee70ee45636533af03b998c57bb0166dd9e25009d556ad"
+        "pool_tables.c=a4063e838e5af8a9699740996344431e76c88ab5887c5e0f9954e1a088261f61")
     string(REPLACE "=" ";" _parts "${_gen}")
     list(GET _parts 0 _file)
     list(GET _parts 1 _expected)

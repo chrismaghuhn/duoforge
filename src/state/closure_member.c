@@ -446,7 +446,9 @@ bool dfi_closure_member_ranges(const dfi_kind_limits *lim, const dfi_member *m)
     if (m->is_mega > 1u || m->item > lim->item_count || m->item_consumed > 1u) {
         return false;
     }
-    if (m->item_consumed != 0u && m->item == 0u) {
+    /* The item that was used up is the sheet's. Under the POOL kinds a member without one may have used an item that a
+     * move gave it (Trick, Thief, Covet; step G29): the tail's item_now says so (dfi_check_side). */
+    if (m->item_consumed != 0u && m->item == 0u && !lim->pool_rules) {
         return false;
     }
     const bool stone = dfi_holds_own_stone(m->species_id, m->item);

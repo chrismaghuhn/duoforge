@@ -317,6 +317,38 @@ class Refusals(unittest.TestCase):
                      "trace_to_c: a Choice Scarf holder without its SwitchIn handler in ['P:p1a:0:S', 'P:p2b:1:S']",
                      'choicescarf')
 
+    def test_switch_order_scarf_is_the_item_the_pokemon_enters_with(self):
+        """The ORACLE_GAP of the first G29 campaign (fz_9900000_938, step 10): an Arcanine-Hisui enters at p1b with no item
+        (its tie entry is 'P:p1b:0:S': no SwitchIn handler), and a Trick later in the same step gives it a Choice Scarf.
+        The state after the step shows the Scarf, so reading the holders there counted a Scarf handler that was not
+        there (a refusal, 'a Choice Scarf holder without its SwitchIn handler'). The holders are read as of the entry:
+        the item that the same species holds in the state before the step. States cut down from that case."""
+        def mon(species, item):
+            return {'species': species, 'item': item}
+        before = {'sides': [
+            {'active': [0, 1], 'pokemon': [mon('Gholdengo', 'choicescarf'), mon('Swalot', 'focussash'),
+                                           mon('Farigiraf', ''), mon('Arcanine-Hisui', '')]},
+            {'active': [0, 1], 'pokemon': [mon('Arcanine-Hisui', ''), mon('Farigiraf', 'leftovers')]}]}
+        after = {'sides': [
+            {'active': [0, 3], 'pokemon': [mon('Gholdengo', ''), mon('Swalot', 'focussash'), mon('Farigiraf', ''),
+                                           mon('Arcanine-Hisui', 'choicescarf')]},
+            {'active': [0, 1], 'pokemon': [mon('Arcanine-Hisui', ''), mon('Farigiraf', 'leftovers')]}]}
+        self.assertEqual(trace_to_c.choice_scarf_slots(after), {'p1b'})  # the end state alone (the old reading)
+        # The standing Gholdengo held the Scarf at the start of the step (p1a); the entering Arcanine-Hisui did not (p1b).
+        self.assertEqual(trace_to_c.choice_scarf_slots(after, before), {'p1a'})
+        group = ['P:p1b:0:S', 'P:p2a:0:-']
+        d = {'site': 'SPEED_TIE', 'context': 'switch-order', 'group': group}
+        self.assertEqual(trace_to_c.drop_reason(d, before, after), 'switch-in order with at most one entry effect')
+        # A Pokemon that comes in with the Scarf has its handler, and the same state before and after reads the same.
+        before['sides'][0]['pokemon'][3]['item'] = 'choicescarf'
+        self.assertEqual(trace_to_c.choice_scarf_slots(after, before), {'p1a', 'p1b'})
+        d = {'site': 'SPEED_TIE', 'context': 'switch-order', 'group': ['P:p1b:1:S', 'P:p2a:0:-']}
+        self.assertEqual(trace_to_c.drop_reason(d, before, after), 'switch-in order with at most one entry effect')
+        # Still refused: a Scarf holder at the entry whose tie entry has no handler.
+        with self.assertRaises(trace_to_c.ConversionError) as cm:
+            trace_to_c.drop_reason(dict(d, group=group), before, after)
+        self.assertEqual((cm.exception.rule, cm.exception.detail), ('switch-order-handlers', 'choicescarf'))
+
     @staticmethod
     def accuracy_tie(trace):
         """The one draw in context event:Accuracy of d01_noguard_accuracy_tie."""
@@ -1230,6 +1262,93 @@ class Library(unittest.TestCase):
         values = list(derived.values())
         self.assertTrue(any(max(v) > 5 for v in values) and any(all(v) for v in values) and any(sum(v) for v in values))
 
+    def test_item_transfer_rows_are_what_the_protocol_lines_say(self):
+        """Decision 0018 section 6.1 for Trick, Switcheroo, Thief and Covet (step G29): the item_now of every roster member
+        after each step, and the numbers of `-item` and silent `-enditem ... [from] move:` lines, are what the committed
+        traces' protocol lines say alone; the rows of tests/test_pool_g29.c must be exactly that. `|-item|X|Item|[from] move:
+        M` gives X the item (item id + 1; a Thief's or Covet's `[of] Y` takes Y's away, 255), `|-enditem|X|Item|[silent]|[from]
+        move: M` takes X's away; a used-up item and a switch change nothing. Also the converter: the lines are ITEM_START (cause
+        MOVE) and ITEM_END (cause ITEM_TAKEN), and any other shape is refused."""
+        names = ('g29_trick_scarf', 'g29_empty_hands', 'g29_thief_covet', 'g29_trick_fails', 'g29_edge_cases', 'g29_trick_lock_before_move', 'g29_thief_fainted')
+        source = open(os.path.join(ROOT, 'tests', 'test_pool_g29.c'), encoding='utf-8').read()
+        rows = {}
+        for m in re.finditer(r'\{"(g29_\w+)", (\d+)u, \{([^}]*)\}, (\d+)u, (\d+)u\}', source):
+            codes = tuple(int(x.strip().rstrip('u')) for x in m.group(3).split(','))
+            rows[(m.group(1), int(m.group(2)))] = (codes, int(m.group(4)), int(m.group(5)))
+        tables = trace_to_c.load_tables(ROOT, True)
+        derived = {}
+        for name in names:
+            with open(os.path.join(ROOT, 'tests', 'reference', 'specs', name + '.json'), encoding='utf-8') as f:
+                spec = json.load(f)
+            with open(os.path.join(ROOT, 'tests', 'reference', 'traces', name + '.json'), encoding='utf-8') as f:
+                trace = json.load(f)
+            rosters = [re.findall(r'^([A-Za-z-]+)(?: \([MF]\))?(?: @|$)', text, re.M) for text in spec['teams']]
+            held = [0] * 12
+
+            def member(side, shown):
+                # the name that the protocol shows: the species, or its first word (Arcanine-Hisui is shown as Arcanine)
+                if shown in rosters[side]:
+                    return rosters[side].index(shown)
+                return [r.split('-')[0] for r in rosters[side]].index(shown)
+            for k, step in enumerate(trace['steps']):
+                received = left = 0
+                for line in step['log']:
+                    part = line.split('|')
+                    if len(part) < 5 or part[1] not in ('-item', '-enditem'):
+                        continue
+                    from_move = [a for a in part[4:] if a.startswith('[from] move: ')]
+                    if not from_move:
+                        continue
+                    side = int(part[2][1]) - 1
+                    index = side * 6 + member(side, part[2][5:])
+                    if part[1] == '-item':
+                        held[index] = tables['ITEM'][trace_to_c.key(part[3])] + 1
+                        received += 1
+                        for a in part[4:]:
+                            if a.startswith('[of] '):
+                                of_side = int(a[6]) - 1
+                                held[of_side * 6 + member(of_side, a[10:])] = 255
+                    else:
+                        held[index] = 255
+                        left += 1
+                derived[(name, k)] = (tuple(held), received, left)
+        self.assertEqual(rows, derived)
+        self.assertTrue(any(r > 0 for (_, r, _) in derived.values()) and any(l > 0 for (_, _, l) in derived.values()))
+        # The converter.
+        roster = [{'Sneasler': 0}, {'Staraptor': 0}]
+        maxhp = [{'Sneasler': 100}, {'Staraptor': 100}]
+        cases = (
+            ('|-item|p2a: Staraptor|Sitrus Berry|[from] move: Trick', 'ITEM_START', 2, trace_to_c.NOPOS, 'Trick', 'Sitrus Berry'),
+            ('|-item|p1a: Sneasler|Sitrus Berry|[from] move: Thief|[of] p2a: Staraptor', 'ITEM_START', 0, 2, 'Thief', 'Sitrus Berry'),
+            ('|-item|p1a: Sneasler|Sitrus Berry|[from] move: Covet|[of] p2a: Staraptor', 'ITEM_START', 0, 2, 'Covet', 'Sitrus Berry'),
+        )
+        for line, kind, pos, other, move, item in cases:
+            with self.subTest(line=line):
+                (e,) = trace_to_c.step_events([line], 0, roster, maxhp, tables)
+                self.assertEqual(e, (trace_to_c.EV[kind], pos, other, trace_to_c.CAUSE['MOVE'],
+                                     tables['MOVE'][trace_to_c.key(move)], tables['ITEM'][trace_to_c.key(item)] + 1,
+                                     0, 0, 0, 0, 0, 0, 0, 0))
+        for line, move, other in (('|-enditem|p2a: Staraptor|Sitrus Berry|[silent]|[from] move: Trick', 'Trick', trace_to_c.NOPOS),
+                                  ('|-enditem|p2a: Staraptor|Sitrus Berry|[silent]|[from] move: Switcheroo', 'Switcheroo',
+                                   trace_to_c.NOPOS),
+                                  ('|-enditem|p2a: Staraptor|Sitrus Berry|[silent]|[from] move: Thief|[of] p1a: Sneasler', 'Thief', 0)):
+            with self.subTest(line=line):
+                (e,) = trace_to_c.step_events([line], 0, roster, maxhp, tables)
+                self.assertEqual(e[:6], (trace_to_c.EV['ITEM_END'], 2, other, trace_to_c.CAUSE['ITEM_TAKEN'],
+                                         tables['MOVE'][trace_to_c.key(move)], tables['ITEM'][trace_to_c.key('Sitrus Berry')] + 1))
+        # A silent -enditem that no move caused is still no event; every other shape of these lines is refused.
+        self.assertEqual(trace_to_c.step_events(['|-enditem|p2a: Staraptor|Sitrus Berry|[silent]'], 0, roster, maxhp, tables), [])
+        for bad in ('|-item|p2a: Staraptor|Sitrus Berry|[from] move: Trick|[of] p1a: Sneasler',
+                    '|-item|p2a: Staraptor|Sitrus Berry|[from] move: Thief',
+                    '|-item|p2a: Staraptor|Sitrus Berry|[from] ability: Frisk',
+                    '|-item|p2a: Staraptor|Sitrus Berry',
+                    '|-enditem|p2a: Staraptor|Sitrus Berry|[silent]|[from] move: Trick|[of] p1a: Sneasler',
+                    '|-enditem|p2a: Staraptor|Sitrus Berry|[from] move: Trick',
+                    '|-enditem|p2a: Staraptor|Sitrus Berry|[silent]|[from] move: Thief',
+                    '|-enditem|p2a: Staraptor|Sitrus Berry|[silent]|[from] move: Knock Off|[of] p1a: Sneasler'):
+            with self.subTest(line=bad), self.assertRaises(trace_to_c.ConversionError):
+                trace_to_c.step_events([bad], 0, roster, maxhp, tables)
+
     def test_item_taken_rows_are_what_the_protocol_lines_say(self):
         """Decision 0018 section 6.1 for Knock Off: a member holds nothing from the `|-enditem|X|Item|[from] move: Knock Off|
         [of] Y` line on, and nothing clears it (the item stays gone across a switch-out and a faint: sim/pokemon.ts:1851-1866
@@ -1929,7 +2048,7 @@ class Library(unittest.TestCase):
         marked = [n for n in re.findall(r'\[DFI_MOVE_(\w+)\] = 1u', read('src', 'data', 'support_manifest.c'))
                   if n in ids and ids[n] >= ext_moves]
         self.assertEqual(len(names), ext_moves + len(ids))
-        self.assertEqual(len(marked), 135)  # Imprison (G38), the three of G33 (Dual Wingbeat, Triple Axel, Twin Beam), Perish Song (G26), the four of G25 (Electric Terrain, Misty Terrain, Rising Voltage, Terrain Pulse), Disable (G27), the ten of G35 (Thunder Punch, X-Scissor, Lumina Crash, Overdrive, Scorching Sands, Leaf Blade, Boomburst, Sludge Wave, Volt Tackle, Discharge), Toxic and Poison Fang (G36), the seven of G34 (Steel Roller, Clangorous Soul, Brick Break, Fiery Dance, Psycho Cut, Iron Defense, Electroweb), the eleven of G32, the ten of G30, the six of G28 (Shell Smash, Acrobatics, Blizzard, Ancient Power, Feint, Earthquake), the 27 of G21, Spiky Shield (G20), G2, G5, G8, G12, G10 (4), G11 (Soak), G7 (Wide Guard), weather (2), the fourteen of G13, G9 (Encore), G17 (six recharge moves), G16 (Knock Off), Expanding Force (G15), Aurora Veil (G20)
+        self.assertEqual(len(marked), 139)  # the four of G29 (Trick, Switcheroo, Thief, Covet), Imprison (G38), the three of G33 (Dual Wingbeat, Triple Axel, Twin Beam), Perish Song (G26), the four of G25 (Electric Terrain, Misty Terrain, Rising Voltage, Terrain Pulse), Disable (G27), the ten of G35 (Thunder Punch, X-Scissor, Lumina Crash, Overdrive, Scorching Sands, Leaf Blade, Boomburst, Sludge Wave, Volt Tackle, Discharge), Toxic and Poison Fang (G36), the seven of G34 (Steel Roller, Clangorous Soul, Brick Break, Fiery Dance, Psycho Cut, Iron Defense, Electroweb), the eleven of G32, the ten of G30, the six of G28 (Shell Smash, Acrobatics, Blizzard, Ancient Power, Feint, Earthquake), the 27 of G21, Spiky Shield (G20), G2, G5, G8, G12, G10 (4), G11 (Soak), G7 (Wide Guard), weather (2), the fourteen of G13, G9 (Encore), G17 (six recharge moves), G16 (Knock Off), Expanding Force (G15), Aurora Veil (G20)
         pool = [n for n in os.listdir(os.path.join(ROOT, 'tests', 'reference', 'specs'))
                 if trace_to_c.is_pool(ROOT, n[:-5])]
         logs = []
@@ -1958,6 +2077,8 @@ class Library(unittest.TestCase):
                             done = done or (name == 'Spiky Shield' and after.startswith('|-singleturn|'))
                             # Rage Powder (step G30): the single-turn line of its condition.
                             done = done or (name == 'Rage Powder' and after.startswith('|-singleturn|') and after.endswith('|move: Rage Powder'))
+                            # An item that a move gave (Trick, Switcheroo, Thief, Covet; step G29): its -item line.
+                            done = done or (after.startswith('|-item|') and ('[from] move: ' + name) in after)
             with self.subTest(move=name):
                 self.assertTrue(done, '%s is marked but no committed pool battle uses it' % name)
 

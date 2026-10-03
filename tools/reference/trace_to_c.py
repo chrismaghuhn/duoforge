@@ -344,12 +344,22 @@ def tie_effects(group):
     return '+'.join(sorted(set(g.split(':')[1] for g in group if isinstance(g, str) and g.startswith('H:'))))
 
 
-def choice_scarf_slots(state):
-    """The active slots ('p1a', ...) whose Pokemon holds a Choice Scarf in `state`."""
+def choice_scarf_slots(state, before=None):
+    """The active slots ('p1a', ...) whose Pokemon holds a Choice Scarf in `state`. With `before`, the state before the
+    step: the item of a Pokemon is then the one that the same species (one per team) holds in `before`, which is what it
+    holds when it enters, because nothing moves the item of a Pokemon on the bench: the item at the end of the step can be
+    another one (step G29: a Trick, Thief or Covet after the switch-in gives or takes a Scarf), and the entry's handler
+    list is the one of the item it came in with."""
     slots = set()
     for s, side in enumerate(state['sides']):
+        standing = {}
+        if before is not None and s < len(before.get('sides', [])):
+            standing = {p['species']: p['item'] for p in before['sides'][s]['pokemon']}
         for pos, i in enumerate(side['active']):
-            if i is not None and 0 <= i < len(side['pokemon']) and side['pokemon'][i]['item'] == 'choicescarf':
+            if i is None or not 0 <= i < len(side['pokemon']):
+                continue
+            mon = side['pokemon'][i]
+            if (standing.get(mon['species'], mon['item'])) == 'choicescarf':
                 slots.add('p%d%s' % (s + 1, 'ab'[pos]))
     return slots
 
@@ -479,7 +489,7 @@ def drop_reason(d, state, after=None, log=None):
                                   detail='+'.join(sorted(set(anys) - {'whiteherb'})))
         # An entering Choice Scarf holder counts one SwitchIn handler without
         # an effect (data/items.ts choicescarf onStart).
-        scarves = choice_scarf_slots(after) if after is not None else set()
+        scarves = choice_scarf_slots(after, state) if after is not None else set()
         effective = []
         for p in parts:
             n = int(p[2]) - (1 if p[3] == 'S' and p[1] in scarves else 0)
@@ -825,7 +835,7 @@ EV = {name: i + 1 for i, name in enumerate(
      'IMMUNE', 'FAIL', 'PROTECT', 'BLOCKED', 'BOOST', 'UNBOOST', 'STATUS', 'CURE_STATUS', 'CONFUSION_START',
      'CONFUSION_END', 'CONFUSED', 'FLASH_FIRE', 'WEATHER', 'FIELD_START', 'FIELD_END', 'SIDE_START', 'SIDE_END',
      'ITEM_END', 'FORME', 'MEGA', 'PREPARE', 'ANIMATION', 'ABILITY', 'ACTIVATE', 'UPKEEP', 'RESULT',
-     'SINGLE_TURN', 'VOLATILE_START', 'VOLATILE_END', 'TYPE_CHANGE'])}
+     'SINGLE_TURN', 'VOLATILE_START', 'VOLATILE_END', 'TYPE_CHANGE', 'ITEM_START'])}
 CAUSE = {'NONE': 0, 'MOVE': 1, 'ITEM': 2, 'ABILITY': 3, 'RECOIL': 4, 'DRAIN': 5, 'BURN': 6, 'CONFUSION': 7,
          'TERRAIN': 8, 'PARALYSIS': 9, 'SLEEP': 10, 'FREEZE': 11, 'FLINCH': 12, 'NO_PP': 13, 'POISON': 14,
          'HEAL_BLOCK': 15, 'WEATHER': 16, 'ITEM_TAKEN': 17, 'RECHARGE': 18, 'DISABLE': 19, 'IMPRISON': 21}
@@ -999,7 +1009,9 @@ def step_events(log, viewer, roster_of, maxhp, tables):
         if kind in NOT_EVENTS or kind.startswith('t:'):
             continue
         attrs = [x for x in parts[2:] if x.startswith('[')]
-        if '[silent]' in attrs:
+        # A silent line is not an event, except the `-enditem` of an item that a move took (Trick, Switcheroo and Thief print
+        # it silent, step G29): the engine's ITEM_END for it is how the other player's old item_used learns that the item left.
+        if '[silent]' in attrs and not (kind == '-enditem' and any(a.startswith('[from] move: ') for a in attrs)):
             continue
         args = [x for x in parts[2:] if not x.startswith('[')]
         e = None
@@ -1246,20 +1258,40 @@ def step_events(log, viewer, roster_of, maxhp, tables):
         elif kind == '-enditem':
             taken = [a for a in attrs if a.startswith('[from] move: ')]
             if taken:
-                # POOL (Knock Off, data/moves.ts:9959-9984): `-enditem|X|Item|[from] move: Knock Off|[of] Y` is an item that
-                # a move took: ITEM_END with the cause ITEM_TAKEN, the move in id and its user ([of]) in other. Nothing else
-                # of the pool takes an item (Thief, Covet and Trick come with their steps), and a line without [of] or with
-                # anything else is an error.
+                # POOL (Knock Off, data/moves.ts:9959-9984; Thief, Trick and Switcheroo, step G29, data/moves.ts:19302,
+                # :19865, :18644): `-enditem|X|Item|[from] move: M|[of] Y` is an item that a move took: ITEM_END with the
+                # cause ITEM_TAKEN, the move in id and the one it went to ([of]) in other; Trick's and Switcheroo's silent line
+                # has no [of] (other: none). Knock Off's line must have it and must not be silent, Thief's is silent with it,
+                # and a line with anything else is an error.
                 of = [a for a in attrs if a.startswith('[of] ')]
-                extra = [a for a in attrs if a not in taken and a not in of]
-                if len(taken) != 1 or len(of) != 1 or extra:
+                silent = '[silent]' in attrs
+                extra = [a for a in attrs if a not in taken and a not in of and a != '[silent]']
+                move_name = taken[0][len('[from] move: '):] if taken else ''
+                if (len(taken) != 1 or len(of) > 1 or extra or (move_name == 'Knock Off' and (silent or len(of) != 1)) or
+                        (move_name == 'Thief' and not (silent and len(of) == 1)) or
+                        (move_name in ('Trick', 'Switcheroo') and not (silent and not of)) or
+                        move_name not in ('Knock Off', 'Thief', 'Trick', 'Switcheroo')):
                     raise ConversionError('enditem-line', 'trace_to_c: unknown -enditem %r' % line, detail=line)
-                e = ev_tuple(EV['ITEM_END'], ev_pos(args[0]), ev_pos(of[0][5:]), CAUSE['ITEM_TAKEN'],
-                             tables['MOVE'][key(taken[0][len('[from] move: '):])], tables['ITEM'][key(args[1])] + 1)
+                e = ev_tuple(EV['ITEM_END'], ev_pos(args[0]), ev_pos(of[0][5:]) if of else NOPOS, CAUSE['ITEM_TAKEN'],
+                             tables['MOVE'][key(move_name)], tables['ITEM'][key(args[1])] + 1)
             else:
                 # [weaken]: the second line of a resist berry (Team C, Chople Berry), detail 1.
                 e = ev_tuple(EV['ITEM_END'], ev_pos(args[0]), NOPOS, 0, 0, tables['ITEM'][key(args[1])] + 1,
                              detail=1 if '[weaken]' in attrs else 0, flags=FLAG['EATEN'] if '[eat]' in attrs else 0)
+        elif kind == '-item':
+            # POOL (step G29): `-item|X|Item|[from] move: M[|[of] Y]` is an item that a move gave X (Trick, Switcheroo, Thief,
+            # Covet): ITEM_START with the cause MOVE, the move in id, the item in id2 and, when the line says it, the Pokemon it
+            # came from ([of]) in other. Any other `-item` line (an ability's, a Frisk) is refused.
+            moves = [a[len('[from] move: '):] for a in attrs if a.startswith('[from] move: ')]
+            of = [a for a in attrs if a.startswith('[of] ')]
+            extra = [a for a in attrs if not a.startswith('[from] move: ') and a not in of]
+            move_name = moves[0] if moves else ''
+            if (len(moves) != 1 or len(of) > 1 or extra or len(args) != 2 or
+                    move_name not in ('Trick', 'Switcheroo', 'Thief', 'Covet') or
+                    (move_name in ('Thief', 'Covet')) != (len(of) == 1)):
+                raise ConversionError('item-line', 'trace_to_c: unknown -item %r' % line, detail=line)
+            e = ev_tuple(EV['ITEM_START'], ev_pos(args[0]), ev_pos(of[0][5:]) if of else NOPOS, CAUSE['MOVE'],
+                         tables['MOVE'][key(move_name)], tables['ITEM'][key(args[1])] + 1)
         elif kind == 'detailschange':
             e = ev_tuple(EV['FORME'], ev_pos(args[0]), ident=tables['FORME'][key(args[1].split(',')[0])])
         elif kind == '-mega':

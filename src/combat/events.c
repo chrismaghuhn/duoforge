@@ -21,7 +21,7 @@ duoforge_event dfi_event_make(uint32_t kind, uint32_t position)
 {
     duoforge_event e;
     memset(&e, 0, sizeof e);
-    e.kind = (uint8_t)kind;         /* <= DUOFORGE_EVENT_TYPE_CHANGE */
+    e.kind = (uint8_t)kind;         /* <= DUOFORGE_EVENT_ITEM_START */
     e.position = (uint8_t)position; /* < 4 or DUOFORGE_NO_POSITION */
     e.other = (uint8_t)DUOFORGE_NO_POSITION;
     return e;
@@ -89,6 +89,16 @@ bool dfi_events_fold_knowledge(const struct duoforge_battle *before, struct duof
         for (uint32_t i = 0u; i < events->count && i < DUOFORGE_MAX_EVENTS; ++i) {
             duoforge_event e;
             dfi_event_project(&events->rec[i], p, &e);
+            /* An item that a move gave (ITEM_START, step G29): the Pokemon it came from ([of], in `other`; Covet prints no
+             * line of its own for it) has lost its item. */
+            if (i >= first && e.kind == DUOFORGE_EVENT_ITEM_START &&
+                e.other < 2u * DUOFORGE_ACTIVE_PER_SIDE && (uint32_t)e.other / 2u == foe) {
+                const uint32_t from = occupant[(uint32_t)e.other % 2u];
+                if (from < DUOFORGE_MAX_ROSTER && from < fs->member_count) {
+                    viewer->knowledge[from].revealed =
+                        (uint8_t)((uint32_t)viewer->knowledge[from].revealed | DFI_REVEALED_ITEM_CONSUMED); /* wide-operands-reviewed */
+                }
+            }
             if (e.position >= 2u * DUOFORGE_ACTIVE_PER_SIDE || (uint32_t)e.position / 2u != foe) {
                 continue;
             }
@@ -123,6 +133,9 @@ bool dfi_events_fold_knowledge(const struct duoforge_battle *before, struct duof
             } else if (e.kind == DUOFORGE_EVENT_FAINT) {
                 /* A faint that no damage line announced (Perish Song's, step G26): the screen shows the foe at 0. */
                 dfi_hp_display(0u, fs->members[m].hp_max, &k->hp_percent, &k->hp_flag);
+            } else if (e.kind == DUOFORGE_EVENT_ITEM_START) {
+                /* The Pokemon now holds the item that a move gave it (step G29): the old item_used is no longer "gone". */
+                k->revealed = (uint8_t)((uint32_t)k->revealed & ~(uint32_t)DFI_REVEALED_ITEM_CONSUMED); /* wide-operands-reviewed */
             } else if (e.kind == DUOFORGE_EVENT_MEGA) {
                 k->revealed = (uint8_t)((uint32_t)k->revealed | DFI_REVEALED_MEGA); /* wide-operands-reviewed */
             }

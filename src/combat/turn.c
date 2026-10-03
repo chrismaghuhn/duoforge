@@ -1947,6 +1947,200 @@ static void dfi_knock_off(dfi_run *r, uint32_t user, uint32_t target, uint32_t m
      * and onDisableMove (every request, endTurn, dfi_end_turn), see dfi_choice_lock_ends. */
 }
 
+/* ---------------------------------------------------------------------------------------------------------------------
+ * Step G29, the item-transfer moves: Trick and Switcheroo (status), Thief and Covet (damaging). The pin
+ * (data/moves.ts:19865-19911 Trick, :18644-18690 Switcheroo, :19302-19330 Thief, :3099-3123 Covet; the Champions mod does
+ * not change them) in terms of sim/pokemon.ts:1851-1889 (takeItem, setItem):
+ *   - takeItem(source): no item, nothing (undefined: no event runs); otherwise runEvent TakeItem, the holder's ability
+ *     before its item: Sticky Hold (data/abilities.ts:4622-4635) of a live holder shows `-activate|X|ability: Sticky Hold`
+ *     and refuses when the taker is another Pokemon (a Pokemon that takes its own item is not refused), Unburden's
+ *     onTakeItem (:5240-5242) adds its volatile (a live holder; it comes first, so it is set although the item's own check
+ *     then refuses: the Mega Stone of the holder's own species, dfi_item_takeable); a refusal is `false`.
+ *   - Trick and Switcheroo: onTryImmunity (the hit step before accuracy) fails a Sticky Hold target with `-immune`.
+ *     onHit takes the target's item (source = the user), then the user's own; a refusal of either, or two empty hands,
+ *     restores both items and fails (-fail|user, [still]); so does the second TakeItem check of each item with the other
+ *     Pokemon as the one that receives it: a Mega Stone is refused for a recipient of the species it belongs to
+ *     (the handler's second argument is the receiver, data/items.ts:27). Then `-activate|user|move: Trick|[of] target`
+ *     (Switcheroo prints Trick too), and for the target, then for the user: setItem and `-item|X|Item|[from] move: M`,
+ *     or, when the other one had nothing, the silent `-enditem|X|Item|[silent]|[from] move: M` of the item that left.
+ *   - Thief and Covet: onAfterHit, nothing if the user holds an item; takeItem(user) of the target (Sticky Hold shows its
+ *     line and keeps the item); the second TakeItem check with the user as receiver; setItem(user) (a user that has
+ *     fainted since, which the Champions mod allows, refuses: the item goes back to the target, whose takeItem already
+ *     ran the TakeItem handlers); Thief: the silent `-enditem|target|Item|[silent]|[from] move: Thief|[of] user`, then
+ *     `-item|user|Item|[from] move: Thief|[of] target`; Covet only the second line, with its own move.
+ *   - setItem runs the item's onStart (data/items.ts): a Choice item removes the holder's lock, and a White Herb or a terrain
+ *     seed whose condition holds is used on the spot, before the `-item` line. The lock part is dfi_set_held; the use of an
+ *     item on the spot is E_UNSUPPORTED, decided before anything changes (dfi_start_uses_item).
+ * State: the held item is the tail's item_now (G16): 1 + id for an item that a move put there, DFI_TAIL_ITEM_NONE for none;
+ * a Pokemon that gets an item has its item_consumed flag cleared (the flag says that what it held was used up). A lock ends
+ * with the item (dfi_set_held), as for Knock Off. Events: `-activate move: Trick` is ACTIVATE, cause MOVE; the `-item` line is
+ * ITEM_START (the cause MOVE, id: the move, id2: the item + 1, other: the one it came from when the line says [of]); the silent
+ * -enditem line is ITEM_END with the cause ITEM_TAKEN, as Knock Off's.
+ * ------------------------------------------------------------------------------------------------------------------ */
+
+/* The item `code` (1 + an item id, 0 none) is a Mega Stone that the second TakeItem check refuses for `recipient`: the stone
+ * of the recipient's own species (megaStone[source.baseSpecies.baseSpecies] of the handler's second argument). */
+static bool dfi_stone_refused_for(const dfi_member *recipient, uint32_t code)
+{
+    if (code == 0u || code > DFI_POOL_ITEM_COUNT) {
+        return false;
+    }
+    const uint32_t base = dfi_pool_items[code - 1u].mega_base;
+    return base != DFI_FORME_NONE && dfi_pool_formes[base].dex_num == dfi_forme_of(recipient)->dex_num;
+}
+
+/* A Pokemon that gets item `code` on the spot uses it in setItem's onStart: a White Herb with a lowered stat, a terrain seed
+ * whose terrain is up (data/items.ts whiteherb, grassyseed, psychicseed). The engine refuses that case, not guesses it. */
+static bool dfi_start_uses_item(struct duoforge_battle *b, uint32_t flat, uint32_t code)
+{
+    if (code == 1u + DFI_ITEM_GRASSYSEED) {
+        return b->terrain == DFI_TERRAIN_GRASSY;
+    }
+    if (code == 1u + DFI_ITEM_PSYCHICSEED) {
+        return b->terrain == DFI_TERRAIN_PSYCHIC;
+    }
+    if (code == 1u + DFI_ITEM_WHITEHERB) {
+        const dfi_active_slot *pos = dfi_pos(b, flat);
+        for (uint32_t i = 0u; i < DFI_STAT_STAGE_COUNT; ++i) {
+            if (pos->stages[i] < DFI_STAGE_NEUTRAL) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+/* The TakeItem event of a holder that has an item and is alive: Unburden's onTakeItem adds its volatile. */
+static void dfi_unburden_on_take(struct duoforge_battle *b, uint32_t flat)
+{
+    const dfi_member *m = dfi_at(b, flat);
+    if (m != NULL && m->hp != 0u && dfi_ability(b, m, DFI_ABILITY_UNBURDEN)) {
+        dfi_active_slot *pos = dfi_pos(b, flat);
+        pos->flags = (uint8_t)((uint32_t)pos->flags | DFI_VOL_UNBURDEN); /* wide-operands-reviewed: < 256 */
+    }
+}
+
+/* The member at `flat` now holds item `code` (1 + id) or nothing (0): the tail's item_now, and its consumed flag cleared for
+ * an item that it gets. A Choice item that it gets ends its Choice lock at once (the item's onStart, data/items.ts:966-972:
+ * setItem runs it); the item that it loses or gets in place of a Choice item does not: the lock stays until choicelock's own
+ * onBeforeMove or onDisableMove ends it (dfi_choice_lock_ends). */
+static void dfi_set_held(struct duoforge_battle *b, uint32_t flat, uint32_t code)
+{
+    dfi_member *m = dfi_at(b, flat);
+    dfi_active_slot *pos = dfi_pos(b, flat);
+    b->tail.sides[flat / 2u].item_now[pos->occupant] = (uint8_t)(code == 0u ? DFI_TAIL_ITEM_NONE : code); /* wide-operands-reviewed: <= 254 */
+    if (code != 0u) {
+        m->item_consumed = 0u;
+    }
+    if (code == 1u + DFI_ITEM_CHOICESCARF && ((uint32_t)pos->flags & DFI_VOL_CHOICE_LOCK) != 0u) {
+        pos->flags = (uint8_t)((uint32_t)pos->flags & ~(uint32_t)DFI_VOL_CHOICE_LOCK); /* wide-operands-reviewed */
+        if (pos->charge_turns == 0u) {
+            pos->locked_move = 0u;
+        }
+    }
+}
+
+/* `-item|X|Item|[from] move: M[|[of] Y]`: ITEM_START (the cause MOVE, id the move, id2 the item + 1, other the Pokemon it
+ * came from). */
+static void dfi_emit_item_received(dfi_run *r, uint32_t flat, uint32_t code, uint32_t move_id, uint32_t from)
+{
+    duoforge_event e = dfi_ev(DUOFORGE_EVENT_ITEM_START, flat, DUOFORGE_CAUSE_MOVE, code, from);
+    e.id = (uint16_t)move_id;
+    dfi_emit(r, &e);
+}
+
+/* The silent `-enditem|X|Item|[silent]|[from] move: M[|[of] Y]` of an item that left: ITEM_END, ITEM_TAKEN. */
+static void dfi_emit_item_left(dfi_run *r, uint32_t flat, uint32_t code, uint32_t move_id, uint32_t to)
+{
+    duoforge_event e = dfi_ev(DUOFORGE_EVENT_ITEM_END, flat, DUOFORGE_CAUSE_ITEM_TAKEN, code, to);
+    e.id = (uint16_t)move_id;
+    dfi_emit(r, &e);
+}
+
+/* Trick's and Switcheroo's onHit for one target (`did` is whether the move did something: a failure prints -fail and stops
+ * the hit loop's end). `lines_move` is the move whose name the `[from] move:` attributes carry: the move itself. */
+static duoforge_status dfi_trick(dfi_run *r, uint32_t user, uint32_t target, uint32_t move_id, bool *did)
+{
+    struct duoforge_battle *b = r->b;
+    const dfi_member *um = dfi_at(b, user);
+    const dfi_member *tm = dfi_at(b, target);
+    *did = false;
+    if (um == NULL || tm == NULL) {
+        return DUOFORGE_E_INVARIANT;
+    }
+    const uint32_t yours = dfi_item_code(b, tm); /* target.takeItem(source) first */
+    const uint32_t mine = dfi_item_code(b, um);  /* then source.takeItem() */
+    const bool refused = (yours != 0u && !dfi_item_takeable(b, tm)) || (mine != 0u && !dfi_item_takeable(b, um));
+    const bool fails = refused || (yours == 0u && mine == 0u) || (mine != 0u && dfi_stone_refused_for(tm, mine)) ||
+                       (yours != 0u && dfi_stone_refused_for(um, yours));
+    if (!fails && ((mine != 0u && dfi_start_uses_item(b, target, mine)) ||
+                   (yours != 0u && dfi_start_uses_item(b, user, yours)))) {
+        return DUOFORGE_E_UNSUPPORTED; /* decided before anything changes */
+    }
+    if (yours != 0u) {
+        dfi_unburden_on_take(b, target); /* the TakeItem handlers ran, whatever came of them */
+    }
+    if (mine != 0u) {
+        dfi_unburden_on_take(b, user);
+    }
+    if (fails) {
+        dfi_fail_still(r, user);
+        return DUOFORGE_OK;
+    }
+    const duoforge_event act = dfi_ev(DUOFORGE_EVENT_ACTIVATE, user, DUOFORGE_CAUSE_MOVE, DFI_MOVE_TRICK, DUOFORGE_NO_POSITION);
+    dfi_emit(r, &act); /* -activate|user|move: Trick|[of] target (Switcheroo prints Trick as well) */
+    dfi_set_held(b, target, mine);
+    if (mine != 0u) {
+        dfi_emit_item_received(r, target, mine, move_id, DUOFORGE_NO_POSITION);
+    } else {
+        dfi_emit_item_left(r, target, yours, move_id, DUOFORGE_NO_POSITION);
+    }
+    dfi_set_held(b, user, yours);
+    if (yours != 0u) {
+        dfi_emit_item_received(r, user, yours, move_id, DUOFORGE_NO_POSITION);
+    } else {
+        dfi_emit_item_left(r, user, mine, move_id, DUOFORGE_NO_POSITION);
+    }
+    *did = true;
+    return DUOFORGE_OK;
+}
+
+/* Thief's and Covet's onAfterHit for one damaged target (`silent_enditem`: Thief's extra line). */
+static duoforge_status dfi_thief(dfi_run *r, uint32_t user, uint32_t target, uint32_t move_id, bool silent_enditem)
+{
+    struct duoforge_battle *b = r->b;
+    const dfi_member *um = dfi_at(b, user);
+    const dfi_member *tm = dfi_at(b, target);
+    if (um == NULL || tm == NULL || dfi_item_code(b, um) != 0u) {
+        return DUOFORGE_OK; /* source.item: nothing to do */
+    }
+    const uint32_t yours = dfi_item_code(b, tm);
+    if (yours == 0u) {
+        return DUOFORGE_OK; /* takeItem answers undefined */
+    }
+    if (tm->hp != 0u && dfi_ability(b, tm, DFI_ABILITY_STICKYHOLD)) {
+        const duoforge_event block = dfi_ev(DUOFORGE_EVENT_ACTIVATE, target, DUOFORGE_CAUSE_ABILITY,
+                                            1u + DFI_ABILITY_STICKYHOLD, DUOFORGE_NO_POSITION);
+        dfi_emit(r, &block); /* [-activate] ability: Sticky Hold, from another Pokemon's takeItem */
+        return DUOFORGE_OK;
+    }
+    const bool transfers = dfi_item_takeable(b, tm) && !dfi_stone_refused_for(um, yours) && um->hp != 0u;
+    if (transfers && dfi_start_uses_item(b, user, yours)) {
+        return DUOFORGE_E_UNSUPPORTED; /* decided before anything changes */
+    }
+    dfi_unburden_on_take(b, target); /* takeItem's TakeItem event, also when the item then stays or goes back */
+    if (!transfers) {
+        return DUOFORGE_OK;
+    }
+    dfi_set_held(b, target, 0u);
+    dfi_set_held(b, user, yours);
+    if (silent_enditem) {
+        dfi_emit_item_left(r, target, yours, move_id, user);
+    }
+    dfi_emit_item_received(r, user, yours, move_id, target);
+    return DUOFORGE_OK;
+}
+
 /* White Herb's check (onStart, data/items.ts): its standing holder has a
  * lowered stat. */
 static bool dfi_herb_due(struct duoforge_battle *b, uint32_t flat)
@@ -3820,8 +4014,8 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
         return DUOFORGE_OK;
     }
     if (status_move && md->primary_status == DFI_STATUS_NONE && md->special != DFI_SPECIAL_PARTING_SHOT &&
-        md->special != DFI_SPECIAL_SOAK && md->special != DFI_SPECIAL_ENCORE && md->special != DFI_SPECIAL_DISABLE) {
-        if (dfi_pool_move_heal[move_id][1] != 0u) {
+        md->special != DFI_SPECIAL_SOAK && md->special != DFI_SPECIAL_ENCORE && md->special != DFI_SPECIAL_DISABLE &&
+        md->special != DFI_SPECIAL_TRICK && md->special != DFI_SPECIAL_SWITCHEROO) {        if (dfi_pool_move_heal[move_id][1] != 0u) {
             return dfi_run_heal_move(r, user, move_id, targets, count);
         }
         if (md->boost_role != DFI_BOOST_ROLE_PRIMARY_SELF || md->target_class != DUOFORGE_TARGET_CLASS_SELF) {
@@ -3850,7 +4044,8 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
         md->special != DFI_SPECIAL_FREEZE_DRY && md->special != DFI_SPECIAL_CLANGING_SCALES &&
         md->special != DFI_SPECIAL_RISING_VOLTAGE && md->special != DFI_SPECIAL_TERRAIN_PULSE &&
         md->special != DFI_SPECIAL_MULTI_HIT_2 && md->special != DFI_SPECIAL_TRIPLE_AXEL &&
-        md->special != DFI_SPECIAL_IMPRISON) {
+        md->special != DFI_SPECIAL_IMPRISON && md->special != DFI_SPECIAL_TRICK && md->special != DFI_SPECIAL_SWITCHEROO &&
+        md->special != DFI_SPECIAL_THIEF && md->special != DFI_SPECIAL_COVET) {
         return DUOFORGE_E_INVARIANT;
     }
     /* Steel Roller's onTry (step G34, data/moves.ts:17893-17913): it fails without a terrain, with -fail and [still]. */
@@ -4073,7 +4268,16 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
             dfi_immune(r, targets[i], 0u);
         }
     }
-    /* then a Prankster-boosted status move fails on a Dark foe. */
+    /* hitStepTryImmunity: Trick's and Switcheroo's onTryImmunity fails a target that has Sticky Hold
+     * (data/moves.ts:19871-19873): -immune, with no reason. After the powder test and before the Prankster test. */
+    for (uint32_t i = 0u; i < count; ++i) {
+        if (hit[i] && (md->special == DFI_SPECIAL_TRICK || md->special == DFI_SPECIAL_SWITCHEROO) &&
+            dfi_ability(r->b, dfi_at(b, targets[i]), DFI_ABILITY_STICKYHOLD)) {
+            hit[i] = false;
+            dfi_immune(r, targets[i], 0u);
+        }
+    }
+    /* hitStepTryImmunity, last: a Prankster-boosted status move fails on a Dark foe. */
     for (uint32_t i = 0u; i < count && status_move && dfi_ability(r->b, m, DFI_ABILITY_PRANKSTER); ++i) {
         if (hit[i] && targets[i] / 2u != side && dfi_has_type(b, dfi_at(b, targets[i]), DFI_TYPE_DARK)) {
             hit[i] = false;
@@ -4161,6 +4365,15 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
                 } else {
                     dfi_fail_still(r, user);
                 }
+                continue;
+            }
+            if (md->special == DFI_SPECIAL_TRICK || md->special == DFI_SPECIAL_SWITCHEROO) {
+                bool swapped = false;
+                st = dfi_trick(r, user, targets[i], move_id, &swapped);
+                if (st != DUOFORGE_OK) {
+                    return st;
+                }
+                did = did || swapped;
                 continue;
             }
             if (md->special == DFI_SPECIAL_ENCORE) {
@@ -4525,6 +4738,18 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
             for (uint32_t i = 0u; i < count; ++i) {
                 if (hit[i]) {
                     dfi_knock_off(r, user, targets[i], move_id);
+                }
+            }
+        }
+        /* Thief's and Covet's onAfterHit (step G29), at the same point (and also for a user that has fainted since: the
+         * Champions mod does not ask, data/mods/champions/scripts.ts:411; setItem then refuses). */
+        if (md->special == DFI_SPECIAL_THIEF || md->special == DFI_SPECIAL_COVET) {
+            for (uint32_t i = 0u; i < count; ++i) {
+                if (hit[i]) {
+                    st = dfi_thief(r, user, targets[i], move_id, md->special == DFI_SPECIAL_THIEF);
+                    if (st != DUOFORGE_OK) {
+                        return st;
+                    }
                 }
             }
         }

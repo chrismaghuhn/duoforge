@@ -125,7 +125,11 @@ static void dfi_view_member(const struct duoforge_battle *b, uint32_t viewer, ui
             v->stat_points[i] = mem->stat_points[i];
         }
         v->is_mega = mem->is_mega;
-        v->item_used = (mem->item_consumed != 0u || b->tail.sides[s].item_now[m] == DFI_TAIL_ITEM_NONE) ? 1u : 0u;
+        /* The item of the sheet is gone: used up or taken, and not replaced by one that a move gave (step G29: then the
+         * consumed flag is clear and item_now holds it; a member without a sheet item has none to lose). */
+        v->item_used = (mem->item != 0u && (mem->item_consumed != 0u || b->tail.sides[s].item_now[m] == DFI_TAIL_ITEM_NONE))
+                           ? 1u
+                           : 0u;
         v->status = mem->hp != 0u ? mem->status : (uint8_t)DUOFORGE_AILMENT_NONE;
         if (b->boundary_kind == DUOFORGE_BOUNDARY_TEAM_SELECTION) {
             v->location = (uint8_t)DUOFORGE_LOCATION_UNDETERMINED;
@@ -144,7 +148,7 @@ static void dfi_view_member(const struct duoforge_battle *b, uint32_t viewer, ui
         v->pp[k] = dfi_derived_pp(mem->moves[k].pp_max, know->moves_used[k]);
     }
     v->is_mega = ((uint32_t)know->revealed & DFI_REVEALED_MEGA) != 0u ? 1u : 0u;
-    v->item_used = ((uint32_t)know->revealed & DFI_REVEALED_ITEM_CONSUMED) != 0u ? 1u : 0u;
+    v->item_used = (mem->item != 0u && ((uint32_t)know->revealed & DFI_REVEALED_ITEM_CONSUMED) != 0u) ? 1u : 0u;
     if ((((uint32_t)b->sides[viewer].seen_mask >> m) & 1u) != 0u) {
         v->hp = know->hp_percent;
         v->hp_flag = know->hp_flag;
@@ -313,8 +317,8 @@ duoforge_status duoforge_battle_observe_ext(const duoforge_context *ctx, const d
             o.sides[s].aurora_veil_turns = battle->tail.sides[s].aurora_veil_turns;
             /* Step G16: the held item that a move took (Knock Off), public (-enditem|X|Item|[from] move: Knock Off): the
              * member holds nothing, DUOFORGE_ITEM_NOW_NONE, and it stays across a switch-out and a faint. The tail's
-             * item_now is the overlay of decision 0018 as it is (a Trick would put an item id + 1 there; nothing does
-             * yet). A member that does not exist has none (the invariants). */
+             * item_now is the overlay of decision 0018 as it is: the item id + 1 that a Trick, Thief or Covet put there (step
+             * G29), or none. A member that does not exist has none (the invariants). */
             for (uint32_t m = 0u; m < DUOFORGE_MAX_ROSTER; ++m) {
                 o.sides[s].members[m].item_now = battle->tail.sides[s].item_now[m];
             }

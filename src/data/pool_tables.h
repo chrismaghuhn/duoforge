@@ -877,7 +877,11 @@
 #define DFI_SPECIAL_MULTI_HIT_2 53u
 #define DFI_SPECIAL_TRIPLE_AXEL 54u
 #define DFI_SPECIAL_IMPRISON 55u
-#define DFI_SPECIAL_UNMODELED 56u
+#define DFI_SPECIAL_TRICK 56u
+#define DFI_SPECIAL_SWITCHEROO 57u
+#define DFI_SPECIAL_THIEF 58u
+#define DFI_SPECIAL_COVET 59u
+#define DFI_SPECIAL_UNMODELED 60u
 
 /* ---- the second flags byte of every move (step G8: the general byte for the flags that the first one has no room
  * for; bits 4 to 128 are free) and the secondary kinds that it comes with ---- */
