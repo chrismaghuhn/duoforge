@@ -19,55 +19,16 @@ at every own point of every committed battle, field by field, the fields
 above compared with their documented sources.
 """
 from duoforge_live import lines, teams
-from duoforge_live.lines import flat_position, line_kind
+from duoforge_live.lines import flat_position
 from duoforge_live.data import trace_to_c
 from duoforge_live.tracker import (ACTIVE, BENCH, HP_PERCENT, NOT_BROUGHT, ROSTER_NONE, TARGET_NONE, UNDETERMINED,
                                    Tracker)
 
 from .labels import REDIRECT_TURN
+from .hindsight import BROUGHT, hindsight, hindsight_picks
 from .points import TEAM_SELECTION, TURN
 
-BROUGHT = 4  # the format brings four (DUOFORGE_DATA_KIND_POOL's profile: max_roster 6, brought_count 4)
 HIDDEN_TARGET = -1  # an own charging move's stored target that no line shows
-
-
-
-
-def hindsight(log, side, data, sheets):
-    """(leads, back): the roster indices of the side's two leads (slot order, the switches at |start|) and the set of
-    the other members that entered during the game."""
-    roster = [data.base_forme(data.forme(s["species"])) for s in sheets[side]]
-    leads, seen, started, turn = [None, None], set(), False, False
-    for line in log:
-        kind = line_kind(line)
-        if kind == "start":
-            started = True
-        elif kind == "turn":
-            turn = True
-        elif kind == "switch" and started and line.split("|")[2][:2] == f"p{side + 1}":
-            parts = line.split("|")
-            try:
-                base = data.base_forme(data.forme(parts[3].split(",")[0]))
-            except ValueError:
-                continue  # a forme changed on the bench (Palafin-Hero): the member entered before in its own forme
-            if roster.count(base) != 1:
-                raise lines.Stop(f"structure:{parts[2]} is not one member of its sheet")
-            member = roster.index(base)
-            if not turn:
-                leads["ab".index(parts[2][2])] = member
-            seen.add(member)
-    if None in leads:
-        raise lines.Stop("structure:no two leads at |start|")
-    return tuple(leads), seen - set(leads)
-
-
-def hindsight_picks(log, side, data, sheets):
-    """The side's picks (leads in slot order, then the back members in ascending roster order), or None when fewer
-    than four members ever entered: the view cannot show which unseen member was brought."""
-    leads, back = hindsight(log, side, data, sheets)
-    if len(back) != BROUGHT - 2:
-        return None
-    return leads + tuple(sorted(back))
 
 
 class SpectatorTracker(Tracker):
