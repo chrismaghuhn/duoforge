@@ -457,11 +457,11 @@ def drop_reason(d, state, after=None, log=None):
         raise ConversionError('modifydamage-tie', 'trace_to_c: ModifyDamage tie with %s' % group,
                               detail=tie_effects(group))
     if site == 'SPEED_TIE' and ctx == 'event:DisableMove':
-        # The DisableMove handlers of one Pokemon: the Choice lock's, Throat Chop's and Heal Block's onDisableMove
+        # The DisableMove handlers of one Pokemon: the Choice lock's, Throat Chop's, Heal Block's, Encore's and Taunt's onDisableMove
         # (data/conditions.ts choicelock, data/moves.ts throatchop and healblock) each only set `disabled` on
         # move slots, and setting a flag twice is setting it once: whichever runs first, the request offers the
         # same moves. Any other handler is a mechanic that has not been looked at.
-        if all(g.startswith(('H:choicelock:', 'H:throatchop:', 'H:healblock:', 'H:encore:')) and g.endswith(':cb')
+        if all(g.startswith(('H:choicelock:', 'H:throatchop:', 'H:healblock:', 'H:encore:', 'H:taunt:')) and g.endswith(':cb')
                for g in group):
             return 'DisableMove handlers whose order changes nothing'
         raise ConversionError('disablemove-tie', 'trace_to_c: DisableMove tie with %s' % group,

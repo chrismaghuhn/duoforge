@@ -2085,9 +2085,18 @@ static const df_tb_stop tb_g31_taunt_a[] = {
     {1u, 0u, 1u, 3u, {4u, 4u}, {778u, 773u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
     {2u, 0u, 2u, 2u, {4u, 4u}, {765u, 773u}, {0x4050660511be1959ull, 0x4050aaaaaaaaaaabull}},
     {3u, 0u, 2u, 2u, {4u, 4u}, {725u, 773u}, {0x404f2598ec9151f5ull, 0x4050aaaaaaaaaaabull}},
-    {6u, 0u, 2u, 1u, {3u, 4u}, {576u, 615u}, {0x4049000000000000ull, 0x404aa3a54ebcce1full}},
-    {7u, 0u, 2u, 1u, {3u, 4u}, {576u, 615u}, {0x4049000000000000ull, 0x404aa3a54ebcce1full}},
-    {8u, 0u, 2u, 1u, {3u, 4u}, {576u, 592u}, {0x4049000000000000ull, 0x40499a6da7c7ef83ull}},
+    {6u, 0u, 2u, 1u, {3u, 4u}, {576u, 672u}, {0x4049000000000000ull, 0x404d1cfaa4122374ull}},
+    {7u, 0u, 2u, 1u, {3u, 4u}, {576u, 646u}, {0x4049000000000000ull, 0x404bf26da7c7ef83ull}},
+    {8u, 0u, 2u, 1u, {3u, 4u}, {516u, 627u}, {0x404668c99dd8350full, 0x404b2e9d799c3d03ull}},
+};
+static const df_tb_stop tb_g31_taunt_encore[] = {
+    {0u, 0u, 2u, 3u, {6u, 6u}, {1116u, 1154u}, {0x4059000000000000ull, 0x4059000000000000ull}},
+    {1u, 0u, 2u, 3u, {4u, 4u}, {740u, 773u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {2u, 0u, 2u, 3u, {4u, 4u}, {740u, 773u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {3u, 0u, 2u, 2u, {4u, 4u}, {727u, 773u}, {0x4050660511be1959ull, 0x4050aaaaaaaaaaabull}},
+    {6u, 0u, 2u, 3u, {4u, 4u}, {740u, 773u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {7u, 0u, 2u, 3u, {4u, 4u}, {740u, 773u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {8u, 0u, 2u, 2u, {4u, 4u}, {727u, 773u}, {0x4050660511be1959ull, 0x4050aaaaaaaaaaabull}},
 };
 static const df_tb_stop tb_g31_taunt_switch[] = {
     {0u, 0u, 3u, 4u, {6u, 6u}, {1154u, 1154u}, {0x4059000000000000ull, 0x4059000000000000ull}},
@@ -2116,26 +2125,26 @@ static const df_tb_stop tb_g31_taunt_tie_b[] = {
 static const df_tb_stop tb_g31_yawn_a[] = {
     {0u, 0u, 3u, 4u, {6u, 6u}, {1154u, 1154u}, {0x4059000000000000ull, 0x4059000000000000ull}},
     {1u, 0u, 1u, 3u, {4u, 4u}, {778u, 773u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
-    {2u, 0u, 2u, 2u, {4u, 4u}, {577u, 773u}, {0x40490a8fa15f78d1ull, 0x4050aaaaaaaaaaabull}},
-    {3u, 0u, 2u, 2u, {4u, 4u}, {577u, 773u}, {0x40490a8fa15f78d1ull, 0x4050aaaaaaaaaaabull}},
-    {6u, 0u, 2u, 2u, {4u, 4u}, {577u, 773u}, {0x40490a8fa15f78d1ull, 0x4050aaaaaaaaaaabull}},
-    {7u, 0u, 2u, 1u, {3u, 4u}, {576u, 773u}, {0x4049000000000000ull, 0x4050aaaaaaaaaaabull}},
+    {2u, 0u, 1u, 3u, {4u, 4u}, {778u, 773u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {3u, 0u, 1u, 3u, {4u, 4u}, {778u, 773u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {6u, 0u, 1u, 3u, {4u, 4u}, {778u, 773u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {7u, 0u, 1u, 3u, {4u, 4u}, {778u, 773u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
 };
 static const df_tb_stop tb_g31_yawn_flower_veil[] = {
     {0u, 0u, 1u, 3u, {6u, 6u}, {1154u, 1117u}, {0x4059000000000000ull, 0x4059000000000000ull}},
     {1u, 0u, 1u, 3u, {4u, 4u}, {778u, 748u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
-    {2u, 0u, 2u, 2u, {4u, 4u}, {589u, 694u}, {0x4049894b31d922a4ull, 0x404f28cfc4a33f11ull}},
-    {3u, 0u, 2u, 1u, {3u, 4u}, {576u, 702u}, {0x4049000000000000ull, 0x404f7b425ed097b4ull}},
-    {5u, 0u, 2u, 1u, {3u, 4u}, {511u, 660u}, {0x4046318515aa397bull, 0x404d9f7a1dad35f1ull}},
-    {6u, 0u, 2u, 1u, {3u, 4u}, {404u, 636u}, {0x404192ca80389819ull, 0x404cb86b27961599ull}},
+    {2u, 0u, 2u, 1u, {3u, 4u}, {576u, 693u}, {0x4049000000000000ull, 0x404f1e81715d93ffull}},
+    {3u, 0u, 2u, 1u, {3u, 4u}, {576u, 693u}, {0x4049000000000000ull, 0x404f1e81715d93ffull}},
+    {5u, 0u, 2u, 1u, {3u, 4u}, {409u, 610u}, {0x4041ca0f086693adull, 0x404b6e49498dc571ull}},
+    {6u, 0u, 2u, 1u, {2u, 4u}, {218u, 528u}, {0x4033b82f5043973cull, 0x4047ebe71eb42b2cull}},
 };
 static const df_tb_stop tb_g31_yawn_switch[] = {
     {0u, 0u, 3u, 4u, {6u, 6u}, {1154u, 1154u}, {0x4059000000000000ull, 0x4059000000000000ull}},
     {1u, 0u, 1u, 3u, {4u, 4u}, {778u, 773u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
-    {2u, 0u, 2u, 2u, {4u, 4u}, {577u, 773u}, {0x40490a8fa15f78d1ull, 0x4050aaaaaaaaaaabull}},
-    {3u, 0u, 2u, 2u, {4u, 4u}, {589u, 773u}, {0x4049894b31d922a4ull, 0x4050aaaaaaaaaaabull}},
-    {5u, 0u, 2u, 2u, {4u, 4u}, {613u, 773u}, {0x404a86c252cc7648ull, 0x4050aaaaaaaaaaabull}},
-    {6u, 0u, 2u, 1u, {3u, 4u}, {576u, 773u}, {0x4049000000000000ull, 0x4050aaaaaaaaaaabull}},
+    {2u, 0u, 1u, 3u, {4u, 4u}, {778u, 773u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {3u, 0u, 1u, 3u, {4u, 4u}, {778u, 773u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {5u, 0u, 1u, 3u, {4u, 4u}, {778u, 773u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {6u, 0u, 1u, 3u, {4u, 4u}, {778u, 773u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
 };
 static const df_tb_stop tb_g31_yawn_tie_a[] = {
     {0u, 0u, 2u, 3u, {6u, 6u}, {1138u, 1149u}, {0x4059000000000000ull, 0x4059000000000000ull}},
@@ -3697,6 +3706,7 @@ static const df_tb_battle tb_battles[] = {
     {"g30_solar_beam_sand_snow", 6u, tb_g30_solar_beam_sand_snow, sizeof tb_g30_solar_beam_sand_snow / sizeof tb_g30_solar_beam_sand_snow[0]},
     {"g30_solar_beam_sun_rain", 5u, tb_g30_solar_beam_sun_rain, sizeof tb_g30_solar_beam_sun_rain / sizeof tb_g30_solar_beam_sun_rain[0]},
     {"g31_taunt_a", 8u, tb_g31_taunt_a, sizeof tb_g31_taunt_a / sizeof tb_g31_taunt_a[0]},
+    {"g31_taunt_encore", 8u, tb_g31_taunt_encore, sizeof tb_g31_taunt_encore / sizeof tb_g31_taunt_encore[0]},
     {"g31_taunt_switch", 7u, tb_g31_taunt_switch, sizeof tb_g31_taunt_switch / sizeof tb_g31_taunt_switch[0]},
     {"g31_taunt_tie_a", 7u, tb_g31_taunt_tie_a, sizeof tb_g31_taunt_tie_a / sizeof tb_g31_taunt_tie_a[0]},
     {"g31_taunt_tie_b", 7u, tb_g31_taunt_tie_b, sizeof tb_g31_taunt_tie_b / sizeof tb_g31_taunt_tie_b[0]},
@@ -3834,7 +3844,7 @@ static const df_tb_battle tb_battles[] = {
     {"w8_sand_soak", 7u, tb_w8_sand_soak, sizeof tb_w8_sand_soak / sizeof tb_w8_sand_soak[0]},
 };
 
-/* 2694 stops: 139 of an ended battle; decided by the count 767,
- * the HP percentage 871, the total HP 862, a tie 55;
- * winners: side 0 1329, side 1 1310, tie 55 */
+/* 2701 stops: 139 of an ended battle; decided by the count 766,
+ * the HP percentage 866, the total HP 875, a tie 55;
+ * winners: side 0 1337, side 1 1309, tie 55 */
 #endif

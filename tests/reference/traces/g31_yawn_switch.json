@@ -64,7 +64,7 @@
        "switch_flag": 0,
        "hp": 202,
        "maxhp": 202,
-       "item": "focussash",
+       "item": "lightclay",
        "status": "",
        "status_time": 0,
        "confusion": 0,
@@ -260,8 +260,8 @@
         0
        ],
        "pp": [
-        16,
-        8
+        8,
+        20
        ],
        "volatiles": [],
        "locked": null
@@ -512,7 +512,7 @@
         "switch_flag": 0,
         "hp": 202,
         "maxhp": 202,
-        "item": "focussash",
+        "item": "lightclay",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -663,8 +663,8 @@
          0
         ],
         "pp": [
-         16,
-         8
+         8,
+         20
         ],
         "volatiles": [],
         "locked": null
@@ -759,37 +759,9 @@
   {
    "input": {
     "p1": "move 1 1, move 3",
-    "p2": "move 1 1, move 2"
+    "p2": "move 2, move 2"
    },
    "draws": [
-    {
-     "site": "ACCURACY",
-     "context": "",
-     "lo": 0,
-     "hi": 100,
-     "value": 63
-    },
-    {
-     "site": "CRIT",
-     "context": "",
-     "lo": 0,
-     "hi": 24,
-     "value": 20
-    },
-    {
-     "site": "DAMAGE_ROLL",
-     "context": "",
-     "lo": 0,
-     "hi": 16,
-     "value": 6
-    },
-    {
-     "site": "SECONDARY",
-     "context": "",
-     "lo": 0,
-     "hi": 100,
-     "value": 69
-    },
     {
      "site": "SPEED_TIE",
      "context": "field:Residual",
@@ -807,7 +779,7 @@
      "context": "field:Residual",
      "lo": 4,
      "hi": 6,
-     "value": 4,
+     "value": 5,
      "group": [
       "H:protect:p1b:end",
       "H:stall:p1b:end"
@@ -822,12 +794,8 @@
     "|-singleturn|p1b: Gyarados|Protect",
     "|move|p1a: Sylveon|Yawn|p2a: Kingambit",
     "|-start|p2a: Kingambit|move: Yawn|[of] p1a: Sylveon",
-    "|move|p2a: Kingambit|Iron Head|p1a: Sylveon",
-    "|-supereffective|p1a: Sylveon|1",
-    "|-enditem|p1a: Sylveon|Focus Sash",
-    "|split|p1",
-    "|-damage|p1a: Sylveon|1/202",
-    "|-damage|p1a: Sylveon|1/100",
+    "|move|p2a: Kingambit|Swords Dance|p2a: Kingambit",
+    "|-boost|p2a: Kingambit|atk|2",
     "|upkeep",
     "|turn|2"
    ],
@@ -870,9 +838,9 @@
         "set_species": "Sylveon",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 1,
+        "hp": 202,
         "maxhp": 202,
-        "item": "",
+        "item": "lightclay",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -1016,7 +984,7 @@
         "confusion": 0,
         "fainted": false,
         "boosts": [
-         1,
+         3,
          0,
          0,
          0,
@@ -1025,8 +993,8 @@
          0
         ],
         "pp": [
-         15,
-         8
+         8,
+         19
         ],
         "volatiles": [
          "yawn"
@@ -1154,9 +1122,6 @@
     "|-fail|p1b: Gyarados",
     "|move|p1a: Sylveon|Protect||[still]",
     "|-fail|p1a: Sylveon",
-    "|split|p1",
-    "|-heal|p1a: Sylveon|13/202|[from] Grassy Terrain",
-    "|-heal|p1a: Sylveon|6/100|[from] Grassy Terrain",
     "|upkeep",
     "|turn|3"
    ],
@@ -1199,9 +1164,9 @@
         "set_species": "Sylveon",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 13,
+        "hp": 202,
         "maxhp": 202,
-        "item": "",
+        "item": "lightclay",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -1406,8 +1371,8 @@
          0
         ],
         "pp": [
-         15,
-         8
+         8,
+         19
         ],
         "volatiles": [],
         "locked": null
@@ -1485,9 +1450,6 @@
     "|-singleturn|p1b: Gyarados|Protect",
     "|move|p1a: Sylveon|Protect||[still]",
     "|-fail|p1a: Sylveon",
-    "|split|p1",
-    "|-heal|p1a: Sylveon|25/202|[from] Grassy Terrain",
-    "|-heal|p1a: Sylveon|12/100|[from] Grassy Terrain",
     "|upkeep",
     "|turn|4"
    ],
@@ -1530,9 +1492,9 @@
         "set_species": "Sylveon",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 25,
+        "hp": 202,
         "maxhp": 202,
-        "item": "",
+        "item": "lightclay",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -1685,8 +1647,8 @@
          0
         ],
         "pp": [
-         15,
-         8
+         8,
+         19
         ],
         "volatiles": [],
         "locked": null
@@ -1783,7 +1745,7 @@
   {
    "input": {
     "p1": "move 2, move 3",
-    "p2": "move 1 1, move 2"
+    "p2": "move 2, move 2"
    },
    "draws": [
     {
@@ -1791,14 +1753,14 @@
      "context": "StallMove",
      "lo": 0,
      "hi": 3,
-     "value": 0
+     "value": 1
     },
     {
      "site": "STALL",
      "context": "StallMove",
      "lo": 0,
      "hi": 3,
-     "value": 0
+     "value": 2
     },
     {
      "site": "SPEED_TIE",
@@ -1807,48 +1769,21 @@
      "hi": 8,
      "value": 7,
      "group": [
-      "H:stall:p2b:end",
-      "H:protect:p2b:end"
+      "H:stall:p1a:end",
+      "H:protect:p1a:end"
      ],
      "start": 6
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "field:Residual",
-     "lo": 8,
-     "hi": 10,
-     "value": 8,
-     "group": [
-      "H:stall:p1b:end",
-      "H:protect:p1b:end"
-     ],
-     "start": 8
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "field:Residual",
-     "lo": 10,
-     "hi": 12,
-     "value": 10,
-     "group": [
-      "H:protect:p1a:end",
-      "H:stall:p1a:end"
-     ],
-     "start": 10
     }
    ],
    "log": [
-    "|move|p2b: Staraptor|Protect|p2b: Staraptor",
-    "|-singleturn|p2b: Staraptor|Protect",
-    "|move|p1b: Gyarados|Protect|p1b: Gyarados",
-    "|-singleturn|p1b: Gyarados|Protect",
+    "|move|p2b: Staraptor|Protect||[still]",
+    "|-fail|p2b: Staraptor",
+    "|move|p1b: Gyarados|Protect||[still]",
+    "|-fail|p1b: Gyarados",
     "|move|p1a: Sylveon|Protect|p1a: Sylveon",
     "|-singleturn|p1a: Sylveon|Protect",
-    "|move|p2a: Kingambit|Iron Head|p1a: Sylveon",
-    "|-activate|p1a: Sylveon|move: Protect",
-    "|split|p1",
-    "|-heal|p1a: Sylveon|37/202|[from] Grassy Terrain",
-    "|-heal|p1a: Sylveon|18/100|[from] Grassy Terrain",
+    "|move|p2a: Kingambit|Swords Dance|p2a: Kingambit",
+    "|-boost|p2a: Kingambit|atk|2",
     "|upkeep",
     "|turn|5"
    ],
@@ -1891,9 +1826,9 @@
         "set_species": "Sylveon",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 37,
+        "hp": 202,
         "maxhp": 202,
-        "item": "",
+        "item": "lightclay",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -1943,6 +1878,341 @@
          4,
          20
         ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Rillaboom",
+        "set_species": "Rillaboom",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 193,
+        "maxhp": 193,
+        "item": "miracleseed",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Ceruledge",
+        "set_species": "Ceruledge",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 181,
+        "maxhp": 181,
+        "item": "grassyseed",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1
+       ],
+       [
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Kingambit",
+        "set_species": "Kingambit",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 207,
+        "maxhp": 207,
+        "item": "chopleberry",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         2,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         18
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Staraptor",
+        "set_species": "Staraptor",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 192,
+        "maxhp": 192,
+        "item": "sharpbeak",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         -1,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         4
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Rillaboom",
+        "set_species": "Rillaboom",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 193,
+        "maxhp": 193,
+        "item": "miracleseed",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Ceruledge",
+        "set_species": "Ceruledge",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 181,
+        "maxhp": 181,
+        "item": "grassyseed",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": {
+    "p1": "move 2, move 3",
+    "p2": "move 2, move 2"
+   },
+   "draws": [
+    {
+     "site": "STALL",
+     "context": "StallMove",
+     "lo": 0,
+     "hi": 3,
+     "value": 1
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "field:Residual",
+     "lo": 6,
+     "hi": 8,
+     "value": 6,
+     "group": [
+      "H:protect:p2b:end",
+      "H:stall:p2b:end"
+     ],
+     "start": 6
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "field:Residual",
+     "lo": 8,
+     "hi": 10,
+     "value": 8,
+     "group": [
+      "H:protect:p1b:end",
+      "H:stall:p1b:end"
+     ],
+     "start": 8
+    }
+   ],
+   "log": [
+    "|move|p2b: Staraptor|Protect|p2b: Staraptor",
+    "|-singleturn|p2b: Staraptor|Protect",
+    "|move|p1b: Gyarados|Protect|p1b: Gyarados",
+    "|-singleturn|p1b: Gyarados|Protect",
+    "|move|p1a: Sylveon|Protect||[still]",
+    "|-fail|p1a: Sylveon",
+    "|move|p2a: Kingambit|Swords Dance|p2a: Kingambit",
+    "|-boost|p2a: Kingambit|atk|2",
+    "|upkeep",
+    "|turn|6"
+   ],
+   "state": {
+    "turn": 6,
+    "ended": false,
+    "winner": "",
+    "weather": "",
+    "weather_turns": 0,
+    "terrain": "grassyterrain",
+    "terrain_turns": 1,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Sylveon",
+        "set_species": "Sylveon",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 202,
+        "maxhp": 202,
+        "item": "lightclay",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         -1,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         11,
+         4
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Gyarados",
+        "set_species": "Gyarados",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 202,
+        "maxhp": 202,
+        "item": "leftovers",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         -1,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         16,
+         3,
+         20
+        ],
         "volatiles": [
          "stall"
         ],
@@ -2039,35 +2309,7 @@
         "confusion": 0,
         "fainted": false,
         "boosts": [
-         0,
-         0,
-         0,
-         0,
-         0,
-         0,
-         0
-        ],
-        "pp": [
-         14,
-         8
-        ],
-        "volatiles": [],
-        "locked": null
-       },
-       {
-        "species": "Staraptor",
-        "set_species": "Staraptor",
-        "mega": 0,
-        "switch_flag": 0,
-        "hp": 192,
-        "maxhp": 192,
-        "item": "sharpbeak",
-        "status": "",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": false,
-        "boosts": [
-         -1,
+         4,
          0,
          0,
          0,
@@ -2076,330 +2318,8 @@
          0
         ],
         "pp": [
-         20,
-         4
-        ],
-        "volatiles": [
-         "stall"
-        ],
-        "locked": null
-       },
-       {
-        "species": "Rillaboom",
-        "set_species": "Rillaboom",
-        "mega": 0,
-        "switch_flag": 0,
-        "hp": 193,
-        "maxhp": 193,
-        "item": "miracleseed",
-        "status": "",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": false,
-        "boosts": [
-         0,
-         0,
-         0,
-         0,
-         0,
-         0,
-         0
-        ],
-        "pp": [
-         12
-        ],
-        "volatiles": [],
-        "locked": null
-       },
-       {
-        "species": "Ceruledge",
-        "set_species": "Ceruledge",
-        "mega": 0,
-        "switch_flag": 0,
-        "hp": 181,
-        "maxhp": 181,
-        "item": "grassyseed",
-        "status": "",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": false,
-        "boosts": [
-         0,
-         0,
-         0,
-         0,
-         0,
-         0,
-         0
-        ],
-        "pp": [
-         8
-        ],
-        "volatiles": [],
-        "locked": null
-       }
-      ]
-     }
-    ]
-   }
-  },
-  {
-   "input": {
-    "p1": "move 2, move 3",
-    "p2": "move 1 1, move 2"
-   },
-   "draws": [
-    {
-     "site": "STALL",
-     "context": "StallMove",
-     "lo": 0,
-     "hi": 9,
-     "value": 0
-    },
-    {
-     "site": "STALL",
-     "context": "StallMove",
-     "lo": 0,
-     "hi": 9,
-     "value": 5
-    },
-    {
-     "site": "STALL",
-     "context": "StallMove",
-     "lo": 0,
-     "hi": 3,
-     "value": 2
-    },
-    {
-     "site": "ACCURACY",
-     "context": "",
-     "lo": 0,
-     "hi": 100,
-     "value": 46
-    },
-    {
-     "site": "CRIT",
-     "context": "",
-     "lo": 0,
-     "hi": 24,
-     "value": 13
-    },
-    {
-     "site": "DAMAGE_ROLL",
-     "context": "",
-     "lo": 0,
-     "hi": 16,
-     "value": 12
-    },
-    {
-     "site": "SECONDARY",
-     "context": "",
-     "lo": 0,
-     "hi": 100,
-     "value": 37
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "field:Residual",
-     "lo": 6,
-     "hi": 8,
-     "value": 6,
-     "group": [
-      "H:protect:p2b:end",
-      "H:stall:p2b:end"
-     ],
-     "start": 6
-    }
-   ],
-   "log": [
-    "|move|p2b: Staraptor|Protect|p2b: Staraptor",
-    "|-singleturn|p2b: Staraptor|Protect",
-    "|move|p1b: Gyarados|Protect||[still]",
-    "|-fail|p1b: Gyarados",
-    "|move|p1a: Sylveon|Protect||[still]",
-    "|-fail|p1a: Sylveon",
-    "|move|p2a: Kingambit|Iron Head|p1a: Sylveon",
-    "|-supereffective|p1a: Sylveon|1",
-    "|split|p1",
-    "|-damage|p1a: Sylveon|0 fnt",
-    "|-damage|p1a: Sylveon|0 fnt",
-    "|faint|p1a: Sylveon",
-    "|upkeep"
-   ],
-   "state": {
-    "turn": 5,
-    "ended": false,
-    "winner": "",
-    "weather": "",
-    "weather_turns": 0,
-    "terrain": "grassyterrain",
-    "terrain_turns": 1,
-    "trick_room": 0,
-    "sides": [
-     {
-      "request": "switch",
-      "conditions": [
-       0,
-       0,
-       0
-      ],
-      "enabled": [],
-      "active": [
-       0,
-       1
-      ],
-      "pokemon": [
-       {
-        "species": "Sylveon",
-        "set_species": "Sylveon",
-        "mega": 0,
-        "switch_flag": 1,
-        "hp": 0,
-        "maxhp": 202,
-        "item": "",
-        "status": "fnt",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": true,
-        "boosts": [
-         0,
-         0,
-         0,
-         0,
-         0,
-         0,
-         0
-        ],
-        "pp": [
-         11,
-         4
-        ],
-        "volatiles": [],
-        "locked": null
-       },
-       {
-        "species": "Gyarados",
-        "set_species": "Gyarados",
-        "mega": 0,
-        "switch_flag": 0,
-        "hp": 202,
-        "maxhp": 202,
-        "item": "leftovers",
-        "status": "",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": false,
-        "boosts": [
-         -1,
-         0,
-         0,
-         0,
-         0,
-         0,
-         0
-        ],
-        "pp": [
-         20,
-         16,
-         3,
-         20
-        ],
-        "volatiles": [],
-        "locked": null
-       },
-       {
-        "species": "Rillaboom",
-        "set_species": "Rillaboom",
-        "mega": 0,
-        "switch_flag": 0,
-        "hp": 193,
-        "maxhp": 193,
-        "item": "miracleseed",
-        "status": "",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": false,
-        "boosts": [
-         0,
-         0,
-         0,
-         0,
-         0,
-         0,
-         0
-        ],
-        "pp": [
-         12
-        ],
-        "volatiles": [],
-        "locked": null
-       },
-       {
-        "species": "Ceruledge",
-        "set_species": "Ceruledge",
-        "mega": 0,
-        "switch_flag": 0,
-        "hp": 181,
-        "maxhp": 181,
-        "item": "grassyseed",
-        "status": "",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": false,
-        "boosts": [
-         0,
-         0,
-         0,
-         0,
-         0,
-         0,
-         0
-        ],
-        "pp": [
-         8
-        ],
-        "volatiles": [],
-        "locked": null
-       }
-      ]
-     },
-     {
-      "request": "",
-      "conditions": [
-       0,
-       0,
-       0
-      ],
-      "enabled": [],
-      "active": [
-       0,
-       1
-      ],
-      "pokemon": [
-       {
-        "species": "Kingambit",
-        "set_species": "Kingambit",
-        "mega": 0,
-        "switch_flag": 0,
-        "hp": 207,
-        "maxhp": 207,
-        "item": "chopleberry",
-        "status": "",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": false,
-        "boosts": [
-         0,
-         0,
-         0,
-         0,
-         0,
-         0,
-         0
-        ],
-        "pp": [
-         13,
-         8
+         8,
+         17
         ],
         "volatiles": [],
         "locked": null

@@ -64,7 +64,7 @@
        "switch_flag": 0,
        "hp": 202,
        "maxhp": 202,
-       "item": "focussash",
+       "item": "lightclay",
        "status": "",
        "status_time": 0,
        "confusion": 0,
@@ -486,7 +486,7 @@
         "switch_flag": 0,
         "hp": 202,
         "maxhp": 202,
-        "item": "focussash",
+        "item": "lightclay",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -784,24 +784,20 @@
     "|move|p2a: Floette|Light Screen|p2a: Floette",
     "|-sidestart|p2: p2|move: Light Screen",
     "|move|p2b: Rillaboom|Wood Hammer|p1a: Sylveon",
-    "|-enditem|p1a: Sylveon|Focus Sash",
     "|split|p1",
-    "|-damage|p1a: Sylveon|1/202",
-    "|-damage|p1a: Sylveon|1/100",
+    "|-damage|p1a: Sylveon|0 fnt",
+    "|-damage|p1a: Sylveon|0 fnt",
+    "|faint|p1a: Sylveon",
     "|split|p2",
-    "|-damage|p2b: Rillaboom|141/207|[from] Recoil",
-    "|-damage|p2b: Rillaboom|68/100|[from] Recoil",
-    "|split|p1",
-    "|-heal|p1a: Sylveon|13/202|[from] Grassy Terrain",
-    "|-heal|p1a: Sylveon|6/100|[from] Grassy Terrain",
+    "|-damage|p2b: Rillaboom|140/207|[from] Recoil",
+    "|-damage|p2b: Rillaboom|67/100|[from] Recoil",
     "|split|p2",
-    "|-heal|p2b: Rillaboom|153/207|[from] Grassy Terrain",
+    "|-heal|p2b: Rillaboom|152/207|[from] Grassy Terrain",
     "|-heal|p2b: Rillaboom|73/100|[from] Grassy Terrain",
-    "|upkeep",
-    "|turn|2"
+    "|upkeep"
    ],
    "state": {
-    "turn": 2,
+    "turn": 1,
     "ended": false,
     "winner": "",
     "weather": "",
@@ -811,24 +807,13 @@
     "trick_room": 0,
     "sides": [
      {
-      "request": "move",
+      "request": "switch",
       "conditions": [
        0,
        0,
        0
       ],
-      "enabled": [
-       [
-        1,
-        1
-       ],
-       [
-        1,
-        1,
-        1,
-        1
-       ]
-      ],
+      "enabled": [],
       "active": [
        0,
        1
@@ -838,14 +823,14 @@
         "species": "Sylveon",
         "set_species": "Sylveon",
         "mega": 0,
-        "switch_flag": 0,
-        "hp": 13,
+        "switch_flag": 1,
+        "hp": 0,
         "maxhp": 202,
-        "item": "",
-        "status": "",
+        "item": "lightclay",
+        "status": "fnt",
         "status_time": 0,
         "confusion": 0,
-        "fainted": false,
+        "fainted": true,
         "boosts": [
          0,
          0,
@@ -951,6 +936,297 @@
       ]
      },
      {
+      "request": "",
+      "conditions": [
+       0,
+       0,
+       4
+      ],
+      "enabled": [],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Floette-Eternal",
+        "set_species": "Floette-Eternal",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 181,
+        "maxhp": 181,
+        "item": "floettite",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         -1,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         8,
+         12,
+         19
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Rillaboom",
+        "set_species": "Rillaboom",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 152,
+        "maxhp": 207,
+        "item": "miracleseed",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         15,
+         12,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Ceruledge",
+        "set_species": "Ceruledge",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 181,
+        "maxhp": 181,
+        "item": "grassyseed",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Gholdengo",
+        "set_species": "Gholdengo",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 179,
+        "maxhp": 179,
+        "item": "lifeorb",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": {
+    "p1": "switch 3, pass"
+   },
+   "draws": [],
+   "log": [
+    "|split|p1",
+    "|switch|p1a: Rillaboom|Rillaboom, L50, M|193/193",
+    "|switch|p1a: Rillaboom|Rillaboom, L50, M|100/100",
+    "|turn|2"
+   ],
+   "state": {
+    "turn": 2,
+    "ended": false,
+    "winner": "",
+    "weather": "",
+    "weather_turns": 0,
+    "terrain": "grassyterrain",
+    "terrain_turns": 4,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Rillaboom",
+        "set_species": "Rillaboom",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 193,
+        "maxhp": 193,
+        "item": "miracleseed",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Gyarados",
+        "set_species": "Gyarados",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 202,
+        "maxhp": 202,
+        "item": "leftovers",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         16,
+         7,
+         20
+        ],
+        "volatiles": [
+         "stall"
+        ],
+        "locked": null
+       },
+       {
+        "species": "Sylveon",
+        "set_species": "Sylveon",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 202,
+        "item": "lightclay",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         11,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Ceruledge",
+        "set_species": "Ceruledge",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 181,
+        "maxhp": 181,
+        "item": "grassyseed",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
       "request": "move",
       "conditions": [
        0,
@@ -1010,7 +1286,7 @@
         "set_species": "Rillaboom",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 153,
+        "hp": 152,
         "maxhp": 207,
         "item": "miracleseed",
         "status": "",
@@ -1126,307 +1402,62 @@
      "lo": 0,
      "hi": 16,
      "value": 5
+    },
+    {
+     "site": "SECONDARY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 99
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 63
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 2
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 15
     }
    ],
    "log": [
     "|move|p1b: Gyarados|Protect||[still]",
     "|-fail|p1b: Gyarados",
-    "|move|p1a: Sylveon|Yawn|p2a: Floette",
-    "|-start|p2a: Floette|move: Yawn|[of] p1a: Sylveon",
-    "|move|p2a: Floette|Light Screen||[still]",
-    "|-fail|p2a: Floette",
-    "|move|p2b: Rillaboom|Wood Hammer|p1a: Sylveon",
-    "|split|p1",
-    "|-damage|p1a: Sylveon|0 fnt",
-    "|-damage|p1a: Sylveon|0 fnt",
-    "|faint|p1a: Sylveon",
+    "|move|p1a: Rillaboom|Fake Out|p2a: Floette",
     "|split|p2",
-    "|-damage|p2b: Rillaboom|149/207|[from] Recoil",
-    "|-damage|p2b: Rillaboom|71/100|[from] Recoil",
-    "|split|p2",
-    "|-heal|p2b: Rillaboom|161/207|[from] Grassy Terrain",
-    "|-heal|p2b: Rillaboom|77/100|[from] Grassy Terrain",
-    "|upkeep"
-   ],
-   "state": {
-    "turn": 2,
-    "ended": false,
-    "winner": "",
-    "weather": "",
-    "weather_turns": 0,
-    "terrain": "grassyterrain",
-    "terrain_turns": 3,
-    "trick_room": 0,
-    "sides": [
-     {
-      "request": "switch",
-      "conditions": [
-       0,
-       0,
-       0
-      ],
-      "enabled": [],
-      "active": [
-       0,
-       1
-      ],
-      "pokemon": [
-       {
-        "species": "Sylveon",
-        "set_species": "Sylveon",
-        "mega": 0,
-        "switch_flag": 1,
-        "hp": 0,
-        "maxhp": 202,
-        "item": "",
-        "status": "fnt",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": true,
-        "boosts": [
-         0,
-         0,
-         0,
-         0,
-         0,
-         0,
-         0
-        ],
-        "pp": [
-         10,
-         8
-        ],
-        "volatiles": [],
-        "locked": null
-       },
-       {
-        "species": "Gyarados",
-        "set_species": "Gyarados",
-        "mega": 0,
-        "switch_flag": 0,
-        "hp": 202,
-        "maxhp": 202,
-        "item": "leftovers",
-        "status": "",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": false,
-        "boosts": [
-         0,
-         0,
-         0,
-         0,
-         0,
-         0,
-         0
-        ],
-        "pp": [
-         20,
-         16,
-         6,
-         20
-        ],
-        "volatiles": [],
-        "locked": null
-       },
-       {
-        "species": "Rillaboom",
-        "set_species": "Rillaboom",
-        "mega": 0,
-        "switch_flag": 0,
-        "hp": 193,
-        "maxhp": 193,
-        "item": "miracleseed",
-        "status": "",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": false,
-        "boosts": [
-         0,
-         0,
-         0,
-         0,
-         0,
-         0,
-         0
-        ],
-        "pp": [
-         12
-        ],
-        "volatiles": [],
-        "locked": null
-       },
-       {
-        "species": "Ceruledge",
-        "set_species": "Ceruledge",
-        "mega": 0,
-        "switch_flag": 0,
-        "hp": 181,
-        "maxhp": 181,
-        "item": "grassyseed",
-        "status": "",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": false,
-        "boosts": [
-         0,
-         0,
-         0,
-         0,
-         0,
-         0,
-         0
-        ],
-        "pp": [
-         8
-        ],
-        "volatiles": [],
-        "locked": null
-       }
-      ]
-     },
-     {
-      "request": "",
-      "conditions": [
-       0,
-       0,
-       3
-      ],
-      "enabled": [],
-      "active": [
-       0,
-       1
-      ],
-      "pokemon": [
-       {
-        "species": "Floette-Eternal",
-        "set_species": "Floette-Eternal",
-        "mega": 0,
-        "switch_flag": 0,
-        "hp": 181,
-        "maxhp": 181,
-        "item": "floettite",
-        "status": "",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": false,
-        "boosts": [
-         -1,
-         0,
-         0,
-         0,
-         0,
-         0,
-         0
-        ],
-        "pp": [
-         12,
-         8,
-         12,
-         18
-        ],
-        "volatiles": [
-         "yawn"
-        ],
-        "locked": null
-       },
-       {
-        "species": "Rillaboom",
-        "set_species": "Rillaboom",
-        "mega": 0,
-        "switch_flag": 0,
-        "hp": 161,
-        "maxhp": 207,
-        "item": "miracleseed",
-        "status": "",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": false,
-        "boosts": [
-         0,
-         0,
-         0,
-         0,
-         0,
-         0,
-         0
-        ],
-        "pp": [
-         14,
-         12,
-         8
-        ],
-        "volatiles": [],
-        "locked": null
-       },
-       {
-        "species": "Ceruledge",
-        "set_species": "Ceruledge",
-        "mega": 0,
-        "switch_flag": 0,
-        "hp": 181,
-        "maxhp": 181,
-        "item": "grassyseed",
-        "status": "",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": false,
-        "boosts": [
-         0,
-         0,
-         0,
-         0,
-         0,
-         0,
-         0
-        ],
-        "pp": [
-         8
-        ],
-        "volatiles": [],
-        "locked": null
-       },
-       {
-        "species": "Gholdengo",
-        "set_species": "Gholdengo",
-        "mega": 0,
-        "switch_flag": 0,
-        "hp": 179,
-        "maxhp": 179,
-        "item": "lifeorb",
-        "status": "",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": false,
-        "boosts": [
-         0,
-         0,
-         0,
-         0,
-         0,
-         0,
-         0
-        ],
-        "pp": [
-         8
-        ],
-        "volatiles": [],
-        "locked": null
-       }
-      ]
-     }
-    ]
-   }
-  },
-  {
-   "input": {
-    "p1": "switch 3, pass"
-   },
-   "draws": [],
-   "log": [
+    "|-damage|p2a: Floette|143/181",
+    "|-damage|p2a: Floette|79/100",
+    "|cant|p2a: Floette|flinch",
+    "|move|p2b: Rillaboom|Wood Hammer|p1a: Rillaboom",
+    "|-resisted|p1a: Rillaboom|1",
     "|split|p1",
-    "|switch|p1a: Rillaboom|Rillaboom, L50, M|193/193",
-    "|switch|p1a: Rillaboom|Rillaboom, L50, M|100/100",
+    "|-damage|p1a: Rillaboom|125/193",
+    "|-damage|p1a: Rillaboom|64/100",
+    "|split|p2",
+    "|-damage|p2b: Rillaboom|130/207|[from] Recoil",
+    "|-damage|p2b: Rillaboom|62/100|[from] Recoil",
+    "|split|p2",
+    "|-heal|p2a: Floette|154/181|[from] Grassy Terrain",
+    "|-heal|p2a: Floette|85/100|[from] Grassy Terrain",
+    "|split|p1",
+    "|-heal|p1a: Rillaboom|137/193|[from] Grassy Terrain",
+    "|-heal|p1a: Rillaboom|70/100|[from] Grassy Terrain",
+    "|split|p2",
+    "|-heal|p2b: Rillaboom|142/207|[from] Grassy Terrain",
+    "|-heal|p2b: Rillaboom|68/100|[from] Grassy Terrain",
+    "|upkeep",
     "|turn|3"
    ],
    "state": {
@@ -1448,7 +1479,7 @@
       ],
       "enabled": [
        [
-        1
+        2
        ],
        [
         1,
@@ -1467,7 +1498,7 @@
         "set_species": "Rillaboom",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 193,
+        "hp": 137,
         "maxhp": 193,
         "item": "miracleseed",
         "status": "",
@@ -1484,7 +1515,7 @@
          0
         ],
         "pp": [
-         12
+         11
         ],
         "volatiles": [],
         "locked": null
@@ -1526,7 +1557,7 @@
         "switch_flag": 0,
         "hp": 0,
         "maxhp": 202,
-        "item": "",
+        "item": "lightclay",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -1541,7 +1572,7 @@
          0
         ],
         "pp": [
-         10,
+         11,
          8
         ],
         "volatiles": [],
@@ -1606,7 +1637,7 @@
         "set_species": "Floette-Eternal",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 181,
+        "hp": 154,
         "maxhp": 181,
         "item": "floettite",
         "status": "",
@@ -1626,11 +1657,9 @@
          12,
          8,
          12,
-         18
+         19
         ],
-        "volatiles": [
-         "yawn"
-        ],
+        "volatiles": [],
         "locked": null
        },
        {
@@ -1638,7 +1667,7 @@
         "set_species": "Rillaboom",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 161,
+        "hp": 142,
         "maxhp": 207,
         "item": "miracleseed",
         "status": "",
@@ -1723,106 +1752,130 @@
   },
   {
    "input": {
-    "p1": "move 1 1, move 3",
+    "p1": "move 1, move 3",
     "p2": "move 4, move 1 1"
    },
    "draws": [
     {
-     "site": "ACCURACY",
-     "context": "",
+     "site": "RANDOM_TARGET",
+     "context": "resolve",
      "lo": 0,
-     "hi": 100,
-     "value": 99
+     "hi": 2,
+     "value": 0
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 0
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 0
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 0
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 0
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "execute:randomNormal",
+     "lo": 0,
+     "hi": 2,
+     "value": 0
     },
     {
      "site": "CRIT",
      "context": "",
      "lo": 0,
      "hi": 24,
-     "value": 15
+     "value": 20
     },
     {
      "site": "DAMAGE_ROLL",
      "context": "",
      "lo": 0,
      "hi": 16,
-     "value": 1
-    },
-    {
-     "site": "SECONDARY",
-     "context": "",
-     "lo": 0,
-     "hi": 100,
-     "value": 94
-    },
-    {
-     "site": "ACCURACY",
-     "context": "",
-     "lo": 0,
-     "hi": 100,
      "value": 13
     },
     {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 9
+    },
+    {
      "site": "CRIT",
      "context": "",
      "lo": 0,
      "hi": 24,
-     "value": 8
+     "value": 21
     },
     {
      "site": "DAMAGE_ROLL",
      "context": "",
      "lo": 0,
      "hi": 16,
-     "value": 4
+     "value": 6
     },
     {
      "site": "SPEED_TIE",
      "context": "field:Residual",
-     "lo": 8,
-     "hi": 10,
+     "lo": 7,
+     "hi": 9,
      "value": 8,
      "group": [
       "H:protect:p1b:end",
       "H:stall:p1b:end"
      ],
-     "start": 8
-    },
-    {
-     "site": "SLEEP_TURNS",
-     "context": "Start",
-     "lo": 0,
-     "hi": 3,
-     "value": 1
+     "start": 7
     }
    ],
    "log": [
     "|move|p1b: Gyarados|Protect|p1b: Gyarados",
     "|-singleturn|p1b: Gyarados|Protect",
-    "|move|p1a: Rillaboom|Fake Out|p2a: Floette",
+    "|move|p2a: Floette|Light Screen||[still]",
+    "|-fail|p2a: Floette",
+    "|-activate|p1a: Rillaboom|move: Struggle",
+    "|move|p1a: Rillaboom|Struggle|p2a: Floette",
     "|split|p2",
-    "|-damage|p2a: Floette|141/181",
-    "|-damage|p2a: Floette|77/100",
-    "|cant|p2a: Floette|flinch",
+    "|-damage|p2a: Floette|110/181",
+    "|-damage|p2a: Floette|60/100",
+    "|split|p1",
+    "|-damage|p1a: Rillaboom|89/193|[from] recoil",
+    "|-damage|p1a: Rillaboom|46/100|[from] recoil",
     "|move|p2b: Rillaboom|Wood Hammer|p1a: Rillaboom",
     "|-resisted|p1a: Rillaboom|1",
     "|split|p1",
-    "|-damage|p1a: Rillaboom|116/193",
-    "|-damage|p1a: Rillaboom|60/100",
+    "|-damage|p1a: Rillaboom|14/193",
+    "|-damage|p1a: Rillaboom|7/100",
     "|split|p2",
-    "|-damage|p2b: Rillaboom|136/207|[from] Recoil",
-    "|-damage|p2b: Rillaboom|65/100|[from] Recoil",
+    "|-damage|p2b: Rillaboom|117/207|[from] Recoil",
+    "|-damage|p2b: Rillaboom|56/100|[from] Recoil",
     "|split|p2",
-    "|-heal|p2a: Floette|152/181|[from] Grassy Terrain",
-    "|-heal|p2a: Floette|83/100|[from] Grassy Terrain",
+    "|-heal|p2a: Floette|121/181|[from] Grassy Terrain",
+    "|-heal|p2a: Floette|66/100|[from] Grassy Terrain",
     "|split|p1",
-    "|-heal|p1a: Rillaboom|128/193|[from] Grassy Terrain",
-    "|-heal|p1a: Rillaboom|66/100|[from] Grassy Terrain",
+    "|-heal|p1a: Rillaboom|26/193|[from] Grassy Terrain",
+    "|-heal|p1a: Rillaboom|13/100|[from] Grassy Terrain",
     "|split|p2",
-    "|-heal|p2b: Rillaboom|148/207|[from] Grassy Terrain",
-    "|-heal|p2b: Rillaboom|71/100|[from] Grassy Terrain",
-    "|-end|p2a: Floette|move: Yawn|[silent]",
-    "|-status|p2a: Floette|slp",
+    "|-heal|p2b: Rillaboom|129/207|[from] Grassy Terrain",
+    "|-heal|p2b: Rillaboom|62/100|[from] Grassy Terrain",
     "|upkeep",
     "|turn|4"
    ],
@@ -1864,7 +1917,7 @@
         "set_species": "Rillaboom",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 128,
+        "hp": 26,
         "maxhp": 193,
         "item": "miracleseed",
         "status": "",
@@ -1925,7 +1978,7 @@
         "switch_flag": 0,
         "hp": 0,
         "maxhp": 202,
-        "item": "",
+        "item": "lightclay",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -1940,7 +1993,7 @@
          0
         ],
         "pp": [
-         10,
+         11,
          8
         ],
         "volatiles": [],
@@ -2005,11 +2058,11 @@
         "set_species": "Floette-Eternal",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 152,
+        "hp": 121,
         "maxhp": 181,
         "item": "floettite",
-        "status": "slp",
-        "status_time": 3,
+        "status": "",
+        "status_time": 0,
         "confusion": 0,
         "fainted": false,
         "boosts": [
@@ -2035,7 +2088,7 @@
         "set_species": "Rillaboom",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 148,
+        "hp": 129,
         "maxhp": 207,
         "item": "miracleseed",
         "status": "",
@@ -2143,14 +2196,14 @@
      "context": "action-speed",
      "lo": 0,
      "hi": 2,
-     "value": 1
+     "value": 0
     },
     {
      "site": "STALL",
      "context": "StallMove",
      "lo": 0,
      "hi": 3,
-     "value": 0
+     "value": 2
     },
     {
      "site": "RANDOM_TARGET",
@@ -2164,97 +2217,99 @@
      "context": "action-speed",
      "lo": 0,
      "hi": 2,
-     "value": 0
+     "value": 1
     },
     {
      "site": "RANDOM_TARGET",
      "context": "execute:randomNormal",
      "lo": 0,
      "hi": 2,
-     "value": 1
+     "value": 0
     },
     {
      "site": "CRIT",
      "context": "",
      "lo": 0,
      "hi": 24,
-     "value": 8
+     "value": 1
     },
     {
      "site": "DAMAGE_ROLL",
      "context": "",
      "lo": 0,
      "hi": 16,
-     "value": 15
+     "value": 7
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 1,
+     "value": 0
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "execute:normal",
+     "lo": 0,
+     "hi": 1,
+     "value": 0
     },
     {
      "site": "ACCURACY",
      "context": "",
      "lo": 0,
      "hi": 100,
-     "value": 18
+     "value": 92
     },
     {
      "site": "CRIT",
      "context": "",
      "lo": 0,
      "hi": 24,
-     "value": 17
+     "value": 22
     },
     {
      "site": "DAMAGE_ROLL",
      "context": "",
      "lo": 0,
      "hi": 16,
-     "value": 12
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "field:Residual",
-     "lo": 7,
-     "hi": 9,
-     "value": 8,
-     "group": [
-      "H:stall:p1b:end",
-      "H:protect:p1b:end"
-     ],
-     "start": 7
+     "value": 3
     }
    ],
    "log": [
-    "|move|p1b: Gyarados|Protect|p1b: Gyarados",
-    "|-singleturn|p1b: Gyarados|Protect",
-    "|cant|p2a: Floette|slp",
+    "|move|p1b: Gyarados|Protect||[still]",
+    "|-fail|p1b: Gyarados",
+    "|move|p2a: Floette|Light Screen||[still]",
+    "|-fail|p2a: Floette",
     "|-activate|p1a: Rillaboom|move: Struggle",
-    "|move|p1a: Rillaboom|Struggle|p2b: Rillaboom",
+    "|move|p1a: Rillaboom|Struggle|p2a: Floette",
     "|split|p2",
-    "|-damage|p2b: Rillaboom|124/207",
-    "|-damage|p2b: Rillaboom|59/100",
+    "|-damage|p2a: Floette|74/181",
+    "|-damage|p2a: Floette|40/100",
     "|split|p1",
-    "|-damage|p1a: Rillaboom|80/193|[from] recoil",
-    "|-damage|p1a: Rillaboom|41/100|[from] recoil",
-    "|move|p2b: Rillaboom|Wood Hammer|p1a: Rillaboom",
-    "|-resisted|p1a: Rillaboom|1",
+    "|-damage|p1a: Rillaboom|0 fnt|[from] recoil",
+    "|-damage|p1a: Rillaboom|0 fnt|[from] recoil",
+    "|faint|p1a: Rillaboom",
+    "|move|p2b: Rillaboom|Wood Hammer|p1b: Gyarados",
     "|split|p1",
-    "|-damage|p1a: Rillaboom|9/193",
-    "|-damage|p1a: Rillaboom|4/100",
+    "|-damage|p1b: Gyarados|25/202",
+    "|-damage|p1b: Gyarados|12/100",
     "|split|p2",
-    "|-damage|p2b: Rillaboom|101/207|[from] Recoil",
-    "|-damage|p2b: Rillaboom|48/100|[from] Recoil",
-    "|split|p2",
-    "|-heal|p2a: Floette|163/181 slp|[from] Grassy Terrain",
-    "|-heal|p2a: Floette|90/100 slp|[from] Grassy Terrain",
+    "|-damage|p2b: Rillaboom|71/207|[from] Recoil",
+    "|-damage|p2b: Rillaboom|34/100|[from] Recoil",
     "|split|p1",
-    "|-heal|p1a: Rillaboom|21/193|[from] Grassy Terrain",
-    "|-heal|p1a: Rillaboom|10/100|[from] Grassy Terrain",
+    "|-heal|p1b: Gyarados|37/202|[from] item: Leftovers",
+    "|-heal|p1b: Gyarados|18/100|[from] item: Leftovers",
     "|split|p2",
-    "|-heal|p2b: Rillaboom|113/207|[from] Grassy Terrain",
-    "|-heal|p2b: Rillaboom|54/100|[from] Grassy Terrain",
-    "|upkeep",
-    "|turn|5"
+    "|-heal|p2a: Floette|85/181|[from] Grassy Terrain",
+    "|-heal|p2a: Floette|46/100|[from] Grassy Terrain",
+    "|split|p2",
+    "|-heal|p2b: Rillaboom|83/207|[from] Grassy Terrain",
+    "|-heal|p2b: Rillaboom|40/100|[from] Grassy Terrain",
+    "|upkeep"
    ],
    "state": {
-    "turn": 5,
+    "turn": 4,
     "ended": false,
     "winner": "",
     "weather": "",
@@ -2264,23 +2319,13 @@
     "trick_room": 0,
     "sides": [
      {
-      "request": "move",
+      "request": "switch",
       "conditions": [
        0,
        0,
        0
       ],
-      "enabled": [
-       [
-        2
-       ],
-       [
-        1,
-        1,
-        1,
-        1
-       ]
-      ],
+      "enabled": [],
       "active": [
        0,
        1
@@ -2290,14 +2335,14 @@
         "species": "Rillaboom",
         "set_species": "Rillaboom",
         "mega": 0,
-        "switch_flag": 0,
-        "hp": 21,
+        "switch_flag": 1,
+        "hp": 0,
         "maxhp": 193,
         "item": "miracleseed",
-        "status": "",
+        "status": "fnt",
         "status_time": 0,
         "confusion": 0,
-        "fainted": false,
+        "fainted": true,
         "boosts": [
          0,
          0,
@@ -2318,7 +2363,7 @@
         "set_species": "Gyarados",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 202,
+        "hp": 37,
         "maxhp": 202,
         "item": "leftovers",
         "status": "",
@@ -2340,9 +2385,7 @@
          4,
          20
         ],
-        "volatiles": [
-         "stall"
-        ],
+        "volatiles": [],
         "locked": null
        },
        {
@@ -2352,7 +2395,7 @@
         "switch_flag": 0,
         "hp": 0,
         "maxhp": 202,
-        "item": "",
+        "item": "lightclay",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -2367,7 +2410,7 @@
          0
         ],
         "pp": [
-         10,
+         11,
          8
         ],
         "volatiles": [],
@@ -2403,25 +2446,13 @@
       ]
      },
      {
-      "request": "move",
+      "request": "",
       "conditions": [
        0,
        0,
        1
       ],
-      "enabled": [
-       [
-        1,
-        1,
-        1,
-        1
-       ],
-       [
-        1,
-        0,
-        1
-       ]
-      ],
+      "enabled": [],
       "active": [
        0,
        1
@@ -2432,11 +2463,11 @@
         "set_species": "Floette-Eternal",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 163,
+        "hp": 85,
         "maxhp": 181,
         "item": "floettite",
-        "status": "slp",
-        "status_time": 2,
+        "status": "",
+        "status_time": 0,
         "confusion": 0,
         "fainted": false,
         "boosts": [
@@ -2452,7 +2483,7 @@
          12,
          8,
          12,
-         18
+         17
         ],
         "volatiles": [],
         "locked": null
@@ -2462,7 +2493,7 @@
         "set_species": "Rillaboom",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 113,
+        "hp": 83,
         "maxhp": 207,
         "item": "miracleseed",
         "status": "",

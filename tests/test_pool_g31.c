@@ -109,6 +109,14 @@ static const struct {
     {"g31_taunt_a", 5u, {0u, 0u, 0u, 0u}},
     {"g31_taunt_a", 6u, {0u, 0u, 0u, 0u}},
     {"g31_taunt_a", 7u, {0u, 0u, 0u, 0u}},
+    {"g31_taunt_encore", 0u, {0u, 0u, 0u, 0u}},
+    {"g31_taunt_encore", 1u, {0u, 0u, 0u, 0u}},
+    {"g31_taunt_encore", 2u, {0u, 0u, 1u, 0u}},
+    {"g31_taunt_encore", 3u, {0u, 0u, 1u, 0u}},
+    {"g31_taunt_encore", 4u, {0u, 0u, 1u, 0u}},
+    {"g31_taunt_encore", 5u, {0u, 0u, 0u, 0u}},
+    {"g31_taunt_encore", 6u, {0u, 0u, 0u, 0u}},
+    {"g31_taunt_encore", 7u, {0u, 0u, 0u, 0u}},
     {"g31_taunt_switch", 0u, {0u, 0u, 0u, 0u}},
     {"g31_taunt_switch", 1u, {0u, 0u, 1u, 0u}},
     {"g31_taunt_switch", 2u, {0u, 0u, 1u, 0u}},
@@ -139,8 +147,8 @@ static const struct {
     {"g31_yawn_a", 6u, {0u, 0u, 0u, 0u}},
     {"g31_yawn_flower_veil", 0u, {0u, 0u, 0u, 0u}},
     {"g31_yawn_flower_veil", 1u, {0u, 0u, 0u, 0u}},
-    {"g31_yawn_flower_veil", 2u, {0u, 0u, 2u, 0u}},
-    {"g31_yawn_flower_veil", 3u, {0u, 0u, 2u, 0u}},
+    {"g31_yawn_flower_veil", 2u, {0u, 0u, 0u, 0u}},
+    {"g31_yawn_flower_veil", 3u, {0u, 0u, 0u, 0u}},
     {"g31_yawn_flower_veil", 4u, {0u, 0u, 0u, 0u}},
     {"g31_yawn_flower_veil", 5u, {0u, 0u, 0u, 0u}},
     {"g31_yawn_switch", 0u, {0u, 0u, 0u, 0u}},
@@ -163,7 +171,7 @@ static const struct {
     {"g31_yawn_tie_b", 5u, {0u, 0u, 0u, 0u}},
 };
 
-static const char *const names[] = {"g31_taunt_a", "g31_taunt_switch", "g31_taunt_tie_a", "g31_taunt_tie_b", "g31_yawn_a", "g31_yawn_flower_veil", "g31_yawn_switch", "g31_yawn_tie_a", "g31_yawn_tie_b"};
+static const char *const names[] = {"g31_taunt_a", "g31_taunt_encore", "g31_taunt_switch", "g31_taunt_tie_a", "g31_taunt_tie_b", "g31_yawn_a", "g31_yawn_flower_veil", "g31_yawn_switch", "g31_yawn_tie_a", "g31_yawn_tie_b"};
 
 int main(void)
 {
