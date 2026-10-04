@@ -95,7 +95,9 @@ class Batch:
     # ---------------------------------------------------------- step mode
 
     def public(self, players):
-        """Public records (E,) and per-env statuses. Buffers are reused.
+        """Public records (E,) and per-env statuses. Both returned arrays are
+        borrowed buffers overwritten by the next public() call; copy them
+        to retain a history snapshot.
 
         An invalid batch argument raises before C touches any environment;
         an unsupported environment keeps its record and reports its status.
