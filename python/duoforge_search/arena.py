@@ -314,7 +314,7 @@ def main(argv=None):
                     "differences against R, the diagnostics and every condition a rerun needs). On the GPU "
                     "set XLA_FLAGS=--xla_gpu_deterministic_ops=true.")
     p.add_argument("--run-dir", required=True, help="the training run: its checkpoints, pool and ladder.json")
-    p.add_argument("--out", required=True)
+    p.add_argument("--out", required=True, help="the output directory, outside the repository")
     p.add_argument("--checkpoint", default=None,
                    help="params-<update>, a file of the run or a path (default: the best by RUN/ladder.json)")
     p.add_argument("--agents", default="N,E", help="N (the Nash rule) and/or E (the expected value)")
@@ -347,6 +347,12 @@ def main(argv=None):
         raise SystemExit(f"--s takes a comma list of sample counts, e.g. 16,32,64 (got {args.s!r})") from None
     if min(samples) < 1 or args.games < 1 or args.capacity < 1 or args.workers < 1 or args.max_steps < 1:
         raise SystemExit("samples, games, capacity, workers and max-steps must be positive")
+    from duoforge_replay.dataset import refuse_repository
+    try:
+        refuse_repository(args.out)
+    except ValueError:
+        raise SystemExit(f"--out {args.out} is inside the repository: evaluation output is written outside it "
+                         f"(AGENTS.md)") from None
 
     import importlib.metadata
 
