@@ -164,12 +164,12 @@ static void random_hypothesis(const duoforge_hypothesis *truth, const duoforge_p
     for (uint32_t m = 0u; m < DUOFORGE_MAX_ROSTER; ++m) {
         uint32_t total = 0u;
         for (uint32_t i = 0u; i < 6u; ++i) {
-            uint32_t v = (uint32_t)(next(s) % 33u);
-            if (total + v > 66u) {
-                v = 66u - total;
+            uint32_t points = (uint32_t)(next(s) % 33u);
+            if (total + points > 66u) {
+                points = 66u - total;
             }
-            h->stat_points[m][i] = (uint8_t)v;
-            total += v;
+            h->stat_points[m][i] = (uint8_t)points;
+            total += points;
         }
         h->hp[m] = next(s);
     }
@@ -535,7 +535,7 @@ static void test_counter_information_safety(df_test *t)
         for (uint32_t counter = 1u; counter <= 3u; ++counter) {
             *b = original;
             const uint32_t member = b->sides[side].positions[0].occupant;
-            b->sides[side].members[member].status = (uint8_t)DFI_STATUS_SLP;
+            b->sides[side].members[member].status = (uint8_t)DUOFORGE_AILMENT_SLEEP;
             b->sides[side].members[member].status_counter = (uint8_t)counter;
             DF_CHECK(t, duoforge_battle_check(ctx, b) == DUOFORGE_OK);
             for (uint32_t p = 0u; p < 2u; ++p) {
@@ -559,7 +559,7 @@ static void test_counter_information_safety(df_test *t)
     }
     *b = original;
     /* Even a caller-supplied masked record cannot bypass the support gate. */
-    normal.state[DFI_ENC_SIDE_OFF + DFI_ENC_SIDE_MEMBERS_OFF + DFI_ENC_MEMBER_STATUS_OFF] = (uint8_t)DFI_STATUS_SLP;
+    normal.state[DFI_ENC_SIDE_OFF + DFI_ENC_SIDE_MEMBERS_OFF + DFI_ENC_MEMBER_STATUS_OFF] = (uint8_t)DUOFORGE_AILMENT_SLEEP;
     normal.state[DFI_ENC_SIDE_OFF + DFI_ENC_SIDE_MEMBERS_OFF + DFI_ENC_MEMBER_STATUS_COUNTER_OFF] = (uint8_t)DUOFORGE_VIEW_HIDDEN;
     DF_CHECK(t, duoforge_battle_from_view(ctx, &normal, &h, b) == DUOFORGE_E_UNSUPPORTED);
     DF_CHECK(t, memcmp(b, &original, sizeof original) == 0);
