@@ -143,3 +143,7 @@ The engine state decided these details. `include/duoforge/duoforge_view.h` docum
 - **A world's RNG** is seeded with (0, 0), since a zero PCG state is not a valid state; every leaf is reseeded anyway.
 - **A built world that fails the full check** is `E_MALFORMED`, as the strict decoder reports it.
 - **The proof (`tests/test_view.c`):** 80 random games each under CLOSURE, TEAM_C and POOL (Teams A, B and C), about 8,500 views. Each view is a byte-equal round trip; 4 random hypotheses per view give back the same public state and the same observation and extension; hidden sleep, confusion and charging targets all occur.
+
+## Review amendment: elapsed counters (owner, 2026-10-04)
+
+The random-point sleep/confusion mixture in section 4 is superseded. Schema 3 does not store publicly elapsed attempts. Any visible sleep or confusion therefore makes public extraction and world construction explicitly E_UNSUPPORTED. The predicate reads only the player's public observation, never the hidden remaining counter. Tests vary all remaining values and both viewers and check unchanged outputs. The honest arena reports the count and share of raw fallbacks separately for visible sleep and visible confusion (overlap is possible). If that share is large, elapsed tracking requires its own later decision and implementation; it is not silently approximated here.

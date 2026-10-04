@@ -26,6 +26,8 @@
  *   - foe HP: among the exact values whose display is the one the player
  *     saw, under the world's maximum HP; a member the player never saw is at
  *     full HP;
+ * Visible sleep/confusion is currently unsupported; the mappings below only
+ * preserve inactive counters (e.g. a faint awaiting cleanup) for round trips.
  *   - a sleep counter: 1, 2 or 3 turns left, weights 3, 3, 2 (sample([2, 3,
  *     3]) seen at a random point of the sleep; the state keeps no elapsed
  *     count to condition on);
@@ -33,6 +35,8 @@
  *   - a charging target: among the targets the move's class allows.
  *
  * Refused (E_UNSUPPORTED), all decided by public facts:
+ *   - visible sleep or confusion: schema 3 has no elapsed-attempt history,
+ *     so a distribution consistent with the observed duration cannot be built;
  *   - a PIVOT where the foe has sealed or queued commands left (a later step
  *     samples them);
  *   - a foe Substitute (its HP follows hidden damage);
@@ -96,7 +100,9 @@ duoforge_status duoforge_battle_public(const duoforge_context *ctx, const duofor
    hypothesis against the record (a spread past 32 or 66, a pick order that is
    not a brought set agreeing with the leads and the members seen, or any pick
    at TEAM_SELECTION) -> E_INVALID_ARGUMENT; the built world's full check ->
-   E_MALFORMED. *out is written only on success. */
+   E_MALFORMED. Visible sleep/confusion or another unmodelled public feature
+   is E_UNSUPPORTED. An invariant failure in a public support query is
+   E_INVARIANT. *out is written only on success. */
 duoforge_status duoforge_battle_from_view(const duoforge_context *ctx, const duoforge_public_state *view,
                                           const duoforge_hypothesis *hypothesis, duoforge_battle *out);
 
