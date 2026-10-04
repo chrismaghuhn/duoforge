@@ -230,6 +230,20 @@ static duoforge_status dfi_view_encode(const duoforge_context *ctx, const duofor
     }
     const uint32_t foe = player ^ 1u;
     /* the refusals, each decided by public facts */
+    if (b->boundary_kind == DUOFORGE_BOUNDARY_PIVOT) {
+        bool moves_started = false;
+        for (uint32_t side = 0u; side < DUOFORGE_SIDE_COUNT; ++side) {
+            for (uint32_t p = 0u; p < DUOFORGE_ACTIVE_PER_SIDE; ++p) {
+                moves_started = moves_started || b->sides[side].positions[p].move_actions != 0u;
+            }
+        }
+        if (!moves_started) {
+            /* A hazard/entry pivot can precede the Mega phase. A refusal
+             * based on the private queue then reveals an unannounced Mega
+             * declaration. Refuse the entire public pre-move phase. */
+            return DUOFORGE_E_UNSUPPORTED;
+        }
+    }
     if (b->sides[foe].sealed != 0u) {
         return DUOFORGE_E_UNSUPPORTED;
     }
