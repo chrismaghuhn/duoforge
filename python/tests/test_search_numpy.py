@@ -4,18 +4,23 @@ The matrix game (an exact linear program with its certificate and its
 exact rescue), the expected-value rule, the tie rules and the play draw
 (spec sections 5.5 and 5.6), the decision keys and play draws (decision
 0022 section 2), the lookahead's candidates, leaf plan, table rules and
-split halves (spec sections 5 and 7), and Batch.encode. The contract is pinned by literals, never by the module's
-own constants. The JAX parts are in test_search.py.
+split halves (spec sections 5 and 7), Batch.encode, and the arena
+measurement's statistics and checkpoint choice (spec section 8). The
+contract is pinned by literals, never by the module's own constants. The
+JAX parts are in test_search.py.
 """
 import itertools
+import json
 import math
+import os
+import tempfile
 import unittest
 
 import numpy as np
 
 from duoforge_learn.pairing import draw as pairing_draw
 from duoforge_learn.pairing import splitmix64
-from duoforge_search import SearchError, lookahead, matrix, seeds
+from duoforge_search import SearchError, arena, lookahead, matrix, seeds
 
 _MASK = (1 << 64) - 1
 _CERTIFICATE = 1e-9  # spec section 5.5, plan Review Focus 5: never relaxed
@@ -527,6 +532,85 @@ class BatchEncode(unittest.TestCase):
             self.assertEqual(hashlib.sha256(b.encode(0)).digest(), b.digest(0))
             with self.assertRaises(IndexError):
                 b.encode(2)
+
+
+class ArenaStatistics(unittest.TestCase):
+    """The NumPy parts of the measurement (plan task 11, spec section 8)."""
+
+    def test_contract_constants(self):
+        self.assertEqual((arena.ARENA_SEED, arena.BOOTSTRAP_SEED, arena.RESAMPLES, arena.GAMES, arena.MAX_STEPS),
+                         (0x2026100300000222, 0x2026100300000220, 2000, 2048, 1000))
+        self.assertEqual(arena.PANEL, (25, 50, 75))
+
+    def test_bootstrap_is_seeded_and_paired(self):
+        rng = np.random.default_rng(0x2026100400000100)
+        a, b = rng.choice([0.0, 0.5, 1.0], 300), rng.choice([0.0, 0.5, 1.0], 300)
+        low, high = arena.bootstrap_mean(a)
+        self.assertEqual((low, high), arena.bootstrap_mean(a.copy()))  # seeded: the same rows, the same interval
+        self.assertLess(low, a.mean())
+        self.assertLess(a.mean(), high)
+        self.assertNotEqual(arena.bootstrap_mean(a, seed=1), arena.bootstrap_mean(a, seed=2))
+        self.assertEqual(arena.bootstrap_paired(a, a), (0.0, 0.0))
+        self.assertEqual(arena.bootstrap_paired(a, b), arena.bootstrap_mean(a - b))  # the rows resampled together
+        self.assertEqual(arena.bootstrap_mean(np.full(10, 0.5)), (0.5, 0.5))
+        for bad in (lambda: arena.bootstrap_paired(a, b[:-1]), lambda: arena.bootstrap_mean([]),
+                    lambda: arena.bootstrap_mean(a, resamples=0)):
+            with self.assertRaises(ValueError):
+                bad()
+
+    def test_elo_mapping(self):
+        self.assertEqual(arena.elo(0.5), 0.0)
+        self.assertAlmostEqual(arena.elo(0.75), 400.0 * math.log10(3.0), places=12)
+        s = np.linspace(0.01, 0.99, 99)
+        e = arena.elo(s)
+        self.assertTrue((np.diff(e) > 0).all())  # monotone
+        np.testing.assert_allclose(arena.elo(1.0 - s), -e, rtol=0, atol=1e-9)
+        self.assertEqual((arena.elo(0.0), arena.elo(1.0)), (-math.inf, math.inf))
+        for bad in (1.5, -0.1, float("nan")):
+            with self.assertRaises(ValueError):
+                arena.elo(bad)
+
+    def test_checkpoint_choice(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            run = os.path.join(tmp, "night")
+            os.makedirs(run)
+            for u in (0, 100, 150, 250, 300, 400):
+                open(os.path.join(run, f"params-{u}.npz"), "wb").close()
+            panel = arena.panel_checkpoints(run)
+            self.assertEqual([(pct, u) for pct, u, _ in panel], [(25, 100), (50, 150), (75, 300)])  # 200: 150 and 250
+            self.assertEqual(arena._checkpoint_path(run, "params-250"), os.path.join(run, "params-250.npz"))
+            with self.assertRaises(SystemExit):
+                arena._checkpoint_path(run, "params-18129")
+            with self.assertRaisesRegex(SystemExit, "no ladder.json"):
+                arena.best_checkpoint(run)
+            players = [{"player": "init", "elo": 900.0}, {"player": "night update 150", "elo": 40.0},
+                       {"player": "night update 300", "elo": 55.5}, {"player": "other update 400", "elo": 99.0}]
+            with open(os.path.join(run, "ladder.json"), "w", encoding="utf-8") as f:
+                json.dump({"players": players}, f)
+            self.assertEqual(arena.best_checkpoint(run), os.path.join(run, "params-300.npz"))  # this run's best
+
+    def test_timing_and_diagnostics(self):
+        def record(kind, ms=(1.0, 2.0, 3.0, 4.0), **fields):
+            r = {"kind": kind, "time": dict(zip(arena.PARTS, (x / 1000.0 for x in ms)))}
+            r.update(fields)
+            return r
+
+        searched = dict(boundary="TURN", changed=True, coverage=0.5, near_duplicates=1, rule="nash", exact=False,
+                        support=[2, 1], split={"exploitability": [0.1, 0.3]},
+                        leaves={"refused": 1, "terminal": 0, "cut_off": 0, "unresolved": 0, "TURN": 3})
+        records = [record("searched", **searched), record("searched", (2.0, 2.0, 2.0, 2.0), **searched),
+                   record("forced"), record("team")]
+        clock = arena.timing(records)
+        self.assertEqual(clock["searched"], 2)
+        self.assertEqual(clock["ms"]["total"]["median"], 9.0)  # (10 + 8) / 2
+        self.assertEqual(clock["ms"]["network"]["median"], 1.5)
+        self.assertEqual(arena.timing(records[2:]), {"searched": 0, "ms": None})
+        d = arena.diagnostics(records, games=2)
+        self.assertEqual(d["decisions"], {"searched": 2, "forced": 1, "team": 1})
+        self.assertEqual((d["searched_per_game"], d["changed"], d["near_duplicates"], d["exact"]), (1.0, 1.0, 2, 0))
+        self.assertEqual(d["leaves"]["refused"], 2)
+        self.assertAlmostEqual(d["split_exploitability"], 0.2)
+        self.assertEqual(arena._finite({"a": [1.0, math.nan, math.inf], "b": 2}), {"a": [1.0, None, None], "b": 2})
 
 
 if __name__ == "__main__":
