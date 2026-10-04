@@ -41,7 +41,8 @@ _DIMS = ("embed", "member", "position", "hidden", "layers", "option")
 # Options a resume may change; any other option that differs from the saved run is refused.
 _RESUMABLE = ("envs", "workers", "minutes", "updates", "self_play_share", "league_slots", "snapshot_every",
               "slot_refresh", "entropy", "eval_every", "eval_games", "eval_budget", "save_minutes", "teams",
-              "team_weights", "teams_root", "opponent_precision", "minibatch")
+              "team_weights", "teams_root", "opponent_precision", "minibatch", "learning_rate_schedule", "kl_ref",
+              "kl_coef", "kl_refresh")
 DATA_KINDS = {"closure": _layout.CONSTANTS["DUOFORGE_DATA_KIND_CLOSURE"],
               "team_c": _layout.CONSTANTS["DUOFORGE_DATA_KIND_TEAM_C"],
               "pool": _layout.CONSTANTS["DUOFORGE_DATA_KIND_POOL"]}
@@ -157,6 +158,12 @@ def _parser(suppress=False):
     add("--epochs", type=int, default=4)
     add("--minibatch", type=int, default=4096)
     add("--learning-rate", type=float, default=3e-4)
+    add("--learning-rate-schedule", default="1",
+        help="a multiplier of the learning rate over learner decisions, as --entropy (for example 0:1,200M:0.1)")
+    add("--kl-ref", default=None, help="the reference policy of the KL anchor: a checkpoint of the same model, or "
+                                       "'magnet', a frozen copy of the learner refreshed every --kl-refresh updates")
+    add("--kl-refresh", type=int, default=500, help="updates between the magnet's refreshes (--kl-ref magnet)")
+    add("--kl-coef", type=float, default=0.0, help="the weight of KL(policy || --kl-ref) in the loss (k3 estimate)")
     add("--entropy", type=str, default="0.01",
         help="entropy bonus: a number, or a schedule over decisions such as 0:0.02,500M:0.01,2G:0.003")
     add("--eval-every", type=int, default=25)
@@ -425,16 +432,21 @@ def _run(args, pool, on_start, stop):
         os.makedirs(args.out, exist_ok=True)
     out = args.out
     entropy = schedule.Schedule.parse(args.entropy)
+    lr_scale = schedule.Schedule.parse(args.learning_rate_schedule)
+    if args.kl_coef and not args.kl_ref:
+        raise SystemExit("--kl-coef needs --kl-ref: the reference policy of the KL anchor")
     train_config = {k: v for k, v in vars(args).items() if not k.startswith("_") and k not in ("resume",)}
     train_config["entropy"] = str(entropy)
+    train_config["learning_rate_schedule"] = str(lr_scale)
     if saved_state is not None and saved_state["data"]["fingerprint"] != context.fingerprint().hex():
         # Other tables (the data kind cannot change on resume): the run goes on when every id its network embeds
         # still names the same row (spec 12.4), and is refused otherwise.
         try:
             checkpoint.check_ids(saved_state, context)
         except ValueError as err:
-            raise SystemExit(f"the context's tables differ from the run's "
-                             f"({saved_state['data']['fingerprint']} -> {context.fingerprint().hex()}): {err}") from None
+            old_print, new_print = saved_state["data"]["fingerprint"], context.fingerprint().hex()
+            raise SystemExit(f"the context's tables differ from the run's ({old_print} -> {new_print}): "
+                             f"{err}") from None
         changes["data"] = [saved_state["data"]["fingerprint"], context.fingerprint().hex()]
     encoder = saved_state["encoder"] if saved_state is not None else features.ENCODER
     widening = saved_state is not None and (saved_state["features"] != list(features.FEATURE_NAMES) or
@@ -487,6 +499,15 @@ def _run(args, pool, on_start, stop):
     learner_rows = state.learner_rows()
     net = policy.make(model_cfg)
     tx = ppo.optimizer(args.learning_rate)
+    ref_params = None
+    magnet = args.kl_ref == "magnet"  # MMD/R-NaD style: the reference is the learner itself, frozen and refreshed
+    if magnet and args.kl_refresh <= 0:
+        raise SystemExit("--kl-refresh must be positive for --kl-ref magnet")
+    if args.kl_ref and not magnet:  # the KL anchor's reference: a checkpoint of this run's model, widened
+        ref_params, ref_config = checkpoint.load_current(args.kl_ref)
+        ref_cfg = checkpoint.model_config(ref_config, ref_params)
+        if ref_cfg != model_cfg:
+            raise SystemExit(f"--kl-ref {args.kl_ref}: its model {ref_cfg} is not the run's {model_cfg}")
     snapshots = _Pool(out)
     if saved_state is None:
         key = jax.random.fold_in(jax.random.PRNGKey(args.seed & 0xFFFFFFFF), args.seed >> 32)
@@ -566,9 +587,18 @@ def _run(args, pool, on_start, stop):
             acted = int(samples["acting"].sum())
             t1 = time.perf_counter()
             entropy_coef = entropy(decisions)
+            magnet_refreshed = magnet and (ref_params is None or update % args.kl_refresh == 0)
+            if magnet_refreshed:  # the magnet: the learner as it is now, frozen until the next refresh
+                ref_params = jax.tree_util.tree_map(lambda x: x, params)
+            if ref_params is not None:  # the reference's log-probability of each taken action, once per update
+                samples["ref_logp"] = np.asarray(net.evaluate(ref_params, samples["obs"], samples["slots"],
+                                                              samples["mask"], samples["is_team"],
+                                                              samples["actions"])[0], dtype=np.float32)
+            scale = lr_scale(decisions)
             params, opt_state, stats = ppo.update(params, opt_state, tx, samples, rng, net.evaluate,
                                                   epochs=args.epochs, minibatch=args.minibatch,
-                                                  entropy_coef=entropy_coef)
+                                                  entropy_coef=entropy_coef, kl_coef=args.kl_coef,
+                                                  lr_scale=scale)
             t2 = time.perf_counter()
             decisions += acted
             episodes += ended
@@ -576,6 +606,7 @@ def _run(args, pool, on_start, stop):
                       "episodes": episodes, "collect_s": round(t1 - t0, 3), "update_s": round(t2 - t1, 3),
                       "decisions_per_s": round(acted / (t2 - t0)), "policy_rows": acted,
                       "acted_rows": int(rollout["acting"].sum()), "entropy_coef": round(entropy_coef, 8),
+                      "lr_scale": round(scale, 8), "kl_coef": args.kl_coef, "magnet_refreshed": magnet_refreshed,
                       "team_episodes": counts.tolist(), "cut_episodes": env.cuts - cuts_before,
                       "tiebreak_unresolved": env.unresolved - unresolved_before,
                       "engine_unsupported": env.engine_unsupported - refused_before}
