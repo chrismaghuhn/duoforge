@@ -60,7 +60,8 @@ class Stop(ValueError):
 ROOM_LINES = {"c", "c:", "chat", "j", "J", "l", "L", "n", "N", "raw", "html", "uhtml", "uhtmlchange", "inactive",
               "inactiveoff", "tempnotify", "tempnotifyoff", "controlshtml", "fieldhtml", "cantleave", "allowleave",
               "title", "badge", "rated", "message", "-message", "notify", "error", "timer", "seed", "debug", "",
-              "join", "leave", "name", "b", "B", "battle", "unlink", "hidelines", "-hint", "-center", "-nothing",
+              "join", "leave", "name", "player", "b", "B", "battle", "unlink", "hidelines", "-hint", "-center",
+              "-nothing",
               "-notarget", "-hitcount", "-waiting", "-combine"}
 
 # Battle lines whose whole effect on the view is in the line (HP, stages, status, a move, a switch, a turn) or that

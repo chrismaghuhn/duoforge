@@ -13,12 +13,15 @@ import os
 import tempfile
 import unittest
 from pathlib import Path
+from unittest import mock
 
 from duoforge_live import client, data, teams
 
 FIXTURE = json.loads((data.ROOT / "python" / "tests" / "data" / "live_stream_ab.json").read_text(encoding="utf-8"))
 ROOM = "battle-gen9championsvgc2026regmc-1"
 FOE = "chris"
+# Showdown's refusal of a switch of a hidden-trapped last active (Side.emitChoiceError, sim/side.ts:527-534, 984-1000).
+UNAVAILABLE = "|error|[Unavailable choice] Can't switch: The active Pokémon is trapped"
 
 
 class FakePolicy:
@@ -32,6 +35,25 @@ class FakePolicy:
 
     def rank_teams(self, observation, obs_part):
         return [(i, 1.0 / 360) for i in range(360)]
+
+
+class SlotBSwitchPolicy(FakePolicy):
+    """Prefer a slot-b switch first; optionally defer it until after many rejections."""
+
+    def __init__(self, switch_rank=0):
+        self.switch_rank = switch_rank
+
+    def rank_pairs(self, observation, obs_part, slot_part, pair_mask):
+        from duoforge import features
+
+        n = pair_mask.shape[1]
+        allowed = [(i, j) for i in range(pair_mask.shape[0]) for j in range(n) if pair_mask[i, j]]
+        switch_column = features.SLOT_FEATURE_NAMES.index("kind.SWITCH")
+        switches = [(i, j) for i, j in allowed if slot_part[1, j, switch_column]]
+        others = [(i, j) for i, j in allowed if (i, j) not in switches]
+        rank = min(self.switch_rank, len(others))
+        ordered = others[:rank] + switches + others[rank:]
+        return [(i, j, 1.0 / len(ordered)) for i, j in ordered]
 
 
 class FakeServer:
@@ -187,10 +209,112 @@ class ClientTest(unittest.TestCase):
         self.assertEqual(self.server.take()[-2:], [f"{ROOM}|{client.INTERNAL}", f"{ROOM}|/forfeit"])
         self.assertEqual(client.INTERNAL, "Internal error on my side, sorry. Forfeiting.")
 
-    def test_unavailable_choice_is_an_internal_error(self):
+    def unavailable(self, rqid, message=5, player_after=False):
+        """Showdown's answer to a switch of a hidden-trapped last active (Shadow Tag, Arena Trap, Magnet Pull): the
+        refusal, then the move request of fixture message `message` again under a new rqid, its last active now
+        trapped (Side.emitRequest with update)."""
+        request = next(json.loads(line[len("|request|"):]) for line in FIXTURE["messages"][message]
+                       if line.startswith("|request|"))
+        request["active"][1]["trapped"] = True
+        request.update(update=True, rqid=rqid)
+        self.feed(room([UNAVAILABLE]))
+        self.assertEqual(self.server.take(), [])  # the next choice waits for the updated request
+        updated = (["|player|p2|Opponent|0|1500"] if player_after else [])
+        self.feed(room(updated + ["|request|" + json.dumps(request)]))
+
+    def log(self):
+        path = Path(self.tmp.name, ROOM + "-duoforgebot.jsonl")
+        return [json.loads(line) for line in path.read_text(encoding="utf-8").splitlines()]
+
+    def test_unavailable_choice_chooses_again_from_the_updated_request(self):
+        self.start_battle(upto=6)
+        first = [s for s in self.server.take() if "/choose" in s][-1]
+        self.assertTrue(first.endswith("|3"), first)
+        self.unavailable(4)
+        again = self.server.take()
+        self.assertEqual(len(again), 1, again)
+        self.assertTrue(again[0].startswith(f"{ROOM}|/choose ") and again[0].endswith("|4"), again)
+        log = self.log()
+        self.assertIn({"unavailable": first[len(f"{ROOM}|/choose "):-len("|3")], "error": UNAVAILABLE}, log)
+        self.assertEqual(log[-1]["decision"], 4)
+        self.feed(room(FIXTURE["messages"][6]))  # the turn: the second choice was taken
+        self.feed(room(FIXTURE["messages"][7]))
+        sent = self.server.take()
+        self.assertEqual(len(sent), 1, sent)
+        self.assertTrue(sent[0].startswith(f"{ROOM}|/choose ") and sent[0].endswith("|5"), sent)
+
+    def test_unavailable_slot_b_switch_redecides_without_accepting_it(self):
+        from duoforge_live.game import Game
+
+        self.bot.policy = SlotBSwitchPolicy()
+        accepted = []
+        accepted_original = Game.accepted
+
+        def accepted_spy(game, text):
+            accepted.append(text)
+            return accepted_original(game, text)
+
+        with mock.patch.object(Game, "accepted", new=accepted_spy):
+            self.start_battle(upto=6)
+            first_sent = [s for s in self.server.take() if "/choose " in s][-1]
+            first = first_sent.split("|/choose ", 1)[1].rsplit("|", 1)[0]
+            self.assertTrue(first.split(", ")[1].startswith("switch "), first)
+            accepted.clear()  # Ignore the earlier team-preview choice.
+
+            self.feed(room(["|player|p2|Opponent|0|1500"]))  # foe leaves/rejoins before the refusal
+            self.assertEqual(accepted, [])
+            self.unavailable(4, player_after=True)  # and again between the refusal and updated request
+
+            revised_sent = self.server.take()
+            self.assertEqual(len(revised_sent), 1, revised_sent)
+            revised = revised_sent[0].split("|/choose ", 1)[1].rsplit("|", 1)[0]
+            self.assertFalse(revised.split(", ")[1].startswith("switch "), revised)
+            self.assertEqual(accepted, [])  # the refused top choice never reaches Game.accepted()
+
+            self.feed(room(FIXTURE["messages"][6]))  # the updated choice is now taken
+            self.assertEqual(accepted, [revised])
+
+    def test_invalid_choice_budget_spans_unavailable_updates(self):
+        self.bot.policy = SlotBSwitchPolicy(switch_rank=63)
         self.start_battle(upto=6)
         self.server.take()
-        self.feed(room(["|error|[Unavailable choice] Can't move: no."]))
+        pending = []
+        for index in range(63):
+            self.feed(room(["|error|[Invalid choice] Can't move: no."]))
+            sent = self.server.take()
+            if index == 62:
+                pending = sent
+        pending = [s for s in pending if "/choose " in s][-1]
+        pending_choice = pending.split("|/choose ", 1)[1].rsplit("|", 1)[0]
+        self.assertTrue(pending_choice.split(", ")[1].startswith("switch "), pending_choice)
+
+        self.unavailable(4)
+        self.server.take()  # the newly-ranked choice after the update
+        self.feed(room(["|error|[Invalid choice] Can't switch: test"]))
+        self.assertEqual(self.server.take()[-2:], [f"{ROOM}|{client.INTERNAL}", f"{ROOM}|/forfeit"])
+
+    def test_unavailable_choices_are_bounded_per_decision_point(self):
+        # Showdown hides two facts of a move request, both of the last active (Pokemon.getMoveRequestData,
+        # sim/pokemon.ts:1112-1134): a trap and disabled moves, each revealed by one refusal. A third refusal at one
+        # decision point is an internal error; the next request starts the count again.
+        self.start_battle(upto=6)
+        self.server.take()
+        self.unavailable(4)
+        self.feed(room(FIXTURE["messages"][6]))
+        self.feed(room(FIXTURE["messages"][7]))  # turn 2 (rqid 5): a new decision point
+        self.server.take()
+        for rqid in (6, 7):
+            self.unavailable(rqid, message=7)
+            sent = self.server.take()
+            self.assertEqual(len(sent), 1, sent)
+            self.assertTrue(sent[0].endswith(f"|{rqid}"), sent)
+        self.feed(room([UNAVAILABLE]))
+        self.assertEqual(self.server.take()[-2:], [f"{ROOM}|{client.INTERNAL}", f"{ROOM}|/forfeit"])
+
+    def test_unavailable_choice_without_a_pending_choice_is_an_internal_error(self):
+        self.start_battle(upto=7)  # turn 1 went on: the choice was taken, the next request has not come
+        self.server.take()
+        self.feed(room([UNAVAILABLE]))
         self.assertEqual(self.server.take()[-2:], [f"{ROOM}|{client.INTERNAL}", f"{ROOM}|/forfeit"])
 
     def test_chat_between_update_and_request(self):

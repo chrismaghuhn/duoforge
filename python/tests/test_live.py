@@ -262,6 +262,51 @@ class TrackerTest(unittest.TestCase):
     def setUpClass(cls):
         cls.ref = Reference.get()
 
+    def _updated_request_pair(self):
+        from duoforge_live.tracker import Tracker
+
+        tracker = Tracker(self.ref.data, self.ref.battles[0].spec["teams"][0])
+        tracker.request = {"rqid": 1, "side": {"id": "p1", "pokemon": []}, "active": [{}, {}]}
+        request = json.loads(json.dumps(tracker.request))
+        request.update(update=True, rqid=2)
+        return tracker, request
+
+    def test_update_requires_a_current_request(self):
+        tracker, request = self._updated_request_pair()
+        tracker.request = None
+        with self.assertRaisesRegex(ValueError, "updated request"):
+            tracker._on_updated_request(request)
+
+    def test_update_requires_active_on_current_request(self):
+        tracker, request = self._updated_request_pair()
+        tracker.request.pop("active")
+        with self.assertRaisesRegex(ValueError, "updated request"):
+            tracker._on_updated_request(request)
+
+    def test_update_requires_active_on_new_request(self):
+        tracker, request = self._updated_request_pair()
+        request.pop("active")
+        with self.assertRaisesRegex(ValueError, "updated request"):
+            tracker._on_updated_request(request)
+
+    def test_update_requires_no_intervening_battle_lines(self):
+        tracker, request = self._updated_request_pair()
+        tracker._lines.append("|player|p2|Opponent|0|1500")
+        with self.assertRaisesRegex(ValueError, "updated request"):
+            tracker._on_updated_request(request)
+
+    def test_update_requires_the_same_active_count(self):
+        tracker, request = self._updated_request_pair()
+        request["active"].pop()
+        with self.assertRaisesRegex(ValueError, "updated request"):
+            tracker._on_updated_request(request)
+
+    def test_update_requires_the_same_side(self):
+        tracker, request = self._updated_request_pair()
+        request["side"]["id"] = "p2"
+        with self.assertRaisesRegex(ValueError, "updated request"):
+            tracker._on_updated_request(request)
+
     def assertSameView(self, battle, player, points):
         expected = sum(1 for _ in battle.points(player))
         self.assertEqual([p[0] for p in points], list(range(expected)), (battle.name, player))
@@ -303,7 +348,8 @@ class TrackerTest(unittest.TestCase):
                 self.assertSameView(battle, player, run_tracker(battle, player, stream))
 
     def test_room_lines_do_not_complete_a_decision(self):
-        room = ["|c|☆someone|hello", "|j|☆watcher", "||watcher is ready for game 2.", "|inactive|Time left"]
+        room = ["|c|☆someone|hello", "|j|☆watcher", "||watcher is ready for game 2.", "|inactive|Time left",
+                "|player|p2|watcher||"]
         for battle in self.ref.battles:
             for player in (0, 1):
                 stream = []
@@ -349,8 +395,9 @@ class TrackerTest(unittest.TestCase):
 
     def test_session_lines_raise(self):
         # A reconnect replays the whole log after |init|, a choice already sent shows |sentchoice|, an updated
-        # request (update: true) or one without rqid cannot be placed, and the end of the session ends the
-        # battle: each raises instead of folding something wrong.
+        # request (update: true) after battle lines (it updates no current request) or a request without rqid
+        # cannot be placed, and the end of the session ends the battle: each raises instead of folding something
+        # wrong.
         battle = self.ref.battles[0]
         stream = [list(lines) for lines in battle.streams[0]]
         last = max(i for i, lines in enumerate(stream) if any(line.startswith("|turn|") for line in lines))
@@ -371,6 +418,39 @@ class TrackerTest(unittest.TestCase):
                 lines.append(line)
             with self.assertRaises(ValueError, msg=change):
                 run_tracker(battle, 0, stream[:request] + [lines] + stream[request + 1:])
+
+    def test_updated_request_is_a_new_epoch_of_the_same_decision_point(self):
+        # Showdown refuses a switch of a hidden-trapped last active with "[Unavailable choice]" and sends the move
+        # request again under a new rqid, the slot now trapped (sim/side.ts:527-534, 984-1000). The tracker takes it
+        # as a new request epoch of the same decision point: the observation stays but for its epoch, and the
+        # options follow the update.
+        from duoforge_live.tracker import Tracker
+        battle = self.ref.battles[0]
+        tracker, done = Tracker(self.ref.data, battle.spec["teams"][0]), 0
+        for lines in battle.streams[0]:
+            tracker.feed(lines)
+            if tracker.ready and tracker.epoch > done:
+                done = tracker.epoch
+                if "active" in tracker.request:
+                    break
+                step = battle.trace["steps"][done - 1]
+                if "p1" in step["input"]:
+                    tracker.accepted(step["input"]["p1"])
+        self.assertIn("active", tracker.request)
+        before, (_, lists_before) = tracker.observation().copy(), tracker.domain()
+        self.assertIn(options.SWITCH, [o.kind for o in lists_before[1]])
+        update = json.loads(json.dumps(tracker.request))
+        update["active"][1]["trapped"] = True
+        update.update(update=True, rqid=update["rqid"] + 100)
+        tracker.feed(["|request|" + json.dumps(update)])
+        self.assertTrue(tracker.ready)
+        dom, lists = tracker.domain()
+        after = tracker.observation()
+        self.assertEqual((int(after["epoch"]), int(dom["epoch"])), (int(before["epoch"]) + 1,) * 2)
+        before["epoch"] = after["epoch"]
+        self.assertFalse(differences(after, before))
+        self.assertEqual(lists[0], lists_before[0])
+        self.assertEqual(lists[1], [o for o in lists_before[1] if o.kind != options.SWITCH])
 
 
 if __name__ == "__main__":
