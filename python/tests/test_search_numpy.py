@@ -20,7 +20,7 @@ import numpy as np
 
 from duoforge_learn.pairing import draw as pairing_draw
 from duoforge_learn.pairing import splitmix64
-from duoforge_search import SearchError, arena, lookahead, matrix, seeds
+from duoforge_search import SearchError, arena, belief, lookahead, matrix, seeds
 
 _MASK = (1 << 64) - 1
 _CERTIFICATE = 1e-9  # spec section 5.5, plan Review Focus 5: never relaxed
@@ -611,6 +611,162 @@ class ArenaStatistics(unittest.TestCase):
         self.assertEqual(d["leaves"]["refused"], 2)
         self.assertAlmostEqual(d["split_exploitability"], 0.2)
         self.assertEqual(arena._finite({"a": [1.0, math.nan, math.inf], "b": 2}), {"a": [1.0, None, None], "b": 2})
+
+
+class BayesRule(unittest.TestCase):
+    """The Bayesian Nash rule (decision 0023, spec section 6.3)."""
+
+    def test_one_world_is_the_matrix_game(self):
+        rng = np.random.default_rng(23)
+        for k, m in ((1, 1), (2, 3), (8, 8), (16, 16)):
+            a = rng.random((k, m))
+            got, want = matrix.solve_bayes(a[None], [1.0]), matrix.solve(a)
+            self.assertAlmostEqual(got.value, want.value, delta=1e-9)
+            np.testing.assert_allclose(got.x, want.x, atol=1e-9)
+
+    def test_certificate_on_random_tables(self):
+        rng = np.random.default_rng(230)
+        for w, k, m in ((2, 2, 2), (4, 8, 8), (16, 8, 8), (16, 16, 16), (3, 5, 1), (5, 1, 4)):
+            a = rng.random((w, k, m)).astype(np.float32).astype(np.float64)
+            p = rng.random(w) + 0.1
+            sol = matrix.solve_bayes(a, p)
+            self.assertLessEqual(matrix.bayes_certify(a, p, sol.x, sol.ys), 1e-9)
+
+    def test_degenerate_and_duplicate_rows(self):
+        a = np.array([[[0.2, 0.8], [0.2, 0.8], [0.5, 0.5]], [[0.9, 0.1], [0.9, 0.1], [0.5, 0.5]]])
+        a[1, 1, 0] += 1e-7  # a near-duplicate row
+        sol = matrix.solve_bayes(a, [1.0, 1.0])
+        matrix.bayes_certify(a, [1.0, 1.0], sol.x, sol.ys)
+        const = matrix.solve_bayes(np.full((3, 2, 2), 0.25), np.ones(3))
+        self.assertEqual(const.value, 0.25)
+        self.assertEqual(const.x.tolist(), [1.0, 0.0])
+
+    def test_the_foe_knowing_its_world_changes_our_strategy(self):
+        # Row 0 scores 1 in each world, but only in the column the foe of that world avoids; row 1 is safe at 0.4.
+        # The averaged table shows row 0 at 0.5 against everything; a foe that knows its world holds it to 0.
+        a = np.array([[[1.0, 0.0], [0.4, 0.4]],
+                      [[0.0, 1.0], [0.4, 0.4]]])
+        sol = matrix.solve_bayes(a, [1.0, 1.0])
+        np.testing.assert_allclose(sol.x, [0.0, 1.0], atol=1e-9)
+        self.assertAlmostEqual(sol.value, 0.4, delta=1e-12)
+        averaged = matrix.solve(a.mean(axis=0))
+        np.testing.assert_allclose(averaged.x, [1.0, 0.0], atol=1e-9)
+        self.assertAlmostEqual(averaged.value, 0.5, delta=1e-12)
+
+    def test_expected_values_and_mix(self):
+        a = np.array([[[1.0, 0.0], [0.0, 1.0]], [[0.0, 1.0], [1.0, 0.0]]])
+        ev = matrix.bayes_expected_values(a, [3.0, 1.0], [[1.0, 0.0], [0.0, 2.0]])
+        np.testing.assert_allclose(ev, [0.75 * 1.0 + 0.25 * 1.0, 0.0])
+        np.testing.assert_allclose(matrix.mix([0.25, 0.75], 0), [0.625, 0.375])
+        np.testing.assert_allclose(matrix.mix([0.25, 0.75], 1, lam=1.0), [0.25, 0.75])
+        with self.assertRaises(SearchError):
+            matrix.mix([0.5, 0.5], 2)
+        with self.assertRaises(SearchError):
+            matrix.solve_bayes(np.zeros((2, 2, 2)), [1.0, 0.0])
+
+
+def _sides(teams):
+    """SIDE_SETUP-like records: teams is a list of member lists (species, nature, item, spread)."""
+    dt = np.dtype([("member_count", np.uint32), ("members", np.dtype([("species_id", np.uint32), ("nature", np.uint32),
+                   ("item", np.uint32), ("stat_points", np.uint32, (6,))]), (6,))])
+    out = np.zeros(len(teams), dtype=dt)
+    for t, members in enumerate(teams):
+        out[t]["member_count"] = len(members)
+        for k, (sp, na, it, spread) in enumerate(members):
+            out[t]["members"][k] = (sp, na, it, spread)
+    return out
+
+
+class BeliefTable(unittest.TestCase):
+    """The spread table and the world words (decision 0023, spec section 5)."""
+
+    def setUp(self):
+        a = [32, 0, 2, 0, 0, 32]
+        b = [32, 32, 0, 0, 0, 2]
+        c = [0, 32, 2, 0, 0, 32]
+        teams = [[(1, 3, 7, a), (2, 4, 0, c)], [(1, 3, 7, a), (1, 3, 9, b)], [(1, 3, 7, b), (5, 3, 0, [0] * 6)],
+                 [(1, 3, 7, a), (1, 2, 7, c)], [(1, 3, 7, c)]]
+        self.table = belief.SpreadTable.from_sides(_sides(teams))
+
+    def test_skips_sets_without_spreads_and_hashes(self):
+        self.assertEqual(self.table.spreads.shape, (8, 6))
+        self.assertNotIn(5, self.table.species.tolist())
+        again = belief.SpreadTable(self.table.team, self.table.species, self.table.nature, self.table.item,
+                                   self.table.spreads)
+        self.assertEqual(again.sha256(), self.table.sha256())
+        other = belief.SpreadTable(self.table.team, self.table.species, self.table.nature, self.table.item,
+                                   self.table.spreads, min_sets=4)
+        self.assertNotEqual(other.sha256(), self.table.sha256())
+
+    def test_backoff_levels(self):
+        self.assertEqual(self.table.candidates(1, 3, 7)[0], 1)    # five sets of (1, 3, 7)
+        self.assertEqual(self.table.candidates(1, 3, 9)[0], 2)    # one set of (1, 3, 9): the (species, nature) level
+        self.assertEqual(self.table.candidates(1, 6, 7)[0], 3)    # species only
+        self.assertEqual(self.table.candidates(8, 3, 0)[0], 4)    # nature only
+        self.assertEqual(self.table.candidates(8, 9, 0)[0], 5)    # everything
+        level, rows = self.table.candidates(1, 3, 7, exclude_team=0)
+        self.assertEqual(level, 2)  # four sets left of (1, 3, 7): below min_sets
+        self.assertNotIn(0, self.table.team[rows].tolist())
+
+    def test_whole_spreads_weighted_by_count(self):
+        counts = {}
+        level, rows = self.table.candidates(1, 3, 7)
+        for i in range(rows.size):
+            word = belief.splitmix64(np.uint64(i))  # any words: the index is floor(word * n / 2^64)
+            spread, _ = self.table.draw(int(word), 1, 3, 7)
+            counts[tuple(spread.tolist())] = counts.get(tuple(spread.tolist()), 0) + 1
+        for spread in counts:
+            self.assertLessEqual(sum(spread), 66)
+        idx = [belief.pick((j << 64) // rows.size + 1, rows.size) for j in range(rows.size)]
+        self.assertEqual(idx, list(range(rows.size)))  # every set once over evenly spaced words: a spread seen c times weighs c
+
+    def test_world_words_are_pure(self):
+        one = belief.world_words(7, 11, 3, [1, 2, 3])
+        self.assertEqual(belief.world_words(7, 11, 3, [3, 2, 1]).tolist(), one[::-1].tolist())
+        self.assertNotEqual(belief.world_words(7, 11, 4, [1]).tolist(), one[:1].tolist())
+        g = splitmix64(splitmix64(np.uint64(7) + np.uint64(belief.WORLD_TAG)) + np.uint64(11))
+        self.assertEqual(int(one[0]), int(splitmix64(splitmix64(g + np.uint64(3)) + np.uint64(1))))
+        self.assertEqual(belief.pick(0, 5), 0)
+        self.assertEqual(belief.pick((1 << 64) - 1, 5), 4)
+
+    def test_sample(self):
+        b = belief.Belief(self.table)
+        members = [(1, 3, 7), (2, 4, 0)]
+        one = b.sample(members, 4, seed=5, key=9)
+        two = b.sample(members, 4, seed=5, key=9)
+        for name in one:
+            np.testing.assert_array_equal(one[name], two[name])
+        self.assertEqual(one["weights"].tolist(), [0.25] * 4)
+        self.assertEqual(one["stat_points"].shape, (4, 6, 6))
+        self.assertFalse(one["stat_points"][:, 2:].any())
+        words = belief.world_words(5, 9, 2, np.arange(64))
+        self.assertEqual(int(one["hp"][2, 0]), int(words[belief.WORDS["hp"]]))
+        attempts = np.zeros((4, 6), dtype=np.int64)
+        attempts[1, 0] = 1
+        redrawn = b.sample(members, 4, seed=5, key=9, attempts=attempts)
+        want, _ = self.table.draw(int(belief.world_words(5, 9, 1, [belief.WORDS["respread"]])[0]), 1, 3, 7, redraw=1)
+        self.assertEqual(redrawn["stat_points"][1, 0].tolist(), want.tolist())
+        np.testing.assert_array_equal(redrawn["stat_points"][0], one["stat_points"][0])
+
+    def test_all_256_attempts_back_off_without_shifting_other_words(self):
+        b = belief.Belief(self.table)
+        first = b.sample([(1, 3, 7)], 1, 5, 9)
+        for attempt in (1, 8, 64, 255):
+            counts = np.zeros((1, 6), np.int64)
+            counts[0, 0] = attempt
+            sampled = b.sample([(1, 3, 7)], 1, 5, 9, attempts=counts)
+            self.assertEqual(int(sampled["levels"][0, 0]), min(5, 1 + attempt))
+            for name in ("hp", "sleep", "confusion", "charge_target", "bench", "queue"):
+                np.testing.assert_array_equal(sampled[name], first[name])
+        counts[0, 0] = 256
+        with self.assertRaisesRegex(ValueError, "255"):
+            b.sample([(1, 3, 7)], 1, 5, 9, attempts=counts)
+
+    def test_draw_index(self):
+        self.assertEqual(belief.draw_index([0.0, 1.0, 1.0], 0), 1)
+        self.assertEqual(belief.draw_index([0.0, 1.0, 1.0], (1 << 64) - 1), 2)
+        with self.assertRaises(ValueError):
+            belief.draw_index([0.0, 0.0], 1)
 
 
 if __name__ == "__main__":

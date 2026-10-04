@@ -226,7 +226,8 @@ duoforge_status duoforge_battle_hypothesis(const duoforge_context *ctx, const du
   1. (species, nature, item) with at least `min_sets` sets (default 5);
   2. else (species, nature);
   3. else species;
-  4. else the spreads of every species whose nature raises the same stat, as stat shapes mapped onto the member.
+  4. else the stated spreads of the exact same nature (any species);
+  5. else every remaining stated source spread.
 - **A draw takes one whole spread,** weighted by how often it was seen. That keeps the 66 total and the shapes people play, such as 32/32 in two stats.
 - **The record of a run** holds the table's SHA-256 and its counts.
 - **Leave one team out.** In the arena and in self-play the foe's team can be one of the table's own sources. Its worlds are then drawn from the table without that team's sets. Otherwise the honest search would draw the true spread with the weight of one set, a leak that live play does not have. The pool's ids, already in the arena's conditions, say which sets are left out; the run records the rule beside the full table's SHA-256.
