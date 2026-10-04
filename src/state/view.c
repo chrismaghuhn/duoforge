@@ -12,6 +12,7 @@
 #include <string.h>
 
 #include "codec/state_codec.h"
+#include "core/bytes.h"
 #include "data/closure_tables.h"
 #include "rng/pcg32.h"
 #include "state/battle_internal.h"
@@ -19,6 +20,10 @@
 #include "state/context_internal.h"
 #include "state/invariants.h"
 #include "state/knowledge.h"
+
+_Static_assert(sizeof(duoforge_public_state) == 1336u, "public state layout");
+_Static_assert(sizeof(duoforge_hypothesis) == 280u, "hypothesis layout");
+_Static_assert(sizeof(((duoforge_hypothesis *)0)->queue_order) == DFI_QUEUE_CAPACITY, "queue permutation capacity");
 
 /* The weights of a running hidden counter's value v = 1, 2, ... (a draw seen at a random point of its run). */
 static const uint32_t dfi_sleep_weights[3] = {3u, 3u, 2u};           /* sample([2, 3, 3]) */
@@ -110,6 +115,41 @@ static uint8_t *position_at(uint8_t *s, uint32_t side, uint32_t p)
 static uint8_t *knowledge_at(uint8_t *s, uint32_t side, uint32_t m)
 {
     return side_at(s, side) + DFI_ENC_SIDE_KNOWLEDGE_OFF + m * DFI_ENC_KNOWLEDGE_SIZE;
+}
+
+/* A private queue order must never disclose a remaining move's priority or
+ * an actor's hidden speed. Canonical public order: kind, side, slot. The
+ * hypothesis carries the permutation solely for privileged byte round trips.
+ * A resumed pivot processes its new switch-ins and sorts moves again. */
+static uint32_t queue_key(const uint8_t *q)
+{
+    return (uint32_t)q[0] * 4u + (uint32_t)q[1] * 2u + q[2];
+}
+
+static void queue_canonical(uint8_t *s, uint8_t *order)
+{
+    const uint32_t n = s[DFI_ENC_QUEUE_LEN_OFF];
+    for (uint32_t i = 0u; i < n; ++i) {
+        order[i] = (uint8_t)i;
+    }
+    for (uint32_t i = 1u; i < n; ++i) {
+        uint32_t j = i;
+        while (j > 0u) {
+            uint8_t *a = s + DFI_ENC_QUEUE_OFF + (j - 1u) * DFI_ENC_QUEUE_RECORD_SIZE;
+            uint8_t *b = a + DFI_ENC_QUEUE_RECORD_SIZE;
+            if (queue_key(a) <= queue_key(b)) {
+                break;
+            }
+            uint8_t tmp[DFI_ENC_QUEUE_RECORD_SIZE];
+            memcpy(tmp, a, sizeof tmp);
+            memcpy(a, b, sizeof tmp);
+            memcpy(b, tmp, sizeof tmp);
+            const uint8_t idx = order[j];
+            order[j] = order[j - 1u];
+            order[j - 1u] = idx;
+            --j;
+        }
+    }
 }
 
 /* ---- the candidates of a hidden value ---- */
@@ -219,12 +259,29 @@ static duoforge_status dfi_view_encode(const duoforge_context *ctx, const duofor
     }
     const uint32_t foe = player ^ 1u;
     /* the refusals, each decided by public facts */
+    if (b->boundary_kind == DUOFORGE_BOUNDARY_PIVOT) {
+        bool moves_started = false;
+        for (uint32_t side = 0u; side < DUOFORGE_SIDE_COUNT; ++side) {
+            for (uint32_t p = 0u; p < DUOFORGE_ACTIVE_PER_SIDE; ++p) {
+                /* These publicly shown volatiles end in every residual.
+                 * move_actions, in contrast, is cumulative since entry. */
+                const uint32_t public_turn_flags = DFI_VOL_PROTECT | DFI_VOL_HELPING_HAND | DFI_VOL_FOLLOW_ME;
+                moves_started = moves_started || (b->sides[side].positions[p].flags & public_turn_flags) != 0u;
+            }
+        }
+        if (!moves_started) {
+            /* A hazard/entry pivot can precede the Mega phase. A refusal
+             * based on the private queue then reveals an unannounced Mega
+             * declaration. Refuse the entire public pre-move phase. */
+            return DUOFORGE_E_UNSUPPORTED;
+        }
+    }
     if (b->sides[foe].sealed != 0u) {
         return DUOFORGE_E_UNSUPPORTED;
     }
     for (uint32_t q = 0u; q < b->queue_len && q < DFI_QUEUE_CAPACITY; ++q) {
         const dfi_queue_record *r = &b->queue[q];
-        if (r->side == foe && (r->kind == DFI_Q_MOVE || r->kind == DFI_Q_SWITCH || r->kind == DFI_Q_MEGA)) {
+        if (r->kind != DFI_Q_MOVE && r->kind != DFI_Q_RESIDUAL) {
             return DUOFORGE_E_UNSUPPORTED;
         }
     }
@@ -237,6 +294,15 @@ static duoforge_status dfi_view_encode(const duoforge_context *ctx, const duofor
         }
     }
     const size_t n = dfi_encode_unchecked(ctx, b, s);
+    uint8_t order[DFI_QUEUE_CAPACITY] = {0};
+    queue_canonical(s, order);
+    for (uint32_t q = 0u; q < b->queue_len; ++q) {
+        uint8_t *r = s + DFI_ENC_QUEUE_OFF + q * DFI_ENC_QUEUE_RECORD_SIZE;
+        if (r[0] == DFI_Q_MOVE && r[1] == foe) {
+            r[3] = (uint8_t)DUOFORGE_VIEW_HIDDEN;
+            r[4] = (uint8_t)DUOFORGE_VIEW_HIDDEN_TARGET;
+        }
+    }
     memset(s + DFI_ENC_RNG_STATE_OFF, 0, 24u);
     for (uint32_t side = 0u; side < DUOFORGE_SIDE_COUNT; ++side) {
         for (uint32_t m = 0u; m < DUOFORGE_MAX_ROSTER; ++m) {
@@ -297,6 +363,13 @@ duoforge_status duoforge_battle_public(const duoforge_context *ctx, const duofor
     out->foe_seen_mask = battle->sides[player].seen_mask;
     out->foe_leads[0] = battle->sides[foe].brought_order[0];
     out->foe_leads[1] = battle->sides[foe].brought_order[1];
+    out->queue_count = battle->queue_len;
+    for (uint32_t q = 0u; q < battle->queue_len; ++q) {
+        const dfi_queue_record *r = &battle->queue[q];
+        if (r->side == foe && r->kind == DFI_Q_MOVE) {
+            out->foe_pending_mask = (uint8_t)(out->foe_pending_mask | (1u << r->slot)); /* wide-operands-reviewed: slots < 2 */
+        }
+    }
     memcpy(out->state, s, n);
     return DUOFORGE_OK;
 }
@@ -368,9 +441,10 @@ duoforge_status duoforge_battle_from_view(const duoforge_context *ctx, const duo
         return DUOFORGE_E_SCHEMA_MISMATCH;
     }
     const size_t n = dfi_state_encoded_size_of(ctx);
-    if (view->player >= DUOFORGE_SIDE_COUNT || view->state_size != n || !dfi_all_zero(view->reserved, 5u) ||
+    if (view->player >= DUOFORGE_SIDE_COUNT || view->state_size != n || !dfi_all_zero(view->reserved, sizeof view->reserved) ||
         !dfi_all_zero(view->pad, 3u) || !dfi_all_zero(view->state + n, DUOFORGE_VIEW_STATE_MAX - n) ||
-        hypothesis->reserved0 != 0u || !dfi_all_zero(hypothesis->reserved1, 6u)) {
+        hypothesis->reserved0 != 0u || !dfi_all_zero(hypothesis->reserved1, 6u) ||
+        !dfi_all_zero(hypothesis->reserved2, 4u)) {
         return DUOFORGE_E_MALFORMED;
     }
     if (!dfi_context_fingerprint_matches(ctx, view->state + DFI_ENC_FINGERPRINT_OFF)) {
@@ -472,10 +546,83 @@ duoforge_status duoforge_battle_from_view(const duoforge_context *ctx, const duo
             }
         }
     }
+    const uint32_t qn = s[DFI_ENC_QUEUE_LEN_OFF];
+    if (qn > DFI_QUEUE_CAPACITY) {
+        return DUOFORGE_E_MALFORMED;
+    }
+    uint32_t pending = 0u;
+    uint32_t permutation = 0u;
+    uint8_t queue[DFI_QUEUE_CAPACITY * DFI_ENC_QUEUE_RECORD_SIZE] = {0};
+    for (uint32_t q = 0u; q < qn; ++q) {
+        uint8_t *r = s + DFI_ENC_QUEUE_OFF + q * DFI_ENC_QUEUE_RECORD_SIZE;
+        const uint32_t idx = hypothesis->queue_order[q];
+        if (idx >= qn || (permutation & (1u << idx)) != 0u) {
+            return DUOFORGE_E_INVALID_ARGUMENT;
+        }
+        permutation |= 1u << idx;
+        if (r[0] == DFI_Q_MOVE && r[1] == foe) {
+            if (r[2] >= DUOFORGE_ACTIVE_PER_SIDE) {
+                return DUOFORGE_E_MALFORMED;
+            }
+            const duoforge_slot_command *c = &hypothesis->queued[r[2]];
+            const uint32_t occupant = position_at(s, foe, r[2])[0];
+            if (c->kind != DUOFORGE_SLOT_MOVE || c->mega > 1u || c->reserve != 0u ||
+                !dfi_all_zero(c->reserved, 3u) || occupant >= member_count ||
+                (c->move_slot >= member_at(s, foe, occupant)[DFI_ENC_MEMBER_MOVE_COUNT_OFF] &&
+                 c->move_slot != DUOFORGE_MOVE_SLOT_STRUGGLE && c->move_slot != DUOFORGE_MOVE_SLOT_RECHARGE)) {
+                return DUOFORGE_E_INVALID_ARGUMENT;
+            }
+            if (c->mega != 0u && member_at(s, foe, occupant)[DFI_ENC_MEMBER_IS_MEGA_OFF] == 0u) {
+                return DUOFORGE_E_INVALID_ARGUMENT;
+            }
+            pending |= 1u << r[2];
+            if (r[3] != DUOFORGE_VIEW_HIDDEN || r[4] != DUOFORGE_VIEW_HIDDEN_TARGET) {
+                return DUOFORGE_E_MALFORMED;
+            }
+            if (c->move_slot < DUOFORGE_MAX_MOVE_SLOTS) {
+                const uint32_t move = rd16(member_at(s, foe, occupant) + DFI_ENC_MOVE_OFF +
+                                           c->move_slot * DFI_ENC_MOVE_SIZE);
+                if (move >= ctx->move_count) {
+                    return DUOFORGE_E_MALFORMED;
+                }
+                uint8_t targets[4];
+                const uint32_t tn = dfi_target_candidates(ctx->move_target_classes[move], foe * 2u + r[2], targets);
+                bool found = false;
+                for (uint32_t ti = 0u; ti < tn; ++ti) {
+                    found = found || targets[ti] == c->target;
+                }
+                if (!found) {
+                    return DUOFORGE_E_INVALID_ARGUMENT;
+                }
+            } else if (c->target != DUOFORGE_TARGET_NONE) {
+                return DUOFORGE_E_INVALID_ARGUMENT;
+            }
+            r[3] = c->move_slot;
+            r[4] = c->target;
+        }
+        memcpy(queue + idx * DFI_ENC_QUEUE_RECORD_SIZE, r, DFI_ENC_QUEUE_RECORD_SIZE);
+    }
+    if (!dfi_all_zero(hypothesis->queue_order + qn, DFI_QUEUE_CAPACITY - qn)) {
+        return DUOFORGE_E_INVALID_ARGUMENT;
+    }
+    for (uint32_t p = 0u; p < DUOFORGE_ACTIVE_PER_SIDE; ++p) {
+        if ((pending & (1u << p)) == 0u && !dfi_all_zero((const uint8_t *)&hypothesis->queued[p], sizeof hypothesis->queued[p])) {
+            return DUOFORGE_E_INVALID_ARGUMENT;
+        }
+    }
+    memcpy(s + DFI_ENC_QUEUE_OFF, queue, sizeof queue);
     struct duoforge_battle world;
     const duoforge_status st = dfi_decode_state(ctx, s, n, &world, NULL);
     if (st != DUOFORGE_OK) {
         return st == DUOFORGE_E_CONTEXT_MISMATCH ? st : DUOFORGE_E_MALFORMED;
+    }
+    duoforge_public_state checked;
+    const duoforge_status cs = duoforge_battle_public(ctx, &world, player, &checked);
+    if (cs != DUOFORGE_OK) {
+        return cs;
+    }
+    if (!dfi_bytes_equal((const uint8_t *)view, (const uint8_t *)&checked, sizeof checked)) {
+        return DUOFORGE_E_MALFORMED;
     }
     const duoforge_status counter_support = dfi_view_counter_support(ctx, &world, player);
     if (counter_support != DUOFORGE_OK) {
@@ -504,6 +651,16 @@ duoforge_status duoforge_battle_hypothesis(const duoforge_context *ctx, const du
     duoforge_hypothesis h;
     memset(&h, 0, sizeof h);
     h.revision = DUOFORGE_HYPOTHESIS_REVISION;
+    (void)dfi_encode_unchecked(ctx, battle, s);
+    queue_canonical(s, h.queue_order);
+    for (uint32_t q = 0u; q < battle->queue_len; ++q) {
+        const dfi_queue_record *r = &battle->queue[q];
+        if (r->kind == DFI_Q_MOVE && r->side == foe) {
+            h.queued[r->slot].kind = (uint8_t)DUOFORGE_SLOT_MOVE;
+            h.queued[r->slot].move_slot = r->move_slot;
+            h.queued[r->slot].target = r->target;
+        }
+    }
     memset(h.pick_order, DUOFORGE_VIEW_PICK_NONE, sizeof h.pick_order);
     uint32_t brought = 0u;
     for (uint32_t m = 0u; m < DUOFORGE_MAX_ROSTER; ++m) {
@@ -557,5 +714,174 @@ duoforge_status duoforge_battle_hypothesis(const duoforge_context *ctx, const du
         }
     }
     *out = h;
+    return DUOFORGE_OK;
+}
+
+/* Neutral spreads are used only to ask the engine for a public domain.
+ * Find a compatible HP shape in C; never ask the caller to invert HP rules. */
+static duoforge_status neutral(const duoforge_context *ctx, const duoforge_public_state *v,
+                                duoforge_hypothesis *h, duoforge_battle *world)
+{
+    memset(h, 0, sizeof *h);
+    h->revision = DUOFORGE_HYPOTHESIS_REVISION;
+    memset(h->pick_order, DUOFORGE_VIEW_PICK_NONE, sizeof h->pick_order);
+    const uint32_t foe = v->player ^ 1u;
+    uint32_t count = 0u;
+    uint32_t mask = 0u;
+    for (uint32_t k = 0u; k < 2u; ++k) {
+        const uint32_t m = v->foe_leads[k];
+        if (m >= DUOFORGE_MAX_ROSTER || (mask & (1u << m)) != 0u) {
+            return DUOFORGE_E_MALFORMED;
+        }
+        h->pick_order[count++] = (uint8_t)m;
+        mask |= 1u << m;
+    }
+    for (uint32_t m = 0u; m < DUOFORGE_MAX_ROSTER; ++m) {
+        if ((v->foe_seen_mask & (1u << m)) != 0u && (mask & (1u << m)) == 0u) {
+            h->pick_order[count++] = (uint8_t)m;
+        }
+    }
+    if (count != ctx->brought_count) {
+        return DUOFORGE_E_UNSUPPORTED;
+    }
+    for (uint32_t m = 0u; m < DUOFORGE_MAX_ROSTER; ++m) {
+        const uint8_t *mb = v->state + DFI_ENC_SIDE_OFF + foe * DFI_ENC_SIDE_SIZE +
+                            DFI_ENC_SIDE_MEMBERS_OFF + m * DFI_ENC_MEMBER_SIZE;
+        const uint8_t *kb = v->state + DFI_ENC_SIDE_OFF + v->player * DFI_ENC_SIDE_SIZE +
+                            DFI_ENC_SIDE_KNOWLEDGE_OFF + m * DFI_ENC_KNOWLEDGE_SIZE;
+        if ((v->foe_seen_mask & (1u << m)) == 0u) {
+            continue;
+        }
+        bool fits = false;
+        for (uint32_t hp_points = 0u; hp_points <= 32u; ++hp_points) {
+            dfi_member mem;
+            dfi_member_of(mb, &mem);
+            memset(mem.stat_points, 0, sizeof mem.stat_points);
+            mem.stat_points[0] = (uint8_t)hp_points;
+            uint32_t hp = 0u;
+            if (dfi_closure_member_derive(&mem) && dfi_hp_candidates(kb[0], kb[1], mem.hp_max, 0u, &hp) != 0u) {
+                h->stat_points[m][0] = (uint8_t)hp_points;
+                fits = true;
+                break;
+            }
+        }
+        if (!fits) {
+            return DUOFORGE_E_UNSUPPORTED;
+        }
+    }
+    const uint32_t qn = v->state[DFI_ENC_QUEUE_LEN_OFF];
+    if (qn > DFI_QUEUE_CAPACITY) {
+        return DUOFORGE_E_MALFORMED;
+    }
+    for (uint32_t q = 0u; q < qn; ++q) {
+        h->queue_order[q] = (uint8_t)q;
+        const uint8_t *r = v->state + DFI_ENC_QUEUE_OFF + q * DFI_ENC_QUEUE_RECORD_SIZE;
+        if (r[0] == DFI_Q_MOVE && r[1] == foe) {
+            if (r[2] >= 2u) {
+                return DUOFORGE_E_MALFORMED;
+            }
+            const uint8_t *pos = v->state + DFI_ENC_SIDE_OFF + foe * DFI_ENC_SIDE_SIZE +
+                                 DFI_ENC_SIDE_POS_OFF + r[2] * DFI_ENC_POS_SIZE;
+            if (pos[0] >= DUOFORGE_MAX_ROSTER) {
+                return DUOFORGE_E_MALFORMED;
+            }
+            const uint8_t *mb = v->state + DFI_ENC_SIDE_OFF + foe * DFI_ENC_SIDE_SIZE +
+                                DFI_ENC_SIDE_MEMBERS_OFF + pos[0] * DFI_ENC_MEMBER_SIZE;
+            const uint32_t move = rd16(mb + DFI_ENC_MOVE_OFF);
+            if (move >= ctx->move_count) {
+                return DUOFORGE_E_MALFORMED;
+            }
+            uint8_t targets[4];
+            (void)dfi_target_candidates(ctx->move_target_classes[move], foe * 2u + r[2], targets);
+            h->queued[r[2]].kind = (uint8_t)DUOFORGE_SLOT_MOVE;
+            h->queued[r[2]].target = targets[0];
+        }
+    }
+    return duoforge_battle_from_view(ctx, v, h, world);
+}
+
+duoforge_status duoforge_public_queue_mask(const duoforge_context *ctx, const duoforge_public_state *turn_start,
+                                           const duoforge_public_state *view, uint8_t *mask)
+{
+    if (ctx == NULL || turn_start == NULL || view == NULL || mask == NULL) {
+        return DUOFORGE_E_NULL_ARGUMENT;
+    }
+    if (turn_start->revision != DUOFORGE_VIEW_REVISION || view->revision != DUOFORGE_VIEW_REVISION) {
+        return DUOFORGE_E_SCHEMA_MISMATCH;
+    }
+    if (turn_start->player >= DUOFORGE_SIDE_COUNT || view->player >= DUOFORGE_SIDE_COUNT ||
+        turn_start->state_size != dfi_state_encoded_size_of(ctx) || view->state_size != dfi_state_encoded_size_of(ctx) ||
+        !dfi_all_zero(view->reserved, sizeof view->reserved) || !dfi_all_zero(view->pad, sizeof view->pad) ||
+        !dfi_all_zero(turn_start->reserved, sizeof turn_start->reserved) || !dfi_all_zero(turn_start->pad, sizeof turn_start->pad) ||
+        !dfi_all_zero(view->state + view->state_size, DUOFORGE_VIEW_STATE_MAX - view->state_size) ||
+        !dfi_all_zero(turn_start->state + turn_start->state_size, DUOFORGE_VIEW_STATE_MAX - turn_start->state_size)) {
+        return DUOFORGE_E_MALFORMED;
+    }
+    if (!dfi_context_fingerprint_matches(ctx, view->state + DFI_ENC_FINGERPRINT_OFF) ||
+        !dfi_context_fingerprint_matches(ctx, turn_start->state + DFI_ENC_FINGERPRINT_OFF)) {
+        return DUOFORGE_E_CONTEXT_MISMATCH;
+    }
+    if (view->boundary != DUOFORGE_BOUNDARY_PIVOT || turn_start->boundary != DUOFORGE_BOUNDARY_TURN ||
+        view->player != turn_start->player || view->turn != turn_start->turn || view->epoch <= turn_start->epoch) {
+        return DUOFORGE_E_INVALID_ARGUMENT;
+    }
+    duoforge_hypothesis h;
+    struct duoforge_battle world;
+    duoforge_status st = neutral(ctx, view, &h, &world);
+    if (st != DUOFORGE_OK) {
+        return st;
+    }
+    st = neutral(ctx, turn_start, &h, &world);
+    if (st != DUOFORGE_OK) {
+        return st;
+    }
+    const uint32_t foe = view->player ^ 1u;
+    duoforge_factored_domain d;
+    st = duoforge_battle_factored(ctx, &world, foe, &d);
+    if (st != DUOFORGE_OK) {
+        return st;
+    }
+    if (d.kind != DUOFORGE_CHOICE_SLOTS) {
+        return DUOFORGE_E_UNSUPPORTED;
+    }
+    uint8_t result[DUOFORGE_MAX_SLOT_OPTIONS * DUOFORGE_MAX_SLOT_OPTIONS] = {0};
+    for (uint32_t i = 0u; i < d.slot_count[0]; ++i) {
+        for (uint32_t j = 0u; j < d.slot_count[1]; ++j) {
+            bool agrees = ((d.allowed[i] >> j) & 1u) != 0u;
+            for (uint32_t p = 0u; p < DUOFORGE_ACTIVE_PER_SIDE && agrees; ++p) {
+                const duoforge_slot_command *c = &d.slots[p][p == 0u ? i : j];
+                const uint8_t *old = turn_start->state + DFI_ENC_SIDE_OFF + foe * DFI_ENC_SIDE_SIZE +
+                                    DFI_ENC_SIDE_POS_OFF + p * DFI_ENC_POS_SIZE;
+                const uint8_t *now = view->state + DFI_ENC_SIDE_OFF + foe * DFI_ENC_SIDE_SIZE +
+                                    DFI_ENC_SIDE_POS_OFF + p * DFI_ENC_POS_SIZE;
+                const bool same = dfi_bytes_equal(old, now, 5u); /* occupant and activation id */
+                if (c->kind == DUOFORGE_SLOT_SWITCH && same) {
+                    agrees = false;
+                }
+                if (same && old[0] < DUOFORGE_MAX_ROSTER) {
+                    const uint32_t m = old[0];
+                    const uint8_t *before = turn_start->state + DFI_ENC_SIDE_OFF + view->player * DFI_ENC_SIDE_SIZE +
+                                           DFI_ENC_SIDE_KNOWLEDGE_OFF + m * DFI_ENC_KNOWLEDGE_SIZE;
+                    const uint8_t *after = view->state + DFI_ENC_SIDE_OFF + view->player * DFI_ENC_SIDE_SIZE +
+                                          DFI_ENC_SIDE_KNOWLEDGE_OFF + m * DFI_ENC_KNOWLEDGE_SIZE;
+                    for (uint32_t k = 0u; k < DUOFORGE_MAX_MOVE_SLOTS; ++k) {
+                        if (after[DFI_ENC_KNOWLEDGE_USED_OFF + k] > before[DFI_ENC_KNOWLEDGE_USED_OFF + k] &&
+                            (c->kind != DUOFORGE_SLOT_MOVE || c->move_slot != k)) {
+                            agrees = false;
+                        }
+                    }
+                    const uint8_t *bm = turn_start->state + DFI_ENC_SIDE_OFF + foe * DFI_ENC_SIDE_SIZE +
+                                       DFI_ENC_SIDE_MEMBERS_OFF + m * DFI_ENC_MEMBER_SIZE;
+                    const uint8_t *am = view->state + DFI_ENC_SIDE_OFF + foe * DFI_ENC_SIDE_SIZE +
+                                       DFI_ENC_SIDE_MEMBERS_OFF + m * DFI_ENC_MEMBER_SIZE;
+                    if (bm[DFI_ENC_MEMBER_IS_MEGA_OFF] == 0u && am[DFI_ENC_MEMBER_IS_MEGA_OFF] != 0u && c->mega == 0u) {
+                        agrees = false;
+                    }
+                }
+            }
+            result[i * DUOFORGE_MAX_SLOT_OPTIONS + j] = agrees ? 1u : 0u;
+        }
+    }
+    memcpy(mask, result, sizeof result);
     return DUOFORGE_OK;
 }

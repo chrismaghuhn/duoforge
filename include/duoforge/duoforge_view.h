@@ -36,10 +36,11 @@
  *   - a charging target: among the targets the move's class allows.
  *
  * Refused (E_UNSUPPORTED), all decided by public facts:
- *   - visible sleep or confusion: schema 3 has no elapsed-attempt history,
- *     so a distribution consistent with the observed duration cannot be built;
- *   - a PIVOT where the foe has sealed or queued commands left (a later step
- *     samples them);
+ *   - visible sleep or confusion: elapsed attempts are not in schema 3;
+ *   - a PIVOT without a public current-turn move volatile (the pre-move phase can still
+ *     hide a Mega declaration; a queue-kind refusal would leak it);
+ *   - sealed opponent commands, or a queue with actions other than MOVE and
+ *     RESIDUAL (switch/entry/mega continuations need another representation);
  *   - a foe Substitute (its HP follows hidden damage);
  *   - a partial trap or a locked move (no mechanic draws their turns yet).
  *
@@ -47,13 +48,14 @@
  * hidden values, for tests and the oracle; it is never model-facing.
  */
 #include <duoforge/duoforge.h>
+#include <duoforge/duoforge_batch.h>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#define DUOFORGE_VIEW_REVISION 1u
-#define DUOFORGE_HYPOTHESIS_REVISION 1u
+#define DUOFORGE_VIEW_REVISION 2u
+#define DUOFORGE_HYPOTHESIS_REVISION 2u
 #define DUOFORGE_VIEW_STATE_MAX 1297u /* the largest canonical state (the POOL kinds) */
 #define DUOFORGE_VIEW_HIDDEN 0xFFu    /* a running counter whose value is hidden */
 #define DUOFORGE_VIEW_HIDDEN_TARGET 0xFEu
@@ -69,7 +71,9 @@ typedef struct duoforge_public_state {
     uint32_t epoch;
     uint8_t foe_seen_mask; /* the foe members the player has seen in battle */
     uint8_t foe_leads[2];  /* roster indices; DUOFORGE_VIEW_PICK_NONE before the leads are out */
-    uint8_t reserved[5];   /* zero */
+    uint8_t foe_pending_mask; /* positions with a queued MOVE */
+    uint8_t queue_count;      /* canonical queue records */
+    uint8_t reserved[3];   /* zero */
     uint8_t state[DUOFORGE_VIEW_STATE_MAX]; /* the masked canonical encoding; zero past state_size */
     uint8_t pad[3];                         /* zero */
 } duoforge_public_state;
@@ -85,7 +89,24 @@ typedef struct duoforge_hypothesis {
     uint64_t sleep[DUOFORGE_SIDE_COUNT][DUOFORGE_MAX_ROSTER]; /* per side and member */
     uint64_t confusion[DUOFORGE_SIDE_COUNT][DUOFORGE_ACTIVE_PER_SIDE];
     uint64_t charge_target[DUOFORGE_ACTIVE_PER_SIDE]; /* the foe's positions */
+    duoforge_slot_command queued[DUOFORGE_ACTIVE_PER_SIDE]; /* foe MOVE commands still pending; zero otherwise */
+    uint8_t queue_order[12]; /* original index of each canonical queue record; permutation at PIVOT */
+    uint8_t reserved2[4];
 } duoforge_hypothesis;
+
+/* Argument errors touch no output. Otherwise statuses are per environment,
+ * the return is the first failure, and each failing environment is atomic.
+ * Both operations run on the batch workers without allocation. */
+duoforge_status duoforge_batch_public(duoforge_batch *batch, const uint32_t *players,
+                                      duoforge_public_state *out, duoforge_status *statuses);
+duoforge_status duoforge_batch_from_view(duoforge_batch *worlds, const duoforge_public_state *views,
+                                         const duoforge_hypothesis *hypotheses, uint32_t count,
+                                         duoforge_status *statuses);
+/* 32 x 32 pair mask of the foe's turn-start domain. Ambiguous unseen bench
+ * membership is E_UNSUPPORTED: its switch options change the pair indices.
+ * Targets are not compared. On any refusal mask is untouched. */
+duoforge_status duoforge_public_queue_mask(const duoforge_context *ctx, const duoforge_public_state *turn_start,
+                                           const duoforge_public_state *view, uint8_t *mask);
 
 /* One player's public state of a battle. Checks: NULL -> E_NULL_ARGUMENT,
    CONTEXT_MISMATCH, player > 1 -> E_INVALID_ARGUMENT, the full state check ->
@@ -101,9 +122,8 @@ duoforge_status duoforge_battle_public(const duoforge_context *ctx, const duofor
    hypothesis against the record (a spread past 32 or 66, a pick order that is
    not a brought set agreeing with the leads and the members seen, or any pick
    at TEAM_SELECTION) -> E_INVALID_ARGUMENT; the built world's full check ->
-   E_MALFORMED. Visible sleep/confusion or another unmodelled public feature
-   is E_UNSUPPORTED. An invariant failure in a public support query is
-   E_INVARIANT. *out is written only on success. */
+   E_MALFORMED. Unmodelled public features are E_UNSUPPORTED; a public
+   support-query invariant failure is E_INVARIANT. *out is written only on success. */
 duoforge_status duoforge_battle_from_view(const duoforge_context *ctx, const duoforge_public_state *view,
                                           const duoforge_hypothesis *hypothesis, duoforge_battle *out);
 
