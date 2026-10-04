@@ -1,7 +1,7 @@
 """The search in the arena (spec section 8, plan tasks 10 and 11).
 
-SearchPlayer plays evaluate.play_suite's games with a Lookahead, on the
-arena's true state: an oracle benchmark (ARCHITECTURE section 10). It has
+SearchPlayer plays evaluate.play_suite's games with a Lookahead (the labeled
+true-state oracle) or Honest (worlds from the player's public record). It has
 the Player interface; play_suite passes it the step, its seat in every game
 and the last-step flag.
 
@@ -39,7 +39,7 @@ BOOTSTRAP_SEED = 0x2026100300000220
 RESAMPLES = 2000
 GAMES = 2048
 MAX_STEPS = 1000
-AGENTS = {"N": "nash", "E": "ev"}
+AGENTS = {"N": "nash", "E": "ev", "X": "mix"}
 PANEL = (25, 50, 75)  # percent of the run's last update
 PARTS = ("network", "engine", "reduction", "split")
 ORACLE = ("an oracle benchmark (ARCHITECTURE section 10): the search runs on the true state, so it knows the foe's "
@@ -73,6 +73,8 @@ class SearchPlayer:
     def clear(self):
         """Forgets the records (a new suite)."""
         self.records = {}
+        if hasattr(self.lookahead, "clear"):
+            self.lookahead.clear()
 
     def indices(self, batch, choices, step=None, seats=None, last_step=None):
         if step is None or seats is None or last_step is None:
@@ -172,8 +174,13 @@ def timing(records):
         return {"searched": 0, "ms": None}
     ms = {p: 1000.0 * np.array([r["time"][p] for r in searched], dtype=np.float64) for p in PARTS}
     ms["total"] = sum(ms[p] for p in PARTS)
-    return {"searched": len(searched),
-            "ms": {p: {"median": float(np.median(v)), "p95": float(np.percentile(v, 95))} for p, v in ms.items()}}
+    result = {"searched": len(searched),
+              "ms": {p: {"median": float(np.median(v)), "p95": float(np.percentile(v, 95))} for p, v in ms.items()}}
+    if all("cost" in r for r in searched):
+        result["cost_ms"] = {p: {"median": float(np.median(v)), "p95": float(np.percentile(v, 95))}
+                             for p in searched[0]["cost"]
+                             for v in [1000 * np.array([r["cost"][p] for r in searched])]}
+    return result
 
 
 def diagnostics(records, games):
@@ -185,6 +192,18 @@ def diagnostics(records, games):
         leaves.update(r["leaves"])
     out = {"decisions": {k: kinds.get(k, 0) for k in ("searched", "forced", "team")},
            "searched_per_game": len(searched) / games, "leaves": dict(leaves)}
+    if kinds["unreconstructible"] or kinds["raw"] or any(r.get("search") == "honest" for r in records):
+        out["decisions"].update({k: kinds[k] for k in ("unreconstructible", "raw")})
+        out["unreconstructible_reasons"] = dict(Counter(r["reason"] for r in records if r["kind"] == "unreconstructible"))
+        causes = Counter(c for r in records if r["kind"] == "unreconstructible" for c in r.get("causes", [r["reason"]]))
+        out["unreconstructible_share"] = kinds["unreconstructible"] / len(records) if records else 0.0
+        for cause in ("visible_sleep", "visible_confusion"):
+            causes.setdefault(cause, 0)
+        out["unreconstructible_by_cause"] = {c: {"decisions": count, "share_of_decisions": count / len(records)}
+                                             for c, count in causes.items()}
+    if any("bench_dropped" in r for r in searched):
+        out["bench_dropped"] = sum(r.get("bench_dropped", 0) for r in searched)
+        out["respreads"] = sum(r.get("respreads", 0) for r in searched)
     if not searched:
         return out
     out["roots"] = {b: sum(r["boundary"] == b for r in searched) for b in ("TURN", "REPLACEMENT", "PIVOT")}
@@ -306,7 +325,7 @@ def _list(text, name, allowed=None):
 def main(argv=None):
     p = argparse.ArgumentParser(
         prog="python -m duoforge_search.arena",
-        description="The M12 stage 1 arena measurement (spec section 8, decision 0022): a checkpoint with the "
+        description="The M12 arena (decisions 0022/0023): honest public-information search or the labeled oracle. A checkpoint with the "
                     "one-turn lookahead against the same network without it, over the run's team suite; "
                     f"{ORACLE}. Outputs in OUT: raw/<config>-games.csv (play_suite's records and the score), "
                     "raw/<config>-decisions.jsonl (the records of spec 8.5, searched configurations), "
@@ -317,7 +336,10 @@ def main(argv=None):
     p.add_argument("--out", required=True, help="the output directory, outside the repository")
     p.add_argument("--checkpoint", default=None,
                    help="params-<update>, a file of the run or a path (default: the best by RUN/ladder.json)")
-    p.add_argument("--agents", default="N,E", help="N (the Nash rule) and/or E (the expected value)")
+    p.add_argument("--agents", default="N,E", help="N (Nash), E (expected value), X (the mix)")
+    p.add_argument("--search", choices=("honest", "oracle"), default="oracle",
+                   help="honest public-information worlds or the labeled true-state oracle")
+    p.add_argument("--lam", type=float, default=0.5, help="X's Nash weight, between 0 and 1")
     p.add_argument("--opponents", default="raw",
                    help="raw (the same network without search), panel (three earlier checkpoints) and/or "
                         "scripted (evaluate's ScriptedPolicy)")
@@ -334,6 +356,8 @@ def main(argv=None):
     p.add_argument("--max-steps", type=int, default=MAX_STEPS)
     p.add_argument("--resamples", type=int, default=RESAMPLES, help="bootstrap resamples")
     args = p.parse_args(sys.argv[1:] if argv is None else list(argv))
+    if not 0 <= args.lam <= 1:
+        raise SystemExit("--lam must be between 0 and 1")
     agents = _list(args.agents, "agents", AGENTS)
     wanted = _list(args.opponents, "opponents", ("raw", "panel", "scripted"))
     km = []
@@ -364,6 +388,11 @@ def main(argv=None):
         raise SystemExit("on the GPU the value calls must be deterministic: set "
                          "XLA_FLAGS=--xla_gpu_deterministic_ops=true (spec section 6)")
     pool, kind = ladder._pool_of(args.run_dir)
+    spread = source_ids = table_info = None
+    if args.search == "honest":
+        from . import honest
+        with duoforge.Context(data_kind=kind) as ctx:
+            spread, source_ids, table_info = honest.spread_table(ctx)
     rows = suite.make_suite(len(pool.ids), ARENA_SEED, budget=args.games)
     models = {}
 
@@ -414,6 +443,13 @@ def main(argv=None):
         "xla_flags": os.environ.get("XLA_FLAGS", "")}
     if "S" in opponents:  # only then, so raw and panel runs keep their conditions byte for byte
         conditions["scripted"] = True
+    conditions["search"] = args.search
+    if args.search == "honest":
+        conditions.pop("oracle", None)
+        conditions.update({"belief": table_info, "w": samples, "lam": args.lam,
+                           "leave_one_team_out": "foe pool index mapped to the spread source id"})
+    elif "X" in agents:
+        conditions["lam"] = args.lam
     os.makedirs(os.path.join(args.out, "raw"), exist_ok=True)
 
     configs = {}
@@ -428,9 +464,16 @@ def main(argv=None):
                 for k, m in km:
                     for s in samples:
                         name = f"{agent}-k{k}m{m}s{s}-vs-{opponent}"
-                        with lookahead.Lookahead(ctx, raw.model, raw.params, raw.encoder, raw.ext_supported, k=k,
+                        factory = lookahead.Lookahead
+                        options = {"lam": args.lam}
+                        if args.search == "honest":
+                            factory = honest.Honest
+                            foe_ids = np.where(rows["learner_seat"] == 0, rows["side1"], rows["side0"])
+                            options.update({"table": spread,
+                                            "exclude_teams": [source_ids.get(pool.ids[int(i)]) for i in foe_ids]})
+                        with factory(ctx, raw.model, raw.params, raw.encoder, raw.ext_supported, k=k,
                                                  m=m, s=s, rule=AGENTS[agent], capacity=args.capacity,
-                                                 workers=args.workers) as look:
+                                                 workers=args.workers, **options) as look:
                             player = SearchPlayer(look, name, ARENA_SEED)
                             records = evaluate.play_suite(ctx, pool, rows, player, other, args.workers,
                                                           ARENA_SEED, max_steps=args.max_steps)

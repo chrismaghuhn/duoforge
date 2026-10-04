@@ -193,7 +193,10 @@ class LookaheadDecisions(unittest.TestCase):
             a, q = np.array(r["table"]), np.array(r["foe_probs"])
             self.assertEqual(r["expected"], matrix.expected_values(a, q).tolist())
             self.assertEqual(r["choice"], r["own_pairs"][matrix.expected_choice(a, q, np.arange(r["k"]))])
-            self.assertNotIn("x", r)
+            # The visible-search contract records all N/E/X outcomes for every rule.
+            self.assertEqual(set(r["outcomes"]), set(lookahead.RULES))
+            self.assertEqual(r["choice"], r["own_pairs"][r["outcomes"]["ev"]])
+            matrix.certify(a, np.array(r["x"]), np.array(r["y"]))
             self.assertIn("same_choice", r["split"])
         self.assertTrue(any(r["changed"] for r in records))  # rows other than the raw network's are played
 
@@ -655,7 +658,8 @@ class ArenaCli(unittest.TestCase):
         self.assertEqual(set(summary["configs"]), {"R-vs-R", "N-k2m2s2-vs-R"})
         self.assertEqual(summary["conditions"]["checkpoint"]["update"], 400)
         repository = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-        for bad in (["--agents", "X"], ["--km", "8"], ["--s", "0"], ["--s", "16,x"], ["--checkpoint", "params-18129"],
+        for bad in (["--agents", "Z"], ["--search", "unknown"], ["--lam", "-0.1"], ["--lam", "1.1"],
+                    ["--km", "8"], ["--s", "0"], ["--s", "16,x"], ["--checkpoint", "params-18129"],
                     ["--out", os.path.join(repository, "arena-out")]):
             with self.assertRaises(SystemExit):
                 arena.main(["--run-dir", self.run_dir, "--out", out] + bad)

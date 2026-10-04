@@ -152,6 +152,21 @@ Public record revision 2 exposes the pending foe-slot mask and queue count. At P
 
 The queue mask builds neutral worlds in C and compares public switch/activation, Mega and move-use facts. It does not compare targets. An unknown brought member can change the turn-start domain's switch options and pair indices: without a unique brought set the mask returns E_UNSUPPORTED, rather than guessing those indices. This refusal belongs to the search's unreconstructible counts.
 
+The random-play proof covers 8,332 views, including PIVOT, under CLOSURE, TEAM_C and POOL. It checks 157 successful queue masks against the true turn-start pair and counts 199 explicit ambiguous-bench refusals. Batch equivalence and argument atomicity run with 1, 2, 3, 4, 8 and 16 workers; the TSan selection includes view tests. The library MINOR bump remains assigned at merge, as for PR A.
+
+## 6. PR E: visible-information lookahead and arena
+
+`duoforge_search.honest.Honest` holds the preview and current turn-start public records per batch environment, seat and episode. It evaluates only the viewer's row of the real root; every foe row is a reconstructed world. The privileged hypothesis function and true-root encoding are absent from this path, including error diagnostics. C owns stats, HP, counters, targets, legality and queue reconstruction. Bench filtering compares roster indices; queued commands are copied whole from the turn-start domain.
+
+Worlds use the belief words of PR D and their own world index as the leaf sample in every cell. One Bayesian strategy holds across all worlds. Records hold all N/E/X outcomes, per-world foe probabilities, W, the spread-table hash, drops, redraws and reconstruction refusals. K=1 plays the raw policy without building worlds. Unsupported reconstructions and missing history play raw with an explicit counted reason; other failures stop with the public record and, for solver failures, the tables.
+
+Two interface details follow from the available C API:
+- A rejected world reports only a status, not a failed member. An HP contradiction therefore redraws all spreads of that world, retaining its HP/counter/target/bench/queue words and every other world's spreads. After 256 attempts the search stops explicitly.
+- Hidden bench membership can change the foe's slot-list indices. The world-weighted probability ranking is filtered by each world's C legality mask; each world's columns name its own legal responses. No illegal pair is submitted to expansion, and the foe's Bayesian response remains specific to its world.
+
+The spread table reads A/B/C and PP_ sources in registry order sorted by id, validates their hashes, skips unstated spreads and counts sets absent from the active context. LL_ guesses are excluded. Arena foe pool indices map to source ids for leave-one-team-out.
+
+`python -m duoforge_search.arena --search honest --agents N,E,X --lam 0.5 --worlds 16 ...` selects this path; `--search oracle` retains the labeled stage-1 path and now also supports X. The default remains oracle for existing command lines. Conditions record the search kind, W, lambda, source counts and table hash; searched-decision costs separate public records, world builds, team head, leaves, network and solve. The tests use synthetic checkpoints and CPU smoke runs only. Plan task 13's measurement and the live/training stages are not part of this PR.
 The random-play proof covers 7,558 supported views, including PIVOT, under CLOSURE, TEAM_C and POOL. It checks 20 successful queue masks against the true turn-start pair and counts 32 explicit ambiguous-bench refusals. Batch equivalence and argument atomicity run with 1, 2, 3, 4, 8 and 16 workers; the TSan selection includes view tests. The library MINOR bump remains assigned at merge, as for PR A.
 ## Review amendment: elapsed counters (owner, 2026-10-04)
 
@@ -160,3 +175,7 @@ The random-point sleep/confusion mixture in section 4 is superseded. Schema 3 do
 ## PR D: back-off review clarification
 
 Review clarification: back-off level 4 compares exact nature ids, as the NumPy table implements; level 5 uses all remaining source sets. A redraw advances from the original eligible level towards level 5. The stronger exact-nature match is intentional; no nature-rule implementation is hidden in Python.
+
+## PR E: review notes
+
+Review notes for E: stale/missing turn-start records count as unreconstructible. Every stopped-world reproduction includes the search seed, exclusion, preview and turn-start records (or explicit absence), plus the current public view. Redraw failures retain that reproduction. Arena diagnostics report counts and shares per visible-counter cause; sleep and confusion can overlap. Oracle records explicitly label search=oracle. Oracle E also computes N/X for the diagnostic contract; its played E action remains the expected-value maximum, verified against the original path.

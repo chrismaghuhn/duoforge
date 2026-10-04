@@ -42,7 +42,7 @@ OPTIONS = _layout.MAX_SLOT_OPTIONS
 PAIRS = OPTIONS * OPTIONS
 NO_FOE = -1  # the foe's pair where the foe has no request (its empty response)
 UNRESOLVED = -1  # the tiebreak of a leaf the engine cannot resolve (the reference's bench order would decide)
-RULES = ("nash", "ev")
+RULES = ("nash", "ev", "mix")
 
 _SLOTS = C["DUOFORGE_CHOICE_SLOTS"]
 _TEAM = C["DUOFORGE_CHOICE_TEAM_SELECTION"]
@@ -246,9 +246,12 @@ class Lookahead:
     policy call once per root batch size, outside the timed calls."""
 
     def __init__(self, context, model, params, encoder, ext_supported, k=8, m=8, s=16, rule="nash",
-                 seed=SEARCH_SEED, capacity=CAPACITY, workers=8):
+                 seed=SEARCH_SEED, capacity=CAPACITY, workers=8, lam=0.5):
         if rule not in RULES:
             raise ValueError(f"unknown rule {rule!r}: one of {RULES}")
+        if not 0 <= lam <= 1:
+            raise ValueError("lam must be between 0 and 1")
+        self.lam = float(lam)
         for name, x in (("k", k), ("m", m), ("s", s), ("capacity", capacity), ("workers", workers)):
             if int(x) < 1:
                 raise ValueError(f"{name} must be at least 1 (got {x})")
@@ -335,7 +338,7 @@ class Lookahead:
             if requests[e, p]["requested"] == 0:
                 raise ValueError(f"seat {p} of environment {e} has no request: there is no decision")
             boundary = int(requests[e, p]["boundary_kind"])
-            base = {"env": e, "seat": p, "key": int(keys[d]), "epoch": int(requests[e, p]["epoch"]),
+            base = {"search": "oracle", "env": e, "seat": p, "key": int(keys[d]), "epoch": int(requests[e, p]["epoch"]),
                     "boundary": _BOUNDARIES.get(boundary, boundary), "last_step": bool(last_step[d])}
             kind = int(domains[e, p]["kind"])
             if kind == _TEAM:
@@ -451,18 +454,14 @@ class Lookahead:
             self.last["tables"].append(tab)
             rank = np.arange(own.size)
             try:
-                if self.rule == "nash":
-                    sol = matrix.solve(tab.a)
-                    u = float(seeds.play_uniforms(self.seed, keys[d:d + 1])[0])
-                    row = matrix.draw(sol.x, rank, u)
-                    reduced = {"x": sol.x.tolist(), "y": sol.y.tolist(), "value": sol.value, "exact": sol.exact,
-                               "u": u, "support": [int((sol.x >= matrix.PROBABILITY_FLOOR).sum()),
-                                                   int((sol.y >= matrix.PROBABILITY_FLOOR).sum())]}
-                else:
-                    row = matrix.expected_choice(tab.a, foe_p, rank)
-                    reduced = {"expected": matrix.expected_values(tab.a, foe_p).tolist()}
+                from .honest import reduce
+                u = float(seeds.play_uniforms(self.seed, keys[d:d + 1])[0])
+                outcomes, reduced = reduce(tab.a[None], np.ones(1), foe_p[None], rank, u, self.lam, oracle=True)
+                row = outcomes[self.rule]
+                reduced["outcomes"] = outcomes
+                reduced["y"] = reduced["ys"][0]
                 t1 = time.perf_counter()
-                split = split_half(tab.values, foe_p, self.rule)
+                split = split_half(tab.values, foe_p, "nash" if self.rule == "mix" else self.rule)
             except SearchError as err:
                 raise self._unsolved(err, int(envs[d]), int(seats[d]), int(keys[d]), own, foe, foe_p, tab) from err
             t2 = time.perf_counter()
