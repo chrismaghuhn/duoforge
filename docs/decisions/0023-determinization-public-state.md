@@ -90,7 +90,7 @@ Status: draft. Owner decisions of 2026-10-04: the brief of the visible-informati
 - **The source:** the foe's stat points are drawn as whole spreads, from the stated spreads of the curated pastes: the `PP_` teams and Teams A, B and C.
   - `LL_` spreads are importer guesses and are not used.
   - Replays show no stat points.
-- **The backoff:** (species, nature, item) with at least 5 sets, then (species, nature), then the species, then the stat shapes of the same nature-raised stat.
+- **The backoff:** (species, nature, item) with at least 5 sets, then (species, nature), then the species, then sets of the exact same nature, then all remaining stated spreads.
 - **Leave one team out:** in the arena and in self-play the foe's own team's sets are left out.
 - **Weights:** every world weighs 1/W. `Belief.sample(view, history, n, seed)` keeps the hook for later updates from damage and turn order (M13 lever 3).
 - **Where it lives:** the belief is in Python and draws numbers only. The distributions of the engine's own draws stay in C.
@@ -156,3 +156,4 @@ The random-play proof covers 7,558 supported views, including PIVOT, under CLOSU
 ## Review amendment: elapsed counters (owner, 2026-10-04)
 
 The random-point sleep/confusion mixture in section 4 is superseded. Schema 3 does not store publicly elapsed attempts. Any visible sleep or confusion therefore makes public extraction and world construction explicitly E_UNSUPPORTED. The predicate reads only the player's public observation, never the hidden remaining counter. Tests vary all remaining values and both viewers and check unchanged outputs. The honest arena reports the count and share of raw fallbacks separately for visible sleep and visible confusion (overlap is possible). If that share is large, elapsed tracking requires its own later decision and implementation; it is not silently approximated here.
+Review clarification: back-off level 4 compares exact nature ids, as the NumPy table implements; level 5 uses all remaining source sets. A redraw advances from the original eligible level towards level 5. The stronger exact-nature match is intentional; no nature-rule implementation is hidden in Python.
