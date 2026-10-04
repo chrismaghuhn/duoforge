@@ -211,7 +211,7 @@ def _canonical_sheets(showteam, pokes, data, diagnostics):
     return tuple(result), tuple(sheets_for_hindsight)
 
 
-def _parse_action(parts, turn, diagnostics, data, active_species, after_upkeep=False):
+def _parse_action(parts, turn, diagnostics, data, active_species, after_upkeep=False, move_seen=False):
     kind = parts[1]
     if len(parts) < 3:
         _bad(diagnostics, kind)
@@ -234,10 +234,10 @@ def _parse_action(parts, turn, diagnostics, data, active_species, after_upkeep=F
             return None
         if kind == "drag":
             switch_context = "drag"
-        elif any(part.startswith("[from]") for part in parts[4:]):
-            switch_context = "pivot"
         elif after_upkeep:
             switch_context = "replacement"
+        elif move_seen or any(part.startswith("[from]") for part in parts[4:]):
+            switch_context = "pivot"
         else:
             switch_context = "choice"
         return Action(turn, side, "switch", position, actor, _species_name(_preview_species(parts[3]), data),
@@ -344,6 +344,7 @@ def extract_game(replay_id, format_id, log, data):
     winner = -1
     current_turn = None
     after_upkeep = False
+    move_seen = False
     bo3_game = 0
     starts = 0
     actions, tera_sides, item_events = [], [False, False], []
@@ -382,8 +383,10 @@ def extract_game(replay_id, format_id, log, data):
                 continue
             current_turn = int(parts[2])
             after_upkeep = False
+            move_seen = False
         elif kind == "upkeep":
             after_upkeep = True
+            move_seen = False
         elif kind == "start":
             starts += 1
         elif kind == "win":
@@ -399,7 +402,8 @@ def extract_game(replay_id, format_id, log, data):
             bo3_game = int(match.group(1)) if match else 0
 
         if kind in ("switch", "drag"):
-            action = _parse_action(parts, current_turn or 0, diagnostics, data, active_species, after_upkeep)
+            action = _parse_action(parts, current_turn or 0, diagnostics, data, active_species, after_upkeep,
+                                   move_seen)
             if action is not None:
                 active_species[action.position] = action.name
                 if current_turn in (1, 2, 3):
@@ -408,7 +412,9 @@ def extract_game(replay_id, format_id, log, data):
         if current_turn not in (1, 2, 3):
             continue
         if kind in ("move", "-mega"):
-            action = _parse_action(parts, current_turn, diagnostics, data, active_species, after_upkeep)
+            if kind == "move":
+                move_seen = True
+            action = _parse_action(parts, current_turn, diagnostics, data, active_species, after_upkeep, move_seen)
             if action is not None:
                 actions.append(action)
         elif kind == "-terastallize":
