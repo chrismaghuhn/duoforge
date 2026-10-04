@@ -136,6 +136,9 @@ bool dfi_closure_battle_supported(const dfi_support_manifest *manifest, const st
 /* Builds the member of a validated setup: derived stats, HP, PP, stone flag,
  * stored ids. Returns false only on an engine bug. */
 bool dfi_closure_member_init(const duoforge_member_setup *src, dfi_member *dst);
+/* hp_max and stats[] of m from its forme, Mega state, item, nature and stat points (decision 0023: a world's foe
+ * members); false if the forme data refuses them. */
+bool dfi_closure_member_derive(dfi_member *m);
 
 /* The member invariant of combat data (reported as DFI_INV_MEMBER_EXTRA):
  * a base forme, a legal gender, nature and Stat Points in range, the current

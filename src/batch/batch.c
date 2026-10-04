@@ -4,12 +4,14 @@
  * on it a single-battle call, so a batch is the same calls one by one.
  */
 #include <duoforge/duoforge_batch.h>
+#include <duoforge/duoforge_view.h>
 
 #include <string.h>
 
 #include "batch/batch_each.h"
 #include "batch/pool.h"
 #include "core/alloc.h"
+#include "state/battle_internal.h"
 
 /* Per-worker scratch: a candidate list and the event buffers of a step. */
 typedef struct dfi_batch_scratch {
@@ -804,4 +806,63 @@ void dfi_batch_leaves(duoforge_batch *batch, uint32_t count, dfi_batch_leaf_fn f
 const duoforge_context *dfi_batch_context(const duoforge_batch *batch)
 {
     return batch->ctx;
+}
+
+typedef struct dfi_public_job {
+    const uint32_t *players;
+    duoforge_public_state *out;
+} dfi_public_job;
+
+static duoforge_status dfi_public_env(void *arg, uint32_t env, const duoforge_context *ctx,
+                                      const duoforge_battle *battle)
+{
+    const dfi_public_job *j = arg;
+    return duoforge_battle_public(ctx, battle, j->players[env], &j->out[env]);
+}
+
+duoforge_status duoforge_batch_public(duoforge_batch *batch, const uint32_t *players,
+                                      duoforge_public_state *out, duoforge_status *statuses)
+{
+    if (batch == NULL || players == NULL || out == NULL || statuses == NULL) {
+        return DUOFORGE_E_NULL_ARGUMENT;
+    }
+    for (uint32_t e = 0u; e < batch->env_count; ++e) {
+        if (players[e] >= DUOFORGE_SIDE_COUNT) {
+            return DUOFORGE_E_INVALID_ARGUMENT;
+        }
+    }
+    dfi_public_job job = {players, out};
+    return dfi_batch_each(batch, dfi_public_env, &job, statuses);
+}
+
+typedef struct dfi_from_view_job {
+    const duoforge_public_state *views;
+    const duoforge_hypothesis *hypotheses;
+    duoforge_status *statuses;
+} dfi_from_view_job;
+
+static void dfi_from_view_env(void *arg, uint32_t env, const duoforge_context *ctx,
+                              duoforge_battle *battle, bool *terminal)
+{
+    const dfi_from_view_job *j = arg;
+    const duoforge_status st = duoforge_battle_from_view(ctx, &j->views[env], &j->hypotheses[env], battle);
+    j->statuses[env] = st;
+    if (st == DUOFORGE_OK) {
+        *terminal = battle->boundary_kind == DUOFORGE_BOUNDARY_TERMINAL;
+    }
+}
+
+duoforge_status duoforge_batch_from_view(duoforge_batch *worlds, const duoforge_public_state *views,
+                                         const duoforge_hypothesis *hypotheses, uint32_t count,
+                                         duoforge_status *statuses)
+{
+    if (worlds == NULL || (count != 0u && (views == NULL || hypotheses == NULL || statuses == NULL))) {
+        return DUOFORGE_E_NULL_ARGUMENT;
+    }
+    if (count > worlds->env_count) {
+        return DUOFORGE_E_INVALID_ARGUMENT;
+    }
+    dfi_from_view_job job = {views, hypotheses, statuses};
+    dfi_batch_leaves(worlds, count, dfi_from_view_env, &job);
+    return dfi_batch_first(statuses, count);
 }
