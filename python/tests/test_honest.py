@@ -4,6 +4,7 @@ os.environ["JAX_PLATFORMS"] = "cpu"
 
 import json
 import hashlib
+import ctypes
 import tempfile
 import unittest
 from unittest import mock
@@ -77,10 +78,17 @@ class HonestSearch(unittest.TestCase):
                 h[0] = privileged.hypothesis(b, 0, seat)
                 h[1] = h[0]
                 h[1]["stat_points"] = 0
+                h[1]["pick_order"][2:4] = h[0]["pick_order"][2:4][::-1]
                 self.assertFalse(b.from_view(np.repeat(v[:1], 2), h).any())
+                reseed = b._lib.duoforge_battle_reseed
+                reseed.restype = ctypes.c_uint32
+                reseed.argtypes = (ctypes.c_void_p, ctypes.c_void_p, ctypes.c_uint64, ctypes.c_uint64)
+                for e in range(2):
+                    self.assertEqual(reseed(ctx.handle, b._battle(e), 100 + e, 10 + e), 0)
                 v, st = b.public(np.full(2, seat, np.uint32))
                 self.assertEqual(v[0].tobytes(), v[1].tobytes())
                 with mock.patch.object(privileged, "hypothesis", side_effect=AssertionError("privileged")), \
+                        mock.patch.object(b._lib, "duoforge_battle_hypothesis", side_effect=AssertionError("direct privileged ABI")), \
                         mock.patch.object(b, "encode", side_effect=AssertionError("true root bytes")):
                     actions, records = search.decide(b, [0, 1], [seat, seat], [456, 456], [False, False])
                 self.assertEqual(actions[0], actions[1])
@@ -157,6 +165,14 @@ class HonestSearch(unittest.TestCase):
                                 mask = duoforge.queue_mask(ctx, search.history[b][(r["env"], p)]["turn_start"], current)
                                 self.assertEqual(len(r["queue_pairs"]), 2)
                                 self.assertTrue(all(mask.reshape(-1)[x] for x in r["queue_pairs"]))
+                                history = search.history[b][(r["env"], p)]
+                                saved_start = history["turn_start"].copy()
+                                history["turn_start"]["turn"] -= 1
+                                with mock.patch.object(duoforge, "queue_mask", side_effect=AssertionError("stale C query")):
+                                    _, fallback = search.decide(b, [r["env"]], [p], [r["key"]], [False])
+                                self.assertEqual(fallback[0]["kind"], "unreconstructible")
+                                self.assertIn("turn-start", fallback[0]["reason"])
+                                history["turn_start"] = saved_start
                 b.step_factored(policy.choose_factored(b))
                 b.reset_terminal()
                 if counted >= 4 and searched:
@@ -195,6 +211,9 @@ class HonestSearch(unittest.TestCase):
                 self.assertIn("E_INVARIANT", str(caught.exception))
                 self.assertIn("public_view", caught.exception.reproduction)
                 self.assertNotIn("root", caught.exception.reproduction)
+                for name in ("search_seed", "exclude_team", "preview", "turn_start"):
+                    self.assertIn(name, caught.exception.reproduction)
+                self.assertIsNotNone(caught.exception.reproduction["preview"])
             with mock.patch.object(honest.matrix, "solve_bayes", side_effect=SearchError("certificate failed")):
                 with self.assertRaises(SearchError) as caught:
                     search.decide(b, [0], [0], [456], [False])
@@ -245,6 +264,68 @@ class HonestSearch(unittest.TestCase):
             for name in ("hp", "sleep", "confusion", "charge_target"):
                 np.testing.assert_array_equal(calls[0][name], calls[2][name])
             np.testing.assert_array_equal(calls[0]["stat_points"][1], calls[2]["stat_points"][1])
+
+    def test_visible_counter_fallbacks_are_public_and_counted_per_cause(self):
+        with duoforge.Context(C["DUOFORGE_DATA_KIND_POOL"]) as ctx, \
+                duoforge.Batch(ctx, np.repeat(duoforge.reference_setups([0]), 2), 2, 42) as b, self.make(ctx) as search:
+            self.preview(search, b)
+            self.start_turn(b)
+            decode = b._lib.duoforge_battle_decode
+            decode.restype = ctypes.c_uint32
+            decode.argtypes = (ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_size_t)
+            original = b.encode(0)
+            for cause in ("visible_sleep", "visible_confusion"):
+                for e in range(2):
+                    # Privileged codec fixtures only: schema-3 offsets, no live rule implementation.
+                    raw = np.frombuffer(original, np.uint8).copy()
+                    if cause == "visible_sleep":
+                        raw[215 + 109 + 27] = C["DUOFORGE_AILMENT_SLEEP"]
+                        raw[215 + 109 + 28] = 1 + e
+                    else:
+                        raw[215 + 15 + 15] = 1 + e
+                    self.assertEqual(decode(ctx.handle, b._battle(e), raw.ctypes.data, raw.size), 0)
+                with mock.patch.object(b._lib, "duoforge_battle_hypothesis", side_effect=AssertionError("privileged ABI")):
+                    actions, records = search.decide(b, [0, 1], [0, 0], [456, 456], [False, False])
+                self.assertEqual(actions[0], actions[1])
+                self.assertTrue(all(r["kind"] == "unreconstructible" and r["causes"] == [cause] for r in records))
+                stats = arena.diagnostics(records, 2)
+                self.assertEqual(stats["unreconstructible_by_cause"][cause], {"decisions": 2, "share_of_decisions": 1.0})
+
+    def test_stale_turn_start_counts_as_unreconstructible(self):
+        with duoforge.Context(C["DUOFORGE_DATA_KIND_POOL"]) as ctx, \
+                duoforge.Batch(ctx, duoforge.reference_setups([0]), 1, 42) as b, self.make(ctx) as search:
+            self.preview(search, b)
+            self.start_turn(b)
+            v, _ = b.public(np.zeros(1, np.uint32))
+            record = v[:1].reshape(()).copy()
+            history = search.history[b][(0, 0)]
+            history["turn_start"] = record.copy()
+            record["turn"] += 1
+            record["boundary"] = C["DUOFORGE_BOUNDARY_PIVOT"]
+            costs = {k: 0. for k in ("public_records", "world_builds", "team_head", "network")}
+            with mock.patch.object(duoforge, "queue_mask", side_effect=AssertionError("stale record must not reach C")):
+                with self.assertRaisesRegex(honest.Unreconstructible, "stale"):
+                    search._hypotheses(record, b.observations[0, 0], history, 1, None, costs)
+
+    def test_redraw_bound_stops_with_complete_reproduction(self):
+        with duoforge.Context(C["DUOFORGE_DATA_KIND_POOL"]) as ctx, \
+                duoforge.Batch(ctx, duoforge.reference_setups([0]), 1, 42) as b, self.make(ctx) as search:
+            self.preview(search, b)
+            self.start_turn(b)
+            build = search._build
+            calls = 0
+            def reject_root(record, h):
+                nonlocal calls
+                if int(record["boundary"]) == C["DUOFORGE_BOUNDARY_TEAM_SELECTION"]:
+                    return build(record, h)
+                calls += 1
+                return np.full(2, C["DUOFORGE_E_INVALID_ARGUMENT"], np.uint32)
+            with mock.patch.object(search, "_build", side_effect=reject_root):
+                with self.assertRaisesRegex(honest.SearchError, "256") as stopped:
+                    search.decide(b, [0], [0], [456], [False])
+            self.assertEqual(calls, 256)
+            for name in ("public_view", "preview", "turn_start", "exclude_team", "search_seed"):
+                self.assertIn(name, stopped.exception.reproduction)
 
 
 class HonestArena(unittest.TestCase):

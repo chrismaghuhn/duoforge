@@ -181,8 +181,9 @@ class Honest(lookahead.Lookahead):
         dropped = respreads = 0
         queue_mask = None
         if int(record["boundary"]) == C["DUOFORGE_BOUNDARY_PIVOT"]:
-            if "turn_start" not in history:
-                raise Unreconstructible("missing turn-start record")
+            start = history.get("turn_start")
+            if start is None or int(start["turn"]) != int(record["turn"]) or int(start["player"]) != int(record["player"]):
+                raise Unreconstructible("missing or stale turn-start record")
             t = time.perf_counter()
             try:
                 queue_mask = duoforge.queue_mask(self.worlds.context, history["turn_start"], record)
@@ -276,6 +277,12 @@ class Honest(lookahead.Lookahead):
                 history["episode"] = episode
             record = records[e:e + 1].reshape(()).copy()
             boundary = int(roots.requests[e, p]["boundary_kind"])
+            current_turn = int(roots.observations[e, p]["turn"])
+            start = history.get("turn_start")
+            if start is not None and int(start["turn"]) != current_turn:
+                history.pop("turn_start")
+            if boundary == C["DUOFORGE_BOUNDARY_TURN"] and roots.requests[e, 0]["requested"] and roots.requests[e, 1]["requested"]:
+                history.pop("turn_start", None)
             if statuses[e] == 0:
                 if boundary == C["DUOFORGE_BOUNDARY_TEAM_SELECTION"]:
                     history["preview"] = record.copy()
@@ -293,13 +300,20 @@ class Honest(lookahead.Lookahead):
                 own, own_p = lookahead.select(pp[d], pairs[e, p], self.k)
                 actions[d] = int(own[0])
                 result = {"kind": "forced" if pairs[e, p].sum() == 1 else "raw", "choice": int(actions[d])}
+                excluded = None if self.exclude_teams is None else self.exclude_teams[e]
                 if result["kind"] != "forced" and self.k != 1:
                     try:
                         if statuses[e] == C["DUOFORGE_E_UNSUPPORTED"]:
+                            observation = roots.observations[e, p]
+                            causes = []
+                            if (observation["sides"]["members"]["status"] == C["DUOFORGE_AILMENT_SLEEP"]).any():
+                                causes.append("visible_sleep")
+                            if observation["sides"]["positions"]["confused"].any():
+                                causes.append("visible_confusion")
+                            result["causes"] = causes or ["public_record_unsupported"]
                             raise Unreconstructible("DUOFORGE_E_UNSUPPORTED: public record")
                         if statuses[e] != 0:
                             raise SearchError(f"public record refused: {duoforge.status_name(int(statuses[e]))}")
-                        excluded = None if self.exclude_teams is None else self.exclude_teams[e]
                         hypotheses, weights, dropped, respreads, queue_pairs = self._hypotheses(record, roots.observations[e, p], history,
                                                                          int(keys[d]), excluded, costs)
                         result = self._decision(p, int(keys[d]), own, own_p, weights, bool(last_step[d]), costs)
@@ -309,10 +323,14 @@ class Honest(lookahead.Lookahead):
                         actions[d] = result["choice"]
                     except Unreconstructible as err:
                         result.update({"kind": "unreconstructible", "reason": str(err)})
-                    except (SearchError, duoforge.DuoforgeError) as err:
+                        result.setdefault("causes", [str(err)])
+                    except (SearchError, duoforge.DuoforgeError, ValueError) as err:
                         stop = SearchError(str(err))
                         stop.reproduction = {**getattr(err, "reproduction", {}), **base,
-                                             "public_view": record.tobytes().hex()}
+                                             "public_view": record.tobytes().hex() if statuses[e] == 0 else None,
+                                             "search_seed": self.seed, "exclude_team": excluded,
+                                             "preview": history["preview"].tobytes().hex() if "preview" in history else None,
+                                             "turn_start": history["turn_start"].tobytes().hex() if "turn_start" in history else None}
                         raise stop from err
             output.append({**base, **result, "cost": costs,
                            "time": {"network": costs["network"] + costs["team_head"],

@@ -338,7 +338,7 @@ class Lookahead:
             if requests[e, p]["requested"] == 0:
                 raise ValueError(f"seat {p} of environment {e} has no request: there is no decision")
             boundary = int(requests[e, p]["boundary_kind"])
-            base = {"env": e, "seat": p, "key": int(keys[d]), "epoch": int(requests[e, p]["epoch"]),
+            base = {"search": "oracle", "env": e, "seat": p, "key": int(keys[d]), "epoch": int(requests[e, p]["epoch"]),
                     "boundary": _BOUNDARIES.get(boundary, boundary), "last_step": bool(last_step[d])}
             kind = int(domains[e, p]["kind"])
             if kind == _TEAM:

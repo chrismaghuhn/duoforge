@@ -192,9 +192,15 @@ def diagnostics(records, games):
         leaves.update(r["leaves"])
     out = {"decisions": {k: kinds.get(k, 0) for k in ("searched", "forced", "team")},
            "searched_per_game": len(searched) / games, "leaves": dict(leaves)}
-    if kinds["unreconstructible"] or kinds["raw"]:
+    if kinds["unreconstructible"] or kinds["raw"] or any(r.get("search") == "honest" for r in records):
         out["decisions"].update({k: kinds[k] for k in ("unreconstructible", "raw")})
         out["unreconstructible_reasons"] = dict(Counter(r["reason"] for r in records if r["kind"] == "unreconstructible"))
+        causes = Counter(c for r in records if r["kind"] == "unreconstructible" for c in r.get("causes", [r["reason"]]))
+        out["unreconstructible_share"] = kinds["unreconstructible"] / len(records) if records else 0.0
+        for cause in ("visible_sleep", "visible_confusion"):
+            causes.setdefault(cause, 0)
+        out["unreconstructible_by_cause"] = {c: {"decisions": count, "share_of_decisions": count / len(records)}
+                                             for c, count in causes.items()}
     if any("bench_dropped" in r for r in searched):
         out["bench_dropped"] = sum(r.get("bench_dropped", 0) for r in searched)
         out["respreads"] = sum(r.get("respreads", 0) for r in searched)
