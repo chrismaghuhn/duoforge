@@ -257,7 +257,7 @@ static void play(df_test *t, const duoforge_context_config *config, const char *
         duoforge_battle *world = df_make_battle(ctx, &setup);
         duoforge_public_state starts[2];
         bool saved[2] = {false, false};
-        duoforge_factored_choice chosen[2];
+        duoforge_factored_choice chosen[2] = {0};
         for (uint32_t step = 0u; step < MAX_STEPS; ++step) {
             check_state(t, ctx, b, world, &rs, ty);
             duoforge_request rq[2];
