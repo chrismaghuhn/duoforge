@@ -29,7 +29,7 @@ import numpy as np
 
 import duoforge
 from duoforge import _layout
-from duoforge_learn import evaluate, ladder, suite
+from duoforge_learn import book_preview, evaluate, ladder, suite
 from duoforge_learn.selfplay import choices_of
 
 from . import lookahead, seeds
@@ -251,6 +251,13 @@ def cpu_model():
         return platform.processor()
 
 
+def require_deterministic_gpu(jax):
+    """The existing arena reproduction requirement, shared with the book A/B."""
+    if jax.default_backend() == "gpu" and "--xla_gpu_deterministic_ops=true" not in os.environ.get("XLA_FLAGS", ""):
+        raise SystemExit("on the GPU the value calls must be deterministic: set "
+                         "XLA_FLAGS=--xla_gpu_deterministic_ops=true (spec section 6)")
+
+
 def _commit():
     """(commit, dirty) of the checkout this module runs from; (None, None) outside git."""
     root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -355,7 +362,9 @@ def main(argv=None):
     p.add_argument("--workers", type=int, default=8)
     p.add_argument("--max-steps", type=int, default=MAX_STEPS)
     p.add_argument("--resamples", type=int, default=RESAMPLES, help="bootstrap resamples")
+    book_preview.add_arguments(p)
     args = p.parse_args(sys.argv[1:] if argv is None else list(argv))
+    evidence = book_preview.load_options(args)
     if not 0 <= args.lam <= 1:
         raise SystemExit("--lam must be between 0 and 1")
     agents = _list(args.agents, "agents", AGENTS)
@@ -384,9 +393,7 @@ def main(argv=None):
     import jax
 
     from duoforge_learn import checkpoint, policy
-    if jax.default_backend() == "gpu" and "--xla_gpu_deterministic_ops=true" not in os.environ.get("XLA_FLAGS", ""):
-        raise SystemExit("on the GPU the value calls must be deterministic: set "
-                         "XLA_FLAGS=--xla_gpu_deterministic_ops=true (spec section 6)")
+    require_deterministic_gpu(jax)
     pool, kind = ladder._pool_of(args.run_dir)
     spread = source_ids = table_info = None
     if args.search == "honest":
@@ -441,6 +448,9 @@ def main(argv=None):
         "numpy": np.__version__, "jax": jax.__version__, "jaxlib": jaxlib, "backend": jax.default_backend(),
         "devices": [str(d) for d in jax.devices()], "cpu": cpu_model(), "platform": platform.platform(),
         "xla_flags": os.environ.get("XLA_FLAGS", "")}
+    if evidence is not None:
+        conditions["book"] = {**book_preview.info(args, evidence),
+                              "scope": "candidate preview only; opponents unchanged"}
     if "S" in opponents:  # only then, so raw and panel runs keep their conditions byte for byte
         conditions["scripted"] = True
     conditions["search"] = args.search
@@ -454,12 +464,16 @@ def main(argv=None):
 
     configs = {}
     with duoforge.Context(data_kind=kind) as ctx:
+        team_sheets = None if evidence is None else book_preview.sheets(ctx, pool)
         for opponent, (other, _) in opponents.items():
             base = f"R-vs-{opponent}"
-            records = evaluate.play_suite(ctx, pool, rows, raw, other, args.workers, ARENA_SEED,
+            candidate = book_preview.wrap(raw, evidence, team_sheets, rows, args)
+            records = evaluate.play_suite(ctx, pool, rows, candidate, other, args.workers, ARENA_SEED,
                                           max_steps=args.max_steps)
             _write_games(os.path.join(args.out, "raw", f"{base}-games.csv"), records)
             configs[base] = {"agent": "R", "opponent": opponent, "records": records}
+            if evidence is not None:
+                configs[base]["book"] = candidate.summary(games=len(rows))
             for agent in agents:
                 for k, m in km:
                     for s in samples:
@@ -475,7 +489,8 @@ def main(argv=None):
                                                  m=m, s=s, rule=AGENTS[agent], capacity=args.capacity,
                                                  workers=args.workers, **options) as look:
                             player = SearchPlayer(look, name, ARENA_SEED)
-                            records = evaluate.play_suite(ctx, pool, rows, player, other, args.workers,
+                            candidate = book_preview.wrap(player, evidence, team_sheets, rows, args, network=raw)
+                            records = evaluate.play_suite(ctx, pool, rows, candidate, other, args.workers,
                                                           ARENA_SEED, max_steps=args.max_steps)
                         decisions = [r for row in sorted(player.records) for r in player.records[row]]
                         raw_dir = os.path.join(args.out, "raw")
@@ -489,6 +504,8 @@ def main(argv=None):
                         configs[name] = {"agent": agent, "opponent": opponent, "k": k, "m": m, "s": s,
                                          "rule": AGENTS[agent], "records": records,
                                          "diagnostics": diagnostics(decisions, int(rows.shape[0])), "timing": clock}
+                        if evidence is not None:
+                            configs[name]["book"] = candidate.summary(games=len(rows))
 
     summary = {}
     for name, c in configs.items():

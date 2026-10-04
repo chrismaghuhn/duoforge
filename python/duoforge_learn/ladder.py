@@ -188,7 +188,10 @@ def main(argv=None):
     p.add_argument("--teams-from", default=None, help="the run whose teams the suite uses (default: the first)")
     p.add_argument("--no-init", action="store_true", help="leave out the untrained network")
     p.add_argument("--out", default=None, help="directory for ladder.json and ladder.md (default: the first run)")
+    from . import book_preview
+    book_preview.add_arguments(p)
     args = p.parse_args(sys.argv[1:] if argv is None else list(argv))
+    evidence = book_preview.load_options(args)
     from .train import refuse_in_repository
     refuse_in_repository(args.out or args.run_dirs[0])  # ladder.json names checkpoints of private runs
     import jax  # the ladder plays the policies
@@ -232,6 +235,9 @@ def main(argv=None):
                                            ext_supported_of(config)))
     n = len(players)
     with duoforge.Context(data_kind=kind) as ctx:
+        if evidence is not None:
+            team_sheets = book_preview.sheets(ctx, pool)
+            players = [book_preview.wrap(player, evidence, team_sheets, rows, args) for player in players]
         records = play_round_robin(ctx, pool, rows, players, args.workers)
         elo = fit(records, n)
         low, high = bootstrap(records, n)
@@ -250,8 +256,10 @@ def main(argv=None):
         print(f"{row['player']:>24}  Elo {row['elo']:8.1f}  [{row['elo_low']:.0f}, {row['elo_high']:.0f}]")
     out = args.out or args.run_dirs[0]
     os.makedirs(out, exist_ok=True)
+    book_info = {} if evidence is None else {"book": {**book_preview.info(args, evidence),
+        "players": {player.name: player.summary() for player in players}}}
     with open(os.path.join(out, "ladder.json"), "w", encoding="utf-8") as f:
-        json.dump({"players": table, "teams": list(pool.ids), "suite": {"games": args.games, "budget": args.budget,
+        json.dump({**book_info, "players": table, "teams": list(pool.ids), "suite": {"games": args.games, "budget": args.budget,
                    "rows": int(rows.shape[0])}, "team_matrix_player": players[best].name,
                    "team_matrix": [[None if np.isnan(x) else round(float(x), 4) for x in r] for r in matrix]},
                   f, indent=1)

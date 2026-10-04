@@ -108,7 +108,61 @@ input row order does not affect the result.
 At preview, actual leads are unknown. The CLI prints turn-1 suggestions for an explicitly labeled hypothetical
 scenario using the highest-weight own and foe preview suggestions. If either side has no supported suggestion,
 `turn_1` is empty. Use `--own-leads SpeciesA,SpeciesB --foe-leads SpeciesC,SpeciesD` for a specific scenario.
-Nothing is connected to training or M12 search; that requires a separate A/B measurement.
+The book is not connected to training or turn search. Evaluation can opt into preview-only use as described below;
+the paired measurement must precede any recommendation to enable it by default.
+
+## Opt-in preview evaluation and private A/B
+
+Both `python -m duoforge_search.arena` and `python -m duoforge_learn.ladder` accept
+`--book /private/openings.json --book-min-count 20 --book-mode override|prior --book-weight 0.5`.
+Omitting `--book` returns the original player object, without extra network calls or output fields. In the arena,
+the book affects only the candidate's preview (raw and searched configurations); opponents remain unchanged.
+In the ladder, every selected player uses the same opt-in preview policy, including the best player's team matrix.
+No battle-turn decisions or training paths consult the book.
+
+Sheets come from the pool setups through the core's data-name API. Each query supplies both six-species teams and
+own items. The book's existing backoff selects an evidence level; **each full lead/back suggestion** must then
+have at least `book-min-count` actual observed games. A level total, a marginal species support count, or a partial
+lead-only observation does not meet that requirement. Unsupported choices fall back to the original network.
+The wrapper does not skip to another evidence level if that level answered but its full choices fail this gate.
+
+`override` selects the eligible choice with highest observed win rate, ties by serialized species key and then
+lowest legal joint rank. A missing decisive win rate cannot override. `prior` renormalizes the eligible book
+probabilities and takes the greedy argmax of `(1-weight)*net + weight*book`. The book stored unordered pairs:
+its mass is divided equally across every ordering listed by the existing domain helpers for those exact leads
+and backs. Override uses the lowest of those ranks. No backs, names, slot order evidence or legality are guessed.
+Weight zero preserves the original choice without a second model application. Native domain/profile refusals,
+missing backs, insufficient counts, query refusals and absent species are explicit causes.
+
+Book diagnostics distinguish answered queries from applied choices, report backoff levels, count fallback games
+per cause (causes may overlap), and separately count rejected suggestions. Arena summaries include these counts
+per configuration; ladder summaries include them per player over its evaluated preview opportunities. A/B shares
+use all budgeted games as denominator, including games that never reached a preview request. File checksums and
+mode/minimum/weight are recorded only when enabled. Preview-only caches avoid recounting repeated sheet matchups;
+these allocations are evaluation metadata, with no change to the C battle hot paths.
+
+The separate CLI measures the same checkpoint with/without the book against the unchanged checkpoint and each
+stage-1 opponent (BC = `params-0`, `params-3600`, `params-11000`):
+
+```sh
+PYTHONPATH=python python -m duoforge_search.book_ab --run-dir /private/run --checkpoint params-18129 \
+    --book /private/openings.json --out /private/book-ab --book-mode prior --book-weight 0.5 \
+    --games 2000 --workers 8
+```
+
+`--panel BC_PATH,3600_PATH,11000_PATH` can provide explicit checkpoint paths. Defaults are 2000 games **per arm
+per opponent**, four opponents, and eight workers. The game budget must be even. Each sampled pairing has both
+learner seat orders adjacent; the two arms use identical rows, batch seed, workers and cutoff. Bootstrap CIs
+resample those seat pairs together, including the paired treatment-minus-baseline score interval. Reports include
+score/CIs, answered/applied book shares and levels, per-cause fallbacks, and a breakdown by the learner's pool group
+(`PP_/A/B/C`, `LL_`, or explicit `other`). `--seed`, `--max-steps` and `--resamples` are configurable.
+
+The output directory must be empty and outside every repo worktree. It holds raw game CSVs, private preview event
+JSON and `summary.json` with provenance and reports. These are book-derived data: never commit or upload them,
+including derived aggregate numbers in this code PR. A later, separately authorized docs PR may publish aggregate
+results only. The tests use hand-written books and temporary synthetic checkpoints, with a tiny native-engine
+smoke and a NumPy backend stand-in; no private checkpoints or book files are needed. Do not launch the default
+full measurement while the M12 arena is using the CPU.
 
 `build` needs:
 - NumPy;
