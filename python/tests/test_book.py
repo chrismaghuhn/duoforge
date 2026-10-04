@@ -21,7 +21,7 @@ def lead(count=20, wins=12, **extra):
     return {"source": "champions", "format": "gen9championsvgc2026regmc", "team_species": list(OWN),
             "team_items": list(ITEMS), "opposing_team_species": list(FOE), "leads": ["Alpha", "Beta"],
             "opposing_leads": ["Rho", "Sigma"], "backs": ["Gamma", "Delta"],
-            "rating": 1500, "opposing_rating": 1400, "count": count, "decisive_count": count, "wins": wins,
+            "rating_band": 1500, "opposing_rating_band": 1400, "count": count, "decisive_count": count, "wins": wins,
             "win_rate": wins / count if count else None, **extra}
 
 
@@ -29,7 +29,7 @@ def action(count=20, wins=10, **extra):
     return {"source": "champions", "format": "gen9championsvgc2026regmc", "leads": ["Alpha", "Beta"],
             "opposing_leads": ["Rho", "Sigma"], "action_kind": "move", "slot": "a", "actor": "Alpha",
             "action": "Example move", "target": "p2a: Rho", "switch_context": "", "side": 0,
-            "rating": 1500, "opposing_rating": 1400, "count": count, "decisive_count": count, "wins": wins,
+            "rating_band": 1500, "opposing_rating_band": 1400, "count": count, "decisive_count": count, "wins": wins,
             "win_rate": wins / count, **extra}
 
 
@@ -130,16 +130,36 @@ class BookTest(unittest.TestCase):
         self.assertEqual(sparse.turn_1(OWN[:2], FOE[:2])["a"]["level"], "unavailable")
 
     def test_rating_bounds_exclude_unknown_and_preserve_weighted_win_rates(self):
-        rows = [lead(20, 10, rating=1400), lead(20, 16, rating=1600), lead(20, 0, rating=-1)]
-        model = self.load(rows, [action(rating=1600), action(rating=-1)])
+        rows = [lead(20, 10, rating_band=1400), lead(20, 16, rating_band=1600), lead(20, 0, rating_band=-1)]
+        model = self.load(rows, [action(rating_band=1600), action(rating_band=-1)])
         self.assertEqual(model.leads(OWN_ITEMS, FOE, min_rating=1500)["suggestions"][0]["win_rate"], .8)
         self.assertEqual(model.leads(OWN_ITEMS, FOE, max_rating=1400)["count"], 20)
         self.assertEqual(model.turn_1(OWN[:2], FOE[:2], min_rating=1500)["a"]["count"], 20)
-        model = self.load([lead(rating=-1)], [action(rating=-1)])
+        model = self.load([lead(rating_band=-1)], [action(rating_band=-1)])
         with self.assertRaisesRegex(ValueError, "no ratings"):
             model.leads(OWN_ITEMS, FOE, min_rating=1500)
         with self.assertRaisesRegex(ValueError, "no ratings"):
             model.turn_1(OWN[:2], FOE[:2], max_rating=1600)
+
+    def test_rating_band_bounds_are_inclusive_and_reject_unrepresentable_cutoffs(self):
+        model = self.load([lead(rating_band=1400), lead(rating_band=1500), lead(rating_band=1600)],
+                          [action(rating_band=1400), action(rating_band=1500), action(rating_band=1600)])
+        for query, args in ((model.leads, (OWN_ITEMS, FOE)), (model.turn_1, (OWN[:2], FOE[:2]))):
+            result = query(*args, min_rating=1500, max_rating=1500)
+            result = result if query == model.leads else result["a"]
+            self.assertEqual(result["count"], 20)
+            for options in ({"min_rating": 1550}, {"max_rating": 1599}):
+                with self.assertRaisesRegex(ValueError, "multiples of 100"):
+                    query(*args, **options)
+        for row in (lead(rating_band=1550), lead(opposing_rating_band=1499)):
+            with self.assertRaisesRegex(ValueError, "100-point band"):
+                self.load([row])
+
+    def test_old_unbanded_schema_two_rows_are_refused_without_guessing(self):
+        row = lead()
+        row["rating"] = row.pop("rating_band")
+        with self.assertRaisesRegex(ValueError, "rating_band"):
+            self.load([row])
 
     def test_turn_one_per_actor_backoff_and_only_choice_switches(self):
         rows = [action(19, 10), action(1, 1, leads=["Alpha", "Gamma"], action="Other move", slot="b"),
@@ -214,7 +234,7 @@ class BookTest(unittest.TestCase):
                     lead(team_items=[]), lead(team_items=[1, *ITEMS[1:]]), lead(leads=["", "Beta"]),
                     lead(leads=["Alpha", "Alpha"]), lead(leads=["Alpha", "Outside"]),
                     lead(backs=["Alpha", "Gamma"]), lead(opposing_leads=["Outside", "Sigma"]),
-                    lead(rating=-2)]
+                    lead(rating_band=-2)]
         for row in bad_rows:
             with self.subTest(row=row), self.assertRaises(ValueError):
                 self.load([row])
@@ -271,7 +291,7 @@ class BookTest(unittest.TestCase):
         self.load([lead()])
         args = ["--book", str(self.path), "--own", ",".join(OWN), "--foe", ",".join(FOE)]
         for extra in (["--own-leads", "Alpha,Beta"], ["--own-leads", "Alpha,Outside", "--foe-leads", "Rho,Sigma"],
-                      ["--min-count", "0"], ["--own", "@missing-paste-file"]):
+                      ["--min-count", "0"], ["--min-rating", "1550"], ["--own", "@missing-paste-file"]):
             with redirect_stderr(io.StringIO()), self.assertRaises(SystemExit) as error:
                 book.main([*args, *extra])
             self.assertEqual(error.exception.code, 2)

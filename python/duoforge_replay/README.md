@@ -36,12 +36,16 @@ the final source unit. Reports include completed units, games read, openings pro
 output is derived from the unlicensed replay dataset, so keep `--out` outside the repository.
 
 Opening exports now use **schema_version 2**. `leads_per_team` retains aligned `team_species`/`team_items`,
-`opposing_team_species`, both lead pairs, `backs` (null unless both backs were observed), and `rating` plus
-`opposing_rating` (-1 if unknown). Each perspective contributes once to the lead table. Ratings and back pairs
+`opposing_team_species`, both lead pairs, `backs` (null unless both backs were observed), and `rating_band` plus
+`opposing_rating_band`. Bands store `floor(rating / 100) * 100` (e.g. 1511 and 1599 both become 1500), or -1
+if unknown; exact per-game ratings are not aggregation keys. Each perspective contributes once to the lead table.
+Rating bands and back pairs
 are part of the aggregation key, so they can be filtered or marginalized without guessing. Turn-1 rows retain
-both ratings and `side` (0/1), allowing protocol targets to be interpreted relative to the observing side.
+both rating bands and `side` (0/1), allowing protocol targets to be interpreted relative to the observing side.
 Species-brought and compatibility tables remain descriptive summaries. Regenerate old schema-1 exports;
-the missing fields cannot be recovered from those files. Serial and parallel exports remain byte-identical.
+the missing fields cannot be recovered from those files. Experimental schema-2 exports with unbanded `rating`
+fields must also be regenerated; the reader refuses them instead of guessing. Serial and parallel exports remain
+byte-identical.
 
 ## Query the opening book
 
@@ -94,8 +98,10 @@ are descriptive suggestions, not executable engine actions. Confidence is `mediu
 
 The default source is only `champions`. SV VGC requires `--source sv_vgc` (repeat `--source champions` to combine),
 or `sources=("sv_vgc",)` in Python. `--min-rating`/`--max-rating` (Python: `min_rating`/`max_rating`) filter the
-observing player's rating, inclusively. Unknown ratings are excluded; a selected source with only unknown ratings
-fails explicitly when a bound is requested. `opposing_rating` remains available in the export but is not filtered
+observing player's rating-band lower edge, inclusively. Bounds must be multiples of 100:
+`--min-rating 1500 --max-rating 1500` selects the entire 1500-1599 band. Cutoffs such as 1550 are explicitly rejected because the
+export cannot distinguish ratings within a band. Unknown ratings are excluded; a selected source with only unknown
+ratings fails explicitly when a bound is requested. `opposing_rating_band` remains available in the export but is not filtered
 by these options. `--min-count` changes the threshold. Equal probabilities sort by a fixed serialized key, so
 input row order does not affect the result.
 

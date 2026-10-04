@@ -51,10 +51,12 @@ def _validate_row(row, action=False):
                 ("team_species", "team_items", "opposing_team_species", "backs"))
     if any(field not in row for field in (*required, "leads", "opposing_leads")):
         raise ValueError("missing schema-2 fields")
-    for field in ("count", "decisive_count", "wins", "rating", "opposing_rating"):
+    for field in ("count", "decisive_count", "wins", "rating_band", "opposing_rating_band"):
         value = row.get(field)
         if type(value) is not int or value < (-1 if "rating" in field else 0):
             raise ValueError(f"invalid {field}")
+        if "rating" in field and value != -1 and value % 100:
+            raise ValueError(f"{field} must be a 100-point band lower edge, or -1")
     if not 0 <= row["wins"] <= row["decisive_count"] <= row["count"] or row["count"] == 0:
         raise ValueError("inconsistent observation counts")
     own = tuple(sorted(_names(row.get("leads"), 2)))
@@ -134,7 +136,7 @@ class Book:
 
     min_count applies to the total matching observations of each level (per
     actor for actions; per species for marginal leads). Rating bounds apply
-    to the observing player's rating;
+    to the observing player's 100-point rating band lower edge;
     unknown (-1) ratings are excluded when a bound is requested.
     """
 
@@ -150,15 +152,17 @@ class Book:
         for bound in (min_rating, max_rating):
             if bound is not None and (type(bound) is not int or bound < 0):
                 raise ValueError("rating bounds must be nonnegative integers")
+            if bound is not None and bound % 100:
+                raise ValueError("rating bounds must be band lower edges (multiples of 100)")
         if min_rating is not None and max_rating is not None and min_rating > max_rating:
             raise ValueError("min_rating exceeds max_rating")
         rows = [row for row in rows if row["source"] in sources]
         if min_rating is not None or max_rating is not None:
-            if rows and not any(row["rating"] >= 0 for row in rows):
+            if rows and not any(row["rating_band"] >= 0 for row in rows):
                 raise ValueError("rating filter requested but selected source has no ratings")
-            rows = [row for row in rows if row["rating"] >= 0 and
-                    (min_rating is None or row["rating"] >= min_rating) and
-                    (max_rating is None or row["rating"] <= max_rating)]
+            rows = [row for row in rows if row["rating_band"] >= 0 and
+                    (min_rating is None or row["rating_band"] >= min_rating) and
+                    (max_rating is None or row["rating_band"] <= max_rating)]
         return rows
 
     def leads(self, own, foe, *, opposing_leads=None, sources=("champions",), min_count=20,
@@ -310,8 +314,8 @@ def main(argv=None):
     parser.add_argument("--foe-leads", help="ordered comma-separated pair; requires --own-leads")
     parser.add_argument("--source", choices=SOURCES, action="append", help="default: champions only")
     parser.add_argument("--min-count", type=int, default=20)
-    parser.add_argument("--min-rating", type=int)
-    parser.add_argument("--max-rating", type=int)
+    parser.add_argument("--min-rating", type=int, help="minimum rating band lower edge (multiple of 100)")
+    parser.add_argument("--max-rating", type=int, help="maximum rating band lower edge, inclusive (multiple of 100)")
     args = parser.parse_args(argv)
     try:
         book = load(args.book)
