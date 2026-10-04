@@ -1,12 +1,10 @@
 """Protocol-only opening extraction tests using short synthetic replay logs."""
 import io
 import json
-import sys
 import tempfile
 import unittest
 from contextlib import redirect_stderr
 from pathlib import Path
-from types import SimpleNamespace
 from unittest import mock
 
 from duoforge_live.data import trace_to_c
@@ -172,9 +170,17 @@ class OpeningsTest(unittest.TestCase):
         result = openings.aggregate([game])
         self.assertEqual(len(result["tables"]["leads_per_team"]), 2)
         p1_team = next(row for row in result["tables"]["leads_per_team"] if "Pikachu" in row["team_species"])
+        self.assertEqual(dict(zip(p1_team["team_species"], p1_team["team_items"])),
+                         {member.species: member.item for member in game.sides[0].team})
+        self.assertEqual(p1_team["opposing_team_species"], tuple(sorted(P2)))
+        self.assertEqual(p1_team["opposing_leads"], ("Gholdengo", "Incineroar"))
+        self.assertEqual(p1_team["backs"], ("Charizard", "Indeedee-F"))
+        self.assertEqual((p1_team["rating"], p1_team["opposing_rating"]), (1500, 1420))
         self.assertEqual((p1_team["source"], p1_team["format"], p1_team["count"], p1_team["wins"], p1_team["win_rate"]),
                          ("sv_vgc", "gen9vgc2026regi", 1, 1, 1.0))
         thunderbolt = next(row for row in result["tables"]["turn_1_actions"] if row["action"] == "Thunderbolt")
+        self.assertEqual((thunderbolt["rating"], thunderbolt["opposing_rating"], thunderbolt["side"]),
+                         (1500, 1420, 0))
         self.assertEqual((thunderbolt["leads"], thunderbolt["opposing_leads"], thunderbolt["target"],
                           thunderbolt["count"], thunderbolt["win_rate"]),
                          (("Pikachu", "Vivillon"), ("Gholdengo", "Incineroar"), "p2a: Incineroar", 1, 1.0))
@@ -244,9 +250,15 @@ class OpeningsTest(unittest.TestCase):
                             "log": LOG.replace("|showteam|p2|", "|future-line|malformed|")}),
             ]) + "\n", encoding="utf-8")
             guard_calls = []
-            fake_dataset = SimpleNamespace(refuse_repository=lambda path: guard_calls.append(Path(path).resolve()))
+            from duoforge_replay import dataset
+
+            original_guard = dataset.refuse_repository
+
+            def guard(path):
+                original_guard(path)
+                guard_calls.append(Path(path).resolve())
             stderr = io.StringIO()
-            with mock.patch.dict(sys.modules, {"duoforge_replay.dataset": fake_dataset}):
+            with mock.patch.object(dataset, "refuse_repository", side_effect=guard):
                 with redirect_stderr(stderr):
                     serial = openings.build([source_file], root / "out-serial", self.data,
                                             unit_lines=1, workers=1, progress_interval=0.01)
@@ -259,6 +271,7 @@ class OpeningsTest(unittest.TestCase):
             self.assertTrue(serial_path.is_file())
             self.assertTrue(parallel_path.is_file())
             self.assertEqual(serial, parallel)
+            self.assertEqual(serial["schema_version"], 2)
             self.assertEqual(serial_path.read_bytes(), parallel_path.read_bytes())
             self.assertEqual(serial["counters"]["games.processed"], 2)
             self.assertEqual(serial["counters"]["games.skipped.skip:format"], 1)
@@ -269,6 +282,24 @@ class OpeningsTest(unittest.TestCase):
             self.assertIn("4/4 units; 4 games read", stderr.getvalue())
             self.assertIn("2 worker(s)", stderr.getvalue())
             self.assertIn("elapsed", stderr.getvalue())
+
+    def test_schema_two_keys_keep_items_matchups_backs_and_ratings_separate(self):
+        from dataclasses import replace
+
+        game = self.extract()
+        own = game.sides[0]
+        variants = [game,
+                    replace(game, sides=(replace(own, rating=1600), game.sides[1])),
+                    replace(game, sides=(replace(own, brought=None), game.sides[1])),
+                    replace(game, sides=(replace(own, team=(openings.SpeciesItem(own.team[0].species, "other"),)
+                                                         + own.team[1:]), game.sides[1])),
+                    replace(game, sides=(own, replace(game.sides[1], leads=None)))]
+        rows = [row for row in openings.aggregate(variants)["tables"]["leads_per_team"]
+                if "Pikachu" in row["team_species"]]
+        self.assertEqual(len(rows), 5)
+        self.assertEqual(sum(row["count"] for row in rows), 5)
+        self.assertTrue(any(row["backs"] is None for row in rows))
+        self.assertTrue(any(row["opposing_leads"] is None for row in rows))
 
 
 if __name__ == "__main__":

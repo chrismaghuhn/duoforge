@@ -539,9 +539,15 @@ def _accumulate(stats, game, exclude_terastallized=False):
     for side in (0, 1):
         own, opposing = game.sides[side], game.sides[1 - side]
         won = game.winner == side
-        team_key = tuple(sorted(member.species for member in own.team))
+        members = sorted((member.species, member.item) for member in own.team)
+        team_key = tuple(species for species, _item in members)
+        item_key = tuple(item for _species, item in members)
+        opposing_team = tuple(sorted(member.species for member in opposing.team))
         if own.leads is not None:
-            lead_key = (game.source, game.format_id, team_key, tuple(sorted(own.leads)))
+            backs = None if own.brought is None else tuple(sorted(own.brought[2:]))
+            opposing_leads = None if opposing.leads is None else tuple(sorted(opposing.leads))
+            lead_key = (game.source, game.format_id, team_key, item_key, opposing_team,
+                        tuple(sorted(own.leads)), opposing_leads, backs, own.rating, opposing.rating)
             _add_observation(stats["lead_stats"], lead_key, won, decisive)
         if own.brought is not None:
             for species in set(own.brought):
@@ -553,7 +559,8 @@ def _accumulate(stats, game, exclude_terastallized=False):
             if action.turn != 1 or action.side != side:
                 continue
             action_key = (game.source, game.format_id, own_pair, foe_pair, action.kind,
-                          action.position[-1], action.actor, action.name, action.target, action.switch_context)
+                          action.position[-1], action.actor, action.name, action.target, action.switch_context,
+                          own.rating, opposing.rating, side)
             _add_observation(stats["action_stats"], action_key, won, decisive)
 
 
@@ -575,9 +582,12 @@ def _aggregate_result(stats):
             output.append(row)
         return output
 
-    lead_rows = rows(stats["lead_stats"], ("source", "format", "team_species", "leads"))
+    lead_rows = rows(stats["lead_stats"], ("source", "format", "team_species", "team_items",
+                                         "opposing_team_species", "leads", "opposing_leads", "backs",
+                                         "rating", "opposing_rating"))
     action_rows = rows(stats["action_stats"], ("source", "format", "leads", "opposing_leads", "action_kind", "slot",
-                                                "actor", "action", "target", "switch_context"))
+                                                "actor", "action", "target", "switch_context", "rating",
+                                                "opposing_rating", "side"))
     brought_rows = rows(stats["brought_stats"], ("source", "format", "species"))
     compatibility_rows = []
     for (source_name, format_id), values in sorted(stats["compatibility"].items()):
@@ -651,7 +661,7 @@ def _opening_work_unit(unit, exclude_terastallized, data=None):
 
 def _build_result(stats, read_counters, skipped, skipped_diagnostics, exclude_terastallized):
     result = _aggregate_result(stats)
-    result["schema_version"] = 1
+    result["schema_version"] = 2
     result["exclude_terastallized"] = bool(exclude_terastallized)
     result["counters"] = dict(sorted((collections.Counter(result["counters"]) + read_counters + skipped).items()))
     result["diagnostics"] = sorted(result["diagnostics"] + [

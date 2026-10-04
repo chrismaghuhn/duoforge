@@ -35,6 +35,14 @@ serial run. The parallel runner reports progress to stderr every 10 seconds by d
 the final source unit. Reports include completed units, games read, openings processed and elapsed time. The JSON
 output is derived from the unlicensed replay dataset, so keep `--out` outside the repository.
 
+Opening exports now use **schema_version 2**. `leads_per_team` retains aligned `team_species`/`team_items`,
+`opposing_team_species`, both lead pairs, `backs` (null unless both backs were observed), and `rating` plus
+`opposing_rating` (-1 if unknown). Each perspective contributes once to the lead table. Ratings and back pairs
+are part of the aggregation key, so they can be filtered or marginalized without guessing. Turn-1 rows retain
+both ratings and `side` (0/1), allowing protocol targets to be interpreted relative to the observing side.
+Species-brought and compatibility tables remain descriptive summaries. Regenerate old schema-1 exports;
+the missing fields cannot be recovered from those files. Serial and parallel exports remain byte-identical.
+
 `build` needs:
 - NumPy;
 - pyarrow, for parquet sources;
