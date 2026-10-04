@@ -34,7 +34,7 @@
  *
  * Refused (E_UNSUPPORTED), all decided by public facts:
  *   - visible sleep or confusion: elapsed attempts are not in schema 3;
- *   - a PIVOT without a publicly acted move (the pre-move phase can still
+ *   - a PIVOT without a public current-turn move volatile (the pre-move phase can still
  *     hide a Mega declaration; a queue-kind refusal would leak it);
  *   - sealed opponent commands, or a queue with actions other than MOVE and
  *     RESIDUAL (switch/entry/mega continuations need another representation);

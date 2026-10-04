@@ -23,6 +23,7 @@
 
 _Static_assert(sizeof(duoforge_public_state) == 1336u, "public state layout");
 _Static_assert(sizeof(duoforge_hypothesis) == 280u, "hypothesis layout");
+_Static_assert(sizeof(((duoforge_hypothesis *)0)->queue_order) == DFI_QUEUE_CAPACITY, "queue permutation capacity");
 
 /* The weights of a running hidden counter's value v = 1, 2, ... (a draw seen at a random point of its run). */
 static const uint32_t dfi_sleep_weights[3] = {3u, 3u, 2u};           /* sample([2, 3, 3]) */
@@ -262,7 +263,10 @@ static duoforge_status dfi_view_encode(const duoforge_context *ctx, const duofor
         bool moves_started = false;
         for (uint32_t side = 0u; side < DUOFORGE_SIDE_COUNT; ++side) {
             for (uint32_t p = 0u; p < DUOFORGE_ACTIVE_PER_SIDE; ++p) {
-                moves_started = moves_started || b->sides[side].positions[p].move_actions != 0u;
+                /* These publicly shown volatiles end in every residual.
+                 * move_actions, in contrast, is cumulative since entry. */
+                const uint32_t public_turn_flags = DFI_VOL_PROTECT | DFI_VOL_HELPING_HAND | DFI_VOL_FOLLOW_ME;
+                moves_started = moves_started || (b->sides[side].positions[p].flags & public_turn_flags) != 0u;
             }
         }
         if (!moves_started) {
@@ -619,6 +623,7 @@ duoforge_status duoforge_battle_from_view(const duoforge_context *ctx, const duo
     }
     if (!dfi_bytes_equal((const uint8_t *)view, (const uint8_t *)&checked, sizeof checked)) {
         return DUOFORGE_E_MALFORMED;
+    }
     const duoforge_status counter_support = dfi_view_counter_support(ctx, &world, player);
     if (counter_support != DUOFORGE_OK) {
         return counter_support;
@@ -806,7 +811,10 @@ duoforge_status duoforge_public_queue_mask(const duoforge_context *ctx, const du
     }
     if (turn_start->player >= DUOFORGE_SIDE_COUNT || view->player >= DUOFORGE_SIDE_COUNT ||
         turn_start->state_size != dfi_state_encoded_size_of(ctx) || view->state_size != dfi_state_encoded_size_of(ctx) ||
-        !dfi_all_zero(view->reserved, sizeof view->reserved) || !dfi_all_zero(view->pad, sizeof view->pad)) {
+        !dfi_all_zero(view->reserved, sizeof view->reserved) || !dfi_all_zero(view->pad, sizeof view->pad) ||
+        !dfi_all_zero(turn_start->reserved, sizeof turn_start->reserved) || !dfi_all_zero(turn_start->pad, sizeof turn_start->pad) ||
+        !dfi_all_zero(view->state + view->state_size, DUOFORGE_VIEW_STATE_MAX - view->state_size) ||
+        !dfi_all_zero(turn_start->state + turn_start->state_size, DUOFORGE_VIEW_STATE_MAX - turn_start->state_size)) {
         return DUOFORGE_E_MALFORMED;
     }
     if (!dfi_context_fingerprint_matches(ctx, view->state + DFI_ENC_FINGERPRINT_OFF) ||

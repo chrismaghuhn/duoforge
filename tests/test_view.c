@@ -33,6 +33,8 @@
 
 static uint32_t masks_checked;
 static uint32_t masks_refused;
+static uint32_t varied_picks;
+static uint32_t varied_commands;
 
 static uint64_t next(uint64_t *s)
 {
@@ -130,12 +132,28 @@ static size_t bytes_of(const duoforge_context *ctx, const duoforge_battle *b, ui
 }
 
 /* A random valid hypothesis that keeps the true picks of `truth`. */
-static void random_hypothesis(const duoforge_hypothesis *truth, const duoforge_public_state *v, uint64_t *s, duoforge_hypothesis *h)
+static void random_hypothesis(const duoforge_context *ctx, duoforge_battle *scratch, const duoforge_hypothesis *truth,
+                              const duoforge_public_state *v, uint64_t *s, duoforge_hypothesis *h)
 {
     *h = *truth;
     uint32_t brought = 0u;
     for (uint32_t k = 0u; k < DUOFORGE_MAX_ROSTER; ++k) {
         brought += truth->pick_order[k] != DUOFORGE_VIEW_PICK_NONE ? 1u : 0u;
+    }
+    for (uint32_t p = 0u; p < 2u; ++p) {
+        if ((v->foe_pending_mask & (1u << p)) == 0u) {
+            continue;
+        }
+        for (uint32_t attempt = 0u; attempt < 16u; ++attempt) {
+            duoforge_hypothesis candidate = *h;
+            candidate.queued[p].move_slot = (uint8_t)(next(s) % DUOFORGE_MAX_MOVE_SLOTS);
+            const uint32_t target = (uint32_t)(next(s) % 5u);
+            candidate.queued[p].target = target == 4u ? (uint8_t)DUOFORGE_TARGET_NONE : (uint8_t)target;
+            if (duoforge_battle_from_view(ctx, v, &candidate, scratch) == DUOFORGE_OK) {
+                h->queued[p] = candidate.queued[p];
+                break;
+            }
+        }
     }
     if (brought >= 2u) {
         uint8_t candidates[DUOFORGE_MAX_ROSTER];
@@ -184,6 +202,8 @@ static void random_hypothesis(const duoforge_hypothesis *truth, const duoforge_p
     for (uint32_t p = 0u; p < 2u; ++p) {
         h->charge_target[p] = next(s);
     }
+    varied_picks += memcmp(h->pick_order, truth->pick_order, sizeof h->pick_order) != 0 ? 1u : 0u;
+    varied_commands += memcmp(h->queued, truth->queued, sizeof h->queued) != 0 ? 1u : 0u;
 }
 
 typedef struct tally {
@@ -233,7 +253,7 @@ static void check_state(df_test *t, const duoforge_context *ctx, const duoforge_
         DF_CHECK(t, duoforge_battle_observe_ext(ctx, b, p, &ext_true) == DUOFORGE_OK);
         for (uint32_t w = 0u; w < WORLDS; ++w) {
             duoforge_hypothesis r;
-            random_hypothesis(&h, &view, rs, &r);
+            random_hypothesis(ctx, world, &h, &view, rs, &r);
             const duoforge_status ws = duoforge_battle_from_view(ctx, &view, &r, world);
             if (ws == DUOFORGE_E_INVALID_ARGUMENT) {
                 /* a maximum HP under which no exact HP shows a flagged display: the true HP points fix it */
@@ -317,6 +337,14 @@ static void play(df_test *t, const duoforge_context_config *config, const char *
                         ++masks_checked;
                         const duoforge_factored_choice *f = &chosen[p ^ 1u];
                         DF_CHECK(t, mask[(uint32_t)f->slot[0] * DUOFORGE_MAX_SLOT_OPTIONS + f->slot[1]] != 0u);
+                        duoforge_public_state bad_start = starts[p];
+                        bad_start.reserved[0] = 1u;
+                        memset(mask, 0x55, sizeof mask);
+                        DF_CHECK(t, duoforge_public_queue_mask(ctx, &bad_start, &v, mask) == DUOFORGE_E_MALFORMED);
+                        DF_CHECK(t, mask[0] == 0x55u);
+                        bad_start = starts[p];
+                        bad_start.pad[0] = 1u;
+                        DF_CHECK(t, duoforge_public_queue_mask(ctx, &bad_start, &v, mask) == DUOFORGE_E_MALFORMED);
                     } else {
                         ++masks_refused;
                     }
@@ -486,6 +514,12 @@ static void test_early_pivot_information_boundary(df_test *t)
     const uint32_t actor = b->sides[1].positions[0].activation_id;
     const dfi_queue_record move = {actor, (uint8_t)DFI_Q_MOVE, 1u, 0u, 0u, 0u, 0u};
     const dfi_queue_record residual = {0u, (uint8_t)DFI_Q_RESIDUAL, 0u, 0u, 0u, 0u, 0u};
+    b->turn = 3u;
+    for (uint32_t side = 0u; side < 2u; ++side) {
+        for (uint32_t slot = 0u; slot < 2u; ++slot) {
+            b->sides[side].positions[slot].move_actions = 2u;
+        }
+    }
     b->queue_len = 2u;
     b->queue[0] = move;
     b->queue[1] = residual;
@@ -591,6 +625,7 @@ int main(void)
     printf("worlds refused for a flagged display: %u\n", closure.contradicted + team_c.contradicted + pool.contradicted);
     DF_CHECK(&t, closure.checked > 0u && team_c.checked > 0u && pool.checked > 0u);
     printf("queue masks: %u sound, %u explicitly unsupported\n", masks_checked, masks_refused);
-    DF_CHECK(&t, masks_checked == 157u && masks_refused == 199u);
+    DF_CHECK(&t, masks_checked == 20u && masks_refused == 32u);
+    DF_CHECK(&t, varied_picks > 0u && varied_commands > 0u);
     return df_test_end(&t);
 }
