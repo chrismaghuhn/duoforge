@@ -33,7 +33,8 @@
  *   - a charging target: among the targets the move's class allows.
  *
  * Refused (E_UNSUPPORTED), all decided by public facts:
- *   - a PIVOT without a publicly acted move (the pre-move phase can still
+ *   - visible sleep or confusion: elapsed attempts are not in schema 3;
+ *   - a PIVOT without a public current-turn move volatile (the pre-move phase can still
  *     hide a Mega declaration; a queue-kind refusal would leak it);
  *   - sealed opponent commands, or a queue with actions other than MOVE and
  *     RESIDUAL (switch/entry/mega continuations need another representation);
@@ -118,7 +119,8 @@ duoforge_status duoforge_battle_public(const duoforge_context *ctx, const duofor
    hypothesis against the record (a spread past 32 or 66, a pick order that is
    not a brought set agreeing with the leads and the members seen, or any pick
    at TEAM_SELECTION) -> E_INVALID_ARGUMENT; the built world's full check ->
-   E_MALFORMED. *out is written only on success. */
+   E_MALFORMED. Unmodelled public features are E_UNSUPPORTED; a public
+   support-query invariant failure is E_INVARIANT. *out is written only on success. */
 duoforge_status duoforge_battle_from_view(const duoforge_context *ctx, const duoforge_public_state *view,
                                           const duoforge_hypothesis *hypothesis, duoforge_battle *out);
 

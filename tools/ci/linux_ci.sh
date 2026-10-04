@@ -64,7 +64,7 @@ for j in "$@"; do
         job "$j" gcc g++ "" -DCMAKE_BUILD_TYPE=Release -DDUOFORGE_ENABLE_IPO=ON "${py[@]}"
         ;;
     clang-release-ipo) job "$j" clang clang++ "" -DCMAKE_BUILD_TYPE=Release -DDUOFORGE_ENABLE_IPO=ON ;;
-    clang-tsan) job "$j" clang clang++ 'duoforge\.((batch|search|view)\.|encode$)' -DCMAKE_BUILD_TYPE=RelWithDebInfo -DDUOFORGE_ENABLE_TSAN=ON ;;
+    clang-tsan) job "$j" clang clang++ 'duoforge\.((batch|search)\.|view$|encode$)' -DCMAKE_BUILD_TYPE=RelWithDebInfo -DDUOFORGE_ENABLE_TSAN=ON ;;
     --setup-python)
         if python3 -m venv "$HOME/df-venv" && "$PY" -m pip install --quiet --upgrade numpy; then
             echo "RESULT setup-python PASS numpy $("$PY" -c 'import numpy; print(numpy.__version__)')"
