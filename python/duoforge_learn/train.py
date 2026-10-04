@@ -591,9 +591,7 @@ def _run(args, pool, on_start, stop):
             if magnet_refreshed:  # the magnet: the learner as it is now, frozen until the next refresh
                 ref_params = jax.tree_util.tree_map(lambda x: x, params)
             if ref_params is not None:  # the reference's log-probability of each taken action, once per update
-                samples["ref_logp"] = np.asarray(net.evaluate(ref_params, samples["obs"], samples["slots"],
-                                                              samples["mask"], samples["is_team"],
-                                                              samples["actions"])[0], dtype=np.float32)
+                samples["ref_logp"] = ppo.reference_logp(ref_params, samples, net.evaluate, args.minibatch)
             scale = lr_scale(decisions)
             params, opt_state, stats = ppo.update(params, opt_state, tx, samples, rng, net.evaluate,
                                                   epochs=args.epochs, minibatch=args.minibatch,

@@ -1,6 +1,6 @@
 # 0023 — Determinization: the public state and worlds built from it (M12, the visible-information search)
 
-Status: draft. Owner decisions of 2026-10-04: the brief of the visible-information search and the brainstorming answers to questions 1 to 7. The owner approved the design's sections 1 to 3 on 2026-10-04. This draft goes up with the specification `docs/superpowers/specs/2026-10-04-m12-visible-search-design.md`, and the owner approves the API with it (spec section 14). Three points added while writing need the owner's yes (the spec's status): the queue mask, facts rather than derivations in the record, and leaving the foe's own team out of the spread table. The number 0023 is reserved; the HauptSession may renumber it at merge. Follows decisions 0002 (privileged operations), 0007 (what a player sees), 0013 §6.2 (determinization, named there), 0016 (the live tracker) and 0022 (search support).
+Status: the owner approved the specification and this API, with the three added points, on 2026-10-04 ("Implementierung starten"). Owner decisions of 2026-10-04: the brief of the visible-information search and the brainstorming answers to questions 1 to 7. The owner approved the design's sections 1 to 3 on 2026-10-04. It went up with the specification `docs/superpowers/specs/2026-10-04-m12-visible-search-design.md`, and the owner approves the API with it (spec section 14). Three points were added while writing (the spec's status): the queue mask, facts rather than derivations in the record, and leaving the foe's own team out of the spread table. The number 0023 is reserved; the HauptSession may renumber it at merge. Follows decisions 0002 (privileged operations), 0007 (what a player sees), 0013 §6.2 (determinization, named there), 0016 (the live tracker) and 0022 (search support).
 
 ## 1. Context
 
@@ -171,6 +171,11 @@ The random-play proof covers 7,558 supported views, including PIVOT, under CLOSU
 ## Review amendment: elapsed counters (owner, 2026-10-04)
 
 The random-point sleep/confusion mixture in section 4 is superseded. Schema 3 does not store publicly elapsed attempts. Any visible sleep or confusion therefore makes public extraction and world construction explicitly E_UNSUPPORTED. The predicate reads only the player's public observation, never the hidden remaining counter. Tests vary all remaining values and both viewers and check unchanged outputs. The honest arena reports the count and share of raw fallbacks separately for visible sleep and visible confusion (overlap is possible). If that share is large, elapsed tracking requires its own later decision and implementation; it is not silently approximated here.
+
+## PR D: back-off review clarification
+
 Review clarification: back-off level 4 compares exact nature ids, as the NumPy table implements; level 5 uses all remaining source sets. A redraw advances from the original eligible level towards level 5. The stronger exact-nature match is intentional; no nature-rule implementation is hidden in Python.
+
+## PR E: review notes
 
 Review notes for E: stale/missing turn-start records count as unreconstructible. Every stopped-world reproduction includes the search seed, exclusion, preview and turn-start records (or explicit absence), plus the current public view. Redraw failures retain that reproduction. Arena diagnostics report counts and shares per visible-counter cause; sleep and confusion can overlap. Oracle records explicitly label search=oracle. Oracle E also computes N/X for the diagnostic contract; its played E action remains the expected-value maximum, verified against the original path.
