@@ -520,10 +520,13 @@ duoforge_status duoforge_battle_from_view(const duoforge_context *ctx, const duo
             }
             const duoforge_slot_command *c = &hypothesis->queued[r[2]];
             const uint32_t occupant = position_at(s, foe, r[2])[0];
-            if (c->kind != DUOFORGE_SLOT_MOVE || c->mega != 0u || c->reserve != 0u ||
+            if (c->kind != DUOFORGE_SLOT_MOVE || c->mega > 1u || c->reserve != 0u ||
                 !dfi_all_zero(c->reserved, 3u) || occupant >= member_count ||
                 (c->move_slot >= member_at(s, foe, occupant)[DFI_ENC_MEMBER_MOVE_COUNT_OFF] &&
                  c->move_slot != DUOFORGE_MOVE_SLOT_STRUGGLE && c->move_slot != DUOFORGE_MOVE_SLOT_RECHARGE)) {
+                return DUOFORGE_E_INVALID_ARGUMENT;
+            }
+            if (c->mega != 0u && member_at(s, foe, occupant)[DFI_ENC_MEMBER_IS_MEGA_OFF] == 0u) {
                 return DUOFORGE_E_INVALID_ARGUMENT;
             }
             pending |= 1u << r[2];
