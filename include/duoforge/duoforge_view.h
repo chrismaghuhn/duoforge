@@ -19,6 +19,9 @@
  *   - the target of a charging foe reads DUOFORGE_VIEW_HIDDEN_TARGET.
  * Everything else in the encoding is public: a human at the table knows it.
  *
+ * Visible sleep/confusion is currently unsupported; the mappings below only
+ * preserve inactive counters (e.g. a faint awaiting cleanup) for round trips.
+ *
  * A hypothesis holds numbers only. A uniform is a 64-bit word u read as
  * u / 2^64; the engine maps it in integer arithmetic (no floating point):
  * u picks the floor(u * n / 2^64)-th of n equally weighted values, or under
@@ -26,8 +29,6 @@
  *   - foe HP: among the exact values whose display is the one the player
  *     saw, under the world's maximum HP; a member the player never saw is at
  *     full HP;
- * Visible sleep/confusion is currently unsupported; the mappings below only
- * preserve inactive counters (e.g. a faint awaiting cleanup) for round trips.
  *   - a sleep counter: 1, 2 or 3 turns left, weights 3, 3, 2 (sample([2, 3,
  *     3]) seen at a random point of the sleep; the state keeps no elapsed
  *     count to condition on);

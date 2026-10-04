@@ -26,12 +26,12 @@ Status: draft. Owner decisions of 2026-10-04: the brief of the visible-informati
 - **`duoforge_public_state`:** the complete public knowledge of one player. It is fixed in size, versioned and little-endian, like the canonical encoding. It holds:
   - a header (revision, player, context fingerprint, data kind, boundary, request state, epoch, turn);
   - the player's observation and its extension (decisions 0007 and 0018);
-  - what they leave out though the player knows it: the foe's leads, the turns since each counter started, the order of the switch-ins, and what the foe knows of the player;
+  - what they leave out though the player knows it: the foe's leads, the stored public values of non-random counters, the order of the switch-ins, and what the foe knows of the player; elapsed sleep/confusion attempts are not stored in schema 3;
   - at a PIVOT, which positions have acted in the turn, and the player's own queued commands.
 - **`duoforge_hypothesis`:** numbers only. It holds:
   - the foe's six stat point spreads;
   - its pick order, which is empty at TEAM_SELECTION;
-  - one uniform for each foe member's exact HP, for each drawn counter instance on either side, and for each charging foe member's target;
+  - one uniform for each foe member's exact HP and each charging foe member's target, plus counter uniform slots used only for inactive-counter round trips while visible sleep/confusion remains unsupported;
   - at a PIVOT, the foe's queued commands for the slots that have not acted, as slot commands of the choice API.
 
   A uniform is a 64-bit word, read as u / 2^64.
@@ -59,7 +59,7 @@ Status: draft. Owner decisions of 2026-10-04: the brief of the visible-informati
 - **A uniform u** picks the ⌊u · n / 2^64⌋-th of n equally weighted values. With integer weights, it picks the value whose cumulative range holds ⌊u · total / 2^64⌋.
 - **Stats and maximum HP** follow from the stat points by the formulas.
 - **Exact HP:** u picks among the values that the shown percent and flag allow. A never-seen member is at full HP.
-- **A drawn counter:** u picks from the posterior of its draw, given the turns since it started.
+- **Visible sleep/confusion:** public extraction and world construction return `E_UNSUPPORTED` explicitly, based only on the player's visible status facts, never on hidden remaining counters. Schema 3 lacks elapsed-attempt history, so no conditioned draw is claimed. The honest search plays the raw policy for these decisions; the arena reports the count and share per cause (`visible_sleep`, `visible_confusion`, with overlap possible). Elapsed tracking, if needed after observing those shares, requires a later decision.
 - **A charging target:** u picks among the targets the move could have chosen.
 - **Every value derived from a hidden one,** such as a Substitute's HP, is computed from the world's values.
 - **`duoforge_battle_hypothesis`** gives each uniform the middle of the range of words that picks the true value.
@@ -73,7 +73,7 @@ Status: draft. Owner decisions of 2026-10-04: the brief of the visible-informati
 | `E_SCHEMA_MISMATCH` | a record of another revision |
 | `E_MALFORMED` | a record's reserved bytes or ranges are wrong |
 | `E_INVALID_ARGUMENT` | the hypothesis contradicts the record: a spread past 32 or 66; a pick order against the leads or a member seen, or one at TEAM_SELECTION; a queued command for a slot that has acted, or one its member could not have chosen. Also a queue mask for a view not at a PIVOT, or with a `turn_start` that is not the same player's TURN record of that turn |
-| `E_UNSUPPORTED` | a state the record cannot express, from a documented list: a POOL tail feature whose support bit is clear, or any hidden value whose distribution the engine does not model |
+| `E_UNSUPPORTED` | visible sleep/confusion (public status facts only), or a state the record cannot express, from a documented list: a POOL tail feature whose support bit is clear, or any hidden value whose distribution the engine does not model |
 | `E_INVARIANT` | a built world fails the full check (an engine bug) |
 
 **Contracts, each proven by a test** (spec section 4.3)
