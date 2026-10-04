@@ -66,6 +66,7 @@ class HonestSearch(unittest.TestCase):
         roots.query_factored()
 
     def test_hidden_roots_give_exactly_same_decision(self):
+        # Visible counters are refused, so this searched-world test varies spreads, bench order and RNG instead.
         for seat in (0, 1):
             with self.subTest(seat=seat), duoforge.Context(C["DUOFORGE_DATA_KIND_POOL"]) as ctx, \
                     duoforge.Batch(ctx, np.repeat(duoforge.reference_setups([0]), 2), 2, 42) as b, \
