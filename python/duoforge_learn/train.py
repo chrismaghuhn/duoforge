@@ -241,8 +241,11 @@ def _load_init(args):
     try:
         refuse_repository(args.out)
         raw = checkpoint.load(args.init)[1]
+        format_version = raw.get("format", 1)
+        if format_version != 2:
+            raise ValueError(f"format-{format_version} checkpoints cannot start a run; --init needs format 2")
         encoder = checkpoint.encoder_of(raw)
-        if encoder not in (2, features.ENCODER) or raw.get("format") != 2:
+        if encoder not in checkpoint.WIDENABLE_ENCODERS:
             raise ValueError(f"a checkpoint of encoder {encoder} (format {raw.get('format')}) cannot start a run of "
                              f"encoder {features.ENCODER}")
         params, config = checkpoint.load_current(args.init)

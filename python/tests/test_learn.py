@@ -17,7 +17,7 @@ import numpy as np
 
 import duoforge
 from duoforge import features
-from duoforge_learn import model, train
+from duoforge_learn import checkpoint, model, train
 from duoforge_learn.checkpoint import encoder_of, load
 from duoforge_learn.selfplay import TEAM_ACTIONS, SelfPlay
 
@@ -64,6 +64,81 @@ class PipelineTest(unittest.TestCase):
                 train.main(["--updates", "1", "--minutes", "0", "--out", out])
         finally:
             shutil.rmtree(out, ignore_errors=True)
+
+    def test_train_init_widens_encoder3_format2_and_preserves_zero_column_output(self):
+        import jax
+
+        model_config = {"version": 1, "hidden": 16, "option_hidden": 8}
+        old_params = model.init(jax.random.PRNGKey(314), features.obs_size(3), features.SLOT_FEATURES, TEAM_ACTIONS,
+                                hidden=model_config["hidden"], option_hidden=model_config["option_hidden"])
+        with tempfile.TemporaryDirectory(prefix="duoforge-train-init-") as folder, duoforge.Context() as context:
+            old_path = os.path.join(folder, "encoder-3.npz")
+            config = {
+                "model": model_config,
+                "encoder": 3,
+                "ext_supported": 0,
+                "features": list(features.FEATURE_NAMES[:features.obs_size(3)]),
+                "slot_features": list(features.SLOT_FEATURE_NAMES),
+                "data": {"kind": "closure", "fingerprint": context.fingerprint().hex()},
+                "teams": {"ids": ["A", "B"], "sha256": ["", ""]},
+                "update": 7,
+                "decisions": 123,
+                "ids": checkpoint.ids_of(context),
+            }
+            checkpoint.save(old_path, old_params, config)
+            args = train.parse(["--init", old_path, "--out", os.path.join(folder, "run"), "--updates", "1",
+                                "--minutes", "0"])
+            new_params, new_config = train._load_init(args)
+            self.assertEqual(new_config["format"], 2)
+            self.assertIn("ids", new_config)
+            self.assertEqual(new_config["encoder"], features.ENCODER)
+            self.assertEqual(args.model, "v1")
+            self.assertEqual(args.data_kind, "closure")
+
+            rng = np.random.default_rng(20261003)
+            obs3 = rng.standard_normal((4, features.obs_size(3))).astype(np.float32)
+            obs4 = np.zeros((4, features.OBS_SIZE), dtype=np.float32)
+            obs4[:, :features.obs_size(3)] = obs3
+            self.assertFalse(obs4[:, features.obs_size(3):].any())
+            slots = rng.standard_normal((4, 2, 32, features.SLOT_FEATURES)).astype(np.float32)
+            mask = np.ones((4, 32, 32), dtype=bool)
+            output3 = model.apply(old_params, obs3, slots, mask)
+            output4 = model.apply(new_params, obs4, slots, mask)
+            for old_output, new_output in zip(output3, output4):
+                np.testing.assert_allclose(np.asarray(new_output), np.asarray(old_output), rtol=1e-6, atol=1e-6)
+
+    def test_train_init_refuses_unknown_encoder_and_format1(self):
+        import jax
+
+        model_config = {"version": 1, "hidden": 8, "option_hidden": 4}
+        params = model.init(jax.random.PRNGKey(2718), features.obs_size(3), features.SLOT_FEATURES, TEAM_ACTIONS,
+                            hidden=model_config["hidden"], option_hidden=model_config["option_hidden"])
+        with tempfile.TemporaryDirectory(prefix="duoforge-train-init-refusals-") as folder, duoforge.Context() as ctx:
+            config = {
+                "model": model_config,
+                "encoder": 9,
+                "ext_supported": 0,
+                "features": list(features.FEATURE_NAMES[:features.obs_size(3)]),
+                "slot_features": list(features.SLOT_FEATURE_NAMES),
+                "data": {"kind": "closure", "fingerprint": ctx.fingerprint().hex()},
+                "teams": {"ids": ["A", "B"], "sha256": ["", ""]},
+                "update": 0,
+                "decisions": 0,
+                "ids": checkpoint.ids_of(ctx),
+            }
+            unknown = os.path.join(folder, "unknown-encoder.npz")
+            checkpoint.save(unknown, params, config)
+            args = train.parse(["--init", unknown, "--out", os.path.join(folder, "unknown-run"), "--updates", "1",
+                                "--minutes", "0"])
+            with self.assertRaisesRegex(SystemExit, "encoder 9"):
+                train._load_init(args)
+
+            legacy = os.path.join(folder, "format-1.npz")
+            train.save(legacy, params, {"seed": 1})
+            args = train.parse(["--init", legacy, "--out", os.path.join(folder, "legacy-run"), "--updates", "1",
+                                "--minutes", "0"])
+            with self.assertRaisesRegex(SystemExit, "format 1"):
+                train._load_init(args)
 
     def test_ladder_passes_each_checkpoint_its_encoder(self):
         # ladder.main gives every pair's evaluation the players' encoder

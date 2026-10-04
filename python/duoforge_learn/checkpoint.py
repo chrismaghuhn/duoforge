@@ -107,6 +107,8 @@ FORMAT2_KEYS = ("model", "encoder", "features", "slot_features", "data", "teams"
 EMBEDDINGS = ("species", "move", "item", "ability", "nature")
 _TABLES = {"species": data.TABLE_SPECIES, "move": data.TABLE_MOVE, "item": data.TABLE_ITEM,
            "ability": data.TABLE_ABILITY, "nature": data.TABLE_NATURE}
+# Format-2 layouts load_current can map to this encoder by column name.
+WIDENABLE_ENCODERS = (2, 3, features.ENCODER)
 
 
 def ids_of(context):
@@ -166,7 +168,7 @@ def load_current(path):
     if config["features"] != list(features.FEATURE_NAMES) or \
             config["slot_features"] != list(features.SLOT_FEATURE_NAMES):
         encoder = encoder_of(config)
-        if encoder not in (2, 3, features.ENCODER):
+        if encoder not in WIDENABLE_ENCODERS:
             raise ValueError(f"{path}: a format-2 checkpoint of encoder {encoder} cannot be widened")
         params, config = widen(params, config, features.FEATURE_NAMES, features.SLOT_FEATURE_NAMES)
         config["encoder"] = features.ENCODER
