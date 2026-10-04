@@ -28,6 +28,8 @@ def _require(array, dtype, shape, name):
         raise ValueError(f"{name} must have shape {shape}, not {array.shape}")
     if not array.flags["C_CONTIGUOUS"]:
         raise ValueError(f"{name} must be C-contiguous")
+    if not array.flags["ALIGNED"]:
+        raise ValueError(f"{name} must be aligned for its dtype")
 
 
 def _buffer(name):
@@ -91,6 +93,46 @@ class Batch:
         }
 
     # ---------------------------------------------------------- step mode
+
+    def public(self, players):
+        """Public records (E,) and per-env statuses. Both returned arrays are
+        borrowed buffers overwritten by the next public() call; copy them
+        to retain a history snapshot.
+
+        An invalid batch argument raises before C touches any environment;
+        an unsupported environment keeps its record and reports its status.
+        """
+        _require(players, np.uint32, (self.envs,), "players")
+        if (players > 1).any():
+            raise ValueError("players must hold 0 or 1")
+        if "public" not in self._buffers:
+            self._buffers["public"] = (np.zeros(self.envs, _layout.PUBLIC_STATE), np.zeros(self.envs, np.uint32))
+        views, statuses = self._buffers["public"]
+        statuses.fill(0xFFFFFFFF)
+        st = self._lib.duoforge_batch_public(self._live(), ptr(players), ptr(views), ptr(statuses))
+        if st and (statuses == 0xFFFFFFFF).all():
+            self._check(st)
+        return views, statuses
+
+    def from_view(self, views, hypotheses, count=None):
+        """Build the first count worlds; return per-env statuses, preserving
+        each failed environment. Inputs must be contiguous structured arrays.
+        """
+        if count is None:
+            count = len(views)
+        count = uint(count, 32, "count")
+        if count > self.envs:
+            raise ValueError(f"{count} worlds do not fit {self.envs} environments")
+        _require(views, _layout.PUBLIC_STATE, (count,), "views")
+        _require(hypotheses, _layout.HYPOTHESIS, (count,), "hypotheses")
+        if "from_view" not in self._buffers:
+            self._buffers["from_view"] = np.zeros(self.envs, np.uint32)
+        statuses = self._buffers["from_view"][:count]
+        statuses.fill(0xFFFFFFFF)
+        st = self._lib.duoforge_batch_from_view(self._live(), ptr(views), ptr(hypotheses), count, ptr(statuses))
+        if st and (statuses == 0xFFFFFFFF).all():
+            self._check(st)
+        return statuses
 
     def query(self):
         """Fills requests, observations, candidates and counts."""

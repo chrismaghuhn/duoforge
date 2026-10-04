@@ -11,6 +11,7 @@
 
 #include <duoforge/duoforge.h>
 #include <duoforge/duoforge_batch.h>
+#include <duoforge/duoforge_view.h>
 
 typedef struct layout_field {
     const char *name;
@@ -136,11 +137,27 @@ int main(void)
     STRUCT(duoforge_batch_config, false, FIELD(duoforge_batch_config, env_count),
            FIELD(duoforge_batch_config, worker_count), FIELD(duoforge_batch_config, seed),
            FIELD(duoforge_batch_config, setups));
-    STRUCT(duoforge_batch_episode, true, FIELD(duoforge_batch_episode, env), FIELD(duoforge_batch_episode, episode),
+    STRUCT(duoforge_batch_episode, false, FIELD(duoforge_batch_episode, env), FIELD(duoforge_batch_episode, episode),
            FIELD(duoforge_batch_episode, steps), FIELD(duoforge_batch_episode, decisions),
            FIELD(duoforge_batch_episode, turns), FIELD(duoforge_batch_episode, result),
            FIELD(duoforge_batch_episode, digest));
+    STRUCT(duoforge_public_state, false, FIELD(duoforge_public_state, revision), FIELD(duoforge_public_state, player),
+           FIELD(duoforge_public_state, state_size), FIELD(duoforge_public_state, boundary), FIELD(duoforge_public_state, turn),
+           FIELD(duoforge_public_state, request_mask), FIELD(duoforge_public_state, epoch), FIELD(duoforge_public_state, foe_seen_mask),
+           FIELD(duoforge_public_state, foe_leads), FIELD(duoforge_public_state, foe_pending_mask), FIELD(duoforge_public_state, queue_count),
+           FIELD(duoforge_public_state, reserved), FIELD(duoforge_public_state, state), FIELD(duoforge_public_state, pad));
+    STRUCT(duoforge_hypothesis, true, FIELD(duoforge_hypothesis, revision), FIELD(duoforge_hypothesis, reserved0),
+           FIELD(duoforge_hypothesis, stat_points), FIELD(duoforge_hypothesis, pick_order), FIELD(duoforge_hypothesis, reserved1),
+           FIELD(duoforge_hypothesis, hp), FIELD(duoforge_hypothesis, sleep), FIELD(duoforge_hypothesis, confusion),
+           FIELD(duoforge_hypothesis, charge_target), FIELD(duoforge_hypothesis, queued), FIELD(duoforge_hypothesis, queue_order),
+           FIELD(duoforge_hypothesis, reserved2));
     printf("  },\n  \"constants\": {\n");
+    CONSTANT(DUOFORGE_VIEW_REVISION, false);
+    CONSTANT(DUOFORGE_HYPOTHESIS_REVISION, false);
+    CONSTANT(DUOFORGE_VIEW_STATE_MAX, false);
+    CONSTANT(DUOFORGE_VIEW_HIDDEN, false);
+    CONSTANT(DUOFORGE_VIEW_HIDDEN_TARGET, false);
+    CONSTANT(DUOFORGE_VIEW_PICK_NONE, false);
     CONSTANT(DUOFORGE_MAX_CANDIDATES, false);
     CONSTANT(DUOFORGE_MAX_SLOT_OPTIONS, false);
     CONSTANT(DUOFORGE_DIGEST_SIZE, false);

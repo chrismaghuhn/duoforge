@@ -519,7 +519,32 @@ EPISODE = _struct([
 ], 56)
 
 # The C struct name of every dtype, as duoforge_layout_dump prints it.
+from . import _view_layout
+
+CONSTANTS.update(_view_layout.CONSTANTS)
+
+
+def _record(c_name, formats):
+    entry = _view_layout.STRUCTS[c_name]
+    return np.dtype({"names": list(entry["fields"]), "formats": [formats[n] for n in entry["fields"]],
+                     "offsets": [v[0] for v in entry["fields"].values()], "itemsize": entry["size"]}, align=True)
+
+
+PUBLIC_STATE = _record("duoforge_public_state", {
+    **{name: _U4 for name in ("revision", "player", "state_size", "boundary", "turn", "request_mask", "epoch")},
+    "foe_seen_mask": _U1, "foe_leads": (_U1, (2,)), "foe_pending_mask": _U1, "queue_count": _U1,
+    "reserved": (_U1, (3,)), "state": (_U1, (CONSTANTS["DUOFORGE_VIEW_STATE_MAX"],)), "pad": (_U1, (3,)),
+})
+HYPOTHESIS = _record("duoforge_hypothesis", {
+    "revision": _U4, "reserved0": _U4, "stat_points": (_U1, (6, 6)), "pick_order": (_U1, (6,)),
+    "reserved1": (_U1, (6,)), "hp": (_U8, (6,)), "sleep": (_U8, (2, 6)), "confusion": (_U8, (2, 2)),
+    "charge_target": (_U8, (2,)), "queued": (SLOT_COMMAND, (2,)), "queue_order": (_U1, (12,)),
+    "reserved2": (_U1, (4,)),
+})
+
 BY_C_NAME = {
+    "duoforge_public_state": PUBLIC_STATE,
+    "duoforge_hypothesis": HYPOTHESIS,
     "duoforge_context_config": CONTEXT_CONFIG,
     "duoforge_move_setup": MOVE_SETUP,
     "duoforge_member_setup": MEMBER_SETUP,
