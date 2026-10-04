@@ -9,6 +9,7 @@ from .context import Context, reference_setups
 from .errors import DuoforgeError, DuoforgeLibraryError
 from .policies import RandomPolicy, ScriptedPolicy, seeds
 from . import data, teams
+from .view import queue_mask
 
 __all__ = [
     "Batch",
@@ -26,6 +27,7 @@ __all__ = [
     "library_path",
     "load_library",
     "reference_setups",
+    "queue_mask",
     "search_seeds",
     "seeds",
     "status_name",
