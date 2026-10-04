@@ -172,6 +172,8 @@ A future fair planner builds hypothetical states from its own observation/histor
 
 Search leaves are expanded by `duoforge_batch_expand` (decision 0022): each leaf is a copy of its root reseeded from the search seeds `duoforge_search_seeds(seed, key, sample)` before it steps, so no leaf sees the root's future gameplay RNG.
 
+A player record and hypothesis rebuild worlds through `duoforge_battle_from_view` (decision 0023). The worker forms `duoforge_batch_public` and `duoforge_batch_from_view` allocate nothing. PIVOT views mask remaining foe commands and canonicalize queue order; the engine owns command reconstruction and the public queue mask.
+
 ## 11. Non-goals for v0.1
 
 No all-generation support, full Pokédex certification, GUI, public-server automation, tournament administration, generic scripting VM, GPU battle kernel, learned rules, production RL algorithm or advanced search implementation. Build the smallest verified vertical slice first.

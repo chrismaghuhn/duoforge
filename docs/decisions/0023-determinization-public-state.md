@@ -143,3 +143,13 @@ The engine state decided these details. `include/duoforge/duoforge_view.h` docum
 - **A world's RNG** is seeded with (0, 0), since a zero PCG state is not a valid state; every leaf is reseeded anyway.
 - **A built world that fails the full check** is `E_MALFORMED`, as the strict decoder reports it.
 - **The proof (`tests/test_view.c`):** 80 random games each under CLOSURE, TEAM_C and POOL (Teams A, B and C), about 8,500 views. Each view is a byte-equal round trip; 4 random hypotheses per view give back the same public state and the same observation and extension; hidden sleep, confusion and charging targets all occur.
+
+## 5. PR B: batches and PIVOT queues
+
+The batch calls use the existing worker hooks, allocate no storage, report per-environment statuses and preserve each refused output/environment. Invalid batch arguments are checked before any worker runs.
+
+Public record revision 2 exposes the pending foe-slot mask and queue count. At PIVOT, remaining MOVE records are sorted by kind, side and slot, and the foe's move slot and target are masked. Queue order also depended on hidden priorities and speeds; it therefore cannot remain public. Hypothesis revision 2 adds the pending commands and the inverse permutation for privileged byte-exact round trips. Search worlds use the canonical permutation: the resumed switch-ins run before the engine sorts remaining moves again. A queue containing switch, entry or Mega actions, or sealed opponent commands at a re-prompt, remains explicitly unsupported. No original queue order is passed to the honest search.
+
+The queue mask builds neutral worlds in C and compares public switch/activation, Mega and move-use facts. It does not compare targets. An unknown brought member can change the turn-start domain's switch options and pair indices: without a unique brought set the mask returns E_UNSUPPORTED, rather than guessing those indices. This refusal belongs to the search's unreconstructible counts.
+
+The random-play proof covers 8,332 views, including PIVOT, under CLOSURE, TEAM_C and POOL. It checks 157 successful queue masks against the true turn-start pair and counts 199 explicit ambiguous-bench refusals. Batch equivalence and argument atomicity run with 1, 2, 3, 4, 8 and 16 workers; the TSan selection includes view tests. The library MINOR bump remains assigned at merge, as for PR A.

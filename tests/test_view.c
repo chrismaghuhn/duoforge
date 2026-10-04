@@ -29,6 +29,9 @@
 #define RNG_OFF 52u
 #define RNG_SIZE 24u
 
+static uint32_t masks_checked;
+static uint32_t masks_refused;
+
 static uint64_t next(uint64_t *s)
 {
     uint64_t z = (*s += 0x9E3779B97F4A7C15u);
@@ -252,6 +255,9 @@ static void play(df_test *t, const duoforge_context_config *config, const char *
         setup.rng_initseq = next(&rs) >> 1;
         duoforge_battle *b = df_make_battle(ctx, &setup);
         duoforge_battle *world = df_make_battle(ctx, &setup);
+        duoforge_public_state starts[2];
+        bool saved[2] = {false, false};
+        duoforge_factored_choice chosen[2];
         for (uint32_t step = 0u; step < MAX_STEPS; ++step) {
             check_state(t, ctx, b, world, &rs, ty);
             duoforge_request rq[2];
@@ -261,6 +267,30 @@ static void play(df_test *t, const duoforge_context_config *config, const char *
                 DF_CHECK(t, duoforge_battle_request(ctx, b, p, &rq[p]) == DUOFORGE_OK);
                 DF_CHECK(t, duoforge_battle_factored(ctx, b, p, &d[p]) == DUOFORGE_OK);
                 c[p] = random_choice(&d[p], &rs);
+            }
+            if (rq[0].boundary_kind == DUOFORGE_BOUNDARY_TURN && rq[0].requested && rq[1].requested) {
+                for (uint32_t p = 0u; p < 2u; ++p) {
+                    saved[p] = duoforge_battle_public(ctx, b, p, &starts[p]) == DUOFORGE_OK;
+                    chosen[p] = c[p];
+                }
+            }
+            if (rq[0].boundary_kind == DUOFORGE_BOUNDARY_PIVOT) {
+                for (uint32_t p = 0u; p < 2u; ++p) {
+                    duoforge_public_state v;
+                    if (!saved[p] || duoforge_battle_public(ctx, b, p, &v) != DUOFORGE_OK) {
+                        continue;
+                    }
+                    uint8_t mask[DUOFORGE_MAX_SLOT_OPTIONS * DUOFORGE_MAX_SLOT_OPTIONS];
+                    const duoforge_status ms = duoforge_public_queue_mask(ctx, &starts[p], &v, mask);
+                    DF_CHECK(t, ms == DUOFORGE_OK || ms == DUOFORGE_E_UNSUPPORTED);
+                    if (ms == DUOFORGE_OK) {
+                        ++masks_checked;
+                        const duoforge_factored_choice *f = &chosen[p ^ 1u];
+                        DF_CHECK(t, mask[(uint32_t)f->slot[0] * DUOFORGE_MAX_SLOT_OPTIONS + f->slot[1]] != 0u);
+                    } else {
+                        ++masks_refused;
+                    }
+                }
             }
             if (rq[0].boundary_kind == DUOFORGE_BOUNDARY_TERMINAL) {
                 break;
@@ -288,7 +318,7 @@ static void test_uniforms(df_test *t)
     duoforge_hypothesis h;
     memset(&h, 0, sizeof h);
     DF_CHECK(t, sizeof(duoforge_public_state) == 1336u);
-    DF_CHECK(t, sizeof(duoforge_hypothesis) == 248u);
+    DF_CHECK(t, sizeof(duoforge_hypothesis) == 280u);
 }
 
 static void test_arguments(df_test *t)
@@ -311,7 +341,7 @@ static void test_arguments(df_test *t)
     DF_CHECK(t, duoforge_battle_from_view(ctx, &v, NULL, b) == DUOFORGE_E_NULL_ARGUMENT);
     DF_CHECK(t, duoforge_battle_from_view(ctx, &v, &h, NULL) == DUOFORGE_E_NULL_ARGUMENT);
     duoforge_public_state bad = v;
-    bad.revision = 2u;
+    bad.revision = 99u;
     DF_CHECK(t, duoforge_battle_from_view(ctx, &bad, &h, b) == DUOFORGE_E_SCHEMA_MISMATCH);
     bad = v;
     bad.reserved[0] = 1u;
@@ -337,6 +367,13 @@ static void test_arguments(df_test *t)
     hb = h;
     hb.pick_order[0] = 0u; /* a pick at TEAM_SELECTION */
     DF_CHECK(t, duoforge_battle_from_view(ctx, &v, &hb, b) == DUOFORGE_E_INVALID_ARGUMENT);
+    hb = h;
+    hb.queued[0].kind = (uint8_t)DUOFORGE_SLOT_MOVE;
+    DF_CHECK(t, duoforge_battle_from_view(ctx, &v, &hb, b) == DUOFORGE_E_INVALID_ARGUMENT);
+    uint8_t mask[DUOFORGE_MAX_SLOT_OPTIONS * DUOFORGE_MAX_SLOT_OPTIONS];
+    memset(mask, 0x55, sizeof mask);
+    DF_CHECK(t, duoforge_public_queue_mask(ctx, &v, &v, mask) == DUOFORGE_E_INVALID_ARGUMENT);
+    DF_CHECK(t, mask[0] == 0x55u && mask[sizeof mask - 1u] == 0x55u);
     /* nothing written on a refusal */
     uint8_t before[DF_STATE_ENCODED_MAX];
     uint8_t after[DF_STATE_ENCODED_MAX];
@@ -347,12 +384,56 @@ static void test_arguments(df_test *t)
     duoforge_context_destroy(ctx);
 }
 
+static void test_batch(df_test *t)
+{
+    const uint32_t workers[] = {1u, 2u, 3u, 4u, 8u, 16u};
+    duoforge_context *ctx = df_make_context(&df_config_k1);
+    duoforge_battle_setup setups[16];
+    for (uint32_t e = 0u; e < 16u; ++e) {
+        (void)duoforge_reference_setup(e % 2u, &setups[e]);
+    }
+    for (uint32_t k = 0u; k < 6u; ++k) {
+        duoforge_batch_config config = {16u, workers[k], 42u, setups};
+        duoforge_batch *b = NULL;
+        DF_CHECK(t, duoforge_batch_create(ctx, &config, &b) == DUOFORGE_OK);
+        duoforge_public_state views[16];
+        duoforge_hypothesis hypotheses[16];
+        duoforge_status statuses[16];
+        uint32_t players[16];
+        for (uint32_t e = 0u; e < 16u; ++e) {
+            players[e] = e % 2u;
+        }
+        DF_CHECK(t, duoforge_batch_public(b, players, views, statuses) == DUOFORGE_OK);
+        for (uint32_t e = 0u; e < 16u; ++e) {
+            duoforge_public_state single;
+            const duoforge_battle *battle = duoforge_batch_env(b, e);
+            DF_CHECK(t, duoforge_battle_public(ctx, battle, players[e], &single) == DUOFORGE_OK);
+            DF_CHECK(t, statuses[e] == DUOFORGE_OK && memcmp(&single, &views[e], sizeof single) == 0);
+            DF_CHECK(t, duoforge_battle_hypothesis(ctx, battle, players[e], &hypotheses[e]) == DUOFORGE_OK);
+        }
+        DF_CHECK(t, duoforge_batch_from_view(b, views, hypotheses, 16u, statuses) == DUOFORGE_OK);
+        players[15] = 2u;
+        memset(statuses, 0x55, sizeof statuses);
+        DF_CHECK(t, duoforge_batch_public(b, players, views, statuses) == DUOFORGE_E_INVALID_ARGUMENT);
+        DF_CHECK(t, statuses[0] == 0x55555555u);
+        DF_CHECK(t, duoforge_batch_from_view(b, views, hypotheses, 17u, statuses) == DUOFORGE_E_INVALID_ARGUMENT);
+        DF_CHECK(t, statuses[0] == 0x55555555u);
+        hypotheses[3].revision = 999u;
+        DF_CHECK(t, duoforge_batch_from_view(b, views, hypotheses, 16u, statuses) == DUOFORGE_E_SCHEMA_MISMATCH);
+        DF_CHECK(t, statuses[3] == DUOFORGE_E_SCHEMA_MISMATCH && statuses[4] == DUOFORGE_OK);
+        DF_CHECK(t, duoforge_batch_from_view(b, NULL, NULL, 0u, NULL) == DUOFORGE_OK);
+        duoforge_batch_destroy(b);
+    }
+    duoforge_context_destroy(ctx);
+}
+
 int main(void)
 {
     df_test t;
     df_test_begin(&t, "duoforge.view");
     test_uniforms(&t);
     test_arguments(&t);
+    test_batch(&t);
     tally closure = {0};
     tally team_c = {0};
     tally pool = {0};
@@ -366,5 +447,7 @@ int main(void)
            closure.confused + team_c.confused + pool.confused, closure.charging + team_c.charging + pool.charging);
     printf("worlds refused for a flagged display: %u\n", closure.contradicted + team_c.contradicted + pool.contradicted);
     DF_CHECK(&t, closure.checked > 0u && team_c.checked > 0u && pool.checked > 0u);
+    printf("queue masks: %u sound, %u explicitly unsupported\n", masks_checked, masks_refused);
+    DF_CHECK(&t, masks_checked == 157u && masks_refused == 199u);
     return df_test_end(&t);
 }
