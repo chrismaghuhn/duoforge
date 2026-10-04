@@ -87,6 +87,21 @@ def _pad(a, size):
     return np.concatenate([a, pad])
 
 
+def reference_logp(params, samples, evaluate_fn=model.evaluate, minibatch=4096):
+    """The log-probability under params of each sample's taken action (the
+    KL anchor's "ref_logp"), in minibatches of a fixed size, the last one
+    padded, so that a large rollout does not ask the device for every row at
+    once and every call has one shape."""
+    n = samples["actions"].shape[0]
+    keys = ("obs", "slots", "mask", "is_team", "actions")
+    out = np.empty(n, dtype=np.float32)
+    for start in range(0, n, minibatch):
+        rows = min(minibatch, n - start)
+        batch = [_pad(samples[k][start:start + rows], minibatch) for k in keys]
+        out[start:start + rows] = np.asarray(evaluate_fn(params, *batch)[0])[:rows]
+    return out
+
+
 @functools.partial(jax.jit, static_argnames=("tx", "evaluate_fn", "clip", "value_coef"))
 def _epochs(params, opt_state, data, order, tx, evaluate_fn, clip, entropy_coef, value_coef, kl_coef, lr_scale):
     """Every minibatch of every epoch in one call: order (steps, minibatch)
