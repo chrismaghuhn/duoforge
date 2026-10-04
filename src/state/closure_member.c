@@ -375,6 +375,11 @@ static bool dfi_derive_stats(uint32_t species, uint32_t is_mega, uint32_t item, 
     return true;
 }
 
+bool dfi_closure_member_derive(dfi_member *m)
+{
+    return dfi_derive_stats(m->species_id, m->is_mega, m->item, m->nature, m->stat_points, &m->hp_max, m->stats);
+}
+
 static bool dfi_derive_pp(uint32_t move, uint8_t *out)
 {
     const dfi_move_data *mv = &dfi_pool_moves[move];
