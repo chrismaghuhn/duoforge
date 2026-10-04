@@ -79,6 +79,24 @@ def reduce(tables, weights, qs, prior_rank, uniform, lam, oracle=False):
         sol = matrix.BayesSolution(single.x, [single.y], single.value, single.exact)
     else:
         sol = matrix.solve_bayes(tables, weights)
+    # A float basis can leave roundoff at a pure vertex (e.g. 1e-16 on
+    # another row). Canonicalize only within four float64 ulps of a vertex,
+    # and only if the candidate still satisfies the unchanged certificate.
+    def vertex(strategy):
+        best = int(np.argmax(strategy))
+        if 1.0 - float(strategy[best]) > 4 * np.finfo(np.float64).eps:
+            return strategy
+        candidate = np.zeros_like(strategy)
+        candidate[best] = 1.0
+        return candidate
+
+    x, ys = vertex(sol.x), [vertex(y) for y in sol.ys]
+    try:
+        matrix.bayes_certify(tables, weights, x, ys)
+    except SearchError:
+        pass  # retain the original certified solution; do not approximate it
+    else:
+        sol = matrix.BayesSolution(x, ys, sol.value, sol.exact)
     expected = matrix.bayes_expected_values(tables, weights, qs)
     best = np.flatnonzero(expected == expected.max())
     ev = int(best[np.argmin(np.asarray(prior_rank)[best])])

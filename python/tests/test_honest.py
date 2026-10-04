@@ -19,6 +19,28 @@ from python.tests import test_search as search_tests
 C = _layout.CONSTANTS
 
 
+class CanonicalReduction(unittest.TestCase):
+    def test_roundoff_at_vertex_is_certified_before_recording(self):
+        a = np.array([[0.0, 0.0], [1.0, 1.0]])
+        solution = honest.matrix.Solution(np.array([1e-16, 1 - 1e-16]), np.array([1.0, 0.0]), 1.0, False)
+        honest.matrix.certify(a, solution.x, solution.y)
+        with mock.patch.object(honest.matrix, "solve", return_value=solution):
+            _, record = honest.reduce(a[None], [1], [[1, 0]], [0, 1], 0.5, 0.5, oracle=True)
+        self.assertEqual(record["x"], [0.0, 1.0])
+        honest.matrix.bayes_certify(a[None], [1], np.array(record["x"]), [np.array(record["ys"][0])])
+        _, mixed = honest.reduce(np.array([[[1., -1.], [-1., 1.]]]), [1], [[0.5, 0.5]], [0, 1], 0.5, 0.5)
+        np.testing.assert_array_equal(mixed["x"], [0.5, 0.5])
+
+    def test_small_real_probability_survives_failed_vertex_certificate(self):
+        a = np.array([[0., 1e16], [1., -1.]])
+        solution = honest.matrix.Solution(np.array([2e-16, 1 - 2e-16]), np.array([1 - 1e-16, 1e-16]), 1., True)
+        honest.matrix.certify(a, solution.x, solution.y)
+        with mock.patch.object(honest.matrix, "solve", return_value=solution):
+            _, record = honest.reduce(a[None], [1], [[1, 0]], [0, 1], 0.5, 0.5, oracle=True)
+        np.testing.assert_array_equal(record["x"], solution.x)
+        np.testing.assert_array_equal(record["ys"][0], solution.y)
+
+
 class HonestSearch(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
