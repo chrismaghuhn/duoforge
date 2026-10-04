@@ -108,7 +108,7 @@ class SpreadTable:
         h.update(int(self.min_sets).to_bytes(4, "little"))
         return h.hexdigest()
 
-    def candidates(self, species, nature, item, exclude_team=None):
+    def candidates(self, species, nature, item, exclude_team=None, min_level=1):
         """(level, indices): the key level used (1..5) and the table rows it draws from."""
         keep = np.ones(self.team.shape, dtype=bool) if exclude_team is None else self.team != int(exclude_team)
         levels = (
@@ -119,14 +119,17 @@ class SpreadTable:
             keep,
         )
         for level, mask in enumerate(levels, start=1):
+            if level < min_level:
+                continue
             rows = np.flatnonzero(mask)
             if rows.size >= (self.min_sets if level == 1 else 1):
                 return level, rows
         raise ValueError("the spread table has no set left once the foe's team is left out")
 
-    def draw(self, word, species, nature, item, exclude_team=None):
+    def draw(self, word, species, nature, item, exclude_team=None, redraw=0):
         """(spread, level): the whole spread a word picks for a member."""
-        level, rows = self.candidates(species, nature, item, exclude_team)
+        initial, _ = self.candidates(species, nature, item, exclude_team)
+        level, rows = self.candidates(species, nature, item, exclude_team, min(5, initial + redraw))
         return self.spreads[rows[pick(word, rows.size)]].copy(), level
 
 
@@ -151,6 +154,9 @@ class Belief:
         if len(members) > ROSTER:
             raise ValueError(f"at most {ROSTER} foe members")
         attempts = np.zeros((n, ROSTER), dtype=np.int64) if attempts is None else np.asarray(attempts)
+        if attempts.shape != (n, ROSTER) or not np.issubdtype(attempts.dtype, np.integer) or \
+                (attempts < 0).any() or (attempts > 255).any():
+            raise ValueError("attempts must be (n, 6) integer redraw counts from 0 through 255")
         out = {
             "stat_points": np.zeros((n, ROSTER, STAT_POINTS), dtype=np.uint8),
             "levels": np.zeros((n, ROSTER), dtype=np.int64),
@@ -163,13 +169,12 @@ class Belief:
             "weights": np.full(n, 1.0 / n, dtype=np.float64),
         }
         for w in range(n):
-            words = world_words(seed, key, w, np.arange(128))
+            words = world_words(seed, key, w, np.arange(64))
             for m, (species, nature, item) in enumerate(members):
                 a = int(attempts[w, m])
                 k = WORDS["spread"] + m if a == 0 else WORDS["respread"] + 8 * (a - 1) + m
-                if k >= words.size:
-                    raise ValueError(f"member {m} of world {w}: too many spreads refused")
-                spread, level = self.table.draw(words[k], species, nature, item, exclude_team)
+                word = words[k] if a == 0 else world_words(seed, key, w, [k])[0]
+                spread, level = self.table.draw(word, species, nature, item, exclude_team, redraw=a)
                 out["stat_points"][w, m] = spread
                 out["levels"][w, m] = level
             out["hp"][w] = words[WORDS["hp"]:WORDS["hp"] + ROSTER]
