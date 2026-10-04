@@ -23,6 +23,18 @@ python -m duoforge_replay build --source <parquet or jsonl files or dirs> --prio
     [--workers N] [--limit-parts N] [--unit-lines N] [--ps-dir <pinned Showdown>] [--node node]
 ```
 
+The opening-book builder reads the same replay sources and writes count and win-rate tables:
+
+```sh
+python -m duoforge_replay.openings --source <parquet or jsonl files or dirs> --out <dir> \
+    [--workers N] [--progress-interval SECONDS]
+```
+
+It defaults to up to 16 worker processes, or the number of available CPU cores if lower. Set `--workers 1` for a
+serial run. The parallel runner reports progress to stderr every 10 seconds by default, and every run reports after
+the final source unit. Reports include completed units, games read, openings processed and elapsed time. The JSON
+output is derived from the unlicensed replay dataset, so keep `--out` outside the repository.
+
 `build` needs:
 - NumPy;
 - pyarrow, for parquet sources;

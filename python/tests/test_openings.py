@@ -1,8 +1,10 @@
 """Protocol-only opening extraction tests using short synthetic replay logs."""
+import io
 import json
 import sys
 import tempfile
 import unittest
+from contextlib import redirect_stderr
 from pathlib import Path
 from types import SimpleNamespace
 from unittest import mock
@@ -186,6 +188,15 @@ class OpeningsTest(unittest.TestCase):
         pikachu = next(row for row in result["tables"]["species_brought"] if row["species"] == "Pikachu")
         self.assertEqual((pikachu["count"], pikachu["wins"], pikachu["win_rate"]), (1, 1, 1.0))
 
+    def test_turn_one_actions_sort_targets_with_and_without_a_target(self):
+        log = LOG.replace(
+            "|move|p1a: Charizard|Thunderbolt|p2a: Incineroar|",
+            "|move|p1a: Charizard|Thunderbolt|p2a: Incineroar|\n|move|p1a: Charizard|Thunderbolt|",
+        )
+        result = openings.aggregate([self.extract(log=log)])
+        thunderbolts = [row for row in result["tables"]["turn_1_actions"] if row["action"] == "Thunderbolt"]
+        self.assertEqual({row["target"] for row in thunderbolts}, {None, "p2a: Incineroar"})
+
     def test_excluding_terastallized_games_preserves_pool_compatibility_counts(self):
         game = self.extract(format_id="gen9vgc2026regi")
         result = openings.aggregate([game], exclude_terastallized=True)
@@ -226,22 +237,38 @@ class OpeningsTest(unittest.TestCase):
             source_file = root / "sample.jsonl"
             source_file.write_text("\n".join([
                 json.dumps({"id": "included", "formatid": "gen9vgc2026regi", "log": LOG}),
+                json.dumps({"id": "included-2", "formatid": "gen9vgc2026regi",
+                            "log": LOG.replace("|win|Alice", "|win|Bob")}),
                 json.dumps({"id": "not-vgc", "formatid": "gen9ou", "log": LOG}),
                 json.dumps({"id": "bad-sheets", "formatid": "gen9vgc2026regi",
                             "log": LOG.replace("|showteam|p2|", "|future-line|malformed|")}),
             ]) + "\n", encoding="utf-8")
             guard_calls = []
             fake_dataset = SimpleNamespace(refuse_repository=lambda path: guard_calls.append(Path(path).resolve()))
+            stderr = io.StringIO()
             with mock.patch.dict(sys.modules, {"duoforge_replay.dataset": fake_dataset}):
-                result = openings.build([source_file], root / "out", self.data, unit_lines=1)
-            self.assertEqual(guard_calls, [(root / "out").resolve()])
-            self.assertTrue((root / "out" / "openings.json").is_file())
-            self.assertEqual(result["counters"]["games.processed"], 1)
-            self.assertEqual(result["counters"]["games.skipped.skip:format"], 1)
-            self.assertEqual(result["counters"]["games.skipped.skip:sheets"], 1)
+                with redirect_stderr(stderr):
+                    serial = openings.build([source_file], root / "out-serial", self.data,
+                                            unit_lines=1, workers=1, progress_interval=0.01)
+                with redirect_stderr(stderr):
+                    parallel = openings.build([source_file], root / "out-parallel", self.data,
+                                              unit_lines=1, workers=2, progress_interval=0.01)
+            self.assertEqual(guard_calls, [(root / "out-serial").resolve(), (root / "out-parallel").resolve()])
+            serial_path = root / "out-serial" / "openings.json"
+            parallel_path = root / "out-parallel" / "openings.json"
+            self.assertTrue(serial_path.is_file())
+            self.assertTrue(parallel_path.is_file())
+            self.assertEqual(serial, parallel)
+            self.assertEqual(serial_path.read_bytes(), parallel_path.read_bytes())
+            self.assertEqual(serial["counters"]["games.processed"], 2)
+            self.assertEqual(serial["counters"]["games.skipped.skip:format"], 1)
+            self.assertEqual(serial["counters"]["games.skipped.skip:sheets"], 1)
             self.assertIn({"source": "sv_vgc", "format": "gen9vgc2026regi", "reason": "lines.unknown.future-line",
-                           "count": 1}, result["diagnostics"])
-            self.assertEqual(json.loads((root / "out" / "openings.json").read_text(encoding="utf-8")), result)
+                           "count": 1}, serial["diagnostics"])
+            self.assertEqual(json.loads(serial_path.read_text(encoding="utf-8")), serial)
+            self.assertIn("4/4 units; 4 games read", stderr.getvalue())
+            self.assertIn("2 worker(s)", stderr.getvalue())
+            self.assertIn("elapsed", stderr.getvalue())
 
 
 if __name__ == "__main__":

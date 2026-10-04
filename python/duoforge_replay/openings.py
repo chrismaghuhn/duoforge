@@ -10,12 +10,17 @@ it does not mean that a name exists in the full Champions dex.
 
 Run with::
 
-    python -m duoforge_replay.openings --source REPLAY_PATH --out LOCAL_DIR
+    python -m duoforge_replay.openings --source REPLAY_PATH --out LOCAL_DIR [--workers N]
 """
 import argparse
 import collections
+import concurrent.futures
 import json
+import multiprocessing
+import os
 import re
+import sys
+import time
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -472,6 +477,15 @@ def extract_game(replay_id, format_id, log, data):
     )
 
 
+def _stable_sort_value(value):
+    """Make heterogeneous tuple keys sortable without collapsing None and empty values."""
+    if value is None:
+        return 0, "", ""
+    if isinstance(value, tuple):
+        return 1, "tuple", tuple(_stable_sort_value(part) for part in value)
+    return 1, type(value).__name__, value
+
+
 def _add_observation(table, key, won, decisive):
     values = table[key]
     values["count"] += 1
@@ -490,57 +504,70 @@ def _action_target(target, data, active_species):
     return target.strip()
 
 
-def aggregate(games, exclude_terastallized=False):
-    """Build deterministic count/win-rate tables from extracted games."""
-    lead_stats, action_stats, brought_stats = collections.defaultdict(collections.Counter), \
-        collections.defaultdict(collections.Counter), collections.defaultdict(collections.Counter)
-    compatibility = collections.defaultdict(collections.Counter)
-    diagnostics = collections.defaultdict(collections.Counter)
-    game_counters = collections.Counter()
+def _new_aggregate():
+    return {
+        "lead_stats": collections.defaultdict(collections.Counter),
+        "action_stats": collections.defaultdict(collections.Counter),
+        "brought_stats": collections.defaultdict(collections.Counter),
+        "compatibility": collections.defaultdict(collections.Counter),
+        "diagnostics": collections.defaultdict(collections.Counter),
+        "game_counters": collections.Counter(),
+    }
 
-    for game in games:
-        group = (game.source, game.format_id)
-        compatibility[group]["games"] += 1
-        compatibility[group]["pool_compatible"] += int(game.pool_compatible)
-        compatibility[group]["pool_incompatible"] += int(not game.pool_compatible)
-        compatibility[group]["terastallized"] += int(game.terastallized)
-        for reason in game.pool_incompatible_reasons:
-            compatibility[group][f"pool_incompatible_{reason}"] += 1
-        for reason, count in game.diagnostics:
-            diagnostics[(game.source, game.format_id, reason)]["count"] += count
 
-        game_counters["games.processed"] += 1
-        game_counters["games.pool_compatible"] += int(game.pool_compatible)
-        game_counters["games.pool_incompatible"] += int(not game.pool_compatible)
-        game_counters["games.terastallized"] += int(game.terastallized)
-        game_counters["games.excluded.terastallized"] += int(exclude_terastallized and game.terastallized)
-        if exclude_terastallized and game.terastallized:
+def _accumulate(stats, game, exclude_terastallized=False):
+    group = (game.source, game.format_id)
+    stats["compatibility"][group]["games"] += 1
+    stats["compatibility"][group]["pool_compatible"] += int(game.pool_compatible)
+    stats["compatibility"][group]["pool_incompatible"] += int(not game.pool_compatible)
+    stats["compatibility"][group]["terastallized"] += int(game.terastallized)
+    for reason in game.pool_incompatible_reasons:
+        stats["compatibility"][group][f"pool_incompatible_{reason}"] += 1
+    for reason, count in game.diagnostics:
+        stats["diagnostics"][(game.source, game.format_id, reason)]["count"] += count
+
+    counters = stats["game_counters"]
+    counters["games.processed"] += 1
+    counters["games.pool_compatible"] += int(game.pool_compatible)
+    counters["games.pool_incompatible"] += int(not game.pool_compatible)
+    counters["games.terastallized"] += int(game.terastallized)
+    counters["games.excluded.terastallized"] += int(exclude_terastallized and game.terastallized)
+    if exclude_terastallized and game.terastallized:
+        return
+
+    decisive = game.winner in (0, 1)
+    for side in (0, 1):
+        own, opposing = game.sides[side], game.sides[1 - side]
+        won = game.winner == side
+        team_key = tuple(sorted(member.species for member in own.team))
+        if own.leads is not None:
+            lead_key = (game.source, game.format_id, team_key, tuple(sorted(own.leads)))
+            _add_observation(stats["lead_stats"], lead_key, won, decisive)
+        if own.brought is not None:
+            for species in set(own.brought):
+                _add_observation(stats["brought_stats"], (game.source, game.format_id, species), won, decisive)
+        if own.leads is None or opposing.leads is None:
             continue
-
-        decisive = game.winner in (0, 1)
-        for side in (0, 1):
-            own, opposing = game.sides[side], game.sides[1 - side]
-            won = game.winner == side
-            team_key = tuple(sorted(member.species for member in own.team))
-            if own.leads is not None:
-                lead_key = (game.source, game.format_id, team_key, tuple(sorted(own.leads)))
-                _add_observation(lead_stats, lead_key, won, decisive)
-            if own.brought is not None:
-                for species in set(own.brought):
-                    _add_observation(brought_stats, (game.source, game.format_id, species), won, decisive)
-            if own.leads is None or opposing.leads is None:
+        own_pair, foe_pair = tuple(sorted(own.leads)), tuple(sorted(opposing.leads))
+        for action in game.actions:
+            if action.turn != 1 or action.side != side:
                 continue
-            own_pair, foe_pair = tuple(sorted(own.leads)), tuple(sorted(opposing.leads))
-            for action in game.actions:
-                if action.turn != 1 or action.side != side:
-                    continue
-                action_key = (game.source, game.format_id, own_pair, foe_pair, action.kind,
-                              action.position[-1], action.actor, action.name, action.target, action.switch_context)
-                _add_observation(action_stats, action_key, won, decisive)
+            action_key = (game.source, game.format_id, own_pair, foe_pair, action.kind,
+                          action.position[-1], action.actor, action.name, action.target, action.switch_context)
+            _add_observation(stats["action_stats"], action_key, won, decisive)
 
-    def rows(stats, fields):
+
+def _merge_aggregate(target, partial):
+    for name in ("lead_stats", "action_stats", "brought_stats", "compatibility", "diagnostics"):
+        for key, values in partial[name].items():
+            target[name][key].update(values)
+    target["game_counters"].update(partial["game_counters"])
+
+
+def _aggregate_result(stats):
+    def rows(table, fields):
         output = []
-        for key, values in sorted(stats.items(), key=lambda item: item[0]):
+        for key, values in sorted(table.items(), key=lambda item: _stable_sort_value(item[0])):
             row = dict(zip(fields, key))
             decisive = values["decisive"]
             row.update(count=values["count"], decisive_count=decisive, wins=values["wins"],
@@ -548,15 +575,15 @@ def aggregate(games, exclude_terastallized=False):
             output.append(row)
         return output
 
-    lead_rows = rows(lead_stats, ("source", "format", "team_species", "leads"))
-    action_rows = rows(action_stats, ("source", "format", "leads", "opposing_leads", "action_kind", "slot",
-                                      "actor", "action", "target", "switch_context"))
-    brought_rows = rows(brought_stats, ("source", "format", "species"))
+    lead_rows = rows(stats["lead_stats"], ("source", "format", "team_species", "leads"))
+    action_rows = rows(stats["action_stats"], ("source", "format", "leads", "opposing_leads", "action_kind", "slot",
+                                                "actor", "action", "target", "switch_context"))
+    brought_rows = rows(stats["brought_stats"], ("source", "format", "species"))
     compatibility_rows = []
-    for (source_name, format_id), values in sorted(compatibility.items()):
+    for (source_name, format_id), values in sorted(stats["compatibility"].items()):
         compatibility_rows.append({"source": source_name, "format": format_id, **dict(values)})
     diagnostic_rows = [{"source": source_name, "format": format_id, "reason": reason, "count": values["count"]}
-                       for (source_name, format_id, reason), values in sorted(diagnostics.items())]
+                       for (source_name, format_id, reason), values in sorted(stats["diagnostics"].items())]
     return {
         "tables": {
             "leads_per_team": lead_rows,
@@ -564,9 +591,17 @@ def aggregate(games, exclude_terastallized=False):
             "species_brought": brought_rows,
             "pool_compatibility": compatibility_rows,
         },
-        "counters": dict(sorted(game_counters.items())),
+        "counters": dict(sorted(stats["game_counters"].items())),
         "diagnostics": diagnostic_rows,
     }
+
+
+def aggregate(games, exclude_terastallized=False):
+    """Build deterministic count/win-rate tables from extracted games."""
+    stats = _new_aggregate()
+    for game in games:
+        _accumulate(stats, game, exclude_terastallized=exclude_terastallized)
+    return _aggregate_result(stats)
 
 
 def read_games(paths, unit_lines=4096, counters=None):
@@ -578,35 +613,44 @@ def read_games(paths, unit_lines=4096, counters=None):
         yield from source.read_unit(unit, SOURCE_FORMAT_FILTER, counters)
 
 
-def build(paths, out_dir, data, *, unit_lines=4096, exclude_terastallized=False):
-    """Extract, aggregate, and write JSON into an output directory outside every repository worktree."""
-    from . import dataset
+_OPENING_WORKER_DATA = None
 
-    out_dir = Path(out_dir)
-    dataset.refuse_repository(out_dir)
-    if out_dir.exists() and not out_dir.is_dir():
-        raise ValueError(f"output path {out_dir} is not a directory")
+
+def _opening_worker_init(data):
+    global _OPENING_WORKER_DATA
+    _OPENING_WORKER_DATA = data
+
+
+def _opening_work_unit(unit, exclude_terastallized, data=None):
+    """Extract one source unit and return compact, mergeable table accumulators."""
+    if data is None:
+        data = _OPENING_WORKER_DATA
+    if data is None:
+        raise RuntimeError("opening worker data was not initialized")
+
     read_counters = collections.Counter()
-    skipped_diagnostics = collections.Counter()
     skipped = collections.Counter()
+    skipped_diagnostics = collections.Counter()
+    stats = _new_aggregate()
+    for replay_id, format_id, log in source.read_unit(unit, SOURCE_FORMAT_FILTER, read_counters):
+        read_counters["games.read"] += 1
+        source_name = source_for_format(format_id)
+        if source_name is None:
+            skipped["games.skipped.skip:format"] += 1
+            continue
+        try:
+            game = extract_game(replay_id, format_id, log, data)
+        except OpeningSkip as skip:
+            skipped[f"games.skipped.{skip.reason}"] += 1
+            for reason, count in skip.diagnostics:
+                skipped_diagnostics[(source_name, format_id, reason)] += count
+            continue
+        _accumulate(stats, game, exclude_terastallized=exclude_terastallized)
+    return unit.id, stats, dict(read_counters), dict(skipped), dict(skipped_diagnostics)
 
-    def extracted_games():
-        for replay_id, format_id, log in read_games(paths, unit_lines=unit_lines, counters=read_counters):
-            read_counters["games.read"] += 1
-            source_name = source_for_format(format_id)
-            if source_name is None:
-                skipped["games.skipped.skip:format"] += 1
-                continue
-            try:
-                game = extract_game(replay_id, format_id, log, data)
-            except OpeningSkip as skip:
-                skipped[f"games.skipped.{skip.reason}"] += 1
-                for reason, count in skip.diagnostics:
-                    skipped_diagnostics[(source_name, format_id, reason)] += count
-                continue
-            yield game
 
-    result = aggregate(extracted_games(), exclude_terastallized=exclude_terastallized)
+def _build_result(stats, read_counters, skipped, skipped_diagnostics, exclude_terastallized):
+    result = _aggregate_result(stats)
     result["schema_version"] = 1
     result["exclude_terastallized"] = bool(exclude_terastallized)
     result["counters"] = dict(sorted((collections.Counter(result["counters"]) + read_counters + skipped).items()))
@@ -614,6 +658,90 @@ def build(paths, out_dir, data, *, unit_lines=4096, exclude_terastallized=False)
         {"source": source_name, "format": format_id, "reason": reason, "count": count}
         for (source_name, format_id, reason), count in skipped_diagnostics.items()
     ], key=lambda row: (row["source"], row["format"], row["reason"]))
+    return result
+
+
+def build(paths, out_dir, data, *, unit_lines=4096, exclude_terastallized=False, workers=1,
+          progress_interval=10, log=None):
+    """Extract, aggregate, and write JSON into an output directory outside every repository worktree."""
+    from . import dataset
+
+    if unit_lines < 1:
+        raise ValueError("unit_lines must be at least 1")
+    if workers < 1:
+        raise ValueError("workers must be at least 1")
+    if progress_interval <= 0:
+        raise ValueError("progress_interval must be greater than 0")
+    log = log or (lambda message: print(message, file=sys.stderr, flush=True))
+    out_dir = Path(out_dir)
+    dataset.refuse_repository(out_dir)
+    if out_dir.exists() and not out_dir.is_dir():
+        raise ValueError(f"output path {out_dir} is not a directory")
+
+    started = time.monotonic()
+    log("openings: indexing source units")
+    units = source.units(paths, unit_lines=unit_lines)
+    log(f"openings: processing {len(units)} source units with {workers} worker(s)")
+    stats = _new_aggregate()
+    read_counters = collections.Counter()
+    skipped = collections.Counter()
+    skipped_diagnostics = collections.Counter()
+    completed = 0
+    last_report = started
+
+    def absorb(result):
+        nonlocal completed
+        _unit_id, unit_stats, unit_read, unit_skipped, unit_diagnostics = result
+        _merge_aggregate(stats, unit_stats)
+        read_counters.update(unit_read)
+        skipped.update(unit_skipped)
+        skipped_diagnostics.update(unit_diagnostics)
+        completed += 1
+
+    def report(force=False):
+        nonlocal last_report
+        now = time.monotonic()
+        if not force and now - last_report < progress_interval:
+            return
+        elapsed = max(now - started, 1e-9)
+        games_read = read_counters["games.read"]
+        games_processed = stats["game_counters"]["games.processed"]
+        log(f"openings: {completed}/{len(units)} units; {games_read:,} games read, "
+            f"{games_processed:,} openings processed; {elapsed:.1f}s elapsed")
+        last_report = now
+
+    if workers == 1:
+        for unit in units:
+            absorb(_opening_work_unit(unit, exclude_terastallized, data))
+            report()
+    elif units:
+        context = multiprocessing.get_context("spawn")
+        with concurrent.futures.ProcessPoolExecutor(workers, mp_context=context, initializer=_opening_worker_init,
+                                                    initargs=(data,)) as pool:
+            queue = iter(units)
+            pending = set()
+            while len(pending) < workers:
+                try:
+                    pending.add(pool.submit(_opening_work_unit, next(queue), exclude_terastallized))
+                except StopIteration:
+                    break
+            while pending:
+                timeout = max(0.0, progress_interval - (time.monotonic() - last_report))
+                finished, pending = concurrent.futures.wait(
+                    pending, timeout=timeout, return_when=concurrent.futures.FIRST_COMPLETED)
+                if not finished:
+                    report(force=True)
+                    continue
+                for future in finished:
+                    absorb(future.result())
+                report()
+                while len(pending) < workers:
+                    try:
+                        pending.add(pool.submit(_opening_work_unit, next(queue), exclude_terastallized))
+                    except StopIteration:
+                        break
+    report(force=True)
+    result = _build_result(stats, read_counters, skipped, skipped_diagnostics, exclude_terastallized)
     out_dir.mkdir(parents=True, exist_ok=True)
     output = out_dir / "openings.json"
     temporary = out_dir / "openings.json.tmp"
@@ -628,15 +756,24 @@ def main(argv=None):
     parser.add_argument("--source", required=True, nargs="+", type=Path, help="Parquet/JSONL files or directories")
     parser.add_argument("--out", required=True, type=Path, help="local output directory, outside the repository")
     parser.add_argument("--unit-lines", type=int, default=4096, help="JSONL rows per existing source unit")
+    parser.add_argument("--workers", type=int, default=min(16, os.cpu_count() or 1),
+                        help="process workers (default: up to 16 available CPU cores; use 1 for serial)")
+    parser.add_argument("--progress-interval", type=float, default=10,
+                        help="seconds between progress reports (default: 10)")
     parser.add_argument("--exclude-terastallized", action="store_true",
                         help="exclude games with Terastallization in turns 1-3 from statistics tables")
     args = parser.parse_args(argv)
     if args.unit_lines < 1:
         parser.error("--unit-lines must be at least 1")
+    if args.workers < 1:
+        parser.error("--workers must be at least 1")
+    if args.progress_interval <= 0:
+        parser.error("--progress-interval must be greater than 0")
     from duoforge_live import data as live_data
 
     result = build(args.source, args.out, live_data.load(kind="pool"), unit_lines=args.unit_lines,
-                   exclude_terastallized=args.exclude_terastallized)
+                   exclude_terastallized=args.exclude_terastallized, workers=args.workers,
+                   progress_interval=args.progress_interval)
     print(f"wrote {args.out / 'openings.json'} ({result['counters'].get('games.processed', 0)} games)")
     return 0
 
