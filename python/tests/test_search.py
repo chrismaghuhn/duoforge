@@ -11,12 +11,15 @@ docs/superpowers/specs/2026-10-03-m12-search-stage1-design.md).
   the reproduction data.
 - SearchPlayer in play_suite (plan task 10): the step and the seats, K = 1
   reproduces the raw network, the cut-off leaves use the tiebreak.
+- The measurement CLI (plan task 11) end to end on tiny checkpoints.
 
 The NumPy parts are in test_search_numpy.py. Teams A and B (the arena: A, B
 and C) under POOL, at fixed init keys, on the CPU.
 """
 import hashlib
+import json
 import os
+import tempfile
 import unittest
 from unittest import mock
 
@@ -571,6 +574,89 @@ class ArenaSearch(unittest.TestCase):
             open_leaves = r["k"] * r["m"] * r["s"] - leaves["refused"] - leaves["terminal"]
             self.assertEqual(r["last_step"], r["step"] == 2)
             self.assertEqual(leaves["cut_off"], open_leaves if r["step"] == 2 else 0)
+
+
+class ArenaCli(unittest.TestCase):
+    """The measurement CLI (plan task 11) end to end: a run directory with tiny v2-S checkpoints of Teams A, B
+    and C under POOL, its ladder file, two sample counts against R and the panel."""
+
+    @classmethod
+    def setUpClass(cls):
+        import jax
+        from duoforge import teams
+        from duoforge_learn import checkpoint, policy
+        cls.tmp = tempfile.TemporaryDirectory()
+        cls.run_dir = os.path.join(cls.tmp.name, "night")
+        os.makedirs(cls.run_dir)
+        cfg = policy.v2_config("S", hidden=64)
+        params = jax.device_get(policy.make(cfg).init(jax.random.PRNGKey(7)))
+        with duoforge.Context(C["DUOFORGE_DATA_KIND_POOL"]) as ctx:
+            pool = teams.load(ctx, ["A", "B", "C"])
+            with duoforge.Batch(ctx, reference_setups([0]), 1, SEED) as b:
+                mask = int(b.observe_ext()[0, 0]["supported"]) & features.version_features(features.ENCODER)
+            config = {"model": cfg, "encoder": features.ENCODER, "ext_supported": mask,
+                      "ids": checkpoint.ids_of(ctx), "features": list(features.FEATURE_NAMES),
+                      "slot_features": list(features.SLOT_FEATURE_NAMES),
+                      "data": {"kind": "pool", "fingerprint": ctx.fingerprint().hex()},
+                      "teams": {"ids": list(pool.ids), "sha256": list(pool.sha256), "weights": [1.0] * 3},
+                      "decisions": 0, "train": {"seed": 1}}
+        for u in (0, 100, 200, 300, 400):
+            checkpoint.save(os.path.join(cls.run_dir, f"params-{u}.npz"), params, dict(config, update=u))
+        with open(os.path.join(cls.run_dir, "ladder.json"), "w", encoding="utf-8") as f:
+            json.dump({"players": [{"player": "init", "elo": 0.0}, {"player": "night update 200", "elo": 12.0},
+                                   {"player": "night update 400", "elo": 3.0}]}, f)
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.tmp.cleanup()
+
+    def _main(self, out, *extra):
+        common = ["--run-dir", self.run_dir, "--out", out, "--games", "16", "--km", "2x2", "--capacity", "64",
+                  "--workers", "2", "--resamples", "50"]
+        self.assertEqual(arena.main(common + list(extra)), 0)
+        with open(os.path.join(out, "summary.json"), encoding="utf-8") as f:
+            return json.load(f)
+
+    def test_cli_smoke(self):
+        import jax
+        out = os.path.join(self.tmp.name, "smoke")
+        summary = self._main(out, "--opponents", "raw,panel", "--s", "2,4", "--max-steps", "6")
+        opponents = ("R", "P25", "P50", "P75")
+        searched = {f"{a}-k2m2s{s}-vs-{o}" for a in "NE" for s in (2, 4) for o in opponents}
+        self.assertEqual(set(summary["configs"]), searched | {f"R-vs-{o}" for o in opponents})
+        for name, c in summary["configs"].items():
+            self.assertTrue(os.path.isfile(os.path.join(out, "raw", f"{name}-games.csv")), name)
+            self.assertEqual(c["games"], 36)  # the complete suite of three teams
+            if name in searched:
+                self.assertEqual(c["s"], int(name.split("s")[1].split("-")[0]))
+                self.assertIn("paired_vs_R", c)
+                self.assertGreater(c["diagnostics"]["decisions"]["searched"], 0)
+                with open(os.path.join(out, "raw", f"{name}-decisions.jsonl"), encoding="utf-8") as f:
+                    decisions = [json.loads(line) for line in f]
+                self.assertTrue(all(r["s"] == c["s"] for r in decisions if r["kind"] == "searched"))
+                with open(os.path.join(out, "raw", f"{name}-timing.json"), encoding="utf-8") as f:
+                    self.assertGreater(json.load(f)["searched"], 0)
+        cond = summary["conditions"]
+        self.assertEqual((cond["capacity"], cond["s"], cond["km"], cond["workers"], cond["max_steps"]),
+                         (64, [2, 4], ["2x2"], 2, 6))
+        self.assertEqual(cond["checkpoint"]["update"], 200)  # the best by the run's ladder file
+        with open(os.path.join(self.run_dir, "params-200.npz"), "rb") as f:
+            self.assertEqual(cond["checkpoint"]["sha256"], hashlib.sha256(f.read()).hexdigest())
+        self.assertEqual([p["update"] for p in cond["panel"]], [100, 200, 300])
+        self.assertEqual(cond["pool"]["ids"], ["A", "B", "C"])
+        self.assertEqual((cond["jax"], cond["backend"], cond["library"]),
+                         (jax.__version__, jax.default_backend(), duoforge.version()))
+        for key in ("search_seed", "arena_seed", "bootstrap_seed", "devices", "cpu", "xla_flags", "commit", "oracle"):
+            self.assertIn(key, cond)
+
+    def test_cli_named_checkpoint(self):
+        out = os.path.join(self.tmp.name, "named")
+        summary = self._main(out, "--checkpoint", "params-400", "--agents", "N", "--s", "2", "--max-steps", "3")
+        self.assertEqual(set(summary["configs"]), {"R-vs-R", "N-k2m2s2-vs-R"})
+        self.assertEqual(summary["conditions"]["checkpoint"]["update"], 400)
+        for bad in (["--agents", "X"], ["--km", "8"], ["--s", "0"], ["--s", "16,x"], ["--checkpoint", "params-18129"]):
+            with self.assertRaises(SystemExit):
+                arena.main(["--run-dir", self.run_dir, "--out", out] + bad)
 
 
 # Mixed strategies of the LookaheadDecisions round (3 x 3 x 4, capacity 256): environment -> (the play draw u,

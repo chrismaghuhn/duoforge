@@ -388,7 +388,9 @@ Python tests:
 - Modify: `python/duoforge_search/arena.py` (`main`), `python/tests/test_search_numpy.py`, `python/tests/test_search.py`
 
 **Interfaces:**
-- Produces: `python -m duoforge_search.arena --run-dir RUN --out DIR [--agents N,E] [--opponents raw,panel] [--sweep] [--games 2048] [--k 8 --m 8 --s 16] [--workers 8]`.
+- Produces: `python -m duoforge_search.arena --run-dir RUN --out DIR [--checkpoint params-U] [--agents N,E] [--opponents raw,panel] [--games 2048] [--km 8x8,...] [--s 16,32,64] [--capacity 16384] [--workers 8]`.
+  - As built (PR E): `--km` and `--s` (also `--samples`, `--worlds`: the sampled chance worlds per cell) take lists, and every combination is a configuration; they replace `--sweep`. The spec's sweep is `--km 8x8 --s 4,64` plus `--km 4x4,16x16 --s 16`; the owner's S sweep is `--s 16,32,64`.
+  - `summary.json` also records every reproduction condition: the capacity, the seeds, the checkpoint's file and SHA-256, the pool, the library, the commit, the JAX and jaxlib versions, the device, the CPU and the XLA flags. On the GPU the CLI refuses to run without `--xla_gpu_deterministic_ops=true`.
   - **The checkpoint:** the best checkpoint of RUN by its ladder file, or `--checkpoint`.
   - **The panel:** the run's checkpoints nearest to 25, 50 and 75 percent of its updates, via `ladder._checkpoints`; or `--panel A,B,C`.
   - **The pool:** `ladder._pool_of(RUN)`.
@@ -396,7 +398,7 @@ Python tests:
   - **Configurations:**
     - main: N vs R, E vs R;
     - panel: R, N and E vs each panel member;
-    - sweep (with `--sweep`): S ∈ {4, 64} at 8 × 8, and K × M ∈ {4 × 4, 16 × 16} at S = 16, for N and E vs R.
+    - sweep: S ∈ {4, 64} at 8 × 8, and K × M ∈ {4 × 4, 16 × 16} at S = 16, for N and E vs R (as built: the lists of `--km` and `--s`).
   - **Outputs:**
     - `DIR/raw/<config>-games.csv`: `play_suite` records plus the seat;
     - `DIR/raw/<config>-decisions.jsonl`: the S8.5 records;
