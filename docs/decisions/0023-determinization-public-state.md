@@ -90,7 +90,7 @@ Status: draft. Owner decisions of 2026-10-04: the brief of the visible-informati
 - **The source:** the foe's stat points are drawn as whole spreads, from the stated spreads of the curated pastes: the `PP_` teams and Teams A, B and C.
   - `LL_` spreads are importer guesses and are not used.
   - Replays show no stat points.
-- **The backoff:** (species, nature, item) with at least 5 sets, then (species, nature), then the species, then the stat shapes of the same nature-raised stat.
+- **The backoff:** (species, nature, item) with at least 5 sets, then (species, nature), then the species, then sets of the exact same nature, then all remaining stated spreads.
 - **Leave one team out:** in the arena and in self-play the foe's own team's sets are left out.
 - **Weights:** every world weighs 1/W. `Belief.sample(view, history, n, seed)` keeps the hook for later updates from damage and turn order (M13 lever 3).
 - **Where it lives:** the belief is in Python and draws numbers only. The distributions of the engine's own draws stay in C.
@@ -127,3 +127,5 @@ Status: draft. Owner decisions of 2026-10-04: the brief of the visible-informati
   - belief updates from damage and turn order (M13 lever 3);
   - a tree search;
   - the stage 3 training loop.
+
+Review clarification: back-off level 4 compares exact nature ids, as the NumPy table implements; level 5 uses all remaining source sets. A redraw advances from the original eligible level towards level 5. The stronger exact-nature match is intentional; no nature-rule implementation is hidden in Python.

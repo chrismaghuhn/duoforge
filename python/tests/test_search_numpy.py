@@ -744,9 +744,23 @@ class BeliefTable(unittest.TestCase):
         attempts = np.zeros((4, 6), dtype=np.int64)
         attempts[1, 0] = 1
         redrawn = b.sample(members, 4, seed=5, key=9, attempts=attempts)
-        want, _ = self.table.draw(int(belief.world_words(5, 9, 1, [belief.WORDS["respread"]])[0]), 1, 3, 7)
+        want, _ = self.table.draw(int(belief.world_words(5, 9, 1, [belief.WORDS["respread"]])[0]), 1, 3, 7, redraw=1)
         self.assertEqual(redrawn["stat_points"][1, 0].tolist(), want.tolist())
         np.testing.assert_array_equal(redrawn["stat_points"][0], one["stat_points"][0])
+
+    def test_all_256_attempts_back_off_without_shifting_other_words(self):
+        b = belief.Belief(self.table)
+        first = b.sample([(1, 3, 7)], 1, 5, 9)
+        for attempt in (1, 8, 64, 255):
+            counts = np.zeros((1, 6), np.int64)
+            counts[0, 0] = attempt
+            sampled = b.sample([(1, 3, 7)], 1, 5, 9, attempts=counts)
+            self.assertEqual(int(sampled["levels"][0, 0]), min(5, 1 + attempt))
+            for name in ("hp", "sleep", "confusion", "charge_target", "bench", "queue"):
+                np.testing.assert_array_equal(sampled[name], first[name])
+        counts[0, 0] = 256
+        with self.assertRaisesRegex(ValueError, "255"):
+            b.sample([(1, 3, 7)], 1, 5, 9, attempts=counts)
 
     def test_draw_index(self):
         self.assertEqual(belief.draw_index([0.0, 1.0, 1.0], 0), 1)
