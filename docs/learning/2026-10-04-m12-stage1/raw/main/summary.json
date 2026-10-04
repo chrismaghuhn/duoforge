@@ -1,0 +1,765 @@
+{
+ "conditions": {
+  "oracle": "an oracle benchmark (ARCHITECTURE section 10): the search runs on the true state, so it knows the foe's stat points and their stats, its exact HP and the secret counters of both sides (spec section 3)",
+  "capacity": 16384,
+  "workers": 8,
+  "max_steps": 1000,
+  "games": 2048,
+  "suite_rows": 2048,
+  "agents": [
+   "N",
+   "E"
+  ],
+  "km": [
+   "8x8"
+  ],
+  "s": [
+   16,
+   32,
+   64
+  ],
+  "search_seed": "0x2026100300000221",
+  "arena_seed": "0x2026100300000222",
+  "bootstrap_seed": "0x2026100300000220",
+  "resamples": 2000,
+  "checkpoint": {
+   "name": "R",
+   "file": "params-18129.npz",
+   "update": 18129,
+   "sha256": "8532b30b855969bed0f003fda5bd4400ad7c468a831ac0385332adb5289f3c2e",
+   "model": {
+    "version": 2,
+    "embed": 64,
+    "member": 128,
+    "position": 128,
+    "hidden": 640,
+    "layers": 3,
+    "option": 128,
+    "capacities": {
+     "species": 1024,
+     "move": 1024,
+     "item": 256,
+     "ability": 256,
+     "nature": 25
+    }
+   },
+   "encoder": 4,
+   "ext_supported": 563751419903
+  },
+  "panel": [],
+  "pool": {
+   "ids": [
+    "A",
+    "B",
+    "C",
+    "PP_0071E895C381DD1C",
+    "PP_097433EFCC505367",
+    "PP_0A93AE91073CC690",
+    "PP_102E046831526921",
+    "PP_1B067B3C97217EAF",
+    "PP_1E6A03DC1764214E",
+    "PP_1F4DA9800A6AD851",
+    "PP_202C514602D9ABE9",
+    "PP_246AECB752FACC29",
+    "PP_24B7E1E280B1088F",
+    "PP_25161F401C0A2005",
+    "PP_297320B831FB73B8",
+    "PP_2C4D3FBB866C4D2C",
+    "PP_2D234B4EC11A9ACA",
+    "PP_2F25D07C9B26E73C",
+    "PP_369E75B64155B6A1",
+    "PP_37083BBE99A1BF42",
+    "PP_3C4611CCBA18D35A",
+    "PP_3E44CC0D5FBA21F8",
+    "PP_470A6EC2468AF8A4",
+    "PP_4BFCE88CE42A966A",
+    "PP_4C6EB1D0D2CBB3F3",
+    "PP_4FCE711199944AE0",
+    "PP_56F0A0120CD736E5",
+    "PP_56F517BBD665899F",
+    "PP_58C15A8BD78B30AB",
+    "PP_5B9FAE64B204F805",
+    "PP_5CEDF6DD944DB220",
+    "PP_5D8E24080B6D3200",
+    "PP_62AA4EF34EE42F01",
+    "PP_674AC2A18201012A",
+    "PP_6853674468737B2E",
+    "PP_6F1B0E8DF51CC57D",
+    "PP_6F1D5B2B15285F2B",
+    "PP_7C9C0663EF60180E",
+    "PP_7F7E07BF0F953B0A",
+    "PP_8025F0AEF5F2D1B6",
+    "PP_81D3F0FFE6EF750C",
+    "PP_8536A2B4F89D3E72",
+    "PP_8606ABBA447D2E2E",
+    "PP_89FAA497014B5641",
+    "PP_8E37C3B00CBBA6B6",
+    "PP_8F4C2600A4A63A90",
+    "PP_90F7CCC7AB5B3D0B",
+    "PP_9F21D2E809A9F09D",
+    "PP_9FED7BFC061AD8BB",
+    "PP_A0582A49F5490809",
+    "PP_A5DFCE8794A63B55",
+    "PP_A702BF47F522438B",
+    "PP_A8154C05ECFA0E20",
+    "PP_A982BEAEE27D32EC",
+    "PP_B80C5F3E363597C2",
+    "PP_BB66FF17A1C4A911",
+    "PP_BED443F8A0ACBE11",
+    "PP_BFE773D9CDA8999C",
+    "PP_C8F60C5168BD6A83",
+    "PP_D3277B02C40781F3",
+    "PP_D3A1849223A946F8",
+    "PP_D668DD98C6C7177B",
+    "PP_D6B2F01DDF4FEE52",
+    "PP_D7C70DFF2BD9F5CF",
+    "PP_D828BB9033A964A0",
+    "PP_D943321333ED8846",
+    "PP_DBC606408D738253",
+    "PP_DDCF443E371A3A19",
+    "PP_DEB9DAC3FF5777D5",
+    "PP_E01AD4BAD0DA9CCC",
+    "PP_E2B7674A54DEBEE7",
+    "PP_E4AA1030C5E684B4",
+    "PP_ECDECC58B9116D68",
+    "PP_EE7A2C6A9F775208",
+    "PP_EEDF279FBC3AD845",
+    "PP_F85133BAC58B317F",
+    "PP_F853DAF986849F1D",
+    "PP_FC5A33ABDD155CA3",
+    "PP_FD6FE5BB94A024FB"
+   ],
+   "sha256": [
+    "4955f90d9f8650ef5e526fec4a2d5853fa1c98910c0a77c85084d9935977852f",
+    "d936ae39ba48a382395e79b795ed8fe024370dcf5d72c4a736127219f0ec5300",
+    "4c625aff89a656e1e52ffe75e98d429d5f9f915aa17ba05dde6941a38004fd3b",
+    "205a33eaab399dcac14016d2eb9b8f5d816cd005e104874f7930433eddbe1f99",
+    "5893edebb86993b7c7956190e55495a7db9fbe7fb42981c1fbb5e51d2072a540",
+    "7558d7eab830e9fb318d725db825a5beddfe76d56450a19dadb88b4fd162ea23",
+    "f71496033b5656d05f6eaa80b24d6a3317a953849f297419bcee6493b4f47ff1",
+    "f4ffd1679bd8e2e6eaf0cc090afb5edddd8cc3f016e153878e23fcf16f28fb16",
+    "08e444a08affbe557abccbc82ee84345ae54e9f36e4142450bab1205bacbcdc5",
+    "7bd616d58c237006754e506f6dc05c88a794c67d79a40e55f55b634e64a90aa9",
+    "abaad5e5c86cde9fb6186c6894c0aa1f784d2da1285418590e69763d5fc811e3",
+    "ed879e7280ee758fb77a11c6da9c98db7b1aca7319e1d955447a2cf2e1721862",
+    "699bc5e9569fc6dbcce8c466dc834d2bac7d424ce381923c89d3309e9b368b9b",
+    "24801b286af7b8bf99a50c6c7cadb28b17490824d7cbe1b1e00c0ad44105539c",
+    "7134a16f139ce02182ba8cd87c043dc18f536f7bab12a7159c2d647d2e7f944f",
+    "6f494a92470ca295d27acccb7542c5ee10908f3373629e66585b734ae71516a2",
+    "b4a61b435c3e0d8cb839eac4e426fe455d71d92be6b1113c25f3b33dc49692cd",
+    "66d6787390cbc309a71e398e70cf68a9ff090416dd94e027b8f064d70008b25f",
+    "f03bbe283579b44cc4dce418fb82a125b59c4e27886b79a0233f64c06431926f",
+    "bda696cfaf57147dd071560fb5667f0abab4be7881d113c197a285f4330f1753",
+    "1b68687c595e4948ab6a4b7aa95c2705652513f9fd99b9a9ab093753ab88a1ac",
+    "b5c85897d865fd3fbe29f955f9f8addc6b5113f148833631fdb189bb3843085d",
+    "b5d3eac7aa5e91b432e1b7f88c2c061a98f14525324a1c084219dd40b63024aa",
+    "22f45f7989c84bf54c37bed520b5aee8e29ec967230f8dd66a4147be848c6c40",
+    "5d1d47bcd4965115794fd531b6b34ebd51445148fa7194d397c635119f99919a",
+    "b4b473a2a276a2b46fccd32438e3012cff2e034b7c196663e2d101eda4914e16",
+    "cf4566e2d311d6ec5f52de8adc2e9d365345ae49da54aab46b6cf0bd7b2c82c0",
+    "1023c54cc9dc00248613561b65f6893b53cd3aa95af1679620e3cf9d5702684a",
+    "0a937acf1e4f309a0179758e566bbccad5619282d546c1986721224d14508ce1",
+    "db2180b09ae4907374bc4af2feddfc965f5752b6b94c31d8c9286f3c998fb49d",
+    "e3165c7ba0f226a18c2e6213bc54f9dd2ea5758829abb74f1e094bc3ad191bf6",
+    "821c2062cf760599bad84345868b9e989993dfe8058b9d2e5582a3814d181436",
+    "30fe05cd74bc6496af356f8d2aca79481a6bdfbfe82e25125e7cc34fdd641b36",
+    "ef60a0b06389fee5a6d968f5ba37d71fe54bd0ef9d8b9f780bf3003ccb1c1197",
+    "b51b09379dd8770042674c15b8b52ec7caa70967cff53ca1bbd81c2882fa6f28",
+    "cb5f1899f2dd97cbb61bec3b5c92c6200e2130ecf938ef703bb8eea1808fc27f",
+    "28e0ccee2dfdac67f08885cda6dfebbc0eda818ea1c79384642db904d09210bd",
+    "536a942081ac04718e75af76de706bc771cde4a7d805729370684a9b7ba7ef2f",
+    "463562980a6049bceb042514c25e1f5caf2b6940c986d735f8f18ff8fee70cfb",
+    "cd85ddd5398c9841eab6bdb4fd69fa9ce8705802279caae8e7683a1d09814de1",
+    "52c16cba62f56f0984afc855868098374c12c3eb083c972f4df26a7f5436e9d6",
+    "1d37b6c35f35ef86d991e03068a762f4ed21d7c0bb4f1cb84ed28ee679e3038b",
+    "5ef37e77675206c31f5d1df5d10fcb33da7bdec8721c561e5dbf388f755499aa",
+    "23f258091979c01dcf407e5581f518f8812ad1fa4306b973e1e406b08b56750b",
+    "47069cc86ef9ce2e129be24b8c280cd1a2af0df72e69352bcddf2204553a6951",
+    "3e230d50ed4f1bb3d5b0d37d5d771cd7cf76e57ac8496513b7ef7ea3aa67ecfb",
+    "6cd60e184db71aae1bbd2c11b5d644a14f07454e1e2565865eda374c581c5b8b",
+    "4648995814c985952db5d1e293a64a692a6040bef5eee0aac2af9c2e941845fe",
+    "cb5f1899f2dd97cbb61bec3b5c92c6200e2130ecf938ef703bb8eea1808fc27f",
+    "9f2a72255bc293ea14e599dc34c545ed9e44c09ec0cc7b8ecf01222121daae12",
+    "10536ebfc8de8e5722d4da8db8e9f34e8e0dd9f078e2e8b19c98d67396f1c72b",
+    "3e47947f6591f000f866ffd9c63e863964d21375f3336ec5a6b1f3f9e6d8337b",
+    "ef905c2c0a0859d42ec1eb19695f635e418104cc71eb552973651fbb4dfa6a6b",
+    "412adcace22abe5f2af11ee63e8ee5e742cb76a60f344f688faa23fe54b9bec3",
+    "40bb77f5640383f8b52ba284ce3a4aa18cebd15ad9eaf4f8ed69431b2364cde8",
+    "d0fff9cf4b5834d65c78d7a70434a8c12044b5af1d0d3277c17bad417a3f0933",
+    "175a74cea1cdefb1612dbbf9b1fc6abb9a780e46110941c7f48fdaab23660613",
+    "68fbd4d2e1649bdef364df183c5417ef89f60d4ecf48552cea948428fe7bc065",
+    "4d544e2dd3ce817e64b65bc3b287a4311107841c43d0eef053fe6640931ac2fc",
+    "f0e9a6c50bb4a81574c1bc4ba7cba44d0bd17d2b72df5df2912ebad13f37157a",
+    "ac6d358afdd6895a086a7e7897756a4bdd8cb560a09b5499e5dbaf02d45b2e9c",
+    "b841ea1d868c887e1688b44215dc3943b992960406174141c72ce49954c35903",
+    "f356c27d80a2db719de8e0e0aba9187467c97e848caf52d4fd9b97fb00f57351",
+    "295013c8dc90de1940af9cb79875a004e68918f62186fb7c2764e8e24321227f",
+    "44c2e34f12108f64e00a4a78ba2d395d753881296c117cf09e5c97855aa38689",
+    "71ffb61f7740c34e04f4a936f5c2788ea07b36e5c93cb942deb7fc3c807e26bc",
+    "e6113366cd8f0577fb1b5af99ee6b4e13e53287aecfa21d4a34e1104bc436599",
+    "a4e5a77dc616cf6a9303ab9adaa88892ce452ebb2b7b5e6c3a0543494b233cdd",
+    "ba98ca8ef6113dc44bad52519fa18c0044a11a431f3c84ac8c42232cf9dc3657",
+    "82ecb4b973c144790ea01a77adba27cd8842ab2e35426288a3e6f16389f5b9c0",
+    "e1e50ee487e7e758cf9f4cdb369eb8bf34eb57abccad288b5633d108d9b56bea",
+    "978d619d7dde9e013c183650a1ed1bd0aa37571f768c87f9a472f56f4ec6fd21",
+    "edfc6fe1828c8a9d4b1526ac0dbf0842cdb4a00b301f2b890945cfd39d9ffa6e",
+    "06873c6f285c870f6b58466d1eec500dcc371f169557e55537fed8e3e1783266",
+    "b0fd07dbce35fea71b3464e88fdee0a42b7dced9a949bb5d66f6435eb583ab67",
+    "f44e69caea2d4b2d1dd20750badbe4ec5a4c8eeae13214e1fff23c13fe5cb8ae",
+    "6b24103a44818792f801b20730e90597acd5bd28841bc074c5a2f1991610f1ac",
+    "5540d5104488a31fe4e18f8f6c8c0750c4c0c56e005bf27b7f902e87243fb9e6",
+    "d6b84a1c699897b541b05927a99cfd70efa9c2cd5c743de5e16770cf750c2454"
+   ],
+   "data_kind": 6
+  },
+  "library": "0.42.0",
+  "commit": null,
+  "dirty": null,
+  "python": "3.12.3",
+  "numpy": "2.5.3",
+  "jax": "0.11.2",
+  "jaxlib": "0.11.2",
+  "backend": "gpu",
+  "devices": [
+   "cuda:0"
+  ],
+  "cpu": "AMD Ryzen 7 5800X 8-Core Processor",
+  "platform": "Linux-6.18.33.2-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+  "xla_flags": "--xla_gpu_deterministic_ops=true"
+ },
+ "configs": {
+  "R-vs-R": {
+   "agent": "R",
+   "opponent": "R",
+   "games": 2048,
+   "score": 0.4912109375,
+   "score_95": [
+    0.47021484375,
+    0.513671875
+   ],
+   "elo": -6.107895297438826,
+   "elo_95": [
+    -20.72138042400553,
+    9.50256055760863
+   ],
+   "unfinished": 0,
+   "unresolved": 0
+  },
+  "N-k8m8s16-vs-R": {
+   "agent": "N",
+   "opponent": "R",
+   "k": 8,
+   "m": 8,
+   "s": 16,
+   "rule": "nash",
+   "diagnostics": {
+    "decisions": {
+     "searched": 17259,
+     "forced": 1077,
+     "team": 2048
+    },
+    "searched_per_game": 8.42724609375,
+    "leaves": {
+     "refused": 0,
+     "terminal": 2205407,
+     "cut_off": 0,
+     "unresolved": 0,
+     "TURN": 7127327,
+     "REPLACEMENT": 5662727,
+     "PIVOT": 229291,
+     "TERMINAL": 2205407
+    },
+    "roots": {
+     "TURN": 15228,
+     "REPLACEMENT": 1934,
+     "PIVOT": 97
+    },
+    "changed": 0.750391100295498,
+    "coverage": 0.9792842739153073,
+    "near_duplicates": 14945,
+    "exact": 0,
+    "support": 1.622168144156672,
+    "split_exploitability": 0.03221016379787534
+   },
+   "timing": {
+    "searched": 17259,
+    "ms": {
+     "network": {
+      "median": 2.438092534158915,
+      "p95": 3.4887675583942896
+     },
+     "engine": {
+      "median": 1.627285375008114,
+      "p95": 2.2245944374787996
+     },
+     "reduction": {
+      "median": 0.7299730000340787,
+      "p95": 0.979078000091249
+     },
+     "split": {
+      "median": 0.8007169999473263,
+      "p95": 1.103024900021409
+     },
+     "total": {
+      "median": 5.737399437516721,
+      "p95": 7.218041208958021
+     }
+    }
+   },
+   "games": 2048,
+   "score": 0.71435546875,
+   "score_95": [
+    0.6953125,
+    0.7334106445312499
+   ],
+   "elo": 159.23538401725216,
+   "elo_95": [
+    143.33015984736542,
+    175.80176169608822
+   ],
+   "unfinished": 0,
+   "unresolved": 0,
+   "paired_vs_R": {
+    "score": 0.22314453125,
+    "score_95": [
+     0.19775390625,
+     0.248046875
+    ],
+    "elo": 165.343279314691,
+    "elo_95": [
+     145.97970018053752,
+     184.4173575458638
+    ]
+   }
+  },
+  "N-k8m8s32-vs-R": {
+   "agent": "N",
+   "opponent": "R",
+   "k": 8,
+   "m": 8,
+   "s": 32,
+   "rule": "nash",
+   "diagnostics": {
+    "decisions": {
+     "searched": 17343,
+     "forced": 1079,
+     "team": 2048
+    },
+    "searched_per_game": 8.46826171875,
+    "leaves": {
+     "refused": 0,
+     "terminal": 4453376,
+     "cut_off": 0,
+     "unresolved": 0,
+     "TURN": 14272201,
+     "REPLACEMENT": 11300056,
+     "PIVOT": 458111,
+     "TERMINAL": 4453376
+    },
+    "roots": {
+     "TURN": 15292,
+     "REPLACEMENT": 1955,
+     "PIVOT": 96
+    },
+    "changed": 0.752926252666782,
+    "coverage": 0.9794681526130695,
+    "near_duplicates": 14719,
+    "exact": 0,
+    "support": 1.61200484345269,
+    "split_exploitability": 0.021100266988663085
+   },
+   "timing": {
+    "searched": 17343,
+    "ms": {
+     "network": {
+      "median": 6.859767029091675,
+      "p95": 8.66367277911488
+     },
+     "engine": {
+      "median": 3.115889652333337,
+      "p95": 4.358207750044585
+     },
+     "reduction": {
+      "median": 0.8363260003534378,
+      "p95": 1.0406432000763743
+     },
+     "split": {
+      "median": 0.814244000139297,
+      "p95": 1.0563078003087865
+     },
+     "total": {
+      "median": 12.001296164256381,
+      "p95": 14.338483215656312
+     }
+    }
+   },
+   "games": 2048,
+   "score": 0.728515625,
+   "score_95": [
+    0.70947265625,
+    0.7480590820312499
+   ],
+   "elo": 171.477612621837,
+   "elo_95": [
+    155.0994594277888,
+    189.05487702862052
+   ],
+   "unfinished": 0,
+   "unresolved": 0,
+   "paired_vs_R": {
+    "score": 0.2373046875,
+    "score_95": [
+     0.2099609375,
+     0.26319580078124993
+    ],
+    "elo": 177.58550791927584,
+    "elo_95": [
+     156.78924288423084,
+     198.21890274377813
+    ]
+   }
+  },
+  "N-k8m8s64-vs-R": {
+   "agent": "N",
+   "opponent": "R",
+   "k": 8,
+   "m": 8,
+   "s": 64,
+   "rule": "nash",
+   "diagnostics": {
+    "decisions": {
+     "searched": 17391,
+     "forced": 1073,
+     "team": 2048
+    },
+    "searched_per_game": 8.49169921875,
+    "leaves": {
+     "refused": 0,
+     "terminal": 8729243,
+     "cut_off": 0,
+     "unresolved": 0,
+     "TURN": 28860980,
+     "REPLACEMENT": 22716335,
+     "PIVOT": 914754,
+     "TERMINAL": 8729243
+    },
+    "roots": {
+     "TURN": 15372,
+     "REPLACEMENT": 1922,
+     "PIVOT": 97
+    },
+    "changed": 0.7533206831119544,
+    "coverage": 0.9800811963645305,
+    "near_duplicates": 14024,
+    "exact": 0,
+    "support": 1.6082456442987751,
+    "split_exploitability": 0.013835341261606217
+   },
+   "timing": {
+    "searched": 17391,
+    "ms": {
+     "network": {
+      "median": 9.691560212982644,
+      "p95": 11.254378876433213
+     },
+     "engine": {
+      "median": 6.093764249953892,
+      "p95": 8.526434351569634
+     },
+     "reduction": {
+      "median": 1.0533189997659065,
+      "p95": 1.2811720000627247
+     },
+     "split": {
+      "median": 0.8431109999946784,
+      "p95": 1.0725524998633773
+     },
+     "total": {
+      "median": 17.91091437670267,
+      "p95": 21.238030257741798
+     }
+    }
+   },
+   "games": 2048,
+   "score": 0.72412109375,
+   "score_95": [
+    0.70458984375,
+    0.7431640625
+   ],
+   "elo": 167.6370812835774,
+   "elo_95": [
+    151.00438257641017,
+    184.571563312326
+   ],
+   "unfinished": 0,
+   "unresolved": 0,
+   "paired_vs_R": {
+    "score": 0.23291015625,
+    "score_95": [
+     0.20703125,
+     0.25782470703124993
+    ],
+    "elo": 173.74497658101623,
+    "elo_95": [
+     153.99200049184913,
+     193.762528572602
+    ]
+   }
+  },
+  "E-k8m8s16-vs-R": {
+   "agent": "E",
+   "opponent": "R",
+   "k": 8,
+   "m": 8,
+   "s": 16,
+   "rule": "ev",
+   "diagnostics": {
+    "decisions": {
+     "searched": 16133,
+     "forced": 780,
+     "team": 2048
+    },
+    "searched_per_game": 7.87744140625,
+    "leaves": {
+     "refused": 0,
+     "terminal": 2248003,
+     "cut_off": 0,
+     "unresolved": 0,
+     "TURN": 6567316,
+     "REPLACEMENT": 5210885,
+     "PIVOT": 204724,
+     "TERMINAL": 2248003
+    },
+    "roots": {
+     "TURN": 14306,
+     "REPLACEMENT": 1741,
+     "PIVOT": 86
+    },
+    "changed": 0.764581912849439,
+    "coverage": 0.9872950604991495,
+    "near_duplicates": 16106,
+    "split_same_choice": 0.821917808219178
+   },
+   "timing": {
+    "searched": 16133,
+    "ms": {
+     "network": {
+      "median": 2.6753411794126234,
+      "p95": 3.4099273123721354
+     },
+     "engine": {
+      "median": 1.5503099374996054,
+      "p95": 2.1287097499964602
+     },
+     "reduction": {
+      "median": 0.33631300038905465,
+      "p95": 0.4374043999632704
+     },
+     "split": {
+      "median": 0.12407099984557135,
+      "p95": 0.18634840016602539
+     },
+     "total": {
+      "median": 4.7791494374215535,
+      "p95": 5.78480405592952
+     }
+    }
+   },
+   "games": 2048,
+   "score": 0.90087890625,
+   "score_95": [
+    0.88818359375,
+    0.91357421875
+   ],
+   "elo": 383.40013303274645,
+   "elo_95": [
+    359.9988866894382,
+    409.6402084552813
+   ],
+   "unfinished": 0,
+   "unresolved": 0,
+   "paired_vs_R": {
+    "score": 0.40966796875,
+    "score_95": [
+     0.38720703125,
+     0.43212890625
+    ],
+    "elo": 389.50802833018525,
+    "elo_95": [
+     364.06417408646473,
+     416.5609359056425
+    ]
+   }
+  },
+  "E-k8m8s32-vs-R": {
+   "agent": "E",
+   "opponent": "R",
+   "k": 8,
+   "m": 8,
+   "s": 32,
+   "rule": "ev",
+   "diagnostics": {
+    "decisions": {
+     "searched": 16209,
+     "forced": 764,
+     "team": 2048
+    },
+    "searched_per_game": 7.91455078125,
+    "leaves": {
+     "refused": 0,
+     "terminal": 4621616,
+     "cut_off": 0,
+     "unresolved": 0,
+     "TURN": 13154539,
+     "REPLACEMENT": 10375038,
+     "PIVOT": 408359,
+     "TERMINAL": 4621616
+    },
+    "roots": {
+     "TURN": 14396,
+     "REPLACEMENT": 1729,
+     "PIVOT": 84
+    },
+    "changed": 0.7642667653772596,
+    "coverage": 0.9868012852549608,
+    "near_duplicates": 15165,
+    "split_same_choice": 0.8549571225862176
+   },
+   "timing": {
+    "searched": 16209,
+    "ms": {
+     "network": {
+      "median": 4.83714364729413,
+      "p95": 6.270612113647189
+     },
+     "engine": {
+      "median": 3.6883531249998214,
+      "p95": 4.550484875039729
+     },
+     "reduction": {
+      "median": 0.46022400056244805,
+      "p95": 0.5788096004835097
+     },
+     "split": {
+      "median": 0.1435390004189685,
+      "p95": 0.20854360009252557
+     },
+     "total": {
+      "median": 9.299228973572081,
+      "p95": 11.000400664226147
+     }
+    }
+   },
+   "games": 2048,
+   "score": 0.89990234375,
+   "score_95": [
+    0.88671875,
+    0.9130859375
+   ],
+   "elo": 381.50858966532775,
+   "elo_95": [
+    357.45114371766664,
+    408.568641691042
+   ],
+   "unfinished": 0,
+   "unresolved": 0,
+   "paired_vs_R": {
+    "score": 0.40869140625,
+    "score_95": [
+     0.38525390625,
+     0.43115234375
+    ],
+    "elo": 387.61648496276655,
+    "elo_95": [
+     361.43535873781764,
+     414.78136067160267
+    ]
+   }
+  },
+  "E-k8m8s64-vs-R": {
+   "agent": "E",
+   "opponent": "R",
+   "k": 8,
+   "m": 8,
+   "s": 64,
+   "rule": "ev",
+   "diagnostics": {
+    "decisions": {
+     "searched": 16002,
+     "forced": 749,
+     "team": 2048
+    },
+    "searched_per_game": 7.8134765625,
+    "leaves": {
+     "refused": 0,
+     "terminal": 9030404,
+     "cut_off": 0,
+     "unresolved": 0,
+     "TURN": 25963710,
+     "REPLACEMENT": 20655272,
+     "PIVOT": 824342,
+     "TERMINAL": 9030404
+    },
+    "roots": {
+     "TURN": 14203,
+     "REPLACEMENT": 1718,
+     "PIVOT": 81
+    },
+    "changed": 0.7674040744906887,
+    "coverage": 0.9865248768439053,
+    "near_duplicates": 14557,
+    "split_same_choice": 0.8790151231096113
+   },
+   "timing": {
+    "searched": 16002,
+    "ms": {
+     "network": {
+      "median": 10.788143339543563,
+      "p95": 13.819013874739927
+     },
+     "engine": {
+      "median": 7.253679625023324,
+      "p95": 9.220504462507506
+     },
+     "reduction": {
+      "median": 0.6702009995933622,
+      "p95": 0.8296791996599494
+     },
+     "split": {
+      "median": 0.17648149969318183,
+      "p95": 0.2434402993458205
+     },
+     "total": {
+      "median": 19.262446670533965,
+      "p95": 23.145836913044707
+     }
+    }
+   },
+   "games": 2048,
+   "score": 0.90771484375,
+   "score_95": [
+    0.89453125,
+    0.919921875
+   ],
+   "elo": 397.1270342394618,
+   "elo_95": [
+    371.3886872723603,
+    424.0948201636643
+   ],
+   "unfinished": 0,
+   "unresolved": 0,
+   "paired_vs_R": {
+    "score": 0.41650390625,
+    "score_95": [
+     0.3935546875,
+     0.43896484375
+    ],
+    "elo": 403.2349295369006,
+    "elo_95": [
+     375.7391960993231,
+     430.96038332142444
+    ]
+   }
+  }
+ }
+}
