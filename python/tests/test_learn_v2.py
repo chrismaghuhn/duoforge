@@ -821,6 +821,27 @@ class PlateauLeverTest(unittest.TestCase):
                                 self.net.evaluate, epochs=4, minibatch=64)
         self.assertLess(gap(pulled), gap(free))
 
+    def test_reference_logp_runs_in_minibatches_and_equals_one_pass(self):
+        # The night run's 29k rows in one pass asked 3.4 GiB of an 8 GiB card (2026-10-04): the reference is
+        # evaluated in minibatches of a fixed size, the last one padded, and equals the one-pass values.
+        from duoforge_learn import ppo
+        o = {k: v[:-1] for k, v in self.samples.items()}  # one row short of a multiple of 64 (the padded tail)
+        seen = []
+
+        def counting(params, obs, *rest):
+            seen.append(obs.shape[0])
+            return self.net.evaluate(params, obs, *rest)
+
+        n = o["actions"].shape[0]
+        whole = np.asarray(self.net.evaluate(self.params, o["obs"], o["slots"], o["mask"], o["is_team"],
+                                             o["actions"])[0])
+        chunked = ppo.reference_logp(self.params, o, counting, minibatch=64)
+        self.assertGreater(n % 64, 0)
+        self.assertEqual(seen, [64] * -(-n // 64))
+        self.assertEqual(chunked.shape, (n,))
+        self.assertEqual(chunked.dtype, np.float32)
+        np.testing.assert_allclose(chunked, whole, rtol=1e-5, atol=1e-5)
+
 
 class DeviceUpdateTest(unittest.TestCase):
     def test_device_resident_update_equals_host_path(self):
