@@ -340,3 +340,226 @@ def draw(x, prior_rank, u):
     if hit.size:
         return int(order[hit[0]])
     return int(order[np.flatnonzero(p[order] > 0.0)[-1]])
+
+
+# ---- the Bayesian game (decision 0023; spec section 6.3) ----
+#
+# One strategy x of the row player holds in every world w (weight p_w); the
+# column player knows its world and best-responds in each:
+#     maximize sum_w p_w v_w  s.t.  v_w <= sum_i x_i b_w[i, j] for all w, j;  sum_i x_i <= 1;  x, v >= 0
+# on the tables scaled together to [0, 1] and shifted by 1 (b >= 1), so the
+# origin is feasible and sum_i x_i = 1 at the optimum. A dense tableau
+# simplex with Bland's rule solves it; the duals of the rows (w, j), divided
+# by p_w, are the column player's strategies y_w. The exact rescue runs the
+# same simplex in rational arithmetic.
+
+
+def _tables(tables, weights):
+    a = np.asarray(tables, dtype=np.float64)
+    if a.ndim != 3 or 0 in a.shape or not np.isfinite(a).all():
+        raise SearchError(f"tables must be a finite (W, K, M) array (got shape {a.shape})")
+    p = np.asarray(weights, dtype=np.float64)
+    if p.shape != (a.shape[0],) or not np.isfinite(p).all() or (p <= 0).any():
+        raise SearchError(f"weights must be {a.shape[0]} positive numbers (got {p!r})")
+    return a, p / math.fsum(p.tolist())
+
+
+def bayes_exploitability(tables, weights, x, ys):
+    """max_i sum_w p_w (a_w y_w)_i - sum_w p_w min_j (x a_w)_j: 0 exactly at
+    an equilibrium of the Bayesian game."""
+    a, p = _tables(tables, weights)
+    x = np.asarray(x, dtype=np.float64)
+    upper = np.zeros(a.shape[1], dtype=np.float64)
+    lower = 0.0
+    for w in range(a.shape[0]):
+        upper += p[w] * _matvec(a[w], np.asarray(ys[w], dtype=np.float64))
+        lower += p[w] * float(np.min(_vecmat(x, a[w])))
+    return float(np.max(upper)) - lower
+
+
+def bayes_certify(tables, weights, x, ys, tol=CERTIFICATE):
+    """As certify, for the Bayesian game: on the tables scaled together to
+    their range."""
+    a, p = _tables(tables, weights)
+    x = _strategy(x, a.shape[1], "x")
+    ys = [_strategy(ys[w], a.shape[2], f"y[{w}]") for w in range(a.shape[0])]
+    low = float(a.min())
+    span = float(a.max()) - low
+    if span == 0.0:
+        return 0.0
+    gap = bayes_exploitability((a - low) / span, p, x, ys)
+    if not gap <= tol * min(1.0, 1.0 / span):
+        raise SearchError(f"the Bayesian Nash certificate is missed: exploitability {gap * span:.3e} "
+                          f"(range {span:.3e}) on {a.shape[0]} tables of {a.shape[1]} x {a.shape[2]}")
+    return gap * span
+
+
+def _bayes_tableau(b, p, zero, one):
+    """The rows of the LP above over a number type (float or Fraction)."""
+    nw, k, m = len(b), len(b[0]), len(b[0][0])
+    nvar = k + nw
+    rows = []
+    for w in range(nw):
+        for j in range(m):
+            row = [zero] * nvar
+            for i in range(k):
+                row[i] = -b[w][i][j]
+            row[k + w] = one
+            rows.append(row)
+    rows.append([one] * k + [zero] * nw)
+    rhs = [zero] * (nw * m) + [one]
+    cost = [zero] * k + [p[w] for w in range(nw)]
+    return rows, rhs, cost
+
+
+def _bland(rows, rhs, cost, zero, positive):
+    """max cost . z s.t. rows z <= rhs (rhs >= 0), z >= 0, by a dense tableau
+    simplex with Bland's rule. Returns (z, duals) of the final tableau."""
+    r, n = len(rows), len(cost)
+    t = [list(rows[i]) + [zero] * r + [rhs[i]] for i in range(r)]
+    for i in range(r):
+        t[i][n + i] = zero + 1
+    obj = list(cost) + [zero] * r + [zero]
+    basis = list(range(n, n + r))
+    for _ in range(MAX_ITERATIONS):
+        enter = next((j for j in range(n + r) if positive(obj[j])), None)
+        if enter is None:
+            break
+        leave, best = -1, None
+        for i in range(r):
+            entry = t[i][enter]
+            if positive(entry):
+                ratio = t[i][-1] / entry
+                if leave < 0 or ratio < best or (ratio == best and basis[i] < basis[leave]):
+                    leave, best = i, ratio
+        if leave < 0:
+            raise SearchError("the Bayesian linear program is unbounded, which shifted tables cannot be")
+        pivot = t[leave][enter]
+        t[leave] = [v / pivot for v in t[leave]]
+        for i in range(r):
+            f = t[i][enter]
+            if i != leave and f != 0:
+                t[i] = [vi - f * vl for vi, vl in zip(t[i], t[leave])]
+        f = obj[enter]
+        obj = [vi - f * vl for vi, vl in zip(obj, t[leave])]
+        basis[leave] = enter
+    else:
+        raise SearchError(f"the Bayesian simplex did not finish in {MAX_ITERATIONS} iterations")
+    z = [zero] * n
+    for row, var in enumerate(basis):
+        if var < n:
+            z[var] = t[row][-1]
+    duals = [-obj[n + i] for i in range(r)]
+    return z, duals
+
+
+def _bland_float(b, p):
+    """_bland on the float tableau of the LP above, in NumPy (no BLAS: the
+    pivot is an elementwise update)."""
+    nw, k, m = b.shape
+    r = nw * m + 1
+    n = k + nw
+    t = np.zeros((r + 1, n + r + 1), dtype=np.float64)
+    for w in range(nw):
+        t[w * m:(w + 1) * m, :k] = -b[w].T
+        t[w * m:(w + 1) * m, k + w] = 1.0
+    t[r - 1, :k] = 1.0
+    t[r - 1, -1] = 1.0
+    t[:r, n:n + r] = np.eye(r)
+    t[r, k:n] = p
+    basis = list(range(n, n + r))
+    for _ in range(MAX_ITERATIONS):
+        positive = np.flatnonzero(t[r, :n + r] > _EPS)
+        if positive.size == 0:
+            break
+        enter = int(positive[0])
+        leave, best = -1, 0.0
+        for i in range(r):
+            entry = t[i, enter]
+            if entry > _EPS:
+                ratio = t[i, -1] / entry
+                if leave < 0 or ratio < best or (ratio == best and basis[i] < basis[leave]):
+                    leave, best = i, ratio
+        if leave < 0:
+            raise SearchError("the Bayesian linear program is unbounded, which shifted tables cannot be")
+        pivot = t[leave] / t[leave, enter]
+        t -= np.outer(t[:, enter], pivot)
+        t[leave] = pivot
+        basis[leave] = enter
+    else:
+        raise SearchError(f"the Bayesian simplex did not finish in {MAX_ITERATIONS} iterations")
+    z = np.zeros(n, dtype=np.float64)
+    for row, var in enumerate(basis):
+        if var < n:
+            z[var] = t[row, -1]
+    return z.tolist(), (-t[r, n:n + r]).tolist()
+
+
+class BayesSolution(NamedTuple):
+    """A certified equilibrium of the Bayesian game: x (rows), ys (one column
+    strategy per world), the value sum_w p_w min_j (x a_w)_j, and whether the
+    exact rescue decided."""
+    x: np.ndarray
+    ys: list
+    value: float
+    exact: bool
+
+
+def solve_bayes(tables, weights):
+    """The BayesSolution of tables (W, K, M) with world weights (W,): the
+    float simplex, or the exact rescue when it fails or misses the
+    certificate. With W = 1 it is the matrix game of solve."""
+    a, p = _tables(tables, weights)
+    nw, k, m = a.shape
+    low = float(a.min())
+    span = float(a.max()) - low
+    if span == 0.0:
+        x = np.zeros(k, dtype=np.float64)
+        x[0] = 1.0
+        ys = [np.eye(m, dtype=np.float64)[0] for _ in range(nw)]
+        return BayesSolution(x, ys, low, False)
+
+    def strategies(z, duals, to_float):
+        x = _normalized(np.array([to_float(v) for v in z[:k]], dtype=np.float64))
+        ys = []
+        for w in range(nw):
+            yw = np.array([to_float(duals[w * m + j]) for j in range(m)], dtype=np.float64)
+            ys.append(_normalized(yw))
+        return x, ys
+
+    try:
+        z, duals = _bland_float((a - low) / span + 1.0, p)
+        x, ys = strategies(z, duals, float)
+        bayes_certify(a, p, x, ys)
+        exact = False
+    except SearchError:
+        lo = Fraction(low)
+        b = [[[Fraction(float(v)) - lo + 1 for v in row] for row in a[w]] for w in range(nw)]
+        pf = [Fraction(float(v)) for v in p]
+        rows, rhs, cost = _bayes_tableau(b, pf, Fraction(0), Fraction(1))
+        z, duals = _bland(rows, rhs, cost, Fraction(0), lambda v: v > 0)
+        x, ys = strategies(z, duals, float)
+        bayes_certify(a, p, x, ys)
+        exact = True
+    value = math.fsum(float(p[w]) * float(np.min(_vecmat(x, a[w]))) for w in range(nw))
+    return BayesSolution(x, ys, value, exact)
+
+
+def bayes_expected_values(tables, weights, qs):
+    """sum_w p_w sum_j q_w,j a_w[i, j] for every row, each q_w renormalized:
+    the scores of the expected-value rule over worlds."""
+    a, p = _tables(tables, weights)
+    out = np.zeros(a.shape[1], dtype=np.float64)
+    for w in range(a.shape[0]):
+        out += p[w] * expected_values(a[w], qs[w])
+    return out
+
+
+def mix(x, best, lam=0.5):
+    """The mixed rule X: lam * x + (1 - lam) * e_best (spec section 6.5)."""
+    x = np.asarray(x, dtype=np.float64)
+    if not 0.0 <= lam <= 1.0 or not 0 <= best < x.size:
+        raise SearchError(f"mix needs 0 <= lam <= 1 and a row of x (got {lam}, {best})")
+    out = lam * x
+    out[best] += 1.0 - lam
+    return out
