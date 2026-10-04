@@ -2,7 +2,9 @@
 
 Status: owner decisions of 2026-10-04 (the brief, and the brainstorming answers to questions 1 to 7). The owner approved sections 1 to 3 of the design on 2026-10-04. This specification goes up with the draft of decision 0023 as a docs PR. Nothing is implemented before the owner approves it; the implementation plan follows that approval.
 
-Three points were added while writing it, after that approval, and need the owner's yes:
+The owner approved this specification, with the three points below, on 2026-10-04 ("Implementierung starten"). The plan is `docs/superpowers/plans/2026-10-04-m12-visible-search.md`.
+
+Three points were added while writing it, after the design approval:
 - **The queue mask** (section 4.3): a fifth public call, so that the rules deciding which foe pairs agree with the turn so far (question 7) stay in C.
 - **Facts, not derivations** (section 4.3): the record's new fields are things the client shows or counts of them, so the live tracker needs no rule.
 - **Leave one team out** (section 5.1): the foe's own team's sets are left out of the spread table in the arena and in self-play.
