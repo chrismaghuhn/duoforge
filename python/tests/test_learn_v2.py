@@ -539,6 +539,30 @@ class ResumeTest(unittest.TestCase):
         finally:
             shutil.rmtree(inside, ignore_errors=True)  # a failing run of this test leaves nothing in the repository
 
+    def test_plateau_levers_train_and_resume(self):
+        # --learning-rate-schedule (a multiplier over decisions) and --kl-ref/--kl-coef run, are logged per update,
+        # and a resume may change them; --kl-coef without --kl-ref is refused.
+        import glob
+        import os
+        self.assertEqual(_run(["--envs", "8", "--updates", "1", "--out", self.out, "--learning-rate-schedule",
+                               "0:1,1M:0.1"] + _SMALL), 0)
+        ref = sorted(glob.glob(os.path.join(self.out, "params-*.npz")))[0]
+        self.assertEqual(_run(["--resume", self.out, "--updates", "2", "--kl-ref", ref, "--kl-coef", "0.02",
+                               "--learning-rate-schedule", "0:0.5"]), 0)
+        records = [r for r in _log(self.out) if "update" in r]
+        self.assertEqual(records[0]["lr_scale"], 1.0)
+        self.assertEqual((records[-1]["lr_scale"], records[-1]["kl_coef"]), (0.5, 0.02))
+        self.assertIn("kl", records[-1])
+        resume = [r for r in _log(self.out) if "resume" in r][-1]["resume"]
+        self.assertEqual(resume["kl_coef"], [0.0, 0.02])
+        with self.assertRaisesRegex(SystemExit, "kl-ref"):
+            _run(["--resume", self.out, "--updates", "3", "--kl-ref", "", "--kl-coef", "0.02"])
+        # The magnet (MMD/R-NaD style): the learner's frozen copy, set at the (re)start and every --kl-refresh updates.
+        self.assertEqual(_run(["--resume", self.out, "--updates", "5", "--kl-ref", "magnet", "--kl-coef", "0.05",
+                               "--kl-refresh", "2"]), 0)
+        refreshed = [r["update"] for r in _log(self.out) if "update" in r and r.get("magnet_refreshed")]
+        self.assertEqual(refreshed, [3, 4])  # the resume's first update, then every second update
+
     def test_refused_option_names_itself(self):
         self.assertEqual(_run(["--envs", "8", "--updates", "1", "--out", self.out] + _SMALL), 0)
         with self.assertRaisesRegex(SystemExit, "learning_rate"):
@@ -736,6 +760,66 @@ class LadderV2Test(unittest.TestCase):
             self.assertTrue(os.path.isfile(os.path.join(report, "ladder.md")))
         finally:
             shutil.rmtree(root, ignore_errors=True)
+
+
+class PlateauLeverTest(unittest.TestCase):
+    """The learning-rate multiplier and the KL anchor to a reference policy (owner, 2026-10-04: plateau levers)."""
+
+    @classmethod
+    def setUpClass(cls):
+        import jax
+        from duoforge_learn import train
+        from duoforge_learn.returns import gae, samples_of
+        from duoforge_learn.selfplay import SelfPlay
+        env = SelfPlay(8, 1, 0x2026100400000010)
+        try:
+            cls.net = policy.make(dict(policy.V1_DEFAULT))
+            cls.params = cls.net.init(jax.random.PRNGKey(50))
+            rollout, bootstrap, _, _ = train.collect(env, cls.params, cls.net.act, jax.random.PRNGKey(51), 12)
+        finally:
+            env.close()
+        adv, _, targets = gae(rollout["values"], rollout["rewards"], rollout["done"], rollout["acting"], bootstrap)
+        cls.samples = samples_of(rollout, adv, targets)
+
+    def _flat(self, params):
+        import jax
+        return np.concatenate([np.ravel(np.asarray(x)) for x in jax.tree_util.tree_leaves(params)])
+
+    def test_lr_scale_scales_the_step(self):
+        from duoforge_learn import ppo
+        tx = ppo.optimizer(3e-4)
+        still, _, _ = ppo.update(self.params, tx.init(self.params), tx, self.samples, np.random.default_rng(1),
+                                 self.net.evaluate, epochs=1, minibatch=64, lr_scale=0.0)
+        np.testing.assert_array_equal(self._flat(still), self._flat(self.params))
+        moved, _, _ = ppo.update(self.params, tx.init(self.params), tx, self.samples, np.random.default_rng(1),
+                                 self.net.evaluate, epochs=1, minibatch=64, lr_scale=1.0)
+        self.assertGreater(float(np.abs(self._flat(moved) - self._flat(self.params)).max()), 0.0)
+
+    def test_kl_anchor_is_zero_at_the_reference_and_pulls_toward_it(self):
+        import jax
+        from duoforge_learn import ppo
+        o = self.samples
+        at_self = dict(o, ref_logp=np.asarray(self.net.evaluate(self.params, o["obs"], o["slots"], o["mask"],
+                                                                o["is_team"], o["actions"])[0]))
+        tx = ppo.optimizer(3e-4)
+        _, _, stats = ppo.update(self.params, tx.init(self.params), tx, at_self, np.random.default_rng(2),
+                                 self.net.evaluate, epochs=1, minibatch=64, kl_coef=1.0, lr_scale=0.0)
+        self.assertAlmostEqual(float(stats["kl"]), 0.0, places=6)
+        # A reference that prefers other actions: the anchored update moves the taken actions' log-probabilities
+        # toward the reference's, the unanchored one does not.
+        ref = self.net.init(jax.random.PRNGKey(99))
+        anchored = dict(o, ref_logp=np.asarray(self.net.evaluate(ref, o["obs"], o["slots"], o["mask"], o["is_team"],
+                                                                 o["actions"])[0]))
+        gap = lambda p: float(np.abs(np.asarray(self.net.evaluate(p, o["obs"], o["slots"], o["mask"], o["is_team"],
+                                                                     o["actions"])[0]) - anchored["ref_logp"]).mean())
+        flat = dict(o, advantages=np.zeros_like(o["advantages"]))
+        pulled, _, stats = ppo.update(self.params, tx.init(self.params), tx,
+                                      dict(anchored, advantages=flat["advantages"]), np.random.default_rng(3),
+                                      self.net.evaluate, epochs=4, minibatch=64, kl_coef=1.0)
+        self.assertGreater(float(stats["kl"]), 0.0)
+        free, _, _ = ppo.update(self.params, tx.init(self.params), tx, flat, np.random.default_rng(3),
+                                self.net.evaluate, epochs=4, minibatch=64)
+        self.assertLess(gap(pulled), gap(free))
 
 
 class DeviceUpdateTest(unittest.TestCase):
