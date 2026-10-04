@@ -41,7 +41,7 @@ _DIMS = ("embed", "member", "position", "hidden", "layers", "option")
 # Options a resume may change; any other option that differs from the saved run is refused.
 _RESUMABLE = ("envs", "workers", "minutes", "updates", "self_play_share", "league_slots", "snapshot_every",
               "slot_refresh", "entropy", "eval_every", "eval_games", "eval_budget", "save_minutes", "teams",
-              "team_weights", "teams_root", "opponent_precision")
+              "team_weights", "teams_root", "opponent_precision", "minibatch")
 DATA_KINDS = {"closure": _layout.CONSTANTS["DUOFORGE_DATA_KIND_CLOSURE"],
               "team_c": _layout.CONSTANTS["DUOFORGE_DATA_KIND_TEAM_C"],
               "pool": _layout.CONSTANTS["DUOFORGE_DATA_KIND_POOL"]}
@@ -373,10 +373,21 @@ def main(argv=None):
     return run(parse(sys.argv[1:] if argv is None else list(argv)))
 
 
+def refuse_in_repository(path):
+    """SystemExit for a run directory inside a work tree of this repository: runs, their checkpoints and league
+    snapshots are private (AGENTS.md) and never written where a commit could pick them up."""
+    from duoforge_replay.dataset import refuse_repository
+    try:
+        refuse_repository(path)
+    except ValueError:
+        raise SystemExit(f"{path} is inside the repository: runs, checkpoints and snapshots never go there") from None
+
+
 def run(args, pool=None, on_start=None):
     """Trains a new run (args.out) or resumes one (args.resume). pool: the
     teams (default Teams A and B); on_start(envs, episodes) is called
     whenever episodes start (tests)."""
+    refuse_in_repository(args.out if args.resume is None else args.resume)
     stop = runstate.StopFlag().install()
     try:
         return _run(args, pool, on_start, stop)

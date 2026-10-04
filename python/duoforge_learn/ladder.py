@@ -189,6 +189,8 @@ def main(argv=None):
     p.add_argument("--no-init", action="store_true", help="leave out the untrained network")
     p.add_argument("--out", default=None, help="directory for ladder.json and ladder.md (default: the first run)")
     args = p.parse_args(sys.argv[1:] if argv is None else list(argv))
+    from .train import refuse_in_repository
+    refuse_in_repository(args.out or args.run_dirs[0])  # ladder.json names checkpoints of private runs
     import jax  # the ladder plays the policies
 
     import duoforge
