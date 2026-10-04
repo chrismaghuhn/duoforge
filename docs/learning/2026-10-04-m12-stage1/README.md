@@ -73,6 +73,16 @@ The search still models the opponent as `params-18129`, but it plays three other
 - **The default teacher is the 50/50 mix N/E** until the honest search has been measured.
 - S = 16 is enough.
 
-## Not in this report
+## Against the scripted agent (`raw/scripted/`, 1,024 games each)
 
-- The scripted agent as an opponent (`--opponents scripted`, #217) follows as its own section once #217 is merged.
+Run on main b7ba0232 (#217, library 0.42.0), again from a `git archive`, so `conditions.commit` is `null`. Same network, seeds and suite; the opponent S is evaluate's ScriptedPolicy (`--opponents scripted`).
+
+| Configuration | Score [95 %] | Paired vs R-vs-S [95 %] | ms per decision (median / p95) |
+|---|---|---|---|
+| R vs S (no search) | 0.955 [0.941–0.967] | – | – |
+| N, S = 16 | 0.958 [0.945–0.970] | +0.003 [-0.013–+0.021] | 5.88 / 7.44 |
+| E, S = 16 | 0.958 [0.946–0.970] | +0.003 [-0.013–+0.020] | 4.65 / 5.58 |
+
+0 unfinished and 0 unresolved games.
+
+**At the ceiling:** the network alone already wins 95.5 % against the scripted agent, so search has no room to show a gain, for N or E. This arm cannot separate the teachers; the panel above is the informative comparison.
