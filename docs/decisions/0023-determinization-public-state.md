@@ -127,3 +127,19 @@ Status: draft. Owner decisions of 2026-10-04: the brief of the visible-informati
   - belief updates from damage and turn order (M13 lever 3);
   - a tree search;
   - the stage 3 training loop.
+
+## 4. Amendments from the implementation (PR A, 2026-10-04)
+
+The engine state decided these details. `include/duoforge/duoforge_view.h` documents them.
+- **The public state is the masked canonical encoding.** It is the battle's canonical bytes (`src/codec/state_codec.h`) with the hidden values replaced: RNG zero; the foe's stat points, stats, maximum HP, exact HP and PP zero; its brought set empty and its pick order cut to the leads; running sleep and confusion counters as `DUOFORGE_VIEW_HIDDEN`; a charging foe's target as `DUOFORGE_VIEW_HIDDEN_TARGET`. A small header repeats what the search reads (boundary, turn, epoch, seen mask, leads). The layout is the codec's, so it needs no second definition, and a world is decoded strictly, so it passes the full check.
+- **Counters set without a draw** (Encore, Taunt, Heal Block and the others) stay as the remaining turns the state holds. They are public, and the starting length is not in the state, so no "duration variant" bit is needed.
+- **Drawn counters are not conditioned on the turns elapsed,** because the state keeps no such count. A running sleep has 1, 2 or 3 turns left, with weights 3, 3, 2. A running confusion has 1 to 5, with weights 4, 4, 3, 2, 1. Each weight is the prior's tail, the value seen at a random point of the run. Conditioning on the elapsed turns needs that count in the state: a later step.
+- **The freeze counter is public:** it always starts at 3, and the thaw chance is separate.
+- **Refused for now (`E_UNSUPPORTED`, public criteria):**
+  - a PIVOT where the foe still has sealed or queued commands (PR B samples them);
+  - a foe Substitute, whose HP follows hidden damage;
+  - a partial trap or a locked move (no mechanic draws their turns yet).
+- **A hypothesis whose maximum HP no exact HP fits** (a display flagged at exactly 20 or 50 % constrains it) is `E_INVALID_ARGUMENT`. The search draws another spread for that member and counts it.
+- **A world's RNG** is seeded with (0, 0), since a zero PCG state is not a valid state; every leaf is reseeded anyway.
+- **A built world that fails the full check** is `E_MALFORMED`, as the strict decoder reports it.
+- **The proof (`tests/test_view.c`):** 80 random games each under CLOSURE, TEAM_C and POOL (Teams A, B and C), about 8,500 views. Each view is a byte-equal round trip; 4 random hypotheses per view give back the same public state and the same observation and extension; hidden sleep, confusion and charging targets all occur.
