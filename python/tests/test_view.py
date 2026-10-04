@@ -24,7 +24,7 @@ class Views(unittest.TestCase):
             first = None
             checked = 0
             pivots = 0
-            for _ in range(64):
+            for _ in range(128):
                 roots.query_factored()
                 views, statuses = roots.public(players)
                 self.assertTrue(np.isin(statuses, [0, _layout.CONSTANTS["DUOFORGE_E_UNSUPPORTED"]]).all())
