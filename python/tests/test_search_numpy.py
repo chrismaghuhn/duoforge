@@ -623,7 +623,13 @@ class BayesRule(unittest.TestCase):
         # Numeric payoffs only, captured from the stopped 16-world arena
         # pilot. The origin basis produced an empty float strategy and
         # sent this small game into seconds of rational tableau pivots.
-        fixture = Path(__file__).with_name("fixtures") / "bayes-arena-16x8x8.json"
+        self._assert_fast_reproduction("bayes-arena-16x8x8.json", 0.5064255588992647)
+
+    def test_arena_tiny_pivot_retries_with_stable_ratio(self):
+        self._assert_fast_reproduction("bayes-arena-16x8x8-tiny-pivot.json", -0.150896305394414)
+
+    def _assert_fast_reproduction(self, filename, value):
+        fixture = Path(__file__).with_name("fixtures") / filename
         saved = json.loads(fixture.read_text())
         tables, weights = saved["tables"], saved["weights"]
         timings = []
@@ -635,13 +641,21 @@ class BayesRule(unittest.TestCase):
                 timings.append(time.perf_counter() - start)
                 self.assertFalse(sol.exact)
                 self.assertLessEqual(matrix.bayes_certify(tables, weights, sol.x, sol.ys), 1e-9)
-                self.assertAlmostEqual(sol.value, 0.5064255588992647, delta=1e-9)
+                self.assertAlmostEqual(sol.value, value, delta=1e-9)
                 if previous is not None:
                     np.testing.assert_array_equal(sol.x, previous.x)
                     np.testing.assert_array_equal(sol.ys, previous.ys)
                 previous = sol
         # Median tolerates an isolated scheduler interruption on shared CI.
         self.assertLess(float(np.median(timings)), 0.050)
+
+    def test_exact_rescue_remains_certified(self):
+        a = np.array([[[1., 0.], [0., 1.]], [[0., 1.], [1., 0.]]])
+        with patch.object(matrix, "_bland_float", side_effect=SearchError("float failed")):
+            sol = matrix.solve_bayes(a, [1., 1.])
+        self.assertTrue(sol.exact)
+        self.assertLessEqual(matrix.bayes_certify(a, [1., 1.], sol.x, sol.ys), 1e-9)
+        self.assertAlmostEqual(sol.value, 0.5, delta=1e-12)
 
     def test_many_worlds_with_near_duplicate_rows_and_columns(self):
         rng = np.random.default_rng(20261004)
