@@ -33,6 +33,8 @@
  *   - a charging target: among the targets the move's class allows.
  *
  * Refused (E_UNSUPPORTED), all decided by public facts:
+ *   - a PIVOT without a publicly acted move (the pre-move phase can still
+ *     hide a Mega declaration; a queue-kind refusal would leak it);
  *   - sealed opponent commands, or a queue with actions other than MOVE and
  *     RESIDUAL (switch/entry/mega continuations need another representation);
  *   - a foe Substitute (its HP follows hidden damage);

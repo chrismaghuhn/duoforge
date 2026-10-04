@@ -22,6 +22,7 @@
 #include "support/fixtures.h"
 #include "support/pool.h"
 #include "support/team_c.h"
+#include "state/battle_internal.h"
 
 #define GAMES 80u
 #define MAX_STEPS 400u
@@ -427,6 +428,55 @@ static void test_batch(df_test *t)
     duoforge_context_destroy(ctx);
 }
 
+static void test_early_pivot_information_boundary(df_test *t)
+{
+    duoforge_context *ctx = df_make_context(&df_config_k1);
+    duoforge_battle_setup setup;
+    (void)duoforge_reference_setup(0u, &setup);
+    duoforge_battle *b = df_make_battle(ctx, &setup);
+    duoforge_request rq[2];
+    duoforge_factored_domain domains[2];
+    duoforge_factored_choice choices[2] = {0};
+    for (uint32_t p = 0u; p < 2u; ++p) {
+        DF_CHECK(t, duoforge_battle_request(ctx, b, p, &rq[p]) == DUOFORGE_OK);
+        DF_CHECK(t, duoforge_battle_factored(ctx, b, p, &domains[p]) == DUOFORGE_OK);
+        for (uint32_t i = 0u; i < 4u; ++i) {
+            choices[p].picks[i] = (uint8_t)i;
+        }
+    }
+    duoforge_decision_bundle bundle;
+    DF_CHECK(t, build_bundle(rq, domains, choices, &bundle));
+    duoforge_step_result result;
+    DF_CHECK(t, duoforge_battle_step(ctx, b, &bundle, &result) == DUOFORGE_OK);
+    b->boundary_kind = (uint8_t)DUOFORGE_BOUNDARY_PIVOT;
+    b->request_mask = 1u;
+    ++b->request_epoch;
+    b->sides[0].requested_slots = 1u;
+    b->sides[1].requested_slots = 0u;
+    b->sides[0].positions[0].switch_flag = (uint8_t)DFI_SWITCH_EMERGENCY_EXIT;
+    const uint32_t actor = b->sides[1].positions[0].activation_id;
+    const dfi_queue_record move = {actor, (uint8_t)DFI_Q_MOVE, 1u, 0u, 0u, 0u, 0u};
+    const dfi_queue_record residual = {0u, (uint8_t)DFI_Q_RESIDUAL, 0u, 0u, 0u, 0u, 0u};
+    b->queue_len = 2u;
+    b->queue[0] = move;
+    b->queue[1] = residual;
+    DF_CHECK(t, duoforge_battle_check(ctx, b) == DUOFORGE_OK);
+    duoforge_public_state v;
+    memset(&v, 0x55, sizeof v);
+    DF_CHECK(t, duoforge_battle_public(ctx, b, 0u, &v) == DUOFORGE_E_UNSUPPORTED);
+    DF_CHECK(t, v.revision == 0x55555555u);
+    /* Same public pre-move facts, a hidden Mega declaration in the queue. */
+    b->queue_len = 3u;
+    b->queue[0] = (dfi_queue_record){actor, (uint8_t)DFI_Q_MEGA, 1u, 0u, 0u, 0u, 0u};
+    b->queue[1] = move;
+    b->queue[2] = residual;
+    DF_CHECK(t, duoforge_battle_check(ctx, b) == DUOFORGE_OK);
+    DF_CHECK(t, duoforge_battle_public(ctx, b, 0u, &v) == DUOFORGE_E_UNSUPPORTED);
+    DF_CHECK(t, v.revision == 0x55555555u);
+    duoforge_battle_destroy(b);
+    duoforge_context_destroy(ctx);
+}
+
 int main(void)
 {
     df_test t;
@@ -434,6 +484,7 @@ int main(void)
     test_uniforms(&t);
     test_arguments(&t);
     test_batch(&t);
+    test_early_pivot_information_boundary(&t);
     tally closure = {0};
     tally team_c = {0};
     tally pool = {0};
