@@ -137,7 +137,7 @@ class PipelineTest(unittest.TestCase):
             train.save(legacy, params, {"seed": 1})
             args = train.parse(["--init", legacy, "--out", os.path.join(folder, "legacy-run"), "--updates", "1",
                                 "--minutes", "0"])
-            with self.assertRaisesRegex(SystemExit, "format 1"):
+            with self.assertRaisesRegex(SystemExit, "format-1 checkpoints cannot start a run; --init needs format 2"):
                 train._load_init(args)
 
     def test_ladder_passes_each_checkpoint_its_encoder(self):
