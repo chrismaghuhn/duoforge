@@ -23,6 +23,7 @@
 #include "support/pool.h"
 #include "support/team_c.h"
 #include "state/battle_internal.h"
+#include "codec/state_codec.h"
 
 #define GAMES 80u
 #define MAX_STEPS 400u
@@ -129,9 +130,37 @@ static size_t bytes_of(const duoforge_context *ctx, const duoforge_battle *b, ui
 }
 
 /* A random valid hypothesis that keeps the true picks of `truth`. */
-static void random_hypothesis(const duoforge_hypothesis *truth, uint64_t *s, duoforge_hypothesis *h)
+static void random_hypothesis(const duoforge_hypothesis *truth, const duoforge_public_state *v, uint64_t *s, duoforge_hypothesis *h)
 {
     *h = *truth;
+    uint32_t brought = 0u;
+    for (uint32_t k = 0u; k < DUOFORGE_MAX_ROSTER; ++k) {
+        brought += truth->pick_order[k] != DUOFORGE_VIEW_PICK_NONE ? 1u : 0u;
+    }
+    if (brought >= 2u) {
+        uint8_t candidates[DUOFORGE_MAX_ROSTER];
+        for (uint32_t k = 0u; k < DUOFORGE_MAX_ROSTER; ++k) {
+            candidates[k] = (uint8_t)k;
+        }
+        for (uint32_t k = DUOFORGE_MAX_ROSTER; k > 1u; --k) {
+            const uint32_t j = (uint32_t)(next(s) % k);
+            const uint8_t tmp = candidates[k - 1u];
+            candidates[k - 1u] = candidates[j];
+            candidates[j] = tmp;
+        }
+        memset(h->pick_order + 2u, DUOFORGE_VIEW_PICK_NONE, DUOFORGE_MAX_ROSTER - 2u);
+        uint32_t filled = 2u;
+        uint32_t mask = (1u << h->pick_order[0]) | (1u << h->pick_order[1]);
+        for (uint32_t pass = 0u; pass < 2u; ++pass) {
+            for (uint32_t k = 0u; k < DUOFORGE_MAX_ROSTER && filled < brought; ++k) {
+                const uint32_t m = candidates[k];
+                if ((mask & (1u << m)) == 0u && (pass != 0u || (v->foe_seen_mask & (1u << m)) != 0u)) {
+                    h->pick_order[filled++] = (uint8_t)m;
+                    mask |= 1u << m;
+                }
+            }
+        }
+    }
     for (uint32_t m = 0u; m < DUOFORGE_MAX_ROSTER; ++m) {
         uint32_t total = 0u;
         for (uint32_t i = 0u; i < 6u; ++i) {
@@ -204,7 +233,7 @@ static void check_state(df_test *t, const duoforge_context *ctx, const duoforge_
         DF_CHECK(t, duoforge_battle_observe_ext(ctx, b, p, &ext_true) == DUOFORGE_OK);
         for (uint32_t w = 0u; w < WORLDS; ++w) {
             duoforge_hypothesis r;
-            random_hypothesis(&h, rs, &r);
+            random_hypothesis(&h, &view, rs, &r);
             const duoforge_status ws = duoforge_battle_from_view(ctx, &view, &r, world);
             if (ws == DUOFORGE_E_INVALID_ARGUMENT) {
                 /* a maximum HP under which no exact HP shows a flagged display: the true HP points fix it */
@@ -477,12 +506,75 @@ static void test_early_pivot_information_boundary(df_test *t)
     duoforge_context_destroy(ctx);
 }
 
+static void test_counter_information_safety(df_test *t)
+{
+    duoforge_context *ctx = df_make_context(&df_config_k1);
+    duoforge_battle_setup setup;
+    (void)duoforge_reference_setup(0u, &setup);
+    duoforge_battle *b = df_make_battle(ctx, &setup);
+    duoforge_request rq[2];
+    duoforge_factored_domain d[2];
+    duoforge_factored_choice c[2] = {0};
+    for (uint32_t p = 0u; p < 2u; ++p) {
+        DF_CHECK(t, duoforge_battle_request(ctx, b, p, &rq[p]) == DUOFORGE_OK);
+        DF_CHECK(t, duoforge_battle_factored(ctx, b, p, &d[p]) == DUOFORGE_OK);
+        for (uint32_t k = 0u; k < d[p].pick_count; ++k) {
+            c[p].picks[k] = (uint8_t)k;
+        }
+    }
+    duoforge_decision_bundle bundle;
+    DF_CHECK(t, build_bundle(rq, d, c, &bundle));
+    duoforge_step_result result;
+    DF_CHECK(t, duoforge_battle_step(ctx, b, &bundle, &result) == DUOFORGE_OK);
+    duoforge_public_state normal;
+    duoforge_hypothesis h;
+    DF_CHECK(t, duoforge_battle_public(ctx, b, 0u, &normal) == DUOFORGE_OK);
+    DF_CHECK(t, duoforge_battle_hypothesis(ctx, b, 0u, &h) == DUOFORGE_OK);
+    const struct duoforge_battle original = *b;
+    for (uint32_t side = 0u; side < 2u; ++side) {
+        for (uint32_t counter = 1u; counter <= 3u; ++counter) {
+            *b = original;
+            const uint32_t member = b->sides[side].positions[0].occupant;
+            b->sides[side].members[member].status = (uint8_t)DFI_STATUS_SLP;
+            b->sides[side].members[member].status_counter = (uint8_t)counter;
+            DF_CHECK(t, duoforge_battle_check(ctx, b) == DUOFORGE_OK);
+            for (uint32_t p = 0u; p < 2u; ++p) {
+                duoforge_public_state untouched;
+                memset(&untouched, 0x55, sizeof untouched);
+                DF_CHECK(t, duoforge_battle_public(ctx, b, p, &untouched) == DUOFORGE_E_UNSUPPORTED);
+                DF_CHECK(t, untouched.revision == 0x55555555u);
+            }
+        }
+        for (uint32_t counter = 1u; counter <= 5u; ++counter) {
+            *b = original;
+            b->sides[side].positions[0].confusion_turns = (uint8_t)counter;
+            DF_CHECK(t, duoforge_battle_check(ctx, b) == DUOFORGE_OK);
+            for (uint32_t p = 0u; p < 2u; ++p) {
+                duoforge_public_state untouched;
+                memset(&untouched, 0x55, sizeof untouched);
+                DF_CHECK(t, duoforge_battle_public(ctx, b, p, &untouched) == DUOFORGE_E_UNSUPPORTED);
+                DF_CHECK(t, untouched.revision == 0x55555555u);
+            }
+        }
+    }
+    *b = original;
+    /* Even a caller-supplied masked record cannot bypass the support gate. */
+    normal.state[DFI_ENC_SIDE_OFF + DFI_ENC_SIDE_MEMBERS_OFF + DFI_ENC_MEMBER_STATUS_OFF] = (uint8_t)DFI_STATUS_SLP;
+    normal.state[DFI_ENC_SIDE_OFF + DFI_ENC_SIDE_MEMBERS_OFF + DFI_ENC_MEMBER_STATUS_COUNTER_OFF] = (uint8_t)DUOFORGE_VIEW_HIDDEN;
+    DF_CHECK(t, duoforge_battle_from_view(ctx, &normal, &h, b) == DUOFORGE_E_UNSUPPORTED);
+    DF_CHECK(t, memcmp(b, &original, sizeof original) == 0);
+    duoforge_battle_destroy(b);
+    duoforge_context_destroy(ctx);
+}
+
+
 int main(void)
 {
     df_test t;
     df_test_begin(&t, "duoforge.view");
     test_uniforms(&t);
     test_arguments(&t);
+    test_counter_information_safety(&t);
     test_batch(&t);
     test_early_pivot_information_boundary(&t);
     tally closure = {0};

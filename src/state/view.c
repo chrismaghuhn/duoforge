@@ -213,6 +213,30 @@ static uint32_t dfi_target_candidates(uint32_t target_class, uint32_t user, uint
 
 /* ---- the public state ---- */
 
+/* Elapsed status attempts are not stored in schema 3. Never invent their
+ * posterior: reject only statuses visible in this player's observation. */
+static duoforge_status dfi_view_counter_support(const duoforge_context *ctx, const duoforge_battle *b, uint32_t player)
+{
+    duoforge_observation observation;
+    const duoforge_status st = duoforge_battle_observe(ctx, b, player, &observation);
+    if (st != DUOFORGE_OK) {
+        return st;
+    }
+    for (uint32_t side = 0u; side < DUOFORGE_SIDE_COUNT; ++side) {
+        for (uint32_t m = 0u; m < DUOFORGE_MAX_ROSTER; ++m) {
+            if (observation.sides[side].members[m].status == DUOFORGE_AILMENT_SLEEP) {
+                return DUOFORGE_E_UNSUPPORTED;
+            }
+        }
+        for (uint32_t p = 0u; p < DUOFORGE_ACTIVE_PER_SIDE; ++p) {
+            if (observation.sides[side].positions[p].confused != 0u) {
+                return DUOFORGE_E_UNSUPPORTED;
+            }
+        }
+    }
+    return DUOFORGE_OK;
+}
+
 static duoforge_status dfi_view_encode(const duoforge_context *ctx, const duoforge_battle *b, uint32_t player,
                                        uint8_t *s, size_t *out_size)
 {
@@ -227,6 +251,10 @@ static duoforge_status dfi_view_encode(const duoforge_context *ctx, const duofor
     }
     if (dfi_state_check(ctx, b, NULL) != DUOFORGE_OK) {
         return DUOFORGE_E_INVARIANT;
+    }
+    const duoforge_status counter_support = dfi_view_counter_support(ctx, b, player);
+    if (counter_support != DUOFORGE_OK) {
+        return counter_support;
     }
     const uint32_t foe = player ^ 1u;
     /* the refusals, each decided by public facts */
@@ -591,6 +619,9 @@ duoforge_status duoforge_battle_from_view(const duoforge_context *ctx, const duo
     }
     if (!dfi_bytes_equal((const uint8_t *)view, (const uint8_t *)&checked, sizeof checked)) {
         return DUOFORGE_E_MALFORMED;
+    const duoforge_status counter_support = dfi_view_counter_support(ctx, &world, player);
+    if (counter_support != DUOFORGE_OK) {
+        return counter_support;
     }
     *out = world;
     return DUOFORGE_OK;
