@@ -319,7 +319,8 @@ def main(argv=None):
                    help="params-<update>, a file of the run or a path (default: the best by RUN/ladder.json)")
     p.add_argument("--agents", default="N,E", help="N (the Nash rule) and/or E (the expected value)")
     p.add_argument("--opponents", default="raw",
-                   help="raw (the same network without search) and/or panel (three earlier checkpoints)")
+                   help="raw (the same network without search), panel (three earlier checkpoints) and/or "
+                        "scripted (evaluate's ScriptedPolicy)")
     p.add_argument("--panel", default=None,
                    help="three checkpoints for the panel (default: nearest to 25, 50 and 75 %% of the run's updates)")
     p.add_argument("--games", type=int, default=GAMES, help="the suite's budget of games")
@@ -334,7 +335,7 @@ def main(argv=None):
     p.add_argument("--resamples", type=int, default=RESAMPLES, help="bootstrap resamples")
     args = p.parse_args(sys.argv[1:] if argv is None else list(argv))
     agents = _list(args.agents, "agents", AGENTS)
-    wanted = _list(args.opponents, "opponents", ("raw", "panel"))
+    wanted = _list(args.opponents, "opponents", ("raw", "panel", "scripted"))
     km = []
     for item in _list(args.km, "km"):
         m = re.fullmatch(r"(\d+)x(\d+)", item)
@@ -392,6 +393,8 @@ def main(argv=None):
             picks = panel_checkpoints(args.run_dir)
         for pct, _, panel_path in picks:
             opponents[f"P{pct}"] = load(panel_path, f"P{pct}")
+    if "scripted" in wanted:  # evaluate's ScriptedPolicy (play_suite's opponent "scripted"), a fixed non-network player
+        opponents["S"] = ("scripted", {"name": "S", "scripted": True})
 
     commit, dirty = _commit()
     try:
@@ -403,12 +406,14 @@ def main(argv=None):
         "games": args.games, "suite_rows": int(rows.shape[0]), "agents": agents, "km": [f"{k}x{m}" for k, m in km],
         "s": samples, "search_seed": hex(lookahead.SEARCH_SEED), "arena_seed": hex(ARENA_SEED),
         "bootstrap_seed": hex(BOOTSTRAP_SEED), "resamples": args.resamples, "checkpoint": raw_info,
-        "panel": [info for name, (_, info) in opponents.items() if name != "R"],
+        "panel": [info for name, (_, info) in opponents.items() if name not in ("R", "S")],
         "pool": {"ids": list(pool.ids), "sha256": list(pool.sha256), "data_kind": int(kind)},
         "library": duoforge.version(), "commit": commit, "dirty": dirty, "python": platform.python_version(),
         "numpy": np.__version__, "jax": jax.__version__, "jaxlib": jaxlib, "backend": jax.default_backend(),
         "devices": [str(d) for d in jax.devices()], "cpu": cpu_model(), "platform": platform.platform(),
         "xla_flags": os.environ.get("XLA_FLAGS", "")}
+    if "S" in opponents:  # only then, so raw and panel runs keep their conditions byte for byte
+        conditions["scripted"] = True
     os.makedirs(os.path.join(args.out, "raw"), exist_ok=True)
 
     configs = {}

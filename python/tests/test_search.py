@@ -660,6 +660,22 @@ class ArenaCli(unittest.TestCase):
             with self.assertRaises(SystemExit):
                 arena.main(["--run-dir", self.run_dir, "--out", out] + bad)
 
+    def test_cli_scripted_opponent(self):
+        # --opponents scripted plays evaluate's ScriptedPolicy as opponent S: R-vs-S as the baseline and each
+        # searched agent against it; the conditions say so, and raw and panel runs keep their conditions as before.
+        out = os.path.join(self.tmp.name, "scripted")
+        summary = self._main(out, "--checkpoint", "params-400", "--agents", "N", "--s", "2", "--max-steps", "3",
+                             "--opponents", "raw,scripted")
+        self.assertEqual(set(summary["configs"]), {"R-vs-R", "N-k2m2s2-vs-R", "R-vs-S", "N-k2m2s2-vs-S"})
+        self.assertIs(summary["conditions"]["scripted"], True)
+        self.assertEqual(summary["conditions"]["panel"], [])
+        self.assertIn("paired_vs_R", summary["configs"]["N-k2m2s2-vs-S"])
+        raw_only = self._main(os.path.join(self.tmp.name, "raw-only"), "--checkpoint", "params-400", "--agents", "N",
+                              "--s", "2", "--max-steps", "3")
+        self.assertNotIn("scripted", raw_only["conditions"])
+        with self.assertRaises(SystemExit):
+            arena.main(["--run-dir", self.run_dir, "--out", out, "--opponents", "random"])
+
 
 # Mixed strategies of the LookaheadDecisions round (3 x 3 x 4, capacity 256): environment -> (the play draw u,
 # a pure function of the key, and the row it plays). u lies more than 1e-3 from every boundary of the strategy.
