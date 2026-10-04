@@ -514,6 +514,31 @@ class ResumeTest(unittest.TestCase):
         resume = [r for r in _log(self.out) if "resume" in r][-1]["resume"]
         self.assertEqual(resume["opponent_precision"], ["bfloat16", "float32"])
 
+    def test_minibatch_is_resumable(self):
+        # More learner work per second (owner, 2026-10-04): a resume may change the minibatch, logged as a change.
+        self.assertEqual(_run(["--envs", "8", "--updates", "1", "--out", self.out] + _SMALL), 0)
+        self.assertEqual(_run(["--resume", self.out, "--updates", "2", "--minibatch", "512"]), 0)
+        resume = [r for r in _log(self.out) if "resume" in r][-1]["resume"]
+        self.assertEqual(resume["minibatch"], [256, 512])
+
+    def test_run_directories_inside_the_repository_are_refused(self):
+        # Runs, checkpoints and league snapshots are private (AGENTS.md): never written inside a work tree.
+        import os
+        import shutil
+        from duoforge_learn import ladder
+        inside = os.path.join(os.path.dirname(os.path.abspath(__file__)), "duoforge-run-must-not-exist")
+        try:
+            with self.assertRaisesRegex(SystemExit, "inside the repository"):
+                _run(["--envs", "8", "--updates", "1", "--out", inside] + _SMALL)
+            with self.assertRaisesRegex(SystemExit, "inside the repository"):
+                _run(["--resume", inside, "--updates", "2"])
+            self.assertFalse(os.path.exists(inside))
+            with self.assertRaisesRegex(SystemExit, "inside the repository"):
+                ladder.main([self.out, "--out", inside])
+            self.assertFalse(os.path.exists(inside))
+        finally:
+            shutil.rmtree(inside, ignore_errors=True)  # a failing run of this test leaves nothing in the repository
+
     def test_refused_option_names_itself(self):
         self.assertEqual(_run(["--envs", "8", "--updates", "1", "--out", self.out] + _SMALL), 0)
         with self.assertRaisesRegex(SystemExit, "learning_rate"):
