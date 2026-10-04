@@ -348,8 +348,10 @@ def draw(x, prior_rank, u):
 # column player knows its world and best-responds in each:
 #     maximize sum_w p_w v_w  s.t.  v_w <= sum_i x_i b_w[i, j] for all w, j;  sum_i x_i <= 1;  x, v >= 0
 # on the tables scaled together to [0, 1] and shifted by 1 (b >= 1), so the
-# origin is feasible and sum_i x_i = 1 at the optimum. A dense tableau
-# simplex with Bland's rule solves it; the duals of the rows (w, j), divided
+# origin is feasible and sum_i x_i = 1 at the optimum. The float tableau
+# starts instead at x[0] = 1 and each world's worst column value, avoiding
+# the degenerate origin. A dense tableau simplex with Bland's rule solves
+# it; the duals of the rows (w, j), divided
 # by p_w, are the column player's strategies y_w. The exact rescue runs the
 # same simplex in rational arithmetic.
 
@@ -468,6 +470,22 @@ def _bland_float(b, p):
     t[:r, n:n + r] = np.eye(r)
     t[r, k:n] = p
     basis = list(range(n, n + r))
+
+    def pivot_at(leave, enter):
+        pivot = t[leave] / t[leave, enter]
+        t[:] -= np.outer(t[:, enter], pivot)
+        t[leave] = pivot
+        basis[leave] = enter
+
+    # Start at the feasible first-row strategy, rather than the highly
+    # degenerate origin (all W*M world constraints have zero RHS there).
+    # Set x[0] = 1, then v[w] = min_j b[w, 0, j]. Each world pivot has
+    # coefficient exactly 1; the remaining RHS are nonnegative slacks.
+    # First minima preserve the column order. Avoiding the zero-length
+    # origin pivots also avoids amplifying roundoff into a false optimum.
+    pivot_at(r - 1, 0)
+    for w in range(nw):
+        pivot_at(w * m + int(np.argmin(b[w, 0])), k + w)
     for _ in range(MAX_ITERATIONS):
         positive = np.flatnonzero(t[r, :n + r] > _EPS)
         if positive.size == 0:
@@ -482,10 +500,7 @@ def _bland_float(b, p):
                     leave, best = i, ratio
         if leave < 0:
             raise SearchError("the Bayesian linear program is unbounded, which shifted tables cannot be")
-        pivot = t[leave] / t[leave, enter]
-        t -= np.outer(t[:, enter], pivot)
-        t[leave] = pivot
-        basis[leave] = enter
+        pivot_at(leave, enter)
     else:
         raise SearchError(f"the Bayesian simplex did not finish in {MAX_ITERATIONS} iterations")
     z = np.zeros(n, dtype=np.float64)
