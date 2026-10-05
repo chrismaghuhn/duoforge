@@ -10,7 +10,11 @@ Two plateau levers (2026-10-04): lr_scale multiplies the optimizer's step
 is, so saved runs resume), and samples with "ref_logp" (a reference policy's
 log-probability of each taken action, for example the BC prior) add
 kl_coef times the k3 estimate of KL(policy || reference) on the policy's rows:
-(r - 1) - log r with r = exp(ref_logp - logp), never negative.
+(r - 1) - log r with r = exp(ref_logp - logp), never negative. Above
+log r = KL_LOG_RATIO_MAX the estimate goes on linearly with k3's slope at
+the cap: a rarely drawn action that the reference finds likely made r
+unbounded (means up to 7.9e6 in the magnet run of 2026-10-04), and one such
+row filled a whole clipped gradient step.
 """
 import functools
 
@@ -21,6 +25,17 @@ import optax
 
 from . import model
 from .returns import gae  # noqa: F401  (the advantages of a rollout)
+
+
+KL_LOG_RATIO_MAX = 3.0
+
+
+def _k3(log_r):
+    """k3 of log r up to KL_LOG_RATIO_MAX, linear beyond it (same value
+    and slope at the cap)."""
+    c = KL_LOG_RATIO_MAX
+    capped = jnp.minimum(log_r, c)
+    return jnp.exp(capped) - 1.0 - capped + (jnp.exp(c) - 1.0) * jnp.maximum(log_r - c, 0.0)
 
 
 def optimizer(learning_rate=3e-4, max_norm=0.5):
@@ -45,7 +60,7 @@ def _loss(params, batch, evaluate_fn, clip, entropy_coef, value_coef, kl_coef=0.
     loss = policy_loss + value_coef * value_loss - entropy_coef * entropy_mean
     if "ref_logp" in batch:  # the KL anchor to a reference policy (k3 on the taken actions)
         log_r = batch["ref_logp"] - logp
-        kl_mean = ((jnp.exp(log_r) - 1.0 - log_r) * w).sum() / total
+        kl_mean = (_k3(log_r) * w).sum() / total
         loss = loss + kl_coef * kl_mean
     else:
         kl_mean = jnp.float32(0.0)
