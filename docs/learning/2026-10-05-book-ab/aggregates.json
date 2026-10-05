@@ -1,0 +1,326 @@
+{
+  "schema_version": 1,
+  "experiment": {
+    "date": "2026-10-05",
+    "code_revision": "fbcc623e88754c863b7d4a7f38be6ef63f6786d2",
+    "library": "0.43.0",
+    "candidate": "params-49333",
+    "panel": [
+      "params-0",
+      "params-3600",
+      "params-11000"
+    ],
+    "checkpoint_sha256": {
+      "params-49333": "ef1abe65f63711eb47e335d6169aad34584e50d4f2df321e4e9cbbbdcaf961cb",
+      "params-0": "bbd9656c5efed224e53667af1c26111594f7c3d956ea112424684099c6562b94",
+      "params-3600": "db0987eaf7c11ede1a35d43158ddaa2748224f00a200882efcdb0fc9f2300b56",
+      "params-11000": "ef0521b5b933cd0e74ed0381e7d2b3bed32f51c881ef652b8c4c18131477a8b9"
+    },
+    "pool_team_count": 79,
+    "pool_groups_evaluated": [
+      "PP_/A/B/C"
+    ],
+    "source_selection": "champions_only_strictly_validated",
+    "mode": "override",
+    "minimum_observed_choice_count": 20,
+    "override_rank": "wilson_lower_endpoint_z1.96",
+    "workers": 4,
+    "cpu_cores": 4,
+    "backend": "cpu",
+    "numpy": "2.5.3",
+    "jax": "0.11.2",
+    "games_per_arm_per_opponent": 2000,
+    "seed": 2316556667694613032,
+    "max_steps": 1000,
+    "bootstrap_resamples": 2000,
+    "bootstrap_unit": "paired seat orders",
+    "confidence_level": 0.95
+  },
+  "opponents": {
+    "same_checkpoint": {
+      "without_book": {
+        "games": 2000,
+        "score": 0.4985,
+        "score_95": [
+          0.4725,
+          0.5245
+        ],
+        "unfinished": 0,
+        "unresolved": 0
+      },
+      "with_book": {
+        "games": 2000,
+        "score": 0.497,
+        "score_95": [
+          0.4705,
+          0.5235
+        ],
+        "unfinished": 0,
+        "unresolved": 0
+      },
+      "paired_difference": {
+        "score": -0.0015,
+        "score_95": [
+          -0.0125,
+          0.010512499999999932
+        ]
+      }
+    },
+    "BC": {
+      "without_book": {
+        "games": 2000,
+        "score": 0.7615,
+        "score_95": [
+          0.739,
+          0.784
+        ],
+        "unfinished": 0,
+        "unresolved": 0
+      },
+      "with_book": {
+        "games": 2000,
+        "score": 0.7505,
+        "score_95": [
+          0.7274875000000001,
+          0.772
+        ],
+        "unfinished": 0,
+        "unresolved": 0
+      },
+      "paired_difference": {
+        "score": -0.011,
+        "score_95": [
+          -0.022,
+          -0.001
+        ]
+      }
+    },
+    "3600": {
+      "without_book": {
+        "games": 2000,
+        "score": 0.691,
+        "score_95": [
+          0.6665,
+          0.715
+        ],
+        "unfinished": 0,
+        "unresolved": 0
+      },
+      "with_book": {
+        "games": 2000,
+        "score": 0.6915,
+        "score_95": [
+          0.6665,
+          0.715
+        ],
+        "unfinished": 0,
+        "unresolved": 0
+      },
+      "paired_difference": {
+        "score": 0.0005,
+        "score_95": [
+          -0.0125,
+          0.0135
+        ]
+      }
+    },
+    "11000": {
+      "without_book": {
+        "games": 2000,
+        "score": 0.7155,
+        "score_95": [
+          0.693,
+          0.7385
+        ],
+        "unfinished": 0,
+        "unresolved": 0
+      },
+      "with_book": {
+        "games": 2000,
+        "score": 0.7055,
+        "score_95": [
+          0.6815,
+          0.7295
+        ],
+        "unfinished": 0,
+        "unresolved": 0
+      },
+      "paired_difference": {
+        "score": -0.01,
+        "score_95": [
+          -0.02,
+          0.0005
+        ]
+      }
+    }
+  },
+  "preview_usage_per_opponent": {
+    "games": 2000,
+    "preview_games": 2000,
+    "answered": 2000,
+    "answered_share": 1.0,
+    "applied": 258,
+    "applied_share": 0.129,
+    "levels": {
+      "exact_team": 26,
+      "lead_pair_vs_opposing_lead_pair": 1960,
+      "team_ignoring_items": 14
+    },
+    "level_shares": {
+      "exact_team": 0.013,
+      "lead_pair_vs_opposing_lead_pair": 0.98,
+      "team_ignoring_items": 0.007
+    },
+    "fallbacks": {
+      "below_choice_min_count": 1742,
+      "missing_backs": 1688
+    },
+    "rejected_choices": {
+      "below_choice_min_count": 70510,
+      "missing_backs": 14420
+    },
+    "fallback_games": 1742,
+    "fallback_share": 0.871,
+    "applied_levels": {
+      "lead_pair_vs_opposing_lead_pair": 258
+    }
+  },
+  "by_pool_group": {
+    "PP_/A/B/C": {
+      "status": "evaluated",
+      "opponents": {
+        "same_checkpoint": {
+          "without_book": {
+            "games": 2000,
+            "score": 0.4985,
+            "score_95": [
+              0.4725,
+              0.5245
+            ],
+            "unfinished": 0,
+            "unresolved": 0
+          },
+          "with_book": {
+            "games": 2000,
+            "score": 0.497,
+            "score_95": [
+              0.4705,
+              0.5235
+            ],
+            "unfinished": 0,
+            "unresolved": 0
+          },
+          "paired_difference": {
+            "score": -0.0015,
+            "score_95": [
+              -0.0125,
+              0.010512499999999932
+            ]
+          }
+        },
+        "BC": {
+          "without_book": {
+            "games": 2000,
+            "score": 0.7615,
+            "score_95": [
+              0.739,
+              0.784
+            ],
+            "unfinished": 0,
+            "unresolved": 0
+          },
+          "with_book": {
+            "games": 2000,
+            "score": 0.7505,
+            "score_95": [
+              0.7274875000000001,
+              0.772
+            ],
+            "unfinished": 0,
+            "unresolved": 0
+          },
+          "paired_difference": {
+            "score": -0.011,
+            "score_95": [
+              -0.022,
+              -0.001
+            ]
+          }
+        },
+        "3600": {
+          "without_book": {
+            "games": 2000,
+            "score": 0.691,
+            "score_95": [
+              0.6665,
+              0.715
+            ],
+            "unfinished": 0,
+            "unresolved": 0
+          },
+          "with_book": {
+            "games": 2000,
+            "score": 0.6915,
+            "score_95": [
+              0.6665,
+              0.715
+            ],
+            "unfinished": 0,
+            "unresolved": 0
+          },
+          "paired_difference": {
+            "score": 0.0005,
+            "score_95": [
+              -0.0125,
+              0.0135
+            ]
+          }
+        },
+        "11000": {
+          "without_book": {
+            "games": 2000,
+            "score": 0.7155,
+            "score_95": [
+              0.693,
+              0.7385
+            ],
+            "unfinished": 0,
+            "unresolved": 0
+          },
+          "with_book": {
+            "games": 2000,
+            "score": 0.7055,
+            "score_95": [
+              0.6815,
+              0.7295
+            ],
+            "unfinished": 0,
+            "unresolved": 0
+          },
+          "paired_difference": {
+            "score": -0.01,
+            "score_95": [
+              -0.02,
+              0.0005
+            ]
+          }
+        }
+      }
+    },
+    "LL_": {
+      "status": "not_evaluated",
+      "games_per_arm_per_opponent": 0
+    }
+  },
+  "validation": {
+    "scores_and_clustered_intervals_recomputed": true,
+    "preview_counts_reconciled": true,
+    "paired_rows_identical_between_arms": true
+  },
+  "owner_decision": {
+    "keep_optional_code": true,
+    "default_enabled": false,
+    "use_in_bot": false,
+    "interpretation": "The book is too thin / human leads don't transfer to the net's play style."
+  }
+}
