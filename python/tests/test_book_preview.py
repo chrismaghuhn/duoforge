@@ -372,9 +372,12 @@ class BookABStatisticsTest(unittest.TestCase):
                 (root / f"{name}.npz").touch()
             with self.assertRaisesRegex(ValueError, "--panel-run-dir"):
                 book_ab.panel_paths(book_ab.PANEL)
-            expected = [str(root / f"{name}.npz") for name in book_ab.PANEL]
+            provided = [str(root / f"{name}.npz") for name in book_ab.PANEL]
+            # The resolver promises canonical paths; Windows TEMP may use
+            # 8.3 aliases (RUNNER~1), which resolve to the long user name.
+            expected = [str(Path(path).resolve()) for path in provided]
             self.assertEqual(book_ab.panel_paths(book_ab.PANEL, root), expected)
-            self.assertEqual(book_ab.panel_paths(expected), expected)
+            self.assertEqual(book_ab.panel_paths(provided), expected)
 
     def test_all_preview_clis_report_invalid_options_as_argparse_errors(self):
         cases = ((arena.main, ["--run-dir", "unused", "--out", "unused"]),
