@@ -14,7 +14,10 @@ import json
 import math
 import os
 import tempfile
+import time
 import unittest
+from pathlib import Path
+from unittest.mock import patch
 
 import numpy as np
 
@@ -615,6 +618,55 @@ class ArenaStatistics(unittest.TestCase):
 
 class BayesRule(unittest.TestCase):
     """The Bayesian Nash rule (decision 0023, spec section 6.3)."""
+
+    def test_arena_reproduction_avoids_rational_blowup(self):
+        # Numeric payoffs only, captured from the stopped 16-world arena
+        # pilot. The origin basis produced an empty float strategy and
+        # sent this small game into seconds of rational tableau pivots.
+        self._assert_fast_reproduction("bayes-arena-16x8x8.json", 0.5064255588992647)
+
+    def test_arena_tiny_pivot_retries_with_stable_ratio(self):
+        self._assert_fast_reproduction("bayes-arena-16x8x8-tiny-pivot.json", -0.150896305394414)
+
+    def _assert_fast_reproduction(self, filename, value):
+        fixture = Path(__file__).with_name("fixtures") / filename
+        saved = json.loads(fixture.read_text())
+        tables, weights = saved["tables"], saved["weights"]
+        timings = []
+        previous = None
+        with patch.object(matrix, "_bland", side_effect=AssertionError("unexpected exact rescue")):
+            for _ in range(5):
+                start = time.perf_counter()
+                sol = matrix.solve_bayes(tables, weights)
+                timings.append(time.perf_counter() - start)
+                self.assertFalse(sol.exact)
+                self.assertLessEqual(matrix.bayes_certify(tables, weights, sol.x, sol.ys), 1e-9)
+                self.assertAlmostEqual(sol.value, value, delta=1e-9)
+                if previous is not None:
+                    np.testing.assert_array_equal(sol.x, previous.x)
+                    np.testing.assert_array_equal(sol.ys, previous.ys)
+                previous = sol
+        # Median tolerates an isolated scheduler interruption on shared CI.
+        self.assertLess(float(np.median(timings)), 0.050)
+
+    def test_exact_rescue_remains_certified(self):
+        a = np.array([[[1., 0.], [0., 1.]], [[0., 1.], [1., 0.]]])
+        with patch.object(matrix, "_bland_float", side_effect=SearchError("float failed")):
+            sol = matrix.solve_bayes(a, [1., 1.])
+        self.assertTrue(sol.exact)
+        self.assertLessEqual(matrix.bayes_certify(a, [1., 1.], sol.x, sol.ys), 1e-9)
+        self.assertAlmostEqual(sol.value, 0.5, delta=1e-12)
+
+    def test_many_worlds_with_near_duplicate_rows_and_columns(self):
+        rng = np.random.default_rng(20261004)
+        for _ in range(30):
+            a = rng.uniform(-1, 1, (16, 8, 8)).astype(np.float32).astype(np.float64)
+            a[:, 1] = a[:, 0]
+            a[:, 2] = a[:, 0] + rng.choice([-1, 1], (16, 8)) * 2**-24
+            a[:, :, 1] = a[:, :, 0]
+            p = rng.random(16) + 0.1
+            sol = matrix.solve_bayes(a, p)
+            self.assertLessEqual(matrix.bayes_certify(a, p, sol.x, sol.ys), 1e-9)
 
     def test_one_world_is_the_matrix_game(self):
         rng = np.random.default_rng(23)

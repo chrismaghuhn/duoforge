@@ -348,10 +348,13 @@ def draw(x, prior_rank, u):
 # column player knows its world and best-responds in each:
 #     maximize sum_w p_w v_w  s.t.  v_w <= sum_i x_i b_w[i, j] for all w, j;  sum_i x_i <= 1;  x, v >= 0
 # on the tables scaled together to [0, 1] and shifted by 1 (b >= 1), so the
-# origin is feasible and sum_i x_i = 1 at the optimum. A dense tableau
-# simplex with Bland's rule solves it; the duals of the rows (w, j), divided
-# by p_w, are the column player's strategies y_w. The exact rescue runs the
-# same simplex in rational arithmetic.
+# origin is feasible and sum_i x_i = 1 at the optimum. The float tableau
+# starts instead at x[0] = 1 and each world's worst column value, avoiding
+# the degenerate origin. A dense tableau simplex with Bland's rule solves
+# it; the duals of the rows (w, j), divided by p_w, are the column player's
+# strategies y_w. If certification fails, a float retry uses a stable
+# two-pass ratio test before the rational Bland rescue. All paths certify
+# the original tables at the same tolerance.
 
 
 def _tables(tables, weights):
@@ -453,9 +456,11 @@ def _bland(rows, rhs, cost, zero, positive):
     return z, duals
 
 
-def _bland_float(b, p):
+def _bland_float(b, p, stable=False):
     """_bland on the float tableau of the LP above, in NumPy (no BLAS: the
-    pivot is an elementwise update)."""
+    pivot is an elementwise update). With stable=True, retry using a
+    two-pass ratio test to avoid tiny pivots on nearly tied constraints;
+    the returned strategies still require the original certificate."""
     nw, k, m = b.shape
     r = nw * m + 1
     n = k + nw
@@ -468,24 +473,59 @@ def _bland_float(b, p):
     t[:r, n:n + r] = np.eye(r)
     t[r, k:n] = p
     basis = list(range(n, n + r))
+
+    def pivot_at(leave, enter):
+        pivot = t[leave] / t[leave, enter]
+        t[:] -= np.outer(t[:, enter], pivot)
+        t[leave] = pivot
+        basis[leave] = enter
+
+    # Start at the feasible first-row strategy, rather than the highly
+    # degenerate origin (all W*M world constraints have zero RHS there).
+    # Set x[0] = 1, then v[w] = min_j b[w, 0, j]. Each world pivot has
+    # coefficient exactly 1; the remaining RHS are nonnegative slacks.
+    # First minima preserve the column order. Avoiding the zero-length
+    # origin pivots also avoids amplifying roundoff into a false optimum.
+    pivot_at(r - 1, 0)
+    for w in range(nw):
+        pivot_at(w * m + int(np.argmin(b[w, 0])), k + w)
+    seen = set()
     for _ in range(MAX_ITERATIONS):
+        if stable:
+            signature = tuple(basis)
+            if signature in seen:
+                raise SearchError("the stable Bayesian float tableau repeated a basis")
+            seen.add(signature)
         positive = np.flatnonzero(t[r, :n + r] > _EPS)
         if positive.size == 0:
             break
         enter = int(positive[0])
         leave, best = -1, 0.0
-        for i in range(r):
-            entry = t[i, enter]
-            if entry > _EPS:
-                ratio = t[i, -1] / entry
-                if leave < 0 or ratio < best or (ratio == best and basis[i] < basis[leave]):
-                    leave, best = i, ratio
+        if stable:
+            # Harris two-pass ratio test: first bound the step with a
+            # small primal feasibility allowance, then choose the largest
+            # pivot among the eligible rows (ties by basic variable).
+            # This tolerance is NOT a payoff/certificate tolerance: a
+            # result is accepted only after bayes_certify on the input.
+            entries = t[:r, enter]
+            candidates = np.flatnonzero(entries > _EPS)
+            if candidates.size:
+                rhs = np.maximum(t[candidates, -1], 0.0)
+                ratios = rhs / entries[candidates]
+                limit = np.min((rhs + _EPS) / entries[candidates])
+                eligible = candidates[ratios <= limit]
+                largest = np.max(entries[eligible])
+                leave = min((int(i) for i in eligible if entries[i] == largest), key=lambda i: basis[i])
+        else:
+            for i in range(r):
+                entry = t[i, enter]
+                if entry > _EPS:
+                    ratio = t[i, -1] / entry
+                    if leave < 0 or ratio < best or (ratio == best and basis[i] < basis[leave]):
+                        leave, best = i, ratio
         if leave < 0:
             raise SearchError("the Bayesian linear program is unbounded, which shifted tables cannot be")
-        pivot = t[leave] / t[leave, enter]
-        t -= np.outer(t[:, enter], pivot)
-        t[leave] = pivot
-        basis[leave] = enter
+        pivot_at(leave, enter)
     else:
         raise SearchError(f"the Bayesian simplex did not finish in {MAX_ITERATIONS} iterations")
     z = np.zeros(n, dtype=np.float64)
@@ -507,8 +547,9 @@ class BayesSolution(NamedTuple):
 
 def solve_bayes(tables, weights):
     """The BayesSolution of tables (W, K, M) with world weights (W,): the
-    float simplex, or the exact rescue when it fails or misses the
-    certificate. With W = 1 it is the matrix game of solve."""
+    float simplex, then a stable float retry, or the exact rescue when both
+    fail or miss the unchanged certificate. With W = 1 it is the matrix
+    game of solve."""
     a, p = _tables(tables, weights)
     nw, k, m = a.shape
     low = float(a.min())
@@ -533,14 +574,20 @@ def solve_bayes(tables, weights):
         bayes_certify(a, p, x, ys)
         exact = False
     except SearchError:
-        lo = Fraction(low)
-        b = [[[Fraction(float(v)) - lo + 1 for v in row] for row in a[w]] for w in range(nw)]
-        pf = [Fraction(float(v)) for v in p]
-        rows, rhs, cost = _bayes_tableau(b, pf, Fraction(0), Fraction(1))
-        z, duals = _bland(rows, rhs, cost, Fraction(0), lambda v: v > 0)
-        x, ys = strategies(z, duals, float)
-        bayes_certify(a, p, x, ys)
-        exact = True
+        try:
+            z, duals = _bland_float((a - low) / span + 1.0, p, stable=True)
+            x, ys = strategies(z, duals, float)
+            bayes_certify(a, p, x, ys)
+            exact = False
+        except SearchError:
+            lo = Fraction(low)
+            b = [[[Fraction(float(v)) - lo + 1 for v in row] for row in a[w]] for w in range(nw)]
+            pf = [Fraction(float(v)) for v in p]
+            rows, rhs, cost = _bayes_tableau(b, pf, Fraction(0), Fraction(1))
+            z, duals = _bland(rows, rhs, cost, Fraction(0), lambda v: v > 0)
+            x, ys = strategies(z, duals, float)
+            bayes_certify(a, p, x, ys)
+            exact = True
     value = math.fsum(float(p[w]) * float(np.min(_vecmat(x, a[w]))) for w in range(nw))
     return BayesSolution(x, ys, value, exact)
 
