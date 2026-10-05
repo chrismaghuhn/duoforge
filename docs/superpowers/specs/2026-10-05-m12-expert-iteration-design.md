@@ -58,8 +58,9 @@ in this pilot. Value regression uses the stored learner rows with a valid outcom
 losses separately; shared-torso changes can affect the value head.
 
 This pilot **replaces PPO and the magnet policy objective**; it does not feed teacher actions into PPO with
-raw-policy likelihoods. League remains an opponent/data-distribution mechanism. If the pilot succeeds, a
-separate arm may add `beta_D*L_D` beside the approved Learner v2 PPO/value/entropy/anchor losses. Teacher rows
+raw-policy likelihoods. League remains an opponent/data-distribution mechanism. This proposes a change to the
+visible-search spec's auxiliary-first outline (section 10), requiring owner approval of D0024. If the pilot
+succeeds, a separate arm may add `beta_D*L_D` beside the approved Learner v2 PPO/value/entropy/anchor losses. Teacher rows
 then either stay supervised-only or carry the actual behavior likelihood required by that learner's on-policy
 contract. The existing taken-action k3 anchor is not a substitute for full-distribution teacher KL.
 
