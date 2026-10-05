@@ -111,6 +111,8 @@ class Luck:
         self._rows = np.zeros((self.capacity, width), dtype=np.float32)
         self.model.value(self.params, self._rows)  # compiled once, one shape
         self._actual = None
+        self._leaf_values = None
+        self.last = None
         self.start(0, np.zeros(0, dtype=np.int64))
 
     def close(self):
@@ -173,7 +175,10 @@ class Luck:
             self._rows[c1 - c0:] = 0.0  # one compiled shape; the padding rows are not read
             head = np.asarray(self.model.value(self.params, self._rows))[:c1 - c0]
             values[c0:c1] = leaf_values(head, st, enc, lres, leaf_seats[c0:c1])
-        self._pending = (envs, values.reshape(envs.size, self.k).mean(axis=1))
+        self.last = {"obs": obs.copy(), "open": (st == 0) & (lres == 0), "root_envs": root_envs[c0:c1],
+                     "seats": leaf_seats[c0:c1]}  # the last chunk's leaves (diagnostics and tests)
+        self._leaf_values = values.reshape(envs.size, self.k)  # the last step's leaves (diagnostics and tests)
+        self._pending = (envs, self._leaf_values.mean(axis=1))
 
     def after(self, batch, dead):
         """After the step: each pending game's luck, the value of the state

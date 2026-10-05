@@ -330,7 +330,8 @@ def luck_summary(c, configs, score, resamples=RESAMPLES):
     also the paired difference against R's adjusted scores."""
     adj = c["luck_scores"]
     low, high = bootstrap_mean(adj, resamples)
-    out = {"score": float(adj.mean()), "score_95": [low, high], "variance_ratio": _variance_ratio(adj, score)}
+    out = {"score": float(adj.mean()), "score_95": [low, high], "variance_ratio": _variance_ratio(adj, score),
+           "steps": c["luck_steps"]}
     if c["agent"] != "R":
         ref = configs[f"R-vs-{c['opponent']}"]
         base_adj, base = ref["luck_scores"], scores(ref["records"])
@@ -506,6 +507,11 @@ def main(argv=None):
         def adjusted(config, records):
             if judge is not None:
                 config["luck_scores"] = luck.adjusted_scores(records, judge.totals)
+                steps = judge.step_terms
+                config["luck_steps"] = {"corrected": int(steps.size),
+                                        "mean": float(steps.mean()) if steps.size else None,
+                                        "stderr": float(steps.std(ddof=1) / np.sqrt(steps.size))
+                                        if steps.size > 1 else None}
             return config
 
         team_sheets = None if evidence is None else book_preview.sheets(ctx, pool)
@@ -556,7 +562,7 @@ def main(argv=None):
     for name, c in configs.items():
         score = scores(c["records"])
         low, high = bootstrap_mean(score, args.resamples)
-        out = {k: v for k, v in c.items() if k not in ("records", "luck_scores")}
+        out = {k: v for k, v in c.items() if k not in ("records", "luck_scores", "luck_steps")}
         out.update({"games": int(score.size), "score": float(score.mean()), "score_95": [low, high],
                     "elo": elo(float(score.mean())), "elo_95": [elo(low), elo(high)],
                     "unfinished": int(c["records"]["unfinished"].sum()),

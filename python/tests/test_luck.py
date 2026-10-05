@@ -57,6 +57,66 @@ class LeafValues(unittest.TestCase):
         np.testing.assert_allclose(luck.adjusted_scores(records, totals), [0.75, 0.125, 0.5])
 
 
+class _Values:
+    """A value head that reads column 0."""
+    feature_names = ("v",)
+
+    @staticmethod
+    def value(params, rows):
+        return np.asarray(rows)[:, 0].astype(np.float32)
+
+
+class _Leaves:
+    """expand: leaf value 10 * root env + sample, every step accepted, nothing terminal."""
+
+    def expand(self, roots, version, ext, seed, keys, viewers, root_envs, samples, choices):
+        n = root_envs.size
+        obs = (10.0 * root_envs + samples).astype(np.float32).reshape(n, 1)
+        zero = np.zeros(n, dtype=np.uint32)
+        return obs, zero, zero, None, zero
+
+
+class _Main:
+    """The played batch: no request (zero choices), results and the viewer rows set by hand."""
+
+    def __init__(self, actual, other, results, seats):
+        n = len(actual)
+        self.envs = n
+        self.requests = np.zeros((n, 2), dtype=[("requested", np.uint8)])
+        self.results = results
+        self.obs = np.zeros((n, 2, 1), dtype=np.float32)
+        self.obs[np.arange(n), seats, 0] = actual
+        self.obs[np.arange(n), 1 - seats, 0] = other  # the other seat's row: never read
+
+    def result(self, e):
+        return self.results[e]
+
+    def query_encoded(self, version, ext):
+        return self.obs, None, None
+
+
+class StepTerms(unittest.TestCase):
+    def test_luck_is_actual_minus_mean_of_alternatives(self):
+        k, n = 4, 4
+        judge = object.__new__(luck.Luck)
+        judge.model, judge.params, judge.encoder, judge.ext_supported = _Values(), None, 4, 0
+        judge.k, judge.seed, judge.capacity = k, 1, 3  # capacity below n * k: chunked
+        judge.leaves, judge._rows, judge._actual = _Leaves(), np.zeros((3, 1), dtype=np.float32), None
+        seats = np.array([0, 1, 0, 1])
+        judge.start(n, seats)
+        actual = np.array([0.5, -0.25, 7.0, 0.0])
+        results = [0, 0, 0, WINS[0]]  # game 3 ends with side 0's win: seat 1 loses
+        batch = _Main(actual, 99.0, results, seats)
+        active = np.array([True, True, True, True])
+        judge.before(batch, np.zeros((n, 2), np.uint16), active, step=0, last_step=False)
+        judge.after(batch, dead=np.array([False, False, True, False]))  # game 2 refused: -1
+        mean = 10.0 * np.arange(n) + (k - 1) / 2.0
+        want = np.array([0.5, -0.25, -1.0, -1.0]) - mean
+        np.testing.assert_allclose(judge.totals, want)
+        np.testing.assert_array_equal(judge.terms, [1, 1, 1, 1])
+        np.testing.assert_allclose(judge.step_terms, want)
+
+
 def _v2s():
     import jax
     from duoforge_learn import policy
@@ -112,6 +172,37 @@ class InPlaySuite(unittest.TestCase):
         with self._judge(seed=SEED + 1) as c:
             self._play(c, 40)
         self.assertFalse(np.array_equal(a.totals, c.totals))
+
+    def test_steps_without_chance_have_no_luck(self):
+        with self._judge() as judge:
+            seen = []
+            before = judge.before
+
+            def recording(*args, **kw):
+                before(*args, **kw)
+                if judge._pending is not None:
+                    seen.append(judge._leaf_values.copy())
+            judge.before = recording
+            self._play(judge, 40)
+        flat = np.concatenate([(v.max(axis=1) - v.min(axis=1)) < 1e-9 for v in seen])
+        steps = judge.step_terms
+        self.assertEqual(flat.size, steps.size)
+        self.assertGreater(flat.sum(), 20)  # team selection and other steps without a draw
+        # K equal alternatives do not prove a step drew nothing: a rare outcome (a critical hit) can miss all K
+        # and still happen in the actual step. A mismatch between the actual successor's valuation and the
+        # leaves' (another seat, row or choice) would make nearly every such step nonzero.
+        self.assertGreater(np.mean(np.abs(steps[flat]) < 1e-5), 0.9)
+
+    def test_leaf_rows_are_the_actual_rows(self):
+        """A leaf's row from expand equals the row the actual successor is valued from (query_encoded of the
+        same state, the same seat): the leaf batch holds the last chunk's leaves."""
+        with self._judge(k=2, capacity=64) as judge:
+            self._play(judge, 3)
+            obs, statuses, roots, seats = (judge.last[x] for x in ("obs", "open", "root_envs", "seats"))
+            rows, _, _ = judge.leaves.query_encoded(4, self.mask)
+            leaf = np.flatnonzero(statuses)
+            self.assertGreater(leaf.size, 0)
+            np.testing.assert_array_equal(rows[leaf, seats[leaf]], obs[leaf])
 
     def test_last_step_is_not_corrected(self):
         with self._judge() as judge:
@@ -180,6 +271,7 @@ class ArenaLuck(unittest.TestCase):
             lk = c["luck"]
             self.assertEqual(len(lk["score_95"]), 2)
             self.assertIn("variance_ratio", lk)
+            self.assertGreater(lk["steps"]["corrected"], 0)
         self.assertIn("paired_vs_R", summary["configs"]["N-k2m2s2-vs-R"]["luck"])
 
 
