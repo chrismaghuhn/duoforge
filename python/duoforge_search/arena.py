@@ -14,6 +14,7 @@ intervals, paired differences, diagnostics and the conditions a rerun needs.
 bootstrap_mean, bootstrap_paired and elo are NumPy.
 """
 import argparse
+import contextlib
 import csv
 import hashlib
 import json
@@ -317,6 +318,28 @@ def _update_of(path):
     return int(m.group(1)) if m else None
 
 
+def _variance_ratio(adjusted, raw):
+    """var(adjusted) / var(raw), None where the raw scores do not vary."""
+    v = float(np.var(raw, ddof=1)) if raw.size > 1 else 0.0
+    return float(np.var(adjusted, ddof=1)) / v if v > 0 else None
+
+
+def luck_summary(c, configs, score, resamples=RESAMPLES):
+    """The luck-adjusted score of one configuration (its luck_scores), its
+    interval and its variance against the raw scores; for a searched agent
+    also the paired difference against R's adjusted scores."""
+    adj = c["luck_scores"]
+    low, high = bootstrap_mean(adj, resamples)
+    out = {"score": float(adj.mean()), "score_95": [low, high], "variance_ratio": _variance_ratio(adj, score)}
+    if c["agent"] != "R":
+        ref = configs[f"R-vs-{c['opponent']}"]
+        base_adj, base = ref["luck_scores"], scores(ref["records"])
+        out["paired_vs_R"] = {"score": float((adj - base_adj).mean()),
+                              "score_95": list(bootstrap_paired(adj, base_adj, resamples)),
+                              "variance_ratio": _variance_ratio(adj - base_adj, score - base)}
+    return out
+
+
 def _write_games(path, records):
     with open(path, "w", encoding="utf-8", newline="") as f:
         w = csv.writer(f)
@@ -365,6 +388,9 @@ def main(argv=None):
     p.add_argument("--workers", type=int, default=8)
     p.add_argument("--max-steps", type=int, default=MAX_STEPS)
     p.add_argument("--resamples", type=int, default=RESAMPLES, help="bootstrap resamples")
+    p.add_argument("--luck", type=int, default=0,
+                   help="luck-adjusted scores (duoforge_learn.luck): K chance alternatives per step, valued by "
+                        "the checkpoint's value head; 0 (default) measures no luck")
     book_preview.add_arguments(p)
     args = p.parse_args(sys.argv[1:] if argv is None else list(argv))
     evidence = book_preview.load_options(args)
@@ -382,6 +408,8 @@ def main(argv=None):
         samples = [int(x) for x in _list(args.s, "s")]
     except ValueError:
         raise SystemExit(f"--s takes a comma list of sample counts, e.g. 16,32,64 (got {args.s!r})") from None
+    if args.luck < 0:
+        raise SystemExit("--luck must be 0 (off) or a positive number of alternatives")
     if min(samples) < 1 or args.games < 1 or args.capacity < 1 or args.workers < 1 or args.max_steps < 1:
         raise SystemExit("samples, games, capacity, workers and max-steps must be positive")
     from duoforge_replay.dataset import refuse_repository
@@ -395,7 +423,7 @@ def main(argv=None):
 
     import jax
 
-    from duoforge_learn import checkpoint, policy
+    from duoforge_learn import checkpoint, luck, policy
     require_deterministic_gpu(jax)
     pool, kind = ladder._pool_of(args.run_dir)
     spread = source_ids = table_info = None
@@ -454,6 +482,9 @@ def main(argv=None):
     if evidence is not None:
         conditions["book"] = {**book_preview.info(args, evidence),
                               "scope": "candidate preview only; opponents unchanged"}
+    if args.luck:  # only then, so runs without it keep their conditions byte for byte
+        conditions["luck"] = {"k": args.luck, "seed": hex(luck.LUCK_SEED), "capacity": args.capacity,
+                              "judge": "the checkpoint's value head (R), every configuration"}
     if "S" in opponents:  # only then, so raw and panel runs keep their conditions byte for byte
         conditions["scripted"] = True
     conditions["search"] = args.search
@@ -466,15 +497,25 @@ def main(argv=None):
     os.makedirs(os.path.join(args.out, "raw"), exist_ok=True)
 
     configs = {}
-    with duoforge.Context(data_kind=kind) as ctx:
+    with duoforge.Context(data_kind=kind) as ctx, contextlib.ExitStack() as stack:
+        judge = None
+        if args.luck:
+            judge = stack.enter_context(luck.Luck(ctx, raw.model, raw.params, raw.encoder, raw.ext_supported,
+                                                  k=args.luck, capacity=args.capacity, workers=args.workers))
+
+        def adjusted(config, records):
+            if judge is not None:
+                config["luck_scores"] = luck.adjusted_scores(records, judge.totals)
+            return config
+
         team_sheets = None if evidence is None else book_preview.sheets(ctx, pool)
         for opponent, (other, _) in opponents.items():
             base = f"R-vs-{opponent}"
             candidate = book_preview.wrap(raw, evidence, team_sheets, rows, args)
             records = evaluate.play_suite(ctx, pool, rows, candidate, other, args.workers, ARENA_SEED,
-                                          max_steps=args.max_steps)
+                                          max_steps=args.max_steps, luck=judge)
             _write_games(os.path.join(args.out, "raw", f"{base}-games.csv"), records)
-            configs[base] = {"agent": "R", "opponent": opponent, "records": records}
+            configs[base] = adjusted({"agent": "R", "opponent": opponent, "records": records}, records)
             if evidence is not None:
                 configs[base]["book"] = candidate.summary(games=len(rows))
             for agent in agents:
@@ -494,7 +535,7 @@ def main(argv=None):
                             player = SearchPlayer(look, name, ARENA_SEED)
                             candidate = book_preview.wrap(player, evidence, team_sheets, rows, args, network=raw)
                             records = evaluate.play_suite(ctx, pool, rows, candidate, other, args.workers,
-                                                          ARENA_SEED, max_steps=args.max_steps)
+                                                          ARENA_SEED, max_steps=args.max_steps, luck=judge)
                         decisions = [r for row in sorted(player.records) for r in player.records[row]]
                         raw_dir = os.path.join(args.out, "raw")
                         _write_games(os.path.join(raw_dir, f"{name}-games.csv"), records)
@@ -507,6 +548,7 @@ def main(argv=None):
                         configs[name] = {"agent": agent, "opponent": opponent, "k": k, "m": m, "s": s,
                                          "rule": AGENTS[agent], "records": records,
                                          "diagnostics": diagnostics(decisions, int(rows.shape[0])), "timing": clock}
+                        adjusted(configs[name], records)
                         if evidence is not None:
                             configs[name]["book"] = candidate.summary(games=len(rows))
 
@@ -514,7 +556,7 @@ def main(argv=None):
     for name, c in configs.items():
         score = scores(c["records"])
         low, high = bootstrap_mean(score, args.resamples)
-        out = {k: v for k, v in c.items() if k != "records"}
+        out = {k: v for k, v in c.items() if k not in ("records", "luck_scores")}
         out.update({"games": int(score.size), "score": float(score.mean()), "score_95": [low, high],
                     "elo": elo(float(score.mean())), "elo_95": [elo(low), elo(high)],
                     "unfinished": int(c["records"]["unfinished"].sum()),
@@ -525,6 +567,8 @@ def main(argv=None):
                                   "score_95": list(bootstrap_paired(score, base, args.resamples)),
                                   "elo": elo(float(score.mean())) - elo(float(base.mean())),
                                   "elo_95": list(_paired_elo(score, base, args.resamples))}
+        if "luck_scores" in c:
+            out["luck"] = luck_summary(c, configs, score, args.resamples)
         summary[name] = out
     with open(os.path.join(args.out, "summary.json"), "w", encoding="utf-8") as f:
         json.dump(_finite({"conditions": conditions, "configs": summary}), f, indent=1, allow_nan=False)
