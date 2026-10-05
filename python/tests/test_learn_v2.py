@@ -821,6 +821,35 @@ class PlateauLeverTest(unittest.TestCase):
                                 self.net.evaluate, epochs=4, minibatch=64)
         self.assertLess(gap(pulled), gap(free))
 
+    def test_k3_is_exact_up_to_the_cap_and_linear_beyond(self):
+        # The night run of 2026-10-04 met k3 means up to 7.9e6: a rarely drawn action (p ~ 1e-7) that the magnet
+        # finds likely gives r = exp(ref_logp - logp) without bound. Up to the cap the estimate is k3; beyond it
+        # the estimate goes on linearly, with k3's slope at the cap, so one row's gradient stays bounded.
+        import jax
+        from duoforge_learn import ppo
+        cap = ppo.KL_LOG_RATIO_MAX
+        self.assertEqual(cap, 3.0)
+        k3 = lambda x: np.exp(x) - 1.0 - x
+        below = np.array([-20.0, -5.0, -1.0, 0.0, 0.5, 2.0, 3.0], dtype=np.float32)
+        np.testing.assert_allclose(np.asarray(ppo._k3(below)), k3(below.astype(np.float64)), rtol=1e-6, atol=1e-6)
+        self.assertAlmostEqual(float(ppo._k3(np.float32(30.0))), k3(cap) + (np.exp(cap) - 1.0) * 27.0, places=3)
+        slope = float(jax.grad(ppo._k3)(np.float32(30.0)))
+        self.assertAlmostEqual(slope, np.exp(cap) - 1.0, places=4)
+        self.assertAlmostEqual(float(jax.grad(ppo._k3)(np.float32(1.0))), np.e - 1.0, places=5)
+
+    def test_kl_stat_stays_bounded_for_a_far_reference(self):
+        from duoforge_learn import ppo
+        o = self.samples
+        logp = np.asarray(self.net.evaluate(self.params, o["obs"], o["slots"], o["mask"], o["is_team"],
+                                            o["actions"])[0])
+        far = dict(o, ref_logp=logp + 30.0)
+        tx = ppo.optimizer(3e-4)
+        _, _, stats = ppo.update(self.params, tx.init(self.params), tx, far, np.random.default_rng(4),
+                                 self.net.evaluate, epochs=1, minibatch=64, kl_coef=1.0, lr_scale=0.0)
+        bound = np.exp(3.0) - 4.0 + (np.exp(3.0) - 1.0) * 27.0
+        self.assertTrue(np.isfinite(float(stats["kl"])))
+        self.assertAlmostEqual(float(stats["kl"]), bound, delta=1e-2 * bound)
+
     def test_reference_logp_runs_in_minibatches_and_equals_one_pass(self):
         # The night run's 29k rows in one pass asked 3.4 GiB of an 8 GiB card (2026-10-04): the reference is
         # evaluated in minibatches of a fixed size, the last one padded, and equals the one-pass values.
