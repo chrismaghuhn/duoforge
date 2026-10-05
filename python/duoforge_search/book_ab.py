@@ -23,6 +23,20 @@ SEED = 0x2026100400000228
 PANEL = ("params-0", "params-3600", "params-11000")
 
 
+def panel_paths(names, panel_run_dir=None):
+    """No candidate-run/CWD fallback: explicit panel root or absolute paths."""
+    root = None if panel_run_dir is None else Path(panel_run_dir).resolve()
+    paths = []
+    for name in names:
+        path = Path(name)
+        if not path.is_absolute():
+            if root is None:
+                raise ValueError("--panel-run-dir is required for panel checkpoint names; alternatively supply three absolute --panel paths")
+            path = root / path
+        paths.append(str(Path(arena._checkpoint_path(str(path.parent), str(path))).resolve()))
+    return paths
+
+
 def paired_rows(n_teams, games=2000, seed=SEED):
     """Exactly games rows, each matchup in both seat orders (adjacent rows)."""
     if n_teams < 1 or games < 2 or games % 2:
@@ -116,6 +130,7 @@ def main(argv=None):
     p.add_argument("--seed", type=lambda x: int(x, 0), default=SEED)
     p.add_argument("--resamples", type=int, default=arena.RESAMPLES)
     p.add_argument("--panel", default=",".join(PANEL), help="stage-1 BC,3600,11000 paths or checkpoint names")
+    p.add_argument("--panel-run-dir", help="explicit stage-1 run directory; required unless all --panel paths are absolute")
     book_preview.add_arguments(p)
     args = p.parse_args(argv)
     if args.book is None:
@@ -127,10 +142,14 @@ def main(argv=None):
     panel = args.panel.split(",")
     if len(panel) != 3 or not all(panel):
         p.error("--panel must name BC,3600,11000 checkpoints")
+    try:
+        selected_panel = panel_paths(panel, args.panel_run_dir)
+    except ValueError as error:
+        p.error(str(error))
     refuse_repository(args.out)
     evidence = book_preview.load_options(args)
     # Fail missing inputs before creating outputs or playing even one arm.
-    paths = [arena._checkpoint_path(args.run_dir, args.checkpoint)] + [arena._checkpoint_path(args.run_dir, n) for n in panel]
+    paths = [str(Path(arena._checkpoint_path(args.run_dir, args.checkpoint)).resolve())] + selected_panel
     checkpoint_hashes = [arena._sha256(path) for path in paths]
     from duoforge_learn import checkpoint, policy
     import jax
@@ -160,6 +179,10 @@ def main(argv=None):
                   "seed": args.seed, "max_steps": args.max_steps, "resamples": args.resamples,
                   "bootstrap_unit": "paired seat orders", "book_sha256": evidence.source_sha256,
                   "book_mode": args.book_mode, "book_min_count": args.book_min_count, "book_weight": args.book_weight,
+                  "book_override_rank": book_preview.OVERRIDE_RANK,
+                  "candidate": {"path": paths[0], "sha256": checkpoint_hashes[0]},
+                  "panel": {name: {"path": path, "sha256": digest}
+                            for name, path, digest in zip(("BC", "3600", "11000"), paths[1:], checkpoint_hashes[1:])},
                   "checkpoint_sha256": checkpoint_hashes, "pool": list(pool.ids),
                   "pool_sha256": list(pool.sha256), "data_kind": int(kind), "commit": arena._commit(),
                   "library": duoforge.version(), "numpy": np.__version__, "python": platform.python_version(),

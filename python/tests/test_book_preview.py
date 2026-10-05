@@ -8,14 +8,14 @@ import tempfile
 import unittest
 from pathlib import Path
 from types import SimpleNamespace
-from contextlib import redirect_stdout
+from contextlib import redirect_stdout, redirect_stderr
 from unittest import mock
 
 import numpy as np
 
 import duoforge
 import duoforge_learn
-from duoforge import _layout, features, teams
+from duoforge import _layout, data, features, teams
 from duoforge_learn import book_preview, evaluate, ladder
 from duoforge_replay import book
 from duoforge_search import arena, book_ab
@@ -93,6 +93,23 @@ class BookPreviewTest(unittest.TestCase):
         self.assertEqual(choices["picks"][1, 1, :4].tolist(), [2, 3, 4, 5])
         self.assertEqual(int(out[0, 0]), int(duoforge.joint_indices(batch.domains[0, :1], choices[0, :1])[0]))
         self.assertEqual(player.summary(games=2)["applied_share"], 1)
+
+    def test_small_noisy_raw_winner_loses_to_supported_wilson_estimate(self):
+        evidence = self.evidence([self.row(20, 18), self.row(100, 80, picks=(0, 1, 2, 3))])
+        self.assertGreater(18 / 20, 80 / 100)
+        self.assertLess(book_preview.override_estimate(18, 20), book_preview.override_estimate(80, 100))
+        player = book_preview.BookPlayer(self.raw, evidence, self.sheets, self.rows)
+        _, choices = self.choose(player, self.batch())
+        self.assertEqual(choices["picks"][0, 0, :4].tolist(), [0, 1, 2, 3])
+
+    def test_sheets_decode_one_based_items_and_known_empty_items(self):
+        sides = self.pool.sides.copy()
+        item_id = data.find(self.ctx, data.TABLE_ITEM, "sitrusberry")
+        sides["members"][0, 0]["item"] = item_id + 1
+        sides["members"][1, 0]["item"] = 0
+        decoded = book_preview.sheets(self.ctx, teams.TeamPool.from_setups(self.pool.ids, sides))
+        self.assertEqual(decoded[0][0]["item"], "sitrusberry")
+        self.assertEqual(decoded[1][0]["item"], "")
 
     def test_threshold_falls_back_byte_for_byte(self):
         batch = self.batch()
@@ -269,6 +286,13 @@ class BookPreviewTest(unittest.TestCase):
 
     def test_ab_cli_writes_summary_with_synthetic_checkpoint_and_numpy_backend(self):
         self.write_checkpoints()
+        from duoforge_learn import checkpoint
+        candidate_run = Path(self.tmp.name, "other-candidate-run")
+        candidate_run.mkdir()
+        params, config = checkpoint.load(Path(self.tmp.name, "params-0.npz"))
+        checkpoint.save(candidate_run / "params-0.npz", params, {**config, "origin": "candidate"})
+        for update in (3600, 11000):
+            (candidate_run / f"params-{update}.npz").write_bytes(b"decoy: must never be selected as the panel")
         self.evidence()
         output = Path(self.tmp.name, "cli-ab")
         backend = SimpleNamespace(make=lambda config: PreviewModel())
@@ -276,13 +300,20 @@ class BookPreviewTest(unittest.TestCase):
         with mock.patch.dict(sys.modules, {"duoforge_learn.policy": backend, "jax": fake_jax}), \
                 mock.patch.object(duoforge_learn, "policy", backend, create=True), \
                 redirect_stdout(io.StringIO()):
-            self.assertEqual(book_ab.main(["--run-dir", self.tmp.name, "--checkpoint", "params-0", "--book", str(self.path),
+            self.assertEqual(book_ab.main(["--run-dir", str(candidate_run), "--checkpoint", "params-0", "--book", str(self.path),
+                                          "--panel-run-dir", self.tmp.name,
                                           "--out", str(output), "--games", "2", "--workers", "1", "--max-steps", "2",
                                           "--resamples", "10"]), 0)
         summary = json.loads((output / "summary.json").read_text(encoding="utf-8"))
         self.assertEqual(set(summary["opponents"]), {"same_checkpoint", "BC", "3600", "11000"})
         self.assertEqual(summary["conditions"]["games_per_arm_per_opponent"], 2)
         self.assertEqual(summary["conditions"]["bootstrap_unit"], "paired seat orders")
+        for label, update in (("BC", 0), ("3600", 3600), ("11000", 11000)):
+            expected = Path(self.tmp.name, f"params-{update}.npz").resolve()
+            recorded = summary["conditions"]["panel"][label]
+            self.assertEqual(recorded["path"], str(expected))
+            self.assertEqual(recorded["sha256"], arena._sha256(expected))
+        self.assertNotEqual(summary["conditions"]["candidate"]["sha256"], summary["conditions"]["panel"]["BC"]["sha256"])
 
     def test_arena_preview_option_and_search_records_describe_the_played_choice(self):
         self.write_checkpoints()
@@ -306,6 +337,58 @@ class BookPreviewTest(unittest.TestCase):
 
 
 class BookABStatisticsTest(unittest.TestCase):
+    def test_book_ladder_requires_separate_output_before_loading_inputs(self):
+        with tempfile.TemporaryDirectory(prefix="duoforge_ladder_guard_") as temp:
+            root = Path(temp)
+            saved = root / "ladder.json"
+            saved.write_text('{"original": true}', encoding="utf-8")
+            for extra in ([], ["--out", str(root)]):
+                error = io.StringIO()
+                with redirect_stderr(error), self.assertRaises(SystemExit) as caught:
+                    ladder.main([str(root), "--book", "missing.json", *extra])
+                self.assertEqual(caught.exception.code, 2)
+                self.assertIn("--out", error.getvalue())
+                self.assertEqual(saved.read_text(encoding="utf-8"), '{"original": true}')
+
+    def test_best_checkpoint_refuses_book_key_and_preserves_ordinary_selection(self):
+        with tempfile.TemporaryDirectory(prefix="duoforge_ladder_select_") as temp:
+            root = Path(temp)
+            for update in (0, 7):
+                (root / f"params-{update}.npz").touch()
+            payload = {"players": [{"player": f"{root.name} update 0", "elo": 0},
+                                   {"player": f"{root.name} update 7", "elo": 10}]}
+            path = root / "ladder.json"
+            path.write_text(json.dumps(payload), encoding="utf-8")
+            self.assertEqual(arena.best_checkpoint(str(root)), str(root / "params-7.npz"))
+            for value in ({}, None):
+                path.write_text(json.dumps({**payload, "book": value}), encoding="utf-8")
+                with self.assertRaisesRegex(SystemExit, "book-influenced"):
+                    arena.best_checkpoint(str(root))
+
+    def test_panel_never_defaults_to_candidate_run_and_absolute_paths_are_explicit(self):
+        with tempfile.TemporaryDirectory(prefix="duoforge_panel_guard_") as temp:
+            root = Path(temp)
+            for name in book_ab.PANEL:
+                (root / f"{name}.npz").touch()
+            with self.assertRaisesRegex(ValueError, "--panel-run-dir"):
+                book_ab.panel_paths(book_ab.PANEL)
+            expected = [str(root / f"{name}.npz") for name in book_ab.PANEL]
+            self.assertEqual(book_ab.panel_paths(book_ab.PANEL, root), expected)
+            self.assertEqual(book_ab.panel_paths(expected), expected)
+
+    def test_all_preview_clis_report_invalid_options_as_argparse_errors(self):
+        cases = ((arena.main, ["--run-dir", "unused", "--out", "unused"]),
+                 (ladder.main, ["unused", "--out", "unused"]),
+                 (book_ab.main, ["--run-dir", "unused", "--checkpoint", "unused", "--out", "unused"]))
+        for main, argv in cases:
+            for flag, value in (("--book-min-count", "0"), ("--book-weight", "nan"), ("--book-weight", "1.1")):
+                error = io.StringIO()
+                with redirect_stderr(error), self.assertRaises(SystemExit) as caught:
+                    main([*argv, flag, value])
+                self.assertEqual(caught.exception.code, 2)
+                self.assertIn(flag, error.getvalue())
+                self.assertNotIn("Traceback", error.getvalue())
+
     def test_gpu_requires_the_same_deterministic_setting_as_arena(self):
         gpu = SimpleNamespace(default_backend=lambda: "gpu")
         with mock.patch.dict(os.environ, {"XLA_FLAGS": ""}), self.assertRaises(SystemExit):

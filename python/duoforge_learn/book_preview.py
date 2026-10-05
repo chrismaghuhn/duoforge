@@ -3,11 +3,13 @@
 No completion of missing backs or conversion of marginal weights to games.
 Unordered observed lead/back pairs map to every engine-listed ordering; prior
 mass is split equally across those orderings. Override takes the lowest rank
-of the highest-win-rate supported observed choice (fixed key breaks ties).
+of the supported choice with highest Wilson lower endpoint (fixed key breaks ties).
 """
+import argparse
 import collections
 import hashlib
 import json
+import math
 
 import numpy as np
 
@@ -18,12 +20,36 @@ from duoforge_replay import book
 from . import evaluate
 from .selfplay import Observation, TEAM
 
+OVERRIDE_RANK = "wilson_lower_endpoint_z1.96"
+
+
+def _positive_count(value):
+    count = int(value)
+    if count < 1:
+        raise argparse.ArgumentTypeError("must be a positive integer")
+    return count
+
+
+def _weight(value):
+    weight = float(value)
+    if not math.isfinite(weight) or not 0 <= weight <= 1:
+        raise argparse.ArgumentTypeError("must be finite and in [0,1]")
+    return weight
+
+
+def override_estimate(wins, decisive_count):
+    """Lower Wilson endpoint with z=1.96; observational ranking, no battle rule."""
+    if decisive_count < 1:
+        raise ValueError("override estimate requires decisive observations")
+    p, n, z2 = wins / decisive_count, decisive_count, 1.96 ** 2
+    return (p + z2 / (2 * n) - 1.96 * math.sqrt(p * (1 - p) / n + z2 / (4 * n * n))) / (1 + z2 / n)
+
 
 def add_arguments(parser):
     parser.add_argument("--book", help="private schema-2 opening book; omitted = original evaluation")
-    parser.add_argument("--book-min-count", type=int, default=20)
+    parser.add_argument("--book-min-count", type=_positive_count, default=20)
     parser.add_argument("--book-mode", choices=("override", "prior"), default="override")
-    parser.add_argument("--book-weight", type=float, default=0.5, help="prior mixture weight in [0,1]")
+    parser.add_argument("--book-weight", type=_weight, default=0.5, help="prior mixture weight in [0,1]")
 
 
 def load_options(args):
@@ -35,13 +61,13 @@ def load_options(args):
 def info(args, evidence=None):
     if evidence is not None:
         return {"sha256": evidence.source_sha256, "mode": args.book_mode,
-                "min_count": args.book_min_count, "weight": args.book_weight}
+                "min_count": args.book_min_count, "weight": args.book_weight, "override_rank": OVERRIDE_RANK}
     digest = hashlib.sha256()
     with open(args.book, "rb") as file:
         for block in iter(lambda: file.read(1 << 20), b""):
             digest.update(block)
     return {"sha256": digest.hexdigest(), "mode": args.book_mode,
-            "min_count": args.book_min_count, "weight": args.book_weight}
+            "min_count": args.book_min_count, "weight": args.book_weight, "override_rank": OVERRIDE_RANK}
 
 
 def sheets(context, pool):
@@ -113,7 +139,8 @@ def mapped_distribution(answer, own, domain, min_count, mode):
             continue
         mass[allowed] += weight / len(allowed)
         key = json.dumps((sorted(leads), sorted(backs)), separators=(",", ":"))
-        candidates.append((-(suggestion["win_rate"] or 0), key, min(allowed)))
+        estimate = override_estimate(suggestion["wins"], suggestion["decisive_count"]) if suggestion["decisive_count"] else 0
+        candidates.append((-estimate, key, min(allowed)))
     if not candidates:
         return None, None, dict(causes or {"no_supported_choice": 1})
     mass /= mass.sum()

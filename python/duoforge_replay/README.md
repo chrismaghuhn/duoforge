@@ -118,17 +118,24 @@ Both `python -m duoforge_search.arena` and `python -m duoforge_learn.ladder` acc
 Omitting `--book` returns the original player object, without extra network calls or output fields. In the arena,
 the book affects only the candidate's preview (raw and searched configurations); opponents remain unchanged.
 In the ladder, every selected player uses the same opt-in preview policy, including the best player's team matrix.
+Ladder `--book` requires an explicit `--out` distinct from every input run directory, preserving the run's
+ordinary `ladder.json`. Automatic `arena.best_checkpoint` refuses any ladder file containing a `book` key;
+use an ordinary ladder or choose `--checkpoint` explicitly for book-influenced evaluations.
 No battle-turn decisions or training paths consult the book.
 
 Sheets come from the pool setups through the core's data-name API. Each query supplies both six-species teams and
-own items. The book's existing backoff selects an evidence level; **each full lead/back suggestion** must then
+both sides' open-sheet items. Schema 2 conditions on own items and opposing species (not opposing items).
+The book's existing backoff selects an evidence level; **each full lead/back suggestion** must then
 have at least `book-min-count` actual observed games. A level total, a marginal species support count, or a partial
 lead-only observation does not meet that requirement. Unsupported choices fall back to the original network.
 The wrapper does not skip to another evidence level if that level answered but its full choices fail this gate.
 
-`override` selects the eligible choice with highest observed win rate, ties by serialized species key and then
-lowest legal joint rank. A missing decisive win rate cannot override. `prior` renormalizes the eligible book
-probabilities and takes the greedy argmax of `(1-weight)*net + weight*book`. The book stored unordered pairs:
+`override` ranks eligible choices by the lower Wilson endpoint using observed wins/decisive games and `z=1.96`,
+reducing selection of noisy small-sample maxima. Ties use the serialized species key and then lowest legal joint
+rank. The criterion is recorded as `wilson_lower_endpoint_z1.96`; it is a conservative ranking, not a calibrated
+confidence guarantee for replay sampling. A missing decisive win rate cannot override. `prior` renormalizes the eligible book
+probabilities and replaces the search's preview choice with the greedy argmax of `(1-weight)*net + weight*book`.
+Search has no preview lookahead: the mixture uses its underlying network's preview distribution. The book stored unordered pairs:
 its mass is divided equally across every ordering listed by the existing domain helpers for those exact leads
 and backs. Override uses the lowest of those ranks. No backs, names, slot order evidence or legality are guessed.
 Weight zero preserves the original choice without a second model application. Native domain/profile refusals,
@@ -146,11 +153,15 @@ stage-1 opponent (BC = `params-0`, `params-3600`, `params-11000`):
 
 ```sh
 PYTHONPATH=python python -m duoforge_search.book_ab --run-dir /private/run --checkpoint params-18129 \
+    --panel-run-dir /private/stage1-run \
     --book /private/openings.json --out /private/book-ab --book-mode prior --book-weight 0.5 \
     --games 2000 --workers 8
 ```
 
-`--panel BC_PATH,3600_PATH,11000_PATH` can provide explicit checkpoint paths. Defaults are 2000 games **per arm
+`--panel-run-dir` explicitly identifies the stage-1 run for the default panel names. Alternatively,
+`--panel BC_PATH,3600_PATH,11000_PATH` supplies three absolute checkpoint paths. The candidate's run is never a
+default panel source, even when it contains checkpoints with the same names. Resolved panel paths and hashes
+(and the candidate path/hash) are recorded in `summary.json`. Defaults are 2000 games **per arm
 per opponent**, four opponents, and eight workers. The game budget must be even. Each sampled pairing has both
 learner seat orders adjacent; the two arms use identical rows, batch seed, workers and cutoff. Bootstrap CIs
 resample those seat pairs together, including the paired treatment-minus-baseline score interval. Reports include

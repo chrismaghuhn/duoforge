@@ -191,6 +191,12 @@ def main(argv=None):
     from . import book_preview
     book_preview.add_arguments(p)
     args = p.parse_args(sys.argv[1:] if argv is None else list(argv))
+    if args.book is not None:
+        from pathlib import Path
+        if args.out is None:
+            p.error("--out is required with --book to preserve the run's ladder.json")
+        if Path(args.out).resolve() in {Path(run_dir).resolve() for run_dir in args.run_dirs}:
+            p.error("book --out must differ from every input run directory")
     evidence = book_preview.load_options(args)
     from .train import refuse_in_repository
     refuse_in_repository(args.out or args.run_dirs[0])  # ladder.json names checkpoints of private runs

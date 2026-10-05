@@ -286,7 +286,10 @@ def best_checkpoint(run_dir):
     if not os.path.isfile(path):
         raise SystemExit(f"{run_dir} has no ladder.json: name the checkpoint (--checkpoint)")
     with open(path, encoding="utf-8") as f:
-        players = json.load(f)["players"]
+        saved = json.load(f)
+    if "book" in saved:
+        raise SystemExit(f"{path} contains book-influenced ladder ratings; use an unmodified ladder or name --checkpoint explicitly")
+    players = saved["players"]
     label = os.path.basename(os.path.normpath(run_dir))
     ranked = [(row["elo"], int(m.group(1))) for row in players
               if (m := re.fullmatch(re.escape(label) + r" update (\d+)", row["player"]))]
