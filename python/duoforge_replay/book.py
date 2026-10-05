@@ -7,6 +7,7 @@ Counts and win rates still describe actual pair observations, never products.
 """
 import argparse
 import collections
+import hashlib
 import itertools
 import json
 import re
@@ -100,15 +101,18 @@ def load(path):
 
     path = Path(path)
     refuse_repository(path)
-    payload = json.loads(path.read_text(encoding="utf-8"))
+    raw = path.read_bytes()
+    payload = json.loads(raw.decode("utf-8"))
     if not isinstance(payload, dict) or type(payload.get("schema_version")) is not int or payload["schema_version"] != 2:
         raise ValueError("opening book requires schema_version 2; regenerate schema 1 with openings.py")
     tables = payload.get("tables")
     if not isinstance(tables, dict) or any(not isinstance(tables.get(name), list)
                                            for name in ("leads_per_team", "turn_1_actions")):
         raise ValueError("missing opening tables")
-    return Book([_validate_row(row) for row in tables["leads_per_team"]],
-                [_validate_row(row, action=True) for row in tables["turn_1_actions"]])
+    loaded = Book([_validate_row(row) for row in tables["leads_per_team"]],
+                  [_validate_row(row, action=True) for row in tables["turn_1_actions"]])
+    loaded.source_sha256 = hashlib.sha256(raw).hexdigest()
+    return loaded
 
 
 def _stats(rows):
