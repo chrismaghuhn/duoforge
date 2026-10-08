@@ -47,9 +47,9 @@ Stop if **work fallbacks >1% of selected eligible roots**. The ~2% public recons
 
 ### Success must beat continued training
 
-Control: approved Learner v2 continuation from 49333, same initial params/optimizer, model size/data and GPU-minute/CPU-core-hour caps. Charge teacher generation/JIT/restarts/audits. Equal steps alone is not equal compute.
+Control: approved Learner v2 continuation from 49333, same initial params/optimizer, model size and GPU-minute/CPU-core-hour caps, using its own Learner v2 data at the matched budget, not teacher-labelled data. Charge teacher generation/JIT/restarts/audits. Equal steps alone is not equal compute.
 
-Predeclare primary raw-student vs raw-continuation H2H, 2048 games, same hardware, both seats, paired-seat 95% bootstrap. Pass only with **point score >=0.52 AND lower bound >0.50**. Also require vs frozen 49333 point >=0.53/lower >0.50 and positive paired-panel lower-bound evidence. Pin BC/3600/11000 paths/hashes and separate ladder output. No post-hoc choice of a passing endpoint. PP_/A/B/C and LL_ noninferiority lower bounds must exceed -0.03; broad/inconclusive or failing groups **block promotion**. Missing groups are not evaluated. Stop on failure/inconclusive strength, drift, leak/compatibility, work-fallback threshold or budget. KL reduction alone cannot promote/scale.
+Predeclare primary raw-student vs raw-continuation H2H, 2048 games, same hardware, both seats, paired-seat 95% bootstrap. Pass only with **point score >=0.52 AND lower bound >0.50**. Also require vs frozen 49333 point >=0.53/lower >0.50 and positive paired-panel lower-bound evidence. Pin BC/3600/11000 paths/hashes and separate ladder output. No post-hoc choice of a passing endpoint. PP_/A/B/C and LL_ noninferiority lower bounds must exceed -0.03; broad/inconclusive or failing groups **block promotion**. Both PP_/A/B/C and LL_ are required groups; a missing required group blocks promotion like an inconclusive one. Stop on failure/inconclusive strength, drift, leak/compatibility, work-fallback threshold or budget. KL reduction alone cannot promote/scale.
 
 ## 4. P2 — lockstep GPU batching only
 
