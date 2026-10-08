@@ -113,9 +113,14 @@ def reduce(tables, weights, qs, prior_rank, uniform, lam, oracle=False):
 class Honest(lookahead.Lookahead):
     def __init__(self, context, model, params, encoder, ext_supported, k=8, m=8, s=16, rule="mix",
                  seed=lookahead.SEARCH_SEED, capacity=lookahead.CAPACITY, workers=8, lam=0.5,
-                 table=None, exclude_teams=None):
+                 table=None, exclude_teams=None, preview_mode="raw", preview_only=False, preview_steps=16):
         if rule not in RULES or not 0 <= lam <= 1:
             raise ValueError("honest search needs nash/ev/mix and 0 <= lam <= 1")
+        if preview_mode not in ("raw", "value", "turn1") or type(preview_steps) is not int or preview_steps < 1:
+            raise ValueError("preview requires raw/value/turn1 and a positive rollout bound")
+        if preview_only and preview_mode == "raw":
+            raise ValueError("preview_only requires preview search")
+        self.preview_mode, self.preview_only, self.preview_steps = preview_mode, preview_only, preview_steps
         if table is None:
             table, _, self.table_info = spread_table(context)
         else:
@@ -296,12 +301,29 @@ class Honest(lookahead.Lookahead):
             if boundary == C["DUOFORGE_BOUNDARY_TEAM_SELECTION"]:
                 actions[d] = int(np.argmax(pt[d]))
                 result = {"kind": "team", "choice": int(actions[d])}
+                if self.preview_mode != "raw" and self.k != 1:
+                    excluded = None if self.exclude_teams is None else self.exclude_teams[e]
+                    try:
+                        if statuses[e] == C["DUOFORGE_E_UNSUPPORTED"]:
+                            raise Unreconstructible("preview_public_record_unsupported")
+                        if statuses[e] != 0:
+                            raise SearchError(f"preview public record refused: {duoforge.status_name(int(statuses[e]))}")
+                        from . import preview
+                        result = preview.decide(self, record, roots.observations[e, p], p, int(keys[d]),
+                                                pt[d], excluded, bool(last_step[d]), costs)
+                        actions[d] = result["choice"]
+                    except Unreconstructible as error:
+                        result.update(kind="unreconstructible", reason=str(error), causes=[str(error)])
+                    except (SearchError, duoforge.DuoforgeError, ValueError) as error:
+                        stop = SearchError(str(error))
+                        stop.reproduction = {**base, "public_view": record.tobytes().hex() if statuses[e] == 0 else None}
+                        raise stop from error
             else:
                 own, own_p = lookahead.select(pp[d], pairs[e, p], self.k)
                 actions[d] = int(own[0])
                 result = {"kind": "forced" if pairs[e, p].sum() == 1 else "raw", "choice": int(actions[d])}
                 excluded = None if self.exclude_teams is None else self.exclude_teams[e]
-                if result["kind"] != "forced" and self.k != 1:
+                if result["kind"] != "forced" and self.k != 1 and not self.preview_only:
                     try:
                         if statuses[e] == C["DUOFORGE_E_UNSUPPORTED"]:
                             observation = roots.observations[e, p]
