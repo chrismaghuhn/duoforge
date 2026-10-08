@@ -1,88 +1,149 @@
-# Stage 3 P1 implementation plan: random-1/8 distillation pilot
+# P1 execution plan: keyed random-1/8 teacher pilot
 
-Status: **proposal for owner approval, 2026-10-08**. This PR is a reviewed-by-author implementation plan, not permission to implement, collect or train. The owner reviews it after the coordinating review; each later run needs the agreed resource window. P1 does not authorize P2–P5.
+**Status: revised proposal for owner approval, 2026-10-08. Docs only; no implementation or run authorized.** Sources: [0024](../../decisions/0024-expert-iteration.md), [spec](../specs/2026-10-05-m12-expert-iteration-design.md), [P0](../../learning/2026-10-08-stage3-p0/README.md). P0 X gain +0.2695 [0.2129, 0.3262] passes entry; CPU median ~50 ms/search is the planning input.
 
-Sources: [decision 0024](../../decisions/0024-expert-iteration.md), [stage-3 spec](../specs/2026-10-05-m12-expert-iteration-design.md), [P0 report](../../learning/2026-10-08-stage3-p0/README.md) ([#242](https://github.com/chrismaghuhn/duoforge/pull/242)). P0 X gain is +0.2695 [0.2129, 0.3262]. Its CPU search median is about 50 ms, not the older 30 ms estimate. GPU inference improvements do not change the P1 CPU teacher or satisfy P2 identity requirements.
+## Ownership, size and execution gates
 
-## Scope and ownership
+After approval, estimate **eight subsequent PRs**: five small M12 code PRs below, one M12 aggregate result PR, one separate Learner v2 implementation-plan PR and one Learner v2 integration/control PR (split further if review requires). This plan contains **only M12 schema/teacher/evaluator and synthetic interface fixtures/tests**. Learner v2 implements `policy.py` integration, collection/training loop, optimizer/loss/drift/resume and continuation in its own plan; owner relays the contract. M12 must not implement a second learner or change Learner v2 files under this plan.
 
-M12 owns the honest teacher adapter, sparse-label/collection contract, deterministic solve-work budget and measurement orchestration. **Learner v2 owns the training loop, loss/optimizer/resume integration and continuation arm; the owner relays and confirms this interface.** Proposed new modules below are implementation locations to agree, not existing APIs. No messages to other sessions are authorized by this plan.
+| M12 PR | Scope | Dependency | Estimate after contract agreement |
+|---|---|---|---|
+| C1 | schema, keys, label admission | none | 0.5–1 day |
+| C2 | bounded matrix solver | independent of C1 | 1 day including private calibration |
+| C3 | honest teacher, mapping, leak/determinism tests | C1 + C2 | 1 day |
+| C4 | Learner v2 synthetic contract fixtures/tests only | C1; real-provider gate waits for its PR | 0.5 day |
+| C5 | evaluation/compute-ledger validator | C1; runnable arms wait for Learner v2 | 0.5–1 day |
+| R1 | aggregate pilot/control report | approved code, resources and completed runs | 0.5 day |
 
-Keep preview raw, book off, frozen 49333 teacher and collector, 50/50 X, W=S=16, K=M=8, capacity 1024, CPU teacher, four assigned native workers and 512 lockstep games. Pin logical game ids/seat/epoch/order, runtime/compiler, masks, encoder/id/pool/belief hashes and all RNG streams. No regret router, GPU teacher batching, double oracle, hindsight, outcome head, exploiter population or PPO+distill arm. No new C battle rules, hot-path allocations or silent fallback.
+C1/C2 can progress independently; C4/C5 can follow C1 while C3 is reviewed. This is a dependency description, not permission to spawn parallel agents or run jobs concurrently. No training process/worker changes. Required full CI gate for **each code PR**: all 13 hosted checks on its head green, including Linux gcc Release/Python/JAX/reference and Windows gcc Debug/Python/reference; existing search, honest, PPO/returns/default-path suites remain enabled. R1 and this docs PR: links/diff/privacy review; runtime tests do not apply.
 
-## Task 1 — freeze the experiment and relay the Learner v2 contract
+**Local rule:** run only the targeted `pytest python/tests/test_<x>.py -k ...` below in the configured Python/native/JAX environment. Full suites run on GitHub CI, never locally. Each step is red test commit → minimal implementation → identical targeted command green. Expected red is a missing API or failed assertion, never a native-library/environment import failure. No test weakening. New tests must remain unittest-compatible for hosted CTest: register expert_data/expert_eval in the NumPy list and expert_teacher/expert_contract in the learn/JAX list of `tests/CMakeLists.txt`. Existing `test_search_numpy.py` already has its gate. Names/commands below are proposed tests, not tests already run.
 
-Files to inspect: `python/duoforge_learn/{train,selfplay,returns,ppo,policy,runstate,checkpoint}.py`, `python/duoforge_search/{honest,matrix,arena}.py`. Proposed manifest/schema: `python/duoforge_search/expert_data.py`; validation tests in `python/tests/test_expert_data.py`.
+## Fixed contract (before any pilot)
 
-- [ ] Freeze params-49333 SHA-256 `ef1abe65f63711eb47e335d6169aad34584e50d4f2df321e4e9cbbbdcaf961cb`; teacher/student start at identical params, same architecture/encoder, fresh optimizer in both arms. No moving league snapshot or teacher during collection.
-- [ ] Owner relays schema v1 fields: own public observation/slots/legal mask; logical game/seat/request epoch; sparse joint ids/probabilities; requested/acting/learner/value/target masks; selected/status/cause and work counters; raw sampled action, executed action and true behavior log-probability; actual rewards/done/collector values/bootstrap; reference policy provenance; teacher/collector/model/encoder/id/pool/belief/config hashes; split/shard cursor and RNG/optimizer state.
-- [ ] Learner v2 confirms unchanged GAE gamma/lambda/c_V, waiting-row and truncation semantics, full joint log-prob API, deterministic checkpoint/resume and the continuation configuration. Copy actual values into the private manifest; no guessed default. Confirmation is required before implementation crosses into its loop and before a run.
-- [ ] Predeclare primary endpoints, fixed BC/3600/11000 checkpoint hashes, seeds, budgets and required evaluation buckets **PP_/A/B/C and LL_**. P0 had no LL_; prepare an approved registry/weight manifest with LL_ coverage before spending the training budget. If unavailable, report blocked promotion and re-plan, never drop the requirement.
-- [ ] All target shards, captured states, checkpoints, diagnostics and run directories pass `refuse_repository` and stay outside Git/CI artifacts. Unsupported schema, illegal id, incompatible resume, invalid likelihood or nonfinite labels fail explicitly. Hashes and run aggregates may be reported later; individual rows/worlds/tables may not.
+Frozen teacher/collector/start params: 49333, SHA-256 `ef1abe65f63711eb47e335d6169aad34584e50d4f2df321e4e9cbbbdcaf961cb`. Honest CPU path, own/foe 8 candidates, W=S=16, lambda=0.5, value capacity 1024, four assigned native workers, 512 lockstep games/round. Preview raw/book off. No routing, GPU teacher batching, hindsight, double oracle, new head or PPO+distill. Teacher models the foe with **its own frozen net**, including league games.
 
-Acceptance: owner-relayed interface and resource/evaluation manifest are agreed; synthetic schema/resume/privacy checks pass. Missing agreement/coverage stops at planning, not an improvised arm.
+Proposed public signatures, dataclass fields and enums (interfaces, not implementation):
 
-## Task 2 — deterministic rescue before collection
+```python
+# expert_data.py; ndarray fields have explicit schema/shape checks
+class RowStatus(Enum):
+    TARGET = "target"
+    UNSELECTED = "unselected"
+    CAP_RAW = "cap_raw"
+    PUBLIC_REFUSAL = "public_refusal"
+    WORK_EXHAUSTED = "work_exhausted"
+    FORCED = "forced"
+    UNREQUESTED = "unrequested"
+# frozen DecisionKey(game_id: int, seat: int, request_epoch: int)
+# frozen SparsePolicy(ids: ndarray[int64, K], probs: ndarray[float64, K])
+# frozen DataManifest(schema_version=1, source/checkpoint/model/encoder/id/pool/
+# belief hashes, seeds/key_version, devices/runtime/compiler, capacity/workers/
+# parallel_games, game_count/rounds, split, budget and evaluation configs)
+# frozen ExpertRow(key, obs, slots, legal_mask, sparse_policy|None, status,
+# raw_action|None, action|None, behavior_logp|None, acting/learner/value masks,
+# actual rewards/done/collector values/bootstrap, admission/work/audit provenance)
+def validate_manifest(manifest: DataManifest) -> None: ...
+def validate_row(row: ExpertRow, manifest: DataManifest) -> None: ...
+def write_shard(path: Path, rows: Sequence[ExpertRow], manifest: DataManifest) -> str: ...
+def read_shard(path: Path, expected: DataManifest) -> tuple[ExpertRow, ...]: ...
+def selection_word(key: DecisionKey, seed: int, *, domain: str, version: int=1) -> int: ...
+# LabelCursor(remaining: int, pending_reservations, dropped_games, logical_tick)
+# AdmissionBatch(admitted_keys, cap_raw_keys, reserved_count); AdmissionOutcome(key, status)
+def admit_tick(cursor: LabelCursor, requests: Sequence[DecisionKey]) -> AdmissionBatch: ...
+def commit_tick(cursor: LabelCursor, outcomes: Sequence[AdmissionOutcome]) -> LabelCursor: ...
 
-Proposed changes: `matrix.py` budget accounting; `honest.py` typed work-exhaustion status. Tests: `python/tests/test_search_budget.py` and existing matrix tests.
+# matrix.py; budget optional, preserving original return/default behavior
+class WorkStatus(Enum):
+    OK = "ok"
+    FLOAT_PIVOTS = "float_pivots"
+    EXACT_PIVOTS = "exact_pivots"
+    EXACT_OPS = "exact_ops"
+    BITS = "bits"
+# WorkBudget(float_pivots=4096, exact_pivots=32, exact_ops=250000, bits=4096)
+# WorkCounters(float_pivots: int, exact_pivots: int, exact_ops: int, max_bits: int)
+# mutable WorkLedger(limits: WorkBudget, consumed: WorkCounters)
+# WorkBudgetExceeded(SearchError): status: WorkStatus, consumed: WorkCounters
+# budget exhaustion is NEVER caught by the ordinary float->rescue retry
+# W=1 reduction must use the same ledger through solve(a, *, budget=None)
+def solve_bayes(tables: ndarray, weights: ndarray, *,
+                budget: WorkLedger | None=None) -> BayesSolution: ...
 
-- [ ] Add opt-in solve-work accounting, preserving the current default solver behavior. Per decision, count all float attempts/stable retries/certification together: 4096 float pivots; 32 exact pivots; 250000 exact arithmetic/comparison operations; 4096-bit numerator/denominator. Count tableau initialization, conversions and certificate work; budget counters never reset on retry. Define the counted primitive operations in the manifest/tests, including bit checks around intermediate results.
-- [ ] Use a dedicated exhausted-work status with cause and consumed/allowed counters. Only this documented condition plays the already sampled raw action and emits **no teacher label**. Keep original payoffs, fixed tie-breaking and certificate tolerance; no quantization or uncertified float acceptance. Unexpected solver errors abort instead of becoming raw choices.
-- [ ] Calibrate on retained private rescue-tail fixtures and public synthetic ill-conditioned tables before collection. Measure identity to the unbounded solution when within budget, work counts and exhaustion share. If caps need changing, stop for reviewed re-plan; do not loosen the certificate or automatically raise the budget.
-- [ ] Outer wall watchdog aborts an incomplete shard/run and rejects late keys. PC load may stop a run, never select a different policy trajectory by timing out individual solves.
+# expert.py; no actual league-opponent model parameter
+# TeacherConfig pins the CPU path and stream/config hashes above
+# TeacherDecision(action, behavior_logp, target|None, status, work, audit,
+# world_digest, table_digest, label_digest)
+def include_student(candidates: ndarray, raw_action: int,
+                    legal_mask: ndarray, *, k: int=8) -> CandidateSet: ...
+def full_target(policy: SparsePolicy, legal_mask: ndarray) -> ndarray: ...  # (1024,)
+def label_decision(search: Honest, roots: Batch, *, env: int, seat: int,
+                   key: DecisionKey, raw_action: int, admitted: bool,
+                   config: TeacherConfig) -> TeacherDecision: ...
 
-Acceptance: byte-identical result/counters for the same table/config, including under injected clock delays; exact/float cap and bit-limit tests; valid within-budget certificates; default-off regression checks. **Work fallbacks >1% of selected eligible roots stop P1.** Public reconstruction refusals are separately counted and excluded from that numerator; report denominators and overlapping causes.
+# expert_eval.py; EvalManifest and ComputeLedger are immutable schema objects
+# GateStatus: PASS, FAIL, INCONCLUSIVE, INCOMPLETE
+# EvalResult(status, scores, paired CIs, groups, provenance, budget causes)
+def make_eval_rows(pool: TeamPool, manifest: EvalManifest) -> dict[str, ndarray]: ...
+def validate_compute(pilot: ComputeLedger, control: ComputeLedger) -> None: ...
+def evaluate_records(records: Mapping[str, ndarray], manifest: EvalManifest,
+                     ledgers: tuple[ComputeLedger, ComputeLedger]) -> EvalResult: ...
+def main(argv: Sequence[str] | None=None) -> int: ...
+```
 
-## Task 3 — keyed random collection and teacher labels
+Paths/unknown schemas/illegal masks/incompatible resume/nonfinite data raise explicit errors; status enums cover documented policy fallbacks only. `write_shard` returns SHA-256 of canonical bytes; keys and ndarray serialization specify dtype/endianness/order and preserve exact float bits. No real table/row goes in synthetic fixtures.
 
-Proposed module: `python/duoforge_search/expert.py`; adapter to Learner v2's approved collector. Tests: `python/tests/test_expert_teacher.py`.
+## C1 — schema, selection and admission (three red/green steps)
 
-- [ ] Draw raw action first from the frozen student's full legal policy with an independent keyed word. Select eligible learner TURN/REPLACEMENT/PIVOT requests with at least two legal actions using `word_SELECT < 2**61` (exact probability 1/8), not every eighth arrival or a floor quota. Keys encode immutable logical game id, seat and request epoch; raw/selection/world/X/audit streams are domain-separated and versioned. Preview/forced/unrequested states have no target.
-- [ ] Collect one learner seat, alternated by logical game id; other seat executes the frozen self-play or predeclared league controller. Teacher foe model is always 49333, never the real opponent network. Keep existing explicit public sleep/confusion/queue refusals. No privileged truth, oracle or future reveals in inputs/targets/weights.
-- [ ] Preserve fixed K=8: if sampled raw action is outside the top eight, displace the lowest-ranked candidate with deterministic ties. Record included/displaced ids. A keyed 1% selected-root K+1 audit uses the same worlds, is charged to generation and does not replace labels. Report differences honestly: restricted universes can disagree; missing Q must not be guessed. Audit setting is separate, including its 1152-leaf chunking/capacity effects.
-- [ ] Use one Bayesian strategy across worlds: `tau = 0.5*x_N + 0.5*one_hot(E)`. Map candidate joint ids to sparse mass in the full 1024 action space; normalize the student over all legal actions. Validate unique/legal ids, finite nonnegative mass and sum 1±1e-6. Do not train slot marginals or final-outcome values as search labels.
-- [ ] Valid selected roots execute a keyed tau draw and record `log tau(executed)`. Unselected/refused/exhausted roots execute the previously drawn raw action and record its raw likelihood. Store actual collector reward/value/termination data for GAE, not counterfactual teacher rewards.
-- [ ] Stop at 16384 accepted targets including held-out targets. Finish active games privately so returns are valid; deterministic label cap/overflow accounting is by logical decision order, never completion speed. Whole-game keyed split assigns approximately 20% to validation before training; never split rows of one game across train/validation. Record realized target counts. Validation labels never receive optimizer updates.
+**1. Schema/privacy.** Write `test_schema_refusal_and_private_roundtrip` in `python/tests/test_expert_data.py`. Red command: `pytest python/tests/test_expert_data.py -k schema_refusal_and_private_roundtrip` → **FAIL**, missing validator/writer. Implement `validate_manifest`, `validate_row`, `write_shard`, `read_shard` above using `refuse_repository` from **`python/duoforge_replay/dataset.py`**. Check shapes/dtypes, sparse mass tolerance 1e-6, masks/GAE provenance, unknown versions and mismatched manifest hash; canonical roundtrip and repository output refusal. Same command → **PASS**.
 
-Acceptance: synthetic tests for singleton/permuted/regrouped requests, keyed selection frequencies and inclusion/ties; mapping and likelihood checks; no-label fallbacks; slot masks; uninterrupted/resumed byte identity at pinned capacity/parallel-game count. Public-prefix mutation traps must compare world/leaf digests and labels with a foe-sensitive net; trap privileged calls and changing the real league-opponent network. No hindsight in collection, validation or evaluation.
+**2. Selection.** Write `test_selection_word_domains_and_frequency`. Red: `pytest python/tests/test_expert_data.py -k selection_word_domains_and_frequency` → **FAIL**. Implement `selection_word`: SHA-256 over version 1 tag `duoforge-expert`, length-prefixed UTF-8 domain and little-endian uint64(seed, game_id, seat, epoch); first eight digest bytes decoded little-endian give an unsigned uniform 64-bit word. Raw/SELECT/world/X/audit domains distinct; no Python hash or worker/timing input. Select exactly when SELECT word <2**61. Test known vectors, permutations, domain/version changes and **65536 predeclared keys; selected count must be 8192±384** (~4.5 binomial standard deviations); no tolerance adjustment. Same command → **PASS**. Raw policy word is drawn before selection; `tau` is precisely **X**, not the Nash component alone.
 
-## Task 4 — Learner v2 distillation and drift guards
+**3. Cap before action.** Write `test_admission_precedes_tau_and_drops_games_in_order`. Red: `pytest python/tests/test_expert_data.py -k admission_precedes_tau_and_drops_games_in_order` → **FAIL**. Implement `admit_tick`/`commit_tick`: each complete logical lockstep tick sorts eligible selected roots by logical game id/seat/epoch, reserves up to remaining 16384 label tickets **before teacher execution**. Never admit by arrival order. Unadmitted games are marked CAP_RAW for the remaining collection, execute already drawn raw, and never play tau with a discarded label. Drop excess game-by-game in that logical order, counting games/roots; earlier labels stay in their original game's split. A valid teacher result consumes its reserved ticket and plays tau; public/work refusals release the ticket only after all tick outcomes commit. No labels are capped after executing tau. Persist pending reservations/dropped-game set/tick in resume; partial tick cannot advance actors. Test zero/one remaining slots, refusal release, regrouped requests, no overshoot, no tau without stored target. Same command → **PASS**.
 
-Learner v2 implements the agreed loop extension (proposed `python/duoforge_learn/distill.py`), with `returns.py`/`ppo.py` value logic reused; M12 supplies schema/teacher tests, not a second training loop.
+Smoke policy (after code approval): **512 complete games once**, included in generation cap; its rows are forecast-only and excluded from training/validation. Production uses disjoint logical game ids and evaluation has its own namespace. Freeze production rounds before execution as `R=ceil(1.25*16384/(512*t))`, where t is smoke valid-targets/game at 1/8; game count=512R, ids/weights/seeds/split pinned. The 1.25 margin is fixed, not tuned. If t=0 or forecast exceeds budget, stop. No extra rounds after seeing production results. Production cap 16384 includes whole-game 20% held-out split (keyed split before collection); use realized counts, no row reassignment. Finish fixed games raw after cap to obtain valid GAE. If planned games yield fewer 16384 valid targets, report incomplete/re-plan, do not silently extend.
 
-- [ ] Keep existing GAE value regression, coefficients, acting/waiting targets, reward aggregation, terminal zero bootstrap and existing truncation protocol. Value targets come from actual collector trajectories. No `z_game` MSE on the discounted head and no separate win head. Include waiting learner rows; exclude opponent private rows.
-- [ ] Pilot loss is `mean_target KL(tau||pi_theta) + 0.1*mean_non_target KL(pi_49333||pi_theta) + c_V*existing_GAE_value_loss`. PPO policy surrogate and magnet are off **only for the distillation arm**; league is collection. Continuation retains its approved Learner v2 recipe.
-- [ ] Use fixed minibatches of 4096: 512 teacher rows and 3584 non-target learner rows. Padding has zero weight; each mean uses its own valid weight sum. Reference policy KL uses requested/legal policy rows and the correct head (preview may be regularized, never teacher-labelled); waiting rows remain value-only. Freeze reference outputs by the pinned full legal policy. Preserve the existing value-loss formula/masks; log policy/value counts and gradient magnitudes so stratum sampling is visible.
-- [ ] Uniform teacher weights. Shuffle whole training strata deterministically; each training label visited once per epoch, with padded final chunk rather than silent dropping. Non-target reuse and shuffle cycles are recorded, with sufficient non-target rows or explicit refusal. Max four epochs and 128 updates, whichever first; fresh Adam, LR 3e-5 constant, gradient norm 0.5. No mid-pilot tuning or extending the epoch cap.
-- [ ] Validate each epoch on held-out whole games: teacher KL and non-target reference KL. Keep best epoch; stop after two epochs without >=1e-4-nat improvement, nonfinite loss or held-out non-target KL >0.02 nats. Restore identical optimizer/shuffle/keys/stratum/shard cursor on resume; mismatches refuse resume.
+## C2 — bounded solver (independent of C1)
 
-Acceptance: synthetic loss tests distinguish sparse full-space KL from candidate-only renormalization; unchanged GAE targets/value formula including waiting/end/truncation; no gradient from padding/held-out/opponent rows; stop/restore tests. Existing default PPO path and opt-out training remain unchanged.
+Commit both steps 4/5 red tests before implementing the shared budget extension in step 4; run both targeted commands red, then both green. This avoids inventing a later failing test for a property the shared implementation already satisfies.
 
-## Task 5 — continuation control, evaluation and stop
+**4. Work budget.** Add `test_bayes_budget_cumulative_and_default_identity` to **`python/tests/test_search_numpy.py`**. Red: `pytest python/tests/test_search_numpy.py -k bayes_budget_cumulative_and_default_identity` → **FAIL**, new keyword/exception missing. Implement `WorkBudget/WorkLedger/WorkBudgetExceeded` and `solve_bayes(..., budget=...)`; thread ledger through single-world `solve`, float/stable/exact and certificate conversion paths. Unit is **one primary teacher decision**, shared across every solve/retry; ledger never resets per call. Count pivots including initialization, Fraction construction/conversion, arithmetic(+,-,*,/,negation) and comparisons; check 4096-bit intermediate numerator/denominator before and after exact operations. Unexpected errors abort. Original 1e-9 certificate/payoffs/ties unchanged, budget=None byte-identical. Same command → **PASS**.
 
-Learner v2 coordinates the control; owner relays the recorded configuration and artifacts. Proposed evaluation CLI: `python/duoforge_search/expert_eval.py`, reusing arena/ladder pairing and private-output guards.
+**5. Audit/clock exhaustion.** Write `test_primary_and_audit_budgets_with_clock_injection` in `python/tests/test_search_numpy.py`. Red: `pytest python/tests/test_search_numpy.py -k primary_and_audit_budgets_with_clock_injection` → **FAIL**. Exercise independent primary and **K+1 audit ledgers with identical caps** through the matrix API on synthetic tables; wire them into TeacherConfig in C3 step 9; audit selected by domain word <floor(2**64/100). It reuses worlds, never replaces target/action. Primary exhaustion→WORK_EXHAUSTED/raw/no label; audit exhaustion→counted incomplete audit, primary unchanged. Any incomplete required audit blocks the audit acceptance gate and re-plan, not a retry with larger cap. Audit work is charged to generation but excluded from primary >1% fallback numerator. Here inject arbitrary clock delay and require solver status/result/counter bytes identical; action/label invariance is tested in C3 step 10. Watchdog aborts incomplete shard, never changes an action. Same command → **PASS**.
 
-- [ ] Start both arms from frozen 49333 with fresh optimizer and unchanged model size. Continuation collects **its own Learner v2 data at matched compute**, never teacher-labelled data. Match predeclared CPU-core-hour/GPU-minute ceilings and resource windows; charge teacher generation, compilation, audits, failed attempts and restarts to the pilot. Learner v2 sizes the control against the pilot's measured resource expenditure with an owner-agreed tolerance; equal configured ceilings alone do not establish matched actual compute. Do not call equal optimizer steps or equal game count equal compute.
-- [ ] Pin a fixed train/validation/evaluation split, registry weights and seeds, identical evaluation hardware, batch shapes and raw play for both arms. Preview and book remain off. Run separate-output ladder, primary student vs continuation H2H (2048 games, both seats), frozen-49333 H2H and paired panel suites (propose 2048 per H2H, 1024 per panel opponent per arm). Predeclare these budgets; inadequate resource budget means re-plan, not reduced evidence presented as a pass.
-- [ ] Use 2000 paired-seat bootstrap resamples. Primary continuation H2H must have point score >=0.52 **and** lower 95% >0.50. Frozen-49333 H2H must have point>=0.53/lower 95% >0.50; panel student-minus-continuation pooled equal-opponent-weight gain must have lower 95% >0, with each opponent reported. No picking whichever endpoint happens to pass.
-- [ ] Report group-specific student-minus-continuation panel gains with matched seat clusters; required PP_/A/B/C and LL_ lower 95% bounds must both exceed -0.03. Missing, failing or inconclusive required groups block promotion. Allocate equal evaluation mass to these two buckets in the reviewed manifest; this new evaluation pool is not an unlabelled comparison to P0's PP-only pool. Report all group/game budgets and the ladder separately.
-- [ ] Stop on strength failure/inconclusive evidence, drift, leak/compatibility, >1% deterministic-work fallback or budget breach. No repeated statistical trials until success, no best-of-seeds checkpoint selection, no automatic scale-up. Publish only aggregates and fingerprints in a later result docs PR; retain rows privately.
+**6. Private tail calibration, no new search run.** On 2026-10-08, a read-only scan found **all five #236 exact-rescue records with tables/weights/foe probabilities/key retained privately**. Proposed `expert_calibrate.py`: `load_rescue_fixture_set(manifest: Path) -> tuple[RescueFixture, ...]`, requiring count 5 and SHA-256 fingerprints. Implement this private fixture loader after the red `pytest python/tests/test_search_numpy.py -k rescue_manifest_missing_stops` → **FAIL** test for count/fingerprint validation, then → **PASS** with synthetic files. At calibration time revalidate five payload hashes privately and run bounded/unbounded replay, recording counts/certificates/exhaustions; no fixture upload. Missing data or failed calibration is an explicit **STOP**, not permission to regenerate a full arena. Synthetic ill-conditioned fixtures in CI are additional tests, not substitutes for that gate. Caps needing revision require owner re-plan.
 
-Acceptance: adversarial synthetic pairing/seat/group/CI tests, explicit missing-group failure, private paths refused, panel hashes stable and continuation data provenance separate. A passing result authorizes an owner promotion decision, not P2 implementation.
+## C3 — teacher (four isolated risk steps)
 
-## Resources and delivery sequence
+**7. Full-space mapping.** Write `test_full_target_kl_and_displacement_ties` in `python/tests/test_expert_teacher.py`. Red: `pytest python/tests/test_expert_teacher.py -k full_target_kl_and_displacement_ties` → **FAIL**. Implement `include_student` and `full_target`: deterministic lowest-ranked displacement keeps K=8; illegal/duplicate ids, negative/nonfinite mass, sum outside 1±1e-6 raise. Values at 1024 joint indices, zero elsewhere. Synthetic NumPy KL reference must distinguish full-legal normalization from candidate-only renormalization; include tied candidates, absent raw id and raw already present. Same command → **PASS**. K+1 audit uses 1152 leaves/capacity 1024, reports changed action/value/certificate without pretending equality across restricted games.
 
-**After plan approval only:** first schema + teacher/work-budget code and synthetic tests; then owner-relayed Learner v2 integration/control review; then bounded private collection, GPU training/evaluation windows and aggregate report. Review each component before a run; no heavy run implicit in this docs PR.
+**8. Leak trap first.** Write `test_teacher_foe_model_and_privileged_traps`. Red: `pytest python/tests/test_expert_teacher.py -k teacher_foe_model_and_privileged_traps` → **FAIL**. Implement `label_decision` using existing Honest public construction, a foe-sensitive synthetic net, and teacher-owned params only. Swapping a real-opponent-network mock with identical public prefixes must leave **world/table/label digests identical**; true-stat/bench mutations likewise. Privileged calls are patched to raise and must never execute. Include an injected-leak negative control that changes a digest, not a blind toy value. Refer to existing **`test_honest.py`, `test_search.py`, `test_search_numpy.py`** for boundary/certificate fixtures. Same command → **PASS**.
 
-Generation cap: two CPU wall hours on four assigned cores; account separately in core-hours for the continuation comparison. At the measured ~50 ms/search, 16k labels alone cost about 14 min, before raw collection/public refusals/audits. At ~8.7 eligible decisions/game and random 1/8, order-of-magnitude ~15k games; P0 counted searched rather than all eligible decisions, so measure the actual eligible count and success rate before projecting. Formula `games=labels/(selection_share*eligible_per_game*success_rate)`. A short smoke, included in the cap, forecasts throughput/shard size; projected or actual cap breach stops for re-plan. No automatic extra workers.
+**9. Action likelihood.** Write `test_tau_execution_and_explicit_fallbacks`. Red: `pytest python/tests/test_expert_teacher.py -k tau_execution_and_explicit_fallbacks` → **FAIL**. Implement X sparse policy and keyed draw; target rows use log tau(executed), other requested rows use log raw(executed), forced/unrequested masks explicit. Labels only for admitted valid learner TURN/REPLACEMENT/PIVOT with >=2 legal actions; alternate learner seat by game id, actual rewards/bootstrap retained. Public sleep/confusion/queue causes explicit; no oracle/hindsight. Same command → **PASS**.
 
-Two exclusive GPU hours total for pilot/control/evaluation, split evenly between arm-attributable work; charge inference and compilation too, with shared evaluation overhead recorded. Actual work and unused ceilings must be visible: a trivial pilot update budget is not assumed to consume an hour. If matching the continuation or fixed evaluation budgets cannot fit, stop before runs and seek a revised plan. Use scheduled local night windows without contending with Learner v2 A/B or ongoing training; CPU generation in assigned daytime windows. Documentation/small tests can coexist. Do not change existing jobs/worker counts. AWS only after engine meta coverage and a new owner-approved budget.
+**10. Determinism first.** Write `test_teacher_resume_permutation_regrouping_clock_bytes`. Red: `pytest python/tests/test_expert_teacher.py -k teacher_resume_permutation_regrouping_clock_bytes` → **FAIL**. Implement key/config/shard cursor and history checkpoint contract plus admission state restoration. Compare complete canonical action/target/status/work bytes uninterrupted vs resumed, permuted input list, regrouped same logical tick and injected clock pauses. Pin 512 games/capacity 1024; permutation cannot change per-game leaves or label admission. Reject wrong runtime/device/config/key version and partial/incompatible resume. Same command → **PASS**. No GPU/cross-capacity trajectory bit claim.
 
-## Approval checklist
+## C4 — Learner v2 contract only; separate loop plan required
 
-- [ ] Owner approves this P1 plan; Learner v2 contract/continuation/evaluation manifest confirmed via owner.
-- [ ] CPU teacher, work accounting/caps, schema/loss/GAE/default-path and privacy tests reviewed.
-- [ ] Required LL_ coverage and group evaluation budgets available; resource windows and matched compute ledger agreed.
-- [ ] Pilot run separately scheduled within caps; stop counters and reproducibility contract fixed before collection.
+Proposed M12 module `expert_contract.py`: `validate_adapter(adapter: StudentAdapter, fixture: ContractFixture) -> ContractResult`. Fixtures include acting/waiting/terminal/truncated/preview/padded/opponent/held-out rows, sparse tau and stored GAE inputs. They contain no trained weights.
 
-No approvals are presumed checked. No feature code, target generation or training is included in this PR.
+**11. Full-joint API test.** Write `test_full_joint_provider_normalization_and_gradient` in `python/tests/test_expert_contract.py`. Red: `pytest python/tests/test_expert_contract.py -k full_joint_provider_normalization_and_gradient` → **FAIL**, contract API missing. Implement validator/fixture only in M12. **Required Learner v2 signature:** `Model.full_joint_log_probs(params, obs, slots, legal_mask) -> jax.Array[B,1024]`; differentiated masked log-softmax over all legal joint actions, illegal=-inf, zero-legal requested row explicitly refused. `_evaluate` currently returns chosen logp/entropy/value; `Model.apply` already exposes full pair outputs, so this is a new learner-facing contract, not a new head. Learner v2 may reuse apply's normalized output, never candidate-only re-normalize. A synthetic provider with deliberate candidate-only normalization must fail; valid provider passes normalization/illegal/gradient tests. Same command → **PASS** for validator/fixture; real provider test remains a **separate Learner v2 CI gate**, not claimed delivered here.
+
+**12. Loss/drift/GAE handoff test.** Write `test_learner_contract_gae_masks_drift_resume`. Red: `pytest python/tests/test_expert_contract.py -k learner_contract_gae_masks_drift_resume` → **FAIL**. Implement schema assertions/reference fixtures, not optimizer/trainer. Required Learner v2 plan: unchanged `returns.gae`/existing value loss/c_V/gamma/lambda, learner waiting rows included; actual rewards/done/bootstrap; no outcome MSE. Loss=`mean_target KL(tau||pi)+0.1*mean_non_target KL(pi49333||pi)+c_V*existing_value_loss`; each valid mean separate, padding/opponent/held-out gradients zero. Batch 4096=512 target+3584 non-target (waiting value-only); reference KL correct requested head, preview regularization allowed. Fresh Adam LR 3e-5/clip 0.5, max 4 epochs/128 steps, label visited once/epoch, padded tail, uniform weights. Stop after 2 epochs without 1e-4-nat held-out KL improvement, nonfinite or held-out reference KL>0.02; keep best epoch and exact optimizer/shuffle/RNG cursor resume. Pilot PPO-policy/magnet off; continuation owns its usual recipe and **its own data**. Same targeted command → **PASS** against synthetic reference; real loss/loop/drift/restore tests are acceptance steps in Learner v2's own plan/PR. Owner relays confirmation; no confirmed loop means no pilot run.
+
+## C5 — evaluation and fixed resource ledger
+
+**13. Pair/group gate.** Write `test_eval_pairings_groups_and_ci_stop` in `python/tests/test_expert_eval.py`. Red: `pytest python/tests/test_expert_eval.py -k eval_pairings_groups_and_ci_stop` → **FAIL**. Implement `make_eval_rows`/`evaluate_records` above with 2000 paired-seat bootstrap resamples. Primary student vs continuation 2048 games: point>=0.52/lower 95%>0.50. Student vs frozen 49333 another 2048: point>=0.53/lower 95%>0.50. Panel BC/3600/11000, **equal weights 1/3**, pinned hashes: student-minus-continuation pooled lower 95%>0. Required PP_/A/B/C and LL_ bucket-specific panel lower 95%>-0.03; missing/failing/inconclusive blocks promotion. All raw play, book/previewsearch off. Test swapped-seat pairing, no chosen-success endpoint, absent LL_, nonfinite/unfinished results and synthetic borderline CIs. Same command → **PASS**.
+
+**14. Compute/fixed CLI.** Write `test_eval_compute_tolerance_cost_and_privacy`. Red: `pytest python/tests/test_expert_eval.py -k eval_compute_tolerance_cost_and_privacy` → **FAIL**. Implement `validate_compute`/`main` with **5% relative tolerance independently for actual CPU-core-seconds and GPU-seconds**, `abs(control-pilot)<=0.05*pilot`; pilot=0 requires control=0. Account generation/JIT/audits/restarts to arm; shared eval half each. Equal caps/steps alone cannot pass. Continuation is sized to measured pilot use by Learner v2; unable to match means incomplete/re-plan. CLI: `python -m duoforge_search.expert_eval --manifest PRIVATE --pilot PRIVATE --control PRIVATE --baseline PRIVATE --out PRIVATE`; bad manifest/pairing/compute/repository paths exit 2 with cause, complete report exit 0 even for FAIL/INCONCLUSIVE strength (structured status). Same targeted command → **PASS**. CLI defaults cannot silently alter seeds/panel/budgets.
+
+Evaluation predeclared **12288 raw-play games**: two H2Hs 2048 each + panel 3 opponents×1024×2 arms=6144 + ladder 1024×2 arms=2048. LL_ is **included**, not an extra unbudgeted suite: every suite is half PP_/A/B/C and half LL_, paired seats within bucket. Thus panel per opponent/arm is 512 games/bucket; H2H 1024/bucket. No unlabelled comparison to P0's PP-only pool. Approved LL_ registry and fixed weights/hashes are prerequisites.
+
+Reserve **60 GPU minutes evaluation/JIT, 30 training minutes per arm**, total120 minutes, eval charged 30/arm. Planning floor 5 completed raw games/s gives 12288/5=2457.6s=40.96min; add fixed20% timing margin8.19min +8min compilation allowance =**57.15min**, within 60. This is an explicit conservative **assumption**, not an existing throughput measurement. A fixed64-game evaluation smoke, included in the ledger/reserve, must verify>=5games/s and forecast incl.JIT<=60 min; otherwise STOP/re-plan **before training**. No shrinking groups/budgets to force fit. Matching actual training use still obeys 5% tolerance; 30 min ceilings do not imply equal actual use. Every measurement/failed setup/validation is charged; no run starts merely because this plan is merged.
+
+Generation cap **2 CPU wall hours on four assigned cores** (core-hours recorded too). At P0's 50 ms, 16k labels alone ~14min; ~15k games at 1/8 is only an initial order estimate. Smoke freezes eligible/valid targets/game, R, shard forecast and audit cost. Projected/actual 2h breach→STOP/re-plan; no extra rounds/workers. Primary work fallbacks>1% of selected eligible roots→STOP; public reconstruction refusals excluded from that numerator and reported separately. Wall watchdog aborts incomplete run, never timed raw fallback. Nonfinite/drift/leak/resume/strength failure or inconclusive required groups stop. No best-of-seeds trials, automatic scale-up or silent fixture replacement.
+
+## Final owner gates
+
+Owner approves this revised plan, the separate Learner v2 plan/API/control recipe, LL_ evaluation manifest and resource windows. CPU daytime generation and exclusive local GPU night windows must not contend with Learner v2 A/B/training. Documentation/small targeted tests can coexist. AWS only after engine meta coverage and a new owner budget. After code/CI/private-fixture/contract gates, schedule the bounded pilot/control/evaluation; R1 publishes aggregates/fingerprints only. P1 success requires a new promotion decision, not P2 execution.
+
+All real rows/worlds/tables/checkpoints/runs stay outside repository and CI artifacts under `refuse_repository`. This PR changes only this plan. No approvals, test outcomes, learner integration or measured evaluation throughput are presumed complete.
