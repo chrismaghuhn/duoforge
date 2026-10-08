@@ -124,5 +124,68 @@ class ExpertDataTest(unittest.TestCase):
             with self.subTest(key=bad_key, seed=seed, domain=domain), self.assertRaises(ValueError):
                 ed.selection_word(bad_key, seed, domain=domain)
 
+    def test_admission_precedes_tau_and_drops_games_in_order(self):
+        from duoforge_search import expert_data as ed
+        m = manifest(ed)
+        a, b = ed.DecisionKey(0, 0, 1), ed.DecisionKey(1, 1, 1)
+        cursor = ed.LabelCursor(remaining=1)
+        batch = ed.admit_tick(cursor, [b, a])
+        self.assertEqual(batch.admitted_keys, (a,))
+        self.assertEqual(batch.cap_raw_keys, (b,))
+        self.assertEqual(batch.reserved_count, 1)
+        self.assertEqual(cursor.remaining, 0)  # reservation precedes teacher/tau
+        checkpoint = ed.cursor_bytes(cursor, m)
+        resumed = ed.restore_cursor(checkpoint, m)
+        self.assertEqual(ed.cursor_bytes(resumed, m), checkpoint)
+        with self.assertRaisesRegex(ValueError, "manifest"):
+            ed.restore_cursor(checkpoint, dataclasses.replace(m, seed=8))
+        with self.assertRaises(ValueError):
+            ed.admit_tick(cursor, [])
+        with self.assertRaises(ValueError):
+            ed.commit_tick(cursor, [ed.AdmissionOutcome(a, ed.RowStatus.TARGET)])
+        with self.assertRaises(ValueError):
+            ed.commit_tick(cursor, [ed.AdmissionOutcome(a, ed.RowStatus.UNSELECTED),
+                                    ed.AdmissionOutcome(b, ed.RowStatus.CAP_RAW)])
+        self.assertEqual(ed.cursor_bytes(cursor, m), checkpoint)
+        outcomes = [ed.AdmissionOutcome(b, ed.RowStatus.CAP_RAW),
+                    ed.AdmissionOutcome(a, ed.RowStatus.PUBLIC_REFUSAL)]
+        committed = ed.commit_tick(cursor, outcomes)
+        restored = ed.commit_tick(resumed, outcomes[::-1])
+        self.assertEqual(ed.cursor_bytes(committed, m), ed.cursor_bytes(restored, m))
+        self.assertEqual(committed.remaining, 1)  # refusal releases only at commit
+        self.assertEqual(committed.logical_tick, 1)
+        self.assertEqual(committed.dropped_games, frozenset({1}))
+        c, again_b = ed.DecisionKey(2, 0, 1), ed.DecisionKey(1, 1, 2)
+        next_batch = ed.admit_tick(committed, [again_b, c])
+        self.assertEqual(next_batch.admitted_keys, (c,))
+        self.assertEqual(next_batch.cap_raw_keys, (again_b,))
+        final = ed.commit_tick(committed, [ed.AdmissionOutcome(c, ed.RowStatus.TARGET),
+                                          ed.AdmissionOutcome(again_b, ed.RowStatus.CAP_RAW)])
+        self.assertEqual(final.remaining, 0)
+        self.assertIsNone(final.pending_reservations)
+        with self.assertRaises(ValueError):
+            ed.commit_tick(final, [])
+        with self.assertRaises(ValueError):
+            ed.admit_tick(final, [c])  # no repeated epoch
+        for ordering in ([a,b], [b,a], sum([[b],[a]], [])):
+            fresh = ed.LabelCursor(remaining=1)
+            self.assertEqual(ed.admit_tick(fresh, ordering), batch)
+            self.assertEqual(ed.cursor_bytes(fresh, m), checkpoint)
+        empty = ed.LabelCursor(remaining=0)
+        rejected = ed.admit_tick(empty, [a,b])
+        self.assertEqual(rejected.admitted_keys, ())
+        self.assertEqual(rejected.cap_raw_keys, (a,b))
+        done = ed.commit_tick(empty, [ed.AdmissionOutcome(k,ed.RowStatus.CAP_RAW) for k in (a,b)])
+        self.assertEqual(done.remaining, 0)
+        blank = ed.LabelCursor()
+        ed.admit_tick(blank, [])
+        self.assertEqual(ed.commit_tick(blank, []).logical_tick, 1)
+        for requests in ([a,a], [a,ed.DecisionKey(0,1,1)]):
+            fresh = ed.LabelCursor()
+            before = ed.cursor_bytes(fresh,m)
+            with self.assertRaises(ValueError):
+                ed.admit_tick(fresh, requests)
+            self.assertEqual(ed.cursor_bytes(fresh,m),before)
+
 if __name__ == "__main__":
     unittest.main()
