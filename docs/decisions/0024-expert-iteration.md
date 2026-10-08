@@ -4,6 +4,7 @@ Status: **proposed for owner approval, 2026-10-05**. Stage 3 is approved in prin
 the [specification](../superpowers/specs/2026-10-05-m12-expert-iteration-design.md) are not yet approved.
 This PR contains documentation only. It authorizes no implementation or run. Follows decisions
 [0017](0017-learner-v2.md), [0022](0022-search-support.md) and [0023](0023-determinization-public-state.md).
+Amendments requested 2026-10-08: regret routing, restricted games, hindsight mining and deterministic GPU batching.
 
 ## Context
 
@@ -22,12 +23,15 @@ no search. The stronger starting network may have less remaining search benefit 
 3. **First pilot:** offline policy KL plus ordinary outcome-value regression, initialized from 49333.
    Replace PPO/magnet policy losses in this pilot; league supplies opponents, not another loss.
    Learner v2 owns training/resume; a later PPO-plus-distillation arm is separately measured.
-4. **Collection:** frozen teacher per round, learner-seat-only search on a deterministic 1/8 of eligible
-   requests. Alternate the learner seat; the other seat stays raw/frozen. Start with 16,384 valid targets,
+4. **Collection:** frozen teacher/student snapshot per round, learner-seat-only search. A cheap honest
+   4x4/S=4 pass routes high teacher-estimated student regret/disagreement to 8x8/S=16, not high entropy alone.
+   Compare with random 1/8 search at matched compute; cap the full-teacher share. Alternate the learner seat;
+   the other seat stays raw/frozen. Start with 16,384 valid targets,
    then consider 125,000 after pilot success. Re-gate before each new teacher round.
-5. **Bound the rescue:** a supervised, isolated teacher worker has a proposed 100 ms decision deadline,
+5. **Bound the rescue:** a supervised, isolated teacher worker has a proposed 100 ms single-decision deadline,
    with at most 10 ms for rational rescue. Expiry plays raw, records the cause, and emits no teacher target.
    No approximate float targets in the pilot, silent fallback or altered certificate.
+   Fixed lockstep batches get their own profiled budget; watchdogs never define batch shapes or flushing.
 6. **Information boundary:** public-information Honest only, including D0023's belief and leave-one-team-out
    rules. No oracle data, privileged true hypotheses or true foe rows can enter target generation.
 7. **Success:** fresh raw-network evaluation against 49333 and the fixed panel, ladder and pool-group
@@ -36,6 +40,14 @@ no search. The stronger starting network may have less remaining search benefit 
 8. **Resources/privacy:** use capped daytime CPU collection and exclusive nighttime GPU training.
    Do not contend with measured Learner v2 A/B windows. All targets, checkpoints and runs remain private;
    later docs PRs contain aggregates only. The 30 ms/search and rescue tail are planning inputs, not new measurements.
+9. **Optimization order:** profile CPU/GPU and batch-size curves first (owner reports 23/33 ms in CPU network
+   calls), then batch all lockstep-step leaves in fixed-capacity padded GPU calls, then restricted-game/double-oracle
+   pruning on cached cells from the same worlds. No timeout flushing, variable-shape or asynchronous batching.
+   Compare decisions/s at each step; pin shapes/runtime and require byte-identical decisions on repeated seeded runs.
+10. **Target quality:** weight distillation by full-teacher estimated regret. Hindsight can select saved states
+    for honest re-evaluation, never supply future information to the teacher or its targets. Restricted certificates
+    cover only the tested action universe; validate against the full reference table. Exploiter populations are out
+    of scope and explicitly deferred.
 
 ## Approval and consequences
 
@@ -43,3 +55,4 @@ The owner relays the spec's contract to Learner v2 for confirmation of the joint
 loss/resume contract and resource windows, then approves the implementation plan/budgets. No new C rules or
 battle-hot-path allocation are proposed. Deeper trees, search-value targets, both-seat teachers and architecture
 changes remain separate decisions. Oracle benchmarks stay labeled and separate.
+M12.x preview search is a separate prerequisite PR/measurement; its adoption in the teacher needs an owner decision.
