@@ -100,6 +100,34 @@ class ExpertDataTest(unittest.TestCase):
         self.assertEqual(detached.obs[0].tobytes(), row.obs[0].tobytes())
 
 
+    def test_schema_refusal_and_private_roundtrip_boundaries_and_masks(self):
+        from duoforge_search import expert_data as ed
+        m = manifest(ed)
+        row = target_row(ed,m)
+        # Explicit boundary prevents preview or forced rows becoming turn labels.
+        with self.assertRaises(ValueError):
+            ed.validate_row(dataclasses.replace(row,boundary="TEAM_SELECTION"),m)
+        with self.assertRaises(ValueError):
+            ed.validate_row(dataclasses.replace(row,boundary="UNKNOWN"),m)
+        team_mask = np.zeros(360,bool)
+        team_mask[0] = team_mask[1] = True
+        preview = dataclasses.replace(row, boundary="TEAM_SELECTION", status=ed.RowStatus.UNSELECTED,
+            sparse_policy=None, admitted=False, legal_mask=team_mask, action=1, behavior_logp=float(np.log(.8)))
+        ed.validate_row(preview,m)
+        with self.assertRaises(ValueError):
+            ed.validate_row(dataclasses.replace(preview,learner=False,value_mask=False),m)
+        with self.assertRaises(ValueError):
+            ed.validate_row(dataclasses.replace(preview,action=360),m)
+        missing_raw = dataclasses.replace(row, sparse_policy=ed.SparsePolicy(np.array([0],np.int64),np.array([1.])),behavior_logp=0.)
+        with self.assertRaises(ValueError):
+            ed.validate_row(missing_raw,m)
+        with self.assertRaises(ValueError):
+            ed.validate_row(dataclasses.replace(row,work={"exact_ops":-1}),m)
+        for bad in (dataclasses.replace(m, budget={"labels":16384.}),
+                    dataclasses.replace(m,teacher_config={"k":8.,"m":8,"worlds":16,"lam":.5})):
+            with self.assertRaises(ValueError):
+                ed.validate_manifest(bad)
+
     def test_selection_word_domains_and_frequency(self):
         from duoforge_search import expert_data as ed
         key = ed.DecisionKey(42, 1, 9)
