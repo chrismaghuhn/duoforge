@@ -158,8 +158,14 @@ class FullJointTest(unittest.TestCase):
         np.testing.assert_array_equal(got[flat], np.asarray(self.model.apply(self.params, obs, slots, mask)[0])[flat])
         self.assertEqual(float(got[1, 4 * 32 + 9]), 0.0)
         np.testing.assert_array_equal(np.asarray(self.model.full_joint_log_probs(self.params, obs, slots, flat)), got)
-        jitted = self.jax.jit(self.model.full_joint_log_probs)  # a traced mask: no host check, same values
+        jitted = self.jax.jit(self.model.full_joint_log_probs_traced)  # inside jit: the traced variant, same values
         np.testing.assert_array_equal(np.asarray(jitted(self.params, obs, slots, mask)), got)
+        with self.assertRaisesRegex(ValueError, "full_joint_log_probs_traced"):  # the public API needs a concrete mask
+            self.jax.jit(self.model.full_joint_log_probs)(self.params, obs, slots, mask)
+        far = obs.copy()  # an id past the model's capacity is refused, as act refuses it (model v2 would clip it)
+        far[0, columns.columns().species[1, 2]] = np.float32(2000 / 65535)
+        with self.assertRaisesRegex(ValueError, "species id 2000"):
+            self.model.full_joint_log_probs(self.params, far, slots, mask)
         bad = mask.copy()
         bad[3] = False
         with self.assertRaisesRegex(ValueError, "row 3"):

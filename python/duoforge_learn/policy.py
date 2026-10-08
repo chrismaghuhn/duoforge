@@ -119,16 +119,20 @@ class Model:
         pair i * 32 + j), the pair head's log-softmax over all legal actions
         of legal_mask ((B, 32, 32) or (B, 1024) bool) and -inf where illegal
         (stage 3, P1 plan C4 step 11). Never renormalized over a candidate
-        set. A row without a legal action raises ValueError, when the mask is
-        concrete; under tracing use full_joint_log_probs_traced."""
+        set. Checks on the host first, as act does: an id past a capacity
+        and a row without a legal action raise ValueError, so obs and
+        legal_mask must be concrete (inside jit, use
+        full_joint_log_probs_traced on rows validated beforehand). A loss
+        over these values must skip zero-mass entries (0 * -inf is NaN)."""
         try:
-            legal = np.asarray(legal_mask).reshape(np.shape(obs)[0], -1)
+            obs_host, legal = np.asarray(obs), np.asarray(legal_mask)
         except jax.errors.TracerArrayConversionError:
-            legal = None
-        if legal is not None:
-            empty = np.flatnonzero(~legal.any(axis=1))
-            if empty.size:
-                raise ValueError(f"full_joint_log_probs: row {int(empty[0])} has no legal joint action")
+            raise ValueError("full_joint_log_probs checks obs and legal_mask on the host: inside jit use "
+                             "full_joint_log_probs_traced on validated rows") from None
+        self.check(obs_host)
+        empty = np.flatnonzero(~legal.reshape(obs_host.shape[0], -1).any(axis=1))
+        if empty.size:
+            raise ValueError(f"full_joint_log_probs: row {int(empty[0])} has no legal joint action")
         return self.full_joint_log_probs_traced(params, obs, slots, legal_mask)
 
     @staticmethod
