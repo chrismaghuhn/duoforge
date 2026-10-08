@@ -48,14 +48,17 @@ def rollout(search, n, player, steps, costs):
         costs["network"] += seconds
         pp = pp.reshape(batch.envs, 2, -1)
         indices = np.full((batch.envs, 2), _layout.NO_CHOICE, np.uint16)
-        for e in np.flatnonzero(active):
-            for seat in range(2):
-                if not batch.requests[e, seat]["requested"]:
-                    continue
-                pair, _prob = lookahead.select(pp[e, seat], masks[e, seat], 1)
-                choice = np.zeros(1, _layout.FACTORED_CHOICE)
-                choice["slot"][0] = divmod(int(pair[0]), lookahead.OPTIONS)
-                indices[e, seat] = duoforge.joint_indices(batch.domains[e, seat].reshape(1), choice)[0]
+        asked = active[:, None] & (batch.requests["requested"] != 0)
+        legal = masks.reshape(batch.envs, 2, -1)
+        if asked.any():
+            if not legal[asked].any(axis=1).all() or not np.isfinite(pp[asked][legal[asked]]).all():
+                raise SearchError("raw rollout needs a finite legal policy")
+            # Same stable top-one choice as select(), using the existing
+            # batched domain bijection instead of one lookup per leaf/seat.
+            pair = np.argmax(np.where(legal[asked], pp[asked], -np.inf), axis=1)
+            choice = np.zeros(len(pair), _layout.FACTORED_CHOICE)
+            choice["slot"][:, 0], choice["slot"][:, 1] = np.divmod(pair, lookahead.OPTIONS)
+            indices[asked] = duoforge.joint_indices(batch.domains[asked], choice)
         t = time.perf_counter()
         try:
             batch.step(indices, active=active)
