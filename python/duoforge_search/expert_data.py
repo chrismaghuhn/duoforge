@@ -9,12 +9,13 @@ import math
 import os
 from pathlib import Path
 import re
+import struct
 from types import MappingProxyType
 from typing import Mapping, Sequence
 
 import numpy as np
 from duoforge import features
-from duoforge_replay.dataset import refuse_repository, fsync_file, fsync_dir
+from duoforge_replay.dataset import refuse_repository, fsync_dir
 
 SCHEMA_VERSION = 1
 KEY_VERSION = 1
@@ -369,3 +370,20 @@ def read_shard(path: Path, expected: DataManifest) -> tuple[ExpertRow, ...]:
         keys.add(row.key)
         rows.append(row)
     return tuple(rows)
+
+
+KEY_DOMAINS = frozenset(("raw", "SELECT", "world", "X", "audit", "split"))
+
+
+def selection_word(key: DecisionKey, seed: int, *, domain: str, version: int = 1) -> int:
+    """Uniform uint64 word with version/domain separation; SELECT < 2**61 is 1/8."""
+    _key(key)
+    _uint(seed, "seed")
+    if type(version) is not int or version != KEY_VERSION:
+        raise ValueError(f"unsupported key version {version!r}")
+    if not isinstance(domain, str) or domain not in KEY_DOMAINS:
+        raise ValueError(f"unsupported key domain {domain!r}")
+    tag = domain.encode("utf-8")
+    data = (b"duoforge-expert" + struct.pack("<II", version, len(tag)) + tag
+            + struct.pack("<QQQQ", seed, key.game_id, key.seat, key.request_epoch))
+    return int.from_bytes(hashlib.sha256(data).digest()[:8], "little")
