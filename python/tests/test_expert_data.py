@@ -26,7 +26,7 @@ def target_row(ed, m):
     mask.flat[[0, 1]] = True
     obs = np.zeros(m.obs_width, np.float32)
     obs[0] = np.float32(-0.0)
-    return ed.ExpertRow(key=ed.DecisionKey(0, 0, 1), obs=obs,
+    return ed.ExpertRow(key=ed.DecisionKey(0, 0, 1), boundary="TURN", obs=obs,
         slots=np.zeros((2, 32, m.slot_width), np.float32), legal_mask=mask,
         sparse_policy=ed.SparsePolicy(np.array([0, 1], np.int64), np.array([.25, .75], np.float64)),
         status=ed.RowStatus.TARGET, raw_action=1, action=0, behavior_logp=float(np.log(.25)),

@@ -94,6 +94,7 @@ class DataManifest:
 @dataclass(frozen=True)
 class ExpertRow:
     key: DecisionKey
+    boundary: str
     obs: np.ndarray
     slots: np.ndarray
     legal_mask: np.ndarray
@@ -185,11 +186,16 @@ def validate_manifest(manifest: DataManifest) -> None:
     for name in ("runtime", "compiler"):
         if not isinstance(getattr(manifest, name), str) or not getattr(manifest, name):
             raise ValueError(f"manifest {name} must be recorded")
+    if not isinstance(manifest.teacher_config, Mapping):
+        raise ValueError("manifest teacher configuration must be recorded")
+    for name in ("k", "m", "worlds"):
+        _uint(manifest.teacher_config.get(name), name)
     if dict(manifest.teacher_config) != {"k": 8, "m": 8, "worlds": 16, "lam": .5}:
         raise ValueError("manifest teacher configuration must be 8x8/16/0.5")
     for name in ("budget", "evaluation"):
         if not isinstance(getattr(manifest, name), Mapping) or not getattr(manifest, name):
             raise ValueError(f"manifest {name} must be recorded")
+    _uint(manifest.budget.get("labels"), "labels")
     if manifest.budget.get("labels") != 16384:
         raise ValueError("manifest label cap must be 16384")
     _canonical(manifest)
@@ -209,7 +215,10 @@ def validate_row(row: ExpertRow, manifest: DataManifest) -> None:
     _key(row.key)
     _array(row.obs, "<f4", (manifest.obs_width,), "obs")
     _array(row.slots, "<f4", (2, 32, manifest.slot_width), "slots")
-    _array(row.legal_mask, "bool", (32, 32), "legal_mask")
+    if row.boundary not in ("TURN", "REPLACEMENT", "PIVOT", "TEAM_SELECTION", "TERMINAL"):
+        raise ValueError("unsupported row boundary")
+    shape = (360,) if row.boundary == "TEAM_SELECTION" else (32,32)
+    _array(row.legal_mask, "bool", shape, "legal_mask")
     for name in ("requested", "acting", "learner", "value_mask", "admitted", "done"):
         if type(getattr(row, name)) is not bool:
             raise ValueError(f"{name} must be bool")
@@ -217,6 +226,10 @@ def validate_row(row: ExpertRow, manifest: DataManifest) -> None:
         value = getattr(row, name)
         if isinstance(value, (bool, np.bool_)) or not isinstance(value, (float, int, np.floating, np.integer)) or not math.isfinite(value):
             raise ValueError(f"{name} must be finite")
+    if not row.learner:
+        raise ValueError("only learner public-view rows belong in expert shards")
+    if row.boundary == "TERMINAL" and row.requested:
+        raise ValueError("terminal cannot request an action")
     if row.acting != row.requested or (row.value_mask and not row.learner):
         raise ValueError("invalid acting/learner/value masks")
     if row.status is RowStatus.UNREQUESTED:
@@ -228,12 +241,14 @@ def validate_row(row: ExpertRow, manifest: DataManifest) -> None:
             raise ValueError("requested status without request")
         for name in ("raw_action", "action"):
             action = getattr(row, name)
-            _uint(action, name, 1023)
+            _uint(action, name, row.legal_mask.size - 1)
             if not row.legal_mask.flat[action]:
                 raise ValueError(f"illegal {name}")
         if row.behavior_logp is None or not math.isfinite(row.behavior_logp) or row.behavior_logp > 0:
             raise ValueError("invalid behavior likelihood")
     if row.status is RowStatus.TARGET:
+        if row.boundary not in ("TURN", "REPLACEMENT", "PIVOT"):
+            raise ValueError("preview/terminal cannot carry teacher labels")
         if not row.admitted or not row.learner or np.count_nonzero(row.legal_mask) < 2:
             raise ValueError("target requires admitted eligible learner")
         policy = row.sparse_policy
@@ -250,6 +265,8 @@ def validate_row(row: ExpertRow, manifest: DataManifest) -> None:
             raise ValueError("illegal sparse mass")
         if abs(float(policy.probs.sum()) - 1.) > MASS_TOLERANCE:
             raise ValueError("sparse mass sum outside tolerance")
+        if row.raw_action not in policy.ids:
+            raise ValueError("target must include the pre-drawn student action")
         where = np.flatnonzero(policy.ids == row.action)
         if not len(where) or policy.probs[where[0]] <= 0 or abs(
                 row.behavior_logp - math.log(float(policy.probs[where[0]]))) > MASS_TOLERANCE:
@@ -272,6 +289,8 @@ def validate_row(row: ExpertRow, manifest: DataManifest) -> None:
             raise ValueError("forced row must have one legal action and logp zero")
     if not isinstance(row.work, Mapping) or not isinstance(row.audit, Mapping):
         raise ValueError("work/audit provenance must be mappings")
+    for name, count in row.work.items():
+        _uint(count, f"work {name}")
     _canonical(row)
 
 
