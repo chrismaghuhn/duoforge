@@ -43,7 +43,7 @@ class Player:
         return _greedy_indices(self.params, self.model.act, batch, choices, self.encoder, self.ext_supported)
 
 
-def play_suite(context, pool, rows, learner, opponent, workers, seed, max_steps=1000):
+def play_suite(context, pool, rows, learner, opponent, workers, seed, max_steps=1000, luck=None):
     """The records (RECORD, one per suite row) of the greedy learner against
     opponent (a Player, greedy too, "random" or "scripted") over the suite rows, one
     environment per row at episode 1 of a batch seeded with seed. A game
@@ -53,7 +53,9 @@ def play_suite(context, pool, rows, learner, opponent, workers, seed, max_steps=
     a player's indices passes step, the loop index t, seats, the player's
     seat in every game, -1 where it decides nothing (a game the engine
     refused, or the learner's seat without a request), and last_step, true
-    at t = max_steps - 1, after which a running game is cut off."""
+    at t = max_steps - 1, after which a running game is cut off. luck, a
+    duoforge_learn.luck.Luck, measures every game's luck from the learner's
+    seat (its totals, one per row) without changing a game."""
     n = rows.shape[0]
     seat = rows["learner_seat"].astype(np.int64)
     every = np.arange(n)
@@ -74,6 +76,8 @@ def play_suite(context, pool, rows, learner, opponent, workers, seed, max_steps=
             raise ValueError(f"unknown opponent {opponent!r}")
         choices = np.zeros((n, 2), dtype=_layout.FACTORED_CHOICE)
         dead = np.zeros(n, dtype=bool)  # games the engine refused to step (E_UNSUPPORTED): the learner's loss
+        if luck is not None:
+            luck.start(n, seat)
         for t in range(max_steps):
             batch.query()
             batch.query_factored()
@@ -91,6 +95,8 @@ def play_suite(context, pool, rows, learner, opponent, workers, seed, max_steps=
                 indices[e, seat[mine]] = learner.indices(batch, choices, step=t, seats=np.where(mine, seat, -1),
                                                          last_step=t == max_steps - 1)[e, seat[mine]]
             indices[dead] = _layout.NO_CHOICE
+            if luck is not None:
+                luck.before(batch, indices, requested.any(axis=1), t, t == max_steps - 1)
             try:
                 batch.step(indices, active=~dead if dead.any() else None)
             except duoforge.DuoforgeError as err:
@@ -100,6 +106,8 @@ def play_suite(context, pool, rows, learner, opponent, workers, seed, max_steps=
                 if (err.statuses[~failed] != 0).any():
                     raise
                 dead |= failed
+            if luck is not None:
+                luck.after(batch, dead)
         for e in range(n):
             if dead[e]:
                 out["unresolved"][e] = True
