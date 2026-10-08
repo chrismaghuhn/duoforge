@@ -134,6 +134,17 @@ class PreviewSearchTest(unittest.TestCase):
                     digests.append(tuple(search.worlds.digest(w) for w in range(search.s)))
             self.assertNotEqual(*digests, "world comparison must expose an injected true-spread leak")
 
+    def test_summary_reports_candidate_score_and_candidate_minus_raw(self):
+        baseline = np.zeros(4,evaluate.RECORD)
+        candidate = baseline.copy()
+        candidate["result"] = 1
+        baseline["result"] = -1
+        result = preview_ab.summary(candidate,baseline,[],{},10)
+        self.assertEqual(result["score"],1.)
+        self.assertEqual(result["score_95"],[1.,1.])
+        self.assertEqual(result["paired_vs_raw"]["score"],1.)
+        self.assertEqual(result["paired_vs_raw"]["score_95"],[1.,1.])
+
     def test_both_searched_cohort_retains_partial_seat_clusters(self):
         value = np.zeros(4,evaluate.RECORD)
         turn1 = value.copy()

@@ -48,7 +48,7 @@ def summary(records, baseline, decisions, baseline_preview, resamples):
     for field in ("side0", "side1", "learner_seat"):
         if not np.array_equal(records[field], baseline[field]):
             raise ValueError("preview measurement pairings differ")
-    a, b = clustered(records), clustered(baseline)
+    b, a = clustered(records), clustered(baseline)
     previews = [r for r in decisions if r["boundary"] == "TEAM_SELECTION"]
     if len({r["env"] for r in previews}) != len(previews):
         raise ValueError("more than one preview per game")
