@@ -1,0 +1,1712 @@
+{
+  "commit": "485cc61473f698757b6c83e76fb5d26a2d64d6ba",
+  "library": "0.43.0",
+  "search": "honest",
+  "worlds": 16,
+  "km": [
+    8,
+    8
+  ],
+  "lam": 0.5,
+  "capacity": 1024,
+  "workers": 4,
+  "max_steps": 1000,
+  "bootstrap_resamples": 2000,
+  "bootstrap_seed": "0x2026100300000220",
+  "arena_seed": "0x2026100300000222",
+  "search_seed": "0x2026100300000221",
+  "configs": {
+    "R-vs-R": {
+      "agent": "R",
+      "opponent": "R",
+      "games": 2048,
+      "score": 0.4912109375,
+      "score_95": [
+        0.47021484375,
+        0.513671875
+      ],
+      "unfinished": 0,
+      "unresolved": 0
+    },
+    "N-k8m8s16-vs-R": {
+      "agent": "N",
+      "opponent": "R",
+      "games": 2048,
+      "score": 0.705078125,
+      "score_95": [
+        0.685546875,
+        0.72607421875
+      ],
+      "unfinished": 0,
+      "unresolved": 0,
+      "paired_gain": {
+        "mean": 0.2138671875,
+        "ci95": [
+          0.1875,
+          0.23828125
+        ]
+      },
+      "oracle_stage1": {
+        "score": 0.71435546875,
+        "score_95": [
+          0.6953125,
+          0.7334106445312499
+        ],
+        "paired_vs_R": {
+          "score": 0.22314453125,
+          "score_95": [
+            0.19775390625,
+            0.248046875
+          ]
+        }
+      },
+      "oracle_gain_retained": 0.9584245076586433,
+      "decisions": {
+        "total": 20728,
+        "eligible": 17575,
+        "kinds": {
+          "team": 2048,
+          "searched": 17179,
+          "forced": 1105,
+          "unreconstructible": 396
+        },
+        "boundaries": {
+          "TEAM_SELECTION": 2048,
+          "TURN": 15559,
+          "REPLACEMENT": 2987,
+          "PIVOT": 134
+        },
+        "fallback_share_all": 0.019104592821304514,
+        "fallback_share_eligible": 0.022532005689900426,
+        "sleep_confusion_overlap": 3,
+        "exact_rescues": 0,
+        "searched_changed": 12793,
+        "spread_redraws": 751,
+        "fallback_causes": {
+          "visible_sleep": {
+            "count": 249,
+            "share_all": 0.012012736395214203,
+            "share_eligible": 0.014167852062588904
+          },
+          "visible_confusion": {
+            "count": 59,
+            "share_all": 0.002846391354689309,
+            "share_eligible": 0.003357041251778094
+          },
+          "pivot_refusal": {
+            "count": 74,
+            "share_all": 0.0035700501736781166,
+            "share_eligible": 0.004210526315789474
+          },
+          "ambiguous_bench": {
+            "count": 17,
+            "share_all": 0.0008201466615206484,
+            "share_eligible": 0.0009672830725462304
+          },
+          "redraw_exhaustion": {
+            "count": 0,
+            "share_all": 0.0,
+            "share_eligible": 0.0
+          },
+          "other": {
+            "count": 0,
+            "share_all": 0.0,
+            "share_eligible": 0.0
+          }
+        },
+        "recorded_refusal_codes": {
+          "TURN / visible_sleep": 233,
+          "TURN / visible_confusion": 53,
+          "PIVOT / DUOFORGE_E_UNSUPPORTED: queue mask": 17,
+          "PIVOT / public_record_unsupported": 74,
+          "REPLACEMENT / visible_confusion": 6,
+          "REPLACEMENT / visible_sleep": 16
+        }
+      },
+      "milliseconds": {
+        "searched": {
+          "median": 33.2902541597411,
+          "p95": 39.93530488329628
+        },
+        "eligible": {
+          "median": 33.20195016590669,
+          "p95": 39.87228904425031
+        },
+        "all_requested": {
+          "median": 32.53453999431174,
+          "p95": 39.33929136633877
+        },
+        "searched_parts": {
+          "network": {
+            "median": 23.216249533527623,
+            "p95": 26.63733582049007
+          },
+          "engine": {
+            "median": 6.213907174083735,
+            "p95": 8.5973512467575
+          },
+          "reduction": {
+            "median": 3.6343219981063157,
+            "p95": 6.841661000362362
+          },
+          "split": {
+            "median": 0.0,
+            "p95": 0.0
+          }
+        }
+      }
+    },
+    "E-k8m8s16-vs-R": {
+      "agent": "E",
+      "opponent": "R",
+      "games": 2048,
+      "score": 0.87890625,
+      "score_95": [
+        0.86474609375,
+        0.8935546875
+      ],
+      "unfinished": 0,
+      "unresolved": 0,
+      "paired_gain": {
+        "mean": 0.3876953125,
+        "ci95": [
+          0.3642578125,
+          0.4111328125
+        ]
+      },
+      "oracle_stage1": {
+        "score": 0.90087890625,
+        "score_95": [
+          0.88818359375,
+          0.91357421875
+        ],
+        "paired_vs_R": {
+          "score": 0.40966796875,
+          "score_95": [
+            0.38720703125,
+            0.43212890625
+          ]
+        }
+      },
+      "oracle_gain_retained": 0.9463647199046484,
+      "decisions": {
+        "total": 19036,
+        "eligible": 16209,
+        "kinds": {
+          "team": 2048,
+          "searched": 15839,
+          "unreconstructible": 370,
+          "forced": 779
+        },
+        "boundaries": {
+          "TEAM_SELECTION": 2048,
+          "TURN": 14367,
+          "REPLACEMENT": 2499,
+          "PIVOT": 122
+        },
+        "fallback_share_all": 0.019436856482454298,
+        "fallback_share_eligible": 0.022826824603615275,
+        "sleep_confusion_overlap": 0,
+        "exact_rescues": 1,
+        "searched_changed": 12144,
+        "spread_redraws": 1112,
+        "fallback_causes": {
+          "visible_sleep": {
+            "count": 240,
+            "share_all": 0.012607690691321706,
+            "share_eligible": 0.014806588932074774
+          },
+          "visible_confusion": {
+            "count": 47,
+            "share_all": 0.0024690060937171674,
+            "share_eligible": 0.002899623665864643
+          },
+          "pivot_refusal": {
+            "count": 67,
+            "share_all": 0.003519646984660643,
+            "share_eligible": 0.004133506076870875
+          },
+          "ambiguous_bench": {
+            "count": 16,
+            "share_all": 0.0008405127127547804,
+            "share_eligible": 0.0009871059288049848
+          },
+          "redraw_exhaustion": {
+            "count": 0,
+            "share_all": 0.0,
+            "share_eligible": 0.0
+          },
+          "other": {
+            "count": 0,
+            "share_all": 0.0,
+            "share_eligible": 0.0
+          }
+        },
+        "recorded_refusal_codes": {
+          "TURN / visible_sleep": 221,
+          "REPLACEMENT / visible_sleep": 19,
+          "TURN / visible_confusion": 42,
+          "PIVOT / public_record_unsupported": 67,
+          "PIVOT / DUOFORGE_E_UNSUPPORTED: queue mask": 16,
+          "REPLACEMENT / visible_confusion": 5
+        }
+      },
+      "milliseconds": {
+        "searched": {
+          "median": 32.34656056642478,
+          "p95": 38.98869604095605
+        },
+        "eligible": {
+          "median": 32.25958112634833,
+          "p95": 38.91766131000015
+        },
+        "all_requested": {
+          "median": 31.588473812607855,
+          "p95": 38.42189677923662
+        },
+        "searched_parts": {
+          "network": {
+            "median": 22.672296630783727,
+            "p95": 26.02043250722135
+          },
+          "engine": {
+            "median": 6.032356355014187,
+            "p95": 8.267806224145694
+          },
+          "reduction": {
+            "median": 3.4927099986816756,
+            "p95": 6.690824801262351
+          },
+          "split": {
+            "median": 0.0,
+            "p95": 0.0
+          }
+        }
+      }
+    },
+    "X-k8m8s16-vs-R": {
+      "agent": "X",
+      "opponent": "R",
+      "games": 2048,
+      "score": 0.8056640625,
+      "score_95": [
+        0.787109375,
+        0.82275390625
+      ],
+      "unfinished": 0,
+      "unresolved": 0,
+      "paired_gain": {
+        "mean": 0.314453125,
+        "ci95": [
+          0.2900390625,
+          0.33935546875
+        ]
+      },
+      "oracle_stage1": null,
+      "decisions": {
+        "total": 19772,
+        "eligible": 16796,
+        "kinds": {
+          "team": 2048,
+          "searched": 16392,
+          "unreconstructible": 404,
+          "forced": 928
+        },
+        "boundaries": {
+          "TEAM_SELECTION": 2048,
+          "TURN": 14862,
+          "REPLACEMENT": 2732,
+          "PIVOT": 130
+        },
+        "fallback_share_all": 0.02043293546429294,
+        "fallback_share_eligible": 0.024053346034770183,
+        "sleep_confusion_overlap": 0,
+        "exact_rescues": 0,
+        "searched_changed": 12378,
+        "spread_redraws": 1111,
+        "fallback_causes": {
+          "visible_sleep": {
+            "count": 274,
+            "share_all": 0.013857980983208578,
+            "share_eligible": 0.016313407954274828
+          },
+          "visible_confusion": {
+            "count": 44,
+            "share_all": 0.002225369208982399,
+            "share_eligible": 0.002619671350321505
+          },
+          "pivot_refusal": {
+            "count": 73,
+            "share_all": 0.003692089823993526,
+            "share_eligible": 0.004346272922124315
+          },
+          "ambiguous_bench": {
+            "count": 13,
+            "share_all": 0.0006574954481084361,
+            "share_eligible": 0.0007739938080495357
+          },
+          "redraw_exhaustion": {
+            "count": 0,
+            "share_all": 0.0,
+            "share_eligible": 0.0
+          },
+          "other": {
+            "count": 0,
+            "share_all": 0.0,
+            "share_eligible": 0.0
+          }
+        },
+        "recorded_refusal_codes": {
+          "TURN / visible_sleep": 251,
+          "REPLACEMENT / visible_sleep": 22,
+          "TURN / visible_confusion": 41,
+          "PIVOT / public_record_unsupported": 73,
+          "PIVOT / DUOFORGE_E_UNSUPPORTED: queue mask": 13,
+          "REPLACEMENT / visible_confusion": 3,
+          "PIVOT / visible_sleep": 1
+        }
+      },
+      "milliseconds": {
+        "searched": {
+          "median": 29.124250227321888,
+          "p95": 37.370685777128465
+        },
+        "eligible": {
+          "median": 29.042853692121984,
+          "p95": 37.25768651860688
+        },
+        "all_requested": {
+          "median": 28.368520282648703,
+          "p95": 36.29488173431108
+        },
+        "searched_parts": {
+          "network": {
+            "median": 20.24976341481484,
+            "p95": 23.77230784959526
+          },
+          "engine": {
+            "median": 5.576243167796559,
+            "p95": 8.4147021897668
+          },
+          "reduction": {
+            "median": 3.226828999999043,
+            "p95": 6.306005400011826
+          },
+          "split": {
+            "median": 0.0,
+            "p95": 0.0
+          }
+        }
+      }
+    },
+    "R-vs-P25": {
+      "agent": "R",
+      "opponent": "P25",
+      "games": 1024,
+      "score": 0.6220703125,
+      "score_95": [
+        0.591796875,
+        0.650390625
+      ],
+      "unfinished": 0,
+      "unresolved": 0
+    },
+    "N-k8m8s16-vs-P25": {
+      "agent": "N",
+      "opponent": "P25",
+      "games": 1024,
+      "score": 0.7392578125,
+      "score_95": [
+        0.7128662109375,
+        0.767578125
+      ],
+      "unfinished": 0,
+      "unresolved": 0,
+      "paired_gain": {
+        "mean": 0.1171875,
+        "ci95": [
+          0.0829833984375,
+          0.1533203125
+        ]
+      },
+      "oracle_stage1": {
+        "score": 0.7412109375,
+        "score_95": [
+          0.71484375,
+          0.7685546875
+        ],
+        "paired_vs_R": {
+          "score": 0.119140625,
+          "score_95": [
+            0.0859375,
+            0.15625
+          ]
+        }
+      },
+      "oracle_gain_retained": 0.9836065573770492,
+      "decisions": {
+        "total": 11518,
+        "eligible": 9889,
+        "kinds": {
+          "team": 1024,
+          "searched": 9648,
+          "forced": 605,
+          "unreconstructible": 241
+        },
+        "boundaries": {
+          "TEAM_SELECTION": 1024,
+          "TURN": 8886,
+          "REPLACEMENT": 1545,
+          "PIVOT": 63
+        },
+        "fallback_share_all": 0.020923771488105574,
+        "fallback_share_eligible": 0.02437051269086864,
+        "sleep_confusion_overlap": 2,
+        "exact_rescues": 1,
+        "searched_changed": 7283,
+        "spread_redraws": 1599,
+        "fallback_causes": {
+          "visible_sleep": {
+            "count": 182,
+            "share_all": 0.01580135440180587,
+            "share_eligible": 0.018404287592274245
+          },
+          "visible_confusion": {
+            "count": 30,
+            "share_all": 0.002604618857440528,
+            "share_eligible": 0.003033673778946304
+          },
+          "pivot_refusal": {
+            "count": 26,
+            "share_all": 0.002257336343115124,
+            "share_eligible": 0.0026291839417534636
+          },
+          "ambiguous_bench": {
+            "count": 5,
+            "share_all": 0.00043410314290675465,
+            "share_eligible": 0.0005056122964910507
+          },
+          "redraw_exhaustion": {
+            "count": 0,
+            "share_all": 0.0,
+            "share_eligible": 0.0
+          },
+          "other": {
+            "count": 0,
+            "share_all": 0.0,
+            "share_eligible": 0.0
+          }
+        },
+        "recorded_refusal_codes": {
+          "TURN / visible_confusion": 27,
+          "REPLACEMENT / visible_sleep": 18,
+          "TURN / visible_sleep": 164,
+          "PIVOT / public_record_unsupported": 26,
+          "REPLACEMENT / visible_confusion": 3,
+          "PIVOT / DUOFORGE_E_UNSUPPORTED: queue mask": 5
+        }
+      },
+      "milliseconds": {
+        "searched": {
+          "median": 31.50917416536823,
+          "p95": 40.556441517614125
+        },
+        "eligible": {
+          "median": 31.40649421989139,
+          "p95": 40.429682667561416
+        },
+        "all_requested": {
+          "median": 30.77226649218845,
+          "p95": 39.63537902745667
+        },
+        "searched_parts": {
+          "network": {
+            "median": 22.064020518633928,
+            "p95": 26.42579589315705
+          },
+          "engine": {
+            "median": 5.858297711191684,
+            "p95": 9.327520720835965
+          },
+          "reduction": {
+            "median": 3.4076350000304956,
+            "p95": 6.68049019996033
+          },
+          "split": {
+            "median": 0.0,
+            "p95": 0.0
+          }
+        }
+      }
+    },
+    "E-k8m8s16-vs-P25": {
+      "agent": "E",
+      "opponent": "P25",
+      "games": 1024,
+      "score": 0.7568359375,
+      "score_95": [
+        0.73046875,
+        0.783203125
+      ],
+      "unfinished": 0,
+      "unresolved": 0,
+      "paired_gain": {
+        "mean": 0.134765625,
+        "ci95": [
+          0.099609375,
+          0.171875
+        ]
+      },
+      "oracle_stage1": {
+        "score": 0.787109375,
+        "score_95": [
+          0.7607421875,
+          0.8115478515624999
+        ],
+        "paired_vs_R": {
+          "score": 0.1650390625,
+          "score_95": [
+            0.1318359375,
+            0.19924316406249987
+          ]
+        }
+      },
+      "oracle_gain_retained": 0.8165680473372781,
+      "decisions": {
+        "total": 10859,
+        "eligible": 9304,
+        "kinds": {
+          "team": 1024,
+          "searched": 9095,
+          "unreconstructible": 209,
+          "forced": 531
+        },
+        "boundaries": {
+          "TEAM_SELECTION": 1024,
+          "TURN": 8308,
+          "REPLACEMENT": 1476,
+          "PIVOT": 51
+        },
+        "fallback_share_all": 0.019246707799981583,
+        "fallback_share_eligible": 0.022463456577815993,
+        "sleep_confusion_overlap": 4,
+        "exact_rescues": 0,
+        "searched_changed": 6903,
+        "spread_redraws": 2308,
+        "fallback_causes": {
+          "visible_sleep": {
+            "count": 146,
+            "share_all": 0.0134450686066857,
+            "share_eligible": 0.015692175408426483
+          },
+          "visible_confusion": {
+            "count": 37,
+            "share_all": 0.003407311907173773,
+            "share_eligible": 0.003976784178847808
+          },
+          "pivot_refusal": {
+            "count": 26,
+            "share_all": 0.0023943272861221107,
+            "share_eligible": 0.0027944969905417025
+          },
+          "ambiguous_bench": {
+            "count": 4,
+            "share_all": 0.0003683580440187863,
+            "share_eligible": 0.0004299226139294927
+          },
+          "redraw_exhaustion": {
+            "count": 0,
+            "share_all": 0.0,
+            "share_eligible": 0.0
+          },
+          "other": {
+            "count": 0,
+            "share_all": 0.0,
+            "share_eligible": 0.0
+          }
+        },
+        "recorded_refusal_codes": {
+          "TURN / visible_sleep": 133,
+          "REPLACEMENT / visible_sleep": 13,
+          "TURN / visible_confusion": 32,
+          "REPLACEMENT / visible_confusion": 4,
+          "PIVOT / public_record_unsupported": 26,
+          "PIVOT / visible_confusion": 1,
+          "PIVOT / DUOFORGE_E_UNSUPPORTED: queue mask": 4
+        }
+      },
+      "milliseconds": {
+        "searched": {
+          "median": 31.684986357439612,
+          "p95": 38.221427013644856
+        },
+        "eligible": {
+          "median": 31.601077287343536,
+          "p95": 38.15915215041241
+        },
+        "all_requested": {
+          "median": 30.98856093272073,
+          "p95": 37.605848963754234
+        },
+        "searched_parts": {
+          "network": {
+            "median": 22.288953259578182,
+            "p95": 25.928195626620838
+          },
+          "engine": {
+            "median": 5.837278132721937,
+            "p95": 8.081041324158011
+          },
+          "reduction": {
+            "median": 3.319445999977688,
+            "p95": 6.2551775000656535
+          },
+          "split": {
+            "median": 0.0,
+            "p95": 0.0
+          }
+        }
+      }
+    },
+    "X-k8m8s16-vs-P25": {
+      "agent": "X",
+      "opponent": "P25",
+      "games": 1024,
+      "score": 0.7744140625,
+      "score_95": [
+        0.7490234375,
+        0.798828125
+      ],
+      "unfinished": 0,
+      "unresolved": 0,
+      "paired_gain": {
+        "mean": 0.15234375,
+        "ci95": [
+          0.1171875,
+          0.185546875
+        ]
+      },
+      "oracle_stage1": null,
+      "decisions": {
+        "total": 10994,
+        "eligible": 9408,
+        "kinds": {
+          "team": 1024,
+          "searched": 9160,
+          "forced": 562,
+          "unreconstructible": 248
+        },
+        "boundaries": {
+          "TEAM_SELECTION": 1024,
+          "TURN": 8417,
+          "REPLACEMENT": 1502,
+          "PIVOT": 51
+        },
+        "fallback_share_all": 0.022557758777515008,
+        "fallback_share_eligible": 0.026360544217687076,
+        "sleep_confusion_overlap": 2,
+        "exact_rescues": 2,
+        "searched_changed": 6908,
+        "spread_redraws": 2290,
+        "fallback_causes": {
+          "visible_sleep": {
+            "count": 185,
+            "share_all": 0.016827360378388213,
+            "share_eligible": 0.019664115646258504
+          },
+          "visible_confusion": {
+            "count": 37,
+            "share_all": 0.0033654720756776425,
+            "share_eligible": 0.003932823129251701
+          },
+          "pivot_refusal": {
+            "count": 21,
+            "share_all": 0.001910132799708932,
+            "share_eligible": 0.002232142857142857
+          },
+          "ambiguous_bench": {
+            "count": 7,
+            "share_all": 0.0006367109332363107,
+            "share_eligible": 0.000744047619047619
+          },
+          "redraw_exhaustion": {
+            "count": 0,
+            "share_all": 0.0,
+            "share_eligible": 0.0
+          },
+          "other": {
+            "count": 0,
+            "share_all": 0.0,
+            "share_eligible": 0.0
+          }
+        },
+        "recorded_refusal_codes": {
+          "TURN / visible_sleep": 163,
+          "TURN / visible_confusion": 32,
+          "REPLACEMENT / visible_sleep": 22,
+          "PIVOT / public_record_unsupported": 21,
+          "REPLACEMENT / visible_confusion": 4,
+          "PIVOT / DUOFORGE_E_UNSUPPORTED: queue mask": 7,
+          "PIVOT / visible_confusion": 1
+        }
+      },
+      "milliseconds": {
+        "searched": {
+          "median": 31.885343531806118,
+          "p95": 39.153550625128496
+        },
+        "eligible": {
+          "median": 31.792077380636165,
+          "p95": 39.06222289233217
+        },
+        "all_requested": {
+          "median": 31.184749454937332,
+          "p95": 38.571479861124736
+        },
+        "searched_parts": {
+          "network": {
+            "median": 22.390830461592614,
+            "p95": 26.288127262994283
+          },
+          "engine": {
+            "median": 5.880073446889892,
+            "p95": 8.682788985792062
+          },
+          "reduction": {
+            "median": 3.390482999975575,
+            "p95": 6.43944919995647
+          },
+          "split": {
+            "median": 0.0,
+            "p95": 0.0
+          }
+        }
+      }
+    },
+    "R-vs-P50": {
+      "agent": "R",
+      "opponent": "P50",
+      "games": 1024,
+      "score": 0.494140625,
+      "score_95": [
+        0.462890625,
+        0.5234375
+      ],
+      "unfinished": 0,
+      "unresolved": 0
+    },
+    "N-k8m8s16-vs-P50": {
+      "agent": "N",
+      "opponent": "P50",
+      "games": 1024,
+      "score": 0.6328125,
+      "score_95": [
+        0.6025390625,
+        0.6611328125
+      ],
+      "unfinished": 0,
+      "unresolved": 0,
+      "paired_gain": {
+        "mean": 0.138671875,
+        "ci95": [
+          0.1015625,
+          0.1748046875
+        ]
+      },
+      "oracle_stage1": {
+        "score": 0.6357421875,
+        "score_95": [
+          0.6064453125,
+          0.6660400390624999
+        ],
+        "paired_vs_R": {
+          "score": 0.1416015625,
+          "score_95": [
+            0.1044921875,
+            0.1787109375
+          ]
+        }
+      },
+      "oracle_gain_retained": 0.9793103448275862,
+      "decisions": {
+        "total": 10326,
+        "eligible": 8698,
+        "kinds": {
+          "team": 1024,
+          "searched": 8496,
+          "forced": 604,
+          "unreconstructible": 202
+        },
+        "boundaries": {
+          "TEAM_SELECTION": 1024,
+          "TURN": 7651,
+          "REPLACEMENT": 1580,
+          "PIVOT": 71
+        },
+        "fallback_share_all": 0.019562269998063143,
+        "fallback_share_eligible": 0.023223729593009886,
+        "sleep_confusion_overlap": 0,
+        "exact_rescues": 0,
+        "searched_changed": 6328,
+        "spread_redraws": 1057,
+        "fallback_causes": {
+          "visible_sleep": {
+            "count": 128,
+            "share_all": 0.012395893860158822,
+            "share_eligible": 0.014716026672798345
+          },
+          "visible_confusion": {
+            "count": 27,
+            "share_all": 0.0026147588611272515,
+            "share_eligible": 0.003104161876293401
+          },
+          "pivot_refusal": {
+            "count": 33,
+            "share_all": 0.0031958163858221964,
+            "share_eligible": 0.003793975626580823
+          },
+          "ambiguous_bench": {
+            "count": 14,
+            "share_all": 0.0013558008909548712,
+            "share_eligible": 0.0016095654173373189
+          },
+          "redraw_exhaustion": {
+            "count": 0,
+            "share_all": 0.0,
+            "share_eligible": 0.0
+          },
+          "other": {
+            "count": 0,
+            "share_all": 0.0,
+            "share_eligible": 0.0
+          }
+        },
+        "recorded_refusal_codes": {
+          "TURN / visible_sleep": 115,
+          "PIVOT / public_record_unsupported": 33,
+          "REPLACEMENT / visible_confusion": 5,
+          "TURN / visible_confusion": 22,
+          "PIVOT / DUOFORGE_E_UNSUPPORTED: queue mask": 14,
+          "REPLACEMENT / visible_sleep": 13
+        }
+      },
+      "milliseconds": {
+        "searched": {
+          "median": 31.702584053916247,
+          "p95": 39.98723550026799
+        },
+        "eligible": {
+          "median": 31.609666243461803,
+          "p95": 39.876157524360075
+        },
+        "all_requested": {
+          "median": 30.87462342317938,
+          "p95": 39.07998107759953
+        },
+        "searched_parts": {
+          "network": {
+            "median": 22.268182803927736,
+            "p95": 26.347714620280676
+          },
+          "engine": {
+            "median": 5.812678852046448,
+            "p95": 9.06924690341937
+          },
+          "reduction": {
+            "median": 3.3835609999641747,
+            "p95": 6.592127749968313
+          },
+          "split": {
+            "median": 0.0,
+            "p95": 0.0
+          }
+        }
+      }
+    },
+    "E-k8m8s16-vs-P50": {
+      "agent": "E",
+      "opponent": "P50",
+      "games": 1024,
+      "score": 0.6865234375,
+      "score_95": [
+        0.658203125,
+        0.7138671875
+      ],
+      "unfinished": 0,
+      "unresolved": 0,
+      "paired_gain": {
+        "mean": 0.1923828125,
+        "ci95": [
+          0.15625,
+          0.2275390625
+        ]
+      },
+      "oracle_stage1": {
+        "score": 0.7060546875,
+        "score_95": [
+          0.6796630859375,
+          0.734375
+        ],
+        "paired_vs_R": {
+          "score": 0.2119140625,
+          "score_95": [
+            0.1767578125,
+            0.2490234375
+          ]
+        }
+      },
+      "oracle_gain_retained": 0.9078341013824884,
+      "decisions": {
+        "total": 9935,
+        "eligible": 8335,
+        "kinds": {
+          "team": 1024,
+          "searched": 8163,
+          "forced": 576,
+          "unreconstructible": 172
+        },
+        "boundaries": {
+          "TEAM_SELECTION": 1024,
+          "TURN": 7313,
+          "REPLACEMENT": 1554,
+          "PIVOT": 44
+        },
+        "fallback_share_all": 0.01731253145445395,
+        "fallback_share_eligible": 0.020635872825434914,
+        "sleep_confusion_overlap": 0,
+        "exact_rescues": 1,
+        "searched_changed": 6129,
+        "spread_redraws": 2094,
+        "fallback_causes": {
+          "visible_sleep": {
+            "count": 118,
+            "share_all": 0.011877201811776547,
+            "share_eligible": 0.014157168566286743
+          },
+          "visible_confusion": {
+            "count": 24,
+            "share_all": 0.002415702063412179,
+            "share_eligible": 0.0028794241151769645
+          },
+          "pivot_refusal": {
+            "count": 25,
+            "share_all": 0.0025163563160543532,
+            "share_eligible": 0.002999400119976005
+          },
+          "ambiguous_bench": {
+            "count": 5,
+            "share_all": 0.0005032712632108706,
+            "share_eligible": 0.0005998800239952009
+          },
+          "redraw_exhaustion": {
+            "count": 0,
+            "share_all": 0.0,
+            "share_eligible": 0.0
+          },
+          "other": {
+            "count": 0,
+            "share_all": 0.0,
+            "share_eligible": 0.0
+          }
+        },
+        "recorded_refusal_codes": {
+          "TURN / visible_sleep": 108,
+          "TURN / visible_confusion": 21,
+          "PIVOT / public_record_unsupported": 25,
+          "REPLACEMENT / visible_sleep": 10,
+          "REPLACEMENT / visible_confusion": 3,
+          "PIVOT / DUOFORGE_E_UNSUPPORTED: queue mask": 5
+        }
+      },
+      "milliseconds": {
+        "searched": {
+          "median": 32.62159040921148,
+          "p95": 40.73111744941349
+        },
+        "eligible": {
+          "median": 32.53475726015963,
+          "p95": 40.64355068205814
+        },
+        "all_requested": {
+          "median": 31.724657409517075,
+          "p95": 39.94259420175744
+        },
+        "searched_parts": {
+          "network": {
+            "median": 22.938675711718307,
+            "p95": 27.100219611854474
+          },
+          "engine": {
+            "median": 5.983643271649542,
+            "p95": 9.108057156118564
+          },
+          "reduction": {
+            "median": 3.441350000230159,
+            "p95": 6.644135699934849
+          },
+          "split": {
+            "median": 0.0,
+            "p95": 0.0
+          }
+        }
+      }
+    },
+    "X-k8m8s16-vs-P50": {
+      "agent": "X",
+      "opponent": "P50",
+      "games": 1024,
+      "score": 0.6591796875,
+      "score_95": [
+        0.630859375,
+        0.689453125
+      ],
+      "unfinished": 0,
+      "unresolved": 0,
+      "paired_gain": {
+        "mean": 0.1650390625,
+        "ci95": [
+          0.1279296875,
+          0.205078125
+        ]
+      },
+      "oracle_stage1": null,
+      "decisions": {
+        "total": 10122,
+        "eligible": 8520,
+        "kinds": {
+          "team": 1024,
+          "searched": 8328,
+          "forced": 578,
+          "unreconstructible": 192
+        },
+        "boundaries": {
+          "TEAM_SELECTION": 1024,
+          "TURN": 7478,
+          "REPLACEMENT": 1567,
+          "PIVOT": 53
+        },
+        "fallback_share_all": 0.01896858328393598,
+        "fallback_share_eligible": 0.022535211267605635,
+        "sleep_confusion_overlap": 0,
+        "exact_rescues": 0,
+        "searched_changed": 6231,
+        "spread_redraws": 1256,
+        "fallback_causes": {
+          "visible_sleep": {
+            "count": 116,
+            "share_all": 0.011460185734044654,
+            "share_eligible": 0.013615023474178404
+          },
+          "visible_confusion": {
+            "count": 39,
+            "share_all": 0.0038529934795494963,
+            "share_eligible": 0.004577464788732394
+          },
+          "pivot_refusal": {
+            "count": 30,
+            "share_all": 0.002963841138114997,
+            "share_eligible": 0.0035211267605633804
+          },
+          "ambiguous_bench": {
+            "count": 7,
+            "share_all": 0.0006915629322268327,
+            "share_eligible": 0.0008215962441314554
+          },
+          "redraw_exhaustion": {
+            "count": 0,
+            "share_all": 0.0,
+            "share_eligible": 0.0
+          },
+          "other": {
+            "count": 0,
+            "share_all": 0.0,
+            "share_eligible": 0.0
+          }
+        },
+        "recorded_refusal_codes": {
+          "TURN / visible_sleep": 105,
+          "TURN / visible_confusion": 31,
+          "PIVOT / public_record_unsupported": 30,
+          "PIVOT / DUOFORGE_E_UNSUPPORTED: queue mask": 7,
+          "REPLACEMENT / visible_sleep": 11,
+          "REPLACEMENT / visible_confusion": 8
+        }
+      },
+      "milliseconds": {
+        "searched": {
+          "median": 33.409327887369344,
+          "p95": 41.390092070350185
+        },
+        "eligible": {
+          "median": 33.30967607632357,
+          "p95": 41.32521640645917
+        },
+        "all_requested": {
+          "median": 32.47111104371747,
+          "p95": 40.700534448805946
+        },
+        "searched_parts": {
+          "network": {
+            "median": 23.541796903652788,
+            "p95": 27.708174019489793
+          },
+          "engine": {
+            "median": 6.132078846164315,
+            "p95": 9.192075816162754
+          },
+          "reduction": {
+            "median": 3.5196095000173955,
+            "p95": 6.688247049942215
+          },
+          "split": {
+            "median": 0.0,
+            "p95": 0.0
+          }
+        }
+      }
+    },
+    "R-vs-P75": {
+      "agent": "R",
+      "opponent": "P75",
+      "games": 1024,
+      "score": 0.505859375,
+      "score_95": [
+        0.474609375,
+        0.5380859375
+      ],
+      "unfinished": 0,
+      "unresolved": 0
+    },
+    "N-k8m8s16-vs-P75": {
+      "agent": "N",
+      "opponent": "P75",
+      "games": 1024,
+      "score": 0.6396484375,
+      "score_95": [
+        0.609375,
+        0.6708984375
+      ],
+      "unfinished": 0,
+      "unresolved": 0,
+      "paired_gain": {
+        "mean": 0.1337890625,
+        "ci95": [
+          0.0947265625,
+          0.173828125
+        ]
+      },
+      "oracle_stage1": {
+        "score": 0.689453125,
+        "score_95": [
+          0.6630859375,
+          0.7177734375
+        ],
+        "paired_vs_R": {
+          "score": 0.18359375,
+          "score_95": [
+            0.1474609375,
+            0.22072753906249987
+          ]
+        }
+      },
+      "oracle_gain_retained": 0.7287234042553191,
+      "decisions": {
+        "total": 10309,
+        "eligible": 8687,
+        "kinds": {
+          "team": 1024,
+          "searched": 8494,
+          "forced": 598,
+          "unreconstructible": 193
+        },
+        "boundaries": {
+          "TEAM_SELECTION": 1024,
+          "TURN": 7673,
+          "REPLACEMENT": 1552,
+          "PIVOT": 60
+        },
+        "fallback_share_all": 0.01872150548064798,
+        "fallback_share_eligible": 0.022217106020490388,
+        "sleep_confusion_overlap": 0,
+        "exact_rescues": 0,
+        "searched_changed": 6312,
+        "spread_redraws": 609,
+        "fallback_causes": {
+          "visible_sleep": {
+            "count": 125,
+            "share_all": 0.012125327383839363,
+            "share_eligible": 0.01438931737078393
+          },
+          "visible_confusion": {
+            "count": 36,
+            "share_all": 0.0034920942865457366,
+            "share_eligible": 0.004144123402785772
+          },
+          "pivot_refusal": {
+            "count": 27,
+            "share_all": 0.0026190707149093026,
+            "share_eligible": 0.003108092552089329
+          },
+          "ambiguous_bench": {
+            "count": 5,
+            "share_all": 0.00048501309535357455,
+            "share_eligible": 0.0005755726948313572
+          },
+          "redraw_exhaustion": {
+            "count": 0,
+            "share_all": 0.0,
+            "share_eligible": 0.0
+          },
+          "other": {
+            "count": 0,
+            "share_all": 0.0,
+            "share_eligible": 0.0
+          }
+        },
+        "recorded_refusal_codes": {
+          "TURN / visible_sleep": 115,
+          "TURN / visible_confusion": 32,
+          "PIVOT / DUOFORGE_E_UNSUPPORTED: queue mask": 5,
+          "PIVOT / public_record_unsupported": 27,
+          "REPLACEMENT / visible_sleep": 10,
+          "REPLACEMENT / visible_confusion": 4
+        }
+      },
+      "milliseconds": {
+        "searched": {
+          "median": 33.537927221026536,
+          "p95": 40.29273819089175
+        },
+        "eligible": {
+          "median": 33.44179417415984,
+          "p95": 40.249960628774296
+        },
+        "all_requested": {
+          "median": 32.61722823239397,
+          "p95": 39.83185026477249
+        },
+        "searched_parts": {
+          "network": {
+            "median": 23.65068984342048,
+            "p95": 27.38683811024205
+          },
+          "engine": {
+            "median": 6.142965885130645,
+            "p95": 8.677886687881136
+          },
+          "reduction": {
+            "median": 3.5206809998271638,
+            "p95": 6.5934193500424945
+          },
+          "split": {
+            "median": 0.0,
+            "p95": 0.0
+          }
+        }
+      }
+    },
+    "E-k8m8s16-vs-P75": {
+      "agent": "E",
+      "opponent": "P75",
+      "games": 1024,
+      "score": 0.7060546875,
+      "score_95": [
+        0.6767578125,
+        0.7353515625
+      ],
+      "unfinished": 0,
+      "unresolved": 0,
+      "paired_gain": {
+        "mean": 0.2001953125,
+        "ci95": [
+          0.1630859375,
+          0.23828125
+        ]
+      },
+      "oracle_stage1": {
+        "score": 0.7138671875,
+        "score_95": [
+          0.685546875,
+          0.7421875
+        ],
+        "paired_vs_R": {
+          "score": 0.2080078125,
+          "score_95": [
+            0.171875,
+            0.24609375
+          ]
+        }
+      },
+      "oracle_gain_retained": 0.9624413145539906,
+      "decisions": {
+        "total": 10033,
+        "eligible": 8430,
+        "kinds": {
+          "team": 1024,
+          "searched": 8225,
+          "forced": 579,
+          "unreconstructible": 205
+        },
+        "boundaries": {
+          "TEAM_SELECTION": 1024,
+          "TURN": 7430,
+          "REPLACEMENT": 1528,
+          "PIVOT": 51
+        },
+        "fallback_share_all": 0.02043257251071464,
+        "fallback_share_eligible": 0.02431791221826809,
+        "sleep_confusion_overlap": 0,
+        "exact_rescues": 0,
+        "searched_changed": 6219,
+        "spread_redraws": 381,
+        "fallback_causes": {
+          "visible_sleep": {
+            "count": 133,
+            "share_all": 0.013256254360609987,
+            "share_eligible": 0.015776986951364175
+          },
+          "visible_confusion": {
+            "count": 45,
+            "share_all": 0.004485198843815409,
+            "share_eligible": 0.005338078291814947
+          },
+          "pivot_refusal": {
+            "count": 22,
+            "share_all": 0.0021927638791986444,
+            "share_eligible": 0.0026097271648873074
+          },
+          "ambiguous_bench": {
+            "count": 5,
+            "share_all": 0.000498355427090601,
+            "share_eligible": 0.0005931198102016608
+          },
+          "redraw_exhaustion": {
+            "count": 0,
+            "share_all": 0.0,
+            "share_eligible": 0.0
+          },
+          "other": {
+            "count": 0,
+            "share_all": 0.0,
+            "share_eligible": 0.0
+          }
+        },
+        "recorded_refusal_codes": {
+          "TURN / visible_confusion": 39,
+          "REPLACEMENT / visible_sleep": 12,
+          "TURN / visible_sleep": 121,
+          "PIVOT / public_record_unsupported": 22,
+          "REPLACEMENT / visible_confusion": 6,
+          "PIVOT / DUOFORGE_E_UNSUPPORTED: queue mask": 5
+        }
+      },
+      "milliseconds": {
+        "searched": {
+          "median": 33.61948199195899,
+          "p95": 40.62509914747865
+        },
+        "eligible": {
+          "median": 33.508705950958614,
+          "p95": 40.51705919649126
+        },
+        "all_requested": {
+          "median": 32.67739170575288,
+          "p95": 40.036450197101345
+        },
+        "searched_parts": {
+          "network": {
+            "median": 23.65827790717284,
+            "p95": 27.547678522012315
+          },
+          "engine": {
+            "median": 6.164581622106083,
+            "p95": 8.835382756106245
+          },
+          "reduction": {
+            "median": 3.5205500003030465,
+            "p95": 6.716120399960346
+          },
+          "split": {
+            "median": 0.0,
+            "p95": 0.0
+          }
+        }
+      }
+    },
+    "X-k8m8s16-vs-P75": {
+      "agent": "X",
+      "opponent": "P75",
+      "games": 1024,
+      "score": 0.7041015625,
+      "score_95": [
+        0.6748046875,
+        0.732421875
+      ],
+      "unfinished": 0,
+      "unresolved": 0,
+      "paired_gain": {
+        "mean": 0.1982421875,
+        "ci95": [
+          0.162109375,
+          0.23439941406249987
+        ]
+      },
+      "oracle_stage1": null,
+      "decisions": {
+        "total": 10253,
+        "eligible": 8638,
+        "kinds": {
+          "team": 1024,
+          "searched": 8416,
+          "forced": 591,
+          "unreconstructible": 222
+        },
+        "boundaries": {
+          "TEAM_SELECTION": 1024,
+          "TURN": 7636,
+          "REPLACEMENT": 1536,
+          "PIVOT": 57
+        },
+        "fallback_share_all": 0.021652199356285966,
+        "fallback_share_eligible": 0.02570039360963186,
+        "sleep_confusion_overlap": 0,
+        "exact_rescues": 0,
+        "searched_changed": 6324,
+        "spread_redraws": 500,
+        "fallback_causes": {
+          "visible_sleep": {
+            "count": 149,
+            "share_all": 0.01453233200039013,
+            "share_eligible": 0.017249363278536697
+          },
+          "visible_confusion": {
+            "count": 45,
+            "share_all": 0.004388959328976885,
+            "share_eligible": 0.005209539245195647
+          },
+          "pivot_refusal": {
+            "count": 22,
+            "share_all": 0.0021457134497220327,
+            "share_eligible": 0.002546885853206761
+          },
+          "ambiguous_bench": {
+            "count": 6,
+            "share_all": 0.000585194577196918,
+            "share_eligible": 0.0006946052326927529
+          },
+          "redraw_exhaustion": {
+            "count": 0,
+            "share_all": 0.0,
+            "share_eligible": 0.0
+          },
+          "other": {
+            "count": 0,
+            "share_all": 0.0,
+            "share_eligible": 0.0
+          }
+        },
+        "recorded_refusal_codes": {
+          "TURN / visible_confusion": 41,
+          "REPLACEMENT / visible_sleep": 17,
+          "TURN / visible_sleep": 132,
+          "PIVOT / public_record_unsupported": 22,
+          "PIVOT / DUOFORGE_E_UNSUPPORTED: queue mask": 6,
+          "REPLACEMENT / visible_confusion": 4
+        }
+      },
+      "milliseconds": {
+        "searched": {
+          "median": 33.43317439866236,
+          "p95": 40.3302903836942
+        },
+        "eligible": {
+          "median": 33.3175111561183,
+          "p95": 40.24436976428788
+        },
+        "all_requested": {
+          "median": 32.59329580981977,
+          "p95": 39.69996888491477
+        },
+        "searched_parts": {
+          "network": {
+            "median": 23.572409377257742,
+            "p95": 27.39665185971346
+          },
+          "engine": {
+            "median": 6.143149273305637,
+            "p95": 8.802462436502744
+          },
+          "reduction": {
+            "median": 3.5198615000808786,
+            "p95": 6.587071500007369
+          },
+          "split": {
+            "median": 0.0,
+            "p95": 0.0
+          }
+        }
+      }
+    }
+  },
+  "validation": {
+    "all_baselines_row_identical_to_stage1": true,
+    "checkpoint_hashes_match_stage1": true,
+    "search_games_replayed": 15360,
+    "all_decision_epochs_and_final_game_records_match": true,
+    "queue_mask_refusals_confirmed_ambiguous_bench": 104
+  },
+  "totals": {
+    "requested_decisions": 153885,
+    "fallback_decisions": 3054,
+    "fallback_share": 0.01984598888780583,
+    "fallback_causes": {
+      "visible_sleep": 2045,
+      "visible_confusion": 470,
+      "pivot_refusal": 446,
+      "ambiguous_bench": 104,
+      "redraw_exhaustion": 0,
+      "other": 0
+    },
+    "sleep_confusion_overlap": 11,
+    "searched_decisions": 127435,
+    "exact_rescues": 5
+  },
+  "solver_tail": {
+    "exact_rescues": 5,
+    "largest_recorded_reduction_ms": 18034.490367997932,
+    "exact_rescue_reduction_ms_min": 1808.055652999883,
+    "exact_rescue_reduction_ms_max": 18034.490367997932,
+    "exact_rescue_reduction_seconds_sum": 52.805378305997465
+  },
+  "runtime": {
+    "x_seconds": 615.0,
+    "panel_seconds": 3311.0,
+    "retained_raw_N_E_training_active": true,
+    "resumed_X_panel_training_active": false,
+    "first_day_interrupted_after_N_E": true
+  },
+  "checkpoint": {
+    "name": "R",
+    "file": "params-18129.npz",
+    "update": 18129,
+    "sha256": "8532b30b855969bed0f003fda5bd4400ad7c468a831ac0385332adb5289f3c2e",
+    "model": {
+      "version": 2,
+      "embed": 64,
+      "member": 128,
+      "position": 128,
+      "hidden": 640,
+      "layers": 3,
+      "option": 128,
+      "capacities": {
+        "species": 1024,
+        "move": 1024,
+        "item": 256,
+        "ability": 256,
+        "nature": 25
+      }
+    },
+    "encoder": 4,
+    "ext_supported": 563751419903
+  },
+  "machine": {
+    "python": "3.12.3",
+    "numpy": "2.5.3",
+    "jax": "0.11.2",
+    "jaxlib": "0.11.2",
+    "platform": "Linux-6.18.33.2-microsoft-standard-WSL2-x86_64-with-glibc2.39",
+    "backend": "gpu",
+    "cpu": "AMD Ryzen 7 5800X 8-Core Processor",
+    "devices": [
+      "cuda:0"
+    ],
+    "xla_flags": "--xla_gpu_deterministic_ops=true"
+  },
+  "belief": {
+    "sets": 444,
+    "unstated": 30,
+    "outside_context": 0,
+    "sha256": "1795524c1e81d3857a26d6c99a194c536069df8d208d502413c3005ff75099d4",
+    "source_count": 79
+  },
+  "suite": {
+    "teams": 79,
+    "profile": "POOL",
+    "encoder": 4,
+    "selection": "first-checkpoint team pool"
+  },
+  "panel_checkpoints": [
+    {
+      "name": "P25",
+      "file": "params-0.npz",
+      "update": 0,
+      "sha256": "bbd9656c5efed224e53667af1c26111594f7c3d956ea112424684099c6562b94",
+      "model": {
+        "version": 2,
+        "embed": 64,
+        "member": 128,
+        "position": 128,
+        "hidden": 640,
+        "layers": 3,
+        "option": 128,
+        "capacities": {
+          "species": 1024,
+          "move": 1024,
+          "item": 256,
+          "ability": 256,
+          "nature": 25
+        }
+      },
+      "encoder": 4,
+      "ext_supported": 563751419903
+    },
+    {
+      "name": "P50",
+      "file": "params-3600.npz",
+      "update": 3600,
+      "sha256": "db0987eaf7c11ede1a35d43158ddaa2748224f00a200882efcdb0fc9f2300b56",
+      "model": {
+        "version": 2,
+        "embed": 64,
+        "member": 128,
+        "position": 128,
+        "hidden": 640,
+        "layers": 3,
+        "option": 128,
+        "capacities": {
+          "species": 1024,
+          "move": 1024,
+          "item": 256,
+          "ability": 256,
+          "nature": 25
+        }
+      },
+      "encoder": 4,
+      "ext_supported": 563751419903
+    },
+    {
+      "name": "P75",
+      "file": "params-11000.npz",
+      "update": 11000,
+      "sha256": "ef0521b5b933cd0e74ed0381e7d2b3bed32f51c881ef652b8c4c18131477a8b9",
+      "model": {
+        "version": 2,
+        "embed": 64,
+        "member": 128,
+        "position": 128,
+        "hidden": 640,
+        "layers": 3,
+        "option": 128,
+        "capacities": {
+          "species": 1024,
+          "move": 1024,
+          "item": 256,
+          "ability": 256,
+          "nature": 25
+        }
+      },
+      "encoder": 4,
+      "ext_supported": 563751419903
+    }
+  ]
+}
