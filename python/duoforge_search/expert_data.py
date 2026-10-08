@@ -387,3 +387,183 @@ def selection_word(key: DecisionKey, seed: int, *, domain: str, version: int = 1
     data = (b"duoforge-expert" + struct.pack("<II", version, len(tag)) + tag
             + struct.pack("<QQQQ", seed, key.game_id, key.seat, key.request_epoch))
     return int.from_bytes(hashlib.sha256(data).digest()[:8], "little")
+
+
+LABEL_LIMIT = 16384
+
+
+@dataclass
+class LabelCursor:
+    """Admission state for complete logical ticks; pending tickets precede tau.
+
+    admit_tick mutates this object to reserve tickets. commit_tick returns a
+    new cursor, leaving the pending checkpoint usable for deterministic resume.
+    Only the caller that has assembled the COMPLETE tick may call admit_tick;
+    grouping teacher execution does not permit incremental admission calls.
+    """
+    remaining: int = LABEL_LIMIT
+    pending_reservations: tuple[DecisionKey, ...] | None = None
+    cap_raw_keys: tuple[DecisionKey, ...] = ()
+    dropped_games: frozenset[int] = frozenset()
+    logical_tick: int = 0
+    last_epochs: Mapping[int, int] = field(default_factory=dict)
+
+    def __post_init__(self):
+        if self.pending_reservations is not None:
+            self.pending_reservations = tuple(self.pending_reservations)
+        self.cap_raw_keys = tuple(self.cap_raw_keys)
+        self.dropped_games = frozenset(self.dropped_games)
+        self.last_epochs = MappingProxyType(dict(self.last_epochs))
+
+
+@dataclass(frozen=True)
+class AdmissionBatch:
+    admitted_keys: tuple[DecisionKey, ...]
+    cap_raw_keys: tuple[DecisionKey, ...]
+    reserved_count: int
+
+
+@dataclass(frozen=True)
+class AdmissionOutcome:
+    key: DecisionKey
+    status: RowStatus
+
+
+def _requests(requests):
+    keys = tuple(requests)
+    for k in keys:
+        _key(k)
+    if len(keys) > 512 or len({k.game_id for k in keys}) != len(keys):
+        raise ValueError("tick needs unique learner game requests, at most 512")
+    return tuple(sorted(keys))
+
+
+def _validate_cursor(cursor):
+    if not isinstance(cursor, LabelCursor):
+        raise ValueError("invalid label cursor")
+    _uint(cursor.remaining, "remaining labels", LABEL_LIMIT)
+    _uint(cursor.logical_tick, "logical tick")
+    for game in cursor.dropped_games:
+        _uint(game, "dropped game")
+    for game, epoch in cursor.last_epochs.items():
+        _uint(game, "history game")
+        _uint(epoch, "history epoch")
+    if cursor.pending_reservations is None:
+        if cursor.cap_raw_keys:
+            raise ValueError("cap-raw keys without pending tick")
+        return
+    pending = cursor.pending_reservations
+    raw = cursor.cap_raw_keys
+    _requests(pending + raw)
+    if pending != tuple(sorted(pending)) or raw != tuple(sorted(raw)):
+        raise ValueError("pending admission keys must be canonical")
+    if cursor.remaining + len(pending) > LABEL_LIMIT:
+        raise ValueError("reserved labels exceed capacity")
+    if any(k.game_id in cursor.dropped_games for k in pending) or any(
+            k.game_id not in cursor.dropped_games for k in raw):
+        raise ValueError("invalid dropped-game admission state")
+    for k in pending + raw:
+        if k.game_id in cursor.last_epochs and k.request_epoch <= cursor.last_epochs[k.game_id]:
+            raise ValueError("pending request repeats/regresses an epoch")
+
+
+def admit_tick(cursor: LabelCursor, requests: Sequence[DecisionKey]) -> AdmissionBatch:
+    _validate_cursor(cursor)
+    if cursor.pending_reservations is not None:
+        raise ValueError("pending tick must commit before another admission")
+    keys = _requests(requests)
+    for k in keys:
+        if k.game_id in cursor.last_epochs and k.request_epoch <= cursor.last_epochs[k.game_id]:
+            raise ValueError("request repeats/regresses an epoch")
+    remaining = cursor.remaining
+    dropped = set(cursor.dropped_games)
+    admitted, raw = [], []
+    for key in keys:
+        if key.game_id in dropped or not remaining:
+            dropped.add(key.game_id)
+            raw.append(key)
+        else:
+            admitted.append(key)
+            remaining -= 1
+    # Validation above completes before any caller-visible state changes.
+    cursor.remaining = remaining
+    cursor.pending_reservations = tuple(admitted)
+    cursor.cap_raw_keys = tuple(raw)
+    cursor.dropped_games = frozenset(dropped)
+    return AdmissionBatch(tuple(admitted), tuple(raw), len(admitted))
+
+
+def commit_tick(cursor: LabelCursor, outcomes: Sequence[AdmissionOutcome]) -> LabelCursor:
+    _validate_cursor(cursor)
+    if cursor.pending_reservations is None:
+        raise ValueError("no pending admission tick")
+    results = {}
+    for outcome in outcomes:
+        if not isinstance(outcome, AdmissionOutcome) or not isinstance(outcome.status, RowStatus):
+            raise ValueError("invalid admission outcome")
+        _key(outcome.key)
+        if outcome.key in results:
+            raise ValueError("duplicate admission outcome")
+        results[outcome.key] = outcome.status
+    admitted, raw = cursor.pending_reservations, cursor.cap_raw_keys
+    if set(results) != set(admitted + raw):
+        raise ValueError("all pending tick outcomes must commit together")
+    released = 0
+    for k in admitted:
+        if results[k] not in (RowStatus.TARGET, RowStatus.PUBLIC_REFUSAL, RowStatus.WORK_EXHAUSTED):
+            raise ValueError("admitted root needs target or named refusal/exhaustion")
+        released += results[k] is not RowStatus.TARGET
+    if any(results[k] is not RowStatus.CAP_RAW for k in raw):
+        raise ValueError("cap-raw game cannot play tau or acquire a target")
+    history = dict(cursor.last_epochs)
+    history.update({k.game_id: k.request_epoch for k in admitted + raw})
+    result = LabelCursor(remaining=cursor.remaining + released, dropped_games=cursor.dropped_games,
+                         logical_tick=cursor.logical_tick + 1, last_epochs=history)
+    _validate_cursor(result)
+    return result
+
+
+def cursor_bytes(cursor: LabelCursor, manifest: DataManifest) -> bytes:
+    """Canonical in-memory checkpoint, bound to the complete immutable manifest."""
+    validate_manifest(manifest)
+    _validate_cursor(cursor)
+    state = {"remaining": cursor.remaining, "pending_reservations": cursor.pending_reservations,
+             "cap_raw_keys": cursor.cap_raw_keys, "dropped_games": sorted(cursor.dropped_games),
+             "logical_tick": cursor.logical_tick, "last_epochs": sorted(cursor.last_epochs.items())}
+    content = {"schema_version": SCHEMA_VERSION, "manifest_sha256": _sha(manifest), "cursor": state}
+    return _canonical({**content, "content_sha256": _sha(content)})
+
+
+def restore_cursor(data: bytes, manifest: DataManifest) -> LabelCursor:
+    validate_manifest(manifest)
+    state = json.loads(data, object_pairs_hook=_object)
+    if not isinstance(state, dict) or type(state.get("schema_version")) is not int or state["schema_version"] != SCHEMA_VERSION:
+        raise ValueError("unsupported cursor schema")
+    if set(state) != {"schema_version", "manifest_sha256", "cursor", "content_sha256"}:
+        raise ValueError("invalid cursor fields")
+    content = {k: v for k, v in state.items() if k != "content_sha256"}
+    if state["content_sha256"] != _sha(content):
+        raise ValueError("cursor integrity mismatch")
+    if state["manifest_sha256"] != _sha(manifest):
+        raise ValueError("incompatible cursor manifest")
+    try:
+        v = dict(state["cursor"])
+        if set(v) != {"remaining", "pending_reservations", "cap_raw_keys", "dropped_games", "logical_tick", "last_epochs"}:
+            raise ValueError("invalid cursor state fields")
+        if v["pending_reservations"] is not None:
+            v["pending_reservations"] = tuple(DecisionKey(**k) for k in v["pending_reservations"])
+        v["cap_raw_keys"] = tuple(DecisionKey(**k) for k in v["cap_raw_keys"])
+        for name in ("dropped_games", "last_epochs"):
+            if not isinstance(v[name], list):
+                raise ValueError(f"invalid cursor {name}")
+        if len(set(v["dropped_games"])) != len(v["dropped_games"]):
+            raise ValueError("duplicate dropped game")
+        history = dict(v["last_epochs"])
+        if len(history) != len(v["last_epochs"]):
+            raise ValueError("duplicate history game")
+        v["last_epochs"] = history
+        cursor = LabelCursor(**v)
+    except (TypeError, KeyError) as err:
+        raise ValueError("invalid cursor state") from err
+    _validate_cursor(cursor)
+    return cursor
