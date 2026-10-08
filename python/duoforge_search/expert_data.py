@@ -94,6 +94,7 @@ class DataManifest:
 @dataclass(frozen=True)
 class ExpertRow:
     key: DecisionKey
+    logical_tick: int
     boundary: str
     obs: np.ndarray
     slots: np.ndarray
@@ -179,7 +180,7 @@ def validate_manifest(manifest: DataManifest) -> None:
         _uint(getattr(manifest, name), name)
     if manifest.encoder != 4 or manifest.obs_width != features.obs_size(4) or manifest.slot_width != features.SLOT_FEATURES:
         raise ValueError("manifest encoder/feature dimensions must match P1 encoder 4")
-    if (manifest.device, manifest.capacity, manifest.workers, manifest.parallel_games) != ("cpu", 1024, 4, 512):
+    if (manifest.device, manifest.capacity, manifest.parallel_games) != ("cpu", 1024, 512) or manifest.workers not in (4, 8, 14):
         raise ValueError("manifest must pin the P1 CPU capacity/workers/parallel games")
     if manifest.rounds < 1 or manifest.game_count != manifest.parallel_games * manifest.rounds:
         raise ValueError("manifest game_count must match complete rounds")
@@ -213,6 +214,7 @@ def validate_row(row: ExpertRow, manifest: DataManifest) -> None:
     if not isinstance(row, ExpertRow) or not isinstance(row.status, RowStatus):
         raise ValueError("invalid row/status")
     _key(row.key)
+    _uint(row.logical_tick, "per-game logical tick")
     _array(row.obs, "<f4", (manifest.obs_width,), "obs")
     _array(row.slots, "<f4", (2, 32, manifest.slot_width), "slots")
     if row.boundary not in ("TURN", "REPLACEMENT", "PIVOT", "TEAM_SELECTION", "TERMINAL"):
@@ -303,12 +305,17 @@ def write_shard(path: Path, rows: Sequence[ExpertRow], manifest: DataManifest) -
     refuse_repository(path)
     validate_manifest(manifest)
     rows = tuple(rows)
-    keys = set()
+    keys, ticks = set(), {}
     for row in rows:
         validate_row(row, manifest)
-        if row.key in keys:
-            raise ValueError("duplicate decision key in shard")
-        keys.add(row.key)
+        identity = (row.key.game_id, row.key.seat, row.logical_tick)
+        if identity in keys:
+            raise ValueError("duplicate learner row tick in shard")
+        stream = (row.key.game_id,row.key.seat)
+        if stream in ticks and row.logical_tick <= ticks[stream]:
+            raise ValueError("regressing learner row tick in shard")
+        keys.add(identity)
+        ticks[stream] = row.logical_tick
     payload = {"schema_version": SCHEMA_VERSION, "manifest": _plain(manifest),
                "manifest_sha256": _sha(manifest), "rows": [_plain(r) for r in rows]}
     data = _canonical({**payload, "content_sha256": _sha(payload)}) + b"\n"
@@ -367,7 +374,7 @@ def read_shard(path: Path, expected: DataManifest) -> tuple[ExpertRow, ...]:
         raise ValueError("incompatible shard manifest")
     if not isinstance(payload["rows"], list):
         raise ValueError("invalid shard rows")
-    rows, keys = [], set()
+    rows, keys, ticks = [], set(), {}
     for value in payload["rows"]:
         try:
             v = dict(value)
@@ -384,9 +391,14 @@ def read_shard(path: Path, expected: DataManifest) -> tuple[ExpertRow, ...]:
         except (KeyError, TypeError) as err:
             raise ValueError("invalid shard row fields") from err
         validate_row(row, expected)
-        if row.key in keys:
-            raise ValueError("duplicate decision key in shard")
-        keys.add(row.key)
+        identity = (row.key.game_id, row.key.seat, row.logical_tick)
+        if identity in keys:
+            raise ValueError("duplicate learner row tick in shard")
+        stream = (row.key.game_id,row.key.seat)
+        if stream in ticks and row.logical_tick <= ticks[stream]:
+            raise ValueError("regressing learner row tick in shard")
+        keys.add(identity)
+        ticks[stream] = row.logical_tick
         rows.append(row)
     return tuple(rows)
 
