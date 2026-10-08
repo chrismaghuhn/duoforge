@@ -53,6 +53,7 @@ def summary(records, baseline, decisions, baseline_preview, resamples):
     if len({r["env"] for r in previews}) != len(previews):
         raise ValueError("more than one preview per game")
     changed = sum(r["choice"] != baseline_preview[r["env"]] for r in previews)
+    searched_changed = sum(r["kind"] == "searched" and r["choice"] != baseline_preview[r["env"]] for r in previews)
     fallback = {}
     for record in previews:
         if record["kind"] == "unreconstructible":
@@ -61,8 +62,35 @@ def summary(records, baseline, decisions, baseline_preview, resamples):
     return {"games": len(records), "score": float(b.mean()), "score_95": list(arena.bootstrap_mean(b, resamples)),
             "paired_vs_raw": {"score": float((b - a).mean()), "score_95": list(arena.bootstrap_paired(b, a, resamples))},
             "preview_games": len(previews), "preview_changed": changed, "preview_changed_share": changed / len(records),
+            "preview_changed_searched": searched_changed, "preview_changed_fallback": changed - searched_changed,
             "fallback_causes": fallback, "unfinished": int(records["unfinished"].sum()),
             "unresolved": int(records["unresolved"].sum()), "timing": arena.timing(decisions)}
+
+
+def both_searched_difference(value_records, turn1_records, value_decisions, turn1_decisions, resamples):
+    """Conditional diagnostic, preserving seat clusters even with one included seat.
+    This post-treatment cohort is not an unbiased whole-suite treatment effect.
+    """
+    if len(value_records) != len(turn1_records) or len(value_records) % 2:
+        raise ValueError("both-searched comparison needs matched seat pairs")
+    for field in ("side0", "side1", "learner_seat"):
+        if not np.array_equal(value_records[field], turn1_records[field]):
+            raise ValueError("both-searched pairings differ")
+    sets = [{r["env"] for r in decisions if r["boundary"] == "TEAM_SELECTION" and r["kind"] == "searched"}
+            for decisions in (value_decisions, turn1_decisions)]
+    selected = np.zeros(len(value_records), bool)
+    selected[list(sets[0] & sets[1])] = True
+    games = int(selected.sum())
+    if not games:
+        return {"games": 0, "score": None, "score_95": None, "status": "no_common_searched_games"}
+    diff = arena.scores(turn1_records) - arena.scores(value_records)
+    sums = (diff * selected).reshape(-1, 2).sum(axis=1)
+    weights = selected.reshape(-1, 2).sum(axis=1)
+    sums, weights = sums[weights > 0], weights[weights > 0]
+    draws = arena._resampled(len(weights), resamples, arena.BOOTSTRAP_SEED)
+    estimates = sums[draws].sum(axis=1) / weights[draws].sum(axis=1)
+    return {"games": games, "score": float(diff[selected].mean()), "score_95": list(arena._interval(estimates)),
+            "status": "conditional_on_both_modes_searched", "bootstrap_unit": "paired seat clusters"}
 
 
 def run(context, pool, candidate, opponents, table, source_ids, args):
@@ -81,7 +109,7 @@ def run(context, pool, candidate, opponents, table, source_ids, args):
         results[f"raw-vs-{opponent_name}"] = book_ab._arm(baseline, args.resamples)
         foe_ids = np.where(rows["learner_seat"] == 0, rows["side1"], rows["side0"])
         excluded = [source_ids.get(pool.ids[int(i)]) for i in foe_ids]
-        by_mode = {}
+        by_mode, by_decisions = {}, {}
         for mode in ("value", "turn1"):
             for agent in args.agents:
                 name = f"{agent}-{mode}-vs-{opponent_name}"
@@ -101,10 +129,13 @@ def run(context, pool, candidate, opponents, table, source_ids, args):
                         file.write(json.dumps(arena._finite(record), allow_nan=False) + "\n")
                 results[name] = summary(records, baseline, decisions, raw.preview, args.resamples)
                 by_mode[(agent, mode)] = records
+                by_decisions[(agent, mode)] = decisions
         for agent in args.agents:
             left, right = (arena.scores(by_mode[(agent, mode)]).reshape(-1, 2).mean(axis=1) for mode in ("value", "turn1"))
             results[f"{agent}-turn1-minus-value-vs-{opponent_name}"] = {
-                "score": float((right - left).mean()), "score_95": list(arena.bootstrap_paired(right, left, args.resamples))}
+                "score": float((right - left).mean()), "score_95": list(arena.bootstrap_paired(right, left, args.resamples)),
+                "both_searched": both_searched_difference(by_mode[(agent, "value")], by_mode[(agent, "turn1")],
+                    by_decisions[(agent, "value")], by_decisions[(agent, "turn1")], args.resamples)}
         # Keep completed opponent arms available if a later arm fails.
         (out / "results.json").write_text(json.dumps(arena._finite(results), indent=1, allow_nan=False), encoding="utf-8")
     return results

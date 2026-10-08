@@ -9,6 +9,10 @@ Own inputs come only from the public root; foe policy rows and all leaf states c
 Preview hypotheses have no preselected hidden bench. Every table cell explicitly plays both candidate tuples.
 Worlds and gameplay seeds are shared across cells; N/E/X use the existing Bayesian solver (`lambda=0.5`).
 No rule, entry effect or move outcome is implemented in Python.
+This is the Champions open-team-list regime: stat alignment (the stat-changing Nature effect) is public,
+while the actual stats remain hidden. The official [2026 VGC handbook](https://mcdn.pokemon.com/pokemon-prod/raw/upload/v1/live/static-assets/content-assets/cms2/pdf/play-pokemon/rules/play-pokemon-vgc-tournament-handbook-en.pdf)
+section 2.5 lists stat alignment and excludes only stats from disclosure; [Pokemon.com's NAIC discussion](https://www.pokemon.com/uk/features/2026-north-america-international-championships-pokemon-vgc-roundtable)
+confirms this change. This does not authorize assuming Nature known in closed-sheet formats.
 
 Two evaluators are measured on the same pairings/seeds:
 
@@ -41,6 +45,10 @@ Panel paths must be explicit or resolved under the named panel run. No search is
 The reports give score/95% CI, paired gain vs raw and paired `turn1-minus-value` difference, actual changed-preview
 count/share against captured baseline ranks, fallback causes and timing. Capture baseline ranks from its actual
 network calls instead of assuming another model batch shape has the same floating argmax.
+Changed previews are split into searched and fallback cases. In addition to the full-suite comparison,
+`both_searched` reports rollout-minus-value only on games where both modes searched. Its weighted seat-cluster
+bootstrap keeps even one included seat of a pair. This post-treatment cohort is descriptive, not an unbiased
+whole-suite effect; the two modes' different unsupported-cell/fallback policies remain explicitly reported.
 Bootstrap resamples keep both seat orders together. Raw games, decisions/tables and conditions stay outside all
 repo worktrees, guarded by `refuse_repository`; only a later authorized aggregate-only report may be published.
 Completed opponent arms are retained privately if a later arm fails. No performance/strength gain is presumed.

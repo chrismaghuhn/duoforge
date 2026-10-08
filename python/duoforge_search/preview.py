@@ -28,7 +28,7 @@ def rollout(search, n, player, steps, costs):
     """
     batch = search.leaves
     failed = np.zeros(n, np.uint32)
-    for _ in range(steps + 1):
+    for rollout_step in range(steps + 1):
         t = time.perf_counter()
         obs, slots, masks = batch.query_encoded(search.encoder, search.ext_supported)
         batch.query()  # the existing joint-index step consumes this public domain
@@ -40,10 +40,12 @@ def rollout(search, n, player, steps, costs):
         costs["leaves"] += time.perf_counter() - t
         if not active.any():
             return failed, obs[:n, player].copy()
-        if _ == steps:
+        if rollout_step == steps:
             from .honest import Unreconstructible
             raise Unreconstructible("preview_rollout_limit")
-        pp, _, seconds = search._policy(obs.reshape(2 * batch.envs, -1),
+        obs, slots, masks = obs.copy(), slots.copy(), masks.copy()
+        obs[n:], slots[n:], masks[n:] = 0, 0, False
+        pp, team_logp, seconds = search._policy(obs.reshape(2 * batch.envs, -1),
             slots.reshape((2 * batch.envs,) + slots.shape[2:]), masks.reshape((2 * batch.envs,) + masks.shape[2:]))
         costs["network"] += seconds
         pp = pp.reshape(batch.envs, 2, -1)

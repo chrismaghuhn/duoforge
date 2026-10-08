@@ -301,7 +301,7 @@ class Honest(lookahead.Lookahead):
             if boundary == C["DUOFORGE_BOUNDARY_TEAM_SELECTION"]:
                 actions[d] = int(np.argmax(pt[d]))
                 result = {"kind": "team", "choice": int(actions[d])}
-                if self.preview_mode != "raw":
+                if self.preview_mode != "raw" and self.k != 1:
                     excluded = None if self.exclude_teams is None else self.exclude_teams[e]
                     try:
                         if statuses[e] == C["DUOFORGE_E_UNSUPPORTED"]:
