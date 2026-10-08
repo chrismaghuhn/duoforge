@@ -128,6 +128,61 @@ class ModelV2Test(unittest.TestCase):
                            np.zeros(obs.shape[0], dtype=bool))
 
 
+class FullJointTest(unittest.TestCase):
+    """Stage 3 C4 step 11: the student's distribution over every legal joint action (1024 = 32 x 32 slot pairs,
+    joint id i * 32 + j), as a masked log-softmax over all legal actions, never renormalized over a candidate set."""
+
+    @classmethod
+    def setUpClass(cls):
+        import jax
+        cls.jax = jax
+        _, cls.turn = _scenes()
+        cls.model = policy.make(policy.v2_config("S"))
+        cls.params = cls.model.init(jax.random.PRNGKey(7))
+
+    def test_full_joint_is_the_masked_pair_softmax_with_gradients(self):
+        import jax.numpy as jnp
+        obs, slots, mask = (x[:6] for x in self.turn)
+        mask = mask.copy()
+        mask[1] = False
+        mask[1, 4, 9] = True  # one legal action
+        out = self.model.full_joint_log_probs(self.params, obs, slots, mask)
+        self.assertEqual(out.shape, (6, 1024))
+        self.assertEqual(out.dtype, np.float32)
+        flat = mask.reshape(6, -1)
+        got = np.asarray(out)
+        self.assertTrue(np.all(got[~flat] == -np.inf))
+        self.assertTrue(np.isfinite(got[flat]).all())
+        legal_sum = np.log(np.where(flat, np.exp(got.astype(np.float64)), 0.0).sum(axis=1))
+        np.testing.assert_allclose(legal_sum, 0.0, atol=1e-5)
+        np.testing.assert_array_equal(got[flat], np.asarray(self.model.apply(self.params, obs, slots, mask)[0])[flat])
+        self.assertEqual(float(got[1, 4 * 32 + 9]), 0.0)
+        np.testing.assert_array_equal(np.asarray(self.model.full_joint_log_probs(self.params, obs, slots, flat)), got)
+        jitted = self.jax.jit(self.model.full_joint_log_probs)  # a traced mask: no host check, same values
+        np.testing.assert_array_equal(np.asarray(jitted(self.params, obs, slots, mask)), got)
+        bad = mask.copy()
+        bad[3] = False
+        with self.assertRaisesRegex(ValueError, "row 3"):
+            self.model.full_joint_log_probs(self.params, obs, slots, bad)
+        # A candidate-only renormalization over three legal ids differs from the full-legal distribution.
+        row = int(np.flatnonzero(flat.sum(axis=1) > 3)[0])
+        ids = np.flatnonzero(flat[row])[:3]
+        candidate = got[row, ids] - np.log(np.exp(got[row, ids].astype(np.float64)).sum())
+        self.assertGreater(float(np.abs(candidate - got[row, ids]).max()), 1e-3)
+        # Gradients reach the parameters through the legal entries, finite.
+        tau = np.zeros((6, 1024), dtype=np.float32)
+        tau[row, ids] = 1.0 / 3.0
+
+        def loss(params):
+            logp = self.model.full_joint_log_probs(params, obs, slots, mask)
+            return -jnp.sum(jnp.where(tau > 0, tau * logp, 0.0))
+
+        grads = self.jax.grad(loss)(self.params)
+        leaves = [np.asarray(g) for g in self.jax.tree_util.tree_leaves(grads)]
+        self.assertTrue(all(np.isfinite(g).all() for g in leaves))
+        self.assertGreater(max(float(np.abs(g).max()) for g in leaves), 0.0)
+
+
 class WideningTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
