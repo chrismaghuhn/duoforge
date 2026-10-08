@@ -100,5 +100,29 @@ class ExpertDataTest(unittest.TestCase):
         self.assertEqual(detached.obs[0].tobytes(), row.obs[0].tobytes())
 
 
+    def test_selection_word_domains_and_frequency(self):
+        from duoforge_search import expert_data as ed
+        key = ed.DecisionKey(42, 1, 9)
+        self.assertEqual(ed.selection_word(key, 7, domain="SELECT"), 7771256613835731320)
+        domains = ("raw", "SELECT", "world", "X", "audit", "split")
+        words = [ed.selection_word(key, 7, domain=d) for d in domains]
+        self.assertEqual(len(set(words)), len(domains))
+        self.assertTrue(all(0 <= x < 2**64 for x in words))
+        keys = [ed.DecisionKey(i, i % 2, 3) for i in range(65536)]
+        count = sum(ed.selection_word(k, 7, domain="SELECT") < 2**61 for k in keys)
+        self.assertLessEqual(abs(count - 8192), 384)
+        sample = keys[:100]
+        expected = {k: ed.selection_word(k, 7, domain="SELECT") for k in sample}
+        self.assertEqual(expected, {k: ed.selection_word(k, 7, domain="SELECT") for k in reversed(sample)})
+        with self.assertRaisesRegex(ValueError, "version"):
+            ed.selection_word(key, 7, domain="SELECT", version=2)
+        for bad_key, seed, domain in ((ed.DecisionKey(-1,0,0),7,"SELECT"),
+                                     (ed.DecisionKey(0,2,0),7,"SELECT"),
+                                     (ed.DecisionKey(0,0,2**64),7,"SELECT"),
+                                     (key,True,"SELECT"), (key,2**64,"SELECT"), (key,7,""),
+                                     (key,7,"select")):
+            with self.subTest(key=bad_key, seed=seed, domain=domain), self.assertRaises(ValueError):
+                ed.selection_word(bad_key, seed, domain=domain)
+
 if __name__ == "__main__":
     unittest.main()
