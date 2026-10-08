@@ -151,7 +151,7 @@ Each item has its test in the owning task: 1 in Task 3, 2 and 3 in Task 2, 4 in 
     - T is the game's lockstep steps, ordered by the per-game step index;
     - the learner's seat holds its rows; the other seat is acting = False and value 0, and its targets are discarded.
     - At a truncation the stored bootstrap applies.
-  - **Contract item for M12 C1:** every learner row, acting or waiting, carries a per-game step index (the logical tick). `request_epoch` alone does not order waiting rows.
+  - **Contract with M12 C1 (confirmed 2026-10-08):** every learner row, acting or waiting, carries the mandatory `logical_tick` (its step index within the game). `request_epoch` alone does not order waiting rows.
   - **Validation:** each of these raises:
     - a nonfinite value;
     - a zero-legal policy row;
@@ -274,7 +274,7 @@ Each item has its test in the owning task: 1 in Task 3, 2 and 3 in Task 2, 4 in 
 **Files:** create `python/duoforge_learn/ledger.py`, `python/tests/test_ledger.py`; register `ledger`.
 
 **Interfaces:**
-- Consumes: M12 C5's `ComputeLedger` field names. The JSON keys are agreed with M12 before this task; the proposal is `cpu_core_seconds`, `gpu_seconds`, `phases`.
+- Consumes: M12 C5's `ComputeLedger`. Its keys `cpu_core_seconds`, `gpu_seconds` and `phases` were confirmed by M12 on 2026-10-08; CPU and GPU time may overlap.
 - Produces: `Ledger(path)` with:
   - `.phase(name)` (a context manager);
   - `.device()`, a context manager timing one device-synchronous section that must end in `jax.block_until_ready`;
@@ -363,7 +363,7 @@ Each item has its test in the owning task: 1 in Task 3, 2 and 3 in Task 2, 4 in 
 
 1. **The control's recipe:** the A/B winner (magnet + LR decay completing within the budget, proposed) or plain PPO at LR 3e-4. A stronger control makes the pilot's bar honest.
 2. **The matching knobs:** the per-update and per-step device shares (above). Matching both axes is the main risk, because the pilot is almost all CPU. The forecast says before any run whether it is feasible.
-3. **The ledger definitions and key names**, agreed with M12 (C5), and the per-game step index in M12 C1's rows (Task 2).
+3. ~~Ledger definitions and the per-game step index~~: confirmed by M12 on 2026-10-08 (`logical_tick`; `cpu_core_seconds`, `gpu_seconds`, `phases`).
 4. **Windows:**
    - The control runs on CPU for hours but needs a GPU free of other jobs, so its GPU-seconds are not inflated by contention.
    - The pilot's training plus evaluation needs an exclusive GPU window.
