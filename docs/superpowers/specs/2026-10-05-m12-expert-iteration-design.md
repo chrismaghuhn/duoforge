@@ -1,246 +1,84 @@
-# M12 stage 3: expert iteration — specification
+# M12 stage 3: phased expert iteration — specification
 
-Status: **draft for owner approval, 2026-10-05; specification only**.
-Decision: [0024](../../decisions/0024-expert-iteration.md). Builds on
-[Learner v2](2026-10-02-learner-v2-design.md) and
-[honest search](2026-10-04-m12-visible-search-design.md), especially its section 10.
-No implementation, training or measurement is started by this PR.
-Owner additions of 2026-10-08 are incorporated below; this remains a proposal.
+Status: **revised draft for owner approval, 2026-10-08; no implementation**. Decision: [0024](../../decisions/0024-expert-iteration.md). Replaces the previous per-step floor quota, outcome-MSE pilot and wall-time policy fallback. Each phase needs its own plan/review and owner go/no-go.
 
-## 1. Starting checkpoint and entry gate
+## 1. Shared contract and targets
 
-Freeze `many-c4e96e6/params-49333`, its hash, encoder/model/id tables, pool/weights, library and belief/exclusion
-configuration. Elo 768 is the owner's reported rating in its existing ladder, not a cross-ladder calibration.
-Opening-book overrides remain off throughout this experiment.
+Freeze `many-c4e96e6/params-49333`, checkpoint/model/encoder/id hashes, library, pool/weights, belief and D0023 leave-foe-source-out setup. Elo 768 belongs to the original brief's ladder. Pin parallel-game count, logical game ids, actor assignment, device/runtime/compiler, capacities, shapes/chunk order, masks, seeds and cutoffs. No moving teacher. Book off; separately reviewed M12.x preview (#240) is not silently incorporated into P0/P1.
 
-Re-measure **raw, honest X and honest E**, each for 512 games against the same frozen raw 49333. Use identical
-pairings and seeds, 256 matchup blocks in both learner seat orders, and K=M=8, W=16, `lam=0.5`. Pin capacity,
-network batch shapes and cutoff to the honest-search measurement. Bootstrap paired score differences by seat
-block, not independent arms. E provides context; only X is the proposed teacher.
+**Information safety:** only the learner's original public prefix and C-reconstructed sampled worlds. In league games the teacher's foe model is **always its own frozen teacher net**, never actual opponent parameters. Real opponent execution is a separate controller which exposes no model handle. No true foe row, privileged hypothesis, actual hidden HP/stats/bench or oracle labels. Trap privileged calls and actual-opponent-network access; changing that network under identical public inputs must not change teacher worlds/tables/targets. Keep explicit public sleep/confusion refusals. Champions OTS exposes stat alignment; closed sheets are outside this contract.
 
-Proceed only if X-minus-raw mean score is **at least +0.08** and its 95% lower bound is positive. Otherwise
-stop and report, including an inconclusive interval or incomplete resource-capped run. Do not tune lambda or
-repeat gates until one passes. Record coverage, fallback causes and cost; a weaker gain against the stronger
-net is a valid stop result. These are score points, not Elo points.
+One information-set policy, not separately solved world policies:
 
-## 2. Teacher targets and action mapping
+    tau = 0.5*x_N + 0.5*one_hot(E)
 
-Current `Honest` records `own_pairs`, `pi_X`, `x`, `expected` and Bayesian `value`. The payoff tables are
-8x8 **per world**; the policy target has at most eight entries over our joint actions, not 64 action labels:
+Map the K own joint-action ids to the full legal 1024 slot-pair distribution, zero elsewhere. Normalize the student over all legal actions; do not substitute slot marginals. Store sparse labels and validate uniqueness, legality, finite/nonnegative mass and total 1±1e-6. Forced/unrequested/refused/work-exhausted rows have no policy label. Search values are diagnostics. Preview labels over the 360-action head require separate adoption approval.
 
-    tau_i = 0.5 * x_N,i + 0.5 * 1[i = E]
+Draw the student's raw action from its full legal policy by an independent **keyed uniform before selection/routing**. Streams for student action, budget, worlds and X draw are separate. Keys use immutable logical game id, epoch and seat, not worker arrival/batch position. In P1 and later full/cheap teacher passes, if the action is outside teacher top K, displace the lowest candidate, keeping K=4/8. Record the displaced/included ids and audit against K+1; never guess a missing Q.
 
-For each root, map `own_pairs[i]` to the existing flat slot-pair index (`slot0*32 + slot1`) in the engine's
-factored domain. Store sparse ids/probabilities; mathematically tau is zero on every other full-space action.
-The student normalizes over **all legal actions**, not just the top eight. Its legal mask comes from C.
-Reject duplicate/out-of-domain ids, negative/nonfinite mass or a sum outside 1±1e-6; never silently repair labels.
-Do not replace the joint target with slot marginals: that discards strategic correlations. An existing additive
-slot-head model may only approximate this distribution; monitor residual KL and off-candidate mass rather than
-assuming perfect representability. A new policy architecture needs separate approval.
+## 2. P0 — gate and profiling, no feature code
 
-TEAM_SELECTION remains raw until the separate M12.x preview PR and its value-vs-turn-1-rollout measurement
-are reviewed. If adopted, map its own tuple-candidate policy to the 360-action team head, with separate metrics
-and a pinned preview evaluator; do not confuse it with slot-pair targets. Forced, unrequested,
-unreconstructible and timed-out requests have `teacher_valid=0`; they are counted, not mislabeled as successful
-search. Bayesian root value and expected row values are recorded diagnostics, not ground-truth value targets.
+Use merged [#236](https://github.com/chrismaghuhn/duoforge/pull/236): **honest X, lambda=0.5, K=M=8, W=S=16, capacity=1024**. Avoid the oracle CLI default. Raw/X each play 512 games against raw 49333, identical rows/seeds, both seat orders (256 blocks); 2000 paired-seat bootstrap resamples. E only if it fits the one-CPU-hour gate budget, never an automatic substitute teacher.
 
-## 3. Loss and Learner v2 interface
+Pass: **X-minus-raw point >=+0.08 score points AND 95% lower bound >0**. Incomplete/inconclusive results stop/report, with no repeated testing until a pass.
 
-The first arm is offline distillation, initialized from 49333. Student/control start with the same explicit
-fresh optimizer; within-round resume restores optimizer and RNG state exactly:
+Profile unchanged search first: CPU/GPU, policy/team/value/world/solve/transfer, fixed-size curve such as 64/256/1024/4096/16384. Warm compilation outside steady-state timings but charge total cost. #236 is the source for ~30–34 ms/search and 5/127435 rational rescues lasting 1.8–18 s. The owner's 23-of-33-ms CPU-net split is a profiling lead, not a new measurement here. Record cross-capacity float/action differences. No new head/router/batching/training in P0. Stop/re-plan on budget or reproducibility failure.
 
-    L = beta_D * sum_valid(w * KL(tau || pi_theta)) / sum_valid(w) + c_V * mean_terminal (v_theta - z_game)^2
-    beta_D = 1; c_V = 0.5 initially
+## 3. P1 — random-1/8 pilot, value decision and continuation control
 
-Cross-entropy `-sum_i tau_i*log pi_theta(a_i)` has the same gradient as that KL. Gather the sparse target
-against the full legal log-softmax. Normalize by valid, unpadded teacher rows, not every rollout row.
-Use full-teacher estimated regret from section 4.1: initial `w=clip(r_full/0.1, 0.1, 2)` on valid targets,
-zero on invalid/padded rows. Pin the scale/caps per round and compare with uniform weighting at matched compute.
-Do not weight labels by raw student entropy or hindsight truth. Regret weights do not change outcome-value labels.
-`z_game` is the ordinary player-relative terminal result (-1/0/+1), shared across that player's game rows.
-Incomplete/engine-refused games get no outcome-value label; explicitly tagged engine tiebreak outcomes may be
-included only under the frozen collection cutoff protocol. Never train on the search's bootstrapped value
-in this pilot. Value regression uses the stored learner rows with a valid outcome. Report policy and value
-losses separately; shared-torso changes can affect the value head.
+Use the **current teacher path**, not regret routing. Select eligible learner-seat TURN/REPLACEMENT/PIVOT requests with >=2 legal actions by `u_SELECT(key)<1/8`. Singleton steps work; grouping cannot affect selection. Alternate learner seats. Other seats execute frozen self-play/league policies. Valid selected roots play a keyed X draw and store its actual behavior likelihood; others play the already drawn raw action. Freeze teacher/collector student per round. Record eligible/selected/valid and cause counters.
 
-This pilot **replaces PPO and the magnet policy objective**; it does not feed teacher actions into PPO with
-raw-policy likelihoods. League remains an opponent/data-distribution mechanism. This proposes a change to the
-visible-search spec's auxiliary-first outline (section 10), requiring owner approval of D0024. If the pilot
-succeeds, a separate arm may add `beta_D*L_D` beside the approved Learner v2 PPO/value/entropy/anchor losses. Teacher rows
-then either stay supervised-only or carry the actual behavior likelihood required by that learner's on-policy
-contract. The existing taken-action k3 anchor is not a substitute for full-distribution teacher KL.
+**Choose (a): retain the existing GAE value regression**, gamma/lambda, acting/waiting row semantics, terminal bootstrap and truncation protocol. Save actual collector rewards/values/bootstrap for `returns.gae`. Do not retarget the discounted head to final outcomes. No PPO policy surrogate with wrong raw likelihoods. PPO policy/magnet are off in the pilot; league remains a collection mechanism.
 
-**Owner-relayed contract to Learner v2, to confirm before implementation:**
+    L = mean_teacher KL(tau || pi_theta)
+        + 0.1*mean_non_target KL(pi_49333 || pi_theta) + c_V*existing_GAE_value_loss
 
-| Producer supplies | Learner v2 owns/validates |
-|---|---|
-| Own encoded row, slots, legal mask, sparse joint ids/probabilities and validity/status | Full joint-policy log-probability API, masked KL, padding and sampling weights |
-| Game/seat/epoch keys; terminal outcome and its validity | Game-level train/validation split, value-target use, optimizer and update cadence |
-| Frozen teacher hash; schema/encoder/id/context/belief hashes; K/M/W/lambda, deadline and solver status | Compatibility checks and immutable round config; refuse incompatible resume |
-| Deterministic data order and sampling/shuffle state | Atomic private shards/checkpoints, consumed-shard cursor, optimizer/RNG resume state |
-| Frozen student choice/hash, cheap/full regret, routing reason, target weight, cached-world/cell keys | Routing/weight masks, synchronized step planner and fixed device-call shapes; preserve these on resume |
+Each mean divides by its own valid unpadded weights. Minibatch 4096: 512 teacher rows plus 3584 non-target learner rows. Existing value-mask regression covers valid learner rows in both strata, including waiting rows; no opponent private rows. Pin inherited c_V/gamma/lambda and report policy:value counts/gradient magnitudes. Padding contributes zero.
 
-This is a proposed private target schema v1, not a new public C API. The learner session must confirm its exact
-names/shapes, whether the auxiliary PPO arm fits its planned A/B, and exclusive GPU/CPU windows. The owner
-relays questions/answers; this session does not implement or message that loop independently.
+**Drift:** 16384 valid targets, whole-game held-out seed split (20% validation), same-size model, fresh optimizer in both arms, Adam LR 3e-5 constant, gradient norm 0.5, max four epochs/128 optimizer steps. Check held-out teacher KL and non-target reference KL each epoch; keep best epoch. Stop after two epochs without >=1e-4-nat improvement, nonfinite losses, or held-out non-target KL >0.02 nats. Hindsight/regret weighting off. Resume restores optimizer/shuffle/keys/shard cursor exactly.
 
-## 4. Collection and information safety
+**(b) Deferred architecture:** [#239](https://github.com/chrismaghuhn/duoforge/pull/239) uses the GAE head as a control variate; its probe reports `corr(result,luck)=0.39` and proposes an undiscounted head, not an implemented one. A separate outcome head needs owner architecture/loader approval and its own arm. It could predict win/tie/loss with utility p_win-p_loss; labels are public final outcomes. Define `mean_terminal` for that optional arm as the mean over stored learner rows of complete games with valid final results, not only terminal positions; exclude unresolved/incomplete games, explicitly tag any allowed tiebreaks. P1 has **no mean_terminal MSE**. Later regret uses the teacher's discounted/bootstrapped Q units, not claimed win probabilities.
 
-One expert-iteration round freezes teacher, collector student snapshot, opponents and belief. Use the existing self-play/league mixture,
-logged in the manifest; in self-play the other seat is the same frozen raw network. Alternate the designated
-learner seat. Eligible TURN/REPLACEMENT/PIVOT requests have at least two legal own actions. The random keyed 1/8
-selector is the control; regret routing below is the proposed next arm. Only successful **full** teacher passes
-play a seeded draw from tau and save a policy target; cheap passes are routing diagnostics, not targets.
-Elsewhere play raw. Report eligible/cheap/promoted/successful counts separately. No moving teacher/both-seat search.
+### Deterministic rescue prerequisite
 
-### 4.1 Student regret routes compute
+Preserve payoffs/certificate. Initial proposed solve caps: 4096 float pivots; 32 exact pivots, 250000 counted rational arithmetic/comparison operations and 4096-bit numerator/denominator. Include conversions/certificate work; calibrate on retained tail fixtures before P1. Exhaustion is table/config-dependent: raw action, precise counted cause/work, no label, no uncertified float acceptance.
 
-Run a cheap honest 4x4, S=4 pass on many eligible states. Include the student's actual legal action within the
-four own candidates (student plus top distinct teacher alternatives), so missing it cannot become guessed regret.
-Use `Q_T(a)=sum_w p_w sum_j q_w,j A_w(a,j)` and `r=max_a Q_T(a)-Q_T(a_student)` in value units, not score points.
-Disagreement is `1-pi_X,cheap(a_student)`. Initial promotion criteria are `r>=0.05` or disagreement `>=0.5`;
-prioritize regret, with decision-key ties and a declared per-lockstep quota. A confidently wrong low-entropy
-student must be routed. Entropy alone cannot be the selector.
+Stop if **work fallbacks >1% of selected eligible roots**. The ~2% public reconstruction refusals in #236 are separate and excluded from this rule. Report both denominators. Outer wall-clock watchdog kills a stuck worker and **aborts an incomplete shard/run**, never chooses raw and silently continues a hardware-load-dependent trajectory. Reject late keys. No timeout flushing/asynchronous batching.
 
-Full promotion uses 8x8/S=16, includes the student action within that own budget, and reuses the cheap pass's
-first four world ids/words. Freeze all hypotheses for the decision; never redraw between comparisons.
-Start with at most `floor(eligible_in_step/16)` full promotions, bounded above by a configurable 1/8 quota;
-if slots run out, record quota rejection, not a timeout. Monitor false negatives on a fixed keyed full-teacher
-audit sample, charged to the same budget. Log cheap/full regret, disagreement, quotas and uncertainty: these are
-teacher estimates, not actual hidden-state regret. Compare routing with random 1/8 selection on strength and
-targets per total compute, not only on its selected-state average.
+### Success must beat continued training
 
-### 4.2 Restricted game / double oracle
+Control: approved Learner v2 continuation from 49333, same initial params/optimizer, model size/data and GPU-minute/CPU-core-hour caps. Charge teacher generation/JIT/restarts/audits. Equal steps alone is not equal compute.
 
-After fixed-shape batching, start with a small subset of the fixed eight-own/eight-foe candidate universe and
-add a best response only when it exploits the current solution beyond the unchanged certificate tolerance.
-Own responses are one strategy across worlds; foe responses may be world-specific as in the Bayesian solver.
-Cache evaluated `(decision, own_action, foe_action, world_id)` cells under model/context/hypothesis hashes.
-Reuse the exact same worlds, chance streams and cell values; do not average separately solved per-world policies.
+Predeclare primary raw-student vs raw-continuation H2H, 2048 games, same hardware, both seats, paired-seat 95% bootstrap. Pass only with **point score >=0.52 AND lower bound >0.50**. Also require vs frozen 49333 point >=0.53/lower >0.50 and positive paired-panel lower-bound evidence. Pin BC/3600/11000 paths/hashes and separate ladder output. No post-hoc choice of a passing endpoint. PP_/A/B/C and LL_ noninferiority lower bounds must exceed -0.03; broad/inconclusive or failing groups **block promotion**. Missing groups are not evaluated. Stop on failure/inconclusive strength, drift, leak/compatibility, work-fallback threshold or budget. KL reduction alone cannot promote/scale.
 
-Best-response checks must cover every excluded candidate needed for a full-universe certificate. Count their
-leaves, retries and expansions too. Stop only at that certificate or expand to the full table; a certificate
-of the small subgame is not a certificate of all eight candidates, still less all legal actions. Keep the full
-8x8/S=16 reference on an audit cohort. Require values to agree within the original certificate bound and report
-exploitability, strategy/action disagreements and net leaves saved. Do not assert exact equivalence for E/X merely
-because N's value agrees: their full policy-weighted expectations and mixed policies need separate checks.
-Dense foe-policy support may require the full table for E/X; without valid omitted-cell bounds, report no
-leaf saving for those rules rather than attributing an N-only saving to the 50/50 teacher.
-Extending the response universe beyond the original top eight is another explicit, measured setting.
+## 4. P2 — lockstep GPU batching only
 
-### 4.3 Hindsight mines states, never targets
+Collect all leaves of a synchronized step in stable decision/cell/world order. Policy/team/value GPU calls have fixed capacities/shapes, padded/masked tail chunks and zero padding. Finish before actors advance; no async queues, timeout flush or active-count-sized calls. Pin parallel-game count, chunk order, runtime and shapes. Preallocate native buffers outside battle hot paths; Learner v2 owns the planner. No routing/pruning changes here.
 
-Later public reveals or outcomes may rank saved decision keys for honest re-evaluation. The teacher receives
-only that state's original public prefix, frozen belief and seeds, never future reveals, true spreads/HP,
-future-conditioned worlds or privileged snapshots. Distillation weight comes from honest full-teacher regret,
-not the hindsight signal. Save mining provenance separately. Tests append/change later reveals and require the
-same re-evaluated target bytes for an identical saved prefix/config. Ordinary terminal value labels remain as
-section 3; hindsight is not a replacement policy/value label. Exploiter populations are explicitly out of scope.
+Report decisions/s, valid targets/s, calls/transfers/memory/JIT/total compute against current CPU/GPU curve. Require repeat-run byte-identical decisions/targets at identical seeds/capacity/device/runtime and identity against reference audits. If reshaping changes float bits/targets, it is not pure performance: fix layouts or request a separately classified change. No CPU/GPU cross-device bit claim. Stop on identity failure or no throughput gain.
 
-Use only `Honest` with public history and D0023's sampled worlds and leave-foe-source-out belief. Leaf expansion
-uses reconstructed worlds, never the original true battle. Original true foe rows, privileged hypotheses,
-canonical true-state snapshots and oracle-stage labels are forbidden model inputs/targets. Require an explicit
-`teacher_kind=honest` manifest and enforce the actual implementation path; the arena's oracle default is unsafe
-for generation. Trap privileged calls and test that hidden-only root changes, under identical public history,
-keys and belief/exclusion config, leave worlds/targets unchanged. Unsupported visible sleep/confusion stays
-explicitly counted raw play, as D0023 specifies. No Python battle rules are introduced.
+## 5. P3 — regret router after batching
 
-First collect 16,384 **valid** policy targets. Split by whole games, with held-out seeds; reserve fixed matchup
-blocks for validation and later strength evaluation. Log group/boundary coverage, label entropy, target KL,
-off-candidate mass, leaf refusals, stale hashes and fallback rates. Consider 125,000 valid targets only after
-the pilot passes. Freeze any next teacher only after evaluation and repeat the entry gate for the new teacher.
+Cheap honest 4x4/S=4; full 8x8/S=16 only on large regret/disagreement. Include the sampled student action by displacement. `Q_T(a)=sum_w p_w sum_j q_w,j A_w(a,j)`, `r=max Q_T-Q_T(a_student)`; disagreement `1-pi_X,cheap(a_student)`. Initial criteria r>=0.05 in Q units or disagreement>=0.5. Confidently wrong low-entropy states matter; entropy alone is forbidden.
 
-## 5. Bound the rational rescue
+Independent budget gate: criteria AND `u_BUDGET(key)<1/16` initially (configurable up to 1/8). This bounds expected share, not a per-step floor; report realized share and apply a separate total-work cap. Same keys route identically for singleton/permuted/regrouped requests; parallel-game count is still pinned. Reuse cheap first-four world identities and immutable cell/model hashes. Cheap targets are not trained. Include a keyed full-teacher audit sample and its cost; report false negatives. Compare random 1/8 and routing at matched **total wall/compute time**.
 
-The owner reports five 1.8–18 s rescues among about 127k decisions. Preserve the normal certificate; do not
-hide this tail by changing tolerances. Proposed rescue limit: **10 ms**, with an outer hard decision watchdog
-initially 100 ms for the existing single-decision path. A lockstep batch gets an explicit bounded batch budget
-chosen after profiling; it must not keep a single-decision 100 ms budget for an arbitrarily large batch.
+Full valid labels get weight `clip(r_full/0.1,0.1,2)`; weighted KL divides by valid total weight. Value loss unchanged. Compare uniform/regret weighting separately. Stop for grouping dependence, no quality-efficiency gain or loss versus continuation.
 
-A supervising collector already has the raw policy. A prewarmed isolated teacher worker receives only immutable
-public inputs and owns its world/leaf buffers; no live battle handle is shared. Enforce the absolute monotonic
-deadline outside that worker, not merely between rational pivots. Late or mismatched-key results are rejected; terminate/replace
-the timed-out worker without blocking the collector, play raw, and emit no target. Count total-deadline and
-rational-deadline expiry separately, with elapsed time and replay key. Unexpected engine/invariant errors stop
-the run. Startup/JIT/restart cost counts toward the resource budget.
+## 6. P4 — double oracle with full-table audit
 
-Record solver path, certificate/gap when available, and fallback status. Approximate float use is off by default;
-a later explicit mode would require feasible strategies, a recorded actual exploitability, its own acceptance
-threshold and separate evaluation. It must not claim the exact certificate or silently enter this dataset.
-World/play/selection draws stay key-based. Wall-time expiry depends on load: replay the recorded fallback
-decisions for reproducibility; seed alone cannot reproduce watchdog outcomes across machines.
-The watchdog is safety containment, **not a batching policy**: it never flushes partial batches, changes
-capacity or starts opportunistic work. Timing-triggered fallback runs fail the seed-only byte-identity acceptance
-claim unless the identical recorded fallback map is replayed. Report them explicitly; deterministic bounded
-solver work and no-watchdog-expiry repeated runs are the normal reproducibility gate.
+Small subset of the fixed eight-own/eight-foe universe; add a best response only if it exploits the current solution beyond the unchanged certificate. One own strategy across worlds, Bayesian world-specific foe responses. Cache cells on identical worlds/chance; count response scans/retries. Cover needed excluded responses for certification, expand to full if necessary. A subgame certificate is not a full-candidate/full-legal-space certificate.
 
-## 6. Evaluation, success and stop
+Audit full 8x8/S=16 values, exploitability, policies/actions within the original certificate, no new epsilon. E/X require full policy-weighted expectation checks; dense foe support can force all cells. Report zero/negative savings honestly. Stop on mismatch/no net leaves saved. K+1/expanded universe audits are separate settings.
 
-Students play **raw, without search or book**, with the same model size/encoder and one network decision as
-49333. Freeze fresh evaluation rows/seeds, both seats, workers, cutoff and hardware. Use 2,048 games per
-head-to-head/panel matchup, paired-seat bootstrap 95% intervals, and a separate ordinary ladder directory.
-Pin the stage-1 BC/3600/11000 panel by explicit paths/hashes; never inherit it from the candidate run.
-Report score/CIs, ladder Elo within the same anchors, and PP_/A/B/C versus LL_ results.
+## 7. P5 — hindsight, mixed loss and scale
 
-Success for the pilot requires score(student vs 49333) >=0.53 with lower bound >0.50, positive paired gain
-against the fixed panel baseline, and no panel/group regression worse than -0.03 at its 95% lower bound.
-If group intervals are too broad, report inconclusive rather than asserting no regression. Stop after a failed
-pilot, nonfinite loss, information/compatibility failure, >1% deadline fallbacks, or resource exhaustion;
-do not promote a checkpoint because training KL fell. No automatic unlimited rounds or hyperparameter sweeps.
+Hindsight off in P1–P4. Mine later public reveals/outcomes only in **training-split games**, initially <=10% of selected targets, with mining share/cost reported. Never mine validation/evaluation. Re-evaluate saved original public prefixes/belief/seeds; future facts/privileged truth cannot condition worlds, targets or weights. Mutation tests require identical targets despite changed later reveals. Weight by honest regret, not hindsight truth. Separately measure PPO+distill with actual behavior/on-policy contract, then consider 125000 labels/new teacher rounds. Stop on leak/held-out or strength regression/budget. Exploiter populations are explicitly out of scope.
 
-Both sides have equal inference compute; teacher generation is an additional training cost and is reported.
-Before claiming benefit over continued training, compare with a continuation from 49333 using the owner-approved
-Learner v2 baseline under the same GPU-time and CPU-core-hour caps. Report actual usage, update/decision counts
-and final strength; equal steps alone is not equal compute.
+## 8. Cost, ownership and privacy
 
-## 7. Cost, schedule and privacy
+Reference ~30 ms implies <=33 unbatched searches/s before overhead; 16384 searches alone cost ~8.2 min, **not total generation time**. At random 1/8 and ~8.7 eligible decisions/game, ~16k valid targets require **~15k games**, more with refusals: `games=labels/(f*D*success_rate)`. Measure D, collection/policy/I/O/refusal costs and shard bytes. Native workers do not multiply controller throughput. Cheap passes have 1/16 the leaves, **not 1/16 unbatched time**; latency/padding dominate. After batching, cheap-all plus full-1/8 is 192 leaves/state vs 128 for random-full-1/8; full-1/16 matches 128 before audits, but leaves are not wall time.
 
-### 7.1 Inference optimization order and acceptance
+Caps proposed: one CPU wall hour P0; **two CPU wall hours P1 generation**; two exclusive GPU hours for pilot/control/evaluation, split evenly and charging inference as well as updates. Above projected/actual two-hour generation cap: stop/checkpoint privately and return a re-plan, not automatic extra actors/budget. Profile 2/4/8 native workers in assigned idle windows. Pause during Learner v2 timing windows; never contend for GPU A/B windows. Docs/small tests can run alongside. **AWS only after the engine covers the meta** and a new owner-approved cost/run plan (2026-10-08).
 
-First profile the unchanged honest teacher: CPU vs GPU, policy/value/world-build/solve/transfer timings and
-the batch-size curve (e.g. fixed capacities 64/256/1024/4096/16384). The owner reports **23 of 33 ms** in
-per-decision CPU network calls; this is the reference bottleneck, not a new measurement. Warm compilation outside
-steady-state timings but charge it to total cost. Use identical pinned states/seeds and record cross-capacity
-float/action differences; do not promise CPU/GPU or different capacities have identical bits.
-
-Then collect leaves of **all decisions in one lockstep step** in stable decision/cell/world order. Policy,
-team-head and value work use declared fixed-capacity GPU calls, padding the last chunk and masking padding.
-Freeze and complete the step before actors advance; no asynchronous queues or timeout-based flushing.
-Changing batch shapes with requested/active counts is forbidden. Capacity, chunk order, backend, deterministic
-GPU flags, compiler/runtime and all masks are part of the reproducibility contract and resume metadata.
-Preallocate/native buffers stay outside C battle hot paths; Learner v2 owns the synchronized planner interface.
-
-Only then add routing/restricted-game pruning. Measure decisions/s, valid targets/s, total GPU calls, utilization,
-transfer cost, leaves (including response scans), fallback counts and memory for (a) unchanged, (b) fixed lockstep
-GPU batches, (c) batched cheap/full routing, (d) restricted games. Compare at equal total compute and include
-quality checks against the full teacher. Accept each step only after repeated runs give **byte-identical chosen
-actions and target distributions** at the same seeds/capacity/pinned runtime; a throughput win cannot relax this.
-
-### 7.2 Planning budget
-
-The **owner-provided ~30 ms/search** is a planning input for the old path, not a forecast after batching. For one search controller,
-ceiling successful-label throughput is about 33/s before collection/I/O/refusals; at f=1/8 this supports at most
-about 267 eligible learner decisions/s. Native batch workers do not multiply independent solver throughput.
-16,384 labels cost roughly 8.2 min of search service, 125,000 roughly 62.5 min, before overhead. For the gate,
-service time is `0.030*(512*D_X + 512*D_E)` seconds, with searched decisions/game D measured in a short pilot.
-Measure the CPU/GPU split and 2/4/8 native-worker settings before committing a larger budget.
-Cheap-all-state 4x4/S=4 costs 64 leaves/state; full 8x8/S=16 costs 1024. Adding full search on 1/8 costs
-192 leaves per eligible state versus 128 for random-full 1/8. The initial routed 1/16 cap gives 128 before
-audits/response scans, but equal leaves are not equal wall time. Recompute the cost plan from the profiling curve.
-
-Proposed local caps: one daytime CPU hour for the gate, up to two further CPU hours for collection, and two
-exclusive nighttime GPU hours for student/control training and evaluation. Start one CPU teacher actor with
-two native workers while sharing the machine; use four, then at most eight, only in an owner-assigned idle
-window. Retiming is required: 30 ms is not promised at every worker count. Bound queues; measure shard bytes
-per row and memory before scaling. Do not invent many actors or rent compute to outrun the synchronous learner.
-
-Alongside Learner v2 A/B, documentation/interface review and small tests can proceed. CPU generation needs an
-explicit spare-core window and must pause during its timing/throughput measurements. GPU distillation never
-shares the GPU with that A/B; queue it at night after the learner releases the device. These are proposed budgets,
-not permission to start jobs or a promise of completion time. Both batched teacher inference and distillation
-need exclusive GPU windows alongside the Learner v2 A/B, not merely the training update phase.
-
-Targets, public histories/reproduction tables, checkpoints, manifests and run logs are private. Writers must
-use `refuse_repository` across all worktrees and never upload CI artifacts. Later docs PRs carry aggregates
-only, not rows, tables, game identifiers or weights. Approval order: owner reviews D0024/spec, relays/confirms
-the Learner v2 contract and budgets, then approves an implementation plan. This PR ends at the specification.
+Owner relays to Learner v2: full joint log-prob API; own public rows/slots/mask; sparse targets/status; keyed raw action/true behavior logp; GAE rewards/values/bootstrap/masks; teacher/student/id/context/belief hashes; logical ids/parallel count; immutable phase/work counters; routing/weight/mining provenance and optimizer/RNG/shard cursor. Refuse incompatible resume. Learner v2 owns all loop/loss/batching/resume code. Each phase needs its own approved plan/resource and promotion gate. Rows, worlds/tables, histories, checkpoints and runs stay private via `refuse_repository`; no CI uploads. Reports carry aggregates only. Nothing here starts implementation.

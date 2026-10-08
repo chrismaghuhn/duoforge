@@ -1,58 +1,30 @@
-# 0024 — Expert iteration with the honest X teacher (M12 stage 3)
+# 0024 — Phased expert iteration with the honest X teacher
 
-Status: **proposed for owner approval, 2026-10-05**. Stage 3 is approved in principle; this decision and
-the [specification](../superpowers/specs/2026-10-05-m12-expert-iteration-design.md) are not yet approved.
-This PR contains documentation only. It authorizes no implementation or run. Follows decisions
-[0017](0017-learner-v2.md), [0022](0022-search-support.md) and [0023](0023-determinization-public-state.md).
-Amendments requested 2026-10-08: regret routing, restricted games, hindsight mining and deterministic GPU batching.
+Status: **revised proposal for owner approval, 2026-10-08**. Stage 3 is approved in principle, not as an implementation plan. This docs PR authorizes no feature code or run. The [specification](../superpowers/specs/2026-10-05-m12-expert-iteration-design.md) replaces the earlier outcome-MSE pilot, per-step quota and wall-time policy fallback. Follows [0017](0017-learner-v2.md), [0022](0022-search-support.md), [0023](0023-determinization-public-state.md), [honest arena #236](https://github.com/chrismaghuhn/duoforge/pull/236) and [luck probe #239](https://github.com/chrismaghuhn/duoforge/pull/239).
 
-## Context
+## Goal
 
-The owner names `many-c4e96e6/params-49333` as the starting checkpoint (current best, reported ladder Elo 768).
-Honest search supplies policy targets which Learner v2 distills into a stronger raw network. Deployment needs
-no search. The stronger starting network may have less remaining search benefit than earlier checkpoints.
+Start from frozen `many-c4e96e6/params-49333` (reported Elo 768 in the original brief). Honest X, lambda=0.5, supplies joint-policy targets; Learner v2 distills them into a stronger raw network. No deployment search or opening book.
 
-## Proposed decision
+## Separate phases, plans and owner gates
 
-1. **Gate first:** 512 games per configuration, honest X/E and raw against frozen 49333, identical team
-   rows/seeds and both seats. X uses `lam=0.5`, K=M=8 and W=16. Stop/report if the paired X-minus-raw
-   score gain is below +0.08 or its 95% lower bound is not positive. E is diagnostic; incomplete gates do not pass.
-2. **Policy target:** `pi_X = 0.5*x_N + 0.5*one_hot(E)` over the own candidates. Map it to the complete
-   legal joint-action distribution. Distill joint distributions, not sampled actions/slot marginals.
-   Search values remain diagnostic.
-3. **First pilot:** offline policy KL plus ordinary outcome-value regression, initialized from 49333.
-   Replace PPO/magnet policy losses in this pilot; league supplies opponents, not another loss.
-   Learner v2 owns training/resume; a later PPO-plus-distillation arm is separately measured.
-4. **Collection:** frozen teacher/student snapshot per round, learner-seat-only search. A cheap honest
-   4x4/S=4 pass routes high teacher-estimated student regret/disagreement to 8x8/S=16, not high entropy alone.
-   Compare with random 1/8 search at matched compute; cap the full-teacher share. Alternate the learner seat;
-   the other seat stays raw/frozen. Start with 16,384 valid targets,
-   then consider 125,000 after pilot success. Re-gate before each new teacher round.
-5. **Bound the rescue:** a supervised, isolated teacher worker has a proposed 100 ms single-decision deadline,
-   with at most 10 ms for rational rescue. Expiry plays raw, records the cause, and emits no teacher target.
-   No approximate float targets in the pilot, silent fallback or altered certificate.
-   Fixed lockstep batches get their own profiled budget; watchdogs never define batch shapes or flushing.
-6. **Information boundary:** public-information Honest only, including D0023's belief and leave-one-team-out
-   rules. No oracle data, privileged true hypotheses or true foe rows can enter target generation.
-7. **Success:** fresh raw-network evaluation against 49333 and the fixed panel, ladder and pool-group
-   breakdowns; require at least +0.03 head-to-head advantage with positive bootstrap evidence and no material
-   panel/group regression. Equal inference compute; account for teacher training cost separately.
-8. **Resources/privacy:** use capped daytime CPU collection and exclusive nighttime GPU training.
-   Do not contend with measured Learner v2 A/B windows. All targets, checkpoints and runs remain private;
-   later docs PRs contain aggregates only. The 30 ms/search and rescue tail are planning inputs, not new measurements.
-9. **Optimization order:** profile CPU/GPU and batch-size curves first (owner reports 23/33 ms in CPU network
-   calls), then batch all lockstep-step leaves in fixed-capacity padded GPU calls, then restricted-game/double-oracle
-   pruning on cached cells from the same worlds. No timeout flushing, variable-shape or asynchronous batching.
-   Compare decisions/s at each step; pin shapes/runtime and require byte-identical decisions on repeated seeded runs.
-10. **Target quality:** weight distillation by full-teacher estimated regret. Hindsight can select saved states
-    for honest re-evaluation, never supply future information to the teacher or its targets. Restricted certificates
-    cover only the tested action universe; validate against the full reference table. Exploiter populations are out
-    of scope and explicitly deferred.
+| Phase | Scope | Stop rule |
+|---|---|---|
+| P0 | X/raw gate on 49333 and CPU/GPU profiling, no feature code | Point gain <+0.08, lower 95% bound <=0, incomplete gate/resource cap |
+| P1 | Current path, random keyed 1/8, distillation, existing GAE value loss, continuation control, deterministic rescue | Drift, work fallbacks >1%, or failure to beat continuation |
+| P2 | Fixed-shape lockstep GPU batching only | Byte-identity regression/no throughput benefit |
+| P3 | Regret/disagreement routing vs random at matched total compute | Group-dependent routing/no quality-efficiency improvement |
+| P4 | Restricted game/double oracle plus full-table audit | Certificate/policy mismatch/no net leaves saved |
+| P5 | Capped training-split hindsight, separate PPO+distill arm, scale | Leak/held-out or strength regression/budget breach |
 
-## Approval and consequences
+P1 retains the discounted head's GAE semantics; no final-outcome MSE on that head. A separate undiscounted head remains an architecture proposal requiring approval, not a feature implemented by #239. The teacher's foe model is always the frozen teacher net, including league games; the actual opponent model is isolated.
 
-The owner relays the spec's contract to Learner v2 for confirmation of the joint-policy API, schema/masks,
-loss/resume contract and resource windows, then approves the implementation plan/budgets. No new C rules or
-battle-hot-path allocation are proposed. Deeper trees, search-value targets, both-seat teachers and architecture
-changes remain separate decisions. Oracle benchmarks stay labeled and separate.
-M12.x preview search is a separate prerequisite PR/measurement; its adoption in the teacher needs an owner decision.
+Regret routing uses independent decision-key streams for the raw action and budget, never a per-step floor. Pin parallel-game count. Include the sampled raw action by displacing the lowest candidate while keeping K=4/8, and audit displacement. P3 weights only full honest labels by full-teacher regret. Hindsight is off in the pilot and never enters teacher inputs/targets or validation. Exploiter populations are out of scope.
+
+Bound rescue work by pivots, operations and bit size. Exhaustion plays raw, is counted, and emits no label. A wall-clock watchdog aborts an incomplete run; PC load must not choose trajectories. Public reconstruction refusals are a separate counter. No silent fallback, weakened certificate, timeout flushing or asynchronous batching.
+
+Success must beat a matched-budget continuation from 49333, not just frozen 49333. Inconclusive groups block promotion. Local resources first: **AWS only after the engine covers the meta** (owner, 2026-10-08), under a new approved budget.
+
+## Ownership
+
+The owner relays the contract to Learner v2. Each phase needs its own reviewed plan and resource/promotion decision; passing one authorizes no next phase. M12.x (#240) is separately measured/gated, not silently added to P0/P1. No C rules or battle-hot-path allocations proposed. Generated rows, worlds/tables, weights and runs stay private; reports carry aggregates only.
