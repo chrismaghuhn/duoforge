@@ -128,6 +128,34 @@ class ExpertDataTest(unittest.TestCase):
             with self.assertRaises(ValueError):
                 ed.validate_manifest(bad)
 
+    def test_schema_refusal_and_private_roundtrip_waiting_ticks_and_workers(self):
+        from duoforge_search import expert_data as ed
+        m = dataclasses.replace(manifest(ed),workers=14)
+        ed.validate_manifest(m)
+        row = target_row(ed,m)
+        self.assertEqual(row.logical_tick,0)
+        waiting = dataclasses.replace(row,status=ed.RowStatus.UNREQUESTED,requested=False,
+            acting=False,admitted=False,action=None,raw_action=None,behavior_logp=None,sparse_policy=None)
+        later = dataclasses.replace(waiting,logical_tick=1)
+        with tempfile.TemporaryDirectory(prefix="duoforge_synthetic_ticks_") as temp:
+            path=Path(temp)/"ticks.json"
+            ed.write_shard(path,[waiting,later],m)
+            restored=ed.read_shard(path,m)
+            self.assertEqual([r.logical_tick for r in restored],[0,1])
+            self.assertEqual(restored[0].key,restored[1].key)
+            with self.assertRaisesRegex(ValueError,"duplicate"):
+                ed.write_shard(Path(temp)/"same_tick.json",[waiting,dataclasses.replace(waiting,key=ed.DecisionKey(0,0,2))],m)
+            with self.assertRaisesRegex(ValueError,"regress"):
+                ed.write_shard(Path(temp)/"regress.json",[later,waiting],m)
+        for tick in (-1,True,2**64):
+            with self.assertRaises(ValueError):
+                ed.validate_row(dataclasses.replace(row,logical_tick=tick),m)
+        for workers in (4,8,14):
+            ed.validate_manifest(dataclasses.replace(m,workers=workers))
+        for workers in (0,7,14.):
+            with self.assertRaises(ValueError):
+                ed.validate_manifest(dataclasses.replace(m,workers=workers))
+
     def test_selection_word_domains_and_frequency(self):
         from duoforge_search import expert_data as ed
         key = ed.DecisionKey(42, 1, 9)
