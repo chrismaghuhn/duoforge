@@ -21,7 +21,7 @@ C1/C2 can progress independently; C4/C5 can follow C1 while C3 is reviewed. This
 
 ## Fixed contract (before any pilot)
 
-Frozen teacher/collector/start params: 49333, SHA-256 `ef1abe65f63711eb47e335d6169aad34584e50d4f2df321e4e9cbbbdcaf961cb`. Honest CPU path, own/foe 8 candidates, W=S=16, lambda=0.5, value capacity 1024, four assigned native workers, 512 lockstep games/round. Preview raw/book off. No routing, GPU teacher batching, hindsight, double oracle, new head or PPO+distill. Teacher models the foe with **its own frozen net**, including league games.
+Frozen teacher/collector/start params: 49333, SHA-256 `ef1abe65f63711eb47e335d6169aad34584e50d4f2df321e4e9cbbbdcaf961cb`. Honest CPU path, own/foe 8 candidates, W=S=16, lambda=0.5, value capacity 1024, native worker/core count selected from 4/8/14 by the short pre-freeze CPU probe below, then immutable in both pilot and control; 512 lockstep games/round. Preview raw/book off. No routing, GPU teacher batching, hindsight, double oracle, new head or PPO+distill. Teacher models the foe with **its own frozen net**, including league games.
 
 Proposed public signatures, dataclass fields and enums (interfaces, not implementation):
 
@@ -40,7 +40,7 @@ class RowStatus(Enum):
 # frozen DataManifest(schema_version=1, source/checkpoint/model/encoder/id/pool/
 # belief hashes, seeds/key_version, devices/runtime/compiler, capacity/workers/
 # parallel_games, game_count/rounds, split, budget and evaluation configs)
-# frozen ExpertRow(key, obs, slots, legal_mask, sparse_policy|None, status,
+# frozen ExpertRow(key, logical_tick, boundary, obs, slots, legal_mask, sparse_policy|None, status,
 # raw_action|None, action|None, behavior_logp|None, acting/learner/value masks,
 # actual rewards/done/collector values/bootstrap, admission/work/audit provenance)
 def validate_manifest(manifest: DataManifest) -> None: ...
@@ -81,6 +81,10 @@ def label_decision(search: Honest, roots: Batch, *, env: int, seat: int,
                    config: TeacherConfig) -> TeacherDecision: ...
 
 # expert_eval.py; EvalManifest and ComputeLedger are immutable schema objects
+# ComputeLedger(cpu_core_seconds: float, gpu_seconds: float,
+#               phases: Mapping[str, PhaseCompute]); each PhaseCompute uses the same keys
+# CPU = deltas of getrusage(SELF + CHILDREN).user + .sys;
+# GPU = synchronous device-section wall time including JIT, with completion barrier
 # GateStatus: PASS, FAIL, INCONCLUSIVE, INCOMPLETE
 # EvalResult(status, scores, paired CIs, groups, provenance, budget causes)
 def make_eval_rows(pool: TeamPool, manifest: EvalManifest) -> dict[str, ndarray]: ...
@@ -140,10 +144,32 @@ Evaluation predeclared **12288 raw-play games**: two H2Hs 2048 each + panel 3 op
 
 Reserve **60 GPU minutes evaluation/JIT, 30 training minutes per arm**, total120 minutes, eval charged 30/arm. Planning floor 5 completed raw games/s gives 12288/5=2457.6s=40.96min; add fixed20% timing margin8.19min +8min compilation allowance =**57.15min**, within 60. This is an explicit conservative **assumption**, not an existing throughput measurement. A fixed64-game evaluation smoke, included in the ledger/reserve, must verify>=5games/s and forecast incl.JIT<=60 min; otherwise STOP/re-plan **before training**. No shrinking groups/budgets to force fit. Matching actual training use still obeys 5% tolerance; 30 min ceilings do not imply equal actual use. Every measurement/failed setup/validation is charged; no run starts merely because this plan is merged.
 
-Generation cap **2 CPU wall hours on four assigned cores** (core-hours recorded too). At P0's 50 ms, 16k labels alone ~14min; ~15k games at 1/8 is only an initial order estimate. Smoke freezes eligible/valid targets/game, R, shard forecast and audit cost. Projected/actual 2h breach→STOP/re-plan; no extra rounds/workers. Primary work fallbacks>1% of selected eligible roots→STOP; public reconstruction refusals excluded from that numerator and reported separately. Wall watchdog aborts incomplete run, never timed raw fallback. Nonfinite/drift/leak/resume/strength failure or inconclusive required groups stop. No best-of-seeds trials, automatic scale-up or silent fixture replacement.
+Generation cap **8 CPU core-hours = 28800 cpu_core_seconds**, equivalent to the former 2 h ×4 cores with full use; this is no budget increase. Use the chosen core count in both arms. CPU wall time and allocated-core estimates are diagnostics, not the matching ledger or collection stop counter. At P0's 50 ms, 16k labels alone ~14min; ~15k games at 1/8 is only an initial order estimate. Smoke freezes eligible/valid targets/game, R, shard forecast and audit cost. Projected/actual 28800-CPU-second breach→STOP/re-plan; no extra rounds or worker changes after freeze. Primary work fallbacks>1% of selected eligible roots→STOP; public reconstruction refusals excluded from that numerator and reported separately. Wall watchdog aborts incomplete run, never timed raw fallback. Nonfinite/drift/leak/resume/strength failure or inconclusive required groups stop. No best-of-seeds trials, automatic scale-up or silent fixture replacement.
 
 ## Final owner gates
 
 Owner approves this revised plan, the separate Learner v2 plan/API/control recipe, LL_ evaluation manifest and resource windows. CPU daytime generation and exclusive local GPU night windows must not contend with Learner v2 A/B/training. Documentation/small targeted tests can coexist. AWS only after engine meta coverage and a new owner budget. After code/CI/private-fixture/contract gates, schedule the bounded pilot/control/evaluation; R1 publishes aggregates/fingerprints only. P1 success requires a new promotion decision, not P2 execution.
 
 All real rows/worlds/tables/checkpoints/runs stay outside repository and CI artifacts under `refuse_repository`. This PR changes only this plan. No approvals, test outcomes, learner integration or measured evaluation throughput are presumed complete.
+
+
+## Owner amendment and Learner v2 handoff (2026-10-08)
+
+Before the production freeze, compare **4/8/14 native workers** with the existing CPU honest teacher, frozen 49333, capacity 1024,512 root games, identical seeds/inputs and fixed OMP/OpenBLAS thread environment. Set affinity before the interpreter starts, so numerical helper threads inherit it. One warm-up and two timed repetitions per count; choose highest median **searched decisions / whole-probe elapsed time**, fixed tie-break lowest count. Also report service-only rate, process CPU seconds and identical decision/table/policy digests; a short prefix is not a full-game scaling guarantee. No generation labels or training are produced by the probe. Charge profiling/smoke/JIT/calibration inside the same 8-core-hour collection allocation; no gain in budget from higher concurrency. A later code/config change that invalidates this profile requires re-plan before a new freeze.
+
+Confirm contract with Learner v2 [plan #244](https://github.com/chrismaghuhn/duoforge/pull/244) / [API #245](https://github.com/chrismaghuhn/duoforge/pull/245): **every learner row, including waiting rows, has required `logical_tick`**, the step index within its logical game. It is distinct from request_epoch and global batch tick. GAE reconstructs complete per-game chronological rows; row identity is (game_id, seat, logical_tick), so waiting rows with unchanged request epochs are not deduplicated. Missing/duplicate/regressing ticks refuse the relevant dataset/trajectory contract. Raw/teacher RNG still uses immutable decision keys, not batching positions. No training-loop implementation moves to M12.
+
+Ledger wire keys are exactly **`cpu_core_seconds`, `gpu_seconds`, `phases`**. CPU is the sum of self+children user+system CPU-time deltas (native threads count in self); collect/reap child sections at phase boundaries or account their own reported deltas exactly once. GPU seconds sum wall duration of nonoverlapping synchronous device sections, including JIT, ending at a device completion barrier. CPU and GPU charges may overlap; never subtract one from the other. Phase charges sum to each axis' total; no allocated-cores×wall substitution for CPU. Both control and pilot use identical measurement code/core count, with the existing 5% tolerance independently on these two actual axes. Report wall-clock separately; watchdogs only abort incomplete work and never select a policy fallback.
+
+
+### Worker probe result and proposed freeze
+
+Existing main source `f985bbea` (before P1 code), checkpoint hash above, library 0.43.0, CPU JAX 0.11.2; 512 paired root games, max 6 batch steps, preview raw, capacity 1024, same seeds/public-world teacher. The probe searches up to 96 requests per repetition and then uses raw; 94 were actually searched. One warm-up plus two timed repetitions per worker count, affinity set **before process/interpreter/thread initialization**, OMP/OpenBLAS 4. Rates below are medians over the two timed repetitions. The whole-probe denominator includes raw controller/engine steps, not just search service. No strength result, generation labels or GPU work.
+
+| Native workers / logical CPU affinity | Searches/s, whole probe | Searches/s, service only | Process CPU seconds, all three repetitions + setup |
+|---|---:|---:|---:|
+| 4 | 12.94 | 20.15 | 65.78 |
+| 8 | 15.20 | 23.00 | 79.25 |
+| 14 | 15.90 | 23.60 | 102.58 |
+
+**Freeze 14 workers and 14 logical CPU affinity slots in both pilot and control**, under the same 28800 measured CPU-second cap. Highest median whole-probe rate chooses 14; 14-vs-8 is only about 4.6%, not a broad scaling claim. Valid comparison CPU cost 247.62s (0.069 core-hours); all nine decision/table/X-policy digests agree. Superseded setup probes remain private and are excluded from the throughput comparison; record profiling/setup charges separately before the production resource freeze. No private paths/tables/games are published. This short first-turn-prefix probe does not replace the generation forecast smoke or its budget/refusal gates.
