@@ -102,8 +102,13 @@ Each item has its test in the owning task: 1 in Task 3, 2 and 3 in Task 2, 4 in 
 - Produces:
   - `Model.full_joint_log_probs(params, obs, slots, legal_mask) -> jax.Array (B, 1024) float32`. `legal_mask` is `(B, 32, 32)` or `(B, 1024)` bool.
   - It returns `apply`'s pair log-softmax at legal ids and `-inf` at illegal ids. That is a masked log-softmax over all legal joint actions, never renormalized over candidates.
-  - A concrete row with no legal action raises `ValueError` naming the row. Under tracing (inside `jit`/`grad` with a traced mask) the check cannot run. The callers in Tasks 2–3 validate the rows at load instead.
-  - Also `Model.full_joint_log_probs_traced` (the same without the host check), for use inside jitted losses.
+  - It checks on the host first, as `act` does:
+    - an id past a capacity raises (`Model.check`; model v2 would otherwise clip it);
+    - a row with no legal action raises `ValueError` naming the row;
+    - a traced `obs` or mask (inside `jit`) raises, pointing at the traced variant.
+  - Also `Model.full_joint_log_probs_traced` (no host checks), for jitted losses over rows that Tasks 2–3 validate at load.
+  - A loss over these values must skip zero-mass entries, because `0 * -inf` is NaN.
+  - Delivered in #245.
 
 - [ ] **Step 1: Write the failing test** `FullJointTest.test_full_joint_is_the_masked_pair_softmax_with_gradients` (v2 preset S config, PRNGKey(7), 6 synthetic rows from `features`/`selfplay` shapes). Assertions:
   - shape `(6, 1024)`, float32;
@@ -131,7 +136,7 @@ Each item has its test in the owning task: 1 in Task 3, 2 and 3 in Task 2, 4 in 
 - Produces:
   - A frozen dataclass `DistillData` (NumPy arrays, one row per learner row):
     - `obs, slots, mask (N,32,32) bool, is_team bool`;
-    - `target_ids (N,9) int64` with `-1` padding, `target_probs (N,9) float32`;
+    - `target_ids (N,8) int64` with `-1` padding, `target_probs (N,8) float32`. K stays 8: the student's action displaces the lowest candidate (spec section 1);
     - `has_target bool`, `policy_row bool` (acting, ≥2 legal, no target), `value_row bool`, `value_target float32`;
     - `game_id int64`, `held_out bool`.
   - `load(shard_dir: Path, manifest: DataManifest) -> DistillData`.
@@ -141,15 +146,25 @@ Each item has its test in the owning task: 1 in Task 3, 2 and 3 in Task 2, 4 in 
   - `has_target` iff the status is `TARGET`.
   - `policy_row`: an acting non-target row with ≥2 legal actions. That covers UNSELECTED, CAP_RAW, PUBLIC_REFUSAL and WORK_EXHAUSTED. FORCED and UNREQUESTED rows are value-only.
   - Waiting rows are value-only.
-  - The value targets come from `returns.gae` per (game, learner seat), ordered by `request_epoch`, with the stored bootstrap at a truncation.
-  - Every row is validated: a nonfinite value, a zero-legal policy row, or a `target_ids` id outside the legal mask raises.
+  - **Value targets:** `returns.gae` per game, with its own shapes:
+    - `values`, `rewards` and `acting` are `(T, 1, 2)`; `done` is `(T, 1)`; `bootstrap` is `(1, 2)`;
+    - T is the game's lockstep steps, ordered by the per-game step index;
+    - the learner's seat holds its rows; the other seat is acting = False and value 0, and its targets are discarded.
+    - At a truncation the stored bootstrap applies.
+  - **Contract item for M12 C1:** every learner row, acting or waiting, carries a per-game step index (the logical tick). `request_epoch` alone does not order waiting rows.
+  - **Validation:** each of these raises:
+    - a nonfinite value;
+    - a zero-legal policy row;
+    - a `target_ids` id outside the legal mask.
+    Team-selection rows are checked against their 360 team actions, not the pair mask.
 
 - [ ] **Step 1: Write the failing tests.** They build synthetic shards through M12's `write_shard` into a temp dir outside the repo.
   - `test_strata_split_and_value_targets` covers 4 games (1 held-out):
     - the strata index sets are disjoint;
     - no held-out game id appears in `train_*` (Review Focus 3);
     - value targets equal a hand-computed `returns.gae` for a 3-step game;
-    - a truncated game uses its bootstrap: the target differs from the terminal-at-cut version by `gamma * lam`-weighted bootstrap terms (Review Focus 2);
+    - a truncated game uses its bootstrap: its targets equal a hand computation with bootstrap 0.37, and differ from the terminal-at-cut version (Review Focus 2);
+    - a waiting row's target is its seat's next decision's return;
     - a game whose learner never acted still yields value rows;
     - FORCED rows are `value_row` only.
   - `test_load_refuses_bad_rows`: an illegal target id, a zero-legal policy row, an opponent row and a nonfinite reward each raise `ValueError`.
@@ -203,8 +218,9 @@ Each item has its test in the owning task: 1 in Task 3, 2 and 3 in Task 2, 4 in 
   - `stop_reason` is one of `"max_epochs"`, `"max_steps"`, `"no_gain"`, `"ref_kl"`, `"nonfinite"`.
 - **Epoch 0** is the baseline evaluation of `init_params` before any step.
 - **Steps per epoch** are `ceil(n_train_target / 512)`. Training stops at 128 steps total even inside an epoch; that point is evaluated as the epoch's end.
-- **Held-out evaluation** uses the same loss terms on `held_target` / `held_non`, in fixed chunks of 4096 rows (the last one padded).
+- **Held-out evaluation** uses the same loss terms on `held_target` / `held_non`, in fixed chunks of 4096 rows (the last one padded). Each metric is the sum over all chunks divided by the summed weights, never a mean of chunk means.
 - **Best epoch:** the lowest held-out teacher KL among epochs with ref KL ≤ 0.02 and all-finite metrics.
+- **If the best epoch is 0** (no step improved on 49333), the fit reports `best_epoch = 0`. `params-best.npz` is then 49333 itself, marked `"no_gain"` in its config. M12's evaluation still runs as declared, and a student identical to 49333 cannot pass the gate against frozen 49333.
 - **Outputs:**
   - `params-epoch-{e}.npz` and `params-best.npz`, written by `checkpoint.save` with 49333's config (so `ladder` and `evaluate` load them unchanged);
   - `log.jsonl`, one line per step: losses, counts, the global norm of the policy-term and value-term gradients (spec: "report policy:value counts/gradient magnitudes"), and seconds; one line per epoch with the held-out metrics.
@@ -215,7 +231,8 @@ Each item has its test in the owning task: 1 in Task 3, 2 and 3 in Task 2, 4 in 
     - the non-target stream continues across epochs (the cursor does not reset);
     - no held-out id appears in either stream (Review Focus 3).
   - `test_fit_stops_and_keeps_best`, each case on a tiny synthetic set (CPU):
-    - (a) `REF_KL_MAX` patched to 0.0 stops with `"ref_kl"` after epoch 1, and best = 0;
+    - held-out metrics over 3 chunks with a padded tail equal the one-pass weighted means;
+    - (a) `REF_KL_MAX` patched to 0.0 stops with `"ref_kl"` after epoch 1, and best = 0, with `params-best` equal to the init and marked `no_gain`;
     - (b) `MIN_GAIN` patched to 1e9 stops with `"no_gain"` after epoch 2, and best = 0;
     - (c) a NaN injected into one value target stops with `"nonfinite"`, with no `params-best` from that epoch;
     - (d) with 32 targets (1 step per epoch), the run goes to `"max_epochs"` at 4 epochs;
@@ -263,59 +280,95 @@ Each item has its test in the owning task: 1 in Task 3, 2 and 3 in Task 2, 4 in 
   - `.device()`, a context manager timing one device-synchronous section that must end in `jax.block_until_ready`;
   - `.save()`.
 - **CPU core-seconds** = the user+sys delta of `resource.getrusage(RUSAGE_SELF)` + `RUSAGE_CHILDREN`. That includes the native batch worker threads, which run in-process.
-- **GPU-seconds** = the sum of the wall time of `.device()` sections.
-- Restarts add up across processes (the ledger file is append-only per process start). JIT counts in its phase. The definitions are the same in both arms and in M12's generation ledger.
+- **GPU-seconds** = the wall time of `.device()` sections: from submitting device work until `block_until_ready` returns, JIT included.
+  - This is wall time reserved on the device, not a hardware busy-time counter, which CUDA does not give us per process.
+  - The host's own CPU inside a section also counts as CPU. The same definition holds in both arms.
+  - Sections never nest. Only code that issues device work runs inside them.
+- **Phases:** every process start appends its totals, so restarts add up. Smokes, calibration, JIT and restarts are charged to their arm. The shared evaluation is charged half to each arm by M12's C5.
+- **Shared definition with M12:** a fixture test runs one `Ledger` file of each arm through M12's `validate_compute`. It is added in this task once C5 is merged. If M12's generation measures differently, the plan is not ready.
 
-- [ ] **Step 1: Write the failing test** `test_ledger_counts_cpu_and_device_and_survives_restart`:
-  - a busy loop of about 0.2 s raises `cpu_core_seconds` by ≥0.15;
-  - a `device()` section around a jitted matmul with `block_until_ready` raises `gpu_seconds` > 0 (CPU JAX in CI: the section is still timed);
-  - two `Ledger` instances on one path sum;
-  - writing inside the repository raises.
-- [ ] **Step 2: Run it.** `python -m unittest test_ledger -v`. Expected: **ERROR**, no module.
+- [ ] **Step 1: Write the failing tests.**
+  - `test_ledger_counts_cpu_and_device_and_survives_restart`:
+    - a busy loop of about 0.2 s raises `cpu_core_seconds` by ≥0.15;
+    - a `device()` section around a jitted matmul with `block_until_ready` raises `gpu_seconds` > 0 (CPU JAX in CI: the section is still timed);
+    - nesting `device()` raises;
+    - two `Ledger` instances on one path sum;
+    - writing inside the repository raises.
+  - `test_ledgers_pass_m12_validate_compute`: two synthetic ledgers within 5 % pass; at 5.1 % they fail on the named axis.
+- [ ] **Step 2: Run them.** `python -m unittest test_ledger -v`. Expected: **ERROR**, no module.
 - [ ] **Step 3: Implement it.** Wrap `fit`'s steps and held-out evaluations in `.device()`.
-- [ ] **Step 4: Run it.** Expected: **OK**.
+- [ ] **Step 4: Run them.** Expected: **OK**.
 - [ ] **Step 5: Commit.**
 
 ### Task 7: the continuation control (code; the run is a separate owner-scheduled step)
 
 **Files:** modify `python/duoforge_learn/train.py`; tests in `python/tests/test_ledger.py`.
 
+**Why two continuous knobs:**
+- Both axes must land within 5 %. Stopping at the first axis that reaches its budget only works if the run's ratio of GPU-seconds to CPU core-seconds already equals the pilot's.
+- The pilot's ratio is extreme: about 8 core-hours of CPU generation against a few GPU minutes of training (128 steps at most, plus held-out evaluation and JIT).
+- Discrete knobs (epochs, all-or-nothing acting device) cannot hit an arbitrary ratio, and epochs would change the recipe.
+- So the device that runs each step is the knob, which leaves the RL recipe as it is:
+  - acting on CPU or GPU, chosen per collection step;
+  - each PPO update on CPU or GPU, chosen per update.
+  - Only float rounding differs between the two devices.
+- Moving updates to CPU lowers the ratio continuously toward 0. Moving acting to GPU raises it. Every ratio between "all CPU" and "all GPU" is reachable.
+
 **Interfaces:**
 - Consumes: Task 6 `Ledger`.
-- Produces three new `train` options, all resumable:
-  - `--ledger PATH` (the collection's `act` and `ppo.update` run inside `.device()`; the whole run is the phase `continuation`);
-  - `--stop-cpu-core-seconds X` and `--stop-gpu-seconds Y`: stop cleanly (save, exit 0) at the first update where either total reaches its value;
-  - `--act-device cpu|default`: `cpu` places the acting params and `act` on JAX's CPU device. This is the knob that moves GPU-seconds to CPU core-seconds; the updates stay on the default device.
+- Produces `train` options (all resumable):
+  - `--ledger PATH`: `act` and `ppo.update` run inside `.device()` when on the GPU; the run is the phase `continuation`.
+  - `--stop-cpu-core-seconds X` and `--stop-gpu-seconds Y`: a clean stop (save, exit 0) at the first update where either total reaches its value.
+    - They replace the 60-minute default: with them, `--minutes`/`--updates` are not required. `--minutes` becomes only a safety cap, set to twice the forecast.
+    - `--eval-every` is set beyond the run, so no in-run suites are played (anything played would be charged).
+  - `--update-gpu-share q` (0..1): update u runs on the GPU iff `floor((u+1)·q) > floor(u·q)`, else on the CPU (params and optimizer state moved with `jax.device_put`). Deterministic, so a resume continues the same schedule.
+  - `--act-gpu-share p` (0..1): the same rule per collection step for `act`.
+  - Defaults q = 1, p = 1 are today's behaviour.
 - **Recipe (owner decision, proposed):** the local A/B winner of 2026-10-05, from params-49333 via `--init` (fresh Adam):
-  - `--kl-ref magnet --kl-coef 0.05 --kl-refresh 500 --learning-rate-schedule 0:1,30M:0.1`;
-  - entropy 0.01;
+  - `--learning-rate 3e-4` (the base);
+  - `--kl-ref magnet --kl-coef 0.05 --kl-refresh 500`;
+  - `--learning-rate-schedule 0:1,D:0.1`, where D = 0.9 × the forecast decisions of the matched budget. D is fixed before the run, so the decay completes within it; the A/B used 30M over its 33M;
+  - entropy 0.01, `--epochs 4`, `--minibatch 2048`, `--envs 256`;
   - the run's teams and weights (core79 + LL_ 50/50, `--teams-root` of the frozen c4e96e6 registry);
-  - `--envs 256 --minibatch 2048`;
-  - `--workers` equal to the pilot's assigned cores (4), pinned to them with `taskset`.
+  - `--workers` equal to the pilot's assigned core count, pinned with `taskset`.
 
-- [ ] **Step 1: Write the failing test** `test_train_stops_at_the_ledger_budget`:
-  - a 2-env CPU run with `--stop-cpu-core-seconds` set just above one update's measured cost stops after a small number of updates with exit 0;
-  - its ledger total is ≥ the budget and below budget + one update;
-  - a resume keeps the ledger sum;
-  - `--act-device cpu` gives `gpu_seconds` only from updates.
-- [ ] **Step 2: Run it.** Expected: **FAIL**, unknown option.
+- [ ] **Step 1: Write the failing tests.**
+  - `test_train_stops_at_the_ledger_budget`:
+    - a 2-env CPU run with `--stop-cpu-core-seconds` just above one update's measured cost stops after a few updates with exit 0, without `--minutes`;
+    - its ledger total is ≥ the budget and below budget + one update;
+    - a resume keeps the ledger sum.
+  - `test_device_shares_are_deterministic_and_resumable`:
+    - with q = 0.25 exactly 1 of every 4 updates is marked GPU in the log;
+    - a resume after update 3 continues the same pattern;
+    - q = 0 and p = 0 give `gpu_seconds == 0`.
+- [ ] **Step 2: Run them.** Expected: **FAIL**, unknown options.
 - [ ] **Step 3: Implement it.**
-- [ ] **Step 4: Run it.** Expected: **OK**.
+- [ ] **Step 4: Run them.** Expected: **OK**.
 - [ ] **Step 5: Commit.** Open the integration PR (Tasks 2–7) with review.
 
 **The control run (after the pilot's ledger is measured):**
-1. **Calibration.** A charged smoke of 5 minutes at each of `--act-device default` and `cpu`, with `--epochs` 4/2/1, measures the ratio `gpu_seconds / cpu_core_seconds`. Pick the setting whose ratio is closest to the pilot's.
-2. **Run.** Run with `--stop-cpu-core-seconds = pilot_cpu - calibration_cpu` (calibration is charged) and `--stop-gpu-seconds = pilot_gpu - calibration_gpu`.
-3. **Check.** Run M12's `validate_compute` on the two ledgers. If either total misses 5 %, the control is **incomplete** and goes back to the owner; it is never extended.
+1. **Forecast first, before any GPU spend.** Use per-unit costs from the Task 7 test machine:
+   - CPU core-seconds per collection step on CPU and on GPU;
+   - GPU-seconds per update on GPU;
+   - CPU core-seconds per update on CPU.
+
+   Solve for (q, p) so that the totals hit both pilot axes at the same update. If no (q, p) in [0, 1]² does, it is infeasible: report it to the owner and run nothing.
+2. **Calibration** (charged, capped at 10 % of each pilot axis): one short run at the forecast (q, p) measures the real unit costs. Re-solve once.
+3. **Run.** `--stop-cpu-core-seconds = pilot_cpu − calibration_cpu`, `--stop-gpu-seconds = pilot_gpu − calibration_gpu`.
+4. **Check.** Run M12's `validate_compute` on both ledgers. If either axis misses 5 %, the control is **incomplete**: back to the owner, never extended or cut.
 
 ---
 
 ## What the owner decides with this plan
 
-1. **The control's recipe:** magnet + 30M LR decay (the 10-05 A/B winner, proposed) or plain PPO at LR 3e-4. A stronger control makes the pilot's bar honest.
-2. **The knobs for matching compute:** acting device and PPO epochs. The pilot's generation is almost all CPU (2 CPU wall hours on 4 cores) with only minutes of GPU training. Whether a PPO run can sit within 5 % on both axes is the main risk; the calibration answers it before the run.
-3. **The ledger key names**, agreed with M12 (C5).
-4. **GPU windows:** the pilot's training plus evaluation, and the control, each in an exclusive local window. Not during night runs.
+1. **The control's recipe:** the A/B winner (magnet + LR decay completing within the budget, proposed) or plain PPO at LR 3e-4. A stronger control makes the pilot's bar honest.
+2. **The matching knobs:** the per-update and per-step device shares (above). Matching both axes is the main risk, because the pilot is almost all CPU. The forecast says before any run whether it is feasible.
+3. **The ledger definitions and key names**, agreed with M12 (C5), and the per-game step index in M12 C1's rows (Task 2).
+4. **Windows:**
+   - The control runs on CPU for hours but needs a GPU free of other jobs, so its GPU-seconds are not inflated by contention.
+   - The pilot's training plus evaluation needs an exclusive GPU window.
+   - Neither runs during a night run.
+5. **More cores** (owner, 2026-10-08): if M12 generates with more than 4 cores, the control uses the same count. Matching stays in core-seconds, so only wall time shrinks.
 
 ## Self-review
 
