@@ -136,7 +136,7 @@ def team_matrix(context, pool, rows, player, workers, seed=LADDER_SEED):
     return np.divide(total, count, out=np.full((n, n), np.nan), where=count > 0)
 
 
-def _pool_of(run_dir):
+def _pool_of(run_dir, teams_root=None):
     """(team pool, data kind) of a run, from its first checkpoint: format 2
     names its teams and data kind; format 1 (decision 0014) trained on Teams
     A and B under CLOSURE."""
@@ -161,7 +161,7 @@ def _pool_of(run_dir):
                                           saved["weights"]), kind
     train = config.get("train", {})
     with duoforge.Context(data_kind=kind) as ctx:
-        pool = teams.load(ctx, saved["ids"], root=train.get("teams_root", "data/teams"), weights=saved["weights"])
+        pool = teams.load(ctx, saved["ids"], root=teams_root or train.get("teams_root", "data/teams"), weights=saved["weights"])
     if list(pool.sha256) != list(saved["sha256"]):
         raise SystemExit(f"{run_dir}: a team file changed since the run (sha256 {saved['sha256']} -> {pool.sha256})")
     return pool, kind

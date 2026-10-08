@@ -114,6 +114,8 @@ def main(argv=None):
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--run-dir", required=True)
     parser.add_argument("--checkpoint", required=True)
+    parser.add_argument("--teams-root", help="explicit saved team registry; all checkpoint hashes must still match")
+    parser.add_argument("--belief-root", help="explicit stated-spread registry for honest worlds")
     parser.add_argument("--panel-run-dir")
     parser.add_argument("--panel", default=",".join(book_ab.PANEL))
     parser.add_argument("--out", required=True)
@@ -152,12 +154,12 @@ def main(argv=None):
             models[key] = policy.make(model_config)
         players.append(evaluate.Player(models[key], params, checkpoint.encoder_of(config), name, checkpoint.ext_supported_of(config)))
         fingerprints[name] = arena._sha256(path)
-    pool, kind = ladder._pool_of(args.run_dir)
+    pool, kind = ladder._pool_of(args.run_dir, args.teams_root)
     with duoforge.Context(data_kind=kind) as context:
         for config in configs:
             if config.get("format") == 2:
                 checkpoint.check_ids(config, context)
-        table, source_ids, belief_info = honest.spread_table(context)
+        table, source_ids, belief_info = honest.spread_table(context, args.belief_root)
         results = run(context, pool, players[0], dict(zip(("R", "BC", "3600", "11000"), players)), table, source_ids, args)
     conditions = {"search": "honest", "preview_only": True, "k": 8, "m": 8, "worlds": args.worlds,
                   "lam": .5, "capacity": args.capacity, "workers": args.workers,
