@@ -1,4 +1,4 @@
-# Stage 3 P0: honest teacher gate and inference profile â€” 2026-10-08
+# Stage 3 P0: honest teacher gate and inference profile — 2026-10-08
 
 **P0 strength gate passes:** X improves by +0.2695 [0.2129, 0.3262] against raw params-49333. This exceeds +0.08 and has a positive lower 95% bound. P1 still needs its own reviewed plan and owner go; no training or feature implementation occurred.
 
@@ -12,7 +12,7 @@ Each arm plays 512 games against raw 49333 in 256 adjacent swapped-seat blocks, 
 
 | Arm | Score [95% CI] | Paired gain over raw [95% CI] |
 |---|---|---|
-| R | 0.5254 [0.4766, 0.5742] | â€” |
+| R | 0.5254 [0.4766, 0.5742] | — |
 | X | 0.7949 [0.7559, 0.8320] | 0.2695 [0.2129, 0.3262] |
 | E | 0.8867 [0.8555, 0.9160] | 0.3613 [0.3066, 0.4141] |
 
