@@ -25,7 +25,7 @@ Rows: one learner seat per game; a row on every lockstep step (`logical_tick` ga
 - Each primary decision has its own `matrix.WorkLedger(config.budget)`. Exhaustion is never retried or rescued.
 - The K+1 audit (`audit word < floor(2**64/100)`) re-solves the same worlds with the next candidate added and the raw action kept. It runs under its own ledger with identical caps and reports action/value/certificate changes. It never replaces the label. An exhausted audit is reported as `exhausted:<cap>`.
 - Audit work belongs to generation but not to the primary fallback numerator.
-- Build `TeacherConfig.from_manifest(manifest, ...)`. It must equal the manifest's key seed, K, M, W, lambda and capacity (P1 pins 8, 8, 16, 0.5 and 1024). It must also match the search: those sizes, rule X and the search's own belief/leaf seed (`search_seed`). Only the budget, audit rate and search seed may be overridden.
+- Build `TeacherConfig.from_manifest(manifest, ...)`. It must equal the manifest's key seed, K, M, W, lambda and capacity (P1 pins 8, 8, 16, 0.5 and 1024). It must also match the search: those sizes, rule X and the search's own belief/leaf seed (`search_seed`). Only the budget, audit rate and search seed may be overridden. `manifest.belief_hash` is the sha256 of the search's spread table (`search.table_info`); production uses the pinned `honest.SPREAD_SOURCES`.
 - Each label re-queries the encoded rows and public records of all environments: measured at 512 environments, about 3 ms per label (about 6% of P0's ~50 ms). This is a P2 performance item, not a correctness one.
 
 ## Resume and determinism

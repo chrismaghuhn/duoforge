@@ -238,6 +238,8 @@ def label_decision(search, roots, *, env, seat, key, raw_action, raw_logp, last_
     team preview."""
     config.check(search)
     config.check_manifest(manifest)
+    if search.table_info["sha256"] != manifest.belief_hash:
+        raise ValueError("the search's spread table (belief) differs from the manifest's belief_hash")
     e, p = int(env), int(seat)
     if not 0 <= e < roots.envs or p not in (0, 1) or not roots.requests[e, p]["requested"]:
         raise ValueError("label_decision needs a requested learner seat")
