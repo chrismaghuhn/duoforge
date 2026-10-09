@@ -1,0 +1,48 @@
+Pincurchin (M) @ Terrain Extender
+Ability: Electric Surge
+Level: 50
+EVs: 32 HP / 32 SpA / 2 SpD
+Modest Nature
+- Thunderbolt
+- Protect
+
+Rillaboom (M) @ Heat Rock
+Ability: Grassy Surge
+Level: 50
+EVs: 32 HP / 32 Atk / 2 SpD
+Adamant Nature
+- Knock Off
+- Protect
+
+Raichu (F) @ Smooth Rock
+Ability: Static
+Level: 50
+EVs: 2 HP / 32 SpA / 32 Spe
+Timid Nature
+- Electric Terrain
+- Knock Off
+- Protect
+
+Indeedee-F (F) @ Icy Rock
+Ability: Psychic Surge
+Level: 50
+EVs: 32 HP / 32 Def / 2 SpD
+Calm Nature
+- Psychic
+- Protect
+
+Sylveon (F) @ Damp Rock
+Ability: Pixilate
+Level: 50
+EVs: 32 HP / 32 SpA / 2 SpD
+Calm Nature
+- Misty Terrain
+- Protect
+
+Kingambit (M) @ Black Glasses
+Ability: Defiant
+Level: 50
+EVs: 32 HP / 32 Atk / 2 SpD
+Adamant Nature
+- Kowtow Cleave
+- Protect
