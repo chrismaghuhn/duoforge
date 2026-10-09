@@ -183,7 +183,10 @@
  * before each later hit, 20 x the hit as the power), each hit with its
  * own critical hit roll, damage roll and DamagingHit handlers; the hit count is the number of -damage lines, so the protocol's
  * -hitcount line is derived and no event is new. Mirror Armor (the drops that another Pokemon causes go back to it, one stat
- * at a time), recorded as g33_* under the POOL kind. */
+ * at a time), recorded as g33_* under the POOL kind.
+ * Step G57 (decision 0015, entry 5bg) marks Magic Bounce (the reflectable moves of the twenty marked rows bounce back at their user:
+ * a single target after Protect, and a foeSide hazard through its holder on the foes' side; two holders refuse) and the Mega Stones
+ * Absolite and Sablenite (Absol-Mega, with Justified, and Sableye-Mega, with Prankster). Recorded as g57_* under the POOL kind. */
 const dfi_support_manifest dfi_support = {
     .turn_core = 1u,
     .switching = 1u,
@@ -555,6 +558,7 @@ const dfi_support_manifest dfi_support = {
             [DFI_ABILITY_REGENERATOR] = 1u,
             [DFI_ABILITY_TOXICDEBRIS] = 1u, /* step G37: a Physical hit puts Toxic Spikes on the attacker's side */
             [DFI_ABILITY_SHADOWTAG] = 1u, /* step G41 */
+            [DFI_ABILITY_PRESSURE] = 1u, /* step G53: a foe's move costs one more PP per standing Pressure target */
             [DFI_ABILITY_SUCTIONCUPS] = 1u, /* step G46: a DragOut blocker (the forced switch is not made) */
             [DFI_ABILITY_GUARDDOG] = 1u,    /* step G46: a DragOut blocker */
             [DFI_ABILITY_STEADFAST] = 1u, /* step G45: a flinch that stops the move raises Speed by 1 */
@@ -567,6 +571,7 @@ const dfi_support_manifest dfi_support = {
             [DFI_ABILITY_OBLIVIOUS] = 1u,   /* step G47: Taunt, and Intimidate's Attack drop (data/abilities.ts:3008-3040) */
             [DFI_ABILITY_KEENEYE] = 1u,   /* step G51: the base ability of Pidgeot (with Pidgeotite), an engine row */
             [DFI_ABILITY_BIGPECKS] = 1u,  /* step G51: the other base ability of Pidgeot, an engine row */
+            [DFI_ABILITY_MAGICBOUNCE] = 1u, /* step G57: reflects the reflectable moves (decision 0015 5bg) */
         },
     .items =
         {
@@ -594,6 +599,11 @@ const dfi_support_manifest dfi_support = {
             [DFI_ITEM_MUSCLEBAND] = 1u,  /* step G49 */
             [DFI_ITEM_WISEGLASSES] = 1u, /* step G49 */
             [DFI_ITEM_BRIGHTPOWDER] = 1u, /* step G49 */
+            [DFI_ITEM_DAMPROCK] = 1u,      /* step G55 */
+            [DFI_ITEM_HEATROCK] = 1u,      /* step G55 */
+            [DFI_ITEM_SMOOTHROCK] = 1u,    /* step G55 */
+            [DFI_ITEM_ICYROCK] = 1u,       /* step G55 */
+            [DFI_ITEM_TERRAINEXTENDER] = 1u, /* step G55 */
             [DFI_ITEM_EJECTBUTTON] = 1u, /* step G32 */
             [DFI_ITEM_ELECTRICSEED] = 1u, /* step G25 */
             [DFI_ITEM_MISTYSEED] = 1u,    /* step G25 */
@@ -649,6 +659,10 @@ const dfi_support_manifest dfi_support = {
             [DFI_ITEM_MEOWSTICITE] = 1u,
             [DFI_ITEM_SCIZORITE] = 1u,
             [DFI_ITEM_GALLADITE] = 1u,
+            /* Step G57 (Mega batch 4): Absolite (Absol-Mega, with the base's Justified) and Sablenite (Sableye-Mega, with the base's
+             * Prankster). Absolite Z is marked by G43; Clefablite stays unmarked (Clefable's abilities are unmarked). */
+            [DFI_ITEM_ABSOLITE] = 1u,
+            [DFI_ITEM_SABLENITE] = 1u,
             [DFI_ITEM_BLACKBELT] = 1u,
             [DFI_ITEM_BLACKGLASSES] = 1u,
             [DFI_ITEM_CHARCOAL] = 1u,

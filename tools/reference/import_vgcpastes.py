@@ -228,11 +228,13 @@ def entry_for(d, today):
             else 'No change by import_paste.py.')
     event = r['event'] if r['event'] not in ('', '-') else None
     placing = r['rank'] if r['rank'] not in ('', '-') else None
+    setup = ('accepts it' if d['status'] == 'pool' else
+             'refuses it as unsupported (what it needs is in "blockers")')
     notes = ('A team of the VGCPastes Repository (@VGCPastes), tab %s, row %s, by %s, shared %s%s. The paste is read '
              'from pokepast.es (one request a second) and imported on %s from the owner\'s export of the sheet; the '
-             'engine\'s setup under the POOL data kind accepts it. %s'
+             'engine\'s setup under the POOL data kind %s. %s'
              % (r['tab'], r['team_id'], r['creator'] or 'an unnamed author', r['date'] or 'on an unknown date',
-                (', %s%s' % (event, ', %s' % placing if placing else '')) if event else '', today, said))
+                (', %s%s' % (event, ', %s' % placing if placing else '')) if event else '', today, setup, said))
     name = '%s (%s)' % (r['description'] or 'VGCPastes team', r['team_id'])
     return team_registry.new_entry(d['id'], name, d['sets'], 'https://pokepast.es/' + r['paste_id'], event, placing,
                                    notes)
@@ -286,6 +288,79 @@ def write(root, decisions, today, tables_for=None):
         team_registry.add_team(root, entry_for(d, today), d['sets'])
         written.append(d['id'])
     return written
+
+
+PENDING_DIR = os.path.join('data', 'teams_pending')
+PENDING_FORMAT = 1
+PENDING_OTHER_FILES = ('index.json', 'README.md')
+
+
+def write_pending(path, decisions, today):
+    """Writes the pending teams into the directory `path` (data/teams_pending): a registry paste <id>.txt for each and an
+    index.json of their entries with their blockers; returns the ids. The directory is the last import's snapshot, not
+    the registry: a team that is no longer pending (it became playable and went into the registry, or a later import
+    refuses it) leaves it, and its README stays."""
+    pending = [d for d in decisions if d['status'] == 'pending']
+    os.makedirs(path, exist_ok=True)
+    keep = {d['id'] + '.txt' for d in pending}
+    for fname in os.listdir(path):
+        if fname.endswith('.txt') and fname not in keep:
+            os.remove(os.path.join(path, fname))
+    teams = []
+    for d in pending:
+        with open(os.path.join(path, d['id'] + '.txt'), 'wb') as f:
+            f.write(team_registry.file_text(d['sets']))
+        teams.append({**entry_for(d, today), 'blockers': d['blockers']})
+    index = {'pending': PENDING_FORMAT, 'source': 'VGCPastes Repository (@VGCPastes), Champions Reg M-A, M-B and M-C '
+             '(tools/reference/import_vgcpastes.py)', 'date': today, 'teams': teams}
+    with open(os.path.join(path, 'index.json'), 'wb') as f:
+        f.write(team_registry.dumps_index(index))
+    return [d['id'] for d in pending]
+
+
+def read_pending(path):
+    with open(os.path.join(path, 'index.json'), encoding='utf-8') as f:
+        return json.load(f)
+
+
+def pending_problems(root, tables_for):
+    """What is wrong with data/teams_pending of `root`, as messages; empty when it is as it must be: an entry for every
+    file and a file for every entry, each the sha256 of its entry, a team the registry does not have, blockers named,
+    and a paste in the registry's form that the converter reads (team_registry.team_problems)."""
+    path = os.path.join(root, PENDING_DIR)
+    found = []
+    try:
+        index = read_pending(path)
+    except (OSError, ValueError) as e:
+        return ['index.json cannot be read: %s' % e]
+    if sorted(index) != ['date', 'pending', 'source', 'teams'] or index['pending'] != PENDING_FORMAT:
+        return ['the keys of index.json are "pending" (%d), "source", "date" and "teams"' % PENDING_FORMAT]
+    registry = {e['id'] for e in team_registry.entries(root)}
+    ids = set()
+    for e in index['teams']:
+        team_id = e.get('id')
+        if not isinstance(team_id, str) or not team_id.startswith('PP_') or team_id in ids:
+            found.append('entry %r: an id PP_..., once' % (team_id,))
+            continue
+        ids.add(team_id)
+        if team_id in registry:
+            found.append('%s: the registry has this team (a playable team leaves the pending directory)' % team_id)
+        if not e.get('blockers'):
+            found.append('%s: no blocker is named' % team_id)
+        file_path = os.path.join(path, team_id + '.txt')
+        if not os.path.exists(file_path):
+            found.append('%s has no file %s.txt' % (team_id, team_id))
+            continue
+        with open(file_path, 'rb') as f:
+            data = f.read()
+        if team_registry.sha256_of(data) != e.get('sha256'):
+            found.append('%s.txt is not the sha256 of its entry' % team_id)
+        found += ['%s: %s: %s' % (team_id, c, m) for c, m in team_registry.team_problems(data.decode('utf-8'),
+                                                                                           tables_for)]
+    for fname in sorted(os.listdir(path)):
+        if fname not in PENDING_OTHER_FILES and not (fname.endswith('.txt') and fname[:-4] in ids):
+            found.append('%s is in no entry of index.json' % fname)
+    return found
 
 
 def engine_check(context):
@@ -368,6 +443,8 @@ def main(argv=None):
     p.add_argument('--report', default=None, help='a JSON file of every decision (outside the repository)')
     p.add_argument('--write', action='store_true', help='add the pool teams to the registry')
     p.add_argument('--pending', default=None, help='write the pending list (ids, URLs, blockers; no paste text) here')
+    p.add_argument('--pending-dir', action='store_true',
+                   help='write the pastes of the pending teams into data/teams_pending (a snapshot of this import)')
     p.add_argument('--today', default=None, help='the import date of the notes (default: today)')
     p.add_argument('--root', default=ROOT, help=argparse.SUPPRESS)
     args = p.parse_args(argv)
@@ -410,6 +487,9 @@ def main(argv=None):
     if args.write:
         written = write(args.root, decisions, today)
         print('import_vgcpastes: %d teams written' % len(written))
+    if args.pending_dir:
+        pending = write_pending(os.path.join(args.root, PENDING_DIR), decisions, today)
+        print('import_vgcpastes: %d pending teams in %s' % (len(pending), PENDING_DIR))
     return 0
 
 

@@ -52,6 +52,7 @@ def paste(names, evs=True):
 TEAM1 = ['Rillaboom', 'Staraptor', 'Milotic', 'Ceruledge', 'Raichu', 'Gholdengo']
 TEAM2 = ['Charizard', 'Salamence', 'Blissey', 'Vulpix', 'Staraptor', 'Milotic']
 TEAM3 = ['Rillaboom', 'Raichu', 'Blissey', 'Vulpix', 'Gholdengo', 'Salamence']
+TEAM4 = ['Charizard', 'Salamence', 'Staraptor', 'Milotic', 'Ceruledge', 'Gholdengo']  # pending, all readable
 
 
 def check_by_first(text):
@@ -243,6 +244,77 @@ class WriteTest(unittest.TestCase):
             self.assertEqual(len(reg.entries(tmp)), before)
         finally:
             shutil.rmtree(tmp, ignore_errors=True)
+
+
+class PendingDirTest(unittest.TestCase):
+    """data/teams_pending: the pastes of the legal teams the library cannot play yet, beside the registry, not in it."""
+
+    def decisions(self):
+        rows = [{'team_id': 'MC%d' % n, 'description': 'd', 'creator': 'c', 'paste_id': pid, 'evs': 'Yes',
+                 'event': 'Regional', 'rank': 'Top 8', 'date': '4 Oct 2026', 'tab': 'Champions M-C'}
+                for n, pid in ((3, 'a' * 16), (4, 'c' * 16))]
+        out = ivp.decide(rows, {'a' * 16: paste(TEAM1), 'c' * 16: paste(TEAM4)}, {}, tip.info_of, check_by_first)
+        self.assertEqual([d['status'] for d in out], ['pool', 'pending'])
+        return out
+
+    def setUp(self):
+        self.tmp = tempfile.mkdtemp(prefix='duoforge_ivp_pending_')
+        self.addCleanup(shutil.rmtree, self.tmp, True)
+        shutil.copytree(os.path.join(ROOT, 'data', 'teams'), os.path.join(self.tmp, 'data', 'teams'))
+        self.dir = os.path.join(self.tmp, 'data', 'teams_pending')
+
+    def test_the_pending_teams_and_only_they_are_written(self):
+        written = ivp.write_pending(self.dir, self.decisions(), '2026-10-09')
+        self.assertEqual(written, ['PP_' + 'C' * 16])
+        self.assertEqual(sorted(os.listdir(self.dir)), ['PP_' + 'C' * 16 + '.txt', 'index.json'])
+        index = ivp.read_pending(self.dir)
+        entry, = index['teams']
+        self.assertEqual(entry['id'], 'PP_' + 'C' * 16)
+        self.assertEqual(entry['blockers'], ['move fake out (unsupported)'])
+        self.assertEqual(entry['source'], {'url': 'https://pokepast.es/' + 'c' * 16, 'event': 'Regional',
+                                           'placing': 'Top 8'})
+        self.assertIn('refuses it as unsupported', entry['notes'])
+        self.assertNotIn('accepts it', entry['notes'])
+        with open(os.path.join(self.dir, entry['id'] + '.txt'), 'rb') as f:
+            self.assertEqual(reg.sha256_of(f.read()), entry['sha256'])
+        self.assertEqual(ivp.pending_problems(self.tmp, tip.tables), [])
+
+    def test_a_team_no_longer_pending_is_taken_out(self):
+        # a snapshot of the last import: a team that became playable (or illegal) leaves the directory
+        os.makedirs(self.dir)
+        with open(os.path.join(self.dir, 'PP_' + 'E' * 16 + '.txt'), 'wb') as f:
+            f.write(b'old\n')
+        ivp.write_pending(self.dir, self.decisions(), '2026-10-09')
+        self.assertNotIn('PP_' + 'E' * 16 + '.txt', os.listdir(self.dir))
+
+    def test_what_is_wrong_with_the_directory(self):
+        pending = self.decisions()[1]
+        ivp.write_pending(self.dir, self.decisions(), '2026-10-09')
+        team = os.path.join(self.dir, 'PP_' + 'C' * 16 + '.txt')
+        with open(team, 'rb') as f:
+            good = f.read()
+        for label, change, part in (
+                ('a changed file', lambda: open(team, 'ab').write(b'x'), 'is not the sha256'),
+                ('a file without entry', lambda: open(os.path.join(self.dir, 'PP_X.txt'), 'wb').write(good),
+                 'in no entry'),
+                ('no file', lambda: os.remove(team), 'has no file'),
+                ('an id the registry has', lambda: reg.add_team(self.tmp, ivp.entry_for(pending, '2026-10-09'),
+                                                                pending['sets']), 'the registry has')):
+            with self.subTest(label):
+                ivp.write_pending(self.dir, self.decisions(), '2026-10-09')
+                change()
+                found = ivp.pending_problems(self.tmp, tip.tables)
+                self.assertTrue(any(part in m for m in found), found)
+                if os.path.exists(os.path.join(self.dir, 'PP_X.txt')):
+                    os.remove(os.path.join(self.dir, 'PP_X.txt'))
+
+    def test_the_committed_directory_is_as_it_must_be(self):
+        if not os.path.isdir(os.path.join(ROOT, 'data', 'teams_pending')):
+            self.skipTest('no data/teams_pending in this checkout')
+        import trace_to_c
+        cache = {}
+        self.assertEqual(ivp.pending_problems(
+            ROOT, lambda team_c: cache.setdefault(team_c, trace_to_c.load_tables(ROOT, team_c))), [])
 
 
 if __name__ == '__main__':

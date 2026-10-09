@@ -139,6 +139,44 @@ class PackTest(unittest.TestCase):
             self.assertEqual(teams.pack(teams.text(name)), node_tool("--pack", str(path)).rstrip("\n"), name)
 
 
+class PressureExtraTest(unittest.TestCase):
+    """Decision 0030 (step G53): the extra PP of the foe's derived PP is Showdown's pressureTargets
+    (sim/pokemon.ts getMoveTargets), counted only where the line shows the targets."""
+
+    @classmethod
+    def setUpClass(cls):
+        from types import SimpleNamespace
+        from duoforge_live import tracker
+        cls.D = data.load(kind="pool")
+        t = tracker.Tracker.__new__(tracker.Tracker)
+        t.data = cls.D
+        t._pressure = cls.D.tables["ABILITY"]["PRESSURE"] + 1
+        members = [SimpleNamespace(ability=t._pressure), SimpleNamespace(ability=t._pressure)]
+        t._member = lambda side: members
+        t._positions = [[SimpleNamespace(occupant=k, fainted=False) for k in (0, 1)] for _ in (0, 1)]
+        cls.t = t
+        cls.FLAG = trace_to_c.FLAG
+
+    def extra(self, move, target, flags=0):
+        return self.t._pressure_extra(0, self.D.tables["MOVE"][move], target, flags)
+
+    def test_a_spread_line_of_a_normal_move_counts_every_standing_pressure_foe(self):
+        # Expanding Force on Psychic Terrain: onModifyMove makes it allAdjacentFoes before getMoveTargets, so
+        # pressureTargets are both foes, also one that Protect leaves out of the [spread] list
+        self.assertEqual(self.extra("EXPANDINGFORCE", trace_to_c.NOPOS, self.FLAG["SPREAD"]), 2)
+
+    def test_a_spread_line_of_an_allies_move_counts_no_foe(self):
+        # target "allies" (Howl, Life Dew): getMoveTargets takes alliesAndSelf, so no foe is a pressureTarget
+        move = next(m for m in ("HOWL", "LIFEDEW", "JUNGLEHEALING", "LUNARBLESSING") if m in self.D.tables["MOVE"])
+        self.assertEqual(self.extra(move, trace_to_c.NOPOS, self.FLAG["SPREAD"]), 0)
+
+    def test_a_single_target_line_counts_its_target(self):
+        self.assertEqual(self.extra("EXPANDINGFORCE", 2), 1)
+
+    def test_a_blanked_target_counts_nothing(self):
+        self.assertEqual(self.extra("EXPANDINGFORCE", trace_to_c.NOPOS, self.FLAG["STILL"] | self.FLAG["SPREAD"]), 0)
+
+
 class BreakProtectTest(unittest.TestCase):
     """Steps G28 and G58: a breaksProtect move's -activate (Feint, Phantom Force [broken]) removes the target's Protect
     and stall and its side's Wide and Quick Guard (sim/battle-actions.ts hitStepBreakProtect, the same for both)."""

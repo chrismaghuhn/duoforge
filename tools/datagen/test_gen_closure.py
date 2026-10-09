@@ -1222,7 +1222,7 @@ class LenientMoves(unittest.TestCase):
         for a basePowerCallback) and the hit counts (multihit: n, [min, max], 1 and 1 otherwise) of every row, modelled or
         not, with their bits in include/duoforge/duoforge.h order."""
         bits = gen_closure.STATIC_FLAG_BITS
-        self.assertEqual(sorted(bits.values()), [1, 2, 4, 8, 16, 32, 64, 128, 256, 512])
+        self.assertEqual(sorted(bits.values()), [1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 2048])  # 2048: mustpressure (step G53)
         self.assertEqual(gen_closure.STATIC_FLAG_POWER_RULE, 1024)
         for flag in bits:
             text = move_entry('plain', 'Plain', category='Physical', base_power=50, flags='%s: 1, protect: 1' % flag)
@@ -1423,7 +1423,8 @@ class ItemAbilityFeatures(unittest.TestCase):
 
     def test_the_rows_that_a_step_implements_by_id_are_listed(self):
         self.assertEqual(gen_closure.ENGINE_ROWS, {'items': ['focussash', 'floettite', 'psychicseed', 'electricseed', 'mistyseed', 'expertbelt',
-                                                           'ejectbutton', 'widelens', 'muscleband', 'wiseglasses', 'brightpowder', 'redcard', 'lumberry', 'mentalherb'],
+                                                           'ejectbutton', 'widelens', 'muscleband', 'wiseglasses', 'brightpowder', 'redcard', 'lumberry', 'mentalherb',
+                                                           'damprock', 'heatrock', 'smoothrock', 'icyrock', 'terrainextender'],
                                                    'abilities': ['rockhead', 'flowerveil', 'fairyaura', 'roughskin',
                                                                  'poisontouch', 'thermalexchange', 'stickyhold', 'trace',
                                                                  'levitate', 'sandrush', 'swiftswim', 'slushrush',
@@ -1435,7 +1436,7 @@ class ItemAbilityFeatures(unittest.TestCase):
                                                                  'snowcloak', 'sandveil', 'static', 'justified', 'limber',
                                                                  'solarpower', 'regenerator', 'toxicdebris', 'shadowtag', 'suctioncups', 'guarddog',
                                                                  'steadfast', 'weakarmor', 'telepathy', 'voltabsorb', 'punkrock', 'moxie',
-                                                                 'synchronize', 'oblivious', 'keeneye', 'bigpecks']})
+                                                                 'synchronize', 'oblivious', 'keeneye', 'bigpecks', 'magicbounce', 'pressure']})
 
 
 class Bounds(unittest.TestCase):
@@ -1800,7 +1801,7 @@ class SmallRulesG35(unittest.TestCase):
 
     def sources(self, skip=(None, None)):
         abilities = []
-        for aid, facts in gen_closure.G34_ABILITY_FACTS + gen_closure.G35_ABILITY_FACTS + gen_closure.MEGA2_ABILITY_FACTS + gen_closure.G39_ABILITY_FACTS + gen_closure.G41_ABILITY_FACTS + gen_closure.G45_ABILITY_FACTS + gen_closure.G46_ABILITY_FACTS + gen_closure.G47_ABILITY_FACTS + gen_closure.G51_ABILITY_FACTS:
+        for aid, facts in gen_closure.G34_ABILITY_FACTS + gen_closure.G35_ABILITY_FACTS + gen_closure.MEGA2_ABILITY_FACTS + gen_closure.G39_ABILITY_FACTS + gen_closure.G41_ABILITY_FACTS + gen_closure.G45_ABILITY_FACTS + gen_closure.G46_ABILITY_FACTS + gen_closure.G47_ABILITY_FACTS + gen_closure.G51_ABILITY_FACTS + gen_closure.G53_ABILITY_FACTS:
             kept = [f for i, f in enumerate(facts) if (aid, i) != skip]
             abilities.append(entry(aid, *kept))
         items = [entry(iid, *facts) for iid, facts in gen_closure.G34_ITEM_FACTS + gen_closure.G46_ITEM_FACTS + gen_closure.G47_ITEM_FACTS]
@@ -1884,7 +1885,7 @@ class SmallRulesG39(unittest.TestCase):
 
     def abilities(self, skip=(None, None)):
         out = []
-        for aid, facts in gen_closure.G34_ABILITY_FACTS + gen_closure.G35_ABILITY_FACTS + gen_closure.MEGA2_ABILITY_FACTS + gen_closure.G39_ABILITY_FACTS + gen_closure.G41_ABILITY_FACTS + gen_closure.G45_ABILITY_FACTS + gen_closure.G46_ABILITY_FACTS + gen_closure.G47_ABILITY_FACTS + gen_closure.G51_ABILITY_FACTS:
+        for aid, facts in gen_closure.G34_ABILITY_FACTS + gen_closure.G35_ABILITY_FACTS + gen_closure.MEGA2_ABILITY_FACTS + gen_closure.G39_ABILITY_FACTS + gen_closure.G41_ABILITY_FACTS + gen_closure.G45_ABILITY_FACTS + gen_closure.G46_ABILITY_FACTS + gen_closure.G47_ABILITY_FACTS + gen_closure.G51_ABILITY_FACTS + gen_closure.G53_ABILITY_FACTS:
             kept = [f for i, f in enumerate(facts) if (aid, i) != skip]
             out.append(entry(aid, *kept))
         items = [entry(iid, *facts) for iid, facts in gen_closure.G34_ITEM_FACTS + gen_closure.G46_ITEM_FACTS + gen_closure.G47_ITEM_FACTS]
@@ -1949,6 +1950,41 @@ class SimpleMovesG44(unittest.TestCase):
         self.assertIn('secondaries', gen_closure.G2_OWNED_FIELDS['ICE_FANG'])
         self.assertIn('TRI_ATTACK', gen_closure.G2_OWNED_SECONDARY)
         self.assertEqual([mid for mid, _ in gen_closure.G44_FACTS], ['powertrip', 'thunder', 'icefang', 'triattack'])
+
+
+class SmallRulesG53(unittest.TestCase):
+    """Step G53: Pressure is an engine row whose pinned texts (the switch-in line and the foe's DeductPP) are demanded whole, and
+    the mustpressure flag is a static bit of the move table (DUOFORGE_MOVE_STATIC_FLAG_MUST_PRESSURE) and the engine bit
+    DFI_MOVE_FLAG3_MUST_PRESSURE."""
+
+    def abilities(self, skip=(None, None)):
+        out = []
+        # check_g34_facts reads every family of the facts, so the fixture carries all of them
+        for aid, facts in (gen_closure.G34_ABILITY_FACTS + gen_closure.G35_ABILITY_FACTS + gen_closure.MEGA2_ABILITY_FACTS +
+                           gen_closure.G39_ABILITY_FACTS + gen_closure.G41_ABILITY_FACTS + gen_closure.G45_ABILITY_FACTS +
+                           gen_closure.G46_ABILITY_FACTS + gen_closure.G47_ABILITY_FACTS + gen_closure.G51_ABILITY_FACTS +
+                           gen_closure.G53_ABILITY_FACTS):
+            kept = [f for i, f in enumerate(facts) if (aid, i) != skip]
+            out.append(entry(aid, *kept))
+        items = [entry(iid, *facts) for iid, facts in gen_closure.G34_ITEM_FACTS + gen_closure.G46_ITEM_FACTS + gen_closure.G47_ITEM_FACTS]
+        return (TextSource('data/abilities.ts', '\n'.join(out)), TextSource('data/mods/champions/abilities.ts', ''),
+                TextSource('data/items.ts', '\n'.join(items)), TextSource('data/mods/champions/items.ts', ''))
+
+    def test_the_facts_of_the_pin_are_accepted(self):
+        gen_closure.check_g34_facts(*self.abilities())
+
+    def test_every_fact_is_demanded(self):
+        self.assertEqual([aid for aid, _ in gen_closure.G53_ABILITY_FACTS], ['pressure'])
+        for aid, facts in gen_closure.G53_ABILITY_FACTS:
+            self.assertIn(aid, gen_closure.ENGINE_ROWS['abilities'])
+            for i in range(len(facts)):
+                with self.subTest(ability=aid, fact=facts[i]), self.assertRaises(SystemExit) as cm:
+                    gen_closure.check_g34_facts(*self.abilities((aid, i)))
+                self.assertIn('the entry no longer has', str(cm.exception.code))
+
+    def test_the_mustpressure_flag_is_the_public_bit(self):
+        self.assertEqual(gen_closure.STATIC_FLAG_BITS['mustpressure'], 2048)
+        self.assertNotIn('mustpressure', gen_closure.FLAGS2_BITS)
 
 
 if __name__ == '__main__':
