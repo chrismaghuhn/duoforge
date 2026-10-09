@@ -63,11 +63,6 @@ typedef struct dfi_run {
     uint32_t move_target;
     /* move.hit (step G33): the hit of a multi-hit move that is being made, 1 for every other move. */
     uint32_t hit_index;
-    /* Step G53 (Pressure): the current move paid a Pressure extra whose targets its move line may hide (a [still] line names
-     * no target, and the viewer cannot tell which foe the extra came from), and the line is then hidden. Set by the PP step
-     * of dfi_run_move, read when the move line is made [still] (dfi_still), and then the action is refused. */
-    bool pressure_taken;
-    bool pressure_refused;
 } dfi_run;
 
 #define DFI_MOVE_TARGET_NONE DFI_POSITIONS          /* no target Pokemon */
@@ -365,11 +360,6 @@ static void dfi_still(dfi_run *r)
     if (mv != NULL) {
         mv->flags = (uint8_t)((uint32_t)mv->flags | DUOFORGE_EVENT_FLAG_STILL); /* wide-operands-reviewed: < 256 */
         mv->other = (uint8_t)DUOFORGE_NO_POSITION;
-    }
-    /* Step G53: the target of this move is no longer on its line, and a Pressure extra that depends on it cannot be derived
-     * by the viewer (dfi_run's pressure_taken): refused, never guessed. */
-    if (r->pressure_taken) {
-        r->pressure_refused = true;
     }
 }
 
@@ -4082,16 +4072,6 @@ static uint32_t dfi_move_hits(const dfi_move_data *md)
            : 1u;
 }
 
-/* Whether a move's Pressure extra depends on its target, which its move line may hide (step G53, dfi_still). Not for a
- * mustpressure move, a field move, a foeSide move or a spread move (count > 1): their pressure targets are the standing
- * foes, known to the viewer without the line. A single-target move's extra is the one target's. */
-static bool dfi_pressure_needs_target(uint32_t cls, uint32_t move_id, uint32_t count)
-{
-    return (dfi_pool_move_static_flags[move_id] & DUOFORGE_MOVE_STATIC_FLAG_MUST_PRESSURE) == 0u &&
-           cls != DUOFORGE_TARGET_CLASS_ALL && cls != DUOFORGE_TARGET_CLASS_ALL_ADJACENT_FOES &&
-           cls != DFI_TARGET_CLASS_ALL_ADJACENT && cls != DFI_TARGET_CLASS_FOE_SIDE && count == 1u;
-}
-
 /* A Pokemon that stands and has Pressure (step G53). */
 static bool dfi_pressure_holder(struct duoforge_battle *b, uint32_t flat)
 {
@@ -4133,7 +4113,6 @@ static uint32_t dfi_pressure_extra(struct duoforge_battle *b, uint32_t user, uin
 static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool *ran)
 {
     r->hit_index = 1u;
-    r->pressure_taken = false; /* step G53: set by the PP step of this move only */
     struct duoforge_battle *b = r->b;
     const uint32_t side = q->side;
     const uint32_t user = side * 2u + (uint32_t)q->slot;
@@ -4381,17 +4360,11 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
     const bool charge_move = md->special == DFI_SPECIAL_ELECTRO_SHOT || md->special == DFI_SPECIAL_SOLAR_BEAM;
     /* Pressure (step G53, dfi_pressure_extra): after the move's own PP and the redirection, before TryMove (the pin's order,
      * sim/battle-actions.ts:473-484). The extra comes off the user's slot as deductPP does, clamped at 0. A locked turn has
-     * none (its source is the lockedmove condition, sim/battle-actions.ts:289, not a move with PP). A two-turn move's charge
-     * turn hides its target (the move line names none, the attack comes later), so the players cannot derive its extra:
-     * such a move with an extra is refused here, never guessed (decision 0030 section 3 does not cover it). */
+     * none (its source is the lockedmove condition, sim/battle-actions.ts:289, not a move with PP). The state is exact
+     * whatever the move line shows; what the viewer can attribute is the view's business (the fold in events.c). */
     if (q->move_slot < DUOFORGE_MAX_MOVE_SLOTS && !locked) {
         const uint32_t extra = dfi_pressure_extra(b, user, target_class, move_id, targets, count);
         if (extra != 0u) {
-            if (charge_move) {
-                return DUOFORGE_E_UNSUPPORTED;
-            }
-            /* a [still] line of this move hides its target: refused by dfi_still when the extra depends on it */
-            r->pressure_taken = dfi_pressure_needs_target(target_class, move_id, count);
             dfi_move_slot *pressed = &m->moves[q->move_slot];
             const uint32_t take = extra < (uint32_t)pressed->pp ? extra : (uint32_t)pressed->pp;
             pressed->pp = (uint8_t)((uint32_t)pressed->pp - take); /* wide-operands-reviewed: take <= pp */
@@ -7337,7 +7310,7 @@ duoforge_status dfi_turn_start(const duoforge_context *ctx, struct duoforge_batt
     if (!dfi_closure_battle_supported(&dfi_support, b)) {
         return DUOFORGE_E_UNSUPPORTED;
     }
-    dfi_run r = {ctx, b, draws, {0u, 0u, 0u, 0u}, 0u, 0u, 0u, false, DFI_RESULT_NONE, {0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u}, events, UINT32_MAX, false, DFI_MOVE_TARGET_NONE, 1u, false, false};
+    dfi_run r = {ctx, b, draws, {0u, 0u, 0u, 0u}, 0u, 0u, 0u, false, DFI_RESULT_NONE, {0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u}, events, UINT32_MAX, false, DFI_MOVE_TARGET_NONE, 1u};
     dfi_init_speeds(&r);
     /* The leads entered one by one (insertChoice updated each speed); their
      * entries run together. */
@@ -7452,7 +7425,7 @@ duoforge_status dfi_turn_run(const duoforge_context *ctx, struct duoforge_battle
     if (!dfi_closure_battle_supported(&dfi_support, b) || ((replacement || pivot) && dfi_support.switching == 0u)) {
         return DUOFORGE_E_UNSUPPORTED;
     }
-    dfi_run r = {ctx, b, draws, {0u, 0u, 0u, 0u}, 0u, 0u, 0u, false, DFI_RESULT_NONE, {0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u}, events, UINT32_MAX, false, DFI_MOVE_TARGET_NONE, 1u, false, false};
+    dfi_run r = {ctx, b, draws, {0u, 0u, 0u, 0u}, 0u, 0u, 0u, false, DFI_RESULT_NONE, {0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u}, events, UINT32_MAX, false, DFI_MOVE_TARGET_NONE, 1u};
     dfi_init_speeds(&r);
     duoforge_status st = DUOFORGE_OK;
     uint32_t exits = 0u; /* Emergency Exit after the residual action */
@@ -7474,9 +7447,6 @@ duoforge_status dfi_turn_run(const duoforge_context *ctx, struct duoforge_battle
             st = dfi_run_move(&r, &q, &ran);
             if (st != DUOFORGE_OK) {
                 return st;
-            }
-            if (r.pressure_refused) {
-                return DUOFORGE_E_UNSUPPORTED; /* step G53: a hidden target of a Pressure extra (dfi_still) */
             }
             if (!ran) {
                 continue; /* runAction returned before its epilogue */

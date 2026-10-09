@@ -144,9 +144,10 @@ static void dfi_own_event(dfi_own_pressure *o, const struct duoforge_battle *aft
 /* The extra PP of a foe's move that the viewer counts (step G53): the same rule as dfi_pressure_extra of the turn code,
  * read from the events. `e` is a MOVE of the foe that is not locked. A mustpressure move, a field move and a spread move
  * count every standing Pressure holder of the viewer's side (all of them are targets); a foeSide move none; the holders of
- * the allies' classes none; a single target counts once when it stands with Pressure. The move line names the target after
- * any redirection (retargetLastMove), and a two-turn charge names none: that charge is refused by the turn code when it
- * costs an extra, so no accepted battle reaches it with one. */
+ * the allies' classes none; a single target counts once when it stands with Pressure and the move line names it. The move
+ * line names the target after any redirection (retargetLastMove). A line made [still] (attrLastMove, sim/battle.ts:3123-3138)
+ * or a two-turn charge names none: the single target is then not attributable, so no extra is counted (the engine's state
+ * still deducts it; decision 0030 section 1). */
 static uint32_t dfi_pressure_charge(const dfi_own_pressure *o, const duoforge_event *e)
 {
     uint32_t standing = 0u;
