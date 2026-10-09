@@ -85,11 +85,13 @@ def draw_word(probabilities, word):
 def reduce(tables, weights, qs, prior_rank, uniform, lam, oracle=False, budget=None):
     """One strategy for all worlds, with every N/E/X outcome recorded.
     budget: an optional matrix.WorkLedger for the solve (P1 teacher)."""
+    # Without a budget the solvers are called exactly as before the teacher existed.
+    extra = {} if budget is None else {"budget": budget}
     if oracle:
-        single = matrix.solve(tables[0], budget=budget)
+        single = matrix.solve(tables[0], **extra)
         sol = matrix.BayesSolution(single.x, [single.y], single.value, single.exact)
     else:
-        sol = matrix.solve_bayes(tables, weights, budget=budget)
+        sol = matrix.solve_bayes(tables, weights, **extra)
     # A float basis can leave roundoff at a pure vertex (e.g. 1e-16 on
     # another row). Canonicalize only within four float64 ulps of a vertex,
     # and only if the candidate still satisfies the unchanged certificate.
