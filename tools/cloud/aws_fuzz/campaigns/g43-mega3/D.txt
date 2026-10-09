@@ -1,0 +1,59 @@
+Dragonite (M) @ Dragoninite
+Ability: Inner Focus
+Level: 50
+EVs: 2 HP / 32 Atk / 32 Spe
+Adamant Nature
+- Dragon Claw
+- Extreme Speed
+- Protect
+- Earthquake
+
+Glimmora (F) @ Glimmoranite
+Ability: Toxic Debris
+Level: 50
+EVs: 32 HP / 32 SpA / 2 Spe
+Modest Nature
+- Sludge Bomb
+- Earth Power
+- Protect
+- Toxic Spikes
+
+Blaziken (M) @ Blazikenite
+Ability: Speed Boost
+Level: 50
+EVs: 2 HP / 32 Atk / 32 Spe
+Jolly Nature
+- Flamethrower
+- Close Combat
+- Protect
+- Overheat
+
+Absol (M) @ Absolite Z
+Ability: Justified
+Level: 50
+EVs: 2 HP / 32 Atk / 32 Spe
+Jolly Nature
+- Night Slash
+- Psycho Cut
+- Protect
+- Knock Off
+
+Raichu (F) @ Raichunite X
+Ability: Lightning Rod
+Level: 50
+EVs: 29 HP / 5 Def / 32 Spe
+Timid Nature
+- Thunderbolt
+- Quick Attack
+- Protect
+- Knock Off
+
+Lopunny (F) @ Lopunnite
+Ability: Limber
+Level: 50
+EVs: 32 HP / 32 Atk / 2 Spe
+Adamant Nature
+- Quick Attack
+- Close Combat
+- Protect
+- U-turn
