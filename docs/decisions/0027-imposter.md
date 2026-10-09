@@ -19,10 +19,10 @@ Status: **proposal** (lane B, 2026-10-09). The owner approved Imposter as an API
   - the target has a Substitute, is transformed, or has an Illusion up (0026);
   - the holder itself is transformed.
 - **The line** is `-transform|HOLDER|TARGET|[from] ability: Imposter`. The event is 0028's TRANSFORM with cause ABILITY and `id2` = Imposter + 1.
-- **The copied ability runs its Start**: `setAbility(..., isTransform)` (`sim/pokemon.ts:1352`, `:1908-1946`) calls `singleEvent('Start')` unless the old and new abilities are the same id.
-  - So a Ditto that copies an Intimidate user **intimidates**.
-  - That also holds for Transform (lane A), so it belongs in 0028 as well.
-  - A `cantsuppress` ability is not copied (`setAbility` returns false before the change); the transformation itself stands.
+- **The copied ability runs its End and Start.** `transformInto` calls `setAbility(pokemon.ability, this, null, true, true)` (`sim/pokemon.ts:1352`), and the fourth argument is `isFromFormeChange` (signature `:1908-1911`). So:
+  - the `cantsuppress` check (`:1916-1918`) and the SetAbility event are skipped, and a `cantsuppress` ability **is** copied;
+  - the old ability's End runs, and the new one's Start runs, unless both are the same id (`:1943-1946`). A Ditto that copies an Intimidate user **intimidates**.
+  - 0028 records the same for Transform (lane A, #252 at 341d26f5).
 - **Timing:** Imposter is a SwitchIn handler.
   - At battle start and after a mid-turn replacement, it runs in the sorted SwitchIn order with the other entry abilities (Intimidate, the weather setters, Unnerve, Pressure from G45).
   - The order is speed, with the tie draws the engine already models.
