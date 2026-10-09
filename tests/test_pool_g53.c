@@ -242,7 +242,8 @@ static void check_marks(df_test *t)
         const bool pub = (dfi_pool_move_static_flags[id] & DUOFORGE_MOVE_STATIC_FLAG_MUST_PRESSURE) != 0u;
         const bool eng = (dfi_pool_move_flags3[id] & DFI_MOVE_FLAG3_MUST_PRESSURE) != 0u;
         DF_CHECK(t, pub == eng);
-        DF_CHECK_EQ_U64(t, (uint32_t)dfi_pool_move_flags3[id] & ~(DFI_MOVE_FLAG3_REFLECTABLE | DFI_MOVE_FLAG3_MUST_PRESSURE), 0u);
+        DF_CHECK_EQ_U64(t, (uint32_t)dfi_pool_move_flags3[id] & ~(DFI_MOVE_FLAG3_REFLECTABLE | DFI_MOVE_FLAG3_MUST_PRESSURE |
+                                                                  DFI_MOVE_FLAG3_BYPASSSUB), 0u);
         must_rows += eng ? 1u : 0u;
     }
     DF_CHECK(t, must_rows >= sizeof must / sizeof must[0]);

@@ -241,6 +241,15 @@ static duoforge_status dfi_view_visible_causes(const duoforge_context *ctx, cons
             }
         }
     }
+    /* Step G60 (decision 0032): a Substitute on either side is public presence (the position's volatile, VOLATILE_SUBSTITUTE); its
+     * HP never is, so the presence is a function of the public record only. */
+    for (uint32_t side = 0u; side < DUOFORGE_SIDE_COUNT; ++side) {
+        for (uint32_t p = 0u; p < DUOFORGE_ACTIVE_PER_SIDE; ++p) {
+            if (b->tail.sides[side].positions[p].substitute_hp != 0u) {
+                mask |= DUOFORGE_PUBLIC_CAUSE_SUBSTITUTE;
+            }
+        }
+    }
     *out_mask = mask;
     return DUOFORGE_OK;
 }
@@ -414,7 +423,9 @@ static duoforge_status dfi_view_encode(const duoforge_context *ctx, const duofor
     for (uint32_t side = 0u; side < DUOFORGE_SIDE_COUNT; ++side) {
         for (uint32_t p = 0u; p < DUOFORGE_ACTIVE_PER_SIDE; ++p) {
             const dfi_tail_pos *tp = &b->tail.sides[side].positions[p];
-            if (tp->trap_turns != 0u || tp->lock_turns != 0u || (side == foe && tp->substitute_hp != 0u)) {
+            /* A Substitute on either side is refused (decision 0032): its HP follows hidden damage and the owner's request does not show
+             * it, so no honest world can rebuild it. The cause (DUOFORGE_PUBLIC_CAUSE_SUBSTITUTE) is named by the causes call. */
+            if (tp->trap_turns != 0u || tp->lock_turns != 0u || tp->substitute_hp != 0u) {
                 return DUOFORGE_E_UNSUPPORTED;
             }
         }

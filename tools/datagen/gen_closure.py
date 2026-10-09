@@ -385,6 +385,10 @@ def parse_move(mid, base, champ, ext=False, pool=False, unmodeled=None):
                 fail('move %s: %s is not the pinned text' % (mid, name))
     if pool and handled[0] == 'TAUNT' and ('condition' not in f or norm(f['condition'][1]) != TAUNT_CONDITION):
         fail('move %s: the condition is not the pinned text' % mid)
+    if pool and handled[0] == 'SUBSTITUTE':
+        for name, text in (('onTryHit', SUBSTITUTE_ONTRYHIT), ('onHit', SUBSTITUTE_ONHIT), ('condition', SUBSTITUTE_CONDITION)):
+            if name not in f or norm(f[name][1]) != text:
+                fail('move %s: %s is not the pinned text (decision 0032)' % (mid, name))
     if pool and handled[0] == 'YAWN':
         if 'onTryHit' not in f or norm(f['onTryHit'][1]) != YAWN_ONTRYHIT:
             fail('move %s: onTryHit is not the pinned text' % mid)
@@ -1953,6 +1957,32 @@ G55_ITEMS = ('damprock', 'heatrock', 'smoothrock', 'icyrock', 'terrainextender')
 # for a turn and has no move queued), order 15, onBeforeMove priority 5 and the Status-category bar; Yawn's duration 2,
 # order 23 and the silent end that calls trySetStatus('slp').
 G31_HANDLERS = ['TAUNT', 'YAWN']
+# Step G60 (decision 0032): Substitute (data/moves.ts:18305-18374). The turn code implements the move: the gate of each hit
+# that a Substitute takes (the pin's onTryPrimaryHit), the HP cost, the break and the events of the decision. The generator
+# checks the three texts, whitespace aside. Its bypasssub flag is bit 4 of the third flags byte (FLAGS3_BITS).
+G60_HANDLERS = ['SUBSTITUTE']
+SUBSTITUTE_ONTRYHIT = (
+    "onTryHit(source) { if (source.volatiles['substitute']) { this.add('-fail', source, 'move: Substitute'); "
+    "return this.NOT_FAIL; } if (source.hp <= source.maxhp / 4 || source.maxhp === 1) { // Shedinja clause "
+    "this.add('-fail', source, 'move: Substitute', '[weak]'); return this.NOT_FAIL; } },")
+SUBSTITUTE_ONHIT = "onHit(target) { this.directDamage(target.maxhp / 4); },"
+SUBSTITUTE_CONDITION = (
+    "condition: { onStart(target, source, effect) { if (effect?.id === 'shedtail') { "
+    "this.add('-start', target, 'Substitute', '[from] move: Shed Tail'); } else { this.add('-start', target, 'Substitute'); } "
+    "this.effectState.hp = Math.floor(target.maxhp / 4); if (target.volatiles['partiallytrapped']) { "
+    "this.add('-end', target, target.volatiles['partiallytrapped'].sourceEffect, '[partiallytrapped]', '[silent]'); "
+    "delete target.volatiles['partiallytrapped']; } }, onTryPrimaryHitPriority: -1, onTryPrimaryHit(target, source, move) { "
+    "if (target === source || move.flags['bypasssub'] || move.infiltrates) { return; } let damage = "
+    "this.actions.getDamage(source, target, move); if (!damage && damage !== 0) { this.add('-fail', source); "
+    "this.attrLastMove('[still]'); return null; } if (damage > target.volatiles['substitute'].hp) { "
+    "damage = target.volatiles['substitute'].hp as number; } target.volatiles['substitute'].hp -= damage; "
+    "source.lastDamage = damage; if (target.volatiles['substitute'].hp <= 0) { if (move.ohko) this.add('-ohko'); "
+    "target.removeVolatile('substitute'); } else { this.add('-activate', target, 'move: Substitute', '[damage]'); } "
+    "if (damage) { this.actions.applyRecoilDamage(damage, move, source); } if (move.drain) { "
+    "this.heal(Math.ceil(damage * move.drain[0] / move.drain[1]), source, target, 'drain'); } "
+    "this.singleEvent('AfterSubDamage', move, null, target, source, move, damage); "
+    "this.runEvent('AfterSubDamage', target, source, move, damage); return this.HIT_SUBSTITUTE; }, "
+    "onEnd(target) { this.add('-end', target, 'Substitute'); }, },")
 # Step G52 (decision 0025 item 6): Revival Blessing (data/moves.ts:15110-15136). onTryHit fails when the user's side has no fainted
 # Pokemon; selfSwitch and the slot condition make the user's slot a revive at its PIVOT (sim/side.ts 925-985, sim/battle.ts
 # 2781-2797). The turn code implements the move (DFI_SWITCH_REVIVE_BLESSING and the revive action); the generator checks onTryHit.
@@ -2105,6 +2135,7 @@ SPECIAL_P = dict(SPECIAL_C, **{
     'disable': ('DISABLE', {'onTryHit'}),                                 # G27: bars the target's last move
     'spikyshield': ('SPIKY_SHIELD', {'onPrepareHit', 'onHit'}),           # G20: Protect that damages a contact attacker
     'taunt': ('TAUNT', set()),                                            # G31: bars the Status moves for three or four turns
+    'substitute': ('SUBSTITUTE', {'onTryHit', 'onHit'}),                  # G60: a 1/4 HP decoy that takes the hits (decision 0032)
     'yawn': ('YAWN', {'onTryHit'}),                                       # G31: sleep at the end of the next turn
     'revivalblessing': ('REVIVAL_BLESSING', {'onTryHit'}),                # G52: the revive at the PIVOT of the user's slot
     'roost': ('ROOST', set()),                                            # G42: heals, then the Flying type is off for the turn
@@ -2302,7 +2333,7 @@ G62_FACTS = (
                'if (!action) return false;', 'action.order = 201;', "this.add('-activate', target, 'move: Quash');",
                'target: "normal",', 'type: "Dark",']),
 )
-SPECIAL_IDS_P = SPECIAL_IDS_C + G2_HANDLERS + WEATHER_HANDLERS + G16_HANDLERS + G15_HANDLERS + G19_HANDLERS + G20_HANDLERS + G20_PROTECT_HANDLERS + G28_HANDLERS + G30_HANDLERS + G32_HANDLERS + G34_HANDLERS + G27_HANDLERS + G25_HANDLERS + G26_HANDLERS + G33_HANDLERS + G38_HANDLERS + G29_HANDLERS + G39_HANDLERS + G31_HANDLERS + G48_HANDLERS + G44_HANDLERS + G50_HANDLERS + G42_HANDLERS + G56_HANDLERS + G52_HANDLERS + G54_HANDLERS + G64_HANDLERS + G62_HANDLERS + ['UNMODELED']# Step G10 made two of these handlers data: Scald (thawsTarget) and Recover (heal) are read into the second flags# byte (bit 4, thaws the target) and the heal column, and have the special NONE; their ids stay defined (the ids after
+SPECIAL_IDS_P = SPECIAL_IDS_C + G2_HANDLERS + WEATHER_HANDLERS + G16_HANDLERS + G15_HANDLERS + G19_HANDLERS + G20_HANDLERS + G20_PROTECT_HANDLERS + G28_HANDLERS + G30_HANDLERS + G32_HANDLERS + G34_HANDLERS + G27_HANDLERS + G25_HANDLERS + G26_HANDLERS + G33_HANDLERS + G38_HANDLERS + G29_HANDLERS + G39_HANDLERS + G31_HANDLERS + G48_HANDLERS + G44_HANDLERS + G50_HANDLERS + G42_HANDLERS + G56_HANDLERS + G52_HANDLERS + G54_HANDLERS + G64_HANDLERS + G62_HANDLERS + G60_HANDLERS + ['UNMODELED']# Step G10 made two of these handlers data: Scald (thawsTarget) and Recover (heal) are read into the second flags# byte (bit 4, thaws the target) and the heal column, and have the special NONE; their ids stay defined (the ids after
 # them keep their values). First Impression and Low Kick keep theirs: the turn code implements them.
 POOL_COLUMN_KEYS = {'thawsTarget', 'heal'}
 G2_OWNED_FIELDS = {
@@ -2313,6 +2344,7 @@ G2_OWNED_FIELDS = {
     'DISABLE': {'volatileStatus': "volatileStatus: 'disable',"},
     'SPIKY_SHIELD': {'volatileStatus': "volatileStatus: 'spikyshield',"},
     'TAUNT': {'volatileStatus': "volatileStatus: 'taunt',"},
+    'SUBSTITUTE': {'volatileStatus': "volatileStatus: 'substitute',"},
     'YAWN': {'volatileStatus': "volatileStatus: 'yawn',"},
     'REVIVAL_BLESSING': {'slotCondition': "slotCondition: 'revivalblessing', // No this not a real switchout move // This is needed "
                                          "to trigger a switch protocol to choose a fainted party member // Feel free to refactor"},
@@ -2348,7 +2380,8 @@ G2_OWNED_FIELDS = {
 G2_OWNED_SECONDARY = {'STONE_AXE': 'secondary: {}, // Sheer Force-boosted', 'CEASELESS_EDGE': 'secondary: {}, // Sheer Force-boosted', 'TRI_ATTACK': "secondary: { chance: 20, onHit(target, source) { const status = this.sample(['brn', 'par', 'frz']); "
                   "target.trySetStatus(status, source); }, },"}
 G2_OWNED_CONDITION = {'ROOST', 'ENCORE', 'WIDE_GUARD', 'QUICK_GUARD', 'GLAIVE_RUSH', 'AURORA_VEIL', 'SPIKY_SHIELD', 'RAGE_POWDER', 'DISABLE',
-                      'ELECTRIC_TERRAIN', 'MISTY_TERRAIN', 'PERISH_SONG', 'IMPRISON', 'TAUNT', 'YAWN', 'REVIVAL_BLESSING'}
+                      'ELECTRIC_TERRAIN', 'MISTY_TERRAIN', 'PERISH_SONG', 'IMPRISON', 'TAUNT', 'YAWN', 'REVIVAL_BLESSING',
+                      'SUBSTITUTE'}
 # Step G8 (Throat Chop and Psychic Noise): the two secondaries become modelled kinds, and the column that their
 # consumers read is the move's second flags byte (the first is full): the `sound` flag (Throat Chop bars the sound
 # moves) and the `heal` flag (Heal Block bars the moves that heal). Both are derived for every pool move, the prefix
@@ -2361,7 +2394,7 @@ G8_SECONDARIES = {
 }
 FLAGS2_BITS = {'sound': 1, 'heal': 2, 'powder': 16, 'punch': 32, 'slicing': 64}  # steps G30 (powder) and G34 (punch, slicing)
 # The third flags byte (DFI_MOVE_FLAG3_*, pool tables only): one bit per Showdown flag name, assigned centrally (HauptSession).
-FLAGS3_BITS = {'reflectable': 1, 'mustpressure': 2}  # steps G57 (Magic Bounce) and G53 (Pressure)
+FLAGS3_BITS = {'reflectable': 1, 'mustpressure': 2, 'bypasssub': 4}  # steps G57 (Magic Bounce), G53 (Pressure) and G60 (Substitute)
 # Decision 0020: the public static flags of a move (DUOFORGE_MOVE_STATIC_FLAG_*, include/duoforge/duoforge.h), one bit per
 # Showdown flag name, additive only; the generated column dfi_pool_move_static_flags holds them for every pool row and has
 # no engine reader. POWER_RULE is not a flag of the pin: the move has a basePowerCallback (its basePower is not the damage).
@@ -2498,7 +2531,7 @@ FLAGS_THAT_MATTER = set()
 # modelling would make it matter (build_pool fails if that row is modelled):
 #   bypasssub -- Chople Berry reads it next to the substitute volatile, which no modelled row has (Substitute is
 #                UNMODELED); pledgecombo -- Lightning Rod reads it; only the pledge moves have it, none is in the pool.
-INERT_FLAG_READS = {'bypasssub': 'substitute', 'pledgecombo': None}
+INERT_FLAG_READS = {'pledgecombo': None}
 HANDLER_IDS = ['NONE', 'UNMODELED']
 # Items and abilities that a step of the expansion implements in the turn code by id (they have no family): modelled
 # by definition, like the closure and Team C rows. The step that marks such a row in the support manifest adds its id
@@ -3346,7 +3379,7 @@ def build_pool(root, repo, dx):
     check_g56_facts(Source(root, 'data/conditions.ts', READER_INPUTS), moves_ts)
     FLAGS_THAT_MATTER.clear()
     FLAGS_THAT_MATTER.update(prefix_flag_reads((items_ts, champ_items, abil_ts, champ_abil, moves_ts, champ_moves), dx)
-                             - set(FLAG_BITS_C) - set(INERT_FLAG_READS))
+                             - set(FLAG_BITS_C) - set(INERT_FLAG_READS) - set(FLAGS3_BITS))
     # The prefix rows keep the closure's "none" (0xFF) for the forme ids of a Mega link in the extended data; the pool
     # rows use None for it, because a forme id above 254 is real here.
     items, abilities = [dict(it, mega_base=None if it['mega_base'] == 0xFF else it['mega_base'],
@@ -4010,7 +4043,7 @@ extern const uint8_t dfi_pool_move_static_hits[DFI_POOL_MOVE_COUNT][2];
  * assigned centrally (HauptSession); bits 3 to 7 are free. */
 #define DFI_MOVE_FLAG3_REFLECTABLE 1u    /* flags.reflectable (step G57): Magic Bounce (DFI_ABILITY_MAGICBOUNCE) bounces the move */
 #define DFI_MOVE_FLAG3_MUST_PRESSURE 2u  /* flags.mustpressure (step G53): a foe's Pressure costs PP whatever the move targets */
-/* bit 2 (4u): reserved for BYPASSSUB (lane A, step G60) */
+#define DFI_MOVE_FLAG3_BYPASSSUB 4u      /* flags.bypasssub (step G60): a Substitute does not take the hit of the move (decision 0032) */
 extern const uint8_t dfi_pool_move_flags3[DFI_POOL_MOVE_COUNT];
 extern const dfi_pool_alias dfi_pool_forme_aliases[DFI_POOL_ALIAS_COUNT];
 

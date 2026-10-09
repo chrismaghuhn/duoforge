@@ -90,6 +90,9 @@ typedef struct dfi_run {
      * hit count is the number of entries). Transient, read only by dfi_get_damage of that move. Last in the struct: the
      * initializers of dfi_run are positional, so a field before the end would shift their values. */
     uint32_t beat_up_bp[DUOFORGE_MAX_ROSTER];
+    /* Decision 0032: set only while the damage of a Substitute's hit is computed. The damage then ignores the target's resist
+     * berry (pin: `hitSub`, data/items.ts:1030-1046 and its siblings: the berry is not eaten for a hit that the Substitute takes). */
+    bool sub_hit;
 } dfi_run;
 
 #define DFI_MOVE_TARGET_NONE DFI_POSITIONS          /* no target Pokemon */
@@ -1796,7 +1799,7 @@ static duoforge_status dfi_get_damage(dfi_run *r, uint32_t user, uint32_t target
      * others, decision 0015; combat/item_family.h) is eaten by a super
      * effective hit of its type, the Normal berry by any Normal hit. */
     const uint32_t berry_item = dfi_item_code(r->b, d);
-    if (dfi_resist_berry_applies(berry_item, move_type, mod) && !dfi_unnerved(r->b, target)) {
+    if (dfi_resist_berry_applies(berry_item, move_type, mod) && !dfi_unnerved(r->b, target) && !r->sub_hit) {
         dfi_use_item(r, target); /* [-enditem] [eat] */
         duoforge_event weaken =
             dfi_ev(DUOFORGE_EVENT_ITEM_END, target, DUOFORGE_CAUSE_NONE, berry_item, DUOFORGE_NO_POSITION);
@@ -4956,6 +4959,107 @@ static duoforge_status dfi_double_shock_try(dfi_run *r, uint32_t user, bool *sto
 /* A move with nothing to hit: Showdown runs TryMove before the no-targets test (sim/battle-actions.ts:486-513), and the
  * target is not null there (the foe in slot 0 is an object even when it has fainted), so Double Shock's onTryMove fails
  * first (recorded: g50_double_shock_no_target). */
+/* Substitute (decision 0032). Its HP is never in an event: the amount of a hit is hidden on both sides. The tail's position
+ * field substitute_hp holds it (0: no Substitute). */
+static uint16_t *dfi_sub_hp_of(struct duoforge_battle *b, uint32_t flat)
+{
+    return &b->tail.sides[flat / 2u].positions[flat % 2u].substitute_hp;
+}
+
+/* The Substitute move (data/moves.ts:18314-18326 and 18328-18340): onTryHit fails in order (the Substitute is up, then the
+ * user's HP is a quarter or less, or its maximum is 1), then the volatile starts with floor(maxhp / 4) HP, and onHit takes
+ * directDamage(maxhp / 4) from the user (clamped to at least 1, sim/battle.ts:2215). */
+static duoforge_status dfi_run_substitute(dfi_run *r, uint32_t user)
+{
+    struct duoforge_battle *b = r->b;
+    const dfi_member *m = dfi_at(b, user);
+    uint16_t *sub = dfi_sub_hp_of(b, user);
+    duoforge_event e;
+    if (*sub != 0u) {
+        e = dfi_ev(DUOFORGE_EVENT_FAIL, user, DUOFORGE_CAUSE_MOVE, DFI_MOVE_SUBSTITUTE, DUOFORGE_NO_POSITION);
+        e.detail = (uint8_t)DUOFORGE_FAIL_SUBSTITUTE_EXISTS;
+        dfi_emit(r, &e);
+        return DUOFORGE_OK;
+    }
+    /* source.hp <= source.maxhp / 4 (a float compare, so 4 * hp <= maxhp) or maxhp === 1 (data/moves.ts:18319) */
+    if (4u * (uint32_t)m->hp <= (uint32_t)m->hp_max || m->hp_max == 1u) {
+        e = dfi_ev(DUOFORGE_EVENT_FAIL, user, DUOFORGE_CAUSE_MOVE, DFI_MOVE_SUBSTITUTE, DUOFORGE_NO_POSITION);
+        e.detail = (uint8_t)DUOFORGE_FAIL_SUBSTITUTE_WEAK;
+        dfi_emit(r, &e);
+        return DUOFORGE_OK;
+    }
+    const uint32_t quarter = (uint32_t)m->hp_max / 4u;
+    /* volatileStatus: onStart sets the HP (floor(maxhp / 4)) and shows -start|X|Substitute, before onHit's cost */
+    *sub = (uint16_t)quarter;
+    e = dfi_ev(DUOFORGE_EVENT_VOLATILE_START, user, DUOFORGE_CAUSE_NONE, 0u, DUOFORGE_NO_POSITION);
+    e.detail = (uint8_t)DUOFORGE_VOLATILE_SUBSTITUTE;
+    dfi_emit(r, &e);
+    /* onHit: the -damage line of the user has no [from] (sim/battle.ts directDamage, default branch) */
+    return dfi_deal(r, user, quarter == 0u ? 1u : quarter, DUOFORGE_CAUSE_NONE, 0u, DUOFORGE_NO_POSITION);
+}
+
+/* The Substitute of a target takes a hit of a move (decision 0032, data/moves.ts:18341-18366: onTryPrimaryHit, run for every
+ * target that is not the user, before any effect of the hit). *taken = true: the hit goes to the Substitute and the target is
+ * not hit (no damage, secondary, boost, status or contact effect). A status move fails on the user ([still]). A damaging move
+ * computes its damage as for the target (one roll, the target's resist berry not eaten), the Substitute loses at most its HP
+ * of it, and the user takes the recoil and the drain of the damage the Substitute took. A move with flags.bypasssub (flags3 bit 2) and a
+ * user with Infiltrator are not taken. */
+static duoforge_status dfi_substitute_takes(dfi_run *r, uint32_t user, uint32_t target, uint32_t move_id,
+                                            const dfi_move_data *md, uint32_t move_type, bool spread, bool status_move,
+                                            bool *taken)
+{
+    struct duoforge_battle *b = r->b;
+    uint16_t *sub = dfi_sub_hp_of(b, target);
+    *taken = false;
+    if (target == user || *sub == 0u || (dfi_pool_move_flags3[move_id] & DFI_MOVE_FLAG3_BYPASSSUB) != 0u ||
+        dfi_ability(b, dfi_at(b, user), DFI_ABILITY_INFILTRATOR)) {
+        return DUOFORGE_OK;
+    }
+    *taken = true;
+    if (status_move) {
+        dfi_fail_still(r, user); /* the handler's `-fail|source` and [still]: a status move has no damage (getDamage undefined) */
+        return DUOFORGE_OK;
+    }
+    uint32_t dealt = 0u;
+    r->sub_hit = true;
+    const duoforge_status st = dfi_get_damage(r, user, target, md, move_type, spread, &dealt);
+    r->sub_hit = false;
+    if (st != DUOFORGE_OK) {
+        return st;
+    }
+    if (dealt > (uint32_t)*sub) {
+        dealt = (uint32_t)*sub; /* the damage is capped at the Substitute's HP (data/moves.ts:18351-18353) */
+    }
+    *sub = (uint16_t)((uint32_t)*sub - dealt);
+    if (*sub == 0u) {
+        /* the break: `-ohko` for a one-hit KO first (no row of this build is one: the generator leaves OHKO moves UNMODELED), then
+         * removeVolatile's -end line (onEnd) */
+        duoforge_event end = dfi_ev(DUOFORGE_EVENT_VOLATILE_END, target, DUOFORGE_CAUSE_NONE, 0u, DUOFORGE_NO_POSITION);
+        end.detail = (uint8_t)DUOFORGE_VOLATILE_SUBSTITUTE;
+        dfi_emit(r, &end);
+    } else {
+        /* the absorbed hit: `-activate|X|move: Substitute|[damage]`, with no amount */
+        const duoforge_event act = dfi_ev(DUOFORGE_EVENT_ACTIVATE, target, DUOFORGE_CAUSE_MOVE, DFI_MOVE_SUBSTITUTE,
+                                          DUOFORGE_NO_POSITION);
+        dfi_emit(r, &act);
+    }
+    if (dealt != 0u && md->recoil[1] != 0u) {
+        /* applyRecoilDamage(damage, move, source): round(damage * recoil[0] / recoil[1]), at least 1 (sim/battle-actions.ts:1384) */
+        uint32_t recoil = (dealt * md->recoil[0] * 2u + md->recoil[1]) / (2u * md->recoil[1]);
+        recoil = recoil < 1u ? 1u : recoil;
+        const duoforge_status rst = dfi_deal(r, user, recoil, DUOFORGE_CAUSE_RECOIL, 0u, DUOFORGE_NO_POSITION);
+        if (rst != DUOFORGE_OK) {
+            return rst;
+        }
+    }
+    if (dealt != 0u && md->drain[1] != 0u) {
+        /* heal(Math.ceil(damage * drain[0] / drain[1]), source, target, 'drain') (data/moves.ts:18363) */
+        const uint32_t amount = (dealt * md->drain[0] + md->drain[1] - 1u) / md->drain[1];
+        dfi_heal(r, user, amount, DUOFORGE_CAUSE_DRAIN, 0u, target);
+    }
+    return DUOFORGE_OK;
+}
+
 static duoforge_status dfi_no_target_or_try(dfi_run *r, uint32_t user, const dfi_move_data *md)
 {
     if (md->special == DFI_SPECIAL_DOUBLE_SHOCK) {
@@ -6049,6 +6153,11 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
         r->mres |= DFI_MRES_TRUE; /* addPseudoWeather (or its end) returns true */
         return DUOFORGE_OK;
     }
+    /* Substitute (decision 0032, data/moves.ts:18305-18374): onTryHit, then the Substitute's start and its cost. A status move with
+     * no effect of its own, so it is dispatched before the generic status check below. */
+    if (md->special == DFI_SPECIAL_SUBSTITUTE) {
+        return dfi_run_substitute(r, user);
+    }
     /* A status move whose only effect is its forced switch (Roar, Whirlwind; step G46) is modelled by the forced-switch step
      * below, not refused here. */
     if (status_move && md->primary_status == DFI_STATUS_NONE && md->special != DFI_SPECIAL_PARTING_SHOT &&
@@ -6103,7 +6212,7 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
         md->special != DFI_SPECIAL_STRENGTH_SAP && md->special != DFI_SPECIAL_POLTERGEIST &&
         md->special != DFI_SPECIAL_BEAT_UP && md->special != DFI_SPECIAL_SHEER_COLD &&
         md->special != DFI_SPECIAL_BUG_BITE && md->special != DFI_SPECIAL_AFTER_YOU &&
-        md->special != DFI_SPECIAL_QUASH) {
+        md->special != DFI_SPECIAL_QUASH && md->special != DFI_SPECIAL_SUBSTITUTE) {
         return DUOFORGE_E_INVARIANT;
     }
     /* Steel Roller's onTry (step G34, data/moves.ts:17893-17913): it fails without a terrain, with -fail and [still]. */
@@ -6345,6 +6454,23 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
     if (md->special == DFI_SPECIAL_QUASH) {
         return dfi_run_quash(r, user, move_id, targets, count, hit); /* step G62 (decision 0015 entry 5az) */
     }
+    /* A status move's hit on a foe with a Substitute (decision 0032, onTryPrimaryHit before the move's effects): the Substitute
+     * takes it, the move fails on the user, and no effect of the move reaches the target. Damaging moves are gated per hit, in
+     * the hit loop below. */
+    if (status_move) {
+        for (uint32_t i = 0u; i < count; ++i) {
+            bool taken = false;
+            if (hit[i]) {
+                st = dfi_substitute_takes(r, user, targets[i], move_id, md, move_type, spread, true, &taken);
+                if (st != DUOFORGE_OK) {
+                    return st;
+                }
+                if (taken) {
+                    hit[i] = false;
+                }
+            }
+        }
+    }
     if (md->special == DFI_SPECIAL_STRENGTH_SAP) {
         return dfi_run_strength_sap(r, user, targets, count, hit);
     }
@@ -6430,6 +6556,13 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
     uint32_t total = 0u;
     uint32_t hp_before[DFI_POSITIONS] = {0u, 0u, 0u, 0u};
     bool any = false;
+    bool sub_any = false; /* decision 0032: a hit of this iteration that a Substitute took (it still counts for the next hit) */
+    /* decision 0032: a target whose damaging hit a Substitute took. The pin's targets entry is null, not false, so selfDrops
+     * (battle-actions.ts:1318-1331) still rolls for it and applies the self effect: it counts as reached, as a hit does. */
+    bool absorbed_any = false;
+    /* The targets whose hit of the previous iteration a Substitute took: their hit is back on for the next hit (the target is
+     * still hit by the move; only this hit went to the Substitute). */
+    bool sub_off[DFI_POSITIONS] = {false, false, false, false};
     for (uint32_t hit_no = 1u; hit_no <= hits_total; ++hit_no) {
         if (hit_no > 1u) {
             if (!any) {
@@ -6450,6 +6583,32 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
             }
         }
         r->hit_index = hit_no;
+        /* Substitute (decision 0032): onTryPrimaryHit of each target of this hit, before the damage. A hit that a Substitute takes
+         * is no hit of the target; the loop continues, as spreadMoveHit's true does (sim/battle-actions.ts:1061-1065). */
+        sub_any = false;
+        for (uint32_t i = 0u; i < count; ++i) {
+            if (sub_off[i]) {
+                hit[i] = true; /* the previous hit went to the Substitute; this one is the target's again */
+                sub_off[i] = false;
+            }
+        }
+        if (!status_move) {
+            for (uint32_t i = 0u; i < count; ++i) {
+                bool taken = false;
+                if (hit[i]) {
+                    st = dfi_substitute_takes(r, user, targets[i], move_id, md, move_type, spread, false, &taken);
+                    if (st != DUOFORGE_OK) {
+                        return st;
+                    }
+                    if (taken) {
+                        hit[i] = false;
+                        sub_off[i] = true;
+                        sub_any = true;
+                        absorbed_any = true;
+                    }
+                }
+            }
+        }
         /* getSpreadDamage: every target's damage (crit, roll), then spreadDamage. */
         uint32_t damage[DFI_POSITIONS] = {0u, 0u, 0u, 0u};
         for (uint32_t i = 0u; i < count; ++i) {
@@ -6559,7 +6718,7 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
          * random(100) that always passes (no chance), then the user's own stat
          * changes (Close Combat, Make It Rain). */
         if (md->boost_role == DFI_BOOST_ROLE_SELF_AFTER_HIT) {
-            bool hit_any = false;
+            bool hit_any = absorbed_any; /* a Substitute's hit is a non-false target (decision 0032) */
             for (uint32_t i = 0u; i < count; ++i) {
                 hit_any = hit_any || hit[i];
             }
@@ -6967,6 +7126,7 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
         for (uint32_t i = 0u; i < count; ++i) {
             any = any || hit[i];
         }
+        any = any || sub_any; /* a Substitute's hit counts for the next hit of a multi-hit move (decision 0032) */
         /* The hit loop's Update (sim/battle-actions.ts:967), after every hit. */
         if (any) {
             st = dfi_update(r);
@@ -7608,6 +7768,13 @@ static duoforge_status dfi_entry_ability(dfi_run *r, uint32_t flat)
                                                     DUOFORGE_NO_POSITION);
                     dfi_emit(r, &e);
                     shown = true;
+                }
+                if (b->tail.sides[foe].positions[slot].substitute_hp != 0u) {
+                    /* A Substitute is -immune to Intimidate (data/abilities.ts:2201-2202): `-immune|target`, no drop, no [from]. */
+                    const duoforge_event im = dfi_ev(DUOFORGE_EVENT_IMMUNE, foe * 2u + slot, DUOFORGE_CAUSE_NONE, 0u,
+                                                     DUOFORGE_NO_POSITION);
+                    dfi_emit(r, &im);
+                    continue;
                 }
                 dfi_boost(r, foe * 2u + slot, drop, flat,
                           dfi_effect(DUOFORGE_CAUSE_ABILITY, 1u + DFI_ABILITY_INTIMIDATE, DFI_BOOST_SECONDARY));
@@ -9046,7 +9213,7 @@ duoforge_status dfi_turn_start(const duoforge_context *ctx, struct duoforge_batt
     if (!dfi_closure_battle_supported(&dfi_support, b)) {
         return DUOFORGE_E_UNSUPPORTED;
     }
-    dfi_run r = {ctx, b, draws, {0u, 0u, 0u, 0u}, 0u, 0u, 0u, false, DFI_RESULT_NONE, {0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u}, events, UINT32_MAX, false, DFI_MOVE_TARGET_NONE, 1u, 0u, 0u, 0u, DFI_POSITIONS, false, {0u, 0u, 0u, 0u, 0u, 0u}};
+    dfi_run r = {ctx, b, draws, {0u, 0u, 0u, 0u}, 0u, 0u, 0u, false, DFI_RESULT_NONE, {0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u}, events, UINT32_MAX, false, DFI_MOVE_TARGET_NONE, 1u, 0u, 0u, 0u, DFI_POSITIONS, false, {0u, 0u, 0u, 0u, 0u, 0u}, false};
     dfi_init_speeds(&r);
     /* The leads entered one by one (insertChoice updated each speed); their
      * entries run together. */
@@ -9161,7 +9328,7 @@ duoforge_status dfi_turn_run(const duoforge_context *ctx, struct duoforge_battle
     if (!dfi_closure_battle_supported(&dfi_support, b) || ((replacement || pivot) && dfi_support.switching == 0u)) {
         return DUOFORGE_E_UNSUPPORTED;
     }
-    dfi_run r = {ctx, b, draws, {0u, 0u, 0u, 0u}, 0u, 0u, 0u, false, DFI_RESULT_NONE, {0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u}, events, UINT32_MAX, false, DFI_MOVE_TARGET_NONE, 1u, 0u, 0u, 0u, DFI_POSITIONS, false, {0u, 0u, 0u, 0u, 0u, 0u}};
+    dfi_run r = {ctx, b, draws, {0u, 0u, 0u, 0u}, 0u, 0u, 0u, false, DFI_RESULT_NONE, {0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u}, events, UINT32_MAX, false, DFI_MOVE_TARGET_NONE, 1u, 0u, 0u, 0u, DFI_POSITIONS, false, {0u, 0u, 0u, 0u, 0u, 0u}, false};
     dfi_init_speeds(&r);
     duoforge_status st = DUOFORGE_OK;
     uint32_t exits = 0u; /* Emergency Exit after the residual action */
