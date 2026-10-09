@@ -3,7 +3,7 @@ Ability: Magic Bounce
 Level: 50
 EVs: 32 HP / 32 SpA / 2 Spe
 Modest Nature
-- Taunt
+- Yawn
 - Protect
 
 Staraptor (F) @ Eject Button
@@ -19,7 +19,7 @@ Ability: Flash Fire
 Level: 50
 EVs: 31 HP / 7 Atk / 24 Def / 3 SpD / 1 Spe
 Adamant Nature
-- Stealth Rock
+- Taunt
 - Protect
 
 Sableye (M) @ Sablenite
