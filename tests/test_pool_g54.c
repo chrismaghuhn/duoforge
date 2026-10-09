@@ -207,5 +207,6 @@ int main(void)
     check_constants(&t);
     check_multihit_weights(&t);
     check_guard_flag(&t, ctx);
+    duoforge_context_destroy(ctx);
     return df_test_end(&t);
 }

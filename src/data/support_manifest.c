@@ -680,5 +680,5 @@ const dfi_support_manifest dfi_support = {
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_SPIKES) |
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_TOXIC_SPIKES) |
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_STICKY_WEB) |
-                         ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_QUICK_GUARD), /* step G54: Quick Guard's side guard */
+                         ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_QUICK_GUARD)
 };
