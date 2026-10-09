@@ -42,6 +42,8 @@ GAMES = sum(games * len(arms) for _, _, arms, games in SCHEDULE)
 H2H_BARS = {"h2h_continuation": (0.52, 0.50), "h2h_frozen": (0.53, 0.50)}
 PANEL_BAR, BUCKET_BAR = 0.0, -0.03
 GROUPS = ("h2h_continuation", "h2h_frozen", "panel", "panel_PP", "panel_LL")
+BLOCKS = tuple(f"{suite}/{opponent}/{arm}/{bucket}" for suite, opponent, arms_, _ in SCHEDULE for arm in arms_
+               for bucket in BUCKETS)
 
 
 class GateStatus(Enum):
@@ -64,12 +66,15 @@ def _hex(value, name):
 @dataclass(frozen=True)
 class EvalManifest:
     """The predeclared evaluation: seed, logical game ids, the pool's hash,
-    every checkpoint's hash, raw play with book and preview search off, and
-    the bootstrap resamples. Nothing here can be changed by the CLI."""
+    every checkpoint's hash, the SHA-256 of every schedule block (suite,
+    opponent, arm, bucket: its teams, seeds and game ids), raw play with book
+    and preview search off, and the bootstrap resamples. Build it with
+    make_manifest; nothing here can be changed by the CLI."""
     seed: int
     first_game_id: int
     pool_sha256: str
     checkpoints: Mapping
+    schedule: Mapping
     play: str = "raw"
     book: bool = False
     preview_search: bool = False
@@ -78,13 +83,18 @@ class EvalManifest:
 
     def __post_init__(self):
         _uint(self.seed, "seed")
-        _uint(self.first_game_id, "first_game_id", (1 << 64) - GAMES)
+        _uint(self.first_game_id, "first_game_id", (1 << 63) - GAMES)  # game ids are int64
         _hex(self.pool_sha256, "pool_sha256")
         if not isinstance(self.checkpoints, Mapping) or set(self.checkpoints) != set(CHECKPOINTS):
             raise ValueError(f"checkpoints must name exactly {CHECKPOINTS}")
         for name in CHECKPOINTS:
             _hex(self.checkpoints[name], f"checkpoint {name}")
         object.__setattr__(self, "checkpoints", MappingProxyType(dict(self.checkpoints)))
+        if not isinstance(self.schedule, Mapping) or set(self.schedule) != set(BLOCKS):
+            raise ValueError("the schedule must hash every predeclared block")
+        for name in BLOCKS:
+            _hex(self.schedule[name], f"schedule block {name}")
+        object.__setattr__(self, "schedule", MappingProxyType(dict(self.schedule)))
         if self.play != "raw" or self.book is not False or self.preview_search is not False:
             raise ValueError("evaluation plays raw with book and preview search off")
         if type(self.resamples) is not int or self.resamples != RESAMPLES:
@@ -95,7 +105,7 @@ class EvalManifest:
 
 def manifest_mapping(manifest):
     return {"seed": manifest.seed, "first_game_id": manifest.first_game_id, "pool_sha256": manifest.pool_sha256,
-            "checkpoints": dict(manifest.checkpoints), "play": manifest.play, "book": manifest.book,
+            "checkpoints": dict(manifest.checkpoints), "schedule": dict(manifest.schedule), "play": manifest.play, "book": manifest.book,
             "preview_search": manifest.preview_search, "resamples": manifest.resamples,
             "schema_version": manifest.schema_version}
 
@@ -123,8 +133,6 @@ def _pairs(games):
     return games // 4
 
 
-def _game_id(manifest, index):
-    return manifest.first_game_id + index
 
 
 def _layout():
@@ -136,44 +144,81 @@ def _layout():
     return out
 
 
-def _seeds(manifest, index, bucket, pairs):
+def _seeds(seed, index, bucket, pairs):
     """Battle seeds of a (suite, bucket) block, from their own stream: the
     same for every pool and both arms."""
-    rng = np.random.default_rng([manifest.seed, index, BUCKETS.index(bucket), 1])
+    rng = np.random.default_rng([seed, index, BUCKETS.index(bucket), 1])
     return rng.integers(0, 1 << 63, size=pairs, dtype=np.uint64) * 2 + rng.integers(0, 2, size=pairs, dtype=np.uint64)
 
 
-def make_eval_rows(pool, manifest) -> dict:
-    """The 12288 predeclared games (SCHEDULE_FIELDS arrays): per suite,
-    opponent and bucket the same teams and seeds for every arm, each pair
-    played on both seats."""
-    if not isinstance(manifest, EvalManifest):
-        raise ValueError("make_eval_rows needs an EvalManifest")
+def _buckets(pool):
     buckets = {b: [] for b in BUCKETS}
     for index, team_id in enumerate(pool.ids):
         buckets[_bucket_of(team_id)].append(index)
     for b, members in buckets.items():
         if not members:
             raise ValueError(f"the evaluation pool needs {'LL_' if b == 'LL' else 'PP_/A/B/C'} teams")
+    return buckets
+
+
+def _block_key(suite, opponent, arm, bucket):
+    return f"{suite}/{opponent}/{arm}/{bucket}"
+
+
+def schedule_hashes(rows):
+    """SHA-256 of every block's rows (SCHEDULE_FIELDS in game-id order)."""
+    out = {}
+    keys = np.array([_block_key(*k) for k in zip(rows["suite"], rows["opponent"], rows["arm"], rows["bucket"])])
+    for block in sorted(set(keys.tolist())):
+        idx = np.flatnonzero(keys == block)
+        idx = idx[np.argsort(rows["game_id"][idx], kind="stable")]
+        out[block] = hashlib.sha256(_canonical({k: np.asarray(rows[k])[idx].tolist() for k in SCHEDULE_FIELDS})).hexdigest()
+    return out
+
+
+def make_manifest(pool, *, seed, first_game_id, checkpoints) -> "EvalManifest":
+    """The evaluation manifest of pool: its hash and every schedule block's."""
+    _buckets(pool)
+    _uint(seed, "seed")
+    _uint(first_game_id, "first_game_id", (1 << 63) - GAMES)
+    rows = _schedule_rows(pool, seed, first_game_id)
+    return EvalManifest(seed, first_game_id, pool_sha256(pool), checkpoints, schedule_hashes(rows))
+
+
+def make_eval_rows(pool, manifest) -> dict:
+    """The 12288 predeclared games (SCHEDULE_FIELDS arrays): per suite,
+    opponent and bucket the same teams and seeds for every arm, each pair
+    played on both seats; checked against the manifest's pool and blocks."""
+    if not isinstance(manifest, EvalManifest):
+        raise ValueError("make_eval_rows needs an EvalManifest")
+    _buckets(pool)
     if pool_sha256(pool) != manifest.pool_sha256:
         raise ValueError("the pool is not the one the evaluation manifest pins")
+    rows = _schedule_rows(pool, manifest.seed, manifest.first_game_id)
+    if schedule_hashes(rows) != dict(manifest.schedule):
+        raise ValueError("the schedule differs from the manifest's blocks")
+    return rows
+
+
+def _schedule_rows(pool, seed, first_game_id):
+    buckets = _buckets(pool)
     cols = {name: [] for name in SCHEDULE_FIELDS}
     for index, suite, opponent, arms, pairs, start in _layout():
         draws = {}
         for b in BUCKETS:
             members = np.array(buckets[b])
             weights = np.asarray(pool.weights, np.float64)[members]
-            rng = np.random.default_rng([manifest.seed, index, BUCKETS.index(b), 0])
+            rng = np.random.default_rng([seed, index, BUCKETS.index(b), 0])
             draws[b] = (members[rng.choice(members.size, size=pairs, p=weights / weights.sum())],
                         members[rng.choice(members.size, size=pairs, p=weights / weights.sum())],
-                        _seeds(manifest, index, b, pairs))
+                        _seeds(seed, index, b, pairs))
         offset = start
         for arm in arms:
             for b in BUCKETS:
                 student, foe, seeds = draws[b]
                 for pair in range(pairs):
                     for seat in (0, 1):
-                        for name, value in (("game_id", _game_id(manifest, offset)), ("suite", suite),
+                        for name, value in (("game_id", first_game_id + offset), ("suite", suite),
                                             ("opponent", opponent), ("arm", arm), ("bucket", b), ("pair", pair),
                                             ("student_seat", seat), ("student_team", int(student[pair])),
                                             ("opponent_team", int(foe[pair])), ("seed", int(seeds[pair]))):
@@ -200,19 +245,42 @@ class EvalResult:
     budget_causes: Mapping = field(default_factory=dict)
 
 
+def _field(name, value):
+    """A records field in its exact type: no silent cast (text, booleans or
+    fractions as integers, large integers through float)."""
+    kind = _DTYPES[name]
+    if isinstance(value, np.ndarray):
+        allowed = {str: "U", bool: "b", np.float64: "fiu"}.get(kind, "iu")
+        if value.ndim != 1 or value.dtype.kind not in allowed:
+            raise ValueError(f"records field {name} must be one-dimensional {kind.__name__} (got {value.dtype})")
+        items = value.tolist()
+    elif isinstance(value, (list, tuple)):
+        items = list(value)
+    else:
+        raise ValueError(f"records field {name} must be a list or array")
+    if kind is str:
+        ok = all(isinstance(v, str) for v in items)
+    elif kind is bool:
+        ok = all(isinstance(v, (bool, np.bool_)) for v in items)
+    elif kind is np.float64:  # JSON has no NaN: an unfinished game may score null
+        items = [math.nan if v is None else v for v in items]
+        ok = all(isinstance(v, (int, float)) and not isinstance(v, bool) for v in items)
+    else:
+        ok = all(isinstance(v, int) and not isinstance(v, bool) and v >= 0 for v in items)
+    if not ok:
+        raise ValueError(f"records field {name} must hold {kind.__name__} values only")
+    try:
+        return np.array(items, dtype=kind)
+    except OverflowError as err:
+        raise ValueError(f"records field {name} is out of range") from err
+
+
 def _check_records(records, manifest):
     """The records' structure against the predeclared schedule; ValueError
     for anything but missing whole blocks (an incomplete group)."""
     if not isinstance(records, Mapping) or set(records) != set(RECORD_FIELDS):
         raise ValueError(f"records need exactly the fields {RECORD_FIELDS}")
-    r = {}
-    for name in RECORD_FIELDS:
-        try:
-            r[name] = np.asarray(records[name], dtype=_DTYPES[name])
-        except (TypeError, ValueError, OverflowError) as err:
-            raise ValueError(f"records field {name} has the wrong type") from err
-        if r[name].ndim != 1:
-            raise ValueError(f"records field {name} must be one-dimensional")
+    r = {name: _field(name, records[name]) for name in RECORD_FIELDS}
     n = r["game_id"].size
     if any(v.size != n for v in r.values()):
         raise ValueError("records fields differ in length")
@@ -240,13 +308,14 @@ def _check_records(records, manifest):
         for i in rows:
             seat = int(r["student_seat"][i])
             expected = start + ((arms.index(arm) * len(BUCKETS) + BUCKETS.index(bucket)) * pairs + pair) * 2 + seat
-            if int(r["game_id"][i]) != _game_id(manifest, expected):
-                raise ValueError(f"row {i} has game id {int(r['game_id'][i])}, the schedule {_game_id(manifest, expected)}")
+            if int(r["game_id"][i]) != manifest.first_game_id + expected:
+                raise ValueError(f"row {i} has game id {int(r['game_id'][i])}, the schedule "
+                                 f"{manifest.first_game_id + expected}")
         for name in ("student_team", "opponent_team", "seed"):
             if r[name][a] != r[name][b]:
                 raise ValueError(f"the two seats of pair {pair} of {block}/{arm}/{bucket} differ in {name}")
         if (index, bucket) not in seed_cache:
-            seed_cache[(index, bucket)] = _seeds(manifest, index, bucket, pairs)
+            seed_cache[(index, bucket)] = _seeds(manifest.seed, index, bucket, pairs)
         if r["seed"][a] != seed_cache[(index, bucket)][pair]:
             raise ValueError(f"pair {pair} of {block}/{arm}/{bucket} has another seed than the schedule")
     for (block, arm, bucket, pair), rows in seen.items():
@@ -257,6 +326,13 @@ def _check_records(records, manifest):
                 for name in ("student_team", "opponent_team", "student_seat"):
                     if sorted(r[name][rows].tolist()) != sorted(r[name][mirror].tolist()):
                         raise ValueError(f"arms differ on mirrored pair {pair} of {block}/{bucket}")
+    # Complete blocks must be the predeclared draw exactly (teams, seeds, game ids).
+    games = dict(SCHEDULE_TABLE)
+    for block, digest in schedule_hashes(r).items():
+        suite, opponent, _, _ = block.split("/")
+        if (np.array([_block_key(*k) for k in zip(r["suite"], r["opponent"], r["arm"], r["bucket"])]) == block).sum() \
+                == _pairs(games[(suite, opponent)]) * 2 and digest != manifest.schedule[block]:
+            raise ValueError(f"schedule block {block} differs from the manifest (teams, seeds or game ids)")
     return r
 
 
@@ -287,13 +363,22 @@ def _rng(group):
     return np.random.default_rng([BOOTSTRAP_SEED, GROUPS.index(group)])
 
 
+def _stratified(rng, strata, resamples):
+    """Resampled means of the pooled pairs, each stratum (bucket) resampled
+    within itself so the predeclared 50/50 split is kept."""
+    total = sum(s.size for s in strata)
+    sums = np.zeros(resamples)
+    for s in strata:
+        sums += s[rng.integers(0, s.size, size=(resamples, s.size))].sum(axis=1)
+    return sums / total
+
+
 def _h2h(r, group, opponent, manifest):
     blocks = [_pair_scores(r, group, opponent, "pilot", b) for b in BUCKETS]
     if any(x is None for x in blocks):
         return {"status": GateStatus.INCOMPLETE, "point": None, "low": None, "high": None, "pairs": 0}
     scores = np.concatenate(blocks)
-    idx = _rng(group).integers(0, scores.size, size=(manifest.resamples, scores.size))
-    low, high = _interval(scores[idx].mean(axis=1))
+    low, high = _interval(_stratified(_rng(group), blocks, manifest.resamples))
     point = float(scores.mean())
     point_bar, low_bar = H2H_BARS[group]
     if point >= point_bar and low > low_bar:
@@ -316,31 +401,32 @@ def _panel(r, group, buckets, bar, manifest):
             if pilot is None or control is None:
                 return {"status": GateStatus.INCOMPLETE, "point": None, "low": None, "high": None, "pairs": 0}
             parts.append(pilot - control)
-        diffs.append(np.concatenate(parts))
+        diffs.append(parts)
     rng = _rng(group)
     stats = np.zeros(manifest.resamples)
-    for d in diffs:
-        stats += d[rng.integers(0, d.size, size=(manifest.resamples, d.size))].mean(axis=1) / len(PANEL)
+    for parts in diffs:
+        stats += _stratified(rng, parts, manifest.resamples) / len(PANEL)
+    diffs = [np.concatenate(parts) for parts in diffs]
     low, high = _interval(stats)
     point = float(sum(d.mean() for d in diffs) / len(PANEL))
     status = GateStatus.PASS if low > bar else GateStatus.FAIL if high <= bar else GateStatus.INCONCLUSIVE
     return {"status": status, "point": point, "low": low, "high": high, "pairs": int(sum(d.size for d in diffs))}
 
 
-def evaluate_records(records, manifest, ledgers=None) -> EvalResult:
+def evaluate_records(records, manifest, ledgers) -> EvalResult:
     """Fixed groups and gate statuses of the evaluation results. A missing
     or unfinished block makes its group INCOMPLETE; any FAIL, INCONCLUSIVE
-    or INCOMPLETE group blocks promotion. ledgers: (pilot, control)
-    ComputeLedgers, checked by validate_compute first."""
+    or INCOMPLETE group blocks promotion. ledgers: the (pilot, control)
+    arms' own ComputeLedgers (before any shared evaluation charge), checked
+    by validate_compute first."""
     if not isinstance(manifest, EvalManifest):
         raise ValueError("evaluate_records needs an EvalManifest")
+    pilot, control = ledgers
+    validate_compute(pilot, control)
     budget = {}
-    if ledgers is not None:
-        pilot, control = ledgers
-        validate_compute(pilot, control)
-        for axis in ("cpu_core_seconds", "gpu_seconds"):
-            p, c = getattr(pilot, axis), getattr(control, axis)
-            budget[axis] = {"pilot": p, "control": c, "relative": 0.0 if p == 0 else (c - p) / p}
+    for axis in ("cpu_core_seconds", "gpu_seconds"):
+        p, c = getattr(pilot, axis), getattr(control, axis)
+        budget[axis] = {"pilot": p, "control": c, "relative": 0.0 if p == 0 else (c - p) / p}
     r = _check_records(records, manifest)
     groups = {"h2h_continuation": _h2h(r, "h2h_continuation", "control", manifest),
               "h2h_frozen": _h2h(r, "h2h_frozen", "frozen", manifest),
@@ -356,9 +442,11 @@ def evaluate_records(records, manifest, ledgers=None) -> EvalResult:
             blocks = [_pair_scores(r, suite, opponent, arm, b) for b in BUCKETS]
             scores.setdefault(suite, {})[f"{opponent}/{arm}"] = None if any(x is None for x in blocks) else \
                 float(np.concatenate(blocks).mean())
+    order = np.argsort(r["game_id"], kind="stable")
     provenance = {"manifest_sha256": hashlib.sha256(_canonical(manifest_mapping(manifest))).hexdigest(),
-                  "records_sha256": hashlib.sha256(b"".join(np.ascontiguousarray(r[k]).tobytes()
-                                                            for k in RECORD_FIELDS)).hexdigest(),
+                  "records_sha256": hashlib.sha256(_canonical({k: [None if isinstance(v, float) and math.isnan(v) else v
+                                                                   for v in r[k][order].tolist()]
+                                                               for k in RECORD_FIELDS})).hexdigest(),
                   "games": int(r["game_id"].size)}
     return EvalResult(status, scores, groups, provenance, budget)
 
@@ -380,9 +468,11 @@ class ComputeLedger:
         if not isinstance(value, Mapping) or set(value) != {"schema", "cpu_core_seconds", "gpu_seconds",
                                                              "processes", "phases"}:
             raise ValueError("a ledger holds exactly schema, cpu_core_seconds, gpu_seconds, processes and phases")
-        if value["schema"] != LEDGER_SCHEMA or isinstance(value["schema"], bool):
+        if type(value["schema"]) is not int or value["schema"] != LEDGER_SCHEMA:
             raise ValueError(f"unsupported ledger schema {value['schema']!r}")
         _uint(value["processes"], "processes")
+        if value["processes"] < 1:
+            raise ValueError("a ledger records at least one process")
         phases = value["phases"]
         if not isinstance(phases, Mapping):
             raise ValueError("ledger phases must be a mapping")
@@ -474,8 +564,9 @@ def main(argv: Sequence[str] | None = None) -> int:
         if not isinstance(baseline, dict) or set(baseline) != {"records", "ledger"}:
             raise ValueError("the baseline file holds exactly records and ledger")
         shared = ComputeLedger.from_mapping(baseline["ledger"])
-        pilot, control = charge_shared(pilot, control, shared)
+        # The 5% match is on the arms' own use; the shared half is charged for the report only.
         result = evaluate_records(baseline["records"], manifest, (pilot, control))
+        pilot, control = charge_shared(pilot, control, shared)
         data = json.dumps(_report(result, pilot, control), indent=1, sort_keys=True, allow_nan=False)
         with open(args.out, "x", encoding="utf-8") as f:
             f.write(data)
