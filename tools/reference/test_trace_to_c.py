@@ -419,10 +419,10 @@ class Refusals(unittest.TestCase):
     def test_unknown_volatile(self):
         def mutate(spec, trace):
             mon = trace['steps'][1]['state']['sides'][0]['pokemon'][0]
-            self.assertNotIn('substitute', mon['volatiles'])
-            mon['volatiles'] = sorted(mon['volatiles'] + ['substitute'])
+            self.assertNotIn('zzunknown', mon['volatiles'])
+            mon['volatiles'] = sorted(mon['volatiles'] + ['zzunknown'])
         self.control('c11_follow_me', mutate, 'unknown-volatile',
-                     "trace_to_c: unknown volatile 'substitute' of Indeedee-F", 'substitute')
+                     "trace_to_c: unknown volatile 'zzunknown' of Indeedee-F", 'zzunknown')
 
     def test_two_turn_move_volatile_without_twoturnmove(self):
         def mutate(spec, trace):
@@ -2229,7 +2229,7 @@ class Library(unittest.TestCase):
         marked = [n for n in re.findall(r'\[DFI_MOVE_(\w+)\] = 1u', read('src', 'data', 'support_manifest.c'))
                   if n in ids and ids[n] >= ext_moves]
         self.assertEqual(len(names), ext_moves + len(ids))
-        self.assertEqual(len(marked), 180)  # the seven of step G54 (Icicle Spear, Scale Shot, Quick Guard, Upper Hand, Heal Pulse, Strength Sap, Sing), and the 171 of main (Roost and Stomping Tantrum of G42, Double Shock of G50 among them)  # Roost and Stomping Tantrum (G42), Double Shock (G50), the eleven of step G44, the four of step G46, the four of step G48, Taunt and Yawn (G31) and the rows of the earlier steps as before
+        self.assertEqual(len(marked), 181)  # the Substitute of step G60 (decision 0032) is the 181st; the seven of step G54 (Icicle Spear, Scale Shot, Quick Guard, Upper Hand, Heal Pulse, Strength Sap, Sing), and the 171 of main (Roost and Stomping Tantrum of G42, Double Shock of G50 among them)  # Roost and Stomping Tantrum (G42), Double Shock (G50), the eleven of step G44, the four of step G46, the four of step G48, Taunt and Yawn (G31) and the rows of the earlier steps as before
         pool = [n for n in os.listdir(os.path.join(ROOT, 'tests', 'reference', 'specs'))
                 if trace_to_c.is_pool(ROOT, n[:-5])]
         logs = []

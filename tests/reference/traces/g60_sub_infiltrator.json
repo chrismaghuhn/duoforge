@@ -1,9 +1,9 @@
 {
  "harness": 14,
  "pin": "b2cb775b0616115b775534eaeff50300e1fc81fc",
- "spec": "g60_sub_yawn.json",
+ "spec": "g60_sub_infiltrator.json",
  "format": "gen9championsvgc2026regmc",
- "seed": "sodium,00000000000000000000000000000000000000000000000000000000000060a3",
+ "seed": "sodium,00000000000000000000000000000000000000000000000000000000000060a8",
  "start": {
   "log": [
    "|gametype|doubles",
@@ -20,7 +20,7 @@
    "|poke|p1|Ceruledge, L50, M|",
    "|poke|p1|Gholdengo, L50|",
    "|poke|p1|Politoed, L50, M|",
-   "|poke|p2|Espeon, L50, F|",
+   "|poke|p2|Dragapult, L50, M|",
    "|poke|p2|Garchomp, L50, M|",
    "|poke|p2|Rillaboom, L50, M|",
    "|poke|p2|Ceruledge, L50, M|",
@@ -237,12 +237,12 @@
      ],
      "pokemon": [
       {
-       "species": "Espeon",
-       "set_species": "Espeon",
+       "species": "Dragapult",
+       "set_species": "Dragapult",
        "mega": 0,
        "switch_flag": 0,
-       "hp": 172,
-       "maxhp": 172,
+       "hp": 195,
+       "maxhp": 195,
        "item": "",
        "status": "",
        "status_time": 0,
@@ -258,7 +258,7 @@
         0
        ],
        "pp": [
-        12,
+        20,
         8
        ],
        "volatiles": [],
@@ -417,7 +417,7 @@
      "context": "queue",
      "lo": 4,
      "hi": 6,
-     "value": 5,
+     "value": 4,
      "group": [
       "A:team:p1c:",
       "A:team:p2c:"
@@ -429,47 +429,12 @@
      "context": "queue",
      "lo": 6,
      "hi": 8,
-     "value": 6,
+     "value": 7,
      "group": [
       "A:team:p1undefined:",
       "A:team:p2undefined:"
      ],
      "start": 6
-    },
-    {
-     "site": "INSERT_TIE",
-     "context": "queue",
-     "lo": 0,
-     "hi": 2,
-     "value": 1,
-     "group": [
-      "A:runSwitch:p1b::0",
-      "A:runSwitch:p1a::0"
-     ]
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "switch-order",
-     "lo": 0,
-     "hi": 2,
-     "value": 0,
-     "group": [
-      "P:p1b:0:S",
-      "P:p2a:0:S"
-     ],
-     "start": 0
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 0,
-     "hi": 2,
-     "value": 0,
-     "group": [
-      "P:p1b:0:",
-      "P:p2a:0:"
-     ],
-     "start": 0
     }
    ],
    "log": [
@@ -489,8 +454,8 @@
     "|switch|p1b: Gengar|Gengar, L50, M|167/167",
     "|switch|p1b: Gengar|Gengar, L50, M|100/100",
     "|split|p2",
-    "|switch|p2a: Espeon|Espeon, L50, F|172/172",
-    "|switch|p2a: Espeon|Espeon, L50, F|100/100",
+    "|switch|p2a: Dragapult|Dragapult, L50, M|195/195",
+    "|switch|p2a: Dragapult|Dragapult, L50, M|100/100",
     "|split|p2",
     "|switch|p2b: Garchomp|Garchomp, L50, M|215/215",
     "|switch|p2b: Garchomp|Garchomp, L50, M|100/100",
@@ -663,12 +628,12 @@
       ],
       "pokemon": [
        {
-        "species": "Espeon",
-        "set_species": "Espeon",
+        "species": "Dragapult",
+        "set_species": "Dragapult",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 172,
-        "maxhp": 172,
+        "hp": 195,
+        "maxhp": 195,
         "item": "",
         "status": "",
         "status_time": 0,
@@ -684,7 +649,7 @@
          0
         ],
         "pp": [
-         12,
+         20,
          8
         ],
         "volatiles": [],
@@ -779,154 +744,10 @@
   },
   {
    "input": {
-    "p1": "move 1, move 1 2",
+    "p1": "move 1, move 1 1",
     "p2": "move 2, move 2"
    },
    "draws": [
-    {
-     "site": "SPEED_TIE",
-     "context": "each:BeforeTurn",
-     "lo": 0,
-     "hi": 2,
-     "value": 1,
-     "group": [
-      "P:p1b:0:",
-      "P:p2a:0:"
-     ],
-     "start": 0
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 0,
-     "hi": 2,
-     "value": 0,
-     "group": [
-      "P:p1b:0:",
-      "P:p2a:0:"
-     ],
-     "start": 0
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 0,
-     "hi": 2,
-     "value": 0,
-     "group": [
-      "P:p1b:0:",
-      "P:p2a:0:"
-     ],
-     "start": 0
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 0,
-     "hi": 2,
-     "value": 0,
-     "group": [
-      "P:p1b:0:",
-      "P:p2a:0:"
-     ],
-     "start": 0
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 0,
-     "hi": 2,
-     "value": 1,
-     "group": [
-      "P:p1b:0:",
-      "P:p2a:0:"
-     ],
-     "start": 0
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 0,
-     "hi": 2,
-     "value": 1,
-     "group": [
-      "P:p1b:0:",
-      "P:p2a:0:"
-     ],
-     "start": 0
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 0,
-     "hi": 2,
-     "value": 0,
-     "group": [
-      "P:p1b:0:",
-      "P:p2a:0:"
-     ],
-     "start": 0
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 0,
-     "hi": 2,
-     "value": 0,
-     "group": [
-      "P:p1b:0:",
-      "P:p2a:0:"
-     ],
-     "start": 0
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 0,
-     "hi": 2,
-     "value": 1,
-     "group": [
-      "P:p1b:0:",
-      "P:p2a:0:"
-     ],
-     "start": 0
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 0,
-     "hi": 2,
-     "value": 1,
-     "group": [
-      "P:p1b:0:",
-      "P:p2a:0:"
-     ],
-     "start": 0
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 0,
-     "hi": 2,
-     "value": 0,
-     "group": [
-      "P:p1b:0:",
-      "P:p2a:0:"
-     ],
-     "start": 0
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 0,
-     "hi": 2,
-     "value": 0,
-     "group": [
-      "P:p1b:0:",
-      "P:p2a:0:"
-     ],
-     "start": 0
-    },
     {
      "site": "SPEED_TIE",
      "context": "field:Residual",
@@ -950,27 +771,15 @@
       "H:stall:p2b:end"
      ],
      "start": 2
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 0,
-     "hi": 2,
-     "value": 0,
-     "group": [
-      "P:p1b:0:",
-      "P:p2a:0:"
-     ],
-     "start": 0
     }
    ],
    "log": [
-    "|move|p2a: Espeon|Protect|p2a: Espeon",
-    "|-singleturn|p2a: Espeon|Protect",
+    "|move|p2a: Dragapult|Protect|p2a: Dragapult",
+    "|-singleturn|p2a: Dragapult|Protect",
     "|move|p2b: Garchomp|Protect|p2b: Garchomp",
     "|-singleturn|p2b: Garchomp|Protect",
-    "|move|p1b: Gengar|Shadow Ball|p2b: Garchomp",
-    "|-activate|p2b: Garchomp|move: Protect",
+    "|move|p1b: Gengar|Shadow Ball|p2a: Dragapult",
+    "|-activate|p2a: Dragapult|move: Protect",
     "|move|p1a: Kingambit|Substitute|p1a: Kingambit",
     "|-start|p1a: Kingambit|Substitute",
     "|split|p1",
@@ -1148,12 +957,12 @@
       ],
       "pokemon": [
        {
-        "species": "Espeon",
-        "set_species": "Espeon",
+        "species": "Dragapult",
+        "set_species": "Dragapult",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 172,
-        "maxhp": 172,
+        "hp": 195,
+        "maxhp": 195,
         "item": "",
         "status": "",
         "status_time": 0,
@@ -1169,7 +978,7 @@
          0
         ],
         "pp": [
-         12,
+         20,
          7
         ],
         "volatiles": [
@@ -1268,205 +1077,80 @@
   },
   {
    "input": {
-    "p1": "move 1, move 1 2",
+    "p1": "move 1, move 1 1",
     "p2": "move 1 1, move 2"
    },
    "draws": [
-    {
-     "site": "SPEED_TIE",
-     "context": "queue",
-     "lo": 1,
-     "hi": 3,
-     "value": 1,
-     "group": [
-      "A:move:p1b:shadowball",
-      "A:move:p2a:yawn"
-     ],
-     "start": 1
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:BeforeTurn",
-     "lo": 0,
-     "hi": 2,
-     "value": 1,
-     "group": [
-      "P:p1b:0:",
-      "P:p2a:0:"
-     ],
-     "start": 0
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 0,
-     "hi": 2,
-     "value": 1,
-     "group": [
-      "P:p1b:0:",
-      "P:p2a:0:"
-     ],
-     "start": 0
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "queue",
-     "lo": 1,
-     "hi": 3,
-     "value": 2,
-     "group": [
-      "A:move:p1b:shadowball",
-      "A:move:p2a:yawn"
-     ],
-     "start": 1
-    },
     {
      "site": "STALL",
      "context": "StallMove",
      "lo": 0,
      "hi": 3,
-     "value": 0
+     "value": 1
     },
     {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
+     "site": "ACCURACY",
+     "context": "",
      "lo": 0,
-     "hi": 2,
-     "value": 1,
-     "group": [
-      "P:p1b:0:",
-      "P:p2a:0:"
-     ],
-     "start": 0
+     "hi": 100,
+     "value": 89
     },
     {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
+     "site": "CRIT",
+     "context": "",
      "lo": 0,
-     "hi": 2,
-     "value": 0,
-     "group": [
-      "P:p1b:0:",
-      "P:p2a:0:"
-     ],
-     "start": 0
+     "hi": 24,
+     "value": 9
     },
     {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
+     "site": "DAMAGE_ROLL",
+     "context": "",
      "lo": 0,
-     "hi": 2,
-     "value": 0,
-     "group": [
-      "P:p1b:0:",
-      "P:p2a:0:"
-     ],
-     "start": 0
+     "hi": 16,
+     "value": 2
     },
     {
-     "site": "SPEED_TIE",
-     "context": "queue",
+     "site": "ACCURACY",
+     "context": "",
      "lo": 0,
-     "hi": 2,
-     "value": 1,
-     "group": [
-      "A:move:p2a:yawn",
-      "A:move:p1b:shadowball"
-     ],
-     "start": 0
+     "hi": 100,
+     "value": 78
     },
     {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
+     "site": "CRIT",
+     "context": "",
      "lo": 0,
-     "hi": 2,
-     "value": 1,
-     "group": [
-      "P:p1b:0:",
-      "P:p2a:0:"
-     ],
-     "start": 0
+     "hi": 24,
+     "value": 14
     },
     {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
+     "site": "DAMAGE_ROLL",
+     "context": "",
      "lo": 0,
-     "hi": 2,
-     "value": 0,
-     "group": [
-      "P:p1b:0:",
-      "P:p2a:0:"
-     ],
-     "start": 0
+     "hi": 16,
+     "value": 5
     },
     {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
+     "site": "SECONDARY",
+     "context": "",
      "lo": 0,
-     "hi": 2,
-     "value": 0,
-     "group": [
-      "P:p1b:0:",
-      "P:p2a:0:"
-     ],
-     "start": 0
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 0,
-     "hi": 2,
-     "value": 1,
-     "group": [
-      "P:p1b:0:",
-      "P:p2a:0:"
-     ],
-     "start": 0
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 0,
-     "hi": 2,
-     "value": 0,
-     "group": [
-      "P:p1b:0:",
-      "P:p2a:0:"
-     ],
-     "start": 0
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "field:Residual",
-     "lo": 1,
-     "hi": 3,
-     "value": 2,
-     "group": [
-      "H:stall:p2b:end",
-      "H:protect:p2b:end"
-     ],
-     "start": 1
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 0,
-     "hi": 2,
-     "value": 1,
-     "group": [
-      "P:p1b:0:",
-      "P:p2a:0:"
-     ],
-     "start": 0
+     "hi": 100,
+     "value": 60
     }
    ],
    "log": [
-    "|move|p2b: Garchomp|Protect|p2b: Garchomp",
-    "|-singleturn|p2b: Garchomp|Protect",
-    "|move|p1b: Gengar|Shadow Ball|p2b: Garchomp",
-    "|-activate|p2b: Garchomp|move: Protect",
-    "|move|p2a: Espeon|Yawn||[still]",
-    "|-fail|p2a: Espeon",
+    "|move|p2b: Garchomp|Protect||[still]",
+    "|-fail|p2b: Garchomp",
+    "|move|p2a: Dragapult|Quick Attack|p1a: Kingambit",
+    "|-resisted|p1a: Kingambit|1",
+    "|split|p1",
+    "|-damage|p1a: Kingambit|149/207",
+    "|-damage|p1a: Kingambit|71/100",
+    "|move|p1b: Gengar|Shadow Ball|p2a: Dragapult",
+    "|-supereffective|p2a: Dragapult|1",
+    "|split|p2",
+    "|-damage|p2a: Dragapult|1/195",
+    "|-damage|p2a: Dragapult|1/100",
     "|move|p1a: Kingambit|Substitute|p1a: Kingambit",
     "|-fail|p1a: Kingambit|move: Substitute",
     "|upkeep",
@@ -1509,7 +1193,7 @@
         "set_species": "Kingambit",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 156,
+        "hp": 149,
         "maxhp": 207,
         "item": "",
         "status": "",
@@ -1641,12 +1325,12 @@
       ],
       "pokemon": [
        {
-        "species": "Espeon",
-        "set_species": "Espeon",
+        "species": "Dragapult",
+        "set_species": "Dragapult",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 172,
-        "maxhp": 172,
+        "hp": 1,
+        "maxhp": 195,
         "item": "",
         "status": "",
         "status_time": 0,
@@ -1662,7 +1346,7 @@
          0
         ],
         "pp": [
-         11,
+         19,
          7
         ],
         "volatiles": [],
@@ -1693,9 +1377,7 @@
          16,
          6
         ],
-        "volatiles": [
-         "stall"
-        ],
+        "volatiles": [],
         "locked": null
        },
        {
