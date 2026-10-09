@@ -101,6 +101,21 @@ class CheckpointTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "own.member0.weight"):
             checkpoint.widen(params, cfg, features.FEATURE_NAMES, features.SLOT_FEATURE_NAMES)
 
+    def test_an_encoder_4_checkpoint_widens_to_encoder_5(self):
+        # params-49333 and its kin are encoder 4 (850 columns): load_current widens them by the 12 columns of
+        # encoder 5 (decision 0028), zero rows, without new weights
+        old = list(features.feature_names(4))
+        params = _v1_params(np.random.default_rng(4), obs=len(old))
+        with tempfile.TemporaryDirectory() as d:
+            path = os.path.join(d, "params-49333.npz")
+            checkpoint.save(path, params, _config(features=old, encoder=4))
+            wide, cfg = checkpoint.load_current(path)
+        self.assertEqual((cfg["encoder"], cfg["features"]), (features.ENCODER, list(features.FEATURE_NAMES)))
+        w = wide["t1"]["w"]
+        self.assertEqual(w.shape[0], features.obs_size(5))
+        self.assertTrue(np.array_equal(w[:len(old)], params["t1"]["w"]))
+        self.assertFalse(w[len(old):].any())
+
     def test_widening_inserts_zero_rows_by_name(self):
         flags = [n for n in features.FEATURE_NAMES if n.endswith(".flag.follow_me")]
         old = [n for n in features.FEATURE_NAMES if n not in flags]

@@ -108,7 +108,7 @@ EMBEDDINGS = ("species", "move", "item", "ability", "nature")
 _TABLES = {"species": data.TABLE_SPECIES, "move": data.TABLE_MOVE, "item": data.TABLE_ITEM,
            "ability": data.TABLE_ABILITY, "nature": data.TABLE_NATURE}
 # Format-2 layouts load_current can map to this encoder by column name.
-WIDENABLE_ENCODERS = (2, 3, features.ENCODER)
+WIDENABLE_ENCODERS = (2, 3, 4, features.ENCODER)  # 4: params-49333 and its kin, widened by encoder 5's 12 columns
 
 
 def ids_of(context):
@@ -154,7 +154,7 @@ def save(path, params, config):
 def load_current(path):
     """(params, config) of a checkpoint widened to the current encoder layout
     (features.FEATURE_NAMES): format 2 by column name, and a network of
-    encoder 2 or 3 widened so is one of features.ENCODER (its new rows are
+    encoder 2, 3 or 4 widened so is one of features.ENCODER (its new rows are
     zero; its ext_supported, none for encoder 2, still lies inside the
     columns it had); a format-1 file must have the width of its own encoder
     version (widen_594 converts the 594-feature ones) and keeps it."""
