@@ -4495,6 +4495,42 @@ static uint32_t dfi_move_hits(const dfi_move_data *md)
            : 1u;
 }
 
+/* A Pokemon that stands and has Pressure (step G53). */
+static bool dfi_pressure_holder(struct duoforge_battle *b, uint32_t flat)
+{
+    const dfi_member *t = dfi_at(b, flat);
+    return t != NULL && t->hp != 0u && dfi_ability(b, t, DFI_ABILITY_PRESSURE);
+}
+
+/* The extra PP of one move (step G53, Pressure: data/abilities.ts:3437-3444, onDeductPP returns 1 for a foe that is a target
+ * of the move; useMoveInner sums the returns over `pressureTargets` and deducts them, sim/battle-actions.ts:473-484). The
+ * pressure targets are the targets of getMoveTargets (sim/pokemon.ts:847-853), the ones after any redirection, except: a
+ * foeSide move has none; a field move (target all) and a mustpressure move (the flag of the move table) count every standing
+ * foe (foes(), sim/pokemon.ts:850-853). An ally, the user and a fainted holder count nothing (runEvent skips a fainted
+ * holder). */
+static uint32_t dfi_pressure_extra(struct duoforge_battle *b, uint32_t user, uint32_t cls, uint32_t move_id,
+                                   const uint32_t *targets, uint32_t count)
+{
+    const uint32_t foes = (1u - user / 2u) * 2u; /* the first foe position */
+    if ((dfi_pool_move_static_flags[move_id] & DUOFORGE_MOVE_STATIC_FLAG_MUST_PRESSURE) != 0u || cls == DUOFORGE_TARGET_CLASS_ALL) {
+        uint32_t holders = 0u;
+        for (uint32_t slot = 0u; slot < DUOFORGE_ACTIVE_PER_SIDE; ++slot) {
+            holders += dfi_pressure_holder(b, foes + slot) ? 1u : 0u;
+        }
+        return holders;
+    }
+    if (cls == DFI_TARGET_CLASS_FOE_SIDE) {
+        return 0u;
+    }
+    uint32_t extra = 0u;
+    for (uint32_t i = 0u; i < count; ++i) {
+        if (targets[i] / 2u != user / 2u && dfi_pressure_holder(b, targets[i])) {
+            extra += 1u;
+        }
+    }
+    return extra;
+}
+
 /* Double Shock's onTryMove (decision 0025, data/moves.ts:3954-3959): without the Electric type it fails, -fail and [still]
  * (*stopped). A user that has the type is played only as Pawmot with its own two types (dfi_double_shock_shape); any other
  * shape is refused, never guessed. Shared by the hit path and the no-target path, since TryMove runs before the no-targets
@@ -5358,6 +5394,18 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
      * user's moves): neither is marked, tests/test_pool_g30.c checks it; ChargeMove is Power Herb's event, which is not
      * in the pool either. */
     const bool charge_move = md->special == DFI_SPECIAL_ELECTRO_SHOT || md->special == DFI_SPECIAL_SOLAR_BEAM;
+    /* Pressure (step G53, dfi_pressure_extra): after the move's own PP and the redirection, before TryMove (the pin's order,
+     * sim/battle-actions.ts:473-484). The extra comes off the user's slot as deductPP does, clamped at 0. A locked turn has
+     * none (its source is the lockedmove condition, sim/battle-actions.ts:289, not a move with PP). The state is exact
+     * whatever the move line shows; what the viewer can attribute is the view's business (the fold in events.c). */
+    if (q->move_slot < DUOFORGE_MAX_MOVE_SLOTS && !locked) {
+        const uint32_t extra = dfi_pressure_extra(b, user, target_class, move_id, targets, count);
+        if (extra != 0u) {
+            dfi_move_slot *pressed = &m->moves[q->move_slot];
+            const uint32_t take = extra < (uint32_t)pressed->pp ? extra : (uint32_t)pressed->pp;
+            pressed->pp = (uint8_t)((uint32_t)pressed->pp - take); /* wide-operands-reviewed: take <= pp */
+        }
+    }
     if (charge_move && !locked) {
         static const uint8_t spa_up[DFI_STAT_STAGE_COUNT] = {6u, 6u, 7u, 6u, 6u, 6u, 6u};
         duoforge_event *mv = dfi_last_move(r);
@@ -6813,7 +6861,7 @@ static bool dfi_has_entry(const struct duoforge_battle *b, const dfi_member *m)
     const uint32_t now = dfi_ability_code(b, m);
     return dfi_weather_set_by_fam(fam) != DFI_WEATHER_NONE || dfi_terrain_set_by_fam(fam) != DFI_TERRAIN_NONE ||
            now == 1u + DFI_ABILITY_INTIMIDATE || now == 1u + DFI_ABILITY_FAIRYAURA || now == 1u + DFI_ABILITY_TRACE ||
-           now == 1u + DFI_ABILITY_UNNERVE;
+           now == 1u + DFI_ABILITY_UNNERVE || now == 1u + DFI_ABILITY_PRESSURE;
 }
 
 /* Trace (data/abilities.ts:5118-5148, onStart then its Update): the holder copies the ability of one of the foes that
@@ -6915,9 +6963,10 @@ static duoforge_status dfi_entry_ability(dfi_run *r, uint32_t flat)
         }
     } else if (a == 1u + DFI_ABILITY_TRACE) {
         return dfi_trace(r, flat);
-    } else if (a == 1u + DFI_ABILITY_FAIRYAURA || a == 1u + DFI_ABILITY_UNNERVE) {
+    } else if (a == 1u + DFI_ABILITY_FAIRYAURA || a == 1u + DFI_ABILITY_UNNERVE || a == 1u + DFI_ABILITY_PRESSURE) {
         /* onStart: -ability|holder|Fairy Aura (the aura itself is onAnyBasePower); Unnerve's is the same announcement
-         * (step G32; its `unnerved` flag is derived: dfi_unnerved) */
+         * (step G32; its `unnerved` flag is derived: dfi_unnerved); Pressure's (step G53, data/abilities.ts:3438-3440)
+         * is -ability|holder|Pressure, its charge being dfi_pressure_extra */
         const duoforge_event e = dfi_ev(DUOFORGE_EVENT_ABILITY, flat, DUOFORGE_CAUSE_NONE, a, DUOFORGE_NO_POSITION);
         dfi_emit(r, &e);
     } else if (a == 1u + DFI_ABILITY_INTIMIDATE) {

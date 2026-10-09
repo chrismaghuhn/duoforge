@@ -743,3 +743,6 @@ endif()
 # Step G51 (Mega batch 4): ten Mega Stones marked with no new rule, Keen Eye and Big Pecks as engine rows (turn.c), the marks, the
 # Mega of each pair, the setup, the API, and the Keen Eye ignoreEvasion check (white-box).
 duoforge_add_test(NAME duoforge.state.pool_g51 SOURCES test_pool_g51.c WHITEBOX TIMEOUT 60)
+
+# Step G53 (decision 0030): Pressure and the foe's derived PP.
+duoforge_add_test(NAME duoforge.state.pool_g53 SOURCES test_pool_g53.c WHITEBOX TIMEOUT 60)

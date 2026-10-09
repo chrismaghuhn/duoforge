@@ -394,6 +394,9 @@ duoforge_status duoforge_data_forme_static(const duoforge_context *ctx, uint32_t
 #define DUOFORGE_MOVE_STATIC_FLAG_POWDER     0x200u
 #define DUOFORGE_MOVE_STATIC_FLAG_POWER_RULE 0x400u /* base_power is not the damage: a callback computes the power
                                                        (Low Kick, Last Respects); base_power is the pin's basePower, 0 then */
+#define DUOFORGE_MOVE_STATIC_FLAG_MUST_PRESSURE 0x800u /* flags.mustpressure (step G53): a foe's Pressure costs one PP for
+                                                          this move whatever its target (Imprison, Spikes, Stealth Rock,
+                                                          Toxic Spikes in the pool) */
 
 /* A move. 64 bytes. */
 typedef struct duoforge_move_static {
@@ -672,7 +675,9 @@ duoforge_status duoforge_battle_step(const duoforge_context *ctx, duoforge_battl
 #define DUOFORGE_HP_PERCENT 2u /* hp = floor percent (1..100 while alive, 0 fainted), hp_max = 100 */
 #define DUOFORGE_HP_UNKNOWN 3u
 #define DUOFORGE_PP_EXACT   1u
-#define DUOFORGE_PP_DERIVED 2u /* the foe: pp_max minus the uses the viewer saw */
+#define DUOFORGE_PP_DERIVED 2u /* the foe: pp_max minus the PP the viewer can attribute (step G53: a use costs 1, plus the Pressure
+                                  extra of the viewer's own Pokemon where the target is shown or follows from the move's class;
+                                  a [still] line blanks its target and counts 1 only; 0 at the floor) */
 #define DUOFORGE_PP_UNKNOWN 3u
 #define DUOFORGE_HP_FLAG_NONE   0u
 #define DUOFORGE_HP_FLAG_RED    1u /* exactly 20 percent and hp*5 <= hp_max */
