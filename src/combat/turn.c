@@ -5144,8 +5144,8 @@ static duoforge_status dfi_substitute_takes(dfi_run *r, uint32_t user, uint32_t 
     }
     *sub = (uint16_t)((uint32_t)*sub - dealt); /* wide-operands-reviewed: dealt <= *sub <= 65535, the difference fits 16 bits */
     if (*sub == 0u) {
-        /* the break: `-ohko` for a one-hit KO first (no row of this build is one: the generator leaves OHKO moves UNMODELED), then
-         * removeVolatile's -end line (onEnd) */
+        /* the break: a one-hit KO (Sheer Cold, step G64) shows a bare `-ohko` first, which carries no state and is dropped by the
+         * converter (tools/reference/trace_to_c.py, the sub-break form), then removeVolatile's -end line (onEnd) */
         duoforge_event end = dfi_ev(DUOFORGE_EVENT_VOLATILE_END, target, DUOFORGE_CAUSE_NONE, 0u, DUOFORGE_NO_POSITION);
         end.detail = (uint8_t)DUOFORGE_VOLATILE_SUBSTITUTE;
         dfi_emit(r, &end);

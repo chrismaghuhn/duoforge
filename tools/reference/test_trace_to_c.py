@@ -153,6 +153,31 @@ class Refusals(unittest.TestCase):
         self.control('w1_sand_stream', hail_damage, 'from-attribute', 'trace_to_c: [from] Hail: no Hail in the format',
                      'Hail')
 
+    def test_the_bare_ohko_of_a_sheer_cold_sub_break_is_dropped_only_before_that_break(self):
+        """Sheer Cold into a Substitute (step G64 with decision 0032): the sub's break prints `-ohko` right after the move line
+        and right before `-end|X|Substitute` (data/moves.ts:18357-18374). The line is dropped only with that exact pair in
+        place: without the -end, or with the -end of another Pokemon, it is refused like any other -ohko."""
+        def drop_the_break(spec, trace):
+            for step in trace['steps']:
+                log = step['log']
+                for i, line in enumerate(log):
+                    if line == '|-ohko' and log[i + 1] == '|-end|p2a: Gengar|Substitute':
+                        del log[i + 1]
+                        return
+            self.fail('no sub break by an OHKO in xr3_sheercold_sub')
+
+        def other_target(spec, trace):
+            for step in trace['steps']:
+                log = step['log']
+                for i, line in enumerate(log):
+                    if line == '|-ohko' and log[i + 1] == '|-end|p2a: Gengar|Substitute':
+                        log[i + 1] = '|-end|p1a: Glalie|Substitute'
+                        return
+            self.fail('no sub break by an OHKO in xr3_sheercold_sub')
+
+        self.control('xr3_sheercold_sub', drop_the_break, 'ohko-line', "trace_to_c: unknown -ohko '|-ohko'", '|-ohko')
+        self.control('xr3_sheercold_sub', other_target, 'ohko-line', "trace_to_c: unknown -ohko '|-ohko'", '|-ohko')
+
     def test_unknown_protocol_line(self):
         self.control('s2_turn_core_1', lambda spec, trace: trace['steps'][1]['log'].append('|foo|bar'),
                      'protocol-line', "trace_to_c: unknown protocol line '|foo|bar'", 'foo')

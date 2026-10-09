@@ -1139,10 +1139,17 @@ def step_events(log, viewer, roster_of, maxhp, tables, rb_pending=None):
             # of faintMessages at :976). The faint of that target is the line right before it (the event is the faint), and the
             # last move line is Sheer Cold aimed at the same Pokemon. It carries no state, so it is checked and dropped; any other
             # `-ohko` is refused.
+            # Sheer Cold into a Substitute (step G64 with decision 0032; data/moves.ts:18357, the sub's onTryPrimaryHit): the
+            # sub's damage is the target's max HP capped at the sub's HP, so the sub always breaks, and the bare `-ohko` comes
+            # right after the move line and right before the `-end|X|Substitute` of that break (removeVolatile's onEnd). The
+            # sub's event is the break, so the line is dropped here too.
             prev = log[i - 1] if i > 0 else ''
+            nxt = log[i + 1] if i + 1 < len(log) else ''
             aimed = last_move_line is not None and len(last_move_line) >= 5 and last_move_line[3] == 'Sheer Cold' and \
                 prev.startswith('|faint|') and prev.split('|')[2] == last_move_line[4]
-            if args or attrs or not aimed:
+            sub_break = last_move_line is not None and len(last_move_line) >= 5 and last_move_line[3] == 'Sheer Cold' and \
+                prev == '|'.join(last_move_line) and nxt.split('|') == ['', '-end', last_move_line[4], 'Substitute']
+            if args or attrs or not (aimed or sub_break):
                 raise ConversionError('ohko-line', 'trace_to_c: unknown -ohko %r' % line, detail=line)
             continue
         if kind == 'turn':
