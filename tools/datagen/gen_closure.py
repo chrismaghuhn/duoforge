@@ -1823,6 +1823,19 @@ G28_ITEM_FACTS = (
     ('expertbelt', ["onModifyDamage(damage, source, target, move) { if (move && target.getMoveHitData(move).typeMod > 0) { "
                     "return this.chainModify([4915, 4096]); } },"]),
 )
+# Step G49 (duration and boost items, part): Muscle Band and Wise Glasses (their base power x4505/4096 by category, priority 16,
+# data/items.ts:4239-4251 and :7754-7766) and Bright Powder (the target's accuracy x3686/4096, priority -2, data/items.ts:659-670)
+# are engine rows (ENGINE_ROWS): the turn code reads the item by id and hard-codes these texts. The duration rows of Damp Rock
+# and its kind and of Terrain Extender are not marked by this step.
+G49_ITEM_FACTS = (
+    ('muscleband', ('onBasePowerPriority: 16,',
+                    "onBasePower(basePower, user, target, move) { if (move.category === 'Physical') { return this.chainModify([4505, 4096]); } },")),
+    ('wiseglasses', ('onBasePowerPriority: 16,',
+                     "onBasePower(basePower, user, target, move) { if (move.category === 'Special') { return this.chainModify([4505, 4096]); } },")),
+    ('brightpowder', ('onModifyAccuracyPriority: -2,',
+                      "onModifyAccuracy(accuracy) { if (typeof accuracy !== 'number') return; this.debug('brightpowder - decreasing accuracy'); "
+                      "return this.chainModify([3686, 4096]); },")),
+)
 # Step G31: Taunt (data/moves.ts:18974-19016) and Yawn (:21131-21162) are handlers of their own that the turn code implements
 # (a condition whose state is the tail's taunt_turns / yawn_turns). The Champions mod changes neither. The generator checks
 # the whole condition text of both and Yawn's onTryHit, whitespace aside: Taunt's duration 3 (4 when the target has been out
@@ -2220,9 +2233,9 @@ HANDLER_IDS = ['NONE', 'UNMODELED']
 # by definition, like the closure and Team C rows. The step that marks such a row in the support manifest adds its id
 # here, which changes the handler column and so the POOL table hash, as any pool change does; a row that is marked and
 # still has the UNMODELED handler fails duoforge.data.pool_tables. G4: Focus Sash, Rock Head. G12: Floettite (the Mega
-# Stone of Floette-Eternal), Flower Veil and Fairy Aura. G14: Rough Skin, Poison Touch and Thermal Exchange. G16: Sticky Hold (Knock Off reads it by id). AC1: Trace (the entry copy of a foe's ability). G15: Psychic Seed (Grassy Seed's rule for the other terrain). G22: Sand Rush, Swift Swim, Slush Rush and Chlorophyll (the doubled Speed in their weather, tools/datagen/pool_families.js ENGINE_ORDER), Sand Rush's immunity to Sandstorm, Inner Focus (no flinch, no Intimidate drop) and Liquid Voice (a sound move becomes Water). G23-C: Levitate (isGrounded and the Ground immunity).
+# Stone of Floette-Eternal), Flower Veil and Fairy Aura. G14: Rough Skin, Poison Touch and Thermal Exchange. G16: Sticky Hold (Knock Off reads it by id). AC1: Trace (the entry copy of a foe's ability). G15: Psychic Seed (Grassy Seed's rule for the other terrain). G22: Sand Rush, Swift Swim, Slush Rush and Chlorophyll (the doubled Speed in their weather, tools/datagen/pool_families.js ENGINE_ORDER), Sand Rush's immunity to Sandstorm, Inner Focus (no flinch, no Intimidate drop) and Liquid Voice (a sound move becomes Water). G23-C: Levitate (isGrounded and the Ground immunity). G49: Muscle Band, Wise Glasses (base power by category) and Bright Powder (the target's accuracy).
 ENGINE_ROWS = {'items': ['focussash', 'floettite', 'psychicseed', 'electricseed', 'mistyseed', 'expertbelt', 'ejectbutton',
-                         'widelens'],
+                         'widelens', 'muscleband', 'wiseglasses', 'brightpowder'],
                'abilities': ['rockhead', 'flowerveil', 'fairyaura', 'roughskin', 'poisontouch', 'thermalexchange',
                              'stickyhold', 'trace', 'levitate', 'sandrush', 'swiftswim', 'slushrush', 'chlorophyll',
                              'innerfocus', 'liquidvoice', 'flamebody', 'clearbody', 'hospitality', 'overcoat',
@@ -2885,6 +2898,21 @@ def check_g34_facts(abil_ts, champ_abil, items_ts, champ_items):
                     fail('%s %s: the entry no longer has "%s"' % (kind, rid, fact))
 
 
+def check_g49_facts(items_ts, champ_items):
+    """Step G49: the texts of Muscle Band, Wise Glasses and Bright Powder that the engine hard-codes (G49_ITEM_FACTS) are in
+    the pinned entries, whitespace aside, and the Champions mod has no entry of its own for them."""
+    for rid, facts in G49_ITEM_FACTS:
+        e = items_ts.entry(rid)
+        if e is None:
+            fail('item %s not found' % rid)
+        if champ_items.entry(rid) is not None:
+            fail('item %s: the champions mod overrides the entry' % rid)
+        text = norm(chr(10).join(e[2]))
+        for fact in facts:
+            if norm(fact) not in text:
+                fail('item %s: the entry no longer has "%s"' % (rid, fact))
+
+
 def check_g37_facts(abil_ts, champ_abil):
     """Step G37: the text of Toxic Debris that the engine hard-codes (G37_ABILITY_FACTS) is in the pinned entry, whitespace aside, and
     the Champions mod has no entry of its own for it."""
@@ -2948,6 +2976,7 @@ def build_pool(root, repo, dx):
     check_g30_facts(abil_ts, champ_abil)
     check_g28_items(items_ts)
     check_g34_facts(abil_ts, champ_abil, items_ts, champ_items)
+    check_g49_facts(items_ts, champ_items)
     check_g37_facts(abil_ts, champ_abil)
     check_g32_entries(items_ts, champ_items, abil_ts, champ_abil)
     check_weather_facts(Source(root, 'data/conditions.ts', READER_INPUTS), moves_ts)

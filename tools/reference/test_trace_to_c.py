@@ -377,6 +377,45 @@ class Refusals(unittest.TestCase):
                      "trace_to_c: event:AfterMove tie with ['H:noguard:p1b:cb', 'H:noguard:p2b:cb']",
                      'event:AfterMove:noguard')
 
+    @staticmethod
+    def priority_tie(trace):
+        """The draws in context event:ModifyAccuracy of g49_bright_powder_tie (Wide Lens and Bright Powder at one Speed)."""
+        found = [d for step in trace['steps'] for d in step['draws'] if d.get('context') == 'event:ModifyAccuracy']
+        assert len(found) == 2, found
+        return found
+
+    def test_wide_lens_and_bright_powder_tie_is_a_dropped_draw(self):
+        """g49_bright_powder_tie: the two priority -2 accuracy items of equal-Speed holders tie in ModifyAccuracy. The draws are
+        dropped with their reason (the engine refuses the orders that differ), and the battle converts."""
+        name = 'g49_bright_powder_tie'
+        spec, trace = battle(name)
+        convert(name, spec, trace)
+        for d in self.priority_tie(trace):
+            self.assertEqual((d['site'], d['group']), ('SPEED_TIE', ['H:brightpowder:p2a:cb', 'H:widelens:p1a:cb']))
+        k = next(k for k, step in enumerate(trace['steps']) for d in step['draws'] if d.get('context') == 'event:ModifyAccuracy')
+        d = self.priority_tie(trace)[0]
+        before, after = trace['steps'][k - 1]['state'], trace['steps'][k]['state']
+        flipped = dict(d, group=list(reversed(d['group'])))
+        self.assertEqual(trace_to_c.drop_reason(d, before, after), trace_to_c.drop_reason(flipped, before, after))
+        self.assertIn('Wide Lens and Bright Powder', trace_to_c.drop_reason(d, before, after))
+
+    def test_accuracy_tie_of_wide_lens_and_bright_powder_with_another_handler(self):
+        """A tie in ModifyAccuracy with any third handler, or with a handler that is not a callback, is still refused."""
+        def other(spec, trace):
+            self.priority_tie(trace)[0]['group'][1] = 'H:noguard:p2b:cb'
+        self.control('g49_bright_powder_tie', other, 'tie-context', 'trace_to_c: unhandled tie context event:ModifyAccuracy',
+                     'event:ModifyAccuracy')
+
+        def third(spec, trace):
+            self.priority_tie(trace)[0]['group'].append('H:widelens:p2b:cb')
+        self.control('g49_bright_powder_tie', third, 'tie-context', 'trace_to_c: unhandled tie context event:ModifyAccuracy',
+                     'event:ModifyAccuracy')
+
+        def not_a_callback(spec, trace):
+            self.priority_tie(trace)[0]['group'][0] = 'H:brightpowder:p2a:end'
+        self.control('g49_bright_powder_tie', not_a_callback, 'tie-context', 'trace_to_c: unhandled tie context event:ModifyAccuracy',
+                     'event:ModifyAccuracy')
+
     def test_unknown_volatile(self):
         def mutate(spec, trace):
             mon = trace['steps'][1]['state']['sides'][0]['pokemon'][0]
