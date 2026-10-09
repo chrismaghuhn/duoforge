@@ -46,7 +46,7 @@ void dfi_event_project(const duoforge_event *in, uint32_t player, duoforge_event
     out->reserved[1] = 0u;
     if ((in->kind == DUOFORGE_EVENT_SWITCH || in->kind == DUOFORGE_EVENT_DRAG) && in->reserved[0] != 0u &&
         in->position != DUOFORGE_NO_POSITION && (uint32_t)in->position / 2u != player) {
-        out->id = (uint16_t)(in->reserved[0] - 1u);
+        out->id = (uint16_t)(in->reserved[0] - 1u); /* wide-operands-reviewed: reserved[0] is set only as roster index + 1 */
     }
     if (in->hp_kind != DUOFORGE_HP_EXACT || in->position == DUOFORGE_NO_POSITION ||
         (uint32_t)in->position / 2u == player) {
@@ -165,7 +165,7 @@ static bool dfi_fold_illusion_break(dfi_tail_illusion *ill, dfi_side *viewer, co
     h->revealed = (uint8_t)((uint32_t)h->revealed | newly); /* wide-operands-reviewed */
     for (uint32_t j = 0u; j < fs->members[truth].move_count && j < DUOFORGE_MAX_MOVE_SLOTS; ++j) {
         const uint32_t sum = (uint32_t)h->moves_used[j] + (uint32_t)ill->pending[j];
-        h->moves_used[j] = (uint8_t)(sum > UINT8_MAX ? UINT8_MAX : sum);
+        h->moves_used[j] = (uint8_t)(sum > UINT8_MAX ? UINT8_MAX : sum); /* wide-operands-reviewed: clamped to UINT8_MAX */
     }
     for (uint32_t k = 0u; k < fs->members[disguise].move_count && k < DUOFORGE_MAX_MOVE_SLOTS; ++k) {
         const uint32_t old = ill->snapshot[3u + k];
@@ -176,7 +176,7 @@ static bool dfi_fold_illusion_break(dfi_tail_illusion *ill, dfi_side *viewer, co
         for (uint32_t j = 0u; j < fs->members[truth].move_count && j < DUOFORGE_MAX_MOVE_SLOTS; ++j) {
             if (fs->members[truth].moves[j].move_id == fs->members[disguise].moves[k].move_id) {
                 const uint32_t sum = (uint32_t)h->moves_used[j] + delta;
-                h->moves_used[j] = (uint8_t)(sum > UINT8_MAX ? UINT8_MAX : sum);
+                h->moves_used[j] = (uint8_t)(sum > UINT8_MAX ? UINT8_MAX : sum); /* wide-operands-reviewed: clamped to UINT8_MAX */
                 break;
             }
         }

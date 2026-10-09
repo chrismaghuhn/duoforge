@@ -2,6 +2,7 @@
 
 #include "core/arith.h"
 #include "core/bytes.h"
+#include "data/pool_tables.h"
 #include "state/closure_member.h"
 #include "state/context_internal.h"
 #include "state/identity.h"
@@ -661,11 +662,23 @@ static dfi_invariant dfi_check_tail(const duoforge_context *ctx, const struct du
             ts->quick_guard > DFI_TAIL_QUICK_GUARD_MAX || !dfi_hazard_order_valid(ts)) {
             return DFI_INV_TAIL_SIDE;
         }
-        /* Rev 5 (decision 0026): the Illusion state the fold keeps. A shown name is a brought member of this side (shown - 1); with
-         * no shown name there is no snapshot, no pending count and no override; the snapshot's reserve bytes are zero. */
+        /* Rev 5 (decision 0026 section 3): the Illusion state. Every field is zero when the side has no holder (a member with
+         * the Illusion ability; Species Clause allows one per side). A shown name is a brought member of this side that is not
+         * the holder; with no shown name there is no snapshot, no pending count and no override; the snapshot's reserve bytes
+         * are zero. */
         const dfi_tail_illusion *il = &ts->illusion;
-        if (il->shown > DUOFORGE_MAX_ROSTER ||
+        uint32_t holder = DUOFORGE_MAX_ROSTER;
+        for (uint32_t m = 0u; m < DUOFORGE_MAX_ROSTER && m < side->member_count; ++m) {
+            if (side->members[m].ability == DFI_ABILITY_ILLUSION) {
+                holder = m;
+                break;
+            }
+        }
+        const bool any_ill = il->shown != 0u || !dfi_bytes_zero(il->snapshot, sizeof il->snapshot) ||
+                             !dfi_bytes_zero(il->pending, sizeof il->pending) || !dfi_bytes_zero(il->override, sizeof il->override);
+        if (il->shown > DUOFORGE_MAX_ROSTER || (any_ill && holder == DUOFORGE_MAX_ROSTER) ||
             (il->shown != 0u && (((uint32_t)side->brought_mask >> ((uint32_t)il->shown - 1u)) & 1u) == 0u) ||
+            (il->shown != 0u && (uint32_t)il->shown - 1u == holder) ||
             (il->shown == 0u && (!dfi_bytes_zero(il->snapshot, sizeof il->snapshot) || !dfi_bytes_zero(il->pending, sizeof il->pending) ||
                                  !dfi_bytes_zero(il->override, sizeof il->override))) ||
             !dfi_bytes_zero(il->snapshot + 7, 2u)) {

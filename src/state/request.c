@@ -870,8 +870,8 @@ duoforge_status dfi_battle_step_events_tape(const duoforge_context *ctx, duoforg
              * channel carries the shown index, the record keeps the true one (the projection strips it). */
             uint32_t disguise = 0u;
             if (dfi_illusion_lead_disguise(&tmp, flat / 2u, flat % 2u, &disguise)) {
-                tmp.tail.sides[flat / 2u].positions[flat % 2u].ability_state = (uint8_t)(disguise + 1u);
-                e.reserved[0] = (uint8_t)(disguise + 1u);
+                tmp.tail.sides[flat / 2u].positions[flat % 2u].ability_state = (uint8_t)(disguise + 1u); /* wide-operands-reviewed: roster index + 1, at most 6 */
+                e.reserved[0] = (uint8_t)(disguise + 1u); /* wide-operands-reviewed: roster index + 1, at most 6 */
             }
             dfi_events_push(events, &e);
         }

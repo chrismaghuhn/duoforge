@@ -6053,7 +6053,7 @@ static duoforge_status dfi_switch_in(dfi_run *r, uint32_t side, uint32_t slot, u
     }
     if (disguised) {
         /* the disguise: its roster index + 1 (tail rev 4, ability_state, cleared with the occupant or by the break) */
-        b->tail.sides[side].positions[slot].ability_state = (uint8_t)(disguise + 1u);
+        b->tail.sides[side].positions[slot].ability_state = (uint8_t)(disguise + 1u); /* wide-operands-reviewed: roster index + 1, at most 6 */
     }
     /* newlySwitched until the end of the turn (Team C: only Helping Hand
      * reads it). */
@@ -6065,7 +6065,7 @@ static duoforge_status dfi_switch_in(dfi_run *r, uint32_t side, uint32_t slot, u
     e.id = (uint16_t)reserve;
     if (disguised) {
         /* the shown roster index (side channel of the record; the projection strips it, decision 0026 section 4) */
-        e.reserved[0] = (uint8_t)(disguise + 1u);
+        e.reserved[0] = (uint8_t)(disguise + 1u); /* wide-operands-reviewed: roster index + 1, at most 6 */
     }
     if (parting_shot || pivot != NULL) {
         e.cause = (uint8_t)DUOFORGE_CAUSE_MOVE;

@@ -85,6 +85,40 @@ static bool dfi_is_occupant(const dfi_side *side, uint32_t m)
     return side->positions[0].occupant == m || side->positions[1].occupant == m;
 }
 
+/* Illusion (decision 0026 section 4). The roster index of the side's holder (its Illusion member; Species Clause allows one per
+ * side), or DUOFORGE_MAX_ROSTER when the side has none. */
+static uint32_t dfi_illusion_holder_index(const dfi_side *side)
+{
+    for (uint32_t m = 0u; m < DUOFORGE_MAX_ROSTER && m < side->member_count; ++m) {
+        if (side->members[m].ability == DFI_ABILITY_ILLUSION) {
+            return m;
+        }
+    }
+    return DUOFORGE_MAX_ROSTER;
+}
+
+/* The occupant of a position as the viewer sees it. For the foe, a disguised holder shows the disguise (ill_shown - 1); the truth
+ * is the viewer's own only. */
+static uint32_t dfi_shown_occupant(const struct duoforge_battle *b, uint32_t viewer, uint32_t s, uint32_t p)
+{
+    const uint32_t occ = b->sides[s].positions[p].occupant;
+    if (s != viewer && b->tail.sides[s].positions[p].ability_state != 0u && b->tail.sides[s].illusion.shown != 0u) {
+        return (uint32_t)b->tail.sides[s].illusion.shown - 1u;
+    }
+    return occ;
+}
+
+/* Whether member m of side s is on the field as the viewer sees it. */
+static bool dfi_shown_on_field(const struct duoforge_battle *b, uint32_t viewer, uint32_t s, uint32_t m)
+{
+    for (uint32_t p = 0u; p < DUOFORGE_ACTIVE_PER_SIDE; ++p) {
+        if (dfi_shown_occupant(b, viewer, s, p) == m) {
+            return true;
+        }
+    }
+    return false;
+}
+
 /* A foe's PP as the viewer can count it: the maximum (open) minus the uses
  * the viewer saw (decision 0007 point A). */
 static uint8_t dfi_derived_pp(uint32_t pp_max, uint32_t used)
@@ -155,13 +189,22 @@ static void dfi_view_member(const struct duoforge_battle *b, uint32_t viewer, ui
         v->hp_flag = know->hp_flag;
         v->hp_max = 100u;
         v->hp_kind = (uint8_t)DUOFORGE_HP_PERCENT;
-        v->location = dfi_is_occupant(side, m) ? (uint8_t)DUOFORGE_LOCATION_ACTIVE : (uint8_t)DUOFORGE_LOCATION_BENCH;
+        v->location = dfi_shown_on_field(b, viewer, s, m) ? (uint8_t)DUOFORGE_LOCATION_ACTIVE : (uint8_t)DUOFORGE_LOCATION_BENCH;
         /* A status is announced when it starts and when it ends, so the
          * current one is the one shown (read from the state like the
          * ability, which changes only by a Mega Evolution, always shown:
          * an invariant ties is_mega to the revealed fact); a fainted member
          * shows none. */
-        v->status = know->hp_percent != 0u ? mem->status : (uint8_t)DUOFORGE_AILMENT_NONE;
+        /* Illusion (decision 0026 section 4): the disguise's row shows the holder's status, because every status line while
+         * disguised carries the disguise's name; the holder's own row is read as before (open point: its status before the
+         * disguise is not kept in the state). */
+        uint8_t shown_status = mem->status;
+        const uint32_t holder = dfi_illusion_holder_index(side);
+        if (!own && holder < DUOFORGE_MAX_ROSTER && holder != m && b->tail.sides[s].illusion.shown != 0u &&
+            (uint32_t)b->tail.sides[s].illusion.shown - 1u == m) {
+            shown_status = side->members[holder].hp != 0u ? side->members[holder].status : (uint8_t)DFI_STATUS_NONE;
+        }
+        v->status = know->hp_percent != 0u ? shown_status : (uint8_t)DUOFORGE_AILMENT_NONE;
     } else {
         v->hp_kind = (uint8_t)DUOFORGE_HP_UNKNOWN;
         v->location = (uint8_t)DUOFORGE_LOCATION_UNDETERMINED;
@@ -227,8 +270,8 @@ static void dfi_view_side(const struct duoforge_battle *b, uint32_t viewer, uint
         dfi_view_position(b, viewer, s, p, &out->positions[p]);
     }
     out->member_count = side->member_count;
-    out->occupant[0] = side->positions[0].occupant;
-    out->occupant[1] = side->positions[1].occupant;
+    out->occupant[0] = (uint8_t)dfi_shown_occupant(b, viewer, s, 0u);
+    out->occupant[1] = (uint8_t)dfi_shown_occupant(b, viewer, s, 1u);
     out->mega_used = side->mega_used;
     for (uint32_t i = 0u; i < DUOFORGE_MAX_ROSTER; ++i) {
         out->brought_order[i] = own ? side->brought_order[i] : (uint8_t)DUOFORGE_ROSTER_NONE;
@@ -347,6 +390,10 @@ duoforge_status duoforge_battle_observe_ext(const duoforge_context *ctx, const d
                     battle->sides[s].positions[p].occupant != DFI_OCCUPANT_NONE &&
                     dfi_last_move_id(battle, s * 2u + p) == (uint32_t)DFI_MOVE_RAGEPOWDER) {
                     vol |= (uint32_t)DUOFORGE_POSITION_EXT_RAGE_POWDER;
+                }
+                /* Illusion (decision 0026 section 4, bit 19): the owner's own disguise is up; the foe's is never shown by the bit */
+                if (s == viewer && tail->ability_state != 0u) {
+                    vol |= (uint32_t)DUOFORGE_POSITION_EXT_ILLUSION_UP;
                 }
                 o.sides[s].positions[p].volatiles = vol;
                 /* Step G9, Encore: the one move slot (slot + 1) that the occupant may use, public (-start|X|Encore: the

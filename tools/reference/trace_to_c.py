@@ -863,6 +863,8 @@ EV = {name: i + 1 for i, name in enumerate(
      'SINGLE_TURN', 'VOLATILE_START', 'VOLATILE_END', 'TYPE_CHANGE', 'ITEM_START'])}
 # DUOFORGE_EVENT_DRAG = 45 (step G46): 43 and 44 belong to REVIVE and TRANSFORM on their own branches, so the drag is set by value.
 EV['DRAG'] = 45
+# DUOFORGE_EVENT_ILLUSION_END = 46 (decision 0026 section 6): `replace` + `-end|X|Illusion`, one event in both streams.
+EV['ILLUSION_END'] = 46
 CAUSE = {'NONE': 0, 'MOVE': 1, 'ITEM': 2, 'ABILITY': 3, 'RECOIL': 4, 'DRAIN': 5, 'BURN': 6, 'CONFUSION': 7,
          'TERRAIN': 8, 'PARALYSIS': 9, 'SLEEP': 10, 'FREEZE': 11, 'FLINCH': 12, 'NO_PP': 13, 'POISON': 14,
          'HEAL_BLOCK': 15, 'WEATHER': 16, 'ITEM_TAKEN': 17, 'RECHARGE': 18, 'DISABLE': 19, 'TAUNT': 20, 'IMPRISON': 21}
@@ -1026,8 +1028,16 @@ def hit_key(text):
     return (m.group(1), m.group(2))
 
 
-def step_events(log, viewer, roster_of, maxhp, tables):
-    """The events `viewer` sees in one step, in protocol order."""
+def step_events(log, viewer, roster_of, maxhp, tables, ill=None):
+    """The events `viewer` sees in one step, in protocol order.
+
+    ill (decision 0026, Illusion; None = no holder in the battle): 'side' (per side: a holder is on it), 'truth_at' ((side, p) ->
+    the true species name of the position after the step, or None), 'multi' (per side: its switch and drag lines in the step),
+    'replace' (side -> (true roster index, name) from the `replace` line, consumed by its `-end|X|Illusion`) and 'last_hp'
+    ((side, name) -> the last HP text the lines showed for that name, the value the break shows). The foe's copy of a switch
+    names the disguise (the shown index); the owner's copy names it too, so its truth comes from the step's own state.
+    """
+    ill = ill if ill is not None else {'side': [False, False], 'truth_at': {}, 'multi': [0, 0], 'replace': {}, 'last_hp': {}}
     out = []
     skip = set()
     hits_on = {}  # the -damage lines of the move that is being shown, by the Pokemon hit (see -hitcount)
@@ -1053,8 +1063,36 @@ def step_events(log, viewer, roster_of, maxhp, tables):
             continue
         args = [x for x in parts[2:] if not x.startswith('[')]
         e = None
+        # The last HP text each name showed (Illusion: the break shows the disguise's last value).
+        if kind in ('switch', 'drag') and len(args) >= 3:
+            ill['last_hp'][(ev_pos(args[0]) // 2, args[0].split(': ', 1)[1])] = args[2]
+        elif kind in ('-damage', '-heal', '-sethp') and len(args) >= 2:
+            ill['last_hp'][(ev_pos(args[0]) // 2, args[0].split(': ', 1)[1])] = args[1]
+        elif kind == 'faint' and len(args) >= 1:
+            ill['last_hp'][(ev_pos(args[0]) // 2, args[0].split(': ', 1)[1])] = '0 fnt'
         if kind == 'move':
             hits_on.clear()
+        elif kind == 'replace':
+            # `replace` names the TRUE holder to both players (decision 0026 section 4); its -end|X|Illusion makes the event.
+            rpos = ev_pos(args[0])
+            rname = args[0].split(': ', 1)[1]
+            if rpos is None or rname not in roster_of[rpos // 2]:
+                raise ConversionError('unknown-pokemon', 'trace_to_c: unknown Pokemon in %r' % line, detail=rname)
+            if rpos // 2 in ill['replace']:
+                raise ConversionError('illusion-end-order', 'trace_to_c: a second replace before the break: %r' % line)
+            ill['replace'][rpos // 2] = (roster_of[rpos // 2][rname], rname)
+        elif kind == '-end' and len(args) > 1 and args[1] == 'Illusion':
+            epos = ev_pos(args[0])
+            eside = epos // 2
+            if eside not in ill['replace']:
+                raise ConversionError('illusion-end-order', 'trace_to_c: an Illusion break without its replace: %r' % line)
+            truth_roster, truth_name = ill['replace'].pop(eside)
+            shown_name = args[0].split(': ', 1)[1]
+            raw = ill['last_hp'].get((eside, shown_name))
+            if raw is None:
+                raise ConversionError('illusion-hp-unknown', 'trace_to_c: no HP shown for %s before the break' % shown_name)
+            hp = ev_hp(raw, eside, viewer, maxhp[eside][truth_name])
+            e = ev_tuple(EV['ILLUSION_END'], epos, NOPOS, 0, truth_roster, 0, *hp)
         elif kind == '-damage' and not attrs:
             hits_on[hit_key(args[0])] = hits_on.get(hit_key(args[0]), 0) + 1
         elif kind == '-hitcount':
@@ -1083,8 +1121,18 @@ def step_events(log, viewer, roster_of, maxhp, tables):
             side = pos // 2
             name = args[0].split(': ', 1)[1]
             cause, id2, _ = ev_cause(attrs, tables)
-            hp = ev_hp(args[2], side, viewer, maxhp[side][name])
-            e = ev_tuple(EV['SWITCH' if kind == 'switch' else 'DRAG'], pos, NOPOS, cause, roster_of[side][name], id2, *hp)
+            # Illusion (decision 0026 section 4): the owner's copy of a disguised entry names the disguise; its truth is the
+            # position's Pokemon after the step, which must be the only switch of that side in the step. Otherwise refuse.
+            truth = name
+            if viewer == side and ill['side'][side]:
+                tn = ill['truth_at'].get((side, pos % 2))
+                if tn != name:
+                    if tn is None or ill['multi'][side] != 1:
+                        raise ConversionError('illusion-owner-truth', 'trace_to_c: the entry of the owner %r cannot be told apart' % line,
+                                              detail=name)
+                    truth = tn
+            hp = ev_hp(args[2], side, viewer, maxhp[side][truth])
+            e = ev_tuple(EV['SWITCH' if kind == 'switch' else 'DRAG'], pos, NOPOS, cause, roster_of[side][truth], id2, *hp)
         elif kind == 'move':
             pos = ev_pos(args[0])
             target = ev_pos(parts[4]) if len(parts) > 4 else None
@@ -1397,7 +1445,8 @@ def step_events(log, viewer, roster_of, maxhp, tables):
                 raise ConversionError('ability-line', 'trace_to_c: unknown -ability line %r' % line, detail=line.split('|')[1:][-1] if attrs else 'plain')
         else:
             raise ConversionError('protocol-line', 'trace_to_c: unknown protocol line %r' % line, detail=kind)
-        out.append(e)
+        if e is not None:
+            out.append(e)
     return out
 
 
@@ -1482,6 +1531,13 @@ def convert_battle(name, spec, trace, tables):
                 maxhp[s][protocol] = maxhp[s][species]
     steps = []
     dropped_total = 0
+    # Illusion (decision 0026): a side with an Illusion member (the sheet's ability), and the state the break and the owner's
+    # entries read across the steps.
+    # The closure's table has no Illusion (a pool row, decision 0015): then no team holds it.
+    ill_key = tables['ABILITY'].get(key('Illusion'))
+    ill_side = [ill_key is not None and any(mon['ability'] == ill_key + 1 for mon in teams[s]) for s in range(2)]
+    ill_pending = {}
+    ill_last_hp = {}
     # What each player has seen of the other side: the last public HP display
     # per roster index (the opponent's knowledge in DuoForge), taken from the
     # public copy of every protocol line that shows HP.
@@ -1625,7 +1681,15 @@ def convert_battle(name, spec, trace, tables):
                      c for sd in new_state['sides'] for c in sd['conditions'])
         boundary = boundary_of(new_state, step['log'])
         result = RESULT[new_state['winner']] if boundary == 5 else 0
-        events = [step_events(step['log'], viewer, roster_of, maxhp, tables) for viewer in range(2)]
+        ill_step = {'side': ill_side, 'truth_at': {}, 'multi': [0, 0], 'replace': ill_pending, 'last_hp': ill_last_hp}
+        for line in step['log']:
+            if line.startswith('|switch|') or line.startswith('|drag|'):
+                ill_step['multi'][int(line.split('|')[2][1]) - 1] += 1
+        for sd_i in range(2):
+            for p_i in range(2):
+                act = new_state['sides'][sd_i]['active'][p_i]
+                ill_step['truth_at'][(sd_i, p_i)] = name_of(new_state['sides'][sd_i]['pokemon'][act]) if act is not None and act >= 0 else None
+        events = [step_events(step['log'], viewer, roster_of, maxhp, tables, ill_step) for viewer in range(2)]
         steps.append({'team': 1 if team else 0, 'answered0': 1 if 0 in kinds else 0, 'answered1': 1 if 1 in kinds else 0,
                       'turn': new_state['turn'], 'boundary': boundary, 'result': result, 'picks': tuple(pk),
                       'cmds': tuple(cmds), 'occupants': tuple(occ), 'entries': tuple(ent), 'field': field,
