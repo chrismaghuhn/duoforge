@@ -905,6 +905,9 @@ VOLATILE_PERISH = 5  # DUOFORGE_VOLATILE_PERISH (step G26)
 VOLATILE_IMPRISON = 8    # DUOFORGE_VOLATILE_IMPRISON (step G38): START only
 VOLATILE_TAUNT = 6       # DUOFORGE_VOLATILE_TAUNT (step G31)
 VOLATILE_YAWN = 7        # DUOFORGE_VOLATILE_YAWN (step G31)
+VOLATILE_SUBSTITUTE = 9  # DUOFORGE_VOLATILE_SUBSTITUTE (decision 0032): START and END, presence only
+FAIL_SUBSTITUTE_EXISTS = 1  # DUOFORGE_FAIL_SUBSTITUTE_EXISTS: cause MOVE + id2 Substitute only
+FAIL_SUBSTITUTE_WEAK = 2    # DUOFORGE_FAIL_SUBSTITUTE_WEAK: cause MOVE + id2 Substitute only
 MOVE_SLOT_RECHARGE = 5   # DUOFORGE_MOVE_SLOT_RECHARGE (step G17)
 # DUOFORGE_TYPE_*: the alphabetical type ids, the detail of TYPE_CHANGE
 TYPE_NONE = 255  # DUOFORGE_TYPE_NONE: the ??? slot of Double Shock (decision 0025)
@@ -1097,6 +1100,11 @@ def step_events(log, viewer, roster_of, maxhp, tables, rb_pending=None):
             continue
         args = [x for x in parts[2:] if not x.startswith('[')]
         e = None
+        # A hit that a Substitute takes shows no -damage line (decision 0032): `-activate|P|move: Substitute|[damage]` for
+        # an absorbed hit and `-end|P|Substitute` for the hit that breaks it. Both count as hits of the move, for -hitcount.
+        if (kind == '-activate' and len(args) == 2 and args[1] == 'move: Substitute' and attrs == ['[damage]']) or \
+                (kind == '-end' and len(args) == 2 and args[1] == 'Substitute' and not attrs):
+            hits_on[hit_key(args[0])] = hits_on.get(hit_key(args[0]), 0) + 1
         if kind == 'move':
             hits_on.clear()
         elif kind == '-damage' and not attrs:
@@ -1226,6 +1234,11 @@ def step_events(log, viewer, roster_of, maxhp, tables, rb_pending=None):
                     (named[args[2]] is not None and id2 != tables['ABILITY'][key(named[args[2]])] + 1):
                 raise ConversionError('fail-line', 'trace_to_c: unknown -fail %r' % line, detail=line)
             e = ev_tuple(EV['FAIL'], ev_pos(args[0]), other, cause, 0, id2)
+        elif kind == '-fail' and len(args) == 2 and args[1] == 'move: Substitute' and attrs in ([], ['[weak]']):
+            # Substitute (decision 0032, data/moves.ts:18314-18322): the user already has one (`-fail|X|move: Substitute`) or
+            # its HP is a quarter or less (`[weak]`). A FAIL with cause MOVE and the move as id2; the detail says which.
+            detail = FAIL_SUBSTITUTE_WEAK if attrs else FAIL_SUBSTITUTE_EXISTS
+            e = ev_tuple(EV['FAIL'], ev_pos(args[0]), NOPOS, CAUSE['MOVE'], 0, tables['MOVE'][key('Substitute')], detail=detail)
         elif kind == '-fail' and len(args) == 2 and args[1] == 'move: Double Shock':
             # Double Shock's onTryMove without the Electric type (decision 0025, data/moves.ts:3954-3959): `-fail|X|move: Double
             # Shock`, a plain FAIL on the user; its move line carries [still], which the move's own line already shows.
@@ -1287,6 +1300,10 @@ def step_events(log, viewer, roster_of, maxhp, tables, rb_pending=None):
                 e = ev_tuple(EV['CONFUSED'], pos)
             elif what.startswith('ability: '):
                 e = ev_tuple(EV['ACTIVATE'], pos, NOPOS, CAUSE['ABILITY'], 0, tables['ABILITY'][key(what[9:])] + 1)
+            elif what == 'move: Substitute' and attrs == ['[damage]']:
+                # Substitute (decision 0032): an absorbed hit, `-activate|X|move: Substitute|[damage]`. The line names no
+                # amount: the Substitute's HP is never public.
+                e = ev_tuple(EV['ACTIVATE'], pos, NOPOS, CAUSE['MOVE'], 0, tables['MOVE'][key('Substitute')])
             elif what.startswith('move: '):
                 e = ev_tuple(EV['ACTIVATE'], pos, NOPOS, CAUSE['MOVE'], 0, tables['MOVE'][key(what[6:])])
             else:
@@ -1335,6 +1352,12 @@ def step_events(log, viewer, roster_of, maxhp, tables, rb_pending=None):
                 # data/moves.ts:9501 onStart: `-start|user|move: Imprison` (step G38); the volatile has no end line, it ends
                 # with the occupant.
                 e = ev_tuple(EV['VOLATILE_START'], ev_pos(args[0]), detail=VOLATILE_IMPRISON)
+            elif what == 'Substitute' and not attrs:
+                # data/moves.ts:18328-18374 (decision 0032): `-start|X|Substitute` from the move's onStart, and `-end|X|Substitute`
+                # from onEnd when the hit breaks it or Tidy Up removes it. A switch-out ends it with no line. The Shed Tail variant
+                # (`[from] move: Shed Tail`) has attrs and is refused by the fall-through below.
+                e = ev_tuple(EV['VOLATILE_START' if kind == '-start' else 'VOLATILE_END'], ev_pos(args[0]),
+                             detail=VOLATILE_SUBSTITUTE)
             elif what == 'move: Taunt':
                 # data/moves.ts:18974-19016 taunt: `-start|X|move: Taunt` from onStart, `-end|X|move: Taunt` from onEnd
                 # (the duration; a switch-out or a faint clears it with no line) (step G31)

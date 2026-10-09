@@ -1,6 +1,6 @@
 # 0032 - Substitute (G60): proposal of phase 1
 
-Status: **proposal**, lane A builder H2 (batch 2), phase 1. No engine code, no public value is final, nothing is approved yet. Event and value numbers marked "to be assigned" are for HauptSession. Pin: Pokemon Showdown b2cb775 (`C:/Dev/src/pokemon-showdown`), Champions mod checked (it does not override Substitute, its condition, or the sub-reading rows listed below).
+Status: **accepted by the lead; public values pending HauptSession.** Lane A builder H2 (batch 2). The lead's decisions of phase 1 are in section 11 (the scope, bypasssub, option A, OHKO). Event and value numbers marked "to be assigned" are for HauptSession. Pin: Pokemon Showdown b2cb775 (`C:/Dev/src/pokemon-showdown`), Champions mod checked (it does not override Substitute, its condition, or the sub-reading rows listed below).
 
 ## 1. What the pin does
 
@@ -169,3 +169,28 @@ Nothing in phase 2 starts until these are answered.
 - The self part of a move against a Substitute (Overheat, Superpower) is not read.
 - Multi-hit: each hit of a multi-hit move passes the gate separately? Not read (Twin Beam and Dual Wingbeat are marked, G33).
 - The full set of marked rows that carry `bypasssub` comes from a generator check, not from my manual list.
+
+## 13. Phase 2 update: every Substitute line of the pin, and its mapping
+
+Every `add()` of the pin that names the Substitute (grep of `sim/` and `data/`, including the Champions mod):
+
+| Line | Pin | Mapping |
+|---|---|---|
+| `-start|X|Substitute` | `data/moves.ts:18332` | VOLATILE_START, detail 9 (mapped) |
+| `-start|X|Substitute|[from] move: Shed Tail` | `data/moves.ts:18330` | refused (Shed Tail is unmarked; the converter's `-start` branch needs no attribute) |
+| `-end|X|Substitute` | `data/moves.ts:18373` (onEnd: break, Tidy Up) | VOLATILE_END, detail 9 (mapped; a switch-out prints none) |
+| `-activate|X|move: Substitute|[damage]` | `data/moves.ts:18360` (absorbed hit, no amount) | ACTIVATE, cause MOVE, id2 Substitute (mapped) |
+| `-activate|X|Substitute|[damage]` | `sim/battle.ts:2234` | **unreachable in gen 9**: the branch needs `gen <= 1` (battle.ts:2220); the converter refuses it (no `move:` prefix) |
+| `-fail|X|move: Substitute` | `data/moves.ts:18316` (already has one) | FAIL, cause MOVE, id2 Substitute, detail EXISTS (mapped) |
+| `-fail|X|move: Substitute|[weak]` | `data/moves.ts:18320` (HP a quarter or less) | FAIL, cause MOVE, id2 Substitute, detail WEAK (mapped) |
+| `-fail|X` (a status move into a Substitute, `[still]` set by the handler) | `data/moves.ts:18347` | the plain FAIL of the user (mapped, no detail) |
+| `-ohko` (a break by an OHKO move) | `data/moves.ts:18357` | refused: no event; a break by an OHKO move is `E_UNSUPPORTED` with a named cause (lead's decision 5) |
+| `-end|X|<source>|[partiallytrapped]|[silent]` (the sub's start ends a partial trap) | `data/moves.ts:18335-18340` | silent, dropped by the converter (like every `[silent]` line); the engine clears the trap with no event |
+| `-immune|X` (Intimidate vs a Substitute, no `[from]`) | `data/abilities.ts:2201-2202` | IMMUNE, no cause (mapped by the existing `-immune` branch) |
+| `-damage|X|hp` (the user's HP cost, no `[from]`) | `sim/battle.ts:2255-2262` (default branch of directDamage) | DAMAGE, cause NONE (existing branch) |
+
+Converter (`tools/reference/trace_to_c.py`): the `-hitcount` count includes the absorbed and the breaking hit (`-activate|X|move: Substitute|[damage]`, `-end|X|Substitute`), as it includes a `-damage` line. The unit suite (89 tests) passes unchanged.
+
+## 14. Public causes
+
+`DUOFORGE_PUBLIC_CAUSE_SUBSTITUTE` = 8u (approved by HauptSession): a Substitute on either side refuses `duoforge_battle_public` and the honest world, with this named cause, counted by the arena (the Python side is HauptSession's, in hs/g60-python).
