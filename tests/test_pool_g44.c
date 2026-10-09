@@ -11,13 +11,20 @@
  *   - the marks, the handler numbers and the pinned numbers of each row (the pin's power, accuracy, priority, critical hit
  *     ratio and stage changes, with the Champions override of Trop Kick's power);
  *   - what stays unmarked: Scale Shot (its hit count is a draw of its own, a new draw site, so it is left out of this step),
- *     and Fly, which Thunder would hit through (not marked, so no battle can have a Thunder that meets a Fly).
+ *     and Fly, which Thunder would hit through (not marked, so no battle can have a Thunder that meets a Fly);
+ *   - the guard: Ice Fang and Tri Attack bypass the generic secondaries path, so they skip the pin's ModifySecondaries
+ *     (sim/battle-actions.ts:1340-1341), which Shield Dust, Covert Cloak and Serene Grace change. None of the three is marked
+ *     or a row of the pool today; marking any of them later fails here until these paths honour it;
+ *   - Power Trip's positive-stage sum at every stat, white-box (combat/power_trip.h): the battles of this step carry two stages
+ *     of attack and defense only, so an accuracy or evasion stage is checked here.
  */
 #include <stdio.h>
 #include <string.h>
 
 #include <duoforge/duoforge.h>
 
+#include "combat/power_trip.h"
+#include "combat/secondary_rolls.h"
 #include "data/closure_tables.h"
 #include "data/pool_tables.h"
 #include "data/support_manifest.h"
@@ -131,6 +138,76 @@ static void check_unmarked(df_test *t)
     DF_CHECK(t, dfi_support.moves[DFI_MOVE_FLY] == 0u);
 }
 
+/* The Tri Attack chance (20 of random(100)): the roll 19 passes, 20 fails, at both edges and at the ends. No recorded battle has
+ * a roll of 19 on that draw, so the edges are checked here (combat/secondary_rolls.h). */
+static void check_tri_attack_edges(df_test *t)
+{
+    DF_CHECK(t, dfi_tri_attack_chance_hit(0u));
+    DF_CHECK(t, dfi_tri_attack_chance_hit(19u));
+    DF_CHECK(t, !dfi_tri_attack_chance_hit(20u));
+    DF_CHECK(t, !dfi_tri_attack_chance_hit(99u));
+}
+
+/* Power Trip's positive-stage sum: every stat counts, accuracy and evasion too (Coil raises accuracy, and the five-stat
+ * mutant of the decision is caught here), a negative stage adds nothing. Stored stages are biased by DFI_STAGE_NEUTRAL. */
+static void check_power_trip_stages(df_test *t)
+{
+    uint8_t s[DFI_STAT_STAGE_COUNT];
+    for (uint32_t i = 0u; i < DFI_STAT_STAGE_COUNT; ++i) {
+        s[i] = DFI_STAGE_NEUTRAL;
+    }
+    DF_CHECK_EQ_U64(t, dfi_power_trip_positive_stages(s), 0u);
+    for (uint32_t k = 0u; k < DFI_STAT_STAGE_COUNT; ++k) {
+        s[k] = (uint8_t)(DFI_STAGE_NEUTRAL + 1u);
+        DF_CHECK_EQ_U64(t, dfi_power_trip_positive_stages(s), 1u);
+        s[k] = DFI_STAGE_NEUTRAL;
+    }
+    s[DFI_STAGE_ACCURACY] = (uint8_t)(DFI_STAGE_NEUTRAL + 2u);
+    s[DFI_STAGE_EVASION] = (uint8_t)(DFI_STAGE_NEUTRAL + 1u);
+    DF_CHECK_EQ_U64(t, dfi_power_trip_positive_stages(s), 3u);
+    s[DFI_STAGE_ATK] = (uint8_t)(DFI_STAGE_NEUTRAL + 2u);
+    s[DFI_STAGE_DEF] = 0u; /* -6 */
+    DF_CHECK_EQ_U64(t, dfi_power_trip_positive_stages(s), 5u);
+    for (uint32_t i = 0u; i < DFI_STAT_STAGE_COUNT; ++i) {
+        s[i] = (uint8_t)(DFI_STAGE_NEUTRAL + DFI_STAGE_NEUTRAL); /* +6 */
+    }
+    DF_CHECK_EQ_U64(t, dfi_power_trip_positive_stages(s), 42u);
+    for (uint32_t i = 0u; i < DFI_STAT_STAGE_COUNT; ++i) {
+        s[i] = 0u; /* -6 */
+    }
+    DF_CHECK_EQ_U64(t, dfi_power_trip_positive_stages(s), 0u);
+}
+
+/* The guard (decision 0015 item 5al): the rows that the generic secondaries path would have to honour (Shield Dust blocks a
+ * move's secondary, Serene Grace doubles its chance, Covert Cloak blocks the effect of an item's source), and the secondaries
+ * that Ice Fang and Tri Attack bypass (ModifySecondaries, sim/battle-actions.ts:1340-1341). None is marked, and none is a
+ * row of the pool today (Serene Grace and Covert Cloak have no name in the tables). A row of any of these names that a later
+ * step adds must stay unmarked until these paths honour it. */
+static void check_guard_unmarked(df_test *t)
+{
+    DF_CHECK(t, dfi_pool_ability_names[DFI_ABILITY_SHIELDDUST] != NULL &&
+                    strcmp(dfi_pool_ability_names[DFI_ABILITY_SHIELDDUST], "shielddust") == 0);
+    DF_CHECK_EQ_U64(t, dfi_support.abilities[DFI_ABILITY_SHIELDDUST], 0u);
+    static const char *const abilities[] = {"shielddust", "serenegrace"};
+    for (uint32_t i = 0u; i < DFI_POOL_ABILITY_COUNT; ++i) {
+        const char *n = dfi_pool_ability_names[i];
+        for (size_t k = 0u; n != NULL && k < sizeof abilities / sizeof abilities[0]; ++k) {
+            if (strcmp(n, abilities[k]) == 0) {
+                DF_CHECK_EQ_U64(t, dfi_support.abilities[i], 0u);
+            }
+        }
+    }
+    static const char *const items[] = {"covertcloak"};
+    for (uint32_t i = 0u; i < DFI_POOL_ITEM_COUNT; ++i) {
+        const char *n = dfi_pool_item_names[i];
+        for (size_t k = 0u; n != NULL && k < sizeof items / sizeof items[0]; ++k) {
+            if (strcmp(n, items[k]) == 0) {
+                DF_CHECK_EQ_U64(t, dfi_support.items[i], 0u);
+            }
+        }
+    }
+}
+
 int main(void)
 {
     df_test t;
@@ -138,5 +215,8 @@ int main(void)
     check_marks(&t);
     check_pins(&t);
     check_unmarked(&t);
+    check_power_trip_stages(&t);
+    check_tri_attack_edges(&t);
+    check_guard_unmarked(&t);
     return df_test_end(&t);
 }

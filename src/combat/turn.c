@@ -7,6 +7,8 @@
 #include "combat/events.h"
 #include "combat/item_family.h"
 #include "combat/move_rules.h"
+#include "combat/power_trip.h"
+#include "combat/secondary_rolls.h"
 
 #include "core/arith.h"
 #include "core/modifier.h"
@@ -1356,12 +1358,7 @@ static duoforge_status dfi_get_damage(dfi_run *r, uint32_t user, uint32_t target
     } else if (md->special == DFI_SPECIAL_POWER_TRIP) {
         /* Power Trip's basePowerCallback (step G44, data/moves.ts:13851-13859): 20 + 20 x the user's positiveBoosts(), the sum
          * of its positive stages (Pokemon.positiveBoosts, sim/pokemon.ts:1201-1208). A stage is stored biased by 6. */
-        uint32_t positive = 0u;
-        for (uint32_t s = 0u; s < DFI_STAT_STAGE_COUNT; ++s) {
-            if (ap->stages[s] > DFI_STAGE_NEUTRAL) {
-                positive += (uint32_t)ap->stages[s] - DFI_STAGE_NEUTRAL;
-            }
-        }
+        const uint32_t positive = dfi_power_trip_positive_stages(ap->stages);
         power = (uint32_t)md->base_power + 20u * positive;
     } else if (md->special == DFI_SPECIAL_RISING_VOLTAGE) {
         /* Rising Voltage's basePowerCallback (step G25, data/moves.ts:15137-15162): doubled while Electric Terrain is up
@@ -5180,7 +5177,7 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
                 if (st != DUOFORGE_OK) {
                     return st;
                 }
-                if (roll >= 20u) {
+                if (!dfi_tri_attack_chance_hit(roll)) {
                     continue;
                 }
                 uint32_t v = 0u;

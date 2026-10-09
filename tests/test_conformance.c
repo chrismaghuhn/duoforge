@@ -33,7 +33,7 @@
 #include "reference/conformance_pool.h"
 #include "support/pool.h"
 #define DF_CONF_FORMES dfi_pool_formes
-#define DF_POOL_DATA_BATTLES 343u /* the recorded pool battles (step G44 adds 19 to the 324 of G41) */
+#define DF_POOL_DATA_BATTLES 347u /* the recorded pool battles (step G44 adds 23 to the 324 of G41) */
 #elif defined(DF_CONFORMANCE_TEAM_C)
 #include "data/extended_tables.h"
 #include "reference/conformance_team_c.h"
