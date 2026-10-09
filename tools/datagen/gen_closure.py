@@ -342,6 +342,7 @@ def parse_move(mid, base, champ, ext=False, pool=False, unmodeled=None):
                 bad('move %s: callback %s is not mapped to a handler' % (mid, name), 'callback %s' % name)
         elif (name not in DATA_KEYS and name not in IGNORED_KEYS and name not in owned_fields and name not in owned
               and not (pool and name in POOL_COLUMN_KEYS)
+              and not (pool and name == 'forceSwitch' and mid in G46_FORCE_SWITCH_MOVES)
               and not (pool and name == 'tags' and norm(f[name][1]) == TAGS_PAST_UNOBTAINABLE)):
             bad('move %s: unknown field %s' % (mid, name), 'field %s' % name)
     missing = handled[1] - set(n for n, v in f.items() if v[0])
@@ -482,6 +483,12 @@ def parse_move(mid, base, champ, ext=False, pool=False, unmodeled=None):
             if len(nums) != 2:
                 fail('move %s: %s is not a fraction' % (mid, key))
             rec[key] = nums
+    if pool and 'forceSwitch' in f:
+        # Step G46: the four moves of G46_FORCE_SWITCH_MOVES, with the pinned text; the turn code forces the switch
+        if mid in G46_FORCE_SWITCH_MOVES and norm(f['forceSwitch'][1]) == 'forceSwitch: true,':
+            rec['flags2'] |= FLAG2_FORCE_SWITCH
+        else:
+            bad('move %s: forceSwitch is not "forceSwitch: true," of a G46 move' % mid, 'field forceSwitch')
     if pool and 'thawsTarget' in f:
         if norm(f['thawsTarget'][1]) != 'thawsTarget: true,':
             bad('move %s: thawsTarget is not "thawsTarget: true,"' % mid, 'field thawsTarget')
@@ -2033,6 +2040,11 @@ STATIC_FLAG_POWER_RULE = 1024
 FLAG2_RECHARGE = 8  # step G17: flags.recharge with self: {volatileStatus: 'mustrecharge'} (data/moves.ts, Hyper Beam 9113-9128)
 RECHARGE_SELF = "self: { volatileStatus: 'mustrecharge', },"
 FLAG2_THAWS_TARGET = 4  # step G10: thawsTarget (data/moves.ts:15770), the move cures a frozen target after the secondaries
+# Step G46: forceSwitch (data/moves.ts: Roar 15157-15171, Whirlwind 20760-20774, Dragon Tail 4208-4221, Circle Throw
+# 2451-2464). The four moves whose forced switch the turn code runs (battle-actions.ts runMoveEffects and forceSwitch,
+# through scripts.ts:374 and :392); any other move with the key stays UNMODELED.
+FLAG2_FORCE_SWITCH = 128
+G46_FORCE_SWITCH_MOVES = ('whirlwind', 'dragontail')  # Roar and Circle Throw: no battle yet (no learner in the recorded teams), unmarked
 # What the engine hard-codes about the two conditions, read from the pin (build_pool checks it): the duration and the
 # residual order of Throat Chop's condition, and Heal Block's (the move healblock) order and Psychic Noise duration.
 G8_CONDITION_FACTS = (
@@ -2163,7 +2175,7 @@ HANDLER_IDS = ['NONE', 'UNMODELED']
 # still has the UNMODELED handler fails duoforge.data.pool_tables. G4: Focus Sash, Rock Head. G12: Floettite (the Mega
 # Stone of Floette-Eternal), Flower Veil and Fairy Aura. G14: Rough Skin, Poison Touch and Thermal Exchange. G16: Sticky Hold (Knock Off reads it by id). AC1: Trace (the entry copy of a foe's ability). G15: Psychic Seed (Grassy Seed's rule for the other terrain). G22: Sand Rush, Swift Swim, Slush Rush and Chlorophyll (the doubled Speed in their weather, tools/datagen/pool_families.js ENGINE_ORDER), Sand Rush's immunity to Sandstorm, Inner Focus (no flinch, no Intimidate drop) and Liquid Voice (a sound move becomes Water). G23-C: Levitate (isGrounded and the Ground immunity).
 ENGINE_ROWS = {'items': ['focussash', 'floettite', 'psychicseed', 'electricseed', 'mistyseed', 'expertbelt', 'ejectbutton',
-                         'widelens'],
+                         'widelens', 'redcard'],
                'abilities': ['rockhead', 'flowerveil', 'fairyaura', 'roughskin', 'poisontouch', 'thermalexchange',
                              'stickyhold', 'trace', 'levitate', 'sandrush', 'swiftswim', 'slushrush', 'chlorophyll',
                              'innerfocus', 'liquidvoice', 'flamebody', 'clearbody', 'hospitality', 'overcoat',
@@ -2181,7 +2193,7 @@ ENGINE_ROWS = {'items': ['focussash', 'floettite', 'psychicseed', 'electricseed'
                              'justified',
                              'limber',
                              'solarpower',
-                             'regenerator', 'toxicdebris', 'shadowtag']}
+                             'regenerator', 'toxicdebris', 'shadowtag', 'suctioncups', 'guarddog']}
 # The moves of the whole pool that the turn code pivots with a switch flag of their own (dfi_pivot_moves,
 # src/state/closure_member.c) beyond Flip Turn and U-turn, which are rows of the steps. Empty: Volt Switch comes with the
 # step that gives it a flag value, and adds its id here.
@@ -2558,7 +2570,7 @@ def parse_pool_move(mid, moves_ts, champ_moves):
     if rec['unmodeled']:
         rec.update(sec_chance=0, sec_kind=0, sec_param=0, boost_role=0, boosts=[0] * 7, primary_status=0,
                    side_condition=0, pseudo_weather=0, special=SPECIAL_IDS_P.index('UNMODELED'), heal=[0, 0],
-                   flags2=rec['flags2'] & ~(FLAG2_THAWS_TARGET | FLAG2_RECHARGE))
+                   flags2=rec['flags2'] & ~(FLAG2_THAWS_TARGET | FLAG2_RECHARGE | FLAG2_FORCE_SWITCH))
     return rec
 
 
@@ -2809,11 +2821,32 @@ def check_g28_items(items_ts, only=None):
                 fail('item %s: the entry no longer has "%s"' % (iid, fact))
 
 
+# Step G46: the blockers of a forced switch and Red Card (the turn code runs them by id). Suction Cups and Guard Dog return
+# null from onDragOut (data/abilities.ts:4693-4698 and :1728-1732), so the drag is not made, and print -activate. Red Card:
+# data/items.ts:5152-5171 (its gates, the consumption before the attacker's DragOut, and the flag it sets).
+G46_ABILITY_FACTS = (
+    ('suctioncups', ('onDragOutPriority: 1,',
+                     "onDragOut(pokemon) { this.add('-activate', pokemon, 'ability: Suction Cups'); return null; },")),
+    ('guarddog', ('onDragOutPriority: 1,',
+                  "onDragOut(pokemon) { this.add('-activate', pokemon, 'ability: Guard Dog'); return null; },",
+                  'onTryBoostPriority: 2,',
+                  "onTryBoost(boost, target, source, effect) { if (effect.name === 'Intimidate' && boost.atk) { "
+                  "delete boost.atk; this.boost({ atk: 1 }, target, target, null, false, true); } },")),
+)
+G46_ITEM_FACTS = (
+    ('redcard', ("onAfterMoveSecondary(target, source, move) { if (source && source !== target && source.hp && target.hp && "
+                 "move && move.category !== 'Status') { if (!source.isActive || !this.canSwitch(source.side) || "
+                 "source.forceSwitchFlag || target.forceSwitchFlag) { return; } // The item is used up even against a pokemon "
+                 "with Ingrain or that otherwise can't be forced out if (target.useItem(source)) { if (this.runEvent('DragOut', "
+                 "source, target, move)) { source.forceSwitchFlag = true; } } } },",)),
+)
+
+
 def check_g34_facts(abil_ts, champ_abil, items_ts, champ_items):
     """Steps G34, G35, Mega batch 2 and G39: every fact of G34_ABILITY_FACTS, G35_ABILITY_FACTS, MEGA2_ABILITY_FACTS, G39_ABILITY_FACTS and G34_ITEM_FACTS is in the pinned entry, whitespace aside, and the
     Champions mod has no entry of its own for it (an override would change what the engine reads)."""
-    for kind, facts_by_id, src, champ in (('ability', G34_ABILITY_FACTS + G35_ABILITY_FACTS + MEGA2_ABILITY_FACTS + G39_ABILITY_FACTS + G41_ABILITY_FACTS, abil_ts, champ_abil),
-                                          ('item', G34_ITEM_FACTS, items_ts, champ_items)):
+    for kind, facts_by_id, src, champ in (('ability', G34_ABILITY_FACTS + G35_ABILITY_FACTS + MEGA2_ABILITY_FACTS + G39_ABILITY_FACTS + G41_ABILITY_FACTS + G46_ABILITY_FACTS, abil_ts, champ_abil),
+                                          ('item', G34_ITEM_FACTS + G46_ITEM_FACTS, items_ts, champ_items)):
         for rid, facts in facts_by_id:
             e = src.entry(rid)
             if e is None:
@@ -3346,6 +3379,7 @@ def render_pool(dp, dx):
 #define DFI_MOVE_FLAG2_POWDER 16u /* flags.powder (step G30): a Grass type, Overcoat and Safety Goggles are immune to the move */
 #define DFI_MOVE_FLAG2_PUNCH 32u /* flags.punch (step G34): Iron Fist boosts these moves (internal; the public static flag is not read) */
 #define DFI_MOVE_FLAG2_SLICING 64u /* flags.slicing (step G34): Sharpness boosts these moves */
+#define DFI_MOVE_FLAG2_FORCE_SWITCH 128u /* forceSwitch (step G46): Roar, Whirlwind, Dragon Tail, Circle Throw force the target out */
 #define DFI_BOOST_ROLE_PRIMARY_ALLY 4u /* step G19: a status move whose primary boosts go to the adjacent ally (Coaching) */
 #define DFI_BOOST_ROLE_SECONDARY_SELF 5u /* step G28: the secondary's roll gives these boosts to the user (Ancient Power) */
 #define DFI_BOOST_ROLE_PRIMARY_TARGET 6u /* step G39: a status move whose primary boosts go to its one target (Charm, Fake Tears) */
@@ -3664,7 +3698,7 @@ size_t dfi_pool_canonical_bytes(uint8_t *out, size_t capacity);
         names = [n for n, bit in (('DFI_MOVE_FLAG2_SOUND', 1), ('DFI_MOVE_FLAG2_HEAL', 2),
                                   ('DFI_MOVE_FLAG2_THAWS_TARGET', 4), ('DFI_MOVE_FLAG2_RECHARGE', 8),
                                   ('DFI_MOVE_FLAG2_POWDER', 16), ('DFI_MOVE_FLAG2_PUNCH', 32),
-                                  ('DFI_MOVE_FLAG2_SLICING', 64)) if m['flags2'] & bit]
+                                  ('DFI_MOVE_FLAG2_SLICING', 64), ('DFI_MOVE_FLAG2_FORCE_SWITCH', 128)) if m['flags2'] & bit]
         c.append('    [DFI_MOVE_%s] = %s, /* %s */' % (m['id'].upper(), ' | '.join(names) if names else '0u', m['name']))
     c += ['};', '', '/* The heal fraction of the moves that heal by one (step G10): numerator, denominator. */',
           'const uint8_t dfi_pool_move_heal[DFI_POOL_MOVE_COUNT][2] = {']

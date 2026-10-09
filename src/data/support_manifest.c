@@ -192,6 +192,8 @@ const dfi_support_manifest dfi_support = {
         {
             [DFI_MOVE_HIGHHORSEPOWER] = 1u,
             [DFI_MOVE_PROTECT] = 1u,
+            [DFI_MOVE_WHIRLWIND] = 1u,   /* step G46: forceSwitch, the drag (decision 0015 section 4) */
+            [DFI_MOVE_DRAGONTAIL] = 1u,  /* step G46 */
             [DFI_MOVE_MUDDYWATER] = 1u,
             [DFI_MOVE_COIL] = 1u,
             [DFI_MOVE_SHADOWSNEAK] = 1u,
@@ -502,6 +504,8 @@ const dfi_support_manifest dfi_support = {
             [DFI_ABILITY_REGENERATOR] = 1u,
             [DFI_ABILITY_TOXICDEBRIS] = 1u, /* step G37: a Physical hit puts Toxic Spikes on the attacker's side */
             [DFI_ABILITY_SHADOWTAG] = 1u, /* step G41 */
+            [DFI_ABILITY_SUCTIONCUPS] = 1u, /* step G46: a DragOut blocker (the forced switch is not made) */
+            [DFI_ABILITY_GUARDDOG] = 1u,    /* step G46: a DragOut blocker */
         },
     .items =
         {
@@ -537,6 +541,7 @@ const dfi_support_manifest dfi_support = {
             [DFI_ITEM_GARCHOMPITEZ] = 1u,
             [DFI_ITEM_DELPHOXITE] = 1u,
             [DFI_ITEM_GENGARITE] = 1u, /* step G41: the Mega Stone of Gengar, whose Mega has Shadow Tag */
+            [DFI_ITEM_REDCARD] = 1u,   /* step G46: forced switch of the attacker, without the Sheer Force gate (Champions) */
             [DFI_ITEM_GARDEVOIRITE] = 1u,
             [DFI_ITEM_ABOMASITE] = 1u,
             [DFI_ITEM_BARBARACITE] = 1u,
