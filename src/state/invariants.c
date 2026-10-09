@@ -391,9 +391,14 @@ static dfi_invariant dfi_check_seen(const struct duoforge_battle *b, uint32_t p)
         return DFI_INV_SEEN_MASK;
     }
     for (uint32_t k = 0u; k < DUOFORGE_ACTIVE_PER_SIDE; ++k) {
-        const uint32_t occupant = opp->positions[k].occupant;
+        uint32_t occupant = opp->positions[k].occupant;
         if (occupant == DFI_OCCUPANT_NONE) {
             continue;
+        }
+        /* Illusion (amended by I2): a disguised holder on the field is seen under the shown name, not its truth. */
+        const dfi_tail_side *ots = &b->tail.sides[1u - p];
+        if (ots->positions[k].ability_state != 0u && ots->illusion.shown != 0u) {
+            occupant = (uint32_t)ots->illusion.shown - 1u;
         }
         if (occupant >= DUOFORGE_MAX_ROSTER || ((seen >> occupant) & 1u) == 0u) {
             return DFI_INV_SEEN_MASK;
