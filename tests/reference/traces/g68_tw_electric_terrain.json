@@ -22,7 +22,7 @@
    "|poke|p1|Salamence, L50, M|",
    "|poke|p2|Primarina, L50, F|",
    "|poke|p2|Excadrill, L50, M|",
-   "|poke|p2|Milotic, L50, F|",
+   "|poke|p2|Gengar, L50, F|",
    "|poke|p2|Kingambit, L50, M|",
    "|poke|p2|Ceruledge, L50, M|",
    "|poke|p2|Salamence, L50, M|",
@@ -295,13 +295,13 @@
        "locked": null
       },
       {
-       "species": "Milotic",
-       "set_species": "Milotic",
+       "species": "Gengar",
+       "set_species": "Gengar",
        "mega": 0,
        "switch_flag": 0,
-       "hp": 202,
-       "maxhp": 202,
-       "item": "sitrusberry",
+       "hp": 167,
+       "maxhp": 167,
+       "item": "lifeorb",
        "status": "",
        "status_time": 0,
        "confusion": 0,
@@ -316,7 +316,7 @@
         0
        ],
        "pp": [
-        12,
+        16,
         8
        ],
        "volatiles": [],
@@ -416,18 +416,6 @@
     "p2": "team 1234"
    },
    "draws": [
-    {
-     "site": "TEAM_ORDER",
-     "context": "queue",
-     "lo": 4,
-     "hi": 6,
-     "value": 5,
-     "group": [
-      "A:team:p1c:",
-      "A:team:p2c:"
-     ],
-     "start": 4
-    },
     {
      "site": "TEAM_ORDER",
      "context": "queue",
@@ -690,13 +678,13 @@
         "locked": null
        },
        {
-        "species": "Milotic",
-        "set_species": "Milotic",
+        "species": "Gengar",
+        "set_species": "Gengar",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 202,
-        "maxhp": 202,
-        "item": "sitrusberry",
+        "hp": 167,
+        "maxhp": 167,
+        "item": "lifeorb",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -711,7 +699,7 @@
          0
         ],
         "pp": [
-         12,
+         16,
          8
         ],
         "volatiles": [],
@@ -761,49 +749,49 @@
      "context": "",
      "lo": 0,
      "hi": 100,
-     "value": 26
+     "value": 59
     },
     {
      "site": "CRIT",
      "context": "",
      "lo": 0,
      "hi": 24,
-     "value": 7
+     "value": 6
     },
     {
      "site": "DAMAGE_ROLL",
      "context": "",
      "lo": 0,
      "hi": 16,
-     "value": 11
+     "value": 4
     },
     {
      "site": "ACCURACY",
      "context": "",
      "lo": 0,
      "hi": 100,
-     "value": 61
+     "value": 71
     },
     {
      "site": "CRIT",
      "context": "",
      "lo": 0,
      "hi": 24,
-     "value": 0
+     "value": 14
     },
     {
      "site": "DAMAGE_ROLL",
      "context": "",
      "lo": 0,
      "hi": 16,
-     "value": 12
+     "value": 0
     },
     {
      "site": "SECONDARY",
      "context": "",
      "lo": 0,
      "hi": 100,
-     "value": 22
+     "value": 81
     },
     {
      "site": "SPEED_TIE",
@@ -826,16 +814,15 @@
     "|move|p1b: Victreebel|Bug Bite|p2a: Primarina",
     "|-resisted|p2a: Primarina|1",
     "|split|p2",
-    "|-damage|p2a: Primarina|166/187",
-    "|-damage|p2a: Primarina|88/100",
+    "|-damage|p2a: Primarina|164/187",
+    "|-damage|p2a: Primarina|87/100",
     "|split|p1",
     "|-damage|p1b: Victreebel|156/187|[from] item: Rocky Helmet|[of] p2a: Primarina",
     "|-damage|p1b: Victreebel|83/100|[from] item: Rocky Helmet|[of] p2a: Primarina",
     "|move|p2a: Primarina|Moonblast|p1a: Raichu",
-    "|-crit|p1a: Raichu",
     "|split|p1",
-    "|-damage|p1a: Raichu|47/167",
-    "|-damage|p1a: Raichu|28/100",
+    "|-damage|p1a: Raichu|76/167",
+    "|-damage|p1a: Raichu|45/100",
     "|split|p1",
     "|-heal|p1b: Victreebel|167/187|[from] item: Leftovers",
     "|-heal|p1b: Victreebel|89/100|[from] item: Leftovers",
@@ -879,7 +866,7 @@
         "set_species": "Raichu",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 47,
+        "hp": 76,
         "maxhp": 167,
         "item": "lifeorb",
         "status": "",
@@ -1015,7 +1002,7 @@
         "set_species": "Primarina",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 166,
+        "hp": 164,
         "maxhp": 187,
         "item": "rockyhelmet",
         "status": "",
@@ -1069,13 +1056,13 @@
         "locked": null
        },
        {
-        "species": "Milotic",
-        "set_species": "Milotic",
+        "species": "Gengar",
+        "set_species": "Gengar",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 202,
-        "maxhp": 202,
-        "item": "sitrusberry",
+        "hp": 167,
+        "maxhp": 167,
+        "item": "lifeorb",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -1090,7 +1077,7 @@
          0
         ],
         "pp": [
-         12,
+         16,
          8
         ],
         "volatiles": [],
@@ -1140,7 +1127,14 @@
      "context": "StallMove",
      "lo": 0,
      "hi": 3,
-     "value": 2
+     "value": 1
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 78
     },
     {
      "site": "ACCURACY",
@@ -1150,32 +1144,53 @@
      "value": 21
     },
     {
-     "site": "ACCURACY",
-     "context": "",
-     "lo": 0,
-     "hi": 100,
-     "value": 37
-    },
-    {
      "site": "CRIT",
      "context": "",
      "lo": 0,
      "hi": 24,
-     "value": 18
+     "value": 9
     },
     {
      "site": "DAMAGE_ROLL",
      "context": "",
      "lo": 0,
      "hi": 16,
-     "value": 10
+     "value": 12
     },
     {
      "site": "FULL_PARALYSIS",
      "context": "BeforeMove",
      "lo": 0,
      "hi": 8,
+     "value": 5
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 10
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 1
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
      "value": 0
+    },
+    {
+     "site": "SECONDARY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 97
     }
    ],
    "log": [
@@ -1186,20 +1201,23 @@
     "|move|p1b: Victreebel|Bug Bite|p2a: Primarina",
     "|-resisted|p2a: Primarina|1",
     "|split|p2",
-    "|-damage|p2a: Primarina|144/187 par",
-    "|-damage|p2a: Primarina|77/100 par",
+    "|-damage|p2a: Primarina|143/187 par",
+    "|-damage|p2a: Primarina|76/100 par",
     "|split|p1",
     "|-damage|p1b: Victreebel|136/187|[from] item: Rocky Helmet|[of] p2a: Primarina",
     "|-damage|p1b: Victreebel|72/100|[from] item: Rocky Helmet|[of] p2a: Primarina",
-    "|cant|p2a: Primarina|par",
+    "|move|p2a: Primarina|Moonblast|p1a: Raichu",
+    "|split|p1",
+    "|-damage|p1a: Raichu|0 fnt",
+    "|-damage|p1a: Raichu|0 fnt",
+    "|faint|p1a: Raichu",
     "|split|p1",
     "|-heal|p1b: Victreebel|147/187|[from] item: Leftovers",
     "|-heal|p1b: Victreebel|78/100|[from] item: Leftovers",
-    "|upkeep",
-    "|turn|3"
+    "|upkeep"
    ],
    "state": {
-    "turn": 3,
+    "turn": 2,
     "ended": false,
     "winner": "",
     "weather": "",
@@ -1209,22 +1227,13 @@
     "trick_room": 0,
     "sides": [
      {
-      "request": "move",
+      "request": "switch",
       "conditions": [
        0,
        0,
        0
       ],
-      "enabled": [
-       [
-        1,
-        1
-       ],
-       [
-        1,
-        1
-       ]
-      ],
+      "enabled": [],
       "active": [
        0,
        1
@@ -1234,14 +1243,14 @@
         "species": "Raichu",
         "set_species": "Raichu",
         "mega": 0,
-        "switch_flag": 0,
-        "hp": 47,
+        "switch_flag": 1,
+        "hp": 0,
         "maxhp": 167,
         "item": "lifeorb",
-        "status": "",
+        "status": "fnt",
         "status_time": 0,
         "confusion": 0,
-        "fainted": false,
+        "fainted": true,
         "boosts": [
          0,
          0,
@@ -1345,22 +1354,13 @@
       ]
      },
      {
-      "request": "move",
+      "request": "",
       "conditions": [
        0,
        0,
        0
       ],
-      "enabled": [
-       [
-        1,
-        1
-       ],
-       [
-        1,
-        1
-       ]
-      ],
+      "enabled": [],
       "active": [
        0,
        1
@@ -1371,7 +1371,7 @@
         "set_species": "Primarina",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 144,
+        "hp": 143,
         "maxhp": 187,
         "item": "rockyhelmet",
         "status": "par",
@@ -1388,7 +1388,7 @@
          0
         ],
         "pp": [
-         15,
+         14,
          8
         ],
         "volatiles": [],
@@ -1423,13 +1423,13 @@
         "locked": null
        },
        {
-        "species": "Milotic",
-        "set_species": "Milotic",
+        "species": "Gengar",
+        "set_species": "Gengar",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 202,
-        "maxhp": 202,
-        "item": "sitrusberry",
+        "hp": 167,
+        "maxhp": 167,
+        "item": "lifeorb",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -1444,7 +1444,7 @@
          0
         ],
         "pp": [
-         12,
+         16,
          8
         ],
         "volatiles": [],

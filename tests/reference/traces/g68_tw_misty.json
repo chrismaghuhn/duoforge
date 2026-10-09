@@ -14,7 +14,7 @@
    "|rule|Species Clause: Limit one of each Pokémon",
    "|rule|Item Clause: Limit 1 of each item",
    "|clearpoke",
-   "|poke|p1|Clefable, L50, F|",
+   "|poke|p1|Gardevoir, L50, F|",
    "|poke|p1|Gengar, L50, F|",
    "|poke|p1|Milotic, L50, F|",
    "|poke|p1|Kingambit, L50, M|",
@@ -58,12 +58,12 @@
      ],
      "pokemon": [
       {
-       "species": "Clefable",
-       "set_species": "Clefable",
+       "species": "Gardevoir",
+       "set_species": "Gardevoir",
        "mega": 0,
        "switch_flag": 0,
-       "hp": 202,
-       "maxhp": 202,
+       "hp": 175,
+       "maxhp": 175,
        "item": "leftovers",
        "status": "",
        "status_time": 0,
@@ -419,18 +419,6 @@
     {
      "site": "TEAM_ORDER",
      "context": "queue",
-     "lo": 0,
-     "hi": 2,
-     "value": 1,
-     "group": [
-      "A:team:p1a:",
-      "A:team:p2a:"
-     ],
-     "start": 0
-    },
-    {
-     "site": "TEAM_ORDER",
-     "context": "queue",
      "lo": 6,
      "hi": 8,
      "value": 7,
@@ -439,41 +427,6 @@
       "A:team:p2undefined:"
      ],
      "start": 6
-    },
-    {
-     "site": "INSERT_TIE",
-     "context": "queue",
-     "lo": 1,
-     "hi": 3,
-     "value": 1,
-     "group": [
-      "A:runSwitch:p1b::0",
-      "A:runSwitch:p1a::0"
-     ]
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "switch-order",
-     "lo": 2,
-     "hi": 4,
-     "value": 2,
-     "group": [
-      "P:p2a:0:S",
-      "P:p1a:0:S"
-     ],
-     "start": 2
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 2,
-     "hi": 4,
-     "value": 3,
-     "group": [
-      "P:p2a:0:",
-      "P:p1a:0:"
-     ],
-     "start": 2
     }
    ],
    "log": [
@@ -487,8 +440,8 @@
     "|uhtmlchange|otsrequest|",
     "",
     "|split|p1",
-    "|switch|p1a: Clefable|Clefable, L50, F|202/202",
-    "|switch|p1a: Clefable|Clefable, L50, F|100/100",
+    "|switch|p1a: Gardevoir|Gardevoir, L50, F|175/175",
+    "|switch|p1a: Gardevoir|Gardevoir, L50, F|100/100",
     "|split|p1",
     "|switch|p1b: Gengar|Gengar, L50, F|167/167",
     "|switch|p1b: Gengar|Gengar, L50, F|100/100",
@@ -533,12 +486,12 @@
       ],
       "pokemon": [
        {
-        "species": "Clefable",
-        "set_species": "Clefable",
+        "species": "Gardevoir",
+        "set_species": "Gardevoir",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 202,
-        "maxhp": 202,
+        "hp": 175,
+        "maxhp": 175,
         "item": "leftovers",
         "status": "",
         "status_time": 0,
@@ -792,236 +745,32 @@
    },
    "draws": [
     {
-     "site": "SPEED_TIE",
-     "context": "queue",
-     "lo": 2,
-     "hi": 4,
-     "value": 3,
-     "group": [
-      "A:move:p2a:moonblast",
-      "A:move:p1a:mistyterrain"
-     ],
-     "start": 2
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:BeforeTurn",
-     "lo": 2,
-     "hi": 4,
-     "value": 2,
-     "group": [
-      "P:p2a:0:",
-      "P:p1a:0:"
-     ],
-     "start": 2
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 2,
-     "hi": 4,
-     "value": 3,
-     "group": [
-      "P:p2a:0:",
-      "P:p1a:0:"
-     ],
-     "start": 2
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "queue",
-     "lo": 2,
-     "hi": 4,
-     "value": 2,
-     "group": [
-      "A:move:p1a:mistyterrain",
-      "A:move:p2a:moonblast"
-     ],
-     "start": 2
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 2,
-     "hi": 4,
-     "value": 2,
-     "group": [
-      "P:p2a:0:",
-      "P:p1a:0:"
-     ],
-     "start": 2
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 2,
-     "hi": 4,
-     "value": 3,
-     "group": [
-      "P:p2a:0:",
-      "P:p1a:0:"
-     ],
-     "start": 2
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 2,
-     "hi": 4,
-     "value": 2,
-     "group": [
-      "P:p2a:0:",
-      "P:p1a:0:"
-     ],
-     "start": 2
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "queue",
-     "lo": 1,
-     "hi": 3,
-     "value": 1,
-     "group": [
-      "A:move:p1a:mistyterrain",
-      "A:move:p2a:moonblast"
-     ],
-     "start": 1
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 2,
-     "hi": 4,
-     "value": 3,
-     "group": [
-      "P:p2a:0:",
-      "P:p1a:0:"
-     ],
-     "start": 2
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 2,
-     "hi": 4,
-     "value": 3,
-     "group": [
-      "P:p2a:0:",
-      "P:p1a:0:"
-     ],
-     "start": 2
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 2,
-     "hi": 4,
-     "value": 2,
-     "group": [
-      "P:p2a:0:",
-      "P:p1a:0:"
-     ],
-     "start": 2
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "queue",
-     "lo": 0,
-     "hi": 2,
-     "value": 0,
-     "group": [
-      "A:move:p1a:mistyterrain",
-      "A:move:p2a:moonblast"
-     ],
-     "start": 0
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:TerrainChange",
-     "lo": 2,
-     "hi": 4,
-     "value": 2,
-     "group": [
-      "P:p2a:0:",
-      "P:p1a:0:"
-     ],
-     "start": 2
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 2,
-     "hi": 4,
-     "value": 3,
-     "group": [
-      "P:p2a:0:",
-      "P:p1a:0:"
-     ],
-     "start": 2
-    },
-    {
      "site": "ACCURACY",
      "context": "",
      "lo": 0,
      "hi": 100,
-     "value": 61
+     "value": 59
     },
     {
      "site": "CRIT",
      "context": "",
      "lo": 0,
      "hi": 24,
-     "value": 18
+     "value": 6
     },
     {
      "site": "DAMAGE_ROLL",
      "context": "",
      "lo": 0,
      "hi": 16,
-     "value": 15
+     "value": 4
     },
     {
      "site": "SECONDARY",
      "context": "",
      "lo": 0,
      "hi": 100,
-     "value": 33
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 2,
-     "hi": 4,
-     "value": 3,
-     "group": [
-      "P:p2a:0:",
-      "P:p1a:0:"
-     ],
-     "start": 2
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 2,
-     "hi": 4,
-     "value": 3,
-     "group": [
-      "P:p2a:0:",
-      "P:p1a:0:"
-     ],
-     "start": 2
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 2,
-     "hi": 4,
-     "value": 2,
-     "group": [
-      "P:p2a:0:",
-      "P:p1a:0:"
-     ],
-     "start": 2
+     "value": 71
     },
     {
      "site": "SPEED_TIE",
@@ -1040,24 +789,12 @@
      "context": "field:Residual",
      "lo": 4,
      "hi": 6,
-     "value": 5,
+     "value": 4,
      "group": [
       "H:protect:p2b:end",
       "H:stall:p2b:end"
      ],
      "start": 4
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 2,
-     "hi": 4,
-     "value": 2,
-     "group": [
-      "P:p2a:0:",
-      "P:p1a:0:"
-     ],
-     "start": 2
     }
    ],
    "log": [
@@ -1065,15 +802,15 @@
     "|-singleturn|p1b: Gengar|Protect",
     "|move|p2b: Excadrill|Protect|p2b: Excadrill",
     "|-singleturn|p2b: Excadrill|Protect",
-    "|move|p1a: Clefable|Misty Terrain|p1a: Clefable",
+    "|move|p1a: Gardevoir|Misty Terrain|p1a: Gardevoir",
     "|-fieldstart|move: Misty Terrain",
-    "|move|p2a: Primarina|Moonblast|p1a: Clefable",
+    "|move|p2a: Primarina|Moonblast|p1a: Gardevoir",
     "|split|p1",
-    "|-damage|p1a: Clefable|132/202",
-    "|-damage|p1a: Clefable|65/100",
+    "|-damage|p1a: Gardevoir|109/175",
+    "|-damage|p1a: Gardevoir|62/100",
     "|split|p1",
-    "|-heal|p1a: Clefable|144/202|[from] item: Leftovers",
-    "|-heal|p1a: Clefable|71/100|[from] item: Leftovers",
+    "|-heal|p1a: Gardevoir|119/175|[from] item: Leftovers",
+    "|-heal|p1a: Gardevoir|68/100|[from] item: Leftovers",
     "|upkeep",
     "|turn|2"
    ],
@@ -1110,12 +847,12 @@
       ],
       "pokemon": [
        {
-        "species": "Clefable",
-        "set_species": "Clefable",
+        "species": "Gardevoir",
+        "set_species": "Gardevoir",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 144,
-        "maxhp": 202,
+        "hp": 119,
+        "maxhp": 175,
         "item": "leftovers",
         "status": "",
         "status_time": 0,
@@ -1373,152 +1110,44 @@
    },
    "draws": [
     {
-     "site": "SPEED_TIE",
-     "context": "each:BeforeTurn",
-     "lo": 2,
-     "hi": 4,
-     "value": 2,
-     "group": [
-      "P:p2a:0:",
-      "P:p1a:0:"
-     ],
-     "start": 2
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 2,
-     "hi": 4,
-     "value": 3,
-     "group": [
-      "P:p2a:0:",
-      "P:p1a:0:"
-     ],
-     "start": 2
-    },
-    {
      "site": "STALL",
      "context": "StallMove",
      "lo": 0,
      "hi": 3,
-     "value": 1
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 2,
-     "hi": 4,
-     "value": 2,
-     "group": [
-      "P:p2a:0:",
-      "P:p1a:0:"
-     ],
-     "start": 2
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 2,
-     "hi": 4,
-     "value": 3,
-     "group": [
-      "P:p2a:0:",
-      "P:p1a:0:"
-     ],
-     "start": 2
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 2,
-     "hi": 4,
-     "value": 3,
-     "group": [
-      "P:p2a:0:",
-      "P:p1a:0:"
-     ],
-     "start": 2
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 2,
-     "hi": 4,
-     "value": 2,
-     "group": [
-      "P:p2a:0:",
-      "P:p1a:0:"
-     ],
-     "start": 2
+     "value": 2
     },
     {
      "site": "ACCURACY",
      "context": "",
      "lo": 0,
      "hi": 100,
-     "value": 46
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 2,
-     "hi": 4,
-     "value": 3,
-     "group": [
-      "P:p2a:0:",
-      "P:p1a:0:"
-     ],
-     "start": 2
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 2,
-     "hi": 4,
-     "value": 2,
-     "group": [
-      "P:p2a:0:",
-      "P:p1a:0:"
-     ],
-     "start": 2
+     "value": 22
     },
     {
      "site": "SPEED_TIE",
      "context": "field:Residual",
      "lo": 3,
      "hi": 5,
-     "value": 4,
+     "value": 3,
      "group": [
       "H:protect:p1a:end",
       "H:stall:p1a:end"
      ],
      "start": 3
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 2,
-     "hi": 4,
-     "value": 3,
-     "group": [
-      "P:p2a:0:",
-      "P:p1a:0:"
-     ],
-     "start": 2
     }
    ],
    "log": [
     "|move|p2b: Excadrill|Protect||[still]",
     "|-fail|p2b: Excadrill",
-    "|move|p1a: Clefable|Protect|p1a: Clefable",
-    "|-singleturn|p1a: Clefable|Protect",
+    "|move|p1a: Gardevoir|Protect|p1a: Gardevoir",
+    "|-singleturn|p1a: Gardevoir|Protect",
     "|move|p1b: Gengar|Thunder Wave|p2a: Primarina",
     "|-activate|p2a: Primarina|move: Misty Terrain",
-    "|move|p2a: Primarina|Moonblast|p1a: Clefable",
-    "|-activate|p1a: Clefable|move: Protect",
+    "|move|p2a: Primarina|Moonblast|p1a: Gardevoir",
+    "|-activate|p1a: Gardevoir|move: Protect",
     "|split|p1",
-    "|-heal|p1a: Clefable|156/202|[from] item: Leftovers",
-    "|-heal|p1a: Clefable|77/100|[from] item: Leftovers",
+    "|-heal|p1a: Gardevoir|129/175|[from] item: Leftovers",
+    "|-heal|p1a: Gardevoir|73/100|[from] item: Leftovers",
     "|upkeep",
     "|turn|3"
    ],
@@ -1555,12 +1184,12 @@
       ],
       "pokemon": [
        {
-        "species": "Clefable",
-        "set_species": "Clefable",
+        "species": "Gardevoir",
+        "set_species": "Gardevoir",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 156,
-        "maxhp": 202,
+        "hp": 129,
+        "maxhp": 175,
         "item": "leftovers",
         "status": "",
         "status_time": 0,

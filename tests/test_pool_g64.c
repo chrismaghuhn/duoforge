@@ -28,7 +28,9 @@ static void check_handlers(df_test *t)
     DF_CHECK_EQ_U64(t, DFI_SPECIAL_POLTERGEIST, DFI_SPECIAL_BUG_BITE + 1u);
     DF_CHECK_EQ_U64(t, DFI_SPECIAL_SHEER_COLD, DFI_SPECIAL_POLTERGEIST + 1u);
     DF_CHECK_EQ_U64(t, DFI_SPECIAL_HAZE, DFI_SPECIAL_SHEER_COLD + 1u); /* step G62 (merged after G64): Haze, After You, Quash */
-    DF_CHECK_EQ_U64(t, DFI_SPECIAL_UNMODELED, DFI_SPECIAL_PHANTOM_FORCE + 1u); /* step G60 (decision 0032) comes after Quash */
+    DF_CHECK_EQ_U64(t, DFI_SPECIAL_STEEL_BEAM, DFI_SPECIAL_PHANTOM_FORCE + 1u); /* step G68 (decision 0015 item 5cc) comes after Phantom Force */
+    DF_CHECK_EQ_U64(t, DFI_SPECIAL_THUNDER_WAVE, DFI_SPECIAL_STEEL_BEAM + 1u);
+    DF_CHECK_EQ_U64(t, DFI_SPECIAL_UNMODELED, DFI_SPECIAL_THUNDER_WAVE + 1u); /* UNMODELED is the last id */
 }
 
 /* The marks of the support manifest: Poltergeist is the one row of the step that the turn code plays at this point. */
