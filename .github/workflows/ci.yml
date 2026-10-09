@@ -146,6 +146,7 @@ jobs:
           grep -E 'Test +#[0-9]+: duoforge\.python\.search ' ctest.log
           grep -E 'Test +#[0-9]+: duoforge\.python\.honest ' ctest.log
           grep -E 'Test +#[0-9]+: duoforge\.python\.luck ' ctest.log
+          grep -E 'Test +#[0-9]+: duoforge\.python\.ledger ' ctest.log
 
   linux-sanitizers:
     name: Linux / gcc / ASan+UBSan
@@ -302,7 +303,7 @@ jobs:
         run: ctest --test-dir build --output-on-failure --no-tests=error --timeout 120 --parallel 4 2>&1 | tee ctest.log
       - name: No Python or reference test skipped (the JAX tests are Linux-only)
         run: |
-          if grep -E '\*\*\*Skipped' ctest.log | grep -E 'duoforge\.(python|reference)\.' | grep -v -E 'duoforge\.python\.(learn(_v2)?|bc|search|honest|luck) '; then
+          if grep -E '\*\*\*Skipped' ctest.log | grep -E 'duoforge\.(python|reference)\.' | grep -v -E 'duoforge\.python\.(learn(_v2)?|bc|search|honest|luck|ledger) '; then
             echo "Python or reference tests were skipped"
             exit 1
           fi

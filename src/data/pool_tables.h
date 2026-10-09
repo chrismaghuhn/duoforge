@@ -884,7 +884,15 @@
 #define DFI_SPECIAL_SUPER_FANG 60u
 #define DFI_SPECIAL_TAUNT 61u
 #define DFI_SPECIAL_YAWN 62u
-#define DFI_SPECIAL_UNMODELED 63u
+#define DFI_SPECIAL_RAGE_FIST 63u
+#define DFI_SPECIAL_STONE_AXE 64u
+#define DFI_SPECIAL_CEASELESS_EDGE 65u
+#define DFI_SPECIAL_MULTI_HIT_10 66u
+#define DFI_SPECIAL_POWER_TRIP 67u
+#define DFI_SPECIAL_THUNDER 68u
+#define DFI_SPECIAL_ICE_FANG 69u
+#define DFI_SPECIAL_TRI_ATTACK 70u
+#define DFI_SPECIAL_UNMODELED 71u
 
 /* ---- the second flags byte of every move (step G8: the general byte for the flags that the first one has no room
  * for; bits 4 to 128 are free) and the secondary kinds that it comes with ---- */

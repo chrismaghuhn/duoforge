@@ -847,6 +847,43 @@ function checkG33(dex) {
     return 1;
 }
 
+// Step G44 (simple moves): the four handlers' pinned rules, called with stubs as the probes above do. Power Trip adds 20 per
+// positive stage (Pokemon.positiveBoosts, sim/pokemon.ts:1201-1208: a negative stage adds nothing); Thunder's onModifyMove is
+// Hurricane's (true in rain, 50 under sun, the target's weather); Ice Fang's secondaries are the freeze and the flinch, in
+// this order; Tri Attack's onHit draws sample(['brn', 'par', 'frz']) and sets that status.
+function checkG44(dex) {
+    const pt = dex.moves.get('powertrip');
+    const positive = (boosts) => Object.values(boosts).reduce((n, b) => (b > 0 ? n + b : n), 0);
+    const powerOf = (boosts) => call(pt.basePowerCallback, battle(pt), [{positiveBoosts: () => positive(boosts)}, {}, {basePower: 20}]);
+    expect('Power Trip, no boost', powerOf({}), 20);
+    expect('Power Trip, a negative stage adds nothing', powerOf({atk: -2}), 20);
+    expect('Power Trip, two positive and one negative', powerOf({atk: 2, def: -1, spe: 1}), 80);
+    expect('Power Trip, every stat at +6 and accuracy and evasion too', powerOf({atk: 6, def: 6, spa: 6, spd: 6, spe: 6, accuracy: 6, evasion: 6}), 860);
+    const th = dex.moves.get('thunder');
+    const thunderAccuracy = (weather) => {
+        const move = {accuracy: 70};
+        call(th.onModifyMove, battle(th), [move, {}, {effectiveWeather: () => weather}]);
+        return move.accuracy;
+    };
+    expect('Thunder accuracy by weather', ['raindance', 'primordialsea', 'sunnyday', 'desolateland', ''].map(thunderAccuracy),
+        [true, true, 50, 50, 70]);
+    expect('Thunder secondary', th.secondary, {chance: 30, status: 'par'});
+    const fang = dex.moves.get('icefang');
+    expect('Ice Fang secondaries', fang.secondaries, [{chance: 10, status: 'frz'}, {chance: 10, volatileStatus: 'flinch'}]);
+    const tri = dex.moves.get('triattack');
+    expect('Tri Attack secondary chance', tri.secondary.chance, 20);
+    const picks = [0, 1, 2].map((v) => {
+        const sampled = [];
+        const set = [];
+        const b = battle(tri, {sample: (list) => { sampled.push(list.join(',')); return list[v]; }});
+        call(tri.secondary.onHit, b, [{trySetStatus: (status) => set.push(status)}, {}]);
+        return {sampled, set};
+    });
+    expect('Tri Attack draws one pick of three', picks, [
+        {sampled: ['brn,par,frz'], set: ['brn']}, {sampled: ['brn,par,frz'], set: ['par']}, {sampled: ['brn,par,frz'], set: ['frz']}]);
+    return 1;
+}
+
 function checkG32(dex) {
     for (const id of ['eruption', 'waterspout']) {
         const m = dex.moves.get(id);
@@ -1670,6 +1707,7 @@ function main() {
     checkG32(dex);
     checkG33(dex);
     checkG41(dex);
+    checkG44(dex);
     checkG22(dex, formeRowsList, new Set(definedIds(headers, 'ITEM').values()), new Set(abilityIds.values()));
     const abilities = checkAbilities(dex, abilityRows, moveIds, unmodeledAbilities, unmodeledMoves);
     // "All 18": a booster and a resist berry for each type, and nothing else in the families.

@@ -6,7 +6,7 @@ library's data API (decision 0020, python/duoforge/data.py), read once at
 load under a context of the kind: the maximum PP and the target class of a
 move (move_static), a forme's base forme and Mega forme (forme_info) and the
 ability a member of it holds (forme_static: a Mega forme's own; under the
-closure the set's), and the Mega forme a stone reaches (item_static). The
+closure the set's), and the Mega forme a stone takes each holder to (duoforge_data_mega_at). The
 library is the one source: the checkout's generated rows and the DLL cannot
 disagree (python/tests/test_replay_unit.py GeneratedRowsTest compares them
 row by row).
@@ -63,7 +63,13 @@ class Data:
             infos = [api.forme_info(context, f) for f in range(self.counts["FORME"])]
             self._ability = [api.forme_static(context, f)["default_ability"] for f in range(self.counts["FORME"])]
             moves = [api.move_static(context, m) for m in range(self.counts["MOVE"])]
-            items = [api.item_static(context, i) for i in range(self.counts["ITEM"])]
+            # Every (holder, stone) pair the library knows (duoforge_data_mega_at): one stone may take two holders
+            # to two Megas (Meowsticite: Meowstic-M and Meowstic-F), so the stone alone does not name its Mega.
+            self._mega_pairs = {}
+            for forme in range(self.counts["FORME"]):
+                for k in range(api.mega_count(context, forme)):
+                    entry = api.mega_at(context, forme, k)
+                    self._mega_pairs[(forme, int(entry["stone"]))] = int(entry["mega_species"])
 
         def link(value):
             return None if value == api.NONE else value
@@ -72,7 +78,6 @@ class Data:
         self._mega = [link(info["mega_species"]) for info in infos]
         self._pp_max = [m["pp"] for m in moves]
         self._target_class = [m["target_class"] for m in moves]
-        self._stone = [link(i["mega_species"]) if i["is_mega_stone"] else None for i in items]  # the Mega it reaches
 
     def team(self, text):
         """A paste as trace_to_c.parse_team reads it: member dicts with species, gender, nature, sp, ability
@@ -166,12 +171,12 @@ class Data:
         return self._mega[forme]
 
     def mega_of(self, forme, item):
-        """The Mega forme that `item` (1-based, 0 for none) takes the forme to, or None: the stone names its Mega,
-        whose base forme is its holder (Charizardite X and Y take Charizard to two formes)."""
+        """The Mega forme that `item` (1-based, 0 for none) takes the forme to, or None, from the library's
+        (holder, stone) pairs: Charizardite X and Y take Charizard to two formes, and Meowsticite takes Meowstic-M
+        and Meowstic-F to two."""
         if item == 0:
             return None
-        mega = self._stone[item - 1]
-        return mega if mega is not None and self._base[mega] == forme else None
+        return self._mega_pairs.get((forme, item - 1))
 
     def mega_capable(self, forme, item):
         """Whether `item` (1-based, 0 for none) is a Mega Stone of the forme."""

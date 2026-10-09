@@ -9,13 +9,17 @@ measurement's statistics and checkpoint choice (spec section 8). The
 contract is pinned by literals, never by the module's own constants. The
 JAX parts are in test_search.py.
 """
+import contextlib
+import hashlib
 import itertools
 import json
 import math
 import os
+import struct
 import tempfile
 import time
 import unittest
+from fractions import Fraction
 from pathlib import Path
 from unittest.mock import patch
 
@@ -72,6 +76,48 @@ def _near_duplicate_tables(rng, count):
         if n % 2:
             a = a.astype(np.float32).astype(np.float64)
         yield a
+
+
+def _budget_cases():
+    """(kind, tables, weights) for the budget identity pin: both float
+    fixtures, random and near-duplicate worlds, and small exact rescues."""
+    for name in ("bayes-arena-16x8x8.json", "bayes-arena-16x8x8-tiny-pivot.json"):
+        saved = json.loads((Path(__file__).with_name("fixtures") / name).read_text())
+        yield "bayes", np.asarray(saved["tables"], dtype=np.float64), np.asarray(saved["weights"], dtype=np.float64)
+    rng = np.random.default_rng(20261009)
+    for w, k, m in ((2, 2, 2), (4, 8, 8), (16, 8, 8), (3, 5, 1), (5, 1, 4)):
+        yield "bayes", rng.random((w, k, m)).astype(np.float32).astype(np.float64), rng.random(w) + 0.1
+    a = rng.uniform(-1, 1, (16, 8, 8)).astype(np.float32).astype(np.float64)
+    a[:, 1] = a[:, 0]
+    a[:, 2] = a[:, 0] + rng.choice([-1, 1], (16, 8)) * 2**-24
+    yield "bayes", a, rng.random(16) + 0.1
+    for w, k, m in ((2, 2, 2), (2, 3, 3)):
+        yield "bayes_exact", rng.random((w, k, m)), rng.random(w) + 0.1
+    for a in _random_tables(np.random.default_rng(20261010), 8):
+        yield "matrix", a, None
+    yield "matrix", np.array([[float.fromhex(v) for v in row] for row in _NEAR_DUPLICATE_HEX]), None
+    for k, m in ((2, 2), (3, 4)):
+        yield "matrix_exact", rng.random((k, m)), None
+
+
+def _budget_digest(solve_bayes, solve):
+    """SHA-256 over every solution's bytes; exact cases force the rescue."""
+    h = hashlib.sha256()
+    for kind, tables, weights in _budget_cases():
+        if kind == "bayes":
+            sol = solve_bayes(tables, weights)
+        elif kind == "bayes_exact":
+            with patch.object(matrix, "_bland_float", side_effect=SearchError("float failed")):
+                sol = solve_bayes(tables, weights)
+        elif kind == "matrix":
+            sol = solve(tables)
+        else:
+            with patch.object(matrix, "_solve_float", side_effect=SearchError("float failed")):
+                sol = solve(tables)
+        ys = sol.ys if hasattr(sol, "ys") else [sol.y]
+        h.update(kind.encode() + sol.x.tobytes() + b"".join(np.asarray(y).tobytes() for y in ys)
+                 + struct.pack("<d?", sol.value, sol.exact))
+    return h.hexdigest()
 
 
 def _support_value(a):
@@ -717,6 +763,306 @@ class BayesRule(unittest.TestCase):
             matrix.solve_bayes(np.zeros((2, 2, 2)), [1.0, 0.0])
 
 
+_FRACTION_OPS = ("__new__", "__add__", "__radd__", "__sub__", "__rsub__", "__mul__", "__rmul__", "__truediv__",
+                 "__rtruediv__", "__neg__", "__lt__", "__gt__", "__le__", "__ge__", "__eq__", "__float__")
+
+
+@contextlib.contextmanager
+def _count_fraction_ops():
+    """Counts outermost Fraction constructions, arithmetic, comparisons and
+    float conversions while active (calls made inside another count once)."""
+    ran = {"ops": 0, "depth": 0}
+
+    def counting(real, static):
+        def wrapper(*args, **kwargs):
+            ran["ops"] += ran["depth"] == 0
+            ran["depth"] += 1
+            try:
+                return real(*args, **kwargs)
+            finally:
+                ran["depth"] -= 1
+        return staticmethod(wrapper) if static else wrapper
+
+    with contextlib.ExitStack() as stack:
+        for name in _FRACTION_OPS:
+            real = getattr(Fraction, name)
+            stack.enter_context(patch.object(Fraction, name, counting(real, name == "__new__")))
+        yield ran
+
+
+class BoundedSolver(unittest.TestCase):
+    """The P1 teacher's deterministic work budget (P1 plan C2 steps 4 and 5)."""
+
+    _AMPLE = {"float_pivots": 10**9, "exact_pivots": 10**9, "exact_ops": 10**12, "bits": 10**9}
+    _GOLDEN = "63f2a5e83803e3f8e69d1d4951811a9a05fb176a6bc9c4788bb872f47a29325a"  # pinned on main 1cd5ba8b
+    _RATIONAL = np.array([[[0.1, 0.7, 0.3], [0.6, 0.2, 0.9], [0.4, 0.8, 0.5]],
+                          [[0.9, 0.1, 0.6], [0.3, 0.8, 0.2], [0.5, 0.4, 0.7]]])
+
+    def _ledger(self, **caps):
+        return matrix.WorkLedger(matrix.WorkBudget(**{**self._AMPLE, **caps}))
+
+    @staticmethod
+    def _counts(ledger):
+        c = ledger.consumed
+        return (c.float_pivots, c.exact_pivots, c.exact_ops, c.max_bits)
+
+    def test_bayes_budget_cumulative_and_default_identity(self):
+        b = matrix.WorkBudget()
+        self.assertEqual((b.float_pivots, b.exact_pivots, b.exact_ops, b.bits), (4096, 32, 250000, 4096))
+        self.assertEqual([s.value for s in matrix.WorkStatus], ["ok", "float_pivots", "exact_pivots", "exact_ops", "bits"])
+        fresh = matrix.WorkLedger()
+        self.assertEqual(fresh.limits, b)
+        self.assertEqual(self._counts(fresh), (0, 0, 0, 0))
+        self.assertIs(fresh.status, matrix.WorkStatus.OK)
+        # budget=None is byte-identical to the solver before budgets existed.
+        self.assertEqual(_budget_digest(lambda t, w: matrix.solve_bayes(t, w, budget=None),
+                                        lambda a: matrix.solve(a, budget=None)), self._GOLDEN)
+        # An ample ledger changes no byte either, and one ledger accumulates over every call
+        # (single-world solve included); it never resets per call.
+        ledger = self._ledger()
+        self.assertEqual(_budget_digest(lambda t, w: matrix.solve_bayes(t, w, budget=ledger),
+                                        lambda a: matrix.solve(a, budget=ledger)), self._GOLDEN)
+        parts = []
+
+        def bayes_part(t, w):
+            parts.append(self._ledger())
+            return matrix.solve_bayes(t, w, budget=parts[-1])
+
+        def matrix_part(a):
+            parts.append(self._ledger())
+            return matrix.solve(a, budget=parts[-1])
+
+        self.assertEqual(_budget_digest(bayes_part, matrix_part), self._GOLDEN)
+        counts = [self._counts(p) for p in parts]
+        self.assertEqual(self._counts(ledger), (sum(c[0] for c in counts), sum(c[1] for c in counts),
+                                                sum(c[2] for c in counts), max(c[3] for c in counts)))
+        self.assertTrue(all(v > 0 for v in self._counts(ledger)))
+        # Float decisions charge only float pivots, the 1 + W start pivots included.
+        self.assertEqual(counts[0][1:], (0, 0, 0))
+        self.assertGreaterEqual(counts[0][0], 17)
+        self.assertIs(ledger.status, matrix.WorkStatus.OK)
+
+    def test_bayes_budget_cumulative_and_default_identity_exhaustion_is_never_retried(self):
+        a, w = self._RATIONAL, [1.0, 2.0]
+        ledger = self._ledger(float_pivots=2)
+        calls = []
+        real = matrix._bland_float
+
+        def spy(*args, **kwargs):
+            calls.append(kwargs.get("stable", False))
+            return real(*args, **kwargs)
+
+        with patch.object(matrix, "_bland_float", side_effect=spy), \
+                patch.object(matrix, "_bland", side_effect=AssertionError("unexpected exact rescue")), \
+                self.assertRaises(matrix.WorkBudgetExceeded) as caught:
+            matrix.solve_bayes(a, w, budget=ledger)
+        self.assertEqual(calls, [False])  # neither the stable retry nor the rescue ran
+        self.assertIsInstance(caught.exception, SearchError)
+        self.assertIs(caught.exception.status, matrix.WorkStatus.FLOAT_PIVOTS)
+        self.assertEqual(caught.exception.consumed, ledger.consumed)
+        self.assertEqual(self._counts(ledger), (3, 0, 0, 0))  # charged before the third pivot ran
+        self.assertIs(ledger.status, matrix.WorkStatus.FLOAT_PIVOTS)
+        # An exhausted ledger refuses every later call, even a constant table, and stays unchanged.
+        with self.assertRaises(matrix.WorkBudgetExceeded):
+            matrix.solve_bayes(np.full((2, 2, 2), 0.5), [1.0, 1.0], budget=ledger)
+        with self.assertRaises(matrix.WorkBudgetExceeded):
+            matrix.solve(np.ones((2, 2)), budget=ledger)
+        self.assertEqual(self._counts(ledger), (3, 0, 0, 0))
+        # Float pivots of the single-world simplex and its basis solves are charged as well.
+        with patch.object(matrix, "_simplex_exact", side_effect=AssertionError("unexpected exact rescue")), \
+                self.assertRaises(matrix.WorkBudgetExceeded) as caught:
+            matrix.solve(a[0], budget=self._ledger(float_pivots=1))
+        self.assertIs(caught.exception.status, matrix.WorkStatus.FLOAT_PIVOTS)
+        # By hand for [[1, 0], [0, 1]]: two simplex pivots, then two 2 x 2 basis solves of two pivots each.
+        ledger = self._ledger()
+        matrix.solve(np.eye(2), budget=ledger)
+        self.assertEqual(self._counts(ledger), (6, 0, 0, 0))
+        # Exact rescues of the same game, counted by hand. solve: 22 to build the tableau, two
+        # pivots of 34 (7 ratio-test operations, 5 to divide the pivot row, 2 comparisons, 20 to
+        # update two rows), 4 final comparisons and 13 to read the strategies; widest value 3/2.
+        ledger = self._ledger()
+        with patch.object(matrix, "_solve_float", side_effect=SearchError("float failed")):
+            matrix.solve(np.eye(2), budget=ledger)
+        self.assertEqual(self._counts(ledger), (0, 2, 107, 2))
+        # solve_bayes, one world: 20 to build, 3 slack ones, pivots of 47, 59 and 57 (each with
+        # 14 for the objective row), 6 final comparisons, 3 dual negations, 4 conversions.
+        ledger = self._ledger()
+        with patch.object(matrix, "_bland_float", side_effect=SearchError("float failed")):
+            matrix.solve_bayes(np.eye(2)[None], [1.0], budget=ledger)
+        self.assertEqual(self._counts(ledger), (0, 3, 199, 2))
+        # Independently, on non-square tables and several worlds: the charged exact operations
+        # equal the Fraction operations that actually ran (outermost calls only).
+        rng = np.random.default_rng(20261013)
+        cases = [("matrix", rng.random((k, m)), None) for k, m in ((3, 4), (4, 2), (2, 5))]
+        cases += [("bayes", rng.random((w, k, m)), rng.random(w) + 0.1) for w, k, m in ((2, 3, 2), (3, 2, 4), (2, 4, 3))]
+        for kind, table, weights in cases:
+            ledger = self._ledger()
+            with self.subTest(kind=kind, shape=table.shape), \
+                    patch.object(matrix, "_solve_float", side_effect=SearchError("float failed")), \
+                    patch.object(matrix, "_bland_float", side_effect=SearchError("float failed")), \
+                    _count_fraction_ops() as ran:
+                if kind == "matrix":
+                    matrix.solve(table, budget=ledger)
+                else:
+                    matrix.solve_bayes(table, weights, budget=ledger)
+            self.assertEqual(ledger.consumed.exact_ops, ran["ops"])
+        # Every exact cap stops the rescue with its own status.
+        for caps, status in (({"exact_pivots": 1}, matrix.WorkStatus.EXACT_PIVOTS),
+                             ({"exact_ops": 10}, matrix.WorkStatus.EXACT_OPS),
+                             ({"bits": 8}, matrix.WorkStatus.BITS)):
+            for name, run in (("bayes", lambda led: matrix.solve_bayes(a, w, budget=led)),
+                              ("matrix", lambda led: matrix.solve(a[0], budget=led))):
+                ledger = self._ledger(**caps)
+                with self.subTest(name=name, status=status), \
+                        patch.object(matrix, "_bland_float", side_effect=SearchError("float failed")), \
+                        patch.object(matrix, "_solve_float", side_effect=SearchError("float failed")), \
+                        self.assertRaises(matrix.WorkBudgetExceeded) as caught:
+                    run(ledger)
+                self.assertIs(caught.exception.status, status)
+                self.assertIs(ledger.status, status)
+        # Unexpected errors abort instead of falling back.
+        with patch.object(matrix, "_bland_float", side_effect=RuntimeError("bug")), \
+                patch.object(matrix, "_bland", side_effect=AssertionError("unexpected exact rescue")), \
+                self.assertRaises(RuntimeError):
+            matrix.solve_bayes(a, w, budget=self._ledger())
+        for caps in ({"float_pivots": -1}, {"bits": 1.5}, {"exact_ops": True}):
+            with self.subTest(caps=caps), self.assertRaises(SearchError):
+                matrix.WorkBudget(**caps)
+        with self.assertRaises(SearchError):
+            matrix.solve_bayes(a, w, budget=matrix.WorkBudget())
+        with self.assertRaises(SearchError):
+            matrix.solve(a[0], budget={"float_pivots": 1})
+
+    def test_primary_and_audit_budgets_with_clock_injection(self):
+        rng = np.random.default_rng(20261011)
+        tables = rng.random((16, 8, 8)).astype(np.float32).astype(np.float64)
+        weights = rng.random(16) + 0.1
+        audit_tables = [rng.random((16, 8, 8)).astype(np.float32).astype(np.float64) for _ in range(9)]
+        audit_weights = rng.random(16) + 0.1
+
+        def fingerprint(sol, ledger):
+            return (sol.x.tobytes(), tuple(y.tobytes() for y in sol.ys), sol.value, sol.exact,
+                    self._counts(ledger), ledger.status)
+
+        def primary_only():
+            ledger = matrix.WorkLedger()
+            return fingerprint(matrix.solve_bayes(tables, weights, budget=ledger), ledger)
+
+        want = primary_only()
+        # One primary and K + 1 = 9 audit ledgers with identical caps.
+        primary = matrix.WorkLedger()
+        audits = [matrix.WorkLedger() for _ in range(9)]
+        self.assertTrue(all(led.limits == primary.limits for led in audits))
+        statuses = []
+        for i, (ledger, audit) in enumerate(zip(audits, audit_tables)):
+            if i == 4:  # this audit lands on the rational rescue and exhausts only its own ledger
+                with patch.object(matrix, "_bland_float", side_effect=SearchError("float failed")), \
+                        self.assertRaises(matrix.WorkBudgetExceeded):
+                    matrix.solve_bayes(audit, audit_weights, budget=ledger)
+            else:
+                matrix.solve_bayes(audit, audit_weights, budget=ledger)
+            statuses.append(ledger.status)
+            if i == 2:
+                sol = matrix.solve_bayes(tables, weights, budget=primary)
+        self.assertEqual(fingerprint(sol, primary), want)
+        self.assertEqual(statuses.count(matrix.WorkStatus.OK), 8)
+        self.assertIn(statuses[4], (matrix.WorkStatus.EXACT_PIVOTS, matrix.WorkStatus.EXACT_OPS, matrix.WorkStatus.BITS))
+        # Arbitrary clock jumps change no status, result or counter byte: the budget counts work, not time.
+        jumps = itertools.count()
+
+        def clock(*_):
+            return float(next(jumps) ** 3 * 977)
+
+        with patch("time.perf_counter", side_effect=clock), patch("time.monotonic", side_effect=clock), \
+                patch("time.time", side_effect=clock), patch("time.process_time", side_effect=clock):
+            self.assertEqual(primary_only(), want)
+
+
+class RescueCalibration(unittest.TestCase):
+    """The private tail calibration's fixture set (P1 plan C2 step 6). Synthetic
+    files in a temporary directory only; the five real records never enter Git or CI."""
+
+    @staticmethod
+    def _write(root, count=5, mutate=None, entries_hook=None):
+        root.mkdir(parents=True, exist_ok=True)
+        rng = np.random.default_rng(20261012)
+        entries = []
+        for i in range(count):
+            payload = {"key": 1000 + i, "tables": rng.random((2, 3, 4)).tolist(),
+                       "weights": (rng.random(2) + 0.1).tolist(), "foe_probs": rng.dirichlet(np.ones(4), 2).tolist(),
+                       "exact": True}
+            if mutate is not None:
+                mutate(i, payload)
+            data = json.dumps(payload).encode("ascii")
+            (root / f"rescue-{i}.json").write_bytes(data)
+            entries.append({"file": f"rescue-{i}.json", "sha256": hashlib.sha256(data).hexdigest()})
+        if entries_hook is not None:
+            entries_hook(entries)
+        manifest = root / "rescues.json"
+        manifest.write_text(json.dumps({"schema": "duoforge-rescue-fixtures-1", "fixtures": entries}), encoding="ascii")
+        return manifest, entries
+
+    def test_rescue_manifest_missing_stops(self):
+        from duoforge_search import expert_calibrate as cal
+        with tempfile.TemporaryDirectory(prefix="duoforge_synthetic_rescue_") as temp:
+            root = Path(temp)
+            manifest, entries = self._write(root / "good")
+            fixtures = cal.load_rescue_fixture_set(manifest)
+            self.assertEqual([f.key for f in fixtures], [1000, 1001, 1002, 1003, 1004])
+            self.assertEqual([f.sha256 for f in fixtures], [e["sha256"] for e in entries])
+            first = fixtures[0]
+            self.assertEqual((first.tables.shape, first.weights.shape, first.foe_probs.shape), ((2, 3, 4), (2,), (2, 4)))
+            self.assertEqual(first.tables.dtype, np.float64)
+            with self.assertRaises(ValueError):
+                first.tables[0, 0, 0] = 1.0  # read-only
+
+            def tamper(path):
+                path.write_bytes(path.read_bytes() + b" ")
+
+            def set_field(name, value):
+                return lambda i, p: p.__setitem__(name, value) if i == 2 else None
+
+            stops = {
+                "absent manifest": lambda d: d / "absent.json",
+                "four records": lambda d: self._write(d, count=4)[0],
+                "six records": lambda d: self._write(d, count=6)[0],
+                "duplicate record": lambda d: self._write(d, entries_hook=lambda e: e.__setitem__(4, e[0]))[0],
+                "escaping path": lambda d: self._write(d, entries_hook=lambda e: e[1].__setitem__("file", "../rescue-1.json"))[0],
+                "missing foe probabilities": lambda d: self._write(d, mutate=lambda i, p: p.pop("foe_probs") if i == 3 else None)[0],
+                "nonfinite table": lambda d: self._write(d, mutate=lambda i, p: p["tables"][0][0].__setitem__(0, math.nan) if i == 1 else None)[0],
+                "weights shape": lambda d: self._write(d, mutate=set_field("weights", [1.0, 1.0, 1.0]))[0],
+                "foe shape": lambda d: self._write(d, mutate=set_field("foe_probs", [[0.5, 0.5]] * 2))[0],
+                "negative key": lambda d: self._write(d, mutate=set_field("key", -1))[0],
+                "boolean key": lambda d: self._write(d, mutate=set_field("key", True))[0],
+                "zero weight": lambda d: self._write(d, mutate=set_field("weights", [1.0, 0.0]))[0],
+                "string number": lambda d: self._write(d, mutate=set_field("weights", ["1.0", 1.0]))[0],
+                "boolean entry": lambda d: self._write(d, mutate=set_field("weights", [True, 1.0]))[0],
+                "huge integer": lambda d: self._write(d, mutate=lambda i, p: p["tables"][0][0].__setitem__(0, 10**400) if i == 0 else None)[0],
+                "zero foe row": lambda d: self._write(d, mutate=set_field("foe_probs", [[0.0] * 4, [0.25] * 4]))[0],
+                "foe row above one": lambda d: self._write(d, mutate=set_field("foe_probs", [[1.75] * 4, [0.25] * 4]))[0],
+                "not a rescue": lambda d: self._write(d, mutate=set_field("exact", False))[0],
+                "no rescue flag": lambda d: self._write(d, mutate=lambda i, p: p.pop("exact") if i == 4 else None)[0],
+            }
+            for name, build in stops.items():
+                with self.subTest(name), self.assertRaises(cal.CalibrationStop):
+                    cal.load_rescue_fixture_set(build(root / name.replace(" ", "_")))
+            missing, _ = self._write(root / "missing_payload")
+            (root / "missing_payload" / "rescue-3.json").unlink()
+            tampered, _ = self._write(root / "tampered")
+            tamper(root / "tampered" / "rescue-0.json")
+            wrong_schema, _ = self._write(root / "schema")
+            data = json.loads(wrong_schema.read_text(encoding="ascii"))
+            data["schema"] = "duoforge-rescue-fixtures-2"
+            wrong_schema.write_text(json.dumps(data), encoding="ascii")
+            for name, path in (("missing payload", missing), ("tampered payload", tampered), ("schema", wrong_schema)):
+                with self.subTest(name), self.assertRaises(cal.CalibrationStop):
+                    cal.load_rescue_fixture_set(path)
+            self.assertTrue(issubclass(cal.CalibrationStop, SearchError))
+        # Real fixtures stay private: a manifest inside the repository is refused before it is read.
+        with self.assertRaisesRegex(cal.CalibrationStop, "repository"):
+            cal.load_rescue_fixture_set(Path(__file__).with_name("rescues.json"))
+
+
 def _sides(teams):
     """SIDE_SETUP-like records: teams is a list of member lists (species, nature, item, spread)."""
     dt = np.dtype([("member_count", np.uint32), ("members", np.dtype([("species_id", np.uint32), ("nature", np.uint32),
@@ -727,6 +1073,42 @@ def _sides(teams):
         for k, (sp, na, it, spread) in enumerate(members):
             out[t]["members"][k] = (sp, na, it, spread)
     return out
+
+
+class SpreadSources(unittest.TestCase):
+    def test_spread_sources_are_pinned(self):
+        # The honest search's belief reads a pinned list of stated-spread teams: a new PP_ team in the
+        # registry (M11's imports) must not widen it; widening is an owner decision with a new list.
+        import json
+        import shutil
+
+        import duoforge
+        from duoforge import _layout
+        from duoforge_search import honest
+        root = Path(__file__).resolve().parents[2] / "data" / "teams"
+        with duoforge.Context(_layout.CONSTANTS["DUOFORGE_DATA_KIND_POOL"]) as ctx:
+            _, _, info = honest.spread_table(ctx)
+            self.assertEqual(len(honest.SPREAD_SOURCES), 79)
+            self.assertEqual([s["id"] for s in info["sources"]], sorted(honest.SPREAD_SOURCES))
+            self.assertEqual((info["sets"], info["sha256"]),
+                             (444, "1795524c1e81d3857a26d6c99a194c536069df8d208d502413c3005ff75099d4"))
+            with tempfile.TemporaryDirectory(prefix="duoforge_spread_registry_") as temp:
+                copy = Path(temp) / "teams"
+                shutil.copytree(root, copy)
+                index = json.loads((copy / "index.json").read_text(encoding="utf-8"))
+                raw = (copy / "A.txt").read_bytes()
+                (copy / "PP_ZZZZWIDENTEST0.txt").write_bytes(raw)
+                index["teams"].append({"id": "PP_ZZZZWIDENTEST0", "sha256": index["teams"][0]["sha256"]})
+                (copy / "index.json").write_text(json.dumps(index), encoding="utf-8")
+                self.assertEqual(honest.spread_table(ctx, copy)[2]["sha256"], info["sha256"])
+                # An explicitly chosen registry (preview_ab --belief-root) reads all of its stated teams.
+                every = honest.spread_table(ctx, copy, sources=None)[2]
+                self.assertEqual(len(every["sources"]), 80)
+                self.assertNotEqual(every["sha256"], info["sha256"])
+                index["teams"] = [t for t in index["teams"] if t["id"] != honest.SPREAD_SOURCES[-1]]
+                (copy / "index.json").write_text(json.dumps(index), encoding="utf-8")
+                with self.assertRaisesRegex(SearchError, "pinned"):
+                    honest.spread_table(ctx, copy)
 
 
 class BeliefTable(unittest.TestCase):
