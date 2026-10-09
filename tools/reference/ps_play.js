@@ -200,9 +200,11 @@ function revivalSlot(side, slot) {
         side.slotConditions[pokemon.position].revivalblessing);
 }
 
+// Every fainted Pokemon of the side: a revive may name a fainted active ally too (its instaswitch, sim/battle.ts), and
+// the Revival Blessing branch of chooseSwitch takes any fainted Pokemon.
 function faintedReserves(side) {
     const out = [];
-    for (let i = side.active.length; i < side.pokemon.length; i++) {
+    for (let i = 0; i < side.pokemon.length; i++) {
         if (side.pokemon[i].fainted) out.push(i);
     }
     return out;
