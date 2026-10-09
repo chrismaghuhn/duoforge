@@ -179,5 +179,104 @@ class DataTest(unittest.TestCase):
             distill_data.load(self.dir, m)
 
 
+def _log_softmax(x):
+    x = x.astype(np.float64)
+    m = x.max(axis=-1, keepdims=True)
+    return x - m - np.log(np.exp(x - m).sum(axis=-1, keepdims=True))
+
+
+class LossTest(unittest.TestCase):
+    """Task 3: mean_target KL(tau || pi) + 0.1 mean_policy KL(pi_ref || pi) + 0.5 mean_value (v - target)^2."""
+
+    @classmethod
+    def setUpClass(cls):
+        import jax
+        from test_learn_v2 import _scenes
+        from duoforge_learn import policy
+        cls.jax = jax
+        team, turn = _scenes()
+        cls.model = policy.make(policy.v2_config("S"))
+        cls.params = cls.model.init(jax.random.PRNGKey(1))
+        cls.ref = cls.model.init(jax.random.PRNGKey(2))
+        obs = np.concatenate([turn[0][:7], team[0][:1]])
+        slots = np.concatenate([turn[1][:7], team[1][:1]])
+        mask = np.concatenate([turn[2][:7], np.zeros_like(turn[2][:1])])
+        n = 8
+        flat = mask.reshape(n, -1)
+        ids = np.full((n, 8), -1, np.int64)
+        probs = np.zeros((n, 8), np.float32)
+        for r in (0, 1):  # two targets over legal ids, one with a zero-mass entry
+            legal = np.flatnonzero(flat[r])[:3]
+            ids[r, :len(legal)] = legal
+            probs[r, :len(legal)] = [.6, .4, 0.][:len(legal)] if r == 0 else np.full(len(legal), 1 / len(legal))
+        cls.batch = {
+            "obs": obs, "slots": slots, "mask": mask, "team_mask": np.zeros((n, 360), bool),
+            "is_team": np.array([0, 0, 0, 0, 0, 0, 0, 1], bool), "target_ids": ids, "target_probs": probs,
+            "has_target": np.array([1, 1, 0, 0, 0, 0, 0, 0], bool),
+            "policy_row": np.array([0, 0, 1, 1, 1, 0, 0, 1], bool),
+            "value_row": np.array([1, 1, 1, 1, 1, 1, 1, 1], bool),
+            "value_target": np.linspace(-1, 1, n).astype(np.float32), "weight": np.ones(n, np.float32)}
+        cls.batch["team_mask"][7] = True
+
+    def _reference(self, params, ref, b):
+        """The loss in NumPy from apply's outputs."""
+        lp, lt, v = (np.asarray(x, np.float64) for x in self.model.apply(params, b["obs"], b["slots"], b["mask"]))
+        rp, rt, _ = (np.asarray(x, np.float64) for x in self.model.apply(ref, b["obs"], b["slots"], b["mask"]))
+        flat, w = b["mask"].reshape(len(lp), -1), b["weight"]
+        tkl = []
+        for r in np.flatnonzero(b["has_target"] & (w > 0)):
+            keep = b["target_probs"][r] > 0
+            p, i = b["target_probs"][r][keep].astype(np.float64), b["target_ids"][r][keep]
+            tkl.append(float((p * (np.log(p) - lp[r, i])).sum()))
+        rkl = []
+        for r in np.flatnonzero(b["policy_row"] & (w > 0)):
+            if b["is_team"][r]:
+                legal = b["team_mask"][r]
+                rkl.append(float((np.exp(rt[r][legal]) * (rt[r][legal] - lt[r][legal])).sum()))
+            else:
+                legal = flat[r]
+                rkl.append(float((np.exp(rp[r][legal]) * (rp[r][legal] - lp[r][legal])).sum()))
+        vrows = np.flatnonzero(b["value_row"] & (w > 0))
+        vloss = float(((v[vrows] - b["value_target"][vrows]) ** 2).mean())
+        return np.mean(tkl) + 0.1 * np.mean(rkl) + 0.5 * vloss, np.mean(tkl), np.mean(rkl), vloss
+
+    def test_loss_terms_match_numpy_reference(self):
+        from duoforge_learn import distill
+        loss, aux = distill.distill_loss(self.params, self.ref, self.batch, self.model)
+        want, tkl, rkl, vloss = self._reference(self.params, self.ref, self.batch)
+        self.assertAlmostEqual(float(aux["teacher_kl"]), tkl, places=4)
+        self.assertAlmostEqual(float(aux["ref_kl"]), rkl, places=4)
+        self.assertAlmostEqual(float(aux["value_loss"]), vloss, places=5)
+        self.assertAlmostEqual(float(loss), want, places=4)
+        self.assertEqual((int(aux["n_target"]), int(aux["n_policy"]), int(aux["n_value"])), (2, 4, 8))
+        self.assertEqual((distill.REF_COEF, distill.VALUE_COEF), (0.1, 0.5))
+
+    def test_loss_is_zero_kl_at_reference_and_finite_at_illegal(self):
+        from duoforge_learn import distill
+        _, aux = distill.distill_loss(self.params, self.params, self.batch, self.model)
+        self.assertAlmostEqual(float(aux["ref_kl"]), 0.0, places=6)
+        grads = self.jax.grad(lambda p: distill.distill_loss(p, self.ref, self.batch, self.model)[0])(self.params)
+        leaves = [np.asarray(g) for g in self.jax.tree_util.tree_leaves(grads)]
+        self.assertTrue(all(np.isfinite(g).all() for g in leaves))
+        self.assertGreater(max(float(np.abs(g).max()) for g in leaves), 0.0)
+
+    def test_padding_and_team_rows(self):
+        from duoforge_learn import distill
+        b = self.batch
+        padded = {k: np.concatenate([v, v]) for k, v in b.items()}
+        padded["weight"][len(b["weight"]):] = 0.0
+        padded["value_target"][len(b["weight"]):] = 1e6  # padding must not reach any term
+        loss, aux = distill.distill_loss(self.params, self.ref, b, self.model)
+        loss2, aux2 = distill.distill_loss(self.params, self.ref, padded, self.model)
+        self.assertAlmostEqual(float(loss2), float(loss), places=5)
+        for k in ("n_target", "n_policy", "n_value"):
+            self.assertEqual(float(aux2[k]), float(aux[k]))
+        # A team row's KL is the team head's: its pair mask is never read.
+        noisy = dict(b, mask=b["mask"].copy())
+        noisy["mask"][7] = True
+        self.assertAlmostEqual(float(distill.distill_loss(self.params, self.ref, noisy, self.model)[1]["ref_kl"]),
+                               float(aux["ref_kl"]), places=6)
+
+
 if __name__ == "__main__":
     unittest.main()
