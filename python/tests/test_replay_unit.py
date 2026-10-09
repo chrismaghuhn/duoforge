@@ -681,13 +681,20 @@ class GameTest(unittest.TestCase):
         for row in last:
             self.assertNotIn(labels.MOVE_HIDDEN, row.label.reasons, row.side)
 
-    def test_weather_extended_by_an_item_stops(self):
-        # review C2: Politoed's Drizzle with Damp Rock lasts 8 turns, and no line says so
+    def test_weather_extended_by_an_item_lasts_eight_turns(self):
+        # review C2: Politoed's Drizzle with Damp Rock lasts 8 turns, and no line says so: the setter's open sheet
+        # holds the rock (data/conditions.ts durationCallback: source.hasItem), so the fold counts 8, not 5
         lines = [line.replace("|MysticWater|", "|DampRock|", 1) if line.startswith("|showteam|p2|") else line
                  for line in self.log]
         result = self.run_game(lines)
-        self.assertEqual(result.counters["perspectives.stopped.line:-weather RainDance Damp Rock"], 2)
-        self.assertTrue(all(int(r.observation["boundary_kind"]) == 1 for r in result.rows))
+        stopped = [k for k in result.counters if k.startswith("perspectives.stopped.line:-weather")]
+        self.assertEqual(stopped, [])
+        plain = self.run_game(self.log)
+        def turns(res):
+            return [int(r.observation["weather_turns"]) for r in res.rows if int(r.observation["weather"]) != 0]
+        self.assertTrue(turns(plain) and max(turns(plain)) <= 5)
+        self.assertTrue(turns(result) and max(turns(result)) > 5, turns(result))
+        self.assertLessEqual(max(turns(result)), 8)
 
     def test_sheet_the_converter_refuses_skips(self):
         # review I2: a refusal of the converter is a counted skip, not an escaping SystemExit
