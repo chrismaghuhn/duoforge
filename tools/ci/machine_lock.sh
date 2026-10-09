@@ -33,14 +33,33 @@ machine_lock_alive() { # pid
 }
 
 machine_lock_acquire() { # label
-    local label=$1 waited=0 holder pid
-    while ! mkdir "$MACHINE_LOCK" 2> /dev/null; do
-        holder=$(cat "$MACHINE_LOCK/owner" 2> /dev/null || true)
-        pid=${holder%% *}
-        if [ -n "$pid" ] && ! machine_lock_alive "$pid"; then
-            echo "machine lock: removing a stale lock ($holder)" >&2
-            rm -rf "$MACHINE_LOCK"
-            continue
+    # First come, first served: a waiter takes a ticket in $MACHINE_LOCK.queue (its name sorts by the time it was
+    # taken), and a free lock goes to the oldest ticket whose process still lives. A dead waiter's ticket is removed.
+    local label=$1 waited=0 holder pid me ticket t first
+    local queue="$MACHINE_LOCK.queue"
+    me=$(machine_lock_pid)
+    mkdir -p "$queue"
+    ticket="$queue/$(printf '%019d' "$(date +%s%N)")-$me"
+    echo "$me $label since $(date '+%Y-%m-%d %H:%M:%S')" > "$ticket"
+    while :; do
+        for t in "$queue"/*; do
+            [ -e "$t" ] && [ "$t" != "$ticket" ] || continue
+            machine_lock_alive "${t##*-}" || rm -f "$t"
+        done
+        first=$(printf '%s\n' "$queue"/* | sort | head -n 1)
+        if [ "$first" = "$ticket" ] && mkdir "$MACHINE_LOCK" 2> /dev/null; then
+            break
+        fi
+        if [ -d "$MACHINE_LOCK" ]; then
+            holder=$(cat "$MACHINE_LOCK/owner" 2> /dev/null || true)
+            pid=${holder%% *}
+            if [ -n "$pid" ] && ! machine_lock_alive "$pid"; then
+                echo "machine lock: removing a stale lock ($holder)" >&2
+                rm -rf "$MACHINE_LOCK"
+                continue
+            fi
+        else
+            holder=$(cat "$first" 2> /dev/null || true)  # the lock is free: an older waiter goes first
         fi
         if [ $((waited % 300)) -eq 0 ]; then
             echo "machine lock: waiting for ${holder:-another job} ($((waited / 60)) min so far)" >&2
@@ -48,7 +67,8 @@ machine_lock_acquire() { # label
         sleep 15
         waited=$((waited + 15))
     done
-    echo "$(machine_lock_pid) $label since $(date '+%Y-%m-%d %H:%M:%S')" > "$MACHINE_LOCK/owner"
+    rm -f "$ticket"
+    echo "$me $label since $(date '+%Y-%m-%d %H:%M:%S')" > "$MACHINE_LOCK/owner"
 }
 
 machine_lock_release() {

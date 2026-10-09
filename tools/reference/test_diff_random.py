@@ -1308,6 +1308,29 @@ class Lock(unittest.TestCase):
                 self.assertEqual(rnd.run_process(command), rnd.PAUSED_STATUS)
             self.assertFalse(os.path.exists(lock))
 
+    def test_a_free_lock_goes_to_the_oldest_live_waiter(self):
+        # First come, first served: a waiter takes a ticket; the lock goes to the oldest ticket whose process lives,
+        # not to whoever polls first (2026-10-09: short jobs queued for an hour behind later arrivals). The stand-in
+        # sleep counts the rounds; an older live waiter (pid 4242) leaves the queue in round 3, and a dead waiter's
+        # ticket (pid 987654321) is no obstacle.
+        with tempfile.TemporaryDirectory() as tmp:
+            lock = os.path.join(tmp, 'lock')
+            queue = lock + '.queue'
+            os.mkdir(queue)
+            for name in ('0000000000000000001-987654321', '0000000000000000002-4242'):
+                with io.open(os.path.join(queue, name), 'w', encoding='ascii', newline='\n') as f:
+                    f.write('%s other since 2026-10-09 12:00:00\n' % name.split('-')[1])
+            script = os.path.join(ROOT, 'tools', 'ci', 'machine_lock.sh').replace('\\', '/')
+            shell = ('source "%s"; machine_lock_alive() { [ "$1" = 4242 ] || [ "$1" = "$(machine_lock_pid)" ]; }; n=0; '
+                     'sleep() { n=$((n + 1)); if [ $n -eq 3 ]; then rm -f "$MACHINE_LOCK.queue/"*-4242; fi; }; '
+                     'machine_lock_acquire fuzz && echo "rounds $n" && ls "$MACHINE_LOCK.queue" | wc -l && '
+                     'machine_lock_release' % script)
+            done = subprocess.run([rnd.find_bash(), '-c', shell], capture_output=True, text=True, timeout=60,
+                                  env=dict(os.environ, DUOFORGE_MACHINE_LOCK=lock.replace('\\', '/')))
+            self.assertEqual(done.returncode, 0, done.stderr)
+            self.assertEqual(done.stdout.split(), ['rounds', '3', '0'])  # waited for 4242, its ticket gone, no ticket left
+            self.assertFalse(os.path.exists(lock))
+
     def test_a_chunk_that_waits_names_the_holder_and_the_minutes_waited_every_five_minutes(self):
         # The script is sourced with two stand-ins: sleep counts the rounds (15 s each) and the holder releases the lock
         # in the 21st, and the holder's pid is alive without asking tasklist (one call is about a second on Windows).
