@@ -171,3 +171,14 @@ No view struct grows: the observation (736 bytes) and the extension (192 bytes) 
 **Also:**
 - round-trip tests of 0023 with the new refusal counted;
 - mutation checks, a campaign of about 300 battles, a 0015 entry and a support line.
+
+## 9. Amended by I2 (2026-10-09, owner and lead)
+
+The sections below are corrected by the I2 builder's pin check. Where this section and an earlier one differ, this one holds. The rest of the note stands.
+
+- **Section 2, the disguise.** Pin confirmed (`data/abilities.ts:2056-2069`): the scan runs from the highest index down to position+1 and takes the first non-fainted member, so the disguise is the last non-fainted member to the right. Unchanged.
+- **Section 4 and 5, the break (P2).** The break is a damaging **move** hit, from any user, an ally included. It is the pin's `DamagingHit` (`sim/battle-actions.ts:1118-1130`), which fires for move hits that are neither secondary nor self. Recoil, Life Orb, Rocky Helmet, residual damage and hazards do **not** break. A hit with a numeric zero damage follows the pin's own condition (a number, not `false`). If the engine cannot tell such a case apart, it refuses the battle explicitly (`E_UNSUPPORTED`). Section 5's "damaging hit from any source" reads as this.
+- **Section 4, the owner's protocol copy (P3).** The protocol names the disguise in both copies: `toString()` (`sim/pokemon.ts:532`) and `getFullDetails` (`:547-552`) feed the switch line for both players (`sim/battle-actions.ts:146-148`). The owner's true roster index is not in any protocol line before the break. It comes from the owner's recorded choice (`switch N`) for a voluntary replacement, and from the request data that the harness records (the active identity) for a drag or a random replacement. The harness records that as data, never as a rule. The owner's SWITCH event carries the truth; the foe's carries the shown index. The internal side channel is stripped by the projection, so no public value changes. The `replace` line names the true holder, because `onEnd` clears `illusion` before it adds the line (`abilities.ts:2076-2081`).
+- **Section 2, the owner's max HP (Q1).** The owner's exact HP is that of the true member, so the converter takes its maximum HP from the true member.
+- **Section 5, Shadow Tag (Q6).** The `maybeTrapped` hint of the pin (`sim/battle.ts:1734-1756`) reads the disguise's ability list. The engine has no `maybeTrapped` field and the switch stays allowed, so the hint is out of scope. The real trap (`onFoeTrapPokemon`, `data/abilities.ts:4157-4161`) reads the real holder, as the G41 row does.
+- **Section 6 (Q7).** No version bump in the I2 PRs. The one version PR (0.44.0) is HauptSession's. The public values of section 6 are listed in the PR body.
