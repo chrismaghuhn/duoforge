@@ -112,6 +112,18 @@ static duoforge_status dfi_slot_candidates(const duoforge_context *ctx, const st
     const uint32_t occupant = side->positions[slot].occupant;
     uint8_t reserves[DUOFORGE_MAX_ROSTER] = {0};
     out->n = 0u;
+    /* Revival Blessing (decision 0025 item 8): at its PIVOT the slot names a brought fainted member, in roster order; no
+     * move, switch or pass is offered in that slot. */
+    if (b->boundary_kind == DUOFORGE_BOUNDARY_PIVOT && side->positions[slot].switch_flag == DFI_SWITCH_REVIVE_BLESSING) {
+        for (uint32_t x = 0u; x < DUOFORGE_MAX_ROSTER && x < side->member_count; ++x) {
+            const bool brought = ((uint32_t)side->brought_mask >> x & 1u) != 0u;
+            if (brought && x != occupant && side->members[x].hp == 0u &&
+                !dfi_list_push(out, DUOFORGE_SLOT_REVIVE, 0u, 0u, 0u, x)) {
+                return DUOFORGE_E_INVARIANT;
+            }
+        }
+        return DUOFORGE_OK;
+    }
     if (b->boundary_kind == DUOFORGE_BOUNDARY_TURN) {
         if (occupant == DFI_OCCUPANT_NONE || occupant >= DUOFORGE_MAX_ROSTER || side->members[occupant].hp == 0u) {
             return dfi_list_push(out, DUOFORGE_SLOT_PASS, 0u, 0u, 0u, 0u) ? DUOFORGE_OK : DUOFORGE_E_INVARIANT;
@@ -318,8 +330,8 @@ static bool dfi_pair_allowed(const duoforge_slot_command *a, const duoforge_slot
     }
     if (forced) {
         uint32_t switches = 0u;
-        switches += a->kind == DUOFORGE_SLOT_SWITCH ? 1u : 0u;
-        switches += c->kind == DUOFORGE_SLOT_SWITCH ? 1u : 0u;
+        switches += (a->kind == DUOFORGE_SLOT_SWITCH || a->kind == DUOFORGE_SLOT_REVIVE) ? 1u : 0u;
+        switches += (c->kind == DUOFORGE_SLOT_SWITCH || c->kind == DUOFORGE_SLOT_REVIVE) ? 1u : 0u;
         if (switches != need) {
             return false; /* exactly min(requested, reserves) actors switch */
         }
@@ -404,7 +416,15 @@ static duoforge_status dfi_side_lists(const duoforge_context *ctx, const struct 
     if (forced) {
         uint8_t reserves[DUOFORGE_MAX_ROSTER] = {0};
         const uint32_t nr = dfi_reserves(side, reserves);
-        need = requested < nr ? requested : nr;
+        /* a revive (decision 0025 item 8) is one of the forced actors, like a switch */
+        uint32_t revive = 0u;
+        for (uint32_t slot = 0u; slot < DUOFORGE_ACTIVE_PER_SIDE; ++slot) {
+            if (((rs >> slot) & 1u) != 0u && side->positions[slot].switch_flag == DFI_SWITCH_REVIVE_BLESSING) {
+                revive += 1u;
+            }
+        }
+        const uint32_t others = requested - revive;
+        need = revive + (others < nr ? others : nr);
     }
     *out_forced = forced;
     *out_need = need;

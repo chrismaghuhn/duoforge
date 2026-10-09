@@ -326,8 +326,9 @@ int main(void)
         DF_CHECK(&t, dfi_kind_limits_of(DUOFORGE_DATA_KIND_CLOSURE_DEV).dev &&
                          dfi_kind_limits_of(DUOFORGE_DATA_KIND_TEAM_C_DEV).dev);
         /* The pool has U-turn's switch flag (step G5) on top of Team C's; everything else of Team C's is the pool's. */
-        DF_CHECK(&t, lp.switch_flag_max == DFI_SWITCH_VOLT_SWITCH && lc.switch_flag_max == DFI_SWITCH_FLIP_TURN &&
-                         DFI_SWITCH_UTURN == DFI_SWITCH_FLIP_TURN + 1u && DFI_SWITCH_VOLT_SWITCH == DFI_SWITCH_UTURN + 1u);
+        DF_CHECK(&t, lp.switch_flag_max == DFI_SWITCH_REVIVE_BLESSING && lc.switch_flag_max == DFI_SWITCH_FLIP_TURN &&
+                         DFI_SWITCH_UTURN == DFI_SWITCH_FLIP_TURN + 1u && DFI_SWITCH_VOLT_SWITCH == DFI_SWITCH_UTURN + 1u &&
+                         DFI_SWITCH_REVIVE_BLESSING == DFI_SWITCH_VOLT_SWITCH + 1u); /* Revival Blessing (decision 0025), step G52 */
         DF_CHECK(&t, lp.status_max == DFI_STATUS_TOX && lc.status_max == DFI_STATUS_PSN && lp.vol_flags_mask == lc.vol_flags_mask);
         /* step G36: badly poisoned is the pool's alone */
         DF_CHECK(&t, lq.switch_flag_max == lp.switch_flag_max && lq.status_max == lp.status_max &&
@@ -335,7 +336,7 @@ int main(void)
         /* Step G25: the pool has Electric and Misty Terrain on top of Team C's terrains. */
         DF_CHECK(&t, lp.terrain_max == DFI_TERRAIN_MISTY && lc.terrain_max == DFI_TERRAIN_PSYCHIC &&
                          DFI_TERRAIN_MISTY == DFI_TERRAIN_ELECTRIC + 1u && DFI_TERRAIN_ELECTRIC == DFI_TERRAIN_PSYCHIC + 1u);
-        DF_CHECK(&t, lp.switch_flag_max == DFI_SWITCH_VOLT_SWITCH && lp.status_max == DFI_STATUS_TOX &&
+        DF_CHECK(&t, lp.switch_flag_max == DFI_SWITCH_REVIVE_BLESSING && lp.status_max == DFI_STATUS_TOX &&
                          lp.terrain_max == DFI_TERRAIN_MISTY && l1.switch_flag_max == DFI_SWITCH_FAINTED &&
                          l1.status_max == DFI_STATUS_SLP && l1.terrain_max == DFI_TERRAIN_GRASSY);
     }
@@ -1044,22 +1045,24 @@ int main(void)
      * (E_UNSUPPORTED), and this test says so before. Parting Shot (a handler, flag 1), Emergency Exit (2) and a
      * fainted position (3) are no damaging pivots. */
     {
-        DF_CHECK_EQ_U64(&t, DFI_PIVOT_MOVE_COUNT, 3u);
+        DF_CHECK_EQ_U64(&t, DFI_PIVOT_MOVE_COUNT, 4u); /* Revival Blessing (step G52) is the fourth */
         for (uint32_t i = 0u; i < DFI_PIVOT_MOVE_COUNT; ++i) {
             const dfi_pivot_move *pm = &dfi_pivot_moves[i];
             DF_CHECK_EQ_U64(&t, pm->flag, DFI_SWITCH_FLIP_TURN + i);
             DF_CHECK(&t, pm->move < DFI_POOL_MOVE_COUNT);
+            /* Revival Blessing is a pivot whose handler is the revive (step G52), not a data row */
             DF_CHECK(&t, (dfi_pool_moves[pm->move].flags & DFI_MOVE_FLAG_SELF_SWITCH) != 0u &&
-                             dfi_pool_moves[pm->move].special == DFI_SPECIAL_NONE);
+                             (dfi_pool_moves[pm->move].special == DFI_SPECIAL_NONE || pm->move == DFI_MOVE_REVIVALBLESSING));
             DF_CHECK(&t, dfi_pivot_of_move(pm->move) == pm && dfi_pivot_of_flag(pm->flag) == pm);
             DF_CHECK(&t, pm->flag <= dfi_kind_limits_of(DUOFORGE_DATA_KIND_POOL).switch_flag_max);
         }
         DF_CHECK_EQ_U64(&t, dfi_pivot_moves[0].move, DFI_MOVE_FLIPTURN);
         DF_CHECK_EQ_U64(&t, dfi_pivot_moves[1].move, DFI_MOVE_UTURN);
         DF_CHECK_EQ_U64(&t, dfi_pivot_moves[2].move, DFI_MOVE_VOLTSWITCH); /* step G32 */
+        DF_CHECK_EQ_U64(&t, dfi_pivot_moves[3].move, DFI_MOVE_REVIVALBLESSING); /* step G52 */
         for (uint32_t id = 0u; id < DFI_POOL_MOVE_COUNT; ++id) {
             const bool pivots = (dfi_pool_moves[id].flags & DFI_MOVE_FLAG_SELF_SWITCH) != 0u &&
-                                dfi_pool_moves[id].special == DFI_SPECIAL_NONE;
+                                (dfi_pool_moves[id].special == DFI_SPECIAL_NONE || id == DFI_MOVE_REVIVALBLESSING);
             DF_CHECK_EQ_U64(&t, dfi_pivot_of_move(id) != NULL ? 1u : 0u, pivots ? 1u : 0u);
             /* A marked move that pivots has its flag. */
             DF_CHECK(&t, dfi_support.moves[id] == 0u || !pivots || dfi_pivot_of_move(id) != NULL);
@@ -1067,11 +1070,12 @@ int main(void)
         DF_CHECK(&t, dfi_pivot_of_move(DFI_MOVE_PARTINGSHOT) == NULL);
         DF_CHECK(&t, dfi_pivot_of_flag(DFI_SWITCH_NONE) == NULL && dfi_pivot_of_flag(DFI_SWITCH_MOVE) == NULL &&
                          dfi_pivot_of_flag(DFI_SWITCH_EMERGENCY_EXIT) == NULL &&
-                         dfi_pivot_of_flag(DFI_SWITCH_FAINTED) == NULL && dfi_pivot_of_flag(DFI_SWITCH_VOLT_SWITCH + 1u) == NULL);
+                         dfi_pivot_of_flag(DFI_SWITCH_FAINTED) == NULL && dfi_pivot_of_flag(DFI_SWITCH_REVIVE_BLESSING + 1u) == NULL &&
+                         dfi_pivot_of_flag(DFI_SWITCH_REVIVE_BLESSING) != NULL);
         /* The kinds: U-turn's flag is the POOL kinds' alone, Flip Turn's the extended ones'. */
         DF_CHECK_EQ_U64(&t, dfi_kind_limits_of(DUOFORGE_DATA_KIND_TEAM_C).switch_flag_max, DFI_SWITCH_FLIP_TURN);
         DF_CHECK_EQ_U64(&t, dfi_kind_limits_of(DUOFORGE_DATA_KIND_TEAM_C_DEV).switch_flag_max, DFI_SWITCH_FLIP_TURN);
-        DF_CHECK_EQ_U64(&t, dfi_kind_limits_of(DUOFORGE_DATA_KIND_POOL_DEV).switch_flag_max, DFI_SWITCH_VOLT_SWITCH);
+        DF_CHECK_EQ_U64(&t, dfi_kind_limits_of(DUOFORGE_DATA_KIND_POOL_DEV).switch_flag_max, DFI_SWITCH_REVIVE_BLESSING);
         DF_CHECK_EQ_U64(&t, dfi_kind_limits_of(DUOFORGE_DATA_KIND_CLOSURE).switch_flag_max, DFI_SWITCH_FAINTED);
         /* In a state under POOL: both flags are in range (a flag is wrong at a TURN boundary, which the invariant
          * names), one past U-turn's is out of range. */
@@ -1087,8 +1091,10 @@ int main(void)
         expect_inv(&t, kp, w, DFI_INV_SWITCH_FLAG, "U-turn's flag at a TURN boundary");
         w->sides[0].positions[0].switch_flag = (uint8_t)DFI_SWITCH_VOLT_SWITCH;
         expect_inv(&t, kp, w, DFI_INV_SWITCH_FLAG, "Volt Switch's flag at a TURN boundary");
-        w->sides[0].positions[0].switch_flag = (uint8_t)(DFI_SWITCH_VOLT_SWITCH + 1u);
-        expect_inv(&t, kp, w, DFI_INV_VOLATILE, "one past Volt Switch's flag");
+        w->sides[0].positions[0].switch_flag = (uint8_t)DFI_SWITCH_REVIVE_BLESSING;
+        expect_inv(&t, kp, w, DFI_INV_SWITCH_FLAG, "Revival Blessing's flag at a TURN boundary");
+        w->sides[0].positions[0].switch_flag = (uint8_t)(DFI_SWITCH_REVIVE_BLESSING + 1u);
+        expect_inv(&t, kp, w, DFI_INV_VOLATILE, "one past Revival Blessing's flag");
         duoforge_battle_destroy(w);
     }
 
