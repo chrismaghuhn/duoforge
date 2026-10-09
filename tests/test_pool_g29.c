@@ -395,7 +395,7 @@ int main(void)
     DF_CHECK_EQ_U64(&t, DFI_SPECIAL_THIEF, 58u);
     DF_CHECK_EQ_U64(&t, DFI_SPECIAL_COVET, 59u);
     DF_CHECK_EQ_U64(&t, DFI_SPECIAL_SUPER_FANG, 60u); /* step G39 follows */
-    DF_CHECK_EQ_U64(&t, DFI_SPECIAL_UNMODELED, DFI_SPECIAL_STRENGTH_SAP + 1u); /* Taunt and Yawn (G31) at 61 and 62, G48 at 63 to 66, G44 at 67 to 70, G54 at 71 to 76 */
+    DF_CHECK_EQ_U64(&t, DFI_SPECIAL_UNMODELED, DFI_SPECIAL_STRENGTH_SAP + 1u) /* the six of step G54 follow Double Shock (G50) */; /* Taunt and Yawn (G31) at 61 and 62, G48 at 63 to 66, G44 at 67 to 70 */
     DF_CHECK(&t, dfi_support.moves[DFI_MOVE_TRICK] != 0u && dfi_support.moves[DFI_MOVE_SWITCHEROO] != 0u &&
                      dfi_support.moves[DFI_MOVE_THIEF] != 0u && dfi_support.moves[DFI_MOVE_COVET] != 0u);
     DF_CHECK_EQ_U64(&t, DUOFORGE_VIEWEXT_FEATURE_ITEM_CHANGE, 11u);

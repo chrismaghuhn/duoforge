@@ -201,6 +201,7 @@ duoforge_add_test(NAME duoforge.state.pool_g37 SOURCES test_pool_g37.c WHITEBOX 
 # Steel Roller, Clangorous Soul, Brick Break): the marks, the flag bits and the commutation test of the ModifyDamage chain.
 duoforge_add_test(NAME duoforge.state.pool_g33 SOURCES test_pool_g33.c WHITEBOX TIMEOUT 60)
 duoforge_add_test(NAME duoforge.state.pool_g48 SOURCES test_pool_g48.c WHITEBOX TIMEOUT 60)
+duoforge_add_test(NAME duoforge.state.pool_g50 SOURCES test_pool_g50.c WHITEBOX TIMEOUT 60)
 duoforge_add_test(NAME duoforge.state.pool_g34 SOURCES test_pool_g34.c WHITEBOX TIMEOUT 60)
 duoforge_add_test(NAME duoforge.state.pool_g41 SOURCES test_pool_g41.c WHITEBOX TIMEOUT 60)
 duoforge_add_test(NAME duoforge.state.pool_g44 SOURCES test_pool_g44.c WHITEBOX TIMEOUT 60)
@@ -236,8 +237,8 @@ foreach(_gen IN ITEMS
         "closure_tables.c=490de42298e34cfd38192d979fd022367bf53693a5fa1855f1cc6ad034d8450a"
         "extended_tables.h=b2abef243fcbfdd87654940076b9fe2fe80b117d74893a7567741f26b9075a7d"
         "extended_tables.c=9e736fa467713283418c4edf8f56b8d844452e596ba422adbd52483d20f7cc17"
-        "pool_tables.h=068104486a318461d556e17bc6e5d766ffbeec9a0797e39dbc2ac56f61297274"
-        "pool_tables.c=1eb9e14ed45cba75699399ca87a26f723ef4dea23b51f297edbf0f6946ef5cbb")
+        "pool_tables.h=755dd0c34877f894f57bdee7d8cf3338104f2ba84c7c738cb7a02c7d98d348de"
+        "pool_tables.c=19cc3a44f5c96508aba1b2ae00cb166c549202f5a86002f2387e9ac9aedea430")
     string(REPLACE "=" ";" _parts "${_gen}")
     list(GET _parts 0 _file)
     list(GET _parts 1 _expected)

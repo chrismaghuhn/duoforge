@@ -892,13 +892,14 @@
 #define DFI_SPECIAL_THUNDER 68u
 #define DFI_SPECIAL_ICE_FANG 69u
 #define DFI_SPECIAL_TRI_ATTACK 70u
-#define DFI_SPECIAL_MULTI_HIT_2_5 71u
-#define DFI_SPECIAL_SCALE_SHOT 72u
-#define DFI_SPECIAL_QUICK_GUARD 73u
-#define DFI_SPECIAL_UPPER_HAND 74u
-#define DFI_SPECIAL_HEAL_PULSE 75u
-#define DFI_SPECIAL_STRENGTH_SAP 76u
-#define DFI_SPECIAL_UNMODELED 77u
+#define DFI_SPECIAL_DOUBLE_SHOCK 71u
+#define DFI_SPECIAL_MULTI_HIT_2_5 72u
+#define DFI_SPECIAL_SCALE_SHOT 73u
+#define DFI_SPECIAL_QUICK_GUARD 74u
+#define DFI_SPECIAL_UPPER_HAND 75u
+#define DFI_SPECIAL_HEAL_PULSE 76u
+#define DFI_SPECIAL_STRENGTH_SAP 77u
+#define DFI_SPECIAL_UNMODELED 78u
 
 /* ---- the second flags byte of every move (step G8: the general byte for the flags that the first one has no room
  * for; bits 4 to 128 are free) and the secondary kinds that it comes with ---- */

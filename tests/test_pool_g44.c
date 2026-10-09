@@ -59,8 +59,7 @@ static void check_marks(df_test *t)
     DF_CHECK_EQ_U64(t, DFI_SPECIAL_THUNDER, DFI_SPECIAL_POWER_TRIP + 1u);
     DF_CHECK_EQ_U64(t, DFI_SPECIAL_ICE_FANG, DFI_SPECIAL_THUNDER + 1u);
     DF_CHECK_EQ_U64(t, DFI_SPECIAL_TRI_ATTACK, DFI_SPECIAL_ICE_FANG + 1u);
-    /* after the handlers of step G54 (Icicle Spear, Scale Shot, Quick Guard, Upper Hand, Heal Pulse, Strength Sap; test_pool_g54.c) */
-    DF_CHECK_EQ_U64(t, DFI_SPECIAL_UNMODELED, DFI_SPECIAL_STRENGTH_SAP + 1u);
+    DF_CHECK_EQ_U64(t, DFI_SPECIAL_UNMODELED, DFI_SPECIAL_STRENGTH_SAP + 1u) /* the six of step G54 follow Double Shock (G50) */ /* G50 follows G44 */;
 }
 
 static void check_pins(df_test *t)

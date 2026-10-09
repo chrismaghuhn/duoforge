@@ -694,7 +694,7 @@ def name_of(p):
 # are called Arcanine and Floette in the switch line (pool step G2); the species clause keeps the alias unique.
 BASE_SPECIES_NAME = {'Indeedee-F': 'Indeedee', 'Arcanine-Hisui': 'Arcanine', 'Floette-Eternal': 'Floette',
                      'Ninetales-Alola': 'Ninetales', 'Meowstic-F': 'Meowstic', 'Lycanroc-Dusk': 'Lycanroc',
-                     'Samurott-Hisui': 'Samurott'}  # step G48: Ceaseless Edge's user, shown as Samurott (sim/pokemon.ts:329-330)
+                     'Samurott-Hisui': 'Samurott'}  # steps G48 and G50: Ceaseless Edge's and Double Shock's user, shown as Samurott (sim/pokemon.ts:329-330)
 
 
 def abs_target(side, loc):
@@ -878,6 +878,7 @@ VOLATILE_TAUNT = 6       # DUOFORGE_VOLATILE_TAUNT (step G31)
 VOLATILE_YAWN = 7        # DUOFORGE_VOLATILE_YAWN (step G31)
 MOVE_SLOT_RECHARGE = 5   # DUOFORGE_MOVE_SLOT_RECHARGE (step G17)
 # DUOFORGE_TYPE_*: the alphabetical type ids, the detail of TYPE_CHANGE
+TYPE_NONE = 255  # DUOFORGE_TYPE_NONE: the ??? slot of Double Shock (decision 0025)
 TYPE_IDS = {name: i for i, name in enumerate(
     ['Bug', 'Dark', 'Dragon', 'Electric', 'Fairy', 'Fighting', 'Fire', 'Flying', 'Ghost', 'Grass', 'Ground', 'Ice',
      'Normal', 'Poison', 'Psychic', 'Rock', 'Steel', 'Water'])}
@@ -1160,6 +1161,10 @@ def step_events(log, viewer, roster_of, maxhp, tables):
             if args[2] != 'atk' or cause != CAUSE['ABILITY'] or other == NOPOS:
                 raise ConversionError('fail-line', 'trace_to_c: unknown -fail %r' % line, detail=line)
             e = ev_tuple(EV['FAIL'], ev_pos(args[0]), other, cause, 0, id2)
+        elif kind == '-fail' and len(args) == 2 and args[1] == 'move: Double Shock':
+            # Double Shock's onTryMove without the Electric type (decision 0025, data/moves.ts:3954-3959): `-fail|X|move: Double
+            # Shock`, a plain FAIL on the user; its move line carries [still], which the move's own line already shows.
+            e = ev_tuple(EV['FAIL'], ev_pos(args[0]))
         elif kind == '-fail':
             # `-fail|X|heal` (a heal move at full HP) is a plain FAIL: the event has no field for the reason, which
             # for a status is the ailment the target already has.
@@ -1285,6 +1290,13 @@ def step_events(log, viewer, roster_of, maxhp, tables):
                 if cause == 0:
                     cause, id2 = CAUSE['MOVE'], tables['MOVE'][key('Soak')]
                 e = ev_tuple(EV['TYPE_CHANGE'], ev_pos(args[0]), NOPOS, cause, 0, id2, detail=TYPE_IDS[args[2]])
+            elif what == 'typechange' and kind == '-start' and len(args) == 3 and args[2].startswith('???/') \
+                    and args[2][4:] in TYPE_IDS and any(a == '[from] move: Double Shock' for a in attrs):
+                # Double Shock (decision 0025, data/moves.ts:3960-3964): `-start|X|typechange|???/Fighting|[from] move: Double
+                # Shock`: the ??? slot is DUOFORGE_TYPE_NONE and amount the second type id + 1 (the public meaning of amount).
+                cause, id2, _ = ev_cause(attrs, tables)
+                e = ev_tuple(EV['TYPE_CHANGE'], ev_pos(args[0]), NOPOS, cause, 0, id2, detail=TYPE_NONE,
+                             amount=TYPE_IDS[args[2][4:]] + 1)
             else:
                 raise ConversionError('start-end-line', 'trace_to_c: unknown %s %r' % (kind, line),
                                       detail='%s %s' % (kind, what))

@@ -325,7 +325,8 @@ typedef struct dfi_tail_side {
     uint8_t spikes;                            /* layers */
     uint8_t sticky_web;                        /* 0/1 */
     uint8_t quick_guard;                       /* tail rev 4: 0/1, this turn only */
-    uint8_t soak_type[DUOFORGE_MAX_ROSTER];    /* per roster member: 0 none, else type id + 1 (the type Soak set) */
+    uint8_t soak_type[DUOFORGE_MAX_ROSTER];    /* per roster member: 0 none, else type id + 1 (the type Soak set); DFI_TAIL_TYPE2_TYPELESS
+                                                * (Double Shock, decision 0025): the first slot is ???, type2 is the second type (nonzero) */
     uint8_t item_now[DUOFORGE_MAX_ROSTER];     /* per roster member: 0 = as the member says, 1..254 = item id + 1,
                                                 * DFI_TAIL_ITEM_NONE = holds nothing (Trick, Knock Off) */
     uint8_t toxic_stage[DUOFORGE_MAX_ROSTER];  /* per roster member: the toxic counter, 0 = none */

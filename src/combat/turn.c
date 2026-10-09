@@ -129,13 +129,29 @@ static void dfi_types_of(const struct duoforge_battle *b, const dfi_member *m, u
         const dfi_member *first = &b->sides[s].members[0];
         if (m >= first && m < first + DUOFORGE_MAX_ROSTER) {
             const uint32_t soak = b->tail.sides[s].soak_type[m - first];
-            if (soak != 0u) {
+            if (soak == DFI_TAIL_TYPE2_TYPELESS) {
+                /* Double Shock (decision 0025, data/moves.ts:3960-3964): the first slot is ??? (no type: DFI_CLOSURE_NONE, which
+                 * every reader skips, since no chart row is that large) and the second is type2, id + 1 (invariant TAIL_MEMBER). */
+                const uint32_t second = b->tail.sides[s].type2[m - first];
+                types[0] = DFI_CLOSURE_NONE;
+                types[1] = second != 0u ? second - 1u : DFI_CLOSURE_NONE;
+            } else if (soak != 0u) {
                 types[0] = soak - 1u; /* a single type */
                 types[1] = DFI_CLOSURE_NONE;
             }
             return;
         }
     }
+}
+
+/* Double Shock plays only Pawmot (decision 0025 item 2): the user's types are exactly its own Electric and Fighting, and
+ * its forme is dex 923. Every other user that has the Electric type is refused (E_UNSUPPORTED) before the move does anything. */
+static bool dfi_double_shock_shape(struct duoforge_battle *b, uint32_t user)
+{
+    const dfi_member *m = dfi_at(b, user);
+    uint32_t t[2];
+    dfi_types_of(b, m, t);
+    return m != NULL && dfi_forme_of(m)->dex_num == 923u && t[0] == DFI_TYPE_ELECTRIC && t[1] == DFI_TYPE_FIGHTING;
 }
 
 static bool dfi_has_type(const struct duoforge_battle *b, const dfi_member *m, uint32_t type)
@@ -3196,6 +3212,25 @@ static duoforge_status dfi_before_move(dfi_run *r, uint32_t user, uint32_t move_
     return DUOFORGE_OK;
 }
 
+/* Double Shock's self effect (the pin's self onHit): the first type becomes ??? (soak_type 255), the second stays as type2, and
+ * the line -start|X|typechange|???/Fighting is TYPE_CHANGE with detail DUOFORGE_TYPE_NONE and amount = the second type + 1. */
+static duoforge_status dfi_double_shock_self(dfi_run *r, uint32_t user, uint32_t move_id)
+{
+    struct duoforge_battle *b = r->b;
+    if (!dfi_double_shock_shape(b, user)) {
+        return DUOFORGE_E_UNSUPPORTED;
+    }
+    const uint32_t occupant = dfi_pos(b, user)->occupant;
+    dfi_tail_side *ts = &b->tail.sides[user / 2u];
+    ts->soak_type[occupant] = DFI_TAIL_TYPE2_TYPELESS;
+    ts->type2[occupant] = (uint8_t)(DFI_TYPE_FIGHTING + 1u); /* wide-operands-reviewed: < 256 */
+    duoforge_event e = dfi_ev(DUOFORGE_EVENT_TYPE_CHANGE, user, DUOFORGE_CAUSE_MOVE, move_id, DUOFORGE_NO_POSITION);
+    e.detail = (uint8_t)DUOFORGE_TYPE_NONE; /* the ??? slot */
+    e.amount = (uint8_t)(DFI_TYPE_FIGHTING + 1u); /* the second type id + 1; wide-operands-reviewed: < 256 */
+    dfi_emit(r, &e);
+    return DUOFORGE_OK;
+}
+
 /* Soak's onHit (data/moves.ts:17186-17208): a target that is already pure Water, or whose type cannot be set, gives
  * -fail|target (the move still animates) and null; otherwise target.setType('Water') and -start|target|typechange|Water.
  * setType refuses (without `enforce`) Arceus and Silvally (species numbers 493 and 773, sim/pokemon.ts:2113-2118; no
@@ -3217,6 +3252,7 @@ static bool dfi_soak(dfi_run *r, uint32_t flat, uint32_t move_id)
         return false;
     }
     b->tail.sides[flat / 2u].soak_type[occupant] = DFI_TYPE_WATER + 1u; /* 18, a constant that fits the byte */
+    b->tail.sides[flat / 2u].type2[occupant] = 0u; /* setType replaces both types (sim/pokemon.ts:2109) */
     duoforge_event e = dfi_ev(DUOFORGE_EVENT_TYPE_CHANGE, flat, DUOFORGE_CAUSE_MOVE, move_id, DUOFORGE_NO_POSITION);
     e.detail = (uint8_t)DFI_TYPE_WATER; /* -start|target|typechange|Water */
     dfi_emit(r, &e);
@@ -4201,6 +4237,37 @@ static uint32_t dfi_move_hits(const dfi_move_data *md)
            : 1u;
 }
 
+/* Double Shock's onTryMove (decision 0025, data/moves.ts:3954-3959): without the Electric type it fails, -fail and [still]
+ * (*stopped). A user that has the type is played only as Pawmot with its own two types (dfi_double_shock_shape); any other
+ * shape is refused, never guessed. Shared by the hit path and the no-target path, since TryMove runs before the no-targets
+ * test (sim/battle-actions.ts:486-513). */
+static duoforge_status dfi_double_shock_try(dfi_run *r, uint32_t user, bool *stopped)
+{
+    uint32_t own[2];
+    dfi_types_of(r->b, dfi_at(r->b, user), own);
+    *stopped = own[0] != DFI_TYPE_ELECTRIC && own[1] != DFI_TYPE_ELECTRIC;
+    if (*stopped) {
+        dfi_fail_still(r, user);
+        return DUOFORGE_OK;
+    }
+    return dfi_double_shock_shape(r->b, user) ? DUOFORGE_OK : DUOFORGE_E_UNSUPPORTED;
+}
+
+/* A move with nothing to hit: Showdown runs TryMove before the no-targets test (sim/battle-actions.ts:486-513), and the
+ * target is not null there (the foe in slot 0 is an object even when it has fainted), so Double Shock's onTryMove fails
+ * first (recorded: g50_double_shock_no_target). */
+static duoforge_status dfi_no_target_or_try(dfi_run *r, uint32_t user, const dfi_move_data *md)
+{
+    if (md->special == DFI_SPECIAL_DOUBLE_SHOCK) {
+        bool stopped = false;
+        const duoforge_status ds = dfi_double_shock_try(r, user, &stopped);
+        if (ds != DUOFORGE_OK || stopped) {
+            return ds;
+        }
+    }
+    return dfi_no_target(r, user);
+}
+
 /* runMove and useMove for one move action (sim/battle-actions.ts:210-548,
  * the hit steps at 550-620 and the Champions hit loop). */
 /* Forced switches (step G46: the drag of Roar, Whirlwind, Dragon Tail, Circle Throw and the attacker of Red Card).
@@ -4445,7 +4512,7 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
         dfi_emit(r, &e);
     }
     if (aimed == DUOFORGE_NO_POSITION && count == 0u) {
-        return dfi_no_target(r, user); /* no target at all: before getMoveTargets */
+        return dfi_no_target_or_try(r, user, md); /* no target at all: before getMoveTargets */
     }
     /* getMoveTargets' RedirectTarget event (sim/pokemon.ts:829-831), after
      * the retarget of a fainted foe and before TryMove. priorityEvent stops
@@ -4595,7 +4662,7 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
         }
     }
     if (count == 0u) {
-        return dfi_no_target(r, user); /* after TryMove (sim/battle-actions.ts:509-513) */
+        return dfi_no_target_or_try(r, user, md); /* after TryMove (sim/battle-actions.ts:509-513) */
     }
     if (md->special == DFI_SPECIAL_HELPING_HAND) {
         return dfi_run_helping_hand(r, user, targets[0]);
@@ -4760,6 +4827,7 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
         md->special != DFI_SPECIAL_FREEZE_DRY && md->special != DFI_SPECIAL_CLANGING_SCALES &&
         md->special != DFI_SPECIAL_RISING_VOLTAGE && md->special != DFI_SPECIAL_TERRAIN_PULSE &&
         md->special != DFI_SPECIAL_MULTI_HIT_2 && md->special != DFI_SPECIAL_TRIPLE_AXEL &&
+        md->special != DFI_SPECIAL_DOUBLE_SHOCK &&
         md->special != DFI_SPECIAL_RAGE_FIST && md->special != DFI_SPECIAL_STONE_AXE &&
         md->special != DFI_SPECIAL_CEASELESS_EDGE && md->special != DFI_SPECIAL_MULTI_HIT_10 &&
         md->special != DFI_SPECIAL_IMPRISON && md->special != DFI_SPECIAL_TRICK && md->special != DFI_SPECIAL_SWITCHEROO &&
@@ -4776,6 +4844,16 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
     if (md->special == DFI_SPECIAL_STEEL_ROLLER && b->terrain == DFI_TERRAIN_NONE) {
         dfi_fail_still(r, user);
         return DUOFORGE_OK;
+    }
+    /* Double Shock's onTryMove (decision 0025, data/moves.ts:3954-3959): without the Electric type it fails, -fail and [still].
+     * A user that has the type is played only as Pawmot with its own two types (dfi_double_shock_shape); any other shape is
+     * refused, never guessed. */
+    if (md->special == DFI_SPECIAL_DOUBLE_SHOCK) {
+        bool stopped = false;
+        const duoforge_status ds = dfi_double_shock_try(r, user, &stopped);
+        if (ds != DUOFORGE_OK || stopped) {
+            return ds;
+        }
     }
     /* Fake Out's and First Impression's onTry (in trySpreadMoveHit, after
      * TryMove): only on the first move action since it entered. */
@@ -5449,6 +5527,20 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
                     if (st != DUOFORGE_OK) {
                         return st;
                     }
+                }
+            }
+        }
+        /* Double Shock's self onHit (decision 0025, data/moves.ts:3960-3964, selfDrops: once for every target that was not ruled out,
+         * with no test of the user's HP): the type Electric becomes ??? and the -start line shows ???/Fighting. */
+        if (md->special == DFI_SPECIAL_DOUBLE_SHOCK) {
+            bool hit_any = false;
+            for (uint32_t i = 0u; i < count; ++i) {
+                hit_any = hit_any || hit[i];
+            }
+            if (hit_any) {
+                st = dfi_double_shock_self(r, user, move_id);
+                if (st != DUOFORGE_OK) {
+                    return st;
                 }
             }
         }
