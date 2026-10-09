@@ -376,6 +376,13 @@ const dfi_support_manifest dfi_support = {
             [DFI_MOVE_DUALWINGBEAT] = 1u,
             [DFI_MOVE_TRIPLEAXEL] = 1u,
             [DFI_MOVE_TWINBEAM] = 1u,
+            /* Step G48: Population Bomb (ten hits, multiaccuracy; accuracy 90, which the later-hit proof of G33 covers), Rage Fist
+             * (its power is 50 + 50 per hit the user took, the tail's hits_taken), Stone Axe and Ceaseless Edge (a hazard on the
+             * foe's side after a hit, the G37 add). Recorded as g48_*. */
+            [DFI_MOVE_POPULATIONBOMB] = 1u,
+            [DFI_MOVE_RAGEFIST] = 1u,
+            [DFI_MOVE_STONEAXE] = 1u,
+            [DFI_MOVE_CEASELESSEDGE] = 1u,
             /* Step G28: Shell Smash (its boosts in the pin's order), Acrobatics (doubled without an item), Blizzard (never misses
              * in snow), Ancient Power (a secondary that boosts its user), Feint (breaks Protect and Wide Guard). */
             [DFI_MOVE_SHELLSMASH] = 1u,
