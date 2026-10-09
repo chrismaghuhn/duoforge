@@ -237,5 +237,6 @@ int main(void)
     check_weak_armor(&t, ctx);
     check_telepathy(&t, ctx);
     check_volt_absorb(&t, ctx);
+    duoforge_context_destroy(ctx);
     return df_test_end(&t);
 }
