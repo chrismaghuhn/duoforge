@@ -494,6 +494,12 @@ class Tracker:
             if amount > 0 and last is not None and last[1] == self._parting_shot and last[2] == pos:
                 self._at(last[0]).flag = 1  # Parting Shot switches its user once it changes a stat (Contrary too)
             p.stages[detail] = min(12, max(0, p.stages[detail] + sign * amount))
+        elif kind == EV["CLEAR_ALL_BOOSTS"]:
+            # Haze (step G62, decision 0031; data/moves.ts haze onHitField: clearBoosts on getAllActive): every standing
+            # active Pokemon's stages return to neutral
+            for p in (p for side in self._positions for p in side):
+                if p.occupant != ROSTER_NONE and not p.fainted:
+                    p.stages = [STAGE_NEUTRAL] * 7
         elif kind == EV["CONFUSION_START"]:
             self._at(pos).confused = 1
         elif kind == EV["CONFUSION_END"]:

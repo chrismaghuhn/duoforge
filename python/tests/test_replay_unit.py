@@ -288,6 +288,17 @@ class LinesTest(unittest.TestCase):
         self.assertEqual(lines.check("|-status|p1a: Staraptor|tox", self.view), "fold")  # Tox folds (BC spec 5)
         self.assertEqual(self.stop("|replace|p1a: Zoroark|Zoroark-Hisui, L50, M"), "feature:ILLUSION")
 
+    def test_g64_lines(self):
+        # Step G64: Sheer Cold's bare -ohko after the target's faint changes no field (kept, no event); Poltergeist's
+        # -activate names the item its target holds, the open sheet's (another stops); Bug Bite's stealeat takes the
+        # target's berry like Knock Off, decision 0018's ITEM_CHANGE
+        self.assertEqual(lines.check("|-ohko", self.view), "keep")
+        self.assertEqual(lines.check("|-activate|p2a: Gholdengo|move: Poltergeist|Life Orb", self.view), "fold")
+        self.assertEqual(self.stop("|-activate|p2a: Gholdengo|move: Poltergeist|Leftovers"),
+                         "line:-activate move: Poltergeist")
+        bug_bite = "|-enditem|p1a: Staraptor|Sitrus Berry|[from] stealeat|[move] Bug Bite|[of] p2a: Gholdengo"
+        self.assertEqual(self.stop(bug_bite), "feature:ITEM_CHANGE")
+
     def test_item_transfer_lines_are_item_change(self):
         # G29 (#171): every line of a Trick, Switcheroo, Thief or Covet is decision 0018's ITEM_CHANGE, the
         # -activate of Trick too (it names the target; Switcheroo prints none)
@@ -298,6 +309,16 @@ class LinesTest(unittest.TestCase):
                      "|-enditem|p2a: Gholdengo|Life Orb|[silent]|[from] move: Thief|[of] p1a: Staraptor",
                      "|-item|p1a: Staraptor|Life Orb|[from] move: Covet|[of] p2a: Gholdengo"):
             self.assertEqual(self.stop(line), "feature:ITEM_CHANGE", line)
+
+    def test_haze_folds(self):
+        # Step G62 (decision 0031): Haze's -clearallboost is the CLEAR_ALL_BOOSTS event; the tracker folds it
+        self.assertEqual(lines.check("|-clearallboost", self.view), "fold")
+
+    def test_after_you_and_quash_fold(self):
+        # Step G62: After You and Quash move their target in the action queue (data/moves.ts afteryou, quash: -activate
+        # of the target); the queue is no field of the view, the move lines that follow show the order
+        self.assertEqual(lines.check("|-activate|p2a: Gholdengo|move: After You", self.view), "fold")
+        self.assertEqual(lines.check("|-activate|p2a: Gholdengo|move: Quash", self.view), "fold")
 
     def test_drag_folds(self):
         # Step G46: a forced switch brings a member in as a switch does (the tracker folds it as one, or stops)
