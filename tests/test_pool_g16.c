@@ -423,7 +423,7 @@ int main(void)
     DF_CHECK_EQ_U64(&t, DFI_SPECIAL_KNOCK_OFF, 24u);
     DF_CHECK_EQ_U64(&t, DFI_SPECIAL_EXPANDING_FORCE, 25u); /* step G15 */
     DF_CHECK_EQ_U64(&t, DFI_SPECIAL_GLAIVE_RUSH, 26u); /* step G19 */
-    DF_CHECK_EQ_U64(&t, DFI_SPECIAL_UNMODELED, DFI_SPECIAL_MULTI_HIT_10 + 1u); /* step G48 moved it past Rage Fist, Stone Axe, Ceaseless Edge and Population Bomb; after Aurora Veil (G20), Spiky Shield, the four of step G28, the three of step G30, the eight of step G32, the three of step G34, Disable (G27), the four of step G25 and Super Fang (G39) */
+    DF_CHECK_EQ_U64(&t, DFI_SPECIAL_UNMODELED, DFI_SPECIAL_TRI_ATTACK + 1u); /* step G48 moved it past Rage Fist, Stone Axe, Ceaseless Edge and Population Bomb; after Aurora Veil (G20), Spiky Shield, the four of step G28, the three of step G30, the eight of step G32, the three of step G34, Disable (G27), the four of step G25 and Super Fang (G39) */
     DF_CHECK(&t, dfi_support.moves[DFI_MOVE_KNOCKOFF] != 0u && dfi_support.abilities[DFI_ABILITY_STICKYHOLD] != 0u);
     DF_CHECK(&t, (dfi_support.view_ext_features & ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_ITEM_CHANGE)) != 0u);
     /* Trick, Switcheroo, Thief and Covet were unmarked here (item_now was 0 or 255 only); step G29 marks them (the item that a
