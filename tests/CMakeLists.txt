@@ -203,6 +203,7 @@ duoforge_add_test(NAME duoforge.state.pool_g33 SOURCES test_pool_g33.c WHITEBOX 
 duoforge_add_test(NAME duoforge.state.pool_g48 SOURCES test_pool_g48.c WHITEBOX TIMEOUT 60)
 duoforge_add_test(NAME duoforge.state.pool_g34 SOURCES test_pool_g34.c WHITEBOX TIMEOUT 60)
 duoforge_add_test(NAME duoforge.state.pool_g41 SOURCES test_pool_g41.c WHITEBOX TIMEOUT 60)
+duoforge_add_test(NAME duoforge.state.pool_g44 SOURCES test_pool_g44.c WHITEBOX TIMEOUT 60)
 duoforge_add_test(NAME duoforge.state.pool_g46_party SOURCES test_pool_g46_party.c WHITEBOX TIMEOUT 120)
 # Step G35: ten data rows, Rain Dish and Friend Guard: the marks, the flags, Gigaton Hammer left out, and Friend Guard in the
 # commutation test and the refusal of the ModifyDamage chain.
@@ -211,6 +212,8 @@ duoforge_add_test(NAME duoforge.state.pool_g38 SOURCES test_pool_g38.c WHITEBOX 
 # Mega batch 2: Swampertite, Metagrossite, Lucarionite Z and Aura Guard: the marks, the Mega of each pair, Aura Guard in the
 # commutation test and the refusal of the ModifyDamage chain.
 duoforge_add_test(NAME duoforge.state.pool_mega2 SOURCES test_pool_mega2.c WHITEBOX TIMEOUT 60)
+# Step G49, the item rows Muscle Band, Wise Glasses and Bright Powder: the marks, the chain orders of Wide Lens and Bright Powder.
+duoforge_add_test(NAME duoforge.state.pool_g49 SOURCES test_pool_g49.c WHITEBOX TIMEOUT 60)
 # Step G39: thirteen abilities and four moves: the marks, the rows, what keeps Damp and Sturdy inert, Hyper Cutter against Flower Veil.
 duoforge_add_test(NAME duoforge.state.pool_g39 SOURCES test_pool_g39.c WHITEBOX TIMEOUT 60)
 # Step G20, Spiky Shield: the protect_kind of the position (POOL tail rev 3), the state round trip, the volatile.
@@ -232,8 +235,8 @@ foreach(_gen IN ITEMS
         "closure_tables.c=490de42298e34cfd38192d979fd022367bf53693a5fa1855f1cc6ad034d8450a"
         "extended_tables.h=b2abef243fcbfdd87654940076b9fe2fe80b117d74893a7567741f26b9075a7d"
         "extended_tables.c=9e736fa467713283418c4edf8f56b8d844452e596ba422adbd52483d20f7cc17"
-        "pool_tables.h=8d2b38b82a50bcb5e207933d5403236b054542a8379410e16c54942912d1fc35"
-        "pool_tables.c=8500d6d4e27cf92aacb0e62ada8120eae7784fedc2edd4d33566bb800e38842f")
+        "pool_tables.h=82eaa9dc95bcfa3f5c2de4e2d77c944b041d256f39f6f3406bd46589390a39a2"
+        "pool_tables.c=840f192d63845652ae024f279ccc657de8d6f2bf24851a9b0dd8b9c86cc929ac")
     string(REPLACE "=" ";" _parts "${_gen}")
     list(GET _parts 0 _file)
     list(GET _parts 1 _expected)
@@ -631,7 +634,7 @@ endif()
 # The Python package (M7, decision 0013), run with DUOFORGE_PYTHON; without
 # an interpreter each test reports skipped instead of passing silently.
 
-foreach(_py layout lib equivalence recipes policies_features example learn_numpy live_unit live_client replay_unit openings book expert_data expert_contract book_preview preview_search data batch_setups learn_v2_numpy teams features_ext bc_numpy encode_c search_numpy search_expand repo_hygiene view)
+foreach(_py layout lib equivalence recipes policies_features example learn_numpy live_unit live_client replay_unit openings book expert_data expert_teacher expert_contract expert_eval book_preview preview_search data batch_setups learn_v2_numpy teams features_ext bc_numpy encode_c search_numpy search_expand repo_hygiene view)
     if(DUOFORGE_PYTHON)
         add_test(NAME duoforge.python.${_py}
             COMMAND "${DUOFORGE_PYTHON}" -m unittest -v python.tests.test_${_py}
@@ -703,4 +706,15 @@ if(DUOFORGE_ENABLE_SANITIZERS)
         ENVIRONMENT "ASAN_OPTIONS=detect_leaks=0"
         PASS_REGULAR_EXPRESSION "AddressSanitizer: heap-buffer-overflow"
         FAIL_REGULAR_EXPRESSION "CANARY_SURVIVED")
+endif()
+# Step G43 (Mega batch 3): ten Mega Stones marked with no new rule (Dragoninite, Glimmoranite, Blazikenite, Absolite Z,
+# Raichunite X, Lopunnite, Alakazite, Meowsticite, Scizorite, Galladite): the marks, the Mega of each pair, the setup and the API.
+duoforge_add_test(NAME duoforge.state.pool_g43 SOURCES test_pool_g43.c WHITEBOX TIMEOUT 60)
+# The state model's pool table hash equals the hash that duoforge.data.pool_tables proves for the generated tables, so
+# that a step which regenerates the tables cannot leave the model's POOL fingerprints stale (no checkout needed).
+if(Python3_Interpreter_FOUND)
+    add_test(NAME duoforge.data.model_pool_hash
+        COMMAND "${Python3_EXECUTABLE}" "${PROJECT_SOURCE_DIR}/tools/state_model/test_model_pins.py")
+    set_tests_properties(duoforge.data.model_pool_hash PROPERTIES TIMEOUT 60
+        ENVIRONMENT PYTHONDONTWRITEBYTECODE=1)
 endif()

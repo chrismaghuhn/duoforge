@@ -1,0 +1,24 @@
+{
+  "name": "g49_category_cross",
+  "purpose": "Step G49, the category of the two boosters: Gholdengo holds Muscle Band and uses Shadow Ball (Special) and Kingambit holds Wise Glasses and uses Kowtow Cleave (Physical). Neither gets its item's boost: Muscle Band is for Physical moves only and Wise Glasses for Special moves only.",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,0000000000000000000000000000000000000000000000000000000000004904",
+  "teams": [
+    "Gholdengo @ Muscle Band\nAbility: Good as Gold\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nModest Nature\n- Shadow Ball\n- Make It Rain\n- Protect\n\nKingambit (M) @ Wise Glasses\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Protect\n- Kowtow Cleave\n\nRaichu (F) @ Sitrus Berry\nAbility: Lightning Rod\nLevel: 50\nEVs: 2 HP / 32 SpA / 32 Spe\nTimid Nature\n- Thunderbolt\n- Protect\n\nIncineroar (M) @ Charcoal\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 14 Def / 20 SpD\nCareful Nature\n- Fake Out\n- Flare Blitz\n- Protect\n\nIndeedee-F (F) @ Rocky Helmet\nAbility: Psychic Surge\nLevel: 50\nEVs: 32 HP / 32 Def / 2 SpD\nRelaxed Nature\n- Protect\n\nStaraptor (F) @ Focus Sash\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 2 SpD / 32 Spe\nJolly Nature\n- Protect\n- Brave Bird",
+    "Milotic (F) @ Sitrus Berry\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Protect\n- Scald\n- Coil\n\nIncineroar (M) @ Charcoal\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 14 Def / 20 SpD\nCareful Nature\n- Fake Out\n- Flare Blitz\n- Protect\n\nKingambit (M) @ Black Glasses\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Protect\n- Kowtow Cleave\n\nIndeedee-F (F) @ Rocky Helmet\nAbility: Psychic Surge\nLevel: 50\nEVs: 32 HP / 32 Def / 2 SpD\nRelaxed Nature\n- Protect\n\nStaraptor (F) @ Focus Sash\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 2 SpD / 32 Spe\nJolly Nature\n- Protect\n- Brave Bird\n\nGholdengo @ Life Orb\nAbility: Good as Gold\nLevel: 50\nEVs: 17 HP / 2 Def / 17 SpA / 16 SpD / 14 Spe\nModest Nature\n- Protect\n- Shadow Ball"
+  ],
+  "plan": {
+    "p1": [
+      "move 1 2, move 2 1",
+      "move 1 1, move 2 2",
+      "move 1 2, move 2 1"
+    ],
+    "p2": [
+      "move 2 1, move 1",
+      "move 2 2, move 1",
+      "move 2 1, move 1"
+    ],
+    "max_steps": 3
+  }
+}

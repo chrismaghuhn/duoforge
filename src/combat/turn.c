@@ -7,6 +7,8 @@
 #include "combat/events.h"
 #include "combat/item_family.h"
 #include "combat/move_rules.h"
+#include "combat/power_trip.h"
+#include "combat/secondary_rolls.h"
 
 #include "core/arith.h"
 #include "core/modifier.h"
@@ -1353,6 +1355,11 @@ static duoforge_status dfi_get_damage(dfi_run *r, uint32_t user, uint32_t target
     } else if (md->special == DFI_SPECIAL_TRIPLE_AXEL) {
         /* Triple Axel's basePowerCallback (step G33, data/moves.ts:20005-20023): 20 x move.hit. */
         power = 20u * r->hit_index;
+    } else if (md->special == DFI_SPECIAL_POWER_TRIP) {
+        /* Power Trip's basePowerCallback (step G44, data/moves.ts:13851-13859): 20 + 20 x the user's positiveBoosts(), the sum
+         * of its positive stages (Pokemon.positiveBoosts, sim/pokemon.ts:1201-1208). A stage is stored biased by 6. */
+        const uint32_t positive = dfi_power_trip_positive_stages(ap->stages);
+        power = (uint32_t)md->base_power + 20u * positive;
     } else if (md->special == DFI_SPECIAL_RAGE_FIST) {
         /* Rage Fist's basePowerCallback (step G48, data/moves.ts:14583-14596): 50 + 50 x the user's timesAttacked, at most 350.
          * timesAttacked counts the damaging hits the user took since it came in (the Champions loop, scripts.ts:565, and the
@@ -1414,6 +1421,17 @@ static duoforge_status dfi_get_damage(dfi_run *r, uint32_t user, uint32_t target
      * flag, x1.5. */
     if ((bp_flags2 & DFI_MOVE_FLAG2_SLICING) != 0u && dfi_ability(r->b, a, DFI_ABILITY_SHARPNESS)) {
         ok = ok && dfi_chain_modify(bp_chain, 6144u, &bp_chain);
+    }
+    /* Muscle Band and Wise Glasses (step G49, data/items.ts:4239-4251 and :7754-7766, onBasePowerPriority 16: after
+     * Sharpness's 19 and before the type boosters' 15): 4505/4096 for a Physical move (Muscle Band) or a Special move (Wise
+     * Glasses) of its holder. The item the holder has now (dfi_item_code); the move's category is the table's, which is the
+     * pinned one for every marked move (no marked move changes its category at the pin). */
+    {
+        const uint32_t held_now = dfi_item_code(r->b, a);
+        if ((held_now == 1u + DFI_ITEM_MUSCLEBAND && md->category == DFI_CATEGORY_PHYSICAL) ||
+            (held_now == 1u + DFI_ITEM_WISEGLASSES && md->category == DFI_CATEGORY_SPECIAL)) {
+            ok = ok && dfi_chain_modify(bp_chain, 4505u, &bp_chain);
+        }
     }
     /* A type booster (the TYPE_BOOSTER family: Mystic Water, Miracle Seed
      * and the sixteen others, decision 0015): 4915/4096 for a move of its
@@ -4010,6 +4028,10 @@ static duoforge_status dfi_accuracy_check(dfi_run *r, uint32_t user, uint32_t ta
             (b->weather == DFI_WEATHER_SAND && dfi_ability(b, victim, DFI_ABILITY_SANDVEIL))) {
             return DUOFORGE_E_UNSUPPORTED;
         }
+        /* And the target's Bright Powder (step G49): it is the same ModifyAccuracy event, after the stages. */
+        if (dfi_holds(b, victim, DFI_ITEM_BRIGHTPOWDER)) {
+            return DUOFORGE_E_UNSUPPORTED;
+        }
         /* The rational comparison below is proved for the accuracy 90 only (combat/multiaccuracy.h, checkG33): a new
          * multiaccuracy move extends the proof before it runs. */
         if (!dfi_multiaccuracy_proven(base_accuracy)) {
@@ -4522,7 +4544,9 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
         md->special != DFI_SPECIAL_CEASELESS_EDGE && md->special != DFI_SPECIAL_MULTI_HIT_10 &&
         md->special != DFI_SPECIAL_IMPRISON && md->special != DFI_SPECIAL_TRICK && md->special != DFI_SPECIAL_SWITCHEROO &&
         md->special != DFI_SPECIAL_THIEF && md->special != DFI_SPECIAL_COVET && md->special != DFI_SPECIAL_SUPER_FANG &&
-        md->special != DFI_SPECIAL_TAUNT && md->special != DFI_SPECIAL_YAWN) {
+        md->special != DFI_SPECIAL_TAUNT && md->special != DFI_SPECIAL_YAWN &&
+        md->special != DFI_SPECIAL_POWER_TRIP && md->special != DFI_SPECIAL_THUNDER && md->special != DFI_SPECIAL_ICE_FANG &&
+        md->special != DFI_SPECIAL_TRI_ATTACK) {
         return DUOFORGE_E_INVARIANT;
     }
     /* Steel Roller's onTry (step G34, data/moves.ts:17893-17913): it fails without a terrain, with -fail and [still]. */
@@ -4556,9 +4580,10 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
             return DUOFORGE_OK;
         }
     }
-    /* Hurricane never misses in rain and has 50 accuracy under sun. */
+    /* Hurricane never misses in rain and has 50 accuracy under sun. Thunder (step G44, data/moves.ts:19438-19458) is the same
+     * onModifyMove: move.accuracy = true in rain, 50 under sun (target.effectiveWeather(), which is the field's weather). */
     uint32_t base_accuracy = md->accuracy;
-    if (md->special == DFI_SPECIAL_HURRICANE) {
+    if (md->special == DFI_SPECIAL_HURRICANE || md->special == DFI_SPECIAL_THUNDER) {
         if (b->weather == DFI_WEATHER_RAIN) {
             base_accuracy = 0u;
         } else if (b->weather == DFI_WEATHER_SUN) {
@@ -4580,7 +4605,8 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
      * (priority -2, 4505/4096, data/items.ts:7713-7727) chain into one modifier that modifies a numeric accuracy (a move that
      * never misses is `true`: untouched). The two of priority -1 run in the order of their holders' speeds and commute (two
      * modifiers always do), Wide Lens always follows them, so the chain is the same in every order; it is computed per
-     * target, in the accuracy loop below. */
+     * target, in the accuracy loop below. The target's Bright Powder (step G49, priority -2 like Wide Lens) joins the
+     * chain there; the two of priority -2 are checked for order in that loop. */
     const bool acc_compound_eyes = base_accuracy != 0u && dfi_ability(r->b, m, DFI_ABILITY_COMPOUNDEYES);
     const bool acc_wide_lens = base_accuracy != 0u && dfi_holds(r->b, m, DFI_ITEM_WIDELENS);
     /* Struggle is typeless; Weather Ball turns Water in rain, Fire under sun
@@ -4772,8 +4798,35 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
                     (b->weather == DFI_WEATHER_SAND && dfi_ability(r->b, acc_target, DFI_ABILITY_SANDVEIL))) {
                     acc_ok = acc_ok && dfi_chain_modify(acc_chain, 3277u, &acc_chain);
                 }
-                if (acc_wide_lens) {
-                    acc_ok = acc_ok && dfi_chain_modify(acc_chain, 4505u, &acc_chain);
+                /* The priority -2 group (step G49): Wide Lens (the attacker, data/items.ts:7719-7726) and Bright Powder (the
+                 * target, data/items.ts:665-670, chainModify([3686, 4096]), a number only) run in one event at the same
+                 * priority, so the pin's order between them is the holders' Speed, and an exact tie draws. The chain rounds
+                 * at each step, so the two orders agree only for some prefixes: when they differ the order is not modelled
+                 * (E_UNSUPPORTED, never a guess). With no powder the chain is Wide Lens's alone. */
+                const bool acc_bright_powder = base_accuracy != 0u && dfi_holds(r->b, acc_target, DFI_ITEM_BRIGHTPOWDER);
+                if (acc_wide_lens && acc_bright_powder) {
+                    uint32_t wide_first = acc_chain;
+                    uint32_t powder_first = acc_chain;
+                    acc_ok = acc_ok && dfi_chain_modify(acc_chain, 4505u, &wide_first) &&
+                             dfi_chain_modify(wide_first, 3686u, &wide_first);
+                    acc_ok = acc_ok && dfi_chain_modify(acc_chain, 3686u, &powder_first) &&
+                             dfi_chain_modify(powder_first, 4505u, &powder_first);
+                    if (!acc_ok) {
+                        return DUOFORGE_E_INVARIANT;
+                    }
+                    /* The accuracy that the chain modifies is this move's own (base_accuracy, an integer): the orders agree
+                     * when they give the same modified accuracy, which is all the stages read. */
+                    if (dfi_modify(base_accuracy, wide_first) != dfi_modify(base_accuracy, powder_first)) {
+                        return DUOFORGE_E_UNSUPPORTED; /* the two orders round apart for this move: not modelled */
+                    }
+                    acc_chain = wide_first;
+                } else {
+                    if (acc_wide_lens) {
+                        acc_ok = acc_ok && dfi_chain_modify(acc_chain, 4505u, &acc_chain);
+                    }
+                    if (acc_bright_powder) {
+                        acc_ok = acc_ok && dfi_chain_modify(acc_chain, 3686u, &acc_chain);
+                    }
                 }
                 if (!acc_ok) {
                     return DUOFORGE_E_INVARIANT;
@@ -5155,6 +5208,66 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
             }
             if (md->boost_role == DFI_BOOST_ROLE_SELF_AFTER_HIT) {
                 return DUOFORGE_E_UNSUPPORTED; /* no closure move has both */
+            }
+        }
+        /* Ice Fang (step G44, data/moves.ts:9347-9368): two secondaries in order, and for each hit target the loop of
+         * secondaries() draws random(100) before each one (sim/battle-actions.ts:1336-1354): a freeze at 10 (a status of the
+         * move, dfi_try_status as a status secondary does), then a flinch at 10 (a volatile of the target). Both rolls are
+         * drawn for a target that fainted, as for any secondary. */
+        if (md->special == DFI_SPECIAL_ICE_FANG) {
+            for (uint32_t i = 0u; i < count; ++i) {
+                if (!hit[i]) {
+                    continue;
+                }
+                uint32_t roll = 0u;
+                st = dfi_draw(r->draws, DFI_SITE_SECONDARY, 0u, 100u, &roll);
+                if (st != DUOFORGE_OK) {
+                    return st;
+                }
+                if (roll < 10u) {
+                    st = dfi_try_status(r, targets[i], DFI_STATUS_FRZ, user, move_id, false, 0u);
+                    if (st != DUOFORGE_OK) {
+                        return st;
+                    }
+                }
+                st = dfi_draw(r->draws, DFI_SITE_SECONDARY, 0u, 100u, &roll);
+                if (st != DUOFORGE_OK) {
+                    return st;
+                }
+                if (roll < 10u) {
+                    st = dfi_add_volatile(r, targets[i], DFI_VOLATILE_FLINCH);
+                    if (st != DUOFORGE_OK) {
+                        return st;
+                    }
+                }
+            }
+        }
+        /* Tri Attack (step G44, data/moves.ts:19845-19864): a secondary of chance 20, one SECONDARY roll per hit target, and
+         * its onHit draws sample(['brn', 'par', 'frz']) (SITE_STATUS_PICK, random(3)) then trySetStatus without a source move,
+         * as Dire Claw's pick does (the reference draws the pick after every successful roll, also for a target that fainted,
+         * has a status or is immune). */
+        if (md->special == DFI_SPECIAL_TRI_ATTACK) {
+            static const uint8_t tri_pick[3] = {DFI_STATUS_BRN, DFI_STATUS_PAR, DFI_STATUS_FRZ};
+            for (uint32_t i = 0u; i < count; ++i) {
+                if (!hit[i]) {
+                    continue;
+                }
+                uint32_t roll = 0u;
+                st = dfi_draw(r->draws, DFI_SITE_SECONDARY, 0u, 100u, &roll);
+                if (st != DUOFORGE_OK) {
+                    return st;
+                }
+                if (!dfi_tri_attack_chance_hit(roll)) {
+                    continue;
+                }
+                uint32_t v = 0u;
+                st = dfi_draw(r->draws, DFI_SITE_STATUS_PICK, 0u, 3u, &v);
+                if (st == DUOFORGE_OK) {
+                    st = dfi_try_status(r, targets[i], tri_pick[v], user, DFI_NO_SOURCE_MOVE, false, 0u);
+                }
+                if (st != DUOFORGE_OK) {
+                    return st;
+                }
             }
         }
         /* DamagingHit, its handlers by order, then target (compareLeftToRightOrder,
