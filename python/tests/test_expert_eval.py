@@ -103,6 +103,14 @@ class EvalGate(unittest.TestCase):
             c = (rows["suite"] == suite) & (rows["opponent"] == opp) & (rows["arm"] == "control")
             for name in ("bucket", "pair", "student_seat", "student_team", "opponent_team", "seed"):
                 np.testing.assert_array_equal(rows[name][p], rows[name][c])
+        # One batch seed per (suite, opponent, bucket) block: the runner plays a block's pairs in one batch (env =
+        # pair, episode 1), so every pair's battle RNG is duoforge_batch_seeds(seed, pair, 1) on both seats and arms.
+        blocks = {}
+        for k, s in zip(zip(rows["suite"], rows["opponent"], rows["bucket"]), rows["seed"]):
+            blocks.setdefault(k, set()).add(int(s))
+        self.assertEqual(len(blocks), len(ev.SCHEDULE) * len(ev.BUCKETS))
+        self.assertTrue(all(len(s) == 1 for s in blocks.values()))
+        self.assertEqual(len({next(iter(s)) for s in blocks.values()}), len(blocks))
         again = ev.make_eval_rows(pool(), m)
         for name in rows:
             np.testing.assert_array_equal(again[name], rows[name])

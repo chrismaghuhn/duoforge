@@ -155,10 +155,17 @@ def _layout():
 
 
 def _seeds(seed, index, bucket, pairs):
-    """Battle seeds of a (suite, bucket) block, from their own stream: the
-    same for every pool and both arms."""
+    """The battle seeds of a (suite, bucket) block's pairs: one batch seed
+    for the whole block, from its own stream, the same for every pool, both
+    arms and both seats. The engine derives a battle's RNG from the batch
+    seed, the environment index and the episode only (duoforge_batch.h), so
+    the runner plays a block's pairs of one arm and seat as one batch of
+    that seed, environment = pair, episode 1 (evaluate.play_suite's order):
+    pair p's battle RNG is duoforge_batch_seeds(seed, p, 1) on both seats
+    and arms."""
     rng = np.random.default_rng([seed, index, BUCKETS.index(bucket), 1])
-    return rng.integers(0, 1 << 63, size=pairs, dtype=np.uint64) * 2 + rng.integers(0, 2, size=pairs, dtype=np.uint64)
+    block = rng.integers(0, 1 << 63, dtype=np.uint64) * 2 + rng.integers(0, 2, dtype=np.uint64)
+    return np.full(pairs, block, dtype=np.uint64)
 
 
 def _buckets(pool):
