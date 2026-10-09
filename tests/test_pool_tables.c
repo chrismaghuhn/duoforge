@@ -45,7 +45,7 @@
 #include "state/closure_member.h"
 #include "support/check.h"
 
-#define POOL_HASH_HEX "a80efd5bf7f61c93b80df539bd6e42ad8e5624ef534675875bbf718624246da2" /* steps G42, G44, G46, G48, G49 and G50: the canonical hash of the rows (the tables and the marks of all six) */
+#define POOL_HASH_HEX "adc360e3e55c76b670e2099d410383501ac51a9f41df62ed6ddfe54b602c177c" /* step G57 (the reflectable column and Magic Bounce's handler), steps G42, G44, G46, G48, G49 and G50: the canonical hash of the rows (the tables and the marks of all six) */
 /* SHA-256 of the closure-layout bytes of the rows of the steps (P1 and G2: 28 formes, 72 moves, 52 items, 29
  * abilities). The whole-pool step must not move one of them (decision 0015 section 4.2); the pool generator before it
  * produced the same bytes. Step G10 moved two of them on purpose: Scald and Recover are data now (the thaw bit and

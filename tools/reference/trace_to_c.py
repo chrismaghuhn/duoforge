@@ -1094,6 +1094,7 @@ def step_events(log, viewer, roster_of, maxhp, tables):
             target = ev_pos(parts[4]) if len(parts) > 4 else None
             flags = 0
             amount = 0
+            bounce = False  # step G57: the move Magic Bounce reflects, `[from] ability: Magic Bounce` (cause ABILITY, id2 + 1)
             for a in parts[5:]:
                 if a == '[still]':
                     flags |= FLAG['STILL']
@@ -1103,6 +1104,8 @@ def step_events(log, viewer, roster_of, maxhp, tables):
                     flags |= FLAG['MISS']
                 elif a == '[notarget]':
                     flags |= FLAG['NOTARGET']
+                elif a == '[from] ability: Magic Bounce':
+                    bounce = True
                 elif a.startswith('[spread]'):
                     flags |= FLAG['SPREAD']
                     for slot in a[len('[spread]'):].strip().split(','):
@@ -1110,9 +1113,16 @@ def step_events(log, viewer, roster_of, maxhp, tables):
                             amount |= 1 << ev_pos(slot)
                 elif a:
                     raise ConversionError('move-attribute', 'trace_to_c: unknown move attribute %r' % a, detail=a)
-            if flags & (FLAG['SPREAD'] | FLAG['NOTARGET'] | FLAG['STILL']) or target is None or args[1] in FOE_SIDE_MOVES:
-                target = NOPOS  # a foeSide move (step G37) names a random foe in the protocol: a label the engine does not draw
-            e = ev_tuple(EV['MOVE'], pos, target, 0, tables['MOVE'][key(args[1])], amount=amount, flags=flags)
+            # A foeSide move (step G37) names a random foe in the protocol: a label the engine does not draw. A bounced foeSide
+            # move names its real target (the source, step G57), which the engine keeps as `other`.
+            if flags & (FLAG['SPREAD'] | FLAG['NOTARGET'] | FLAG['STILL']) or target is None or \
+                    (args[1] in FOE_SIDE_MOVES and not bounce):
+                target = NOPOS
+            if bounce:
+                e = ev_tuple(EV['MOVE'], pos, target, CAUSE['ABILITY'], tables['MOVE'][key(args[1])],
+                             tables['ABILITY'][key('Magic Bounce')] + 1, amount=amount, flags=flags)
+            else:
+                e = ev_tuple(EV['MOVE'], pos, target, 0, tables['MOVE'][key(args[1])], amount=amount, flags=flags)
         elif kind in ('-damage', '-heal'):
             pos = ev_pos(args[0])
             side = pos // 2

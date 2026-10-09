@@ -2144,7 +2144,7 @@ const dfi_pool_item_data dfi_pool_items[DFI_POOL_ITEM_COUNT] = {
  *   liquidooze -- data/abilities.ts:2402-2415  [unmodelled: callback onSourceTryHeal]
  *   liquidvoice -- data/abilities.ts:2416-2427
  *   longreach -- data/abilities.ts:2428-2436  [unmodelled: callback onModifyMove]
- *   magicbounce -- data/abilities.ts:2437-2464  [unmodelled: callback onAllyTryHitSide; callback onTryHit; callback onTryHitPriority]
+ *   magicbounce -- data/abilities.ts:2437-2464
  *   magicguard -- data/abilities.ts:2465-2476  [unmodelled: callback onDamage; read by id in data/items.ts]
  *   magician -- data/abilities.ts:2477-2500  [unmodelled: callback onAfterMoveSecondarySelf]
  *   magmaarmor -- data/abilities.ts:2501-2515  [unmodelled: callback onImmunity; callback onUpdate]
@@ -2923,7 +2923,7 @@ const uint8_t dfi_pool_ability_handler[DFI_POOL_ABILITY_COUNT] = {
     [DFI_ABILITY_LIQUIDOOZE] = DFI_HANDLER_UNMODELED,
     [DFI_ABILITY_LIQUIDVOICE] = DFI_HANDLER_NONE,
     [DFI_ABILITY_LONGREACH] = DFI_HANDLER_UNMODELED,
-    [DFI_ABILITY_MAGICBOUNCE] = DFI_HANDLER_UNMODELED,
+    [DFI_ABILITY_MAGICBOUNCE] = DFI_HANDLER_NONE,
     [DFI_ABILITY_MAGICGUARD] = DFI_HANDLER_UNMODELED,
     [DFI_ABILITY_MAGICIAN] = DFI_HANDLER_UNMODELED,
     [DFI_ABILITY_MAGMAARMOR] = DFI_HANDLER_UNMODELED,
@@ -5370,6 +5370,69 @@ const uint8_t dfi_pool_move_static_hits[DFI_POOL_MOVE_COUNT][2] = {
     [DFI_MOVE_ZINGZAP] = {1u, 1u}, /* Zing Zap */
 };
 
+/* The reflectable column (step G57): flags.reflectable of the pin, 1 for a move that Magic Bounce reflects. */
+const uint8_t dfi_pool_move_reflectable[DFI_POOL_MOVE_COUNT] = {
+    [DFI_MOVE_HYPNOSIS] = 1u, /* Hypnosis */
+    [DFI_MOVE_PARTINGSHOT] = 1u, /* Parting Shot */
+    [DFI_MOVE_ENCORE] = 1u, /* Encore */
+    [DFI_MOVE_SOAK] = 1u, /* Soak */
+    [DFI_MOVE_ATTRACT] = 1u, /* Attract */
+    [DFI_MOVE_BABYDOLLEYES] = 1u, /* Baby-Doll Eyes */
+    [DFI_MOVE_BLOCK] = 1u, /* Block */
+    [DFI_MOVE_CHARM] = 1u, /* Charm */
+    [DFI_MOVE_CONFUSERAY] = 1u, /* Confuse Ray */
+    [DFI_MOVE_CORROSIVEGAS] = 1u, /* Corrosive Gas */
+    [DFI_MOVE_COTTONSPORE] = 1u, /* Cotton Spore */
+    [DFI_MOVE_DEFOG] = 1u, /* Defog */
+    [DFI_MOVE_DISABLE] = 1u, /* Disable */
+    [DFI_MOVE_EERIEIMPULSE] = 1u, /* Eerie Impulse */
+    [DFI_MOVE_ENTRAINMENT] = 1u, /* Entrainment */
+    [DFI_MOVE_FAKETEARS] = 1u, /* Fake Tears */
+    [DFI_MOVE_FEATHERDANCE] = 1u, /* Feather Dance */
+    [DFI_MOVE_FLATTER] = 1u, /* Flatter */
+    [DFI_MOVE_FORESTSCURSE] = 1u, /* Forest's Curse */
+    [DFI_MOVE_GASTROACID] = 1u, /* Gastro Acid */
+    [DFI_MOVE_GLARE] = 1u, /* Glare */
+    [DFI_MOVE_HEALPULSE] = 1u, /* Heal Pulse */
+    [DFI_MOVE_LEECHSEED] = 1u, /* Leech Seed */
+    [DFI_MOVE_MAGICPOWDER] = 1u, /* Magic Powder */
+    [DFI_MOVE_MEANLOOK] = 1u, /* Mean Look */
+    [DFI_MOVE_METALSOUND] = 1u, /* Metal Sound */
+    [DFI_MOVE_NOBLEROAR] = 1u, /* Noble Roar */
+    [DFI_MOVE_POISONPOWDER] = 1u, /* Poison Powder */
+    [DFI_MOVE_ROAR] = 1u, /* Roar */
+    [DFI_MOVE_SCARYFACE] = 1u, /* Scary Face */
+    [DFI_MOVE_SCREECH] = 1u, /* Screech */
+    [DFI_MOVE_SIMPLEBEAM] = 1u, /* Simple Beam */
+    [DFI_MOVE_SING] = 1u, /* Sing */
+    [DFI_MOVE_SLEEPPOWDER] = 1u, /* Sleep Powder */
+    [DFI_MOVE_SPICYEXTRACT] = 1u, /* Spicy Extract */
+    [DFI_MOVE_SPIKES] = 1u, /* Spikes */
+    [DFI_MOVE_SPITE] = 1u, /* Spite */
+    [DFI_MOVE_STEALTHROCK] = 1u, /* Stealth Rock */
+    [DFI_MOVE_STICKYWEB] = 1u, /* Sticky Web */
+    [DFI_MOVE_STRENGTHSAP] = 1u, /* Strength Sap */
+    [DFI_MOVE_STRINGSHOT] = 1u, /* String Shot */
+    [DFI_MOVE_STUNSPORE] = 1u, /* Stun Spore */
+    [DFI_MOVE_SWAGGER] = 1u, /* Swagger */
+    [DFI_MOVE_SWEETKISS] = 1u, /* Sweet Kiss */
+    [DFI_MOVE_SWEETSCENT] = 1u, /* Sweet Scent */
+    [DFI_MOVE_TAUNT] = 1u, /* Taunt */
+    [DFI_MOVE_TEARFULLOOK] = 1u, /* Tearful Look */
+    [DFI_MOVE_THUNDERWAVE] = 1u, /* Thunder Wave */
+    [DFI_MOVE_TICKLE] = 1u, /* Tickle */
+    [DFI_MOVE_TOPSYTURVY] = 1u, /* Topsy-Turvy */
+    [DFI_MOVE_TORMENT] = 1u, /* Torment */
+    [DFI_MOVE_TOXIC] = 1u, /* Toxic */
+    [DFI_MOVE_TOXICSPIKES] = 1u, /* Toxic Spikes */
+    [DFI_MOVE_TOXICTHREAD] = 1u, /* Toxic Thread */
+    [DFI_MOVE_TRICKORTREAT] = 1u, /* Trick-or-Treat */
+    [DFI_MOVE_WHIRLWIND] = 1u, /* Whirlwind */
+    [DFI_MOVE_WILLOWISP] = 1u, /* Will-O-Wisp */
+    [DFI_MOVE_WORRYSEED] = 1u, /* Worry Seed */
+    [DFI_MOVE_YAWN] = 1u, /* Yawn */
+};
+
 /* Cosmetic formes: a name for the row of the base forme (decision 0015 section 4.2). */
 const dfi_pool_alias dfi_pool_forme_aliases[DFI_POOL_ALIAS_COUNT] = {
     {"vivillonicysnow", DFI_FORME_VIVILLON},
@@ -6982,7 +7045,6 @@ const char *const dfi_pool_ability_unmodeled[DFI_POOL_ABILITY_COUNT] = {
     [DFI_ABILITY_LIGHTMETAL] = "callback onModifyWeight",
     [DFI_ABILITY_LIQUIDOOZE] = "callback onSourceTryHeal",
     [DFI_ABILITY_LONGREACH] = "callback onModifyMove",
-    [DFI_ABILITY_MAGICBOUNCE] = "callback onAllyTryHitSide; callback onTryHit; callback onTryHitPriority",
     [DFI_ABILITY_MAGICGUARD] = "callback onDamage; read by id in data/items.ts",
     [DFI_ABILITY_MAGICIAN] = "callback onAfterMoveSecondarySelf",
     [DFI_ABILITY_MAGMAARMOR] = "callback onImmunity; callback onUpdate",
@@ -7064,10 +7126,10 @@ const char *const dfi_pool_ability_unmodeled[DFI_POOL_ABILITY_COUNT] = {
 };
 
 const uint8_t dfi_pool_table_hash[32] = {
-    0xa8u, 0x0eu, 0xfdu, 0x5bu, 0xf7u, 0xf6u, 0x1cu, 0x93u,
-    0xb8u, 0x0du, 0xf5u, 0x39u, 0xbdu, 0x6eu, 0x42u, 0xadu,
-    0x8eu, 0x56u, 0x24u, 0xefu, 0x53u, 0x46u, 0x75u, 0x87u,
-    0x5bu, 0xbfu, 0x71u, 0x86u, 0x24u, 0x24u, 0x6du, 0xa2u,
+    0xadu, 0xc3u, 0x60u, 0xe3u, 0xe5u, 0x5cu, 0x76u, 0xb6u,
+    0x70u, 0xe2u, 0x09u, 0x9du, 0x41u, 0x03u, 0x83u, 0x50u,
+    0x1au, 0xc5u, 0x1au, 0x9fu, 0x41u, 0xdfu, 0x62u, 0xedu,
+    0x6du, 0xdfu, 0xe5u, 0x4bu, 0x60u, 0x2cu, 0x17u, 0x7cu,
 };
 
 static size_t dfi_pool_put_u16(uint8_t *out, size_t n, uint32_t v)
@@ -7285,6 +7347,9 @@ size_t dfi_pool_canonical_bytes(uint8_t *out, size_t capacity)
     for (uint32_t i = 0u; i < DFI_POOL_MOVE_COUNT; ++i) {
         out[n++] = dfi_pool_move_static_hits[i][0];
         out[n++] = dfi_pool_move_static_hits[i][1];
+    }
+    for (uint32_t i = 0u; i < DFI_POOL_MOVE_COUNT; ++i) {
+        out[n++] = dfi_pool_move_reflectable[i];
     }
     return n;
 }

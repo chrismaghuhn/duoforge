@@ -1,0 +1,47 @@
+Espeon (F) @ Focus Sash
+Ability: Magic Bounce
+Level: 50
+EVs: 32 HP / 32 SpA / 2 Spe
+Modest Nature
+- Taunt
+- Protect
+
+Staraptor (F) @ Eject Button
+Ability: Intimidate
+Level: 50
+EVs: 32 HP / 2 SpD / 32 Spe
+Jolly Nature
+- Whirlwind
+- Protect
+
+Ceruledge (M) @ Grassy Seed
+Ability: Flash Fire
+Level: 50
+EVs: 31 HP / 7 Atk / 24 Def / 3 SpD / 1 Spe
+Adamant Nature
+- Stealth Rock
+- Protect
+
+Sableye (M) @ Sablenite
+Ability: Prankster
+Level: 50
+EVs: 32 HP / 32 Def / 2 SpD
+Bold Nature
+- Taunt
+- Protect
+
+Gholdengo @ Leftovers
+Ability: Good as Gold
+Level: 50
+EVs: 17 HP / 2 Def / 17 SpA / 16 SpD / 14 Spe
+Modest Nature
+- Make It Rain
+- Protect
+
+Umbreon (F) @ Life Orb
+Ability: Inner Focus
+Level: 50
+EVs: 32 HP / 32 Def / 2 SpD
+Bold Nature
+- Protect
+- Foul Play
