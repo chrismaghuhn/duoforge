@@ -7978,7 +7978,8 @@ static bool dfi_skill_swap_update_due(struct duoforge_battle *b, uint32_t flat, 
 static void dfi_skill_swap_set(struct duoforge_battle *b, uint32_t flat, uint32_t code)
 {
     const dfi_member *m = dfi_at(b, flat);
-    b->tail.sides[flat / 2u].ability_now[dfi_pos(b, flat)->occupant] = (uint16_t)(code == m->ability ? 0u : code);
+    const uint32_t stored = code == m->ability ? 0u : code;
+    b->tail.sides[flat / 2u].ability_now[dfi_pos(b, flat)->occupant] = (uint16_t)stored;
 }
 
 /* setAbility's End of the old ability (sim/battle.ts:1325-1326): Flash Fire removes its volatile (silent), Unburden its
