@@ -337,6 +337,61 @@ class ComputeLedger(unittest.TestCase):
                 ev.main(sum(([k, v] for k, v in paths.items()), []) + ["--out", str(d / "x.json"), "--seed", "1"])
 
 
+class EvalManifestCli(unittest.TestCase):
+    def test_eval_manifest_cli_pins_pool_and_checkpoint_files(self):
+        # The pilot's evaluation manifest from the registry and the checkpoint files: exactly make_manifest's,
+        # with every checkpoint hashed as its file, written once outside the repository.
+        import hashlib
+        from duoforge import _layout
+        from duoforge_search import eval_manifest, expert_eval as ev
+        root = Path(__file__).resolve().parents[2] / "data" / "teams"
+        ids = "A,B,C,LL_6A3CEAB783FD320299BCFBFF_89,LL_6A47CA1965724DB9DED3B322_79"
+        weights = "1,2,1,1,3"
+        with tempfile.TemporaryDirectory() as tmp:
+            d = Path(tmp)
+            files = {}
+            for i, name in enumerate(ev.CHECKPOINTS):
+                files[name] = d / f"{name}.npz"
+                files[name].write_bytes(f"checkpoint {i}".encode())
+            base = ["--teams", ids, "--team-weights", weights, "--teams-root", str(root), "--seed", "0x2026100900000301",
+                    "--first-game-id", "1000000000"]
+            ckpt = sum((["--checkpoint", f"{n}={p}"] for n, p in files.items()), [])
+
+            def run(out, args):
+                err = io.StringIO()
+                with contextlib.redirect_stderr(err), contextlib.redirect_stdout(io.StringIO()):
+                    code = eval_manifest.main(args + ["--out", str(out)])
+                return code, err.getvalue()
+
+            code, _ = run(d / "m.json", base + ckpt)
+            self.assertEqual(code, 0)
+            got = ev.EvalManifest(**json.loads((d / "m.json").read_text(encoding="utf-8")))
+            with duoforge.Context(_layout.CONSTANTS["DUOFORGE_DATA_KIND_POOL"]) as ctx:
+                p = teams.load(ctx, ids.split(","), root=str(root), weights=[1.0, 2.0, 1.0, 1.0, 3.0])
+                want = ev.make_manifest(p, seed=0x2026100900000301, first_game_id=10**9, checkpoints={
+                    n: hashlib.sha256(f.read_bytes()).hexdigest() for n, f in files.items()})
+            self.assertEqual(got, want)
+            self.assertEqual(ev.make_eval_rows(p, got)["game_id"][0], 10**9)
+            for name, args, cause in (
+                    ("exists", base + ckpt, "exists"),
+                    ("missing name", base + ckpt[:-2], "ladder"),
+                    ("duplicate", base + ckpt + ckpt[-2:], "twice"),
+                    ("unknown", base + ckpt + ["--checkpoint", f"other={files['BC']}"], "other"),
+                    ("no file", base + ckpt[:-1] + [f"ladder={d / 'absent.npz'}"], "absent.npz"),
+                    ("no LL_", ["--teams", "A,B,C", "--team-weights", "1,1,1"] + base[4:] + ckpt, "LL_")):
+                with self.subTest(name):
+                    out = d / "m.json" if name == "exists" else d / f"{name}.json"
+                    code, err = run(out, args)
+                    self.assertEqual(code, 2)
+                    self.assertIn(cause, err)
+                    if name != "exists":
+                        self.assertFalse(out.exists())
+            inside = Path(__file__).with_name("private-eval-manifest.json")
+            code, _ = run(inside, base + ckpt)
+            self.assertEqual(code, 2)
+            self.assertFalse(inside.exists())
+
+
 class FakeBatch:
     """One game (E=1) as play_suite's query leaves it: both players' own views, the chosen candidate at index 0."""
 
