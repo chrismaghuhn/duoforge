@@ -2139,6 +2139,10 @@ SPECIAL_P = dict(SPECIAL_C, **{
     'upperhand': ('UPPER_HAND', {'onTry'}),                               # G54: a priority move against a target that moves first with one
     'healpulse': ('HEAL_PULSE', {'onHit'}),                               # G54: heals the target by half of its maximum HP
     'strengthsap': ('STRENGTH_SAP', {'onHit'}),                           # G54: heals the user by the target's Attack, then lowers it
+    'beatup': ('BEAT_UP', {'basePowerCallback', 'onModifyMove'}),         # G64: one hit per eligible party member, its base Attack
+    'bugbite': ('BUG_BITE', {'onHit'}),                                   # G64: takes the target's berry and eats it
+    'poltergeist': ('POLTERGEIST', {'onTry', 'onTryHit'}),                # G64: fails without a target item; reveals it
+    'sheercold': ('SHEER_COLD', set()),                                   # G64: an OHKO move (ohko 'Ice'), see G2_OWNED_FIELDS
                                    # G44: a 20 percent pick of burn, paralysis or freeze (G2_OWNED_SECONDARY)
     'ragefist': ('RAGE_FIST', {'basePowerCallback'}),                     # G48: 50 + 50 per hit the user took, at most 350
     'stoneaxe': ('STONE_AXE', {'onAfterHit', 'onAfterSubDamage'}),        # G48: Stealth Rock on the foe's side after a hit
@@ -2227,7 +2231,33 @@ G54_FACTS = (
                      "const success = this.boost({ atk: -1 }, target, source, null, false, true);",
                      'return !!(this.heal(atk, source, target) || success);', 'target: "normal",', 'type: "Grass",']),
 )
-SPECIAL_IDS_P = SPECIAL_IDS_C + G2_HANDLERS + WEATHER_HANDLERS + G16_HANDLERS + G15_HANDLERS + G19_HANDLERS + G20_HANDLERS + G20_PROTECT_HANDLERS + G28_HANDLERS + G30_HANDLERS + G32_HANDLERS + G34_HANDLERS + G27_HANDLERS + G25_HANDLERS + G26_HANDLERS + G33_HANDLERS + G38_HANDLERS + G29_HANDLERS + G39_HANDLERS + G31_HANDLERS + G48_HANDLERS + G44_HANDLERS + G50_HANDLERS + G42_HANDLERS + G56_HANDLERS + G52_HANDLERS + G54_HANDLERS + ['UNMODELED']# Step G10 made two of these handlers data: Scald (thawsTarget) and Recover (heal) are read into the second flags# byte (bit 4, thaws the target) and the heal column, and have the special NONE; their ids stay defined (the ids after
+# Step G64 (moves batch 2, decision 0015 item 5ca). BEAT_UP (Beat Up: onModifyMove counts the side's eligible members, one hit each,
+# and basePowerCallback gives each hit 5 plus the base Attack of its set species, 10th part), BUG_BITE (onHit takes the target's
+# berry when it is a berry and eats it, for the user), POLTERGEIST (onTry fails without a target item; onTryHit reveals it with
+# -activate) and SHEER_COLD (an OHKO move: ohko 'Ice', the accuracy and immunity of hitStepAccuracy; G2_OWNED_FIELDS owns the field).
+G64_HANDLERS = ['BEAT_UP', 'BUG_BITE', 'POLTERGEIST', 'SHEER_COLD']
+G64_FACTS = (
+    ('beatup', ['move.allies = pokemon.side.pokemon.filter(ally => ally === pokemon || !ally.fainted && !ally.status);',
+                'move.multihit = move.allies.length;',
+                'const setSpecies = this.dex.species.get(move.allies!.shift()!.set.species);',
+                'const bp = 5 + Math.floor(setSpecies.baseStats.atk / 10);', 'return bp;',
+                'accuracy: 100,', 'basePower: 0,', 'category: "Physical",', 'priority: 0,',
+                'flags: { protect: 1, mirror: 1, allyanim: 1, metronome: 1 },', 'target: "normal",', 'type: "Dark",']),
+    ('bugbite', ['const item = target.getItem();', 'if (source.hp && item.isBerry && target.takeItem(source)) {',
+                 "this.add('-enditem', target, item.name, '[from] stealeat', '[move] Bug Bite', `[of] ${source}`);",
+                 "if (this.singleEvent('Eat', item, target.itemState, source, source, move)) {",
+                 "this.runEvent('EatItem', source, source, move, item);", "if (item.id === 'leppaberry') target.staleness = 'external';",
+                 'if (item.onEat) source.ateBerry = true;', 'accuracy: 100,', 'basePower: 60,', 'category: "Physical",',
+                 'priority: 0,', 'flags: { contact: 1, protect: 1, mirror: 1, metronome: 1 },', 'target: "normal",', 'type: "Bug",']),
+    ('poltergeist', ['onTry(source, target) {', 'return !!target.item;',
+                     'onTryHit(target, source, move) {',
+                     "this.add('-activate', target, 'move: Poltergeist', this.dex.items.get(target.item).name);",
+                     'accuracy: 90,', 'basePower: 110,', 'category: "Physical",', 'priority: 0,',
+                     'flags: { protect: 1, mirror: 1, metronome: 1 },', 'target: "normal",', 'type: "Ghost",']),
+    ('sheercold', ["ohko: 'Ice',", 'accuracy: 30,', 'basePower: 0,', 'category: "Special",', 'priority: 0,',
+                   'flags: { protect: 1, mirror: 1, metronome: 1 },', 'target: "normal",', 'type: "Ice",']),
+)
+SPECIAL_IDS_P = SPECIAL_IDS_C + G2_HANDLERS + WEATHER_HANDLERS + G16_HANDLERS + G15_HANDLERS + G19_HANDLERS + G20_HANDLERS + G20_PROTECT_HANDLERS + G28_HANDLERS + G30_HANDLERS + G32_HANDLERS + G34_HANDLERS + G27_HANDLERS + G25_HANDLERS + G26_HANDLERS + G33_HANDLERS + G38_HANDLERS + G29_HANDLERS + G39_HANDLERS + G31_HANDLERS + G48_HANDLERS + G44_HANDLERS + G50_HANDLERS + G42_HANDLERS + G56_HANDLERS + G52_HANDLERS + G54_HANDLERS + G64_HANDLERS + ['UNMODELED']# Step G10 made two of these handlers data: Scald (thawsTarget) and Recover (heal) are read into the second flags# byte (bit 4, thaws the target) and the heal column, and have the special NONE; their ids stay defined (the ids after
 # them keep their values). First Impression and Low Kick keep theirs: the turn code implements them.
 POOL_COLUMN_KEYS = {'thawsTarget', 'heal'}
 G2_OWNED_FIELDS = {
@@ -2265,6 +2295,7 @@ G2_OWNED_FIELDS = {
     'MULTI_HIT_2_5': {'multihit': 'multihit: [2, 5],'},
     'SCALE_SHOT': {'multihit': 'multihit: [2, 5],', 'selfBoost': "selfBoost: { boosts: { def: -1, spe: 1, }, },"},
     'QUICK_GUARD': {'sideCondition': "sideCondition: 'quickguard',"},
+    'SHEER_COLD': {'ohko': "ohko: 'Ice',"},
 }
 # Step G48: the empty secondary of Stone Axe and Ceaseless Edge (the Sheer Force placeholder). Without Sheer Force the pin runs
 # it for every hit target (moveHit of an empty secondary with chance undefined, sim/battle-actions.ts:1336-1349): the engine
@@ -3182,7 +3213,7 @@ def check_g8_conditions(moves_ts, only=None):
     must be in the pinned entry, as one normalised text. `only`: a tuple of (move id, facts) to check instead of all of
     them (the generator's tests)."""
     for mid, facts in (G8_CONDITION_FACTS + G20_CONDITION_FACTS + G28_FACTS + G32_FACTS + G34_FACTS + G25_FACTS +
-                       G33_FACTS + G38_FACTS + G39_FACTS + G37_FACTS + G44_FACTS + G48_FACTS + G54_FACTS if only is None else only):
+                       G33_FACTS + G38_FACTS + G39_FACTS + G37_FACTS + G44_FACTS + G48_FACTS + G54_FACTS + G64_FACTS if only is None else only):
         e = moves_ts.entry(mid)
         if e is None:
             fail('move %s not found' % mid)

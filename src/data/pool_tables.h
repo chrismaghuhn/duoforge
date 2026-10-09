@@ -903,7 +903,11 @@
 #define DFI_SPECIAL_UPPER_HAND 79u
 #define DFI_SPECIAL_HEAL_PULSE 80u
 #define DFI_SPECIAL_STRENGTH_SAP 81u
-#define DFI_SPECIAL_UNMODELED 82u
+#define DFI_SPECIAL_BEAT_UP 82u
+#define DFI_SPECIAL_BUG_BITE 83u
+#define DFI_SPECIAL_POLTERGEIST 84u
+#define DFI_SPECIAL_SHEER_COLD 85u
+#define DFI_SPECIAL_UNMODELED 86u
 
 /* ---- the second flags byte of every move (step G8: the general byte for the flags that the first one has no room
  * for; bits 4 to 128 are free) and the secondary kinds that it comes with ---- */

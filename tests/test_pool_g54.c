@@ -91,7 +91,7 @@ static void check_marks(df_test *t)
     DF_CHECK_EQ_U64(t, DFI_SPECIAL_UPPER_HAND, DFI_SPECIAL_QUICK_GUARD + 1u);
     DF_CHECK_EQ_U64(t, DFI_SPECIAL_HEAL_PULSE, DFI_SPECIAL_UPPER_HAND + 1u);
     DF_CHECK_EQ_U64(t, DFI_SPECIAL_STRENGTH_SAP, DFI_SPECIAL_HEAL_PULSE + 1u);
-    DF_CHECK_EQ_U64(t, DFI_SPECIAL_UNMODELED, DFI_SPECIAL_STRENGTH_SAP + 1u);
+    DF_CHECK_EQ_U64(t, DFI_SPECIAL_UNMODELED, DFI_SPECIAL_SHEER_COLD + 1u);
 }
 
 /* The pinned numbers that the rows of this step depend on (data/moves.ts; the Champions mod changes none of them). */

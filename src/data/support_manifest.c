@@ -463,6 +463,11 @@ const dfi_support_manifest dfi_support = {
             [DFI_MOVE_HEALPULSE] = 1u,
             [DFI_MOVE_STRENGTHSAP] = 1u,
             [DFI_MOVE_SING] = 1u,
+            /* Step G64 (decision 0015 item 5ca). Poltergeist: fails without a target item, and reveals the item after Protect. */
+            [DFI_MOVE_POLTERGEIST] = 1u,
+            [DFI_MOVE_BEATUP] = 1u,
+            [DFI_MOVE_SHEERCOLD] = 1u,
+            [DFI_MOVE_BUGBITE] = 1u,
         },
     .abilities =
         {
