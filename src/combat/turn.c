@@ -753,6 +753,19 @@ static uint32_t dfi_raw_speed_key(const dfi_member *m)
     return DFI_SPEED_BIAS + (uint32_t)m->stats[DFI_STAT_SPE - 1u];
 }
 
+/* The speed key of a Pokemon dragged in (step G46): a drag runs its entry at once and queues no insertChoice
+ * (sim/battle-actions.ts:153-155, 162-174), so no updateSpeed takes its speed. Its pokemon.speed is the value its
+ * setSpecies gave it (sim/pokemon.ts:1418, and again at its clearVolatile): the raw Speed stat, without the boosts,
+ * items and status that dfi_speed_key applies to a standing Pokemon. The key keeps the scale of dfi_speed_key: under
+ * Trick Room the reference's standing key is 10000 - speed (sim/pokemon.ts:641-649), and the raw value is not reversed,
+ * so it is the raw number itself. Without this key the drag-in kept the speed key of the Pokemon that stood in the slot
+ * before, so an Update tie of the entrant and an equal-speed holder was missed. */
+static uint32_t dfi_entrant_speed_key(const struct duoforge_battle *b, const dfi_member *m)
+{
+    const uint32_t raw = (uint32_t)m->stats[DFI_STAT_SPE - 1u];
+    return b->trick_room_turns != 0u ? raw : DFI_SPEED_BIAS + raw;
+}
+
 /* Battle.updateSpeed: every standing active Pokemon's speed is taken again;
  * a fainted one keeps the value it had (getAllActive skips it). */
 static duoforge_status dfi_update_position_speed(dfi_run *r, uint32_t flat)
@@ -5757,7 +5770,14 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
                 continue;
             }
             if (md->primary_status == DFI_STATUS_NONE && (dfi_pool_move_flags2[move_id] & DFI_MOVE_FLAG2_FORCE_SWITCH) != 0u) {
-                continue; /* a forced switch alone (Roar, Whirlwind; step G46): no status is set, and no [-status] line */
+                /* a forced switch alone (Roar, Whirlwind; step G46): no status is set, and no [-status] line. The hit of the
+                 * target is true when its side has a reserve (moveHit's hitResult = canSwitch, battle-actions.ts:1260-1262,
+                 * kept by dfi_force_switch_status), whatever the drag then does: a blocker's DragOut answers null, not false
+                 * (Suction Cups, Guard Dog; data/abilities.ts). So the hit loop of the Champions mod runs its Updates
+                 * (data/mods/champions/scripts.ts:537 and :574), before the phazing (step G46). The DragOut that answers
+                 * false (Commanding, data/conditions.ts:815-829) is not in the pool. */
+                did = true;
+                continue;
             }
             const uint32_t before = dfi_at(b, targets[i])->status;
             st = dfi_try_status(r, targets[i], md->primary_status, user, move_id, DFI_ORIGIN_MOVE, 0u);
@@ -8346,6 +8366,11 @@ static duoforge_status dfi_drag_in(dfi_run *r, uint32_t side, uint32_t slot)
     if (st != DUOFORGE_OK) {
         return st;
     }
+    const dfi_member *entrant = dfi_at(b, flat);
+    if (entrant == NULL) {
+        return DUOFORGE_E_INVARIANT; /* dfi_switch_in placed the reserve in this slot */
+    }
+    r->speed_seen[flat] = dfi_entrant_speed_key(b, entrant); /* the entrant's cached speed (dfi_entrant_speed_key) */
     uint32_t entering = 1u << flat;
     while (b->queue_len > 0u && b->queue[0].kind == DFI_Q_RUN_SWITCH) {
         dfi_queue_record q;

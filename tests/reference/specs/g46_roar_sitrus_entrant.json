@@ -1,0 +1,16 @@
+{
+  "name": "g46_roar_sitrus_entrant",
+  "purpose": "Roar (forceSwitch, sound) by Gyarados on the foe in slot 1 (Kingambit) drags it out, and the reserve the draw picks, a Decidueye holding Sitrus Berry, comes in: the Update after the drag has two Sitrus holders of equal speed (the entrant and the foe's Decidueye in slot 2), a real tie. Step G46 fix: the entrant's speed is its cached raw Speed, not the speed of the Pokemon it replaced.",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,00000000000000000000000000000000000000000000000000000000000000a1",
+  "teams": [
+    "Kingambit (M) @ Black Glasses\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Sucker Punch\n- Protect\n- Taunt\n- Iron Head\n\nRaichu (F) @ Life Orb\nAbility: Lightning Rod\nLevel: 50\nEVs: 29 HP / 5 Def / 32 Spe\nTimid Nature\n- Thunderbolt\n- Protect\n\nDecidueye (M) @ Sitrus Berry\nAbility: Overgrow\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- U-turn\n- Protect\n- Shadow Sneak\n- Knock Off\n\nMilotic (F) @ Eject Button\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Protect\n- Coil\n\nIndeedee-F (F) @ Rocky Helmet\nAbility: Psychic Surge\nLevel: 50\nEVs: 32 HP / 32 Def / 2 SpD\nRelaxed Nature\n- Protect\n\nGyarados (M) @ Focus Sash\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 2 Def / 32 Spe\nJolly Nature\n- Roar\n- Protect",
+    "Gyarados (M) @ Focus Sash\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 2 Def / 32 Spe\nJolly Nature\n- Roar\n- Protect\n\nDecidueye (M) @ Sitrus Berry\nAbility: Overgrow\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- U-turn\n- Protect\n- Shadow Sneak\n- Knock Off\n\nKingambit (M) @ Black Glasses\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Sucker Punch\n- Protect\n- Taunt\n- Iron Head\n\nMilotic (F) @ Eject Button\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Protect\n- Coil\n\nIndeedee-F (F) @ Rocky Helmet\nAbility: Psychic Surge\nLevel: 50\nEVs: 32 HP / 32 Def / 2 SpD\nRelaxed Nature\n- Protect\n\nRaichu (F) @ Life Orb\nAbility: Lightning Rod\nLevel: 50\nEVs: 29 HP / 5 Def / 32 Spe\nTimid Nature\n- Thunderbolt\n- Protect"
+  ],
+  "plan": {
+    "p1": ["move 1 1, move 2", "move 2, move 2", "move 2, move 2"],
+    "p2": ["move 1 1, move 2", "move 2, move 2", "move 2, move 2"],
+    "max_steps": 3
+  }
+}
