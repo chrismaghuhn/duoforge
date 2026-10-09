@@ -1244,6 +1244,11 @@ int main(void)
                                id == DFI_ITEM_SWAMPERTITE || id == DFI_ITEM_METAGROSSITE || id == DFI_ITEM_LUCARIONITEZ || id == DFI_ITEM_FROSLASSITE /* Mega batch 2 */ ||
                                id == DFI_ITEM_WIDELENS /* step G34: the accuracy modifier, by id */ ||
                                id == DFI_ITEM_GENGARITE /* step G41: the Mega Stone of Gengar */ ||
+                               /* step G43 (Mega batch 3): ten more Mega Stones, mark only */
+                               id == DFI_ITEM_DRAGONINITE || id == DFI_ITEM_GLIMMORANITE || id == DFI_ITEM_BLAZIKENITE ||
+                               id == DFI_ITEM_ABSOLITEZ || id == DFI_ITEM_RAICHUNITEX || id == DFI_ITEM_LOPUNNITE ||
+                               id == DFI_ITEM_ALAKAZITE || id == DFI_ITEM_MEOWSTICITE || id == DFI_ITEM_SCIZORITE ||
+                               id == DFI_ITEM_GALLADITE ||
                                id == DFI_ITEM_REDCARD /* step G46: the attacker is dragged out (no Sheer Force gate) */;
             DF_CHECK_EQ_U64(&t, dfi_support.items[id] != 0u ? 1u : 0u, stone ? 1u : 0u);
         }
@@ -1720,14 +1725,14 @@ int main(void)
         DF_CHECK_EQ_U64(&t, dfi_mega_of(DFI_FORME_CHARIZARD, DFI_POOL_ITEM_COUNT + 1u), DFI_FORME_NONE);    /* beyond the table */
         DF_CHECK_EQ_U64(&t, dfi_mega_of(DFI_POOL_FORME_COUNT, 1u + DFI_ITEM_CHARIZARDITEX), DFI_FORME_NONE);
         /* The support gate follows the pair: Charizard-Mega-X brings Tough Claws, which is marked (and Charizardite X is
-         * marked since step G23-C); Absol-Mega-Z brings Sharpness, marked since step G34, while Absolite Z itself stays unmarked. */
+         * marked since step G23-C); Absol-Mega-Z brings Sharpness, marked since step G34, and Absolite Z is marked by step G43. */
         DF_CHECK(&t, dfi_manifest_mega_of(&dfi_support, DFI_FORME_CHARIZARD, 1u + DFI_ITEM_CHARIZARDITEX));
         DF_CHECK(&t, !dfi_manifest_mega_of(&dfi_support, DFI_FORME_CHARIZARD, 1u + DFI_ITEM_LEFTOVERS));
         DF_CHECK(&t, dfi_manifest_mega_of(&dfi_support, DFI_FORME_ABSOL, 1u + DFI_ITEM_ABSOLITEZ)); /* Sharpness is marked since step G34 */
         dfi_support_manifest sharp = dfi_support;
         sharp.abilities[DFI_ABILITY_SHARPNESS] = 0u;
         DF_CHECK(&t, !dfi_manifest_mega_of(&sharp, DFI_FORME_ABSOL, 1u + DFI_ITEM_ABSOLITEZ)); /* the pair follows the Mega's ability */
-        DF_CHECK(&t, dfi_support.items[DFI_ITEM_CHARIZARDITEX] != 0u && dfi_support.items[DFI_ITEM_ABSOLITEZ] == 0u);
+        DF_CHECK(&t, dfi_support.items[DFI_ITEM_CHARIZARDITEX] != 0u && dfi_support.items[DFI_ITEM_ABSOLITEZ] != 0u); /* G43 marks Absolite Z */
         /* The support is that of the pair's own Mega ability: with Tough Claws unmarked Charizardite X is unsupported and
          * Charizardite Y (Drought) is not. */
         dfi_support_manifest claws = dfi_support;

@@ -703,3 +703,6 @@ if(DUOFORGE_ENABLE_SANITIZERS)
         PASS_REGULAR_EXPRESSION "AddressSanitizer: heap-buffer-overflow"
         FAIL_REGULAR_EXPRESSION "CANARY_SURVIVED")
 endif()
+# Step G43 (Mega batch 3): ten Mega Stones marked with no new rule (Dragoninite, Glimmoranite, Blazikenite, Absolite Z,
+# Raichunite X, Lopunnite, Alakazite, Meowsticite, Scizorite, Galladite): the marks, the Mega of each pair, the setup and the API.
+duoforge_add_test(NAME duoforge.state.pool_g43 SOURCES test_pool_g43.c WHITEBOX TIMEOUT 60)
