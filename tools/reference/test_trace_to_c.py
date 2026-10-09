@@ -1990,6 +1990,46 @@ class Library(unittest.TestCase):
             with self.assertRaises(trace_to_c.ConversionError):
                 trace_to_c.step_events([bad], 0, roster, [{'Gardevoir': 100}] * 2, tables)
 
+    def test_skill_swap_foe_and_ally_lines_are_two_ability_events(self):
+        """Step G70 (decision 0041): the foe's line names both abilities (the source now has the first); the ally's line
+        names none, and its pair is the one swap_partners follows from the sheets and the earlier lines of the battle."""
+        tables = trace_to_c.load_tables(ROOT, True)
+        roster = [{'Gardevoir': 0, 'Incineroar': 1}, {'Milotic': 0, 'Pelipper': 1}]
+        maxhp = [{'Gardevoir': 100, 'Incineroar': 100}, {'Milotic': 100, 'Pelipper': 100}]
+        ab = tables['ABILITY']
+        move = tables['MOVE'][trace_to_c.key('Skill Swap')]
+        # foe line: p2a Milotic (the source) swaps with p1a Gardevoir; Milotic now has Intimidate, Gardevoir Multiscale
+        foe = '|-activate|p2a: Milotic|Skill Swap|Intimidate|Multiscale|[of] p1a: Gardevoir'
+        events = trace_to_c.step_events([foe], 0, roster, maxhp, tables)
+        self.assertEqual(len(events), 2)
+        self.assertEqual(events[0][:6], (trace_to_c.EV['ABILITY'], 2, 0, trace_to_c.CAUSE['MOVE'], ab[trace_to_c.key('Intimidate')] + 1, move))
+        self.assertEqual(events[1][:6], (trace_to_c.EV['ABILITY'], 0, 2, trace_to_c.CAUSE['MOVE'], ab[trace_to_c.key('Multiscale')] + 1, move))
+        # ally line: p1a Gardevoir (Trace) swaps with p1b Incineroar (Intimidate); no names in the line
+        teams = [[{'ability': ab[trace_to_c.key('Trace')] + 1}, {'ability': ab[trace_to_c.key('Intimidate')] + 1}],
+                 [{'ability': ab[trace_to_c.key('Multiscale')] + 1}, {'ability': ab[trace_to_c.key('Pressure')] + 1}]]
+        ally = '|-activate|p1a: Gardevoir|Skill Swap|||[of] p1b: Incineroar'
+        enter = ['|switch|p1a: Gardevoir|Gardevoir, L50|100/100', '|switch|p1b: Incineroar|Incineroar, L50|100/100']
+        log = enter + [ally]
+        swaps = trace_to_c.swap_partners({'steps': [{'log': log}]}, teams, roster, tables)
+        self.assertEqual(swaps, [{2: (ab[trace_to_c.key('Intimidate')], ab[trace_to_c.key('Trace')])}])
+        events = trace_to_c.step_events(log, 1, roster, maxhp, tables, None, swaps[0])
+        self.assertEqual(events[-2][:6], (trace_to_c.EV['ABILITY'], 0, 1, trace_to_c.CAUSE['MOVE'], ab[trace_to_c.key('Intimidate')] + 1, move))
+        self.assertEqual(events[-1][:6], (trace_to_c.EV['ABILITY'], 1, 0, trace_to_c.CAUSE['MOVE'], ab[trace_to_c.key('Trace')] + 1, move))
+        # the Trace copy before the ally swap is followed: Incineroar copies Multiscale from p2a, then swaps with Gardevoir
+        log2 = enter + ['|-ability|p1b: Incineroar|Multiscale|Intimidate|[from] ability: Trace|[of] p2a: Milotic', ally]
+        swaps2 = trace_to_c.swap_partners({'steps': [{'log': log2}]}, teams, roster, tables)
+        self.assertEqual(swaps2, [{3: (ab[trace_to_c.key('Multiscale')], ab[trace_to_c.key('Trace')])}])
+        # refusals: an ally line without its pair, and an ally swap of a Mega Evolved holder (its ability is not known)
+        with self.assertRaises(trace_to_c.ConversionError):
+            trace_to_c.step_events([ally], 1, roster, maxhp, tables)
+        mega_log = enter + ['|-mega|p1a: Gardevoir|Gardevoir-Mega|Gardevoirite', ally]
+        with self.assertRaises(trace_to_c.ConversionError):
+            trace_to_c.swap_partners({'steps': [{'log': mega_log}]}, teams, roster, tables)
+        for bad in ('|-activate|p2a: Milotic|Skill Swap|Intimidate|[of] p1a: Gardevoir',
+                    '|-activate|p2a: Milotic|Skill Swap|Intimidate|Multiscale|[of] p1a: Gardevoir|[from] move: X'):
+            with self.assertRaises(trace_to_c.ConversionError):
+                trace_to_c.step_events([bad], 0, roster, maxhp, tables)
+
     def test_perish_song_lines_are_events_and_rows_are_what_the_protocol_lines_say(self):
         """Perish Song (step G26): `-start|X|perishN` is a VOLATILE_START of the volatile PERISH (5) with the count N in
         `amount` (3, 2, 1, and 0 from onEnd, which a `faint` line follows); `-fieldactivate|move: Perish Song` is an ACTIVATE

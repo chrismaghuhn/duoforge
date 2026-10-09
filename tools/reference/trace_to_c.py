@@ -1077,9 +1077,89 @@ def hit_key(text):
     return (m.group(1), m.group(2))
 
 
-def step_events(log, viewer, roster_of, maxhp, tables, rb_pending=None):
+def skill_swap_events(args, attrs, line, tables, ally_ids):
+    """Step G70 (Skill Swap, decision 0041; sim/battle.ts:1318-1321): `-activate|SRC|Skill Swap|A|B|[of] TGT` names the two
+    abilities (A is the one SRC now has), and the ally's `-activate|SRC|Skill Swap|||[of] TGT` names none: ally_ids is the
+    pair the pre-pass followed (swap_partners). Two ABILITY events in the line's order, both with cause MOVE: position SRC
+    with id = its new ability + 1 and other TGT, then TGT with its new ability + 1 and other SRC; id2 is the move."""
+    if len(attrs) != 1 or not attrs[0].startswith('[of] '):
+        raise ConversionError('activate-line', 'trace_to_c: unknown -activate %r' % line, detail='Skill Swap')
+    src, tgt = ev_pos(args[0]), ev_pos(attrs[0][len('[of] '):])
+    if src is None or tgt is None:
+        raise ConversionError('activate-line', 'trace_to_c: unknown -activate %r' % line, detail='Skill Swap')
+    if args[2] and args[3]:
+        try:
+            to_src, to_tgt = tables['ABILITY'][key(args[2])], tables['ABILITY'][key(args[3])]
+        except KeyError:
+            raise ConversionError('activate-line', 'trace_to_c: unknown -activate %r' % line, detail='Skill Swap ability')
+    elif not args[2] and not args[3]:
+        if ally_ids is None:
+            raise ConversionError('skill-swap-ally', 'trace_to_c: ally Skill Swap without its ability pair %r' % line,
+                                  detail='ally')
+        to_src, to_tgt = ally_ids
+    else:
+        raise ConversionError('activate-line', 'trace_to_c: unknown -activate %r' % line, detail='Skill Swap')
+    move = tables['MOVE'][key('Skill Swap')]
+    return [ev_tuple(EV['ABILITY'], src, tgt, CAUSE['MOVE'], to_src + 1, move),
+            ev_tuple(EV['ABILITY'], tgt, src, CAUSE['MOVE'], to_tgt + 1, move)]
+
+
+def swap_partners(trace, teams, roster_of, tables):
+    """Step G70 (Skill Swap, decision 0041): the two abilities that an ally swap exchanges, for every `-activate|X|Skill Swap|||
+    [of] Y` line, which names none. The converter follows each holder's current ability over the battle: the sheet's, reset
+    at each entry (switch or drag), a Trace copy (its `-ability` line), a foe swap's two names and an ally swap's exchange
+    itself. A Mega Evolution makes the holder's ability unknown (the forme's ability is not read here), so an ally swap that
+    involves such a holder is refused. Returns one dict per step: line index -> (the source's new ability id, the target's
+    new ability id); ids without the +1 of the events."""
+    now = [[(mon['ability'] - 1) if mon['ability'] else None for mon in teams[s]] for s in range(2)]
+    mega = set()  # (side, roster index) of a Mega Evolved member: its ability is unknown from then on
+    occ = [[None, None], [None, None]]  # the roster index of the holder of each position (side, slot)
+    out = []
+    for step in trace['steps']:
+        marks = {}
+        for i, line in enumerate(step['log']):
+            parts = line.split('|')
+            kind = parts[1] if len(parts) > 1 else ''
+            attrs = [x for x in parts[2:] if x.startswith('[')]
+            args = [x for x in parts[2:] if not x.startswith('[')]
+            if kind in ('switch', 'drag') and args and ev_pos(args[0]) is not None:
+                pos = ev_pos(args[0])
+                side, r = pos // 2, roster_of[pos // 2][args[0].split(': ', 1)[1]]
+                occ[side][pos % 2] = r
+                sheet = (teams[side][r]['ability'] - 1) if teams[side][r]['ability'] else None
+                now[side][r] = None if (side, r) in mega else sheet
+            elif kind == '-ability' and ev_pos(args[0]) is not None and '[from] ability: Trace' in attrs:
+                pos = ev_pos(args[0])
+                now[pos // 2][occ[pos // 2][pos % 2]] = tables['ABILITY'][key(args[1])]
+            elif kind == '-mega' and ev_pos(args[0]) is not None:
+                pos = ev_pos(args[0])
+                r = occ[pos // 2][pos % 2]
+                mega.add((pos // 2, r))
+                now[pos // 2][r] = None
+            elif kind == '-activate' and len(args) == 4 and args[1] == 'Skill Swap' and ev_pos(args[0]) is not None \
+                    and len(attrs) == 1 and attrs[0].startswith('[of] ') and ev_pos(attrs[0][len('[of] '):]) is not None:
+                src, tgt = ev_pos(args[0]), ev_pos(attrs[0][len('[of] '):])
+                rs, rt = occ[src // 2][src % 2], occ[tgt // 2][tgt % 2]
+                if args[2] and args[3]:
+                    now[src // 2][rs] = tables['ABILITY'][key(args[2])]
+                    now[tgt // 2][rt] = tables['ABILITY'][key(args[3])]
+                elif not args[2] and not args[3]:
+                    a, b = now[src // 2][rs], now[tgt // 2][rt]
+                    if a is None or b is None or (src // 2, rs) in mega or (tgt // 2, rt) in mega:
+                        raise ConversionError('skill-swap-ally', 'trace_to_c: ally Skill Swap of an ability that is not known %r'
+                                              % line, detail='ally')
+                    marks[i] = (b, a)
+                    now[src // 2][rs], now[tgt // 2][rt] = b, a
+                else:
+                    raise ConversionError('activate-line', 'trace_to_c: unknown -activate %r' % line, detail='Skill Swap')
+        out.append(marks)
+    return out
+
+
+def step_events(log, viewer, roster_of, maxhp, tables, rb_pending=None, swap_ids=None):
     """The events `viewer` sees in one step, in protocol order. rb_pending maps a side to the position of the last Revival
-    Blessing user of that side: its revive is shown in the step that answers the pivot, not in the step of the move."""
+    Blessing user of that side: its revive is shown in the step that answers the pivot, not in the step of the move.
+    swap_ids maps the line index of an ally Skill Swap to the pair of ability ids that swap_partners followed."""
     if rb_pending is None:
         rb_pending = {}
     out = []
@@ -1109,6 +1189,10 @@ def step_events(log, viewer, roster_of, maxhp, tables, rb_pending=None):
                                         (kind == '-heal' and '[from] ability: Regenerator' in attrs)):
             continue
         args = [x for x in parts[2:] if not x.startswith('[')]
+        if kind == '-activate' and len(args) == 4 and args[1] == 'Skill Swap':
+            # Step G70: two ABILITY events, one per holder (skill_swap_events); the ally's pair comes from swap_partners.
+            out.extend(skill_swap_events(args, attrs, line, tables, None if swap_ids is None else swap_ids.get(i)))
+            continue
         e = None
         # A hit that a Substitute takes shows no -damage line (decision 0032): `-activate|P|move: Substitute|[damage]` for
         # an absorbed hit and `-end|P|Substitute` for the hit that breaks it. Both count as hits of the move, for -hitcount.
@@ -1657,7 +1741,8 @@ def convert_battle(name, spec, trace, tables):
     # reached the end of the turn (no upkeep line).
     mid_turn = False
     rb_pending = {}  # side -> the position of its last Revival Blessing user (see step_events)
-    for step in trace['steps']:
+    swaps = swap_partners(trace, teams, roster_of, tables)  # step G70: the ability pair of every ally Skill Swap
+    for si, step in enumerate(trace['steps']):
         public_lines(step['log'], roster_of, shown)
         kinds = {}
         for side, sid in enumerate(('p1', 'p2')):
@@ -1791,7 +1876,8 @@ def convert_battle(name, spec, trace, tables):
                      c for sd in new_state['sides'] for c in sd['conditions'])
         boundary = boundary_of(new_state, step['log'])
         result = RESULT[new_state['winner']] if boundary == 5 else 0
-        events = [step_events(step['log'], viewer, roster_of, maxhp, tables, rb_pending) for viewer in range(2)]
+        events = [step_events(step['log'], viewer, roster_of, maxhp, tables, rb_pending, swaps[si])
+                  for viewer in range(2)]
         for line in step['log']:  # one revive per Revival Blessing: the side's pending user ends with its revive
             if line.startswith('|-heal|') and '[from] move: Revival Blessing' in line:
                 rb_pending.pop(int(line.split('|')[2][1]) - 1, None)
@@ -1871,6 +1957,8 @@ def attribute_pp(steps, teams, roster_of, trace, tables):
                         alive[occ] = False
                     elif kind == EV['ABILITY'] and cause == CAUSE['ABILITY'] and other != NOPOS and occ is not None:
                         has_pressure[occ] = ident2 == pressure  # Trace's copy (the -ability line with its source)
+                    elif kind == EV['ABILITY'] and cause == CAUSE['MOVE'] and occ is not None:
+                        has_pressure[occ] = ident == pressure  # Skill Swap (step G70): the holder's new ability is `ident`
                     elif kind == EV['MEGA'] and occ is not None:
                         has_pressure[occ] = False  # the Mega formes of the pool that have Pressure lose it (Tough Claws, Magic Bounce)
                 elif pos // 2 == foe:
