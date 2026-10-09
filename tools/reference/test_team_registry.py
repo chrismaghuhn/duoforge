@@ -70,6 +70,8 @@ class Committed(unittest.TestCase):
             self.assertTrue(entry['notes'])  # each says where its genders are from
 
     def test_every_gender_is_stated_and_every_set_has_level_50(self):
+        # genderless is the converter's gender rule (3), as parse_team reads it: every other species states M or F
+        pool = tables(True)
         for entry in reg.entries(ROOT):
             sets = reg.read_team(ROOT, entry['id'])[0]
             self.assertEqual(len(sets), 6)
@@ -78,10 +80,11 @@ class Committed(unittest.TestCase):
                 head = reg.HEAD.match(lines[0])
                 self.assertIsNotNone(head, lines[0])
                 self.assertIn('Level: 50', lines)
-                if head.group('species') not in ('Gholdengo',):  # the genderless one of these teams
+                forme = pool['FORME'][trace_to_c.key(head.group('species'))]
+                if pool['GENDER_RULE'][forme] != trace_to_c.GENDERLESS:
                     self.assertIn(head.group('gender'), ('M', 'F'), lines[0])
                 else:
-                    self.assertIsNone(head.group('gender'))
+                    self.assertIsNone(head.group('gender'), lines[0])
 
     def test_the_index_is_written_as_the_registry_writes_it(self):
         self.assertEqual(read(reg.index_path(ROOT)), reg.dumps_index(reg.read_index(ROOT)))

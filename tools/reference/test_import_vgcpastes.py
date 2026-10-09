@@ -163,6 +163,15 @@ class DecideTest(unittest.TestCase):
         out = ivp.decide(rows, {}, {}, tip.info_of, check_by_first)
         self.assertEqual([d['status'] for d in out], ['not-fetched', 'not-fetched'])
 
+    def test_a_team_the_converter_cannot_read_is_left_out(self):
+        # a cosmetic forme the engine accepts but trace_to_c.parse_team does not read (Sinistcha-Masterpiece): a registry
+        # team must be readable by every tool that reads the registry
+        rows = self.rows(('MC5', 'a' * 16, 'Yes', 'Champions M-C'))
+        out = ivp.decide(rows, {'a' * 16: paste(TEAM1)}, {}, tip.info_of, check_by_first,
+                         readable=lambda text: 'species RILLABOOM is not in the converter\'s tables')
+        self.assertEqual((out[0]['status'], out[0]['detail']),
+                         ('unreadable', 'species RILLABOOM is not in the converter\'s tables'))
+
     def test_a_missing_paste_is_counted(self):
         out = ivp.decide(self.rows(('MC5', 'a' * 16, 'Yes', 'Champions M-C')), {}, {}, tip.info_of, check_by_first)
         self.assertEqual(out[0]['status'], 'not-fetched')

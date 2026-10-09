@@ -145,7 +145,24 @@ def _has_all_evs(sets):
     return all(any(line.startswith('EVs: ') for line in block.split('\n')) for block in sets)
 
 
-def decide(rows, pastes, known, info_of, check, registry_ids=()):
+def converter_readable(tables):
+    """readable(text) for decide: None when trace_to_c.parse_team reads the team with `tables` (the pool's), else why
+    not. A registry team is read by the converter and the differential tools too, not only the engine (which also
+    takes cosmetic formes such as Sinistcha-Masterpiece)."""
+    import trace_to_c
+
+    def readable(text):
+        try:
+            trace_to_c.parse_team(text, tables)
+        except KeyError as e:
+            return 'the converter\'s tables have no %s' % e
+        except trace_to_c.ConversionError as e:
+            return 'the converter refuses it: %s' % e.code
+        return None
+    return readable
+
+
+def decide(rows, pastes, known, info_of, check, registry_ids=(), readable=None):
     """The decision for every row with EVs = Yes and a paste link, in the import order: a dict with row, status (pool,
     pending, illegal, name, evs-missing, paste-error, duplicate, in-registry, not-fetched), id, sets, notes, blockers,
     detail and duplicate_of. `known` maps content_key -> id of the registry's teams; `check(text)` is the engine's
@@ -180,6 +197,10 @@ def decide(rows, pastes, known, info_of, check, registry_ids=()):
         ids[pid] = d['id']  # a later row of this paste is a duplicate of it (only once it was read)
         if not _has_all_evs(d['sets']):
             d['status'] = 'evs-missing'
+            continue
+        why = readable(team_registry.file_text(d['sets']).decode('utf-8')) if readable is not None else None
+        if why is not None:
+            d['status'], d['detail'] = 'unreadable', why
             continue
         key = content_key(d['sets'])
         if key in keys:
@@ -369,7 +390,9 @@ def main(argv=None):
     species = import_paste.SpeciesInfo(args.checkout, args.node)
     species.prefetch(n for text in pastes.values() for n in import_paste.species_of_paste(text))
     with duoforge.Context(data_kind=_layout.CONSTANTS['DUOFORGE_DATA_KIND_POOL']) as context:
-        decisions = decide(rows, pastes, known, species.get, engine_check(context), {e['id'] for e in entries})
+        import trace_to_c
+        decisions = decide(rows, pastes, known, species.get, engine_check(context), {e['id'] for e in entries},
+                           converter_readable(trace_to_c.load_tables(ROOT, True)))
     counts = {}
     for d in decisions:
         counts[d['status']] = counts.get(d['status'], 0) + 1
