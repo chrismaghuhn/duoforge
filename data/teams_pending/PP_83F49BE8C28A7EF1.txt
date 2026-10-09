@@ -1,0 +1,59 @@
+Ampharos (M) @ Ampharosite
+Ability: Static
+Level: 50
+EVs: 32 HP / 2 Def / 32 SpA
+Quiet Nature
+- Thunderbolt
+- Dragon Pulse
+- Discharge
+- Protect
+
+Araquanid (M) @ Mystic Water
+Ability: Water Bubble
+Level: 50
+EVs: 32 HP / 32 Atk / 2 Def
+Brave Nature
+- Liquidation
+- Leech Life
+- Soak
+- Wide Guard
+
+Farigiraf (M) @ Colbur Berry
+Ability: Armor Tail
+Level: 50
+EVs: 20 HP / 24 Def / 20 SpD / 2 Spe
+Sassy Nature
+- Twin Beam
+- Dazzling Gleam
+- Trick Room
+- Helping Hand
+
+Incineroar (M) @ White Herb
+Ability: Intimidate
+Level: 50
+EVs: 31 HP / 30 Atk / 1 Def / 4 SpD
+Brave Nature
+- Fake Out
+- Throat Chop
+- Flare Blitz
+- Parting Shot
+
+Aggron (M) @ Aggronite
+Ability: Heavy Metal
+Level: 50
+EVs: 32 HP / 2 Def / 32 SpD
+Sassy Nature
+- Heavy Slam
+- Body Press
+- Iron Defense
+- Protect
+
+Torkoal (M) @ Charcoal
+Ability: Drought
+Level: 50
+EVs: 32 HP / 32 SpA / 2 SpD
+Quiet Nature
+- Eruption
+- Weather Ball
+- Earth Power
+- Protect

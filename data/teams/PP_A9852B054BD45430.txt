@@ -1,0 +1,59 @@
+Tyranitar (M) @ Tyranitarite
+Ability: Sand Stream
+Level: 50
+EVs: 12 HP / 21 Atk / 1 Def / 1 SpD / 31 Spe
+Jolly Nature
+- Dragon Dance
+- Knock Off
+- Protect
+- Rock Slide
+
+Garchomp (M) @ Choice Scarf
+Ability: Rough Skin
+Level: 50
+EVs: 18 HP / 24 Atk / 1 Def / 1 SpD / 22 Spe
+Adamant Nature
+- Stomping Tantrum
+- Dragon Claw
+- Rock Slide
+- Earthquake
+
+Corviknight (M) @ Occa Berry
+Ability: Mirror Armor
+Level: 50
+EVs: 24 HP / 23 Atk / 1 Def / 1 SpD / 17 Spe
+Adamant Nature
+- Roost
+- Brave Bird
+- Tailwind
+- Iron Head
+
+Sneasler (M) @ White Herb
+Ability: Unburden
+Level: 50
+EVs: 32 HP / 1 Atk / 28 Def / 1 SpD / 4 Spe
+Adamant Nature
+- Dire Claw
+- Protect
+- Close Combat
+- Throat Chop
+
+Rotom-Wash @ Leftovers
+Ability: Levitate
+Level: 50
+EVs: 32 HP / 1 Def / 25 SpA / 8 Spe
+Modest Nature
+- Protect
+- Electroweb
+- Hydro Pump
+- Volt Switch
+
+Sinistcha @ Sitrus Berry
+Ability: Hospitality
+Level: 50
+EVs: 32 HP / 9 Def / 1 SpA / 23 SpD / 1 Spe
+Calm Nature
+- Matcha Gotcha
+- Rage Powder
+- Protect
+- Life Dew

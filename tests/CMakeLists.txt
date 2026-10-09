@@ -517,8 +517,9 @@ if(Python3_Interpreter_FOUND)
     # what it normalises and reports, what it refuses, and what it writes, with a stand-in for the pokedex.
     add_test(NAME duoforge.reference.team_registry
         COMMAND "${Python3_EXECUTABLE}" "${PROJECT_SOURCE_DIR}/tools/reference/test_team_registry.py")
-    # 600 s: the 1,042 teams took 95 s (MSVC release), 136 s (GCC debug) and 171 s (GCC ASan on WSL) in the parallel
-    # local CI of 2026-10-09, more than the 120 s that fitted the first registry.
+    # The committed registry is checked whole once; the tests of the checks and of adding use a small copy of it
+    # (copy_registry), so the time grows with that one check only: 18 s alone (GCC debug, 1,414 teams, 2026-10-09; it was
+    # 161 s when every subtest checked a whole copy). 600 s is the margin for ASan and a busy machine.
     set_tests_properties(duoforge.reference.team_registry PROPERTIES TIMEOUT 600 ENVIRONMENT PYTHONDONTWRITEBYTECODE=1)
     add_test(NAME duoforge.reference.import_paste
         COMMAND "${Python3_EXECUTABLE}" "${PROJECT_SOURCE_DIR}/tools/reference/test_import_paste.py")

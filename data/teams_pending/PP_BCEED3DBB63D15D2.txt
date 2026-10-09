@@ -1,0 +1,59 @@
+Empoleon (M) @ Mystic Water
+Ability: Competitive
+Level: 50
+EVs: 12 HP / 22 Def / 24 SpA / 8 SpD
+Modest Nature
+- Water Pulse
+- Icy Wind
+- Flash Cannon
+- Protect
+
+Chesnaught (M) @ Leftovers
+Ability: Bulletproof
+Level: 50
+EVs: 32 HP / 32 Def / 2 Spe
+Impish Nature
+- Body Press
+- Leech Seed
+- Spiky Shield
+- Wood Hammer
+
+Armarouge (M) @ Focus Sash
+Ability: Weak Armor
+Level: 50
+EVs: 2 HP / 32 SpA / 32 Spe
+Modest Nature
+- Armor Cannon
+- Psychic
+- Aura Sphere
+- Wide Guard
+
+Aegislash (M) @ Spell Tag
+Ability: Stance Change
+Level: 50
+EVs: 32 HP / 32 Atk / 1 Def / 1 SpD
+Adamant Nature
+- Iron Head
+- King's Shield
+- Shadow Sneak
+- Poltergeist
+
+Heracross (M) @ Choice Scarf
+Ability: Moxie
+Level: 50
+EVs: 5 HP / 32 Atk / 29 Spe
+Adamant Nature
+- Close Combat
+- Knock Off
+- Feint
+- Rock Slide
+
+Farigiraf (M) @ Sitrus Berry
+Ability: Armor Tail
+Level: 50
+EVs: 32 HP / 32 SpA / 2 SpD
+Sassy Nature
+- Hyper Voice
+- Trick Room
+- Psychic
+- Protect

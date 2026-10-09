@@ -1,0 +1,59 @@
+Crabominable (M) @ Crabominite
+Ability: Hyper Cutter
+Level: 50
+EVs: 32 HP / 32 Atk / 2 SpD
+Brave Nature
+- Ice Hammer
+- Drain Punch
+- Protect
+- Thunder Punch
+
+Farigiraf (M) @ Colbur Berry
+Ability: Armor Tail
+Level: 50
+EVs: 32 HP / 23 Def / 11 SpD
+Relaxed Nature
+- Psychic
+- Sunny Day
+- Trick Room
+- Helping Hand
+
+Torkoal (M) @ Charcoal
+Ability: Drought
+Level: 50
+EVs: 32 HP / 32 SpA / 2 SpD
+Quiet Nature
+- Eruption
+- Heat Wave
+- Solar Beam
+- Protect
+
+Venusaur (M) @ Focus Sash
+Ability: Chlorophyll
+Level: 50
+EVs: 14 Def / 31 SpA / 21 Spe
+Modest Nature
+- Sludge Bomb
+- Energy Ball
+- Protect
+- Sleep Powder
+
+Aerodactyl (M) @ Aerodactylite
+Ability: Unnerve
+Level: 50
+EVs: 2 HP / 32 Atk / 32 Spe
+Jolly Nature
+- Dual Wingbeat
+- Rock Slide
+- Protect
+- Ice Fang
+
+Incineroar (M) @ Sitrus Berry
+Ability: Intimidate
+Level: 50
+EVs: 32 HP / 32 Atk / 2 Spe
+Brave Nature
+- Flare Blitz
+- Fake Out
+- Close Combat
+- Darkest Lariat
