@@ -35,7 +35,23 @@ Rows in prior-rank order. Where a table has several equilibria, which one
 the simplex returns follows the order of its rows and columns (a constant
 table plays its first row and first column). The search passes both in
 prior-rank order (spec section 5.6), so such ties go to the better prior.
+
+The work budget (P1 plan C2). solve and solve_bayes take an optional
+WorkLedger: the work of one primary teacher decision, shared by every solve
+and retry and never reset per call. It counts float pivots (the start
+pivots of the Bayesian tableau and the basis solves included), exact
+pivots, exact operations (Fraction construction and conversion,
++, -, *, /, negation and comparisons) and the widest exact numerator or
+denominator, checked on the starting tableau and after every exact pivot.
+Work is charged before it runs, so a cap stops the solver before the step
+that would exceed it, with WorkBudgetExceeded naming the cap. That error is
+never caught by the float retry or the rescue; the ledger counts work, not
+time, so the outcome is the same on every machine. Without a ledger
+(budget=None) nothing is counted and every result is byte-identical.
 """
+import dataclasses
+from dataclasses import dataclass, field
+from enum import Enum
 import math
 from fractions import Fraction
 from typing import NamedTuple
@@ -48,6 +64,108 @@ CERTIFICATE = 1e-9  # the largest exploitability a solution may have, and at mos
 PROBABILITY_FLOOR = 1e-9  # a mixed strategy's probabilities below it are played as 0
 MAX_ITERATIONS = 10_000
 _EPS = 1e-12  # a reduced cost or a pivot entry must exceed it to count as positive
+
+
+class WorkStatus(Enum):
+    OK = "ok"
+    FLOAT_PIVOTS = "float_pivots"
+    EXACT_PIVOTS = "exact_pivots"
+    EXACT_OPS = "exact_ops"
+    BITS = "bits"
+
+
+@dataclass(frozen=True)
+class WorkBudget:
+    """The caps of one primary teacher decision (P1 plan C2)."""
+    float_pivots: int = 4096
+    exact_pivots: int = 32
+    exact_ops: int = 250_000
+    bits: int = 4096
+
+    def __post_init__(self):
+        for f in dataclasses.fields(self):
+            value = getattr(self, f.name)
+            if isinstance(value, bool) or not isinstance(value, int) or value < 0:
+                raise SearchError(f"the work budget's {f.name} must be a nonnegative integer (got {value!r})")
+
+
+@dataclass(frozen=True)
+class WorkCounters:
+    float_pivots: int = 0
+    exact_pivots: int = 0
+    exact_ops: int = 0
+    max_bits: int = 0
+
+
+class WorkBudgetExceeded(SearchError):
+    """A cap of the work budget is exhausted; never retried or rescued."""
+
+    def __init__(self, status, consumed):
+        super().__init__(f"the work budget is exhausted: {status.value} (consumed {consumed})")
+        self.status = status
+        self.consumed = consumed
+
+
+@dataclass
+class WorkLedger:
+    """The work one decision consumed so far against its caps."""
+    limits: WorkBudget = field(default_factory=WorkBudget)
+    consumed: WorkCounters = field(default_factory=WorkCounters)
+
+    def __post_init__(self):
+        if not isinstance(self.limits, WorkBudget) or not isinstance(self.consumed, WorkCounters):
+            raise SearchError("a work ledger needs a WorkBudget and WorkCounters")
+
+    @property
+    def status(self):
+        c, cap = self.consumed, self.limits
+        for status, used, limit in ((WorkStatus.FLOAT_PIVOTS, c.float_pivots, cap.float_pivots),
+                                    (WorkStatus.EXACT_PIVOTS, c.exact_pivots, cap.exact_pivots),
+                                    (WorkStatus.EXACT_OPS, c.exact_ops, cap.exact_ops),
+                                    (WorkStatus.BITS, c.max_bits, cap.bits)):
+            if used > limit:
+                return status
+        return WorkStatus.OK
+
+    def check(self):
+        status = self.status
+        if status is not WorkStatus.OK:
+            raise WorkBudgetExceeded(status, self.consumed)
+
+    def charge(self, float_pivots=0, exact_pivots=0, exact_ops=0):
+        c = self.consumed
+        self.consumed = WorkCounters(c.float_pivots + float_pivots, c.exact_pivots + exact_pivots,
+                                     c.exact_ops + exact_ops, c.max_bits)
+        self.check()
+
+    def bits(self, values):
+        """Records the widest numerator or denominator of exact values."""
+        widest = max((max(v.numerator.bit_length(), v.denominator.bit_length()) for v in values), default=0)
+        if widest > self.consumed.max_bits:
+            self.consumed = dataclasses.replace(self.consumed, max_bits=widest)
+        self.check()
+
+
+class _Unbounded:
+    """budget=None: nothing is counted, so the solver runs exactly as before."""
+
+    def charge(self, float_pivots=0, exact_pivots=0, exact_ops=0):
+        pass
+
+    def bits(self, values):
+        pass
+
+
+_UNBOUNDED = _Unbounded()
+
+
+def _ledger(budget):
+    if budget is None:
+        return _UNBOUNDED
+    if not isinstance(budget, WorkLedger):
+        raise SearchError(f"budget must be a WorkLedger or None (got {type(budget).__name__})")
+    budget.check()  # an exhausted ledger refuses every later call
+    return budget
 
 
 def _table(a):
@@ -113,13 +231,14 @@ def certify(a, x, y, tol=CERTIFICATE):
     return gap * span
 
 
-def _gauss(mat, rhs):
+def _gauss(mat, rhs, ledger=_UNBOUNDED):
     """The solution of mat z = rhs by Gaussian elimination with partial
     pivoting (the first largest pivot); SearchError for a singular matrix."""
     m = np.array(mat, dtype=np.float64)
     r = np.array(rhs, dtype=np.float64)
     n = r.size
     for c in range(n):
+        ledger.charge(float_pivots=1)
         p = c + int(np.argmax(np.abs(m[c:, c])))
         if m[p, c] == 0.0:
             raise SearchError("the final basis of the simplex is singular")
@@ -138,7 +257,7 @@ def _gauss(mat, rhs):
     return z
 
 
-def _simplex(b):
+def _simplex(b, ledger=_UNBOUNDED):
     """The final basis of max sum(q) s.t. b q <= 1, q >= 0, b >= 1 entrywise:
     one variable index per row, q_j as j < m, the slack of row i as m + i."""
     k, m = b.shape
@@ -164,6 +283,7 @@ def _simplex(b):
                     leave, best = i, ratio
         if leave < 0:
             raise SearchError("the linear program is unbounded, which a shifted table cannot be")
+        ledger.charge(float_pivots=1)
         pivot = t[leave] / t[leave, enter]
         t -= np.outer(t[:, enter], pivot)
         t[leave] = pivot
@@ -171,12 +291,47 @@ def _simplex(b):
     raise SearchError(f"the simplex did not finish in {MAX_ITERATIONS} iterations")
 
 
-def _simplex_exact(a):
+def _enter(costs, positive):
+    """Bland's entering index (the first positive reduced cost) and the
+    number of comparisons it made."""
+    for j, v in enumerate(costs):
+        if positive(v):
+            return j, j + 1
+    return None, len(costs)
+
+
+def _ratio_test(t, rows, enter, rhs, basis, positive, ops):
+    """Bland's leaving row (the lowest ratio, ties to the lowest basic
+    index) and the operations counted so far: one comparison per entry, a
+    division per positive entry, then the ratio comparisons evaluated."""
+    leave, best = -1, None
+    for i in range(rows):
+        entry = t[i][enter]
+        ops += 1
+        if positive(entry):
+            ratio = t[i][rhs] / entry
+            ops += 1
+            if leave < 0:
+                leave, best = i, ratio
+                continue
+            ops += 1
+            if ratio < best:
+                leave, best = i, ratio
+                continue
+            ops += 1
+            if ratio == best and basis[i] < basis[leave]:
+                leave, best = i, ratio
+    return leave, ops
+
+
+def _simplex_exact(a, ledger=_UNBOUNDED):
     """(x, y) of the table a by the same simplex in exact rational
     arithmetic: b = a - min(a) + 1 exactly, Bland's rule, which cannot cycle
-    here, so it ends at an optimal basis; the strategies rounded to float."""
+    here, so it ends at an optimal basis; the strategies rounded to float.
+    Every Fraction operation is charged to the ledger before it runs."""
     k, m = a.shape
     n = m + k
+    ledger.charge(exact_ops=1 + (k + 1) + 3 * k * m + 2 * k + m)
     low = Fraction(float(a.min()))
     t = [[Fraction(0)] * (n + 1) for _ in range(k + 1)]
     for i in range(k):
@@ -186,21 +341,18 @@ def _simplex_exact(a):
         t[i][n] = Fraction(1)
     for j in range(m):
         t[k][j] = Fraction(1)
+    ledger.bits(v for row in t for v in row)
     basis = list(range(m, n))
     for _ in range(MAX_ITERATIONS):
-        enter = next((j for j in range(n) if t[k][j] > 0), None)
+        enter, ops = _enter(t[k][:n], lambda v: v > 0)
         if enter is None:
+            ledger.charge(exact_ops=ops)
             break
-        leave = -1
-        best = None
-        for i in range(k):
-            entry = t[i][enter]
-            if entry > 0:
-                ratio = t[i][n] / entry
-                if leave < 0 or ratio < best or (ratio == best and basis[i] < basis[leave]):
-                    leave, best = i, ratio
+        leave, ops = _ratio_test(t, k, enter, n, basis, lambda v: v > 0, ops)
         if leave < 0:
             raise SearchError("the exact linear program is unbounded, which a shifted table cannot be")
+        nonzero = sum(1 for i in range(k + 1) if i != leave and t[i][enter] != 0)
+        ledger.charge(exact_pivots=1, exact_ops=ops + (n + 1) + k + 2 * (n + 1) * nonzero)
         pivot = t[leave][enter]
         t[leave] = [v / pivot for v in t[leave]]
         for i in range(k + 1):
@@ -208,27 +360,30 @@ def _simplex_exact(a):
             if i != leave and factor != 0:
                 t[i] = [vi - factor * vl for vi, vl in zip(t[i], t[leave])]
         basis[leave] = enter
+        ledger.bits(v for row in t for v in row)
     else:
         raise SearchError(f"the exact simplex did not finish in {MAX_ITERATIONS} iterations")
+    ledger.charge(exact_ops=1 + m + 3 * k + 2 * m)
     q = [Fraction(0)] * m
     for row, var in enumerate(basis):
         if var < m:
             q[var] = t[row][n]
     total = sum(q)
+    ledger.bits([total])
     x = np.array([float(-t[k][m + i] / total) for i in range(k)], dtype=np.float64)
     y = np.array([float(v / total) for v in q], dtype=np.float64)
     return x, y
 
 
-def _solve_float(a, low, span):
+def _solve_float(a, low, span, ledger=_UNBOUNDED):
     """(x, y) by the float simplex on the table scaled to its range, its
     final basis solved again from the scaled table."""
     k, m = a.shape
     b = (a - low) / span + 1.0
-    basis = _simplex(b)
+    basis = _simplex(b, ledger)
     square = np.hstack([b, np.eye(k)])[:, basis]
-    primal = _gauss(square, np.ones(k))
-    dual = _gauss(square.T, np.array([1.0 if var < m else 0.0 for var in basis]))
+    primal = _gauss(square, np.ones(k), ledger)
+    dual = _gauss(square.T, np.array([1.0 if var < m else 0.0 for var in basis]), ledger)
     q = np.zeros(m, dtype=np.float64)
     for row, var in enumerate(basis):
         if var < m:
@@ -254,12 +409,14 @@ class Solution(NamedTuple):
     exact: bool
 
 
-def solve(a):
+def solve(a, *, budget=None):
     """The Solution of the zero-sum game a (the row player maximizes x a
     y): the float simplex, or the exact rescue when the float simplex fails
     or misses the certificate; certified either way (certify), so a
     SearchError from here is a failure of the exact path. Rows and columns in
-    prior-rank order: see the module."""
+    prior-rank order: see the module. budget: an optional WorkLedger (see
+    the module); its WorkBudgetExceeded is never rescued."""
+    ledger = _ledger(budget)
     a = _table(a)
     k, m = a.shape
     low = float(a.min())
@@ -270,12 +427,14 @@ def solve(a):
         x[0] = y[0] = 1.0
         return Solution(x, y, low, False)
     try:
-        dual, q = _solve_float(a, low, span)
+        dual, q = _solve_float(a, low, span, ledger)
         x, y = _normalized(dual), _normalized(q)
         certify(a, x, y)
         exact = False
+    except WorkBudgetExceeded:
+        raise
     except SearchError:
-        dual, q = _simplex_exact(a)
+        dual, q = _simplex_exact(a, ledger)
         x, y = _normalized(dual), _normalized(q)
         certify(a, x, y)
         exact = True
@@ -415,28 +574,29 @@ def _bayes_tableau(b, p, zero, one):
     return rows, rhs, cost
 
 
-def _bland(rows, rhs, cost, zero, positive):
+def _bland(rows, rhs, cost, zero, positive, ledger=_UNBOUNDED):
     """max cost . z s.t. rows z <= rhs (rhs >= 0), z >= 0, by a dense tableau
-    simplex with Bland's rule. Returns (z, duals) of the final tableau."""
+    simplex with Bland's rule. Returns (z, duals) of the final tableau. With
+    a ledger (exact values only), every operation is charged before it runs."""
     r, n = len(rows), len(cost)
+    ledger.charge(exact_ops=r)
     t = [list(rows[i]) + [zero] * r + [rhs[i]] for i in range(r)]
     for i in range(r):
         t[i][n + i] = zero + 1
     obj = list(cost) + [zero] * r + [zero]
+    ledger.bits(v for row in t + [obj] for v in row)
     basis = list(range(n, n + r))
+    width = n + r + 1
     for _ in range(MAX_ITERATIONS):
-        enter = next((j for j in range(n + r) if positive(obj[j])), None)
+        enter, ops = _enter(obj[:n + r], positive)
         if enter is None:
+            ledger.charge(exact_ops=ops)
             break
-        leave, best = -1, None
-        for i in range(r):
-            entry = t[i][enter]
-            if positive(entry):
-                ratio = t[i][-1] / entry
-                if leave < 0 or ratio < best or (ratio == best and basis[i] < basis[leave]):
-                    leave, best = i, ratio
+        leave, ops = _ratio_test(t, r, enter, -1, basis, positive, ops)
         if leave < 0:
             raise SearchError("the Bayesian linear program is unbounded, which shifted tables cannot be")
+        nonzero = sum(1 for i in range(r) if i != leave and t[i][enter] != 0)
+        ledger.charge(exact_pivots=1, exact_ops=ops + width + (r - 1) + 2 * width * nonzero + 2 * width)
         pivot = t[leave][enter]
         t[leave] = [v / pivot for v in t[leave]]
         for i in range(r):
@@ -446,8 +606,10 @@ def _bland(rows, rhs, cost, zero, positive):
         f = obj[enter]
         obj = [vi - f * vl for vi, vl in zip(obj, t[leave])]
         basis[leave] = enter
+        ledger.bits(v for row in t + [obj] for v in row)
     else:
         raise SearchError(f"the Bayesian simplex did not finish in {MAX_ITERATIONS} iterations")
+    ledger.charge(exact_ops=r)
     z = [zero] * n
     for row, var in enumerate(basis):
         if var < n:
@@ -456,7 +618,7 @@ def _bland(rows, rhs, cost, zero, positive):
     return z, duals
 
 
-def _bland_float(b, p, stable=False):
+def _bland_float(b, p, stable=False, ledger=_UNBOUNDED):
     """_bland on the float tableau of the LP above, in NumPy (no BLAS: the
     pivot is an elementwise update). With stable=True, retry using a
     two-pass ratio test to avoid tiny pivots on nearly tied constraints;
@@ -475,6 +637,7 @@ def _bland_float(b, p, stable=False):
     basis = list(range(n, n + r))
 
     def pivot_at(leave, enter):
+        ledger.charge(float_pivots=1)
         pivot = t[leave] / t[leave, enter]
         t[:] -= np.outer(t[:, enter], pivot)
         t[leave] = pivot
@@ -545,11 +708,13 @@ class BayesSolution(NamedTuple):
     exact: bool
 
 
-def solve_bayes(tables, weights):
+def solve_bayes(tables, weights, *, budget=None):
     """The BayesSolution of tables (W, K, M) with world weights (W,): the
     float simplex, then a stable float retry, or the exact rescue when both
     fail or miss the unchanged certificate. With W = 1 it is the matrix
-    game of solve."""
+    game of solve. budget: an optional WorkLedger shared by all three paths
+    (see the module); its WorkBudgetExceeded is never retried or rescued."""
+    ledger = _ledger(budget)
     a, p = _tables(tables, weights)
     nw, k, m = a.shape
     low = float(a.min())
@@ -569,22 +734,30 @@ def solve_bayes(tables, weights):
         return x, ys
 
     try:
-        z, duals = _bland_float((a - low) / span + 1.0, p)
+        z, duals = _bland_float((a - low) / span + 1.0, p, ledger=ledger)
         x, ys = strategies(z, duals, float)
         bayes_certify(a, p, x, ys)
         exact = False
+    except WorkBudgetExceeded:
+        raise
     except SearchError:
         try:
-            z, duals = _bland_float((a - low) / span + 1.0, p, stable=True)
+            z, duals = _bland_float((a - low) / span + 1.0, p, stable=True, ledger=ledger)
             x, ys = strategies(z, duals, float)
             bayes_certify(a, p, x, ys)
             exact = False
+        except WorkBudgetExceeded:
+            raise
         except SearchError:
+            # Fraction(low), each entry constructed, shifted and offset, the
+            # weights, the negated table entries and the two constants.
+            ledger.charge(exact_ops=1 + 3 * nw * k * m + nw + nw * m * k + 2)
             lo = Fraction(low)
             b = [[[Fraction(float(v)) - lo + 1 for v in row] for row in a[w]] for w in range(nw)]
             pf = [Fraction(float(v)) for v in p]
             rows, rhs, cost = _bayes_tableau(b, pf, Fraction(0), Fraction(1))
-            z, duals = _bland(rows, rhs, cost, Fraction(0), lambda v: v > 0)
+            z, duals = _bland(rows, rhs, cost, Fraction(0), lambda v: v > 0, ledger)
+            ledger.charge(exact_ops=k + nw * m)  # the conversions to float
             x, ys = strategies(z, duals, float)
             bayes_certify(a, p, x, ys)
             exact = True

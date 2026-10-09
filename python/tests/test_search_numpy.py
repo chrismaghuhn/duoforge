@@ -840,9 +840,27 @@ class BoundedSolver(unittest.TestCase):
             matrix.solve(np.ones((2, 2)), budget=ledger)
         self.assertEqual(self._counts(ledger), (3, 0, 0, 0))
         # Float pivots of the single-world simplex and its basis solves are charged as well.
-        with self.assertRaises(matrix.WorkBudgetExceeded) as caught:
+        with patch.object(matrix, "_simplex_exact", side_effect=AssertionError("unexpected exact rescue")), \
+                self.assertRaises(matrix.WorkBudgetExceeded) as caught:
             matrix.solve(a[0], budget=self._ledger(float_pivots=1))
         self.assertIs(caught.exception.status, matrix.WorkStatus.FLOAT_PIVOTS)
+        # By hand for [[1, 0], [0, 1]]: two simplex pivots, then two 2 x 2 basis solves of two pivots each.
+        ledger = self._ledger()
+        matrix.solve(np.eye(2), budget=ledger)
+        self.assertEqual(self._counts(ledger), (6, 0, 0, 0))
+        # Exact rescues of the same game, counted by hand. solve: 22 to build the tableau, two
+        # pivots of 34 (7 ratio-test operations, 5 to divide the pivot row, 2 comparisons, 20 to
+        # update two rows), 4 final comparisons and 13 to read the strategies; widest value 3/2.
+        ledger = self._ledger()
+        with patch.object(matrix, "_solve_float", side_effect=SearchError("float failed")):
+            matrix.solve(np.eye(2), budget=ledger)
+        self.assertEqual(self._counts(ledger), (0, 2, 107, 2))
+        # solve_bayes, one world: 20 to build, 3 slack ones, pivots of 47, 59 and 57 (each with
+        # 14 for the objective row), 6 final comparisons, 3 dual negations, 4 conversions.
+        ledger = self._ledger()
+        with patch.object(matrix, "_bland_float", side_effect=SearchError("float failed")):
+            matrix.solve_bayes(np.eye(2)[None], [1.0], budget=ledger)
+        self.assertEqual(self._counts(ledger), (0, 3, 199, 2))
         # Every exact cap stops the rescue with its own status.
         for caps, status in (({"exact_pivots": 1}, matrix.WorkStatus.EXACT_PIVOTS),
                              ({"exact_ops": 10}, matrix.WorkStatus.EXACT_OPS),
@@ -874,8 +892,8 @@ class BoundedSolver(unittest.TestCase):
         rng = np.random.default_rng(20261011)
         tables = rng.random((16, 8, 8)).astype(np.float32).astype(np.float64)
         weights = rng.random(16) + 0.1
-        audit_tables = [rng.random((4, 8, 8)).astype(np.float32).astype(np.float64) for _ in range(9)]
-        audit_weights = rng.random(4) + 0.1
+        audit_tables = [rng.random((16, 8, 8)).astype(np.float32).astype(np.float64) for _ in range(9)]
+        audit_weights = rng.random(16) + 0.1
 
         def fingerprint(sol, ledger):
             return (sol.x.tobytes(), tuple(y.tobytes() for y in sol.ys), sol.value, sol.exact,
