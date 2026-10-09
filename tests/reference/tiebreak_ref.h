@@ -5379,10 +5379,10 @@ static const df_tb_stop tb_g68_tw_electric[] = {
     {2u, 0u, 2u, 2u, {4u, 4u}, {700u, 754u}, {0x404e4bde31878355ull, 0x405021c4ad679622ull}},
 };
 static const df_tb_stop tb_g68_tw_electric_terrain[] = {
-    {0u, 0u, 2u, 3u, {6u, 6u}, {1116u, 1166u}, {0x4059000000000000ull, 0x4059000000000000ull}},
-    {1u, 0u, 2u, 3u, {4u, 4u}, {763u, 813u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
-    {2u, 0u, 2u, 2u, {4u, 4u}, {623u, 792u}, {0x404a743c36a39de8ull, 0x405032e16d0ff8b3ull}},
-    {3u, 0u, 2u, 2u, {4u, 4u}, {603u, 770u}, {0x404990123b33d104ull, 0x404f6ac7df24f66bull}},
+    {0u, 0u, 2u, 3u, {6u, 6u}, {1116u, 1131u}, {0x4059000000000000ull, 0x4059000000000000ull}},
+    {1u, 0u, 2u, 3u, {4u, 4u}, {763u, 778u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {2u, 0u, 2u, 2u, {4u, 4u}, {652u, 755u}, {0x404be6b1bd06bf1dull, 0x40502778ed4a61a7ull}},
+    {3u, 0u, 2u, 1u, {3u, 4u}, {556u, 734u}, {0x404737ac09206638ull, 0x404f5f5f5f5f5f5full}},
 };
 static const df_tb_stop tb_g68_tw_ground[] = {
     {0u, 0u, 2u, 3u, {6u, 6u}, {1116u, 1131u}, {0x4059000000000000ull, 0x4059000000000000ull}},
@@ -5400,10 +5400,10 @@ static const df_tb_stop tb_g68_tw_limber[] = {
     {2u, 0u, 2u, 2u, {4u, 4u}, {666u, 741u}, {0x404c7e3629e6737bull, 0x404f4c67319cc673ull}},
 };
 static const df_tb_stop tb_g68_tw_misty[] = {
-    {0u, 0u, 3u, 4u, {6u, 6u}, {1131u, 1131u}, {0x4059000000000000ull, 0x4059000000000000ull}},
-    {1u, 0u, 3u, 4u, {4u, 4u}, {778u, 778u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
-    {2u, 0u, 2u, 2u, {4u, 4u}, {720u, 778u}, {0x404ef0cac5b3f5dcull, 0x4050aaaaaaaaaaabull}},
-    {3u, 0u, 2u, 2u, {4u, 4u}, {732u, 778u}, {0x404f6f86562d9fafull, 0x4050aaaaaaaaaaabull}},
+    {0u, 0u, 2u, 3u, {6u, 6u}, {1104u, 1131u}, {0x4059000000000000ull, 0x4059000000000000ull}},
+    {1u, 0u, 2u, 3u, {4u, 4u}, {751u, 778u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {2u, 0u, 2u, 2u, {4u, 4u}, {695u, 778u}, {0x404eaaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {3u, 0u, 2u, 2u, {4u, 4u}, {705u, 778u}, {0x404f249249249249ull, 0x4050aaaaaaaaaaabull}},
 };
 static const df_tb_stop tb_g68_tw_protect[] = {
     {0u, 0u, 2u, 3u, {6u, 6u}, {1116u, 1143u}, {0x4059000000000000ull, 0x4059000000000000ull}},
@@ -7535,7 +7535,7 @@ static const df_tb_battle tb_battles[] = {
     {"xr3_sheercold_sub_miss", 3u, tb_xr3_sheercold_sub_miss, sizeof tb_xr3_sheercold_sub_miss / sizeof tb_xr3_sheercold_sub_miss[0]},
 };
 
-/* 5099 stops: 150 of an ended battle; decided by the count 1235,
- * the HP percentage 1606, the total HP 1965, a tie 143;
- * winners: side 0 2466, side 1 2490, tie 143 */
+/* 5099 stops: 150 of an ended battle; decided by the count 1236,
+ * the HP percentage 1605, the total HP 1967, a tie 141;
+ * winners: side 0 2466, side 1 2492, tie 141 */
 #endif
