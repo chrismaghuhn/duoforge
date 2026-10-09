@@ -518,6 +518,9 @@ duoforge_status duoforge_battle_reseed(const duoforge_context *ctx, duoforge_bat
 #define DUOFORGE_SLOT_MOVE   1u
 #define DUOFORGE_SLOT_SWITCH 2u
 #define DUOFORGE_SLOT_PASS   3u /* forced no-action only where the profile says so */
+#define DUOFORGE_SLOT_REVIVE 4u /* Revival Blessing (decision 0025 item 8): reserve is the roster index of a fainted brought
+   member; the candidates are the fainted brought members other than the user, in roster order; no MOVE, SWITCH or PASS is
+   offered in that slot */
 /* move_slot of Struggle: offered, with no target and no Mega declaration,
    exactly when an occupant has no selectable move (no PP left, Fake Out
    disabled, a choice lock; sim/pokemon.ts, the reference's request). */
@@ -1036,6 +1039,11 @@ duoforge_status duoforge_battle_observe_ext(const duoforge_context *ctx, const d
                                               MOVE with id: the move, other: the Pokemon it came from when the line says [of]
                                               (Thief, Covet), else DUOFORGE_NO_POSITION. The item that left the other Pokemon is
                                               ITEM_END with the cause ITEM_TAKEN (Thief, Trick, Switcheroo), or no line (Covet) */
+#define DUOFORGE_EVENT_REVIVE          43u /* [-heal] of a revived member (decision 0025 item 9): position: the user (the line
+                                               names no position, so the converter takes it from the move line before it); id: the
+                                               revived member's roster index; hp, hp_max, hp_kind and hp_flag as HEAL and SWITCH
+                                               (EXACT for the owner, PERCENT for the foe), amount 0; cause MOVE, id2: Revival
+                                               Blessing */
 
 /* Causes ([from] and [of] in the protocol). */
 #define DUOFORGE_CAUSE_NONE      0u /* the move or the plain mechanic */
