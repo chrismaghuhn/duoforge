@@ -122,7 +122,9 @@ bool dfi_events_fold_knowledge(const struct duoforge_battle *before, struct duof
                 }
                 k->hp_percent = (uint8_t)e.hp; /* the percent display: <= 100 */
                 k->hp_flag = e.hp_flag;
-            } else if (e.kind == DUOFORGE_EVENT_MOVE && ((uint32_t)e.flags & DUOFORGE_EVENT_FLAG_LOCKED) == 0u) {
+            } else if (e.kind == DUOFORGE_EVENT_MOVE && ((uint32_t)e.flags & DUOFORGE_EVENT_FLAG_LOCKED) == 0u &&
+                       e.cause != DUOFORGE_CAUSE_ABILITY) {
+                /* A bounced move (Magic Bounce, cause ABILITY, step G57) uses no PP: the pin's useMove deducts none. */
                 for (uint32_t j = 0u; j < fs->members[m].move_count && j < DUOFORGE_MAX_MOVE_SLOTS; ++j) {
                     if (fs->members[m].moves[j].move_id == e.id && k->moves_used[j] < UINT8_MAX) {
                         k->moves_used[j] = (uint8_t)((uint32_t)k->moves_used[j] + 1u); /* wide-operands-reviewed */

@@ -241,8 +241,8 @@ foreach(_gen IN ITEMS
         "closure_tables.c=490de42298e34cfd38192d979fd022367bf53693a5fa1855f1cc6ad034d8450a"
         "extended_tables.h=b2abef243fcbfdd87654940076b9fe2fe80b117d74893a7567741f26b9075a7d"
         "extended_tables.c=9e736fa467713283418c4edf8f56b8d844452e596ba422adbd52483d20f7cc17"
-        "pool_tables.h=a45bddf39a207d955ea1be488bec166abbbb2971d4a6df21f63c54788eeccdbb"
-        "pool_tables.c=259db9f53e2654c508079ef2d698d8948fefed88f556d2d38f49f2c6704f31d8")
+        "pool_tables.h=400b0b0a2d54ba6b513cecff25e53f7a3980730375d7109dc1e731c8da16aa3f"
+        "pool_tables.c=04c2f9e280ce12c5f3379b22498871249cea6e1c208ce9c94f2a5c2c5753e5d6")
     string(REPLACE "=" ";" _parts "${_gen}")
     list(GET _parts 0 _file)
     list(GET _parts 1 _expected)
@@ -282,6 +282,12 @@ if(DUOFORGE_PS_REFERENCE_DIR)
                 "${DUOFORGE_PS_REFERENCE_DIR}" "${PROJECT_SOURCE_DIR}"
                 --check "${CMAKE_CURRENT_SOURCE_DIR}/reference/tiebreak_ref.h")
         set_tests_properties(duoforge.reference.tiebreak_ref PROPERTIES TIMEOUT 900 LABELS reference)
+        # Step G57: the reflectable moves of the Champions Dex (flags.reflectable), recomputed by the pinned Showdown; the
+        # generated column dfi_pool_move_reflectable is checked against them by duoforge.state.pool_g57.
+        add_test(NAME duoforge.reference.reflect_ref
+            COMMAND "${DUOFORGE_NODE}" "${PROJECT_SOURCE_DIR}/tools/reference/reflect_ref.js"
+                "${DUOFORGE_PS_REFERENCE_DIR}" --check "${CMAKE_CURRENT_SOURCE_DIR}/reference/reflect_ref.h")
+        set_tests_properties(duoforge.reference.reflect_ref PROPERTIES TIMEOUT 120 LABELS reference)
         # The family columns of the pool tables (decision 0015), against the pinned handlers: every
         # family member's handler is called with a probe for each of the 18 types and must agree
         # with the generated type, weather or terrain; the pool's ids are also validated by the

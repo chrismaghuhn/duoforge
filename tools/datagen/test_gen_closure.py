@@ -1423,7 +1423,7 @@ class ItemAbilityFeatures(unittest.TestCase):
                                                                  'sharpness', 'solidrock', 'technician', 'multiscale',
                                                                  'galewings', 'raindish', 'friendguard', 'cursedbody', 'mirrorarmor', 'auraguard', 'hypercutter', 'scrappy', 'infiltrator', 'queenlymajesty', 'damp', 'sturdy',
                                                                  'snowcloak', 'sandveil', 'static', 'justified', 'limber',
-                                                                 'solarpower', 'regenerator', 'toxicdebris', 'shadowtag', 'suctioncups', 'guarddog']})
+                                                                 'solarpower', 'regenerator', 'toxicdebris', 'shadowtag', 'suctioncups', 'guarddog', 'magicbounce']})
 
 
 class Bounds(unittest.TestCase):

@@ -4736,7 +4736,7 @@ static duoforge_status dfi_bounce(dfi_run *r, uint32_t user, uint32_t holder, ui
         e.id = (uint16_t)move_id;
         e.other = (uint8_t)user; /* the bounced move's target: the original user, also for a hazard (the label is real here) */
         e.cause = (uint8_t)DUOFORGE_CAUSE_ABILITY;
-        e.id2 = (uint16_t)(1u + DFI_ABILITY_MAGICBOUNCE);
+        e.id2 = (uint16_t)(1u + DFI_ABILITY_MAGICBOUNCE); /* wide-operands-reviewed: 106 */
         r->last_move = r->events != NULL ? r->events->count : UINT32_MAX;
         dfi_emit(r, &e);
     }

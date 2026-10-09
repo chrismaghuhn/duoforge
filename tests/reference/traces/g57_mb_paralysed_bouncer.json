@@ -14,14 +14,18 @@
    "|rule|Species Clause: Limit one of each Pokémon",
    "|rule|Item Clause: Limit 1 of each item",
    "|clearpoke",
-   "|poke|p1|Staraptor, L50, F|",
+   "|poke|p1|Hatterene, L50, F|",
    "|poke|p1|Ceruledge, L50, M|",
    "|poke|p1|Gholdengo, L50|",
    "|poke|p1|Kingambit, L50, M|",
+   "|poke|p1|Umbreon, L50, F|",
+   "|poke|p1|Indeedee-F, L50, F|",
    "|poke|p2|Espeon, L50, F|",
    "|poke|p2|Umbreon, L50, F|",
    "|poke|p2|Ceruledge, L50, M|",
    "|poke|p2|Gholdengo, L50|",
+   "|poke|p2|Kingambit, L50, M|",
+   "|poke|p2|Indeedee-F, L50, F|",
    "|teampreview|4",
    "|split|p1",
    "|uhtml|otsrequest|<button name=\"send\" value=\"/acceptopenteamsheets\" class=\"button\" style=\"margin-right: 10px;\"><strong>Accept Open Team Sheets</strong></button><button name=\"send\" value=\"/rejectopenteamsheets\" class=\"button\" style=\"margin-top: 10px\"><strong>Deny Open Team Sheets</strong></button>",
@@ -54,13 +58,13 @@
      ],
      "pokemon": [
       {
-       "species": "Staraptor",
-       "set_species": "Staraptor",
+       "species": "Hatterene",
+       "set_species": "Hatterene",
        "mega": 0,
        "switch_flag": 0,
-       "hp": 192,
-       "maxhp": 192,
-       "item": "ejectbutton",
+       "hp": 164,
+       "maxhp": 164,
+       "item": "mysticwater",
        "status": "",
        "status_time": 0,
        "confusion": 0,
@@ -164,6 +168,61 @@
        ],
        "volatiles": [],
        "locked": null
+      },
+      {
+       "species": "Umbreon",
+       "set_species": "Umbreon",
+       "mega": 0,
+       "switch_flag": 0,
+       "hp": 202,
+       "maxhp": 202,
+       "item": "lifeorb",
+       "status": "",
+       "status_time": 0,
+       "confusion": 0,
+       "fainted": false,
+       "boosts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "pp": [
+        8,
+        16
+       ],
+       "volatiles": [],
+       "locked": null
+      },
+      {
+       "species": "Indeedee-F",
+       "set_species": "Indeedee-F",
+       "mega": 0,
+       "switch_flag": 0,
+       "hp": 177,
+       "maxhp": 177,
+       "item": "rockyhelmet",
+       "status": "",
+       "status_time": 0,
+       "confusion": 0,
+       "fainted": false,
+       "boosts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "pp": [
+        8
+       ],
+       "volatiles": [],
+       "locked": null
       }
      ]
     },
@@ -202,7 +261,7 @@
         0
        ],
        "pp": [
-        20,
+        12,
         8
        ],
        "volatiles": [],
@@ -291,6 +350,61 @@
        ],
        "volatiles": [],
        "locked": null
+      },
+      {
+       "species": "Kingambit",
+       "set_species": "Kingambit",
+       "mega": 0,
+       "switch_flag": 0,
+       "hp": 207,
+       "maxhp": 207,
+       "item": "blackglasses",
+       "status": "",
+       "status_time": 0,
+       "confusion": 0,
+       "fainted": false,
+       "boosts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "pp": [
+        8,
+        8
+       ],
+       "volatiles": [],
+       "locked": null
+      },
+      {
+       "species": "Indeedee-F",
+       "set_species": "Indeedee-F",
+       "mega": 0,
+       "switch_flag": 0,
+       "hp": 177,
+       "maxhp": 177,
+       "item": "rockyhelmet",
+       "status": "",
+       "status_time": 0,
+       "confusion": 0,
+       "fainted": false,
+       "boosts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "pp": [
+        8
+       ],
+       "volatiles": [],
+       "locked": null
       }
      ]
     }
@@ -315,8 +429,8 @@
     "|uhtmlchange|otsrequest|",
     "",
     "|split|p1",
-    "|switch|p1a: Staraptor|Staraptor, L50, F|192/192",
-    "|switch|p1a: Staraptor|Staraptor, L50, F|100/100",
+    "|switch|p1a: Hatterene|Hatterene, L50, F|164/164",
+    "|switch|p1a: Hatterene|Hatterene, L50, F|100/100",
     "|split|p1",
     "|switch|p1b: Ceruledge|Ceruledge, L50, M|181/181",
     "|switch|p1b: Ceruledge|Ceruledge, L50, M|100/100",
@@ -326,9 +440,6 @@
     "|split|p2",
     "|switch|p2b: Umbreon|Umbreon, L50, F|202/202",
     "|switch|p2b: Umbreon|Umbreon, L50, F|100/100",
-    "|-ability|p1a: Staraptor|Intimidate|boost",
-    "|-unboost|p2a: Espeon|atk|1",
-    "|-fail|p2b: Umbreon|unboost|atk|[from] ability: Inner Focus|[of] p2b: Umbreon",
     "|turn|1"
    ],
    "state": {
@@ -364,13 +475,13 @@
       ],
       "pokemon": [
        {
-        "species": "Staraptor",
-        "set_species": "Staraptor",
+        "species": "Hatterene",
+        "set_species": "Hatterene",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 192,
-        "maxhp": 192,
-        "item": "ejectbutton",
+        "hp": 164,
+        "maxhp": 164,
+        "item": "mysticwater",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -512,7 +623,7 @@
         "confusion": 0,
         "fainted": false,
         "boosts": [
-         -1,
+         0,
          0,
          0,
          0,
@@ -521,7 +632,7 @@
          0
         ],
         "pp": [
-         20,
+         12,
          8
         ],
         "volatiles": [],
@@ -624,59 +735,45 @@
    "draws": [
     {
      "site": "ACCURACY",
-     "context": "",
+     "context": "TryHit",
      "lo": 0,
      "hi": 100,
      "value": 99
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 60
     },
     {
      "site": "CRIT",
      "context": "",
      "lo": 0,
      "hi": 24,
-     "value": 14
+     "value": 6
     },
     {
      "site": "DAMAGE_ROLL",
      "context": "",
      "lo": 0,
      "hi": 16,
-     "value": 4
+     "value": 2
     },
     {
      "site": "SECONDARY",
      "context": "",
      "lo": 0,
      "hi": 100,
-     "value": 16
-    },
-    {
-     "site": "ACCURACY",
-     "context": "TryHit",
-     "lo": 0,
-     "hi": 100,
      "value": 14
-    },
-    {
-     "site": "FULL_PARALYSIS",
-     "context": "BeforeMove",
-     "lo": 0,
-     "hi": 8,
-     "value": 2
-    },
-    {
-     "site": "ACCURACY",
-     "context": "",
-     "lo": 0,
-     "hi": 100,
-     "value": 0
     },
     {
      "site": "SPEED_TIE",
      "context": "field:Residual",
      "lo": 2,
      "hi": 4,
-     "value": 3,
+     "value": 2,
      "group": [
       "H:protect:p2b:end",
       "H:stall:p2b:end"
@@ -687,16 +784,17 @@
    "log": [
     "|move|p2b: Umbreon|Protect|p2b: Umbreon",
     "|-singleturn|p2b: Umbreon|Protect",
-    "|move|p1a: Staraptor|Nuzzle|p2a: Espeon",
-    "|split|p2",
-    "|-damage|p2a: Espeon|156/172",
-    "|-damage|p2a: Espeon|90/100",
-    "|-status|p2a: Espeon|par",
+    "|move|p2a: Espeon|Yawn|p1a: Hatterene",
+    "|move|p1a: Hatterene|Yawn|p2a: Espeon|[from] ability: Magic Bounce",
+    "|-start|p2a: Espeon|move: Yawn|[of] p1a: Hatterene",
     "|move|p1b: Ceruledge|Taunt|p2a: Espeon",
     "|move|p2a: Espeon|Taunt|p1b: Ceruledge|[from] ability: Magic Bounce",
     "|-start|p1b: Ceruledge|move: Taunt",
-    "|move|p2a: Espeon|Taunt|p1a: Staraptor",
-    "|-start|p1a: Staraptor|move: Taunt",
+    "|move|p1a: Hatterene|Nuzzle|p2a: Espeon",
+    "|split|p2",
+    "|-damage|p2a: Espeon|161/172",
+    "|-damage|p2a: Espeon|93/100",
+    "|-status|p2a: Espeon|par",
     "|upkeep",
     "|turn|2"
    ],
@@ -720,7 +818,7 @@
       "enabled": [
        [
         1,
-        0
+        1
        ],
        [
         2
@@ -732,13 +830,13 @@
       ],
       "pokemon": [
        {
-        "species": "Staraptor",
-        "set_species": "Staraptor",
+        "species": "Hatterene",
+        "set_species": "Hatterene",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 192,
-        "maxhp": 192,
-        "item": "ejectbutton",
+        "hp": 164,
+        "maxhp": 164,
+        "item": "mysticwater",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -756,9 +854,7 @@
          19,
          8
         ],
-        "volatiles": [
-         "taunt"
-        ],
+        "volatiles": [],
         "locked": null
        },
        {
@@ -876,7 +972,7 @@
         "set_species": "Espeon",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 156,
+        "hp": 161,
         "maxhp": 172,
         "item": "focussash",
         "status": "par",
@@ -884,7 +980,7 @@
         "confusion": 0,
         "fainted": false,
         "boosts": [
-         -1,
+         0,
          0,
          0,
          0,
@@ -893,10 +989,12 @@
          0
         ],
         "pp": [
-         19,
+         11,
          8
         ],
-        "volatiles": [],
+        "volatiles": [
+         "yawn"
+        ],
         "locked": null
        },
        {
