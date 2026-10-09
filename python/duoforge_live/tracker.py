@@ -32,6 +32,7 @@ from .data import trace_to_c
 C = _layout.CONSTANTS
 EV = trace_to_c.EV
 FLAG = trace_to_c.FLAG
+_MUST_PRESSURE = _layout.CONSTANTS["DUOFORGE_MOVE_STATIC_FLAG_MUST_PRESSURE"]  # step G53
 NOPOS = trace_to_c.NOPOS
 ROSTER_NONE = C["DUOFORGE_ROSTER_NONE"]
 MOVE_SLOT_NONE = C["DUOFORGE_MOVE_SLOT_NONE"]
@@ -158,6 +159,7 @@ class Tracker:
         tables = data.tables
         self._choice_items = {tables["ITEM"][k.upper()] + 1 for k in lines.CHOICE_ITEMS if k.upper() in tables["ITEM"]}
         self._unburden = tables["ABILITY"]["UNBURDEN"] + 1 if "UNBURDEN" in tables["ABILITY"] else None
+        self._pressure = tables["ABILITY"]["PRESSURE"] + 1 if "PRESSURE" in tables["ABILITY"] else None
         self._follow_me = tables["MOVE"].get("FOLLOWME")
         # Protect and Detect both show "-singleturn|POKEMON|Protect"; a failed one resets the stall counter
         self._stall_moves = {tables["MOVE"][k] for k in ("PROTECT", "DETECT") if k in tables["MOVE"]}
@@ -420,7 +422,7 @@ class Tracker:
             self._last_move = (pos, ident, e[2])
             m = self._occupant(pos)
             if not flags & FLAG["LOCKED"] and ident in m.sheet["moves"]:
-                m.uses[m.sheet["moves"].index(ident)] += 1
+                m.uses[m.sheet["moves"].index(ident)] += 1 + self._pressure_extra(pos, ident, e[2], flags)
             if ident in self._guard_moves and not flags & FLAG["LOCKED"]:
                 # Wide Guard and Quick Guard add the stall volatile when they run (data/moves.ts onHitSide
                 # addVolatile('stall')), also when the side has the guard already (no -singleturn line then), the
@@ -588,6 +590,26 @@ class Tracker:
                     p.charge -= 1
                     if not p.charge:
                         p.locked_slot, p.locked_target = MOVE_SLOT_NONE, TARGET_NONE
+
+    def _pressure_extra(self, pos, move, target, flags):
+        """The extra PP a move use costs for the user's standing foes with Pressure (decision 0030, step G53), counted
+        only where the line shows the targets: the named target of a single-target move, every standing foe for the
+        spread classes, for "all" and for a MUSTPRESSURE move; none for a foeSide move or a blanked ([still])
+        target, which nobody can know."""
+        if self._pressure is None or flags & FLAG["STILL"]:
+            return 0
+        foe = 1 - pos // 2
+        members = self._member(foe)
+        holders = [k for k, p in enumerate(self._positions[foe]) if p.occupant != ROSTER_NONE and not p.fainted
+                   and p.occupant < len(members) and members[p.occupant].ability == self._pressure]
+        if not holders:
+            return 0
+        kind = self.data.target_type(move)
+        if self.data.move_flags(move) & _MUST_PRESSURE or kind in ("all", "allAdjacentFoes", "allAdjacent"):
+            return len(holders)
+        if kind == "foeSide" or target == NOPOS or target // 2 != foe:
+            return 0
+        return int(target % 2 in holders)
 
     # ------------------------------------------------------------------ output
     def boundary(self):
