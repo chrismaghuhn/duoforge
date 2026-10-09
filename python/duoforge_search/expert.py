@@ -412,7 +412,7 @@ class TickRoot:
     raw_logp: float
 
 
-def label_tick(search, roots, tick, *, last_step, config, manifest) -> tuple:
+def label_tick(search, roots, tick, *, last_step, config, manifest, dedup=True, stats=None) -> tuple:
     """label_decision for every admitted root of one logical tick, in input
     order, with the tick's value calls shared (stage 3 P2): the encoded rows
     and public records are read once; per root, in input order, its worlds
@@ -421,7 +421,9 @@ def label_tick(search, roots, tick, *, last_step, config, manifest) -> tuple:
     through one deduplicated TickTable in fixed-capacity calls; then every
     decision is finished with its own ledger. Per-root bytes equal
     label_decision's where value bits do not depend on a row's position,
-    neighbours or padding at the capacity (rowprobe, P2 Task 1)."""
+    neighbours or padding at the capacity (rowprobe, P2 Task 1). dedup=False
+    and stats (a dict filled with the table's counters) serve the P2
+    measurement."""
     _check_search(search, config, manifest)
     tick = tuple(tick)
     if not all(isinstance(x, TickRoot) for x in tick):
@@ -437,7 +439,7 @@ def label_tick(search, roots, tick, *, last_step, config, manifest) -> tuple:
         players[int(x.env)] = int(x.seat)
     public = roots.public(players)
     search.last = []
-    table = ticks.TickTable(search._rows.shape[1])
+    table = ticks.TickTable(search._rows.shape[1], dedup=dedup)
     states = []
     for x in tick:
         r = _root(search, roots, encoded, public, env=x.env, seat=x.seat, key=x.key, raw_action=x.raw_action,
@@ -456,6 +458,9 @@ def label_tick(search, roots, tick, *, last_step, config, manifest) -> tuple:
             audit = (ids, request, table.add(request))
         states.append((r, (hypotheses, weights, primary, table.add(primary), costs, audit), None))
     values = table.evaluate(search.model, search.params, search._rows)
+    if stats is not None:
+        stats.update(leaves=table.leaves, open_leaves=table.open_leaves, unique=table.unique,
+                     value_calls=-(-table.unique // search._rows.shape[0]))
     out = []
     for r, prepared, refusal in states:
         ledger = matrix.WorkLedger(config.budget)

@@ -656,6 +656,27 @@ class Teacher(unittest.TestCase):
             with self.assertRaises(ValueError):  # one root per environment
                 ex.label_tick(search, b, [tick[0], tick[0]], last_step=False, config=cfg, manifest=self.manifest)
 
+    def test_tickbench_paths_agree(self):
+        # The P2 measurement harness: per-root, per-tick without and with dedup label the same roots with the
+        # same bytes; the tick table's counters are consistent and dedup never adds rows.
+        from duoforge_search import tickbench
+        with duoforge.Context(C["DUOFORGE_DATA_KIND_POOL"]) as ctx:
+            def roots():
+                return duoforge.Batch(ctx, np.repeat(duoforge.reference_setups([0]), 4), 2, 42)
+
+            cfg = self.config(audit_threshold=2**64)
+            got = {path: tickbench.run(lambda: self.make(ctx), roots, path=path, steps=4, config=cfg,
+                                       manifest=self.manifest, seed=11, select=lambda key: True)
+                   for path in tickbench.PATHS}
+        self.assertEqual(len({r["digest"] for r in got.values()}), 1)
+        self.assertGreater(got["per_root"]["labels"], 0)
+        self.assertEqual({r["labels"] for r in got.values()}, {got["per_root"]["labels"]})
+        plain, dedup = got["tick_nodedup"], got["tick"]
+        self.assertEqual((plain["leaves"], plain["open_leaves"]), (dedup["leaves"], dedup["open_leaves"]))
+        self.assertEqual(plain["unique"], plain["open_leaves"])
+        self.assertLessEqual(dedup["unique"], plain["unique"])
+        self.assertLessEqual(dedup["tick_value_calls"], plain["tick_value_calls"])
+
     def test_two_phase_decision_bytes_pinned(self):
         import hashlib
         conditions = self._two_phase_conditions()
