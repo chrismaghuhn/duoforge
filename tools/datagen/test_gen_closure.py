@@ -1426,7 +1426,7 @@ class ItemAbilityFeatures(unittest.TestCase):
                                                                  'snowcloak', 'sandveil', 'static', 'justified', 'limber',
                                                                  'solarpower', 'regenerator', 'toxicdebris', 'shadowtag', 'suctioncups', 'guarddog',
                                                                  'steadfast', 'weakarmor', 'telepathy', 'voltabsorb', 'punkrock', 'moxie',
-                                                                 'synchronize', 'oblivious', 'keeneye', 'bigpecks']})
+                                                                 'synchronize', 'oblivious', 'keeneye', 'bigpecks', 'magicbounce']})
 
 
 class Bounds(unittest.TestCase):

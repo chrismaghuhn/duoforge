@@ -2410,6 +2410,27 @@ class Library(unittest.TestCase):
         self.assertEqual(seen['g5_uturn_b'], 0)  # Protect: no pivot
         self.assertTrue(all(seen[n] > 0 for n in names if n not in ('g5_uturn_b',)), seen)
 
+    def test_magic_bounce_move_line_is_accepted_and_another_ability_is_refused(self):
+        """Step G57: `[from] ability: Magic Bounce` on a move line is the bounced move (cause ABILITY, id2 the ability + 1, and
+        other the source, also for a foeSide hazard, whose label is real then); every other `[from] ability:` on a move line
+        still raises move-attribute (a negative control: the acceptance is for Magic Bounce alone)."""
+        tables = trace_to_c.load_tables(ROOT, True)
+        cause, mb = trace_to_c.CAUSE['ABILITY'], tables['ABILITY'][trace_to_c.key('Magic Bounce')] + 1
+        for name in ('g57_mb_whirlwind', 'g57_mb_stealth_rock'):
+            spec, trace = trace_to_c.load_battle(ROOT, name)
+            data = trace_to_c.convert_battle(name, spec, trace, tables)
+            bounced = [e for st in data['steps'] for evs in st['events'] for e in evs
+                       if e[0] == trace_to_c.EV['MOVE'] and e[3] == cause]
+            self.assertTrue(bounced, name)
+            self.assertTrue(all(e[5] == mb for e in bounced), name)
+            self.assertTrue(all(e[2] != trace_to_c.NOPOS for e in bounced), name)
+        spec, trace = trace_to_c.load_battle(ROOT, 'g57_mb_whirlwind')
+        for step in trace['steps']:
+            step['log'] = [line.replace('[from] ability: Magic Bounce', '[from] ability: Soundproof') for line in step['log']]
+        with self.assertRaises(trace_to_c.ConversionError) as cm:
+            trace_to_c.convert_battle('g57_mb_whirlwind', spec, trace, tables)
+        self.assertEqual(cm.exception.rule, 'move-attribute')
+
     def test_pass_for_both_slots_converts_per_slot(self):
         """A choice that passes both slots of a switch request: each slot is
         asked when its Pokemon holds the switch flag (a fainted one, or a

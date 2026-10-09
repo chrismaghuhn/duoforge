@@ -417,11 +417,14 @@ def parse_move(mid, base, champ, ext=False, pool=False, unmodeled=None):
 
     flags = 0
     flags2 = 0
+    reflect = 0  # step G57: flags.reflectable (pool tables only; a generated 0/1 column, not a flag bit)
     static_flags = 0  # decision 0020: the public static flags of every row, from the pin's flags object (pool tables only)
     flag_bits = FLAG_BITS_C if ext else FLAG_BITS
     for fl in re.findall(r'(\w+): 1', f['flags'][1]):
         flags2 |= FLAGS2_BITS.get(fl, 0)
         static_flags |= STATIC_FLAG_BITS.get(fl, 0)
+        if fl == 'reflectable':
+            reflect = 1
         if fl in flag_bits:
             flags |= flag_bits[fl]
         elif lenient:
@@ -478,7 +481,7 @@ def parse_move(mid, base, champ, ext=False, pool=False, unmodeled=None):
         'type': TYPES.index(get('type')), 'category': CATEGORIES[get('category')],
         'base_power': get('basePower'), 'accuracy': 0 if acc is True else acc, 'pp_base': pp_base, 'pp_max': pp_max,
         'priority': get('priority') + 8, 'target_class': target_class,
-        'crit_ratio': get('critRatio', 1), 'flags': flags, 'flags2': flags2, 'heal': [0, 0],
+        'crit_ratio': get('critRatio', 1), 'flags': flags, 'flags2': flags2, 'reflect': reflect, 'heal': [0, 0],
         'recoil': [0, 0], 'drain': [0, 0], 'sec_chance': 0, 'sec_kind': 0, 'sec_param': 0,
         'boost_role': 0, 'boosts': [0] * 7, 'primary_status': 0, 'side_condition': 0, 'pseudo_weather': 0,
         'special': (SPECIAL_IDS_P if pool else SPECIAL_IDS_C if ext else SPECIAL_IDS).index(handled[0]),
@@ -2383,7 +2386,7 @@ ENGINE_ROWS = {'items': ['focussash', 'floettite', 'psychicseed', 'electricseed'
                              'limber',
                              'solarpower',
                              'regenerator', 'toxicdebris', 'shadowtag', 'suctioncups', 'guarddog',
-                             'steadfast', 'weakarmor', 'telepathy', 'voltabsorb', 'punkrock', 'moxie', 'synchronize', 'oblivious', 'keeneye', 'bigpecks']}
+                             'steadfast', 'weakarmor', 'telepathy', 'voltabsorb', 'punkrock', 'moxie', 'synchronize', 'oblivious', 'keeneye', 'bigpecks', 'magicbounce']}
 # The moves of the whole pool that the turn code pivots with a switch flag of their own (dfi_pivot_moves,
 # src/state/closure_member.c) beyond Flip Turn and U-turn, which are rows of the steps. Empty: Volt Switch comes with the
 # step that gives it a flag value, and adds its id here.
@@ -3032,6 +3035,41 @@ G46_ITEM_FACTS = (
 )
 
 
+# Step G57: Magic Bounce is an engine row read by id (src/combat/turn.c, the bounced path of dfi_run_move_body). The turn code
+# hard-codes the pinned callbacks it reproduces: the TryHit priority, the single-target bounce and the side bounce of a
+# foeSide move (data/abilities.ts:2437-2464). Its flags are breakable only: a Mold Breaker attacker would suppress it, and no
+# Mold Breaker move is marked. The Champions mod overrides the entry nowhere.
+G57_ABILITY_FACTS = (
+    ('magicbounce', ('onTryHitPriority: 1,',
+                     "onTryHit(target, source, move) { if (target === source || move.hasBounced || !move.flags['reflectable'] || "
+                     "target.isSemiInvulnerable()) { return; } const newMove = this.dex.getActiveMove(move.id); "
+                     "newMove.hasBounced = true; newMove.pranksterBoosted = false; "
+                     "this.actions.useMove(newMove, target, { target: source }); return null; },",
+                     "onAllyTryHitSide(target, source, move) { if (target.isAlly(source) || move.hasBounced || "
+                     "!move.flags['reflectable'] || target.isSemiInvulnerable()) { return; } const newMove = "
+                     "this.dex.getActiveMove(move.id); newMove.hasBounced = true; newMove.pranksterBoosted = false; "
+                     "this.actions.useMove(newMove, this.effectState.target, { target: source });",
+                     'move.hasBounced = true; // only bounce once in free-for-all battles',
+                     'return null; },',
+                     'flags: { breakable: 1 },')),
+)
+
+
+def check_g57_facts(abil_ts, champ_abil):
+    """Step G57: the texts of Magic Bounce that the engine reproduces (G57_ABILITY_FACTS) are in the pinned entry, whitespace
+    aside, and the Champions mod has no entry of its own for it."""
+    for rid, facts in G57_ABILITY_FACTS:
+        e = abil_ts.entry(rid)
+        if e is None:
+            fail('ability %s not found' % rid)
+        if champ_abil.entry(rid) is not None:
+            fail('ability %s: the champions mod overrides the entry' % rid)
+        text = norm(chr(10).join(e[2]))
+        for fact in facts:
+            if norm(fact) not in text:
+                fail('ability %s: the entry no longer has "%s"' % (rid, fact))
+
+
 def check_g34_facts(abil_ts, champ_abil, items_ts, champ_items):
     """Steps G34, G35, Mega batch 2 and G39: every fact of G34_ABILITY_FACTS, G35_ABILITY_FACTS, MEGA2_ABILITY_FACTS, G39_ABILITY_FACTS and G34_ITEM_FACTS is in the pinned entry, whitespace aside, and the
     Champions mod has no entry of its own for it (an override would change what the engine reads)."""
@@ -3143,6 +3181,7 @@ def build_pool(root, repo, dx):
     check_g49_facts(items_ts, champ_items)
     check_g55_items(items_ts, champ_items)
     check_g37_facts(abil_ts, champ_abil)
+    check_g57_facts(abil_ts, champ_abil)
     check_g32_entries(items_ts, champ_items, abil_ts, champ_abil)
     check_weather_facts(Source(root, 'data/conditions.ts', READER_INPUTS), moves_ts)
     FLAGS_THAT_MATTER.clear()
@@ -3183,7 +3222,8 @@ def build_pool(root, repo, dx):
     n_steps = (len(items), len(abilities))
     # The second flags byte (step G8) of the prefix moves, read from the pin as the new rows are: the prefix rows
     # themselves (the CLOSURE and extended bytes) do not have it.
-    moves = [dict(m, flags2=parse_move(m['id'], moves_ts, champ_moves, ext=True, pool=True)['flags2'])
+    moves = [dict(m, flags2=parse_move(m['id'], moves_ts, champ_moves, ext=True, pool=True)['flags2'],
+                  reflect=parse_move(m['id'], moves_ts, champ_moves, ext=True, pool=True)['reflect'])
              for m in dx['moves']]
     for mid in G2_MOVES:
         if any(m['id'] == mid for m in moves):
@@ -3462,6 +3502,12 @@ def static_hits_bytes(d):
     return bytes(b)
 
 
+def reflect_bytes(d):
+    """The reflectable column of every move (step G57: flags.reflectable of the pin, 0 or 1), in id order, in the canonical
+    pool bytes; the very last part."""
+    return bytes(m['reflect'] for m in d['moves'])
+
+
 def canonical_pool(d):
     """The canonical pool bytes hashed into the context fingerprint of the POOL kinds (the pool layout): the six
     counts, a row per forme (the forme links are u16: the pool has more than 255 formes), per move (the closure's
@@ -3498,7 +3544,7 @@ def canonical_pool(d):
     b.extend(d['immunity'])
     for n in d['natures']:
         b.extend([n['plus'], n['minus']])
-    return bytes(b) + family_bytes(d) + handler_bytes(d) + forme_legal_bytes(d) + flags2_bytes(d) + heal_bytes(d) +         static_flags_bytes(d) + static_hits_bytes(d)
+    return bytes(b) + family_bytes(d) + handler_bytes(d) + forme_legal_bytes(d) + flags2_bytes(d) + heal_bytes(d) +         static_flags_bytes(d) + static_hits_bytes(d) + reflect_bytes(d)
 
 
 def closure_projection(rows, key):
@@ -3799,6 +3845,9 @@ extern const uint8_t dfi_pool_move_heal[DFI_POOL_MOVE_COUNT][2];
  * last parts of the canonical pool bytes. */
 extern const uint32_t dfi_pool_move_static_flags[DFI_POOL_MOVE_COUNT];
 extern const uint8_t dfi_pool_move_static_hits[DFI_POOL_MOVE_COUNT][2];
+/* The reflectable column (step G57): 1 for a move with flags.reflectable in the pin, 0 otherwise; the very last part of the
+ * canonical pool bytes. Magic Bounce (DFI_ABILITY_MAGICBOUNCE) bounces the moves with 1 only. */
+extern const uint8_t dfi_pool_move_reflectable[DFI_POOL_MOVE_COUNT];
 extern const dfi_pool_alias dfi_pool_forme_aliases[DFI_POOL_ALIAS_COUNT];
 
 /* ---- names ----
@@ -3934,6 +3983,11 @@ size_t dfi_pool_canonical_bytes(uint8_t *out, size_t capacity);
           'const uint8_t dfi_pool_move_static_hits[DFI_POOL_MOVE_COUNT][2] = {']
     for m in dp['moves']:
         c.append('    [DFI_MOVE_%s] = {%du, %du}, /* %s */' % (m['id'].upper(), m['hits'][0], m['hits'][1], m['name']))
+    c += ['};', '', '/* The reflectable column (step G57): flags.reflectable of the pin, 1 for a move that Magic Bounce reflects. */',
+          'const uint8_t dfi_pool_move_reflectable[DFI_POOL_MOVE_COUNT] = {']
+    for m in dp['moves']:
+        if m['reflect']:
+            c.append('    [DFI_MOVE_%s] = 1u, /* %s */' % (m['id'].upper(), m['name']))
     c += ['};', '', '/* Cosmetic formes: a name for the row of the base forme (decision 0015 section 4.2). */',
           'const dfi_pool_alias dfi_pool_forme_aliases[DFI_POOL_ALIAS_COUNT] = {']
     for alias, base in dp['aliases']:
@@ -4175,6 +4229,9 @@ size_t dfi_pool_canonical_bytes(uint8_t *out, size_t capacity)
     for (uint32_t i = 0u; i < DFI_POOL_MOVE_COUNT; ++i) {
         out[n++] = dfi_pool_move_static_hits[i][0];
         out[n++] = dfi_pool_move_static_hits[i][1];
+    }
+    for (uint32_t i = 0u; i < DFI_POOL_MOVE_COUNT; ++i) {
+        out[n++] = dfi_pool_move_reflectable[i];
     }
     return n;
 }

@@ -204,6 +204,8 @@ duoforge_add_test(NAME duoforge.state.pool_g48 SOURCES test_pool_g48.c WHITEBOX 
 duoforge_add_test(NAME duoforge.state.pool_g50 SOURCES test_pool_g50.c WHITEBOX TIMEOUT 60)
 duoforge_add_test(NAME duoforge.state.pool_g34 SOURCES test_pool_g34.c WHITEBOX TIMEOUT 60)
 duoforge_add_test(NAME duoforge.state.pool_g41 SOURCES test_pool_g41.c WHITEBOX TIMEOUT 60)
+# Step G57: Magic Bounce and the Mega Stones Absolite and Sablenite (the reflectable column against the pinned Dex, the marks).
+duoforge_add_test(NAME duoforge.state.pool_g57 SOURCES test_pool_g57.c WHITEBOX TIMEOUT 60)
 # Step G42: Roost and Stomping Tantrum: the move result classes (this and last) at every boundary of the g42 battles, the Roost
 # volatile (the pivot boundary inside its turn), the view bits (40 supported, 41 not), the unclassified refusal.
 duoforge_add_test(NAME duoforge.state.pool_g42 SOURCES test_pool_g42.c WHITEBOX TIMEOUT 60)
@@ -242,8 +244,8 @@ foreach(_gen IN ITEMS
         "closure_tables.c=490de42298e34cfd38192d979fd022367bf53693a5fa1855f1cc6ad034d8450a"
         "extended_tables.h=b2abef243fcbfdd87654940076b9fe2fe80b117d74893a7567741f26b9075a7d"
         "extended_tables.c=9e736fa467713283418c4edf8f56b8d844452e596ba422adbd52483d20f7cc17"
-        "pool_tables.h=a45bddf39a207d955ea1be488bec166abbbb2971d4a6df21f63c54788eeccdbb"
-        "pool_tables.c=c422adcd89c092e1b60b87f268962f7ecbdbf142a722f31038d9d27710d2df28")
+        "pool_tables.h=400b0b0a2d54ba6b513cecff25e53f7a3980730375d7109dc1e731c8da16aa3f"
+        "pool_tables.c=5536415736eac66b95c6bf02056f7750e8d62014debd05985c30699329da00b0")
     string(REPLACE "=" ";" _parts "${_gen}")
     list(GET _parts 0 _file)
     list(GET _parts 1 _expected)
@@ -283,6 +285,12 @@ if(DUOFORGE_PS_REFERENCE_DIR)
                 "${DUOFORGE_PS_REFERENCE_DIR}" "${PROJECT_SOURCE_DIR}"
                 --check "${CMAKE_CURRENT_SOURCE_DIR}/reference/tiebreak_ref.h")
         set_tests_properties(duoforge.reference.tiebreak_ref PROPERTIES TIMEOUT 900 LABELS reference)
+        # Step G57: the reflectable moves of the Champions Dex (flags.reflectable), recomputed by the pinned Showdown; the
+        # generated column dfi_pool_move_reflectable is checked against them by duoforge.state.pool_g57.
+        add_test(NAME duoforge.reference.reflect_ref
+            COMMAND "${DUOFORGE_NODE}" "${PROJECT_SOURCE_DIR}/tools/reference/reflect_ref.js"
+                "${DUOFORGE_PS_REFERENCE_DIR}" --check "${CMAKE_CURRENT_SOURCE_DIR}/reference/reflect_ref.h")
+        set_tests_properties(duoforge.reference.reflect_ref PROPERTIES TIMEOUT 120 LABELS reference)
         # The family columns of the pool tables (decision 0015), against the pinned handlers: every
         # family member's handler is called with a probe for each of the 18 types and must agree
         # with the generated type, weather or terrain; the pool's ids are also validated by the

@@ -1394,6 +1394,9 @@ extern const uint8_t dfi_pool_move_heal[DFI_POOL_MOVE_COUNT][2];
  * last parts of the canonical pool bytes. */
 extern const uint32_t dfi_pool_move_static_flags[DFI_POOL_MOVE_COUNT];
 extern const uint8_t dfi_pool_move_static_hits[DFI_POOL_MOVE_COUNT][2];
+/* The reflectable column (step G57): 1 for a move with flags.reflectable in the pin, 0 otherwise; the very last part of the
+ * canonical pool bytes. Magic Bounce (DFI_ABILITY_MAGICBOUNCE) bounces the moves with 1 only. */
+extern const uint8_t dfi_pool_move_reflectable[DFI_POOL_MOVE_COUNT];
 extern const dfi_pool_alias dfi_pool_forme_aliases[DFI_POOL_ALIAS_COUNT];
 
 /* ---- names ----
@@ -1418,7 +1421,7 @@ extern const char *const dfi_pool_item_unmodeled[DFI_POOL_ITEM_COUNT];
 extern const char *const dfi_pool_ability_unmodeled[DFI_POOL_ABILITY_COUNT];
 
 /* SHA-256 of the canonical pool bytes (written by the generator). */
-#define DFI_POOL_CANONICAL_SIZE 54153u
+#define DFI_POOL_CANONICAL_SIZE 54664u
 extern const uint8_t dfi_pool_table_hash[32];
 /* The canonical bytes of the closure layout over the first `formes`, `moves`,
  * `items` and `abilities` rows of the tables above, with every immunity byte
