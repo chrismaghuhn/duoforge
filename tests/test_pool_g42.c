@@ -16,10 +16,11 @@
  *     boundary of a pivot or a replacement inside a turn shows the results so far (`this`) and the turn before (`last`).
  *   - the ROOST bit of single_turn, which is set at the Roost's heal and ends in the residual of its turn (order 25): it is set
  *     only at a boundary inside the Roost turn (the pivot of g42_roost_pivot), and clear at every turn end.
- *   - the unclassified bits (4: this turn, 5: last turn). An action that no class line maps is unclassified, which the engine
- *     writes as the bit with both result values zero. It is the one gap of the classifier that these battles show: Milotic's
- *     Coil (a self boost; the pin's result is true) has no exit of its own, so its position is unclassified in the table. Bits
- *     6-7 are zero. Stomping Tantrum refuses on the last bit (below), so no battle here uses a Tantrum after such a result.
+ *   - the unclassified bits (4: this turn, 5: last turn). Every exit of the move body writes a class (true, false, null or the
+ *     charge's null), so an action is unclassified only if no exit writes one, and none of these battles has that: the table
+ *     has no unclassified position. Bits 6-7 are zero. Stomping Tantrum refuses on the last bit (below).
+ *   - the classes of the review: a Protect that succeeds (TRUE), a repeated Protect that fails (FALSE), a Tailwind that sets
+ *     the side (TRUE) and one that fails on a side that has it (FALSE), a self boost of Coil (TRUE), the Tantrum after each.
  *   - the POOL view extension of both viewers, byte for byte: the revision, the viewer, the epoch, the supported bits of the
  *     build (bit 40 yes, bit 41 no), the ROOST presence bit of each position and MOVE_FAILED = the last result is FALSE.
  *   - an unclassified last result (bit 5, which no battle here produces) makes Stomping Tantrum refuse with E_UNSUPPORTED.
@@ -122,11 +123,11 @@ static const struct {
     {"g42_roost_full", 1u, 0u, 0u, 2u, 0u, 0u, 0u},
     {"g42_roost_full", 1u, 1u, 0u, 1u, 0u, 0u, 0u},
     {"g42_roost_full", 1u, 2u, 0u, 1u, 0u, 0u, 0u},
-    {"g42_roost_full", 1u, 3u, 0u, 0u, 0u, 0u, 1u},
+    {"g42_roost_full", 1u, 3u, 0u, 1u, 0u, 0u, 0u},
     {"g42_roost_full", 2u, 0u, 0u, 1u, 0u, 0u, 0u},
     {"g42_roost_full", 2u, 1u, 0u, 2u, 0u, 0u, 0u},
     {"g42_roost_full", 2u, 2u, 0u, 2u, 0u, 0u, 0u},
-    {"g42_roost_full", 2u, 3u, 0u, 0u, 0u, 0u, 1u},
+    {"g42_roost_full", 2u, 3u, 0u, 1u, 0u, 0u, 0u},
     {"g42_roost_full", 3u, 0u, 0u, 3u, 0u, 0u, 0u},
     {"g42_roost_full", 3u, 1u, 0u, 1u, 0u, 0u, 0u},
     {"g42_roost_full", 3u, 2u, 0u, 1u, 0u, 0u, 0u},
@@ -134,7 +135,7 @@ static const struct {
     {"g42_roost_full", 4u, 0u, 0u, 1u, 0u, 0u, 0u},
     {"g42_roost_full", 4u, 1u, 0u, 2u, 0u, 0u, 0u},
     {"g42_roost_full", 4u, 2u, 0u, 2u, 0u, 0u, 0u},
-    {"g42_roost_full", 4u, 3u, 0u, 0u, 0u, 0u, 1u},
+    {"g42_roost_full", 4u, 3u, 0u, 1u, 0u, 0u, 0u},
     {"g42_tantrum_switch", 0u, 0u, 0u, 0u, 0u, 0u, 0u},
     {"g42_tantrum_switch", 0u, 1u, 0u, 0u, 0u, 0u, 0u},
     {"g42_tantrum_switch", 0u, 2u, 0u, 0u, 0u, 0u, 0u},
@@ -142,19 +143,19 @@ static const struct {
     {"g42_tantrum_switch", 1u, 0u, 0u, 2u, 0u, 0u, 0u},
     {"g42_tantrum_switch", 1u, 1u, 0u, 1u, 0u, 0u, 0u},
     {"g42_tantrum_switch", 1u, 2u, 0u, 1u, 0u, 0u, 0u},
-    {"g42_tantrum_switch", 1u, 3u, 0u, 0u, 0u, 0u, 1u},
+    {"g42_tantrum_switch", 1u, 3u, 0u, 1u, 0u, 0u, 0u},
     {"g42_tantrum_switch", 2u, 0u, 0u, 0u, 0u, 0u, 0u},
     {"g42_tantrum_switch", 2u, 1u, 0u, 2u, 0u, 0u, 0u},
     {"g42_tantrum_switch", 2u, 2u, 0u, 1u, 0u, 0u, 0u},
-    {"g42_tantrum_switch", 2u, 3u, 0u, 0u, 0u, 0u, 1u},
+    {"g42_tantrum_switch", 2u, 3u, 0u, 1u, 0u, 0u, 0u},
     {"g42_tantrum_switch", 3u, 0u, 0u, 0u, 0u, 0u, 0u},
     {"g42_tantrum_switch", 3u, 1u, 0u, 1u, 0u, 0u, 0u},
     {"g42_tantrum_switch", 3u, 2u, 0u, 2u, 0u, 0u, 0u},
-    {"g42_tantrum_switch", 3u, 3u, 0u, 0u, 0u, 0u, 1u},
+    {"g42_tantrum_switch", 3u, 3u, 0u, 1u, 0u, 0u, 0u},
     {"g42_tantrum_switch", 4u, 0u, 0u, 1u, 0u, 0u, 0u},
     {"g42_tantrum_switch", 4u, 1u, 0u, 1u, 0u, 0u, 0u},
     {"g42_tantrum_switch", 4u, 2u, 0u, 1u, 0u, 0u, 0u},
-    {"g42_tantrum_switch", 4u, 3u, 0u, 0u, 0u, 0u, 1u},
+    {"g42_tantrum_switch", 4u, 3u, 0u, 1u, 0u, 0u, 0u},
     {"g42_roost_heal", 0u, 0u, 0u, 0u, 0u, 0u, 0u},
     {"g42_roost_heal", 0u, 1u, 0u, 0u, 0u, 0u, 0u},
     {"g42_roost_heal", 0u, 2u, 0u, 0u, 0u, 0u, 0u},
@@ -162,19 +163,19 @@ static const struct {
     {"g42_roost_heal", 1u, 0u, 0u, 1u, 0u, 0u, 0u},
     {"g42_roost_heal", 1u, 1u, 0u, 1u, 0u, 0u, 0u},
     {"g42_roost_heal", 1u, 2u, 0u, 1u, 0u, 0u, 0u},
-    {"g42_roost_heal", 1u, 3u, 0u, 0u, 0u, 0u, 1u},
+    {"g42_roost_heal", 1u, 3u, 0u, 1u, 0u, 0u, 0u},
     {"g42_roost_heal", 2u, 0u, 0u, 1u, 0u, 0u, 0u},
     {"g42_roost_heal", 2u, 1u, 0u, 1u, 0u, 0u, 0u},
     {"g42_roost_heal", 2u, 2u, 0u, 1u, 0u, 0u, 0u},
-    {"g42_roost_heal", 2u, 3u, 0u, 0u, 0u, 0u, 1u},
+    {"g42_roost_heal", 2u, 3u, 0u, 1u, 0u, 0u, 0u},
     {"g42_roost_heal", 3u, 0u, 0u, 1u, 0u, 0u, 0u},
     {"g42_roost_heal", 3u, 1u, 0u, 2u, 0u, 0u, 0u},
     {"g42_roost_heal", 3u, 2u, 0u, 2u, 0u, 0u, 0u},
-    {"g42_roost_heal", 3u, 3u, 0u, 0u, 0u, 0u, 1u},
+    {"g42_roost_heal", 3u, 3u, 0u, 1u, 0u, 0u, 0u},
     {"g42_roost_heal", 4u, 0u, 0u, 1u, 0u, 0u, 0u},
     {"g42_roost_heal", 4u, 1u, 0u, 1u, 0u, 0u, 0u},
     {"g42_roost_heal", 4u, 2u, 0u, 1u, 0u, 0u, 0u},
-    {"g42_roost_heal", 4u, 3u, 0u, 0u, 0u, 0u, 1u},
+    {"g42_roost_heal", 4u, 3u, 0u, 1u, 0u, 0u, 0u},
     {"g42_tantrum_paralysis", 0u, 0u, 0u, 0u, 0u, 0u, 0u},
     {"g42_tantrum_paralysis", 0u, 1u, 0u, 0u, 0u, 0u, 0u},
     {"g42_tantrum_paralysis", 0u, 2u, 0u, 0u, 0u, 0u, 0u},
@@ -239,10 +240,83 @@ static const struct {
     {"g42_roost_pivot", 3u, 1u, 0u, 1u, 0u, 0u, 0u},
     {"g42_roost_pivot", 3u, 2u, 0u, 2u, 0u, 0u, 0u},
     {"g42_roost_pivot", 3u, 3u, 0u, 0u, 0u, 0u, 0u},
+    {"g42_protect_tantrum", 0u, 0u, 0u, 0u, 0u, 0u, 0u},
+    {"g42_protect_tantrum", 0u, 1u, 0u, 0u, 0u, 0u, 0u},
+    {"g42_protect_tantrum", 0u, 2u, 0u, 0u, 0u, 0u, 0u},
+    {"g42_protect_tantrum", 0u, 3u, 0u, 0u, 0u, 0u, 0u},
+    {"g42_protect_tantrum", 1u, 0u, 0u, 1u, 0u, 0u, 0u},
+    {"g42_protect_tantrum", 1u, 1u, 0u, 1u, 0u, 0u, 0u},
+    {"g42_protect_tantrum", 1u, 2u, 0u, 2u, 0u, 0u, 0u},
+    {"g42_protect_tantrum", 1u, 3u, 0u, 1u, 0u, 0u, 0u},
+    {"g42_protect_tantrum", 2u, 0u, 0u, 1u, 0u, 0u, 0u},
+    {"g42_protect_tantrum", 2u, 1u, 0u, 1u, 0u, 0u, 0u},
+    {"g42_protect_tantrum", 2u, 2u, 0u, 1u, 0u, 0u, 0u},
+    {"g42_protect_tantrum", 2u, 3u, 0u, 2u, 0u, 0u, 0u},
+    {"g42_protect_stall_tantrum", 0u, 0u, 0u, 0u, 0u, 0u, 0u},
+    {"g42_protect_stall_tantrum", 0u, 1u, 0u, 0u, 0u, 0u, 0u},
+    {"g42_protect_stall_tantrum", 0u, 2u, 0u, 0u, 0u, 0u, 0u},
+    {"g42_protect_stall_tantrum", 0u, 3u, 0u, 0u, 0u, 0u, 0u},
+    {"g42_protect_stall_tantrum", 1u, 0u, 0u, 1u, 0u, 0u, 0u},
+    {"g42_protect_stall_tantrum", 1u, 1u, 0u, 1u, 0u, 0u, 0u},
+    {"g42_protect_stall_tantrum", 1u, 2u, 0u, 2u, 0u, 0u, 0u},
+    {"g42_protect_stall_tantrum", 1u, 3u, 0u, 1u, 0u, 0u, 0u},
+    {"g42_protect_stall_tantrum", 2u, 0u, 0u, 2u, 0u, 0u, 0u},
+    {"g42_protect_stall_tantrum", 2u, 1u, 0u, 2u, 0u, 0u, 0u},
+    {"g42_protect_stall_tantrum", 2u, 2u, 0u, 1u, 0u, 0u, 0u},
+    {"g42_protect_stall_tantrum", 2u, 3u, 0u, 1u, 0u, 0u, 0u},
+    {"g42_protect_stall_tantrum", 3u, 0u, 0u, 1u, 0u, 0u, 0u},
+    {"g42_protect_stall_tantrum", 3u, 1u, 0u, 1u, 0u, 0u, 0u},
+    {"g42_protect_stall_tantrum", 3u, 2u, 0u, 1u, 0u, 0u, 0u},
+    {"g42_protect_stall_tantrum", 3u, 3u, 0u, 2u, 0u, 0u, 0u},
+    {"g42_protect_stall_tantrum", 4u, 0u, 0u, 1u, 0u, 0u, 0u},
+    {"g42_protect_stall_tantrum", 4u, 1u, 0u, 2u, 0u, 0u, 0u},
+    {"g42_protect_stall_tantrum", 4u, 2u, 0u, 1u, 0u, 0u, 0u},
+    {"g42_protect_stall_tantrum", 4u, 3u, 0u, 1u, 0u, 0u, 0u},
+    {"g42_tailwind_tantrum", 0u, 0u, 0u, 0u, 0u, 0u, 0u},
+    {"g42_tailwind_tantrum", 0u, 1u, 0u, 0u, 0u, 0u, 0u},
+    {"g42_tailwind_tantrum", 0u, 2u, 0u, 0u, 0u, 0u, 0u},
+    {"g42_tailwind_tantrum", 0u, 3u, 0u, 0u, 0u, 0u, 0u},
+    {"g42_tailwind_tantrum", 1u, 0u, 0u, 1u, 0u, 0u, 0u},
+    {"g42_tailwind_tantrum", 1u, 1u, 0u, 1u, 0u, 0u, 0u},
+    {"g42_tailwind_tantrum", 1u, 2u, 0u, 2u, 0u, 0u, 0u},
+    {"g42_tailwind_tantrum", 1u, 3u, 0u, 1u, 0u, 0u, 0u},
+    {"g42_tailwind_tantrum", 2u, 0u, 0u, 1u, 0u, 0u, 0u},
+    {"g42_tailwind_tantrum", 2u, 1u, 0u, 2u, 0u, 0u, 0u},
+    {"g42_tailwind_tantrum", 2u, 2u, 0u, 1u, 0u, 0u, 0u},
+    {"g42_tailwind_tantrum", 2u, 3u, 0u, 2u, 0u, 0u, 0u},
+    {"g42_tailwind_tantrum", 3u, 0u, 0u, 2u, 0u, 0u, 0u},
+    {"g42_tailwind_tantrum", 3u, 1u, 0u, 1u, 0u, 0u, 0u},
+    {"g42_tailwind_tantrum", 3u, 2u, 0u, 1u, 0u, 0u, 0u},
+    {"g42_tailwind_tantrum", 3u, 3u, 0u, 1u, 0u, 0u, 0u},
+    {"g42_tailwind_tantrum", 4u, 0u, 0u, 1u, 0u, 0u, 0u},
+    {"g42_tailwind_tantrum", 4u, 1u, 0u, 1u, 0u, 0u, 0u},
+    {"g42_tailwind_tantrum", 4u, 2u, 0u, 1u, 0u, 0u, 0u},
+    {"g42_tailwind_tantrum", 4u, 3u, 0u, 2u, 0u, 0u, 0u},
+    {"g42_coil_tantrum", 0u, 0u, 0u, 0u, 0u, 0u, 0u},
+    {"g42_coil_tantrum", 0u, 1u, 0u, 0u, 0u, 0u, 0u},
+    {"g42_coil_tantrum", 0u, 2u, 0u, 0u, 0u, 0u, 0u},
+    {"g42_coil_tantrum", 0u, 3u, 0u, 0u, 0u, 0u, 0u},
+    {"g42_coil_tantrum", 1u, 0u, 0u, 1u, 0u, 0u, 0u},
+    {"g42_coil_tantrum", 1u, 1u, 0u, 1u, 0u, 0u, 0u},
+    {"g42_coil_tantrum", 1u, 2u, 0u, 2u, 0u, 0u, 0u},
+    {"g42_coil_tantrum", 1u, 3u, 0u, 1u, 0u, 0u, 0u},
+    {"g42_coil_tantrum", 2u, 0u, 0u, 1u, 0u, 0u, 0u},
+    {"g42_coil_tantrum", 2u, 1u, 0u, 2u, 0u, 0u, 0u},
+    {"g42_coil_tantrum", 2u, 2u, 0u, 2u, 0u, 0u, 0u},
+    {"g42_coil_tantrum", 2u, 3u, 0u, 1u, 0u, 0u, 0u},
+    {"g42_coil_tantrum", 3u, 0u, 0u, 1u, 0u, 0u, 0u},
+    {"g42_coil_tantrum", 3u, 1u, 0u, 1u, 0u, 0u, 0u},
+    {"g42_coil_tantrum", 3u, 2u, 0u, 1u, 0u, 0u, 0u},
+    {"g42_coil_tantrum", 3u, 3u, 0u, 2u, 0u, 0u, 0u},
+    {"g42_coil_tantrum", 4u, 0u, 0u, 1u, 0u, 0u, 0u},
+    {"g42_coil_tantrum", 4u, 1u, 0u, 2u, 0u, 0u, 0u},
+    {"g42_coil_tantrum", 4u, 2u, 0u, 2u, 0u, 0u, 0u},
+    {"g42_coil_tantrum", 4u, 3u, 0u, 1u, 0u, 0u, 0u},
 };
 
 static const char *const names[] = {"g42_roost_full", "g42_tantrum_switch", "g42_roost_heal", "g42_tantrum_paralysis",
-                                    "g42_tantrum_miss", "g42_roost_ground_order", "g42_roost_pivot"};
+                                    "g42_tantrum_miss", "g42_roost_ground_order", "g42_roost_pivot", "g42_protect_tantrum",
+                                    "g42_protect_stall_tantrum", "g42_tailwind_tantrum", "g42_coil_tantrum"};
 
 int main(void)
 {
@@ -418,7 +492,7 @@ int main(void)
     fprintf(stderr, "  %u steps in %zu battles; %u boundary positions; results true %u, false %u, null %u, unclassified %u; %u Roost "
                     "boundaries; %u viewer extensions\n",
             steps_run, sizeof names / sizeof names[0], steps_run * 4u, trues, falses, nulls, unclass, roosts, compared);
-    DF_CHECK_EQ_U64(&t, sizeof rows / sizeof rows[0], 124u); /* 31 steps of seven battles, four positions each */
+    DF_CHECK_EQ_U64(&t, sizeof rows / sizeof rows[0], 196u); /* 49 steps of eleven battles, four positions each */ /* 31 steps of seven battles, four positions each */
     DF_CHECK_EQ_U64(&t, compared, 2u * steps_run);
     DF_CHECK(&t, trues != 0u && falses != 0u && nulls != 0u && roosts == 1u);
     duoforge_context_destroy(ctx);

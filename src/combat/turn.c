@@ -414,6 +414,7 @@ static void dfi_fail_still(dfi_run *r, uint32_t user)
 {
     dfi_emit_plain(r, DUOFORGE_EVENT_FAIL, user);
     dfi_still(r);
+    r->mres |= DFI_MRES_FALSE; /* a [still] failure returns false (sim/battle-actions.ts, useMoveInner and runMoveEffects) */
 }
 
 /* -immune for `flat`, with [from] ability when an ability did it. */
@@ -2676,6 +2677,7 @@ static duoforge_status dfi_run_imprison(dfi_run *r, uint32_t user)
     duoforge_event e = dfi_event_make(DUOFORGE_EVENT_VOLATILE_START, user);
     e.detail = (uint8_t)DUOFORGE_VOLATILE_IMPRISON;
     dfi_emit(r, &e); /* [-start] move: Imprison */
+    r->mres |= DFI_MRES_TRUE;
     return DUOFORGE_OK;
 }
 
@@ -3232,6 +3234,7 @@ static bool dfi_soak(dfi_run *r, uint32_t flat, uint32_t move_id)
 static duoforge_status dfi_terrain_change(dfi_run *r);
 static duoforge_status dfi_status_hit_end(dfi_run *r)
 {
+    r->mres |= DFI_MRES_TRUE; /* the effect applied: the move's hit returns true (sim/battle-actions.ts, runMoveEffects) */
     const duoforge_status st = dfi_update(r);
     if (st != DUOFORGE_OK) {
         return st;
@@ -3401,6 +3404,7 @@ static duoforge_status dfi_run_wide_guard(dfi_run *r, uint32_t user)
     dfi_active_slot *pos = dfi_pos(b, user);
     pos->stall_level = (uint8_t)(pos->stall_level < DFI_STALL_LEVEL_MAX ? pos->stall_level + 1u : pos->stall_level); /* wide-operands-reviewed */
     pos->stall_turns = (uint8_t)DFI_STALL_DURATION;
+    r->mres |= DFI_MRES_TRUE; /* Wide Guard's effect applies (a second one of the side prints nothing, and is still a success) */
     return DUOFORGE_OK;
 }
 
@@ -3425,6 +3429,7 @@ static duoforge_status dfi_run_aurora_veil(dfi_run *r, uint32_t user)
     e.detail = (uint8_t)side;
     e.amount = (uint8_t)DUOFORGE_SIDE_AURORA_VEIL;
     dfi_emit(r, &e);
+    r->mres |= DFI_MRES_TRUE; /* addSideCondition returns true */
     return DUOFORGE_OK;
 }
 
@@ -3479,6 +3484,7 @@ static duoforge_status dfi_run_perish_song(dfi_run *r, uint32_t user, const dfi_
         dfi_fail_still(r, user);
         return DUOFORGE_OK;
     }
+    r->mres |= DFI_MRES_TRUE; /* at least one holder took the volatile or was stopped: the hit returns true */
     if (message) {
         /* -fieldactivate|move: Perish Song: the ACTIVATE event of the move, with no position */
         const duoforge_event e = dfi_ev(DUOFORGE_EVENT_ACTIVATE, DUOFORGE_NO_POSITION, DUOFORGE_CAUSE_MOVE,
@@ -3814,6 +3820,7 @@ static duoforge_status dfi_run_helping_hand(dfi_run *r, uint32_t user, uint32_t 
 {
     if (dfi_ability(r->b, dfi_at(r->b, ally), DFI_ABILITY_GOODASGOLD)) {
         dfi_immune(r, ally, 1u + DFI_ABILITY_GOODASGOLD); /* the move steps stop: no Update */
+        r->mres |= DFI_MRES_FALSE; /* the TryHit of the ally returns false: the move fails */
         return DUOFORGE_OK;
     }
     dfi_active_slot *pos = dfi_pos(r->b, ally);
@@ -3841,12 +3848,14 @@ static duoforge_status dfi_run_coaching(dfi_run *r, uint32_t user, uint32_t ally
 {
     if (dfi_ability(r->b, dfi_at(r->b, ally), DFI_ABILITY_GOODASGOLD)) {
         dfi_immune(r, ally, 1u + DFI_ABILITY_GOODASGOLD); /* the move steps stop: no Update */
+        r->mres |= DFI_MRES_FALSE; /* the TryHit of the ally returns false: the move fails */
         return DUOFORGE_OK;
     }
     if (dfi_boost(r, ally, md->boosts, user, dfi_effect(DUOFORGE_CAUSE_MOVE, 0u, DFI_BOOST_PRIMARY))) {
         return dfi_status_hit_end(r);
     }
-    return DUOFORGE_OK; /* nothing changed: the hit loop stops */
+    r->mres |= DFI_MRES_FALSE; /* nothing changed: the hit returns false (runMoveEffects) */
+    return DUOFORGE_OK; /* the hit loop stops */
 }
 
 /* Clangorous Soul (step G34, data/moves.ts:2498-2526; the Champions mod makes its accuracy true, mods/champions/moves.ts:121-124):
@@ -3862,7 +3871,8 @@ static duoforge_status dfi_run_clangorous_soul(dfi_run *r, uint32_t user, const 
         return DUOFORGE_OK;
     }
     if (!dfi_boost(r, user, md->boosts, DFI_POSITIONS, dfi_effect(DUOFORGE_CAUSE_MOVE, 0u, DFI_BOOST_PRIMARY))) {
-        return DUOFORGE_OK; /* nothing changed: the hit loop stops */
+        r->mres |= DFI_MRES_FALSE; /* nothing changed: the hit returns false (runMoveEffects) */
+    return DUOFORGE_OK; /* the hit loop stops */
     }
     uint32_t cost = (uint32_t)m->hp_max * 33u / 100u;
     cost = cost == 0u ? 1u : cost;
@@ -4204,6 +4214,7 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
     if (q->move_slot < DUOFORGE_MAX_MOVE_SLOTS && !locked) {
         dfi_move_slot *slot = &m->moves[q->move_slot];
         if (slot->pp == 0u) {
+            r->mres |= DFI_MRES_FALSE; /* "cant nopp": the move returns false (battle-actions.ts useMoveInner) */
             return DUOFORGE_OK; /* "cant nopp"; the domain never offers it */
         }
         slot->pp = (uint8_t)((uint32_t)slot->pp - 1u); /* wide-operands-reviewed: pp > 0 */
@@ -4399,6 +4410,7 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
             pos->charge_turns = (uint8_t)DFI_CHARGE_TURNS_MAX;
             pos->locked_move = (uint8_t)((uint32_t)q->move_slot + 1u); /* wide-operands-reviewed: <= 4 */
             pos->locked_target = q->target;
+            r->mres |= DFI_MRES_NULL; /* the charge turn's onTryMove returns null (data/moves.ts) */
             return DUOFORGE_OK;
         }
     }
@@ -4422,6 +4434,7 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
                 if (shield != 0u) {
                     /* [still], then cant|holder|ability: Armor Tail|move|[of] user */
                     dfi_still(r);
+                    r->mres |= DFI_MRES_FALSE; /* onFoeTryMove returns false (data/abilities.ts armortail) */
                     duoforge_event e = dfi_ev(DUOFORGE_EVENT_CANT, (1u - side) * 2u + slot, DUOFORGE_CAUSE_ABILITY, shield, user);
                     e.id = (uint16_t)move_id;
                     dfi_emit(r, &e);
@@ -4480,6 +4493,8 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
         }
         if (!added) {
             dfi_fail_still(r, user);
+        } else {
+            r->mres |= DFI_MRES_TRUE; /* addSideCondition succeeded */
         }
         return DUOFORGE_OK;
     }
@@ -4504,6 +4519,7 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
         e.detail = (uint8_t)side;
         e.amount = (uint8_t)md->side_condition; /* DUOFORGE_SIDE_* */
         dfi_emit(r, &e);
+        r->mres |= DFI_MRES_TRUE; /* addSideCondition returns true */
         return DUOFORGE_OK;
     }
     if (status_move && (md->special == DFI_SPECIAL_SANDSTORM || md->special == DFI_SPECIAL_SNOWSCAPE ||
@@ -4525,6 +4541,7 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
         duoforge_event e = dfi_event_make(DUOFORGE_EVENT_WEATHER, DUOFORGE_NO_POSITION);
         e.detail = (uint8_t)w; /* DUOFORGE_WEATHER_* */
         dfi_emit(r, &e);
+        r->mres |= DFI_MRES_TRUE; /* Field.setWeather returns true */
         return DUOFORGE_OK;
     }
     if (status_move && (md->special == DFI_SPECIAL_ELECTRIC_TERRAIN || md->special == DFI_SPECIAL_MISTY_TERRAIN)) {
@@ -4542,6 +4559,7 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
         duoforge_event e = dfi_event_make(DUOFORGE_EVENT_FIELD_START, DUOFORGE_NO_POSITION);
         e.detail = (uint8_t)dfi_terrain_field_detail(terrain);
         dfi_emit(r, &e);
+        r->mres |= DFI_MRES_TRUE; /* Field.setTerrain returns true */
         return dfi_terrain_change(r);
     }
     if (status_move && md->pseudo_weather == DFI_PSEUDO_WEATHER_TRICK_ROOM) {
@@ -4554,6 +4572,7 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
                                   DUOFORGE_CAUSE_NONE, 0u, of);
         e.detail = (uint8_t)DUOFORGE_FIELD_TRICK_ROOM;
         dfi_emit(r, &e);
+        r->mres |= DFI_MRES_TRUE; /* addPseudoWeather (or its end) returns true */
         return DUOFORGE_OK;
     }
     if (status_move && md->primary_status == DFI_STATUS_NONE && md->special != DFI_SPECIAL_PARTING_SHOT &&
@@ -4572,7 +4591,8 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
         if (dfi_boost(r, user, md->boosts, DFI_POSITIONS, own)) {
             return dfi_status_hit_end(r);
         }
-        return DUOFORGE_OK; /* nothing changed: the hit loop stops */
+        r->mres |= DFI_MRES_FALSE; /* nothing changed: the hit returns false (runMoveEffects) */
+    return DUOFORGE_OK; /* the hit loop stops */
     }
     /* A handler this build does not have fails explicitly; the Team C
      * specials of later steps are also kept out by the support manifest. */
@@ -4997,7 +5017,7 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
             /* Without a did, the reference's damage of a hit target may be false or undefined (battle-actions.ts:1296-1310):
              * not classified. A status move with no target left keeps the classes of the hit steps. */
             for (uint32_t i = 0u; i < count; ++i) {
-                r->mres |= hit[i] ? DFI_MRES_UNCLASS : 0u;
+                r->mres |= hit[i] ? DFI_MRES_FALSE : 0u; /* the hit's moveHit returns false: -fail [still] (runMoveEffects) */
             }
         }
         return did ? dfi_status_hit_end(r) : DUOFORGE_OK;
