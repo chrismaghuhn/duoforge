@@ -21,22 +21,50 @@ from .errors import SearchError
 C = _layout.CONSTANTS
 RULES = lookahead.RULES
 MAX_RESPREADS = 256
+# The stated-spread teams of the belief (decision 0023): A/B/C and the PP_ teams of the D0023 pool, pinned on
+# 2026-10-09 (79 sources, 444 sets, table sha256 1795524c...). New registry teams never widen it silently;
+# a wider belief is an owner decision with a new list.
+SPREAD_SOURCES = ("A", "B", "C", "PP_0071E895C381DD1C", "PP_097433EFCC505367", "PP_0A93AE91073CC690",
+                  "PP_102E046831526921", "PP_1B067B3C97217EAF", "PP_1E6A03DC1764214E", "PP_1F4DA9800A6AD851",
+                  "PP_202C514602D9ABE9", "PP_246AECB752FACC29", "PP_24B7E1E280B1088F", "PP_25161F401C0A2005",
+                  "PP_297320B831FB73B8", "PP_2C4D3FBB866C4D2C", "PP_2D234B4EC11A9ACA", "PP_2F25D07C9B26E73C",
+                  "PP_369E75B64155B6A1", "PP_37083BBE99A1BF42", "PP_3C4611CCBA18D35A", "PP_3E44CC0D5FBA21F8",
+                  "PP_470A6EC2468AF8A4", "PP_4BFCE88CE42A966A", "PP_4C6EB1D0D2CBB3F3", "PP_4FCE711199944AE0",
+                  "PP_56F0A0120CD736E5", "PP_56F517BBD665899F", "PP_58C15A8BD78B30AB", "PP_5B9FAE64B204F805",
+                  "PP_5CEDF6DD944DB220", "PP_5D8E24080B6D3200", "PP_62AA4EF34EE42F01", "PP_674AC2A18201012A",
+                  "PP_6853674468737B2E", "PP_6F1B0E8DF51CC57D", "PP_6F1D5B2B15285F2B", "PP_7C9C0663EF60180E",
+                  "PP_7F7E07BF0F953B0A", "PP_8025F0AEF5F2D1B6", "PP_81D3F0FFE6EF750C", "PP_8536A2B4F89D3E72",
+                  "PP_8606ABBA447D2E2E", "PP_89FAA497014B5641", "PP_8E37C3B00CBBA6B6", "PP_8F4C2600A4A63A90",
+                  "PP_90F7CCC7AB5B3D0B", "PP_9F21D2E809A9F09D", "PP_9FED7BFC061AD8BB", "PP_A0582A49F5490809",
+                  "PP_A5DFCE8794A63B55", "PP_A702BF47F522438B", "PP_A8154C05ECFA0E20", "PP_A982BEAEE27D32EC",
+                  "PP_B80C5F3E363597C2", "PP_BB66FF17A1C4A911", "PP_BED443F8A0ACBE11", "PP_BFE773D9CDA8999C",
+                  "PP_C8F60C5168BD6A83", "PP_D3277B02C40781F3", "PP_D3A1849223A946F8", "PP_D668DD98C6C7177B",
+                  "PP_D6B2F01DDF4FEE52", "PP_D7C70DFF2BD9F5CF", "PP_D828BB9033A964A0", "PP_D943321333ED8846",
+                  "PP_DBC606408D738253", "PP_DDCF443E371A3A19", "PP_DEB9DAC3FF5777D5", "PP_E01AD4BAD0DA9CCC",
+                  "PP_E2B7674A54DEBEE7", "PP_E4AA1030C5E684B4", "PP_ECDECC58B9116D68", "PP_EE7A2C6A9F775208",
+                  "PP_EEDF279FBC3AD845", "PP_F85133BAC58B317F", "PP_F853DAF986849F1D", "PP_FC5A33ABDD155CA3",
+                  "PP_FD6FE5BB94A024FB")
 
 
 class Unreconstructible(Exception):
     """An explicitly counted absence of a supported public reconstruction."""
 
 
-def spread_table(ctx, root=None):
-    """Read A/B/C and PP_ stated spreads, never LL_ importer guesses.
+def spread_table(ctx, root=None, sources=SPREAD_SOURCES):
+    """Read the pinned A/B/C and PP_ stated spreads, never LL_ importer guesses
+    (sources=None: every A/B/C and PP_ team of an explicitly chosen root).
 
     Sets absent from the context's tables cannot occur there; count those
     exclusions. Source ids, counts and hashes are saved beside the table hash.
     """
     root = Path(root) if root is not None else Path(__file__).resolve().parents[2] / "data/teams"
-    registry = json.loads((root / "index.json").read_text(encoding="utf-8"))["teams"]
-    sources = sorted((r for r in registry if r["id"] in ("A", "B", "C") or r["id"].startswith("PP_")),
-                     key=lambda r: r["id"])
+    registry = {r["id"]: r for r in json.loads((root / "index.json").read_text(encoding="utf-8"))["teams"]}
+    if sources is None:  # an explicitly chosen registry: all of its stated A/B/C and PP_ teams
+        sources = [x for x in registry if x in ("A", "B", "C") or x.startswith("PP_")]
+    missing = [x for x in sources if x not in registry]
+    if missing:
+        raise SearchError(f"pinned spread sources missing from the registry: {missing}")
+    sources = [registry[x] for x in sorted(sources)]
     cols = ([], [], [], [], [])
     counts = {"sets": 0, "unstated": 0, "outside_context": 0}
     for t, source in enumerate(sources):

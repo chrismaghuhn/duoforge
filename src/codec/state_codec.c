@@ -63,6 +63,11 @@ static void dfi_encode_tail_pos(const dfi_tail_pos *tp, uint8_t *po)
 static void dfi_encode_tail(const dfi_pool_tail *tail, uint8_t *out)
 {
     out[DFI_ENC_TAIL_FIELD_GRAVITY_OFF] = tail->gravity_turns;
+    for (uint32_t s = 0u; s < DUOFORGE_SIDE_COUNT; ++s) {
+        for (uint32_t i = 0u; i < DFI_PARTY_BYTES_PER_SIDE; ++i) {
+            out[DFI_ENC_TAIL_FIELD_PARTY_OFF + s * DFI_PARTY_BYTES_PER_SIDE + i] = tail->party_order[s][i];
+        }
+    }
     for (uint32_t i = 0u; i < DFI_ENC_TAIL_FIELD_RESERVED_SIZE; ++i) {
         out[DFI_ENC_TAIL_FIELD_RESERVED_OFF + i] = 0u;
     }
@@ -152,6 +157,11 @@ static void dfi_parse_tail_pos(const uint8_t *po, dfi_tail_pos *tp)
 static void dfi_parse_tail(const uint8_t *in, dfi_pool_tail *tail)
 {
     tail->gravity_turns = in[DFI_ENC_TAIL_FIELD_GRAVITY_OFF];
+    for (uint32_t s = 0u; s < DUOFORGE_SIDE_COUNT; ++s) {
+        for (uint32_t i = 0u; i < DFI_PARTY_BYTES_PER_SIDE; ++i) {
+            tail->party_order[s][i] = in[DFI_ENC_TAIL_FIELD_PARTY_OFF + s * DFI_PARTY_BYTES_PER_SIDE + i];
+        }
+    }
     tail->field_pad = 0u;
     for (uint32_t s = 0u; s < DUOFORGE_SIDE_COUNT; ++s) {
         dfi_tail_side *ts = &tail->sides[s];
