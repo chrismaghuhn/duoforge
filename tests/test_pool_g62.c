@@ -27,8 +27,8 @@ static void check_mark(df_test *t)
     DF_CHECK(t, dfi_support.moves[DFI_MOVE_AFTERYOU] != 0u);
     DF_CHECK(t, dfi_support.moves[DFI_MOVE_QUASH] != 0u);
     DF_CHECK_EQ_U64(t, dfi_pool_moves[DFI_MOVE_HAZE].special, DFI_SPECIAL_HAZE);
-    /* the handler id comes after the G54 ones, and Unmodelled moves after it */
-    DF_CHECK_EQ_U64(t, DFI_SPECIAL_HAZE, DFI_SPECIAL_STRENGTH_SAP + 1u);
+    /* the handler id comes after the G64 ones, and Unmodelled moves after it */
+    DF_CHECK_EQ_U64(t, DFI_SPECIAL_HAZE, DFI_SPECIAL_SHEER_COLD + 1u); /* after the four of G64 (batch 2 merge) */
     DF_CHECK_EQ_U64(t, DFI_SPECIAL_AFTER_YOU, DFI_SPECIAL_HAZE + 1u);
     DF_CHECK_EQ_U64(t, DFI_SPECIAL_QUASH, DFI_SPECIAL_AFTER_YOU + 1u);
     DF_CHECK_EQ_U64(t, DFI_SPECIAL_UNMODELED, DFI_SPECIAL_QUASH + 1u);
