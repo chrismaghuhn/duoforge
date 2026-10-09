@@ -26,7 +26,12 @@ SHARD_ROWS = 2500  # below a round's rows: trajectories span shards and a round 
 
 
 def _pool():
-    return teams.TeamPool.from_setups(("A", "B"), duoforge.reference_setups([0])["sides"][0])
+    """Teams A and B (both spread sources of _table) and LL_B, a copy of B that is no spread source."""
+    sides = duoforge.reference_setups([0])["sides"][0]
+    return teams.TeamPool.from_setups(("A", "B", "LL_B"), np.stack([sides[0], sides[1], sides[1]]))
+
+
+SOURCES = {"A": 0, "B": 1}  # _table's source index of each spread-source team (its position in the sides)
 
 
 def _table():
@@ -98,7 +103,7 @@ class Collector(unittest.TestCase):
     @classmethod
     def collect(cls, out, **kw):
         from duoforge_learn import collect_expert as ce
-        options = {"max_steps": MAX_STEPS, "label_limit": LABELS}
+        options = {"max_steps": MAX_STEPS, "label_limit": LABELS, "source_ids": SOURCES}
         options.update(kw)
         with mock.patch.object(ce, "SHARD_ROWS", SHARD_ROWS), cls.search() as search:
             return ce.collect(cls.manifest, cls.net, cls.net.params, _pool(), search, out, **options)
@@ -172,6 +177,27 @@ class Collector(unittest.TestCase):
         self.assertEqual(pairs.shape, (1024, 2))
         self.assertEqual(ce.pairing_of(self.manifest, _pool(), [1001, 1000]).tolist(), pairs[1::-1].tolist())
 
+    def test_the_foe_source_is_left_out(self):
+        """D0023's leave-foe-source-out (as arena.py): the teacher's belief of a game excludes its foe team's spread
+        source, and nothing when the foe team is no source (an LL_ team)."""
+        from duoforge_learn import collect_expert as ce
+        from duoforge_search import expert as ex
+        pool = _pool()
+        for r in (0, 1):
+            games = 1000 + 512 * r + np.arange(512)
+            pairs = ce.pairing_of(self.manifest, pool, games)
+            excluded = ce.exclusions(self.manifest, pool, SOURCES, r)
+            self.assertEqual(len(excluded), 512)
+            for e, game in enumerate(games):
+                foe = pool.ids[int(pairs[e, 1 - ex.learner_seat(int(game))])]
+                self.assertEqual(excluded[e], SOURCES.get(foe), (r, e, foe))
+            self.assertEqual({type(x) for x in excluded}, {int, type(None)})  # sources and a non-source occur
+            self.assertEqual(set(excluded) - {None}, {0, 1})
+        self.assertNotEqual(ce.exclusions(self.manifest, pool, SOURCES, 0), ce.exclusions(self.manifest, pool,
+                                                                                            SOURCES, 1))
+        with self.assertRaisesRegex(ValueError, "source"):
+            ce.exclusions(self.manifest, pool, {"A": "0"}, 0)
+
     def test_raw_draw_is_keyed_and_follows_the_full_policy(self):
         from duoforge_learn import collect_expert as ce
         from duoforge_search.expert_data import DecisionKey
@@ -242,6 +268,12 @@ class Collector(unittest.TestCase):
         self.assertTrue(any(n.startswith("round-0001-") for n in partial))  # the interrupted round's shard
         state = ce.read_state(out)
         self.assertEqual(state["next_round"], 1)
+        # The teacher checkpoint of the boundary binds round 1's own exclusions (its pairings differ from round 0's).
+        teacher = __import__("json").loads(state["teacher"])
+        self.assertEqual(teacher["search"]["exclude_teams"], ce.exclusions(self.manifest, _pool(), SOURCES, 1))
+        self.assertNotEqual(teacher["search"]["exclude_teams"], ce.exclusions(self.manifest, _pool(), SOURCES, 0))
+        with self.assertRaisesRegex(ValueError, "resume"):
+            self.collect(out, resume=True, source_ids={"A": 0})
         # Anything other than the run's own manifest and configuration is refused.
         with self.assertRaisesRegex(ValueError, "resume"):
             self.collect(out, resume=True, max_steps=MAX_STEPS + 1)
@@ -326,19 +358,45 @@ class Cli(unittest.TestCase):
         import io
         from duoforge_learn import collect_expert as ce
         from duoforge_search import expert_data as ed
+        import hashlib
+        import json
+        import jax
+        from duoforge_learn import checkpoint, policy
+        from duoforge_search import expert_eval
         repo = Path(__file__).resolve().parents[2]
         with tempfile.TemporaryDirectory(prefix="duoforge-collect-cli-") as tmp:
             tmp = Path(tmp)
+            # A real (untrained) checkpoint stands in for params-49333.
+            cfg = policy.v2_config("S")
+            params = policy.make(cfg).init(jax.random.PRNGKey(5))
             init = tmp / "params-other.npz"
-            init.write_bytes(b"not params-49333")
-            ed.write_manifest(tmp / "manifest.json", _manifest())
-            cases = {"inside the repository": ["--out", str(repo / "collect-out")],
-                     "params-49333": ["--out", str(tmp / "out")],
-                     "pins checkpoint": ["--out", str(tmp / "out"), "--allow-other-init"]}
-            for cause, extra in cases.items():
+            checkpoint.save(init, params, {"model": cfg, "encoder": features.ENCODER,
+                                           "features": list(features.FEATURE_NAMES),
+                                           "slot_features": list(features.SLOT_FEATURE_NAMES),
+                                           "data": {"kind": "pool"}, "teams": {}, "update": 0, "decisions": 0,
+                                           "ids": {}})
+            # The hashes the CLI computes: the init file, the canonical model configuration, the pool (M12's
+            # expert_eval.pool_sha256 of the default Teams A and B).
+            right = dataclasses.replace(
+                _manifest(), checkpoint_hash=hashlib.sha256(init.read_bytes()).hexdigest(),
+                model_hash=hashlib.sha256(json.dumps(cfg, sort_keys=True, separators=(",", ":")).encode()).hexdigest(),
+                pool_hash=expert_eval.pool_sha256(teams.TeamPool.from_setups(
+                    ("A", "B"), duoforge.reference_setups([0])["sides"][0])))
+            manifests = {"checkpoint": dataclasses.replace(right, checkpoint_hash="b" * 64),
+                         "model": dataclasses.replace(right, model_hash="c" * 64),
+                         "pool": dataclasses.replace(right, pool_hash="e" * 64)}
+            for name, m in manifests.items():
+                ed.write_manifest(tmp / f"manifest-{name}.json", m)
+            other = ["--allow-other-init", "--out", str(tmp / "out")]
+            cases = {"inside the repository": ("checkpoint", ["--out", str(repo / "collect-out")]),
+                     "params-49333": ("checkpoint", ["--out", str(tmp / "out")]),
+                     "the manifest pins checkpoint": ("checkpoint", other),
+                     "the manifest pins model": ("model", other),
+                     "the manifest pins pool": ("pool", other)}
+            for cause, (name, extra) in cases.items():
                 err = io.StringIO()
                 with self.subTest(cause), contextlib.redirect_stderr(err):
-                    code = ce.main(["--init", str(init), "--manifest", str(tmp / "manifest.json"), *extra])
+                    code = ce.main(["--init", str(init), "--manifest", str(tmp / f"manifest-{name}.json"), *extra])
                     self.assertEqual(code, 2)
                     self.assertIn(cause, err.getvalue())
             self.assertFalse((tmp / "out").exists())
