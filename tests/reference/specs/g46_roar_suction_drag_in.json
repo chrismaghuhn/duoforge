@@ -1,6 +1,6 @@
 {
   "name": "g46_roar_suction_drag_in",
-  "purpose": "Roar on a Suction Cups holder, the drag-in DragOut blocker (dragIn, sim/battle-actions.ts:163-169): Gyarados Roars Malamar (Suction Cups, its only legal ability) in the active slot. The drag draws a reserve first (getRandomSwitchable), then the DragOut is blocked by Suction Cups ([-activate] ability: Suction Cups, no -fail); Malamar stays and no reserve comes in.",
+  "purpose": "Roar on a Suction Cups holder: Gyarados Roars Malamar (Suction Cups, its only legal ability) in the active slot. The DragOut of forceSwitch (battle-actions.ts:1356-1367) is blocked at the hit ([-activate] ability: Suction Cups): no forceSwitchFlag, no draw, no -fail, Malamar stays and no reserve comes in.",
   "data": "pool",
   "format": "gen9championsvgc2026regmc",
   "seed": "sodium,0000000000000000000000000000000000000000000000000000000000000009",
