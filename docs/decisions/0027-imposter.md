@@ -1,6 +1,6 @@
 # 0027 — Imposter (Ditto): the trigger of the transformed state
 
-Status: **proposal** (lane B, 2026-10-09). The owner approved Imposter as an API item. **This note adds no public value, no event and no state of its own.** The transformed state, its view and `DUOFORGE_EVENT_TRANSFORM` (44) are decision 0028 (lane A, PR #252); Imposter is a second way into it. Builds on 0028 and 0026 (Illusion).
+Status: **accepted** (owner, 2026-10-09: Imposter approved as an API item; code after 0028, #252, merges). **This note adds no public value, no event and no state of its own.** The transformed state, its view and `DUOFORGE_EVENT_TRANSFORM` (44) are decision 0028 (lane A, PR #252); Imposter is a second way into it. Builds on 0028 and 0026 (Illusion).
 
 ## 1. Why, and how much
 
@@ -53,4 +53,5 @@ Status: **proposal** (lane B, 2026-10-09). The owner approved Imposter as an API
   - a copy that fails into a Substitute (if marked) or into a transformed foe;
   - an empty diagonal slot;
   - a faster Ditto against a slower Intimidate lead.
+- **The converter:** `tools/reference/trace_to_c.py` (the `switch-order-handlers` rule, about lines 488-510) must know Imposter as a SwitchIn handler with an effect, so that a switch-order tie between an entering Ditto and another entering handler is converted, not refused.
 - **A C test, mutation checks, a campaign of about 300 battles, a 0015 entry and a support line.**
