@@ -1679,6 +1679,14 @@ G41_ABILITY_FACTS = (
                    "pokemon.maybeTrapped = true; } },",
                    'flags: {},')),
 )
+# Step G53: Pressure is an engine row read by id (dfi_pressure_extra, src/combat/turn.c). Its onStart is the announcement at
+# switch-in (as Unnerve's); its onDeductPP is the extra PP that a foe's move costs (useMoveInner, sim/battle-actions.ts:473-484).
+# The move flag mustpressure is read from the move table (DUOFORGE_MOVE_STATIC_FLAG_MUST_PRESSURE). The Champions mod has no entry.
+G53_ABILITY_FACTS = (
+    ('pressure', ("onStart(pokemon) { this.add('-ability', pokemon, 'Pressure'); },",
+                  "onDeductPP(target, source) { if (target.isAlly(source)) return; return 1; },",
+                  'flags: {},')),
+)
 G34_ITEM_FACTS = (
     ('widelens', ('onSourceModifyAccuracyPriority: -2,',
                   "onSourceModifyAccuracy(accuracy) { if (typeof accuracy === 'number') { return this.chainModify([4505, 4096]); } },")),
@@ -2100,7 +2108,7 @@ FLAGS2_BITS = {'sound': 1, 'heal': 2, 'powder': 16, 'punch': 32, 'slicing': 64} 
 # Showdown flag name, additive only; the generated column dfi_pool_move_static_flags holds them for every pool row and has
 # no engine reader. POWER_RULE is not a flag of the pin: the move has a basePowerCallback (its basePower is not the damage).
 STATIC_FLAG_BITS = {'contact': 1, 'sound': 2, 'punch': 4, 'bite': 8, 'bullet': 16, 'pulse': 32, 'slicing': 64,
-                    'wind': 128, 'dance': 256, 'powder': 512}
+                    'wind': 128, 'dance': 256, 'powder': 512, 'mustpressure': 2048}  # mustpressure: step G53 (Pressure's targets)
 STATIC_FLAG_POWER_RULE = 1024
 FLAG2_RECHARGE = 8  # step G17: flags.recharge with self: {volatileStatus: 'mustrecharge'} (data/moves.ts, Hyper Beam 9113-9128)
 RECHARGE_SELF = "self: { volatileStatus: 'mustrecharge', },"
@@ -2253,7 +2261,7 @@ ENGINE_ROWS = {'items': ['focussash', 'floettite', 'psychicseed', 'electricseed'
                              'justified',
                              'limber',
                              'solarpower',
-                             'regenerator', 'toxicdebris', 'shadowtag']}
+                             'regenerator', 'toxicdebris', 'shadowtag', 'pressure']}
 # The moves of the whole pool that the turn code pivots with a switch flag of their own (dfi_pivot_moves,
 # src/state/closure_member.c) beyond Flip Turn and U-turn, which are rows of the steps. Empty: Volt Switch comes with the
 # step that gives it a flag value, and adds its id here.
@@ -2884,7 +2892,7 @@ def check_g28_items(items_ts, only=None):
 def check_g34_facts(abil_ts, champ_abil, items_ts, champ_items):
     """Steps G34, G35, Mega batch 2 and G39: every fact of G34_ABILITY_FACTS, G35_ABILITY_FACTS, MEGA2_ABILITY_FACTS, G39_ABILITY_FACTS and G34_ITEM_FACTS is in the pinned entry, whitespace aside, and the
     Champions mod has no entry of its own for it (an override would change what the engine reads)."""
-    for kind, facts_by_id, src, champ in (('ability', G34_ABILITY_FACTS + G35_ABILITY_FACTS + MEGA2_ABILITY_FACTS + G39_ABILITY_FACTS + G41_ABILITY_FACTS, abil_ts, champ_abil),
+    for kind, facts_by_id, src, champ in (('ability', G34_ABILITY_FACTS + G35_ABILITY_FACTS + MEGA2_ABILITY_FACTS + G39_ABILITY_FACTS + G41_ABILITY_FACTS + G53_ABILITY_FACTS, abil_ts, champ_abil),
                                           ('item', G34_ITEM_FACTS, items_ts, champ_items)):
         for rid, facts in facts_by_id:
             e = src.entry(rid)

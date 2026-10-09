@@ -2174,7 +2174,7 @@ const dfi_pool_item_data dfi_pool_items[DFI_POOL_ITEM_COUNT] = {
  *   poisonheal -- data/abilities.ts:3331-3343  [unmodelled: callback onDamage; callback onDamagePriority]
  *   poisonpoint -- data/abilities.ts:3344-3356  [unmodelled: callback onDamagingHit]
  *   poisontouch -- data/abilities.ts:3370-3384
- *   pressure -- data/abilities.ts:3437-3449  [unmodelled: callback onDeductPP; callback onStart]
+ *   pressure -- data/abilities.ts:3437-3449
  *   protean -- data/abilities.ts:3497-3512  [unmodelled: callback onPrepareHit]
  *   punkrock -- data/abilities.ts:3589-3607  [unmodelled: callback onBasePower; callback onBasePowerPriority; callback onSourceModifyDamage]
  *   purepower -- data/abilities.ts:3608-3617  [unmodelled: callback onModifyAtk; callback onModifyAtkPriority]
@@ -2953,7 +2953,7 @@ const uint8_t dfi_pool_ability_handler[DFI_POOL_ABILITY_COUNT] = {
     [DFI_ABILITY_POISONHEAL] = DFI_HANDLER_UNMODELED,
     [DFI_ABILITY_POISONPOINT] = DFI_HANDLER_UNMODELED,
     [DFI_ABILITY_POISONTOUCH] = DFI_HANDLER_NONE,
-    [DFI_ABILITY_PRESSURE] = DFI_HANDLER_UNMODELED,
+    [DFI_ABILITY_PRESSURE] = DFI_HANDLER_NONE,
     [DFI_ABILITY_PROTEAN] = DFI_HANDLER_UNMODELED,
     [DFI_ABILITY_PUNKROCK] = DFI_HANDLER_UNMODELED,
     [DFI_ABILITY_PUREPOWER] = DFI_HANDLER_UNMODELED,
@@ -4744,6 +4744,7 @@ const uint32_t dfi_pool_move_static_flags[DFI_POOL_MOVE_COUNT] = {
     [DFI_MOVE_ICEHAMMER] = 0x5u, /* Ice Hammer */
     [DFI_MOVE_ICESPINNER] = 0x1u, /* Ice Spinner */
     [DFI_MOVE_ICYWIND] = 0x80u, /* Icy Wind */
+    [DFI_MOVE_IMPRISON] = 0x800u, /* Imprison */
     [DFI_MOVE_INFERNALPARADE] = 0x400u, /* Infernal Parade */
     [DFI_MOVE_INFESTATION] = 0x1u, /* Infestation */
     [DFI_MOVE_IRONTAIL] = 0x1u, /* Iron Tail */
@@ -4815,7 +4816,9 @@ const uint32_t dfi_pool_move_static_flags[DFI_POOL_MOVE_COUNT] = {
     [DFI_MOVE_SNORE] = 0x2u, /* Snore */
     [DFI_MOVE_SOLARBLADE] = 0x41u, /* Solar Blade */
     [DFI_MOVE_SPARKLINGARIA] = 0x2u, /* Sparkling Aria */
+    [DFI_MOVE_SPIKES] = 0x800u, /* Spikes */
     [DFI_MOVE_SPITUP] = 0x400u, /* Spit Up */
+    [DFI_MOVE_STEALTHROCK] = 0x800u, /* Stealth Rock */
     [DFI_MOVE_STEELROLLER] = 0x1u, /* Steel Roller */
     [DFI_MOVE_STEELWING] = 0x1u, /* Steel Wing */
     [DFI_MOVE_STOMPINGTANTRUM] = 0x401u, /* Stomping Tantrum */
@@ -4836,6 +4839,7 @@ const uint32_t dfi_pool_move_static_flags[DFI_POOL_MOVE_COUNT] = {
     [DFI_MOVE_THUNDERFANG] = 0x9u, /* Thunder Fang */
     [DFI_MOVE_THUNDERPUNCH] = 0x5u, /* Thunder Punch */
     [DFI_MOVE_TORCHSONG] = 0x2u, /* Torch Song */
+    [DFI_MOVE_TOXICSPIKES] = 0x800u, /* Toxic Spikes */
     [DFI_MOVE_TRAILBLAZE] = 0x1u, /* Trailblaze */
     [DFI_MOVE_TRIPLEAXEL] = 0x401u, /* Triple Axel */
     [DFI_MOVE_TROPKICK] = 0x1u, /* Trop Kick */
@@ -7016,7 +7020,6 @@ const char *const dfi_pool_ability_unmodeled[DFI_POOL_ABILITY_COUNT] = {
     [DFI_ABILITY_PLUS] = "callback onModifySpA; callback onModifySpAPriority; read by id in data/abilities.ts; read by id in data/moves.ts",
     [DFI_ABILITY_POISONHEAL] = "callback onDamage; callback onDamagePriority",
     [DFI_ABILITY_POISONPOINT] = "callback onDamagingHit",
-    [DFI_ABILITY_PRESSURE] = "callback onDeductPP; callback onStart",
     [DFI_ABILITY_PROTEAN] = "callback onPrepareHit",
     [DFI_ABILITY_PUNKROCK] = "callback onBasePower; callback onBasePowerPriority; callback onSourceModifyDamage",
     [DFI_ABILITY_PUREPOWER] = "callback onModifyAtk; callback onModifyAtkPriority",
@@ -7073,10 +7076,10 @@ const char *const dfi_pool_ability_unmodeled[DFI_POOL_ABILITY_COUNT] = {
 };
 
 const uint8_t dfi_pool_table_hash[32] = {
-    0xc6u, 0x41u, 0xb7u, 0x23u, 0x15u, 0x48u, 0x43u, 0x30u,
-    0xf1u, 0x8cu, 0x50u, 0xa0u, 0xd8u, 0x65u, 0x40u, 0xefu,
-    0xe5u, 0x59u, 0x7eu, 0x40u, 0x16u, 0xa7u, 0xdcu, 0xc0u,
-    0x5eu, 0x76u, 0x88u, 0xceu, 0x32u, 0x07u, 0xbdu, 0x7bu,
+    0xb3u, 0xcfu, 0xe6u, 0x0cu, 0xd3u, 0xdeu, 0xa3u, 0x4du,
+    0x8du, 0xa6u, 0x9bu, 0xfcu, 0x6cu, 0x99u, 0xa6u, 0xd7u,
+    0x23u, 0x8bu, 0xb4u, 0x43u, 0x74u, 0x68u, 0x4au, 0x6cu,
+    0x04u, 0xaeu, 0x4eu, 0x43u, 0x53u, 0x0cu, 0x59u, 0xfau,
 };
 
 static size_t dfi_pool_put_u16(uint8_t *out, size_t n, uint32_t v)
