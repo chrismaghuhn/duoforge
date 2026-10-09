@@ -894,6 +894,8 @@ EV = {name: i + 1 for i, name in enumerate(
      'SINGLE_TURN', 'VOLATILE_START', 'VOLATILE_END', 'TYPE_CHANGE', 'ITEM_START', 'REVIVE'])}
 # DUOFORGE_EVENT_DRAG = 45 (step G46): 43 and 44 belong to REVIVE and TRANSFORM on their own branches, so the drag is set by value.
 EV['DRAG'] = 45
+# DUOFORGE_EVENT_CLEAR_ALL_BOOSTS = 47 (Haze, decision 0031, step G62): by value, as DRAG; 46 is not used here.
+EV['CLEAR_ALL_BOOSTS'] = 47
 CAUSE = {'NONE': 0, 'MOVE': 1, 'ITEM': 2, 'ABILITY': 3, 'RECOIL': 4, 'DRAIN': 5, 'BURN': 6, 'CONFUSION': 7,
          'TERRAIN': 8, 'PARALYSIS': 9, 'SLEEP': 10, 'FREEZE': 11, 'FLINCH': 12, 'NO_PP': 13, 'POISON': 14,
          'HEAL_BLOCK': 15, 'WEATHER': 16, 'ITEM_TAKEN': 17, 'RECHARGE': 18, 'DISABLE': 19, 'TAUNT': 20, 'IMPRISON': 21}
@@ -1074,6 +1076,7 @@ def step_events(log, viewer, roster_of, maxhp, tables, rb_pending=None):
     skip = set()
     hits_on = {}  # the -damage lines of the move that is being shown, by the Pokemon hit (see -hitcount)
     last_user = None  # the position of the last move line's user (Revival Blessing's REVIVE names no position)
+    last_move_line = None  # the parts of the last move line (Sheer Cold's `-ohko` names its move through it, step G64)
     revived = None  # (side, name) of the member revived last: its instaswitch line has no [from]
     for i, line in enumerate(log):
         if i in skip:
@@ -1099,6 +1102,7 @@ def step_events(log, viewer, roster_of, maxhp, tables, rb_pending=None):
         e = None
         if kind == 'move':
             hits_on.clear()
+            last_move_line = parts
         elif kind == '-damage' and not attrs:
             hits_on[hit_key(args[0])] = hits_on.get(hit_key(args[0]), 0) + 1
         elif kind == '-hitcount':
@@ -1113,6 +1117,18 @@ def step_events(log, viewer, roster_of, maxhp, tables, rb_pending=None):
             if len(args) != 2 or not args[1].isdigit() or hits_on.get(hit_key(args[0]), 0) != int(args[1]):
                 raise ConversionError('hitcount-mismatch', 'trace_to_c: %r but the move showed %d -damage lines on that Pokemon'
                                       % (line, hits_on.get(hit_key(args[0]), 0)), detail=line.split('|')[-1])
+            continue
+        elif kind == '-ohko':
+            # Step G64 (Sheer Cold, data/moves.ts:16198-16213: ohko 'Ice'): the bare line that an OHKO move shows when it knocks its
+            # target out (sim/battle-actions.ts:999, `if (move.ohko && !targets[0].hp) this.battle.add('-ohko')`, after the faints
+            # of faintMessages at :976). The faint of that target is the line right before it (the event is the faint), and the
+            # last move line is Sheer Cold aimed at the same Pokemon. It carries no state, so it is checked and dropped; any other
+            # `-ohko` is refused.
+            prev = log[i - 1] if i > 0 else ''
+            aimed = last_move_line is not None and len(last_move_line) >= 5 and last_move_line[3] == 'Sheer Cold' and \
+                prev.startswith('|faint|') and prev.split('|')[2] == last_move_line[4]
+            if args or attrs or not aimed:
+                raise ConversionError('ohko-line', 'trace_to_c: unknown -ohko %r' % line, detail=line)
             continue
         if kind == 'turn':
             e = ev_tuple(EV['TURN'], ident=int(args[0]))
@@ -1285,7 +1301,17 @@ def step_events(log, viewer, roster_of, maxhp, tables, rb_pending=None):
         elif kind == '-activate':
             pos = ev_pos(args[0])
             what = args[1]
-            if what == 'move: Protect':
+            if what == 'move: Poltergeist' and len(args) == 3:
+                # Step G64 (Poltergeist's onTryHit, data/moves.ts:13601-13604): -activate|X|move: Poltergeist|Item, an ACTIVATE of
+                # the move with no state of its own. The item is the one X holds now; the name must be an item of the tables.
+                try:
+                    tables['ITEM'][key(args[2])]
+                except KeyError:
+                    raise ConversionError('activate-line', 'trace_to_c: unknown -activate %r' % line, detail='Poltergeist item')
+                e = ev_tuple(EV['ACTIVATE'], pos, NOPOS, CAUSE['MOVE'], 0, tables['MOVE'][key('Poltergeist')])
+            elif len(args) != 2:
+                raise ConversionError('activate-line', 'trace_to_c: unknown -activate %r' % line, detail=what)
+            elif what == 'move: Protect':
                 e = ev_tuple(EV['BLOCKED'], pos)
             elif what == 'move: Psychic Terrain':  # Team C: a priority move stopped at a grounded target
                 e = ev_tuple(EV['BLOCKED'], pos, detail=FIELD_PSYCHIC_TERRAIN)
@@ -1301,6 +1327,13 @@ def step_events(log, viewer, roster_of, maxhp, tables, rb_pending=None):
                 e = ev_tuple(EV['ACTIVATE'], pos, NOPOS, CAUSE['MOVE'], 0, tables['MOVE'][key(what[6:])])
             else:
                 raise ConversionError('activate-line', 'trace_to_c: unknown -activate %r' % line, detail=what)
+        elif kind == '-clearallboost':
+            # Haze (step G62, decision 0031; data/moves.ts:8156-8172, onHitField): the line names no position and has no
+            # attribute. Its event is public: both players see the same line. Anything else is refused, never mapped.
+            if args or attrs:
+                raise ConversionError('protocol-line', 'trace_to_c: -clearallboost with arguments %r' % line,
+                                      detail='clearallboost')
+            e = ev_tuple(EV['CLEAR_ALL_BOOSTS'])
         elif kind in ('-boost', '-unboost'):
             cause, id2, other = ev_cause(attrs, tables)
             e = ev_tuple(EV['BOOST' if kind == '-boost' else 'UNBOOST'], ev_pos(args[0]), other, cause, 0, id2,
@@ -1425,6 +1458,18 @@ def step_events(log, viewer, roster_of, maxhp, tables, rb_pending=None):
                     raise ConversionError('enditem-line', 'trace_to_c: unknown -enditem %r' % line, detail=line)
                 e = ev_tuple(EV['ITEM_END'], ev_pos(args[0]), ev_pos(of[0][5:]) if of else NOPOS, CAUSE['ITEM_TAKEN'],
                              tables['MOVE'][key(move_name)], tables['ITEM'][key(args[1])] + 1)
+            elif '[from] stealeat' in attrs:
+                # Step G64 (Bug Bite, data/moves.ts:1911-1931): `-enditem|X|Berry|[from] stealeat|[move] Bug Bite|[of] Y`, the berry
+                # that the user takes from X and eats at once: ITEM_END with the cause ITEM_TAKEN, the move in id, the user (Y) in
+                # other, and the eaten flag. Any other shape of it (silent, another move, no [of]) is refused.
+                move_attr = [a for a in attrs if a.startswith('[move] ')]
+                of = [a for a in attrs if a.startswith('[of] ')]
+                extra = [a for a in attrs if a not in ('[from] stealeat',) and not a.startswith('[move] ') and not a.startswith('[of] ')]
+                if (len(move_attr) != 1 or move_attr[0] != '[move] Bug Bite' or len(of) != 1 or extra or '[silent]' in attrs or
+                        len(args) != 2):
+                    raise ConversionError('enditem-line', 'trace_to_c: unknown -enditem %r' % line, detail=line)
+                e = ev_tuple(EV['ITEM_END'], ev_pos(args[0]), ev_pos(of[0][5:]), CAUSE['ITEM_TAKEN'],
+                             tables['MOVE'][key('Bug Bite')], tables['ITEM'][key(args[1])] + 1, flags=FLAG['EATEN'])
             else:
                 # [weaken]: the second line of a resist berry (Team C, Chople Berry), detail 1.
                 # step G46: Red Card's `-enditem|holder|Red Card|[of] attacker`: the attacker's position is `other` (items.ts:5160).
