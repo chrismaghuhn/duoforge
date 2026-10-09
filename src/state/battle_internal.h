@@ -227,8 +227,15 @@ typedef struct dfi_side {
 #define DFI_MOVE_RESULT_TRUE 1u
 #define DFI_MOVE_RESULT_FALSE 2u
 #define DFI_MOVE_RESULT_NULL 3u
-#define DFI_TAIL_MOVE_RESULT_MASK 0x0Fu /* bits 4-7 are zero */
 #define DFI_MOVE_RESULT_LAST_SHIFT 2u
+/* Step G42 (Stomping Tantrum, Roost): the result of the occupant's move was not classified exactly (an engine exit that
+ * the classifier does not map to the pin's value, turn.c dfi_move_result_*): bit 4 while this turn runs, bit 5 for the last
+ * turn once the turn ends (dfi_end_turn shifts it with the result). A set bit means the result bits of its slot are zero.
+ * Stomping Tantrum refuses (E_UNSUPPORTED) when its user's last result carries bit 5; nothing else reads it. This is an
+ * internal bit of rev 4 (no public value): the layout stays 288 bytes, and bits 6-7 are zero. */
+#define DFI_MOVE_RESULT_UNCLASSIFIED_NOW 0x10u
+#define DFI_MOVE_RESULT_UNCLASSIFIED_LAST 0x20u
+#define DFI_TAIL_MOVE_RESULT_MASK 0x3Fu /* bits 6-7 are zero */
 /* single_turn: one-turn volatiles that the position's flags byte (full) cannot hold; both end in the residual of the turn, on
  * switch-out and on faint. RAGE_POWDER belongs to the Follow Me flag (the move that set it also sets that flag). */
 #define DFI_SINGLE_TURN_RAGE_POWDER 1u
@@ -325,7 +332,8 @@ typedef struct dfi_tail_side {
     uint8_t spikes;                            /* layers */
     uint8_t sticky_web;                        /* 0/1 */
     uint8_t quick_guard;                       /* tail rev 4: 0/1, this turn only */
-    uint8_t soak_type[DUOFORGE_MAX_ROSTER];    /* per roster member: 0 none, else type id + 1 (the type Soak set) */
+    uint8_t soak_type[DUOFORGE_MAX_ROSTER];    /* per roster member: 0 none, else type id + 1 (the type Soak set); DFI_TAIL_TYPE2_TYPELESS
+                                                * (Double Shock, decision 0025): the first slot is ???, type2 is the second type (nonzero) */
     uint8_t item_now[DUOFORGE_MAX_ROSTER];     /* per roster member: 0 = as the member says, 1..254 = item id + 1,
                                                 * DFI_TAIL_ITEM_NONE = holds nothing (Trick, Knock Off) */
     uint8_t toxic_stage[DUOFORGE_MAX_ROSTER];  /* per roster member: the toxic counter, 0 = none */
