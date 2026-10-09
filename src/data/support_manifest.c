@@ -463,6 +463,11 @@ const dfi_support_manifest dfi_support = {
             [DFI_MOVE_HEALPULSE] = 1u,
             [DFI_MOVE_STRENGTHSAP] = 1u,
             [DFI_MOVE_SING] = 1u,
+            /* Step G58 (Phantom Force, decision 0015 item 5ax): the two-turn charge (-prepare, no target shown), the
+             * semi-invulnerability of the charge (the Invulnerability step misses a target that is charging it: No Guard and
+             * a Poison-type user's Toxic are the exceptions), and breaksProtect after the accuracy check (Protect, Wide Guard,
+             * Quick Guard and the stall counter of the target; the -activate line carries [broken]). No Power Herb (unmarked). */
+            [DFI_MOVE_PHANTOMFORCE] = 1u,
         },
     .abilities =
         {

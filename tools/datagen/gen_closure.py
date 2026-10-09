@@ -2139,6 +2139,7 @@ SPECIAL_P = dict(SPECIAL_C, **{
     'upperhand': ('UPPER_HAND', {'onTry'}),                               # G54: a priority move against a target that moves first with one
     'healpulse': ('HEAL_PULSE', {'onHit'}),                               # G54: heals the target by half of its maximum HP
     'strengthsap': ('STRENGTH_SAP', {'onHit'}),                           # G54: heals the user by the target's Attack, then lowers it
+    'phantomforce': ('PHANTOM_FORCE', {'onTryMove'}),                     # G58: a two-turn move, semi-invulnerable on the charge turn; breaks Protect on a hit
                                    # G44: a 20 percent pick of burn, paralysis or freeze (G2_OWNED_SECONDARY)
     'ragefist': ('RAGE_FIST', {'basePowerCallback'}),                     # G48: 50 + 50 per hit the user took, at most 350
     'stoneaxe': ('STONE_AXE', {'onAfterHit', 'onAfterSubDamage'}),        # G48: Stealth Rock on the foe's side after a hit
@@ -2205,6 +2206,18 @@ G44_FACTS = (
 # Punch's queue read with the priority test); HEAL_PULSE and STRENGTH_SAP (the heals of the target and the user); STEEL_BEAM
 # (mindBlownRecoil: the recoil of half the maximum HP, after a hit and in MoveFail); FINAL_GAMBIT (damage = the user's HP).
 G54_HANDLERS = ['MULTI_HIT_2_5', 'SCALE_SHOT', 'QUICK_GUARD', 'UPPER_HAND', 'HEAL_PULSE', 'STRENGTH_SAP']
+# Step G58, Phantom Force (data/moves.ts:13307-13335; the Champions mod has no entry). The charge is the two-turn move of
+# Electro Shot and Solar Beam (twoturnmove, -prepare on the charge turn), and the user is semi-invulnerable through its
+# volatile phantomforce (duration 2, onInvulnerability false: every move that targets it misses). The move has no protect
+# flag, so Protect does not stop it; its breaksProtect removes the target's protections after the accuracy check.
+G58_HANDLERS = ['PHANTOM_FORCE']
+G58_FACTS = (
+    'accuracy: 100,', 'basePower: 90,', 'category: "Physical",', 'priority: 0,', 'target: "normal",', 'type: "Ghost",',
+    'flags: { contact: 1, charge: 1, mirror: 1, metronome: 1, nosleeptalk: 1, noassist: 1, failinstruct: 1 },',
+    'breaksProtect: true,', 'if (attacker.removeVolatile(move.id)) {', "this.add('-prepare', attacker, move.name);",
+    "if (!this.runEvent('ChargeMove', attacker, defender, move)) {", "attacker.addVolatile('twoturnmove', defender);",
+    'return null;', 'duration: 2,', 'onInvulnerability: false,',
+)
 G54_FACTS = (
     ('iciclespear', ['accuracy: 100,', 'basePower: 25,', 'category: "Physical",', 'priority: 0,',
                      'flags: { protect: 1, mirror: 1, metronome: 1 },', 'multihit: [2, 5],', 'target: "normal",', 'type: "Ice",']),
@@ -2227,7 +2240,7 @@ G54_FACTS = (
                      "const success = this.boost({ atk: -1 }, target, source, null, false, true);",
                      'return !!(this.heal(atk, source, target) || success);', 'target: "normal",', 'type: "Grass",']),
 )
-SPECIAL_IDS_P = SPECIAL_IDS_C + G2_HANDLERS + WEATHER_HANDLERS + G16_HANDLERS + G15_HANDLERS + G19_HANDLERS + G20_HANDLERS + G20_PROTECT_HANDLERS + G28_HANDLERS + G30_HANDLERS + G32_HANDLERS + G34_HANDLERS + G27_HANDLERS + G25_HANDLERS + G26_HANDLERS + G33_HANDLERS + G38_HANDLERS + G29_HANDLERS + G39_HANDLERS + G31_HANDLERS + G48_HANDLERS + G44_HANDLERS + G50_HANDLERS + G42_HANDLERS + G56_HANDLERS + G52_HANDLERS + G54_HANDLERS + ['UNMODELED']# Step G10 made two of these handlers data: Scald (thawsTarget) and Recover (heal) are read into the second flags# byte (bit 4, thaws the target) and the heal column, and have the special NONE; their ids stay defined (the ids after
+SPECIAL_IDS_P = SPECIAL_IDS_C + G2_HANDLERS + WEATHER_HANDLERS + G16_HANDLERS + G15_HANDLERS + G19_HANDLERS + G20_HANDLERS + G20_PROTECT_HANDLERS + G28_HANDLERS + G30_HANDLERS + G32_HANDLERS + G34_HANDLERS + G27_HANDLERS + G25_HANDLERS + G26_HANDLERS + G33_HANDLERS + G38_HANDLERS + G29_HANDLERS + G39_HANDLERS + G31_HANDLERS + G48_HANDLERS + G44_HANDLERS + G50_HANDLERS + G42_HANDLERS + G56_HANDLERS + G52_HANDLERS + G54_HANDLERS + G58_HANDLERS + ['UNMODELED']# Step G10 made two of these handlers data: Scald (thawsTarget) and Recover (heal) are read into the second flags# byte (bit 4, thaws the target) and the heal column, and have the special NONE; their ids stay defined (the ids after
 # them keep their values). First Impression and Low Kick keep theirs: the turn code implements them.
 POOL_COLUMN_KEYS = {'thawsTarget', 'heal'}
 G2_OWNED_FIELDS = {
@@ -2249,6 +2262,7 @@ G2_OWNED_FIELDS = {
     'FEINT': {'breaksProtect': "breaksProtect: true, // Breaking protection implemented in scripts.js"},
     'GLAIVE_RUSH': {'self': "self: { volatileStatus: 'glaiverush', },"},
     'LOCKED_MOVE': {'self': "self: { volatileStatus: 'lockedmove', },"},
+    'PHANTOM_FORCE': {'breaksProtect': 'breaksProtect: true,'},
     'RAGE_POWDER': {'volatileStatus': "volatileStatus: 'ragepowder',"},
     'MULTI_HIT_2': {'multihit': 'multihit: 2,'},
     'DOUBLE_SHOCK': {'self': "self: { onHit(pokemon) { pokemon.setType(pokemon.getTypes(true).map(type => type === \"Electric\" ? \"???\" : type)); this.add('-start', pokemon, 'typechange', pokemon.getTypes().join('/'), '[from] move: Double Shock'); }, },"},
@@ -2272,7 +2286,8 @@ G2_OWNED_FIELDS = {
 G2_OWNED_SECONDARY = {'STONE_AXE': 'secondary: {}, // Sheer Force-boosted', 'CEASELESS_EDGE': 'secondary: {}, // Sheer Force-boosted', 'TRI_ATTACK': "secondary: { chance: 20, onHit(target, source) { const status = this.sample(['brn', 'par', 'frz']); "
                   "target.trySetStatus(status, source); }, },"}
 G2_OWNED_CONDITION = {'ROOST', 'ENCORE', 'WIDE_GUARD', 'QUICK_GUARD', 'GLAIVE_RUSH', 'AURORA_VEIL', 'SPIKY_SHIELD', 'RAGE_POWDER', 'DISABLE',
-                      'ELECTRIC_TERRAIN', 'MISTY_TERRAIN', 'PERISH_SONG', 'IMPRISON', 'TAUNT', 'YAWN', 'REVIVAL_BLESSING'}
+                      'ELECTRIC_TERRAIN', 'MISTY_TERRAIN', 'PERISH_SONG', 'IMPRISON', 'TAUNT', 'YAWN', 'REVIVAL_BLESSING',
+                      'PHANTOM_FORCE'}
 # Step G8 (Throat Chop and Psychic Noise): the two secondaries become modelled kinds, and the column that their
 # consumers read is the move's second flags byte (the first is full): the `sound` flag (Throat Chop bars the sound
 # moves) and the `heal` flag (Heal Block bars the moves that heal). Both are derived for every pool move, the prefix
@@ -2993,6 +3008,17 @@ def check_g56_facts(conditions_ts, moves_ts):
                 fail('move %s: the entry no longer has "%s"' % (mid, fact))
 
 
+def check_g58_facts(moves_ts):
+    """Step G58: the Phantom Force entry is the pinned text the turn code reads (its charge, its volatile, its flags)."""
+    e = moves_ts.entry('phantomforce')
+    if e is None:
+        fail('move phantomforce not found')
+    text = norm('\n'.join(e[2]))
+    for fact in G58_FACTS:
+        if norm(fact) not in text:
+            fail('move phantomforce: the entry no longer has "%s"' % fact)
+
+
 def check_weather_facts(conditions_ts, moves_ts):
     """Every fact of WEATHER_FACTS is in the pinned condition entry, the absent ones are not, and Weather Ball has the
     types and the doubling that the engine reads for every weather."""
@@ -3215,6 +3241,7 @@ def build_pool(root, repo, dx):
     check_g32_entries(items_ts, champ_items, abil_ts, champ_abil)
     check_weather_facts(Source(root, 'data/conditions.ts', READER_INPUTS), moves_ts)
     check_g56_facts(Source(root, 'data/conditions.ts', READER_INPUTS), moves_ts)
+    check_g58_facts(moves_ts)
     FLAGS_THAT_MATTER.clear()
     FLAGS_THAT_MATTER.update(prefix_flag_reads((items_ts, champ_items, abil_ts, champ_abil, moves_ts, champ_moves), dx)
                              - set(FLAG_BITS_C) - set(INERT_FLAG_READS))

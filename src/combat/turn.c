@@ -650,6 +650,48 @@ static uint32_t dfi_move_type_now(const struct duoforge_battle *b, const dfi_mem
     return move_type;
 }
 
+/* Step G58, Phantom Force's semi-invulnerability (the volatile phantomforce of data/moves.ts:13327-13330: duration 2,
+ * onInvulnerability false; the charge is twoturnmove, sim/battle-actions.ts:621-643 is the Invulnerability step). A position
+ * is semi-invulnerable while its two-turn lock is Phantom Force's: on the charge turn, from the charge to the end of the turn;
+ * on the locked turn, until its own action, whose onTryMove removes the volatile. No field of its own is needed: the charge
+ * (charge_turns is 2 on the charge turn and 1 after its residual) and the locked move say which turn it is, and the user's
+ * MOVE record is queued exactly until the locked action has run. A fainted user has no charge (the charge ends with it). */
+static bool dfi_phantom_charging(dfi_run *r, uint32_t flat)
+{
+    struct duoforge_battle *b = r->b;
+    const dfi_active_slot *pos = dfi_pos(b, flat);
+    const dfi_member *m = dfi_at(b, flat);
+    if (pos->charge_turns == 0u || pos->locked_move == 0u || m == NULL || m->hp == 0u ||
+        dfi_move_of(m, (uint32_t)pos->locked_move - 1u) != DFI_MOVE_PHANTOMFORCE) {
+        return false;
+    }
+    if (pos->charge_turns >= DFI_CHARGE_TURNS_MAX) {
+        return true;
+    }
+    for (uint32_t i = 0u; i < b->queue_len; ++i) {
+        if (b->queue[i].kind == DFI_Q_MOVE && (uint32_t)b->queue[i].side * 2u + (uint32_t)b->queue[i].slot == flat) {
+            return true;
+        }
+    }
+    return false;
+}
+
+/* Step G58, the Invulnerability step of a move against one target (hitStepInvulnerabilityEvent, sim/battle-actions.ts:621-643):
+ * a semi-invulnerable target is a miss unless No Guard is on the user or on the target (onAnyInvulnerability returns 0, not
+ * false: data/abilities.ts:2970-2974) or the move is a Toxic of a Poison-type user (sim/battle-actions.ts:627-628). Helping
+ * Hand never reaches it (its own function). Lock-On (onSourceInvulnerability) is unmarked, so it cannot be in a battle. */
+static bool dfi_invulnerable_to(dfi_run *r, uint32_t user, uint32_t target, uint32_t move_id)
+{
+    struct duoforge_battle *b = r->b;
+    if (!dfi_phantom_charging(r, target)) {
+        return false;
+    }
+    if (dfi_ability(b, dfi_at(b, user), DFI_ABILITY_NOGUARD) || dfi_ability(b, dfi_at(b, target), DFI_ABILITY_NOGUARD)) {
+        return false;
+    }
+    return !(move_id == DFI_MOVE_TOXIC && dfi_has_type(b, dfi_at(b, user), DFI_TYPE_POISON));
+}
+
 /* Feint's breaksProtect (hitStepBreakProtect, sim/battle-actions.ts:755-777, the step after the accuracy check, for every target
  * that is still hit): the target's Protect volatile and the Wide Guard of its side are removed (Quick Guard, Crafty Shield,
  * Mat Block and the other protections are not modelled: UNMODELED rows), and if any was there the line is
@@ -662,6 +704,8 @@ static void dfi_break_protect(dfi_run *r, uint32_t flat, uint32_t move_id)
     bool broke = false;
     if (((uint32_t)pos->flags & DFI_VOL_PROTECT) != 0u) {
         pos->flags = (uint8_t)((uint32_t)pos->flags & ~(uint32_t)DFI_VOL_PROTECT); /* wide-operands-reviewed */
+        /* The variant belongs to the volatile (invariants.c): a Spiky Shield that breaks is a plain one from now on. */
+        b->tail.sides[flat / 2u].positions[flat % 2u].protect_kind = DFI_PROTECT_PLAIN;
         broke = true;
     }
     if (b->tail.sides[flat / 2u].wide_guard != 0u) {
@@ -4242,6 +4286,17 @@ static duoforge_status dfi_run_helping_hand(dfi_run *r, uint32_t user, uint32_t 
  * the ordinary path, with the user as the source; `-boost|ally|atk|1`, `-boost|ally|def|1`. */
 static duoforge_status dfi_run_coaching(dfi_run *r, uint32_t user, uint32_t ally, const dfi_move_data *md)
 {
+    if (dfi_invulnerable_to(r, user, ally, DFI_MOVE_COACHING)) {
+        /* The Invulnerability step (step G58) comes before Good as Gold's TryHit: a -miss, and nothing else. */
+        duoforge_event *mv = dfi_last_move(r);
+        if (mv != NULL) {
+            mv->flags = (uint8_t)((uint32_t)mv->flags | DUOFORGE_EVENT_FLAG_MISS); /* wide-operands-reviewed */
+        }
+        const duoforge_event miss = dfi_ev(DUOFORGE_EVENT_MISS, user, DUOFORGE_CAUSE_NONE, 0u, ally);
+        dfi_emit(r, &miss);
+        r->mres |= DFI_MRES_FALSE;
+        return DUOFORGE_OK;
+    }
     if (dfi_ability(r->b, dfi_at(r->b, ally), DFI_ABILITY_GOODASGOLD)) {
         dfi_immune(r, ally, 1u + DFI_ABILITY_GOODASGOLD); /* the move steps stop: no Update */
         r->mres |= DFI_MRES_FALSE; /* the TryHit of the ally returns false: the move fails */
@@ -5007,7 +5062,8 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
      * effectiveWeather asks Utility Umbrella (sun and rain are ignored for its holder) and Mega Sol (sun for a Mega Sol
      * user's moves): neither is marked, tests/test_pool_g30.c checks it; ChargeMove is Power Herb's event, which is not
      * in the pool either. */
-    const bool charge_move = md->special == DFI_SPECIAL_ELECTRO_SHOT || md->special == DFI_SPECIAL_SOLAR_BEAM;
+    const bool charge_move = md->special == DFI_SPECIAL_ELECTRO_SHOT || md->special == DFI_SPECIAL_SOLAR_BEAM ||
+                             md->special == DFI_SPECIAL_PHANTOM_FORCE;
     if (charge_move && !locked) {
         static const uint8_t spa_up[DFI_STAT_STAGE_COUNT] = {6u, 6u, 7u, 6u, 6u, 6u, 6u};
         duoforge_event *mv = dfi_last_move(r);
@@ -5021,8 +5077,10 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
         if (md->special == DFI_SPECIAL_ELECTRO_SHOT) {
             dfi_boost(r, user, spa_up, DFI_POSITIONS, dfi_effect(DUOFORGE_CAUSE_MOVE, 0u, DFI_BOOST_PRIMARY));
         }
+        /* Step G58: Phantom Force (data/moves.ts:13307-13335) has no weather that skips its charge (no ChargeMove but Power Herb's,
+         * which is unmarked): its charge always stands. */
         const uint32_t skip_weather = md->special == DFI_SPECIAL_SOLAR_BEAM ? DFI_WEATHER_SUN : DFI_WEATHER_RAIN;
-        if (b->weather == skip_weather) {
+        if (md->special != DFI_SPECIAL_PHANTOM_FORCE && b->weather == skip_weather) {
             /* addMove('-anim'): from now on the last move line, which later
              * attributes ([miss], [notarget]) amend. */
             duoforge_event anim = dfi_event_make(DUOFORGE_EVENT_ANIMATION, user);
@@ -5031,7 +5089,7 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
             r->last_move = r->events != NULL ? r->events->count : UINT32_MAX;
             dfi_emit(r, &anim);
         }
-        if (b->weather != skip_weather) {
+        if (md->special == DFI_SPECIAL_PHANTOM_FORCE || b->weather != skip_weather) {
             pos->charge_turns = (uint8_t)DFI_CHARGE_TURNS_MAX;
             pos->locked_move = (uint8_t)((uint32_t)q->move_slot + 1u); /* wide-operands-reviewed: <= 4 */
             pos->locked_target = q->target;
@@ -5256,7 +5314,7 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
         md->special != DFI_SPECIAL_MULTI_HIT_2_5 &&
         md->special != DFI_SPECIAL_SCALE_SHOT && md->special != DFI_SPECIAL_QUICK_GUARD &&
         md->special != DFI_SPECIAL_UPPER_HAND && md->special != DFI_SPECIAL_HEAL_PULSE &&
-        md->special != DFI_SPECIAL_STRENGTH_SAP) {
+        md->special != DFI_SPECIAL_STRENGTH_SAP && md->special != DFI_SPECIAL_PHANTOM_FORCE) {
         return DUOFORGE_E_INVARIANT;
     }
     /* Steel Roller's onTry (step G34, data/moves.ts:17893-17913): it fails without a terrain, with -fail and [still]. */
@@ -5369,6 +5427,22 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
         return DUOFORGE_E_UNSUPPORTED;
     }
     bool hit[DFI_POSITIONS] = {false, false, false, false};
+    /* Step G58, the Invulnerability step: the first of the hit steps (sim/battle-actions.ts:556, before TryHit, so before Wide
+     * Guard, Quick Guard and Protect). A semi-invulnerable target is a miss: one -miss line (with [miss] on a single target's
+     * move line) and no more part in the hit (the steps below skip it, as Showdown filters it out of the targets). */
+    bool inv_miss[DFI_POSITIONS] = {false, false, false, false};
+    for (uint32_t i = 0u; i < count; ++i) {
+        if (dfi_invulnerable_to(r, user, targets[i], move_id)) {
+            inv_miss[i] = true;
+            duoforge_event *mv = dfi_last_move(r);
+            if (mv != NULL && !spread) {
+                mv->flags = (uint8_t)((uint32_t)mv->flags | DUOFORGE_EVENT_FLAG_MISS); /* wide-operands-reviewed */
+            }
+            const duoforge_event miss = dfi_ev(DUOFORGE_EVENT_MISS, user, DUOFORGE_CAUSE_NONE, 0u, targets[i]);
+            dfi_emit(r, &miss);
+            r->mres |= DFI_MRES_FALSE; /* the Invulnerability result is false: the move's targets are short by one */
+        }
+    }
     /* Wide Guard's onTryHit (priority 4, data/moves.ts:20828-20844) runs for every target before Protect's (3): it
      * stops a move whose target class is allAdjacentFoes (or allAdjacent, which the tables do not have yet) and that
      * has the protect flag (checkMoveBypassesProtect, sim/battle.ts:1300-1309), whatever its category and however many
@@ -5379,7 +5453,7 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
         (md->flags & DFI_MOVE_FLAG_PROTECT) != 0u) {
         for (uint32_t i = 0u; i < count; ++i) {
             const uint32_t t = targets[i];
-            if (b->tail.sides[t / 2u].wide_guard != 0u) {
+            if (!inv_miss[i] && b->tail.sides[t / 2u].wide_guard != 0u) {
                 guarded[i] = true;
                 duoforge_event e = dfi_event_make(DUOFORGE_EVENT_BLOCKED, t);
                 e.detail = (uint8_t)DUOFORGE_BLOCK_WIDE_GUARD; /* [-activate] move: Wide Guard */
@@ -5394,7 +5468,7 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
     if ((md->flags & DFI_MOVE_FLAG_PROTECT) != 0u && dfi_move_priority(b, dfi_at(b, user), md) > DFI_PRIORITY_BIAS) {
         for (uint32_t i = 0u; i < count; ++i) {
             const uint32_t t = targets[i];
-            if (b->tail.sides[t / 2u].quick_guard != 0u && !guarded[i]) {
+            if (b->tail.sides[t / 2u].quick_guard != 0u && !guarded[i] && !inv_miss[i]) {
                 guarded[i] = true;
                 duoforge_event e = dfi_event_make(DUOFORGE_EVENT_BLOCKED, t);
                 e.detail = (uint8_t)DUOFORGE_BLOCK_QUICK_GUARD; /* [-activate] move: Quick Guard */
@@ -5409,7 +5483,7 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
         uint32_t punishers = 0u;
         for (uint32_t i = 0u; i < count; ++i) {
             const uint32_t t = targets[i];
-            punishers += (!guarded[i] && ((uint32_t)dfi_pos(b, t)->flags & DFI_VOL_PROTECT) != 0u &&
+            punishers += (!guarded[i] && !inv_miss[i] && ((uint32_t)dfi_pos(b, t)->flags & DFI_VOL_PROTECT) != 0u &&
                           b->tail.sides[t / 2u].positions[t % 2u].protect_kind != DFI_PROTECT_PLAIN)
                              ? 1u
                              : 0u;
@@ -5421,6 +5495,9 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
     for (uint32_t i = 0u; i < count; ++i) {
         const uint32_t t = targets[i];
         const dfi_active_slot *tp = dfi_pos(b, t);
+        if (inv_miss[i]) {
+            continue; /* the Invulnerability step stopped it: no TryHit of its own */
+        }
         if (guarded[i]) {
             r->mres |= DFI_MRES_NULL; /* Wide Guard's TryHit returns NOT_FAIL (data/moves.ts:20838-20848) */
             continue;
@@ -5650,7 +5727,7 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
     }
     /* hitStepBreakProtect, after the accuracy check (sim/battle-actions.ts:568-571): Feint removes the protections of every
      * target that is still hit. */
-    if (md->special == DFI_SPECIAL_FEINT) {
+    if (md->special == DFI_SPECIAL_FEINT || md->special == DFI_SPECIAL_PHANTOM_FORCE) {
         for (uint32_t i = 0u; i < count; ++i) {
             if (hit[i]) {
                 dfi_break_protect(r, targets[i], move_id);
