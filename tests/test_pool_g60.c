@@ -62,7 +62,7 @@ static void check_values_and_marks(df_test *t)
     DF_CHECK_EQ_U64(t, DUOFORGE_FAIL_SUBSTITUTE_WEAK, 2u);
     DF_CHECK_EQ_U64(t, DUOFORGE_PUBLIC_CAUSE_SUBSTITUTE, 8u);
     DF_CHECK_EQ_U64(t, DUOFORGE_POSITION_EXT_SUBSTITUTE, 1u);
-    DF_CHECK_EQ_U64(t, DFI_SPECIAL_SUBSTITUTE, 82u);
+    DF_CHECK_EQ_U64(t, DFI_SPECIAL_SUBSTITUTE, DFI_SPECIAL_QUASH + 1u); /* after G64 (82 to 85) and G62 (86 to 88) in the batch merge */
     DF_CHECK(t, dfi_support.moves[DFI_MOVE_SUBSTITUTE] != 0u);
     DF_CHECK(t, dfi_support.abilities[DFI_ABILITY_INFILTRATOR] != 0u);
     DF_CHECK(t, dfi_support.abilities[DFI_ABILITY_INTIMIDATE] != 0u);
