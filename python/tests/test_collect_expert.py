@@ -128,10 +128,13 @@ class Collector(unittest.TestCase):
         book = ledger.Ledger(self.root / "ledger.json")
         result = self.collect(again, workers=1, ledger=book)
         self.assertEqual(self.files(again), base)
-        # The generation phase is charged: CPU core-seconds and the network pass's device sections.
+        # The generation phase is charged. On CPU JAX the network pass is CPU work: its time is in the CPU
+        # core-seconds (getrusage), never in GPU-seconds.
         saved = __import__("json").loads((self.root / "ledger.json").read_text())
         self.assertGreater(saved["phases"]["generate"]["cpu_core_seconds"], 0)
-        self.assertGreater(saved["phases"]["generate"]["gpu_seconds"], 0)
+        self.assertEqual(saved["phases"]["generate"]["gpu_seconds"], 0.0)
+        self.assertEqual(saved["gpu_seconds"], 0.0)
+        self.assertEqual(ce.device_platform(self.net.params), "cpu")
         self.assertEqual(result.counters, self.base_result.counters)
         self.assertEqual(ed.read_manifest(again / "manifest.json"), self.manifest)
         # Learner v2's loader reads them: complete trajectories, one learner seat per game, done on the last row.
