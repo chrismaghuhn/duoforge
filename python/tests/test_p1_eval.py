@@ -238,6 +238,7 @@ class Schedule(unittest.TestCase):
         self.assertEqual(go["jit_seconds"], 40.0)
         self.assertAlmostEqual(go["forecast_seconds"], 40.0 + 12288 / 20.0)
         self.assertTrue(go["forecast_is_upper_bound"])
+        self.assertTrue(go["jit_is_estimate"])  # extrapolated from the smoke's small shapes
         self.assertEqual(go["stop_reasons"], [])
         self.assertEqual((go["cutoffs"], go["refused"]), (0, 0))
         # Only the forecast rule fires: the warm rate is at the floor, JIT and games together exceed 60 minutes.
@@ -304,6 +305,8 @@ class Schedule(unittest.TestCase):
         self.assertEqual(shapes, {"pilot": {1024, 512}, "control": {1024, 512}, "frozen": {1024},
                                   "BC": {512}, "3600": {512}, "11000": {512}, "ladder": {512}})
         self.assertAlmostEqual(clock.jit_estimate(shapes), (10.0 - 0.01) * 9)
+        with self.assertRaisesRegex(ValueError, "no smoke measurement"):  # never a silent 0 for an unmeasured player
+            clock.jit_estimate({**shapes, "stranger": {512}})
 
     def test_a_pair_shares_its_seed_and_teams_across_seats_and_arms(self):
         rows = _subset(self.rows, _prefix(self.rows, 2))
@@ -415,6 +418,18 @@ class Play(unittest.TestCase):
         broken = Path(self.tmp.name) / "broken.npz"
         broken.write_bytes(b"PK\x03\x04" + b"\x00" * 64)  # a zip header and nothing behind it
         self._refused("checkpoint BC: .*zip", {"BC": str(broken)})
+        # A compressed member whose deflate stream is damaged (zlib.error while reading it): a refusal too.
+        import struct
+        from duoforge_learn import checkpoint
+        params, config = checkpoint.load_trained(self.paths["BC"])
+        damaged = Path(self.tmp.name) / "damaged.npz"
+        np.savez_compressed(damaged, config=json.dumps(config), **checkpoint.flatten(params))
+        data = bytearray(damaged.read_bytes())
+        name_len, extra_len = struct.unpack("<HH", data[26:30])  # the first member's local header
+        start = 30 + name_len + extra_len
+        data[start:start + 16] = b"\xff" * 16  # BTYPE 11: an invalid deflate block
+        damaged.write_bytes(bytes(data))
+        self._refused("checkpoint BC: .*(invalid|Error -3)", {"BC": str(damaged)})
 
     def test_a_checkpoint_the_manifest_does_not_pin_is_refused(self):
         paths = dict(self.paths, pilot=self.paths["control"])

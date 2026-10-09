@@ -225,6 +225,30 @@ class KeepInitEncoderTest(unittest.TestCase):
         with self.assertRaisesRegex(SystemExit, "keep_init_encoder"):  # a resume cannot switch it on
             _train(["--resume", out, "--updates", "2", "--keep-init-encoder"])
 
+    def test_a_kl_reference_of_another_layout_is_refused(self):
+        other = os.path.join(self.tmp.name, "ref-e3.npz")
+        _init_checkpoint(other, encoder=3)
+        with self.assertRaisesRegex(SystemExit, "layout"):
+            _train(["--out", os.path.join(self.tmp.name, "ref"), "--init", self.init, "--keep-init-encoder",
+                    "--kl-ref", other, "--kl-coef", "0.01", "--updates", "1", "--minutes", "0"] + _SMALL)
+
+    def test_an_init_with_view_extension_features_keeps_its_mask(self):
+        import duoforge
+        from duoforge import _layout, features
+        from duoforge.context import reference_setups
+        from duoforge_learn import runstate
+        with duoforge.Context(_layout.CONSTANTS["DUOFORGE_DATA_KIND_POOL"]) as ctx, \
+                duoforge.Batch(ctx, reference_setups([0]), 1, 1) as b:
+            mask = int(b.observe_ext()[0, 0]["supported"]) & features.version_features(4)
+        self.assertNotEqual(mask, 0)
+        init = os.path.join(self.tmp.name, "init-e4-ext.npz")
+        _init_checkpoint(init, ext_supported=mask)
+        out = os.path.join(self.tmp.name, "ext")
+        self.assertEqual(_train(["--out", out, "--init", init, "--keep-init-encoder", "--updates", "1",
+                                 "--minutes", "0"] + _SMALL), 0)
+        state = runstate.load_state(out)
+        self.assertEqual((state["encoder"], state["ext_supported"]), (4, mask))
+
     def test_the_flag_needs_init_and_the_inits_mask(self):
         from duoforge_learn import train
         with self.assertRaises(SystemExit):

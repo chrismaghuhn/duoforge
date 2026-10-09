@@ -52,6 +52,7 @@ import os
 import sys
 import time
 import zipfile
+import zlib
 
 import numpy as np
 
@@ -111,7 +112,7 @@ def load_checkpoints(paths, manifest):
         try:
             params, config = checkpoint.load_trained(io.BytesIO(data))
             checkpoint.ext_supported_of(config)  # a mask its encoder has no columns for is refused here
-        except (ValueError, KeyError, zipfile.BadZipFile) as err:  # a damaged file is a refusal, not a crash
+        except (ValueError, KeyError, zipfile.BadZipFile, zlib.error, EOFError) as err:  # damaged: a refusal
             raise ValueError(f"checkpoint {name}: {paths[name]}: {err}") from err
         out[name] = (params, config, sha)
     return out
@@ -297,7 +298,10 @@ class SmokeClock:
         full_shapes). It assumes one compile per shape costs about the smoke's largest per player; XLA's compile
         time grows little with the batch dimension, but this is an estimate, not a measurement."""
         excess = self.jit_excess()
-        return float(sum(excess.get(name, 0.0) * len(rows) for name, rows in shapes.items()))
+        missing = sorted(set(shapes) - set(excess))
+        if missing:
+            raise ValueError(f"no smoke measurement of {missing}: their JIT cannot be estimated")
+        return float(sum(excess[name] * len(rows) for name, rows in shapes.items()))
 
 
 class _ClockedModel:
@@ -352,7 +356,8 @@ def smoke_report(games, counts, seconds, *, jit_seconds, warm_games_per_second, 
     return {"games": int(games), "seconds": float(seconds),
             "games_per_second": float(games / seconds) if seconds > 0 else None,
             "warm_games_per_second": None if warm is None else float(warm), "jit_seconds": float(jit_seconds),
-            "forecast_seconds": forecast, "forecast_is_upper_bound": True, "forecast_games": int(total),
+            "forecast_seconds": forecast, "forecast_is_upper_bound": True, "jit_is_estimate": True,
+            "forecast_games": int(total),
             "cutoffs": int(counts["cutoffs"]), "refused": int(counts["refused"]),
             "status": "STOP" if reasons else "GO", "stop_reasons": reasons}
 
