@@ -3176,8 +3176,10 @@ G63_ABILITY_FACTS = (
                 "this.debug('Filter neutralize'); return this.chainModify(0.75); } },",
                 'flags: { breakable: 1 },')),
     ('stalwart', ('onModifyMovePriority: 1,',
-                  "onModifyMove(move) { // most of the implementation is in Battle#getTarget",
-                  "move.tracksTarget = move.target !== 'scripted';")),
+                  'onModifyMove(move) {',
+                  '// most of the implementation is in Battle#getTarget',
+                  "move.tracksTarget = move.target !== 'scripted';",
+                  '},')),
 )
 
 

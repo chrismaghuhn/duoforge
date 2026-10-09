@@ -4722,6 +4722,54 @@ static const df_tb_stop tb_g5_uturn_e[] = {
     {8u, 0u, 2u, 1u, {2u, 4u}, {276u, 640u}, {0x4037df1c71c71c73ull, 0x404c809e4cad23ddull}},
     {9u, 1u, 2u, 0u, {0u, 4u}, {0u, 560u}, {0x0000000000000000ull, 0x4049482446e7ad8dull}},
 };
+static const df_tb_stop tb_g63_filter_aggron[] = {
+    {0u, 0u, 1u, 3u, {6u, 6u}, {1174u, 1147u}, {0x4059000000000000ull, 0x4059000000000000ull}},
+    {1u, 0u, 1u, 3u, {4u, 4u}, {760u, 738u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {2u, 0u, 1u, 1u, {4u, 3u}, {589u, 426u}, {0x4049fb513cdfe8a1ull, 0x4044ff93dad3389bull}},
+    {3u, 0u, 1u, 1u, {4u, 3u}, {589u, 426u}, {0x4049fb513cdfe8a1ull, 0x4044ff93dad3389bull}},
+};
+static const df_tb_stop tb_g63_sand_force_garchomp[] = {
+    {0u, 0u, 1u, 3u, {6u, 6u}, {1212u, 1147u}, {0x4059000000000000ull, 0x4059000000000000ull}},
+    {1u, 0u, 1u, 3u, {4u, 4u}, {803u, 738u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {2u, 0u, 2u, 2u, {4u, 4u}, {699u, 656u}, {0x404d359ea77bda88ull, 0x404e27b09ec27b0bull}},
+    {3u, 0u, 2u, 2u, {4u, 4u}, {635u, 584u}, {0x404ab224fc851ae4ull, 0x404b5d457515d458ull}},
+};
+static const df_tb_stop tb_g63_sand_force_steelix[] = {
+    {0u, 0u, 1u, 3u, {6u, 6u}, {1179u, 1147u}, {0x4059000000000000ull, 0x4059000000000000ull}},
+    {1u, 0u, 1u, 3u, {4u, 4u}, {770u, 738u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {2u, 0u, 2u, 2u, {4u, 4u}, {579u, 603u}, {0x4048f82f82f82f83ull, 0x404c19cc67319cc5ull}},
+    {3u, 0u, 2u, 2u, {3u, 3u}, {452u, 523u}, {0x40438663c2fd1d44ull, 0x4049000000000000ull}},
+};
+static const df_tb_stop tb_g63_shell_armor_scolipede[] = {
+    {0u, 0u, 1u, 3u, {6u, 6u}, {1164u, 1147u}, {0x4059000000000000ull, 0x4059000000000000ull}},
+    {1u, 0u, 1u, 3u, {4u, 4u}, {750u, 738u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {2u, 0u, 2u, 2u, {4u, 4u}, {614u, 572u}, {0x404abbf7381b9074ull, 0x404ad267dca1fb67ull}},
+    {3u, 0u, 1u, 1u, {4u, 3u}, {481u, 485u}, {0x4044473569b435aeull, 0x40476eae0bd410e5ull}},
+};
+static const df_tb_stop tb_g63_shell_armor_slowbro[] = {
+    {0u, 0u, 1u, 3u, {6u, 6u}, {1199u, 1147u}, {0x4059000000000000ull, 0x4059000000000000ull}},
+    {1u, 0u, 1u, 3u, {4u, 4u}, {785u, 738u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {2u, 0u, 1u, 2u, {4u, 4u}, {672u, 550u}, {0x404c5ff10c059b7full, 0x4049e96c84bebf57ull}},
+    {3u, 0u, 1u, 1u, {4u, 3u}, {573u, 462u}, {0x40483353f215da8cull, 0x40467bc68c403613ull}},
+};
+static const df_tb_stop tb_g63_shell_armor_slowbro_control[] = {
+    {0u, 0u, 1u, 3u, {6u, 6u}, {1199u, 1147u}, {0x4059000000000000ull, 0x4059000000000000ull}},
+    {1u, 0u, 1u, 3u, {4u, 4u}, {785u, 738u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {2u, 0u, 1u, 2u, {4u, 4u}, {633u, 567u}, {0x404ac40f767a3391ull, 0x404a94a90e34b27dull}},
+    {3u, 0u, 1u, 1u, {4u, 3u}, {567u, 466u}, {0x4047f3f629d905a3ull, 0x4046a60511be1959ull}},
+};
+static const df_tb_stop tb_g63_stalwart_skarmory[] = {
+    {0u, 0u, 1u, 3u, {6u, 6u}, {1169u, 1109u}, {0x4059000000000000ull, 0x4059000000000000ull}},
+    {1u, 0u, 1u, 3u, {4u, 4u}, {755u, 700u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {2u, 0u, 2u, 2u, {4u, 4u}, {696u, 674u}, {0x404e962ae7afe91dull, 0x4050215f78d18807ull}},
+    {3u, 0u, 1u, 2u, {4u, 4u}, {563u, 395u}, {0x40483e431e3baafcull, 0x4043e1f3a3127f2cull}},
+};
+static const df_tb_stop tb_g63_stalwart_skarmory_control[] = {
+    {0u, 0u, 1u, 3u, {6u, 6u}, {1169u, 1109u}, {0x4059000000000000ull, 0x4059000000000000ull}},
+    {1u, 0u, 1u, 3u, {4u, 4u}, {755u, 700u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {2u, 0u, 2u, 2u, {4u, 4u}, {696u, 674u}, {0x404e962ae7afe91dull, 0x4050215f78d18807ull}},
+    {3u, 0u, 1u, 1u, {4u, 3u}, {626u, 490u}, {0x404b3a3238dfc577ull, 0x4047a37c32b16cfdull}},
+};
 static const df_tb_stop tb_g7_wide_guard_a[] = {
     {0u, 0u, 1u, 3u, {6u, 6u}, {1119u, 1095u}, {0x4059000000000000ull, 0x4059000000000000ull}},
     {1u, 0u, 1u, 3u, {4u, 4u}, {759u, 729u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
@@ -6546,6 +6594,14 @@ static const df_tb_battle tb_battles[] = {
     {"g5_uturn_c", 9u, tb_g5_uturn_c, sizeof tb_g5_uturn_c / sizeof tb_g5_uturn_c[0]},
     {"g5_uturn_d", 8u, tb_g5_uturn_d, sizeof tb_g5_uturn_d / sizeof tb_g5_uturn_d[0]},
     {"g5_uturn_e", 9u, tb_g5_uturn_e, sizeof tb_g5_uturn_e / sizeof tb_g5_uturn_e[0]},
+    {"g63_filter_aggron", 3u, tb_g63_filter_aggron, sizeof tb_g63_filter_aggron / sizeof tb_g63_filter_aggron[0]},
+    {"g63_sand_force_garchomp", 3u, tb_g63_sand_force_garchomp, sizeof tb_g63_sand_force_garchomp / sizeof tb_g63_sand_force_garchomp[0]},
+    {"g63_sand_force_steelix", 3u, tb_g63_sand_force_steelix, sizeof tb_g63_sand_force_steelix / sizeof tb_g63_sand_force_steelix[0]},
+    {"g63_shell_armor_scolipede", 3u, tb_g63_shell_armor_scolipede, sizeof tb_g63_shell_armor_scolipede / sizeof tb_g63_shell_armor_scolipede[0]},
+    {"g63_shell_armor_slowbro", 3u, tb_g63_shell_armor_slowbro, sizeof tb_g63_shell_armor_slowbro / sizeof tb_g63_shell_armor_slowbro[0]},
+    {"g63_shell_armor_slowbro_control", 3u, tb_g63_shell_armor_slowbro_control, sizeof tb_g63_shell_armor_slowbro_control / sizeof tb_g63_shell_armor_slowbro_control[0]},
+    {"g63_stalwart_skarmory", 3u, tb_g63_stalwart_skarmory, sizeof tb_g63_stalwart_skarmory / sizeof tb_g63_stalwart_skarmory[0]},
+    {"g63_stalwart_skarmory_control", 3u, tb_g63_stalwart_skarmory_control, sizeof tb_g63_stalwart_skarmory_control / sizeof tb_g63_stalwart_skarmory_control[0]},
     {"g7_wide_guard_a", 6u, tb_g7_wide_guard_a, sizeof tb_g7_wide_guard_a / sizeof tb_g7_wide_guard_a[0]},
     {"g7_wide_guard_ally", 6u, tb_g7_wide_guard_ally, sizeof tb_g7_wide_guard_ally / sizeof tb_g7_wide_guard_ally[0]},
     {"g7_wide_guard_b", 5u, tb_g7_wide_guard_b, sizeof tb_g7_wide_guard_b / sizeof tb_g7_wide_guard_b[0]},
@@ -6668,7 +6724,7 @@ static const df_tb_battle tb_battles[] = {
     {"w8_sand_soak", 7u, tb_w8_sand_soak, sizeof tb_w8_sand_soak / sizeof tb_w8_sand_soak[0]},
 };
 
-/* 4586 stops: 150 of an ended battle; decided by the count 1175,
- * the HP percentage 1451, the total HP 1707, a tie 103;
- * winners: side 0 2261, side 1 2222, tie 103 */
+/* 4618 stops: 150 of an ended battle; decided by the count 1181,
+ * the HP percentage 1461, the total HP 1723, a tie 103;
+ * winners: side 0 2286, side 1 2229, tie 103 */
 #endif
