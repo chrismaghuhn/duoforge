@@ -2044,7 +2044,7 @@ FLAG2_THAWS_TARGET = 4  # step G10: thawsTarget (data/moves.ts:15770), the move 
 # 2451-2464). The four moves whose forced switch the turn code runs (battle-actions.ts runMoveEffects and forceSwitch,
 # through scripts.ts:374 and :392); any other move with the key stays UNMODELED.
 FLAG2_FORCE_SWITCH = 128
-G46_FORCE_SWITCH_MOVES = ('whirlwind', 'dragontail')  # Roar and Circle Throw: no battle yet (no learner in the recorded teams), unmarked
+G46_FORCE_SWITCH_MOVES = ('roar', 'whirlwind', 'dragontail', 'circlethrow')  # each marked with its battle (g46_roar_drag, g46_whirlwind_drag, g46_dragontail_drag, g46_circlethrow_drag)
 # What the engine hard-codes about the two conditions, read from the pin (build_pool checks it): the duration and the
 # residual order of Throat Chop's condition, and Heal Block's (the move healblock) order and Psychic Noise duration.
 G8_CONDITION_FACTS = (

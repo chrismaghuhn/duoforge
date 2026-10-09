@@ -974,8 +974,8 @@ const dfi_move_data dfi_pool_moves[DFI_POOL_MOVE_COUNT] = {
     {17u, 1u, 50u, 100u, 20u, 20u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 100u, 1u, 0u, 2u, {5u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
     /* Chilly Reception -- data/moves.ts:2396-2420  [unmodelled: callback priorityChargeCallback; condition block; field selfSwitch without a switch flag; field weather] */
     {11u, 2u, 0u, 0u, 10u, 12u, 8u, 9u, 1u, 16u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 63u},
-    /* Circle Throw -- data/moves.ts:2451-2464  [unmodelled: field forceSwitch] */
-    {5u, 0u, 60u, 90u, 10u, 12u, 2u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 63u},
+    /* Circle Throw -- data/moves.ts:2451-2464 */
+    {5u, 0u, 60u, 90u, 10u, 12u, 2u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
     /* Clanging Scales -- data/moves.ts:2480-2497 */
     {2u, 1u, 110u, 100u, 5u, 8u, 8u, 7u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 43u},
     /* Clangorous Soul -- data/moves.ts:2498-2526, data/mods/champions/moves.ts:121-124 */
@@ -1452,8 +1452,8 @@ const dfi_move_data dfi_pool_moves[DFI_POOL_MOVE_COUNT] = {
     {12u, 2u, 0u, 0u, 1u, 1u, 8u, 6u, 1u, 48u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 63u},
     /* Rising Voltage -- data/moves.ts:15137-15156 */
     {3u, 1u, 70u, 100u, 20u, 20u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 50u},
-    /* Roar -- data/moves.ts:15157-15171  [unmodelled: field forceSwitch] */
-    {12u, 2u, 0u, 0u, 20u, 20u, 2u, 1u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 63u},
+    /* Roar -- data/moves.ts:15157-15171 */
+    {12u, 2u, 0u, 0u, 20u, 20u, 2u, 1u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
     /* Rock Blast -- data/moves.ts:15188-15203  [unmodelled: field multihit] */
     {15u, 0u, 25u, 90u, 10u, 12u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 63u},
     /* Rock Polish -- data/moves.ts:15222-15238 */
@@ -4216,7 +4216,7 @@ const uint8_t dfi_pool_move_flags2[DFI_POOL_MOVE_COUNT] = {
     [DFI_MOVE_CHARM] = 0u, /* Charm */
     [DFI_MOVE_CHILLINGWATER] = 0u, /* Chilling Water */
     [DFI_MOVE_CHILLYRECEPTION] = 0u, /* Chilly Reception */
-    [DFI_MOVE_CIRCLETHROW] = 0u, /* Circle Throw */
+    [DFI_MOVE_CIRCLETHROW] = DFI_MOVE_FLAG2_FORCE_SWITCH, /* Circle Throw */
     [DFI_MOVE_CLANGINGSCALES] = DFI_MOVE_FLAG2_SOUND, /* Clanging Scales */
     [DFI_MOVE_CLANGOROUSSOUL] = DFI_MOVE_FLAG2_SOUND, /* Clangorous Soul */
     [DFI_MOVE_CLEARSMOG] = 0u, /* Clear Smog */
@@ -4455,7 +4455,7 @@ const uint8_t dfi_pool_move_flags2[DFI_POOL_MOVE_COUNT] = {
     [DFI_MOVE_REVERSAL] = 0u, /* Reversal */
     [DFI_MOVE_REVIVALBLESSING] = DFI_MOVE_FLAG2_HEAL, /* Revival Blessing */
     [DFI_MOVE_RISINGVOLTAGE] = 0u, /* Rising Voltage */
-    [DFI_MOVE_ROAR] = DFI_MOVE_FLAG2_SOUND, /* Roar */
+    [DFI_MOVE_ROAR] = DFI_MOVE_FLAG2_SOUND | DFI_MOVE_FLAG2_FORCE_SWITCH, /* Roar */
     [DFI_MOVE_ROCKBLAST] = 0u, /* Rock Blast */
     [DFI_MOVE_ROCKPOLISH] = 0u, /* Rock Polish */
     [DFI_MOVE_ROCKTOMB] = 0u, /* Rock Tomb */
@@ -6711,7 +6711,6 @@ const char *const dfi_pool_move_unmodeled[DFI_POOL_MOVE_COUNT] = {
     [DFI_MOVE_CEASELESSEDGE] = "callback onAfterHit; callback onAfterSubDamage; secondary",
     [DFI_MOVE_CHARGE] = "condition block; primary volatile charge",
     [DFI_MOVE_CHILLYRECEPTION] = "callback priorityChargeCallback; condition block; field selfSwitch without a switch flag; field weather",
-    [DFI_MOVE_CIRCLETHROW] = "field forceSwitch",
     [DFI_MOVE_CLEARSMOG] = "callback onHit",
     [DFI_MOVE_COMEUPPANCE] = "callback damageCallback; callback onModifyTarget; callback onTry; target scripted",
     [DFI_MOVE_CONFUSERAY] = "primary volatile confusion",
@@ -6833,7 +6832,6 @@ const char *const dfi_pool_move_unmodeled[DFI_POOL_MOVE_COUNT] = {
     [DFI_MOVE_REST] = "callback onHit; callback onTry",
     [DFI_MOVE_REVERSAL] = "callback basePowerCallback",
     [DFI_MOVE_REVIVALBLESSING] = "callback onTryHit; condition block; field selfSwitch without a switch flag; field slotCondition",
-    [DFI_MOVE_ROAR] = "field forceSwitch",
     [DFI_MOVE_ROCKBLAST] = "field multihit",
     [DFI_MOVE_ROLEPLAY] = "callback onHit; callback onTryHit",
     [DFI_MOVE_ROOST] = "condition block; self effect",
@@ -7079,10 +7077,10 @@ const char *const dfi_pool_ability_unmodeled[DFI_POOL_ABILITY_COUNT] = {
 };
 
 const uint8_t dfi_pool_table_hash[32] = {
-    0x04u, 0x23u, 0x5cu, 0xc9u, 0x82u, 0x57u, 0x8fu, 0x1bu,
-    0x43u, 0x7fu, 0xd8u, 0xfbu, 0x24u, 0x9cu, 0x15u, 0x30u,
-    0xe2u, 0xafu, 0xc1u, 0x45u, 0x7cu, 0x45u, 0x39u, 0xeau,
-    0x20u, 0x02u, 0xd3u, 0x88u, 0x9au, 0x68u, 0x3fu, 0x53u,
+    0x88u, 0x26u, 0xc4u, 0x3eu, 0xc8u, 0x75u, 0x73u, 0xd2u,
+    0x18u, 0x61u, 0x75u, 0x99u, 0x2du, 0x6fu, 0xc9u, 0x7bu,
+    0x1au, 0xcdu, 0x50u, 0xb1u, 0x16u, 0x67u, 0xd9u, 0x77u,
+    0xc2u, 0xbbu, 0xf4u, 0x1fu, 0x26u, 0xa9u, 0x79u, 0xa7u,
 };
 
 static size_t dfi_pool_put_u16(uint8_t *out, size_t n, uint32_t v)

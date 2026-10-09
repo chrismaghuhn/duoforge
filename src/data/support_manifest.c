@@ -192,8 +192,10 @@ const dfi_support_manifest dfi_support = {
         {
             [DFI_MOVE_HIGHHORSEPOWER] = 1u,
             [DFI_MOVE_PROTECT] = 1u,
-            [DFI_MOVE_WHIRLWIND] = 1u,   /* step G46: forceSwitch, the drag (decision 0015 section 4) */
+            [DFI_MOVE_ROAR] = 1u,        /* step G46: forceSwitch, the drag (decision 0015 section 4) */
+            [DFI_MOVE_WHIRLWIND] = 1u,   /* step G46 */
             [DFI_MOVE_DRAGONTAIL] = 1u,  /* step G46 */
+            [DFI_MOVE_CIRCLETHROW] = 1u, /* step G46 */
             [DFI_MOVE_MUDDYWATER] = 1u,
             [DFI_MOVE_COIL] = 1u,
             [DFI_MOVE_SHADOWSNEAK] = 1u,

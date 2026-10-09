@@ -869,7 +869,9 @@ static bool dfi_boost(dfi_run *r, uint32_t flat, const uint8_t *boosts, uint32_t
         boosts[DFI_STAGE_ATK] != DFI_BIAS6 && capped[DFI_STAGE_ATK] != DFI_BIAS6 && dfi_ability(r->b, m, DFI_ABILITY_GUARDDOG)) {
         veil[DFI_STAGE_ATK] = true;
         static const uint8_t guard_dog_atk_up[DFI_STAT_STAGE_COUNT] = {7u, 6u, 6u, 6u, 6u, 6u, 6u};
-        (void)dfi_boost(r, flat, guard_dog_atk_up, flat, dfi_effect(DUOFORGE_CAUSE_NONE, 0u, DFI_BOOST_PRIMARY));
+        /* The nested boost's effect is the running handler, Guard Dog (boost() defaults to this.effect): its line is
+         * -ability|holder|Guard Dog|boost, then the -boost line (sim/battle.ts boost). */
+        (void)dfi_boost(r, flat, guard_dog_atk_up, flat, dfi_effect(DUOFORGE_CAUSE_ABILITY, 1u + DFI_ABILITY_GUARDDOG, DFI_BOOST_PRIMARY));
     }
     /* Inner Focus (step G22, POOL data, data/abilities.ts:2157-2162): TryBoost, a change that the effect named
      * Intimidate would make to Attack (boost.atk is set: a change the cap already took to 0 is not) is deleted, and
