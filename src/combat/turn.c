@@ -5248,18 +5248,6 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
                 if (st != DUOFORGE_OK) {
                     return st;
                 }
-                /* Illusion (decision 0026 section 4; the pin's DamagingHit, sim/battle-actions.ts:1118-1130): a damaging move hit of
-                 * any user, an ally included, ends the disguise of the target. Its replace and -end lines are one ILLUSION_END event,
-                 * after the damage line and before any faint (the holder's true name). The owner's and the foe's folds read it. */
-                {
-                    dfi_tail_pos *dp = &b->tail.sides[targets[i] / 2u].positions[targets[i] % 2u];
-                    if (dp->ability_state != 0u && dfi_ability(b, dfi_at(b, targets[i]), DFI_ABILITY_ILLUSION)) {
-                        dp->ability_state = 0u;
-                        duoforge_event ie = dfi_event_make(DUOFORGE_EVENT_ILLUSION_END, targets[i]);
-                        ie.id = (uint16_t)b->sides[targets[i] / 2u].positions[targets[i] % 2u].occupant;
-                        dfi_emit_hp(r, ie);
-                    }
-                }
                 /* timesAttacked (step G48): a damaging hit of another Pokemon's move counts for the target, once per hit (the
                  * Champions loop adds the hits after the move, data/mods/champions/scripts.ts:565; the same count, and no reader
                  * sees it in between, since Rage Fist is one hit). The target still stands here: a faint clears its position later. */
@@ -5502,12 +5490,29 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
                 }
             }
         }
+        /* Illusion (decision 0026 section 4; the pin's DamagingHit, sim/battle-actions.ts:1118-1130): a damaging move hit of
+         * any user, an ally included, ends the disguise of the target. Its replace and -end lines are one ILLUSION_END event,
+         * after the self effects and secondaries of the hit and before the DamagingHit handlers, as the pin orders them (an unboost of the
+         * same hit shows before the replace line). The owner's and the foe's folds read it. */
         /* DamagingHit, its handlers by order, then target (compareLeftToRightOrder,
          * sim/battle.ts:421-426). Rocky Helmet (Team C, onDamagingHitOrder 2,
          * data/items.ts:5295-5309) comes first, also when the hit knocked its
          * holder out (the faint is not processed yet): a contact move costs the
          * attacker floor(maxHP / 6), at least 1. */
         const uint32_t user_before_hit = m->hp;
+        /* The break of each target that this hit damaged (the DamagingHit step, after the secondaries). */
+        for (uint32_t i = 0u; i < count; ++i) {
+            if (!hit[i]) {
+                continue;
+            }
+            dfi_tail_pos *dp = &b->tail.sides[targets[i] / 2u].positions[targets[i] % 2u];
+            if (dp->ability_state != 0u && dfi_ability(b, dfi_at(b, targets[i]), DFI_ABILITY_ILLUSION)) {
+                dp->ability_state = 0u;
+                duoforge_event ie = dfi_event_make(DUOFORGE_EVENT_ILLUSION_END, targets[i]);
+                ie.id = (uint16_t)b->sides[targets[i] / 2u].positions[targets[i] % 2u].occupant;
+                dfi_emit_hp(r, ie);
+            }
+        }
         /* Rough Skin (POOL data, data/abilities.ts:3938-3950) is the order-1 handler, before Rocky Helmet's 2: a contact
          * move costs the attacker floor(maxHP / 8), at least 1, with [from] ability: Rough Skin [of] the holder, also
          * when the hit knocked the holder out. A contact move is one with the contact flag (checkMoveMakesContact,
