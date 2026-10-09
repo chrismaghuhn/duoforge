@@ -4454,6 +4454,38 @@ static const df_tb_stop tb_g5_uturn_e[] = {
     {8u, 0u, 2u, 1u, {2u, 4u}, {276u, 640u}, {0x4037df1c71c71c73ull, 0x404c809e4cad23ddull}},
     {9u, 1u, 2u, 0u, {0u, 4u}, {0u, 560u}, {0x0000000000000000ull, 0x4049482446e7ad8dull}},
 };
+static const df_tb_stop tb_g62_haze_boosts_a[] = {
+    {0u, 0u, 3u, 4u, {6u, 6u}, {1143u, 1143u}, {0x4059000000000000ull, 0x4059000000000000ull}},
+    {1u, 0u, 3u, 4u, {4u, 4u}, {790u, 790u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {2u, 0u, 3u, 4u, {4u, 4u}, {790u, 790u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {3u, 0u, 3u, 4u, {4u, 4u}, {790u, 790u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {4u, 0u, 3u, 4u, {4u, 4u}, {790u, 790u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+};
+static const df_tb_stop tb_g62_haze_faint[] = {
+    {0u, 0u, 3u, 4u, {6u, 6u}, {1143u, 1143u}, {0x4059000000000000ull, 0x4059000000000000ull}},
+    {1u, 0u, 2u, 3u, {4u, 4u}, {760u, 775u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {2u, 0u, 2u, 3u, {4u, 4u}, {760u, 775u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {3u, 0u, 2u, 3u, {4u, 4u}, {760u, 775u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {6u, 0u, 2u, 3u, {4u, 4u}, {760u, 775u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {9u, 0u, 2u, 2u, {4u, 4u}, {684u, 775u}, {0x404e46149ca68b57ull, 0x4050aaaaaaaaaaabull}},
+    {12u, 0u, 1u, 2u, {4u, 4u}, {617u, 646u}, {0x404b9394d16ac50dull, 0x404b155555555555ull}},
+    {13u, 0u, 2u, 3u, {3u, 3u}, {553u, 603u}, {0x4049000000000000ull, 0x4049000000000000ull}},
+    {14u, 0u, 2u, 3u, {3u, 3u}, {553u, 603u}, {0x4049000000000000ull, 0x4049000000000000ull}},
+};
+static const df_tb_stop tb_g62_haze_mega[] = {
+    {0u, 0u, 2u, 3u, {6u, 6u}, {1111u, 1143u}, {0x4059000000000000ull, 0x4059000000000000ull}},
+    {1u, 0u, 2u, 3u, {4u, 4u}, {758u, 790u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {2u, 0u, 2u, 3u, {4u, 4u}, {758u, 790u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {3u, 0u, 2u, 3u, {4u, 4u}, {758u, 790u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {4u, 0u, 2u, 3u, {4u, 4u}, {758u, 790u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+};
+static const df_tb_stop tb_g62_haze_taunt[] = {
+    {0u, 0u, 2u, 3u, {6u, 6u}, {1111u, 1143u}, {0x4059000000000000ull, 0x4059000000000000ull}},
+    {1u, 0u, 2u, 3u, {4u, 4u}, {758u, 790u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {2u, 0u, 2u, 2u, {4u, 4u}, {697u, 790u}, {0x404e6db6db6db6dbull, 0x4050aaaaaaaaaaabull}},
+    {3u, 0u, 2u, 2u, {4u, 4u}, {697u, 790u}, {0x404e6db6db6db6dbull, 0x4050aaaaaaaaaaabull}},
+    {4u, 0u, 2u, 2u, {4u, 4u}, {636u, 790u}, {0x404b861861861861ull, 0x4050aaaaaaaaaaabull}},
+};
 static const df_tb_stop tb_g7_wide_guard_a[] = {
     {0u, 0u, 1u, 3u, {6u, 6u}, {1119u, 1095u}, {0x4059000000000000ull, 0x4059000000000000ull}},
     {1u, 0u, 1u, 3u, {4u, 4u}, {759u, 729u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
@@ -6242,6 +6274,10 @@ static const df_tb_battle tb_battles[] = {
     {"g5_uturn_c", 9u, tb_g5_uturn_c, sizeof tb_g5_uturn_c / sizeof tb_g5_uturn_c[0]},
     {"g5_uturn_d", 8u, tb_g5_uturn_d, sizeof tb_g5_uturn_d / sizeof tb_g5_uturn_d[0]},
     {"g5_uturn_e", 9u, tb_g5_uturn_e, sizeof tb_g5_uturn_e / sizeof tb_g5_uturn_e[0]},
+    {"g62_haze_boosts_a", 4u, tb_g62_haze_boosts_a, sizeof tb_g62_haze_boosts_a / sizeof tb_g62_haze_boosts_a[0]},
+    {"g62_haze_faint", 14u, tb_g62_haze_faint, sizeof tb_g62_haze_faint / sizeof tb_g62_haze_faint[0]},
+    {"g62_haze_mega", 4u, tb_g62_haze_mega, sizeof tb_g62_haze_mega / sizeof tb_g62_haze_mega[0]},
+    {"g62_haze_taunt", 4u, tb_g62_haze_taunt, sizeof tb_g62_haze_taunt / sizeof tb_g62_haze_taunt[0]},
     {"g7_wide_guard_a", 6u, tb_g7_wide_guard_a, sizeof tb_g7_wide_guard_a / sizeof tb_g7_wide_guard_a[0]},
     {"g7_wide_guard_ally", 6u, tb_g7_wide_guard_ally, sizeof tb_g7_wide_guard_ally / sizeof tb_g7_wide_guard_ally[0]},
     {"g7_wide_guard_b", 5u, tb_g7_wide_guard_b, sizeof tb_g7_wide_guard_b / sizeof tb_g7_wide_guard_b[0]},
@@ -6364,7 +6400,7 @@ static const df_tb_battle tb_battles[] = {
     {"w8_sand_soak", 7u, tb_w8_sand_soak, sizeof tb_w8_sand_soak / sizeof tb_w8_sand_soak[0]},
 };
 
-/* 4390 stops: 150 of an ended battle; decided by the count 1161,
- * the HP percentage 1431, the total HP 1552, a tie 96;
- * winners: side 0 2213, side 1 2081, tie 96 */
+/* 4414 stops: 150 of an ended battle; decided by the count 1161,
+ * the HP percentage 1436, the total HP 1565, a tie 102;
+ * winners: side 0 2214, side 1 2098, tie 102 */
 #endif

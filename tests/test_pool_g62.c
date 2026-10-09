@@ -37,7 +37,7 @@ static void check_pins(df_test *t)
     DF_CHECK_EQ_U64(t, haze->accuracy, 0u);
     DF_CHECK_EQ_U64(t, haze->category, DFI_CATEGORY_STATUS);
     DF_CHECK_EQ_U64(t, haze->target_class, DUOFORGE_TARGET_CLASS_ALL);
-    DF_CHECK((haze->flags & DFI_MOVE_FLAG_PROTECT) == 0u);
+    DF_CHECK(t, (haze->flags & DFI_MOVE_FLAG_PROTECT) == 0u);
     DF_CHECK_EQ_U64(t, haze->priority, DFI_PRIORITY_BIAS);
     DF_CHECK_EQ_U64(t, haze->type, DFI_TYPE_ICE);
     DF_CHECK_EQ_U64(t, haze->sec_chance, 0u);

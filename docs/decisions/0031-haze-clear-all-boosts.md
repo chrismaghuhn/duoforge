@@ -49,4 +49,15 @@ The version is not bumped by the builder. HauptSession collects the value into t
 
 ## Evidence
 
-Recorded POOL battles under `tests/reference/specs` (`g62_haze_*`, genders stated), with the engine checks of `duoforge.state.pool_g62` and the conformance of `duoforge.reference.conformance_pool_data`. Each battle shows the events and the stages after the step, against the pinned reference. The battles include: boosts on both sides (cleared on all positions), a volatile that survives (a Taunt or another volatile the pool supports, which is not a boost), a fainted slot on the field (no change to it), and a Haze in the same turn as a switch or a Mega.
+Four recorded POOL battles under `tests/reference/specs` and `traces` (`g62_haze_*`; every gendered Pokemon has its gender in the paste; each six-member team, four brought). They are replayed by `duoforge.reference.conformance_pool_data` (489 POOL battles, 6994 checks, 0 failures), and their trace state is compared with the engine after every step.
+
+- `g62_haze_boosts_a`: Kingambit (M) Swords Dances on both sides (+2 Attack each); Milotic (F) Hazes, both Kingambit lose the boost. Two `-clearallboost` lines.
+- `g62_haze_taunt`: Gardevoir (F) Taunts Primarina (F) on turn 1; Milotic (F) Hazes on turn 2 and Kingambit (M) loses its boost; the Taunt volatile of Primarina survives the Haze and ends at the residual of turn 4 (`-end ... move: Taunt`). A volatile is not a boost.
+- `g62_haze_mega`: Gardevoir (F) Mega-evolves (`-mega`) before Milotic (F) Hazes in the same turn (the Mega, order 104, runs before the move, order 200); the Haze clears the Kingambit (M) boost.
+- `g62_haze_faint`: a fainted slot on the field when Haze is used. In turn 12 Salamence (M, p2b) faints from Struggle recoil (`|faint|p2b: Salamence`); in the same turn, before its replacement (which is asked only after the turn), Milotic (F, p2a) Hazes; then Kingambit (M, p1b) faints. The fainted slot is skipped: `getAllActive()` (`sim/battle.ts:1365-1375`) takes `includeFainted` as undefined, so a fainted Pokemon is not in the list. A fainted slot has no boosts to lose anyway (`clearVolatile`, `sim/pokemon.ts:1508`, resets them at the faint), so the battle proves the state, not a visible difference.
+
+Mutation and campaign numbers are in the decision entry 5az of decision 0015.
+
+## The queue marker (After You and Quash)
+
+After You and Quash (in this same step, decision 0015 entry 5az) change the order of a queued move. The engine keeps that order in the queue record's `reserve` byte, for move records only: `reserve` 1 means prioritized (After You: `prioritizeAction` sets `order = 3`, `sim/battle-queue.ts:282-292`), `reserve` 2 means quashed (Quash: `action.order = 201`, `data/moves.ts:14454-14475`). The gen-9 re-sort after each action (`sim/battle.ts:2919-2926`, `this.queue.sort()` after `updateSpeed`) reads the order, so the marker must persist across a PIVOT boundary, where the queue is stored in the state. The state's meaning changes: no size change, no public value, no tail field; the invariant `dfi_queue_record_valid` (`src/state/invariants.c`) admits `reserve` 0, 1 or 2 for a move record, and the state model, the codec round-trip and the byte sweep test both values.
