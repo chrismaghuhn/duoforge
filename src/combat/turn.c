@@ -5722,6 +5722,11 @@ static duoforge_status dfi_run_switch(dfi_run *r, const dfi_queue_record *q)
         (item != 0u && (item > DFI_POOL_ITEM_COUNT || dfi_support.items[item - 1u] == 0u))) {
         return DUOFORGE_E_UNSUPPORTED; /* not marked in the support manifest */
     }
+    /* Regenerator on an instaswitch (decision 0025 item 10): the reference's SwitchOut path for the revived holder is not
+     * modelled here, so the instaswitch of such a holder is refused explicitly, never played (flagged in the PR). */
+    if (insta && dfi_ability(b, &sd->members[reserve], DFI_ABILITY_REGENERATOR)) {
+        return DUOFORGE_E_UNSUPPORTED;
+    }
     /* an instaswitch has no leaving Pokemon: the member is revived, not switched out (the reference would run its
      * SwitchOut, which Regenerator answers; that is refused below) */
     const dfi_member *leaving = insta ? NULL : dfi_at(b, side * 2u + slot);
