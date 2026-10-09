@@ -101,8 +101,11 @@ unsigned df_conf_compare_observation(FILE *out, const duoforge_context *ctx, con
                     ability = 1u + dfi_pool_formes[dfi_mega_of(set->species, set->item)].ability; /* the Mega of (forme, stone) */
                 }
                 bool ok = v->status == status && v->is_mega == e->mega && v->item_used == used && v->ability == ability;
+                /* The owner sees its PP exact; the other player sees the PP it can attribute (step G53, decision 0030
+                 * section 1): the same as the exact PP unless a Pressure extra is hidden by a [still] line. */
+                const uint8_t *want = viewer == s ? e->pp : e->pp_foe;
                 for (uint32_t k = 0; k < v->move_count && k < 4u; ++k) {
-                    ok = ok && v->pp[k] == e->pp[k]; /* own exact, foe derived: the same in the closure */
+                    ok = ok && v->pp[k] == want[k];
                 }
                 if (!ok) {
                     fprintf(out,

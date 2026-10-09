@@ -45,7 +45,7 @@
 #include "state/closure_member.h"
 #include "support/check.h"
 
-#define POOL_HASH_HEX "50554a6aba75f1f09b67def54a6a01a96483702d8820388571eb814870074f0b" /* the canonical hash of the rows of the lane A batch (G42, G44, G46, G47, G48, G49, G50, G56, G52, G54) */
+#define POOL_HASH_HEX "866a6946d1f377d8581126fef6cdb9dbbbca0d669a711f07b82eeb04b20428a5" /* the canonical hash of the rows of the lane A batch (G42, G44, G46, G47, G48, G49, G50, G56, G52, G54) */
 /* SHA-256 of the closure-layout bytes of the rows of the steps (P1 and G2: 28 formes, 72 moves, 52 items, 29
  * abilities). The whole-pool step must not move one of them (decision 0015 section 4.2); the pool generator before it
  * produced the same bytes. Step G10 moved two of them on purpose: Scald and Recover are data now (the thaw bit and
@@ -70,8 +70,8 @@
 
 /* The rows that the tables do not model, pinned (the generator reports the same counts). */
 #define UNMODELED_MOVES 196u /* 208 before step G42 modelled Roost and Stomping Tantrum; 217 before step G44 modelled Thunder, Power Trip, Ice Fang and Tri Attack (213 after it); 213 with the four of step G46 (Roar, Whirlwind, Dragon Tail, Circle Throw) removed too: 209; 221 before step G48 modelled Rage Fist, Population Bomb, Stone Axe and Ceaseless Edge; 225 before step G37 modelled Stealth Rock, Spikes, Toxic Spikes and Sticky Web (target foeSide, side conditions 5 to 8); 227 before step G31 modelled Taunt and Yawn; 230 before step G33 modelled Dual Wingbeat, Triple Axel and Twin Beam (its count was not carried through the batch merges); 246 before step G39 modelled Charm, Fake Tears, Sacred Sword, Super Fang and the twelve other status moves of one target with primary boosts; 250 before step G29 modelled Trick, Switcheroo, Thief and Covet; 251 before step G38 modelled Imprison; 252 before step G26 modelled Perish Song; 256 before step G25 modelled Electric Terrain, Misty Terrain, Rising Voltage and Terrain Pulse; 257 before step G27 modelled Disable; 260 before step G34 (262 before step G36 modelled Toxic and Poison Fang); 262 before step G34 modelled Steel Roller, Clangorous Soul and Brick Break (the other four rows of the step were already modelled); 273 before step G32 modelled Eruption, Water Spout, Life Dew, Body Press, Foul Play, Psyshock, Rain Dance, Sunny Day, Volt Switch, Clanging Scales and Freeze-Dry; 276 before step G30 modelled Rage Powder, Psychic Fangs and Solar Beam; 299 before step G28 modelled Acrobatics, Blizzard, Feint and the rows of the new secondary self boost (Ancient Power, Aqua Step, Charge Beam, Fiery Dance, Flame Charge, Meteor Mash, Psyshield Bash, Steel Wing, Torch Song, Trailblaze) and the allAdjacent moves; 300 before step G20 modelled Spiky Shield; 301 before it modelled Aurora Veil; 303 before step G19 modelled Coaching and Glaive Rush; 305u before step G15 modelled Expanding Force; 306 before step G16 modelled Knock Off; 313 before step G17 modelled the seven recharge moves; 319 before step G13 modelled Detect, Light of Ruin and the poison secondaries (Cross Poison, Gunk Shot, Poison Jab, Sludge Bomb); 324 before step G10 */
-#define UNMODELED_ITEMS 28u /* two fewer since step G47 made Lum Berry and Mental Herb engine rows; three fewer since step G49 modelled Muscle Band, Wise Glasses and Bright Powder; one fewer since step G46 modelled Red Card; two fewer since step G25 modelled Electric Seed and Misty Seed; one fewer since step G34 modelled Wide Lens; one fewer since step G32 modelled Eject Button; one fewer since step G28 modelled Expert Belt; five fewer since step G23-A found the Mega of a stone from (forme, stone); one fewer since step G15 modelled Psychic Seed */
-#define UNMODELED_ABILITIES 125u /* 127 before step G51 made Keen Eye and Big Pecks engine rows; 129 before step G47 made Synchronize and Oblivious engine rows; 135 before step G45 made Steadfast, Moxie, Weak Armor, Telepathy, Volt Absorb and Punk Rock engine rows; 137 before step G46 made Suction Cups and Guard Dog engine rows; 138 before step G41 made Shadow Tag an engine row; 139 before step G37 made Toxic Debris an engine row; 152 before step G39 modelled thirteen abilities (Hyper Cutter, Regenerator, Solar Power, Scrappy, Infiltrator, Queenly Majesty, Damp, Sturdy, Snow Cloak, Sand Veil, Static, Justified, Limber); 153 before Mega batch 2 made Aura Guard an engine row; 154 before step G33 made Mirror Armor an engine row; 155 before step G25 made Electric Surge a terrain setter; 156 before step G27 made Cursed Body an engine row; 158 before step G35 made Rain Dish and Friend Guard engine rows; 165 before step G34 made Compound Eyes, Iron Fist, Sharpness, Solid Rock, Technician, Multiscale and Gale Wings engine rows; 168 before step G32 made Soundproof, Unnerve and Speed Boost engine rows; 172 before step G30 made Flame Body, Clear Body, Hospitality and Overcoat engine rows; 178 before step G22 made six abilities engine rows; 179 before step G23-C made Levitate an engine row; 180 before step AC1 made Trace an engine row; 181 before step G16 made Sticky Hold an engine row; 184 before step G14 made Rough Skin, Poison Touch and Thermal Exchange engine rows */
+#define UNMODELED_ITEMS 23u /* five fewer since step G55 modelled Damp Rock, Heat Rock, Smooth Rock, Icy Rock and Terrain Extender; two fewer since step G47 made Lum Berry and Mental Herb engine rows; three fewer since step G49 modelled Muscle Band, Wise Glasses and Bright Powder; one fewer since step G46 modelled Red Card; two fewer since step G25 modelled Electric Seed and Misty Seed; one fewer since step G34 modelled Wide Lens; one fewer since step G32 modelled Eject Button; one fewer since step G28 modelled Expert Belt; five fewer since step G23-A found the Mega of a stone from (forme, stone); one fewer since step G15 modelled Psychic Seed */
+#define UNMODELED_ABILITIES 123u /* 124 before step G53 made Pressure an engine row; 125 before step G57 made Magic Bounce an engine row; 127 before step G51 made Keen Eye and Big Pecks engine rows; 129 before step G47 made Synchronize and Oblivious engine rows; 135 before step G45 made Steadfast, Moxie, Weak Armor, Telepathy, Volt Absorb and Punk Rock engine rows; 137 before step G46 made Suction Cups and Guard Dog engine rows; 138 before step G41 made Shadow Tag an engine row; 139 before step G37 made Toxic Debris an engine row; 152 before step G39 modelled thirteen abilities (Hyper Cutter, Regenerator, Solar Power, Scrappy, Infiltrator, Queenly Majesty, Damp, Sturdy, Snow Cloak, Sand Veil, Static, Justified, Limber); 153 before Mega batch 2 made Aura Guard an engine row; 154 before step G33 made Mirror Armor an engine row; 155 before step G25 made Electric Surge a terrain setter; 156 before step G27 made Cursed Body an engine row; 158 before step G35 made Rain Dish and Friend Guard engine rows; 165 before step G34 made Compound Eyes, Iron Fist, Sharpness, Solid Rock, Technician, Multiscale and Gale Wings engine rows; 168 before step G32 made Soundproof, Unnerve and Speed Boost engine rows; 172 before step G30 made Flame Body, Clear Body, Hospitality and Overcoat engine rows; 178 before step G22 made six abilities engine rows; 179 before step G23-C made Levitate an engine row; 180 before step AC1 made Trace an engine row; 181 before step G16 made Sticky Hold an engine row; 184 before step G14 made Rough Skin, Poison Touch and Thermal Exchange engine rows */
 
 /* How many rows of the manifest are marked and half modelled: marked, and with the UNMODELED handler or a list of
  * unmodelled features (decision 0015 section 4.2). A step marks only what it fully models. */
@@ -920,7 +920,7 @@ int main(void)
                                                          18u + 50u + POOL_ITEMS * 2u + POOL_ABILITIES * 2u +
                                                          POOL_ITEMS + POOL_ABILITIES +
                                                          POOL_FORMES * (DFI_POOL_LEARN_BYTES + 1u + 3u) + POOL_MOVES +
-                                                         POOL_MOVES * 2u + POOL_MOVES * 4u + POOL_MOVES * 2u);
+                                                         POOL_MOVES * 2u + POOL_MOVES * 4u + POOL_MOVES * 2u + POOL_MOVES);
         DF_CHECK(&t, bytes[DFI_POOL_CANONICAL_SIZE] == 0xA5u);
         uint32_t at = 0u;
         uint32_t bad = 0u;
@@ -1026,6 +1026,10 @@ int main(void)
                        : 0u;
         }
         at += 2u * DFI_POOL_MOVE_COUNT;
+        for (uint32_t i = 0u; i < DFI_POOL_MOVE_COUNT; ++i) { /* the third flags byte (steps G57, G53), the very last part */
+            bad += bytes[at + i] != dfi_pool_move_flags3[i] ? 1u : 0u;
+        }
+        at += DFI_POOL_MOVE_COUNT;
         DF_CHECK_EQ_U64(&t, bad, 0u);
         DF_CHECK_EQ_U64(&t, at, DFI_POOL_CANONICAL_SIZE);
         DF_CHECK(&t, dfi_sha256(bytes, n, sha));
@@ -1256,10 +1260,14 @@ int main(void)
                                id == DFI_ITEM_LUMBERRY || id == DFI_ITEM_MENTALHERB ||
                                /* step G43 (Mega batch 3): ten more Mega Stones, mark only */
                                id == DFI_ITEM_DRAGONINITE || id == DFI_ITEM_GLIMMORANITE || id == DFI_ITEM_BLAZIKENITE ||
+                               id == DFI_ITEM_ABSOLITE || id == DFI_ITEM_SABLENITE /* step G57: Absolite and Sablenite */ ||
                                id == DFI_ITEM_ABSOLITEZ || id == DFI_ITEM_RAICHUNITEX || id == DFI_ITEM_LOPUNNITE ||
                                id == DFI_ITEM_ALAKAZITE || id == DFI_ITEM_MEOWSTICITE || id == DFI_ITEM_SCIZORITE ||
                                id == DFI_ITEM_GALLADITE ||
-                               id == DFI_ITEM_REDCARD || id == DFI_ITEM_MUSCLEBAND || id == DFI_ITEM_WISEGLASSES || id == DFI_ITEM_BRIGHTPOWDER /* step G46: Red Card (no Sheer Force gate); step G49: the three item rows */;
+                               id == DFI_ITEM_REDCARD || id == DFI_ITEM_MUSCLEBAND || id == DFI_ITEM_WISEGLASSES || id == DFI_ITEM_BRIGHTPOWDER /* step G46: Red Card (no Sheer Force gate); step G49: the three item rows */ ||
+                               /* step G55: the four rocks and Terrain Extender (the duration rows, read by the setter's item) */
+                               id == DFI_ITEM_DAMPROCK || id == DFI_ITEM_HEATROCK || id == DFI_ITEM_SMOOTHROCK ||
+                               id == DFI_ITEM_ICYROCK || id == DFI_ITEM_TERRAINEXTENDER;
             DF_CHECK_EQ_U64(&t, dfi_support.items[id] != 0u ? 1u : 0u, stone ? 1u : 0u);
         }
         for (uint32_t id = 0u; id < DFI_POOL_ITEM_COUNT; ++id) {
@@ -1329,7 +1337,11 @@ int main(void)
                                 /* step G47: Synchronize and Oblivious, by id (dfi_synchronize, Taunt's and Intimidate's guard) */
                                 id == DFI_ABILITY_SYNCHRONIZE || id == DFI_ABILITY_OBLIVIOUS ||
                                 /* step G51: Keen Eye and Big Pecks, by id (dfi_boost and dfi_accuracy_check) */
-                                id == DFI_ABILITY_KEENEYE || id == DFI_ABILITY_BIGPECKS;
+                                id == DFI_ABILITY_KEENEYE || id == DFI_ABILITY_BIGPECKS ||
+                                /* step G57: Magic Bounce, by id (the bounced path of the move body) */
+                                id == DFI_ABILITY_MAGICBOUNCE ||
+                                /* step G53: Pressure, by id (dfi_pressure_extra, the switch-in line) */
+                                id == DFI_ABILITY_PRESSURE;
             DF_CHECK_EQ_U64(&t, dfi_support.abilities[id] != 0u ? 1u : 0u, (setter || terrain_setter || engine) ? 1u : 0u);
             DF_CHECK_EQ_U64(&t, dfi_pool_ability_family[id].family,
                             setter ? DFI_ABILITY_FAMILY_WEATHER_SETTER
@@ -1674,7 +1686,8 @@ int main(void)
         DF_CHECK(&t, dfi_pool_item_handler[DFI_ITEM_ABSOLITEZ] == DFI_HANDLER_NONE &&
                          dfi_pool_item_unmodeled[DFI_ITEM_ABSOLITEZ] == NULL &&
                          dfi_pool_item_handler[DFI_ITEM_ABSOLITE] == DFI_HANDLER_NONE);
-        DF_CHECK(&t, strcmp(dfi_pool_item_unmodeled[DFI_ITEM_DAMPROCK], "read by id in data/conditions.ts") == 0);
+        /* Step G55: Damp Rock is an engine row (the rain's 8 turns), so it has no unmodelled feature any more. */
+        DF_CHECK(&t, dfi_pool_item_handler[DFI_ITEM_DAMPROCK] == DFI_HANDLER_NONE && dfi_pool_item_unmodeled[DFI_ITEM_DAMPROCK] == NULL);
         DF_CHECK(&t, dfi_pool_ability_handler[DFI_ABILITY_LEVITATE] == DFI_HANDLER_NONE &&
                          dfi_pool_ability_unmodeled[DFI_ABILITY_LEVITATE] == NULL); /* an engine row since step G23-C */
         DF_CHECK(&t, dfi_pool_ability_handler[DFI_ABILITY_EELEVATE] == DFI_HANDLER_UNMODELED);
