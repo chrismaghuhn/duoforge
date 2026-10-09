@@ -4461,6 +4461,12 @@ static const df_tb_stop tb_g64_beatup_a[] = {
     {3u, 0u, 2u, 1u, {3u, 4u}, {575u, 632u}, {0x4047cc18a1de9209ull, 0x404a4ad679621c4bull}},
     {4u, 0u, 2u, 1u, {3u, 4u}, {575u, 632u}, {0x4047cc18a1de9209ull, 0x404a4ad679621c4bull}},
 };
+static const df_tb_stop tb_g64_beatup_skip_status[] = {
+    {0u, 0u, 1u, 3u, {6u, 6u}, {1158u, 1138u}, {0x4059000000000000ull, 0x4059000000000000ull}},
+    {1u, 0u, 1u, 3u, {4u, 4u}, {805u, 750u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {2u, 0u, 1u, 2u, {4u, 4u}, {793u, 634u}, {0x40506b4ce26dd5c1ull, 0x404b8b7f3bc8d07bull}},
+    {3u, 0u, 1u, 2u, {4u, 4u}, {769u, 644u}, {0x404fd922a3e857ddull, 0x404c0b3dd40e4eb1ull}},
+};
 static const df_tb_stop tb_g64_beatup_status[] = {
     {0u, 0u, 1u, 3u, {6u, 6u}, {1158u, 1116u}, {0x4059000000000000ull, 0x4059000000000000ull}},
     {1u, 0u, 1u, 3u, {4u, 4u}, {805u, 763u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
@@ -6348,6 +6354,7 @@ static const df_tb_battle tb_battles[] = {
     {"g5_uturn_d", 8u, tb_g5_uturn_d, sizeof tb_g5_uturn_d / sizeof tb_g5_uturn_d[0]},
     {"g5_uturn_e", 9u, tb_g5_uturn_e, sizeof tb_g5_uturn_e / sizeof tb_g5_uturn_e[0]},
     {"g64_beatup_a", 4u, tb_g64_beatup_a, sizeof tb_g64_beatup_a / sizeof tb_g64_beatup_a[0]},
+    {"g64_beatup_skip_status", 3u, tb_g64_beatup_skip_status, sizeof tb_g64_beatup_skip_status / sizeof tb_g64_beatup_skip_status[0]},
     {"g64_beatup_status", 4u, tb_g64_beatup_status, sizeof tb_g64_beatup_status / sizeof tb_g64_beatup_status[0]},
     {"g64_beatup_switch", 4u, tb_g64_beatup_switch, sizeof tb_g64_beatup_switch / sizeof tb_g64_beatup_switch[0]},
     {"g64_bugbite_lum", 4u, tb_g64_bugbite_lum, sizeof tb_g64_bugbite_lum / sizeof tb_g64_bugbite_lum[0]},
@@ -6484,7 +6491,7 @@ static const df_tb_battle tb_battles[] = {
     {"w8_sand_soak", 7u, tb_w8_sand_soak, sizeof tb_w8_sand_soak / sizeof tb_w8_sand_soak[0]},
 };
 
-/* 4465 stops: 150 of an ended battle; decided by the count 1189,
- * the HP percentage 1448, the total HP 1572, a tie 106;
- * winners: side 0 2241, side 1 2118, tie 106 */
+/* 4469 stops: 150 of an ended battle; decided by the count 1189,
+ * the HP percentage 1450, the total HP 1574, a tie 106;
+ * winners: side 0 2245, side 1 2118, tie 106 */
 #endif

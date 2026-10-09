@@ -33,7 +33,7 @@
 #include "reference/conformance_pool.h"
 #include "support/pool.h"
 #define DF_CONF_FORMES dfi_pool_formes
-#define DF_POOL_DATA_BATTLES 500u /* the recorded pool battles of the lane A batch: main (G42, G44, G46, G47, G48, G49, G50, G45), G56, G52, G54 and G64 (Poltergeist four, Beat Up three, Sheer Cold four, Bug Bite three) */
+#define DF_POOL_DATA_BATTLES 501u /* the recorded pool battles of the lane A batch: main (G42, G44, G46, G47, G48, G49, G50, G45), G56, G52, G54 and G64 (Poltergeist four, Beat Up three, Sheer Cold four, Bug Bite three) */
 #elif defined(DF_CONFORMANCE_TEAM_C)
 #include "data/extended_tables.h"
 #include "reference/conformance_team_c.h"
