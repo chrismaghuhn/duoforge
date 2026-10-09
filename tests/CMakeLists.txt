@@ -162,7 +162,12 @@ duoforge_add_test(NAME duoforge.state.pool_tail SOURCES test_pool_tail.c WHITEBO
 duoforge_add_test(NAME duoforge.state.pool_g8 SOURCES test_pool_g8.c WHITEBOX TIMEOUT 60)
 duoforge_add_test(NAME duoforge.state.ability_now SOURCES test_ability_now.c WHITEBOX TIMEOUT 60)
 # The residual handler list: when the order of a Pokemon's volatiles (not stored) cannot change the outcome (brute force).
-duoforge_add_test(NAME duoforge.combat.residual_order SOURCES test_residual_order.c WHITEBOX TIMEOUT 120)
+# Its 40000 random lists run in four shards (the trials [i * 10000, (i + 1) * 10000)): in one test they took 125 to
+# 177 s under ASan+UBSan (Debug, a loaded machine, 2026-10-09), over the 120 s limit; one shard takes 13 to 28 s there.
+foreach(_shard RANGE 3)
+    duoforge_add_test(NAME duoforge.combat.residual_order.${_shard} SOURCES test_residual_order.c WHITEBOX TIMEOUT 120
+        ARGS ${_shard} 4)
+endforeach()
 # Step G7: Wide Guard in the tail, the stall counter and the POOL view extension.
 duoforge_add_test(NAME duoforge.state.pool_g7 SOURCES test_pool_g7.c WHITEBOX TIMEOUT 60)
 # Sandstorm and Snowscape (the weather step): the view of the weather battles against the protocol lines, the sources of
