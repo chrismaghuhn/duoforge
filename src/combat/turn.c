@@ -6425,7 +6425,7 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
             }
             const duoforge_event miss = dfi_ev(DUOFORGE_EVENT_MISS, user, DUOFORGE_CAUSE_NONE, 0u, targets[i]);
             dfi_emit(r, &miss);
-            r->mres |= DFI_MRES_FALSE; /* the Invulnerability result is false: the move's targets are short by one */
+            r->mres |= DFI_MRES_FALSE; /* the Invulnerability result is false: the move has one target fewer */
         }
     }
     /* Wide Guard's onTryHit (priority 4, data/moves.ts:20828-20844) runs for every target before Protect's (3): it
