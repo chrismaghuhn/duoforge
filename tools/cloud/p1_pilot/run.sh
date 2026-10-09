@@ -632,19 +632,47 @@ if ! marked control-cal-b; then
     reached control-cal-b "$CAL_B"
     mark control-cal-b
 fi
+# The matching, with extra calibration blocks while a device has no warm update (p1_match exit 5): each extra block
+# is its own train process of p1_match.EXTRA_UPDATES updates on that device, at most p1_match.MAX_EXTRA per device,
+# all charged to the control ledger and counted against the 10 % cap. The blocks played are in
+# control/extra-calibration.json, so a restart neither repeats nor forgets one.
+# Dry run only: a STOP here (INFEASIBLE, over the cap, extras exhausted; expected without a production phase) is
+# reported, and the rehearsal goes on without the matched run: the export takes the calibrated state.
+EXTRAS=$OUT/control/extra-calibration.json
+match_stop() {  # CODE MESSAGE
+    if [[ $MODE == dry ]]; then log "dry run: $2 (control/match.json); continuing without the matched run"
+    else die "$1" "$2 (control/match.json): STOP"; fi
+}
 if ! marked control-match; then
-    rc=0
-    launch match "$OUT/control/match.stdout" "$PY" "$HERE/p1_match.py" --pilot-ledger "$PILOT_LEDGER" \
-        --control-run "$CONTROL" --control-ledger "$CONTROL_LEDGER" --out "$OUT/control/match.json" || rc=$?
-    cat "$OUT/control/match.json" 2>/dev/null || true
-    case $rc in
-        0) ;;
-        3) if [[ $MODE == dry ]]; then log "dry run: matching INFEASIBLE (control/match.json); continuing the rehearsal"
-           else die $EX_INFEASIBLE "the control cannot match the pilot's compute (control/match.json): STOP"; fi ;;
-        4) if [[ $MODE == dry ]]; then log "dry run: the calibration exceeds 10 % of a pilot axis (control/match.json); continuing the rehearsal"
-           else die $EX_CALIBRATION_CAP "the calibration spent more than 10 % of a pilot axis (control/match.json): STOP"; fi ;;
-        *) die $EX_CRASH "p1_match failed with exit $rc" ;;
-    esac
+    while true; do
+        rc=0
+        launch match "$OUT/control/match.stdout" "$PY" "$HERE/p1_match.py" --pilot-ledger "$PILOT_LEDGER" \
+            --control-run "$CONTROL" --control-ledger "$CONTROL_LEDGER" --extras "$EXTRAS" \
+            --out "$OUT/control/match.json" || rc=$?
+        case $rc in
+            0) break ;;
+            3) match_stop $EX_INFEASIBLE "the control cannot match the pilot's compute"; break ;;
+            4) match_stop $EX_CALIBRATION_CAP "the calibration spent more than 10 % of a pilot axis"; break ;;
+            5) next=$(json_get "$(cat "$OUT/control/match.json")" next_extra)
+               device=$(json_get "$next" device 2>/dev/null || true)
+               if [[ -z $device ]]; then
+                   match_stop $EX_INFEASIBLE "no warm calibration update on $(json_get "$next" exhausted) after the extra blocks"
+                   break
+               fi
+               share=$(json_get "$next" update_gpu_share)
+               target=$(( $(state_update) + $(json_get "$next" updates) ))
+               log "calibrate more: $device has no warm update; extra block to update $target"
+               # The count first: a crash inside the block then counts it too (the bound holds across restarts).
+               "$PY" -c 'import json, sys, pathlib; p = pathlib.Path(sys.argv[1]); d = json.loads(p.read_text()) if p.exists() else {}; d[sys.argv[2]] = d.get(sys.argv[2], 0) + 1; p.write_text(json.dumps(d))' \
+                   "$EXTRAS" "$device"
+               train "control-cal-extra-$device" --resume "$CONTROL" --updates "$target" --update-gpu-share "$share" \
+                   --act-gpu-share 0
+               reached "control-cal-extra-$device" "$target"
+               ;;
+            *) die $EX_CRASH "p1_match failed with exit $rc" ;;
+        esac
+    done
+    cat "$OUT/control/match.json"
     mark control-match
 fi
 

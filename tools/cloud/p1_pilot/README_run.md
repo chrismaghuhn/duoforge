@@ -101,7 +101,13 @@ directory left without a resumable state is moved to `<dir>.aside-<time>`, never
      exactly 6 (12) updates; a block cut short (a signal, the `--minutes` default) stops the start, and the next
      start resumes it.
    - **Matching:** `p1_match.py` writes `control/match.json`. It STOPs when the calibration spent more than 10 % of
-     either pilot axis (33), or when no share q in [0, 1] hits both axes (INFEASIBLE, 30). Otherwise the script
+     either pilot axis (33), or when no share q in [0, 1] hits both axes (INFEASIBLE, 30).
+     - **Calibrate more:** p1_match skips each process's first update (its JIT). When a device is left with no warm
+       update (interrupts during a short block), it exits 5 and names the device. The script then plays one extra
+       block on that device: its own process of 2 updates (one JIT, one warm), recorded in
+       `control/extra-calibration.json`. Then it runs p1_match again. At most 3 extra blocks per device, else STOP 30.
+       Extra blocks are charged to the control and count against the 10 % cap.
+     - Otherwise the script
      resumes with its flags: q, the pilot totals as ledger stops, `--updates 0`, a `--minutes` safety cap of twice
      the forecast, and `--learning-rate-schedule 0:1,D:0.1`.
    - **Budget stop:** "reached" is decided from the restored control ledger (saved with the run state) against the
@@ -156,7 +162,7 @@ exit code (train answers SIGTERM by saving and exiting 0): `run.sh` exits 60, an
 | 21 | STOP: forecast or actual generation CPU above 28800 core-seconds |
 | 22 | STOP: primary work fallbacks above 1 % |
 | 23 | production incomplete: fewer than 16384 targets (re-plan) |
-| 30 | matching infeasible (`control/match.json`) |
+| 30 | matching infeasible, or still no warm calibration update after 3 extra blocks on a device (`control/match.json`) |
 | 31 | compute mismatch above 5 % (`control/compute-check.json`) |
 | 32 | the control ended without reaching its ledger budget |
 | 33 | the calibration spent more than 10 % of a pilot axis (`control/match.json`) |
@@ -174,7 +180,9 @@ checking them exactly as above, and writes to `$WORK_DIR/out`.
   t = 0 stops; a budget or fallback STOP is only reported.
 - **Distillation:** on the smoke's shards with the smoke manifest. `DRY_DISTILL_DEVICE=cpu` (dry run only; a run
   refuses it with 2) puts it on the CPU.
-- **Control:** calibration 3 + 3 updates (a block keeps a warm update through one interrupt), then `p1_match.py`. Its result is only reported (INFEASIBLE or the 10 % cap
-  are expected, because the pilot ledger has no production). Then the export, and the compute check, which is only
-  reported.
+- **Control:** calibration 3 + 3 updates (a block keeps a warm update through one interrupt), then `p1_match.py`
+  with its extra calibration blocks as in the run.
+  - **Dry-run-only stand-in:** a matching STOP (INFEASIBLE, over the 10 % cap, extras exhausted) is only reported.
+    It is expected, because the pilot ledger has no production. The rehearsal then goes on without the matched run:
+    the export takes the calibrated state, and the compute check is only reported. A run always stops there.
 - **Evaluation:** the manifest and the `p1_eval` smoke on the real students. The run exits 0 on GO and 40 on STOP.

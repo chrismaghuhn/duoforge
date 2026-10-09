@@ -84,10 +84,76 @@ class MatchSolveTest(unittest.TestCase):
         out, code = p1_match.solve({"cpu_core_seconds": 40000.0, "gpu_seconds": 200.0}, spent, records)
         self.assertEqual((code, out["calibration_cap"]["over"]), (p1_match.OVER_CAP, ["gpu_seconds"]))
 
-    def test_no_calibration_is_refused(self):
+    def test_no_warm_update_asks_for_more_calibration(self):
         records, spent = calibration()
-        with self.assertRaises(ValueError):
-            p1_match.solve({"cpu_core_seconds": 4e4, "gpu_seconds": 800.0}, spent, records[:6])
+        pilot = {"cpu_core_seconds": 4e4, "gpu_seconds": 800.0}
+        out, code = p1_match.solve(pilot, spent, records[:6])  # no GPU block yet
+        self.assertEqual((code, out["calibrate_more"]), (p1_match.CALIBRATE_MORE, ["gpu"]))
+        # Every update a process's first (interrupts after each): no warm update on either device.
+        cut = [dict(r, restart=True) for r in records]
+        out, code = p1_match.solve(pilot, spent, cut)
+        self.assertEqual((code, out["calibrate_more"]), (p1_match.CALIBRATE_MORE, ["cpu", "gpu"]))
+        self.assertTrue(out["status"].startswith("CALIBRATE MORE"))
+
+    def test_the_cap_is_checked_before_more_calibration(self):
+        records, spent = calibration()
+        out, code = p1_match.solve({"cpu_core_seconds": 1e4, "gpu_seconds": 800.0}, spent, records[:6])
+        self.assertEqual(code, p1_match.OVER_CAP)
+        self.assertNotIn("calibrate_more", out)
+
+    def test_extra_calibration_decision(self):
+        more = {"calibrate_more": ["cpu", "gpu"]}
+        self.assertEqual(p1_match.extra_calibration(more, {}),
+                         {"device": "cpu", "update_gpu_share": 0, "updates": 2})
+        self.assertEqual(p1_match.extra_calibration({"calibrate_more": ["gpu"]}, {"cpu": 3, "gpu": 2}),
+                         {"device": "gpu", "update_gpu_share": 1, "updates": 2})
+        self.assertEqual(p1_match.extra_calibration(more, {"cpu": p1_match.MAX_EXTRA}), {"exhausted": "cpu"})
+        self.assertEqual(p1_match.MAX_EXTRA, 3)
+
+    def test_an_extra_block_gives_a_warm_update(self):
+        # A CPU block cut after its first (JIT) update, then one extra block of EXTRA_UPDATES on the CPU.
+        records, spent = calibration()
+        cut = [dict(records[0])] + [dict(r, restart=True) if r["update"] == 7 else r for r in records[6:]]
+        for i, r in enumerate(cut):
+            r["update"] = i + 1
+        _, code = p1_match.solve({"cpu_core_seconds": 4e4, "gpu_seconds": 800.0}, spent, cut)
+        self.assertEqual(code, p1_match.CALIBRATE_MORE)
+        extra = []
+        for k in range(p1_match.EXTRA_UPDATES):
+            last = cut[-1]
+            extra.append({"update": last["update"] + 1, "update_device": "cpu", "restart": k == 0,
+                          "ledger": {"cpu_core_seconds": last["ledger"]["cpu_core_seconds"] + 170.0,
+                                     "gpu_seconds": last["ledger"]["gpu_seconds"]},
+                          "collect_s": 20.0, "update_s": 9.0, "decisions": last["decisions"] + 10000})
+            cut.append(extra[-1])
+        out, code = p1_match.solve({"cpu_core_seconds": 4e4, "gpu_seconds": 800.0}, spent, cut)
+        self.assertEqual(code, 0, out["status"])
+        self.assertEqual(out["per_update"]["warm_updates"][0], 1)
+
+    def test_main_writes_the_next_extra_block(self):
+        d = tempfile.mkdtemp()
+        try:
+            records, spent = calibration()
+            os.makedirs(os.path.join(d, "run"))
+            with open(os.path.join(d, "run", "log.jsonl"), "w") as f:
+                f.write(json.dumps({"init": {}}) + "\n")
+                for r in records[:6]:
+                    f.write(json.dumps({k: v for k, v in r.items() if k != "restart"}) + "\n")
+            for name, value in (("pilot.json", {"cpu_core_seconds": 4e4, "gpu_seconds": 800.0}),
+                                ("control.json", spent), ("extras.json", {"gpu": 1})):
+                with open(os.path.join(d, name), "w") as f:
+                    json.dump(value, f)
+            out_path = os.path.join(d, "match.json")
+            code = p1_match.main(["--pilot-ledger", os.path.join(d, "pilot.json"), "--control-run",
+                                  os.path.join(d, "run"), "--control-ledger", os.path.join(d, "control.json"),
+                                  "--extras", os.path.join(d, "extras.json"), "--out", out_path])
+            with open(out_path) as f:
+                out = json.load(f)
+            self.assertEqual(code, p1_match.CALIBRATE_MORE)
+            self.assertEqual(out["next_extra"], {"device": "gpu", "update_gpu_share": 1, "updates": 2})
+            self.assertEqual(out["extra_calibration_blocks"], {"gpu": 1})
+        finally:
+            shutil.rmtree(d)
 
 
 class FreezeTest(unittest.TestCase):

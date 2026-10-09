@@ -16,9 +16,12 @@ P_c --stop-gpu-seconds P_g (the ledger totals are cumulative, so the stops are t
 --minutes M (a safety cap, twice the forecast wall time) and the learning-rate decay end D = 0.9 x the forecast
 decisions of the whole run (--learning-rate-schedule 0:1,D:0.1).
 
-usage: python p1_match.py --pilot-ledger PILOT.json --control-run RUN_DIR --control-ledger CONTROL.json [--out F]
+usage: python p1_match.py --pilot-ledger PILOT.json --control-run RUN_DIR --control-ledger CONTROL.json
+       [--extras EXTRAS.json] [--out F]
 exit: 0 OK, 3 INFEASIBLE (run.sh: STOP 30), 4 the calibration spent more than 10 % of a pilot axis (run.sh: STOP
-33), 2 bad input.
+33), 5 CALIBRATE MORE: a device has no warm update; out["next_extra"] (extra_calibration, with the extra blocks
+already played from --extras) says which block run.sh plays next, or that the device's extras are exhausted (run.sh:
+STOP 30), 2 bad input.
 """
 import argparse
 import json
@@ -28,7 +31,10 @@ from pathlib import Path
 
 INFEASIBLE = 3
 OVER_CAP = 4
+CALIBRATE_MORE = 5
 CALIBRATION_CAP = 0.10  # of each pilot axis
+MAX_EXTRA = 3  # extra calibration blocks per device
+EXTRA_UPDATES = 2  # updates per extra block: one JIT update (skipped) and one warm update
 
 
 def per_update(records, device):
@@ -60,21 +66,24 @@ def records_of(run_dir):
     return records
 
 
+def extra_calibration(out, extras, limit=MAX_EXTRA):
+    """What run.sh does after a CALIBRATE_MORE result: the first device of out["calibrate_more"] gets one more
+    calibration block of EXTRA_UPDATES updates (its own process, so its first update is a JIT update p1_match skips
+    and the second is warm), unless that device already had `limit` extra blocks (extras: {"cpu": n, "gpu": n}).
+    Returns {"device", "update_gpu_share", "updates"} or {"exhausted": device}."""
+    device = out["calibrate_more"][0]
+    if extras.get(device, 0) >= limit:
+        return {"exhausted": device}
+    return {"device": device, "update_gpu_share": 0 if device == "cpu" else 1, "updates": EXTRA_UPDATES}
+
+
 def solve(pilot, spent, records):
     target_c, target_g = pilot["cpu_core_seconds"], pilot["gpu_seconds"]
-    on_cpu, on_gpu = per_update(records, "cpu"), per_update(records, "default")
-    if on_cpu is None or on_gpu is None:
-        raise ValueError(f"calibrate first: warm updates on the CPU {on_cpu}, on the GPU {on_gpu}")
-    c_cpu, _, w_cpu, n_cpu = on_cpu
-    c_gpu, g_gpu, w_gpu, n_gpu = on_gpu
     spent = {k: spent[k] for k in ("cpu_core_seconds", "gpu_seconds")}
-    rem_c, rem_g = target_c - spent["cpu_core_seconds"], target_g - spent["gpu_seconds"]
     out = {"pilot": {"cpu_core_seconds": target_c, "gpu_seconds": target_g}, "spent": spent,
-           "per_update": {"cpu_on_cpu": c_cpu, "cpu_on_gpu": c_gpu, "gpu_on_gpu": g_gpu, "wall_on_cpu": w_cpu,
-                          "wall_on_gpu": w_gpu, "warm_updates": [n_cpu, n_gpu]},
            "calibration_updates": records[-1]["update"]}
     # The calibration is charged to the control and capped at CALIBRATION_CAP of each pilot axis (Learner v2 plan,
-    # task 7): over the cap is a STOP for the owner, not a rescaled run.
+    # task 7), extra calibration blocks included: over the cap is a STOP for the owner, not a rescaled run.
     caps = {"cpu_core_seconds": CALIBRATION_CAP * target_c, "gpu_seconds": CALIBRATION_CAP * target_g}
     over = sorted(axis for axis in caps if spent[axis] > caps[axis])
     out["calibration_cap"] = {"share": CALIBRATION_CAP, "caps": caps, "over": over, "ok": not over}
@@ -82,6 +91,17 @@ def solve(pilot, spent, records):
         out["status"] = (f"STOP: the calibration spent more than {CALIBRATION_CAP:.0%} of the pilot's "
                          f"{', '.join(over)}")
         return out, OVER_CAP
+    on_cpu, on_gpu = per_update(records, "cpu"), per_update(records, "default")
+    missing = [name for name, measured in (("cpu", on_cpu), ("gpu", on_gpu)) if measured is None]
+    if missing:  # every update of that device was a process's first (JIT) update, e.g. after interrupts
+        out["calibrate_more"] = missing
+        out["status"] = f"CALIBRATE MORE: no warm update on {', '.join(missing)}"
+        return out, CALIBRATE_MORE
+    c_cpu, _, w_cpu, n_cpu = on_cpu
+    c_gpu, g_gpu, w_gpu, n_gpu = on_gpu
+    rem_c, rem_g = target_c - spent["cpu_core_seconds"], target_g - spent["gpu_seconds"]
+    out["per_update"] = {"cpu_on_cpu": c_cpu, "cpu_on_gpu": c_gpu, "gpu_on_gpu": g_gpu, "wall_on_cpu": w_cpu,
+                         "wall_on_gpu": w_gpu, "warm_updates": [n_cpu, n_gpu]}
     if rem_c <= 0 or rem_g < 0:
         out["status"] = "INFEASIBLE: the calibration already spent the pilot's budget on an axis"
         return out, INFEASIBLE
@@ -116,15 +136,21 @@ def main(argv=None):
     p.add_argument("--control-run", required=True)
     p.add_argument("--control-ledger", required=True,
                    help="the control's ledger file: what it spent so far, including what no record shows")
+    p.add_argument("--extras", default=None,
+                   help="JSON {\"cpu\": n, \"gpu\": n}: the extra calibration blocks already played (default none)")
     p.add_argument("--out", default=None)
     args = p.parse_args(argv)
     try:
         pilot = json.loads(Path(args.pilot_ledger).read_text())
         spent = json.loads(Path(args.control_ledger).read_text())
+        extras = json.loads(Path(args.extras).read_text()) if args.extras and Path(args.extras).exists() else {}
         records = records_of(args.control_run)
         if not records:
             raise ValueError("no update with a ledger in the control run yet")
         out, code = solve(pilot, spent, records)
+        out["extra_calibration_blocks"] = extras
+        if code == CALIBRATE_MORE:
+            out["next_extra"] = extra_calibration(out, extras)
     except (ValueError, OSError, KeyError) as err:
         print(f"p1_match: {err}", file=sys.stderr)
         return 2
