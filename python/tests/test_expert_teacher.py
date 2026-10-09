@@ -155,7 +155,10 @@ class Teacher(unittest.TestCase):
         from duoforge_search import expert_data as ed
         from python.tests.test_expert_data import manifest
         cls.net = FoeSensitiveNet()
-        cls.manifest = manifest(ed)
+        # The manifest pins the belief: the spread table the teacher's search reads (honest.SPREAD_SOURCES
+        # in production, here the reference setups' table).
+        table = belief.SpreadTable.from_sides(duoforge.reference_setups([0])["sides"].reshape(-1))
+        cls.manifest = dataclasses.replace(manifest(ed), belief_hash=table.sha256())
 
     def make(self, ctx, k=8, net=None, seed=lookahead.SEARCH_SEED, excluded=None):
         net = net or self.net
@@ -336,6 +339,10 @@ class Teacher(unittest.TestCase):
                             self.config(audit_threshold=0, search_seed=5)):
                     with self.subTest(config=bad), self.assertRaises(ValueError):
                         self.label(search, b, 0, 0, raw, bad)
+                with self.assertRaisesRegex(ValueError, "belief"):  # another spread table than the manifest's
+                    ex.label_decision(search, b, env=0, seat=0, key=key, raw_action=raw, raw_logp=-1.0,
+                                      last_step=False, config=cfg,
+                                      manifest=dataclasses.replace(m, belief_hash="f" * 64))
                 for bad_logp in (0.5, float("nan")):
                     with self.assertRaises(ValueError):
                         ex.label_decision(search, b, env=0, seat=0, key=key, raw_action=raw, raw_logp=bad_logp,
