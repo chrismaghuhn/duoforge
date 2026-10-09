@@ -120,7 +120,7 @@ static void check_facts(df_test *t)
     /* the numbers */
     DF_CHECK_EQ_U64(t, DFI_SITE_FLAME_BODY, 18u);
     DF_CHECK_EQ_U64(t, DFI_SITE_STATIC, 19u); /* step G39: Static's draw; the count was 19 until then */
-    DF_CHECK_EQ_U64(t, DFI_SITE_COUNT, 21u); /* step G46: DFI_SITE_DRAG */
+    DF_CHECK_EQ_U64(t, DFI_SITE_COUNT, 20u);
     DF_CHECK_EQ_U64(t, DFI_SPECIAL_RAGE_POWDER, 33u);
     DF_CHECK_EQ_U64(t, DFI_SPECIAL_PSYCHIC_FANGS, 34u);
     DF_CHECK_EQ_U64(t, DFI_SPECIAL_SOLAR_BEAM, 35u);

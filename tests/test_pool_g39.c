@@ -67,7 +67,7 @@ static void check_marks(df_test *t)
     DF_CHECK_EQ_U64(t, dfi_pool_moves[DFI_MOVE_FAKETEARS].boosts[3], 4u);
     /* Static's draw is the site 19 (Flame Body has 18, 17 is Cursed Body's) */
     DF_CHECK_EQ_U64(t, DFI_SITE_STATIC, 19u);
-    DF_CHECK_EQ_U64(t, DFI_SITE_COUNT, 21u); /* step G46: DFI_SITE_DRAG */
+    DF_CHECK_EQ_U64(t, DFI_SITE_COUNT, 20u);
 }
 
 /* Damp and Sturdy are inert only while what they would act on is unmarked. */
