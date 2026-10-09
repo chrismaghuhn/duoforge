@@ -152,6 +152,7 @@ jobs:
           grep -E 'Test +#[0-9]+: duoforge\.python\.distill ' ctest.log
           grep -E 'Test +#[0-9]+: duoforge\.python\.collect_expert ' ctest.log
           grep -E 'Test +#[0-9]+: duoforge\.python\.learner_contract ' ctest.log
+          grep -E 'Test +#[0-9]+: duoforge\.python\.perft ' ctest.log
 
   linux-sanitizers:
     name: Linux / gcc / ASan+UBSan
@@ -313,6 +314,7 @@ jobs:
             exit 1
           fi
           grep -c -E 'Test +#[0-9]+: duoforge\.reference\.trace\.' ctest.log
+          grep -E 'Test +#[0-9]+: duoforge\.python\.perft ' ctest.log
 
   windows-gcc-release-ipo:
     name: Windows / gcc / Release / IPO
