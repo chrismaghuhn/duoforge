@@ -127,8 +127,11 @@
 #define DFI_ENC_TAIL_OFF DUOFORGE_STATE_V3_ENCODED_SIZE
 #define DFI_ENC_TAIL_FIELD_SIZE 8u
 #define DFI_ENC_TAIL_FIELD_GRAVITY_OFF 0u
-#define DFI_ENC_TAIL_FIELD_RESERVED_OFF 1u
-#define DFI_ENC_TAIL_FIELD_RESERVED_SIZE 7u
+/* step G46: party_order, 3 bytes per side (3 bits per entry, see battle_internal.h), then one reserved byte (+7) */
+#define DFI_ENC_TAIL_FIELD_PARTY_OFF 1u
+#define DFI_ENC_TAIL_FIELD_PARTY_SIZE 6u
+#define DFI_ENC_TAIL_FIELD_RESERVED_OFF 7u
+#define DFI_ENC_TAIL_FIELD_RESERVED_SIZE 1u
 #define DFI_ENC_TAIL_SIDES_OFF DFI_ENC_TAIL_FIELD_SIZE
 #define DFI_ENC_TAIL_SIDE_SIZE 140u
 #define DFI_ENC_TAIL_SIZE (DFI_ENC_TAIL_FIELD_SIZE + DUOFORGE_SIDE_COUNT * DFI_ENC_TAIL_SIDE_SIZE)
@@ -301,7 +304,8 @@ _Static_assert(DFI_ENC_TAIL_MEMBER_TYPE2_OFF == DFI_ENC_TAIL_MEMBER_TOXIC_OFF + 
 _Static_assert(DFI_ENC_TAIL_MEMBER_RESERVED_OFF + DFI_ENC_TAIL_MEMBER_RESERVED_SIZE == DFI_ENC_TAIL_MEMBER_SIZE,
                "tail member block is 10 bytes");
 _Static_assert(DFI_ENC_TAIL_SIZE == 288u, "the tail is 288 bytes");
-_Static_assert(DFI_ENC_TAIL_RESERVED_COUNT == 35u, "35 of them are reserved (43 in rev 3: rev 4 adds 40 bytes and defines 48)");
+_Static_assert(DFI_ENC_TAIL_RESERVED_COUNT == 29u,
+               "29 of them are reserved (step G46: party_order takes 6 of the field block's 7; 35 before it, 43 in rev 3)");
 _Static_assert(DFI_STATE_POOL_ENCODED_SIZE == 1297u, "the state with the POOL tail is 1297 bytes");
 /* No padding: every field of the tail in memory is a byte or an aligned u16, so the structs are the encoded data
  * and nothing else (the encoded size without the reserved bytes, plus the pad byte of the field block: a position and a side
