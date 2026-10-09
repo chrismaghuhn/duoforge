@@ -350,6 +350,14 @@ class LinesTest(unittest.TestCase):
         with self.assertRaises(lines.Stop):
             lines.check("|-fail|p1a: Dragonite|unboost|Power|[from] ability: Inner Focus|[of] p1a: Dragonite", view)
 
+    def test_roost_single_turn_is_its_feature(self):
+        # G42: -singleturn|X|move: Roost is the ROOST feature: folded once the library supports it, else a Stop
+        line = "|-singleturn|p1a: Staraptor|move: Roost"
+        if lines.SUPPORTED >> lines.FEATURES["ROOST"] & 1:
+            self.assertEqual(lines.check(line, self.view), "fold")
+        else:
+            self.assertEqual(self.stop(line), "feature:ROOST")
+
     def test_activate_of_own_ability_folds(self):
         # G45/G47: Synchronize, Telepathy and the like announce the holder's own ability; their effects come in
         # their own lines (-status, the skipped hit), so the -activate line itself changes no field
