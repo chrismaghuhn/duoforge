@@ -465,6 +465,7 @@ const dfi_support_manifest dfi_support = {
             [DFI_MOVE_STRENGTHSAP] = 1u,
             [DFI_MOVE_SING] = 1u,
             [DFI_MOVE_HAZE] = 1u, /* step G62, decision 0031 */
+            [DFI_MOVE_AFTERYOU] = 1u, /* step G62, decision 0015 entry 5az: the queued move of the target goes next */
         },
     .abilities =
         {

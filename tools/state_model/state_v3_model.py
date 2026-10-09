@@ -295,7 +295,7 @@ KD = TeamCContext(KIND_TEAM_C_DEV, 6, 4)
 # which tests/test_pool_tables.c recomputes from the pool canonical bytes: the
 # pool layout over the pool data, then the family columns, the handler columns
 # and the moves and abilities that each forme may have.
-POOL_TABLE_HASH = bytes.fromhex('fbd61323c50b1d1555ce75b40b514c2e40a719c80c8c1a491eea1342976c504f')
+POOL_TABLE_HASH = bytes.fromhex('f6b61e7e6b27c24fafbfc47e2847af79369dcdab72150265424d05b3d95d1572')
 KIND_POOL, KIND_POOL_DEV = 6, 7
 
 
@@ -870,7 +870,7 @@ def queue_record_valid(st, r):
     if r['kind'] in (Q_RUN_SWITCH, Q_MEGA):
         return plain and bound and r['reserve'] == 0
     if r['kind'] == Q_MOVE:
-        return (bound and r['reserve'] == 0 and r['move_slot'] <= MOVE_SLOT_RECHARGE
+        return (bound and r['reserve'] <= 2 and r['move_slot'] <= MOVE_SLOT_RECHARGE  # DFI_QRES_*: 0, 1, 2 (G62)
                 and (r['target'] < 4 or r['target'] == TARGET_NONE))
     return r == qrec(Q_RESIDUAL)
 

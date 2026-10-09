@@ -104,6 +104,12 @@ typedef struct dfi_move_slot {
 #define DFI_Q_RESIDUAL 6u   /* order class 300 */
 #define DFI_Q_REVIVE 7u     /* Revival Blessing's revive, order class 6 (decision 0025 item 6) */
 #define DFI_Q_INSTASWITCH 8u /* an instaswitch, appended to the queue (addChoice), order class 3 */
+/* The reserve byte of a MOVE record (step G62, decision 0015 entry 5az; decision 0031): the order class that After You and Quash
+ * give a queued move. 0 is the plain move (order class 200). Persisted with the queue at a PIVOT boundary, like the rest of
+ * the record. */
+#define DFI_QRES_NONE 0u
+#define DFI_QRES_PRIORITIZED 1u /* After You (prioritizeAction): order class 3 */
+#define DFI_QRES_QUASHED 2u     /* Quash (action.order = 201): order class 201 */
 
 typedef struct dfi_member {
     uint16_t species_id; /* SYNTHETIC: caller id; later the base forme id */

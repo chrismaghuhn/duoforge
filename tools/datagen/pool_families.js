@@ -990,6 +990,11 @@ function checkG62(dex) {
     expect('Haze accuracy and target', [haze.accuracy, haze.target], [true, 'all']);
     expect('Haze has no protect flag', haze.flags.protect === undefined, true);
     expect('Haze priority', haze.priority, 0);
+    // After You (no protect flag, accuracy true) and Quash (a protect move, accuracy 100), both priority 0 Status moves.
+    const ay = dex.moves.get('afteryou');
+    expect('After You accuracy, priority, protect', [ay.accuracy, ay.priority, ay.flags.protect === undefined], [true, 0, true]);
+    const qu = dex.moves.get('quash');
+    expect('Quash accuracy, priority, protect', [qu.accuracy, qu.priority, qu.flags.protect], [100, 0, 1]);
     return 1;
 }
 

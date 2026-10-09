@@ -27,6 +27,8 @@
 #define DFI_ORDER_SWITCH 103u     /* a voluntary switch */
 #define DFI_ORDER_MEGA 104u       /* megaEvo */
 #define DFI_ORDER_MOVE 200u
+#define DFI_ORDER_PRIORITIZED 3u /* After You: queue.prioritizeAction sets order 3 (sim/battle-queue.ts:282-292) */
+#define DFI_ORDER_QUASHED 201u   /* Quash: action.order = 201 (data/moves.ts:14454-14475) */
 #define DFI_ORDER_RESIDUAL 300u
 #define DFI_SPEED_BIAS 10000u   /* speed key: 10000 + speed, or 10000 - speed under Trick Room */
 #define DFI_SPEED_CAP 10000u    /* getStat caps Speed at 10000 (sim/pokemon.ts:636) */
@@ -693,7 +695,10 @@ static duoforge_status dfi_key_of(dfi_run *r, const dfi_queue_record *q, dfi_key
     }
     uint32_t order = 0u;
     if (q->kind == DFI_Q_MOVE) {
-        order = DFI_ORDER_MOVE;
+        /* After You and Quash give a queued move its order (DFI_QRES_*, step G62); a plain move is class 200. */
+        order = q->reserve == DFI_QRES_PRIORITIZED   ? DFI_ORDER_PRIORITIZED
+                : q->reserve == DFI_QRES_QUASHED     ? DFI_ORDER_QUASHED
+                                                     : DFI_ORDER_MOVE;
     } else if (q->kind == DFI_Q_SWITCH) {
         order = DFI_ORDER_SWITCH;
     } else if (q->kind == DFI_Q_SWITCH_IN) {
@@ -4408,6 +4413,73 @@ static duoforge_status dfi_run_heal_fraction(dfi_run *r, uint32_t num, uint32_t 
     return dfi_status_hit_end(r);
 }
 
+/* queue.willMove (sim/battle-queue.ts:324-331): the index of the queued move of the Pokemon at `flat`, or -1. A fainted or empty
+ * position has none (willMove's `pokemon.fainted`); the record must belong to the occupant (its activation), as `action.pokemon`
+ * is that Pokemon. */
+static int dfi_queued_move_index(struct duoforge_battle *b, uint32_t flat)
+{
+    const dfi_member *m = dfi_at(b, flat);
+    if (m == NULL || m->hp == 0u) {
+        return -1;
+    }
+    const dfi_active_slot *pos = dfi_pos(b, flat);
+    for (uint32_t i = 0u; i < b->queue_len; ++i) {
+        const dfi_queue_record *q = &b->queue[i];
+        if (q->kind == DFI_Q_MOVE && (uint32_t)q->side * 2u + (uint32_t)q->slot == flat &&
+            q->activation_id == pos->activation_id) {
+            return (int)i;
+        }
+    }
+    return -1;
+}
+
+/* After You (step G62, decision 0015 entry 5az; data/moves.ts:195-218), onHit of its target: `if (this.activePerHalf === 1)
+ * return false` is singles only, so the format is doubles and it never fails there. The target's queued move (willMove) is
+ * prioritized (prioritizeAction: its order class becomes 3, the reserve DFI_QRES_PRIORITIZED) and the line is
+ * `-activate|target|move: After You`. With no queued move (the target moved, fainted, or switches) the hit returns false.
+ * The hit returns undefined on success (the move result stays unclassified, as Haze's). Its accuracy is true and it has no
+ * protect flag: a Protect does not stop it, and the hit steps before this one (accuracy) are the generic ones. */
+static duoforge_status dfi_run_after_you(dfi_run *r, uint32_t user, uint32_t move_id, const uint32_t *targets, uint32_t count,
+                                         const bool *hit)
+{
+    if (count == 0u || !hit[0]) {
+        return DUOFORGE_OK;
+    }
+    const uint32_t t = targets[0];
+    const int idx = dfi_queued_move_index(r->b, t);
+    if (idx < 0) {
+        r->mres |= DFI_MRES_FALSE; /* onHit returns false */
+        dfi_fail_still(r, user);
+        return DUOFORGE_OK;
+    }
+    r->b->queue[idx].reserve = DFI_QRES_PRIORITIZED;
+    const duoforge_event e = dfi_ev(DUOFORGE_EVENT_ACTIVATE, t, DUOFORGE_CAUSE_MOVE, move_id, DUOFORGE_NO_POSITION);
+    dfi_emit(r, &e);
+    return DUOFORGE_OK;
+}
+
+/* Quash (step G62, decision 0015 entry 5az; data/moves.ts:14454-14475): a protect move, accuracy 100, whose onHit (doubles, as
+ * After You) finds the target's queued move and gives it order 201 (reserve DFI_QRES_QUASHED): it goes after every other move of
+ * the turn, and its line is `-activate|target|move: Quash`. No queued move: the hit returns false. */
+static duoforge_status dfi_run_quash(dfi_run *r, uint32_t user, uint32_t move_id, const uint32_t *targets, uint32_t count,
+                                     const bool *hit)
+{
+    if (count == 0u || !hit[0]) {
+        return DUOFORGE_OK;
+    }
+    const uint32_t t = targets[0];
+    const int idx = dfi_queued_move_index(r->b, t);
+    if (idx < 0) {
+        r->mres |= DFI_MRES_FALSE; /* onHit returns false */
+        dfi_fail_still(r, user);
+        return DUOFORGE_OK;
+    }
+    r->b->queue[idx].reserve = DFI_QRES_QUASHED;
+    const duoforge_event e = dfi_ev(DUOFORGE_EVENT_ACTIVATE, t, DUOFORGE_CAUSE_MOVE, move_id, DUOFORGE_NO_POSITION);
+    dfi_emit(r, &e);
+    return DUOFORGE_OK;
+}
+
 /* Haze (step G62, decision 0031; data/moves.ts:8156-8172, onHitField): the move prints `-clearallboost` (no position, no
  * cause, public), then clearBoosts for each of getAllActive(), which skips a fainted Pokemon (sim/battle.ts:1365-1375; the
  * default includeFainted is off). clearBoosts (sim/pokemon.ts:1232-1237) zeroes the seven boosts only: volatiles such as
@@ -5235,6 +5307,7 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
      * below, not refused here. */
     if (status_move && md->primary_status == DFI_STATUS_NONE && md->special != DFI_SPECIAL_PARTING_SHOT &&
         md->special != DFI_SPECIAL_STRENGTH_SAP && md->special != DFI_SPECIAL_HEAL_PULSE && md->special != DFI_SPECIAL_SOAK && md->special != DFI_SPECIAL_ENCORE && md->special != DFI_SPECIAL_DISABLE &&
+        md->special != DFI_SPECIAL_AFTER_YOU && md->special != DFI_SPECIAL_QUASH && /* step G62: their own hit, below (after the Protect and immunity steps) */
         md->special != DFI_SPECIAL_TRICK && md->special != DFI_SPECIAL_SWITCHEROO &&
         md->special != DFI_SPECIAL_TAUNT && md->special != DFI_SPECIAL_YAWN &&
         md->boost_role != DFI_BOOST_ROLE_PRIMARY_TARGET &&
@@ -5281,7 +5354,8 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
         md->special != DFI_SPECIAL_MULTI_HIT_2_5 &&
         md->special != DFI_SPECIAL_SCALE_SHOT && md->special != DFI_SPECIAL_QUICK_GUARD &&
         md->special != DFI_SPECIAL_UPPER_HAND && md->special != DFI_SPECIAL_HEAL_PULSE &&
-        md->special != DFI_SPECIAL_STRENGTH_SAP) {
+        md->special != DFI_SPECIAL_STRENGTH_SAP && md->special != DFI_SPECIAL_AFTER_YOU &&
+        md->special != DFI_SPECIAL_QUASH) {
         return DUOFORGE_E_INVARIANT;
     }
     /* Steel Roller's onTry (step G34, data/moves.ts:17893-17913): it fails without a terrain, with -fail and [still]. */
@@ -5681,6 +5755,12 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
                 dfi_break_protect(r, targets[i], move_id);
             }
         }
+    }
+    if (md->special == DFI_SPECIAL_AFTER_YOU) {
+        return dfi_run_after_you(r, user, move_id, targets, count, hit); /* step G62 (decision 0015 entry 5az) */
+    }
+    if (md->special == DFI_SPECIAL_QUASH) {
+        return dfi_run_quash(r, user, move_id, targets, count, hit); /* step G62 (decision 0015 entry 5az) */
     }
     if (md->special == DFI_SPECIAL_STRENGTH_SAP) {
         return dfi_run_strength_sap(r, user, targets, count, hit);

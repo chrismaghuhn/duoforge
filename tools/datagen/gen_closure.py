@@ -2140,6 +2140,8 @@ SPECIAL_P = dict(SPECIAL_C, **{
     'healpulse': ('HEAL_PULSE', {'onHit'}),                               # G54: heals the target by half of its maximum HP
     'strengthsap': ('STRENGTH_SAP', {'onHit'}),                           # G54: heals the user by the target's Attack, then lowers it
     'haze': ('HAZE', {'onHitField'}),                                     # G62: clears every boost of the standing actives (decision 0031)
+    'afteryou': ('AFTER_YOU', {'onHit'}),                                 # G62: the target's queued move goes next (decision 0015 entry 5az)
+    'quash': ('QUASH', {'onHit'}),                                        # G62: the target's queued move goes last
                                    # G44: a 20 percent pick of burn, paralysis or freeze (G2_OWNED_SECONDARY)
     'ragefist': ('RAGE_FIST', {'basePowerCallback'}),                     # G48: 50 + 50 per hit the user took, at most 350
     'stoneaxe': ('STONE_AXE', {'onAfterHit', 'onAfterSubDamage'}),        # G48: Stealth Rock on the foe's side after a hit
@@ -2231,11 +2233,23 @@ G54_FACTS = (
 # Step G62 (Haze, decision 0031; the turn-order moves After You and Quash follow in their own rows). HAZE: `onHitField` prints
 # `-clearallboost` and clears the boosts of every active Pokemon (getAllActive(), the standing ones only); no protect flag, a
 # target of the field (`all`), accuracy true. The engine's stages are the boosts; clearBoosts zeroes the seven of them only.
-G62_HANDLERS = ['HAZE']
+G62_HANDLERS = ['HAZE', 'AFTER_YOU', 'QUASH']
 G62_FACTS = (
     ('haze', ['accuracy: true,', 'basePower: 0,', 'category: "Status",', 'priority: 0,',
               'flags: { bypasssub: 1, metronome: 1 },', "this.add('-clearallboost');",
               'for (const pokemon of this.getAllActive()) {', 'pokemon.clearBoosts();', 'target: "all",', 'type: "Ice",']),
+    # After You (data/moves.ts:195-218): the target's pending move goes first (prioritizeAction, order 3) and the line
+    # `-activate|target|move: After You`; no move action of the target (fainted, moved, switching) fails the move.
+    ('afteryou', ['accuracy: true,', 'basePower: 0,', 'category: "Status",', 'priority: 0,', 'flags: { bypasssub: 1, allyanim: 1 },',
+                  'if (this.activePerHalf === 1) return false;', 'const action = this.queue.willMove(target);',
+                  'this.queue.prioritizeAction(action);', "this.add('-activate', target, 'move: After You');",
+                  'return false;', 'target: "normal",', 'type: "Normal",']),
+    # Quash (data/moves.ts:14454-14475): the target's pending move goes last (action.order = 201) and the line
+    # `-activate|target|move: Quash`; a protect move, accuracy 100.
+    ('quash', ['accuracy: 100,', 'basePower: 0,', 'category: "Status",', 'priority: 0,', 'flags: { protect: 1, mirror: 1 },',
+               'if (this.activePerHalf === 1) return false;', 'const action = this.queue.willMove(target);',
+               'if (!action) return false;', 'action.order = 201;', "this.add('-activate', target, 'move: Quash');",
+               'target: "normal",', 'type: "Dark",']),
 )
 SPECIAL_IDS_P =SPECIAL_IDS_C + G2_HANDLERS + WEATHER_HANDLERS + G16_HANDLERS + G15_HANDLERS + G19_HANDLERS + G20_HANDLERS + G20_PROTECT_HANDLERS + G28_HANDLERS + G30_HANDLERS + G32_HANDLERS + G34_HANDLERS + G27_HANDLERS + G25_HANDLERS + G26_HANDLERS + G33_HANDLERS + G38_HANDLERS + G29_HANDLERS + G39_HANDLERS + G31_HANDLERS + G48_HANDLERS + G44_HANDLERS + G50_HANDLERS + G42_HANDLERS + G56_HANDLERS + G52_HANDLERS + G54_HANDLERS + G62_HANDLERS + ['UNMODELED']# Step G10 made two of these handlers data: Scald (thawsTarget) and Recover (heal) are read into the second flags# byte (bit 4, thaws the target) and the heal column, and have the special NONE; their ids stay defined (the ids after
 # them keep their values). First Impression and Low Kick keep theirs: the turn code implements them.
