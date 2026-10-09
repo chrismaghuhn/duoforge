@@ -420,6 +420,24 @@ def selection_word(key: DecisionKey, seed: int, *, domain: str, version: int = 1
     return int.from_bytes(hashlib.sha256(data).digest()[:8], "little")
 
 
+SELECT_THRESHOLD = 1 << 61
+HELD_OUT_THRESHOLD = (1 << 64) // 5
+
+
+def is_selected(key: DecisionKey, seed: int) -> bool:
+    """Keyed random 1/8 gate (manifest seed), never every eighth arrival."""
+    return selection_word(key, seed, domain="SELECT") < SELECT_THRESHOLD
+
+
+def is_held_out(game_id: int, split_seed: int) -> bool:
+    """Whole-game 20% held-out split, fixed before collection.
+
+    Only the logical game id and the manifest split seed enter; the key uses
+    seat 0 and epoch 0, so every row of a game shares its split.
+    """
+    return selection_word(DecisionKey(game_id, 0, 0), split_seed, domain="split") < HELD_OUT_THRESHOLD
+
+
 LABEL_LIMIT = 16384
 
 
