@@ -37,11 +37,11 @@ static void test_mega_abilities_are_engine_rows(df_test *t)
     }
 }
 
-/* The base abilities that stay unmarked: Megas stay reachable through their marked base abilities (decision 0015 5bj). */
+/* The base abilities that stay unmarked: Megas stay reachable through their marked base abilities (decision 0015 5bj).
+ * Steelix's Sheer Force is no longer one of them: step G61 (decision 0015 5bi) made it an engine row (tests/test_pool_g61.c). */
 static void test_unmarked_base_abilities_stay_unmodelled(df_test *t)
 {
-    static const uint32_t bases[] = {DFI_ABILITY_SHEERFORCE, DFI_ABILITY_OWNTEMPO, DFI_ABILITY_POISONPOINT, DFI_ABILITY_HEAVYMETAL,
-                                     DFI_ABILITY_GUTS};
+    static const uint32_t bases[] = {DFI_ABILITY_OWNTEMPO, DFI_ABILITY_POISONPOINT, DFI_ABILITY_HEAVYMETAL, DFI_ABILITY_GUTS};
     for (size_t i = 0u; i < sizeof bases / sizeof bases[0]; ++i) {
         DF_CHECK_EQ_U64(t, dfi_support.abilities[bases[i]], 0u);
         DF_CHECK_EQ_U64(t, dfi_pool_ability_handler[bases[i]], DFI_HANDLER_UNMODELED);

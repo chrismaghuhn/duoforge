@@ -580,6 +580,8 @@ const dfi_support_manifest dfi_support = {
             [DFI_ABILITY_FIREMANE] = 1u,     /* Pyroar-Mega: Fire moves x1.5 (data/abilities.ts:1295-1310) */
             [DFI_ABILITY_SPICYSPRAY] = 1u,   /* Scovillain-Mega: a damaging hit burns the attacker (data/abilities.ts:4466-4475) */
             [DFI_ABILITY_MEGASOL] = 1u,      /* Meganium-Mega: sun for the holder's moves (data/abilities.ts:2558-2569) */
+            [DFI_ABILITY_SHEERFORCE] = 1u,  /* step G61: the stripped secondaries and self effects, x5325/4096 (data/abilities.ts:4202-4221) */
+            [DFI_ABILITY_DRAGONIZE] = 1u,   /* step G61: an -ate member, Dragon (data/abilities.ts:1036-1055), Feraligatr-Mega's */
             [DFI_ABILITY_KEENEYE] = 1u,   /* step G51: the base ability of Pidgeot (with Pidgeotite), an engine row */
             [DFI_ABILITY_BIGPECKS] = 1u,  /* step G51: the other base ability of Pidgeot, an engine row */
             [DFI_ABILITY_MAGICBOUNCE] = 1u, /* step G57: reflects the reflectable moves (decision 0015 5bg) */
@@ -682,6 +684,8 @@ const dfi_support_manifest dfi_support = {
             [DFI_ITEM_MEOWSTICITE] = 1u,
             [DFI_ITEM_SCIZORITE] = 1u,
             [DFI_ITEM_GALLADITE] = 1u,
+            [DFI_ITEM_CAMERUPTITE] = 1u, /* step G61: the Mega Stone of Camerupt (Camerupt-Mega: Sheer Force) */
+            [DFI_ITEM_FERALIGITE] = 1u,  /* step G61: the Mega Stone of Feraligatr (Feraligatr-Mega: Dragonize) */
             /* Step G57 (Mega batch 4): Absolite (Absol-Mega, with the base's Justified) and Sablenite (Sableye-Mega, with the base's
              * Prankster). Absolite Z is marked by G43; Clefablite stays unmarked (Clefable's abilities are unmarked). */
             [DFI_ITEM_ABSOLITE] = 1u,

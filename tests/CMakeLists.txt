@@ -229,6 +229,8 @@ duoforge_add_test(NAME duoforge.state.pool_g38 SOURCES test_pool_g38.c WHITEBOX 
 duoforge_add_test(NAME duoforge.state.pool_mega2 SOURCES test_pool_mega2.c WHITEBOX TIMEOUT 60)
 # Step G49, the item rows Muscle Band, Wise Glasses and Bright Powder: the marks, the chain orders of Wide Lens and Bright Powder.
 duoforge_add_test(NAME duoforge.state.pool_g49 SOURCES test_pool_g49.c WHITEBOX TIMEOUT 60)
+# Step G61: Sheer Force (the strip and boost predicates on every pool move), Dragonize, Cameruptite and Feraligite: the marks and the named moves.
+duoforge_add_test(NAME duoforge.state.pool_g61 SOURCES test_pool_g61.c WHITEBOX TIMEOUT 60)
 # Step G39: thirteen abilities and four moves: the marks, the rows, what keeps Damp and Sturdy inert, Hyper Cutter against Flower Veil.
 duoforge_add_test(NAME duoforge.state.pool_g39 SOURCES test_pool_g39.c WHITEBOX TIMEOUT 60)
 # Step G45: six abilities of the simple kind (Steadfast, Moxie, Weak Armor, Telepathy, Volt Absorb, Punk Rock): the marks,
@@ -254,7 +256,7 @@ foreach(_gen IN ITEMS
         "extended_tables.h=b2abef243fcbfdd87654940076b9fe2fe80b117d74893a7567741f26b9075a7d"
         "extended_tables.c=9e736fa467713283418c4edf8f56b8d844452e596ba422adbd52483d20f7cc17"
         "pool_tables.h=98f4b86f5b3bf9ce7a99fe4503b45d95d5290beceb5219c61826eef99fc102da"
-        "pool_tables.c=8c813c6c7ac402fd797b8e51871aae6355c9fa037b1b0448fff724b72d3206a0")
+        "pool_tables.c=f06fef40789a07b644ccf3a7c731420d1eb0a3455ca52862d5149920b16e0316")
     string(REPLACE "=" ";" _parts "${_gen}")
     list(GET _parts 0 _file)
     list(GET _parts 1 _expected)
