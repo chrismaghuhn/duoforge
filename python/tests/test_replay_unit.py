@@ -288,6 +288,17 @@ class LinesTest(unittest.TestCase):
         self.assertEqual(lines.check("|-status|p1a: Staraptor|tox", self.view), "fold")  # Tox folds (BC spec 5)
         self.assertEqual(self.stop("|replace|p1a: Zoroark|Zoroark-Hisui, L50, M"), "feature:ILLUSION")
 
+    def test_g64_lines(self):
+        # Step G64: Sheer Cold's bare -ohko after the target's faint changes no field (kept, no event); Poltergeist's
+        # -activate names the item its target holds, the open sheet's (another stops); Bug Bite's stealeat takes the
+        # target's berry like Knock Off, decision 0018's ITEM_CHANGE
+        self.assertEqual(lines.check("|-ohko", self.view), "keep")
+        self.assertEqual(lines.check("|-activate|p2a: Gholdengo|move: Poltergeist|Life Orb", self.view), "fold")
+        self.assertEqual(self.stop("|-activate|p2a: Gholdengo|move: Poltergeist|Leftovers"),
+                         "line:-activate move: Poltergeist")
+        bug_bite = "|-enditem|p1a: Staraptor|Sitrus Berry|[from] stealeat|[move] Bug Bite|[of] p2a: Gholdengo"
+        self.assertEqual(self.stop(bug_bite), "feature:ITEM_CHANGE")
+
     def test_item_transfer_lines_are_item_change(self):
         # G29 (#171): every line of a Trick, Switcheroo, Thief or Covet is decision 0018's ITEM_CHANGE, the
         # -activate of Trick too (it names the target; Switcheroo prints none)
