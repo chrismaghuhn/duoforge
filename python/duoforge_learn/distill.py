@@ -40,6 +40,9 @@ MAX_STEPS = 128
 MIN_GAIN = 1e-4
 PATIENCE = 2
 REF_KL_MAX = 0.02
+OPTIMIZER = "adam"  # ppo.optimizer: Adam behind the gradient clip
+PPO_POLICY = False  # no PPO surrogate in the distillation
+MAGNET = False  # no KL anchor to a moving copy (the reference is the frozen start)
 EVAL_ROWS = 4096
 
 
@@ -90,6 +93,34 @@ def distill_loss(params, ref_params, batch, model):
     loss = t + REF_COEF * r + VALUE_COEF * v
     return loss, {"teacher_kl": t, "ref_kl": r, "value_loss": v, "n_target": counts[0], "n_policy": counts[1],
                   "n_value": counts[2]}
+
+
+def guard(best, best_kl, stale, epoch, metrics):
+    """One epoch's held-out metrics against the best so far: (best, best_kl, stale, reason). reason "nonfinite"
+    (any metric) or "ref_kl" (held-out reference KL above REF_KL_MAX; that epoch is never best) stops; a held-out
+    teacher KL MIN_GAIN below best_kl makes the epoch best, anything else counts as stale, and PATIENCE stale
+    epochs stop with "no_gain"."""
+    if not np.isfinite(list(metrics.values())).all():
+        return best, best_kl, stale, "nonfinite"
+    if metrics["held_ref_kl"] > REF_KL_MAX:
+        return best, best_kl, stale, "ref_kl"
+    if metrics["held_teacher_kl"] < best_kl - MIN_GAIN:
+        return epoch, metrics["held_teacher_kl"], 0, None
+    stale += 1
+    return best, best_kl, stale, "no_gain" if stale >= PATIENCE else None
+
+
+def drift(history):
+    """(stop, best_epoch) after the epochs of history (history[0]: the start, epoch 0), as fit decides: guard
+    for every epoch, and a stop at MAX_EPOCHS."""
+    if not np.isfinite(list(history[0].values())).all():
+        return True, 0
+    best, best_kl, stale = 0, history[0]["held_teacher_kl"], 0
+    for epoch, metrics in enumerate(history[1:], start=1):
+        best, best_kl, stale, reason = guard(best, best_kl, stale, epoch, metrics)
+        if reason is not None or epoch >= MAX_EPOCHS:
+            return True, best
+    return False, best
 
 
 _FIELDS = ("obs", "slots", "mask", "team_mask", "is_team", "target_ids", "target_probs", "has_target", "policy_row",
@@ -337,22 +368,18 @@ def fit(data, model, init_params, ref_params, config, out, seed=0, ledger=None, 
             metrics = held(params)
             record = metrics | {"epoch": epoch}
             s = s | {"epochs": s["epochs"] + [record]}
-            if not np.isfinite(list(metrics.values())).all():
-                write(record)
-                reason = "nonfinite"
+            best, best_kl, stale, verdict = guard(s["best"], s["best_kl"], s["stale"], epoch, metrics)
+            if verdict in ("nonfinite", "ref_kl"):
+                write(record if verdict == "nonfinite" else record | {"best": False})
+                reason = verdict
                 break
-            if metrics["held_ref_kl"] > REF_KL_MAX:
-                write(record | {"best": False})
-                reason = "ref_kl"
-                break
-            if metrics["held_teacher_kl"] < s["best_kl"] - MIN_GAIN:
-                s = s | {"best": epoch, "best_kl": metrics["held_teacher_kl"], "best_params": params, "stale": 0}
-            else:
-                s = s | {"stale": s["stale"] + 1}
+            s = s | {"best": best, "best_kl": best_kl, "stale": stale}
+            if best == epoch:
+                s = s | {"best_params": params}
             write(record | {"best": s["best"] == epoch})
             _save(out / f"params-epoch-{epoch}.npz", params,
                   config | {"distill": {"epoch": epoch, "best_epoch": s["best"], "no_gain": s["best"] == 0}})
-            if s["stale"] >= PATIENCE:
+            if verdict == "no_gain":
                 reason = "no_gain"
             elif s["steps"] == MAX_STEPS:
                 reason = "max_steps"
