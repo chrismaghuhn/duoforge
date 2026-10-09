@@ -211,6 +211,8 @@ duoforge_add_test(NAME duoforge.state.pool_g38 SOURCES test_pool_g38.c WHITEBOX 
 # Mega batch 2: Swampertite, Metagrossite, Lucarionite Z and Aura Guard: the marks, the Mega of each pair, Aura Guard in the
 # commutation test and the refusal of the ModifyDamage chain.
 duoforge_add_test(NAME duoforge.state.pool_mega2 SOURCES test_pool_mega2.c WHITEBOX TIMEOUT 60)
+# Step G49, the item rows Muscle Band, Wise Glasses and Bright Powder: the marks, the chain orders of Wide Lens and Bright Powder.
+duoforge_add_test(NAME duoforge.state.pool_g49 SOURCES test_pool_g49.c WHITEBOX TIMEOUT 60)
 # Step G39: thirteen abilities and four moves: the marks, the rows, what keeps Damp and Sturdy inert, Hyper Cutter against Flower Veil.
 duoforge_add_test(NAME duoforge.state.pool_g39 SOURCES test_pool_g39.c WHITEBOX TIMEOUT 60)
 # Step G20, Spiky Shield: the protect_kind of the position (POOL tail rev 3), the state round trip, the volatile.
@@ -233,7 +235,7 @@ foreach(_gen IN ITEMS
         "extended_tables.h=b2abef243fcbfdd87654940076b9fe2fe80b117d74893a7567741f26b9075a7d"
         "extended_tables.c=9e736fa467713283418c4edf8f56b8d844452e596ba422adbd52483d20f7cc17"
         "pool_tables.h=6d5e16570d998e8d2f5f959439953c37536c4c4a5020d2bcfc89f1518aced5ad"
-        "pool_tables.c=a85daac26d6b8ef44d873f54b1f2a362843c6dfeee94ae1939bba77efa6cc034")
+        "pool_tables.c=9c836254d41a201943076a2527493a457b866c977ed0363f595882d44639f4b1")
     string(REPLACE "=" ";" _parts "${_gen}")
     list(GET _parts 0 _file)
     list(GET _parts 1 _expected)
@@ -631,7 +633,7 @@ endif()
 # The Python package (M7, decision 0013), run with DUOFORGE_PYTHON; without
 # an interpreter each test reports skipped instead of passing silently.
 
-foreach(_py layout lib equivalence recipes policies_features example learn_numpy live_unit live_client replay_unit openings book expert_data expert_contract book_preview preview_search data batch_setups learn_v2_numpy teams features_ext bc_numpy encode_c search_numpy search_expand repo_hygiene view)
+foreach(_py layout lib equivalence recipes policies_features example learn_numpy live_unit live_client replay_unit openings book expert_data expert_teacher expert_contract expert_eval book_preview preview_search data batch_setups learn_v2_numpy teams features_ext bc_numpy encode_c search_numpy search_expand repo_hygiene view)
     if(DUOFORGE_PYTHON)
         add_test(NAME duoforge.python.${_py}
             COMMAND "${DUOFORGE_PYTHON}" -m unittest -v python.tests.test_${_py}
@@ -707,3 +709,11 @@ endif()
 # Step G43 (Mega batch 3): ten Mega Stones marked with no new rule (Dragoninite, Glimmoranite, Blazikenite, Absolite Z,
 # Raichunite X, Lopunnite, Alakazite, Meowsticite, Scizorite, Galladite): the marks, the Mega of each pair, the setup and the API.
 duoforge_add_test(NAME duoforge.state.pool_g43 SOURCES test_pool_g43.c WHITEBOX TIMEOUT 60)
+# The state model's pool table hash equals the hash that duoforge.data.pool_tables proves for the generated tables, so
+# that a step which regenerates the tables cannot leave the model's POOL fingerprints stale (no checkout needed).
+if(Python3_Interpreter_FOUND)
+    add_test(NAME duoforge.data.model_pool_hash
+        COMMAND "${Python3_EXECUTABLE}" "${PROJECT_SOURCE_DIR}/tools/state_model/test_model_pins.py")
+    set_tests_properties(duoforge.data.model_pool_hash PROPERTIES TIMEOUT 60
+        ENVIRONMENT PYTHONDONTWRITEBYTECODE=1)
+endif()
