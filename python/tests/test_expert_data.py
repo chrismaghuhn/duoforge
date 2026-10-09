@@ -5,6 +5,7 @@ import json
 import tempfile
 import unittest
 from pathlib import Path
+from unittest.mock import patch
 
 import numpy as np
 from duoforge import features
@@ -15,7 +16,7 @@ def manifest(ed):
         model_hash="c" * 64, encoder=4, ids_hash="d" * 64, pool_hash="e" * 64,
         belief_hash="f" * 64, seed=7, split_seed=9, key_version=1,
         device="cpu", runtime="synthetic", compiler="synthetic", capacity=1024,
-        workers=4, parallel_games=512, game_count=1024, rounds=2,
+        workers=4, parallel_games=512, game_count=1024, rounds=2, first_game_id=0,
         obs_width=features.obs_size(4), slot_width=features.SLOT_FEATURES,
         teacher_config={"k": 8, "m": 8, "worlds": 16, "lam": .5},
         budget={"labels": 16384}, evaluation={"synthetic": True})
@@ -32,6 +33,20 @@ def target_row(ed, m):
         status=ed.RowStatus.TARGET, raw_action=1, action=0, behavior_logp=float(np.log(.25)),
         requested=True, acting=True, learner=True, value_mask=True, admitted=True,
         reward=0., done=False, collector_value=.5, bootstrap=.3, cause=None, work={}, audit={})
+
+
+def turns(ed, keys):
+    return [ed.AdmissionRequest(k, "TURN", 2) for k in keys]
+
+
+def canonical(value):
+    return json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=True, allow_nan=False).encode("ascii")
+
+
+def rehash(data):
+    """A tampered shard with valid integrity hashes, to reach row validation."""
+    content = {k: v for k, v in data.items() if k != "content_sha256"}
+    return canonical({**content, "content_sha256": hashlib.sha256(canonical(content)).hexdigest()})
 
 
 class ExpertDataTest(unittest.TestCase):
@@ -216,7 +231,7 @@ class ExpertDataTest(unittest.TestCase):
         m = manifest(ed)
         a, b, c = ed.DecisionKey(0, 0, 1), ed.DecisionKey(1, 1, 1), ed.DecisionKey(2, 0, 1)
         cursor = ed.LabelCursor(remaining=1)
-        batch = ed.admit_tick(cursor, [a, b])
+        batch = ed.admit_tick(cursor, turns(ed, [a, b]))
         self.assertEqual((batch.admitted_keys, batch.cap_raw_keys), ((a,), (b,)))
         pending = ed.cursor_bytes(cursor, m)
         # A cap-raw (discarded-label) root may only execute its pre-drawn raw action.
@@ -242,7 +257,7 @@ class ExpertDataTest(unittest.TestCase):
         after = ed.commit_tick(cursor, [ed.AdmissionOutcome(a, ed.RowStatus.PUBLIC_REFUSAL),
                                         ed.AdmissionOutcome(b, ed.RowStatus.CAP_RAW)])
         self.assertEqual(after.remaining, 1)
-        again = ed.admit_tick(after, [ed.DecisionKey(1, 1, 2)])
+        again = ed.admit_tick(after, turns(ed, [ed.DecisionKey(1, 1, 2)]))
         self.assertEqual((again.admitted_keys, again.cap_raw_keys), ((), (ed.DecisionKey(1, 1, 2),)))
         self.assertEqual(after.remaining, 1)
         # Row level: no stored tau, no fallback cause and no admission on a discarded label.
@@ -264,7 +279,7 @@ class ExpertDataTest(unittest.TestCase):
         m = manifest(ed)
         a, b = ed.DecisionKey(0, 0, 1), ed.DecisionKey(1, 1, 1)
         cursor = ed.LabelCursor(remaining=1)
-        batch = ed.admit_tick(cursor, [b, a])
+        batch = ed.admit_tick(cursor, turns(ed, [b, a]))
         self.assertEqual(batch.admitted_keys, (a,))
         self.assertEqual(batch.cap_raw_keys, (b,))
         self.assertEqual(batch.reserved_count, 1)
@@ -275,7 +290,7 @@ class ExpertDataTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "manifest"):
             ed.restore_cursor(checkpoint, dataclasses.replace(m, seed=8))
         with self.assertRaises(ValueError):
-            ed.admit_tick(cursor, [])
+            ed.admit_tick(cursor, turns(ed, []))
         with self.assertRaises(ValueError):
             ed.commit_tick(cursor, [ed.AdmissionOutcome(a, ed.RowStatus.TARGET)])
         with self.assertRaises(ValueError):
@@ -291,7 +306,7 @@ class ExpertDataTest(unittest.TestCase):
         self.assertEqual(committed.logical_tick, 1)
         self.assertEqual(committed.dropped_games, frozenset({1}))
         c, again_b = ed.DecisionKey(2, 0, 1), ed.DecisionKey(1, 1, 2)
-        next_batch = ed.admit_tick(committed, [again_b, c])
+        next_batch = ed.admit_tick(committed, turns(ed, [again_b, c]))
         self.assertEqual(next_batch.admitted_keys, (c,))
         self.assertEqual(next_batch.cap_raw_keys, (again_b,))
         final = ed.commit_tick(committed, [ed.AdmissionOutcome(c, ed.RowStatus.TARGET),
@@ -301,26 +316,151 @@ class ExpertDataTest(unittest.TestCase):
         with self.assertRaises(ValueError):
             ed.commit_tick(final, [])
         with self.assertRaises(ValueError):
-            ed.admit_tick(final, [c])  # no repeated epoch
-        for ordering in ([a,b], [b,a], sum([[b],[a]], [])):
+            ed.admit_tick(final, turns(ed, [c]))  # no repeated epoch
+        for ordering in ([a,b], [b,a]):
             fresh = ed.LabelCursor(remaining=1)
-            self.assertEqual(ed.admit_tick(fresh, ordering), batch)
+            self.assertEqual(ed.admit_tick(fresh, turns(ed, ordering)), batch)
             self.assertEqual(ed.cursor_bytes(fresh, m), checkpoint)
         empty = ed.LabelCursor(remaining=0)
-        rejected = ed.admit_tick(empty, [a,b])
+        rejected = ed.admit_tick(empty, turns(ed, [a,b]))
         self.assertEqual(rejected.admitted_keys, ())
         self.assertEqual(rejected.cap_raw_keys, (a,b))
         done = ed.commit_tick(empty, [ed.AdmissionOutcome(k,ed.RowStatus.CAP_RAW) for k in (a,b)])
         self.assertEqual(done.remaining, 0)
         blank = ed.LabelCursor()
-        ed.admit_tick(blank, [])
+        ed.admit_tick(blank, turns(ed, []))
         self.assertEqual(ed.commit_tick(blank, []).logical_tick, 1)
         for requests in ([a,a], [a,ed.DecisionKey(0,1,1)]):
             fresh = ed.LabelCursor()
             before = ed.cursor_bytes(fresh,m)
             with self.assertRaises(ValueError):
-                ed.admit_tick(fresh, requests)
+                ed.admit_tick(fresh, turns(ed, requests))
             self.assertEqual(ed.cursor_bytes(fresh,m),before)
+
+    def test_schema_refusal_and_private_roundtrip_row_fields_have_no_defaults(self):
+        from duoforge_search import expert_data as ed
+        m = manifest(ed)
+        with tempfile.TemporaryDirectory(prefix="duoforge_synthetic_fields_") as temp:
+            good = Path(temp)/"good.json"
+            ed.write_shard(good, [target_row(ed, m)], m)
+            for name in ("logical_tick", "work", "audit"):
+                data = json.loads(good.read_text(encoding="utf-8"))
+                del data["rows"][0][name]
+                bad = Path(temp)/f"missing_{name}.json"
+                bad.write_bytes(rehash(data))
+                with self.subTest(missing=name), self.assertRaisesRegex(ValueError, "row fields"):
+                    ed.read_shard(bad, m)
+            data = json.loads(good.read_text(encoding="utf-8"))
+            data["rows"][0]["bogus"] = 1
+            (Path(temp)/"extra.json").write_bytes(rehash(data))
+            with self.assertRaisesRegex(ValueError, "row fields"):
+                ed.read_shard(Path(temp)/"extra.json", m)
+
+    def test_schema_refusal_and_private_roundtrip_only_eligible_roots_are_admitted(self):
+        from duoforge_search import expert_data as ed
+        m = manifest(ed)
+        row = target_row(ed, m)
+        team = np.zeros(360, bool)
+        team[:2] = True
+        one = np.zeros((32, 32), bool)
+        one.flat[1] = True
+        preview = dataclasses.replace(row, boundary="TEAM_SELECTION", legal_mask=team, sparse_policy=None,
+            status=ed.RowStatus.UNSELECTED, admitted=False, action=1, behavior_logp=float(np.log(.8)))
+        forced = dataclasses.replace(row, legal_mask=one, sparse_policy=None, status=ed.RowStatus.FORCED,
+            admitted=False, action=1, behavior_logp=0.)
+        ed.validate_row(preview, m)
+        ed.validate_row(forced, m)
+        # Only TURN/REPLACEMENT/PIVOT roots with >=2 legal actions can be admitted, capped or refused;
+        # otherwise the >1% primary fallback counter would count ineligible roots.
+        for bad in (dataclasses.replace(preview, status=ed.RowStatus.PUBLIC_REFUSAL, admitted=True, cause="x"),
+                    dataclasses.replace(preview, status=ed.RowStatus.WORK_EXHAUSTED, admitted=True, cause="x"),
+                    dataclasses.replace(preview, status=ed.RowStatus.CAP_RAW),
+                    dataclasses.replace(forced, status=ed.RowStatus.WORK_EXHAUSTED, admitted=True, cause="x"),
+                    dataclasses.replace(forced, status=ed.RowStatus.PUBLIC_REFUSAL, admitted=True, cause="x"),
+                    dataclasses.replace(forced, status=ed.RowStatus.CAP_RAW),
+                    dataclasses.replace(forced, status=ed.RowStatus.UNSELECTED),
+                    dataclasses.replace(preview, status=ed.RowStatus.FORCED, behavior_logp=0.)):
+            with self.subTest(boundary=bad.boundary, status=bad.status), self.assertRaises(ValueError):
+                ed.validate_row(bad, m)
+        a = ed.DecisionKey(0, 0, 1)
+        for boundary, legal in (("TEAM_SELECTION", 2), ("TURN", 1), ("TERMINAL", 2), ("UNKNOWN", 2), ("PIVOT", True)):
+            cursor = ed.LabelCursor()
+            before = ed.cursor_bytes(cursor, m)
+            with self.subTest(boundary=boundary, legal=legal), self.assertRaises(ValueError):
+                ed.admit_tick(cursor, [ed.AdmissionRequest(a, boundary, legal)])
+            self.assertEqual(ed.cursor_bytes(cursor, m), before)
+        for boundary in ("TURN", "REPLACEMENT", "PIVOT"):
+            batch = ed.admit_tick(ed.LabelCursor(), [ed.AdmissionRequest(a, boundary, 2)])
+            self.assertEqual(batch.admitted_keys, (a,))
+        with self.assertRaises(ValueError):
+            ed.admit_tick(ed.LabelCursor(), [a])  # a bare key carries no eligibility
+
+    def test_schema_refusal_and_private_roundtrip_acting_epochs_increase(self):
+        from duoforge_search import expert_data as ed
+        m = manifest(ed)
+        acting = dataclasses.replace(target_row(ed, m), key=ed.DecisionKey(0, 0, 1))
+        waiting = dataclasses.replace(acting, status=ed.RowStatus.UNREQUESTED, requested=False, acting=False,
+            admitted=False, action=None, raw_action=None, behavior_logp=None, sparse_policy=None)
+        later = dataclasses.replace(acting, key=ed.DecisionKey(0, 0, 2))
+        with tempfile.TemporaryDirectory(prefix="duoforge_synthetic_epochs_") as temp:
+            ok = Path(temp)/"ok.json"
+            ed.write_shard(ok, [acting, dataclasses.replace(waiting, logical_tick=1),
+                                dataclasses.replace(later, logical_tick=2)], m)
+            self.assertEqual(len(ed.read_shard(ok, m)), 3)
+            for name, rows in (("repeat", [acting, dataclasses.replace(acting, logical_tick=1)]),
+                               ("regress", [later, dataclasses.replace(acting, logical_tick=1)])):
+                with self.subTest(name), self.assertRaisesRegex(ValueError, "epoch"):
+                    ed.write_shard(Path(temp)/f"{name}.json", rows, m)
+            data = json.loads(ok.read_text(encoding="utf-8"))
+            data["rows"][2]["key"]["request_epoch"] = 1
+            (Path(temp)/"tampered.json").write_bytes(rehash(data))
+            with self.assertRaisesRegex(ValueError, "epoch"):
+                ed.read_shard(Path(temp)/"tampered.json", m)
+            # Each seat of a game is its own stream.
+            other_seat = dataclasses.replace(acting, key=ed.DecisionKey(0, 1, 1), logical_tick=1)
+            ed.write_shard(Path(temp)/"seats.json", [acting, other_seat], m)
+
+    def test_schema_refusal_and_private_roundtrip_game_ids_and_terminal_rows(self):
+        from duoforge_search import expert_data as ed
+        m = manifest(ed)
+        row = target_row(ed, m)
+        for game in (0, 1023):
+            ed.validate_row(dataclasses.replace(row, key=ed.DecisionKey(game, 0, 1)), m)
+        for game in (1024, 10**9):
+            with self.subTest(game=game), self.assertRaisesRegex(ValueError, "game id"):
+                ed.validate_row(dataclasses.replace(row, key=ed.DecisionKey(game, 0, 1)), m)
+        # Production uses logical ids disjoint from the smoke round.
+        production = dataclasses.replace(m, first_game_id=512)
+        ed.validate_row(dataclasses.replace(row, key=ed.DecisionKey(512, 0, 1)), production)
+        ed.validate_row(dataclasses.replace(row, key=ed.DecisionKey(1535, 0, 1)), production)
+        for game in (0, 511, 1536):
+            with self.subTest(game=game), self.assertRaisesRegex(ValueError, "game id"):
+                ed.validate_row(dataclasses.replace(row, key=ed.DecisionKey(game, 0, 1)), production)
+        for first in (-1, True, 2**64 - 1):
+            with self.subTest(first=first), self.assertRaises(ValueError):
+                ed.validate_manifest(dataclasses.replace(m, first_game_id=first))
+        # returns.gae has no terminal step: done on the last stored row ends the episode.
+        waiting = dataclasses.replace(row, status=ed.RowStatus.UNREQUESTED, requested=False, acting=False,
+            admitted=False, action=None, raw_action=None, behavior_logp=None, sparse_policy=None)
+        with self.assertRaisesRegex(ValueError, "terminal"):
+            ed.validate_row(dataclasses.replace(waiting, boundary="TERMINAL"), m)
+        ed.validate_row(dataclasses.replace(waiting, done=True, reward=1.), m)
+
+    def test_schema_refusal_and_private_roundtrip_shard_row_limit(self):
+        from duoforge_search import expert_data as ed
+        m = manifest(ed)
+        self.assertEqual(ed.MAX_SHARD_ROWS, 4096)  # ~10.7 KB/row: a shard stays near 44 MB
+        row = target_row(ed, m)
+        rows = [row, dataclasses.replace(row, logical_tick=1, key=ed.DecisionKey(0, 0, 2))]
+        with tempfile.TemporaryDirectory(prefix="duoforge_synthetic_limit_") as temp:
+            ed.write_shard(Path(temp)/"two.json", rows, m)
+            with patch.object(ed, "MAX_SHARD_ROWS", 1):
+                with self.assertRaisesRegex(ValueError, "rows"):
+                    ed.write_shard(Path(temp)/"over.json", rows, m)
+                with self.assertRaisesRegex(ValueError, "rows"):
+                    ed.read_shard(Path(temp)/"two.json", m)
+            self.assertFalse((Path(temp)/"over.json").exists())
+
 
 if __name__ == "__main__":
     unittest.main()
