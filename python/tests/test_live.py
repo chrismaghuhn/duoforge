@@ -165,6 +165,11 @@ class PressureExtraTest(unittest.TestCase):
         # pressureTargets are both foes, also one that Protect leaves out of the [spread] list
         self.assertEqual(self.extra("EXPANDINGFORCE", trace_to_c.NOPOS, self.FLAG["SPREAD"]), 2)
 
+    def test_a_spread_line_of_an_allies_move_counts_no_foe(self):
+        # target "allies" (Howl, Life Dew): getMoveTargets takes alliesAndSelf, so no foe is a pressureTarget
+        move = next(m for m in ("HOWL", "LIFEDEW", "JUNGLEHEALING", "LUNARBLESSING") if m in self.D.tables["MOVE"])
+        self.assertEqual(self.extra(move, trace_to_c.NOPOS, self.FLAG["SPREAD"]), 0)
+
     def test_a_single_target_line_counts_its_target(self):
         self.assertEqual(self.extra("EXPANDINGFORCE", 2), 1)
 

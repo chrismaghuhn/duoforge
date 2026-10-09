@@ -609,8 +609,10 @@ class Tracker:
         kind = self.data.target_type(move)
         if self.data.move_flags(move) & _MUST_PRESSURE or kind in ("all", "allAdjacentFoes", "allAdjacent"):
             return len(holders)
-        if flags & FLAG["SPREAD"] and kind != "foeSide":
-            return len(holders)
+        if flags & FLAG["SPREAD"]:
+            # a single-target class turned spread (onModifyMove: allAdjacentFoes) hits every adjacent foe; an "allies"
+            # move's [spread] list is the user's side (alliesAndSelf), no foe
+            return len(holders) if kind in ("normal", "any", "adjacentFoe") else 0
         if kind == "foeSide" or target == NOPOS or target // 2 != foe:
             return 0
         return int(target % 2 in holders)
