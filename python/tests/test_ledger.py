@@ -79,5 +79,75 @@ class LedgerTest(unittest.TestCase):
             ledger.Ledger(self.path)
 
 
+_SMALL = ["--envs", "4", "--workers", "1", "--rollout", "4", "--eval-every", "1000", "--minibatch", "64",
+          "--snapshot-every", "1000", "--league-slots", "0", "--self-play-share", "1"]
+_LEAGUE = ["--league-slots", "2", "--self-play-share", "0.5", "--slot-refresh", "1", "--snapshot-every", "1"]
+
+
+def _train(argv):
+    from duoforge_learn import train
+    return train.run(train.parse(argv))
+
+
+def _log(out):
+    with open(os.path.join(out, "log.jsonl"), encoding="utf-8") as f:
+        return [json.loads(line) for line in f if '"update"' in line and '"resume"' not in line]
+
+
+class ControlTest(unittest.TestCase):
+    """Task 7: the continuation control stops at a ledger budget and runs each update and each collection step on
+    the default device or the CPU by a deterministic share."""
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.out = os.path.join(self.tmp.name, "run")
+        self.book = os.path.join(self.tmp.name, "ledger.json")
+
+    def tearDown(self):
+        self.tmp.cleanup()
+
+    def test_train_stops_at_the_ledger_budget(self):
+        from duoforge_learn import train
+        with self.assertRaises(SystemExit):  # a budget needs a ledger
+            train.parse(["--out", self.out, "--stop-cpu-core-seconds", "1"] + _SMALL)
+        args = train.parse(["--out", self.out, "--ledger", self.book, "--stop-cpu-core-seconds", "1e-6"] + _SMALL)
+        self.assertEqual(args.minutes, 0.0)  # the budget replaces the 60-minute default
+        self.assertEqual(train.run(args), 0)
+        rows = _log(self.out)
+        self.assertEqual([r["update"] for r in rows], [1])
+        self.assertEqual(rows[-1]["stopped"], "budget")
+        first = json.loads(Path(self.book).read_text())
+        self.assertEqual(first["processes"], 1)
+        self.assertGreater(first["cpu_core_seconds"], 0.0)
+        self.assertGreater(first["phases"]["collect"]["cpu_core_seconds"], 0.0)
+        self.assertGreater(first["phases"]["update"]["gpu_seconds"], 0.0)
+        # A resume with a larger budget goes on and adds its process to the same ledger.
+        self.assertEqual(_train(["--resume", self.out, "--stop-cpu-core-seconds", "1e9", "--updates", "3"]), 0)
+        self.assertEqual([r["update"] for r in _log(self.out)], [1, 2, 3])
+        second = json.loads(Path(self.book).read_text())
+        self.assertEqual(second["processes"], 2)
+        self.assertGreater(second["cpu_core_seconds"], first["cpu_core_seconds"])
+
+    def test_device_shares_are_deterministic_and_resumable(self):
+        self.assertEqual(_train(["--out", self.out, "--ledger", self.book, "--updates", "3",
+                                 "--update-gpu-share", "0.25", "--act-gpu-share", "0.5"] + _SMALL + _LEAGUE), 0)
+        self.assertEqual(_train(["--resume", self.out, "--updates", "8"]), 0)
+        rows = _log(self.out)
+        self.assertEqual([r["update_device"] for r in rows],
+                         ["cpu", "cpu", "cpu", "default", "cpu", "cpu", "cpu", "default"])
+        # 4 rollout steps + 1 bootstrap call per update: every second collection call on the default device.
+        self.assertEqual([r["act_default_calls"] for r in rows], [2, 3, 2, 3, 2, 3, 2, 3])
+        # Both shares at 0: nothing runs in a device section.
+        other = os.path.join(self.tmp.name, "cpu-only")
+        book = os.path.join(self.tmp.name, "cpu-only.json")
+        self.assertEqual(_train(["--out", other, "--ledger", book, "--updates", "2", "--update-gpu-share", "0",
+                                 "--act-gpu-share", "0"] + _SMALL), 0)
+        self.assertEqual(json.loads(Path(book).read_text())["gpu_seconds"], 0.0)
+        from duoforge_learn import train
+        for bad in ("-0.1", "1.5"):
+            with self.assertRaises(SystemExit):
+                train.parse(["--out", other, "--updates", "1", "--update-gpu-share", bad] + _SMALL)
+
+
 if __name__ == "__main__":
     unittest.main()

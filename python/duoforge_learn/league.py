@@ -134,6 +134,7 @@ class Opponents:
         self.precision = precision
         self._params = [None] * slots
         self._stacked = None
+        self._placed = {}  # device -> the stacked parameters there (train's --act-gpu-share)
 
         def act(stacked, key, obs, slot_part, mask, is_team, slot_idx):
             with jax.default_matmul_precision(precision):
@@ -148,10 +149,18 @@ class Opponents:
         self._params[slot] = params
         if all(p is not None for p in self._params):
             self._stacked = jax.tree_util.tree_map(lambda *xs: jnp.stack(xs), *self._params)
+            self._placed = {}
 
-    def act(self, key, obs, slot_part, mask, is_team, slot_idx):
-        """Sampled actions of rows whose slots are slot_idx (int, (B,))."""
+    def act(self, key, obs, slot_part, mask, is_team, slot_idx, device=None):
+        """Sampled actions of rows whose slots are slot_idx (int, (B,)); on
+        device (a jax.Device) when given, else where the parameters are."""
+        import jax
         if self._stacked is None:
             raise ValueError("every league slot needs parameters before the league plays")
         self.model.check(np.asarray(obs))
-        return np.asarray(self._act(self._stacked, key, obs, slot_part, mask, is_team, np.asarray(slot_idx)))
+        stacked = self._stacked
+        if device is not None:
+            if device not in self._placed:
+                self._placed[device] = jax.device_put(self._stacked, device)
+            stacked, key = self._placed[device], jax.device_put(key, device)
+        return np.asarray(self._act(stacked, key, obs, slot_part, mask, is_team, np.asarray(slot_idx)))
