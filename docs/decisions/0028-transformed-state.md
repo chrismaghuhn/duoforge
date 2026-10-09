@@ -59,22 +59,42 @@ The replay coverage of 2026-10-09 has Transform in 114 games and Imposter in 101
    - `duoforge_position_ext.transform_source` (u8, from `reserved`): 1 + side * 6 + roster index of the source, 0 when not transformed. This is public: the line names the source.
    - `DUOFORGE_VIEWEXT_FEATURE_TRANSFORM` = 42 (FEATURE_COUNT becomes 43).
    - The transformed forme is shown through the existing `member_ext.forme`, and the types through `type_now`/`TYPE_CHANGED` and `ability_now`, as for Soak and Trace.
-   - The player's own request offers the copied moves as move slots 0-3. PP stays inside the engine, as for every move.
-   - **The own member view keeps the member's OWN stats.** The pin's request shows `baseStoredStats` (sim/pokemon.ts:1159-1164, getSwitchRequestData), not the copied ones.
-     - Showing the copied stats would leak the foe's hidden Stat Points.
+   - **Moves and PP in the member view.**
+     - While the member is transformed, `duoforge_member_view.move_ids`, `pp` and `pp_max` show the COPIED moves, as the pin's request does (sim/pokemon.ts:1166, `moves`): the owner sees them exactly, and the foe gets them per `pp_kind` (DERIVED).
+     - So request move slot k is the move in column k.
+     - `pp_max` is min(5, base PP).
+     - They return to the member's own moves when the transformation ends.
+     - Under Open Team Sheets the copied moves are public, because the source's sheet is.
+   - **Stats in the member view stay the member's OWN.** The pin's request shows `baseStoredStats` (sim/pokemon.ts:1159-1164).
+     - Showing the copied stats would leak the source's hidden Stat Points to the transformed side.
      - It would also break 0023: the own row must be the same in every world of one record.
-     - The copied stats live only inside the engine.
-     - A test checks two things: Transform leaves `duoforge_member_view` stats unchanged, and two determinized worlds with different foe spreads give identical own rows.
+     - The copied stats live only inside the engine, and the header comment on `stats` says so.
+     - A test checks two things: Transform leaves the own `stats` unchanged, and two determinized worlds with different foe spreads give identical own rows.
+   - **The other copied things are always shown while transformed:**
+     - `TYPE_CHANGED` is always set, and `type_now` holds the copied types. They are the source's types before Roost (`typeWas`) when the source had Roosted, with 0 meaning no type.
+     - `ability_now` holds the copied ability when it differs from the sheet's.
+     - `member_ext.forme` holds `transform_forme` + 1.
+     - The copied boosts and crit stages are the position's own, as always.
+   - **Decision 0018 is superseded on two points.** Line 193 (Transform kept out of the view as hidden) and the table row at 228 (Transform "not exposed") no longer hold. Transform is public under Open Team Sheets and is exposed by this note.
 4. **New public event `DUOFORGE_EVENT_TRANSFORM`** = 44, the next free number after 43 (REVIVE, decision 0025). Fields:
    - `position` = the user;
    - `id` = 1 + side * 6 + roster index of the source;
-   - cause MOVE with id2 Transform, or cause ABILITY with id2 Imposter.
+   - cause MOVE with `id2` = Transform, or cause ABILITY with `id2` = Imposter + 1 (ability + 1, as the cause convention says).
 
    45 is `DUOFORGE_EVENT_DRAG` (G46). Lane B's Illusion takes 46 (0026).
-5. **Refusals (E_UNSUPPORTED)** until a recorded battle covers them:
-   - Mega Evolution of a transformed Pokemon (the pin forbids it; the request must not offer it);
-   - a transformed Pokemon's copied Choice lock or Encore slot;
-   - copying a source whose moves changed after setup (impossible in the pool today, guarded by a test listing the move-changing moves as unmarked).
+5. **Choice lock.** A Choice item locks into a COPIED move as into any move. This is the most common Ditto set: Scarf plus Imposter, about 41 of about 115 Ditto sheets in the coverage data. The lock is supported, not refused, and the lock state refers to the move slot, which now holds the copied move.
+6. **Refusals (E_UNSUPPORTED)** until a recorded battle covers them:
+   - Mega Evolution of a transformed Pokemon. The pin forbids it, and the request must not offer it.
+   - An Encore that forces a copied move.
+   - Copying a source whose moves or stats changed after setup. That is impossible in the pool today, and a guard test lists as unmarked the move-changing moves and the stat-swap moves Power Trick, Guard Split, Power Split and Speed Swap.
+7. **Encoders, as in 0025 item 12.**
+   - One shared encoder 5 carries the REVIVE rows (0025), the TRANSFORMED bit and `transform_source`, with the side relative to the viewer.
+   - Encoders 1-4 refuse a record with volatiles bit 21 or the TRANSFORM feature explicitly.
+   - The C `dfi_version_features(4)` must mask feature 42, so that C and Python stay a byte-equal pair.
+   - The static asserts (encode.c:59 on the feature count, features.py:147 on the volatile bits) are updated in the same PR.
+   - Transform (and lane B's Imposter) are marked supported only together with encoder 5, or are explicitly excluded for encoder 4 and earlier.
+8. **Determinization (0023).** For a foe position, the public record carries `transform_pp` as 5 minus the copied move's observed uses. That is derivable: the source's moves are public and each starts at 5 PP. Hypotheses supply the source's hidden stats, as they do for the source itself. The tracker builds the byte-equal record. Until that path exists, determinizing a record with a transformed foe refuses with E_UNSUPPORTED, with a named cause and a test.
+9. **Tail ledger.** The tail stays rev 4. Its reserve is shared in one ledger, documented in 0015 §7: G46's `party_order` takes field bytes +1..+6, this note takes the member and position reserves (28 bytes), and field byte +7 stays free.
 
 ## Evidence and order
 
@@ -84,6 +104,8 @@ The replay coverage of 2026-10-09 has Transform in 114 games and Imposter in 101
 - **Recorded battles:**
   - Transform into a foe;
   - Transform into an ally;
+  - Transform through Protect (Transform has no protect flag);
+  - Ditto with Scarf plus Imposter locking into a copied move;
   - Transform into an Intimidate user (Start runs);
   - Transform between two holders of the same ability (no Start);
   - each failure case that is reachable;
@@ -92,4 +114,7 @@ The replay coverage of 2026-10-09 has Transform in 114 games and Imposter in 101
   - switch-out ending the transformation;
   - a transformed Pokemon hit by a super-effective move of its copied types.
 - Mutation checks, a campaign, a 0015 entry, and the version bump at merge.
-- **Python** (python/duoforge_live, the M11 tracker, features.py) is HauptSession's. It folds `-transform` and the new view fields. This PR changes only `_layout.py` on the Python side.
+- **Who changes what:**
+  - The lane A builder: the engine, the header with `tools/layout/layout_dump.c` and `python/duoforge/_layout.py`, the C side of encoder 5 (`encode.c`, `dfi_version_features`), and `tools/reference/trace_to_c.py` (`-transform`; HauptSession reviews it).
+  - HauptSession: `features.py` and `_reference_features.py` (encoder 5, byte-equal), `_lib.py` at merge, and the tracker's TYPE_CHANGE, ABILITY_CHANGE, FORME_CHANGE and TRANSFORM folds.
+  - Until the tracker folds a lock on a copied move, a copied-move lock stops the tracker (tracker.py:427 locks only sheet moves).
