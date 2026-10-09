@@ -25,6 +25,7 @@ from .returns import gae
 
 K = 8
 TEAM_ACTIONS = 360
+GAMMA, LAMBDA = 0.99, 0.95  # returns.gae's, unchanged (spec section 3)
 
 
 @dataclasses.dataclass(frozen=True)
@@ -73,30 +74,39 @@ def _trajectory(game, rows):
     return rows
 
 
-def _targets(rows):
-    """returns.gae over one trajectory (T, 1, 2), the learner on its own seat."""
-    t, seat = len(rows), rows[0].key.seat
-    values = np.zeros((t, 1, 2), np.float32)
-    rewards = np.zeros((t, 1, 2), np.float32)
-    acting = np.zeros((t, 1, 2), bool)
-    done = np.zeros((t, 1), bool)
-    for i, r in enumerate(rows):
-        values[i, 0, seat], rewards[i, 0, seat], acting[i, 0, seat], done[i, 0] = (r.collector_value, r.reward,
-                                                                                  r.acting, r.done)
-    bootstrap = np.zeros((1, 2), np.float32)
-    bootstrap[0, seat] = rows[-1].bootstrap
-    return gae(values, rewards, done, acting, bootstrap)[2][:, 0, seat]
+def value_targets(game_id, seat, logical_tick, acting, reward, done, collector_value, bootstrap):
+    """Per row (in the given order): returns.gae's value target of its (game, seat) trajectory, the rows taken in
+    logical-tick order (gapless from 0, done at most on the last row: ValueError otherwise), as (T, 1, 2) arrays
+    with the learner on its own seat, bootstrapped from the trajectory's last row's bootstrap."""
+    game_id, seat, tick = (np.asarray(x, np.int64) for x in (game_id, seat, logical_tick))
+    acting, done = np.asarray(acting, bool), np.asarray(done, bool)
+    out = np.zeros(game_id.shape, np.float32)
+    order = np.lexsort((tick, seat, game_id))  # one sort: (game, seat) groups, each in tick order
+    starts = np.flatnonzero(np.r_[True, (np.diff(game_id[order]) != 0) | (np.diff(seat[order]) != 0)])
+    for idx in np.split(order, starts[1:]):
+        g, s = int(game_id[idx[0]]), int(seat[idx[0]])
+        if not np.array_equal(tick[idx], np.arange(idx.size)):
+            raise ValueError(f"game {g} seat {s}: logical ticks have a gap or repeat")
+        if done[idx[:-1]].any():
+            raise ValueError(f"game {g} seat {s}: the episode ends before its last row")
+        t = idx.size
+        values, rewards = np.zeros((t, 1, 2), np.float32), np.zeros((t, 1, 2), np.float32)
+        acts = np.zeros((t, 1, 2), bool)
+        values[:, 0, s], rewards[:, 0, s], acts[:, 0, s] = (np.asarray(collector_value)[idx],
+                                                            np.asarray(reward)[idx], acting[idx])
+        boot = np.zeros((1, 2), np.float32)
+        boot[0, s] = np.asarray(bootstrap)[idx[-1]]
+        out[idx] = gae(values, rewards, done[idx].reshape(t, 1), acts, boot, gamma=GAMMA, lam=LAMBDA)[2][:, 0, s]
+    return out
 
 
 def load(shard_dir, manifest):
     """DistillData of every shard (*.json, read in name order) of shard_dir under manifest."""
     from duoforge_search import expert_data as ed
     games = _rows(shard_dir, manifest)
-    order, targets = [], []
+    order = []
     for game in sorted(games):
-        rows = _trajectory(game, games[game])
-        order.extend(rows)
-        targets.append(_targets(rows))
+        order.extend(_trajectory(game, games[game]))
     n, slots_n = len(order), _layout.MAX_SLOT_OPTIONS
     out = {
         "obs": np.stack([r.obs for r in order]).astype(np.float32),
@@ -109,7 +119,10 @@ def load(shard_dir, manifest):
         "has_target": np.zeros(n, bool),
         "policy_row": np.zeros(n, bool),
         "value_row": np.zeros(n, bool),
-        "value_target": np.concatenate(targets).astype(np.float32),
+        "value_target": value_targets([r.key.game_id for r in order], [r.key.seat for r in order],
+                                      [r.logical_tick for r in order], [r.acting for r in order],
+                                      [r.reward for r in order], [r.done for r in order],
+                                      [r.collector_value for r in order], [r.bootstrap for r in order]),
         "game_id": np.array([r.key.game_id for r in order], np.int64),
         "held_out": np.array([ed.is_held_out(r.key.game_id, manifest.split_seed) for r in order], bool),
     }

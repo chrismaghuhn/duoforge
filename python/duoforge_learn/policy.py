@@ -25,6 +25,19 @@ def _entropy(logp):
     return -jnp.sum(jnp.exp(logp) * logp, axis=-1)
 
 
+def full_joint(logp_pairs, legal):
+    """(B, 1024): logp_pairs at the legal joint actions, -inf elsewhere."""
+    return jnp.where(jnp.reshape(legal, (logp_pairs.shape[0], -1)), logp_pairs, -jnp.inf)
+
+
+def refuse_empty_rows(legal):
+    """ValueError naming the first row of legal ((B, 32, 32) or (B, 1024), concrete) without a legal action."""
+    legal = np.asarray(legal)
+    empty = np.flatnonzero(~legal.reshape(legal.shape[0], -1).any(axis=1))
+    if empty.size:
+        raise ValueError(f"full_joint_log_probs: row {int(empty[0])} has no legal joint action")
+
+
 def _evaluate(apply, params, obs, slots, mask, is_team, actions):
     logp_pairs, logp_team, value = apply(params, obs, slots, mask)
     pair = jnp.take_along_axis(logp_pairs, jnp.clip(actions, 0, logp_pairs.shape[1] - 1)[:, None], axis=1)[:, 0]
@@ -111,8 +124,7 @@ class Model:
         use inside jitted losses (whose rows are validated at load)."""
         b = obs.shape[0]
         mask = jnp.reshape(legal_mask, (b, _layout.MAX_SLOT_OPTIONS, _layout.MAX_SLOT_OPTIONS))
-        logp_pairs = self.apply(params, obs, slots, mask)[0]
-        return jnp.where(jnp.reshape(mask, (b, -1)), logp_pairs, -jnp.inf)
+        return full_joint(self.apply(params, obs, slots, mask)[0], mask)
 
     def full_joint_log_probs(self, params, obs, slots, legal_mask):
         """(B, 1024) float32: the log-probability of every joint action (slot
@@ -130,9 +142,7 @@ class Model:
             raise ValueError("full_joint_log_probs checks obs and legal_mask on the host: inside jit use "
                              "full_joint_log_probs_traced on validated rows") from None
         self.check(obs_host)
-        empty = np.flatnonzero(~legal.reshape(obs_host.shape[0], -1).any(axis=1))
-        if empty.size:
-            raise ValueError(f"full_joint_log_probs: row {int(empty[0])} has no legal joint action")
+        refuse_empty_rows(legal.reshape(obs_host.shape[0], -1))
         return self.full_joint_log_probs_traced(params, obs, slots, legal_mask)
 
     @staticmethod
