@@ -95,9 +95,14 @@ class GeneratedRowsTest(unittest.TestCase):
                 self.assertEqual(d.target_type(move), data.TARGET_TYPES[target_class], (kind, "move", move))
             for item, (holder, mega) in enumerate(items):
                 where = (kind, "item", item)
+                if holder is not None and mega is not None:  # the item row names the stone's first pair
+                    self.assertEqual(d.mega_of(holder, item + 1), mega, where)
                 for forme in range(len(formes)):
-                    expected = mega if holder is not None and mega is not None and holder == forme else None
-                    self.assertEqual(d.mega_of(forme, item + 1), expected, where + (forme,))
+                    got = d.mega_of(forme, item + 1)
+                    if mega is None:
+                        self.assertIsNone(got, where + (forme,))  # no stone, no Mega
+                    elif got is not None:  # another holder of the same stone (Meowsticite): its own Mega
+                        self.assertEqual(formes[got][1], forme, where + (forme,))
                 self.assertIsNone(d.mega_of(0, 0))
 
 
@@ -144,7 +149,10 @@ class DataTest(unittest.TestCase):
         for base, stone, mega in (("CHARIZARD", "CHARIZARDITEX", "CHARIZARDMEGAX"),
                                   ("CHARIZARD", "CHARIZARDITEY", "CHARIZARDMEGAY"),
                                   ("GARCHOMP", "GARCHOMPITE", "GARCHOMPMEGA"),
-                                  ("GARCHOMP", "GARCHOMPITEZ", "GARCHOMPMEGAZ")):
+                                  ("GARCHOMP", "GARCHOMPITEZ", "GARCHOMPMEGAZ"),
+                                  # one stone, two holders: Meowsticite takes each Meowstic to its own Mega
+                                  ("MEOWSTIC", "MEOWSTICITE", "MEOWSTICMMEGA"),
+                                  ("MEOWSTICF", "MEOWSTICITE", "MEOWSTICFMEGA")):
             self.assertEqual(self.pool.mega_of(f[base], i[stone] + 1), f[mega], stone)
             self.assertEqual(self.pool.base_forme(f[mega]), f[base], mega)
             self.assertIsNone(self.pool.mega_of(f["SALAMENCE"], i[stone] + 1), stone)  # another forme's stone
