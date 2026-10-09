@@ -1,6 +1,6 @@
 # 0028 - The transformed state: Transform and Imposter
 
-Status: **accepted** (owner, 2026-10-09: all API items of the coverage push approved; the values below are the lead's proposal, written before any code). Drafted by the expansion lead (build session A). Lane B's 0027 (Imposter) gives only the trigger and uses this note's state and values. Builds on 0015 (tail rev 4, section 7) and 0018 (the view extension).
+Status: **accepted** (owner, 2026-10-09: all API items of the coverage push approved; the values below are the lead's proposal, written before any code). Drafted by the expansion lead (build session A). Lane B's 0027 (Imposter) gives only the trigger: `onSwitchIn`, aimed at the diagonal foe `foe.active[foe.active.length - 1 - position]`, with no transform when that slot is empty, for the leads at the start and for every later switch-in. It uses this note's state and values. Builds on 0015 (tail rev 4, section 7) and 0018 (the view extension).
 
 ## Problem
 
@@ -47,12 +47,17 @@ The replay coverage of 2026-10-09 has Transform in 114 games and Imposter in 101
    - `DUOFORGE_VIEWEXT_FEATURE_TRANSFORM` = 42 (FEATURE_COUNT becomes 43).
    - The transformed forme is shown through the existing `member_ext.forme`, and the types through `type_now`/`TYPE_CHANGED` and `ability_now`, as for Soak and Trace.
    - The player's own request offers the copied moves as move slots 0-3. PP stays inside the engine, as for every move.
+   - **The own member view keeps the member's OWN stats.** The pin's request shows `baseStoredStats` (sim/pokemon.ts:1159-1164, getSwitchRequestData), not the copied ones.
+     - Showing the copied stats would leak the foe's hidden Stat Points.
+     - It would also break 0023: the own row must be the same in every world of one record.
+     - The copied stats live only inside the engine.
+     - A test checks two things: Transform leaves `duoforge_member_view` stats unchanged, and two determinized worlds with different foe spreads give identical own rows.
 4. **New public event `DUOFORGE_EVENT_TRANSFORM`** = 44, the next free number after 43 (REVIVE, decision 0025). Fields:
    - `position` = the user;
    - `id` = 1 + side * 6 + roster index of the source;
    - cause MOVE with id2 Transform, or cause ABILITY with id2 Imposter.
 
-   Lane B's Illusion takes 45 or later.
+   45 is `DUOFORGE_EVENT_DRAG` (G46). Lane B's Illusion takes 46 (0026).
 5. **Refusals (E_UNSUPPORTED)** until a recorded battle covers them:
    - Mega Evolution of a transformed Pokemon (the pin forbids it; the request must not offer it);
    - a transformed Pokemon's copied Choice lock or Encore slot;
