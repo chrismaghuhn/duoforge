@@ -595,7 +595,9 @@ class Tracker:
         """The extra PP a move use costs for the user's standing foes with Pressure (decision 0030, step G53), counted
         only where the line shows the targets: the named target of a single-target move, every standing foe for the
         spread classes, for "all" and for a MUSTPRESSURE move; none for a foeSide move or a blanked ([still])
-        target, which nobody can know."""
+        target, which nobody can know. A [spread] line of a single-target move (Expanding Force on Psychic Terrain:
+        onModifyMove runs before getMoveTargets, sim/battle-actions.ts useMoveInner) counts every standing foe as
+        well: its pressureTargets are all adjacent foes, a foe its Protect leaves out of the [spread] list included."""
         if self._pressure is None or flags & FLAG["STILL"]:
             return 0
         foe = 1 - pos // 2
@@ -606,6 +608,8 @@ class Tracker:
             return 0
         kind = self.data.target_type(move)
         if self.data.move_flags(move) & _MUST_PRESSURE or kind in ("all", "allAdjacentFoes", "allAdjacent"):
+            return len(holders)
+        if flags & FLAG["SPREAD"] and kind != "foeSide":
             return len(holders)
         if kind == "foeSide" or target == NOPOS or target // 2 != foe:
             return 0
