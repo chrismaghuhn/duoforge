@@ -616,6 +616,7 @@ class TrickRoomTracker:
         self._at_foe = np.array([moves["taunt"], moves["fakeout"]])
         constants = _layout.CONSTANTS
         self._slots, self._move = constants["DUOFORGE_CHOICE_SLOTS"], constants["DUOFORGE_SLOT_MOVE"]
+        self._turn_boundary = constants["DUOFORGE_BOUNDARY_TURN"]
         self._no_choice, self._roster = _layout.NO_CHOICE, _layout.MAX_ROSTER
         self.seats = None
 
@@ -689,7 +690,8 @@ class TrickRoomTracker:
         # A choice is open until a change is attributed or a later turn is observed.
         self._chose[change] = -1
         self._chose[go[:, None] & (self._chose >= 0) & (self._chose < turn[:, None])] = -1
-        count = go & (trick_room > 0) & (turn != self._counted)
+        # A turn that begins with TR: its TURN boundary (a same-turn replacement already shows a fresh set).
+        count = go & (student["boundary_kind"] == self._turn_boundary) & (trick_room > 0) & (turn != self._counted)
         f["tr_turns"] += count
         self._counted = np.where(count, turn, self._counted)
         self._turn = np.where(go, turn, self._turn)
@@ -786,7 +788,8 @@ def trick_room_report(records) -> dict:
                      "by_suite": {suite: _tr_group(r, rows & (r["suite"] == suite), (a, i))
                                   for i, suite in enumerate(suites)}}
     note = (f"Trick Room diagnostic, no gate. A field change on a game's last turn is not observed: {last} games "
-            f"chose Trick Room on their last turn and are counted without that turn's effect.")
+            f"chose Trick Room on their last turn and are counted without that turn's effect. A setter is a member "
+            f"of the whole team sheet, brought or not.")
     return {"note": note, "last_turn_unobserved_games": last, "arms": arms}
 
 

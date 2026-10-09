@@ -176,18 +176,18 @@ Existing main source `f985bbea` (before P1 code), checkpoint hash above, library
 
 ## Owner amendment: Trick Room diagnostic (2026-10-09)
 
-Trick Room (TR) is a plan that spans several turns. The search (one turn plus a value) sees it only through the net, so the owner expects weaknesses here. This amendment adds a **diagnostic** to the P1 evaluation. It needs no extra run: the 12288 evaluation games carry its fields in their records. It changes no gate, no promotion and no schedule; `evaluate_records` ignores the new fields.
+Trick Room (TR) is a plan that spans several turns. The search (one turn plus a value) sees it only through the net, so the owner expects weaknesses here. This amendment adds a **diagnostic** to the P1 evaluation. It needs no extra run: the 12288 evaluation games carry its fields in their records. It changes no gate, no promotion and no schedule. `evaluate_records` requires the new fields (a record without them is broken, not a game without TR) and includes them in `records_sha256`, but no gate status reads them.
 
 **Record fields** (`expert_eval.TR_FIELDS`, part of `RECORD_FIELDS`). Every field is an integer per game. *Student* is the evaluated arm's seat, *opponent* the other seat.
 
 | Field | Meaning |
 |---|---|
-| `tr_setter_student`, `tr_setter_opponent` | 1 if a member of that side's team knows Trick Room (the side's own view at the first observation), else 0 |
+| `tr_setter_student`, `tr_setter_opponent` | 1 if a member of that side's team sheet (brought or not) knows Trick Room (the side's own view at the first observation), else 0 |
 | `tr_sets_student`, `tr_sets_opponent` | turns on which that side set TR |
 | `tr_first_set_turn_student` | the view's `turn` before the student's first set; 0 if never |
 | `tr_reversals_student` | the student ended an active TR **the opponent set** with its own Trick Room |
 | `tr_blocks_student` | the student's chosen block attempts against the opponent's TR (see below) |
-| `tr_turns` | observed turns that began with `trick_room_turns > 0` |
+| `tr_turns` | observed turns that began with `trick_room_turns > 0` (at their TURN boundary; a same-turn replacement does not count) |
 | `tr_unattributed` | field changes this rule cannot attribute |
 | `tr_last_turn_choice` | 1 if a side chose Trick Room on the game's last turn, whose field change is never observed |
 
