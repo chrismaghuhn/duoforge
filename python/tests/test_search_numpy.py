@@ -9,10 +9,12 @@ measurement's statistics and checkpoint choice (spec section 8). The
 contract is pinned by literals, never by the module's own constants. The
 JAX parts are in test_search.py.
 """
+import hashlib
 import itertools
 import json
 import math
 import os
+import struct
 import tempfile
 import time
 import unittest
@@ -72,6 +74,48 @@ def _near_duplicate_tables(rng, count):
         if n % 2:
             a = a.astype(np.float32).astype(np.float64)
         yield a
+
+
+def _budget_cases():
+    """(kind, tables, weights) for the budget identity pin: both float
+    fixtures, random and near-duplicate worlds, and small exact rescues."""
+    for name in ("bayes-arena-16x8x8.json", "bayes-arena-16x8x8-tiny-pivot.json"):
+        saved = json.loads((Path(__file__).with_name("fixtures") / name).read_text())
+        yield "bayes", np.asarray(saved["tables"], dtype=np.float64), np.asarray(saved["weights"], dtype=np.float64)
+    rng = np.random.default_rng(20261009)
+    for w, k, m in ((2, 2, 2), (4, 8, 8), (16, 8, 8), (3, 5, 1), (5, 1, 4)):
+        yield "bayes", rng.random((w, k, m)).astype(np.float32).astype(np.float64), rng.random(w) + 0.1
+    a = rng.uniform(-1, 1, (16, 8, 8)).astype(np.float32).astype(np.float64)
+    a[:, 1] = a[:, 0]
+    a[:, 2] = a[:, 0] + rng.choice([-1, 1], (16, 8)) * 2**-24
+    yield "bayes", a, rng.random(16) + 0.1
+    for w, k, m in ((2, 2, 2), (2, 3, 3)):
+        yield "bayes_exact", rng.random((w, k, m)), rng.random(w) + 0.1
+    for a in _random_tables(np.random.default_rng(20261010), 8):
+        yield "matrix", a, None
+    yield "matrix", np.array([[float.fromhex(v) for v in row] for row in _NEAR_DUPLICATE_HEX]), None
+    for k, m in ((2, 2), (3, 4)):
+        yield "matrix_exact", rng.random((k, m)), None
+
+
+def _budget_digest(solve_bayes, solve):
+    """SHA-256 over every solution's bytes; exact cases force the rescue."""
+    h = hashlib.sha256()
+    for kind, tables, weights in _budget_cases():
+        if kind == "bayes":
+            sol = solve_bayes(tables, weights)
+        elif kind == "bayes_exact":
+            with patch.object(matrix, "_bland_float", side_effect=SearchError("float failed")):
+                sol = solve_bayes(tables, weights)
+        elif kind == "matrix":
+            sol = solve(tables)
+        else:
+            with patch.object(matrix, "_solve_float", side_effect=SearchError("float failed")):
+                sol = solve(tables)
+        ys = sol.ys if hasattr(sol, "ys") else [sol.y]
+        h.update(kind.encode() + sol.x.tobytes() + b"".join(np.asarray(y).tobytes() for y in ys)
+                 + struct.pack("<d?", sol.value, sol.exact))
+    return h.hexdigest()
 
 
 def _support_value(a):
@@ -715,6 +759,160 @@ class BayesRule(unittest.TestCase):
             matrix.mix([0.5, 0.5], 2)
         with self.assertRaises(SearchError):
             matrix.solve_bayes(np.zeros((2, 2, 2)), [1.0, 0.0])
+
+
+class BoundedSolver(unittest.TestCase):
+    """The P1 teacher's deterministic work budget (P1 plan C2 steps 4 and 5)."""
+
+    _AMPLE = {"float_pivots": 10**9, "exact_pivots": 10**9, "exact_ops": 10**12, "bits": 10**9}
+    _GOLDEN = "63f2a5e83803e3f8e69d1d4951811a9a05fb176a6bc9c4788bb872f47a29325a"  # pinned on main 1cd5ba8b
+    _RATIONAL = np.array([[[0.1, 0.7, 0.3], [0.6, 0.2, 0.9], [0.4, 0.8, 0.5]],
+                          [[0.9, 0.1, 0.6], [0.3, 0.8, 0.2], [0.5, 0.4, 0.7]]])
+
+    def _ledger(self, **caps):
+        return matrix.WorkLedger(matrix.WorkBudget(**{**self._AMPLE, **caps}))
+
+    @staticmethod
+    def _counts(ledger):
+        c = ledger.consumed
+        return (c.float_pivots, c.exact_pivots, c.exact_ops, c.max_bits)
+
+    def test_bayes_budget_cumulative_and_default_identity(self):
+        b = matrix.WorkBudget()
+        self.assertEqual((b.float_pivots, b.exact_pivots, b.exact_ops, b.bits), (4096, 32, 250000, 4096))
+        self.assertEqual([s.value for s in matrix.WorkStatus], ["ok", "float_pivots", "exact_pivots", "exact_ops", "bits"])
+        fresh = matrix.WorkLedger()
+        self.assertEqual(fresh.limits, b)
+        self.assertEqual(self._counts(fresh), (0, 0, 0, 0))
+        self.assertIs(fresh.status, matrix.WorkStatus.OK)
+        # budget=None is byte-identical to the solver before budgets existed.
+        self.assertEqual(_budget_digest(lambda t, w: matrix.solve_bayes(t, w, budget=None),
+                                        lambda a: matrix.solve(a, budget=None)), self._GOLDEN)
+        # An ample ledger changes no byte either, and one ledger accumulates over every call
+        # (single-world solve included); it never resets per call.
+        ledger = self._ledger()
+        self.assertEqual(_budget_digest(lambda t, w: matrix.solve_bayes(t, w, budget=ledger),
+                                        lambda a: matrix.solve(a, budget=ledger)), self._GOLDEN)
+        parts = []
+
+        def bayes_part(t, w):
+            parts.append(self._ledger())
+            return matrix.solve_bayes(t, w, budget=parts[-1])
+
+        def matrix_part(a):
+            parts.append(self._ledger())
+            return matrix.solve(a, budget=parts[-1])
+
+        self.assertEqual(_budget_digest(bayes_part, matrix_part), self._GOLDEN)
+        counts = [self._counts(p) for p in parts]
+        self.assertEqual(self._counts(ledger), (sum(c[0] for c in counts), sum(c[1] for c in counts),
+                                                sum(c[2] for c in counts), max(c[3] for c in counts)))
+        self.assertTrue(all(v > 0 for v in self._counts(ledger)))
+        # Float decisions charge only float pivots, the 1 + W start pivots included.
+        self.assertEqual(counts[0][1:], (0, 0, 0))
+        self.assertGreaterEqual(counts[0][0], 17)
+        self.assertIs(ledger.status, matrix.WorkStatus.OK)
+
+    def test_bayes_budget_cumulative_and_default_identity_exhaustion_is_never_retried(self):
+        a, w = self._RATIONAL, [1.0, 2.0]
+        ledger = self._ledger(float_pivots=2)
+        calls = []
+        real = matrix._bland_float
+
+        def spy(*args, **kwargs):
+            calls.append(kwargs.get("stable", False))
+            return real(*args, **kwargs)
+
+        with patch.object(matrix, "_bland_float", side_effect=spy), \
+                patch.object(matrix, "_bland", side_effect=AssertionError("unexpected exact rescue")), \
+                self.assertRaises(matrix.WorkBudgetExceeded) as caught:
+            matrix.solve_bayes(a, w, budget=ledger)
+        self.assertEqual(calls, [False])  # neither the stable retry nor the rescue ran
+        self.assertIsInstance(caught.exception, SearchError)
+        self.assertIs(caught.exception.status, matrix.WorkStatus.FLOAT_PIVOTS)
+        self.assertEqual(caught.exception.consumed, ledger.consumed)
+        self.assertEqual(self._counts(ledger), (3, 0, 0, 0))  # charged before the third pivot ran
+        self.assertIs(ledger.status, matrix.WorkStatus.FLOAT_PIVOTS)
+        # An exhausted ledger refuses every later call, even a constant table, and stays unchanged.
+        with self.assertRaises(matrix.WorkBudgetExceeded):
+            matrix.solve_bayes(np.full((2, 2, 2), 0.5), [1.0, 1.0], budget=ledger)
+        with self.assertRaises(matrix.WorkBudgetExceeded):
+            matrix.solve(np.ones((2, 2)), budget=ledger)
+        self.assertEqual(self._counts(ledger), (3, 0, 0, 0))
+        # Float pivots of the single-world simplex and its basis solves are charged as well.
+        with self.assertRaises(matrix.WorkBudgetExceeded) as caught:
+            matrix.solve(a[0], budget=self._ledger(float_pivots=1))
+        self.assertIs(caught.exception.status, matrix.WorkStatus.FLOAT_PIVOTS)
+        # Every exact cap stops the rescue with its own status.
+        for caps, status in (({"exact_pivots": 1}, matrix.WorkStatus.EXACT_PIVOTS),
+                             ({"exact_ops": 10}, matrix.WorkStatus.EXACT_OPS),
+                             ({"bits": 8}, matrix.WorkStatus.BITS)):
+            for name, run in (("bayes", lambda led: matrix.solve_bayes(a, w, budget=led)),
+                              ("matrix", lambda led: matrix.solve(a[0], budget=led))):
+                ledger = self._ledger(**caps)
+                with self.subTest(name=name, status=status), \
+                        patch.object(matrix, "_bland_float", side_effect=SearchError("float failed")), \
+                        patch.object(matrix, "_solve_float", side_effect=SearchError("float failed")), \
+                        self.assertRaises(matrix.WorkBudgetExceeded) as caught:
+                    run(ledger)
+                self.assertIs(caught.exception.status, status)
+                self.assertIs(ledger.status, status)
+        # Unexpected errors abort instead of falling back.
+        with patch.object(matrix, "_bland_float", side_effect=RuntimeError("bug")), \
+                patch.object(matrix, "_bland", side_effect=AssertionError("unexpected exact rescue")), \
+                self.assertRaises(RuntimeError):
+            matrix.solve_bayes(a, w, budget=self._ledger())
+        for caps in ({"float_pivots": -1}, {"bits": 1.5}, {"exact_ops": True}):
+            with self.subTest(caps=caps), self.assertRaises(SearchError):
+                matrix.WorkBudget(**caps)
+        with self.assertRaises(SearchError):
+            matrix.solve_bayes(a, w, budget=matrix.WorkBudget())
+        with self.assertRaises(SearchError):
+            matrix.solve(a[0], budget={"float_pivots": 1})
+
+    def test_primary_and_audit_budgets_with_clock_injection(self):
+        rng = np.random.default_rng(20261011)
+        tables = rng.random((16, 8, 8)).astype(np.float32).astype(np.float64)
+        weights = rng.random(16) + 0.1
+        audit_tables = [rng.random((4, 8, 8)).astype(np.float32).astype(np.float64) for _ in range(9)]
+        audit_weights = rng.random(4) + 0.1
+
+        def fingerprint(sol, ledger):
+            return (sol.x.tobytes(), tuple(y.tobytes() for y in sol.ys), sol.value, sol.exact,
+                    self._counts(ledger), ledger.status)
+
+        def primary_only():
+            ledger = matrix.WorkLedger()
+            return fingerprint(matrix.solve_bayes(tables, weights, budget=ledger), ledger)
+
+        want = primary_only()
+        # One primary and K + 1 = 9 audit ledgers with identical caps.
+        primary = matrix.WorkLedger()
+        audits = [matrix.WorkLedger() for _ in range(9)]
+        self.assertTrue(all(led.limits == primary.limits for led in audits))
+        statuses = []
+        for i, (ledger, audit) in enumerate(zip(audits, audit_tables)):
+            if i == 4:  # this audit lands on the rational rescue and exhausts only its own ledger
+                with patch.object(matrix, "_bland_float", side_effect=SearchError("float failed")), \
+                        self.assertRaises(matrix.WorkBudgetExceeded):
+                    matrix.solve_bayes(audit, audit_weights, budget=ledger)
+            else:
+                matrix.solve_bayes(audit, audit_weights, budget=ledger)
+            statuses.append(ledger.status)
+            if i == 2:
+                sol = matrix.solve_bayes(tables, weights, budget=primary)
+        self.assertEqual(fingerprint(sol, primary), want)
+        self.assertEqual(statuses.count(matrix.WorkStatus.OK), 8)
+        self.assertIn(statuses[4], (matrix.WorkStatus.EXACT_PIVOTS, matrix.WorkStatus.EXACT_OPS, matrix.WorkStatus.BITS))
+        # Arbitrary clock jumps change no status, result or counter byte: the budget counts work, not time.
+        jumps = itertools.count()
+
+        def clock(*_):
+            return float(next(jumps) ** 3 * 977)
+
+        with patch("time.perf_counter", side_effect=clock), patch("time.monotonic", side_effect=clock), \
+                patch("time.time", side_effect=clock), patch("time.process_time", side_effect=clock):
+            self.assertEqual(primary_only(), want)
 
 
 def _sides(teams):
