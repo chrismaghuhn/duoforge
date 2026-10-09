@@ -1,6 +1,6 @@
 # 0026 — Illusion (Zoroark, Zoroark-Hisui): hidden identity in the player view
 
-Status: **proposal** (lane B, 2026-10-09). The owner approved Illusion as an API item; this note lists every new public value and state field for review **before any code**. Builds on decisions 0005 (bench order), 0007 (what a player sees), 0015 section 7 (POOL tail), 0018 (view extension, bit 19 `ILLUSION_UP`) and 0023 (public state and worlds).
+Status: **accepted, option B** (owner, 2026-10-09, relayed by HauptSession: hidden identity as in the game, `ILLUSION_END` = 46, the honest search refuses and plays raw, counted, while a foe Illusion could be active). This note lists every new public value and state field; it was reviewed **before any code**. Builds on decisions 0005 (bench order), 0007 (what a player sees), 0015 section 7 (POOL tail), 0018 (view extension, bit 19 `ILLUSION_UP`) and 0023 (public state and worlds).
 
 ## 1. Why, and how much
 
@@ -43,7 +43,7 @@ Status: **proposal** (lane B, 2026-10-09). The owner approved Illusion as an API
   - This is a review point on G46. If G46 stores something weaker, those swaps are added there, not as a second field.
 - **Alternative rejected:** deriving the order from the event history. The order is state, and the round trip of 0023 needs it.
 
-## 4. The view — the owner's choice
+## 4. The view — the owner chose B
 
 Decision 0018 declared bit 19 `ILLUSION_UP` as **public**, with "the disguise is not exposed". Read literally, the foe's observation shows the **true** occupant plus a flag. That contradicts decision 0007's principle (exactly what a human sees). Under open team sheets a human sees "Incineroar", not Zoroark.
 
@@ -53,7 +53,7 @@ Decision 0018 declared bit 19 `ILLUSION_UP` as **public**, with "the disguise is
 - It leaks the hidden identity to the policy and to the search. The live tracker cannot fill it from the protocol until the break, because the protocol shows the disguise, so live and engine views would differ.
 - **Not recommended.**
 
-**Option B — hidden identity (recommended)**
+**Option B — hidden identity (chosen by the owner, 2026-10-09)**
 - **The foe viewer, while the disguise holds:**
   - `occupant[pos]` is the **disguise's** roster index.
   - The disguise's member row shows location ACTIVE, and the holder's HP percent, flag and status (what the game shows on that name).
@@ -102,7 +102,7 @@ No struct grows, and the observation layout (736 bytes) and the extension (192 b
 
 ## 7. Open points
 
-1. **Option A or B** (the owner). Recommended: B.
+1. ~~Option A or B~~: **B** (owner, 2026-10-09).
 2. **A foe's move that is not on the disguise's sheet** (open sheets): a human then knows it is the holder. Recommended: keep the disguise in the view until `replace`, as the game shows it, and leave the deduction to the model. The move-use count goes to the slot of the move on the **holder's** sheet, revealed only at the break, so nothing is counted on the disguise.
 3. **The duplicate case:** refuse it in revision 1, as in section 4.
 
