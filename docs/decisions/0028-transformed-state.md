@@ -20,6 +20,10 @@ The replay coverage of 2026-10-09 has Transform in 114 games and Imposter in 101
   - timesAttacked;
   - its ability (setAbility, `isTransform`).
 - **Prints** `-transform|USER|SOURCE[|[from] ability: Imposter]`.
+- **Then copies the ability** with `setAbility(source.ability, this, null, true, true)` (sim/pokemon.ts:1352):
+  - isFromFormeChange and isTransform are both true, so the cantsuppress check (:1919) and the SetAbility event are skipped, and a cantsuppress ability IS copied;
+  - the old ability's End runs (:1926);
+  - the new ability's Start runs unless the old and new ids are equal (:1945-1946). Transforming into an Intimidate user intimidates, and weather setters, Unnerve and Pressure announce again.
 - **Stays until** the user switches out or faints (`transformed = false` in the switch-in reset, champions scripts.ts:136). The user's HP, status, item and level stay its own.
 
 ## Decisions
@@ -71,6 +75,8 @@ The replay coverage of 2026-10-09 has Transform in 114 games and Imposter in 101
 - **Recorded battles:**
   - Transform into a foe;
   - Transform into an ally;
+  - Transform into an Intimidate user (Start runs);
+  - Transform between two holders of the same ability (no Start);
   - each failure case that is reachable;
   - copied boosts and Focus Energy;
   - 5 PP running out;
