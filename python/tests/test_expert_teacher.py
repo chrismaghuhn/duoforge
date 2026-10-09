@@ -547,6 +547,41 @@ class Teacher(unittest.TestCase):
                                                                manifest=self.manifest)))
             return out
 
+    def test_two_phase_matches_decision_in_process(self):
+        prepared, finished, copies = [], [], []
+        with duoforge.Context(C["DUOFORGE_DATA_KIND_POOL"]) as ctx, self.make(ctx) as search:
+            real_prepare, real_finish = search._prepare, search._finish
+            fields = ("rows", "step", "encode", "results", "tiebreaks", "open", "choices", "foe_pairs", "qs")
+
+            def prepare(*args, **kwargs):
+                request = real_prepare(*args, **kwargs)
+                prepared.append(request)
+                copies.append({name: np.copy(getattr(request, name)) for name in fields})
+                return request
+
+            def finish(*args, **kwargs):
+                result = real_finish(*args, **kwargs)
+                finished.append(result)
+                return result
+
+            with mock.patch.object(search, "_prepare", side_effect=prepare), \
+                    mock.patch.object(search, "_finish", side_effect=finish):
+                self._three_labels(ctx, search)
+            self.assertEqual(len(prepared), 6)  # a primary and its K+1 audit per root
+            first = prepared[0]
+            self.assertEqual(first.rows.shape, (8 * 8 * 16, features.obs_size(4)))
+            self.assertEqual(first.rows.dtype, np.float32)
+            np.testing.assert_array_equal(first.open, (first.step == 0) & (first.results == 0))
+            # Later roots overwrote the search's worlds and leaf batch; every request kept its own copies.
+            for request, copy in zip(prepared, copies):
+                for name in fields:
+                    np.testing.assert_array_equal(getattr(request, name), copy[name], name)
+            # Root A finishes again after B and C with the same table bytes.
+            costs = {k: 0.0 for k in ("public_records", "world_builds", "team_head", "leaves", "network", "solve")}
+            again = search._finish(first, search._values(first, costs), np.zeros(first.own.size), costs)
+            self.assertEqual(np.asarray(again["tables"]).tobytes(), np.asarray(finished[0]["tables"]).tobytes())
+            self.assertEqual((again["x"], again["pi_X"]), (finished[0]["x"], finished[0]["pi_X"]))
+
     def test_two_phase_decision_bytes_pinned(self):
         import hashlib
         conditions = self._two_phase_conditions()
