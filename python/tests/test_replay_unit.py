@@ -1007,9 +1007,9 @@ class GameTest(unittest.TestCase):
         self.assertEqual(self.skip_reason(self.log + self.log[start:]), "skip:two-games")
 
     def test_a_failure_the_converter_does_not_parse_stops(self):
-        # the converter decides which -fail forms it reads (main reads "heal" since G8); the one it cannot read is a
-        # named stop, never an internal error
-        lines = self.insert_after("|turn|3", "|-fail|p2a: Politoed|move: Substitute")
+        # the converter decides which -fail forms it reads (main reads "heal" since G8, Substitute's since G60); one it
+        # cannot read (Shed Tail's, data/moves.ts:16181) is a named stop, never an internal error
+        lines = self.insert_after("|turn|3", "|-fail|p2a: Politoed|move: Shed Tail|[weak]")
         result = self.run_game(lines)
         stops = [k for k in result.counters if k.startswith("perspectives.stopped.converter:untyped -fail")]
         self.assertEqual(sum(result.counters[k] for k in stops), 2, result.counters)
