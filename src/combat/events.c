@@ -78,6 +78,118 @@ duoforge_event dfi_event_switch(const struct duoforge_battle *b, uint32_t flat)
     return e;
 }
 
+/* Illusion in the fold (decision 0026 section 4). While a foe's holder is disguised, its position shows the disguise, and the fold
+ * keeps what the lines cannot give: the snapshot of the disguise's row before it came in, the holder's moves that are not on the
+ * disguise's sheet (pending, per holder move slot, attributed at the break), and the shown name (ill_shown). The truth of the
+ * holder is read from the record only where the public event carries it (SWITCH and DRAG, the break). */
+static void dfi_ill_snapshot_take(const dfi_knowledge *k, uint8_t *snap)
+{
+    snap[0] = k->hp_percent;
+    snap[1] = k->hp_flag;
+    snap[2] = k->revealed;
+    for (uint32_t j = 0u; j < DUOFORGE_MAX_MOVE_SLOTS; ++j) {
+        snap[3u + j] = k->moves_used[j];
+    }
+    snap[7] = 0u;
+    snap[8] = 0u;
+}
+
+static void dfi_ill_snapshot_restore(dfi_knowledge *k, const uint8_t *snap)
+{
+    k->hp_percent = snap[0];
+    k->hp_flag = snap[1];
+    k->revealed = snap[2];
+    for (uint32_t j = 0u; j < DUOFORGE_MAX_MOVE_SLOTS; ++j) {
+        k->moves_used[j] = snap[3u + j];
+    }
+}
+
+/* A switch or drag of the foe's position: an unbroken disguise of the position ends (no break is shown: its snapshot and pending
+ * counts go), a line about the shown member ends the override (ill_shown), and a disguised entry starts one. `shown` is the
+ * projected id (the disguise for a foe), `raw` the record (its id is the truth; reserved[0] the disguise + 1). */
+static void dfi_fold_illusion_switch(dfi_tail_illusion *ill, dfi_knowledge *shown_rows, uint32_t shown, const duoforge_event *raw,
+                                     bool apply, bool *disg, uint32_t *holder, uint32_t slot)
+{
+    if (apply && disg[slot]) {
+        memset(ill->snapshot, 0, sizeof ill->snapshot);
+        memset(ill->pending, 0, sizeof ill->pending);
+    }
+    disg[slot] = false;
+    if (apply && ill->shown != 0u && (uint32_t)ill->shown - 1u == shown) {
+        ill->shown = 0u;
+        memset(ill->override, 0, sizeof ill->override);
+    }
+    holder[slot] = raw->id;
+    if (raw->reserved[0] != 0u) {
+        disg[slot] = true;
+        if (apply) {
+            ill->shown = raw->reserved[0];
+            dfi_ill_snapshot_take(&shown_rows[raw->reserved[0] - 1u], ill->snapshot);
+            memset(ill->pending, 0, sizeof ill->pending);
+        }
+    }
+}
+
+/* A move of a disguised holder that is not on the disguise's sheet: one use of the holder's move slot, pending until the break. */
+static void dfi_fold_illusion_pending(dfi_tail_illusion *ill, const dfi_side *fs, uint32_t holder, uint32_t move_id)
+{
+    if (holder >= DUOFORGE_MAX_ROSTER || holder >= fs->member_count) {
+        return;
+    }
+    for (uint32_t j = 0u; j < fs->members[holder].move_count && j < DUOFORGE_MAX_MOVE_SLOTS; ++j) {
+        if (fs->members[holder].moves[j].move_id == move_id && ill->pending[j] < UINT8_MAX) {
+            ill->pending[j] = (uint8_t)((uint32_t)ill->pending[j] + 1u); /* wide-operands-reviewed */
+        }
+    }
+}
+
+/* The break (`replace` and `-end Illusion`, one ILLUSION_END event): the holder's row takes the last shown HP and status, the item
+ * it used up while disguised and its move uses (the pending ones, and the disguise row's uses above the snapshot, mapped by move id),
+ * the disguise's row goes back to its snapshot, and the foe's occupant is the true holder. Returns false on an inconsistent break. */
+static bool dfi_fold_illusion_break(dfi_tail_illusion *ill, dfi_side *viewer, const dfi_side *fs, uint32_t slot, const duoforge_event *e,
+                                    uint32_t *occupant, bool *disg, uint32_t *holder)
+{
+    const uint32_t truth = e->id;
+    if (!disg[slot] || ill->shown == 0u || truth >= DUOFORGE_MAX_ROSTER || truth >= fs->member_count) {
+        return false;
+    }
+    const uint32_t disguise = (uint32_t)ill->shown - 1u;
+    if (disguise >= DUOFORGE_MAX_ROSTER || disguise >= fs->member_count) {
+        return false;
+    }
+    dfi_knowledge *h = &viewer->knowledge[truth];
+    dfi_knowledge *d = &viewer->knowledge[disguise];
+    const uint32_t newly = (uint32_t)d->revealed & ~(uint32_t)ill->snapshot[2] & (uint32_t)DFI_REVEALED_ITEM_CONSUMED;
+    h->hp_percent = (uint8_t)e->hp; /* the percent display: <= 100 */
+    h->hp_flag = e->hp_flag;
+    h->revealed = (uint8_t)((uint32_t)h->revealed | newly); /* wide-operands-reviewed */
+    for (uint32_t j = 0u; j < fs->members[truth].move_count && j < DUOFORGE_MAX_MOVE_SLOTS; ++j) {
+        const uint32_t sum = (uint32_t)h->moves_used[j] + (uint32_t)ill->pending[j];
+        h->moves_used[j] = (uint8_t)(sum > UINT8_MAX ? UINT8_MAX : sum);
+    }
+    for (uint32_t k = 0u; k < fs->members[disguise].move_count && k < DUOFORGE_MAX_MOVE_SLOTS; ++k) {
+        const uint32_t old = ill->snapshot[3u + k];
+        if (d->moves_used[k] <= old) {
+            continue;
+        }
+        const uint32_t delta = (uint32_t)d->moves_used[k] - old;
+        for (uint32_t j = 0u; j < fs->members[truth].move_count && j < DUOFORGE_MAX_MOVE_SLOTS; ++j) {
+            if (fs->members[truth].moves[j].move_id == fs->members[disguise].moves[k].move_id) {
+                const uint32_t sum = (uint32_t)h->moves_used[j] + delta;
+                h->moves_used[j] = (uint8_t)(sum > UINT8_MAX ? UINT8_MAX : sum);
+                break;
+            }
+        }
+    }
+    dfi_ill_snapshot_restore(d, ill->snapshot);
+    viewer->seen_mask = (uint8_t)((uint32_t)viewer->seen_mask | 1u << truth); /* wide-operands-reviewed: < 64 */
+    *occupant = truth;
+    holder[slot] = truth;
+    disg[slot] = false;
+    memset(ill, 0, sizeof *ill);
+    return true;
+}
+
 /* For every event about an opposing position, in order: a switch makes the
  * member seen and shows its HP, damage and heal show the HP, a move other
  * than a locked turn is one use of the slot that holds it on the open team
@@ -91,8 +203,15 @@ bool dfi_events_fold_knowledge(const struct duoforge_battle *before, struct duof
         const dfi_side *fs = &after->sides[foe];
         dfi_side *viewer = &after->sides[p];
         uint32_t occupant[DUOFORGE_ACTIVE_PER_SIDE];
+        bool disg[DUOFORGE_ACTIVE_PER_SIDE];   /* Illusion: the position shows a disguise (decision 0026) */
+        uint32_t holder[DUOFORGE_ACTIVE_PER_SIDE]; /* the true holder of the position (the record's truth) */
         for (uint32_t slot = 0u; slot < DUOFORGE_ACTIVE_PER_SIDE; ++slot) {
             occupant[slot] = before->sides[foe].positions[slot].occupant;
+            holder[slot] = occupant[slot];
+            disg[slot] = before->tail.sides[foe].positions[slot].ability_state != 0u;
+            if (disg[slot] && after->tail.sides[foe].illusion.shown != 0u) {
+                occupant[slot] = (uint32_t)after->tail.sides[foe].illusion.shown - 1u; /* the name the foe sees */
+            }
         }
         for (uint32_t i = 0u; i < events->count && i < DUOFORGE_MAX_EVENTS; ++i) {
             duoforge_event e;
@@ -111,8 +230,18 @@ bool dfi_events_fold_knowledge(const struct duoforge_battle *before, struct duof
                 continue;
             }
             const uint32_t slot = (uint32_t)e.position % 2u;
+            /* Illusion (decision 0026): the break is one event; it restores the disguise's row and makes the holder the occupant */
+            if (e.kind == DUOFORGE_EVENT_ILLUSION_END) {
+                if (i >= first && !dfi_fold_illusion_break(&after->tail.sides[foe].illusion, viewer, fs, slot, &e, &occupant[slot],
+                                                           disg, holder)) {
+                    return false;
+                }
+                continue;
+            }
             /* a drag (step G46) enters a member as a switch does: the opponent sees it, and its occupant */
             if (e.kind == DUOFORGE_EVENT_SWITCH || e.kind == DUOFORGE_EVENT_DRAG) {
+                dfi_fold_illusion_switch(&after->tail.sides[foe].illusion, viewer->knowledge, e.id, &events->rec[i], i >= first, disg,
+                                         holder, slot);
                 occupant[slot] = e.id;
             }
             const uint32_t m = occupant[slot];
@@ -131,10 +260,18 @@ bool dfi_events_fold_knowledge(const struct duoforge_battle *before, struct duof
                 k->hp_percent = (uint8_t)e.hp; /* the percent display: <= 100 */
                 k->hp_flag = e.hp_flag;
             } else if (e.kind == DUOFORGE_EVENT_MOVE && ((uint32_t)e.flags & DUOFORGE_EVENT_FLAG_LOCKED) == 0u) {
+                bool on_sheet = false;
                 for (uint32_t j = 0u; j < fs->members[m].move_count && j < DUOFORGE_MAX_MOVE_SLOTS; ++j) {
+                    if (fs->members[m].moves[j].move_id == e.id) {
+                        on_sheet = true;
+                    }
                     if (fs->members[m].moves[j].move_id == e.id && k->moves_used[j] < UINT8_MAX) {
                         k->moves_used[j] = (uint8_t)((uint32_t)k->moves_used[j] + 1u); /* wide-operands-reviewed */
                     }
+                }
+                /* Illusion: a move that is not on the disguise's sheet is the holder's: pending until the break (decision 0026) */
+                if (!on_sheet && disg[slot]) {
+                    dfi_fold_illusion_pending(&after->tail.sides[foe].illusion, fs, holder[slot], e.id);
                 }
             } else if (e.kind == DUOFORGE_EVENT_ITEM_END) {
                 /* An item that is gone: used up, or taken by a move (Knock Off, ITEM_TAKEN). The old item_used says it
@@ -143,6 +280,13 @@ bool dfi_events_fold_knowledge(const struct duoforge_battle *before, struct duof
             } else if (e.kind == DUOFORGE_EVENT_FAINT) {
                 /* A faint that no damage line announced (Perish Song's, step G26): the screen shows the foe at 0. */
                 dfi_hp_display(0u, fs->members[m].hp_max, &k->hp_percent, &k->hp_flag);
+                /* Illusion: a faint of a disguised position is no break (the engine drops the disguise): no break will be shown, so
+                 * the snapshot and the pending counts go (decision 0026 section 4). The shown name keeps the fainted values. */
+                if (disg[slot]) {
+                    disg[slot] = false;
+                    memset(after->tail.sides[foe].illusion.snapshot, 0, sizeof after->tail.sides[foe].illusion.snapshot);
+                    memset(after->tail.sides[foe].illusion.pending, 0, sizeof after->tail.sides[foe].illusion.pending);
+                }
             } else if (e.kind == DUOFORGE_EVENT_ITEM_START) {
                 /* The Pokemon now holds the item that a move gave it (step G29): the old item_used is no longer "gone". */
                 k->revealed = (uint8_t)((uint32_t)k->revealed & ~(uint32_t)DFI_REVEALED_ITEM_CONSUMED); /* wide-operands-reviewed */

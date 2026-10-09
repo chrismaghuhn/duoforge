@@ -661,8 +661,14 @@ static dfi_invariant dfi_check_tail(const duoforge_context *ctx, const struct du
             ts->quick_guard > DFI_TAIL_QUICK_GUARD_MAX || !dfi_hazard_order_valid(ts)) {
             return DFI_INV_TAIL_SIDE;
         }
-        /* Rev 5 (decision 0026): the Illusion state, zero until the step that writes it. */
-        if (!dfi_bytes_zero(&ts->illusion, sizeof ts->illusion)) {
+        /* Rev 5 (decision 0026): the Illusion state the fold keeps. A shown name is a brought member of this side (shown - 1); with
+         * no shown name there is no snapshot, no pending count and no override; the snapshot's reserve bytes are zero. */
+        const dfi_tail_illusion *il = &ts->illusion;
+        if (il->shown > DUOFORGE_MAX_ROSTER ||
+            (il->shown != 0u && (((uint32_t)side->brought_mask >> ((uint32_t)il->shown - 1u)) & 1u) == 0u) ||
+            (il->shown == 0u && (!dfi_bytes_zero(il->snapshot, sizeof il->snapshot) || !dfi_bytes_zero(il->pending, sizeof il->pending) ||
+                                 !dfi_bytes_zero(il->override, sizeof il->override))) ||
+            !dfi_bytes_zero(il->snapshot + 7, 2u)) {
             return DFI_INV_TAIL_SIDE;
         }
         for (uint32_t p = 0u; p < DUOFORGE_ACTIVE_PER_SIDE; ++p) {
