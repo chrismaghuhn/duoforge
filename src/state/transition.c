@@ -2,6 +2,8 @@
 
 #include "core/arith.h"
 #include "state/context_internal.h"
+#include "state/battle_internal.h"
+#include "state/closure_member.h"
 #include "state/identity.h"
 #include "state/invariants.h"
 
@@ -35,6 +37,12 @@ duoforge_status dfi_apply_team_selection(const duoforge_context *ctx, struct duo
             }
         }
         side->brought_mask = (uint8_t)mask; /* mask < 64 */
+        /* step G46: the party order starts as the pick order (the leads, then the bench), under the POOL kinds only */
+        if (dfi_kind_limits_of(ctx->data_kind).pool_rules) {
+            for (uint32_t i = 0u; i < brought_count; ++i) {
+                dfi_party_put(&tmp.tail, s, i, (uint32_t)picks->picks[s][i] + 1u);
+            }
+        }
     }
     for (uint32_t s = 0u; s < DUOFORGE_SIDE_COUNT; ++s) {
         for (uint32_t k = 0u; k < DUOFORGE_ACTIVE_PER_SIDE && k < brought_count; ++k) {

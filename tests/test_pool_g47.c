@@ -233,6 +233,24 @@ static void check_oblivious_and_lum(df_test *t, const duoforge_context *ctx)
     expect_item(t, ctx, "g47_lum_unnerve", 3u, 2u, false);
 }
 
+/* Round two: the double replacement (the two Houndoom of the two sides enter poisoned, the switch-in order tie is drawn), the
+ * toxic stage that restarts when a tox status starts again (stage 1 after the re-poison and its residual), and the Flower Veil
+ * that silences the pass-back of Synchronize to a Grass Pokemon of its side (Whimsicott stays unparalysed). */
+static void check_round_two(df_test *t, const duoforge_context *ctx)
+{
+    expect_status(t, ctx, "g47_switch_tox_tie", 8u, 0u, DFI_STATUS_TOX);
+    expect_status(t, ctx, "g47_switch_tox_tie", 8u, 2u, DFI_STATUS_TOX);
+    expect_status(t, ctx, "g47_synchronize_flower_veil", 2u, 0u, DFI_STATUS_PAR);
+    expect_status(t, ctx, "g47_synchronize_flower_veil", 2u, 2u, DFI_STATUS_NONE);
+    duoforge_battle *b = replay(t, ctx, "g47_toxic_reset", 4u);
+    if (b != NULL) {
+        const uint32_t occupant = b->sides[1].positions[0].occupant;
+        DF_CHECK_EQ_U64(t, standing(b, 2u)->status, DFI_STATUS_TOX);
+        DF_CHECK_EQ_U64(t, b->tail.sides[1].toxic_stage[occupant], 1u);
+        duoforge_battle_destroy(b);
+    }
+}
+
 static void check_herb(df_test *t, const duoforge_context *ctx)
 {
     /* the Taunt of Gyarados is cured by the herb of Umbreon in the Update after it */
@@ -279,6 +297,7 @@ int main(void)
     check_synchronize(&t, ctx);
     check_oblivious_and_lum(&t, ctx);
     check_herb(&t, ctx);
+    check_round_two(&t, ctx);
     duoforge_context_destroy(ctx);
     return df_test_end(&t);
 }
