@@ -414,5 +414,89 @@ class FitTest(unittest.TestCase):
             self.assertLess(abs(chunked[k] - one[k]), 1e-5 * max(1.0, abs(one[k])), k)
 
 
+class _StopAfter:
+    """A stop flag that is requested from its n-th check on (fit checks it after every step)."""
+
+    def __init__(self, n):
+        self.n, self.checks = n, 0
+
+    @property
+    def requested(self):
+        self.checks += 1
+        return self.checks >= self.n
+
+
+class ResumeTest(unittest.TestCase):
+    """Task 5: an interrupted fit resumes bitwise; a resume with other inputs or constants is refused."""
+
+    @classmethod
+    def setUpClass(cls):
+        import jax
+        from duoforge_learn import policy
+        cls.jax = jax
+        cls.model = policy.make(policy.v2_config("S"))
+        cls.params = cls.model.init(jax.random.PRNGKey(4))
+        cls.data = _small_data()
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory(prefix="duoforge-distill-")
+        self.root = Path(self.tmp.name)
+
+    def tearDown(self):
+        self.tmp.cleanup()
+
+    def _fit(self, out, **kw):
+        from unittest import mock
+        from duoforge_learn import distill
+        out.mkdir(exist_ok=True)
+        with mock.patch.multiple(distill, TARGET_ROWS=8, NON_TARGET_ROWS=24, MIN_GAIN=-1.0), \
+                mock.patch.object(distill, "_save", lambda path, params, config: Path(path).write_text("x")):
+            return distill.fit(self.data, self.model, self.params, self.params, {"format": 2}, out, seed=3,
+                               identity=kw.pop("identity", {"manifest": "m"}), **kw)
+
+    @staticmethod
+    def _lines(out):
+        import json
+        return [{k: v for k, v in json.loads(line).items() if k != "seconds"}
+                for line in (out / "log.jsonl").read_text().splitlines()]
+
+    def _leaves(self, tree):
+        return [np.asarray(x) for x in self.jax.tree_util.tree_leaves(tree)]
+
+    def test_resume_mid_epoch_is_bitwise_identical(self):
+        whole = self._fit(self.root / "whole")
+        cut = self.root / "cut"
+        first = self._fit(cut, stop=_StopAfter(3))  # stops after step 3, the first of epoch 2
+        self.assertEqual((first.stop_reason, first.steps), ("signal", 3))
+        again = self._fit(cut, resume=True)
+        self.assertEqual((again.stop_reason, again.steps, again.best_epoch),
+                         (whole.stop_reason, whole.steps, whole.best_epoch))
+        for a, b in zip(self._leaves(again.params), self._leaves(whole.params)):
+            np.testing.assert_array_equal(a, b)
+        for a, b in zip(self._leaves(again.best_params), self._leaves(whole.best_params)):
+            np.testing.assert_array_equal(a, b)
+        self.assertEqual(self._lines(cut), self._lines(self.root / "whole"))
+
+    def test_resume_refusals(self):
+        from unittest import mock
+        from duoforge_learn import distill
+        out = self.root / "run"
+        self._fit(out, stop=_StopAfter(1))
+        with self.assertRaisesRegex(ValueError, "manifest"):
+            self._fit(out, resume=True, identity={"manifest": "other"})
+        with mock.patch.object(distill, "LR", 1e-3), self.assertRaisesRegex(ValueError, "LR"):
+            self._fit(out, resume=True)
+        with self.assertRaisesRegex(ValueError, "no state"):
+            self._fit(self.root / "fresh", resume=True)
+        with self.assertRaisesRegex(ValueError, "not empty"):
+            self._fit(out)
+        repo = Path(__file__).resolve().parents[2]
+        self.assertEqual(distill.main(["--init", "x", "--reference", "x", "--shards", "x", "--manifest", "x",
+                                       "--out", str(repo / "distill-should-not-exist")]), 2)
+        self.assertFalse((repo / "distill-should-not-exist").exists())
+        self.assertEqual(distill.main(["--init", "x", "--reference", "x", "--shards", "x", "--manifest", "x",
+                                       "--out", str(self.root / "empty"), "--resume"]), 2)
+
+
 if __name__ == "__main__":
     unittest.main()
