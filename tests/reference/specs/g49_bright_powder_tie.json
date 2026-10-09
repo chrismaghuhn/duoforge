@@ -1,0 +1,24 @@
+{
+  "name": "g49_bright_powder_tie",
+  "purpose": "Step G49, the order of the two priority -2 accuracy items: a Milotic (F) with Wide Lens and a Milotic (F) with Bright Powder have the same Speed (same set), so the ModifyAccuracy event of the first one's Scald against the second is a Speed tie between Wide Lens (the attacker) and Bright Powder (the target). Both orders give the same accuracy for accuracy 100, so the tie changes nothing.",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,0000000000000000000000000000000000000000000000000000000000004905",
+  "teams": [
+    "Milotic (F) @ Wide Lens\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Protect\n- Scald\n- Coil\n\nIncineroar (M) @ Charcoal\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 14 Def / 20 SpD\nCareful Nature\n- Fake Out\n- Flare Blitz\n- Protect\n\nKingambit (M) @ Black Glasses\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Protect\n- Kowtow Cleave\n\nIndeedee-F (F) @ Rocky Helmet\nAbility: Psychic Surge\nLevel: 50\nEVs: 32 HP / 32 Def / 2 SpD\nRelaxed Nature\n- Protect\n\nStaraptor (F) @ Focus Sash\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 2 SpD / 32 Spe\nJolly Nature\n- Protect\n- Brave Bird\n\nRaichu (F) @ Sitrus Berry\nAbility: Lightning Rod\nLevel: 50\nEVs: 2 HP / 32 SpA / 32 Spe\nTimid Nature\n- Thunderbolt\n- Protect",
+    "Milotic (F) @ Bright Powder\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Protect\n- Scald\n- Coil\n\nIncineroar (M) @ Charcoal\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 14 Def / 20 SpD\nCareful Nature\n- Fake Out\n- Flare Blitz\n- Protect\n\nKingambit (M) @ Black Glasses\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Protect\n- Kowtow Cleave\n\nIndeedee-F (F) @ Rocky Helmet\nAbility: Psychic Surge\nLevel: 50\nEVs: 32 HP / 32 Def / 2 SpD\nRelaxed Nature\n- Protect\n\nStaraptor (F) @ Focus Sash\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 2 SpD / 32 Spe\nJolly Nature\n- Protect\n- Brave Bird\n\nGholdengo @ Life Orb\nAbility: Good as Gold\nLevel: 50\nEVs: 17 HP / 2 Def / 17 SpA / 16 SpD / 14 Spe\nModest Nature\n- Protect\n- Shadow Ball"
+  ],
+  "plan": {
+    "p1": [
+      "move 2 1, move 3",
+      "move 2 1, move 3",
+      "move 2 1, move 3"
+    ],
+    "p2": [
+      "move 3, move 3",
+      "move 3, move 3",
+      "move 3, move 3"
+    ],
+    "max_steps": 3
+  }
+}

@@ -50,7 +50,8 @@ _WEATHER_ITEM = {"RainDance": "Damp Rock", "SunnyDay": "Heat Rock", "Sandstorm":
                  "Snow": "Icy Rock"}
 PP_EXACT, PP_DERIVED = 1, 2  # DUOFORGE_PP_EXACT, DUOFORGE_PP_DERIVED
 STAGE_NEUTRAL = 6  # DFI_STAGE_NEUTRAL: stages are stored biased (src/state/battle_internal.h)
-FIELD_TURNS = 5  # DFI_FIELD_TURNS_MAX: weather, terrain, Trick Room
+FIELD_TURNS = 5  # weather, terrain, Trick Room
+FIELD_TURNS_EXTENDED = 8  # DFI_FIELD_TURNS_MAX: a weather rock or Terrain Extender held by the setter
 TAILWIND_TURNS, SCREEN_TURNS, SCREEN_TURNS_CLAY = 4, 5, 8  # DFI_TAILWIND_TURNS_MAX, 5, DFI_SCREEN_TURNS_MAX
 STALL_DURATION, STALL_LEVEL_MAX = 2, 6  # DFI_STALL_DURATION (src/combat/turn.c), DFI_STALL_LEVEL_MAX
 CHARGE_TURNS = 2  # twoturnmove's duration: the charge and the locked turn end in the second residual
@@ -140,6 +141,7 @@ class Tracker:
         self._positions = [[_Position(), _Position()], [_Position(), _Position()]]
         self._turn = 0
         self._weather = self._weather_turns = 0
+        self._field_turns_next = FIELD_TURNS  # set per line by _extended_field
         self._terrain = self._terrain_turns = 0
         self._trick_room = 0
         self._conditions = [[0, 0, 0], [0, 0, 0]]  # reflect, light screen, tailwind turns per side
@@ -207,9 +209,11 @@ class Tracker:
         self._fold(line)
 
     def _extended_field(self, line):
-        """Stop at a weather or terrain set by a member holding an item that lengthens it (Damp Rock, Heat Rock,
-        Smooth Rock, Icy Rock, Terrain Extender: data/conditions.ts): no line shows the 8 turns, and the fold
-        counts 5."""
+        """A weather or terrain set by a member that holds the item lengthening it (Damp Rock, Heat Rock, Smooth
+        Rock, Icy Rock, Terrain Extender; data/conditions.ts durationCallback: source.hasItem) lasts 8 turns, and no
+        line shows it: the setter is the [of] member (an ability) or the last move's user, its item the open
+        sheet's unless it was seen used or lost. The next WEATHER or FIELD_START event of this line takes the 8."""
+        self._field_turns_next = FIELD_TURNS
         parts = line.split("|")
         kind = parts[1] if len(parts) > 1 else ""
         if kind == "-weather" and len(parts) > 2 and parts[2] in _WEATHER_ITEM and "[upkeep]" not in parts:
@@ -225,8 +229,8 @@ class Tracker:
         elif self._last_move is not None:
             holder = self._occupant(self._last_move[0])
         item_id = self.data.tables["ITEM"].get(trace_to_c.key(item))
-        if holder is not None and item_id is not None and holder.sheet["item"] == item_id + 1:
-            raise lines.Stop(f"line:{kind} {parts[2]} {item}")
+        if holder is not None and item_id is not None and holder.sheet["item"] == item_id + 1 and not holder.item_used:
+            self._field_turns_next = FIELD_TURNS_EXTENDED
 
     def _turn_scoped_stop(self, boundary):
         """Stop at a PIVOT boundary while a single-turn feature of this turn is up and its bit is not supported."""
@@ -496,12 +500,12 @@ class Tracker:
         elif kind == EV["WEATHER"]:
             if not flags & FLAG["UPKEEP"]:
                 self._weather = detail
-                self._weather_turns = FIELD_TURNS if detail else 0
+                self._weather_turns = self._field_turns_next if detail else 0
         elif kind == EV["FIELD_START"]:
             if detail == 2:
                 self._trick_room = FIELD_TURNS
             else:
-                self._terrain, self._terrain_turns = (1 if detail == 1 else 2), FIELD_TURNS
+                self._terrain, self._terrain_turns = (1 if detail == 1 else 2), self._field_turns_next
         elif kind == EV["FIELD_END"]:
             if detail == 2:
                 self._trick_room = 0

@@ -1428,6 +1428,17 @@ static duoforge_status dfi_get_damage(dfi_run *r, uint32_t user, uint32_t target
     if ((bp_flags2 & DFI_MOVE_FLAG2_SLICING) != 0u && dfi_ability(r->b, a, DFI_ABILITY_SHARPNESS)) {
         ok = ok && dfi_chain_modify(bp_chain, 6144u, &bp_chain);
     }
+    /* Muscle Band and Wise Glasses (step G49, data/items.ts:4239-4251 and :7754-7766, onBasePowerPriority 16: after
+     * Sharpness's 19 and before the type boosters' 15): 4505/4096 for a Physical move (Muscle Band) or a Special move (Wise
+     * Glasses) of its holder. The item the holder has now (dfi_item_code); the move's category is the table's, which is the
+     * pinned one for every marked move (no marked move changes its category at the pin). */
+    {
+        const uint32_t held_now = dfi_item_code(r->b, a);
+        if ((held_now == 1u + DFI_ITEM_MUSCLEBAND && md->category == DFI_CATEGORY_PHYSICAL) ||
+            (held_now == 1u + DFI_ITEM_WISEGLASSES && md->category == DFI_CATEGORY_SPECIAL)) {
+            ok = ok && dfi_chain_modify(bp_chain, 4505u, &bp_chain);
+        }
+    }
     /* A type booster (the TYPE_BOOSTER family: Mystic Water, Miracle Seed
      * and the sixteen others, decision 0015): 4915/4096 for a move of its
      * type (onBasePowerPriority 15). */
@@ -4122,6 +4133,10 @@ static duoforge_status dfi_accuracy_check(dfi_run *r, uint32_t user, uint32_t ta
             (b->weather == DFI_WEATHER_SAND && dfi_ability(b, victim, DFI_ABILITY_SANDVEIL))) {
             return DUOFORGE_E_UNSUPPORTED;
         }
+        /* And the target's Bright Powder (step G49): it is the same ModifyAccuracy event, after the stages. */
+        if (dfi_holds(b, victim, DFI_ITEM_BRIGHTPOWDER)) {
+            return DUOFORGE_E_UNSUPPORTED;
+        }
         /* The rational comparison below is proved for the accuracy 90 only (combat/multiaccuracy.h, checkG33): a new
          * multiaccuracy move extends the proof before it runs. */
         if (!dfi_multiaccuracy_proven(base_accuracy)) {
@@ -4721,7 +4736,8 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
      * (priority -2, 4505/4096, data/items.ts:7713-7727) chain into one modifier that modifies a numeric accuracy (a move that
      * never misses is `true`: untouched). The two of priority -1 run in the order of their holders' speeds and commute (two
      * modifiers always do), Wide Lens always follows them, so the chain is the same in every order; it is computed per
-     * target, in the accuracy loop below. */
+     * target, in the accuracy loop below. The target's Bright Powder (step G49, priority -2 like Wide Lens) joins the
+     * chain there; the two of priority -2 are checked for order in that loop. */
     const bool acc_compound_eyes = base_accuracy != 0u && dfi_ability(r->b, m, DFI_ABILITY_COMPOUNDEYES);
     const bool acc_wide_lens = base_accuracy != 0u && dfi_holds(r->b, m, DFI_ITEM_WIDELENS);
     /* Struggle is typeless; Weather Ball turns Water in rain, Fire under sun
@@ -4928,8 +4944,35 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
                     (b->weather == DFI_WEATHER_SAND && dfi_ability(r->b, acc_target, DFI_ABILITY_SANDVEIL))) {
                     acc_ok = acc_ok && dfi_chain_modify(acc_chain, 3277u, &acc_chain);
                 }
-                if (acc_wide_lens) {
-                    acc_ok = acc_ok && dfi_chain_modify(acc_chain, 4505u, &acc_chain);
+                /* The priority -2 group (step G49): Wide Lens (the attacker, data/items.ts:7719-7726) and Bright Powder (the
+                 * target, data/items.ts:665-670, chainModify([3686, 4096]), a number only) run in one event at the same
+                 * priority, so the pin's order between them is the holders' Speed, and an exact tie draws. The chain rounds
+                 * at each step, so the two orders agree only for some prefixes: when they differ the order is not modelled
+                 * (E_UNSUPPORTED, never a guess). With no powder the chain is Wide Lens's alone. */
+                const bool acc_bright_powder = base_accuracy != 0u && dfi_holds(r->b, acc_target, DFI_ITEM_BRIGHTPOWDER);
+                if (acc_wide_lens && acc_bright_powder) {
+                    uint32_t wide_first = acc_chain;
+                    uint32_t powder_first = acc_chain;
+                    acc_ok = acc_ok && dfi_chain_modify(acc_chain, 4505u, &wide_first) &&
+                             dfi_chain_modify(wide_first, 3686u, &wide_first);
+                    acc_ok = acc_ok && dfi_chain_modify(acc_chain, 3686u, &powder_first) &&
+                             dfi_chain_modify(powder_first, 4505u, &powder_first);
+                    if (!acc_ok) {
+                        return DUOFORGE_E_INVARIANT;
+                    }
+                    /* The accuracy that the chain modifies is this move's own (base_accuracy, an integer): the orders agree
+                     * when they give the same modified accuracy, which is all the stages read. */
+                    if (dfi_modify(base_accuracy, wide_first) != dfi_modify(base_accuracy, powder_first)) {
+                        return DUOFORGE_E_UNSUPPORTED; /* the two orders round apart for this move: not modelled */
+                    }
+                    acc_chain = wide_first;
+                } else {
+                    if (acc_wide_lens) {
+                        acc_ok = acc_ok && dfi_chain_modify(acc_chain, 4505u, &acc_chain);
+                    }
+                    if (acc_bright_powder) {
+                        acc_ok = acc_ok && dfi_chain_modify(acc_chain, 3686u, &acc_chain);
+                    }
                 }
                 if (!acc_ok) {
                     return DUOFORGE_E_INVARIANT;
