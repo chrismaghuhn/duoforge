@@ -261,16 +261,20 @@ setup() {
 
     # The runtime environment: identical for every phase of both arms (the collector adds JAX_PLATFORMS=cpu,
     # as its manifest pins device cpu). Written to the log and to run-info.
-    unset JAX_PLATFORMS JAX_ENABLE_X64 XLA_PYTHON_CLIENT_MEM_FRACTION XLA_PYTHON_CLIENT_ALLOCATOR CUDA_VISIBLE_DEVICES
+    unset JAX_PLATFORMS JAX_ENABLE_X64 XLA_PYTHON_CLIENT_MEM_FRACTION CUDA_VISIBLE_DEVICES
     export DUOFORGE_LIBRARY=$LIB
     export PYTHONPATH=$REPO/python
     export PYTHONDONTWRITEBYTECODE=1
     export XLA_FLAGS=--xla_gpu_deterministic_ops=true
     export XLA_PYTHON_CLIENT_PREALLOCATE=false
+    # The platform allocator (cudaMalloc/cudaFree, no BFC pool): with the default pool and no preallocation, the
+    # memory distill's held-out evaluation grew stays reserved, and loading the next kernel (jit__step) fails with
+    # CUDA out of memory on an 8 GB card. Same for both arms (README_run.md).
+    export XLA_PYTHON_CLIENT_ALLOCATOR=platform
     export OMP_NUM_THREADS=4
     export OPENBLAS_NUM_THREADS=4
     RUNTIME_ENV=(DUOFORGE_LIBRARY PYTHONPATH PYTHONDONTWRITEBYTECODE XLA_FLAGS XLA_PYTHON_CLIENT_PREALLOCATE
-                 OMP_NUM_THREADS OPENBLAS_NUM_THREADS)
+                 XLA_PYTHON_CLIENT_ALLOCATOR OMP_NUM_THREADS OPENBLAS_NUM_THREADS)
     local name
     for name in "${RUNTIME_ENV[@]}"; do log "env $name=${!name}"; done
     log "affinity taskset -c $AFFINITY, workers $WORKERS"

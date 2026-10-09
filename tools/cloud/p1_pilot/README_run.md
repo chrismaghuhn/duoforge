@@ -43,7 +43,19 @@ also match the pinned hash `ef1abe65…961cb`.
   third-party modules `python/` imports. The versions are verified, and JAX's default device must be a GPU.
 - Sets the same runtime environment for every phase of both arms: `DUOFORGE_LIBRARY`, `PYTHONPATH=<repo>/python`,
   `PYTHONDONTWRITEBYTECODE=1`, `XLA_FLAGS=--xla_gpu_deterministic_ops=true`, `XLA_PYTHON_CLIENT_PREALLOCATE=false`,
-  `OMP_NUM_THREADS=4`, `OPENBLAS_NUM_THREADS=4`.
+  `XLA_PYTHON_CLIENT_ALLOCATOR=platform`, `OMP_NUM_THREADS=4`, `OPENBLAS_NUM_THREADS=4`.
+- Why `XLA_PYTHON_CLIENT_ALLOCATOR=platform`: with the default pool allocator and no preallocation, distill's held-out
+  evaluation (`_eval_sums`, 4096 rows) leaves its grown pool reserved, and loading the next kernel (`jit__step`)
+  fails with "Failed to load in-memory CUBIN ... CUDA_ERROR_OUT_OF_MEMORY" on the 8 GB 4060 Ti. Measured on
+  2026-10-09 (v2-M, encoder 4, 4096 rows, one fresh process each):
+  - eval then step, deterministic: fails;
+  - the same with `jax.clear_caches()` between: fails;
+  - step alone: passes;
+  - eval then step without deterministic ops: passes, but gives up determinism;
+  - eval then step with the platform allocator: passes, about 0.24 s per step slower.
+
+  The setting holds for every GPU phase of both arms (distill, the control's calibration and run, p1_eval), so the
+  arms' GPU-seconds stay comparable.
 - Unsets `JAX_PLATFORMS`, `XLA_PYTHON_CLIENT_MEM_FRACTION`, `XLA_PYTHON_CLIENT_ALLOCATOR`, `JAX_ENABLE_X64` and
   `CUDA_VISIBLE_DEVICES`.
 - Only the collector additionally gets `JAX_PLATFORMS=cpu`, because its manifest pins `device: cpu`.
