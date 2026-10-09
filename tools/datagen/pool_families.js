@@ -798,6 +798,62 @@ function checkG41(dex) {
     return 1;
 }
 
+// Step G47, the status and volatile cures: the pinned handlers of Synchronize, Oblivious, Lum Berry and Mental Herb, called on
+// stubs with their own arguments (the calls and log lines the engine reproduces: dfi_synchronize, dfi_lum_berry, dfi_mental_herb
+// and the Oblivious branches of turn.c). Synchronize passes psn, tox, brn and par on, never slp or frz, never from Toxic Spikes,
+// never to itself or with no source; Oblivious refuses Taunt and cuts Intimidate's Attack drop; Lum Berry eats a status or a
+// confusion; Mental Herb is used when a volatile it cures is there and removes them in the list's order.
+function checkG47(dex) {
+    const sync = dex.abilities.get('synchronize');
+    const target = {name: 'T', toString() { return 'T'; }};
+    const syncRun = (status, source, effect) => {
+        const log = [];
+        const b = battle(sync, {add: (...a) => log.push(a)});
+        const src = source === 'none' ? undefined : (source === 'self' ? target
+            : {name: 'S', trySetStatus: (st, tg, eff) => log.push(['trySetStatus', st.id, tg.name, eff])});
+        call(sync.onAfterSetStatus, b, [{id: status}, target, src, effect]);
+        return log;
+    };
+    const activate = ['-activate', target, 'ability: Synchronize'];
+    expect('Synchronize passes psn on to the source', syncRun('psn', 'S', undefined),
+        [activate, ['trySetStatus', 'psn', 'T', {status: 'psn', id: 'synchronize'}]]);
+    expect('Synchronize passes par on', syncRun('par', 'S', undefined)[1][1], 'par');
+    expect('Synchronize passes tox on', syncRun('tox', 'S', undefined)[1][1], 'tox');
+    expect('Synchronize passes brn on', syncRun('brn', 'S', undefined)[1][1], 'brn');
+    expect('Synchronize does not pass slp on', syncRun('slp', 'S', undefined), []);
+    expect('Synchronize does not pass frz on', syncRun('frz', 'S', undefined), []);
+    expect('Synchronize is not passed back to a source with no source', syncRun('psn', 'none', undefined), []);
+    expect('Synchronize does nothing for its own status', syncRun('psn', 'self', undefined), []);
+    expect('Synchronize does not answer Toxic Spikes', syncRun('psn', 'S', {id: 'toxicspikes'}), []);
+    const obl = dex.abilities.get('oblivious');
+    const holder = {name: 'H', toString() { return 'H'; }};
+    const oblLog = [];
+    const b1 = battle(obl, {add: (...a) => oblLog.push(a)});
+    const taunted = call(obl.onTryHit, b1, [holder, holder, {id: 'taunt'}]);
+    expect('Oblivious refuses Taunt, with the -immune line', [taunted, oblLog],
+        [null, [['-immune', holder, '[from] ability: Oblivious']]]);
+    oblLog.length = 0;
+    expect('Oblivious does not refuse a tackle', call(obl.onTryHit, b1, [holder, holder, {id: 'tackle'}]), undefined);
+    const boost = {atk: -1, spe: -1};
+    const intimidate = {name: 'Intimidate'};
+    call(obl.onTryBoost, b1, [boost, holder, holder, intimidate]);
+    expect('Oblivious cuts the Attack drop of Intimidate, with -fail', [boost, oblLog],
+        [{spe: -1}, [['-fail', holder, 'unboost', 'atk', '[from] ability: Oblivious', '[of] H']]]);
+    const herbLog = [];
+    const holding = {status: '', volatiles: {taunt: {}}, useItem: () => { herbLog.push('useItem'); return true; },
+        removeVolatile: (id) => herbLog.push('remove:' + id)};
+    call(dex.items.get('mentalherb').onUpdate, battle(dex.items.get('mentalherb')), [holding]);
+    expect('Mental Herb is used and removes its volatiles in the list order', herbLog,
+        ['useItem', 'remove:attract', 'remove:taunt', 'remove:encore', 'remove:torment', 'remove:disable', 'remove:healblock']);
+    const lumLog = [];
+    const lum = dex.items.get('lumberry');
+    call(lum.onUpdate, battle(lum), [{status: '', volatiles: {}, eatItem: () => lumLog.push('eat')}]);
+    call(lum.onUpdate, battle(lum), [{status: 'par', volatiles: {}, eatItem: () => lumLog.push('eat')}]);
+    call(lum.onUpdate, battle(lum), [{status: '', volatiles: {confusion: {}}, eatItem: () => lumLog.push('eat')}]);
+    expect('Lum Berry is eaten for a status or a confusion, not otherwise', lumLog, ['eat', 'eat']);
+    return 1;
+}
+
 // Step G33, the multi-hit batch and Mirror Armor: the pinned facts that the engine hard-codes (decision 0015, item 5y). The
 // four moves' hit counts and Triple Axel's rising power; Mirror Armor's handler against stubs: it deletes every drop of
 // another Pokemon that is still one (a stat at -6 has none), shows its ability line and gives the drop to a source that
@@ -1375,12 +1431,12 @@ function checkFormes(dex, validator, rows, moves, abilities) {
 // The UNMODELED markers of gen_closure.py --pool, re-derived from the pinned data in this file's own words: the
 // special column of a move, the handler column of an item and of an ability, and the lists of unmodelled features.
 // implemented in the turn code by id (G4: Focus Sash, Rock Head; G12: Floettite, Flower Veil, Fairy Aura)
-const ENGINE_ROWS = {items: ['focussash', 'floettite', 'psychicseed', 'electricseed', 'mistyseed', 'expertbelt', 'ejectbutton', 'widelens', 'muscleband', 'wiseglasses', 'brightpowder', 'redcard'],
+const ENGINE_ROWS = {items: ['focussash', 'floettite', 'psychicseed', 'electricseed', 'mistyseed', 'expertbelt', 'ejectbutton', 'widelens', 'muscleband', 'wiseglasses', 'brightpowder', 'redcard', 'lumberry', 'mentalherb'],
     abilities: ['rockhead', 'flowerveil', 'fairyaura', 'roughskin', 'poisontouch', 'thermalexchange', 'stickyhold', 'trace',
         'levitate', 'sandrush', 'swiftswim', 'slushrush', 'chlorophyll', 'innerfocus', 'liquidvoice',
         'flamebody', 'clearbody', 'hospitality', 'overcoat', 'soundproof', 'unnerve', 'speedboost',
         'compoundeyes', 'ironfist', 'sharpness', 'solidrock', 'technician', 'multiscale', 'galewings', 'raindish', 'friendguard', 'cursedbody', 'mirrorarmor', 'auraguard', 'hypercutter', 'scrappy', 'infiltrator', 'queenlymajesty', 'damp', 'sturdy', 'snowcloak', 'sandveil', 'static', 'justified', 'limber', 'solarpower', 'regenerator', 'toxicdebris', 'shadowtag', 'suctioncups', 'guarddog',
-        'steadfast', 'weakarmor', 'telepathy', 'voltabsorb', 'punkrock', 'moxie']};
+        'steadfast', 'weakarmor', 'telepathy', 'voltabsorb', 'punkrock', 'moxie', 'synchronize', 'oblivious']};
 const ENGINE_TARGETS = new Set(['normal', 'any', 'adjacentAlly', 'adjacentFoe', 'self', 'allAdjacentFoes', 'allySide', 'all',
     'randomNormal', 'allAdjacent', 'allies', 'foeSide']); // foeSide: step G37 (the four hazards)
 // The fields of a move that the tables model (gen_closure.py DATA_KEYS and IGNORED_KEYS), nothing else.
@@ -1757,6 +1813,7 @@ function main() {
     checkG32(dex);
     checkG33(dex);
     checkG41(dex);
+    checkG47(dex);
     checkG44(dex);
     checkG54(dex);
     checkG22(dex, formeRowsList, new Set(definedIds(headers, 'ITEM').values()), new Set(abilityIds.values()));

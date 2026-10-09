@@ -472,9 +472,19 @@ def drop_reason(d, state, after=None, log=None):
                     if index is not None and side['pokemon'][index]['status'] == status:
                         raise ConversionError('thermal-exchange-burn' if ability == 'thermalexchange' else 'limber-paralysis',
                                               'trace_to_c: a %s holder has %s: %s' % (ability, status, slot), detail=slot)
+        # Oblivious's onUpdate (step G47, data/abilities.ts:3008-3040) removes a taunt of its holder (and an attract, which no
+        # volatile of the engine is). A taunted Oblivious holder is refused by the engine (dfi_trace), so an Oblivious holder that
+        # is not taunted does nothing here: it is not a holder.
+        for g in group:
+            if 'oblivious' in g.split(':', 3)[3].split('+'):
+                slot = g.split(':')[1]
+                side = placed['sides'][int(slot[1]) - 1]
+                index = side['active'][' ab'.index(slot[2]) - 1]
+                if index is not None and 'taunt' in side['pokemon'][index]['volatiles']:
+                    raise ConversionError('oblivious-taunt', 'trace_to_c: a taunted Oblivious holder: %s' % slot, detail=slot)
         # Trace's onUpdate (step AC1) returns unless its holder is still seeking after an onStart that found no foe to
         # copy, which the engine refuses (E_UNSUPPORTED): until then it does nothing either, so it is not a holder.
-        inert = {'thermalexchange', 'trace', 'limber'}
+        inert = {'thermalexchange', 'trace', 'limber', 'oblivious'}
         # Rain Dish's onWeather (step G35, data/abilities.ts:3759) heals only in rain (RainDance; Primordial Sea is not in the
         # format): under any other weather its holder has the handler and it does nothing, so it is not a holder. The weather is
         # the one of the upkeep, which is the one the step ends with (after) or, without it, the one it started with. Solar
@@ -662,7 +672,8 @@ def drop_reason(d, state, after=None, log=None):
 
 
 # The items and abilities whose each-event handlers (Update, TerrainChange, Weather: Rain Dish, step G35) act on their holder alone.
-EACH_HANDLERS = frozenset(('sitrusberry', 'grassyseed', 'psychicseed', 'electricseed', 'mistyseed', 'raindish', 'solarpower', 'limber'))
+EACH_HANDLERS = frozenset(('sitrusberry', 'grassyseed', 'psychicseed', 'electricseed', 'mistyseed', 'raindish', 'solarpower', 'limber',
+                           'lumberry', 'mentalherb'))
 
 
 def site_of(d):

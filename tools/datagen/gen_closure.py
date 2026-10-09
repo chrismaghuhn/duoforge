@@ -1715,6 +1715,39 @@ G45_ABILITY_FACTS = (
     ('moxie', ("onSourceAfterFaint(length, target, source, effect) { if (effect && effect.effectType === 'Move') { "
                    "this.boost({ atk: length }, source); } },", 'flags: {},')),
 )
+# Step G47, the status and volatile cures: Synchronize and Oblivious (abilities) and Lum Berry and Mental Herb (items) are engine
+# rows read by id (src/combat/turn.c dfi_synchronize, dfi_lum_berry, dfi_mental_herb; Oblivious in dfi_try_status' TryHit chain,
+# the Intimidate guard and dfi_trace). Their texts, whitespace aside, are the facts the engine hard-codes; the Champions mod
+# has no entry for any of the four (check_g34_facts). The Champions Encore override (moves.ts:330) is a move, checked by hand.
+# Each fact is a balanced statement or block of the pinned entry (the entry's own parser counts the braces), without the
+# comment lines between the statements that the pin has.
+G47_ABILITY_FACTS = (
+    ('synchronize', ('if (!source || source === target) return;',
+                     "if (effect && effect.id === 'toxicspikes') return;",
+                     "if (status.id === 'slp' || status.id === 'frz') return;",
+                     "this.add('-activate', target, 'ability: Synchronize');",
+                     "source.trySetStatus(status, target, { status: status.id, id: 'synchronize' } as Effect);",
+                     'flags: {},')),
+    ('oblivious', ("if (pokemon.volatiles['attract']) { this.add('-activate', pokemon, 'ability: Oblivious'); "
+                   "pokemon.removeVolatile('attract'); this.add('-end', pokemon, 'move: Attract', '[from] ability: Oblivious'); }",
+                   "pokemon.removeVolatile('taunt');",
+                   "if (type === 'attract') return false;",
+                   "if (move.id === 'attract' || move.id === 'captivate' || move.id === 'taunt') { "
+                   "this.add('-immune', pokemon, '[from] ability: Oblivious'); return null; }",
+                   "if (effect.name === 'Intimidate' && boost.atk) { delete boost.atk; "
+                   "this.add('-fail', target, 'unboost', 'atk', '[from] ability: Oblivious', `[of] ${target}`); }",
+                   'flags: { breakable: 1 },')),
+)
+G47_ITEM_FACTS = (
+    ('lumberry', ('onAfterSetStatusPriority: -1,',
+                  'onAfterSetStatus(status, pokemon) { pokemon.eatItem(); },',
+                  "onUpdate(pokemon) { if (pokemon.status || pokemon.volatiles['confusion']) { pokemon.eatItem(); } },",
+                  "onEat(pokemon) { pokemon.cureStatus(); pokemon.removeVolatile('confusion'); },")),
+    ('mentalherb', ("const conditions = ['attract', 'taunt', 'encore', 'torment', 'disable', 'healblock'];",
+                    'if (!pokemon.useItem()) return;',
+                    'pokemon.removeVolatile(secondCondition);',
+                    "this.add('-end', pokemon, 'move: Attract', '[from] item: Mental Herb');")),
+)
 G34_ITEM_FACTS = (
     ('widelens', ('onSourceModifyAccuracyPriority: -2,',
                   "onSourceModifyAccuracy(accuracy) { if (typeof accuracy === 'number') { return this.chainModify([4505, 4096]); } },")),
@@ -2339,7 +2372,7 @@ HANDLER_IDS = ['NONE', 'UNMODELED']
 # still has the UNMODELED handler fails duoforge.data.pool_tables. G4: Focus Sash, Rock Head. G12: Floettite (the Mega
 # Stone of Floette-Eternal), Flower Veil and Fairy Aura. G14: Rough Skin, Poison Touch and Thermal Exchange. G16: Sticky Hold (Knock Off reads it by id). AC1: Trace (the entry copy of a foe's ability). G15: Psychic Seed (Grassy Seed's rule for the other terrain). G22: Sand Rush, Swift Swim, Slush Rush and Chlorophyll (the doubled Speed in their weather, tools/datagen/pool_families.js ENGINE_ORDER), Sand Rush's immunity to Sandstorm, Inner Focus (no flinch, no Intimidate drop) and Liquid Voice (a sound move becomes Water). G23-C: Levitate (isGrounded and the Ground immunity). G49: Muscle Band, Wise Glasses (base power by category) and Bright Powder (the target's accuracy).
 ENGINE_ROWS = {'items': ['focussash', 'floettite', 'psychicseed', 'electricseed', 'mistyseed', 'expertbelt', 'ejectbutton',
-                         'widelens', 'muscleband', 'wiseglasses', 'brightpowder', 'redcard'],
+                         'widelens', 'muscleband', 'wiseglasses', 'brightpowder', 'redcard', 'lumberry', 'mentalherb'],
                'abilities': ['rockhead', 'flowerveil', 'fairyaura', 'roughskin', 'poisontouch', 'thermalexchange',
                              'stickyhold', 'trace', 'levitate', 'sandrush', 'swiftswim', 'slushrush', 'chlorophyll',
                              'innerfocus', 'liquidvoice', 'flamebody', 'clearbody', 'hospitality', 'overcoat',
@@ -2358,7 +2391,7 @@ ENGINE_ROWS = {'items': ['focussash', 'floettite', 'psychicseed', 'electricseed'
                              'limber',
                              'solarpower',
                              'regenerator', 'toxicdebris', 'shadowtag', 'suctioncups', 'guarddog',
-                             'steadfast', 'weakarmor', 'telepathy', 'voltabsorb', 'punkrock', 'moxie']}
+                             'steadfast', 'weakarmor', 'telepathy', 'voltabsorb', 'punkrock', 'moxie', 'synchronize', 'oblivious']}
 # The moves of the whole pool that the turn code pivots with a switch flag of their own (dfi_pivot_moves,
 # src/state/closure_member.c) beyond Flip Turn and U-turn, which are rows of the steps. Empty: Volt Switch comes with the
 # step that gives it a flag value, and adds its id here.
@@ -3010,8 +3043,8 @@ G46_ITEM_FACTS = (
 def check_g34_facts(abil_ts, champ_abil, items_ts, champ_items):
     """Steps G34, G35, Mega batch 2 and G39: every fact of G34_ABILITY_FACTS, G35_ABILITY_FACTS, MEGA2_ABILITY_FACTS, G39_ABILITY_FACTS and G34_ITEM_FACTS is in the pinned entry, whitespace aside, and the
     Champions mod has no entry of its own for it (an override would change what the engine reads)."""
-    for kind, facts_by_id, src, champ in (('ability', G34_ABILITY_FACTS + G35_ABILITY_FACTS + MEGA2_ABILITY_FACTS + G39_ABILITY_FACTS + G41_ABILITY_FACTS + G45_ABILITY_FACTS + G46_ABILITY_FACTS, abil_ts, champ_abil),
-                                          ('item', G34_ITEM_FACTS + G46_ITEM_FACTS, items_ts, champ_items)):
+    for kind, facts_by_id, src, champ in (('ability', G34_ABILITY_FACTS + G35_ABILITY_FACTS + MEGA2_ABILITY_FACTS + G39_ABILITY_FACTS + G41_ABILITY_FACTS + G45_ABILITY_FACTS + G46_ABILITY_FACTS + G47_ABILITY_FACTS, abil_ts, champ_abil),
+                                          ('item', G34_ITEM_FACTS + G46_ITEM_FACTS + G47_ITEM_FACTS, items_ts, champ_items)):
         for rid, facts in facts_by_id:
             e = src.entry(rid)
             if e is None:
