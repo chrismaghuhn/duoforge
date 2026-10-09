@@ -329,9 +329,15 @@ function enumerate(side) {
 // ---------------------------------------------------------------- the side's answer
 
 // Showdown's verdict on a text, with the choice cleared again: the trial changes nothing that stays.
+// A revive (sim/side.ts chooseSwitch, its Revival Blessing branch) clears the switch flag of the Pokemon it is chosen for,
+// so the switch flags are kept too: a trial that the revive accepts must leave every later trial the same request.
 function trial(side, text) {
+    const flags = side.pokemon.map((p) => p.switchFlag);
     const accepted = side.choose(text);
     side.clearChoice();
+    side.pokemon.forEach((p, i) => {
+        p.switchFlag = flags[i];
+    });
     return accepted;
 }
 
