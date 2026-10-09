@@ -278,5 +278,141 @@ class LossTest(unittest.TestCase):
                                float(aux["ref_kl"]), places=6)
 
 
+def _small_data(targets=16, held_targets=4, policy=24, value_only=8, held_policy=6):
+    """DistillData of real observations (repeated), with a known layout; held rows carry a value target of 1e6, so
+    a held row in a training batch would show in the step's value loss."""
+    from test_learn_v2 import _scenes
+    from duoforge_learn import distill_data
+    _, turn = _scenes()
+    obs, slots, mask = turn
+    kinds = (["t"] * targets + ["p"] * policy + ["v"] * value_only + ["T"] * held_targets + ["P"] * held_policy)
+    n = len(kinds)
+    pick = np.arange(n) % 7
+    flat = mask[pick].reshape(n, -1)
+    ids = np.full((n, 8), -1, np.int64)
+    probs = np.zeros((n, 8), np.float32)
+    for r, k in enumerate(kinds):
+        if k in "tT":
+            legal = np.flatnonzero(flat[r])[:2]
+            ids[r, :len(legal)] = legal
+            probs[r, :len(legal)] = 1.0 / len(legal)
+    held = np.array([k in "TP" for k in kinds])
+    return distill_data.DistillData(
+        obs=obs[pick], slots=slots[pick], mask=mask[pick], team_mask=np.zeros((n, 360), bool),
+        is_team=np.zeros(n, bool), target_ids=ids, target_probs=probs,
+        has_target=np.array([k in "tT" for k in kinds]), policy_row=np.array([k in "pP" for k in kinds]),
+        value_row=np.ones(n, bool),
+        value_target=np.where(held, 1e6, np.linspace(-.5, .5, n)).astype(np.float32),
+        game_id=np.arange(n, dtype=np.int64), held_out=held)
+
+
+class FitTest(unittest.TestCase):
+    """Task 4: keyed batches, epochs, drift guards and the best epoch (the row counts patched small)."""
+
+    @classmethod
+    def setUpClass(cls):
+        import jax
+        from duoforge_learn import policy
+        cls.model = policy.make(policy.v2_config("S"))
+        cls.params = cls.model.init(jax.random.PRNGKey(4))
+        cls.config = {"format": 2}
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory(prefix="duoforge-distill-")
+        self.out = Path(self.tmp.name)
+
+    def tearDown(self):
+        self.tmp.cleanup()
+
+    def _fit(self, data, **patches):
+        from unittest import mock
+        from duoforge_learn import distill
+        consts = {"TARGET_ROWS": 8, "NON_TARGET_ROWS": 24} | patches
+        with mock.patch.multiple(distill, **consts), \
+                mock.patch.object(distill, "_save", lambda path, params, config: Path(path).write_text("x")):
+            return distill.fit(data, self.model, self.params, self.params, self.config, self.out, seed=3)
+
+    def _log(self):
+        import json
+        return [json.loads(line) for line in (self.out / "log.jsonl").read_text().splitlines()]
+
+    def test_batch_plan_covers_each_target_once_and_streams_non_targets(self):
+        from unittest import mock
+        from duoforge_learn import distill
+        with mock.patch.multiple(distill, TARGET_ROWS=16, NON_TARGET_ROWS=48):
+            plan = distill.BatchPlan(5)
+            idx = np.arange(10, 40)
+            one, two = plan.targets(1, idx), plan.targets(2, idx)
+            self.assertEqual(one.shape, (2, 16))
+            for e in (one, two):
+                got = e[e >= 0]
+                self.assertEqual(sorted(got.tolist()), idx.tolist())
+                self.assertEqual((e < 0).sum(), 2)
+            self.assertNotEqual(one.tolist(), two.tolist())
+            np.testing.assert_array_equal(plan.targets(1, idx), one)
+            non = np.arange(100, 130)
+            first, cursor = plan.non_targets((0, 0), non, 2)
+            second, _ = plan.non_targets(cursor, non, 2)
+            whole, _ = plan.non_targets((0, 0), non, 4)
+            np.testing.assert_array_equal(np.concatenate([first, second]), whole)
+            stream = whole.reshape(-1)
+            for lap in range(len(stream) // 30):
+                self.assertEqual(sorted(stream[30 * lap:30 * (lap + 1)].tolist()), non.tolist())
+
+    def test_fit_stops_and_keeps_best(self):
+        from duoforge_learn import distill
+        data = _small_data()
+        # (d) every epoch counts as a gain: four epochs of two steps each.
+        result = self._fit(data, MIN_GAIN=-1.0)
+        self.assertEqual((result.stop_reason, result.steps, len(result.epochs)), ("max_epochs", 8, 5))
+        steps = [r for r in self._log() if "step" in r]
+        self.assertEqual(len(steps), 8)
+        self.assertLess(max(r["value_loss"] for r in steps), 100.0)  # no held row ever trained on
+        self.assertTrue(all(r["n_target"] == 8 for r in steps))
+        self.assertEqual(self._log()[-1], {"stop": "max_epochs", "best_epoch": result.best_epoch, "steps": 8})
+        held = [r for r in self._log() if "held_teacher_kl" in r][-1]
+        self.assertEqual(held["epoch"], 4)
+        self.assertGreater(held["held_value_loss"], 1e10)  # the held rows are evaluated
+        self.assertTrue((self.out / "params-best.npz").exists())
+        self.tmp.cleanup()
+        self.tmp = tempfile.TemporaryDirectory(prefix="duoforge-distill-")
+        self.out = Path(self.tmp.name)
+        # (a) the reference KL guard: best stays epoch 0, the init, marked no_gain.
+        result = self._fit(data, REF_KL_MAX=0.0)
+        self.assertEqual((result.stop_reason, result.best_epoch, len(result.epochs)), ("ref_kl", 0, 2))
+        self.tmp.cleanup()
+        self.tmp = tempfile.TemporaryDirectory(prefix="duoforge-distill-")
+        self.out = Path(self.tmp.name)
+        # (b) no gain of MIN_GAIN for PATIENCE epochs.
+        result = self._fit(data, MIN_GAIN=1e9)
+        self.assertEqual((result.stop_reason, result.best_epoch, len(result.epochs)), ("no_gain", 0, 3))
+        self.tmp.cleanup()
+        self.tmp = tempfile.TemporaryDirectory(prefix="duoforge-distill-")
+        self.out = Path(self.tmp.name)
+        # (e) the step cap inside an epoch: 2 steps per epoch, stop at step 3, evaluated as an epoch end.
+        result = self._fit(data, MAX_STEPS=3, MIN_GAIN=-1.0)
+        self.assertEqual((result.stop_reason, result.steps, len(result.epochs)), ("max_steps", 3, 3))
+        self.tmp.cleanup()
+        self.tmp = tempfile.TemporaryDirectory(prefix="duoforge-distill-")
+        self.out = Path(self.tmp.name)
+        # (c) a nonfinite value target stops the fit; no epoch after it is kept.
+        bad = dataclasses.replace(data, value_target=data.value_target.copy())
+        bad.value_target[0] = np.nan
+        result = self._fit(bad, MIN_GAIN=-1.0)
+        self.assertEqual((result.stop_reason, result.best_epoch), ("nonfinite", 0))
+        self.assertEqual(distill.MAX_EPOCHS, 4)
+
+    def test_held_metrics_are_weighted_over_chunks(self):
+        from unittest import mock
+        from duoforge_learn import distill
+        data = _small_data()
+        rows = np.flatnonzero(data.held_out)
+        one = distill.evaluate_rows(data, rows, self.model, self.params, self.params)
+        with mock.patch.object(distill, "EVAL_ROWS", 3):  # 10 held rows: chunks of 3, the last one padded
+            chunked = distill.evaluate_rows(data, rows, self.model, self.params, self.params)
+        for k in one:
+            self.assertLess(abs(chunked[k] - one[k]), 1e-5 * max(1.0, abs(one[k])), k)
+
+
 if __name__ == "__main__":
     unittest.main()
