@@ -180,7 +180,7 @@ static duoforge_battle *replay(df_test *t, const duoforge_context *ctx, const ch
 /* The state that the swaps of the recorded battles leave, checked on the replayed battles (the protocol shows no end of a volatile
  * and no copy that is cleared, so the conformance runner cannot see these):
  *   - flash fire: Gardevoir (the user, flat 0) holds the flashfire volatile after Bitter Blade's hit, and the swap ends it;
- *   - swap back: Liepard (flat 1) holds Contrary after the first swap and its own Unburden after the second, so its copy
+ *   - swap back: Liepard (flat 1) holds Pressure (Gardevoir's entry copy) after the first swap and its own Unburden after the second, so its copy
  *     (ability_now) is cleared, as the sheet is the ability it has again. */
 static void check_swap_state(df_test *t, const duoforge_context *ctx)
 {
@@ -197,7 +197,7 @@ static void check_swap_state(df_test *t, const duoforge_context *ctx)
     duoforge_battle *once = replay(t, ctx, "g70_skillswap_swap_back", 3u);
     if (DF_CHECK(t, once != NULL)) {
         const uint32_t occ = once->sides[0].positions[1].occupant;
-        DF_CHECK_EQ_U64(t, once->tail.sides[0].ability_now[occ], (uint64_t)DFI_ABILITY_CONTRARY + 1u);
+        DF_CHECK_EQ_U64(t, once->tail.sides[0].ability_now[occ], (uint64_t)DFI_ABILITY_PRESSURE + 1u);
         duoforge_battle_destroy(once);
     }
     duoforge_battle *back = replay(t, ctx, "g70_skillswap_swap_back", 4u);

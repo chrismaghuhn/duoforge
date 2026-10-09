@@ -1,9 +1,9 @@
 {
  "harness": 14,
  "pin": "b2cb775b0616115b775534eaeff50300e1fc81fc",
- "spec": "g70_skillswap_flashfire_end.json",
+ "spec": "g70_skillswap_swap_back.json",
  "format": "gen9championsvgc2026regmc",
- "seed": "sodium,0000000000000000000000000000000000000000000000000000000000006406",
+ "seed": "sodium,0000000000000000000000000000000000000000000000000000000000006409",
  "start": {
   "log": [
    "|gametype|doubles",
@@ -15,17 +15,17 @@
    "|rule|Item Clause: Limit 1 of each item",
    "|clearpoke",
    "|poke|p1|Gardevoir, L50, F|",
-   "|poke|p1|Incineroar, L50, M|",
-   "|poke|p1|Espeon, L50, F|",
+   "|poke|p1|Liepard, L50, F|",
+   "|poke|p1|Gyarados, L50, M|",
    "|poke|p1|Gengar, L50, F|",
    "|poke|p1|Rillaboom, L50, M|",
    "|poke|p1|Pelipper, L50, M|",
-   "|poke|p2|Ceruledge, L50, M|",
    "|poke|p2|Malamar, L50, M|",
+   "|poke|p2|Spiritomb, L50, M|",
    "|poke|p2|Kingambit, L50, M|",
    "|poke|p2|Chimecho, L50, F|",
-   "|poke|p2|Spiritomb, L50, M|",
-   "|poke|p2|Gyarados, L50, M|",
+   "|poke|p2|Incineroar, L50, M|",
+   "|poke|p2|Ceruledge, L50, M|",
    "|teampreview|4",
    "|split|p1",
    "|uhtml|otsrequest|<button name=\"send\" value=\"/acceptopenteamsheets\" class=\"button\" style=\"margin-right: 10px;\"><strong>Accept Open Team Sheets</strong></button><button name=\"send\" value=\"/rejectopenteamsheets\" class=\"button\" style=\"margin-top: 10px\"><strong>Deny Open Team Sheets</strong></button>",
@@ -88,8 +88,38 @@
        "locked": null
       },
       {
-       "species": "Incineroar",
-       "set_species": "Incineroar",
+       "species": "Liepard",
+       "set_species": "Liepard",
+       "mega": 0,
+       "switch_flag": 0,
+       "hp": 171,
+       "maxhp": 171,
+       "item": "focussash",
+       "status": "",
+       "status_time": 0,
+       "confusion": 0,
+       "fainted": false,
+       "boosts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "pp": [
+        12,
+        20,
+        20,
+        12
+       ],
+       "volatiles": [],
+       "locked": null
+      },
+      {
+       "species": "Gyarados",
+       "set_species": "Gyarados",
        "mega": 0,
        "switch_flag": 0,
        "hp": 202,
@@ -109,38 +139,9 @@
         0
        ],
        "pp": [
-        12,
-        16,
-        12
-       ],
-       "volatiles": [],
-       "locked": null
-      },
-      {
-       "species": "Espeon",
-       "set_species": "Espeon",
-       "mega": 0,
-       "switch_flag": 0,
-       "hp": 172,
-       "maxhp": 172,
-       "item": "",
-       "status": "",
-       "status_time": 0,
-       "confusion": 0,
-       "fainted": false,
-       "boosts": [
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0
-       ],
-       "pp": [
         20,
         12,
-        20
+        16
        ],
        "volatiles": [],
        "locked": null
@@ -248,35 +249,6 @@
      ],
      "pokemon": [
       {
-       "species": "Ceruledge",
-       "set_species": "Ceruledge",
-       "mega": 0,
-       "switch_flag": 0,
-       "hp": 182,
-       "maxhp": 182,
-       "item": "",
-       "status": "",
-       "status_time": 0,
-       "confusion": 0,
-       "fainted": false,
-       "boosts": [
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0
-       ],
-       "pp": [
-        8,
-        12,
-        20
-       ],
-       "volatiles": [],
-       "locked": null
-      },
-      {
        "species": "Malamar",
        "set_species": "Malamar",
        "mega": 0,
@@ -302,6 +274,35 @@
         16,
         20,
         20
+       ],
+       "volatiles": [],
+       "locked": null
+      },
+      {
+       "species": "Spiritomb",
+       "set_species": "Spiritomb",
+       "mega": 0,
+       "switch_flag": 0,
+       "hp": 157,
+       "maxhp": 157,
+       "item": "",
+       "status": "",
+       "status_time": 0,
+       "confusion": 0,
+       "fainted": false,
+       "boosts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "pp": [
+        8,
+        16,
+        16
        ],
        "volatiles": [],
        "locked": null
@@ -365,37 +366,8 @@
        "locked": null
       },
       {
-       "species": "Spiritomb",
-       "set_species": "Spiritomb",
-       "mega": 0,
-       "switch_flag": 0,
-       "hp": 157,
-       "maxhp": 157,
-       "item": "",
-       "status": "",
-       "status_time": 0,
-       "confusion": 0,
-       "fainted": false,
-       "boosts": [
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0
-       ],
-       "pp": [
-        8,
-        16,
-        16
-       ],
-       "volatiles": [],
-       "locked": null
-      },
-      {
-       "species": "Gyarados",
-       "set_species": "Gyarados",
+       "species": "Incineroar",
+       "set_species": "Incineroar",
        "mega": 0,
        "switch_flag": 0,
        "hp": 202,
@@ -415,9 +387,38 @@
         0
        ],
        "pp": [
-        20,
         12,
-        16
+        16,
+        12
+       ],
+       "volatiles": [],
+       "locked": null
+      },
+      {
+       "species": "Ceruledge",
+       "set_species": "Ceruledge",
+       "mega": 0,
+       "switch_flag": 0,
+       "hp": 182,
+       "maxhp": 182,
+       "item": "",
+       "status": "",
+       "status_time": 0,
+       "confusion": 0,
+       "fainted": false,
+       "boosts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "pp": [
+        8,
+        12,
+        20
        ],
        "volatiles": [],
        "locked": null
@@ -439,7 +440,7 @@
      "context": "Update",
      "lo": 0,
      "hi": 2,
-     "value": 0
+     "value": 1
     }
    ],
    "log": [
@@ -456,18 +457,17 @@
     "|switch|p1a: Gardevoir|Gardevoir, L50, F|175/175",
     "|switch|p1a: Gardevoir|Gardevoir, L50, F|100/100",
     "|split|p1",
-    "|switch|p1b: Incineroar|Incineroar, L50, M|202/202",
-    "|switch|p1b: Incineroar|Incineroar, L50, M|100/100",
+    "|switch|p1b: Liepard|Liepard, L50, F|171/171",
+    "|switch|p1b: Liepard|Liepard, L50, F|100/100",
     "|split|p2",
-    "|switch|p2a: Ceruledge|Ceruledge, L50, M|182/182",
-    "|switch|p2a: Ceruledge|Ceruledge, L50, M|100/100",
+    "|switch|p2a: Malamar|Malamar, L50, M|193/193",
+    "|switch|p2a: Malamar|Malamar, L50, M|100/100",
     "|split|p2",
-    "|switch|p2b: Malamar|Malamar, L50, M|193/193",
-    "|switch|p2b: Malamar|Malamar, L50, M|100/100",
-    "|-ability|p1a: Gardevoir|Flash Fire|Trace|[from] ability: Trace|[of] p2a: Ceruledge",
-    "|-ability|p1b: Incineroar|Intimidate|boost",
-    "|-unboost|p2a: Ceruledge|atk|1",
-    "|-boost|p2b: Malamar|atk|1",
+    "|switch|p2b: Spiritomb|Spiritomb, L50, M|157/157",
+    "|switch|p2b: Spiritomb|Spiritomb, L50, M|100/100",
+    "|-ability|p1a: Gardevoir|Pressure|Trace|[from] ability: Trace|[of] p2b: Spiritomb",
+    "|-ability|p1a: Gardevoir|Pressure",
+    "|-ability|p2b: Spiritomb|Pressure",
     "|turn|1"
    ],
    "state": {
@@ -495,6 +495,7 @@
         1
        ],
        [
+        1,
         1,
         1,
         1
@@ -536,8 +537,38 @@
         "locked": null
        },
        {
-        "species": "Incineroar",
-        "set_species": "Incineroar",
+        "species": "Liepard",
+        "set_species": "Liepard",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 171,
+        "maxhp": 171,
+        "item": "focussash",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         20,
+         20,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Gyarados",
+        "set_species": "Gyarados",
         "mega": 0,
         "switch_flag": 0,
         "hp": 202,
@@ -557,38 +588,9 @@
          0
         ],
         "pp": [
-         12,
-         16,
-         12
-        ],
-        "volatiles": [],
-        "locked": null
-       },
-       {
-        "species": "Espeon",
-        "set_species": "Espeon",
-        "mega": 0,
-        "switch_flag": 0,
-        "hp": 172,
-        "maxhp": 172,
-        "item": "",
-        "status": "",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": false,
-        "boosts": [
-         0,
-         0,
-         0,
-         0,
-         0,
-         0,
-         0
-        ],
-        "pp": [
          20,
          12,
-         20
+         16
         ],
         "volatiles": [],
         "locked": null
@@ -635,10 +637,10 @@
        [
         1,
         1,
+        1,
         1
        ],
        [
-        1,
         1,
         1,
         1
@@ -649,35 +651,6 @@
        1
       ],
       "pokemon": [
-       {
-        "species": "Ceruledge",
-        "set_species": "Ceruledge",
-        "mega": 0,
-        "switch_flag": 0,
-        "hp": 182,
-        "maxhp": 182,
-        "item": "",
-        "status": "",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": false,
-        "boosts": [
-         -1,
-         0,
-         0,
-         0,
-         0,
-         0,
-         0
-        ],
-        "pp": [
-         8,
-         12,
-         20
-        ],
-        "volatiles": [],
-        "locked": null
-       },
        {
         "species": "Malamar",
         "set_species": "Malamar",
@@ -691,7 +664,7 @@
         "confusion": 0,
         "fainted": false,
         "boosts": [
-         1,
+         0,
          0,
          0,
          0,
@@ -704,6 +677,35 @@
          16,
          20,
          20
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Spiritomb",
+        "set_species": "Spiritomb",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 157,
+        "maxhp": 157,
+        "item": "",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         16,
+         16
         ],
         "volatiles": [],
         "locked": null
@@ -773,44 +775,34 @@
   },
   {
    "input": {
-    "p1": "move 2, move 2 1",
-    "p2": "move 2 1, move 1 1"
+    "p1": "move 2, move 3",
+    "p2": "move 3, move 1"
    },
    "draws": [
     {
-     "site": "ACCURACY",
-     "context": "",
+     "site": "SPEED_TIE",
+     "context": "field:Residual",
      "lo": 0,
-     "hi": 100,
-     "value": 29
-    },
-    {
-     "site": "CRIT",
-     "context": "",
-     "lo": 0,
-     "hi": 24,
-     "value": 15
-    },
-    {
-     "site": "DAMAGE_ROLL",
-     "context": "",
-     "lo": 0,
-     "hi": 16,
-     "value": 14
+     "hi": 2,
+     "value": 0,
+     "group": [
+      "H:protect:p2b:end",
+      "H:stall:p2b:end"
+     ],
+     "start": 0
     }
    ],
    "log": [
+    "|move|p2b: Spiritomb|Protect|p2b: Spiritomb",
+    "|-singleturn|p2b: Spiritomb|Protect",
+    "|move|p1b: Liepard|Nasty Plot|p1b: Liepard",
+    "|-boost|p1b: Liepard|spa|2",
     "|move|p1a: Gardevoir|Calm Mind|p1a: Gardevoir",
     "|-boost|p1a: Gardevoir|spa|1",
     "|-boost|p1a: Gardevoir|spd|1",
-    "|move|p2a: Ceruledge|Bitter Blade|p1a: Gardevoir",
-    "|-start|p1a: Gardevoir|ability: Flash Fire",
-    "|move|p2b: Malamar|Foul Play|p1a: Gardevoir",
-    "|split|p1",
-    "|-damage|p1a: Gardevoir|126/175",
-    "|-damage|p1a: Gardevoir|72/100",
-    "|move|p1b: Incineroar|Flamethrower|p2a: Ceruledge",
-    "|-start|p2a: Ceruledge|ability: Flash Fire",
+    "|move|p2a: Malamar|Calm Mind|p2a: Malamar",
+    "|-unboost|p2a: Malamar|spa|1",
+    "|-unboost|p2a: Malamar|spd|1",
     "|upkeep",
     "|turn|2"
    ],
@@ -841,6 +833,7 @@
        [
         0,
         1,
+        1,
         1
        ]
       ],
@@ -854,7 +847,7 @@
         "set_species": "Gardevoir",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 126,
+        "hp": 175,
         "maxhp": 175,
         "item": "",
         "status": "",
@@ -876,14 +869,42 @@
          12,
          20
         ],
-        "volatiles": [
-         "flashfire"
-        ],
+        "volatiles": [],
         "locked": null
        },
        {
-        "species": "Incineroar",
-        "set_species": "Incineroar",
+        "species": "Liepard",
+        "set_species": "Liepard",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 171,
+        "maxhp": 171,
+        "item": "focussash",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         2,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         20,
+         19,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Gyarados",
+        "set_species": "Gyarados",
         "mega": 0,
         "switch_flag": 0,
         "hp": 202,
@@ -903,38 +924,9 @@
          0
         ],
         "pp": [
-         12,
-         15,
-         12
-        ],
-        "volatiles": [],
-        "locked": null
-       },
-       {
-        "species": "Espeon",
-        "set_species": "Espeon",
-        "mega": 0,
-        "switch_flag": 0,
-        "hp": 172,
-        "maxhp": 172,
-        "item": "",
-        "status": "",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": false,
-        "boosts": [
-         0,
-         0,
-         0,
-         0,
-         0,
-         0,
-         0
-        ],
-        "pp": [
          20,
          12,
-         20
+         16
         ],
         "volatiles": [],
         "locked": null
@@ -981,10 +973,10 @@
        [
         1,
         1,
+        1,
         1
        ],
        [
-        1,
         1,
         1,
         1
@@ -995,37 +987,6 @@
        1
       ],
       "pokemon": [
-       {
-        "species": "Ceruledge",
-        "set_species": "Ceruledge",
-        "mega": 0,
-        "switch_flag": 0,
-        "hp": 182,
-        "maxhp": 182,
-        "item": "",
-        "status": "",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": false,
-        "boosts": [
-         -1,
-         0,
-         0,
-         0,
-         0,
-         0,
-         0
-        ],
-        "pp": [
-         8,
-         11,
-         20
-        ],
-        "volatiles": [
-         "flashfire"
-        ],
-        "locked": null
-       },
        {
         "species": "Malamar",
         "set_species": "Malamar",
@@ -1039,7 +1000,37 @@
         "confusion": 0,
         "fainted": false,
         "boosts": [
-         1,
+         0,
+         0,
+         -1,
+         -1,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         16,
+         16,
+         19,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Spiritomb",
+        "set_species": "Spiritomb",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 157,
+        "maxhp": 157,
+        "item": "",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
          0,
          0,
          0,
@@ -1048,10 +1039,343 @@
          0
         ],
         "pp": [
-         15,
+         7,
          16,
+         16
+        ],
+        "volatiles": [
+         "stall"
+        ],
+        "locked": null
+       },
+       {
+        "species": "Kingambit",
+        "set_species": "Kingambit",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 207,
+        "maxhp": 207,
+        "item": "",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         16,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Chimecho",
+        "set_species": "Chimecho",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 182,
+        "maxhp": 182,
+        "item": "",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
          20,
+         12,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": {
+    "p1": "move 1 -2, move 3",
+    "p2": "move 3, move 1"
+   },
+   "draws": [
+    {
+     "site": "STALL",
+     "context": "StallMove",
+     "lo": 0,
+     "hi": 3,
+     "value": 1
+    }
+   ],
+   "log": [
+    "|move|p2b: Spiritomb|Protect||[still]",
+    "|-fail|p2b: Spiritomb",
+    "|move|p1b: Liepard|Nasty Plot|p1b: Liepard",
+    "|-boost|p1b: Liepard|spa|2",
+    "|move|p1a: Gardevoir|Skill Swap|p1b: Liepard",
+    "|-activate|p1a: Gardevoir|Skill Swap|||[of] p1b: Liepard",
+    "|-hint|Skill Swap does not announce the abilities of the Pokémon when used between allies.",
+    "|-ability|p1b: Liepard|Pressure",
+    "|move|p2a: Malamar|Calm Mind|p2a: Malamar",
+    "|-unboost|p2a: Malamar|spa|1",
+    "|-unboost|p2a: Malamar|spd|1",
+    "|upkeep",
+    "|turn|3"
+   ],
+   "state": {
+    "turn": 3,
+    "ended": false,
+    "winner": "",
+    "weather": "",
+    "weather_turns": 0,
+    "terrain": "",
+    "terrain_turns": 0,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        0,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Gardevoir",
+        "set_species": "Gardevoir",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 175,
+        "maxhp": 175,
+        "item": "",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         1,
+         1,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         11,
+         19,
+         12,
          20
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Liepard",
+        "set_species": "Liepard",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 171,
+        "maxhp": 171,
+        "item": "focussash",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         4,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         20,
+         18,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Gyarados",
+        "set_species": "Gyarados",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 202,
+        "maxhp": 202,
+        "item": "",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         12,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Gengar",
+        "set_species": "Gengar",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 167,
+        "maxhp": 167,
+        "item": "",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         16,
+         16,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Malamar",
+        "set_species": "Malamar",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 193,
+        "maxhp": 193,
+        "item": "",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         -2,
+         -2,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         16,
+         16,
+         18,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Spiritomb",
+        "set_species": "Spiritomb",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 157,
+        "maxhp": 157,
+        "item": "",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         6,
+         16,
+         16
         ],
         "volatiles": [],
         "locked": null
@@ -1121,114 +1445,40 @@
   },
   {
    "input": {
-    "p1": "move 1 1, move 3 1",
-    "p2": "move 1 1, move 2 1"
+    "p1": "move 1 -2, move 3",
+    "p2": "move 3, move 1"
    },
    "draws": [
     {
-     "site": "ACCURACY",
-     "context": "",
+     "site": "SPEED_TIE",
+     "context": "field:Residual",
      "lo": 0,
-     "hi": 100,
-     "value": 9
-    },
-    {
-     "site": "CRIT",
-     "context": "",
-     "lo": 0,
-     "hi": 24,
-     "value": 2
-    },
-    {
-     "site": "DAMAGE_ROLL",
-     "context": "",
-     "lo": 0,
-     "hi": 16,
-     "value": 3
-    },
-    {
-     "site": "SECONDARY",
-     "context": "",
-     "lo": 0,
-     "hi": 100,
-     "value": 21
-    },
-    {
-     "site": "ACCURACY",
-     "context": "",
-     "lo": 0,
-     "hi": 100,
-     "value": 48
-    },
-    {
-     "site": "CRIT",
-     "context": "",
-     "lo": 0,
-     "hi": 24,
-     "value": 1
-    },
-    {
-     "site": "DAMAGE_ROLL",
-     "context": "",
-     "lo": 0,
-     "hi": 16,
-     "value": 5
-    },
-    {
-     "site": "SECONDARY",
-     "context": "",
-     "lo": 0,
-     "hi": 100,
-     "value": 30
-    },
-    {
-     "site": "ACCURACY",
-     "context": "",
-     "lo": 0,
-     "hi": 100,
-     "value": 71
-    },
-    {
-     "site": "CRIT",
-     "context": "",
-     "lo": 0,
-     "hi": 24,
-     "value": 11
-    },
-    {
-     "site": "DAMAGE_ROLL",
-     "context": "",
-     "lo": 0,
-     "hi": 16,
-     "value": 11
+     "hi": 2,
+     "value": 1,
+     "group": [
+      "H:protect:p2b:end",
+      "H:stall:p2b:end"
+     ],
+     "start": 0
     }
    ],
    "log": [
-    "|move|p1a: Gardevoir|Skill Swap|p2a: Ceruledge",
-    "|-activate|p1a: Gardevoir|Skill Swap|Flash Fire|Flash Fire|[of] p2a: Ceruledge",
-    "|-end|p1a: Gardevoir|ability: Flash Fire|[silent]",
-    "|-end|p2a: Ceruledge|ability: Flash Fire|[silent]",
-    "|move|p2a: Ceruledge|Close Combat|p1a: Gardevoir",
-    "|-resisted|p1a: Gardevoir|2",
-    "|split|p1",
-    "|-damage|p1a: Gardevoir|107/175",
-    "|-damage|p1a: Gardevoir|61/100",
-    "|-unboost|p2a: Ceruledge|def|1",
-    "|-unboost|p2a: Ceruledge|spd|1",
-    "|move|p2b: Malamar|Dark Pulse|p1a: Gardevoir",
-    "|split|p1",
-    "|-damage|p1a: Gardevoir|86/175",
-    "|-damage|p1a: Gardevoir|49/100",
-    "|move|p1b: Incineroar|Darkest Lariat|p2a: Ceruledge",
-    "|-supereffective|p2a: Ceruledge|1",
-    "|split|p2",
-    "|-damage|p2a: Ceruledge|0 fnt",
-    "|-damage|p2a: Ceruledge|0 fnt",
-    "|faint|p2a: Ceruledge",
-    "|upkeep"
+    "|move|p2b: Spiritomb|Protect|p2b: Spiritomb",
+    "|-singleturn|p2b: Spiritomb|Protect",
+    "|move|p1b: Liepard|Nasty Plot|p1b: Liepard",
+    "|-boost|p1b: Liepard|spa|2",
+    "|move|p1a: Gardevoir|Skill Swap|p1b: Liepard",
+    "|-activate|p1a: Gardevoir|Skill Swap|||[of] p1b: Liepard",
+    "|-hint|Skill Swap does not announce the abilities of the Pokémon when used between allies.",
+    "|-ability|p1a: Gardevoir|Pressure",
+    "|move|p2a: Malamar|Calm Mind|p2a: Malamar",
+    "|-unboost|p2a: Malamar|spa|1",
+    "|-unboost|p2a: Malamar|spd|1",
+    "|upkeep",
+    "|turn|4"
    ],
    "state": {
-    "turn": 2,
+    "turn": 4,
     "ended": false,
     "winner": "",
     "weather": "",
@@ -1238,13 +1488,26 @@
     "trick_room": 0,
     "sides": [
      {
-      "request": "",
+      "request": "move",
       "conditions": [
        0,
        0,
        0
       ],
-      "enabled": [],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        0,
+        1,
+        1,
+        1
+       ]
+      ],
       "active": [
        0,
        1
@@ -1255,7 +1518,7 @@
         "set_species": "Gardevoir",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 86,
+        "hp": 175,
         "maxhp": 175,
         "item": "",
         "status": "",
@@ -1272,7 +1535,7 @@
          0
         ],
         "pp": [
-         11,
+         10,
          19,
          12,
          20
@@ -1281,8 +1544,38 @@
         "locked": null
        },
        {
-        "species": "Incineroar",
-        "set_species": "Incineroar",
+        "species": "Liepard",
+        "set_species": "Liepard",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 171,
+        "maxhp": 171,
+        "item": "focussash",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         6,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         20,
+         17,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Gyarados",
+        "set_species": "Gyarados",
         "mega": 0,
         "switch_flag": 0,
         "hp": 202,
@@ -1302,38 +1595,9 @@
          0
         ],
         "pp": [
-         12,
-         15,
-         11
-        ],
-        "volatiles": [],
-        "locked": null
-       },
-       {
-        "species": "Espeon",
-        "set_species": "Espeon",
-        "mega": 0,
-        "switch_flag": 0,
-        "hp": 172,
-        "maxhp": 172,
-        "item": "",
-        "status": "",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": false,
-        "boosts": [
-         0,
-         0,
-         0,
-         0,
-         0,
-         0,
-         0
-        ],
-        "pp": [
          20,
          12,
-         20
+         16
         ],
         "volatiles": [],
         "locked": null
@@ -1370,47 +1634,30 @@
       ]
      },
      {
-      "request": "switch",
+      "request": "move",
       "conditions": [
        0,
        0,
        0
       ],
-      "enabled": [],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1
+       ]
+      ],
       "active": [
        0,
        1
       ],
       "pokemon": [
-       {
-        "species": "Ceruledge",
-        "set_species": "Ceruledge",
-        "mega": 0,
-        "switch_flag": 1,
-        "hp": 0,
-        "maxhp": 182,
-        "item": "",
-        "status": "fnt",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": true,
-        "boosts": [
-         0,
-         0,
-         0,
-         0,
-         0,
-         0,
-         0
-        ],
-        "pp": [
-         7,
-         11,
-         20
-        ],
-        "volatiles": [],
-        "locked": null
-       },
        {
         "species": "Malamar",
         "set_species": "Malamar",
@@ -1424,7 +1671,37 @@
         "confusion": 0,
         "fainted": false,
         "boosts": [
-         1,
+         0,
+         0,
+         -3,
+         -3,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         16,
+         16,
+         17,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Spiritomb",
+        "set_species": "Spiritomb",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 157,
+        "maxhp": 157,
+        "item": "",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
          0,
          0,
          0,
@@ -1433,12 +1710,13 @@
          0
         ],
         "pp": [
-         15,
-         15,
-         20,
-         20
+         5,
+         16,
+         16
         ],
-        "volatiles": [],
+        "volatiles": [
+         "stall"
+        ],
         "locked": null
        },
        {
