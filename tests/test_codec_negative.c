@@ -395,7 +395,7 @@ int main(void)
             {FX_F5, 97, 0x02, DFI_INV_QUEUE},
             {FX_F5, 98, 0x06, DFI_INV_QUEUE}, /* 5 is the recharge turn since step G17 */
             {FX_F5, 99, 0x04, DFI_INV_QUEUE},
-            {FX_F5, 100, 0x01, DFI_INV_QUEUE},
+            {FX_F5, 100, 0x03, DFI_INV_QUEUE}, /* G62: reserve 1 and 2 of a move are After You and Quash; 3 is refused */
             {FX_F5, 101, 0x05, DFI_INV_QUEUE},
             {FX_F5, 101, 0x00, DFI_INV_QUEUE},
             {FX_F5, 116, 0x01, DFI_INV_QUEUE},

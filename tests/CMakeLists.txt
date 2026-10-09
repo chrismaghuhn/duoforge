@@ -217,6 +217,8 @@ duoforge_add_test(NAME duoforge.state.pool_g57 SOURCES test_pool_g57.c WHITEBOX 
 duoforge_add_test(NAME duoforge.state.pool_g42 SOURCES test_pool_g42.c WHITEBOX TIMEOUT 60)
 duoforge_add_test(NAME duoforge.state.pool_g44 SOURCES test_pool_g44.c WHITEBOX TIMEOUT 60)
 duoforge_add_test(NAME duoforge.state.pool_g54 SOURCES test_pool_g54.c WHITEBOX TIMEOUT 60)
+duoforge_add_test(NAME duoforge.state.pool_g64 SOURCES test_pool_g64.c WHITEBOX TIMEOUT 60)
+duoforge_add_test(NAME duoforge.state.pool_g62 SOURCES test_pool_g62.c WHITEBOX TIMEOUT 60)
 duoforge_add_test(NAME duoforge.state.pool_g46_party SOURCES test_pool_g46_party.c WHITEBOX TIMEOUT 120)
 # Step G35: ten data rows, Rain Dish and Friend Guard: the marks, the flags, Gigaton Hammer left out, and Friend Guard in the
 # commutation test and the refusal of the ModifyDamage chain.
@@ -251,8 +253,8 @@ foreach(_gen IN ITEMS
         "closure_tables.c=490de42298e34cfd38192d979fd022367bf53693a5fa1855f1cc6ad034d8450a"
         "extended_tables.h=b2abef243fcbfdd87654940076b9fe2fe80b117d74893a7567741f26b9075a7d"
         "extended_tables.c=9e736fa467713283418c4edf8f56b8d844452e596ba422adbd52483d20f7cc17"
-        "pool_tables.h=8d7e8ad836e2b996b24a08f834b1f24617e6ef392e0353ffb8b3f36d43cf42e8"
-        "pool_tables.c=3e409b879bafa803deddd3db4edfd9c31b8896544209409345880c919b43a308")
+        "pool_tables.h=98f4b86f5b3bf9ce7a99fe4503b45d95d5290beceb5219c61826eef99fc102da"
+        "pool_tables.c=42b7cad6f8b5bcb32e6bd783fe47a87cfc386b270945f99ea9073d6078fd4edb")
     string(REPLACE "=" ";" _parts "${_gen}")
     list(GET _parts 0 _file)
     list(GET _parts 1 _expected)
@@ -551,6 +553,12 @@ if(Python3_Interpreter_FOUND)
             COMMAND "${Python3_EXECUTABLE}" "${PROJECT_SOURCE_DIR}/tools/cloud/aws_fuzz/test_guards.py")
         set_tests_properties(duoforge.cloud.aws_fuzz_guards PROPERTIES TIMEOUT 300
             ENVIRONMENT "PYTHONDONTWRITEBYTECODE=1;DUOFORGE_BASH=${DUOFORGE_BASH}")
+        # The P1 pilot launcher (tools/cloud/p1_pilot): the same guards with a stub aws, and the user data run with
+        # stand-ins for shutdown, aws, git and the workload (the three self-termination mechanisms).
+        add_test(NAME duoforge.cloud.p1_pilot_guards
+            COMMAND "${Python3_EXECUTABLE}" "${PROJECT_SOURCE_DIR}/tools/cloud/p1_pilot/test_guards.py")
+        set_tests_properties(duoforge.cloud.p1_pilot_guards PROPERTIES TIMEOUT 600
+            ENVIRONMENT "PYTHONDONTWRITEBYTECODE=1;DUOFORGE_BASH=${DUOFORGE_BASH}")
         # The Google Cloud watchdog (tools/cloud/gcp_watch): the same, with a stub gcloud and the round with stand-ins.
         add_test(NAME duoforge.cloud.gcp_watch_guards
             COMMAND "${Python3_EXECUTABLE}" "${PROJECT_SOURCE_DIR}/tools/cloud/gcp_watch/test_guards.py")
@@ -664,7 +672,7 @@ endif()
 # The Python package (M7, decision 0013), run with DUOFORGE_PYTHON; without
 # an interpreter each test reports skipped instead of passing silently.
 
-foreach(_py layout lib equivalence recipes policies_features example learn_numpy live_unit live_client replay_unit openings book expert_data expert_teacher expert_contract expert_eval ticks book_preview preview_search data batch_setups learn_v2_numpy teams features_ext bc_numpy encode_c search_numpy search_expand repo_hygiene view vgcpastes_engine)
+foreach(_py layout lib equivalence recipes policies_features example learn_numpy live_unit live_client replay_unit openings book expert_data expert_teacher expert_contract expert_eval ticks book_preview preview_search data batch_setups learn_v2_numpy teams features_ext bc_numpy encode_c search_numpy search_expand repo_hygiene view vgcpastes_engine perft)
     if(DUOFORGE_PYTHON)
         add_test(NAME duoforge.python.${_py}
             COMMAND "${DUOFORGE_PYTHON}" -m unittest -v python.tests.test_${_py}
@@ -680,7 +688,7 @@ foreach(_py layout lib equivalence recipes policies_features example learn_numpy
 endforeach()
 
 # The learner pipeline (decisions 0014, 0017) needs JAX: DUOFORGE_LEARN_PYTHON.
-foreach(_learn learn learn_v2 bc search honest luck ledger pfsp value_rows distill collect_expert learner_contract)
+foreach(_learn learn learn_v2 bc search honest luck ledger pfsp value_rows distill collect_expert learner_contract p1_eval)
     if(DUOFORGE_LEARN_PYTHON)
         add_test(NAME duoforge.python.${_learn}
             COMMAND "${DUOFORGE_LEARN_PYTHON}" -m unittest -v python.tests.test_${_learn}

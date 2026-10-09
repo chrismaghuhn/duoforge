@@ -118,7 +118,7 @@ static const unsigned expected_f5[REGION_COUNT][STATUS_COUNT] = {
     {1019, 511, 0, 0, 0}, /* boundary */
     {509, 256, 0, 0, 0}, /* turn_result */
     {14, 1261, 0, 0, 0}, /* field */
-    {29, 30826, 0, 0, 0}, /* queue (a queued move slot 5, the recharge turn, is valid since step G17) */
+    {33, 30822, 0, 0, 0}, /* queue (a queued move slot 5, the recharge turn, is valid since step G17; G62: reserve 1 and 2 of the two move records, After You and Quash) */
     {24, 3801, 0, 0, 0}, /* side0.header */
     {710, 10000, 0, 0, 0}, /* side0.positions */
     {0, 2550, 0, 0, 0}, /* side0.sealed */
@@ -231,6 +231,22 @@ static void sweep(df_test *t, const duoforge_context *c1, duoforge_battle *dst, 
     }
 }
 
+/* step G62 (decision 0015 entry 5az): the reserve byte of a MOVE record is its order class: 0 plain, 1 After You, 2 Quash.
+ * The golden F5 has its move records at queue index 0 and 1; each of 0, 1 and 2 decodes, re-encodes to itself and checks,
+ * and 3 is refused with the state unchanged (decode_one checks both). */
+static void reserve_round_trip(df_test *t, const duoforge_context *c1, duoforge_battle *dst)
+{
+    uint8_t *in = df_heap_copy(df_golden_f5, DUOFORGE_STATE_V3_ENCODED_SIZE);
+    unsigned violations = 0;
+    for (unsigned v = 0u; v <= 3u; ++v) {
+        in[DFI_ENC_QUEUE_OFF + 5u] = (uint8_t)v; /* record 0, its reserve (state_codec.c: qo[5]) */
+        const duoforge_status st = decode_one(t, c1, dst, in, false, &violations);
+        DF_CHECK(t, (v <= 2u) ? st == DUOFORGE_OK : st != DUOFORGE_OK);
+    }
+    DF_CHECK_EQ_U64(t, violations, 0u);
+    df_free(in);
+}
+
 int main(void)
 {
     df_test t;
@@ -242,6 +258,7 @@ int main(void)
     sweep(&t, c1, dst, df_golden_f1, expected_f1, false, "F1 decode");
     sweep(&t, c1, dst, df_golden_f2, expected_f2, false, "F2 decode");
     sweep(&t, c1, dst, df_golden_f5, expected_f5, false, "F5 decode");
+    reserve_round_trip(&t, c1, dst);
     sweep(&t, c1, dst, df_golden_f1, expected_f1, true, "F1 create_decoded");
 
     /* 10,000 seeded multi-byte mutations: property checks only. */

@@ -150,6 +150,43 @@ class DataTest(unittest.TestCase):
         self.assertEqual((data.policy_row[rd[2]], data.value_row[rd[2]], data.has_target[rd[2]]), (False, True, False))
         self.assertEqual(sets["held_target"], {int(rd[1])})
 
+    def test_parallel_load_is_identical_to_sequential(self):
+        import contextlib
+        import io
+        from duoforge_learn import distill_data
+        ed, m = self.ed, self.m
+        S = ed.RowStatus
+        (a, b, c), (d,) = _games(ed, m.split_seed, 3, 1)
+        ga, gb, gc, gd = _Rows(ed, m, a), _Rows(ed, m, b, seat=1), _Rows(ed, m, c), _Rows(ed, m, d)
+        a_rows = [ga.team(.1), ga.act(S.TARGET, .5), ga.wait(.4), ga.act(S.UNSELECTED, .2, reward=1., done=True)]
+        b_rows = [gb.act(S.UNSELECTED, .3, bootstrap=.9), gb.act(S.FORCED, .6, bootstrap=.37)]
+        c_rows = [gc.wait(.1), gc.act(S.CAP_RAW, .3), gc.wait(.2, reward=-1., done=True)]
+        d_rows = [gd.team(.0), gd.act(S.TARGET, .5), gd.act(S.FORCED, .5, reward=1., done=True)]
+        # Games span shards; the shards' names order the trajectories' rows, not their contents.
+        self._write("0.json", [a_rows[0], *b_rows[:1], c_rows[0]])
+        self._write("1.json", [*a_rows[1:3], *d_rows])
+        self._write("2.json", [a_rows[3], b_rows[1], *c_rows[1:]])
+        err = io.StringIO()
+        with contextlib.redirect_stderr(err):
+            one = distill_data.load(self.dir, m, workers=1)
+            many = distill_data.load(self.dir, m, workers=3)
+        self.assertIn("distill: loaded shard 3/3", err.getvalue())
+        for f in dataclasses.fields(one):
+            x, y = getattr(one, f.name), getattr(many, f.name)
+            self.assertEqual((x.dtype, x.shape), (y.dtype, y.shape), f.name)
+            self.assertEqual(x.tobytes(), y.tobytes(), f.name)
+        self.assertEqual(len(one.game_id), 12)
+        self.assertTrue(one.is_team.any() and one.has_target.any() and one.policy_row.any())
+        with self.assertRaises(ValueError):
+            distill_data.load(self.dir, m, workers=0)
+
+    def test_load_refuses_shards_without_rows(self):
+        from unittest import mock
+        from duoforge_learn import distill_data
+        self._write("0.json", [_Rows(self.ed, self.m, 0).wait(.1, done=True)])
+        with mock.patch.object(self.ed, "read_shard", return_value=()), self.assertRaisesRegex(ValueError, "no rows"):
+            distill_data.load(self.dir, self.m, workers=1)
+
     def test_truncation_uses_the_stored_bootstrap(self):
         from duoforge_learn import distill_data
         ed, m = self.ed, self.m
@@ -522,6 +559,138 @@ class CliTest(unittest.TestCase):
             if features.ENCODER != P1_ENCODER:  # a checkpoint of another layout than the manifest's is refused
                 _checkpoint(root / "current.npz", features.ENCODER)
                 self.assertEqual(distill.main(argv(root / "current.npz", "other")), 2)
+
+
+def _cli_fixture(root):
+    """A manifest, one shard of three games and an encoder-4 start under root; argv(out, *extra) runs the CLI."""
+    from duoforge_search import expert, expert_data as ed
+    m = dataclasses.replace(_manifest(ed), encoder=P1_ENCODER, obs_width=features.obs_size(P1_ENCODER))
+    ed.write_manifest(root / "manifest.json", m)
+    (train_a, train_b), (held,) = _games(ed, m.split_seed, 2, 1)
+    S, rows = ed.RowStatus, []
+    for game in (train_a, train_b, held):
+        g = _Rows(ed, m, game, seat=expert.learner_seat(game))
+        rows += [g.act(S.TARGET, .4), g.wait(.3), g.act(S.UNSELECTED, .2, reward=1., done=True)]
+    (root / "shards").mkdir()
+    ed.write_shard(root / "shards" / "0.json", rows, m)
+    _checkpoint(root / "start.npz", P1_ENCODER)
+
+    def argv(out, *extra):
+        return ["--init", str(root / "start.npz"), "--reference", str(root / "start.npz"), "--shards",
+                str(root / "shards"), "--manifest", str(root / "manifest.json"), "--out", str(root / out),
+                "--allow-other-init", "--load-workers", "1", *extra]
+    return argv
+
+
+class LedgerExitTest(unittest.TestCase):
+    """The ledger exists before the shards load (phase load) and is saved on every exit: a refusal after it, a
+    crash inside fit, a finished fit (phases load and distill)."""
+
+    def test_the_ledger_is_saved_on_every_exit(self):
+        import contextlib
+        import io
+        import json
+        from unittest import mock
+        from duoforge_learn import distill
+        with tempfile.TemporaryDirectory(prefix="duoforge_synthetic_distill_ledger_") as tmp:
+            root = Path(tmp)
+            argv = _cli_fixture(root)
+
+            def book(name):
+                return json.loads((root / name).read_text())
+            with mock.patch.object(distill, "fit", side_effect=RuntimeError("boom")), \
+                    self.assertRaisesRegex(RuntimeError, "boom"):
+                distill.main(argv("crash", "--ledger", str(root / "crash.json")))
+            crashed = book("crash.json")
+            self.assertEqual(crashed["processes"], 1)
+            self.assertIn("load", crashed["phases"])
+            self.assertGreater(crashed["phases"]["load"]["cpu_core_seconds"], 0.0)
+            refused = [a for a in argv("refused", "--ledger", str(root / "refused.json")) if a != "--allow-other-init"]
+            with contextlib.redirect_stderr(io.StringIO()):
+                self.assertEqual(distill.main(refused), 2)  # not params-49333: refused after the ledger exists
+            self.assertEqual(book("refused.json")["processes"], 1)
+            self.assertEqual(distill.main(argv("fit", "--ledger", str(root / "fit.json"))), 0)
+            self.assertTrue({"load", "distill"} <= set(book("fit.json")["phases"]))
+            with contextlib.redirect_stderr(io.StringIO()), self.assertRaises(SystemExit):
+                distill.main(argv("bad-workers", "--load-workers", "0"))
+
+    def test_a_signal_during_the_load_is_charged(self):
+        """SIGTERM while the shards load: exit 3, and the ledger is saved with the load phase."""
+        import contextlib
+        import io
+        import json
+        import signal
+        from unittest import mock
+        from duoforge_learn import distill, distill_data
+        real = distill_data.load
+
+        def interrupted(*args, **kwargs):
+            real(*args, **kwargs)
+            signal.raise_signal(signal.SIGTERM)
+            raise AssertionError("the signal must stop the load")
+        before = signal.getsignal(signal.SIGTERM)
+        with tempfile.TemporaryDirectory(prefix="duoforge_synthetic_distill_signal_") as tmp:
+            root = Path(tmp)
+            argv = _cli_fixture(root)
+            with mock.patch.object(distill_data, "load", interrupted), contextlib.redirect_stderr(io.StringIO()):
+                self.assertEqual(distill.main(argv("sig", "--ledger", str(root / "sig.json"))), 3)
+            book = json.loads((root / "sig.json").read_text())
+            self.assertIn("load", book["phases"])
+            self.assertFalse((root / "sig" / "log.jsonl").exists())  # no fit started
+        self.assertIs(signal.getsignal(signal.SIGTERM), before)  # the handler is restored
+
+    def test_pool_workers_without_child_cpu_accounting_are_refused(self):
+        """Without resource (native Windows) os.times() counts no child CPU: --ledger with pool workers is refused,
+        not silently undercharged."""
+        import contextlib
+        import io
+        import json
+        from unittest import mock
+        from duoforge_learn import distill, ledger
+        with tempfile.TemporaryDirectory(prefix="duoforge_synthetic_distill_win_") as tmp:
+            root = Path(tmp)
+            argv = _cli_fixture(root)
+            err = io.StringIO()
+            with mock.patch.object(ledger, "resource", None), contextlib.redirect_stderr(err):
+                code = distill.main(argv("win", "--ledger", str(root / "win.json"), "--load-workers", "2"))
+            self.assertEqual(code, 2)
+            self.assertIn("child", err.getvalue())
+            self.assertEqual(json.loads((root / "win.json").read_text())["processes"], 1)  # the refusal is charged
+
+    def test_pool_workers_are_charged_and_a_worker_refusal_exits_2(self):
+        import contextlib
+        import io
+        import json
+        import resource
+        from duoforge_learn import distill
+        with tempfile.TemporaryDirectory(prefix="duoforge_synthetic_distill_pool_") as tmp:
+            root = Path(tmp)
+            argv = _cli_fixture(root)
+            from duoforge_search import expert, expert_data as ed
+            m = ed.read_manifest(root / "manifest.json")
+            extra = _games(ed, m.split_seed, 3, 1)[0][2]  # a third training game in a second shard: a real pool
+            g, S = _Rows(ed, m, extra, seat=expert.learner_seat(extra)), ed.RowStatus
+            ed.write_shard(root / "shards" / "1.json", [g.act(S.TARGET, .4), g.wait(.3),
+                                                        g.act(S.UNSELECTED, .2, reward=1., done=True)], m)
+
+            def pooled(out, *more):
+                a = argv(out, *more)
+                i = a.index("--load-workers")
+                return a[:i] + a[i + 2:] + ["--load-workers", "2"]
+            pool_args = pooled("pool", "--ledger", str(root / "pool.json"))
+            kids = resource.getrusage(resource.RUSAGE_CHILDREN)
+            self.assertEqual(distill.main(pool_args), 0)
+            after = resource.getrusage(resource.RUSAGE_CHILDREN)
+            self.assertGreater(after.ru_utime + after.ru_stime, kids.ru_utime + kids.ru_stime)  # reaped workers
+            self.assertGreater(json.loads((root / "pool.json").read_text())["phases"]["load"]["cpu_core_seconds"], 0)
+            # A shard a worker refuses: exit 2, fast.
+            (root / "shards" / "1.json").unlink()
+            (root / "shards" / "1.json").write_text("not a shard")
+            bad = pooled("bad")
+            err = io.StringIO()
+            with contextlib.redirect_stderr(err):
+                self.assertEqual(distill.main(bad), 2)
+            self.assertIn("distill:", err.getvalue())
 
 
 class ResumeTest(unittest.TestCase):

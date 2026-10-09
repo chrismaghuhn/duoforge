@@ -1,0 +1,93 @@
+{
+  "name": "g62_after_you_update",
+  "purpose": "After You on Milotic (Sitrus Berry, p1a) while Milotic (Sitrus, p2b) ties at Speed: the hit loop Update after the After You hit, then Haze; Update ties in each:Update (campaign seed 62, fz_62_14)",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,ca955b6560672f8b84d378c56939402c40ba922b971d7ea29abee0d02061cf5d",
+  "teams": [
+    "Ceruledge (M) @ Expert Belt\nAbility: Flash Fire\nLevel: 50\nEVs: 31 HP / 7 Atk / 24 Def / 3 SpD / 1 Spe\nBrave Nature\n- Protect\n\nIndeedee (M) @ Leftovers\nAbility: Inner Focus\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 SpD\nModest Nature\n- After You\n- Protect\n\nSalamence (M) @ Salamencite\nAbility: Intimidate\nLevel: 50\nEVs: 2 HP / 32 SpA / 32 Spe\nTimid Nature\n- Protect\n\nPrimarina (F) @ Rocky Helmet\nAbility: Torrent\nLevel: 50\nEVs: 32 HP / 2 Def / 32 SpD\nCalm Nature\n- Moonblast\n- Protect\n\nGholdengo @ Focus Sash\nAbility: Good as Gold\nLevel: 50\nEVs: 32 HP / 2 SpA / 32 SpD\nCalm Nature\n- Shadow Ball\n- Protect\n\nMilotic (F) @ Sitrus Berry\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Haze\n- Protect",
+    "Gholdengo @ Focus Sash\nAbility: Good as Gold\nLevel: 50\nEVs: 32 HP / 2 SpA / 32 SpD\nCalm Nature\n- Shadow Ball\n- Protect\n\nMilotic (F) @ Sitrus Berry\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Haze\n- Protect\n\nPrimarina (F) @ Rocky Helmet\nAbility: Torrent\nLevel: 50\nEVs: 32 HP / 2 Def / 32 SpD\nCalm Nature\n- Moonblast\n- Protect\n\nSalamence (M) @ Salamencite\nAbility: Intimidate\nLevel: 50\nEVs: 2 HP / 32 SpA / 32 Spe\nTimid Nature\n- Protect\n\nIndeedee (M) @ Leftovers\nAbility: Inner Focus\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 SpD\nModest Nature\n- After You\n- Protect\n\nCeruledge (M) @ Expert Belt\nAbility: Flash Fire\nLevel: 50\nEVs: 31 HP / 7 Atk / 24 Def / 3 SpD / 1 Spe\nBrave Nature\n- Protect"
+  ],
+  "choices": [
+    {
+      "p1": "team 5623",
+      "p2": "team 5362"
+    },
+    {
+      "p1": "move 2, switch 3",
+      "p2": "move 2, move 1 2"
+    },
+    {
+      "p1": "move 1 1, move 1 -1",
+      "p2": "move 2, move 1 1"
+    },
+    {
+      "p1": "move 2, move 2",
+      "p2": "move 2, move 2"
+    },
+    {
+      "p1": "move 1 2, move 1 1",
+      "p2": "move 2, move 2"
+    },
+    {
+      "p1": "move 2, move 1 1",
+      "p2": "move 2, move 2"
+    },
+    {
+      "p1": "move 2, move 2",
+      "p2": "move 1 -2, move 2"
+    },
+    {
+      "p1": "move 1 2, switch 3",
+      "p2": "move 2, move 1 1"
+    },
+    {
+      "p1": "move 1 1, move 1",
+      "p2": "move 1 2, move 1 1"
+    },
+    {
+      "p1": "move 1 1, move 1",
+      "p2": "move 2, move 2"
+    },
+    {
+      "p1": "move 2, move 2",
+      "p2": "move 1 2, switch 3"
+    },
+    {
+      "p1": "move 1 1, move 1",
+      "p2": "move 1 1, move 1"
+    },
+    {
+      "p1": "switch 3, move 1",
+      "p2": "move 2, move 1"
+    },
+    {
+      "p1": "move 2, move 2",
+      "p2": "move 1 1, move 1"
+    },
+    {
+      "p1": "move 2, switch 3",
+      "p2": "move 1 -2, move 1"
+    },
+    {
+      "p1": "move 1 -2, move 2",
+      "p2": "move 1 1, switch 4"
+    },
+    {
+      "p1": "switch 3, move 2",
+      "p2": "move 1 1, move 1"
+    },
+    {
+      "p1": "move 1, move 1 2",
+      "p2": "move 1 2, move 1"
+    },
+    {
+      "p1": "move 2, switch 4",
+      "p2": "move 1 1, move 2"
+    },
+    {
+      "p1": "move 1, move 1",
+      "p2": "move 1 1, move 2"
+    }
+  ]
+}
