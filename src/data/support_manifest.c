@@ -422,6 +422,21 @@ const dfi_support_manifest dfi_support = {
             [DFI_MOVE_FAKETEARS] = 1u,
             [DFI_MOVE_SACREDSWORD] = 1u,
             [DFI_MOVE_SUPERFANG] = 1u,
+            /* Step G44 (simple moves, decision 0015 item 5an). Handlers: Thunder (never misses in rain, 50 under sun), Power Trip
+             * (20 plus 20 per positive stage of the user), Ice Fang (a freeze roll, then a flinch roll) and Tri Attack (a
+             * 20 percent pick of burn, paralysis or freeze). Data rows: Breaking Swipe, Vacuum Wave, Stone Edge, Aqua Cutter,
+             * Hammer Arm, Trop Kick and Meteor Mash. */
+            [DFI_MOVE_THUNDER] = 1u,
+            [DFI_MOVE_POWERTRIP] = 1u,
+            [DFI_MOVE_ICEFANG] = 1u,
+            [DFI_MOVE_TRIATTACK] = 1u,
+            [DFI_MOVE_BREAKINGSWIPE] = 1u,
+            [DFI_MOVE_VACUUMWAVE] = 1u,
+            [DFI_MOVE_STONEEDGE] = 1u,
+            [DFI_MOVE_AQUACUTTER] = 1u,
+            [DFI_MOVE_HAMMERARM] = 1u,
+            [DFI_MOVE_TROPKICK] = 1u,
+            [DFI_MOVE_METEORMASH] = 1u,
         },
     .abilities =
         {
@@ -559,6 +574,20 @@ const dfi_support_manifest dfi_support = {
             [DFI_ITEM_METAGROSSITE] = 1u,
             [DFI_ITEM_LUCARIONITEZ] = 1u,
             [DFI_ITEM_FROSLASSITE] = 1u,
+            /* Step G43 (Mega batch 3, mark only): ten Mega Stones whose Mega ability is marked already (Multiscale, Adaptability,
+             * Speed Boost, Sharpness, Electric Surge, Scrappy, Trace, Technician, Inner Focus) and whose base formes' abilities are
+             * marked: Dragoninite, Glimmoranite, Blazikenite, Absolite Z, Raichunite X, Lopunnite, Alakazite, Meowsticite (both
+             * Meowstic formes), Scizorite and Galladite. */
+            [DFI_ITEM_DRAGONINITE] = 1u,
+            [DFI_ITEM_GLIMMORANITE] = 1u,
+            [DFI_ITEM_BLAZIKENITE] = 1u,
+            [DFI_ITEM_ABSOLITEZ] = 1u,
+            [DFI_ITEM_RAICHUNITEX] = 1u,
+            [DFI_ITEM_LOPUNNITE] = 1u,
+            [DFI_ITEM_ALAKAZITE] = 1u,
+            [DFI_ITEM_MEOWSTICITE] = 1u,
+            [DFI_ITEM_SCIZORITE] = 1u,
+            [DFI_ITEM_GALLADITE] = 1u,
             [DFI_ITEM_BLACKBELT] = 1u,
             [DFI_ITEM_BLACKGLASSES] = 1u,
             [DFI_ITEM_CHARCOAL] = 1u,

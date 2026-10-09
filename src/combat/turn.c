@@ -7,6 +7,8 @@
 #include "combat/events.h"
 #include "combat/item_family.h"
 #include "combat/move_rules.h"
+#include "combat/power_trip.h"
+#include "combat/secondary_rolls.h"
 
 #include "core/arith.h"
 #include "core/modifier.h"
@@ -1353,6 +1355,11 @@ static duoforge_status dfi_get_damage(dfi_run *r, uint32_t user, uint32_t target
     } else if (md->special == DFI_SPECIAL_TRIPLE_AXEL) {
         /* Triple Axel's basePowerCallback (step G33, data/moves.ts:20005-20023): 20 x move.hit. */
         power = 20u * r->hit_index;
+    } else if (md->special == DFI_SPECIAL_POWER_TRIP) {
+        /* Power Trip's basePowerCallback (step G44, data/moves.ts:13851-13859): 20 + 20 x the user's positiveBoosts(), the sum
+         * of its positive stages (Pokemon.positiveBoosts, sim/pokemon.ts:1201-1208). A stage is stored biased by 6. */
+        const uint32_t positive = dfi_power_trip_positive_stages(ap->stages);
+        power = (uint32_t)md->base_power + 20u * positive;
     } else if (md->special == DFI_SPECIAL_RAGE_FIST) {
         /* Rage Fist's basePowerCallback (step G48, data/moves.ts:14583-14596): 50 + 50 x the user's timesAttacked, at most 350.
          * timesAttacked counts the damaging hits the user took since it came in (the Champions loop, scripts.ts:565, and the
@@ -4522,7 +4529,9 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
         md->special != DFI_SPECIAL_CEASELESS_EDGE && md->special != DFI_SPECIAL_MULTI_HIT_10 &&
         md->special != DFI_SPECIAL_IMPRISON && md->special != DFI_SPECIAL_TRICK && md->special != DFI_SPECIAL_SWITCHEROO &&
         md->special != DFI_SPECIAL_THIEF && md->special != DFI_SPECIAL_COVET && md->special != DFI_SPECIAL_SUPER_FANG &&
-        md->special != DFI_SPECIAL_TAUNT && md->special != DFI_SPECIAL_YAWN) {
+        md->special != DFI_SPECIAL_TAUNT && md->special != DFI_SPECIAL_YAWN &&
+        md->special != DFI_SPECIAL_POWER_TRIP && md->special != DFI_SPECIAL_THUNDER && md->special != DFI_SPECIAL_ICE_FANG &&
+        md->special != DFI_SPECIAL_TRI_ATTACK) {
         return DUOFORGE_E_INVARIANT;
     }
     /* Steel Roller's onTry (step G34, data/moves.ts:17893-17913): it fails without a terrain, with -fail and [still]. */
@@ -4556,9 +4565,10 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
             return DUOFORGE_OK;
         }
     }
-    /* Hurricane never misses in rain and has 50 accuracy under sun. */
+    /* Hurricane never misses in rain and has 50 accuracy under sun. Thunder (step G44, data/moves.ts:19438-19458) is the same
+     * onModifyMove: move.accuracy = true in rain, 50 under sun (target.effectiveWeather(), which is the field's weather). */
     uint32_t base_accuracy = md->accuracy;
-    if (md->special == DFI_SPECIAL_HURRICANE) {
+    if (md->special == DFI_SPECIAL_HURRICANE || md->special == DFI_SPECIAL_THUNDER) {
         if (b->weather == DFI_WEATHER_RAIN) {
             base_accuracy = 0u;
         } else if (b->weather == DFI_WEATHER_SUN) {
@@ -5155,6 +5165,66 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
             }
             if (md->boost_role == DFI_BOOST_ROLE_SELF_AFTER_HIT) {
                 return DUOFORGE_E_UNSUPPORTED; /* no closure move has both */
+            }
+        }
+        /* Ice Fang (step G44, data/moves.ts:9347-9368): two secondaries in order, and for each hit target the loop of
+         * secondaries() draws random(100) before each one (sim/battle-actions.ts:1336-1354): a freeze at 10 (a status of the
+         * move, dfi_try_status as a status secondary does), then a flinch at 10 (a volatile of the target). Both rolls are
+         * drawn for a target that fainted, as for any secondary. */
+        if (md->special == DFI_SPECIAL_ICE_FANG) {
+            for (uint32_t i = 0u; i < count; ++i) {
+                if (!hit[i]) {
+                    continue;
+                }
+                uint32_t roll = 0u;
+                st = dfi_draw(r->draws, DFI_SITE_SECONDARY, 0u, 100u, &roll);
+                if (st != DUOFORGE_OK) {
+                    return st;
+                }
+                if (roll < 10u) {
+                    st = dfi_try_status(r, targets[i], DFI_STATUS_FRZ, user, move_id, false, 0u);
+                    if (st != DUOFORGE_OK) {
+                        return st;
+                    }
+                }
+                st = dfi_draw(r->draws, DFI_SITE_SECONDARY, 0u, 100u, &roll);
+                if (st != DUOFORGE_OK) {
+                    return st;
+                }
+                if (roll < 10u) {
+                    st = dfi_add_volatile(r, targets[i], DFI_VOLATILE_FLINCH);
+                    if (st != DUOFORGE_OK) {
+                        return st;
+                    }
+                }
+            }
+        }
+        /* Tri Attack (step G44, data/moves.ts:19845-19864): a secondary of chance 20, one SECONDARY roll per hit target, and
+         * its onHit draws sample(['brn', 'par', 'frz']) (SITE_STATUS_PICK, random(3)) then trySetStatus without a source move,
+         * as Dire Claw's pick does (the reference draws the pick after every successful roll, also for a target that fainted,
+         * has a status or is immune). */
+        if (md->special == DFI_SPECIAL_TRI_ATTACK) {
+            static const uint8_t tri_pick[3] = {DFI_STATUS_BRN, DFI_STATUS_PAR, DFI_STATUS_FRZ};
+            for (uint32_t i = 0u; i < count; ++i) {
+                if (!hit[i]) {
+                    continue;
+                }
+                uint32_t roll = 0u;
+                st = dfi_draw(r->draws, DFI_SITE_SECONDARY, 0u, 100u, &roll);
+                if (st != DUOFORGE_OK) {
+                    return st;
+                }
+                if (!dfi_tri_attack_chance_hit(roll)) {
+                    continue;
+                }
+                uint32_t v = 0u;
+                st = dfi_draw(r->draws, DFI_SITE_STATUS_PICK, 0u, 3u, &v);
+                if (st == DUOFORGE_OK) {
+                    st = dfi_try_status(r, targets[i], tri_pick[v], user, DFI_NO_SOURCE_MOVE, false, 0u);
+                }
+                if (st != DUOFORGE_OK) {
+                    return st;
+                }
             }
         }
         /* DamagingHit, its handlers by order, then target (compareLeftToRightOrder,

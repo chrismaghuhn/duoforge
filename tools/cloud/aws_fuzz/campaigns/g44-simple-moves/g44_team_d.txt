@@ -1,0 +1,54 @@
+Krookodile (M) @ Life Orb
+Ability: Intimidate
+Level: 50
+EVs: 32 HP / 32 Atk / 2 SpD
+Adamant Nature
+- Power Trip
+- Bulk Up
+- Protect
+- Earthquake
+
+Gliscor (M) @ Leftovers
+Ability: Hyper Cutter
+Level: 50
+EVs: 32 HP / 32 Atk / 2 SpD
+Jolly Nature
+- Ice Fang
+- Protect
+- Earthquake
+
+Hydreigon (M) @ Expert Belt
+Ability: Levitate
+Level: 50
+EVs: 2 HP / 32 SpA / 32 Spe
+Timid Nature
+- Tri Attack
+- Protect
+- Dragon Pulse
+
+Ampharos (M) @ Sitrus Berry
+Ability: Static
+Level: 50
+EVs: 2 HP / 32 SpA / 32 Spe
+Timid Nature
+- Thunder
+- Protect
+- Sunny Day
+
+Rhyperior (M) @ Focus Sash
+Ability: Solid Rock
+Level: 50
+EVs: 32 HP / 32 Atk / 2 SpD
+Adamant Nature
+- Stone Edge
+- Protect
+- Earthquake
+
+Lucario (M) @ Mystic Water
+Ability: Inner Focus
+Level: 50
+EVs: 2 HP / 32 Atk / 32 Spe
+Jolly Nature
+- Meteor Mash
+- Protect
+- Close Combat
