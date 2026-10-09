@@ -39,7 +39,7 @@ class ValueRows(unittest.TestCase):
         out = rowprobe.row_independence(model, params, rows, capacity=1024, seed=7)
         self.assertEqual((out["position_bits"], out["neighbour_bits"], out["padding_bits"]), (0, 0, 0), out)
         self.assertEqual(out["conditions"]["capacity"], 1024)
-        for key in ("jax", "cpu", "xla_flags", "device"):
+        for key in ("jax", "cpu", "xla_flags", "device", "jax_devices"):
             self.assertIn(key, out["conditions"])
         # The probe itself must see a dependence when there is one.
         fake_rows = np.random.default_rng(3).normal(size=(160, 4)).astype(np.float32)

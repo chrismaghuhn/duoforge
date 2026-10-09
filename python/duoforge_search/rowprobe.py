@@ -30,7 +30,7 @@ def conditions(capacity, device):
     except (OSError, StopIteration):
         pass
     return {"jax": jax.__version__, "cpu": cpu, "xla_flags": os.environ.get("XLA_FLAGS", ""), "device": device,
-            "capacity": int(capacity)}
+            "jax_devices": [str(d) for d in jax.devices()], "capacity": int(capacity)}
 
 
 def encoded_rows(n, seed, encoder=4, envs=64, workers=4):
