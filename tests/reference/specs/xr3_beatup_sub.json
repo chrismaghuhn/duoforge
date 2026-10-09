@@ -1,0 +1,20 @@
+{
+  "name": "xr3_beatup_sub",
+  "purpose": "Beat Up into a Substitute, each hit gated on its own (multihit = the six members, data/moves.ts:1150-1170; each hit is one spreadMoveHit, so the sub takes the first hit that reaches it and the later hits go on to the target): Krookodile (M) hits Gengar (M), whose sub is up from turn 1 (Gengar is faster). Dark is super effective on Gengar, so the sub breaks within the hits. Beat Up is not bypasssub.",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,0000000000000000000000000000000000000000000000000000000000000001",
+  "teams": [
+    "Krookodile (M) @ Leftovers\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Beat Up\n- Protect\n\nKingambit (M) @ Black Glasses\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 2 Atk / 32 Spe\nAdamant Nature\n- Swords Dance\n- Protect\n\nMilotic (F) @ Sitrus Berry\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Triple Axel\n- Protect\n- Coil\n\nGholdengo @ Focus Sash\nAbility: Good as Gold\nLevel: 50\nEVs: 32 HP / 2 SpA / 32 SpD\nCalm Nature\n- Shadow Ball\n- Protect\n\nCeruledge (M) @ Expert Belt\nAbility: Flash Fire\nLevel: 50\nEVs: 31 HP / 7 Atk / 24 Def / 3 SpD / 1 Spe\nBrave Nature\n- Protect\n\nSalamence (M) @ Salamencite\nAbility: Intimidate\nLevel: 50\nEVs: 2 HP / 32 SpA / 32 Spe\nTimid Nature\n- Hyper Voice\n- Draco Meteor\n- Protect\n- Tailwind",
+    "Gengar (M)\nAbility: Cursed Body\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nTimid Nature\n- Substitute\n- Shadow Ball\n- Protect\n\nPrimarina (F) @ Rocky Helmet\nAbility: Torrent\nLevel: 50\nEVs: 32 HP / 2 Def / 32 SpD\nCalm Nature\n- Moonblast\n- Protect\n\nMilotic (F) @ Sitrus Berry\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Triple Axel\n- Protect\n- Coil\n\nKingambit (M) @ Black Glasses\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 2 Atk / 32 Spe\nAdamant Nature\n- Swords Dance\n- Protect\n\nCeruledge (M) @ Expert Belt\nAbility: Flash Fire\nLevel: 50\nEVs: 31 HP / 7 Atk / 24 Def / 3 SpD / 1 Spe\nBrave Nature\n- Protect\n\nSalamence (M) @ Salamencite\nAbility: Intimidate\nLevel: 50\nEVs: 2 HP / 32 SpA / 32 Spe\nTimid Nature\n- Hyper Voice\n- Draco Meteor\n- Protect\n- Tailwind"
+  ],
+  "plan": {
+    "p1": [
+      "move 1 1, move 2"
+    ],
+    "p2": [
+      "move 1, move 2"
+    ],
+    "max_steps": 2
+  }
+}
