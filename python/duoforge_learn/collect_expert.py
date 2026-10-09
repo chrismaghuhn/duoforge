@@ -633,7 +633,7 @@ def main(argv=None):
         from duoforge_replay.dataset import refuse_repository
         from duoforge import teams
         from duoforge_search import expert_data as ed, expert_eval, honest
-        from . import checkpoint, policy, runstate
+        from . import checkpoint, runstate
         from .train import DATA_KINDS
         refuse_repository(args.out)
         sha = _file_sha(args.init)
@@ -644,12 +644,16 @@ def main(argv=None):
             raise ValueError(f"the manifest pins checkpoint {manifest.checkpoint_hash}, --init is {sha}")
         if args.workers is not None and args.workers != manifest.workers:
             raise ValueError(f"the manifest pins {manifest.workers} workers (--workers {args.workers})")
-        params, config = checkpoint.load_current(args.init)
+        # The network in the layout it was trained with (P1: encoder 4, as the manifest's rows), never widened.
+        params, config = checkpoint.load_trained(args.init)
         encoder, ext = checkpoint.encoder_of(config), checkpoint.ext_supported_of(config)
+        if encoder != manifest.encoder or len(config["features"]) != manifest.obs_width:
+            raise Refusal(f"--init is encoder {encoder} ({len(config['features'])} features), the manifest pins "
+                          f"encoder {manifest.encoder} ({manifest.obs_width})")
         model_config = checkpoint.model_config(config, params)
         if manifest.model_hash != model_hash(model_config):
             raise ValueError(f"the manifest pins model {manifest.model_hash}, --init's is {model_hash(model_config)}")
-        model = policy.make(model_config)
+        model = checkpoint.trained_model(config, params)
         context = duoforge.Context(data_kind=DATA_KINDS[config["data"]["kind"]])
         if manifest.ids_hash != ids_hash(context):
             raise ValueError(f"the manifest pins ids {manifest.ids_hash}, the context's are {ids_hash(context)}")

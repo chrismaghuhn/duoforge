@@ -398,10 +398,10 @@ class Cli(unittest.TestCase):
         self.tmp = tempfile.TemporaryDirectory(prefix="duoforge-collect-cli-")
         self.dir = Path(self.tmp.name)
         cfg = policy.v2_config("S")
-        params = policy.make(cfg).init(jax.random.PRNGKey(5))
+        names = list(features.feature_names(4))  # P1 pins encoder 4 (params-49333's layout)
+        params = policy.make(cfg, names).init(jax.random.PRNGKey(5))
         self.init = self.dir / "params-other.npz"
-        checkpoint.save(self.init, params, {"model": cfg, "encoder": features.ENCODER,
-                                            "features": list(features.FEATURE_NAMES),
+        checkpoint.save(self.init, params, {"model": cfg, "encoder": 4, "features": names,
                                             "slot_features": list(features.SLOT_FEATURE_NAMES),
                                             "data": {"kind": "pool"}, "teams": {}, "update": 0, "decisions": 0,
                                             "ids": {}})

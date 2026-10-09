@@ -175,6 +175,26 @@ def load_current(path):
     return params, config
 
 
+def load_trained(path):
+    """(params, config) of a format-2 checkpoint in the layout its network was trained with: never widened to
+    the current encoder (load_current does that). Stage 3 P1 pins encoder 4: its rows are encoded by version 4,
+    and params-49333's network must read them as trained. ValueError for another format or for a feature list
+    that is not encoder_of(config)'s layout."""
+    params, config = load(path)
+    if config.get("format") != 2:
+        raise ValueError(f"{path}: load_trained reads format-2 checkpoints")
+    encoder = encoder_of(config)
+    if list(config.get("features", ())) != list(features.feature_names(encoder)) or             list(config.get("slot_features", ())) != list(features.SLOT_FEATURE_NAMES):
+        raise ValueError(f"{path}: its features are not encoder {encoder}'s layout")
+    return params, config
+
+
+def trained_model(config, params):
+    """The policy.Model of a load_trained checkpoint, reading its own encoder's columns."""
+    from . import policy
+    return policy.make(model_config(config, params), config["features"], config["slot_features"])
+
+
 def model_config(config, params):
     """The model configuration of a checkpoint: format 2 stores it; a format-1
     file is model v1 with the sizes of its parameters."""

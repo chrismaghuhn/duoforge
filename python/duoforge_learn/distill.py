@@ -441,17 +441,20 @@ def main(argv=None):
         refuse_repository(args.out)
         if args.resume and not (Path(args.out) / STATE).exists():
             raise ValueError(f"{args.out}: no state to resume ({STATE})")
-        from . import checkpoint, policy, runstate
+        from . import checkpoint, runstate
         shas = {"init": _sha256(args.init), "reference": _sha256(args.reference)}
         if not args.allow_other_init and set(shas.values()) != {PARAMS_49333_SHA256}:
             raise ValueError(f"the init and the reference must both be params-49333 ({PARAMS_49333_SHA256}): {shas}")
         manifest, manifest_sha = _manifest(args.manifest)
-        init, config = checkpoint.load_current(args.init)
-        ref, ref_config = checkpoint.load_current(args.reference)
-        model_cfg = checkpoint.model_config(config, init)
-        if checkpoint.model_config(ref_config, ref) != model_cfg:
-            raise ValueError("the reference's model differs from the init's")
-        model = policy.make(model_cfg)
+        # The networks in the layout they were trained with (P1: encoder 4), which the manifest's rows are in.
+        init, config = checkpoint.load_trained(args.init)
+        ref, ref_config = checkpoint.load_trained(args.reference)
+        if checkpoint.encoder_of(config) != manifest.encoder or len(config["features"]) != manifest.obs_width:
+            raise ValueError(f"--init is encoder {checkpoint.encoder_of(config)} ({len(config['features'])} "
+                             f"features), the manifest's rows encoder {manifest.encoder} ({manifest.obs_width})")
+        if (checkpoint.model_config(ref_config, ref), ref_config["features"]) !=                 (checkpoint.model_config(config, init), config["features"]):
+            raise ValueError("the reference's model or layout differs from the init's")
+        model = checkpoint.trained_model(config, init)
         data = distill_data.load(args.shards, manifest)
         identity = {"manifest": manifest_sha, **shas, "jax": jax.__version__, "optax": optax.__version__,
                     "device": jax.devices()[0].device_kind, "allow_other_init": args.allow_other_init}
