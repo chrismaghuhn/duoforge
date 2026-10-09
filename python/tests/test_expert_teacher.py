@@ -600,6 +600,62 @@ class Teacher(unittest.TestCase):
             self.assertEqual(np.asarray(again["tables"]).tobytes(), np.asarray(finished[0]["tables"]).tobytes())
             self.assertEqual((again["x"], again["pi_X"]), (finished[0]["x"], finished[0]["pi_X"]))
 
+    def test_label_tick_bytes_equal_per_root(self):
+        from duoforge_search import expert as ex
+        from duoforge_search import matrix
+        games = (500, 502, 504, 506)
+
+        def roots_of(b, envs):
+            return [ex.TickRoot(e, 0, DecisionKey(games[e], 0, int(b.requests[e, 0]["epoch"])), None, -1.25)
+                    for e in envs]
+
+        def per_root(search, b, tick, cfg):
+            return [ex.decision_bytes(ex.label_decision(search, b, env=r.env, seat=0, key=r.key,
+                                                        raw_action=r.raw_action, raw_logp=r.raw_logp,
+                                                        last_step=False, config=cfg, manifest=self.manifest))
+                    for r in tick]
+
+        with duoforge.Context(C["DUOFORGE_DATA_KIND_POOL"]) as ctx, self.make(ctx) as search, \
+                self.turn_roots(ctx, search, envs=4) as b:
+            cfg = self.config(audit_threshold=2**64)  # every root also prepares its K+1 audit
+            tick = [dataclasses.replace(r, raw_action=self.low_raw(search, b, r.env, 0)) for r in roots_of(b, range(4))]
+            want = per_root(search, b, tick, cfg)
+            got = ex.label_tick(search, b, tick, last_step=False, config=cfg, manifest=self.manifest)
+            self.assertEqual([ex.decision_bytes(d) for d in got], want)
+            # Root order does not matter; results come back in input order.
+            order = [2, 0, 3, 1]
+            got = ex.label_tick(search, b, [tick[i] for i in order], last_step=False, config=cfg, manifest=self.manifest)
+            self.assertEqual([ex.decision_bytes(d) for d in got], [want[i] for i in order])
+            # One query of the encoded rows per tick; each root's audit is prepared before the next root's worlds.
+            calls = []
+            real_query, real_hyp, real_prep = b.query_encoded, search._hypotheses, search._prepare
+            with mock.patch.object(b, "query_encoded", side_effect=lambda *a: (calls.append("query"), real_query(*a))[1]), \
+                    mock.patch.object(search, "_hypotheses", side_effect=lambda *a: (calls.append("worlds"), real_hyp(*a))[1]), \
+                    mock.patch.object(search, "_prepare", side_effect=lambda *a, **k: (calls.append("prepare"), real_prep(*a, **k))[1]):
+                ex.label_tick(search, b, tick, last_step=False, config=cfg, manifest=self.manifest)
+            self.assertEqual(calls, ["query"] + ["worlds", "prepare", "prepare"] * 4)
+            # A tiny budget exhausts every root on its own, a value call per tick of 1024 rows each.
+            tiny = self.config(audit_threshold=0, budget=matrix.WorkBudget(float_pivots=1))
+            exhausted = ex.label_tick(search, b, tick, last_step=False, config=tiny, manifest=self.manifest)
+            self.assertEqual({d.status for d in exhausted}, {ex.RowStatus.WORK_EXHAUSTED})
+            self.assertEqual([ex.decision_bytes(d) for d in exhausted], per_root(search, b, tick, tiny))
+            # Visible sleep in one environment: that root refuses publicly, the others are unchanged.
+            decode = b._lib.duoforge_battle_decode
+            decode.restype = ctypes.c_uint32
+            decode.argtypes = (ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_size_t)
+            fixture = np.frombuffer(b.encode(1), np.uint8).copy()  # privileged codec fixture only
+            fixture[215 + 109 + 27] = C["DUOFORGE_AILMENT_SLEEP"]
+            fixture[215 + 109 + 28] = 2
+            self.assertEqual(decode(ctx.handle, b._battle(1), fixture.ctypes.data, fixture.size), 0)
+            b.query_factored()
+            ex.observe(search, b, [0, 1, 2, 3], [0] * 4)
+            tick = [dataclasses.replace(r, raw_action=self.low_raw(search, b, r.env, 0)) for r in roots_of(b, range(4))]
+            mixed = ex.label_tick(search, b, tick, last_step=False, config=cfg, manifest=self.manifest)
+            self.assertEqual(mixed[1].status, ex.RowStatus.PUBLIC_REFUSAL)
+            self.assertEqual([ex.decision_bytes(d) for d in mixed], per_root(search, b, tick, cfg))
+            with self.assertRaises(ValueError):  # one root per environment
+                ex.label_tick(search, b, [tick[0], tick[0]], last_step=False, config=cfg, manifest=self.manifest)
+
     def test_two_phase_decision_bytes_pinned(self):
         import hashlib
         conditions = self._two_phase_conditions()
