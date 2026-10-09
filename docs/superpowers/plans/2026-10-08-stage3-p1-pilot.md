@@ -259,4 +259,4 @@ The first local attempt is superseded. On 2026-10-09 the generation finished loc
 - It stops once both axes are ≥ 0.95. If no device is allowed before that, the run STOPs as incomplete; it never exceeds the tolerance.
 - It runs in one process where possible, since every resume pays a JIT.
 
-`expert_eval.validate_compute` checks the result unchanged: both axes within 5%.
+`expert_eval.validate_compute` checks the result unchanged: both axes within 5%. The control's learning rate decays over its spent share of the pilot's CPU core-seconds (`--learning-rate-over budget`, schedule 0:1 to 900:0.1 per mille), replacing the forecast decision count D. The exact ledgers of the discarded run were control 4142.374 / 62.9025 against pilot 5202.450 / 59.9023 (GPU |Δ| 3.0002 > 2.9951).
