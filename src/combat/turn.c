@@ -656,7 +656,14 @@ static uint32_t dfi_move_type_now(const struct duoforge_battle *b, const dfi_mem
  * on the locked turn, until its own action, whose onTryMove removes the volatile. No field of its own is needed: the charge
  * (charge_turns is 2 on the charge turn and 1 after its residual) and the locked move say which turn it is, and the user's
  * MOVE record is queued exactly until the locked action has run. A fainted user has no charge (the charge ends with it). */
-static bool dfi_phantom_charging(dfi_run *r, uint32_t flat)
+/* Step G58 (generalised by the semi-invulnerable exemptions of the terrains): the engine's form of Pokemon.isSemiInvulnerable
+ * (sim/pokemon.ts:2162-2165: the volatiles fly, bounce, dive, dig, phantomforce, shadowforce, and skydrop). Today only the
+ * charge of Phantom Force makes a position semi-invulnerable (the only such source the pool marks). Fly, Bounce, Dive, Dig,
+ * Shadow Force and Sky Drop must extend this predicate when their rows are marked (none is). Every reader of the pin's
+ * isSemiInvulnerable() in the marked data calls this predicate: the Invulnerability step (dfi_invulnerable_to), the
+ * terrains' status, confusion, Earthquake and Dragon weakening, the Grassy residual heal, the terrains' attacker boosts and
+ * Psychic Terrain's TryHit (data/moves.ts:4517, 4525, 4533, 7695, 7714, 12171, 12178, 12186, 14119, 14132). */
+static bool dfi_semi_invulnerable(dfi_run *r, uint32_t flat)
 {
     struct duoforge_battle *b = r->b;
     const dfi_active_slot *pos = dfi_pos(b, flat);
@@ -683,7 +690,7 @@ static bool dfi_phantom_charging(dfi_run *r, uint32_t flat)
 static bool dfi_invulnerable_to(dfi_run *r, uint32_t user, uint32_t target, uint32_t move_id)
 {
     struct duoforge_battle *b = r->b;
-    if (!dfi_phantom_charging(r, target)) {
+    if (!dfi_semi_invulnerable(r, target)) {
         return false;
     }
     if (dfi_ability(b, dfi_at(b, user), DFI_ABILITY_NOGUARD) || dfi_ability(b, dfi_at(b, target), DFI_ABILITY_NOGUARD)) {
@@ -1648,22 +1655,28 @@ static duoforge_status dfi_get_damage(dfi_run *r, uint32_t user, uint32_t target
     /* Grassy Terrain's other half (step G28, data/moves.ts:7694-7698): Earthquake (and Bulldoze and Magnitude, which are not
      * marked) at a grounded target is chainModify(0.5), the first branch of the same handler (priority 6); a Ground move is
      * not a Grass move, so the two never both apply. */
-    if (md == &dfi_pool_moves[DFI_MOVE_EARTHQUAKE] && r->b->terrain == DFI_TERRAIN_GRASSY && dfi_grounded(r->b, d)) {
+    if (md == &dfi_pool_moves[DFI_MOVE_EARTHQUAKE] && r->b->terrain == DFI_TERRAIN_GRASSY && dfi_grounded(r->b, d) &&
+        !dfi_semi_invulnerable(r, target)) { /* data/moves.ts:7695 (weakenedMoves: Earthquake is the marked one) */
         ok = ok && dfi_chain_modify(bp_chain, 2048u, &bp_chain);
     }
     /* Psychic Terrain (Team C): 5325/4096 for a grounded user's Psychic move
      * (onBasePowerPriority 6, like Grassy Terrain's, which cannot be up at
      * the same time). */
-    if (move_type == DFI_TYPE_PSYCHIC && r->b->terrain == DFI_TERRAIN_PSYCHIC && dfi_grounded(r->b, a)) {
+    if (move_type == DFI_TYPE_PSYCHIC && r->b->terrain == DFI_TERRAIN_PSYCHIC && dfi_grounded(r->b, a) &&
+        !dfi_semi_invulnerable(r, user)) { /* data/moves.ts:14132 */
         ok = ok && dfi_chain_modify(bp_chain, 5325u, &bp_chain);
     }
     /* Electric Terrain (step G25, data/moves.ts:4520-4527): 5325/4096 for a grounded user's Electric move, the same
      * handler slot (priority 6). Misty Terrain (:12175-12181): chainModify(0.5), 2048/4096, for a Dragon move at a grounded
      * target. */
-    if (move_type == DFI_TYPE_ELECTRIC && r->b->terrain == DFI_TERRAIN_ELECTRIC && dfi_grounded(r->b, a)) {
+    /* The attacker's boost: a semi-invulnerable user gets none (data/moves.ts:4533, :14132; no pool move reads it while the user is
+     * semi-invulnerable, the predicate keeps the reading of the pin). */
+    if (move_type == DFI_TYPE_ELECTRIC && r->b->terrain == DFI_TERRAIN_ELECTRIC && dfi_grounded(r->b, a) &&
+        !dfi_semi_invulnerable(r, user)) {
         ok = ok && dfi_chain_modify(bp_chain, 5325u, &bp_chain);
     }
-    if (move_type == DFI_TYPE_DRAGON && r->b->terrain == DFI_TERRAIN_MISTY && dfi_grounded(r->b, d)) {
+    if (move_type == DFI_TYPE_DRAGON && r->b->terrain == DFI_TERRAIN_MISTY && dfi_grounded(r->b, d) &&
+        !dfi_semi_invulnerable(r, target)) { /* data/moves.ts:12186 */
         ok = ok && dfi_chain_modify(bp_chain, 2048u, &bp_chain);
     }
     /* Expanding Force's own onBasePower (step G15, data/moves.ts:4952-4957): chainModify(1.5) for a grounded user in
@@ -2028,8 +2041,9 @@ static duoforge_status dfi_try_status(dfi_run *r, uint32_t flat, uint32_t status
      * status; both return false, and show `-activate|target|move: X Terrain` only for a move's own status (Electric:
      * `effect.effectType === 'Move' && !effect.secondaries`; Misty: `effect.status`, which a secondary's move does not
      * have), and nothing for a secondary or an ability (Poison Touch) or an item. A flying Pokemon is not grounded. */
+    /* The semi-invulnerable exemption (data/moves.ts:4517 for sleep, :12178 for every status): a charging target is not blocked. */
     if ((r->b->terrain == DFI_TERRAIN_MISTY || (r->b->terrain == DFI_TERRAIN_ELECTRIC && status == DFI_STATUS_SLP)) &&
-        dfi_grounded(r->b, m)) {
+        dfi_grounded(r->b, m) && !dfi_semi_invulnerable(r, flat)) {
         if (primary) {
             const uint32_t terrain_move =
                 r->b->terrain == DFI_TERRAIN_MISTY ? DFI_MOVE_MISTYTERRAIN : DFI_MOVE_ELECTRICTERRAIN;
@@ -2377,7 +2391,8 @@ static duoforge_status dfi_add_volatile(dfi_run *r, uint32_t flat, uint32_t whic
     }
     /* Misty Terrain's onTryAddVolatile (step G25, data/moves.ts:12170-12177): confusion on a grounded Pokemon returns
      * null; the -activate line is for a move without secondaries, and this function adds only a secondary's confusion. */
-    if (r->b->terrain == DFI_TERRAIN_MISTY && dfi_grounded(r->b, m)) {
+    /* onTryAddVolatile returns null for a grounded target that is not semi-invulnerable (data/moves.ts:12171). */
+    if (r->b->terrain == DFI_TERRAIN_MISTY && dfi_grounded(r->b, m) && !dfi_semi_invulnerable(r, flat)) {
         return DUOFORGE_OK;
     }
     uint32_t v = 0u;
@@ -5502,7 +5517,8 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
             r->mres |= DFI_MRES_NULL; /* Wide Guard's TryHit returns NOT_FAIL (data/moves.ts:20838-20848) */
             continue;
         }
-        if (psychic_block && t / 2u != side && dfi_grounded(b, dfi_at(b, t))) {
+        /* psychicterrain's onTryHit returns for a semi-invulnerable target (data/moves.ts:14119): a No Guard charger is not blocked. */
+        if (psychic_block && t / 2u != side && dfi_grounded(b, dfi_at(b, t)) && !dfi_semi_invulnerable(r, t)) {
             duoforge_event e = dfi_event_make(DUOFORGE_EVENT_BLOCKED, t);
             e.detail = (uint8_t)DUOFORGE_FIELD_PSYCHIC_TERRAIN; /* [-activate] move: Psychic Terrain */
             dfi_emit(r, &e);
@@ -7807,7 +7823,10 @@ static duoforge_status dfi_residual_events_run(dfi_run *r, dfi_noorder_snapshot 
         if (e->kind == DFI_RES_GRASSY) {
             /* heal(baseMaxhp / 16): at least 1, not above the maximum, not
              * for a Pokemon that is not grounded or at full HP. */
-            if (dfi_grounded(b, m) && m->hp < m->hp_max && !dfi_heal_blocked(b, e->flat)) {
+            /* A semi-invulnerable Pokemon takes no heal (data/moves.ts:7714). At this entry the charge turn's count is still 2
+             * (the decrement below comes after the entries), and the locked turn's volatile is gone: see dfi_semi_invulnerable. */
+            if (dfi_grounded(b, m) && m->hp < m->hp_max && !dfi_heal_blocked(b, e->flat) &&
+                !dfi_semi_invulnerable(r, e->flat)) {
                 uint32_t heal = (uint32_t)m->hp_max / 16u;
                 heal = heal == 0u ? 1u : heal;
                 const uint32_t hp = (uint32_t)m->hp + heal;

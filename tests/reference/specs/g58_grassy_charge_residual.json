@@ -1,0 +1,20 @@
+{
+ "name": "g58_grassy_charge_residual",
+ "purpose": "G58 (decision 0015 5ax, the semi-invulnerable exemptions of the terrains): Grassy Terrain (Rillaboom, Grassy Surge) is up; Ceruledge (M, Grassy Seed) is shot by Decidueye Shadow Sneak before its slow Phantom Force charge on turn 1, then keeps charging with its volatile up: the Grassy residual heal of the charge turn is refused (data/moves.ts:7714), the locked turn heals it. Kingambit (M), Gyarados, Milotic, Raichu, Indeedee are from team Y of random battle 52 of run 58.",
+ "data": "pool",
+ "format": "gen9championsvgc2026regmc",
+ "seed": "sodium,de2cf3f5f4085878b51f0c604b09bb213aa0d06aca44e466c99d72a8b5eb4513",
+ "teams": [
+  "Rillaboom (M) @ Miracle Seed\nAbility: Grassy Surge\nLevel: 50\nEVs: 18 HP / 32 Atk / 2 Def / 6 SpD / 8 Spe\nAdamant Nature\n- Wood Hammer\n- Grassy Glide\n- Fake Out\n- U-turn\n\nCeruledge (M) @ Grassy Seed\nAbility: Flash Fire\nLevel: 50\nEVs: 31 HP / 7 Atk / 24 Def / 3 SpD / 1 Spe\nAdamant Nature\n- Phantom Force\n- Quick Guard\n- Protect\n- Close Combat\n\nGholdengo @ Focus Sash\nAbility: Good as Gold\nLevel: 50\nEVs: 17 HP / 2 Def / 17 SpA / 16 SpD\nModest Nature\n- Shadow Ball\n- Protect\n- Make It Rain\n- Iron Head\n\nGengar (M) @ Mystic Water\nAbility: Cursed Body\nLevel: 50\nEVs: 32 HP / 2 Def / 32 Spe\nTimid Nature\n- Toxic\n- Protect\n- Shadow Ball\n- Taunt\n\nMachamp (M) @ Sitrus Berry\nAbility: Steadfast\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Coaching\n- Protect\n- Close Combat\n- Wide Guard\n\nGolurk @ Leftovers\nAbility: No Guard\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Phantom Force\n- Protect\n- Earthquake\n- Close Combat",
+  "Decidueye (M) @ Sitrus Berry\nAbility: Overgrow\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- U-turn\n- Protect\n- Shadow Sneak\n- Knock Off\n\nKingambit (M) @ Black Glasses\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Sucker Punch\n- Protect\n- Taunt\n- Iron Head\n\nMilotic (F) @ Eject Button\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Protect\n- Coil\n\nRaichu (F) @ Life Orb\nAbility: Lightning Rod\nLevel: 50\nEVs: 29 HP / 5 Def / 32 Spe\nTimid Nature\n- Thunderbolt\n- Protect\n\nIndeedee-F (F) @ Rocky Helmet\nAbility: Psychic Surge\nLevel: 50\nEVs: 32 HP / 32 Def / 2 SpD\nRelaxed Nature\n- Protect\n\nGyarados (M) @ Focus Sash\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 2 Def / 32 Spe\nJolly Nature\n- Roar\n- Protect"
+ ],
+ "plan": {
+  "p1": [
+   "move 1, move 1"
+  ],
+  "p2": [
+   "move 3 2, move 2"
+  ],
+  "max_steps": 5
+ }
+}
