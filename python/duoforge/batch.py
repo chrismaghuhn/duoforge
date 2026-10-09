@@ -114,6 +114,27 @@ class Batch:
             self._check(st)
         return views, statuses
 
+    def public_causes(self, players):
+        """The DUOFORGE_PUBLIC_CAUSE_* mask of every environment (E,) uint32 and
+        per-env statuses (duoforge_batch_public_causes, decision 0026 section 4):
+        why public() refuses, decided by the player's view alone (a visible
+        sleep or confusion, a possible Illusion); 0 when public() succeeds or
+        refuses for another cause. Borrowed buffers, overwritten by the next
+        call. An invalid batch argument raises before C touches any
+        environment."""
+        _require(players, np.uint32, (self.envs,), "players")
+        if (players > 1).any():
+            raise ValueError("players must hold 0 or 1")
+        if "public_causes" not in self._buffers:
+            self._buffers["public_causes"] = (np.zeros(self.envs, np.uint32), np.zeros(self.envs, np.uint32))
+        masks, statuses = self._buffers["public_causes"]
+        masks.fill(0)
+        statuses.fill(0xFFFFFFFF)
+        st = self._lib.duoforge_batch_public_causes(self._live(), ptr(players), ptr(masks), ptr(statuses))
+        if st and (statuses == 0xFFFFFFFF).all():
+            self._check(st)
+        return masks, statuses
+
     def from_view(self, views, hypotheses, count=None):
         """Build the first count worlds; return per-env statuses, preserving
         each failed environment. Inputs must be contiguous structured arrays.
