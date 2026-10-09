@@ -131,23 +131,27 @@ class FullSpace(unittest.TestCase):
 
 
 class Teacher(unittest.TestCase):
-    """label_decision on real roots with the synthetic net (small K, M, W for speed)."""
+    """label_decision on real roots with the synthetic net, at the P1 sizes (K = M = 8, W = 16,
+    capacity 1024): 1024 primary and 1152 audit leaves, the audit in two expand chunks."""
 
     @classmethod
     def setUpClass(cls):
+        from duoforge_search import expert_data as ed
+        from python.tests.test_expert_data import manifest
         cls.net = FoeSensitiveNet()
+        cls.manifest = manifest(ed)
 
-    def make(self, ctx, k=3):
+    def make(self, ctx, k=8, net=None, seed=lookahead.SEARCH_SEED, excluded=None):
+        net = net or self.net
         table = belief.SpreadTable.from_sides(duoforge.reference_setups([0])["sides"].reshape(-1))
         with duoforge.Batch(ctx, duoforge.reference_setups([0]), 1, 42) as b:
             mask = int(b.observe_ext()[0, 0]["supported"])
-        return honest.Honest(ctx, self.net, self.net.params, 4, mask, k=k, m=2, s=2, rule="mix",
-                             capacity=16, workers=2, table=table)
+        return honest.Honest(ctx, net, net.params, 4, mask, k=k, m=8, s=16, rule="mix", capacity=1024,
+                             workers=2, table=table, seed=seed, exclude_teams=excluded)
 
-    def config(self, search, **kw):
+    def config(self, **kw):
         from duoforge_search import expert as ex
-        return ex.TeacherConfig(**{"seed": 77, "k": search.k, "m": search.m, "worlds": search.s,
-                                   "lam": search.lam, "capacity": search.capacity, **kw})
+        return ex.TeacherConfig.from_manifest(self.manifest, **kw)
 
     @staticmethod
     def start_turn(roots):
@@ -157,23 +161,36 @@ class Teacher(unittest.TestCase):
         roots.step_factored(choices)
         roots.query_factored()
 
-    def label(self, search, roots, env, seat, raw, cfg):
+    def label(self, search, roots, env, seat, raw, cfg, game=None):
         from duoforge_search import expert as ex
-        key = DecisionKey(500, seat, int(roots.requests[env, seat]["epoch"]))
-        return ex.label_decision(search, roots, env=env, seat=seat, key=key, raw_action=raw,
-                                 raw_logp=-1.25, last_step=False, config=cfg)
+        game = 500 + seat if game is None else game
+        key = DecisionKey(game, seat, int(roots.requests[env, seat]["epoch"]))
+        return ex.label_decision(search, roots, env=env, seat=seat, key=key, raw_action=raw, raw_logp=-1.25,
+                                 last_step=False, config=cfg, manifest=self.manifest)
+
+    def turn_roots(self, ctx, search, envs=2, seat=0):
+        from duoforge_search import expert as ex
+        b = duoforge.Batch(ctx, np.repeat(duoforge.reference_setups([0]), envs), 2, 42)
+        b.query_factored()  # the collector has queried its roots before observing
+        ex.observe(search, b, list(range(envs)), [seat] * envs)  # team preview
+        self.start_turn(b)
+        ex.observe(search, b, list(range(envs)), [seat] * envs)  # turn start
+        return b
+
+    @staticmethod
+    def low_raw(search, roots, env, seat):
+        """The legal pair the policy ranks last: never among the top K."""
+        obs, slots, pairs = roots.query_encoded(4, search.ext_supported)
+        logp = search._policy(obs[env:env + 1, seat], slots[env:env + 1, seat], pairs[env:env + 1, seat])[0][0]
+        legal = np.flatnonzero(pairs[env, seat].reshape(-1))
+        return int(legal[np.argsort(-logp[legal], kind="stable")][-1])
 
     def test_teacher_foe_model_and_privileged_traps(self):
         from duoforge_search import expert as ex
         for seat in (0, 1):
             with self.subTest(seat=seat), duoforge.Context(C["DUOFORGE_DATA_KIND_POOL"]) as ctx, \
-                    duoforge.Batch(ctx, np.repeat(duoforge.reference_setups([0]), 2), 2, 42) as b, \
-                    self.make(ctx) as search:
-                cfg = self.config(search)
-                b.query_factored()  # the collector has queried its roots before observing
-                ex.observe(search, b, [0, 1], [seat, seat])  # team preview
-                self.start_turn(b)
-                ex.observe(search, b, [0, 1], [seat, seat])  # turn start
+                    self.make(ctx) as search, self.turn_roots(ctx, search, seat=seat) as b:
+                cfg = self.config()
                 v, st = b.public(np.full(2, seat, np.uint32))
                 self.assertFalse(st.any())
                 # Hidden truth of environment 1 differs: foe stat points, bench order and RNG.
@@ -193,22 +210,24 @@ class Teacher(unittest.TestCase):
                 truth = [privileged.hypothesis(b, e, seat) for e in range(2)]
                 self.assertNotEqual(truth[0].tobytes(), truth[1].tobytes())
                 ex.observe(search, b, [0, 1], [seat, seat])
-                _, _, pairs = b.query_encoded(4, search.ext_supported)
-                raw = int(np.flatnonzero(pairs[0, seat].reshape(-1))[-1])  # a low-prior legal pair
-                # Privileged state, the true root bytes and any second (real opponent) network
-                # must never be read: the teacher models the foe with its own net only.
-                opponent = mock.Mock(side_effect=AssertionError("real opponent network"))
+                raw = self.low_raw(search, b, 0, seat)
+                # Privileged state and the true root bytes must never be read; the teacher has no
+                # opponent-network input at all and models the foe with its own net only.
                 with mock.patch.object(privileged, "hypothesis", side_effect=AssertionError("privileged")), \
                         mock.patch.object(b._lib, "duoforge_battle_hypothesis", side_effect=AssertionError("direct privileged ABI")), \
                         mock.patch.object(b, "encode", side_effect=AssertionError("true root bytes")):
-                    decisions = [self.label(search, b, e, seat, raw, cfg) for e in range(2)]
-                opponent.assert_not_called()
-                a, c = decisions
+                    a, c = (self.label(search, b, e, seat, raw, cfg) for e in range(2))
                 self.assertIs(a.status, ex.RowStatus.TARGET)
                 for name in ("world_digest", "table_digest", "label_digest", "action", "behavior_logp"):
                     self.assertEqual(getattr(a, name), getattr(c, name), name)
                 np.testing.assert_array_equal(a.target.ids, c.target.ids)
                 self.assertIn(raw, a.target.ids.tolist())
+                # A second model with other weights as the teacher's foe model changes the tables:
+                # the digests see the network that models the foe.
+                with self.make(ctx, net=FoeSensitiveNet(seed=99)) as other:
+                    other.history[b] = {k: dict(v) for k, v in search.history[b].items()}  # same public history
+                    swapped = self.label(other, b, 0, seat, raw, cfg)
+                self.assertNotEqual(swapped.table_digest, a.table_digest)
                 # Negative control: leak the true foe stat points into the sampled worlds and the
                 # world digest (and with it the tables) must tell the two environments apart.
                 real_sample = search.belief.sample
@@ -227,55 +246,49 @@ class Teacher(unittest.TestCase):
                         leaked.append(self.label(search, b, e, seat, raw, cfg))
                 self.assertNotEqual(leaked[0].world_digest, leaked[1].world_digest)
 
-    def turn_roots(self, ctx, search, envs=2):
-        b = duoforge.Batch(ctx, np.repeat(duoforge.reference_setups([0]), envs), 2, 42)
-        from duoforge_search import expert as ex
-        b.query_factored()
-        ex.observe(search, b, list(range(envs)), [0] * envs)
-        self.start_turn(b)
-        ex.observe(search, b, list(range(envs)), [0] * envs)
-        return b
-
     def test_tau_execution_and_explicit_fallbacks(self):
         import math
         from duoforge_search import expert as ex, matrix
         from duoforge_search import expert_data as ed
-        from python.tests.test_expert_data import manifest
+        m = self.manifest
         with duoforge.Context(C["DUOFORGE_DATA_KIND_POOL"]) as ctx, self.make(ctx) as search:
-            cfg = self.config(search, audit_threshold=0)
+            cfg = self.config(audit_threshold=0)
             with self.turn_roots(ctx, search) as b:
                 obs, slots, pairs = b.query_encoded(4, search.ext_supported)
-                raw = int(np.flatnonzero(pairs[0, 0].reshape(-1))[-1])
+                raw = self.low_raw(search, b, 0, 0)
+                top = lookahead.select(search._policy(obs[:1, 0], slots[:1, 0], pairs[:1, 0])[0][0], pairs[0, 0], 9)[0]
+                self.assertNotIn(raw, top.tolist())
                 key = DecisionKey(500, 0, int(b.requests[0, 0]["epoch"]))
                 d = self.label(search, b, 0, 0, raw, cfg)
-                # TARGET: the exact play distribution of X, the X-word draw and its likelihood.
+                # TARGET: the raw action displaces the 8th candidate; X's play distribution, the X draw.
                 self.assertIs(d.status, ed.RowStatus.TARGET)
                 self.assertIsNone(d.cause)
+                np.testing.assert_array_equal(d.target.ids, np.append(top[:7], raw))
+                self.assertEqual(d.raw_action, raw)
                 probs = d.target.probs
                 self.assertLessEqual(abs(math.fsum(probs.tolist()) - 1.0), 1e-12)
                 self.assertTrue((probs[probs > 0] >= 1e-9).all())
                 index = d.target.ids.tolist().index(d.action)
                 self.assertEqual(d.behavior_logp, math.log(float(probs[index])))
-                u = (ed.selection_word(key, 77, domain="X") >> 11) * 2.0 ** -53
+                u = (ed.selection_word(key, m.seed, domain="X") >> 11) * 2.0 ** -53
                 self.assertEqual(index, int(np.flatnonzero(np.cumsum(probs) > u)[0]))
-                self.assertIn(raw, d.target.ids.tolist())
-                self.assertEqual(d.work["status"], "ok")
+                self.assertEqual((d.work["status"], d.work["leaves"]), ("ok", 8 * 8 * 16))
                 self.assertGreater(d.work["float_pivots"], 0)
                 self.assertEqual(dict(d.audit), {"selected": False})
                 # Work exhaustion: the raw action with the student's likelihood and a named cause.
-                tiny = self.config(search, audit_threshold=0, budget=matrix.WorkBudget(float_pivots=1))
+                tiny = self.config(audit_threshold=0, budget=matrix.WorkBudget(float_pivots=1))
                 w = self.label(search, b, 0, 0, raw, tiny)
                 self.assertEqual((w.status, w.cause, w.action, w.behavior_logp, w.target),
                                  (ed.RowStatus.WORK_EXHAUSTED, "work:float_pivots", raw, -1.25, None))
                 self.assertEqual(w.work["status"], "float_pivots")
-                # The K+1 audit reuses the worlds with its own ledger and never changes the label.
-                audited = self.label(search, b, 0, 0, raw, self.config(search, audit_threshold=2**64))
+                # The K+1 audit: the displaced 8th candidate returns as the 9th, 1152 leaves in two
+                # chunks of capacity 1024, on the same worlds and never changing the label.
+                audited = self.label(search, b, 0, 0, raw, self.config(audit_threshold=2**64))
                 for name in ("action", "behavior_logp", "status", "world_digest", "table_digest", "label_digest"):
                     self.assertEqual(getattr(audited, name), getattr(d, name), name)
-                self.assertTrue(audited.audit["selected"])
                 self.assertEqual(audited.audit["status"], "ok")
-                self.assertEqual(len(audited.audit["candidates"]), search.k + 1)
-                self.assertIn(raw, audited.audit["candidates"])
+                self.assertEqual(audited.audit["candidates"], np.append(top[:8], raw).tolist())
+                self.assertEqual(audited.audit["leaves"], 9 * 8 * 16)
                 for name in ("action_changed", "value", "value_delta", "certificate", "work"):
                     self.assertIn(name, audited.audit)
                 self.assertLessEqual(audited.audit["certificate"], 1e-9)
@@ -289,24 +302,28 @@ class Teacher(unittest.TestCase):
                     return real(*args, **kwargs)
 
                 with mock.patch.object(search, "_decision", side_effect=audit_exhausts):
-                    incomplete = self.label(search, b, 0, 0, raw, self.config(search, audit_threshold=2**64))
+                    incomplete = self.label(search, b, 0, 0, raw, self.config(audit_threshold=2**64))
                 self.assertEqual(incomplete.audit["status"], "exhausted:exact_ops")
                 self.assertEqual((incomplete.action, incomplete.label_digest), (d.action, d.label_digest))
-                # Only admitted eligible roots are labeled, after observe(), with their own key.
+                # Only admitted eligible roots of the learner seat are labeled, after observe(),
+                # with the manifest's configuration and their own key.
                 one = np.zeros_like(pairs)
                 one[0, 0].reshape(-1)[raw] = True
                 with mock.patch.object(b, "query_encoded", return_value=(obs, slots, one)), \
                         self.assertRaisesRegex(ValueError, "two legal"):
                     self.label(search, b, 0, 0, raw, cfg)
-                with self.assertRaisesRegex(ValueError, "key"):
-                    ex.label_decision(search, b, env=0, seat=0, key=DecisionKey(500, 1, key.request_epoch),
-                                      raw_action=raw, raw_logp=-1.0, last_step=False, config=cfg)
-                with self.assertRaises(ValueError):
-                    self.label(search, b, 0, 0, raw, self.config(search, audit_threshold=0, lam=0.25))
+                for game, seat_key in ((500, 1), (501, 0)):  # wrong seat; game 501's learner is seat 1
+                    with self.subTest(game=game, seat=seat_key), self.assertRaises(ValueError):
+                        ex.label_decision(search, b, env=0, seat=0, key=DecisionKey(game, seat_key, key.request_epoch),
+                                          raw_action=raw, raw_logp=-1.0, last_step=False, config=cfg, manifest=m)
+                for bad in (ex.TeacherConfig(seed=8, audit_threshold=0), self.config(audit_threshold=0, lam=0.25),
+                            self.config(audit_threshold=0, search_seed=5)):
+                    with self.subTest(config=bad), self.assertRaises(ValueError):
+                        self.label(search, b, 0, 0, raw, bad)
                 for bad_logp in (0.5, float("nan")):
                     with self.assertRaises(ValueError):
                         ex.label_decision(search, b, env=0, seat=0, key=key, raw_action=raw, raw_logp=bad_logp,
-                                          last_step=False, config=cfg)
+                                          last_step=False, config=cfg, manifest=m)
                 # Visible sleep has no supported public reconstruction: a named public refusal.
                 decode = b._lib.duoforge_battle_decode
                 decode.restype = ctypes.c_uint32
@@ -317,21 +334,23 @@ class Teacher(unittest.TestCase):
                 self.assertEqual(decode(ctx.handle, b._battle(1), fixture.ctypes.data, fixture.size), 0)
                 b.query_factored()
                 ex.observe(search, b, [1], [0])
-                key1 = DecisionKey(501, 0, int(b.requests[1, 0]["epoch"]))
-                refused = ex.label_decision(search, b, env=1, seat=0, key=key1, raw_action=raw, raw_logp=-0.75,
-                                            last_step=False, config=cfg)
+                refused = self.label(search, b, 1, 0, raw, cfg, game=502)
                 self.assertEqual((refused.status, refused.cause, refused.action, refused.behavior_logp),
-                                 (ed.RowStatus.PUBLIC_REFUSAL, "public:visible_sleep", raw, -0.75))
-                with self.assertRaisesRegex(ValueError, "observe"):  # a new request needs observe() first
-                    b.query_factored()
-                    stale = DecisionKey(501, 0, int(b.requests[1, 0]["epoch"]))
-                    search.history[b][(1, 0)]["observed"] = -1
-                    ex.label_decision(search, b, env=1, seat=0, key=stale, raw_action=raw, raw_logp=-0.75,
-                                      last_step=False, config=cfg)
+                                 (ed.RowStatus.PUBLIC_REFUSAL, "public:visible_sleep", raw, -1.25))
+                search.history[b][(1, 0)]["observed"] = -1
+                with self.assertRaisesRegex(ValueError, "observe"):  # a request needs observe() first
+                    self.label(search, b, 1, 0, raw, cfg, game=502)
+            # A collector that never observed the team preview is a bug, not a public refusal.
+            with duoforge.Batch(ctx, duoforge.reference_setups([0]), 2, 42) as late:
+                late.query_factored()
+                self.start_turn(late)
+                ex.observe(search, late, [0], [0])
+                with self.assertRaisesRegex(ValueError, "team preview"):
+                    self.label(search, late, 0, 0, self.low_raw(search, late, 0, 0), cfg)
             # Rows without a search: the pre-drawn raw action and its likelihood, checked statuses.
             capped = ex.raw_decision(ed.RowStatus.CAP_RAW, raw, -2.5, legal_count=5)
-            self.assertEqual((capped.status, capped.action, capped.behavior_logp, capped.target, capped.cause),
-                             (ed.RowStatus.CAP_RAW, raw, -2.5, None, None))
+            self.assertEqual((capped.status, capped.action, capped.raw_action, capped.behavior_logp, capped.target,
+                              capped.cause), (ed.RowStatus.CAP_RAW, raw, raw, -2.5, None, None))
             self.assertIs(ex.raw_decision(ed.RowStatus.UNSELECTED, raw, -0.5, legal_count=2).status, ed.RowStatus.UNSELECTED)
             self.assertIs(ex.raw_decision(ed.RowStatus.FORCED, raw, 0.0, legal_count=1).status, ed.RowStatus.FORCED)
             for status, logp, count in ((ed.RowStatus.FORCED, 0.0, 2), (ed.RowStatus.FORCED, -0.1, 1),
@@ -346,7 +365,6 @@ class Teacher(unittest.TestCase):
                 with self.assertRaises(ValueError):
                     ex.learner_seat(bad)
             # teacher_row keeps the collector's actual step values and follows validate_row.
-            m = manifest(ed)
             step = ex.StepData(key=key, logical_tick=3, boundary="TURN", obs=obs[0, 0], slots=slots[0, 0],
                                legal_mask=pairs[0, 0], requested=True, reward=0.25, done=False,
                                collector_value=0.1, bootstrap=-0.3)
@@ -356,87 +374,86 @@ class Teacher(unittest.TestCase):
             self.assertEqual((row.reward, row.done, row.collector_value, row.bootstrap, row.logical_tick),
                              (0.25, False, 0.1, -0.3, 3))
             np.testing.assert_array_equal(row.sparse_policy.probs, d.target.probs)
+            self.assertEqual(ex.teacher_row(audited, step, m).audit["work"]["status"], "ok")  # audit work kept
             self.assertEqual(ex.teacher_row(w, step, m).cause, "work:float_pivots")
             self.assertTrue(ex.teacher_row(w, step, m).admitted)
             self.assertFalse(ex.teacher_row(capped, step, m).admitted)
             waiting = ex.teacher_row(None, dataclasses.replace(step, requested=False), m)
             self.assertEqual((waiting.status, waiting.action, waiting.acting, waiting.value_mask),
                              (ed.RowStatus.UNREQUESTED, None, False, True))
-            with self.assertRaises(ValueError):
-                ex.teacher_row(None, step, m)  # a requested row needs a decision
-            with self.assertRaises(ValueError):
-                ex.teacher_row(d, dataclasses.replace(step, requested=False), m)
-            with self.assertRaises(ValueError):
-                ex.teacher_row(d, dataclasses.replace(step, boundary="TEAM_SELECTION"), m)
+            team = np.zeros(360, bool)
+            team[:3] = True
+            preview = ex.teacher_row(ex.raw_decision(ed.RowStatus.UNSELECTED, 2, -1.1, legal_count=3),
+                                     dataclasses.replace(step, boundary="TEAM_SELECTION", legal_mask=team), m)
+            self.assertEqual((preview.status, preview.action), (ed.RowStatus.UNSELECTED, 2))
+            for bad_step, decision in ((step, None), (dataclasses.replace(step, requested=False), d),
+                                       (dataclasses.replace(step, boundary="TEAM_SELECTION"), d),
+                                       (dataclasses.replace(step, key=DecisionKey(501, 0, key.request_epoch)), d)):
+                with self.assertRaises(ValueError):
+                    ex.teacher_row(decision, bad_step, m)
 
     def test_teacher_resume_permutation_regrouping_clock_bytes(self):
         import itertools
         import json
         from duoforge_search import expert as ex
         from duoforge_search import expert_data as ed
-        from python.tests.test_expert_data import manifest
-        m = manifest(ed)
+        m = self.manifest
         envs = 3
 
-        def labels(search, b, order, cfg):
-            _, _, pairs = b.query_encoded(4, search.ext_supported)
+        def labels(search, b, games, cfg):
+            """Decision bytes by game id; games maps each environment slot to its game."""
             out = {}
-            for e in order:
-                raw = int(np.flatnonzero(pairs[e, 0].reshape(-1))[-1])
-                key = DecisionKey(500 + e, 0, int(b.requests[e, 0]["epoch"]))
-                out[e] = ex.decision_bytes(ex.label_decision(search, b, env=e, seat=0, key=key, raw_action=raw,
-                                                             raw_logp=-1.25, last_step=False, config=cfg))
+            for e, game in games:
+                raw = self.low_raw(search, b, e, 0)
+                key = DecisionKey(game, 0, int(b.requests[e, 0]["epoch"]))
+                out[game] = ex.decision_bytes(ex.label_decision(search, b, env=e, seat=0, key=key, raw_action=raw,
+                                                                raw_logp=-1.25, last_step=False, config=cfg, manifest=m))
             return out
 
-        def admit(b, order):
+        def admit(b, games):
             _, _, pairs = b.query_encoded(4, 0)
             cursor = ed.LabelCursor()
-            ed.admit_tick(cursor, [ed.AdmissionRequest(DecisionKey(500 + e, 0, int(b.requests[e, 0]["epoch"])), "TURN",
-                                                       int(pairs[e, 0].sum())) for e in order])
+            ed.admit_tick(cursor, [ed.AdmissionRequest(DecisionKey(game, 0, int(b.requests[e, 0]["epoch"])), "TURN",
+                                                       int(pairs[e, 0].sum())) for e, game in games])
             return cursor
 
-        def run(ctx, order, groups=((0, 1, 2),), resume=False):
+        def run(ctx, games, groups=((0, 1, 2),), resume=False):
             with self.make(ctx) as search, \
                     duoforge.Batch(ctx, np.repeat(duoforge.reference_setups([0]), envs), 2, 42) as b:
-                cfg = self.config(search, audit_threshold=2**64)  # the audit runs too
+                cfg = self.config(audit_threshold=2**64)  # the audit runs too
                 b.query_factored()
                 for g in groups:
                     ex.observe(search, b, list(g), [0] * len(g))
                 self.start_turn(b)
                 for g in groups:
                     ex.observe(search, b, list(g), [0] * len(g))
-                cursor = admit(b, order)
+                cursor = admit(b, games)
                 if resume:
                     data = ex.teacher_checkpoint(search, b, cursor, cfg, m)
                     with self.make(ctx) as fresh:
                         restored = ex.restore_teacher(fresh, b, data, cfg, m)
-                        return labels(fresh, b, order, cfg), ed.cursor_bytes(restored, m)
-                return labels(search, b, order, cfg), ed.cursor_bytes(cursor, m)
+                        return labels(fresh, b, games, cfg), ed.cursor_bytes(restored, m)
+                return labels(search, b, games, cfg), ed.cursor_bytes(cursor, m)
 
         with duoforge.Context(C["DUOFORGE_DATA_KIND_POOL"]) as ctx:
-            base = run(ctx, [0, 1, 2])
+            base = run(ctx, [(0, 500), (1, 502), (2, 504)])
             self.assertEqual(len(set(base[0].values())), envs)  # each game's own key words
-            self.assertEqual(run(ctx, [2, 0, 1]), base)
-            self.assertEqual(run(ctx, [1, 2, 0], groups=((2,), (0, 1))), base)
-            self.assertEqual(run(ctx, [2, 1, 0], resume=True), base)
+            # Games permuted across environment slots and call order: per-game bytes are unchanged.
+            self.assertEqual(run(ctx, [(2, 500), (0, 502), (1, 504)]), base)
+            self.assertEqual(run(ctx, [(1, 504), (2, 500), (0, 502)], groups=((2,), (0, 1))), base)
+            self.assertEqual(run(ctx, [(0, 502), (2, 504), (1, 500)], resume=True), base)
             jumps = itertools.count()
 
             def clock(*_):
                 return float(next(jumps) ** 2 * 3.5)
 
             with mock.patch("time.perf_counter", side_effect=clock), mock.patch("time.monotonic", side_effect=clock):
-                self.assertEqual(run(ctx, [0, 1, 2]), base)
+                self.assertEqual(run(ctx, [(0, 500), (1, 502), (2, 504)]), base)
             # Incompatible or partial resumes are refused.
-            with self.make(ctx) as search, \
-                    duoforge.Batch(ctx, np.repeat(duoforge.reference_setups([0]), envs), 2, 42) as b:
-                cfg = self.config(search)
-                b.query_factored()
-                ex.observe(search, b, [0, 1, 2], [0, 0, 0])
-                self.start_turn(b)
-                ex.observe(search, b, [0, 1, 2], [0, 0, 0])
-                cursor = admit(b, [0, 1, 2])
+            with self.make(ctx) as search, self.turn_roots(ctx, search, envs) as b:
+                cfg = self.config()
+                cursor = admit(b, [(0, 500), (1, 502), (2, 504)])
                 data = ex.teacher_checkpoint(search, b, cursor, cfg, m)
-                payload = json.loads(data)
 
                 def rehashed(change):
                     value = json.loads(data)
@@ -445,23 +462,26 @@ class Teacher(unittest.TestCase):
                     return json.dumps({**content, "content_sha256": ed._sha(content)}).encode("ascii")
 
                 cases = {
-                    "other config": (data, self.config(search, seed=78), m, None),
-                    "other manifest": (data, cfg, dataclasses.replace(m, seed=8), None),
-                    "truncated": (data[:-9], cfg, m, None),
-                    "tampered": (data.replace(b'"observed":', b'"observed":1', 1), cfg, m, None),  # a value, unhashed
-                    "key version": (rehashed(lambda v: v.__setitem__("key_version", 2)), cfg, m, None),
-                    "schema": (rehashed(lambda v: v.__setitem__("version", 2)), cfg, m, None),
-                    "record size": (rehashed(lambda v: v["histories"][0].__setitem__("preview", "00")), cfg, m, None),
-                    "fewer envs": (data, cfg, m, 2),
+                    "other config": (data, self.config(budget=ex.matrix.WorkBudget(exact_pivots=31)), m, {}),
+                    "other manifest": (data, cfg, dataclasses.replace(m, split_seed=8), {}),
+                    "truncated": (data[:-9], cfg, m, {}),
+                    "tampered": (data.replace(b'"observed":', b'"observed":1', 1), cfg, m, {}),  # a value, unhashed
+                    "key version": (rehashed(lambda v: v.__setitem__("key_version", 2)), cfg, m, {}),
+                    "schema": (rehashed(lambda v: v.__setitem__("version", 2)), cfg, m, {}),
+                    "record size": (rehashed(lambda v: v["histories"][0].__setitem__("preview", "00")), cfg, m, {}),
+                    "fewer envs": (data, cfg, m, {"envs": 2}),
+                    "other weights": (data, cfg, m, {"net": FoeSensitiveNet(seed=99)}),
+                    "other search seed": (data, self.config(search_seed=5), m, {"seed": 5}),
+                    "other exclusions": (data, cfg, m, {"excluded": [None, None, 0]}),
                 }
-                self.assertIn("histories", payload)
-                for name, (blob, config, man, env_count) in cases.items():
-                    with self.subTest(name), self.make(ctx) as fresh, \
-                            duoforge.Batch(ctx, np.repeat(duoforge.reference_setups([0]), env_count or envs), 2, 42) as other:
-                        target = b if env_count is None else other
+                for name, (blob, config, man, change) in cases.items():
+                    env_count = change.pop("envs", envs)
+                    with self.subTest(name), self.make(ctx, **change) as fresh, \
+                            duoforge.Batch(ctx, np.repeat(duoforge.reference_setups([0]), env_count), 2, 42) as other:
+                        target = b if env_count == envs else other
                         with self.assertRaises(ValueError):
                             ex.restore_teacher(fresh, target, blob, config, man)
-                with self.make(ctx, k=2) as smaller, self.assertRaises(ValueError):
+                with self.make(ctx, k=7) as smaller, self.assertRaises(ValueError):
                     ex.restore_teacher(smaller, b, data, cfg, m)  # the search must run the configuration
                 with self.assertRaisesRegex(ValueError, "fresh"):
                     ex.restore_teacher(search, b, data, cfg, m)  # never merged into a live history
