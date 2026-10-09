@@ -2119,7 +2119,8 @@ class Library(unittest.TestCase):
     def test_the_data_has_the_df_conf_shape(self):
         spec, trace = battle('s2_turn_core_1')
         data = convert('s2_turn_core_1', spec, trace)
-        self.assertEqual(sorted(data), ['dropped_total', 'member_count', 'members', 'name', 'purpose', 'steps'])
+        self.assertEqual(sorted(data), ['dropped_total', 'illusion_duplicate_step', 'member_count', 'members', 'name', 'purpose', 'steps'])
+        self.assertIsNone(data['illusion_duplicate_step'])  # no disguise shown beside its real member in this battle
         self.assertEqual((data['name'], data['purpose']), ('s2_turn_core_1', spec['purpose']))
         self.assertEqual(data['member_count'], 4)
         self.assertEqual([len(rows) for rows in data['members']], [4, 4])
