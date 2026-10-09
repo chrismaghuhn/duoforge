@@ -69,6 +69,15 @@ typedef struct dfi_run {
     uint32_t drag_pending;
     /* step G42: the classification of the current move action's result (DFI_MRES_*, bits; 0 = none seen). */
     uint32_t mres;
+    /* Step G45, Moxie: the cause of the last faint queued (faintData, the last of faintQueue, sim/battle.ts:2549-2601): the
+     * flat position of the Pokemon that caused it, and whether it is the direct damage of a Move (effect.effectType 'Move').
+     * Read only while faint_count is not 0; every queued faint sets both.
+     * Run-scoped scratch, not state: they are set and read inside one step's dfi_run (between the faint announcement and
+     * AfterFaint, or the process of the same action), never saved in the battle, the codec or the digest. The epilogue of
+     * every action runs dfi_process_faints before the step can end (a PIVOT boundary included), which resets faint_count, so
+     * the fields are dead at a step boundary. If that ever stopped being true they would be state: stop and report. */
+    uint32_t last_faint_by;
+    bool last_faint_move;
 } dfi_run;
 
 #define DFI_MOVE_TARGET_NONE DFI_POSITIONS          /* no target Pokemon */
@@ -1536,6 +1545,12 @@ static duoforge_status dfi_get_damage(dfi_run *r, uint32_t user, uint32_t target
     if (((uint32_t)dfi_pos(r->b, user)->flags & DFI_VOL_HELPING_HAND) != 0u) {
         ok = ok && dfi_chain_modify(bp_chain, 6144u, &bp_chain);
     }
+    /* Punk Rock (step G45, data/abilities.ts:3589-3602, onBasePowerPriority 7: after Helping Hand's 10 and the items' 15, before
+     * the terrains' 6): chainModify([5325, 4096]) for a sound move of the holder (breakable; Mold Breaker is not marked). */
+    if (dfi_ability(r->b, a, DFI_ABILITY_PUNKROCK) && md->special != DFI_SPECIAL_STRUGGLE &&
+        (dfi_pool_move_flags2[(uint32_t)(md - dfi_pool_moves)] & DFI_MOVE_FLAG2_SOUND) != 0u) { /* wide-operands-reviewed: a pointer into the move table */
+        ok = ok && dfi_chain_modify(bp_chain, 5325u, &bp_chain);
+    }
     if (move_type == DFI_TYPE_GRASS && r->b->terrain == DFI_TERRAIN_GRASSY && dfi_grounded(r->b, a)) {
         ok = ok && dfi_chain_modify(bp_chain, 5325u, &bp_chain);
     }
@@ -1743,6 +1758,14 @@ static duoforge_status dfi_get_damage(dfi_run *r, uint32_t user, uint32_t target
         mlist[mods] = 2048u;
         mods += 1u;
     }
+    /* Punk Rock's onSourceModifyDamage (step G45, data/abilities.ts:3597-3602, breakable): chainModify(0.5) on a sound move
+     * against the holder. It is the target's one ability, so with Solid Rock, Multiscale and Aura Guard a hit has at most one. */
+    if (dfi_ability(r->b, d, DFI_ABILITY_PUNKROCK) && md->special != DFI_SPECIAL_STRUGGLE &&
+        (dfi_pool_move_flags2[(uint32_t)(md - dfi_pool_moves)] & DFI_MOVE_FLAG2_SOUND) != 0u) { /* wide-operands-reviewed: a pointer into the move table */
+        ok = ok && dfi_chain_modify(chain, 2048u, &chain);
+        mlist[mods] = 2048u;
+        mods += 1u;
+    }
     /* Friend Guard (step G35, data/abilities.ts:1533-1540, onAnyModifyDamage, breakable and Mold Breaker is not marked): the
      * target's partner, when it stands and holds the ability, weakens every hit on the target by x0.75 (3072/4096). The handler
      * is any Pokemon's, so the attacker's own partner is a holder too when it is the one hit (a spread move on an ally), and the
@@ -1792,6 +1815,8 @@ static duoforge_status dfi_deal(dfi_run *r, uint32_t flat, uint32_t amount, uint
         if (r->faint_count < DFI_POSITIONS) {
             r->faint_queue[r->faint_count] = flat;
             r->faint_count += 1u;
+            r->last_faint_by = DFI_POSITIONS; /* not a move's damage unless the caller says so (dfi_run_move's hit loop) */
+            r->last_faint_move = false;
         }
     }
     return DUOFORGE_OK;
@@ -3046,11 +3071,31 @@ static uint32_t dfi_win_result(const struct duoforge_battle *b, uint32_t last_fa
     return left0 == 0u ? DFI_RESULT_SIDE1 : DFI_RESULT_NONE;
 }
 
+/* The AfterFaint event of faintMessages (sim/battle.ts:2600-2602, runEvent('AfterFaint', faintData.target, faintData.source,
+ * faintData.effect, length)): length is the number of faints that this call shows (the queue's length when it began, faints
+ * from `from` on), and the handler that runs is the source's onSourceAfterFaint, Moxie's (data/abilities.ts:2749-2759), when
+ * the last faint's effect is a Move: this.boost({atk: length}, source), the source being the holder itself, so a fainted
+ * holder gets nothing (Battle.boost, :2029). The caller has checked the win (no AfterFaint after a finished battle). */
+static void dfi_after_faint(dfi_run *r, uint32_t length, bool by_move, uint32_t src)
+{
+    if (length == 0u || !by_move || src >= DFI_POSITIONS) {
+        return;
+    }
+    const dfi_member *holder = dfi_at(r->b, src);
+    if (!dfi_ability(r->b, holder, DFI_ABILITY_MOXIE) || holder->hp == 0u) {
+        return;
+    }
+    uint8_t atk_up[DFI_STAT_STAGE_COUNT] = {6u, 6u, 6u, 6u, 6u, 6u, 6u}; /* biased by 6 */
+    atk_up[DFI_STAGE_ATK] = (uint8_t)(6u + length); /* wide-operands-reviewed: length <= DFI_POSITIONS */
+    (void)dfi_boost(r, src, atk_up, src, dfi_effect(DUOFORGE_CAUSE_ABILITY, 1u + DFI_ABILITY_MOXIE, DFI_BOOST_PRIMARY));
+}
+
 /* faintMessages and checkWin (sim/battle.ts:2535-2590, 404-415): the faints
  * of the action in order, then the win rule. */
 static void dfi_process_faints(dfi_run *r)
 {
     struct duoforge_battle *b = r->b;
+    const uint32_t length = r->faint_count - r->faint_announced; /* the faints this call shows (sim/battle.ts faintQueue.length) */
     for (uint32_t i = 0u; i < r->faint_count; ++i) {
         const uint32_t flat = r->faint_queue[i];
         if (i >= r->faint_announced) {
@@ -3065,6 +3110,8 @@ static void dfi_process_faints(dfi_run *r)
         r->last_fainted = flat;
     }
     const bool any = r->faint_count != 0u;
+    const bool by_move = r->last_faint_move;
+    const uint32_t src = r->last_faint_by;
     r->faint_count = 0u;
     r->faint_announced = 0u;
     if (!any) {
@@ -3074,7 +3121,9 @@ static void dfi_process_faints(dfi_run *r)
     if (result != DFI_RESULT_NONE) {
         b->result = (uint8_t)result;
         r->ended = true;
+        return; /* checkWin returns before AfterFaint (sim/battle.ts:2598) */
     }
+    dfi_after_faint(r, length, by_move, src); /* after the queue is processed: the faints of this call are no longer queued */
 }
 
 /* The faintMessages after the hit loop (data/mods/champions/scripts.ts:546)
@@ -3086,6 +3135,7 @@ static void dfi_process_faints(dfi_run *r)
  * Emergency Exit, :578-590). */
 static void dfi_announce_faints(dfi_run *r, bool check_win)
 {
+    const uint32_t length = r->faint_count - r->faint_announced; /* the faints this call shows */
     for (uint32_t i = r->faint_announced; i < r->faint_count; ++i) {
         dfi_emit_plain(r, DUOFORGE_EVENT_FAINT, r->faint_queue[i]); /* [faint] */
     }
@@ -3097,8 +3147,10 @@ static void dfi_announce_faints(dfi_run *r, bool check_win)
             e.detail = (uint8_t)result; /* wide-operands-reviewed: <= 3 */
             dfi_emit(r, &e); /* [win] */
             r->early_result = result;
+            return; /* faintMessages returns after checkWin: no AfterFaint (sim/battle.ts:2598) */
         }
     }
+    dfi_after_faint(r, length, r->last_faint_move, r->last_faint_by);
 }
 
 /* Whether a faintMessages inside the current action already showed the
@@ -3169,6 +3221,15 @@ static duoforge_status dfi_before_move(dfi_run *r, uint32_t user, uint32_t move_
     if (((uint32_t)pos->flags & DFI_VOL_FLINCH) != 0u) {
         const duoforge_event e = dfi_ev(DUOFORGE_EVENT_CANT, user, DUOFORGE_CAUSE_FLINCH, 0u, DUOFORGE_NO_POSITION);
         dfi_emit(r, &e); /* [cant] flinch */
+        /* Steadfast (step G45, data/abilities.ts:4549-4557, onFlinch: this.boost({spe: 1}) with no source, so the holder is
+         * its own source): the Speed of the holder rises by 1 once its flinch stopped the move, after the [cant] line. The
+         * change is the ability's primary one: -ability|holder|Steadfast|boost, then -boost|holder|spe|1 (a change of 0 shows
+         * nothing). Battle.boost returns at once for a fainted holder. */
+        if (dfi_ability(r->b, m, DFI_ABILITY_STEADFAST)) {
+            static const uint8_t spe_up[DFI_STAT_STAGE_COUNT] = {6u, 6u, 6u, 6u, 7u, 6u, 6u};
+            (void)dfi_boost(r, user, spe_up, DFI_POSITIONS,
+                            dfi_effect(DUOFORGE_CAUSE_ABILITY, 1u + DFI_ABILITY_STEADFAST, DFI_BOOST_PRIMARY));
+        }
         return DUOFORGE_OK;
     }
     /* Disable's onBeforeMove (priority 7: after the flinch's 8, before Throat Chop's and Heal Block's 6; data/moves.ts:3697-3703,
@@ -5027,6 +5088,25 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
         } else if (dfi_ability(r->b, tm, DFI_ABILITY_GOODASGOLD) && status_move) {
             dfi_immune(r, t, 1u + DFI_ABILITY_GOODASGOLD);
             hit[i] = false;
+        } else if (dfi_ability(r->b, tm, DFI_ABILITY_VOLTABSORB) && tm->hp != 0u && move_type == DFI_TYPE_ELECTRIC) {
+            /* Volt Absorb (step G45, data/abilities.ts:5340-5353, onTryHit, breakable): an Electric move of another Pokemon,
+             * a status move included, heals the holder by baseMaxHP / 4 through this.heal, whose source is the user (so
+             * `[of]` shows) and whose TryHeal refuses at full HP and under Heal Block; when that heal does nothing it is
+             * -immune|holder|[from] ability: Volt Absorb. The move is stopped for this target either way. */
+            if (tm->hp >= tm->hp_max || dfi_heal_blocked(b, t)) {
+                dfi_immune(r, t, 1u + DFI_ABILITY_VOLTABSORB);
+            } else {
+                dfi_heal(r, t, (uint32_t)tm->hp_max / 4u, DUOFORGE_CAUSE_ABILITY, 1u + DFI_ABILITY_VOLTABSORB, user);
+            }
+            hit[i] = false;
+        } else if (dfi_ability(r->b, tm, DFI_ABILITY_TELEPATHY) && !status_move && t / 2u == user / 2u) {
+            /* Telepathy (step G45, data/abilities.ts:4931-4942, onTryHit, breakable): a non-Status move of an ally (target !==
+             * source, target.isAlly(source)) is stopped for the holder with -activate|holder|ability: Telepathy. A spread move
+             * still hits the others. */
+            const duoforge_event act = dfi_ev(DUOFORGE_EVENT_ACTIVATE, t, DUOFORGE_CAUSE_ABILITY, 1u + DFI_ABILITY_TELEPATHY,
+                                              DUOFORGE_NO_POSITION);
+            dfi_emit(r, &act);
+            hit[i] = false;
         } else if (powder_move && dfi_ability(r->b, tm, DFI_ABILITY_OVERCOAT) && !dfi_powder_natural_immune(b, tm)) {
             /* Overcoat's onTryHit (priority 1, step G30, data/abilities.ts:3112-3118): a powder move of another Pokemon
              * that a natural immunity does not stop already; the Grass-type holder is stopped by the plain -immune of
@@ -5378,9 +5458,14 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
                     dfi_use_item(r, targets[i]);
                     damage[i] = (uint32_t)tm->hp - 1u;
                 }
+                const uint32_t queued_before = r->faint_count;
                 st = dfi_deal(r, targets[i], damage[i], DUOFORGE_CAUSE_NONE, 0u, DUOFORGE_NO_POSITION);
                 if (st != DUOFORGE_OK) {
                     return st;
+                }
+                if (r->faint_count != queued_before) {
+                    r->last_faint_by = user; /* the Move's damage: Battle.damage's source and effect (Moxie reads them) */
+                    r->last_faint_move = true;
                 }
                 /* timesAttacked (step G48): a damaging hit of another Pokemon's move counts for the target, once per hit (the
                  * Champions loop adds the hits after the move, data/mods/champions/scripts.ts:565; the same count, and no reader
@@ -5743,6 +5828,14 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
                 static const uint8_t atk_up_j[DFI_STAT_STAGE_COUNT] = {7u, 6u, 6u, 6u, 6u, 6u, 6u};
                 dfi_boost(r, targets[i], atk_up_j, user,
                           dfi_effect(DUOFORGE_CAUSE_ABILITY, 1u + DFI_ABILITY_JUSTIFIED, DFI_BOOST_PRIMARY));
+            }
+            /* Weak Armor (step G45, data/abilities.ts:5448-5458, onDamagingHit: a Physical move of another Pokemon or of its
+             * own, every hit): this.boost({def: -1, spe: 2}, target, target), the holder its own source, so no block by another
+             * Pokemon's ability. -unboost|holder|def|1 then -boost|holder|spe|2; a Defense already at -6 shows nothing for it. */
+            if (md->category == DFI_CATEGORY_PHYSICAL && dfi_ability(r->b, tm, DFI_ABILITY_WEAKARMOR)) {
+                static const uint8_t def_down_spe_up[DFI_STAT_STAGE_COUNT] = {6u, 5u, 6u, 6u, 8u, 6u, 6u};
+                dfi_boost(r, targets[i], def_down_spe_up, targets[i],
+                          dfi_effect(DUOFORGE_CAUSE_ABILITY, 1u + DFI_ABILITY_WEAKARMOR, DFI_BOOST_PRIMARY));
             }
             /* Static (step G39): the target's own unordered handler, like Flame Body's. */
             st = dfi_static(r, user, targets[i], md);
@@ -6993,6 +7086,8 @@ static duoforge_status dfi_residual_events_run(dfi_run *r, dfi_noorder_snapshot 
                 }
                 if (r->faint_count < DFI_POSITIONS) {
                     r->faint_queue[r->faint_count] = e->flat;
+                    r->last_faint_by = DFI_POSITIONS;
+                    r->last_faint_move = false;
                     r->faint_count += 1u;
                 }
                 continue;
@@ -7760,7 +7855,7 @@ duoforge_status dfi_turn_start(const duoforge_context *ctx, struct duoforge_batt
     if (!dfi_closure_battle_supported(&dfi_support, b)) {
         return DUOFORGE_E_UNSUPPORTED;
     }
-    dfi_run r = {ctx, b, draws, {0u, 0u, 0u, 0u}, 0u, 0u, 0u, false, DFI_RESULT_NONE, {0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u}, events, UINT32_MAX, false, DFI_MOVE_TARGET_NONE, 1u, 0u, 0u};
+    dfi_run r = {ctx, b, draws, {0u, 0u, 0u, 0u}, 0u, 0u, 0u, false, DFI_RESULT_NONE, {0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u}, events, UINT32_MAX, false, DFI_MOVE_TARGET_NONE, 1u, 0u, 0u, DFI_POSITIONS, false};
     dfi_init_speeds(&r);
     /* The leads entered one by one (insertChoice updated each speed); their
      * entries run together. */
@@ -7875,7 +7970,7 @@ duoforge_status dfi_turn_run(const duoforge_context *ctx, struct duoforge_battle
     if (!dfi_closure_battle_supported(&dfi_support, b) || ((replacement || pivot) && dfi_support.switching == 0u)) {
         return DUOFORGE_E_UNSUPPORTED;
     }
-    dfi_run r = {ctx, b, draws, {0u, 0u, 0u, 0u}, 0u, 0u, 0u, false, DFI_RESULT_NONE, {0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u}, events, UINT32_MAX, false, DFI_MOVE_TARGET_NONE, 1u, 0u, 0u};
+    dfi_run r = {ctx, b, draws, {0u, 0u, 0u, 0u}, 0u, 0u, 0u, false, DFI_RESULT_NONE, {0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u}, events, UINT32_MAX, false, DFI_MOVE_TARGET_NONE, 1u, 0u, 0u, DFI_POSITIONS, false};
     dfi_init_speeds(&r);
     duoforge_status st = DUOFORGE_OK;
     uint32_t exits = 0u; /* Emergency Exit after the residual action */
