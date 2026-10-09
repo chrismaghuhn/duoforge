@@ -179,7 +179,9 @@ Status of stage 1 (spec `docs/superpowers/specs/2026-10-03-m12-search-stage1-des
   - the library's leaf expansion and search seeds (plan PR A, #203, 0.42.0);
   - the Python bindings (plan PR B, #205);
   - `Model.value`, the lookahead and `SearchPlayer` (plan PR D, #206).
-- **Open:** the arena measurement against the same network without search (plan PR E). It needs the GPU, so it runs after the night run. It should also vary the number of sampled worlds: mikumiku37's author reports nonsensical plays at 4 worlds, uses 16, and considers 64 to 128 ideal.
+- **Measured (2026-10-04/05):** the oracle arena (#218/#219), then the honest public-information search (decision 0023, #222-#233). Its report (#236): E +0.39 / X +0.31 against the raw network and +0.12 to +0.20 against the panel, about 95 percent of the oracle's gain, with 2 percent raw fallbacks; about 33 ms per decision, 23 ms of it in the network on the CPU. On params-49333 the gain is X +0.27 (stage 3 P0, #242).
+- **Team preview searched (#240, report #241):** no consistent panel gain, so the preview stays with the raw network.
+- **Stage 3 (expert iteration):** spec `docs/superpowers/specs/2026-10-05-m12-expert-iteration-design.md`, decision 0024, phases P0 to P5. P0 passed; P1 (a pilot labelling one decision in eight) is being built from plans `docs/superpowers/plans/2026-10-08-stage3-p1-pilot.md` and `...-p1-learner.md`.
 
 Exit:
 - The Elo gain over the raw policy on the ladder, at a fixed time per move.
@@ -243,6 +245,23 @@ Related public work, as reference points:
 - **Metamon** (UT Austin): offline RL on human Showdown replays, with spectator logs rebuilt into first-person trajectories (as M11 does). Gens 1 to 4 singles, about 79 percent GXE; code and data are open.
 - **PokéChamp:** a minimax language-model agent.
 - **nessie123** (Smogon, 2026-09-28): Reg M-C Bo3 with open sheets, briefly #1 on the ladder. A double-oracle matrix-game search with chance pruning, search-guided self-play, a network of about 1.5M parameters with auxiliary heads, and mutated Pokémon in half of the training games (see M12, levers 17 and 18). An analysis tool is planned for release after Reg M-C; no code yet.
+
+
+Measured levers (2026-10-05 to 10-08):
+- **Lever 9, the opening book:** built from about 100,000 Champions replays (#228) and A/B-tested (#234, #238). No gain (-0.011 to +0.001); the book changed the choice in only 13 percent of games. It stays in the code, default off.
+- **Lever 8, team preview by search:** see M12 (#240, #241). No consistent gain.
+- **Luck-adjusted evaluation (#239):** the value head as a control variate over chance. Unbiased, but only about 1.2x fewer games, because the GAE-trained value head explains luck poorly (correlation 0.39). An undiscounted win-probability head would help; stage 3 records it as a proposal.
+
+Ideas recorded by the owner on 2026-10-09 (from the Chess Programming Wiki, an endgame-tablebase note and a paper list), with where they fit:
+- **A cache of network inputs in the search:** the 16 worlds differ only in hidden values, and the network sees only the public view, so many of the 1,024 leaves of a decision may give byte-equal rows. Measure the duplicate rate first; if it is high, the cache belongs to stage 3 P2 (performance).
+- **Perft/divide counts as an engine regression test:** frozen counts of the legal joint actions (and their sequences under fixed seeds) for reference positions. They catch a lost or added legal option during the content expansion. Enumerating chance outcomes would need an engine change.
+- **Lever 7, the damage calculator as a network input,** planned after the engine coverage work: a new encoder version (5) with, per move option and target, the damage range and KO chance. It is computed by the engine's own formulas and assumes only public facts about the foe (species, item, ability, nature, and a common-spread assumption for the hidden stat points), never the hidden values. It needs a decision and an owner OK; existing networks are widened, not retrained from zero.
+- **Gumbel top-k with sequential halving** (Gumbel MuZero, ReSCALE arXiv 2603.21162) for stage 3's compute routing (P3), next to double oracle (P4).
+- **A KL-regularised matrix game with the network's policy as a fixed magnet** (test-time RL, arXiv 2608.30635) as a candidate teacher next to N/E/X. It bounds the loss against the network; measure it against X before use.
+- **A learned belief network for the hidden stat points** (Sokota et al., Nature 2026, Stratego), extending lever 3. Public inputs only at inference time. Trained only on our self-play, it learns our pool's spreads, not human ones, so it needs public replay or paste data for ladder play.
+- **Endgame solving:** exact tablebases do not fit (the engine does not enumerate chance outcomes, and even 1v1 states with HP, PP and status are vast). A depth-limited endgame search at game time, as in M12, is the practical form; its results can also serve as a teacher.
+- Transposition tables, iterative deepening and tactical extensions matter only for multi-turn search. Alpha-beta, null-move and forward pruning do not fit simultaneous moves.
+- Further references: Student of Games (arXiv 2112.03178) for multi-turn search and endgames; look-ahead on policy networks (arXiv 2312.15220); PokéChamp (arXiv 2503.04094).
 
 
 ## M14 — Closed team sheets (the Bo1 ladder)
