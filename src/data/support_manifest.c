@@ -563,6 +563,20 @@ const dfi_support_manifest dfi_support = {
             [DFI_ITEM_METAGROSSITE] = 1u,
             [DFI_ITEM_LUCARIONITEZ] = 1u,
             [DFI_ITEM_FROSLASSITE] = 1u,
+            /* Step G43 (Mega batch 3, mark only): ten Mega Stones whose Mega ability is marked already (Multiscale, Adaptability,
+             * Speed Boost, Sharpness, Electric Surge, Scrappy, Trace, Technician, Inner Focus) and whose base formes' abilities are
+             * marked: Dragoninite, Glimmoranite, Blazikenite, Absolite Z, Raichunite X, Lopunnite, Alakazite, Meowsticite (both
+             * Meowstic formes), Scizorite and Galladite. */
+            [DFI_ITEM_DRAGONINITE] = 1u,
+            [DFI_ITEM_GLIMMORANITE] = 1u,
+            [DFI_ITEM_BLAZIKENITE] = 1u,
+            [DFI_ITEM_ABSOLITEZ] = 1u,
+            [DFI_ITEM_RAICHUNITEX] = 1u,
+            [DFI_ITEM_LOPUNNITE] = 1u,
+            [DFI_ITEM_ALAKAZITE] = 1u,
+            [DFI_ITEM_MEOWSTICITE] = 1u,
+            [DFI_ITEM_SCIZORITE] = 1u,
+            [DFI_ITEM_GALLADITE] = 1u,
             [DFI_ITEM_BLACKBELT] = 1u,
             [DFI_ITEM_BLACKGLASSES] = 1u,
             [DFI_ITEM_CHARCOAL] = 1u,
