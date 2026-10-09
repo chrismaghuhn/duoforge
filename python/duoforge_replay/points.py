@@ -13,7 +13,9 @@ A spectator log has no requests. The points come from the line structure:
   a PIVOT (as trace_to_c.boundary_of). It covers the run of |switch| lines up
   to the next action line; a position that switches a second time starts a
   new point, and a switch "[from]" a move (the user's own switch) shares no
-  run with another switch of its side.
+  run with another switch of its side. The outgoing member's own switch-out
+  effects (Regenerator's heal, Natural Cure) print before its |switch| but
+  answer the request: the point starts before them.
 
 find() decides nothing about who is asked: the tracker's fold state at the
 point does (spectator.SpectatorTracker.at_point).
@@ -30,6 +32,27 @@ TEAM_SELECTION, TURN, REPLACEMENT, PIVOT = (C[f"DUOFORGE_BOUNDARY_{n}"] for n in
 _ACTED = {"move", "cant", "-mega"}
 # Lines that end a run of switch lines: anything that acts or a turn boundary.
 _RUN_ENDS = {"move", "cant", "turn", "upkeep", "win", "tie", "-mega"}
+# Effects of the outgoing member's own switch-out, printed before its |switch| line (data/abilities.ts onSwitchOut):
+# they belong to the answer of the request, not to its point.
+_SWITCH_OUT = {("-heal", "[from] ability: Regenerator"), ("-curestatus", "[from] ability: Natural Cure")}
+
+
+def _before_switch_out(lines, i, position, floor):
+    """The first line of the run of switch-out effect lines of position's outgoing member that ends right before
+    lines[i] (no earlier than floor): where a switch point that starts at lines[i] really begins."""
+    start = i
+    while start - 1 > floor:
+        parts = lines[start - 1].split("|")
+        kind = line_kind(lines[start - 1])
+        if len(parts) < 3 or not any((kind, x) in _SWITCH_OUT for x in parts[3:]):
+            break
+        try:
+            if flat_position(parts[2]) != position:
+                break
+        except (ValueError, KeyError, IndexError):
+            break
+        start -= 1
+    return start
 
 
 class Skip(Exception):
@@ -139,9 +162,10 @@ def find(lines):
                 run[3].add((position // 2, outgoing))
                 continue
             boundary = REPLACEMENT if upkeep_since_point else PIVOT
-            run = [i, [position], [own_request], {(position // 2, outgoing)}]
+            start = _before_switch_out(lines, i, position, points[-1].line)  # a Regenerator heal is the answer's
+            run = [start, [position], [own_request], {(position // 2, outgoing)}]
             runs[len(points)] = run
-            points.append(Point(len(points), i, boundary))
+            points.append(Point(len(points), start, boundary))
             upkeep_since_point = False
     return _ends([p if p.boundary in (TEAM_SELECTION, TURN) or p.revive else _with_run(p, runs[p.index])
                    for p in points], lines)

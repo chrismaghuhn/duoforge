@@ -92,14 +92,22 @@ def spread_table(ctx, root=None, sources=SPREAD_SOURCES):
     return table, {s["id"]: i for i, s in enumerate(sources)}, {**counts, "sources": sources, "sha256": table.sha256()}
 
 
-def visible_causes(observation):
-    """The visible counters that have no supported public reconstruction."""
-    causes = []
-    if (observation["sides"]["members"]["status"] == C["DUOFORGE_AILMENT_SLEEP"]).any():
-        causes.append("visible_sleep")
-    if observation["sides"]["positions"]["confused"].any():
-        causes.append("visible_confusion")
-    return causes
+_CAUSES = ((C["DUOFORGE_PUBLIC_CAUSE_VISIBLE_SLEEP"], "visible_sleep"),
+           (C["DUOFORGE_PUBLIC_CAUSE_VISIBLE_CONFUSION"], "visible_confusion"),
+           (C["DUOFORGE_PUBLIC_CAUSE_ILLUSION_POSSIBLE"], "illusion_possible"))
+
+
+def visible_causes(roots, env, player):
+    """The causes (names) of environment env's public refusal for player, from the library's own predicate
+    (duoforge_batch_public_causes, decision 0026 section 4): a visible sleep or confusion, a possible Illusion. The
+    library decides them from the player's view, so no rule is restated here; an empty list is another refusal."""
+    players = np.zeros(roots.envs, dtype=np.uint32)
+    players[env] = player
+    masks, statuses = roots.public_causes(players)
+    if statuses[env] != 0:
+        raise SearchError(f"public causes refused: {duoforge.status_name(int(statuses[env]))}")
+    mask = int(masks[env])
+    return [name for bit, name in _CAUSES if mask & bit]
 
 
 def draw_word(probabilities, word):
@@ -349,7 +357,7 @@ class Honest(lookahead.Lookahead):
                 if result["kind"] != "forced" and self.k != 1 and not self.preview_only:
                     try:
                         if statuses[e] == C["DUOFORGE_E_UNSUPPORTED"]:
-                            result["causes"] = visible_causes(roots.observations[e, p]) or ["public_record_unsupported"]
+                            result["causes"] = visible_causes(roots, e, p) or ["public_record_unsupported"]
                             raise Unreconstructible("DUOFORGE_E_UNSUPPORTED: public record")
                         if statuses[e] != 0:
                             raise SearchError(f"public record refused: {duoforge.status_name(int(statuses[e]))}")

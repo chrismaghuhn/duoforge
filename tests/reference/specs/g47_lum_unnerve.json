@@ -1,0 +1,22 @@
+{
+  "name": "g47_lum_unnerve",
+  "purpose": "Lum Berry and Unnerve (step G47): Tyranitar (male, Unnerve) stands on the side of Houndoom; the foe Umbreon (female, Lum Berry) is burned and keeps the burn and the berry, since the foe with Unnerve refuses every eating of the berry (TryEatItem).",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,000000000000000000000000000000000000000000000000000000000000a20a",
+  "teams": [
+    "Tyranitar (M) @ Focus Sash\nAbility: Unnerve\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Rock Slide\n- Protect\n\nHoundoom (M) @ Charcoal\nAbility: Flash Fire\nLevel: 50\nEVs: 2 HP / 32 SpA / 32 Spe\nTimid Nature\n- Will-O-Wisp\n- Toxic\n- Protect\n\nPolitoed (M) @ Mystic Water\nAbility: Drizzle\nLevel: 50\nEVs: 32 HP / 2 Def / 32 SpD\nCalm Nature\n- Protect\n\nCeruledge (M) @ Grassy Seed\nAbility: Flash Fire\nLevel: 50\nEVs: 31 HP / 7 Atk / 24 Def / 3 SpD / 1 Spe\nAdamant Nature\n- Protect\n\nRillaboom (M) @ Miracle Seed\nAbility: Grassy Surge\nLevel: 50\nEVs: 18 HP / 32 Atk / 2 Def / 6 SpD / 8 Spe\nAdamant Nature\n- Fake Out\n\nMilotic (F) @ Sitrus Berry\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Coil\n- Protect",
+    "Umbreon (F) @ Lum Berry\nAbility: Inner Focus\nLevel: 50\nEVs: 32 HP / 32 Def / 2 SpD\nCalm Nature\n- Toxic\n- Protect\n\nGholdengo @ Life Orb\nAbility: Good as Gold\nLevel: 50\nEVs: 32 HP / 2 SpA / 32 SpD\nCalm Nature\n- Protect\n- Shadow Ball\n\nPolitoed (M) @ Mystic Water\nAbility: Drizzle\nLevel: 50\nEVs: 32 HP / 2 Def / 32 SpD\nCalm Nature\n- Protect\n\nCeruledge (M) @ Grassy Seed\nAbility: Flash Fire\nLevel: 50\nEVs: 31 HP / 7 Atk / 24 Def / 3 SpD / 1 Spe\nAdamant Nature\n- Protect\n\nRillaboom (M) @ Miracle Seed\nAbility: Grassy Surge\nLevel: 50\nEVs: 18 HP / 32 Atk / 2 Def / 6 SpD / 8 Spe\nAdamant Nature\n- Fake Out\n\nMilotic (F) @ Sitrus Berry\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Coil\n- Protect"
+  ],
+  "plan": {
+    "p1": [
+      "move 2, move 1 1",
+      "move 2, move 1 1"
+    ],
+    "p2": [
+      "move 1 2, move 1",
+      "move 1 2, move 1"
+    ],
+    "max_steps": 3
+  }
+}
