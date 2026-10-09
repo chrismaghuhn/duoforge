@@ -15,7 +15,8 @@ typedef struct df_conf_member {
 typedef struct df_conf_cmd {
     uint8_t kind, move_slot, target, mega, reserve;
 } df_conf_cmd;
-/* present, hp, pp, stages (biased by 6), stall counter present, fainted,
+/* present, hp, pp (the true PP), shown_pp (the PP the opponent knows: the true PP unless an Illusion is up, decision 0026),
+ * stages (biased by 6), stall counter present, fainted,
  * status (DFI_STATUS_*), its counter (sleep, freeze), confusion turns, the
  * locked move slot (0xFF none) and its target, Mega forme, the item still
  * held, and what the opponent has seen: seen, HP percent and colour flag
@@ -23,6 +24,8 @@ typedef struct df_conf_cmd {
 typedef struct df_conf_mon {
     uint32_t present, hp;
     uint8_t pp[4];
+    uint8_t shown_pp[4];
+    uint8_t shown_status;
     uint8_t stages[7];
     uint8_t stall, fainted, status, status_counter, confusion, locked_slot, locked_target, mega;
     uint8_t held, seen, seen_percent, seen_flag;

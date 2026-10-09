@@ -458,13 +458,42 @@ static bool dfi_knowledge_valid(const struct duoforge_battle *b, uint32_t p)
                 return false;
             }
         }
-        if (opp->positions[0].occupant == m || opp->positions[1].occupant == m) {
+        /* Illusion (decision 0026 section 4, the I2 amendment): a disguised holder's own row is what the foe knew before the
+         * disguise (frozen, so exempt here); the HP the foe is shown while it stands disguised is the disguise row's, checked
+         * below. Every other occupant keeps the check. */
+        const uint32_t on_pos = opp->positions[0].occupant == m ? 0u : (opp->positions[1].occupant == m ? 1u : 2u);
+        if (on_pos < DUOFORGE_ACTIVE_PER_SIDE) {
             uint8_t percent = 0u;
             uint8_t flag = 0u;
             dfi_hp_display(mem->hp, mem->hp_max, &percent, &flag);
-            if (k->hp_percent != percent || k->hp_flag != flag) {
+            const bool frozen = dfi_illusion_disguise_up(opp, &b->tail.sides[1u - p], on_pos);
+            if (!frozen && (k->hp_percent != percent || k->hp_flag != flag)) {
                 return false;
             }
+        }
+    }
+    /* The disguise row of a disguised holder mirrors the holder's current HP display, and so does ill_override (the shown
+     * values of the name, I2 amendment of 0026 section 3): a disguise up with no name shown is refused. */
+    const dfi_tail_side *ots = &b->tail.sides[1u - p];
+    for (uint32_t pos = 0u; pos < DUOFORGE_ACTIVE_PER_SIDE; ++pos) {
+        if (!dfi_illusion_disguise_up(opp, ots, pos)) {
+            continue;
+        }
+        const dfi_member *holder = &opp->members[opp->positions[pos].occupant];
+        uint8_t percent = 0u;
+        uint8_t flag = 0u;
+        dfi_hp_display(holder->hp, holder->hp_max, &percent, &flag);
+        if (ots->illusion.shown == 0u || ots->illusion.shown - 1u >= DUOFORGE_MAX_ROSTER) {
+            return false;
+        }
+        const uint32_t disguise = (uint32_t)ots->illusion.shown - 1u;
+        if (((seen >> disguise) & 1u) == 0u) {
+            return false;
+        }
+        const dfi_knowledge *kd = &b->sides[p].knowledge[disguise];
+        if (kd->hp_percent != percent || kd->hp_flag != flag || ots->illusion.override[0] != percent ||
+            ots->illusion.override[1] != flag) {
+            return false;
         }
     }
     return true;

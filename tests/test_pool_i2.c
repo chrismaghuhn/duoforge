@@ -25,6 +25,7 @@
 #include "data/pool_tables.h"
 #include "reference/conformance_pool.h"
 #include "state/battle_internal.h"
+#include "state/knowledge.h"
 #include "state/request.h"
 #include "support/check.h"
 #include "support/fixtures.h"
@@ -360,6 +361,72 @@ static void check_disguise_needs_name(df_test *t, const duoforge_context *ctx)
     duoforge_battle_destroy(b);
 }
 
+/* The foe's knowledge of a disguised holder (decision 0026 section 4, the I2 amendment; invariants.c dfi_knowledge_valid): the
+ * holder's own row is frozen at what the foe knew before the disguise, so it is exempt from the current HP check; the disguise
+ * row and ill_override mirror the holder's current HP display. Three cases on the disguise of i2_illusion_break at step 1, with the
+ * holder at 80 percent and its own row frozen at 100 percent:
+ *   (a) the disguise row and ill_override mirror the holder: a valid state;
+ *   (b) the disguise row shows another HP than the holder: refused, E_INVARIANT;
+ *   (c) an undisguised occupant (side 1's, with a wrong HP) is still refused. */
+static void check_knowledge_disguise(df_test *t, const duoforge_context *ctx)
+{
+    duoforge_battle *b = replay(t, ctx, "i2_illusion_break", 1u);
+    if (b == NULL) {
+        return;
+    }
+    uint32_t pos = DUOFORGE_ACTIVE_PER_SIDE;
+    for (uint32_t p = 0u; p < DUOFORGE_ACTIVE_PER_SIDE; ++p) {
+        if (dfi_illusion_disguise_up(&b->sides[0], &b->tail.sides[0], p)) {
+            pos = p;
+        }
+    }
+    if (!DF_CHECK(t, pos < DUOFORGE_ACTIVE_PER_SIDE && b->tail.sides[0].illusion.shown != 0u)) {
+        duoforge_battle_destroy(b);
+        return;
+    }
+    const uint32_t holder = b->sides[0].positions[pos].occupant;
+    const uint32_t disguise = (uint32_t)b->tail.sides[0].illusion.shown - 1u;
+    dfi_member *hm = &b->sides[0].members[holder];
+    hm->hp = (uint16_t)((hm->hp_max * 4u) / 5u); /* 80 percent: the truth */
+    uint8_t pct = 0u;
+    uint8_t flag = 0u;
+    dfi_hp_display(hm->hp, hm->hp_max, &pct, &flag);
+    /* The foe's knowledge: the holder frozen at 100 percent (its row before the disguise), the disguise row and ill_override at the
+     * holder's current display. */
+    b->sides[1].seen_mask = (uint8_t)(b->sides[1].seen_mask | (1u << holder) | (1u << disguise));
+    b->sides[1].knowledge[holder].hp_percent = 100u;
+    b->sides[1].knowledge[holder].hp_flag = 0u;
+    b->sides[1].knowledge[disguise].hp_percent = pct;
+    b->sides[1].knowledge[disguise].hp_flag = flag;
+    b->tail.sides[0].illusion.override[0] = pct;
+    b->tail.sides[0].illusion.override[1] = flag;
+    uint32_t causes = 0u;
+    DF_CHECK_EQ_U64(t, duoforge_battle_public_causes(ctx, b, 1u, &causes), DUOFORGE_OK); /* (a) */
+
+    b->sides[1].knowledge[disguise].hp_percent = 100u; /* (b): the disguise row shows another HP */
+    b->sides[1].knowledge[disguise].hp_flag = 0u;
+    DF_CHECK_EQ_U64(t, duoforge_battle_public_causes(ctx, b, 1u, &causes), DUOFORGE_E_INVARIANT);
+    b->sides[1].knowledge[disguise].hp_percent = pct;
+    b->sides[1].knowledge[disguise].hp_flag = flag;
+
+    const uint32_t foe = b->sides[1].positions[0].occupant; /* (c): an undisguised occupant of side 1 */
+    const dfi_member *fm = &b->sides[1].members[foe];
+    uint8_t tpct = 0u;
+    uint8_t tflag = 0u;
+    dfi_hp_display(fm->hp, fm->hp_max, &tpct, &tflag);
+    uint8_t fpct = 0u;
+    uint8_t fflag = 0u;
+    dfi_hp_display(fm->hp_max / 2u, fm->hp_max, &fpct, &fflag); /* a wrong HP for the occupant (its truth is not half) */
+    if (!DF_CHECK(t, fpct != tpct || fflag != tflag)) {
+        duoforge_battle_destroy(b);
+        return;
+    }
+    b->sides[0].knowledge[foe].hp_percent = fpct;
+    b->sides[0].knowledge[foe].hp_flag = fflag;
+    DF_CHECK_EQ_U64(t, duoforge_battle_public_causes(ctx, b, 0u, &causes), DUOFORGE_E_INVARIANT);
+    duoforge_battle_destroy(b);
+}
+
 int main(void)
 {
     df_test t;
@@ -373,5 +440,6 @@ int main(void)
     check_disguise_status(&t, ctx);
     check_possible_fainted(&t, ctx);
     check_disguise_needs_name(&t, ctx);
+    check_knowledge_disguise(&t, ctx);
     return df_test_end(&t);
 }

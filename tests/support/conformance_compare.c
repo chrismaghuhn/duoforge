@@ -92,7 +92,9 @@ unsigned df_conf_compare_observation(FILE *out, const duoforge_context *ctx, con
                     continue;
                 }
                 const bool visible = s == viewer || e->seen != 0u;
-                const uint32_t status = (visible && !e->fainted) ? e->status : 0u;
+                /* The foe's status is the one it shows (shown_status, decision 0026: the disguise's row shows the holder's status while it
+                 * stands disguised), the owner's the true one. */
+                const uint32_t status = (visible && !e->fainted) ? (s == viewer ? e->status : e->shown_status) : 0u;
                 const uint32_t used = (cb->members[s][m].item != 0u && e->held == 0u) ? 1u : 0u;
                 /* The ability on the sheet, the Mega forme's once it evolved. */
                 const df_conf_member *set = &cb->members[s][m];
@@ -101,15 +103,18 @@ unsigned df_conf_compare_observation(FILE *out, const duoforge_context *ctx, con
                     ability = 1u + dfi_pool_formes[dfi_mega_of(set->species, set->item)].ability; /* the Mega of (forme, stone) */
                 }
                 bool ok = v->status == status && v->is_mega == e->mega && v->item_used == used && v->ability == ability;
+                /* Own PP exact; the foe's PP is the one it knows (shown_pp, decision 0026: an Illusion holder's counts and its
+                 * disguise's), which is the true PP wherever no Illusion is up. */
+                const uint8_t *want_pp = s == viewer ? e->pp : e->shown_pp;
                 for (uint32_t k = 0; k < v->move_count && k < 4u; ++k) {
-                    ok = ok && v->pp[k] == e->pp[k]; /* own exact, foe derived: the same in the closure */
+                    ok = ok && v->pp[k] == want_pp[k];
                 }
                 if (!ok) {
                     fprintf(out,
                             "  %s step %u: player %u sees side %u member %u as status %u mega %u used %u pp %u, "
                             "reference %u %u %u %u\n",
                             cb->name, step, viewer, s, m, v->status, v->is_mega, v->item_used, v->pp[0], status,
-                            e->mega, used, e->pp[0]);
+                            e->mega, used, want_pp[0]);
                     ++bad;
                 }
             }

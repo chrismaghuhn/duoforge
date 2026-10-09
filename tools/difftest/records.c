@@ -15,8 +15,8 @@
  * build stops instead of reading the records in a stale order. */
 _Static_assert(sizeof(df_conf_member) == 64u, "df_conf_member changed: update tools/difftest/records.c");
 _Static_assert(sizeof(df_conf_cmd) == 5u, "df_conf_cmd changed: update tools/difftest/records.c");
-_Static_assert(sizeof(df_conf_mon) == 32u, "df_conf_mon changed: update tools/difftest/records.c");
-_Static_assert(sizeof(df_conf_step) == 488u, "df_conf_step changed: update tools/difftest/records.c");
+_Static_assert(sizeof(df_conf_mon) == 40u, "df_conf_mon changed: update tools/difftest/records.c");
+_Static_assert(sizeof(df_conf_step) == 584u, "df_conf_step changed: update tools/difftest/records.c");
 _Static_assert(sizeof(dfi_tape_entry) == 16u, "dfi_tape_entry changed: update tools/difftest/records.c");
 _Static_assert(sizeof(duoforge_event) == 20u, "duoforge_event changed: update tools/difftest/records.c");
 /* dfr_choice is compared and ordered by memcmp: it must have no padding. */
@@ -331,6 +331,7 @@ static bool rd_cmd(dfr_cursor *c, df_conf_cmd *d)
 static bool rd_mon(dfr_cursor *c, df_conf_mon *m)
 {
     return rd_u32(c, &m->present) && rd_u32(c, &m->hp) && rd_u8s(c, m->pp, DFR_COUNT(m->pp)) &&
+           rd_u8s(c, m->shown_pp, DFR_COUNT(m->shown_pp)) && rd_u8(c, &m->shown_status) &&
            rd_u8s(c, m->stages, DFR_COUNT(m->stages)) && rd_u8(c, &m->stall) && rd_u8(c, &m->fainted) &&
            rd_u8(c, &m->status) && rd_u8(c, &m->status_counter) && rd_u8(c, &m->confusion) &&
            rd_u8(c, &m->locked_slot) && rd_u8(c, &m->locked_target) && rd_u8(c, &m->mega) && rd_u8(c, &m->held) &&

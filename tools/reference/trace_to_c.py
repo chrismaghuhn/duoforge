@@ -1060,19 +1060,14 @@ def hit_key(text):
 
 
 def ill_hp_put(ill, key, text):
-    """The HP text of a line for ill['last_hp'][key]: its own status token when it has one, else the status the name showed before
-    (a damage or heal line prints none; see step_events)."""
+    """The HP text of a line for ill['last_hp'][key]. The pin's getHealth (sim/pokemon.ts:2060-2103) prints the status token of
+    the Pokemon at that moment and no token when it has none, and `0 fnt` for a fainted one: so a line's own text is what the name
+    shows (decision 0026 section 4, the status the break carries), with no status carried over from an earlier line."""
     parts = text.split(' ')
-    prev = ill['last_hp'].get(key)
-    if len(parts) > 1 and parts[1] != 'fnt':
-        ill['last_hp'][key] = text
-    elif parts[0] == '0':
+    if parts[0] == '0':
         ill['last_hp'][key] = '0 fnt'
     else:
-        status = None
-        if prev is not None and len(prev.split(' ')) > 1 and prev.split(' ')[1] != 'fnt':
-            status = prev.split(' ')[1]
-        ill['last_hp'][key] = parts[0] + (' ' + status if status else '')
+        ill['last_hp'][key] = text
 
 
 def ill_status_set(ill, key, status):
@@ -1084,6 +1079,171 @@ def ill_status_set(ill, key, status):
     if hp == '0':
         return
     ill['last_hp'][key] = hp + (' ' + status if status else '')
+
+
+def pp_map(state, roster_of):
+    """{(side, roster): the true PP of each move slot} of a state's brought Pokemon, padded to four slots."""
+    out = {}
+    for s in range(2):
+        for p in state['sides'][s]['pokemon']:
+            out[(s, roster_of[s][name_of(p)])] = [int(x) for x in p['pp']] + [0] * (4 - len(p['pp']))
+    return out
+
+
+def status_token(text):
+    """The status of an HP text (`65/167 brn` -> `brn`, `0 fnt` or no token -> ''): the pin's getHealth (sim/pokemon.ts:2060-2103)
+    prints the status of the Pokemon at that moment, and nothing when it has none."""
+    tokens = text.split(' ')
+    return '' if len(tokens) < 2 or tokens[1] == 'fnt' else tokens[1]
+
+
+def status_map(state, roster_of):
+    """{(side, roster): the true status name ('' none)} of a state's brought Pokemon."""
+    out = {}
+    for s in range(2):
+        for p in state['sides'][s]['pokemon']:
+            out[(s, roster_of[s][name_of(p)])] = p.get('status', '') or ''
+    return out
+
+
+def known_pp_of(true_pp, off):
+    """The PP the foe knows of a row (shown_pp): the true PP plus the fold's offset per slot, never below 0. The owner's own row
+    is exact and takes the true PP (the C comparison of conformance_compare.c picks it by the viewer)."""
+    return tuple(max(0, true_pp[k] + off[k]) for k in range(4))
+
+
+def ill_pp_fold(log, prev_state, new_state, roster_of, teams, tables, ill_key, win, off, sst=None):
+    """The foe's knowledge of PP while an Illusion is up (decision 0026 section 4, amended by I2; the reference's fold, step I2).
+
+    The foe counts a move use on the row of the name it was shown: a move on the disguise's sheet counts on the disguise's row
+    (win[side]['on']), a move that is not on it is the holder's and stays out of every row until the break (it is never
+    counted). So while the disguise is up the holder's row stays what it was before (frozen), and the disguise's row is its
+    row before the disguise less the uses shown under its name. The break goes back to the holder's row before the disguise
+    plus the truth (every holder use of the disguise was pending or on the disguise's sheet, and both reach the holder at the
+    break), and restores the disguise's row. A switch-out without a break keeps both rows where the fold leaves them. The
+    belief of a row is its true PP plus off[(side, roster)] (per slot, never below 0), so off is the state the fold keeps.
+    win[side] is None or {'pos', 'h', 'd', 'name', 'frozen', 'snap', 'on', 'off_h', 'off_d'}; a use with the flag
+    '[from] lockedmove' is no PP use (the engine's MOVE events, step I2).
+    """
+    # PROVENANCE (decision 0026 section 4; the reference must stay an oracle): the foe's knowledge is derived ONLY from the protocol
+    # lines of the trace (the move lines and the names they show, the switch, drag and replace lines), the open sheets of the
+    # teams of the spec and the static move ids of the tables. Nothing here reads the engine's output or src/combat/events.c, so a
+    # defect in the engine's counting cannot be copied into the reference.
+    t_prev = pp_map(prev_state, roster_of)
+    t_now = pp_map(new_state, roster_of)
+    if sst is None:
+        sst = {}
+    st_prev = status_map(prev_state, roster_of)
+
+    def shown_status_of(key):
+        """The status the foe shows for a row (STATUS name), or its true status when no line of the fold changed it."""
+        return sst[key] if sst.get(key) is not None else st_prev.get(key, '')
+
+    def offset(key):
+        return off.get(key, [0, 0, 0, 0])
+
+    def settle(s):
+        """The offsets that make the belief of the two rows what the fold says, at the true PP of now."""
+        w = win[s]
+        h_now, d_now = t_now[(s, w['h'])], t_now[(s, w['d'])]
+        off[(s, w['h'])] = [w['frozen'][k] - h_now[k] for k in range(4)]
+        off[(s, w['d'])] = [w['snap'][k] - w['on'][k] - d_now[k] for k in range(4)]
+
+    def finish(s):
+        """The disguise is over without a break: the rows keep their values from now on."""
+        settle(s)
+        win[s] = None
+
+    def restore(s):
+        w = win[s]
+        off[(s, w['h'])] = list(w['off_h'])
+        off[(s, w['d'])] = list(w['off_d'])
+        win[s] = None
+
+    lines = []
+    skip = False
+    for line in log:
+        if skip:
+            skip = False
+            continue
+        if line.startswith('|split|'):
+            skip = True  # the owner's copy; the public copy that follows is the one that counts
+            continue
+        lines.append(line)
+    positions = {}
+    for line in lines:
+        if line.startswith('|switch|') or line.startswith('|drag|'):
+            who = line.split('|')[2]
+            key_ = (int(who[1]) - 1, 'ab'.index(who[2]))
+            positions[key_] = positions.get(key_, 0) + 1
+    for line in lines:
+        parts = line.split('|')
+        if len(parts) >= 3 and parts[1] in ('switch', 'drag'):
+            who = parts[2]
+            s, p = int(who[1]) - 1, 'ab'.index(who[2])
+            name = who.split(': ', 1)[1]
+            r = roster_of[s][name]
+            if win[s] is not None and win[s]['pos'] == p:
+                finish(s)  # the holder left unbroken: its row and the disguise's keep what the fold had
+            tok = status_token(parts[4]) if len(parts) > 4 else ''
+            opened = False
+            if win[s] is None and ill_key is not None:
+                # The Pokemon on the position after the step is the truth; a switch that shows another name is a disguise.
+                truth = new_state['sides'][s]['active'][p]
+                if truth is not None and truth >= 0:
+                    h = roster_of[s][name_of(new_state['sides'][s]['pokemon'][truth])]
+                    if h != r and teams[s][h]['ability'] == ill_key + 1:
+                        if positions[(s, p)] != 1:
+                            raise ConversionError('illusion-window', 'trace_to_c: two entries of one position in a step: %r'
+                                                  % line, detail=name)
+                        win[s] = {'pos': p, 'h': h, 'd': r, 'name': name,
+                                  'frozen': [t_prev[(s, h)][k] + offset((s, h))[k] for k in range(4)],
+                                  'snap': [t_prev[(s, r)][k] + offset((s, r))[k] for k in range(4)], 'on': [0, 0, 0, 0],
+                                  'off_h': list(offset((s, h))), 'off_d': list(offset((s, r)))}
+                        # Status (shown_status, I2): the holder's row keeps the status the foe knew before (frozen); the
+                        # disguise's row shows the status of the switch line, the holder's status at its entry (0026 section 4).
+                        win[s]['snap_sst'] = sst.get((s, r))
+                        sst[(s, h)] = shown_status_of((s, h))
+                        opened = True
+            if opened:
+                sst[(s, r)] = tok
+            else:
+                sst[(s, r)] = None  # a line about the Pokemon itself: the foe shows its true status
+        elif len(parts) >= 4 and parts[1] in ('-damage', '-heal', '-sethp', '-status', '-curestatus'):
+            # The status token of an HP line, or the status of -status (`-curestatus` cures it): under the disguise's name the
+            # foe reads it on the disguise's row; any other name's line is the Pokemon's own (its true status).
+            s = int(parts[2][1]) - 1
+            nm = parts[2].split(': ', 1)[1]
+            if parts[1] in ('-status', '-curestatus'):
+                value = '' if parts[1] == '-curestatus' else parts[3]
+            else:
+                value = status_token(parts[3])
+            w = win[s]
+            if w is not None and nm == w['name']:
+                sst[(s, w['d'])] = value
+            else:
+                sst[(s, roster_of[s][nm])] = None
+        elif len(parts) >= 4 and parts[1] == 'move':
+            s = int(parts[2][1]) - 1
+            w = win[s]
+            if w is not None and parts[2].split(': ', 1)[1] == w['name'] and '[from] lockedmove' not in parts[5:]:
+                mid = tables['MOVE'].get(key(parts[3]))
+                sheet = teams[s][w['d']]['moves']
+                if mid in sheet:
+                    w['on'][sheet.index(mid)] += 1
+        elif len(parts) >= 4 and parts[1] == '-end' and parts[3] == 'Illusion':
+            s = int(parts[2][1]) - 1
+            if win[s] is None:
+                raise ConversionError('illusion-end-order', 'trace_to_c: an Illusion break without a disguise: %r' % line)
+            # The holder takes the last status the name showed (0026 section 4, the break); the disguise's row goes back to its
+            # status before the disguise.
+            w = win[s]
+            sst[(s, w['h'])] = shown_status_of((s, w['d']))
+            sst[(s, w['d'])] = w['snap_sst']
+            restore(s)
+    for s in range(2):
+        if win[s] is not None:
+            settle(s)  # still disguised at the end of the step: the rows hold their fold values at the truth of now
 
 
 def step_events(log, viewer, roster_of, maxhp, tables, ill=None):
@@ -1230,7 +1390,15 @@ def step_events(log, viewer, roster_of, maxhp, tables, ill=None):
             pos = ev_pos(args[0])
             side = pos // 2
             cause, id2, other = ev_cause(attrs, tables)
-            hp = ev_hp(args[1], side, viewer, maxhp[side][args[0].split(': ', 1)[1]])
+            name = args[0].split(': ', 1)[1]
+            shown_max = name
+            # Illusion (decision 0026 section 9, Q1): the owner's exact HP is the true member's, so its maximum is the holder's
+            # when the line names the disguise on the holder's position.
+            if viewer == side and ill['side'][side]:
+                tn = ill['truth_at'].get((side, pos % 2))
+                if tn is not None and tn != name and ill['shown_at'].get((side, pos % 2)) == name:
+                    shown_max = tn
+            hp = ev_hp(args[1], side, viewer, maxhp[side][shown_max])
             e = ev_tuple(EV['DAMAGE' if kind == '-damage' else 'HEAL'], pos, other, cause, 0, id2, *hp)
         elif kind == 'faint':
             e = ev_tuple(EV['FAINT'], ev_pos(args[0]))
@@ -1606,6 +1774,9 @@ def convert_battle(name, spec, trace, tables):
     ill_key = tables['ABILITY'].get(key('Illusion'))
     ill_side = [ill_key is not None and any(mon['ability'] == ill_key + 1 for mon in teams[s]) for s in range(2)]
     ill_pending = {}
+    ill_win = [None, None]  # the disguise of each side, while it is up (ill_pp_fold)
+    ill_off = {}  # (side, roster) -> the foe's PP offset per slot (ill_pp_fold)
+    ill_sst = {}  # (side, roster) -> the status name the foe shows (ill_pp_fold; None: the true status)
     ill_last_hp = {}
     ill_shown_at = {}
     # What each player has seen of the other side: the last public HP display
@@ -1643,6 +1814,8 @@ def convert_battle(name, spec, trace, tables):
         if team:
             picks = [kinds[0][1], kinds[1][1]]
         new_state = step['state']
+        ill_pp_fold(step['log'], state, new_state, roster_of, teams, tables, ill_key, ill_win, ill_off, ill_sst)
+        t_now = pp_map(new_state, roster_of)
         mons = []
         for s in range(2):
             row = []
@@ -1652,14 +1825,20 @@ def convert_battle(name, spec, trace, tables):
             for roster in range(6):
                 p = by_roster.get(roster)
                 if p is None:
-                    row.append((0, 0, (0, 0, 0, 0), (0, 0, 0, 0, 0, 0, 0), 0, 0, 0, 0, 0, 255, 0, 0, 0, 0, 0, 0, 0))
+                    row.append((0, 0, (0, 0, 0, 0), (0, 0, 0, 0), 0, (0, 0, 0, 0, 0, 0, 0), 0, 0, 0, 0, 0, 255, 0, 0, 0, 0, 0, 0, 0))
                     continue
                 pp = p['pp'] + [0] * (4 - len(p['pp']))
+                # The foe's knowledge of the PP (ill_pp_fold; equal to the true PP unless an Illusion is up): the owner's row is exact.
+                known_pp = known_pp_of(t_now[(s, roster)], ill_off.get((s, roster), (0, 0, 0, 0)))
                 stall = 1 if 'stall' in p['volatiles'] else 0
                 # A fainted Pokemon's status is not compared (DuoForge drops it).
                 status, counter = (0, 0) if p['fainted'] else (STATUS[p['status']], p['status_time'])
                 if status not in (2, 4):
                     counter = 0
+                # The status the foe shows (shown_status, ill_pp_fold; equal to the true one unless an Illusion is up): a fainted
+                # Pokemon shows none, and the owner's row is exact.
+                shown_name = ill_sst.get((s, roster))
+                shown_status = 0 if p['fainted'] else STATUS[p['status'] if shown_name is None else shown_name]
                 lock = two_turn_lock(p, (s, name_of(p)), remembered_locks)
                 lslot, ltarget = (lock[0], abs_target(s, lock[1])) if lock else (0xFF, 0)
                 # A Choice item's lock (Team C) names its slot without a
@@ -1682,7 +1861,7 @@ def convert_battle(name, spec, trace, tables):
                         raise ConversionError('unknown-volatile', 'trace_to_c: %s without twoturnmove on %s' %
                                               (charge, name_of(p)), detail=charge)
                 vols = sum(bit for name, bit in COMPARED_VOLATILES if name in p['volatiles'])
-                row.append((1, p['hp'], tuple(pp), tuple(x + 6 for x in p['boosts']),
+                row.append((1, p['hp'], tuple(pp), known_pp, shown_status, tuple(x + 6 for x in p['boosts']),
                             stall, 1 if p['fainted'] else 0, status, counter, p['confusion'], lslot, ltarget,
                             p.get('mega', 0), 1 if p['item'] else 0, 1 if seen else 0, seen[0] if seen else 0,
                             seen[1] if seen else 0, vols))
@@ -1908,12 +2087,13 @@ TYPES = [
     '    uint32_t species, gender, nature, sp[6], ability, item, move_count, moves[4];',
     '} df_conf_member;', '/* kind, move_slot, target, mega, reserve */',
     'typedef struct df_conf_cmd {', '    uint8_t kind, move_slot, target, mega, reserve;', '} df_conf_cmd;',
-    '/* present, hp, pp, stages (biased by 6), stall counter present, fainted,',
+    '/* present, hp, pp (the true PP), shown_pp (the PP the opponent knows: the true PP unless an Illusion is up, decision 0026),',
+    ' * stages (biased by 6), stall counter present, fainted,',
     ' * status (DFI_STATUS_*), its counter (sleep, freeze), confusion turns, the',
     ' * locked move slot (0xFF none) and its target, Mega forme, the item still',
     ' * held, and what the opponent has seen: seen, HP percent and colour flag',
     ' * of the last public display (DUOFORGE_HP_FLAG_*) */',
-    'typedef struct df_conf_mon {', '    uint32_t present, hp;', '    uint8_t pp[4];', '    uint8_t stages[7];',
+    'typedef struct df_conf_mon {', '    uint32_t present, hp;', '    uint8_t pp[4];', '    uint8_t shown_pp[4];', '    uint8_t shown_status;', '    uint8_t stages[7];',
     '    uint8_t stall, fainted, status, status_counter, confusion, locked_slot, locked_target, mega;',
     '    uint8_t held, seen, seen_percent, seen_flag;',
     '    uint8_t vols; /* volatiles: 1 protect, 2 flashfire, 4 twoturnmove, 8 choicelock, 16 unburden, 32 helpinghand,',
