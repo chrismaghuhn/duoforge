@@ -502,6 +502,12 @@ if(Python3_Interpreter_FOUND)
     add_test(NAME duoforge.reference.import_paste
         COMMAND "${Python3_EXECUTABLE}" "${PROJECT_SOURCE_DIR}/tools/reference/test_import_paste.py")
     set_tests_properties(duoforge.reference.import_paste PROPERTIES TIMEOUT 120 ENVIRONMENT PYTHONDONTWRITEBYTECODE=1)
+    # The bulk import of the VGCPastes sheet (tools/reference/import_vgcpastes.py) without Node or the library: the
+    # sheet rows, pool/pending/illegal, duplicates, the entries, a write into a copy of the registry (which it checks
+    # whole, hence the time of team_registry).
+    add_test(NAME duoforge.reference.import_vgcpastes
+        COMMAND "${Python3_EXECUTABLE}" "${PROJECT_SOURCE_DIR}/tools/reference/test_import_vgcpastes.py")
+    set_tests_properties(duoforge.reference.import_vgcpastes PROPERTIES TIMEOUT 600 ENVIRONMENT PYTHONDONTWRITEBYTECODE=1)
     # The AWS fuzz tooling (tools/cloud/aws_fuzz): its guards, the request, the user data and the policy text, offline,
     # with a stub aws first on the PATH. It needs a bash; on Windows that is Git's, not the WSL launcher in System32.
     if(WIN32)
