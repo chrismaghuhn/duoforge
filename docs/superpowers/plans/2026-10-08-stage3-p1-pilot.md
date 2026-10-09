@@ -254,9 +254,10 @@ The first local attempt is superseded. On 2026-10-09 the generation finished loc
 **First control run discarded:** the continuation stopped with a compute mismatch. Control 4142 CPU core-seconds / 62.9 GPU-seconds against the pilot's 5202 / 59.9 put the GPU axis already outside 5% (|Δ| = 3.0 > 2.995) at −20% CPU. More training could not bring it back. Probable cause: the fixed GPU share left out the resume's GPU JIT (~13 GPU-seconds). The owner chose a fresh control run from params-49333. The discarded run and its ledger are reported but not charged. Pilot, generation and distill stay as run.
 
 **The fresh control run** chooses each update's device by feedback (`train --update-gpu-share match`), with no calibration and no p1_match:
-- Before each update it takes the device whose axis is further behind its pilot total.
-- It never takes a device whose expected cost (the next update, including the JIT of a process's first update on that device) would push that axis above 1.05 of the pilot.
-- It stops once both axes are ≥ 0.95. If no device is allowed before that, the run STOPs as incomplete; it never exceeds the tolerance.
+- It runs GPU updates until the GPU axis reaches 0.95, then CPU updates. Only GPU updates raise the GPU axis, and a late restart then pays a CPU JIT (about 3%) instead of a GPU JIT (about 22%).
+- A device is allowed only if the expected step keeps both axes at ≤ 1.05 of the pilot. The expected step is the most expensive one measured. A process's first step on a device (JIT, start) counts as 25% per axis until measured.
+- It stops as matched once both axes are ≥ 0.95. It stops as incomplete when no allowed device remains, and immediately when the GPU axis is below 0.95 with no GPU step allowed. Any axis above 1.05 is an overshoot stop, never matched. Every stop other than matched is a STOP (exit 30).
+- The device sequence depends on measurement and is logged per update (update_device, match). The control's ledger holds training only; it plays no end suites.
 - It runs in one process where possible, since every resume pays a JIT.
 
 `expert_eval.validate_compute` checks the result unchanged: both axes within 5%. The control's learning rate decays over its spent share of the pilot's CPU core-seconds (`--learning-rate-over budget`, schedule 0:1 to 900:0.1 per mille), replacing the forecast decision count D. The exact ledgers of the discarded run were control 4142.374 / 62.9025 against pilot 5202.450 / 59.9023 (GPU |Δ| 3.0002 > 2.9951).
