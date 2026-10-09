@@ -14,7 +14,7 @@ set -euo pipefail
 EX_DONE=0 EX_CRASH=1 EX_USAGE=2
 EX_INPUTS=10 EX_SETUP=11 EX_REFUSED=13
 EX_SMOKE_T0=20 EX_GEN_BUDGET=21 EX_WORK_FALLBACK=22 EX_PROD_INCOMPLETE=23
-EX_INFEASIBLE=30 EX_COMPUTE=31 EX_CONTROL_NO_BUDGET_STOP=32 EX_CALIBRATION_CAP=33
+EX_INFEASIBLE=30 EX_COMPUTE=31 EX_CONTROL_NO_BUDGET_STOP=32
 EX_EVAL_SMOKE=40 EX_EXPERT_EVAL=41
 EX_NO_M12_TOOL=50 EX_INTERRUPTED=60
 
@@ -122,13 +122,25 @@ s3() {
 # Uploads the whole output tree; --delete because the local tree was restored from the prefix first and is the
 # authoritative state (an interrupted collector round moves its partial shards to discarded/, which must not come
 # back on the next restore). Without a completed restore nothing is uploaded except the logs.
+# The launcher's own paths under the prefix (log/ and out/ from user_data.sh, logs-unrestored/) are not run state:
+# restore and upload both exclude them, so --delete never tries to delete them. A sync whose only errors are refused
+# deletes (a role without s3:DeleteObject) still uploaded everything: a warning naming the keys, not a failure.
+LAUNCHER_PATHS=(--exclude 'log/*' --exclude 'out/*' --exclude 'logs-unrestored/*')
 upload_state() {
     [[ $MODE != dry ]] || return 0
     [[ -n ${BUCKET:-} && -n ${RUN_PREFIX:-} ]] || return 0
     (
         flock -w 600 9 || { log "upload: lock busy"; exit 1; }
         if [[ -e $WORK_DIR/.restored ]]; then
-            s3 sync "$OUT" "s3://$BUCKET/$RUN_PREFIX" --delete
+            errors=$WORK_DIR/.upload.errors
+            s3 sync "$OUT" "s3://$BUCKET/$RUN_PREFIX" --delete "${LAUNCHER_PATHS[@]}" 2>"$errors" && exit 0
+            rc=$?
+            cat "$errors" >&2
+            if [[ -s $errors ]] && ! grep -qv '^delete failed: ' "$errors"; then
+                log "upload: WARNING: $(wc -l <"$errors") deletes refused (no s3:DeleteObject?); these keys stay in the prefix and come back on a restore"
+                exit 0
+            fi
+            exit "$rc"
         elif [[ -d $OUT/logs ]]; then
             s3 sync "$OUT/logs" "s3://$BUCKET/${RUN_PREFIX}logs-unrestored/"
         fi
@@ -193,7 +205,7 @@ on_exit() {
         11) meaning=setup-failed ;; 13) meaning=phase-cli-refusal ;; 20) meaning=smoke-t0 ;;
         21) meaning=generation-cpu-budget ;; 22) meaning=work-fallback-above-1pct ;; 23) meaning=production-incomplete ;;
         30) meaning=matching-infeasible ;; 31) meaning=compute-mismatch ;; 32) meaning=control-no-budget-stop ;;
-        33) meaning=calibration-over-cap ;; 40) meaning=eval-smoke-stop ;; 41) meaning=expert-eval-refusal ;;
+        40) meaning=eval-smoke-stop ;; 41) meaning=expert-eval-refusal ;;
         50) meaning=missing-m12-tool ;; 60) meaning=interrupted ;; *) meaning=unknown ;;
     esac
     if [[ -n ${UPLOADER:-} ]]; then  # with its children: its sleep would hold the log pipe open
@@ -215,7 +227,7 @@ trap 'log "SIGTERM/SIGINT"; touch "$WORK_DIR/INTERRUPTED"; [[ -f $WORK_DIR/phase
 # ---- restore the run's state ----
 if [[ $MODE == run ]]; then
     log "restore s3://$BUCKET/$RUN_PREFIX"
-    s3 sync "s3://$BUCKET/$RUN_PREFIX" "$OUT"
+    s3 sync "s3://$BUCKET/$RUN_PREFIX" "$OUT" "${LAUNCHER_PATHS[@]}"
 fi
 check_earlier_starts "$OUT" "$WORK_DIR" "${RUN_ID:-dry}" "$MODE"
 touch "$WORK_DIR/.restored"
@@ -649,9 +661,9 @@ if ! marked control-cal-b; then
 fi
 # The matching, with extra calibration blocks while a device has no warm update (p1_match exit 5): each extra block
 # is its own train process of p1_match.EXTRA_UPDATES updates on that device, at most p1_match.MAX_EXTRA per device,
-# all charged to the control ledger and counted against the 10 % cap. The blocks played are in
+# all charged to the control ledger (their share of the pilot is reported in match.json). The blocks played are in
 # control/extra-calibration.json, so a restart neither repeats nor forgets one.
-# Dry run only: a STOP here (INFEASIBLE, over the cap, extras exhausted; expected without a production phase) is
+# Dry run only: a STOP here (INFEASIBLE, extras exhausted; expected without a production phase) is
 # reported, and the rehearsal goes on without the matched run: the export takes the calibrated state.
 EXTRAS=$OUT/control/extra-calibration.json
 match_stop() {  # CODE MESSAGE
@@ -667,7 +679,6 @@ if ! marked control-match; then
         case $rc in
             0) break ;;
             3) match_stop $EX_INFEASIBLE "the control cannot match the pilot's compute"; break ;;
-            4) match_stop $EX_CALIBRATION_CAP "the calibration spent more than 10 % of a pilot axis"; break ;;
             5) next=$(json_get "$(cat "$OUT/control/match.json")" next_extra)
                device=$(json_get "$next" device 2>/dev/null || true)
                if [[ -z $device ]]; then

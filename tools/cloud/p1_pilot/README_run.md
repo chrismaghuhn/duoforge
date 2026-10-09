@@ -100,13 +100,14 @@ directory left without a resumable state is moved to `<dir>.aside-<time>`, never
      is on the CPU throughout (`--act-gpu-share 0`). Each block is marked done only when the saved run state holds
      exactly 6 (12) updates; a block cut short (a signal, the `--minutes` default) stops the start, and the next
      start resumes it.
-   - **Matching:** `p1_match.py` writes `control/match.json`. It STOPs when the calibration spent more than 10 % of
-     either pilot axis (33), or when no share q in [0, 1] hits both axes (INFEASIBLE, 30).
+   - **Matching:** `p1_match.py` writes `control/match.json`. It STOPs when no share q in [0, 1] hits both axes
+     (INFEASIBLE, 30). The calibration's share of each pilot axis is reported there (`calibration_cap`, 10 % for
+     reference, `binding: false`); it is no stop (owner decision 2026-10-09).
      - **Calibrate more:** p1_match skips each process's first update (its JIT). When a device is left with no warm
        update (interrupts during a short block), it exits 5 and names the device. The script then plays one extra
        block on that device: its own process of 2 updates (one JIT, one warm), recorded in
        `control/extra-calibration.json`. Then it runs p1_match again. At most 3 extra blocks per device, else STOP 30.
-       Extra blocks are charged to the control and count against the 10 % cap.
+       Extra blocks are charged to the control like the calibration.
      - Otherwise the script
      resumes with its flags: q, the pilot totals as ledger stops, `--updates 0`, a `--minutes` safety cap of twice
      the forecast, and `--learning-rate-schedule 0:1,D:0.1`.
@@ -124,7 +125,9 @@ directory left without a resumable state is moved to `<dir>.aside-<time>`, never
 
 **Uploads.** Everything in `out/` goes to `s3://$BUCKET/$RUN_PREFIX` as `sync --delete`. The local tree is the
 authoritative state after the restore; without a completed restore (`.restored` is reset on every start) only the
-logs are uploaded, under `logs-unrestored/`.
+logs are uploaded, under `logs-unrestored/`. The launcher's paths under the prefix (`log/`, `out/`,
+`logs-unrestored/`) are excluded from the restore and from the `--delete` upload. A sync whose only errors are
+refused deletes (a role without `s3:DeleteObject`) is a logged warning naming the count, not an upload failure.
 - What `out/` holds: manifests, ledgers, logs (`logs/run-<start>.log` per start, one log per phase, `timings.jsonl`),
   run-info, shards and their SHA list, distill and control run directories (final params of both arms), evaluation
   records and reports, and `STATUS.json`.
@@ -145,8 +148,8 @@ exit code (train answers SIGTERM by saving and exiting 0): `run.sh` exits 60, an
   after training with the real students (phase 4). Both are charged to the shared evaluation ledger.
 - **Calibration first, with acting on the CPU (p = 0).** The Learner v2 plan forecasts the shares (q, p) from unit
   costs before any GPU spend. Here the calibration (6 CPU + 6 GPU updates of the control itself) is the measurement:
-  p is fixed at 0, q is solved from the measured costs, and the calibration is capped at 10 % of each pilot axis
-  (STOP 33 above it). A q outside [0, 1] would need acting on the GPU: INFEASIBLE (30), back to the owner.
+  p is fixed at 0, q is solved from the measured costs, and the calibration counts in full in the control's ledger;
+  its share of each pilot axis is only reported (a 60 GPU-second pilot cannot hold a calibration under 10 %). A q outside [0, 1] would need acting on the GPU: INFEASIBLE (30), back to the owner.
 
 ## Exit codes
 
@@ -165,7 +168,6 @@ exit code (train answers SIGTERM by saving and exiting 0): `run.sh` exits 60, an
 | 30 | matching infeasible, or still no warm calibration update after 3 extra blocks on a device (`control/match.json`) |
 | 31 | compute mismatch above 5 % (`control/compute-check.json`) |
 | 32 | the control ended without reaching its ledger budget |
-| 33 | the calibration spent more than 10 % of a pilot axis (`control/match.json`) |
 | 40 | evaluation smoke STOP (pre-training or post-training) |
 | 41 | expert_eval refused (exit 2) |
 | 50 | M12's `duoforge_search.eval_manifest` does not import from the commit (checked in setup) |
@@ -182,7 +184,7 @@ checking them exactly as above, and writes to `$WORK_DIR/out`.
   refuses it with 2) puts it on the CPU.
 - **Control:** calibration 3 + 3 updates (a block keeps a warm update through one interrupt), then `p1_match.py`
   with its extra calibration blocks as in the run.
-  - **Dry-run-only stand-in:** a matching STOP (INFEASIBLE, over the 10 % cap, extras exhausted) is only reported.
+  - **Dry-run-only stand-in:** a matching STOP (INFEASIBLE, extras exhausted) is only reported.
     It is expected, because the pilot ledger has no production. The rehearsal then goes on without the matched run:
     the export takes the calibrated state, and the compute check is only reported. A run always stops there.
 - **Evaluation:** the manifest and the `p1_eval` smoke on the real students. The run exits 0 on GO and 40 on STOP.

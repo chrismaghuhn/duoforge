@@ -18,8 +18,7 @@ decisions of the whole run (--learning-rate-schedule 0:1,D:0.1).
 
 usage: python p1_match.py --pilot-ledger PILOT.json --control-run RUN_DIR --control-ledger CONTROL.json
        [--extras EXTRAS.json] [--out F]
-exit: 0 OK, 3 INFEASIBLE (run.sh: STOP 30), 4 the calibration spent more than 10 % of a pilot axis (run.sh: STOP
-33), 5 CALIBRATE MORE: a device has no warm update; out["next_extra"] (extra_calibration, with the extra blocks
+exit: 0 OK, 3 INFEASIBLE (run.sh: STOP 30), 5 CALIBRATE MORE: a device has no warm update; out["next_extra"] (extra_calibration, with the extra blocks
 already played from --extras) says which block run.sh plays next, or that the device's extras are exhausted (run.sh:
 STOP 30), 2 bad input.
 """
@@ -29,10 +28,10 @@ import math
 import sys
 from pathlib import Path
 
+OK = 0
 INFEASIBLE = 3
-OVER_CAP = 4
 CALIBRATE_MORE = 5
-CALIBRATION_CAP = 0.10  # of each pilot axis
+CALIBRATION_CAP = 0.10  # of each pilot axis: reported only (owner decision 2026-10-09), never a stop
 MAX_EXTRA = 3  # extra calibration blocks per device
 EXTRA_UPDATES = 2  # updates per extra block: one JIT update (skipped) and one warm update
 
@@ -82,15 +81,15 @@ def solve(pilot, spent, records):
     spent = {k: spent[k] for k in ("cpu_core_seconds", "gpu_seconds")}
     out = {"pilot": {"cpu_core_seconds": target_c, "gpu_seconds": target_g}, "spent": spent,
            "calibration_updates": records[-1]["update"]}
-    # The calibration is charged to the control and capped at CALIBRATION_CAP of each pilot axis (Learner v2 plan,
-    # task 7), extra calibration blocks included: over the cap is a STOP for the owner, not a rescaled run.
+    # The calibration is the control's own compute, charged in full to its ledger (extra blocks included). Its share
+    # of each pilot axis is reported, not a stop (owner decision 2026-10-09, after AWS run EXIT 33: a 60 GPU-s pilot
+    # cannot hold a calibration under 10 %); what binds is that both totals match the pilot within 5 %.
     caps = {"cpu_core_seconds": CALIBRATION_CAP * target_c, "gpu_seconds": CALIBRATION_CAP * target_g}
     over = sorted(axis for axis in caps if spent[axis] > caps[axis])
-    out["calibration_cap"] = {"share": CALIBRATION_CAP, "caps": caps, "over": over, "ok": not over}
-    if over:
-        out["status"] = (f"STOP: the calibration spent more than {CALIBRATION_CAP:.0%} of the pilot's "
-                         f"{', '.join(over)}")
-        return out, OVER_CAP
+    out["calibration_cap"] = {"share": CALIBRATION_CAP, "caps": caps, "over": over, "ok": not over, "binding": False,
+                              "spent_share": {axis: spent[axis] / pilot_axis if pilot_axis else None
+                                              for axis, pilot_axis in (("cpu_core_seconds", target_c),
+                                                                       ("gpu_seconds", target_g))}}
     on_cpu, on_gpu = per_update(records, "cpu"), per_update(records, "default")
     missing = [name for name, measured in (("cpu", on_cpu), ("gpu", on_gpu)) if measured is None]
     if missing:  # every update of that device was a process's first (JIT) update, e.g. after interrupts
@@ -127,7 +126,7 @@ def solve(pilot, spent, records):
             "forecast_gpu_at_cpu_stop": spent["gpu_seconds"] + updates * q * g_gpu,
             "forecast_wall_seconds": wall, "safety_minutes": minutes,
             "learning_rate_schedule": f"0:1,{decay_end}:0.1", "resume_flags": flags, "status": "OK"}
-    return out, 0
+    return out, OK
 
 
 def main(argv=None):
