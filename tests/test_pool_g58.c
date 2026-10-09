@@ -132,6 +132,7 @@ static void test_spiky_break_reset_at_mid_turn(df_test *t)
     const df_conf_battle *cb = find_conf("g58_phantom_spiky_break");
     DF_CHECK(t, cb != NULL);
     if (ctx == NULL || cb == NULL) {
+        duoforge_context_destroy(ctx);
         return;
     }
     duoforge_battle_setup s;
@@ -139,6 +140,7 @@ static void test_spiky_break_reset_at_mid_turn(df_test *t)
     duoforge_battle *b = df_make_battle(ctx, &s);
     DF_CHECK(t, b != NULL);
     if (b == NULL) {
+        duoforge_context_destroy(ctx);
         return;
     }
     duoforge_decision_bundle bd;
@@ -158,6 +160,8 @@ static void test_spiky_break_reset_at_mid_turn(df_test *t)
     /* the break reset the protect variant of Glimmora's position (flat 2: side 1, position 0) with its volatile */
     DF_CHECK_EQ_U64(t, b->tail.sides[1].positions[0].protect_kind, 0u);
     DF_CHECK(t, ((uint32_t)b->sides[1].positions[0].flags & DFI_VOL_PROTECT) == 0u);
+    duoforge_battle_destroy(b);
+    duoforge_context_destroy(ctx);
 }
 
 int main(void)
