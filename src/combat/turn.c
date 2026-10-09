@@ -4433,6 +4433,20 @@ static int dfi_queued_move_index(struct duoforge_battle *b, uint32_t flat)
     return -1;
 }
 
+/* A successful hit of a single-target move that is not a damaging one (After You, Quash): the Champions hit loop runs the Update
+ * after the hit (data/mods/champions/scripts.ts:537), then the faint lines and the Update after the damage check (:574; the
+ * target's damage entry is 0 for an undefined hit result, so the check passes). Its hit result is undefined, not TRUE. A failed
+ * hit (false) breaks the loop before either (:531-532) and shows nothing here. */
+static duoforge_status dfi_after_hit_updates(dfi_run *r)
+{
+    const duoforge_status st = dfi_update(r);
+    if (st != DUOFORGE_OK) {
+        return st;
+    }
+    dfi_announce_faints(r, false);
+    return dfi_update(r);
+}
+
 /* The queue record at `idx` goes to the front; the records before it move one place back, the rest keep their places
  * (battle-queue.ts prioritizeAction: splice out, unshift). */
 static void dfi_queue_move_to_front(struct duoforge_battle *b, uint32_t idx)
@@ -4469,7 +4483,7 @@ static duoforge_status dfi_run_after_you(dfi_run *r, uint32_t user, uint32_t mov
     r->b->queue[0].reserve = DFI_QRES_PRIORITIZED;
     const duoforge_event e = dfi_ev(DUOFORGE_EVENT_ACTIVATE, t, DUOFORGE_CAUSE_MOVE, move_id, DUOFORGE_NO_POSITION);
     dfi_emit(r, &e);
-    return DUOFORGE_OK;
+    return dfi_after_hit_updates(r);
 }
 
 /* Quash (step G62, decision 0015 entry 5az; data/moves.ts:14454-14475): a protect move, accuracy 100, whose onHit (doubles, as
@@ -4491,7 +4505,7 @@ static duoforge_status dfi_run_quash(dfi_run *r, uint32_t user, uint32_t move_id
     r->b->queue[idx].reserve = DFI_QRES_QUASHED;
     const duoforge_event e = dfi_ev(DUOFORGE_EVENT_ACTIVATE, t, DUOFORGE_CAUSE_MOVE, move_id, DUOFORGE_NO_POSITION);
     dfi_emit(r, &e);
-    return DUOFORGE_OK;
+    return dfi_after_hit_updates(r);
 }
 
 /* Haze (step G62, decision 0031; data/moves.ts:8156-8172, onHitField): the move prints `-clearallboost` (no position, no
