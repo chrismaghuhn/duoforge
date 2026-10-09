@@ -1,0 +1,20 @@
+{
+  "name": "g31_yawn_electric",
+  "purpose": "Step G31 fix: Yawn into a grounded target (Pincurchin, Electric type) under Electric Terrain, which Electric Surge sets at the start: the Electric Terrain refusal shows -activate|target|move: Electric Terrain on each Yawn and no -start, and no Yawn fail line.",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,b8354128ce331c48d3a4846ee79700c622b0d6530b71f171ad96074fe8f5cbcc",
+  "teams": [
+    "Pincurchin (M) @ Charcoal\nAbility: Electric Surge\nLevel: 50\nEVs: 32 HP / 32 Def / 2 SpA\nBold Nature\n- Thunderbolt\n- Protect\n\nStaraptor (F) @ Black Glasses\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 2 SpD / 32 Spe\nJolly Nature\n- Protect\n\nKingambit (M) @ Rocky Helmet\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Protect\n\nGholdengo @ Life Orb\nAbility: Good as Gold\nLevel: 50\nEVs: 17 HP / 2 Def / 17 SpA / 16 SpD / 14 Spe\nModest Nature\n- Protect\n\nCeruledge (M) @ Grassy Seed\nAbility: Flash Fire\nLevel: 50\nEVs: 31 HP / 7 Atk / 24 Def / 3 SpD / 1 Spe\nAdamant Nature\n- Protect\n\nRaichu (F) @ Raichunite Y\nAbility: Lightning Rod\nLevel: 50\nEVs: 29 HP / 5 Def / 32 Spe\nTimid Nature\n- Protect",
+    "Sylveon (F) @ Light Clay\nAbility: Pixilate\nLevel: 50\nEVs: 32 HP / 2 SpD / 32 Spe\nTimid Nature\n- Yawn\n- Protect\n\nSalamence (M) @ Leftovers\nAbility: Intimidate\nLevel: 50\nEVs: 2 HP / 32 Atk / 32 Spe\nJolly Nature\n- Dragon Claw\n- Protect\n\nMilotic (F) @ Sitrus Berry\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Hypnosis\n- Protect\n\nArchaludon (M) @ Mystic Water\nAbility: Stamina\nLevel: 50\nEVs: 32 HP / 10 Def / 24 SpD\nBold Nature\n- Iron Head\n- Protect\n\nKingambit (M) @ Black Glasses\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Protect\n\nCeruledge (M) @ Fairy Feather\nAbility: Flash Fire\nLevel: 50\nEVs: 31 HP / 7 Atk / 24 Def / 3 SpD / 1 Spe\nAdamant Nature\n- Protect"
+  ],
+  "plan": {
+    "p1": [
+      "move 1 2, move 1"
+    ],
+    "p2": [
+      "move 1 1, move 2"
+    ],
+    "max_steps": 4
+  }
+}

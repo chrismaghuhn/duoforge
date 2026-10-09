@@ -1,0 +1,22 @@
+{
+  "name": "xr3_sheercold_ice_sub",
+  "purpose": "Sheer Cold into an Ice-type holder with a Substitute (Ninetales-Alola, Ice/Fairy): -immune [ohko] at the accuracy step, with no draw and no sub line (the immunity comes before the sub's TryPrimaryHit; sim/battle-actions.ts:696-706). Turn 2 the Ice Beam of the holder shows the sub is still up on its side.",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,0000000000000000000000000000000000000000000000000000000000000001",
+  "teams": [
+    "Glalie (M) @ Leftovers\nAbility: Inner Focus\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 SpD\nModest Nature\n- Sheer Cold\n- Protect\n\nKingambit (M) @ Black Glasses\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 2 Atk / 32 Spe\nAdamant Nature\n- Swords Dance\n- Protect\n\nMilotic (F) @ Sitrus Berry\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Triple Axel\n- Protect\n- Coil\n\nGholdengo @ Focus Sash\nAbility: Good as Gold\nLevel: 50\nEVs: 32 HP / 2 SpA / 32 SpD\nCalm Nature\n- Shadow Ball\n- Protect\n\nCeruledge (M) @ Expert Belt\nAbility: Flash Fire\nLevel: 50\nEVs: 31 HP / 7 Atk / 24 Def / 3 SpD / 1 Spe\nBrave Nature\n- Protect\n\nSalamence (M) @ Salamencite\nAbility: Intimidate\nLevel: 50\nEVs: 2 HP / 32 SpA / 32 Spe\nTimid Nature\n- Hyper Voice\n- Draco Meteor\n- Protect\n- Tailwind",
+    "Ninetales-Alola (F)\nAbility: Snow Cloak\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nModest Nature\n- Substitute\n- Ice Beam\n- Protect\n\nPrimarina (F) @ Rocky Helmet\nAbility: Torrent\nLevel: 50\nEVs: 32 HP / 2 Def / 32 SpD\nCalm Nature\n- Moonblast\n- Protect\n\nMilotic (F) @ Sitrus Berry\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Triple Axel\n- Protect\n- Coil\n\nKingambit (M) @ Black Glasses\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 2 Atk / 32 Spe\nAdamant Nature\n- Swords Dance\n- Protect\n\nCeruledge (M) @ Expert Belt\nAbility: Flash Fire\nLevel: 50\nEVs: 31 HP / 7 Atk / 24 Def / 3 SpD / 1 Spe\nBrave Nature\n- Protect\n\nSalamence (M) @ Salamencite\nAbility: Intimidate\nLevel: 50\nEVs: 2 HP / 32 SpA / 32 Spe\nTimid Nature\n- Hyper Voice\n- Draco Meteor\n- Protect\n- Tailwind"
+  ],
+  "plan": {
+    "p1": [
+      "move 1 1, move 2",
+      "move 1 1, move 1"
+    ],
+    "p2": [
+      "move 1, move 2",
+      "move 2 1, move 1 1"
+    ],
+    "max_steps": 3
+  }
+}

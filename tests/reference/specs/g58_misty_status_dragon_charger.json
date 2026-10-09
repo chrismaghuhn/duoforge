@@ -1,0 +1,21 @@
+{
+ "name": "g58_misty_status_dragon_charger",
+ "purpose": "G58 (decision 0015 5ax, the semi-invulnerable exemptions of the terrains): Misty Terrain (Florges) is up on turn 1; Golurk (No Guard) charges Phantom Force on turn 1; on turn 2 Gengar Toxic (data/moves.ts:12178, the target is semi-invulnerable) and Dragalge Dragon Pulse (data/moves.ts:12186, not weakened) hit the charging Golurk.",
+ "data": "pool",
+ "format": "gen9championsvgc2026regmc",
+ "seed": "sodium,de2cf3f5f4085878b51f0c604b09bb213aa0d06aca44e466c99d72a8b5eb4513",
+ "teams": [
+  "Florges (F) @ Life Orb\nAbility: Flower Veil\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 SpD\nModest Nature\n- Misty Terrain\n- Protect\n- Moonblast\n\nGolurk @ Leftovers\nAbility: No Guard\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Phantom Force\n- Protect\n- Earthquake\n- Close Combat\n\nGholdengo @ Focus Sash\nAbility: Good as Gold\nLevel: 50\nEVs: 17 HP / 2 Def / 17 SpA / 16 SpD\nModest Nature\n- Shadow Ball\n- Protect\n- Make It Rain\n- Iron Head\n\nCeruledge (M) @ Grassy Seed\nAbility: Flash Fire\nLevel: 50\nEVs: 31 HP / 7 Atk / 24 Def / 3 SpD / 1 Spe\nAdamant Nature\n- Phantom Force\n- Quick Guard\n- Protect\n- Close Combat\n\nMachamp (M) @ Sitrus Berry\nAbility: Steadfast\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Coaching\n- Protect\n- Close Combat\n- Wide Guard\n\nGengar (M) @ Mystic Water\nAbility: Cursed Body\nLevel: 50\nEVs: 32 HP / 2 Def / 32 Spe\nTimid Nature\n- Toxic\n- Protect\n- Shadow Ball\n- Taunt",
+  "Gengar (M) @ Mystic Water\nAbility: Cursed Body\nLevel: 50\nEVs: 32 HP / 2 Def / 32 Spe\nTimid Nature\n- Toxic\n- Protect\n- Shadow Ball\n- Taunt\n\nDragalge (F) @ Life Orb\nAbility: Adaptability\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 SpD\nModest Nature\n- Dragon Pulse\n- Protect\n- Sludge Bomb\n- Flip Turn\n\nKingambit (M) @ Black Glasses\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Sucker Punch\n- Protect\n- Taunt\n- Iron Head\n\nMilotic (F) @ Eject Button\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Protect\n- Coil\n\nDecidueye (M) @ Sitrus Berry\nAbility: Overgrow\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- U-turn\n- Protect\n- Shadow Sneak\n- Knock Off\n\nGyarados (M) @ Focus Sash\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 2 Def / 32 Spe\nJolly Nature\n- Hurricane\n- Protect"
+ ],
+ "plan": {
+  "p1": [
+   "move 1 2, move 1 2"
+  ],
+  "p2": [
+   "move 2, move 2",
+   "move 1 2, move 1 2"
+  ],
+  "max_steps": 4
+ }
+}

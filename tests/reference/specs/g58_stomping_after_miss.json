@@ -1,0 +1,24 @@
+{
+ "name": "g58_stomping_after_miss",
+ "purpose": "Golurk (M) Shadow Balls the charging Ceruledge (M) on the charge turn (-miss, the move result is false); next turn Golurk uses Stomping Tantrum, whose base power is doubled by that false result",
+ "data": "pool",
+ "format": "gen9championsvgc2026regmc",
+ "seed": "sodium,0000000000000000000000000000000000000000000000000000000000058010",
+ "teams": [
+  "Annihilape (M) @ Life Orb\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Phantom Force\n- Protect\n- Close Combat\n- Coaching\n\nGolurk @ Leftovers\nAbility: Iron Fist\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Shadow Ball\n- Protect\n- Stomping Tantrum\n- Close Combat\n\nKingambit (M) @ Black Glasses\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Sucker Punch\n- Protect\n- Taunt\n- Iron Head\n\nMilotic (F) @ Eject Button\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Protect\n- Coil\n\nRaichu (F) @ Sitrus Berry\nAbility: Lightning Rod\nLevel: 50\nEVs: 29 HP / 5 Def / 32 Spe\nTimid Nature\n- Thunderbolt\n- Protect\n\nIndeedee-F (F) @ Rocky Helmet\nAbility: Psychic Surge\nLevel: 50\nEVs: 32 HP / 32 Def / 2 SpD\nRelaxed Nature\n- Protect",
+  "Ceruledge (M) @ Grassy Seed\nAbility: Flash Fire\nLevel: 50\nEVs: 31 HP / 7 Atk / 24 Def / 3 SpD / 1 Spe\nAdamant Nature\n- Phantom Force\n- Quick Guard\n- Protect\n- Close Combat\n\nGengar (M) @ Mystic Water\nAbility: Cursed Body\nLevel: 50\nEVs: 32 HP / 2 Def / 32 Spe\nTimid Nature\n- Toxic\n- Protect\n- Shadow Ball\n- Taunt\n\nKingambit (M) @ Black Glasses\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Sucker Punch\n- Protect\n- Taunt\n- Iron Head\n\nMilotic (F) @ Eject Button\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Protect\n- Coil\n\nRaichu (F) @ Sitrus Berry\nAbility: Lightning Rod\nLevel: 50\nEVs: 29 HP / 5 Def / 32 Spe\nTimid Nature\n- Thunderbolt\n- Protect\n\nIndeedee-F (F) @ Rocky Helmet\nAbility: Psychic Surge\nLevel: 50\nEVs: 32 HP / 32 Def / 2 SpD\nRelaxed Nature\n- Protect"
+ ],
+ "plan": {
+  "p1": [
+   "move 2, move 1 1",
+   "move 2, move 3",
+   "move 2, move 3"
+  ],
+  "p2": [
+   "move 1 1, move 2",
+   "move 1 1, move 2",
+   "move 1 1, move 2"
+  ],
+  "max_steps": 4
+ }
+}

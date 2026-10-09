@@ -1,0 +1,26 @@
+{
+  "name": "g31_yawn_misty",
+  "purpose": "Step G31 fix: the Yawn starts on turn 1 with its -start line (Misty Terrain refuses only confusion, and Sylveon's Misty Terrain comes after the Yawn in that turn), then Misty Terrain is up at the end of turn 2 and the sleep is refused with -activate|target|move: Misty Terrain (the line the engine lacks).",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,acbd1846ec4062ad2ec65c30aeb541a9d2bb5671b612c5b3983e0310b9c49677",
+  "teams": [
+    "Sylveon (F) @ Fairy Feather\nAbility: Pixilate\nLevel: 50\nEVs: 19 HP / 32 SpA / 15 Spe\nModest Nature\n- Misty Terrain\n- Protect\n\nKingambit (M) @ Rocky Helmet\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Protect\n\nStaraptor (F) @ Black Glasses\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 2 SpD / 32 Spe\nJolly Nature\n- Protect\n\nGholdengo @ Life Orb\nAbility: Good as Gold\nLevel: 50\nEVs: 17 HP / 2 Def / 17 SpA / 16 SpD / 14 Spe\nModest Nature\n- Protect\n\nCeruledge (M) @ Grassy Seed\nAbility: Flash Fire\nLevel: 50\nEVs: 31 HP / 7 Atk / 24 Def / 3 SpD / 1 Spe\nAdamant Nature\n- Protect\n\nRaichu (F) @ Raichunite Y\nAbility: Lightning Rod\nLevel: 50\nEVs: 29 HP / 5 Def / 32 Spe\nTimid Nature\n- Protect",
+    "Sylveon (F) @ Light Clay\nAbility: Pixilate\nLevel: 50\nEVs: 32 HP / 2 SpD / 32 Spe\nTimid Nature\n- Yawn\n- Protect\n\nSalamence (M) @ Leftovers\nAbility: Intimidate\nLevel: 50\nEVs: 2 HP / 32 Atk / 32 Spe\nJolly Nature\n- Dragon Claw\n- Protect\n\nMilotic (F) @ Sitrus Berry\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Hypnosis\n- Protect\n\nArchaludon (M) @ Mystic Water\nAbility: Stamina\nLevel: 50\nEVs: 32 HP / 10 Def / 24 SpD\nBold Nature\n- Iron Head\n- Protect\n\nKingambit (M) @ Black Glasses\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Protect\n\nCeruledge (M) @ Fairy Feather\nAbility: Flash Fire\nLevel: 50\nEVs: 31 HP / 7 Atk / 24 Def / 3 SpD / 1 Spe\nAdamant Nature\n- Protect"
+  ],
+  "plan": {
+    "p1": [
+      "move 1, move 1",
+      "move 2, move 1",
+      "move 2, move 1",
+      "move 2, move 1"
+    ],
+    "p2": [
+      "move 1 1, move 2",
+      "move 2, move 2",
+      "move 2, move 2",
+      "move 2, move 2"
+    ],
+    "max_steps": 4
+  }
+}

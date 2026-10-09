@@ -138,6 +138,7 @@ SUPPORTED = LIBRARY_SUPPORTED & TRACKER_FOLDS
 
 # Effects of decision 0018 section 6.1, by line kind: the effect (without "move: " / "ability: ") -> feature.
 _START = {"move: Taunt": "TAUNT", "Taunt": "TAUNT", "Encore": "ENCORE", "Substitute": "SUBSTITUTE",
+          "move: Substitute": "SUBSTITUTE",  # the absorbed hit's -activate (decision 0032, step G60)
           "typechange": "TYPE_CHANGE", "Throat Chop": "THROAT_CHOP", "move: Heal Block": "HEAL_BLOCK",
           "Heal Block": "HEAL_BLOCK", "move: Imprison": "IMPRISON", "Disable": "DISABLE", "Stockpile": "STOCKPILE",
           "move: Yawn": "YAWN", "move: Leech Seed": "LEECH_SEED", "Salt Cure": "SALT_CURE", "Curse": "CURSE",
@@ -171,7 +172,7 @@ _ITEM_CHANGE_FROM = {"move: Trick", "move: Switcheroo", "move: Thief", "move: Co
 # guard markers in the ACTIVATE event).
 _FOLD_ACTIVATE = {"move: Protect", "move: Psychic Terrain", "confusion", "ability: Emergency Exit",
                   "ability: Lightning Rod", "ability: Storm Drain", "move: Struggle", "ability: Sticky Hold",
-                  "move: Feint", "move: After You", "move: Quash"}  # After You, Quash: the queue, no field (G62)
+                  "move: Feint", "move: After You", "move: Quash", "move: Phantom Force"}  # After You, Quash: the queue, no field (G62); Phantom Force: its [broken] protection (G58)
 # A guard blocking a move this turn: the same single-turn feature as its -singleturn line.
 _GUARD_ACTIVATE = {"move: Wide Guard": "WIDE_GUARD", "move: Quick Guard": "QUICK_GUARD"}
 # `-singleturn|X|move: Protect` is the Protect volatile of Spiky Shield, Baneful Bunker and Burning Bulwark (their condition
@@ -280,6 +281,8 @@ def check(line, view):
             return "fold"
         if effect in _GUARD_ACTIVATE:
             return _feature(_GUARD_ACTIVATE[effect])
+        if effect in ("move: Electric Terrain", "move: Misty Terrain"):
+            return _feature(_FIELD[effect])  # the terrain blocking Yawn or its sleep: its own feature, as -fieldstart
         if effect in ("move: Skill Swap",):
             return _feature("ABILITY_CHANGE")
         if effect == "move: Poltergeist" and len(args) == 3:
