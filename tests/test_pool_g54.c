@@ -154,14 +154,14 @@ static void check_multihit_weights(df_test *t)
     DF_CHECK_EQ_U64(t, share[3], 7u);
     DF_CHECK_EQ_U64(t, share[4], 3u);
     DF_CHECK_EQ_U64(t, share[5], 3u);
-    DF_CHECK_EQ_U64(t, DFI_SITE_MULTIHIT_COUNT, 20u);
+    DF_CHECK_EQ_U64(t, DFI_SITE_MULTIHIT_COUNT, 21u /* site 20 is the G46 drag */);
 }
 
 /* The constants that the rows and their draws depend on. */
 static void check_constants(df_test *t)
 {
-    DF_CHECK_EQ_U64(t, DFI_SITE_MULTIHIT_COUNT, 20u);
-    DF_CHECK_EQ_U64(t, DFI_SITE_COUNT, 21u);
+    DF_CHECK_EQ_U64(t, DFI_SITE_MULTIHIT_COUNT, 21u /* site 20 is the G46 drag */);
+    DF_CHECK_EQ_U64(t, DFI_SITE_COUNT, 22u);
     DF_CHECK_EQ_U64(t, DUOFORGE_BLOCK_QUICK_GUARD, 6u); /* decision 0029 */
     DF_CHECK_EQ_U64(t, DUOFORGE_SIDE_GUARD_QUICK_GUARD, 2u);
     DF_CHECK_EQ_U64(t, DUOFORGE_VIEWEXT_FEATURE_QUICK_GUARD, 38u);

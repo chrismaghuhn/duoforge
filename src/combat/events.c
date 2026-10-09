@@ -103,7 +103,8 @@ bool dfi_events_fold_knowledge(const struct duoforge_battle *before, struct duof
                 continue;
             }
             const uint32_t slot = (uint32_t)e.position % 2u;
-            if (e.kind == DUOFORGE_EVENT_SWITCH) {
+            /* a drag (step G46) enters a member as a switch does: the opponent sees it, and its occupant */
+            if (e.kind == DUOFORGE_EVENT_SWITCH || e.kind == DUOFORGE_EVENT_DRAG) {
                 occupant[slot] = e.id;
             }
             const uint32_t m = occupant[slot];
@@ -111,10 +112,11 @@ bool dfi_events_fold_knowledge(const struct duoforge_battle *before, struct duof
                 continue;
             }
             dfi_knowledge *k = &viewer->knowledge[m];
-            if (e.kind == DUOFORGE_EVENT_SWITCH) {
+            if (e.kind == DUOFORGE_EVENT_SWITCH || e.kind == DUOFORGE_EVENT_DRAG) {
                 viewer->seen_mask = (uint8_t)((uint32_t)viewer->seen_mask | 1u << m); /* wide-operands-reviewed: < 64 */
             }
-            if (e.kind == DUOFORGE_EVENT_SWITCH || e.kind == DUOFORGE_EVENT_DAMAGE || e.kind == DUOFORGE_EVENT_HEAL) {
+            if (e.kind == DUOFORGE_EVENT_SWITCH || e.kind == DUOFORGE_EVENT_DRAG || e.kind == DUOFORGE_EVENT_DAMAGE ||
+                e.kind == DUOFORGE_EVENT_HEAL) {
                 if (e.hp_kind != DUOFORGE_HP_PERCENT) {
                     return false; /* never a silent 0 */
                 }

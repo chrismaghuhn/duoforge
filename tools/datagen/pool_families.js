@@ -1375,11 +1375,11 @@ function checkFormes(dex, validator, rows, moves, abilities) {
 // The UNMODELED markers of gen_closure.py --pool, re-derived from the pinned data in this file's own words: the
 // special column of a move, the handler column of an item and of an ability, and the lists of unmodelled features.
 // implemented in the turn code by id (G4: Focus Sash, Rock Head; G12: Floettite, Flower Veil, Fairy Aura)
-const ENGINE_ROWS = {items: ['focussash', 'floettite', 'psychicseed', 'electricseed', 'mistyseed', 'expertbelt', 'ejectbutton', 'widelens', 'muscleband', 'wiseglasses', 'brightpowder'],
+const ENGINE_ROWS = {items: ['focussash', 'floettite', 'psychicseed', 'electricseed', 'mistyseed', 'expertbelt', 'ejectbutton', 'widelens', 'muscleband', 'wiseglasses', 'brightpowder', 'redcard'],
     abilities: ['rockhead', 'flowerveil', 'fairyaura', 'roughskin', 'poisontouch', 'thermalexchange', 'stickyhold', 'trace',
         'levitate', 'sandrush', 'swiftswim', 'slushrush', 'chlorophyll', 'innerfocus', 'liquidvoice',
         'flamebody', 'clearbody', 'hospitality', 'overcoat', 'soundproof', 'unnerve', 'speedboost',
-        'compoundeyes', 'ironfist', 'sharpness', 'solidrock', 'technician', 'multiscale', 'galewings', 'raindish', 'friendguard', 'cursedbody', 'mirrorarmor', 'auraguard', 'hypercutter', 'scrappy', 'infiltrator', 'queenlymajesty', 'damp', 'sturdy', 'snowcloak', 'sandveil', 'static', 'justified', 'limber', 'solarpower', 'regenerator', 'toxicdebris', 'shadowtag']};
+        'compoundeyes', 'ironfist', 'sharpness', 'solidrock', 'technician', 'multiscale', 'galewings', 'raindish', 'friendguard', 'cursedbody', 'mirrorarmor', 'auraguard', 'hypercutter', 'scrappy', 'infiltrator', 'queenlymajesty', 'damp', 'sturdy', 'snowcloak', 'sandveil', 'static', 'justified', 'limber', 'solarpower', 'regenerator', 'toxicdebris', 'shadowtag', 'suctioncups', 'guarddog']};
 const ENGINE_TARGETS = new Set(['normal', 'any', 'adjacentAlly', 'adjacentFoe', 'self', 'allAdjacentFoes', 'allySide', 'all',
     'randomNormal', 'allAdjacent', 'allies', 'foeSide']); // foeSide: step G37 (the four hazards)
 // The fields of a move that the tables model (gen_closure.py DATA_KEYS and IGNORED_KEYS), nothing else.
@@ -1403,6 +1403,9 @@ function isBoostBlock(b) {
 const ENGINE_PIVOTS = ['uturn', 'voltswitch'];
 // Step G13: the moves that are another move's handler under another name (gen_closure.py PROTECT_COPIES).
 const PROTECT_COPIES = {detect: 'protect'};
+// Step G46: the four forced-switch moves; their forceSwitch: true is modelled (gen_closure.py G46_FORCE_SWITCH_MOVES).
+const G46_FORCE_SWITCH_MOVES = ['roar', 'whirlwind', 'dragontail', 'circlethrow'];
+
 function moveIsModelled(raw, id) {
     if (raw.selfSwitch !== undefined && !ENGINE_PIVOTS.includes(id)) {
         return false;
@@ -1410,6 +1413,10 @@ function moveIsModelled(raw, id) {
     for (const [key, value] of Object.entries(raw)) {
         // Step G13: Light of Ruin's tags (the Champions mod clears isNonstandard); no other tag value is read.
         if (key === 'tags' && JSON.stringify(value) === JSON.stringify(['Past Unobtainable'])) {
+            continue;
+        }
+        // Step G46: forceSwitch: true of the four moves of G46_FORCE_SWITCH_MOVES, and nothing else of it.
+        if (key === 'forceSwitch' && value === true && G46_FORCE_SWITCH_MOVES.includes(id)) {
             continue;
         }
         if (typeof value === 'function' || !MOVE_KEYS.has(key)) {

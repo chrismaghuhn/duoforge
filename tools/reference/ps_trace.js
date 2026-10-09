@@ -50,6 +50,9 @@ const HARNESS_VERSION = 14;
 
 // Stack frame name -> site. The first match in stack order wins.
 const SITE_RULES = [
+    // The drag (step G46): dragIn's getRandomSwitchable, one sample over the bench in side.pokemon order (sim/battle.ts:1570-1588).
+    // It was an UNKNOWN draw before the G46 battles, so the harness version stays (as for the condition sites above).
+    ['Battle.getRandomSwitchable', 'DRAG'],
     ['BattleActions.hitStepAccuracy', 'ACCURACY'],
     ['Battle.randomizer', 'DAMAGE_ROLL'],
     ['BattleActions.secondaries', 'SECONDARY'],

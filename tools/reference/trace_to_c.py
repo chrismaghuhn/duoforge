@@ -136,8 +136,9 @@ import sys
 SITES = {'SPEED_TIE': 1, 'ACCURACY': 2, 'CRIT': 3, 'DAMAGE_ROLL': 4, 'SECONDARY': 5, 'STALL': 6,
          'SLEEP_TURNS': 7, 'FREEZE_THAW': 8, 'FULL_PARALYSIS': 9, 'CONFUSION_TURNS': 10,
          'CONFUSION_HIT': 11, 'RANDOM_TARGET': 12, 'STATUS_PICK': 13, 'INSERT_TIE': 14, 'TRACE': 15, 'POISON_TOUCH': 16,
-         'CURSED_BODY': 17, 'FLAME_BODY': 18, 'STATIC': 19,
-         'MULTIHIT_COUNT': 20}  # 17: step G27, 18: step G30, 19: step G39, 20: step G54 (Icicle Spear, Scale Shot)
+         'CURSED_BODY': 17, 'FLAME_BODY': 18, 'STATIC': 19,  # 17: step G27, 18: step G30, 19: step G39
+         'DRAG': 20,  # 20: step G46, the drag's draw (DFI_SITE_DRAG)
+         'MULTIHIT_COUNT': 21}  # 21: step G54 (Icicle Spear, Scale Shot), DFI_SITE_MULTIHIT_COUNT
 STATS = ['HP', 'Atk', 'Def', 'SpA', 'SpD', 'Spe']
 GENDER = {'M': 1, 'F': 2}
 GENDERLESS = 3
@@ -862,6 +863,8 @@ EV = {name: i + 1 for i, name in enumerate(
      'CONFUSION_END', 'CONFUSED', 'FLASH_FIRE', 'WEATHER', 'FIELD_START', 'FIELD_END', 'SIDE_START', 'SIDE_END',
      'ITEM_END', 'FORME', 'MEGA', 'PREPARE', 'ANIMATION', 'ABILITY', 'ACTIVATE', 'UPKEEP', 'RESULT',
      'SINGLE_TURN', 'VOLATILE_START', 'VOLATILE_END', 'TYPE_CHANGE', 'ITEM_START'])}
+# DUOFORGE_EVENT_DRAG = 45 (step G46): 43 and 44 belong to REVIVE and TRANSFORM on their own branches, so the drag is set by value.
+EV['DRAG'] = 45
 CAUSE = {'NONE': 0, 'MOVE': 1, 'ITEM': 2, 'ABILITY': 3, 'RECOIL': 4, 'DRAIN': 5, 'BURN': 6, 'CONFUSION': 7,
          'TERRAIN': 8, 'PARALYSIS': 9, 'SLEEP': 10, 'FREEZE': 11, 'FLINCH': 12, 'NO_PP': 13, 'POISON': 14,
          'HEAL_BLOCK': 15, 'WEATHER': 16, 'ITEM_TAKEN': 17, 'RECHARGE': 18, 'DISABLE': 19, 'TAUNT': 20, 'IMPRISON': 21}
@@ -1074,13 +1077,15 @@ def step_events(log, viewer, roster_of, maxhp, tables):
             e = ev_tuple(EV['UPKEEP'])
         elif kind in ('win', 'tie'):
             e = ev_tuple(EV['RESULT'], detail=3 if kind == 'tie' else int(args[0][1:]))
-        elif kind == 'switch':
+        elif kind in ('switch', 'drag'):
+            # A drag (step G46) is a switch of the forced kind: the entered slot, the roster index, the HP; no cause
+            # (the Pokemon that forced it is named by the move line, not by the drag).
             pos = ev_pos(args[0])
             side = pos // 2
             name = args[0].split(': ', 1)[1]
             cause, id2, _ = ev_cause(attrs, tables)
             hp = ev_hp(args[2], side, viewer, maxhp[side][name])
-            e = ev_tuple(EV['SWITCH'], pos, NOPOS, cause, roster_of[side][name], id2, *hp)
+            e = ev_tuple(EV['SWITCH' if kind == 'switch' else 'DRAG'], pos, NOPOS, cause, roster_of[side][name], id2, *hp)
         elif kind == 'move':
             pos = ev_pos(args[0])
             target = ev_pos(parts[4]) if len(parts) > 4 else None
@@ -1333,7 +1338,10 @@ def step_events(log, viewer, roster_of, maxhp, tables):
                              tables['MOVE'][key(move_name)], tables['ITEM'][key(args[1])] + 1)
             else:
                 # [weaken]: the second line of a resist berry (Team C, Chople Berry), detail 1.
-                e = ev_tuple(EV['ITEM_END'], ev_pos(args[0]), NOPOS, 0, 0, tables['ITEM'][key(args[1])] + 1,
+                # step G46: Red Card's `-enditem|holder|Red Card|[of] attacker`: the attacker's position is `other` (items.ts:5160).
+                of_attacker = [a for a in attrs if a.startswith('[of] ')]
+                e = ev_tuple(EV['ITEM_END'], ev_pos(args[0]), ev_pos(of_attacker[0][5:]) if of_attacker else NOPOS, 0, 0,
+                             tables['ITEM'][key(args[1])] + 1,
                              detail=1 if '[weaken]' in attrs else 0, flags=FLAG['EATEN'] if '[eat]' in attrs else 0)
         elif kind == '-item':
             # POOL (step G29): `-item|X|Item|[from] move: M[|[of] Y]` is an item that a move gave X (Trick, Switcheroo, Thief,
@@ -1562,15 +1570,17 @@ def convert_battle(name, spec, trace, tables):
             sd = new_state['sides'][s]
             row = [roster_of[s][name_of(sd['pokemon'][i])] if i >= 0 else 0xFF for i in sd['active']]
             occ.append(tuple(row))
-        # The positions that received a Pokemon, in the reference's order
-        # (each switch is logged twice, for the two audiences).
+        # The positions that received a Pokemon, in the reference's order of their LAST entry (each switch or drag is
+        # logged twice, for the two audiences). A position entered again in the same step (a drag of a Pokemon that
+        # switched in) moves to the end: the engine's activation ids of the positions are those of their last entry.
         entries = []
         for line in step['log']:
-            if line.startswith('|switch|'):
+            if line.startswith('|switch|') or line.startswith('|drag|'):
                 who = line.split('|')[2].split(':')[0]
                 flat = (int(who[1]) - 1) * 2 + (ord(who[2]) - ord('a'))
-                if flat not in entries:
-                    entries.append(flat)
+                if flat in entries:
+                    entries.remove(flat)
+                entries.append(flat)
         ent = entries + [0xFF] * (4 - len(entries))
         # The moves the reference's request offers per slot: bit k for move k,
         # 0x10 for Struggle, 0x20 for the recharge turn, 0xFF where there is nothing to compare.
