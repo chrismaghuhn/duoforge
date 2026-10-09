@@ -384,6 +384,19 @@ bool dfi_illusion_disguise_up(const dfi_side *side, const dfi_tail_side *ts, uin
            side->members[occ].ability == DFI_ABILITY_ILLUSION + 1u;
 }
 
+uint32_t dfi_illusion_shown_occupant(const dfi_side *side, const dfi_tail_side *ts, uint32_t p)
+{
+    const uint32_t occ = side->positions[p].occupant;
+    if (ts->illusion.shown == 0u || occ >= DUOFORGE_MAX_ROSTER || occ >= side->member_count) {
+        return occ;
+    }
+    if (dfi_illusion_disguise_up(side, ts, p) != 0 ||
+        (side->members[occ].ability == DFI_ABILITY_ILLUSION + 1u && side->members[occ].hp == 0u)) {
+        return (uint32_t)ts->illusion.shown - 1u;
+    }
+    return occ;
+}
+
 /* Knowledge of player p about the opponent: every seen bit names a brought
  * member, and every foe occupant is seen. Runs after both sides passed, so
  * member_count and brought_mask are already in range. */
@@ -403,11 +416,8 @@ static dfi_invariant dfi_check_seen(const struct duoforge_battle *b, uint32_t p)
         if (occupant == DFI_OCCUPANT_NONE) {
             continue;
         }
-        /* Illusion (amended by I2): a disguised holder on the field is seen under the shown name, not its truth. */
-        const dfi_tail_side *ots = &b->tail.sides[1u - p];
-        if (dfi_illusion_disguise_up(opp, ots, k) && ots->illusion.shown != 0u) {
-            occupant = (uint32_t)ots->illusion.shown - 1u;
-        }
+        /* Illusion (amended by I2): the foe sees the name shown on the position (a disguise up, or a holder fainted under its name). */
+        occupant = dfi_illusion_shown_occupant(opp, &b->tail.sides[1u - p], k);
         if (occupant >= DUOFORGE_MAX_ROSTER || ((seen >> occupant) & 1u) == 0u) {
             return DFI_INV_SEEN_MASK;
         }
@@ -466,7 +476,8 @@ static bool dfi_knowledge_valid(const struct duoforge_battle *b, uint32_t p)
             uint8_t percent = 0u;
             uint8_t flag = 0u;
             dfi_hp_display(mem->hp, mem->hp_max, &percent, &flag);
-            const bool frozen = dfi_illusion_disguise_up(opp, &b->tail.sides[1u - p], on_pos);
+            /* The foe's row of a member under another name on its position is what it knew before that name came: frozen. */
+            const bool frozen = dfi_illusion_shown_occupant(opp, &b->tail.sides[1u - p], on_pos) != m;
             if (!frozen && (k->hp_percent != percent || k->hp_flag != flag)) {
                 return false;
             }

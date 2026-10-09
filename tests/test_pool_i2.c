@@ -21,6 +21,7 @@
 #include <duoforge/duoforge_encode.h>
 #include <duoforge/duoforge_view.h>
 
+#include "combat/events.h"
 #include "combat/turn.h"
 #include "data/pool_tables.h"
 #include "reference/conformance_pool.h"
@@ -427,6 +428,95 @@ static void check_knowledge_disguise(df_test *t, const duoforge_context *ctx)
     duoforge_battle_destroy(b);
 }
 
+/* The faint of a disguised holder (decision 0026 section 4, amended by I2): the faint drops the disguise (the tail ends with the
+ * occupant) and the faint line names the disguise, so the foe shows the shown name fainted on the position while the holder stands
+ * there. The holder's own row stays as the foe knew it (frozen, possibly never seen). White-box: the state the fold leaves after a
+ * faint of Zoroark at position 0 under the name Gholdengo (i2_illusion_break, step 1). Two cases: the foe had seen the holder at 100%
+ * (its row is frozen at that value), and the foe never saw it (the shown name is the seen member). */
+static void check_faint_held(df_test *t, const duoforge_context *ctx)
+{
+    for (uint32_t seen = 0u; seen < 2u; ++seen) {
+        duoforge_battle *b = replay(t, ctx, "i2_illusion_break", 1u);
+        if (b == NULL) {
+            return;
+        }
+        b->tail.sides[0].positions[0].ability_state = 0u; /* the faint drops the disguise (dfi_process_faints) */
+        b->sides[0].members[0].hp = 0u;                   /* the holder fainted */
+        dfi_tail_illusion *ill = &b->tail.sides[0].illusion;
+        memset(ill->snapshot, 0, 7u); /* the fold: the disguise row's snapshot and the pending counts go */
+        memset(ill->pending, 0, sizeof ill->pending);
+        ill->override[2] = 0u;
+        ill->override[3] = 2u; /* fainted, not active */
+        uint8_t pct = 0u;
+        uint8_t flag = 0u;
+        dfi_hp_display(0u, b->sides[0].members[3].hp_max, &pct, &flag);
+        b->sides[1].knowledge[3].hp_percent = pct; /* the disguise row: fainted, as the fold shows it */
+        b->sides[1].knowledge[3].hp_flag = flag;
+        if (seen != 0u) {
+            b->sides[1].seen_mask = (uint8_t)(b->sides[1].seen_mask | 1u);
+            b->sides[1].knowledge[0].hp_percent = 100u; /* the holder's row, as the foe knew it before the disguise */
+            b->sides[1].knowledge[0].hp_flag = 0u;
+        }
+        duoforge_observation foe;
+        if (observe(t, ctx, b, 1u, &foe)) {
+            DF_CHECK_EQ_U64(t, foe.sides[0].occupant[0], 3u); /* the foe sees the shown name on the position, not the holder */
+        }
+        uint32_t causes = 0u;
+        DF_CHECK_EQ_U64(t, duoforge_battle_public_causes(ctx, b, 1u, &causes), DUOFORGE_OK);
+        DF_CHECK_EQ_U64(t, causes & DUOFORGE_PUBLIC_CAUSE_ILLUSION_POSSIBLE, DUOFORGE_PUBLIC_CAUSE_ILLUSION_POSSIBLE);
+        duoforge_battle_destroy(b);
+    }
+}
+
+/* The fold writes the status the lines show on the name (decision 0026 section 4, amended by I2): a STATUS line of the disguised holder
+ * sets the override status, a CURE_STATUS line clears it. One line folded on the battle with the disguise up (i2_illusion_break,
+ * step 1); the fold reads `before` only at its start, so the battle serves as both. */
+static void check_fold_status_line(df_test *t, const duoforge_context *ctx)
+{
+    duoforge_battle *b = replay(t, ctx, "i2_illusion_break", 1u);
+    if (b == NULL) {
+        return;
+    }
+    dfi_events ev;
+    memset(&ev, 0, sizeof ev);
+    ev.rec[0] = dfi_event_make(DUOFORGE_EVENT_STATUS, 0u);
+    ev.rec[0].detail = DFI_STATUS_BRN;
+    ev.count = 1u;
+    DF_CHECK(t, dfi_events_fold_knowledge(b, b, &ev, 0u));
+    DF_CHECK_EQ_U64(t, b->tail.sides[0].illusion.override[2], DFI_STATUS_BRN);
+    memset(&ev, 0, sizeof ev);
+    ev.rec[0] = dfi_event_make(DUOFORGE_EVENT_CURE_STATUS, 0u);
+    ev.count = 1u;
+    DF_CHECK(t, dfi_events_fold_knowledge(b, b, &ev, 0u));
+    DF_CHECK_EQ_U64(t, b->tail.sides[0].illusion.override[2], DUOFORGE_AILMENT_NONE);
+    duoforge_battle_destroy(b);
+}
+
+/* The switch-in of a disguised holder with a status on its line (M11, decision 0026 section 3 as amended by I2): byte 7 of the snapshot
+ * is the holder's status as the foe was shown it, and the override carries the same status. The team-start state has the disguise up;
+ * a SWITCH line of position 0 names the holder (roster 0) and its disguise (reserved[0] = 3 + 1), at 167/167 and burned. */
+static void check_fold_switch_status(df_test *t, const duoforge_context *ctx)
+{
+    duoforge_battle *b = replay(t, ctx, "i2_illusion_break", 1u);
+    if (b == NULL) {
+        return;
+    }
+    dfi_events ev;
+    memset(&ev, 0, sizeof ev);
+    ev.rec[0] = dfi_event_make(DUOFORGE_EVENT_SWITCH, 0u);
+    ev.rec[0].id = 0u;
+    ev.rec[0].reserved[0] = 4u; /* the disguise (roster 3) + 1 */
+    ev.rec[0].hp = b->sides[0].members[0].hp_max;
+    ev.rec[0].hp_max = b->sides[0].members[0].hp_max;
+    ev.rec[0].hp_kind = DUOFORGE_HP_EXACT;
+    ev.rec[0].status = DFI_STATUS_BRN;
+    ev.count = 1u;
+    DF_CHECK(t, dfi_events_fold_knowledge(b, b, &ev, 0u));
+    DF_CHECK_EQ_U64(t, b->tail.sides[0].illusion.snapshot[7], DFI_STATUS_BRN);
+    DF_CHECK_EQ_U64(t, b->tail.sides[0].illusion.override[2], DFI_STATUS_BRN);
+    duoforge_battle_destroy(b);
+}
+
 int main(void)
 {
     df_test t;
@@ -441,5 +531,8 @@ int main(void)
     check_possible_fainted(&t, ctx);
     check_disguise_needs_name(&t, ctx);
     check_knowledge_disguise(&t, ctx);
+    check_faint_held(&t, ctx);
+    check_fold_status_line(&t, ctx);
+    check_fold_switch_status(&t, ctx);
     return df_test_end(&t);
 }

@@ -6019,7 +6019,7 @@ static duoforge_status dfi_switch_in(dfi_run *r, uint32_t side, uint32_t slot, u
      * member's entry in its own position (the unbroken switch-out of the holder) is not this case. */
     if (pool_rules && b->tail.sides[side].illusion.shown != 0u && reserve == (uint32_t)b->tail.sides[side].illusion.shown - 1u) {
         for (uint32_t other = 0u; other < DUOFORGE_ACTIVE_PER_SIDE; ++other) {
-            if (other != slot && dfi_illusion_disguise_up(sd, &b->tail.sides[side], other) != 0) {
+            if (other != slot && dfi_illusion_shown_occupant(sd, &b->tail.sides[side], other) != sd->positions[other].occupant) {
                 return DUOFORGE_E_UNSUPPORTED;
             }
         }

@@ -101,11 +101,10 @@ static uint32_t dfi_illusion_holder_index(const dfi_side *side)
  * is the viewer's own only. */
 static uint32_t dfi_shown_occupant(const struct duoforge_battle *b, uint32_t viewer, uint32_t s, uint32_t p)
 {
-    const uint32_t occ = b->sides[s].positions[p].occupant;
-    if (s != viewer && dfi_illusion_disguise_up(&b->sides[s], &b->tail.sides[s], p) != 0 && b->tail.sides[s].illusion.shown != 0u) {
-        return (uint32_t)b->tail.sides[s].illusion.shown - 1u;
+    if (s != viewer) {
+        return dfi_illusion_shown_occupant(&b->sides[s], &b->tail.sides[s], p);
     }
-    return occ;
+    return b->sides[s].positions[p].occupant;
 }
 
 /* Whether member m of side s is on the field as the viewer sees it. */

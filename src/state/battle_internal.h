@@ -340,6 +340,10 @@ typedef struct dfi_tail_side {
 /* Illusion (decision 0026): the position's disguise is up (1) or not (0). ability_state is the state of the occupant's current ability
  * (rev 4), so it is the disguise only while the occupant is a holder: the sheet's Illusion (id + 1). Defined in state/invariants.c. */
 bool dfi_illusion_disguise_up(const dfi_side *side, const dfi_tail_side *ts, uint32_t p);
+/* The roster index the foe shows on position p of `side` (decision 0026 section 4): the disguise while it is up, and the holder's name
+ * while the holder stands fainted on the position after a faint while disguised (the faint drops the disguise; the name keeps the
+ * fainted values until a line about the real member). Otherwise the occupant (DFI_OCCUPANT_NONE stays none). Defined in state/invariants.c. */
+uint32_t dfi_illusion_shown_occupant(const dfi_side *side, const dfi_tail_side *ts, uint32_t p);
 
 /* party_order (step G46, decision 0015 section 7): the side.pokemon order of the pin, per side, as the permutation of the
  * brought members. Entry k (k = 0..5, the Showdown index in side.pokemon: the two actives, then the bench) holds roster index
