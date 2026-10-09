@@ -155,6 +155,9 @@ static uint32_t dfi_pressure_charge(const dfi_own_pressure *o, const duoforge_ev
         const uint32_t m = o->occupant[slot];
         standing += (m < DUOFORGE_MAX_ROSTER && o->alive[m] && o->pressure[m]) ? 1u : 0u;
     }
+    if ((e->flags & DUOFORGE_EVENT_FLAG_STILL) != 0u) {
+        return 0u; /* a [still] line blanks the targets: none can be known (the tracker's rule too) */
+    }
     const uint32_t cls = dfi_pool_moves[e->id].target_class;
     if ((dfi_pool_move_static_flags[e->id] & DUOFORGE_MOVE_STATIC_FLAG_MUST_PRESSURE) != 0u) {
         return standing;

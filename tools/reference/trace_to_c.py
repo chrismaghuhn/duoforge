@@ -1728,7 +1728,9 @@ def attribute_pp(steps, teams, roster_of, trace, tables):
                         roster = foe_occ[slot]
                         standing = sum(1 for o in own_occ if o is not None and alive[o] and has_pressure[o])
                         cls = cls_of[ident]
-                        if must_of[ident]:
+                        if flags & FLAG['STILL']:
+                            extra = 0  # a [still] line blanks the targets (the tracker's rule too)
+                        elif must_of[ident]:
                             extra = standing
                         elif cls == TARGET_CLASS['FOE_SIDE']:
                             extra = 0
