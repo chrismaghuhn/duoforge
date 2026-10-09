@@ -336,7 +336,8 @@ launch() {
     local name=$1 stdout=$2; shift 2
     local rc=0 pid
     local shown="$*"
-    (( ${#shown} <= 400 )) || shown="${shown:0:400} ... (${#shown} characters; team lists elided)"
+    shown=${shown//"$TEAM_IDS"/<teams.txt>}
+    shown=${shown//"$TEAM_WEIGHTS"/<team_weights.txt>}
     log "phase $name: $shown"
     timing "$name" start
     taskset -c "$AFFINITY" "$@" >>"$stdout" 2>>"$OUT/logs/$name.log" &
