@@ -1282,8 +1282,11 @@ class Library(unittest.TestCase):
 
     def test_taunt_and_yawn_rows_are_what_the_protocol_lines_say(self):
         """Decision 0018 section 6.1 for Taunt and Yawn (step G31): a position has Taunt (bit 0) from `|-start|X|move: Taunt`
-        until `|-end|X|move: Taunt`, and Yawn (bit 1) from `|-start|X|move: Yawn|[of] SRC` until the `|-status|X|slp` that it
-        brings, and both end when the occupant leaves (`|switch|` at the position) or faints. The rows of the C test (rows in
+        until `|-end|X|move: Taunt`, and Yawn (bit 1) from `|-start|X|move: Yawn|[of] SRC` until its `|-end|X|move: Yawn|[silent]`:
+        the pin's onEnd of Yawn (data/moves.ts:21153-21156) prints that line and then tries the sleep, which is the
+        `|-status|X|slp` line when it lands, or the terrain's `|-activate|X|move: Electric Terrain` (or Misty) line when the terrain
+        refuses it (data/moves.ts:4518 and 12172); the volatile ends either way, so a refused sleep clears the bit as well.
+        Both end when the occupant leaves (`|switch|` at the position) or faints. The rows of the C test (rows in
         tests/test_pool_g31.c) must be exactly what these lines give for the committed traces; the sleep that Yawn brings
         has no [from], there are `cant|X|move: Taunt|MOVE` lines, and the new public numbers are the header's."""
         self.assertEqual(trace_to_c.CAUSE['TAUNT'], 20)
@@ -1319,6 +1322,8 @@ class Library(unittest.TestCase):
                         bits[flat(part[2])] &= ~1
                     elif part[1] == '-start' and part[3] == 'move: Yawn':
                         bits[flat(part[2])] |= 2
+                    elif part[1] == '-end' and part[3] == 'move: Yawn':
+                        bits[flat(part[2])] &= ~2  # onEnd: the volatile ends (silently), whether the sleep lands or is refused
                     elif part[1] == '-status' and part[3] == 'slp':
                         self.assertEqual(len(part), 4, line)  # no [from]
                         bits[flat(part[2])] &= ~2
