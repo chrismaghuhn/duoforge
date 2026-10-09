@@ -151,6 +151,7 @@ class Tracker:
         self._last_move = None  # (position, move id, target) of the last MOVE event
         self._parting_shot = data.tables["MOVE"]["PARTINGSHOT"]
         self._feint = data.tables["MOVE"].get("FEINT", -1)
+        self._phantom_force = data.tables["MOVE"].get("PHANTOMFORCE", -1)  # breaks a Protect as Feint does (G58)
         self._turn_scoped = set()  # single-turn features of decision 0018 seen since the turn began (lines.TURN_SCOPED)
         self._guards = set()  # (Wide or Quick Guard feature, side) seen this turn: what a Feint breaks (step G28)
         self._rb_pending = {}  # side -> its Revival Blessing user's position until its revive (step G52, trace_to_c)
@@ -446,11 +447,12 @@ class Tracker:
         elif kind == EV["ACTIVATE"]:
             if e[3] == trace_to_c.CAUSE["ABILITY"] and ident2 == self.data.tables["ABILITY"]["EMERGENCYEXIT"] + 1:
                 self._at(pos).flag = 1  # it leaves: asked to switch (id2 names an ability only with cause ABILITY)
-            elif e[3] == trace_to_c.CAUSE["MOVE"] and ident2 == self._feint:
-                # Feint broke something (step G28, sim/battle-actions.ts hitStepBreakProtect, printed only then): the
-                # target's own Protect (its flag) and its stall volatile (chain and stall, a guard_undo that is no longer
-                # open), and the Wide Guard and Quick Guard of the target's whole side, a partner's included. Only the
-                # target's stall goes: a partner that set the guard keeps its own chain.
+            elif e[3] == trace_to_c.CAUSE["MOVE"] and ident2 in (self._feint, self._phantom_force):
+                # Feint broke something (step G28, sim/battle-actions.ts hitStepBreakProtect, printed only then; Phantom
+                # Force's `[broken]` line the same, step G58): the target's own Protect (its flag) and its stall
+                # volatile (chain and stall, a guard_undo that is no longer open), and the Wide Guard and Quick Guard of
+                # the target's whole side, a partner's included. Only the target's stall goes: a partner that set the
+                # guard keeps its own chain.
                 p = self._at(pos)
                 p.protecting = p.chain = p.stall = 0
                 p.guard_undo = None
