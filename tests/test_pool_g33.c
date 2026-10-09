@@ -7,7 +7,7 @@
  * show:
  *
  *   - the marks and the handler numbers: the hit counts are in the handler ids (the static hit columns have no reader in the
- *     engine, duoforge.data.static_unread checks that), Population Bomb stays unmarked and keeps its data;
+ *     engine, duoforge.data.static_unread checks that); Population Bomb came later (step G48);
  *   - the later hits of a multiaccuracy move are checked with the loop's own arithmetic (scripts.ts:481-510), which the
  *     engine plays only without a ModifyAccuracy handler on the user: a Triple Axel user with Wide Lens (or Compound Eyes)
  *     is refused at its second hit, E_UNSUPPORTED, never played with the first hit's arithmetic.
@@ -40,9 +40,7 @@ static void check_facts(df_test *t)
     DF_CHECK_EQ_U64(t, dfi_pool_moves[DFI_MOVE_TWINBEAM].special, DFI_SPECIAL_MULTI_HIT_2);
     DF_CHECK_EQ_U64(t, dfi_pool_moves[DFI_MOVE_TRIPLEAXEL].special, DFI_SPECIAL_TRIPLE_AXEL);
     DF_CHECK_EQ_U64(t, DFI_SPECIAL_TRIPLE_AXEL, DFI_SPECIAL_MULTI_HIT_2 + 1u);
-    /* Population Bomb: no marked user, so no mark and no handler; its data stays */
-    DF_CHECK(t, dfi_support.moves[DFI_MOVE_POPULATIONBOMB] == 0u);
-    DF_CHECK_EQ_U64(t, dfi_pool_moves[DFI_MOVE_POPULATIONBOMB].special, DFI_SPECIAL_UNMODELED);
+    /* Population Bomb is not one of this step's rows: step G48 marks it (MULTI_HIT_10, tests/test_pool_g48.c) */
     DF_CHECK_EQ_U64(t, dfi_pool_moves[DFI_MOVE_TRIPLEAXEL].accuracy, 90u);
 }
 

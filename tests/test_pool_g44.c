@@ -1,5 +1,5 @@
 /*
- * duoforge.state.pool_g44 (white-box): step G44 of the content expansion (decision 0015 item 5al), the simple moves.
+ * duoforge.state.pool_g44 (white-box): step G44 of the content expansion (decision 0015 item 5an), the simple moves.
  *
  * Four handlers, each a rule that the generic columns cannot hold: Thunder (never misses in rain, 50 under sun), Power Trip
  * (20 plus 20 per positive stage of the user), Ice Fang (a freeze roll, then a flinch roll) and Tri Attack (a 20 percent roll,
@@ -54,7 +54,8 @@ static void check_marks(df_test *t)
     DF_CHECK_EQ_U64(t, dfi_pool_moves[DFI_MOVE_POWERTRIP].special, DFI_SPECIAL_POWER_TRIP);
     DF_CHECK_EQ_U64(t, dfi_pool_moves[DFI_MOVE_ICEFANG].special, DFI_SPECIAL_ICE_FANG);
     DF_CHECK_EQ_U64(t, dfi_pool_moves[DFI_MOVE_TRIATTACK].special, DFI_SPECIAL_TRI_ATTACK);
-    DF_CHECK_EQ_U64(t, DFI_SPECIAL_POWER_TRIP, DFI_SPECIAL_YAWN + 1u);
+    /* after the handlers of step G48 (Rage Fist, Stone Axe, Ceaseless Edge, Population Bomb) */
+    DF_CHECK_EQ_U64(t, DFI_SPECIAL_POWER_TRIP, DFI_SPECIAL_MULTI_HIT_10 + 1u);
     DF_CHECK_EQ_U64(t, DFI_SPECIAL_THUNDER, DFI_SPECIAL_POWER_TRIP + 1u);
     DF_CHECK_EQ_U64(t, DFI_SPECIAL_ICE_FANG, DFI_SPECIAL_THUNDER + 1u);
     DF_CHECK_EQ_U64(t, DFI_SPECIAL_TRI_ATTACK, DFI_SPECIAL_ICE_FANG + 1u);
@@ -178,7 +179,7 @@ static void check_power_trip_stages(df_test *t)
     DF_CHECK_EQ_U64(t, dfi_power_trip_positive_stages(s), 0u);
 }
 
-/* The guard (decision 0015 item 5al): the rows that the generic secondaries path would have to honour (Shield Dust blocks a
+/* The guard (decision 0015 item 5an): the rows that the generic secondaries path would have to honour (Shield Dust blocks a
  * move's secondary, Serene Grace doubles its chance, Covert Cloak blocks the effect of an item's source), and the secondaries
  * that Ice Fang and Tri Attack bypass (ModifySecondaries, sim/battle-actions.ts:1340-1341). None is marked, and none is a
  * row of the pool today (Serene Grace and Covert Cloak have no name in the tables). A row of any of these names that a later

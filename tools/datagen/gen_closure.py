@@ -1718,6 +1718,31 @@ G33_ENTRY_FACTS = (
       "this.add('-ability', target, 'Mirror Armor'); this.boost(negativeBoost, source, target, null, true); } } }",
       'flags: { breakable: 1 },']),
 )
+# Step G48 (moves that use the rev 4 fields that exist): Rage Fist (the power of the user's hits_taken, tail rev 4), Stone Axe and
+# Ceaseless Edge (a hazard on the foe's side after a hit, the G37 hazard add) and Population Bomb (ten hits, multiaccuracy; its
+# accuracy is 90, which the later-hit proof of G33 covers). The Champions mod overrides none of the four (data/mods/champions/
+# moves.ts has only an inherit for Rage Fist, whose hit counter is reset in Pokemon#clearVolatile). Quick Guard is not here: its
+# block line needs a new BLOCKED detail. The generator checks the four whole texts (G48_FACTS) and the handler ids.
+G48_HANDLERS = ['RAGE_FIST', 'STONE_AXE', 'CEASELESS_EDGE', 'MULTI_HIT_10']
+G48_FACTS = (
+    ('ragefist', ['accuracy: 100,', 'basePower: 50,',
+                  'basePowerCallback(pokemon) { return Math.min(350, 50 + 50 * pokemon.timesAttacked); },',
+                  'category: "Physical",', 'priority: 0,', 'flags: { contact: 1, protect: 1, mirror: 1, punch: 1 },',
+                  'target: "normal",', 'type: "Ghost",']),
+    ('stoneaxe', ['accuracy: 90,', 'basePower: 65,', 'category: "Physical",', 'priority: 0,',
+                  'flags: { contact: 1, protect: 1, mirror: 1, metronome: 1, slicing: 1 },',
+                  "onAfterHit(target, source, move) { if (!move.hasSheerForce) { for (const side of source.side.foeSidesWithConditions()) { "
+                  "side.addSideCondition('stealthrock'); } } },",
+                  'secondary: {},', 'target: "normal",', 'type: "Rock",']),
+    ('ceaselessedge', ['accuracy: 90,', 'basePower: 65,', 'category: "Physical",', 'priority: 0,',
+                       'flags: { contact: 1, protect: 1, mirror: 1, metronome: 1, slicing: 1 },',
+                       "onAfterHit(target, source, move) { if (!move.hasSheerForce) { for (const side of source.side.foeSidesWithConditions()) { "
+                       "side.addSideCondition('spikes'); } } },",
+                       'secondary: {},', 'target: "normal",', 'type: "Dark",']),
+    ('populationbomb', ['accuracy: 90,', 'basePower: 20,', 'category: "Physical",', 'priority: 0,',
+                        'flags: { contact: 1, protect: 1, mirror: 1, slicing: 1 },', 'multihit: 10,', 'multiaccuracy: true,',
+                        'target: "normal",', 'type: "Normal",']),
+)
 _HP_POWER_CALLBACK = ("basePowerCallback(pokemon, target, move) { const bp = move.basePower * pokemon.hp / pokemon.maxhp; "
                       "this.debug(`BP: ${bp}`); return bp; },")
 G32_FACTS = (
@@ -1971,6 +1996,10 @@ SPECIAL_P = dict(SPECIAL_C, **{
     'thunder': ('THUNDER', {'onModifyMove'}),                             # G44: never misses in rain, 50 under sun (as Hurricane)
     'icefang': ('ICE_FANG', set()),                                       # G44: a 10 percent freeze, then a 10 percent flinch (G2_OWNED_FIELDS)
     'triattack': ('TRI_ATTACK', set()),                                   # G44: a 20 percent pick of burn, paralysis or freeze (G2_OWNED_SECONDARY)
+    'ragefist': ('RAGE_FIST', {'basePowerCallback'}),                     # G48: 50 + 50 per hit the user took, at most 350
+    'stoneaxe': ('STONE_AXE', {'onAfterHit', 'onAfterSubDamage'}),        # G48: Stealth Rock on the foe's side after a hit
+    'ceaselessedge': ('CEASELESS_EDGE', {'onAfterHit', 'onAfterSubDamage'}),  # G48: a Spikes layer on the foe's side after a hit
+    'populationbomb': ('MULTI_HIT_10', set()),                            # G48: ten hits, a check for each (multiaccuracy)
 })
 # Step G13: Detect is Protect (data/moves.ts:3526-3547 against 13961-14005): the same handler (not one of the G2 handlers,
 # so it is added to the pool's map only), and the generator checks that its stalling fields and both callbacks are,
@@ -2003,7 +2032,7 @@ G44_FACTS = (
     ('triattack', ['accuracy: 100,', 'basePower: 80,', 'category: "Special",', 'priority: 0,',
                    'flags: { protect: 1, mirror: 1, metronome: 1 },', 'target: "normal",', 'type: "Normal",']),
 )
-SPECIAL_IDS_P = SPECIAL_IDS_C + G2_HANDLERS + WEATHER_HANDLERS + G16_HANDLERS + G15_HANDLERS + G19_HANDLERS + G20_HANDLERS + G20_PROTECT_HANDLERS + G28_HANDLERS + G30_HANDLERS + G32_HANDLERS + G34_HANDLERS + G27_HANDLERS + G25_HANDLERS + G26_HANDLERS + G33_HANDLERS + G38_HANDLERS + G29_HANDLERS + G39_HANDLERS + G31_HANDLERS + G44_HANDLERS + ['UNMODELED']
+SPECIAL_IDS_P = SPECIAL_IDS_C + G2_HANDLERS + WEATHER_HANDLERS + G16_HANDLERS + G15_HANDLERS + G19_HANDLERS + G20_HANDLERS + G20_PROTECT_HANDLERS + G28_HANDLERS + G30_HANDLERS + G32_HANDLERS + G34_HANDLERS + G27_HANDLERS + G25_HANDLERS + G26_HANDLERS + G33_HANDLERS + G38_HANDLERS + G29_HANDLERS + G39_HANDLERS + G31_HANDLERS + G48_HANDLERS + G44_HANDLERS + ['UNMODELED']
 # Step G10 made two of these handlers data: Scald (thawsTarget) and Recover (heal) are read into the second flags
 # byte (bit 4, thaws the target) and the heal column, and have the special NONE; their ids stay defined (the ids after
 # them keep their values). First Impression and Low Kick keep theirs: the turn code implements them.
@@ -2026,6 +2055,7 @@ G2_OWNED_FIELDS = {
     'RAGE_POWDER': {'volatileStatus': "volatileStatus: 'ragepowder',"},
     'MULTI_HIT_2': {'multihit': 'multihit: 2,'},
     'TRIPLE_AXEL': {'multihit': 'multihit: 3,', 'multiaccuracy': 'multiaccuracy: true,'},
+    'MULTI_HIT_10': {'multihit': 'multihit: 10,', 'multiaccuracy': 'multiaccuracy: true,'},
     'BODY_PRESS': {'overrideOffensiveStat': "overrideOffensiveStat: 'def',"},
     'FOUL_PLAY': {'overrideOffensivePokemon': "overrideOffensivePokemon: 'target',"},
     'PSYSHOCK': {'overrideDefensiveStat': "overrideDefensiveStat: 'def',"},
@@ -2035,10 +2065,11 @@ G2_OWNED_FIELDS = {
     'IMPRISON': {'volatileStatus': "volatileStatus: 'imprison',"},
     'ICE_FANG': {'secondaries': "secondaries: [ { chance: 10, status: 'frz', }, { chance: 10, volatileStatus: 'flinch', }, ],"},
 }
-G2_OWNED_SECONDARY = {
-    'TRI_ATTACK': "secondary: { chance: 20, onHit(target, source) { const status = this.sample(['brn', 'par', 'frz']); "
-                  "target.trySetStatus(status, source); }, },",
-}
+# Step G48: the empty secondary of Stone Axe and Ceaseless Edge (the Sheer Force placeholder). Without Sheer Force the pin runs
+# it for every hit target (moveHit of an empty secondary with chance undefined, sim/battle-actions.ts:1336-1349): the engine
+# draws the roll and does nothing else; the engine's special case is in dfi_run_move.
+G2_OWNED_SECONDARY = {'STONE_AXE': 'secondary: {}, // Sheer Force-boosted', 'CEASELESS_EDGE': 'secondary: {}, // Sheer Force-boosted', 'TRI_ATTACK': "secondary: { chance: 20, onHit(target, source) { const status = this.sample(['brn', 'par', 'frz']); "
+                  "target.trySetStatus(status, source); }, },"}
 G2_OWNED_CONDITION = {'ENCORE', 'WIDE_GUARD', 'GLAIVE_RUSH', 'AURORA_VEIL', 'SPIKY_SHIELD', 'RAGE_POWDER', 'DISABLE',
                       'ELECTRIC_TERRAIN', 'MISTY_TERRAIN', 'PERISH_SONG', 'IMPRISON', 'TAUNT', 'YAWN'}
 # Step G8 (Throat Chop and Psychic Noise): the two secondaries become modelled kinds, and the column that their
@@ -2889,7 +2920,7 @@ def check_g8_conditions(moves_ts, only=None):
     must be in the pinned entry, as one normalised text. `only`: a tuple of (move id, facts) to check instead of all of
     them (the generator's tests)."""
     for mid, facts in (G8_CONDITION_FACTS + G20_CONDITION_FACTS + G28_FACTS + G32_FACTS + G34_FACTS + G25_FACTS +
-                       G33_FACTS + G38_FACTS + G39_FACTS + G37_FACTS + G44_FACTS if only is None else only):
+                       G33_FACTS + G38_FACTS + G39_FACTS + G37_FACTS + G44_FACTS + G48_FACTS if only is None else only):
         e = moves_ts.entry(mid)
         if e is None:
             fail('move %s not found' % mid)
