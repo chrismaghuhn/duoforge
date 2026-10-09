@@ -62,10 +62,12 @@ def play_suite(context, pool, rows, learner, opponent, workers, seed, max_steps=
     before(batch, indices, active, step, last_step) after each query, with
     the indices about to be stepped, active the games with a request;
     after(batch, dead) after the step, dead the games the engine refused so
-    far. seats, indices, active and dead are read-only views; an observer
-    changes nothing else either (no batch buffer, no game), so their order
-    does not matter and the records are those of a suite without them
-    (expert_eval.TrickRoomTracker is one)."""
+    far. seats, indices, active and dead are read-only views: writing them
+    raises. The batch and its buffers (requests, observations, candidates,
+    domains) are read-only by contract only, which is not enforced: an
+    observer must not write them, step the batch or change a game. Kept to,
+    their order does not matter and the records are those of a suite
+    without them (expert_eval.TrickRoomTracker is one)."""
     observers = tuple(observers)
     n = rows.shape[0]
     seat = rows["learner_seat"].astype(np.int64)
