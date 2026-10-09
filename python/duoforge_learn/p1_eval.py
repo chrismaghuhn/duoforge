@@ -33,12 +33,14 @@ module plays everything and decides nothing about the gate.
   (round robin over the 20 (suite, opponent, arm, bucket) units in schedule order, both seats, pairs in order, until
   64 games: pair 0 of every unit, then pair 1 of the first 12), so PP_ and LL_, every opponent (the older-encoder
   panel checkpoints too) and both arms play. It writes a report (games, seconds, games/s, forecast, cut-offs,
-  refused, status, ledger) instead of records. Its SmokeClock times JIT apart: a network's first pass at a row count
-  compiles; the warm rate counts only calls that compiled nothing. The forecast, an upper bound (the smoke's
-  batches of 1-2 games are slower per game than the run's 256-512), is the full run's estimated JIT (per player
-  its measured compile excess times the row counts it plays in the run) plus 12288 games at the warm rate. Status
-  STOP when a game was cut off or refused, the warm rate is below 5 games/s or the forecast exceeds 60 minutes,
-  else GO.
+  refused, status, ledger) instead of records. After the 64 games it plays one full-width warm measurement (M12,
+  option c): the run's own WARM_CALL call, 256 pairs, same players, seed and shapes; it is no smoke game and writes
+  no record, its compute is in the ledger and its cut-offs and refused games count for STOP. Its SmokeClock times
+  JIT apart: a network's first pass at a row count compiles, and its excess is taken out of the call's time. The
+  rate rule reads that call's games/s (full width); the 64 games' rate (narrow) is reported. The forecast is the
+  full run's estimated JIT (per player its largest measured compile excess times the row counts it plays in the
+  run; an estimate) plus 12288 games at the full-width rate. Status STOP when a game was cut off or refused, the
+  full-width rate is below 5 games/s or the forecast exceeds 60 minutes, else GO.
 - The ledger (duoforge_learn.ledger, phase "evaluate") is the shared evaluation cost: a --ledger file sums every
   process that ran into it (the smoke, refusals, crashes, the run); it is saved whatever happens once it exists.
   GPU-seconds count only the network passes on a non-CPU device.
@@ -66,6 +68,9 @@ SMOKE_GAMES = 64
 SMOKE_MIN_RATE = 5.0  # games per second (plan C5)
 SMOKE_MAX_FORECAST = 3600.0  # seconds of the whole evaluation including JIT (plan C5: 60 minutes)
 CALL_KEY = ("suite", "opponent", "arm", "bucket", "student_seat")
+# The smoke's full-width warm measurement (M12, option c): this one predeclared call of the run, in full width.
+WARM_CALL = ("panel", "BC", "pilot", "PP", 0)  # (suite, opponent, arm, bucket, seat): an older-encoder opponent
+WARM_WIDTH = 256  # pairs: the panel and ladder calls' width
 
 
 def file_sha256(path):
@@ -213,11 +218,11 @@ def play_rows(context, pool, rows, players, *, workers=1, max_steps=MAX_STEPS, t
         first = idx[0]
         student, opponent = players[str(rows["arm"][first])], players[str(rows["opponent"][first])]
         if clock is not None:
-            compiles, start = clock.compiles, clock.now()
+            compiled, start = len(clock.compiled), clock.now()
         records = evaluate.play_suite(context, pool, suite_rows(rows, idx), student, opponent, workers,
                                       int(rows["seed"][first]), max_steps=max_steps, observers=(tracker,))
         if clock is not None:
-            clock.calls.append((int(idx.size), clock.now() - start, clock.compiles > compiles))
+            clock.calls.append((int(idx.size), clock.now() - start, tuple(clock.compiled[compiled:])))
         cut = records["unfinished"].astype(bool)
         refused = records["unresolved"].astype(bool) & ~cut  # play_suite: a refused game is unresolved, not cut
         finished = ~(cut | refused)
@@ -256,14 +261,16 @@ def smoke_indices(rows, games=SMOKE_GAMES):
 class SmokeClock:
     """The smoke's timing, JIT apart from warm play. wrap(name, model) times every network pass of that player,
     keyed by its row count: the first pass of a (player, rows) key compiles (XLA traces a new shape), its excess
-    over the key's later passes is that compile's JIT. play_rows records every call (games, seconds, compiled:
-    whether any pass in it compiled); the warm rate counts only the calls that compiled nothing."""
+    over the key's later passes is that compile's JIT. play_rows records every call (games, seconds, the keys
+    that compiled in it); warm_rate counts only the calls that compiled nothing, call_rate one call without the
+    excess of the compiles in it."""
 
     def __init__(self, now=time.perf_counter):
         self.now = now
         self.acts = {}  # (player, rows) -> [seconds of every pass]
         self.compiles = 0
-        self.calls = []  # (games, seconds, compiled)
+        self.compiled = []  # the keys in the order of their first pass
+        self.calls = []  # (games, seconds, keys compiled in the call)
 
     def wrap(self, name, model):
         return _ClockedModel(model, name, self)
@@ -272,20 +279,29 @@ class SmokeClock:
         key = (name, int(rows))
         if key not in self.acts:
             self.compiles += 1
+            self.compiled.append(key)
         self.acts.setdefault(key, []).append(seconds)
 
+    def key_excess(self, key):
+        """A key's compile excess: its first pass minus the mean of its later passes (else of the player's other
+        later passes; else the whole first pass), at least 0."""
+        times = self.acts[key]
+        warm = times[1:] or [t for (name, _), ts in self.acts.items() if name == key[0] for t in ts[1:]]
+        return max(times[0] - (sum(warm) / len(warm) if warm else 0.0), 0.0)
+
     def jit_excess(self):
-        """{player: the largest compile excess over its keys}: a key's first pass minus the mean of its later
-        passes (else of the player's other later passes; else the whole first pass), at least 0."""
-        later = {}
-        for (name, _), times in self.acts.items():
-            later.setdefault(name, []).extend(times[1:])
+        """{player: the largest compile excess over its keys}."""
         out = {}
-        for (name, _), times in self.acts.items():
-            warm = times[1:] or later[name]
-            excess = max(times[0] - (sum(warm) / len(warm) if warm else 0.0), 0.0)
-            out[name] = max(out.get(name, 0.0), excess)
+        for key in self.acts:
+            out[key[0]] = max(out.get(key[0], 0.0), self.key_excess(key))
         return out
+
+    def call_rate(self, call):
+        """Games per second of one recorded call, the excess of the compiles in it taken out; None if nothing
+        is left."""
+        games, seconds, compiled = call
+        warm = seconds - sum(self.key_excess(key) for key in compiled)
+        return games / warm if games and warm > 0 else None
 
     def warm_rate(self):
         """Games per second over the calls that compiled nothing; None without such a call."""
@@ -331,33 +347,50 @@ def full_shapes(rows):
     return out
 
 
-def smoke_report(games, counts, seconds, *, jit_seconds, warm_games_per_second, total=None):
-    """The smoke's report and status. forecast_seconds = jit_seconds (the full run's estimated JIT,
-    SmokeClock.jit_estimate) + total games at the warm rate (calls that compiled nothing); an upper bound, since
-    the smoke's batches of 1-2 games run slower per game than the run's 256-512. STOP for any cut-off or refused
-    game, a warm rate below SMOKE_MIN_RATE (or none measured), or a forecast above SMOKE_MAX_FORECAST; else GO.
-    games_per_second (every smoke call, its compiles included) is reported, never a rule."""
+def warm_call_indices(rows):
+    """The schedule indices of the smoke's warm measurement: the first WARM_WIDTH pairs (all of them at 256) of the
+    run's own WARM_CALL call, in pair order: the same players, seed and network shapes as that call of the run."""
+    for idx in call_groups(rows):
+        first = idx[0]
+        if tuple(np.asarray(rows[k])[first].item() for k in CALL_KEY) == WARM_CALL:
+            if idx.size < WARM_WIDTH:
+                raise ValueError(f"the warm call {WARM_CALL} has {idx.size} pairs, not {WARM_WIDTH}")
+            return idx[:WARM_WIDTH]
+    raise ValueError(f"the schedule has no call {WARM_CALL}")
+
+
+def smoke_report(games, counts, seconds, *, jit_seconds, narrow_games_per_second, full_games_per_second,
+                 total=None):
+    """The smoke's report and status (M12, option c). The rate rule reads full_games_per_second, the warm
+    full-width call's games/s without its compiles; narrow_games_per_second (the 64 smoke games' calls that
+    compiled nothing) and games_per_second (every smoke call, compiles included) are reported only.
+    forecast_seconds = jit_seconds (the full run's estimated JIT, SmokeClock.jit_estimate, extrapolated: an
+    estimate) + play_seconds (total games at the full-width rate). STOP for any cut-off or refused game (the smoke's
+    and the warm call's: counts), a full-width rate below SMOKE_MIN_RATE (or none), or a forecast above
+    SMOKE_MAX_FORECAST; else GO."""
     from duoforge_search import expert_eval
     total = expert_eval.GAMES if total is None else total
-    warm = warm_games_per_second
-    forecast = None if warm is None else float(jit_seconds + total / warm)
+    full = full_games_per_second
+    play = None if full is None else float(total / full)
+    forecast = None if play is None else float(jit_seconds + play)
     reasons = []
     if counts["cutoffs"]:
         reasons.append(f"{counts['cutoffs']} cut-off games (unfinished at the step limit)")
     if counts["refused"]:
         reasons.append(f"{counts['refused']} games refused by the engine")
-    if warm is None:
-        reasons.append("no warm call (one that compiled nothing) to measure a rate")
-    elif warm < SMOKE_MIN_RATE:
-        reasons.append(f"{warm:.3f} warm games/s is below {SMOKE_MIN_RATE}")
+    if full is None:
+        reasons.append("no full-width warm rate was measured")
+    elif full < SMOKE_MIN_RATE:
+        reasons.append(f"{full:.3f} full-width games/s is below {SMOKE_MIN_RATE}")
     if forecast is not None and forecast > SMOKE_MAX_FORECAST:
-        reasons.append(f"the forecast {forecast:.0f} s (JIT {jit_seconds:.0f} s + {total} games at {warm:.3f} "
+        reasons.append(f"the forecast {forecast:.0f} s (JIT {jit_seconds:.0f} s + {total} games at {full:.3f} "
                        f"games/s) exceeds {SMOKE_MAX_FORECAST:.0f} s")
     return {"games": int(games), "seconds": float(seconds),
             "games_per_second": float(games / seconds) if seconds > 0 else None,
-            "warm_games_per_second": None if warm is None else float(warm), "jit_seconds": float(jit_seconds),
-            "forecast_seconds": forecast, "forecast_is_upper_bound": True, "jit_is_estimate": True,
-            "forecast_games": int(total),
+            "narrow_games_per_second": None if narrow_games_per_second is None else float(narrow_games_per_second),
+            "full_games_per_second": None if full is None else float(full), "jit_seconds": float(jit_seconds),
+            "play_seconds": play, "forecast_seconds": forecast, "forecast_is_upper_bound": False,
+            "jit_is_estimate": True, "forecast_games": int(total),
             "cutoffs": int(counts["cutoffs"]), "refused": int(counts["refused"]),
             "status": "STOP" if reasons else "GO", "stop_reasons": reasons}
 
@@ -460,6 +493,7 @@ def main(argv=None):
             rows = expert_eval.make_eval_rows(pool, manifest)  # the manifest's pool and blocks, or ValueError
             shapes = full_shapes(rows)
             if args.smoke:
+                warm_rows = {k: v[warm_call_indices(rows)] for k, v in rows.items()}
                 rows = {k: v[smoke_indices(rows)] for k, v in rows.items()}
             call_groups(rows)
             players = make_players(loaded, context, book)
@@ -476,7 +510,12 @@ def main(argv=None):
         with book.phase(PHASE):
             records, counts = play_rows(context, pool, rows, players, workers=args.workers, max_steps=MAX_STEPS,
                                         tracker=tracker, clock=clock)
-        seconds = time.perf_counter() - start
+            seconds = time.perf_counter() - start
+            if args.smoke:  # the full-width warm measurement: no record, no smoke game, charged and STOP-relevant
+                narrow = clock.warm_rate()
+                _, warm_counts = play_rows(context, pool, warm_rows, players, workers=args.workers,
+                                           max_steps=MAX_STEPS, tracker=tracker, clock=clock)
+                warm_call = clock.calls[-1]
     finally:
         if context is not None:
             context.close()
@@ -486,8 +525,13 @@ def main(argv=None):
     expert_eval.ComputeLedger.from_mapping(totals)  # the form expert_eval reads
     games = int(records["finished"].size)
     if args.smoke:
-        out = {**smoke_report(games, counts, seconds, jit_seconds=clock.jit_estimate(shapes),
-                              warm_games_per_second=clock.warm_rate()), "ledger": totals,
+        both = {k: counts[k] + warm_counts[k] for k in counts}
+        out = {**smoke_report(games, both, seconds, jit_seconds=clock.jit_estimate(shapes),
+                              narrow_games_per_second=narrow, full_games_per_second=clock.call_rate(warm_call)),
+               "smoke_cutoffs": counts["cutoffs"], "smoke_refused": counts["refused"],
+               "warm_call": {"call": list(WARM_CALL), "games": warm_call[0], "seconds": warm_call[1],
+                             "jit_seconds": warm_call[1] - warm_call[0] / clock.call_rate(warm_call)
+                             if clock.call_rate(warm_call) else None, **warm_counts}, "ledger": totals,
                "encoders": {name: int(p.encoder) for name, p in players.items()}}
     else:
         out = {"records": records_json(records), "ledger": totals}

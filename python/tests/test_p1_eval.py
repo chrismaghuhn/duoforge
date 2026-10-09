@@ -228,36 +228,57 @@ class Schedule(unittest.TestCase):
         ev._check_records(json.loads(p1_eval.records_bytes(records)), self.manifest)
 
     def test_the_smoke_report_and_its_stops(self):
+        """The rate rule reads the full-width warm call (M12, option c); the 64 narrow games' rate is reported only."""
         from duoforge_learn import p1_eval
         ok = {"cutoffs": 0, "refused": 0}
-        go = p1_eval.smoke_report(64, ok, 30.0, jit_seconds=40.0, warm_games_per_second=20.0)
+
+        def report(counts=ok, jit=40.0, narrow=2.0, full=20.0, seconds=30.0):
+            return p1_eval.smoke_report(64, counts, seconds, jit_seconds=jit, narrow_games_per_second=narrow,
+                                        full_games_per_second=full)
+        go = report()
         self.assertEqual(go["status"], "GO")
         self.assertEqual(go["games"], 64)
         self.assertAlmostEqual(go["games_per_second"], 64 / 30.0)  # every smoke call, JIT included (reported only)
-        self.assertEqual(go["warm_games_per_second"], 20.0)
+        self.assertEqual((go["narrow_games_per_second"], go["full_games_per_second"]), (2.0, 20.0))
         self.assertEqual(go["jit_seconds"], 40.0)
+        self.assertAlmostEqual(go["play_seconds"], 12288 / 20.0)
         self.assertAlmostEqual(go["forecast_seconds"], 40.0 + 12288 / 20.0)
-        self.assertTrue(go["forecast_is_upper_bound"])
-        self.assertTrue(go["jit_is_estimate"])  # extrapolated from the smoke's small shapes
+        self.assertFalse(go["forecast_is_upper_bound"])  # the rate is measured at the run's width
+        self.assertTrue(go["jit_is_estimate"])  # the JIT part is extrapolated from the smoke's shapes
         self.assertEqual(go["stop_reasons"], [])
         self.assertEqual((go["cutoffs"], go["refused"]), (0, 0))
-        # Only the forecast rule fires: the warm rate is at the floor, JIT and games together exceed 60 minutes.
-        only = p1_eval.smoke_report(64, ok, 12.8, jit_seconds=1300.0, warm_games_per_second=5.0)
+        # Only the forecast rule fires: the full-width rate is at the floor, JIT and games exceed 60 minutes.
+        only = report(jit=1300.0, full=5.0)
         self.assertEqual(only["status"], "STOP")
         self.assertEqual(len(only["stop_reasons"]), 1)
         self.assertIn("forecast", only["stop_reasons"][0])
-        # A large smoke JIT is no false STOP: the smoke took 60 s (about 1 game/s with its compiles), warm play
-        # runs at 25 games/s and the full run's estimated JIT is 300 s.
-        slow_start = p1_eval.smoke_report(64, ok, 60.0, jit_seconds=300.0, warm_games_per_second=25.0)
+        # A slow, compile-heavy smoke (about 1 game/s narrow) is no false STOP when full-width play is fast.
+        slow_start = report(jit=300.0, narrow=1.0, full=25.0, seconds=60.0)
         self.assertEqual(slow_start["status"], "GO", slow_start["stop_reasons"])
-        for counts, warm, reason in (({"cutoffs": 1, "refused": 0}, 20.0, "cut-off"),
+        # A fast narrow rate does not hide a slow full-width one.
+        slow_full = report(narrow=50.0, full=4.9)
+        self.assertEqual(slow_full["status"], "STOP")
+        self.assertTrue(any("games/s" in r for r in slow_full["stop_reasons"]))
+        for counts, full, reason in (({"cutoffs": 1, "refused": 0}, 20.0, "cut-off"),
                                      ({"cutoffs": 0, "refused": 2}, 20.0, "refused"),
-                                     (ok, 4.9, "games/s"),
-                                     (ok, None, "warm")):
+                                     (ok, None, "full-width")):
             with self.subTest(reason=reason):
-                stop = p1_eval.smoke_report(64, counts, 30.0, jit_seconds=40.0, warm_games_per_second=warm)
+                stop = report(counts=counts, full=full)
                 self.assertEqual(stop["status"], "STOP")
                 self.assertTrue(any(reason in r for r in stop["stop_reasons"]), stop["stop_reasons"])
+
+    def test_the_warm_call_is_one_predeclared_full_width_call(self):
+        from duoforge_learn import p1_eval
+        rows = self.rows
+        self.assertEqual(p1_eval.WARM_WIDTH, 256)
+        self.assertEqual(p1_eval.WARM_CALL, ("panel", "BC", "pilot", "PP", 0))
+        idx = p1_eval.warm_call_indices(rows)
+        self.assertEqual(idx.size, 256)
+        groups = p1_eval.call_groups(rows)
+        full = next(g for g in groups if _group_key(rows, g[0]) == p1_eval.WARM_CALL)
+        np.testing.assert_array_equal(idx, full)  # exactly the eval's own call: same players, seed and shape
+        with mock.patch.object(p1_eval, "WARM_WIDTH", 8):
+            np.testing.assert_array_equal(p1_eval.warm_call_indices(rows), full[:8])
 
     def test_the_smoke_clock_separates_jit_from_warm_play(self):
         """A mocked clock: a network's first pass at a row count costs 10 s (a compile), later ones 0.01 s; the
@@ -307,6 +328,16 @@ class Schedule(unittest.TestCase):
         self.assertAlmostEqual(clock.jit_estimate(shapes), (10.0 - 0.01) * 9)
         with self.assertRaisesRegex(ValueError, "no smoke measurement"):  # never a silent 0 for an unmeasured player
             clock.jit_estimate({**shapes, "stranger": {512}})
+        # The full-width warm call (width patched to 8): its first passes at 16 rows compile; their excess is
+        # timed apart, and its rate counts the rest of the call only.
+        with mock.patch.object(p1_eval, "WARM_WIDTH", 8), mock.patch.object(evaluate, "play_suite", fake):
+            warm_rows = _subset(self.rows, p1_eval.warm_call_indices(self.rows))
+            p1_eval.play_rows(None, self.pool, warm_rows, players, tracker=_Fields(), clock=clock)
+        call = clock.calls[-1]
+        self.assertEqual(call[0], 8)
+        self.assertEqual(sorted(call[2]), [("BC", 16), ("pilot", 16)])
+        self.assertAlmostEqual(call[1], 2 * 10.0 + 0.1 * 8)
+        self.assertAlmostEqual(clock.call_rate(call), 8 / (0.02 + 0.1 * 8))
 
     def test_a_pair_shares_its_seed_and_teams_across_seats_and_arms(self):
         rows = _subset(self.rows, _prefix(self.rows, 2))
@@ -530,15 +561,21 @@ class Cli(unittest.TestCase):
             played.append(np.asarray(rows["game_id"]).copy())
             self.assertIsNotNone(kw.get("clock"))
             return real(context, pool, rows, players, **kw)
-        with mock.patch.object(p1_eval, "play_rows", spy):
+        with mock.patch.object(p1_eval, "play_rows", spy), mock.patch.object(p1_eval, "WARM_WIDTH", 4):
             code, err, _ = self._main(out, "--smoke", "--ledger", str(ledger))
+            warm_ids = self.rows["game_id"][p1_eval.warm_call_indices(self.rows)]
         self.assertEqual(code, 0, err)
-        self.assertEqual(len(played), 1)  # the predeclared selection, nothing else
+        self.assertEqual(len(played), 2)  # the predeclared selection, then the one full-width warm call
         np.testing.assert_array_equal(played[0], self.rows["game_id"][p1_eval.smoke_indices(self.rows)])
+        np.testing.assert_array_equal(played[1], warm_ids)
         report = json.loads(out.read_text())
         self.assertGreater(report["jit_seconds"], 0.0)
-        self.assertGreater(report["warm_games_per_second"], 0.0)
-        self.assertTrue(report["forecast_is_upper_bound"])
+        self.assertGreater(report["full_games_per_second"], 0.0)
+        self.assertIn("narrow_games_per_second", report)
+        self.assertEqual(report["warm_call"]["games"], 4)
+        self.assertEqual(report["games"], 64)  # the warm call is no smoke game
+        self.assertEqual(report["cutoffs"], report["smoke_cutoffs"] + report["warm_call"]["cutoffs"])
+        self.assertEqual(report["refused"], report["smoke_refused"] + report["warm_call"]["refused"])
         for key in ("games", "seconds", "games_per_second", "forecast_seconds", "cutoffs", "refused", "status",
                     "stop_reasons", "ledger"):
             self.assertIn(key, report)
