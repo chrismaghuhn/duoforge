@@ -4,6 +4,7 @@ Synthetic tables, masks and a foe-sensitive NumPy network only; no trained
 weights, real data or run outputs. The contract is pinned by literals.
 """
 import ctypes
+import dataclasses
 import unittest
 from unittest import mock
 
@@ -145,8 +146,8 @@ class Teacher(unittest.TestCase):
 
     def config(self, search, **kw):
         from duoforge_search import expert as ex
-        return ex.TeacherConfig(seed=77, k=search.k, m=search.m, worlds=search.s, lam=search.lam,
-                                capacity=search.capacity, **kw)
+        return ex.TeacherConfig(**{"seed": 77, "k": search.k, "m": search.m, "worlds": search.s,
+                                   "lam": search.lam, "capacity": search.capacity, **kw})
 
     @staticmethod
     def start_turn(roots):
@@ -225,6 +226,148 @@ class Teacher(unittest.TestCase):
                         current["env"] = e
                         leaked.append(self.label(search, b, e, seat, raw, cfg))
                 self.assertNotEqual(leaked[0].world_digest, leaked[1].world_digest)
+
+    def turn_roots(self, ctx, search, envs=2):
+        b = duoforge.Batch(ctx, np.repeat(duoforge.reference_setups([0]), envs), 2, 42)
+        from duoforge_search import expert as ex
+        b.query_factored()
+        ex.observe(search, b, list(range(envs)), [0] * envs)
+        self.start_turn(b)
+        ex.observe(search, b, list(range(envs)), [0] * envs)
+        return b
+
+    def test_tau_execution_and_explicit_fallbacks(self):
+        import math
+        from duoforge_search import expert as ex, matrix
+        from duoforge_search import expert_data as ed
+        from python.tests.test_expert_data import manifest
+        with duoforge.Context(C["DUOFORGE_DATA_KIND_POOL"]) as ctx, self.make(ctx) as search:
+            cfg = self.config(search, audit_threshold=0)
+            with self.turn_roots(ctx, search) as b:
+                obs, slots, pairs = b.query_encoded(4, search.ext_supported)
+                raw = int(np.flatnonzero(pairs[0, 0].reshape(-1))[-1])
+                key = DecisionKey(500, 0, int(b.requests[0, 0]["epoch"]))
+                d = self.label(search, b, 0, 0, raw, cfg)
+                # TARGET: the exact play distribution of X, the X-word draw and its likelihood.
+                self.assertIs(d.status, ed.RowStatus.TARGET)
+                self.assertIsNone(d.cause)
+                probs = d.target.probs
+                self.assertLessEqual(abs(math.fsum(probs.tolist()) - 1.0), 1e-12)
+                self.assertTrue((probs[probs > 0] >= 1e-9).all())
+                index = d.target.ids.tolist().index(d.action)
+                self.assertEqual(d.behavior_logp, math.log(float(probs[index])))
+                u = (ed.selection_word(key, 77, domain="X") >> 11) * 2.0 ** -53
+                self.assertEqual(index, int(np.flatnonzero(np.cumsum(probs) > u)[0]))
+                self.assertIn(raw, d.target.ids.tolist())
+                self.assertEqual(d.work["status"], "ok")
+                self.assertGreater(d.work["float_pivots"], 0)
+                self.assertEqual(dict(d.audit), {"selected": False})
+                # Work exhaustion: the raw action with the student's likelihood and a named cause.
+                tiny = self.config(search, audit_threshold=0, budget=matrix.WorkBudget(float_pivots=1))
+                w = self.label(search, b, 0, 0, raw, tiny)
+                self.assertEqual((w.status, w.cause, w.action, w.behavior_logp, w.target),
+                                 (ed.RowStatus.WORK_EXHAUSTED, "work:float_pivots", raw, -1.25, None))
+                self.assertEqual(w.work["status"], "float_pivots")
+                # The K+1 audit reuses the worlds with its own ledger and never changes the label.
+                audited = self.label(search, b, 0, 0, raw, self.config(search, audit_threshold=2**64))
+                for name in ("action", "behavior_logp", "status", "world_digest", "table_digest", "label_digest"):
+                    self.assertEqual(getattr(audited, name), getattr(d, name), name)
+                self.assertTrue(audited.audit["selected"])
+                self.assertEqual(audited.audit["status"], "ok")
+                self.assertEqual(len(audited.audit["candidates"]), search.k + 1)
+                self.assertIn(raw, audited.audit["candidates"])
+                for name in ("action_changed", "value", "value_delta", "certificate", "work"):
+                    self.assertIn(name, audited.audit)
+                self.assertLessEqual(audited.audit["certificate"], 1e-9)
+                real = search._decision
+                calls = []
+
+                def audit_exhausts(*args, **kwargs):
+                    calls.append(1)
+                    if len(calls) == 2:
+                        raise matrix.WorkBudgetExceeded(matrix.WorkStatus.EXACT_OPS, kwargs["budget"].consumed)
+                    return real(*args, **kwargs)
+
+                with mock.patch.object(search, "_decision", side_effect=audit_exhausts):
+                    incomplete = self.label(search, b, 0, 0, raw, self.config(search, audit_threshold=2**64))
+                self.assertEqual(incomplete.audit["status"], "exhausted:exact_ops")
+                self.assertEqual((incomplete.action, incomplete.label_digest), (d.action, d.label_digest))
+                # Only admitted eligible roots are labeled, after observe(), with their own key.
+                one = np.zeros_like(pairs)
+                one[0, 0].reshape(-1)[raw] = True
+                with mock.patch.object(b, "query_encoded", return_value=(obs, slots, one)), \
+                        self.assertRaisesRegex(ValueError, "two legal"):
+                    self.label(search, b, 0, 0, raw, cfg)
+                with self.assertRaisesRegex(ValueError, "key"):
+                    ex.label_decision(search, b, env=0, seat=0, key=DecisionKey(500, 1, key.request_epoch),
+                                      raw_action=raw, raw_logp=-1.0, last_step=False, config=cfg)
+                with self.assertRaises(ValueError):
+                    self.label(search, b, 0, 0, raw, self.config(search, audit_threshold=0, lam=0.25))
+                for bad_logp in (0.5, float("nan")):
+                    with self.assertRaises(ValueError):
+                        ex.label_decision(search, b, env=0, seat=0, key=key, raw_action=raw, raw_logp=bad_logp,
+                                          last_step=False, config=cfg)
+                # Visible sleep has no supported public reconstruction: a named public refusal.
+                decode = b._lib.duoforge_battle_decode
+                decode.restype = ctypes.c_uint32
+                decode.argtypes = (ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_size_t)
+                fixture = np.frombuffer(b.encode(1), np.uint8).copy()  # privileged codec fixture only
+                fixture[215 + 109 + 27] = C["DUOFORGE_AILMENT_SLEEP"]
+                fixture[215 + 109 + 28] = 2
+                self.assertEqual(decode(ctx.handle, b._battle(1), fixture.ctypes.data, fixture.size), 0)
+                b.query_factored()
+                ex.observe(search, b, [1], [0])
+                key1 = DecisionKey(501, 0, int(b.requests[1, 0]["epoch"]))
+                refused = ex.label_decision(search, b, env=1, seat=0, key=key1, raw_action=raw, raw_logp=-0.75,
+                                            last_step=False, config=cfg)
+                self.assertEqual((refused.status, refused.cause, refused.action, refused.behavior_logp),
+                                 (ed.RowStatus.PUBLIC_REFUSAL, "public:visible_sleep", raw, -0.75))
+                with self.assertRaisesRegex(ValueError, "observe"):  # a new request needs observe() first
+                    b.query_factored()
+                    stale = DecisionKey(501, 0, int(b.requests[1, 0]["epoch"]))
+                    search.history[b][(1, 0)]["observed"] = -1
+                    ex.label_decision(search, b, env=1, seat=0, key=stale, raw_action=raw, raw_logp=-0.75,
+                                      last_step=False, config=cfg)
+            # Rows without a search: the pre-drawn raw action and its likelihood, checked statuses.
+            capped = ex.raw_decision(ed.RowStatus.CAP_RAW, raw, -2.5, legal_count=5)
+            self.assertEqual((capped.status, capped.action, capped.behavior_logp, capped.target, capped.cause),
+                             (ed.RowStatus.CAP_RAW, raw, -2.5, None, None))
+            self.assertIs(ex.raw_decision(ed.RowStatus.UNSELECTED, raw, -0.5, legal_count=2).status, ed.RowStatus.UNSELECTED)
+            self.assertIs(ex.raw_decision(ed.RowStatus.FORCED, raw, 0.0, legal_count=1).status, ed.RowStatus.FORCED)
+            for status, logp, count in ((ed.RowStatus.FORCED, 0.0, 2), (ed.RowStatus.FORCED, -0.1, 1),
+                                        (ed.RowStatus.CAP_RAW, -1.0, 1), (ed.RowStatus.UNSELECTED, -1.0, 1),
+                                        (ed.RowStatus.TARGET, -1.0, 3), (ed.RowStatus.PUBLIC_REFUSAL, -1.0, 3),
+                                        (ed.RowStatus.WORK_EXHAUSTED, -1.0, 3), (ed.RowStatus.UNREQUESTED, -1.0, 3),
+                                        (ed.RowStatus.CAP_RAW, 0.5, 3), (ed.RowStatus.CAP_RAW, float("inf"), 3)):
+                with self.subTest(status=status, logp=logp, count=count), self.assertRaises(ValueError):
+                    ex.raw_decision(status, raw, logp, legal_count=count)
+            self.assertEqual([ex.learner_seat(g) for g in range(4)], [0, 1, 0, 1])
+            for bad in (-1, True, 2**64, 1.0):
+                with self.assertRaises(ValueError):
+                    ex.learner_seat(bad)
+            # teacher_row keeps the collector's actual step values and follows validate_row.
+            m = manifest(ed)
+            step = ex.StepData(key=key, logical_tick=3, boundary="TURN", obs=obs[0, 0], slots=slots[0, 0],
+                               legal_mask=pairs[0, 0], requested=True, reward=0.25, done=False,
+                               collector_value=0.1, bootstrap=-0.3)
+            row = ex.teacher_row(d, step, m)
+            self.assertEqual((row.status, row.admitted, row.acting, row.value_mask, row.action, row.raw_action),
+                             (ed.RowStatus.TARGET, True, True, True, d.action, raw))
+            self.assertEqual((row.reward, row.done, row.collector_value, row.bootstrap, row.logical_tick),
+                             (0.25, False, 0.1, -0.3, 3))
+            np.testing.assert_array_equal(row.sparse_policy.probs, d.target.probs)
+            self.assertEqual(ex.teacher_row(w, step, m).cause, "work:float_pivots")
+            self.assertTrue(ex.teacher_row(w, step, m).admitted)
+            self.assertFalse(ex.teacher_row(capped, step, m).admitted)
+            waiting = ex.teacher_row(None, dataclasses.replace(step, requested=False), m)
+            self.assertEqual((waiting.status, waiting.action, waiting.acting, waiting.value_mask),
+                             (ed.RowStatus.UNREQUESTED, None, False, True))
+            with self.assertRaises(ValueError):
+                ex.teacher_row(None, step, m)  # a requested row needs a decision
+            with self.assertRaises(ValueError):
+                ex.teacher_row(d, dataclasses.replace(step, requested=False), m)
+            with self.assertRaises(ValueError):
+                ex.teacher_row(d, dataclasses.replace(step, boundary="TEAM_SELECTION"), m)
 
 
 if __name__ == "__main__":
