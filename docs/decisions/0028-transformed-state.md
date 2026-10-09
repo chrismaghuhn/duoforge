@@ -28,7 +28,7 @@ The replay coverage of 2026-10-09 has Transform in 114 games and Imposter in 101
 
 ## Decisions
 
-1. **The state is derived, not copied wholesale.** Per position, the tail gets three fields, all cleared on switch-out and faint:
+1. **The state is derived, not copied wholesale.** Three tail fields, all cleared on switch-out and faint (placement in item 2):
    - `transform_source` (u8): 0 = not transformed, else 1 + side * 6 + roster index of the source;
    - `transform_forme` (u16): the source's forme at the moment of the copy;
    - `transform_pp` (u16): four 4-bit PP counters for the copied moves, 0 to 5.
@@ -44,7 +44,16 @@ The replay coverage of 2026-10-09 has Transform in 114 games and Imposter in 101
    - boosts, the crit flags and `hits_taken` are already per position.
 
    The invariant checks that a transformed position's source is a brought member of the other side or the own side (Transform can target an ally), and that the PP counters are ≤ 5.
-2. **Fit in the tail.** The three fields take 5 bytes per position, 20 in all. Tail rev 4 has 35 reserved bytes after hazard_order, and Illusion's roster index already lives in `ability_state`. The fields go into the reserve with no size change. If the builder finds the reserve smaller than counted, it stops and the lead asks the owner about a tail rev 5.
+2. **Fit in the tail.** Tail rev 4 has 35 reserved bytes on main:
+   - 7 in the field block;
+   - 4 per position (16 in all);
+   - 1 per member (12 in all).
+
+   G46's `party_order` takes field bytes +1..+6. This note takes:
+   - `transform_source` in the member reserve, one byte per member. It is the member that is transformed, and it is cleared when that member leaves the field;
+   - `transform_forme` (u16) and `transform_pp` (u16) in the position reserve, 4 bytes per position.
+
+   That uses 28 bytes and leaves one, at field byte +7, with no size change. Illusion's roster index already lives in `ability_state`. If the builder finds a different reserve, it stops, and the lead asks the owner about a tail rev 5.
 3. **New public view values:**
    - `DUOFORGE_POSITION_EXT_TRANSFORMED`: volatiles bit 21 (the next free bit after ROOST, 20).
    - `duoforge_position_ext.transform_source` (u8, from `reserved`): 1 + side * 6 + roster index of the source, 0 when not transformed. This is public: the line names the source.
