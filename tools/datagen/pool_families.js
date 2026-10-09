@@ -315,6 +315,36 @@ function pinchTypes(ability, hp, maxhp) {
     return out;
 }
 
+// The stat multipliers of an ability's onModifyAtk / onModifySpA for each move type at the given HP, whatever the factor
+// (pinchTypes demands x1.5): {callback: {type: chain}} with the types for which the callback fires.
+function statModifiers(ability, hp, maxhp) {
+    const out = {};
+    for (const callback of ['onModifyAtk', 'onModifySpA']) {
+        if (typeof ability[callback] !== 'function') {
+            continue;
+        }
+        out[callback] = {};
+        for (const type of TYPES) {
+            const r = call(ability[callback], battle(ability), [100, {hp, maxhp}, {}, moveOf(type)]);
+            if (r !== undefined) {
+                out[callback][type] = r.chain;
+            }
+        }
+    }
+    return out;
+}
+
+// Step G59: the engine rows without a family whose onModifyAtk / onModifySpA the turn code implements by id
+// (src/combat/turn.c, the G59 attack modifiers): Huge Power doubles Attack for every move (data/abilities.ts hugepower,
+// chainModify(2)); Fire Mane (data/abilities.ts firemane, inherited by the Champions mod) gives x1.5 to a Fire move's
+// Attack and Special Attack. Neither depends on HP, so the probe expects the same at full and at low HP. Any other
+// modelled row without a family must still show no stat modifier (the pinch probe below).
+const ALL_TYPES_X = (chain) => Object.fromEntries(TYPES.map((t) => [t, chain]));
+const ENGINE_STAT_MODIFIERS = {
+    hugepower: {onModifyAtk: ALL_TYPES_X(2)},
+    firemane: {onModifyAtk: {Fire: 1.5}, onModifySpA: {Fire: 1.5}},
+};
+
 // What an entry ability sets for a source Pokemon.
 function setterEffect(ability, speciesId, itemId) {
     const set = {weather: null, terrain: null};
@@ -1299,9 +1329,16 @@ function checkAbilities(dex, rows, moveIds, unmodeled, unmodeledMoves) {
                 if (typeof ability.onModifyType === 'function') {
                     expect(row.id + ' (no family) "-ate" probe', ateChanges(ability).changed, {});
                 }
-                for (const callback of ['onModifyAtk', 'onModifySpA']) {
-                    if (typeof ability[callback] === 'function') {
-                        expect(row.id + ' (no family) pinch probe ' + callback, pinchTypes(ability, 10, 30)[callback], []);
+                if (ENGINE_STAT_MODIFIERS[row.id] !== undefined) {
+                    for (const [hp, what] of [[30, 'full HP'], [10, 'low HP']]) {
+                        expect(row.id + ' (engine row) stat modifiers at ' + what, statModifiers(ability, hp, 30),
+                            ENGINE_STAT_MODIFIERS[row.id]);
+                    }
+                } else {
+                    for (const callback of ['onModifyAtk', 'onModifySpA']) {
+                        if (typeof ability[callback] === 'function') {
+                            expect(row.id + ' (no family) pinch probe ' + callback, pinchTypes(ability, 10, 30)[callback], []);
+                        }
                     }
                 }
                 if (typeof ability.onStart === 'function' && /\.field\.set(Weather|Terrain)\(/.test(ability.onStart.toString())) {
