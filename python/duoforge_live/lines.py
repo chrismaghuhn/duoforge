@@ -172,7 +172,7 @@ _ITEM_CHANGE_FROM = {"move: Trick", "move: Switcheroo", "move: Thief", "move: Co
 # guard markers in the ACTIVATE event).
 _FOLD_ACTIVATE = {"move: Protect", "move: Psychic Terrain", "confusion", "ability: Emergency Exit",
                   "ability: Lightning Rod", "ability: Storm Drain", "move: Struggle", "ability: Sticky Hold",
-                  "move: Feint", "move: After You", "move: Quash"}  # After You, Quash: the queue, no field (G62)
+                  "move: Feint", "move: After You", "move: Quash", "move: Phantom Force"}  # After You, Quash: the queue, no field (G62); Phantom Force: its [broken] protection (G58)
 # A guard blocking a move this turn: the same single-turn feature as its -singleturn line.
 _GUARD_ACTIVATE = {"move: Wide Guard": "WIDE_GUARD", "move: Quick Guard": "QUICK_GUARD"}
 # `-singleturn|X|move: Protect` is the Protect volatile of Spiky Shield, Baneful Bunker and Burning Bulwark (their condition

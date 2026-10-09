@@ -31,7 +31,7 @@ static void check_mark(df_test *t)
     DF_CHECK_EQ_U64(t, DFI_SPECIAL_HAZE, DFI_SPECIAL_SHEER_COLD + 1u); /* after the four of G64 (batch 2 merge) */
     DF_CHECK_EQ_U64(t, DFI_SPECIAL_AFTER_YOU, DFI_SPECIAL_HAZE + 1u);
     DF_CHECK_EQ_U64(t, DFI_SPECIAL_QUASH, DFI_SPECIAL_AFTER_YOU + 1u);
-    DF_CHECK_EQ_U64(t, DFI_SPECIAL_UNMODELED, DFI_SPECIAL_SUBSTITUTE + 1u); /* step G60 (decision 0032) comes after Quash */
+    DF_CHECK_EQ_U64(t, DFI_SPECIAL_UNMODELED, DFI_SPECIAL_PHANTOM_FORCE + 1u); /* step G60 (decision 0032) comes after Quash */
 }
 
 /* data/moves.ts:8156-8172: accuracy true (0: never misses), Status, the field target, no protect flag, priority 0, Ice. */

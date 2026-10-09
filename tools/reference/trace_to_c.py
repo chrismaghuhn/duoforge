@@ -951,6 +951,10 @@ IGNORED_VOLATILES = {
     # after every step (a pivot inside the Roost turn is the only boundary where it stands).
     'roost': 'the Ground move lines and the single-turn line',
     'solarbeam': 'the locked slot and target',  # step G30: the same two-turn lock
+    # Step G58 (Phantom Force, data/moves.ts:13307-13335): the move's own volatile, which its onTryMove removes on the locked
+    # turn, so the lock is twoturnmove's (remembered, as Electro Shot's) and the semi-invulnerability of the charge is shown by
+    # the -miss lines of the moves against the charging user (the engine's Invulnerability step, not a field).
+    'phantomforce': 'the locked slot and target; the semi-invulnerability shows in the -miss lines',
     # Pool step G8 (the POOL tail, decision 0015 section 7). Their turns are not a field of the state record; each
     # shows in the steps that the comparison already covers: the moves of the next request (disabled slots, the
     # request that offers Struggle), the cant lines, the heal that is missing, and Heal Block's start and end lines.
@@ -1705,7 +1709,7 @@ def convert_battle(name, spec, trace, tables):
                     if v not in compared and v not in IGNORED_VOLATILES:
                         raise ConversionError('unknown-volatile', 'trace_to_c: unknown volatile %r of %s' %
                                               (v, name_of(p)), detail=v)
-                for charge in ('electroshot', 'solarbeam'):
+                for charge in ('electroshot', 'solarbeam', 'phantomforce'):
                     if charge in p['volatiles'] and 'twoturnmove' not in p['volatiles']:
                         raise ConversionError('unknown-volatile', 'trace_to_c: %s without twoturnmove on %s' %
                                               (charge, name_of(p)), detail=charge)

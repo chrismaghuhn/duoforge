@@ -298,6 +298,9 @@ class LinesTest(unittest.TestCase):
                          "line:-activate move: Poltergeist")
         bug_bite = "|-enditem|p1a: Staraptor|Sitrus Berry|[from] stealeat|[move] Bug Bite|[of] p2a: Gholdengo"
         self.assertEqual(self.stop(bug_bite), "feature:ITEM_CHANGE")
+    def test_phantom_force_breaking_a_protection_folds(self):
+        # Step G58: Phantom Force breaks a Protect like Feint (hitStepBreakProtect), printed with [broken]
+        self.assertEqual(lines.check("|-activate|p2a: Gholdengo|move: Phantom Force|[broken]", self.view), "fold")
 
     def test_item_transfer_lines_are_item_change(self):
         # G29 (#171): every line of a Trick, Switcheroo, Thief or Covet is decision 0018's ITEM_CHANGE, the

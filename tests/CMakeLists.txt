@@ -213,6 +213,7 @@ duoforge_add_test(NAME duoforge.state.pool_g41 SOURCES test_pool_g41.c WHITEBOX 
 duoforge_add_test(NAME duoforge.state.pool_g60 SOURCES test_pool_g60.c WHITEBOX LIBS duoforge_batch TIMEOUT 60)
 # Step G57: Magic Bounce and the Mega Stones Absolite and Sablenite (the reflectable column against the pinned Dex, the marks).
 duoforge_add_test(NAME duoforge.state.pool_g57 SOURCES test_pool_g57.c WHITEBOX TIMEOUT 60)
+duoforge_add_test(NAME duoforge.state.pool_g58 SOURCES test_pool_g58.c WHITEBOX TIMEOUT 60)
 # Step G42: Roost and Stomping Tantrum: the move result classes (this and last) at every boundary of the g42 battles, the Roost
 # volatile (the pivot boundary inside its turn), the view bits (40 supported, 41 not), the unclassified refusal.
 duoforge_add_test(NAME duoforge.state.pool_g42 SOURCES test_pool_g42.c WHITEBOX TIMEOUT 60)
@@ -254,8 +255,8 @@ foreach(_gen IN ITEMS
         "closure_tables.c=490de42298e34cfd38192d979fd022367bf53693a5fa1855f1cc6ad034d8450a"
         "extended_tables.h=b2abef243fcbfdd87654940076b9fe2fe80b117d74893a7567741f26b9075a7d"
         "extended_tables.c=9e736fa467713283418c4edf8f56b8d844452e596ba422adbd52483d20f7cc17"
-        "pool_tables.h=a88d97be25c92a47a0c4f2d8f5c18ee39c0cfe2399365038d028f2d0152a1ca6"
-        "pool_tables.c=e3fd564594cf6da0840a17a9e49fafd8de695e892f36b5d8126059268f3c6836")
+        "pool_tables.h=0d8be7b2cfb091df1d1e323e430b6f02afde6d9a51c46d32218493b7992c3dc9"
+        "pool_tables.c=b964e8a5cf16a64a092a3692e6480852b3e54c976a0d45e510f1817d8ea47e9a")
     string(REPLACE "=" ";" _parts "${_gen}")
     list(GET _parts 0 _file)
     list(GET _parts 1 _expected)

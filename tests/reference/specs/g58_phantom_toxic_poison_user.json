@@ -1,0 +1,24 @@
+{
+ "name": "g58_phantom_toxic_poison_user",
+ "purpose": "Gengar (M, a Poison type) Toxics the charging Annihilape (M) on the locked turn: the Poison-type exception of the Invulnerability step, so the status lands",
+ "data": "pool",
+ "format": "gen9championsvgc2026regmc",
+ "seed": "sodium,0000000000000000000000000000000000000000000000000000000000058005",
+ "teams": [
+  "Annihilape (M) @ Life Orb\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Phantom Force\n- Protect\n- Close Combat\n- Coaching\n\nGolurk @ Leftovers\nAbility: No Guard\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Phantom Force\n- Protect\n- Earthquake\n- Close Combat\n\nKingambit (M) @ Black Glasses\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Sucker Punch\n- Protect\n- Taunt\n- Iron Head\n\nMilotic (F) @ Eject Button\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Protect\n- Coil\n\nRaichu (F) @ Sitrus Berry\nAbility: Lightning Rod\nLevel: 50\nEVs: 29 HP / 5 Def / 32 Spe\nTimid Nature\n- Thunderbolt\n- Protect\n\nIndeedee-F (F) @ Rocky Helmet\nAbility: Psychic Surge\nLevel: 50\nEVs: 32 HP / 32 Def / 2 SpD\nRelaxed Nature\n- Protect",
+  "Gengar (M) @ Mystic Water\nAbility: Cursed Body\nLevel: 50\nEVs: 32 HP / 2 Def / 32 Spe\nTimid Nature\n- Toxic\n- Protect\n- Shadow Ball\n- Taunt\n\nGholdengo @ Focus Sash\nAbility: Good as Gold\nLevel: 50\nEVs: 17 HP / 2 Def / 17 SpA / 16 SpD\nModest Nature\n- Shadow Ball\n- Protect\n- Make It Rain\n- Iron Head\n\nKingambit (M) @ Black Glasses\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Sucker Punch\n- Protect\n- Taunt\n- Iron Head\n\nMilotic (F) @ Eject Button\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Protect\n- Coil\n\nRaichu (F) @ Sitrus Berry\nAbility: Lightning Rod\nLevel: 50\nEVs: 29 HP / 5 Def / 32 Spe\nTimid Nature\n- Thunderbolt\n- Protect\n\nIndeedee-F (F) @ Rocky Helmet\nAbility: Psychic Surge\nLevel: 50\nEVs: 32 HP / 32 Def / 2 SpD\nRelaxed Nature\n- Protect"
+ ],
+ "plan": {
+  "p1": [
+   "move 1 1, move 2",
+   "move 1 1, move 2",
+   "move 1 1, move 2"
+  ],
+  "p2": [
+   "move 2, move 2",
+   "move 1 1, move 2",
+   "move 2, move 2"
+  ],
+  "max_steps": 3
+ }
+}

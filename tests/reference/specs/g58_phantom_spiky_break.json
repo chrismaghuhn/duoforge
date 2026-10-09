@@ -1,0 +1,22 @@
+{
+ "name": "g58_phantom_spiky_break",
+ "purpose": "Glimmora (F, Jolly, Spiky Shield) uses Spiky Shield on the turn Annihilape Phantom Force hits it (no Protect the turn before, so the first use succeeds): the hit breaks the Spiky Shield, and the protect variant is reset (the tail invariant)",
+ "data": "pool",
+ "format": "gen9championsvgc2026regmc",
+ "seed": "sodium,0000000000000000000000000000000000000000000000000000000000058026",
+ "teams": [
+  "Annihilape (M) @ Life Orb\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Phantom Force\n- Protect\n- Close Combat\n- Coaching\n\nGolurk @ Leftovers\nAbility: No Guard\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Phantom Force\n- Protect\n- Earthquake\n- Close Combat\n\nKingambit (M) @ Black Glasses\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Sucker Punch\n- Protect\n- Taunt\n- Iron Head\n\nMilotic (F) @ Sitrus Berry\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Protect\n- Coil\n\nIndeedee-F (F) @ Rocky Helmet\nAbility: Psychic Surge\nLevel: 50\nEVs: 32 HP / 32 Def / 2 SpD\nRelaxed Nature\n- Protect\n\nMachamp (M) @ Expert Belt\nAbility: Steadfast\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Coaching\n- Protect\n- Close Combat\n- Wide Guard",
+  "Glimmora (F) @ Eject Button\nAbility: Toxic Debris\nLevel: 50\nEVs: 32 HP / 2 Def / 32 Spe\nJolly Nature\n- Spiky Shield\n- Protect\n- Toxic\n- Rock Slide\n\nGengar (M) @ Mystic Water\nAbility: Cursed Body\nLevel: 50\nEVs: 32 HP / 2 Def / 32 Spe\nTimid Nature\n- Toxic\n- Protect\n- Shadow Ball\n- Taunt\n\nKingambit (M) @ Black Glasses\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Sucker Punch\n- Protect\n- Taunt\n- Iron Head\n\nMilotic (F) @ Sitrus Berry\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Protect\n- Coil\n\nIndeedee-F (F) @ Rocky Helmet\nAbility: Psychic Surge\nLevel: 50\nEVs: 32 HP / 32 Def / 2 SpD\nRelaxed Nature\n- Protect\n\nMachamp (M) @ Expert Belt\nAbility: Steadfast\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Coaching\n- Protect\n- Close Combat\n- Wide Guard"
+ ],
+ "plan": {
+  "p1": [
+   "move 1 1, move 2",
+   "move 1 1, move 2"
+  ],
+  "p2": [
+   "move 3 1, move 2",
+   "move 1, move 2"
+  ],
+  "max_steps": 3
+ }
+}

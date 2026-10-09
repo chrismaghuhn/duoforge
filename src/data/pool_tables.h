@@ -911,7 +911,8 @@
 #define DFI_SPECIAL_AFTER_YOU 87u
 #define DFI_SPECIAL_QUASH 88u
 #define DFI_SPECIAL_SUBSTITUTE 89u
-#define DFI_SPECIAL_UNMODELED 90u
+#define DFI_SPECIAL_PHANTOM_FORCE 90u
+#define DFI_SPECIAL_UNMODELED 91u
 
 /* ---- the second flags byte of every move (step G8: the general byte for the flags that the first one has no room
  * for; bits 4 to 128 are free) and the secondary kinds that it comes with ---- */
