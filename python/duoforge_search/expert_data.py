@@ -340,16 +340,32 @@ def write_shard(path: Path, rows: Sequence[ExpertRow], manifest: DataManifest) -
     _check_streams(rows)
     payload = {"schema_version": SCHEMA_VERSION, "manifest": _plain(manifest),
                "manifest_sha256": _sha(manifest), "rows": [_plain(r) for r in rows]}
+    return _write_private(path, payload)
+
+
+def _write_private(path, payload):
+    """Canonical JSON with its content hash, created exclusively and fsynced;
+    returns the file's SHA-256."""
     data = _canonical({**payload, "content_sha256": _sha(payload)}) + b"\n"
     path.parent.mkdir(parents=True, exist_ok=True)
     # Exclusive creation prevents accidental loss of private data. A partial
-    # failed shard is not valid and cannot be resumed through read_shard.
+    # failed file is not valid and cannot be read back.
     with path.open("xb") as file:
         file.write(data)
         file.flush()
         os.fsync(file.fileno())
     fsync_dir(path.parent)
     return hashlib.sha256(data).hexdigest()
+
+
+def write_manifest(path: Path, manifest: DataManifest) -> str:
+    """The run's manifest file, in the same canonical form as every shard
+    header (same manifest_sha256); returns the file's SHA-256."""
+    path = Path(path)
+    refuse_repository(path)
+    validate_manifest(manifest)
+    return _write_private(path, {"schema_version": SCHEMA_VERSION, "manifest": _plain(manifest),
+                                 "manifest_sha256": _sha(manifest)})
 
 
 def _object(pairs):
@@ -381,13 +397,43 @@ def _restore_array(value):
 _ROW_FIELDS = frozenset(f.name for f in dataclasses.fields(ExpertRow))
 
 
+def _load_private(path):
+    def invalid_constant(value):
+        raise ValueError(f"nonfinite JSON constant {value}")
+    return json.loads(path.read_bytes(), object_pairs_hook=_object, parse_constant=invalid_constant)
+
+
+_MANIFEST_FIELDS = frozenset(f.name for f in dataclasses.fields(DataManifest))
+
+
+def read_manifest(path: Path) -> DataManifest:
+    """The manifest written by write_manifest: integrity, every field (no
+    defaults) and validate_manifest are checked."""
+    path = Path(path)
+    refuse_repository(path)
+    payload = _load_private(path)
+    if not isinstance(payload, dict) or type(payload.get("schema_version")) is not int or payload["schema_version"] != SCHEMA_VERSION:
+        raise ValueError("unsupported expert manifest schema")
+    if set(payload) != {"schema_version", "manifest", "manifest_sha256", "content_sha256"}:
+        raise ValueError("invalid manifest file fields")
+    content = {k: v for k, v in payload.items() if k != "content_sha256"}
+    if payload["content_sha256"] != _sha(content):
+        raise ValueError("manifest file integrity mismatch")
+    fields = payload["manifest"]
+    if not isinstance(fields, dict) or set(fields) != _MANIFEST_FIELDS:
+        raise ValueError("invalid manifest fields (no defaults)")
+    manifest = DataManifest(**fields)
+    validate_manifest(manifest)
+    if payload["manifest_sha256"] != _sha(fields) or payload["manifest_sha256"] != _sha(manifest):
+        raise ValueError("manifest file hash mismatch")
+    return manifest
+
+
 def read_shard(path: Path, expected: DataManifest) -> tuple[ExpertRow, ...]:
     path = Path(path)
     refuse_repository(path)
     validate_manifest(expected)
-    def invalid_constant(value):
-        raise ValueError(f"nonfinite JSON constant {value}")
-    payload = json.loads(path.read_bytes(), object_pairs_hook=_object, parse_constant=invalid_constant)
+    payload = _load_private(path)
     if not isinstance(payload, dict) or type(payload.get("schema_version")) is not int or payload["schema_version"] != SCHEMA_VERSION:
         raise ValueError("unsupported expert shard schema")
     if set(payload) != {"schema_version", "manifest", "manifest_sha256", "rows", "content_sha256"}:
@@ -553,7 +599,7 @@ def _validate_cursor(cursor):
             raise ValueError("pending request repeats/regresses an epoch")
 
 
-def admit_tick(cursor: LabelCursor, requests: Sequence[DecisionKey]) -> AdmissionBatch:
+def admit_tick(cursor: LabelCursor, requests: Sequence[AdmissionRequest]) -> AdmissionBatch:
     _validate_cursor(cursor)
     if cursor.pending_reservations is not None:
         raise ValueError("pending tick must commit before another admission")
