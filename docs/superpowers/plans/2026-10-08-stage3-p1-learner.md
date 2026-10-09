@@ -221,7 +221,7 @@ Each item has its test in the owning task: 1 in Task 3, 2 and 3 in Task 2, 4 in 
 - **Epoch 0** is the baseline evaluation of `init_params` before any step.
 - **Steps per epoch** are `ceil(n_train_target / 512)`. Training stops at 128 steps total even inside an epoch; that point is evaluated as the epoch's end.
 - **Held-out evaluation** uses the same loss terms on `held_target` / `held_non`, in fixed chunks of 4096 rows (the last one padded). Each metric is the sum over all chunks divided by the summed weights, never a mean of chunk means.
-- **Best epoch:** the lowest held-out teacher KL among epochs with ref KL ≤ 0.02 and all-finite metrics.
+- **Best epoch:** the epoch whose held-out teacher KL beats the best so far (epoch 0 before any step is the start) by at least `MIN_GAIN` (1e-4 nats); a smaller improvement does not count. An epoch with a held-out reference KL above 0.02 or a nonfinite metric is never best (it stops the fit). This is the rule `fit` (#256) and M12's contract reference (#264) implement, confirmed 2026-10-09.
 - **If the best epoch is 0** (no step improved on 49333), the fit reports `best_epoch = 0`. `params-best.npz` is then 49333 itself, marked `"no_gain"` in its config. M12's evaluation still runs as declared, and a student identical to 49333 cannot pass the gate against frozen 49333.
 - **Outputs:**
   - `params-epoch-{e}.npz` and `params-best.npz`, written by `checkpoint.save` with 49333's config (so `ladder` and `evaluate` load them unchanged);
