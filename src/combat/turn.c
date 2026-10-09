@@ -2017,6 +2017,9 @@ static bool dfi_poison_immune(const struct duoforge_battle *b, const dfi_member 
 #define DFI_ORIGIN_MOVE 1u
 #define DFI_ORIGIN_SYNC 2u
 #define DFI_ORIGIN_HAZARD 3u
+/* the Yawn residual (step G31 fix): a sleep that Yawn's end sets. Every reader of the origin treats it as OTHER, except
+ * the terrains' sleep refusal below, which shows its line for a Yawn (data/moves.ts:4518, 12172: effect.id 'yawn'). */
+#define DFI_ORIGIN_YAWN 4u
 
 static duoforge_status dfi_try_status(dfi_run *r, uint32_t flat, uint32_t status, uint32_t user, uint32_t move_id,
                                       uint32_t origin, uint32_t from_ability);
@@ -2103,7 +2106,9 @@ static duoforge_status dfi_try_status(dfi_run *r, uint32_t flat, uint32_t status
     /* The semi-invulnerable exemption (data/moves.ts:4517 for sleep, :12178 for every status): a charging target is not blocked. */
     if ((r->b->terrain == DFI_TERRAIN_MISTY || (r->b->terrain == DFI_TERRAIN_ELECTRIC && status == DFI_STATUS_SLP)) &&
         dfi_grounded(r->b, m) && !dfi_semi_invulnerable(r, flat)) {
-        if (primary) {
+        /* a Yawn's sleep shows the line too (effect.id 'yawn' in both terrains' onSetStatus, data/moves.ts:4518 and
+         * 12172; the Yawn residual of step G31 fix passes DFI_ORIGIN_YAWN) */
+        if (primary || origin == DFI_ORIGIN_YAWN) {
             const uint32_t terrain_move =
                 r->b->terrain == DFI_TERRAIN_MISTY ? DFI_MOVE_MISTYTERRAIN : DFI_MOVE_ELECTRICTERRAIN;
             const duoforge_event e =
@@ -4328,9 +4333,19 @@ static bool dfi_taunt(dfi_run *r, uint32_t user, uint32_t flat)
 
 /* Yawn (data/moves.ts:21131-21162, no Champions change; accuracy true: no draw). Its own onTryHit fails the move
  * (-fail|user with [still]) for a target that has a status or is immune to sleep (no marked ability, item or type of
- * the pool is: the Immunity handlers of Insomnia, Vital Spirit, Sweet Veil and Comatose are unmarked, and the terrains
- * that stop sleep are Electric Terrain's, not in this build). addVolatile then fails for a target that is yawning
- * already. Otherwise -start|target|move: Yawn|[of] user, and the target falls asleep at the end of the next turn
+ * the pool is: the Immunity handlers of Insomnia, Vital Spirit, Sweet Veil and Comatose are unmarked; Electric Terrain's
+ * refusal is below and Misty Terrain's sleep refusal is in dfi_try_status). addVolatile order (sim/pokemon.ts:1983-1994):
+ * a target that yawns already is refused first and silently (no onRestart: -fail|user [still], the move's own fail);
+ * then TryAddVolatile, where the Pokemon's effects run before the field (speed, sim/battle.ts:1001-1003): Flower Veil of
+ * the target's side blocks it on a Grass type (-block, then the move did nothing; data/abilities.ts:1445-1452), and
+ * Electric Terrain blocks it on a grounded target (-activate|target|move: Electric Terrain, return null;
+ * data/moves.ts:4525-4530). Both blocks return null, and the move's hit then has result false with no line of its
+ * own (no [still], no -fail): so moveThisTurnResult is false (moveHit's didSomething null -> false, the target drops out
+ * of the hit list, and atLeastOneFailure keeps the result from becoming null: sim/battle-actions.ts:1298-1300, 616, 374).
+ * Electric Terrain does not block a target that is not grounded (a Flying type, a Levitate holder), nor a semi-invulnerable
+ * one: the pin's test is `!target.isSemiInvulnerable()` (data/moves.ts:4525; step G58, dfi_semi_invulnerable), added to
+ * the grounded test of Electric Terrain below.
+ * Otherwise -start|target|move: Yawn|[of] user, and the target falls asleep at the end of the next turn
  * (duration 2, the residual at order 23: the Yawn pass of dfi_residual). True when it started. */
 static bool dfi_yawn(dfi_run *r, uint32_t user, uint32_t flat)
 {
@@ -4344,15 +4359,27 @@ static bool dfi_yawn(dfi_run *r, uint32_t user, uint32_t flat)
         dfi_fail_still(r, user);
         return false;
     }
-    /* addVolatile('yawn'): TryAddVolatile, Flower Veil of the target's side blocks it on a Grass type (-block, then the
-     * move did nothing); a target that yawns already refuses it (no onRestart). */
+    /* addVolatile: a target that yawns already is refused silently before TryAddVolatile (the fix of G31's second bug:
+     * this check was after Flower Veil's block, which made a yawning Grass target print -block; recorded in
+     * g31_yawn_flower_veil_yawning). */
+    if (tail->yawn_turns != 0u) {
+        dfi_fail_still(r, user);
+        return false;
+    }
+    /* TryAddVolatile: Flower Veil of the target's side blocks it on a Grass type (-block, then the move did nothing);
+     * the Pokemon's effects run before the field's, so Flower Veil comes before Electric Terrain. */
     uint32_t veil = 0u;
     if (dfi_flower_veil_holder(b, flat, &veil)) {
         dfi_flower_veil_block(r, flat, veil); /* -block only: neither [still] nor -fail (recorded in g31_yawn_flower_veil) */
         return false;
     }
-    if (tail->yawn_turns != 0u) {
-        dfi_fail_still(r, user);
+    /* Electric Terrain (step G31 fix, data/moves.ts:4525-4530): a grounded target does not take the volatile; the line
+     * is the move's cause and the terrain move as id2, as the sleep refusal's (recorded in g31_yawn_electric). The
+     * result is false, as the Flower Veil block's. */
+    if (b->terrain == DFI_TERRAIN_ELECTRIC && dfi_grounded(b, tm) && !dfi_semi_invulnerable(r, flat)) {
+        const duoforge_event e =
+            dfi_ev(DUOFORGE_EVENT_ACTIVATE, flat, DUOFORGE_CAUSE_MOVE, DFI_MOVE_ELECTRICTERRAIN, DUOFORGE_NO_POSITION);
+        dfi_emit(r, &e);
         return false;
     }
     tail->yawn_turns = 2u; /* DFI_TAIL_YAWN_MAX */
@@ -8609,7 +8636,7 @@ static duoforge_status dfi_residual_events_run(dfi_run *r, dfi_noorder_snapshot 
             }
             tail->yawn_turns = (uint8_t)((uint32_t)tail->yawn_turns - 1u); /* wide-operands-reviewed: >= 1 */
             if (tail->yawn_turns == 0u) {
-                st = dfi_try_status(r, e->flat, DFI_STATUS_SLP, e->flat, DFI_NO_SOURCE_MOVE, DFI_ORIGIN_OTHER, 0u);
+                st = dfi_try_status(r, e->flat, DFI_STATUS_SLP, e->flat, DFI_NO_SOURCE_MOVE, DFI_ORIGIN_YAWN, 0u);
                 if (st != DUOFORGE_OK) {
                     return st;
                 }

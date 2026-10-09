@@ -2404,6 +2404,34 @@ static const df_tb_stop tb_g31_yawn_a[] = {
     {6u, 0u, 1u, 3u, {4u, 4u}, {778u, 773u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
     {7u, 0u, 1u, 3u, {4u, 4u}, {778u, 773u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
 };
+static const df_tb_stop tb_g31_yawn_electric[] = {
+    {0u, 0u, 2u, 3u, {6u, 6u}, {1078u, 1161u}, {0x4059000000000000ull, 0x4059000000000000ull}},
+    {1u, 0u, 2u, 3u, {4u, 4u}, {733u, 773u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {2u, 0u, 2u, 3u, {4u, 4u}, {733u, 773u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {3u, 0u, 1u, 2u, {4u, 4u}, {733u, 699u}, {0x4050aaaaaaaaaaabull, 0x404dbf80fe03f810ull}},
+    {4u, 0u, 1u, 2u, {4u, 4u}, {733u, 709u}, {0x4050aaaaaaaaaaabull, 0x404e3b88ee23b890ull}},
+};
+static const df_tb_stop tb_g31_yawn_electric_flying[] = {
+    {0u, 0u, 2u, 3u, {6u, 6u}, {1058u, 1161u}, {0x4059000000000000ull, 0x4059000000000000ull}},
+    {1u, 0u, 2u, 3u, {4u, 4u}, {713u, 773u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {2u, 0u, 2u, 3u, {4u, 4u}, {713u, 773u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {3u, 0u, 1u, 2u, {4u, 4u}, {713u, 701u}, {0x4050aaaaaaaaaaabull, 0x404dd84f613d84f7ull}},
+    {4u, 0u, 1u, 2u, {4u, 4u}, {713u, 711u}, {0x4050aaaaaaaaaaabull, 0x404e5457515d4575ull}},
+};
+static const df_tb_stop tb_g31_yawn_electric_residual[] = {
+    {0u, 0u, 2u, 3u, {6u, 6u}, {1068u, 1161u}, {0x4059000000000000ull, 0x4059000000000000ull}},
+    {1u, 0u, 2u, 3u, {4u, 4u}, {695u, 773u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {2u, 0u, 2u, 3u, {4u, 4u}, {695u, 773u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {3u, 0u, 2u, 3u, {4u, 4u}, {695u, 773u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {4u, 0u, 1u, 2u, {4u, 4u}, {695u, 654u}, {0x4050aaaaaaaaaaabull, 0x404b915d457515d4ull}},
+};
+static const df_tb_stop tb_g31_yawn_electric_tantrum[] = {
+    {0u, 0u, 1u, 3u, {6u, 6u}, {1139u, 1114u}, {0x4059000000000000ull, 0x4059000000000000ull}},
+    {1u, 0u, 1u, 3u, {4u, 4u}, {794u, 726u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {2u, 0u, 1u, 3u, {4u, 4u}, {794u, 726u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {3u, 0u, 1u, 2u, {4u, 4u}, {794u, 666u}, {0x4050aaaaaaaaaaabull, 0x404e1b86e1b86e1bull}},
+    {4u, 0u, 2u, 2u, {4u, 4u}, {608u, 634u}, {0x404942aaaaaaaaabull, 0x404c6318c6318c63ull}},
+};
 static const df_tb_stop tb_g31_yawn_flower_veil[] = {
     {0u, 0u, 1u, 3u, {6u, 6u}, {1154u, 1117u}, {0x4059000000000000ull, 0x4059000000000000ull}},
     {1u, 0u, 1u, 3u, {4u, 4u}, {778u, 748u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
@@ -2411,6 +2439,27 @@ static const df_tb_stop tb_g31_yawn_flower_veil[] = {
     {3u, 0u, 2u, 1u, {3u, 4u}, {576u, 693u}, {0x4049000000000000ull, 0x404f1e81715d93ffull}},
     {5u, 0u, 2u, 1u, {3u, 4u}, {409u, 610u}, {0x4041ca0f086693adull, 0x404b6e49498dc571ull}},
     {6u, 0u, 2u, 1u, {2u, 4u}, {218u, 528u}, {0x4033b82f5043973cull, 0x4047ebe71eb42b2cull}},
+};
+static const df_tb_stop tb_g31_yawn_flower_veil_yawning[] = {
+    {0u, 0u, 2u, 3u, {6u, 6u}, {1119u, 1161u}, {0x4059000000000000ull, 0x4059000000000000ull}},
+    {1u, 0u, 1u, 3u, {4u, 4u}, {776u, 773u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {2u, 0u, 1u, 3u, {4u, 4u}, {776u, 773u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {3u, 0u, 1u, 2u, {4u, 4u}, {776u, 746u}, {0x4050aaaaaaaaaaabull, 0x405003398ce63399ull}},
+    {4u, 0u, 1u, 2u, {4u, 4u}, {776u, 756u}, {0x4050aaaaaaaaaaabull, 0x4050413d84f613d9ull}},
+};
+static const df_tb_stop tb_g31_yawn_misty[] = {
+    {0u, 0u, 2u, 3u, {6u, 6u}, {1112u, 1161u}, {0x4059000000000000ull, 0x4059000000000000ull}},
+    {1u, 0u, 2u, 3u, {4u, 4u}, {767u, 773u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {2u, 0u, 2u, 3u, {4u, 4u}, {767u, 773u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {3u, 0u, 2u, 3u, {4u, 4u}, {767u, 773u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {4u, 0u, 2u, 3u, {4u, 4u}, {767u, 773u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+};
+static const df_tb_stop tb_g31_yawn_misty_steel_roller[] = {
+    {0u, 0u, 2u, 3u, {6u, 6u}, {1108u, 1161u}, {0x4059000000000000ull, 0x4059000000000000ull}},
+    {1u, 0u, 2u, 3u, {4u, 4u}, {709u, 773u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {2u, 0u, 2u, 3u, {4u, 4u}, {709u, 773u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {3u, 0u, 1u, 2u, {4u, 4u}, {709u, 717u}, {0x4050aaaaaaaaaaabull, 0x404e9ec27b09ec28ull}},
+    {4u, 0u, 1u, 2u, {4u, 4u}, {709u, 727u}, {0x4050aaaaaaaaaaabull, 0x404f1aca6b29aca7ull}},
 };
 static const df_tb_stop tb_g31_yawn_switch[] = {
     {0u, 0u, 3u, 4u, {6u, 6u}, {1154u, 1154u}, {0x4059000000000000ull, 0x4059000000000000ull}},
@@ -6763,7 +6812,14 @@ static const df_tb_battle tb_battles[] = {
     {"g31_taunt_tie_a", 7u, tb_g31_taunt_tie_a, sizeof tb_g31_taunt_tie_a / sizeof tb_g31_taunt_tie_a[0]},
     {"g31_taunt_tie_b", 7u, tb_g31_taunt_tie_b, sizeof tb_g31_taunt_tie_b / sizeof tb_g31_taunt_tie_b[0]},
     {"g31_yawn_a", 7u, tb_g31_yawn_a, sizeof tb_g31_yawn_a / sizeof tb_g31_yawn_a[0]},
+    {"g31_yawn_electric", 4u, tb_g31_yawn_electric, sizeof tb_g31_yawn_electric / sizeof tb_g31_yawn_electric[0]},
+    {"g31_yawn_electric_flying", 4u, tb_g31_yawn_electric_flying, sizeof tb_g31_yawn_electric_flying / sizeof tb_g31_yawn_electric_flying[0]},
+    {"g31_yawn_electric_residual", 4u, tb_g31_yawn_electric_residual, sizeof tb_g31_yawn_electric_residual / sizeof tb_g31_yawn_electric_residual[0]},
+    {"g31_yawn_electric_tantrum", 4u, tb_g31_yawn_electric_tantrum, sizeof tb_g31_yawn_electric_tantrum / sizeof tb_g31_yawn_electric_tantrum[0]},
     {"g31_yawn_flower_veil", 6u, tb_g31_yawn_flower_veil, sizeof tb_g31_yawn_flower_veil / sizeof tb_g31_yawn_flower_veil[0]},
+    {"g31_yawn_flower_veil_yawning", 4u, tb_g31_yawn_flower_veil_yawning, sizeof tb_g31_yawn_flower_veil_yawning / sizeof tb_g31_yawn_flower_veil_yawning[0]},
+    {"g31_yawn_misty", 4u, tb_g31_yawn_misty, sizeof tb_g31_yawn_misty / sizeof tb_g31_yawn_misty[0]},
+    {"g31_yawn_misty_steel_roller", 4u, tb_g31_yawn_misty_steel_roller, sizeof tb_g31_yawn_misty_steel_roller / sizeof tb_g31_yawn_misty_steel_roller[0]},
     {"g31_yawn_switch", 6u, tb_g31_yawn_switch, sizeof tb_g31_yawn_switch / sizeof tb_g31_yawn_switch[0]},
     {"g31_yawn_tie_a", 6u, tb_g31_yawn_tie_a, sizeof tb_g31_yawn_tie_a / sizeof tb_g31_yawn_tie_a[0]},
     {"g31_yawn_tie_b", 6u, tb_g31_yawn_tie_b, sizeof tb_g31_yawn_tie_b / sizeof tb_g31_yawn_tie_b[0]},
@@ -7253,7 +7309,7 @@ static const df_tb_battle tb_battles[] = {
     {"w8_sand_soak", 7u, tb_w8_sand_soak, sizeof tb_w8_sand_soak / sizeof tb_w8_sand_soak[0]},
 };
 
-/* 4943 stops: 150 of an ended battle; decided by the count 1230,
- * the HP percentage 1552, the total HP 1884, a tie 127;
- * winners: side 0 2409, side 1 2407, tie 127 */
+/* 4978 stops: 150 of an ended battle; decided by the count 1230,
+ * the HP percentage 1563, the total HP 1908, a tie 127;
+ * winners: side 0 2424, side 1 2427, tie 127 */
 #endif
