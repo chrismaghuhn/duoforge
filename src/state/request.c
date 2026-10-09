@@ -122,6 +122,11 @@ static duoforge_status dfi_slot_candidates(const duoforge_context *ctx, const st
                 return DUOFORGE_E_INVARIANT;
             }
         }
+        /* a pass is offered too: the pair check (dfi_pair_allowed) lets it stand only when the flagged slots exceed the living
+         * reserves (forcedPasses, sim/side.ts:1119-1132) */
+        if (!dfi_list_push(out, DUOFORGE_SLOT_PASS, 0u, 0u, 0u, 0u)) {
+            return DUOFORGE_E_INVARIANT;
+        }
         return DUOFORGE_OK;
     }
     if (b->boundary_kind == DUOFORGE_BOUNDARY_TURN) {
@@ -416,15 +421,9 @@ static duoforge_status dfi_side_lists(const duoforge_context *ctx, const struct 
     if (forced) {
         uint8_t reserves[DUOFORGE_MAX_ROSTER] = {0};
         const uint32_t nr = dfi_reserves(side, reserves);
-        /* a revive (decision 0025 item 8) is one of the forced actors, like a switch */
-        uint32_t revive = 0u;
-        for (uint32_t slot = 0u; slot < DUOFORGE_ACTIVE_PER_SIDE; ++slot) {
-            if (((rs >> slot) & 1u) != 0u && side->positions[slot].switch_flag == DFI_SWITCH_REVIVE_BLESSING) {
-                revive += 1u;
-            }
-        }
-        const uint32_t others = requested - revive;
-        need = revive + (others < nr ? others : nr);
+        /* forcedPasses = the flagged slots beyond the living reserves (sim/side.ts:1119-1132): a revive slot counts as a
+         * switch like any flagged slot, so exactly min(flagged, living reserves) actors switch */
+        need = requested < nr ? requested : nr;
     }
     *out_forced = forced;
     *out_need = need;

@@ -4075,7 +4075,12 @@ static duoforge_status dfi_run_revival_blessing(dfi_run *r, uint32_t user)
         any = any || (brought && b->sides[side].members[x].hp == 0u);
     }
     if (!any) {
-        dfi_emit_plain(r, DUOFORGE_EVENT_FAIL, user);
+        /* the reference's line: no target, then -fail and [still] (the move line is kept with no target) */
+        duoforge_event *mv = dfi_last_move(r);
+        if (mv != NULL) {
+            mv->other = (uint8_t)DUOFORGE_NO_POSITION; /* wide-operands-reviewed: a position or NO_POSITION, < 256 */
+        }
+        dfi_fail_still(r, user);
         return DUOFORGE_OK;
     }
     dfi_pos(b, user)->switch_flag = DFI_SWITCH_REVIVE_BLESSING;
@@ -7156,6 +7161,8 @@ static duoforge_status dfi_resume_pivot(dfi_run *r, const duoforge_side_choice r
                 fresh[k] = (dfi_queue_record){0u, (uint8_t)DFI_Q_SWITCH_IN, (uint8_t)s, (uint8_t)slot, 0u, 0u,
                                               sc->reserve};
                 k += 1u;
+            } else if (sc->kind == DUOFORGE_SLOT_PASS && b->sides[s].positions[slot].switch_flag == DFI_SWITCH_REVIVE_BLESSING) {
+                b->sides[s].positions[slot].switch_flag = 0u; /* a Revival Blessing that passes ends (choosePass with no living reserve) */
             } else if (((uint32_t)b->sides[s].requested_slots >> slot & 1u) == 0u) {
                 b->sides[s].positions[slot].switch_flag = 0u;
             }
