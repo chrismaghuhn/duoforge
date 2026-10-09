@@ -1414,7 +1414,7 @@ class ItemAbilityFeatures(unittest.TestCase):
 
     def test_the_rows_that_a_step_implements_by_id_are_listed(self):
         self.assertEqual(gen_closure.ENGINE_ROWS, {'items': ['focussash', 'floettite', 'psychicseed', 'electricseed', 'mistyseed', 'expertbelt',
-                                                           'ejectbutton', 'widelens', 'muscleband', 'wiseglasses', 'brightpowder', 'redcard'],
+                                                           'ejectbutton', 'widelens', 'muscleband', 'wiseglasses', 'brightpowder', 'redcard', 'lumberry', 'mentalherb'],
                                                    'abilities': ['rockhead', 'flowerveil', 'fairyaura', 'roughskin',
                                                                  'poisontouch', 'thermalexchange', 'stickyhold', 'trace',
                                                                  'levitate', 'sandrush', 'swiftswim', 'slushrush',
@@ -1425,7 +1425,8 @@ class ItemAbilityFeatures(unittest.TestCase):
                                                                  'galewings', 'raindish', 'friendguard', 'cursedbody', 'mirrorarmor', 'auraguard', 'hypercutter', 'scrappy', 'infiltrator', 'queenlymajesty', 'damp', 'sturdy',
                                                                  'snowcloak', 'sandveil', 'static', 'justified', 'limber',
                                                                  'solarpower', 'regenerator', 'toxicdebris', 'shadowtag', 'suctioncups', 'guarddog',
-                                                                 'steadfast', 'weakarmor', 'telepathy', 'voltabsorb', 'punkrock', 'moxie']})
+                                                                 'steadfast', 'weakarmor', 'telepathy', 'voltabsorb', 'punkrock', 'moxie',
+                                                                 'synchronize', 'oblivious']})
 
 
 class Bounds(unittest.TestCase):
@@ -1790,10 +1791,10 @@ class SmallRulesG35(unittest.TestCase):
 
     def sources(self, skip=(None, None)):
         abilities = []
-        for aid, facts in gen_closure.G34_ABILITY_FACTS + gen_closure.G35_ABILITY_FACTS + gen_closure.MEGA2_ABILITY_FACTS + gen_closure.G39_ABILITY_FACTS + gen_closure.G41_ABILITY_FACTS + gen_closure.G45_ABILITY_FACTS + gen_closure.G46_ABILITY_FACTS:
+        for aid, facts in gen_closure.G34_ABILITY_FACTS + gen_closure.G35_ABILITY_FACTS + gen_closure.MEGA2_ABILITY_FACTS + gen_closure.G39_ABILITY_FACTS + gen_closure.G41_ABILITY_FACTS + gen_closure.G45_ABILITY_FACTS + gen_closure.G46_ABILITY_FACTS + gen_closure.G47_ABILITY_FACTS:
             kept = [f for i, f in enumerate(facts) if (aid, i) != skip]
             abilities.append(entry(aid, *kept))
-        items = [entry(iid, *facts) for iid, facts in gen_closure.G34_ITEM_FACTS + gen_closure.G46_ITEM_FACTS]
+        items = [entry(iid, *facts) for iid, facts in gen_closure.G34_ITEM_FACTS + gen_closure.G46_ITEM_FACTS + gen_closure.G47_ITEM_FACTS]
         return (TextSource('data/abilities.ts', '\n'.join(abilities)), TextSource('data/mods/champions/abilities.ts', ''),
                 TextSource('data/items.ts', '\n'.join(items)), TextSource('data/mods/champions/items.ts', ''))
 
@@ -1874,10 +1875,10 @@ class SmallRulesG39(unittest.TestCase):
 
     def abilities(self, skip=(None, None)):
         out = []
-        for aid, facts in gen_closure.G34_ABILITY_FACTS + gen_closure.G35_ABILITY_FACTS + gen_closure.MEGA2_ABILITY_FACTS + gen_closure.G39_ABILITY_FACTS + gen_closure.G41_ABILITY_FACTS + gen_closure.G45_ABILITY_FACTS + gen_closure.G46_ABILITY_FACTS:
+        for aid, facts in gen_closure.G34_ABILITY_FACTS + gen_closure.G35_ABILITY_FACTS + gen_closure.MEGA2_ABILITY_FACTS + gen_closure.G39_ABILITY_FACTS + gen_closure.G41_ABILITY_FACTS + gen_closure.G45_ABILITY_FACTS + gen_closure.G46_ABILITY_FACTS + gen_closure.G47_ABILITY_FACTS:
             kept = [f for i, f in enumerate(facts) if (aid, i) != skip]
             out.append(entry(aid, *kept))
-        items = [entry(iid, *facts) for iid, facts in gen_closure.G34_ITEM_FACTS + gen_closure.G46_ITEM_FACTS]
+        items = [entry(iid, *facts) for iid, facts in gen_closure.G34_ITEM_FACTS + gen_closure.G46_ITEM_FACTS + gen_closure.G47_ITEM_FACTS]
         return (TextSource('data/abilities.ts', '\n'.join(out)), TextSource('data/mods/champions/abilities.ts', ''),
                 TextSource('data/items.ts', '\n'.join(items)), TextSource('data/mods/champions/items.ts', ''))
 

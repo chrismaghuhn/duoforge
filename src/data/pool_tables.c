@@ -1963,7 +1963,7 @@ const dfi_pool_item_data dfi_pool_items[DFI_POOL_ITEM_COUNT] = {
     {162u, 163u},
     /* Lucarionite Z -- data/items.ts:3509-3520, data/mods/champions/items.ts:554-557 */
     {162u, 164u},
-    /* Lum Berry -- data/items.ts:3537-3560  [unmodelled: callback onAfterSetStatus; callback onAfterSetStatusPriority; callback onEat; callback onUpdate] */
+    /* Lum Berry -- data/items.ts:3537-3560 */
     {DFI_FORME_NONE, DFI_FORME_NONE},
     /* Malamarite -- data/items.ts:3754-3765, data/mods/champions/items.ts:586-589 */
     {247u, 248u},
@@ -1975,7 +1975,7 @@ const dfi_pool_item_data dfi_pool_items[DFI_POOL_ITEM_COUNT] = {
     {125u, 126u},
     /* Meganiumite -- data/items.ts:3877-3888, data/mods/champions/items.ts:622-625 */
     {83u, 84u},
-    /* Mental Herb -- data/items.ts:3889-3926  [unmodelled: callback onUpdate; read by id in data/mods/champions/moves.ts] */
+    /* Mental Herb -- data/items.ts:3889-3926 */
     {DFI_FORME_NONE, DFI_FORME_NONE},
     /* Meowsticite -- data/items.ts:3927-3942, data/mods/champions/items.ts:626-629 */
     {240u, 241u},
@@ -2162,7 +2162,7 @@ const dfi_pool_item_data dfi_pool_items[DFI_POOL_ITEM_COUNT] = {
  *   multiscale -- data/abilities.ts:2760-2771
  *   mummy -- data/abilities.ts:2779-2793  [unmodelled: callback onDamagingHit; read by id in sim/pokemon.ts]
  *   naturalcure -- data/abilities.ts:2811-2893, data/mods/champions/abilities.ts:49-58  [unmodelled: callback onCheckShow; callback onSwitchOut; read by id in sim/battle.ts]
- *   oblivious -- data/abilities.ts:3008-3040  [unmodelled: callback onImmunity; callback onTryBoost; callback onTryHit; callback onUpdate]
+ *   oblivious -- data/abilities.ts:3008-3040
  *   opportunist -- data/abilities.ts:3041-3087  [unmodelled: callback onAnyAfterMega; callback onAnyAfterMove; callback onAnyAfterTerastallization; callback onAnySwitchIn; callback onAnySwitchInPriority; callback onEnd; callback onFoeAfterBoost; callback onResidual; callback onResidualOrder]
  *   overcoat -- data/abilities.ts:3108-3123
  *   owntempo -- data/abilities.ts:3144-3169  [unmodelled: callback onHit; callback onTryAddVolatile; callback onTryBoost; callback onUpdate]
@@ -2235,7 +2235,7 @@ const dfi_pool_item_data dfi_pool_items[DFI_POOL_ITEM_COUNT] = {
  *   sweetveil -- data/abilities.ts:4786-4807  [unmodelled: callback onAllySetStatus; callback onAllyTryAddVolatile]
  *   swiftswim -- data/abilities.ts:4808-4818
  *   symbiosis -- data/abilities.ts:4837-4856  [unmodelled: callback onAllyAfterUseItem]
- *   synchronize -- data/abilities.ts:4857-4871  [unmodelled: callback onAfterSetStatus; read by id in data/moves.ts]
+ *   synchronize -- data/abilities.ts:4857-4871
  *   tangledfeet -- data/abilities.ts:4890-4903  [unmodelled: callback onModifyAccuracy; callback onModifyAccuracyPriority]
  *   technician -- data/abilities.ts:4916-4930
  *   telepathy -- data/abilities.ts:4931-4942
@@ -2768,13 +2768,13 @@ const uint8_t dfi_pool_item_handler[DFI_POOL_ITEM_COUNT] = {
     [DFI_ITEM_LOPUNNITE] = DFI_HANDLER_NONE,
     [DFI_ITEM_LUCARIONITE] = DFI_HANDLER_NONE,
     [DFI_ITEM_LUCARIONITEZ] = DFI_HANDLER_NONE,
-    [DFI_ITEM_LUMBERRY] = DFI_HANDLER_UNMODELED,
+    [DFI_ITEM_LUMBERRY] = DFI_HANDLER_NONE,
     [DFI_ITEM_MALAMARITE] = DFI_HANDLER_NONE,
     [DFI_ITEM_MANECTITE] = DFI_HANDLER_NONE,
     [DFI_ITEM_MAWILITE] = DFI_HANDLER_NONE,
     [DFI_ITEM_MEDICHAMITE] = DFI_HANDLER_NONE,
     [DFI_ITEM_MEGANIUMITE] = DFI_HANDLER_NONE,
-    [DFI_ITEM_MENTALHERB] = DFI_HANDLER_UNMODELED,
+    [DFI_ITEM_MENTALHERB] = DFI_HANDLER_NONE,
     [DFI_ITEM_MEOWSTICITE] = DFI_HANDLER_NONE,
     [DFI_ITEM_METAGROSSITE] = DFI_HANDLER_NONE,
     [DFI_ITEM_METRONOME] = DFI_HANDLER_UNMODELED,
@@ -2941,7 +2941,7 @@ const uint8_t dfi_pool_ability_handler[DFI_POOL_ABILITY_COUNT] = {
     [DFI_ABILITY_MULTISCALE] = DFI_HANDLER_NONE,
     [DFI_ABILITY_MUMMY] = DFI_HANDLER_UNMODELED,
     [DFI_ABILITY_NATURALCURE] = DFI_HANDLER_UNMODELED,
-    [DFI_ABILITY_OBLIVIOUS] = DFI_HANDLER_UNMODELED,
+    [DFI_ABILITY_OBLIVIOUS] = DFI_HANDLER_NONE,
     [DFI_ABILITY_OPPORTUNIST] = DFI_HANDLER_UNMODELED,
     [DFI_ABILITY_OVERCOAT] = DFI_HANDLER_NONE,
     [DFI_ABILITY_OWNTEMPO] = DFI_HANDLER_UNMODELED,
@@ -3014,7 +3014,7 @@ const uint8_t dfi_pool_ability_handler[DFI_POOL_ABILITY_COUNT] = {
     [DFI_ABILITY_SWEETVEIL] = DFI_HANDLER_UNMODELED,
     [DFI_ABILITY_SWIFTSWIM] = DFI_HANDLER_NONE,
     [DFI_ABILITY_SYMBIOSIS] = DFI_HANDLER_UNMODELED,
-    [DFI_ABILITY_SYNCHRONIZE] = DFI_HANDLER_UNMODELED,
+    [DFI_ABILITY_SYNCHRONIZE] = DFI_HANDLER_NONE,
     [DFI_ABILITY_TANGLEDFEET] = DFI_HANDLER_UNMODELED,
     [DFI_ABILITY_TECHNICIAN] = DFI_HANDLER_NONE,
     [DFI_ABILITY_TELEPATHY] = DFI_HANDLER_NONE,
@@ -6905,8 +6905,6 @@ const char *const dfi_pool_item_unmodeled[DFI_POOL_ITEM_COUNT] = {
     [DFI_ITEM_LEEK] = "callback onModifyCritRatio",
     [DFI_ITEM_LEPPABERRY] = "callback onEat; callback onUpdate; read by id in data/items.ts; read by id in data/moves.ts; read by id in sim/pokemon.ts",
     [DFI_ITEM_LIGHTBALL] = "callback onModifyAtk; callback onModifyAtkPriority; callback onModifySpA; callback onModifySpAPriority",
-    [DFI_ITEM_LUMBERRY] = "callback onAfterSetStatus; callback onAfterSetStatusPriority; callback onEat; callback onUpdate",
-    [DFI_ITEM_MENTALHERB] = "callback onUpdate; read by id in data/mods/champions/moves.ts",
     [DFI_ITEM_METRONOME] = "callback onStart; condition block; read by id in data/moves.ts; read by id in sim/pokemon.ts",
     [DFI_ITEM_NORMALGEM] = "callback onSourceTryPrimaryHit",
     [DFI_ITEM_ORANBERRY] = "callback onEat; callback onTryEatItem; callback onUpdate; read by id in data/abilities.ts; read by id in sim/pokemon.ts",
@@ -6994,7 +6992,6 @@ const char *const dfi_pool_ability_unmodeled[DFI_POOL_ABILITY_COUNT] = {
     [DFI_ABILITY_MOTORDRIVE] = "callback onTryHit",
     [DFI_ABILITY_MUMMY] = "callback onDamagingHit; read by id in sim/pokemon.ts",
     [DFI_ABILITY_NATURALCURE] = "callback onCheckShow; callback onSwitchOut; read by id in sim/battle.ts",
-    [DFI_ABILITY_OBLIVIOUS] = "callback onImmunity; callback onTryBoost; callback onTryHit; callback onUpdate",
     [DFI_ABILITY_OPPORTUNIST] = "callback onAnyAfterMega; callback onAnyAfterMove; callback onAnyAfterTerastallization; callback onAnySwitchIn; callback onAnySwitchInPriority; callback onEnd; callback onFoeAfterBoost; callback onResidual; callback onResidualOrder",
     [DFI_ABILITY_OWNTEMPO] = "callback onHit; callback onTryAddVolatile; callback onTryBoost; callback onUpdate",
     [DFI_ABILITY_PARENTALBOND] = "callback onPrepareHit; callback onSourceModifySecondaries; read by id in data/mods/champions/scripts.ts; read by id in sim/battle-actions.ts",
@@ -7041,7 +7038,6 @@ const char *const dfi_pool_ability_unmodeled[DFI_POOL_ABILITY_COUNT] = {
     [DFI_ABILITY_SURGESURFER] = "callback onModifySpe",
     [DFI_ABILITY_SWEETVEIL] = "callback onAllySetStatus; callback onAllyTryAddVolatile",
     [DFI_ABILITY_SYMBIOSIS] = "callback onAllyAfterUseItem",
-    [DFI_ABILITY_SYNCHRONIZE] = "callback onAfterSetStatus; read by id in data/moves.ts",
     [DFI_ABILITY_TANGLEDFEET] = "callback onModifyAccuracy; callback onModifyAccuracyPriority",
     [DFI_ABILITY_THICKFAT] = "callback onSourceModifyAtk; callback onSourceModifyAtkPriority; callback onSourceModifySpA; callback onSourceModifySpAPriority",
     [DFI_ABILITY_UNAWARE] = "callback onAnyModifyBoost",
@@ -7055,10 +7051,10 @@ const char *const dfi_pool_ability_unmodeled[DFI_POOL_ABILITY_COUNT] = {
 };
 
 const uint8_t dfi_pool_table_hash[32] = {
-    0x7au, 0x2fu, 0xa9u, 0x69u, 0x74u, 0x36u, 0xf3u, 0x49u,
-    0x29u, 0x7fu, 0x24u, 0xb1u, 0xbeu, 0x7fu, 0xb1u, 0x2fu,
-    0x66u, 0xa8u, 0x28u, 0xabu, 0xd0u, 0xd5u, 0xaau, 0xc5u,
-    0xa8u, 0xe1u, 0x8bu, 0xd7u, 0x24u, 0xefu, 0x8cu, 0x20u,
+    0xefu, 0x03u, 0x33u, 0xc3u, 0xa2u, 0x54u, 0x55u, 0xcdu,
+    0x83u, 0x06u, 0x92u, 0x34u, 0xf5u, 0x41u, 0x6fu, 0xfau,
+    0x1cu, 0xb1u, 0xe7u, 0xbfu, 0x73u, 0x81u, 0xd1u, 0x2bu,
+    0x83u, 0x8eu, 0x94u, 0x65u, 0x46u, 0x84u, 0x91u, 0x57u,
 };
 
 static size_t dfi_pool_put_u16(uint8_t *out, size_t n, uint32_t v)
