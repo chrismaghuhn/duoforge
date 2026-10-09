@@ -689,6 +689,8 @@ def _run(args, pool, on_start, stop):
     def save_run():
         everyone = np.maximum(seen, -1)
         everyone[:args.envs] = env.episodes.astype(np.int64)
+        if book is not None:  # the ledger first: a crash between the two never leaves a state ahead of its ledger
+            book.save()
         runstate.save_state(out, {
             "params": params, "opt_leaves": jax.tree_util.tree_leaves(opt_state), "episodes_seen": everyone,
             "jax_key": np.asarray(key), "counters": {"update": update, "decisions": decisions, "episodes": episodes,
@@ -697,7 +699,7 @@ def _run(args, pool, on_start, stop):
             "data": _data_json(args.data_kind, context), "model": model_cfg,
             "features": list(layout[0]), "slot_features": list(layout[1]),
             "encoder": encoder, "ext_supported": ext_supported, "ids": ids, "train": train_config})
-        if book is not None:
+        if book is not None:  # and again with the state's own saving booked
             book.save()
 
     # The continuation control of stage 3 P1: a ledger, and each update and collection call on the default device
@@ -827,8 +829,8 @@ def _run(args, pool, on_start, stop):
             last = ((args.updates and update >= args.updates) or (args.minutes and elapsed_min >= args.minutes)
                     or stop.requested or budget)
             # A budget stop plays no final suites: whatever it played would be charged to the arm.
-            # A match run's ledger is training only: its end suites are never played (an update or minutes cap).
-            evaluating = update % args.eval_every == 0 or (last and not stop.requested and not budget and not match)
+            # A match run's ledger is training only: no suites, neither periodic nor at an update or minutes cap.
+            evaluating = not match and (update % args.eval_every == 0 or (last and not stop.requested and not budget))
             if update % args.snapshot_every == 0 or evaluating:
                 snapshots.save(update, params, snapshot_config(train_config, model_cfg, context, pool, update,
                                                                decisions, encoder, ext_supported, layout))

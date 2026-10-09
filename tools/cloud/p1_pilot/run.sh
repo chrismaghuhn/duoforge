@@ -756,7 +756,7 @@ control_stopped() {
     at=$(json_get "$last" update 2>/dev/null || json_get "$last" at_update 2>/dev/null || true)
     saved=$("$PY" -c 'import sys; from duoforge_learn import runstate; print(runstate.load_state(sys.argv[1])["counters"]["update"])' "$CONTROL")
     if [[ $at != "$saved" ]]; then
-        log "control: the log's last line is at update ${at:-?}, the saved state at $saved: resuming the state"
+        log "control: the log's last line is at update ${at:-?}, the saved state at $saved: resuming the state" >&2
         return 0
     fi
     json_get "$last" stopped 2>/dev/null || true

@@ -8,9 +8,9 @@ the update on the chosen device. Before each step:
     stop, never as matched;
   - matched: both axes at FLOOR (0.95) of the pilot or above: stop;
   - a device fits when its expected step keeps both axes at CEILING (1.05) or below; the expected step is the most
-    expensive one measured for that device: among the warm steps once the device ran in this process, among the
-    first steps (JIT, and a resumed process's start-up) before that; unmeasured: UNKNOWN_SHARE of each axis it
-    spends;
+    expensive one measured for that device: among the warm steps once the device ran in this process (its first
+    steps while it has no warm one yet), among the first steps (JIT, and a resumed process's start-up) before that;
+    unmeasured: UNKNOWN_SHARE of each axis it spends;
   - the GPU axis first: GPU updates until it reaches FLOOR, then CPU updates (a GPU update if no CPU update fits).
     GPU first because only a GPU update raises the GPU axis and its first update in a process costs a JIT (22 %
     of the GPU axis on the L4): after the first ~13 updates a restart only costs a CPU JIT (3 % of the CPU axis).
@@ -45,7 +45,7 @@ class Costs:
 
     def estimate(self, device):
         """The expected (cpu, gpu) of a step on device, None when no such step was measured."""
-        steps = (self.warm if device in self.used else self.first)[device]
+        steps = (self.warm if device in self.used else self.first)[device] or self.first[device]
         if not steps:
             return None
         return max(c for c, _ in steps), max(g for _, g in steps)

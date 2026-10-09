@@ -101,6 +101,11 @@ class ChooseTest(unittest.TestCase):
         self.assertEqual(bm.choose((1089.0, 10.45), (1000.0, 10.0), bm.Costs()), (None, "overshoot"))
         self.assertEqual(bm.choose((600.0, 10.6), (1000.0, 10.0), bm.Costs()), (None, "overshoot"))
 
+    def test_a_device_without_a_warm_step_is_estimated_by_its_first_step(self):
+        book = bm.Costs()
+        book.observe("default", 108.2, 13.2)  # the JIT step: an upper bound of the warm ones, not "unmeasured"
+        self.assertEqual(book.estimate("default"), (108.2, 13.2))
+
     def test_matched_at_the_floor(self):
         self.assertEqual(bm.choose((950.0, 9.5), (1000.0, 10.0), bm.Costs()), (None, "matched"))
 

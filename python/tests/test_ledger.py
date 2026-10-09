@@ -183,11 +183,11 @@ class ControlTest(unittest.TestCase):
         self.assertEqual([r["match"]["next"] for r in rows], ["default", "default"])
         self.assertTrue(all(0.999 < r["lr_scale"] <= 1.0 for r in rows), [r["lr_scale"] for r in rows])
 
-    def test_match_plays_no_final_suites_at_an_update_cap(self):
-        # A match run's ledger holds training only: a stop by --updates (or --minutes) plays no end suites either.
+    def test_match_plays_no_suites(self):
+        # A match run's ledger holds training only: no periodic suites, and no end suites at an --updates cap.
         self.assertEqual(_train(["--out", self.out, "--ledger", self.book, "--update-gpu-share", "match",
-                                 "--stop-cpu-core-seconds", "1e9", "--stop-gpu-seconds", "1e9", "--updates", "1"]
-                                + _SMALL), 0)
+                                 "--stop-cpu-core-seconds", "1e9", "--stop-gpu-seconds", "1e9", "--updates", "1",
+                                 "--eval-every", "1"] + _SMALL), 0)
         rows = _log(self.out)
         self.assertEqual([r["update"] for r in rows], [1])
         self.assertNotIn("vs_random", rows[0])
