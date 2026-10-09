@@ -88,6 +88,7 @@ typedef struct dfi_move_slot {
 #define DFI_SWITCH_FLIP_TURN 4u /* Flip Turn (the TEAM_C and POOL kinds) */
 #define DFI_SWITCH_UTURN 5u     /* U-turn (the POOL kinds only), step G5 */
 #define DFI_SWITCH_VOLT_SWITCH 6u /* Volt Switch (the POOL kinds only), step G32 */
+#define DFI_SWITCH_REVIVE_BLESSING 7u /* Revival Blessing (the POOL kinds only), decision 0025 item 6: a REVIVE answer */
 #define DFI_REVEALED_ITEM_CONSUMED 1u
 #define DFI_REVEALED_MEGA 2u
 #define DFI_MEMBER_STAT_COUNT 5u  /* atk, def, spa, spd, spe (HP is hp_max) */
@@ -102,6 +103,8 @@ typedef struct dfi_move_slot {
 #define DFI_Q_MEGA 4u       /* order class 104 */
 #define DFI_Q_MOVE 5u       /* order class 200 */
 #define DFI_Q_RESIDUAL 6u   /* order class 300 */
+#define DFI_Q_REVIVE 7u     /* Revival Blessing's revive, order class 6 (decision 0025 item 6) */
+#define DFI_Q_INSTASWITCH 8u /* an instaswitch, appended to the queue (addChoice), order class 3 */
 
 typedef struct dfi_member {
     uint16_t species_id; /* SYNTHETIC: caller id; later the base forme id */

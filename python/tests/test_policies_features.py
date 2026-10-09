@@ -414,7 +414,7 @@ class PoliciesFeaturesTest(unittest.TestCase):
             part = features.encode(ob, d)[0]
             self.assertEqual(features.as_encoder(part, ob, 1)[_OWN_PRESENT].tolist(), [0.0] + [1.0] * 5)
             self.assertEqual(part[_OWN_PRESENT].tolist(), [1.0] * 6)  # one record, untouched
-            for bad in (0, 5, "2", None, True, 1.0):  # only ints count: True == 1, 1.0 == 1
+            for bad in (0, 6, "2", None, True, 1.0):  # only ints count: True == 1, 1.0 == 1; 6 is past ENCODER
                 with self.assertRaisesRegex(ValueError, "encoder"):
                     features.as_encoder(part, ob, bad)
             for odd in (part[:-1], part.astype(np.float64), np.stack([part, part])):

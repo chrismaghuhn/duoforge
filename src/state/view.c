@@ -14,6 +14,7 @@
 #include "codec/state_codec.h"
 #include "core/bytes.h"
 #include "data/closure_tables.h"
+#include "data/pool_tables.h"
 #include "rng/pcg32.h"
 #include "state/battle_internal.h"
 #include "state/closure_member.h"
@@ -245,6 +246,23 @@ static duoforge_status dfi_view_visible_causes(const duoforge_context *ctx, cons
 }
 
 /* The counter refusal of duoforge_battle_public: E_UNSUPPORTED while the one predicate names a cause. */
+/* decision 0023 (HauptSession, the PP proxy): the record keeps no revive history, so a foe that may have revived is seen
+ * through its Revival Blessing slot: Revival Blessing has PP 1 and a foe's PP is derived from the moves it used, so a
+ * derived PP of 0 means the move was used once, revive or not. While any foe member shows that, the record refuses (the
+ * generic cause: no cause bit, the causes mask stays 0). It depends only on the observation. Own slots never count. */
+static bool dfi_view_foe_revive_proxy(const duoforge_observation *ob, uint32_t foe)
+{
+    for (uint32_t m = 0u; m < DUOFORGE_MAX_ROSTER; ++m) {
+        const duoforge_member_view *v = &ob->sides[foe].members[m];
+        for (uint32_t k = 0u; k < DUOFORGE_MAX_MOVE_SLOTS && k < v->move_count; ++k) {
+            if (v->move_ids[k] == DFI_MOVE_REVIVALBLESSING && v->pp[k] == 0u) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
 static duoforge_status dfi_view_counter_support(const duoforge_context *ctx, const duoforge_battle *b, uint32_t player)
 {
     uint32_t causes = 0u;
@@ -252,7 +270,15 @@ static duoforge_status dfi_view_counter_support(const duoforge_context *ctx, con
     if (st != DUOFORGE_OK) {
         return st;
     }
-    return causes == 0u ? DUOFORGE_OK : DUOFORGE_E_UNSUPPORTED;
+    if (causes != 0u) {
+        return DUOFORGE_E_UNSUPPORTED;
+    }
+    duoforge_observation observation;
+    const duoforge_status so = duoforge_battle_observe(ctx, b, player, &observation);
+    if (so != DUOFORGE_OK) {
+        return so;
+    }
+    return dfi_view_foe_revive_proxy(&observation, 1u - (player & 1u)) ? DUOFORGE_E_UNSUPPORTED : DUOFORGE_OK;
 }
 
 /* party_order in a public view (step G46; decision 0023): the foe's bench entries (positions 2 and up) are the order of the

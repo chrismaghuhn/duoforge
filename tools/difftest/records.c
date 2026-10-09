@@ -432,8 +432,15 @@ static bool command_fits(dfr_reader *r, const df_conf_cmd *c, uint32_t member_co
             return false;
         }
         return true;
+    case DUOFORGE_SLOT_REVIVE:
+        if (c->move_slot != 0u || c->target != 0u || c->mega != 0u || c->reserve >= member_count) {
+            fail(r, "record C: a revive command with the roster index %u of %u members or with other fields than a revive",
+                 (unsigned)c->reserve, (unsigned)member_count);
+            return false;
+        }
+        return true;
     default:
-        fail(r, "record C: slot command kind %u is not 0 to 3", (unsigned)c->kind);
+        fail(r, "record C: slot command kind %u is not 0 to 4", (unsigned)c->kind);
         return false;
     }
 }

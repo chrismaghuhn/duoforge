@@ -23,6 +23,7 @@ import json
 import os
 import re
 import shutil
+import subprocess
 import sys
 import tempfile
 import threading
@@ -1290,6 +1291,29 @@ class Lock(unittest.TestCase):
                        lock.replace('\\', '/')]  # the child exits with 75 only while the lock is held
             with mock.patch.dict(os.environ, {'DUOFORGE_MACHINE_LOCK': lock}):
                 self.assertEqual(rnd.run_process(command), rnd.PAUSED_STATUS)
+            self.assertFalse(os.path.exists(lock))
+
+    def test_a_chunk_that_waits_names_the_holder_and_the_minutes_waited_every_five_minutes(self):
+        # The script is sourced with two stand-ins: sleep counts the rounds (15 s each) and the holder releases the lock
+        # in the 21st, and the holder's pid is alive without asking tasklist (one call is about a second on Windows).
+        with tempfile.TemporaryDirectory() as tmp:
+            lock = os.path.join(tmp, 'lock')
+            os.mkdir(lock)
+            with io.open(os.path.join(lock, 'owner'), 'w', encoding='ascii', newline='\n') as f:
+                f.write('4242 local_ci other-checkout since 2026-10-09 12:00:00\n')
+            script = os.path.join(ROOT, 'tools', 'ci', 'machine_lock.sh').replace('\\', '/')
+            shell = ('source "%s"; machine_lock_alive() { [ "$1" = 4242 ]; }; n=0; '
+                     'sleep() { n=$((n + 1)); if [ $n -eq 21 ]; then rm -rf "$MACHINE_LOCK"; fi; }; '
+                     'machine_lock_acquire fuzz && cat "$MACHINE_LOCK/owner" && machine_lock_release' % script)
+            done = subprocess.run([rnd.find_bash(), '-c', shell], capture_output=True, text=True, timeout=60,
+                                  env=dict(os.environ, DUOFORGE_MACHINE_LOCK=lock.replace('\\', '/')))
+            self.assertEqual(done.returncode, 0, done.stderr)
+            holder = '4242 local_ci other-checkout since 2026-10-09 12:00:00'
+            self.assertEqual(done.stderr.splitlines(), [
+                'machine lock: waiting for %s (0 min so far)' % holder,  # at once: who holds it and since when
+                'machine lock: waiting for %s (5 min so far)' % holder,  # then every 300 s: how long this one waited
+            ])
+            self.assertRegex(done.stdout, r'^\d+ fuzz since \d{4}-\d\d-\d\d \d\d:\d\d:\d\d\n$')  # then it is ours
             self.assertFalse(os.path.exists(lock))
 
 

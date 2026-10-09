@@ -14,7 +14,8 @@
  *     traces (one hit per public -damage line of a move's target, a switch or a faint clears the position; -sidestart and
  *     -sideend of the hazards), by a scratch helper that is not committed;
  *   - the bounds of the field: 6 is valid and 7 is refused by the invariants (Rage Fist's power is capped at 6 hits);
- *   - the marks: the four moves are supported, Quick Guard is not (its block line needs a new BLOCKED detail).
+ *   - the marks: the four moves are supported; Quick Guard was dropped here (its block line needs a new BLOCKED detail) and
+ *     is marked by step G54 with DUOFORGE_BLOCK_QUICK_GUARD (decision 0029).
  */
 #include <stdio.h>
 #include <string.h>
@@ -37,12 +38,12 @@ static void check_facts(df_test *t)
     DF_CHECK(t, dfi_support.moves[DFI_MOVE_STONEAXE] != 0u);
     DF_CHECK(t, dfi_support.moves[DFI_MOVE_CEASELESSEDGE] != 0u);
     DF_CHECK(t, dfi_support.moves[DFI_MOVE_POPULATIONBOMB] != 0u);
-    DF_CHECK(t, dfi_support.moves[DFI_MOVE_QUICKGUARD] == 0u); /* the drop: the block line needs a new BLOCKED detail */
+    DF_CHECK(t, dfi_support.moves[DFI_MOVE_QUICKGUARD] != 0u); /* marked by step G54 (decision 0029), not by this step */
     DF_CHECK_EQ_U64(t, dfi_pool_moves[DFI_MOVE_RAGEFIST].special, DFI_SPECIAL_RAGE_FIST);
     DF_CHECK_EQ_U64(t, dfi_pool_moves[DFI_MOVE_STONEAXE].special, DFI_SPECIAL_STONE_AXE);
     DF_CHECK_EQ_U64(t, dfi_pool_moves[DFI_MOVE_CEASELESSEDGE].special, DFI_SPECIAL_CEASELESS_EDGE);
     DF_CHECK_EQ_U64(t, dfi_pool_moves[DFI_MOVE_POPULATIONBOMB].special, DFI_SPECIAL_MULTI_HIT_10);
-    DF_CHECK_EQ_U64(t, dfi_pool_moves[DFI_MOVE_QUICKGUARD].special, DFI_SPECIAL_UNMODELED);
+    DF_CHECK_EQ_U64(t, dfi_pool_moves[DFI_MOVE_QUICKGUARD].special, DFI_SPECIAL_QUICK_GUARD); /* step G54 */
     /* Population Bomb: ten hits, and the accuracy 90 that the later-hit proof covers (combat/multiaccuracy.h) */
     DF_CHECK(t, dfi_pool_move_static_hits[DFI_MOVE_POPULATIONBOMB][0] == 10u && dfi_pool_move_static_hits[DFI_MOVE_POPULATIONBOMB][1] == 10u);
     DF_CHECK_EQ_U64(t, dfi_pool_moves[DFI_MOVE_POPULATIONBOMB].accuracy, 90u);

@@ -97,8 +97,10 @@ typedef struct duoforge_hypothesis {
 /* The causes of a public refusal that the player's view decides (decision 0023; decision 0026 section 4). Bits of
  * duoforge_battle_public_causes' mask: a visible sleep (a member of either side), a visible confusion (a position of either
  * side), and ILLUSION_POSSIBLE, which stays 0 until Illusion is implemented. duoforge_battle_public refuses (E_UNSUPPORTED)
- * exactly while the mask is nonzero; a mask of 0 with a refusing duoforge_battle_public means another refusal (a PIVOT, sealed
- * commands, a foe Substitute, a partial trap, a locked move). The mask depends only on the player's view. */
+ * while the mask is nonzero, and also while a foe's Revival Blessing slot shows derived PP 0 (decision 0023's PP proxy,
+ * decision 0025 item 11): that refusal has no cause bit, so the mask is 0 for it. A mask of 0 with a refusing
+ * duoforge_battle_public therefore means another refusal (a PIVOT, sealed commands, a foe Substitute, a partial trap, a
+ * locked move, or the Revival Blessing proxy). The mask depends only on the player's view. */
 #define DUOFORGE_PUBLIC_CAUSE_VISIBLE_SLEEP 1u
 #define DUOFORGE_PUBLIC_CAUSE_VISIBLE_CONFUSION 2u
 #define DUOFORGE_PUBLIC_CAUSE_ILLUSION_POSSIBLE 4u

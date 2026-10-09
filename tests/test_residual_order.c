@@ -17,8 +17,15 @@
  *  - flagged lists are not vacuous: the brute force finds a list that is flagged and whose outcome does change;
  *  - fixed examples: Encore and Throat Chop on one Pokemon with Leftovers tied (an order before the volatiles: fine),
  *    Encore tied between two Pokemon that each hold two volatiles of different keys (flagged), one key only (fine).
+ *
+ * The random lists are TRIALS lists; trial i draws from its own generator (seeded from i), so the trials split into
+ * shards that ctest runs as separate tests (`<shard> <count>` on the command line, tests/CMakeLists.txt; no arguments:
+ * all of them). Every shard checks the non-vacuity bounds below on its own lists. Most of the time goes into the
+ * engine's exact test, dfi_residual_order_ambiguous: under ASan+UBSan (Debug) all trials in one test took 125 to 177 s
+ * on a loaded machine (2026-10-09), about 60 percent of it in that test, the rest in the brute force below.
  */
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include "combat/residual_order.h"
@@ -27,6 +34,7 @@
 #define MAX_LIST 64u
 #define MAX_MONS 4u
 #define MAX_VOL 4u
+#define TRIALS 40000u
 
 typedef struct rng {
     uint64_t s;
@@ -36,6 +44,15 @@ static uint32_t rng_next(rng *g)
 {
     g->s = g->s * 6364136223846793005ull + 1442695040888963407ull;
     return (uint32_t)(g->s >> 33);
+}
+
+/* The generator of one trial: splitmix64 of the trial's index, so that a trial's list does not depend on the others. */
+static rng trial_rng(uint32_t trial)
+{
+    uint64_t z = 0x5EEDC0DEull + (uint64_t)trial * 0x9E3779B97F4A7C15ull;
+    z = (z ^ (z >> 30)) * 0xBF58476D1CE4E5B9ull;
+    z = (z ^ (z >> 27)) * 0x94D049BB133111EBull;
+    return (rng){z ^ (z >> 31)};
 }
 
 /* The reference's selection sort with shuffles. The draws are taken from `values` in order. */
@@ -171,24 +188,33 @@ static void scramble(rng *g, shape *s)
     }
 }
 
-static bool same_outcome(const shape *a, const shape *b, const uint32_t *values)
+/* The outcome of a list for the draws `values`. */
+static uint32_t sorted_outcome(const shape *s, const uint32_t *values, uint32_t *out)
 {
-    dfi_residual_entry la[MAX_LIST];
-    dfi_residual_entry lb[MAX_LIST];
-    memcpy(la, a->list, sizeof(dfi_residual_entry) * a->n);
-    memcpy(lb, b->list, sizeof(dfi_residual_entry) * b->n);
-    model_sort(la, a->n, values);
-    model_sort(lb, b->n, values);
-    uint32_t oa[MAX_LIST];
-    uint32_t ob[MAX_LIST];
-    const uint32_t na = outcome(la, a->n, oa);
-    const uint32_t nb = outcome(lb, b->n, ob);
-    return na == nb && memcmp(oa, ob, sizeof(uint32_t) * na) == 0;
+    dfi_residual_entry l[MAX_LIST];
+    memcpy(l, s->list, sizeof(dfi_residual_entry) * s->n);
+    model_sort(l, s->n, values);
+    return outcome(l, s->n, out);
 }
 
-/* Every value of every draw (an odometer over the ranges that the model recorded for these values) and a number of
- * random orders of the volatiles: does the outcome ever differ from the list as it is? Returns false when there are too
- * many draws to try all values. */
+/* Two lists with the same entries (every field) in the same order: model_sort and outcome read nothing else, so their
+ * outcomes are the same for every value of the draws. */
+static bool same_list(const shape *a, const shape *b)
+{
+    if (a->n != b->n) {
+        return false;
+    }
+    for (uint32_t i = 0u; i < a->n; ++i) {
+        const dfi_residual_entry *x = &a->list[i];
+        const dfi_residual_entry *y = &b->list[i];
+        if (x->kind != y->kind || x->flat != y->flat || x->order != y->order || x->speed != y->speed ||
+            x->sub_order != y->sub_order || x->callback != y->callback) {
+            return false;
+        }
+    }
+    return true;
+}
+
 /* The number of orders of the volatiles of the Pokemon with two keys or more (equal entries counted once), saturating. */
 static uint32_t arrangements(const shape *s)
 {
@@ -222,6 +248,9 @@ static uint32_t arrangements(const shape *s)
     return total;
 }
 
+/* Every value of every draw (an odometer over the ranges that the model recorded for these values) and a number of
+ * random orders of the volatiles: does the outcome ever differ from the list as it is? Returns false when there are too
+ * many draws to try all values. */
 static bool differs_somewhere(rng *g, const shape *base, bool *tried_all)
 {
     uint32_t values[MAX_LIST] = {0};
@@ -240,12 +269,41 @@ static bool differs_somewhere(rng *g, const shape *base, bool *tried_all)
         }
     }
     *tried_all = arrangements(base) <= 1024u; /* more orders than that and the engine's test gives up (refuses) */
+    /* The outcomes of the list as it is, for every value of the draws, computed once and compared with each order. */
+    static uint32_t base_out[4096u][MAX_LIST];
+    static uint32_t base_count[4096u];
+    memset(values, 0, sizeof values);
+    for (uint32_t c = 0u; c < combos; ++c) {
+        base_count[c] = sorted_outcome(base, values, base_out[c]);
+        for (uint32_t k = 0u; k < draws; ++k) {
+            values[k] += 1u;
+            if (values[k] < ranges[k]) {
+                break;
+            }
+            values[k] = 0u;
+        }
+    }
+    /* The orders tried so far, the list as it is first: an order with the same entries as one of them has the same
+     * outcomes, already compared (and equal), and is skipped. Few lists have many orders, so most of the 60 repeat. */
+    static shape seen[61];
+    uint32_t seen_count = 0u;
+    seen[seen_count++] = *base;
     for (uint32_t rep = 0u; rep < 60u; ++rep) {
         shape other = *base;
         scramble(g, &other);
+        bool repeated = false;
+        for (uint32_t i = 0u; i < seen_count && !repeated; ++i) {
+            repeated = same_list(&seen[i], &other);
+        }
+        if (repeated) {
+            continue;
+        }
+        seen[seen_count++] = other;
         memset(values, 0, sizeof values);
         for (uint32_t c = 0u; c < combos; ++c) {
-            if (!same_outcome(base, &other, values)) {
+            uint32_t out[MAX_LIST];
+            const uint32_t count = sorted_outcome(&other, values, out);
+            if (count != base_count[c] || memcmp(out, base_out[c], sizeof(uint32_t) * count) != 0) {
                 return true;
             }
             for (uint32_t k = 0u; k < draws; ++k) {
@@ -260,15 +318,16 @@ static bool differs_somewhere(rng *g, const shape *base, bool *tried_all)
     return false;
 }
 
-static void test_random_lists(df_test *t)
+/* The trials [first, end). */
+static void test_random_lists(df_test *t, uint32_t first, uint32_t end)
 {
-    rng g = {0x5EEDC0DEull};
     unsigned long may_matter = 0u;
     unsigned long refused = 0u;
     unsigned long cleared_by_exact = 0u; /* the cheap test cannot clear them, the exact one does */
     unsigned long refused_but_no_difference = 0u;
     unsigned long unrefused_multi = 0u; /* unrefused lists with a Pokemon that has volatiles of two keys */
-    for (uint32_t trial = 0u; trial < 40000u; ++trial) {
+    for (uint32_t trial = first; trial < end; ++trial) {
+        rng g = trial_rng(trial);
         shape base;
         random_shape(&g, &base, rng_next(&g) % 4u == 0u, rng_next(&g) % 4u == 0u);
         const bool may = dfi_residual_order_may_matter(base.list, base.n);
@@ -297,7 +356,8 @@ static void test_random_lists(df_test *t)
         }
     }
     /* The brute force is not vacuous: lists that the cheap test flags exist, the exact test clears some of them and
-     * refuses others, and unrefused lists with volatiles of two keys (which the argument says are fine) are many. */
+     * refuses others, and unrefused lists with volatiles of two keys (which the argument says are fine) are many. The
+     * bounds hold for every shard of 10000 trials or more (about a quarter of them is flagged by the cheap test). */
     DF_CHECK(t, may_matter > 100u);
     DF_CHECK(t, refused > 10u);
     DF_CHECK(t, cleared_by_exact > 10u);
@@ -402,11 +462,31 @@ static void test_examples(df_test *t)
                     2u);
 }
 
-int main(void)
+/* A shard argument: a decimal number below `limit`, nothing else. */
+static bool parse_shard_arg(const char *text, uint32_t limit, uint32_t *out)
 {
+    char *end = NULL;
+    const unsigned long v = strtoul(text, &end, 10);
+    if (text[0] < '0' || text[0] > '9' || *end != '\0' || v >= limit) {
+        return false;
+    }
+    *out = (uint32_t)v;
+    return true;
+}
+
+int main(int argc, char **argv)
+{
+    uint32_t shard = 0u;
+    uint32_t count = 1u;
+    if (argc != 1 && (argc != 3 || !parse_shard_arg(argv[2], TRIALS / 10000u + 1u, &count) || count == 0u ||
+                      !parse_shard_arg(argv[1], count, &shard))) {
+        fprintf(stderr, "usage: %s [<shard> <count>] (count 1 to %u, shard below count)\n", argv[0], TRIALS / 10000u);
+        return 2;
+    }
     df_test t;
     df_test_begin(&t, "duoforge.combat.residual_order");
     test_examples(&t);
-    test_random_lists(&t);
+    test_random_lists(&t, (uint32_t)((uint64_t)TRIALS * shard / count),
+                      (uint32_t)((uint64_t)TRIALS * (shard + 1u) / count));
     return df_test_end(&t);
 }

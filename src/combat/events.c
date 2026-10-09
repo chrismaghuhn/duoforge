@@ -215,6 +215,20 @@ bool dfi_events_fold_knowledge(const struct duoforge_battle *before, struct duof
                         (uint8_t)((uint32_t)viewer->knowledge[from].revealed | DFI_REVEALED_ITEM_CONSUMED); /* wide-operands-reviewed */
                 }
             }
+            /* Revival Blessing (decision 0025 item 9): the revived member is named by its roster index in `id`, not by a
+             * position. On the foe's side its line is a percentage (the projection above), which is the member's HP display;
+             * on the viewer's own side it tells the viewer nothing new. */
+            if (e.kind == DUOFORGE_EVENT_REVIVE) {
+                if (i >= first && e.position < 2u * DUOFORGE_ACTIVE_PER_SIDE && (uint32_t)e.position / 2u == foe &&
+                    e.id < DUOFORGE_MAX_ROSTER && e.id < fs->member_count) {
+                    if (e.hp_kind != DUOFORGE_HP_PERCENT) {
+                        return false; /* never a silent 0 */
+                    }
+                    viewer->knowledge[e.id].hp_percent = (uint8_t)e.hp; /* the percent display: <= 100 */
+                    viewer->knowledge[e.id].hp_flag = e.hp_flag;
+                }
+                continue;
+            }
             if (e.position >= 2u * DUOFORGE_ACTIVE_PER_SIDE || (uint32_t)e.position / 2u != foe) {
                 continue;
             }

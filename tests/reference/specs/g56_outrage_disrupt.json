@@ -1,0 +1,38 @@
+{
+ "name": "g56_outrage_disrupt",
+ "purpose": "Garchomp Outrage hits, then its locked turn is stopped by the target's Protect: the lock is not restarted and it ends by onAfterMove",
+ "data": "pool",
+ "format": "gen9championsvgc2026regmc",
+ "seed": "sodium,000000000000000000000000000000000000000000000000000000000000000d",
+ "teams": [
+  "Gyarados (M) @ Life Orb\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 2 Def / 32 Spe\nJolly Nature\n- Roar\n- Protect\n\nGarchomp (M) @ Black Glasses\nAbility: Rough Skin\nLevel: 50\nEVs: 2 HP / 32 Atk / 32 Spe\nJolly Nature\n- Outrage\n- Dragon Claw\n- Protect\n\nKingambit (M) @ Focus Sash\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Sucker Punch\n- Protect\n\nGholdengo @ Rocky Helmet\nAbility: Good as Gold\nLevel: 50\nEVs: 17 HP / 2 Def / 17 SpA / 16 SpD / 14 Spe\nModest Nature\n- Make It Rain\n- Protect\n\nStaraptor (F) @ Eject Button\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 2 SpD / 32 Spe\nJolly Nature\n- Whirlwind\n- Brave Bird\n- Protect\n\nCeruledge (M) @ Grassy Seed\nAbility: Flash Fire\nLevel: 50\nEVs: 31 HP / 7 Atk / 24 Def / 3 SpD / 1 Spe\nAdamant Nature\n- Protect",
+  "Raichu (F) @ Life Orb\nAbility: Lightning Rod\nLevel: 50\nEVs: 29 HP / 5 Def / 32 Spe\nTimid Nature\n- Thunderbolt\n- Protect\n\nGyarados (M) @ Leftovers\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 2 Def / 32 Spe\nJolly Nature\n- Roar\n- Protect\n\nIndeedee-F (F) @ Rocky Helmet\nAbility: Psychic Surge\nLevel: 50\nEVs: 32 HP / 32 Def / 2 SpD\nRelaxed Nature\n- Protect\n\nCeruledge (M) @ Grassy Seed\nAbility: Flash Fire\nLevel: 50\nEVs: 31 HP / 7 Atk / 24 Def / 3 SpD / 1 Spe\nAdamant Nature\n- Protect\n\nGholdengo @ Focus Sash\nAbility: Good as Gold\nLevel: 50\nEVs: 17 HP / 2 Def / 17 SpA / 16 SpD / 14 Spe\nModest Nature\n- Make It Rain\n- Protect\n\nKingambit (M) @ Black Glasses\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Sucker Punch\n- Protect"
+ ],
+ "plan": {
+  "p1": [
+   "move 1 1, move 1",
+   "move 1 1, move 1",
+   "move 1 1, move 1",
+   "move 1 1, move 1",
+   "move 1 1, move 3 1",
+   "move 1 1, move 1",
+   "move 1 1, move 1",
+   "move 1 1, move 2",
+   "move 2, move 1",
+   "move 1 1, move 1"
+  ],
+  "p2": [
+   "move 1 1, move 2 1",
+   "move 1 1, move 1",
+   "move 1 1, move 1",
+   "move 1 1, move 1",
+   "move 1 1, move 1",
+   "move 1, move 1",
+   "move 1 1, move 4 1",
+   "move 1 1, move 1",
+   "move 1, move 1",
+   "move 4 1, move 1"
+  ],
+  "max_steps": 8
+ }
+}

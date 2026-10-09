@@ -162,7 +162,12 @@ duoforge_add_test(NAME duoforge.state.pool_tail SOURCES test_pool_tail.c WHITEBO
 duoforge_add_test(NAME duoforge.state.pool_g8 SOURCES test_pool_g8.c WHITEBOX TIMEOUT 60)
 duoforge_add_test(NAME duoforge.state.ability_now SOURCES test_ability_now.c WHITEBOX TIMEOUT 60)
 # The residual handler list: when the order of a Pokemon's volatiles (not stored) cannot change the outcome (brute force).
-duoforge_add_test(NAME duoforge.combat.residual_order SOURCES test_residual_order.c WHITEBOX TIMEOUT 120)
+# Its 40000 random lists run in four shards (the trials [i * 10000, (i + 1) * 10000)): in one test they took 125 to
+# 177 s under ASan+UBSan (Debug, a loaded machine, 2026-10-09), over the 120 s limit; one shard takes 13 to 28 s there.
+foreach(_shard RANGE 3)
+    duoforge_add_test(NAME duoforge.combat.residual_order.${_shard} SOURCES test_residual_order.c WHITEBOX TIMEOUT 120
+        ARGS ${_shard} 4)
+endforeach()
 # Step G7: Wide Guard in the tail, the stall counter and the POOL view extension.
 duoforge_add_test(NAME duoforge.state.pool_g7 SOURCES test_pool_g7.c WHITEBOX TIMEOUT 60)
 # Sandstorm and Snowscape (the weather step): the view of the weather battles against the protocol lines, the sources of
@@ -201,6 +206,7 @@ duoforge_add_test(NAME duoforge.state.pool_g37 SOURCES test_pool_g37.c WHITEBOX 
 # Steel Roller, Clangorous Soul, Brick Break): the marks, the flag bits and the commutation test of the ModifyDamage chain.
 duoforge_add_test(NAME duoforge.state.pool_g33 SOURCES test_pool_g33.c WHITEBOX TIMEOUT 60)
 duoforge_add_test(NAME duoforge.state.pool_g48 SOURCES test_pool_g48.c WHITEBOX TIMEOUT 60)
+duoforge_add_test(NAME duoforge.state.pool_g52 SOURCES test_pool_g52.c WHITEBOX TIMEOUT 60)
 duoforge_add_test(NAME duoforge.state.pool_g50 SOURCES test_pool_g50.c WHITEBOX TIMEOUT 60)
 duoforge_add_test(NAME duoforge.state.pool_g34 SOURCES test_pool_g34.c WHITEBOX TIMEOUT 60)
 duoforge_add_test(NAME duoforge.state.pool_g41 SOURCES test_pool_g41.c WHITEBOX TIMEOUT 60)
@@ -210,6 +216,7 @@ duoforge_add_test(NAME duoforge.state.pool_g57 SOURCES test_pool_g57.c WHITEBOX 
 # volatile (the pivot boundary inside its turn), the view bits (40 supported, 41 not), the unclassified refusal.
 duoforge_add_test(NAME duoforge.state.pool_g42 SOURCES test_pool_g42.c WHITEBOX TIMEOUT 60)
 duoforge_add_test(NAME duoforge.state.pool_g44 SOURCES test_pool_g44.c WHITEBOX TIMEOUT 60)
+duoforge_add_test(NAME duoforge.state.pool_g54 SOURCES test_pool_g54.c WHITEBOX TIMEOUT 60)
 duoforge_add_test(NAME duoforge.state.pool_g46_party SOURCES test_pool_g46_party.c WHITEBOX TIMEOUT 120)
 # Step G35: ten data rows, Rain Dish and Friend Guard: the marks, the flags, Gigaton Hammer left out, and Friend Guard in the
 # commutation test and the refusal of the ModifyDamage chain.
@@ -244,8 +251,8 @@ foreach(_gen IN ITEMS
         "closure_tables.c=490de42298e34cfd38192d979fd022367bf53693a5fa1855f1cc6ad034d8450a"
         "extended_tables.h=b2abef243fcbfdd87654940076b9fe2fe80b117d74893a7567741f26b9075a7d"
         "extended_tables.c=9e736fa467713283418c4edf8f56b8d844452e596ba422adbd52483d20f7cc17"
-        "pool_tables.h=400b0b0a2d54ba6b513cecff25e53f7a3980730375d7109dc1e731c8da16aa3f"
-        "pool_tables.c=5536415736eac66b95c6bf02056f7750e8d62014debd05985c30699329da00b0")
+        "pool_tables.h=8f1d3812b8d96bf9a668c96388c199081b38878cc15705913a53b4c3baa64fa5"
+        "pool_tables.c=98d37babc8d9ae37d3102cb4a1c6d590f8d36b362588ded9defda79c0c1d8707")
     string(REPLACE "=" ";" _parts "${_gen}")
     list(GET _parts 0 _file)
     list(GET _parts 1 _expected)
@@ -656,7 +663,7 @@ endif()
 # The Python package (M7, decision 0013), run with DUOFORGE_PYTHON; without
 # an interpreter each test reports skipped instead of passing silently.
 
-foreach(_py layout lib equivalence recipes policies_features example learn_numpy live_unit live_client replay_unit openings book expert_data expert_teacher expert_contract expert_eval book_preview preview_search data batch_setups learn_v2_numpy teams features_ext bc_numpy encode_c search_numpy search_expand repo_hygiene view vgcpastes_engine)
+foreach(_py layout lib equivalence recipes policies_features example learn_numpy live_unit live_client replay_unit openings book expert_data expert_teacher expert_contract expert_eval ticks book_preview preview_search data batch_setups learn_v2_numpy teams features_ext bc_numpy encode_c search_numpy search_expand repo_hygiene view vgcpastes_engine)
     if(DUOFORGE_PYTHON)
         add_test(NAME duoforge.python.${_py}
             COMMAND "${DUOFORGE_PYTHON}" -m unittest -v python.tests.test_${_py}
@@ -672,7 +679,7 @@ foreach(_py layout lib equivalence recipes policies_features example learn_numpy
 endforeach()
 
 # The learner pipeline (decisions 0014, 0017) needs JAX: DUOFORGE_LEARN_PYTHON.
-foreach(_learn learn learn_v2 bc search honest luck ledger pfsp)
+foreach(_learn learn learn_v2 bc search honest luck ledger pfsp value_rows distill)
     if(DUOFORGE_LEARN_PYTHON)
         add_test(NAME duoforge.python.${_learn}
             COMMAND "${DUOFORGE_LEARN_PYTHON}" -m unittest -v python.tests.test_${_learn}

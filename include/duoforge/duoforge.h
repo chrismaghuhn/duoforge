@@ -521,6 +521,9 @@ duoforge_status duoforge_battle_reseed(const duoforge_context *ctx, duoforge_bat
 #define DUOFORGE_SLOT_MOVE   1u
 #define DUOFORGE_SLOT_SWITCH 2u
 #define DUOFORGE_SLOT_PASS   3u /* forced no-action only where the profile says so */
+#define DUOFORGE_SLOT_REVIVE 4u /* Revival Blessing (decision 0025 item 8): reserve is the roster index of a fainted brought
+   member; the candidates are the fainted brought members other than the user, in roster order; no MOVE, SWITCH or PASS is
+   offered in that slot */
 /* move_slot of Struggle: offered, with no target and no Mega declaration,
    exactly when an occupant has no selectable move (no PP left, Fake Out
    disabled, a choice lock; sim/pokemon.ts, the reference's request). */
@@ -839,7 +842,7 @@ duoforge_status duoforge_battle_observe(const duoforge_context *ctx, const duofo
    type_now is 0 in a slot that holds it (the other slot's id + 1 stays). */
 #define DUOFORGE_TYPE_NONE     255u
 
-/* Bits of duoforge_position_ext.volatiles (bits 21 to 31 are reserved, 0). */
+/* Bits of duoforge_position_ext.volatiles (bits 22 to 31 are reserved, 0). */
 #define DUOFORGE_POSITION_EXT_SUBSTITUTE   0x00000001u
 #define DUOFORGE_POSITION_EXT_TAUNT        0x00000002u
 #define DUOFORGE_POSITION_EXT_IMPRISON     0x00000004u
@@ -861,13 +864,14 @@ duoforge_status duoforge_battle_observe(const duoforge_context *ctx, const duofo
 #define DUOFORGE_POSITION_EXT_TYPE_CHANGED 0x00040000u
 #define DUOFORGE_POSITION_EXT_ILLUSION_UP  0x00080000u
 #define DUOFORGE_POSITION_EXT_ROOST        0x00100000u /* Roost: the Flying type is off until the end of the turn */
+#define DUOFORGE_POSITION_EXT_TRANSFORMED  0x00200000u /* Transform: the occupant is a copy of another Pokemon (decision 0028) */
 /* Bits of duoforge_side_ext.guard_flags (this turn only). */
 #define DUOFORGE_SIDE_GUARD_WIDE_GUARD  1u
 #define DUOFORGE_SIDE_GUARD_QUICK_GUARD 2u
 /* duoforge_member_ext.item_now: the member holds nothing (Knock Off, Thief). */
 #define DUOFORGE_ITEM_NOW_NONE 255u
 
-/* Bit numbers of duoforge_observation_ext.supported, by tier (decision 0018 section 7.1). Bits 42 to 63 are free. */
+/* Bit numbers of duoforge_observation_ext.supported, by tier (decision 0018 section 7.1). Bits 43 to 63 are free. */
 #define DUOFORGE_VIEWEXT_FEATURE_WEATHER_SAND     0u
 #define DUOFORGE_VIEWEXT_FEATURE_WEATHER_SNOW     1u
 #define DUOFORGE_VIEWEXT_FEATURE_ABILITY_CHANGE   2u
@@ -910,7 +914,8 @@ duoforge_status duoforge_battle_observe(const duoforge_context *ctx, const duofo
 #define DUOFORGE_VIEWEXT_FEATURE_RAGE_POWDER      39u
 #define DUOFORGE_VIEWEXT_FEATURE_ROOST            40u
 #define DUOFORGE_VIEWEXT_FEATURE_MOVE_FAILED      41u
-#define DUOFORGE_VIEWEXT_FEATURE_COUNT            42u
+#define DUOFORGE_VIEWEXT_FEATURE_TRANSFORM        42u
+#define DUOFORGE_VIEWEXT_FEATURE_COUNT            43u
 
 /* Field-wide, public. */
 typedef struct duoforge_field_ext {
@@ -928,7 +933,8 @@ typedef struct duoforge_position_ext {
     uint8_t stockpile;     /* 0 to 3 levels */
     uint8_t perish;        /* the Perish count shown, 3 to 1; 0: none */
     uint8_t move_failed;   /* 0/1: the occupant's last move failed last turn (the pin's moveLastTurnResult === false), public */
-    uint8_t reserved[3];   /* zero */
+    uint8_t transform_source; /* decision 0028: 0 = none, else 1 + side * 6 + roster index of the Pokemon that is copied */
+    uint8_t reserved[2];   /* zero */
 } duoforge_position_ext; /* 16 bytes */
 
 /* One roster member, bench included. */
@@ -1046,6 +1052,11 @@ duoforge_status duoforge_battle_observe_ext(const duoforge_context *ctx, const d
                                               MOVE with id: the move, other: the Pokemon it came from when the line says [of]
                                               (Thief, Covet), else DUOFORGE_NO_POSITION. The item that left the other Pokemon is
                                               ITEM_END with the cause ITEM_TAKEN (Thief, Trick, Switcheroo), or no line (Covet) */
+#define DUOFORGE_EVENT_REVIVE          43u /* [-heal] of a revived member (decision 0025 item 9): position: the user (the line
+                                               names no position, so the converter takes it from the move line before it); id: the
+                                               revived member's roster index; hp, hp_max, hp_kind and hp_flag as HEAL and SWITCH
+                                               (EXACT for the owner, PERCENT for the foe), amount 0; cause MOVE, id2: Revival
+                                               Blessing */
 #define DUOFORGE_EVENT_DRAG            45u /* [drag] position: the slot the dragged-in member enters; id: its roster index, HP;
                                               cause NONE (the line has no [from]). POOL kinds: the forced switch of Roar,
                                               Whirlwind, Dragon Tail and Circle Throw, and of a Red Card holder's attacker
@@ -1095,6 +1106,7 @@ duoforge_status duoforge_battle_observe_ext(const duoforge_context *ctx, const d
 #define DUOFORGE_EVENT_FLAG_NOTARGET 128u /* MOVE: no target left ([notarget]) */
 
 #define DUOFORGE_BLOCK_WIDE_GUARD 4u /* BLOCKED detail: Wide Guard (POOL kinds); 0 Protect, 3 Psychic Terrain */
+#define DUOFORGE_BLOCK_QUICK_GUARD 6u /* BLOCKED detail: Quick Guard (POOL kinds; decision 0029, PR #276): -activate move: Quick Guard */
 #define DUOFORGE_VOLATILE_HEAL_BLOCK 1u /* VOLATILE_START / VOLATILE_END: Heal Block (Psychic Noise, 2 turns) */
 #define DUOFORGE_VOLATILE_ENCORE     2u /* VOLATILE_START / VOLATILE_END: Encore (-start|X|Encore, -end|X|Encore) */
 #define DUOFORGE_VOLATILE_MUST_RECHARGE 3u /* VOLATILE_START: -mustrecharge|X (a recharge move hit); no END, it ends with the

@@ -137,7 +137,7 @@ static dfi_invariant dfi_check_member(const struct duoforge_context *ctx, const 
 /* Value ranges of an occupied position's volatile block. move_count is the
  * occupant's (already range-checked) move count; switch_flag_max is the
  * kind's (dfi_kind_limits). */
-static bool dfi_volatile_valid(const dfi_active_slot *slot, uint32_t move_count, const dfi_kind_limits *lim)
+static bool dfi_volatile_valid(const dfi_active_slot *slot, uint32_t move_count, const dfi_kind_limits *lim, bool lock)
 {
     if (slot->switch_flag > lim->switch_flag_max) {
         return false;
@@ -163,7 +163,11 @@ static bool dfi_volatile_valid(const dfi_active_slot *slot, uint32_t move_count,
      * lock (Team C) or to both, then on the same move; the target only to
      * the charge. */
     const bool choice = ((uint32_t)slot->flags & DFI_VOL_CHOICE_LOCK) != 0u;
-    if (slot->locked_move > move_count || (slot->locked_move != 0u) != (slot->charge_turns != 0u || choice)) {
+    /* A lockedmove (step G56, the tail's lock_turns) is a locked move too: it stores no target. A locked move needs its
+     * owner (a charge, a choice lock or a lockedmove); the owner needs the locked move only for the charge and the choice
+     * (a lock without its move is the tail's refusal: TAIL_POSITION, like Rage Powder's marker and its Follow Me flag). */
+    if (slot->locked_move > move_count || (slot->locked_move != 0u && !(slot->charge_turns != 0u || choice || lock)) ||
+        (slot->locked_move == 0u && (slot->charge_turns != 0u || choice))) {
         return false;
     }
     if (slot->charge_turns == 0u) {
@@ -277,7 +281,7 @@ static dfi_invariant dfi_check_side(const struct duoforge_context *ctx, const st
         } else {
             const dfi_kind_limits lim = dfi_kind_limits_of(ctx->data_kind);
             const dfi_member *occupant = &side->members[slot->occupant]; /* occupant < member_count <= 6 here */
-            if (!dfi_volatile_valid(slot, occupant->move_count, &lim)) {
+            if (!dfi_volatile_valid(slot, occupant->move_count, &lim, b->tail.sides[s].positions[p].lock_turns != 0u)) {
                 return DFI_INV_VOLATILE;
             }
             /* The item the occupant holds now: its sheet's unless that was used up, or the one that the POOL tail's
@@ -603,7 +607,8 @@ static bool dfi_tail_pos_valid(const dfi_kind_limits *lim, const dfi_tail_pos *t
                          (tp->single_turn & ~DFI_TAIL_SINGLE_TURN_MASK) == 0u &&
                          ((tp->single_turn & DFI_SINGLE_TURN_RAGE_POWDER) == 0u || ((uint32_t)slot->flags & DFI_VOL_FOLLOW_ME) != 0u) &&
                          tp->hits_taken <= DFI_TAIL_HITS_TAKEN_MAX && tp->ability_state <= DFI_TAIL_ABILITY_STATE_MAX &&
-                         tp->lock_turns <= DFI_TAIL_LOCK_TURNS_MAX;
+                         tp->lock_turns <= DFI_TAIL_LOCK_TURNS_MAX &&
+                         (tp->lock_turns == 0u || slot->locked_move != 0u); /* lockedmove (G56): its move is in the slot */
     /* Rev 5 (lane A): the slot's pending effect and Future Sight, zero until the steps that write them. */
     const bool rev5_ok = tp->slot_pending == 0u && tp->future_sight == 0u;
     return encore_ok && bars_ok && disable_ok && flags_ok && substitute_ok && trap_ok && leech_ok && stockpile_ok &&

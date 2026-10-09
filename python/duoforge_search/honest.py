@@ -4,6 +4,7 @@ The actual root supplies the deciding player's public record and row. Foe
 rows are evaluated exclusively in reconstructed worlds. No privileged call
 or true-root encoding is used, even for error reproduction.
 """
+from dataclasses import dataclass
 import json
 from pathlib import Path
 import time
@@ -44,6 +45,30 @@ SPREAD_SOURCES = ("A", "B", "C", "PP_0071E895C381DD1C", "PP_097433EFCC505367", "
                   "PP_E2B7674A54DEBEE7", "PP_E4AA1030C5E684B4", "PP_ECDECC58B9116D68", "PP_EE7A2C6A9F775208",
                   "PP_EEDF279FBC3AD845", "PP_F85133BAC58B317F", "PP_F853DAF986849F1D", "PP_FC5A33ABDD155CA3",
                   "PP_FD6FE5BB94A024FB")
+
+
+@dataclass(frozen=True)
+class LeafRequest:
+    """A prepared decision (Honest._prepare): its seat, key, own candidates,
+    cut-off flag, world weights, foe pairs and probabilities, the leaves'
+    choices and (i, j, w) plan, their copied rows (L, width) float32, step/
+    encode/result statuses and tiebreaks, and which leaves the table reads a
+    value of (open)."""
+    p: int
+    key: int
+    own: np.ndarray
+    last_step: bool
+    weights: np.ndarray
+    foe_pairs: np.ndarray
+    qs: np.ndarray
+    choices: np.ndarray
+    plan: tuple
+    rows: np.ndarray
+    step: np.ndarray
+    encode: np.ndarray
+    results: np.ndarray
+    tiebreaks: np.ndarray
+    open: np.ndarray
 
 
 class Unreconstructible(Exception):
@@ -411,6 +436,14 @@ class Honest(lookahead.Lookahead):
         return history
 
     def _decision(self, p, key, own, own_p, weights, last_step, costs, budget=None):
+        request = self._prepare(p, key, own, weights, last_step, costs)
+        return self._finish(request, self._values(request, costs), own_p, costs, budget)
+
+    def _prepare(self, p, key, own, weights, last_step, costs):
+        """Phase one of a decision on the current worlds: the worlds' policy,
+        the foe's pairs and every expand chunk with its tiebreaks. The rows
+        and statuses are copied out, so later roots may reuse the worlds and
+        the leaf batch before this request is finished (stage 3 P2)."""
         pp, _, elapsed, masks, obs, slots, query_seconds = self._world_policy()
         costs["world_builds"] += query_seconds
         costs["network"] += elapsed
@@ -441,7 +474,7 @@ class Honest(lookahead.Lookahead):
         other = foe_pairs[w, j]
         asked = other != lookahead.NO_FOE
         choices["slot"][asked, foe, 0], choices["slot"][asked, foe, 1] = np.divmod(other[asked], lookahead.OPTIONS)
-        values = np.zeros(total, np.float32)
+        rows = np.zeros((total, self._rows.shape[1]), np.float32)
         step, encode, results, tiebreaks = (np.zeros(total, np.uint32) for _ in range(4))
         root_keys, viewers = np.full(self.s, key, np.uint64), np.full(self.s, p, np.uint8)
         for start in range(0, total, self.capacity):
@@ -451,6 +484,7 @@ class Honest(lookahead.Lookahead):
                                                       root_keys, viewers, w[start:end].astype(np.uint32),
                                                       w[start:end].astype(np.uint32), choices[start:end])
             step[start:end], encode[start:end], results[start:end] = st, enc, res
+            rows[start:end] = row
             if last_step:
                 for x in np.flatnonzero((st == 0) & (res == 0)):
                     try:
@@ -460,20 +494,44 @@ class Honest(lookahead.Lookahead):
                             raise
                         tiebreaks[start + x] = np.uint32(0xFFFFFFFF)
             costs["leaves"] += time.perf_counter() - t
+        # The table reads a value only where the step ran, the leaf is not terminal and not cut off.
+        open_ = (step == 0) & (results == 0) & (not last_step)
+        return LeafRequest(p, key, own.copy(), bool(last_step), np.array(weights, copy=True), foe_pairs, qs, choices,
+                           (i, j, w), rows, step, encode, results, tiebreaks, open_)
+
+    def _values(self, request, costs):
+        """Today's per-root value calls: the request's rows in capacity
+        chunks through the preallocated row buffer, padded with zeros."""
+        total = request.rows.shape[0]
+        values = np.zeros(total, np.float32)
+        for start in range(0, total, self.capacity):
+            end = min(total, start + self.capacity)
             self._rows.fill(0)
-            self._rows[:end - start] = row
+            self._rows[:end - start] = request.rows[start:end]
             t = time.perf_counter()
             values[start:end] = np.asarray(self.model.value(self.params, self._rows))[:end - start]
             costs["network"] += time.perf_counter() - t
+        return values
+
+    def _finish(self, request, values, own_p, costs, budget=None):
+        """Phase two: the table from the request's leaves and their values
+        (float32; non-open leaves are never read: a SearchError reproduction
+        records them as given), the reduction and the decision record."""
+        values = np.asarray(values)
+        if values.shape != request.step.shape or values.dtype != np.float32:
+            raise ValueError("a request needs one float32 value per leaf")
+        p, key, own, weights, qs = request.p, request.key, request.own, request.weights, request.qs
+        i, j, w = request.plan
         t = time.perf_counter()
-        breaks = tiebreaks.astype(np.int64)
+        breaks = request.tiebreaks.astype(np.int64)
         breaks[breaks == 0xFFFFFFFF] = lookahead.UNRESOLVED
         try:
-            tab = lookahead.table(values, step, encode, results, breaks, (i, j, w), p, last_step)
+            tab = lookahead.table(values, request.step, request.encode, request.results, breaks, (i, j, w), p,
+                                  request.last_step)
         except SearchError as err:
-            err.reproduction = {"values": values.tolist(), "step_statuses": step.tolist(),
-                                "encode_statuses": encode.tolist(), "samples": w.tolist(),
-                                "choices": choices.tobytes().hex()}
+            err.reproduction = {"values": values.tolist(), "step_statuses": request.step.tolist(),
+                                "encode_statuses": request.encode.tolist(), "samples": w.tolist(),
+                                "choices": request.choices.tobytes().hex()}
             raise
         tables = tab.values.transpose(2, 0, 1)
         rank = np.arange(own.size)
@@ -485,8 +543,9 @@ class Honest(lookahead.Lookahead):
             err.reproduction = {"tables": tables.tolist(), "weights": weights.tolist(), "foe_probs": qs.tolist()}
             raise
         costs["solve"] += time.perf_counter() - t
-        self.last.append({"tables": tables.copy(), "choices": choices.copy(),
+        self.last.append({"tables": tables.copy(), "choices": request.choices.copy(),
                           "samples": w.copy(), "values": tab.values.copy()})
+        foe_pairs = request.foe_pairs
         action = int(own[outcomes[self.rule]])
         return {"kind": "searched", "rule": self.rule, "k": own.size, "m": foe_pairs.shape[1], "s": self.s,
                 "own_pairs": own.tolist(), "own_probs": own_p.tolist(), "foe_pairs": foe_pairs.tolist(),

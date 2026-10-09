@@ -144,6 +144,8 @@ The engine state decided these details. `include/duoforge/duoforge_view.h` docum
 - **A built world that fails the full check** is `E_MALFORMED`, as the strict decoder reports it.
 - **The proof (`tests/test_view.c`):** 80 random games each under CLOSURE, TEAM_C and POOL (Teams A, B and C), about 8,500 views. Each view is a byte-equal round trip; 4 random hypotheses per view give back the same public state and the same observation and extension; hidden sleep, confusion and charging targets all occur.
 
+- **A revived foe member (G52, decision 0025 item 11): the PP proxy, decided by HauptSession for PR #286, no layout change.** A foe's Revival Blessing revive sets its HP to half its maximum, and the owner's knowledge shows a percentage like any heal. The record keeps no revive history, so a foe that may have revived is seen through its Revival Blessing slot: Revival Blessing has PP 1, and a foe's derived PP 0 means the move was used once. While any foe member's Revival Blessing slot shows derived PP 0, the public record refuses (`DUOFORGE_E_UNSUPPORTED`) under the generic public-record cause (no cause bit, the causes mask stays 0). It depends only on public facts. Extra refusals after a failed Revival Blessing are accepted; own slots never count. Tests: `test_foe_revive_proxy` in `tests/test_view_causes.c`.
+
 ## 5. PR B: batches and PIVOT queues
 
 The batch calls use the existing worker hooks, allocate no storage, report per-environment statuses and preserve each refused output/environment. Invalid batch arguments are checked before any worker runs.

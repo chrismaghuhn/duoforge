@@ -29,11 +29,17 @@
 #include "support/fixtures.h"
 #include "support/pool.h"
 
-/* The twenty marked moves that Magic Bounce handles (step G57): the rows of dfi_bounce_kind_ok and the foeSide hazards. */
+/* The marked moves that Magic Bounce handles (step G57): the rows of dfi_bounce_kind_ok and the foeSide hazards. Sing (marked
+ * by lane A's G52 batch) is a primary status move, bounced on the same path as Hypnosis and Sleep Powder. */
 static const char *const handled[] = {
     "roar", "whirlwind", "hypnosis", "partingshot", "soak", "encore", "willowisp", "disable", "sleeppowder", "stunspore",
     "poisonpowder", "toxic", "stealthrock", "spikes", "toxicspikes", "stickyweb", "taunt", "yawn", "charm", "faketears",
+    "sing",
 };
+
+/* The marked reflectable moves whose bounced run is not modelled (marked by lane A's G54 batch): dfi_bounce_kind_ok refuses
+ * them, so a bounce of one is E_UNSUPPORTED (test_unmodelled_bounces_are_refused). */
+static const char *const refused[] = {"healpulse", "strengthsap"};
 
 static bool in_list(const char *name, const char *const *list, size_t n)
 {
@@ -87,10 +93,11 @@ static void test_marked_reflectable_moves_are_the_handled_list(df_test *t)
             continue;
         }
         const char *name = dfi_pool_move_names[id];
-        DF_CHECK(t, name != NULL && in_list(name, handled, sizeof handled / sizeof handled[0]));
+        DF_CHECK(t, name != NULL && (in_list(name, handled, sizeof handled / sizeof handled[0]) ||
+                                     in_list(name, refused, sizeof refused / sizeof refused[0])));
         marked += 1u;
     }
-    DF_CHECK_EQ_U64(t, marked, 20u);
+    DF_CHECK_EQ_U64(t, marked, 23u);
 }
 
 /* Every marked reflectable move is a single-target or a foeSide move: a spread one would need the TryHit of every target
@@ -468,6 +475,43 @@ static void test_a_bounce_is_no_move_action_of_the_bouncer(df_test *t)
     duoforge_context_destroy(ctx);
 }
 
+/* Heal Pulse and Strength Sap at a Magic Bounce holder: the bounced run of neither is modelled, so the turn is refused with
+ * E_UNSUPPORTED (dfi_bounce_kind_ok). The Whirlwind user of g57_mb_whirlwind (position 0) is replaced by a learner of the move
+ * (Indeedee-F with Heal Pulse, Sinistcha with Strength Sap), which aims it at the foes' Espeon (position 2). */
+static void test_unmodelled_bounces_are_refused(df_test *t)
+{
+    const df_conf_battle *cb = must_find(t, "g57_mb_whirlwind");
+    if (cb == NULL) {
+        return;
+    }
+    const struct {
+        uint32_t species, gender, ability, move;
+    } users[2] = {
+        {DFI_FORME_INDEEDEEF, DUOFORGE_GENDER_FEMALE, DFI_ABILITY_PSYCHICSURGE + 1u, DFI_MOVE_HEALPULSE},
+        {DFI_FORME_SINISTCHA, DUOFORGE_GENDER_NONE, DFI_ABILITY_HOSPITALITY + 1u, DFI_MOVE_STRENGTHSAP},
+    };
+    for (uint32_t u = 0u; u < 2u; ++u) {
+        duoforge_context *ctx = df_make_context(&df_config_pool);
+        duoforge_battle_setup setup;
+        build_setup(cb, &setup);
+        const uint32_t moves[2] = {users[u].move, DFI_MOVE_PROTECT};
+        set_member(&setup, 0u, 0u, users[u].species, users[u].gender, users[u].ability, 2u, moves);
+        /* Species Clause: the bench Indeedee-F of this team (member 5) becomes the replaced Staraptor with its own set. */
+        const uint32_t staraptor_moves[2] = {DFI_MOVE_WHIRLWIND, DFI_MOVE_PROTECT};
+        set_member(&setup, 0u, 5u, DFI_FORME_STARAPTOR, DUOFORGE_GENDER_FEMALE, DFI_ABILITY_INTIMIDATE + 1u, 2u, staraptor_moves);
+        duoforge_battle *b = start(t, ctx, cb, &setup);
+        if (b != NULL) {
+            /* Ceruledge (position 1) protects with its second move; Umbreon (position 3) protects with its first. */
+            duoforge_slot_command cmd[2][2] = {{slot(0, 2), slot(1, DUOFORGE_TARGET_NONE)}, {slot(0, 0), slot(0, DUOFORGE_TARGET_NONE)}};
+            uint32_t bounces = 0u;
+            DF_CHECK_EQ_U64(t, turn(ctx, b, cmd, &bounces), DUOFORGE_E_UNSUPPORTED);
+            DF_CHECK_EQ_U64(t, bounces, 0u);
+            duoforge_battle_destroy(b);
+        }
+        duoforge_context_destroy(ctx);
+    }
+}
+
 int main(void)
 {
     df_test t;
@@ -484,5 +528,6 @@ int main(void)
     test_a_taunt_is_bounced_once(&t);
     test_a_protecting_holder_is_not_bounced(&t);
     test_a_bounce_is_no_move_action_of_the_bouncer(&t);
+    test_unmodelled_bounces_are_refused(&t);
     return df_test_end(&t);
 }
