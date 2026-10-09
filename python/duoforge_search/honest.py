@@ -92,6 +92,16 @@ def spread_table(ctx, root=None, sources=SPREAD_SOURCES):
     return table, {s["id"]: i for i, s in enumerate(sources)}, {**counts, "sources": sources, "sha256": table.sha256()}
 
 
+def visible_causes(observation):
+    """The visible counters that have no supported public reconstruction."""
+    causes = []
+    if (observation["sides"]["members"]["status"] == C["DUOFORGE_AILMENT_SLEEP"]).any():
+        causes.append("visible_sleep")
+    if observation["sides"]["positions"]["confused"].any():
+        causes.append("visible_confusion")
+    return causes
+
+
 def draw_word(probabilities, word):
     """Network categorical draw, in index order, by its separate world word."""
     try:
@@ -100,13 +110,16 @@ def draw_word(probabilities, word):
         raise SearchError("no probability remains after public-fact filtering") from err
 
 
-def reduce(tables, weights, qs, prior_rank, uniform, lam, oracle=False):
-    """One strategy for all worlds, with every N/E/X outcome recorded."""
+def reduce(tables, weights, qs, prior_rank, uniform, lam, oracle=False, budget=None):
+    """One strategy for all worlds, with every N/E/X outcome recorded.
+    budget: an optional matrix.WorkLedger for the solve (P1 teacher)."""
+    # Without a budget the solvers are called exactly as before the teacher existed.
+    extra = {} if budget is None else {"budget": budget}
     if oracle:
-        single = matrix.solve(tables[0])
+        single = matrix.solve(tables[0], **extra)
         sol = matrix.BayesSolution(single.x, [single.y], single.value, single.exact)
     else:
-        sol = matrix.solve_bayes(tables, weights)
+        sol = matrix.solve_bayes(tables, weights, **extra)
     # A float basis can leave roundoff at a pure vertex (e.g. 1e-16 on
     # another row). Canonicalize only within four float64 ulps of a vertex,
     # and only if the candidate still satisfies the unchanged certificate.
@@ -296,31 +309,13 @@ class Honest(lookahead.Lookahead):
         public_time = (time.perf_counter() - t) / n
         # The network sees only the viewer's rows of the real root.
         pp, pt, network_time = self._policy(obs[envs, seats], slots[envs, seats], pairs[envs, seats])
-        histories = self.history.setdefault(roots, {})
         actions, output = np.zeros(n, np.int64), []
         self.last = []
         for d, (e, p) in enumerate(zip(envs, seats)):
             e, p = int(e), int(p)
-            if roots.requests[e, p]["requested"] == 0:
-                raise ValueError(f"seat {p} of environment {e} has no request")
-            episode = roots.episode(e)
-            history = histories.setdefault((e, p), {})
-            if history.get("episode") != episode:
-                history.clear()
-                history["episode"] = episode
             record = records[e:e + 1].reshape(()).copy()
+            history = self._observe(roots, e, p, record, statuses[e])
             boundary = int(roots.requests[e, p]["boundary_kind"])
-            current_turn = int(roots.observations[e, p]["turn"])
-            start = history.get("turn_start")
-            if start is not None and int(start["turn"]) != current_turn:
-                history.pop("turn_start")
-            if boundary == C["DUOFORGE_BOUNDARY_TURN"] and roots.requests[e, 0]["requested"] and roots.requests[e, 1]["requested"]:
-                history.pop("turn_start", None)
-            if statuses[e] == 0:
-                if boundary == C["DUOFORGE_BOUNDARY_TEAM_SELECTION"]:
-                    history["preview"] = record.copy()
-                if boundary == C["DUOFORGE_BOUNDARY_TURN"] and int(record["request_mask"]) == 3:
-                    history["turn_start"] = record.copy()
             costs = {k: 0.0 for k in ("public_records", "world_builds", "team_head", "leaves", "network", "solve")}
             costs["public_records"], costs["network"] = public_time, network_time / n
             base = {"env": e, "seat": p, "key": int(keys[d]), "epoch": int(roots.requests[e, p]["epoch"]),
@@ -354,13 +349,7 @@ class Honest(lookahead.Lookahead):
                 if result["kind"] != "forced" and self.k != 1 and not self.preview_only:
                     try:
                         if statuses[e] == C["DUOFORGE_E_UNSUPPORTED"]:
-                            observation = roots.observations[e, p]
-                            causes = []
-                            if (observation["sides"]["members"]["status"] == C["DUOFORGE_AILMENT_SLEEP"]).any():
-                                causes.append("visible_sleep")
-                            if observation["sides"]["positions"]["confused"].any():
-                                causes.append("visible_confusion")
-                            result["causes"] = causes or ["public_record_unsupported"]
+                            result["causes"] = visible_causes(roots.observations[e, p]) or ["public_record_unsupported"]
                             raise Unreconstructible("DUOFORGE_E_UNSUPPORTED: public record")
                         if statuses[e] != 0:
                             raise SearchError(f"public record refused: {duoforge.status_name(int(statuses[e]))}")
@@ -388,7 +377,32 @@ class Honest(lookahead.Lookahead):
                                     "reduction": costs["solve"], "split": 0.0}})
         return actions, output
 
-    def _decision(self, p, key, own, own_p, weights, last_step, costs):
+    def _observe(self, roots, e, p, record, status):
+        """The public history of seat p in environment e (team preview,
+        turn start), updated from its current request; returns it."""
+        if roots.requests[e, p]["requested"] == 0:
+            raise ValueError(f"seat {p} of environment {e} has no request")
+        histories = self.history.setdefault(roots, {})
+        episode = roots.episode(e)
+        history = histories.setdefault((e, p), {})
+        if history.get("episode") != episode:
+            history.clear()
+            history["episode"] = episode
+        boundary = int(roots.requests[e, p]["boundary_kind"])
+        current_turn = int(roots.observations[e, p]["turn"])
+        start = history.get("turn_start")
+        if start is not None and int(start["turn"]) != current_turn:
+            history.pop("turn_start")
+        if boundary == C["DUOFORGE_BOUNDARY_TURN"] and roots.requests[e, 0]["requested"] and roots.requests[e, 1]["requested"]:
+            history.pop("turn_start", None)
+        if status == 0:
+            if boundary == C["DUOFORGE_BOUNDARY_TEAM_SELECTION"]:
+                history["preview"] = record.copy()
+            if boundary == C["DUOFORGE_BOUNDARY_TURN"] and int(record["request_mask"]) == 3:
+                history["turn_start"] = record.copy()
+        return history
+
+    def _decision(self, p, key, own, own_p, weights, last_step, costs, budget=None):
         pp, _, elapsed, masks, obs, slots, query_seconds = self._world_policy()
         costs["world_builds"] += query_seconds
         costs["network"] += elapsed
@@ -457,7 +471,8 @@ class Honest(lookahead.Lookahead):
         rank = np.arange(own.size)
         try:
             outcomes, reduced = reduce(tables, weights, qs, rank,
-                                       float(seeds.play_uniforms(self.seed, np.array([key], np.uint64))[0]), self.lam)
+                                       float(seeds.play_uniforms(self.seed, np.array([key], np.uint64))[0]), self.lam,
+                                       budget=budget)
         except SearchError as err:
             err.reproduction = {"tables": tables.tolist(), "weights": weights.tolist(), "foe_probs": qs.tolist()}
             raise

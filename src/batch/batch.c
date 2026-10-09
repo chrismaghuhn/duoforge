@@ -835,6 +835,33 @@ duoforge_status duoforge_batch_public(duoforge_batch *batch, const uint32_t *pla
     return dfi_batch_each(batch, dfi_public_env, &job, statuses);
 }
 
+typedef struct dfi_public_causes_job {
+    const uint32_t *players;
+    uint32_t *out_masks;
+} dfi_public_causes_job;
+
+static duoforge_status dfi_public_causes_env(void *arg, uint32_t env, const duoforge_context *ctx,
+                                             const duoforge_battle *battle)
+{
+    const dfi_public_causes_job *j = arg;
+    return duoforge_battle_public_causes(ctx, battle, j->players[env], &j->out_masks[env]);
+}
+
+duoforge_status duoforge_batch_public_causes(duoforge_batch *batch, const uint32_t *players, uint32_t *out_masks,
+                                             duoforge_status *statuses)
+{
+    if (batch == NULL || players == NULL || out_masks == NULL || statuses == NULL) {
+        return DUOFORGE_E_NULL_ARGUMENT;
+    }
+    for (uint32_t e = 0u; e < batch->env_count; ++e) {
+        if (players[e] >= DUOFORGE_SIDE_COUNT) {
+            return DUOFORGE_E_INVALID_ARGUMENT;
+        }
+    }
+    dfi_public_causes_job job = {players, out_masks};
+    return dfi_batch_each(batch, dfi_public_causes_env, &job, statuses);
+}
+
 typedef struct dfi_from_view_job {
     const duoforge_public_state *views;
     const duoforge_hypothesis *hypotheses;

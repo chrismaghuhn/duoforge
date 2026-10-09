@@ -56,7 +56,7 @@ extern "C" {
 
 #define DUOFORGE_VIEW_REVISION 2u
 #define DUOFORGE_HYPOTHESIS_REVISION 2u
-#define DUOFORGE_VIEW_STATE_MAX 1297u /* the largest canonical state (the POOL kinds) */
+#define DUOFORGE_VIEW_STATE_MAX 1357u /* the largest canonical state (the POOL kinds, tail rev 5) */
 #define DUOFORGE_VIEW_HIDDEN 0xFFu    /* a running counter whose value is hidden */
 #define DUOFORGE_VIEW_HIDDEN_TARGET 0xFEu
 #define DUOFORGE_VIEW_PICK_NONE 0xFFu
@@ -94,11 +94,24 @@ typedef struct duoforge_hypothesis {
     uint8_t reserved2[4];
 } duoforge_hypothesis;
 
+/* The causes of a public refusal that the player's view decides (decision 0023; decision 0026 section 4). Bits of
+ * duoforge_battle_public_causes' mask: a visible sleep (a member of either side), a visible confusion (a position of either
+ * side), and ILLUSION_POSSIBLE, which stays 0 until Illusion is implemented. duoforge_battle_public refuses (E_UNSUPPORTED)
+ * exactly while the mask is nonzero; a mask of 0 with a refusing duoforge_battle_public means another refusal (a PIVOT, sealed
+ * commands, a foe Substitute, a partial trap, a locked move). The mask depends only on the player's view. */
+#define DUOFORGE_PUBLIC_CAUSE_VISIBLE_SLEEP 1u
+#define DUOFORGE_PUBLIC_CAUSE_VISIBLE_CONFUSION 2u
+#define DUOFORGE_PUBLIC_CAUSE_ILLUSION_POSSIBLE 4u
+
 /* Argument errors touch no output. Otherwise statuses are per environment,
  * the return is the first failure, and each failing environment is atomic.
  * Both operations run on the batch workers without allocation. */
 duoforge_status duoforge_batch_public(duoforge_batch *batch, const uint32_t *players,
                                       duoforge_public_state *out, duoforge_status *statuses);
+/* The causes of every environment (duoforge_battle_public_causes, per environment, on the batch workers): the same arguments as
+ * duoforge_batch_public, with out_masks[e] written for each environment that succeeds. */
+duoforge_status duoforge_batch_public_causes(duoforge_batch *batch, const uint32_t *players, uint32_t *out_masks,
+                                             duoforge_status *statuses);
 duoforge_status duoforge_batch_from_view(duoforge_batch *worlds, const duoforge_public_state *views,
                                          const duoforge_hypothesis *hypotheses, uint32_t count,
                                          duoforge_status *statuses);
@@ -113,6 +126,12 @@ duoforge_status duoforge_public_queue_mask(const duoforge_context *ctx, const du
    E_INVARIANT, then E_UNSUPPORTED (above). *out is written only on success. */
 duoforge_status duoforge_battle_public(const duoforge_context *ctx, const duoforge_battle *battle, uint32_t player,
                                        duoforge_public_state *out);
+
+/* The causes of the refusal of duoforge_battle_public for this player, as the DUOFORGE_PUBLIC_CAUSE_* mask (above). A pure call:
+   it writes nothing else. Checks in the order of duoforge_battle_public: NULL -> E_NULL_ARGUMENT (out_mask too), CONTEXT_MISMATCH,
+   player > 1 -> E_INVALID_ARGUMENT, the full state check -> E_INVARIANT. *out_mask is written only on success. */
+duoforge_status duoforge_battle_public_causes(const duoforge_context *ctx, const duoforge_battle *battle, uint32_t player,
+                                              uint32_t *out_mask);
 
 /* The world of a public state and a hypothesis, written into *out (a battle of
    the same context, as duoforge_battle_copy's destination). Its RNG is seeded

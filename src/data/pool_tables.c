@@ -974,8 +974,8 @@ const dfi_move_data dfi_pool_moves[DFI_POOL_MOVE_COUNT] = {
     {17u, 1u, 50u, 100u, 20u, 20u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 100u, 1u, 0u, 2u, {5u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
     /* Chilly Reception -- data/moves.ts:2396-2420  [unmodelled: callback priorityChargeCallback; condition block; field selfSwitch without a switch flag; field weather] */
     {11u, 2u, 0u, 0u, 10u, 12u, 8u, 9u, 1u, 16u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 72u},
-    /* Circle Throw -- data/moves.ts:2451-2464  [unmodelled: field forceSwitch] */
-    {5u, 0u, 60u, 90u, 10u, 12u, 2u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 72u},
+    /* Circle Throw -- data/moves.ts:2451-2464 */
+    {5u, 0u, 60u, 90u, 10u, 12u, 2u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
     /* Clanging Scales -- data/moves.ts:2480-2497 */
     {2u, 1u, 110u, 100u, 5u, 8u, 8u, 7u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 43u},
     /* Clangorous Soul -- data/moves.ts:2498-2526, data/mods/champions/moves.ts:121-124 */
@@ -1050,8 +1050,8 @@ const dfi_move_data dfi_pool_moves[DFI_POOL_MOVE_COUNT] = {
     {2u, 0u, 50u, 100u, 10u, 12u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 72u},
     /* Dragon Rush -- data/moves.ts:4191-4207 */
     {2u, 0u, 100u, 75u, 10u, 12u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 20u, 3u, 1u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
-    /* Dragon Tail -- data/moves.ts:4208-4221  [unmodelled: field forceSwitch] */
-    {2u, 0u, 60u, 90u, 10u, 12u, 2u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 72u},
+    /* Dragon Tail -- data/moves.ts:4208-4221 */
+    {2u, 0u, 60u, 90u, 10u, 12u, 2u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
     /* Draining Kiss -- data/moves.ts:4222-4235 */
     {4u, 1u, 50u, 100u, 10u, 12u, 8u, 1u, 1u, 3u, {0u, 0u}, {3u, 4u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
     /* Drain Punch -- data/moves.ts:4236-4249 */
@@ -1452,8 +1452,8 @@ const dfi_move_data dfi_pool_moves[DFI_POOL_MOVE_COUNT] = {
     {12u, 2u, 0u, 0u, 1u, 1u, 8u, 6u, 1u, 48u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 72u},
     /* Rising Voltage -- data/moves.ts:15137-15156 */
     {3u, 1u, 70u, 100u, 20u, 20u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 50u},
-    /* Roar -- data/moves.ts:15157-15171  [unmodelled: field forceSwitch] */
-    {12u, 2u, 0u, 0u, 20u, 20u, 2u, 1u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 72u},
+    /* Roar -- data/moves.ts:15157-15171 */
+    {12u, 2u, 0u, 0u, 20u, 20u, 2u, 1u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
     /* Rock Blast -- data/moves.ts:15188-15203  [unmodelled: field multihit] */
     {15u, 0u, 25u, 90u, 10u, 12u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 72u},
     /* Rock Polish -- data/moves.ts:15222-15238 */
@@ -1700,8 +1700,8 @@ const dfi_move_data dfi_pool_moves[DFI_POOL_MOVE_COUNT] = {
     {17u, 1u, 150u, 100u, 5u, 8u, 8u, 7u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 36u},
     /* Whirlpool -- data/moves.ts:20746-20759  [unmodelled: primary volatile partiallytrapped] */
     {17u, 1u, 35u, 85u, 15u, 16u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 72u},
-    /* Whirlwind -- data/moves.ts:20760-20774  [unmodelled: field forceSwitch] */
-    {12u, 2u, 0u, 0u, 20u, 20u, 2u, 1u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 72u},
+    /* Whirlwind -- data/moves.ts:20760-20774 */
+    {12u, 2u, 0u, 0u, 20u, 20u, 2u, 1u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
     /* Wild Charge -- data/moves.ts:20873-20886 */
     {3u, 0u, 90u, 100u, 15u, 16u, 8u, 1u, 1u, 3u, {1u, 4u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
     /* Will-O-Wisp -- data/moves.ts:20887-20901 */
@@ -1867,7 +1867,7 @@ const dfi_pool_item_data dfi_pool_items[DFI_POOL_ITEM_COUNT] = {
     {31u, 32u},
     /* Blazikenite -- data/items.ts:568-579, data/mods/champions/items.ts:110-113 */
     {113u, 114u},
-    /* Bright Powder -- data/items.ts:659-673  [unmodelled: callback onModifyAccuracy; callback onModifyAccuracyPriority] */
+    /* Bright Powder -- data/items.ts:659-673 */
     {DFI_FORME_NONE, DFI_FORME_NONE},
     /* Cameruptite -- data/items.ts:732-743, data/mods/champions/items.ts:126-129 */
     {132u, 133u},
@@ -1985,7 +1985,7 @@ const dfi_pool_item_data dfi_pool_items[DFI_POOL_ITEM_COUNT] = {
     {DFI_FORME_NONE, DFI_FORME_NONE},
     /* Misty Seed -- data/items.ts:4200-4222 */
     {DFI_FORME_NONE, DFI_FORME_NONE},
-    /* Muscle Band -- data/items.ts:4239-4253  [unmodelled: callback onBasePower; callback onBasePowerPriority] */
+    /* Muscle Band -- data/items.ts:4239-4253 */
     {DFI_FORME_NONE, DFI_FORME_NONE},
     /* Normal Gem -- data/items.ts:4324-4336  [unmodelled: callback onSourceTryPrimaryHit] */
     {DFI_FORME_NONE, DFI_FORME_NONE},
@@ -2009,7 +2009,7 @@ const dfi_pool_item_data dfi_pool_items[DFI_POOL_ITEM_COUNT] = {
     {5u, 39u},
     /* Rawst Berry -- data/items.ts:5068-5088  [unmodelled: callback onEat; callback onUpdate] */
     {DFI_FORME_NONE, DFI_FORME_NONE},
-    /* Red Card -- data/items.ts:5146-5167  [unmodelled: callback onAfterMoveSecondary; read by id in sim/pokemon.ts] */
+    /* Red Card -- data/items.ts:5146-5167 */
     {DFI_FORME_NONE, DFI_FORME_NONE},
     /* Sablenite -- data/items.ts:5429-5440, data/mods/champions/items.ts:814-817 */
     {119u, 120u},
@@ -2053,7 +2053,7 @@ const dfi_pool_item_data dfi_pool_items[DFI_POOL_ITEM_COUNT] = {
     {53u, 54u},
     /* Wide Lens -- data/items.ts:7713-7727 */
     {DFI_FORME_NONE, DFI_FORME_NONE},
-    /* Wise Glasses -- data/items.ts:7754-7768  [unmodelled: callback onBasePower; callback onBasePowerPriority] */
+    /* Wise Glasses -- data/items.ts:7754-7768 */
     {DFI_FORME_NONE, DFI_FORME_NONE},
     /* Zoom Lens -- data/items.ts:7825-7840  [unmodelled: callback onSourceModifyAccuracy; callback onSourceModifyAccuracyPriority] */
     {DFI_FORME_NONE, DFI_FORME_NONE},
@@ -2111,7 +2111,7 @@ const dfi_pool_item_data dfi_pool_items[DFI_POOL_ITEM_COUNT] = {
  *   gluttony -- data/abilities.ts:1618-1629  [unmodelled: callback onDamage; callback onStart; read by id in data/abilities.ts; read by id in data/items.ts]
  *   gooey -- data/abilities.ts:1642-1653  [unmodelled: callback onDamagingHit]
  *   grasspelt -- data/abilities.ts:1697-1706  [unmodelled: callback onModifyDef; callback onModifyDefPriority]
- *   guarddog -- data/abilities.ts:1727-1744  [unmodelled: callback onDragOut; callback onDragOutPriority; callback onTryBoost; callback onTryBoostPriority]
+ *   guarddog -- data/abilities.ts:1727-1744
  *   guts -- data/abilities.ts:1770-1781  [unmodelled: callback onModifyAtk; callback onModifyAtkPriority; read by id in data/mods/champions/scripts.ts; read by id in sim/battle-actions.ts]
  *   harvest -- data/abilities.ts:1800-1816  [unmodelled: callback onResidual; callback onResidualOrder; callback onResidualSubOrder; read by id in sim/battle.ts]
  *   healer -- data/abilities.ts:1817-1832, data/mods/champions/abilities.ts:34-44  [unmodelled: callback onResidual; callback onResidualOrder; callback onResidualSubOrder]
@@ -2227,7 +2227,7 @@ const dfi_pool_item_data dfi_pool_items[DFI_POOL_ITEM_COUNT] = {
  *   stickyhold -- data/abilities.ts:4622-4635
  *   strongjaw -- data/abilities.ts:4661-4672  [unmodelled: callback onBasePower; callback onBasePowerPriority]
  *   sturdy -- data/abilities.ts:4673-4691
- *   suctioncups -- data/abilities.ts:4692-4702  [unmodelled: callback onDragOut; callback onDragOutPriority]
+ *   suctioncups -- data/abilities.ts:4692-4702
  *   superluck -- data/abilities.ts:4703-4711  [unmodelled: callback onModifyCritRatio]
  *   supersweetsyrup -- data/abilities.ts:4712-4729  [unmodelled: callback onStart]
  *   supremeoverlord -- data/abilities.ts:4730-4754  [unmodelled: callback onBasePower; callback onBasePowerPriority; callback onEnd; callback onStart]
@@ -2720,7 +2720,7 @@ const uint8_t dfi_pool_item_handler[DFI_POOL_ITEM_COUNT] = {
     [DFI_ITEM_BINDINGBAND] = DFI_HANDLER_UNMODELED,
     [DFI_ITEM_BLASTOISINITE] = DFI_HANDLER_NONE,
     [DFI_ITEM_BLAZIKENITE] = DFI_HANDLER_NONE,
-    [DFI_ITEM_BRIGHTPOWDER] = DFI_HANDLER_UNMODELED,
+    [DFI_ITEM_BRIGHTPOWDER] = DFI_HANDLER_NONE,
     [DFI_ITEM_CAMERUPTITE] = DFI_HANDLER_NONE,
     [DFI_ITEM_CHANDELURITE] = DFI_HANDLER_NONE,
     [DFI_ITEM_CHARIZARDITEX] = DFI_HANDLER_NONE,
@@ -2779,7 +2779,7 @@ const uint8_t dfi_pool_item_handler[DFI_POOL_ITEM_COUNT] = {
     [DFI_ITEM_METAGROSSITE] = DFI_HANDLER_NONE,
     [DFI_ITEM_METRONOME] = DFI_HANDLER_UNMODELED,
     [DFI_ITEM_MISTYSEED] = DFI_HANDLER_NONE,
-    [DFI_ITEM_MUSCLEBAND] = DFI_HANDLER_UNMODELED,
+    [DFI_ITEM_MUSCLEBAND] = DFI_HANDLER_NONE,
     [DFI_ITEM_NORMALGEM] = DFI_HANDLER_UNMODELED,
     [DFI_ITEM_ORANBERRY] = DFI_HANDLER_UNMODELED,
     [DFI_ITEM_PECHABERRY] = DFI_HANDLER_UNMODELED,
@@ -2791,7 +2791,7 @@ const uint8_t dfi_pool_item_handler[DFI_POOL_ITEM_COUNT] = {
     [DFI_ITEM_QUICKCLAW] = DFI_HANDLER_UNMODELED,
     [DFI_ITEM_RAICHUNITEX] = DFI_HANDLER_NONE,
     [DFI_ITEM_RAWSTBERRY] = DFI_HANDLER_UNMODELED,
-    [DFI_ITEM_REDCARD] = DFI_HANDLER_UNMODELED,
+    [DFI_ITEM_REDCARD] = DFI_HANDLER_NONE,
     [DFI_ITEM_SABLENITE] = DFI_HANDLER_NONE,
     [DFI_ITEM_SCEPTILITE] = DFI_HANDLER_NONE,
     [DFI_ITEM_SCIZORITE] = DFI_HANDLER_NONE,
@@ -2813,7 +2813,7 @@ const uint8_t dfi_pool_item_handler[DFI_POOL_ITEM_COUNT] = {
     [DFI_ITEM_VENUSAURITE] = DFI_HANDLER_NONE,
     [DFI_ITEM_VICTREEBELITE] = DFI_HANDLER_NONE,
     [DFI_ITEM_WIDELENS] = DFI_HANDLER_NONE,
-    [DFI_ITEM_WISEGLASSES] = DFI_HANDLER_UNMODELED,
+    [DFI_ITEM_WISEGLASSES] = DFI_HANDLER_NONE,
     [DFI_ITEM_ZOOMLENS] = DFI_HANDLER_UNMODELED,
 };
 
@@ -2890,7 +2890,7 @@ const uint8_t dfi_pool_ability_handler[DFI_POOL_ABILITY_COUNT] = {
     [DFI_ABILITY_GLUTTONY] = DFI_HANDLER_UNMODELED,
     [DFI_ABILITY_GOOEY] = DFI_HANDLER_UNMODELED,
     [DFI_ABILITY_GRASSPELT] = DFI_HANDLER_UNMODELED,
-    [DFI_ABILITY_GUARDDOG] = DFI_HANDLER_UNMODELED,
+    [DFI_ABILITY_GUARDDOG] = DFI_HANDLER_NONE,
     [DFI_ABILITY_GUTS] = DFI_HANDLER_UNMODELED,
     [DFI_ABILITY_HARVEST] = DFI_HANDLER_UNMODELED,
     [DFI_ABILITY_HEALER] = DFI_HANDLER_UNMODELED,
@@ -3006,7 +3006,7 @@ const uint8_t dfi_pool_ability_handler[DFI_POOL_ABILITY_COUNT] = {
     [DFI_ABILITY_STICKYHOLD] = DFI_HANDLER_NONE,
     [DFI_ABILITY_STRONGJAW] = DFI_HANDLER_UNMODELED,
     [DFI_ABILITY_STURDY] = DFI_HANDLER_NONE,
-    [DFI_ABILITY_SUCTIONCUPS] = DFI_HANDLER_UNMODELED,
+    [DFI_ABILITY_SUCTIONCUPS] = DFI_HANDLER_NONE,
     [DFI_ABILITY_SUPERLUCK] = DFI_HANDLER_UNMODELED,
     [DFI_ABILITY_SUPERSWEETSYRUP] = DFI_HANDLER_UNMODELED,
     [DFI_ABILITY_SUPREMEOVERLORD] = DFI_HANDLER_UNMODELED,
@@ -4216,7 +4216,7 @@ const uint8_t dfi_pool_move_flags2[DFI_POOL_MOVE_COUNT] = {
     [DFI_MOVE_CHARM] = 0u, /* Charm */
     [DFI_MOVE_CHILLINGWATER] = 0u, /* Chilling Water */
     [DFI_MOVE_CHILLYRECEPTION] = 0u, /* Chilly Reception */
-    [DFI_MOVE_CIRCLETHROW] = 0u, /* Circle Throw */
+    [DFI_MOVE_CIRCLETHROW] = DFI_MOVE_FLAG2_FORCE_SWITCH, /* Circle Throw */
     [DFI_MOVE_CLANGINGSCALES] = DFI_MOVE_FLAG2_SOUND, /* Clanging Scales */
     [DFI_MOVE_CLANGOROUSSOUL] = DFI_MOVE_FLAG2_SOUND, /* Clangorous Soul */
     [DFI_MOVE_CLEARSMOG] = 0u, /* Clear Smog */
@@ -4254,7 +4254,7 @@ const uint8_t dfi_pool_move_flags2[DFI_POOL_MOVE_COUNT] = {
     [DFI_MOVE_DRAGONDANCE] = 0u, /* Dragon Dance */
     [DFI_MOVE_DRAGONDARTS] = 0u, /* Dragon Darts */
     [DFI_MOVE_DRAGONRUSH] = 0u, /* Dragon Rush */
-    [DFI_MOVE_DRAGONTAIL] = 0u, /* Dragon Tail */
+    [DFI_MOVE_DRAGONTAIL] = DFI_MOVE_FLAG2_FORCE_SWITCH, /* Dragon Tail */
     [DFI_MOVE_DRAININGKISS] = DFI_MOVE_FLAG2_HEAL, /* Draining Kiss */
     [DFI_MOVE_DRAINPUNCH] = DFI_MOVE_FLAG2_HEAL | DFI_MOVE_FLAG2_PUNCH, /* Drain Punch */
     [DFI_MOVE_DRILLPECK] = 0u, /* Drill Peck */
@@ -4455,7 +4455,7 @@ const uint8_t dfi_pool_move_flags2[DFI_POOL_MOVE_COUNT] = {
     [DFI_MOVE_REVERSAL] = 0u, /* Reversal */
     [DFI_MOVE_REVIVALBLESSING] = DFI_MOVE_FLAG2_HEAL, /* Revival Blessing */
     [DFI_MOVE_RISINGVOLTAGE] = 0u, /* Rising Voltage */
-    [DFI_MOVE_ROAR] = DFI_MOVE_FLAG2_SOUND, /* Roar */
+    [DFI_MOVE_ROAR] = DFI_MOVE_FLAG2_SOUND | DFI_MOVE_FLAG2_FORCE_SWITCH, /* Roar */
     [DFI_MOVE_ROCKBLAST] = 0u, /* Rock Blast */
     [DFI_MOVE_ROCKPOLISH] = 0u, /* Rock Polish */
     [DFI_MOVE_ROCKTOMB] = 0u, /* Rock Tomb */
@@ -4579,7 +4579,7 @@ const uint8_t dfi_pool_move_flags2[DFI_POOL_MOVE_COUNT] = {
     [DFI_MOVE_WATERSHURIKEN] = 0u, /* Water Shuriken */
     [DFI_MOVE_WATERSPOUT] = 0u, /* Water Spout */
     [DFI_MOVE_WHIRLPOOL] = 0u, /* Whirlpool */
-    [DFI_MOVE_WHIRLWIND] = 0u, /* Whirlwind */
+    [DFI_MOVE_WHIRLWIND] = DFI_MOVE_FLAG2_FORCE_SWITCH, /* Whirlwind */
     [DFI_MOVE_WILDCHARGE] = 0u, /* Wild Charge */
     [DFI_MOVE_WILLOWISP] = 0u, /* Will-O-Wisp */
     [DFI_MOVE_WISH] = DFI_MOVE_FLAG2_HEAL, /* Wish */
@@ -6710,7 +6710,6 @@ const char *const dfi_pool_move_unmodeled[DFI_POOL_MOVE_COUNT] = {
     [DFI_MOVE_BURNUP] = "callback onTryMove; self effect",
     [DFI_MOVE_CHARGE] = "condition block; primary volatile charge",
     [DFI_MOVE_CHILLYRECEPTION] = "callback priorityChargeCallback; condition block; field selfSwitch without a switch flag; field weather",
-    [DFI_MOVE_CIRCLETHROW] = "field forceSwitch",
     [DFI_MOVE_CLEARSMOG] = "callback onHit",
     [DFI_MOVE_COMEUPPANCE] = "callback damageCallback; callback onModifyTarget; callback onTry; target scripted",
     [DFI_MOVE_CONFUSERAY] = "primary volatile confusion",
@@ -6727,7 +6726,6 @@ const char *const dfi_pool_move_unmodeled[DFI_POOL_MOVE_COUNT] = {
     [DFI_MOVE_DOUBLEHIT] = "field multihit",
     [DFI_MOVE_DRAGONCHEER] = "condition block; primary volatile dragoncheer",
     [DFI_MOVE_DRAGONDARTS] = "field multihit; field smartTarget",
-    [DFI_MOVE_DRAGONTAIL] = "field forceSwitch",
     [DFI_MOVE_EERIESPELL] = "secondary",
     [DFI_MOVE_ELECTRIFY] = "callback onTryHit; condition block; primary volatile electrify",
     [DFI_MOVE_ELECTROBALL] = "callback basePowerCallback",
@@ -6828,7 +6826,6 @@ const char *const dfi_pool_move_unmodeled[DFI_POOL_MOVE_COUNT] = {
     [DFI_MOVE_REST] = "callback onHit; callback onTry",
     [DFI_MOVE_REVERSAL] = "callback basePowerCallback",
     [DFI_MOVE_REVIVALBLESSING] = "callback onTryHit; condition block; field selfSwitch without a switch flag; field slotCondition",
-    [DFI_MOVE_ROAR] = "field forceSwitch",
     [DFI_MOVE_ROCKBLAST] = "field multihit",
     [DFI_MOVE_ROLEPLAY] = "callback onHit; callback onTryHit",
     [DFI_MOVE_ROOST] = "condition block; self effect",
@@ -6890,7 +6887,6 @@ const char *const dfi_pool_move_unmodeled[DFI_POOL_MOVE_COUNT] = {
     [DFI_MOVE_VENOSHOCK] = "callback onBasePower",
     [DFI_MOVE_WATERSHURIKEN] = "callback basePowerCallback; field multihit",
     [DFI_MOVE_WHIRLPOOL] = "primary volatile partiallytrapped",
-    [DFI_MOVE_WHIRLWIND] = "field forceSwitch",
     [DFI_MOVE_WISH] = "condition block; field slotCondition",
     [DFI_MOVE_WONDERROOM] = "condition block; pseudo weather wonderroom",
     [DFI_MOVE_WORRYSEED] = "callback onHit; callback onTryHit; callback onTryImmunity",
@@ -6902,7 +6898,6 @@ const char *const dfi_pool_item_unmodeled[DFI_POOL_ITEM_COUNT] = {
     [DFI_ITEM_ASPEARBERRY] = "callback onEat; callback onUpdate",
     [DFI_ITEM_BIGROOT] = "callback onTryHeal; callback onTryHealPriority",
     [DFI_ITEM_BINDINGBAND] = "read by id in data/conditions.ts",
-    [DFI_ITEM_BRIGHTPOWDER] = "callback onModifyAccuracy; callback onModifyAccuracyPriority",
     [DFI_ITEM_CHERIBERRY] = "callback onEat; callback onUpdate",
     [DFI_ITEM_CHESTOBERRY] = "callback onEat; callback onUpdate",
     [DFI_ITEM_DAMPROCK] = "read by id in data/conditions.ts",
@@ -6917,20 +6912,17 @@ const char *const dfi_pool_item_unmodeled[DFI_POOL_ITEM_COUNT] = {
     [DFI_ITEM_LUMBERRY] = "callback onAfterSetStatus; callback onAfterSetStatusPriority; callback onEat; callback onUpdate",
     [DFI_ITEM_MENTALHERB] = "callback onUpdate; read by id in data/mods/champions/moves.ts",
     [DFI_ITEM_METRONOME] = "callback onStart; condition block; read by id in data/moves.ts; read by id in sim/pokemon.ts",
-    [DFI_ITEM_MUSCLEBAND] = "callback onBasePower; callback onBasePowerPriority",
     [DFI_ITEM_NORMALGEM] = "callback onSourceTryPrimaryHit",
     [DFI_ITEM_ORANBERRY] = "callback onEat; callback onTryEatItem; callback onUpdate; read by id in data/abilities.ts; read by id in sim/pokemon.ts",
     [DFI_ITEM_PECHABERRY] = "callback onEat; callback onUpdate",
     [DFI_ITEM_PERSIMBERRY] = "callback onEat; callback onUpdate",
     [DFI_ITEM_QUICKCLAW] = "callback onFractionalPriority; callback onFractionalPriorityPriority",
     [DFI_ITEM_RAWSTBERRY] = "callback onEat; callback onUpdate",
-    [DFI_ITEM_REDCARD] = "callback onAfterMoveSecondary; read by id in sim/pokemon.ts",
     [DFI_ITEM_SCOPELENS] = "callback onModifyCritRatio",
     [DFI_ITEM_SHEDSHELL] = "callback onMaybeTrapPokemon; callback onMaybeTrapPokemonPriority; callback onTrapPokemon; callback onTrapPokemonPriority",
     [DFI_ITEM_SHELLBELL] = "callback onAfterMoveSecondarySelf; callback onAfterMoveSecondarySelfPriority",
     [DFI_ITEM_SMOOTHROCK] = "read by id in data/conditions.ts",
     [DFI_ITEM_TERRAINEXTENDER] = "read by id in data/moves.ts",
-    [DFI_ITEM_WISEGLASSES] = "callback onBasePower; callback onBasePowerPriority",
     [DFI_ITEM_ZOOMLENS] = "callback onSourceModifyAccuracy; callback onSourceModifyAccuracyPriority",
 };
 
@@ -6968,7 +6960,6 @@ const char *const dfi_pool_ability_unmodeled[DFI_POOL_ABILITY_COUNT] = {
     [DFI_ABILITY_GLUTTONY] = "callback onDamage; callback onStart; read by id in data/abilities.ts; read by id in data/items.ts",
     [DFI_ABILITY_GOOEY] = "callback onDamagingHit",
     [DFI_ABILITY_GRASSPELT] = "callback onModifyDef; callback onModifyDefPriority",
-    [DFI_ABILITY_GUARDDOG] = "callback onDragOut; callback onDragOutPriority; callback onTryBoost; callback onTryBoostPriority",
     [DFI_ABILITY_GUTS] = "callback onModifyAtk; callback onModifyAtkPriority; read by id in data/mods/champions/scripts.ts; read by id in sim/battle-actions.ts",
     [DFI_ABILITY_HARVEST] = "callback onResidual; callback onResidualOrder; callback onResidualSubOrder; read by id in sim/battle.ts",
     [DFI_ABILITY_HEALER] = "callback onResidual; callback onResidualOrder; callback onResidualSubOrder",
@@ -7051,7 +7042,6 @@ const char *const dfi_pool_ability_unmodeled[DFI_POOL_ABILITY_COUNT] = {
     [DFI_ABILITY_STEELYSPIRIT] = "callback onAllyBasePower; callback onAllyBasePowerPriority",
     [DFI_ABILITY_STENCH] = "callback onModifyMove; callback onModifyMovePriority",
     [DFI_ABILITY_STRONGJAW] = "callback onBasePower; callback onBasePowerPriority",
-    [DFI_ABILITY_SUCTIONCUPS] = "callback onDragOut; callback onDragOutPriority",
     [DFI_ABILITY_SUPERLUCK] = "callback onModifyCritRatio",
     [DFI_ABILITY_SUPERSWEETSYRUP] = "callback onStart",
     [DFI_ABILITY_SUPREMEOVERLORD] = "callback onBasePower; callback onBasePowerPriority; callback onEnd; callback onStart",
@@ -7075,10 +7065,10 @@ const char *const dfi_pool_ability_unmodeled[DFI_POOL_ABILITY_COUNT] = {
 };
 
 const uint8_t dfi_pool_table_hash[32] = {
-    0xc2u, 0xe8u, 0x1cu, 0xcfu, 0xf3u, 0x0du, 0x16u, 0x5bu,
-    0x56u, 0xc4u, 0x2au, 0x97u, 0x71u, 0x84u, 0x09u, 0xb1u,
-    0xa1u, 0x66u, 0x64u, 0x8bu, 0xf0u, 0xb6u, 0x4bu, 0x28u,
-    0xbdu, 0x15u, 0x2bu, 0xa4u, 0xd5u, 0x02u, 0x81u, 0xdeu,
+    0x28u, 0x38u, 0xedu, 0xa9u, 0xc3u, 0xd0u, 0x6fu, 0x48u,
+    0x8bu, 0x83u, 0xabu, 0x2bu, 0x00u, 0x05u, 0x4au, 0x02u,
+    0x94u, 0x70u, 0x00u, 0x10u, 0xfeu, 0x3fu, 0x2du, 0xe2u,
+    0x9fu, 0xd9u, 0x01u, 0xfeu, 0x25u, 0x45u, 0x89u, 0x5fu,
 };
 
 static size_t dfi_pool_put_u16(uint8_t *out, size_t n, uint32_t v)
