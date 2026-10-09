@@ -2265,7 +2265,7 @@ ENGINE_ROWS = {'items': ['focussash', 'floettite', 'psychicseed', 'electricseed'
                              'justified',
                              'limber',
                              'solarpower',
-                             'regenerator', 'toxicdebris', 'shadowtag', 'suctioncups', 'guarddog']}
+                             'regenerator', 'toxicdebris', 'shadowtag', 'suctioncups', 'guarddog', 'illusion']}
 # The moves of the whole pool that the turn code pivots with a switch flag of their own (dfi_pivot_moves,
 # src/state/closure_member.c) beyond Flip Turn and U-turn, which are rows of the steps. Empty: Volt Switch comes with the
 # step that gives it a flag value, and adds its id here.
@@ -2914,10 +2914,31 @@ G46_ITEM_FACTS = (
 )
 
 
+# Step I2a: Illusion (decision 0026) is an engine row (ENGINE_ROWS): the turn code implements its four callbacks by id and
+# hard-codes these texts. The disguise is the last non-fainted member to the right (onBeforeSwitchIn, data/abilities.ts:2056-2069),
+# the break is the damaging hit (onDamagingHit, which the DamagingHit event of sim/battle-actions.ts:1118-1130 runs), the end
+# prints `replace` and `-end|Illusion` (onEnd), and the faint clears it (onFaint). Its flags are the notrace of Trace's rule.
+I2_ABILITY_FACTS = (
+    ('illusion', (
+        "onBeforeSwitchIn(pokemon) { pokemon.illusion = null;",
+        "for (let i = pokemon.side.pokemon.length - 1; i > pokemon.position; i--) {",
+        "if (!possibleTarget.fainted) {",
+        "pokemon.illusion = possibleTarget;",
+        "onDamagingHit(damage, target, source, move) { if (target.illusion) { "
+        "this.singleEvent('End', this.dex.abilities.get('Illusion'), target.abilityState, target, source, move); } },",
+        "onEnd(pokemon) { if (pokemon.illusion && !pokemon.beingCalledBack) {",
+        "this.add('replace', pokemon, details);",
+        "this.add('-end', pokemon, 'Illusion');",
+        "onFaint(pokemon) { pokemon.illusion = null; },",
+        "flags: { failroleplay: 1, noreceiver: 1, noentrain: 1, notrace: 1, failskillswap: 1 },",
+    )),
+)
+
+
 def check_g34_facts(abil_ts, champ_abil, items_ts, champ_items):
     """Steps G34, G35, Mega batch 2 and G39: every fact of G34_ABILITY_FACTS, G35_ABILITY_FACTS, MEGA2_ABILITY_FACTS, G39_ABILITY_FACTS and G34_ITEM_FACTS is in the pinned entry, whitespace aside, and the
     Champions mod has no entry of its own for it (an override would change what the engine reads)."""
-    for kind, facts_by_id, src, champ in (('ability', G34_ABILITY_FACTS + G35_ABILITY_FACTS + MEGA2_ABILITY_FACTS + G39_ABILITY_FACTS + G41_ABILITY_FACTS + G46_ABILITY_FACTS, abil_ts, champ_abil),
+    for kind, facts_by_id, src, champ in (('ability', G34_ABILITY_FACTS + G35_ABILITY_FACTS + MEGA2_ABILITY_FACTS + G39_ABILITY_FACTS + G41_ABILITY_FACTS + G46_ABILITY_FACTS + I2_ABILITY_FACTS, abil_ts, champ_abil),
                                           ('item', G34_ITEM_FACTS + G46_ITEM_FACTS, items_ts, champ_items)):
         for rid, facts in facts_by_id:
             e = src.entry(rid)

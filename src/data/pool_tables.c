@@ -2125,7 +2125,7 @@ const dfi_pool_item_data dfi_pool_items[DFI_POOL_ITEM_COUNT] = {
  *   hypercutter -- data/abilities.ts:1940-1954
  *   icebody -- data/abilities.ts:1955-1968  [unmodelled: callback onImmunity; callback onWeather]
  *   illuminate -- data/abilities.ts:2037-2054  [unmodelled: callback onModifyMove; callback onTryBoost]
- *   illusion -- data/abilities.ts:2055-2095  [unmodelled: callback onBeforeSwitchIn; callback onDamagingHit; callback onEnd; callback onFaint]
+ *   illusion -- data/abilities.ts:2055-2095
  *   immunity -- data/abilities.ts:2096-2114  [unmodelled: callback onSetStatus; callback onUpdate]
  *   imposter -- data/abilities.ts:2115-2130  [unmodelled: callback onSwitchIn; read by id in data/moves.ts]
  *   infiltrator -- data/abilities.ts:2131-2139
@@ -2904,7 +2904,7 @@ const uint8_t dfi_pool_ability_handler[DFI_POOL_ABILITY_COUNT] = {
     [DFI_ABILITY_HYPERCUTTER] = DFI_HANDLER_NONE,
     [DFI_ABILITY_ICEBODY] = DFI_HANDLER_UNMODELED,
     [DFI_ABILITY_ILLUMINATE] = DFI_HANDLER_UNMODELED,
-    [DFI_ABILITY_ILLUSION] = DFI_HANDLER_UNMODELED,
+    [DFI_ABILITY_ILLUSION] = DFI_HANDLER_NONE,
     [DFI_ABILITY_IMMUNITY] = DFI_HANDLER_UNMODELED,
     [DFI_ABILITY_IMPOSTER] = DFI_HANDLER_UNMODELED,
     [DFI_ABILITY_INFILTRATOR] = DFI_HANDLER_NONE,
@@ -6972,7 +6972,6 @@ const char *const dfi_pool_ability_unmodeled[DFI_POOL_ABILITY_COUNT] = {
     [DFI_ABILITY_HYDRATION] = "callback onResidual; callback onResidualOrder; callback onResidualSubOrder",
     [DFI_ABILITY_ICEBODY] = "callback onImmunity; callback onWeather",
     [DFI_ABILITY_ILLUMINATE] = "callback onModifyMove; callback onTryBoost",
-    [DFI_ABILITY_ILLUSION] = "callback onBeforeSwitchIn; callback onDamagingHit; callback onEnd; callback onFaint",
     [DFI_ABILITY_IMMUNITY] = "callback onSetStatus; callback onUpdate",
     [DFI_ABILITY_IMPOSTER] = "callback onSwitchIn; read by id in data/moves.ts",
     [DFI_ABILITY_INNARDSOUT] = "callback onDamagingHit; callback onDamagingHitOrder",
@@ -7066,10 +7065,10 @@ const char *const dfi_pool_ability_unmodeled[DFI_POOL_ABILITY_COUNT] = {
 };
 
 const uint8_t dfi_pool_table_hash[32] = {
-    0x93u, 0x1au, 0x45u, 0xc7u, 0xf3u, 0x75u, 0xc1u, 0x98u,
-    0x55u, 0x95u, 0x25u, 0x9bu, 0x06u, 0x93u, 0x6eu, 0x91u,
-    0x48u, 0x27u, 0x72u, 0x9cu, 0xc6u, 0xabu, 0x4du, 0xf1u,
-    0x80u, 0x0bu, 0x17u, 0x6eu, 0x2fu, 0xf2u, 0xdfu, 0x8bu,
+    0x6du, 0xc8u, 0xfcu, 0x12u, 0x21u, 0x6eu, 0x45u, 0x4du,
+    0x90u, 0x2du, 0xabu, 0xa4u, 0x64u, 0x15u, 0x53u, 0x4eu,
+    0x75u, 0xc0u, 0x47u, 0x0au, 0x36u, 0xb1u, 0xe4u, 0xc1u,
+    0xb0u, 0xf7u, 0x35u, 0xfbu, 0xbcu, 0xa8u, 0x0bu, 0xb3u,
 };
 
 static size_t dfi_pool_put_u16(uint8_t *out, size_t n, uint32_t v)
