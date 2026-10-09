@@ -510,11 +510,18 @@ if(Python3_Interpreter_FOUND)
     # what it normalises and reports, what it refuses, and what it writes, with a stand-in for the pokedex.
     add_test(NAME duoforge.reference.team_registry
         COMMAND "${Python3_EXECUTABLE}" "${PROJECT_SOURCE_DIR}/tools/reference/test_team_registry.py")
-    # 600 s: under ASan on WSL the 76 PP_ and 573 LL_ teams take more than the 120 s that fitted the plain builds.
+    # 600 s: the 1,042 teams took 95 s (MSVC release), 136 s (GCC debug) and 171 s (GCC ASan on WSL) in the parallel
+    # local CI of 2026-10-09, more than the 120 s that fitted the first registry.
     set_tests_properties(duoforge.reference.team_registry PROPERTIES TIMEOUT 600 ENVIRONMENT PYTHONDONTWRITEBYTECODE=1)
     add_test(NAME duoforge.reference.import_paste
         COMMAND "${Python3_EXECUTABLE}" "${PROJECT_SOURCE_DIR}/tools/reference/test_import_paste.py")
     set_tests_properties(duoforge.reference.import_paste PROPERTIES TIMEOUT 120 ENVIRONMENT PYTHONDONTWRITEBYTECODE=1)
+    # The bulk import of the VGCPastes sheet (tools/reference/import_vgcpastes.py) without Node or the library: the
+    # sheet rows, pool/pending/illegal, duplicates, the entries, a write into a copy of the registry (which it checks
+    # whole, hence the time of team_registry).
+    add_test(NAME duoforge.reference.import_vgcpastes
+        COMMAND "${Python3_EXECUTABLE}" "${PROJECT_SOURCE_DIR}/tools/reference/test_import_vgcpastes.py")
+    set_tests_properties(duoforge.reference.import_vgcpastes PROPERTIES TIMEOUT 600 ENVIRONMENT PYTHONDONTWRITEBYTECODE=1)
     # The AWS fuzz tooling (tools/cloud/aws_fuzz): its guards, the request, the user data and the policy text, offline,
     # with a stub aws first on the PATH. It needs a bash; on Windows that is Git's, not the WSL launcher in System32.
     if(WIN32)
@@ -641,7 +648,7 @@ endif()
 # The Python package (M7, decision 0013), run with DUOFORGE_PYTHON; without
 # an interpreter each test reports skipped instead of passing silently.
 
-foreach(_py layout lib equivalence recipes policies_features example learn_numpy live_unit live_client replay_unit openings book expert_data expert_teacher expert_contract expert_eval book_preview preview_search data batch_setups learn_v2_numpy teams features_ext bc_numpy encode_c search_numpy search_expand repo_hygiene view)
+foreach(_py layout lib equivalence recipes policies_features example learn_numpy live_unit live_client replay_unit openings book expert_data expert_teacher expert_contract expert_eval book_preview preview_search data batch_setups learn_v2_numpy teams features_ext bc_numpy encode_c search_numpy search_expand repo_hygiene view vgcpastes_engine)
     if(DUOFORGE_PYTHON)
         add_test(NAME duoforge.python.${_py}
             COMMAND "${DUOFORGE_PYTHON}" -m unittest -v python.tests.test_${_py}
