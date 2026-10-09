@@ -58,7 +58,9 @@ df_init() {
 # Every AWS call goes through here. Git Bash would turn an argument such as /aws/service/... into a Windows path before
 # it reaches the CLI, so the conversion is switched off for this one command only (exported, it would break git).
 df_aws() {
-    MSYS_NO_PATHCONV=1 MSYS2_ARG_CONV_EXCL='*' aws --region "$DF_REGION" "$@"
+    # aws.exe on Windows ends its text output with CRLF: the carriage returns are no part of any value.
+    MSYS_NO_PATHCONV=1 MSYS2_ARG_CONV_EXCL='*' aws --region "$DF_REGION" "$@" | tr -d '\r'
+    return "${PIPESTATUS[0]}"
 }
 
 # The first AWS action of every script: who is calling. Anything but the user pokeengine is refused.

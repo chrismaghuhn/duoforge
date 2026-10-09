@@ -64,8 +64,9 @@ case "$svc $op" in
         echo "${STUB_ACTIVE:-}" ;;
     "ec2 describe-images")
         case $all in
-            *RootDeviceName*) echo "${STUB_ROOT_DEV:-/dev/sda1}" ;;
-            *BlockDeviceMappings*) printf '%s\t%s\n/dev/sdb\tNone\n' "${STUB_ROOT_DEV:-/dev/sda1}" "${STUB_ROOT_GB:-75}" ;;
+            *RootDeviceName*) printf '%s%s\n' "${STUB_ROOT_DEV:-/dev/sda1}" "${STUB_CR:-}" ;;
+            *BlockDeviceMappings*) printf '%s\t%s%s\n/dev/sdb\tNone%s\n' "${STUB_ROOT_DEV:-/dev/sda1}" "${STUB_ROOT_GB:-75}" \
+                "${STUB_CR:-}" "${STUB_CR:-}" ;;
             *"Images[0].Name"*) echo "${STUB_AMI_NAME:-Deep Learning Base OSS Nvidia Driver GPU AMI (Ubuntu 24.04) 20261006}" ;;
         esac ;;
     "ssm get-parameter")
@@ -618,6 +619,14 @@ class Guards(unittest.TestCase):
         self.assertIn('"s3:prefix": ["p1/", "p1/*"]', r.stdout)
         self.assertNotIn(ACCOUNT, r.stdout + r.stderr)
         self.assertFalse([c for c in self.calls() if ' create-' in c or ' put-' in c or ' delete-' in c or 'iam ' in c])
+
+    def test_the_windows_cli_s_carriage_returns_are_no_part_of_a_value(self):
+        # aws.exe on Windows ends its text output with CRLF: the root device size read as "75\r" was "no EBS size"
+        # (check.sh on the owner's machine, 2026-10-09)
+        r = self.run_script('check.sh', '--bucket', 'my-p1-bucket', STUB_CR='\r')
+        self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+        self.assertNotIn('no EBS size', r.stdout)
+        self.assertIn('nothing is missing', r.stdout)
 
     def test_check_reports_what_is_missing_and_what_the_user_policy_lacks(self):
         r = self.run_script('check.sh', '--bucket', 'my-p1-bucket', STUB_DRYRUN='unauth', STUB_S3='deny', STUB_SSM='deny',
