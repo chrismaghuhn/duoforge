@@ -355,7 +355,7 @@ static void check_keen_eye_evasion(df_test *t, const duoforge_context *ctx)
     duoforge_battle_destroy(b);
 }
 
-/* 3. Regenerator on a PIVOT switch-out (step G51 rework; the fix of the G39 Regenerator row, decision 0015 5ar). In g51_dragalgite
+/* 3. Regenerator on a PIVOT switch-out (step G51 rework; the fix of the G39 Regenerator row, decision 0015 5bc). In g51_dragalgite
  * Dragalge-Mega uses Flip Turn at step 2 and leaves at step 3 (the answer to the PIVOT, `switch 3`): Regenerator heals it by a
  * third before the switch, and the opponent's knowledge of its HP must show the healed percent. */
 static void check_regenerator_pivot(df_test *t, const duoforge_context *ctx)
