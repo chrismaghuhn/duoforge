@@ -177,6 +177,30 @@ class Collector(unittest.TestCase):
         self.assertEqual(pairs.shape, (1024, 2))
         self.assertEqual(ce.pairing_of(self.manifest, _pool(), [1001, 1000]).tolist(), pairs[1::-1].tolist())
 
+    def test_refusals_and_a_failed_setup_leave_no_collection(self):
+        from duoforge_learn import collect_expert as ce
+        out = self.root / "refused"
+        # The network must run on the manifest's device (P1: cpu); another platform is refused before any write.
+        with mock.patch.object(ce, "device_platform", return_value="gpu"), \
+                self.assertRaisesRegex(ce.Refusal, "device"):
+            self.collect(out)
+        self.assertFalse(out.exists())
+        # A setup that fails before the first state save leaves no manifest or state: a fresh start is accepted
+        # (it fails again here for the same injected cause, never as "a collection exists").
+        for _ in range(2):
+            with mock.patch.object(ce._Collection, "roots", side_effect=RuntimeError("injected setup failure")), \
+                    self.assertRaisesRegex(RuntimeError, "injected"):
+                self.collect(out)
+            self.assertFalse((out / "manifest.json").exists())
+            self.assertFalse((out / ce.STATE).exists())
+            self.assertEqual(list((out / "shards").iterdir()), [])
+        # Refusals are ValueErrors of their own type: an existing collection, a resume without state.
+        with self.assertRaisesRegex(ce.Refusal, "exists"):
+            self.collect(self.base)
+        with self.assertRaisesRegex(ce.Refusal, "no collection state"):
+            self.collect(self.root / "nothing", resume=True)
+        self.assertTrue(issubclass(ce.Refusal, ValueError))
+
     def test_the_foe_source_is_left_out(self):
         """D0023's leave-foe-source-out (as arena.py): the teacher's belief of a game excludes its foe team's spread
         source, and nothing when the foe team is no source (an LL_ team)."""
@@ -240,6 +264,14 @@ class Collector(unittest.TestCase):
         bad[40] = np.nan
         with self.assertRaisesRegex(ValueError, "finite"):
             ce.raw_draws(bad[None], legal[None], keys[:1], seed=7)
+        # u = word / 2**64 rounds to 1.0 for the top words: the inverse CDF's limit, the last id with positive mass
+        # (a legal id whose mass underflows to 0 after it is never drawn).
+        from duoforge_search import expert_data as ed
+        tail = logp.copy()
+        tail[900] = -1000.0  # legal, exp() == 0 in float64
+        with mock.patch.object(ed, "selection_word", return_value=2 ** 64 - 1):
+            a, lp = ce.raw_draws(tail[None], np.isfinite(tail)[None], keys[:1], seed=7)
+        self.assertEqual((int(a[0]), float(lp[0])), (700, float(logp[700])))
         # The full legal distribution of a pair row is Model.full_joint_log_probs; a preview row is the team head.
         import jax
         from duoforge_learn import policy
@@ -250,7 +282,7 @@ class Collector(unittest.TestCase):
         obs, slots, mask = (x[:6] for x in turn)
         is_team = np.zeros(6, bool)
         is_team[2] = True
-        pairs, team, value = ce.distributions(model, params, obs, slots, mask, is_team)
+        pairs, team, value = ce.distributions(model, params, obs, slots, mask)
         full = np.asarray(model.full_joint_log_probs(params, obs[~is_team], slots[~is_team], mask[~is_team]))
         legal_rows = mask[~is_team].reshape(5, -1)
         self.assertTrue(np.all(pairs[~is_team][~legal_rows] == -np.inf))
@@ -353,54 +385,84 @@ class Collector(unittest.TestCase):
 
 
 class Cli(unittest.TestCase):
-    def test_cli_refusals_exit_2(self):
-        import contextlib
-        import io
-        from duoforge_learn import collect_expert as ce
-        from duoforge_search import expert_data as ed
+    """The CLI with a real (untrained) checkpoint standing in for params-49333 and a manifest carrying exactly the
+    hashes the CLI computes: the init file, the canonical model configuration, the context's ids, the pool (M12's
+    expert_eval.pool_sha256 of the default Teams A and B) and the pinned spread table."""
+
+    def setUp(self):
         import hashlib
         import json
         import jax
         from duoforge_learn import checkpoint, policy
-        from duoforge_search import expert_eval
+        from duoforge_search import expert_eval, honest
+        self.tmp = tempfile.TemporaryDirectory(prefix="duoforge-collect-cli-")
+        self.dir = Path(self.tmp.name)
+        cfg = policy.v2_config("S")
+        params = policy.make(cfg).init(jax.random.PRNGKey(5))
+        self.init = self.dir / "params-other.npz"
+        checkpoint.save(self.init, params, {"model": cfg, "encoder": features.ENCODER,
+                                            "features": list(features.FEATURE_NAMES),
+                                            "slot_features": list(features.SLOT_FEATURE_NAMES),
+                                            "data": {"kind": "pool"}, "teams": {}, "update": 0, "decisions": 0,
+                                            "ids": {}})
+
+        def canonical(value):
+            return hashlib.sha256(json.dumps(value, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
+
+        with duoforge.Context(C["DUOFORGE_DATA_KIND_POOL"]) as ctx:
+            ids, belief = canonical(checkpoint.ids_of(ctx)), honest.spread_table(ctx)[2]["sha256"]
+        self.right = dataclasses.replace(
+            _manifest(), checkpoint_hash=hashlib.sha256(self.init.read_bytes()).hexdigest(), model_hash=canonical(cfg),
+            ids_hash=ids, belief_hash=belief, pool_hash=expert_eval.pool_sha256(teams.TeamPool.from_setups(
+                ("A", "B"), duoforge.reference_setups([0])["sides"][0])))
+
+    def tearDown(self):
+        self.tmp.cleanup()
+
+    def main(self, manifest, *extra):
+        import contextlib
+        import io
+        from duoforge_learn import collect_expert as ce
+        from duoforge_search import expert_data as ed
+        path = self.dir / f"manifest-{len(list(self.dir.glob('manifest-*')))}.json"
+        ed.write_manifest(path, manifest)
+        err = io.StringIO()
+        with contextlib.redirect_stderr(err):
+            code = ce.main(["--init", str(self.init), "--manifest", str(path), *extra])
+        return code, err.getvalue()
+
+    def test_cli_refusals_exit_2(self):
         repo = Path(__file__).resolve().parents[2]
-        with tempfile.TemporaryDirectory(prefix="duoforge-collect-cli-") as tmp:
-            tmp = Path(tmp)
-            # A real (untrained) checkpoint stands in for params-49333.
-            cfg = policy.v2_config("S")
-            params = policy.make(cfg).init(jax.random.PRNGKey(5))
-            init = tmp / "params-other.npz"
-            checkpoint.save(init, params, {"model": cfg, "encoder": features.ENCODER,
-                                           "features": list(features.FEATURE_NAMES),
-                                           "slot_features": list(features.SLOT_FEATURE_NAMES),
-                                           "data": {"kind": "pool"}, "teams": {}, "update": 0, "decisions": 0,
-                                           "ids": {}})
-            # The hashes the CLI computes: the init file, the canonical model configuration, the pool (M12's
-            # expert_eval.pool_sha256 of the default Teams A and B).
-            right = dataclasses.replace(
-                _manifest(), checkpoint_hash=hashlib.sha256(init.read_bytes()).hexdigest(),
-                model_hash=hashlib.sha256(json.dumps(cfg, sort_keys=True, separators=(",", ":")).encode()).hexdigest(),
-                pool_hash=expert_eval.pool_sha256(teams.TeamPool.from_setups(
-                    ("A", "B"), duoforge.reference_setups([0])["sides"][0])))
-            manifests = {"checkpoint": dataclasses.replace(right, checkpoint_hash="b" * 64),
-                         "model": dataclasses.replace(right, model_hash="c" * 64),
-                         "pool": dataclasses.replace(right, pool_hash="e" * 64)}
-            for name, m in manifests.items():
-                ed.write_manifest(tmp / f"manifest-{name}.json", m)
-            other = ["--allow-other-init", "--out", str(tmp / "out")]
-            cases = {"inside the repository": ("checkpoint", ["--out", str(repo / "collect-out")]),
-                     "params-49333": ("checkpoint", ["--out", str(tmp / "out")]),
-                     "the manifest pins checkpoint": ("checkpoint", other),
-                     "the manifest pins model": ("model", other),
-                     "the manifest pins pool": ("pool", other)}
-            for cause, (name, extra) in cases.items():
-                err = io.StringIO()
-                with self.subTest(cause), contextlib.redirect_stderr(err):
-                    code = ce.main(["--init", str(init), "--manifest", str(tmp / f"manifest-{name}.json"), *extra])
-                    self.assertEqual(code, 2)
-                    self.assertIn(cause, err.getvalue())
-            self.assertFalse((tmp / "out").exists())
-            self.assertFalse((repo / "collect-out").exists())
+        other = ["--allow-other-init", "--out", str(self.dir / "out")]
+        r = self.right
+        cases = {"inside the repository": (r, ["--out", str(repo / "collect-out")]),
+                 "params-49333": (r, ["--out", str(self.dir / "out")]),
+                 "the manifest pins checkpoint": (dataclasses.replace(r, checkpoint_hash="b" * 64), other),
+                 "workers": (r, other + ["--workers", "8"]),
+                 "the manifest pins model": (dataclasses.replace(r, model_hash="c" * 64), other),
+                 "the manifest pins ids": (dataclasses.replace(r, ids_hash="d" * 64), other),
+                 "the manifest pins pool": (dataclasses.replace(r, pool_hash="e" * 64), other),
+                 "the manifest pins belief": (dataclasses.replace(r, belief_hash="f" * 64), other)}
+        for cause, (manifest, extra) in cases.items():
+            with self.subTest(cause):
+                code, err = self.main(manifest, *extra)
+                self.assertEqual(code, 2)
+                self.assertIn(cause, err)
+        self.assertFalse((self.dir / "out").exists())
+        self.assertFalse((repo / "collect-out").exists())
+
+    def test_cli_refusal_versus_crash_during_the_collection(self):
+        """A refusal of collect's own pre-run checks exits 2; any other error inside the collection is a crash and
+        propagates (exit 1), never a refusal."""
+        from duoforge_learn import collect_expert as ce
+        other = ["--allow-other-init", "--out", str(self.dir / "out")]
+        with mock.patch.object(ce, "collect", side_effect=ce.Refusal("resume refused: injected")):
+            code, err = self.main(self.right, *other)
+        self.assertEqual(code, 2)
+        self.assertIn("resume refused: injected", err)
+        with mock.patch.object(ce, "collect", side_effect=ValueError("injected crash")), \
+                self.assertRaisesRegex(ValueError, "injected crash"):
+            self.main(self.right, *other)
 
 
 if __name__ == "__main__":
