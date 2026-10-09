@@ -469,6 +469,89 @@ static void check_faint_held(df_test *t, const duoforge_context *ctx)
     }
 }
 
+/* One boundary of side 0 with a SWITCH of `reserve` into position `slot`, run on a copy of the battle the way request.c runs a boundary
+ * (the copy is discarded: a refusal changes nothing, and a success is not committed here). */
+static duoforge_status replacement_switch(const duoforge_context *ctx, const duoforge_battle *b, uint32_t slot, uint32_t reserve)
+{
+    struct duoforge_battle tmp = *b;
+    tmp.boundary_kind = (uint8_t)DUOFORGE_BOUNDARY_REPLACEMENT;
+    tmp.request_mask = 1u; /* side 0 only */
+    tmp.sides[0].requested_slots = (uint8_t)(1u << slot);
+    duoforge_side_choice responses[DUOFORGE_SIDE_COUNT];
+    memset(responses, 0, sizeof responses);
+    responses[0].side = 0u;
+    responses[0].kind = DUOFORGE_CHOICE_SLOTS;
+    responses[0].slots[slot].kind = DUOFORGE_SLOT_SWITCH;
+    responses[0].slots[slot].reserve = (uint8_t)reserve;
+    dfi_events events;
+    memset(&events, 0, sizeof events);
+    dfi_draws draws = dfi_draws_from_rng(&tmp.rng);
+    draws.tape = NULL;
+    draws.tape_len = 0u;
+    return dfi_turn_run(ctx, &tmp, responses, &draws, &events);
+}
+
+/* M9 (decision 0026 section 3, amended by I2: one shown name per side): while the holder stands disguised as a name on position 0,
+ * the member of that name entering on position 1 would show the name twice. Refused E_UNSUPPORTED at its switch-in, before any change.
+ * White-box: i2_illusion_break at step 1 (Zoroark at position 0 disguised as roster 3, the name shown), roster 3 switching into
+ * position 1 in place of roster 1. The negative control is a member that is not the shown name entering the same position: not refused. */
+static void check_one_name_switch_in(df_test *t, const duoforge_context *ctx)
+{
+    duoforge_battle *b = replay(t, ctx, "i2_illusion_break", 1u);
+    if (b == NULL) {
+        return;
+    }
+    if (!DF_CHECK(t, b->tail.sides[0].illusion.shown == 4u && b->tail.sides[0].positions[0].ability_state == 4u)) {
+        duoforge_battle_destroy(b);
+        return;
+    }
+    DF_CHECK_EQ_U64(t, replacement_switch(ctx, b, 1u, 3u), DUOFORGE_E_UNSUPPORTED);
+    DF_CHECK_EQ_U64(t, b->tail.sides[0].illusion.shown, 4u); /* the refused switch changed nothing (the copy was discarded) */
+    DF_CHECK(t, replacement_switch(ctx, b, 1u, 2u) != DUOFORGE_E_UNSUPPORTED);
+    duoforge_battle_destroy(b);
+}
+
+/* The clear of a holder fainted under its shown name (decision 0026 section 4, amended by I2; option B: the view must not read the
+ * holder's true state). The real disguise member (roster 3) entering on the holder's fainted position while the foe still shows the
+ * faint under its name is refused E_UNSUPPORTED at the switch-in, before any change. White-box: the state of check_faint_held (Zoroark
+ * fainted at position 0 under the name of roster 3, the disguise dropped, i2_illusion_break step 1), with the foe having seen the
+ * holder at 100 percent or never. Negative control: the same entry on a live holder (its unbroken switch-out) is not this case. */
+static void check_faint_clear(df_test *t, const duoforge_context *ctx)
+{
+    for (uint32_t seen = 0u; seen < 2u; ++seen) {
+        duoforge_battle *b = replay(t, ctx, "i2_illusion_break", 1u);
+        if (b == NULL) {
+            return;
+        }
+        b->tail.sides[0].positions[0].ability_state = 0u;
+        b->sides[0].members[0].hp = 0u;
+        dfi_tail_illusion *ill = &b->tail.sides[0].illusion;
+        memset(ill->snapshot, 0, 7u);
+        memset(ill->pending, 0, sizeof ill->pending);
+        ill->override[2] = 0u;
+        ill->override[3] = 2u;
+        uint8_t pct = 0u;
+        uint8_t flag = 0u;
+        dfi_hp_display(0u, b->sides[0].members[3].hp_max, &pct, &flag);
+        b->sides[1].knowledge[3].hp_percent = pct;
+        b->sides[1].knowledge[3].hp_flag = flag;
+        if (seen != 0u) {
+            b->sides[1].seen_mask = (uint8_t)(b->sides[1].seen_mask | 1u);
+            b->sides[1].knowledge[0].hp_percent = 100u;
+            b->sides[1].knowledge[0].hp_flag = 0u;
+        }
+        DF_CHECK_EQ_U64(t, replacement_switch(ctx, b, 0u, 3u), DUOFORGE_E_UNSUPPORTED);
+        DF_CHECK_EQ_U64(t, b->tail.sides[0].illusion.shown, 4u);
+        DF_CHECK_EQ_U64(t, b->sides[0].positions[0].occupant, 0u);
+        duoforge_battle_destroy(b);
+    }
+    duoforge_battle *live = replay(t, ctx, "i2_illusion_break", 1u);
+    if (live != NULL) {
+        DF_CHECK(t, replacement_switch(ctx, live, 0u, 3u) != DUOFORGE_E_UNSUPPORTED); /* the holder alive: its unbroken switch-out */
+        duoforge_battle_destroy(live);
+    }
+}
+
 /* The fold writes the status the lines show on the name (decision 0026 section 4, amended by I2): a STATUS line of the disguised holder
  * sets the override status, a CURE_STATUS line clears it. One line folded on the battle with the disguise up (i2_illusion_break,
  * step 1); the fold reads `before` only at its start, so the battle serves as both. */
@@ -566,6 +649,8 @@ int main(void)
     check_knowledge_disguise(&t, ctx);
     check_expected_status(&t);
     check_faint_held(&t, ctx);
+    check_one_name_switch_in(&t, ctx);
+    check_faint_clear(&t, ctx);
     check_fold_status_line(&t, ctx);
     check_fold_switch_status(&t, ctx);
     return df_test_end(&t);

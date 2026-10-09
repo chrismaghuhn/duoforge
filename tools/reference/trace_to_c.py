@@ -1795,7 +1795,13 @@ def convert_battle(name, spec, trace, tables):
     # shows fainted for a holder that fainted under it. Set when the holder stands fainted on a position whose shown name is another
     # member; cleared only by a SWITCH or DRAG line of that real member (its own line replaces the name's values).
     held_faint = {}
-    for step in trace['steps']:
+    # Decision 0026 section 4, the duplicate name: the first step at which a disguise and its real member are both on the field
+    # (the holder's disguise is the other active). The engine refuses that switch-in (dfi_switch_in), so the display of the real
+    # member is exempt from this step on, and no step after it is compared; diff_driver counts an engine that does not refuse at
+    # or before this step as an ORACLE_GAP (duplicate_gap).
+    dup_step = None
+    dup_rows = set()  # (side, roster) of the real member whose name the holder shows, from dup_step on
+    for k, step in enumerate(trace['steps']):
         public_lines(step['log'], roster_of, shown, ill_pub)
         kinds = {}
         for side, sid in enumerate(('p1', 'p2')):
@@ -1837,6 +1843,13 @@ def convert_battle(name, spec, trace, tables):
                 if truth_roster in ill_holder[s] and truth['fainted'] and entry[0] != truth_roster:
                     held_faint[s] = entry[0]
         ill_pp_fold(step['log'], state, new_state, roster_of, teams, tables, ill_key, ill_win, ill_off, ill_sst)
+        for s in range(2):
+            w = ill_win[s]
+            if w is not None and any(i is not None and i >= 0 and roster_of[s][name_of(new_state['sides'][s]['pokemon'][i])] == w['d']
+                                     for i in new_state['sides'][s]['active']):
+                if dup_step is None:
+                    dup_step = k
+                dup_rows.add((s, w['d']))
         t_now = pp_map(new_state, roster_of)
         mons = []
         for s in range(2):
@@ -1879,7 +1892,8 @@ def convert_battle(name, spec, trace, tables):
                 is_holder = roster in ill_holder[s]
                 fainted = bool(p['fainted'])
                 shown_under_holder = held_faint.get(s) == roster  # the name of a holder fainted under it (0026 section 4)
-                if seen and not is_holder and not shown_under_holder and (seen[0] == 0) != fainted:
+                shown_as_duplicate = (s, roster) in dup_rows  # the name of the holder's disguise, shown beside its real member
+                if seen and not is_holder and not shown_under_holder and not shown_as_duplicate and (seen[0] == 0) != fainted:
                     raise ConversionError('display-faint', 'trace_to_c: the foe shows %s at %s percent, fainted %s' %
                                           (name_of(p), seen[0], fainted), detail=name_of(p))
                 held_under_name = is_holder and fainted and bool(seen) and seen[0] != 0
@@ -1990,7 +2004,7 @@ def convert_battle(name, spec, trace, tables):
         state = new_state
         mid_turn = boundary == 4 if 'queue_len' in new_state else not any(line.startswith('|upkeep') for line in step['log'])
     return {'name': name, 'purpose': spec['purpose'], 'member_count': len(teams[0]), 'members': members,
-            'steps': steps, 'dropped_total': dropped_total}
+            'steps': steps, 'dropped_total': dropped_total, 'illusion_duplicate_step': dup_step}
 
 
 def c_init(value):

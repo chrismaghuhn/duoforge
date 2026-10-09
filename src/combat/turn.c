@@ -6029,6 +6029,15 @@ static duoforge_status dfi_switch_in(dfi_run *r, uint32_t side, uint32_t slot, u
         (!disguised || disguise != (uint32_t)b->tail.sides[side].illusion.shown - 1u)) {
         return DUOFORGE_E_UNSUPPORTED;
     }
+    /* A holder fainted under its shown name (decision 0026 section 4, amended by I2: the holder stands fainted on the position while
+     * the foe still shows the name) whose real disguise member enters on that position: the clear would show the holder's true
+     * fainted state, and the view must not read it (no deduction; option B). Refused before any change. */
+    if (pool_rules && b->tail.sides[side].illusion.shown != 0u && reserve == (uint32_t)b->tail.sides[side].illusion.shown - 1u &&
+        sd->positions[slot].occupant != DFI_OCCUPANT_NONE && sd->positions[slot].occupant != reserve &&
+        sd->positions[slot].occupant < sd->member_count && sd->members[sd->positions[slot].occupant].hp == 0u &&
+        dfi_illusion_shown_occupant(sd, &b->tail.sides[side], slot) == reserve) {
+        return DUOFORGE_E_UNSUPPORTED;
+    }
     const dfi_member *leaving = dfi_at(b, side * 2u + slot);
     const uint32_t flag = sd->positions[slot].switch_flag;
     const bool parting_shot = leaving != NULL && leaving->hp != 0u && flag == DFI_SWITCH_MOVE && !drag;
