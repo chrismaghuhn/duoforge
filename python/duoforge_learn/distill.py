@@ -420,11 +420,31 @@ def _manifest(path):
     return ed.read_manifest(Path(path)), _sha256(path)
 
 
+class _LoadInterrupted(Exception):
+    """SIGTERM or SIGINT while the shards load (before fit's own stop flag is installed)."""
+
+
+@contextlib.contextmanager
+def _interruptible():
+    """SIGTERM and SIGINT raise _LoadInterrupted inside the block (so the ledger's finally still runs); the
+    previous handlers come back afterwards."""
+    import signal
+
+    def raise_(signum, frame):
+        raise _LoadInterrupted(signal.Signals(signum).name)
+    old = {sig: signal.signal(sig, raise_) for sig in (signal.SIGTERM, signal.SIGINT)}
+    try:
+        yield
+    finally:
+        for sig, handler in old.items():
+            signal.signal(sig, handler)
+
+
 def main(argv=None):
     """python -m duoforge_learn.distill: exit 0 after a finished fit (whatever its stop reason), 2 for a refusal, 3
     when a signal stopped it (resume with --resume). With --ledger the ledger exists before anything is loaded
     (phases "load", the shards, and "distill", the fit) and is saved on every exit: a refusal, a crash, a signal,
-    a finished fit."""
+    a finished fit. A signal while the shards load exits 3 as well (nothing to resume: the fit has not started)."""
     import argparse
     import sys
     p = argparse.ArgumentParser(prog="python -m duoforge_learn.distill", description="Stage 3 P1 distillation.")
@@ -472,8 +492,15 @@ def main(argv=None):
                     (checkpoint.model_config(config, init), config["features"]):
                 raise ValueError("the reference's model or layout differs from the init's")
             model = checkpoint.trained_model(config, init)
-            with (book.phase("load") if book is not None else contextlib.nullcontext()):
-                data = distill_data.load(args.shards, manifest, workers=args.load_workers)
+            workers = args.load_workers or os.cpu_count() or 1
+            if book is not None and workers > 1:
+                from . import ledger as ledger_mod
+                if ledger_mod.resource is None:
+                    raise ValueError("--ledger with --load-workers above 1 needs getrusage: os.times() counts no "
+                                     "child CPU here, so the pool workers' CPU would go uncharged (use "
+                                     "--load-workers 1)")
+            with _interruptible(), (book.phase("load") if book is not None else contextlib.nullcontext()):
+                data = distill_data.load(args.shards, manifest, workers=workers)
             identity = {"manifest": manifest_sha, **shas, "jax": jax.__version__, "optax": optax.__version__,
                         "device": jax.devices()[0].device_kind, "allow_other_init": args.allow_other_init}
             stop = runstate.StopFlag().install()
@@ -485,6 +512,9 @@ def main(argv=None):
         except (ValueError, OSError) as err:
             print(f"distill: {err}", file=sys.stderr)
             return 2
+        except _LoadInterrupted as err:
+            print(f"distill: {err} while loading the shards; nothing fitted", file=sys.stderr)
+            return 3
     finally:
         if book is not None:
             book.save()

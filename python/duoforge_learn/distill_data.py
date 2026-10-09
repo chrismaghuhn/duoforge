@@ -125,9 +125,15 @@ def _shards(shard_dir, manifest, workers):
     import concurrent.futures
     import multiprocessing
     # spawn: the parent holds JAX's threads, which a fork must not copy.
-    with concurrent.futures.ProcessPoolExecutor(workers, mp_context=multiprocessing.get_context("spawn")) as pool:
-        return [report(i, part) for i, part in enumerate(pool.map(_shard_columns, map(str, paths),
-                                                                   [fields] * len(paths)), start=1)]
+    pool = concurrent.futures.ProcessPoolExecutor(workers, mp_context=multiprocessing.get_context("spawn"))
+    try:
+        futures = [pool.submit(_shard_columns, str(p), fields) for p in paths]
+        parts = [report(i, f.result()) for i, f in enumerate(futures, start=1)]
+    except BaseException:
+        pool.shutdown(wait=True, cancel_futures=True)  # a refused shard (or a signal) stops the rest at once
+        raise
+    pool.shutdown(wait=True)
+    return parts
 
 
 def _trajectories(game_id, seat, tick, done):
@@ -186,13 +192,16 @@ def load(shard_dir, manifest, workers=None):
         raise ValueError(f"load workers must be a positive integer (got {workers!r})")
     parts = _shards(shard_dir, manifest, workers)
     cols = {name: np.concatenate([p[name] for p in parts]) for name in parts[0]}
+    del parts  # the per-shard copies
+    if not cols["game_id"].size:
+        raise ValueError(f"{shard_dir}: the shards hold no rows")
     order = _trajectories(cols["game_id"], cols["seat"], cols["logical_tick"], cols["done"])
     cols = {name: v[order] for name, v in cols.items()}
     games = np.unique(cols["game_id"])
     held = dict(zip(games.tolist(), (ed.is_held_out(int(g), manifest.split_seed) for g in games)))
     out = {
-        "obs": cols["obs"].astype(np.float32),
-        "slots": cols["slots"].astype(np.float32),
+        "obs": cols.pop("obs").astype(np.float32, copy=False),
+        "slots": cols.pop("slots").astype(np.float32, copy=False),
         "mask": cols["mask"], "team_mask": cols["team_mask"], "is_team": cols["is_team"],
         "target_ids": cols["target_ids"], "target_probs": cols["target_probs"], "has_target": cols["has_target"],
         "policy_row": cols["policy_row"], "value_row": cols["value_row"],
