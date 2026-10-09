@@ -149,7 +149,7 @@ static void check_facts(df_test *t)
     DF_CHECK_EQ_U64(t, DFI_SPECIAL_TRICK, DFI_SPECIAL_IMPRISON + 1u); /* step G29's four ids follow */
     DF_CHECK_EQ_U64(t, DFI_SPECIAL_SUPER_FANG, DFI_SPECIAL_COVET + 1u); /* step G39 follows */
     DF_CHECK_EQ_U64(t, DFI_SPECIAL_TAUNT, DFI_SPECIAL_SUPER_FANG + 1u); /* step G31 */
-    DF_CHECK_EQ_U64(t, DFI_SPECIAL_UNMODELED, DFI_SPECIAL_PHANTOM_FORCE + 1u) /* G62: After You and Quash (decision 0015 entry 5az) come after Strength Sap */; /* step G48 adds four handlers after Yawn */
+    DF_CHECK_EQ_U64(t, DFI_SPECIAL_UNMODELED, DFI_SPECIAL_KINGS_SHIELD + 1u) /* G62: After You and Quash (decision 0015 entry 5az) come after Strength Sap */; /* step G48 adds four handlers after Yawn */
     /* Clangorous Soul: the Champions mod's accuracy true, five +1 boosts on the user, the sound flag (Throat Chop bars it) */
     const dfi_move_data *cs = &dfi_pool_moves[DFI_MOVE_CLANGOROUSSOUL];
     DF_CHECK_EQ_U64(t, cs->accuracy, 0u);

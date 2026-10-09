@@ -5847,11 +5847,11 @@ static duoforge_status dfi_stance_change(dfi_run *r, uint32_t user, uint32_t mov
     for (uint32_t i = 0u; i < DFI_MEMBER_STAT_COUNT; ++i) {
         m->stats[i] = stats[i];
     }
-    *forme_slot = want_blade ? (uint16_t)(DFI_FORME_AEGISLASHBLADE + 1u) : 0u;
+    *forme_slot = want_blade ? (uint16_t)(DFI_FORME_AEGISLASHBLADE + 1u) : 0u; /* wide-operands-reviewed: a forme id + 1, < 348 */
     duoforge_event e = dfi_event_make(DUOFORGE_EVENT_FORME, user);
     e.id = (uint16_t)forme;
     e.cause = (uint8_t)DUOFORGE_CAUSE_ABILITY;
-    e.id2 = (uint16_t)(DFI_ABILITY_STANCECHANGE + 1u);
+    e.id2 = (uint16_t)(DFI_ABILITY_STANCECHANGE + 1u); /* wide-operands-reviewed: an ability id + 1, < 255 */
     dfi_emit(r, &e);
     return DUOFORGE_OK;
 }
