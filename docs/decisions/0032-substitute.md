@@ -1,6 +1,6 @@
 # 0032 - Substitute (G60): proposal of phase 1
 
-Status: **accepted by the lead; public values pending HauptSession.** Lane A builder H2 (batch 2). The lead's decisions of phase 1 are in section 11 (the scope, bypasssub, option A, OHKO). Event and value numbers marked "to be assigned" are for HauptSession. Pin: Pokemon Showdown b2cb775 (`C:/Dev/src/pokemon-showdown`), Champions mod checked (it does not override Substitute, its condition, or the sub-reading rows listed below).
+Status: **accepted by the lead; public values approved by HauptSession (volatile 9, FAIL details 1 and 2, cause 8); engine, generator and tests done (section 15).** Lane A builder H2 (batch 2). The lead's decisions of phase 1 are in section 11 (the scope, bypasssub, option A, OHKO). Event and value numbers marked "to be assigned" are for HauptSession. Pin: Pokemon Showdown b2cb775 (`C:/Dev/src/pokemon-showdown`), Champions mod checked (it does not override Substitute, its condition, or the sub-reading rows listed below).
 
 ## 1. What the pin does
 
@@ -194,3 +194,13 @@ Converter (`tools/reference/trace_to_c.py`): the `-hitcount` count includes the 
 ## 14. Public causes
 
 `DUOFORGE_PUBLIC_CAUSE_SUBSTITUTE` = 8u (approved by HauptSession): a Substitute on either side refuses `duoforge_battle_public` and the honest world, with this named cause, counted by the arena (the Python side is HauptSession's, in hs/g60-python).
+
+## 15. Phase 2: what is built, what is measured
+
+- Values (approved): volatile 9, FAIL details 1 (EXISTS) and 2 (WEAK), cause 8; header, `tools/layout/layout_dump.c` and `python/duoforge/_layout.py` in their own commits.
+- Engine (`src/combat/turn.c`): the move (fails, cost, start, break), the gate of each hit that the target does not take (before the status effects for status moves; per hit inside the hit loop for damaging moves, with an absorbed hit counting for the next hit of a multi-hit move), the self-drop roll of an absorbed target (`battle-actions.ts:1318-1331`: a null target is not false), the resist berry not eaten under the Substitute's hit, Intimidate's `-immune`. Infiltrator (`move.infiltrates`) and the bypasssub column pass the Substitute.
+- Generator: the pinned texts of onTryHit, onHit and the condition are checked; the column `dfi_pool_move_bypasssub` is appended last to the canonical bytes; the POOL hash and the KP/KPD fingerprints are updated.
+- Public record: any Substitute on either side refuses with cause 8 (`src/state/view.c`); the observation writes the presence bit only (`src/state/observation.c`).
+- Evidence: eight recorded POOL battles (`tests/reference/specs/g60_sub_*.json`), all 493 pool-data battles pass (`duoforge.reference.conformance_pool_data`: 7000 checks, 0 failures); closure and Team C unchanged; `duoforge.state.pool_g60` (46 checks); `tools/reference/test_trace_to_c.py` (89 tests); `tools/datagen/test_gen_closure.py` (124 tests).
+- Mutations (the rule edited, then the tests run): 11 kinds. Caught by the conformance or the white-box test: the cost off by one, the bypasssub column ignored, the Infiltrator bypass removed, the status gate off, the berry eaten under a Substitute, Intimidate ignoring a Substitute, the self-drop roll ignoring absorbed targets, the multi-hit target not restored, the break without its -end event, the cause bit off. Survived: the weak check at the boundary (`<` for `<=`): no recorded battle has a user at exactly a quarter of its maximum HP.
+- Not in this step: the Substitute's live tracker and the foe-presence folding (HauptSession's `hs/g60-python`, by design); Baton Pass and Shed Tail stay refused; OHKO breaks are not represented (no marked OHKO row).
