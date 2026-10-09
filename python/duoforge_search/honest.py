@@ -120,7 +120,8 @@ def spread_table(ctx, root=None, sources=SPREAD_SOURCES):
 _CAUSES = ((C["DUOFORGE_PUBLIC_CAUSE_VISIBLE_SLEEP"], "visible_sleep"),
            (C["DUOFORGE_PUBLIC_CAUSE_VISIBLE_CONFUSION"], "visible_confusion"),
            (C["DUOFORGE_PUBLIC_CAUSE_ILLUSION_POSSIBLE"], "illusion_possible"),
-           (C["DUOFORGE_PUBLIC_CAUSE_SUBSTITUTE"], "substitute"))  # decision 0032 (step G60)
+           (C["DUOFORGE_PUBLIC_CAUSE_SUBSTITUTE"], "substitute"),  # decision 0032 (step G60)
+           (C["DUOFORGE_PUBLIC_CAUSE_RAISED_THIS_TURN"], "raised_this_turn"))  # step G72: Alluring Voice at a PIVOT
 
 
 def visible_causes(roots, env, player):

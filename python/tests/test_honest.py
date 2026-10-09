@@ -49,6 +49,7 @@ class PublicCauses(unittest.TestCase):
         bits = {v for k, v in C.items() if k.startswith("DUOFORGE_PUBLIC_CAUSE_")}
         self.assertEqual({bit for bit, _ in honest._CAUSES}, bits)
         self.assertIn((C["DUOFORGE_PUBLIC_CAUSE_SUBSTITUTE"], "substitute"), honest._CAUSES)
+        self.assertIn((C["DUOFORGE_PUBLIC_CAUSE_RAISED_THIS_TURN"], "raised_this_turn"), honest._CAUSES)
 
 
 class HonestSearch(unittest.TestCase):
