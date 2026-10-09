@@ -15,10 +15,16 @@
  * everything the reference shows. Here are the facts that it does not show:
  *   - the marks and the handler columns of the three rows (ENGINE_ROWS: no handler, not UNMODELED, no family);
  *   - the chain arithmetic: the modifiers, and for which base accuracies the two orders of Wide Lens and Bright Powder give
- *     different accuracies, for each prefix that Compound Eyes and Snow Cloak or Sand Veil make before them.
+ *     different accuracies, for each prefix that Compound Eyes and Snow Cloak or Sand Veil make before them;
+ *   - the two refusals, each with a control that the same battle with the powder removed (or a Sitrus Berry) is accepted:
+ *       (a) Compound Eyes and Wide Lens on the attacker, Bright Powder on the target, a move of accuracy 75 (Sleep Powder,
+ *           Vivillon): the two orders give 97 and 96, so the step is E_UNSUPPORTED (a battle built here, step API);
+ *       (b) a multi-hit multiaccuracy move (Triple Axel, the recorded g33_triple_axel battle) into a Bright Powder holder:
+ *           its first hit hits (the recorded draw is below 81), its second hit's check is refused (E_UNSUPPORTED).
  */
 #include <stdbool.h>
 #include <stdint.h>
+#include <stdio.h>
 #include <string.h>
 
 #include <duoforge/duoforge.h>
@@ -28,6 +34,7 @@
 #include "data/support_manifest.h"
 #include "reference/conformance_pool.h"
 #include "state/battle_internal.h"
+#include "state/request.h"
 #include "support/check.h"
 #include "support/fixtures.h"
 #include "support/pool.h"
@@ -53,6 +60,198 @@ static uint32_t order_chains(uint32_t prefix, uint32_t *wide_first, uint32_t *po
         *differing += modified(acc, a) != modified(acc, b) ? 1u : 0u;
     }
     return ok ? 1u : 0u;
+}
+
+/* ---- the recorded battles, as the conformance tests build them (the G34 pattern) ---- */
+
+/* One member's item replaced: side, member and the item code (1 + id). side -1: none. */
+typedef struct {
+    int side;
+    uint32_t member;
+    uint32_t item;
+} df_patch;
+
+static void build_setup(const df_conf_battle *cb, duoforge_battle_setup *s, const df_patch *p)
+{
+    memset(s, 0, sizeof *s);
+    s->rng_initstate = 1u;
+    s->rng_initseq = 2u;
+    for (uint32_t side = 0; side < 2u; ++side) {
+        s->sides[side].member_count = cb->member_count;
+        for (uint32_t m = 0; m < cb->member_count; ++m) {
+            const df_conf_member *src = &cb->members[side][m];
+            duoforge_member_setup *dst = &s->sides[side].members[m];
+            dst->species_id = src->species;
+            dst->gender = src->gender;
+            dst->nature = src->nature;
+            for (uint32_t i = 0; i < 6u; ++i) {
+                dst->stat_points[i] = src->sp[i];
+            }
+            dst->ability = src->ability;
+            dst->item = src->item;
+            if (p != NULL && p->side == (int)side && p->member == m) {
+                dst->item = p->item;
+            }
+            dst->move_count = src->move_count;
+            for (uint32_t k = 0; k < src->move_count; ++k) {
+                dst->moves[k].move_id = src->moves[k];
+            }
+        }
+    }
+}
+
+static void bundle_of(const df_conf_step *st, const duoforge_battle *b, duoforge_decision_bundle *bd)
+{
+    memset(bd, 0, sizeof *bd);
+    bd->epoch = b->request_epoch;
+    bd->response_mask = (uint8_t)(st->answered0 | (st->answered1 << 1u)); /* wide-operands-reviewed */
+    for (uint32_t s = 0; s < 2u; ++s) {
+        if ((s == 0u && !st->answered0) || (s == 1u && !st->answered1)) {
+            continue;
+        }
+        duoforge_side_choice *r = &bd->responses[s];
+        r->epoch = b->request_epoch;
+        r->side = (uint8_t)s;
+        if (st->team) {
+            r->kind = (uint8_t)DUOFORGE_CHOICE_TEAM_SELECTION;
+            r->pick_count = 4u;
+            for (uint32_t i = 0; i < 4u; ++i) {
+                r->picks[i] = st->picks[s][i];
+            }
+        } else {
+            r->kind = (uint8_t)DUOFORGE_CHOICE_SLOTS;
+            for (uint32_t k = 0; k < 2u; ++k) {
+                const df_conf_cmd *c = &st->cmds[s][k];
+                r->slots[k] = (duoforge_slot_command){c->kind, c->move_slot, c->target, c->mega, c->reserve, {0u, 0u, 0u}};
+            }
+        }
+    }
+}
+
+static const df_conf_battle *find(const char *name)
+{
+    for (size_t i = 0; i < sizeof conf_battles / sizeof conf_battles[0]; ++i) {
+        if (strcmp(conf_battles[i].name, name) == 0) {
+            return &conf_battles[i];
+        }
+    }
+    return NULL;
+}
+
+/* The first step that does not return OK (or step_count when none), and its status. */
+static uint32_t play(df_test *t, duoforge_context *ctx, const df_conf_battle *cb, const df_patch *p, duoforge_status *status)
+{
+    duoforge_battle_setup setup;
+    build_setup(cb, &setup, p);
+    duoforge_battle *b = NULL;
+    *status = DUOFORGE_OK;
+    if (!DF_CHECK(t, duoforge_battle_create(ctx, &setup, &b) == DUOFORGE_OK && b != NULL)) {
+        return 0u;
+    }
+    uint32_t si = 0u;
+    for (; si < cb->step_count; ++si) {
+        const df_conf_step *st = &cb->steps[si];
+        duoforge_decision_bundle bd;
+        bundle_of(st, b, &bd);
+        duoforge_step_result res;
+        uint32_t used = 0u;
+        *status = dfi_battle_step_tape(ctx, b, &bd, &conf_tape[st->tape_off], st->tape_len, &used, &res);
+        if (*status != DUOFORGE_OK) {
+            break;
+        }
+    }
+    duoforge_battle_destroy(b);
+    return si;
+}
+
+/* ---- (a) Vivillon: Compound Eyes and Wide Lens against Bright Powder, Sleep Powder (accuracy 75) ---- */
+
+/* The battle of g49_bright_powder's team, with the attacker at side 0 member 0 replaced by Vivillon (Compound Eyes, Wide
+ * Lens, Sleep Powder and Protect), and the target (side 1 member 0, Milotic) holding `target_item`. Two steps: the team, then
+ * Vivillon's Sleep Powder at Milotic (slot 0 of side 1) and Coil and Protect for the others. Returns the status of the turn. */
+static duoforge_status vivillon_turn(df_test *t, duoforge_context *ctx, uint32_t target_item)
+{
+    const df_conf_battle *cb = find("g49_bright_powder");
+    if (!DF_CHECK(t, cb != NULL)) {
+        return DUOFORGE_E_INVARIANT;
+    }
+    const df_patch target = {1, 0u, target_item};
+    duoforge_battle_setup setup;
+    build_setup(cb, &setup, &target);
+    duoforge_member_setup *v = &setup.sides[0].members[0];
+    v->species_id = DFI_FORME_VIVILLON;
+    v->gender = DUOFORGE_GENDER_FEMALE;
+    v->ability = 1u + DFI_ABILITY_COMPOUNDEYES;
+    v->item = 1u + DFI_ITEM_WIDELENS;
+    v->move_count = 2u;
+    v->moves[0].move_id = DFI_MOVE_SLEEPPOWDER;
+    v->moves[1].move_id = DFI_MOVE_PROTECT;
+    duoforge_battle *b = NULL;
+    if (!DF_CHECK(t, duoforge_battle_create(ctx, &setup, &b) == DUOFORGE_OK && b != NULL)) {
+        return DUOFORGE_E_INVARIANT;
+    }
+    duoforge_decision_bundle bd;
+    duoforge_step_result res;
+    bundle_of(&cb->steps[0], b, &bd); /* the team selection, as recorded */
+    DF_CHECK_EQ_U64(t, duoforge_battle_step(ctx, b, &bd, &res), DUOFORGE_OK);
+    /* The turn: Vivillon's Sleep Powder (slot 0) at the foe in position 2 (side 1, slot 0); Gholdengo's Protect; the foe's
+     * Coil (slot 2, self) and Incineroar's Protect (slot 2). */
+    memset(&bd, 0, sizeof bd);
+    bd.epoch = b->request_epoch;
+    bd.response_mask = 3u;
+    const duoforge_slot_command mine[2] = {{DUOFORGE_SLOT_MOVE, 0u, 2u, 0u, 0u, {0u, 0u, 0u}},
+                                           {DUOFORGE_SLOT_MOVE, 2u, DUOFORGE_TARGET_NONE, 0u, 0u, {0u, 0u, 0u}}};
+    const duoforge_slot_command theirs[2] = {{DUOFORGE_SLOT_MOVE, 2u, DUOFORGE_TARGET_NONE, 0u, 0u, {0u, 0u, 0u}},
+                                             {DUOFORGE_SLOT_MOVE, 2u, DUOFORGE_TARGET_NONE, 0u, 0u, {0u, 0u, 0u}}};
+    for (uint32_t s = 0; s < 2u; ++s) {
+        duoforge_side_choice *r = &bd.responses[s];
+        r->epoch = b->request_epoch;
+        r->side = (uint8_t)s;
+        r->kind = (uint8_t)DUOFORGE_CHOICE_SLOTS;
+        r->slots[0] = s == 0u ? mine[0] : theirs[0];
+        r->slots[1] = s == 0u ? mine[1] : theirs[1];
+    }
+    const duoforge_status st = duoforge_battle_step(ctx, b, &bd, &res);
+    duoforge_battle_destroy(b);
+    return st;
+}
+
+static void check_vivillon_refusal(df_test *t)
+{
+    duoforge_context *ctx = df_make_context(&df_config_pool);
+    /* the control: the powder is a Sitrus Berry, the same turn is accepted */
+    DF_CHECK_EQ_U64(t, vivillon_turn(t, ctx, 1u + DFI_ITEM_SITRUSBERRY), DUOFORGE_OK);
+    /* Bright Powder: the orders give 97 and 96 for accuracy 75 (Compound Eyes, Wide Lens, Bright Powder), so refused */
+    DF_CHECK_EQ_U64(t, vivillon_turn(t, ctx, 1u + DFI_ITEM_BRIGHTPOWDER), DUOFORGE_E_UNSUPPORTED);
+    duoforge_context_destroy(ctx);
+}
+
+/* ---- (b) Triple Axel into a Bright Powder holder (the recorded g33_triple_axel battle) ---- */
+
+static void check_triple_axel_refusal(df_test *t)
+{
+    duoforge_context *ctx = df_make_context(&df_config_pool);
+    const df_conf_battle *cb = find("g33_triple_axel");
+    if (!DF_CHECK(t, cb != NULL)) {
+        duoforge_context_destroy(ctx);
+        return;
+    }
+    duoforge_status st = DUOFORGE_OK;
+    /* as recorded: every step is played */
+    DF_CHECK_EQ_U64(t, play(t, ctx, cb, NULL, &st), cb->step_count);
+    DF_CHECK_EQ_U64(t, st, DUOFORGE_OK);
+    /* The foe Primarina (side 1) holds Bright Powder: step 2 (index 1), Milotic's Triple Axel, hits once (its first draw, 44,
+     * is below 81, the powder's accuracy for 90) and the second hit is refused before its draw. */
+    uint32_t prim = 0u;
+    for (uint32_t m = 0; m < cb->member_count; ++m) {
+        if (cb->members[1][m].species == DFI_FORME_PRIMARINA) {
+            prim = m;
+        }
+    }
+    const df_patch powder = {1, prim, 1u + DFI_ITEM_BRIGHTPOWDER};
+    DF_CHECK_EQ_U64(t, play(t, ctx, cb, &powder, &st), 1u);
+    DF_CHECK_EQ_U64(t, st, DUOFORGE_E_UNSUPPORTED);
+    duoforge_context_destroy(ctx);
 }
 
 static void check_facts(df_test *t)
@@ -105,18 +304,18 @@ static void check_orders(df_test *t)
     DF_CHECK_EQ_U64(t, differing, 3u);
     DF_CHECK(t, modified(85u, wide) != modified(85u, powder));
     DF_CHECK(t, modified(100u, wide) == modified(100u, powder));
+    /* The refusal of (a) is at 75 with Compound Eyes: 97 against 96 (the numbers the test above relies on). */
+    DF_CHECK_EQ_U64(t, modified(75u, 5271u), 97u);
+    DF_CHECK_EQ_U64(t, modified(75u, 5270u), 96u);
 }
 
 static void check_recorded(df_test *t)
 {
     static const char *names[] = {"g49_wise_glasses", "g49_wise_glasses_base", "g49_muscle_band", "g49_muscle_band_base",
-                                  "g49_bright_powder", "g49_bright_powder_base", "g49_category_cross"};
+                                  "g49_bright_powder", "g49_bright_powder_base", "g49_category_cross",
+                                  "g49_bright_powder_tie"};
     for (size_t i = 0u; i < sizeof names / sizeof names[0]; ++i) {
-        bool found = false;
-        for (size_t k = 0u; k < sizeof conf_battles / sizeof conf_battles[0]; ++k) {
-            found = found || strcmp(conf_battles[k].name, names[i]) == 0;
-        }
-        DF_CHECK(t, found);
+        DF_CHECK(t, find(names[i]) != NULL);
     }
 }
 
@@ -127,5 +326,7 @@ int main(void)
     check_facts(&t);
     check_orders(&t);
     check_recorded(&t);
+    check_vivillon_refusal(&t);
+    check_triple_axel_refusal(&t);
     return df_test_end(&t);
 }

@@ -3098,6 +3098,12 @@ static const df_tb_stop tb_g49_bright_powder_base[] = {
     {2u, 0u, 2u, 2u, {4u, 4u}, {655u, 718u}, {0x404c29bb7bf38ae7ull, 0x404e720f353a4c0bull}},
     {3u, 0u, 1u, 2u, {3u, 3u}, {603u, 534u}, {0x4049000000000000ull, 0x4046dad3389b7570ull}},
 };
+static const df_tb_stop tb_g49_bright_powder_tie[] = {
+    {0u, 0u, 2u, 3u, {6u, 6u}, {1117u, 1159u}, {0x4059000000000000ull, 0x4059000000000000ull}},
+    {1u, 0u, 3u, 4u, {4u, 4u}, {788u, 788u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {2u, 0u, 1u, 2u, {4u, 4u}, {788u, 740u}, {0x4050aaaaaaaaaaabull, 0x404f5a67136eae0bull}},
+    {3u, 0u, 1u, 2u, {4u, 4u}, {788u, 691u}, {0x4050aaaaaaaaaaabull, 0x404d54e930288df1ull}},
+};
 static const df_tb_stop tb_g49_category_cross[] = {
     {0u, 0u, 2u, 3u, {6u, 6u}, {1109u, 1159u}, {0x4059000000000000ull, 0x4059000000000000ull}},
     {1u, 0u, 2u, 3u, {4u, 4u}, {740u, 788u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
@@ -4841,6 +4847,7 @@ static const df_tb_battle tb_battles[] = {
     {"g41_shadow_tag_trace", 14u, tb_g41_shadow_tag_trace, sizeof tb_g41_shadow_tag_trace / sizeof tb_g41_shadow_tag_trace[0]},
     {"g49_bright_powder", 3u, tb_g49_bright_powder, sizeof tb_g49_bright_powder / sizeof tb_g49_bright_powder[0]},
     {"g49_bright_powder_base", 3u, tb_g49_bright_powder_base, sizeof tb_g49_bright_powder_base / sizeof tb_g49_bright_powder_base[0]},
+    {"g49_bright_powder_tie", 3u, tb_g49_bright_powder_tie, sizeof tb_g49_bright_powder_tie / sizeof tb_g49_bright_powder_tie[0]},
     {"g49_category_cross", 3u, tb_g49_category_cross, sizeof tb_g49_category_cross / sizeof tb_g49_category_cross[0]},
     {"g49_muscle_band", 3u, tb_g49_muscle_band, sizeof tb_g49_muscle_band / sizeof tb_g49_muscle_band[0]},
     {"g49_muscle_band_base", 3u, tb_g49_muscle_band_base, sizeof tb_g49_muscle_band_base / sizeof tb_g49_muscle_band_base[0]},
@@ -4981,7 +4988,7 @@ static const df_tb_battle tb_battles[] = {
     {"w8_sand_soak", 7u, tb_w8_sand_soak, sizeof tb_w8_sand_soak / sizeof tb_w8_sand_soak[0]},
 };
 
-/* 3469 stops: 142 of an ended battle; decided by the count 926,
- * the HP percentage 1131, the total HP 1209, a tie 61;
- * winners: side 0 1710, side 1 1698, tie 61 */
+/* 3473 stops: 142 of an ended battle; decided by the count 926,
+ * the HP percentage 1133, the total HP 1210, a tie 62;
+ * winners: side 0 1712, side 1 1699, tie 62 */
 #endif
