@@ -193,11 +193,33 @@ function drawTeam(side, rng) {
     return teamText(side, order.slice(0, side.pickedTeamSize()));
 }
 
+// A slot flagged by Revival Blessing (sim/side.ts chooseSwitch): its switch names a fainted Pokemon, not a standing one.
+function revivalSlot(side, slot) {
+    const pokemon = side.active[slot];
+    return !!(pokemon && side.slotConditions && side.slotConditions[pokemon.position] &&
+        side.slotConditions[pokemon.position].revivalblessing);
+}
+
+function faintedReserves(side) {
+    const out = [];
+    for (let i = side.active.length; i < side.pokemon.length; i++) {
+        if (side.pokemon[i].fainted) out.push(i);
+    }
+    return out;
+}
+
 function drawSwitch(side, rng) {
     const flags = side.activeRequest.forceSwitch;
     const free = standingReserves(side);
+    const fainted = faintedReserves(side);
     const chosen = new Map();
     for (const slot of rng.shuffle([...flags.keys()].filter((i) => flags[i]))) {
+        if (revivalSlot(side, slot)) {
+            // a revive needs a standing reserve to be forced (the count of sim/side.ts clearChoice); with none it passes
+            if (!free.length || !fainted.length) continue;
+            chosen.set(slot, fainted.splice(rng.below(fainted.length), 1)[0]);
+            continue;
+        }
         if (!free.length) break;
         chosen.set(slot, free.splice(rng.below(free.length), 1)[0]);
     }
@@ -276,8 +298,12 @@ function enumerate(side) {
     const reserves = standingReserves(side);
     if (side.requestState === 'switch') {
         const flags = side.activeRequest.forceSwitch;
-        return joint(side.active.map((_, slot) => (flags[slot] ?
-            ['pass', ...reserves.map((r) => `switch ${r + 1}`)] : ['pass'])));
+        const fainted = faintedReserves(side);
+        return joint(side.active.map((_, slot) => {
+            if (!flags[slot]) return ['pass'];
+            const targets = revivalSlot(side, slot) ? fainted : reserves;
+            return ['pass', ...targets.map((r) => `switch ${r + 1}`)];
+        }));
     }
     if (side.requestState !== 'move') throw new Error(`no choice to enumerate for a ${side.requestState} request`);
     return joint(side.active.map((pokemon, slot) => {
