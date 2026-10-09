@@ -1536,7 +1536,7 @@ static duoforge_status dfi_get_damage(dfi_run *r, uint32_t user, uint32_t target
     /* Sheer Force (step G61, data/abilities.ts:4214-4215, onBasePowerPriority 21 like Tough Claws, which it never meets: one
      * ability): chainModify([5325, 4096]) for a move it stripped and for Electro Shot (hasSheerForceBoost). */
     if (dfi_sf_boosts(r->b, a, md)) {
-        ok = ok && dfi_chain_modify(bp_chain, 5325u, &bp_chain);
+        ok = ok && dfi_chain_modify(bp_chain, DFI_SHEER_FORCE_MODIFIER, &bp_chain);
     }
     /* Fairy Aura (the Mega Floette's ability, onAnyBasePower priority 20: after Tough Claws, before the items): a
      * Fairy move of anyone on the field, unless it targets its own user, 5448/4096 once. */

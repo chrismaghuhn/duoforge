@@ -20,6 +20,9 @@
 #include "data/closure_tables.h"
 #include "data/pool_tables.h"
 
+/* chainModify([5325, 4096]) of data/abilities.ts:4214-4215, the base power of a move that Sheer Force strips and of Electro Shot. */
+#define DFI_SHEER_FORCE_MODIFIER 5325u
+
 /* True when the holder's Sheer Force strips the move's secondaries and self effects (hasSheerForce). */
 static inline bool dfi_sf_strips_move(bool holder_sheer_force, const dfi_move_data *md)
 {

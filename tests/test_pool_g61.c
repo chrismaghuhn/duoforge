@@ -18,6 +18,7 @@
 #include <duoforge/duoforge.h>
 
 #include "combat/sheer_force.h"
+#include "core/modifier.h"
 #include "data/closure_tables.h"
 #include "data/pool_tables.h"
 #include "data/support_manifest.h"
@@ -104,6 +105,18 @@ static void check_pool_counts(df_test *t)
     DF_CHECK_EQ_U64(t, boost_only, G61_PINNED_BOOST_ONLY);
 }
 
+/* The multiplier itself (data/abilities.ts:4215, chainModify([5325, 4096])), pinned directly: the constant is 5325 over
+ * 4096, a base power of 100 becomes 130 (tr((tr(100 * 5325) + 2047) / 4096)), and the chain from 4096 gives the constant. */
+static void check_multiplier(df_test *t)
+{
+    DF_CHECK_EQ_U64(t, DFI_SHEER_FORCE_MODIFIER, 5325u);
+    uint32_t chained = 0u;
+    DF_CHECK(t, dfi_chain_modify(4096u, DFI_SHEER_FORCE_MODIFIER, &chained));
+    DF_CHECK_EQ_U64(t, chained, 5325u);
+    DF_CHECK_EQ_U64(t, dfi_modify(100u, DFI_SHEER_FORCE_MODIFIER), 130u);
+    DF_CHECK_EQ_U64(t, dfi_modify(200u, DFI_SHEER_FORCE_MODIFIER), 260u);
+}
+
 int main(void)
 {
     df_test t;
@@ -111,5 +124,6 @@ int main(void)
     check_marks(&t);
     check_named_moves(&t);
     check_pool_counts(&t);
+    check_multiplier(&t);
     return df_test_end(&t);
 }
