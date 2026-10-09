@@ -38,23 +38,30 @@ _PASTE = re.compile(r'pokepast\.es/([0-9a-f]{16})')
 
 
 class _Table(html.parser.HTMLParser):
-    """The rows of an exported sheet: each cell as (text, links)."""
+    """The rows of an exported sheet: each cell as (text, links). A merged cell (colspan) fills the columns it spans,
+    the later ones empty, so every cell stays under its header; a row with a rowspan cell is marked (the rows below it
+    would shift) and refused by sheet_rows when it is a team row."""
 
     def __init__(self):
         super().__init__()
-        self.rows, self.row, self.cell, self.links = [], None, None, []
+        self.rows, self.row, self.cell, self.links, self.span, self.rowspans = [], None, None, [], 1, set()
 
     def handle_starttag(self, tag, attrs):
+        a = dict(attrs)
         if tag == 'tr':
             self.row = []
         elif tag in ('td', 'th') and self.row is not None:
             self.cell, self.links = [], []
-        elif tag == 'a' and self.cell is not None and dict(attrs).get('href'):
-            self.links.append(dict(attrs)['href'])
+            self.span = int(a.get('colspan') or 1)
+            if int(a.get('rowspan') or 1) > 1:
+                self.rowspans.add(len(self.rows))
+        elif tag == 'a' and self.cell is not None and a.get('href'):
+            self.links.append(a['href'])
 
     def handle_endtag(self, tag):
         if tag in ('td', 'th') and self.row is not None and self.cell is not None:
             self.row.append((''.join(self.cell).strip(), list(self.links)))
+            self.row.extend([('', [])] * (self.span - 1))
             self.cell = None
         elif tag == 'tr' and self.row is not None:
             self.rows.append(self.row)
@@ -65,9 +72,11 @@ class _Table(html.parser.HTMLParser):
             self.cell.append(data)
 
 
-def sheet_rows(text, tab):
-    """The team rows of one exported tab: team_id, description, creator, paste_id (lower case, or None), evs, event,
-    rank, date, tab."""
+def sheet_rows(text, tab, counts=None):
+    """The team rows of one exported tab: team_id, description, creator, paste_id (lower case, or None), evs ("Yes"
+    for any case of yes), event, rank, date, tab. A row whose Team ID is not one is counted in `counts`
+    (sheet.rows.not-a-team-id); a team row with a rowspan cell is a ValueError."""
+    counts = counts if counts is not None else {}
     table = _Table()
     table.feed(text)
     header = next((r for r in table.rows if any(t == 'Team ID' for t, _ in r)), None)
@@ -80,17 +89,36 @@ def sheet_rows(text, tab):
         return row[i] if i is not None and i < len(row) else ('', [])
 
     out = []
-    for row in table.rows[table.rows.index(header) + 1:]:
+    start = table.rows.index(header) + 1
+    for n, row in enumerate(table.rows[start:], start):
         team_id = cell(row, 'Team ID')[0]
         if not _TEAM_ID.match(team_id):
+            if team_id:
+                counts['sheet.rows.not-a-team-id'] = counts.get('sheet.rows.not-a-team-id', 0) + 1
             continue
+        if n in table.rowspans:
+            raise ValueError('%s: row %s has a cell spanning rows: its columns cannot be read' % (tab, team_id))
         text, links = cell(row, 'Pokepaste')
         m = next((m for m in (_PASTE.search(s) for s in links + [text]) if m), None)
         out.append({'team_id': team_id, 'description': cell(row, 'Team Description')[0],
                     'creator': cell(row, 'Full Name')[0], 'paste_id': m.group(1) if m else None,
-                    'evs': cell(row, 'EVs')[0], 'event': cell(row, 'Tournament / Event')[0],
+                    'evs': 'Yes' if cell(row, 'EVs')[0].strip().lower() == 'yes' else cell(row, 'EVs')[0],
+                    'event': cell(row, 'Tournament / Event')[0],
                     'rank': cell(row, 'Rank')[0], 'date': cell(row, 'Date Shared')[0], 'tab': tab})
     return out
+
+
+def read_sheet(sheet_dir, counts=None):
+    """The team rows of every tab of TABS in `sheet_dir` (one HTML file per tab); ValueError naming a tab whose file is
+    missing (a misnamed export would drop a tab and change which row is a team's first)."""
+    rows = []
+    for tab in TABS:
+        path = os.path.join(sheet_dir, tab + '.html')
+        if not os.path.exists(path):
+            raise ValueError('the sheet export has no tab %r (%s)' % (tab, path))
+        with open(path, encoding='utf-8', errors='replace') as f:
+            rows += sheet_rows(f.read(), tab, counts)
+    return rows
 
 
 def normalized(text, info_of):
@@ -123,21 +151,23 @@ def decide(rows, pastes, known, info_of, check, registry_ids=()):
     detail and duplicate_of. `known` maps content_key -> id of the registry's teams; `check(text)` is the engine's
     verdict on a registry paste: (status, blockers or detail)."""
     order = {t: n for n, t in enumerate(TABS)}
-    wanted = [r for r in rows if r['evs'] == 'Yes' and r['paste_id']]
+    wanted = [r for r in rows if r['evs'] == 'Yes']
     wanted = sorted(enumerate(wanted), key=lambda x: (order.get(x[1]['tab'], len(TABS)), x[0]))
     keys, ids, out = dict(known), {}, []
     for _, row in wanted:
         pid = row['paste_id']
-        d = {'row': row, 'id': 'PP_' + pid.upper(), 'status': None, 'sets': None, 'notes': [], 'blockers': None,
-             'detail': None, 'duplicate_of': None}
+        d = {'row': row, 'id': 'PP_' + pid.upper() if pid else None, 'status': None, 'sets': None, 'notes': [],
+             'blockers': None, 'detail': None, 'duplicate_of': None}
         out.append(d)
+        if pid is None:
+            d['status'] = 'no-link'
+            continue
         if d['id'] in registry_ids:
             d['status'] = 'in-registry'
             continue
         if pid in ids:
             d['status'], d['duplicate_of'] = 'duplicate', ids[pid]
             continue
-        ids[pid] = d['id']
         text = pastes.get(pid)
         if text is None:
             d['status'] = 'not-fetched'
@@ -147,6 +177,7 @@ def decide(rows, pastes, known, info_of, check, registry_ids=()):
         except import_paste.PasteError as e:
             d['status'], d['detail'] = 'paste-error', '; '.join(e.problems if hasattr(e, 'problems') else e.args)
             continue
+        ids[pid] = d['id']  # a later row of this paste is a duplicate of it (only once it was read)
         if not _has_all_evs(d['sets']):
             d['status'] = 'evs-missing'
             continue
@@ -157,6 +188,8 @@ def decide(rows, pastes, known, info_of, check, registry_ids=()):
         verdict, info = check(team_registry.file_text(d['sets']).decode('utf-8'))
         d['status'] = verdict
         if verdict == 'pending':
+            if not info:
+                raise ValueError('%s: the engine refuses it as unsupported, but no blocker is named' % d['id'])
             d['blockers'] = info
         elif verdict != 'pool':
             d['detail'] = info
@@ -200,13 +233,36 @@ def pending_list(decisions, today):
             'blocker_counts': dict(sorted(counts.items(), key=lambda kv: (-kv[1], kv[0])))}
 
 
-def write(root, decisions, today):
-    """Adds every pool decision to the registry at `root`; returns the ids written."""
+def write(root, decisions, today, tables_for=None):
+    """Adds every pool decision to the registry at `root`; returns the ids written. Every team is checked first, as
+    import_paste.py checks one (team_registry.check_new and team_problems against the converter's tables, `tables_for`
+    by the team_c flag): one that fails writes nothing (RegistryError naming it), since a registry file is never
+    changed once it is there."""
+    if tables_for is None:
+        import trace_to_c
+        cache = {}
+
+        def tables_for(team_c):
+            if team_c not in cache:
+                cache[team_c] = trace_to_c.load_tables(ROOT, team_c)
+            return cache[team_c]
+    pool = [d for d in decisions if d['status'] == 'pool']
+    bad = []
+    for d in pool:
+        try:
+            team_registry.check_new(root, d['id'])
+        except team_registry.RegistryError as e:
+            bad.append('%s: %s' % (d['id'], e))
+            continue
+        for category, message in team_registry.team_problems(team_registry.file_text(d['sets']).decode('utf-8'),
+                                                             tables_for):
+            bad.append('%s: %s: %s' % (d['id'], category, message))
+    if bad:
+        raise team_registry.RegistryError('nothing written: ' + '; '.join(bad))
     written = []
-    for d in decisions:
-        if d['status'] == 'pool':
-            team_registry.add_team(root, entry_for(d, today), d['sets'])
-            written.append(d['id'])
+    for d in pool:
+        team_registry.add_team(root, entry_for(d, today), d['sets'])
+        written.append(d['id'])
     return written
 
 
@@ -230,11 +286,12 @@ def engine_check(context):
                     out.append('set %d: %s %s' % (k + 1, {data.TABLE_ITEM: 'item', data.TABLE_ABILITY: 'ability',
                                                           data.TABLE_MOVE: 'move'}[table], name))
             species = data.find(context, data.TABLE_SPECIES, data.to_id(m['species']))
-            info = data.forme_info(context, species)
-            if m['item'] is not None and info['mega_stone'] != data.NONE and \
-                    data.find(context, data.TABLE_ITEM, data.to_id(m['item'])) == info['mega_stone'] and \
-                    not info['mega_supported']:
-                out.append('set %d: Mega Evolution of %s' % (k + 1, m['species']))
+            if m['item'] is not None:
+                item = data.find(context, data.TABLE_ITEM, data.to_id(m['item']))
+                for i in range(data.mega_count(context, species)):  # every stone of the forme (Charizardite X and Y)
+                    mega = data.mega_at(context, species, i)
+                    if mega['stone'] == item and not mega['supported']:
+                        out.append('set %d: Mega Evolution of %s with %s' % (k + 1, m['species'], m['item']))
         return out
 
     def check(text):
@@ -296,11 +353,8 @@ def main(argv=None):
     if args.report:
         refuse_repository(args.report)
     today = args.today or datetime.date.today().isoformat()
-    rows = []
-    for tab in TABS:
-        path = os.path.join(args.sheet_dir, tab + '.html')
-        if os.path.exists(path):
-            rows += sheet_rows(open(path, encoding='utf-8', errors='replace').read(), tab)
+    sheet_counts = {}
+    rows = read_sheet(args.sheet_dir, sheet_counts)
     pastes = {}
     for r in rows:
         pid = r['paste_id']
@@ -319,7 +373,7 @@ def main(argv=None):
     counts = {}
     for d in decisions:
         counts[d['status']] = counts.get(d['status'], 0) + 1
-    print(json.dumps(counts, sort_keys=True))
+    print(json.dumps({**counts, **sheet_counts}, sort_keys=True))
     if args.report:
         with open(args.report, 'w', encoding='utf-8') as f:
             json.dump([{k: v for k, v in d.items() if k != 'sets'} for d in decisions], f, indent=1)

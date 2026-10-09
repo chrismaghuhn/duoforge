@@ -106,7 +106,7 @@
    "blockers": [
     "set 1: move Thunder Wave",
     "set 4: item Pyroarite",
-    "set 4: Mega Evolution of Pyroar"
+    "set 4: Mega Evolution of Pyroar with Pyroarite"
    ]
   },
   {
@@ -333,7 +333,7 @@
    "creator": "BoltBeamVGC",
    "blockers": [
     "set 2: item Scovillainite",
-    "set 2: Mega Evolution of Scovillain",
+    "set 2: Mega Evolution of Scovillain with Scovillainite",
     "set 3: item Raichunite X",
     "set 6: move Baton Pass"
    ]
@@ -413,7 +413,7 @@
     "set 5: item Sablenite",
     "set 5: move Psych Up",
     "set 5: move Night Shade",
-    "set 5: Mega Evolution of Sableye"
+    "set 5: Mega Evolution of Sableye with Sablenite"
    ]
   },
   {
@@ -471,7 +471,7 @@
     "set 2: ability Magic Bounce",
     "set 2: move Magic Powder",
     "set 3: item Cameruptite",
-    "set 3: Mega Evolution of Camerupt",
+    "set 3: Mega Evolution of Camerupt with Cameruptite",
     "set 5: item Leek",
     "set 6: move Speed Swap"
    ]
@@ -515,7 +515,7 @@
    "creator": "mumemo",
    "blockers": [
     "set 1: item Cameruptite",
-    "set 1: Mega Evolution of Camerupt",
+    "set 1: Mega Evolution of Camerupt with Cameruptite",
     "set 2: move Eerie Impulse"
    ]
   },
@@ -552,7 +552,7 @@
    "creator": "Yuta Ishigaki",
    "blockers": [
     "set 5: item Scovillainite",
-    "set 5: Mega Evolution of Scovillain"
+    "set 5: Mega Evolution of Scovillain with Scovillainite"
    ]
   },
   {
@@ -596,10 +596,10 @@
    "blockers": [
     "set 3: item Damp Rock",
     "set 4: item Mawilite",
-    "set 4: Mega Evolution of Mawile",
+    "set 4: Mega Evolution of Mawile with Mawilite",
     "set 5: item Kangaskhanite",
     "set 5: move Hammer Arm",
-    "set 5: Mega Evolution of Kangaskhan",
+    "set 5: Mega Evolution of Kangaskhan with Kangaskhanite",
     "set 6: move Storm Throw",
     "set 6: move Stomping Tantrum"
    ]
@@ -634,7 +634,7 @@
     "set 1: item Garchompite",
     "set 1: move Stomping Tantrum",
     "set 1: move Scale Shot",
-    "set 1: Mega Evolution of Garchomp"
+    "set 1: Mega Evolution of Garchomp with Garchompite"
    ]
   },
   {
@@ -646,7 +646,7 @@
    "blockers": [
     "set 2: item Starminite",
     "set 2: ability Natural Cure",
-    "set 2: Mega Evolution of Starmie"
+    "set 2: Mega Evolution of Starmie with Starminite"
    ]
   },
   {
@@ -767,7 +767,7 @@
     "set 1: ability Cloud Nine",
     "set 1: move Roost",
     "set 2: item Blastoisinite",
-    "set 2: Mega Evolution of Blastoise"
+    "set 2: Mega Evolution of Blastoise with Blastoisinite"
    ]
   },
   {
@@ -823,7 +823,7 @@
    "blockers": [
     "set 1: ability Synchronize",
     "set 6: item Pyroarite",
-    "set 6: Mega Evolution of Pyroar"
+    "set 6: Mega Evolution of Pyroar with Pyroarite"
    ]
   },
   {
@@ -886,7 +886,7 @@
    "blockers": [
     "set 1: move Assurance",
     "set 3: item Mawilite",
-    "set 3: Mega Evolution of Mawile",
+    "set 3: Mega Evolution of Mawile with Mawilite",
     "set 6: move Double Shock"
    ]
   },
@@ -934,7 +934,7 @@
    "blockers": [
     "set 1: move Final Gambit",
     "set 4: item Cameruptite",
-    "set 4: Mega Evolution of Camerupt",
+    "set 4: Mega Evolution of Camerupt with Cameruptite",
     "set 6: ability Magic Bounce"
    ]
   },
@@ -1030,7 +1030,7 @@
    "creator": "Sahil",
    "blockers": [
     "set 1: item Meganiumite",
-    "set 1: Mega Evolution of Meganium",
+    "set 1: Mega Evolution of Meganium with Meganiumite",
     "set 6: ability Stance Change",
     "set 6: move Poltergeist"
    ]
@@ -1056,7 +1056,7 @@
     "set 1: move Meteor Assault",
     "set 3: ability Magic Bounce",
     "set 4: item Cameruptite",
-    "set 4: Mega Evolution of Camerupt"
+    "set 4: Mega Evolution of Camerupt with Cameruptite"
    ]
   },
   {
@@ -1069,7 +1069,7 @@
     "set 1: item Absolite Z",
     "set 2: ability Punk Rock",
     "set 6: item Meganiumite",
-    "set 6: Mega Evolution of Meganium"
+    "set 6: Mega Evolution of Meganium with Meganiumite"
    ]
   },
   {
@@ -1148,7 +1148,7 @@
    "blockers": [
     "set 3: item Scovillainite",
     "set 3: ability Moody",
-    "set 3: Mega Evolution of Scovillain"
+    "set 3: Mega Evolution of Scovillain with Scovillainite"
    ]
   },
   {
@@ -1246,7 +1246,7 @@
    "creator": "joserockzvgc",
    "blockers": [
     "set 6: item Mawilite",
-    "set 6: Mega Evolution of Mawile"
+    "set 6: Mega Evolution of Mawile with Mawilite"
    ]
   },
   {
@@ -1295,7 +1295,7 @@
    "creator": "WoodTofu",
    "blockers": [
     "set 3: item Blastoisinite",
-    "set 3: Mega Evolution of Blastoise"
+    "set 3: Mega Evolution of Blastoise with Blastoisinite"
    ]
   },
   {
@@ -1307,7 +1307,7 @@
    "blockers": [
     "set 1: item Pyroarite",
     "set 1: ability Moxie",
-    "set 1: Mega Evolution of Pyroar"
+    "set 1: Mega Evolution of Pyroar with Pyroarite"
    ]
   },
   {
@@ -1605,9 +1605,9 @@
    "creator": "krlos_cb",
    "blockers": [
     "set 1: item Blastoisinite",
-    "set 1: Mega Evolution of Blastoise",
+    "set 1: Mega Evolution of Blastoise with Blastoisinite",
     "set 2: item Cameruptite",
-    "set 2: Mega Evolution of Camerupt"
+    "set 2: Mega Evolution of Camerupt with Cameruptite"
    ]
   },
   {
@@ -1751,7 +1751,7 @@
    "creator": "Sarapoke0914",
    "blockers": [
     "set 1: item Blastoisinite",
-    "set 1: Mega Evolution of Blastoise",
+    "set 1: Mega Evolution of Blastoise with Blastoisinite",
     "set 2: move Heal Pulse",
     "set 3: move Psychic Terrain"
    ]
@@ -1776,7 +1776,7 @@
    "creator": "CookedCatfish",
    "blockers": [
     "set 2: item Blastoisinite",
-    "set 2: Mega Evolution of Blastoise",
+    "set 2: Mega Evolution of Blastoise with Blastoisinite",
     "set 3: ability Surge Surfer",
     "set 6: move Acupressure"
    ]
@@ -1887,7 +1887,7 @@
    "blockers": [
     "set 2: item Pyroarite",
     "set 2: ability Moxie",
-    "set 2: Mega Evolution of Pyroar"
+    "set 2: Mega Evolution of Pyroar with Pyroarite"
    ]
   },
   {
@@ -2065,7 +2065,7 @@
     "set 2: ability Illusion",
     "set 3: move Ally Switch",
     "set 4: item Mawilite",
-    "set 4: Mega Evolution of Mawile",
+    "set 4: Mega Evolution of Mawile with Mawilite",
     "set 5: ability Mega Launcher",
     "set 5: move Water Pulse"
    ]
@@ -2204,7 +2204,7 @@
     "set 1: item Crabominite",
     "set 1: move Ice Hammer",
     "set 2: item Cameruptite",
-    "set 2: Mega Evolution of Camerupt",
+    "set 2: Mega Evolution of Camerupt with Cameruptite",
     "set 4: ability Magic Bounce"
    ]
   },
@@ -2260,7 +2260,7 @@
    "blockers": [
     "set 3: item Alakazite",
     "set 5: item Mawilite",
-    "set 5: Mega Evolution of Mawile"
+    "set 5: Mega Evolution of Mawile with Mawilite"
    ]
   },
   {
@@ -2274,7 +2274,7 @@
     "set 4: item Leek",
     "set 4: move Meteor Assault",
     "set 5: item Blastoisinite",
-    "set 5: Mega Evolution of Blastoise"
+    "set 5: Mega Evolution of Blastoise with Blastoisinite"
    ]
   },
   {
@@ -2384,7 +2384,7 @@
    "creator": "jessditta",
    "blockers": [
     "set 1: item Mawilite",
-    "set 1: Mega Evolution of Mawile",
+    "set 1: Mega Evolution of Mawile with Mawilite",
     "set 2: ability Magic Bounce",
     "set 6: ability Frisk"
    ]
@@ -2439,7 +2439,7 @@
    "creator": "castillo11vgc",
    "blockers": [
     "set 1: item Blastoisinite",
-    "set 1: Mega Evolution of Blastoise"
+    "set 1: Mega Evolution of Blastoise with Blastoisinite"
    ]
   },
   {
@@ -2483,7 +2483,7 @@
     "set 1: move Focus Energy",
     "set 3: move Beat Up",
     "set 4: item Mawilite",
-    "set 4: Mega Evolution of Mawile"
+    "set 4: Mega Evolution of Mawile with Mawilite"
    ]
   },
   {
@@ -2726,7 +2726,7 @@
    "blockers": [
     "set 1: item Scovillainite",
     "set 1: ability Moody",
-    "set 1: Mega Evolution of Scovillain"
+    "set 1: Mega Evolution of Scovillain with Scovillainite"
    ]
   },
   {
@@ -2767,7 +2767,7 @@
    "creator": "Justin Tang",
    "blockers": [
     "set 1: item Blastoisinite",
-    "set 1: Mega Evolution of Blastoise",
+    "set 1: Mega Evolution of Blastoise with Blastoisinite",
     "set 4: move Quick Guard"
    ]
   },
@@ -2791,7 +2791,7 @@
     "set 1: move Hammer Arm",
     "set 2: move Ice Fang",
     "set 6: item Cameruptite",
-    "set 6: Mega Evolution of Camerupt"
+    "set 6: Mega Evolution of Camerupt with Cameruptite"
    ]
   },
   {
@@ -2875,7 +2875,7 @@
    "blockers": [
     "set 1: move Quick Guard",
     "set 2: item Blastoisinite",
-    "set 2: Mega Evolution of Blastoise"
+    "set 2: Mega Evolution of Blastoise with Blastoisinite"
    ]
   },
   {
@@ -2898,7 +2898,7 @@
     "set 2: move After You",
     "set 2: move Population Bomb",
     "set 6: item Cameruptite",
-    "set 6: Mega Evolution of Camerupt"
+    "set 6: Mega Evolution of Camerupt with Cameruptite"
    ]
   },
   {
@@ -2919,7 +2919,7 @@
    "creator": "Kazuki Ogushi",
    "blockers": [
     "set 1: item Blastoisinite",
-    "set 1: Mega Evolution of Blastoise",
+    "set 1: Mega Evolution of Blastoise with Blastoisinite",
     "set 5: move Quick Guard"
    ]
   },
@@ -2945,7 +2945,7 @@
    "blockers": [
     "set 1: item Pyroarite",
     "set 1: ability Rivalry",
-    "set 1: Mega Evolution of Pyroar",
+    "set 1: Mega Evolution of Pyroar with Pyroarite",
     "set 4: ability Illusion"
    ]
   },
@@ -3036,7 +3036,7 @@
     "set 4: item Scovillainite",
     "set 4: ability Moody",
     "set 4: move Leech Seed",
-    "set 4: Mega Evolution of Scovillain"
+    "set 4: Mega Evolution of Scovillain with Scovillainite"
    ]
   },
   {
@@ -3058,7 +3058,7 @@
    "blockers": [
     "set 4: item Clefablite",
     "set 4: ability Magic Guard",
-    "set 4: Mega Evolution of Clefable"
+    "set 4: Mega Evolution of Clefable with Clefablite"
    ]
   },
   {
@@ -3069,7 +3069,7 @@
    "creator": "Michael Zhang",
    "blockers": [
     "set 5: item Venusaurite",
-    "set 5: Mega Evolution of Venusaur"
+    "set 5: Mega Evolution of Venusaur with Venusaurite"
    ]
   },
   {
@@ -3117,7 +3117,7 @@
    "blockers": [
     "set 4: item Scovillainite",
     "set 4: ability Moody",
-    "set 4: Mega Evolution of Scovillain"
+    "set 4: Mega Evolution of Scovillain with Scovillainite"
    ]
   },
   {
@@ -3138,7 +3138,7 @@
    "creator": "Aaron Traylor",
    "blockers": [
     "set 1: item Venusaurite",
-    "set 1: Mega Evolution of Venusaur",
+    "set 1: Mega Evolution of Venusaur with Venusaurite",
     "set 2: move Stomping Tantrum",
     "set 3: ability Unaware"
    ]
@@ -3164,7 +3164,7 @@
    "blockers": [
     "set 6: item Scovillainite",
     "set 6: ability Moody",
-    "set 6: Mega Evolution of Scovillain"
+    "set 6: Mega Evolution of Scovillain with Scovillainite"
    ]
   },
   {
@@ -3190,7 +3190,7 @@
    "blockers": [
     "set 5: item Scovillainite",
     "set 5: ability Moody",
-    "set 5: Mega Evolution of Scovillain"
+    "set 5: Mega Evolution of Scovillain with Scovillainite"
    ]
   },
   {
@@ -3202,7 +3202,7 @@
    "blockers": [
     "set 2: move Quick Guard",
     "set 6: item Blastoisinite",
-    "set 6: Mega Evolution of Blastoise"
+    "set 6: Mega Evolution of Blastoise with Blastoisinite"
    ]
   },
   {
@@ -3236,7 +3236,7 @@
    "creator": "_Ghira_",
    "blockers": [
     "set 1: item Venusaurite",
-    "set 1: Mega Evolution of Venusaur",
+    "set 1: Mega Evolution of Venusaur with Venusaurite",
     "set 4: move Roost"
    ]
   },
@@ -3248,7 +3248,7 @@
    "creator": "averagewoopfan",
    "blockers": [
     "set 4: item Mawilite",
-    "set 4: Mega Evolution of Mawile"
+    "set 4: Mega Evolution of Mawile with Mawilite"
    ]
   },
   {
@@ -3261,7 +3261,7 @@
     "set 1: move Population Bomb",
     "set 1: move After You",
     "set 6: item Cameruptite",
-    "set 6: Mega Evolution of Camerupt"
+    "set 6: Mega Evolution of Camerupt with Cameruptite"
    ]
   },
   {
@@ -3283,7 +3283,7 @@
    "creator": "fruitmanvgc",
    "blockers": [
     "set 1: item Mawilite",
-    "set 1: Mega Evolution of Mawile",
+    "set 1: Mega Evolution of Mawile with Mawilite",
     "set 2: item Chandelurite",
     "set 3: move Stomping Tantrum"
    ]
@@ -3296,7 +3296,7 @@
    "creator": "punihina1334",
    "blockers": [
     "set 6: item Mawilite",
-    "set 6: Mega Evolution of Mawile"
+    "set 6: Mega Evolution of Mawile with Mawilite"
    ]
   },
   {
@@ -3321,7 +3321,7 @@
    "blockers": [
     "set 2: item Scovillainite",
     "set 2: ability Moody",
-    "set 2: Mega Evolution of Scovillain",
+    "set 2: Mega Evolution of Scovillain with Scovillainite",
     "set 5: move Population Bomb"
    ]
   },
@@ -3345,7 +3345,7 @@
    "blockers": [
     "set 2: ability Magic Bounce",
     "set 5: item Kangaskhanite",
-    "set 5: Mega Evolution of Kangaskhan"
+    "set 5: Mega Evolution of Kangaskhan with Kangaskhanite"
    ]
   },
   {
@@ -3369,7 +3369,7 @@
    "creator": "a__poke_",
    "blockers": [
     "set 5: item Venusaurite",
-    "set 5: Mega Evolution of Venusaur"
+    "set 5: Mega Evolution of Venusaur with Venusaurite"
    ]
   },
   {
@@ -3381,7 +3381,7 @@
    "blockers": [
     "set 2: item Heat Rock",
     "set 5: item Pyroarite",
-    "set 5: Mega Evolution of Pyroar"
+    "set 5: Mega Evolution of Pyroar with Pyroarite"
    ]
   },
   {
@@ -3412,7 +3412,7 @@
    "creator": "tantomisso",
    "blockers": [
     "set 4: item Venusaurite",
-    "set 4: Mega Evolution of Venusaur"
+    "set 4: Mega Evolution of Venusaur with Venusaurite"
    ]
   },
   {
@@ -3472,9 +3472,9 @@
     "set 2: ability Huge Power",
     "set 2: move Belly Drum",
     "set 3: item Mawilite",
-    "set 3: Mega Evolution of Mawile",
+    "set 3: Mega Evolution of Mawile with Mawilite",
     "set 6: item Cameruptite",
-    "set 6: Mega Evolution of Camerupt"
+    "set 6: Mega Evolution of Camerupt with Cameruptite"
    ]
   },
   {
@@ -3542,7 +3542,7 @@
    "blockers": [
     "set 3: item Kangaskhanite",
     "set 3: move Hammer Arm",
-    "set 3: Mega Evolution of Kangaskhan",
+    "set 3: Mega Evolution of Kangaskhan with Kangaskhanite",
     "set 4: item Wise Glasses",
     "set 5: ability Sheer Force",
     "set 5: move Fire Punch"
@@ -3567,7 +3567,7 @@
    "blockers": [
     "set 2: item Scovillainite",
     "set 2: ability Moody",
-    "set 2: Mega Evolution of Scovillain"
+    "set 2: Mega Evolution of Scovillain with Scovillainite"
    ]
   },
   {
@@ -3611,7 +3611,7 @@
    "blockers": [
     "set 2: item Garchompite",
     "set 2: move Stomping Tantrum",
-    "set 2: Mega Evolution of Garchomp"
+    "set 2: Mega Evolution of Garchomp with Garchompite"
    ]
   },
   {
@@ -3622,7 +3622,7 @@
    "creator": "chillgatr",
    "blockers": [
     "set 2: item Meganiumite",
-    "set 2: Mega Evolution of Meganium"
+    "set 2: Mega Evolution of Meganium with Meganiumite"
    ]
   },
   {
@@ -3650,13 +3650,13 @@
     "set 1: item Scovillainite",
     "set 1: ability Moody",
     "set 1: move Leech Seed",
-    "set 1: Mega Evolution of Scovillain",
+    "set 1: Mega Evolution of Scovillain with Scovillainite",
     "set 2: move Acid Spray",
     "set 2: move Chilly Reception",
     "set 4: item Bright Powder",
     "set 5: item Chesnaughtite",
     "set 5: ability Bulletproof",
-    "set 5: Mega Evolution of Chesnaught",
+    "set 5: Mega Evolution of Chesnaught with Chesnaughtite",
     "set 6: ability Oblivious"
    ]
   },
@@ -3679,7 +3679,7 @@
    "blockers": [
     "set 1: item Meganiumite",
     "set 1: ability Leaf Guard",
-    "set 1: Mega Evolution of Meganium",
+    "set 1: Mega Evolution of Meganium with Meganiumite",
     "set 5: ability Stance Change",
     "set 5: move King's Shield"
    ]
@@ -3737,7 +3737,7 @@
    "creator": "Klub",
    "blockers": [
     "set 1: item Venusaurite",
-    "set 1: Mega Evolution of Venusaur"
+    "set 1: Mega Evolution of Venusaur with Venusaurite"
    ]
   },
   {
@@ -3787,10 +3787,10 @@
     "set 1: move Glare",
     "set 2: item Venusaurite",
     "set 2: move Leech Seed",
-    "set 2: Mega Evolution of Venusaur",
+    "set 2: Mega Evolution of Venusaur with Venusaurite",
     "set 3: item Emboarite",
     "set 3: ability Reckless",
-    "set 3: Mega Evolution of Emboar",
+    "set 3: Mega Evolution of Emboar with Emboarite",
     "set 4: ability Unaware",
     "set 6: ability Sap Sipper"
    ]
@@ -3863,7 +3863,7 @@
    "blockers": [
     "set 3: item Gyaradosite",
     "set 3: move Lash Out",
-    "set 3: Mega Evolution of Gyarados",
+    "set 3: Mega Evolution of Gyarados with Gyaradosite",
     "set 5: move Stomping Tantrum"
    ]
   },
@@ -3899,7 +3899,7 @@
    "blockers": [
     "set 1: move Assurance",
     "set 3: item Mawilite",
-    "set 3: Mega Evolution of Mawile"
+    "set 3: Mega Evolution of Mawile with Mawilite"
    ]
   },
   {
@@ -3911,7 +3911,7 @@
    "blockers": [
     "set 2: item Clefablite",
     "set 2: ability Unaware",
-    "set 2: Mega Evolution of Clefable",
+    "set 2: Mega Evolution of Clefable with Clefablite",
     "set 3: move Stomping Tantrum",
     "set 5: move Baneful Bunker",
     "set 5: move Infestation",
@@ -3927,7 +3927,7 @@
    "blockers": [
     "set 1: item Garchompite",
     "set 1: move Stomping Tantrum",
-    "set 1: Mega Evolution of Garchomp"
+    "set 1: Mega Evolution of Garchomp with Garchompite"
    ]
   },
   {
@@ -3993,7 +3993,7 @@
    "creator": "Ryotaro Kimura",
    "blockers": [
     "set 1: item Blastoisinite",
-    "set 1: Mega Evolution of Blastoise"
+    "set 1: Mega Evolution of Blastoise with Blastoisinite"
    ]
   },
   {
@@ -4027,7 +4027,7 @@
    "blockers": [
     "set 2: ability Magic Bounce",
     "set 5: item Kangaskhanite",
-    "set 5: Mega Evolution of Kangaskhan"
+    "set 5: Mega Evolution of Kangaskhan with Kangaskhanite"
    ]
   },
   {
@@ -4050,7 +4050,7 @@
    "blockers": [
     "set 2: item Blazikenite",
     "set 4: item Venusaurite",
-    "set 4: Mega Evolution of Venusaur"
+    "set 4: Mega Evolution of Venusaur with Venusaurite"
    ]
   },
   {
@@ -4090,7 +4090,7 @@
    "creator": "hanashi",
    "blockers": [
     "set 1: item Garchompite",
-    "set 1: Mega Evolution of Garchomp",
+    "set 1: Mega Evolution of Garchomp with Garchompite",
     "set 6: move Upper Hand"
    ]
   },
@@ -4102,7 +4102,7 @@
    "creator": "chaguma_poke90",
    "blockers": [
     "set 1: item Scolipite",
-    "set 1: Mega Evolution of Scolipede"
+    "set 1: Mega Evolution of Scolipede with Scolipite"
    ]
   },
   {
@@ -4148,7 +4148,7 @@
     "set 1: move Population Bomb",
     "set 1: move Bite",
     "set 2: item Blastoisinite",
-    "set 2: Mega Evolution of Blastoise"
+    "set 2: Mega Evolution of Blastoise with Blastoisinite"
    ]
   },
   {
@@ -4183,7 +4183,7 @@
    "blockers": [
     "set 1: item Steelixite",
     "set 1: move Heavy Slam",
-    "set 1: Mega Evolution of Steelix",
+    "set 1: Mega Evolution of Steelix with Steelixite",
     "set 6: move Dragon Tail",
     "set 6: move Stomping Tantrum"
    ]
@@ -4265,7 +4265,7 @@
    "blockers": [
     "set 4: item Scovillainite",
     "set 4: ability Moody",
-    "set 4: Mega Evolution of Scovillain"
+    "set 4: Mega Evolution of Scovillain with Scovillainite"
    ]
   },
   {
@@ -4289,7 +4289,7 @@
     "set 3: move Psychic Terrain",
     "set 4: move Roost",
     "set 6: item Mawilite",
-    "set 6: Mega Evolution of Mawile"
+    "set 6: Mega Evolution of Mawile with Mawilite"
    ]
   },
   {
@@ -4338,7 +4338,7 @@
    "creator": "SwapDogVGC",
    "blockers": [
     "set 6: item Venusaurite",
-    "set 6: Mega Evolution of Venusaur"
+    "set 6: Mega Evolution of Venusaur with Venusaurite"
    ]
   },
   {
@@ -4351,7 +4351,7 @@
     "set 1: move Ice Fang",
     "set 3: move Vacuum Wave",
     "set 6: item Mawilite",
-    "set 6: Mega Evolution of Mawile"
+    "set 6: Mega Evolution of Mawile with Mawilite"
    ]
   },
   {
@@ -4363,7 +4363,7 @@
    "blockers": [
     "set 2: item Iron Ball",
     "set 3: item Blastoisinite",
-    "set 3: Mega Evolution of Blastoise",
+    "set 3: Mega Evolution of Blastoise with Blastoisinite",
     "set 5: item Mental Herb",
     "set 6: move Stomping Tantrum"
    ]
@@ -4406,7 +4406,7 @@
    "creator": "shikabane",
    "blockers": [
     "set 1: item Mawilite",
-    "set 1: Mega Evolution of Mawile",
+    "set 1: Mega Evolution of Mawile with Mawilite",
     "set 6: move Vacuum Wave"
    ]
   },
@@ -4450,7 +4450,7 @@
     "set 5: item Scovillainite",
     "set 5: ability Moody",
     "set 5: move Leech Seed",
-    "set 5: Mega Evolution of Scovillain",
+    "set 5: Mega Evolution of Scovillain with Scovillainite",
     "set 6: ability Dry Skin"
    ]
   },
@@ -4519,9 +4519,9 @@
    "blockers": [
     "set 4: move Vacuum Wave",
     "set 5: item Kangaskhanite",
-    "set 5: Mega Evolution of Kangaskhan",
+    "set 5: Mega Evolution of Kangaskhan with Kangaskhanite",
     "set 6: item Venusaurite",
-    "set 6: Mega Evolution of Venusaur"
+    "set 6: Mega Evolution of Venusaur with Venusaurite"
    ]
   },
   {
@@ -4638,9 +4638,9 @@
    "blockers": [
     "set 1: item Gyaradosite",
     "set 1: move Lash Out",
-    "set 1: Mega Evolution of Gyarados",
+    "set 1: Mega Evolution of Gyarados with Gyaradosite",
     "set 4: item Garchompite",
-    "set 4: Mega Evolution of Garchomp"
+    "set 4: Mega Evolution of Garchomp with Garchompite"
    ]
   },
   {
@@ -4662,7 +4662,7 @@
    "creator": "Castillo11VGC",
    "blockers": [
     "set 1: item Garchompite",
-    "set 1: Mega Evolution of Garchomp",
+    "set 1: Mega Evolution of Garchomp with Garchompite",
     "set 4: move Haze"
    ]
   },
@@ -4674,7 +4674,7 @@
    "creator": "Yosuke Takayanagi",
    "blockers": [
     "set 2: item Garchompite",
-    "set 2: Mega Evolution of Garchomp",
+    "set 2: Mega Evolution of Garchomp with Garchompite",
     "set 3: move Bug Bite"
    ]
   },
@@ -4722,7 +4722,7 @@
     "set 1: item Medichamite",
     "set 1: ability Pure Power",
     "set 1: move Zen Headbutt",
-    "set 1: Mega Evolution of Medicham",
+    "set 1: Mega Evolution of Medicham with Medichamite",
     "set 5: ability Reckless",
     "set 5: move Final Gambit",
     "set 6: move Safeguard"
@@ -4757,7 +4757,7 @@
    "creator": "Yuta Ishigaki",
    "blockers": [
     "set 2: item Mawilite",
-    "set 2: Mega Evolution of Mawile",
+    "set 2: Mega Evolution of Mawile with Mawilite",
     "set 5: ability Oblivious",
     "set 6: move Phantom Force"
    ]
@@ -4793,7 +4793,7 @@
     "set 2: item Dragoninite",
     "set 5: item Scovillainite",
     "set 5: ability Moody",
-    "set 5: Mega Evolution of Scovillain",
+    "set 5: Mega Evolution of Scovillain with Scovillainite",
     "set 6: move Stomping Tantrum"
    ]
   },
@@ -4810,7 +4810,7 @@
     "set 4: ability Imposter",
     "set 4: move Transform",
     "set 5: item Kangaskhanite",
-    "set 5: Mega Evolution of Kangaskhan"
+    "set 5: Mega Evolution of Kangaskhan with Kangaskhanite"
    ]
   },
   {
@@ -4833,7 +4833,7 @@
    "creator": "Perjutsu24",
    "blockers": [
     "set 2: item Mawilite",
-    "set 2: Mega Evolution of Mawile",
+    "set 2: Mega Evolution of Mawile with Mawilite",
     "set 4: item Dragoninite"
    ]
   },
@@ -4879,7 +4879,7 @@
    "creator": "Joseph Ugarte",
    "blockers": [
     "set 1: item Mawilite",
-    "set 1: Mega Evolution of Mawile"
+    "set 1: Mega Evolution of Mawile with Mawilite"
    ]
   },
   {
@@ -4892,7 +4892,7 @@
     "set 1: item Raichunite X",
     "set 2: item Meganiumite",
     "set 2: ability Leaf Guard",
-    "set 2: Mega Evolution of Meganium",
+    "set 2: Mega Evolution of Meganium with Meganiumite",
     "set 6: move Quash"
    ]
   },
@@ -4907,7 +4907,7 @@
     "set 3: ability Pickpocket",
     "set 4: move Rage Fist",
     "set 5: item Scolipite",
-    "set 5: Mega Evolution of Scolipede"
+    "set 5: Mega Evolution of Scolipede with Scolipite"
    ]
   },
   {
@@ -4929,7 +4929,7 @@
    "creator": "Maya Hoppins",
    "blockers": [
     "set 1: item Mawilite",
-    "set 1: Mega Evolution of Mawile"
+    "set 1: Mega Evolution of Mawile with Mawilite"
    ]
   },
   {
@@ -4954,7 +4954,7 @@
    "blockers": [
     "set 3: item Starminite",
     "set 3: ability Natural Cure",
-    "set 3: Mega Evolution of Starmie"
+    "set 3: Mega Evolution of Starmie with Starminite"
    ]
   },
   {
@@ -4967,7 +4967,7 @@
     "set 2: item Houndoominite",
     "set 5: item Kangaskhanite",
     "set 5: move Hammer Arm",
-    "set 5: Mega Evolution of Kangaskhan"
+    "set 5: Mega Evolution of Kangaskhan with Kangaskhanite"
    ]
   },
   {
@@ -5075,7 +5075,7 @@
    "blockers": [
     "set 1: item Ampharosite",
     "set 1: move Parabolic Charge",
-    "set 1: Mega Evolution of Ampharos",
+    "set 1: Mega Evolution of Ampharos with Ampharosite",
     "set 2: ability Wandering Spirit",
     "set 2: move Ally Switch",
     "set 4: ability Water Bubble",
@@ -5094,7 +5094,7 @@
     "set 4: item Dragoninite",
     "set 4: move Haze",
     "set 6: item Venusaurite",
-    "set 6: Mega Evolution of Venusaur"
+    "set 6: Mega Evolution of Venusaur with Venusaurite"
    ]
   },
   {
@@ -5118,9 +5118,9 @@
    "blockers": [
     "set 1: move Final Gambit",
     "set 4: item Blastoisinite",
-    "set 4: Mega Evolution of Blastoise",
+    "set 4: Mega Evolution of Blastoise with Blastoisinite",
     "set 6: item Cameruptite",
-    "set 6: Mega Evolution of Camerupt"
+    "set 6: Mega Evolution of Camerupt with Cameruptite"
    ]
   },
   {
@@ -5131,7 +5131,7 @@
    "creator": "averagewoopfan",
    "blockers": [
     "set 4: item Mawilite",
-    "set 4: Mega Evolution of Mawile"
+    "set 4: Mega Evolution of Mawile with Mawilite"
    ]
   },
   {
@@ -5207,7 +5207,7 @@
    "blockers": [
     "set 5: item Scovillainite",
     "set 5: ability Moody",
-    "set 5: Mega Evolution of Scovillain"
+    "set 5: Mega Evolution of Scovillain with Scovillainite"
    ]
   },
   {
@@ -5225,7 +5225,7 @@
     "set 5: ability Imposter",
     "set 5: move Transform",
     "set 6: item Kangaskhanite",
-    "set 6: Mega Evolution of Kangaskhan"
+    "set 6: Mega Evolution of Kangaskhan with Kangaskhanite"
    ]
   },
   {
@@ -5259,7 +5259,7 @@
     "set 3: move Quick Guard",
     "set 5: item Gyaradosite",
     "set 5: move Lash Out",
-    "set 5: Mega Evolution of Gyarados"
+    "set 5: Mega Evolution of Gyarados with Gyaradosite"
    ]
   },
   {
@@ -5293,7 +5293,7 @@
    "creator": "kuro4wing",
    "blockers": [
     "set 2: item Venusaurite",
-    "set 2: Mega Evolution of Venusaur"
+    "set 2: Mega Evolution of Venusaur with Venusaurite"
    ]
   },
   {
@@ -5304,7 +5304,7 @@
    "creator": "DjSanders",
    "blockers": [
     "set 2: item Eelektrossite",
-    "set 2: Mega Evolution of Eelektross",
+    "set 2: Mega Evolution of Eelektross with Eelektrossite",
     "set 6: move Infestation",
     "set 6: move Baneful Bunker"
    ]
@@ -5435,7 +5435,7 @@
     "set 1: move Heal Pulse",
     "set 2: item Dragoninite",
     "set 5: item Mawilite",
-    "set 5: Mega Evolution of Mawile"
+    "set 5: Mega Evolution of Mawile with Mawilite"
    ]
   },
   {
@@ -5446,12 +5446,12 @@
    "creator": "Andrew Lavigne",
    "blockers": [
     "set 4: item Scolipite",
-    "set 4: Mega Evolution of Scolipede",
+    "set 4: Mega Evolution of Scolipede with Scolipite",
     "set 5: move Rage Fist",
     "set 6: item Greninjite",
     "set 6: ability Protean",
     "set 6: move Water Shuriken",
-    "set 6: Mega Evolution of Greninja"
+    "set 6: Mega Evolution of Greninja with Greninjite"
    ]
   },
   {
@@ -5462,7 +5462,7 @@
    "creator": "Alex Soto",
    "blockers": [
     "set 3: item Cameruptite",
-    "set 3: Mega Evolution of Camerupt",
+    "set 3: Mega Evolution of Camerupt with Cameruptite",
     "set 6: item Iron Ball"
    ]
   },
@@ -5474,7 +5474,7 @@
    "creator": "Itachi",
    "blockers": [
     "set 5: item Blastoisinite",
-    "set 5: Mega Evolution of Blastoise"
+    "set 5: Mega Evolution of Blastoise with Blastoisinite"
    ]
   },
   {
@@ -5486,7 +5486,7 @@
    "blockers": [
     "set 2: item Victreebelite",
     "set 2: move Strength Sap",
-    "set 2: Mega Evolution of Victreebel",
+    "set 2: Mega Evolution of Victreebel with Victreebelite",
     "set 4: move Stomping Tantrum"
    ]
   },
@@ -5509,7 +5509,7 @@
    "creator": "JortChamp",
    "blockers": [
     "set 1: item Scolipite",
-    "set 1: Mega Evolution of Scolipede",
+    "set 1: Mega Evolution of Scolipede with Scolipite",
     "set 2: move Phantom Force"
    ]
   },
@@ -5560,7 +5560,7 @@
     "set 3: move Haze",
     "set 4: item Scovillainite",
     "set 4: move Leech Seed",
-    "set 4: Mega Evolution of Scovillain"
+    "set 4: Mega Evolution of Scovillain with Scovillainite"
    ]
   },
   {
@@ -5572,7 +5572,7 @@
    "blockers": [
     "set 2: item Venusaurite",
     "set 2: move Leech Seed",
-    "set 2: Mega Evolution of Venusaur",
+    "set 2: Mega Evolution of Venusaur with Venusaurite",
     "set 6: move Phantom Force"
    ]
   },
@@ -5639,7 +5639,7 @@
    "creator": "Santino Tarquinio",
    "blockers": [
     "set 2: item Blastoisinite",
-    "set 2: Mega Evolution of Blastoise"
+    "set 2: Mega Evolution of Blastoise with Blastoisinite"
    ]
   },
   {
@@ -5708,7 +5708,7 @@
     "set 3: move Flower Trick",
     "set 4: move Facade",
     "set 5: item Mawilite",
-    "set 5: Mega Evolution of Mawile"
+    "set 5: Mega Evolution of Mawile with Mawilite"
    ]
   },
   {
@@ -5721,7 +5721,7 @@
     "set 1: item Golurkite",
     "set 1: move Headlong Rush",
     "set 1: move Poltergeist",
-    "set 1: Mega Evolution of Golurk"
+    "set 1: Mega Evolution of Golurk with Golurkite"
    ]
   },
   {
@@ -5732,7 +5732,7 @@
    "creator": "Junhee Lee",
    "blockers": [
     "set 4: item Venusaurite",
-    "set 4: Mega Evolution of Venusaur"
+    "set 4: Mega Evolution of Venusaur with Venusaurite"
    ]
   },
   {
@@ -5755,7 +5755,7 @@
    "blockers": [
     "set 2: item Scovillainite",
     "set 2: ability Moody",
-    "set 2: Mega Evolution of Scovillain"
+    "set 2: Mega Evolution of Scovillain with Scovillainite"
    ]
   },
   {
@@ -5768,7 +5768,7 @@
     "set 1: move Population Bomb",
     "set 1: move Bite",
     "set 2: item Blastoisinite",
-    "set 2: Mega Evolution of Blastoise"
+    "set 2: Mega Evolution of Blastoise with Blastoisinite"
    ]
   },
   {
@@ -5781,7 +5781,7 @@
     "set 3: move Population Bomb",
     "set 4: move Stomping Tantrum",
     "set 6: item Blastoisinite",
-    "set 6: Mega Evolution of Blastoise"
+    "set 6: Mega Evolution of Blastoise with Blastoisinite"
    ]
   },
   {
@@ -5802,7 +5802,7 @@
    "creator": "lun1118",
    "blockers": [
     "set 1: item Mawilite",
-    "set 1: Mega Evolution of Mawile",
+    "set 1: Mega Evolution of Mawile with Mawilite",
     "set 2: item Bright Powder",
     "set 4: item Quick Claw",
     "set 4: move Stone Edge",
@@ -5822,7 +5822,7 @@
     "set 3: ability Weak Armor",
     "set 3: move Destiny Bond",
     "set 5: item Pyroarite",
-    "set 5: Mega Evolution of Pyroar"
+    "set 5: Mega Evolution of Pyroar with Pyroarite"
    ]
   },
   {
@@ -5847,7 +5847,7 @@
     "set 3: move Stomping Tantrum",
     "set 5: item Blastoisinite",
     "set 5: move Water Pulse",
-    "set 5: Mega Evolution of Blastoise"
+    "set 5: Mega Evolution of Blastoise with Blastoisinite"
    ]
   },
   {
@@ -5881,7 +5881,7 @@
    "creator": "chaguma_poke90",
    "blockers": [
     "set 1: item Scolipite",
-    "set 1: Mega Evolution of Scolipede"
+    "set 1: Mega Evolution of Scolipede with Scolipite"
    ]
   },
   {
@@ -5892,7 +5892,7 @@
    "creator": "yakan_sv",
    "blockers": [
     "set 1: item Mawilite",
-    "set 1: Mega Evolution of Mawile",
+    "set 1: Mega Evolution of Mawile with Mawilite",
     "set 2: move Substitute"
    ]
   },
@@ -5929,7 +5929,7 @@
     "set 6: item Greninjite",
     "set 6: ability Protean",
     "set 6: move Extrasensory",
-    "set 6: Mega Evolution of Greninja"
+    "set 6: Mega Evolution of Greninja with Greninjite"
    ]
   },
   {
@@ -5951,7 +5951,7 @@
    "blockers": [
     "set 1: move Population Bomb",
     "set 3: item Mawilite",
-    "set 3: Mega Evolution of Mawile",
+    "set 3: Mega Evolution of Mawile with Mawilite",
     "set 4: move Vacuum Wave",
     "set 5: ability Screen Cleaner",
     "set 5: move Frost Breath"
@@ -6000,7 +6000,7 @@
    "blockers": [
     "set 1: move Roost",
     "set 2: item Skarmorite",
-    "set 2: Mega Evolution of Skarmory",
+    "set 2: Mega Evolution of Skarmory with Skarmorite",
     "set 3: move Roar"
    ]
   },
@@ -6012,7 +6012,7 @@
    "creator": "shinysopheon",
    "blockers": [
     "set 1: item Mawilite",
-    "set 1: Mega Evolution of Mawile",
+    "set 1: Mega Evolution of Mawile with Mawilite",
     "set 6: item Iron Ball"
    ]
   },
@@ -6024,10 +6024,10 @@
    "creator": "eteru",
    "blockers": [
     "set 2: item Cameruptite",
-    "set 2: Mega Evolution of Camerupt",
+    "set 2: Mega Evolution of Camerupt with Cameruptite",
     "set 3: item Kangaskhanite",
     "set 3: move Hammer Arm",
-    "set 3: Mega Evolution of Kangaskhan",
+    "set 3: Mega Evolution of Kangaskhan with Kangaskhanite",
     "set 4: item Iron Ball",
     "set 4: ability Disguise",
     "set 4: move Beat Up",
@@ -6043,7 +6043,7 @@
    "creator": "dameningenyoyo",
    "blockers": [
     "set 1: item Kangaskhanite",
-    "set 1: Mega Evolution of Kangaskhan",
+    "set 1: Mega Evolution of Kangaskhan with Kangaskhanite",
     "set 2: ability Stance Change",
     "set 2: move Poltergeist",
     "set 2: move King's Shield",
@@ -6117,7 +6117,7 @@
     "set 4: item Sablenite",
     "set 4: move Psych Up",
     "set 4: move Pain Split",
-    "set 4: Mega Evolution of Sableye",
+    "set 4: Mega Evolution of Sableye with Sablenite",
     "set 6: move Stored Power",
     "set 6: move Psych Up"
    ]
@@ -6131,7 +6131,7 @@
    "blockers": [
     "set 2: move Population Bomb",
     "set 3: item Mawilite",
-    "set 3: Mega Evolution of Mawile"
+    "set 3: Mega Evolution of Mawile with Mawilite"
    ]
   },
   {
@@ -6157,7 +6157,7 @@
    "creator": "moscate1oon",
    "blockers": [
     "set 2: item Mawilite",
-    "set 2: Mega Evolution of Mawile"
+    "set 2: Mega Evolution of Mawile with Mawilite"
    ]
   },
   {
@@ -6175,11 +6175,11 @@
     "set 3: item Sablenite",
     "set 3: move Night Shade",
     "set 3: move Psych Up",
-    "set 3: Mega Evolution of Sableye",
+    "set 3: Mega Evolution of Sableye with Sablenite",
     "set 4: move Stored Power",
     "set 4: move Psych Up",
     "set 5: item Blastoisinite",
-    "set 5: Mega Evolution of Blastoise"
+    "set 5: Mega Evolution of Blastoise with Blastoisinite"
    ]
   },
   {
@@ -6202,7 +6202,7 @@
     "set 1: move Aqua Cutter",
     "set 1: move Ceaseless Edge",
     "set 2: item Mawilite",
-    "set 2: Mega Evolution of Mawile"
+    "set 2: Mega Evolution of Mawile with Mawilite"
    ]
   },
   {
@@ -6227,7 +6227,7 @@
     "set 4: item Iron Ball",
     "set 4: move Skill Swap",
     "set 5: item Mawilite",
-    "set 5: Mega Evolution of Mawile",
+    "set 5: Mega Evolution of Mawile with Mawilite",
     "set 6: ability Reckless",
     "set 6: move Final Gambit"
    ]
@@ -6244,7 +6244,7 @@
     "set 1: move Skill Swap",
     "set 3: item Scovillainite",
     "set 3: move Leech Seed",
-    "set 3: Mega Evolution of Scovillain",
+    "set 3: Mega Evolution of Scovillain with Scovillainite",
     "set 4: move Hex",
     "set 5: move Flower Trick"
    ]
@@ -6258,7 +6258,7 @@
    "blockers": [
     "set 2: item Garchompite",
     "set 2: move Stomping Tantrum",
-    "set 2: Mega Evolution of Garchomp",
+    "set 2: Mega Evolution of Garchomp with Garchompite",
     "set 3: move Final Gambit"
    ]
   },
@@ -6271,10 +6271,10 @@
    "blockers": [
     "set 2: item Kangaskhanite",
     "set 2: move Hammer Arm",
-    "set 2: Mega Evolution of Kangaskhan",
+    "set 2: Mega Evolution of Kangaskhan with Kangaskhanite",
     "set 6: item Blastoisinite",
     "set 6: move Water Pulse",
-    "set 6: Mega Evolution of Blastoise"
+    "set 6: Mega Evolution of Blastoise with Blastoisinite"
    ]
   },
   {
@@ -6285,11 +6285,11 @@
    "creator": "eRennPokemon",
    "blockers": [
     "set 3: item Mawilite",
-    "set 3: Mega Evolution of Mawile",
+    "set 3: Mega Evolution of Mawile with Mawilite",
     "set 4: item Iron Ball",
     "set 4: move Fling",
     "set 5: item Blastoisinite",
-    "set 5: Mega Evolution of Blastoise"
+    "set 5: Mega Evolution of Blastoise with Blastoisinite"
    ]
   },
   {
@@ -6300,7 +6300,7 @@
    "creator": "oh_oshiruko",
    "blockers": [
     "set 1: item Pyroarite",
-    "set 1: Mega Evolution of Pyroar",
+    "set 1: Mega Evolution of Pyroar with Pyroarite",
     "set 2: move Ice Fang"
    ]
   },
@@ -6326,7 +6326,7 @@
     "set 3: move Skill Swap",
     "set 3: move Psychic Terrain",
     "set 4: item Mawilite",
-    "set 4: Mega Evolution of Mawile",
+    "set 4: Mega Evolution of Mawile with Mawilite",
     "set 5: move Population Bomb",
     "set 5: move After You",
     "set 6: ability Huge Power",
@@ -6341,7 +6341,7 @@
    "creator": "DjSanders",
    "blockers": [
     "set 2: item Eelektrossite",
-    "set 2: Mega Evolution of Eelektross"
+    "set 2: Mega Evolution of Eelektross with Eelektrossite"
    ]
   },
   {
@@ -6353,7 +6353,7 @@
    "blockers": [
     "set 1: move Last Resort",
     "set 4: item Mawilite",
-    "set 4: Mega Evolution of Mawile"
+    "set 4: Mega Evolution of Mawile with Mawilite"
    ]
   },
   {
@@ -6376,7 +6376,7 @@
    "blockers": [
     "set 5: move Quick Guard",
     "set 6: item Blastoisinite",
-    "set 6: Mega Evolution of Blastoise"
+    "set 6: Mega Evolution of Blastoise with Blastoisinite"
    ]
   },
   {
@@ -6388,9 +6388,9 @@
    "blockers": [
     "set 2: move Last Resort",
     "set 4: item Mawilite",
-    "set 4: Mega Evolution of Mawile",
+    "set 4: Mega Evolution of Mawile with Mawilite",
     "set 5: item Pyroarite",
-    "set 5: Mega Evolution of Pyroar"
+    "set 5: Mega Evolution of Pyroar with Pyroarite"
    ]
   },
   {
@@ -6465,7 +6465,7 @@
    "creator": "punihina1334",
    "blockers": [
     "set 2: item Mawilite",
-    "set 2: Mega Evolution of Mawile",
+    "set 2: Mega Evolution of Mawile with Mawilite",
     "set 5: move Stomping Tantrum"
    ]
   },
@@ -6489,7 +6489,7 @@
     "set 2: item Heat Rock",
     "set 3: ability Oblivious",
     "set 5: item Pyroarite",
-    "set 5: Mega Evolution of Pyroar"
+    "set 5: Mega Evolution of Pyroar with Pyroarite"
    ]
   },
   {
@@ -6500,7 +6500,7 @@
    "creator": "Shoma Honami",
    "blockers": [
     "set 5: item Venusaurite",
-    "set 5: Mega Evolution of Venusaur",
+    "set 5: Mega Evolution of Venusaur with Venusaurite",
     "set 6: move Ice Fang"
    ]
   },
@@ -6522,7 +6522,7 @@
     "set 5: item Sablenite",
     "set 5: move Pain Split",
     "set 5: move Psych Up",
-    "set 5: Mega Evolution of Sableye",
+    "set 5: Mega Evolution of Sableye with Sablenite",
     "set 6: move Substitute",
     "set 6: move Psych Up"
    ]
@@ -6560,7 +6560,7 @@
    "creator": "greyfox302",
    "blockers": [
     "set 1: item Mawilite",
-    "set 1: Mega Evolution of Mawile",
+    "set 1: Mega Evolution of Mawile with Mawilite",
     "set 6: move Last Resort"
    ]
   },
@@ -6572,7 +6572,7 @@
    "creator": "Wolfe Glick",
    "blockers": [
     "set 1: item Pyroarite",
-    "set 1: Mega Evolution of Pyroar",
+    "set 1: Mega Evolution of Pyroar with Pyroarite",
     "set 2: move After You"
    ]
   },
@@ -6584,7 +6584,7 @@
    "creator": "evenushinata",
    "blockers": [
     "set 1: item Scolipite",
-    "set 1: Mega Evolution of Scolipede",
+    "set 1: Mega Evolution of Scolipede with Scolipite",
     "set 4: ability Pickpocket"
    ]
   },
@@ -6611,9 +6611,9 @@
     "set 2: ability Mold Breaker",
     "set 2: move Stomping Tantrum",
     "set 2: move Horn Drill",
-    "set 2: Mega Evolution of Excadrill",
+    "set 2: Mega Evolution of Excadrill with Excadrite",
     "set 5: item Venusaurite",
-    "set 5: Mega Evolution of Venusaur"
+    "set 5: Mega Evolution of Venusaur with Venusaurite"
    ]
   },
   {
@@ -6624,7 +6624,7 @@
    "creator": "Gunge",
    "blockers": [
     "set 2: item Kangaskhanite",
-    "set 2: Mega Evolution of Kangaskhan"
+    "set 2: Mega Evolution of Kangaskhan with Kangaskhanite"
    ]
   },
   {
@@ -6645,7 +6645,7 @@
    "creator": "rennyvgc",
    "blockers": [
     "set 4: item Mawilite",
-    "set 4: Mega Evolution of Mawile"
+    "set 4: Mega Evolution of Mawile with Mawilite"
    ]
   },
   {
@@ -6669,10 +6669,10 @@
    "blockers": [
     "set 2: move Last Resort",
     "set 4: item Cameruptite",
-    "set 4: Mega Evolution of Camerupt",
+    "set 4: Mega Evolution of Camerupt with Cameruptite",
     "set 5: move After You",
     "set 6: item Pyroarite",
-    "set 6: Mega Evolution of Pyroar"
+    "set 6: Mega Evolution of Pyroar with Pyroarite"
    ]
   },
   {
@@ -6686,7 +6686,7 @@
     "set 2: item Mental Herb",
     "set 2: move Instruct",
     "set 3: item Mawilite",
-    "set 3: Mega Evolution of Mawile",
+    "set 3: Mega Evolution of Mawile with Mawilite",
     "set 4: move Last Resort"
    ]
   },
@@ -6720,7 +6720,7 @@
    "creator": "Alex Soto",
    "blockers": [
     "set 1: item Blastoisinite",
-    "set 1: Mega Evolution of Blastoise",
+    "set 1: Mega Evolution of Blastoise with Blastoisinite",
     "set 4: move Quick Guard"
    ]
   },
@@ -6744,7 +6744,7 @@
    "blockers": [
     "set 3: item Garchompite",
     "set 3: move Stomping Tantrum",
-    "set 3: Mega Evolution of Garchomp"
+    "set 3: Mega Evolution of Garchomp with Garchompite"
    ]
   },
   {
@@ -6755,7 +6755,7 @@
    "creator": "Santino Tarquinio",
    "blockers": [
     "set 5: item Blastoisinite",
-    "set 5: Mega Evolution of Blastoise"
+    "set 5: Mega Evolution of Blastoise with Blastoisinite"
    ]
   },
   {
@@ -6783,7 +6783,7 @@
     "set 1: move Meteor Mash",
     "set 3: move Haze",
     "set 6: item Venusaurite",
-    "set 6: Mega Evolution of Venusaur"
+    "set 6: Mega Evolution of Venusaur with Venusaurite"
    ]
   },
   {
@@ -6804,7 +6804,7 @@
    "creator": "Nate Innocenti",
    "blockers": [
     "set 1: item Mawilite",
-    "set 1: Mega Evolution of Mawile",
+    "set 1: Mega Evolution of Mawile with Mawilite",
     "set 5: item Scope Lens",
     "set 5: move Triple Arrows",
     "set 6: move Final Gambit"
@@ -6841,7 +6841,7 @@
    "creator": "Balyn Wales-Lewis",
    "blockers": [
     "set 3: item Scovillainite",
-    "set 3: Mega Evolution of Scovillain"
+    "set 3: Mega Evolution of Scovillain with Scovillainite"
    ]
   },
   {
@@ -6852,7 +6852,7 @@
    "creator": "PsychoR&R",
    "blockers": [
     "set 3: item Garchompite",
-    "set 3: Mega Evolution of Garchomp"
+    "set 3: Mega Evolution of Garchomp with Garchompite"
    ]
   },
   {
@@ -6875,7 +6875,7 @@
     "set 1: ability Pickpocket",
     "set 1: move Upper Hand",
     "set 3: item Blastoisinite",
-    "set 3: Mega Evolution of Blastoise",
+    "set 3: Mega Evolution of Blastoise with Blastoisinite",
     "set 6: ability Unaware"
    ]
   },
@@ -6890,7 +6890,7 @@
     "set 2: item Scovillainite",
     "set 2: ability Moody",
     "set 2: move Leech Seed",
-    "set 2: Mega Evolution of Scovillain",
+    "set 2: Mega Evolution of Scovillain with Scovillainite",
     "set 4: move Psych Up"
    ]
   },
@@ -6903,7 +6903,7 @@
    "blockers": [
     "set 1: move Quick Guard",
     "set 2: item Blastoisinite",
-    "set 2: Mega Evolution of Blastoise"
+    "set 2: Mega Evolution of Blastoise with Blastoisinite"
    ]
   },
   {
@@ -6915,7 +6915,7 @@
    "blockers": [
     "set 3: move Quick Guard",
     "set 4: item Venusaurite",
-    "set 4: Mega Evolution of Venusaur"
+    "set 4: Mega Evolution of Venusaur with Venusaurite"
    ]
   },
   {
@@ -6926,7 +6926,7 @@
    "creator": "Blake Falls",
    "blockers": [
     "set 3: item Mawilite",
-    "set 3: Mega Evolution of Mawile",
+    "set 3: Mega Evolution of Mawile with Mawilite",
     "set 6: item Dragoninite"
    ]
   },
@@ -6939,7 +6939,7 @@
    "blockers": [
     "set 2: move Quick Guard",
     "set 6: item Blastoisinite",
-    "set 6: Mega Evolution of Blastoise"
+    "set 6: Mega Evolution of Blastoise with Blastoisinite"
    ]
   },
   {
@@ -6960,9 +6960,9 @@
    "creator": "azuf_azelf_1001",
    "blockers": [
     "set 1: item Pyroarite",
-    "set 1: Mega Evolution of Pyroar",
+    "set 1: Mega Evolution of Pyroar with Pyroarite",
     "set 6: item Blastoisinite",
-    "set 6: Mega Evolution of Blastoise"
+    "set 6: Mega Evolution of Blastoise with Blastoisinite"
    ]
   },
   {
@@ -7021,7 +7021,7 @@
     "set 2: ability Unaware",
     "set 2: move Moonlight",
     "set 2: move Psych Up",
-    "set 2: Mega Evolution of Clefable",
+    "set 2: Mega Evolution of Clefable with Clefablite",
     "set 3: move Minimize",
     "set 3: move Stockpile",
     "set 3: move Barb Barrage",
@@ -7050,7 +7050,7 @@
    "blockers": [
     "set 1: item Meganiumite",
     "set 1: ability Leaf Guard",
-    "set 1: Mega Evolution of Meganium",
+    "set 1: Mega Evolution of Meganium with Meganiumite",
     "set 4: move Swagger",
     "set 6: item Lum Berry"
    ]
@@ -7075,7 +7075,7 @@
     "set 3: move Roar",
     "set 5: item Garchompite",
     "set 5: move Stomping Tantrum",
-    "set 5: Mega Evolution of Garchomp"
+    "set 5: Mega Evolution of Garchomp with Garchompite"
    ]
   },
   {
@@ -7110,7 +7110,7 @@
    "blockers": [
     "set 1: ability Magician",
     "set 2: item Eelektrossite",
-    "set 2: Mega Evolution of Eelektross",
+    "set 2: Mega Evolution of Eelektross with Eelektrossite",
     "set 4: ability Telepathy"
    ]
   },
@@ -7134,7 +7134,7 @@
    "blockers": [
     "set 4: item Blastoisinite",
     "set 4: move Water Pulse",
-    "set 4: Mega Evolution of Blastoise",
+    "set 4: Mega Evolution of Blastoise with Blastoisinite",
     "set 6: ability Cloud Nine"
    ]
   },
@@ -7147,7 +7147,7 @@
    "blockers": [
     "set 2: move Ally Switch",
     "set 6: item Venusaurite",
-    "set 6: Mega Evolution of Venusaur"
+    "set 6: Mega Evolution of Venusaur with Venusaurite"
    ]
   },
   {
@@ -7194,7 +7194,7 @@
    "creator": "Michael Chen",
    "blockers": [
     "set 3: item Venusaurite",
-    "set 3: Mega Evolution of Venusaur"
+    "set 3: Mega Evolution of Venusaur with Venusaurite"
    ]
   },
   {
@@ -7205,7 +7205,7 @@
    "creator": "Xena",
    "blockers": [
     "set 5: item Mawilite",
-    "set 5: Mega Evolution of Mawile"
+    "set 5: Mega Evolution of Mawile with Mawilite"
    ]
   },
   {
@@ -7270,7 +7270,7 @@
    "creator": "kanato_poke_",
    "blockers": [
     "set 6: item Venusaurite",
-    "set 6: Mega Evolution of Venusaur"
+    "set 6: Mega Evolution of Venusaur with Venusaurite"
    ]
   },
   {
@@ -7291,7 +7291,7 @@
    "creator": "bribri_tweets",
    "blockers": [
     "set 2: item Mawilite",
-    "set 2: Mega Evolution of Mawile"
+    "set 2: Mega Evolution of Mawile with Mawilite"
    ]
   },
   {
@@ -7302,7 +7302,7 @@
    "creator": "Eric Ríos",
    "blockers": [
     "set 1: item Eelektrossite",
-    "set 1: Mega Evolution of Eelektross",
+    "set 1: Mega Evolution of Eelektross with Eelektrossite",
     "set 4: move Quick Guard",
     "set 5: move Population Bomb",
     "set 6: move No Retreat"
@@ -7351,7 +7351,7 @@
     "set 1: move Final Gambit",
     "set 2: ability Moxie",
     "set 4: item Mawilite",
-    "set 4: Mega Evolution of Mawile",
+    "set 4: Mega Evolution of Mawile with Mawilite",
     "set 6: move After You"
    ]
   },
@@ -7373,7 +7373,7 @@
    "creator": "Itachi",
    "blockers": [
     "set 5: item Mawilite",
-    "set 5: Mega Evolution of Mawile"
+    "set 5: Mega Evolution of Mawile with Mawilite"
    ]
   },
   {
@@ -7398,7 +7398,7 @@
    "creator": "Xena",
    "blockers": [
     "set 3: item Mawilite",
-    "set 3: Mega Evolution of Mawile"
+    "set 3: Mega Evolution of Mawile with Mawilite"
    ]
   },
   {
@@ -7419,7 +7419,7 @@
    "creator": "Michael Kelsch",
    "blockers": [
     "set 1: item Pyroarite",
-    "set 1: Mega Evolution of Pyroar",
+    "set 1: Mega Evolution of Pyroar with Pyroarite",
     "set 5: move Meteor Mash",
     "set 5: move Final Gambit"
    ]
@@ -7465,7 +7465,7 @@
    "creator": "downtowntojun",
    "blockers": [
     "set 1: item Mawilite",
-    "set 1: Mega Evolution of Mawile",
+    "set 1: Mega Evolution of Mawile with Mawilite",
     "set 2: move Final Gambit",
     "set 5: move Heavy Slam"
    ]
@@ -7488,7 +7488,7 @@
    "creator": "Kiwamu Endo",
    "blockers": [
     "set 5: item Venusaurite",
-    "set 5: Mega Evolution of Venusaur"
+    "set 5: Mega Evolution of Venusaur with Venusaurite"
    ]
   },
   {
@@ -7511,7 +7511,7 @@
    "creator": "Michael Kelsch",
    "blockers": [
     "set 1: item Eelektrossite",
-    "set 1: Mega Evolution of Eelektross",
+    "set 1: Mega Evolution of Eelektross with Eelektrossite",
     "set 5: move Trop Kick"
    ]
   },
@@ -7524,7 +7524,7 @@
    "blockers": [
     "set 1: item Scovillainite",
     "set 1: move Leech Seed",
-    "set 1: Mega Evolution of Scovillain",
+    "set 1: Mega Evolution of Scovillain with Scovillainite",
     "set 2: move Infestation",
     "set 2: move Baneful Bunker"
    ]
@@ -7548,7 +7548,7 @@
    "creator": "totsuwaki_coal",
    "blockers": [
     "set 1: item Cameruptite",
-    "set 1: Mega Evolution of Camerupt",
+    "set 1: Mega Evolution of Camerupt with Cameruptite",
     "set 4: move Final Gambit"
    ]
   },
@@ -7656,7 +7656,7 @@
    "blockers": [
     "set 2: move Roost",
     "set 6: item Mawilite",
-    "set 6: Mega Evolution of Mawile"
+    "set 6: Mega Evolution of Mawile with Mawilite"
    ]
   },
   {
@@ -7668,7 +7668,7 @@
    "blockers": [
     "set 3: move Quash",
     "set 6: item Mawilite",
-    "set 6: Mega Evolution of Mawile"
+    "set 6: Mega Evolution of Mawile with Mawilite"
    ]
   },
   {
@@ -7694,7 +7694,7 @@
     "set 1: move Final Gambit",
     "set 2: ability Pickpocket",
     "set 4: item Mawilite",
-    "set 4: Mega Evolution of Mawile"
+    "set 4: Mega Evolution of Mawile with Mawilite"
    ]
   },
   {
@@ -7705,7 +7705,7 @@
    "creator": "erennpokemon",
    "blockers": [
     "set 4: item Meganiumite",
-    "set 4: Mega Evolution of Meganium",
+    "set 4: Mega Evolution of Meganium with Meganiumite",
     "set 5: ability Protean",
     "set 5: move Water Shuriken"
    ]
@@ -7772,7 +7772,7 @@
    "creator": "Fang Yu-Yang",
    "blockers": [
     "set 1: item Pyroarite",
-    "set 1: Mega Evolution of Pyroar",
+    "set 1: Mega Evolution of Pyroar with Pyroarite",
     "set 2: move Roost"
    ]
   },
@@ -7838,7 +7838,7 @@
     "set 1: move Roost",
     "set 4: move Roar",
     "set 5: item Pyroarite",
-    "set 5: Mega Evolution of Pyroar"
+    "set 5: Mega Evolution of Pyroar with Pyroarite"
    ]
   },
   {
@@ -7849,7 +7849,7 @@
    "creator": "spy_anya11",
    "blockers": [
     "set 6: item Pyroarite",
-    "set 6: Mega Evolution of Pyroar"
+    "set 6: Mega Evolution of Pyroar with Pyroarite"
    ]
   },
   {
@@ -7860,7 +7860,7 @@
    "creator": "Fortree21",
    "blockers": [
     "set 2: item Mawilite",
-    "set 2: Mega Evolution of Mawile",
+    "set 2: Mega Evolution of Mawile with Mawilite",
     "set 6: ability Magic Bounce",
     "set 6: move Skill Swap"
    ]
@@ -7873,7 +7873,7 @@
    "creator": "kashiwagineru",
    "blockers": [
     "set 2: item Venusaurite",
-    "set 2: Mega Evolution of Venusaur"
+    "set 2: Mega Evolution of Venusaur with Venusaurite"
    ]
   },
   {
@@ -7884,7 +7884,7 @@
    "creator": "kunisada00eikan",
    "blockers": [
     "set 1: item Pyroarite",
-    "set 1: Mega Evolution of Pyroar",
+    "set 1: Mega Evolution of Pyroar with Pyroarite",
     "set 4: move Final Gambit",
     "set 6: move Stomping Tantrum"
    ]
@@ -7898,7 +7898,7 @@
    "blockers": [
     "set 1: move Last Resort",
     "set 2: item Mawilite",
-    "set 2: Mega Evolution of Mawile",
+    "set 2: Mega Evolution of Mawile with Mawilite",
     "set 5: move Final Gambit",
     "set 6: move Pollen Puff"
    ]
@@ -7912,7 +7912,7 @@
    "blockers": [
     "set 1: item Scovillainite",
     "set 1: ability Moody",
-    "set 1: Mega Evolution of Scovillain",
+    "set 1: Mega Evolution of Scovillain with Scovillainite",
     "set 2: move Population Bomb"
    ]
   },
@@ -7969,7 +7969,7 @@
     "set 4: ability Disguise",
     "set 6: item Venusaurite",
     "set 6: move Leech Seed",
-    "set 6: Mega Evolution of Venusaur"
+    "set 6: Mega Evolution of Venusaur with Venusaurite"
    ]
   },
   {
@@ -7980,7 +7980,7 @@
    "creator": "Ale",
    "blockers": [
     "set 4: item Mawilite",
-    "set 4: Mega Evolution of Mawile"
+    "set 4: Mega Evolution of Mawile with Mawilite"
    ]
   },
   {
@@ -7991,7 +7991,7 @@
    "creator": "SewrathVGC",
    "blockers": [
     "set 2: item Eelektrossite",
-    "set 2: Mega Evolution of Eelektross",
+    "set 2: Mega Evolution of Eelektross with Eelektrossite",
     "set 4: move Population Bomb",
     "set 4: move Bite",
     "set 5: move Phantom Force"
@@ -8005,7 +8005,7 @@
    "creator": "Michael Kelsch",
    "blockers": [
     "set 2: item Mawilite",
-    "set 2: Mega Evolution of Mawile"
+    "set 2: Mega Evolution of Mawile with Mawilite"
    ]
   },
   {
@@ -8016,7 +8016,7 @@
    "creator": "Xena",
    "blockers": [
     "set 6: item Mawilite",
-    "set 6: Mega Evolution of Mawile"
+    "set 6: Mega Evolution of Mawile with Mawilite"
    ]
   },
   {
@@ -8027,7 +8027,7 @@
    "creator": "spy_anya11",
    "blockers": [
     "set 1: item Eelektrossite",
-    "set 1: Mega Evolution of Eelektross"
+    "set 1: Mega Evolution of Eelektross with Eelektrossite"
    ]
   },
   {
@@ -8060,7 +8060,7 @@
     "set 1: item Blazikenite",
     "set 3: item Clefablite",
     "set 3: ability Unaware",
-    "set 3: Mega Evolution of Clefable",
+    "set 3: Mega Evolution of Clefable with Clefablite",
     "set 4: move Roost",
     "set 5: move Stomping Tantrum"
    ]
@@ -8087,7 +8087,7 @@
    "creator": "poke_sky39",
    "blockers": [
     "set 1: item Venusaurite",
-    "set 1: Mega Evolution of Venusaur",
+    "set 1: Mega Evolution of Venusaur with Venusaurite",
     "set 5: move Temper Flare",
     "set 6: ability Unaware"
    ]
@@ -8112,7 +8112,7 @@
    "creator": "Andrew Krebs",
    "blockers": [
     "set 6: item Eelektrossite",
-    "set 6: Mega Evolution of Eelektross"
+    "set 6: Mega Evolution of Eelektross with Eelektrossite"
    ]
   },
   {
@@ -8135,7 +8135,7 @@
    "blockers": [
     "set 2: move Roost",
     "set 3: item Eelektrossite",
-    "set 3: Mega Evolution of Eelektross"
+    "set 3: Mega Evolution of Eelektross with Eelektrossite"
    ]
   },
   {
@@ -8147,7 +8147,7 @@
    "blockers": [
     "set 2: item Scovillainite",
     "set 2: ability Moody",
-    "set 2: Mega Evolution of Scovillain"
+    "set 2: Mega Evolution of Scovillain with Scovillainite"
    ]
   },
   {
@@ -8169,7 +8169,7 @@
    "blockers": [
     "set 1: item Raichunite X",
     "set 2: item Venusaurite",
-    "set 2: Mega Evolution of Venusaur"
+    "set 2: Mega Evolution of Venusaur with Venusaurite"
    ]
   },
   {
@@ -8192,7 +8192,7 @@
    "blockers": [
     "set 4: item Bright Powder",
     "set 5: item Mawilite",
-    "set 5: Mega Evolution of Mawile"
+    "set 5: Mega Evolution of Mawile with Mawilite"
    ]
   },
   {
@@ -8205,7 +8205,7 @@
     "set 1: move After You",
     "set 4: item Kangaskhanite",
     "set 4: move Hammer Arm",
-    "set 4: Mega Evolution of Kangaskhan",
+    "set 4: Mega Evolution of Kangaskhan with Kangaskhanite",
     "set 6: move Final Gambit"
    ]
   },
@@ -8248,7 +8248,7 @@
    "creator": "Erizabeth",
    "blockers": [
     "set 1: item Pyroarite",
-    "set 1: Mega Evolution of Pyroar"
+    "set 1: Mega Evolution of Pyroar with Pyroarite"
    ]
   },
   {
@@ -8291,7 +8291,7 @@
    "creator": "Lauri Halonen",
    "blockers": [
     "set 1: item Blastoisinite",
-    "set 1: Mega Evolution of Blastoise",
+    "set 1: Mega Evolution of Blastoise with Blastoisinite",
     "set 5: move Final Gambit"
    ]
   },
@@ -8314,7 +8314,7 @@
    "creator": "cloudjgr0424",
    "blockers": [
     "set 2: item Pyroarite",
-    "set 2: Mega Evolution of Pyroar",
+    "set 2: Mega Evolution of Pyroar with Pyroarite",
     "set 4: ability Oblivious"
    ]
   },
@@ -8327,7 +8327,7 @@
    "blockers": [
     "set 1: move Roost",
     "set 3: item Eelektrossite",
-    "set 3: Mega Evolution of Eelektross",
+    "set 3: Mega Evolution of Eelektross with Eelektrossite",
     "set 5: move Tickle"
    ]
   },
@@ -8375,7 +8375,7 @@
    "blockers": [
     "set 5: item Scolipite",
     "set 5: move Baton Pass",
-    "set 5: Mega Evolution of Scolipede"
+    "set 5: Mega Evolution of Scolipede with Scolipite"
    ]
   },
   {
@@ -8409,7 +8409,7 @@
    "creator": "Fortree21",
    "blockers": [
     "set 4: item Eelektrossite",
-    "set 4: Mega Evolution of Eelektross"
+    "set 4: Mega Evolution of Eelektross with Eelektrossite"
    ]
   },
   {
@@ -8431,7 +8431,7 @@
    "creator": "castillo11vgc",
    "blockers": [
     "set 1: item Blastoisinite",
-    "set 1: Mega Evolution of Blastoise"
+    "set 1: Mega Evolution of Blastoise with Blastoisinite"
    ]
   },
   {
@@ -8454,7 +8454,7 @@
    "creator": "megamaphoo",
    "blockers": [
     "set 1: item Eelektrossite",
-    "set 1: Mega Evolution of Eelektross"
+    "set 1: Mega Evolution of Eelektross with Eelektrossite"
    ]
   },
   {
@@ -8468,7 +8468,7 @@
     "set 4: move After You",
     "set 4: move Pollen Puff",
     "set 5: item Mawilite",
-    "set 5: Mega Evolution of Mawile"
+    "set 5: Mega Evolution of Mawile with Mawilite"
    ]
   },
   {
@@ -8481,7 +8481,7 @@
     "set 3: move Endeavor",
     "set 5: item Eelektrossite",
     "set 5: move Thunder",
-    "set 5: Mega Evolution of Eelektross"
+    "set 5: Mega Evolution of Eelektross with Eelektrossite"
    ]
   },
   {
@@ -8527,10 +8527,10 @@
    "blockers": [
     "set 1: item Pyroarite",
     "set 1: move Round",
-    "set 1: Mega Evolution of Pyroar",
+    "set 1: Mega Evolution of Pyroar with Pyroarite",
     "set 2: move Round",
     "set 3: item Kangaskhanite",
-    "set 3: Mega Evolution of Kangaskhan",
+    "set 3: Mega Evolution of Kangaskhan with Kangaskhanite",
     "set 6: move After You"
    ]
   },
@@ -8563,7 +8563,7 @@
    "creator": "Sitinho6Y",
    "blockers": [
     "set 1: item Pyroarite",
-    "set 1: Mega Evolution of Pyroar",
+    "set 1: Mega Evolution of Pyroar with Pyroarite",
     "set 2: item Heat Rock",
     "set 2: move Burning Jealousy",
     "set 6: move Thunder Wave"
@@ -8588,7 +8588,7 @@
    "creator": "charge_poke",
    "blockers": [
     "set 1: item Mawilite",
-    "set 1: Mega Evolution of Mawile"
+    "set 1: Mega Evolution of Mawile with Mawilite"
    ]
   },
   {
@@ -8610,7 +8610,7 @@
    "creator": "Apex__Dragon",
    "blockers": [
     "set 1: item Mawilite",
-    "set 1: Mega Evolution of Mawile"
+    "set 1: Mega Evolution of Mawile with Mawilite"
    ]
   },
   {
@@ -8624,7 +8624,7 @@
     "set 2: move After You",
     "set 3: move Skill Swap",
     "set 4: item Mawilite",
-    "set 4: Mega Evolution of Mawile",
+    "set 4: Mega Evolution of Mawile with Mawilite",
     "set 6: move Roost"
    ]
   },
@@ -8682,7 +8682,7 @@
    "creator": "glaceon__rei",
    "blockers": [
     "set 4: item Mawilite",
-    "set 4: Mega Evolution of Mawile"
+    "set 4: Mega Evolution of Mawile with Mawilite"
    ]
   },
   {
@@ -8693,7 +8693,7 @@
    "creator": "Kazeno_shion",
    "blockers": [
     "set 1: item Pyroarite",
-    "set 1: Mega Evolution of Pyroar"
+    "set 1: Mega Evolution of Pyroar with Pyroarite"
    ]
   },
   {
@@ -8728,10 +8728,10 @@
    "creator": "waifuwarrior64",
    "blockers": [
     "set 1: item Scolipite",
-    "set 1: Mega Evolution of Scolipede",
+    "set 1: Mega Evolution of Scolipede with Scolipite",
     "set 3: move Stomping Tantrum",
     "set 6: item Eelektrossite",
-    "set 6: Mega Evolution of Eelektross"
+    "set 6: Mega Evolution of Eelektross with Eelektrossite"
    ]
   },
   {
@@ -8742,7 +8742,7 @@
    "creator": "xjeffyyy",
    "blockers": [
     "set 2: item Mawilite",
-    "set 2: Mega Evolution of Mawile"
+    "set 2: Mega Evolution of Mawile with Mawilite"
    ]
   },
   {
@@ -8754,7 +8754,7 @@
    "blockers": [
     "set 1: item Pyroarite",
     "set 1: move Substitute",
-    "set 1: Mega Evolution of Pyroar"
+    "set 1: Mega Evolution of Pyroar with Pyroarite"
    ]
   },
   {
@@ -8779,7 +8779,7 @@
    "blockers": [
     "set 2: move After You",
     "set 6: item Mawilite",
-    "set 6: Mega Evolution of Mawile"
+    "set 6: Mega Evolution of Mawile with Mawilite"
    ]
   },
   {
@@ -8803,7 +8803,7 @@
    "blockers": [
     "set 3: item Pyroarite",
     "set 3: move Round",
-    "set 3: Mega Evolution of Pyroar",
+    "set 3: Mega Evolution of Pyroar with Pyroarite",
     "set 6: move Round"
    ]
   },
@@ -8815,7 +8815,7 @@
    "creator": "Snorlaxpikachu1",
    "blockers": [
     "set 1: item Pyroarite",
-    "set 1: Mega Evolution of Pyroar"
+    "set 1: Mega Evolution of Pyroar with Pyroarite"
    ]
   },
   {
@@ -8827,7 +8827,7 @@
    "blockers": [
     "set 1: move After You",
     "set 2: item Kangaskhanite",
-    "set 2: Mega Evolution of Kangaskhan"
+    "set 2: Mega Evolution of Kangaskhan with Kangaskhanite"
    ]
   },
   {
@@ -8859,10 +8859,10 @@
    "creator": "_ghira_",
    "blockers": [
     "set 1: item Mawilite",
-    "set 1: Mega Evolution of Mawile",
+    "set 1: Mega Evolution of Mawile with Mawilite",
     "set 3: move Final Gambit",
     "set 5: item Ampharosite",
-    "set 5: Mega Evolution of Ampharos"
+    "set 5: Mega Evolution of Ampharos with Ampharosite"
    ]
   },
   {
@@ -8910,7 +8910,7 @@
     "set 5: move Upper Hand",
     "set 6: item Pyroarite",
     "set 6: ability Rivalry",
-    "set 6: Mega Evolution of Pyroar"
+    "set 6: Mega Evolution of Pyroar with Pyroarite"
    ]
   },
   {
@@ -8923,7 +8923,7 @@
     "set 1: item Scovillainite",
     "set 1: ability Insomnia",
     "set 1: move Leech Seed",
-    "set 1: Mega Evolution of Scovillain"
+    "set 1: Mega Evolution of Scovillain with Scovillainite"
    ]
   },
   {
@@ -8961,7 +8961,7 @@
    "creator": "ShiningStAr359",
    "blockers": [
     "set 1: item Mawilite",
-    "set 1: Mega Evolution of Mawile"
+    "set 1: Mega Evolution of Mawile with Mawilite"
    ]
   },
   {
@@ -8994,7 +8994,7 @@
    "creator": "sktypoke",
    "blockers": [
     "set 6: item Venusaurite",
-    "set 6: Mega Evolution of Venusaur"
+    "set 6: Mega Evolution of Venusaur with Venusaurite"
    ]
   },
   {
@@ -9005,7 +9005,7 @@
    "creator": "Sarapoke0914",
    "blockers": [
     "set 1: item Pyroarite",
-    "set 1: Mega Evolution of Pyroar",
+    "set 1: Mega Evolution of Pyroar with Pyroarite",
     "set 3: move After You",
     "set 4: move Last Resort",
     "set 5: item Iron Ball",
@@ -9023,7 +9023,7 @@
     "set 1: move Final Gambit",
     "set 1: move Blaze Kick",
     "set 3: item Blastoisinite",
-    "set 3: Mega Evolution of Blastoise",
+    "set 3: Mega Evolution of Blastoise with Blastoisinite",
     "set 4: item Iron Ball"
    ]
   },
@@ -9077,7 +9077,7 @@
    "creator": "mikevgc",
    "blockers": [
     "set 3: item Eelektrossite",
-    "set 3: Mega Evolution of Eelektross"
+    "set 3: Mega Evolution of Eelektross with Eelektrossite"
    ]
   },
   {
@@ -9088,7 +9088,7 @@
    "creator": "ntsu__",
    "blockers": [
     "set 1: item Eelektrossite",
-    "set 1: Mega Evolution of Eelektross",
+    "set 1: Mega Evolution of Eelektross with Eelektrossite",
     "set 6: move Low Sweep"
    ]
   },
@@ -9123,7 +9123,7 @@
    "creator": "dollarmonke13",
    "blockers": [
     "set 1: item Mawilite",
-    "set 1: Mega Evolution of Mawile",
+    "set 1: Mega Evolution of Mawile with Mawilite",
     "set 5: move Stomping Tantrum",
     "set 6: move Substitute"
    ]
@@ -9138,7 +9138,7 @@
     "set 1: move Population Bomb",
     "set 1: move After You",
     "set 5: item Mawilite",
-    "set 5: Mega Evolution of Mawile"
+    "set 5: Mega Evolution of Mawile with Mawilite"
    ]
   },
   {
@@ -9205,7 +9205,7 @@
    "blockers": [
     "set 1: item Blazikenite",
     "set 5: item Venusaurite",
-    "set 5: Mega Evolution of Venusaur",
+    "set 5: Mega Evolution of Venusaur with Venusaurite",
     "set 6: move Steel Beam"
    ]
   },
@@ -9244,7 +9244,7 @@
    "creator": "kashiwagineru",
    "blockers": [
     "set 2: item Venusaurite",
-    "set 2: Mega Evolution of Venusaur"
+    "set 2: Mega Evolution of Venusaur with Venusaurite"
    ]
   },
   {
@@ -9255,7 +9255,7 @@
    "creator": "Federico Camporesi",
    "blockers": [
     "set 1: item Pyroarite",
-    "set 1: Mega Evolution of Pyroar",
+    "set 1: Mega Evolution of Pyroar with Pyroarite",
     "set 2: item Heat Rock",
     "set 4: move Stomping Tantrum",
     "set 5: move Ice Fang",
@@ -9406,7 +9406,7 @@
    "creator": "regibang",
    "blockers": [
     "set 1: item Pyroarite",
-    "set 1: Mega Evolution of Pyroar",
+    "set 1: Mega Evolution of Pyroar with Pyroarite",
     "set 3: item Lum Berry",
     "set 6: ability Illusion",
     "set 6: move Bitter Malice"
@@ -9477,7 +9477,7 @@
    "creator": "c_bass365",
    "blockers": [
     "set 6: item Eelektrossite",
-    "set 6: Mega Evolution of Eelektross"
+    "set 6: Mega Evolution of Eelektross with Eelektrossite"
    ]
   },
   {
@@ -9489,7 +9489,7 @@
    "blockers": [
     "set 5: move Thunder",
     "set 6: item Mawilite",
-    "set 6: Mega Evolution of Mawile"
+    "set 6: Mega Evolution of Mawile with Mawilite"
    ]
   },
   {
@@ -9545,7 +9545,7 @@
    "blockers": [
     "set 1: ability Symbiosis",
     "set 4: item Eelektrossite",
-    "set 4: Mega Evolution of Eelektross"
+    "set 4: Mega Evolution of Eelektross with Eelektrossite"
    ]
   },
   {
@@ -9557,7 +9557,7 @@
    "blockers": [
     "set 4: item Venusaurite",
     "set 4: move Leech Seed",
-    "set 4: Mega Evolution of Venusaur"
+    "set 4: Mega Evolution of Venusaur with Venusaurite"
    ]
   },
   {
@@ -9631,7 +9631,7 @@
     "set 3: move Swagger",
     "set 4: item Venusaurite",
     "set 4: move Leech Seed",
-    "set 4: Mega Evolution of Venusaur"
+    "set 4: Mega Evolution of Venusaur with Venusaurite"
    ]
   },
   {
@@ -9653,7 +9653,7 @@
    "blockers": [
     "set 1: item Dragalgite",
     "set 5: item Eelektrossite",
-    "set 5: Mega Evolution of Eelektross"
+    "set 5: Mega Evolution of Eelektross with Eelektrossite"
    ]
   },
   {
@@ -9697,7 +9697,7 @@
    "creator": "rennyvgc",
    "blockers": [
     "set 1: item Mawilite",
-    "set 1: Mega Evolution of Mawile",
+    "set 1: Mega Evolution of Mawile with Mawilite",
     "set 2: item Lum Berry",
     "set 3: move Rage Fist",
     "set 3: move Stone Edge"
@@ -9712,7 +9712,7 @@
    "blockers": [
     "set 1: item Eelektrossite",
     "set 1: move Supercell Slam",
-    "set 1: Mega Evolution of Eelektross"
+    "set 1: Mega Evolution of Eelektross with Eelektrossite"
    ]
   },
   {
@@ -9739,7 +9739,7 @@
    "creator": "danyul_yt",
    "blockers": [
     "set 6: item Venusaurite",
-    "set 6: Mega Evolution of Venusaur"
+    "set 6: Mega Evolution of Venusaur with Venusaurite"
    ]
   },
   {
@@ -9760,9 +9760,9 @@
    "creator": "DjSanders",
    "blockers": [
     "set 2: item Mawilite",
-    "set 2: Mega Evolution of Mawile",
+    "set 2: Mega Evolution of Mawile with Mawilite",
     "set 4: item Eelektrossite",
-    "set 4: Mega Evolution of Eelektross"
+    "set 4: Mega Evolution of Eelektross with Eelektrossite"
    ]
   },
   {
@@ -9773,7 +9773,7 @@
    "creator": "DjSanders",
    "blockers": [
     "set 3: item Mawilite",
-    "set 3: Mega Evolution of Mawile",
+    "set 3: Mega Evolution of Mawile with Mawilite",
     "set 6: move Barb Barrage"
    ]
   },
@@ -9785,9 +9785,9 @@
    "creator": "DjSanders",
    "blockers": [
     "set 1: item Blastoisinite",
-    "set 1: Mega Evolution of Blastoise",
+    "set 1: Mega Evolution of Blastoise with Blastoisinite",
     "set 5: item Pyroarite",
-    "set 5: Mega Evolution of Pyroar"
+    "set 5: Mega Evolution of Pyroar with Pyroarite"
    ]
   },
   {
@@ -9842,7 +9842,7 @@
    "creator": "dyeittight",
    "blockers": [
     "set 1: item Eelektrossite",
-    "set 1: Mega Evolution of Eelektross"
+    "set 1: Mega Evolution of Eelektross with Eelektrossite"
    ]
   },
   {
@@ -9853,7 +9853,7 @@
    "creator": "jortchamp",
    "blockers": [
     "set 1: item Pyroarite",
-    "set 1: Mega Evolution of Pyroar",
+    "set 1: Mega Evolution of Pyroar with Pyroarite",
     "set 2: ability Disguise",
     "set 4: item Dragoninite"
    ]
@@ -9867,7 +9867,7 @@
    "blockers": [
     "set 3: item Kangaskhanite",
     "set 3: move Hammer Arm",
-    "set 3: Mega Evolution of Kangaskhan",
+    "set 3: Mega Evolution of Kangaskhan with Kangaskhanite",
     "set 6: move Stone Edge"
    ]
   },
@@ -9890,7 +9890,7 @@
    "creator": "Blake Falls",
    "blockers": [
     "set 3: item Mawilite",
-    "set 3: Mega Evolution of Mawile",
+    "set 3: Mega Evolution of Mawile with Mawilite",
     "set 5: move Quash"
    ]
   },
@@ -10038,7 +10038,7 @@
     "set 2: item Scovillainite",
     "set 2: ability Insomnia",
     "set 2: move Leech Seed",
-    "set 2: Mega Evolution of Scovillain",
+    "set 2: Mega Evolution of Scovillain with Scovillainite",
     "set 5: move Psych Up",
     "set 6: move Dragon Tail",
     "set 6: move Beat Up",
@@ -10086,7 +10086,7 @@
    "creator": "Yuto Kimura",
    "blockers": [
     "set 2: item Kangaskhanite",
-    "set 2: Mega Evolution of Kangaskhan"
+    "set 2: Mega Evolution of Kangaskhan with Kangaskhanite"
    ]
   },
   {
@@ -10102,7 +10102,7 @@
     "set 3: move Acid Spray",
     "set 3: move Heal Pulse",
     "set 4: item Blastoisinite",
-    "set 4: Mega Evolution of Blastoise",
+    "set 4: Mega Evolution of Blastoise with Blastoisinite",
     "set 5: move Psych Up"
    ]
   },
@@ -10116,7 +10116,7 @@
     "set 4: move Stone Edge",
     "set 5: item Medichamite",
     "set 5: ability Pure Power",
-    "set 5: Mega Evolution of Medicham",
+    "set 5: Mega Evolution of Medicham with Medichamite",
     "set 6: item Mental Herb",
     "set 6: move After You",
     "set 6: move Instruct"
@@ -10169,7 +10169,7 @@
    "creator": "Yuya Wakasugi",
    "blockers": [
     "set 1: item Excadrite",
-    "set 1: Mega Evolution of Excadrill",
+    "set 1: Mega Evolution of Excadrill with Excadrite",
     "set 2: move Heavy Slam",
     "set 6: move Roar"
    ]
@@ -10182,10 +10182,10 @@
    "creator": "Hidetsuna Shimizu",
    "blockers": [
     "set 1: item Blastoisinite",
-    "set 1: Mega Evolution of Blastoise",
+    "set 1: Mega Evolution of Blastoise with Blastoisinite",
     "set 2: move Roar",
     "set 6: item Cameruptite",
-    "set 6: Mega Evolution of Camerupt"
+    "set 6: Mega Evolution of Camerupt with Cameruptite"
    ]
   },
   {
@@ -10256,10 +10256,10 @@
     "set 1: move Ally Switch",
     "set 2: item Kangaskhanite",
     "set 2: move Hammer Arm",
-    "set 2: Mega Evolution of Kangaskhan",
+    "set 2: Mega Evolution of Kangaskhan with Kangaskhanite",
     "set 3: ability Supreme Overlord",
     "set 6: item Cameruptite",
-    "set 6: Mega Evolution of Camerupt"
+    "set 6: Mega Evolution of Camerupt with Cameruptite"
    ]
   },
   {
@@ -10315,7 +10315,7 @@
     "set 4: move Stored Power",
     "set 4: move Psych Up",
     "set 4: move Slack Off",
-    "set 4: Mega Evolution of Slowbro",
+    "set 4: Mega Evolution of Slowbro with Slowbronite",
     "set 5: move Stored Power",
     "set 5: move Psych Up",
     "set 5: move Wish"
@@ -10339,7 +10339,7 @@
    "creator": "Ryota Otsubo",
    "blockers": [
     "set 3: item Blastoisinite",
-    "set 3: Mega Evolution of Blastoise",
+    "set 3: Mega Evolution of Blastoise with Blastoisinite",
     "set 6: ability Supreme Overlord"
    ]
   },
@@ -10352,7 +10352,7 @@
    "blockers": [
     "set 2: item Venusaurite",
     "set 2: move Leech Seed",
-    "set 2: Mega Evolution of Venusaur",
+    "set 2: Mega Evolution of Venusaur with Venusaurite",
     "set 5: ability Cloud Nine",
     "set 5: move Roost",
     "set 6: move Skill Swap"
@@ -10367,11 +10367,11 @@
    "blockers": [
     "set 1: item Scovillainite",
     "set 1: move Leech Seed",
-    "set 1: Mega Evolution of Scovillain",
+    "set 1: Mega Evolution of Scovillain with Scovillainite",
     "set 4: move Thunder Wave",
     "set 4: move Avalanche",
     "set 5: item Kangaskhanite",
-    "set 5: Mega Evolution of Kangaskhan"
+    "set 5: Mega Evolution of Kangaskhan with Kangaskhanite"
    ]
   },
   {
@@ -10439,7 +10439,7 @@
    "creator": "Charalampos Frimas",
    "blockers": [
     "set 2: item Kangaskhanite",
-    "set 2: Mega Evolution of Kangaskhan"
+    "set 2: Mega Evolution of Kangaskhan with Kangaskhanite"
    ]
   },
   {
@@ -10450,7 +10450,7 @@
    "creator": "Giacomo Bovolenta",
    "blockers": [
     "set 1: item Blastoisinite",
-    "set 1: Mega Evolution of Blastoise"
+    "set 1: Mega Evolution of Blastoise with Blastoisinite"
    ]
   },
   {
@@ -10474,7 +10474,7 @@
    "creator": "Alessandro Bugari",
    "blockers": [
     "set 1: item Skarmorite",
-    "set 1: Mega Evolution of Skarmory"
+    "set 1: Mega Evolution of Skarmory with Skarmorite"
    ]
   },
   {
@@ -10486,7 +10486,7 @@
    "blockers": [
     "set 3: item Kangaskhanite",
     "set 3: move Hammer Arm",
-    "set 3: Mega Evolution of Kangaskhan",
+    "set 3: Mega Evolution of Kangaskhan with Kangaskhanite",
     "set 5: ability Magic Bounce"
    ]
   },
@@ -10500,7 +10500,7 @@
     "set 2: item Scovillainite",
     "set 2: ability Insomnia",
     "set 2: move Leech Seed",
-    "set 2: Mega Evolution of Scovillain"
+    "set 2: Mega Evolution of Scovillain with Scovillainite"
    ]
   },
   {
@@ -10512,7 +10512,7 @@
    "blockers": [
     "set 1: move Quick Guard",
     "set 2: item Excadrite",
-    "set 2: Mega Evolution of Excadrill",
+    "set 2: Mega Evolution of Excadrill with Excadrite",
     "set 5: move Quick Guard"
    ]
   },
@@ -10535,7 +10535,7 @@
    "blockers": [
     "set 6: item Garchompite",
     "set 6: move Stomping Tantrum",
-    "set 6: Mega Evolution of Garchomp"
+    "set 6: Mega Evolution of Garchomp with Garchompite"
    ]
   },
   {
@@ -10548,7 +10548,7 @@
     "set 3: item Scovillainite",
     "set 3: ability Moody",
     "set 3: move Leech Seed",
-    "set 3: Mega Evolution of Scovillain",
+    "set 3: Mega Evolution of Scovillain with Scovillainite",
     "set 5: item Dragoninite",
     "set 6: move Baton Pass"
    ]
@@ -10562,7 +10562,7 @@
    "blockers": [
     "set 1: item Gyaradosite",
     "set 1: move Lash Out",
-    "set 1: Mega Evolution of Gyarados"
+    "set 1: Mega Evolution of Gyarados with Gyaradosite"
    ]
   },
   {
@@ -10586,7 +10586,7 @@
     "set 1: item Scovillainite",
     "set 1: ability Moody",
     "set 1: move Leech Seed",
-    "set 1: Mega Evolution of Scovillain"
+    "set 1: Mega Evolution of Scovillain with Scovillainite"
    ]
   },
   {
@@ -10632,7 +10632,7 @@
     "set 3: move Baton Pass",
     "set 6: item Scovillainite",
     "set 6: ability Moody",
-    "set 6: Mega Evolution of Scovillain"
+    "set 6: Mega Evolution of Scovillain with Scovillainite"
    ]
   },
   {
@@ -10679,7 +10679,7 @@
     "set 5: item Scovillainite",
     "set 5: ability Moody",
     "set 5: move Leech Seed",
-    "set 5: Mega Evolution of Scovillain",
+    "set 5: Mega Evolution of Scovillain with Scovillainite",
     "set 6: move Stomping Tantrum"
    ]
   },
@@ -10691,7 +10691,7 @@
    "creator": "Edward Glover",
    "blockers": [
     "set 1: item Kangaskhanite",
-    "set 1: Mega Evolution of Kangaskhan",
+    "set 1: Mega Evolution of Kangaskhan with Kangaskhanite",
     "set 2: move Vacuum Wave"
    ]
   },
@@ -10704,7 +10704,7 @@
    "blockers": [
     "set 5: item Excadrite",
     "set 5: ability Mold Breaker",
-    "set 5: Mega Evolution of Excadrill"
+    "set 5: Mega Evolution of Excadrill with Excadrite"
    ]
   },
   {
@@ -10715,9 +10715,9 @@
    "creator": "dreamswgh",
    "blockers": [
     "set 1: item Kangaskhanite",
-    "set 1: Mega Evolution of Kangaskhan",
+    "set 1: Mega Evolution of Kangaskhan with Kangaskhanite",
     "set 3: item Blastoisinite",
-    "set 3: Mega Evolution of Blastoise"
+    "set 3: Mega Evolution of Blastoise with Blastoisinite"
    ]
   },
   {
@@ -10728,7 +10728,7 @@
    "creator": "brisxx_",
    "blockers": [
     "set 1: item Venusaurite",
-    "set 1: Mega Evolution of Venusaur",
+    "set 1: Mega Evolution of Venusaur with Venusaurite",
     "set 4: move Stomping Tantrum",
     "set 6: move Roost"
    ]
@@ -10753,7 +10753,7 @@
    "creator": "Ak",
    "blockers": [
     "set 6: item Blastoisinite",
-    "set 6: Mega Evolution of Blastoise"
+    "set 6: Mega Evolution of Blastoise with Blastoisinite"
    ]
   },
   {
@@ -10765,7 +10765,7 @@
    "blockers": [
     "set 1: item Scovillainite",
     "set 1: ability Moody",
-    "set 1: Mega Evolution of Scovillain",
+    "set 1: Mega Evolution of Scovillain with Scovillainite",
     "set 4: ability Shell Armor",
     "set 4: move Shelter",
     "set 6: move Scale Shot",
@@ -10801,7 +10801,7 @@
    "blockers": [
     "set 1: item Steelixite",
     "set 1: move Heavy Slam",
-    "set 1: Mega Evolution of Steelix"
+    "set 1: Mega Evolution of Steelix with Steelixite"
    ]
   },
   {
@@ -10817,12 +10817,12 @@
     "set 4: item Golurkite",
     "set 4: move Poltergeist",
     "set 4: move Headlong Rush",
-    "set 4: Mega Evolution of Golurk",
+    "set 4: Mega Evolution of Golurk with Golurkite",
     "set 5: item Heracronite",
     "set 5: ability Moxie",
     "set 5: move Pin Missile",
     "set 5: move Rock Blast",
-    "set 5: Mega Evolution of Heracross",
+    "set 5: Mega Evolution of Heracross with Heracronite",
     "set 6: move Roar"
    ]
   },
@@ -10836,7 +10836,7 @@
     "set 1: ability Hunger Switch",
     "set 1: move Aura Wheel",
     "set 5: item Blastoisinite",
-    "set 5: Mega Evolution of Blastoise"
+    "set 5: Mega Evolution of Blastoise with Blastoisinite"
    ]
   },
   {
@@ -10870,7 +10870,7 @@
    "creator": "migawari",
    "blockers": [
     "set 1: item Blastoisinite",
-    "set 1: Mega Evolution of Blastoise",
+    "set 1: Mega Evolution of Blastoise with Blastoisinite",
     "set 5: item Mental Herb",
     "set 5: move Quick Guard"
    ]
@@ -10927,7 +10927,7 @@
     "set 4: move Jet Punch",
     "set 5: item Skarmorite",
     "set 5: move Roost",
-    "set 5: Mega Evolution of Skarmory"
+    "set 5: Mega Evolution of Skarmory with Skarmorite"
    ]
   },
   {
@@ -10939,7 +10939,7 @@
    "blockers": [
     "set 1: item Steelixite",
     "set 1: move Heavy Slam",
-    "set 1: Mega Evolution of Steelix"
+    "set 1: Mega Evolution of Steelix with Steelixite"
    ]
   },
   {
@@ -10971,9 +10971,9 @@
    "creator": "maggie57alt",
    "blockers": [
     "set 1: item Venusaurite",
-    "set 1: Mega Evolution of Venusaur",
+    "set 1: Mega Evolution of Venusaur with Venusaurite",
     "set 2: item Skarmorite",
-    "set 2: Mega Evolution of Skarmory"
+    "set 2: Mega Evolution of Skarmory with Skarmorite"
    ]
   },
   {
@@ -10999,7 +10999,7 @@
     "set 3: move Stomping Tantrum",
     "set 4: item Scovillainite",
     "set 4: move Leech Seed",
-    "set 4: Mega Evolution of Scovillain"
+    "set 4: Mega Evolution of Scovillain with Scovillainite"
    ]
   },
   {
@@ -11046,7 +11046,7 @@
     "set 2: ability Magic Bounce",
     "set 6: item Medichamite",
     "set 6: ability Pure Power",
-    "set 6: Mega Evolution of Medicham"
+    "set 6: Mega Evolution of Medicham with Medichamite"
    ]
   },
   {
@@ -11061,7 +11061,7 @@
     "set 5: item Golurkite",
     "set 5: move Headlong Rush",
     "set 5: move Poltergeist",
-    "set 5: Mega Evolution of Golurk",
+    "set 5: Mega Evolution of Golurk with Golurkite",
     "set 6: move Final Gambit",
     "set 6: move Meteor Mash"
    ]
@@ -11074,7 +11074,7 @@
    "creator": "TheBattleRoom",
    "blockers": [
     "set 6: item Skarmorite",
-    "set 6: Mega Evolution of Skarmory"
+    "set 6: Mega Evolution of Skarmory with Skarmorite"
    ]
   },
   {
@@ -11138,7 +11138,7 @@
    "blockers": [
     "set 4: item Feraligite",
     "set 4: ability Sheer Force",
-    "set 4: Mega Evolution of Feraligatr",
+    "set 4: Mega Evolution of Feraligatr with Feraligite",
     "set 6: move Ice Fang"
    ]
   },
@@ -11160,7 +11160,7 @@
    "creator": "coo_sleep_talk",
    "blockers": [
     "set 2: item Blastoisinite",
-    "set 2: Mega Evolution of Blastoise",
+    "set 2: Mega Evolution of Blastoise with Blastoisinite",
     "set 3: item Mental Herb",
     "set 3: move Acid Spray",
     "set 3: move Heal Pulse",
@@ -11226,7 +11226,7 @@
     "set 1: item Scovillainite",
     "set 1: ability Moody",
     "set 1: move Burning Jealousy",
-    "set 1: Mega Evolution of Scovillain",
+    "set 1: Mega Evolution of Scovillain with Scovillainite",
     "set 2: ability Thick Fat",
     "set 2: move Curse",
     "set 3: item Quick Claw"
@@ -11246,7 +11246,7 @@
     "set 3: move Stone Edge",
     "set 6: item Drampanite",
     "set 6: ability Berserk",
-    "set 6: Mega Evolution of Drampa"
+    "set 6: Mega Evolution of Drampa with Drampanite"
    ]
   },
   {
@@ -11257,7 +11257,7 @@
    "creator": "OHKO",
    "blockers": [
     "set 1: item Cameruptite",
-    "set 1: Mega Evolution of Camerupt",
+    "set 1: Mega Evolution of Camerupt with Cameruptite",
     "set 3: move Instruct",
     "set 6: item Lum Berry"
    ]
@@ -11270,10 +11270,10 @@
    "creator": "Francis Tai",
    "blockers": [
     "set 1: item Gyaradosite",
-    "set 1: Mega Evolution of Gyarados",
+    "set 1: Mega Evolution of Gyarados with Gyaradosite",
     "set 3: item Victreebelite",
     "set 3: move Acid Spray",
-    "set 3: Mega Evolution of Victreebel",
+    "set 3: Mega Evolution of Victreebel with Victreebelite",
     "set 5: ability Stance Change",
     "set 5: move Substitute",
     "set 5: move King's Shield"
@@ -11287,7 +11287,7 @@
    "creator": "Francis Tai",
    "blockers": [
     "set 1: item Gyaradosite",
-    "set 1: Mega Evolution of Gyarados",
+    "set 1: Mega Evolution of Gyarados with Gyaradosite",
     "set 2: ability Stance Change",
     "set 2: move Substitute",
     "set 2: move King's Shield",
@@ -11304,7 +11304,7 @@
    "blockers": [
     "set 1: item Glimmoranite",
     "set 2: item Garchompite",
-    "set 2: Mega Evolution of Garchomp",
+    "set 2: Mega Evolution of Garchomp with Garchompite",
     "set 3: move Aqua Cutter",
     "set 4: item Mental Herb",
     "set 4: move Thunder Wave",
@@ -11336,7 +11336,7 @@
     "set 2: move Pollen Puff",
     "set 4: item Clefablite",
     "set 4: ability Unaware",
-    "set 4: Mega Evolution of Clefable"
+    "set 4: Mega Evolution of Clefable with Clefablite"
    ]
   },
   {
@@ -11347,7 +11347,7 @@
    "creator": "Okami",
    "blockers": [
     "set 1: item Meganiumite",
-    "set 1: Mega Evolution of Meganium",
+    "set 1: Mega Evolution of Meganium with Meganiumite",
     "set 2: ability Electromorphosis",
     "set 2: move Parabolic Charge",
     "set 5: ability Supreme Overlord",
@@ -11402,7 +11402,7 @@
     "set 1: ability Guts",
     "set 1: move Pin Missile",
     "set 1: move Rock Blast",
-    "set 1: Mega Evolution of Heracross",
+    "set 1: Mega Evolution of Heracross with Heracronite",
     "set 2: move Last Resort",
     "set 3: move Acid Spray",
     "set 3: move Heal Pulse",
@@ -11463,7 +11463,7 @@
     "set 6: item Scovillainite",
     "set 6: ability Moody",
     "set 6: move Leech Seed",
-    "set 6: Mega Evolution of Scovillain"
+    "set 6: Mega Evolution of Scovillain with Scovillainite"
    ]
   },
   {
@@ -11476,10 +11476,10 @@
     "set 1: ability Frisk",
     "set 2: item Excadrite",
     "set 2: ability Mold Breaker",
-    "set 2: Mega Evolution of Excadrill",
+    "set 2: Mega Evolution of Excadrill with Excadrite",
     "set 5: move Trop Kick",
     "set 6: item Blastoisinite",
-    "set 6: Mega Evolution of Blastoise"
+    "set 6: Mega Evolution of Blastoise with Blastoisinite"
    ]
   },
   {
@@ -11500,7 +11500,7 @@
    "creator": "Jittarin Rojmahamongkol",
    "blockers": [
     "set 6: item Venusaurite",
-    "set 6: Mega Evolution of Venusaur"
+    "set 6: Mega Evolution of Venusaur with Venusaurite"
    ]
   },
   {
@@ -11512,7 +11512,7 @@
    "blockers": [
     "set 1: item Scovillainite",
     "set 1: ability Moody",
-    "set 1: Mega Evolution of Scovillain"
+    "set 1: Mega Evolution of Scovillain with Scovillainite"
    ]
   },
   {
@@ -11525,7 +11525,7 @@
     "set 2: item Scovillainite",
     "set 2: ability Moody",
     "set 2: move Leech Seed",
-    "set 2: Mega Evolution of Scovillain",
+    "set 2: Mega Evolution of Scovillain with Scovillainite",
     "set 4: move Baton Pass"
    ]
   },
@@ -11539,7 +11539,7 @@
     "set 1: item Bright Powder",
     "set 1: ability Cloud Nine",
     "set 2: item Blastoisinite",
-    "set 2: Mega Evolution of Blastoise"
+    "set 2: Mega Evolution of Blastoise with Blastoisinite"
    ]
   },
   {
@@ -11563,7 +11563,7 @@
    "blockers": [
     "set 1: item Starminite",
     "set 1: ability Natural Cure",
-    "set 1: Mega Evolution of Starmie",
+    "set 1: Mega Evolution of Starmie with Starminite",
     "set 3: ability Stalwart",
     "set 6: move Stomping Tantrum"
    ]
@@ -11592,7 +11592,7 @@
     "set 2: ability Guts",
     "set 2: move Pin Missile",
     "set 2: move Bullet Seed",
-    "set 2: Mega Evolution of Heracross",
+    "set 2: Mega Evolution of Heracross with Heracronite",
     "set 3: move Aqua Cutter",
     "set 4: ability Stance Change",
     "set 6: move Quick Guard"
@@ -11607,7 +11607,7 @@
    "blockers": [
     "set 1: item Chesnaughtite",
     "set 1: ability Bulletproof",
-    "set 1: Mega Evolution of Chesnaught",
+    "set 1: Mega Evolution of Chesnaught with Chesnaughtite",
     "set 6: move Haze"
    ]
   },
@@ -11619,7 +11619,7 @@
    "creator": "Mattie Morgan",
    "blockers": [
     "set 1: item Kangaskhanite",
-    "set 1: Mega Evolution of Kangaskhan",
+    "set 1: Mega Evolution of Kangaskhan with Kangaskhanite",
     "set 3: ability Stance Change",
     "set 3: move Poltergeist",
     "set 3: move King's Shield",
@@ -11748,7 +11748,7 @@
     "set 3: item Scovillainite",
     "set 3: ability Moody",
     "set 3: move Leech Seed",
-    "set 3: Mega Evolution of Scovillain",
+    "set 3: Mega Evolution of Scovillain with Scovillainite",
     "set 4: ability Supreme Overlord"
    ]
   },
@@ -11829,7 +11829,7 @@
    "blockers": [
     "set 1: item Kangaskhanite",
     "set 1: move Hammer Arm",
-    "set 1: Mega Evolution of Kangaskhan",
+    "set 1: Mega Evolution of Kangaskhan with Kangaskhanite",
     "set 3: move Amnesia",
     "set 3: move Baton Pass"
    ]
@@ -11863,7 +11863,7 @@
    "creator": "tikuwa_0123",
    "blockers": [
     "set 1: item Blastoisinite",
-    "set 1: Mega Evolution of Blastoise",
+    "set 1: Mega Evolution of Blastoise with Blastoisinite",
     "set 2: move Quick Guard",
     "set 6: move Vacuum Wave"
    ]
@@ -11909,7 +11909,7 @@
    "creator": "toracado2025",
    "blockers": [
     "set 1: item Cameruptite",
-    "set 1: Mega Evolution of Camerupt",
+    "set 1: Mega Evolution of Camerupt with Cameruptite",
     "set 2: item Crabominite",
     "set 2: move Ice Hammer",
     "set 3: ability Huge Power"
@@ -11944,7 +11944,7 @@
    "creator": "Mutou",
    "blockers": [
     "set 1: item Blastoisinite",
-    "set 1: Mega Evolution of Blastoise",
+    "set 1: Mega Evolution of Blastoise with Blastoisinite",
     "set 2: move Bug Bite",
     "set 3: item Mental Herb",
     "set 5: ability Earth Eater",
@@ -11997,7 +11997,7 @@
    "creator": "CHORI",
    "blockers": [
     "set 1: item Blastoisinite",
-    "set 1: Mega Evolution of Blastoise"
+    "set 1: Mega Evolution of Blastoise with Blastoisinite"
    ]
   },
   {
@@ -12009,7 +12009,7 @@
    "blockers": [
     "set 4: item Venusaurite",
     "set 4: move Leech Seed",
-    "set 4: Mega Evolution of Venusaur"
+    "set 4: Mega Evolution of Venusaur with Venusaurite"
    ]
   },
   {
@@ -12118,7 +12118,7 @@
    "creator": "76tky",
    "blockers": [
     "set 1: item Venusaurite",
-    "set 1: Mega Evolution of Venusaur",
+    "set 1: Mega Evolution of Venusaur with Venusaurite",
     "set 2: item Pidgeotite",
     "set 2: ability Big Pecks"
    ]
@@ -12136,7 +12136,7 @@
     "set 4: move Fissure",
     "set 5: item Venusaurite",
     "set 5: move Leech Seed",
-    "set 5: Mega Evolution of Venusaur"
+    "set 5: Mega Evolution of Venusaur with Venusaurite"
    ]
   },
   {
@@ -12150,7 +12150,7 @@
     "set 1: move Icicle Spear",
     "set 4: item Glimmoranite",
     "set 5: item Meganiumite",
-    "set 5: Mega Evolution of Meganium"
+    "set 5: Mega Evolution of Meganium with Meganiumite"
    ]
   },
   {
@@ -12172,7 +12172,7 @@
    "blockers": [
     "set 1: item Absolite",
     "set 1: ability Super Luck",
-    "set 1: Mega Evolution of Absol"
+    "set 1: Mega Evolution of Absol with Absolite"
    ]
   },
   {
@@ -12197,7 +12197,7 @@
     "set 3: move After You",
     "set 4: item Kangaskhanite",
     "set 4: move Hammer Arm",
-    "set 4: Mega Evolution of Kangaskhan"
+    "set 4: Mega Evolution of Kangaskhan with Kangaskhanite"
    ]
   },
   {
@@ -12210,7 +12210,7 @@
     "set 1: item Feraligite",
     "set 1: ability Sheer Force",
     "set 1: move Body Slam",
-    "set 1: Mega Evolution of Feraligatr",
+    "set 1: Mega Evolution of Feraligatr with Feraligite",
     "set 6: move Roost"
    ]
   },
@@ -12252,7 +12252,7 @@
     "set 5: ability Oblivious",
     "set 5: move Icicle Spear",
     "set 6: item Gyaradosite",
-    "set 6: Mega Evolution of Gyarados"
+    "set 6: Mega Evolution of Gyarados with Gyaradosite"
    ]
   },
   {
@@ -12305,7 +12305,7 @@
     "set 4: item Crabominite",
     "set 4: move Ice Hammer",
     "set 6: item Blastoisinite",
-    "set 6: Mega Evolution of Blastoise"
+    "set 6: Mega Evolution of Blastoise with Blastoisinite"
    ]
   },
   {
@@ -12317,7 +12317,7 @@
    "blockers": [
     "set 1: item Ampharosite",
     "set 1: move Cotton Guard",
-    "set 1: Mega Evolution of Ampharos",
+    "set 1: Mega Evolution of Ampharos with Ampharosite",
     "set 2: move Heavy Slam",
     "set 2: move Fissure",
     "set 5: move Hammer Arm",
@@ -12337,7 +12337,7 @@
     "set 3: move Ceaseless Edge",
     "set 3: move Aqua Cutter",
     "set 4: item Venusaurite",
-    "set 4: Mega Evolution of Venusaur",
+    "set 4: Mega Evolution of Venusaur with Venusaurite",
     "set 5: move Quash",
     "set 6: item Quick Claw",
     "set 6: ability Quick Draw",
@@ -12367,7 +12367,7 @@
     "set 2: move Aqua Cutter",
     "set 3: move Stomping Tantrum",
     "set 4: item Meganiumite",
-    "set 4: Mega Evolution of Meganium"
+    "set 4: Mega Evolution of Meganium with Meganiumite"
    ]
   },
   {
@@ -12390,7 +12390,7 @@
     "set 5: item Dragoninite",
     "set 6: item Venusaurite",
     "set 6: move Leech Seed",
-    "set 6: Mega Evolution of Venusaur"
+    "set 6: Mega Evolution of Venusaur with Venusaurite"
    ]
   },
   {
@@ -12401,9 +12401,9 @@
    "creator": "Yuto Kimura",
    "blockers": [
     "set 1: item Kangaskhanite",
-    "set 1: Mega Evolution of Kangaskhan",
+    "set 1: Mega Evolution of Kangaskhan with Kangaskhanite",
     "set 2: item Blastoisinite",
-    "set 2: Mega Evolution of Blastoise"
+    "set 2: Mega Evolution of Blastoise with Blastoisinite"
    ]
   },
   {
@@ -12415,7 +12415,7 @@
    "blockers": [
     "set 3: move Stomping Tantrum",
     "set 6: item Skarmorite",
-    "set 6: Mega Evolution of Skarmory"
+    "set 6: Mega Evolution of Skarmory with Skarmorite"
    ]
   },
   {
@@ -12426,7 +12426,7 @@
    "creator": "24kun315",
    "blockers": [
     "set 4: item Skarmorite",
-    "set 4: Mega Evolution of Skarmory"
+    "set 4: Mega Evolution of Skarmory with Skarmorite"
    ]
   },
   {
@@ -12449,7 +12449,7 @@
    "creator": "pamela_emuritto",
    "blockers": [
     "set 1: item Blastoisinite",
-    "set 1: Mega Evolution of Blastoise"
+    "set 1: Mega Evolution of Blastoise with Blastoisinite"
    ]
   },
   {
@@ -12472,7 +12472,7 @@
     "set 1: item Scovillainite",
     "set 1: ability Moody",
     "set 1: move Leech Seed",
-    "set 1: Mega Evolution of Scovillain"
+    "set 1: Mega Evolution of Scovillain with Scovillainite"
    ]
   },
   {
@@ -12488,7 +12488,7 @@
     "set 5: item Starminite",
     "set 5: ability Illuminate",
     "set 5: move Zen Headbutt",
-    "set 5: Mega Evolution of Starmie"
+    "set 5: Mega Evolution of Starmie with Starminite"
    ]
   },
   {
@@ -12532,7 +12532,7 @@
    "creator": "satochin",
    "blockers": [
     "set 1: item Blastoisinite",
-    "set 1: Mega Evolution of Blastoise",
+    "set 1: Mega Evolution of Blastoise with Blastoisinite",
     "set 2: move Ice Fang",
     "set 3: move Quick Guard"
    ]
@@ -12545,7 +12545,7 @@
    "creator": "iogames_pokemon",
    "blockers": [
     "set 1: item Blastoisinite",
-    "set 1: Mega Evolution of Blastoise",
+    "set 1: Mega Evolution of Blastoise with Blastoisinite",
     "set 2: item Mental Herb",
     "set 2: move Acid Spray",
     "set 2: move Heal Pulse",
@@ -12597,7 +12597,7 @@
    "creator": "kabane_tayu",
    "blockers": [
     "set 2: item Blastoisinite",
-    "set 2: Mega Evolution of Blastoise",
+    "set 2: Mega Evolution of Blastoise with Blastoisinite",
     "set 6: ability Supreme Overlord"
    ]
   },
@@ -12648,7 +12648,7 @@
     "set 4: item Scovillainite",
     "set 4: ability Moody",
     "set 4: move Leech Seed",
-    "set 4: Mega Evolution of Scovillain"
+    "set 4: Mega Evolution of Scovillain with Scovillainite"
    ]
   },
   {
@@ -12698,7 +12698,7 @@
     "set 3: item Starminite",
     "set 3: ability Natural Cure",
     "set 3: move Zen Headbutt",
-    "set 3: Mega Evolution of Starmie",
+    "set 3: Mega Evolution of Starmie with Starminite",
     "set 6: move Trop Kick",
     "set 6: move Zen Headbutt"
    ]
@@ -12712,7 +12712,7 @@
    "blockers": [
     "set 1: item Scovillainite",
     "set 1: ability Moody",
-    "set 1: Mega Evolution of Scovillain",
+    "set 1: Mega Evolution of Scovillain with Scovillainite",
     "set 5: ability Bulletproof",
     "set 6: move Eerie Impulse"
    ]
@@ -12751,7 +12751,7 @@
    "blockers": [
     "set 3: move Instruct",
     "set 6: item Kangaskhanite",
-    "set 6: Mega Evolution of Kangaskhan"
+    "set 6: Mega Evolution of Kangaskhan with Kangaskhanite"
    ]
   },
   {
@@ -12774,7 +12774,7 @@
    "blockers": [
     "set 2: item Venusaurite",
     "set 2: move Leech Seed",
-    "set 2: Mega Evolution of Venusaur",
+    "set 2: Mega Evolution of Venusaur with Venusaurite",
     "set 4: move Morning Sun",
     "set 5: move Skill Swap"
    ]
@@ -12800,13 +12800,13 @@
     "set 1: move Pollen Puff",
     "set 2: move Last Resort",
     "set 3: item Cameruptite",
-    "set 3: Mega Evolution of Camerupt",
+    "set 3: Mega Evolution of Camerupt with Cameruptite",
     "set 4: item Venusaurite",
     "set 4: move Acid Spray",
     "set 4: move Amnesia",
     "set 4: move Leech Seed",
     "set 4: move Synthesis",
-    "set 4: Mega Evolution of Venusaur",
+    "set 4: Mega Evolution of Venusaur with Venusaurite",
     "set 5: move Hammer Arm"
    ]
   },
@@ -12820,7 +12820,7 @@
     "set 2: ability Supreme Overlord",
     "set 3: move Upper Hand",
     "set 4: item Blastoisinite",
-    "set 4: Mega Evolution of Blastoise",
+    "set 4: Mega Evolution of Blastoise with Blastoisinite",
     "set 6: move Stomping Tantrum"
    ]
   },
@@ -12848,9 +12848,9 @@
    "creator": "Sarapoke0914",
    "blockers": [
     "set 1: item Blastoisinite",
-    "set 1: Mega Evolution of Blastoise",
+    "set 1: Mega Evolution of Blastoise with Blastoisinite",
     "set 3: item Garchompite",
-    "set 3: Mega Evolution of Garchomp",
+    "set 3: Mega Evolution of Garchomp with Garchompite",
     "set 4: ability Earth Eater",
     "set 4: move Heavy Slam",
     "set 4: move Shed Tail",
@@ -12910,7 +12910,7 @@
     "set 5: item Crabominite",
     "set 5: move Ice Hammer",
     "set 6: item Ampharosite",
-    "set 6: Mega Evolution of Ampharos"
+    "set 6: Mega Evolution of Ampharos with Ampharosite"
    ]
   },
   {
@@ -12937,7 +12937,7 @@
     "set 6: item Scovillainite",
     "set 6: ability Moody",
     "set 6: move Leech Seed",
-    "set 6: Mega Evolution of Scovillain"
+    "set 6: Mega Evolution of Scovillain with Scovillainite"
    ]
   },
   {
@@ -13040,7 +13040,7 @@
    "blockers": [
     "set 1: item Kangaskhanite",
     "set 1: move Hammer Arm",
-    "set 1: Mega Evolution of Kangaskhan",
+    "set 1: Mega Evolution of Kangaskhan with Kangaskhanite",
     "set 6: move Ice Fang"
    ]
   },
@@ -13053,7 +13053,7 @@
    "blockers": [
     "set 3: item Greninjite",
     "set 3: ability Protean",
-    "set 3: Mega Evolution of Greninja",
+    "set 3: Mega Evolution of Greninja with Greninjite",
     "set 6: ability Oblivious"
    ]
   },
@@ -13069,9 +13069,9 @@
     "set 2: item Scovillainite",
     "set 2: ability Moody",
     "set 2: move Leech Seed",
-    "set 2: Mega Evolution of Scovillain",
+    "set 2: Mega Evolution of Scovillain with Scovillainite",
     "set 5: item Kangaskhanite",
-    "set 5: Mega Evolution of Kangaskhan"
+    "set 5: Mega Evolution of Kangaskhan with Kangaskhanite"
    ]
   },
   {
@@ -13119,7 +13119,7 @@
     "set 2: move Final Gambit",
     "set 2: move Meteor Mash",
     "set 4: item Kangaskhanite",
-    "set 4: Mega Evolution of Kangaskhan",
+    "set 4: Mega Evolution of Kangaskhan with Kangaskhanite",
     "set 5: ability Natural Cure"
    ]
   },
@@ -13146,7 +13146,7 @@
     "set 6: item Scovillainite",
     "set 6: ability Moody",
     "set 6: move Leech Seed",
-    "set 6: Mega Evolution of Scovillain"
+    "set 6: Mega Evolution of Scovillain with Scovillainite"
    ]
   },
   {
@@ -13200,13 +13200,13 @@
    "creator": "hinahinaid",
    "blockers": [
     "set 1: item Blastoisinite",
-    "set 1: Mega Evolution of Blastoise",
+    "set 1: Mega Evolution of Blastoise with Blastoisinite",
     "set 5: move Amnesia",
     "set 5: move Baton Pass",
     "set 6: item Scovillainite",
     "set 6: ability Moody",
     "set 6: move Leech Seed",
-    "set 6: Mega Evolution of Scovillain"
+    "set 6: Mega Evolution of Scovillain with Scovillainite"
    ]
   },
   {
@@ -13323,7 +13323,7 @@
    "creator": "junioichi",
    "blockers": [
     "set 1: item Blastoisinite",
-    "set 1: Mega Evolution of Blastoise",
+    "set 1: Mega Evolution of Blastoise with Blastoisinite",
     "set 5: move Upper Hand"
    ]
   },
@@ -13348,7 +13348,7 @@
     "set 2: ability Pressure",
     "set 2: move Fling",
     "set 3: item Blastoisinite",
-    "set 3: Mega Evolution of Blastoise",
+    "set 3: Mega Evolution of Blastoise with Blastoisinite",
     "set 4: move Ally Switch",
     "set 6: move Bug Bite"
    ]
@@ -13383,10 +13383,10 @@
    "blockers": [
     "set 2: item Aggronite",
     "set 2: move Heavy Slam",
-    "set 2: Mega Evolution of Aggron",
+    "set 2: Mega Evolution of Aggron with Aggronite",
     "set 3: item Lum Berry",
     "set 5: item Meganiumite",
-    "set 5: Mega Evolution of Meganium",
+    "set 5: Mega Evolution of Meganium with Meganiumite",
     "set 6: move Endeavor"
    ]
   },
@@ -13459,7 +13459,7 @@
    "blockers": [
     "set 2: item Aggronite",
     "set 2: move Heavy Slam",
-    "set 2: Mega Evolution of Aggron",
+    "set 2: Mega Evolution of Aggron with Aggronite",
     "set 3: move Thunder Wave",
     "set 3: move Roar"
    ]
@@ -13499,10 +13499,10 @@
     "set 1: move Substitute",
     "set 3: item Feraligite",
     "set 3: ability Sheer Force",
-    "set 3: Mega Evolution of Feraligatr",
+    "set 3: Mega Evolution of Feraligatr with Feraligite",
     "set 4: move Mortal Spin",
     "set 5: item Gyaradosite",
-    "set 5: Mega Evolution of Gyarados",
+    "set 5: Mega Evolution of Gyarados with Gyaradosite",
     "set 6: ability Shell Armor",
     "set 6: move Leech Seed",
     "set 6: move Headlong Rush"
@@ -13516,7 +13516,7 @@
    "creator": "Seongjae Jeong",
    "blockers": [
     "set 4: item Cameruptite",
-    "set 4: Mega Evolution of Camerupt"
+    "set 4: Mega Evolution of Camerupt with Cameruptite"
    ]
   },
   {
@@ -13539,7 +13539,7 @@
     "set 5: item Scovillainite",
     "set 5: ability Moody",
     "set 5: move Leech Seed",
-    "set 5: Mega Evolution of Scovillain"
+    "set 5: Mega Evolution of Scovillain with Scovillainite"
    ]
   },
   {
@@ -13550,7 +13550,7 @@
    "creator": "Haruka",
    "blockers": [
     "set 2: item Kangaskhanite",
-    "set 2: Mega Evolution of Kangaskhan"
+    "set 2: Mega Evolution of Kangaskhan with Kangaskhanite"
    ]
   },
   {
@@ -13562,7 +13562,7 @@
    "blockers": [
     "set 2: item Kangaskhanite",
     "set 2: move Hammer Arm",
-    "set 2: Mega Evolution of Kangaskhan",
+    "set 2: Mega Evolution of Kangaskhan with Kangaskhanite",
     "set 5: move Substitute"
    ]
   },
@@ -13612,7 +13612,7 @@
    "blockers": [
     "set 4: item Glimmoranite",
     "set 5: item Meganiumite",
-    "set 5: Mega Evolution of Meganium"
+    "set 5: Mega Evolution of Meganium with Meganiumite"
    ]
   },
   {
@@ -13715,7 +13715,7 @@
    "creator": "appdate",
    "blockers": [
     "set 2: item Venusaurite",
-    "set 2: Mega Evolution of Venusaur",
+    "set 2: Mega Evolution of Venusaur with Venusaurite",
     "set 3: move Breaking Swipe",
     "set 6: move Surf"
    ]
@@ -13728,7 +13728,7 @@
    "creator": "Sarapoke0914",
    "blockers": [
     "set 1: item Blastoisinite",
-    "set 1: Mega Evolution of Blastoise",
+    "set 1: Mega Evolution of Blastoise with Blastoisinite",
     "set 4: move Trop Kick",
     "set 4: move Zen Headbutt"
    ]
@@ -13789,7 +13789,7 @@
     "set 3: move Scale Shot",
     "set 5: move Quick Guard",
     "set 6: item Blastoisinite",
-    "set 6: Mega Evolution of Blastoise"
+    "set 6: Mega Evolution of Blastoise with Blastoisinite"
    ]
   },
   {
@@ -13815,7 +13815,7 @@
     "set 1: move Baton Pass",
     "set 2: item Blastoisinite",
     "set 2: move Water Pulse",
-    "set 2: Mega Evolution of Blastoise",
+    "set 2: Mega Evolution of Blastoise with Blastoisinite",
     "set 4: move Roost"
    ]
   },
@@ -13844,7 +13844,7 @@
     "set 5: item Scovillainite",
     "set 5: ability Moody",
     "set 5: move Leech Seed",
-    "set 5: Mega Evolution of Scovillain"
+    "set 5: Mega Evolution of Scovillain with Scovillainite"
    ]
   },
   {
@@ -13856,11 +13856,11 @@
    "blockers": [
     "set 1: move Last Resort",
     "set 3: item Cameruptite",
-    "set 3: Mega Evolution of Camerupt",
+    "set 3: Mega Evolution of Camerupt with Cameruptite",
     "set 4: move Substitute",
     "set 5: ability Supreme Overlord",
     "set 6: item Blastoisinite",
-    "set 6: Mega Evolution of Blastoise"
+    "set 6: Mega Evolution of Blastoise with Blastoisinite"
    ]
   },
   {
@@ -13904,7 +13904,7 @@
    "blockers": [
     "set 1: item Meganiumite",
     "set 1: ability Leaf Guard",
-    "set 1: Mega Evolution of Meganium",
+    "set 1: Mega Evolution of Meganium with Meganiumite",
     "set 5: ability Stance Change",
     "set 5: move King's Shield"
    ]
@@ -13967,7 +13967,7 @@
     "set 2: move Zen Headbutt",
     "set 4: item Drampanite",
     "set 4: ability Cloud Nine",
-    "set 4: Mega Evolution of Drampa",
+    "set 4: Mega Evolution of Drampa with Drampanite",
     "set 6: ability Oblivious"
    ]
   },
@@ -13993,12 +13993,12 @@
    "creator": "mjpp24o",
    "blockers": [
     "set 3: item Blastoisinite",
-    "set 3: Mega Evolution of Blastoise",
+    "set 3: Mega Evolution of Blastoise with Blastoisinite",
     "set 5: move Poltergeist",
     "set 5: move Lash Out",
     "set 6: item Excadrite",
     "set 6: ability Mold Breaker",
-    "set 6: Mega Evolution of Excadrill"
+    "set 6: Mega Evolution of Excadrill with Excadrite"
    ]
   },
   {
@@ -14034,7 +14034,7 @@
     "set 1: ability Moxie",
     "set 1: move Bullet Seed",
     "set 1: move Rock Blast",
-    "set 1: Mega Evolution of Heracross",
+    "set 1: Mega Evolution of Heracross with Heracronite",
     "set 4: item Glimmoranite"
    ]
   },
@@ -14073,7 +14073,7 @@
     "set 1: item Golurkite",
     "set 1: move Headlong Rush",
     "set 1: move Poltergeist",
-    "set 1: Mega Evolution of Golurk"
+    "set 1: Mega Evolution of Golurk with Golurkite"
    ]
   },
   {
@@ -14084,7 +14084,7 @@
    "creator": "Fang Yu-Yang",
    "blockers": [
     "set 5: item Venusaurite",
-    "set 5: Mega Evolution of Venusaur"
+    "set 5: Mega Evolution of Venusaur with Venusaurite"
    ]
   },
   {
@@ -14138,12 +14138,12 @@
    "creator": "yesmess72837",
    "blockers": [
     "set 1: item Ampharosite",
-    "set 1: Mega Evolution of Ampharos",
+    "set 1: Mega Evolution of Ampharos with Ampharosite",
     "set 2: ability Water Bubble",
     "set 5: item Aggronite",
     "set 5: ability Heavy Metal",
     "set 5: move Heavy Slam",
-    "set 5: Mega Evolution of Aggron"
+    "set 5: Mega Evolution of Aggron with Aggronite"
    ]
   },
   {
@@ -14154,7 +14154,7 @@
    "creator": "Q",
    "blockers": [
     "set 2: item Venusaurite",
-    "set 2: Mega Evolution of Venusaur"
+    "set 2: Mega Evolution of Venusaur with Venusaurite"
    ]
   },
   {
@@ -14166,7 +14166,7 @@
    "blockers": [
     "set 2: item Scovillainite",
     "set 2: move Leech Seed",
-    "set 2: Mega Evolution of Scovillain"
+    "set 2: Mega Evolution of Scovillain with Scovillainite"
    ]
   },
   {
@@ -14189,7 +14189,7 @@
     "set 1: item Lopunnite",
     "set 2: item Scovillainite",
     "set 2: ability Moody",
-    "set 2: Mega Evolution of Scovillain",
+    "set 2: Mega Evolution of Scovillain with Scovillainite",
     "set 5: ability Shell Armor",
     "set 5: move Shelter"
    ]
@@ -14231,7 +14231,7 @@
    "creator": "shiroan",
    "blockers": [
     "set 2: item Venusaurite",
-    "set 2: Mega Evolution of Venusaur",
+    "set 2: Mega Evolution of Venusaur with Venusaurite",
     "set 6: item Quick Claw",
     "set 6: ability Quick Draw",
     "set 6: move Shell Side Arm"
@@ -14245,11 +14245,11 @@
    "creator": "Xavier Tindall",
    "blockers": [
     "set 1: item Victreebelite",
-    "set 1: Mega Evolution of Victreebel",
+    "set 1: Mega Evolution of Victreebel with Victreebelite",
     "set 2: move Last Resort",
     "set 4: item Garchompite",
     "set 4: move Stomping Tantrum",
-    "set 4: Mega Evolution of Garchomp",
+    "set 4: Mega Evolution of Garchomp with Garchompite",
     "set 5: ability Electromorphosis",
     "set 5: move Parabolic Charge"
    ]
@@ -14264,7 +14264,7 @@
     "set 1: item Scovillainite",
     "set 1: ability Moody",
     "set 1: move Leech Seed",
-    "set 1: Mega Evolution of Scovillain",
+    "set 1: Mega Evolution of Scovillain with Scovillainite",
     "set 3: ability Supreme Overlord",
     "set 5: move Ice Fang",
     "set 6: item Quick Claw",
@@ -14303,7 +14303,7 @@
    "blockers": [
     "set 1: item Scovillainite",
     "set 1: ability Moody",
-    "set 1: Mega Evolution of Scovillain"
+    "set 1: Mega Evolution of Scovillain with Scovillainite"
    ]
   },
   {
@@ -14316,7 +14316,7 @@
     "set 1: move Infernal Parade",
     "set 3: item Golurkite",
     "set 3: move Headlong Rush",
-    "set 3: Mega Evolution of Golurk",
+    "set 3: Mega Evolution of Golurk with Golurkite",
     "set 5: item Mental Herb",
     "set 6: ability Stance Change",
     "set 6: move King's Shield"
@@ -14333,7 +14333,7 @@
     "set 1: ability Oblivious",
     "set 1: move Amnesia",
     "set 1: move Slack Off",
-    "set 1: Mega Evolution of Slowbro",
+    "set 1: Mega Evolution of Slowbro with Slowbronite",
     "set 2: item Mental Herb",
     "set 2: move Psychic Terrain",
     "set 4: item Scope Lens",
@@ -14373,7 +14373,7 @@
     "set 6: item Scovillainite",
     "set 6: ability Moody",
     "set 6: move Leech Seed",
-    "set 6: Mega Evolution of Scovillain"
+    "set 6: Mega Evolution of Scovillain with Scovillainite"
    ]
   },
   {
@@ -14384,7 +14384,7 @@
    "creator": "kauezaovgc",
    "blockers": [
     "set 1: item Venusaurite",
-    "set 1: Mega Evolution of Venusaur",
+    "set 1: Mega Evolution of Venusaur with Venusaurite",
     "set 3: move Scale Shot",
     "set 4: move Roost"
    ]
@@ -14399,7 +14399,7 @@
     "set 2: item Scovillainite",
     "set 2: ability Moody",
     "set 2: move Leech Seed",
-    "set 2: Mega Evolution of Scovillain"
+    "set 2: Mega Evolution of Scovillain with Scovillainite"
    ]
   },
   {
@@ -14453,7 +14453,7 @@
     "set 2: move Skill Swap",
     "set 6: item Victreebelite",
     "set 6: move Strength Sap",
-    "set 6: Mega Evolution of Victreebel"
+    "set 6: Mega Evolution of Victreebel with Victreebelite"
    ]
   },
   {
@@ -14476,7 +14476,7 @@
     "set 1: item Greninjite",
     "set 1: ability Protean",
     "set 1: move Water Shuriken",
-    "set 1: Mega Evolution of Greninja",
+    "set 1: Mega Evolution of Greninja with Greninjite",
     "set 3: move Stomping Tantrum",
     "set 6: item Scizorite",
     "set 6: move Bug Bite"
@@ -14490,7 +14490,7 @@
    "creator": "kodakzaq",
    "blockers": [
     "set 1: item Sablenite",
-    "set 1: Mega Evolution of Sableye",
+    "set 1: Mega Evolution of Sableye with Sablenite",
     "set 2: ability Stance Change",
     "set 2: move King's Shield",
     "set 2: move Poltergeist",
@@ -14518,13 +14518,13 @@
     "set 2: item Garchompite",
     "set 2: move Stomping Tantrum",
     "set 2: move Scale Shot",
-    "set 2: Mega Evolution of Garchomp",
+    "set 2: Mega Evolution of Garchomp with Garchompite",
     "set 4: item Scizorite",
     "set 5: item Gyaradosite",
-    "set 5: Mega Evolution of Gyarados",
+    "set 5: Mega Evolution of Gyarados with Gyaradosite",
     "set 6: item Clefablite",
     "set 6: ability Magic Guard",
-    "set 6: Mega Evolution of Clefable"
+    "set 6: Mega Evolution of Clefable with Clefablite"
    ]
   },
   {
@@ -14598,7 +14598,7 @@
    "creator": "Adryan Sutantoso",
    "blockers": [
     "set 2: item Blastoisinite",
-    "set 2: Mega Evolution of Blastoise"
+    "set 2: Mega Evolution of Blastoise with Blastoisinite"
    ]
   },
   {
@@ -14612,7 +14612,7 @@
     "set 2: item Feraligite",
     "set 2: ability Sheer Force",
     "set 2: move Facade",
-    "set 2: Mega Evolution of Feraligatr",
+    "set 2: Mega Evolution of Feraligatr with Feraligite",
     "set 3: ability Guts",
     "set 4: ability Magic Bounce",
     "set 6: move Hex"
@@ -14634,7 +14634,7 @@
     "set 4: ability Natural Cure",
     "set 4: move Ice Spinner",
     "set 4: move Zen Headbutt",
-    "set 4: Mega Evolution of Starmie"
+    "set 4: Mega Evolution of Starmie with Starminite"
    ]
   },
   {
@@ -14655,7 +14655,7 @@
    "creator": "oyaaa",
    "blockers": [
     "set 2: item Blastoisinite",
-    "set 2: Mega Evolution of Blastoise",
+    "set 2: Mega Evolution of Blastoise with Blastoisinite",
     "set 6: move Substitute"
    ]
   },
@@ -14667,7 +14667,7 @@
    "creator": "Marcos Perez",
    "blockers": [
     "set 1: item Ampharosite",
-    "set 1: Mega Evolution of Ampharos",
+    "set 1: Mega Evolution of Ampharos with Ampharosite",
     "set 3: move Substitute",
     "set 6: ability Zero to Hero",
     "set 6: move Jet Punch"
@@ -14691,7 +14691,7 @@
    "creator": "Wolfe Glick",
    "blockers": [
     "set 6: item Skarmorite",
-    "set 6: Mega Evolution of Skarmory"
+    "set 6: Mega Evolution of Skarmory with Skarmorite"
    ]
   },
   {
@@ -14704,7 +14704,7 @@
     "set 4: item Scovillainite",
     "set 4: ability Moody",
     "set 4: move Leech Seed",
-    "set 4: Mega Evolution of Scovillain"
+    "set 4: Mega Evolution of Scovillain with Scovillainite"
    ]
   },
   {
@@ -14715,7 +14715,7 @@
    "creator": "Ilias Roufogalis",
    "blockers": [
     "set 6: item Venusaurite",
-    "set 6: Mega Evolution of Venusaur"
+    "set 6: Mega Evolution of Venusaur with Venusaurite"
    ]
   },
   {
@@ -14727,7 +14727,7 @@
    "blockers": [
     "set 1: item Kangaskhanite",
     "set 1: move Hammer Arm",
-    "set 1: Mega Evolution of Kangaskhan",
+    "set 1: Mega Evolution of Kangaskhan with Kangaskhanite",
     "set 6: move Substitute"
    ]
   },
@@ -14816,7 +14816,7 @@
     "set 3: item Starminite",
     "set 3: ability Natural Cure",
     "set 3: move Zen Headbutt",
-    "set 3: Mega Evolution of Starmie",
+    "set 3: Mega Evolution of Starmie with Starminite",
     "set 4: ability Stance Change",
     "set 4: move Poltergeist",
     "set 4: move King's Shield"
@@ -14840,13 +14840,13 @@
    "creator": "Blake Falls",
    "blockers": [
     "set 1: item Sharpedonite",
-    "set 1: Mega Evolution of Sharpedo",
+    "set 1: Mega Evolution of Sharpedo with Sharpedonite",
     "set 2: ability Hunger Switch",
     "set 2: move Aura Wheel",
     "set 3: move Sheer Cold",
     "set 4: item Meganiumite",
     "set 4: ability Leaf Guard",
-    "set 4: Mega Evolution of Meganium"
+    "set 4: Mega Evolution of Meganium with Meganiumite"
    ]
   },
   {
@@ -14878,7 +14878,7 @@
    "creator": "thepostmanp",
    "blockers": [
     "set 1: item Kangaskhanite",
-    "set 1: Mega Evolution of Kangaskhan",
+    "set 1: Mega Evolution of Kangaskhan with Kangaskhanite",
     "set 2: ability Stance Change",
     "set 2: move Poltergeist",
     "set 2: move King's Shield"
@@ -14918,7 +14918,7 @@
    "blockers": [
     "set 3: item Scovillainite",
     "set 3: ability Moody",
-    "set 3: Mega Evolution of Scovillain"
+    "set 3: Mega Evolution of Scovillain with Scovillainite"
    ]
   },
   {
@@ -14944,7 +14944,7 @@
     "set 1: item Starminite",
     "set 1: ability Natural Cure",
     "set 1: move Ice Spinner",
-    "set 1: Mega Evolution of Starmie",
+    "set 1: Mega Evolution of Starmie with Starminite",
     "set 2: move High Jump Kick",
     "set 2: move Seed Bomb"
    ]
@@ -14992,7 +14992,7 @@
    "blockers": [
     "set 1: item Skarmorite",
     "set 1: ability Weak Armor",
-    "set 1: Mega Evolution of Skarmory",
+    "set 1: Mega Evolution of Skarmory with Skarmorite",
     "set 5: move Thunder Wave"
    ]
   },
@@ -15058,7 +15058,7 @@
    "creator": "Wolfey",
    "blockers": [
     "set 1: item Gyaradosite",
-    "set 1: Mega Evolution of Gyarados",
+    "set 1: Mega Evolution of Gyarados with Gyaradosite",
     "set 3: move Stomping Tantrum",
     "set 6: ability Magic Guard"
    ]
@@ -15202,7 +15202,7 @@
    "blockers": [
     "set 4: item Scovillainite",
     "set 4: move Leech Seed",
-    "set 4: Mega Evolution of Scovillain"
+    "set 4: Mega Evolution of Scovillain with Scovillainite"
    ]
   },
   {
@@ -15271,7 +15271,7 @@
    "creator": "Nick Jorgensen",
    "blockers": [
     "set 1: item Blastoisinite",
-    "set 1: Mega Evolution of Blastoise",
+    "set 1: Mega Evolution of Blastoise with Blastoisinite",
     "set 4: ability Heatproof"
    ]
   },
@@ -15315,7 +15315,7 @@
     "set 3: item Chesnaughtite",
     "set 3: ability Bulletproof",
     "set 3: move Leech Seed",
-    "set 3: Mega Evolution of Chesnaught",
+    "set 3: Mega Evolution of Chesnaught with Chesnaughtite",
     "set 5: move Eerie Spell",
     "set 5: move Heal Pulse",
     "set 6: move Last Resort"
@@ -15329,7 +15329,7 @@
    "creator": "MeLuCaVGC",
    "blockers": [
     "set 1: item Kangaskhanite",
-    "set 1: Mega Evolution of Kangaskhan",
+    "set 1: Mega Evolution of Kangaskhan with Kangaskhanite",
     "set 2: ability Stance Change",
     "set 2: move Poltergeist",
     "set 2: move Substitute",
@@ -15346,7 +15346,7 @@
    "blockers": [
     "set 2: item Greninjite",
     "set 2: ability Protean",
-    "set 2: Mega Evolution of Greninja",
+    "set 2: Mega Evolution of Greninja with Greninjite",
     "set 3: move Destiny Bond",
     "set 4: item Lum Berry",
     "set 4: move Stomping Tantrum"
@@ -15371,7 +15371,7 @@
    "blockers": [
     "set 1: move Aerial Ace",
     "set 5: item Venusaurite",
-    "set 5: Mega Evolution of Venusaur",
+    "set 5: Mega Evolution of Venusaur with Venusaurite",
     "set 6: move Baby-Doll Eyes"
    ]
   },
@@ -15383,7 +15383,7 @@
    "creator": "nagareoo",
    "blockers": [
     "set 2: item Blastoisinite",
-    "set 2: Mega Evolution of Blastoise",
+    "set 2: Mega Evolution of Blastoise with Blastoisinite",
     "set 4: ability Supreme Overlord",
     "set 6: move Substitute"
    ]
@@ -15398,7 +15398,7 @@
     "set 3: move Substitute",
     "set 4: ability Supreme Overlord",
     "set 5: item Blastoisinite",
-    "set 5: Mega Evolution of Blastoise"
+    "set 5: Mega Evolution of Blastoise with Blastoisinite"
    ]
   },
   {
@@ -15442,7 +15442,7 @@
    "creator": "Nick Jorgensen",
    "blockers": [
     "set 1: item Blastoisinite",
-    "set 1: Mega Evolution of Blastoise"
+    "set 1: Mega Evolution of Blastoise with Blastoisinite"
    ]
   },
   {
@@ -15453,7 +15453,7 @@
    "creator": "joeypokeaim",
    "blockers": [
     "set 3: item Cameruptite",
-    "set 3: Mega Evolution of Camerupt"
+    "set 3: Mega Evolution of Camerupt with Cameruptite"
    ]
   },
   {
@@ -15464,7 +15464,7 @@
    "creator": "spragels",
    "blockers": [
     "set 6: item Meganiumite",
-    "set 6: Mega Evolution of Meganium"
+    "set 6: Mega Evolution of Meganium with Meganiumite"
    ]
   },
   {
@@ -15475,7 +15475,7 @@
    "creator": "YaBeamatUp_poke",
    "blockers": [
     "set 3: item Audinite",
-    "set 3: Mega Evolution of Audino",
+    "set 3: Mega Evolution of Audino with Audinite",
     "set 4: ability Thick Fat",
     "set 4: move Curse",
     "set 6: ability Stance Change",
@@ -15507,7 +15507,7 @@
    "blockers": [
     "set 1: item Meganiumite",
     "set 1: ability Leaf Guard",
-    "set 1: Mega Evolution of Meganium",
+    "set 1: Mega Evolution of Meganium with Meganiumite",
     "set 3: item Lum Berry"
    ]
   },
@@ -15533,7 +15533,7 @@
    "blockers": [
     "set 4: item Scovillainite",
     "set 4: move Leech Seed",
-    "set 4: Mega Evolution of Scovillain"
+    "set 4: Mega Evolution of Scovillain with Scovillainite"
    ]
   },
   {
@@ -15555,7 +15555,7 @@
    "creator": "Eric Ríos",
    "blockers": [
     "set 2: item Venusaurite",
-    "set 2: Mega Evolution of Venusaur",
+    "set 2: Mega Evolution of Venusaur with Venusaurite",
     "set 6: move Phantom Force"
    ]
   },
@@ -15579,7 +15579,7 @@
    "blockers": [
     "set 1: item Emboarite",
     "set 1: move Wild Charge",
-    "set 1: Mega Evolution of Emboar",
+    "set 1: Mega Evolution of Emboar with Emboarite",
     "set 2: ability Magic Bounce",
     "set 2: move Psychic Terrain"
    ]
@@ -15613,7 +15613,7 @@
    "creator": "Alex Underhill",
    "blockers": [
     "set 2: item Kangaskhanite",
-    "set 2: Mega Evolution of Kangaskhan"
+    "set 2: Mega Evolution of Kangaskhan with Kangaskhanite"
    ]
   },
   {
@@ -15625,7 +15625,7 @@
    "blockers": [
     "set 1: item Scovillainite",
     "set 1: ability Moody",
-    "set 1: Mega Evolution of Scovillain"
+    "set 1: Mega Evolution of Scovillain with Scovillainite"
    ]
   },
   {
@@ -15636,7 +15636,7 @@
    "creator": "Wolfey",
    "blockers": [
     "set 3: item Kangaskhanite",
-    "set 3: Mega Evolution of Kangaskhan",
+    "set 3: Mega Evolution of Kangaskhan with Kangaskhanite",
     "set 4: ability Stance Change",
     "set 4: move King's Shield",
     "set 4: move Poltergeist"
@@ -15652,7 +15652,7 @@
     "set 3: ability Supreme Overlord",
     "set 3: move Quick Guard",
     "set 5: item Cameruptite",
-    "set 5: Mega Evolution of Camerupt"
+    "set 5: Mega Evolution of Camerupt with Cameruptite"
    ]
   },
   {
@@ -15667,7 +15667,7 @@
     "set 2: move King's Shield",
     "set 4: move Stomping Tantrum",
     "set 6: item Kangaskhanite",
-    "set 6: Mega Evolution of Kangaskhan"
+    "set 6: Mega Evolution of Kangaskhan with Kangaskhanite"
    ]
   },
   {
@@ -15746,7 +15746,7 @@
    "creator": "sudoz",
    "blockers": [
     "set 2: item Meganiumite",
-    "set 2: Mega Evolution of Meganium"
+    "set 2: Mega Evolution of Meganium with Meganiumite"
    ]
   },
   {
@@ -15772,7 +15772,7 @@
     "set 1: ability Oblivious",
     "set 1: move Slack Off",
     "set 1: move Amnesia",
-    "set 1: Mega Evolution of Slowbro",
+    "set 1: Mega Evolution of Slowbro with Slowbronite",
     "set 5: move Mortal Spin"
    ]
   },
@@ -15799,7 +15799,7 @@
     "set 3: ability Moxie",
     "set 3: move Pin Missile",
     "set 3: move Rock Blast",
-    "set 3: Mega Evolution of Heracross"
+    "set 3: Mega Evolution of Heracross with Heracronite"
    ]
   },
   {
@@ -15824,7 +15824,7 @@
     "set 6: item Scovillainite",
     "set 6: ability Moody",
     "set 6: move Leech Seed",
-    "set 6: Mega Evolution of Scovillain"
+    "set 6: Mega Evolution of Scovillain with Scovillainite"
    ]
   },
   {
@@ -15868,7 +15868,7 @@
    "blockers": [
     "set 1: move Destiny Bond",
     "set 2: item Blastoisinite",
-    "set 2: Mega Evolution of Blastoise",
+    "set 2: Mega Evolution of Blastoise with Blastoisinite",
     "set 3: move Quick Guard"
    ]
   },
@@ -15880,7 +15880,7 @@
    "creator": "Wolfe Glick",
    "blockers": [
     "set 3: item Feraligite",
-    "set 3: Mega Evolution of Feraligatr",
+    "set 3: Mega Evolution of Feraligatr with Feraligite",
     "set 4: item Lum Berry"
    ]
   },
@@ -15892,7 +15892,7 @@
    "creator": "Yosuke Takayanagi",
    "blockers": [
     "set 1: item Kangaskhanite",
-    "set 1: Mega Evolution of Kangaskhan",
+    "set 1: Mega Evolution of Kangaskhan with Kangaskhanite",
     "set 6: move Substitute"
    ]
   },
@@ -15905,7 +15905,7 @@
    "blockers": [
     "set 3: item Scovillainite",
     "set 3: ability Moody",
-    "set 3: Mega Evolution of Scovillain"
+    "set 3: Mega Evolution of Scovillain with Scovillainite"
    ]
   },
   {
@@ -15916,7 +15916,7 @@
    "creator": "Juan Manuel Odriozola",
    "blockers": [
     "set 3: item Meganiumite",
-    "set 3: Mega Evolution of Meganium",
+    "set 3: Mega Evolution of Meganium with Meganiumite",
     "set 5: ability Stance Change",
     "set 5: move King's Shield",
     "set 5: move Poltergeist"
@@ -15955,7 +15955,7 @@
     "set 3: item Glimmoranite",
     "set 5: move Scale Shot",
     "set 6: item Kangaskhanite",
-    "set 6: Mega Evolution of Kangaskhan"
+    "set 6: Mega Evolution of Kangaskhan with Kangaskhanite"
    ]
   },
   {
@@ -15979,7 +15979,7 @@
    "blockers": [
     "set 3: item Scovillainite",
     "set 3: ability Moody",
-    "set 3: Mega Evolution of Scovillain"
+    "set 3: Mega Evolution of Scovillain with Scovillainite"
    ]
   },
   {
@@ -15991,7 +15991,7 @@
    "blockers": [
     "set 1: ability Cheek Pouch",
     "set 3: item Meganiumite",
-    "set 3: Mega Evolution of Meganium",
+    "set 3: Mega Evolution of Meganium with Meganiumite",
     "set 6: ability Stance Change",
     "set 6: move King's Shield",
     "set 6: move Poltergeist"
@@ -16033,7 +16033,7 @@
    "blockers": [
     "set 3: item Scovillainite",
     "set 3: ability Moody",
-    "set 3: Mega Evolution of Scovillain"
+    "set 3: Mega Evolution of Scovillain with Scovillainite"
    ]
   },
   {
@@ -16054,7 +16054,7 @@
    "creator": "Eden Batchelor",
    "blockers": [
     "set 1: item Venusaurite",
-    "set 1: Mega Evolution of Venusaur",
+    "set 1: Mega Evolution of Venusaur with Venusaurite",
     "set 3: move Roost"
    ]
   },
@@ -16080,7 +16080,7 @@
     "set 1: item Scovillainite",
     "set 1: ability Moody",
     "set 1: move Spicy Extract",
-    "set 1: Mega Evolution of Scovillain",
+    "set 1: Mega Evolution of Scovillain with Scovillainite",
     "set 2: ability Purifying Salt",
     "set 2: move Salt Cure",
     "set 6: item Altarianite",
@@ -16122,7 +16122,7 @@
     "set 2: ability Pressure",
     "set 4: item Venusaurite",
     "set 4: move Leech Seed",
-    "set 4: Mega Evolution of Venusaur",
+    "set 4: Mega Evolution of Venusaur with Venusaurite",
     "set 5: ability Zero to Hero",
     "set 5: move Jet Punch"
    ]
@@ -16185,7 +16185,7 @@
     "set 2: move Heavy Slam",
     "set 5: item Drampanite",
     "set 5: ability Cloud Nine",
-    "set 5: Mega Evolution of Drampa"
+    "set 5: Mega Evolution of Drampa with Drampanite"
    ]
   },
   {
@@ -16196,7 +16196,7 @@
    "creator": "slyx183",
    "blockers": [
     "set 1: item Venusaurite",
-    "set 1: Mega Evolution of Venusaur",
+    "set 1: Mega Evolution of Venusaur with Venusaurite",
     "set 2: move Stomping Tantrum",
     "set 3: ability Stance Change",
     "set 3: move King's Shield",
@@ -16257,7 +16257,7 @@
    "blockers": [
     "set 5: item Scovillainite",
     "set 5: ability Moody",
-    "set 5: Mega Evolution of Scovillain",
+    "set 5: Mega Evolution of Scovillain with Scovillainite",
     "set 6: move Substitute"
    ]
   },
@@ -16273,7 +16273,7 @@
     "set 3: ability Marvel Scale",
     "set 4: item Venusaurite",
     "set 4: move Leech Seed",
-    "set 4: Mega Evolution of Venusaur"
+    "set 4: Mega Evolution of Venusaur with Venusaurite"
    ]
   },
   {
@@ -16308,7 +16308,7 @@
    "blockers": [
     "set 1: item Meganiumite",
     "set 1: ability Leaf Guard",
-    "set 1: Mega Evolution of Meganium",
+    "set 1: Mega Evolution of Meganium with Meganiumite",
     "set 3: move Stomping Tantrum",
     "set 4: ability Stance Change",
     "set 4: move Poltergeist",
@@ -16327,7 +16327,7 @@
     "set 2: move Roost",
     "set 4: move Stomping Tantrum",
     "set 5: item Gyaradosite",
-    "set 5: Mega Evolution of Gyarados"
+    "set 5: Mega Evolution of Gyarados with Gyaradosite"
    ]
   },
   {
@@ -16351,7 +16351,7 @@
    "creator": "billtram6",
    "blockers": [
     "set 1: item Kangaskhanite",
-    "set 1: Mega Evolution of Kangaskhan",
+    "set 1: Mega Evolution of Kangaskhan with Kangaskhanite",
     "set 3: move Strength Sap",
     "set 5: ability Stance Change",
     "set 5: move King's Shield"
@@ -16367,7 +16367,7 @@
     "set 1: ability Guts",
     "set 2: item Lum Berry",
     "set 4: item Emboarite",
-    "set 4: Mega Evolution of Emboar",
+    "set 4: Mega Evolution of Emboar with Emboarite",
     "set 6: item Mental Herb",
     "set 6: ability Mummy"
    ]
@@ -16419,7 +16419,7 @@
     "set 6: item Scovillainite",
     "set 6: move Leech Seed",
     "set 6: move Fire Spin",
-    "set 6: Mega Evolution of Scovillain"
+    "set 6: Mega Evolution of Scovillain with Scovillainite"
    ]
   },
   {
@@ -16554,7 +16554,7 @@
     "set 2: move Instruct",
     "set 3: item Golurkite",
     "set 3: move Headlong Rush",
-    "set 3: Mega Evolution of Golurk",
+    "set 3: Mega Evolution of Golurk with Golurkite",
     "set 4: move Population Bomb"
    ]
   },
@@ -16600,7 +16600,7 @@
    "creator": "sunnie",
    "blockers": [
     "set 1: item Audinite",
-    "set 1: Mega Evolution of Audino"
+    "set 1: Mega Evolution of Audino with Audinite"
    ]
   },
   {
@@ -16641,7 +16641,7 @@
     "set 2: move Last Resort",
     "set 3: item Blastoisinite",
     "set 3: move Water Pulse",
-    "set 3: Mega Evolution of Blastoise"
+    "set 3: Mega Evolution of Blastoise with Blastoisinite"
    ]
   },
   {
@@ -16663,7 +16663,7 @@
    "creator": "koyuki",
    "blockers": [
     "set 3: item Venusaurite",
-    "set 3: Mega Evolution of Venusaur"
+    "set 3: Mega Evolution of Venusaur with Venusaurite"
    ]
   },
   {
@@ -16702,7 +16702,7 @@
    "creator": "Shintaro Amemiya",
    "blockers": [
     "set 2: item Meganiumite",
-    "set 2: Mega Evolution of Meganium",
+    "set 2: Mega Evolution of Meganium with Meganiumite",
     "set 4: move Scale Shot",
     "set 4: move Stomping Tantrum"
    ]
@@ -16748,7 +16748,7 @@
     "set 2: move Last Resort",
     "set 3: item Blastoisinite",
     "set 3: move Water Pulse",
-    "set 3: Mega Evolution of Blastoise"
+    "set 3: Mega Evolution of Blastoise with Blastoisinite"
    ]
   },
   {
@@ -16760,12 +16760,12 @@
    "blockers": [
     "set 1: item Meganiumite",
     "set 1: ability Leaf Guard",
-    "set 1: Mega Evolution of Meganium",
+    "set 1: Mega Evolution of Meganium with Meganiumite",
     "set 2: ability Stalwart",
     "set 2: move Steel Beam",
     "set 4: ability Frisk",
     "set 6: item Kangaskhanite",
-    "set 6: Mega Evolution of Kangaskhan"
+    "set 6: Mega Evolution of Kangaskhan with Kangaskhanite"
    ]
   },
   {
@@ -16792,7 +16792,7 @@
    "blockers": [
     "set 3: item Aggronite",
     "set 3: move Heavy Slam",
-    "set 3: Mega Evolution of Aggron",
+    "set 3: Mega Evolution of Aggron with Aggronite",
     "set 4: item Bright Powder"
    ]
   },
@@ -16805,7 +16805,7 @@
    "blockers": [
     "set 1: item Aggronite",
     "set 1: move Heavy Slam",
-    "set 1: Mega Evolution of Aggron",
+    "set 1: Mega Evolution of Aggron with Aggronite",
     "set 4: move Quick Guard",
     "set 6: move Poltergeist"
    ]
@@ -16819,7 +16819,7 @@
    "blockers": [
     "set 1: item Scovillainite",
     "set 1: ability Moody",
-    "set 1: Mega Evolution of Scovillain"
+    "set 1: Mega Evolution of Scovillain with Scovillainite"
    ]
   },
   {
@@ -16842,7 +16842,7 @@
    "blockers": [
     "set 1: item Meganiumite",
     "set 1: ability Leaf Guard",
-    "set 1: Mega Evolution of Meganium",
+    "set 1: Mega Evolution of Meganium with Meganiumite",
     "set 2: item Focus Band",
     "set 5: ability Stance Change",
     "set 5: move Poltergeist",
@@ -16865,7 +16865,7 @@
     "set 3: ability Moody",
     "set 3: move Leech Seed",
     "set 3: move Burning Jealousy",
-    "set 3: Mega Evolution of Scovillain",
+    "set 3: Mega Evolution of Scovillain with Scovillainite",
     "set 6: ability Shell Armor",
     "set 6: move Shelter"
    ]
@@ -16931,7 +16931,7 @@
    "creator": "urshifu19",
    "blockers": [
     "set 2: item Blastoisinite",
-    "set 2: Mega Evolution of Blastoise"
+    "set 2: Mega Evolution of Blastoise with Blastoisinite"
    ]
   },
   {
@@ -16976,7 +16976,7 @@
    "blockers": [
     "set 3: item Garchompite",
     "set 3: move Stomping Tantrum",
-    "set 3: Mega Evolution of Garchomp"
+    "set 3: Mega Evolution of Garchomp with Garchompite"
    ]
   },
   {
@@ -16988,7 +16988,7 @@
    "blockers": [
     "set 1: item Chesnaughtite",
     "set 1: ability Bulletproof",
-    "set 1: Mega Evolution of Chesnaught",
+    "set 1: Mega Evolution of Chesnaught with Chesnaughtite",
     "set 2: item Scizorite",
     "set 2: move Bug Bite",
     "set 6: move Roar"
@@ -17014,7 +17014,7 @@
    "blockers": [
     "set 1: item Clefablite",
     "set 1: ability Magic Guard",
-    "set 1: Mega Evolution of Clefable",
+    "set 1: Mega Evolution of Clefable with Clefablite",
     "set 2: item Lum Berry",
     "set 3: move Thunder Wave"
    ]
@@ -17039,7 +17039,7 @@
    "blockers": [
     "set 2: item Drampanite",
     "set 2: ability Cloud Nine",
-    "set 2: Mega Evolution of Drampa",
+    "set 2: Mega Evolution of Drampa with Drampanite",
     "set 4: move Speed Swap",
     "set 5: item Scizorite",
     "set 5: move Bug Bite"
@@ -17104,7 +17104,7 @@
     "set 1: ability Moody",
     "set 1: move Leech Seed",
     "set 1: move Spicy Extract",
-    "set 1: Mega Evolution of Scovillain",
+    "set 1: Mega Evolution of Scovillain with Scovillainite",
     "set 2: move Dragon Darts",
     "set 2: move Infestation",
     "set 3: move Stone Edge",
@@ -17169,7 +17169,7 @@
    "creator": "Daniel Oakes",
    "blockers": [
     "set 1: item Skarmorite",
-    "set 1: Mega Evolution of Skarmory",
+    "set 1: Mega Evolution of Skarmory with Skarmorite",
     "set 3: item Lum Berry",
     "set 6: ability Zero to Hero",
     "set 6: move Jet Punch"
@@ -17224,7 +17224,7 @@
    "creator": "Shohei Kimura",
    "blockers": [
     "set 1: item Blastoisinite",
-    "set 1: Mega Evolution of Blastoise",
+    "set 1: Mega Evolution of Blastoise with Blastoisinite",
     "set 2: move Stomping Tantrum"
    ]
   },
@@ -17285,7 +17285,7 @@
     "set 1: move Stored Power",
     "set 1: move Psych Up",
     "set 1: move Moonlight",
-    "set 1: Mega Evolution of Clefable",
+    "set 1: Mega Evolution of Clefable with Clefablite",
     "set 2: ability Analytic",
     "set 2: move Cosmic Power",
     "set 2: move Minimize",
@@ -17327,7 +17327,7 @@
    "blockers": [
     "set 1: item Victreebelite",
     "set 1: move Strength Sap",
-    "set 1: Mega Evolution of Victreebel",
+    "set 1: Mega Evolution of Victreebel with Victreebelite",
     "set 2: ability Oblivious",
     "set 4: item Lum Berry",
     "set 4: move Ice Fang",
@@ -17344,7 +17344,7 @@
     "set 5: move Dragon Darts",
     "set 5: move Phantom Force",
     "set 6: item Meganiumite",
-    "set 6: Mega Evolution of Meganium"
+    "set 6: Mega Evolution of Meganium with Meganiumite"
    ]
   },
   {
@@ -17356,7 +17356,7 @@
    "blockers": [
     "set 3: item Drampanite",
     "set 3: ability Cloud Nine",
-    "set 3: Mega Evolution of Drampa",
+    "set 3: Mega Evolution of Drampa with Drampanite",
     "set 4: item Mental Herb"
    ]
   },
@@ -17383,7 +17383,7 @@
     "set 5: item Chesnaughtite",
     "set 5: ability Bulletproof",
     "set 5: move Leech Seed",
-    "set 5: Mega Evolution of Chesnaught"
+    "set 5: Mega Evolution of Chesnaught with Chesnaughtite"
    ]
   },
   {
@@ -17480,7 +17480,7 @@
     "set 1: move Upper Hand",
     "set 1: move Surf",
     "set 2: item Kangaskhanite",
-    "set 2: Mega Evolution of Kangaskhan",
+    "set 2: Mega Evolution of Kangaskhan with Kangaskhanite",
     "set 3: move Roost",
     "set 5: move Chilly Reception",
     "set 6: item Mental Herb",
@@ -17496,7 +17496,7 @@
    "blockers": [
     "set 1: item Meganiumite",
     "set 1: ability Leaf Guard",
-    "set 1: Mega Evolution of Meganium"
+    "set 1: Mega Evolution of Meganium with Meganiumite"
    ]
   },
   {
@@ -17543,7 +17543,7 @@
     "set 1: item Golurkite",
     "set 1: move Poltergeist",
     "set 1: move Headlong Rush",
-    "set 1: Mega Evolution of Golurk"
+    "set 1: Mega Evolution of Golurk with Golurkite"
    ]
   },
   {
@@ -17581,7 +17581,7 @@
     "set 6: item Slowbronite",
     "set 6: ability Oblivious",
     "set 6: move Skill Swap",
-    "set 6: Mega Evolution of Slowbro"
+    "set 6: Mega Evolution of Slowbro with Slowbronite"
    ]
   },
   {
@@ -17597,7 +17597,7 @@
     "set 4: ability Natural Cure",
     "set 4: move Skill Swap",
     "set 4: move Zen Headbutt",
-    "set 4: Mega Evolution of Starmie"
+    "set 4: Mega Evolution of Starmie with Starminite"
    ]
   },
   {
@@ -17639,7 +17639,7 @@
    "creator": "joeypokeaim",
    "blockers": [
     "set 1: item Blastoisinite",
-    "set 1: Mega Evolution of Blastoise",
+    "set 1: Mega Evolution of Blastoise with Blastoisinite",
     "set 2: move Strength Sap",
     "set 3: item Lum Berry",
     "set 6: ability Frisk"
@@ -17726,7 +17726,7 @@
    "creator": "Nate Innocenti",
    "blockers": [
     "set 1: item Meganiumite",
-    "set 1: Mega Evolution of Meganium",
+    "set 1: Mega Evolution of Meganium with Meganiumite",
     "set 3: move Thunder Wave",
     "set 5: move Roost"
    ]
@@ -17753,7 +17753,7 @@
     "set 1: item Dragoninite",
     "set 3: item Aggronite",
     "set 3: move Heavy Slam",
-    "set 3: Mega Evolution of Aggron"
+    "set 3: Mega Evolution of Aggron with Aggronite"
    ]
   },
   {
@@ -17764,7 +17764,7 @@
    "creator": "Hiroto Hayasaki",
    "blockers": [
     "set 1: item Kangaskhanite",
-    "set 1: Mega Evolution of Kangaskhan",
+    "set 1: Mega Evolution of Kangaskhan with Kangaskhanite",
     "set 3: move Stomping Tantrum"
    ]
   },
@@ -17792,7 +17792,7 @@
     "set 2: ability Supreme Overlord",
     "set 3: item Drampanite",
     "set 3: ability Cloud Nine",
-    "set 3: Mega Evolution of Drampa",
+    "set 3: Mega Evolution of Drampa with Drampanite",
     "set 4: item Crabominite",
     "set 4: move Ice Hammer",
     "set 5: ability Magic Bounce",
@@ -17809,7 +17809,7 @@
    "creator": "Kreide1119",
    "blockers": [
     "set 5: item Cameruptite",
-    "set 5: Mega Evolution of Camerupt",
+    "set 5: Mega Evolution of Camerupt with Cameruptite",
     "set 6: item Crabominite",
     "set 6: move Ice Hammer"
    ]
@@ -17832,7 +17832,7 @@
    "creator": "hii_syatyo2220",
    "blockers": [
     "set 1: item Blastoisinite",
-    "set 1: Mega Evolution of Blastoise",
+    "set 1: Mega Evolution of Blastoise with Blastoisinite",
     "set 3: ability Stance Change",
     "set 3: move King's Shield",
     "set 3: move Substitute",
@@ -17857,7 +17857,7 @@
    "creator": "yassun_normal",
    "blockers": [
     "set 4: item Skarmorite",
-    "set 4: Mega Evolution of Skarmory",
+    "set 4: Mega Evolution of Skarmory with Skarmorite",
     "set 6: item Glimmoranite"
    ]
   },
@@ -17930,7 +17930,7 @@
    "blockers": [
     "set 1: item Blastoisinite",
     "set 1: move Water Pulse",
-    "set 1: Mega Evolution of Blastoise"
+    "set 1: Mega Evolution of Blastoise with Blastoisinite"
    ]
   },
   {
@@ -17941,7 +17941,7 @@
    "creator": "iona_rosesrc",
    "blockers": [
     "set 1: item Meganiumite",
-    "set 1: Mega Evolution of Meganium"
+    "set 1: Mega Evolution of Meganium with Meganiumite"
    ]
   },
   {
@@ -17955,7 +17955,7 @@
     "set 6: item Venusaurite",
     "set 6: move Growth",
     "set 6: move Leech Seed",
-    "set 6: Mega Evolution of Venusaur"
+    "set 6: Mega Evolution of Venusaur with Venusaurite"
    ]
   },
   {
@@ -17966,7 +17966,7 @@
    "creator": "Hiroshi Onishi",
    "blockers": [
     "set 1: item Garchompite",
-    "set 1: Mega Evolution of Garchomp",
+    "set 1: Mega Evolution of Garchomp with Garchompite",
     "set 2: ability Telepathy",
     "set 3: move Roost",
     "set 4: move Thunder Wave"
@@ -17990,7 +17990,7 @@
    "creator": "Ryota Otsubo",
    "blockers": [
     "set 1: item Blastoisinite",
-    "set 1: Mega Evolution of Blastoise",
+    "set 1: Mega Evolution of Blastoise with Blastoisinite",
     "set 4: item Glimmoranite",
     "set 5: move Trop Kick",
     "set 5: move Low Sweep",
@@ -18009,7 +18009,7 @@
     "set 2: move Heavy Slam",
     "set 5: item Drampanite",
     "set 5: ability Cloud Nine",
-    "set 5: Mega Evolution of Drampa"
+    "set 5: Mega Evolution of Drampa with Drampanite"
    ]
   },
   {
@@ -18022,7 +18022,7 @@
     "set 1: item Bright Powder",
     "set 2: move Dragon Cheer",
     "set 4: item Gyaradosite",
-    "set 4: Mega Evolution of Gyarados"
+    "set 4: Mega Evolution of Gyarados with Gyaradosite"
    ]
   },
   {
@@ -18104,7 +18104,7 @@
     "set 2: item Starminite",
     "set 2: ability Natural Cure",
     "set 2: move Zen Headbutt",
-    "set 2: Mega Evolution of Starmie"
+    "set 2: Mega Evolution of Starmie with Starminite"
    ]
   },
   {
@@ -18135,7 +18135,7 @@
    "creator": "soulkw",
    "blockers": [
     "set 1: item Feraligite",
-    "set 1: Mega Evolution of Feraligatr",
+    "set 1: Mega Evolution of Feraligatr with Feraligite",
     "set 2: ability Protean",
     "set 2: move Flower Trick",
     "set 3: move Howl",
@@ -18265,7 +18265,7 @@
     "set 1: move King's Shield",
     "set 2: item Kangaskhanite",
     "set 2: move Last Resort",
-    "set 2: Mega Evolution of Kangaskhan",
+    "set 2: Mega Evolution of Kangaskhan with Kangaskhanite",
     "set 6: item Scope Lens"
    ]
   },
@@ -18293,7 +18293,7 @@
     "set 5: item Quick Claw",
     "set 6: item Clefablite",
     "set 6: ability Magic Guard",
-    "set 6: Mega Evolution of Clefable"
+    "set 6: Mega Evolution of Clefable with Clefablite"
    ]
   },
   {
@@ -18315,7 +18315,7 @@
    "blockers": [
     "set 3: item Skarmorite",
     "set 3: move Roost",
-    "set 3: Mega Evolution of Skarmory",
+    "set 3: Mega Evolution of Skarmory with Skarmorite",
     "set 4: item Lum Berry",
     "set 4: move Dragon Darts",
     "set 4: move Thunder Wave"
@@ -18343,7 +18343,7 @@
    "blockers": [
     "set 3: item Mental Herb",
     "set 5: item Blastoisinite",
-    "set 5: Mega Evolution of Blastoise"
+    "set 5: Mega Evolution of Blastoise with Blastoisinite"
    ]
   },
   {
@@ -18444,7 +18444,7 @@
    "creator": "Joshua Lorcy",
    "blockers": [
     "set 2: item Meganiumite",
-    "set 2: Mega Evolution of Meganium",
+    "set 2: Mega Evolution of Meganium with Meganiumite",
     "set 6: ability Stance Change",
     "set 6: move Poltergeist",
     "set 6: move King's Shield"
@@ -18485,7 +18485,7 @@
     "set 1: item Starminite",
     "set 1: ability Natural Cure",
     "set 1: move Ice Spinner",
-    "set 1: Mega Evolution of Starmie",
+    "set 1: Mega Evolution of Starmie with Starminite",
     "set 2: ability Stance Change",
     "set 2: move Poltergeist",
     "set 2: move King's Shield"
@@ -18525,7 +18525,7 @@
    "blockers": [
     "set 1: item Meganiumite",
     "set 1: ability Leaf Guard",
-    "set 1: Mega Evolution of Meganium",
+    "set 1: Mega Evolution of Meganium with Meganiumite",
     "set 2: item Dragoninite"
    ]
   },
@@ -18548,7 +18548,7 @@
    "creator": "Daniel Song",
    "blockers": [
     "set 1: item Kangaskhanite",
-    "set 1: Mega Evolution of Kangaskhan",
+    "set 1: Mega Evolution of Kangaskhan with Kangaskhanite",
     "set 5: ability Stance Change",
     "set 5: move King's Shield",
     "set 5: move Substitute",
@@ -18566,7 +18566,7 @@
    "blockers": [
     "set 1: item Chesnaughtite",
     "set 1: ability Bulletproof",
-    "set 1: Mega Evolution of Chesnaught",
+    "set 1: Mega Evolution of Chesnaught with Chesnaughtite",
     "set 6: move Hex"
    ]
   },
@@ -18627,7 +18627,7 @@
     "set 2: move Heavy Slam",
     "set 5: item Drampanite",
     "set 5: ability Cloud Nine",
-    "set 5: Mega Evolution of Drampa",
+    "set 5: Mega Evolution of Drampa with Drampanite",
     "set 6: item Pinsirite",
     "set 6: move Body Slam"
    ]
@@ -18666,7 +18666,7 @@
    "blockers": [
     "set 1: item Greninjite",
     "set 1: ability Protean",
-    "set 1: Mega Evolution of Greninja",
+    "set 1: Mega Evolution of Greninja with Greninjite",
     "set 2: item Glimmoranite"
    ]
   },
@@ -18688,7 +18688,7 @@
    "creator": "Wang Yi-Liang",
    "blockers": [
     "set 1: item Kangaskhanite",
-    "set 1: Mega Evolution of Kangaskhan",
+    "set 1: Mega Evolution of Kangaskhan with Kangaskhanite",
     "set 2: ability Mold Breaker",
     "set 2: move Gigaton Hammer"
    ]
@@ -18734,7 +18734,7 @@
    "creator": "Abdullah Mohayyuddin",
    "blockers": [
     "set 5: item Kangaskhanite",
-    "set 5: Mega Evolution of Kangaskhan"
+    "set 5: Mega Evolution of Kangaskhan with Kangaskhanite"
    ]
   },
   {
@@ -18773,7 +18773,7 @@
     "set 1: item Golurkite",
     "set 1: move Headlong Rush",
     "set 1: move Poltergeist",
-    "set 1: Mega Evolution of Golurk"
+    "set 1: Mega Evolution of Golurk with Golurkite"
    ]
   },
   {
@@ -18810,7 +18810,7 @@
    "creator": "aki_cgv",
    "blockers": [
     "set 1: item Gyaradosite",
-    "set 1: Mega Evolution of Gyarados"
+    "set 1: Mega Evolution of Gyarados with Gyaradosite"
    ]
   },
   {
@@ -18822,7 +18822,7 @@
    "blockers": [
     "set 6: item Clefablite",
     "set 6: ability Unaware",
-    "set 6: Mega Evolution of Clefable"
+    "set 6: Mega Evolution of Clefable with Clefablite"
    ]
   },
   {
@@ -18861,7 +18861,7 @@
     "set 2: move Fire Spin",
     "set 4: item Venusaurite",
     "set 4: move Leech Seed",
-    "set 4: Mega Evolution of Venusaur",
+    "set 4: Mega Evolution of Venusaur with Venusaurite",
     "set 5: item Lum Berry"
    ]
   },
@@ -18930,7 +18930,7 @@
    "creator": "Emir Abdulovski",
    "blockers": [
     "set 3: item Garchompite",
-    "set 3: Mega Evolution of Garchomp",
+    "set 3: Mega Evolution of Garchomp with Garchompite",
     "set 5: move Endeavor"
    ]
   },
@@ -18984,7 +18984,7 @@
    "blockers": [
     "set 4: item Meganiumite",
     "set 4: move Synthesis",
-    "set 4: Mega Evolution of Meganium",
+    "set 4: Mega Evolution of Meganium with Meganiumite",
     "set 6: item Crabominite"
    ]
   },
@@ -19023,16 +19023,16 @@
    "blockers": [
     "set 1: item Aggronite",
     "set 1: move Heavy Slam",
-    "set 1: Mega Evolution of Aggron",
+    "set 1: Mega Evolution of Aggron with Aggronite",
     "set 2: item Mental Herb",
     "set 4: item Cameruptite",
-    "set 4: Mega Evolution of Camerupt",
+    "set 4: Mega Evolution of Camerupt with Cameruptite",
     "set 5: ability Water Bubble",
     "set 6: item Starminite",
     "set 6: ability Illuminate",
     "set 6: move Ice Spinner",
     "set 6: move Zen Headbutt",
-    "set 6: Mega Evolution of Starmie"
+    "set 6: Mega Evolution of Starmie with Starminite"
    ]
   },
   {
@@ -19043,7 +19043,7 @@
    "creator": "Joe Brown",
    "blockers": [
     "set 1: item Gyaradosite",
-    "set 1: Mega Evolution of Gyarados"
+    "set 1: Mega Evolution of Gyarados with Gyaradosite"
    ]
   },
   {
@@ -19068,7 +19068,7 @@
     "set 5: ability Natural Cure",
     "set 5: move Zen Headbutt",
     "set 5: move Substitute",
-    "set 5: Mega Evolution of Starmie"
+    "set 5: Mega Evolution of Starmie with Starminite"
    ]
   },
   {
@@ -19124,7 +19124,7 @@
    "creator": "Heavy_Bubbles",
    "blockers": [
     "set 1: item Blastoisinite",
-    "set 1: Mega Evolution of Blastoise"
+    "set 1: Mega Evolution of Blastoise with Blastoisinite"
    ]
   },
   {
@@ -19155,7 +19155,7 @@
     "set 3: item Starminite",
     "set 3: ability Natural Cure",
     "set 3: move Ice Spinner",
-    "set 3: Mega Evolution of Starmie",
+    "set 3: Mega Evolution of Starmie with Starminite",
     "set 6: item Scope Lens",
     "set 6: move Triple Arrows"
    ]
@@ -19174,7 +19174,7 @@
     "set 5: item Drampanite",
     "set 5: ability Cloud Nine",
     "set 5: move Round",
-    "set 5: Mega Evolution of Drampa"
+    "set 5: Mega Evolution of Drampa with Drampanite"
    ]
   },
   {
@@ -19322,7 +19322,7 @@
     "set 2: ability Telepathy",
     "set 5: item Kangaskhanite",
     "set 5: move Body Slam",
-    "set 5: Mega Evolution of Kangaskhan",
+    "set 5: Mega Evolution of Kangaskhan with Kangaskhanite",
     "set 6: move Stomping Tantrum"
    ]
   },
@@ -19359,7 +19359,7 @@
    "creator": "Mao Harada",
    "blockers": [
     "set 1: item Kangaskhanite",
-    "set 1: Mega Evolution of Kangaskhan",
+    "set 1: Mega Evolution of Kangaskhan with Kangaskhanite",
     "set 6: item Lum Berry"
    ]
   },
@@ -19413,7 +19413,7 @@
     "set 6: item Chesnaughtite",
     "set 6: ability Bulletproof",
     "set 6: move Leech Seed",
-    "set 6: Mega Evolution of Chesnaught"
+    "set 6: Mega Evolution of Chesnaught with Chesnaughtite"
    ]
   },
   {
@@ -19464,7 +19464,7 @@
     "set 2: move Instruct",
     "set 3: item Golurkite",
     "set 3: move Headlong Rush",
-    "set 3: Mega Evolution of Golurk",
+    "set 3: Mega Evolution of Golurk with Golurkite",
     "set 4: ability Unaware",
     "set 5: move Tri Attack",
     "set 6: move Clear Smog"
@@ -19489,7 +19489,7 @@
    "blockers": [
     "set 1: item Starminite",
     "set 1: ability Natural Cure",
-    "set 1: Mega Evolution of Starmie",
+    "set 1: Mega Evolution of Starmie with Starminite",
     "set 3: move Strength Sap",
     "set 5: item Dragoninite"
    ]
@@ -19512,7 +19512,7 @@
    "creator": "xx_z2z",
    "blockers": [
     "set 2: item Gyaradosite",
-    "set 2: Mega Evolution of Gyarados",
+    "set 2: Mega Evolution of Gyarados with Gyaradosite",
     "set 4: item Lum Berry",
     "set 5: ability Stance Change",
     "set 5: move Substitute",
@@ -19613,7 +19613,7 @@
    "creator": "kurbito",
    "blockers": [
     "set 3: item Gyaradosite",
-    "set 3: Mega Evolution of Gyarados"
+    "set 3: Mega Evolution of Gyarados with Gyaradosite"
    ]
   },
   {
@@ -19636,7 +19636,7 @@
    "blockers": [
     "set 1: item Clefablite",
     "set 1: ability Unaware",
-    "set 1: Mega Evolution of Clefable",
+    "set 1: Mega Evolution of Clefable with Clefablite",
     "set 2: move Water Pulse",
     "set 3: move Stomping Tantrum",
     "set 4: item Lucarionite",
@@ -19653,7 +19653,7 @@
    "blockers": [
     "set 1: item Starminite",
     "set 1: ability Natural Cure",
-    "set 1: Mega Evolution of Starmie",
+    "set 1: Mega Evolution of Starmie with Starminite",
     "set 4: ability Telepathy",
     "set 6: move Tickle"
    ]
@@ -19667,7 +19667,7 @@
    "blockers": [
     "set 1: item Blastoisinite",
     "set 1: move Water Pulse",
-    "set 1: Mega Evolution of Blastoise",
+    "set 1: Mega Evolution of Blastoise with Blastoisinite",
     "set 5: item Lum Berry"
    ]
   },
@@ -19679,10 +19679,10 @@
    "creator": "Castorbrown",
    "blockers": [
     "set 4: item Feraligite",
-    "set 4: Mega Evolution of Feraligatr",
+    "set 4: Mega Evolution of Feraligatr with Feraligite",
     "set 5: item Chesnaughtite",
     "set 5: ability Bulletproof",
-    "set 5: Mega Evolution of Chesnaught"
+    "set 5: Mega Evolution of Chesnaught with Chesnaughtite"
    ]
   },
   {
@@ -19694,10 +19694,10 @@
    "blockers": [
     "set 4: item Greninjite",
     "set 4: ability Protean",
-    "set 4: Mega Evolution of Greninja",
+    "set 4: Mega Evolution of Greninja with Greninjite",
     "set 5: item Meganiumite",
     "set 5: move Synthesis",
-    "set 5: Mega Evolution of Meganium"
+    "set 5: Mega Evolution of Meganium with Meganiumite"
    ]
   },
   {
@@ -19826,7 +19826,7 @@
    "creator": "Nate Innocenti",
    "blockers": [
     "set 1: item Meganiumite",
-    "set 1: Mega Evolution of Meganium",
+    "set 1: Mega Evolution of Meganium with Meganiumite",
     "set 4: move Population Bomb",
     "set 4: move Bite",
     "set 6: item Lum Berry",
@@ -19839,25 +19839,25 @@
   "move Roost": 136,
   "item Dragoninite": 88,
   "move Poltergeist": 88,
-  "Mega Evolution of Blastoise": 83,
+  "Mega Evolution of Blastoise with Blastoisinite": 83,
   "item Blastoisinite": 83,
   "move Substitute": 76,
   "ability Stance Change": 74,
   "item Lum Berry": 73,
-  "Mega Evolution of Mawile": 71,
+  "Mega Evolution of Mawile with Mawilite": 71,
   "item Mawilite": 71,
-  "Mega Evolution of Scovillain": 68,
+  "Mega Evolution of Scovillain with Scovillainite": 68,
   "item Scovillainite": 68,
   "item Mental Herb": 65,
   "item Glimmoranite": 64,
   "move Leech Seed": 60,
-  "Mega Evolution of Venusaur": 58,
+  "Mega Evolution of Venusaur with Venusaurite": 58,
   "item Venusaurite": 58,
   "move Ice Fang": 58,
   "move King's Shield": 57,
   "move Quick Guard": 57,
   "ability Moody": 56,
-  "Mega Evolution of Kangaskhan": 51,
+  "Mega Evolution of Kangaskhan with Kangaskhanite": 51,
   "item Kangaskhanite": 51,
   "ability Supreme Overlord": 39,
   "move Strength Sap": 36,
@@ -19867,8 +19867,8 @@
   "ability Oblivious": 34,
   "ability Telepathy": 34,
   "move Population Bomb": 34,
-  "Mega Evolution of Meganium": 32,
-  "Mega Evolution of Pyroar": 32,
+  "Mega Evolution of Meganium with Meganiumite": 32,
+  "Mega Evolution of Pyroar with Pyroarite": 32,
   "item Meganiumite": 32,
   "item Pyroarite": 32,
   "item Scizorite": 32,
@@ -19889,7 +19889,7 @@
   "move Baneful Bunker": 27,
   "move Final Gambit": 27,
   "move Scale Shot": 27,
-  "Mega Evolution of Camerupt": 26,
+  "Mega Evolution of Camerupt with Cameruptite": 26,
   "ability Frisk": 26,
   "item Cameruptite": 26,
   "move Roar": 25,
@@ -19899,7 +19899,7 @@
   "move Last Resort": 24,
   "ability Illusion": 23,
   "move Ally Switch": 23,
-  "Mega Evolution of Eelektross": 22,
+  "Mega Evolution of Eelektross with Eelektrossite": 22,
   "item Eelektrossite": 22,
   "move After You": 22,
   "move Haze": 22,
@@ -19908,7 +19908,7 @@
   "move Trop Kick": 22,
   "move Steel Beam": 21,
   "move Psych Up": 20,
-  "Mega Evolution of Garchomp": 19,
+  "Mega Evolution of Garchomp with Garchompite": 19,
   "item Garchompite": 19,
   "move Baton Pass": 19,
   "move Beat Up": 19,
@@ -19919,8 +19919,8 @@
   "ability Natural Cure": 17,
   "move Fissure": 17,
   "move Tickle": 17,
-  "Mega Evolution of Gyarados": 16,
-  "Mega Evolution of Starmie": 16,
+  "Mega Evolution of Gyarados with Gyaradosite": 16,
+  "Mega Evolution of Starmie with Starminite": 16,
   "ability Weak Armor": 16,
   "item Gyaradosite": 16,
   "item Quick Claw": 16,
@@ -19947,13 +19947,13 @@
   "move Revival Blessing": 13,
   "move Stockpile": 13,
   "move Stone Axe": 13,
-  "Mega Evolution of Skarmory": 12,
+  "Mega Evolution of Skarmory with Skarmorite": 12,
   "item Skarmorite": 12,
   "move Headlong Rush": 12,
   "move Ice Hammer": 12,
   "move Quash": 12,
   "move Water Pulse": 12,
-  "Mega Evolution of Clefable": 11,
+  "Mega Evolution of Clefable with Clefablite": 11,
   "ability Leaf Guard": 11,
   "ability Moxie": 11,
   "ability Pickpocket": 11,
@@ -19966,8 +19966,8 @@
   "move Minimize": 10,
   "move Parabolic Charge": 10,
   "move Shed Tail": 10,
-  "Mega Evolution of Drampa": 9,
-  "Mega Evolution of Golurk": 9,
+  "Mega Evolution of Drampa with Drampanite": 9,
+  "Mega Evolution of Golurk with Golurkite": 9,
   "ability Cute Charm": 9,
   "ability Earth Eater": 9,
   "ability Electromorphosis": 9,
@@ -19977,8 +19977,8 @@
   "move Endeavor": 9,
   "move Lash Out": 9,
   "move Sheer Cold": 9,
-  "Mega Evolution of Chesnaught": 8,
-  "Mega Evolution of Scolipede": 8,
+  "Mega Evolution of Chesnaught with Chesnaughtite": 8,
+  "Mega Evolution of Scolipede with Scolipite": 8,
   "ability Magic Guard": 8,
   "ability Sheer Force": 8,
   "ability Synchronize": 8,
@@ -19994,9 +19994,9 @@
   "move Howl": 8,
   "move Pollen Puff": 8,
   "move Stored Power": 8,
-  "Mega Evolution of Aggron": 7,
-  "Mega Evolution of Feraligatr": 7,
-  "Mega Evolution of Greninja": 7,
+  "Mega Evolution of Aggron with Aggronite": 7,
+  "Mega Evolution of Feraligatr with Feraligite": 7,
+  "Mega Evolution of Greninja with Greninjite": 7,
   "ability Huge Power": 7,
   "ability Insomnia": 7,
   "ability Magician": 7,
@@ -20013,8 +20013,8 @@
   "move Entrainment": 7,
   "move Ice Spinner": 7,
   "move Memento": 7,
-  "Mega Evolution of Ampharos": 6,
-  "Mega Evolution of Excadrill": 6,
+  "Mega Evolution of Ampharos with Ampharosite": 6,
+  "Mega Evolution of Excadrill with Excadrite": 6,
   "ability Dry Skin": 6,
   "ability Stalwart": 6,
   "ability Symbiosis": 6,
@@ -20035,9 +20035,9 @@
   "move Temper Flare": 6,
   "move Triple Arrows": 6,
   "move Wild Charge": 6,
-  "Mega Evolution of Heracross": 5,
-  "Mega Evolution of Sableye": 5,
-  "Mega Evolution of Victreebel": 5,
+  "Mega Evolution of Heracross with Heracronite": 5,
+  "Mega Evolution of Sableye with Sablenite": 5,
+  "Mega Evolution of Victreebel with Victreebelite": 5,
   "ability Guts": 5,
   "item Alakazite": 5,
   "item Heat Rock": 5,
@@ -20058,7 +20058,7 @@
   "move Sing": 5,
   "move Surf": 5,
   "move Synthesis": 5,
-  "Mega Evolution of Slowbro": 4,
+  "Mega Evolution of Slowbro with Slowbronite": 4,
   "ability Healer": 4,
   "ability Imposter": 4,
   "ability Punk Rock": 4,
@@ -20085,9 +20085,9 @@
   "move Transform": 4,
   "move Water Shuriken": 4,
   "move Whirlwind": 4,
-  "Mega Evolution of Emboar": 3,
-  "Mega Evolution of Medicham": 3,
-  "Mega Evolution of Steelix": 3,
+  "Mega Evolution of Emboar with Emboarite": 3,
+  "Mega Evolution of Medicham with Medichamite": 3,
+  "Mega Evolution of Steelix with Steelixite": 3,
   "ability Analytic": 3,
   "ability Own Tempo": 3,
   "ability Poison Point": 3,
@@ -20122,7 +20122,7 @@
   "move Smack Down": 3,
   "move Speed Swap": 3,
   "move Trailblaze": 3,
-  "Mega Evolution of Audino": 2,
+  "Mega Evolution of Audino with Audinite": 2,
   "ability Aroma Veil": 2,
   "ability Big Pecks": 2,
   "ability Cheek Pouch": 2,
@@ -20161,8 +20161,8 @@
   "move Torch Song": 2,
   "move Tri Attack": 2,
   "move Whirlpool": 2,
-  "Mega Evolution of Absol": 1,
-  "Mega Evolution of Sharpedo": 1,
+  "Mega Evolution of Absol with Absolite": 1,
+  "Mega Evolution of Sharpedo with Sharpedonite": 1,
   "ability Anger Point": 1,
   "ability Berserk": 1,
   "ability Curious Medicine": 1,

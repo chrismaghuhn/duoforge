@@ -77,6 +77,43 @@ class SheetTest(unittest.TestCase):
         self.assertIsNone(rows[1]['paste_id'])
 
 
+class SheetReviewTest(unittest.TestCase):
+    """Review of the PR: merged cells, rows the sheet has but the import drops, a missing tab."""
+
+    def test_a_merged_cell_keeps_the_columns(self):
+        # Google Sheets writes merged cells with colspan: the cells after it must stay under their headers
+        text = sheet([('MC12', 'A team', 'Alice', 'aaaaaaaaaaaaaaaa', 'Yes', 'Recife Regional', 'Champion')])
+        text = text.replace('<td>A team</td><td></td>', '<td colspan="2">A team</td>', 1)
+        r = ivp.sheet_rows(text, 'Champions M-C')[0]
+        self.assertEqual((r['description'], r['creator'], r['paste_id'], r['evs'], r['rank']),
+                         ('A team', 'Alice', 'aaaaaaaaaaaaaaaa', 'Yes', 'Champion'))
+
+    def test_dropped_rows_are_counted(self):
+        counts = {}
+        text = sheet([('MC12', 'A team', 'Alice', 'aaaaaaaaaaaaaaaa', 'yes', '-', '-'),
+                      ('M-C 3', 'odd id', 'Bob', 'bbbbbbbbbbbbbbbb', 'Yes', '-', '-')])
+        rows = ivp.sheet_rows(text, 'Champions M-C', counts)
+        self.assertEqual([r['evs'] for r in rows], ['Yes'])  # "yes" is Yes
+        self.assertEqual(counts, {'sheet.rows.not-a-team-id': 1})
+
+    def test_a_row_with_evs_but_no_link_is_a_decision(self):
+        rows = [{'team_id': 'MC1', 'description': 'd', 'creator': 'c', 'paste_id': None, 'evs': 'Yes', 'event': '-',
+                 'rank': '-', 'date': '-', 'tab': 'Champions M-C'}]
+        out = ivp.decide(rows, {}, {}, tip.info_of, check_by_first)
+        self.assertEqual([d['status'] for d in out], ['no-link'])
+
+    def test_a_missing_tab_is_an_error(self):
+        tmp = tempfile.mkdtemp(prefix='duoforge_ivp_tabs_')
+        try:
+            for tab in ivp.TABS[:-1]:
+                with open(os.path.join(tmp, tab + '.html'), 'w', encoding='utf-8') as f:
+                    f.write(sheet([]))
+            with self.assertRaisesRegex(ValueError, ivp.TABS[-1]):
+                ivp.read_sheet(tmp)
+        finally:
+            shutil.rmtree(tmp, ignore_errors=True)
+
+
 class DecideTest(unittest.TestCase):
     def rows(self, *specs):
         return [{'team_id': tid, 'description': 'd ' + tid, 'creator': 'c', 'paste_id': pid, 'evs': evs, 'event': '-',
@@ -119,6 +156,12 @@ class DecideTest(unittest.TestCase):
         out = ivp.decide(self.rows(('MC5', 'a' * 16, 'Yes', 'Champions M-C')), {'a' * 16: paste(TEAM1)}, {},
                          tip.info_of, check_by_first, registry_ids={'PP_' + 'A' * 16})
         self.assertEqual(out[0]['status'], 'in-registry')
+
+    def test_a_paste_that_failed_is_not_the_original_of_its_repeats(self):
+        # review: a later row of a paste that could not be read is not a "duplicate" of a team never imported
+        rows = self.rows(('MC5', 'a' * 16, 'Yes', 'Champions M-C'), ('MB5', 'a' * 16, 'Yes', 'Champions M-B'))
+        out = ivp.decide(rows, {}, {}, tip.info_of, check_by_first)
+        self.assertEqual([d['status'] for d in out], ['not-fetched', 'not-fetched'])
 
     def test_a_missing_paste_is_counted(self):
         out = ivp.decide(self.rows(('MC5', 'a' * 16, 'Yes', 'Champions M-C')), {}, {}, tip.info_of, check_by_first)
@@ -169,6 +212,26 @@ class WriteTest(unittest.TestCase):
             self.assertEqual(reg.problems(tmp, lambda team_c: tip.tables(team_c)), [])
             with self.assertRaises(reg.RegistryError):  # ids are never reused: a second write refuses
                 ivp.write(tmp, decisions, '2026-10-09')
+        finally:
+            shutil.rmtree(tmp, ignore_errors=True)
+
+    def test_write_checks_every_team_before_the_first_write(self):
+        # review: the registry's own check (team_registry.team_problems, as import_paste does) runs on every pool team
+        # first; one bad team writes nothing
+        tmp = tempfile.mkdtemp(prefix='duoforge_ivp_')
+        try:
+            shutil.copytree(os.path.join(ROOT, 'data', 'teams'), os.path.join(tmp, 'data', 'teams'))
+            rows = [{'team_id': 'MC%d' % n, 'description': 'd', 'creator': 'c', 'paste_id': pid, 'evs': 'Yes',
+                     'event': '-', 'rank': '-', 'date': '-', 'tab': 'Champions M-C'}
+                    for n, pid in ((3, 'a' * 16), (4, 'c' * 16))]
+            decisions = ivp.decide(rows, {'a' * 16: paste(TEAM1), 'c' * 16: paste(TEAM3)}, {}, tip.info_of,
+                                   check_by_first)
+            self.assertEqual([d['status'] for d in decisions], ['pool', 'pool'])
+            decisions[1]['sets'][0] = decisions[1]['sets'][0] + ' '  # blank space at a line end: not a registry paste
+            before = len(reg.entries(tmp))
+            with self.assertRaisesRegex(reg.RegistryError, 'PP_' + 'C' * 16):
+                ivp.write(tmp, decisions, '2026-10-09', tables_for=tip.tables)
+            self.assertEqual(len(reg.entries(tmp)), before)
         finally:
             shutil.rmtree(tmp, ignore_errors=True)
 
