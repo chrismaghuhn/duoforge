@@ -123,6 +123,17 @@ static duoforge_battle *replay(df_test *t, const duoforge_context *ctx, const ch
     return b;
 }
 
+static bool dfi_bytes_zero_i2(const void *p, size_t n)
+{
+    const uint8_t *q = (const uint8_t *)p;
+    for (size_t i = 0u; i < n; ++i) {
+        if (q[i] != 0u) {
+            return false;
+        }
+    }
+    return true;
+}
+
 /* The foe's view of side 0 as player 1 sees it, and the owner's view as player 0. */
 static bool observe(df_test *t, const duoforge_context *ctx, const duoforge_battle *b, uint32_t player, duoforge_observation *o)
 {
@@ -174,11 +185,58 @@ static void check_team_start(df_test *t, const duoforge_context *ctx)
     duoforge_battle_destroy(b);
 }
 
+/* Step 1 of i2_illusion_break: the foe's Moonblast breaks the disguise; the holder is seen with the last shown HP, and the disguise
+ * row, never shown before, is at full HP on the bench (decision 0026 section 4, amended by I2). */
+static void check_break(df_test *t, const duoforge_context *ctx)
+{
+    duoforge_battle *b = replay(t, ctx, "i2_illusion_break", 2u);
+    if (b == NULL) {
+        return;
+    }
+    const dfi_tail_illusion *ill = &b->tail.sides[0].illusion;
+    DF_CHECK(t, dfi_bytes_zero_i2(ill, sizeof *ill)); /* the break clears every ill_* field */
+    duoforge_observation foe;
+    if (observe(t, ctx, b, 1u, &foe)) {
+        DF_CHECK_EQ_U64(t, foe.sides[0].members[0].hp_kind, DUOFORGE_HP_PERCENT); /* the holder is seen now */
+        DF_CHECK_EQ_U64(t, foe.sides[0].members[0].hp, 1u); /* the last shown value under the disguise name: 1% */
+        DF_CHECK_EQ_U64(t, foe.sides[0].members[0].location, DUOFORGE_LOCATION_ACTIVE); /* the holder stays on the field (Shadow Ball) */
+        DF_CHECK_EQ_U64(t, foe.sides[0].members[3].hp, 100u); /* decision 3: never shown, so full HP */
+        DF_CHECK_EQ_U64(t, foe.sides[0].members[3].location, DUOFORGE_LOCATION_BENCH);
+        DF_CHECK_EQ_U64(t, foe.sides[0].members[3].hp_kind, DUOFORGE_HP_PERCENT);
+    }
+    uint32_t causes = 0u;
+    DF_CHECK(t, duoforge_battle_public_causes(ctx, b, 1u, &causes) == DUOFORGE_OK);
+    DF_CHECK_EQ_U64(t, causes & DUOFORGE_PUBLIC_CAUSE_ILLUSION_POSSIBLE, 0u); /* the holder is shown on the field under its own name */
+    duoforge_battle_destroy(b);
+}
+
+/* Step 1 of i2_unbroken_switchout: the holder leaves unbroken and the real Gholdengo's own line clears the disguise name. */
+static void check_unbroken(df_test *t, const duoforge_context *ctx)
+{
+    duoforge_battle *b = replay(t, ctx, "i2_unbroken_switchout", 2u);
+    if (b == NULL) {
+        return;
+    }
+    DF_CHECK(t, dfi_bytes_zero_i2(&b->tail.sides[0].illusion, sizeof b->tail.sides[0].illusion)); /* the real line cleared it */
+    duoforge_observation_ext ext;
+    if (DF_CHECK(t, duoforge_battle_observe_ext(ctx, b, 0u, &ext) == DUOFORGE_OK)) {
+        DF_CHECK(t, (ext.sides[0].positions[0].volatiles & DUOFORGE_POSITION_EXT_ILLUSION_UP) == 0u);
+    }
+    duoforge_observation foe;
+    if (observe(t, ctx, b, 1u, &foe)) {
+        DF_CHECK_EQ_U64(t, foe.sides[0].members[0].hp_kind, DUOFORGE_HP_UNKNOWN); /* the foe never sees Zoroark */
+        DF_CHECK_EQ_U64(t, foe.sides[0].members[3].location, DUOFORGE_LOCATION_ACTIVE);
+    }
+    duoforge_battle_destroy(b);
+}
+
 int main(void)
 {
     df_test t;
     df_test_begin(&t, "duoforge.state.pool_i2");
     duoforge_context *ctx = df_make_context(&df_config_pool);
     check_team_start(&t, ctx);
+    check_break(&t, ctx);
+    check_unbroken(&t, ctx);
     return df_test_end(&t);
 }
