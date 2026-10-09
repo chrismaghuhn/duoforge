@@ -201,6 +201,63 @@ static void check_public_refusal(df_test *t, const duoforge_context *ctx)
     duoforge_battle_destroy(b);
 }
 
+/* The view's presence bit (DUOFORGE_POSITION_EXT_SUBSTITUTE) of a position, read by both players: a standing Substitute is public
+ * presence on both sides (decision 0032 section 4), the break and a switch-out clear it. `expect` is the bit of side 0's first
+ * position for both viewers; every other position must be clear. */
+static void expect_presence(df_test *t, const duoforge_context *ctx, const duoforge_battle *b, const char *what, bool expect)
+{
+    for (uint32_t viewer = 0u; viewer < DUOFORGE_SIDE_COUNT; ++viewer) {
+        duoforge_observation_ext ob;
+        DF_CHECK_EQ_U64(t, duoforge_battle_observe_ext(ctx, b, viewer, &ob), DUOFORGE_OK);
+        for (uint32_t side = 0u; side < DUOFORGE_SIDE_COUNT; ++side) {
+            for (uint32_t p = 0u; p < DUOFORGE_ACTIVE_PER_SIDE; ++p) {
+                const bool bit = (ob.sides[side].positions[p].volatiles & DUOFORGE_POSITION_EXT_SUBSTITUTE) != 0u;
+                const bool want = expect && side == 0u && p == 0u;
+                if (bit != want) {
+                    fprintf(stderr, "  %s: viewer %u side %u position %u presence %d, expected %d\n", what, (unsigned)viewer,
+                            (unsigned)side, (unsigned)p, (int)bit, (int)want);
+                }
+                DF_CHECK_EQ_U64(t, (uint64_t)bit, (uint64_t)want);
+            }
+        }
+    }
+}
+
+static void check_observation_bit(df_test *t, const duoforge_context *ctx)
+{
+    /* a standing Substitute: Kingambit's, after its first turn (g60_sub_absorb, the Substitute is up at the end of step 1) */
+    duoforge_battle *up = replay(t, ctx, "g60_sub_absorb", 2u);
+    DF_CHECK(t, up != NULL);
+    if (up != NULL) {
+        DF_CHECK(t, up->tail.sides[0].positions[0].substitute_hp != 0u);
+        expect_presence(t, ctx, up, "absorb, the Substitute stands", true);
+        duoforge_battle_destroy(up);
+    }
+    /* after the break: g60_sub_basic's Dragon Claw breaks Gengar's Substitute in step 1, and nothing raises one after it */
+    duoforge_battle *broken = replay(t, ctx, "g60_sub_basic", 2u);
+    DF_CHECK(t, broken != NULL);
+    if (broken != NULL) {
+        DF_CHECK_EQ_U64(t, (uint64_t)broken->tail.sides[0].positions[0].substitute_hp, 0u);
+        expect_presence(t, ctx, broken, "basic, after the break", false);
+        duoforge_battle_destroy(broken);
+    }
+    /* a switch-out: g60_sub_switchout raises it in step 1 (the presence stands), and in step 2 Rillaboom replaces Kingambit in
+     * the position with no line for it (the presence goes with the occupant) */
+    duoforge_battle *before = replay(t, ctx, "g60_sub_switchout", 2u);
+    DF_CHECK(t, before != NULL);
+    if (before != NULL) {
+        expect_presence(t, ctx, before, "switch-out, before the switch", true);
+        duoforge_battle_destroy(before);
+    }
+    duoforge_battle *after = replay(t, ctx, "g60_sub_switchout", 3u);
+    DF_CHECK(t, after != NULL);
+    if (after != NULL) {
+        DF_CHECK_EQ_U64(t, (uint64_t)after->tail.sides[0].positions[0].substitute_hp, 0u);
+        expect_presence(t, ctx, after, "switch-out, after the switch", false);
+        duoforge_battle_destroy(after);
+    }
+}
+
 int main(void)
 {
     df_test t;
@@ -211,6 +268,7 @@ int main(void)
     check_bypass_column(&t);
     if (ctx != NULL) {
         check_public_refusal(&t, ctx);
+        check_observation_bit(&t, ctx);
         duoforge_context_destroy(ctx);
     }
     return df_test_end(&t);
