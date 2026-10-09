@@ -359,6 +359,9 @@ class Tracker:
         base = self.data.base_forme(self.data.forme(parts[3].split(",")[0]))
         index = [m for m, member in enumerate(self._member(side)) if member.sheet["species"] == base]
         if len(index) != 1:
+            if parts[1] == "drag":
+                # Step G46: a drag into a member that is not one member of the side's sheet cannot be represented.
+                raise lines.Stop(f"drag:{parts[2]} names no member of the side's sheet")
             raise ValueError(f"{parts[2]} ({parts[3]}) is not one member of its side's sheet")
         self._names[side][name] = index[0]
 
@@ -370,6 +373,9 @@ class Tracker:
             return
         if self._foe_members is None:
             raise ValueError(f"a battle line before both open team sheets: {line!r}")
+        if _kind(line) == "drag" and self.boundary() == PIVOT:
+            # Step G46: a forced switch arrives in the step of a pending PIVOT, which the view cannot represent.
+            raise lines.Stop("drag:during a pending PIVOT")
         self._register(line)
         maxhp = [{n: 100 for n in self._names[s]} for s in (0, 1)]
         own = self._member(self.side)
@@ -403,7 +409,8 @@ class Tracker:
             self._turn = ident
             self._turn_scoped.clear()
             self._guards.clear()
-        elif kind == EV["SWITCH"]:
+        elif kind in (EV["SWITCH"], EV["DRAG"]):
+            # A drag (Step G46) is a switch of the dragged-in member: the occupant is replaced and reset, the HP of the line.
             p = self._at(pos)
             p.occupant, p.flag, p.fainted = ident, 0, False
             p.reset()
