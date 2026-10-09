@@ -130,6 +130,22 @@ class FullSpace(unittest.TestCase):
         self.assertGreater(kl_full - kl_cand, 0.1)
 
 
+class ReduceBudget(unittest.TestCase):
+    def test_reduce_without_budget_calls_the_solvers_as_before(self):
+        # The search paths without a teacher budget keep calling matrix.solve/solve_bayes exactly as before
+        # (test_search patches them with one-argument stand-ins).
+        a = np.array([[[1.0, -1.0], [-1.0, 1.0]]])
+        single = honest.matrix.solve(a[0])
+        bayes = honest.matrix.solve_bayes(a, [1.0])
+        with mock.patch.object(honest.matrix, "solve", lambda table: single):
+            honest.reduce(a, [1.0], [[0.5, 0.5]], [0, 1], 0.5, 0.5, oracle=True)
+        with mock.patch.object(honest.matrix, "solve_bayes", lambda tables, weights: bayes):
+            honest.reduce(a, [1.0], [[0.5, 0.5]], [0, 1], 0.5, 0.5)
+        ledger = honest.matrix.WorkLedger()
+        honest.reduce(a, [1.0], [[0.5, 0.5]], [0, 1], 0.5, 0.5, budget=ledger)
+        self.assertGreater(ledger.consumed.float_pivots, 0)
+
+
 class Teacher(unittest.TestCase):
     """label_decision on real roots with the synthetic net, at the P1 sizes (K = M = 8, W = 16,
     capacity 1024): 1024 primary and 1152 audit leaves, the audit in two expand chunks."""
