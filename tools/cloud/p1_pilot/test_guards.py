@@ -75,7 +75,7 @@ case "$svc $op" in
         echo "${STUB_AMI:-ami-0abc123}" ;;
     "s3api list-objects-v2")
         if [ "${STUB_S3:-ok}" = deny ]; then echo "An error occurred (AccessDenied) when calling the ListObjectsV2 operation" >&2; exit 254; fi
-        echo 0 ;;
+        echo "${STUB_KEYS:-0}" ;;
     "service-quotas get-service-quota")
         if [ "${STUB_QUOTA:-16}" = deny ]; then echo "An error occurred (AccessDeniedException)" >&2; exit 254; fi
         echo "${STUB_QUOTA:-16.0}" ;;
@@ -225,6 +225,22 @@ class Guards(unittest.TestCase):
         self.assertTrue(run_id.startswith(SHA[:12]))
         self.assertIn('s3://my-p1-bucket/p1/%s/' % run_id, r.stdout)
         self.assertIn('cost cap      $4.50', r.stdout)  # 3 h x $1.50, the defaults
+
+    def test_a_resume_keeps_the_run_id_of_an_existing_run(self):
+        # run.sh resumes from the markers under p1/<run id>/ (EXIT 33 of the first AWS pilot, 2026-10-09): a resume keeps
+        # that run id (the commit may be newer); a malformed id or a run without markers is refused before anything else
+        old = 'aaaaaaaaaaaa-20261009T172944Z'
+        r = self.run_script('launch.sh', *self.LAUNCH, '--resume', old, STUB_KEYS='1')
+        self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+        self.assertEqual(re.search(r'^run id +(\S+)', r.stdout, re.M).group(1), old)
+        self.assertIn('s3://my-p1-bucket/p1/%s/' % old, r.stdout)
+        self.assertTrue(any('list-objects-v2' in c and '--prefix p1/%s/markers/' % old in c for c in self.calls()))
+        r = self.run_script('launch.sh', *self.LAUNCH, '--resume', old, STUB_KEYS='0')
+        self.assertNotEqual(r.returncode, 0)
+        self.assertIn('no markers', r.stderr)
+        r = self.run_script('launch.sh', *self.LAUNCH, '--resume', 'inputs')
+        self.assertNotEqual(r.returncode, 0)
+        self.assertEqual(self.real_launches(), [])
 
     def test_with_the_flag_one_spot_instance_of_the_required_shape_is_requested(self):
         r = self.run_script('launch.sh', *self.LAUNCH, '--i-have-owner-approval')
