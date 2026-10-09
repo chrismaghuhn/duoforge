@@ -18,6 +18,7 @@ import functools
 import hashlib
 import json
 import os
+import shutil
 import time
 from pathlib import Path
 
@@ -162,15 +163,13 @@ def _norm(tree):
 @functools.partial(jax.jit, static_argnames=("model", "tx"))
 def _step(params, opt_state, ref_params, batch, model, tx):
     """One optimizer step; the gradient norms of the policy terms and of the value term are reported apart."""
-    def policy_part(p):
-        loss, aux = distill_loss(p, ref_params, batch, model)
-        return aux["teacher_kl"] + REF_COEF * aux["ref_kl"], aux
+    def parts(p):
+        _, aux = distill_loss(p, ref_params, batch, model)
+        return jnp.stack([aux["teacher_kl"] + REF_COEF * aux["ref_kl"], aux["value_loss"]]), aux
 
-    def value_part(p):
-        return distill_loss(p, ref_params, batch, model)[1]["value_loss"]
-
-    (_, aux), g_policy = jax.value_and_grad(policy_part, has_aux=True)(params)
-    g_value = jax.grad(value_part)(params)
+    _, pullback, aux = jax.vjp(parts, params, has_aux=True)
+    g_policy = pullback(jnp.array([1.0, 0.0]))[0]
+    g_value = pullback(jnp.array([0.0, 1.0]))[0]
     grads = jax.tree_util.tree_map(lambda a, b: a + VALUE_COEF * b, g_policy, g_value)
     updates, opt_state = tx.update(grads, opt_state, params)
     loss = aux["teacher_kl"] + REF_COEF * aux["ref_kl"] + VALUE_COEF * aux["value_loss"]
@@ -192,7 +191,7 @@ class FitResult:
     best_params: object = None
 
 
-STATE = "distill-state.npz"
+STATE, PREVIOUS = "distill-state.npz", "distill-state.prev.npz"
 _CONSTANTS = ("LR", "CLIP", "TARGET_ROWS", "NON_TARGET_ROWS", "REF_COEF", "VALUE_COEF", "MAX_EPOCHS", "MAX_STEPS",
               "MIN_GAIN", "PATIENCE", "REF_KL_MAX", "EVAL_ROWS")
 
@@ -208,11 +207,11 @@ def _save_state(out, state, tx):
     arrays |= {f"opt[{i}]": np.asarray(v) for i, v in enumerate(jax.tree_util.tree_leaves(state["opt_state"]))}
     meta = {k: v for k, v in state.items() if k not in ("params", "best_params", "opt_state")}
     arrays["meta"] = np.array(json.dumps(meta))
+    from . import runstate
     tmp = out / "distill-state.tmp.npz"
-    with open(tmp, "wb") as f:
-        np.savez(f, **arrays)
-        f.flush()
-        os.fsync(f.fileno())
+    runstate._write(tmp, arrays)
+    if (out / STATE).exists():
+        shutil.copyfile(out / STATE, out / PREVIOUS)
     os.replace(tmp, out / STATE)
 
 
@@ -251,11 +250,19 @@ def fit(data, model, init_params, ref_params, config, out, seed=0, ledger=None, 
     tx = ppo.optimizer(LR, CLIP)
     plan = BatchPlan(seed)
     idx = distill_data.strata(data)
+    for name in ("train_target", "train_non", "held_target", "held_non"):
+        if not len(idx[name]):
+            raise ValueError(f"no {name} rows: the fit and its guards need every stratum")
+    if not data.policy_row[idx["held_non"]].any():
+        raise ValueError("no policy rows in held_non: the held-out reference KL guard would be blind")
+    held_rows = np.concatenate([idx["held_target"], idx["held_non"]])
     who = {"identity": identity or {}, "seed": int(seed), "constants": _constants()}
     if resume:
         if not (out / STATE).exists():
             raise ValueError(f"{out}: no state to resume ({STATE})")
         s = _load_state(out, tx, init_params)
+        if s["reason"] is not None:
+            raise ValueError(f"{out}: the fit already finished ({s['reason']}); nothing to resume")
         for name in ("identity", "seed", "constants"):
             if s[name] != who[name]:
                 changed = sorted(k for k in set(s[name]) | set(who[name])) if isinstance(who[name], dict) else []
@@ -272,9 +279,12 @@ def fit(data, model, init_params, ref_params, config, out, seed=0, ledger=None, 
         return ledger.device() if ledger is not None else contextlib.nullcontext()
 
     def held(p):
+        """Teacher KL over the held-out targets, reference KL over the held-out policy rows, value loss over every
+        held-out value row."""
         with device():
-            return evaluate_rows(data, idx["held_target"], model, p, ref_params) | \
-                {"held_ref_kl": evaluate_rows(data, idx["held_non"], model, p, ref_params)["held_ref_kl"]}
+            return {"held_teacher_kl": evaluate_rows(data, idx["held_target"], model, p, ref_params)["held_teacher_kl"],
+                    "held_ref_kl": evaluate_rows(data, idx["held_non"], model, p, ref_params)["held_ref_kl"],
+                    "held_value_loss": evaluate_rows(data, held_rows, model, p, ref_params)["held_value_loss"]}
 
     with phase, open(out / "log.jsonl", "a", encoding="utf-8") as log:
         def write(record):
@@ -287,13 +297,14 @@ def fit(data, model, init_params, ref_params, config, out, seed=0, ledger=None, 
             s = who | {"params": init_params, "opt_state": tx.init(init_params), "best_params": init_params,
                        "epochs": [metrics | {"epoch": 0}], "best": 0, "best_kl": metrics["held_teacher_kl"],
                        "stale": 0, "steps": 0, "cursor": [0, 0], "epoch": 1, "row": 0, "seconds": 0.0,
-                       "reason": None}
+                       "reason": None if np.isfinite(list(metrics.values())).all() else "nonfinite"}
         start = time.perf_counter() - s["seconds"]
         params, opt_state, reason = s["params"], s["opt_state"], s["reason"]
 
         def state(**kw):
             return s | {"params": params, "opt_state": opt_state, "seconds": time.perf_counter() - start} | kw
 
+        signalled = False
         while reason is None and s["epoch"] <= MAX_EPOCHS:
             epoch = s["epoch"]
             targets = plan.targets(epoch, idx["train_target"])
@@ -316,9 +327,10 @@ def fit(data, model, init_params, ref_params, config, out, seed=0, ledger=None, 
                     break
                 if stop is not None and stop.requested:
                     _save_state(out, state(), tx)
-                    if ledger is not None:
-                        ledger.save()
-                    return FitResult(s["best"], "signal", s["epochs"], s["steps"], params, s["best_params"])
+                    signalled = True
+                    break
+            if signalled:
+                break
             if nonfinite:
                 reason = "nonfinite"
                 break
@@ -346,13 +358,19 @@ def fit(data, model, init_params, ref_params, config, out, seed=0, ledger=None, 
                 reason = "max_steps"
             s = s | {"epoch": epoch + 1, "row": 0}
             _save_state(out, state(reason=reason), tx)
-        reason = reason or "max_epochs"
+            if ledger is not None:
+                ledger.save()
+        if signalled:
+            reason = "signal"
+        else:
+            reason = reason or "max_epochs"
         best = s["best"]
-        _save(out / "params-best.npz", s["best_params"],
-              config | {"distill": {"epoch": best, "best_epoch": best, "no_gain": best == 0, "stop": reason}})
-        write({"stop": reason, "best_epoch": best, "steps": s["steps"]})
-        _save_state(out, state(reason=reason), tx)
-    if ledger is not None:
+        if not signalled:
+            _save(out / "params-best.npz", s["best_params"],
+                  config | {"distill": {"epoch": best, "best_epoch": best, "no_gain": best == 0, "stop": reason}})
+            write({"stop": reason, "best_epoch": best, "steps": s["steps"]})
+            _save_state(out, state(reason=reason), tx)
+    if ledger is not None:  # after the phase closed, so its seconds are in the phase
         ledger.save()
     return FitResult(best, reason, s["epochs"], s["steps"], params, s["best_params"])
 
@@ -375,7 +393,8 @@ def _manifest(path):
 
 
 def main(argv=None):
-    """python -m duoforge_learn.distill: exit 0 after a fit (whatever its stop), 2 for a refusal."""
+    """python -m duoforge_learn.distill: exit 0 after a finished fit (whatever its stop reason), 2 for a refusal, 3
+    when a signal stopped it (resume with --resume)."""
     import argparse
     import sys
     p = argparse.ArgumentParser(prog="python -m duoforge_learn.distill", description="Stage 3 P1 distillation.")
@@ -394,11 +413,11 @@ def main(argv=None):
         refuse_repository(args.out)
         if args.resume and not (Path(args.out) / STATE).exists():
             raise ValueError(f"{args.out}: no state to resume ({STATE})")
-        from . import checkpoint, ledger as ledger_mod, policy, runstate
-        manifest, manifest_sha = _manifest(args.manifest)
+        from . import checkpoint, policy, runstate
         shas = {"init": _sha256(args.init), "reference": _sha256(args.reference)}
         if not args.allow_other_init and set(shas.values()) != {PARAMS_49333_SHA256}:
             raise ValueError(f"the init and the reference must both be params-49333 ({PARAMS_49333_SHA256}): {shas}")
+        manifest, manifest_sha = _manifest(args.manifest)
         init, config = checkpoint.load_current(args.init)
         ref, ref_config = checkpoint.load_current(args.reference)
         model_cfg = checkpoint.model_config(config, init)
@@ -407,8 +426,11 @@ def main(argv=None):
         model = policy.make(model_cfg)
         data = distill_data.load(args.shards, manifest)
         identity = {"manifest": manifest_sha, **shas, "jax": jax.__version__, "optax": optax.__version__,
-                    "device": jax.devices()[0].device_kind}
-        book = ledger_mod.Ledger(args.ledger) if args.ledger else None
+                    "device": jax.devices()[0].device_kind, "allow_other_init": args.allow_other_init}
+        book = None
+        if args.ledger:
+            from . import ledger as ledger_mod
+            book = ledger_mod.Ledger(args.ledger)
         stop = runstate.StopFlag().install()
         try:
             result = fit(data, model, jax.device_put(init), jax.device_put(ref), config, args.out, seed=args.seed,
@@ -419,7 +441,7 @@ def main(argv=None):
         print(f"distill: {err}", file=sys.stderr)
         return 2
     print(json.dumps({"stop": result.stop_reason, "best_epoch": result.best_epoch, "steps": result.steps}))
-    return 0
+    return 3 if result.stop_reason == "signal" else 0
 
 
 if __name__ == "__main__":

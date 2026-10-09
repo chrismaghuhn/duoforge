@@ -380,6 +380,9 @@ class FitTest(unittest.TestCase):
         # (a) the reference KL guard: best stays epoch 0, the init, marked no_gain.
         result = self._fit(data, REF_KL_MAX=0.0)
         self.assertEqual((result.stop_reason, result.best_epoch, len(result.epochs)), ("ref_kl", 0, 2))
+        import jax
+        for a, b in zip(jax.tree_util.tree_leaves(result.best_params), jax.tree_util.tree_leaves(self.params)):
+            np.testing.assert_array_equal(np.asarray(a), np.asarray(b))  # best epoch 0: the start itself
         self.tmp.cleanup()
         self.tmp = tempfile.TemporaryDirectory(prefix="duoforge-distill-")
         self.out = Path(self.tmp.name)
@@ -400,7 +403,20 @@ class FitTest(unittest.TestCase):
         bad.value_target[0] = np.nan
         result = self._fit(bad, MIN_GAIN=-1.0)
         self.assertEqual((result.stop_reason, result.best_epoch), ("nonfinite", 0))
+        self.assertFalse((self.out / "params-epoch-1.npz").exists())  # no epoch after the nonfinite step is kept
         self.assertEqual(distill.MAX_EPOCHS, 4)
+
+    def test_fit_refuses_empty_strata_and_reports_the_whole_held_value_loss(self):
+        from duoforge_learn import distill
+        data = _small_data()
+        for kw, name in (({"held_targets": 0}, "held_target"), ({"policy": 0, "value_only": 0}, "train_non"),
+                         ({"held_policy": 0}, "held_non")):
+            with self.assertRaisesRegex(ValueError, name):
+                self._fit(_small_data(**kw))
+        result = self._fit(data, MAX_EPOCHS=0)
+        held = np.flatnonzero(data.held_out)
+        whole = distill.evaluate_rows(data, held, self.model, self.params, self.params)["held_value_loss"]
+        self.assertLess(abs(result.epochs[0]["held_value_loss"] - whole), 1e-5 * whole)
 
     def test_held_metrics_are_weighted_over_chunks(self):
         from unittest import mock
@@ -476,6 +492,13 @@ class ResumeTest(unittest.TestCase):
         for a, b in zip(self._leaves(again.best_params), self._leaves(whole.best_params)):
             np.testing.assert_array_equal(a, b)
         self.assertEqual(self._lines(cut), self._lines(self.root / "whole"))
+        with np.load(cut / "distill-state.npz") as a, np.load(self.root / "whole" / "distill-state.npz") as b:
+            self.assertEqual(sorted(a.files), sorted(b.files))
+            for k in a.files:  # params, best params and every optimizer leaf
+                if k != "meta":
+                    np.testing.assert_array_equal(a[k], b[k], k)
+        with self.assertRaisesRegex(ValueError, "finished"):  # a finished fit is not resumed
+            self._fit(cut, resume=True)
 
     def test_resume_refusals(self):
         from unittest import mock
@@ -484,6 +507,8 @@ class ResumeTest(unittest.TestCase):
         self._fit(out, stop=_StopAfter(1))
         with self.assertRaisesRegex(ValueError, "manifest"):
             self._fit(out, resume=True, identity={"manifest": "other"})
+        with self.assertRaisesRegex(ValueError, "reference"):
+            self._fit(out, resume=True, identity={"manifest": "m", "reference": "another file"})
         with mock.patch.object(distill, "LR", 1e-3), self.assertRaisesRegex(ValueError, "LR"):
             self._fit(out, resume=True)
         with self.assertRaisesRegex(ValueError, "no state"):
@@ -494,6 +519,16 @@ class ResumeTest(unittest.TestCase):
         self.assertEqual(distill.main(["--init", "x", "--reference", "x", "--shards", "x", "--manifest", "x",
                                        "--out", str(repo / "distill-should-not-exist")]), 2)
         self.assertFalse((repo / "distill-should-not-exist").exists())
+        import contextlib
+        import io
+        other = self.root / "not-49333.npz"
+        other.write_bytes(b"not params-49333")
+        err = io.StringIO()
+        with contextlib.redirect_stderr(err):
+            code = distill.main(["--init", str(other), "--reference", str(other), "--shards", "x", "--manifest", "x",
+                                 "--out", str(self.root / "pinned")])
+        self.assertEqual(code, 2)
+        self.assertIn("params-49333", err.getvalue())
         self.assertEqual(distill.main(["--init", "x", "--reference", "x", "--shards", "x", "--manifest", "x",
                                        "--out", str(self.root / "empty"), "--resume"]), 2)
 
