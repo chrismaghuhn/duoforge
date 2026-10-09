@@ -20,22 +20,46 @@ machine_lock_pid() {
 }
 
 machine_lock_alive() { # pid
+    local out
     if command -v tasklist > /dev/null 2>&1; then
-        tasklist //FI "PID eq $1" //NH 2> /dev/null | grep -q " $1 "
+        # No path conversion, whatever the caller exported (a wsl.exe command needs MSYS_NO_PATHCONV=1): the
+        # switches go to tasklist as written. A tasklist that cannot answer counts as alive: a lock is taken over
+        # only when its holder is known to be gone.
+        out=$(MSYS_NO_PATHCONV=1 MSYS2_ARG_CONV_EXCL='*' tasklist /FI "PID eq $1" /NH 2> /dev/null) || return 0
+        printf '%s\n' "$out" | grep -q " $1 "
     else
         kill -0 "$1" 2> /dev/null
     fi
 }
 
 machine_lock_acquire() { # label
-    local label=$1 waited=0 holder pid
-    while ! mkdir "$MACHINE_LOCK" 2> /dev/null; do
-        holder=$(cat "$MACHINE_LOCK/owner" 2> /dev/null || true)
-        pid=${holder%% *}
-        if [ -n "$pid" ] && ! machine_lock_alive "$pid"; then
-            echo "machine lock: removing a stale lock ($holder)" >&2
-            rm -rf "$MACHINE_LOCK"
-            continue
+    # First come, first served: a waiter takes a ticket in $MACHINE_LOCK.queue (its name sorts by the time it was
+    # taken), and a free lock goes to the oldest ticket whose process still lives. A dead waiter's ticket is removed.
+    local label=$1 waited=0 holder pid me ticket t first
+    local queue="$MACHINE_LOCK.queue"
+    me=$(machine_lock_pid)
+    mkdir -p "$queue"
+    ticket="$queue/$(printf '%019d' "$(date +%s%N)")-$me"
+    echo "$me $label since $(date '+%Y-%m-%d %H:%M:%S')" > "$ticket"
+    while :; do
+        for t in "$queue"/*; do
+            [ -e "$t" ] && [ "$t" != "$ticket" ] || continue
+            machine_lock_alive "${t##*-}" || rm -f "$t"
+        done
+        first=$(printf '%s\n' "$queue"/* | sort | head -n 1)
+        if [ "$first" = "$ticket" ] && mkdir "$MACHINE_LOCK" 2> /dev/null; then
+            break
+        fi
+        if [ -d "$MACHINE_LOCK" ]; then
+            holder=$(cat "$MACHINE_LOCK/owner" 2> /dev/null || true)
+            pid=${holder%% *}
+            if [ -n "$pid" ] && ! machine_lock_alive "$pid"; then
+                echo "machine lock: removing a stale lock ($holder)" >&2
+                rm -rf "$MACHINE_LOCK"
+                continue
+            fi
+        else
+            holder=$(cat "$first" 2> /dev/null || true)  # the lock is free: an older waiter goes first
         fi
         if [ $((waited % 300)) -eq 0 ]; then
             echo "machine lock: waiting for ${holder:-another job} ($((waited / 60)) min so far)" >&2
@@ -43,7 +67,8 @@ machine_lock_acquire() { # label
         sleep 15
         waited=$((waited + 15))
     done
-    echo "$(machine_lock_pid) $label since $(date '+%Y-%m-%d %H:%M:%S')" > "$MACHINE_LOCK/owner"
+    rm -f "$ticket"
+    echo "$me $label since $(date '+%Y-%m-%d %H:%M:%S')" > "$MACHINE_LOCK/owner"
 }
 
 machine_lock_release() {

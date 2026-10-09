@@ -1,0 +1,169 @@
+{
+  "about": "Perft pins of tools/perft/perft.py (definition in its docstring), checked by duoforge.python.perft. A position is a setup (reference pairing or registry teams), seed and prefix of per-player domain ranks from TEAM_SELECTION; prefix, seed and depths are inputs, the rest is written by --write. A changed count or sequence is a bug or gets a new pin (--write --position NAME) with its reason in the commit. context_fingerprint and library_version say what a pin was made with and are not compared (the POOL fingerprint changes with every pool data change).",
+  "positions": [
+    {
+      "name": "closure_ab_team_selection",
+      "data_kind": "CLOSURE",
+      "pairing": 0,
+      "seed": 2026,
+      "prefix": [],
+      "boundary": "TEAM_SELECTION",
+      "teams": {"reference": ["A", "B"]},
+      "setup_sha256": "df988d43efafd0705d48d09028405f751014488121f3823e3202e5917ebcde7e",
+      "context_fingerprint": "09d8d247c926610b2c3957002644221c01cc07d268bfa98461575c3b1c6a8306",
+      "library_version": "0.44.0",
+      "depths": {
+        "1": {"count": 129600, "sequence_sha256": "36b84e21fad8e9d50a824c307ac580f935bcd1a953fa683625acbac6b2b3f31c"},
+        "2": {"count": 3748808448, "sequence_sha256": "7b95534cd43411a8d15b2590e4ab75b8ad13dfda44000ab933b7f1bf7e1e1fa6"}
+      }
+    },
+    {
+      "name": "closure_ab_turn1",
+      "data_kind": "CLOSURE",
+      "pairing": 0,
+      "seed": 2026,
+      "prefix": [[0, 0]],
+      "boundary": "TURN",
+      "teams": {"reference": ["A", "B"]},
+      "setup_sha256": "df988d43efafd0705d48d09028405f751014488121f3823e3202e5917ebcde7e",
+      "context_fingerprint": "09d8d247c926610b2c3957002644221c01cc07d268bfa98461575c3b1c6a8306",
+      "library_version": "0.44.0",
+      "depths": {
+        "1": {"count": 54500, "sequence_sha256": "579f357cff84ed4c67ec74d29dcd14243c9ab185bc2d9becf8909ab6fba57a79"},
+        "2": {"count": 789547234, "sequence_sha256": "05b78ad7a42f760f8b83fb64a56d7e6ab8b8cc93723333811a359b53d1d19a03"}
+      }
+    },
+    {
+      "name": "closure_ba_turn1",
+      "data_kind": "CLOSURE",
+      "pairing": 1,
+      "seed": 2026,
+      "prefix": [[0, 0]],
+      "boundary": "TURN",
+      "teams": {"reference": ["B", "A"]},
+      "setup_sha256": "22ed280dcf37daad8f9a367e062b7875aa525e83f5810d0600ae00d919f1c067",
+      "context_fingerprint": "09d8d247c926610b2c3957002644221c01cc07d268bfa98461575c3b1c6a8306",
+      "library_version": "0.44.0",
+      "depths": {
+        "1": {"count": 54500, "sequence_sha256": "d4ed5c477e6009e800b008b35943883907ba44759ecbd912a1b5cc81edb7d08d"},
+        "2": {"count": 789547234, "sequence_sha256": "15ab7cef4885db9c20b94c44215454737885fdb6a60c94d81dc39fb302910e0a"}
+      }
+    },
+    {
+      "name": "closure_aa_turn1",
+      "data_kind": "CLOSURE",
+      "pairing": 2,
+      "seed": 2026,
+      "prefix": [[0, 0]],
+      "boundary": "TURN",
+      "teams": {"reference": ["A", "A"]},
+      "setup_sha256": "88fe12738cd0db88139b3e90aa53d0e2b35d947470271700ef2be9a701490420",
+      "context_fingerprint": "09d8d247c926610b2c3957002644221c01cc07d268bfa98461575c3b1c6a8306",
+      "library_version": "0.44.0",
+      "depths": {
+        "1": {"count": 62500, "sequence_sha256": "7b98ee7a99c875958ca631ccadc8f95c582f7c93c3133a359ae14e98f1235f66"},
+        "2": {"count": 1208567352, "sequence_sha256": "14d3c24571983e0bbc3b337b5b3f4f741714f4265469cd251ccdfb95236f824c"}
+      }
+    },
+    {
+      "name": "closure_bb_turn1",
+      "data_kind": "CLOSURE",
+      "pairing": 3,
+      "seed": 2026,
+      "prefix": [[0, 0]],
+      "boundary": "TURN",
+      "teams": {"reference": ["B", "B"]},
+      "setup_sha256": "bfdc97be4b2014823af2053db8dedf6a9e2aa2fb64f615cca27767437cbf7e98",
+      "context_fingerprint": "09d8d247c926610b2c3957002644221c01cc07d268bfa98461575c3b1c6a8306",
+      "library_version": "0.44.0",
+      "depths": {
+        "1": {"count": 47524, "sequence_sha256": "3dde706ea2c4e01a8b996a20f774ea2038a9152ef2feb1ac7d3b51ed28da9e65"},
+        "2": {"count": 1008199764, "sequence_sha256": "b1ebdbb399b2dc1466ea44340a66660ebfdb17bf1c674c541dfda2aec86aad2b"}
+      }
+    },
+    {
+      "name": "pool_ac_turn1",
+      "data_kind": "POOL",
+      "registry": ["A", "C"],
+      "seed": 2026,
+      "prefix": [[0, 0]],
+      "boundary": "TURN",
+      "teams": {"registry": ["A", "C"], "sha256": ["4955f90d9f8650ef5e526fec4a2d5853fa1c98910c0a77c85084d9935977852f", "4c625aff89a656e1e52ffe75e98d429d5f9f915aa17ba05dde6941a38004fd3b"]},
+      "setup_sha256": "111670c4bcf704b95b3df5bcc666066ae041ad2f783fa1e8651305afb6608718",
+      "context_fingerprint": "f4e2e7f6a4ef3d824a3303fc2aeb59f9f9142c0e03b298c267b98760bfaefb79",
+      "library_version": "0.44.0",
+      "depths": {
+        "1": {"count": 41500, "sequence_sha256": "0782ab40494c80bedbab376c482a1c87675c775826763d9f1bd01f3565b6d128"},
+        "2": {"count": 408513324, "sequence_sha256": "454e160af941a5bf199aea0a1333cffcad35305e1b3711110d694e2daaf071fd"}
+      }
+    },
+    {
+      "name": "pool_cb_turn1",
+      "data_kind": "POOL",
+      "registry": ["C", "B"],
+      "seed": 2026,
+      "prefix": [[0, 0]],
+      "boundary": "TURN",
+      "teams": {"registry": ["C", "B"], "sha256": ["4c625aff89a656e1e52ffe75e98d429d5f9f915aa17ba05dde6941a38004fd3b", "d936ae39ba48a382395e79b795ed8fe024370dcf5d72c4a736127219f0ec5300"]},
+      "setup_sha256": "4ca0ddbb3724bd4349daf6c0b279236ebc79afc323bf52b7c5ca1d1de4a470c7",
+      "context_fingerprint": "f4e2e7f6a4ef3d824a3303fc2aeb59f9f9142c0e03b298c267b98760bfaefb79",
+      "library_version": "0.44.0",
+      "depths": {
+        "1": {"count": 36188, "sequence_sha256": "0108d6e2f1937627c65bc07dea3325c22074cd7caaa055461f1363eff7572624"},
+        "2": {"count": 343666346, "sequence_sha256": "9dbdc7a3aea3663a27238f65c39766c9adeb0dbdd058730329c5122322ed5da0"}
+      }
+    },
+    {
+      "name": "closure_ab_pivot",
+      "data_kind": "CLOSURE",
+      "pairing": 0,
+      "seed": 2026,
+      "prefix": [[0, 0], [4, 0]],
+      "boundary": "PIVOT",
+      "teams": {"reference": ["A", "B"]},
+      "setup_sha256": "df988d43efafd0705d48d09028405f751014488121f3823e3202e5917ebcde7e",
+      "context_fingerprint": "09d8d247c926610b2c3957002644221c01cc07d268bfa98461575c3b1c6a8306",
+      "library_version": "0.44.0",
+      "depths": {
+        "1": {"count": 2, "sequence_sha256": "0e08777494a3c20eaa600485345a414f368173332915fbcdfc89a26bbe16793a"},
+        "2": {"count": 38416, "sequence_sha256": "1c27eb0b5091720283c95cb0c3a440841d2d40ffebeddcba8dcb9922f71297e8"},
+        "3": {"count": 187343846, "sequence_sha256": "cbb61cb1f2649a356982256c5bec2a8e051f1271fe004e6c9209e67cdf95610c"}
+      }
+    },
+    {
+      "name": "closure_ab_replacement",
+      "data_kind": "CLOSURE",
+      "pairing": 0,
+      "seed": 2026,
+      "prefix": [[0, 0], [2, 27]],
+      "boundary": "REPLACEMENT",
+      "teams": {"reference": ["A", "B"]},
+      "setup_sha256": "df988d43efafd0705d48d09028405f751014488121f3823e3202e5917ebcde7e",
+      "context_fingerprint": "09d8d247c926610b2c3957002644221c01cc07d268bfa98461575c3b1c6a8306",
+      "library_version": "0.44.0",
+      "depths": {
+        "1": {"count": 4, "sequence_sha256": "3d494eada3f914fc82dd6c42c9467229f1b078a237b839403de3f1f9b316900c"},
+        "2": {"count": 34888, "sequence_sha256": "b2d9540a47eb41f3fc039977aca1c1edd5faa8f3cdcab3a79994eac46bc5b2ec"},
+        "3": {"count": 254281878, "sequence_sha256": "635679168493c23047739149f76e3fe875a99994c85acebef6a132c48982ff96"}
+      }
+    },
+    {
+      "name": "pool_ac_pivot",
+      "data_kind": "POOL",
+      "registry": ["A", "C"],
+      "seed": 2026,
+      "prefix": [[0, 0], [0, 6]],
+      "boundary": "PIVOT",
+      "teams": {"registry": ["A", "C"], "sha256": ["4955f90d9f8650ef5e526fec4a2d5853fa1c98910c0a77c85084d9935977852f", "4c625aff89a656e1e52ffe75e98d429d5f9f915aa17ba05dde6941a38004fd3b"]},
+      "setup_sha256": "111670c4bcf704b95b3df5bcc666066ae041ad2f783fa1e8651305afb6608718",
+      "context_fingerprint": "f4e2e7f6a4ef3d824a3303fc2aeb59f9f9142c0e03b298c267b98760bfaefb79",
+      "library_version": "0.44.0",
+      "depths": {
+        "1": {"count": 2, "sequence_sha256": "0e08777494a3c20eaa600485345a414f368173332915fbcdfc89a26bbe16793a"},
+        "2": {"count": 4, "sequence_sha256": "c79d822ece975956b1a836e11f78d6e7bd01e698d4aa1eb21303ed14116ae811"},
+        "3": {"count": 58976, "sequence_sha256": "02dc745c2d273a3e3b400c1c066078327a3d900903905e42bb2a6f6c79285b45"},
+        "4": {"count": 477194301, "sequence_sha256": "bb270dfee48431cd33f2117bba17d98fc14e9e19f87bd2829d3a3009eed142c7"}
+      }
+    }
+  ]
+}
