@@ -4408,6 +4408,28 @@ static duoforge_status dfi_run_heal_fraction(dfi_run *r, uint32_t num, uint32_t 
     return dfi_status_hit_end(r);
 }
 
+/* Haze (step G62, decision 0031; data/moves.ts:8156-8172, onHitField): the move prints `-clearallboost` (no position, no
+ * cause, public), then clearBoosts for each of getAllActive(), which skips a fainted Pokemon (sim/battle.ts:1365-1375; the
+ * default includeFainted is off). clearBoosts (sim/pokemon.ts:1232-1237) zeroes the seven boosts only: volatiles such as
+ * Focus Energy and the stall counters stay. A standing active position is one whose member is alive (dfi_alive); the
+ * stages go to DFI_STAGE_NEUTRAL. The hit returns undefined (no DFI_MRES bit: the move result stays unclassified, which
+ * only Stomping Tantrum and Roost read, and they refuse). Haze has no protect flag, so Protect does not stop it. */
+static duoforge_status dfi_run_haze(dfi_run *r)
+{
+    struct duoforge_battle *b = r->b;
+    dfi_emit_plain(r, DUOFORGE_EVENT_CLEAR_ALL_BOOSTS, DUOFORGE_NO_POSITION);
+    for (uint32_t flat = 0u; flat < DFI_POSITIONS; ++flat) {
+        if (!dfi_alive(b, flat)) {
+            continue;
+        }
+        dfi_active_slot *pos = dfi_pos(b, flat);
+        for (uint32_t i = 0u; i < DFI_STAT_STAGE_COUNT; ++i) {
+            pos->stages[i] = (uint8_t)DFI_STAGE_NEUTRAL;
+        }
+    }
+    return DUOFORGE_OK;
+}
+
 /* Heal Pulse's heal (step G54, data/moves.ts:8399-8428): the target heals by Math.ceil(baseMaxhp / 2); a target at full HP shows
  * the plain fail of the heal move (dfi_run_heal_fraction), the Mega Launcher's 3/4 is not marked. */
 /* Heal Pulse's heal after the hit steps: a target that Protect (or an immunity) stopped is not healed and shows no fail;
@@ -5152,6 +5174,9 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
         dfi_emit(r, &e);
         r->mres |= DFI_MRES_TRUE; /* addSideCondition returns true */
         return DUOFORGE_OK;
+    }
+    if (status_move && md->special == DFI_SPECIAL_HAZE) {
+        return dfi_run_haze(r); /* step G62: the field hit of Haze (decision 0031) */
     }
     if (status_move && (md->special == DFI_SPECIAL_SANDSTORM || md->special == DFI_SPECIAL_SNOWSCAPE ||
                         md->special == DFI_SPECIAL_RAIN_DANCE || md->special == DFI_SPECIAL_SUNNY_DAY)) {

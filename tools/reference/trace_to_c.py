@@ -894,6 +894,8 @@ EV = {name: i + 1 for i, name in enumerate(
      'SINGLE_TURN', 'VOLATILE_START', 'VOLATILE_END', 'TYPE_CHANGE', 'ITEM_START', 'REVIVE'])}
 # DUOFORGE_EVENT_DRAG = 45 (step G46): 43 and 44 belong to REVIVE and TRANSFORM on their own branches, so the drag is set by value.
 EV['DRAG'] = 45
+# DUOFORGE_EVENT_CLEAR_ALL_BOOSTS = 47 (Haze, decision 0031, step G62): by value, as DRAG; 46 is not used here.
+EV['CLEAR_ALL_BOOSTS'] = 47
 CAUSE = {'NONE': 0, 'MOVE': 1, 'ITEM': 2, 'ABILITY': 3, 'RECOIL': 4, 'DRAIN': 5, 'BURN': 6, 'CONFUSION': 7,
          'TERRAIN': 8, 'PARALYSIS': 9, 'SLEEP': 10, 'FREEZE': 11, 'FLINCH': 12, 'NO_PP': 13, 'POISON': 14,
          'HEAL_BLOCK': 15, 'WEATHER': 16, 'ITEM_TAKEN': 17, 'RECHARGE': 18, 'DISABLE': 19, 'TAUNT': 20, 'IMPRISON': 21}
@@ -1291,6 +1293,13 @@ def step_events(log, viewer, roster_of, maxhp, tables, rb_pending=None):
                 e = ev_tuple(EV['ACTIVATE'], pos, NOPOS, CAUSE['MOVE'], 0, tables['MOVE'][key(what[6:])])
             else:
                 raise ConversionError('activate-line', 'trace_to_c: unknown -activate %r' % line, detail=what)
+        elif kind == '-clearallboost':
+            # Haze (step G62, decision 0031; data/moves.ts:8156-8172, onHitField): the line names no position and has no
+            # attribute. Its event is public: both players see the same line. Anything else is refused, never mapped.
+            if args or attrs:
+                raise ConversionError('protocol-line', 'trace_to_c: -clearallboost with arguments %r' % line,
+                                      detail='clearallboost')
+            e = ev_tuple(EV['CLEAR_ALL_BOOSTS'])
         elif kind in ('-boost', '-unboost'):
             cause, id2, other = ev_cause(attrs, tables)
             e = ev_tuple(EV['BOOST' if kind == '-boost' else 'UNBOOST'], ev_pos(args[0]), other, cause, 0, id2,

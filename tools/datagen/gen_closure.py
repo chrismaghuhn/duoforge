@@ -2139,6 +2139,7 @@ SPECIAL_P = dict(SPECIAL_C, **{
     'upperhand': ('UPPER_HAND', {'onTry'}),                               # G54: a priority move against a target that moves first with one
     'healpulse': ('HEAL_PULSE', {'onHit'}),                               # G54: heals the target by half of its maximum HP
     'strengthsap': ('STRENGTH_SAP', {'onHit'}),                           # G54: heals the user by the target's Attack, then lowers it
+    'haze': ('HAZE', {'onHitField'}),                                     # G62: clears every boost of the standing actives (decision 0031)
                                    # G44: a 20 percent pick of burn, paralysis or freeze (G2_OWNED_SECONDARY)
     'ragefist': ('RAGE_FIST', {'basePowerCallback'}),                     # G48: 50 + 50 per hit the user took, at most 350
     'stoneaxe': ('STONE_AXE', {'onAfterHit', 'onAfterSubDamage'}),        # G48: Stealth Rock on the foe's side after a hit
@@ -2227,7 +2228,16 @@ G54_FACTS = (
                      "const success = this.boost({ atk: -1 }, target, source, null, false, true);",
                      'return !!(this.heal(atk, source, target) || success);', 'target: "normal",', 'type: "Grass",']),
 )
-SPECIAL_IDS_P = SPECIAL_IDS_C + G2_HANDLERS + WEATHER_HANDLERS + G16_HANDLERS + G15_HANDLERS + G19_HANDLERS + G20_HANDLERS + G20_PROTECT_HANDLERS + G28_HANDLERS + G30_HANDLERS + G32_HANDLERS + G34_HANDLERS + G27_HANDLERS + G25_HANDLERS + G26_HANDLERS + G33_HANDLERS + G38_HANDLERS + G29_HANDLERS + G39_HANDLERS + G31_HANDLERS + G48_HANDLERS + G44_HANDLERS + G50_HANDLERS + G42_HANDLERS + G56_HANDLERS + G52_HANDLERS + G54_HANDLERS + ['UNMODELED']# Step G10 made two of these handlers data: Scald (thawsTarget) and Recover (heal) are read into the second flags# byte (bit 4, thaws the target) and the heal column, and have the special NONE; their ids stay defined (the ids after
+# Step G62 (Haze, decision 0031; the turn-order moves After You and Quash follow in their own rows). HAZE: `onHitField` prints
+# `-clearallboost` and clears the boosts of every active Pokemon (getAllActive(), the standing ones only); no protect flag, a
+# target of the field (`all`), accuracy true. The engine's stages are the boosts; clearBoosts zeroes the seven of them only.
+G62_HANDLERS = ['HAZE']
+G62_FACTS = (
+    ('haze', ['accuracy: true,', 'basePower: 0,', 'category: "Status",', 'priority: 0,',
+              'flags: { bypasssub: 1, metronome: 1 },', "this.add('-clearallboost');",
+              'for (const pokemon of this.getAllActive()) {', 'pokemon.clearBoosts();', 'target: "all",', 'type: "Ice",']),
+)
+SPECIAL_IDS_P =SPECIAL_IDS_C + G2_HANDLERS + WEATHER_HANDLERS + G16_HANDLERS + G15_HANDLERS + G19_HANDLERS + G20_HANDLERS + G20_PROTECT_HANDLERS + G28_HANDLERS + G30_HANDLERS + G32_HANDLERS + G34_HANDLERS + G27_HANDLERS + G25_HANDLERS + G26_HANDLERS + G33_HANDLERS + G38_HANDLERS + G29_HANDLERS + G39_HANDLERS + G31_HANDLERS + G48_HANDLERS + G44_HANDLERS + G50_HANDLERS + G42_HANDLERS + G56_HANDLERS + G52_HANDLERS + G54_HANDLERS + G62_HANDLERS + ['UNMODELED']# Step G10 made two of these handlers data: Scald (thawsTarget) and Recover (heal) are read into the second flags# byte (bit 4, thaws the target) and the heal column, and have the special NONE; their ids stay defined (the ids after
 # them keep their values). First Impression and Low Kick keep theirs: the turn code implements them.
 POOL_COLUMN_KEYS = {'thawsTarget', 'heal'}
 G2_OWNED_FIELDS = {
@@ -3182,7 +3192,7 @@ def check_g8_conditions(moves_ts, only=None):
     must be in the pinned entry, as one normalised text. `only`: a tuple of (move id, facts) to check instead of all of
     them (the generator's tests)."""
     for mid, facts in (G8_CONDITION_FACTS + G20_CONDITION_FACTS + G28_FACTS + G32_FACTS + G34_FACTS + G25_FACTS +
-                       G33_FACTS + G38_FACTS + G39_FACTS + G37_FACTS + G44_FACTS + G48_FACTS + G54_FACTS if only is None else only):
+                       G33_FACTS + G38_FACTS + G39_FACTS + G37_FACTS + G44_FACTS + G48_FACTS + G54_FACTS + G62_FACTS if only is None else only):
         e = moves_ts.entry(mid)
         if e is None:
             fail('move %s not found' % mid)

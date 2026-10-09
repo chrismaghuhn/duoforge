@@ -983,6 +983,16 @@ function checkG54(dex) {
     return 1;
 }
 
+// Step G62 (Haze, decision 0031): accuracy true, a field target and no protect flag; onHitField clears the boosts of the
+// standing actives (getAllActive, the default that skips a fainted Pokemon), checked by its text in gen_closure.py.
+function checkG62(dex) {
+    const haze = dex.moves.get('haze');
+    expect('Haze accuracy and target', [haze.accuracy, haze.target], [true, 'all']);
+    expect('Haze has no protect flag', haze.flags.protect === undefined, true);
+    expect('Haze priority', haze.priority, 0);
+    return 1;
+}
+
 function checkG32(dex) {
     for (const id of ['eruption', 'waterspout']) {
         const m = dex.moves.get(id);
@@ -1822,6 +1832,7 @@ function main() {
     checkG47(dex);
     checkG44(dex);
     checkG54(dex);
+    checkG62(dex);
     checkG22(dex, formeRowsList, new Set(definedIds(headers, 'ITEM').values()), new Set(abilityIds.values()));
     const abilities = checkAbilities(dex, abilityRows, moveIds, unmodeledAbilities, unmodeledMoves);
     // "All 18": a booster and a resist berry for each type, and nothing else in the families.

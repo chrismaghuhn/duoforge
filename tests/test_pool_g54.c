@@ -9,7 +9,7 @@
  * every draw, message and HP that the reference shows. Here are the facts the battles do not show by themselves:
  *
  *   - the marks, the handler numbers and the pinned numbers of the rows (Sing's data row included);
- *   - what stays unmarked and why: Haze, Steel Beam and Final Gambit (the public values or the state they need are not in
+ *   - what stays unmarked and why (Haze was added by step G62, decision 0031): Steel Beam and Final Gambit (the public values or the state they need are not in
  *     this build), Loaded Dice and Skill Link (the hit count is their own rule and is not modelled), and Mega Launcher (the
  *     pulse guard of Heal Pulse is not modelled), so no battle can reach them;
  *   - the constants that the rows depend on: the draw site of the hit count (20 values), the BLOCKED detail of Quick Guard
@@ -91,7 +91,8 @@ static void check_marks(df_test *t)
     DF_CHECK_EQ_U64(t, DFI_SPECIAL_UPPER_HAND, DFI_SPECIAL_QUICK_GUARD + 1u);
     DF_CHECK_EQ_U64(t, DFI_SPECIAL_HEAL_PULSE, DFI_SPECIAL_UPPER_HAND + 1u);
     DF_CHECK_EQ_U64(t, DFI_SPECIAL_STRENGTH_SAP, DFI_SPECIAL_HEAL_PULSE + 1u);
-    DF_CHECK_EQ_U64(t, DFI_SPECIAL_UNMODELED, DFI_SPECIAL_STRENGTH_SAP + 1u);
+    DF_CHECK_EQ_U64(t, DFI_SPECIAL_HAZE, DFI_SPECIAL_STRENGTH_SAP + 1u); /* step G62 (decision 0031) */
+    DF_CHECK_EQ_U64(t, DFI_SPECIAL_UNMODELED, DFI_SPECIAL_HAZE + 1u);
 }
 
 /* The pinned numbers that the rows of this step depend on (data/moves.ts; the Champions mod changes none of them). */
@@ -122,7 +123,7 @@ static void check_pins(df_test *t)
 /* The rows that stay out of this build (the step's drops and the guards): no mark, and no battle can reach them. */
 static void check_unmarked(df_test *t)
 {
-    DF_CHECK(t, dfi_support.moves[DFI_MOVE_HAZE] == 0u);
+    /* Haze was unmarked here until step G62 (decision 0031) marked it; its check is in duoforge.state.pool_g62 */
     DF_CHECK(t, dfi_support.moves[DFI_MOVE_STEELBEAM] == 0u);
     DF_CHECK(t, dfi_support.moves[DFI_MOVE_FINALGAMBIT] == 0u);
     /* the abilities whose rule would change a hit count (Skill Link: the maximum) or a pulse (Mega Launcher) stay unmarked */
