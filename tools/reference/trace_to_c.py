@@ -1773,6 +1773,8 @@ def convert_battle(name, spec, trace, tables):
     # The closure's table has no Illusion (a pool row, decision 0015): then no team holds it.
     ill_key = tables['ABILITY'].get(key('Illusion'))
     ill_side = [ill_key is not None and any(mon['ability'] == ill_key + 1 for mon in teams[s]) for s in range(2)]
+    # The side's Illusion member(s) by roster index (Species Clause: at most one; decision 0026 section 2).
+    ill_holder = [[r for r, mon in enumerate(teams[s]) if ill_key is not None and mon['ability'] == ill_key + 1] for s in range(2)]
     ill_pending = {}
     ill_win = [None, None]  # the disguise of each side, while it is up (ill_pp_fold)
     ill_off = {}  # (side, roster) -> the foe's PP offset per slot (ill_pp_fold)
@@ -1789,6 +1791,10 @@ def convert_battle(name, spec, trace, tables):
     # reached the end of the turn (no upkeep line).
     mid_turn = False
     ill_pub = {'entry': {}, 'replace': {}}
+    # Decision 0026 section 3 (ill_override) and section 4 ("A faint while disguised"): side -> the roster whose name the foe still
+    # shows fainted for a holder that fainted under it. Set when the holder stands fainted on a position whose shown name is another
+    # member; cleared only by a SWITCH or DRAG line of that real member (its own line replaces the name's values).
+    held_faint = {}
     for step in trace['steps']:
         public_lines(step['log'], roster_of, shown, ill_pub)
         kinds = {}
@@ -1814,6 +1820,22 @@ def convert_battle(name, spec, trace, tables):
         if team:
             picks = [kinds[0][1], kinds[1][1]]
         new_state = step['state']
+        for line in step['log']:
+            parts = line.split('|')
+            if len(parts) >= 3 and parts[1] in ('switch', 'drag') and ': ' in parts[2]:
+                side = int(parts[2][1]) - 1
+                if held_faint.get(side) is not None and roster_of[side].get(parts[2].split(': ', 1)[1]) == held_faint[side]:
+                    del held_faint[side]
+        for s in range(2):
+            actives = new_state['sides'][s]['active']
+            for pos in range(2):
+                entry = ill_pub['entry'].get((s, pos))
+                if entry is None or pos >= len(actives) or actives[pos] is None or actives[pos] < 0:
+                    continue
+                truth = new_state['sides'][s]['pokemon'][actives[pos]]
+                truth_roster = roster_of[s].get(name_of(truth))
+                if truth_roster in ill_holder[s] and truth['fainted'] and entry[0] != truth_roster:
+                    held_faint[s] = entry[0]
         ill_pp_fold(step['log'], state, new_state, roster_of, teams, tables, ill_key, ill_win, ill_off, ill_sst)
         t_now = pp_map(new_state, roster_of)
         mons = []
@@ -1838,7 +1860,6 @@ def convert_battle(name, spec, trace, tables):
                 # The status the foe shows (shown_status, ill_pp_fold; equal to the true one unless an Illusion is up): a fainted
                 # Pokemon shows none, and the owner's row is exact.
                 shown_name = ill_sst.get((s, roster))
-                shown_status = 0 if p['fainted'] else STATUS[p['status'] if shown_name is None else shown_name]
                 lock = two_turn_lock(p, (s, name_of(p)), remembered_locks)
                 lslot, ltarget = (lock[0], abs_target(s, lock[1])) if lock else (0xFF, 0)
                 # A Choice item's lock (Team C) names its slot without a
@@ -1851,6 +1872,18 @@ def convert_battle(name, spec, trace, tables):
                     if not lock:
                         lslot, ltarget = choice, 0
                 seen = shown[s].get(roster)
+                # Decision 0026 section 4 (the faint while disguised): for a member that is not the side's Illusion holder, the foe's
+                # display is 0 exactly when the member is fainted. Checked on every member the foe has seen; a violation stops the
+                # conversion. The holder fainted under its shown name is the one member that may differ: the foe never saw it faint,
+                # so its row keeps what the foe knew (shown_status keeps the status, section 4).
+                is_holder = roster in ill_holder[s]
+                fainted = bool(p['fainted'])
+                shown_under_holder = held_faint.get(s) == roster  # the name of a holder fainted under it (0026 section 4)
+                if seen and not is_holder and not shown_under_holder and (seen[0] == 0) != fainted:
+                    raise ConversionError('display-faint', 'trace_to_c: the foe shows %s at %s percent, fainted %s' %
+                                          (name_of(p), seen[0], fainted), detail=name_of(p))
+                held_under_name = is_holder and fainted and bool(seen) and seen[0] != 0
+                shown_status = 0 if fainted and not held_under_name else STATUS[p['status'] if shown_name is None else shown_name]
                 compared = dict(COMPARED_VOLATILES)
                 for v in p['volatiles']:
                     if v not in compared and v not in IGNORED_VOLATILES:

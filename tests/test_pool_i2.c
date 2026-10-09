@@ -29,6 +29,7 @@
 #include "state/knowledge.h"
 #include "state/request.h"
 #include "support/check.h"
+#include "support/conformance_compare.h"
 #include "support/fixtures.h"
 #include "support/pool.h"
 
@@ -517,6 +518,38 @@ static void check_fold_switch_status(df_test *t, const duoforge_context *ctx)
     duoforge_battle_destroy(b);
 }
 
+/* Negative controls of the expected foe status (conformance_compare.c df_conf_expected_status; decision 0026 section 4, "A faint while
+ * disguised"). The one exception is the holder fainted under its shown name, which the foe never saw faint (its display is nonzero):
+ * (a) a fainted foe member that is not the holder shows none, even with a nonzero display (a broad gate shows its status and fails
+ * here); (b) without the holder exception the holder's status would be lost (it must show the status it knew); a holder the foe saw
+ * fainted shows none; the owner sees its true status alive and none fainted. */
+static void check_expected_status(df_test *t)
+{
+    df_conf_member holder;
+    df_conf_member plain;
+    memset(&holder, 0, sizeof holder);
+    memset(&plain, 0, sizeof plain);
+    holder.ability = DFI_ABILITY_ILLUSION + 1u;
+    df_conf_mon e;
+    memset(&e, 0, sizeof e);
+    e.present = 1u;
+    e.seen = 1u;
+    e.seen_percent = 50u; /* the foe's last display: never shown fainted */
+    e.fainted = 1u;
+    e.status = DFI_STATUS_PSN;
+    e.shown_status = DFI_STATUS_BRN;
+    DF_CHECK_EQ_U64(t, df_conf_expected_status(&e, &plain, 1u, 0u), 0u);                      /* (a) non-holder, fainted */
+    DF_CHECK_EQ_U64(t, df_conf_expected_status(&e, &holder, 1u, 0u), DFI_STATUS_BRN);         /* (b) holder under its name */
+    e.seen_percent = 0u;
+    DF_CHECK_EQ_U64(t, df_conf_expected_status(&e, &holder, 1u, 0u), 0u);                     /* holder the foe saw fainted */
+    e.seen_percent = 50u;
+    e.fainted = 0u;
+    DF_CHECK_EQ_U64(t, df_conf_expected_status(&e, &plain, 1u, 0u), DFI_STATUS_BRN);          /* alive foe: the shown status */
+    DF_CHECK_EQ_U64(t, df_conf_expected_status(&e, &plain, 0u, 0u), DFI_STATUS_PSN);          /* the owner: its true status */
+    e.fainted = 1u;
+    DF_CHECK_EQ_U64(t, df_conf_expected_status(&e, &plain, 0u, 0u), 0u);                      /* the owner, fainted */
+}
+
 int main(void)
 {
     df_test t;
@@ -531,6 +564,7 @@ int main(void)
     check_possible_fainted(&t, ctx);
     check_disguise_needs_name(&t, ctx);
     check_knowledge_disguise(&t, ctx);
+    check_expected_status(&t);
     check_faint_held(&t, ctx);
     check_fold_status_line(&t, ctx);
     check_fold_switch_status(&t, ctx);
