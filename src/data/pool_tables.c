@@ -974,8 +974,8 @@ const dfi_move_data dfi_pool_moves[DFI_POOL_MOVE_COUNT] = {
     {17u, 1u, 50u, 100u, 20u, 20u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 100u, 1u, 0u, 2u, {5u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
     /* Chilly Reception -- data/moves.ts:2396-2420  [unmodelled: callback priorityChargeCallback; condition block; field selfSwitch without a switch flag; field weather] */
     {11u, 2u, 0u, 0u, 10u, 12u, 8u, 9u, 1u, 16u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 71u},
-    /* Circle Throw -- data/moves.ts:2451-2464  [unmodelled: field forceSwitch] */
-    {5u, 0u, 60u, 90u, 10u, 12u, 2u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 71u},
+    /* Circle Throw -- data/moves.ts:2451-2464 */
+    {5u, 0u, 60u, 90u, 10u, 12u, 2u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
     /* Clanging Scales -- data/moves.ts:2480-2497 */
     {2u, 1u, 110u, 100u, 5u, 8u, 8u, 7u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 43u},
     /* Clangorous Soul -- data/moves.ts:2498-2526, data/mods/champions/moves.ts:121-124 */
@@ -1050,8 +1050,8 @@ const dfi_move_data dfi_pool_moves[DFI_POOL_MOVE_COUNT] = {
     {2u, 0u, 50u, 100u, 10u, 12u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 71u},
     /* Dragon Rush -- data/moves.ts:4191-4207 */
     {2u, 0u, 100u, 75u, 10u, 12u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 20u, 3u, 1u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
-    /* Dragon Tail -- data/moves.ts:4208-4221  [unmodelled: field forceSwitch] */
-    {2u, 0u, 60u, 90u, 10u, 12u, 2u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 71u},
+    /* Dragon Tail -- data/moves.ts:4208-4221 */
+    {2u, 0u, 60u, 90u, 10u, 12u, 2u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
     /* Draining Kiss -- data/moves.ts:4222-4235 */
     {4u, 1u, 50u, 100u, 10u, 12u, 8u, 1u, 1u, 3u, {0u, 0u}, {3u, 4u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
     /* Drain Punch -- data/moves.ts:4236-4249 */
@@ -1452,8 +1452,8 @@ const dfi_move_data dfi_pool_moves[DFI_POOL_MOVE_COUNT] = {
     {12u, 2u, 0u, 0u, 1u, 1u, 8u, 6u, 1u, 48u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 71u},
     /* Rising Voltage -- data/moves.ts:15137-15156 */
     {3u, 1u, 70u, 100u, 20u, 20u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 50u},
-    /* Roar -- data/moves.ts:15157-15171  [unmodelled: field forceSwitch] */
-    {12u, 2u, 0u, 0u, 20u, 20u, 2u, 1u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 71u},
+    /* Roar -- data/moves.ts:15157-15171 */
+    {12u, 2u, 0u, 0u, 20u, 20u, 2u, 1u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
     /* Rock Blast -- data/moves.ts:15188-15203  [unmodelled: field multihit] */
     {15u, 0u, 25u, 90u, 10u, 12u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 71u},
     /* Rock Polish -- data/moves.ts:15222-15238 */
@@ -1700,8 +1700,8 @@ const dfi_move_data dfi_pool_moves[DFI_POOL_MOVE_COUNT] = {
     {17u, 1u, 150u, 100u, 5u, 8u, 8u, 7u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 36u},
     /* Whirlpool -- data/moves.ts:20746-20759  [unmodelled: primary volatile partiallytrapped] */
     {17u, 1u, 35u, 85u, 15u, 16u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 71u},
-    /* Whirlwind -- data/moves.ts:20760-20774  [unmodelled: field forceSwitch] */
-    {12u, 2u, 0u, 0u, 20u, 20u, 2u, 1u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 71u},
+    /* Whirlwind -- data/moves.ts:20760-20774 */
+    {12u, 2u, 0u, 0u, 20u, 20u, 2u, 1u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
     /* Wild Charge -- data/moves.ts:20873-20886 */
     {3u, 0u, 90u, 100u, 15u, 16u, 8u, 1u, 1u, 3u, {1u, 4u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
     /* Will-O-Wisp -- data/moves.ts:20887-20901 */
@@ -2009,7 +2009,7 @@ const dfi_pool_item_data dfi_pool_items[DFI_POOL_ITEM_COUNT] = {
     {5u, 39u},
     /* Rawst Berry -- data/items.ts:5068-5088  [unmodelled: callback onEat; callback onUpdate] */
     {DFI_FORME_NONE, DFI_FORME_NONE},
-    /* Red Card -- data/items.ts:5146-5167  [unmodelled: callback onAfterMoveSecondary; read by id in sim/pokemon.ts] */
+    /* Red Card -- data/items.ts:5146-5167 */
     {DFI_FORME_NONE, DFI_FORME_NONE},
     /* Sablenite -- data/items.ts:5429-5440, data/mods/champions/items.ts:814-817 */
     {119u, 120u},
@@ -2111,7 +2111,7 @@ const dfi_pool_item_data dfi_pool_items[DFI_POOL_ITEM_COUNT] = {
  *   gluttony -- data/abilities.ts:1618-1629  [unmodelled: callback onDamage; callback onStart; read by id in data/abilities.ts; read by id in data/items.ts]
  *   gooey -- data/abilities.ts:1642-1653  [unmodelled: callback onDamagingHit]
  *   grasspelt -- data/abilities.ts:1697-1706  [unmodelled: callback onModifyDef; callback onModifyDefPriority]
- *   guarddog -- data/abilities.ts:1727-1744  [unmodelled: callback onDragOut; callback onDragOutPriority; callback onTryBoost; callback onTryBoostPriority]
+ *   guarddog -- data/abilities.ts:1727-1744
  *   guts -- data/abilities.ts:1770-1781  [unmodelled: callback onModifyAtk; callback onModifyAtkPriority; read by id in data/mods/champions/scripts.ts; read by id in sim/battle-actions.ts]
  *   harvest -- data/abilities.ts:1800-1816  [unmodelled: callback onResidual; callback onResidualOrder; callback onResidualSubOrder; read by id in sim/battle.ts]
  *   healer -- data/abilities.ts:1817-1832, data/mods/champions/abilities.ts:34-44  [unmodelled: callback onResidual; callback onResidualOrder; callback onResidualSubOrder]
@@ -2227,7 +2227,7 @@ const dfi_pool_item_data dfi_pool_items[DFI_POOL_ITEM_COUNT] = {
  *   stickyhold -- data/abilities.ts:4622-4635
  *   strongjaw -- data/abilities.ts:4661-4672  [unmodelled: callback onBasePower; callback onBasePowerPriority]
  *   sturdy -- data/abilities.ts:4673-4691
- *   suctioncups -- data/abilities.ts:4692-4702  [unmodelled: callback onDragOut; callback onDragOutPriority]
+ *   suctioncups -- data/abilities.ts:4692-4702
  *   superluck -- data/abilities.ts:4703-4711  [unmodelled: callback onModifyCritRatio]
  *   supersweetsyrup -- data/abilities.ts:4712-4729  [unmodelled: callback onStart]
  *   supremeoverlord -- data/abilities.ts:4730-4754  [unmodelled: callback onBasePower; callback onBasePowerPriority; callback onEnd; callback onStart]
@@ -2791,7 +2791,7 @@ const uint8_t dfi_pool_item_handler[DFI_POOL_ITEM_COUNT] = {
     [DFI_ITEM_QUICKCLAW] = DFI_HANDLER_UNMODELED,
     [DFI_ITEM_RAICHUNITEX] = DFI_HANDLER_NONE,
     [DFI_ITEM_RAWSTBERRY] = DFI_HANDLER_UNMODELED,
-    [DFI_ITEM_REDCARD] = DFI_HANDLER_UNMODELED,
+    [DFI_ITEM_REDCARD] = DFI_HANDLER_NONE,
     [DFI_ITEM_SABLENITE] = DFI_HANDLER_NONE,
     [DFI_ITEM_SCEPTILITE] = DFI_HANDLER_NONE,
     [DFI_ITEM_SCIZORITE] = DFI_HANDLER_NONE,
@@ -2890,7 +2890,7 @@ const uint8_t dfi_pool_ability_handler[DFI_POOL_ABILITY_COUNT] = {
     [DFI_ABILITY_GLUTTONY] = DFI_HANDLER_UNMODELED,
     [DFI_ABILITY_GOOEY] = DFI_HANDLER_UNMODELED,
     [DFI_ABILITY_GRASSPELT] = DFI_HANDLER_UNMODELED,
-    [DFI_ABILITY_GUARDDOG] = DFI_HANDLER_UNMODELED,
+    [DFI_ABILITY_GUARDDOG] = DFI_HANDLER_NONE,
     [DFI_ABILITY_GUTS] = DFI_HANDLER_UNMODELED,
     [DFI_ABILITY_HARVEST] = DFI_HANDLER_UNMODELED,
     [DFI_ABILITY_HEALER] = DFI_HANDLER_UNMODELED,
@@ -3006,7 +3006,7 @@ const uint8_t dfi_pool_ability_handler[DFI_POOL_ABILITY_COUNT] = {
     [DFI_ABILITY_STICKYHOLD] = DFI_HANDLER_NONE,
     [DFI_ABILITY_STRONGJAW] = DFI_HANDLER_UNMODELED,
     [DFI_ABILITY_STURDY] = DFI_HANDLER_NONE,
-    [DFI_ABILITY_SUCTIONCUPS] = DFI_HANDLER_UNMODELED,
+    [DFI_ABILITY_SUCTIONCUPS] = DFI_HANDLER_NONE,
     [DFI_ABILITY_SUPERLUCK] = DFI_HANDLER_UNMODELED,
     [DFI_ABILITY_SUPERSWEETSYRUP] = DFI_HANDLER_UNMODELED,
     [DFI_ABILITY_SUPREMEOVERLORD] = DFI_HANDLER_UNMODELED,
@@ -4216,7 +4216,7 @@ const uint8_t dfi_pool_move_flags2[DFI_POOL_MOVE_COUNT] = {
     [DFI_MOVE_CHARM] = 0u, /* Charm */
     [DFI_MOVE_CHILLINGWATER] = 0u, /* Chilling Water */
     [DFI_MOVE_CHILLYRECEPTION] = 0u, /* Chilly Reception */
-    [DFI_MOVE_CIRCLETHROW] = 0u, /* Circle Throw */
+    [DFI_MOVE_CIRCLETHROW] = DFI_MOVE_FLAG2_FORCE_SWITCH, /* Circle Throw */
     [DFI_MOVE_CLANGINGSCALES] = DFI_MOVE_FLAG2_SOUND, /* Clanging Scales */
     [DFI_MOVE_CLANGOROUSSOUL] = DFI_MOVE_FLAG2_SOUND, /* Clangorous Soul */
     [DFI_MOVE_CLEARSMOG] = 0u, /* Clear Smog */
@@ -4254,7 +4254,7 @@ const uint8_t dfi_pool_move_flags2[DFI_POOL_MOVE_COUNT] = {
     [DFI_MOVE_DRAGONDANCE] = 0u, /* Dragon Dance */
     [DFI_MOVE_DRAGONDARTS] = 0u, /* Dragon Darts */
     [DFI_MOVE_DRAGONRUSH] = 0u, /* Dragon Rush */
-    [DFI_MOVE_DRAGONTAIL] = 0u, /* Dragon Tail */
+    [DFI_MOVE_DRAGONTAIL] = DFI_MOVE_FLAG2_FORCE_SWITCH, /* Dragon Tail */
     [DFI_MOVE_DRAININGKISS] = DFI_MOVE_FLAG2_HEAL, /* Draining Kiss */
     [DFI_MOVE_DRAINPUNCH] = DFI_MOVE_FLAG2_HEAL | DFI_MOVE_FLAG2_PUNCH, /* Drain Punch */
     [DFI_MOVE_DRILLPECK] = 0u, /* Drill Peck */
@@ -4455,7 +4455,7 @@ const uint8_t dfi_pool_move_flags2[DFI_POOL_MOVE_COUNT] = {
     [DFI_MOVE_REVERSAL] = 0u, /* Reversal */
     [DFI_MOVE_REVIVALBLESSING] = DFI_MOVE_FLAG2_HEAL, /* Revival Blessing */
     [DFI_MOVE_RISINGVOLTAGE] = 0u, /* Rising Voltage */
-    [DFI_MOVE_ROAR] = DFI_MOVE_FLAG2_SOUND, /* Roar */
+    [DFI_MOVE_ROAR] = DFI_MOVE_FLAG2_SOUND | DFI_MOVE_FLAG2_FORCE_SWITCH, /* Roar */
     [DFI_MOVE_ROCKBLAST] = 0u, /* Rock Blast */
     [DFI_MOVE_ROCKPOLISH] = 0u, /* Rock Polish */
     [DFI_MOVE_ROCKTOMB] = 0u, /* Rock Tomb */
@@ -4579,7 +4579,7 @@ const uint8_t dfi_pool_move_flags2[DFI_POOL_MOVE_COUNT] = {
     [DFI_MOVE_WATERSHURIKEN] = 0u, /* Water Shuriken */
     [DFI_MOVE_WATERSPOUT] = 0u, /* Water Spout */
     [DFI_MOVE_WHIRLPOOL] = 0u, /* Whirlpool */
-    [DFI_MOVE_WHIRLWIND] = 0u, /* Whirlwind */
+    [DFI_MOVE_WHIRLWIND] = DFI_MOVE_FLAG2_FORCE_SWITCH, /* Whirlwind */
     [DFI_MOVE_WILDCHARGE] = 0u, /* Wild Charge */
     [DFI_MOVE_WILLOWISP] = 0u, /* Will-O-Wisp */
     [DFI_MOVE_WISH] = DFI_MOVE_FLAG2_HEAL, /* Wish */
@@ -6710,7 +6710,6 @@ const char *const dfi_pool_move_unmodeled[DFI_POOL_MOVE_COUNT] = {
     [DFI_MOVE_BURNUP] = "callback onTryMove; self effect",
     [DFI_MOVE_CHARGE] = "condition block; primary volatile charge",
     [DFI_MOVE_CHILLYRECEPTION] = "callback priorityChargeCallback; condition block; field selfSwitch without a switch flag; field weather",
-    [DFI_MOVE_CIRCLETHROW] = "field forceSwitch",
     [DFI_MOVE_CLEARSMOG] = "callback onHit",
     [DFI_MOVE_COMEUPPANCE] = "callback damageCallback; callback onModifyTarget; callback onTry; target scripted",
     [DFI_MOVE_CONFUSERAY] = "primary volatile confusion",
@@ -6728,7 +6727,6 @@ const char *const dfi_pool_move_unmodeled[DFI_POOL_MOVE_COUNT] = {
     [DFI_MOVE_DOUBLESHOCK] = "callback onTryMove; self effect",
     [DFI_MOVE_DRAGONCHEER] = "condition block; primary volatile dragoncheer",
     [DFI_MOVE_DRAGONDARTS] = "field multihit; field smartTarget",
-    [DFI_MOVE_DRAGONTAIL] = "field forceSwitch",
     [DFI_MOVE_EERIESPELL] = "secondary",
     [DFI_MOVE_ELECTRIFY] = "callback onTryHit; condition block; primary volatile electrify",
     [DFI_MOVE_ELECTROBALL] = "callback basePowerCallback",
@@ -6829,7 +6827,6 @@ const char *const dfi_pool_move_unmodeled[DFI_POOL_MOVE_COUNT] = {
     [DFI_MOVE_REST] = "callback onHit; callback onTry",
     [DFI_MOVE_REVERSAL] = "callback basePowerCallback",
     [DFI_MOVE_REVIVALBLESSING] = "callback onTryHit; condition block; field selfSwitch without a switch flag; field slotCondition",
-    [DFI_MOVE_ROAR] = "field forceSwitch",
     [DFI_MOVE_ROCKBLAST] = "field multihit",
     [DFI_MOVE_ROLEPLAY] = "callback onHit; callback onTryHit",
     [DFI_MOVE_ROOST] = "condition block; self effect",
@@ -6891,7 +6888,6 @@ const char *const dfi_pool_move_unmodeled[DFI_POOL_MOVE_COUNT] = {
     [DFI_MOVE_VENOSHOCK] = "callback onBasePower",
     [DFI_MOVE_WATERSHURIKEN] = "callback basePowerCallback; field multihit",
     [DFI_MOVE_WHIRLPOOL] = "primary volatile partiallytrapped",
-    [DFI_MOVE_WHIRLWIND] = "field forceSwitch",
     [DFI_MOVE_WISH] = "condition block; field slotCondition",
     [DFI_MOVE_WONDERROOM] = "condition block; pseudo weather wonderroom",
     [DFI_MOVE_WORRYSEED] = "callback onHit; callback onTryHit; callback onTryImmunity",
@@ -6923,7 +6919,6 @@ const char *const dfi_pool_item_unmodeled[DFI_POOL_ITEM_COUNT] = {
     [DFI_ITEM_PERSIMBERRY] = "callback onEat; callback onUpdate",
     [DFI_ITEM_QUICKCLAW] = "callback onFractionalPriority; callback onFractionalPriorityPriority",
     [DFI_ITEM_RAWSTBERRY] = "callback onEat; callback onUpdate",
-    [DFI_ITEM_REDCARD] = "callback onAfterMoveSecondary; read by id in sim/pokemon.ts",
     [DFI_ITEM_SCOPELENS] = "callback onModifyCritRatio",
     [DFI_ITEM_SHEDSHELL] = "callback onMaybeTrapPokemon; callback onMaybeTrapPokemonPriority; callback onTrapPokemon; callback onTrapPokemonPriority",
     [DFI_ITEM_SHELLBELL] = "callback onAfterMoveSecondarySelf; callback onAfterMoveSecondarySelfPriority",
@@ -6966,7 +6961,6 @@ const char *const dfi_pool_ability_unmodeled[DFI_POOL_ABILITY_COUNT] = {
     [DFI_ABILITY_GLUTTONY] = "callback onDamage; callback onStart; read by id in data/abilities.ts; read by id in data/items.ts",
     [DFI_ABILITY_GOOEY] = "callback onDamagingHit",
     [DFI_ABILITY_GRASSPELT] = "callback onModifyDef; callback onModifyDefPriority",
-    [DFI_ABILITY_GUARDDOG] = "callback onDragOut; callback onDragOutPriority; callback onTryBoost; callback onTryBoostPriority",
     [DFI_ABILITY_GUTS] = "callback onModifyAtk; callback onModifyAtkPriority; read by id in data/mods/champions/scripts.ts; read by id in sim/battle-actions.ts",
     [DFI_ABILITY_HARVEST] = "callback onResidual; callback onResidualOrder; callback onResidualSubOrder; read by id in sim/battle.ts",
     [DFI_ABILITY_HEALER] = "callback onResidual; callback onResidualOrder; callback onResidualSubOrder",
@@ -7049,7 +7043,6 @@ const char *const dfi_pool_ability_unmodeled[DFI_POOL_ABILITY_COUNT] = {
     [DFI_ABILITY_STEELYSPIRIT] = "callback onAllyBasePower; callback onAllyBasePowerPriority",
     [DFI_ABILITY_STENCH] = "callback onModifyMove; callback onModifyMovePriority",
     [DFI_ABILITY_STRONGJAW] = "callback onBasePower; callback onBasePowerPriority",
-    [DFI_ABILITY_SUCTIONCUPS] = "callback onDragOut; callback onDragOutPriority",
     [DFI_ABILITY_SUPERLUCK] = "callback onModifyCritRatio",
     [DFI_ABILITY_SUPERSWEETSYRUP] = "callback onStart",
     [DFI_ABILITY_SUPREMEOVERLORD] = "callback onBasePower; callback onBasePowerPriority; callback onEnd; callback onStart",
@@ -7073,10 +7066,10 @@ const char *const dfi_pool_ability_unmodeled[DFI_POOL_ABILITY_COUNT] = {
 };
 
 const uint8_t dfi_pool_table_hash[32] = {
-    0xc6u, 0x41u, 0xb7u, 0x23u, 0x15u, 0x48u, 0x43u, 0x30u,
-    0xf1u, 0x8cu, 0x50u, 0xa0u, 0xd8u, 0x65u, 0x40u, 0xefu,
-    0xe5u, 0x59u, 0x7eu, 0x40u, 0x16u, 0xa7u, 0xdcu, 0xc0u,
-    0x5eu, 0x76u, 0x88u, 0xceu, 0x32u, 0x07u, 0xbdu, 0x7bu,
+    0x93u, 0x1au, 0x45u, 0xc7u, 0xf3u, 0x75u, 0xc1u, 0x98u,
+    0x55u, 0x95u, 0x25u, 0x9bu, 0x06u, 0x93u, 0x6eu, 0x91u,
+    0x48u, 0x27u, 0x72u, 0x9cu, 0xc6u, 0xabu, 0x4du, 0xf1u,
+    0x80u, 0x0bu, 0x17u, 0x6eu, 0x2fu, 0xf2u, 0xdfu, 0x8bu,
 };
 
 static size_t dfi_pool_put_u16(uint8_t *out, size_t n, uint32_t v)

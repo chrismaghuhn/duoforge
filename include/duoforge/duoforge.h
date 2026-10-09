@@ -1036,6 +1036,10 @@ duoforge_status duoforge_battle_observe_ext(const duoforge_context *ctx, const d
                                               MOVE with id: the move, other: the Pokemon it came from when the line says [of]
                                               (Thief, Covet), else DUOFORGE_NO_POSITION. The item that left the other Pokemon is
                                               ITEM_END with the cause ITEM_TAKEN (Thief, Trick, Switcheroo), or no line (Covet) */
+#define DUOFORGE_EVENT_DRAG            45u /* [drag] position: the slot the dragged-in member enters; id: its roster index, HP;
+                                              cause NONE (the line has no [from]). POOL kinds: the forced switch of Roar,
+                                              Whirlwind, Dragon Tail and Circle Throw, and of a Red Card holder's attacker
+                                              (decision 0015 section 7, step G46). 43 and 44 are REVIVE and TRANSFORM. */
 
 /* Causes ([from] and [of] in the protocol). */
 #define DUOFORGE_CAUSE_NONE      0u /* the move or the plain mechanic */
