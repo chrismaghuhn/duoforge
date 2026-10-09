@@ -250,6 +250,17 @@ static duoforge_status dfi_view_visible_causes(const duoforge_context *ctx, cons
             }
         }
     }
+    /* Step G66 (decision 0040; the cause approved by HauptSession): a position whose occupant is in a temporary forme (Stance
+     * Change's Aegislash-Blade), on either side. The view does not show that forme yet (member_ext.forme stays unfilled), so
+     * the record and the rebuild refuse it with this cause. forme_now ends with the switch-out. */
+    for (uint32_t side = 0u; side < DUOFORGE_SIDE_COUNT; ++side) {
+        for (uint32_t p = 0u; p < DUOFORGE_ACTIVE_PER_SIDE; ++p) {
+            const uint32_t occupant = b->sides[side].positions[p].occupant;
+            if (occupant < DUOFORGE_MAX_ROSTER && b->tail.sides[side].forme_now[occupant] != 0u) {
+                mask |= DUOFORGE_PUBLIC_CAUSE_TEMP_FORME;
+            }
+        }
+    }
     *out_mask = mask;
     return DUOFORGE_OK;
 }
@@ -425,7 +436,10 @@ static duoforge_status dfi_view_encode(const duoforge_context *ctx, const duofor
             const dfi_tail_pos *tp = &b->tail.sides[side].positions[p];
             /* A Substitute on either side is refused (decision 0032): its HP follows hidden damage and the owner's request does not show
              * it, so no honest world can rebuild it. The cause (DUOFORGE_PUBLIC_CAUSE_SUBSTITUTE) is named by the causes call. */
-            if (tp->trap_turns != 0u || tp->lock_turns != 0u || tp->substitute_hp != 0u) {
+            /* Step G66: a temporary forme (Stance Change) is refused too: its forme is not in the view (the TEMP_FORME cause). */
+            const uint32_t occupant = b->sides[side].positions[p].occupant;
+            const bool temp_forme = occupant < DUOFORGE_MAX_ROSTER && b->tail.sides[side].forme_now[occupant] != 0u;
+            if (tp->trap_turns != 0u || tp->lock_turns != 0u || tp->substitute_hp != 0u || temp_forme) {
                 return DUOFORGE_E_UNSUPPORTED;
             }
         }

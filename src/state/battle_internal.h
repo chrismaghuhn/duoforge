@@ -229,7 +229,9 @@ typedef struct dfi_side {
 /* rev 3: the variants of the Protect volatile (Protect and Detect, Spiky Shield; Baneful Bunker is next when a Toxapex ability is marked) */
 #define DFI_PROTECT_PLAIN 0u
 #define DFI_PROTECT_SPIKY_SHIELD 1u
-#define DFI_TAIL_PROTECT_KIND_MAX 1u
+/* step G66 (decision 0015 5cb, decision 0040): King's Shield, Protect that passes Status moves and lowers a contact attacker's Attack */
+#define DFI_PROTECT_KINGS_SHIELD 2u
+#define DFI_TAIL_PROTECT_KIND_MAX 2u
 /* rev 4, per position (decision 0015 section 7, the audit of tail-rev4-proposal.md section 4.1; no mechanic writes them yet).
  * move_result: two bits for this turn (0-1) and two for the last turn (2-3), each DFI_MOVE_RESULT_*; the pin's
  * moveThisTurnResult and moveLastTurnResult (Stomping Tantrum reads `=== false`, so null must not count as a failure). */

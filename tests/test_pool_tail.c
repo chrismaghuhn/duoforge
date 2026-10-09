@@ -825,7 +825,11 @@ MUT(m_charge, p0->charge = 2u)
 MUT(m_glaive, p0->glaive_rush = 2u)
 MUT(m_protect_above, {
     y->sides[0].positions[0].flags = (uint8_t)(y->sides[0].positions[0].flags | DFI_VOL_PROTECT);
-    p0->protect_kind = 2u;
+    p0->protect_kind = 3u; /* above DFI_TAIL_PROTECT_KIND_MAX (2, King's Shield of step G66) */
+})
+MUT(m_protect_kings, { /* King's Shield, protect_kind 2 (step G66, decision 0015 5cb): a valid kind */
+    y->sides[0].positions[0].flags = (uint8_t)(y->sides[0].positions[0].flags | DFI_VOL_PROTECT);
+    p0->protect_kind = DFI_PROTECT_KINGS_SHIELD;
 })
 MUT(m_protect_no_volatile, p0->protect_kind = 1u) /* the volatile is down */
 MUT(m_move_result_high, p0->move_result = 0x40u) /* bits 6-7 are zero (step G42: bits 4 and 5 are the unclassified bits) */
@@ -1058,7 +1062,8 @@ static const tail_case cases[] = {
     {"Focus Energy above 1", DFI_INV_TAIL_POSITION, false, m_focus},
     {"Charge above 1", DFI_INV_TAIL_POSITION, false, m_charge},
     {"Glaive Rush above 1", DFI_INV_TAIL_POSITION, false, m_glaive},
-    {"protect kind above 1", DFI_INV_TAIL_POSITION, false, m_protect_above},
+    {"protect kind above 2", DFI_INV_TAIL_POSITION, false, m_protect_above},
+    {"protect kind King's Shield (2) with the volatile", DFI_INV_NONE, false, m_protect_kings},
     {"protect kind without the Protect volatile", DFI_INV_TAIL_POSITION, false, m_protect_no_volatile},
     {"a move result above its two nibbles and its two unclassified bits", DFI_INV_TAIL_POSITION, false, m_move_result_high},
     {"an unclassified this-turn bit with a this-turn result", DFI_INV_TAIL_POSITION, false, m_unclass_now_with_result},

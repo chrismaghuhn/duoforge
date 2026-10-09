@@ -90,7 +90,7 @@ TAIL_ITEM_NONE = 255
 TAIL_TOXIC_STAGE_MAX = 15
 TAIL_TOXIC_STATUS = 6               # DUOFORGE_AILMENT_TOX: no state has it yet (the status bound of every kind is below)
 # What the pool tables hold (decision 0015 section 2, tests/test_pool_tables.c): the bounds of the member overrides.
-POOL_FORME_COUNT, POOL_MOVE_COUNT, POOL_ITEM_COUNT, POOL_ABILITY_COUNT = 346, 511, 166, 215
+POOL_FORME_COUNT, POOL_MOVE_COUNT, POOL_ITEM_COUNT, POOL_ABILITY_COUNT = 347, 511, 166, 215
 # The byte fields of a position's tail in their encoded order (offset 0 to 21), then two u16: substitute_hp at 22 and
 # trap_move at 24, then (rev 3) protect_kind at 26, (rev 4) move_result, single_turn, hits_taken, ability_state and lock_turns
 # at 27 to 31 and 4 reserved bytes.
@@ -292,17 +292,17 @@ KD = TeamCContext(KIND_TEAM_C_DEV, 6, 4)
 
 # POOL contexts (decision 0015 section 2): the pool tables (the extended tables
 # followed by the rows of the expansion steps and then every other forme, move,
-# item and ability of the legal pool: 346 formes and 511 moves) and their hash,
+# item and ability of the legal pool: 347 formes and 511 moves) and their hash,
 # which tests/test_pool_tables.c recomputes from the pool canonical bytes: the
 # pool layout over the pool data, then the family columns, the handler columns
 # and the moves and abilities that each forme may have.
-POOL_TABLE_HASH = bytes.fromhex('b049ce595bdfb6b6750a59834a74005133d2a79667b91690a32e4c52dca3f38c')
+POOL_TABLE_HASH = bytes.fromhex('454c64b46485b961047f34835974953622b5f444c6c87731fa146a49514bc08c')
 KIND_POOL, KIND_POOL_DEV = 6, 7
 
 
 class PoolContext(ClosureContext):
     def __init__(self, data_kind, max_roster, brought_count):
-        Context.__init__(self, data_kind, max_roster, brought_count, 346, 511, b'')
+        Context.__init__(self, data_kind, max_roster, brought_count, 347, 511, b'')
 
     def valid(self):
         if self.data_kind == KIND_POOL and (self.max_roster != MAX_ROSTER or self.brought_count != 4):
