@@ -884,6 +884,26 @@ function checkG44(dex) {
     return 1;
 }
 
+// Step G54 (moves): the multi-hit rows and the side condition, read from the pinned data as the generator's facts read them.
+// Scale Shot's self boost is after the last hit (its selfBoost), Icicle Spear and Scale Shot draw a count of 2 to 5 hits,
+// Quick Guard is a priority 3 side condition, Upper Hand a priority 3 move whose flinch is its secondary, Heal Pulse never
+// misses and Strength Sap has accuracy 100 (its -6 check is its onTryHit, before the accuracy check).
+function checkG54(dex) {
+    const ice = dex.moves.get('iciclespear');
+    expect('Icicle Spear accuracy and multihit', [ice.accuracy, ice.multihit], [100, [2, 5]]);
+    const sc = dex.moves.get('scaleshot');
+    expect('Scale Shot accuracy and multihit', [sc.accuracy, sc.multihit], [90, [2, 5]]);
+    expect('Scale Shot self boost', sc.selfBoost, {boosts: {def: -1, spe: 1}});
+    const qg = dex.moves.get('quickguard');
+    expect('Quick Guard side condition and priority', [qg.sideCondition, qg.priority], ['quickguard', 3]);
+    const uh = dex.moves.get('upperhand');
+    expect('Upper Hand priority', uh.priority, 3);
+    expect('Upper Hand flinch', uh.secondary, {chance: 100, volatileStatus: 'flinch'});
+    expect('Heal Pulse accuracy', dex.moves.get('healpulse').accuracy, true);
+    expect('Strength Sap accuracy', dex.moves.get('strengthsap').accuracy, 100);
+    return 1;
+}
+
 function checkG32(dex) {
     for (const id of ['eruption', 'waterspout']) {
         const m = dex.moves.get(id);
@@ -1707,6 +1727,7 @@ function main() {
     checkG33(dex);
     checkG41(dex);
     checkG44(dex);
+    checkG54(dex);
     checkG22(dex, formeRowsList, new Set(definedIds(headers, 'ITEM').values()), new Set(abilityIds.values()));
     const abilities = checkAbilities(dex, abilityRows, moveIds, unmodeledAbilities, unmodeledMoves);
     // "All 18": a booster and a resist berry for each type, and nothing else in the families.

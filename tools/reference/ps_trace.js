@@ -132,6 +132,13 @@ function classify(stack, battle) {
         frames[2] === 'BattleActions.hitStepMoveHitLoop') {
         return ['ACCURACY', ev];
     }
+    // The hit count of a move with 2 to 5 hits (Icicle Spear, Scale Shot, step G54; data/mods/champions/scripts.ts:437-446): the
+    // sample of the twenty weights, called straight from hitStepMoveHitLoop. It was an UNKNOWN draw before, which the converter
+    // refuses, so the harness version stays.
+    if (frames[0] === 'RecordingPRNG.sample' && frames[1] === 'Battle.sample' &&
+        frames[2] === 'BattleActions.hitStepMoveHitLoop') {
+        return ['MULTIHIT_COUNT', ev];
+    }
     return ['UNKNOWN', frames.slice(0, 6).join('<')];
 }
 

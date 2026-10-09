@@ -42,7 +42,8 @@
 #define DFI_SITE_CURSED_BODY 17u   /* Cursed Body (POOL data, step G27): randomChance(3, 10), random(10) < 3 */
 #define DFI_SITE_FLAME_BODY 18u    /* Flame Body (POOL data, step G30): randomChance(3, 10), random(10) < 3 */
 #define DFI_SITE_STATIC 19u        /* Static (POOL data, step G39): randomChance(3, 10), random(10) < 3 */
-#define DFI_SITE_COUNT 20u
+#define DFI_SITE_MULTIHIT_COUNT 20u /* Scale Shot, Icicle Spear (POOL data, step G54): sample of 20 hit counts, random(20) */
+#define DFI_SITE_COUNT 21u
 
 typedef struct dfi_tape_entry {
     uint32_t site;

@@ -1995,7 +1995,14 @@ SPECIAL_P = dict(SPECIAL_C, **{
     'powertrip': ('POWER_TRIP', {'basePowerCallback'}),                   # G44: 20 plus 20 per positive stage of the user
     'thunder': ('THUNDER', {'onModifyMove'}),                             # G44: never misses in rain, 50 under sun (as Hurricane)
     'icefang': ('ICE_FANG', set()),                                       # G44: a 10 percent freeze, then a 10 percent flinch (G2_OWNED_FIELDS)
-    'triattack': ('TRI_ATTACK', set()),                                   # G44: a 20 percent pick of burn, paralysis or freeze (G2_OWNED_SECONDARY)
+    'triattack': ('TRI_ATTACK', set()),
+    'iciclespear': ('MULTI_HIT_2_5', set()),                              # G54: 2 to 5 hits, a weighted draw (SITE_MULTIHIT_COUNT)
+    'scaleshot': ('SCALE_SHOT', set()),                                   # G54: 2 to 5 hits, then the user's Defense -1 and Speed +1
+    'quickguard': ('QUICK_GUARD', {'onTry', 'onHitSide'}),                # G54: a side condition against the priority moves of the foes
+    'upperhand': ('UPPER_HAND', {'onTry'}),                               # G54: a priority move against a target that moves first with one
+    'healpulse': ('HEAL_PULSE', {'onHit'}),                               # G54: heals the target by half of its maximum HP
+    'strengthsap': ('STRENGTH_SAP', {'onHit'}),                           # G54: heals the user by the target's Attack, then lowers it
+                                   # G44: a 20 percent pick of burn, paralysis or freeze (G2_OWNED_SECONDARY)
     'ragefist': ('RAGE_FIST', {'basePowerCallback'}),                     # G48: 50 + 50 per hit the user took, at most 350
     'stoneaxe': ('STONE_AXE', {'onAfterHit', 'onAfterSubDamage'}),        # G48: Stealth Rock on the foe's side after a hit
     'ceaselessedge': ('CEASELESS_EDGE', {'onAfterHit', 'onAfterSubDamage'}),  # G48: a Spikes layer on the foe's side after a hit
@@ -2032,7 +2039,35 @@ G44_FACTS = (
     ('triattack', ['accuracy: 100,', 'basePower: 80,', 'category: "Special",', 'priority: 0,',
                    'flags: { protect: 1, mirror: 1, metronome: 1 },', 'target: "normal",', 'type: "Normal",']),
 )
-SPECIAL_IDS_P = SPECIAL_IDS_C + G2_HANDLERS + WEATHER_HANDLERS + G16_HANDLERS + G15_HANDLERS + G19_HANDLERS + G20_HANDLERS + G20_PROTECT_HANDLERS + G28_HANDLERS + G30_HANDLERS + G32_HANDLERS + G34_HANDLERS + G27_HANDLERS + G25_HANDLERS + G26_HANDLERS + G33_HANDLERS + G38_HANDLERS + G29_HANDLERS + G39_HANDLERS + G31_HANDLERS + G48_HANDLERS + G44_HANDLERS + ['UNMODELED']
+# Step G54 (multi-hit 2 to 5, Quick Guard, Upper Hand, Heal Pulse, Strength Sap, Steel Beam, Final Gambit). MULTI_HIT_2_5 (Icicle
+# Spear: `multihit: [2, 5]`, the Champions sample of the hit count, SITE_MULTIHIT_COUNT) and SCALE_SHOT (the same, then the
+# user's `selfBoost`); QUICK_GUARD (Wide Guard's side condition, priority 4 against positive priority); UPPER_HAND (Sucker
+# Punch's queue read with the priority test); HEAL_PULSE and STRENGTH_SAP (the heals of the target and the user); STEEL_BEAM
+# (mindBlownRecoil: the recoil of half the maximum HP, after a hit and in MoveFail); FINAL_GAMBIT (damage = the user's HP).
+G54_HANDLERS = ['MULTI_HIT_2_5', 'SCALE_SHOT', 'QUICK_GUARD', 'UPPER_HAND', 'HEAL_PULSE', 'STRENGTH_SAP']
+G54_FACTS = (
+    ('iciclespear', ['accuracy: 100,', 'basePower: 25,', 'category: "Physical",', 'priority: 0,',
+                     'flags: { protect: 1, mirror: 1, metronome: 1 },', 'multihit: [2, 5],', 'target: "normal",', 'type: "Ice",']),
+    ('scaleshot', ['accuracy: 90,', 'basePower: 25,', 'category: "Physical",', 'priority: 0,',
+                   'flags: { protect: 1, mirror: 1, metronome: 1 },', 'multihit: [2, 5],',
+                   'selfBoost: { boosts: { def: -1, spe: 1, }, },', 'target: "normal",', 'type: "Dragon",']),
+    ('quickguard', ['accuracy: true,', 'basePower: 0,', 'category: "Status",', 'priority: 3,', 'flags: { snatch: 1 },',
+                    "sideCondition: 'quickguard',", 'onTry() { return !!this.queue.willAct(); },',
+                    'onHitSide(side, source) { source.addVolatile(\'stall\'); },', 'onTryHitPriority: 4,',
+                    'if (move.priority <= 0.1) return;', "this.add('-activate', target, 'move: Quick Guard');",
+                    'target: "allySide",', 'type: "Fighting",']),
+    ('upperhand', ['accuracy: 100,', 'basePower: 65,', 'category: "Physical",', 'priority: 3,',
+                   'if (!move || move.priority <= 0.1 || move.category === \'Status\') {', 'chance: 100,',
+                   "volatileStatus: 'flinch',", 'target: "normal",', 'type: "Fighting",']),
+    ('healpulse', ['accuracy: true,', 'basePower: 0,', 'category: "Status",', 'priority: 0,',
+                   'this.heal(Math.ceil(target.baseMaxhp * 0.5));', "this.add('-fail', target, 'heal');",
+                   'target: "any",', 'type: "Psychic",']),
+    ('strengthsap', ['accuracy: 100,', 'basePower: 0,', 'category: "Status",', 'priority: 0,',
+                     'if (target.boosts.atk === -6) return false;', "const atk = target.getStat('atk', false, true);",
+                     "const success = this.boost({ atk: -1 }, target, source, null, false, true);",
+                     'return !!(this.heal(atk, source, target) || success);', 'target: "normal",', 'type: "Grass",']),
+)
+SPECIAL_IDS_P = SPECIAL_IDS_C + G2_HANDLERS + WEATHER_HANDLERS + G16_HANDLERS + G15_HANDLERS + G19_HANDLERS + G20_HANDLERS + G20_PROTECT_HANDLERS + G28_HANDLERS + G30_HANDLERS + G32_HANDLERS + G34_HANDLERS + G27_HANDLERS + G25_HANDLERS + G26_HANDLERS + G33_HANDLERS + G38_HANDLERS + G29_HANDLERS + G39_HANDLERS + G31_HANDLERS + G48_HANDLERS + G44_HANDLERS + G54_HANDLERS + ['UNMODELED']
 # Step G10 made two of these handlers data: Scald (thawsTarget) and Recover (heal) are read into the second flags
 # byte (bit 4, thaws the target) and the heal column, and have the special NONE; their ids stay defined (the ids after
 # them keep their values). First Impression and Low Kick keep theirs: the turn code implements them.
@@ -2064,13 +2099,16 @@ G2_OWNED_FIELDS = {
     'CLANGING_SCALES': {'selfBoost': "selfBoost: { boosts: { def: -1, }, },"},
     'IMPRISON': {'volatileStatus': "volatileStatus: 'imprison',"},
     'ICE_FANG': {'secondaries': "secondaries: [ { chance: 10, status: 'frz', }, { chance: 10, volatileStatus: 'flinch', }, ],"},
+    'MULTI_HIT_2_5': {'multihit': 'multihit: [2, 5],'},
+    'SCALE_SHOT': {'multihit': 'multihit: [2, 5],', 'selfBoost': "selfBoost: { boosts: { def: -1, spe: 1, }, },"},
+    'QUICK_GUARD': {'sideCondition': "sideCondition: 'quickguard',"},
 }
 # Step G48: the empty secondary of Stone Axe and Ceaseless Edge (the Sheer Force placeholder). Without Sheer Force the pin runs
 # it for every hit target (moveHit of an empty secondary with chance undefined, sim/battle-actions.ts:1336-1349): the engine
 # draws the roll and does nothing else; the engine's special case is in dfi_run_move.
 G2_OWNED_SECONDARY = {'STONE_AXE': 'secondary: {}, // Sheer Force-boosted', 'CEASELESS_EDGE': 'secondary: {}, // Sheer Force-boosted', 'TRI_ATTACK': "secondary: { chance: 20, onHit(target, source) { const status = this.sample(['brn', 'par', 'frz']); "
                   "target.trySetStatus(status, source); }, },"}
-G2_OWNED_CONDITION = {'ENCORE', 'WIDE_GUARD', 'GLAIVE_RUSH', 'AURORA_VEIL', 'SPIKY_SHIELD', 'RAGE_POWDER', 'DISABLE',
+G2_OWNED_CONDITION = {'ENCORE', 'WIDE_GUARD', 'QUICK_GUARD', 'GLAIVE_RUSH', 'AURORA_VEIL', 'SPIKY_SHIELD', 'RAGE_POWDER', 'DISABLE',
                       'ELECTRIC_TERRAIN', 'MISTY_TERRAIN', 'PERISH_SONG', 'IMPRISON', 'TAUNT', 'YAWN'}
 # Step G8 (Throat Chop and Psychic Noise): the two secondaries become modelled kinds, and the column that their
 # consumers read is the move's second flags byte (the first is full): the `sound` flag (Throat Chop bars the sound
@@ -2920,7 +2958,7 @@ def check_g8_conditions(moves_ts, only=None):
     must be in the pinned entry, as one normalised text. `only`: a tuple of (move id, facts) to check instead of all of
     them (the generator's tests)."""
     for mid, facts in (G8_CONDITION_FACTS + G20_CONDITION_FACTS + G28_FACTS + G32_FACTS + G34_FACTS + G25_FACTS +
-                       G33_FACTS + G38_FACTS + G39_FACTS + G37_FACTS + G44_FACTS + G48_FACTS if only is None else only):
+                       G33_FACTS + G38_FACTS + G39_FACTS + G37_FACTS + G44_FACTS + G48_FACTS + G54_FACTS if only is None else only):
         e = moves_ts.entry(mid)
         if e is None:
             fail('move %s not found' % mid)

@@ -1081,6 +1081,7 @@ duoforge_status duoforge_battle_observe_ext(const duoforge_context *ctx, const d
 #define DUOFORGE_EVENT_FLAG_NOTARGET 128u /* MOVE: no target left ([notarget]) */
 
 #define DUOFORGE_BLOCK_WIDE_GUARD 4u /* BLOCKED detail: Wide Guard (POOL kinds); 0 Protect, 3 Psychic Terrain */
+#define DUOFORGE_BLOCK_QUICK_GUARD 6u /* BLOCKED detail: Quick Guard (POOL kinds; decision 0029, PR #276): -activate move: Quick Guard */
 #define DUOFORGE_VOLATILE_HEAL_BLOCK 1u /* VOLATILE_START / VOLATILE_END: Heal Block (Psychic Noise, 2 turns) */
 #define DUOFORGE_VOLATILE_ENCORE     2u /* VOLATILE_START / VOLATILE_END: Encore (-start|X|Encore, -end|X|Encore) */
 #define DUOFORGE_VOLATILE_MUST_RECHARGE 3u /* VOLATILE_START: -mustrecharge|X (a recharge move hit); no END, it ends with the

@@ -437,6 +437,17 @@ const dfi_support_manifest dfi_support = {
             [DFI_MOVE_HAMMERARM] = 1u,
             [DFI_MOVE_TROPKICK] = 1u,
             [DFI_MOVE_METEORMASH] = 1u,
+            /* Step G54 (decision 0015 item 5an). Handlers: Icicle Spear and Scale Shot (2 to 5 hits, the Champions weighted count,
+             * Scale Shot's self boost after the last hit), Quick Guard (Wide Guard's shape against the priority moves), Upper Hand
+             * (Sucker Punch's queue read: a queued priority move), Heal Pulse (half of the target's HP) and Strength Sap (heals by
+             * the target's Attack and lowers it). Data row: Sing. Left out: Haze, Steel Beam and Final Gambit (decision 0015 5an). */
+            [DFI_MOVE_ICICLESPEAR] = 1u,
+            [DFI_MOVE_SCALESHOT] = 1u,
+            [DFI_MOVE_QUICKGUARD] = 1u,
+            [DFI_MOVE_UPPERHAND] = 1u,
+            [DFI_MOVE_HEALPULSE] = 1u,
+            [DFI_MOVE_STRENGTHSAP] = 1u,
+            [DFI_MOVE_SING] = 1u,
         },
     .abilities =
         {
@@ -665,5 +676,6 @@ const dfi_support_manifest dfi_support = {
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_STEALTH_ROCK) |
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_SPIKES) |
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_TOXIC_SPIKES) |
-                         ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_STICKY_WEB),
+                         ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_STICKY_WEB) |
+                         ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_QUICK_GUARD), /* step G54: Quick Guard's side guard */
 };

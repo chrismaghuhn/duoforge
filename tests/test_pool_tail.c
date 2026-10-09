@@ -1602,6 +1602,7 @@ int main(void)
         dfi_pool_tail want = x->tail;
         for (uint32_t s = 0u; s < DUOFORGE_SIDE_COUNT; ++s) {
             want.sides[s].wide_guard = 0u;
+            want.sides[s].quick_guard = 0u; /* step G54: Quick Guard lasts this turn, as Wide Guard does (the residual clears it) */
             /* step G20: Aurora Veil counts down in the residual (the example's 8 turns are 7 after the turn) */
             want.sides[s].aurora_veil_turns = (uint8_t)(want.sides[s].aurora_veil_turns != 0u ? want.sides[s].aurora_veil_turns - 1u : 0u);
             for (uint32_t p = 0u; p < DUOFORGE_ACTIVE_PER_SIDE; ++p) {
