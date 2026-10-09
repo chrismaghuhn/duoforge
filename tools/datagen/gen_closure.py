@@ -1748,6 +1748,23 @@ G47_ITEM_FACTS = (
                     'pokemon.removeVolatile(secondCondition);',
                     "this.add('-end', pokemon, 'move: Attract', '[from] item: Mental Herb');")),
 )
+# Step G51 (Pidgeotite: Keen Eye and Big Pecks, the base abilities of Pidgeot): both are engine rows (ENGINE_ROWS) that dfi_boost
+# (src/combat/turn.c) reads by id, Hyper Cutter's shape: the pinned TryBoost of the target itself deletes one drop that another
+# Pokemon causes (accuracy for Keen Eye, Defense for Big Pecks), with the line unless the move's secondary. Keen Eye's
+# onModifyMove (move.ignoreEvasion for the holder's own moves) is read by dfi_accuracy_check. Both are breakable, and Mold Breaker is
+# not marked. The Champions mod overrides neither entry.
+G51_ABILITY_FACTS = (
+    ('keeneye', ("onTryBoost(boost, target, source, effect) { if (source && target === source) return; "
+                 "if (boost.accuracy && boost.accuracy < 0) { delete boost.accuracy; if (!(effect as ActiveMove).secondaries) { "
+                 "this.add('-fail', target, 'unboost', 'accuracy', '[from] ability: Keen Eye', `[of] ${target}`); } } },",
+                 "onModifyMove(move) { move.ignoreEvasion = true; },",
+                 'flags: { breakable: 1 },')),
+    ('bigpecks', ("onTryBoost(boost, target, source, effect) { if (source && target === source) return; "
+                  "if (boost.def && boost.def < 0) { delete boost.def; if (!(effect as ActiveMove).secondaries && "
+                  "effect.id !== 'octolock') { this.add('-fail', target, 'unboost', 'def', '[from] ability: Big Pecks', "
+                  "`[of] ${target}`); } } },",
+                  'flags: { breakable: 1 },')),
+)
 G34_ITEM_FACTS = (
     ('widelens', ('onSourceModifyAccuracyPriority: -2,',
                   "onSourceModifyAccuracy(accuracy) { if (typeof accuracy === 'number') { return this.chainModify([4505, 4096]); } },")),
@@ -2355,7 +2372,7 @@ ENGINE_ROWS = {'items': ['focussash', 'floettite', 'psychicseed', 'electricseed'
                              'limber',
                              'solarpower',
                              'regenerator', 'toxicdebris', 'shadowtag', 'suctioncups', 'guarddog',
-                             'steadfast', 'weakarmor', 'telepathy', 'voltabsorb', 'punkrock', 'moxie', 'synchronize', 'oblivious']}
+                             'steadfast', 'weakarmor', 'telepathy', 'voltabsorb', 'punkrock', 'moxie', 'synchronize', 'oblivious', 'keeneye', 'bigpecks']}
 # The moves of the whole pool that the turn code pivots with a switch flag of their own (dfi_pivot_moves,
 # src/state/closure_member.c) beyond Flip Turn and U-turn, which are rows of the steps. Empty: Volt Switch comes with the
 # step that gives it a flag value, and adds its id here.
@@ -3007,7 +3024,7 @@ G46_ITEM_FACTS = (
 def check_g34_facts(abil_ts, champ_abil, items_ts, champ_items):
     """Steps G34, G35, Mega batch 2 and G39: every fact of G34_ABILITY_FACTS, G35_ABILITY_FACTS, MEGA2_ABILITY_FACTS, G39_ABILITY_FACTS and G34_ITEM_FACTS is in the pinned entry, whitespace aside, and the
     Champions mod has no entry of its own for it (an override would change what the engine reads)."""
-    for kind, facts_by_id, src, champ in (('ability', G34_ABILITY_FACTS + G35_ABILITY_FACTS + MEGA2_ABILITY_FACTS + G39_ABILITY_FACTS + G41_ABILITY_FACTS + G45_ABILITY_FACTS + G46_ABILITY_FACTS + G47_ABILITY_FACTS, abil_ts, champ_abil),
+    for kind, facts_by_id, src, champ in (('ability', G34_ABILITY_FACTS + G35_ABILITY_FACTS + MEGA2_ABILITY_FACTS + G39_ABILITY_FACTS + G41_ABILITY_FACTS + G45_ABILITY_FACTS + G46_ABILITY_FACTS + G47_ABILITY_FACTS + G51_ABILITY_FACTS, abil_ts, champ_abil),
                                           ('item', G34_ITEM_FACTS + G46_ITEM_FACTS + G47_ITEM_FACTS, items_ts, champ_items)):
         for rid, facts in facts_by_id:
             e = src.entry(rid)

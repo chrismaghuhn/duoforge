@@ -1,0 +1,59 @@
+Chandelure (F) @ Chandelurite
+Ability: Flash Fire
+Level: 50
+EVs: 2 HP / 32 SpA / 32 Spe
+Modest Nature
+- Fire Blast
+- Shadow Ball
+- Flamethrower
+- Protect
+
+Houndoom (M) @ Houndoominite
+Ability: Flash Fire
+Level: 50
+EVs: 2 HP / 32 SpA / 32 Spe
+Timid Nature
+- Fire Blast
+- Shadow Ball
+- Flamethrower
+- Protect
+
+Lucario (M) @ Lucarionite
+Ability: Inner Focus
+Level: 50
+EVs: 32 HP / 32 Atk / 2 SpD
+Adamant Nature
+- Close Combat
+- Dragon Pulse
+- Protect
+- Shadow Claw
+
+Dragalge (F) @ Dragalgite
+Ability: Adaptability
+Level: 50
+EVs: 32 HP / 32 SpA / 2 SpD
+Modest Nature
+- Flip Turn
+- Sludge Bomb
+- Protect
+- Draco Meteor
+
+Crabominable (M) @ Crabominite
+Ability: Hyper Cutter
+Level: 50
+EVs: 32 HP / 32 Atk / 2 SpD
+Adamant Nature
+- Ice Punch
+- Close Combat
+- Protect
+- Mach Punch
+
+Chimecho (F) @ Chimechite
+Ability: Levitate
+Level: 50
+EVs: 32 HP / 2 Def / 32 SpA
+Modest Nature
+- Psychic
+- Protect
+- Shadow Ball
+- Taunt

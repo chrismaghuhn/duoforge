@@ -983,6 +983,35 @@ static bool dfi_boost(dfi_run *r, uint32_t flat, const uint8_t *boosts, uint32_t
             dfi_emit(r, &e); /* the Inner Focus line: it names the stat */
         }
     }
+    /* Keen Eye and Big Pecks (step G51, data/abilities.ts:2260-2276 and :445-455, onTryBoost of the target itself, breakable):
+     * an accuracy drop, and a Defense drop, that another Pokemon causes is deleted after Contrary and the cap, as Hyper
+     * Cutter deletes the Attack drop, with the same line unless the effect is a move's secondary (effect.secondaries). The
+     * pin's Keen Eye also ignores the target's evasion for its holder's own moves (onModifyMove, dfi_accuracy_check). No
+     * Mold Breaker is marked, so no move or ability ignores either ability.
+     * The source test is the pin's `source && target === source` return (data/abilities.ts:2262, 447): a drop that the holder
+     * causes itself is let through, which is DFI_POSITIONS (the holder itself, as above) or the holder as its own source; a drop
+     * by another Pokemon is blocked. The pin also blocks a drop with no source at all. That case is not representable here and
+     * cannot occur for these stats in the pool: the pin's negative Attack, Defense and accuracy boosts without a source are the
+     * Max moves (Max Phantasm, data/moves.ts:11350, and its neighbour at :11484), isNonstandard "Past" and not in Champions.
+     * Neither holder can meet another TryBoost of the
+     * same stat: a holder has one ability, and Flower Veil reads a Grass type, which no forme with either ability is
+     * (tests/test_pool_g51.c). */
+    if (source != flat && source != DFI_POSITIONS && boosts[DFI_STAGE_ACCURACY] != DFI_BIAS6 &&
+        capped[DFI_STAGE_ACCURACY] < DFI_BIAS6 && dfi_ability(r->b, m, DFI_ABILITY_KEENEYE)) {
+        veil[DFI_STAGE_ACCURACY] = true;
+        if (!(effect.cause == DUOFORGE_CAUSE_MOVE && effect.mode == DFI_BOOST_SECONDARY)) {
+            const duoforge_event e = dfi_ev(DUOFORGE_EVENT_FAIL, flat, DUOFORGE_CAUSE_ABILITY, 1u + DFI_ABILITY_KEENEYE, flat);
+            dfi_emit(r, &e); /* the line names the accuracy stat */
+        }
+    }
+    if (source != flat && source != DFI_POSITIONS && boosts[DFI_STAGE_DEF] != DFI_BIAS6 &&
+        capped[DFI_STAGE_DEF] < DFI_BIAS6 && dfi_ability(r->b, m, DFI_ABILITY_BIGPECKS)) {
+        veil[DFI_STAGE_DEF] = true;
+        if (!(effect.cause == DUOFORGE_CAUSE_MOVE && effect.mode == DFI_BOOST_SECONDARY)) {
+            const duoforge_event e = dfi_ev(DUOFORGE_EVENT_FAIL, flat, DUOFORGE_CAUSE_ABILITY, 1u + DFI_ABILITY_BIGPECKS, flat);
+            dfi_emit(r, &e); /* the line names the Defense stat */
+        }
+    }
     /* Clear Body (step G30, data/abilities.ts:523-542, onTryBoost of the target itself): every drop that another Pokemon
      * causes is deleted, and the line shows unless the effect is a move's secondary (effect.secondaries) or Octolock
      * (not in the pool). Like Flower Veil it sees the drop after Contrary and the cap. A Grass type that has Clear Body
@@ -4373,9 +4402,12 @@ static duoforge_status dfi_accuracy_check(dfi_run *r, uint32_t user, uint32_t ta
     }
     /* The user's accuracy stage minus the target's evasion, clamped. */
     const uint32_t acc = dfi_pos(b, user)->stages[DFI_STAGE_ACCURACY];
-    /* Darkest Lariat (Team C): ignoreEvasion (sim/battle-actions.ts:719). */
-    const uint32_t eva = md->special == DFI_SPECIAL_DARKEST_LARIAT ? DFI_BIAS6
-                                                                    : (uint32_t)dfi_pos(b, target)->stages[DFI_STAGE_EVASION];
+    /* Darkest Lariat (Team C): ignoreEvasion (sim/battle-actions.ts:719). Keen Eye (step G51, data/abilities.ts:2260-2276,
+     * onModifyMove: move.ignoreEvasion = true for the holder's own moves) sets the same flag, read by the same check. */
+    const bool keen_eye_user = dfi_ability(b, dfi_at(b, user), DFI_ABILITY_KEENEYE);
+    const uint32_t eva = md->special == DFI_SPECIAL_DARKEST_LARIAT || keen_eye_user
+                             ? DFI_BIAS6
+                             : (uint32_t)dfi_pos(b, target)->stages[DFI_STAGE_EVASION];
     if (later_hit) {
         if (acc > DFI_BIAS6_MAX || eva > DFI_BIAS6_MAX) {
             return DUOFORGE_E_INVARIANT;
