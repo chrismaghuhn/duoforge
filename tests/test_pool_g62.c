@@ -25,8 +25,7 @@ static void check_mark(df_test *t)
 {
     DF_CHECK(t, dfi_support.moves[DFI_MOVE_HAZE] != 0u);
     DF_CHECK(t, dfi_support.moves[DFI_MOVE_AFTERYOU] != 0u);
-    /* Quash has its handler and its code, but no mark yet: a battle that uses it is refused (E_UNSUPPORTED), never played. */
-    DF_CHECK(t, dfi_support.moves[DFI_MOVE_QUASH] == 0u);
+    DF_CHECK(t, dfi_support.moves[DFI_MOVE_QUASH] != 0u);
     DF_CHECK_EQ_U64(t, dfi_pool_moves[DFI_MOVE_HAZE].special, DFI_SPECIAL_HAZE);
     /* the handler id comes after the G54 ones, and Unmodelled moves after it */
     DF_CHECK_EQ_U64(t, DFI_SPECIAL_HAZE, DFI_SPECIAL_STRENGTH_SAP + 1u);

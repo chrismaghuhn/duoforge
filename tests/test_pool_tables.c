@@ -1437,7 +1437,7 @@ int main(void)
                                                 /* step G54: Icicle Spear, Scale Shot, Quick Guard, Upper Hand, Heal Pulse, Strength Sap and Sing */
                                                 DFI_MOVE_ICICLESPEAR, DFI_MOVE_SCALESHOT, DFI_MOVE_QUICKGUARD, DFI_MOVE_UPPERHAND,
                                                 DFI_MOVE_HEALPULSE, DFI_MOVE_STRENGTHSAP, DFI_MOVE_SING, DFI_MOVE_HAZE,
-                                                DFI_MOVE_AFTERYOU,
+                                                DFI_MOVE_AFTERYOU, DFI_MOVE_QUASH,
                                                 /* step G56: Outrage (the lock); step G52: Revival Blessing */
                                                 DFI_MOVE_OUTRAGE, DFI_MOVE_REVIVALBLESSING};
         uint32_t marked_count = 0u;
@@ -1474,7 +1474,7 @@ int main(void)
                              id == DFI_MOVE_ROOST || id == DFI_MOVE_STOMPINGTANTRUM ||
                              id == DFI_MOVE_ICICLESPEAR || id == DFI_MOVE_SCALESHOT || id == DFI_MOVE_QUICKGUARD ||
                              id == DFI_MOVE_UPPERHAND || id == DFI_MOVE_HEALPULSE || id == DFI_MOVE_STRENGTHSAP || id == DFI_MOVE_OUTRAGE || id == DFI_MOVE_REVIVALBLESSING || id == DFI_MOVE_HAZE ||
-                             id == DFI_MOVE_AFTERYOU ||
+                             id == DFI_MOVE_AFTERYOU || id == DFI_MOVE_QUASH ||
                              (id == DFI_MOVE_WIDEGUARD && dfi_pool_moves[id].special == DFI_SPECIAL_WIDE_GUARD) ||
                              (id == DFI_MOVE_DETECT && dfi_pool_moves[id].special == DFI_SPECIAL_PROTECT));
             DF_CHECK(&t, !want || dfi_pool_moves[id].special != DFI_SPECIAL_UNMODELED);
@@ -1498,7 +1498,7 @@ int main(void)
          * between the hit-time DragOut and the drag-in. Skill Swap (and any move that changes abilities mid-turn) would make
          * that re-check live: once it is marked, the drag-in DragOut must read the holder's ability at the drag-in. */
         DF_CHECK_EQ_U64(&t, dfi_support.moves[DFI_MOVE_SKILLSWAP] != 0u ? 1u : 0u, 0u);
-        DF_CHECK_EQ_U64(&t, marked_count, 182u); /* step G62 adds Haze (decision 0031) and After You (decision 0015 entry 5az; Quash is not marked yet); the seven of step G54 (Icicle Spear, Scale Shot, Quick Guard, Upper Hand, Heal Pulse, Strength Sap, Sing) */ /* the eleven of step G44 (Thunder, Power Trip, Ice Fang, Tri Attack and seven data rows), the four of step G46 (Roar, Whirlwind, Dragon Tail, Circle Throw), the four of step G48, Taunt and Yawn (G31), the four hazards (G37), the four of step G39, the four of step G29, Imprison (G38), the three of step G33, Perish Song (G26), the four of step G25, Disable (G27), the ten of step G35, Toxic and Poison Fang (G36), the ten of step G30, the eleven of step G32 and the seven of step G34 */
+        DF_CHECK_EQ_U64(&t, marked_count, 183u); /* step G62 adds Haze (decision 0031), After You and Quash (decision 0015 entry 5az); the seven of step G54 (Icicle Spear, Scale Shot, Quick Guard, Upper Hand, Heal Pulse, Strength Sap, Sing) */ /* the eleven of step G44 (Thunder, Power Trip, Ice Fang, Tri Attack and seven data rows), the four of step G46 (Roar, Whirlwind, Dragon Tail, Circle Throw), the four of step G48, Taunt and Yawn (G31), the four hazards (G37), the four of step G39, the four of step G29, Imprison (G38), the three of step G33, Perish Song (G26), the four of step G25, Disable (G27), the ten of step G35, Toxic and Poison Fang (G36), the ten of step G30, the eleven of step G32 and the seven of step G34 */
     }
 
     /* Step AC1: Trace copies the ability of a foe unless that has the pin's notrace flag. The turn code excludes only
