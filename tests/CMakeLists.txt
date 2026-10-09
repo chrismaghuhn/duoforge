@@ -214,6 +214,9 @@ duoforge_add_test(NAME duoforge.state.pool_g60 SOURCES test_pool_g60.c WHITEBOX 
 # Step G57: Magic Bounce and the Mega Stones Absolite and Sablenite (the reflectable column against the pinned Dex, the marks).
 duoforge_add_test(NAME duoforge.state.pool_g57 SOURCES test_pool_g57.c WHITEBOX TIMEOUT 60)
 duoforge_add_test(NAME duoforge.state.pool_g58 SOURCES test_pool_g58.c WHITEBOX TIMEOUT 60)
+# Step G72: Yawn on a charging (semi-invulnerable) target under Electric Terrain: the volatile starts on the locked turn, the
+# residual sleep is not refused while the charge is up, and a Yawn without No Guard misses (decision 0015 item 5ce).
+duoforge_add_test(NAME duoforge.state.pool_g72 SOURCES test_pool_g72.c WHITEBOX TIMEOUT 60)
 # Step G42: Roost and Stomping Tantrum: the move result classes (this and last) at every boundary of the g42 battles, the Roost
 # volatile (the pivot boundary inside its turn), the view bits (40 supported, 41 not), the unclassified refusal.
 duoforge_add_test(NAME duoforge.state.pool_g42 SOURCES test_pool_g42.c WHITEBOX TIMEOUT 60)
