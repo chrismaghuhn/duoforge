@@ -174,8 +174,9 @@ class Guards(unittest.TestCase):
     def real_launches(self):
         return [c for c in self.calls() if ' run-instances ' in (' ' + c + ' ') and '--dry-run' not in c]
 
-    def render(self, minutes=180, commit=SHA, bucket='my-p1-bucket', run_id='b' * 12 + '-20261009T120000Z'):
-        script = '. "%s/lib.sh"; df_render_user_data %s %s %s %s' % (posix(HERE), commit, bucket, minutes, run_id)
+    def render(self, minutes=180, commit=SHA, bucket='my-p1-bucket', run_id='b' * 12 + '-20261009T120000Z', pilot=''):
+        script = '. "%s/lib.sh"; df_render_user_data %s %s %s %s "%s"' % (posix(HERE), commit, bucket, minutes, run_id,
+                                                                         pilot)
         r = subprocess.run([BASH, '-c', script], env=self.env, capture_output=True, text=True)
         self.assertEqual(r.returncode, 0, r.stderr)
         return r.stdout
@@ -225,6 +226,28 @@ class Guards(unittest.TestCase):
         self.assertTrue(run_id.startswith(SHA[:12]))
         self.assertIn('s3://my-p1-bucket/p1/%s/' % run_id, r.stdout)
         self.assertIn('cost cap      $4.50', r.stdout)  # 3 h x $1.50, the defaults
+
+    def test_a_fresh_run_can_take_the_pilot_of_an_earlier_run(self):
+        # option A of 2026-10-09: a new run (new run id) whose run.sh reads the pilot artefacts of an earlier run, read
+        # only (PILOT_RUN_ID); the earlier run must have finished its generation and distillation
+        old = 'aaaaaaaaaaaa-20261009T172944Z'
+        r = self.run_script('launch.sh', *self.LAUNCH, '--from-run', old, STUB_KEYS='1')
+        self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+        run_id = re.search(r'^run id +(\S+)', r.stdout, re.M).group(1)
+        self.assertNotEqual(run_id, old)
+        self.assertIn('pilot from    s3://my-p1-bucket/p1/%s/ (read only)' % old, r.stdout)
+        for marker in ('collect-production.done', 'distill.done'):
+            self.assertTrue(any('--prefix p1/%s/markers/%s' % (old, marker) in c for c in self.calls()), marker)
+        r = self.run_script('launch.sh', *self.LAUNCH, '--from-run', old, STUB_KEYS='0')
+        self.assertNotEqual(r.returncode, 0)
+        self.assertIn('collect-production.done', r.stderr)
+        r = self.run_script('launch.sh', *self.LAUNCH, '--from-run', old, '--resume', old, STUB_KEYS='1')
+        self.assertNotEqual(r.returncode, 0)
+        r = self.run_script('launch.sh', *self.LAUNCH, '--from-run', 'not-a-run')
+        self.assertNotEqual(r.returncode, 0)
+        self.assertEqual(self.real_launches(), [])
+        self.assertIn("DF_PILOT_RUN_ID='%s'" % old, self.render(pilot=old))
+        self.assertIn("DF_PILOT_RUN_ID=''", self.render())
 
     def test_a_resume_keeps_the_run_id_of_an_existing_run(self):
         # run.sh resumes from the markers under p1/<run id>/ (EXIT 33 of the first AWS pilot, 2026-10-09): a resume keeps
@@ -489,7 +512,8 @@ class Guards(unittest.TestCase):
         self.assertLess(len(text.encode()), 16000)  # the limit of EC2 user data is 16 KB
         with open(os.path.join(HERE, 'user_data.sh'), encoding='utf-8') as f:
             raw = f.read()
-        self.assertEqual(sorted(set(re.findall(r'@[A-Z_]+@', raw))), ['@BUCKET@', '@COMMIT@', '@MAX_MINUTES@', '@RUN_ID@'])
+        self.assertEqual(sorted(set(re.findall(r'@[A-Z_]+@', raw))),
+                         ['@BUCKET@', '@COMMIT@', '@MAX_MINUTES@', '@PILOT_RUN_ID@', '@RUN_ID@'])
 
     # ------------------------------------------------------------------ the user data, run with stand-ins
     def run_box(self, workload, soft_deadline_seconds=30, minutes=180):
