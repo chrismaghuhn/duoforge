@@ -345,6 +345,14 @@ class LinesTest(unittest.TestCase):
         with self.assertRaises(lines.Stop):
             lines.check("|-fail|p1a: Dragonite|unboost|Power|[from] ability: Inner Focus|[of] p1a: Dragonite", view)
 
+    def test_roost_single_turn_is_its_feature(self):
+        # G42: -singleturn|X|move: Roost is the ROOST feature: folded once the library supports it, else a Stop
+        line = "|-singleturn|p1a: Staraptor|move: Roost"
+        if lines.SUPPORTED >> lines.FEATURES["ROOST"] & 1:
+            self.assertEqual(lines.check(line, self.view), "fold")
+        else:
+            self.assertEqual(self.stop(line), "feature:ROOST")
+
     def test_fold_and_room_lines(self):
         self.assertEqual(lines.check("|-enditem|p1a: Staraptor|Sitrus Berry|[eat]", self.view), "fold")
         self.assertEqual(lines.check("|-ability|p1a: Staraptor|Intimidate|boost", self.view), "fold")
