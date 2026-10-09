@@ -460,8 +460,7 @@ class CliTest(unittest.TestCase):
         from duoforge_learn import checkpoint, distill, policy
         with tempfile.TemporaryDirectory(prefix="duoforge_synthetic_distill_cli_") as tmp:
             root = Path(tmp)
-            m = dataclasses.replace(_manifest(ed), encoder=features.ENCODER,
-                                    obs_width=features.obs_size(features.ENCODER))
+            m = _manifest(ed)  # P1 pins encoder 4 (expert_data.validate_manifest), also with encoder 5 the default
             ed.write_manifest(root / "manifest.json", m)
             (train_a, train_b), (held,) = _games(ed, m.split_seed, 2, 1)
             S, rows = ed.RowStatus, []
@@ -471,8 +470,8 @@ class CliTest(unittest.TestCase):
             (root / "shards").mkdir()
             ed.write_shard(root / "shards" / "0.json", rows, m)
             cfg = policy.v2_config("S")
-            params = policy.make(cfg).init(jax.random.PRNGKey(5))
-            config = {"model": cfg, "encoder": features.ENCODER, "features": list(features.FEATURE_NAMES),
+            params = policy.make(cfg, features.feature_names(4)).init(jax.random.PRNGKey(5))
+            config = {"model": cfg, "encoder": 4, "features": list(features.feature_names(4)),
                       "slot_features": list(features.SLOT_FEATURE_NAMES), "data": {}, "teams": {}, "update": 0,
                       "decisions": 0, "ids": {}}
             checkpoint.save(root / "start.npz", params, config)
