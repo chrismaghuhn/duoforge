@@ -47,8 +47,10 @@ class ChooseTest(unittest.TestCase):
         fractions, reason, devices = simulate()
         self.assertEqual(reason, "matched")
         self.assert_matched(fractions)
-        self.assertIn("default", devices)
         self.assertGreater(devices.count("cpu"), devices.count("default"))
+        first_cpu = devices.index("cpu")
+        self.assertEqual(devices[:first_cpu], ["default"] * first_cpu)  # the GPU phase first
+        self.assertNotIn("default", devices[first_cpu:])
 
     def test_restarts_pay_their_jit_and_still_match(self):
         for restarts in ((5,), (20,), (10, 25), (30,)):
@@ -79,24 +81,42 @@ class ChooseTest(unittest.TestCase):
         device, reason = bm.choose((900.0, 9.4), (1000.0, 10.0), book)
         self.assertEqual((device, reason), (None, "incomplete"))
 
-    def test_an_unmeasured_jit_is_not_risked_near_the_end(self):
+    def test_an_unmeasured_gpu_step_is_not_risked_near_the_end(self):
         book = bm.Costs()
         book.observe("cpu", 100.0, 0.0)
         book.observe("cpu", 100.0, 0.0)
-        # GPU axis lagging at 0.85, but no GPU update measured yet: its cost is assumed to be a quarter of the axis.
-        device, _ = bm.choose((900.0, 8.5), (1000.0, 10.0), book)
-        self.assertEqual(device, "cpu")
+        # GPU axis at 0.85, no GPU update measured yet: assumed a quarter of the axis, it would pass 1.05.
+        self.assertEqual(bm.choose((900.0, 8.5), (1000.0, 10.0), book), (None, "incomplete"))
+
+    def test_a_lagging_gpu_axis_without_a_fitting_gpu_step_is_incomplete_at_once(self):
+        # A CPU step would fit, but it never adds GPU-seconds: burning CPU budget cannot reach the GPU floor.
+        book = bm.Costs()
+        for device, cost in (("cpu", (10.0, 0.0)), ("cpu", (10.0, 0.0)), ("default", (5.0, 2.0)),
+                             ("default", (5.0, 2.0))):
+            book.observe(device, *cost)
+        self.assertEqual(bm.choose((500.0, 9.0), (1000.0, 10.0), book), (None, "incomplete"))
 
     def test_matched_at_the_floor(self):
         self.assertEqual(bm.choose((950.0, 9.5), (1000.0, 10.0), bm.Costs()), (None, "matched"))
 
-    def test_lagging_axis_first(self):
+    def test_gpu_axis_first_then_cpu(self):
         book = bm.Costs()
         for device, cost in (("cpu", (10.0, 0.0)), ("cpu", (10.0, 0.0)), ("default", (2.0, 0.1)),
                              ("default", (2.0, 0.1))):
             book.observe(device, *cost)
-        self.assertEqual(bm.choose((300.0, 2.0), (1000.0, 10.0), book)[0], "default")
-        self.assertEqual(bm.choose((200.0, 3.0), (1000.0, 10.0), book)[0], "cpu")
+        self.assertEqual(bm.choose((800.0, 2.0), (1000.0, 10.0), book)[0], "default")
+        self.assertEqual(bm.choose((200.0, 9.6), (1000.0, 10.0), book)[0], "cpu")
+        # CPU axis done, a CPU step would pass 1.05: a GPU step that fits.
+        self.assertEqual(bm.choose((1045.0, 9.4), (1000.0, 10.0), book)[0], "default")
+
+    def test_a_restart_at_any_update_after_the_gpu_phase_still_matches(self):
+        fresh = simulate()[2]
+        gpu_phase = max(i for i, d in enumerate(fresh) if d == "default") + 1
+        self.assertLessEqual(gpu_phase, 15)
+        for k in range(gpu_phase, len(fresh)):
+            fractions, reason, _ = simulate(restarts=(k,))
+            self.assertEqual(reason, "matched", k)
+            self.assert_matched(fractions)
 
     def test_costs_from_the_run_log(self):
         lines = [{"init": "params-49333.npz"},
@@ -112,7 +132,9 @@ class ChooseTest(unittest.TestCase):
         book = bm.Costs.from_log(json.dumps(r) for r in lines)
         self.assertEqual(book.used, set())  # a new process: every device's next update is a first one again
         self.assertEqual(book.estimate("cpu"), (150.0, 0.0))
-        self.assertEqual(book.estimate("default"), (130.0, 14.0))
+        # A resumed process's first update is not measured from the log: its delta from the previous process's last
+        # line holds the start-up and any lines the crashed process wrote after its last save.
+        self.assertEqual(book.estimate("default"), (110.0, 13.0))
         book.observe("default", 120.0, 13.5)
         self.assertEqual(book.estimate("default"), (28.0, 3.5))
 

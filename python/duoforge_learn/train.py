@@ -827,7 +827,8 @@ def _run(args, pool, on_start, stop):
             last = ((args.updates and update >= args.updates) or (args.minutes and elapsed_min >= args.minutes)
                     or stop.requested or budget)
             # A budget stop plays no final suites: whatever it played would be charged to the arm.
-            evaluating = update % args.eval_every == 0 or (last and not stop.requested and not budget)
+            # A match run's ledger is training only: its end suites are never played (an update or minutes cap).
+            evaluating = update % args.eval_every == 0 or (last and not stop.requested and not budget and not match)
             if update % args.snapshot_every == 0 or evaluating:
                 snapshots.save(update, params, snapshot_config(train_config, model_cfg, context, pool, update,
                                                                decisions, encoder, ext_supported, layout))

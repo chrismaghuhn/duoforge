@@ -9,9 +9,13 @@ the update on the chosen device. Before each step:
     expensive one measured for that device: among the warm steps once the device ran in this process, among the
     first steps (JIT, and a resumed process's start-up) before that; unmeasured: UNKNOWN_SHARE of each axis it
     spends;
-  - the lagging axis goes first: the GPU when its share is below the CPU's, else the CPU; the other device if the
-    preferred one does not fit;
-  - incomplete: no device fits: stop (the plan's "unable to match": re-plan, never a silent overrun).
+  - the GPU axis first: GPU updates until it reaches FLOOR, then CPU updates (a GPU update if no CPU update fits).
+    GPU first because only a GPU update raises the GPU axis and its first update in a process costs a JIT (22 %
+    of the GPU axis on the L4): after the first ~13 updates a restart only costs a CPU JIT (3 % of the CPU axis).
+    Against the L4 costs of 2026-10-09, one or two restarts at any update end incomplete in 4 of 157 cases (a
+    restart while the GPU axis is between 0.83 and FLOOR), against 32 of 157 with the lagging axis first;
+  - incomplete: the GPU axis is below FLOOR and no GPU step fits (CPU steps never add GPU-seconds), or no device
+    fits: stop (the plan's "unable to match": re-plan, never a silent overrun).
 The device sequence depends on measured costs, so it is logged per update (update_device), not reproduced by a seed.
 """
 import json
@@ -47,17 +51,23 @@ class Costs:
     @classmethod
     def from_log(cls, lines):
         """The costs of a run's log.jsonl lines (train's records with "ledger" and "update_device"; "init" and
-        "resume" lines start a process), for the process that resumes it: a new process."""
+        "resume" lines start a process), for the process that resumes it: a new process. A resumed process's first
+        update is not measured (its delta from the previous process's last line holds the start-up, and lines a
+        crashed process wrote after its last save); it only marks its device as used."""
         book, prev = cls(), (0.0, 0.0)
         for line in lines:
             r = json.loads(line) if isinstance(line, str) else line
             if "resume" in r or "init" in r:
                 book.new_process()
+                prev = None if "resume" in r else (0.0, 0.0)
                 continue
             if "ledger" not in r or r.get("update_device") not in DEVICES:
                 continue
             now = (r["ledger"]["cpu_core_seconds"], r["ledger"]["gpu_seconds"])
-            book.observe(r["update_device"], now[0] - prev[0], now[1] - prev[1])
+            if prev is None:
+                book.used.add(r["update_device"])
+            else:
+                book.observe(r["update_device"], now[0] - prev[0], now[1] - prev[1])
             prev = now
         book.new_process()
         return book
@@ -78,7 +88,9 @@ def choose(totals, targets, costs):
             step = (UNKNOWN_SHARE * pc, UNKNOWN_SHARE * pg if device == "default" else 0.0)
         return (c + step[0]) / pc <= CEILING and (g + step[1]) / pg <= CEILING
 
-    for device in (("default", "cpu") if fg < fc else ("cpu", "default")):
+    if fg < FLOOR:
+        return ("default", None) if fits("default") else (None, "incomplete")
+    for device in ("cpu", "default"):
         if fits(device):
             return device, None
     return None, "incomplete"

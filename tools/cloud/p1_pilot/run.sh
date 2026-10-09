@@ -83,6 +83,7 @@ check_earlier_starts() {  # OUT WORK_DIR RUN_ID MODE PILOT_SOURCE
         for key in work_dir run_id mode pilot_source; do
             case $key in work_dir) want=$work ;; run_id) want=$run_id ;; mode) want=$mode ;; pilot_source) want=$pilot ;; esac
             got=$(sed -n "s/^ *\"$key\": \"\(.*\)\",\{0,1\}\$/\1/p" "$info")
+            [[ $key != pilot_source || -n $got ]] || got=none  # a start before PILOT_RUN_ID existed played phases 1-2
             [[ -z $got || $got == "$want" ]] \
                 || die $EX_SETUP "$(basename "$info") of an earlier start has $key '$got', this start '$want': use a fresh WORK_DIR (or the earlier run's settings)"
         done
@@ -745,14 +746,25 @@ train() {  # NAME ARGS...
     launch "$name" "$OUT/logs/$name.stdout" env "${PHASE_ENV_TRAIN[@]}" "$PY" -m duoforge_learn.train "$@" || rc=$?
     [[ $rc -eq 0 ]] || tool_failed "$name" "$rc"
 }
-control_stopped() {  # the "stopped" of the control run's last log line: matched, incomplete, signal, budget or empty
-    local last
+# The "stopped" of the control run's last log line (matched, incomplete, signal, budget), empty without one or when
+# the saved run state is not at that line's update: train writes the line before it saves, and the periodic upload
+# can carry the line without the state, so the state decides.
+control_stopped() {
+    local last at saved
     last=$(last_json "$CONTROL/log.jsonl")
-    [[ -n $last ]] || return 0
+    [[ -n $last && -f $CONTROL/state.npz ]] || return 0
+    at=$(json_get "$last" update 2>/dev/null || json_get "$last" at_update 2>/dev/null || true)
+    saved=$("$PY" -c 'import sys; from duoforge_learn import runstate; print(runstate.load_state(sys.argv[1])["counters"]["update"])' "$CONTROL")
+    if [[ $at != "$saved" ]]; then
+        log "control: the log's last line is at update ${at:-?}, the saved state at $saved: resuming the state"
+        return 0
+    fi
     json_get "$last" stopped 2>/dev/null || true
 }
 if ! marked control-fresh; then
-    read -r PILOT_C PILOT_G < <("$PY" -c 'import json, sys; d = json.load(open(sys.argv[1])); print(repr(d["cpu_core_seconds"]), repr(d["gpu_seconds"]))' "$PILOT_LEDGER")
+    totals=$("$PY" -c 'import json, sys; d = json.load(open(sys.argv[1])); print(repr(d["cpu_core_seconds"]), repr(d["gpu_seconds"]))' "$PILOT_LEDGER") \
+        || die $EX_CRASH "the pilot ledger $PILOT_LEDGER cannot be read"
+    read -r PILOT_C PILOT_G <<<"$totals"
     if ! "$PY" -c 'import sys; sys.exit(0 if float(sys.argv[1]) > 0 and float(sys.argv[2]) > 0 else 1)' "$PILOT_C" "$PILOT_G"; then
         if [[ $MODE == dry ]]; then
             log "dry run: the pilot ledger has $PILOT_C CPU core-s / $PILOT_G GPU-s (distill on the CPU?); the control targets 1 s on an empty axis"

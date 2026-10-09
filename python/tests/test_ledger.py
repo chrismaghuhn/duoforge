@@ -170,9 +170,9 @@ class ControlTest(unittest.TestCase):
         with open(os.path.join(self.out, "log.jsonl"), encoding="utf-8") as f:
             self.assertEqual(json.loads(f.read().splitlines()[-1]), {"stopped": "incomplete", "at_update": 1})
 
-    def test_match_runs_the_lagging_axis_and_the_budget_lr(self):
-        # Equal, unreachable targets: the GPU-seconds always lag the CPU core-seconds, so every update goes to the
-        # default device; the learning rate follows the CPU budget spent (permille), here close to 0.
+    def test_match_runs_the_gpu_axis_first_and_the_budget_lr(self):
+        # Unreachable targets: the GPU axis stays below its floor, so every update goes to the default device; the
+        # learning rate follows the CPU budget spent (permille), here close to 0.
         self.assertEqual(_train(["--out", self.out, "--ledger", self.book, "--update-gpu-share", "match",
                                  "--stop-cpu-core-seconds", "1e9", "--stop-gpu-seconds", "1e9", "--updates", "2",
                                  "--learning-rate-over", "budget", "--learning-rate-schedule", "0:1,900:0.1"]
@@ -181,6 +181,15 @@ class ControlTest(unittest.TestCase):
         self.assertEqual([r["update_device"] for r in rows], ["default", "default"])
         self.assertEqual([r["match"]["next"] for r in rows], ["default", "default"])
         self.assertTrue(all(0.999 < r["lr_scale"] <= 1.0 for r in rows), [r["lr_scale"] for r in rows])
+
+    def test_match_plays_no_final_suites_at_an_update_cap(self):
+        # A match run's ledger holds training only: a stop by --updates (or --minutes) plays no end suites either.
+        self.assertEqual(_train(["--out", self.out, "--ledger", self.book, "--update-gpu-share", "match",
+                                 "--stop-cpu-core-seconds", "1e9", "--stop-gpu-seconds", "1e9", "--updates", "1"]
+                                + _SMALL), 0)
+        rows = _log(self.out)
+        self.assertEqual([r["update"] for r in rows], [1])
+        self.assertNotIn("vs_random", rows[0])
 
 
 

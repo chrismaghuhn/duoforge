@@ -98,16 +98,20 @@ directory left without a resumable state is moved to `<dir>.aside-<time>`, never
      acting on the CPU (`--act-gpu-share 0`). One run from the start, no calibration.
    - **Budget matching:** `--update-gpu-share match` with the pilot's totals as `--stop-cpu-core-seconds` and
      `--stop-gpu-seconds` (`duoforge_learn.budget_match`). Before every update the ledger decides the device: the
-     lagging axis first (the GPU when its share of the pilot is below the CPU's), and only a device whose expected
+     GPU axis first (GPU updates until it reaches 95 %, then CPU updates; only a GPU update raises it, and its first
+     update in a process pays a JIT of about 22 % of the axis), and only a device whose expected
      step keeps both axes at 105 % or below. The expected step is the most expensive one measured for that device,
      the first one of a process (JIT, start-up) until the device ran in this process; an unmeasured step counts as
      25 % of each axis it spends. The run stops `matched` when both axes reach 95 %, or `incomplete` when no device
-     fits (STOP 30, re-plan). Restarts and JIT are absorbed: a resumed process reads the measured steps from the
-     run's log. The device sequence depends on measured costs; each update logs it (`update_device`, `match`).
+     fits, or the GPU axis is below 95 % and no GPU update fits (STOP 30, re-plan). Restarts and JIT are absorbed:
+     a resumed process reads the measured steps from the run's log; only a restart in the last updates of the GPU
+     phase (GPU axis 83-95 %) cannot fit its JIT. The run plays no end suites (its ledger is training only). The
+     device sequence depends on measured costs; each update logs it (`update_device`, `match`).
    - **Learning rate:** `--learning-rate-over budget --learning-rate-schedule 0:1,900:0.1`: the decay runs over the
      CPU budget spent (permille), so it ends at 90 % of the run without a forecast.
    - **Safety:** `--minutes 90` per process. A run that ends without `matched` or `incomplete` stops with 32, and
-     the next start resumes it.
+     the next start resumes it. A stop counts only when the saved run state holds the update of that log line (the
+     log can be uploaded before the state is saved); otherwise the next start resumes the saved state.
    - **Export:** `p1_export.py` writes `control-fresh/params-final.npz`.
    - **Check:** `expert_eval.validate_compute` compares both ledgers (5 % per axis) and writes
      `control-fresh/compute-check.json` (31 on a mismatch).
