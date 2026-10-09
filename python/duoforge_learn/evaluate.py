@@ -43,7 +43,7 @@ class Player:
         return _greedy_indices(self.params, self.model.act, batch, choices, self.encoder, self.ext_supported)
 
 
-def play_suite(context, pool, rows, learner, opponent, workers, seed, max_steps=1000, luck=None):
+def play_suite(context, pool, rows, learner, opponent, workers, seed, max_steps=1000, luck=None, observers=()):
     """The records (RECORD, one per suite row) of the greedy learner against
     opponent (a Player, greedy too, "random" or "scripted") over the suite rows, one
     environment per row at episode 1 of a batch seeded with seed. A game
@@ -55,7 +55,18 @@ def play_suite(context, pool, rows, learner, opponent, workers, seed, max_steps=
     refused, or the learner's seat without a request), and last_step, true
     at t = max_steps - 1, after which a running game is cut off. luck, a
     duoforge_learn.luck.Luck, measures every game's luck from the learner's
-    seat (its totals, one per row) without changing a game."""
+    seat (its totals, one per row) without changing a game.
+
+    observers: read-only watchers in luck's hook form, called after luck at
+    the same points: start(n, seats) once, the learner's seats (n,);
+    before(batch, indices, active, step, last_step) after each query, with
+    the indices about to be stepped, active the games with a request;
+    after(batch, dead) after the step, dead the games the engine refused so
+    far. seats, indices, active and dead are read-only views; an observer
+    changes nothing else either (no batch buffer, no game), so their order
+    does not matter and the records are those of a suite without them
+    (expert_eval.TrickRoomTracker is one)."""
+    observers = tuple(observers)
     n = rows.shape[0]
     seat = rows["learner_seat"].astype(np.int64)
     every = np.arange(n)
@@ -78,6 +89,8 @@ def play_suite(context, pool, rows, learner, opponent, workers, seed, max_steps=
         dead = np.zeros(n, dtype=bool)  # games the engine refused to step (E_UNSUPPORTED): the learner's loss
         if luck is not None:
             luck.start(n, seat)
+        for o in observers:
+            o.start(n, _read_only(seat))
         for t in range(max_steps):
             batch.query()
             batch.query_factored()
@@ -97,6 +110,10 @@ def play_suite(context, pool, rows, learner, opponent, workers, seed, max_steps=
             indices[dead] = _layout.NO_CHOICE
             if luck is not None:
                 luck.before(batch, indices, requested.any(axis=1), t, t == max_steps - 1)
+            if observers:
+                shown, active = _read_only(indices), _read_only(requested.any(axis=1))
+                for o in observers:
+                    o.before(batch, shown, active, t, t == max_steps - 1)
             try:
                 batch.step(indices, active=~dead if dead.any() else None)
             except duoforge.DuoforgeError as err:
@@ -108,6 +125,10 @@ def play_suite(context, pool, rows, learner, opponent, workers, seed, max_steps=
                 dead |= failed
             if luck is not None:
                 luck.after(batch, dead)
+            if observers:
+                shown = _read_only(dead)
+                for o in observers:
+                    o.after(batch, shown)
         for e in range(n):
             if dead[e]:
                 out["unresolved"][e] = True
@@ -125,6 +146,13 @@ def play_suite(context, pool, rows, learner, opponent, workers, seed, max_steps=
             if result not in (0, _TIE):
                 out["result"][e] = 1 if result == _SIDE_WINS[seat[e]] else -1
     return out
+
+
+def _read_only(array):
+    """A view of array that its holder cannot write through (play_suite's observers)."""
+    view = array.view()
+    view.flags.writeable = False
+    return view
 
 
 def scores(records, n_teams):
