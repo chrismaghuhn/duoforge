@@ -502,6 +502,8 @@ const dfi_support_manifest dfi_support = {
             [DFI_ABILITY_REGENERATOR] = 1u,
             [DFI_ABILITY_TOXICDEBRIS] = 1u, /* step G37: a Physical hit puts Toxic Spikes on the attacker's side */
             [DFI_ABILITY_SHADOWTAG] = 1u, /* step G41 */
+            [DFI_ABILITY_SYNCHRONIZE] = 1u, /* step G47: the status passed back to a source (data/abilities.ts:4857-4871) */
+            [DFI_ABILITY_OBLIVIOUS] = 1u,   /* step G47: Taunt, and Intimidate's Attack drop (data/abilities.ts:3008-3040) */
         },
     .items =
         {
@@ -566,6 +568,8 @@ const dfi_support_manifest dfi_support = {
             [DFI_ITEM_SILKSCARF] = 1u,
             [DFI_ITEM_SILVERPOWDER] = 1u,
             [DFI_ITEM_SOFTSAND] = 1u,
+            [DFI_ITEM_LUMBERRY] = 1u,   /* step G47: a status or a confusion is cured by the berry (data/items.ts:3537-3560) */
+            [DFI_ITEM_MENTALHERB] = 1u, /* step G47: the four volatiles (data/items.ts:3889-3926) */
             [DFI_ITEM_SPELLTAG] = 1u,
             [DFI_ITEM_TWISTEDSPOON] = 1u,
             [DFI_ITEM_BABIRIBERRY] = 1u,

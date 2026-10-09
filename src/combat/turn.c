@@ -865,9 +865,12 @@ static bool dfi_boost(dfi_run *r, uint32_t flat, const uint8_t *boosts, uint32_t
      * a Grass type (tools/datagen/pool_families.js checkG22). Breakable, like Flower Veil. */
     /* Scrappy (step G39, data/abilities.ts:4079-4098) has the same onTryBoost for Intimidate, with the same line (its other
      * half, the immunity of Ghost types to Normal and Fighting moves, is in dfi_get_damage's caller). */
+    /* Oblivious (step G47, data/abilities.ts:3026-3031): the same onTryBoost for Intimidate's Attack drop, with the same line
+     * (`[of] ${target}`); its Attract half of onUpdate is not reached (no Attract volatile). */
     const uint32_t intimidate_guard = dfi_ability(r->b, m, DFI_ABILITY_INNERFOCUS) ? DFI_ABILITY_INNERFOCUS
                                       : dfi_ability(r->b, m, DFI_ABILITY_SCRAPPY)  ? DFI_ABILITY_SCRAPPY
-                                                                                   : DFI_POOL_ABILITY_COUNT;
+                                      : dfi_ability(r->b, m, DFI_ABILITY_OBLIVIOUS) ? DFI_ABILITY_OBLIVIOUS
+                                                                                    : DFI_POOL_ABILITY_COUNT;
     if (effect.cause == DUOFORGE_CAUSE_ABILITY && effect.id2 == 1u + DFI_ABILITY_INTIMIDATE &&
         boosts[DFI_STAGE_ATK] != DFI_BIAS6 && capped[DFI_STAGE_ATK] != DFI_BIAS6 && intimidate_guard != DFI_POOL_ABILITY_COUNT) {
         veil[DFI_STAGE_ATK] = true;
@@ -1702,10 +1705,28 @@ static bool dfi_poison_immune(const struct duoforge_battle *b, const dfi_member 
  * cannot be poisoned (Team C). Sleep lasts sample([2, 3, 3]) attempts,
  * freeze at most 3 (the Champions conditions,
  * data/mods/champions/conditions.ts). */
+/* The origin of a status (dfi_try_status), which says what the effect that sets it is to the handlers of the status:
+ * OTHER is a secondary, an ability or a pick (Poison Touch, Flame Body, Static, Dire Claw's pick); MOVE is a move's own
+ * status (effect.status and no secondaries); SYNC is Synchronize's trySetStatus, whose effect is `{status, id:
+ * 'synchronize'}` (data/abilities.ts:4857-4871): the immunity and fail lines read it as a move's status (effect.status),
+ * but it has no name and no effectType, so Flower Veil's -block (data/abilities.ts:1438) stays silent for it and its start
+ * line has no [from]; HAZARD is Toxic Spikes, which Synchronize does not pass on (effect.id 'toxicspikes'). */
+#define DFI_ORIGIN_OTHER 0u
+#define DFI_ORIGIN_MOVE 1u
+#define DFI_ORIGIN_SYNC 2u
+#define DFI_ORIGIN_HAZARD 3u
+
 static duoforge_status dfi_try_status(dfi_run *r, uint32_t flat, uint32_t status, uint32_t user, uint32_t move_id,
-                                      bool primary, uint32_t from_ability)
+                                      uint32_t origin, uint32_t from_ability);
+static duoforge_status dfi_after_set_status(dfi_run *r, uint32_t flat, uint32_t status, uint32_t source, uint32_t origin);
+
+static duoforge_status dfi_try_status(dfi_run *r, uint32_t flat, uint32_t status, uint32_t user, uint32_t move_id,
+                                      uint32_t origin, uint32_t from_ability)
 {
     static const uint8_t sleep_turns[3] = {2u, 3u, 3u};
+    /* the messages that read a move's own status (effect.status): a move's and Synchronize's; the Flower Veil block below is
+     * the move's alone */
+    const bool primary = origin == DFI_ORIGIN_MOVE || origin == DFI_ORIGIN_SYNC;
     dfi_member *m = dfi_at(r->b, flat);
     if (m == NULL || m->hp == 0u) {
         return DUOFORGE_OK;
@@ -1763,7 +1784,9 @@ static duoforge_status dfi_try_status(dfi_run *r, uint32_t flat, uint32_t status
         return DUOFORGE_OK;
     }
     if (user != flat && dfi_flower_veil_holder(r->b, flat, &holder)) {
-        if (primary) {
+        /* the block line: effect.effectType 'Move' without secondaries, or the name Synchronize, which the effect of Synchronize
+         * does not have (data/abilities.ts:1438): a move's own status alone shows it */
+        if (origin == DFI_ORIGIN_MOVE) {
             dfi_flower_veil_block(r, flat, holder);
         }
         return DUOFORGE_OK;
@@ -1799,6 +1822,11 @@ static duoforge_status dfi_try_status(dfi_run *r, uint32_t flat, uint32_t status
     }
     m->status = (uint8_t)status;          /* <= DFI_STATUS_TOX */
     m->status_counter = (uint8_t)counter; /* <= 3 */
+    if (status == DFI_STATUS_TOX) {
+        /* tox's onStart sets the stage to 0 (data/conditions.ts:141-150): a toxic status cured by Lum Berry and set again
+         * starts from 0 */
+        r->b->tail.sides[flat / 2u].toxic_stage[dfi_pos(r->b, flat)->occupant] = 0u;
+    }
     /* [-status]; sleep says [from] move when a move is its source
      * (data/mods/champions/conditions.ts:13-20) */
     duoforge_event e = dfi_event_make(DUOFORGE_EVENT_STATUS, flat);
@@ -1815,6 +1843,113 @@ static duoforge_status dfi_try_status(dfi_run *r, uint32_t flat, uint32_t status
         e.id2 = (uint16_t)move_id;
     }
     dfi_emit(r, &e);
+    return dfi_after_set_status(r, flat, status, user, origin);
+}
+
+static void dfi_use_item(dfi_run *r, uint32_t flat);
+static void dfi_volatile_end(dfi_run *r, uint32_t flat, uint32_t which);
+
+/* Synchronize (step G47, data/abilities.ts:4857-4871, onAfterSetStatus, priority 0): a psn, tox, brn or par that another
+ * Pokemon gave the holder is passed back to it. The line -activate|holder|ability: Synchronize comes first, then
+ * source.trySetStatus(status, holder, the Synchronize effect): the source's own rules apply (its status, its immunities,
+ * its SetStatus handlers), through dfi_try_status with the SYNC origin. The source's own Synchronize, if it has one, answers
+ * in turn: the holder already has the status, so the holder's trySetStatus fails with -fail|holder|status (a move's fail line).
+ * Not for slp or frz (the caller), not from Toxic Spikes, not when the source is the holder itself (the caller). */
+static duoforge_status dfi_synchronize(dfi_run *r, uint32_t holder, uint32_t status, uint32_t source)
+{
+    const duoforge_event e = dfi_ev(DUOFORGE_EVENT_ACTIVATE, holder, DUOFORGE_CAUSE_ABILITY, 1u + DFI_ABILITY_SYNCHRONIZE,
+                                    DUOFORGE_NO_POSITION);
+    dfi_emit(r, &e); /* [-activate] ability: Synchronize */
+    return dfi_try_status(r, source, status, holder, DFI_NO_SOURCE_MOVE, DFI_ORIGIN_SYNC, 0u);
+}
+
+/* Lum Berry (step G47, data/items.ts:3537-3560): eatItem, which a foe's Unnerve refuses (onFoeTryEatItem, TryEatItem). The
+ * berry is eaten (-enditem|X|Lum Berry|[eat], a berry's flag), then onEat cures the holder's status (-curestatus with [msg])
+ * and removes its confusion (-end|X|confusion). Its AfterSetStatus (priority -1) and its Update call this. */
+static duoforge_status dfi_lum_berry(dfi_run *r, uint32_t flat)
+{
+    struct duoforge_battle *b = r->b;
+    dfi_member *m = dfi_at(b, flat);
+    if (m == NULL || m->hp == 0u || !dfi_holds(b, m, DFI_ITEM_LUMBERRY) || dfi_unnerved(b, flat)) {
+        return DUOFORGE_OK;
+    }
+    dfi_use_item(r, flat);
+    if (m->status != DFI_STATUS_NONE) {
+        duoforge_event cure = dfi_event_make(DUOFORGE_EVENT_CURE_STATUS, flat);
+        cure.detail = m->status;
+        cure.flags = (uint8_t)DUOFORGE_EVENT_FLAG_MESSAGE;
+        dfi_emit(r, &cure); /* [-curestatus] [msg] */
+        m->status = (uint8_t)DFI_STATUS_NONE;
+        m->status_counter = 0u;
+    }
+    dfi_active_slot *pos = dfi_pos(b, flat);
+    if (pos->confusion_turns != 0u) {
+        pos->confusion_turns = 0u;
+        dfi_emit_plain(r, DUOFORGE_EVENT_CONFUSION_END, flat); /* [-end] confusion */
+    }
+    return DUOFORGE_OK;
+}
+
+/* sim/pokemon.ts:1746: AfterSetStatus of a status that has just taken. The holder's handlers in priority order: Synchronize
+ * (0) and then Lum Berry (-1). The Synchronize step needs the status to be passed on from another Pokemon. */
+static duoforge_status dfi_after_set_status(dfi_run *r, uint32_t flat, uint32_t status, uint32_t source, uint32_t origin)
+{
+    const dfi_member *m = dfi_at(r->b, flat);
+    if (m != NULL && origin != DFI_ORIGIN_HAZARD && source != flat &&
+        (status == DFI_STATUS_PSN || status == DFI_STATUS_TOX || status == DFI_STATUS_BRN || status == DFI_STATUS_PAR) &&
+        dfi_ability(r->b, m, DFI_ABILITY_SYNCHRONIZE)) {
+        const duoforge_status st = dfi_synchronize(r, flat, status, source);
+        if (st != DUOFORGE_OK) {
+            return st;
+        }
+    }
+    return dfi_lum_berry(r, flat);
+}
+
+/* removeVolatile (sim/pokemon.ts), for a volatile whose condition has an onEnd line and no cause: the VOLATILE_END event of
+ * the residual's ends (the protocol line names the volatile). */
+static void dfi_volatile_end(dfi_run *r, uint32_t flat, uint32_t which)
+{
+    duoforge_event end = dfi_event_make(DUOFORGE_EVENT_VOLATILE_END, flat);
+    end.detail = (uint8_t)which;
+    dfi_emit(r, &end);
+}
+
+/* Mental Herb (step G47, data/items.ts:3889-3926, onUpdate): when its holder has a taunt, an encore, a disable or a heal
+ * block, the herb is used (useItem: -enditem|X|Mental Herb with no [eat]; Unnerve does not refuse it, only TryEatItem asks),
+ * and then every one of those volatiles is removed, in the pin's list order (taunt, encore, disable, heal block). The pin's
+ * attract and torment are not here: no volatile of either exists in the engine (Attract is unmarked, Torment is not
+ * modelled), so no state can hold them. Each removal shows its own -end line through its condition's onEnd. */
+static duoforge_status dfi_mental_herb(dfi_run *r, uint32_t flat)
+{
+    struct duoforge_battle *b = r->b;
+    const dfi_member *m = dfi_at(b, flat);
+    dfi_tail_pos *tail = &b->tail.sides[flat / 2u].positions[flat % 2u];
+    if (m == NULL || m->hp == 0u || !dfi_holds(b, m, DFI_ITEM_MENTALHERB)) {
+        return DUOFORGE_OK;
+    }
+    if (tail->taunt_turns == 0u && tail->encore_slot == 0u && tail->disable_slot == 0u && tail->heal_block_turns == 0u) {
+        return DUOFORGE_OK;
+    }
+    dfi_use_item(r, flat);
+    if (tail->taunt_turns != 0u) {
+        tail->taunt_turns = 0u;
+        dfi_volatile_end(r, flat, DUOFORGE_VOLATILE_TAUNT);
+    }
+    if (tail->encore_slot != 0u) {
+        tail->encore_slot = 0u;
+        tail->encore_turns = 0u;
+        dfi_volatile_end(r, flat, DUOFORGE_VOLATILE_ENCORE);
+    }
+    if (tail->disable_slot != 0u) {
+        tail->disable_slot = 0u;
+        tail->disable_turns = 0u;
+        dfi_volatile_end(r, flat, DUOFORGE_VOLATILE_DISABLE);
+    }
+    if (tail->heal_block_turns != 0u) {
+        tail->heal_block_turns = 0u;
+        dfi_volatile_end(r, flat, DUOFORGE_VOLATILE_HEAL_BLOCK);
+    }
     return DUOFORGE_OK;
 }
 
@@ -1955,7 +2090,7 @@ static duoforge_status dfi_hazards_enter(dfi_run *r, uint32_t flat)
                     /* trySetStatus('psn' or 'tox', foe.active[0]) with the condition as the source effect: no -fail and no
                      * -immune line, and Flower Veil's silent interruption (sim/pokemon.ts:1684-1744) */
                     st = dfi_try_status(r, flat, ts->toxic_spikes >= 2u ? DFI_STATUS_TOX : DFI_STATUS_PSN, source,
-                                        DFI_NO_SOURCE_MOVE, false, 0u);
+                                        DFI_NO_SOURCE_MOVE, DFI_ORIGIN_HAZARD, 0u);
                 }
             }
         } else if (dfi_grounded(b, m)) {
@@ -2127,7 +2262,7 @@ static void dfi_use_item(dfi_run *r, uint32_t flat)
     const uint32_t item = dfi_item_code(b, &b->sides[side].members[occupant]); /* before it is used up */
     b->sides[side].members[occupant].item_consumed = 1u;
     duoforge_event e = dfi_ev(DUOFORGE_EVENT_ITEM_END, flat, DUOFORGE_CAUSE_NONE, item, DUOFORGE_NO_POSITION);
-    const bool berry = item == 1u + DFI_ITEM_SITRUSBERRY ||
+    const bool berry = item == 1u + DFI_ITEM_SITRUSBERRY || item == 1u + DFI_ITEM_LUMBERRY /* step G47: isBerry */ ||
                        (item != 0u && item <= DFI_POOL_ITEM_COUNT &&
                         dfi_pool_item_family[item - 1u].family == DFI_ITEM_FAMILY_RESIST_BERRY);
     e.flags = berry ? (uint8_t)DUOFORGE_EVENT_FLAG_EATEN : 0u;
@@ -2726,7 +2861,11 @@ static duoforge_status dfi_update(dfi_run *r)
 {
     uint32_t bearers = 0u;
     for (uint32_t flat = 0u; flat < DFI_POSITIONS; ++flat) {
-        bearers |= dfi_holds(r->b, dfi_at(r->b, flat), DFI_ITEM_SITRUSBERRY) ? 1u << flat : 0u;
+        /* the holders with an Update handler that can act: Sitrus Berry, and step G47's Lum Berry and Mental Herb */
+        const bool bears = dfi_holds(r->b, dfi_at(r->b, flat), DFI_ITEM_SITRUSBERRY) ||
+                           dfi_holds(r->b, dfi_at(r->b, flat), DFI_ITEM_LUMBERRY) ||
+                           dfi_holds(r->b, dfi_at(r->b, flat), DFI_ITEM_MENTALHERB);
+        bearers |= bears ? 1u << flat : 0u;
     }
     if (bearers == 0u) {
         return DUOFORGE_OK;
@@ -2745,6 +2884,20 @@ static duoforge_status dfi_update(dfi_run *r)
             dfi_use_item(r, flat);
             dfi_heal(r, flat, (uint32_t)m->hp_max / 4u, DUOFORGE_CAUSE_ITEM, 1u + DFI_ITEM_SITRUSBERRY,
                      DUOFORGE_NO_POSITION);
+        }
+        /* Lum Berry's onUpdate (data/items.ts:3548-3552): a status or a confusion of its holder is eaten (dfi_lum_berry asks
+         * Unnerve); Mental Herb's (data/items.ts:3906-3918) cures the holder's volatiles (dfi_mental_herb). One item per holder,
+         * so the two never meet on one Pokemon. */
+        const dfi_active_slot *pos = dfi_pos(r->b, flat);
+        if (m->hp != 0u && dfi_holds(r->b, m, DFI_ITEM_LUMBERRY) && (m->status != DFI_STATUS_NONE || pos->confusion_turns != 0u)) {
+            const duoforge_status lum = dfi_lum_berry(r, flat);
+            if (lum != DUOFORGE_OK) {
+                return lum;
+            }
+        }
+        const duoforge_status herb = dfi_mental_herb(r, flat);
+        if (herb != DUOFORGE_OK) {
+            return herb;
         }
     }
     return DUOFORGE_OK;
@@ -3236,7 +3389,7 @@ static duoforge_status dfi_poison_touch(dfi_run *r, uint32_t user, uint32_t targ
     if (st != DUOFORGE_OK || roll >= 3u) {
         return st;
     }
-    return dfi_try_status(r, target, DFI_STATUS_PSN, user, DFI_NO_SOURCE_MOVE, false, 1u + DFI_ABILITY_POISONTOUCH);
+    return dfi_try_status(r, target, DFI_STATUS_PSN, user, DFI_NO_SOURCE_MOVE, DFI_ORIGIN_OTHER, 1u + DFI_ABILITY_POISONTOUCH);
 }
 
 /* side.removeSideCondition for the three screens that Psychic Fangs breaks (step G30), in the order of its onTryHit:
@@ -3296,7 +3449,7 @@ static duoforge_status dfi_flame_body(dfi_run *r, uint32_t user, uint32_t holder
     if (st != DUOFORGE_OK || roll >= 3u) {
         return st;
     }
-    return dfi_try_status(r, user, DFI_STATUS_BRN, holder, DFI_NO_SOURCE_MOVE, false, 1u + DFI_ABILITY_FLAMEBODY);
+    return dfi_try_status(r, user, DFI_STATUS_BRN, holder, DFI_NO_SOURCE_MOVE, DFI_ORIGIN_OTHER, 1u + DFI_ABILITY_FLAMEBODY);
 }
 
 /* Static (step G39, data/abilities.ts:4536-4548, onDamagingHit; its holder is the target): Flame Body's shape with paralysis.
@@ -3313,7 +3466,7 @@ static duoforge_status dfi_static(dfi_run *r, uint32_t user, uint32_t holder, co
     if (st != DUOFORGE_OK || roll >= 3u) {
         return st;
     }
-    return dfi_try_status(r, user, DFI_STATUS_PAR, holder, DFI_NO_SOURCE_MOVE, false, 1u + DFI_ABILITY_STATIC);
+    return dfi_try_status(r, user, DFI_STATUS_PAR, holder, DFI_NO_SOURCE_MOVE, DFI_ORIGIN_OTHER, 1u + DFI_ABILITY_STATIC);
 }
 
 /* Wide Guard (data/moves.ts:20808-20851; POOL kinds, the side's flag is in the state tail). Its onTry (:20818) fails
@@ -3578,8 +3731,8 @@ static duoforge_status dfi_encore_replace(dfi_run *r, uint32_t flat, uint32_t sl
  * move, for a failencore move, for a move that is not among the target's slots or has no PP left; a failure is
  * -fail|user with [still] (the move did nothing). Otherwise the lock starts: -start|target|Encore, duration 3, or 4
  * when the target has no move queued (it has moved this turn, or switches); a target that has another move queued has
- * it replaced by the Encored one (dfi_encore_replace), unless it holds a Mental Herb (the item is not in any set the
- * gate accepts: E_UNSUPPORTED). *did tells whether the lock started. */
+ * it replaced by the Encored one (dfi_encore_replace), unless it holds a Mental Herb: then it keeps its queued move (step
+ * G47). *did tells whether the lock started. */
 static duoforge_status dfi_encore(dfi_run *r, uint32_t user, uint32_t flat, bool *did)
 {
     struct duoforge_battle *b = r->b;
@@ -3599,16 +3752,16 @@ static duoforge_status dfi_encore(dfi_run *r, uint32_t user, uint32_t flat, bool
     const uint32_t move_id = tm->moves[slot].move_id;
     const dfi_queue_record *queued = dfi_will_move(b, flat);
     const bool replace = queued != NULL && dfi_move_of(tm, queued->move_slot) != move_id;
-    if (replace && dfi_holds(b, tm, DFI_ITEM_MENTALHERB)) {
-        return DUOFORGE_E_UNSUPPORTED;
-    }
     tail->encore_slot = (uint8_t)last;
     tail->encore_turns = queued == NULL ? DFI_ENCORE_TURNS + 1u : DFI_ENCORE_TURNS; /* 4 or 3: fits the byte */
     duoforge_event e = dfi_event_make(DUOFORGE_EVENT_VOLATILE_START, flat);
     e.detail = (uint8_t)DUOFORGE_VOLATILE_ENCORE;
     dfi_emit(r, &e);
     *did = true;
-    if (replace) {
+    /* A target that holds Mental Herb keeps its queued move: the Champions onStart changes the action only when the target has
+     * no Mental Herb (data/mods/champions/moves.ts:330, `!target.hasItem('mentalherb')`). The herb's Update, which follows the
+     * move, removes the lock before the target acts (dfi_mental_herb), so the target's own move runs. */
+    if (replace && !dfi_holds(b, tm, DFI_ITEM_MENTALHERB)) {
         return dfi_encore_replace(r, flat, slot);
     }
     return DUOFORGE_OK;
@@ -4686,6 +4839,12 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
         } else if (dfi_ability(r->b, tm, DFI_ABILITY_GOODASGOLD) && status_move) {
             dfi_immune(r, t, 1u + DFI_ABILITY_GOODASGOLD);
             hit[i] = false;
+        } else if (dfi_ability(r->b, tm, DFI_ABILITY_OBLIVIOUS) && move_id == DFI_MOVE_TAUNT) {
+            /* Oblivious's onTryHit (step G47, data/abilities.ts:3018-3024): a Taunt aimed at the holder by another Pokemon is
+             * -immune|holder|[from] ability: Oblivious and does nothing (breakable: no Mold Breaker is marked, so nothing
+             * ignores it). Its Attract and Captivate halves need moves that are unmarked, so they are not modelled. */
+            dfi_immune(r, t, 1u + DFI_ABILITY_OBLIVIOUS);
+            hit[i] = false;
         } else if (powder_move && dfi_ability(r->b, tm, DFI_ABILITY_OVERCOAT) && !dfi_powder_natural_immune(b, tm)) {
             /* Overcoat's onTryHit (priority 1, step G30, data/abilities.ts:3112-3118): a powder move of another Pokemon
              * that a natural immunity does not stop already; the Grass-type holder is stopped by the plain -immune of
@@ -4883,7 +5042,7 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
                 continue;
             }
             const uint32_t before = dfi_at(b, targets[i])->status;
-            st = dfi_try_status(r, targets[i], md->primary_status, user, move_id, true, 0u);
+            st = dfi_try_status(r, targets[i], md->primary_status, user, move_id, DFI_ORIGIN_MOVE, 0u);
             if (st != DUOFORGE_OK) {
                 return st;
             }
@@ -5085,7 +5244,7 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
                 if (md->sec_kind == DFI_SECONDARY_BOOST) {
                     dfi_boost(r, targets[i], md->boosts, user, dfi_effect(DUOFORGE_CAUSE_MOVE, 0u, DFI_BOOST_SECONDARY));
                 } else if (md->sec_kind == DFI_SECONDARY_STATUS) {
-                    st = dfi_try_status(r, targets[i], md->sec_param, user, move_id, false, 0u);
+                    st = dfi_try_status(r, targets[i], md->sec_param, user, move_id, DFI_ORIGIN_OTHER, 0u);
                 } else if (md->sec_kind == DFI_SECONDARY_VOLATILE) {
                     st = dfi_add_volatile(r, targets[i], md->sec_param);
                 } else if (md->sec_kind == DFI_SECONDARY_SELF_BOOST) {
@@ -5107,7 +5266,7 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
                     uint32_t v = 0u;
                     st = dfi_draw(r->draws, DFI_SITE_STATUS_PICK, 0u, 3u, &v);
                     if (st == DUOFORGE_OK) {
-                        st = dfi_try_status(r, targets[i], pick[v], user, DFI_NO_SOURCE_MOVE, false, 0u);
+                        st = dfi_try_status(r, targets[i], pick[v], user, DFI_NO_SOURCE_MOVE, DFI_ORIGIN_OTHER, 0u);
                     }
                 } else {
                     st = DUOFORGE_E_UNSUPPORTED;
@@ -5714,6 +5873,11 @@ static duoforge_status dfi_trace(dfi_run *r, uint32_t flat)
     /* Limber's onUpdate (step G39) cures a paralysis that its holder has: a paralysed Trace holder that copies it is not
      * modelled (E_UNSUPPORTED, never a guess; no other Update handler of the marked abilities acts on a status). */
     if (copied == 1u + DFI_ABILITY_LIMBER && dfi_at(b, flat)->status == DFI_STATUS_PAR) {
+        return DUOFORGE_E_UNSUPPORTED;
+    }
+    /* Oblivious's onUpdate (step G47, data/abilities.ts:3009-3016) removes a taunt of its holder with its -activate line. The
+     * copy comes at the entry, where no taunt stands; a taunted holder that copies it is refused, never guessed. */
+    if (copied == 1u + DFI_ABILITY_OBLIVIOUS && b->tail.sides[flat / 2u].positions[flat % 2u].taunt_turns != 0u) {
         return DUOFORGE_E_UNSUPPORTED;
     }
     b->tail.sides[flat / 2u].ability_now[dfi_pos(b, flat)->occupant] = (uint16_t)copied; /* <= the ability count */
@@ -6467,7 +6631,7 @@ static duoforge_status dfi_residual_events_run(dfi_run *r, dfi_noorder_snapshot 
             }
             tail->yawn_turns = (uint8_t)((uint32_t)tail->yawn_turns - 1u); /* wide-operands-reviewed: >= 1 */
             if (tail->yawn_turns == 0u) {
-                st = dfi_try_status(r, e->flat, DFI_STATUS_SLP, e->flat, DFI_NO_SOURCE_MOVE, false, 0u);
+                st = dfi_try_status(r, e->flat, DFI_STATUS_SLP, e->flat, DFI_NO_SOURCE_MOVE, DFI_ORIGIN_OTHER, 0u);
                 if (st != DUOFORGE_OK) {
                     return st;
                 }
