@@ -892,7 +892,8 @@
 #define DFI_SPECIAL_THUNDER 68u
 #define DFI_SPECIAL_ICE_FANG 69u
 #define DFI_SPECIAL_TRI_ATTACK 70u
-#define DFI_SPECIAL_UNMODELED 71u
+#define DFI_SPECIAL_DOUBLE_SHOCK 71u
+#define DFI_SPECIAL_UNMODELED 72u
 
 /* ---- the second flags byte of every move (step G8: the general byte for the flags that the first one has no room
  * for; bits 4 to 128 are free) and the secondary kinds that it comes with ---- */

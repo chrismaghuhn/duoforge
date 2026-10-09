@@ -705,8 +705,13 @@ static dfi_invariant dfi_check_tail(const duoforge_context *ctx, const struct du
             /* The type ends when the member leaves or faints, and a Mega Evolution that comes after it ends it too
              * (setSpecies); a Pokemon that is already Mega Evolved can be Soaked, so is_mega is no part of the rule
              * (step G11: the research note had assumed it was; the rule is only weaker, no encoded state changes). */
-            if (ts->soak_type[m] != 0u && (ts->soak_type[m] > DFI_TYPE_COUNT || !standing_on_field)) {
-                return DFI_INV_TAIL_MEMBER;
+            /* Double Shock (decision 0025): the typeless first slot, DFI_TAIL_TYPE2_TYPELESS, only with a second type in type2. */
+            if (ts->soak_type[m] != 0u) {
+                const bool typeless = ts->soak_type[m] == DFI_TAIL_TYPE2_TYPELESS;
+                const bool second_ok = ts->type2[m] != 0u && ts->type2[m] <= DFI_TYPE_COUNT;
+                if ((!typeless && ts->soak_type[m] > DFI_TYPE_COUNT) || (typeless && !second_ok) || !standing_on_field) {
+                    return DFI_INV_TAIL_MEMBER;
+                }
             }
             /* A current ability that something swapped in ends when the member leaves or faints. */
             if (ts->ability_now[m] != 0u && (ts->ability_now[m] > lim.ability_count || !standing_on_field)) {
