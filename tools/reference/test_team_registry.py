@@ -228,15 +228,19 @@ class Made(unittest.TestCase):
         self.has('gender', 'Rillaboom has no gender')  # a species that has one: it is stated
         self.write_team('A', text.replace('Gholdengo @', 'Gholdengo (M) @', 1).encode('utf-8'))
         self.has('gender', 'Gholdengo cannot be (M)')  # one that has none: nothing is stated
-        self.write_team('A', text.replace('Rillaboom (M)', 'Blissey (M)', 1).encode('utf-8'))  # (Blissey is not in the tables)
-        self.assertEqual([(c, m) for c, m in self.problems() if c == 'gender'], [])  # a name the tables lack: only the form
-
-    def test_a_name_that_the_tables_do_not_have_is_checked_for_its_form_only(self):
-        """The registry does not depend on what the engine plays yet (the POOL data kind comes with P1): a team of species
-        the tables lack is a registry team if its form is right."""
-        text = self.team_text('A').replace('Rillaboom (M) @ Miracle Seed', 'Fakemon (M) @ Fake Item', 1)
-        self.write_team('A', text.encode('utf-8'))
-        self.assertEqual(self.problems(), [])
+    def test_a_name_that_the_tables_do_not_have_is_a_problem(self):
+        """A team the converter cannot read is no registry team: the differential tools read every one. It is named, not
+        skipped (before, such a team was checked for its form only, and a cosmetic forme slipped through)."""
+        text = self.team_text('A')
+        for label, changed, part in (
+                ('species', text.replace('Rillaboom (M) @ Miracle Seed', 'Fakemon (M) @ Miracle Seed', 1), 'FAKEMON'),
+                ('item', text.replace('Rillaboom (M) @ Miracle Seed', 'Rillaboom (M) @ Fake Item', 1), 'FAKEITEM'),
+                ('move', text.replace('- Wood Hammer', '- Fake Move', 1), 'FAKEMOVE')):
+            with self.subTest(label):
+                self.write_team('A', changed.encode('utf-8'))
+                found = self.has('names', part)
+                self.assertEqual([c for c, _ in found], ['names'])
+                self.assertIn("the converter's tables have no", found[0][1])
 
 
 class Adding(unittest.TestCase):

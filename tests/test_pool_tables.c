@@ -45,7 +45,7 @@
 #include "state/closure_member.h"
 #include "support/check.h"
 
-#define POOL_HASH_HEX "7725d31c6188bfbdb24d37ef1081bc592c1e7b57ebff2831a6c61b7b06e5a51b"
+#define POOL_HASH_HEX "e09e8475e790834e6cbeeb2d28bffe41f13046b3960832aacdf58bd934b289c2" /* steps G42, G44, G46, G48 and G49: the canonical hash of the rows (the tables and the marks of all five) */
 /* SHA-256 of the closure-layout bytes of the rows of the steps (P1 and G2: 28 formes, 72 moves, 52 items, 29
  * abilities). The whole-pool step must not move one of them (decision 0015 section 4.2); the pool generator before it
  * produced the same bytes. Step G10 moved two of them on purpose: Scald and Recover are data now (the thaw bit and
@@ -69,9 +69,9 @@
 #define POOL_ABILITIES 215u
 
 /* The rows that the tables do not model, pinned (the generator reports the same counts). */
-#define UNMODELED_MOVES 215u /* 217 before step G42 modelled Roost and Stomping Tantrum; 221 before step G48 modelled Rage Fist, Population Bomb, Stone Axe and Ceaseless Edge; 225 before step G37 modelled Stealth Rock, Spikes, Toxic Spikes and Sticky Web (target foeSide, side conditions 5 to 8); 227 before step G31 modelled Taunt and Yawn; 230 before step G33 modelled Dual Wingbeat, Triple Axel and Twin Beam (its count was not carried through the batch merges); 246 before step G39 modelled Charm, Fake Tears, Sacred Sword, Super Fang and the twelve other status moves of one target with primary boosts; 250 before step G29 modelled Trick, Switcheroo, Thief and Covet; 251 before step G38 modelled Imprison; 252 before step G26 modelled Perish Song; 256 before step G25 modelled Electric Terrain, Misty Terrain, Rising Voltage and Terrain Pulse; 257 before step G27 modelled Disable; 260 before step G34 (262 before step G36 modelled Toxic and Poison Fang); 262 before step G34 modelled Steel Roller, Clangorous Soul and Brick Break (the other four rows of the step were already modelled); 273 before step G32 modelled Eruption, Water Spout, Life Dew, Body Press, Foul Play, Psyshock, Rain Dance, Sunny Day, Volt Switch, Clanging Scales and Freeze-Dry; 276 before step G30 modelled Rage Powder, Psychic Fangs and Solar Beam; 299 before step G28 modelled Acrobatics, Blizzard, Feint and the rows of the new secondary self boost (Ancient Power, Aqua Step, Charge Beam, Fiery Dance, Flame Charge, Meteor Mash, Psyshield Bash, Steel Wing, Torch Song, Trailblaze) and the allAdjacent moves; 300 before step G20 modelled Spiky Shield; 301 before it modelled Aurora Veil; 303 before step G19 modelled Coaching and Glaive Rush; 305u before step G15 modelled Expanding Force; 306 before step G16 modelled Knock Off; 313 before step G17 modelled the seven recharge moves; 319 before step G13 modelled Detect, Light of Ruin and the poison secondaries (Cross Poison, Gunk Shot, Poison Jab, Sludge Bomb); 324 before step G10 */
-#define UNMODELED_ITEMS 34u /* two fewer since step G25 modelled Electric Seed and Misty Seed; one fewer since step G34 modelled Wide Lens; one fewer since step G32 modelled Eject Button; one fewer since step G28 modelled Expert Belt; five fewer since step G23-A found the Mega of a stone from (forme, stone); one fewer since step G15 modelled Psychic Seed */
-#define UNMODELED_ABILITIES 137u /* 138 before step G41 made Shadow Tag an engine row; 139 before step G37 made Toxic Debris an engine row; 152 before step G39 modelled thirteen abilities (Hyper Cutter, Regenerator, Solar Power, Scrappy, Infiltrator, Queenly Majesty, Damp, Sturdy, Snow Cloak, Sand Veil, Static, Justified, Limber); 153 before Mega batch 2 made Aura Guard an engine row; 154 before step G33 made Mirror Armor an engine row; 155 before step G25 made Electric Surge a terrain setter; 156 before step G27 made Cursed Body an engine row; 158 before step G35 made Rain Dish and Friend Guard engine rows; 165 before step G34 made Compound Eyes, Iron Fist, Sharpness, Solid Rock, Technician, Multiscale and Gale Wings engine rows; 168 before step G32 made Soundproof, Unnerve and Speed Boost engine rows; 172 before step G30 made Flame Body, Clear Body, Hospitality and Overcoat engine rows; 178 before step G22 made six abilities engine rows; 179 before step G23-C made Levitate an engine row; 180 before step AC1 made Trace an engine row; 181 before step G16 made Sticky Hold an engine row; 184 before step G14 made Rough Skin, Poison Touch and Thermal Exchange engine rows */
+#define UNMODELED_MOVES 207u /* 209 before step G42 modelled Roost and Stomping Tantrum; 217 before step G44 modelled Thunder, Power Trip, Ice Fang and Tri Attack (213 after it); 213 with the four of step G46 (Roar, Whirlwind, Dragon Tail, Circle Throw) removed too: 209; 221 before step G48 modelled Rage Fist, Population Bomb, Stone Axe and Ceaseless Edge; 225 before step G37 modelled Stealth Rock, Spikes, Toxic Spikes and Sticky Web (target foeSide, side conditions 5 to 8); 227 before step G31 modelled Taunt and Yawn; 230 before step G33 modelled Dual Wingbeat, Triple Axel and Twin Beam (its count was not carried through the batch merges); 246 before step G39 modelled Charm, Fake Tears, Sacred Sword, Super Fang and the twelve other status moves of one target with primary boosts; 250 before step G29 modelled Trick, Switcheroo, Thief and Covet; 251 before step G38 modelled Imprison; 252 before step G26 modelled Perish Song; 256 before step G25 modelled Electric Terrain, Misty Terrain, Rising Voltage and Terrain Pulse; 257 before step G27 modelled Disable; 260 before step G34 (262 before step G36 modelled Toxic and Poison Fang); 262 before step G34 modelled Steel Roller, Clangorous Soul and Brick Break (the other four rows of the step were already modelled); 273 before step G32 modelled Eruption, Water Spout, Life Dew, Body Press, Foul Play, Psyshock, Rain Dance, Sunny Day, Volt Switch, Clanging Scales and Freeze-Dry; 276 before step G30 modelled Rage Powder, Psychic Fangs and Solar Beam; 299 before step G28 modelled Acrobatics, Blizzard, Feint and the rows of the new secondary self boost (Ancient Power, Aqua Step, Charge Beam, Fiery Dance, Flame Charge, Meteor Mash, Psyshield Bash, Steel Wing, Torch Song, Trailblaze) and the allAdjacent moves; 300 before step G20 modelled Spiky Shield; 301 before it modelled Aurora Veil; 303 before step G19 modelled Coaching and Glaive Rush; 305u before step G15 modelled Expanding Force; 306 before step G16 modelled Knock Off; 313 before step G17 modelled the seven recharge moves; 319 before step G13 modelled Detect, Light of Ruin and the poison secondaries (Cross Poison, Gunk Shot, Poison Jab, Sludge Bomb); 324 before step G10 */
+#define UNMODELED_ITEMS 30u /* three fewer since step G49 modelled Muscle Band, Wise Glasses and Bright Powder; one fewer since step G46 modelled Red Card; two fewer since step G25 modelled Electric Seed and Misty Seed; one fewer since step G34 modelled Wide Lens; one fewer since step G32 modelled Eject Button; one fewer since step G28 modelled Expert Belt; five fewer since step G23-A found the Mega of a stone from (forme, stone); one fewer since step G15 modelled Psychic Seed */
+#define UNMODELED_ABILITIES 135u /* 137 before step G46 made Suction Cups and Guard Dog engine rows; 138 before step G41 made Shadow Tag an engine row; 139 before step G37 made Toxic Debris an engine row; 152 before step G39 modelled thirteen abilities (Hyper Cutter, Regenerator, Solar Power, Scrappy, Infiltrator, Queenly Majesty, Damp, Sturdy, Snow Cloak, Sand Veil, Static, Justified, Limber); 153 before Mega batch 2 made Aura Guard an engine row; 154 before step G33 made Mirror Armor an engine row; 155 before step G25 made Electric Surge a terrain setter; 156 before step G27 made Cursed Body an engine row; 158 before step G35 made Rain Dish and Friend Guard engine rows; 165 before step G34 made Compound Eyes, Iron Fist, Sharpness, Solid Rock, Technician, Multiscale and Gale Wings engine rows; 168 before step G32 made Soundproof, Unnerve and Speed Boost engine rows; 172 before step G30 made Flame Body, Clear Body, Hospitality and Overcoat engine rows; 178 before step G22 made six abilities engine rows; 179 before step G23-C made Levitate an engine row; 180 before step AC1 made Trace an engine row; 181 before step G16 made Sticky Hold an engine row; 184 before step G14 made Rough Skin, Poison Touch and Thermal Exchange engine rows */
 
 /* How many rows of the manifest are marked and half modelled: marked, and with the UNMODELED handler or a list of
  * unmodelled features (decision 0015 section 4.2). A step marks only what it fully models. */
@@ -705,7 +705,7 @@ int main(void)
         DF_CHECK_EQ_U64(&t, DFI_SPECIAL_STONE_AXE, DFI_SPECIAL_RAGE_FIST + 1u);
         DF_CHECK_EQ_U64(&t, DFI_SPECIAL_CEASELESS_EDGE, DFI_SPECIAL_STONE_AXE + 1u);
         DF_CHECK_EQ_U64(&t, DFI_SPECIAL_MULTI_HIT_10, DFI_SPECIAL_CEASELESS_EDGE + 1u);
-        DF_CHECK_EQ_U64(&t, DFI_SPECIAL_ROOST, DFI_SPECIAL_MULTI_HIT_10 + 1u); /* step G42 */
+        DF_CHECK_EQ_U64(&t, DFI_SPECIAL_ROOST, DFI_SPECIAL_TRI_ATTACK + 1u); /* step G42 */
         DF_CHECK_EQ_U64(&t, DFI_SPECIAL_STOMPING_TANTRUM, DFI_SPECIAL_ROOST + 1u); /* step G42 */
         DF_CHECK_EQ_U64(&t, DFI_SPECIAL_UNMODELED, DFI_SPECIAL_STOMPING_TANTRUM + 1u);
         DF_CHECK_EQ_U64(&t, dfi_pool_moves[DFI_MOVE_TAUNT].special, DFI_SPECIAL_TAUNT);
@@ -824,7 +824,8 @@ int main(void)
             heal += (dfi_pool_move_flags2[i] & DFI_MOVE_FLAG2_HEAL) != 0u ? 1u : 0u;
             other += (dfi_pool_move_flags2[i] &
                       ~(uint32_t)(DFI_MOVE_FLAG2_SOUND | DFI_MOVE_FLAG2_HEAL | DFI_MOVE_FLAG2_THAWS_TARGET | DFI_MOVE_FLAG2_RECHARGE |
-                                    DFI_MOVE_FLAG2_POWDER | DFI_MOVE_FLAG2_PUNCH | DFI_MOVE_FLAG2_SLICING)) != 0u
+                                    DFI_MOVE_FLAG2_POWDER | DFI_MOVE_FLAG2_PUNCH | DFI_MOVE_FLAG2_SLICING |
+                                    DFI_MOVE_FLAG2_FORCE_SWITCH)) != 0u
                          ? 1u
                          : 0u;
         }
@@ -1249,7 +1250,8 @@ int main(void)
                                id == DFI_ITEM_DRAGONINITE || id == DFI_ITEM_GLIMMORANITE || id == DFI_ITEM_BLAZIKENITE ||
                                id == DFI_ITEM_ABSOLITEZ || id == DFI_ITEM_RAICHUNITEX || id == DFI_ITEM_LOPUNNITE ||
                                id == DFI_ITEM_ALAKAZITE || id == DFI_ITEM_MEOWSTICITE || id == DFI_ITEM_SCIZORITE ||
-                               id == DFI_ITEM_GALLADITE;
+                               id == DFI_ITEM_GALLADITE ||
+                               id == DFI_ITEM_REDCARD || id == DFI_ITEM_MUSCLEBAND || id == DFI_ITEM_WISEGLASSES || id == DFI_ITEM_BRIGHTPOWDER /* step G46: Red Card (no Sheer Force gate); step G49: the three item rows */;
             DF_CHECK_EQ_U64(&t, dfi_support.items[id] != 0u ? 1u : 0u, stone ? 1u : 0u);
         }
         for (uint32_t id = 0u; id < DFI_POOL_ITEM_COUNT; ++id) {
@@ -1310,7 +1312,9 @@ int main(void)
                                 id == DFI_ABILITY_AURAGUARD ||
                                 id == DFI_ABILITY_TOXICDEBRIS /* step G37: Toxic Debris, by id (a Physical hit adds Toxic Spikes) */ ||
                                 /* step G41: Shadow Tag, by id (the request builder asks dfi_switch_trapped) */
-                                id == DFI_ABILITY_SHADOWTAG;
+                                id == DFI_ABILITY_SHADOWTAG ||
+                                /* step G46: Suction Cups and Guard Dog, the DragOut blockers, by id */
+                                id == DFI_ABILITY_SUCTIONCUPS || id == DFI_ABILITY_GUARDDOG;
             DF_CHECK_EQ_U64(&t, dfi_support.abilities[id] != 0u ? 1u : 0u, (setter || terrain_setter || engine) ? 1u : 0u);
             DF_CHECK_EQ_U64(&t, dfi_pool_ability_family[id].family,
                             setter ? DFI_ABILITY_FAMILY_WEATHER_SETTER
@@ -1400,8 +1404,15 @@ int main(void)
                                                 DFI_MOVE_TAUNT, DFI_MOVE_YAWN,
                                                 /* step G37: the four hazards */
                                                 DFI_MOVE_STEALTHROCK, DFI_MOVE_SPIKES, DFI_MOVE_TOXICSPIKES, DFI_MOVE_STICKYWEB,
-                                                 /* step G48: Rage Fist, Stone Axe, Ceaseless Edge and Population Bomb; step G42: Roost (a heal and a self volatile) and Stomping Tantrum (a base power callback) */
+                                                /* step G44: four handlers (Thunder, Power Trip, Ice Fang, Tri Attack) and seven data rows */
+                                                DFI_MOVE_THUNDER, DFI_MOVE_POWERTRIP, DFI_MOVE_ICEFANG, DFI_MOVE_TRIATTACK,
+                                                DFI_MOVE_BREAKINGSWIPE, DFI_MOVE_VACUUMWAVE, DFI_MOVE_STONEEDGE, DFI_MOVE_AQUACUTTER,
+                                                DFI_MOVE_HAMMERARM, DFI_MOVE_TROPKICK, DFI_MOVE_METEORMASH,
+                                                /* step G46: the forced switch (the drag): Roar, Whirlwind, Dragon Tail, Circle Throw */
+                                                DFI_MOVE_ROAR, DFI_MOVE_WHIRLWIND, DFI_MOVE_DRAGONTAIL, DFI_MOVE_CIRCLETHROW,
+                                                /* step G48: Rage Fist, Stone Axe, Ceaseless Edge and Population Bomb */
                                                 DFI_MOVE_RAGEFIST, DFI_MOVE_STONEAXE, DFI_MOVE_CEASELESSEDGE, DFI_MOVE_POPULATIONBOMB,
+                                                /* step G42: Roost (a heal and a self volatile) and Stomping Tantrum (a base power callback) */
                                                 DFI_MOVE_ROOST, DFI_MOVE_STOMPINGTANTRUM};
         uint32_t marked_count = 0u;
         for (uint32_t id = DFI_EXT_MOVE_COUNT; id < DFI_POOL_MOVE_COUNT; ++id) {
@@ -1429,6 +1440,7 @@ int main(void)
                              (id == DFI_MOVE_SACREDSWORD && dfi_pool_moves[id].special == DFI_SPECIAL_DARKEST_LARIAT) ||
                              id == DFI_MOVE_ELECTRICTERRAIN || id == DFI_MOVE_MISTYTERRAIN || id == DFI_MOVE_RISINGVOLTAGE ||
                              id == DFI_MOVE_TERRAINPULSE || id == DFI_MOVE_PERISHSONG ||
+                             id == DFI_MOVE_THUNDER || id == DFI_MOVE_POWERTRIP || id == DFI_MOVE_ICEFANG || id == DFI_MOVE_TRIATTACK ||
                              id == DFI_MOVE_DUALWINGBEAT || id == DFI_MOVE_TRIPLEAXEL || id == DFI_MOVE_TWINBEAM ||
                              id == DFI_MOVE_TRICK || id == DFI_MOVE_SWITCHEROO || id == DFI_MOVE_THIEF || id == DFI_MOVE_COVET ||
                              id == DFI_MOVE_RAGEFIST || id == DFI_MOVE_STONEAXE || id == DFI_MOVE_CEASELESSEDGE ||
@@ -1439,7 +1451,25 @@ int main(void)
             DF_CHECK(&t, !want || dfi_pool_moves[id].special != DFI_SPECIAL_UNMODELED);
             marked_count += dfi_support.moves[id] != 0u ? 1u : 0u;
         }
-        DF_CHECK_EQ_U64(&t, marked_count, 155u); /* Roost and Stomping Tantrum (G42), the four of step G48 (Rage Fist, Stone Axe, Ceaseless Edge, Population Bomb), Taunt and Yawn (G31), the four hazards (G37), the four of step G39, the four of step G29, Imprison (G38), the three of step G33, Perish Song (G26), the four of step G25, Disable (G27), the ten of step G35, Toxic and Poison Fang (G36), the ten of step G30, the eleven of step G32 and the seven of step G34 */
+        /* Step G46 guards: rows that stay UNMARKED until a battle uses them. Substitute: once it is marked, Dragon Tail and
+         * Circle Throw must stop their drag at a Substitute (no target, forceSwitch skipped) and Roar must bypass it
+         * (bypasssub). Mold Breaker: Suction Cups and Guard Dog are breakable (their DragOut is ignored under Mold Breaker),
+         * so Mold Breaker is marked only with that rule. Sheer Force: Red Card has no Sheer Force gate under Champions
+         * (scripts.ts:595-600), so once Sheer Force is marked a battle must show Red Card against a Sheer Force attacker. */
+        DF_CHECK_EQ_U64(&t, dfi_support.moves[DFI_MOVE_SUBSTITUTE] != 0u ? 1u : 0u, 0u);
+        DF_CHECK_EQ_U64(&t, dfi_support.abilities[DFI_ABILITY_MOLDBREAKER] != 0u ? 1u : 0u, 0u);
+        DF_CHECK_EQ_U64(&t, dfi_support.abilities[DFI_ABILITY_SHEERFORCE] != 0u ? 1u : 0u, 0u);
+        /* Step G46, the forceSwitchFlag gates of the pin (decision 0015 section 7): Shell Bell (items.ts:5658) and Pickpocket
+         * (abilities.ts:3242) are skipped while the holder has a forceSwitchFlag. Both are unmodelled and stay UNMARKED; once
+         * one is marked it must read the drag_pending bit of dfi_run for its holder (as Emergency Exit and the Eject Button
+         * do). Wimp Out (abilities.ts:5495, champions :99) has no pool row; if one is added it must read the same bit. */
+        DF_CHECK_EQ_U64(&t, dfi_support.items[DFI_ITEM_SHELLBELL] != 0u ? 1u : 0u, 0u);
+        DF_CHECK_EQ_U64(&t, dfi_support.abilities[DFI_ABILITY_PICKPOCKET] != 0u ? 1u : 0u, 0u);
+        /* The equivalence of the drag-in DragOut re-check (mutant M1, step G46): no marked row changes a blocker's ability
+         * between the hit-time DragOut and the drag-in. Skill Swap (and any move that changes abilities mid-turn) would make
+         * that re-check live: once it is marked, the drag-in DragOut must read the holder's ability at the drag-in. */
+        DF_CHECK_EQ_U64(&t, dfi_support.moves[DFI_MOVE_SKILLSWAP] != 0u ? 1u : 0u, 0u);
+        DF_CHECK_EQ_U64(&t, marked_count, 170u); /* the eleven of step G44 (Thunder, Power Trip, Ice Fang, Tri Attack and seven data rows), the four of step G46 (Roar, Whirlwind, Dragon Tail, Circle Throw), the four of step G48, Taunt and Yawn (G31), the four hazards (G37), the four of step G39, the four of step G29, Imprison (G38), the three of step G33, Perish Song (G26), the four of step G25, Disable (G27), the ten of step G35, Toxic and Poison Fang (G36), the ten of step G30, the eleven of step G32 and the seven of step G34 */
     }
 
     /* Step AC1: Trace copies the ability of a foe unless that has the pin's notrace flag. The turn code excludes only

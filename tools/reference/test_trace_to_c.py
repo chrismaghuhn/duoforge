@@ -377,6 +377,45 @@ class Refusals(unittest.TestCase):
                      "trace_to_c: event:AfterMove tie with ['H:noguard:p1b:cb', 'H:noguard:p2b:cb']",
                      'event:AfterMove:noguard')
 
+    @staticmethod
+    def priority_tie(trace):
+        """The draws in context event:ModifyAccuracy of g49_bright_powder_tie (Wide Lens and Bright Powder at one Speed)."""
+        found = [d for step in trace['steps'] for d in step['draws'] if d.get('context') == 'event:ModifyAccuracy']
+        assert len(found) == 2, found
+        return found
+
+    def test_wide_lens_and_bright_powder_tie_is_a_dropped_draw(self):
+        """g49_bright_powder_tie: the two priority -2 accuracy items of equal-Speed holders tie in ModifyAccuracy. The draws are
+        dropped with their reason (the engine refuses the orders that differ), and the battle converts."""
+        name = 'g49_bright_powder_tie'
+        spec, trace = battle(name)
+        convert(name, spec, trace)
+        for d in self.priority_tie(trace):
+            self.assertEqual((d['site'], d['group']), ('SPEED_TIE', ['H:brightpowder:p2a:cb', 'H:widelens:p1a:cb']))
+        k = next(k for k, step in enumerate(trace['steps']) for d in step['draws'] if d.get('context') == 'event:ModifyAccuracy')
+        d = self.priority_tie(trace)[0]
+        before, after = trace['steps'][k - 1]['state'], trace['steps'][k]['state']
+        flipped = dict(d, group=list(reversed(d['group'])))
+        self.assertEqual(trace_to_c.drop_reason(d, before, after), trace_to_c.drop_reason(flipped, before, after))
+        self.assertIn('Wide Lens and Bright Powder', trace_to_c.drop_reason(d, before, after))
+
+    def test_accuracy_tie_of_wide_lens_and_bright_powder_with_another_handler(self):
+        """A tie in ModifyAccuracy with any third handler, or with a handler that is not a callback, is still refused."""
+        def other(spec, trace):
+            self.priority_tie(trace)[0]['group'][1] = 'H:noguard:p2b:cb'
+        self.control('g49_bright_powder_tie', other, 'tie-context', 'trace_to_c: unhandled tie context event:ModifyAccuracy',
+                     'event:ModifyAccuracy')
+
+        def third(spec, trace):
+            self.priority_tie(trace)[0]['group'].append('H:widelens:p2b:cb')
+        self.control('g49_bright_powder_tie', third, 'tie-context', 'trace_to_c: unhandled tie context event:ModifyAccuracy',
+                     'event:ModifyAccuracy')
+
+        def not_a_callback(spec, trace):
+            self.priority_tie(trace)[0]['group'][0] = 'H:brightpowder:p2a:end'
+        self.control('g49_bright_powder_tie', not_a_callback, 'tie-context', 'trace_to_c: unhandled tie context event:ModifyAccuracy',
+                     'event:ModifyAccuracy')
+
     def test_unknown_volatile(self):
         def mutate(spec, trace):
             mon = trace['steps'][1]['state']['sides'][0]['pokemon'][0]
@@ -2180,7 +2219,7 @@ class Library(unittest.TestCase):
         marked = [n for n in re.findall(r'\[DFI_MOVE_(\w+)\] = 1u', read('src', 'data', 'support_manifest.c'))
                   if n in ids and ids[n] >= ext_moves]
         self.assertEqual(len(names), ext_moves + len(ids))
-        self.assertEqual(len(marked), 155)  # Roost and Stomping Tantrum (G42), the four of step G48 (Rage Fist, Stone Axe, Ceaseless Edge, Population Bomb), Taunt and Yawn (G31), the four hazards (G37), the four of G39 (Charm, Fake Tears, Sacred Sword, Super Fang), the four of G29 (Trick, Switcheroo, Thief, Covet), Imprison (G38), the three of G33 (Dual Wingbeat, Triple Axel, Twin Beam), Perish Song (G26), the four of G25 (Electric Terrain, Misty Terrain, Rising Voltage, Terrain Pulse), Disable (G27), the ten of G35 (Thunder Punch, X-Scissor, Lumina Crash, Overdrive, Scorching Sands, Leaf Blade, Boomburst, Sludge Wave, Volt Tackle, Discharge), Toxic and Poison Fang (G36), the seven of G34 (Steel Roller, Clangorous Soul, Brick Break, Fiery Dance, Psycho Cut, Iron Defense, Electroweb), the eleven of G32, the ten of G30, the six of G28 (Shell Smash, Acrobatics, Blizzard, Ancient Power, Feint, Earthquake), the 27 of G21, Spiky Shield (G20), G2, G5, G8, G12, G10 (4), G11 (Soak), G7 (Wide Guard), weather (2), the fourteen of G13, G9 (Encore), G17 (six recharge moves), G16 (Knock Off), Expanding Force (G15), Aurora Veil (G20)
+        self.assertEqual(len(marked), 170)  # Roost and Stomping Tantrum (G42), the eleven of step G44, the four of step G46 (Roar, Whirlwind, Dragon Tail, Circle Throw), the four of step G48, Taunt and Yawn (G31), the four hazards (G37), and the rows of the earlier steps as before
         pool = [n for n in os.listdir(os.path.join(ROOT, 'tests', 'reference', 'specs'))
                 if trace_to_c.is_pool(ROOT, n[:-5])]
         logs = []
@@ -2199,6 +2238,8 @@ class Library(unittest.TestCase):
                             done = done or after.startswith(('|-damage|', '|-boost|', '|-heal|', '|-start|', '|-weather|') + (('|-status|',) if name in ('Will-O-Wisp', 'Stun Spore', 'Sleep Powder', 'Poison Powder') else ()))
                             # A status move of one target with a primary drop (Charm, Fake Tears, step G39): its -unboost line.
                             done = done or (name in ('Charm', 'Fake Tears') and after.startswith('|-unboost|'))
+                            # A forced switch (step G46: Whirlwind; Dragon Tail is damaging, so its damage line counts): the drag line.
+                            done = done or (name in ('Whirlwind', 'Roar', 'Circle Throw') and after.startswith('|drag|'))
                             # A side condition that a status move sets (Aurora Veil, step G20): its -sidestart line.
                             done = done or (after.startswith('|-sidestart|') and after.endswith(('|move: ' + name, '|' + name)))  # Spikes' own line has no move: prefix (step G37)
                             # A terrain that a status move sets (Electric Terrain, Misty Terrain, step G25): its -fieldstart line.
