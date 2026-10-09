@@ -1,0 +1,141 @@
+{
+  "name": "g52_fail_no_fainted_pawmot",
+  "purpose": "Revival Blessing fails at turn 1 with no fainted member of the side: Pawmot (M) uses it, the reference prints the move line with [still] and no target, then -fail. Team X3 against the g50 team Y, random play of diff_driver seed 5401.",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,f7578dd209a448baf1fa8526b2a975f32e50de93f7d71a31c6752419154806a2",
+  "teams": [
+    "Milotic (F) @ Rocky Helmet\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Protect\n- Scald\n- Recover\n- Coil\n\nPrimarina (F) @ Fairy Feather\nAbility: Torrent\nLevel: 50\nEVs: 32 HP / 2 Def / 32 SpD\nCalm Nature\n- Protect\n- Moonblast\n- Calm Mind\n\nPawmot (M) @ Leftovers\nAbility: Iron Fist\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Thunderbolt\n- Revival Blessing\n- Ice Punch\n- Protect\n\nGholdengo @ Life Orb\nAbility: Good as Gold\nLevel: 50\nEVs: 32 HP / 2 SpA / 32 SpD\nCalm Nature\n- Protect\n- Shadow Ball\n- Make It Rain\n\nKingambit (M) @ Black Glasses\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Sucker Punch\n- Iron Head\n- Protect\n- Swords Dance\n\nCeruledge (M) @ Charcoal\nAbility: Flash Fire\nLevel: 50\nEVs: 31 HP / 7 Atk / 24 Def / 3 SpD / 1 Spe\nBrave Nature\n- Protect",
+    "Samurott-Hisui (F) @ Mystic Water\nAbility: Torrent\nLevel: 50\nEVs: 2 HP / 32 Atk / 32 Spe\nJolly Nature\n- Soak\n- Protect\n- Aqua Jet\n- Swords Dance\n\nPrimarina (F) @ Fairy Feather\nAbility: Torrent\nLevel: 50\nEVs: 32 HP / 2 Def / 32 SpD\nCalm Nature\n- Protect\n- Moonblast\n- Calm Mind\n\nMilotic (F) @ Leftovers\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Protect\n- Scald\n- Recover\n- Coil\n\nSneasler (M) @ Charcoal\nAbility: Poison Touch\nLevel: 50\nEVs: 2 HP / 32 Atk / 32 Spe\nJolly Nature\n- Protect\n\nGarchomp (M) @ Focus Sash\nAbility: Rough Skin\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Earthquake\n- Protect\n- Swords Dance\n- Dragon Claw\n\nGholdengo @ Black Glasses\nAbility: Good as Gold\nLevel: 50\nEVs: 32 HP / 2 SpA / 32 SpD\nCalm Nature\n- Protect\n- Shadow Ball\n- Make It Rain"
+  ],
+  "choices": [
+    {
+      "p1": "team 3546",
+      "p2": "team 3645"
+    },
+    {
+      "p1": "move 2, move 1 1",
+      "p2": "move 2 2, move 2 2"
+    },
+    {
+      "p1": "move 4, switch 3",
+      "p2": "switch 4, move 3"
+    },
+    {
+      "p1": "move 1 1, move 2 2",
+      "p2": "move 4 -2, move 1"
+    },
+    {
+      "p1": "move 3 2, move 3",
+      "p2": "move 2, move 2 1"
+    },
+    {
+      "p1": "move 3 1, move 3",
+      "p2": "move 2, move 1"
+    },
+    {
+      "p2": "switch 3, pass"
+    },
+    {
+      "p1": "move 4, move 2 1",
+      "p2": "move 1, move 2 -1"
+    },
+    {
+      "p1": "move 1 1, move 2 2",
+      "p2": "move 1, move 1"
+    },
+    {
+      "p1": "move 4, move 1",
+      "p2": "move 1, move 3"
+    },
+    {
+      "p1": "move 3 1, move 3",
+      "p2": "move 1, move 1"
+    },
+    {
+      "p1": "move 3 -2, move 3",
+      "p2": "move 1, move 2 1"
+    },
+    {
+      "p1": "move 3 2, move 1",
+      "p2": "move 1, move 3"
+    },
+    {
+      "p1": "move 4, move 3",
+      "p2": "move 1, move 1"
+    },
+    {
+      "p1": "move 4, move 1",
+      "p2": "move 1, move 3"
+    },
+    {
+      "p1": "move 1 2, move 2 -1",
+      "p2": "move 1, move 3"
+    },
+    {
+      "p1": "move 4, move 2 1",
+      "p2": "move 1, switch 4"
+    },
+    {
+      "p1": "move 1 2, move 3",
+      "p2": "switch 4, move 4"
+    },
+    {
+      "p1": "move 1 -2, move 1",
+      "p2": "move 2 1, move 3"
+    },
+    {
+      "p1": "switch 3, pass"
+    },
+    {
+      "p1": "move 1 1, switch 4",
+      "p2": "move 1, move 2 2"
+    },
+    {
+      "p1": "move 2 1, move 1",
+      "p2": "move 1, move 3"
+    },
+    {
+      "p1": "move 2 2, move 1",
+      "p2": "switch 4, move 4"
+    },
+    {
+      "p1": "move 4, move 1",
+      "p2": "move 1, move 3"
+    },
+    {
+      "p1": "switch 4, pass"
+    },
+    {
+      "p1": "move 2 -2, move 1",
+      "p2": "move 1, move 1"
+    },
+    {
+      "p1": "move 3, move 1",
+      "p2": "move 1, move 3"
+    },
+    {
+      "p2": "switch 4, pass"
+    },
+    {
+      "p1": "move 3, move 1",
+      "p2": "move 3, move 1"
+    },
+    {
+      "p1": "pass, move 1",
+      "p2": "move 3, move 4"
+    },
+    {
+      "p1": "pass, move 1",
+      "p2": "move 1, move 3"
+    },
+    {
+      "p1": "pass, move 1",
+      "p2": "move 2 -2, move 4"
+    },
+    {
+      "p1": "pass, move 1",
+      "p2": "move 3, move 1"
+    }
+  ]
+}
