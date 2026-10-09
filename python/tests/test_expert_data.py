@@ -180,6 +180,85 @@ class ExpertDataTest(unittest.TestCase):
             with self.subTest(key=bad_key, seed=seed, domain=domain), self.assertRaises(ValueError):
                 ed.selection_word(bad_key, seed, domain=domain)
 
+    def test_selection_word_domains_and_frequency_select_rule_in_code(self):
+        from duoforge_search import expert_data as ed
+        self.assertEqual(ed.SELECT_THRESHOLD, 2**61)  # random 1/8, not every eighth arrival
+        key = ed.DecisionKey(42, 1, 9)
+        self.assertFalse(ed.is_selected(key, 7))  # pinned word 7771256613835731320 >= 2**61
+        keys = [ed.DecisionKey(i, i % 2, 3) for i in range(65536)]
+        chosen = [k for k in keys if ed.is_selected(k, 7)]
+        self.assertEqual(chosen, [k for k in keys if ed.selection_word(k, 7, domain="SELECT") < 2**61])
+        self.assertLessEqual(abs(len(chosen) - 8192), 384)
+        for bad_key, seed in ((ed.DecisionKey(0, 2, 0), 7), (key, True), (key, 2**64)):
+            with self.subTest(key=bad_key, seed=seed), self.assertRaises(ValueError):
+                ed.is_selected(bad_key, seed)
+
+    def test_selection_word_domains_and_frequency_held_out_split(self):
+        from duoforge_search import expert_data as ed
+        # Whole-game keyed split, fixed before collection: only game id and split seed enter.
+        self.assertEqual(ed.HELD_OUT_THRESHOLD, 2**64 // 5)
+        games = range(65536)
+        held = [g for g in games if ed.is_held_out(g, 9)]
+        self.assertEqual(held, [g for g in games if ed.selection_word(
+            ed.DecisionKey(g, 0, 0), 9, domain="split") < 2**64 // 5])
+        # Predeclared: 13107.2 expected, ~4.5 binomial standard deviations (102.4); no tuning.
+        self.assertLessEqual(abs(len(held) - 13107), 460)
+        self.assertEqual(held[:4], [17, 23, 32, 33])
+        self.assertNotEqual(held, [g for g in games if ed.is_held_out(g, 7)])
+        # The split never follows the SELECT gate; both are drawn from separate domains.
+        self.assertNotEqual(set(held), {g for g in games if ed.is_selected(ed.DecisionKey(g, 0, 0), 9)})
+        for game, seed in ((-1, 9), (True, 9), (2**64, 9), (0, -1), (0, 2**64)):
+            with self.subTest(game=game, seed=seed), self.assertRaises(ValueError):
+                ed.is_held_out(game, seed)
+
+    def test_admission_precedes_tau_and_drops_games_in_order_never_tau_for_discarded_label(self):
+        from duoforge_search import expert_data as ed
+        m = manifest(ed)
+        a, b, c = ed.DecisionKey(0, 0, 1), ed.DecisionKey(1, 1, 1), ed.DecisionKey(2, 0, 1)
+        cursor = ed.LabelCursor(remaining=1)
+        batch = ed.admit_tick(cursor, [a, b])
+        self.assertEqual((batch.admitted_keys, batch.cap_raw_keys), ((a,), (b,)))
+        pending = ed.cursor_bytes(cursor, m)
+        # A cap-raw (discarded-label) root may only execute its pre-drawn raw action.
+        for status in (ed.RowStatus.TARGET, ed.RowStatus.PUBLIC_REFUSAL, ed.RowStatus.WORK_EXHAUSTED,
+                       ed.RowStatus.UNSELECTED, ed.RowStatus.FORCED):
+            with self.subTest(cap_raw=status), self.assertRaisesRegex(ValueError, "cap-raw"):
+                ed.commit_tick(cursor, [ed.AdmissionOutcome(a, ed.RowStatus.TARGET),
+                                        ed.AdmissionOutcome(b, status)])
+        # An admitted root cannot silently become cap-raw/unselected after the teacher ran.
+        for status in (ed.RowStatus.CAP_RAW, ed.RowStatus.UNSELECTED, ed.RowStatus.FORCED):
+            with self.subTest(admitted=status), self.assertRaisesRegex(ValueError, "admitted"):
+                ed.commit_tick(cursor, [ed.AdmissionOutcome(a, status),
+                                        ed.AdmissionOutcome(b, ed.RowStatus.CAP_RAW)])
+        for outcomes in ([ed.AdmissionOutcome(a, ed.RowStatus.TARGET)],
+                         [ed.AdmissionOutcome(a, ed.RowStatus.TARGET), ed.AdmissionOutcome(b, ed.RowStatus.CAP_RAW),
+                          ed.AdmissionOutcome(c, ed.RowStatus.CAP_RAW)],
+                         [ed.AdmissionOutcome(a, ed.RowStatus.TARGET), ed.AdmissionOutcome(a, ed.RowStatus.TARGET),
+                          ed.AdmissionOutcome(b, ed.RowStatus.CAP_RAW)]):
+            with self.subTest(outcomes=outcomes), self.assertRaises(ValueError):
+                ed.commit_tick(cursor, outcomes)
+        self.assertEqual(ed.cursor_bytes(cursor, m), pending)  # refused commits change nothing
+        # Released refusal tickets never revive a dropped game: it stays cap-raw.
+        after = ed.commit_tick(cursor, [ed.AdmissionOutcome(a, ed.RowStatus.PUBLIC_REFUSAL),
+                                        ed.AdmissionOutcome(b, ed.RowStatus.CAP_RAW)])
+        self.assertEqual(after.remaining, 1)
+        again = ed.admit_tick(after, [ed.DecisionKey(1, 1, 2)])
+        self.assertEqual((again.admitted_keys, again.cap_raw_keys), ((), (ed.DecisionKey(1, 1, 2),)))
+        self.assertEqual(after.remaining, 1)
+        # Row level: no stored tau, no fallback cause and no admission on a discarded label.
+        row = target_row(ed, m)
+        raw = dataclasses.replace(row, status=ed.RowStatus.CAP_RAW, sparse_policy=None, admitted=False,
+                                  action=1, behavior_logp=float(np.log(.8)))
+        ed.validate_row(raw, m)
+        for bad in (dataclasses.replace(raw, action=0), dataclasses.replace(raw, sparse_policy=row.sparse_policy),
+                    dataclasses.replace(raw, admitted=True), dataclasses.replace(raw, cause="cap"),
+                    dataclasses.replace(raw, status=ed.RowStatus.UNSELECTED, action=0),
+                    dataclasses.replace(raw, status=ed.RowStatus.PUBLIC_REFUSAL, admitted=True, cause="x", action=0),
+                    dataclasses.replace(raw, status=ed.RowStatus.WORK_EXHAUSTED, admitted=True, cause="x", action=0),
+                    dataclasses.replace(row, sparse_policy=None)):
+            with self.subTest(row=bad.status), self.assertRaises(ValueError):
+                ed.validate_row(bad, m)
+
     def test_admission_precedes_tau_and_drops_games_in_order(self):
         from duoforge_search import expert_data as ed
         m = manifest(ed)
