@@ -214,3 +214,29 @@ Move identity comes from the data API: the named constant `TR_MOVES` (`trickroom
 Unfinished games count for none of these.
 
 Tests: `test_trick_room_tracker_attribution` (synthetic observations: set, early end, natural expiry, both sides choosing TR → unattributed, a mid-turn switch request, blocks, last-turn choice) and `test_trick_room_report_groups`. CLI: the report is part of the `expert_eval` output JSON.
+
+## Owner amendment: the pilot runs on AWS (2026-10-09)
+
+The first local attempt is superseded. On 2026-10-09 the generation finished locally on main `d3631151`: R = 39 frozen from the smoke (t = 534/512), 19968 games, 16384 targets, 0 cut-offs, 6173 CPU core-seconds. Distill then failed with a CUDA out-of-memory error on the local 8 GB GPU at its first step, after about 25 minutes of single-threaded shard loading that its ledger did not charge. The owner then moved the whole pilot to AWS. Its local shards serve only as a determinism cross-check against the AWS generation (shard SHA-256 lists) and are not used.
+
+**Hardware:** one g6.4xlarge Spot machine (NVIDIA L4 24 GB, 16 vCPU, 64 GB, Frankfurt). It runs generation, distill, the control arm and the evaluation, so both arms' CPU core-seconds and GPU-seconds come from identical hardware and stay comparable within 5%. Ledgers from the local attempt are not mixed in. The worker freeze stays at 14 native workers on 14 logical CPUs, with OMP/OpenBLAS 4. Generation stays on the CPU, as frozen. One allocator setting holds for every GPU phase of both arms and is recorded in the report.
+
+**Operation:**
+- Only HauptSession starts and stops AWS machines, with the owner; every machine terminates itself.
+- The run script is `tools/cloud/p1_pilot/run.sh` (Learner v2).
+- Code, results, checkpoints, ledgers and logs stay in the private S3 bucket only.
+- A Spot interruption is a pause at the last completed phase boundary. The run resumes from that boundary with the same commit and its own ledger. Work lost to an interruption is charged to its arm.
+
+**Evaluation:**
+- **Pool:** the 49333 training pool (652 teams: A/B/C and PP_ in the PP bucket, LL_ in the LL bucket, with its weights), approved by the owner as the LL_ registry. Its hash is pinned in the evaluation manifest.
+- **Checkpoints** (file SHA-256 via `python -m duoforge_search.eval_manifest`, written after both arms are trained and before the evaluation smoke):
+  - pilot and control: the arms' results;
+  - frozen: params-49333;
+  - panel: params-0 (BC), params-3600 and params-11000 of the many-c4e96e6 run;
+  - ladder: params-39400 of the same run. The plan names a ladder opponent but never defines it. 39400 is the strongest ladder rung below 49333 (ladder Elo 749, 49333 768), so the separate ladder output faces a strong near opponent instead of duplicating BC. This is an M12 decision, not a gate: no gate group reads the ladder.
+- **Seed and ids:** seed `0x2026100900000301`, first game id 10^9 (its own namespace).
+- **Rate gate of the 64-game smoke:** measured on one extra warm call at full evaluation width (one block seat, 256 pairs, same players and form). That call is not recorded, but it is charged to the shared evaluation reserve, and its cut-offs and refusals count for STOP.
+  - warm_rate comes from that call.
+  - forecast = JIT + 12288 / warm_rate.
+  - The thresholds are unchanged: any cut-off, any refusal, warm_rate < 5 games/s or forecast > 3600 s is a STOP.
+  - The report shows both the narrow and the full-width rate.
