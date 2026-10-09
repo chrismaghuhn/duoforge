@@ -414,7 +414,9 @@ The [P1 plan](2026-10-08-stage3-p1-pilot.md) gives the collection loop to Learne
     - the identity: manifest, teacher configuration, cut-off, label cap, shard size, encoder, network and search digests, belief, exclusions, pool, and the CLI's checkpoint hash.
   - A resume restores the teacher with `restore_teacher` into a fresh search. It refuses another identity or manifest, and missing or altered shards.
   - The interrupted round's shards are moved to `out/discarded/attempt-NNNN/`, kept for diagnosis as EXPERT_DATA.md asks of failed writes and never read as data. The round is replayed from its start; its keys make it identical.
-- **Compute ledger.** It is optional, phase `generate`. The collector's own network pass runs in a `Ledger.device()` section ending in `block_until_ready`.
+- **Compute ledger.** It is optional, phase `generate`. GPU-seconds count only device work that runs on a GPU.
+  - The collector's own network pass runs in a `Ledger.device()` section, ending in `block_until_ready`, only when its platform is not `cpu`: the platform of the params' arrays, else JAX's default device.
+  - On the CPU path its time is in `cpu_core_seconds` (getrusage) alone. A test checks that a CPU collection gives `gpu_seconds == 0`.
   - Counters: eligible, selected, admitted, targets, public refusals, work exhausted, capped, forced, unselected, unrequested, audits, games, rows, cuts, unresolved, engine-unsupported.
 - **CLI.** `--init`, `--manifest`, `--out`, `--rounds`, `--workers` (must equal the manifest's), `--max-steps`, `--teams`/`--team-weights`/`--teams-root`, `--ledger`, `--resume`, `--allow-other-init` (tests only, recorded in the identity).
   - It refuses `--out` inside the repository and an init whose SHA-256 is not params-49333's.

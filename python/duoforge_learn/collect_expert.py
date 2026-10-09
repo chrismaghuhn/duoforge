@@ -129,6 +129,18 @@ def distributions(model, params, obs, slots, mask, is_team):
     return pairs, np.asarray(logp_team, np.float32), np.asarray(value, np.float32)
 
 
+def device_platform(params):
+    """The platform the network pass runs on: that of the params' JAX arrays (a jitted apply runs where its
+    committed inputs are), else of JAX's default device (NumPy params go there; a NumPy network runs on the host,
+    which is "cpu" whenever JAX is on the CPU). ValueError for params spread over several platforms."""
+    import jax
+    platforms = {d.platform for leaf in jax.tree_util.tree_leaves(params) if isinstance(leaf, jax.Array)
+                 for d in leaf.devices()}
+    if len(platforms) > 1:
+        raise ValueError(f"the network's params lie on several platforms {sorted(platforms)}")
+    return platforms.pop() if platforms else jax.devices()[0].platform
+
+
 def params_digest(params):
     """SHA-256 over every parameter array (name, dtype, shape, bytes) in sorted name order."""
     from . import checkpoint
@@ -202,6 +214,9 @@ class _Collection:
         self.out, self.config, self.max_steps, self.workers, self.ledger = out, config, max_steps, workers, ledger
         self.shard_dir = out / "shards"
         self.context = search.leaves.context
+        # GPU-seconds count only device work that runs on a GPU: on the CPU the pass's time is already in the
+        # CPU core-seconds (getrusage), so it gets no device section.
+        self.on_gpu = ledger is not None and device_platform(params) != "cpu"
 
     def roots(self, r):
         """The batch of round r: environment e plays game first_game_id + r * parallel_games + e as its episode r."""
@@ -219,7 +234,7 @@ class _Collection:
         return roots
 
     def device(self):
-        return self.ledger.device() if self.ledger is not None else contextlib.nullcontext()
+        return self.ledger.device() if self.on_gpu else contextlib.nullcontext()
 
     def save(self, identity, next_round, cursor, roots, counters, shards):
         """The state after a completed round: the teacher's checkpoint is taken against the next round's (fresh)
@@ -395,7 +410,8 @@ def collect(manifest, model, params, pool, search, out_dir, *, rounds=None, max_
     resume needs a fresh one). rounds: the rounds to have played at the end (default the manifest's);
     max_steps: the cut-off; label_limit: the label cap (default and production expert_data.LABEL_LIMIT; smaller only
     in tests); budget, audit_threshold: the teacher's overrides; workers: the roots' native workers (default the
-    manifest's; results do not depend on it); ledger: a ledger.Ledger, phase "generate"; resume: continue out_dir
+    manifest's; results do not depend on it); ledger: a ledger.Ledger, phase "generate" (the network pass is a device
+    section only when it runs on a GPU, see device_platform; the teacher's search runs on the CPU); resume: continue out_dir
     from its last completed round (refused for another manifest or configuration); stop: an object whose
     `requested` ends the run at the next tick (the round in play is played again on resume); identity: more
     fields a resume must match (the CLI's checkpoint hash). Shards go to out_dir/shards (round-RRRR-shard-SSSS.json,
