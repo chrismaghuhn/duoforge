@@ -112,6 +112,23 @@ static duoforge_status dfi_slot_candidates(const duoforge_context *ctx, const st
     const uint32_t occupant = side->positions[slot].occupant;
     uint8_t reserves[DUOFORGE_MAX_ROSTER] = {0};
     out->n = 0u;
+    /* Revival Blessing (decision 0025 item 8): at its PIVOT the slot names a brought fainted member, in roster order; no
+     * move, switch or pass is offered in that slot. */
+    if (b->boundary_kind == DUOFORGE_BOUNDARY_PIVOT && side->positions[slot].switch_flag == DFI_SWITCH_REVIVE_BLESSING) {
+        for (uint32_t x = 0u; x < DUOFORGE_MAX_ROSTER && x < side->member_count; ++x) {
+            const bool brought = ((uint32_t)side->brought_mask >> x & 1u) != 0u;
+            if (brought && x != occupant && side->members[x].hp == 0u &&
+                !dfi_list_push(out, DUOFORGE_SLOT_REVIVE, 0u, 0u, 0u, x)) {
+                return DUOFORGE_E_INVARIANT;
+            }
+        }
+        /* a pass is offered too: the pair check (dfi_pair_allowed) lets it stand only when the flagged slots exceed the living
+         * reserves (forcedPasses, sim/side.ts:1119-1132) */
+        if (!dfi_list_push(out, DUOFORGE_SLOT_PASS, 0u, 0u, 0u, 0u)) {
+            return DUOFORGE_E_INVARIANT;
+        }
+        return DUOFORGE_OK;
+    }
     if (b->boundary_kind == DUOFORGE_BOUNDARY_TURN) {
         if (occupant == DFI_OCCUPANT_NONE || occupant >= DUOFORGE_MAX_ROSTER || side->members[occupant].hp == 0u) {
             return dfi_list_push(out, DUOFORGE_SLOT_PASS, 0u, 0u, 0u, 0u) ? DUOFORGE_OK : DUOFORGE_E_INVARIANT;
@@ -324,12 +341,35 @@ static bool dfi_pair_allowed(const duoforge_slot_command *a, const duoforge_slot
         return false; /* one Mega declaration per side per choice */
     }
     if (forced) {
-        uint32_t switches = 0u;
-        switches += a->kind == DUOFORGE_SLOT_SWITCH ? 1u : 0u;
-        switches += c->kind == DUOFORGE_SLOT_SWITCH ? 1u : 0u;
-        if (switches != need) {
-            return false; /* exactly min(requested, reserves) actors switch */
+        /* The choice is read slot by slot, as sim/side.ts does: forcedSwitchesLeft = min(requested, reserves) and
+         * forcedPassesLeft = requested - that. A normal switch takes a unit (chooseSwitch throws without one); a revive
+         * takes one if any is left and is accepted regardless (its branch, sim/side.ts:966-977); a pass takes a forced
+         * pass. The choice is done with no unit left. */
+        const uint32_t requested = (a->kind != DUOFORGE_SLOT_NONE ? 1u : 0u) + (c->kind != DUOFORGE_SLOT_NONE ? 1u : 0u);
+        if (need > requested) {
+            return false;
         }
+        uint32_t units = need;
+        uint32_t passes = requested - need;
+        const duoforge_slot_command *cmds[2] = {a, c};
+        for (uint32_t i = 0u; i < 2u; ++i) {
+            if (cmds[i]->kind == DUOFORGE_SLOT_SWITCH) {
+                if (units == 0u) {
+                    return false;
+                }
+                units -= 1u;
+            } else if (cmds[i]->kind == DUOFORGE_SLOT_REVIVE) {
+                if (units > 0u) {
+                    units -= 1u;
+                }
+            } else if (cmds[i]->kind == DUOFORGE_SLOT_PASS) {
+                if (passes == 0u) {
+                    return false;
+                }
+                passes -= 1u;
+            }
+        }
+        return units == 0u;
     }
     return true;
 }
@@ -411,6 +451,8 @@ static duoforge_status dfi_side_lists(const duoforge_context *ctx, const struct 
     if (forced) {
         uint8_t reserves[DUOFORGE_MAX_ROSTER] = {0};
         const uint32_t nr = dfi_reserves(side, reserves);
+        /* forcedPasses = the flagged slots beyond the living reserves (sim/side.ts:1119-1132): a revive slot counts as a
+         * switch like any flagged slot, so exactly min(flagged, living reserves) actors switch */
         need = requested < nr ? requested : nr;
     }
     *out_forced = forced;

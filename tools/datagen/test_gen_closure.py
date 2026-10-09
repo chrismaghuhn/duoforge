@@ -737,7 +737,7 @@ class PoolMoves(unittest.TestCase):
                           'STEEL_ROLLER', 'CLANGOROUS_SOUL', 'BRICK_BREAK', 'DISABLE',
                           'ELECTRIC_TERRAIN', 'MISTY_TERRAIN', 'RISING_VOLTAGE', 'TERRAIN_PULSE', 'PERISH_SONG', 'MULTI_HIT_2', 'TRIPLE_AXEL', 'IMPRISON',
                           'TRICK', 'SWITCHEROO', 'THIEF', 'COVET', 'SUPER_FANG', 'TAUNT', 'YAWN',
-                          'RAGE_FIST', 'STONE_AXE', 'CEASELESS_EDGE', 'MULTI_HIT_10', 'POWER_TRIP', 'THUNDER', 'ICE_FANG', 'TRI_ATTACK', 'DOUBLE_SHOCK', 'ROOST', 'STOMPING_TANTRUM', 'LOCKED_MOVE', 'UNMODELED'])
+                          'RAGE_FIST', 'STONE_AXE', 'CEASELESS_EDGE', 'MULTI_HIT_10', 'POWER_TRIP', 'THUNDER', 'ICE_FANG', 'TRI_ATTACK', 'DOUBLE_SHOCK', 'ROOST', 'STOMPING_TANTRUM', 'LOCKED_MOVE', 'REVIVAL_BLESSING', 'UNMODELED'])
         self.assertEqual(len(gen_closure.G2_HANDLERS), 7)
         # Step G16: Knock Off's handler is 24 in the tables; step G15's Expanding Force is 25, step G19's Glaive Rush 26,
         # step G20's Aurora Veil 27, Spiky Shield 28, the four of step G28 29 to 32, the eight of step G32 33 to 40 and
@@ -773,11 +773,14 @@ class PoolMoves(unittest.TestCase):
         self.assertEqual([gen_closure.SPECIAL_IDS_P.index(h) for h in gen_closure.G31_HANDLERS], [61, 62])
         # step G48: Rage Fist, Stone Axe, Ceaseless Edge and Population Bomb follow Taunt and Yawn (63 to 66)
         self.assertEqual([gen_closure.SPECIAL_IDS_P.index(h) for h in gen_closure.G48_HANDLERS], [63, 64, 65, 66])
-        # step G50: Double Shock follows the eight of steps G48 and G44 (71); UNMODELED moves to 72
+        # step G50: Double Shock follows the eight of steps G48 and G44 (71); Revival Blessing (step G52) 72; UNMODELED 73
         self.assertEqual([gen_closure.SPECIAL_IDS_P.index(h) for h in gen_closure.G50_HANDLERS], [71])
-        # step G42: Roost and Stomping Tantrum follow Double Shock (72, 73); UNMODELED moves to 74
+        self.assertEqual(gen_closure.G52_HANDLERS, ['REVIVAL_BLESSING'])  # step G52
+        self.assertEqual(gen_closure.SPECIAL_IDS_P.index('REVIVAL_BLESSING'), 74)
+        # step G42: Roost and Stomping Tantrum follow Double Shock (72, 73); Revival Blessing (G52) 74; UNMODELED moves to 75
         self.assertEqual([gen_closure.SPECIAL_IDS_P.index(h) for h in gen_closure.G42_HANDLERS], [72, 73])
         self.assertEqual([gen_closure.SPECIAL_IDS_P.index(h) for h in gen_closure.G56_HANDLERS], [74])  # G56: LOCKED_MOVE
+        self.assertEqual([gen_closure.SPECIAL_IDS_P.index(h) for h in gen_closure.G52_HANDLERS], [75])  # G52: REVIVAL_BLESSING
         self.assertEqual(gen_closure.SPECIAL_IDS_P.index('UNMODELED'), 75)
         # Scald and Recover became data in step G10: their ids stay defined and no move maps to them.
         self.assertEqual({v[0] for k, v in gen_closure.SPECIAL_P.items() if k not in gen_closure.SPECIAL_C},
@@ -785,7 +788,7 @@ class PoolMoves(unittest.TestCase):
                          set(gen_closure.G16_HANDLERS) | set(gen_closure.G15_HANDLERS) | set(gen_closure.G19_HANDLERS) |
                          set(gen_closure.G20_HANDLERS) | set(gen_closure.G20_PROTECT_HANDLERS) | set(gen_closure.G28_HANDLERS) |
                          set(gen_closure.G30_HANDLERS) | set(gen_closure.G32_HANDLERS) | set(gen_closure.G34_HANDLERS) |
-                         set(gen_closure.G27_HANDLERS) | set(gen_closure.G25_HANDLERS) | set(gen_closure.G26_HANDLERS) | set(gen_closure.G33_HANDLERS) | set(gen_closure.G38_HANDLERS) | set(gen_closure.G29_HANDLERS) | set(gen_closure.G39_HANDLERS) | set(gen_closure.G31_HANDLERS) | set(gen_closure.G48_HANDLERS) | set(gen_closure.G44_HANDLERS) | set(gen_closure.G50_HANDLERS) | set(gen_closure.G42_HANDLERS) | set(gen_closure.G56_HANDLERS) | {'DARKEST_LARIAT'})
+                         set(gen_closure.G27_HANDLERS) | set(gen_closure.G25_HANDLERS) | set(gen_closure.G26_HANDLERS) | set(gen_closure.G33_HANDLERS) | set(gen_closure.G38_HANDLERS) | set(gen_closure.G29_HANDLERS) | set(gen_closure.G39_HANDLERS) | set(gen_closure.G31_HANDLERS) | set(gen_closure.G48_HANDLERS) | set(gen_closure.G44_HANDLERS) | set(gen_closure.G50_HANDLERS) | set(gen_closure.G42_HANDLERS) | set(gen_closure.G56_HANDLERS) | set(gen_closure.G52_HANDLERS) | {'DARKEST_LARIAT'})
 
     def test_taunt_and_yawn_are_handlers_whose_conditions_are_the_pinned_text(self):
         for mid, text, special in (('taunt', TAUNT, 'TAUNT'), ('yawn', YAWN, 'YAWN')):
@@ -1098,7 +1101,7 @@ class PoolMoves(unittest.TestCase):
                                                                 'dualwingbeat', 'twinbeam', 'tripleaxel', 'imprison',
                                                                 'trick', 'switcheroo', 'thief', 'covet', 'sacredsword', 'superfang', 'taunt', 'yawn',
                                                                 'ragefist', 'stoneaxe', 'ceaselessedge', 'populationbomb',
-                                                                'powertrip', 'thunder', 'icefang', 'triattack', 'doubleshock', 'roost', 'stompingtantrum'})
+                                                                'powertrip', 'thunder', 'icefang', 'triattack', 'doubleshock', 'roost', 'stompingtantrum', 'revivalblessing'})
         self.assertEqual(gen_closure.WEATHER_HANDLERS, ['SANDSTORM', 'SNOWSCAPE'])
         for _sp, _ab, item, moves, _mega in gen_closure.SETS_G2:
             self.assertTrue(item in gen_closure.G2_ITEMS or item not in gen_closure.POOL_ITEMS)
@@ -1779,7 +1782,7 @@ class SmallRules(unittest.TestCase):
         self.assertEqual(gen_closure.SPECIAL_P['eruption'], ('HP_POWER', {'basePowerCallback'}))
         self.assertEqual(gen_closure.SPECIAL_P['waterspout'], ('HP_POWER', {'basePowerCallback'}))
         self.assertEqual(gen_closure.SPECIAL_P['freezedry'], ('FREEZE_DRY', {'onEffectiveness'}))
-        self.assertEqual(gen_closure.ENGINE_PIVOT_MOVES, ('voltswitch',))
+        self.assertEqual(gen_closure.ENGINE_PIVOT_MOVES, ('voltswitch', 'revivalblessing'))
         self.assertIn('allies', gen_closure.ENGINE_TARGETS)
         self.assertIn('ejectbutton', gen_closure.ENGINE_ROWS['items'])
         for ability in ('soundproof', 'unnerve', 'speedboost'):

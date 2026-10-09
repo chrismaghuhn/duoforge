@@ -41,8 +41,8 @@
 #include "support/pool.h"
 #include "support/team_c.h"
 
-#define FP_KP_HEX "837d2ac6d4af2cbd5f56e25a511bab864e7f77c15063ca78e2f78e459d055078" /* the model fingerprint of the merged tables (G42, G44, G46, G48, G49, G50) */
-#define FP_KPD_HEX "580710f07bc1d6643dc8d7c00b00d667a686c51a137dd0cd790f04db88f7d3d7"
+#define FP_KP_HEX "68b9395c74e2d01a7c288d56000bd5e0cef42c14d2afb5c3bc76d0c668177b78" /* the model fingerprint of the merged tables, G42 to G52 with G45 and G47 */
+#define FP_KPD_HEX "c3485802d568987c8ac4f820a32284061f5aca831179d3649afaea1290132eff"
 
 /* The public create under `ctx` gives `gated`, and the build without the
  * support gate `ungated`. */
@@ -326,8 +326,9 @@ int main(void)
         DF_CHECK(&t, dfi_kind_limits_of(DUOFORGE_DATA_KIND_CLOSURE_DEV).dev &&
                          dfi_kind_limits_of(DUOFORGE_DATA_KIND_TEAM_C_DEV).dev);
         /* The pool has U-turn's switch flag (step G5) on top of Team C's; everything else of Team C's is the pool's. */
-        DF_CHECK(&t, lp.switch_flag_max == DFI_SWITCH_VOLT_SWITCH && lc.switch_flag_max == DFI_SWITCH_FLIP_TURN &&
-                         DFI_SWITCH_UTURN == DFI_SWITCH_FLIP_TURN + 1u && DFI_SWITCH_VOLT_SWITCH == DFI_SWITCH_UTURN + 1u);
+        DF_CHECK(&t, lp.switch_flag_max == DFI_SWITCH_REVIVE_BLESSING && lc.switch_flag_max == DFI_SWITCH_FLIP_TURN &&
+                         DFI_SWITCH_UTURN == DFI_SWITCH_FLIP_TURN + 1u && DFI_SWITCH_VOLT_SWITCH == DFI_SWITCH_UTURN + 1u &&
+                         DFI_SWITCH_REVIVE_BLESSING == DFI_SWITCH_VOLT_SWITCH + 1u); /* Revival Blessing (decision 0025), step G52 */
         DF_CHECK(&t, lp.status_max == DFI_STATUS_TOX && lc.status_max == DFI_STATUS_PSN && lp.vol_flags_mask == lc.vol_flags_mask);
         /* step G36: badly poisoned is the pool's alone */
         DF_CHECK(&t, lq.switch_flag_max == lp.switch_flag_max && lq.status_max == lp.status_max &&
@@ -335,7 +336,7 @@ int main(void)
         /* Step G25: the pool has Electric and Misty Terrain on top of Team C's terrains. */
         DF_CHECK(&t, lp.terrain_max == DFI_TERRAIN_MISTY && lc.terrain_max == DFI_TERRAIN_PSYCHIC &&
                          DFI_TERRAIN_MISTY == DFI_TERRAIN_ELECTRIC + 1u && DFI_TERRAIN_ELECTRIC == DFI_TERRAIN_PSYCHIC + 1u);
-        DF_CHECK(&t, lp.switch_flag_max == DFI_SWITCH_VOLT_SWITCH && lp.status_max == DFI_STATUS_TOX &&
+        DF_CHECK(&t, lp.switch_flag_max == DFI_SWITCH_REVIVE_BLESSING && lp.status_max == DFI_STATUS_TOX &&
                          lp.terrain_max == DFI_TERRAIN_MISTY && l1.switch_flag_max == DFI_SWITCH_FAINTED &&
                          l1.status_max == DFI_STATUS_SLP && l1.terrain_max == DFI_TERRAIN_GRASSY);
     }
@@ -1044,22 +1045,24 @@ int main(void)
      * (E_UNSUPPORTED), and this test says so before. Parting Shot (a handler, flag 1), Emergency Exit (2) and a
      * fainted position (3) are no damaging pivots. */
     {
-        DF_CHECK_EQ_U64(&t, DFI_PIVOT_MOVE_COUNT, 3u);
+        DF_CHECK_EQ_U64(&t, DFI_PIVOT_MOVE_COUNT, 4u); /* Revival Blessing (step G52) is the fourth */
         for (uint32_t i = 0u; i < DFI_PIVOT_MOVE_COUNT; ++i) {
             const dfi_pivot_move *pm = &dfi_pivot_moves[i];
             DF_CHECK_EQ_U64(&t, pm->flag, DFI_SWITCH_FLIP_TURN + i);
             DF_CHECK(&t, pm->move < DFI_POOL_MOVE_COUNT);
+            /* Revival Blessing is a pivot whose handler is the revive (step G52), not a data row */
             DF_CHECK(&t, (dfi_pool_moves[pm->move].flags & DFI_MOVE_FLAG_SELF_SWITCH) != 0u &&
-                             dfi_pool_moves[pm->move].special == DFI_SPECIAL_NONE);
+                             (dfi_pool_moves[pm->move].special == DFI_SPECIAL_NONE || pm->move == DFI_MOVE_REVIVALBLESSING));
             DF_CHECK(&t, dfi_pivot_of_move(pm->move) == pm && dfi_pivot_of_flag(pm->flag) == pm);
             DF_CHECK(&t, pm->flag <= dfi_kind_limits_of(DUOFORGE_DATA_KIND_POOL).switch_flag_max);
         }
         DF_CHECK_EQ_U64(&t, dfi_pivot_moves[0].move, DFI_MOVE_FLIPTURN);
         DF_CHECK_EQ_U64(&t, dfi_pivot_moves[1].move, DFI_MOVE_UTURN);
         DF_CHECK_EQ_U64(&t, dfi_pivot_moves[2].move, DFI_MOVE_VOLTSWITCH); /* step G32 */
+        DF_CHECK_EQ_U64(&t, dfi_pivot_moves[3].move, DFI_MOVE_REVIVALBLESSING); /* step G52 */
         for (uint32_t id = 0u; id < DFI_POOL_MOVE_COUNT; ++id) {
             const bool pivots = (dfi_pool_moves[id].flags & DFI_MOVE_FLAG_SELF_SWITCH) != 0u &&
-                                dfi_pool_moves[id].special == DFI_SPECIAL_NONE;
+                                (dfi_pool_moves[id].special == DFI_SPECIAL_NONE || id == DFI_MOVE_REVIVALBLESSING);
             DF_CHECK_EQ_U64(&t, dfi_pivot_of_move(id) != NULL ? 1u : 0u, pivots ? 1u : 0u);
             /* A marked move that pivots has its flag. */
             DF_CHECK(&t, dfi_support.moves[id] == 0u || !pivots || dfi_pivot_of_move(id) != NULL);
@@ -1067,11 +1070,12 @@ int main(void)
         DF_CHECK(&t, dfi_pivot_of_move(DFI_MOVE_PARTINGSHOT) == NULL);
         DF_CHECK(&t, dfi_pivot_of_flag(DFI_SWITCH_NONE) == NULL && dfi_pivot_of_flag(DFI_SWITCH_MOVE) == NULL &&
                          dfi_pivot_of_flag(DFI_SWITCH_EMERGENCY_EXIT) == NULL &&
-                         dfi_pivot_of_flag(DFI_SWITCH_FAINTED) == NULL && dfi_pivot_of_flag(DFI_SWITCH_VOLT_SWITCH + 1u) == NULL);
+                         dfi_pivot_of_flag(DFI_SWITCH_FAINTED) == NULL && dfi_pivot_of_flag(DFI_SWITCH_REVIVE_BLESSING + 1u) == NULL &&
+                         dfi_pivot_of_flag(DFI_SWITCH_REVIVE_BLESSING) != NULL);
         /* The kinds: U-turn's flag is the POOL kinds' alone, Flip Turn's the extended ones'. */
         DF_CHECK_EQ_U64(&t, dfi_kind_limits_of(DUOFORGE_DATA_KIND_TEAM_C).switch_flag_max, DFI_SWITCH_FLIP_TURN);
         DF_CHECK_EQ_U64(&t, dfi_kind_limits_of(DUOFORGE_DATA_KIND_TEAM_C_DEV).switch_flag_max, DFI_SWITCH_FLIP_TURN);
-        DF_CHECK_EQ_U64(&t, dfi_kind_limits_of(DUOFORGE_DATA_KIND_POOL_DEV).switch_flag_max, DFI_SWITCH_VOLT_SWITCH);
+        DF_CHECK_EQ_U64(&t, dfi_kind_limits_of(DUOFORGE_DATA_KIND_POOL_DEV).switch_flag_max, DFI_SWITCH_REVIVE_BLESSING);
         DF_CHECK_EQ_U64(&t, dfi_kind_limits_of(DUOFORGE_DATA_KIND_CLOSURE).switch_flag_max, DFI_SWITCH_FAINTED);
         /* In a state under POOL: both flags are in range (a flag is wrong at a TURN boundary, which the invariant
          * names), one past U-turn's is out of range. */
@@ -1087,8 +1091,57 @@ int main(void)
         expect_inv(&t, kp, w, DFI_INV_SWITCH_FLAG, "U-turn's flag at a TURN boundary");
         w->sides[0].positions[0].switch_flag = (uint8_t)DFI_SWITCH_VOLT_SWITCH;
         expect_inv(&t, kp, w, DFI_INV_SWITCH_FLAG, "Volt Switch's flag at a TURN boundary");
-        w->sides[0].positions[0].switch_flag = (uint8_t)(DFI_SWITCH_VOLT_SWITCH + 1u);
-        expect_inv(&t, kp, w, DFI_INV_VOLATILE, "one past Volt Switch's flag");
+        w->sides[0].positions[0].switch_flag = (uint8_t)DFI_SWITCH_REVIVE_BLESSING;
+        expect_inv(&t, kp, w, DFI_INV_SWITCH_FLAG, "Revival Blessing's flag at a TURN boundary");
+        w->sides[0].positions[0].switch_flag = (uint8_t)(DFI_SWITCH_REVIVE_BLESSING + 1u);
+        expect_inv(&t, kp, w, DFI_INV_VOLATILE, "one past Revival Blessing's flag");
+        duoforge_battle_destroy(w);
+    }
+
+    /* A Revival Blessing pivot offers the brought fainted members only: a side with one fainted and one standing reserve
+     * has exactly one revive candidate, the fainted member, and the standing one is never offered (decision 0025 item 8). */
+    {
+        duoforge_battle *w = df_make_battle(kp, &teams);
+        duoforge_decision_bundle bd;
+        team_bundle(&bd, w);
+        step_expect(&t, kp, w, &bd, DUOFORGE_OK, "team selection (revive pivot)");
+        uint32_t fainted = DUOFORGE_MAX_ROSTER;
+        uint32_t living = DUOFORGE_MAX_ROSTER;
+        for (uint32_t m = 0u; m < DUOFORGE_MAX_ROSTER && m < w->sides[0].member_count; ++m) {
+            const bool brought = ((uint32_t)w->sides[0].brought_mask >> m & 1u) != 0u;
+            const bool active = w->sides[0].positions[0].occupant == m || w->sides[0].positions[1].occupant == m;
+            if (!brought || active) {
+                continue;
+            }
+            if (fainted == DUOFORGE_MAX_ROSTER) {
+                fainted = m;
+            } else if (living == DUOFORGE_MAX_ROSTER) {
+                living = m;
+            }
+        }
+        DF_CHECK(&t, fainted < DUOFORGE_MAX_ROSTER && living < DUOFORGE_MAX_ROSTER);
+        w->sides[0].members[fainted].hp = 0u;
+        w->boundary_kind = (uint8_t)DUOFORGE_BOUNDARY_PIVOT;
+        w->sides[0].requested_slots = 1u;
+        w->sides[1].requested_slots = 0u; /* only side 0 is asked at this pivot */
+        w->queue[0] = (dfi_queue_record){0u, (uint8_t)DFI_Q_RESIDUAL, 0u, 0u, 0u, 0u, 0u};
+        w->queue_len = 1u; /* a PIVOT has the rest of its turn queued: here the residual record only */
+        w->request_mask = 1u;
+        w->sides[0].positions[0].switch_flag = (uint8_t)DFI_SWITCH_REVIVE_BLESSING;
+        expect_inv(&t, kp, w, DFI_INV_NONE, "a revive pivot with one fainted and one standing reserve");
+        duoforge_factored_domain dom;
+        DF_CHECK(&t, duoforge_battle_factored(kp, w, 0u, &dom) == DUOFORGE_OK);
+        uint32_t revives = 0u;
+        bool living_offered = false;
+        for (uint32_t i = 0u; i < dom.slot_count[0]; ++i) {
+            const duoforge_slot_command *c = &dom.slots[0][i];
+            if (c->kind == DUOFORGE_SLOT_REVIVE) {
+                revives += 1u;
+                living_offered = living_offered || c->reserve == living;
+            }
+        }
+        DF_CHECK_EQ_U64(&t, revives, 1u);
+        DF_CHECK(&t, !living_offered);
         duoforge_battle_destroy(w);
     }
 

@@ -21,6 +21,7 @@
 
 /* Action orders (sim/battle-queue.ts:174-195). */
 #define DFI_ORDER_SWITCH_IN 3u    /* instaswitch: a replacement */
+#define DFI_ORDER_REVIVE 6u /* revivalblessing (decision 0025 item 6): after an instaswitch, before runSwitch */
 #define DFI_ORDER_RUN_SWITCH 101u /* the entry of a Pokemon that came in */
 #define DFI_ORDER_SWITCH 103u     /* a voluntary switch */
 #define DFI_ORDER_MEGA 104u       /* megaEvo */
@@ -691,6 +692,10 @@ static duoforge_status dfi_key_of(dfi_run *r, const dfi_queue_record *q, dfi_key
         order = DFI_ORDER_SWITCH;
     } else if (q->kind == DFI_Q_SWITCH_IN) {
         order = DFI_ORDER_SWITCH_IN;
+    } else if (q->kind == DFI_Q_INSTASWITCH) {
+        order = DFI_ORDER_SWITCH_IN;
+    } else if (q->kind == DFI_Q_REVIVE) {
+        order = DFI_ORDER_REVIVE;
     } else if (q->kind == DFI_Q_RUN_SWITCH) {
         order = DFI_ORDER_RUN_SWITCH;
     } else if (q->kind == DFI_Q_MEGA) {
@@ -859,7 +864,7 @@ static bool dfi_will_act(const struct duoforge_battle *b)
 {
     for (uint32_t i = 0u; i < b->queue_len && i < DFI_QUEUE_CAPACITY; ++i) {
         const uint32_t k = b->queue[i].kind;
-        if (k == DFI_Q_MOVE || k == DFI_Q_SWITCH || k == DFI_Q_SWITCH_IN) {
+        if (k == DFI_Q_MOVE || k == DFI_Q_SWITCH || k == DFI_Q_SWITCH_IN || k == DFI_Q_INSTASWITCH) {
             return true;
         }
     }
@@ -4498,6 +4503,31 @@ static uint32_t dfi_move_hits(const dfi_move_data *md)
            : 1u;
 }
 
+/* Revival Blessing (decision 0025 item 6; data/moves.ts revivalblessing): onTryHit fails with a plain -fail when the user's
+ * side has no fainted Pokemon. Otherwise the user's slot is flagged to switch at a PIVOT, with no check of a living reserve
+ * (the request is made anyway); the revive comes with the answer (dfi_resume_pivot). */
+static duoforge_status dfi_run_revival_blessing(dfi_run *r, uint32_t user)
+{
+    struct duoforge_battle *b = r->b;
+    const uint32_t side = user / 2u;
+    bool any = false;
+    for (uint32_t x = 0u; x < DUOFORGE_MAX_ROSTER && x < b->sides[side].member_count; ++x) {
+        const bool brought = ((uint32_t)b->sides[side].brought_mask >> x & 1u) != 0u;
+        any = any || (brought && b->sides[side].members[x].hp == 0u);
+    }
+    if (!any) {
+        /* the reference's line: no target, then -fail and [still] (the move line is kept with no target) */
+        duoforge_event *mv = dfi_last_move(r);
+        if (mv != NULL) {
+            mv->other = (uint8_t)DUOFORGE_NO_POSITION; /* wide-operands-reviewed: a position or NO_POSITION, < 256 */
+        }
+        dfi_fail_still(r, user);
+        return DUOFORGE_OK;
+    }
+    dfi_pos(b, user)->switch_flag = DFI_SWITCH_REVIVE_BLESSING;
+    return DUOFORGE_OK;
+}
+
 /* Double Shock's onTryMove (decision 0025, data/moves.ts:3954-3959): without the Electric type it fails, -fail and [still]
  * (*stopped). A user that has the type is played only as Pawmot with its own two types (dfi_double_shock_shape); any other
  * shape is refused, never guessed. Shared by the hit path and the no-target path, since TryMove runs before the no-targets
@@ -4964,6 +4994,9 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
     }
     if (md->special == DFI_SPECIAL_IMPRISON) {
         return dfi_run_imprison(r, user);
+    }
+    if (move_id == DFI_MOVE_REVIVALBLESSING) {
+        return dfi_run_revival_blessing(r, user);
     }
     const bool status_move = md->category == DFI_CATEGORY_STATUS;
     /* flags.powder (step G30): the second flags byte's bit; Struggle has none. */
@@ -6413,19 +6446,56 @@ static void dfi_party_switch(dfi_run *r, uint32_t side, uint32_t slot, uint32_t 
  * (its position is cleared; a fainted one simply makes room), the reserve
  * comes in with a fresh activation and is seen by the opponent, and its
  * entry is queued. */
+/* Revival Blessing's revive (decision 0025 items 6 and 9; sim/battle.ts 2781-2797): the member loses its fainted and
+ * status, its HP is sethp(maxhp / 2), i.e. floor(maxhp / 2), then the -heal line: the REVIVE event with the member's
+ * exact HP (the foe's copy is a percentage, as for every heal). A member that still stands in a position (it fainted there
+ * and was never replaced) is queued for an instaswitch, appended to the queue as addChoice does. */
+static duoforge_status dfi_run_revive(dfi_run *r, const dfi_queue_record *q)
+{
+    struct duoforge_battle *b = r->b;
+    const uint32_t side = q->side;
+    const uint32_t reserve = q->reserve;
+    dfi_side *sd = &b->sides[side];
+    if (reserve >= sd->member_count || ((uint32_t)sd->brought_mask >> reserve & 1u) == 0u ||
+        sd->members[reserve].hp != 0u) {
+        return DUOFORGE_E_INVARIANT; /* the request offers only brought fainted members */
+    }
+    dfi_member *m = &sd->members[reserve];
+    m->status = DUOFORGE_AILMENT_NONE;
+    m->hp = (uint16_t)(m->hp_max / 2u); /* sethp(maxhp / 2): trunc, and maxhp is at least 2; wide-operands-reviewed: < 256 */
+    duoforge_event e = dfi_event_make(DUOFORGE_EVENT_REVIVE, side * 2u + (uint32_t)q->slot);
+    e.id = (uint16_t)reserve; /* wide-operands-reviewed: a roster index */
+    dfi_event_set_hp(&e, m);
+    e.cause = (uint8_t)DUOFORGE_CAUSE_MOVE;
+    e.id2 = (uint16_t)DFI_MOVE_REVIVALBLESSING; /* wide-operands-reviewed: a move id of the pool tables, a u16 */
+    dfi_emit(r, &e);
+    for (uint32_t p = 0u; p < DUOFORGE_ACTIVE_PER_SIDE; ++p) {
+        if (sd->positions[p].occupant == reserve) {
+            if (b->queue_len >= DFI_QUEUE_CAPACITY) {
+                return DUOFORGE_E_INVARIANT;
+            }
+            b->queue[b->queue_len] = (dfi_queue_record){0u, (uint8_t)DFI_Q_INSTASWITCH, (uint8_t)side, (uint8_t)p, 0u, 0u,
+                                                        (uint8_t)reserve};
+            b->queue_len = (uint8_t)((uint32_t)b->queue_len + 1u); /* wide-operands-reviewed: <= 12 */
+        }
+    }
+    return DUOFORGE_OK;
+}
+
 /* The switch of a reserve in: the outgoing Pokemon leaves and the reserve is placed (sim/battle-actions.ts switchIn). A drag
  * (step G46, `drag`) skips BeforeSwitchOut and its Update (sim/battle-actions.ts:80-85), takes no pivot or Parting Shot
  * cause, and its line is [drag] (DUOFORGE_EVENT_DRAG). The entry (runSwitch) is queued, or, for a drag, run at once by the
  * caller. `*activation` is the reserve's activation id. */
 static duoforge_status dfi_switch_in(dfi_run *r, uint32_t side, uint32_t slot, uint32_t reserve, bool drag,
-                                     uint32_t *activation)
+                                     bool insta, uint32_t *activation)
 {
     struct duoforge_battle *b = r->b;
     const dfi_position_id where = {(uint8_t)side, (uint8_t)slot};
     const dfi_side *sd = &b->sides[side];
     if (reserve >= sd->member_count || sd->members[reserve].hp == 0u ||
-        ((uint32_t)sd->brought_mask >> reserve & 1u) == 0u || sd->positions[0].occupant == reserve ||
-        sd->positions[1].occupant == reserve) {
+        ((uint32_t)sd->brought_mask >> reserve & 1u) == 0u ||
+        (insta ? sd->positions[slot].occupant != reserve
+               : sd->positions[0].occupant == reserve || sd->positions[1].occupant == reserve)) {
         return DUOFORGE_E_INVARIANT; /* the domain offers only standing reserves */
     }
     const uint32_t ability = sd->members[reserve].ability;
@@ -6434,7 +6504,14 @@ static duoforge_status dfi_switch_in(dfi_run *r, uint32_t side, uint32_t slot, u
         (item != 0u && (item > DFI_POOL_ITEM_COUNT || dfi_support.items[item - 1u] == 0u))) {
         return DUOFORGE_E_UNSUPPORTED; /* not marked in the support manifest */
     }
-    const dfi_member *leaving = dfi_at(b, side * 2u + slot);
+    /* Regenerator on an instaswitch (decision 0025 item 10): the reference's SwitchOut path for the revived holder is not
+     * modelled here, so the instaswitch of such a holder is refused explicitly, never played (flagged in the PR). */
+    if (insta && dfi_ability(b, &sd->members[reserve], DFI_ABILITY_REGENERATOR)) {
+        return DUOFORGE_E_UNSUPPORTED;
+    }
+    /* an instaswitch has no leaving Pokemon: the member is revived, not switched out (the reference would run its
+     * SwitchOut, which Regenerator answers; that is refused below) */
+    const dfi_member *leaving = insta ? NULL : dfi_at(b, side * 2u + slot);
     const uint32_t flag = sd->positions[slot].switch_flag;
     const bool parting_shot = leaving != NULL && leaving->hp != 0u && flag == DFI_SWITCH_MOVE && !drag;
     /* A damaging pivot move's flag names the move that pivots. */
@@ -6487,7 +6564,10 @@ static duoforge_status dfi_switch_in(dfi_run *r, uint32_t side, uint32_t slot, u
     /* [switch], with [from] and the move (Parting Shot, Flip Turn, U-turn) when the move made it */
     duoforge_event e = dfi_event_make(drag ? DUOFORGE_EVENT_DRAG : DUOFORGE_EVENT_SWITCH, side * 2u + slot);
     e.id = (uint16_t)reserve;
-    if (parting_shot || pivot != NULL) {
+    if (insta) {
+        e.cause = (uint8_t)DUOFORGE_CAUSE_MOVE; /* the [switch] line has no [from]; the revive is the cause (decision 0025) */
+        e.id2 = (uint16_t)DFI_MOVE_REVIVALBLESSING; /* wide-operands-reviewed: a move id of the pool tables, a u16 */
+    } else if (parting_shot || pivot != NULL) {
         e.cause = (uint8_t)DUOFORGE_CAUSE_MOVE;
         e.id2 = (uint16_t)(parting_shot ? DFI_MOVE_PARTINGSHOT : pivot->move); /* wide-operands-reviewed: a move id of the pool tables, a u16 */
     }
@@ -6499,7 +6579,8 @@ static duoforge_status dfi_switch_in(dfi_run *r, uint32_t side, uint32_t slot, u
 static duoforge_status dfi_run_switch(dfi_run *r, const dfi_queue_record *q)
 {
     uint32_t activation = 0u;
-    const duoforge_status st = dfi_switch_in(r, q->side, q->slot, q->reserve, false, &activation);
+    const bool insta = q->kind == DFI_Q_INSTASWITCH; /* decision 0025 item 10: the revived member back into its own position */
+    const duoforge_status st = dfi_switch_in(r, q->side, q->slot, q->reserve, false, insta, &activation);
     if (st != DUOFORGE_OK) {
         return st;
     }
@@ -7838,6 +7919,25 @@ static bool dfi_has_reserve(const struct duoforge_battle *b, uint32_t side);
  * Pokemon (Parting Shot, Emergency Exit) or, after a pass at a REPLACEMENT,
  * a fainted one (checkFainted): then the side is asked again right after the
  * switch, before the newcomer's entry. */
+/* A side with a pending pivot can answer it: a flagged slot needs a living reserve, a Revival Blessing slot a brought
+ * fainted member (the request is made even with no living reserve, sim/battle.ts 2882-2891). */
+static bool dfi_side_can_answer(struct duoforge_battle *b, uint32_t s)
+{
+    const dfi_side *sd = &b->sides[s];
+    for (uint32_t p = 0u; p < DUOFORGE_ACTIVE_PER_SIDE; ++p) {
+        if (sd->positions[p].switch_flag == DFI_SWITCH_REVIVE_BLESSING) {
+            for (uint32_t x = 0u; x < DUOFORGE_MAX_ROSTER && x < sd->member_count; ++x) {
+                if (((uint32_t)sd->brought_mask >> x & 1u) != 0u && sd->members[x].hp == 0u) {
+                    return true;
+                }
+            }
+        } else if (sd->positions[p].switch_flag != 0u && dfi_has_reserve(b, s)) {
+            return true;
+        }
+    }
+    return false;
+}
+
 static bool dfi_pivot_pending(struct duoforge_battle *b)
 {
     bool pending = false;
@@ -7846,7 +7946,7 @@ static bool dfi_pivot_pending(struct duoforge_battle *b)
         if (sd->positions[0].switch_flag == 0u && sd->positions[1].switch_flag == 0u) {
             continue;
         }
-        if (dfi_has_reserve(b, s)) {
+        if (dfi_side_can_answer(b, s)) {
             pending = true;
         } else {
             sd->positions[0].switch_flag = 0u;
@@ -7903,7 +8003,12 @@ static duoforge_status dfi_resume_pivot(dfi_run *r, const duoforge_side_choice r
         }
         for (uint32_t slot = 0u; slot < DUOFORGE_ACTIVE_PER_SIDE; ++slot) {
             const duoforge_slot_command *sc = &responses[s].slots[slot];
-            if (sc->kind == DUOFORGE_SLOT_SWITCH) {
+            if (sc->kind == DUOFORGE_SLOT_REVIVE) {
+                /* the answer ends the request: the flag goes (choice of a revive, sim/side.ts:960-977) */
+                fresh[k] = (dfi_queue_record){0u, (uint8_t)DFI_Q_REVIVE, (uint8_t)s, (uint8_t)slot, 0u, 0u, sc->reserve};
+                k += 1u;
+                b->sides[s].positions[slot].switch_flag = 0u;
+            } else if (sc->kind == DUOFORGE_SLOT_SWITCH) {
                 fresh[k] = (dfi_queue_record){0u, (uint8_t)DFI_Q_SWITCH_IN, (uint8_t)s, (uint8_t)slot, 0u, 0u,
                                               sc->reserve};
                 k += 1u;
@@ -8061,7 +8166,7 @@ static duoforge_status dfi_drag_in(dfi_run *r, uint32_t side, uint32_t slot)
         return DUOFORGE_OK; /* DragOut (Suction Cups, Guard Dog) returns null: the drag is not made */
     }
     uint32_t activation = 0u;
-    st = dfi_switch_in(r, side, slot, cand[pick], true, &activation);
+    st = dfi_switch_in(r, side, slot, cand[pick], true, false, &activation);
     if (st != DUOFORGE_OK) {
         return st;
     }
@@ -8354,7 +8459,12 @@ duoforge_status dfi_turn_run(const duoforge_context *ctx, struct duoforge_battle
                     }
                 }
             }
-        } else if (q.kind == DFI_Q_SWITCH || q.kind == DFI_Q_SWITCH_IN) {
+        } else if (q.kind == DFI_Q_REVIVE) {
+            st = dfi_run_revive(&r, &q);
+            if (st != DUOFORGE_OK) {
+                return st;
+            }
+        } else if (q.kind == DFI_Q_SWITCH || q.kind == DFI_Q_SWITCH_IN || q.kind == DFI_Q_INSTASWITCH) {
             st = dfi_run_switch(&r, &q);
             if (st != DUOFORGE_OK) {
                 return st;

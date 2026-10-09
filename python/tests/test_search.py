@@ -61,7 +61,7 @@ class ModelValue(unittest.TestCase):
         obs, slots, mask = _rows()
         self.assertTrue(mask.any())  # real pair masks: the value must not read them
         for config in (policy.V1_DEFAULT, policy.v2_config("S")):
-            model = policy.make(config)
+            model = policy.make(config, features.feature_names(4))  # the encoder-4 rows of _rows
             params = model.init(jax.random.PRNGKey(5))
             want = np.asarray(model.apply(params, obs, slots, mask)[2])
             got = np.asarray(model.value(params, obs))
@@ -72,7 +72,7 @@ class ModelValue(unittest.TestCase):
 def _v2s():
     import jax
     from duoforge_learn import policy
-    model = policy.make(policy.v2_config("S"))
+    model = policy.make(policy.v2_config("S"), features.feature_names(4))  # pinned values: an encoder-4 model
     return model, model.init(jax.random.PRNGKey(7))
 
 
@@ -342,7 +342,7 @@ class LookaheadDecisions(unittest.TestCase):
 
     def test_encoder_probe_refuses_at_init(self):
         with self.assertRaises(ValueError):  # no mask of the feature bits
-            self._lookahead(capacity=4).__init__(self.ctx, self.model, self.params, 4, 1 << 42)
+            self._lookahead(capacity=4).__init__(self.ctx, self.model, self.params, 4, 1 << 43)
         from duoforge_learn import policy
         v3 = policy.make(policy.v2_config("S"), features.feature_names(3))
         with self.assertRaises(duoforge.DuoforgeError):  # a mask past version 3's features: the C encoder refuses

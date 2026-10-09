@@ -153,6 +153,7 @@ class Tracker:
         self._feint = data.tables["MOVE"].get("FEINT", -1)
         self._turn_scoped = set()  # single-turn features of decision 0018 seen since the turn began (lines.TURN_SCOPED)
         self._guards = set()  # (Wide or Quick Guard feature, side) seen this turn: what a Feint breaks (step G28)
+        self._rb_pending = {}  # side -> its Revival Blessing user's position until its revive (step G52, trace_to_c)
         self._spectator = False  # the own side folded like the foe's, from the public lines (duoforge_replay)
         self.turn_scoped_seen = collections.Counter()  # single-turn feature lines seen, by feature (counters)
         tables = data.tables
@@ -384,8 +385,13 @@ class Tracker:
             for name, index in self._names[self.side].items():
                 maxhp[self.side][name] = own[index].hp_max
         viewer = SPECTATOR if self._spectator else self.side
+        parts = line.split("|")
+        if _kind(line) == "move" and parts[3:4] == ["Revival Blessing"]:
+            user = lines.flat_position(parts[2])
+            if user is not None:
+                self._rb_pending[user // 2] = user  # its revive comes in the step that answers the request
         try:
-            events = trace_to_c.step_events([line], viewer, self._names, maxhp, self.data.tables)
+            events = trace_to_c.step_events([line], viewer, self._names, maxhp, self.data.tables, self._rb_pending)
         except trace_to_c.ConversionError as e:  # a SystemExit: callers catch one kind of error
             detail = getattr(e, "detail", None)
             raise lines.Stop(f"converter:{e.rule}" + (f" {detail}" if detail else "")) from e
@@ -465,6 +471,14 @@ class Tracker:
             if public:
                 m = self._occupant(pos)
                 m.hp_percent, m.hp_flag = hp, hp_flag
+        elif kind == EV["REVIVE"]:
+            # Step G52 (decision 0025): Revival Blessing brings a fainted member of the user's side back at half HP,
+            # its status cured; ident is its roster index (the line names it without a position)
+            m = self._member(pos // 2)[ident]
+            if public:
+                m.hp_percent, m.hp_flag = hp, hp_flag
+            m.status = 0
+            self._rb_pending.pop(pos // 2, None)
         elif kind == EV["STATUS"]:
             if public:
                 self._occupant(pos).status = detail

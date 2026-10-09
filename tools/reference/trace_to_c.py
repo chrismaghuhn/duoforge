@@ -798,9 +798,11 @@ def convert_choice(text, side, state, roster_of, mid_turn=False):
             cmds.append((1, n, target, mega, 0))
         elif words[0] == 'switch':
             # "switch N" names position N of side.pokemon, which the
-            # reference reorders on every switch.
+            # reference reorders on every switch. A fainted Pokemon named here is a Revival Blessing revive (slot kind 4,
+            # decision 0025 item 8): the reference's switch choice of a revive is the same text (side.ts:932-977).
             mon = state['sides'][side]['pokemon'][int(words[1]) - 1]
-            cmds.append((2, 0, 0, 0, roster_of[side][name_of(mon)]))
+            kind = 4 if mon['fainted'] else 2
+            cmds.append((kind, 0, 0, 0, roster_of[side][name_of(mon)]))
         elif words[0] == 'pass':
             # In a switch request the reference wants "pass" for a slot that
             # is not asked to switch; DuoForge does not request that slot. A
@@ -887,7 +889,7 @@ EV = {name: i + 1 for i, name in enumerate(
      'IMMUNE', 'FAIL', 'PROTECT', 'BLOCKED', 'BOOST', 'UNBOOST', 'STATUS', 'CURE_STATUS', 'CONFUSION_START',
      'CONFUSION_END', 'CONFUSED', 'FLASH_FIRE', 'WEATHER', 'FIELD_START', 'FIELD_END', 'SIDE_START', 'SIDE_END',
      'ITEM_END', 'FORME', 'MEGA', 'PREPARE', 'ANIMATION', 'ABILITY', 'ACTIVATE', 'UPKEEP', 'RESULT',
-     'SINGLE_TURN', 'VOLATILE_START', 'VOLATILE_END', 'TYPE_CHANGE', 'ITEM_START'])}
+     'SINGLE_TURN', 'VOLATILE_START', 'VOLATILE_END', 'TYPE_CHANGE', 'ITEM_START', 'REVIVE'])}
 # DUOFORGE_EVENT_DRAG = 45 (step G46): 43 and 44 belong to REVIVE and TRANSFORM on their own branches, so the drag is set by value.
 EV['DRAG'] = 45
 CAUSE = {'NONE': 0, 'MOVE': 1, 'ITEM': 2, 'ABILITY': 3, 'RECOIL': 4, 'DRAIN': 5, 'BURN': 6, 'CONFUSION': 7,
@@ -1061,11 +1063,16 @@ def hit_key(text):
     return (m.group(1), m.group(2))
 
 
-def step_events(log, viewer, roster_of, maxhp, tables):
-    """The events `viewer` sees in one step, in protocol order."""
+def step_events(log, viewer, roster_of, maxhp, tables, rb_pending=None):
+    """The events `viewer` sees in one step, in protocol order. rb_pending maps a side to the position of the last Revival
+    Blessing user of that side: its revive is shown in the step that answers the pivot, not in the step of the move."""
+    if rb_pending is None:
+        rb_pending = {}
     out = []
     skip = set()
     hits_on = {}  # the -damage lines of the move that is being shown, by the Pokemon hit (see -hitcount)
+    last_user = None  # the position of the last move line's user (Revival Blessing's REVIVE names no position)
+    revived = None  # (side, name) of the member revived last: its instaswitch line has no [from]
     for i, line in enumerate(log):
         if i in skip:
             continue
@@ -1118,10 +1125,16 @@ def step_events(log, viewer, roster_of, maxhp, tables):
             side = pos // 2
             name = args[0].split(': ', 1)[1]
             cause, id2, _ = ev_cause(attrs, tables)
+            if not attrs and revived == (side, name):
+                cause, id2 = CAUSE['MOVE'], tables['MOVE'][key('Revival Blessing')]  # the instaswitch of a revive (item 10)
+            revived = None
             hp = ev_hp(args[2], side, viewer, maxhp[side][name])
             e = ev_tuple(EV['SWITCH' if kind == 'switch' else 'DRAG'], pos, NOPOS, cause, roster_of[side][name], id2, *hp)
         elif kind == 'move':
             pos = ev_pos(args[0])
+            last_user = pos
+            if args[1] == 'Revival Blessing':
+                rb_pending[pos // 2] = pos  # a failed one is never followed by a -heal of its side (the next one replaces it)
             target = ev_pos(parts[4]) if len(parts) > 4 else None
             flags = 0
             amount = 0
@@ -1144,6 +1157,19 @@ def step_events(log, viewer, roster_of, maxhp, tables):
             if flags & (FLAG['SPREAD'] | FLAG['NOTARGET'] | FLAG['STILL']) or target is None or args[1] in FOE_SIDE_MOVES:
                 target = NOPOS  # a foeSide move (step G37) names a random foe in the protocol: a label the engine does not draw
             e = ev_tuple(EV['MOVE'], pos, target, 0, tables['MOVE'][key(args[1])], amount=amount, flags=flags)
+        elif kind == '-heal' and '[from] move: Revival Blessing' in attrs:
+            # The line names the revived member without a position ("p2: Name"): the user is the move line's, the member
+            # is the roster index, and its HP is the viewer's copy (exact for the owner, a percentage for the foe).
+            side = int(args[0][1]) - 1  # "p2: Name": the side of the member
+            name = args[0].split(': ', 1)[1]
+            user = rb_pending.get(side)  # both viewers read it; the step's caller consumes it (convert_battle)
+            if user is None:
+                raise ConversionError('revive-user', 'trace_to_c: a revive with no Revival Blessing user of its side',
+                                      detail='revive of %s' % name)
+            hp = ev_hp(args[1], side, viewer, maxhp[side][name])
+            e = ev_tuple(EV['REVIVE'], user, NOPOS, CAUSE['MOVE'], roster_of[side][name],
+                         tables['MOVE'][key('Revival Blessing')], *hp)
+            revived = (side, name)
         elif kind in ('-damage', '-heal'):
             pos = ev_pos(args[0])
             side = pos // 2
@@ -1532,6 +1558,7 @@ def convert_battle(name, spec, trace, tables):
     # A switch request made during the turn: the step that led to it has not
     # reached the end of the turn (no upkeep line).
     mid_turn = False
+    rb_pending = {}  # side -> the position of its last Revival Blessing user (see step_events)
     for step in trace['steps']:
         public_lines(step['log'], roster_of, shown)
         kinds = {}
@@ -1666,7 +1693,10 @@ def convert_battle(name, spec, trace, tables):
                      c for sd in new_state['sides'] for c in sd['conditions'])
         boundary = boundary_of(new_state, step['log'])
         result = RESULT[new_state['winner']] if boundary == 5 else 0
-        events = [step_events(step['log'], viewer, roster_of, maxhp, tables) for viewer in range(2)]
+        events = [step_events(step['log'], viewer, roster_of, maxhp, tables, rb_pending) for viewer in range(2)]
+        for line in step['log']:  # one revive per Revival Blessing: the side's pending user ends with its revive
+            if line.startswith('|-heal|') and '[from] move: Revival Blessing' in line:
+                rb_pending.pop(int(line.split('|')[2][1]) - 1, None)
         steps.append({'team': 1 if team else 0, 'answered0': 1 if 0 in kinds else 0, 'answered1': 1 if 1 in kinds else 0,
                       'turn': new_state['turn'], 'boundary': boundary, 'result': result, 'picks': tuple(pk),
                       'cmds': tuple(cmds), 'occupants': tuple(occ), 'entries': tuple(ent), 'field': field,

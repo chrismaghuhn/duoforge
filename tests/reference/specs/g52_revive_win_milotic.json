@@ -1,0 +1,131 @@
+{
+  "name": "g52_revive_win_milotic",
+  "purpose": "Revival Blessing revives a benched Milotic (F) at a pivot answered with pass and switch 4, and the revived side wins the battle. Team X3 against the g50 team Y, random play of diff_driver seed 5401.",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,a963c038a8d5d33b1654d58faa7dd47c7e829aab7b7f6a904eb2d90fdfc880ef",
+  "teams": [
+    "Gholdengo @ Life Orb\nAbility: Good as Gold\nLevel: 50\nEVs: 32 HP / 2 SpA / 32 SpD\nCalm Nature\n- Protect\n- Shadow Ball\n- Make It Rain\n\nCeruledge (M) @ Charcoal\nAbility: Flash Fire\nLevel: 50\nEVs: 31 HP / 7 Atk / 24 Def / 3 SpD / 1 Spe\nBrave Nature\n- Protect\n\nKingambit (M) @ Black Glasses\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Sucker Punch\n- Iron Head\n- Protect\n- Swords Dance\n\nPrimarina (F) @ Fairy Feather\nAbility: Torrent\nLevel: 50\nEVs: 32 HP / 2 Def / 32 SpD\nCalm Nature\n- Protect\n- Moonblast\n- Calm Mind\n\nPawmot (M) @ Leftovers\nAbility: Iron Fist\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Thunderbolt\n- Revival Blessing\n- Ice Punch\n- Protect\n\nMilotic (F) @ Rocky Helmet\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Protect\n- Scald\n- Recover\n- Coil",
+    "Primarina (F) @ Fairy Feather\nAbility: Torrent\nLevel: 50\nEVs: 32 HP / 2 Def / 32 SpD\nCalm Nature\n- Protect\n- Moonblast\n- Calm Mind\n\nKingambit (M) @ Black Glasses\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Sucker Punch\n- Iron Head\n- Protect\n- Swords Dance\n\nMilotic (F) @ Rocky Helmet\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Protect\n- Scald\n- Recover\n- Coil\n\nGholdengo @ Life Orb\nAbility: Good as Gold\nLevel: 50\nEVs: 32 HP / 2 SpA / 32 SpD\nCalm Nature\n- Protect\n- Shadow Ball\n- Make It Rain\n\nCeruledge (M) @ Charcoal\nAbility: Flash Fire\nLevel: 50\nEVs: 31 HP / 7 Atk / 24 Def / 3 SpD / 1 Spe\nBrave Nature\n- Protect\n\nPawmot (M) @ Leftovers\nAbility: Iron Fist\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Thunderbolt\n- Revival Blessing\n- Ice Punch\n- Protect"
+  ],
+  "choices": [
+    {
+      "p1": "team 3256",
+      "p2": "team 1365"
+    },
+    {
+      "p1": "move 1 -2, move 1",
+      "p2": "move 3, move 1"
+    },
+    {
+      "p1": "move 2 2, move 1",
+      "p2": "move 3, move 2 -1"
+    },
+    {
+      "p1": "move 1 2, switch 3",
+      "p2": "move 3, move 2 1"
+    },
+    {
+      "p1": "move 1 -2, switch 4",
+      "p2": "move 1, move 2 -1"
+    },
+    {
+      "p1": "move 1 2, move 1",
+      "p2": "move 3, move 3"
+    },
+    {
+      "p1": "move 1 -2, move 1",
+      "p2": "move 1, move 2 1"
+    },
+    {
+      "p1": "switch 4, pass"
+    },
+    {
+      "p1": "move 3 -2, move 2 1",
+      "p2": "move 1, move 2 1"
+    },
+    {
+      "p1": "move 2, move 3",
+      "p2": "move 1, move 3"
+    },
+    {
+      "p1": "switch 4, pass"
+    },
+    {
+      "p1": "move 3 -2, move 2 -1",
+      "p2": "move 1, move 1"
+    },
+    {
+      "p1": "switch 4, pass"
+    },
+    {
+      "p1": "move 2 -2, move 4",
+      "p2": "move 3, move 2 2"
+    },
+    {
+      "p1": "move 4, move 4",
+      "p2": "move 3, move 1"
+    },
+    {
+      "p1": "move 4, move 4",
+      "p2": "move 1, move 4"
+    },
+    {
+      "p1": "move 3, move 4",
+      "p2": "move 2 -2, move 3"
+    },
+    {
+      "p2": "pass, switch 4"
+    },
+    {
+      "p1": "move 4, move 1",
+      "p2": "move 1, move 1"
+    },
+    {
+      "p1": "move 3, move 3",
+      "p2": "move 3, switch 3"
+    },
+    {
+      "p1": "move 1 -2, move 3",
+      "p2": "move 2 2, move 3 2"
+    },
+    {
+      "p1": "pass, switch 3"
+    },
+    {
+      "p1": "move 4, move 1",
+      "p2": "move 1, move 3 -1"
+    },
+    {
+      "p1": "move 1 -2, move 1",
+      "p2": "move 3, move 1 2"
+    },
+    {
+      "p1": "move 4, move 1",
+      "p2": "move 3, move 1 -1"
+    },
+    {
+      "p1": "move 1 1, move 1",
+      "p2": "move 3, move 3 -1"
+    },
+    {
+      "p1": "move 4, move 1",
+      "p2": "move 2 1, move 2"
+    },
+    {
+      "p2": "pass, switch 4"
+    },
+    {
+      "p1": "pass, move 1",
+      "p2": "move 2 -2, move 4"
+    },
+    {
+      "p1": "pass, move 1",
+      "p2": "move 3, move 4"
+    },
+    {
+      "p1": "pass, move 1",
+      "p2": "move 2 1, move 1 1"
+    }
+  ]
+}

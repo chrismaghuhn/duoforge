@@ -1352,8 +1352,8 @@ const dfi_move_data dfi_pool_moves[DFI_POOL_MOVE_COUNT] = {
     {3u, 0u, 20u, 100u, 20u, 20u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 100u, 2u, 3u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
     /* Octolock -- data/moves.ts:12960-12994, data/mods/champions/moves.ts:705-708  [unmodelled: callback onTryImmunity; condition block; primary volatile octolock] */
     {5u, 2u, 0u, 100u, 15u, 16u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 75u},
-    /* Outrage -- data/moves.ts:13082-13097 */
-    {2u, 0u, 120u, 100u, 10u, 12u, 8u, 10u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 74u},
+    /* Outrage -- data/moves.ts:13082-13097  [unmodelled: self effect] */
+    {2u, 0u, 120u, 100u, 10u, 12u, 8u, 10u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 75u},
     /* Overdrive -- data/moves.ts:13098-13109 */
     {3u, 1u, 80u, 100u, 10u, 12u, 8u, 7u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
     /* Overheat -- data/moves.ts:13110-13127 */
@@ -1368,8 +1368,8 @@ const dfi_move_data dfi_pool_moves[DFI_POOL_MOVE_COUNT] = {
     {12u, 2u, 0u, 0u, 5u, 8u, 8u, 9u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 52u},
     /* Petal Blizzard -- data/moves.ts:13278-13290 */
     {9u, 0u, 90u, 100u, 15u, 16u, 8u, 11u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
-    /* Petal Dance -- data/moves.ts:13291-13306 */
-    {9u, 1u, 120u, 100u, 10u, 12u, 8u, 10u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 74u},
+    /* Petal Dance -- data/moves.ts:13291-13306  [unmodelled: self effect] */
+    {9u, 1u, 120u, 100u, 10u, 12u, 8u, 10u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 75u},
     /* Phantom Force -- data/moves.ts:13307-13335  [unmodelled: callback onTryMove; condition block; field breaksProtect] */
     {8u, 0u, 90u, 100u, 10u, 12u, 8u, 1u, 1u, 5u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 75u},
     /* Pin Missile -- data/moves.ts:13372-13387  [unmodelled: field multihit] */
@@ -1448,8 +1448,8 @@ const dfi_move_data dfi_pool_moves[DFI_POOL_MOVE_COUNT] = {
     {14u, 2u, 0u, 0u, 5u, 8u, 8u, 6u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 75u},
     /* Reversal -- data/moves.ts:15077-15109  [unmodelled: callback basePowerCallback] */
     {5u, 0u, 0u, 100u, 15u, 16u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 75u},
-    /* Revival Blessing -- data/moves.ts:15110-15136  [unmodelled: callback onTryHit; condition block; field selfSwitch without a switch flag; field slotCondition] */
-    {12u, 2u, 0u, 0u, 1u, 1u, 8u, 6u, 1u, 48u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 75u},
+    /* Revival Blessing -- data/moves.ts:15110-15136 */
+    {12u, 2u, 0u, 0u, 1u, 1u, 8u, 6u, 1u, 48u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 74u},
     /* Rising Voltage -- data/moves.ts:15137-15156 */
     {3u, 1u, 70u, 100u, 20u, 20u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 50u},
     /* Roar -- data/moves.ts:15157-15171 */
@@ -1634,8 +1634,8 @@ const dfi_move_data dfi_pool_moves[DFI_POOL_MOVE_COUNT] = {
     {12u, 1u, 50u, 100u, 10u, 12u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 51u},
     /* Thief -- data/moves.ts:19302-19330 */
     {1u, 0u, 60u, 100u, 25u, 20u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 58u},
-    /* Thrash -- data/moves.ts:19373-19388 */
-    {12u, 0u, 120u, 100u, 10u, 12u, 8u, 10u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 74u},
+    /* Thrash -- data/moves.ts:19373-19388  [unmodelled: self effect] */
+    {12u, 0u, 120u, 100u, 10u, 12u, 8u, 10u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 75u},
     /* Thunder -- data/moves.ts:19438-19466 */
     {3u, 1u, 110u, 70u, 10u, 12u, 8u, 1u, 1u, 2u, {0u, 0u}, {0u, 0u}, 30u, 2u, 3u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 68u},
     /* Thunder Fang -- data/moves.ts:19517-19538  [unmodelled: field secondaries] */
@@ -6824,7 +6824,6 @@ const char *const dfi_pool_move_unmodeled[DFI_POOL_MOVE_COUNT] = {
     [DFI_MOVE_REFLECTTYPE] = "callback onHit",
     [DFI_MOVE_REST] = "callback onHit; callback onTry",
     [DFI_MOVE_REVERSAL] = "callback basePowerCallback",
-    [DFI_MOVE_REVIVALBLESSING] = "callback onTryHit; condition block; field selfSwitch without a switch flag; field slotCondition",
     [DFI_MOVE_ROCKBLAST] = "field multihit",
     [DFI_MOVE_ROLEPLAY] = "callback onHit; callback onTryHit",
     [DFI_MOVE_ROUND] = "callback basePowerCallback; callback onTry",
@@ -7049,10 +7048,10 @@ const char *const dfi_pool_ability_unmodeled[DFI_POOL_ABILITY_COUNT] = {
 };
 
 const uint8_t dfi_pool_table_hash[32] = {
-    0xefu, 0x03u, 0x33u, 0xc3u, 0xa2u, 0x54u, 0x55u, 0xcdu,
-    0x83u, 0x06u, 0x92u, 0x34u, 0xf5u, 0x41u, 0x6fu, 0xfau,
-    0x1cu, 0xb1u, 0xe7u, 0xbfu, 0x73u, 0x81u, 0xd1u, 0x2bu,
-    0x83u, 0x8eu, 0x94u, 0x65u, 0x46u, 0x84u, 0x91u, 0x57u,
+    0xa6u, 0xd3u, 0x90u, 0xd8u, 0xf4u, 0xb7u, 0xf7u, 0xdeu,
+    0x8fu, 0x8bu, 0x5cu, 0xe6u, 0x2bu, 0x8du, 0xc3u, 0x4eu,
+    0x18u, 0x71u, 0x23u, 0xa4u, 0xa0u, 0x8bu, 0x0au, 0xc9u,
+    0x6au, 0x25u, 0xd2u, 0xa3u, 0x3bu, 0x9bu, 0x88u, 0xfdu,
 };
 
 static size_t dfi_pool_put_u16(uint8_t *out, size_t n, uint32_t v)

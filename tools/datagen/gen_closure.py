@@ -390,6 +390,10 @@ def parse_move(mid, base, champ, ext=False, pool=False, unmodeled=None):
             fail('move %s: onTryHit is not the pinned text' % mid)
         if 'condition' not in f or norm(f['condition'][1]) != YAWN_CONDITION:
             fail('move %s: the condition is not the pinned text' % mid)
+    if pool and handled[0] == 'REVIVAL_BLESSING' and ('condition' not in f or norm(f['condition'][1]) != REVIVAL_BLESSING_CONDITION):
+        fail('move %s: the condition is not the pinned text' % mid)
+    if pool and handled[0] == 'REVIVAL_BLESSING' and ('onTryHit' not in f or norm(f['onTryHit'][1]) != REVIVAL_BLESSING_ONTRYHIT):
+        fail('move %s: onTryHit is not the pinned text' % mid)
     if pool and handled[0] == 'ROOST' and ('condition' not in f or norm(f['condition'][1]) != ROOST_CONDITION):
         fail('move %s: the condition is not the pinned text' % mid)
     if pool and handled[0] == 'STOMPING_TANTRUM':
@@ -1928,6 +1932,12 @@ G49_ITEM_FACTS = (
 # for a turn and has no move queued), order 15, onBeforeMove priority 5 and the Status-category bar; Yawn's duration 2,
 # order 23 and the silent end that calls trySetStatus('slp').
 G31_HANDLERS = ['TAUNT', 'YAWN']
+# Step G52 (decision 0025 item 6): Revival Blessing (data/moves.ts:15110-15136). onTryHit fails when the user's side has no fainted
+# Pokemon; selfSwitch and the slot condition make the user's slot a revive at its PIVOT (sim/side.ts 925-985, sim/battle.ts
+# 2781-2797). The turn code implements the move (DFI_SWITCH_REVIVE_BLESSING and the revive action); the generator checks onTryHit.
+G52_HANDLERS = ['REVIVAL_BLESSING']
+REVIVAL_BLESSING_ONTRYHIT = "onTryHit(source) { if (!source.side.pokemon.filter(ally => ally.fainted).length) { return false; } },"
+REVIVAL_BLESSING_CONDITION = "condition: { duration: 1, // reviving implemented in side.ts, kind of },"
 # Step G50 (decision 0025 items 1 and 2): Double Shock. Its onTryMove fails without the Electric type (data/moves.ts:3954-3959);
 # its self onHit sets the type ??? in place of Electric and shows -start|X|typechange|???/Fighting (data/moves.ts:3960-3964). The
 # Champions mod adds the punch flag (its flags column) and nothing else. The self text is owned by the handler (G2_OWNED_FIELDS),
@@ -2075,6 +2085,7 @@ SPECIAL_P = dict(SPECIAL_C, **{
     'spikyshield': ('SPIKY_SHIELD', {'onPrepareHit', 'onHit'}),           # G20: Protect that damages a contact attacker
     'taunt': ('TAUNT', set()),                                            # G31: bars the Status moves for three or four turns
     'yawn': ('YAWN', {'onTryHit'}),                                       # G31: sleep at the end of the next turn
+    'revivalblessing': ('REVIVAL_BLESSING', {'onTryHit'}),                # G52: the revive at the PIVOT of the user's slot
     'roost': ('ROOST', set()),                                            # G42: heals, then the Flying type is off for the turn
     'stompingtantrum': ('STOMPING_TANTRUM', {'basePowerCallback'}),        # G42: base power x2 after a failed last move
     'auroraveil': ('AURORA_VEIL', {'onTry'}),                             # G20: a screen against both categories, in snow only
@@ -2181,7 +2192,7 @@ G44_FACTS = (
     ('triattack', ['accuracy: 100,', 'basePower: 80,', 'category: "Special",', 'priority: 0,',
                    'flags: { protect: 1, mirror: 1, metronome: 1 },', 'target: "normal",', 'type: "Normal",']),
 )
-SPECIAL_IDS_P = SPECIAL_IDS_C + G2_HANDLERS + WEATHER_HANDLERS + G16_HANDLERS + G15_HANDLERS + G19_HANDLERS + G20_HANDLERS + G20_PROTECT_HANDLERS + G28_HANDLERS + G30_HANDLERS + G32_HANDLERS + G34_HANDLERS + G27_HANDLERS + G25_HANDLERS + G26_HANDLERS + G33_HANDLERS + G38_HANDLERS + G29_HANDLERS + G39_HANDLERS + G31_HANDLERS + G48_HANDLERS + G44_HANDLERS + G50_HANDLERS + G42_HANDLERS + G56_HANDLERS + ['UNMODELED']
+SPECIAL_IDS_P = SPECIAL_IDS_C + G2_HANDLERS + WEATHER_HANDLERS + G16_HANDLERS + G15_HANDLERS + G19_HANDLERS + G20_HANDLERS + G20_PROTECT_HANDLERS + G28_HANDLERS + G30_HANDLERS + G32_HANDLERS + G34_HANDLERS + G27_HANDLERS + G25_HANDLERS + G26_HANDLERS + G33_HANDLERS + G38_HANDLERS + G29_HANDLERS + G39_HANDLERS + G31_HANDLERS + G48_HANDLERS + G44_HANDLERS + G50_HANDLERS + G42_HANDLERS + G56_HANDLERS + G52_HANDLERS + ['UNMODELED']
 # Step G10 made two of these handlers data: Scald (thawsTarget) and Recover (heal) are read into the second flags
 # byte (bit 4, thaws the target) and the heal column, and have the special NONE; their ids stay defined (the ids after
 # them keep their values). First Impression and Low Kick keep theirs: the turn code implements them.
@@ -2195,6 +2206,8 @@ G2_OWNED_FIELDS = {
     'SPIKY_SHIELD': {'volatileStatus': "volatileStatus: 'spikyshield',"},
     'TAUNT': {'volatileStatus': "volatileStatus: 'taunt',"},
     'YAWN': {'volatileStatus': "volatileStatus: 'yawn',"},
+    'REVIVAL_BLESSING': {'slotCondition': "slotCondition: 'revivalblessing', // No this not a real switchout move // This is needed "
+                                         "to trigger a switch protocol to choose a fainted party member // Feel free to refactor"},
     'SANDSTORM': {'weather': "weather: 'Sandstorm',"},
     'SNOWSCAPE': {'weather': "weather: 'snowscape',"},
     'ELECTRIC_TERRAIN': {'terrain': "terrain: 'electricterrain',"},
@@ -2223,7 +2236,7 @@ G2_OWNED_FIELDS = {
 G2_OWNED_SECONDARY = {'STONE_AXE': 'secondary: {}, // Sheer Force-boosted', 'CEASELESS_EDGE': 'secondary: {}, // Sheer Force-boosted', 'TRI_ATTACK': "secondary: { chance: 20, onHit(target, source) { const status = this.sample(['brn', 'par', 'frz']); "
                   "target.trySetStatus(status, source); }, },"}
 G2_OWNED_CONDITION = {'ROOST', 'ENCORE', 'WIDE_GUARD', 'GLAIVE_RUSH', 'AURORA_VEIL', 'SPIKY_SHIELD', 'RAGE_POWDER', 'DISABLE',
-                      'ELECTRIC_TERRAIN', 'MISTY_TERRAIN', 'PERISH_SONG', 'IMPRISON', 'TAUNT', 'YAWN'}
+                      'ELECTRIC_TERRAIN', 'MISTY_TERRAIN', 'PERISH_SONG', 'IMPRISON', 'TAUNT', 'YAWN', 'REVIVAL_BLESSING'}
 # Step G8 (Throat Chop and Psychic Noise): the two secondaries become modelled kinds, and the column that their
 # consumers read is the move's second flags byte (the first is full): the `sound` flag (Throat Chop bars the sound
 # moves) and the `heal` flag (Heal Block bars the moves that heal). Both are derived for every pool move, the prefix
@@ -2402,7 +2415,7 @@ ENGINE_ROWS = {'items': ['focussash', 'floettite', 'psychicseed', 'electricseed'
 # The moves of the whole pool that the turn code pivots with a switch flag of their own (dfi_pivot_moves,
 # src/state/closure_member.c) beyond Flip Turn and U-turn, which are rows of the steps. Empty: Volt Switch comes with the
 # step that gives it a flag value, and adds its id here.
-ENGINE_PIVOT_MOVES = ('voltswitch',)  # step G32: switch flag 6
+ENGINE_PIVOT_MOVES = ('voltswitch', 'revivalblessing')  # step G32: switch flag 6
 # The one ability that the pin tags as not released and that the pool still has: Aura Guard is the ability of
 # Lucario-Mega-Z, whose set the pinned validator accepts (docs/research/expansion/data/legal_pool.json, 'abilities_mega_only').
 # The row exists because the format has the forme; it is UNMODELED like every ability with a callback. Any other tag fails.
