@@ -1834,10 +1834,11 @@ def move_rules(source, move_ids):
     must = {}
     for ident, value in re.findall(r'\[DFI_MOVE_([A-Z0-9]+)\] = 0x([0-9a-fA-F]+)u', source[a:source.index('};', a)]):
         must[move_ids[ident]] = bool(int(value, 16) & 0x800)
-    if len(classes) != len(move_ids):
+    moves = {k: v for k, v in move_ids.items() if k != 'COUNT'}  # DFI_MOVE_COUNT is no move
+    if len(classes) != len(moves):
         raise ConversionError('move-rules', 'trace_to_c: %d move rows of dfi_pool_moves, %d moves'
-                              % (len(classes), len(move_ids)))
-    return classes, {i: must.get(i, False) for i in move_ids.values()}
+                              % (len(classes), len(moves)))
+    return classes, {i: must.get(i, False) for i in moves.values()}
 
 
 def main():

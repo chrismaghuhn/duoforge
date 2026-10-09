@@ -675,8 +675,9 @@ duoforge_status duoforge_battle_step(const duoforge_context *ctx, duoforge_battl
 #define DUOFORGE_HP_PERCENT 2u /* hp = floor percent (1..100 while alive, 0 fainted), hp_max = 100 */
 #define DUOFORGE_HP_UNKNOWN 3u
 #define DUOFORGE_PP_EXACT   1u
-#define DUOFORGE_PP_DERIVED 2u /* the foe: pp_max minus the PP the viewer saw spent (step G53: a use costs 1 plus the Pressure extra of
-                                  that use, the extra from the viewer's own Pokemon with Pressure that the move targets; 0 at the floor) */
+#define DUOFORGE_PP_DERIVED 2u /* the foe: pp_max minus the PP the viewer can attribute (step G53: a use costs 1, plus the Pressure
+                                  extra of the viewer's own Pokemon where the target is shown or follows from the move's class;
+                                  a [still] line blanks its target and counts 1 only; 0 at the floor) */
 #define DUOFORGE_PP_UNKNOWN 3u
 #define DUOFORGE_HP_FLAG_NONE   0u
 #define DUOFORGE_HP_FLAG_RED    1u /* exactly 20 percent and hp*5 <= hp_max */

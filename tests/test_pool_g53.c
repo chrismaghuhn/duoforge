@@ -1,27 +1,32 @@
 /*
- * duoforge.state.pool_g53 (white-box): step G53 of the content expansion (decision 0030 section 1), Pressure and the foe's derived
- * PP.
+ * duoforge.state.pool_g53 (white-box): step G53 of the content expansion (decision 0030), Pressure and the PP a viewer can
+ * attribute to a foe's moves.
  *
- * Pressure (data/abilities.ts:3437-3449: onDeductPP returns 1 for a foe; useMoveInner sums the returns over the pressure targets
- * after the move's own PP, sim/battle-actions.ts:473-484) costs the user one more PP per standing foe with Pressure that the move
- * targets. The engine deducts it (src/combat/turn.c dfi_pressure_extra); the viewer of the foe derives it from the lines (the
- * fold in src/combat/events.c, dfi_pressure_charge): the foe's derived PP is pp_max minus the PP the viewer saw spent (decision
- * 0007, DUOFORGE_PP_DERIVED). The recorded battles (g53_* under "data": "pool") replay in duoforge.reference.conformance_pool_data,
- * which compares the engine's PP with the reference's. Here the facts that are not in that comparison:
+ * Pressure (data/abilities.ts:3437-3449: onDeductPP returns 1 for a foe; useMoveInner sums the returns over the pressure
+ * targets after the move's own PP, sim/battle-actions.ts:473-484) costs the user one more PP per standing foe with Pressure
+ * that the move targets. The engine deducts it in the state, exactly. The viewer of the foe attributes the extra only where the
+ * targets are visible to it (the fold in src/combat/events.c, dfi_pressure_charge): a single-target move whose line names its
+ * target, and the classes whose targets follow from the class and the board (field, spread, mustpressure). A line made
+ * [still] blanks the target (sim/battle.ts:3123-3138, attrLastMove), so that extra is not attributed: the foe's derived PP
+ * is then higher than the owner's exact PP by exactly that extra. The recorded battles (g53_* under "data": "pool") replay
+ * in duoforge.reference.conformance_pool_data, which compares the engine's PP with what the reference's lines allow the
+ * viewer to attribute. Here the facts that battle comparison does not state:
  *
  *   - the marks and the flag: Pressure is supported; mustpressure (DUOFORGE_MOVE_STATIC_FLAG_MUST_PRESSURE, 0x800) is on
- *     Imprison, Spikes, Stealth Rock and Toxic Spikes, and on none of the moves that are not mustpressure in the pin;
- *   - at every boundary of every g53 battle, for both players, the foe's derived PP of every move slot equals the PP that the
- *     owner sees (its own PP is exact: the owner's view is the state). That is the statement "derived = pp_max minus the PP spent
- *     as the viewer saw it", checked against the state rather than against the reference's numbers;
- *   - the numbers of the Pressure cases, pinned: the single target (one extra per use), the mustpressure move (two extras for one
- *     target), the floor at 0 (the last PP of Trick Room takes what is left, no wrap).
+ *     Imprison, Spikes, Stealth Rock and Toxic Spikes, and on none of the moves the battles use without it;
+ *   - at every boundary of every g53 battle, for both players and every move slot, the foe's derived PP equals the owner's
+ *     exact PP, except the hidden extra of a [still] move, which is pinned below: g53_still_pressure, where the Sucker Punch
+ *     of Kingambit (side 1, roster 0, slot 1) is one attributable PP higher after its first use and two after the second;
+ *   - a control with a shown target (g53_trace_pressure, the Moonblast of Gardevoir) where the two are equal;
+ *   - the charge of a two-turn move and of a [still] move is deducted in the state (accepted, not refused): Solar Beam at a
+ *     Pressure foe costs its user two PP, one of its own and one for the foe; at its ally, one.
  */
 #include <stdio.h>
 #include <string.h>
 
 #include <duoforge/duoforge.h>
 
+#include "combat/events.h"
 #include "combat/turn.h"
 #include "data/pool_tables.h"
 #include "data/support_manifest.h"
@@ -126,39 +131,44 @@ static duoforge_battle *replay(df_test *t, const duoforge_context *ctx, const ch
     return b;
 }
 
-/* The PP of move slot `k` of member `m` of `side`, as `viewer` sees it. */
-static bool observe_pp(df_test *t, const duoforge_context *ctx, const duoforge_battle *b, uint32_t viewer, duoforge_observation *ob)
+/* The PP a player attributes to a foe move that its line hides: the one Pressure extra of the [still] Sucker Punch (its
+ * target Gardevoir has Pressure from Trace, and no line names it), at Kingambit (side 1, roster 0, move slot 1), after
+ * `steps` steps of g53_still_pressure: one use per move step, and each use is a [still] one. */
+static uint32_t hidden_gap(const char *name, uint32_t steps, uint32_t side, uint32_t member, uint32_t slot)
 {
-    return DF_CHECK(t, duoforge_battle_observe(ctx, b, viewer, ob) == DUOFORGE_OK);
+    if (strcmp(name, "g53_still_pressure") != 0 || side != 1u || member != 0u || slot != 1u || steps < 2u) {
+        return 0u;
+    }
+    return steps - 1u; /* the first step is the team step */
 }
 
 /* For every move slot of every member of both sides, at this boundary: the foe's view (derived) equals the owner's view
- * (exact). Returns the number of slots compared, 0 on a failure. */
-static uint32_t check_derived_equals_exact(df_test *t, const duoforge_context *ctx, const duoforge_battle *b)
+ * (exact) plus the hidden gap of the battle, which is 0 everywhere but the pinned [still] case. Returns the number of slots
+ * compared, 0 on a failure. */
+static uint32_t check_derived(df_test *t, const duoforge_context *ctx, const duoforge_battle *b, const char *name, uint32_t steps)
 {
     duoforge_observation own[DUOFORGE_SIDE_COUNT];
     duoforge_observation foe[DUOFORGE_SIDE_COUNT];
     uint32_t compared = 0u;
     for (uint32_t p = 0u; p < DUOFORGE_SIDE_COUNT; ++p) {
-        if (!observe_pp(t, ctx, b, p, &own[p])) {
-            return 0u;
-        }
-        if (!observe_pp(t, ctx, b, 1u - p, &foe[p])) {
+        if (!DF_CHECK(t, duoforge_battle_observe(ctx, b, p, &own[p]) == DUOFORGE_OK) ||
+            !DF_CHECK(t, duoforge_battle_observe(ctx, b, 1u - p, &foe[p]) == DUOFORGE_OK)) {
             return 0u;
         }
     }
     for (uint32_t side = 0u; side < DUOFORGE_SIDE_COUNT; ++side) {
-        /* the owner (viewer `side`) sees its own PP exact; the other player (viewer 1 - side) sees it derived */
+        /* the owner (viewer `side`) sees its PP exact; the other player (viewer 1 - side) attributes it: foe[side] */
         const duoforge_side_view *ex = &own[side].sides[side];
-        const duoforge_side_view *dv = &foe[side].sides[side]; /* foe[p] is viewer 1 - p: viewer 1 - side sees `side` */
+        const duoforge_side_view *dv = &foe[side].sides[side];
         for (uint32_t m = 0u; m < ex->member_count; ++m) {
             for (uint32_t k = 0u; k < ex->members[m].move_count && k < DUOFORGE_MAX_MOVE_SLOTS; ++k) {
                 if (!DF_CHECK(t, ex->members[m].pp_kind == DUOFORGE_PP_EXACT && dv->members[m].pp_kind == DUOFORGE_PP_DERIVED)) {
                     return 0u;
                 }
-                if (!DF_CHECK(t, dv->members[m].pp[k] == ex->members[m].pp[k])) {
-                    fprintf(stderr, "  side %u member %u slot %u: derived %u, exact %u\n", side, m, k,
-                            (unsigned)dv->members[m].pp[k], (unsigned)ex->members[m].pp[k]);
+                const uint32_t gap = hidden_gap(name, steps, side, m, k);
+                if (!DF_CHECK(t, (uint32_t)dv->members[m].pp[k] == (uint32_t)ex->members[m].pp[k] + gap)) {
+                    fprintf(stderr, "  %s step %u: side %u member %u slot %u: attributed %u, exact %u, gap %u\n", name, steps,
+                            side, m, k, (unsigned)dv->members[m].pp[k], (unsigned)ex->members[m].pp[k], gap);
                     return 0u;
                 }
                 compared += 1u;
@@ -168,14 +178,14 @@ static uint32_t check_derived_equals_exact(df_test *t, const duoforge_context *c
     return compared;
 }
 
-/* Every recorded g53 battle, at every boundary: the foe's derived PP is the owner's PP for both players. */
+/* Every recorded g53 battle, at every boundary (k steps replayed for k = 1 to the battle's steps). */
 static void check_every_boundary(df_test *t, const duoforge_context *ctx)
 {
     static const char *const names[] = {
         "g53_single_target", "g53_spread_protect", "g53_field_trick_room", "g53_mustpressure",
         "g53_fainted_holder", "g53_pressure_ally", "g53_sticky_web", "g53_trace_pressure",
         "g53_fainted_field", "g53_switch_pressure", "g53_expanding_force", "g53_trace_switch", "g53_mega_pressure",
-        "g53_switch_in_pressure",
+        "g53_switch_in_pressure", "g53_still_pressure",
     };
     for (size_t i = 0u; i < sizeof names / sizeof names[0]; ++i) {
         const df_conf_battle *cb = find(names[i]);
@@ -187,10 +197,26 @@ static void check_every_boundary(df_test *t, const duoforge_context *ctx)
             if (b == NULL) {
                 break;
             }
-            DF_CHECK(t, check_derived_equals_exact(t, ctx, b) != 0u);
+            DF_CHECK(t, check_derived(t, ctx, b, names[i], steps) != 0u);
             duoforge_battle_destroy(b);
         }
     }
+}
+
+/* The hidden extra is a real charge: the [still] battle has its Sucker Punch exact at 6 after one use, and the foe sees 7. */
+static void check_still_pinned(df_test *t, const duoforge_context *ctx)
+{
+    duoforge_battle *b = replay(t, ctx, "g53_still_pressure", 2u);
+    if (!DF_CHECK(t, b != NULL)) {
+        return;
+    }
+    duoforge_observation own;
+    duoforge_observation foe;
+    DF_CHECK(t, duoforge_battle_observe(ctx, b, 1u, &own) == DUOFORGE_OK);
+    DF_CHECK(t, duoforge_battle_observe(ctx, b, 0u, &foe) == DUOFORGE_OK);
+    DF_CHECK_EQ_U64(t, own.sides[1].members[0].pp[1], 6u);  /* exact: 8 - (1 + the extra of Gardevoir) */
+    DF_CHECK_EQ_U64(t, foe.sides[1].members[0].pp[1], 7u);  /* attributed: 8 - 1 */
+    duoforge_battle_destroy(b);
 }
 
 static void check_marks(df_test *t)
@@ -201,7 +227,7 @@ static void check_marks(df_test *t)
     for (size_t i = 0u; i < sizeof must / sizeof must[0]; ++i) {
         DF_CHECK(t, (dfi_pool_move_static_flags[must[i]] & DUOFORGE_MOVE_STATIC_FLAG_MUST_PRESSURE) != 0u);
     }
-    /* the moves that the battles use without the flag: a single target, a spread, a field move, a foe-side move that is not
+    /* the moves the battles use without the flag: a single target, a spread, a field move, a foe-side move that is not
      * mustpressure (Sticky Web) and a Protect */
     static const uint32_t plain[] = {DFI_MOVE_SHADOWBALL, DFI_MOVE_HYPERVOICE, DFI_MOVE_TRICKROOM, DFI_MOVE_STICKYWEB,
                                      DFI_MOVE_PROTECT, DFI_MOVE_EARTHQUAKE};
@@ -210,12 +236,10 @@ static void check_marks(df_test *t)
     }
 }
 
-/* A two-turn move that would cost a Pressure extra is refused (E_UNSUPPORTED) at its PP: the charge turn names no target, so
- * the players could not derive the extra (src/combat/turn.c, dfi_run_move). Forretress learns Solar Beam (the pool), so the
- * setup of g53_mustpressure gives it Solar Beam in the slot of its Spikes, and the first move step of the battle aims it at
- * Kingambit (Pressure): refused, and the battle is unchanged. The control aims it at its ally Indeedee (no Pressure, the extra is
- * none): the same step is accepted. */
-static void check_charge_refused(df_test *t, const duoforge_context *ctx)
+/* A two-turn charge into a Pressure foe is accepted and deducted: Solar Beam of Forretress (side 0, slot 0) at Kingambit costs 2
+ * PP in the state (one of its own, one for the foe). Its control at the ally Indeedee costs 1. The battle is the recorded
+ * g53_mustpressure, with Solar Beam in the slot of its Spikes, and the first move step. */
+static void check_charge_accepted(df_test *t, const duoforge_context *ctx)
 {
     const df_conf_battle *cb = find("g53_mustpressure");
     if (!DF_CHECK(t, cb != NULL && cb->step_count >= 2u)) {
@@ -239,79 +263,116 @@ static void check_charge_refused(df_test *t, const duoforge_context *ctx)
             duoforge_battle_destroy(b);
             return;
         }
-        duoforge_observation before[DUOFORGE_SIDE_COUNT];
-        duoforge_observation after[DUOFORGE_SIDE_COUNT];
-        for (uint32_t p = 0u; p < DUOFORGE_SIDE_COUNT; ++p) {
-            DF_CHECK(t, duoforge_battle_observe(ctx, b, p, &before[p]) == DUOFORGE_OK);
-        }
+        duoforge_observation before;
+        duoforge_observation after;
+        DF_CHECK(t, duoforge_battle_observe(ctx, b, 0u, &before) == DUOFORGE_OK);
         bundle_of(&cb->steps[1], b, &bd);
-        /* the recorded first move step: Forretress (side 0, slot 0) uses its move 1, now Solar Beam, at Kingambit (flat 2) or at
-         * its ally Indeedee (flat 1) */
+        /* Forretress (side 0, slot 0) uses its move 1, now Solar Beam, at Kingambit (flat 2) or at its ally Indeedee (flat 1) */
         bd.responses[0].slots[0].target = control != 0u ? 1u : 2u;
         const duoforge_status st = duoforge_battle_step(ctx, b, &bd, &res);
-        if (control == 0u) {
-            DF_CHECK_EQ_U64(t, st, DUOFORGE_E_UNSUPPORTED);
-            for (uint32_t p = 0u; p < DUOFORGE_SIDE_COUNT; ++p) {
-                DF_CHECK(t, duoforge_battle_observe(ctx, b, p, &after[p]) == DUOFORGE_OK);
-                DF_CHECK(t, memcmp(&before[p], &after[p], sizeof before[p]) == 0);
-            }
-        } else {
-            DF_CHECK_EQ_U64(t, st, DUOFORGE_OK);
-        }
+        DF_CHECK_EQ_U64(t, st, DUOFORGE_OK);
+        DF_CHECK(t, duoforge_battle_observe(ctx, b, 0u, &after) == DUOFORGE_OK);
+        /* the charge is deducted in the state: its own PP and the foe's extra (2 at Kingambit, 1 at the ally) */
+        const uint32_t drop = (uint32_t)before.sides[0].members[0].pp[0] - (uint32_t)after.sides[0].members[0].pp[0];
+        DF_CHECK_EQ_U64(t, drop, control != 0u ? 1u : 2u);
         duoforge_battle_destroy(b);
     }
 }
 
-/* A move whose line hides its target (a [still] line names none) costs a Pressure extra that depends on the target: refused
- * (E_UNSUPPORTED), never guessed, because the viewer cannot tell which foe the extra came from (src/combat/turn.c, dfi_still).
- * g53_trace_pressure: Gardevoir has Pressure from its Trace copy; the first step's choices are Moonblast and Protect, and at
- * the second step Kingambit's Sucker Punch at Gardevoir fails, with its line hidden, if Gardevoir protects (its move 2). The
- * control is the recorded choice (Moonblast): the line names the target and the step is accepted. */
-static void check_hidden_target_refused(df_test *t, const duoforge_context *ctx)
+/* White-box (a constructed event list, the fold of the viewer): a Pokemon whose faint line has no damage line before it leaves the
+ * count of the Pressure extra at once. g53_pressure_ally after its team step: Kingambit (Pressure) is on side 0 slot 1, and
+ * Gholdengo (side 1 slot 1) Shadow Balls it in the next event; with the faint first, the Shadow Ball counts 1 (no extra). */
+static void check_fold_fainted_holder(df_test *t, const duoforge_context *ctx)
 {
-    const df_conf_battle *cb = find("g53_trace_pressure");
+    duoforge_battle *b = replay(t, ctx, "g53_pressure_ally", 1u);
+    if (!DF_CHECK(t, b != NULL)) {
+        return;
+    }
+    static struct duoforge_battle after;
+    memcpy(&after, b, sizeof after);
+    dfi_events ev;
+    memset(&ev, 0, sizeof ev);
+    ev.rec[0] = dfi_event_make(DUOFORGE_EVENT_FAINT, 1u);
+    duoforge_event shadow = dfi_event_make(DUOFORGE_EVENT_MOVE, 3u);
+    shadow.id = (uint16_t)DFI_MOVE_SHADOWBALL;
+    shadow.other = 1u; /* Kingambit's position, the only target of the line */
+    ev.rec[1] = shadow;
+    ev.count = 2u;
+    DF_CHECK(t, dfi_events_fold_knowledge(b, &after, &ev, 0u));
+    /* the viewer's knowledge of Gholdengo (roster 1 of side 1), its Shadow Ball (move slot 0): one use, no extra */
+    DF_CHECK_EQ_U64(t, after.sides[0].knowledge[1].moves_used[0], 1u);
+    duoforge_battle_destroy(b);
+}
+
+/* White-box (the step API, a constructed locked turn): after the charge of Solar Beam into Kingambit (2 PP: its own and the
+ * extra), the locked turn of the same move costs nothing: a locked move has no PP and no extra (sim/battle-actions.ts:289). */
+static void check_locked_turn_free(df_test *t, const duoforge_context *ctx)
+{
+    const df_conf_battle *cb = find("g53_mustpressure");
     if (!DF_CHECK(t, cb != NULL && cb->step_count >= 2u)) {
         return;
     }
-    for (uint32_t control = 0u; control < 2u; ++control) {
-        duoforge_battle_setup setup;
-        build_setup(cb, &setup);
-        duoforge_battle *b = NULL;
-        if (!DF_CHECK(t, duoforge_battle_create(ctx, &setup, &b) == DUOFORGE_OK && b != NULL)) {
-            return;
-        }
-        const df_conf_step *team = &cb->steps[0];
-        duoforge_decision_bundle bd;
-        bundle_of(team, b, &bd);
-        duoforge_step_result res;
-        uint32_t used = 0xFFFFFFFFu;
-        if (!DF_CHECK(t, dfi_battle_step_tape(ctx, b, &bd, &conf_tape[team->tape_off], team->tape_len, &used, &res) ==
-                             DUOFORGE_OK && used == team->tape_len)) {
+    duoforge_battle_setup setup;
+    build_setup(cb, &setup);
+    setup.sides[0].members[0].moves[0].move_id = DFI_MOVE_SOLARBEAM;
+    duoforge_battle *b = NULL;
+    if (!DF_CHECK(t, duoforge_battle_create(ctx, &setup, &b) == DUOFORGE_OK && b != NULL)) {
+        return;
+    }
+    duoforge_decision_bundle bd;
+    duoforge_step_result res;
+    uint32_t used = 0xFFFFFFFFu;
+    const df_conf_step *team = &cb->steps[0];
+    bundle_of(team, b, &bd);
+    if (!DF_CHECK(t, dfi_battle_step_tape(ctx, b, &bd, &conf_tape[team->tape_off], team->tape_len, &used, &res) == DUOFORGE_OK &&
+                         used == team->tape_len)) {
+        duoforge_battle_destroy(b);
+        return;
+    }
+    bundle_of(&cb->steps[1], b, &bd);
+    bd.responses[0].slots[0].target = 2u; /* the charge at Kingambit */
+    if (!DF_CHECK(t, duoforge_battle_step(ctx, b, &bd, &res) == DUOFORGE_OK)) {
+        duoforge_battle_destroy(b);
+        return;
+    }
+    duoforge_observation before;
+    duoforge_observation after;
+    DF_CHECK(t, duoforge_battle_observe(ctx, b, 0u, &before) == DUOFORGE_OK);
+    /* the locked turn: Forretress has only its locked move; Kingambit and Indeedee protect */
+    /* the choices come from the engine's own domain: side 0 takes its locked Solar Beam (move 0) in slot 0, side 1 any choice */
+    memset(&bd, 0, sizeof bd);
+    bd.epoch = b->request_epoch;
+    bd.response_mask = 3u;
+    for (uint32_t s = 0u; s < 2u; ++s) {
+        static duoforge_side_choice cands[4096];
+        uint32_t n = 0u;
+        if (!DF_CHECK(t, duoforge_battle_candidates(ctx, b, s, cands, 4096u, &n) == DUOFORGE_OK && n != 0u)) {
             duoforge_battle_destroy(b);
             return;
         }
-        duoforge_observation before[DUOFORGE_SIDE_COUNT];
-        duoforge_observation after[DUOFORGE_SIDE_COUNT];
-        for (uint32_t p = 0u; p < DUOFORGE_SIDE_COUNT; ++p) {
-            DF_CHECK(t, duoforge_battle_observe(ctx, b, p, &before[p]) == DUOFORGE_OK);
-        }
-        bundle_of(&cb->steps[1], b, &bd);
-        if (control == 0u) {
-            bd.responses[0].slots[0].move_slot = 1u; /* Gardevoir (side 0, slot 0) protects: its move 2 */
-            bd.responses[0].slots[0].target = DUOFORGE_TARGET_NONE; /* Protect takes no target */
-        }
-        const duoforge_status st = duoforge_battle_step(ctx, b, &bd, &res);
-        if (control == 0u) {
-            DF_CHECK_EQ_U64(t, st, DUOFORGE_E_UNSUPPORTED);
-            for (uint32_t p = 0u; p < DUOFORGE_SIDE_COUNT; ++p) {
-                DF_CHECK(t, duoforge_battle_observe(ctx, b, p, &after[p]) == DUOFORGE_OK);
-                DF_CHECK(t, memcmp(&before[p], &after[p], sizeof before[p]) == 0);
+        uint32_t pick = n;
+        for (uint32_t i = 0u; i < n && pick == n; ++i) {
+            if (s == 0u ? (cands[i].slots[0].kind == DUOFORGE_SLOT_MOVE && cands[i].slots[0].move_slot == 0u) : true) {
+                pick = i;
             }
-        } else {
-            DF_CHECK_EQ_U64(t, st, DUOFORGE_OK);
         }
-        duoforge_battle_destroy(b);
+        if (!DF_CHECK(t, pick < n)) {
+            duoforge_battle_destroy(b);
+            return;
+        }
+        bd.responses[s] = cands[pick];
     }
+    const duoforge_status locked_status = duoforge_battle_step(ctx, b, &bd, &res);
+    if (locked_status != DUOFORGE_OK) {
+        fprintf(stderr, "  locked turn: %s\n", duoforge_status_name(locked_status));
+    }
+    if (!DF_CHECK(t, locked_status == DUOFORGE_OK)) {
+        duoforge_battle_destroy(b);
+        return;
+    }
+    DF_CHECK(t, duoforge_battle_observe(ctx, b, 0u, &after) == DUOFORGE_OK);
+    DF_CHECK_EQ_U64(t, (uint32_t)before.sides[0].members[0].pp[0] - (uint32_t)after.sides[0].members[0].pp[0], 0u);
+    duoforge_battle_destroy(b);
 }
 
 int main(void)
@@ -322,8 +383,10 @@ int main(void)
     if (DF_CHECK(&t, ctx != NULL)) {
         check_marks(&t);
         check_every_boundary(&t, ctx);
-        check_charge_refused(&t, ctx);
-        check_hidden_target_refused(&t, ctx);
+        check_still_pinned(&t, ctx);
+        check_charge_accepted(&t, ctx);
+        check_fold_fainted_holder(&t, ctx);
+        check_locked_turn_free(&t, ctx);
         duoforge_context_destroy(ctx);
     }
     return df_test_end(&t);

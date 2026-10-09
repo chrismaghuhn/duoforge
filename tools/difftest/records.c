@@ -16,7 +16,7 @@
 _Static_assert(sizeof(df_conf_member) == 64u, "df_conf_member changed: update tools/difftest/records.c");
 _Static_assert(sizeof(df_conf_cmd) == 5u, "df_conf_cmd changed: update tools/difftest/records.c");
 _Static_assert(sizeof(df_conf_mon) == 36u, "df_conf_mon changed: update tools/difftest/records.c");
-_Static_assert(sizeof(df_conf_step) == 488u, "df_conf_step changed: update tools/difftest/records.c");
+_Static_assert(sizeof(df_conf_step) == 536u, "df_conf_step changed: update tools/difftest/records.c");
 _Static_assert(sizeof(dfi_tape_entry) == 16u, "dfi_tape_entry changed: update tools/difftest/records.c");
 _Static_assert(sizeof(duoforge_event) == 20u, "duoforge_event changed: update tools/difftest/records.c");
 /* dfr_choice is compared and ordered by memcmp: it must have no padding. */

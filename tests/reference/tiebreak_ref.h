@@ -3627,6 +3627,12 @@ static const df_tb_stop tb_g53_sticky_web[] = {
     {2u, 0u, 2u, 3u, {4u, 4u}, {705u, 775u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
     {3u, 0u, 2u, 3u, {4u, 4u}, {705u, 775u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
 };
+static const df_tb_stop tb_g53_still_pressure[] = {
+    {0u, 0u, 2u, 3u, {6u, 6u}, {1045u, 1124u}, {0x4059000000000000ull, 0x4059000000000000ull}},
+    {1u, 0u, 2u, 3u, {4u, 4u}, {686u, 775u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {2u, 0u, 2u, 3u, {4u, 4u}, {686u, 775u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {3u, 0u, 2u, 3u, {4u, 4u}, {686u, 775u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+};
 static const df_tb_stop tb_g53_switch_in_pressure[] = {
     {0u, 0u, 1u, 3u, {6u, 6u}, {1122u, 1094u}, {0x4059000000000000ull, 0x4059000000000000ull}},
     {1u, 0u, 1u, 3u, {4u, 4u}, {773u, 760u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
@@ -5381,6 +5387,7 @@ static const df_tb_battle tb_battles[] = {
     {"g53_single_target", 5u, tb_g53_single_target, sizeof tb_g53_single_target / sizeof tb_g53_single_target[0]},
     {"g53_spread_protect", 4u, tb_g53_spread_protect, sizeof tb_g53_spread_protect / sizeof tb_g53_spread_protect[0]},
     {"g53_sticky_web", 3u, tb_g53_sticky_web, sizeof tb_g53_sticky_web / sizeof tb_g53_sticky_web[0]},
+    {"g53_still_pressure", 3u, tb_g53_still_pressure, sizeof tb_g53_still_pressure / sizeof tb_g53_still_pressure[0]},
     {"g53_switch_in_pressure", 4u, tb_g53_switch_in_pressure, sizeof tb_g53_switch_in_pressure / sizeof tb_g53_switch_in_pressure[0]},
     {"g53_switch_pressure", 6u, tb_g53_switch_pressure, sizeof tb_g53_switch_pressure / sizeof tb_g53_switch_pressure[0]},
     {"g53_trace_pressure", 3u, tb_g53_trace_pressure, sizeof tb_g53_trace_pressure / sizeof tb_g53_trace_pressure[0]},
@@ -5512,7 +5519,7 @@ static const df_tb_battle tb_battles[] = {
     {"w8_sand_soak", 7u, tb_w8_sand_soak, sizeof tb_w8_sand_soak / sizeof tb_w8_sand_soak[0]},
 };
 
-/* 3820 stops: 142 of an ended battle; decided by the count 1023,
- * the HP percentage 1223, the total HP 1367, a tie 65;
- * winners: side 0 1897, side 1 1858, tie 65 */
+/* 3824 stops: 142 of an ended battle; decided by the count 1023,
+ * the HP percentage 1223, the total HP 1371, a tie 65;
+ * winners: side 0 1897, side 1 1862, tie 65 */
 #endif

@@ -21,6 +21,8 @@ Allies never count, and neither does a fainted holder.
 - The engine's foe knowledge (`dfi_knowledge.moves_used`, saturating) counts 1 + the Pressure extra per use.
 - The live tracker does the same from the lines. HauptSession builds that side, against the flag below.
 
+**Amendment (overnight, lead's ruling of 2026-10-09; the state stays exact, only the view is changed):** A `[still]` line blanks the target (`attrLastMove('[still]')`, sim/battle.ts:3123-3138: "If no animation plays, the target should never be known"), so a single-target Pressure extra on that line is not attributed: the foe counts only the 1 of the use, because a human cannot know the target either. The state still deducts the extra. The same holds for the charge turn of a two-turn move, whose line names no target. The extra counts where the targets are visible or follow from the move's class and the board: a single-target line that names its target, and the field, spread and mustpressure classes. `DUOFORGE_PP_DERIVED` is "pp_max minus the PP the viewer can attribute (Pressure counted where the target is shown or follows from the move's class)".
+
 ## 2. New public value
 
 | Value | Kind | Note |
