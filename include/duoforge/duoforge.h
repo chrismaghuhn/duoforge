@@ -1061,6 +1061,10 @@ duoforge_status duoforge_battle_observe_ext(const duoforge_context *ctx, const d
                                               cause NONE (the line has no [from]). POOL kinds: the forced switch of Roar,
                                               Whirlwind, Dragon Tail and Circle Throw, and of a Red Card holder's attacker
                                               (decision 0015 section 7, step G46). 43 and 44 are REVIVE and TRANSFORM. */
+#define DUOFORGE_EVENT_CLEAR_ALL_BOOSTS 47u /* [-clearallboost] (Haze, decision 0031, step G62): position NO_POSITION, other
+                                              NO_POSITION, cause NONE, every other field 0. Public: both players get it. The
+                                              standing active positions (not fainted, as getAllActive takes them) lose every
+                                              boost: their seven stages go to neutral; nothing else changes (decision 0031). */
 
 /* Causes ([from] and [of] in the protocol). */
 #define DUOFORGE_CAUSE_NONE      0u /* the move or the plain mechanic */

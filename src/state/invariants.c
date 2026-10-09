@@ -486,7 +486,8 @@ static bool dfi_queue_record_valid(const struct duoforge_battle *b, const dfi_qu
         return plain && bound && r->reserve == 0u;
     }
     if (kind == DFI_Q_MOVE) {
-        return bound && r->reserve == 0u && r->move_slot <= DUOFORGE_MOVE_SLOT_RECHARGE &&
+        /* reserve: the order class of a move (DFI_QRES_*, step G62); a plain move has 0. */
+        return bound && r->reserve <= DFI_QRES_QUASHED && r->move_slot <= DUOFORGE_MOVE_SLOT_RECHARGE &&
                (r->target < DUOFORGE_SIDE_COUNT * DUOFORGE_ACTIVE_PER_SIDE || r->target == DUOFORGE_TARGET_NONE);
     }
     /* RESIDUAL has no actor and no operand. */

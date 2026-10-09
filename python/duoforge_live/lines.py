@@ -81,7 +81,7 @@ CHOICE_ITEMS = ("choiceband", "choicescarf", "choicespecs")
 TURN_SCOPED = {"RAGE_POWDER", "WIDE_GUARD", "QUICK_GUARD"}
 
 # Kinds whose effect on the view no field holds and the fold does not apply: stops with a readable reason.
-UNREPRESENTABLE_KINDS = {"-sethp", "-clearallboost", "-clearboost", "-clearpositiveboost", "-copyboost", "-setboost",
+UNREPRESENTABLE_KINDS = {"-sethp", "-clearboost", "-clearpositiveboost", "-copyboost", "-setboost",
                          "-swapboost", "-invertboost", "-transform", "swap", "-endability", "-swapsideconditions",
                          "-cureteam"}
 
@@ -171,7 +171,7 @@ _ITEM_CHANGE_FROM = {"move: Trick", "move: Switcheroo", "move: Thief", "move: Co
 # guard markers in the ACTIVATE event).
 _FOLD_ACTIVATE = {"move: Protect", "move: Psychic Terrain", "confusion", "ability: Emergency Exit",
                   "ability: Lightning Rod", "ability: Storm Drain", "move: Struggle", "ability: Sticky Hold",
-                  "move: Feint"}
+                  "move: Feint", "move: After You", "move: Quash"}  # After You, Quash: the queue, no field (G62)
 # A guard blocking a move this turn: the same single-turn feature as its -singleturn line.
 _GUARD_ACTIVATE = {"move: Wide Guard": "WIDE_GUARD", "move: Quick Guard": "QUICK_GUARD"}
 # `-singleturn|X|move: Protect` is the Protect volatile of Spiky Shield, Baneful Bunker and Burning Bulwark (their condition
@@ -268,6 +268,10 @@ def check(line, view):
         return _kept_drop(args, attrs, view)
     if kind in GENERIC:
         return "fold"
+    if kind == "-ohko" and not args and not attrs:
+        # Sheer Cold (step G64, sim/battle-actions.ts:999): shown after its target's faint, which its own lines fold;
+        # no field changes ("keep": the converter drops it only in that place, so the tracker does not convert it)
+        return "keep"
     if kind == "-clearnegativeboost" and attrs == ["[silent]"]:
         return "fold"  # White Herb (Team C): the [silent] line the converter skips; the tracker folds it
     effect = args[1] if len(args) > 1 else ""
@@ -278,6 +282,14 @@ def check(line, view):
             return _feature(_GUARD_ACTIVATE[effect])
         if effect in ("move: Skill Swap",):
             return _feature("ABILITY_CHANGE")
+        if effect == "move: Poltergeist" and len(args) == 3:
+            # Poltergeist (step G64): it names the item its target holds; the open sheet's item is no news (an
+            # ACTIVATE without state). Any other item stops: the view does not know it.
+            item = tables["ITEM"].get(trace_to_c.key(args[2]))
+            target = view.sheet_of(args[0])
+            if item is not None and item + 1 == target["item"]:
+                return "fold"
+            _unknown(kind, effect)
         if effect == "move: Trick":
             return _feature("ITEM_CHANGE")  # Trick's announcement before its -item lines (G29; Switcheroo prints none)
         if effect in _START:

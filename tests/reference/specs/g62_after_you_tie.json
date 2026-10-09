@@ -1,0 +1,141 @@
+{
+  "name": "g62_after_you_tie",
+  "purpose": "After You moves its target to the front of the queue (prioritizeAction): the Gholdengo (p1a, Shadow Ball) and the Gholdengo (p2a) tie at Speed 104 and their order comes from the list positions; Kingambit (SD) was prioritized from the middle of the list",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,e66d8a3dcb02bde79b7d937c935dc5b2343927b55d14448f39c10a0bbe77bd9d",
+  "teams": [
+    "Ceruledge (M) @ Expert Belt\nAbility: Flash Fire\nLevel: 50\nEVs: 31 HP / 7 Atk / 24 Def / 3 SpD / 1 Spe\nBrave Nature\n- Protect\n\nMilotic (F) @ Sitrus Berry\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Haze\n- Protect\n\nPrimarina (F) @ Rocky Helmet\nAbility: Torrent\nLevel: 50\nEVs: 32 HP / 2 Def / 32 SpD\nCalm Nature\n- Moonblast\n- Protect\n\nGholdengo @ Focus Sash\nAbility: Good as Gold\nLevel: 50\nEVs: 32 HP / 2 SpA / 32 SpD\nCalm Nature\n- Shadow Ball\n- Protect\n\nSalamence (M) @ Salamencite\nAbility: Intimidate\nLevel: 50\nEVs: 2 HP / 32 SpA / 32 Spe\nTimid Nature\n- Protect\n\nKingambit (M) @ Black Glasses\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Swords Dance\n- Protect",
+    "Salamence (M) @ Salamencite\nAbility: Intimidate\nLevel: 50\nEVs: 2 HP / 32 SpA / 32 Spe\nTimid Nature\n- Protect\n\nGholdengo @ Focus Sash\nAbility: Good as Gold\nLevel: 50\nEVs: 32 HP / 2 SpA / 32 SpD\nCalm Nature\n- Shadow Ball\n- Protect\n\nIndeedee (M) @ Leftovers\nAbility: Inner Focus\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 SpD\nModest Nature\n- After You\n- Protect\n\nPrimarina (F) @ Rocky Helmet\nAbility: Torrent\nLevel: 50\nEVs: 32 HP / 2 Def / 32 SpD\nCalm Nature\n- Moonblast\n- Protect\n\nCeruledge (M) @ Expert Belt\nAbility: Flash Fire\nLevel: 50\nEVs: 31 HP / 7 Atk / 24 Def / 3 SpD / 1 Spe\nBrave Nature\n- Protect\n\nMilotic (F) @ Sitrus Berry\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Haze\n- Protect"
+  ],
+  "choices": [
+    {
+      "p1": "team 3465",
+      "p2": "team 3251"
+    },
+    {
+      "p1": "move 2, move 1 1",
+      "p2": "move 2, switch 4"
+    },
+    {
+      "p1": "move 1 1, move 1 -1",
+      "p2": "move 2, move 1"
+    },
+    {
+      "p1": "move 2, move 1 2",
+      "p2": "move 2, move 1"
+    },
+    {
+      "p1": "move 2, move 2",
+      "p2": "move 1 2, move 1"
+    },
+    {
+      "p1": "move 1 1, move 2",
+      "p2": "switch 3, move 1 mega"
+    },
+    {
+      "p1": "move 1 -2, move 2",
+      "p2": "move 1, move 1"
+    },
+    {
+      "p1": "move 2, switch 3",
+      "p2": "move 1, move 1"
+    },
+    {
+      "p1": "move 1 -2, move 2",
+      "p2": "move 1, move 1"
+    },
+    {
+      "p1": "move 2, move 2",
+      "p2": "move 1, move 1"
+    },
+    {
+      "p1": "move 1 1, move 2",
+      "p2": "move 1, switch 3"
+    },
+    {
+      "p1": "move 2, move 1",
+      "p2": "move 1, move 1 1"
+    },
+    {
+      "p1": "move 2, move 1",
+      "p2": "move 1, move 2"
+    },
+    {
+      "p1": "move 1 -2, move 1",
+      "p2": "move 1, move 1 2"
+    },
+    {
+      "p1": "switch 4, move 2",
+      "p2": "move 1, move 1 2"
+    },
+    {
+      "p1": "move 1, switch 4",
+      "p2": "move 1, move 2"
+    },
+    {
+      "p2": "switch 3, pass"
+    },
+    {
+      "p1": "move 1 mega, move 1 -1",
+      "p2": "move 1, move 1 2"
+    },
+    {
+      "p1": "move 1, move 1 2",
+      "p2": "move 1, move 1 2"
+    },
+    {
+      "p1": "move 1, move 1 2",
+      "p2": "move 1, move 2"
+    },
+    {
+      "p1": "move 1, move 2",
+      "p2": "move 1, move 2"
+    },
+    {
+      "p1": "move 1, move 1 2",
+      "p2": "move 1, move 2"
+    },
+    {
+      "p1": "move 1, move 1 -1",
+      "p2": "move 1, move 1 2"
+    },
+    {
+      "p1": "move 1, move 1 -1",
+      "p2": "move 1, move 1 2"
+    },
+    {
+      "p1": "switch 3, pass"
+    },
+    {
+      "p1": "switch 4, move 1 1",
+      "p2": "move 1, move 1 -1"
+    },
+    {
+      "p2": "switch 4, pass"
+    },
+    {
+      "p1": "switch 4, move 1 -1",
+      "p2": "move 2, move 1 1"
+    },
+    {
+      "p1": "move 1 2, move 1 1",
+      "p2": "move 1 2, move 1 1"
+    },
+    {
+      "p1": "move 1 2, move 1 2",
+      "p2": "move 1 -2, move 1 -1"
+    },
+    {
+      "p1": "move 2, move 1",
+      "p2": "move 1 2, move 1 2"
+    },
+    {
+      "p1": "pass, switch 4"
+    },
+    {
+      "p1": "move 1 2, move 1",
+      "p2": "move 1 -2, move 1 2"
+    }
+  ]
+}
