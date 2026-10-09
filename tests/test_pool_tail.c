@@ -101,7 +101,7 @@ static const unsigned sweep[DFI_ENC_TAIL_SIZE][SWEEP_COLUMNS] = {
     {254, 0, 1, 0, 0, 0, 0},
     {1, 0, 254, 0, 0, 0, 0},
     {0, 0, 255, 0, 0, 0, 0},
-    {15, 0, 240, 0, 0, 0, 0},
+    {24, 0, 231, 0, 0, 0, 0},
     {1, 0, 254, 0, 0, 0, 0},
     {6, 0, 249, 0, 0, 0, 0},
     {6, 0, 249, 0, 0, 0, 0},
@@ -137,7 +137,7 @@ static const unsigned sweep[DFI_ENC_TAIL_SIZE][SWEEP_COLUMNS] = {
     {0, 0, 255, 0, 0, 0, 0},
     {0, 0, 255, 0, 0, 0, 0},
     {0, 0, 255, 0, 0, 0, 0},
-    {15, 0, 240, 0, 0, 0, 0},
+    {24, 0, 231, 0, 0, 0, 0},
     {1, 0, 254, 0, 0, 0, 0},
     {6, 0, 249, 0, 0, 0, 0},
     {6, 0, 249, 0, 0, 0, 0},
@@ -241,7 +241,7 @@ static const unsigned sweep[DFI_ENC_TAIL_SIZE][SWEEP_COLUMNS] = {
     {0, 0, 255, 0, 0, 0, 0},
     {0, 0, 255, 0, 0, 0, 0},
     {0, 0, 255, 0, 0, 0, 0},
-    {15, 0, 240, 0, 0, 0, 0},
+    {24, 0, 231, 0, 0, 0, 0},
     {1, 0, 254, 0, 0, 0, 0},
     {6, 0, 249, 0, 0, 0, 0},
     {6, 0, 249, 0, 0, 0, 0},
@@ -277,7 +277,7 @@ static const unsigned sweep[DFI_ENC_TAIL_SIZE][SWEEP_COLUMNS] = {
     {255, 0, 0, 0, 0, 0, 0},
     {1, 0, 254, 0, 0, 0, 0},
     {0, 0, 255, 0, 0, 0, 0},
-    {15, 0, 240, 0, 0, 0, 0},
+    {24, 0, 231, 0, 0, 0, 0},
     {1, 0, 254, 0, 0, 0, 0},
     {6, 0, 249, 0, 0, 0, 0},
     {6, 0, 249, 0, 0, 0, 0},
@@ -826,7 +826,9 @@ MUT(m_protect_above, {
     p0->protect_kind = 2u;
 })
 MUT(m_protect_no_volatile, p0->protect_kind = 1u) /* the volatile is down */
-MUT(m_move_result_high, p0->move_result = 0x10u) /* bits 4-7 are zero */
+MUT(m_move_result_high, p0->move_result = 0x40u) /* bits 6-7 are zero (step G42: bits 4 and 5 are the unclassified bits) */
+MUT(m_unclass_now_with_result, p0->move_result = 0x11u) /* unclassified this turn, but this turn is TRUE */
+MUT(m_unclass_last_with_result, p0->move_result = 0x28u) /* unclassified last turn, but last turn is FALSE */
 MUT(m_single_turn_bit2, p0->single_turn = 4u)
 MUT(m_rage_no_follow_me, p0->single_turn = DFI_SINGLE_TURN_RAGE_POWDER) /* the Follow Me flag is down */
 MUT(m_hits_taken7, p0->hits_taken = 7u)
@@ -977,6 +979,8 @@ MUT(v_maxima, {
 /* No valid case for Rage Powder's marker: the Follow Me flag it needs lives only at a PIVOT boundary, and these states are at a
  * TURN one; the invalid case above (the marker without the flag) and the model say what the rule is. */
 MUT(v_move_result_null, p0->move_result = (uint8_t)((DFI_MOVE_RESULT_NULL << DFI_MOVE_RESULT_LAST_SHIFT) | DFI_MOVE_RESULT_FALSE))
+MUT(v_unclass_now, p0->move_result = DFI_MOVE_RESULT_UNCLASSIFIED_NOW)
+MUT(v_unclass_both, p0->move_result = DFI_MOVE_RESULT_UNCLASSIFIED_NOW | DFI_MOVE_RESULT_UNCLASSIFIED_LAST)
 MUT(v_hazard_order_two, {
     ts->spikes = 2u;
     ts->toxic_spikes = 1u;
@@ -1052,7 +1056,9 @@ static const tail_case cases[] = {
     {"Glaive Rush above 1", DFI_INV_TAIL_POSITION, false, m_glaive},
     {"protect kind above 1", DFI_INV_TAIL_POSITION, false, m_protect_above},
     {"protect kind without the Protect volatile", DFI_INV_TAIL_POSITION, false, m_protect_no_volatile},
-    {"a move result above its two nibbles", DFI_INV_TAIL_POSITION, false, m_move_result_high},
+    {"a move result above its two nibbles and its two unclassified bits", DFI_INV_TAIL_POSITION, false, m_move_result_high},
+    {"an unclassified this-turn bit with a this-turn result", DFI_INV_TAIL_POSITION, false, m_unclass_now_with_result},
+    {"an unclassified last-turn bit with a last-turn result", DFI_INV_TAIL_POSITION, false, m_unclass_last_with_result},
     {"a single-turn bit that is not defined", DFI_INV_TAIL_POSITION, false, m_single_turn_bit2},
     {"Rage Powder's marker without the Follow Me flag", DFI_INV_TAIL_POSITION, false, m_rage_no_follow_me},
     {"hits taken above 6", DFI_INV_TAIL_POSITION, false, m_hits_taken7},
@@ -1114,7 +1120,9 @@ static const tail_case cases[] = {
     {"the item and forme of a reserve and a fainted member are valid", DFI_INV_NONE, false, v_bench_overrides},
     {"a trap by the ally is valid", DFI_INV_NONE, false, v_ally_trap},
     {"a Protect variant under its volatile is valid", DFI_INV_NONE, false, v_protect_variant},
-    {"a move result of this turn false and last turn null is valid", DFI_INV_NONE, false, v_move_result_null}};
+    {"a move result of this turn false and last turn null is valid", DFI_INV_NONE, false, v_move_result_null},
+    {"an unclassified this-turn bit with an undefined this-turn result is valid", DFI_INV_NONE, false, v_unclass_now},
+    {"both unclassified bits with both results undefined are valid", DFI_INV_NONE, false, v_unclass_both}};
 
 /* True iff the byte at `off` of the encoded tail is a reserved one (by the layout alone). */
 static bool is_reserved_offset(size_t off)
@@ -1708,6 +1716,8 @@ int main(void)
                 tp->perish = (uint8_t)(tp->perish != 0u ? tp->perish - 1u : 0u); /* step G26: the residual's count */
                 /* step G27: Disable counts down in the residual (the example's 5 turns are 4 after the turn, its slot stays) */
                 tp->disable_turns = (uint8_t)(tp->disable_turns != 0u ? tp->disable_turns - 1u : 0u);
+                /* step G42: Roost's volatile ends in the residual of order 25 (silent) */
+                tp->single_turn = (uint8_t)(tp->single_turn & ~DFI_SINGLE_TURN_ROOST);
             }
         }
         duoforge_decision_bundle bd;
@@ -1734,6 +1744,12 @@ int main(void)
                 /* each position that acted used slot 0 (turn_bundle's plan): last_move 1; one that did not has none */
                 DF_CHECK(&t, x->tail.sides[s].positions[p].last_move <= 1u);
                 want.sides[s].positions[p].last_move = x->tail.sides[s].positions[p].last_move;
+                /* step G42: the move results of this turn are the actions' own (the engine writes them while the turn runs and
+                 * the end of the turn shifts them to the last turn; the shift is checked by the recorded battles of
+                 * test_pool_g42.c), so this model takes them as they are, and only the bits outside the layout are checked. */
+                const uint32_t mr = x->tail.sides[s].positions[p].move_result;
+                DF_CHECK_EQ_U64(&t, mr & 0xC0u, 0u);
+                want.sides[s].positions[p].move_result = (uint8_t)mr;
             }
         }
         DF_CHECK(&t, memcmp(&x->tail, &want, sizeof want) == 0);
