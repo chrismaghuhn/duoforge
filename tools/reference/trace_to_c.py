@@ -137,7 +137,9 @@ SITES = {'SPEED_TIE': 1, 'ACCURACY': 2, 'CRIT': 3, 'DAMAGE_ROLL': 4, 'SECONDARY'
          'SLEEP_TURNS': 7, 'FREEZE_THAW': 8, 'FULL_PARALYSIS': 9, 'CONFUSION_TURNS': 10,
          'CONFUSION_HIT': 11, 'RANDOM_TARGET': 12, 'STATUS_PICK': 13, 'INSERT_TIE': 14, 'TRACE': 15, 'POISON_TOUCH': 16,
          'CURSED_BODY': 17, 'FLAME_BODY': 18, 'STATIC': 19,  # 17: step G27, 18: step G30, 19: step G39
-         'DRAG': 20}  # 20: step G46, the drag's draw (DFI_SITE_DRAG)
+         'DRAG': 20,  # 20: step G46, the drag's draw (DFI_SITE_DRAG)
+         'LOCK_TURNS': 21,
+         'MULTIHIT_COUNT': 22}  # 21: step G56, the lock's count of Outrage, Thrash and Petal Dance (DFI_SITE_LOCK_TURNS)
 STATS = ['HP', 'Atk', 'Def', 'SpA', 'SpD', 'Spe']
 GENDER = {'M': 1, 'F': 2}
 GENDERLESS = 3
@@ -422,6 +424,19 @@ def modifier_subsets(kinds, values):
     return out
 
 
+def lock_counter_tie(group):
+    """A residual tie of one lockedmove (Outrage, Thrash, Petal Dance: onResidual, a callback with no order) and the ends of
+    silent duration counters (stall, Protect: `H:stall:...:end`, `H:protect:...:end`, which print nothing and change no state
+    that the lock reads). The reference shuffles the tie (speedSort), the engine draws only for two callbacks, and neither
+    order shows in a line or a draw: the lock's countdown (trueDuration--, and the sleep's delete) and its end (confusion,
+    which draws CONFUSION_TURNS) do not depend on the counters' ends (data/conditions.ts:253-285; stall and protect have no
+    line of their end). Returns True only for exactly this shape."""
+    locks = [g for g in group if g.startswith('H:lockedmove:') and g.endswith(':cb')]
+    others = [g for g in group if g not in locks]
+    return len(locks) == 1 and bool(others) and \
+        all(g.startswith(('H:stall:', 'H:protect:')) and g.endswith(':end') for g in others)
+
+
 def drop_reason(d, state, after=None, log=None):
     """Why draw `d` is not a tape entry, or None; `state` is the state before the step, `after` the one after
     it (an entering Pokemon stands in its slot there), `log` the step's protocol lines (needed for the residual tie of
@@ -547,6 +562,8 @@ def drop_reason(d, state, after=None, log=None):
             return 'residual tie of duration counters'
         if all(g.startswith('H:') and g.endswith(':cb') for g in group):
             return None  # callbacks (burn, Grassy Terrain): the engine draws
+        if lock_counter_tie(group):
+            return 'residual tie of a lockedmove with the silent ends of stall and Protect (no line, no state read by the lock)'
         raise ConversionError('residual-tie-callbacks', 'trace_to_c: residual tie with callbacks: %s' % group,
                               detail=tie_effects(group))
     if site == 'SPEED_TIE' and ctx in ('event:AfterMove', 'event:AfterMega'):
@@ -782,9 +799,11 @@ def convert_choice(text, side, state, roster_of, mid_turn=False):
             cmds.append((1, n, target, mega, 0))
         elif words[0] == 'switch':
             # "switch N" names position N of side.pokemon, which the
-            # reference reorders on every switch.
+            # reference reorders on every switch. A fainted Pokemon named here is a Revival Blessing revive (slot kind 4,
+            # decision 0025 item 8): the reference's switch choice of a revive is the same text (side.ts:932-977).
             mon = state['sides'][side]['pokemon'][int(words[1]) - 1]
-            cmds.append((2, 0, 0, 0, roster_of[side][name_of(mon)]))
+            kind = 4 if mon['fainted'] else 2
+            cmds.append((kind, 0, 0, 0, roster_of[side][name_of(mon)]))
         elif words[0] == 'pass':
             # In a switch request the reference wants "pass" for a slot that
             # is not asked to switch; DuoForge does not request that slot. A
@@ -812,6 +831,7 @@ FIELD_PSYCHIC_TERRAIN = 3  # DUOFORGE_FIELD_PSYCHIC_TERRAIN (Team C)
 FIELD_ELECTRIC_TERRAIN = 4  # DUOFORGE_FIELD_ELECTRIC_TERRAIN (POOL, step G25)
 FIELD_MISTY_TERRAIN = 5  # DUOFORGE_FIELD_MISTY_TERRAIN (POOL, step G25)
 BLOCK_WIDE_GUARD = 4  # DUOFORGE_BLOCK_WIDE_GUARD (POOL), a detail of BLOCKED
+BLOCK_QUICK_GUARD = 6  # DUOFORGE_BLOCK_QUICK_GUARD (POOL, decision 0029): -activate move: Quick Guard
 FOE_SIDE_MOVES = ('Stealth Rock', 'Spikes', 'Toxic Spikes', 'Sticky Web')  # the moves with the target class foeSide (POOL, step G37)
 RESULT = {'p1': 1, 'p2': 2, '': 3}
 
@@ -871,7 +891,7 @@ EV = {name: i + 1 for i, name in enumerate(
      'IMMUNE', 'FAIL', 'PROTECT', 'BLOCKED', 'BOOST', 'UNBOOST', 'STATUS', 'CURE_STATUS', 'CONFUSION_START',
      'CONFUSION_END', 'CONFUSED', 'FLASH_FIRE', 'WEATHER', 'FIELD_START', 'FIELD_END', 'SIDE_START', 'SIDE_END',
      'ITEM_END', 'FORME', 'MEGA', 'PREPARE', 'ANIMATION', 'ABILITY', 'ACTIVATE', 'UPKEEP', 'RESULT',
-     'SINGLE_TURN', 'VOLATILE_START', 'VOLATILE_END', 'TYPE_CHANGE', 'ITEM_START'])}
+     'SINGLE_TURN', 'VOLATILE_START', 'VOLATILE_END', 'TYPE_CHANGE', 'ITEM_START', 'REVIVE'])}
 # DUOFORGE_EVENT_DRAG = 45 (step G46): 43 and 44 belong to REVIVE and TRANSFORM on their own branches, so the drag is set by value.
 EV['DRAG'] = 45
 CAUSE = {'NONE': 0, 'MOVE': 1, 'ITEM': 2, 'ABILITY': 3, 'RECOIL': 4, 'DRAIN': 5, 'BURN': 6, 'CONFUSION': 7,
@@ -941,6 +961,10 @@ IGNORED_VOLATILES = {
     # Pool step G17 (the recharge turn): the volatile shows in the request of the next turn (the one candidate, the
     # recharge slot), the start line (`-mustrecharge`) and the cant line (`cant|X|recharge`), and the view bit.
     'mustrecharge': 'the request of the recharge turn, the start line and the cant line',
+    # Pool step G56 (Outrage, Thrash, Petal Dance: the lock, decision 0015 5au): the count is not a field of the record;
+    # the request offers only the locked move, the `[from] lockedmove` move lines show each locked use, and the
+    # confusion start line shows the end of a lock that ends in confusion (no line shows a silent end).
+    'lockedmove': 'the request (only the locked move), the locked move lines and the confusion start that ends the lock',
     # Pool step G19 (Glaive Rush): `-singlemove|X|Glaive Rush|[silent]` is not shown; the volatile shows in the accuracy
     # draws that are missing (the moves against it cannot miss) and in the doubled damage of every move that hits it.
     'glaiverush': 'the damage of the moves against it and the accuracy draws that it removes',
@@ -1041,11 +1065,16 @@ def hit_key(text):
     return (m.group(1), m.group(2))
 
 
-def step_events(log, viewer, roster_of, maxhp, tables):
-    """The events `viewer` sees in one step, in protocol order."""
+def step_events(log, viewer, roster_of, maxhp, tables, rb_pending=None):
+    """The events `viewer` sees in one step, in protocol order. rb_pending maps a side to the position of the last Revival
+    Blessing user of that side: its revive is shown in the step that answers the pivot, not in the step of the move."""
+    if rb_pending is None:
+        rb_pending = {}
     out = []
     skip = set()
     hits_on = {}  # the -damage lines of the move that is being shown, by the Pokemon hit (see -hitcount)
+    last_user = None  # the position of the last move line's user (Revival Blessing's REVIVE names no position)
+    revived = None  # (side, name) of the member revived last: its instaswitch line has no [from]
     for i, line in enumerate(log):
         if i in skip:
             continue
@@ -1098,10 +1127,16 @@ def step_events(log, viewer, roster_of, maxhp, tables):
             side = pos // 2
             name = args[0].split(': ', 1)[1]
             cause, id2, _ = ev_cause(attrs, tables)
+            if not attrs and revived == (side, name):
+                cause, id2 = CAUSE['MOVE'], tables['MOVE'][key('Revival Blessing')]  # the instaswitch of a revive (item 10)
+            revived = None
             hp = ev_hp(args[2], side, viewer, maxhp[side][name])
             e = ev_tuple(EV['SWITCH' if kind == 'switch' else 'DRAG'], pos, NOPOS, cause, roster_of[side][name], id2, *hp)
         elif kind == 'move':
             pos = ev_pos(args[0])
+            last_user = pos
+            if args[1] == 'Revival Blessing':
+                rb_pending[pos // 2] = pos  # a failed one is never followed by a -heal of its side (the next one replaces it)
             target = ev_pos(parts[4]) if len(parts) > 4 else None
             flags = 0
             amount = 0
@@ -1124,6 +1159,19 @@ def step_events(log, viewer, roster_of, maxhp, tables):
             if flags & (FLAG['SPREAD'] | FLAG['NOTARGET'] | FLAG['STILL']) or target is None or args[1] in FOE_SIDE_MOVES:
                 target = NOPOS  # a foeSide move (step G37) names a random foe in the protocol: a label the engine does not draw
             e = ev_tuple(EV['MOVE'], pos, target, 0, tables['MOVE'][key(args[1])], amount=amount, flags=flags)
+        elif kind == '-heal' and '[from] move: Revival Blessing' in attrs:
+            # The line names the revived member without a position ("p2: Name"): the user is the move line's, the member
+            # is the roster index, and its HP is the viewer's copy (exact for the owner, a percentage for the foe).
+            side = int(args[0][1]) - 1  # "p2: Name": the side of the member
+            name = args[0].split(': ', 1)[1]
+            user = rb_pending.get(side)  # both viewers read it; the step's caller consumes it (convert_battle)
+            if user is None:
+                raise ConversionError('revive-user', 'trace_to_c: a revive with no Revival Blessing user of its side',
+                                      detail='revive of %s' % name)
+            hp = ev_hp(args[1], side, viewer, maxhp[side][name])
+            e = ev_tuple(EV['REVIVE'], user, NOPOS, CAUSE['MOVE'], roster_of[side][name],
+                         tables['MOVE'][key('Revival Blessing')], *hp)
+            revived = (side, name)
         elif kind in ('-damage', '-heal'):
             pos = ev_pos(args[0])
             side = pos // 2
@@ -1203,6 +1251,8 @@ def step_events(log, viewer, roster_of, maxhp, tables):
                 e = ev_tuple(EV['SINGLE_TURN'], ev_pos(args[0]), of, 0, tables['MOVE'][key(args[1])])
             elif args[1] == 'Wide Guard' and not attrs:  # POOL: the side condition of the user's side, one turn
                 e = ev_tuple(EV['SINGLE_TURN'], ev_pos(args[0]), NOPOS, 0, tables['MOVE'][key(args[1])])
+            elif args[1] == 'Quick Guard' and not attrs:  # POOL (step G54): the same line for Quick Guard's side condition
+                e = ev_tuple(EV['SINGLE_TURN'], ev_pos(args[0]), NOPOS, 0, tables['MOVE'][key(args[1])])
             elif args[1] == 'move: Roost' and not attrs:  # POOL, step G42: the Flying type is off for the turn (no [of])
                 e = ev_tuple(EV['SINGLE_TURN'], ev_pos(args[0]), NOPOS, 0, tables['MOVE'][key('Roost')])
             elif args[1] in ('move: Follow Me', 'move: Rage Powder') and not attrs:
@@ -1231,6 +1281,8 @@ def step_events(log, viewer, roster_of, maxhp, tables):
                 e = ev_tuple(EV['BLOCKED'], pos, detail=FIELD_PSYCHIC_TERRAIN)
             elif what == 'move: Wide Guard':  # POOL: a spread move stopped at a target of the guarded side
                 e = ev_tuple(EV['BLOCKED'], pos, detail=BLOCK_WIDE_GUARD)
+            elif what == 'move: Quick Guard':  # POOL (step G54): a priority move stopped at a target of the guarded side
+                e = ev_tuple(EV['BLOCKED'], pos, detail=BLOCK_QUICK_GUARD)
             elif what == 'confusion':
                 e = ev_tuple(EV['CONFUSED'], pos)
             elif what.startswith('ability: '):
@@ -1512,6 +1564,7 @@ def convert_battle(name, spec, trace, tables):
     # A switch request made during the turn: the step that led to it has not
     # reached the end of the turn (no upkeep line).
     mid_turn = False
+    rb_pending = {}  # side -> the position of its last Revival Blessing user (see step_events)
     for step in trace['steps']:
         public_lines(step['log'], roster_of, shown)
         kinds = {}
@@ -1646,7 +1699,10 @@ def convert_battle(name, spec, trace, tables):
                      c for sd in new_state['sides'] for c in sd['conditions'])
         boundary = boundary_of(new_state, step['log'])
         result = RESULT[new_state['winner']] if boundary == 5 else 0
-        events = [step_events(step['log'], viewer, roster_of, maxhp, tables) for viewer in range(2)]
+        events = [step_events(step['log'], viewer, roster_of, maxhp, tables, rb_pending) for viewer in range(2)]
+        for line in step['log']:  # one revive per Revival Blessing: the side's pending user ends with its revive
+            if line.startswith('|-heal|') and '[from] move: Revival Blessing' in line:
+                rb_pending.pop(int(line.split('|')[2][1]) - 1, None)
         steps.append({'team': 1 if team else 0, 'answered0': 1 if 0 in kinds else 0, 'answered1': 1 if 1 in kinds else 0,
                       'turn': new_state['turn'], 'boundary': boundary, 'result': result, 'picks': tuple(pk),
                       'cmds': tuple(cmds), 'occupants': tuple(occ), 'entries': tuple(ent), 'field': field,

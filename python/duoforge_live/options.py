@@ -20,6 +20,7 @@ from duoforge import _layout
 
 C = _layout.CONSTANTS
 NONE, MOVE, SWITCH, PASS = (C[f"DUOFORGE_SLOT_{n}"] for n in ("NONE", "MOVE", "SWITCH", "PASS"))
+REVIVE = C["DUOFORGE_SLOT_REVIVE"]  # Revival Blessing's choice of a fainted member (decision 0025)
 TARGET_NONE = C["DUOFORGE_TARGET_NONE"]
 STRUGGLE = 4  # DUOFORGE_MOVE_SLOT_STRUGGLE (include/duoforge/duoforge.h)
 TEAM, SLOTS = C["DUOFORGE_CHOICE_TEAM_SELECTION"], C["DUOFORGE_CHOICE_SLOTS"]
@@ -76,6 +77,16 @@ def _reserves(request, roster_of):
     return sorted(out)
 
 
+def _fainted(request, roster_of):
+    """(roster index, text) of every fainted Pokemon a Revival Blessing can bring back (Showdown's switch N names it),
+    ascending by roster index."""
+    out = []
+    for pos, mon in enumerate(request["side"]["pokemon"]):
+        if not _alive(mon):
+            out.append((roster_of[mon["ident"]], f"switch {pos + 1}"))
+    return sorted(out)
+
+
 def own_roster(request, own_members, data):
     """{ident: roster index} of the request's Pokemon: the member whose species is the base forme of the
     species in its details (species are unique in a team)."""
@@ -123,6 +134,12 @@ def slot_options(request, side, roster_of, locked):
         elif "forceSwitch" in request:
             if not request["forceSwitch"][slot]:
                 lists.append([Option(NONE, 0, 0, 0, 0, "pass")])
+                continue
+            if mon is not None and mon.get("reviving"):
+                # Revival Blessing's request (pin: side.pokemon[i].reviving): one of the fainted members, or a pass,
+                # which defers it to the next request (g52_revive_pivot_no_reserve_ceruledge)
+                lists.append([Option(REVIVE, 0, 0, 0, r, text) for r, text in _fainted(request, roster_of)]
+                             + [Option(PASS, 0, 0, 0, 0, "pass")])
                 continue
             out = [Option(SWITCH, 0, 0, 0, r, text) for r, text in _reserves(request, roster_of)]
             out.append(Option(PASS, 0, 0, 0, 0, "pass"))
