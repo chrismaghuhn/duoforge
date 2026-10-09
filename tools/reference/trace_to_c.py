@@ -130,7 +130,8 @@ import sys
 SITES = {'SPEED_TIE': 1, 'ACCURACY': 2, 'CRIT': 3, 'DAMAGE_ROLL': 4, 'SECONDARY': 5, 'STALL': 6,
          'SLEEP_TURNS': 7, 'FREEZE_THAW': 8, 'FULL_PARALYSIS': 9, 'CONFUSION_TURNS': 10,
          'CONFUSION_HIT': 11, 'RANDOM_TARGET': 12, 'STATUS_PICK': 13, 'INSERT_TIE': 14, 'TRACE': 15, 'POISON_TOUCH': 16,
-         'CURSED_BODY': 17, 'FLAME_BODY': 18, 'STATIC': 19}  # 17: step G27, 18: step G30, 19: step G39
+         'CURSED_BODY': 17, 'FLAME_BODY': 18, 'STATIC': 19,  # 17: step G27, 18: step G30, 19: step G39
+         'DRAG': 20}  # 20: step G46, the drag's draw (DFI_SITE_DRAG)
 STATS = ['HP', 'Atk', 'Def', 'SpA', 'SpD', 'Spe']
 GENDER = {'M': 1, 'F': 2}
 GENDERLESS = 3
@@ -846,6 +847,8 @@ EV = {name: i + 1 for i, name in enumerate(
      'CONFUSION_END', 'CONFUSED', 'FLASH_FIRE', 'WEATHER', 'FIELD_START', 'FIELD_END', 'SIDE_START', 'SIDE_END',
      'ITEM_END', 'FORME', 'MEGA', 'PREPARE', 'ANIMATION', 'ABILITY', 'ACTIVATE', 'UPKEEP', 'RESULT',
      'SINGLE_TURN', 'VOLATILE_START', 'VOLATILE_END', 'TYPE_CHANGE', 'ITEM_START'])}
+# DUOFORGE_EVENT_DRAG = 45 (step G46): 43 and 44 belong to REVIVE and TRANSFORM on their own branches, so the drag is set by value.
+EV['DRAG'] = 45
 CAUSE = {'NONE': 0, 'MOVE': 1, 'ITEM': 2, 'ABILITY': 3, 'RECOIL': 4, 'DRAIN': 5, 'BURN': 6, 'CONFUSION': 7,
          'TERRAIN': 8, 'PARALYSIS': 9, 'SLEEP': 10, 'FREEZE': 11, 'FLINCH': 12, 'NO_PP': 13, 'POISON': 14,
          'HEAL_BLOCK': 15, 'WEATHER': 16, 'ITEM_TAKEN': 17, 'RECHARGE': 18, 'DISABLE': 19, 'TAUNT': 20, 'IMPRISON': 21}
@@ -1058,13 +1061,15 @@ def step_events(log, viewer, roster_of, maxhp, tables):
             e = ev_tuple(EV['UPKEEP'])
         elif kind in ('win', 'tie'):
             e = ev_tuple(EV['RESULT'], detail=3 if kind == 'tie' else int(args[0][1:]))
-        elif kind == 'switch':
+        elif kind in ('switch', 'drag'):
+            # A drag (step G46) is a switch of the forced kind: the entered slot, the roster index, the HP; no cause
+            # (the Pokemon that forced it is named by the move line, not by the drag).
             pos = ev_pos(args[0])
             side = pos // 2
             name = args[0].split(': ', 1)[1]
             cause, id2, _ = ev_cause(attrs, tables)
             hp = ev_hp(args[2], side, viewer, maxhp[side][name])
-            e = ev_tuple(EV['SWITCH'], pos, NOPOS, cause, roster_of[side][name], id2, *hp)
+            e = ev_tuple(EV['SWITCH' if kind == 'switch' else 'DRAG'], pos, NOPOS, cause, roster_of[side][name], id2, *hp)
         elif kind == 'move':
             pos = ev_pos(args[0])
             target = ev_pos(parts[4]) if len(parts) > 4 else None
