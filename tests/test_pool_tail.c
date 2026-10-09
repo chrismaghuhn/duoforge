@@ -1725,6 +1725,9 @@ int main(void)
                 tp->encore_slot = 0u;
                 tp->encore_turns = 0u;
                 tp->must_recharge = 0u; /* step G17: a Pokemon that must recharge is offered the recharge only */
+                /* step G60: the example's Substitutes would absorb this step's hits (both leads are the targets of the foe's first
+                 * moves, and the hits go to the Substitute: ACTIVATE, no DAMAGE, the HP is hidden); tested in test_pool_g60.c. */
+                tp->substitute_hp = 0u;
                 tp->glaive_rush = 0u;   /* step G19: the first BeforeMove of a Pokemon ends it (test_pool_g19.c) */
                 /* step G56: the example's locks are not this step's turn (a locked move is forced, and its count goes down; the
                  * lock is tested by test_pool_g56.c): the lock and its move in the body are cleared together. */
