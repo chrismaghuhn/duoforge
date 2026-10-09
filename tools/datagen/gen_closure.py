@@ -389,6 +389,12 @@ def parse_move(mid, base, champ, ext=False, pool=False, unmodeled=None):
             fail('move %s: onTryHit is not the pinned text' % mid)
         if 'condition' not in f or norm(f['condition'][1]) != YAWN_CONDITION:
             fail('move %s: the condition is not the pinned text' % mid)
+    if pool and handled[0] == 'ROOST' and ('condition' not in f or norm(f['condition'][1]) != ROOST_CONDITION):
+        fail('move %s: the condition is not the pinned text' % mid)
+    if pool and handled[0] == 'STOMPING_TANTRUM':
+        for name, text in STOMPING_TANTRUM_CALLBACKS.items():
+            if name not in f or norm(f[name][1]) != norm(text):
+                fail('move %s: %s is not the pinned text' % (mid, name))
     if pool and handled[0] == 'AURORA_VEIL' and ('onTry' not in f or norm(f['onTry'][1]) != AURORA_VEIL_ONTRY):
         fail('move %s: onTry is not the pinned text' % mid)
     if pool and handled[0] in G20_PROTECT_HANDLERS:
@@ -1817,6 +1823,23 @@ YAWN_CONDITION = (
     "condition: { noCopy: true, // doesn't get copied by Baton Pass duration: 2, onStart(target, source) { "
     "this.add('-start', target, 'move: Yawn', `[of] ${source}`); }, onResidualOrder: 23, onEnd(target) { "
     "this.add('-end', target, 'move: Yawn', '[silent]'); target.trySetStatus('slp', this.effectState.source); }, },")
+# Step G42: Roost (data/moves.ts:15428-15463) heals the user (the heal column, the heal flag) and then, through its self
+# volatile, takes the Flying type off until the residual of order 25; its condition is the handler ROOST (the tail's
+# single_turn bit). Stomping Tantrum's basePowerCallback doubles its power when the user's last move result is `false`.
+# The generator checks both texts, whitespace aside.
+G42_HANDLERS = ['ROOST', 'STOMPING_TANTRUM']
+ROOST_SELF = "self: { volatileStatus: 'roost', },"
+ROOST_CONDITION = (
+    "condition: { duration: 1, onResidualOrder: 25, onStart(target) { if (target.terastallized) { "
+    "if (target.hasType('Flying')) { this.add('-hint', \"If a Terastallized Pokemon uses Roost, it remains Flying-type.\"); } "
+    "return false; } this.add('-singleturn', target, 'move: Roost'); }, onTypePriority: -1, "
+    "onType(types, pokemon) { this.effectState.typeWas = types; return types.filter(type => type !== 'Flying'); }, },")
+STOMPING_TANTRUM_CALLBACKS = {
+    'basePowerCallback': "basePowerCallback(pokemon, target, move) { if (pokemon.moveLastTurnResult === false) { "
+                         "this.debug('doubling Stomping Tantrum BP due to previous move failure'); "
+                         "return move.basePower * 2; } return move.basePower; },",
+}
+
 # Step G25 (Electric Terrain, Misty Terrain): the two terrain moves keep their `terrain` field and their condition as handlers of
 # their own that the turn code implements (setTerrain, then the terrain's rules in the damage chain and in SetStatus and
 # TryAddVolatile), and Rising Voltage and Terrain Pulse keep the callback that reads the terrain (base power; type and
@@ -1926,6 +1949,8 @@ SPECIAL_P = dict(SPECIAL_C, **{
     'spikyshield': ('SPIKY_SHIELD', {'onPrepareHit', 'onHit'}),           # G20: Protect that damages a contact attacker
     'taunt': ('TAUNT', set()),                                            # G31: bars the Status moves for three or four turns
     'yawn': ('YAWN', {'onTryHit'}),                                       # G31: sleep at the end of the next turn
+    'roost': ('ROOST', set()),                                            # G42: heals, then the Flying type is off for the turn
+    'stompingtantrum': ('STOMPING_TANTRUM', {'basePowerCallback'}),        # G42: base power x2 after a failed last move
     'auroraveil': ('AURORA_VEIL', {'onTry'}),                             # G20: a screen against both categories, in snow only
     'trick': ('TRICK', {'onTryImmunity', 'onHit'}),                         # G29: swaps the two items
     'switcheroo': ('SWITCHEROO', {'onTryImmunity', 'onHit'}),               # G29: Trick's text with its own name in the lines
@@ -1979,12 +2004,13 @@ PROTECT_COPIES = {'detect': 'protect'}
 # champions/moves.ts:581-584) sets isNonstandard to null, which makes it legal, and the tag has no reader in the tables.
 TAGS_PAST_UNOBTAINABLE = 'tags: ["Past Unobtainable"],'
 PROTECT_COPY_FIELDS = ('onPrepareHit', 'onHit', 'stallingMove', 'volatileStatus', 'priority', 'accuracy', 'target')
-SPECIAL_IDS_P = SPECIAL_IDS_C + G2_HANDLERS + WEATHER_HANDLERS + G16_HANDLERS + G15_HANDLERS + G19_HANDLERS + G20_HANDLERS + G20_PROTECT_HANDLERS + G28_HANDLERS + G30_HANDLERS + G32_HANDLERS + G34_HANDLERS + G27_HANDLERS + G25_HANDLERS + G26_HANDLERS + G33_HANDLERS + G38_HANDLERS + G29_HANDLERS + G39_HANDLERS + G31_HANDLERS + ['UNMODELED']
+SPECIAL_IDS_P = SPECIAL_IDS_C + G2_HANDLERS + WEATHER_HANDLERS + G16_HANDLERS + G15_HANDLERS + G19_HANDLERS + G20_HANDLERS + G20_PROTECT_HANDLERS + G28_HANDLERS + G30_HANDLERS + G32_HANDLERS + G34_HANDLERS + G27_HANDLERS + G25_HANDLERS + G26_HANDLERS + G33_HANDLERS + G38_HANDLERS + G29_HANDLERS + G39_HANDLERS + G31_HANDLERS + G42_HANDLERS + ['UNMODELED']
 # Step G10 made two of these handlers data: Scald (thawsTarget) and Recover (heal) are read into the second flags
 # byte (bit 4, thaws the target) and the heal column, and have the special NONE; their ids stay defined (the ids after
 # them keep their values). First Impression and Low Kick keep theirs: the turn code implements them.
 POOL_COLUMN_KEYS = {'thawsTarget', 'heal'}
 G2_OWNED_FIELDS = {
+    'ROOST': {'self': ROOST_SELF},
     'ENCORE': {'volatileStatus': "volatileStatus: 'encore',"},
     'WIDE_GUARD': {'sideCondition': "sideCondition: 'wideguard',"},
     'AURORA_VEIL': {'sideCondition': "sideCondition: 'auroraveil',"},
@@ -2011,7 +2037,7 @@ G2_OWNED_FIELDS = {
     'IMPRISON': {'volatileStatus': "volatileStatus: 'imprison',"},
 }
 G2_OWNED_SECONDARY = {}
-G2_OWNED_CONDITION = {'ENCORE', 'WIDE_GUARD', 'GLAIVE_RUSH', 'AURORA_VEIL', 'SPIKY_SHIELD', 'RAGE_POWDER', 'DISABLE',
+G2_OWNED_CONDITION = {'ROOST', 'ENCORE', 'WIDE_GUARD', 'GLAIVE_RUSH', 'AURORA_VEIL', 'SPIKY_SHIELD', 'RAGE_POWDER', 'DISABLE',
                       'ELECTRIC_TERRAIN', 'MISTY_TERRAIN', 'PERISH_SONG', 'IMPRISON', 'TAUNT', 'YAWN'}
 # Step G8 (Throat Chop and Psychic Noise): the two secondaries become modelled kinds, and the column that their
 # consumers read is the move's second flags byte (the first is full): the `sound` flag (Throat Chop bars the sound

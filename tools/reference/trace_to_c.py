@@ -1160,6 +1160,8 @@ def step_events(log, viewer, roster_of, maxhp, tables):
                 e = ev_tuple(EV['SINGLE_TURN'], ev_pos(args[0]), of, 0, tables['MOVE'][key(args[1])])
             elif args[1] == 'Wide Guard' and not attrs:  # POOL: the side condition of the user's side, one turn
                 e = ev_tuple(EV['SINGLE_TURN'], ev_pos(args[0]), NOPOS, 0, tables['MOVE'][key(args[1])])
+            elif args[1] == 'move: Roost' and not attrs:  # POOL, step G42: the Flying type is off for the turn (no [of])
+                e = ev_tuple(EV['SINGLE_TURN'], ev_pos(args[0]), NOPOS, 0, tables['MOVE'][key('Roost')])
             elif args[1] in ('move: Follow Me', 'move: Rage Powder') and not attrs:
                 # Team C: no [of]; [zeffect] is not in the format. Rage Powder (step G30) has the same line.
                 e = ev_tuple(EV['SINGLE_TURN'], ev_pos(args[0]), NOPOS, 0, tables['MOVE'][key(args[1][6:])])
