@@ -301,7 +301,7 @@ class PoolFamilies(unittest.TestCase):
         self.assertEqual((len(gen_closure.ITEM_MEMBERS['TYPE_BOOSTER']), len(gen_closure.ITEM_MEMBERS['RESIST_BERRY'])),
                          (18, 18))
         self.assertEqual({k: len(v) for k, v in gen_closure.ABILITY_MEMBERS.items()},
-                         {'ATE': 3, 'PINCH': 4, 'WEATHER_SETTER': 4, 'TERRAIN_SETTER': 3})
+                         {'ATE': 4, 'PINCH': 4, 'WEATHER_SETTER': 4, 'TERRAIN_SETTER': 3})  # step G61: Dragonize joins the ATE family
         every = gen_closure.POOL_ITEMS + gen_closure.POOL_ABILITIES
         self.assertEqual(len(every), len(set(every)))
         self.assertEqual((len(gen_closure.POOL_ITEMS), len(gen_closure.POOL_ABILITIES)), (33, 5))
@@ -1425,7 +1425,7 @@ class ItemAbilityFeatures(unittest.TestCase):
                                                                  'snowcloak', 'sandveil', 'static', 'justified', 'limber',
                                                                  'solarpower', 'regenerator', 'toxicdebris', 'shadowtag', 'suctioncups', 'guarddog',
                                                                  'steadfast', 'weakarmor', 'telepathy', 'voltabsorb', 'punkrock', 'moxie',
-                                                                 'synchronize', 'oblivious']})
+                                                                 'synchronize', 'oblivious', 'sheerforce']})  # step G61
 
 
 class Bounds(unittest.TestCase):
