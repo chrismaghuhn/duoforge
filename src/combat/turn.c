@@ -7414,7 +7414,9 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
      * `[from] steelbeam`, cause MOVE with the move in id2, then the EmergencyExit check of useMoveInner (the user is not
      * the target). A move that stops before its hit steps (TryMove, a failed PP, no target) is not a MoveFail and returned
      * above. A Substitute's hit counts as a hit (any), so no MoveFail follows it. */
-    if (!any && md->special == DFI_SPECIAL_STEEL_BEAM && m->hp != 0u) {
+    /* A Substitute's hit leaves the target null (the pin's HIT_SUBSTITUTE, data/mods/champions/scripts.ts:350-352), so the
+     * move's result is false: a MoveFail for the single target of Steel Beam, even though `any` counts the absorbed hit. */
+    if ((!any || absorbed_any) && md->special == DFI_SPECIAL_STEEL_BEAM && m->hp != 0u) {
         const uint32_t user_before = m->hp;
         const uint32_t fail_damage = ((uint32_t)m->hp_max + 1u) / 2u; /* Math.round(maxhp / 2) */
         st = dfi_deal(r, user, fail_damage, DUOFORGE_CAUSE_MOVE, move_id, DUOFORGE_NO_POSITION);
