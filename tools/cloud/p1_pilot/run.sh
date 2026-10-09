@@ -14,9 +14,9 @@ set -euo pipefail
 EX_DONE=0 EX_CRASH=1 EX_USAGE=2
 EX_INPUTS=10 EX_SETUP=11 EX_REFUSED=13
 EX_SMOKE_T0=20 EX_GEN_BUDGET=21 EX_WORK_FALLBACK=22 EX_PROD_INCOMPLETE=23
-EX_INFEASIBLE=30 EX_COMPUTE=31 EX_CONTROL_NO_BUDGET_STOP=32
+EX_CONTROL_INCOMPLETE=30 EX_COMPUTE=31 EX_CONTROL_NO_BUDGET_STOP=32
 EX_EVAL_SMOKE=40 EX_EXPERT_EVAL=41
-EX_NO_M12_TOOL=50 EX_INTERRUPTED=60
+EX_NO_M12_TOOL=50 EX_PILOT_SOURCE=51 EX_PILOT_MISMATCH=52 EX_INTERRUPTED=60
 
 # ---- fixed run constants (the same on every start; recorded in run-info) ----
 PARAMS_49333_SHA256=ef1abe65f63711eb47e335d6169aad34584e50d4f2df321e4e9cbbbdcaf961cb
@@ -67,16 +67,21 @@ require_cloud_env() {
         || die $EX_USAGE "RUN_ID must start with a letter, digit, _ or - and hold only letters, digits, . _ - (got '$RUN_ID')"
     [[ $RUN_ID != inputs ]] || die $EX_USAGE "RUN_ID 'inputs' is the inputs prefix"
     [[ $RUN_PREFIX == "p1/$RUN_ID/" ]] || die $EX_USAGE "RUN_PREFIX must be p1/<RUN_ID>/ (got '$RUN_PREFIX', RUN_ID '$RUN_ID')"
+    if [[ -n ${PILOT_RUN_ID:-} ]]; then  # the pilot arm of an earlier run, read only (p1/<PILOT_RUN_ID>/)
+        [[ $PILOT_RUN_ID =~ ^[A-Za-z0-9_-][A-Za-z0-9._-]*$ && $PILOT_RUN_ID != inputs ]] \
+            || die $EX_USAGE "PILOT_RUN_ID must be a run id like RUN_ID (got '$PILOT_RUN_ID')"
+        [[ $PILOT_RUN_ID != "$RUN_ID" ]] || die $EX_USAGE "PILOT_RUN_ID must name another run than RUN_ID"
+    fi
 }
 # The earlier starts recorded in OUT/run-info must be this run: the same WORK_DIR (the tools' states hold absolute
-# paths), RUN_ID and mode, so a new RUN_ID, or a run after a dry run in the same WORK_DIR, never inherits markers or
+# paths), RUN_ID, mode and pilot source (PILOT_RUN_ID or DRY_PILOT_DIR, "none"), so a new RUN_ID, or a run after a dry run in the same WORK_DIR, never inherits markers or
 # outputs. Exit 11 otherwise.
-check_earlier_starts() {  # OUT WORK_DIR RUN_ID MODE
-    local out=$1 work=$2 run_id=$3 mode=$4 info key want got
+check_earlier_starts() {  # OUT WORK_DIR RUN_ID MODE PILOT_SOURCE
+    local out=$1 work=$2 run_id=$3 mode=$4 pilot=$5 info key want got
     for info in "$out"/run-info/run-info-*.json; do
         [[ -f $info ]] || continue
-        for key in work_dir run_id mode; do
-            case $key in work_dir) want=$work ;; run_id) want=$run_id ;; mode) want=$mode ;; esac
+        for key in work_dir run_id mode pilot_source; do
+            case $key in work_dir) want=$work ;; run_id) want=$run_id ;; mode) want=$mode ;; pilot_source) want=$pilot ;; esac
             got=$(sed -n "s/^ *\"$key\": \"\(.*\)\",\{0,1\}\$/\1/p" "$info")
             [[ -z $got || $got == "$want" ]] \
                 || die $EX_SETUP "$(basename "$info") of an earlier start has $key '$got', this start '$want': use a fresh WORK_DIR (or the earlier run's settings)"
@@ -86,7 +91,7 @@ check_earlier_starts() {  # OUT WORK_DIR RUN_ID MODE
 if [[ $MODE == check ]]; then  # the environment checks alone: no aws call; with WORK_DIR set, also its earlier starts
     require_cloud_env
     if [[ -n ${WORK_DIR:-} && -d $WORK_DIR ]]; then
-        check_earlier_starts "$(cd "$WORK_DIR" && pwd -P)/out" "$(cd "$WORK_DIR" && pwd -P)" "$RUN_ID" run
+        check_earlier_starts "$(cd "$WORK_DIR" && pwd -P)/out" "$(cd "$WORK_DIR" && pwd -P)" "$RUN_ID" run "${PILOT_RUN_ID:-none}"
     fi
     echo "run.sh: BUCKET, RUN_PREFIX and RUN_ID are valid"
     exit 0
@@ -102,6 +107,15 @@ UPLOAD_EVERY=${UPLOAD_EVERY:-900}
 if [[ $MODE != dry && -n ${DRY_DISTILL_DEVICE:-} ]]; then
     echo "DRY_DISTILL_DEVICE is for --dry-run only" >&2; exit $EX_USAGE
 fi
+# The pilot arm from an earlier run instead of phases 1-2: PILOT_RUN_ID (a run), or DRY_PILOT_DIR (a dry run, the
+# out/ directory of an earlier dry run).
+if [[ $MODE == dry && -n ${PILOT_RUN_ID:-} ]]; then echo "a dry run takes DRY_PILOT_DIR, not PILOT_RUN_ID" >&2; exit $EX_USAGE; fi
+if [[ $MODE != dry && -n ${DRY_PILOT_DIR:-} ]]; then echo "DRY_PILOT_DIR is for --dry-run only" >&2; exit $EX_USAGE; fi
+if [[ -n ${DRY_PILOT_DIR:-} ]]; then
+    [[ -d $DRY_PILOT_DIR ]] || { echo "DRY_PILOT_DIR $DRY_PILOT_DIR is not a directory" >&2; exit $EX_USAGE; }
+    DRY_PILOT_DIR=$(cd "$DRY_PILOT_DIR" && pwd -P)
+fi
+PILOT_SOURCE=${PILOT_RUN_ID:-${DRY_PILOT_DIR:-}}
 if [[ $MODE == dry ]]; then
     WORK_DIR=${WORK_DIR:-$HOME/p1-dry/work}
 else
@@ -204,9 +218,9 @@ on_exit() {
         0) meaning=done ;; 1) meaning=crash ;; 2) meaning=usage ;; 10) meaning=input-sha-mismatch-or-missing ;;
         11) meaning=setup-failed ;; 13) meaning=phase-cli-refusal ;; 20) meaning=smoke-t0 ;;
         21) meaning=generation-cpu-budget ;; 22) meaning=work-fallback-above-1pct ;; 23) meaning=production-incomplete ;;
-        30) meaning=matching-infeasible ;; 31) meaning=compute-mismatch ;; 32) meaning=control-no-budget-stop ;;
+        30) meaning=control-incomplete ;; 31) meaning=compute-mismatch ;; 32) meaning=control-no-budget-stop ;;
         40) meaning=eval-smoke-stop ;; 41) meaning=expert-eval-refusal ;;
-        50) meaning=missing-m12-tool ;; 60) meaning=interrupted ;; *) meaning=unknown ;;
+        50) meaning=missing-m12-tool ;; 51) meaning=pilot-source-missing ;; 52) meaning=pilot-source-mismatch ;; 60) meaning=interrupted ;; *) meaning=unknown ;;
     esac
     if [[ -n ${UPLOADER:-} ]]; then  # with its children: its sleep would hold the log pipe open
         pkill -TERM -P "$UPLOADER" 2>/dev/null || true
@@ -229,7 +243,7 @@ if [[ $MODE == run ]]; then
     log "restore s3://$BUCKET/$RUN_PREFIX"
     s3 sync "s3://$BUCKET/$RUN_PREFIX" "$OUT" "${LAUNCHER_PATHS[@]}"
 fi
-check_earlier_starts "$OUT" "$WORK_DIR" "${RUN_ID:-dry}" "$MODE"
+check_earlier_starts "$OUT" "$WORK_DIR" "${RUN_ID:-dry}" "$MODE" "${PILOT_SOURCE:-none}"
 touch "$WORK_DIR/.restored"
 if [[ $MODE == run ]]; then  # long phases (production collection, the control) upload their progress meanwhile
     ( trap - EXIT TERM INT; while true; do sleep "$UPLOAD_EVERY" & wait $!; upload_state || log "periodic upload failed"; done ) &
@@ -289,7 +303,7 @@ DIRTY=$(git -C "$REPO" status --porcelain --untracked-files=no 2>/dev/null | wc 
 
 # ---- per-phase runtime environment (added to setup's shared base) ----
 # collector: JAX on the CPU, as its manifest pins device cpu.
-# training phases of both arms (distill; the control's calibration and matched run): the platform allocator
+# training phases of both arms (distill; the control): the platform allocator
 #   (cudaMalloc/cudaFree, no pool). With the default pool and PREALLOCATE=false, distill's held-out evaluation leaves
 #   its pool reserved and loading jit__step fails with a CUBIN-load CUDA out of memory on an 8 GB card. Both arms'
 #   training phases share it, so their GPU-seconds compare fairly.
@@ -346,7 +360,7 @@ setup() {
     local name
     for name in "${RUNTIME_ENV[@]}"; do log "env $name=${!name}"; done
     log "env collector: ${PHASE_ENV_COLLECT[*]}"
-    log "env training (distill, control calibration and matched run): ${PHASE_ENV_TRAIN[*]}"
+    log "env training (distill, control): ${PHASE_ENV_TRAIN[*]}"
     log "env evaluation (eval_manifest, p1_eval smoke and full): ${PHASE_ENV_EVAL[*]:-nothing added (the default BFC allocator of JAX)}"
     log "affinity taskset -c $AFFINITY, workers $WORKERS"
 
@@ -369,6 +383,7 @@ EOF
 
     local info=$OUT/run-info/run-info-$STARTED.json
     RI_MODE=$MODE RI_COMMIT=$COMMIT RI_HEAD=$HEAD_COMMIT RI_DIRTY=$DIRTY RI_RUN_ID=${RUN_ID:-dry} RI_WORK=$WORK_DIR \
+    RI_PILOT_SOURCE=${PILOT_SOURCE:-none} \
     RI_WORKERS=$WORKERS RI_AFFINITY=$AFFINITY RI_LADDER=$LADDER_FILE RI_ENV="${RUNTIME_ENV[*]}" RI_IN=$IN \
     RI_PHASE_COLLECT="${PHASE_ENV_COLLECT[*]}" RI_PHASE_TRAIN="${PHASE_ENV_TRAIN[*]}" RI_PHASE_EVAL="${PHASE_ENV_EVAL[*]}" \
     RI_SEEDS="collect=$COLLECT_SEED split=$COLLECT_SPLIT_SEED distill=$DISTILL_SEED control=$CONTROL_SEED eval=$EVAL_SEED eval_first_game_id=$EVAL_FIRST_GAME_ID" \
@@ -388,6 +403,7 @@ with open(os.path.join(os.environ["RI_IN"], "SHA256SUMS")) as f:
         sums[name.strip().lstrip("*")] = sha
 info = {
     "mode": os.environ["RI_MODE"], "run_id": os.environ["RI_RUN_ID"], "commit": os.environ["RI_COMMIT"],
+    "pilot_source": os.environ["RI_PILOT_SOURCE"],
     "git_head": os.environ["RI_HEAD"], "tracked_changes": os.environ["RI_DIRTY"], "work_dir": os.environ["RI_WORK"],
     "workers": int(os.environ["RI_WORKERS"]), "affinity": os.environ["RI_AFFINITY"],
     "ladder_file": os.environ["RI_LADDER"], "seeds": os.environ["RI_SEEDS"],
@@ -457,7 +473,8 @@ last_json() { { grep -E '^\{' "$1" 2>/dev/null || true; } | tail -1; }
 json_get() { "$PY" -c 'import json,sys; v=json.loads(sys.argv[1]); [v := v[k] for k in sys.argv[2:]]; print(json.dumps(v) if isinstance(v,(dict,list,bool)) or v is None else v)' "$@"; }
 
 PILOT_LEDGER=$OUT/ledgers/pilot.json
-CONTROL_LEDGER=$OUT/ledgers/control.json
+CONTROL_LEDGER=$OUT/ledgers/control-fresh.json  # the budget-matched control (phase 3); ledgers/control.json was the
+                                                 # calibrated control of runs before it, never written again
 EVAL_LEDGER=$OUT/ledgers/eval.json
 
 manifest_write() {  # ROLE ROUNDS FIRST_GAME_ID OUT
@@ -528,6 +545,97 @@ if ! marked eval-pretrain; then
     mark eval-pretrain
 fi
 
+# ======== phases 1-2 from an earlier run (PILOT_RUN_ID, or DRY_PILOT_DIR in a dry run): read only ========
+# The pilot arm's results are copied into $OUT/pilot-source/; nothing is ever written to the earlier run. They are
+# checked (its markers, the SHA256 its distill phase recorded, the runtime environment, versions and engine sources
+# against the earlier run's run-info) and pinned with their SHA256 in run-info/pilot-source.json. Exit 51: a file
+# is missing; 52: something differs.
+PILOT_SRC=$OUT/pilot-source
+PILOT_FILES=(markers/distill.done ledgers/pilot.json distill/params-best.npz distill-meta/params-best.sha256)
+[[ $MODE == dry ]] || PILOT_FILES+=(markers/collect-production.done manifests/production.json collect-production/shards.sha256)
+pilot_fetch() {  # REL: the earlier run's file to $PILOT_SRC/REL
+    mkdir -p "$(dirname "$PILOT_SRC/$1")"
+    if [[ $MODE == dry ]]; then cp "$DRY_PILOT_DIR/$1" "$PILOT_SRC/$1"
+    else s3 cp "s3://$BUCKET/p1/$PILOT_RUN_ID/$1" "$PILOT_SRC/$1"; fi
+}
+if [[ -n $PILOT_SOURCE ]] && ! marked pilot-import; then
+    log "the pilot arm from $PILOT_SOURCE (read only)"
+    rm -rf "$PILOT_SRC"
+    mkdir -p "$PILOT_SRC/run-info"
+    for f in "${PILOT_FILES[@]}"; do
+        pilot_fetch "$f" 2>>"$OUT/logs/pilot-import.log" || die $EX_PILOT_SOURCE "the pilot source $PILOT_SOURCE has no $f"
+    done
+    if [[ $MODE == dry ]]; then
+        cp "$DRY_PILOT_DIR"/run-info/run-info-*.json "$PILOT_SRC/run-info/" 2>>"$OUT/logs/pilot-import.log" \
+            || die $EX_PILOT_SOURCE "the pilot source $PILOT_SOURCE has no run-info"
+    else
+        s3 cp "s3://$BUCKET/p1/$PILOT_RUN_ID/run-info/" "$PILOT_SRC/run-info/" --recursive 2>>"$OUT/logs/pilot-import.log" \
+            || die $EX_PILOT_SOURCE "the pilot source $PILOT_SOURCE has no run-info"
+    fi
+    want=$(cut -d' ' -f1 "$PILOT_SRC/distill-meta/params-best.sha256")
+    got=$(sha256sum "$PILOT_SRC/distill/params-best.npz" | cut -d' ' -f1)
+    [[ $want == "$got" ]] || die $EX_PILOT_MISMATCH "distill/params-best.npz of $PILOT_SOURCE is $got, its run recorded $want"
+    rc=0
+    "$PY" - "$PILOT_SRC" "$OUT/run-info/run-info-$STARTED.json" "$OUT/run-info/pilot-source.json" "$PILOT_SOURCE" \
+        "$REPO" "$COMMIT" "${PILOT_FILES[@]}" <<'EOF' || rc=$?
+import glob, hashlib, json, os, subprocess, sys
+src, mine_path, out, source, repo, commit, *files = sys.argv[1:]
+infos = sorted(glob.glob(os.path.join(src, "run-info", "run-info-*.json")))
+if not infos:
+    print("the pilot source has no run-info-*.json")
+    sys.exit(51)
+theirs, mine = json.load(open(infos[-1])), json.load(open(mine_path))
+problems = []
+for k in ("XLA_FLAGS", "XLA_PYTHON_CLIENT_PREALLOCATE", "OMP_NUM_THREADS", "OPENBLAS_NUM_THREADS"):
+    if theirs["runtime_env"].get(k) != mine["runtime_env"].get(k):
+        problems.append(f"runtime env {k}: pilot {theirs['runtime_env'].get(k)!r}, here {mine['runtime_env'].get(k)!r}")
+for phase in ("collect", "train"):
+    if theirs["phase_env"].get(phase) != mine["phase_env"].get(phase):
+        problems.append(f"{phase} env: pilot {theirs['phase_env'].get(phase)}, here {mine['phase_env'].get(phase)}")
+for k in ("python", "jax", "jaxlib", "optax", "numpy"):
+    if theirs["versions"].get(k) != mine["versions"].get(k):
+        problems.append(f"{k}: pilot {theirs['versions'].get(k)}, here {mine['versions'].get(k)}")
+pilot_commit = theirs["commit"]
+git = ["git", "-C", repo]
+if subprocess.run(git + ["cat-file", "-e", pilot_commit + "^{commit}"], capture_output=True).returncode != 0:
+    subprocess.run(git + ["fetch", "-q", "--depth", "1", "origin", pilot_commit], capture_output=True)  # a shallow clone
+diff = subprocess.run(git + ["diff", "--quiet", pilot_commit, commit, "--", "src", "include"], capture_output=True)
+if diff.returncode == 1:
+    problems.append(f"the engine sources (src, include) differ between the pilot's commit {pilot_commit} and {commit}")
+elif diff.returncode != 0:
+    problems.append(f"the pilot's commit {pilot_commit} cannot be compared: {diff.stderr.decode().strip()}")
+
+
+def sha(path):
+    h = hashlib.sha256()
+    with open(path, "rb") as f:
+        for block in iter(lambda: f.read(1 << 20), b""):
+            h.update(block)
+    return h.hexdigest()
+
+
+pins = {"pilot_source": source, "pilot_commit": pilot_commit, "pilot_run_info": os.path.basename(infos[-1]),
+        "sha256": {f: sha(os.path.join(src, f)) for f in files}, "problems": problems}
+json.dump(pins, open(out, "w"), indent=1, sort_keys=True)
+print(json.dumps(pins))
+sys.exit(52 if problems else 0)
+EOF
+    case $rc in
+        0) ;;
+        51) die $EX_PILOT_SOURCE "the pilot source $PILOT_SOURCE has no run-info" ;;
+        52) die $EX_PILOT_MISMATCH "the pilot source $PILOT_SOURCE differs from this run (run-info/pilot-source.json)" ;;
+        *) die $EX_CRASH "the pilot import failed with exit $rc" ;;
+    esac
+    mark pilot-import
+fi
+if [[ -n $PILOT_SOURCE ]]; then
+    PILOT_LEDGER=$PILOT_SRC/ledgers/pilot.json  # read only: no phase of this run writes to it
+    PILOT_PARAMS=$PILOT_SRC/distill/params-best.npz
+else
+    PILOT_PARAMS=$OUT/distill/params-best.npz
+fi
+
+if [[ -z $PILOT_SOURCE ]]; then  # phases 1-2 (up to "fi  # phases 1-2"): only without a pilot source
 # ======== phase 1: collection ========
 SMOKE=$OUT/collect-smoke
 PROD=$OUT/collect-production
@@ -612,133 +720,86 @@ if ! marked distill; then
     sha256sum "$DISTILL/params-best.npz" >"$OUT/distill-meta/params-best.sha256"
     mark distill
 fi
+fi  # phases 1-2
 
-# ======== phase 3: continuation control ========
-CONTROL=$OUT/control/run
-mkdir -p "$OUT/control"
+# ======== phase 3: continuation control (fresh, budget-matched) ========
+# One train run from params-49333 with --update-gpu-share match (duoforge_learn.budget_match): before every update
+# the ledger decides its device so that both of the pilot's totals end within 5 %: it stops at 95 % on both axes,
+# never takes a step expected to pass 105 % (JIT and a resumed process's start-up included), and stops as incomplete
+# when no device fits (STOP 30, re-plan). No calibration. Its own directory and ledger (control-fresh/,
+# ledgers/control-fresh.json): the calibrated control of earlier runs (control/) stays untouched. The learning rate
+# decays over the CPU budget spent: 0:1,900:0.1 in permille (the recipe's decay end at 90 % of the run).
+CONTROL=$OUT/control-fresh/run
+mkdir -p "$OUT/control-fresh"
 RECIPE=(--envs 256 --workers "$WORKERS" --rollout 32 --epochs 4 --minibatch 2048 --learning-rate 3e-4 --entropy 0.01
         --kl-ref magnet --kl-coef 0.05 --kl-refresh 500 --self-play-share 0.5 --league-slots 4 --slot-refresh 50
         --snapshot-every 200 --eval-every 100000 --eval-budget 1 --max-steps 500 --save-minutes 30
-        --teams "$TEAM_IDS" --team-weights "$TEAM_WEIGHTS" --teams-root "$TEAMS_ROOT" --seed "$CONTROL_SEED")
-# p1_match skips the first update of every process (its JIT): a block keeps a warm update through one interrupt.
-if [[ $MODE == dry ]]; then CAL_A=3 CAL_B=6; else CAL_A=6 CAL_B=12; fi
+        --teams "$TEAM_IDS" --team-weights "$TEAM_WEIGHTS" --teams-root "$TEAMS_ROOT" --seed "$CONTROL_SEED"
+        --learning-rate-over budget --learning-rate-schedule 0:1,900:0.1)
+CONTROL_MINUTES=90  # a safety cap per process (the 2026-10-09 L4 control took 49 updates, about 9 minutes)
+if [[ $MODE == dry ]]; then CONTROL_UPDATES=4; else CONTROL_UPDATES=0; fi
 
-state_update() {  # the update of the control's saved run state, 0 without one
-    [[ -f $CONTROL/state.npz ]] || { echo 0; return; }
-    "$PY" -c 'import sys; from duoforge_learn import runstate; print(runstate.load_state(sys.argv[1])["counters"]["update"])' "$CONTROL"
-}
 train() {  # NAME ARGS...
     local name=$1; shift
     local rc=0
     launch "$name" "$OUT/logs/$name.stdout" env "${PHASE_ENV_TRAIN[@]}" "$PY" -m duoforge_learn.train "$@" || rc=$?
     [[ $rc -eq 0 ]] || tool_failed "$name" "$rc"
 }
-
-reached() {  # NAME UPDATES: the saved run state must hold exactly that many updates (a signal or --minutes cut fails)
-    local got
-    got=$(state_update)
-    [[ $got -eq $2 ]] || die $EX_CRASH "$1: the control's saved state is at update $got, not $2 (cut short; the next start resumes)"
+control_stopped() {  # the "stopped" of the control run's last log line: matched, incomplete, signal, budget or empty
+    local last
+    last=$(last_json "$CONTROL/log.jsonl")
+    [[ -n $last ]] || return 0
+    json_get "$last" stopped 2>/dev/null || true
 }
-if ! marked control-cal-a; then
-    if [[ -f $CONTROL/state.npz ]]; then
-        if (( $(state_update) < CAL_A )); then
-            train control-cal-a --resume "$CONTROL" --updates "$CAL_A" --update-gpu-share 0 --act-gpu-share 0
+if ! marked control-fresh; then
+    read -r PILOT_C PILOT_G < <("$PY" -c 'import json, sys; d = json.load(open(sys.argv[1])); print(repr(d["cpu_core_seconds"]), repr(d["gpu_seconds"]))' "$PILOT_LEDGER")
+    if ! "$PY" -c 'import sys; sys.exit(0 if float(sys.argv[1]) > 0 and float(sys.argv[2]) > 0 else 1)' "$PILOT_C" "$PILOT_G"; then
+        if [[ $MODE == dry ]]; then
+            log "dry run: the pilot ledger has $PILOT_C CPU core-s / $PILOT_G GPU-s (distill on the CPU?); the control targets 1 s on an empty axis"
+            PILOT_C=$("$PY" -c 'import sys; print(max(float(sys.argv[1]), 1.0))' "$PILOT_C")
+            PILOT_G=$("$PY" -c 'import sys; print(max(float(sys.argv[1]), 1.0))' "$PILOT_G")
+        else
+            die $EX_CONTROL_INCOMPLETE "the pilot ledger has $PILOT_C CPU core-s / $PILOT_G GPU-s: nothing to match"
         fi
-    else
-        set_aside "$CONTROL"
-        train control-cal-a --out "$CONTROL" --init "$INIT" --keep-init-encoder --ledger "$CONTROL_LEDGER" "${RECIPE[@]}" \
-            --updates "$CAL_A" --update-gpu-share 0 --act-gpu-share 0
     fi
-    reached control-cal-a "$CAL_A"
-    mark control-cal-a
+    stopped=$(control_stopped)
+    case $stopped in
+        matched|incomplete) log "control: stopped already ($stopped)" ;;
+        *)
+            if [[ -f $CONTROL/state.npz ]]; then
+                train control-fresh --resume "$CONTROL"
+            else
+                set_aside "$CONTROL"
+                train control-fresh --out "$CONTROL" --init "$INIT" --keep-init-encoder --ledger "$CONTROL_LEDGER" \
+                    "${RECIPE[@]}" --update-gpu-share match --act-gpu-share 0 --stop-cpu-core-seconds "$PILOT_C" \
+                    --stop-gpu-seconds "$PILOT_G" --updates "$CONTROL_UPDATES" --minutes "$CONTROL_MINUTES"
+            fi
+            stopped=$(control_stopped) ;;
+    esac
+    log "control: stopped ${stopped:-without a stop}, ledger $(cat "$CONTROL_LEDGER" 2>/dev/null | tr -d '\n ' | head -c 200)"
+    case $stopped in
+        matched) ;;
+        incomplete)
+            [[ $MODE == dry ]] || die $EX_CONTROL_INCOMPLETE "the control cannot match the pilot's compute within 5 % (control-fresh/run/log.jsonl): STOP, re-plan"
+            log "dry run: the control stopped incomplete; continuing the rehearsal" ;;
+        *)
+            [[ $MODE == dry ]] || die $EX_CONTROL_NO_BUDGET_STOP "the control ended without its budget stop (stopped: ${stopped:-none}, logs/control-fresh.log); the next start resumes it"
+            log "dry run: the control stopped at its update cap; continuing the rehearsal" ;;
+    esac
+    mark control-fresh
 fi
-if ! marked control-cal-b; then
-    if (( $(state_update) < CAL_B )); then
-        train control-cal-b --resume "$CONTROL" --updates "$CAL_B" --update-gpu-share 1 --act-gpu-share 0
-    fi
-    reached control-cal-b "$CAL_B"
-    mark control-cal-b
-fi
-# The matching, with extra calibration blocks while a device has no warm update (p1_match exit 5): each extra block
-# is its own train process of p1_match.EXTRA_UPDATES updates on that device, at most p1_match.MAX_EXTRA per device,
-# all charged to the control ledger (their share of the pilot is reported in match.json). The blocks played are in
-# control/extra-calibration.json, so a restart neither repeats nor forgets one.
-# Dry run only: a STOP here (INFEASIBLE, extras exhausted; expected without a production phase) is
-# reported, and the rehearsal goes on without the matched run: the export takes the calibrated state.
-EXTRAS=$OUT/control/extra-calibration.json
-match_stop() {  # CODE MESSAGE
-    if [[ $MODE == dry ]]; then log "dry run: $2 (control/match.json); continuing without the matched run"
-    else die "$1" "$2 (control/match.json): STOP"; fi
-}
-if ! marked control-match; then
-    while true; do
-        rc=0
-        launch match "$OUT/control/match.stdout" "$PY" "$HERE/p1_match.py" --pilot-ledger "$PILOT_LEDGER" \
-            --control-run "$CONTROL" --control-ledger "$CONTROL_LEDGER" --extras "$EXTRAS" \
-            --out "$OUT/control/match.json" || rc=$?
-        case $rc in
-            0) break ;;
-            3) match_stop $EX_INFEASIBLE "the control cannot match the pilot's compute"; break ;;
-            5) next=$(json_get "$(cat "$OUT/control/match.json")" next_extra)
-               device=$(json_get "$next" device 2>/dev/null || true)
-               if [[ -z $device ]]; then
-                   match_stop $EX_INFEASIBLE "no warm calibration update on $(json_get "$next" exhausted) after the extra blocks"
-                   break
-               fi
-               share=$(json_get "$next" update_gpu_share)
-               target=$(( $(state_update) + $(json_get "$next" updates) ))
-               log "calibrate more: $device has no warm update; extra block to update $target"
-               [[ ! -e $WORK_DIR/INTERRUPTED ]] || die $EX_INTERRUPTED "interrupted before an extra calibration block"
-               # The count first: a crash inside the block then counts it too (the bound holds across restarts).
-               "$PY" -c 'import json, sys, pathlib; p = pathlib.Path(sys.argv[1]); d = json.loads(p.read_text()) if p.exists() else {}; d[sys.argv[2]] = d.get(sys.argv[2], 0) + 1; p.write_text(json.dumps(d))' \
-                   "$EXTRAS" "$device"
-               train "control-cal-extra-$device" --resume "$CONTROL" --updates "$target" --update-gpu-share "$share" \
-                   --act-gpu-share 0
-               reached "control-cal-extra-$device" "$target"
-               ;;
-            *) die $EX_CRASH "p1_match failed with exit $rc" ;;
-        esac
-    done
-    cat "$OUT/control/match.json"
-    mark control-match
-fi
-
-# "Budget reached" from the saved run: the control's ledger file (saved together with its state) against the stops
-# p1_match set. Exit 0 yes, 1 no.
-budget_reached() {
-    "$PY" - "$CONTROL_LEDGER" "$OUT/control/match.json" <<'EOF'
-import json, sys
-ledger, match = (json.load(open(p)) for p in sys.argv[1:3])
-stop_c, stop_g = match["pilot"]["cpu_core_seconds"], match["pilot"]["gpu_seconds"]
-hit = ledger["cpu_core_seconds"] >= stop_c or (stop_g > 0 and ledger["gpu_seconds"] >= stop_g)
-print(f"control ledger cpu {ledger['cpu_core_seconds']:.1f} / stop {stop_c:.1f}, gpu {ledger['gpu_seconds']:.1f} / "
-      f"stop {stop_g:.1f}: {'reached' if hit else 'not reached'}")
-sys.exit(0 if hit else 1)
-EOF
-}
-if [[ $MODE == run ]]; then
-    if ! marked control-final; then
-        mapfile -t FLAGS < <("$PY" -c 'import json,sys; print("\n".join(json.load(open(sys.argv[1]))["resume_flags"]))' "$OUT/control/match.json")
-        (( ${#FLAGS[@]} > 0 )) && [[ -n ${FLAGS[0]} ]] || die $EX_CRASH "control/match.json gives no resume flags"
-        if ! budget_reached; then
-            train control-final --resume "$CONTROL" "${FLAGS[@]}"
-        fi
-        budget_reached || die $EX_CONTROL_NO_BUDGET_STOP "the control ended without reaching its ledger budget (logs/control-final.log)"
-        mark control-final
-    fi
-fi
-if ! marked control-export; then
-    rm -f "$OUT/control/params-final.npz"
+if ! marked control-fresh-export; then
+    rm -f "$OUT/control-fresh/params-final.npz"
     rc=0
-    launch export "$OUT/control/export.json" "$PY" "$HERE/p1_export.py" "$CONTROL" "$OUT/control/params-final.npz" || rc=$?
+    launch control-fresh-export "$OUT/control-fresh/export.json" "$PY" "$HERE/p1_export.py" "$CONTROL" "$OUT/control-fresh/params-final.npz" || rc=$?
     [[ $rc -eq 0 ]] || die $EX_CRASH "p1_export failed with exit $rc"
-    mark control-export
+    mark control-fresh-export
 fi
-CONTROL_FINAL=$OUT/control/params-final.npz
+CONTROL_FINAL=$OUT/control-fresh/params-final.npz
 
-if ! marked compute-check; then
+if ! marked compute-check-fresh; then
     rc=0
-    "$PY" - "$PILOT_LEDGER" "$CONTROL_LEDGER" "$OUT/control/compute-check.json" <<'EOF' || rc=$?
+    "$PY" - "$PILOT_LEDGER" "$CONTROL_LEDGER" "$OUT/control-fresh/compute-check.json" <<'EOF' || rc=$?
 import json, sys
 from duoforge_search import expert_eval
 pilot, control = (expert_eval.ComputeLedger.from_mapping(json.load(open(p))) for p in sys.argv[1:3])
@@ -754,17 +815,17 @@ print(json.dumps(out))
 sys.exit(0 if out["status"] == "MATCH" else 31)
 EOF
     if [[ $rc -ne 0 ]]; then
-        if [[ $MODE == dry ]]; then log "dry run: compute check $(cat "$OUT/control/compute-check.json" 2>/dev/null) (expected: calibration only)"
-        elif [[ $rc -eq 31 ]]; then die $EX_COMPUTE "the arms' compute differs by more than 5 % (control/compute-check.json): STOP"
+        if [[ $MODE == dry ]]; then log "dry run: compute check $(cat "$OUT/control-fresh/compute-check.json" 2>/dev/null) (expected: an update cap)"
+        elif [[ $rc -eq 31 ]]; then die $EX_COMPUTE "the arms' compute differs by more than 5 % (control-fresh/compute-check.json): STOP"
         else die $EX_CRASH "the compute check failed with exit $rc"; fi
     fi
-    [[ $MODE == dry ]] || mark compute-check
+    [[ $MODE == dry ]] || mark compute-check-fresh
 fi
 
 # ======== phase 4: evaluation ========
 EVAL=$OUT/eval
 mkdir -p "$EVAL"
-eval_smoke eval "$EVAL" "$DISTILL/params-best.npz" "$CONTROL_FINAL"  # the real students: the gate's manifest
+eval_smoke eval "$EVAL" "$PILOT_PARAMS" "$CONTROL_FINAL"  # the real students: the gate's manifest
 EVAL_ARGS=(--manifest "$EVAL/manifest.json" "${EVAL_CHECKPOINTS[@]}" --teams "$TEAM_IDS" --team-weights "$TEAM_WEIGHTS"
            --teams-root "$TEAMS_ROOT" --workers "$WORKERS" --ledger "$EVAL_LEDGER")
 if [[ $MODE == dry ]]; then

@@ -151,6 +151,37 @@ class ControlTest(unittest.TestCase):
             with self.assertRaises(SystemExit):
                 train.parse(["--out", other, "--updates", "1", "--update-gpu-share", bad] + _SMALL)
 
+    def test_match_needs_both_stops_and_budget_lr_needs_match(self):
+        from duoforge_learn import train
+        for argv in (["--update-gpu-share", "match", "--stop-cpu-core-seconds", "10"],
+                     ["--update-gpu-share", "match", "--stop-gpu-seconds", "10"],
+                     ["--learning-rate-over", "budget", "--stop-cpu-core-seconds", "10"]):
+            with self.assertRaises(SystemExit):
+                train.parse(["--out", self.out, "--ledger", self.book] + argv + _SMALL)
+
+    def test_match_stops_incomplete_when_no_device_fits(self):
+        self.assertEqual(_train(["--out", self.out, "--ledger", self.book, "--update-gpu-share", "match",
+                                 "--stop-cpu-core-seconds", "1e9", "--stop-gpu-seconds", "1e9", "--updates", "1"]
+                                + _SMALL), 0)
+        # Resumed with targets the ledger already exceeds on the CPU axis: no device fits, nothing is played.
+        self.assertEqual(_train(["--resume", self.out, "--stop-cpu-core-seconds", "1e-6", "--stop-gpu-seconds", "1e9",
+                                 "--updates", "5"]), 0)
+        self.assertEqual([r["update"] for r in _log(self.out)], [1])
+        with open(os.path.join(self.out, "log.jsonl"), encoding="utf-8") as f:
+            self.assertEqual(json.loads(f.read().splitlines()[-1]), {"stopped": "incomplete", "at_update": 1})
+
+    def test_match_runs_the_lagging_axis_and_the_budget_lr(self):
+        # Equal, unreachable targets: the GPU-seconds always lag the CPU core-seconds, so every update goes to the
+        # default device; the learning rate follows the CPU budget spent (permille), here close to 0.
+        self.assertEqual(_train(["--out", self.out, "--ledger", self.book, "--update-gpu-share", "match",
+                                 "--stop-cpu-core-seconds", "1e9", "--stop-gpu-seconds", "1e9", "--updates", "2",
+                                 "--learning-rate-over", "budget", "--learning-rate-schedule", "0:1,900:0.1"]
+                                + _SMALL), 0)
+        rows = _log(self.out)
+        self.assertEqual([r["update_device"] for r in rows], ["default", "default"])
+        self.assertEqual([r["match"]["next"] for r in rows], ["default", "default"])
+        self.assertTrue(all(0.999 < r["lr_scale"] <= 1.0 for r in rows), [r["lr_scale"] for r in rows])
+
 
 
 def _init_checkpoint(path, encoder=4, ext_supported=0):
