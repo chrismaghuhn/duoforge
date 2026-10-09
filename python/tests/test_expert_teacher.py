@@ -369,6 +369,103 @@ class Teacher(unittest.TestCase):
             with self.assertRaises(ValueError):
                 ex.teacher_row(d, dataclasses.replace(step, boundary="TEAM_SELECTION"), m)
 
+    def test_teacher_resume_permutation_regrouping_clock_bytes(self):
+        import itertools
+        import json
+        from duoforge_search import expert as ex
+        from duoforge_search import expert_data as ed
+        from python.tests.test_expert_data import manifest
+        m = manifest(ed)
+        envs = 3
+
+        def labels(search, b, order, cfg):
+            _, _, pairs = b.query_encoded(4, search.ext_supported)
+            out = {}
+            for e in order:
+                raw = int(np.flatnonzero(pairs[e, 0].reshape(-1))[-1])
+                key = DecisionKey(500 + e, 0, int(b.requests[e, 0]["epoch"]))
+                out[e] = ex.decision_bytes(ex.label_decision(search, b, env=e, seat=0, key=key, raw_action=raw,
+                                                             raw_logp=-1.25, last_step=False, config=cfg))
+            return out
+
+        def admit(b, order):
+            _, _, pairs = b.query_encoded(4, 0)
+            cursor = ed.LabelCursor()
+            ed.admit_tick(cursor, [ed.AdmissionRequest(DecisionKey(500 + e, 0, int(b.requests[e, 0]["epoch"])), "TURN",
+                                                       int(pairs[e, 0].sum())) for e in order])
+            return cursor
+
+        def run(ctx, order, groups=((0, 1, 2),), resume=False):
+            with self.make(ctx) as search, \
+                    duoforge.Batch(ctx, np.repeat(duoforge.reference_setups([0]), envs), 2, 42) as b:
+                cfg = self.config(search, audit_threshold=2**64)  # the audit runs too
+                b.query_factored()
+                for g in groups:
+                    ex.observe(search, b, list(g), [0] * len(g))
+                self.start_turn(b)
+                for g in groups:
+                    ex.observe(search, b, list(g), [0] * len(g))
+                cursor = admit(b, order)
+                if resume:
+                    data = ex.teacher_checkpoint(search, b, cursor, cfg, m)
+                    with self.make(ctx) as fresh:
+                        restored = ex.restore_teacher(fresh, b, data, cfg, m)
+                        return labels(fresh, b, order, cfg), ed.cursor_bytes(restored, m)
+                return labels(search, b, order, cfg), ed.cursor_bytes(cursor, m)
+
+        with duoforge.Context(C["DUOFORGE_DATA_KIND_POOL"]) as ctx:
+            base = run(ctx, [0, 1, 2])
+            self.assertEqual(len(set(base[0].values())), envs)  # each game's own key words
+            self.assertEqual(run(ctx, [2, 0, 1]), base)
+            self.assertEqual(run(ctx, [1, 2, 0], groups=((2,), (0, 1))), base)
+            self.assertEqual(run(ctx, [2, 1, 0], resume=True), base)
+            jumps = itertools.count()
+
+            def clock(*_):
+                return float(next(jumps) ** 2 * 3.5)
+
+            with mock.patch("time.perf_counter", side_effect=clock), mock.patch("time.monotonic", side_effect=clock):
+                self.assertEqual(run(ctx, [0, 1, 2]), base)
+            # Incompatible or partial resumes are refused.
+            with self.make(ctx) as search, \
+                    duoforge.Batch(ctx, np.repeat(duoforge.reference_setups([0]), envs), 2, 42) as b:
+                cfg = self.config(search)
+                b.query_factored()
+                ex.observe(search, b, [0, 1, 2], [0, 0, 0])
+                self.start_turn(b)
+                ex.observe(search, b, [0, 1, 2], [0, 0, 0])
+                cursor = admit(b, [0, 1, 2])
+                data = ex.teacher_checkpoint(search, b, cursor, cfg, m)
+                payload = json.loads(data)
+
+                def rehashed(change):
+                    value = json.loads(data)
+                    change(value)
+                    content = {k: v for k, v in value.items() if k != "content_sha256"}
+                    return json.dumps({**content, "content_sha256": ed._sha(content)}).encode("ascii")
+
+                cases = {
+                    "other config": (data, self.config(search, seed=78), m, None),
+                    "other manifest": (data, cfg, dataclasses.replace(m, seed=8), None),
+                    "truncated": (data[:-9], cfg, m, None),
+                    "tampered": (data.replace(b'"observed":', b'"observed":1', 1), cfg, m, None),  # a value, unhashed
+                    "key version": (rehashed(lambda v: v.__setitem__("key_version", 2)), cfg, m, None),
+                    "schema": (rehashed(lambda v: v.__setitem__("version", 2)), cfg, m, None),
+                    "record size": (rehashed(lambda v: v["histories"][0].__setitem__("preview", "00")), cfg, m, None),
+                    "fewer envs": (data, cfg, m, 2),
+                }
+                self.assertIn("histories", payload)
+                for name, (blob, config, man, env_count) in cases.items():
+                    with self.subTest(name), self.make(ctx) as fresh, \
+                            duoforge.Batch(ctx, np.repeat(duoforge.reference_setups([0]), env_count or envs), 2, 42) as other:
+                        target = b if env_count is None else other
+                        with self.assertRaises(ValueError):
+                            ex.restore_teacher(fresh, target, blob, config, man)
+                with self.make(ctx, k=2) as smaller, self.assertRaises(ValueError):
+                    ex.restore_teacher(smaller, b, data, cfg, m)  # the search must run the configuration
+                with self.assertRaisesRegex(ValueError, "fresh"):
+                    ex.restore_teacher(search, b, data, cfg, m)  # never merged into a live history
+
 
 if __name__ == "__main__":
     unittest.main()
