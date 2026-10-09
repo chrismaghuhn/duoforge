@@ -18,6 +18,7 @@
 #include <string.h>
 
 #include <duoforge/duoforge.h>
+#include <duoforge/duoforge_encode.h>
 #include <duoforge/duoforge_view.h>
 
 #include "combat/turn.h"
@@ -230,6 +231,85 @@ static void check_unbroken(df_test *t, const duoforge_context *ctx)
     duoforge_battle_destroy(b);
 }
 
+/* Information safety (decision 0026, lead point 1c): A is the disguised holder at team start, shown as Gholdengo; B is the real Gholdengo
+ * entering after the holder left unbroken (i2_unbroken_switchout, step 1). The foe was shown the same lines for side 0 (Gholdengo at 100%
+ * on the field, the holder never shown), so the foe's view of side 0, the public refusal and the cause mask must be equal, although
+ * the truth differs (the holder is on the field in A only). Compared: the occupants, the rows of the four Pokemon side 0 shows (HP,
+ * location, status) and the position volatiles, not the turn (A is the team step, B a later one). */
+static void check_ab_info_safety(df_test *t, const duoforge_context *ctx)
+{
+    duoforge_battle *a = replay(t, ctx, "i2_illusion_break", 1u);
+    duoforge_battle *b = replay(t, ctx, "i2_unbroken_switchout", 2u);
+    if (a == NULL || b == NULL) {
+        duoforge_battle_destroy(a);
+        duoforge_battle_destroy(b);
+        return;
+    }
+    duoforge_observation fa;
+    duoforge_observation fb;
+    if (observe(t, ctx, a, 1u, &fa) && observe(t, ctx, b, 1u, &fb)) {
+        DF_CHECK_EQ_U64(t, fa.sides[0].occupant[0], fb.sides[0].occupant[0]);
+        DF_CHECK_EQ_U64(t, fa.sides[0].occupant[1], fb.sides[0].occupant[1]);
+        for (uint32_t m = 0u; m < 4u; ++m) {
+            const duoforge_member_view *ma = &fa.sides[0].members[m];
+            const duoforge_member_view *mb = &fb.sides[0].members[m];
+            DF_CHECK_EQ_U64(t, ma->hp_kind, mb->hp_kind);
+            DF_CHECK_EQ_U64(t, ma->hp, mb->hp);
+            DF_CHECK_EQ_U64(t, ma->location, mb->location);
+            DF_CHECK_EQ_U64(t, ma->status, mb->status);
+        }
+    }
+    duoforge_observation_ext ea;
+    duoforge_observation_ext eb;
+    if (DF_CHECK(t, duoforge_battle_observe_ext(ctx, a, 1u, &ea) == DUOFORGE_OK) &&
+        DF_CHECK(t, duoforge_battle_observe_ext(ctx, b, 1u, &eb) == DUOFORGE_OK)) {
+        for (uint32_t p = 0u; p < DUOFORGE_ACTIVE_PER_SIDE; ++p) {
+            DF_CHECK_EQ_U64(t, ea.sides[0].positions[p].volatiles, eb.sides[0].positions[p].volatiles); /* bit 19 is off for the foe in both */
+        }
+    }
+    uint32_t ca = 0u;
+    uint32_t cb = 0u;
+    if (DF_CHECK(t, duoforge_battle_public_causes(ctx, a, 1u, &ca) == DUOFORGE_OK) &&
+        DF_CHECK(t, duoforge_battle_public_causes(ctx, b, 1u, &cb) == DUOFORGE_OK)) {
+        DF_CHECK_EQ_U64(t, ca, cb);
+    }
+    duoforge_public_state pa;
+    duoforge_public_state pb;
+    DF_CHECK_EQ_U64(t, duoforge_battle_public(ctx, a, 1u, &pa), duoforge_battle_public(ctx, b, 1u, &pb));
+    duoforge_battle_destroy(a);
+    duoforge_battle_destroy(b);
+}
+
+/* Encoders 1 to 4 refuse a battle with an Illusion member on either sheet (decision 0026 section 4, amended by I2, point (b)); encoder 5
+ * does not. The refusal is the first check of the encoder, before the domain is read: the observation alone decides it. */
+static void check_encoder_refusal(df_test *t)
+{
+    static float obs[850];
+    static float slots[DUOFORGE_ENCODER_SLOT_VALUES];
+    static uint8_t pairs[DUOFORGE_ENCODER_PAIR_VALUES];
+    duoforge_factored_domain dom;
+    memset(&dom, 0, sizeof dom);
+    for (uint32_t side = 0u; side < DUOFORGE_SIDE_COUNT; ++side) {
+        for (uint32_t with = 0u; with < 2u; ++with) {
+            duoforge_observation ob;
+            memset(&ob, 0, sizeof ob);
+            ob.player = 0u;
+            ob.sides[side].member_count = 1u;
+            ob.sides[side].members[0].ability = with != 0u ? (uint8_t)(DFI_ABILITY_ILLUSION + 1u) : 0u;
+            for (uint32_t v = 4u; v <= 5u; ++v) {
+                const duoforge_status st = duoforge_encode(v, 0u, &ob, &dom, NULL, obs, slots, pairs);
+                if (v == 4u && with != 0u) {
+                    DF_CHECK_EQ_U64(t, st, DUOFORGE_E_UNSUPPORTED);
+                } else if (v == 4u) {
+                    DF_CHECK(t, st != DUOFORGE_E_UNSUPPORTED);
+                } else {
+                    DF_CHECK(t, st != DUOFORGE_E_UNSUPPORTED); /* encoder 5 has no refusal for Illusion */
+                }
+            }
+        }
+    }
+}
+
 int main(void)
 {
     df_test t;
@@ -238,5 +318,7 @@ int main(void)
     check_team_start(&t, ctx);
     check_break(&t, ctx);
     check_unbroken(&t, ctx);
+    check_ab_info_safety(&t, ctx);
+    check_encoder_refusal(&t);
     return df_test_end(&t);
 }
