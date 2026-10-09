@@ -2076,7 +2076,7 @@ const dfi_pool_item_data dfi_pool_items[DFI_POOL_ITEM_COUNT] = {
  *   auraguard -- data/abilities.ts:310-319
  *   battlearmor -- data/abilities.ts:355-361  [unmodelled: callback onCriticalHit]
  *   berserk -- data/abilities.ts:414-444, data/mods/champions/abilities.ts:8-13  [unmodelled: callback onAfterMoveSecondary; callback onDamage; callback onTryEatItem]
- *   bigpecks -- data/abilities.ts:445-459  [unmodelled: callback onTryBoost]
+ *   bigpecks -- data/abilities.ts:445-459
  *   bulletproof -- data/abilities.ts:480-491  [unmodelled: callback onTryHit]
  *   cheekpouch -- data/abilities.ts:492-500  [unmodelled: callback onEatItem]
  *   chlorophyll -- data/abilities.ts:512-522
@@ -2134,7 +2134,7 @@ const dfi_pool_item_data dfi_pool_items[DFI_POOL_ITEM_COUNT] = {
  *   insomnia -- data/abilities.ts:2168-2192  [unmodelled: callback onSetStatus; callback onTryAddVolatile; callback onUpdate; read by id in data/moves.ts]
  *   ironfist -- data/abilities.ts:2236-2248
  *   justified -- data/abilities.ts:2249-2259
- *   keeneye -- data/abilities.ts:2260-2277  [unmodelled: callback onModifyMove; callback onTryBoost]
+ *   keeneye -- data/abilities.ts:2260-2277
  *   klutz -- data/abilities.ts:2278-2290  [unmodelled: callback onStart; callback onSwitchInPriority; read by id in sim/pokemon.ts]
  *   leafguard -- data/abilities.ts:2291-2310  [unmodelled: callback onSetStatus; callback onTryAddVolatile]
  *   levitate -- data/abilities.ts:2311-2317
@@ -2855,7 +2855,7 @@ const uint8_t dfi_pool_ability_handler[DFI_POOL_ABILITY_COUNT] = {
     [DFI_ABILITY_AURAGUARD] = DFI_HANDLER_NONE,
     [DFI_ABILITY_BATTLEARMOR] = DFI_HANDLER_UNMODELED,
     [DFI_ABILITY_BERSERK] = DFI_HANDLER_UNMODELED,
-    [DFI_ABILITY_BIGPECKS] = DFI_HANDLER_UNMODELED,
+    [DFI_ABILITY_BIGPECKS] = DFI_HANDLER_NONE,
     [DFI_ABILITY_BULLETPROOF] = DFI_HANDLER_UNMODELED,
     [DFI_ABILITY_CHEEKPOUCH] = DFI_HANDLER_UNMODELED,
     [DFI_ABILITY_CHLOROPHYLL] = DFI_HANDLER_NONE,
@@ -2913,7 +2913,7 @@ const uint8_t dfi_pool_ability_handler[DFI_POOL_ABILITY_COUNT] = {
     [DFI_ABILITY_INSOMNIA] = DFI_HANDLER_UNMODELED,
     [DFI_ABILITY_IRONFIST] = DFI_HANDLER_NONE,
     [DFI_ABILITY_JUSTIFIED] = DFI_HANDLER_NONE,
-    [DFI_ABILITY_KEENEYE] = DFI_HANDLER_UNMODELED,
+    [DFI_ABILITY_KEENEYE] = DFI_HANDLER_NONE,
     [DFI_ABILITY_KLUTZ] = DFI_HANDLER_UNMODELED,
     [DFI_ABILITY_LEAFGUARD] = DFI_HANDLER_UNMODELED,
     [DFI_ABILITY_LEVITATE] = DFI_HANDLER_NONE,
@@ -6951,7 +6951,6 @@ const char *const dfi_pool_ability_unmodeled[DFI_POOL_ABILITY_COUNT] = {
     [DFI_ABILITY_AROMAVEIL] = "callback onAllyTryAddVolatile",
     [DFI_ABILITY_BATTLEARMOR] = "callback onCriticalHit",
     [DFI_ABILITY_BERSERK] = "callback onAfterMoveSecondary; callback onDamage; callback onTryEatItem",
-    [DFI_ABILITY_BIGPECKS] = "callback onTryBoost",
     [DFI_ABILITY_BULLETPROOF] = "callback onTryHit",
     [DFI_ABILITY_CHEEKPOUCH] = "callback onEatItem",
     [DFI_ABILITY_CLOUDNINE] = "callback onEnd; callback onStart; callback onSwitchIn; field suppressWeather",
@@ -6994,7 +6993,6 @@ const char *const dfi_pool_ability_unmodeled[DFI_POOL_ABILITY_COUNT] = {
     [DFI_ABILITY_IMPOSTER] = "callback onSwitchIn; read by id in data/moves.ts",
     [DFI_ABILITY_INNARDSOUT] = "callback onDamagingHit; callback onDamagingHitOrder",
     [DFI_ABILITY_INSOMNIA] = "callback onSetStatus; callback onTryAddVolatile; callback onUpdate; read by id in data/moves.ts",
-    [DFI_ABILITY_KEENEYE] = "callback onModifyMove; callback onTryBoost",
     [DFI_ABILITY_KLUTZ] = "callback onStart; callback onSwitchInPriority; read by id in sim/pokemon.ts",
     [DFI_ABILITY_LEAFGUARD] = "callback onSetStatus; callback onTryAddVolatile",
     [DFI_ABILITY_LIBERO] = "callback onPrepareHit",
@@ -7084,10 +7082,10 @@ const char *const dfi_pool_ability_unmodeled[DFI_POOL_ABILITY_COUNT] = {
 };
 
 const uint8_t dfi_pool_table_hash[32] = {
-    0x25u, 0x15u, 0xabu, 0x6au, 0x5bu, 0x02u, 0xa9u, 0x27u,
-    0x3eu, 0xd5u, 0xb4u, 0xd6u, 0x5cu, 0xadu, 0x76u, 0x6eu,
-    0x6fu, 0x29u, 0x8eu, 0x81u, 0xf4u, 0x70u, 0x83u, 0x88u,
-    0xebu, 0x4fu, 0xa0u, 0xdcu, 0x70u, 0x6eu, 0xf2u, 0x54u,
+    0x29u, 0x0fu, 0xc1u, 0xbeu, 0xbeu, 0x3du, 0x9cu, 0xf9u,
+    0x6cu, 0xdcu, 0x96u, 0x30u, 0x86u, 0xcfu, 0x91u, 0x96u,
+    0x6cu, 0x4cu, 0x9fu, 0x01u, 0xceu, 0xc1u, 0x8fu, 0x58u,
+    0xccu, 0x16u, 0x45u, 0x00u, 0xcdu, 0x8bu, 0x10u, 0x09u,
 };
 
 static size_t dfi_pool_put_u16(uint8_t *out, size_t n, uint32_t v)

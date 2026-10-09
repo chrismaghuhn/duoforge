@@ -1,0 +1,58 @@
+Glalie (M) @ Glalitite
+Ability: Inner Focus
+Level: 50
+EVs: 32 HP / 32 Atk / 2 SpD
+Adamant Nature
+- Giga Impact
+- Ice Shard
+- Protect
+- Taunt
+
+Pinsir (M) @ Pinsirite
+Ability: Hyper Cutter
+Level: 50
+EVs: 32 HP / 32 Atk / 2 SpD
+Adamant Nature
+- Quick Attack
+- Close Combat
+- Protect
+
+Banette (F) @ Banettite
+Ability: Cursed Body
+Level: 50
+EVs: 32 HP / 32 Atk / 2 SpD
+Jolly Nature
+- Will-O-Wisp
+- Shadow Ball
+- Protect
+- Taunt
+
+Pidgeot (M) @ Pidgeotite
+Ability: Keen Eye
+Level: 50
+EVs: 32 HP / 32 SpA / 2 Spe
+Modest Nature
+- Hurricane
+- Brave Bird
+- Protect
+- U-turn
+
+Incineroar (M) @ Charcoal
+Ability: Intimidate
+Level: 50
+EVs: 32 HP / 14 Def / 20 SpD
+Careful Nature
+- Fake Out
+- Flare Blitz
+- Parting Shot
+- Darkest Lariat
+
+Milotic (F) @ Leftovers
+Ability: Competitive
+Level: 50
+EVs: 32 HP / 29 Def / 5 SpD
+Calm Nature
+- Muddy Water
+- Ice Beam
+- Coil
+- Protect

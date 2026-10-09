@@ -230,7 +230,7 @@ foreach(_gen IN ITEMS
         "extended_tables.h=b2abef243fcbfdd87654940076b9fe2fe80b117d74893a7567741f26b9075a7d"
         "extended_tables.c=9e736fa467713283418c4edf8f56b8d844452e596ba422adbd52483d20f7cc17"
         "pool_tables.h=debe1fce378c7deb09a05a0593a21b4241506eed8801433d9fde2c1a7ccb0a02"
-        "pool_tables.c=c3b99d1a5be13f3cc24ce87c1768df626d4f80fa5dbbc3561d13665616c0e402")
+        "pool_tables.c=783ca53eb6536df9bffd1ff919a8da64967c23ce2ed64d2f40adb5ea1898c25c")
     string(REPLACE "=" ";" _parts "${_gen}")
     list(GET _parts 0 _file)
     list(GET _parts 1 _expected)
@@ -701,3 +701,6 @@ if(DUOFORGE_ENABLE_SANITIZERS)
         PASS_REGULAR_EXPRESSION "AddressSanitizer: heap-buffer-overflow"
         FAIL_REGULAR_EXPRESSION "CANARY_SURVIVED")
 endif()
+# Step G51 (Mega batch 4): ten Mega Stones marked with no new rule, Keen Eye and Big Pecks as engine rows (turn.c), the marks, the
+# Mega of each pair, the setup, the API, and the Keen Eye ignoreEvasion check (white-box).
+duoforge_add_test(NAME duoforge.state.pool_g51 SOURCES test_pool_g51.c WHITEBOX TIMEOUT 60)

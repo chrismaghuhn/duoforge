@@ -502,6 +502,8 @@ const dfi_support_manifest dfi_support = {
             [DFI_ABILITY_REGENERATOR] = 1u,
             [DFI_ABILITY_TOXICDEBRIS] = 1u, /* step G37: a Physical hit puts Toxic Spikes on the attacker's side */
             [DFI_ABILITY_SHADOWTAG] = 1u, /* step G41 */
+            [DFI_ABILITY_KEENEYE] = 1u,   /* step G51: the base ability of Pidgeot (with Pidgeotite), an engine row */
+            [DFI_ABILITY_BIGPECKS] = 1u,  /* step G51: the other base ability of Pidgeot, an engine row */
         },
     .items =
         {
@@ -552,6 +554,20 @@ const dfi_support_manifest dfi_support = {
             [DFI_ITEM_METAGROSSITE] = 1u,
             [DFI_ITEM_LUCARIONITEZ] = 1u,
             [DFI_ITEM_FROSLASSITE] = 1u,
+            /* Step G51 (Mega batch 4, mark only for the stones; Keen Eye and Big Pecks are engine rows): ten Mega Stones whose Mega
+             * ability is marked already (Infiltrator, Solar Power, Adaptability, Regenerator, Iron Fist, Levitate, Refrigerate,
+             * Aerilate, Prankster, No Guard) and whose base forme's ability is marked: Chandelurite, Houndoominite, Lucarionite (not
+             * the Z stone), Dragalgite, Crabominite, Chimechite, Glalitite, Pinsirite, Banettite and Pidgeotite. */
+            [DFI_ITEM_CHANDELURITE] = 1u,
+            [DFI_ITEM_HOUNDOOMINITE] = 1u,
+            [DFI_ITEM_LUCARIONITE] = 1u,
+            [DFI_ITEM_DRAGALGITE] = 1u,
+            [DFI_ITEM_CRABOMINITE] = 1u,
+            [DFI_ITEM_CHIMECHITE] = 1u,
+            [DFI_ITEM_GLALITITE] = 1u,
+            [DFI_ITEM_PINSIRITE] = 1u,
+            [DFI_ITEM_BANETTITE] = 1u,
+            [DFI_ITEM_PIDGEOTITE] = 1u,
             [DFI_ITEM_BLACKBELT] = 1u,
             [DFI_ITEM_BLACKGLASSES] = 1u,
             [DFI_ITEM_CHARCOAL] = 1u,

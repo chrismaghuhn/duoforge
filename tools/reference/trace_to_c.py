@@ -1135,8 +1135,12 @@ def step_events(log, viewer, roster_of, maxhp, tables):
             # Inner Focus (step G22, data/abilities.ts:2157-2162): `-fail|X|unboost|atk|[from] ability: Inner Focus|[of] X`,
             # an Intimidate drop that the ability deleted: a FAIL with the ability as its cause and the holder in `other`.
             # Clear Body's line has no stat (the next branch); anything else is refused, never mapped.
+            # Keen Eye (step G51) names `accuracy` and Big Pecks `def`: each stat only with its own ability, the id checked, so
+            # a drop named for another stat is refused.
             cause, id2, other = ev_cause(attrs, tables)
-            if args[2] != 'atk' or cause != CAUSE['ABILITY'] or other == NOPOS:
+            named = {'atk': None, 'accuracy': 'Keen Eye', 'def': 'Big Pecks'}
+            if args[2] not in named or cause != CAUSE['ABILITY'] or other == NOPOS or \
+                    (named[args[2]] is not None and id2 != tables['ABILITY'][key(named[args[2]])] + 1):
                 raise ConversionError('fail-line', 'trace_to_c: unknown -fail %r' % line, detail=line)
             e = ev_tuple(EV['FAIL'], ev_pos(args[0]), other, cause, 0, id2)
         elif kind == '-fail':
