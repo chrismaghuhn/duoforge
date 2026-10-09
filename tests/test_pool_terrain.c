@@ -213,7 +213,10 @@ static void check_view(df_test *t, const duoforge_context *ctx)
                 want.player = (uint8_t)viewer;
                 want.epoch = ob.epoch;
                 want.supported = dfi_support.view_ext_features;
-                DF_CHECK(t, memcmp(&ext, &want, sizeof want) == 0);
+                for (uint32_t g42f = 0u; g42f < 4u; ++g42f) { /* step G42: move_failed is the last move result FALSE */
+                    const uint32_t g42last = ((uint32_t)b->tail.sides[g42f / 2u].positions[g42f % 2u].move_result >> 2) & 3u;
+                    want.sides[g42f / 2u].positions[g42f % 2u].move_failed = g42last == 2u ? 1u : 0u;
+                }                DF_CHECK(t, memcmp(&ext, &want, sizeof want) == 0);
                 compared += 1u;
             }
         }

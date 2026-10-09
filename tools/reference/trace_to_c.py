@@ -471,9 +471,19 @@ def drop_reason(d, state, after=None, log=None):
                     if index is not None and side['pokemon'][index]['status'] == status:
                         raise ConversionError('thermal-exchange-burn' if ability == 'thermalexchange' else 'limber-paralysis',
                                               'trace_to_c: a %s holder has %s: %s' % (ability, status, slot), detail=slot)
+        # Oblivious's onUpdate (step G47, data/abilities.ts:3008-3040) removes a taunt of its holder (and an attract, which no
+        # volatile of the engine is). A taunted Oblivious holder is refused by the engine (dfi_trace), so an Oblivious holder that
+        # is not taunted does nothing here: it is not a holder.
+        for g in group:
+            if 'oblivious' in g.split(':', 3)[3].split('+'):
+                slot = g.split(':')[1]
+                side = placed['sides'][int(slot[1]) - 1]
+                index = side['active'][' ab'.index(slot[2]) - 1]
+                if index is not None and 'taunt' in side['pokemon'][index]['volatiles']:
+                    raise ConversionError('oblivious-taunt', 'trace_to_c: a taunted Oblivious holder: %s' % slot, detail=slot)
         # Trace's onUpdate (step AC1) returns unless its holder is still seeking after an onStart that found no foe to
         # copy, which the engine refuses (E_UNSUPPORTED): until then it does nothing either, so it is not a holder.
-        inert = {'thermalexchange', 'trace', 'limber'}
+        inert = {'thermalexchange', 'trace', 'limber', 'oblivious'}
         # Rain Dish's onWeather (step G35, data/abilities.ts:3759) heals only in rain (RainDance; Primordial Sea is not in the
         # format): under any other weather its holder has the handler and it does nothing, so it is not a holder. The weather is
         # the one of the upkeep, which is the one the step ends with (after) or, without it, the one it started with. Solar
@@ -661,7 +671,8 @@ def drop_reason(d, state, after=None, log=None):
 
 
 # The items and abilities whose each-event handlers (Update, TerrainChange, Weather: Rain Dish, step G35) act on their holder alone.
-EACH_HANDLERS = frozenset(('sitrusberry', 'grassyseed', 'psychicseed', 'electricseed', 'mistyseed', 'raindish', 'solarpower', 'limber'))
+EACH_HANDLERS = frozenset(('sitrusberry', 'grassyseed', 'psychicseed', 'electricseed', 'mistyseed', 'raindish', 'solarpower', 'limber',
+                           'lumberry', 'mentalherb'))
 
 
 def site_of(d):
@@ -910,6 +921,10 @@ IGNORED_VOLATILES = {
     # Step G30: Rage Powder shares the position's Follow Me bit, so the engine's state compares as no Follow Me: its presence
     # is the extension's RAGE_POWDER bit, read after every step by duoforge.state.pool_g30.
     'ragepowder': 'the extension bit RAGE_POWDER',
+    # Step G42: Roost's volatile takes the Flying type off until the residual of its turn. It is not a field of the record: the
+    # -singleturn line and the immunity and the damage of a Ground move show it; duoforge.state.pool_g42 reads the tail's bit
+    # after every step (a pivot inside the Roost turn is the only boundary where it stands).
+    'roost': 'the Ground move lines and the single-turn line',
     'solarbeam': 'the locked slot and target',  # step G30: the same two-turn lock
     # Pool step G8 (the POOL tail, decision 0015 section 7). Their turns are not a field of the state record; each
     # shows in the steps that the comparison already covers: the moves of the next request (disabled slots, the
@@ -1155,8 +1170,12 @@ def step_events(log, viewer, roster_of, maxhp, tables):
             # Inner Focus (step G22, data/abilities.ts:2157-2162): `-fail|X|unboost|atk|[from] ability: Inner Focus|[of] X`,
             # an Intimidate drop that the ability deleted: a FAIL with the ability as its cause and the holder in `other`.
             # Clear Body's line has no stat (the next branch); anything else is refused, never mapped.
+            # Keen Eye (step G51) names `accuracy` and Big Pecks `def`: each stat only with its own ability, the id checked, so
+            # a drop named for another stat is refused.
             cause, id2, other = ev_cause(attrs, tables)
-            if args[2] != 'atk' or cause != CAUSE['ABILITY'] or other == NOPOS:
+            named = {'atk': None, 'accuracy': 'Keen Eye', 'def': 'Big Pecks'}
+            if args[2] not in named or cause != CAUSE['ABILITY'] or other == NOPOS or \
+                    (named[args[2]] is not None and id2 != tables['ABILITY'][key(named[args[2]])] + 1):
                 raise ConversionError('fail-line', 'trace_to_c: unknown -fail %r' % line, detail=line)
             e = ev_tuple(EV['FAIL'], ev_pos(args[0]), other, cause, 0, id2)
         elif kind == '-fail' and len(args) == 2 and args[1] == 'move: Double Shock':
@@ -1184,6 +1203,8 @@ def step_events(log, viewer, roster_of, maxhp, tables):
                 e = ev_tuple(EV['SINGLE_TURN'], ev_pos(args[0]), of, 0, tables['MOVE'][key(args[1])])
             elif args[1] == 'Wide Guard' and not attrs:  # POOL: the side condition of the user's side, one turn
                 e = ev_tuple(EV['SINGLE_TURN'], ev_pos(args[0]), NOPOS, 0, tables['MOVE'][key(args[1])])
+            elif args[1] == 'move: Roost' and not attrs:  # POOL, step G42: the Flying type is off for the turn (no [of])
+                e = ev_tuple(EV['SINGLE_TURN'], ev_pos(args[0]), NOPOS, 0, tables['MOVE'][key('Roost')])
             elif args[1] in ('move: Follow Me', 'move: Rage Powder') and not attrs:
                 # Team C: no [of]; [zeffect] is not in the format. Rage Powder (step G30) has the same line.
                 e = ev_tuple(EV['SINGLE_TURN'], ev_pos(args[0]), NOPOS, 0, tables['MOVE'][key(args[1][6:])])

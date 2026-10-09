@@ -289,7 +289,7 @@ def label_decision(search, roots, *, env, seat, key, raw_action, raw_logp, last_
 
     try:
         if statuses[e] == C["DUOFORGE_E_UNSUPPORTED"]:
-            raise Unreconstructible("+".join(visible_causes(roots.observations[e, p])) or "public_record_unsupported")
+            raise Unreconstructible("+".join(visible_causes(roots, e, p)) or "public_record_unsupported")
         if statuses[e] != 0:
             raise SearchError(f"public record refused: {duoforge.status_name(int(statuses[e]))}")
         hypotheses, weights, _, _, _ = search._hypotheses(record, roots.observations[e, p], history, world_key,

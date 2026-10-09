@@ -259,8 +259,8 @@ int main(void)
     /* No committed stop depends on the order of a bench. */
     DF_CHECK_EQ_U64(&t, counts.ambiguous, 0u);
 #if defined(DF_CONFORMANCE_POOL_DATA)
-    DF_CHECK_EQ_U64(&t, battles, 412u); /* the pool battles of G46, G48, G43, G44, G49, G50 and G55 (fourteen rock battles) */
-    DF_CHECK_EQ_U64(&t, counts.stops, 2397u); /* closure 833 + Team C 734 + pool 2397 = 3964 (tiebreak_ref.h; step G55 adds 98) */
+    DF_CHECK_EQ_U64(&t, battles, 466u); /* main's 452 and G55's fourteen */
+    DF_CHECK_EQ_U64(&t, counts.stops, 2660u); /* main's 2562 and G55's 98 */
 #else
     /* Every kind of decision of the pin is among the stops (the pool battles are too few for that). */
     DF_CHECK(&t, counts.by_stage[1] > 0u && counts.by_stage[2] > 0u && counts.by_stage[3] > 0u &&

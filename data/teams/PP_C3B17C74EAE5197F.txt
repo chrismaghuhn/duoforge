@@ -1,0 +1,59 @@
+Charizard (M) @ Charizardite Y
+Ability: Blaze
+Level: 50
+EVs: 2 HP / 32 SpA / 32 Spe
+Modest Nature
+- Heat Wave
+- Weather Ball
+- Solar Beam
+- Protect
+
+Kingambit (M) @ Chople Berry
+Ability: Defiant
+Level: 50
+EVs: 18 HP / 32 Atk / 16 Spe
+Adamant Nature
+- Protect
+- Kowtow Cleave
+- Sucker Punch
+- Low Kick
+
+Whimsicott (M) @ Focus Sash
+Ability: Prankster
+Level: 50
+EVs: 32 HP / 2 Def / 32 Spe
+Timid Nature
+- Tailwind
+- Encore
+- Sunny Day
+- Moonblast
+
+Garchomp (M) @ Sitrus Berry
+Ability: Rough Skin
+Level: 50
+EVs: 2 HP / 32 Atk / 32 Spe
+Adamant Nature
+- Dragon Claw
+- Rock Slide
+- Protect
+- Earthquake
+
+Farigiraf (M) @ Colbur Berry
+Ability: Armor Tail
+Level: 50
+EVs: 32 HP / 32 Def / 2 SpD
+Bold Nature
+- Psychic
+- Helping Hand
+- Dazzling Gleam
+- Trick Room
+
+Heliolisk (M) @ Choice Scarf
+Ability: Solar Power
+Level: 50
+EVs: 2 HP / 32 SpA / 32 Spe
+Modest Nature
+- Thunderbolt
+- Electroweb
+- Dragon Pulse
+- Volt Switch

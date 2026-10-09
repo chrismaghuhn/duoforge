@@ -68,7 +68,10 @@ TAIL_YAWN_MAX = 2
 TAIL_STOCKPILE_MAX = 3
 TAIL_FLAG_MAX = 1
 TAIL_PROTECT_KIND_MAX = 1           # rev 3: 0 Protect and Detect, 1 Spiky Shield (Baneful Bunker would be 2)
-TAIL_MOVE_RESULT_MASK = 0x0F        # rev 4: two bits this turn, two bits last turn (0 undefined, 1 true, 2 false, 3 null)
+TAIL_MOVE_RESULT_MASK = 0x3F        # rev 4: two bits this turn, two bits last turn (0 undefined, 1 true, 2 false, 3 null),
+                                    # bit 4 unclassified this turn, bit 5 unclassified last turn (step G42); bits 6-7 zero
+UNCLASSIFIED_NOW = 0x10
+UNCLASSIFIED_LAST = 0x20
 TAIL_SINGLE_TURN_MASK = 3           # rev 4: bit 0 RAGE_POWDER (needs the Follow Me flag), bit 1 ROOST
 SINGLE_TURN_RAGE_POWDER = 1
 TAIL_HITS_TAKEN_MAX = 6
@@ -293,7 +296,7 @@ KD = TeamCContext(KIND_TEAM_C_DEV, 6, 4)
 # which tests/test_pool_tables.c recomputes from the pool canonical bytes: the
 # pool layout over the pool data, then the family columns, the handler columns
 # and the moves and abilities that each forme may have.
-POOL_TABLE_HASH = bytes.fromhex('033bf62d382f032ac9e5b68e9ccc16585f1101ca074cf5b7786b754d9c40d894')  # steps G44, G46, G48, G49, G50, G55
+POOL_TABLE_HASH = bytes.fromhex('0229a04b51ccc8eab476bc78553c1624e441fb4f5670dd13c20cf2b96a6428a5')  # steps G42, G44, G46, G48, G49, G50
 KIND_POOL, KIND_POOL_DEV = 6, 7
 
 
@@ -993,6 +996,10 @@ def tail_pos_valid(ctx, tp, flat, mem, slot_flags=0):
         return False
     # Rev 4: the move result is two two-bit values, the single-turn markers are the two defined bits (Rage Powder's belongs to
     # the Follow Me flag), the counters and the ability state have their bounds.
+    mr = tp['move_result']
+    # step G42: an unclassified bit only with the result bits of its slot zero
+    if not ((mr & UNCLASSIFIED_NOW == 0 or mr & 3 == 0) and (mr & UNCLASSIFIED_LAST == 0 or (mr >> 2) & 3 == 0)):
+        return False
     if not (tp['move_result'] & ~TAIL_MOVE_RESULT_MASK == 0 and tp['single_turn'] & ~TAIL_SINGLE_TURN_MASK == 0
             and (tp['single_turn'] & SINGLE_TURN_RAGE_POWDER == 0 or slot_flags & VOL_FOLLOW_ME)
             and tp['hits_taken'] <= TAIL_HITS_TAKEN_MAX and tp['ability_state'] <= TAIL_ABILITY_STATE_MAX

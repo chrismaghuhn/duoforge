@@ -220,7 +220,10 @@ static void check_battles(df_test *t, const duoforge_context *ctx, uint32_t *com
                         want.sides[flat / 2u].positions[flat % 2u].type_now[0] = WATER_PLUS_1;
                     }
                 }
-                if (!DF_CHECK(t, memcmp(&ext[viewer], &want, sizeof want) == 0)) {
+                for (uint32_t g42f = 0u; g42f < 4u; ++g42f) { /* step G42: move_failed is the last move result FALSE */
+                    const uint32_t g42last = ((uint32_t)b->tail.sides[g42f / 2u].positions[g42f % 2u].move_result >> 2) & 3u;
+                    want.sides[g42f / 2u].positions[g42f % 2u].move_failed = g42last == 2u ? 1u : 0u;
+                }                if (!DF_CHECK(t, memcmp(&ext[viewer], &want, sizeof want) == 0)) {
                     fprintf(stderr, "  %s step %u viewer %u: the extension differs from the protocol's (Soaked 0x%x)\n",
                             names[n], si, viewer, soaked);
                 }

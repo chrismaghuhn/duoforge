@@ -390,6 +390,12 @@ def parse_move(mid, base, champ, ext=False, pool=False, unmodeled=None):
             fail('move %s: onTryHit is not the pinned text' % mid)
         if 'condition' not in f or norm(f['condition'][1]) != YAWN_CONDITION:
             fail('move %s: the condition is not the pinned text' % mid)
+    if pool and handled[0] == 'ROOST' and ('condition' not in f or norm(f['condition'][1]) != ROOST_CONDITION):
+        fail('move %s: the condition is not the pinned text' % mid)
+    if pool and handled[0] == 'STOMPING_TANTRUM':
+        for name, text in STOMPING_TANTRUM_CALLBACKS.items():
+            if name not in f or norm(f[name][1]) != norm(text):
+                fail('move %s: %s is not the pinned text' % (mid, name))
     if pool and handled[0] == 'AURORA_VEIL' and ('onTry' not in f or norm(f['onTry'][1]) != AURORA_VEIL_ONTRY):
         fail('move %s: onTry is not the pinned text' % mid)
     if pool and handled[0] in G20_PROTECT_HANDLERS:
@@ -1686,6 +1692,79 @@ G41_ABILITY_FACTS = (
                    "pokemon.maybeTrapped = true; } },",
                    'flags: {},')),
 )
+# Step G45 (six abilities of the simple kind): Steadfast, Moxie, Weak Armor, Telepathy, Volt Absorb and Punk Rock
+# are engine rows (ENGINE_ROWS) that the turn code reads by id; the pinned callbacks they hard-code are checked here, whole,
+# whitespace aside. The Champions mod overrides none of them (check_g34_facts). Mold Breaker, Teravolt and Turboblaze are not
+# marked, and Mycelium Might is not in the pool, so no marked ability ignores the `breakable` flag of Telepathy, Volt Absorb or
+# Punk Rock (tests/test_pool_g45.c pins the refusals).
+G45_ABILITY_FACTS = (
+    ('steadfast', ("onFlinch(pokemon) { this.boost({ spe: 1 }); },", 'flags: {},')),
+    ('weakarmor', ("onDamagingHit(damage, target, source, move) { if (move.category === 'Physical') { "
+                   "this.boost({ def: -1, spe: 2 }, target, target); } },", 'flags: {},')),
+    ('telepathy', ("onTryHit(target, source, move) { if (target !== source && target.isAlly(source) && move.category !== 'Status') { "
+                   "this.add('-activate', target, 'ability: Telepathy'); return null; } },", 'flags: { breakable: 1 },')),
+    ('voltabsorb', ("onTryHit(target, source, move) { if (target !== source && move.type === 'Electric') { "
+                    "if (!this.heal(target.baseMaxhp / 4)) { this.add('-immune', target, '[from] ability: Volt Absorb'); } return null; } },",
+                    'flags: { breakable: 1 },')),
+    ('punkrock', ('onBasePowerPriority: 7,',
+                  "onBasePower(basePower, attacker, defender, move) { if (move.flags['sound']) { this.debug('Punk Rock boost'); "
+                  "return this.chainModify([5325, 4096]); } },",
+                  "onSourceModifyDamage(damage, source, target, move) { if (move.flags['sound']) { this.debug('Punk Rock weaken'); "
+                  "return this.chainModify(0.5); } },",
+                  'flags: { breakable: 1 },')),
+    ('moxie', ("onSourceAfterFaint(length, target, source, effect) { if (effect && effect.effectType === 'Move') { "
+                   "this.boost({ atk: length }, source); } },", 'flags: {},')),
+)
+# Step G47, the status and volatile cures: Synchronize and Oblivious (abilities) and Lum Berry and Mental Herb (items) are engine
+# rows read by id (src/combat/turn.c dfi_synchronize, dfi_lum_berry, dfi_mental_herb; Oblivious in dfi_try_status' TryHit chain,
+# the Intimidate guard and dfi_trace). Their texts, whitespace aside, are the facts the engine hard-codes; the Champions mod
+# has no entry for any of the four (check_g34_facts). The Champions Encore override (moves.ts:330) is a move, checked by hand.
+# Each fact is a balanced statement or block of the pinned entry (the entry's own parser counts the braces), without the
+# comment lines between the statements that the pin has.
+G47_ABILITY_FACTS = (
+    ('synchronize', ('if (!source || source === target) return;',
+                     "if (effect && effect.id === 'toxicspikes') return;",
+                     "if (status.id === 'slp' || status.id === 'frz') return;",
+                     "this.add('-activate', target, 'ability: Synchronize');",
+                     "source.trySetStatus(status, target, { status: status.id, id: 'synchronize' } as Effect);",
+                     'flags: {},')),
+    ('oblivious', ("if (pokemon.volatiles['attract']) { this.add('-activate', pokemon, 'ability: Oblivious'); "
+                   "pokemon.removeVolatile('attract'); this.add('-end', pokemon, 'move: Attract', '[from] ability: Oblivious'); }",
+                   "pokemon.removeVolatile('taunt');",
+                   "if (type === 'attract') return false;",
+                   "if (move.id === 'attract' || move.id === 'captivate' || move.id === 'taunt') { "
+                   "this.add('-immune', pokemon, '[from] ability: Oblivious'); return null; }",
+                   "if (effect.name === 'Intimidate' && boost.atk) { delete boost.atk; "
+                   "this.add('-fail', target, 'unboost', 'atk', '[from] ability: Oblivious', `[of] ${target}`); }",
+                   'flags: { breakable: 1 },')),
+)
+G47_ITEM_FACTS = (
+    ('lumberry', ('onAfterSetStatusPriority: -1,',
+                  'onAfterSetStatus(status, pokemon) { pokemon.eatItem(); },',
+                  "onUpdate(pokemon) { if (pokemon.status || pokemon.volatiles['confusion']) { pokemon.eatItem(); } },",
+                  "onEat(pokemon) { pokemon.cureStatus(); pokemon.removeVolatile('confusion'); },")),
+    ('mentalherb', ("const conditions = ['attract', 'taunt', 'encore', 'torment', 'disable', 'healblock'];",
+                    'if (!pokemon.useItem()) return;',
+                    'pokemon.removeVolatile(secondCondition);',
+                    "this.add('-end', pokemon, 'move: Attract', '[from] item: Mental Herb');")),
+)
+# Step G51 (Pidgeotite: Keen Eye and Big Pecks, the base abilities of Pidgeot): both are engine rows (ENGINE_ROWS) that dfi_boost
+# (src/combat/turn.c) reads by id, Hyper Cutter's shape: the pinned TryBoost of the target itself deletes one drop that another
+# Pokemon causes (accuracy for Keen Eye, Defense for Big Pecks), with the line unless the move's secondary. Keen Eye's
+# onModifyMove (move.ignoreEvasion for the holder's own moves) is read by dfi_accuracy_check. Both are breakable, and Mold Breaker is
+# not marked. The Champions mod overrides neither entry.
+G51_ABILITY_FACTS = (
+    ('keeneye', ("onTryBoost(boost, target, source, effect) { if (source && target === source) return; "
+                 "if (boost.accuracy && boost.accuracy < 0) { delete boost.accuracy; if (!(effect as ActiveMove).secondaries) { "
+                 "this.add('-fail', target, 'unboost', 'accuracy', '[from] ability: Keen Eye', `[of] ${target}`); } } },",
+                 "onModifyMove(move) { move.ignoreEvasion = true; },",
+                 'flags: { breakable: 1 },')),
+    ('bigpecks', ("onTryBoost(boost, target, source, effect) { if (source && target === source) return; "
+                  "if (boost.def && boost.def < 0) { delete boost.def; if (!(effect as ActiveMove).secondaries && "
+                  "effect.id !== 'octolock') { this.add('-fail', target, 'unboost', 'def', '[from] ability: Big Pecks', "
+                  "`[of] ${target}`); } } },",
+                  'flags: { breakable: 1 },')),
+)
 G34_ITEM_FACTS = (
     ('widelens', ('onSourceModifyAccuracyPriority: -2,',
                   "onSourceModifyAccuracy(accuracy) { if (typeof accuracy === 'number') { return this.chainModify([4505, 4096]); } },")),
@@ -1877,6 +1956,23 @@ YAWN_CONDITION = (
     "condition: { noCopy: true, // doesn't get copied by Baton Pass duration: 2, onStart(target, source) { "
     "this.add('-start', target, 'move: Yawn', `[of] ${source}`); }, onResidualOrder: 23, onEnd(target) { "
     "this.add('-end', target, 'move: Yawn', '[silent]'); target.trySetStatus('slp', this.effectState.source); }, },")
+# Step G42: Roost (data/moves.ts:15428-15463) heals the user (the heal column, the heal flag) and then, through its self
+# volatile, takes the Flying type off until the residual of order 25; its condition is the handler ROOST (the tail's
+# single_turn bit). Stomping Tantrum's basePowerCallback doubles its power when the user's last move result is `false`.
+# The generator checks both texts, whitespace aside.
+G42_HANDLERS = ['ROOST', 'STOMPING_TANTRUM']
+ROOST_SELF = "self: { volatileStatus: 'roost', },"
+ROOST_CONDITION = (
+    "condition: { duration: 1, onResidualOrder: 25, onStart(target) { if (target.terastallized) { "
+    "if (target.hasType('Flying')) { this.add('-hint', \"If a Terastallized Pokemon uses Roost, it remains Flying-type.\"); } "
+    "return false; } this.add('-singleturn', target, 'move: Roost'); }, onTypePriority: -1, "
+    "onType(types, pokemon) { this.effectState.typeWas = types; return types.filter(type => type !== 'Flying'); }, },")
+STOMPING_TANTRUM_CALLBACKS = {
+    'basePowerCallback': "basePowerCallback(pokemon, target, move) { if (pokemon.moveLastTurnResult === false) { "
+                         "this.debug('doubling Stomping Tantrum BP due to previous move failure'); "
+                         "return move.basePower * 2; } return move.basePower; },",
+}
+
 # Step G25 (Electric Terrain, Misty Terrain): the two terrain moves keep their `terrain` field and their condition as handlers of
 # their own that the turn code implements (setTerrain, then the terrain's rules in the damage chain and in SetStatus and
 # TryAddVolatile), and Rising Voltage and Terrain Pulse keep the callback that reads the terrain (base power; type and
@@ -1986,6 +2082,8 @@ SPECIAL_P = dict(SPECIAL_C, **{
     'spikyshield': ('SPIKY_SHIELD', {'onPrepareHit', 'onHit'}),           # G20: Protect that damages a contact attacker
     'taunt': ('TAUNT', set()),                                            # G31: bars the Status moves for three or four turns
     'yawn': ('YAWN', {'onTryHit'}),                                       # G31: sleep at the end of the next turn
+    'roost': ('ROOST', set()),                                            # G42: heals, then the Flying type is off for the turn
+    'stompingtantrum': ('STOMPING_TANTRUM', {'basePowerCallback'}),        # G42: base power x2 after a failed last move
     'auroraveil': ('AURORA_VEIL', {'onTry'}),                             # G20: a screen against both categories, in snow only
     'trick': ('TRICK', {'onTryImmunity', 'onHit'}),                         # G29: swaps the two items
     'switcheroo': ('SWITCHEROO', {'onTryImmunity', 'onHit'}),               # G29: Trick's text with its own name in the lines
@@ -2068,12 +2166,13 @@ G44_FACTS = (
     ('triattack', ['accuracy: 100,', 'basePower: 80,', 'category: "Special",', 'priority: 0,',
                    'flags: { protect: 1, mirror: 1, metronome: 1 },', 'target: "normal",', 'type: "Normal",']),
 )
-SPECIAL_IDS_P = SPECIAL_IDS_C + G2_HANDLERS + WEATHER_HANDLERS + G16_HANDLERS + G15_HANDLERS + G19_HANDLERS + G20_HANDLERS + G20_PROTECT_HANDLERS + G28_HANDLERS + G30_HANDLERS + G32_HANDLERS + G34_HANDLERS + G27_HANDLERS + G25_HANDLERS + G26_HANDLERS + G33_HANDLERS + G38_HANDLERS + G29_HANDLERS + G39_HANDLERS + G31_HANDLERS + G48_HANDLERS + G44_HANDLERS + G50_HANDLERS + ['UNMODELED']
+SPECIAL_IDS_P = SPECIAL_IDS_C + G2_HANDLERS + WEATHER_HANDLERS + G16_HANDLERS + G15_HANDLERS + G19_HANDLERS + G20_HANDLERS + G20_PROTECT_HANDLERS + G28_HANDLERS + G30_HANDLERS + G32_HANDLERS + G34_HANDLERS + G27_HANDLERS + G25_HANDLERS + G26_HANDLERS + G33_HANDLERS + G38_HANDLERS + G29_HANDLERS + G39_HANDLERS + G31_HANDLERS + G48_HANDLERS + G44_HANDLERS + G50_HANDLERS + G42_HANDLERS + ['UNMODELED']
 # Step G10 made two of these handlers data: Scald (thawsTarget) and Recover (heal) are read into the second flags
 # byte (bit 4, thaws the target) and the heal column, and have the special NONE; their ids stay defined (the ids after
 # them keep their values). First Impression and Low Kick keep theirs: the turn code implements them.
 POOL_COLUMN_KEYS = {'thawsTarget', 'heal'}
 G2_OWNED_FIELDS = {
+    'ROOST': {'self': ROOST_SELF},
     'ENCORE': {'volatileStatus': "volatileStatus: 'encore',"},
     'WIDE_GUARD': {'sideCondition': "sideCondition: 'wideguard',"},
     'AURORA_VEIL': {'sideCondition': "sideCondition: 'auroraveil',"},
@@ -2107,7 +2206,7 @@ G2_OWNED_FIELDS = {
 # draws the roll and does nothing else; the engine's special case is in dfi_run_move.
 G2_OWNED_SECONDARY = {'STONE_AXE': 'secondary: {}, // Sheer Force-boosted', 'CEASELESS_EDGE': 'secondary: {}, // Sheer Force-boosted', 'TRI_ATTACK': "secondary: { chance: 20, onHit(target, source) { const status = this.sample(['brn', 'par', 'frz']); "
                   "target.trySetStatus(status, source); }, },"}
-G2_OWNED_CONDITION = {'ENCORE', 'WIDE_GUARD', 'GLAIVE_RUSH', 'AURORA_VEIL', 'SPIKY_SHIELD', 'RAGE_POWDER', 'DISABLE',
+G2_OWNED_CONDITION = {'ROOST', 'ENCORE', 'WIDE_GUARD', 'GLAIVE_RUSH', 'AURORA_VEIL', 'SPIKY_SHIELD', 'RAGE_POWDER', 'DISABLE',
                       'ELECTRIC_TERRAIN', 'MISTY_TERRAIN', 'PERISH_SONG', 'IMPRISON', 'TAUNT', 'YAWN'}
 # Step G8 (Throat Chop and Psychic Noise): the two secondaries become modelled kinds, and the column that their
 # consumers read is the move's second flags byte (the first is full): the `sound` flag (Throat Chop bars the sound
@@ -2264,7 +2363,7 @@ HANDLER_IDS = ['NONE', 'UNMODELED']
 # still has the UNMODELED handler fails duoforge.data.pool_tables. G4: Focus Sash, Rock Head. G12: Floettite (the Mega
 # Stone of Floette-Eternal), Flower Veil and Fairy Aura. G14: Rough Skin, Poison Touch and Thermal Exchange. G16: Sticky Hold (Knock Off reads it by id). AC1: Trace (the entry copy of a foe's ability). G15: Psychic Seed (Grassy Seed's rule for the other terrain). G22: Sand Rush, Swift Swim, Slush Rush and Chlorophyll (the doubled Speed in their weather, tools/datagen/pool_families.js ENGINE_ORDER), Sand Rush's immunity to Sandstorm, Inner Focus (no flinch, no Intimidate drop) and Liquid Voice (a sound move becomes Water). G23-C: Levitate (isGrounded and the Ground immunity). G49: Muscle Band, Wise Glasses (base power by category) and Bright Powder (the target's accuracy).
 ENGINE_ROWS = {'items': ['focussash', 'floettite', 'psychicseed', 'electricseed', 'mistyseed', 'expertbelt', 'ejectbutton',
-                         'widelens', 'muscleband', 'wiseglasses', 'brightpowder', 'redcard', 'damprock', 'heatrock',
+                         'widelens', 'muscleband', 'wiseglasses', 'brightpowder', 'redcard', 'lumberry', 'mentalherb', 'damprock', 'heatrock',
                          'smoothrock', 'icyrock', 'terrainextender'],
                'abilities': ['rockhead', 'flowerveil', 'fairyaura', 'roughskin', 'poisontouch', 'thermalexchange',
                              'stickyhold', 'trace', 'levitate', 'sandrush', 'swiftswim', 'slushrush', 'chlorophyll',
@@ -2283,7 +2382,8 @@ ENGINE_ROWS = {'items': ['focussash', 'floettite', 'psychicseed', 'electricseed'
                              'justified',
                              'limber',
                              'solarpower',
-                             'regenerator', 'toxicdebris', 'shadowtag', 'suctioncups', 'guarddog']}
+                             'regenerator', 'toxicdebris', 'shadowtag', 'suctioncups', 'guarddog',
+                             'steadfast', 'weakarmor', 'telepathy', 'voltabsorb', 'punkrock', 'moxie', 'synchronize', 'oblivious', 'keeneye', 'bigpecks']}
 # The moves of the whole pool that the turn code pivots with a switch flag of their own (dfi_pivot_moves,
 # src/state/closure_member.c) beyond Flip Turn and U-turn, which are rows of the steps. Empty: Volt Switch comes with the
 # step that gives it a flag value, and adds its id here.
@@ -2935,8 +3035,8 @@ G46_ITEM_FACTS = (
 def check_g34_facts(abil_ts, champ_abil, items_ts, champ_items):
     """Steps G34, G35, Mega batch 2 and G39: every fact of G34_ABILITY_FACTS, G35_ABILITY_FACTS, MEGA2_ABILITY_FACTS, G39_ABILITY_FACTS and G34_ITEM_FACTS is in the pinned entry, whitespace aside, and the
     Champions mod has no entry of its own for it (an override would change what the engine reads)."""
-    for kind, facts_by_id, src, champ in (('ability', G34_ABILITY_FACTS + G35_ABILITY_FACTS + MEGA2_ABILITY_FACTS + G39_ABILITY_FACTS + G41_ABILITY_FACTS + G46_ABILITY_FACTS, abil_ts, champ_abil),
-                                          ('item', G34_ITEM_FACTS + G46_ITEM_FACTS, items_ts, champ_items)):
+    for kind, facts_by_id, src, champ in (('ability', G34_ABILITY_FACTS + G35_ABILITY_FACTS + MEGA2_ABILITY_FACTS + G39_ABILITY_FACTS + G41_ABILITY_FACTS + G45_ABILITY_FACTS + G46_ABILITY_FACTS + G47_ABILITY_FACTS + G51_ABILITY_FACTS, abil_ts, champ_abil),
+                                          ('item', G34_ITEM_FACTS + G46_ITEM_FACTS + G47_ITEM_FACTS, items_ts, champ_items)):
         for rid, facts in facts_by_id:
             e = src.entry(rid)
             if e is None:

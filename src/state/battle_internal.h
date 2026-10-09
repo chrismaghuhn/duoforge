@@ -228,8 +228,15 @@ typedef struct dfi_side {
 #define DFI_MOVE_RESULT_TRUE 1u
 #define DFI_MOVE_RESULT_FALSE 2u
 #define DFI_MOVE_RESULT_NULL 3u
-#define DFI_TAIL_MOVE_RESULT_MASK 0x0Fu /* bits 4-7 are zero */
 #define DFI_MOVE_RESULT_LAST_SHIFT 2u
+/* Step G42 (Stomping Tantrum, Roost): the result of the occupant's move was not classified exactly (an engine exit that
+ * the classifier does not map to the pin's value, turn.c dfi_move_result_*): bit 4 while this turn runs, bit 5 for the last
+ * turn once the turn ends (dfi_end_turn shifts it with the result). A set bit means the result bits of its slot are zero.
+ * Stomping Tantrum refuses (E_UNSUPPORTED) when its user's last result carries bit 5; nothing else reads it. This is an
+ * internal bit of rev 4 (no public value): the layout stays 288 bytes, and bits 6-7 are zero. */
+#define DFI_MOVE_RESULT_UNCLASSIFIED_NOW 0x10u
+#define DFI_MOVE_RESULT_UNCLASSIFIED_LAST 0x20u
+#define DFI_TAIL_MOVE_RESULT_MASK 0x3Fu /* bits 6-7 are zero */
 /* single_turn: one-turn volatiles that the position's flags byte (full) cannot hold; both end in the residual of the turn, on
  * switch-out and on faint. RAGE_POWDER belongs to the Follow Me flag (the move that set it also sets that flag). */
 #define DFI_SINGLE_TURN_RAGE_POWDER 1u

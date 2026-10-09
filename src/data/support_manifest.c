@@ -362,6 +362,10 @@ const dfi_support_manifest dfi_support = {
             [DFI_MOVE_TERRAINPULSE] = 1u,
             [DFI_MOVE_TAUNT] = 1u,
             [DFI_MOVE_YAWN] = 1u,
+            /* Step G42: Roost (the heal, then the Flying type is off for the turn) and Stomping Tantrum (base power x2 after a
+             * FALSE last move result; the move_result of tail rev 4, decision 0015 section 7). */
+            [DFI_MOVE_ROOST] = 1u,
+            [DFI_MOVE_STOMPINGTANTRUM] = 1u,
             /* Step G50: Double Shock (Pawmot only: the Electric and Fighting types become ??? and Fighting; decision 0025). */
             [DFI_MOVE_DOUBLESHOCK] = 1u,
             /* Step G32: Eruption and Water Spout (power by the user's HP), Life Dew (the user and its ally), Body Press, Foul Play
@@ -532,6 +536,16 @@ const dfi_support_manifest dfi_support = {
             [DFI_ABILITY_SHADOWTAG] = 1u, /* step G41 */
             [DFI_ABILITY_SUCTIONCUPS] = 1u, /* step G46: a DragOut blocker (the forced switch is not made) */
             [DFI_ABILITY_GUARDDOG] = 1u,    /* step G46: a DragOut blocker */
+            [DFI_ABILITY_STEADFAST] = 1u, /* step G45: a flinch that stops the move raises Speed by 1 */
+            [DFI_ABILITY_WEAKARMOR] = 1u, /* step G45: a Physical hit lowers Defense by 1 and raises Speed by 2, each hit */
+            [DFI_ABILITY_TELEPATHY] = 1u, /* step G45: a damaging move of an ally is stopped */
+            [DFI_ABILITY_VOLTABSORB] = 1u, /* step G45: an Electric move heals a quarter of the HP, or is stopped */
+            [DFI_ABILITY_PUNKROCK] = 1u, /* step G45: sound moves: x1.3 for the holder, x0.5 against it */
+            [DFI_ABILITY_MOXIE] = 1u, /* step G45: a Move's knock-out raises Attack by the number of faints it caused at once */
+            [DFI_ABILITY_SYNCHRONIZE] = 1u, /* step G47: the status passed back to a source (data/abilities.ts:4857-4871) */
+            [DFI_ABILITY_OBLIVIOUS] = 1u,   /* step G47: Taunt, and Intimidate's Attack drop (data/abilities.ts:3008-3040) */
+            [DFI_ABILITY_KEENEYE] = 1u,   /* step G51: the base ability of Pidgeot (with Pidgeotite), an engine row */
+            [DFI_ABILITY_BIGPECKS] = 1u,  /* step G51: the other base ability of Pidgeot, an engine row */
         },
     .items =
         {
@@ -591,6 +605,20 @@ const dfi_support_manifest dfi_support = {
             [DFI_ITEM_METAGROSSITE] = 1u,
             [DFI_ITEM_LUCARIONITEZ] = 1u,
             [DFI_ITEM_FROSLASSITE] = 1u,
+            /* Step G51 (Mega batch 4, mark only for the stones; Keen Eye and Big Pecks are engine rows): ten Mega Stones whose Mega
+             * ability is marked already (Infiltrator, Solar Power, Adaptability, Regenerator, Iron Fist, Levitate, Refrigerate,
+             * Aerilate, Prankster, No Guard) and whose base forme's ability is marked: Chandelurite, Houndoominite, Lucarionite (not
+             * the Z stone), Dragalgite, Crabominite, Chimechite, Glalitite, Pinsirite, Banettite and Pidgeotite. */
+            [DFI_ITEM_CHANDELURITE] = 1u,
+            [DFI_ITEM_HOUNDOOMINITE] = 1u,
+            [DFI_ITEM_LUCARIONITE] = 1u,
+            [DFI_ITEM_DRAGALGITE] = 1u,
+            [DFI_ITEM_CRABOMINITE] = 1u,
+            [DFI_ITEM_CHIMECHITE] = 1u,
+            [DFI_ITEM_GLALITITE] = 1u,
+            [DFI_ITEM_PINSIRITE] = 1u,
+            [DFI_ITEM_BANETTITE] = 1u,
+            [DFI_ITEM_PIDGEOTITE] = 1u,
             /* Step G43 (Mega batch 3, mark only): ten Mega Stones whose Mega ability is marked already (Multiscale, Adaptability,
              * Speed Boost, Sharpness, Electric Surge, Scrappy, Trace, Technician, Inner Focus) and whose base formes' abilities are
              * marked: Dragoninite, Glimmoranite, Blazikenite, Absolite Z, Raichunite X, Lopunnite, Alakazite, Meowsticite (both
@@ -619,6 +647,8 @@ const dfi_support_manifest dfi_support = {
             [DFI_ITEM_SILKSCARF] = 1u,
             [DFI_ITEM_SILVERPOWDER] = 1u,
             [DFI_ITEM_SOFTSAND] = 1u,
+            [DFI_ITEM_LUMBERRY] = 1u,   /* step G47: a status or a confusion is cured by the berry (data/items.ts:3537-3560) */
+            [DFI_ITEM_MENTALHERB] = 1u, /* step G47: the four volatiles (data/items.ts:3889-3926) */
             [DFI_ITEM_SPELLTAG] = 1u,
             [DFI_ITEM_TWISTEDSPOON] = 1u,
             [DFI_ITEM_BABIRIBERRY] = 1u,
@@ -658,6 +688,10 @@ const dfi_support_manifest dfi_support = {
      * Step AC1: the ability change of Trace (bit 2: position_ext.ability_now, public, verified against the ac1 battles in
      * duoforge.state.pool_ac1). Every other source of a changed ability stays E_UNSUPPORTED (an unmarked move or
      * ability), so the bit is exact: a zero is "no change". */
+    /* Step G42: Roost (bit 40: the ROOST volatile of the position, public: the -singleturn line of Roost, set at its heal and
+     * ended in the residual of order 25, verified against the g42 battles). MOVE_FAILED (bit 41) stays clear: the field is exact
+     * only when the last result is classified, and an unclassified exit (decision 0015 section 7) reads 0 where the reference
+     * may read 1. The expression stays plain terms: python/duoforge_live/lines.py parses it. */
     .view_ext_features = ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_THROAT_CHOP) |
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_HEAL_BLOCK) |
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_TYPE_CHANGE) |
@@ -682,5 +716,5 @@ const dfi_support_manifest dfi_support = {
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_STEALTH_ROCK) |
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_SPIKES) |
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_TOXIC_SPIKES) |
-                         ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_STICKY_WEB),
+                         ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_STICKY_WEB) | ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_ROOST),
 };

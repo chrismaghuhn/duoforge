@@ -254,7 +254,10 @@ static void check_view(df_test *t, const duoforge_context *ctx)
                 /* w8_sand_soak has Soaked positions (TYPE_CHANGED, type_now: step G11's fields, checked against the
                  * protocol by duoforge.state.pool_g11 for its own battles); the weather needs no other field. */
                 if (strcmp(names[n], "w8_sand_soak") != 0) {
-                    DF_CHECK(t, memcmp(&ext, &want, sizeof want) == 0);
+                    for (uint32_t g42f = 0u; g42f < 4u; ++g42f) { /* step G42: move_failed is the last move result FALSE */
+                        const uint32_t g42last = ((uint32_t)b->tail.sides[g42f / 2u].positions[g42f % 2u].move_result >> 2) & 3u;
+                        want.sides[g42f / 2u].positions[g42f % 2u].move_failed = g42last == 2u ? 1u : 0u;
+                    }                    DF_CHECK(t, memcmp(&ext, &want, sizeof want) == 0);
                 } else {
                     DF_CHECK(t, ext.supported == want.supported && ext.epoch == want.epoch);
                 }
