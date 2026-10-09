@@ -4433,6 +4433,17 @@ static int dfi_queued_move_index(struct duoforge_battle *b, uint32_t flat)
     return -1;
 }
 
+/* The queue record at `idx` goes to the front; the records before it move one place back, the rest keep their places
+ * (battle-queue.ts prioritizeAction: splice out, unshift). */
+static void dfi_queue_move_to_front(struct duoforge_battle *b, uint32_t idx)
+{
+    const dfi_queue_record q = b->queue[idx];
+    for (uint32_t i = idx; i > 0u; --i) {
+        b->queue[i] = b->queue[i - 1u];
+    }
+    b->queue[0] = q;
+}
+
 /* After You (step G62, decision 0015 entry 5az; data/moves.ts:195-218), onHit of its target: `if (this.activePerHalf === 1)
  * return false` is singles only, so the format is doubles and it never fails there. The target's queued move (willMove) is
  * prioritized (prioritizeAction: its order class becomes 3, the reserve DFI_QRES_PRIORITIZED) and the line is
@@ -4452,7 +4463,10 @@ static duoforge_status dfi_run_after_you(dfi_run *r, uint32_t user, uint32_t mov
         dfi_fail_still(r, user);
         return DUOFORGE_OK;
     }
-    r->b->queue[idx].reserve = DFI_QRES_PRIORITIZED;
+    /* prioritizeAction (sim/battle-queue.ts:282-292) removes the action and unshifts it: the front of the list, the rest in their
+     * order. The sort's ties read the list's positions (a selection sort that swaps), so the record moves too. */
+    dfi_queue_move_to_front(r->b, (uint32_t)idx);
+    r->b->queue[0].reserve = DFI_QRES_PRIORITIZED;
     const duoforge_event e = dfi_ev(DUOFORGE_EVENT_ACTIVATE, t, DUOFORGE_CAUSE_MOVE, move_id, DUOFORGE_NO_POSITION);
     dfi_emit(r, &e);
     return DUOFORGE_OK;
