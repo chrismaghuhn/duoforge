@@ -4983,7 +4983,7 @@ static duoforge_status dfi_run_substitute(dfi_run *r, uint32_t user)
         dfi_emit(r, &e);
         return DUOFORGE_OK;
     }
-    /* source.hp <= source.maxhp / 4 (a float compare, so 4 * hp <= maxhp) or maxhp === 1 (data/moves.ts:18319) */
+    /* source.hp <= source.maxhp / 4 (a fractional compare, so 4 * hp <= maxhp) or maxhp === 1 (data/moves.ts:18319) */
     if (4u * (uint32_t)m->hp <= (uint32_t)m->hp_max || m->hp_max == 1u) {
         e = dfi_ev(DUOFORGE_EVENT_FAIL, user, DUOFORGE_CAUSE_MOVE, DFI_MOVE_SUBSTITUTE, DUOFORGE_NO_POSITION);
         e.detail = (uint8_t)DUOFORGE_FAIL_SUBSTITUTE_WEAK;
@@ -5032,7 +5032,7 @@ static duoforge_status dfi_substitute_takes(dfi_run *r, uint32_t user, uint32_t 
     if (dealt > (uint32_t)*sub) {
         dealt = (uint32_t)*sub; /* the damage is capped at the Substitute's HP (data/moves.ts:18351-18353) */
     }
-    *sub = (uint16_t)((uint32_t)*sub - dealt);
+    *sub = (uint16_t)((uint32_t)*sub - dealt); /* wide-operands-reviewed: dealt <= *sub <= 65535, the difference fits 16 bits */
     if (*sub == 0u) {
         /* the break: `-ohko` for a one-hit KO first (no row of this build is one: the generator leaves OHKO moves UNMODELED), then
          * removeVolatile's -end line (onEnd) */
