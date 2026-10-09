@@ -78,6 +78,7 @@ class Data:
         self._mega = [link(info["mega_species"]) for info in infos]
         self._pp_max = [m["pp"] for m in moves]
         self._target_class = [m["target_class"] for m in moves]
+        self._move_flags = [m["flags"] for m in moves]  # DUOFORGE_MOVE_STATIC_FLAG_*
 
     def team(self, text):
         """A paste as trace_to_c.parse_team reads it: member dicts with species, gender, nature, sp, ability
@@ -150,6 +151,10 @@ class Data:
 
     def pp_max(self, move_id):
         return self._pp_max[move_id]
+
+    def move_flags(self, move_id):
+        """The DUOFORGE_MOVE_STATIC_FLAG_* bits of a move (duoforge_move_static)."""
+        return self._move_flags[move_id]
 
     def target_type(self, move_id):
         """Showdown's target type of a move (the options of a synthetic request); ValueError for a target class
