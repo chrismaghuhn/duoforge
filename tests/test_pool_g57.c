@@ -443,6 +443,31 @@ static void test_a_protecting_holder_is_not_bounced(df_test *t)
     duoforge_context_destroy(ctx);
 }
 
+/* The bounced move is a useMove, not a runMove (data/abilities.ts magicbounce, sim/battle-actions.ts): it is no move action of
+ * the bouncer, so the bouncer's move-action count (which Fake Out reads) rises by its own move of the turn only. Espeon (side 1,
+ * position 0) bounces Ceruledge's Taunt and uses its own first move in the same turn: one move action, not two. (Lead, batch-1:
+ * closes G57's mutant M4.) */
+static void test_a_bounce_is_no_move_action_of_the_bouncer(df_test *t)
+{
+    const df_conf_battle *cb = must_find(t, "g57_mb_taunt");
+    if (cb == NULL) {
+        return;
+    }
+    duoforge_context *ctx = df_make_context(&df_config_pool);
+    duoforge_battle_setup setup;
+    build_setup(cb, &setup);
+    duoforge_battle *b = start(t, ctx, cb, &setup);
+    if (b != NULL) {
+        duoforge_slot_command cmd[2][2] = {{slot(0, DUOFORGE_TARGET_NONE), slot(0, 2)}, {slot(0, 0), slot(0, DUOFORGE_TARGET_NONE)}};
+        uint32_t bounces = 0u;
+        DF_CHECK_EQ_U64(t, turn(ctx, b, cmd, &bounces), DUOFORGE_OK);
+        DF_CHECK_EQ_U64(t, bounces, 1u);
+        DF_CHECK_EQ_U64(t, b->sides[1].positions[0].move_actions, 1u);
+        duoforge_battle_destroy(b);
+    }
+    duoforge_context_destroy(ctx);
+}
+
 int main(void)
 {
     df_test t;
@@ -458,5 +483,6 @@ int main(void)
     test_psychic_terrain_with_a_prankster_copy_stops_the_original(&t);
     test_a_taunt_is_bounced_once(&t);
     test_a_protecting_holder_is_not_bounced(&t);
+    test_a_bounce_is_no_move_action_of_the_bouncer(&t);
     return df_test_end(&t);
 }
