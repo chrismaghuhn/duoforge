@@ -1360,6 +1360,9 @@ function isBoostBlock(b) {
 const ENGINE_PIVOTS = ['uturn', 'voltswitch'];
 // Step G13: the moves that are another move's handler under another name (gen_closure.py PROTECT_COPIES).
 const PROTECT_COPIES = {detect: 'protect'};
+// Step G46: the four forced-switch moves; their forceSwitch: true is modelled (gen_closure.py G46_FORCE_SWITCH_MOVES).
+const G46_FORCE_SWITCH_MOVES = ['roar', 'whirlwind', 'dragontail', 'circlethrow'];
+
 function moveIsModelled(raw, id) {
     if (raw.selfSwitch !== undefined && !ENGINE_PIVOTS.includes(id)) {
         return false;
@@ -1367,6 +1370,10 @@ function moveIsModelled(raw, id) {
     for (const [key, value] of Object.entries(raw)) {
         // Step G13: Light of Ruin's tags (the Champions mod clears isNonstandard); no other tag value is read.
         if (key === 'tags' && JSON.stringify(value) === JSON.stringify(['Past Unobtainable'])) {
+            continue;
+        }
+        // Step G46: forceSwitch: true of the four moves of G46_FORCE_SWITCH_MOVES, and nothing else of it.
+        if (key === 'forceSwitch' && value === true && G46_FORCE_SWITCH_MOVES.includes(id)) {
             continue;
         }
         if (typeof value === 'function' || !MOVE_KEYS.has(key)) {
