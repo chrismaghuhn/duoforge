@@ -377,9 +377,6 @@ class Tracker:
             return
         if self._foe_members is None:
             raise ValueError(f"a battle line before both open team sheets: {line!r}")
-        if _kind(line) == "drag" and self.boundary() == PIVOT:
-            # Step G46: a forced switch arrives in the step of a pending PIVOT, which the view cannot represent.
-            raise lines.Stop("drag:during a pending PIVOT")
         self._register(line)
         maxhp = [{n: 100 for n in self._names[s]} for s in (0, 1)]
         own = self._member(self.side)
