@@ -189,7 +189,7 @@ static void test_constants(df_test *t)
                      ((uint64_t)1u << 14u) | ((uint64_t)1u << 25u) | /* step G31: Taunt and Yawn */
                      ((uint64_t)1u << 12u) | /* step G38: Imprison (bit 12) */
                      ((uint64_t)1u << 13u) | ((uint64_t)1u << 30u) | ((uint64_t)1u << 8u) | ((uint64_t)1u << 33u) | /* step G37: Stealth Rock, Spikes, Toxic Spikes, Sticky Web */
-                     ((uint64_t)1u << 38u))); /* step G54: Quick Guard (bit 38) */
+                     ((uint64_t)1u << 40u) | ((uint64_t)1u << 38u))); /* step G42: Roost (bit 40); step G54: Quick Guard (bit 38); MOVE_FAILED (bit 41) stays clear, see support_manifest.c */
 }
 
 /* The expected extension: all zero, and under POOL the header of the paired observation. */

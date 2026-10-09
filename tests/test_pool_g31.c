@@ -255,6 +255,10 @@ int main(void)
                         (tp->heal_block_turns != 0u ? (uint32_t)DUOFORGE_POSITION_EXT_HEAL_BLOCK : 0u);
                     exp.sides[flat / 2u].positions[flat % 2u].encore_slot = tp->encore_slot;
                 }
+                for (uint32_t flat = 0u; flat < 4u; ++flat) { /* step G42: move_failed is the last move result FALSE */
+                    const uint32_t last = ((uint32_t)b->tail.sides[flat / 2u].positions[flat % 2u].move_result >> 2) & 3u;
+                    exp.sides[flat / 2u].positions[flat % 2u].move_failed = last == 2u ? 1u : 0u;
+                }
                 if (!DF_CHECK(&t, memcmp(&ext[viewer], &exp, sizeof exp) == 0)) {
                     fprintf(stderr, "  %s step %u viewer %u: the extension differs from the protocol's\n", names[n], si,
                             viewer);
