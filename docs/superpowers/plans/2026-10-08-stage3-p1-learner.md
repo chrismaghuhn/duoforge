@@ -380,8 +380,47 @@ The [P1 plan](2026-10-08-stage3-p1-pilot.md) gives the collection loop to Learne
   - Task 6 `Ledger`;
   - `SelfPlay` / the batch runtime for the lockstep games.
 - Produces:
-  - `collect(manifest, model, params, opponents, out_dir, *, rounds, ledger=None, resume=False, stop=None) -> CollectResult(games, rows, targets, counters)`;
+  - `collect(manifest, model, params, pool, search, out_dir, *, rounds=None, max_steps=500, label_limit=None, budget=None, audit_threshold=None, workers=None, ledger=None, resume=False, stop=None, identity=None) -> CollectResult(games, rows, targets, counters, complete, next_round)`;
+  - `raw_draws(logps, legal, keys, seed)`, `distributions(model, params, obs, slots, mask, is_team)`, `pairing_of(manifest, pool, game_ids)`;
   - CLI `python -m duoforge_learn.collect_expert` with the same refusals as Task 5 (output outside the repository, pinned params-49333, exit 2).
+
+**Decisions agreed 2026-10-09 (binding for this task):**
+- **Self-play only in P1.** Both seats play the frozen collector network (params-49333 in production; any Model and params in tests). A league would be a separate owner decision.
+- **One game per environment per round.** `game_id = first_game_id + round * parallel_games + env`.
+  - A finished game does not start another episode inside the round: it stays idle under `Batch.step`'s `active` mask until every game of the round has ended.
+  - Its teams are `pairing.pairings(manifest.seed, game_ids, 0, pool.weights)`, keyed by the game id. Its battle is episode `round` of environment `env` of a batch seeded with `manifest.seed`. A game therefore depends on its id alone, never on worker count or environment order.
+- **The learner seat** of a game is `expert.learner_seat(game_id)`.
+- **Raw draws, both seats.**
+  - The student's raw action is drawn from its full legal distribution: `Model.full_joint_log_probs` at pair boundaries, the team head (360 actions, `Model.apply`'s log-softmax) at TEAM_SELECTION.
+  - The draw is an inverse CDF over the action ids in ascending order, at `u = word / 2**64` of `selection_word(DecisionKey(game_id, seat, request_epoch), manifest.seed, domain="raw")`.
+  - The opponent seat draws the same way with its own key (seat = 1 - learner seat). No other domain is used.
+  - `raw_logp` is the drawn action's log-probability under the full distribution. FORCED (one legal action) is logp 0.
+  - The pair distribution comes from one fixed-shape `Model.apply` pass over all `2 * parallel_games` rows per tick, masked to `-inf` at illegal ids. That is `full_joint_log_probs_traced`'s definition. A test checks it against `full_joint_log_probs`.
+- **Cut-off at `max_steps` (default 500, as SelfPlay).** A cut game is scored by the reference's tiebreak as SelfPlay scores it: `done = True` with the tiebreak's reward, and an unresolvable tiebreak is a loss. No bootstrap is used.
+  - `label_decision` gets `last_step=True` on the last step before the cut.
+  - A step the engine refuses with E_UNSUPPORTED ends the game as a loss, as in SelfPlay.
+  - Any other early stop (a stop request, a crash, a watchdog) discards the whole round, which is re-run. No truncated trajectory (`done = False` with a bootstrap, the C1 contract) is ever written by the normal run.
+- **Belief.** `manifest.belief_hash` must equal `search.table_info["sha256"]`. Production uses `honest.spread_table(ctx)` with the pinned 79 sources, sha256 `1795524c1e81d3857a26d6c99a194c536069df8d208d502413c3005ff75099d4`.
+- **Shards.**
+  - `write_manifest` runs once, at `out/manifest.json`.
+  - Shards go to `out/shards/round-RRRR-shard-SSSS.json`, which sorts in write order. Each holds at most `MAX_SHARD_ROWS` rows.
+  - A trajectory may span shards of its round; `distill_data.load` reassembles it.
+- **Resume at round boundaries only.**
+  - `out/collect-state.json` is written atomically after every completed round, and once at the start. It holds:
+    - the next round;
+    - the label cursor (`cursor_bytes`);
+    - the teacher checkpoint (`expert.teacher_checkpoint`, taken against the next round's fresh roots);
+    - the counters, the shard list with SHA-256s, the seed;
+    - the identity: manifest, teacher configuration, cut-off, label cap, shard size, encoder, network and search digests, belief, exclusions, pool, and the CLI's checkpoint hash.
+  - A resume restores the teacher with `restore_teacher` into a fresh search. It refuses another identity or manifest, and missing or altered shards.
+  - The interrupted round's shards are moved to `out/discarded/attempt-NNNN/`, kept for diagnosis as EXPERT_DATA.md asks of failed writes and never read as data. The round is replayed from its start; its keys make it identical.
+- **Compute ledger.** It is optional, phase `generate`. The collector's own network pass runs in a `Ledger.device()` section ending in `block_until_ready`.
+  - Counters: eligible, selected, admitted, targets, public refusals, work exhausted, capped, forced, unselected, unrequested, audits, games, rows, cuts, unresolved, engine-unsupported.
+- **CLI.** `--init`, `--manifest`, `--out`, `--rounds`, `--workers` (must equal the manifest's), `--max-steps`, `--teams`/`--team-weights`/`--teams-root`, `--ledger`, `--resume`, `--allow-other-init` (tests only, recorded in the identity).
+  - It refuses `--out` inside the repository and an init whose SHA-256 is not params-49333's.
+  - It also refuses a manifest whose `checkpoint_hash` is not the init file's SHA-256, or whose `pool_hash` is not `pool_digest(pool)`.
+  - Exit 0 is complete, 3 is stopped by a signal (resume with `--resume`), 2 is a refusal.
+- **Tests only:** `label_limit` below 16384 (the initial `LabelCursor.remaining`) and a smaller `SHARD_ROWS`. Production keeps the manifest's 16384 and `MAX_SHARD_ROWS`.
 
 **Per logical tick of the `parallel_games` lockstep games:**
 1. **Encode.** Encode every game's learner row, acting or waiting, with `logical_tick` = its step index in the game. The boundary (TURN, REPLACEMENT, PIVOT, TEAM_SELECTION) and the legal masks come from the native request; Python infers no rule.
@@ -397,18 +436,18 @@ The [P1 plan](2026-10-08-stage3-p1-pilot.md) gives the collection loop to Learne
    - waiting → `None`.
 
    Then `commit_tick` with the outcomes. No actor advances before the whole tick is committed.
-5. **Opponents.** The opponent seat plays the frozen self-play/league policy. Its rows are never stored.
+5. **Opponents.** The opponent seat plays the frozen collector network (self-play only, see above). Its rows are never stored.
 6. **Step.** Step the engine, then record `reward`, `done` and `collector_value` (params-49333's value of the learner row).
-   - A game cut at `max_steps` is truncated: its last row has `done = False`, and its `bootstrap` is the value after the last step.
+   - A game cut at `max_steps` is scored by the tiebreak with `done = True` (decision above; this replaces the first draft's truncation with a bootstrap).
 7. **Write.** Build the rows with `teacher_row(decision, step, manifest)`. Write a shard whenever `MAX_SHARD_ROWS` are pending. `write_manifest` runs once at the start.
 
 **Resume and determinism:**
 - The collection state (the label cursor, the round, shards written, counters, RNG keys, M12's teacher history) is saved at **round boundaries**.
-- An interrupted round is re-run from its start: its partial shards are deleted, and its keys make it identical. No engine snapshot is needed.
+- An interrupted round is re-run from its start: its partial shards are set aside (`out/discarded/`), and its keys make it identical. No engine snapshot is needed.
 - Nothing depends on worker count, arrival order or timing. Admission is ordered by logical id inside `admit_tick`.
 - The ledger phase is `generate`. The wall watchdog aborts an incomplete run and never chooses raw on time.
 
-- [ ] **Step 1: Write the failing tests** (a tiny configuration: a few games, stub search budgets, CPU):
+- [ ] **Step 1: Write the failing tests.** The configuration is P1-sized where the manifest pins it: 512 games per round, K = M = 8, W = 16, capacity 1024. It is kept small elsewhere: a cut-off of 24 steps, a label cap of 12, 2500-row shards, the deterministic NumPy network of `test_expert_teacher`, CPU.
   - `test_collect_is_deterministic_and_round_trips`: two collections with one seed give byte-identical shard files. `distill_data.load` reads them, so ticks are contiguous, there is one seat per game and `done` only on the last row.
   - `test_raw_draw_is_keyed_and_follows_the_full_policy`: over 20000 keys on a fixed 3-action row, the frequencies match `exp(logp)` within 4 binomial standard deviations. The draw does not depend on batch grouping.
   - `test_resume_at_a_round_boundary_equals_uninterrupted`: a stop in round 2 followed by a resume gives byte-identical shards and the same label cursor.
@@ -417,6 +456,7 @@ The [P1 plan](2026-10-08-stage3-p1-pilot.md) gives the collection loop to Learne
     - FORCED rows appear exactly at one legal action;
     - waiting rows are UNREQUESTED;
     - no TARGET exists without a stored target.
+  - `test_cli_refusals_exit_2`: an output inside the repository, another init than params-49333, and a manifest pinning another checkpoint each exit 2.
 - [ ] **Step 2: Run them.** `python -m unittest test_collect_expert -v`. Expected: **ERROR**, no module.
 - [ ] **Step 3: Implement `collect` and the CLI.**
 - [ ] **Step 4: Run them.** Expected: **OK**.

@@ -16,7 +16,8 @@ from unittest import mock
 import numpy as np
 
 import duoforge
-from duoforge import _layout, teams
+from duoforge import _layout, features, teams
+from duoforge_learn.selfplay import TEAM_ACTIONS
 
 C = _layout.CONSTANTS
 MAX_STEPS = 24  # most games of the near-uniform network end by then; the rest are cut and scored by tiebreak
@@ -58,7 +59,22 @@ class Collector(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         from python.tests.test_expert_teacher import FoeSensitiveNet
-        cls.net = FoeSensitiveNet()
+
+        class RowLocalNet(FoeSensitiveNet):
+            """test_expert_teacher's network with each row's slot term its own (np.resize there spreads one row's
+            slot terms over the next rows of a batch), so a row's outputs do not depend on its batch."""
+
+            def apply(self, params, obs, slots, mask):
+                obs = np.asarray(obs, np.float32)
+                b = obs.shape[0]
+                legal = np.asarray(mask, bool).reshape(b, -1)
+                slot_term = np.asarray(slots, np.float32).reshape(b, -1, features.SLOT_FEATURES) @ params["slot"]
+                pair = obs @ params["pair"] + np.tile(slot_term, (1, 1024 // slot_term.shape[1]))
+                pair = self._log_softmax(pair, legal | ~legal.any(axis=1, keepdims=True))
+                team = self._log_softmax(obs @ params["team"], np.ones((b, TEAM_ACTIONS), bool))
+                return pair, team, np.tanh(obs @ params["value"])
+
+        cls.net = RowLocalNet()
         cls.ctx = duoforge.Context(C["DUOFORGE_DATA_KIND_POOL"])
         cls.manifest = _manifest()
         cls.tmp = tempfile.TemporaryDirectory(prefix="duoforge-collect-")
@@ -107,9 +123,15 @@ class Collector(unittest.TestCase):
         self.assertEqual(sorted(base), sorted(base, key=lambda n: (int(n[6:10]), int(n[17:21]))))  # write order
         self.assertTrue(all(n.startswith(("round-0000-", "round-0001-")) for n in base))
         # Another collection with the same inputs, on another number of native workers: the same bytes.
+        from duoforge_learn import ledger
         again = self.root / "again"
-        result = self.collect(again, workers=1)
+        book = ledger.Ledger(self.root / "ledger.json")
+        result = self.collect(again, workers=1, ledger=book)
         self.assertEqual(self.files(again), base)
+        # The generation phase is charged: CPU core-seconds and the network pass's device sections.
+        saved = __import__("json").loads((self.root / "ledger.json").read_text())
+        self.assertGreater(saved["phases"]["generate"]["cpu_core_seconds"], 0)
+        self.assertGreater(saved["phases"]["generate"]["gpu_seconds"], 0)
         self.assertEqual(result.counters, self.base_result.counters)
         self.assertEqual(ed.read_manifest(again / "manifest.json"), self.manifest)
         # Learner v2's loader reads them: complete trajectories, one learner seat per game, done on the last row.
@@ -293,6 +315,31 @@ class Collector(unittest.TestCase):
         raw = next(r for r in rows if r.status is status.UNSELECTED and r.boundary == "TURN")
         pair = self.net.apply(self.net.params, raw.obs[None], raw.slots[None], raw.legal_mask[None])[0][0]
         self.assertAlmostEqual(raw.behavior_logp, float(pair[raw.action]), delta=1e-5)
+
+
+class Cli(unittest.TestCase):
+    def test_cli_refusals_exit_2(self):
+        import contextlib
+        import io
+        from duoforge_learn import collect_expert as ce
+        from duoforge_search import expert_data as ed
+        repo = Path(__file__).resolve().parents[2]
+        with tempfile.TemporaryDirectory(prefix="duoforge-collect-cli-") as tmp:
+            tmp = Path(tmp)
+            init = tmp / "params-other.npz"
+            init.write_bytes(b"not params-49333")
+            ed.write_manifest(tmp / "manifest.json", _manifest())
+            cases = {"inside the repository": ["--out", str(repo / "collect-out")],
+                     "params-49333": ["--out", str(tmp / "out")],
+                     "pins checkpoint": ["--out", str(tmp / "out"), "--allow-other-init"]}
+            for cause, extra in cases.items():
+                err = io.StringIO()
+                with self.subTest(cause), contextlib.redirect_stderr(err):
+                    code = ce.main(["--init", str(init), "--manifest", str(tmp / "manifest.json"), *extra])
+                    self.assertEqual(code, 2)
+                    self.assertIn(cause, err.getvalue())
+            self.assertFalse((tmp / "out").exists())
+            self.assertFalse((repo / "collect-out").exists())
 
 
 if __name__ == "__main__":
