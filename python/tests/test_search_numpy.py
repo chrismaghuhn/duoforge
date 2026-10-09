@@ -1101,6 +1101,10 @@ class SpreadSources(unittest.TestCase):
                 index["teams"].append({"id": "PP_ZZZZWIDENTEST0", "sha256": index["teams"][0]["sha256"]})
                 (copy / "index.json").write_text(json.dumps(index), encoding="utf-8")
                 self.assertEqual(honest.spread_table(ctx, copy)[2]["sha256"], info["sha256"])
+                # An explicitly chosen registry (preview_ab --belief-root) reads all of its stated teams.
+                every = honest.spread_table(ctx, copy, sources=None)[2]
+                self.assertEqual(len(every["sources"]), 80)
+                self.assertNotEqual(every["sha256"], info["sha256"])
                 index["teams"] = [t for t in index["teams"] if t["id"] != honest.SPREAD_SOURCES[-1]]
                 (copy / "index.json").write_text(json.dumps(index), encoding="utf-8")
                 with self.assertRaisesRegex(SearchError, "pinned"):
