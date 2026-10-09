@@ -176,6 +176,10 @@ The random-point sleep/confusion mixture in section 4 is superseded. Schema 3 do
 
 Review clarification: back-off level 4 compares exact nature ids, as the NumPy table implements; level 5 uses all remaining source sets. A redraw advances from the original eligible level towards level 5. The stronger exact-nature match is intentional; no nature-rule implementation is hidden in Python.
 
+## Step G46: party_order (amendment, 2026-10-09)
+
+The side.pokemon order (decision 0015 §7) is information the switches reveal, not the whole state. Per side: own side exact; foe side from the hypothesis's brought order: the public record writes the foe's entries 2..5 as `DFI_PARTY_HIDDEN` (7), as it masks the pick order past the leads, and `duoforge_battle_from_view` builds the foe's party from its visible actives (entries 0 and 1) and the hypothesis's pick order, never from the true state. The honest search reads only the public record and the hypothesis, so it never sees the foe's true bench order. Test: `test_party_order_information_safety` in `tests/test_view.c` (varying the foe's true bench order leaves the public record, the observation and the honest world's encoding byte for byte unchanged). The round-trip check in `check_state` compares every byte with the true state except the foe's bench order, which it checks against the hypothesis.
+
 ## PR E: review notes
 
 Review notes for E: stale/missing turn-start records count as unreconstructible. Every stopped-world reproduction includes the search seed, exclusion, preview and turn-start records (or explicit absence), plus the current public view. Redraw failures retain that reproduction. Arena diagnostics report counts and shares per visible-counter cause; sleep and confusion can overlap. Oracle records explicitly label search=oracle. Oracle E also computes N/X for the diagnostic contract; its played E action remains the expected-value maximum, verified against the original path.
