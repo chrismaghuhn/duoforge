@@ -229,23 +229,96 @@ class Schedule(unittest.TestCase):
 
     def test_the_smoke_report_and_its_stops(self):
         from duoforge_learn import p1_eval
-        go = p1_eval.smoke_report(64, {"cutoffs": 0, "refused": 0}, 6.4)
+        ok = {"cutoffs": 0, "refused": 0}
+        go = p1_eval.smoke_report(64, ok, 30.0, jit_seconds=40.0, warm_games_per_second=20.0)
         self.assertEqual(go["status"], "GO")
         self.assertEqual(go["games"], 64)
-        self.assertAlmostEqual(go["games_per_second"], 10.0)
-        self.assertAlmostEqual(go["forecast_seconds"], 6.4 + (12288 - 64) / 10.0)
+        self.assertAlmostEqual(go["games_per_second"], 64 / 30.0)  # every smoke call, JIT included (reported only)
+        self.assertEqual(go["warm_games_per_second"], 20.0)
+        self.assertEqual(go["jit_seconds"], 40.0)
+        self.assertAlmostEqual(go["forecast_seconds"], 40.0 + 12288 / 20.0)
+        self.assertTrue(go["forecast_is_upper_bound"])
         self.assertEqual(go["stop_reasons"], [])
-        self.assertEqual(go["cutoffs"], 0)
-        self.assertEqual(go["refused"], 0)
-        for counts, seconds, reason in (({"cutoffs": 1, "refused": 0}, 6.4, "cut-off"),
-                                        ({"cutoffs": 0, "refused": 2}, 6.4, "refused"),
-                                        ({"cutoffs": 0, "refused": 0}, 64 / 4.9, "games/s"),
-                                        ({"cutoffs": 0, "refused": 0}, 3500.0, "forecast")):
+        self.assertEqual((go["cutoffs"], go["refused"]), (0, 0))
+        # Only the forecast rule fires: the warm rate is at the floor, JIT and games together exceed 60 minutes.
+        only = p1_eval.smoke_report(64, ok, 12.8, jit_seconds=1300.0, warm_games_per_second=5.0)
+        self.assertEqual(only["status"], "STOP")
+        self.assertEqual(len(only["stop_reasons"]), 1)
+        self.assertIn("forecast", only["stop_reasons"][0])
+        # A large smoke JIT is no false STOP: the smoke took 60 s (about 1 game/s with its compiles), warm play
+        # runs at 25 games/s and the full run's estimated JIT is 300 s.
+        slow_start = p1_eval.smoke_report(64, ok, 60.0, jit_seconds=300.0, warm_games_per_second=25.0)
+        self.assertEqual(slow_start["status"], "GO", slow_start["stop_reasons"])
+        for counts, warm, reason in (({"cutoffs": 1, "refused": 0}, 20.0, "cut-off"),
+                                     ({"cutoffs": 0, "refused": 2}, 20.0, "refused"),
+                                     (ok, 4.9, "games/s"),
+                                     (ok, None, "warm")):
             with self.subTest(reason=reason):
-                stop = p1_eval.smoke_report(64, counts, seconds)
+                stop = p1_eval.smoke_report(64, counts, 30.0, jit_seconds=40.0, warm_games_per_second=warm)
                 self.assertEqual(stop["status"], "STOP")
                 self.assertTrue(any(reason in r for r in stop["stop_reasons"]), stop["stop_reasons"])
 
+    def test_the_smoke_clock_separates_jit_from_warm_play(self):
+        """A mocked clock: a network's first pass at a row count costs 10 s (a compile), later ones 0.01 s; the
+        engine 0.1 s per game. The JIT excess, the warm rate and the full run's JIT estimate follow exactly."""
+        from duoforge_learn import evaluate, p1_eval
+        now = [0.0]
+        clock = p1_eval.SmokeClock(now=lambda: now[0])
+
+        class Net:
+            def __init__(self):
+                self.seen = set()
+
+            def act(self, params, key, obs, *rest, **kw):
+                now[0] += 0.01 if obs.shape[0] in self.seen else 10.0
+                self.seen.add(obs.shape[0])
+                return np.zeros(obs.shape[0], np.int64)
+
+        players = {name: evaluate.Player(clock.wrap(name, Net()), None, 4, name) for name in NAMES}
+
+        def fake(context, pool_, suite_rows, learner, opponent, workers, seed, max_steps=1000, luck=None,
+                 observers=()):
+            n = suite_rows.shape[0]
+            for o in observers:
+                o.start(n, suite_rows["learner_seat"].astype(np.int64))
+            for p in (learner, opponent):
+                p.model.act(None, None, np.zeros((2 * n, 3)))
+            now[0] += 0.1 * n
+            return np.zeros(n, dtype=evaluate.RECORD)
+
+        smoke = _subset(self.rows, p1_eval.smoke_indices(self.rows))
+        with mock.patch.object(evaluate, "play_suite", fake):
+            p1_eval.play_rows(None, self.pool, smoke, players, tracker=_Fields(), clock=clock)
+        self.assertEqual(clock.compiles, len(clock.acts))
+        excess = clock.jit_excess()
+        self.assertEqual(set(excess), set(NAMES))
+        for value in excess.values():
+            self.assertAlmostEqual(value, 10.0 - 0.01)
+        warm = [c for c in clock.calls if not c[2]]
+        self.assertGreater(len(warm), 0)
+        self.assertTrue(clock.calls[0][2])  # the first call compiles
+        games, seconds = sum(c[0] for c in warm), sum(c[1] for c in warm)
+        self.assertAlmostEqual(clock.warm_rate(), games / seconds)
+        self.assertAlmostEqual(seconds, sum(0.02 + 0.1 * c[0] for c in warm))
+        shapes = p1_eval.full_shapes(self.rows)
+        self.assertEqual(shapes, {"pilot": {1024, 512}, "control": {1024, 512}, "frozen": {1024},
+                                  "BC": {512}, "3600": {512}, "11000": {512}, "ladder": {512}})
+        self.assertAlmostEqual(clock.jit_estimate(shapes), (10.0 - 0.01) * 9)
+
+    def test_a_pair_shares_its_seed_and_teams_across_seats_and_arms(self):
+        rows = _subset(self.rows, _prefix(self.rows, 2))
+        for name in ("opponent_team", "student_team"):
+            with self.subTest(field=name):
+                bad = {k: v.copy() for k, v in rows.items()}
+                seat1 = np.flatnonzero(bad["student_seat"] == 1)[0]
+                bad[name][seat1] = (bad[name][seat1] + 1) % 6
+                with self.assertRaisesRegex(ValueError, "share"):
+                    self._run(bad)
+        bad = {k: v.copy() for k, v in rows.items()}
+        control = np.flatnonzero((bad["arm"] == "control") & (bad["pair"] == 0))
+        bad["opponent_team"][control] = (bad["opponent_team"][control] + 1) % 6  # both seats: the arms differ
+        with self.assertRaisesRegex(ValueError, "share"):
+            self._run(bad)
 
 class Play(unittest.TestCase):
     """Real games of the first two pairs of every call between untrained networks."""
@@ -339,6 +412,9 @@ class Play(unittest.TestCase):
         moved = {**ids, "move": list(reversed(ids["move"]))}
         self._refused("checkpoint BC: move id 0", data={"kind": "pool", "fingerprint": "00"}, ids=moved)
         self._refused("checkpoint BC: .*no id tables", data={"kind": "pool", "fingerprint": "00"}, ids=None)
+        broken = Path(self.tmp.name) / "broken.npz"
+        broken.write_bytes(b"PK\x03\x04" + b"\x00" * 64)  # a zip header and nothing behind it
+        self._refused("checkpoint BC: .*zip", {"BC": str(broken)})
 
     def test_a_checkpoint_the_manifest_does_not_pin_is_refused(self):
         paths = dict(self.paths, pilot=self.paths["control"])
@@ -379,8 +455,10 @@ class Cli(unittest.TestCase):
         with duoforge.Context(C["DUOFORGE_DATA_KIND_POOL"]) as ctx:
             cls.paths = _checkpoints(cls.dir, ctx)
             pool = teams.load(ctx, cls.teams, root=str(REPO / "data" / "teams"))
+        manifest = _manifest(pool, cls.paths)
+        cls.rows = ev.make_eval_rows(pool, manifest)
         cls.manifest = cls.dir / "manifest.json"
-        cls.manifest.write_text(json.dumps(ev.manifest_mapping(_manifest(pool, cls.paths))))
+        cls.manifest.write_text(json.dumps(ev.manifest_mapping(manifest)))
         for arm in ("pilot", "control"):
             (cls.dir / f"{arm}-ledger.json").write_text(json.dumps(
                 {"schema": 1, "cpu_core_seconds": 100.0, "gpu_seconds": 10.0, "processes": 1,
@@ -429,10 +507,23 @@ class Cli(unittest.TestCase):
         self.assertIn("trick_room", result)
 
     def test_cli_smoke(self):
+        from duoforge_learn import p1_eval
         out, ledger = self.dir / "smoke.json", self.dir / "smoke-ledger.json"
-        code, err, _ = self._main(out, "--smoke", "--ledger", str(ledger))
+        played, real = [], p1_eval.play_rows
+
+        def spy(context, pool, rows, players, **kw):
+            played.append(np.asarray(rows["game_id"]).copy())
+            self.assertIsNotNone(kw.get("clock"))
+            return real(context, pool, rows, players, **kw)
+        with mock.patch.object(p1_eval, "play_rows", spy):
+            code, err, _ = self._main(out, "--smoke", "--ledger", str(ledger))
         self.assertEqual(code, 0, err)
+        self.assertEqual(len(played), 1)  # the predeclared selection, nothing else
+        np.testing.assert_array_equal(played[0], self.rows["game_id"][p1_eval.smoke_indices(self.rows)])
         report = json.loads(out.read_text())
+        self.assertGreater(report["jit_seconds"], 0.0)
+        self.assertGreater(report["warm_games_per_second"], 0.0)
+        self.assertTrue(report["forecast_is_upper_bound"])
         for key in ("games", "seconds", "games_per_second", "forecast_seconds", "cutoffs", "refused", "status",
                     "stop_reasons", "ledger"):
             self.assertIn(key, report)
@@ -476,8 +567,12 @@ class Cli(unittest.TestCase):
         import jax
         ledger = self.dir / "gpu-ledger.json"
         env = {k: v for k, v in os.environ.items() if k != "XLA_FLAGS"}
-        with mock.patch.object(jax, "default_backend", return_value="gpu"), mock.patch.dict(os.environ, env,
-                                                                                            clear=True):
+        from duoforge_learn import evaluate
+
+        def never(*args, **kwargs):
+            raise AssertionError("refused before play: play_suite must not run")
+        with mock.patch.object(jax, "default_backend", return_value="gpu"), \
+                mock.patch.dict(os.environ, env, clear=True), mock.patch.object(evaluate, "play_suite", never):
             code, err, _ = self._main(self.dir / "refused.json", "--ledger", str(ledger))
         self.assertEqual(code, 2)
         self.assertIn("xla_gpu_deterministic_ops", err)
