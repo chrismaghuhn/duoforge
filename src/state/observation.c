@@ -90,7 +90,7 @@ static bool dfi_is_occupant(const dfi_side *side, uint32_t m)
 static uint32_t dfi_illusion_holder_index(const dfi_side *side)
 {
     for (uint32_t m = 0u; m < DUOFORGE_MAX_ROSTER && m < side->member_count; ++m) {
-        if (side->members[m].ability == DFI_ABILITY_ILLUSION) {
+        if (side->members[m].ability == DFI_ABILITY_ILLUSION + 1u) { /* the sheet's ability is id + 1 */
             return m;
         }
     }
@@ -199,10 +199,17 @@ static void dfi_view_member(const struct duoforge_battle *b, uint32_t viewer, ui
          * disguised carries the disguise's name; the holder's own row is read as before (open point: its status before the
          * disguise is not kept in the state). */
         uint8_t shown_status = mem->status;
-        const uint32_t holder = dfi_illusion_holder_index(side);
-        if (!own && holder < DUOFORGE_MAX_ROSTER && holder != m && b->tail.sides[s].illusion.shown != 0u &&
-            (uint32_t)b->tail.sides[s].illusion.shown - 1u == m) {
-            shown_status = side->members[holder].hp != 0u ? side->members[holder].status : (uint8_t)DFI_STATUS_NONE;
+        const dfi_tail_illusion *il = &b->tail.sides[s].illusion;
+        if (!own && il->shown != 0u) {
+            if ((uint32_t)il->shown - 1u == m) {
+                /* the disguise's row: the status the lines showed on the name (amended by I2: ill_override) */
+                shown_status = il->override[2];
+            } else if (dfi_illusion_holder_index(side) == m) {
+                /* the holder's row: its status and location as the foe knew them before the disguise (amended by I2: snapshot 7..8,
+                 * the location is the public value: 0 undetermined, 1 bench) */
+                shown_status = il->snapshot[7];
+                v->location = il->snapshot[8];
+            }
         }
         v->status = know->hp_percent != 0u ? shown_status : (uint8_t)DUOFORGE_AILMENT_NONE;
     } else {

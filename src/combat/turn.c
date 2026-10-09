@@ -6006,6 +6006,14 @@ static duoforge_status dfi_switch_in(dfi_run *r, uint32_t side, uint32_t slot, u
             return DUOFORGE_E_UNSUPPORTED;
         }
     }
+    /* Illusion, one shown name per side (amended by I2, decision 0026 section 3): while a name is still shown on the bench, the
+     * holder may enter only disguised as that same name. Any other entry of the holder would need a second name, which the single
+     * state cannot hold: refused before any change. */
+    if (pool_rules && b->tail.sides[side].illusion.shown != 0u && reserve != (uint32_t)b->tail.sides[side].illusion.shown - 1u &&
+        dfi_ability(b, &sd->members[reserve], DFI_ABILITY_ILLUSION) &&
+        (!disguised || disguise != (uint32_t)b->tail.sides[side].illusion.shown - 1u)) {
+        return DUOFORGE_E_UNSUPPORTED;
+    }
     const dfi_member *leaving = dfi_at(b, side * 2u + slot);
     const uint32_t flag = sd->positions[slot].switch_flag;
     const bool parting_shot = leaving != NULL && leaving->hp != 0u && flag == DFI_SWITCH_MOVE && !drag;

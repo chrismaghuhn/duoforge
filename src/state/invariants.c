@@ -669,19 +669,27 @@ static dfi_invariant dfi_check_tail(const duoforge_context *ctx, const struct du
         const dfi_tail_illusion *il = &ts->illusion;
         uint32_t holder = DUOFORGE_MAX_ROSTER;
         for (uint32_t m = 0u; m < DUOFORGE_MAX_ROSTER && m < side->member_count; ++m) {
-            if (side->members[m].ability == DFI_ABILITY_ILLUSION) {
+            if (side->members[m].ability == DFI_ABILITY_ILLUSION + 1u) { /* the sheet's ability is id + 1 */
                 holder = m;
                 break;
             }
         }
         const bool any_ill = il->shown != 0u || !dfi_bytes_zero(il->snapshot, sizeof il->snapshot) ||
                              !dfi_bytes_zero(il->pending, sizeof il->pending) || !dfi_bytes_zero(il->override, sizeof il->override);
+        /* Amended by I2 (decision 0026 section 3): snapshot bytes 7..8 (the holder's status and location as the foe knew them) are
+         * set exactly while a name is shown; bytes 0..6 (the disguise row) and the pending counts exist only while a disguise is up. */
+        bool any_disguise = false;
+        for (uint32_t p = 0u; p < DUOFORGE_ACTIVE_PER_SIDE; ++p) {
+            any_disguise = any_disguise || ts->positions[p].ability_state != 0u;
+        }
         if (il->shown > DUOFORGE_MAX_ROSTER || (any_ill && holder == DUOFORGE_MAX_ROSTER) ||
             (il->shown != 0u && (((uint32_t)side->brought_mask >> ((uint32_t)il->shown - 1u)) & 1u) == 0u) ||
             (il->shown != 0u && (uint32_t)il->shown - 1u == holder) ||
             (il->shown == 0u && (!dfi_bytes_zero(il->snapshot, sizeof il->snapshot) || !dfi_bytes_zero(il->pending, sizeof il->pending) ||
                                  !dfi_bytes_zero(il->override, sizeof il->override))) ||
-            !dfi_bytes_zero(il->snapshot + 7, 2u)) {
+            (il->shown != 0u && (il->snapshot[7] > DFI_STATUS_TOX || il->snapshot[8] > 1u)) || /* location: 0 undetermined, 1 bench */
+            il->override[2] > DFI_STATUS_TOX || (il->override[3] & 0xF8u) != 0u ||
+            (!any_disguise && (!dfi_bytes_zero(il->snapshot, 7u) || !dfi_bytes_zero(il->pending, sizeof il->pending)))) {
             return DFI_INV_TAIL_SIDE;
         }
         for (uint32_t p = 0u; p < DUOFORGE_ACTIVE_PER_SIDE; ++p) {

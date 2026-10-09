@@ -14,6 +14,7 @@
 #include "codec/state_codec.h"
 #include "core/bytes.h"
 #include "data/closure_tables.h"
+#include "data/pool_tables.h"
 #include "rng/pcg32.h"
 #include "state/battle_internal.h"
 #include "state/closure_member.h"
@@ -219,6 +220,18 @@ static uint32_t dfi_target_candidates(uint32_t target_class, uint32_t user, uint
  * (duoforge_battle_public_causes writes it), so the two can never disagree. It reads only the player's observation, never a
  * hidden counter. Elapsed status attempts are not stored in schema 3. Never invent their posterior: a visible sleep or
  * confusion is a cause, nothing else is. ILLUSION_POSSIBLE stays 0 until Illusion (decision 0026, section 4). */
+/* Any byte of a side's Illusion state is set (point (d) of I2: a public view is refused while the foe side's ill_* is nonzero). */
+static bool dfi_view_ill_nonzero(const dfi_tail_illusion *il)
+{
+    const uint8_t *p = (const uint8_t *)il;
+    for (size_t i = 0u; i < sizeof *il; ++i) {
+        if (p[i] != 0u) {
+            return true;
+        }
+    }
+    return false;
+}
+
 static duoforge_status dfi_view_visible_causes(const duoforge_context *ctx, const duoforge_battle *b, uint32_t player,
                                                uint32_t *out_mask)
 {
@@ -238,6 +251,26 @@ static duoforge_status dfi_view_visible_causes(const duoforge_context *ctx, cons
             if (observation.sides[side].positions[p].confused != 0u) {
                 mask |= DUOFORGE_PUBLIC_CAUSE_VISIBLE_CONFUSION;
             }
+        }
+    }
+    /* Illusion (decision 0026 section 4, amended by I2, point (a)): the foe's sheet has an Illusion member that the viewer has not
+     * seen fainted under its own name and that is not shown on the field under its own name. The foe side's disguise state (ill_*)
+     * being nonzero counts as well. Facts of the viewer only: the observation and the state of the foe side's disguise. */
+    {
+        const uint32_t foe = 1u - player;
+        for (uint32_t m = 0u; m < observation.sides[foe].member_count && m < DUOFORGE_MAX_ROSTER; ++m) {
+            const duoforge_member_view *v = &observation.sides[foe].members[m];
+            if (v->ability != DFI_ABILITY_ILLUSION + 1u) {
+                continue;
+            }
+            const bool fainted_seen = v->hp_kind == DUOFORGE_HP_PERCENT && v->hp == 0u;
+            const bool shown_own = observation.sides[foe].occupant[0] == m || observation.sides[foe].occupant[1] == m;
+            if (!fainted_seen && !shown_own) {
+                mask |= DUOFORGE_PUBLIC_CAUSE_ILLUSION_POSSIBLE;
+            }
+        }
+        if (dfi_view_ill_nonzero(&b->tail.sides[foe].illusion)) {
+            mask |= DUOFORGE_PUBLIC_CAUSE_ILLUSION_POSSIBLE;
         }
     }
     *out_mask = mask;
@@ -280,7 +313,7 @@ static void dfi_view_hide_foe_illusion(uint8_t *s, uint32_t foe)
           DFI_ENC_TAIL_POS_ABILITY_STATE_OFF] = 0u;
     }
     uint8_t *il = s + DFI_ENC_TAIL_OFF + DFI_ENC_TAIL_REV4_SIZE + DFI_ENC_TAIL5_SIDES_OFF + foe * DFI_ENC_TAIL5_SIDE_SIZE;
-    memset(il + DFI_ENC_TAIL5_ILL_SNAPSHOT_OFF, 0, 9u);
+    memset(il + DFI_ENC_TAIL5_ILL_SNAPSHOT_OFF, 0, 7u); /* bytes 7..8 (the holder's status and location as the foe knew them) stay */
     memset(il + DFI_ENC_TAIL5_ILL_PENDING_OFF, 0, 4u);
 }
 

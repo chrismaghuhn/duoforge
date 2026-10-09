@@ -1313,7 +1313,9 @@ int main(void)
                                 /* step G41: Shadow Tag, by id (the request builder asks dfi_switch_trapped) */
                                 id == DFI_ABILITY_SHADOWTAG ||
                                 /* step G46: Suction Cups and Guard Dog, the DragOut blockers, by id */
-                                id == DFI_ABILITY_SUCTIONCUPS || id == DFI_ABILITY_GUARDDOG;
+                                id == DFI_ABILITY_SUCTIONCUPS || id == DFI_ABILITY_GUARDDOG ||
+                                /* step I2: Illusion, by id (the disguise, the break, the faint, the foe view) */
+                                id == DFI_ABILITY_ILLUSION;
             DF_CHECK_EQ_U64(&t, dfi_support.abilities[id] != 0u ? 1u : 0u, (setter || terrain_setter || engine) ? 1u : 0u);
             DF_CHECK_EQ_U64(&t, dfi_pool_ability_family[id].family,
                             setter ? DFI_ABILITY_FAMILY_WEATHER_SETTER
@@ -1473,7 +1475,8 @@ int main(void)
     /* Step AC1: Trace copies the ability of a foe unless that has the pin's notrace flag. The turn code excludes only
      * Trace itself (dfi_trace in src/combat/turn.c), which is right while no other ability with the flag is marked: the
      * nine abilities of the pinned data with the flag (tools/datagen/pool_families.js checks the list against the pin)
-     * are all unmarked but Trace. Marking one of them needs its place in that rule. */
+     * are unmarked but Trace and Illusion. Illusion is marked by step I2 (decision 0026, amended by I2): Trace may not copy a
+     * disguised holder's name (dfi_trace excludes DFI_ABILITY_ILLUSION), so the expectation is {Trace, Illusion}, with that reason. */
     {
         static const char *const notrace[] = {"disguise", "forecast", "hungerswitch", "illusion", "imposter", "receiver",
                                               "stancechange", "trace", "zerotohero"};
@@ -1482,7 +1485,8 @@ int main(void)
             for (size_t k = 0u; k < sizeof notrace / sizeof notrace[0]; ++k) {
                 if (strcmp(dfi_pool_ability_names[id], notrace[k]) == 0) {
                     found += 1u;
-                    DF_CHECK_EQ_U64(&t, dfi_support.abilities[id] != 0u ? 1u : 0u, id == DFI_ABILITY_TRACE ? 1u : 0u);
+                    DF_CHECK_EQ_U64(&t, dfi_support.abilities[id] != 0u ? 1u : 0u,
+                                    (id == DFI_ABILITY_TRACE || id == DFI_ABILITY_ILLUSION) ? 1u : 0u);
                 }
             }
         }
