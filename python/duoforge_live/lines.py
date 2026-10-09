@@ -81,7 +81,7 @@ CHOICE_ITEMS = ("choiceband", "choicescarf", "choicespecs")
 TURN_SCOPED = {"RAGE_POWDER", "WIDE_GUARD", "QUICK_GUARD"}
 
 # Kinds whose effect on the view no field holds and the fold does not apply: stops with a readable reason.
-UNREPRESENTABLE_KINDS = {"-sethp", "-clearallboost", "-clearboost", "-clearpositiveboost", "-copyboost", "-setboost",
+UNREPRESENTABLE_KINDS = {"-sethp", "-clearboost", "-clearpositiveboost", "-copyboost", "-setboost",
                          "-swapboost", "-invertboost", "-transform", "swap", "-endability", "-swapsideconditions",
                          "-cureteam"}
 

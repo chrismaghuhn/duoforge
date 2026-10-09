@@ -218,6 +218,7 @@ duoforge_add_test(NAME duoforge.state.pool_g42 SOURCES test_pool_g42.c WHITEBOX 
 duoforge_add_test(NAME duoforge.state.pool_g44 SOURCES test_pool_g44.c WHITEBOX TIMEOUT 60)
 duoforge_add_test(NAME duoforge.state.pool_g54 SOURCES test_pool_g54.c WHITEBOX TIMEOUT 60)
 duoforge_add_test(NAME duoforge.state.pool_g64 SOURCES test_pool_g64.c WHITEBOX TIMEOUT 60)
+duoforge_add_test(NAME duoforge.state.pool_g62 SOURCES test_pool_g62.c WHITEBOX TIMEOUT 60)
 duoforge_add_test(NAME duoforge.state.pool_g46_party SOURCES test_pool_g46_party.c WHITEBOX TIMEOUT 120)
 # Step G35: ten data rows, Rain Dish and Friend Guard: the marks, the flags, Gigaton Hammer left out, and Friend Guard in the
 # commutation test and the refusal of the ModifyDamage chain.

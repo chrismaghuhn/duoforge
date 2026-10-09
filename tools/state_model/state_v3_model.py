@@ -871,7 +871,7 @@ def queue_record_valid(st, r):
     if r['kind'] in (Q_RUN_SWITCH, Q_MEGA):
         return plain and bound and r['reserve'] == 0
     if r['kind'] == Q_MOVE:
-        return (bound and r['reserve'] == 0 and r['move_slot'] <= MOVE_SLOT_RECHARGE
+        return (bound and r['reserve'] <= 2 and r['move_slot'] <= MOVE_SLOT_RECHARGE  # DFI_QRES_*: 0, 1, 2 (G62)
                 and (r['target'] < 4 or r['target'] == TARGET_NONE))
     return r == qrec(Q_RESIDUAL)
 

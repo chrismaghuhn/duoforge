@@ -458,7 +458,8 @@ const dfi_support_manifest dfi_support = {
             /* Step G54 (decision 0015 item 5at). Handlers: Icicle Spear and Scale Shot (2 to 5 hits, the Champions weighted count,
              * Scale Shot's self boost after the last hit), Quick Guard (Wide Guard's shape against the priority moves), Upper Hand
              * (Sucker Punch's queue read: a queued priority move), Heal Pulse (half of the target's HP) and Strength Sap (heals by
-             * the target's Attack and lowers it). Data row: Sing. Left out: Haze, Steel Beam and Final Gambit (decision 0015 5at). */
+             * the target's Attack and lowers it). Data row: Sing. Left out: Steel Beam and Final Gambit (decision 0015 5at).
+             * Haze came in with step G62 (decision 0031, the event -clearallboost). */
             [DFI_MOVE_ICICLESPEAR] = 1u,
             [DFI_MOVE_SCALESHOT] = 1u,
             [DFI_MOVE_QUICKGUARD] = 1u,
@@ -471,6 +472,9 @@ const dfi_support_manifest dfi_support = {
             [DFI_MOVE_BEATUP] = 1u,
             [DFI_MOVE_SHEERCOLD] = 1u,
             [DFI_MOVE_BUGBITE] = 1u,
+            [DFI_MOVE_HAZE] = 1u, /* step G62, decision 0031 */
+            [DFI_MOVE_AFTERYOU] = 1u, /* step G62, decision 0015 entry 5az: the queued move of the target goes next */
+            [DFI_MOVE_QUASH] = 1u,    /* step G62, decision 0015 entry 5az: the queued move of the target goes last */
         },
     .abilities =
         {

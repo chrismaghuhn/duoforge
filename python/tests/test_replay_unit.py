@@ -310,6 +310,10 @@ class LinesTest(unittest.TestCase):
                      "|-item|p1a: Staraptor|Life Orb|[from] move: Covet|[of] p2a: Gholdengo"):
             self.assertEqual(self.stop(line), "feature:ITEM_CHANGE", line)
 
+    def test_haze_folds(self):
+        # Step G62 (decision 0031): Haze's -clearallboost is the CLEAR_ALL_BOOSTS event; the tracker folds it
+        self.assertEqual(lines.check("|-clearallboost", self.view), "fold")
+
     def test_drag_folds(self):
         # Step G46: a forced switch brings a member in as a switch does (the tracker folds it as one, or stops)
         self.assertEqual(lines.check("|drag|p2a: Gholdengo|Gholdengo, L50|100/100", self.view), "fold")
