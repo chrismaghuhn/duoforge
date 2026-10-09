@@ -30,18 +30,27 @@ POS_SIZE = 21
 KNOW_SIZE = 7
 MEMBER_SIZE = 48
 STATE_SIZE = HEADER_SIZE + 2 * SIDE_SIZE
-# The POOL state tail (decision 0015 section 7): schema 0x0403 = "v3 + pool tail rev 4", 288 bytes after the 1009.
-# Rev 1 (0x0103, 42 bytes), rev 2 (0x0203, 248 bytes) and rev 3 (0x0303, 248 bytes, protect_kind at +26 of a position) are
-# no schema of any kind any more: they are refused as unknown, there is no migration.
+# The POOL state tail (decision 0015 section 7): schema 0x0503 = "v3 + pool tail rev 5", 348 bytes after the 1009: the rev 4
+# part (288 bytes) and the rev 5 block (60 bytes, decision 0026 and lane A).
+# Rev 1 (0x0103, 42 bytes), rev 2 (0x0203, 248 bytes), rev 3 (0x0303, 248 bytes, protect_kind at +26 of a position) and rev 4
+# (0x0403, 288 bytes) are no schema of any kind any more: they are refused as unknown, there is no migration.
 SCHEMA_POOL_TAIL_REV1 = 0x0103
 SCHEMA_POOL_TAIL_REV2 = 0x0203
 SCHEMA_POOL_TAIL_REV3 = 0x0303
 SCHEMA_POOL_TAIL_REV4 = 0x0403
+SCHEMA_POOL_TAIL_REV5 = 0x0503
 TAIL_FIELD_SIZE = 8                 # gravity_turns, then 7 reserved bytes
 TAIL_SIDE_SIZE = 140                # 8 side bytes (no reserved byte), 2 positions of 36, 6 members of 10
 TAIL_POS_SIZE = 36
 TAIL_MEMBER_SIZE = 10
-TAIL_SIZE = TAIL_FIELD_SIZE + 2 * TAIL_SIDE_SIZE
+TAIL_REV4_SIZE = TAIL_FIELD_SIZE + 2 * TAIL_SIDE_SIZE              # 288
+# The rev 5 block, after the rev 4 part (offsets within it): per side 18 bytes (the Illusion state: shown, override[4],
+# snapshot[9], pending[4]), per position (flat order) 2 bytes (slot_pending, future_sight), 16 bytes of reserve.
+TAIL5_SIDE_SIZE = 18
+TAIL5_POS_SIZE = 2
+TAIL5_RESERVED_SIZE = 16
+TAIL5_SIZE = 2 * TAIL5_SIDE_SIZE + 4 * TAIL5_POS_SIZE + TAIL5_RESERVED_SIZE        # 60
+TAIL_SIZE = TAIL_REV4_SIZE + TAIL5_SIZE                             # 348
 POOL_STATE_SIZE = STATE_SIZE + TAIL_SIZE
 TAIL_MOVE_MAX = 5
 TAIL_ENCORE_SLOT_MAX = 4
@@ -59,7 +68,10 @@ TAIL_YAWN_MAX = 2
 TAIL_STOCKPILE_MAX = 3
 TAIL_FLAG_MAX = 1
 TAIL_PROTECT_KIND_MAX = 1           # rev 3: 0 Protect and Detect, 1 Spiky Shield (Baneful Bunker would be 2)
-TAIL_MOVE_RESULT_MASK = 0x0F        # rev 4: two bits this turn, two bits last turn (0 undefined, 1 true, 2 false, 3 null)
+TAIL_MOVE_RESULT_MASK = 0x3F        # rev 4: two bits this turn, two bits last turn (0 undefined, 1 true, 2 false, 3 null),
+                                    # bit 4 unclassified this turn, bit 5 unclassified last turn (step G42); bits 6-7 zero
+UNCLASSIFIED_NOW = 0x10
+UNCLASSIFIED_LAST = 0x20
 TAIL_SINGLE_TURN_MASK = 3           # rev 4: bit 0 RAGE_POWDER (needs the Follow Me flag), bit 1 ROOST
 SINGLE_TURN_RAGE_POWDER = 1
 TAIL_HITS_TAKEN_MAX = 6
@@ -87,6 +99,8 @@ TAIL_POS_BYTE_FIELDS = ['last_move', 'encore_slot', 'encore_turns', 'throat_chop
                         'trap_band', 'leech_seed', 'yawn', 'focus_energy', 'stockpile', 'stockpile_def',
                         'stockpile_spd', 'charge', 'glaive_rush']
 TAIL_POS_REV4_FIELDS = ['move_result', 'single_turn', 'hits_taken', 'ability_state', 'lock_turns']
+# rev 5, per position (lane A; zero, nothing writes them yet) and per side (the Illusion state of decision 0026, zero)
+TAIL_POS_REV5_FIELDS = ['slot_pending', 'future_sight']
 TAIL_SIDE_BYTE_FIELDS = ['wide_guard', 'aurora_veil', 'toxic_spikes', 'stealth_rock', 'spikes', 'sticky_web', 'quick_guard',
                          'hazard_order']
 # hazard_order (rev 4): the creation order of the hazards that are up, 2 bits per slot (slot 0 in bits 1:0); the kind codes
@@ -281,7 +295,7 @@ KD = TeamCContext(KIND_TEAM_C_DEV, 6, 4)
 # which tests/test_pool_tables.c recomputes from the pool canonical bytes: the
 # pool layout over the pool data, then the family columns, the handler columns
 # and the moves and abilities that each forme may have.
-POOL_TABLE_HASH = bytes.fromhex('c641b72315484330f18c50a0d86540efe5597e4016a7dcc05e7688ce3207bd7b')
+POOL_TABLE_HASH = bytes.fromhex('39548ca397d12f9e88228abedd16252b5cd7e2949cd2f10437d3ca0b29317901')  # steps G42, G44, G46, G48, G49, G50
 KIND_POOL, KIND_POOL_DEV = 6, 7
 
 
@@ -360,12 +374,19 @@ def empty_tail_pos():
     p['protect_kind'] = 0
     for f in TAIL_POS_REV4_FIELDS:
         p[f] = 0
+    for f in TAIL_POS_REV5_FIELDS:
+        p[f] = 0
     return p
+
+
+def empty_tail_ill():
+    return {'shown': 0, 'override': [0] * 4, 'snapshot': [0] * 9, 'pending': [0] * 4}
 
 
 def empty_tail_side():
     s = {f: 0 for f in TAIL_SIDE_BYTE_FIELDS}
     s['pos'] = [empty_tail_pos(), empty_tail_pos()]
+    s['ill'] = empty_tail_ill()
     for f in TAIL_MEMBER_LIST_FIELDS:
         s[f] = [0] * MAX_ROSTER
     return s
@@ -403,7 +424,7 @@ def party_valid(party_bytes, brought_mask):
 
 
 def empty_state(ctx):
-    # 'tailed': the state carries the POOL tail (schema 0x0403); 'tail': the field block and the two sides, all zero
+    # 'tailed': the state carries the POOL tail (schema 0x0503); 'tail': the field block and the two sides, all zero
     # unless a test sets them.
     return {'tailed': has_pool_tail(ctx), 'tail': empty_tail(),
             'fp': ctx.fingerprint(), 'rng_state': 0, 'rng_inc': 0, 'draws': 0, 'next': 1,
@@ -920,10 +941,16 @@ def check_state(ctx, st):
     return check_tail(ctx, st)
 
 
+def ill_values(ill):
+    """The bytes of a side's Illusion state (rev 5), in encoded order."""
+    return [ill['shown']] + ill['override'] + ill['snapshot'] + ill['pending']
+
+
 def tail_is_zero(tail):
     def side_zero(ts):
         return (all(ts[f] == 0 for f in TAIL_SIDE_BYTE_FIELDS)
                 and all(v == 0 for p in ts['pos'] for v in p.values())
+                and all(v == 0 for v in ill_values(ts['ill']))
                 and all(v == 0 for f in TAIL_MEMBER_LIST_FIELDS for v in ts[f]))
     return (tail['gravity'] == 0 and all(v == 0 for p in tail['party'] for v in p)
             and all(side_zero(ts) for ts in tail['sides']))
@@ -967,10 +994,17 @@ def tail_pos_valid(ctx, tp, flat, mem, slot_flags=0):
         return False
     # Rev 4: the move result is two two-bit values, the single-turn markers are the two defined bits (Rage Powder's belongs to
     # the Follow Me flag), the counters and the ability state have their bounds.
+    mr = tp['move_result']
+    # step G42: an unclassified bit only with the result bits of its slot zero
+    if not ((mr & UNCLASSIFIED_NOW == 0 or mr & 3 == 0) and (mr & UNCLASSIFIED_LAST == 0 or (mr >> 2) & 3 == 0)):
+        return False
     if not (tp['move_result'] & ~TAIL_MOVE_RESULT_MASK == 0 and tp['single_turn'] & ~TAIL_SINGLE_TURN_MASK == 0
             and (tp['single_turn'] & SINGLE_TURN_RAGE_POWDER == 0 or slot_flags & VOL_FOLLOW_ME)
             and tp['hits_taken'] <= TAIL_HITS_TAKEN_MAX and tp['ability_state'] <= TAIL_ABILITY_STATE_MAX
             and tp['lock_turns'] <= TAIL_LOCK_TURNS_MAX):
+        return False
+    # Rev 5 (lane A): nothing writes the slot's pending effect or Future Sight yet, so both are zero.
+    if tp['slot_pending'] != 0 or tp['future_sight'] != 0:
         return False
     return (tp['stockpile'] <= TAIL_STOCKPILE_MAX and tp['stockpile_def'] <= tp['stockpile']
             and tp['stockpile_spd'] <= tp['stockpile'])
@@ -994,7 +1028,8 @@ def check_tail(ctx, st):
         if (ts['wide_guard'] > TAIL_WIDE_GUARD_MAX or ts['aurora_veil'] > TAIL_AURORA_VEIL_MAX
                 or ts['toxic_spikes'] > TAIL_TOXIC_SPIKES_MAX or ts['stealth_rock'] > TAIL_STEALTH_ROCK_MAX
                 or ts['spikes'] > TAIL_SPIKES_MAX or ts['sticky_web'] > TAIL_STICKY_WEB_MAX
-                or ts['quick_guard'] > TAIL_QUICK_GUARD_MAX or not hazard_order_valid(ts)):
+                or ts['quick_guard'] > TAIL_QUICK_GUARD_MAX or not hazard_order_valid(ts)
+                or any(v != 0 for v in ill_values(ts['ill']))):  # rev 5: the Illusion state, zero until its step
             return 'TAIL_SIDE'
         for p in range(2):
             tp = ts['pos'][p]
@@ -1041,7 +1076,7 @@ QUEUE_BYTE_FIELDS = ['kind', 'side', 'slot', 'move_slot', 'target', 'reserve']
 
 
 def encode(st):
-    schema, size = (SCHEMA_POOL_TAIL_REV4, POOL_STATE_SIZE) if st['tailed'] else (SCHEMA, STATE_SIZE)
+    schema, size = (SCHEMA_POOL_TAIL_REV5, POOL_STATE_SIZE) if st['tailed'] else (SCHEMA, STATE_SIZE)
     b = bytearray(MAGIC + struct.pack('<HHII', KIND_BATTLE_STATE, schema, SEMANTICS, size))
     b += st['fp']
     b += struct.pack('<QQQI', st['rng_state'], st['rng_inc'], st['draws'], st['next'])
@@ -1077,7 +1112,8 @@ def encode(st):
 
 
 def tail_bytes(tail):
-    """The 288 encoded bytes of a tail (the layout of src/codec/state_codec.h), reserved bytes zero."""
+    """The 348 encoded bytes of a tail (the layout of src/codec/state_codec.h), reserved bytes zero: the rev 4 part (288),
+    then the rev 5 block (60: per side the Illusion state, per position two bytes, then the reserve)."""
     out = bytearray([tail['gravity']]) + bytes(tail['party'][0]) + bytes(tail['party'][1]) + bytes(TAIL_FIELD_SIZE - 7)
     for ts in tail['sides']:
         out += bytes([ts[f] for f in TAIL_SIDE_BYTE_FIELDS])
@@ -1088,12 +1124,20 @@ def tail_bytes(tail):
         for m in range(MAX_ROSTER):
             out += struct.pack('<HH', ts['ability_now'][m], ts['forme_now'][m])
             out += bytes([ts['soak'][m], ts['item_now'][m], ts['toxic_stage'][m], ts['type2'][m], ts['member_flags'][m], 0])
+    assert len(out) == TAIL_REV4_SIZE
+    for ts in tail['sides']:
+        out += bytes(ill_values(ts['ill']))
+    for flat in range(4):
+        tp = tail['sides'][flat // 2]['pos'][flat % 2]
+        out += bytes([tp[f] for f in TAIL_POS_REV5_FIELDS])
+    out += bytes(TAIL5_RESERVED_SIZE)
     assert len(out) == TAIL_SIZE
     return bytes(out)
 
 
 def tail_reserved_offsets():
-    """The offsets (within the tail) of the 29 reserved bytes (step G46: the field block's +1..+6 are party_order)."""
+    """The offsets (within the tail) of the 45 reserved bytes: 29 of the rev 4 part (step G46: the field block's +1..+6 are
+    party_order) and the 16 of the rev 5 reserve at the end."""
     offs = [TAIL_FIELD_SIZE - 1]
     for s in range(2):
         so = TAIL_FIELD_SIZE + TAIL_SIDE_SIZE * s
@@ -1101,6 +1145,9 @@ def tail_reserved_offsets():
             offs += [so + 8 + TAIL_POS_SIZE * p + 32 + i for i in range(4)]
         offs += [so + 80 + TAIL_MEMBER_SIZE * m + 9 for m in range(MAX_ROSTER)]
     assert len(offs) == 29
+    rev5_reserve = TAIL_REV4_SIZE + TAIL5_SIZE - TAIL5_RESERVED_SIZE
+    offs += [rev5_reserve + i for i in range(TAIL5_RESERVED_SIZE)]
+    assert len(offs) == 45
     return offs
 
 
@@ -1136,6 +1183,17 @@ def parse_tail(b):
             ts['type2'].append(b[mo + 7])
             ts['member_flags'].append(b[mo + 8])
         tail['sides'].append(ts)
+    # The rev 5 block (after the rev 4 part): the Illusion state per side, then the two bytes per position in flat order.
+    r5 = o + TAIL_REV4_SIZE
+    for s in range(2):
+        q = r5 + TAIL5_SIDE_SIZE * s
+        ill = {'shown': b[q], 'override': list(b[q + 1:q + 5]), 'snapshot': list(b[q + 5:q + 14]),
+               'pending': list(b[q + 14:q + 18])}
+        tail['sides'][s]['ill'] = ill
+    for flat in range(4):
+        tp = tail['sides'][flat // 2]['pos'][flat % 2]
+        q = r5 + 2 * TAIL5_SIDE_SIZE + TAIL5_POS_SIZE * flat
+        tp['slot_pending'], tp['future_sight'] = b[q], b[q + 1]
     return tail
 
 
@@ -1198,15 +1256,15 @@ def decode(ctx, b):
     if bytes(b[0:8]) != MAGIC:
         return 'MALFORMED', None
     kind, schema, semantics, total = struct.unpack_from('<HHII', b, 8)
-    # Rev 1 (0x0103), rev 2 (0x0203) and rev 3 (0x0303) of the tail are refused here like every schema that is not v3 or
-    # v3 + pool tail rev 4.
-    if kind != KIND_BATTLE_STATE or schema not in (SCHEMA, SCHEMA_POOL_TAIL_REV4):
+    # Rev 1 (0x0103), rev 2 (0x0203), rev 3 (0x0303) and rev 4 (0x0403) of the tail are refused here like every schema that is
+    # not v3 or v3 + pool tail rev 5.
+    if kind != KIND_BATTLE_STATE or schema not in (SCHEMA, SCHEMA_POOL_TAIL_REV5):
         return 'SCHEMA_MISMATCH', None
     if semantics != SEMANTICS:
         return 'SEMANTICS_MISMATCH', None
     if total != size:
         return 'MALFORMED', None
-    tailed = schema == SCHEMA_POOL_TAIL_REV4
+    tailed = schema == SCHEMA_POOL_TAIL_REV5
     if size != (POOL_STATE_SIZE if tailed else STATE_SIZE):
         return 'MALFORMED', None
     if bytes(b[20:52]) != ctx.fingerprint():
@@ -1915,7 +1973,7 @@ def print_pool_tail():
     example = tail_example()
     base_tail = tail_bytes(example)
     assert tail_outcome(base_tail) == 'OK' and len(base_tail) == TAIL_SIZE
-    head = MAGIC + struct.pack('<HHII', KIND_BATTLE_STATE, SCHEMA_POOL_TAIL_REV4, SEMANTICS, POOL_STATE_SIZE)
+    head = MAGIC + struct.pack('<HHII', KIND_BATTLE_STATE, SCHEMA_POOL_TAIL_REV5, SEMANTICS, POOL_STATE_SIZE)
     print('pool_tail envelope %s' % head.hex())
     print('pool_tail example %s' % base_tail.hex())
     reserved = set(tail_reserved_offsets())
@@ -1942,12 +2000,12 @@ def print_pool_tail():
         st['tailed'] = tailed
         b = bytearray(encode(st))
         print('pool_tail wrong-schema %s tailed=%s %s' % (label, tailed, decode(ctx, b)))
-    # Rev 1 (0x0103), rev 2 (0x0203), rev 3 (0x0303) and schema 4 are unknown schemas of every kind: an artifact that carries
-    # them is refused.
+    # Rev 1 (0x0103), rev 2 (0x0203), rev 3 (0x0303), rev 4 (0x0403) and schema 4 are unknown schemas of every kind: an
+    # artifact that carries them is refused.
     for label, ctx, tailed in (('KP', KP, False), ('C1', C1, True)):
         st = empty_state(ctx)
         st['tailed'] = tailed
-        for schema in (SCHEMA_POOL_TAIL_REV1, SCHEMA_POOL_TAIL_REV2, SCHEMA_POOL_TAIL_REV3, 4):
+        for schema in (SCHEMA_POOL_TAIL_REV1, SCHEMA_POOL_TAIL_REV2, SCHEMA_POOL_TAIL_REV3, SCHEMA_POOL_TAIL_REV4, 4):
             b = bytearray(encode(st))
             struct.pack_into('<H', b, 10, schema)
             print('pool_tail schema %#06x %s tailed=%s %s' % (schema, label, tailed, decode(ctx, b)))

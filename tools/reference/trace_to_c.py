@@ -136,7 +136,8 @@ import sys
 SITES = {'SPEED_TIE': 1, 'ACCURACY': 2, 'CRIT': 3, 'DAMAGE_ROLL': 4, 'SECONDARY': 5, 'STALL': 6,
          'SLEEP_TURNS': 7, 'FREEZE_THAW': 8, 'FULL_PARALYSIS': 9, 'CONFUSION_TURNS': 10,
          'CONFUSION_HIT': 11, 'RANDOM_TARGET': 12, 'STATUS_PICK': 13, 'INSERT_TIE': 14, 'TRACE': 15, 'POISON_TOUCH': 16,
-         'CURSED_BODY': 17, 'FLAME_BODY': 18, 'STATIC': 19}  # 17: step G27, 18: step G30, 19: step G39
+         'CURSED_BODY': 17, 'FLAME_BODY': 18, 'STATIC': 19,  # 17: step G27, 18: step G30, 19: step G39
+         'DRAG': 20}  # 20: step G46, the drag's draw (DFI_SITE_DRAG)
 STATS = ['HP', 'Atk', 'Def', 'SpA', 'SpD', 'Spe']
 GENDER = {'M': 1, 'F': 2}
 GENDERLESS = 3
@@ -692,7 +693,7 @@ def name_of(p):
 # are called Arcanine and Floette in the switch line (pool step G2); the species clause keeps the alias unique.
 BASE_SPECIES_NAME = {'Indeedee-F': 'Indeedee', 'Arcanine-Hisui': 'Arcanine', 'Floette-Eternal': 'Floette',
                      'Ninetales-Alola': 'Ninetales', 'Meowstic-F': 'Meowstic', 'Lycanroc-Dusk': 'Lycanroc',
-                     'Samurott-Hisui': 'Samurott'}  # step G48: Ceaseless Edge's user, shown as Samurott (sim/pokemon.ts:329-330)
+                     'Samurott-Hisui': 'Samurott'}  # steps G48 and G50: Ceaseless Edge's and Double Shock's user, shown as Samurott (sim/pokemon.ts:329-330)
 
 
 def abs_target(side, loc):
@@ -860,6 +861,8 @@ EV = {name: i + 1 for i, name in enumerate(
      'CONFUSION_END', 'CONFUSED', 'FLASH_FIRE', 'WEATHER', 'FIELD_START', 'FIELD_END', 'SIDE_START', 'SIDE_END',
      'ITEM_END', 'FORME', 'MEGA', 'PREPARE', 'ANIMATION', 'ABILITY', 'ACTIVATE', 'UPKEEP', 'RESULT',
      'SINGLE_TURN', 'VOLATILE_START', 'VOLATILE_END', 'TYPE_CHANGE', 'ITEM_START'])}
+# DUOFORGE_EVENT_DRAG = 45 (step G46): 43 and 44 belong to REVIVE and TRANSFORM on their own branches, so the drag is set by value.
+EV['DRAG'] = 45
 CAUSE = {'NONE': 0, 'MOVE': 1, 'ITEM': 2, 'ABILITY': 3, 'RECOIL': 4, 'DRAIN': 5, 'BURN': 6, 'CONFUSION': 7,
          'TERRAIN': 8, 'PARALYSIS': 9, 'SLEEP': 10, 'FREEZE': 11, 'FLINCH': 12, 'NO_PP': 13, 'POISON': 14,
          'HEAL_BLOCK': 15, 'WEATHER': 16, 'ITEM_TAKEN': 17, 'RECHARGE': 18, 'DISABLE': 19, 'TAUNT': 20, 'IMPRISON': 21}
@@ -873,6 +876,7 @@ VOLATILE_TAUNT = 6       # DUOFORGE_VOLATILE_TAUNT (step G31)
 VOLATILE_YAWN = 7        # DUOFORGE_VOLATILE_YAWN (step G31)
 MOVE_SLOT_RECHARGE = 5   # DUOFORGE_MOVE_SLOT_RECHARGE (step G17)
 # DUOFORGE_TYPE_*: the alphabetical type ids, the detail of TYPE_CHANGE
+TYPE_NONE = 255  # DUOFORGE_TYPE_NONE: the ??? slot of Double Shock (decision 0025)
 TYPE_IDS = {name: i for i, name in enumerate(
     ['Bug', 'Dark', 'Dragon', 'Electric', 'Fairy', 'Fighting', 'Fire', 'Flying', 'Ghost', 'Grass', 'Ground', 'Ice',
      'Normal', 'Poison', 'Psychic', 'Rock', 'Steel', 'Water'])}
@@ -906,6 +910,10 @@ IGNORED_VOLATILES = {
     # Step G30: Rage Powder shares the position's Follow Me bit, so the engine's state compares as no Follow Me: its presence
     # is the extension's RAGE_POWDER bit, read after every step by duoforge.state.pool_g30.
     'ragepowder': 'the extension bit RAGE_POWDER',
+    # Step G42: Roost's volatile takes the Flying type off until the residual of its turn. It is not a field of the record: the
+    # -singleturn line and the immunity and the damage of a Ground move show it; duoforge.state.pool_g42 reads the tail's bit
+    # after every step (a pivot inside the Roost turn is the only boundary where it stands).
+    'roost': 'the Ground move lines and the single-turn line',
     'solarbeam': 'the locked slot and target',  # step G30: the same two-turn lock
     # Pool step G8 (the POOL tail, decision 0015 section 7). Their turns are not a field of the state record; each
     # shows in the steps that the comparison already covers: the moves of the next request (disabled slots, the
@@ -1072,13 +1080,15 @@ def step_events(log, viewer, roster_of, maxhp, tables):
             e = ev_tuple(EV['UPKEEP'])
         elif kind in ('win', 'tie'):
             e = ev_tuple(EV['RESULT'], detail=3 if kind == 'tie' else int(args[0][1:]))
-        elif kind == 'switch':
+        elif kind in ('switch', 'drag'):
+            # A drag (step G46) is a switch of the forced kind: the entered slot, the roster index, the HP; no cause
+            # (the Pokemon that forced it is named by the move line, not by the drag).
             pos = ev_pos(args[0])
             side = pos // 2
             name = args[0].split(': ', 1)[1]
             cause, id2, _ = ev_cause(attrs, tables)
             hp = ev_hp(args[2], side, viewer, maxhp[side][name])
-            e = ev_tuple(EV['SWITCH'], pos, NOPOS, cause, roster_of[side][name], id2, *hp)
+            e = ev_tuple(EV['SWITCH' if kind == 'switch' else 'DRAG'], pos, NOPOS, cause, roster_of[side][name], id2, *hp)
         elif kind == 'move':
             pos = ev_pos(args[0])
             target = ev_pos(parts[4]) if len(parts) > 4 else None
@@ -1153,6 +1163,10 @@ def step_events(log, viewer, roster_of, maxhp, tables):
             if args[2] != 'atk' or cause != CAUSE['ABILITY'] or other == NOPOS:
                 raise ConversionError('fail-line', 'trace_to_c: unknown -fail %r' % line, detail=line)
             e = ev_tuple(EV['FAIL'], ev_pos(args[0]), other, cause, 0, id2)
+        elif kind == '-fail' and len(args) == 2 and args[1] == 'move: Double Shock':
+            # Double Shock's onTryMove without the Electric type (decision 0025, data/moves.ts:3954-3959): `-fail|X|move: Double
+            # Shock`, a plain FAIL on the user; its move line carries [still], which the move's own line already shows.
+            e = ev_tuple(EV['FAIL'], ev_pos(args[0]))
         elif kind == '-fail':
             # `-fail|X|heal` (a heal move at full HP) is a plain FAIL: the event has no field for the reason, which
             # for a status is the ailment the target already has.
@@ -1174,6 +1188,8 @@ def step_events(log, viewer, roster_of, maxhp, tables):
                 e = ev_tuple(EV['SINGLE_TURN'], ev_pos(args[0]), of, 0, tables['MOVE'][key(args[1])])
             elif args[1] == 'Wide Guard' and not attrs:  # POOL: the side condition of the user's side, one turn
                 e = ev_tuple(EV['SINGLE_TURN'], ev_pos(args[0]), NOPOS, 0, tables['MOVE'][key(args[1])])
+            elif args[1] == 'move: Roost' and not attrs:  # POOL, step G42: the Flying type is off for the turn (no [of])
+                e = ev_tuple(EV['SINGLE_TURN'], ev_pos(args[0]), NOPOS, 0, tables['MOVE'][key('Roost')])
             elif args[1] in ('move: Follow Me', 'move: Rage Powder') and not attrs:
                 # Team C: no [of]; [zeffect] is not in the format. Rage Powder (step G30) has the same line.
                 e = ev_tuple(EV['SINGLE_TURN'], ev_pos(args[0]), NOPOS, 0, tables['MOVE'][key(args[1][6:])])
@@ -1274,6 +1290,13 @@ def step_events(log, viewer, roster_of, maxhp, tables):
                 if cause == 0:
                     cause, id2 = CAUSE['MOVE'], tables['MOVE'][key('Soak')]
                 e = ev_tuple(EV['TYPE_CHANGE'], ev_pos(args[0]), NOPOS, cause, 0, id2, detail=TYPE_IDS[args[2]])
+            elif what == 'typechange' and kind == '-start' and len(args) == 3 and args[2].startswith('???/') \
+                    and args[2][4:] in TYPE_IDS and any(a == '[from] move: Double Shock' for a in attrs):
+                # Double Shock (decision 0025, data/moves.ts:3960-3964): `-start|X|typechange|???/Fighting|[from] move: Double
+                # Shock`: the ??? slot is DUOFORGE_TYPE_NONE and amount the second type id + 1 (the public meaning of amount).
+                cause, id2, _ = ev_cause(attrs, tables)
+                e = ev_tuple(EV['TYPE_CHANGE'], ev_pos(args[0]), NOPOS, cause, 0, id2, detail=TYPE_NONE,
+                             amount=TYPE_IDS[args[2][4:]] + 1)
             else:
                 raise ConversionError('start-end-line', 'trace_to_c: unknown %s %r' % (kind, line),
                                       detail='%s %s' % (kind, what))
@@ -1327,7 +1350,10 @@ def step_events(log, viewer, roster_of, maxhp, tables):
                              tables['MOVE'][key(move_name)], tables['ITEM'][key(args[1])] + 1)
             else:
                 # [weaken]: the second line of a resist berry (Team C, Chople Berry), detail 1.
-                e = ev_tuple(EV['ITEM_END'], ev_pos(args[0]), NOPOS, 0, 0, tables['ITEM'][key(args[1])] + 1,
+                # step G46: Red Card's `-enditem|holder|Red Card|[of] attacker`: the attacker's position is `other` (items.ts:5160).
+                of_attacker = [a for a in attrs if a.startswith('[of] ')]
+                e = ev_tuple(EV['ITEM_END'], ev_pos(args[0]), ev_pos(of_attacker[0][5:]) if of_attacker else NOPOS, 0, 0,
+                             tables['ITEM'][key(args[1])] + 1,
                              detail=1 if '[weaken]' in attrs else 0, flags=FLAG['EATEN'] if '[eat]' in attrs else 0)
         elif kind == '-item':
             # POOL (step G29): `-item|X|Item|[from] move: M[|[of] Y]` is an item that a move gave X (Trick, Switcheroo, Thief,
@@ -1556,15 +1582,17 @@ def convert_battle(name, spec, trace, tables):
             sd = new_state['sides'][s]
             row = [roster_of[s][name_of(sd['pokemon'][i])] if i >= 0 else 0xFF for i in sd['active']]
             occ.append(tuple(row))
-        # The positions that received a Pokemon, in the reference's order
-        # (each switch is logged twice, for the two audiences).
+        # The positions that received a Pokemon, in the reference's order of their LAST entry (each switch or drag is
+        # logged twice, for the two audiences). A position entered again in the same step (a drag of a Pokemon that
+        # switched in) moves to the end: the engine's activation ids of the positions are those of their last entry.
         entries = []
         for line in step['log']:
-            if line.startswith('|switch|'):
+            if line.startswith('|switch|') or line.startswith('|drag|'):
                 who = line.split('|')[2].split(':')[0]
                 flat = (int(who[1]) - 1) * 2 + (ord(who[2]) - ord('a'))
-                if flat not in entries:
-                    entries.append(flat)
+                if flat in entries:
+                    entries.remove(flat)
+                entries.append(flat)
         ent = entries + [0xFF] * (4 - len(entries))
         # The moves the reference's request offers per slot: bit k for move k,
         # 0x10 for Struggle, 0x20 for the recharge turn, 0xFF where there is nothing to compare.

@@ -140,8 +140,9 @@ The owner's OK, through the night authorization of 2026-10-09:
 | bit 19 `ILLUSION_UP` | visibility | public -> own side only (never supported before) |
 | `duoforge_battle_public_causes`, `duoforge_batch_public_causes`, `DUOFORGE_PUBLIC_CAUSE_*` (1, 2, 4) | functions, constants | the cause of a public-record refusal, from C |
 | POOL tail rev 5 (0x0503): `ill_shown`, `ill_override[4]`, `ill_snapshot[9]`, `ill_pending[4]` per side | state schema | internal; a registry entry; the POOL fingerprints change |
+| `duoforge_public_state` 1336 -> 1396 bytes, `DUOFORGE_VIEW_STATE_MAX` 1297 -> 1357 | layout | follows from tail rev 5 (step I1) |
 
-No view struct grows: the observation (736 bytes) and the extension (192 bytes) stay as they are.
+No view struct grows: the observation (736 bytes) and the extension (192 bytes) stay as they are. The public record of decision 0023 does grow, because it carries the canonical state: `duoforge_public_state` 1336 -> 1396 bytes and `DUOFORGE_VIEW_STATE_MAX` 1297 -> 1357 (step I1, PR #279; the night authorization covers it as a consequence of tail rev 5). Its Illusion bytes are zero until the Illusion step, which must mask them in the foe's record (the pending counts and the snapshot are not the viewer's knowledge).
 
 ## 7. Open points
 

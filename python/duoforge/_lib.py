@@ -30,6 +30,7 @@ _STATUS = ctypes.c_uint32
 # restype, argtypes of every function the package calls.
 _SIGNATURES = {
     "duoforge_batch_public": (_STATUS, (_P, _P, _P, _P)),
+    "duoforge_batch_public_causes": (_STATUS, (_P, _P, _P, _P)),
     "duoforge_batch_from_view": (_STATUS, (_P, _P, _P, _U32, _P)),
     "duoforge_battle_hypothesis": (_STATUS, (_P, _P, _U32, _P)),
     "duoforge_public_queue_mask": (_STATUS, (_P, _P, _P, _P)),
