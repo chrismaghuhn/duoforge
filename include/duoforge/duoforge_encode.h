@@ -20,7 +20,7 @@
  * zero):
  *   E_UNSUPPORTED      a value the version or mask cannot show: Sand, Snow,
  *                      Electric or Misty Terrain or Tox without its mask bit,
- *                      a Recharge option under versions 1 and 2, a mask bit
+ *                      a Recharge option under versions 1 and 2, a REVIVE option under versions 1 to 4, a mask bit
  *                      the records' library does not support;
  *   E_INVALID_ARGUMENT anything malformed: an unknown version, a mask past
  *                      the version's feature bits or nonzero under versions 1
@@ -40,12 +40,12 @@ extern "C" {
 #endif
 
 #define DUOFORGE_ENCODER_MIN 1u
-#define DUOFORGE_ENCODER_MAX 4u
+#define DUOFORGE_ENCODER_MAX 5u
 #define DUOFORGE_ENCODER_SLOT_FEATURES 12u
 #define DUOFORGE_ENCODER_SLOT_VALUES (DUOFORGE_ACTIVE_PER_SIDE * DUOFORGE_MAX_SLOT_OPTIONS * DUOFORGE_ENCODER_SLOT_FEATURES)
 #define DUOFORGE_ENCODER_PAIR_VALUES (DUOFORGE_MAX_SLOT_OPTIONS * DUOFORGE_MAX_SLOT_OPTIONS)
 
-/* The obs width of an encoder version (607 for 1 and 2, 842 for 3, 850 for 4);
+/* The obs width of an encoder version (607 for 1 and 2, 842 for 3, 850 for 4, 862 for 5);
    E_INVALID_ARGUMENT for another version. */
 duoforge_status duoforge_encoder_size(uint32_t version, uint32_t *out_obs_size);
 

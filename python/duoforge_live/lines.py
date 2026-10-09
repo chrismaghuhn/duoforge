@@ -72,7 +72,7 @@ GENERIC = {"move", "switch", "-damage", "-heal", "faint", "cant", "-miss", "-cri
 
 # Moves whose effect on the view no line shows: Baton Pass hands stages and volatiles to the incoming Pokemon,
 # Revival Blessing revives a member through a request of its own.
-SILENT_MOVES = {"Baton Pass", "Revival Blessing", "Shed Tail"}
+SILENT_MOVES = {"Baton Pass", "Shed Tail"}  # Revival Blessing: folded since step G52 (the REVIVE event)
 
 # Showdown's choice items at the pin (isChoice; the reference test checks the list): a holder is locked into the move
 # of its |move| line until it leaves (data/items.ts onModifyMove, data/conditions.ts choicelock).
