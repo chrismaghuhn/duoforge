@@ -271,8 +271,8 @@ int main(void)
         }
         DF_CHECK(&t, zero);
 
-        /* ILLUSION_UP (volatile bit 19) is shown for the own side only from encoder 5 (decision 0026, option B): the foe's
-         * bit moves no column of encoder 5, and encoder 4 still shows it on the foe's side */
+        /* ILLUSION_UP (volatile bit 19) is shown for the own side only (decision 0026, option B): the foe's bit moves no
+         * column of any version, encoder 4 included */
         {
             const uint64_t illusion = UINT64_C(1) << DUOFORGE_VIEWEXT_FEATURE_ILLUSION;
             static float none5[V5];
@@ -296,7 +296,7 @@ int main(void)
             DF_CHECK(&t, duoforge_encode(5u, illusion, ob, d, &i, foe5, s5, p5) == DUOFORGE_OK);
             DF_CHECK(&t, memcmp(foe5, none5, sizeof none5) == 0);
             DF_CHECK(&t, duoforge_encode(4u, illusion, ob, d, &i, foe4, s5, p5) == DUOFORGE_OK);
-            DF_CHECK(&t, memcmp(foe4, none4, sizeof none4) != 0);
+            DF_CHECK(&t, memcmp(foe4, none4, sizeof none4) == 0);
         }
 
         /* encoder 4 accepts volatile bit 21 and writes nothing for it: the same bytes as the record without it */

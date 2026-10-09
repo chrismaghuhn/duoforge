@@ -240,7 +240,7 @@ static void dfi_ext_side(const duoforge_observation *ob, const duoforge_side_ext
     for (uint32_t p = 0u; p < DUOFORGE_ACTIVE_PER_SIDE; ++p) {
         const duoforge_position_ext *q = x != NULL ? &x->positions[p] : NULL;
         for (uint32_t b = 0u; b < DFI_ENC_VOLATILES; ++b) {
-            /* encoder 5 (decision 0026, option B): ILLUSION_UP is shown for the own side only; the foe's bit is always 0 */
+            /* decision 0026, option B: ILLUSION_UP is shown for the own side only, in every encoder version (the foe's bit is 0) */
             const bool hidden = foe_hides_illusion && b == DFI_ENC_ILLUSION_BIT;
             dfi_put(o++, mask, dfi_enc_volatile_feature[b],
                     dfi_bool(q != NULL && !hidden && ((q->volatiles >> b) & 1u) != 0u));
@@ -289,7 +289,7 @@ static void dfi_block(const duoforge_observation *ob, const duoforge_observation
     for (uint32_t k = 0u; k < DUOFORGE_SIDE_COUNT; ++k) {
         const uint32_t abs = k == 0u ? viewer : 1u - viewer; /* own first */
         dfi_ext_side(ob, present ? &ext->sides[abs] : NULL, ext != NULL && !present, abs, mask,
-                     version >= 5u && k != 0u, &o[5u + k * DFI_ENC_EXT_SIDE]);
+                     k != 0u, &o[5u + k * DFI_ENC_EXT_SIDE]);
     }
     if (version >= 4u) { /* appended by encoder 4: per side (own first) and position, Roost and move_failed */
         float *a = &o[DFI_ENC_EXT];
