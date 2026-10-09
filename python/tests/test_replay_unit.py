@@ -314,6 +314,12 @@ class LinesTest(unittest.TestCase):
         # Step G62 (decision 0031): Haze's -clearallboost is the CLEAR_ALL_BOOSTS event; the tracker folds it
         self.assertEqual(lines.check("|-clearallboost", self.view), "fold")
 
+    def test_after_you_and_quash_fold(self):
+        # Step G62: After You and Quash move their target in the action queue (data/moves.ts afteryou, quash: -activate
+        # of the target); the queue is no field of the view, the move lines that follow show the order
+        self.assertEqual(lines.check("|-activate|p2a: Gholdengo|move: After You", self.view), "fold")
+        self.assertEqual(lines.check("|-activate|p2a: Gholdengo|move: Quash", self.view), "fold")
+
     def test_drag_folds(self):
         # Step G46: a forced switch brings a member in as a switch does (the tracker folds it as one, or stops)
         self.assertEqual(lines.check("|drag|p2a: Gholdengo|Gholdengo, L50|100/100", self.view), "fold")
