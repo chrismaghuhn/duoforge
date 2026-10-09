@@ -52,6 +52,9 @@ def scored(rows, rule):
     for i in range(score.size):
         score[i] = rule(rows["suite"][i], rows["opponent"][i], rows["arm"][i], rows["bucket"][i], int(rows["pair"][i]))
     out["score"], out["finished"] = score, np.ones(score.size, bool)
+    from duoforge_search.expert_eval import TR_FIELDS
+    for name in TR_FIELDS:  # the Trick Room diagnostic: no TR in these games
+        out[name] = np.zeros(score.size, np.int64)
     return out
 
 
@@ -290,6 +293,7 @@ class ComputeLedger(unittest.TestCase):
             self.assertEqual(code, 0)
             report = json.loads((d / "report.json").read_text(encoding="utf-8"))
             self.assertEqual(report["status"], "PASS")
+            self.assertEqual(report["trick_room"]["last_turn_unobserved_games"], 0)  # the diagnostic rides along
             self.assertEqual(report["compute"]["pilot"]["cpu_core_seconds"], 1200.0)
             lost = scored(rows, lambda s, o, a, b, i: 0.0 if a == "pilot" else 1.0)
             code, _ = run("lost.json", **{"--baseline": write("lost_baseline.json", baseline(lost))})
@@ -324,6 +328,197 @@ class ComputeLedger(unittest.TestCase):
             with contextlib.redirect_stderr(io.StringIO()), self.assertRaises(SystemExit):
                 ev.main(sum(([k, v] for k, v in paths.items()), []) + ["--out", str(d / "x.json"), "--seed", "1"])
 
+
+class FakeBatch:
+    """One game (E=1) as play_suite's query leaves it: both players' own views, the chosen candidate at index 0."""
+
+    def __init__(self, moves, *, turn, trick_room, picks, requested=(True, True)):
+        from duoforge import _layout
+        c_ = _layout.CONSTANTS
+        tr, taunt, fake, imprison, plain = (moves[k] for k in ("trickroom", "taunt", "fakeout", "imprison", "plain"))
+        # Side 0: A0 knows Trick Room and Imprison, A1 Taunt and Fake Out. Side 1: B0 the setter, B1 knows no TR.
+        team = (((plain, tr, imprison, fake), (taunt, fake, plain, plain)),
+                ((tr, plain, plain, plain), (plain, plain, plain, plain)))
+        self.requests = np.zeros((1, 2), dtype=_layout.REQUEST)
+        self.observations = np.zeros((1, 2), dtype=_layout.OBSERVATION)
+        self.candidates = np.zeros((1, 2, _layout.MAX_CANDIDATES), dtype=_layout.SIDE_CHOICE)
+        for p in range(2):
+            self.requests["requested"][0, p] = requested[p]
+            self.requests["boundary_kind"][0, p] = c_["DUOFORGE_BOUNDARY_TURN"]
+            self.observations["turn"][0, p] = turn
+            self.observations["trick_room_turns"][0, p] = trick_room
+            sides = self.observations["sides"][0, p]
+            for s in range(2):
+                sides["member_count"][s] = 2
+                sides["occupant"][s] = (0, 1)
+                for m in range(2):
+                    sides["members"]["move_count"][s, m] = 4
+                    if s == p:  # the foe's moves stay hidden: the tracker reads each side's own view only
+                        sides["members"]["move_ids"][s, m] = team[s][m]
+            self.candidates["kind"][0, p, 0] = c_["DUOFORGE_CHOICE_SLOTS"] if requested[p] else 0
+            slots = self.candidates["slots"][0, p, 0]
+            for slot, pick in enumerate(picks[p]):
+                if pick is None:
+                    slots["kind"][slot], slots["target"][slot] = c_["DUOFORGE_SLOT_NONE"], 0xFF
+                else:
+                    slots["kind"][slot] = c_["DUOFORGE_SLOT_MOVE"]
+                    slots["move_slot"][slot], slots["target"][slot] = pick
+        self.indices = np.array([[0 if r else _layout.NO_CHOICE for r in requested]], dtype=np.int64)
+
+
+class TrickRoom(unittest.TestCase):
+    NONE = 0xFF
+
+    @classmethod
+    def setUpClass(cls):
+        from duoforge import _layout, data
+        cls.ctx = duoforge.Context(_layout.CONSTANTS["DUOFORGE_DATA_KIND_POOL"])
+        cls.plain = data.find(cls.ctx, data.TABLE_MOVE, "protect")
+
+    @classmethod
+    def tearDownClass(cls):
+        cls.ctx.close()
+
+    def play(self, steps, seat=0):
+        """steps: (turn, trick_room, picks[, requested]); returns the game's TR fields."""
+        from duoforge_search import expert_eval as ev
+        tracker = ev.TrickRoomTracker(self.ctx)
+        moves = {**ev.tr_moves(self.ctx), "plain": self.plain}
+        tracker.start(1, np.array([seat]))
+        for i, step in enumerate(steps):
+            turn, trick_room, picks = step[:3]
+            batch = FakeBatch(moves, turn=turn, trick_room=trick_room, picks=picks,
+                              requested=step[3] if len(step) > 3 else (True, True))
+            tracker.before(batch, batch.indices, np.array([True]), i, False)
+            tracker.after(batch, np.array([False]))
+        self.assertEqual(set(tracker.fields), set(ev.TR_FIELDS))
+        return {k: int(v[0]) for k, v in tracker.fields.items()}
+
+    def test_trick_room_tracker_attribution(self):
+        N = self.NONE
+        TR, IMPRISON, FAKE0 = (1, N), (2, N), (3, 3)  # side 0, A0's move slots; Fake Out at B1
+        TAUNT1, FAKE1 = (0, 2), (1, 3)  # side 0, A1: Taunt at B0 (position 2), Fake Out at B1 (position 3)
+        B_TR, B_PLAIN = (0, N), (1, 0)
+        PLAIN = (0, 2)
+        # The student sets TR on turn 1; it runs out by itself (1 -> 0 is no early end).
+        got = self.play([(1, 0, ((TR, None), (B_PLAIN, None))), (2, 4, ((PLAIN, None), (B_PLAIN, None))),
+                         (3, 3, ((PLAIN, None), (B_PLAIN, None))), (4, 2, ((PLAIN, None), (B_PLAIN, None))),
+                         (5, 1, ((PLAIN, None), (B_PLAIN, None))), (6, 0, ((PLAIN, None), (B_PLAIN, None)))])
+        self.assertEqual(got, {"tr_setter_student": 1, "tr_setter_opponent": 1, "tr_sets_student": 1,
+                               "tr_sets_opponent": 0, "tr_first_set_turn_student": 1, "tr_reversals_student": 0,
+                               "tr_blocks_student": 0, "tr_turns": 4, "tr_unattributed": 0, "tr_last_turn_choice": 0})
+        # The opponent sets it, the student ends it early with its own Trick Room: a reversal.
+        got = self.play([(1, 0, ((PLAIN, None), (B_TR, None))), (2, 4, ((TR, None), (B_PLAIN, None))),
+                         (3, 0, ((PLAIN, None), (B_PLAIN, None)))])
+        self.assertEqual((got["tr_sets_opponent"], got["tr_reversals_student"], got["tr_sets_student"],
+                          got["tr_turns"], got["tr_unattributed"]), (1, 1, 0, 1, 0))
+        # The same from seat 1: the student is side 1 now, so side 0's set is the opponent's.
+        got = self.play([(1, 0, ((TR, None), (B_PLAIN, None))), (2, 4, ((PLAIN, None), (B_PLAIN, None)))], seat=1)
+        self.assertEqual((got["tr_sets_opponent"], got["tr_sets_student"], got["tr_first_set_turn_student"]), (1, 0, 0))
+        # Both sides choose Trick Room, or neither does: the change is never attributed silently.
+        got = self.play([(1, 0, ((TR, None), (B_TR, None))), (2, 4, ((PLAIN, None), (B_PLAIN, None))),
+                         (3, 0, ((PLAIN, None), (B_PLAIN, None))), (4, 4, ((PLAIN, None), (B_PLAIN, None)))])
+        self.assertEqual((got["tr_sets_student"], got["tr_sets_opponent"], got["tr_unattributed"]), (0, 0, 3))
+        # A mid-turn switch request (only the opponent asked) between the choice and the change: the student's
+        # turn-1 choice still owns the set.
+        got = self.play([(1, 0, ((TR, None), (B_PLAIN, None))), (1, 0, ((None, None), (None, None)), (False, True)),
+                         (2, 4, ((PLAIN, None), (B_PLAIN, None)))])
+        self.assertEqual((got["tr_sets_student"], got["tr_unattributed"]), (1, 0))
+        # Blocks are chosen attempts while TR is inactive: Imprison by a TR knower with a TR knower across, Taunt
+        # at the setter; Fake Out at the non-setter is none, nor is a Taunt at the setter during TR.
+        got = self.play([(1, 0, ((IMPRISON, TAUNT1), (B_PLAIN, None))), (2, 0, ((FAKE0, FAKE1), (B_TR, None))),
+                         (3, 4, ((PLAIN, TAUNT1), (B_PLAIN, None)))])
+        self.assertEqual((got["tr_blocks_student"], got["tr_sets_opponent"]), (2, 1))
+        # Trick Room chosen on the game's last observed turn: its effect is never seen.
+        got = self.play([(1, 0, ((PLAIN, None), (B_PLAIN, None))), (2, 0, ((TR, None), (B_PLAIN, None)))])
+        self.assertEqual((got["tr_last_turn_choice"], got["tr_sets_student"]), (1, 0))
+
+    def test_trick_room_tracker_real_games(self):
+        # Random play of two pool teams that know Trick Room in play_suite's hook order: the fields agree with the
+        # field starts seen from outside.
+        from pathlib import Path
+        from duoforge_search import expert_eval as ev
+        root = Path(__file__).resolve().parents[2] / "data" / "teams"
+        p = teams.load(self.ctx, ["B", "C"], root=str(root))
+        n = 16
+        side0, side1 = np.arange(n) % 2, (np.arange(n) // 2) % 2
+        tracker = ev.TrickRoomTracker(self.ctx)
+        tracker.start(n, np.arange(n) % 2)
+        policy = duoforge.RandomPolicy(5, n)
+        starts = np.zeros(n, np.int64)
+        prev = None
+        with duoforge.Batch(self.ctx, p.setups(side0, side1), 2, 5) as batch:
+            for e in range(n):
+                batch.reset(e, 1)
+            policy.start_episodes(np.arange(n), np.ones(n, dtype=np.uint64))
+            for t in range(200):
+                batch.query()
+                if not batch.requests["requested"].any():
+                    break
+                now = batch.observations["trick_room_turns"][:, 0].astype(np.int64)
+                if prev is not None:
+                    starts += (prev == 0) & (now > 0)
+                prev = now
+                indices = policy.choose(batch)
+                tracker.before(batch, indices, batch.requests["requested"].any(axis=1), t, False)
+                batch.step(indices)
+                tracker.after(batch, np.zeros(n, bool))
+        f = tracker.fields
+        self.assertTrue(f["tr_setter_student"].all() and f["tr_setter_opponent"].all())  # B and C both know TR
+        self.assertGreater(int(starts.sum()), 0)
+        self.assertTrue((f["tr_sets_student"] + f["tr_sets_opponent"] + f["tr_unattributed"] >= starts).all())
+        self.assertTrue(((f["tr_first_set_turn_student"] > 0) == (f["tr_sets_student"] > 0)).all())
+
+    def test_trick_room_report_groups(self):
+        from duoforge_search import expert_eval as ev
+        rows = ev.make_eval_rows(pool(), manifest(ev))
+        records = scored(rows, strong)
+        n = records["game_id"].size
+        i = np.arange(n)
+        pilot = records["arm"] == "pilot"
+        # Pilot games: every third student team sets TR on turn 2 and wins; every fifth opponent team has a setter
+        # and sets it; the student reverses it in every other such game and makes one block attempt in each.
+        st, op = (i % 3 == 0) & pilot, (i % 5 == 0) & pilot
+        records["tr_setter_student"][st] = 1
+        records["tr_sets_student"][st] = 1
+        records["tr_first_set_turn_student"][st] = 2
+        records["score"][st] = 1.0
+        records["tr_setter_opponent"][op] = 1
+        records["tr_sets_opponent"][op] = 1
+        records["tr_reversals_student"][op & (i % 2 == 0)] = 1
+        records["tr_blocks_student"][op] = 1
+        records["tr_turns"][st | op] = 3
+        records["tr_last_turn_choice"][:7] = 1
+        records["finished"][1] = False  # an unfinished game counts nowhere
+        report = ev.trick_room_report(records)
+        self.assertEqual(report["last_turn_unobserved_games"], 6)
+        self.assertIn("6 games", report["note"])
+        done = records["finished"]
+        a = report["arms"]["pilot"]["all"]
+        self.assertEqual(a["games"], int((pilot & done).sum()))
+        self.assertEqual(a["student_setter"]["games"], int((st & done).sum()))
+        self.assertEqual(a["student_setter"]["score"], 1.0)
+        low, high = a["student_setter"]["ci95"]
+        self.assertTrue(low <= 1.0 <= high)
+        self.assertEqual(a["opponent_setter"]["games"], int((op & done).sum()))
+        self.assertAlmostEqual(a["opponent_setter"]["score"], float(records["score"][op & done].mean()))
+        self.assertEqual(a["student_sets"]["games_with_set"], int((st & done).sum()))
+        self.assertEqual(a["student_sets"]["first_turn"], {"2": int((st & done).sum())})
+        self.assertEqual(a["answers"]["games_opponent_set"], int((op & done).sum()))
+        self.assertEqual(a["answers"]["reversals"], int((op & done & (i % 2 == 0)).sum()))
+        self.assertEqual(a["answers"]["games_opponent_setter"], int((op & done).sum()))
+        self.assertEqual(a["answers"]["blocks"], int((op & done).sum()))
+        self.assertEqual(a["tr_active"]["games"], int(((st | op) & done).sum()))
+        self.assertEqual(a["tr_inactive"]["games"], int((pilot & done & ~(st | op)).sum()))
+        c = report["arms"]["control"]["all"]
+        self.assertEqual((c["student_setter"]["games"], c["tr_active"]["games"]), (0, 0))
+        self.assertIsNone(c["student_setter"]["score"])  # an empty group has no rate, not 0
+        self.assertIsNone(c["student_setter"]["ci95"])
+        self.assertEqual(set(report["arms"]["pilot"]["by_suite"]), {s for s, _, _, _ in ev.SCHEDULE})
+        self.assertEqual(report, ev.trick_room_report(records))  # fixed bootstrap seed: reproducible
+        json.dumps(report, allow_nan=False)
+        with self.assertRaises(ValueError):  # a negative count is a broken record, not a game
+            ev.trick_room_report({**records, "tr_turns": np.full(n, -1)})
 
 if __name__ == "__main__":
     unittest.main()
