@@ -69,10 +69,14 @@ static const struct {
     {"g50_double_shock_soak", 2u, 18u, 0u},
     {"g50_double_shock_ground", 0u, 0u, 0u},
     {"g50_double_shock_ground", 1u, 255u, 6u},
+    /* Double Shock first, then Soak on the typeless Pawmot: Soak clears the second type as well (type2 back to 0). */
+    {"g50_double_shock_soak_after", 0u, 0u, 0u},
+    {"g50_double_shock_soak_after", 1u, 255u, 6u},
+    {"g50_double_shock_soak_after", 2u, 18u, 0u},
 };
 
 static const char *const names[] = {"g50_double_shock_fail", "g50_double_shock_switch", "g50_double_shock_soak",
-                                    "g50_double_shock_ground"};
+                                    "g50_double_shock_ground", "g50_double_shock_soak_after"};
 
 static void build_setup(const df_conf_battle *cb, duoforge_battle_setup *s)
 {

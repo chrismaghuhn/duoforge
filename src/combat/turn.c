@@ -4075,6 +4075,37 @@ static uint32_t dfi_move_hits(const dfi_move_data *md)
     return md->special == DFI_SPECIAL_MULTI_HIT_2 ? 2u : md->special == DFI_SPECIAL_TRIPLE_AXEL ? 3u : 1u;
 }
 
+/* Double Shock's onTryMove (decision 0025, data/moves.ts:3954-3959): without the Electric type it fails, -fail and [still]
+ * (*stopped). A user that has the type is played only as Pawmot with its own two types (dfi_double_shock_shape); any other
+ * shape is refused, never guessed. Shared by the hit path and the no-target path, since TryMove runs before the no-targets
+ * test (sim/battle-actions.ts:486-513). */
+static duoforge_status dfi_double_shock_try(dfi_run *r, uint32_t user, bool *stopped)
+{
+    uint32_t own[2];
+    dfi_types_of(r->b, dfi_at(r->b, user), own);
+    *stopped = own[0] != DFI_TYPE_ELECTRIC && own[1] != DFI_TYPE_ELECTRIC;
+    if (*stopped) {
+        dfi_fail_still(r, user);
+        return DUOFORGE_OK;
+    }
+    return dfi_double_shock_shape(r->b, user) ? DUOFORGE_OK : DUOFORGE_E_UNSUPPORTED;
+}
+
+/* A move with nothing to hit: Showdown runs TryMove before the no-targets test (sim/battle-actions.ts:486-513), and the
+ * target is not null there (the foe in slot 0 is an object even when it has fainted), so Double Shock's onTryMove fails
+ * first (recorded: g50_double_shock_no_target). */
+static duoforge_status dfi_no_target_or_try(dfi_run *r, uint32_t user, const dfi_move_data *md)
+{
+    if (md->special == DFI_SPECIAL_DOUBLE_SHOCK) {
+        bool stopped = false;
+        const duoforge_status ds = dfi_double_shock_try(r, user, &stopped);
+        if (ds != DUOFORGE_OK || stopped) {
+            return ds;
+        }
+    }
+    return dfi_no_target(r, user);
+}
+
 /* runMove and useMove for one move action (sim/battle-actions.ts:210-548,
  * the hit steps at 550-620 and the Champions hit loop). */
 static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool *ran)
@@ -4234,7 +4265,7 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
         dfi_emit(r, &e);
     }
     if (aimed == DUOFORGE_NO_POSITION && count == 0u) {
-        return dfi_no_target(r, user); /* no target at all: before getMoveTargets */
+        return dfi_no_target_or_try(r, user, md); /* no target at all: before getMoveTargets */
     }
     /* getMoveTargets' RedirectTarget event (sim/pokemon.ts:829-831), after
      * the retarget of a fainted foe and before TryMove. priorityEvent stops
@@ -4384,7 +4415,7 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
         }
     }
     if (count == 0u) {
-        return dfi_no_target(r, user); /* after TryMove (sim/battle-actions.ts:509-513) */
+        return dfi_no_target_or_try(r, user, md); /* after TryMove (sim/battle-actions.ts:509-513) */
     }
     if (md->special == DFI_SPECIAL_HELPING_HAND) {
         return dfi_run_helping_hand(r, user, targets[0]);
@@ -4558,14 +4589,10 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
      * A user that has the type is played only as Pawmot with its own two types (dfi_double_shock_shape); any other shape is
      * refused, never guessed. */
     if (md->special == DFI_SPECIAL_DOUBLE_SHOCK) {
-        uint32_t own[2];
-        dfi_types_of(b, dfi_at(b, user), own);
-        if (own[0] != DFI_TYPE_ELECTRIC && own[1] != DFI_TYPE_ELECTRIC) {
-            dfi_fail_still(r, user);
-            return DUOFORGE_OK;
-        }
-        if (!dfi_double_shock_shape(b, user)) {
-            return DUOFORGE_E_UNSUPPORTED;
+        bool stopped = false;
+        const duoforge_status ds = dfi_double_shock_try(r, user, &stopped);
+        if (ds != DUOFORGE_OK || stopped) {
+            return ds;
         }
     }
     /* Fake Out's and First Impression's onTry (in trySpreadMoveHit, after
