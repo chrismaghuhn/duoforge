@@ -1450,6 +1450,10 @@ int main(void)
          * do). Wimp Out (abilities.ts:5495, champions :99) has no pool row; if one is added it must read the same bit. */
         DF_CHECK_EQ_U64(&t, dfi_support.items[DFI_ITEM_SHELLBELL] != 0u ? 1u : 0u, 0u);
         DF_CHECK_EQ_U64(&t, dfi_support.abilities[DFI_ABILITY_PICKPOCKET] != 0u ? 1u : 0u, 0u);
+        /* The equivalence of the drag-in DragOut re-check (mutant M1, step G46): no marked row changes a blocker's ability
+         * between the hit-time DragOut and the drag-in. Skill Swap (and any move that changes abilities mid-turn) would make
+         * that re-check live: once it is marked, the drag-in DragOut must read the holder's ability at the drag-in. */
+        DF_CHECK_EQ_U64(&t, dfi_support.moves[DFI_MOVE_SKILLSWAP] != 0u ? 1u : 0u, 0u);
         DF_CHECK_EQ_U64(&t, marked_count, 157u); /* the four of step G48 (Rage Fist, Stone Axe, Ceaseless Edge, Population Bomb), the four of step G46 (Roar, Whirlwind, Dragon Tail, Circle Throw), Taunt and Yawn (G31), the four hazards (G37), the four of step G39, the four of step G29, Imprison (G38), the three of step G33, Perish Song (G26), the four of step G25, Disable (G27), the ten of step G35, Toxic and Poison Fang (G36), the ten of step G30, the eleven of step G32 and the seven of step G34 */
     }
 
