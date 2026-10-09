@@ -244,3 +244,19 @@ The first local attempt is superseded. On 2026-10-09 the generation finished loc
   - forecast = JIT + 12288 / warm_rate.
   - The thresholds are unchanged: any cut-off, any refusal, warm_rate < 5 games/s or forecast > 3600 s is a STOP.
   - The report shows both the narrow and the full-width rate.
+
+### Control arm matching on AWS (owner decisions, 2026-10-09 evening)
+
+**First AWS run** (2be0afe30d62-20261009T172944Z): generation took 16 min (4947 CPU core-seconds, 19968 games), loading 85 s and distill 1.3 min. The pilot ledger totals 5202 CPU core-seconds and 59.9 GPU-seconds.
+
+**Calibration cap dropped:** the control's 10% calibration cap could not be met with a GPU budget of 60 seconds. One GPU update costs about 4.5 GPU-seconds and the match needs one warm update per device. The owner dropped the cap. It survives as a report field only; the binding rule stays both axes within 5% of the pilot. Calibration updates use the control recipe and count fully in the control's ledger.
+
+**First control run discarded:** the continuation stopped with a compute mismatch. Control 4142 CPU core-seconds / 62.9 GPU-seconds against the pilot's 5202 / 59.9 put the GPU axis already outside 5% (|Δ| = 3.0 > 2.995) at −20% CPU. More training could not bring it back. Probable cause: the fixed GPU share left out the resume's GPU JIT (~13 GPU-seconds). The owner chose a fresh control run from params-49333. The discarded run and its ledger are reported but not charged. Pilot, generation and distill stay as run.
+
+**The fresh control run** chooses each update's device by feedback (`train --update-gpu-share match`), with no calibration and no p1_match:
+- Before each update it takes the device whose axis is further behind its pilot total.
+- It never takes a device whose expected cost (the next update, including the JIT of a process's first update on that device) would push that axis above 1.05 of the pilot.
+- It stops once both axes are ≥ 0.95. If no device is allowed before that, the run STOPs as incomplete; it never exceeds the tolerance.
+- It runs in one process where possible, since every resume pays a JIT.
+
+`expert_eval.validate_compute` checks the result unchanged: both axes within 5%.
