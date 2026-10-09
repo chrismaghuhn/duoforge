@@ -310,6 +310,40 @@ static void check_encoder_refusal(df_test *t)
     }
 }
 
+/* M5 (decision 0026 section 4, amended by I2): the disguise row shows the status the lines showed on the name (ill_override), not the
+ * disguise member's own state. Here the true Gholdengo is burned while the shown status is none; the foe must see none. */
+static void check_disguise_status(df_test *t, const duoforge_context *ctx)
+{
+    duoforge_battle *b = replay(t, ctx, "i2_illusion_break", 1u);
+    if (b == NULL) {
+        return;
+    }
+    b->sides[0].members[3].status = DFI_STATUS_BRN; /* the truth of the shown member; the foe was never shown it */
+    duoforge_observation foe;
+    if (observe(t, ctx, b, 1u, &foe)) {
+        DF_CHECK_EQ_U64(t, foe.sides[0].members[3].status, DUOFORGE_AILMENT_NONE);
+    }
+    duoforge_battle_destroy(b);
+}
+
+/* M6 (decision 0026 section 4, amended by I2, point (a)): a holder the viewer has seen fainted under its own name is not a possible
+ * disguise, whether or not it is on the field. Here the holder is benched and unseen in the unbroken battle; the foe's knowledge of it
+ * is set to fainted (white-box), and ILLUSION_POSSIBLE must be clear. */
+static void check_possible_fainted(df_test *t, const duoforge_context *ctx)
+{
+    duoforge_battle *b = replay(t, ctx, "i2_unbroken_switchout", 2u);
+    if (b == NULL) {
+        return;
+    }
+    b->sides[1].seen_mask = (uint8_t)(b->sides[1].seen_mask | 1u);
+    b->sides[1].knowledge[0].hp_percent = 0u;
+    b->sides[1].knowledge[0].hp_flag = 0u;
+    uint32_t causes = 0u;
+    DF_CHECK(t, duoforge_battle_public_causes(ctx, b, 1u, &causes) == DUOFORGE_OK);
+    DF_CHECK_EQ_U64(t, causes & DUOFORGE_PUBLIC_CAUSE_ILLUSION_POSSIBLE, 0u);
+    duoforge_battle_destroy(b);
+}
+
 int main(void)
 {
     df_test t;
@@ -320,5 +354,7 @@ int main(void)
     check_unbroken(&t, ctx);
     check_ab_info_safety(&t, ctx);
     check_encoder_refusal(&t);
+    check_disguise_status(&t, ctx);
+    check_possible_fainted(&t, ctx);
     return df_test_end(&t);
 }
