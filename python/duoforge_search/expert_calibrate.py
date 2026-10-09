@@ -9,8 +9,9 @@ and is re-planned, never replaced by regenerated data. No battle rules here.
 
 Manifest: {"schema": "duoforge-rescue-fixtures-1", "fixtures": [{"file":
 "<plain name beside the manifest>", "sha256": "<of the file bytes>"}, ...]}.
-Payload: a JSON object with at least key (uint64), tables (W, K, M), weights
-(W,) and foe_probs (W, M), as the honest search records them.
+Payload: a JSON object with at least key (uint64), exact (true), tables
+(W, K, M), weights (W,) and foe_probs (W, M), as the honest search records
+them.
 """
 from dataclasses import dataclass
 import hashlib
@@ -24,6 +25,7 @@ from .errors import SearchError
 
 SCHEMA = "duoforge-rescue-fixtures-1"
 FIXTURE_COUNT = 5
+PROBABILITY_TOLERANCE = 1e-6
 
 
 class CalibrationStop(SearchError):
@@ -39,11 +41,24 @@ class RescueFixture:
     sha256: str
 
 
+def _numbers(value):
+    if isinstance(value, list):
+        return all(_numbers(v) for v in value)
+    return isinstance(value, (int, float)) and not isinstance(value, bool)
+
+
 def _array(value, name, ndim):
+    # Only JSON numbers: strings, booleans, ragged lists and integers beyond
+    # int64 (object arrays) stop instead of being converted.
+    if not _numbers(value):
+        raise CalibrationStop(f"rescue fixture {name} must hold only numbers")
     try:
-        a = np.array(value, dtype=np.float64)
+        raw = np.array(value)
     except (TypeError, ValueError) as err:
         raise CalibrationStop(f"rescue fixture {name} is not a numeric array") from err
+    if raw.dtype.kind not in "iuf":
+        raise CalibrationStop(f"rescue fixture {name} must hold only numbers (got {raw.dtype})")
+    a = raw.astype(np.float64)
     if a.ndim != ndim or 0 in a.shape or not np.isfinite(a).all():
         raise CalibrationStop(f"rescue fixture {name} must be a finite {ndim}-d array (got shape {a.shape})")
     a.setflags(write=False)
@@ -58,8 +73,10 @@ def _fixture(data, sha):
         payload = json.loads(data, parse_constant=invalid_constant)
     except ValueError as err:
         raise CalibrationStop("rescue fixture is not JSON") from err
-    if not isinstance(payload, dict) or not {"key", "tables", "weights", "foe_probs"} <= set(payload):
-        raise CalibrationStop("rescue fixture needs key, tables, weights and foe_probs")
+    if not isinstance(payload, dict) or not {"key", "tables", "weights", "foe_probs", "exact"} <= set(payload):
+        raise CalibrationStop("rescue fixture needs key, tables, weights, foe_probs and exact")
+    if payload["exact"] is not True:
+        raise CalibrationStop("rescue fixture is not an exact-rescue record")
     key = payload["key"]
     if isinstance(key, bool) or not isinstance(key, int) or not 0 <= key < 1 << 64:
         raise CalibrationStop(f"rescue fixture key must be a uint64 (got {key!r})")
@@ -71,6 +88,10 @@ def _fixture(data, sha):
         raise CalibrationStop(f"rescue fixture weights must be {nw} positive numbers")
     if foe_probs.shape != (nw, m) or (foe_probs < 0).any():
         raise CalibrationStop(f"rescue fixture foe_probs must be ({nw}, {m}) nonnegative numbers")
+    # Each world's top-M foe probabilities cover part of its policy: mass in (0, 1].
+    coverage = foe_probs.sum(axis=1)
+    if not ((coverage > 0) & (coverage <= 1 + PROBABILITY_TOLERANCE)).all():
+        raise CalibrationStop("rescue fixture foe_probs rows must carry mass in (0, 1]")
     return RescueFixture(key, tables, weights, foe_probs, sha)
 
 

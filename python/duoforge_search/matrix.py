@@ -42,9 +42,14 @@ and retry and never reset per call. It counts float pivots (the start
 pivots of the Bayesian tableau and the basis solves included), exact
 pivots, exact operations (Fraction construction and conversion,
 +, -, *, /, negation and comparisons) and the widest exact numerator or
-denominator, checked on the starting tableau and after every exact pivot.
-Work is charged before it runs, so a cap stops the solver before the step
-that would exceed it, with WorkBudgetExceeded naming the cap. That error is
+denominator, checked on the starting tableau, every ratio-test quotient, the
+stored entries after every exact pivot and the final strategy quotients (a
+product inside one row update, bounded by its checked operands, is not
+checked on its own). Work whose amount is known in advance (pivots,
+tableau construction, row updates, conversions) is charged before it runs;
+the comparisons and divisions of Bland's entering and ratio tests, whose
+number depends on their outcome, right after they run. A cap stops the
+solver at the first charge past it, with WorkBudgetExceeded naming it. That error is
 never caught by the float retry or the rescue; the ledger counts work, not
 time, so the outcome is the same on every machine. Without a ledger
 (budget=None) nothing is counted and every result is byte-identical.
@@ -300,10 +305,11 @@ def _enter(costs, positive):
     return None, len(costs)
 
 
-def _ratio_test(t, rows, enter, rhs, basis, positive, ops):
+def _ratio_test(t, rows, enter, rhs, basis, positive, ops, ledger):
     """Bland's leaving row (the lowest ratio, ties to the lowest basic
     index) and the operations counted so far: one comparison per entry, a
-    division per positive entry, then the ratio comparisons evaluated."""
+    division per positive entry, then the ratio comparisons evaluated.
+    Each quotient's width goes to the ledger."""
     leave, best = -1, None
     for i in range(rows):
         entry = t[i][enter]
@@ -311,6 +317,7 @@ def _ratio_test(t, rows, enter, rhs, basis, positive, ops):
         if positive(entry):
             ratio = t[i][rhs] / entry
             ops += 1
+            ledger.bits((ratio,))
             if leave < 0:
                 leave, best = i, ratio
                 continue
@@ -328,7 +335,7 @@ def _simplex_exact(a, ledger=_UNBOUNDED):
     """(x, y) of the table a by the same simplex in exact rational
     arithmetic: b = a - min(a) + 1 exactly, Bland's rule, which cannot cycle
     here, so it ends at an optimal basis; the strategies rounded to float.
-    Every Fraction operation is charged to the ledger before it runs."""
+    Every Fraction operation is charged to the ledger (see the module)."""
     k, m = a.shape
     n = m + k
     ledger.charge(exact_ops=1 + (k + 1) + 3 * k * m + 2 * k + m)
@@ -348,17 +355,18 @@ def _simplex_exact(a, ledger=_UNBOUNDED):
         if enter is None:
             ledger.charge(exact_ops=ops)
             break
-        leave, ops = _ratio_test(t, k, enter, n, basis, lambda v: v > 0, ops)
+        leave, ops = _ratio_test(t, k, enter, n, basis, lambda v: v > 0, ops, ledger)
         if leave < 0:
+            ledger.charge(exact_ops=ops)
             raise SearchError("the exact linear program is unbounded, which a shifted table cannot be")
-        nonzero = sum(1 for i in range(k + 1) if i != leave and t[i][enter] != 0)
-        ledger.charge(exact_pivots=1, exact_ops=ops + (n + 1) + k + 2 * (n + 1) * nonzero)
+        ledger.charge(exact_ops=ops + k)  # the ratio test, then one zero test per other row
+        update = [i for i in range(k + 1) if i != leave and t[i][enter] != 0]
+        ledger.charge(exact_pivots=1, exact_ops=(n + 1) + 2 * (n + 1) * len(update))
         pivot = t[leave][enter]
         t[leave] = [v / pivot for v in t[leave]]
-        for i in range(k + 1):
+        for i in update:
             factor = t[i][enter]
-            if i != leave and factor != 0:
-                t[i] = [vi - factor * vl for vi, vl in zip(t[i], t[leave])]
+            t[i] = [vi - factor * vl for vi, vl in zip(t[i], t[leave])]
         basis[leave] = enter
         ledger.bits(v for row in t for v in row)
     else:
@@ -369,9 +377,11 @@ def _simplex_exact(a, ledger=_UNBOUNDED):
         if var < m:
             q[var] = t[row][n]
     total = sum(q)
-    ledger.bits([total])
-    x = np.array([float(-t[k][m + i] / total) for i in range(k)], dtype=np.float64)
-    y = np.array([float(v / total) for v in q], dtype=np.float64)
+    xs = [-t[k][m + i] / total for i in range(k)]
+    ys = [v / total for v in q]
+    ledger.bits([total] + xs + ys)
+    x = np.array([float(v) for v in xs], dtype=np.float64)
+    y = np.array([float(v) for v in ys], dtype=np.float64)
     return x, y
 
 
@@ -577,7 +587,7 @@ def _bayes_tableau(b, p, zero, one):
 def _bland(rows, rhs, cost, zero, positive, ledger=_UNBOUNDED):
     """max cost . z s.t. rows z <= rhs (rhs >= 0), z >= 0, by a dense tableau
     simplex with Bland's rule. Returns (z, duals) of the final tableau. With
-    a ledger (exact values only), every operation is charged before it runs."""
+    a ledger (exact values only), every operation is charged (see the module)."""
     r, n = len(rows), len(cost)
     ledger.charge(exact_ops=r)
     t = [list(rows[i]) + [zero] * r + [rhs[i]] for i in range(r)]
@@ -592,17 +602,18 @@ def _bland(rows, rhs, cost, zero, positive, ledger=_UNBOUNDED):
         if enter is None:
             ledger.charge(exact_ops=ops)
             break
-        leave, ops = _ratio_test(t, r, enter, -1, basis, positive, ops)
+        leave, ops = _ratio_test(t, r, enter, -1, basis, positive, ops, ledger)
         if leave < 0:
+            ledger.charge(exact_ops=ops)
             raise SearchError("the Bayesian linear program is unbounded, which shifted tables cannot be")
-        nonzero = sum(1 for i in range(r) if i != leave and t[i][enter] != 0)
-        ledger.charge(exact_pivots=1, exact_ops=ops + width + (r - 1) + 2 * width * nonzero + 2 * width)
+        ledger.charge(exact_ops=ops + (r - 1))  # the ratio test, then one zero test per other row
+        update = [i for i in range(r) if i != leave and t[i][enter] != 0]
+        ledger.charge(exact_pivots=1, exact_ops=width + 2 * width * len(update) + 2 * width)
         pivot = t[leave][enter]
         t[leave] = [v / pivot for v in t[leave]]
-        for i in range(r):
+        for i in update:
             f = t[i][enter]
-            if i != leave and f != 0:
-                t[i] = [vi - f * vl for vi, vl in zip(t[i], t[leave])]
+            t[i] = [vi - f * vl for vi, vl in zip(t[i], t[leave])]
         f = obj[enter]
         obj = [vi - f * vl for vi, vl in zip(obj, t[leave])]
         basis[leave] = enter
@@ -755,8 +766,9 @@ def solve_bayes(tables, weights, *, budget=None):
             lo = Fraction(low)
             b = [[[Fraction(float(v)) - lo + 1 for v in row] for row in a[w]] for w in range(nw)]
             pf = [Fraction(float(v)) for v in p]
-            rows, rhs, cost = _bayes_tableau(b, pf, Fraction(0), Fraction(1))
-            z, duals = _bland(rows, rhs, cost, Fraction(0), lambda v: v > 0, ledger)
+            zero, one = Fraction(0), Fraction(1)
+            rows, rhs, cost = _bayes_tableau(b, pf, zero, one)
+            z, duals = _bland(rows, rhs, cost, zero, lambda v: v > 0, ledger)
             ledger.charge(exact_ops=k + nw * m)  # the conversions to float
             x, ys = strategies(z, duals, float)
             bayes_certify(a, p, x, ys)
