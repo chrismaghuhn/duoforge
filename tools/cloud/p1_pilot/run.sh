@@ -593,7 +593,8 @@ RECIPE=(--envs 256 --workers "$WORKERS" --rollout 32 --epochs 4 --minibatch 2048
         --kl-ref magnet --kl-coef 0.05 --kl-refresh 500 --self-play-share 0.5 --league-slots 4 --slot-refresh 50
         --snapshot-every 200 --eval-every 100000 --eval-budget 1 --max-steps 500 --save-minutes 30
         --teams "$TEAM_IDS" --team-weights "$TEAM_WEIGHTS" --teams-root "$TEAMS_ROOT" --seed "$CONTROL_SEED")
-if [[ $MODE == dry ]]; then CAL_A=2 CAL_B=4; else CAL_A=6 CAL_B=12; fi
+# p1_match skips the first update of every process (its JIT): a block keeps a warm update through one interrupt.
+if [[ $MODE == dry ]]; then CAL_A=3 CAL_B=6; else CAL_A=6 CAL_B=12; fi
 
 state_update() {  # the update of the control's saved run state, 0 without one
     [[ -f $CONTROL/state.npz ]] || { echo 0; return; }

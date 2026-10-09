@@ -174,7 +174,7 @@ checking them exactly as above, and writes to `$WORK_DIR/out`.
   t = 0 stops; a budget or fallback STOP is only reported.
 - **Distillation:** on the smoke's shards with the smoke manifest. `DRY_DISTILL_DEVICE=cpu` (dry run only; a run
   refuses it with 2) puts it on the CPU.
-- **Control:** calibration 2 + 2 updates, then `p1_match.py`. Its result is only reported (INFEASIBLE or the 10 % cap
+- **Control:** calibration 3 + 3 updates (a block keeps a warm update through one interrupt), then `p1_match.py`. Its result is only reported (INFEASIBLE or the 10 % cap
   are expected, because the pilot ledger has no production). Then the export, and the compute check, which is only
   reported.
 - **Evaluation:** the manifest and the `p1_eval` smoke on the real students. The run exits 0 on GO and 40 on STOP.
