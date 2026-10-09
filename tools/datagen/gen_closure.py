@@ -2288,7 +2288,7 @@ FAMILY_PARAM_NONE = 0xFF
 # is never listed here: it comes from the pinned handler. Every id of the pool that is not listed has no family.
 ITEM_MEMBERS = {'TYPE_BOOSTER': ['miracleseed', 'mysticwater'] + POOL_TYPE_BOOSTERS,
                 'RESIST_BERRY': ['chopleberry'] + POOL_RESIST_BERRIES}
-ABILITY_MEMBERS = {'ATE': ['aerilate', 'pixilate', 'refrigerate'],
+ABILITY_MEMBERS = {'ATE': ['aerilate', 'pixilate', 'refrigerate', 'dragonize'],
                    'PINCH': ['blaze', 'overgrow', 'torrent', 'swarm'],
                    'WEATHER_SETTER': ['drizzle', 'drought', 'sandstream', 'snowwarning'],
                    'TERRAIN_SETTER': ['grassysurge', 'psychicsurge', 'electricsurge']}
@@ -2355,7 +2355,8 @@ ENGINE_ROWS = {'items': ['focussash', 'floettite', 'psychicseed', 'electricseed'
                              'limber',
                              'solarpower',
                              'regenerator', 'toxicdebris', 'shadowtag', 'suctioncups', 'guarddog',
-                             'steadfast', 'weakarmor', 'telepathy', 'voltabsorb', 'punkrock', 'moxie', 'synchronize', 'oblivious']}
+                             'steadfast', 'weakarmor', 'telepathy', 'voltabsorb', 'punkrock', 'moxie', 'synchronize', 'oblivious',
+                             'sheerforce']}
 # The moves of the whole pool that the turn code pivots with a switch flag of their own (dfi_pivot_moves,
 # src/state/closure_member.c) beyond Flip Turn and U-turn, which are rows of the steps. Empty: Volt Switch comes with the
 # step that gives it a flag value, and adds its id here.
@@ -2451,8 +2452,9 @@ def resist_berry_type(f, iid):
 ITEM_MATCHERS = [('TYPE_BOOSTER', type_booster_type), ('RESIST_BERRY', resist_berry_type)]
 
 # Abilities. "-ate": Normal moves become the type (ModifyType, priority -1) and get BasePower x4915/4096 (priority 23).
+# isNonstandard is metadata: Dragonize (data/abilities.ts:1036, "Future") is an -ate member the Champions mod makes standard.
 ABILITY_ATE_KEYS = {'onModifyTypePriority', 'onModifyType', 'onBasePowerPriority', 'onBasePower', 'flags', 'name',
-                    'rating', 'num'}
+                    'rating', 'num', 'isNonstandard'}
 ATE_MODIFY_TYPE = (r"onModifyType\(move, pokemon\) \{ const noModifyType = \[ 'judgment', 'multiattack', 'naturalgift', "
                    r"'revelationdance', 'technoblast', 'terrainpulse', 'weatherball', \]; "
                    r"if \(move\.type === 'Normal' && \(!noModifyType\.includes\(move\.id\) \|\| "
@@ -2464,7 +2466,8 @@ ATE_BASE_POWER = (r"onBasePower\(basePower, pokemon, target, move\) \{ "
 
 
 def ate_type(f):
-    shape(f, ABILITY_ATE_KEYS)
+    # isNonstandard is optional: only Dragonize has it, as "Future" in the pin
+    shape(f, ABILITY_ATE_KEYS if 'isNonstandard' in f else ABILITY_ATE_KEYS - {'isNonstandard'})
     field_is(f, 'onModifyTypePriority', 'onModifyTypePriority: -1,')
     field_is(f, 'onBasePowerPriority', 'onBasePowerPriority: 23,')
     field_is(f, 'flags', 'flags: {},')
@@ -3004,6 +3007,80 @@ G46_ITEM_FACTS = (
 )
 
 
+# Step G61, Sheer Force (an engine row read by id, data/abilities.ts:4202-4221): the pinned texts the turn code hard-codes.
+# Its onModifyMove strips a move's secondaries and self effects, and sets hasSheerForce, only when the move has secondaries
+# and is not hasSheerForceBoost (Electro Shot); onBasePower is x5325/4096 for either flag, at priority 21. The engine's
+# predicate (turn.c dfi_sf_strips) and the generator's strip check (pool_families.js checkG61) follow these texts.
+G61_ABILITY_FACTS = (
+    ('sheerforce', ('onModifyMove(move, pokemon) {',
+                    'if (move.secondaries && !move.hasSheerForceBoost) {',
+                    'delete move.secondaries;',
+                    'delete move.self;',
+                    'if (move.id === \'clangoroussoulblaze\') delete move.selfBoost;',
+                    'move.hasSheerForce = true;',
+                    'onBasePowerPriority: 21,',
+                    'if (move.hasSheerForce || move.hasSheerForceBoost) return this.chainModify([5325, 4096]);',
+                    'flags: {},')),
+)
+# Step G61, Dragonize (the Mega ability of Feraligatr, an "-ate" member of the ATE family, param Dragon): the pinned texts
+# of its handlers, which are the -ate pattern of ATE_MODIFY_TYPE and ATE_BASE_POWER. The Champions entry only inherits it
+# and lifts isNonstandard (champions/abilities.ts:14-17); no handler of its own.
+G61_DRAGONIZE_FACTS = (
+    "const noModifyType = [ 'judgment', 'multiattack', 'naturalgift', 'revelationdance', 'technoblast', 'terrainpulse', 'weatherball', ];",
+    'onModifyTypePriority: -1,',
+    'onBasePowerPriority: 23,',
+    "move.type = 'Dragon';",
+    'move.typeChangerBoosted = this.effect;',
+    'if (move.typeChangerBoosted === this.effect) return this.chainModify([4915, 4096]);',
+    'flags: {},',
+)
+# Step G61: the turn code's gates on Sheer Force (turn.c dfi_run_move_body and useMoveInner) are the pinned gates: the base
+# gate on the user's AfterMoveSecondarySelf (Life Orb) and its Emergency Exit, the base and Champions gates on the
+# target's Emergency Exit, and the Champions afterMoveSecondaryEvent that has no Sheer Force test at all (Red Card,
+# Eject Button and the thaw of Scald run under Sheer Force).
+G61_GATE_FACTS = (
+    ('sim/battle-actions.ts', "if (!(move.hasSheerForce && pokemon.hasAbility('sheerforce')) && !move.flags['futuremove']) {"),
+    ('sim/battle-actions.ts', "if (!(move.hasSheerForce && pokemon.hasAbility('sheerforce'))) {"),
+    ('data/mods/champions/scripts.ts', "if (!(move.hasSheerForce && pokemon.hasAbility('sheerforce'))) {"),
+)
+
+
+def check_g61_facts(root, abil_ts, champ_abil):
+    """Step G61: the Sheer Force and Dragonize texts (G61_ABILITY_FACTS, G61_DRAGONIZE_FACTS) are in the pinned entries, whitespace
+    aside. The Champions mod has no entry for Sheer Force, and its Dragonize entry only inherits and lifts isNonstandard. The
+    three gate texts of G61_GATE_FACTS are in their files; the Champions afterMoveSecondaryEvent carries no Sheer Force test."""
+    e = abil_ts.entry('sheerforce')
+    if e is None:
+        fail('ability sheerforce not found')
+    if champ_abil.entry('sheerforce') is not None:
+        fail('ability sheerforce: the champions mod overrides the entry')
+    text = norm(chr(10).join(e[2]))
+    for fact in G61_ABILITY_FACTS[0][1]:
+        if norm(fact) not in text:
+            fail('ability sheerforce: the entry no longer has "%s"' % fact)
+    d = abil_ts.entry('dragonize')
+    if d is None:
+        fail('ability dragonize not found')
+    dtext = norm(chr(10).join(d[2]))
+    for fact in G61_DRAGONIZE_FACTS:
+        if norm(fact) not in dtext:
+            fail('ability dragonize: the entry no longer has "%s"' % fact)
+    cd = champ_abil.entry('dragonize')
+    if cd is None:
+        fail('ability dragonize: the champions mod has no entry (expected inherit only)')
+    ctext = norm(chr(10).join(cd[2]))
+    if 'inherit: true' not in ctext or 'onBasePower' in ctext or 'onModifyType' in ctext:
+        fail('ability dragonize: the champions entry is not an inherit-only entry: %s' % ctext)
+    for rel, fact in G61_GATE_FACTS:
+        src = Source(root, rel, READER_INPUTS if rel in READER_INPUTS else None)
+        if norm(fact) not in norm(chr(10).join(src.lines)):
+            fail('%s: the gate "%s" is gone' % (rel, fact))
+    champ_src = norm(chr(10).join(Source(root, 'data/mods/champions/scripts.ts').lines))
+    start = champ_src.find('afterMoveSecondaryEvent(targets, pokemon, move) {')
+    if start < 0 or 'hasSheerForce' in champ_src[start:start + 260]:
+        fail('champions afterMoveSecondaryEvent: not the ungated form (Sheer Force must not gate it)')
+
+
 def check_g34_facts(abil_ts, champ_abil, items_ts, champ_items):
     """Steps G34, G35, Mega batch 2 and G39: every fact of G34_ABILITY_FACTS, G35_ABILITY_FACTS, MEGA2_ABILITY_FACTS, G39_ABILITY_FACTS and G34_ITEM_FACTS is in the pinned entry, whitespace aside, and the
     Champions mod has no entry of its own for it (an override would change what the engine reads)."""
@@ -3099,6 +3176,7 @@ def build_pool(root, repo, dx):
     check_g30_facts(abil_ts, champ_abil)
     check_g28_items(items_ts)
     check_g34_facts(abil_ts, champ_abil, items_ts, champ_items)
+    check_g61_facts(root, abil_ts, champ_abil)
     check_g49_facts(items_ts, champ_items)
     check_g37_facts(abil_ts, champ_abil)
     check_g32_entries(items_ts, champ_items, abil_ts, champ_abil)

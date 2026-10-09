@@ -2090,7 +2090,7 @@ const dfi_pool_item_data dfi_pool_items[DFI_POOL_ITEM_COUNT] = {
  *   cutecharm -- data/abilities.ts:798-810  [unmodelled: callback onDamagingHit]
  *   damp -- data/abilities.ts:811-828
  *   disguise -- data/abilities.ts:970-1016  [unmodelled: callback onCriticalHit; callback onDamage; callback onDamagePriority; callback onEffectiveness; callback onUpdate; read by id in data/mods/champions/scripts.ts; read by id in sim/pokemon.ts]
- *   dragonize -- data/abilities.ts:1036-1057, data/mods/champions/abilities.ts:14-17  [unmodelled: callback onBasePower; callback onBasePowerPriority; callback onModifyType; callback onModifyTypePriority]
+ *   dragonize -- data/abilities.ts:1036-1057, data/mods/champions/abilities.ts:14-17
  *   dryskin -- data/abilities.ts:1098-1125  [unmodelled: callback onSourceBasePower; callback onSourceBasePowerPriority; callback onTryHit; callback onWeather]
  *   earlybird -- data/abilities.ts:1126-1132  [unmodelled: read by id in data/conditions.ts]
  *   eartheater -- data/abilities.ts:1133-1146  [unmodelled: callback onTryHit]
@@ -2203,7 +2203,7 @@ const dfi_pool_item_data dfi_pool_items[DFI_POOL_ITEM_COUNT] = {
  *   shadowtag -- data/abilities.ts:4156-4173
  *   sharpness -- data/abilities.ts:4174-4186
  *   shedskin -- data/abilities.ts:4187-4201  [unmodelled: callback onResidual; callback onResidualOrder; callback onResidualSubOrder]
- *   sheerforce -- data/abilities.ts:4202-4221  [unmodelled: callback onBasePower; callback onBasePowerPriority; callback onModifyMove; read by id in data/abilities.ts; read by id in data/mods/champions/scripts.ts; read by id in sim/battle-actions.ts]
+ *   sheerforce -- data/abilities.ts:4202-4221
  *   shellarmor -- data/abilities.ts:4222-4228  [unmodelled: callback onCriticalHit]
  *   shielddust -- data/abilities.ts:4229-4238  [unmodelled: callback onModifySecondaries; read by id in data/abilities.ts]
  *   skilllink -- data/abilities.ts:4297-4310  [unmodelled: callback onModifyMove]
@@ -2481,7 +2481,7 @@ const dfi_ability_family dfi_pool_ability_family[DFI_POOL_ABILITY_COUNT] = {
     [DFI_ABILITY_CUTECHARM] = {DFI_ABILITY_FAMILY_NONE, DFI_FAMILY_PARAM_NONE},
     [DFI_ABILITY_DAMP] = {DFI_ABILITY_FAMILY_NONE, DFI_FAMILY_PARAM_NONE},
     [DFI_ABILITY_DISGUISE] = {DFI_ABILITY_FAMILY_NONE, DFI_FAMILY_PARAM_NONE},
-    [DFI_ABILITY_DRAGONIZE] = {DFI_ABILITY_FAMILY_NONE, DFI_FAMILY_PARAM_NONE},
+    [DFI_ABILITY_DRAGONIZE] = {DFI_ABILITY_FAMILY_ATE, DFI_TYPE_DRAGON},
     [DFI_ABILITY_DRYSKIN] = {DFI_ABILITY_FAMILY_NONE, DFI_FAMILY_PARAM_NONE},
     [DFI_ABILITY_EARLYBIRD] = {DFI_ABILITY_FAMILY_NONE, DFI_FAMILY_PARAM_NONE},
     [DFI_ABILITY_EARTHEATER] = {DFI_ABILITY_FAMILY_NONE, DFI_FAMILY_PARAM_NONE},
@@ -2869,7 +2869,7 @@ const uint8_t dfi_pool_ability_handler[DFI_POOL_ABILITY_COUNT] = {
     [DFI_ABILITY_CUTECHARM] = DFI_HANDLER_UNMODELED,
     [DFI_ABILITY_DAMP] = DFI_HANDLER_NONE,
     [DFI_ABILITY_DISGUISE] = DFI_HANDLER_UNMODELED,
-    [DFI_ABILITY_DRAGONIZE] = DFI_HANDLER_UNMODELED,
+    [DFI_ABILITY_DRAGONIZE] = DFI_HANDLER_NONE,
     [DFI_ABILITY_DRYSKIN] = DFI_HANDLER_UNMODELED,
     [DFI_ABILITY_EARLYBIRD] = DFI_HANDLER_UNMODELED,
     [DFI_ABILITY_EARTHEATER] = DFI_HANDLER_UNMODELED,
@@ -2982,7 +2982,7 @@ const uint8_t dfi_pool_ability_handler[DFI_POOL_ABILITY_COUNT] = {
     [DFI_ABILITY_SHADOWTAG] = DFI_HANDLER_NONE,
     [DFI_ABILITY_SHARPNESS] = DFI_HANDLER_NONE,
     [DFI_ABILITY_SHEDSKIN] = DFI_HANDLER_UNMODELED,
-    [DFI_ABILITY_SHEERFORCE] = DFI_HANDLER_UNMODELED,
+    [DFI_ABILITY_SHEERFORCE] = DFI_HANDLER_NONE,
     [DFI_ABILITY_SHELLARMOR] = DFI_HANDLER_UNMODELED,
     [DFI_ABILITY_SHIELDDUST] = DFI_HANDLER_UNMODELED,
     [DFI_ABILITY_SKILLLINK] = DFI_HANDLER_UNMODELED,
@@ -6940,7 +6940,6 @@ const char *const dfi_pool_ability_unmodeled[DFI_POOL_ABILITY_COUNT] = {
     [DFI_ABILITY_CURIOUSMEDICINE] = "callback onStart",
     [DFI_ABILITY_CUTECHARM] = "callback onDamagingHit",
     [DFI_ABILITY_DISGUISE] = "callback onCriticalHit; callback onDamage; callback onDamagePriority; callback onEffectiveness; callback onUpdate; read by id in data/mods/champions/scripts.ts; read by id in sim/pokemon.ts",
-    [DFI_ABILITY_DRAGONIZE] = "callback onBasePower; callback onBasePowerPriority; callback onModifyType; callback onModifyTypePriority",
     [DFI_ABILITY_DRYSKIN] = "callback onSourceBasePower; callback onSourceBasePowerPriority; callback onTryHit; callback onWeather",
     [DFI_ABILITY_EARLYBIRD] = "read by id in data/conditions.ts",
     [DFI_ABILITY_EARTHEATER] = "callback onTryHit",
@@ -7022,7 +7021,6 @@ const char *const dfi_pool_ability_unmodeled[DFI_POOL_ABILITY_COUNT] = {
     [DFI_ABILITY_SCREENCLEANER] = "callback onStart",
     [DFI_ABILITY_SEEDSOWER] = "callback onDamagingHit",
     [DFI_ABILITY_SHEDSKIN] = "callback onResidual; callback onResidualOrder; callback onResidualSubOrder",
-    [DFI_ABILITY_SHEERFORCE] = "callback onBasePower; callback onBasePowerPriority; callback onModifyMove; read by id in data/abilities.ts; read by id in data/mods/champions/scripts.ts; read by id in sim/battle-actions.ts",
     [DFI_ABILITY_SHELLARMOR] = "callback onCriticalHit",
     [DFI_ABILITY_SHIELDDUST] = "callback onModifySecondaries; read by id in data/abilities.ts",
     [DFI_ABILITY_SKILLLINK] = "callback onModifyMove",
@@ -7054,10 +7052,10 @@ const char *const dfi_pool_ability_unmodeled[DFI_POOL_ABILITY_COUNT] = {
 };
 
 const uint8_t dfi_pool_table_hash[32] = {
-    0x40u, 0x7au, 0x3bu, 0xd0u, 0xfcu, 0x1cu, 0x48u, 0x4au,
-    0xafu, 0x9eu, 0x90u, 0xeau, 0xc1u, 0x25u, 0x65u, 0xc1u,
-    0x25u, 0xb1u, 0xb6u, 0x3du, 0xc4u, 0x2bu, 0x86u, 0x94u,
-    0x29u, 0xc4u, 0x5fu, 0xeau, 0x1au, 0xb9u, 0x83u, 0x12u,
+    0x61u, 0x09u, 0xd1u, 0x2fu, 0xffu, 0xfcu, 0xdcu, 0xcdu,
+    0xd9u, 0xacu, 0xd5u, 0xe5u, 0x46u, 0x2eu, 0x01u, 0x50u,
+    0x91u, 0x24u, 0x8au, 0x5cu, 0xc5u, 0xf8u, 0xcau, 0x61u,
+    0xcau, 0xb2u, 0xd5u, 0xedu, 0xe8u, 0xd0u, 0x0bu, 0x06u,
 };
 
 static size_t dfi_pool_put_u16(uint8_t *out, size_t n, uint32_t v)

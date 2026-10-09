@@ -9,6 +9,7 @@
 #include "combat/move_rules.h"
 #include "combat/power_trip.h"
 #include "combat/secondary_rolls.h"
+#include "combat/sheer_force.h"
 
 #include "core/arith.h"
 #include "core/modifier.h"
@@ -1346,6 +1347,23 @@ _Static_assert(DFI_CHAIN(DFI_CHAIN(4915u, 2048u), 2732u) == DFI_CHAIN(DFI_CHAIN(
 _Static_assert(DFI_CHAIN(DFI_CHAIN(4915u, 2048u), 2732u) == DFI_CHAIN(DFI_CHAIN(2048u, 2732u), 4915u),
                "ModifyDamage modifiers must chain in any order");
 
+/* Sheer Force (step G61, data/abilities.ts:4202-4221). The pinned onModifyMove deletes a move's secondaries and self effects,
+ * and sets hasSheerForce, only when the move has secondaries and is not hasSheerForceBoost. The engine's rows of such a move
+ * are the secondary columns: sec_chance != 0, or the special of Stone Axe and Ceaseless Edge (their empty `secondary: {}`),
+ * Ice Fang and Tri Attack (their secondaries run in their own code). The generator checks this against the pin for every
+ * pool move (pool_families.js checkG61). dfi_sf_strips is that flag (the holder's current ability, so a Mega forme and a Trace
+ * copy count); dfi_sf_boosts adds Electro Shot (hasSheerForceBoost, x5325/4096 only). A move that is not stripped keeps its
+ * self effects (Close Combat, Overheat, the recharge moves): the pin strips nothing else. */
+static bool dfi_sf_strips(const struct duoforge_battle *b, const dfi_member *a, const dfi_move_data *md)
+{
+    return dfi_sf_strips_move(dfi_ability(b, a, DFI_ABILITY_SHEERFORCE), md);
+}
+
+static bool dfi_sf_boosts(const struct duoforge_battle *b, const dfi_member *a, const dfi_move_data *md)
+{
+    return dfi_sf_boosts_move(dfi_ability(b, a, DFI_ABILITY_SHEERFORCE), md);
+}
+
 /* getDamage and the Champions modifyDamage (sim/battle-actions.ts:1585-1720,
  * data/mods/champions/scripts.ts:196-312) for a turn-core move: CRIT and
  * DAMAGE_ROLL draws in that order. */
@@ -1514,6 +1532,11 @@ static duoforge_status dfi_get_damage(dfi_run *r, uint32_t user, uint32_t target
     }
     if (dfi_ability(r->b, a, DFI_ABILITY_TOUGHCLAWS) && (md->flags & DFI_MOVE_FLAG_CONTACT) != 0u) {
         ok = dfi_chain_modify(bp_chain, 5325u, &bp_chain); /* onBasePowerPriority 21: first */
+    }
+    /* Sheer Force (step G61, data/abilities.ts:4214-4215, onBasePowerPriority 21 like Tough Claws, which it never meets: one
+     * ability): chainModify([5325, 4096]) for a move it stripped and for Electro Shot (hasSheerForceBoost). */
+    if (dfi_sf_boosts(r->b, a, md)) {
+        ok = ok && dfi_chain_modify(bp_chain, 5325u, &bp_chain);
     }
     /* Fairy Aura (the Mega Floette's ability, onAnyBasePower priority 20: after Tough Claws, before the items): a
      * Fairy move of anyone on the field, unless it targets its own user, 5448/4096 once. */
@@ -5733,8 +5756,9 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
         }
         /* The empty secondary of Stone Axe and Ceaseless Edge (step G48, `secondary: {}`, the Sheer Force placeholder): without
          * Sheer Force the pin runs it for every target that was not ruled out (sim/battle-actions.ts:1336-1349: a secondary
-         * with no chance always applies, after the roll), so one SECONDARY roll per hit target and nothing else. */
-        if (md->special == DFI_SPECIAL_STONE_AXE || md->special == DFI_SPECIAL_CEASELESS_EDGE) {
+         * with no chance always applies, after the roll), so one SECONDARY roll per hit target and nothing else. Sheer Force
+         * (step G61) strips the secondary: no roll. */
+        if ((md->special == DFI_SPECIAL_STONE_AXE || md->special == DFI_SPECIAL_CEASELESS_EDGE) && !dfi_sf_strips(r->b, m, md)) {
             for (uint32_t i = 0u; i < count; ++i) {
                 if (hit[i]) {
                     uint32_t roll = 0u;
@@ -5760,8 +5784,10 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
             }
         }
         /* secondaries: one SECONDARY draw per hit target, even at 100; a status
-         * or volatile reaches only a standing target. */
-        if (md->sec_chance != 0u) {
+         * or volatile reaches only a standing target. Sheer Force (step G61) strips
+         * them all for its holder: no draw, no effect (sim/battle-actions.ts:1099, the
+         * `moveData.secondaries` test of a stripped move). */
+        if (md->sec_chance != 0u && !dfi_sf_strips(r->b, m, md)) {
             for (uint32_t i = 0u; i < count; ++i) {
                 if (!hit[i]) {
                     continue;
@@ -5816,7 +5842,7 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
          * secondaries() draws random(100) before each one (sim/battle-actions.ts:1336-1354): a freeze at 10 (a status of the
          * move, dfi_try_status as a status secondary does), then a flinch at 10 (a volatile of the target). Both rolls are
          * drawn for a target that fainted, as for any secondary. */
-        if (md->special == DFI_SPECIAL_ICE_FANG) {
+        if (md->special == DFI_SPECIAL_ICE_FANG && !dfi_sf_strips(r->b, m, md)) {
             for (uint32_t i = 0u; i < count; ++i) {
                 if (!hit[i]) {
                     continue;
@@ -5848,7 +5874,7 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
          * its onHit draws sample(['brn', 'par', 'frz']) (SITE_STATUS_PICK, random(3)) then trySetStatus without a source move,
          * as Dire Claw's pick does (the reference draws the pick after every successful roll, also for a target that fainted,
          * has a status or is immune). */
-        if (md->special == DFI_SPECIAL_TRI_ATTACK) {
+        if (md->special == DFI_SPECIAL_TRI_ATTACK && !dfi_sf_strips(r->b, m, md)) {
             static const uint8_t tri_pick[3] = {DFI_STATUS_BRN, DFI_STATUS_PAR, DFI_STATUS_FRZ};
             for (uint32_t i = 0u; i < count; ++i) {
                 if (!hit[i]) {
@@ -6039,9 +6065,10 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
          * hazard after each damaged target (`source.side.foeSidesWithConditions()`, the Champions loop calls onAfterHit for every
          * damaged target without asking whether the user stands: data/mods/champions/scripts.ts:411-414; the base game's HP test is
          * at sim/battle-actions.ts:1123). addSideCondition adds a layer or does nothing (no line) when the side is full, and the
-         * hazard of the same kind is not restarted: dfi_add_hazard. Sheer Force (move.hasSheerForce) is not marked, so no
-         * battle has it. The foe's side is the side the hit went to (single target: the other side of the user). */
-        if (md->special == DFI_SPECIAL_STONE_AXE || md->special == DFI_SPECIAL_CEASELESS_EDGE) {
+         * hazard of the same kind is not restarted: dfi_add_hazard. A holder of Sheer Force lays none (step G61: both the
+         * onAfterHit and the onAfterSubDamage of the pin test `!move.hasSheerForce`, data/moves.ts:2230-2242, 18079-18086).
+         * The foe's side is the side the hit went to (single target: the other side of the user). */
+        if ((md->special == DFI_SPECIAL_STONE_AXE || md->special == DFI_SPECIAL_CEASELESS_EDGE) && !dfi_sf_strips(r->b, m, md)) {
             const uint32_t kind = md->special == DFI_SPECIAL_STONE_AXE ? DUOFORGE_SIDE_STEALTH_ROCK : DUOFORGE_SIDE_SPIKES;
             for (uint32_t i = 0u; i < count; ++i) {
                 if (hit[i]) {
@@ -6174,10 +6201,14 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
             }
         }
         /* After the secondaries of the hit loop: a target that fell to half
-         * HP (sim/battle-actions.ts:1005-1017). */
-        for (uint32_t i = 0u; i < count; ++i) {
-            if (hit[i]) {
-                dfi_emergency_exit(r, targets[i], hp_before[i]);
+         * HP (sim/battle-actions.ts:1005-1017). A Sheer Force holder's stripped move
+         * does not check it (step G61, data/mods/champions/scripts.ts:578, the
+         * `!(move.hasSheerForce && pokemon.hasAbility('sheerforce'))` test). */
+        if (!dfi_sf_strips(r->b, m, md)) {
+            for (uint32_t i = 0u; i < count; ++i) {
+                if (hit[i]) {
+                    dfi_emergency_exit(r, targets[i], hp_before[i]);
+                }
             }
         }
     }
@@ -6192,7 +6223,10 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
      * (at least 1) after a damaging move that hit something, unless the holder
      * has a forceSwitchFlag (items.ts:3414): a Red Card drag of the user, which
      * runs before this, sets it (drag_pending, step G46). */
-    if (any && dfi_holds(r->b, m, DFI_ITEM_LIFEORB) && ((r->drag_pending >> user) & 1u) == 0u) {
+    /* Sheer Force (step G61): the holder's own AfterMoveSecondarySelf is not run for a move it stripped
+     * (sim/battle-actions.ts:536, useMoveInner), so no Life Orb recoil and no user Emergency Exit from it. */
+    if (any && dfi_holds(r->b, m, DFI_ITEM_LIFEORB) && ((r->drag_pending >> user) & 1u) == 0u &&
+        !dfi_sf_strips(r->b, m, md)) {
         const uint32_t recoil = (uint32_t)m->hp_max / 10u;
         const uint32_t user_before = m->hp;
         st = dfi_deal(r, user, recoil == 0u ? 1u : recoil, DUOFORGE_CAUSE_ITEM, 1u + DFI_ITEM_LIFEORB,
