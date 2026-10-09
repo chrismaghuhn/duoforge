@@ -6029,14 +6029,18 @@ static duoforge_status dfi_switch_in(dfi_run *r, uint32_t side, uint32_t slot, u
         (!disguised || disguise != (uint32_t)b->tail.sides[side].illusion.shown - 1u)) {
         return DUOFORGE_E_UNSUPPORTED;
     }
-    /* A holder fainted under its shown name (decision 0026 section 4, amended by I2: the holder stands fainted on the position while
-     * the foe still shows the name) whose real disguise member enters on that position: the clear would show the holder's true
-     * fainted state, and the view must not read it (no deduction; option B). Refused before any change. */
-    if (pool_rules && b->tail.sides[side].illusion.shown != 0u && reserve == (uint32_t)b->tail.sides[side].illusion.shown - 1u &&
-        sd->positions[slot].occupant != DFI_OCCUPANT_NONE && sd->positions[slot].occupant != reserve &&
-        sd->positions[slot].occupant < sd->member_count && sd->members[sd->positions[slot].occupant].hp == 0u &&
-        dfi_illusion_shown_occupant(sd, &b->tail.sides[side], slot) == reserve) {
-        return DUOFORGE_E_UNSUPPORTED;
+    /* A holder fainted under its shown name (decision 0026 section 4, amended by I2, lead decision B): the faint of a disguised holder
+     * is shown under the name, and the name stays after the holder has left the field (the replacement of the fainted holder puts
+     * another member on its position). The real disguise member (the name's member) entering while that holder stands fainted, on
+     * the field or on the bench, would clear the name, and the view would read the holder's true fainted state. Refused before any
+     * change (option B, no deduction). */
+    if (pool_rules && b->tail.sides[side].illusion.shown != 0u && reserve == (uint32_t)b->tail.sides[side].illusion.shown - 1u) {
+        for (uint32_t m = 0u; m < sd->member_count; ++m) {
+            if (m != reserve && sd->members[m].ability == DFI_ABILITY_ILLUSION + 1u && sd->members[m].hp == 0u &&
+                ((uint32_t)sd->brought_mask >> m & 1u) != 0u) {
+                return DUOFORGE_E_UNSUPPORTED;
+            }
+        }
     }
     const dfi_member *leaving = dfi_at(b, side * 2u + slot);
     const uint32_t flag = sd->positions[slot].switch_flag;

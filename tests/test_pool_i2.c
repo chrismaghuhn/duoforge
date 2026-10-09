@@ -543,6 +543,12 @@ static void check_faint_clear(df_test *t, const duoforge_context *ctx)
         DF_CHECK_EQ_U64(t, replacement_switch(ctx, b, 0u, 3u), DUOFORGE_E_UNSUPPORTED);
         DF_CHECK_EQ_U64(t, b->tail.sides[0].illusion.shown, 4u);
         DF_CHECK_EQ_U64(t, b->sides[0].positions[0].occupant, 0u);
+        /* The holder benched after its faint (its replacement took the position, the name stays: the campaign's fz_130): the name's
+         * member entering on the other position is refused too. The holder moves to position 1; roster 1 stands on position 0. */
+        b->sides[0].positions[0].occupant = 1u;
+        b->sides[0].positions[1].occupant = 0u;
+        DF_CHECK_EQ_U64(t, replacement_switch(ctx, b, 0u, 3u), DUOFORGE_E_UNSUPPORTED);
+        DF_CHECK_EQ_U64(t, b->tail.sides[0].illusion.shown, 4u);
         duoforge_battle_destroy(b);
     }
     duoforge_battle *live = replay(t, ctx, "i2_illusion_break", 1u);
