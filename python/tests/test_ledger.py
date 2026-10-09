@@ -152,5 +152,88 @@ class ControlTest(unittest.TestCase):
                 train.parse(["--out", other, "--updates", "1", "--update-gpu-share", bad] + _SMALL)
 
 
+
+def _init_checkpoint(path, encoder=4, ext_supported=0):
+    """An untrained format-2 v2-S network of encoder `encoder`'s layout, pool data (the P1 continuation's start in
+    miniature: params-49333 is encoder 4)."""
+    import jax
+    import duoforge
+    from duoforge import _layout, features
+    from duoforge_learn import checkpoint, policy
+    cfg = policy.v2_config("S")
+    names = list(features.feature_names(encoder))
+    params = jax.device_get(policy.make(cfg, names).init(jax.random.PRNGKey(3)))
+    with duoforge.Context(data_kind=_layout.CONSTANTS["DUOFORGE_DATA_KIND_POOL"]) as context:
+        checkpoint.save(path, params, {
+            "model": cfg, "encoder": encoder, "ext_supported": ext_supported, "features": names,
+            "slot_features": list(features.SLOT_FEATURE_NAMES),
+            "data": {"kind": "pool", "fingerprint": context.fingerprint().hex()}, "teams": {}, "update": 0,
+            "decisions": 0, "ids": checkpoint.ids_of(context)})
+
+
+class KeepInitEncoderTest(unittest.TestCase):
+    """--keep-init-encoder: the P1 continuation control keeps params-49333's encoder 4 (pilot and control differ
+    only in method, not in features); without it a run from an older encoder is widened as before."""
+
+    def setUp(self):
+        self.tmp = tempfile.TemporaryDirectory()
+        self.init = os.path.join(self.tmp.name, "init-e4.npz")
+        _init_checkpoint(self.init)
+
+    def tearDown(self):
+        self.tmp.cleanup()
+
+    def test_a_run_keeps_encoder_4_through_league_magnet_eval_and_resume(self):
+        import numpy as np
+        from duoforge import features
+        from duoforge_learn import checkpoint, policy, runstate
+        out = os.path.join(self.tmp.name, "kept")
+        self.assertEqual(_train(["--out", out, "--init", self.init, "--keep-init-encoder", "--updates", "2",
+                                 "--minutes", "0", "--kl-ref", "magnet", "--kl-coef", "0.01"] + _SMALL + _LEAGUE), 0)
+        names4 = list(features.feature_names(4))
+        state = runstate.load_state(out)
+        self.assertEqual(state["encoder"], 4)
+        self.assertEqual(state["features"], names4)
+        self.assertTrue(state["train"]["keep_init_encoder"])
+        for update in (0, 1, 2):  # params-0 is the init; 1 and 2 are league snapshots (--snapshot-every 1)
+            params, config = checkpoint.load_trained(os.path.join(out, f"params-{update}.npz"))
+            self.assertEqual((config["encoder"], config["features"]), (4, names4))
+            want = policy.make(config["model"], names4).init(__import__("jax").random.PRNGKey(0))
+            self.assertEqual(checkpoint.flatten(params).keys(), checkpoint.flatten(want).keys())
+            for k, v in checkpoint.flatten(want).items():
+                self.assertEqual(checkpoint.flatten(params)[k].shape, v.shape, k)  # the input width of encoder 4
+        widened, config = checkpoint.load_current(os.path.join(out, "params-2.npz"))  # later code widens it
+        self.assertEqual(config["encoder"], features.ENCODER)
+        self.assertEqual(features.obs_size(4), len(names4))
+        self.assertTrue(any("vs_previous" in r for r in _log(out)))  # the in-run evaluation played encoder 4
+        # A resume continues on encoder 4, with a checkpoint as the KL reference (read in the run's layout).
+        self.assertEqual(_train(["--resume", out, "--updates", "3", "--minutes", "0", "--kl-ref", self.init]), 0)
+        self.assertEqual([r["update"] for r in _log(out)][-1], 3)
+        state = runstate.load_state(out)
+        self.assertEqual((state["encoder"], state["features"]), (4, names4))
+        self.assertTrue(np.isfinite(_log(out)[-1]["loss"]))
+
+    def test_without_the_flag_the_run_is_widened_to_the_current_encoder(self):
+        from duoforge import features
+        from duoforge_learn import runstate
+        out = os.path.join(self.tmp.name, "widened")
+        self.assertEqual(_train(["--out", out, "--init", self.init, "--updates", "1", "--minutes", "0"] + _SMALL), 0)
+        state = runstate.load_state(out)
+        self.assertEqual(state["encoder"], features.ENCODER)
+        self.assertEqual(state["features"], list(features.FEATURE_NAMES))
+        self.assertNotIn("keep_init_encoder", state["train"])  # the saved options are as before
+        with self.assertRaisesRegex(SystemExit, "keep_init_encoder"):  # a resume cannot switch it on
+            _train(["--resume", out, "--updates", "2", "--keep-init-encoder"])
+
+    def test_the_flag_needs_init_and_the_inits_mask(self):
+        from duoforge_learn import train
+        with self.assertRaises(SystemExit):
+            train.parse(["--out", os.path.join(self.tmp.name, "no-init"), "--keep-init-encoder", "--updates", "1"]
+                        + _SMALL)
+        with self.assertRaisesRegex(SystemExit, "ext_supported"):
+            _train(["--out", os.path.join(self.tmp.name, "mask"), "--init", self.init, "--keep-init-encoder",
+                    "--ext-supported", "1", "--updates", "1", "--minutes", "0"] + _SMALL)
+
+
 if __name__ == "__main__":
     unittest.main()

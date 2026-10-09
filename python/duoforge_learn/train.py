@@ -150,11 +150,13 @@ def _data_json(kind, context):
     return {"kind": kind, "fingerprint": context.fingerprint().hex()}
 
 
-def snapshot_config(train_config, model_cfg, context, pool, update, decisions, encoder, ext_supported):
-    """The format-2 config of a snapshot of this run."""
+def snapshot_config(train_config, model_cfg, context, pool, update, decisions, encoder, ext_supported,
+                    layout=(features.FEATURE_NAMES, features.SLOT_FEATURE_NAMES)):
+    """The format-2 config of a snapshot of this run; layout: the (feature, slot feature) names its network reads
+    (the current encoder's, or the init's own under --keep-init-encoder)."""
     return {"model": model_cfg, "encoder": encoder, "ext_supported": ext_supported,
-            "ids": checkpoint.ids_of(context), "features": list(features.FEATURE_NAMES),
-            "slot_features": list(features.SLOT_FEATURE_NAMES),
+            "ids": checkpoint.ids_of(context), "features": list(layout[0]),
+            "slot_features": list(layout[1]),
             "data": _data_json(train_config["data_kind"], context),
             "teams": _teams_json(pool), "update": update, "decisions": decisions, "train": train_config}
 
@@ -238,6 +240,10 @@ def _parser(suppress=False):
              "device when floor((u+1)q) > floor(uq))")
     add("--act-gpu-share", type=float, default=1.0,
         help="the same share for the collection's network calls (learner and league opponents)")
+    add("--keep-init-encoder", action="store_true", default=False,
+        help="a new run from --init keeps the init's encoder layout (its feature names and ext_supported) instead "
+             "of widening it to the current encoder: the stage 3 P1 continuation control stays on params-49333's "
+             "encoder 4; a resume keeps the run's layout")
     add("--ext-supported", type=lambda s: int(s, 0), default=None,
         help="the view-extension features the network reads (decision 0018), a mask of DUOFORGE_VIEWEXT_FEATURE_* "
              "bits (default: every feature the library supports under the data kind)")
@@ -255,6 +261,8 @@ def parse(argv):
         p.error("give --out for a new run or --resume for an existing one")
     if args.init is not None and args.resume is not None:
         p.error("--init starts a new run: a resume keeps the run's own parameters")
+    if args.keep_init_encoder and args.resume is None and args.init is None:
+        p.error("--keep-init-encoder keeps the layout of --init: give --init")
     for share in ("update_gpu_share", "act_gpu_share"):
         if not 0.0 <= getattr(args, share) <= 1.0:
             p.error(f"--{share.replace('_', '-')} must lie between 0 and 1")
@@ -293,7 +301,8 @@ def _merged(args, saved):
 
 def _load_init(args):
     """(params, config) of --init, widened to the current encoder layout by name (checkpoint.load_current: old rows
-    exact, new rows zero); the run takes its model and data kind unless the command line gives them, and then they
+    exact, new rows zero), or with --keep-init-encoder in the layout it was trained with (checkpoint.load_trained,
+    never widened); the run takes its model and data kind unless the command line gives them, and then they
     must agree. SystemExit for anything it cannot take: an output inside the repository (a network that descends
     from replay data, decision 0019), an unknown encoder, another model or kind."""
     from duoforge_replay.dataset import refuse_repository
@@ -307,7 +316,10 @@ def _load_init(args):
         if encoder not in checkpoint.WIDENABLE_ENCODERS:
             raise ValueError(f"a checkpoint of encoder {encoder} (format {raw.get('format')}) cannot start a run of "
                              f"encoder {features.ENCODER}")
-        params, config = checkpoint.load_current(args.init)
+        if args.keep_init_encoder:
+            params, config = checkpoint.load_trained(args.init)
+        else:
+            params, config = checkpoint.load_current(args.init)
     except ValueError as err:
         raise SystemExit(f"--init {args.init}: {err}") from None
     if any(k in args._given for k in ("model", "preset") + _DIMS):
@@ -370,10 +382,11 @@ def _widen_state(params, opt_leaves, model_cfg, names, slot_names, tx):
 
 
 class _Pool:
-    """The run's snapshots: update numbers whose params-<update>.npz exist."""
+    """The run's snapshots: update numbers whose params-<update>.npz exist. keep: the run keeps its init's layout
+    (--keep-init-encoder), so a snapshot is read as trained, never widened."""
 
-    def __init__(self, out):
-        self.out = out
+    def __init__(self, out, keep=False):
+        self.out, self.keep = out, keep
         found = [int(m.group(1)) for f in os.listdir(out) for m in [re.match(r"params-(\d+)\.npz$", f)] if m]
         self.updates = sorted(found)
 
@@ -386,7 +399,9 @@ class _Pool:
             self.updates.append(update)
 
     def load(self, update):
-        """A snapshot's parameters, widened to the current encoder layout."""
+        """A snapshot's parameters, widened to the current encoder layout (or in the run's own, keep)."""
+        if self.keep:
+            return checkpoint.load_trained(self.path(update))[0]
         return checkpoint.load_current(self.path(update))[0]
 
     def set_aside(self, after):
@@ -500,6 +515,9 @@ def _run(args, pool, on_start, stop):
     for option, (_, default) in _REFILL.items():
         if train_config[option] == default:
             del train_config[option]
+    keep = bool(args.keep_init_encoder)
+    if not keep:
+        train_config.pop("keep_init_encoder", None)  # the saved options of a run without it are as before
     if saved_state is not None and saved_state["data"]["fingerprint"] != context.fingerprint().hex():
         # Other tables (the data kind cannot change on resume): the run goes on when every id its network embeds
         # still names the same row (spec 12.4), and is refused otherwise.
@@ -511,8 +529,17 @@ def _run(args, pool, on_start, stop):
                              f"{err}") from None
         changes["data"] = [saved_state["data"]["fingerprint"], context.fingerprint().hex()]
     encoder = saved_state["encoder"] if saved_state is not None else features.ENCODER
-    widening = saved_state is not None and (saved_state["features"] != list(features.FEATURE_NAMES) or
-                                            saved_state["slot_features"] != list(features.SLOT_FEATURE_NAMES))
+    # The (feature, slot feature) names the run's network reads: the current encoder's, or under
+    # --keep-init-encoder the init's own, which a resume keeps (no widening).
+    layout = (list(features.FEATURE_NAMES), list(features.SLOT_FEATURE_NAMES))
+    if keep and saved_state is not None:
+        layout = (list(saved_state["features"]), list(saved_state["slot_features"]))
+    elif keep:
+        encoder = checkpoint.encoder_of(init[1])
+        layout = (list(init[1]["features"]), list(init[1]["slot_features"]))
+    widening = saved_state is not None and not keep and (
+        saved_state["features"] != list(features.FEATURE_NAMES) or
+        saved_state["slot_features"] != list(features.SLOT_FEATURE_NAMES))
     if widening and encoder != features.ENCODER:
         # A run of encoder 2 or 3 widened by name continues on this encoder's inputs: the new rows start at zero,
         # and its mask, which lies inside the columns it had, stays.
@@ -546,6 +573,12 @@ def _run(args, pool, on_start, stop):
     # A resumed run keeps the mask it trained with (a run from before encoder 3 had none: 0); a new one takes
     # --ext-supported, by default every feature the library supports under the context.
     ext_supported = saved_state.get("ext_supported", 0) if saved_state is not None else args.ext_supported
+    if keep and saved_state is None:  # the init's own mask: its columns, nothing zeroed or dropped
+        own = checkpoint.ext_supported_of(init[1])
+        if "ext_supported" in args._given and args.ext_supported != own:
+            raise SystemExit(f"--keep-init-encoder runs the init's ext_supported {own:#x}, not "
+                             f"--ext-supported {args.ext_supported:#x}")
+        ext_supported = own
     env = SelfPlay(args.envs, args.workers, args.seed, pool=pool, max_steps=args.max_steps, start_episodes=starts,
                    encoder=encoder, context=context, on_start=started, ext_supported=ext_supported,
                    on_end=lambda envs, rewards: state.end(envs, league.learner_results(state, envs, rewards)))
@@ -559,18 +592,27 @@ def _run(args, pool, on_start, stop):
         train_config["init"] = init_info
     sides[0] = env
     learner_rows = state.learner_rows()
-    net = policy.make(model_cfg)
+    net = policy.make(model_cfg) if not keep else policy.make(model_cfg, *layout)
     tx = ppo.optimizer(args.learning_rate)
     ref_params = None
     magnet = args.kl_ref == "magnet"  # MMD/R-NaD style: the reference is the learner itself, frozen and refreshed
     if magnet and args.kl_refresh <= 0:
         raise SystemExit("--kl-refresh must be positive for --kl-ref magnet")
     if args.kl_ref and not magnet:  # the KL anchor's reference: a checkpoint of this run's model, widened
-        ref_params, ref_config = checkpoint.load_current(args.kl_ref)
+        if keep:  # read in its own layout, which must be the run's
+            try:
+                ref_params, ref_config = checkpoint.load_trained(args.kl_ref)
+            except ValueError as err:
+                raise SystemExit(f"--kl-ref {args.kl_ref}: {err}") from None
+            if (list(ref_config["features"]), list(ref_config["slot_features"])) != layout:
+                raise SystemExit(f"--kl-ref {args.kl_ref}: its layout (encoder {checkpoint.encoder_of(ref_config)}) "
+                                 f"is not the run's (encoder {encoder})")
+        else:
+            ref_params, ref_config = checkpoint.load_current(args.kl_ref)
         ref_cfg = checkpoint.model_config(ref_config, ref_params)
         if ref_cfg != model_cfg:
             raise SystemExit(f"--kl-ref {args.kl_ref}: its model {ref_cfg} is not the run's {model_cfg}")
-    snapshots = _Pool(out)
+    snapshots = _Pool(out, keep)
     if saved_state is None:
         key = jax.random.fold_in(jax.random.PRNGKey(args.seed & 0xFFFFFFFF), args.seed >> 32)
         key, sub = jax.random.split(key)
@@ -579,7 +621,7 @@ def _run(args, pool, on_start, stop):
         rng = np.random.default_rng(args.seed)
         update = decisions = episodes = last_eval = act_calls = 0
         snapshots.save(0, params, snapshot_config(train_config, model_cfg, context, pool, 0, 0, encoder,
-                                                  ext_supported))
+                                                  ext_supported, layout))
         previous = params
     else:
         params, opt_leaves = saved_state["params"], saved_state["opt_leaves"]
@@ -623,7 +665,7 @@ def _run(args, pool, on_start, stop):
                                                      "last_eval": last_eval, "act_calls": calls["act"]},
             "league": state.to_dict(), "numpy_rng": rng.bit_generator.state, "teams": _teams_json(pool),
             "data": _data_json(args.data_kind, context), "model": model_cfg,
-            "features": list(features.FEATURE_NAMES), "slot_features": list(features.SLOT_FEATURE_NAMES),
+            "features": list(layout[0]), "slot_features": list(layout[1]),
             "encoder": encoder, "ext_supported": ext_supported, "ids": ids, "train": train_config})
         if book is not None:
             book.save()
@@ -736,7 +778,7 @@ def _run(args, pool, on_start, stop):
             evaluating = update % args.eval_every == 0 or (last and not stop.requested and not budget)
             if update % args.snapshot_every == 0 or evaluating:
                 snapshots.save(update, params, snapshot_config(train_config, model_cfg, context, pool, update,
-                                                               decisions, encoder, ext_supported))
+                                                               decisions, encoder, ext_supported, layout))
             if state.has_league:
                 state.tick(update)
                 slot = state.ready()
