@@ -213,15 +213,19 @@ function drawSwitch(side, rng) {
     const free = standingReserves(side);
     const fainted = faintedReserves(side);
     const chosen = new Map();
-    for (const slot of rng.shuffle([...flags.keys()].filter((i) => flags[i]))) {
+    // sim/side.ts clearChoice: exactly min(flagged, standing reserves) switches; a revive is one of them and names a fainted
+    // Pokemon, a normal switch takes a standing reserve. The rest pass.
+    const flagged = rng.shuffle([...flags.keys()].filter((i) => flags[i]));
+    let budget = Math.min(flagged.length, free.length);
+    for (const slot of flagged) {
+        if (budget <= 0) break;
         if (revivalSlot(side, slot)) {
-            // a revive needs a standing reserve to be forced (the count of sim/side.ts clearChoice); with none it passes
-            if (!free.length || !fainted.length) continue;
+            if (!fainted.length) continue;
             chosen.set(slot, fainted.splice(rng.below(fainted.length), 1)[0]);
-            continue;
+        } else {
+            chosen.set(slot, free.splice(rng.below(free.length), 1)[0]);
         }
-        if (!free.length) break;
-        chosen.set(slot, free.splice(rng.below(free.length), 1)[0]);
+        budget -= 1;
     }
     return side.active.map((_, slot) => (chosen.has(slot) ? `switch ${chosen.get(slot) + 1}` : 'pass')).join(', ');
 }
