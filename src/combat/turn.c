@@ -7161,8 +7161,6 @@ static duoforge_status dfi_resume_pivot(dfi_run *r, const duoforge_side_choice r
                 fresh[k] = (dfi_queue_record){0u, (uint8_t)DFI_Q_SWITCH_IN, (uint8_t)s, (uint8_t)slot, 0u, 0u,
                                               sc->reserve};
                 k += 1u;
-            } else if (sc->kind == DUOFORGE_SLOT_PASS && b->sides[s].positions[slot].switch_flag == DFI_SWITCH_REVIVE_BLESSING) {
-                b->sides[s].positions[slot].switch_flag = 0u; /* a Revival Blessing that passes ends (choosePass with no living reserve) */
             } else if (((uint32_t)b->sides[s].requested_slots >> slot & 1u) == 0u) {
                 b->sides[s].positions[slot].switch_flag = 0u;
             }
