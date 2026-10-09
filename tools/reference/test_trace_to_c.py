@@ -2152,7 +2152,8 @@ class Library(unittest.TestCase):
         Arcanine-Hisui and Floette-Eternal. The pool battles g2_data_moves_b names Arcanine-Hisui in the switch line."""
         self.assertEqual(trace_to_c.BASE_SPECIES_NAME,
                          {'Indeedee-F': 'Indeedee', 'Arcanine-Hisui': 'Arcanine', 'Floette-Eternal': 'Floette',
-                          'Ninetales-Alola': 'Ninetales', 'Meowstic-F': 'Meowstic', 'Lycanroc-Dusk': 'Lycanroc'})  # G21
+                          'Ninetales-Alola': 'Ninetales', 'Meowstic-F': 'Meowstic', 'Lycanroc-Dusk': 'Lycanroc',
+                          'Samurott-Hisui': 'Samurott'})  # G21; Samurott-Hisui of step G50
         spec = json.load(open(os.path.join(ROOT, 'tests', 'reference', 'traces', 'g2_data_moves_b.json')))
         # Meowstic-F (step G15, g15_ef_retarget_*) is called Meowstic.
         for name in ('g15_ef_retarget_terrain', 'g15_ef_retarget_plain'):
@@ -2179,7 +2180,7 @@ class Library(unittest.TestCase):
         marked = [n for n in re.findall(r'\[DFI_MOVE_(\w+)\] = 1u', read('src', 'data', 'support_manifest.c'))
                   if n in ids and ids[n] >= ext_moves]
         self.assertEqual(len(names), ext_moves + len(ids))
-        self.assertEqual(len(marked), 149)  # Taunt and Yawn (G31), the four hazards (G37), the four of G39 (Charm, Fake Tears, Sacred Sword, Super Fang), the four of G29 (Trick, Switcheroo, Thief, Covet), Imprison (G38), the three of G33 (Dual Wingbeat, Triple Axel, Twin Beam), Perish Song (G26), the four of G25 (Electric Terrain, Misty Terrain, Rising Voltage, Terrain Pulse), Disable (G27), the ten of G35 (Thunder Punch, X-Scissor, Lumina Crash, Overdrive, Scorching Sands, Leaf Blade, Boomburst, Sludge Wave, Volt Tackle, Discharge), Toxic and Poison Fang (G36), the seven of G34 (Steel Roller, Clangorous Soul, Brick Break, Fiery Dance, Psycho Cut, Iron Defense, Electroweb), the eleven of G32, the ten of G30, the six of G28 (Shell Smash, Acrobatics, Blizzard, Ancient Power, Feint, Earthquake), the 27 of G21, Spiky Shield (G20), G2, G5, G8, G12, G10 (4), G11 (Soak), G7 (Wide Guard), weather (2), the fourteen of G13, G9 (Encore), G17 (six recharge moves), G16 (Knock Off), Expanding Force (G15), Aurora Veil (G20)
+        self.assertEqual(len(marked), 150)  # Double Shock (G50), Taunt and Yawn (G31), the four hazards (G37), the four of G39 (Charm, Fake Tears, Sacred Sword, Super Fang), the four of G29 (Trick, Switcheroo, Thief, Covet), Imprison (G38), the three of G33 (Dual Wingbeat, Triple Axel, Twin Beam), Perish Song (G26), the four of G25 (Electric Terrain, Misty Terrain, Rising Voltage, Terrain Pulse), Disable (G27), the ten of G35 (Thunder Punch, X-Scissor, Lumina Crash, Overdrive, Scorching Sands, Leaf Blade, Boomburst, Sludge Wave, Volt Tackle, Discharge), Toxic and Poison Fang (G36), the seven of G34 (Steel Roller, Clangorous Soul, Brick Break, Fiery Dance, Psycho Cut, Iron Defense, Electroweb), the eleven of G32, the ten of G30, the six of G28 (Shell Smash, Acrobatics, Blizzard, Ancient Power, Feint, Earthquake), the 27 of G21, Spiky Shield (G20), G2, G5, G8, G12, G10 (4), G11 (Soak), G7 (Wide Guard), weather (2), the fourteen of G13, G9 (Encore), G17 (six recharge moves), G16 (Knock Off), Expanding Force (G15), Aurora Veil (G20)
         pool = [n for n in os.listdir(os.path.join(ROOT, 'tests', 'reference', 'specs'))
                 if trace_to_c.is_pool(ROOT, n[:-5])]
         logs = []

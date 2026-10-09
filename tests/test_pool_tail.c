@@ -49,7 +49,8 @@ static const char TAIL_HEX[] =
  * of it): the model's LEAD_HP_MAX, asserted below. */
 static const unsigned lead_hp_max[2][2] = {{193, 192}, {197, 182}};
 
-/* For every tail byte of the example: how many of the 255 other values give OK, TAIL_SIDE, TAIL_POSITION,
+/* Step G50: a soak_type of 255 (Double Shock) is OK for a standing member with a second type, which moves the two soak bytes
+ * (offsets 92 and 232) from 18 to 19 OK values and from 237 to 236 member refusals. For every tail byte of the example: how many of the 255 other values give OK, TAIL_SIDE, TAIL_POSITION,
  * TAIL_MEMBER, TAIL_FIELD and TAIL_RESERVED ("pool_tail_sweep_c" of the model). */
 enum { SWEEP_COLUMNS = 6 };
 static const unsigned sweep[DFI_ENC_TAIL_SIZE][SWEEP_COLUMNS] = {
@@ -145,7 +146,7 @@ static const unsigned sweep[DFI_ENC_TAIL_SIZE][SWEEP_COLUMNS] = {
     {0, 0, 0, 255, 0, 0},
     {90, 0, 0, 165, 0, 0},
     {1, 0, 0, 254, 0, 0},
-    {18, 0, 0, 237, 0, 0},
+    {19, 0, 0, 236, 0, 0},
     {167, 0, 0, 88, 0, 0},
     {0, 0, 0, 255, 0, 0},
     {19, 0, 0, 236, 0, 0},
@@ -285,7 +286,7 @@ static const unsigned sweep[DFI_ENC_TAIL_SIZE][SWEEP_COLUMNS] = {
     {0, 0, 0, 255, 0, 0},
     {255, 0, 0, 0, 0, 0},
     {1, 0, 0, 254, 0, 0},
-    {18, 0, 0, 237, 0, 0},
+    {19, 0, 0, 236, 0, 0},
     {167, 0, 0, 88, 0, 0},
     {0, 0, 0, 255, 0, 0},
     {19, 0, 0, 236, 0, 0},

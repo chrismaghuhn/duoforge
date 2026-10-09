@@ -3142,6 +3142,31 @@ static const df_tb_stop tb_g4_rock_head_struggle[] = {
     {12u, 0u, 1u, 1u, {4u, 3u}, {695u, 448u}, {0x404e5125f0f30329ull, 0x4043ec81f3014cabull}},
     {13u, 0u, 1u, 1u, {4u, 3u}, {628u, 384u}, {0x404b1223f4eb130bull, 0x40413771ec130f29ull}},
 };
+static const df_tb_stop tb_g50_double_shock_fail[] = {
+    {0u, 0u, 1u, 3u, {6u, 6u}, {1148u, 1122u}, {0x4059000000000000ull, 0x4059000000000000ull}},
+    {1u, 0u, 1u, 3u, {4u, 4u}, {780u, 778u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {2u, 0u, 1u, 1u, {4u, 3u}, {780u, 611u}, {0x4050aaaaaaaaaaabull, 0x4049000000000000ull}},
+    {3u, 0u, 1u, 1u, {4u, 3u}, {780u, 611u}, {0x4050aaaaaaaaaaabull, 0x4049000000000000ull}},
+    {4u, 0u, 1u, 1u, {4u, 3u}, {780u, 611u}, {0x4050aaaaaaaaaaabull, 0x4049000000000000ull}},
+};
+static const df_tb_stop tb_g50_double_shock_ground[] = {
+    {0u, 0u, 1u, 3u, {6u, 6u}, {1148u, 1122u}, {0x4059000000000000ull, 0x4059000000000000ull}},
+    {1u, 0u, 1u, 3u, {4u, 4u}, {780u, 778u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {2u, 0u, 1u, 1u, {4u, 3u}, {691u, 611u}, {0x404d24a3eac9858bull, 0x4049000000000000ull}},
+};
+static const df_tb_stop tb_g50_double_shock_soak[] = {
+    {0u, 0u, 1u, 3u, {6u, 6u}, {1148u, 1122u}, {0x4059000000000000ull, 0x4059000000000000ull}},
+    {1u, 0u, 1u, 3u, {4u, 4u}, {780u, 778u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {2u, 0u, 1u, 3u, {4u, 4u}, {780u, 778u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {3u, 0u, 1u, 3u, {4u, 4u}, {780u, 778u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+};
+static const df_tb_stop tb_g50_double_shock_switch[] = {
+    {0u, 0u, 1u, 3u, {6u, 6u}, {1148u, 1122u}, {0x4059000000000000ull, 0x4059000000000000ull}},
+    {1u, 0u, 1u, 3u, {4u, 4u}, {780u, 778u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {2u, 0u, 1u, 1u, {4u, 3u}, {688u, 611u}, {0x404d007b6b82a6cfull, 0x4049000000000000ull}},
+    {3u, 0u, 1u, 1u, {4u, 3u}, {688u, 611u}, {0x404d007b6b82a6cfull, 0x4049000000000000ull}},
+    {4u, 0u, 1u, 1u, {4u, 3u}, {487u, 556u}, {0x4044d5da28400d7bull, 0x4046bb24547d0afcull}},
+};
 static const df_tb_stop tb_g5_uturn_a[] = {
     {0u, 0u, 2u, 3u, {6u, 6u}, {1078u, 1126u}, {0x4059000000000000ull, 0x4059000000000000ull}},
     {1u, 0u, 2u, 3u, {4u, 4u}, {754u, 775u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
@@ -4805,6 +4830,10 @@ static const df_tb_battle tb_battles[] = {
     {"g4_focus_sash_unburden", 4u, tb_g4_focus_sash_unburden, sizeof tb_g4_focus_sash_unburden / sizeof tb_g4_focus_sash_unburden[0]},
     {"g4_rock_head", 4u, tb_g4_rock_head, sizeof tb_g4_rock_head / sizeof tb_g4_rock_head[0]},
     {"g4_rock_head_struggle", 13u, tb_g4_rock_head_struggle, sizeof tb_g4_rock_head_struggle / sizeof tb_g4_rock_head_struggle[0]},
+    {"g50_double_shock_fail", 4u, tb_g50_double_shock_fail, sizeof tb_g50_double_shock_fail / sizeof tb_g50_double_shock_fail[0]},
+    {"g50_double_shock_ground", 2u, tb_g50_double_shock_ground, sizeof tb_g50_double_shock_ground / sizeof tb_g50_double_shock_ground[0]},
+    {"g50_double_shock_soak", 3u, tb_g50_double_shock_soak, sizeof tb_g50_double_shock_soak / sizeof tb_g50_double_shock_soak[0]},
+    {"g50_double_shock_switch", 4u, tb_g50_double_shock_switch, sizeof tb_g50_double_shock_switch / sizeof tb_g50_double_shock_switch[0]},
     {"g5_uturn_a", 6u, tb_g5_uturn_a, sizeof tb_g5_uturn_a / sizeof tb_g5_uturn_a[0]},
     {"g5_uturn_b", 3u, tb_g5_uturn_b, sizeof tb_g5_uturn_b / sizeof tb_g5_uturn_b[0]},
     {"g5_uturn_c", 9u, tb_g5_uturn_c, sizeof tb_g5_uturn_c / sizeof tb_g5_uturn_c[0]},
@@ -4932,7 +4961,7 @@ static const df_tb_battle tb_battles[] = {
     {"w8_sand_soak", 7u, tb_w8_sand_soak, sizeof tb_w8_sand_soak / sizeof tb_w8_sand_soak[0]},
 };
 
-/* 3441 stops: 142 of an ended battle; decided by the count 920,
- * the HP percentage 1123, the total HP 1195, a tie 61;
- * winners: side 0 1706, side 1 1674, tie 61 */
+/* 3458 stops: 142 of an ended battle; decided by the count 927,
+ * the HP percentage 1123, the total HP 1205, a tie 61;
+ * winners: side 0 1723, side 1 1674, tie 61 */
 #endif
