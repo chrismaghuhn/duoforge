@@ -389,6 +389,8 @@ def parse_move(mid, base, champ, ext=False, pool=False, unmodeled=None):
         for name, text in (('onTryHit', SUBSTITUTE_ONTRYHIT), ('onHit', SUBSTITUTE_ONHIT), ('condition', SUBSTITUTE_CONDITION)):
             if name not in f or norm(f[name][1]) != text:
                 fail('move %s: %s is not the pinned text (decision 0032)' % (mid, name))
+    if pool and handled[0] == 'SKILL_SWAP' and ('onHit' not in f or norm(f['onHit'][1]) != norm(SKILL_SWAP_ONHIT)):
+        fail('move %s: onHit is not the pinned text' % mid)
     if pool and handled[0] == 'YAWN':
         if 'onTryHit' not in f or norm(f['onTryHit'][1]) != YAWN_ONTRYHIT:
             fail('move %s: onTryHit is not the pinned text' % mid)
@@ -1961,6 +1963,9 @@ G31_HANDLERS = ['TAUNT', 'YAWN']
 # that a Substitute takes (the pin's onTryPrimaryHit), the HP cost, the break and the events of the decision. The generator
 # checks the three texts, whitespace aside. Its bypasssub flag is bit 4 of the third flags byte (FLAGS3_BITS).
 G60_HANDLERS = ['SUBSTITUTE']
+# Step G70 (Skill Swap, decision 0041; data/moves.ts:16590-16606): the handler swaps the two holders' abilities.
+G70_HANDLERS = ['SKILL_SWAP']
+SKILL_SWAP_ONHIT = "onHit(target, source, move) { return this.skillSwap(source, target); },"
 SUBSTITUTE_ONTRYHIT = (
     "onTryHit(source) { if (source.volatiles['substitute']) { this.add('-fail', source, 'move: Substitute'); "
     "return this.NOT_FAIL; } if (source.hp <= source.maxhp / 4 || source.maxhp === 1) { // Shedinja clause "
@@ -2136,6 +2141,7 @@ SPECIAL_P = dict(SPECIAL_C, **{
     'spikyshield': ('SPIKY_SHIELD', {'onPrepareHit', 'onHit'}),           # G20: Protect that damages a contact attacker
     'taunt': ('TAUNT', set()),                                            # G31: bars the Status moves for three or four turns
     'substitute': ('SUBSTITUTE', {'onTryHit', 'onHit'}),                  # G60: a 1/4 HP decoy that takes the hits (decision 0032)
+    'skillswap': ('SKILL_SWAP', {'onHit'}),                               # G70: swaps the two abilities (decision 0041)
     'yawn': ('YAWN', {'onTryHit'}),                                       # G31: sleep at the end of the next turn
     'revivalblessing': ('REVIVAL_BLESSING', {'onTryHit'}),                # G52: the revive at the PIVOT of the user's slot
     'roost': ('ROOST', set()),                                            # G42: heals, then the Flying type is off for the turn
@@ -2346,7 +2352,7 @@ G62_FACTS = (
                'if (!action) return false;', 'action.order = 201;', "this.add('-activate', target, 'move: Quash');",
                'target: "normal",', 'type: "Dark",']),
 )
-SPECIAL_IDS_P = SPECIAL_IDS_C + G2_HANDLERS + WEATHER_HANDLERS + G16_HANDLERS + G15_HANDLERS + G19_HANDLERS + G20_HANDLERS + G20_PROTECT_HANDLERS + G28_HANDLERS + G30_HANDLERS + G32_HANDLERS + G34_HANDLERS + G27_HANDLERS + G25_HANDLERS + G26_HANDLERS + G33_HANDLERS + G38_HANDLERS + G29_HANDLERS + G39_HANDLERS + G31_HANDLERS + G48_HANDLERS + G44_HANDLERS + G50_HANDLERS + G42_HANDLERS + G56_HANDLERS + G52_HANDLERS + G54_HANDLERS + G64_HANDLERS + G62_HANDLERS + G60_HANDLERS + G58_HANDLERS + ['UNMODELED']# Step G10 made two of these handlers data: Scald (thawsTarget) and Recover (heal) are read into the second flags# byte (bit 4, thaws the target) and the heal column, and have the special NONE; their ids stay defined (the ids after
+SPECIAL_IDS_P = SPECIAL_IDS_C + G2_HANDLERS + WEATHER_HANDLERS + G16_HANDLERS + G15_HANDLERS + G19_HANDLERS + G20_HANDLERS + G20_PROTECT_HANDLERS + G28_HANDLERS + G30_HANDLERS + G32_HANDLERS + G34_HANDLERS + G27_HANDLERS + G25_HANDLERS + G26_HANDLERS + G33_HANDLERS + G38_HANDLERS + G29_HANDLERS + G39_HANDLERS + G31_HANDLERS + G48_HANDLERS + G44_HANDLERS + G50_HANDLERS + G42_HANDLERS + G56_HANDLERS + G52_HANDLERS + G54_HANDLERS + G64_HANDLERS + G62_HANDLERS + G60_HANDLERS + G58_HANDLERS + G70_HANDLERS + ['UNMODELED']# Step G10 made two of these handlers data: Scald (thawsTarget) and Recover (heal) are read into the second flags# byte (bit 4, thaws the target) and the heal column, and have the special NONE; their ids stay defined (the ids after
 # them keep their values). First Impression and Low Kick keep theirs: the turn code implements them.
 POOL_COLUMN_KEYS = {'thawsTarget', 'heal'}
 G2_OWNED_FIELDS = {

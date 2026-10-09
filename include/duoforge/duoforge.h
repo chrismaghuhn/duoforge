@@ -1034,7 +1034,9 @@ duoforge_status duoforge_battle_observe_ext(const duoforge_context *ctx, const d
 #define DUOFORGE_EVENT_ANIMATION       33u /* [-anim] position, other, id: the move shown; flags MISS, NOTARGET
                                                     (the last move line once shown) */
 #define DUOFORGE_EVENT_ABILITY         34u /* [-ability] position, id2: ability + 1. POOL kinds, cause ABILITY (Trace copying
-                                               a foe's): other is the foe, id2 the copied ability + 1 */
+                                               a foe's): other is the foe, id2 the copied ability + 1. With cause MOVE
+                                               (Skill Swap, decision 0041): id = the new ability + 1, id2 = the move, other
+                                               the partner; two events per swap, the source first */
 #define DUOFORGE_EVENT_ACTIVATE        35u /* [-activate] position; cause ABILITY + id2 (Lightning Rod, Emergency Exit) or MOVE + id2 (Struggle);
                                                     Flower Veil's [-block] too: position the protected Pokemon, other the holder ([of]);
                                                     POOL kinds: [-fieldactivate|move: Perish Song] is cause MOVE, id2 the move, position
@@ -1073,7 +1075,8 @@ duoforge_status duoforge_battle_observe_ext(const duoforge_context *ctx, const d
 #define DUOFORGE_CAUSE_NONE      0u /* the move or the plain mechanic */
 #define DUOFORGE_CAUSE_MOVE      1u /* id2: move id (Parting Shot's switch; a sleep that a move caused; POOL kinds: the damage that
                                         Spiky Shield does to a contact attacker, [-damage] ... [from] Spiky Shield [of] the holder,
-                                        the holder in other) */
+                                        the holder in other; POOL kinds, ABILITY events of Skill Swap: id is the new ability + 1,
+                                        decision 0041) */
 #define DUOFORGE_CAUSE_ITEM      2u /* id2: item + 1 */
 #define DUOFORGE_CAUSE_ABILITY   3u /* id2: ability + 1; other: its holder when shown */
 #define DUOFORGE_CAUSE_RECOIL    4u

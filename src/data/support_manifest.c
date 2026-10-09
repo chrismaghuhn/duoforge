@@ -481,6 +481,9 @@ const dfi_support_manifest dfi_support = {
              * a Poison-type user's Toxic are the exceptions), and breaksProtect after the accuracy check (Protect, Wide Guard,
              * Quick Guard and the stall counter of the target; the -activate line carries [broken]). No Power Herb (unmarked). */
             [DFI_MOVE_PHANTOMFORCE] = 1u,
+            /* Step G70 (Skill Swap, decision 0041): the two holders swap their abilities (onHit, the ability events and the
+             * Start and End of the abilities that move; an ally swap is modelled, the Mega and the Illusion cases are named). */
+            [DFI_MOVE_SKILLSWAP] = 1u,
         },
     .abilities =
         {
