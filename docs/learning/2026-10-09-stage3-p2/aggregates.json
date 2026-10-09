@@ -1,0 +1,585 @@
+{
+ "checkpoint_sha256": "ef1abe65f63711eb47e335d6169aad34584e50d4f2df321e4e9cbbbdcaf961cb",
+ "commit_note": "P2 T4/T5 branch (label_tick + tickbench), library main b144181c",
+ "devices": {
+  "cpu": {
+   "decisions_per_second": {
+    "per_root": [
+     20.101676621048387,
+     20.225561411108075
+    ],
+    "tick": [
+     28.83646157013181,
+     29.890562592435856
+    ],
+    "tick_nodedup": [
+     22.313549836220016,
+     22.646495620472965
+    ]
+   },
+   "envs": 512,
+   "gate": {
+    "identity": true,
+    "min_speedup": 1.25,
+    "pass": true
+   },
+   "gpu_peak_bytes": null,
+   "identity": {
+    "across_paths": true,
+    "per_path_repeat": true
+   },
+   "jax": "0.11.2",
+   "jax_devices": [
+    "cpu:0"
+   ],
+   "paths": {
+    "per_root": {
+     "timed": [
+      {
+       "calls": {
+        "policy": 1739,
+        "value": 563
+       },
+       "cpu_seconds": 149.916971,
+       "digest": "b89b545bd05bfdfa5c82042ba8011fc22046d2f34e0af619e63dbf01caefeb1d",
+       "labels": 596,
+       "leaves": 0,
+       "model_seconds": {
+        "policy": 7.0096658199959165,
+        "value": 12.154546873992786
+       },
+       "open_leaves": 0,
+       "rows": {
+        "policy": 37141,
+        "value": 576512
+       },
+       "seconds": 29.6492681299992,
+       "targets": 556,
+       "tick_value_calls": 0,
+       "unique": 0
+      },
+      {
+       "calls": {
+        "policy": 1739,
+        "value": 563
+       },
+       "cpu_seconds": 149.634662,
+       "digest": "b89b545bd05bfdfa5c82042ba8011fc22046d2f34e0af619e63dbf01caefeb1d",
+       "labels": 596,
+       "leaves": 0,
+       "model_seconds": {
+        "policy": 6.938398760984455,
+        "value": 12.134990532998017
+       },
+       "open_leaves": 0,
+       "rows": {
+        "policy": 37141,
+        "value": 576512
+       },
+       "seconds": 29.46766163300026,
+       "targets": 556,
+       "tick_value_calls": 0,
+       "unique": 0
+      }
+     ],
+     "warmup_seconds": 30.849806420000277
+    },
+    "tick": {
+     "timed": [
+      {
+       "calls": {
+        "policy": 1739,
+        "value": 230
+       },
+       "cpu_seconds": 78.29027200000007,
+       "digest": "b89b545bd05bfdfa5c82042ba8011fc22046d2f34e0af619e63dbf01caefeb1d",
+       "labels": 596,
+       "leaves": 508928,
+       "model_seconds": {
+        "policy": 6.480938620998131,
+        "value": 5.021320198998183
+       },
+       "open_leaves": 465825,
+       "rows": {
+        "policy": 37141,
+        "value": 235520
+       },
+       "seconds": 20.668277851999846,
+       "targets": 556,
+       "tick_value_calls": 230,
+       "unique": 229656
+      },
+      {
+       "calls": {
+        "policy": 1739,
+        "value": 230
+       },
+       "cpu_seconds": 78.63119000000063,
+       "digest": "b89b545bd05bfdfa5c82042ba8011fc22046d2f34e0af619e63dbf01caefeb1d",
+       "labels": 596,
+       "leaves": 508928,
+       "model_seconds": {
+        "policy": 6.178154771999743,
+        "value": 5.067721088003054
+       },
+       "open_leaves": 465825,
+       "rows": {
+        "policy": 37141,
+        "value": 235520
+       },
+       "seconds": 19.93940388899955,
+       "targets": 556,
+       "tick_value_calls": 230,
+       "unique": 229656
+      }
+     ],
+     "warmup_seconds": 20.457228994000616
+    },
+    "tick_nodedup": {
+     "timed": [
+      {
+       "calls": {
+        "policy": 1739,
+        "value": 460
+       },
+       "cpu_seconds": 122.33558400000027,
+       "digest": "b89b545bd05bfdfa5c82042ba8011fc22046d2f34e0af619e63dbf01caefeb1d",
+       "labels": 596,
+       "leaves": 508928,
+       "model_seconds": {
+        "policy": 7.168915667999499,
+        "value": 10.225455932998557
+       },
+       "open_leaves": 465825,
+       "rows": {
+        "policy": 37141,
+        "value": 471040
+       },
+       "seconds": 26.71022783799981,
+       "targets": 556,
+       "tick_value_calls": 460,
+       "unique": 465825
+      },
+      {
+       "calls": {
+        "policy": 1739,
+        "value": 460
+       },
+       "cpu_seconds": 120.14266999999961,
+       "digest": "b89b545bd05bfdfa5c82042ba8011fc22046d2f34e0af619e63dbf01caefeb1d",
+       "labels": 596,
+       "leaves": 508928,
+       "model_seconds": {
+        "policy": 7.1589640589868395,
+        "value": 10.187947186000656
+       },
+       "open_leaves": 465825,
+       "rows": {
+        "policy": 37141,
+        "value": 471040
+       },
+       "seconds": 26.31753759999856,
+       "targets": 556,
+       "tick_value_calls": 460,
+       "unique": 465825
+      }
+     ],
+     "warmup_seconds": 28.072109627999907
+    }
+   },
+   "speedup_tick_vs_per_root": [
+    1.4345301694853285,
+    1.4778607122381122
+   ],
+   "steps": 12,
+   "workers": 14,
+   "xla_flags": ""
+  },
+  "gpu": {
+   "decisions_per_second": {
+    "per_root": [
+     17.324487587636455,
+     17.676380215136188
+    ],
+    "tick": [
+     19.069150639304866,
+     19.522870775444765
+    ],
+    "tick_nodedup": [
+     19.415879191797213,
+     19.375426747025163
+    ]
+   },
+   "envs": 512,
+   "gate": {
+    "identity": true,
+    "min_speedup": 1.25,
+    "pass": false
+   },
+   "gpu_peak_bytes": 47193600,
+   "identity": {
+    "across_paths": true,
+    "per_path_repeat": true
+   },
+   "jax": "0.11.2",
+   "jax_devices": [
+    "cuda:0"
+   ],
+   "paths": {
+    "per_root": {
+     "timed": [
+      {
+       "calls": {
+        "policy": 1739,
+        "value": 563
+       },
+       "cpu_seconds": 59.249071999999984,
+       "digest": "35f2bdba24f91d2ca5e8a241c6d41f2dee12ea9e028b0a194bf2965e9c1be415",
+       "labels": 596,
+       "leaves": 0,
+       "model_seconds": {
+        "policy": 18.655096991002665,
+        "value": 7.201054356006807
+       },
+       "open_leaves": 0,
+       "rows": {
+        "policy": 37141,
+        "value": 576512
+       },
+       "seconds": 34.40217189600071,
+       "targets": 556,
+       "tick_value_calls": 0,
+       "unique": 0
+      },
+      {
+       "calls": {
+        "policy": 1739,
+        "value": 563
+       },
+       "cpu_seconds": 59.82227500000002,
+       "digest": "35f2bdba24f91d2ca5e8a241c6d41f2dee12ea9e028b0a194bf2965e9c1be415",
+       "labels": 596,
+       "leaves": 0,
+       "model_seconds": {
+        "policy": 18.604696981997677,
+        "value": 6.453553221003858
+       },
+       "open_leaves": 0,
+       "rows": {
+        "policy": 37141,
+        "value": 576512
+       },
+       "seconds": 33.717310486999395,
+       "targets": 556,
+       "tick_value_calls": 0,
+       "unique": 0
+      }
+     ],
+     "warmup_seconds": 34.46655152599942
+    },
+    "tick": {
+     "timed": [
+      {
+       "calls": {
+        "policy": 1739,
+        "value": 229
+       },
+       "cpu_seconds": 51.996126999999944,
+       "digest": "35f2bdba24f91d2ca5e8a241c6d41f2dee12ea9e028b0a194bf2965e9c1be415",
+       "labels": 596,
+       "leaves": 508928,
+       "model_seconds": {
+        "policy": 18.128513408010804,
+        "value": 2.423804690002271
+       },
+       "open_leaves": 465506,
+       "rows": {
+        "policy": 37141,
+        "value": 234496
+       },
+       "seconds": 31.254669453999668,
+       "targets": 556,
+       "tick_value_calls": 229,
+       "unique": 229391
+      },
+      {
+       "calls": {
+        "policy": 1739,
+        "value": 229
+       },
+       "cpu_seconds": 51.838978000000054,
+       "digest": "35f2bdba24f91d2ca5e8a241c6d41f2dee12ea9e028b0a194bf2965e9c1be415",
+       "labels": 596,
+       "leaves": 508928,
+       "model_seconds": {
+        "policy": 18.400100570983795,
+        "value": 2.348137445996599
+       },
+       "open_leaves": 465506,
+       "rows": {
+        "policy": 37141,
+        "value": 234496
+       },
+       "seconds": 30.52829713699839,
+       "targets": 556,
+       "tick_value_calls": 229,
+       "unique": 229391
+      }
+     ],
+     "warmup_seconds": 29.319233353000527
+    },
+    "tick_nodedup": {
+     "timed": [
+      {
+       "calls": {
+        "policy": 1739,
+        "value": 460
+       },
+       "cpu_seconds": 52.872759999999914,
+       "digest": "35f2bdba24f91d2ca5e8a241c6d41f2dee12ea9e028b0a194bf2965e9c1be415",
+       "labels": 596,
+       "leaves": 508928,
+       "model_seconds": {
+        "policy": 17.155302637981094,
+        "value": 4.166976004999469
+       },
+       "open_leaves": 465506,
+       "rows": {
+        "policy": 37141,
+        "value": 471040
+       },
+       "seconds": 30.69652391799991,
+       "targets": 556,
+       "tick_value_calls": 460,
+       "unique": 465506
+      },
+      {
+       "calls": {
+        "policy": 1739,
+        "value": 460
+       },
+       "cpu_seconds": 53.13823400000001,
+       "digest": "35f2bdba24f91d2ca5e8a241c6d41f2dee12ea9e028b0a194bf2965e9c1be415",
+       "labels": 596,
+       "leaves": 508928,
+       "model_seconds": {
+        "policy": 17.090488821003873,
+        "value": 4.177254877005453
+       },
+       "open_leaves": 465506,
+       "rows": {
+        "policy": 37141,
+        "value": 471040
+       },
+       "seconds": 30.760612799999763,
+       "targets": 556,
+       "tick_value_calls": 460,
+       "unique": 465506
+      }
+     ],
+     "warmup_seconds": 30.6616038580014
+    }
+   },
+   "speedup_tick_vs_per_root": [
+    1.1007050305437884,
+    1.104460898545701
+   ],
+   "steps": 12,
+   "workers": 14,
+   "xla_flags": "--xla_gpu_deterministic_ops=true"
+  },
+  "split": {
+   "decisions_per_second": {
+    "per_root": [
+     28.318864897325884,
+     28.5710680376952
+    ],
+    "tick": [
+     35.85482217473171,
+     36.40394814123339
+    ],
+    "tick_nodedup": [
+     30.869141881655064,
+     30.091979125724446
+    ]
+   },
+   "envs": 512,
+   "gate": {
+    "identity": true,
+    "min_speedup": 1.25,
+    "pass": true
+   },
+   "gpu_peak_bytes": 71744768,
+   "identity": {
+    "across_paths": true,
+    "per_path_repeat": true
+   },
+   "jax": "0.11.2",
+   "jax_devices": [
+    "cuda:0"
+   ],
+   "paths": {
+    "per_root": {
+     "timed": [
+      {
+       "calls": {
+        "policy": 1739,
+        "value": 563
+       },
+       "cpu_seconds": 45.246530000000014,
+       "digest": "11f1ecedcbcad0363d7a5f382f648454627cde341a446b1e9b446bb6e960c160",
+       "labels": 596,
+       "leaves": 0,
+       "model_seconds": {
+        "policy": 5.83797064299597,
+        "value": 6.323391071001424
+       },
+       "open_leaves": 0,
+       "rows": {
+        "policy": 37141,
+        "value": 576512
+       },
+       "seconds": 21.04604129299969,
+       "targets": 556,
+       "tick_value_calls": 0,
+       "unique": 0
+      },
+      {
+       "calls": {
+        "policy": 1739,
+        "value": 563
+       },
+       "cpu_seconds": 44.895255000000006,
+       "digest": "11f1ecedcbcad0363d7a5f382f648454627cde341a446b1e9b446bb6e960c160",
+       "labels": 596,
+       "leaves": 0,
+       "model_seconds": {
+        "policy": 5.756070117008221,
+        "value": 6.346916498988776
+       },
+       "open_leaves": 0,
+       "rows": {
+        "policy": 37141,
+        "value": 576512
+       },
+       "seconds": 20.86026322900034,
+       "targets": 556,
+       "tick_value_calls": 0,
+       "unique": 0
+      }
+     ],
+     "warmup_seconds": 23.43867854400014
+    },
+    "tick": {
+     "timed": [
+      {
+       "calls": {
+        "policy": 1739,
+        "value": 230
+       },
+       "cpu_seconds": 38.17916800000012,
+       "digest": "11f1ecedcbcad0363d7a5f382f648454627cde341a446b1e9b446bb6e960c160",
+       "labels": 596,
+       "leaves": 508928,
+       "model_seconds": {
+        "policy": 5.864255035005499,
+        "value": 2.2511536100028025
+       },
+       "open_leaves": 465825,
+       "rows": {
+        "policy": 37141,
+        "value": 235520
+       },
+       "seconds": 16.62258976199928,
+       "targets": 556,
+       "tick_value_calls": 230,
+       "unique": 229656
+      },
+      {
+       "calls": {
+        "policy": 1739,
+        "value": 230
+       },
+       "cpu_seconds": 37.823446999999874,
+       "digest": "11f1ecedcbcad0363d7a5f382f648454627cde341a446b1e9b446bb6e960c160",
+       "labels": 596,
+       "leaves": 508928,
+       "model_seconds": {
+        "policy": 5.72714052100082,
+        "value": 2.20648342000095
+       },
+       "open_leaves": 465825,
+       "rows": {
+        "policy": 37141,
+        "value": 235520
+       },
+       "seconds": 16.37185059400008,
+       "targets": 556,
+       "tick_value_calls": 230,
+       "unique": 229656
+      }
+     ],
+     "warmup_seconds": 17.886223079000047
+    },
+    "tick_nodedup": {
+     "timed": [
+      {
+       "calls": {
+        "policy": 1739,
+        "value": 460
+       },
+       "cpu_seconds": 39.62628599999999,
+       "digest": "11f1ecedcbcad0363d7a5f382f648454627cde341a446b1e9b446bb6e960c160",
+       "labels": 596,
+       "leaves": 508928,
+       "model_seconds": {
+        "policy": 5.753798357990036,
+        "value": 3.9138545539972256
+       },
+       "open_leaves": 465825,
+       "rows": {
+        "policy": 37141,
+        "value": 471040
+       },
+       "seconds": 19.30730702799974,
+       "targets": 556,
+       "tick_value_calls": 460,
+       "unique": 465825
+      },
+      {
+       "calls": {
+        "policy": 1739,
+        "value": 460
+       },
+       "cpu_seconds": 40.2543520000001,
+       "digest": "11f1ecedcbcad0363d7a5f382f648454627cde341a446b1e9b446bb6e960c160",
+       "labels": 596,
+       "leaves": 508928,
+       "model_seconds": {
+        "policy": 5.90682161299992,
+        "value": 3.7970480620028866
+       },
+       "open_leaves": 465825,
+       "rows": {
+        "policy": 37141,
+        "value": 471040
+       },
+       "seconds": 19.805942224999853,
+       "targets": 556,
+       "tick_value_calls": 460,
+       "unique": 465825
+      }
+     ],
+     "warmup_seconds": 18.851899941000283
+    }
+   },
+   "speedup_tick_vs_per_root": [
+    1.2661108524204103,
+    1.2741542630889364
+   ],
+   "steps": 12,
+   "workers": 14,
+   "xla_flags": "--xla_gpu_deterministic_ops=true"
+  }
+ }
+}
