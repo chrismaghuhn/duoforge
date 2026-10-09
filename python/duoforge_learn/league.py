@@ -13,6 +13,8 @@ drains at a time.
 
 LeagueState is NumPy only; Opponents (JAX) plays the slots' snapshots.
 """
+import math
+
 import numpy as np
 
 from . import pairing
@@ -140,6 +142,10 @@ class Refill:
     def __init__(self, pfsp_share=0.0, anchor_share=0.0, anchors=1, weighting="hard", min_weight=0.05, prior=0.5,
                  prior_games=4.0):
         pfsp_share, anchor_share = float(pfsp_share), float(anchor_share)
+        for name, value in (("pfsp_share", pfsp_share), ("anchor_share", anchor_share), ("min_weight", min_weight),
+                            ("prior", prior), ("prior_games", prior_games)):
+            if not math.isfinite(float(value)):
+                raise ValueError(f"pfsp {name} {value} is not finite")
         if not (0.0 <= pfsp_share <= 1.0 and 0.0 <= anchor_share <= 1.0 and pfsp_share + anchor_share <= 1.0):
             raise ValueError(f"the league's pfsp share {pfsp_share} and anchor share {anchor_share} must lie in "
                              f"[0, 1] with a sum of at most 1 (the rest refills uniformly)")
@@ -161,6 +167,11 @@ class Refill:
     def enabled(self):
         return self.pfsp_share > 0.0 or self.anchor_share > 0.0
 
+    @property
+    def shares(self):
+        """(uniform, pfsp, anchor); uniform clamped at 0 against rounding (1 - 0.07 - 0.93 < 0)."""
+        return (max(0.0, 1.0 - self.pfsp_share - self.anchor_share), self.pfsp_share, self.anchor_share)
+
     def win_rates(self, updates, stats):
         """The learner's smoothed win rate against each snapshot of updates."""
         record = np.array([stats.get(str(u), (0, 0, 0)) for u in updates], dtype=np.float64).reshape(-1, 3)
@@ -181,8 +192,7 @@ class Refill:
         source = "uniform"
         if self.enabled:
             s = pairing.draw(seed, pairing.LEAGUE_SOURCE, np.array([update]), np.array([0]))
-            shares = [1.0 - self.pfsp_share - self.anchor_share, self.pfsp_share, self.anchor_share]
-            source = SOURCES[int(pairing.pick(s, shares)[0])]
+            source = SOURCES[int(pairing.pick(s, self.shares)[0])]
         if source == "uniform":
             candidates, weights = list(updates), np.ones(len(updates))
         elif source == "pfsp":

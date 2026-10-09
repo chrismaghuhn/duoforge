@@ -67,6 +67,21 @@ class RefillWeightsTest(unittest.TestCase):
             with self.subTest(kw=kw), self.assertRaisesRegex(ValueError, word):
                 league.Refill(**kw)
 
+    def test_non_finite_settings_are_refused(self):
+        for name in ("pfsp_share", "anchor_share", "min_weight", "prior", "prior_games"):
+            for value in (float("inf"), float("-inf"), float("nan")):
+                with self.subTest(name=name, value=value), self.assertRaisesRegex(ValueError, "finite"):
+                    league.Refill(**{name: value})
+
+    def test_uniform_share_never_goes_negative(self):
+        # 1 - 0.07 - 0.93 is -1.1e-16 in floating point: the uniform share is clamped to 0.
+        refill = league.Refill(pfsp_share=0.07, anchor_share=0.93)
+        self.assertEqual(refill.shares, (0.0, 0.07, 0.93))
+        updates = list(range(0, 500, 100))
+        sources = [refill.draw(SEED, u, updates, {})[1] for u in range(1, 2001)]
+        self.assertEqual(set(sources), {"pfsp", "anchor"})
+        _within(self, sources.count("pfsp"), len(sources), 0.07, "pfsp")
+
     def test_default_draws_are_the_old_uniform_draws(self):
         refill = league.Refill()
         for seed in (SEED, 0, 12345):
@@ -233,6 +248,15 @@ class TrainPfspTest(unittest.TestCase):
             _run(_SMALL + ["--updates", "1", "--league-pfsp-share", "0.8", "--league-anchor-share", "0.4",
                            "--out", self.out])
         self.assertFalse(os.path.exists(self.out))
+
+    def test_non_finite_options_are_refused_before_the_run_directory(self):
+        for option in ("--pfsp-min-weight", "--pfsp-prior", "--pfsp-prior-games", "--league-pfsp-share",
+                       "--league-anchor-share"):
+            for value in ("inf", "nan"):
+                with self.subTest(option=option, value=value):
+                    with self.assertRaisesRegex(SystemExit, "finite"):
+                        _run(_SMALL + ["--updates", "1", option, value, "--out", self.out])
+                    self.assertFalse(os.path.exists(self.out))
 
 
 if __name__ == "__main__":
