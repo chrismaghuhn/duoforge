@@ -64,6 +64,16 @@ def spread_table(ctx, root=None):
     return table, {s["id"]: i for i, s in enumerate(sources)}, {**counts, "sources": sources, "sha256": table.sha256()}
 
 
+def visible_causes(observation):
+    """The visible counters that have no supported public reconstruction."""
+    causes = []
+    if (observation["sides"]["members"]["status"] == C["DUOFORGE_AILMENT_SLEEP"]).any():
+        causes.append("visible_sleep")
+    if observation["sides"]["positions"]["confused"].any():
+        causes.append("visible_confusion")
+    return causes
+
+
 def draw_word(probabilities, word):
     """Network categorical draw, in index order, by its separate world word."""
     try:
@@ -309,13 +319,7 @@ class Honest(lookahead.Lookahead):
                 if result["kind"] != "forced" and self.k != 1 and not self.preview_only:
                     try:
                         if statuses[e] == C["DUOFORGE_E_UNSUPPORTED"]:
-                            observation = roots.observations[e, p]
-                            causes = []
-                            if (observation["sides"]["members"]["status"] == C["DUOFORGE_AILMENT_SLEEP"]).any():
-                                causes.append("visible_sleep")
-                            if observation["sides"]["positions"]["confused"].any():
-                                causes.append("visible_confusion")
-                            result["causes"] = causes or ["public_record_unsupported"]
+                            result["causes"] = visible_causes(roots.observations[e, p]) or ["public_record_unsupported"]
                             raise Unreconstructible("DUOFORGE_E_UNSUPPORTED: public record")
                         if statuses[e] != 0:
                             raise SearchError(f"public record refused: {duoforge.status_name(int(statuses[e]))}")

@@ -23,7 +23,7 @@ from .expert_data import (DECISION_BOUNDARIES, KEY_VERSION, MASS_TOLERANCE, Deci
                           RowStatus, SparsePolicy, cursor_bytes, restore_cursor, selection_word, validate_manifest,
                           validate_row)
 from .expert_data import _canonical, _object, _sha
-from .honest import Unreconstructible
+from .honest import Unreconstructible, visible_causes
 
 C = _layout.CONSTANTS
 K = 8  # own candidates of a label (P1 fixed contract)
@@ -104,9 +104,10 @@ def full_target(policy: SparsePolicy, legal_mask) -> np.ndarray:
 
 @dataclass(frozen=True)
 class TeacherConfig:
-    """The teacher's search and key configuration, checked against the
-    search it labels with. P1 pins K = M = 8, W = 16, lambda 0.5 and
-    capacity 1024 through the data manifest; tests may use smaller searches."""
+    """The teacher's search and key configuration. It must equal the data
+    manifest's (seed, K, M, W, lambda, capacity; P1 pins 8, 8, 16, 0.5 and
+    1024) and the search it labels with, search seed included: build it
+    with from_manifest."""
     seed: int  # the manifest seed of the world, X and audit key words
     k: int = K
     m: int = 8
@@ -115,12 +116,31 @@ class TeacherConfig:
     capacity: int = 1024
     budget: matrix.WorkBudget = field(default_factory=matrix.WorkBudget)
     audit_threshold: int = AUDIT_THRESHOLD
+    search_seed: int = lookahead.SEARCH_SEED  # the search's belief and leaf seed
     key_version: int = KEY_VERSION
 
+    @classmethod
+    def from_manifest(cls, manifest, **overrides):
+        """The configuration a manifest pins; overrides for budget, audit rate
+        or search seed (any other change is refused by check_manifest)."""
+        validate_manifest(manifest)
+        tc = manifest.teacher_config
+        fields = {"seed": manifest.seed, "k": tc["k"], "m": tc["m"], "worlds": tc["worlds"], "lam": tc["lam"],
+                  "capacity": manifest.capacity}
+        return cls(**{**fields, **overrides})
+
+    def check_manifest(self, manifest):
+        """ValueError unless the key seed and the search sizes are the manifest's."""
+        validate_manifest(manifest)
+        tc = manifest.teacher_config
+        if (self.seed, self.k, self.m, self.worlds, float(self.lam), self.capacity) != \
+                (manifest.seed, tc["k"], tc["m"], tc["worlds"], float(tc["lam"]), manifest.capacity):
+            raise ValueError("the teacher configuration differs from the data manifest")
+
     def __post_init__(self):
-        for name in ("seed", "k", "m", "worlds", "capacity"):
+        for name in ("seed", "k", "m", "worlds", "capacity", "search_seed"):
             value = getattr(self, name)
-            low = 0 if name == "seed" else 1
+            low = 0 if name in ("seed", "search_seed") else 1
             if isinstance(value, bool) or not isinstance(value, int) or not low <= value < 1 << 64:
                 raise ValueError(f"teacher {name} must be an integer of at least {low}")
         if self.k > K:
@@ -137,8 +157,8 @@ class TeacherConfig:
 
     def check(self, search):
         """ValueError unless search runs this configuration with rule X."""
-        got = (search.k, search.m, search.s, search.lam, search.capacity, search.rule)
-        if got != (self.k, self.m, self.worlds, float(self.lam), self.capacity, "mix"):
+        got = (search.k, search.m, search.s, search.lam, search.capacity, search.rule, search.seed)
+        if got != (self.k, self.m, self.worlds, float(self.lam), self.capacity, "mix", self.search_seed):
             raise ValueError(f"the search {got} does not run the teacher configuration")
 
 
@@ -201,9 +221,12 @@ def observe(search, roots, envs, seats):
     for e, p in zip(envs.tolist(), seats.tolist()):
         history = search._observe(roots, e, p, records[e:e + 1].reshape(()).copy(), statuses[e])
         history["observed"] = int(roots.requests[e, p]["epoch"])
+        if int(roots.requests[e, p]["boundary_kind"]) == C["DUOFORGE_BOUNDARY_TEAM_SELECTION"]:
+            history["preview_observed"] = True  # even when its record was refused
 
 
-def label_decision(search, roots, *, env, seat, key, raw_action, raw_logp, last_step, config) -> TeacherDecision:
+def label_decision(search, roots, *, env, seat, key, raw_action, raw_logp, last_step, config,
+                   manifest) -> TeacherDecision:
     """The teacher's decision for an admitted learner root (TURN, REPLACEMENT
     or PIVOT with >= 2 legal pairs) whose ticket was reserved before this
     call, after observe() recorded its request. TARGET: the action drawn
@@ -211,13 +234,18 @@ def label_decision(search, roots, *, env, seat, key, raw_action, raw_logp, last_
     its exact play probability as the behavior likelihood. PUBLIC_REFUSAL (no
     supported public reconstruction) and WORK_EXHAUSTED (the work budget):
     the pre-drawn raw action with raw_logp and a named cause. Any other
-    failure raises."""
+    failure raises, as does a collector that never observed the game's
+    team preview."""
     config.check(search)
+    config.check_manifest(manifest)
     e, p = int(env), int(seat)
     if not 0 <= e < roots.envs or p not in (0, 1) or not roots.requests[e, p]["requested"]:
         raise ValueError("label_decision needs a requested learner seat")
     if not isinstance(key, DecisionKey) or key.seat != p or key.request_epoch != int(roots.requests[e, p]["epoch"]):
         raise ValueError("the decision key must name this seat and request epoch")
+    if not manifest.first_game_id <= key.game_id < manifest.first_game_id + manifest.game_count or \
+            learner_seat(key.game_id) != p:
+        raise ValueError("the decision key must name a manifest game and its learner seat")
     boundary = lookahead._BOUNDARIES[int(roots.requests[e, p]["boundary_kind"])]
     if boundary not in DECISION_BOUNDARIES:
         raise ValueError(f"only TURN/REPLACEMENT/PIVOT roots are labeled (got {boundary})")
@@ -227,13 +255,15 @@ def label_decision(search, roots, *, env, seat, key, raw_action, raw_logp, last_
     history = search.history.get(roots, {}).get((e, p))
     if history is None or history.get("observed") != key.request_epoch or history.get("episode") != roots.episode(e):
         raise ValueError("observe() must record this request before label_decision")
+    if not history.get("preview_observed"):
+        raise ValueError("observe() missed this game's team preview: a collector error, not a public refusal")
     obs, slots, pairs = roots.query_encoded(search.encoder, search.ext_supported)
     mask = pairs[e, p]
     if int(mask.sum()) < 2:
         raise ValueError("a labeled root needs at least two legal pairs")
     pp, _, _ = search._policy(obs[e:e + 1, p], slots[e:e + 1, p], pairs[e:e + 1, p])
-    candidates, _ = lookahead.select(pp[0], mask, search.k)
-    cand = include_student(candidates, raw_action, mask)
+    candidates, _ = lookahead.select(pp[0], mask, config.k)
+    cand = _with_raw(candidates, raw_action, mask, config.k)
     players = np.zeros(roots.envs, np.uint32)
     players[e] = p
     records, statuses = roots.public(players)
@@ -257,13 +287,7 @@ def label_decision(search, roots, *, env, seat, key, raw_action, raw_logp, last_
 
     try:
         if statuses[e] == C["DUOFORGE_E_UNSUPPORTED"]:
-            observation = roots.observations[e, p]
-            causes = []
-            if (observation["sides"]["members"]["status"] == C["DUOFORGE_AILMENT_SLEEP"]).any():
-                causes.append("visible_sleep")
-            if observation["sides"]["positions"]["confused"].any():
-                causes.append("visible_confusion")
-            raise Unreconstructible("+".join(causes) or "public_record_unsupported")
+            raise Unreconstructible("+".join(visible_causes(roots.observations[e, p])) or "public_record_unsupported")
         if statuses[e] != 0:
             raise SearchError(f"public record refused: {duoforge.status_name(int(statuses[e]))}")
         hypotheses, weights, _, _, _ = search._hypotheses(record, roots.observations[e, p], history, world_key,
@@ -300,7 +324,7 @@ def _audit(search, config, key, world_key, logp, mask, raw_action, weights, last
     """The K+1 audit on the same worlds with its own ledger of identical caps:
     the next candidate added (the raw action kept), reported beside the
     label and never replacing it. Exhaustion is an incomplete audit."""
-    ids = _with_raw(lookahead.select(logp, mask, search.k + 1)[0], raw_action, mask, search.k + 1).ids
+    ids = _with_raw(lookahead.select(logp, mask, config.k + 1)[0], raw_action, mask, config.k + 1).ids
     ledger = matrix.WorkLedger(config.budget)
     costs = {k: 0.0 for k in ("public_records", "world_builds", "team_head", "leaves", "network", "solve")}
 
@@ -368,6 +392,8 @@ def teacher_row(decision, step, manifest):
     bootstrap are kept as given. Checked by validate_row."""
     if not isinstance(step, StepData):
         raise ValueError("teacher_row needs StepData")
+    if not isinstance(step.key, DecisionKey) or step.key.seat != learner_seat(step.key.game_id):
+        raise ValueError("expert rows hold the learner seat of their game only")
     if (decision is None) == bool(step.requested):
         raise ValueError("a requested step needs a decision and a waiting step none")
     if decision is None:
@@ -379,7 +405,7 @@ def teacher_row(decision, step, manifest):
         admitted = decision.status in (RowStatus.TARGET, RowStatus.PUBLIC_REFUSAL, RowStatus.WORK_EXHAUSTED)
         fields = {"sparse_policy": decision.target, "status": decision.status, "raw_action": decision.raw_action,
                   "action": decision.action, "behavior_logp": decision.behavior_logp, "admitted": admitted,
-                  "cause": decision.cause, "work": _counts(decision.work), "audit": _plain_audit(decision.audit)}
+                  "cause": decision.cause, "work": _counts(decision.work), "audit": decision.audit}
     row = ExpertRow(key=step.key, logical_tick=step.logical_tick, boundary=step.boundary, obs=step.obs,
                     slots=step.slots, legal_mask=step.legal_mask, requested=bool(step.requested),
                     acting=bool(step.requested), learner=True, value_mask=True, reward=step.reward, done=step.done,
@@ -392,15 +418,40 @@ def _counts(work):
     return {k: int(v) for k, v in work.items() if k != "status"}
 
 
-def _plain_audit(audit):
-    return {k: v for k, v in audit.items() if k != "work"}
-
 
 
 CHECKPOINT_VERSION = 1
-_CHECKPOINT_FIELDS = {"version", "manifest_sha256", "config", "key_version", "envs", "cursor", "histories",
-                      "content_sha256"}
-_HISTORY_FIELDS = {"env", "seat", "episode", "observed", "preview", "turn_start"}
+_CHECKPOINT_FIELDS = {"version", "manifest_sha256", "config", "key_version", "search", "envs", "cursor",
+                      "histories", "content_sha256"}
+_HISTORY_FIELDS = {"env", "seat", "episode", "observed", "preview_observed", "preview", "turn_start"}
+
+
+def _params_digest(params):
+    """SHA-256 over every parameter array, in sorted key order."""
+    h = hashlib.sha256()
+
+    def walk(value, path):
+        if isinstance(value, Mapping):
+            for k in sorted(value):
+                walk(value[k], f"{path}/{k}")
+        elif isinstance(value, (list, tuple)):
+            for i, v in enumerate(value):
+                walk(v, f"{path}/{i}")
+        else:
+            a = np.ascontiguousarray(np.asarray(value))
+            h.update(path.encode("utf-8") + a.dtype.str.encode("ascii") + repr(a.shape).encode("ascii") + a.tobytes())
+
+    walk(params, "")
+    return h.hexdigest()
+
+
+def _search_identity(search):
+    """What a resumed search must share beyond the configuration: the
+    network weights, the spread table and the per-environment exclusions."""
+    excluded = None if search.exclude_teams is None else \
+        [None if x is None else int(x) for x in search.exclude_teams]
+    return {"params_sha256": _params_digest(search.params), "table_sha256": search.table_info["sha256"],
+            "exclude_teams": excluded}
 
 
 def decision_bytes(decision) -> bytes:
@@ -427,11 +478,11 @@ def teacher_checkpoint(search, roots, cursor, config, manifest) -> bytes:
     histories = []
     for (e, p), h in sorted(search.history.get(roots, {}).items()):
         histories.append({"env": int(e), "seat": int(p), "episode": int(h["episode"]),
-                          "observed": h.get("observed"),
+                          "observed": h.get("observed"), "preview_observed": bool(h.get("preview_observed")),
                           "preview": h["preview"].tobytes().hex() if "preview" in h else None,
                           "turn_start": h["turn_start"].tobytes().hex() if "turn_start" in h else None})
     content = {"version": CHECKPOINT_VERSION, "manifest_sha256": _sha(manifest), "config": _config(config),
-               "key_version": KEY_VERSION, "envs": int(roots.envs),
+               "key_version": KEY_VERSION, "search": _search_identity(search), "envs": int(roots.envs),
                "cursor": cursor_bytes(cursor, manifest).decode("ascii"), "histories": histories}
     return _canonical({**content, "content_sha256": _sha(content)})
 
@@ -469,6 +520,8 @@ def restore_teacher(search, roots, data, config, manifest) -> LabelCursor:
         raise ValueError("unsupported teacher checkpoint or key version")
     if state["manifest_sha256"] != _sha(manifest) or state["config"] != json.loads(_canonical(_config(config))):
         raise ValueError("the teacher checkpoint belongs to another manifest or configuration")
+    if state["search"] != json.loads(_canonical(_search_identity(search))):
+        raise ValueError("the teacher checkpoint was taken with other weights, spread table or exclusions")
     if state["envs"] != roots.envs:
         raise ValueError("the teacher checkpoint was taken on another number of environments")
     cursor = restore_cursor(state["cursor"].encode("ascii"), manifest)
@@ -483,9 +536,13 @@ def restore_teacher(search, roots, data, config, manifest) -> LabelCursor:
             raise ValueError("the restored roots are in another episode than the checkpoint")
         if h["observed"] is not None and type(h["observed"]) is not int:
             raise ValueError("invalid observed request epoch")
+        if type(h["preview_observed"]) is not bool:
+            raise ValueError("invalid preview flag")
         entry = {"episode": h["episode"]}
         if h["observed"] is not None:
             entry["observed"] = h["observed"]
+        if h["preview_observed"]:
+            entry["preview_observed"] = True
         for name in ("preview", "turn_start"):
             record = _record(h[name])
             if record is not None:
