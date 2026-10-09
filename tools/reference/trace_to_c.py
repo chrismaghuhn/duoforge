@@ -1318,7 +1318,10 @@ def step_events(log, viewer, roster_of, maxhp, tables):
                              tables['MOVE'][key(move_name)], tables['ITEM'][key(args[1])] + 1)
             else:
                 # [weaken]: the second line of a resist berry (Team C, Chople Berry), detail 1.
-                e = ev_tuple(EV['ITEM_END'], ev_pos(args[0]), NOPOS, 0, 0, tables['ITEM'][key(args[1])] + 1,
+                # step G46: Red Card's `-enditem|holder|Red Card|[of] attacker`: the attacker's position is `other` (items.ts:5160).
+                of_attacker = [a for a in attrs if a.startswith('[of] ')]
+                e = ev_tuple(EV['ITEM_END'], ev_pos(args[0]), ev_pos(of_attacker[0][5:]) if of_attacker else NOPOS, 0, 0,
+                             tables['ITEM'][key(args[1])] + 1,
                              detail=1 if '[weaken]' in attrs else 0, flags=FLAG['EATEN'] if '[eat]' in attrs else 0)
         elif kind == '-item':
             # POOL (step G29): `-item|X|Item|[from] move: M[|[of] Y]` is an item that a move gave X (Trick, Switcheroo, Thief,

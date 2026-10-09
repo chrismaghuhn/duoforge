@@ -1,0 +1,16 @@
+{
+  "name": "g46_redcard_suction",
+  "purpose": "Red Card with a blocked drag: Malamar (male, Suction Cups, its only legal ability) attacks the Red Card holder Raichu with Psycho Cut. The item is used ([-enditem] Red Card [of] Malamar) and is consumed anyway; the attacker's DragOut is blocked by Suction Cups ([-activate] ability: Suction Cups), so Malamar stays and no reserve comes in.",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,000000000000000000000000000000000000000000000000000000000000000a",
+  "teams": [
+    "Malamar (M) @ Life Orb\nAbility: Suction Cups\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Psycho Cut\n- Protect\n\nStaraptor (F) @ Eject Button\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 2 SpD / 32 Spe\nJolly Nature\n- Whirlwind\n- Brave Bird\n- Protect\n\nGarchomp (M) @ Black Glasses\nAbility: Rough Skin\nLevel: 50\nEVs: 2 HP / 32 Atk / 32 Spe\nJolly Nature\n- Earthquake\n- Dragon Claw\n- Protect\n\nKingambit (M) @ Focus Sash\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Sucker Punch\n- Protect\n\nGholdengo @ Rocky Helmet\nAbility: Good as Gold\nLevel: 50\nEVs: 17 HP / 2 Def / 17 SpA / 16 SpD / 14 Spe\nModest Nature\n- Make It Rain\n- Protect\n\nCeruledge (M) @ Grassy Seed\nAbility: Flash Fire\nLevel: 50\nEVs: 31 HP / 7 Atk / 24 Def / 3 SpD / 1 Spe\nAdamant Nature\n- Protect",
+    "Raichu (F) @ Red Card\nAbility: Lightning Rod\nLevel: 50\nEVs: 32 HP / 32 Def / 2 SpD\nRelaxed Nature\n- Thunderbolt\n- Protect\n\nMilotic (F) @ Eject Button\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Protect\n- Coil\n\nIndeedee-F (F) @ Rocky Helmet\nAbility: Psychic Surge\nLevel: 50\nEVs: 32 HP / 32 Def / 2 SpD\nRelaxed Nature\n- Protect\n\nCeruledge (M) @ Grassy Seed\nAbility: Flash Fire\nLevel: 50\nEVs: 31 HP / 7 Atk / 24 Def / 3 SpD / 1 Spe\nAdamant Nature\n- Protect\n\nGholdengo @ Focus Sash\nAbility: Good as Gold\nLevel: 50\nEVs: 17 HP / 2 Def / 17 SpA / 16 SpD / 14 Spe\nModest Nature\n- Make It Rain\n- Protect\n\nKingambit (M) @ Black Glasses\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Sucker Punch\n- Protect"
+  ],
+  "plan": {
+    "p1": ["move 1 1, move 3", "move 1 1, move 3"],
+    "p2": ["move 1 1, move 1", "move 1 1, move 1"],
+    "max_steps": 3
+  }
+}
