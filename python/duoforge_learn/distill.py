@@ -420,9 +420,31 @@ def _manifest(path):
     return ed.read_manifest(Path(path)), _sha256(path)
 
 
+class _LoadInterrupted(Exception):
+    """SIGTERM or SIGINT while the shards load (before fit's own stop flag is installed)."""
+
+
+@contextlib.contextmanager
+def _interruptible():
+    """SIGTERM and SIGINT raise _LoadInterrupted inside the block (so the ledger's finally still runs); the
+    previous handlers come back afterwards."""
+    import signal
+
+    def raise_(signum, frame):
+        raise _LoadInterrupted(signal.Signals(signum).name)
+    old = {sig: signal.signal(sig, raise_) for sig in (signal.SIGTERM, signal.SIGINT)}
+    try:
+        yield
+    finally:
+        for sig, handler in old.items():
+            signal.signal(sig, handler)
+
+
 def main(argv=None):
     """python -m duoforge_learn.distill: exit 0 after a finished fit (whatever its stop reason), 2 for a refusal, 3
-    when a signal stopped it (resume with --resume)."""
+    when a signal stopped it (resume with --resume). With --ledger the ledger exists before anything is loaded
+    (phases "load", the shards, and "distill", the fit) and is saved on every exit: a refusal, a crash, a signal,
+    a finished fit. A signal while the shards load exits 3 as well (nothing to resume: the fit has not started)."""
     import argparse
     import sys
     p = argparse.ArgumentParser(prog="python -m duoforge_learn.distill", description="Stage 3 P1 distillation.")
@@ -434,44 +456,68 @@ def main(argv=None):
     p.add_argument("--resume", action="store_true", help="continue the fit in --out")
     p.add_argument("--seed", type=lambda v: int(v, 0), default=0)
     p.add_argument("--ledger", default=None, help="the arm's compute ledger (ledger.py)")
+    p.add_argument("--load-workers", type=int, default=None,
+                   help="processes reading the shards (default: os.cpu_count()); the data does not depend on it")
     p.add_argument("--allow-other-init", action="store_true", help="tests only: another start or reference")
     args = p.parse_args(argv)
+    if args.load_workers is not None and args.load_workers < 1:
+        p.error("--load-workers must be at least 1")
+    book = None
     try:
         from duoforge_replay.dataset import refuse_repository
         refuse_repository(args.out)
-        if args.resume and not (Path(args.out) / STATE).exists():
-            raise ValueError(f"{args.out}: no state to resume ({STATE})")
-        from . import checkpoint, runstate
-        shas = {"init": _sha256(args.init), "reference": _sha256(args.reference)}
-        if not args.allow_other_init and set(shas.values()) != {PARAMS_49333_SHA256}:
-            raise ValueError(f"the init and the reference must both be params-49333 ({PARAMS_49333_SHA256}): {shas}")
-        manifest, manifest_sha = _manifest(args.manifest)
-        # The networks in the layout they were trained with (P1: encoder 4), which the manifest's rows are in.
-        init, config = checkpoint.load_trained(args.init)
-        ref, ref_config = checkpoint.load_trained(args.reference)
-        if checkpoint.encoder_of(config) != manifest.encoder or len(config["features"]) != manifest.obs_width:
-            raise ValueError(f"--init is encoder {checkpoint.encoder_of(config)} ({len(config['features'])} "
-                             f"features), the manifest's rows encoder {manifest.encoder} ({manifest.obs_width})")
-        if (checkpoint.model_config(ref_config, ref), ref_config["features"]) != \
-                (checkpoint.model_config(config, init), config["features"]):
-            raise ValueError("the reference's model or layout differs from the init's")
-        model = checkpoint.trained_model(config, init)
-        data = distill_data.load(args.shards, manifest)
-        identity = {"manifest": manifest_sha, **shas, "jax": jax.__version__, "optax": optax.__version__,
-                    "device": jax.devices()[0].device_kind, "allow_other_init": args.allow_other_init}
-        book = None
         if args.ledger:
             from . import ledger as ledger_mod
             book = ledger_mod.Ledger(args.ledger)
-        stop = runstate.StopFlag().install()
-        try:
-            result = fit(data, model, jax.device_put(init), jax.device_put(ref), config, args.out, seed=args.seed,
-                         ledger=book, identity=identity, resume=args.resume, stop=stop)
-        finally:
-            stop.restore()
     except (ValueError, OSError) as err:
         print(f"distill: {err}", file=sys.stderr)
         return 2
+    try:  # from here on every exit is charged to the ledger
+        try:
+            if args.resume and not (Path(args.out) / STATE).exists():
+                raise ValueError(f"{args.out}: no state to resume ({STATE})")
+            from . import checkpoint, runstate
+            shas = {"init": _sha256(args.init), "reference": _sha256(args.reference)}
+            if not args.allow_other_init and set(shas.values()) != {PARAMS_49333_SHA256}:
+                raise ValueError(f"the init and the reference must both be params-49333 ({PARAMS_49333_SHA256}): "
+                                 f"{shas}")
+            manifest, manifest_sha = _manifest(args.manifest)
+            # The networks in the layout they were trained with (P1: encoder 4), which the manifest's rows are in.
+            init, config = checkpoint.load_trained(args.init)
+            ref, ref_config = checkpoint.load_trained(args.reference)
+            if checkpoint.encoder_of(config) != manifest.encoder or len(config["features"]) != manifest.obs_width:
+                raise ValueError(f"--init is encoder {checkpoint.encoder_of(config)} ({len(config['features'])} "
+                                 f"features), the manifest's rows encoder {manifest.encoder} ({manifest.obs_width})")
+            if (checkpoint.model_config(ref_config, ref), ref_config["features"]) != \
+                    (checkpoint.model_config(config, init), config["features"]):
+                raise ValueError("the reference's model or layout differs from the init's")
+            model = checkpoint.trained_model(config, init)
+            workers = args.load_workers or os.cpu_count() or 1
+            if book is not None and workers > 1:
+                from . import ledger as ledger_mod
+                if ledger_mod.resource is None:
+                    raise ValueError("--ledger with --load-workers above 1 needs getrusage: os.times() counts no "
+                                     "child CPU here, so the pool workers' CPU would go uncharged (use "
+                                     "--load-workers 1)")
+            with _interruptible(), (book.phase("load") if book is not None else contextlib.nullcontext()):
+                data = distill_data.load(args.shards, manifest, workers=workers)
+            identity = {"manifest": manifest_sha, **shas, "jax": jax.__version__, "optax": optax.__version__,
+                        "device": jax.devices()[0].device_kind, "allow_other_init": args.allow_other_init}
+            stop = runstate.StopFlag().install()
+            try:
+                result = fit(data, model, jax.device_put(init), jax.device_put(ref), config, args.out,
+                             seed=args.seed, ledger=book, identity=identity, resume=args.resume, stop=stop)
+            finally:
+                stop.restore()
+        except (ValueError, OSError) as err:
+            print(f"distill: {err}", file=sys.stderr)
+            return 2
+        except _LoadInterrupted as err:
+            print(f"distill: {err} while loading the shards; nothing fitted", file=sys.stderr)
+            return 3
+    finally:
+        if book is not None:
+            book.save()
     print(json.dumps({"stop": result.stop_reason, "best_epoch": result.best_epoch, "steps": result.steps}))
     return 3 if result.stop_reason == "signal" else 0
 

@@ -13,8 +13,15 @@ Each row then falls in at most one policy stratum:
   WORK_EXHAUSTED, and team preview), for the KL to the frozen reference;
 and every row with value_mask is a value row (waiting and FORCED rows are value rows only). held_out is the
 manifest's whole-game split (is_held_out).
+
+Shards are read in a process pool (load's workers, default os.cpu_count()): each worker validates its shard with
+read_shard and returns plain arrays of the columns load needs (ExpertRow's frozen mappings do not pickle); the
+results are consumed in shard-name order, so the data is byte-identical to a sequential load.
 """
 import dataclasses
+import os
+import sys
+from collections.abc import Mapping
 from pathlib import Path
 
 import numpy as np
@@ -46,32 +53,108 @@ class DistillData:
     held_out: np.ndarray     # (N,) bool
 
 
-def _rows(shard_dir, manifest):
+def _plain(value):
+    """A manifest field as plain picklable data (expert_data freezes mappings into MappingProxyType)."""
+    if isinstance(value, Mapping):
+        return {k: _plain(v) for k, v in value.items()}
+    if isinstance(value, tuple):
+        return [_plain(v) for v in value]
+    return value
+
+
+def _manifest_fields(manifest):
+    return {f.name: _plain(getattr(manifest, f.name)) for f in dataclasses.fields(manifest)}
+
+
+def _shard_columns(path, fields):
+    """One shard's rows (read_shard validates them against the manifest of fields) as plain arrays, in file
+    order: the columns load assembles. Runs in a pool worker."""
     from duoforge_search import expert_data as ed
+    rows = ed.read_shard(Path(path), ed.DataManifest(**fields))
+    n, slots_n = len(rows), _layout.MAX_SLOT_OPTIONS
+    out = {
+        "game_id": np.array([r.key.game_id for r in rows], np.int64),
+        "seat": np.array([r.key.seat for r in rows], np.int64),
+        "logical_tick": np.array([r.logical_tick for r in rows], np.int64),
+        "acting": np.array([r.acting for r in rows], bool),
+        "done": np.array([r.done for r in rows], bool),
+        "reward": np.array([r.reward for r in rows], np.float64),
+        "collector_value": np.array([r.collector_value for r in rows], np.float64),
+        "bootstrap": np.array([r.bootstrap for r in rows], np.float64),
+        "obs": np.stack([r.obs for r in rows]) if n else np.zeros((0, fields["obs_width"]), np.float32),
+        "slots": (np.stack([r.slots for r in rows]) if n
+                  else np.zeros((0, 2, slots_n, fields["slot_width"]), np.float32)),
+        "mask": np.zeros((n, slots_n, slots_n), bool),
+        "team_mask": np.zeros((n, TEAM_ACTIONS), bool),
+        "is_team": np.zeros(n, bool),
+        "target_ids": np.full((n, K), -1, np.int64),
+        "target_probs": np.zeros((n, K), np.float32),
+        "has_target": np.zeros(n, bool),
+        "policy_row": np.zeros(n, bool),
+        "value_row": np.zeros(n, bool),
+    }
+    for i, r in enumerate(rows):
+        team = r.boundary == "TEAM_SELECTION"
+        out["is_team"][i] = team
+        (out["team_mask"] if team else out["mask"])[i] = r.legal_mask
+        out["value_row"][i] = r.value_mask
+        if r.status is ed.RowStatus.TARGET:
+            k = len(r.sparse_policy.ids)
+            out["target_ids"][i, :k] = r.sparse_policy.ids
+            out["target_probs"][i, :k] = r.sparse_policy.probs
+            out["has_target"][i] = True
+        elif r.acting and int(np.count_nonzero(r.legal_mask)) >= 2:
+            out["policy_row"][i] = True
+    return out
+
+
+def _shards(shard_dir, manifest, workers):
+    """The columns of every shard (*.json) of shard_dir in name order, read by `workers` processes."""
     paths = sorted(Path(shard_dir).glob("*.json"))
     if not paths:
         raise ValueError(f"{shard_dir}: no shard (*.json)")
-    games = {}
-    for path in paths:
-        for row in ed.read_shard(path, manifest):
-            games.setdefault(row.key.game_id, []).append(row)
-    return games
+    fields = _manifest_fields(manifest)
+    workers = min(int(workers), len(paths))
+
+    def report(i, part):
+        print(f"distill: loaded shard {i}/{len(paths)} ({part['game_id'].size} rows)", file=sys.stderr, flush=True)
+        return part
+
+    if workers == 1:
+        return [report(i, _shard_columns(p, fields)) for i, p in enumerate(paths, start=1)]
+    import concurrent.futures
+    import multiprocessing
+    # spawn: the parent holds JAX's threads, which a fork must not copy.
+    pool = concurrent.futures.ProcessPoolExecutor(workers, mp_context=multiprocessing.get_context("spawn"))
+    try:
+        futures = [pool.submit(_shard_columns, str(p), fields) for p in paths]
+        parts = [report(i, f.result()) for i, f in enumerate(futures, start=1)]
+    except BaseException:
+        pool.shutdown(wait=True, cancel_futures=True)  # a refused shard (or a signal) stops the rest at once
+        raise
+    pool.shutdown(wait=True)
+    return parts
 
 
-def _trajectory(game, rows):
-    seats = {r.key.seat for r in rows}
-    if len(seats) != 1:
-        raise ValueError(f"game {game}: rows of more than one learner seat {sorted(seats)}")
-    rows = sorted(rows, key=lambda r: r.logical_tick)
-    ticks = [r.logical_tick for r in rows]
-    if len(set(ticks)) != len(ticks):
-        raise ValueError(f"game {game}: duplicate logical tick across shards")
-    if ticks != list(range(len(ticks))):
-        missing = sorted(set(range(ticks[-1] + 1)) - set(ticks))
-        raise ValueError(f"game {game}: incomplete trajectory, gap at logical tick {missing[0]}")
-    if any(r.done for r in rows[:-1]):
-        raise ValueError(f"game {game}: the episode ends before its last row")
-    return rows
+def _trajectories(game_id, seat, tick, done):
+    """The row order of every game's trajectory (games ascending, each in logical-tick order); ValueError for a
+    game of several seats, a duplicate tick, a gap, or an episode that ends before its last row."""
+    order = np.lexsort((tick, game_id))
+    starts = np.flatnonzero(np.r_[True, np.diff(game_id[order]) != 0])
+    for idx in np.split(order, starts[1:]):
+        game = int(game_id[idx[0]])
+        seats = sorted(set(seat[idx].tolist()))
+        if len(seats) != 1:
+            raise ValueError(f"game {game}: rows of more than one learner seat {seats}")
+        ticks = tick[idx]
+        if np.unique(ticks).size != ticks.size:
+            raise ValueError(f"game {game}: duplicate logical tick across shards")
+        if not np.array_equal(ticks, np.arange(ticks.size)):
+            missing = sorted(set(range(int(ticks[-1]) + 1)) - set(ticks.tolist()))
+            raise ValueError(f"game {game}: incomplete trajectory, gap at logical tick {missing[0]}")
+        if done[idx[:-1]].any():
+            raise ValueError(f"game {game}: the episode ends before its last row")
+    return order
 
 
 def value_targets(game_id, seat, logical_tick, acting, reward, done, collector_value, bootstrap):
@@ -100,44 +183,33 @@ def value_targets(game_id, seat, logical_tick, acting, reward, done, collector_v
     return out
 
 
-def load(shard_dir, manifest):
-    """DistillData of every shard (*.json, read in name order) of shard_dir under manifest."""
+def load(shard_dir, manifest, workers=None):
+    """DistillData of every shard (*.json, read in name order) of shard_dir under manifest, the shards read by
+    `workers` processes (default os.cpu_count(); 1 reads them in this process). Progress goes to stderr."""
     from duoforge_search import expert_data as ed
-    games = _rows(shard_dir, manifest)
-    order = []
-    for game in sorted(games):
-        order.extend(_trajectory(game, games[game]))
-    n, slots_n = len(order), _layout.MAX_SLOT_OPTIONS
+    workers = (os.cpu_count() or 1) if workers is None else workers
+    if isinstance(workers, bool) or not isinstance(workers, int) or workers < 1:
+        raise ValueError(f"load workers must be a positive integer (got {workers!r})")
+    parts = _shards(shard_dir, manifest, workers)
+    cols = {name: np.concatenate([p[name] for p in parts]) for name in parts[0]}
+    del parts  # the per-shard copies
+    if not cols["game_id"].size:
+        raise ValueError(f"{shard_dir}: the shards hold no rows")
+    order = _trajectories(cols["game_id"], cols["seat"], cols["logical_tick"], cols["done"])
+    cols = {name: v[order] for name, v in cols.items()}
+    games = np.unique(cols["game_id"])
+    held = dict(zip(games.tolist(), (ed.is_held_out(int(g), manifest.split_seed) for g in games)))
     out = {
-        "obs": np.stack([r.obs for r in order]).astype(np.float32),
-        "slots": np.stack([r.slots for r in order]).astype(np.float32),
-        "mask": np.zeros((n, slots_n, slots_n), bool),
-        "team_mask": np.zeros((n, TEAM_ACTIONS), bool),
-        "is_team": np.zeros(n, bool),
-        "target_ids": np.full((n, K), -1, np.int64),
-        "target_probs": np.zeros((n, K), np.float32),
-        "has_target": np.zeros(n, bool),
-        "policy_row": np.zeros(n, bool),
-        "value_row": np.zeros(n, bool),
-        "value_target": value_targets([r.key.game_id for r in order], [r.key.seat for r in order],
-                                      [r.logical_tick for r in order], [r.acting for r in order],
-                                      [r.reward for r in order], [r.done for r in order],
-                                      [r.collector_value for r in order], [r.bootstrap for r in order]),
-        "game_id": np.array([r.key.game_id for r in order], np.int64),
-        "held_out": np.array([ed.is_held_out(r.key.game_id, manifest.split_seed) for r in order], bool),
+        "obs": cols.pop("obs").astype(np.float32, copy=False),
+        "slots": cols.pop("slots").astype(np.float32, copy=False),
+        "mask": cols["mask"], "team_mask": cols["team_mask"], "is_team": cols["is_team"],
+        "target_ids": cols["target_ids"], "target_probs": cols["target_probs"], "has_target": cols["has_target"],
+        "policy_row": cols["policy_row"], "value_row": cols["value_row"],
+        "value_target": value_targets(cols["game_id"], cols["seat"], cols["logical_tick"], cols["acting"],
+                                      cols["reward"], cols["done"], cols["collector_value"], cols["bootstrap"]),
+        "game_id": cols["game_id"],
+        "held_out": np.array([held[g] for g in cols["game_id"].tolist()], bool),
     }
-    for i, r in enumerate(order):
-        team = r.boundary == "TEAM_SELECTION"
-        out["is_team"][i] = team
-        (out["team_mask"] if team else out["mask"])[i] = r.legal_mask
-        out["value_row"][i] = r.value_mask
-        if r.status is ed.RowStatus.TARGET:
-            k = len(r.sparse_policy.ids)
-            out["target_ids"][i, :k] = r.sparse_policy.ids
-            out["target_probs"][i, :k] = r.sparse_policy.probs
-            out["has_target"][i] = True
-        elif r.acting and int(np.count_nonzero(r.legal_mask)) >= 2:
-            out["policy_row"][i] = True
     for name in ("obs", "slots", "value_target"):
         if not np.isfinite(out[name]).all():
             raise ValueError(f"nonfinite {name} in the shards of {shard_dir}")

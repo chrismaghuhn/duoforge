@@ -7,6 +7,9 @@
   without the luck measurement, the luck is a pure function of the seeds,
   the last step is never corrected, and over many games the luck averages
   to zero (the control variate keeps the mean).
+- play_suite's observers (the luck hook form, read-only): they see every
+  step's indices and the dead mask, change no game and no Luck total, and
+  their order does not matter.
 - The arena CLI: --luck adds the adjusted scores; without it the summary
   has no luck entries.
 
@@ -124,6 +127,34 @@ def _v2s():
     return model, model.init(jax.random.PRNGKey(7))
 
 
+class _Recorder:
+    """A play_suite observer that copies everything it is shown."""
+
+    def __init__(self):
+        self.calls = []
+
+    def start(self, n, seats):
+        self.calls.append(("start", n, np.array(seats, copy=True)))
+
+    def before(self, batch, indices, active, step, last_step):
+        self.calls.append(("before", step, last_step, np.array(indices, copy=True), np.array(active, copy=True),
+                           bool(np.asarray(indices).flags.writeable)))
+
+    def after(self, batch, dead):
+        self.calls.append(("after", np.array(dead, copy=True)))
+
+
+def _same_calls(test, a, b):
+    test.assertEqual(len(a), len(b))
+    for x, y in zip(a, b):
+        test.assertEqual(len(x), len(y))
+        for u, v in zip(x, y):
+            if isinstance(u, np.ndarray):
+                np.testing.assert_array_equal(u, v)
+            else:
+                test.assertEqual(u, v)
+
+
 class InPlaySuite(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
@@ -221,6 +252,67 @@ class InPlaySuite(unittest.TestCase):
         self.assertLess(abs(mean), 4 * se, (mean, se))
         adjusted = luck.adjusted_scores(records, judge.totals)
         self.assertEqual(adjusted.shape, (len(rows),))
+
+
+    def _observed(self, max_steps, observers=(), judge=None, step=None):
+        from unittest import mock
+        stepped = []
+        original = duoforge.Batch.step if step is None else step
+
+        def recording(batch, indices, active=None):
+            stepped.append(np.array(indices, copy=True))
+            return original(batch, indices, active=active)
+        with mock.patch.object(duoforge.Batch, "step", recording):
+            records = self.evaluate.play_suite(self.ctx, self.pool, self.rows, self.raw, self.raw, 2, SEED,
+                                               max_steps=max_steps, luck=judge, observers=observers)
+        return records, stepped
+
+    def test_observers_see_every_step_and_change_nothing(self):
+        a, b = _Recorder(), _Recorder()
+        records, stepped = self._observed(40, (a, b))
+        self.assertEqual(records.tobytes(), self.plain.tobytes())
+        _same_calls(self, a.calls, b.calls)
+        n = len(self.rows)
+        self.assertEqual(a.calls[0][0], "start")
+        self.assertEqual(a.calls[0][1], n)
+        np.testing.assert_array_equal(a.calls[0][2], self.rows["learner_seat"])
+        rest = a.calls[1:]
+        self.assertEqual(len(rest), 2 * len(stepped))
+        self.assertGreater(len(stepped), 3)
+        for t, (before, after) in enumerate(zip(rest[0::2], rest[1::2])):
+            self.assertEqual((before[0], after[0]), ("before", "after"))
+            self.assertEqual(before[1], t)  # every loop index, in order
+            self.assertEqual(before[2], t == 39)
+            np.testing.assert_array_equal(before[3], stepped[t])  # the indices batch.step plays
+            self.assertFalse(before[5])  # read-only for observers
+            self.assertEqual(before[4].shape, (n,))
+            np.testing.assert_array_equal(after[1], np.zeros(n, bool))
+        # Their order does not matter.
+        c, d = _Recorder(), _Recorder()
+        again, _ = self._observed(40, (d, c))
+        self.assertEqual(again.tobytes(), records.tobytes())
+        _same_calls(self, c.calls, a.calls)
+
+    def test_observers_see_the_dead_mask(self):
+        from python.tests.test_learn_v2_numpy import _fail_env_once
+        rec = _Recorder()
+        records, _ = self._observed(40, (rec,), step=_fail_env_once(duoforge.Batch.step, 1))
+        self.assertTrue(records["unresolved"][1])
+        afters = [c[1] for c in rec.calls if c[0] == "after"]
+        want = np.zeros(len(self.rows), bool)
+        want[1] = True
+        for dead in afters:  # refused on the first step, dead from then on
+            np.testing.assert_array_equal(dead, want)
+        befores = [c for c in rec.calls if c[0] == "before"]
+        self.assertTrue(all(not c[4][1] for c in befores[1:]))  # no longer active
+
+    def test_luck_is_unchanged_beside_observers(self):
+        with self._judge() as alone, self._judge() as beside:
+            self._play(alone, 40)
+            records, _ = self._observed(40, (_Recorder(),), judge=beside)
+        self.assertEqual(records.tobytes(), self.plain.tobytes())
+        np.testing.assert_array_equal(beside.totals, alone.totals)
+        np.testing.assert_array_equal(beside.terms, alone.terms)
 
 
 class ArenaLuck(unittest.TestCase):
