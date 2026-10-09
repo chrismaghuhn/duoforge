@@ -1626,6 +1626,14 @@ static duoforge_status dfi_get_damage(dfi_run *r, uint32_t user, uint32_t target
     if ((bp_flags2 & DFI_MOVE_FLAG2_SLICING) != 0u && dfi_ability(r->b, a, DFI_ABILITY_SHARPNESS)) {
         ok = ok && dfi_chain_modify(bp_chain, 6144u, &bp_chain);
     }
+    /* Mega Launcher (step G59, data/abilities.ts:2546-2556, onBasePowerPriority 19, the same slot as Sharpness, which it never
+     * meets: one ability): chainModify(1.5) for a pulse move of its holder (the public static flag PULSE of the pool row,
+     * engine column dfi_pool_move_flags3, bit DFI_MOVE_FLAG3_PULSE, which equals the public static PULSE flag of every row; no
+     * pulse move is a Struggle). Breakable: no; the Champions mod has no entry. */
+    if (bp_move != DFI_MOVE_STRUGGLE && dfi_ability(r->b, a, DFI_ABILITY_MEGALAUNCHER) &&
+        (dfi_pool_move_flags3[bp_move] & DFI_MOVE_FLAG3_PULSE) != 0u) {
+        ok = ok && dfi_chain_modify(bp_chain, 6144u, &bp_chain);
+    }
     /* Muscle Band and Wise Glasses (step G49, data/items.ts:4239-4251 and :7754-7766, onBasePowerPriority 16: after
      * Sharpness's 19 and before the type boosters' 15): 4505/4096 for a Physical move (Muscle Band) or a Special move (Wise
      * Glasses) of its holder. The item the holder has now (dfi_item_code); the move's category is the table's, which is the
@@ -1715,6 +1723,26 @@ static duoforge_status dfi_get_damage(dfi_run *r, uint32_t user, uint32_t target
     if (atk_index == DFI_STAGE_SPA && r->b->weather == DFI_WEATHER_SUN && dfi_ability(r->b, a, DFI_ABILITY_SOLARPOWER)) {
         ok = ok && dfi_chain_modify(atk_chain, 6144u, &atk_chain);
     }
+    /* The three step-G59 abilities of the Attack and Special Attack events, all dyadic (8192, 6144, 2048 out of 4096), so
+     * their order and the one rounding of the chain give the same value in every order. The events follow the move's
+     * CATEGORY, not the stat that the move uses (sim/battle-actions.ts:1694-1697: `Modify` + Atk or SpA of the category), so
+     * Body Press's Defense is multiplied by Huge Power in the ModifyAtk event and Foul Play's Attack by the user's
+     * abilities, the user being the event's holder (the source of the runEvent call; `source`, sim/battle-actions.ts:1697).
+     *   Huge Power (data/abilities.ts:1886-1896, onModifyAtkPriority 5): x2 for a physical move of its holder.
+     *   Fire Mane (data/abilities.ts:1295-1310, onModifyAtkPriority 5 and onModifySpAPriority 5): x1.5 for a Fire move of its
+     *     holder, either category; the Champions mod inherits it (Future tag dropped).
+     *   Thick Fat (data/abilities.ts:5014-5030, onSourceModifyAtkPriority 6 and onSourceModifySpAPriority 5, breakable: no
+     *     Mold Breaker is marked): x0.5 for an Ice or Fire move against its holder (the target, the `source` of the
+     *     event), either category. */
+    if (physical && dfi_ability(r->b, a, DFI_ABILITY_HUGEPOWER)) {
+        ok = ok && dfi_chain_modify(atk_chain, 8192u, &atk_chain);
+    }
+    if (move_type == DFI_TYPE_FIRE && dfi_ability(r->b, a, DFI_ABILITY_FIREMANE)) {
+        ok = ok && dfi_chain_modify(atk_chain, 6144u, &atk_chain);
+    }
+    if ((move_type == DFI_TYPE_ICE || move_type == DFI_TYPE_FIRE) && dfi_ability(r->b, d, DFI_ABILITY_THICKFAT)) {
+        ok = ok && dfi_chain_modify(atk_chain, 2048u, &atk_chain);
+    }
     if (!ok) {
         return DUOFORGE_E_INVARIANT;
     }
@@ -1731,8 +1759,18 @@ static duoforge_status dfi_get_damage(dfi_run *r, uint32_t user, uint32_t target
     /* WeatherModifyDamage: rain and sun boost their type by half and halve
      * the other (data/conditions.ts raindance, sunnyday). */
     const uint32_t weather = r->b->weather;
-    if ((weather == DFI_WEATHER_RAIN && move_type == DFI_TYPE_WATER) ||
-        (weather == DFI_WEATHER_SUN && move_type == DFI_TYPE_FIRE)) {
+    if (dfi_ability(r->b, a, DFI_ABILITY_MEGASOL)) {
+        /* Mega Sol (step G59, data/abilities.ts:2558-2569, onWeatherModifyDamagePriority 1): the holder's own handler, first
+         * of the event (the field's handlers are priority 0, and it returns the damage: a fast exit), calls sunnyday's
+         * onWeatherModifyDamage with the holder's moves as sun: Fire x1.5 and Water x0.5 (data/conditions.ts:556-578), whatever
+         * the field's weather is (the field's raindance and the rest do not run). Hydro Steam is not marked. */
+        if (move_type == DFI_TYPE_FIRE) {
+            damage = dfi_modify(damage, 6144u);
+        } else if (move_type == DFI_TYPE_WATER) {
+            damage = dfi_modify(damage, 2048u);
+        }
+    } else if ((weather == DFI_WEATHER_RAIN && move_type == DFI_TYPE_WATER) ||
+               (weather == DFI_WEATHER_SUN && move_type == DFI_TYPE_FIRE)) {
         damage = dfi_modify(damage, 6144u);
     } else if ((weather == DFI_WEATHER_RAIN && move_type == DFI_TYPE_FIRE) ||
                (weather == DFI_WEATHER_SUN && move_type == DFI_TYPE_WATER)) {
@@ -3875,6 +3913,19 @@ static duoforge_status dfi_static(dfi_run *r, uint32_t user, uint32_t holder, co
     return dfi_try_status(r, user, DFI_STATUS_PAR, holder, DFI_NO_SOURCE_MOVE, DFI_ORIGIN_OTHER, 1u + DFI_ABILITY_STATIC);
 }
 
+/* Spicy Spray (step G59, data/abilities.ts:4466-4475, onDamagingHit; its holder is the target): after EVERY damaging hit, contact or
+ * not, and with no roll, source.trySetStatus('brn', target): the attacker is burned, from the holder, through the status path of
+ * the other sources (dfi_try_status: the Fire type, a status already up, a Flower Veil, a fainted attacker and Synchronize on the
+ * attacker, which passes the burn back to the holder). It runs also when the hit knocked the holder out (the handler still runs,
+ * as Flame Body's does). The Champions mod inherits it. Mold Breaker is not marked; the holder has one ability. */
+static duoforge_status dfi_spicy_spray(dfi_run *r, uint32_t user, uint32_t holder)
+{
+    if (!dfi_ability(r->b, dfi_at(r->b, holder), DFI_ABILITY_SPICYSPRAY)) {
+        return DUOFORGE_OK;
+    }
+    return dfi_try_status(r, user, DFI_STATUS_BRN, holder, DFI_NO_SOURCE_MOVE, DFI_ORIGIN_OTHER, 1u + DFI_ABILITY_SPICYSPRAY);
+}
+
 /* Wide Guard (data/moves.ts:20808-20851; POOL kinds, the side's flag is in the state tail). Its onTry (:20818) fails
  * unless another action is pending (queue.willAct), as Protect's does. Its side condition lasts the turn:
  * addSideCondition prints [-singleturn] user|Wide Guard once (onSideStart, :20825-20827); a second Wide Guard of the
@@ -4491,6 +4542,11 @@ static duoforge_status dfi_run_heal_fraction(dfi_run *r, uint32_t num, uint32_t 
             return DUOFORGE_E_UNSUPPORTED;
         }
         uint32_t amount = ((uint32_t)m->hp_max * num * 2u + den) / (2u * den); /* Math.round(hp_max * num / den) */
+        /* Heal Pulse of a user with Mega Launcher (step G59, data/moves.ts:8410): this.heal(this.modify(target.baseMaxhp, 0.75)),
+         * i.e. the three quarters of the target's maximum HP by the modifier's rounding (dfi_modify, 3072/4096). */
+        if (move_id == DFI_MOVE_HEALPULSE && dfi_ability(r->b, dfi_at(r->b, user), DFI_ABILITY_MEGALAUNCHER)) {
+            amount = dfi_modify((uint32_t)m->hp_max, 3072u);
+        }
         amount = amount < 1u ? 1u : amount;
         dfi_heal(r, t, amount, DUOFORGE_CAUSE_NONE, 0u, DUOFORGE_NO_POSITION);
         did = true;
@@ -4650,11 +4706,11 @@ static duoforge_status dfi_run_haze(dfi_run *r)
     return DUOFORGE_OK;
 }
 
-/* Heal Pulse's heal (step G54, data/moves.ts:8399-8428): the target heals by Math.ceil(baseMaxhp / 2); a target at full HP shows
- * the plain fail of the heal move (dfi_run_heal_fraction), the Mega Launcher's 3/4 is not marked. */
-/* Heal Pulse's heal after the hit steps: a target that Protect (or an immunity) stopped is not healed and shows no fail;
- * the others heal by half of their maximum HP, or fail at full HP with the plain line. */
-static duoforge_status dfi_run_heal_pulse(dfi_run *r, const uint32_t *targets, const bool *hit, uint32_t count)
+/* Heal Pulse's heal after the hit steps (step G54, data/moves.ts:8399-8428): a target that Protect (or an immunity) stopped is
+ * not healed and shows no fail; the others heal by half of their maximum HP, or fail at full HP with the plain line. A user
+ * with Mega Launcher heals by three quarters instead (step G59: the same entry's `source.hasAbility('megalauncher')` branch,
+ * in dfi_run_heal_fraction). */
+static duoforge_status dfi_run_heal_pulse(dfi_run *r, uint32_t user, const uint32_t *targets, const bool *hit, uint32_t count)
 {
     uint32_t live[DFI_POSITIONS] = {0u, 0u, 0u, 0u};
     uint32_t n = 0u;
@@ -4667,8 +4723,8 @@ static duoforge_status dfi_run_heal_pulse(dfi_run *r, const uint32_t *targets, c
     if (n == 0u) {
         return DUOFORGE_OK;
     }
-    /* Heal Pulse is not Roost: the user and the move are only read by the Roost branch below */
-    return dfi_run_heal_fraction(r, 1u, 2u, false, DFI_POSITIONS, DFI_MOVE_HEALPULSE, live, n);
+    /* The user is read for the Mega Launcher branch of the heal, and by the Roost branch (which Heal Pulse is not) */
+    return dfi_run_heal_fraction(r, 1u, 2u, false, user, DFI_MOVE_HEALPULSE, live, n);
 }
 
 /* Strength Sap (step G54, data/moves.ts:18174-18193, data/mods/champions/moves.ts:981-984): onHit. A target at -6 Attack fails
@@ -5594,6 +5650,22 @@ static duoforge_status dfi_bounce(dfi_run *r, uint32_t user, uint32_t holder, ui
     return DUOFORGE_OK;
 }
 
+/* Mega Sol (step G59, data/abilities.ts:2558-2569): Pokemon#effectiveWeather (sim/pokemon.ts:2190-2198) reads the weather as sun for
+ * the effects of a Move, a Weather or Mega Sol itself while the Mega Sol holder is the active Pokemon, whatever the field's weather
+ * is. The moves that read the weather through it, and that the engine reads from the field: Solar Beam (its charge, sunnyday's
+ * prepare test, and its onBasePower, data/moves.ts:17224-17258), Weather Ball (its type and power, :20700-20730), and Thunder and
+ * Hurricane (their accuracy, :19447-19460 and :20861-20866). With the field in sun the two readings agree; otherwise the move is
+ * refused (E_UNSUPPORTED), not modelled. The Mega Sol holder's legal moves of those kinds are the marked ones (Meganium's
+ * Solar Beam and Weather Ball; Thunder and Hurricane are not in its learnset). Refused at the move's own use, after BeforeMove. */
+static bool dfi_mega_sol_refused(struct duoforge_battle *b, uint32_t user, const dfi_move_data *md)
+{
+    if (b->weather == DFI_WEATHER_SUN || !dfi_ability(b, dfi_at(b, user), DFI_ABILITY_MEGASOL)) {
+        return false;
+    }
+    return md->special == DFI_SPECIAL_SOLAR_BEAM || md->special == DFI_SPECIAL_WEATHER_BALL ||
+           md->special == DFI_SPECIAL_THUNDER || md->special == DFI_SPECIAL_HURRICANE;
+}
+
 static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, bool *ran)
 {
     r->hit_index = 1u;
@@ -5669,6 +5741,10 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
             }
         }
         return DUOFORGE_OK;
+    }
+    /* Mega Sol's weather reading (step G59): refused before the move's PP and its lines, for a move that reads the weather. */
+    if (dfi_mega_sol_refused(b, user, md)) {
+        return DUOFORGE_E_UNSUPPORTED;
     }
     /* choicelock's onBeforeMove, reached by a holder that can move: its Choice item is gone, so the lock ends here. */
     dfi_choice_lock_ends(b, user);
@@ -6375,7 +6451,7 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
         return dfi_run_strength_sap(r, user, targets, count, hit);
     }
     if (md->special == DFI_SPECIAL_HEAL_PULSE) {
-        return dfi_run_heal_pulse(r, targets, hit, count);
+        return dfi_run_heal_pulse(r, user, targets, hit, count);
     }
     /* trySpreadMoveHit ends a spread move's line with [spread] and the
      * slots still hit (sim/battle-actions.ts:618): the hit loop keeps every
@@ -6854,6 +6930,10 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
                 if (st != DUOFORGE_OK) {
                     return st;
                 }
+                st = dfi_spicy_spray(r, user, targets[i]); /* step G59: the holder's one ability, a down holder too */
+                if (st != DUOFORGE_OK) {
+                    return st;
+                }
                 st = dfi_static(r, user, targets[i], md); /* step G39: one ability per holder, so never with Flame Body's */
                 if (st != DUOFORGE_OK) {
                     return st;
@@ -6921,6 +7001,11 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
                 static const uint8_t def_down_spe_up[DFI_STAT_STAGE_COUNT] = {6u, 5u, 6u, 6u, 8u, 6u, 6u};
                 dfi_boost(r, targets[i], def_down_spe_up, targets[i],
                           dfi_effect(DUOFORGE_CAUSE_ABILITY, 1u + DFI_ABILITY_WEAKARMOR, DFI_BOOST_PRIMARY));
+            }
+            /* Spicy Spray (step G59): the target's own handler, one ability per holder, so never with Flame Body's or Static's. */
+            st = dfi_spicy_spray(r, user, targets[i]);
+            if (st != DUOFORGE_OK) {
+                return st;
             }
             /* Static (step G39): the target's own unordered handler, like Flame Body's. */
             st = dfi_static(r, user, targets[i], md);

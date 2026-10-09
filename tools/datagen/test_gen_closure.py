@@ -1438,7 +1438,7 @@ class ItemAbilityFeatures(unittest.TestCase):
                                                                  'solarpower', 'regenerator', 'toxicdebris', 'shadowtag', 'suctioncups', 'guarddog',
                                                                  'steadfast', 'weakarmor', 'telepathy', 'voltabsorb', 'punkrock', 'moxie',
                                                                  'synchronize', 'oblivious', 'keeneye', 'bigpecks', 'magicbounce', 'pressure',
-                                                                 'sandforce', 'shellarmor', 'filter', 'stalwart']})
+                                                                 'sandforce', 'shellarmor', 'filter', 'stalwart', 'megalauncher', 'hugepower', 'thickfat', 'firemane', 'spicyspray', 'megasol']})
 
 
 class Bounds(unittest.TestCase):
@@ -1803,7 +1803,7 @@ class SmallRulesG35(unittest.TestCase):
 
     def sources(self, skip=(None, None)):
         abilities = []
-        for aid, facts in gen_closure.G34_ABILITY_FACTS + gen_closure.G35_ABILITY_FACTS + gen_closure.MEGA2_ABILITY_FACTS + gen_closure.G39_ABILITY_FACTS + gen_closure.G41_ABILITY_FACTS + gen_closure.G45_ABILITY_FACTS + gen_closure.G46_ABILITY_FACTS + gen_closure.G47_ABILITY_FACTS + gen_closure.G51_ABILITY_FACTS + gen_closure.G53_ABILITY_FACTS + gen_closure.G63_ABILITY_FACTS:
+        for aid, facts in gen_closure.G34_ABILITY_FACTS + gen_closure.G35_ABILITY_FACTS + gen_closure.MEGA2_ABILITY_FACTS + gen_closure.G39_ABILITY_FACTS + gen_closure.G41_ABILITY_FACTS + gen_closure.G45_ABILITY_FACTS + gen_closure.G46_ABILITY_FACTS + gen_closure.G47_ABILITY_FACTS + gen_closure.G51_ABILITY_FACTS + gen_closure.G53_ABILITY_FACTS + gen_closure.G63_ABILITY_FACTS + gen_closure.G59_ABILITY_FACTS:
             kept = [f for i, f in enumerate(facts) if (aid, i) != skip]
             abilities.append(entry(aid, *kept))
         items = [entry(iid, *facts) for iid, facts in gen_closure.G34_ITEM_FACTS + gen_closure.G46_ITEM_FACTS + gen_closure.G47_ITEM_FACTS]
@@ -1887,7 +1887,7 @@ class SmallRulesG39(unittest.TestCase):
 
     def abilities(self, skip=(None, None)):
         out = []
-        for aid, facts in gen_closure.G34_ABILITY_FACTS + gen_closure.G35_ABILITY_FACTS + gen_closure.MEGA2_ABILITY_FACTS + gen_closure.G39_ABILITY_FACTS + gen_closure.G41_ABILITY_FACTS + gen_closure.G45_ABILITY_FACTS + gen_closure.G46_ABILITY_FACTS + gen_closure.G47_ABILITY_FACTS + gen_closure.G51_ABILITY_FACTS + gen_closure.G53_ABILITY_FACTS + gen_closure.G63_ABILITY_FACTS:
+        for aid, facts in gen_closure.G34_ABILITY_FACTS + gen_closure.G35_ABILITY_FACTS + gen_closure.MEGA2_ABILITY_FACTS + gen_closure.G39_ABILITY_FACTS + gen_closure.G41_ABILITY_FACTS + gen_closure.G45_ABILITY_FACTS + gen_closure.G46_ABILITY_FACTS + gen_closure.G47_ABILITY_FACTS + gen_closure.G51_ABILITY_FACTS + gen_closure.G53_ABILITY_FACTS + gen_closure.G63_ABILITY_FACTS + gen_closure.G59_ABILITY_FACTS:
             kept = [f for i, f in enumerate(facts) if (aid, i) != skip]
             out.append(entry(aid, *kept))
         items = [entry(iid, *facts) for iid, facts in gen_closure.G34_ITEM_FACTS + gen_closure.G46_ITEM_FACTS + gen_closure.G47_ITEM_FACTS]
@@ -1953,6 +1953,73 @@ class SimpleMovesG44(unittest.TestCase):
         self.assertIn('TRI_ATTACK', gen_closure.G2_OWNED_SECONDARY)
         self.assertEqual([mid for mid, _ in gen_closure.G44_FACTS], ['powertrip', 'thunder', 'icefang', 'triattack'])
 
+class SmallRulesG59(unittest.TestCase):
+    """Step G59: six Mega abilities are engine rows whose pinned texts are demanded whole (G59_ABILITY_FACTS); the Champions mod
+    may only inherit three of them (G59_INHERIT_ONLY); Mega Sol's effectiveWeather side and the sunnyday handler it calls are
+    demanded (check_g59_facts)."""
+
+    def abilities(self, skip=(None, None)):
+        out = []
+        for aid, facts in gen_closure.G34_ABILITY_FACTS + gen_closure.G35_ABILITY_FACTS + gen_closure.MEGA2_ABILITY_FACTS + gen_closure.G39_ABILITY_FACTS + gen_closure.G41_ABILITY_FACTS + gen_closure.G45_ABILITY_FACTS + gen_closure.G46_ABILITY_FACTS + gen_closure.G47_ABILITY_FACTS + gen_closure.G51_ABILITY_FACTS + gen_closure.G53_ABILITY_FACTS + gen_closure.G59_ABILITY_FACTS + gen_closure.G63_ABILITY_FACTS:
+            kept = [f for i, f in enumerate(facts) if (aid, i) != skip]
+            out.append(entry(aid, *kept))
+        return out
+
+    def champ(self, extra=()):
+        out = [entry(aid, 'inherit: true,', 'isNonstandard: null,') for aid in gen_closure.G59_INHERIT_ONLY]
+        return TextSource('data/mods/champions/abilities.ts', '\n'.join(out + list(extra)))
+
+    def sources(self, skip=(None, None), champ=None):
+        items = [entry(iid, *facts) for iid, facts in gen_closure.G34_ITEM_FACTS + gen_closure.G46_ITEM_FACTS + gen_closure.G47_ITEM_FACTS]
+        return (TextSource('data/abilities.ts', '\n'.join(self.abilities(skip))),
+                self.champ() if champ is None else champ,
+                TextSource('data/items.ts', '\n'.join(items)), TextSource('data/mods/champions/items.ts', ''))
+
+    def test_the_facts_of_the_pin_are_accepted(self):
+        gen_closure.check_g34_facts(*self.sources())
+
+    def test_every_fact_is_demanded(self):
+        self.assertEqual([aid for aid, _ in gen_closure.G59_ABILITY_FACTS],
+                         ['megalauncher', 'hugepower', 'thickfat', 'firemane', 'spicyspray', 'megasol'])
+        for aid, facts in gen_closure.G59_ABILITY_FACTS:
+            for i in range(len(facts)):
+                with self.subTest(ability=aid, fact=facts[i]), self.assertRaises(SystemExit) as cm:
+                    gen_closure.check_g34_facts(*self.sources((aid, i)))
+                self.assertIn('the entry no longer has', str(cm.exception.code))
+
+    def test_the_rows_of_the_step(self):
+        for aid, _ in gen_closure.G59_ABILITY_FACTS:
+            self.assertIn(aid, gen_closure.ENGINE_ROWS['abilities'])
+
+    def test_the_champions_mod_may_only_inherit_three(self):
+        # Control: the three inherit-only entries are accepted.
+        gen_closure.check_g34_facts(*self.sources())
+        # A Champions entry of a row that has none is an override.
+        with self.assertRaises(SystemExit) as cm:
+            gen_closure.check_g34_facts(*self.sources(champ=TextSource('data/mods/champions/abilities.ts',
+                                                                       entry('hugepower', 'inherit: true,'))))
+        self.assertIn('the champions mod overrides the entry', str(cm.exception.code))
+        # An entry of an inherit-only row that also changes a callback is an override too.
+        bad = entry('firemane', 'inherit: true,', 'isNonstandard: null,', 'onModifyAtk() { return 1; },')
+        with self.assertRaises(SystemExit) as cm:
+            gen_closure.check_g34_facts(*self.sources(champ=TextSource('data/mods/champions/abilities.ts', bad)))
+        self.assertIn('the champions mod overrides the entry', str(cm.exception.code))
+
+    def test_mega_sol_side_facts_are_demanded(self):
+        pokemon = TextSource('sim/pokemon.ts', '\n'.join(gen_closure.G59_POKEMON_FACTS))
+        conditions = TextSource('data/conditions.ts', '\n'.join(gen_closure.G59_SUNNY_FACTS))
+        gen_closure.check_g59_facts(None, None, pokemon, conditions)
+        for fact in gen_closure.G59_POKEMON_FACTS:
+            cut = TextSource('sim/pokemon.ts', '\n'.join(f for f in gen_closure.G59_POKEMON_FACTS if f != fact))
+            with self.subTest(fact=fact), self.assertRaises(SystemExit) as cm:
+                gen_closure.check_g59_facts(None, None, cut, conditions)
+            self.assertIn('the pin no longer has', str(cm.exception.code))
+        for fact in gen_closure.G59_SUNNY_FACTS:
+            cut = TextSource('data/conditions.ts', '\n'.join(f for f in gen_closure.G59_SUNNY_FACTS if f != fact))
+            with self.subTest(fact=fact), self.assertRaises(SystemExit) as cm:
+                gen_closure.check_g59_facts(None, None, pokemon, cut)
+            self.assertIn('the pin no longer has', str(cm.exception.code))
+
 
 class SmallRulesG53(unittest.TestCase):
     """Step G53: Pressure is an engine row whose pinned texts (the switch-in line and the foe's DeductPP) are demanded whole, and
@@ -1965,7 +2032,7 @@ class SmallRulesG53(unittest.TestCase):
         for aid, facts in (gen_closure.G34_ABILITY_FACTS + gen_closure.G35_ABILITY_FACTS + gen_closure.MEGA2_ABILITY_FACTS +
                            gen_closure.G39_ABILITY_FACTS + gen_closure.G41_ABILITY_FACTS + gen_closure.G45_ABILITY_FACTS +
                            gen_closure.G46_ABILITY_FACTS + gen_closure.G47_ABILITY_FACTS + gen_closure.G51_ABILITY_FACTS +
-                           gen_closure.G53_ABILITY_FACTS + gen_closure.G63_ABILITY_FACTS):
+                           gen_closure.G53_ABILITY_FACTS + gen_closure.G63_ABILITY_FACTS + gen_closure.G59_ABILITY_FACTS):
             kept = [f for i, f in enumerate(facts) if (aid, i) != skip]
             out.append(entry(aid, *kept))
         items = [entry(iid, *facts) for iid, facts in gen_closure.G34_ITEM_FACTS + gen_closure.G46_ITEM_FACTS + gen_closure.G47_ITEM_FACTS]
