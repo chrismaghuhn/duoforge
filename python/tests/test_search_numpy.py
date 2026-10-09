@@ -9,6 +9,7 @@ measurement's statistics and checkpoint choice (spec section 8). The
 contract is pinned by literals, never by the module's own constants. The
 JAX parts are in test_search.py.
 """
+import contextlib
 import hashlib
 import itertools
 import json
@@ -18,6 +19,7 @@ import struct
 import tempfile
 import time
 import unittest
+from fractions import Fraction
 from pathlib import Path
 from unittest.mock import patch
 
@@ -761,6 +763,33 @@ class BayesRule(unittest.TestCase):
             matrix.solve_bayes(np.zeros((2, 2, 2)), [1.0, 0.0])
 
 
+_FRACTION_OPS = ("__new__", "__add__", "__radd__", "__sub__", "__rsub__", "__mul__", "__rmul__", "__truediv__",
+                 "__rtruediv__", "__neg__", "__lt__", "__gt__", "__le__", "__ge__", "__eq__", "__float__")
+
+
+@contextlib.contextmanager
+def _count_fraction_ops():
+    """Counts outermost Fraction constructions, arithmetic, comparisons and
+    float conversions while active (calls made inside another count once)."""
+    ran = {"ops": 0, "depth": 0}
+
+    def counting(real, static):
+        def wrapper(*args, **kwargs):
+            ran["ops"] += ran["depth"] == 0
+            ran["depth"] += 1
+            try:
+                return real(*args, **kwargs)
+            finally:
+                ran["depth"] -= 1
+        return staticmethod(wrapper) if static else wrapper
+
+    with contextlib.ExitStack() as stack:
+        for name in _FRACTION_OPS:
+            real = getattr(Fraction, name)
+            stack.enter_context(patch.object(Fraction, name, counting(real, name == "__new__")))
+        yield ran
+
+
 class BoundedSolver(unittest.TestCase):
     """The P1 teacher's deterministic work budget (P1 plan C2 steps 4 and 5)."""
 
@@ -861,6 +890,22 @@ class BoundedSolver(unittest.TestCase):
         with patch.object(matrix, "_bland_float", side_effect=SearchError("float failed")):
             matrix.solve_bayes(np.eye(2)[None], [1.0], budget=ledger)
         self.assertEqual(self._counts(ledger), (0, 3, 199, 2))
+        # Independently, on non-square tables and several worlds: the charged exact operations
+        # equal the Fraction operations that actually ran (outermost calls only).
+        rng = np.random.default_rng(20261013)
+        cases = [("matrix", rng.random((k, m)), None) for k, m in ((3, 4), (4, 2), (2, 5))]
+        cases += [("bayes", rng.random((w, k, m)), rng.random(w) + 0.1) for w, k, m in ((2, 3, 2), (3, 2, 4), (2, 4, 3))]
+        for kind, table, weights in cases:
+            ledger = self._ledger()
+            with self.subTest(kind=kind, shape=table.shape), \
+                    patch.object(matrix, "_solve_float", side_effect=SearchError("float failed")), \
+                    patch.object(matrix, "_bland_float", side_effect=SearchError("float failed")), \
+                    _count_fraction_ops() as ran:
+                if kind == "matrix":
+                    matrix.solve(table, budget=ledger)
+                else:
+                    matrix.solve_bayes(table, weights, budget=ledger)
+            self.assertEqual(ledger.consumed.exact_ops, ran["ops"])
         # Every exact cap stops the rescue with its own status.
         for caps, status in (({"exact_pivots": 1}, matrix.WorkStatus.EXACT_PIVOTS),
                              ({"exact_ops": 10}, matrix.WorkStatus.EXACT_OPS),
@@ -990,6 +1035,13 @@ class RescueCalibration(unittest.TestCase):
                 "negative key": lambda d: self._write(d, mutate=set_field("key", -1))[0],
                 "boolean key": lambda d: self._write(d, mutate=set_field("key", True))[0],
                 "zero weight": lambda d: self._write(d, mutate=set_field("weights", [1.0, 0.0]))[0],
+                "string number": lambda d: self._write(d, mutate=set_field("weights", ["1.0", 1.0]))[0],
+                "boolean entry": lambda d: self._write(d, mutate=set_field("weights", [True, 1.0]))[0],
+                "huge integer": lambda d: self._write(d, mutate=lambda i, p: p["tables"][0][0].__setitem__(0, 10**400) if i == 0 else None)[0],
+                "zero foe row": lambda d: self._write(d, mutate=set_field("foe_probs", [[0.0] * 4, [0.25] * 4]))[0],
+                "foe row above one": lambda d: self._write(d, mutate=set_field("foe_probs", [[1.75] * 4, [0.25] * 4]))[0],
+                "not a rescue": lambda d: self._write(d, mutate=set_field("exact", False))[0],
+                "no rescue flag": lambda d: self._write(d, mutate=lambda i, p: p.pop("exact") if i == 4 else None)[0],
             }
             for name, build in stops.items():
                 with self.subTest(name), self.assertRaises(cal.CalibrationStop):
