@@ -933,6 +933,84 @@ class BoundedSolver(unittest.TestCase):
             self.assertEqual(primary_only(), want)
 
 
+class RescueCalibration(unittest.TestCase):
+    """The private tail calibration's fixture set (P1 plan C2 step 6). Synthetic
+    files in a temporary directory only; the five real records never enter Git or CI."""
+
+    @staticmethod
+    def _write(root, count=5, mutate=None, entries_hook=None):
+        root.mkdir(parents=True, exist_ok=True)
+        rng = np.random.default_rng(20261012)
+        entries = []
+        for i in range(count):
+            payload = {"key": 1000 + i, "tables": rng.random((2, 3, 4)).tolist(),
+                       "weights": (rng.random(2) + 0.1).tolist(), "foe_probs": rng.dirichlet(np.ones(4), 2).tolist(),
+                       "exact": True}
+            if mutate is not None:
+                mutate(i, payload)
+            data = json.dumps(payload).encode("ascii")
+            (root / f"rescue-{i}.json").write_bytes(data)
+            entries.append({"file": f"rescue-{i}.json", "sha256": hashlib.sha256(data).hexdigest()})
+        if entries_hook is not None:
+            entries_hook(entries)
+        manifest = root / "rescues.json"
+        manifest.write_text(json.dumps({"schema": "duoforge-rescue-fixtures-1", "fixtures": entries}), encoding="ascii")
+        return manifest, entries
+
+    def test_rescue_manifest_missing_stops(self):
+        from duoforge_search import expert_calibrate as cal
+        with tempfile.TemporaryDirectory(prefix="duoforge_synthetic_rescue_") as temp:
+            root = Path(temp)
+            manifest, entries = self._write(root / "good")
+            fixtures = cal.load_rescue_fixture_set(manifest)
+            self.assertEqual([f.key for f in fixtures], [1000, 1001, 1002, 1003, 1004])
+            self.assertEqual([f.sha256 for f in fixtures], [e["sha256"] for e in entries])
+            first = fixtures[0]
+            self.assertEqual((first.tables.shape, first.weights.shape, first.foe_probs.shape), ((2, 3, 4), (2,), (2, 4)))
+            self.assertEqual(first.tables.dtype, np.float64)
+            with self.assertRaises(ValueError):
+                first.tables[0, 0, 0] = 1.0  # read-only
+
+            def tamper(path):
+                path.write_bytes(path.read_bytes() + b" ")
+
+            def set_field(name, value):
+                return lambda i, p: p.__setitem__(name, value) if i == 2 else None
+
+            stops = {
+                "absent manifest": lambda d: d / "absent.json",
+                "four records": lambda d: self._write(d, count=4)[0],
+                "six records": lambda d: self._write(d, count=6)[0],
+                "duplicate record": lambda d: self._write(d, entries_hook=lambda e: e.__setitem__(4, e[0]))[0],
+                "escaping path": lambda d: self._write(d, entries_hook=lambda e: e[1].__setitem__("file", "../rescue-1.json"))[0],
+                "missing foe probabilities": lambda d: self._write(d, mutate=lambda i, p: p.pop("foe_probs") if i == 3 else None)[0],
+                "nonfinite table": lambda d: self._write(d, mutate=lambda i, p: p["tables"][0][0].__setitem__(0, math.nan) if i == 1 else None)[0],
+                "weights shape": lambda d: self._write(d, mutate=set_field("weights", [1.0, 1.0, 1.0]))[0],
+                "foe shape": lambda d: self._write(d, mutate=set_field("foe_probs", [[0.5, 0.5]] * 2))[0],
+                "negative key": lambda d: self._write(d, mutate=set_field("key", -1))[0],
+                "boolean key": lambda d: self._write(d, mutate=set_field("key", True))[0],
+                "zero weight": lambda d: self._write(d, mutate=set_field("weights", [1.0, 0.0]))[0],
+            }
+            for name, build in stops.items():
+                with self.subTest(name), self.assertRaises(cal.CalibrationStop):
+                    cal.load_rescue_fixture_set(build(root / name.replace(" ", "_")))
+            missing, _ = self._write(root / "missing_payload")
+            (root / "missing_payload" / "rescue-3.json").unlink()
+            tampered, _ = self._write(root / "tampered")
+            tamper(root / "tampered" / "rescue-0.json")
+            wrong_schema, _ = self._write(root / "schema")
+            data = json.loads(wrong_schema.read_text(encoding="ascii"))
+            data["schema"] = "duoforge-rescue-fixtures-2"
+            wrong_schema.write_text(json.dumps(data), encoding="ascii")
+            for name, path in (("missing payload", missing), ("tampered payload", tampered), ("schema", wrong_schema)):
+                with self.subTest(name), self.assertRaises(cal.CalibrationStop):
+                    cal.load_rescue_fixture_set(path)
+            self.assertTrue(issubclass(cal.CalibrationStop, SearchError))
+        # Real fixtures stay private: a manifest inside the repository is refused before it is read.
+        with self.assertRaisesRegex(cal.CalibrationStop, "repository"):
+            cal.load_rescue_fixture_set(Path(__file__).with_name("rescues.json"))
+
+
 def _sides(teams):
     """SIDE_SETUP-like records: teams is a list of member lists (species, nature, item, spread)."""
     dt = np.dtype([("member_count", np.uint32), ("members", np.dtype([("species_id", np.uint32), ("nature", np.uint32),
