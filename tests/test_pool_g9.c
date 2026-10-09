@@ -262,7 +262,10 @@ static void check_battles(df_test *t, const duoforge_context *ctx, uint32_t *com
                 for (uint32_t flat = 0u; flat < 4u; ++flat) {
                     want.sides[flat / 2u].positions[flat % 2u].encore_slot = want_slot[flat];
                 }
-                if (!DF_CHECK(t, memcmp(&ext[viewer], &want, sizeof want) == 0)) {
+                for (uint32_t g42f = 0u; g42f < 4u; ++g42f) { /* step G42: move_failed is the last move result FALSE */
+                    const uint32_t g42last = ((uint32_t)b->tail.sides[g42f / 2u].positions[g42f % 2u].move_result >> 2) & 3u;
+                    want.sides[g42f / 2u].positions[g42f % 2u].move_failed = g42last == 2u ? 1u : 0u;
+                }                if (!DF_CHECK(t, memcmp(&ext[viewer], &want, sizeof want) == 0)) {
                     fprintf(stderr, "  %s step %u viewer %u: the extension differs from the protocol's\n", names[n], si,
                             viewer);
                 }

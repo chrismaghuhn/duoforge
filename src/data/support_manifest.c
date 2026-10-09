@@ -362,6 +362,12 @@ const dfi_support_manifest dfi_support = {
             [DFI_MOVE_TERRAINPULSE] = 1u,
             [DFI_MOVE_TAUNT] = 1u,
             [DFI_MOVE_YAWN] = 1u,
+            /* Step G42: Roost (the heal, then the Flying type is off for the turn) and Stomping Tantrum (base power x2 after a
+             * FALSE last move result; the move_result of tail rev 4, decision 0015 section 7). */
+            [DFI_MOVE_ROOST] = 1u,
+            [DFI_MOVE_STOMPINGTANTRUM] = 1u,
+            /* Step G50: Double Shock (Pawmot only: the Electric and Fighting types become ??? and Fighting; decision 0025). */
+            [DFI_MOVE_DOUBLESHOCK] = 1u,
             /* Step G32: Eruption and Water Spout (power by the user's HP), Life Dew (the user and its ally), Body Press, Foul Play
              * and Psyshock (the stat overrides), Rain Dance and Sunny Day, Volt Switch (a pivot of its own), Clanging Scales (the
              * user's Defense falls after the hit) and Freeze-Dry (Water takes it super effective). */
@@ -655,6 +661,10 @@ const dfi_support_manifest dfi_support = {
      * Step AC1: the ability change of Trace (bit 2: position_ext.ability_now, public, verified against the ac1 battles in
      * duoforge.state.pool_ac1). Every other source of a changed ability stays E_UNSUPPORTED (an unmarked move or
      * ability), so the bit is exact: a zero is "no change". */
+    /* Step G42: Roost (bit 40: the ROOST volatile of the position, public: the -singleturn line of Roost, set at its heal and
+     * ended in the residual of order 25, verified against the g42 battles). MOVE_FAILED (bit 41) stays clear: the field is exact
+     * only when the last result is classified, and an unclassified exit (decision 0015 section 7) reads 0 where the reference
+     * may read 1. The expression stays plain terms: python/duoforge_live/lines.py parses it. */
     .view_ext_features = ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_THROAT_CHOP) |
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_HEAL_BLOCK) |
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_TYPE_CHANGE) |
@@ -679,5 +689,5 @@ const dfi_support_manifest dfi_support = {
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_STEALTH_ROCK) |
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_SPIKES) |
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_TOXIC_SPIKES) |
-                         ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_STICKY_WEB),
+                         ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_STICKY_WEB) | ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_ROOST),
 };

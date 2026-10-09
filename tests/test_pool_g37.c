@@ -284,6 +284,10 @@ int main(void)
                     w.sides[s].toxic_spikes = (uint8_t)want[s * 4u + 2u];
                     w.sides[s].sticky_web = (uint8_t)want[s * 4u + 3u];
                 }
+                for (uint32_t flat = 0u; flat < 4u; ++flat) { /* step G42: move_failed is the last move result FALSE */
+                    const uint32_t last = ((uint32_t)b->tail.sides[flat / 2u].positions[flat % 2u].move_result >> 2) & 3u;
+                    w.sides[flat / 2u].positions[flat % 2u].move_failed = last == 2u ? 1u : 0u;
+                }
                 if (!DF_CHECK(&t, memcmp(&ext[viewer], &w, sizeof w) == 0)) {
                     fprintf(stderr, "  %s step %u viewer %u: the extension differs from the reference's state\n", names[n], si,
                             viewer);

@@ -236,7 +236,10 @@ static void check_battles(df_test *t, const duoforge_context *ctx, uint32_t *com
                     exp.sides[flat / 2u].positions[flat % 2u].volatiles =
                         want[flat] != 0u ? (uint32_t)DUOFORGE_POSITION_EXT_GLAIVE_RUSH : 0u;
                 }
-                if (!DF_CHECK(t, memcmp(&ext[viewer], &exp, sizeof exp) == 0)) {
+                for (uint32_t g42f = 0u; g42f < 4u; ++g42f) { /* step G42: move_failed is the last move result FALSE */
+                    const uint32_t g42last = ((uint32_t)b->tail.sides[g42f / 2u].positions[g42f % 2u].move_result >> 2) & 3u;
+                    exp.sides[g42f / 2u].positions[g42f % 2u].move_failed = g42last == 2u ? 1u : 0u;
+                }                if (!DF_CHECK(t, memcmp(&ext[viewer], &exp, sizeof exp) == 0)) {
                     fprintf(stderr, "  %s step %u viewer %u: the extension differs from the protocol's\n", names[n], si,
                             viewer);
                 }

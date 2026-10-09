@@ -154,7 +154,8 @@ _SIDE = {"move: Aurora Veil": "AURORA_VEIL", "Aurora Veil": "AURORA_VEIL", "move
          "move: Toxic Spikes": "TOXIC_SPIKES", "Toxic Spikes": "TOXIC_SPIKES", "move: Sticky Web": "STICKY_WEB",
          "Sticky Web": "STICKY_WEB"}
 _SINGLE_TURN = {"move: Rage Powder": "RAGE_POWDER", "Rage Powder": "RAGE_POWDER", "Wide Guard": "WIDE_GUARD",
-                "move: Wide Guard": "WIDE_GUARD", "Quick Guard": "QUICK_GUARD", "move: Quick Guard": "QUICK_GUARD"}
+                "move: Wide Guard": "WIDE_GUARD", "Quick Guard": "QUICK_GUARD", "move: Quick Guard": "QUICK_GUARD",
+                "move: Roost": "ROOST", "Roost": "ROOST"}  # Roost's grounded turn (G42; its residual end is silent)
 _SINGLE_MOVE = {"Glaive Rush": "GLAIVE_RUSH", "move: Glaive Rush": "GLAIVE_RUSH", "Destiny Bond": "DESTINY_BOND",
                 "move: Destiny Bond": "DESTINY_BOND"}
 _ITEM_CHANGE_FROM = {"move: Trick", "move: Switcheroo", "move: Thief", "move: Covet", "move: Recycle",
