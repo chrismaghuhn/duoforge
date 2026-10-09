@@ -51,6 +51,10 @@ first, then the foe):
     then, appended by encoder 4 (tail revision 4, 8): per side, own then
     foe, and position, slot 0 then 1: the Roost volatile, move failed (the
     position's last move failed, Stomping Tantrum's condition)
+    then, appended by encoder 5 (decision 0028, 12): per side, own then foe,
+    and position, slot 0 then 1: the transformed volatile, its source on the
+    viewer's foe side (1) or the viewer's own (0), the source's roster / 5;
+    transform_source (1 + side * 6 + roster) is set exactly with the volatile
   Every block column belongs to one DUOFORGE_VIEWEXT_FEATURE_* bit
   (EXT_COLUMN_FEATURES). ext_supported, the mask a network was trained with
   (a checkpoint property, never an input), zeros the columns of every clear
@@ -71,17 +75,20 @@ slot_part, float32 (2, 32, SLOT_FEATURES): for slot list s and entry i,
   move slot / 4 (moves only; Struggle is 4, Recharge is 5, any other slot
   is refused), target one-hot relative to
   the viewer (4: own slot 0, own slot 1, foe slot 0, foe slot 1; none for
-  a move without a target), mega, reserve / 5 (switches only). All zero
-  past slot_count and at team selection.
+  a move without a target), mega, reserve / 5 (switches and Revival
+  Blessing's revives; a revive has no kind bit, decision 0025, encoder 5).
+  All zero past slot_count and at team selection.
 
 pair_mask, bool (32, 32): [i, j] is bit j of domain.allowed[i], the pair
   rule of the engine; its sum is the joint count at a SLOTS boundary and
   0 at team selection.
 
-Versions: this encoder is ENCODER (4), and a checkpoint's config names the
+Versions: this encoder is ENCODER (5), and a checkpoint's config names the
 version its network was trained with ("encoder"; a config without it is
-1). Version 3 is the first obs_size(3) columns (without the columns encoder
-4 appends; version_features gives the feature bits of each version);
+1). Version 4 is the first obs_size(4) columns (without encoder 5's; it
+takes the transformed volatile as unshown and refuses a Revival Blessing
+option); version 3 the first obs_size(3) columns (without the columns
+encoder 4 appends; version_features gives the feature bits of each version);
 version 2 is the first BASE_OBS_SIZE columns, which know none of the new
 values; version 1 took present from species_id != 0, so Rillaboom (forme 0)
 was absent; every other column is the same. as_encoder(obs_part,
@@ -138,13 +145,15 @@ BASE_VALUE_FEATURES = sum(1 << FEATURE_BITS[n] for n in ("WEATHER_SAND", "WEATHE
 ALL_FEATURES = (1 << FEATURE_COUNT) - 1
 RECORD_FEATURES = ALL_FEATURES & ~BASE_VALUE_FEATURES
 # (name, its DUOFORGE_POSITION_EXT_* bit, its feature) in bit order: 0..19 of revision 1 (encoder 3's columns), 20
-# ROOST of tail revision 4 (encoder 4's). A bit beyond them needs a new encoder version: the import fails.
-_VOLATILE_FEATURE = {"TYPE_CHANGED": "TYPE_CHANGE", "ILLUSION_UP": "ILLUSION"}
+# ROOST of tail revision 4 (encoder 4's), 21 TRANSFORMED (encoder 5's, decision 0028). A bit beyond them needs a new
+# encoder version: the import fails.
+_VOLATILE_FEATURE = {"TYPE_CHANGED": "TYPE_CHANGE", "ILLUSION_UP": "ILLUSION", "TRANSFORMED": "TRANSFORM"}
 VOLATILES = tuple(sorted(((name[len("DUOFORGE_POSITION_EXT_"):], bit,
                            _VOLATILE_FEATURE.get(name[len("DUOFORGE_POSITION_EXT_"):],
                                                  name[len("DUOFORGE_POSITION_EXT_"):]))
                           for name, bit in C.items() if name.startswith("DUOFORGE_POSITION_EXT_")), key=lambda v: v[1]))
-assert [v[1] for v in VOLATILES] == [1 << k for k in range(21)] and VOLATILES[20][0] == "ROOST", VOLATILES
+assert [v[1] for v in VOLATILES] == [1 << k for k in range(22)] and VOLATILES[20][0] == "ROOST" \
+    and VOLATILES[21][0] == "TRANSFORMED", VOLATILES
 _VOLATILES3 = VOLATILES[:20]  # encoder 3's columns, in place
 _GUARDS = ((C["DUOFORGE_SIDE_GUARD_WIDE_GUARD"], "WIDE_GUARD"), (C["DUOFORGE_SIDE_GUARD_QUICK_GUARD"], "QUICK_GUARD"))
 _ITEM_NOW_NONE = C["DUOFORGE_ITEM_NOW_NONE"]
@@ -152,9 +161,10 @@ _EXT_REVISION = C["DUOFORGE_OBSERVATION_EXT_REVISION"]
 
 # This encoder's version, which train writes into a checkpoint's config
 # ("encoder"), and every version as_encoder serves (1: present from the
-# species id; 2: without the block; 3: without encoder 4's columns).
-ENCODER = 4
-ENCODERS = (1, 2, 3, ENCODER)
+# species id; 2: without the block; 3: without encoder 4's columns; 4: without
+# encoder 5's).
+ENCODER = 5
+ENCODERS = (1, 2, 3, 4, ENCODER)
 
 
 _STAGES = ("atk", "def", "spa", "spd", "spe", "accuracy", "evasion")
@@ -227,9 +237,20 @@ def _ext4_columns():
             for col in ((f"ext.{s}.pos{p}.volatile.roost", f["ROOST"]), (f"ext.{s}.pos{p}.move_failed", f["MOVE_FAILED"]))]
 
 
+def _ext5_columns():
+    """(name, feature bit) of the columns encoder 5 appends after encoder 4's
+    (decision 0028): per side and position the transformed volatile and its
+    source, on the viewer's or the foe's side and its roster index / 5."""
+    f = FEATURE_BITS
+    return [(f"ext.{s}.pos{p}.{n}", f["TRANSFORM"]) for s in ("own", "foe") for p in range(2)
+            for n in ("volatile.transformed", "transform_source.foe", "transform_source.roster")]
+
+
 _EXT3 = _ext_columns()
-_EXT = _EXT3 + _ext4_columns()
+_EXT4 = _EXT3 + _ext4_columns()
+_EXT = _EXT4 + _ext5_columns()
 EXT3_SIZE = len(_EXT3)
+EXT4_SIZE = len(_EXT4)
 EXT_SIZE = len(_EXT)
 
 
@@ -238,17 +259,21 @@ def columns_of(mask):
     trained without those bits always read as 0 (checkpoint.zero_columns)."""
     return [name for name, bit in _EXT if int(mask) >> bit & 1]
 OBS_SIZE = BASE_OBS_SIZE + EXT_SIZE
-_OBS_SIZES = {1: BASE_OBS_SIZE, 2: BASE_OBS_SIZE, 3: BASE_OBS_SIZE + EXT3_SIZE, 4: OBS_SIZE}
+_OBS_SIZES = {1: BASE_OBS_SIZE, 2: BASE_OBS_SIZE, 3: BASE_OBS_SIZE + EXT3_SIZE, 4: BASE_OBS_SIZE + EXT4_SIZE,
+              5: OBS_SIZE}
 # The DUOFORGE_VIEWEXT_FEATURE_* bit of every block column.
 EXT_COLUMN_FEATURES = np.array([bit for _, bit in _EXT], dtype=np.int64)
 FEATURE_NAMES = tuple(_base_names() + [name for name, _ in _EXT])
 SLOT_FEATURE_NAMES = (("valid",) + tuple(f"kind.{n}" for n in _SLOT_KIND_NAMES) + ("move_slot",)
                       + tuple(f"target.{n}" for n in ("own0", "own1", "foe0", "foe1")) + ("mega", "reserve"))
 assert len(FEATURE_NAMES) == OBS_SIZE and len(SLOT_FEATURE_NAMES) == SLOT_FEATURES
-assert len(_base_names()) == BASE_OBS_SIZE and EXT3_SIZE == 5 + 2 * (7 + 2 * 36 + 6 * 6) and EXT_SIZE == EXT3_SIZE + 8
+assert len(_base_names()) == BASE_OBS_SIZE and EXT3_SIZE == 5 + 2 * (7 + 2 * 36 + 6 * 6) and EXT4_SIZE == EXT3_SIZE + 8 \
+    and EXT_SIZE == EXT4_SIZE + 12
 _EXT_SIDE = 7 + 2 * 36 + 6 * 6
 _VOLATILE_SHIFTS = np.arange(len(_VOLATILES3))
 _ROOST = C["DUOFORGE_POSITION_EXT_ROOST"]
+_TRANSFORMED = C["DUOFORGE_POSITION_EXT_TRANSFORMED"]
+_SLOT_REVIVE = C["DUOFORGE_SLOT_REVIVE"]
 _EYE5 = np.eye(5)
 # One side's columns of an empty record: no Encore and no Disable at either position ("none" of each one-hot).
 _EMPTY_SIDE = np.zeros(_EXT_SIDE)
@@ -265,8 +290,8 @@ def obs_size(encoder):
 
 def version_features(encoder):
     """The mask of the DUOFORGE_VIEWEXT_FEATURE_* bits encoder version
-    `encoder` has columns for: none for 1 and 2, bits 0 to 39 for 3, every
-    bit for 4. A network's ext_supported lies inside it."""
+    `encoder` has columns for: none for 1 and 2, bits 0 to 39 for 3, 0 to 41
+    for 4, every bit for 5. A network's ext_supported lies inside it."""
     width = obs_size(encoder) - BASE_OBS_SIZE
     return int(np.bitwise_or.reduce(1 << EXT_COLUMN_FEATURES[:width], initial=0))
 
@@ -420,6 +445,12 @@ def _check_records(ob, ext, mask):
     if unknown.any():
         raise ValueError(f"extension field volatiles bits {int(unknown[unknown != 0].flat[0])} are not ones "
                          "this encoder knows")
+    source = rec["sides"]["positions"]["transform_source"].astype(np.int64)
+    if (source > 2 * _layout.MAX_ROSTER).any():
+        raise ValueError(f"extension field transform_source {int(source[source > 2 * _layout.MAX_ROSTER].flat[0])} "
+                         f"is above {2 * _layout.MAX_ROSTER} (1 + side * 6 + roster)")
+    if ((source != 0) != ((volatiles & _TRANSFORMED) != 0)).any():
+        raise ValueError("extension field transform_source and the volatile TRANSFORMED must be set together")
     typed = (rec["sides"]["positions"]["type_now"] != 0).any(axis=-1)
     if (typed & ((volatiles & C["DUOFORGE_POSITION_EXT_TYPE_CHANGED"]) == 0)).any():
         raise ValueError("extension field type_now is set while the volatile TYPE_CHANGED is clear")
@@ -461,7 +492,16 @@ def _ext_block(ob, ext, present, viewer):
         sides[...] = absolute[rows, order]
         appended = np.stack([(pos["volatiles"].astype(np.int64) & _ROOST) != 0, pos["move_failed"]], axis=-1)
         appended[~present] = 0  # (N, 2, 2, 2): side, position, (roost, move_failed)
-        block[:, EXT3_SIZE:] = appended[rows, order].reshape(n, 8)
+        block[:, EXT3_SIZE:EXT4_SIZE] = appended[rows, order].reshape(n, 8)
+        # Encoder 5 (decision 0028): transformed, the source on the foe's side of the viewer, its roster / 5.
+        source = pos["transform_source"].astype(np.int64)  # (N, 2, 2): 0, or 1 + absolute side * 6 + roster
+        known = source != 0
+        source_side = np.where(known, (source - 1) // _layout.MAX_ROSTER, 0)
+        transform = np.stack([(pos["volatiles"].astype(np.int64) & _TRANSFORMED) != 0,
+                              known & (source_side != viewer[:, None, None]),
+                              np.where(known, (source - 1) % _layout.MAX_ROSTER, 0) / 5], axis=-1)
+        transform[~present] = 0  # (N, 2, 2, 3): side, position, (transformed, source on the foe's side, roster)
+        block[:, EXT4_SIZE:] = transform[rows, order].reshape(n, 12)
         block[:, 4] = np.where(present, rec["field"]["gravity_turns"] / 5, 0.0)
     # The base values, from the observation itself.
     block[:, 0] = ob["weather"] == C["DUOFORGE_WEATHER_SAND"]
@@ -526,7 +566,7 @@ def encode_batch(observations, domains, ext=None, ext_supported=0):
     kind = cmd["kind"]
     f = np.zeros((cmd.shape[0], SLOT_FEATURES), dtype=_F32)
     f[:, 0] = 1.0
-    f[:, 1:5] = _one_hot(kind, SLOT_KINDS, "slot command kind")
+    f[:, 1:5] = _one_hot(kind, SLOT_KINDS, "slot command kind", blank=(_SLOT_REVIVE,))  # REVIVE: no kind bit
     move = kind == C["DUOFORGE_SLOT_MOVE"]
     move_slot = cmd["move_slot"][move]
     unknown = move_slot > C["DUOFORGE_MOVE_SLOT_RECHARGE"]
@@ -541,7 +581,7 @@ def encode_batch(observations, domains, ext=None, ext_supported=0):
     rel = ((target[aimed] >> 1) ^ viewer[where[0]][aimed]) * 2 + (target[aimed] & 1)
     f[np.flatnonzero(aimed), 6 + rel] = 1.0
     f[move, 10] = cmd["mega"][move].astype(_F32)
-    switch = kind == C["DUOFORGE_SLOT_SWITCH"]
+    switch = (kind == C["DUOFORGE_SLOT_SWITCH"]) | (kind == _SLOT_REVIVE)  # a revive names a fainted member
     f[switch, 11] = _ratio(cmd["reserve"][switch], 5)
     slot_part[where] = f
 
@@ -615,11 +655,15 @@ def as_encoder(obs_part, observations, encoder):
 def slots_as_encoder(slot_part, encoder):
     """slot_part of encode or encode_batch as encoder version `encoder`
     makes it: itself, for every version; versions 1 and 2 raise ValueError
-    for a Recharge option (move slot 5), which they do not know."""
+    for a Recharge option (move slot 5), which they do not know, and versions
+    1 to 4 for a Revival Blessing option (a valid row with no kind bit,
+    decision 0025), which they cannot show."""
     part = np.asarray(slot_part)
     if part.dtype != _F32 or part.shape[-3:] != (2, OPTIONS, SLOT_FEATURES):
         raise TypeError("slot_part must be the float32 slot_part of encode or encode_batch")
     _check_version(encoder)
     if encoder < 3 and ((part[..., _KIND_MOVE] == 1.0) & (part[..., _MOVE_SLOT] > 1.0)).any():
         raise ValueError(f"a Recharge option (move slot 5) is not one encoder {encoder} knows")
+    if encoder < 5 and ((part[..., 0] == 1.0) & ~part[..., 1:5].any(axis=-1)).any():
+        raise ValueError(f"a Revival Blessing option is not one encoder {encoder} knows (decision 0025: encoder 5)")
     return slot_part
