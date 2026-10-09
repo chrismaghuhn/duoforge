@@ -1,0 +1,489 @@
+"""The P1 evaluation gate and fixed resource ledger (plan C5, decision 0024).
+
+make_eval_rows predeclares the 12288 raw-play evaluation games: paired
+swapped seats, every suite half PP_/A/B/C and half LL_, pilot and control on
+mirrored rows. evaluate_records turns their results into fixed groups with
+paired-seat bootstrap intervals and gate statuses; nothing chooses an
+endpoint after the fact. validate_compute compares the two arms' measured
+CPU core-seconds and GPU-seconds (learner ledger.py files) within 5% each.
+Plays nothing, trains nothing; no battle rules here.
+"""
+import argparse
+from dataclasses import dataclass, field
+from enum import Enum
+import hashlib
+import json
+import math
+import sys
+from types import MappingProxyType
+from typing import Mapping, Sequence
+
+import numpy as np
+
+from duoforge_replay.dataset import refuse_repository
+
+from .arena import BOOTSTRAP_SEED, RESAMPLES
+
+SCHEMA_VERSION = 1
+LEDGER_SCHEMA = 1
+COMPUTE_TOLERANCE = 0.05
+BUCKETS = ("PP", "LL")
+ARMS = ("pilot", "control")
+PANEL = ("BC", "3600", "11000")  # equal weights 1/3
+CHECKPOINTS = ("pilot", "control", "frozen") + PANEL + ("ladder",)
+# (suite, opponent, arms, games per arm): 2048 + 2048 + 3 x 1024 x 2 + 1024 x 2 = 12288 games.
+SCHEDULE = (("h2h_continuation", "control", ("pilot",), 2048), ("h2h_frozen", "frozen", ("pilot",), 2048),
+            *(("panel", opponent, ARMS, 1024) for opponent in PANEL), ("ladder", "ladder", ARMS, 1024))
+SCHEDULE_FIELDS = ("game_id", "suite", "opponent", "arm", "bucket", "pair", "student_seat", "student_team",
+                   "opponent_team", "seed")
+RECORD_FIELDS = SCHEDULE_FIELDS + ("score", "finished")
+GAMES = sum(games * len(arms) for _, _, arms, games in SCHEDULE)
+# (point bar, interval bar) of the head-to-head gates, interval bar of the panel gates.
+H2H_BARS = {"h2h_continuation": (0.52, 0.50), "h2h_frozen": (0.53, 0.50)}
+PANEL_BAR, BUCKET_BAR = 0.0, -0.03
+GROUPS = ("h2h_continuation", "h2h_frozen", "panel", "panel_PP", "panel_LL")
+
+
+class GateStatus(Enum):
+    PASS = "PASS"
+    FAIL = "FAIL"
+    INCONCLUSIVE = "INCONCLUSIVE"
+    INCOMPLETE = "INCOMPLETE"
+
+
+def _uint(value, name, limit=1 << 64):
+    if isinstance(value, bool) or not isinstance(value, (int, np.integer)) or not 0 <= value < limit:
+        raise ValueError(f"{name} must be an unsigned integer below {limit}")
+
+
+def _hex(value, name):
+    if not isinstance(value, str) or len(value) != 64 or any(c not in "0123456789abcdef" for c in value):
+        raise ValueError(f"{name} must be 64 lowercase hex digits")
+
+
+@dataclass(frozen=True)
+class EvalManifest:
+    """The predeclared evaluation: seed, logical game ids, the pool's hash,
+    every checkpoint's hash, raw play with book and preview search off, and
+    the bootstrap resamples. Nothing here can be changed by the CLI."""
+    seed: int
+    first_game_id: int
+    pool_sha256: str
+    checkpoints: Mapping
+    play: str = "raw"
+    book: bool = False
+    preview_search: bool = False
+    resamples: int = RESAMPLES
+    schema_version: int = SCHEMA_VERSION
+
+    def __post_init__(self):
+        _uint(self.seed, "seed")
+        _uint(self.first_game_id, "first_game_id", (1 << 64) - GAMES)
+        _hex(self.pool_sha256, "pool_sha256")
+        if not isinstance(self.checkpoints, Mapping) or set(self.checkpoints) != set(CHECKPOINTS):
+            raise ValueError(f"checkpoints must name exactly {CHECKPOINTS}")
+        for name in CHECKPOINTS:
+            _hex(self.checkpoints[name], f"checkpoint {name}")
+        object.__setattr__(self, "checkpoints", MappingProxyType(dict(self.checkpoints)))
+        if self.play != "raw" or self.book is not False or self.preview_search is not False:
+            raise ValueError("evaluation plays raw with book and preview search off")
+        if type(self.resamples) is not int or self.resamples != RESAMPLES:
+            raise ValueError(f"the paired-seat bootstrap uses {RESAMPLES} resamples")
+        if type(self.schema_version) is not int or self.schema_version != SCHEMA_VERSION:
+            raise ValueError(f"unsupported evaluation manifest schema {self.schema_version!r}")
+
+
+def manifest_mapping(manifest):
+    return {"seed": manifest.seed, "first_game_id": manifest.first_game_id, "pool_sha256": manifest.pool_sha256,
+            "checkpoints": dict(manifest.checkpoints), "play": manifest.play, "book": manifest.book,
+            "preview_search": manifest.preview_search, "resamples": manifest.resamples,
+            "schema_version": manifest.schema_version}
+
+
+def _canonical(value):
+    return json.dumps(value, sort_keys=True, separators=(",", ":"), ensure_ascii=True, allow_nan=False).encode("ascii")
+
+
+def pool_sha256(pool):
+    """The identity of an evaluation pool: its team ids, file hashes and weights."""
+    return hashlib.sha256(_canonical({"ids": list(pool.ids), "sha256": list(pool.sha256),
+                                      "weights": [float(w).hex() for w in pool.weights]})).hexdigest()
+
+
+def _bucket_of(team_id):
+    if team_id.startswith("LL_"):
+        return "LL"
+    if team_id.startswith("PP_") or team_id in ("A", "B", "C"):
+        return "PP"
+    raise ValueError(f"team {team_id!r} is neither PP_/A/B/C nor LL_")
+
+
+def _pairs(games):
+    """Seat pairs per arm and bucket: games / 2 buckets / 2 seats."""
+    return games // 4
+
+
+def _game_id(manifest, index):
+    return manifest.first_game_id + index
+
+
+def _layout():
+    """(suite index, suite, opponent, arms, pairs per bucket, first game index) in schedule order."""
+    out, start = [], 0
+    for i, (suite, opponent, arms, games) in enumerate(SCHEDULE):
+        out.append((i, suite, opponent, arms, _pairs(games), start))
+        start += games * len(arms)
+    return out
+
+
+def _seeds(manifest, index, bucket, pairs):
+    """Battle seeds of a (suite, bucket) block, from their own stream: the
+    same for every pool and both arms."""
+    rng = np.random.default_rng([manifest.seed, index, BUCKETS.index(bucket), 1])
+    return rng.integers(0, 1 << 63, size=pairs, dtype=np.uint64) * 2 + rng.integers(0, 2, size=pairs, dtype=np.uint64)
+
+
+def make_eval_rows(pool, manifest) -> dict:
+    """The 12288 predeclared games (SCHEDULE_FIELDS arrays): per suite,
+    opponent and bucket the same teams and seeds for every arm, each pair
+    played on both seats."""
+    if not isinstance(manifest, EvalManifest):
+        raise ValueError("make_eval_rows needs an EvalManifest")
+    buckets = {b: [] for b in BUCKETS}
+    for index, team_id in enumerate(pool.ids):
+        buckets[_bucket_of(team_id)].append(index)
+    for b, members in buckets.items():
+        if not members:
+            raise ValueError(f"the evaluation pool needs {'LL_' if b == 'LL' else 'PP_/A/B/C'} teams")
+    if pool_sha256(pool) != manifest.pool_sha256:
+        raise ValueError("the pool is not the one the evaluation manifest pins")
+    cols = {name: [] for name in SCHEDULE_FIELDS}
+    for index, suite, opponent, arms, pairs, start in _layout():
+        draws = {}
+        for b in BUCKETS:
+            members = np.array(buckets[b])
+            weights = np.asarray(pool.weights, np.float64)[members]
+            rng = np.random.default_rng([manifest.seed, index, BUCKETS.index(b), 0])
+            draws[b] = (members[rng.choice(members.size, size=pairs, p=weights / weights.sum())],
+                        members[rng.choice(members.size, size=pairs, p=weights / weights.sum())],
+                        _seeds(manifest, index, b, pairs))
+        offset = start
+        for arm in arms:
+            for b in BUCKETS:
+                student, foe, seeds = draws[b]
+                for pair in range(pairs):
+                    for seat in (0, 1):
+                        for name, value in (("game_id", _game_id(manifest, offset)), ("suite", suite),
+                                            ("opponent", opponent), ("arm", arm), ("bucket", b), ("pair", pair),
+                                            ("student_seat", seat), ("student_team", int(student[pair])),
+                                            ("opponent_team", int(foe[pair])), ("seed", int(seeds[pair]))):
+                            cols[name].append(value)
+                        offset += 1
+    return _arrays(cols)
+
+
+_DTYPES = {"game_id": np.int64, "suite": str, "opponent": str, "arm": str, "bucket": str, "pair": np.int64,
+           "student_seat": np.int64, "student_team": np.int64, "opponent_team": np.int64, "seed": np.uint64,
+           "score": np.float64, "finished": bool}
+
+
+def _arrays(cols):
+    return {name: np.array(values, dtype=_DTYPES[name]) for name, values in cols.items()}
+
+
+@dataclass(frozen=True)
+class EvalResult:
+    status: GateStatus
+    scores: Mapping
+    groups: Mapping
+    provenance: Mapping
+    budget_causes: Mapping = field(default_factory=dict)
+
+
+def _check_records(records, manifest):
+    """The records' structure against the predeclared schedule; ValueError
+    for anything but missing whole blocks (an incomplete group)."""
+    if not isinstance(records, Mapping) or set(records) != set(RECORD_FIELDS):
+        raise ValueError(f"records need exactly the fields {RECORD_FIELDS}")
+    r = {}
+    for name in RECORD_FIELDS:
+        try:
+            r[name] = np.asarray(records[name], dtype=_DTYPES[name])
+        except (TypeError, ValueError, OverflowError) as err:
+            raise ValueError(f"records field {name} has the wrong type") from err
+        if r[name].ndim != 1:
+            raise ValueError(f"records field {name} must be one-dimensional")
+    n = r["game_id"].size
+    if any(v.size != n for v in r.values()):
+        raise ValueError("records fields differ in length")
+    finished = r["finished"] & np.isfinite(r["score"])
+    if (finished & ~np.isin(r["score"], (0.0, 0.5, 1.0))).any():
+        raise ValueError("a finished game scores 0, 0.5 or 1 for the student")
+    layout = {(suite, opponent): (index, arms, pairs, start) for index, suite, opponent, arms, pairs, start in _layout()}
+    seen = {}
+    for i in range(n):
+        block = (str(r["suite"][i]), str(r["opponent"][i]))
+        if block not in layout:
+            raise ValueError(f"unknown suite/opponent {block}: only the predeclared groups are evaluated")
+        index, arms, pairs, start = layout[block]
+        arm, bucket, pair, seat = str(r["arm"][i]), str(r["bucket"][i]), int(r["pair"][i]), int(r["student_seat"][i])
+        if arm not in arms or bucket not in BUCKETS or not 0 <= pair < pairs or seat not in (0, 1):
+            raise ValueError(f"row {i} is outside the schedule")
+        key = (block, arm, bucket, pair)
+        seen.setdefault(key, []).append(i)
+    seed_cache = {}
+    for (block, arm, bucket, pair), rows in seen.items():
+        if len(rows) != 2 or {int(r["student_seat"][i]) for i in rows} != {0, 1}:
+            raise ValueError(f"pair {pair} of {block}/{arm}/{bucket} must be played once on each seat")
+        a, b = rows
+        index, arms, pairs, start = layout[block]
+        for i in rows:
+            seat = int(r["student_seat"][i])
+            expected = start + ((arms.index(arm) * len(BUCKETS) + BUCKETS.index(bucket)) * pairs + pair) * 2 + seat
+            if int(r["game_id"][i]) != _game_id(manifest, expected):
+                raise ValueError(f"row {i} has game id {int(r['game_id'][i])}, the schedule {_game_id(manifest, expected)}")
+        for name in ("student_team", "opponent_team", "seed"):
+            if r[name][a] != r[name][b]:
+                raise ValueError(f"the two seats of pair {pair} of {block}/{arm}/{bucket} differ in {name}")
+        if (index, bucket) not in seed_cache:
+            seed_cache[(index, bucket)] = _seeds(manifest, index, bucket, pairs)
+        if r["seed"][a] != seed_cache[(index, bucket)][pair]:
+            raise ValueError(f"pair {pair} of {block}/{arm}/{bucket} has another seed than the schedule")
+    for (block, arm, bucket, pair), rows in seen.items():
+        _, arms, _, _ = layout[block]
+        for other in arms:
+            mirror = seen.get((block, other, bucket, pair))
+            if other != arm and mirror is not None:
+                for name in ("student_team", "opponent_team", "student_seat"):
+                    if sorted(r[name][rows].tolist()) != sorted(r[name][mirror].tolist()):
+                        raise ValueError(f"arms differ on mirrored pair {pair} of {block}/{bucket}")
+    return r
+
+
+def _pair_scores(r, suite, opponent, arm, bucket):
+    """(scores per pair in pair order, complete) of one block."""
+    rows = (r["suite"] == suite) & (r["opponent"] == opponent) & (r["arm"] == arm) & (r["bucket"] == bucket)
+    games = dict(SCHEDULE_TABLE)[(suite, opponent)]
+    pairs = _pairs(games)
+    if rows.sum() != pairs * 2:
+        return None
+    idx = np.flatnonzero(rows)
+    idx = idx[np.lexsort((r["student_seat"][idx], r["pair"][idx]))]
+    finished = r["finished"][idx] & np.isfinite(r["score"][idx])
+    if not finished.all():
+        return None
+    return r["score"][idx].reshape(pairs, 2).mean(axis=1)
+
+
+SCHEDULE_TABLE = tuple(((suite, opponent), games) for suite, opponent, _, games in SCHEDULE)
+
+
+def _interval(stats):
+    low, high = np.quantile(stats, (0.025, 0.975))
+    return float(low), float(high)
+
+
+def _rng(group):
+    return np.random.default_rng([BOOTSTRAP_SEED, GROUPS.index(group)])
+
+
+def _h2h(r, group, opponent, manifest):
+    blocks = [_pair_scores(r, group, opponent, "pilot", b) for b in BUCKETS]
+    if any(x is None for x in blocks):
+        return {"status": GateStatus.INCOMPLETE, "point": None, "low": None, "high": None, "pairs": 0}
+    scores = np.concatenate(blocks)
+    idx = _rng(group).integers(0, scores.size, size=(manifest.resamples, scores.size))
+    low, high = _interval(scores[idx].mean(axis=1))
+    point = float(scores.mean())
+    point_bar, low_bar = H2H_BARS[group]
+    if point >= point_bar and low > low_bar:
+        status = GateStatus.PASS
+    elif high <= low_bar:
+        status = GateStatus.FAIL
+    else:
+        status = GateStatus.INCONCLUSIVE
+    return {"status": status, "point": point, "low": low, "high": high, "pairs": int(scores.size)}
+
+
+def _panel(r, group, buckets, bar, manifest):
+    """The pilot-minus-control panel difference, equal weights over the
+    panel opponents, each opponent's mirrored pairs resampled together."""
+    diffs = []
+    for opponent in PANEL:
+        parts = []
+        for b in buckets:
+            pilot, control = (_pair_scores(r, "panel", opponent, arm, b) for arm in ARMS)
+            if pilot is None or control is None:
+                return {"status": GateStatus.INCOMPLETE, "point": None, "low": None, "high": None, "pairs": 0}
+            parts.append(pilot - control)
+        diffs.append(np.concatenate(parts))
+    rng = _rng(group)
+    stats = np.zeros(manifest.resamples)
+    for d in diffs:
+        stats += d[rng.integers(0, d.size, size=(manifest.resamples, d.size))].mean(axis=1) / len(PANEL)
+    low, high = _interval(stats)
+    point = float(sum(d.mean() for d in diffs) / len(PANEL))
+    status = GateStatus.PASS if low > bar else GateStatus.FAIL if high <= bar else GateStatus.INCONCLUSIVE
+    return {"status": status, "point": point, "low": low, "high": high, "pairs": int(sum(d.size for d in diffs))}
+
+
+def evaluate_records(records, manifest, ledgers=None) -> EvalResult:
+    """Fixed groups and gate statuses of the evaluation results. A missing
+    or unfinished block makes its group INCOMPLETE; any FAIL, INCONCLUSIVE
+    or INCOMPLETE group blocks promotion. ledgers: (pilot, control)
+    ComputeLedgers, checked by validate_compute first."""
+    if not isinstance(manifest, EvalManifest):
+        raise ValueError("evaluate_records needs an EvalManifest")
+    budget = {}
+    if ledgers is not None:
+        pilot, control = ledgers
+        validate_compute(pilot, control)
+        for axis in ("cpu_core_seconds", "gpu_seconds"):
+            p, c = getattr(pilot, axis), getattr(control, axis)
+            budget[axis] = {"pilot": p, "control": c, "relative": 0.0 if p == 0 else (c - p) / p}
+    r = _check_records(records, manifest)
+    groups = {"h2h_continuation": _h2h(r, "h2h_continuation", "control", manifest),
+              "h2h_frozen": _h2h(r, "h2h_frozen", "frozen", manifest),
+              "panel": _panel(r, "panel", BUCKETS, PANEL_BAR, manifest),
+              "panel_PP": _panel(r, "panel_PP", ("PP",), BUCKET_BAR, manifest),
+              "panel_LL": _panel(r, "panel_LL", ("LL",), BUCKET_BAR, manifest)}
+    statuses = {g["status"] for g in groups.values()}
+    status = next(s for s in (GateStatus.INCOMPLETE, GateStatus.FAIL, GateStatus.INCONCLUSIVE, GateStatus.PASS)
+                  if s in statuses or s is GateStatus.PASS)
+    scores = {}
+    for suite, opponent, arms, _ in SCHEDULE:
+        for arm in arms:
+            blocks = [_pair_scores(r, suite, opponent, arm, b) for b in BUCKETS]
+            scores.setdefault(suite, {})[f"{opponent}/{arm}"] = None if any(x is None for x in blocks) else \
+                float(np.concatenate(blocks).mean())
+    provenance = {"manifest_sha256": hashlib.sha256(_canonical(manifest_mapping(manifest))).hexdigest(),
+                  "records_sha256": hashlib.sha256(b"".join(np.ascontiguousarray(r[k]).tobytes()
+                                                            for k in RECORD_FIELDS)).hexdigest(),
+                  "games": int(r["game_id"].size)}
+    return EvalResult(status, scores, groups, provenance, budget)
+
+
+# ---- the compute ledger ----
+
+@dataclass(frozen=True)
+class ComputeLedger:
+    """An arm's measured cost (learner ledger.py files): CPU core-seconds
+    (getrusage self + children user + system), GPU-seconds (synchronous
+    device sections, JIT included) and their breakdown by phase."""
+    cpu_core_seconds: float
+    gpu_seconds: float
+    phases: Mapping
+    processes: int = 1
+
+    @staticmethod
+    def from_mapping(value):
+        if not isinstance(value, Mapping) or set(value) != {"schema", "cpu_core_seconds", "gpu_seconds",
+                                                             "processes", "phases"}:
+            raise ValueError("a ledger holds exactly schema, cpu_core_seconds, gpu_seconds, processes and phases")
+        if value["schema"] != LEDGER_SCHEMA or isinstance(value["schema"], bool):
+            raise ValueError(f"unsupported ledger schema {value['schema']!r}")
+        _uint(value["processes"], "processes")
+        phases = value["phases"]
+        if not isinstance(phases, Mapping):
+            raise ValueError("ledger phases must be a mapping")
+        sums = {"cpu_core_seconds": 0.0, "gpu_seconds": 0.0}
+        clean = {}
+        for name, phase in phases.items():
+            if not isinstance(name, str) or not isinstance(phase, Mapping) or set(phase) != set(sums):
+                raise ValueError(f"ledger phase {name!r} needs exactly {tuple(sums)}")
+            clean[name] = {axis: _seconds(phase[axis], f"phase {name} {axis}") for axis in sums}
+            for axis in sums:
+                sums[axis] += clean[name][axis]
+        totals = {axis: _seconds(value[axis], axis) for axis in sums}
+        for axis in sums:
+            if sums[axis] > totals[axis] * (1 + 1e-9) + 1e-9:
+                raise ValueError(f"ledger phases charge more {axis} than the total")
+        return ComputeLedger(totals["cpu_core_seconds"], totals["gpu_seconds"],
+                             MappingProxyType({k: MappingProxyType(v) for k, v in clean.items()}), int(value["processes"]))
+
+    def to_mapping(self):
+        return {"schema": LEDGER_SCHEMA, "cpu_core_seconds": self.cpu_core_seconds, "gpu_seconds": self.gpu_seconds,
+                "processes": self.processes, "phases": {k: dict(v) for k, v in self.phases.items()}}
+
+
+def _seconds(value, name):
+    if isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(value) or value < 0:
+        raise ValueError(f"{name} must be finite nonnegative seconds")
+    return float(value)
+
+
+def validate_compute(pilot, control) -> None:
+    """ValueError naming the axis unless the control's measured CPU
+    core-seconds and GPU-seconds each lie within 5% of the pilot's:
+    |control - pilot| <= 0.05 pilot; a zero pilot axis needs zero."""
+    if not isinstance(pilot, ComputeLedger) or not isinstance(control, ComputeLedger):
+        raise ValueError("validate_compute needs two ComputeLedgers")
+    for axis in ("cpu_core_seconds", "gpu_seconds"):
+        p, c = getattr(pilot, axis), getattr(control, axis)
+        if p == 0.0 and c != 0.0 or abs(c - p) > COMPUTE_TOLERANCE * p:
+            raise ValueError(f"{axis}: control {c:.6g} differs from pilot {p:.6g} by more than 5%")
+
+
+def charge_shared(pilot, control, shared):
+    """Both arms with half of the shared evaluation charged, as phase
+    evaluation_share."""
+    out = []
+    for arm in (pilot, control):
+        if "evaluation_share" in arm.phases:
+            raise ValueError("the shared evaluation is already charged")
+        half = {"cpu_core_seconds": shared.cpu_core_seconds / 2, "gpu_seconds": shared.gpu_seconds / 2}
+        phases = {**{k: dict(v) for k, v in arm.phases.items()}, "evaluation_share": half}
+        out.append(ComputeLedger.from_mapping({"schema": LEDGER_SCHEMA, "processes": arm.processes, "phases": phases,
+                                               "cpu_core_seconds": arm.cpu_core_seconds + half["cpu_core_seconds"],
+                                               "gpu_seconds": arm.gpu_seconds + half["gpu_seconds"]}))
+    return tuple(out)
+
+
+# ---- the CLI ----
+
+def _load(path):
+    refuse_repository(path)
+    with open(path, encoding="utf-8") as f:
+        return json.load(f, parse_constant=lambda c: (_ for _ in ()).throw(ValueError(f"nonfinite JSON {c}")))
+
+
+def _report(result, pilot, control):
+    def plain(group):
+        return {k: (v.value if isinstance(v, GateStatus) else v) for k, v in group.items()}
+    return {"status": result.status.value, "groups": {k: plain(v) for k, v in result.groups.items()},
+            "scores": result.scores, "provenance": result.provenance, "budget_causes": result.budget_causes,
+            "compute": {"pilot": pilot.to_mapping(), "control": control.to_mapping()}}
+
+
+def main(argv: Sequence[str] | None = None) -> int:
+    """python -m duoforge_search.expert_eval --manifest M --pilot P --control C
+    --baseline B --out O. M: the evaluation manifest; P, C: the arms'
+    ledgers; B: {"records": ..., "ledger": ...}, the evaluation games and
+    their shared cost. Exit 2 with the cause for a bad manifest, pairing,
+    compute match or path; exit 0 with a structured report otherwise, also
+    for FAIL, INCONCLUSIVE or INCOMPLETE strength."""
+    parser = argparse.ArgumentParser(prog="python -m duoforge_search.expert_eval")
+    for flag in ("--manifest", "--pilot", "--control", "--baseline", "--out"):
+        parser.add_argument(flag, required=True)
+    args = parser.parse_args(argv)
+    try:
+        refuse_repository(args.out)
+        manifest = EvalManifest(**_load(args.manifest))
+        pilot, control = (ComputeLedger.from_mapping(_load(p)) for p in (args.pilot, args.control))
+        baseline = _load(args.baseline)
+        if not isinstance(baseline, dict) or set(baseline) != {"records", "ledger"}:
+            raise ValueError("the baseline file holds exactly records and ledger")
+        shared = ComputeLedger.from_mapping(baseline["ledger"])
+        pilot, control = charge_shared(pilot, control, shared)
+        result = evaluate_records(baseline["records"], manifest, (pilot, control))
+        data = json.dumps(_report(result, pilot, control), indent=1, sort_keys=True, allow_nan=False)
+        with open(args.out, "x", encoding="utf-8") as f:
+            f.write(data)
+    except (ValueError, TypeError, KeyError, OSError) as err:
+        print(f"expert_eval: {err}", file=sys.stderr)
+        return 2
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())
