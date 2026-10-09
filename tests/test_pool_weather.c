@@ -274,15 +274,14 @@ static void check_view(df_test *t, const duoforge_context *ctx)
 
 /* The abilities and the item that the pinned data gives immunity to Sandstorm damage (onImmunity 'sandstorm': Sand Force,
  * Sand Rush, Sand Veil; the item that does so, Safety Goggles, is not in the pool) or protection from
- * indirect damage (Magic Guard): the engine has an immunity for Sand Rush (step G22), Overcoat (step G30) and Sand Veil (step G39) in
- * dfi_sand_immune, so the others stay unmarked. The abilities that suppress or override the weather that the Speed abilities of step G22 read
+ * indirect damage (Magic Guard): the engine has an immunity for Sand Rush (step G22), Overcoat (step G30), Sand Veil (step G39)
+ * and Sand Force (step G63) in dfi_sand_immune, so the others stay unmarked. The abilities that suppress or override the weather that the Speed abilities of step G22 read
  * (Cloud Nine; Mega Sol makes Pokemon#effectiveWeather sunny for its holder's moves; Air Lock and Utility Umbrella are
  * not in the pool at all) stay unmarked too, and so do the ones that break an ability (Inner Focus is breakable): no
  * battle holds any of them. The pinned-data side of this list is checked by tools/datagen/pool_families.js. */
 static void check_unmodelled_sources(df_test *t)
 {
-    static const uint32_t abilities[] = {DFI_ABILITY_SANDFORCE,
-                                         DFI_ABILITY_MAGICGUARD, DFI_ABILITY_CLOUDNINE, DFI_ABILITY_MEGASOL,
+    static const uint32_t abilities[] = {DFI_ABILITY_MAGICGUARD, DFI_ABILITY_CLOUDNINE, DFI_ABILITY_MEGASOL,
                                          DFI_ABILITY_MOLDBREAKER};
     for (size_t i = 0u; i < sizeof abilities / sizeof abilities[0]; ++i) {
         DF_CHECK_EQ_U64(t, dfi_support.abilities[abilities[i]], 0u);
@@ -290,6 +289,7 @@ static void check_unmodelled_sources(df_test *t)
     }
     DF_CHECK_EQ_U64(t, dfi_support.abilities[DFI_ABILITY_SANDRUSH], 1u); /* step G22: its immunity is dfi_sand_immune */
     DF_CHECK_EQ_U64(t, dfi_support.abilities[DFI_ABILITY_SANDVEIL], 1u); /* step G39: so is Sand Veil's */
+    DF_CHECK_EQ_U64(t, dfi_support.abilities[DFI_ABILITY_SANDFORCE], 1u); /* step G63: its immunity is dfi_sand_immune too */
     /* Step G55 marks the rocks (Sandstorm and Snowscape for 8 turns with Smooth Rock and Icy Rock); the rule is checked in
      * tests/test_pool_g55.c and by the recorded battles g55_*. */
     DF_CHECK(t, dfi_support.items[DFI_ITEM_SMOOTHROCK] != 0u);

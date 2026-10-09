@@ -1446,6 +1446,12 @@ static duoforge_status dfi_get_damage(dfi_run *r, uint32_t user, uint32_t target
             return st;
         }
     }
+    /* Shell Armor (step G63, data/abilities.ts:4222-4228, onCriticalHit false): the target's CriticalHit event runs after the
+     * roll (sim/battle-actions.ts:1640-1646), so the draw above is taken and the hit is then not a critical one: no crit
+     * modifier and no [-crit] line. Breakable; Mold Breaker is not marked. */
+    if (crit && dfi_ability(r->b, d, DFI_ABILITY_SHELLARMOR)) {
+        crit = false;
+    }
     const bool physical = md->category == DFI_CATEGORY_PHYSICAL;
     uint32_t atk_index = physical ? DFI_STAGE_ATK : DFI_STAGE_SPA;
     uint32_t def_index = physical ? DFI_STAGE_DEF : DFI_STAGE_SPD;
@@ -1583,6 +1589,14 @@ static duoforge_status dfi_get_damage(dfi_run *r, uint32_t user, uint32_t target
     }
     if (dfi_ability(r->b, a, DFI_ABILITY_TOUGHCLAWS) && (md->flags & DFI_MOVE_FLAG_CONTACT) != 0u) {
         ok = dfi_chain_modify(bp_chain, 5325u, &bp_chain); /* onBasePowerPriority 21: first */
+    }
+    /* Sand Force (step G63, data/abilities.ts:3956-3973, onBasePowerPriority 21, the same priority as Tough Claws; a holder has
+     * one ability): chainModify([5325, 4096]) for a Rock, Ground or Steel move of its holder while the effective weather is
+     * Sandstorm. The weather is the battle's (Cloud Nine and Air Lock are not marked: a team that holds one is refused). The
+     * type is move_type (the attack's type, after the -ate change), which is what the pin's move.type is for these moves. */
+    if (dfi_ability(r->b, a, DFI_ABILITY_SANDFORCE) && r->b->weather == DFI_WEATHER_SAND &&
+        (move_type == DFI_TYPE_ROCK || move_type == DFI_TYPE_GROUND || move_type == DFI_TYPE_STEEL)) {
+        ok = ok && dfi_chain_modify(bp_chain, 5325u, &bp_chain);
     }
     /* Fairy Aura (the Mega Floette's ability, onAnyBasePower priority 20: after Tough Claws, before the items): a
      * Fairy move of anyone on the field, unless it targets its own user, 5448/4096 once. */
@@ -1810,8 +1824,9 @@ static duoforge_status dfi_get_damage(dfi_run *r, uint32_t user, uint32_t target
         mods += 1u;
     }
     /* Solid Rock and Multiscale (step G34, data/abilities.ts:4414-4425 and 2760-2771, onSourceModifyDamage of the target,
-     * both breakable and Mold Breaker is not marked): x0.75 on a super effective hit (typeMod > 0), x0.5 at full HP. */
-    if (dfi_ability(r->b, d, DFI_ABILITY_SOLIDROCK) && mod > DFI_BIAS6) {
+     * both breakable and Mold Breaker is not marked): x0.75 on a super effective hit (typeMod > 0), x0.5 at full HP.
+     * Filter (step G63, data/abilities.ts:1283-1294) is the same callback with the same text: x0.75 on typeMod > 0. */
+    if ((dfi_ability(r->b, d, DFI_ABILITY_SOLIDROCK) || dfi_ability(r->b, d, DFI_ABILITY_FILTER)) && mod > DFI_BIAS6) {
         ok = ok && dfi_chain_modify(chain, 3072u, &chain);
         mlist[mods] = 3072u;
         mods += 1u;
@@ -3154,13 +3169,15 @@ static duoforge_status dfi_update(dfi_run *r)
 /* runStatusImmunity('sandstorm'): a type whose chart entry carries the sandstorm key, Rock, Ground and Steel
  * (data/typechart.ts), judged by the types now (dfi_types_of: a Soaked Pokemon is a Water type alone, step G11), or the
  * ability that gives the immunity: Sand Rush (step G22, data/abilities.ts:3980-3982, onImmunity 'sandstorm' returns
- * false; the Champions mod has no entry) and Overcoat (step G30, data/abilities.ts:3108-3111). The others that give it
- * (Sand Force, Safety Goggles) or stop indirect damage (Magic Guard) are not marked in the support manifest,
+ * false; the Champions mod has no entry), Overcoat (step G30, data/abilities.ts:3108-3111) and Sand Force (step G63). The
+ * others that give it (Safety Goggles) or stop indirect damage (Magic Guard) are not marked in the support manifest,
  * so no battle holds one (tests/test_pool_weather.c checks that); marking one needs its immunity here. */
 static bool dfi_sand_immune(const struct duoforge_battle *b, const dfi_member *m)
 {
     if (dfi_ability(b, m, DFI_ABILITY_SANDRUSH) || dfi_ability(b, m, DFI_ABILITY_OVERCOAT) ||
-        dfi_ability(b, m, DFI_ABILITY_SANDVEIL)) { /* Sand Veil: step G39, data/abilities.ts:4006-4022, onImmunity 'sandstorm' */
+        dfi_ability(b, m, DFI_ABILITY_SANDVEIL) ||
+        dfi_ability(b, m, DFI_ABILITY_SANDFORCE)) { /* Sand Veil: step G39, data/abilities.ts:4006-4022, onImmunity 'sandstorm';
+                                                       Sand Force (step G63, data/abilities.ts:3956-3973) the same */
         return true;
     }
     for (uint32_t type = 0u; type < DFI_TYPE_COUNT; ++type) {
@@ -5484,10 +5501,17 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
      * or at a fainted ally. No line; the move line is retargeted. Two
      * holders on one side would need the handlers' Speed order; only
      * Indeedee-F learns Follow Me, and Species Clause keeps one per side. */
-    const bool single = count <= 1u && (target_class == DUOFORGE_TARGET_CLASS_NORMAL ||
-                                        target_class == DUOFORGE_TARGET_CLASS_ANY ||
-                                        target_class == DUOFORGE_TARGET_CLASS_ADJACENT_FOE ||
-                                        target_class == DFI_TARGET_CLASS_RANDOM_NORMAL);
+    /* Stalwart (step G63, data/abilities.ts:4503-4513, onModifyMove: move.tracksTarget = move.target !== 'scripted'): the
+     * RedirectTarget event is not run for a move with tracksTarget (sim/pokemon.ts:829, `activePerHalf > 1 &&
+     * !move.tracksTarget`), and ModifyMove runs before getMoveTargets (sim/battle-actions.ts:431-439 and :467). So the
+     * holder's single-target moves are not redirected, by Follow Me and by Lightning Rod alike. The pin's test is on the
+     * move's target: every class that `single` admits is not 'scripted' (DFI_TARGET_CLASS_SCRIPTED is not among them), so
+     * the holder's gate is the whole of Stalwart here. */
+    const bool stalwart = m != NULL && dfi_ability(b, m, DFI_ABILITY_STALWART);
+    const bool single = count <= 1u && !stalwart && (target_class == DUOFORGE_TARGET_CLASS_NORMAL ||
+                                                     target_class == DUOFORGE_TARGET_CLASS_ANY ||
+                                                     target_class == DUOFORGE_TARGET_CLASS_ADJACENT_FOE ||
+                                                     target_class == DFI_TARGET_CLASS_RANDOM_NORMAL);
     uint32_t follow = DFI_POSITIONS;
     for (uint32_t slot = 0u; single && slot < DUOFORGE_ACTIVE_PER_SIDE; ++slot) {
         const uint32_t flat = (1u - side) * 2u + slot;
