@@ -421,7 +421,10 @@ def label_tick(search, roots, tick, *, last_step, config, manifest, dedup=True, 
     through one deduplicated TickTable in fixed-capacity calls; then every
     decision is finished with its own ledger. Per-root bytes equal
     label_decision's where value bits do not depend on a row's position,
-    neighbours or padding at the capacity (rowprobe, P2 Task 1). dedup=False
+    neighbours or padding at the capacity (rowprobe, P2 Task 1: shown for
+    params-49333 on the owner's CPU and GPU; re-probe for another checkpoint
+    or machine). A tick above ticks.MAX_ROWS unique rows raises ValueError,
+    and any other failure of one root stops the whole tick. dedup=False
     and stats (a dict filled with the table's counters) serve the P2
     measurement."""
     _check_search(search, config, manifest)
@@ -440,10 +443,11 @@ def label_tick(search, roots, tick, *, last_step, config, manifest, dedup=True, 
     public = roots.public(players)
     search.last = []
     table = ticks.TickTable(search._rows.shape[1], dedup=dedup)
+    # Every root is checked before any root builds worlds: a bad root stops the tick before work is spent.
+    checked = [_root(search, roots, encoded, public, env=x.env, seat=x.seat, key=x.key, raw_action=x.raw_action,
+                     raw_logp=x.raw_logp, config=config, manifest=manifest) for x in tick]
     states = []
-    for x in tick:
-        r = _root(search, roots, encoded, public, env=x.env, seat=x.seat, key=x.key, raw_action=x.raw_action,
-                  raw_logp=x.raw_logp, config=config, manifest=manifest)
+    for r in checked:
         costs = _costs()
         try:
             hypotheses, weights = _worlds(search, roots, r, costs)

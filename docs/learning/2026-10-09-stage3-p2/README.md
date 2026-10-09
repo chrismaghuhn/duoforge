@@ -23,15 +23,19 @@ Task 1's probe (#292) had already shown the precondition for params-49333 on thi
 
 596 labels per repetition, 556 of them TARGET.
 
-| Device | Path | Seconds (two repetitions) | Decisions/s | vs per root |
-|---|---|---:|---:|---:|
-| CPU | per root | 29.6 / 29.5 | 20.1 / 20.2 | 1.00 |
-| CPU | tick, no dedup | 26.7 / 26.3 | 22.3 / 22.6 | 1.11 / 1.12 |
-| CPU | **tick** | **20.7 / 19.9** | **28.8 / 29.9** | **1.43 / 1.48** |
-| GPU | per root | 34.4 / 33.7 | 17.3 / 17.7 | 1.00 |
-| GPU | tick | 31.3 / 30.5 | 19.1 / 19.5 | 1.10 / 1.10 |
-| Split | per root | 21.0 / 20.9 | 28.3 / 28.6 | 1.00 |
-| Split | **tick** | **16.6 / 16.4** | **35.9 / 36.4** | **1.27 / 1.27** |
+| Device | Path | Seconds | Decisions/s | Valid targets/s | vs per root | CPU core-s |
+|---|---|---:|---:|---:|---:|---:|
+| CPU | per root | 29.6 / 29.5 | 20.1 / 20.2 | 18.8 / 18.9 | 1.00 | 150 |
+| CPU | tick, no dedup | 26.7 / 26.3 | 22.3 / 22.6 | 20.8 / 21.1 | 1.11 / 1.12 | 121 |
+| CPU | **tick** | **20.7 / 19.9** | **28.8 / 29.9** | **26.9 / 27.9** | **1.43 / 1.48** | 78 |
+| GPU | per root | 34.4 / 33.7 | 17.3 / 17.7 | 16.2 / 16.5 | 1.00 | 60 |
+| GPU | tick, no dedup | 30.7 / 30.8 | 19.4 / 19.4 | 18.1 / 18.1 | 1.12 / 1.10 | 53 |
+| GPU | tick | 31.3 / 30.5 | 19.1 / 19.5 | 17.8 / 18.2 | 1.10 / 1.10 | 52 |
+| Split | per root | 21.0 / 20.9 | 28.3 / 28.6 | 26.4 / 26.7 | 1.00 | 45 |
+| Split | tick, no dedup | 19.3 / 19.8 | 30.9 / 30.1 | 28.8 / 28.1 | 1.09 / 1.05 | 40 |
+| Split | **tick** | **16.6 / 16.4** | **35.9 / 36.4** | **33.4 / 34.0** | **1.27 / 1.27** | 38 |
+
+Seconds, rates and ratios are given for both timed repetitions; CPU core-seconds (process, threads included) for the first. On the GPU, dedup buys nothing over the tick without dedup (19.1 vs 19.4 decisions/s). There, the value calls are cheap and the per-root policy calls dominate.
 
 ### Where the time goes (first timed repetition)
 
@@ -50,7 +54,16 @@ Task 1's probe (#292) had already shown the precondition for params-49333 on thi
 
 **GPU memory:** peak 45 MB on the GPU device, 68 MB on the split.
 
-**Forecast vs. measurement on the CPU:** forecast ≈1.6×, measured 1.43–1.48×.
+**Forecast vs. measurement on the CPU:** forecast ≈1.6×, measured 1.43–1.48×. Of the 8.9 s saved per repetition, the value calls account for 7.2 s. The rest comes mostly from reading the encoded rows and public records once per tick instead of once per root.
+
+**Limits of the measurement:**
+- The three paths ran one after the other (per root ×3, then without dedup ×3, then tick ×3), not interleaved. Drift on the machine would count against one path; the window was exclusive under the machine lock.
+- Warm-up and timed runs take about the same time (e.g. CPU tick 20.5 s vs 20.7 s), because the value call is compiled when the search is built.
+- Not measured separately:
+  - host-to-device transfer bytes (proxy: value rows × 850 float32);
+  - JIT seconds;
+  - a GPU-seconds ledger;
+  - the zero/padding share per call.
 
 ## Gate (predeclared)
 
@@ -60,5 +73,5 @@ Task 1's probe (#292) had already shown the precondition for params-49333 on thi
 
 ## Next
 
-- Learner v2's collector can switch to `label_tick` per tick without changing any label.
+- Learner v2's collector can switch to `label_tick` per tick without changing a label, under two conditions. First, the row-independence probe must hold for the checkpoint and machine in use: it was shown here for params-49333 on this CPU and GPU; re-run `rowprobe` for another. Second, a tick must stay within `ticks.MAX_ROWS` (196,608 unique rows, roughly 500 labeled roots at about 385 unique rows each); above that, `label_tick` refuses with `ValueError` where `label_decision` would not.
 - The remaining big cost is the per-root policy calls: 1 root row plus 1–3 world calls of 32 rows. Batching those across a tick is the next lever. It changes logit bits at other shapes (P0) and therefore needs its own plan and identity gate.

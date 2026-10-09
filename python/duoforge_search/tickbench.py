@@ -133,6 +133,10 @@ def main(argv=None):
     parser.add_argument("--steps", type=int, default=12)
     parser.add_argument("--workers", type=int, default=14)
     args = parser.parse_args(argv)
+    if args.envs < 2 or args.envs > 512 or args.envs % 2 or args.workers not in (4, 8, 14):
+        # The manifest pins 512 parallel games and 4/8/14 workers; an odd count would move a game's learner seat
+        # across resets and with it the leave-foe-source-out exclusion.
+        parser.error("--envs must be even and at most 512, --workers one of 4, 8, 14")
     from duoforge_replay.dataset import refuse_repository
     refuse_repository(args.out)
     os.environ["JAX_PLATFORMS"] = {"cpu": "cpu", "gpu": "cuda", "split": "cuda,cpu"}[args.device]
@@ -167,7 +171,7 @@ def main(argv=None):
         manifest = DataManifest(source_commit="0" * 40, checkpoint_hash=checkpoint_sha, model_hash="0" * 64,
                                 encoder=encoder, ids_hash="0" * 64, pool_hash=pool_sha256(pool), belief_hash=info["sha256"],
                                 seed=7, split_seed=9, key_version=KEY_VERSION, device="cpu", runtime=jax.__version__,
-                                compiler="bench", capacity=1024, workers=args.workers if args.workers in (4, 8, 14) else 14,
+                                compiler="bench", capacity=1024, workers=args.workers,
                                 parallel_games=512, game_count=512 * rounds, rounds=rounds, first_game_id=0,
                                 obs_width=features.obs_size(encoder), slot_width=features.SLOT_FEATURES,
                                 teacher_config={"k": 8, "m": 8, "worlds": 16, "lam": .5}, budget={"labels": 16384},
