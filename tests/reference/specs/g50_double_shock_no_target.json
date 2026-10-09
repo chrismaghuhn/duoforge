@@ -1,0 +1,113 @@
+{
+  "name": "g50_double_shock_no_target",
+  "purpose": "Double Shock (decision 0025) with no target left: Pawmot without the Electric type (after Double Shock, Fighting-type ???) fails at TryMove with -fail and [still] before the no-target test (sim/battle-actions.ts:486-513), not with [notarget]. Found by the G50 campaign (seed 5050, battle 2).",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,f9aa936d4de6cd633204ffd6dcc4696d9830012cb7266a3300a9052c49576d4b",
+  "teams": [
+    "Pawmot (M) @ Leftovers\nAbility: Iron Fist\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Double Shock\n- Thunderbolt\n- Ice Punch\n- Protect\n\nKingambit (M) @ Black Glasses\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Sucker Punch\n- Iron Head\n- Protect\n- Swords Dance\n\nCeruledge (M) @ Charcoal\nAbility: Flash Fire\nLevel: 50\nEVs: 31 HP / 7 Atk / 24 Def / 3 SpD / 1 Spe\nBrave Nature\n- Protect\n\nMilotic (F) @ Rocky Helmet\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Protect\n- Scald\n- Recover\n- Coil\n\nPrimarina (F) @ Fairy Feather\nAbility: Torrent\nLevel: 50\nEVs: 32 HP / 2 Def / 32 SpD\nCalm Nature\n- Protect\n- Moonblast\n- Calm Mind\n\nGholdengo @ Life Orb\nAbility: Good as Gold\nLevel: 50\nEVs: 32 HP / 2 SpA / 32 SpD\nCalm Nature\n- Protect\n- Shadow Ball\n- Make It Rain",
+    "Primarina (F) @ Fairy Feather\nAbility: Torrent\nLevel: 50\nEVs: 32 HP / 2 Def / 32 SpD\nCalm Nature\n- Protect\n- Moonblast\n- Calm Mind\n\nPawmot (M) @ Leftovers\nAbility: Iron Fist\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Double Shock\n- Thunderbolt\n- Ice Punch\n- Protect\n\nGholdengo @ Life Orb\nAbility: Good as Gold\nLevel: 50\nEVs: 32 HP / 2 SpA / 32 SpD\nCalm Nature\n- Protect\n- Shadow Ball\n- Make It Rain\n\nKingambit (M) @ Black Glasses\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Sucker Punch\n- Iron Head\n- Protect\n- Swords Dance\n\nMilotic (F) @ Rocky Helmet\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Protect\n- Scald\n- Recover\n- Coil\n\nCeruledge (M) @ Charcoal\nAbility: Flash Fire\nLevel: 50\nEVs: 31 HP / 7 Atk / 24 Def / 3 SpD / 1 Spe\nBrave Nature\n- Protect"
+  ],
+  "choices": [
+    {
+      "p1": "team 6342",
+      "p2": "team 3642"
+    },
+    {
+      "p1": "move 2 -2, move 1",
+      "p2": "move 1, move 1"
+    },
+    {
+      "p1": "move 3, move 1",
+      "p2": "move 2 1, move 1"
+    },
+    {
+      "p1": "move 3, move 1",
+      "p2": "move 1, move 1"
+    },
+    {
+      "p1": "move 2 1, move 1",
+      "p2": "move 2 2, move 1"
+    },
+    {
+      "p1": "move 3, move 1",
+      "p2": "move 3, move 1"
+    },
+    {
+      "p1": "switch 4, pass"
+    },
+    {
+      "p1": "move 4, move 1",
+      "p2": "move 1, move 1"
+    },
+    {
+      "p1": "switch 3, move 1",
+      "p2": "move 2 1, switch 3"
+    },
+    {
+      "p1": "move 4, move 1",
+      "p2": "move 2 -2, move 4"
+    },
+    {
+      "p2": "switch 3, pass"
+    },
+    {
+      "p1": "move 1, move 1",
+      "p2": "move 1, move 1 -1"
+    },
+    {
+      "p1": "pass, switch 3"
+    },
+    {
+      "p1": "move 2 -2, move 1 2",
+      "p2": "move 1, move 3"
+    },
+    {
+      "p1": "move 4, move 3",
+      "p2": "move 1, move 1 1"
+    },
+    {
+      "p1": "move 4, move 3",
+      "p2": "move 1, move 1 1"
+    },
+    {
+      "p1": "move 4, move 3",
+      "p2": "move 1, move 4"
+    },
+    {
+      "p1": "move 2 2, move 4",
+      "p2": "switch 4, move 3"
+    },
+    {
+      "p1": "move 2 2, move 4",
+      "p2": "move 2 1, move 3"
+    },
+    {
+      "p1": "move 4, move 3",
+      "p2": "move 1 -2, switch 4"
+    },
+    {
+      "p2": "pass, switch 4"
+    },
+    {
+      "p1": "move 1, move 1 2",
+      "p2": "move 2 1, move 2 2"
+    },
+    {
+      "p1": "move 4, move 3",
+      "p2": "move 1 2, pass"
+    },
+    {
+      "p1": "move 2 1, move 2 -1",
+      "p2": "move 1 -2, pass"
+    },
+    {
+      "p1": "move 2 1, move 4",
+      "p2": "move 1 2, pass"
+    },
+    {
+      "p1": "move 1, move 2 2",
+      "p2": "move 3 -2, pass"
+    }
+  ]
+}
