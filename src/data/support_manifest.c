@@ -540,6 +540,12 @@ const dfi_support_manifest dfi_support = {
             [DFI_ABILITY_SHADOWTAG] = 1u, /* step G41 */
             [DFI_ABILITY_SUCTIONCUPS] = 1u, /* step G46: a DragOut blocker (the forced switch is not made) */
             [DFI_ABILITY_GUARDDOG] = 1u,    /* step G46: a DragOut blocker */
+            [DFI_ABILITY_STEADFAST] = 1u, /* step G45: a flinch that stops the move raises Speed by 1 */
+            [DFI_ABILITY_WEAKARMOR] = 1u, /* step G45: a Physical hit lowers Defense by 1 and raises Speed by 2, each hit */
+            [DFI_ABILITY_TELEPATHY] = 1u, /* step G45: a damaging move of an ally is stopped */
+            [DFI_ABILITY_VOLTABSORB] = 1u, /* step G45: an Electric move heals a quarter of the HP, or is stopped */
+            [DFI_ABILITY_PUNKROCK] = 1u, /* step G45: sound moves: x1.3 for the holder, x0.5 against it */
+            [DFI_ABILITY_MOXIE] = 1u, /* step G45: a Move's knock-out raises Attack by the number of faints it caused at once */
         },
     .items =
         {
