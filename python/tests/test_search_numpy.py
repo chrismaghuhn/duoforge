@@ -1103,7 +1103,9 @@ class SpreadSources(unittest.TestCase):
                 self.assertEqual(honest.spread_table(ctx, copy)[2]["sha256"], info["sha256"])
                 # An explicitly chosen registry (preview_ab --belief-root) reads all of its stated teams.
                 every = honest.spread_table(ctx, copy, sources=None)[2]
-                self.assertEqual(len(every["sources"]), 80)
+                stated = [t["id"] for t in index["teams"] if t["id"] in ("A", "B", "C") or t["id"].startswith("PP_")]
+                self.assertGreater(len(stated), 80)  # the registry has more stated teams than the pinned 79 and the test one
+                self.assertEqual([s["id"] for s in every["sources"]], sorted(stated))
                 self.assertNotEqual(every["sha256"], info["sha256"])
                 index["teams"] = [t for t in index["teams"] if t["id"] != honest.SPREAD_SOURCES[-1]]
                 (copy / "index.json").write_text(json.dumps(index), encoding="utf-8")
