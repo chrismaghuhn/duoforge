@@ -481,6 +481,13 @@ const dfi_support_manifest dfi_support = {
              * a Poison-type user's Toxic are the exceptions), and breaksProtect after the accuracy check (Protect, Wide Guard,
              * Quick Guard and the stall counter of the target; the -activate line carries [broken]). No Power Herb (unmarked). */
             [DFI_MOVE_PHANTOMFORCE] = 1u,
+            /* Step G68 (decision 0015 item 5cc). Steel Beam: the recoil of half the maximum HP after a hit and in MoveFail, with the
+             * move's own condition (`[from] steelbeam`). Thunder Wave: the Electric type immunity of the target (Ground). Fire Punch
+             * and Ice Hammer: no handler (a 10 percent burn secondary; a self Speed drop), the existing paths. */
+            [DFI_MOVE_STEELBEAM] = 1u,
+            [DFI_MOVE_THUNDERWAVE] = 1u,
+            [DFI_MOVE_FIREPUNCH] = 1u,
+            [DFI_MOVE_ICEHAMMER] = 1u,
         },
     .abilities =
         {

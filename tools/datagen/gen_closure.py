@@ -2205,6 +2205,8 @@ SPECIAL_P = dict(SPECIAL_C, **{
     'ceaselessedge': ('CEASELESS_EDGE', {'onAfterHit', 'onAfterSubDamage'}),  # G48: a Spikes layer on the foe's side after a hit
     'populationbomb': ('MULTI_HIT_10', set()),
     'doubleshock': ('DOUBLE_SHOCK', {'onTryMove'}),                       # G50: fails without Electric; its self effect is owned                            # G48: ten hits, a check for each (multiaccuracy)
+    'steelbeam': ('STEEL_BEAM', {'onMoveFail'}),                          # G68: mindBlownRecoil (half the maximum HP on a hit and in MoveFail)
+    'thunderwave': ('THUNDER_WAVE', set()),                               # G68: ignoreImmunity false (Ground is immune to the Electric move)
 })
 # Step G13: Detect is Protect (data/moves.ts:3526-3547 against 13961-14005): the same handler (not one of the G2 handlers,
 # so it is added to the pool's map only), and the generator checks that its stalling fields and both callbacks are,
@@ -2346,7 +2348,22 @@ G62_FACTS = (
                'if (!action) return false;', 'action.order = 201;', "this.add('-activate', target, 'move: Quash');",
                'target: "normal",', 'type: "Dark",']),
 )
-SPECIAL_IDS_P = SPECIAL_IDS_C + G2_HANDLERS + WEATHER_HANDLERS + G16_HANDLERS + G15_HANDLERS + G19_HANDLERS + G20_HANDLERS + G20_PROTECT_HANDLERS + G28_HANDLERS + G30_HANDLERS + G32_HANDLERS + G34_HANDLERS + G27_HANDLERS + G25_HANDLERS + G26_HANDLERS + G33_HANDLERS + G38_HANDLERS + G29_HANDLERS + G39_HANDLERS + G31_HANDLERS + G48_HANDLERS + G44_HANDLERS + G50_HANDLERS + G42_HANDLERS + G56_HANDLERS + G52_HANDLERS + G54_HANDLERS + G64_HANDLERS + G62_HANDLERS + G60_HANDLERS + G58_HANDLERS + ['UNMODELED']# Step G10 made two of these handlers data: Scald (thawsTarget) and Recover (heal) are read into the second flags# byte (bit 4, thaws the target) and the heal column, and have the special NONE; their ids stay defined (the ids after
+# Step G68 (moves batch 4, decision 0015 item 5cc). STEEL_BEAM: mindBlownRecoil (round(maxhp / 2) to the user after a hit, the
+# move's own condition as the effect, so the line is `[from] steelbeam`) and onMoveFail (the same damage when the hit steps
+# leave no target: a miss, a Protect, an invulnerability). THUNDER_WAVE: ignoreImmunity false, so the Electric type immunity of
+# the target applies (a Ground target is -immune before the accuracy check). G68_FACTS holds the pinned texts.
+G68_HANDLERS = ['STEEL_BEAM', 'THUNDER_WAVE']
+G68_FACTS = (
+    ('steelbeam', ['accuracy: 95,', 'basePower: 140,', 'category: "Special",', 'priority: 0,',
+                   'flags: { protect: 1, mirror: 1 },', 'mindBlownRecoil: true,', 'onMoveFail(target, source, move) {',
+                   'if (move.multihit) return;',
+                   "this.damage(Math.round(source.maxhp / 2), source, source, this.dex.conditions.get('Steel Beam'));",
+                   'target: "normal",', 'type: "Steel",']),
+    ('thunderwave', ['accuracy: 90,', 'basePower: 0,', 'category: "Status",', 'priority: 0,',
+                     'flags: { protect: 1, reflectable: 1, mirror: 1, metronome: 1 },', "status: 'par',",
+                     'ignoreImmunity: false,', 'target: "normal",', 'type: "Electric",']),
+)
+SPECIAL_IDS_P = SPECIAL_IDS_C + G2_HANDLERS + WEATHER_HANDLERS + G16_HANDLERS + G15_HANDLERS + G19_HANDLERS + G20_HANDLERS + G20_PROTECT_HANDLERS + G28_HANDLERS + G30_HANDLERS + G32_HANDLERS + G34_HANDLERS + G27_HANDLERS + G25_HANDLERS + G26_HANDLERS + G33_HANDLERS + G38_HANDLERS + G29_HANDLERS + G39_HANDLERS + G31_HANDLERS + G48_HANDLERS + G44_HANDLERS + G50_HANDLERS + G42_HANDLERS + G56_HANDLERS + G52_HANDLERS + G54_HANDLERS + G64_HANDLERS + G62_HANDLERS + G60_HANDLERS + G58_HANDLERS + G68_HANDLERS + ['UNMODELED']# Step G10 made two of these handlers data: Scald (thawsTarget) and Recover (heal) are read into the second flags# byte (bit 4, thaws the target) and the heal column, and have the special NONE; their ids stay defined (the ids after
 # them keep their values). First Impression and Low Kick keep theirs: the turn code implements them.
 POOL_COLUMN_KEYS = {'thawsTarget', 'heal'}
 G2_OWNED_FIELDS = {
@@ -2387,6 +2404,8 @@ G2_OWNED_FIELDS = {
     'SCALE_SHOT': {'multihit': 'multihit: [2, 5],', 'selfBoost': "selfBoost: { boosts: { def: -1, spe: 1, }, },"},
     'QUICK_GUARD': {'sideCondition': "sideCondition: 'quickguard',"},
     'SHEER_COLD': {'ohko': "ohko: 'Ice',"},
+    'STEEL_BEAM': {'mindBlownRecoil': 'mindBlownRecoil: true,'},
+    'THUNDER_WAVE': {'ignoreImmunity': 'ignoreImmunity: false,'},
 }
 # Step G48: the empty secondary of Stone Axe and Ceaseless Edge (the Sheer Force placeholder). Without Sheer Force the pin runs
 # it for every hit target (moveHit of an empty secondary with chance undefined, sim/battle-actions.ts:1336-1349): the engine
@@ -3367,7 +3386,7 @@ def check_g8_conditions(moves_ts, only=None):
     must be in the pinned entry, as one normalised text. `only`: a tuple of (move id, facts) to check instead of all of
     them (the generator's tests)."""
     for mid, facts in (G8_CONDITION_FACTS + G20_CONDITION_FACTS + G28_FACTS + G32_FACTS + G34_FACTS + G25_FACTS +
-                       G33_FACTS + G38_FACTS + G39_FACTS + G37_FACTS + G44_FACTS + G48_FACTS + G55_FACTS + G54_FACTS + G64_FACTS + G62_FACTS if only is None else only):
+                       G33_FACTS + G38_FACTS + G39_FACTS + G37_FACTS + G44_FACTS + G48_FACTS + G55_FACTS + G54_FACTS + G64_FACTS + G62_FACTS + G68_FACTS if only is None else only):
         e = moves_ts.entry(mid)
         if e is None:
             fail('move %s not found' % mid)

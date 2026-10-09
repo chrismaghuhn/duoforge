@@ -220,6 +220,7 @@ duoforge_add_test(NAME duoforge.state.pool_g42 SOURCES test_pool_g42.c WHITEBOX 
 duoforge_add_test(NAME duoforge.state.pool_g44 SOURCES test_pool_g44.c WHITEBOX TIMEOUT 60)
 duoforge_add_test(NAME duoforge.state.pool_g54 SOURCES test_pool_g54.c WHITEBOX TIMEOUT 60)
 duoforge_add_test(NAME duoforge.state.pool_g64 SOURCES test_pool_g64.c WHITEBOX TIMEOUT 60)
+duoforge_add_test(NAME duoforge.state.pool_g68 SOURCES test_pool_g68.c WHITEBOX TIMEOUT 60)
 duoforge_add_test(NAME duoforge.state.pool_g62 SOURCES test_pool_g62.c WHITEBOX TIMEOUT 60)
 duoforge_add_test(NAME duoforge.state.pool_g46_party SOURCES test_pool_g46_party.c WHITEBOX TIMEOUT 120)
 # Step G35: ten data rows, Rain Dish and Friend Guard: the marks, the flags, Gigaton Hammer left out, and Friend Guard in the
@@ -255,8 +256,8 @@ foreach(_gen IN ITEMS
         "closure_tables.c=490de42298e34cfd38192d979fd022367bf53693a5fa1855f1cc6ad034d8450a"
         "extended_tables.h=b2abef243fcbfdd87654940076b9fe2fe80b117d74893a7567741f26b9075a7d"
         "extended_tables.c=9e736fa467713283418c4edf8f56b8d844452e596ba422adbd52483d20f7cc17"
-        "pool_tables.h=0d8be7b2cfb091df1d1e323e430b6f02afde6d9a51c46d32218493b7992c3dc9"
-        "pool_tables.c=b964e8a5cf16a64a092a3692e6480852b3e54c976a0d45e510f1817d8ea47e9a")
+        "pool_tables.h=ef311ec610ec1aaaf9c42d96d4aab1b3cc146c71be8f7f3ba237b22a4b0ac377"
+        "pool_tables.c=daf85798c8703d195b7c46ec38e0d2db457a4e870de7b94407d07d14bcd2d148")
     string(REPLACE "=" ";" _parts "${_gen}")
     list(GET _parts 0 _file)
     list(GET _parts 1 _expected)
