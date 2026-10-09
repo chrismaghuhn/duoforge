@@ -6626,7 +6626,8 @@ static duoforge_status dfi_residual_events_run(dfi_run *r, dfi_noorder_snapshot 
         }
         if (e->kind == DFI_RES_DURATION) {
             if (e->order == 25u) { /* Roost's end (step G42): silent, the Flying type is back for the rest of the residual */
-                r->b->tail.sides[e->flat / 2u].positions[e->flat % 2u].single_turn &= (uint8_t)~DFI_SINGLE_TURN_ROOST;
+                uint8_t *single = &r->b->tail.sides[e->flat / 2u].positions[e->flat % 2u].single_turn;
+                *single = (uint8_t)((uint32_t)*single & ~(uint32_t)DFI_SINGLE_TURN_ROOST); /* MSVC C4310: no constant cast */
             }
             continue; /* Throat Chop's (order 22): silent, its count goes down below */
         }

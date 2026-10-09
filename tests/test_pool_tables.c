@@ -1389,7 +1389,9 @@ int main(void)
                                                 /* step G31 */
                                                 DFI_MOVE_TAUNT, DFI_MOVE_YAWN,
                                                 /* step G37: the four hazards */
-                                                DFI_MOVE_STEALTHROCK, DFI_MOVE_SPIKES, DFI_MOVE_TOXICSPIKES, DFI_MOVE_STICKYWEB};
+                                                DFI_MOVE_STEALTHROCK, DFI_MOVE_SPIKES, DFI_MOVE_TOXICSPIKES, DFI_MOVE_STICKYWEB,
+                                                /* step G42: Roost (a heal and a self volatile) and Stomping Tantrum (a base power callback) */
+                                                DFI_MOVE_ROOST, DFI_MOVE_STOMPINGTANTRUM};
         uint32_t marked_count = 0u;
         for (uint32_t id = DFI_EXT_MOVE_COUNT; id < DFI_POOL_MOVE_COUNT; ++id) {
             bool want = false;
@@ -1418,12 +1420,13 @@ int main(void)
                              id == DFI_MOVE_TERRAINPULSE || id == DFI_MOVE_PERISHSONG ||
                              id == DFI_MOVE_DUALWINGBEAT || id == DFI_MOVE_TRIPLEAXEL || id == DFI_MOVE_TWINBEAM ||
                              id == DFI_MOVE_TRICK || id == DFI_MOVE_SWITCHEROO || id == DFI_MOVE_THIEF || id == DFI_MOVE_COVET ||
+                             id == DFI_MOVE_ROOST || id == DFI_MOVE_STOMPINGTANTRUM ||
                              (id == DFI_MOVE_WIDEGUARD && dfi_pool_moves[id].special == DFI_SPECIAL_WIDE_GUARD) ||
                              (id == DFI_MOVE_DETECT && dfi_pool_moves[id].special == DFI_SPECIAL_PROTECT));
             DF_CHECK(&t, !want || dfi_pool_moves[id].special != DFI_SPECIAL_UNMODELED);
             marked_count += dfi_support.moves[id] != 0u ? 1u : 0u;
         }
-        DF_CHECK_EQ_U64(&t, marked_count, 149u); /* Taunt and Yawn (G31), the four hazards (G37), the four of step G39, the four of step G29, Imprison (G38), the three of step G33, Perish Song (G26), the four of step G25, Disable (G27), the ten of step G35, Toxic and Poison Fang (G36), the ten of step G30, the eleven of step G32 and the seven of step G34 */
+        DF_CHECK_EQ_U64(&t, marked_count, 151u); /* Roost and Stomping Tantrum (G42), Taunt and Yawn (G31), the four hazards (G37), the four of step G39, the four of step G29, Imprison (G38), the three of step G33, Perish Song (G26), the four of step G25, Disable (G27), the ten of step G35, Toxic and Poison Fang (G36), the ten of step G30, the eleven of step G32 and the seven of step G34 */
     }
 
     /* Step AC1: Trace copies the ability of a foe unless that has the pin's notrace flag. The turn code excludes only
