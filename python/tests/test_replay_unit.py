@@ -299,6 +299,11 @@ class LinesTest(unittest.TestCase):
                      "|-item|p1a: Staraptor|Life Orb|[from] move: Covet|[of] p2a: Gholdengo"):
             self.assertEqual(self.stop(line), "feature:ITEM_CHANGE", line)
 
+    def test_drag_folds(self):
+        # Step G46: a forced switch brings a member in as a switch does (the tracker folds it as one, or stops)
+        self.assertEqual(lines.check("|drag|p2a: Gholdengo|Gholdengo, L50|100/100", self.view), "fold")
+        self.assertEqual(lines.check("|drag|p1a: Staraptor|Staraptor, L50, F|100/100", self.view), "fold")
+
     def test_unknown_lines_stop(self):
         self.assertEqual(self.stop("|-sethp|p1a: Staraptor|50/100"), "line:-sethp")
         self.assertEqual(self.stop("|move|p1a: Staraptor|Baton Pass|p1a: Staraptor"), "line:move Baton Pass")
@@ -344,6 +349,25 @@ class LinesTest(unittest.TestCase):
                                      view), "keep")
         with self.assertRaises(lines.Stop):
             lines.check("|-fail|p1a: Dragonite|unboost|Power|[from] ability: Inner Focus|[of] p1a: Dragonite", view)
+
+    def test_roost_single_turn_is_its_feature(self):
+        # G42: -singleturn|X|move: Roost is the ROOST feature: folded once the library supports it, else a Stop
+        line = "|-singleturn|p1a: Staraptor|move: Roost"
+        if lines.SUPPORTED >> lines.FEATURES["ROOST"] & 1:
+            self.assertEqual(lines.check(line, self.view), "fold")
+        else:
+            self.assertEqual(self.stop(line), "feature:ROOST")
+
+    def test_activate_of_own_ability_folds(self):
+        # G45/G47: Synchronize, Telepathy and the like announce the holder's own ability; their effects come in
+        # their own lines (-status, the skipped hit), so the -activate line itself changes no field
+        view = _View({"p1: Umbreon": ("UMBREON", "LEFTOVERS", "SYNCHRONIZE"),
+                      "p2: Staraptor": ("STARAPTOR", "SITRUSBERRY", "INTIMIDATE")})
+        self.assertEqual(lines.check("|-activate|p1a: Umbreon|ability: Synchronize", view), "fold")
+        with self.assertRaises(lines.Stop):  # not the holder's current ability: unknown, as before
+            lines.check("|-activate|p2a: Staraptor|ability: Synchronize", view)
+        with self.assertRaises(lines.Stop):  # an ability the tables lack
+            lines.check("|-activate|p1a: Umbreon|ability: No Such Ability", view)
 
     def test_fold_and_room_lines(self):
         self.assertEqual(lines.check("|-enditem|p1a: Staraptor|Sitrus Berry|[eat]", self.view), "fold")
@@ -689,13 +713,20 @@ class GameTest(unittest.TestCase):
         for row in last:
             self.assertNotIn(labels.MOVE_HIDDEN, row.label.reasons, row.side)
 
-    def test_weather_extended_by_an_item_stops(self):
-        # review C2: Politoed's Drizzle with Damp Rock lasts 8 turns, and no line says so
+    def test_weather_extended_by_an_item_lasts_eight_turns(self):
+        # review C2: Politoed's Drizzle with Damp Rock lasts 8 turns, and no line says so: the setter's open sheet
+        # holds the rock (data/conditions.ts durationCallback: source.hasItem), so the fold counts 8, not 5
         lines = [line.replace("|MysticWater|", "|DampRock|", 1) if line.startswith("|showteam|p2|") else line
                  for line in self.log]
         result = self.run_game(lines)
-        self.assertEqual(result.counters["perspectives.stopped.line:-weather RainDance Damp Rock"], 2)
-        self.assertTrue(all(int(r.observation["boundary_kind"]) == 1 for r in result.rows))
+        stopped = [k for k in result.counters if k.startswith("perspectives.stopped.line:-weather")]
+        self.assertEqual(stopped, [])
+        plain = self.run_game(self.log)
+        def turns(res):
+            return [int(r.observation["weather_turns"]) for r in res.rows if int(r.observation["weather"]) != 0]
+        self.assertTrue(turns(plain) and max(turns(plain)) <= 5)
+        self.assertTrue(turns(result) and max(turns(result)) > 5, turns(result))
+        self.assertLessEqual(max(turns(result)), 8)
 
     def test_sheet_the_converter_refuses_skips(self):
         # review I2: a refusal of the converter is a counted skip, not an escaping SystemExit
