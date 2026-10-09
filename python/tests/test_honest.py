@@ -42,6 +42,15 @@ class CanonicalReduction(unittest.TestCase):
         np.testing.assert_array_equal(record["ys"][0], solution.y)
 
 
+class PublicCauses(unittest.TestCase):
+    def test_every_public_cause_bit_has_a_name(self):
+        # visible_causes names the library's refusal causes; a DUOFORGE_PUBLIC_CAUSE_* bit without a name would vanish
+        # into the unnamed "public_record_unsupported" (Substitute, decision 0032 step G60, among them)
+        bits = {v for k, v in C.items() if k.startswith("DUOFORGE_PUBLIC_CAUSE_")}
+        self.assertEqual({bit for bit, _ in honest._CAUSES}, bits)
+        self.assertIn((C["DUOFORGE_PUBLIC_CAUSE_SUBSTITUTE"], "substitute"), honest._CAUSES)
+
+
 class HonestSearch(unittest.TestCase):
     @classmethod
     def setUpClass(cls):

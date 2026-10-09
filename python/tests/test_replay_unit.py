@@ -299,6 +299,15 @@ class LinesTest(unittest.TestCase):
                      "|-item|p1a: Staraptor|Life Orb|[from] move: Covet|[of] p2a: Gholdengo"):
             self.assertEqual(self.stop(line), "feature:ITEM_CHANGE", line)
 
+    def test_substitute_lines_stop_on_its_feature(self):
+        # Decision 0032 (step G60): every line that shows a Substitute stops on its feature until the tracker folds it,
+        # the absorbed hit's -activate included (it is no unknown line); its -fail lines are FAIL events (fold)
+        for line in ("|-start|p1a: Staraptor|Substitute", "|-end|p1a: Staraptor|Substitute",
+                     "|-activate|p1a: Staraptor|move: Substitute|[damage]"):
+            self.assertEqual(self.stop(line), "feature:SUBSTITUTE", line)
+        for line in ("|-fail|p1a: Staraptor|move: Substitute", "|-fail|p1a: Staraptor|move: Substitute|[weak]"):
+            self.assertEqual(lines.check(line, self.view), "fold", line)
+
     def test_drag_folds(self):
         # Step G46: a forced switch brings a member in as a switch does (the tracker folds it as one, or stops)
         self.assertEqual(lines.check("|drag|p2a: Gholdengo|Gholdengo, L50|100/100", self.view), "fold")
