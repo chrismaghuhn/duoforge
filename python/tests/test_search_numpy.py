@@ -1075,6 +1075,42 @@ def _sides(teams):
     return out
 
 
+class SpreadSources(unittest.TestCase):
+    def test_spread_sources_are_pinned(self):
+        # The honest search's belief reads a pinned list of stated-spread teams: a new PP_ team in the
+        # registry (M11's imports) must not widen it; widening is an owner decision with a new list.
+        import json
+        import shutil
+
+        import duoforge
+        from duoforge import _layout
+        from duoforge_search import honest
+        root = Path(__file__).resolve().parents[2] / "data" / "teams"
+        with duoforge.Context(_layout.CONSTANTS["DUOFORGE_DATA_KIND_POOL"]) as ctx:
+            _, _, info = honest.spread_table(ctx)
+            self.assertEqual(len(honest.SPREAD_SOURCES), 79)
+            self.assertEqual([s["id"] for s in info["sources"]], sorted(honest.SPREAD_SOURCES))
+            self.assertEqual((info["sets"], info["sha256"]),
+                             (444, "1795524c1e81d3857a26d6c99a194c536069df8d208d502413c3005ff75099d4"))
+            with tempfile.TemporaryDirectory(prefix="duoforge_spread_registry_") as temp:
+                copy = Path(temp) / "teams"
+                shutil.copytree(root, copy)
+                index = json.loads((copy / "index.json").read_text(encoding="utf-8"))
+                raw = (copy / "A.txt").read_bytes()
+                (copy / "PP_ZZZZWIDENTEST0.txt").write_bytes(raw)
+                index["teams"].append({"id": "PP_ZZZZWIDENTEST0", "sha256": index["teams"][0]["sha256"]})
+                (copy / "index.json").write_text(json.dumps(index), encoding="utf-8")
+                self.assertEqual(honest.spread_table(ctx, copy)[2]["sha256"], info["sha256"])
+                # An explicitly chosen registry (preview_ab --belief-root) reads all of its stated teams.
+                every = honest.spread_table(ctx, copy, sources=None)[2]
+                self.assertEqual(len(every["sources"]), 80)
+                self.assertNotEqual(every["sha256"], info["sha256"])
+                index["teams"] = [t for t in index["teams"] if t["id"] != honest.SPREAD_SOURCES[-1]]
+                (copy / "index.json").write_text(json.dumps(index), encoding="utf-8")
+                with self.assertRaisesRegex(SearchError, "pinned"):
+                    honest.spread_table(ctx, copy)
+
+
 class BeliefTable(unittest.TestCase):
     """The spread table and the world words (decision 0023, spec section 5)."""
 

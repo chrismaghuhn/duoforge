@@ -86,6 +86,8 @@ typedef enum dfi_invariant {
     DFI_INV_TAIL_SCHEMA,   /* decode: the artifact's schema is not the one of the context's kind */
     DFI_INV_TAIL_RESERVED, /* decode: a reserved byte of the tail is not zero */
     DFI_INV_TAIL_FIELD,    /* Gravity's turns out of range (or the field block's pad byte is not zero) */
+    DFI_INV_TAIL_PARTY,    /* step G46: a party order that is not the permutation of the brought members (the first n entries, n
+                            * the brought count, each a brought member once; the rest empty; bits 18-23 zero) */
     DFI_INV_COUNT
 } dfi_invariant;
 

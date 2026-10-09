@@ -281,7 +281,7 @@ KD = TeamCContext(KIND_TEAM_C_DEV, 6, 4)
 # which tests/test_pool_tables.c recomputes from the pool canonical bytes: the
 # pool layout over the pool data, then the family columns, the handler columns
 # and the moves and abilities that each forme may have.
-POOL_TABLE_HASH = bytes.fromhex('fb0826fe95708eedd5e5a858afdca556b84cf04da823687f587472b3328db750')
+POOL_TABLE_HASH = bytes.fromhex('403ef55d32c8502b978197f6f775dd6edc2cc415edea29de88d3e15fb7f4ba0b')
 KIND_POOL, KIND_POOL_DEV = 6, 7
 
 
@@ -372,7 +372,34 @@ def empty_tail_side():
 
 
 def empty_tail():
-    return {'gravity': 0, 'sides': [empty_tail_side(), empty_tail_side()]}
+    # party: step G46, per side the 3 bytes of party_order (entry k = roster index + 1 at bits 3k..3k+2, 0 = empty)
+    return {'gravity': 0, 'party': [[0, 0, 0], [0, 0, 0]], 'sides': [empty_tail_side(), empty_tail_side()]}
+
+
+def party_entries(party_bytes):
+    """The six 3-bit entries of one side's party order (roster index + 1, 0 = empty), from its 3 bytes."""
+    w = party_bytes[0] | party_bytes[1] << 8 | party_bytes[2] << 16
+    return [(w >> (3 * k)) & 7 for k in range(MAX_ROSTER)]
+
+
+def party_valid(party_bytes, brought_mask):
+    """Invariant TAIL_PARTY: no bit above the 18 entry bits; the first n entries (n = the brought count) are the brought
+    members, each once, and the rest are empty."""
+    w = party_bytes[0] | party_bytes[1] << 8 | party_bytes[2] << 16
+    if w >> (3 * MAX_ROSTER):
+        return False
+    n = bin(brought_mask).count('1')
+    seen = 0
+    for k, v in enumerate(party_entries(party_bytes)):
+        if k >= n:
+            if v != 0:
+                return False
+            continue
+        bit = 1 << (v - 1) if 1 <= v <= MAX_ROSTER else 0
+        if bit == 0 or not brought_mask & bit or seen & bit:
+            return False
+        seen |= bit
+    return True
 
 
 def empty_state(ctx):
@@ -585,8 +612,9 @@ INVARIANTS = ['NONE', 'CONTEXT_FINGERPRINT', 'RNG_INC_EVEN', 'NEXT_ACTIVATION_ZE
               'ACTIVATION_NOT_ISSUED', 'OCCUPANT_DUPLICATE', 'VOLATILE', 'REQUESTED_SLOTS', 'SWITCH_FLAG',
               'SEALED_RANGE',
               'SEALED_RULE', 'SEALED_COMMAND', 'ACTIVATION_DUPLICATE', 'SEEN_MASK', 'KNOWLEDGE', 'QUEUE',
-              'TAIL_KIND', 'TAIL_SIDE', 'TAIL_POSITION', 'TAIL_MEMBER', 'TAIL_SCHEMA', 'TAIL_RESERVED', 'TAIL_FIELD']
-assert len(INVARIANTS) == 50
+              'TAIL_KIND', 'TAIL_SIDE', 'TAIL_POSITION', 'TAIL_MEMBER', 'TAIL_SCHEMA', 'TAIL_RESERVED', 'TAIL_FIELD',
+              'TAIL_PARTY']
+assert len(INVARIANTS) == 51
 
 
 def cmd_is_zero(c):
@@ -897,7 +925,8 @@ def tail_is_zero(tail):
         return (all(ts[f] == 0 for f in TAIL_SIDE_BYTE_FIELDS)
                 and all(v == 0 for p in ts['pos'] for v in p.values())
                 and all(v == 0 for f in TAIL_MEMBER_LIST_FIELDS for v in ts[f]))
-    return tail['gravity'] == 0 and all(side_zero(ts) for ts in tail['sides'])
+    return (tail['gravity'] == 0 and all(v == 0 for p in tail['party'] for v in p)
+            and all(side_zero(ts) for ts in tail['sides']))
 
 
 def hazard_order_valid(ts):
@@ -957,6 +986,9 @@ def check_tail(ctx, st):
         return 'OK' if tail_is_zero(tail) else 'TAIL_KIND'
     if tail['gravity'] > TAIL_GRAVITY_MAX:
         return 'TAIL_FIELD'
+    for s in range(2):
+        if not party_valid(tail['party'][s], st['sides'][s]['brought']):
+            return 'TAIL_PARTY'
     for s in range(2):
         ts, sd = tail['sides'][s], st['sides'][s]
         if (ts['wide_guard'] > TAIL_WIDE_GUARD_MAX or ts['aurora_veil'] > TAIL_AURORA_VEIL_MAX
@@ -1046,7 +1078,7 @@ def encode(st):
 
 def tail_bytes(tail):
     """The 288 encoded bytes of a tail (the layout of src/codec/state_codec.h), reserved bytes zero."""
-    out = bytearray([tail['gravity']]) + bytes(TAIL_FIELD_SIZE - 1)
+    out = bytearray([tail['gravity']]) + bytes(tail['party'][0]) + bytes(tail['party'][1]) + bytes(TAIL_FIELD_SIZE - 7)
     for ts in tail['sides']:
         out += bytes([ts[f] for f in TAIL_SIDE_BYTE_FIELDS])
         for tp in ts['pos']:
@@ -1061,14 +1093,14 @@ def tail_bytes(tail):
 
 
 def tail_reserved_offsets():
-    """The offsets (within the tail) of the 35 reserved bytes."""
-    offs = list(range(1, TAIL_FIELD_SIZE))
+    """The offsets (within the tail) of the 29 reserved bytes (step G46: the field block's +1..+6 are party_order)."""
+    offs = [TAIL_FIELD_SIZE - 1]
     for s in range(2):
         so = TAIL_FIELD_SIZE + TAIL_SIDE_SIZE * s
         for p in range(2):
             offs += [so + 8 + TAIL_POS_SIZE * p + 32 + i for i in range(4)]
         offs += [so + 80 + TAIL_MEMBER_SIZE * m + 9 for m in range(MAX_ROSTER)]
-    assert len(offs) == 35
+    assert len(offs) == 29
     return offs
 
 
@@ -1078,7 +1110,7 @@ def tail_reserved_zero(b):
 
 def parse_tail(b):
     o = STATE_SIZE
-    tail = {'gravity': b[o], 'sides': []}
+    tail = {'gravity': b[o], 'party': [list(b[o + 1 + 3 * s:o + 4 + 3 * s]) for s in range(2)], 'sides': []}
     for s in range(2):
         so = o + TAIL_FIELD_SIZE + TAIL_SIDE_SIZE * s
         ts = {f: b[so + i] for i, f in enumerate(TAIL_SIDE_BYTE_FIELDS)}
@@ -1821,6 +1853,8 @@ def tail_pos(**kw):
 def tail_example():
     t = empty_tail()
     t['gravity'] = 5
+    # step G46: the pick order of the four brought members 0, 1, 2, 3 on both sides (entries 1, 2, 3, 4 of 3 bits: 0x8D1)
+    t['party'] = [[0xD1, 0x08, 0x00], [0xD1, 0x08, 0x00]]
     a, c = t['sides']
     # all four hazards up, created in the order Spikes, Stealth Rock, Sticky Web, Toxic Spikes: 1 | 0 << 2 | 3 << 4 | 2 << 6
     a.update(wide_guard=1, aurora_veil=8, toxic_spikes=2, stealth_rock=1, spikes=3, sticky_web=1, quick_guard=1,
@@ -1856,6 +1890,7 @@ def tail_model_state():
     st = empty_state(KP)
     for s, sd in enumerate(st['sides']):
         sd['member_count'] = 6
+        sd['brought'] = 0b1111  # step G46: the four brought members whose pick order is the example's party
         sd['pos'][0]['occ'], sd['pos'][1]['occ'] = 0, 1
         for m, mem in enumerate(sd['members']):
             mem['hp'], mem['move_count'] = 1, 4
@@ -1873,7 +1908,7 @@ def tail_outcome(raw):
     return check_tail(KP, st)
 
 
-SWEEP_COLUMNS = ('OK', 'TAIL_SIDE', 'TAIL_POSITION', 'TAIL_MEMBER', 'TAIL_FIELD', 'TAIL_RESERVED')
+SWEEP_COLUMNS = ('OK', 'TAIL_SIDE', 'TAIL_POSITION', 'TAIL_MEMBER', 'TAIL_FIELD', 'TAIL_RESERVED', 'TAIL_PARTY')
 
 
 def print_pool_tail():
