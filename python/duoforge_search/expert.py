@@ -17,13 +17,14 @@ from duoforge import _layout
 
 from . import lookahead, matrix
 from .errors import SearchError
-from .expert_data import (DECISION_BOUNDARIES, KEY_VERSION, MASS_TOLERANCE, DecisionKey, RowStatus, SparsePolicy,
-                          selection_word)
+from .expert_data import (DECISION_BOUNDARIES, KEY_VERSION, MASS_TOLERANCE, DecisionKey, ExpertRow, RowStatus,
+                          SparsePolicy, selection_word, validate_row)
 from .honest import Unreconstructible
 
 C = _layout.CONSTANTS
 K = 8  # own candidates of a label (P1 fixed contract)
 JOINT = lookahead.PAIRS  # full joint pair ids, i0 * 32 + i1
+AUDIT_THRESHOLD = (1 << 64) // 100  # the K+1 audit: audit word below it (1%)
 
 
 @dataclass(frozen=True)
@@ -55,6 +56,10 @@ def include_student(candidates, raw_action, legal_mask, *, k=K) -> CandidateSet:
     candidate (the last, ties already broken by lookahead.select)."""
     if k != K:
         raise ValueError(f"P1 labels keep exactly K = {K} candidates")
+    return _with_raw(candidates, raw_action, legal_mask, k)
+
+
+def _with_raw(candidates, raw_action, legal_mask, k):
     legal = _legal(legal_mask)
     ids = np.asarray(candidates)
     if ids.ndim != 1 or not 1 <= ids.size <= k or not np.issubdtype(ids.dtype, np.integer):
@@ -105,6 +110,7 @@ class TeacherConfig:
     lam: float = 0.5
     capacity: int = 1024
     budget: matrix.WorkBudget = field(default_factory=matrix.WorkBudget)
+    audit_threshold: int = AUDIT_THRESHOLD
     key_version: int = KEY_VERSION
 
     def __post_init__(self):
@@ -119,6 +125,9 @@ class TeacherConfig:
             raise ValueError("teacher lambda must lie in [0, 1]")
         if not isinstance(self.budget, matrix.WorkBudget):
             raise ValueError("teacher budget must be a matrix.WorkBudget")
+        if isinstance(self.audit_threshold, bool) or not isinstance(self.audit_threshold, int) or \
+                not 0 <= self.audit_threshold <= 1 << 64:
+            raise ValueError("the audit threshold must lie in [0, 2**64]")
         if type(self.key_version) is not int or self.key_version != KEY_VERSION:
             raise ValueError(f"unsupported key version {self.key_version!r}")
 
@@ -131,10 +140,12 @@ class TeacherConfig:
 
 @dataclass(frozen=True)
 class TeacherDecision:
-    """What a learner root executes and stores: the action, its behavior
-    log-likelihood, the sparse target (TARGET only), the status with its
-    fallback cause, solver work, audit and the world/table/label digests."""
+    """What a learner root executes and stores: the action, the collector's
+    pre-drawn raw action, the behavior log-likelihood of the action, the
+    sparse target (TARGET only), the status with its fallback cause, solver
+    work, audit and the world/table/label digests."""
     action: int
+    raw_action: int
     behavior_logp: float
     target: SparsePolicy | None
     status: RowStatus
@@ -237,7 +248,8 @@ def label_decision(search, roots, *, env, seat, key, raw_action, raw_logp, last_
 
     def fallback(status, cause):
         world = None if hypotheses is None else _digest(hypotheses, weights)
-        return TeacherDecision(int(raw_action), raw_logp, None, status, cause, work(), {}, world, None, None)
+        return TeacherDecision(int(raw_action), int(raw_action), raw_logp, None, status, cause, work(), {}, world,
+                               None, None)
 
     try:
         if statuses[e] == C["DUOFORGE_E_UNSUPPORTED"]:
@@ -268,5 +280,114 @@ def label_decision(search, roots, *, env, seat, key, raw_action, raw_logp, last_
     index = matrix.draw(pi, np.arange(cand.ids.size), _uniform(selection_word(key, config.seed, domain="X")))
     action, logp = int(cand.ids[index]), math.log(float(play[index]))
     label_digest = _digest(cand.ids, play, np.array([action], np.int64), np.array([logp]))
-    return TeacherDecision(action, logp, SparsePolicy(cand.ids.copy(), play), RowStatus.TARGET, None,
-                           work(leaves=int(tables.size)), {}, world_digest, table_digest, label_digest)
+    audit = {"selected": False}
+    if selection_word(key, config.seed, domain="audit") < config.audit_threshold:
+        audit = _audit(search, config, key, world_key, pp[0], mask, raw_action, weights, bool(last_step), result, action)
+    return TeacherDecision(action, int(raw_action), logp, SparsePolicy(cand.ids.copy(), play), RowStatus.TARGET,
+                           None, work(leaves=int(tables.size)), audit, world_digest, table_digest, label_digest)
+
+
+def _certificate(result, weights):
+    tables = np.asarray(result["tables"], np.float64)
+    return matrix.bayes_certify(tables, weights, np.asarray(result["x"]), [np.asarray(y) for y in result["ys"]])
+
+
+def _audit(search, config, key, world_key, logp, mask, raw_action, weights, last_step, primary, action):
+    """The K+1 audit on the same worlds with its own ledger of identical caps:
+    the next candidate added (the raw action kept), reported beside the
+    label and never replacing it. Exhaustion is an incomplete audit."""
+    ids = _with_raw(lookahead.select(logp, mask, search.k + 1)[0], raw_action, mask, search.k + 1).ids
+    ledger = matrix.WorkLedger(config.budget)
+    costs = {k: 0.0 for k in ("public_records", "world_builds", "team_head", "leaves", "network", "solve")}
+
+    def work():
+        c = ledger.consumed
+        return {"float_pivots": c.float_pivots, "exact_pivots": c.exact_pivots, "exact_ops": c.exact_ops,
+                "max_bits": c.max_bits, "status": ledger.status.value}
+
+    try:
+        result = search._decision(int(key.seat), world_key, ids, np.zeros(ids.size), weights, last_step, costs,
+                                  budget=ledger)
+    except matrix.WorkBudgetExceeded as err:
+        return {"selected": True, "status": f"exhausted:{err.status.value}", "candidates": ids.tolist(), "work": work()}
+    index = matrix.draw(np.asarray(result["pi_X"]), np.arange(ids.size),
+                        _uniform(selection_word(key, config.seed, domain="X")))
+    return {"selected": True, "status": "ok", "candidates": ids.tolist(), "action": int(ids[index]),
+            "action_changed": int(ids[index]) != action, "value": float(result["value"]),
+            "value_delta": float(result["value"]) - float(primary["value"]),
+            "certificate": float(_certificate(result, weights)), "primary_certificate": float(_certificate(primary, weights)),
+            "leaves": int(np.asarray(result["tables"]).size), "work": work()}
+
+
+_RAW_STATUSES = (RowStatus.UNSELECTED, RowStatus.CAP_RAW, RowStatus.FORCED)
+
+
+def raw_decision(status, raw_action, raw_logp, *, legal_count) -> TeacherDecision:
+    """A requested learner root that runs no search: UNSELECTED, CAP_RAW (a
+    selected root without a ticket) or FORCED (one legal action, logp 0).
+    It executes the collector's pre-drawn raw action; no world, network or
+    solver is touched."""
+    if status not in _RAW_STATUSES:
+        raise ValueError(f"raw_decision covers {[s.value for s in _RAW_STATUSES]} (got {status!r})")
+    if isinstance(legal_count, bool) or not isinstance(legal_count, int) or not 1 <= legal_count <= JOINT:
+        raise ValueError("legal_count must count the root's legal actions")
+    raw_logp = float(raw_logp)
+    if not math.isfinite(raw_logp) or raw_logp > 0:
+        raise ValueError("raw_logp must be a finite log-probability")
+    if (status is RowStatus.FORCED) != (legal_count == 1) or (status is RowStatus.FORCED and raw_logp != 0.0):
+        raise ValueError("a root is FORCED exactly when it has one legal action, with logp 0")
+    if isinstance(raw_action, bool) or not isinstance(raw_action, (int, np.integer)) or raw_action < 0:
+        raise ValueError("raw_action must be an action index")
+    return TeacherDecision(int(raw_action), int(raw_action), raw_logp, None, status, None)
+
+
+@dataclass(frozen=True)
+class StepData:
+    """The collector's facts of one learner row (acting or waiting)."""
+    key: DecisionKey
+    logical_tick: int
+    boundary: str
+    obs: np.ndarray
+    slots: np.ndarray
+    legal_mask: np.ndarray
+    requested: bool
+    reward: float
+    done: bool
+    collector_value: float
+    bootstrap: float
+
+
+def teacher_row(decision, step, manifest):
+    """The ExpertRow of a learner step: a waiting step (decision None) is
+    UNREQUESTED; a requested step carries its decision's action, likelihood,
+    target, status and cause; the collector's reward, done, value and
+    bootstrap are kept as given. Checked by validate_row."""
+    if not isinstance(step, StepData):
+        raise ValueError("teacher_row needs StepData")
+    if (decision is None) == bool(step.requested):
+        raise ValueError("a requested step needs a decision and a waiting step none")
+    if decision is None:
+        fields = {"sparse_policy": None, "status": RowStatus.UNREQUESTED, "raw_action": None, "action": None,
+                  "behavior_logp": None, "admitted": False, "cause": None, "work": {}, "audit": {}}
+    else:
+        if not isinstance(decision, TeacherDecision):
+            raise ValueError("teacher_row needs a TeacherDecision")
+        admitted = decision.status in (RowStatus.TARGET, RowStatus.PUBLIC_REFUSAL, RowStatus.WORK_EXHAUSTED)
+        fields = {"sparse_policy": decision.target, "status": decision.status, "raw_action": decision.raw_action,
+                  "action": decision.action, "behavior_logp": decision.behavior_logp, "admitted": admitted,
+                  "cause": decision.cause, "work": _counts(decision.work), "audit": _plain_audit(decision.audit)}
+    row = ExpertRow(key=step.key, logical_tick=step.logical_tick, boundary=step.boundary, obs=step.obs,
+                    slots=step.slots, legal_mask=step.legal_mask, requested=bool(step.requested),
+                    acting=bool(step.requested), learner=True, value_mask=True, reward=step.reward, done=step.done,
+                    collector_value=step.collector_value, bootstrap=step.bootstrap, **fields)
+    validate_row(row, manifest)
+    return row
+
+
+def _counts(work):
+    return {k: int(v) for k, v in work.items() if k != "status"}
+
+
+def _plain_audit(audit):
+    return {k: v for k, v in audit.items() if k != "work"}
+
