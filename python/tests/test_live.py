@@ -139,6 +139,27 @@ class PackTest(unittest.TestCase):
             self.assertEqual(teams.pack(teams.text(name)), node_tool("--pack", str(path)).rstrip("\n"), name)
 
 
+class ClearAllBoostsTest(unittest.TestCase):
+    """Step G62 (decision 0031): Haze's CLEAR_ALL_BOOSTS returns the stages of every standing active Pokemon to
+    neutral (data/moves.ts haze onHitField: getAllActive, sim/pokemon.ts clearBoosts); an empty or fainted position
+    keeps what it holds."""
+
+    def test_every_standing_active_position_returns_to_neutral(self):
+        from types import SimpleNamespace
+        from duoforge_live import tracker
+        t = tracker.Tracker.__new__(tracker.Tracker)
+        t.side, t._spectator = 0, False
+        raised = [8, 4, 6, 6, 6, 9, 6]
+
+        def position(occupant, fainted=False):
+            return SimpleNamespace(occupant=occupant, fainted=fainted, stages=list(raised))
+
+        t._positions = [[position(0), position(1)], [position(2, fainted=True), position(tracker.ROSTER_NONE)]]
+        t._event(trace_to_c.ev_tuple(trace_to_c.EV["CLEAR_ALL_BOOSTS"]))
+        self.assertEqual([p.stages for p in t._positions[0]], [[tracker.STAGE_NEUTRAL] * 7] * 2)
+        self.assertEqual([p.stages for p in t._positions[1]], [raised, raised])
+
+
 class OptionsTest(unittest.TestCase):
     """Test 1 (the options) and test 2 (the choice text) of the spec."""
 
