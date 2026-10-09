@@ -719,3 +719,5 @@ if(Python3_Interpreter_FOUND)
     set_tests_properties(duoforge.data.model_pool_hash PROPERTIES TIMEOUT 60
         ENVIRONMENT PYTHONDONTWRITEBYTECODE=1)
 endif()
+# Step I2 (decision 0026, amended by I2): Illusion, the disguise, the break, the foe view, the causes (white-box).
+duoforge_add_test(NAME duoforge.state.pool_i2 SOURCES test_pool_i2.c WHITEBOX LIBS duoforge_batch TIMEOUT 60)

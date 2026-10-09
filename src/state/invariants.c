@@ -376,6 +376,14 @@ static dfi_invariant dfi_check_side(const struct duoforge_context *ctx, const st
     return DFI_INV_NONE;
 }
 
+/* Illusion (decision 0026): see battle_internal.h. */
+bool dfi_illusion_disguise_up(const dfi_side *side, const dfi_tail_side *ts, uint32_t p)
+{
+    const uint32_t occ = side->positions[p].occupant;
+    return ts->positions[p].ability_state != 0u && occ < DUOFORGE_MAX_ROSTER && occ < side->member_count &&
+           side->members[occ].ability == DFI_ABILITY_ILLUSION + 1u;
+}
+
 /* Knowledge of player p about the opponent: every seen bit names a brought
  * member, and every foe occupant is seen. Runs after both sides passed, so
  * member_count and brought_mask are already in range. */
@@ -397,7 +405,7 @@ static dfi_invariant dfi_check_seen(const struct duoforge_battle *b, uint32_t p)
         }
         /* Illusion (amended by I2): a disguised holder on the field is seen under the shown name, not its truth. */
         const dfi_tail_side *ots = &b->tail.sides[1u - p];
-        if (ots->positions[k].ability_state != 0u && ots->illusion.shown != 0u) {
+        if (dfi_illusion_disguise_up(opp, ots, k) && ots->illusion.shown != 0u) {
             occupant = (uint32_t)ots->illusion.shown - 1u;
         }
         if (occupant >= DUOFORGE_MAX_ROSTER || ((seen >> occupant) & 1u) == 0u) {
@@ -685,7 +693,7 @@ static dfi_invariant dfi_check_tail(const duoforge_context *ctx, const struct du
          * set exactly while a name is shown; bytes 0..6 (the disguise row) and the pending counts exist only while a disguise is up. */
         bool any_disguise = false;
         for (uint32_t p = 0u; p < DUOFORGE_ACTIVE_PER_SIDE; ++p) {
-            any_disguise = any_disguise || ts->positions[p].ability_state != 0u;
+            any_disguise = any_disguise || dfi_illusion_disguise_up(side, ts, p) != 0;
         }
         if (il->shown > DUOFORGE_MAX_ROSTER || (any_ill && holder == DUOFORGE_MAX_ROSTER) ||
             (il->shown != 0u && (((uint32_t)side->brought_mask >> ((uint32_t)il->shown - 1u)) & 1u) == 0u) ||

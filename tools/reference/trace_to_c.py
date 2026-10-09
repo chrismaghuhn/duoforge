@@ -808,11 +808,18 @@ RESULT = {'p1': 1, 'p2': 2, '': 3}
 HP_FLAGS = {'': 0, 'r': 1, 'y': 2, 'g': 3}  # DUOFORGE_HP_FLAG_*
 
 
-def public_lines(log, roster_of, shown):
+def public_lines(log, roster_of, shown, ill=None):
     """Updates shown[side][roster] = (percent, flag) from the protocol lines
     that show HP to everyone. A split line comes as '|split|pN', the copy for
     pN (exact HP) and then the public copy: only the public copy counts. A
-    public HP that is not a Champions percent display stops the conversion."""
+    public HP that is not a Champions percent display stops the conversion.
+
+    ill (decision 0026, amended by I2; kept across the steps): 'entry' ((side, position) ->
+    (roster, the shown value before that switch or drag line)) and 'replace' (side -> the true
+    roster of its `replace` line). The break (`-end|X|Illusion`) shows the holder with the last
+    value of the disguise name, and the disguise row goes back to its value before the disguise,
+    or to full HP when the foe had never seen it (a disguise is never fainted: P1)."""
+    ill = ill if ill is not None else {'entry': {}, 'replace': {}}
     skip = False
     for line in log:
         if skip:
@@ -822,6 +829,28 @@ def public_lines(log, roster_of, shown):
             skip = True
             continue
         parts = line.split('|')
+        if len(parts) >= 3 and parts[1] == 'replace':
+            side = int(parts[2][1]) - 1
+            roster = roster_of[side].get(parts[2].split(': ', 1)[1])
+            if roster is None:
+                raise ConversionError('unknown-pokemon', 'trace_to_c: unknown Pokemon in %r' % line,
+                                      detail=parts[2].split(': ', 1)[1])
+            ill['replace'][side] = roster
+            continue
+        if len(parts) >= 4 and parts[1] == '-end' and parts[3] == 'Illusion':
+            side = int(parts[2][1]) - 1
+            pos = 'ab'.index(parts[2][2])
+            entry = ill['entry'].get((side, pos))
+            if entry is None or side not in ill['replace']:
+                raise ConversionError('illusion-end-order', 'trace_to_c: an Illusion break without its switch or replace: %r' % line)
+            disguise, before = entry
+            truth = ill['replace'].pop(side)
+            held = shown[side].get(disguise)
+            if held is None:
+                raise ConversionError('illusion-hp-unknown', 'trace_to_c: no HP shown for the disguise before the break: %r' % line)
+            shown[side][truth] = held
+            shown[side][disguise] = before if before is not None else (100, 0)
+            continue
         if len(parts) >= 3 and parts[1] == 'faint':
             # A faint that no `-damage ... 0 fnt` line announced (Perish Song, step G26): the screen shows the Pokemon at 0.
             side = int(parts[2][1]) - 1
@@ -840,6 +869,8 @@ def public_lines(log, roster_of, shown):
         if roster is None:
             raise ConversionError('unknown-pokemon', 'trace_to_c: unknown Pokemon in %r' % line,
                                   detail=who.split(': ', 1)[1])
+        if parts[1] in ('switch', 'drag'):
+            ill['entry'][(side, 'ab'.index(who[2]))] = (roster, shown[side].get(roster))
         token = hp.split(' ')[0]
         if token == '0':
             shown[side][roster] = (0, 0)
@@ -1553,8 +1584,9 @@ def convert_battle(name, spec, trace, tables):
     # A switch request made during the turn: the step that led to it has not
     # reached the end of the turn (no upkeep line).
     mid_turn = False
+    ill_pub = {'entry': {}, 'replace': {}}
     for step in trace['steps']:
-        public_lines(step['log'], roster_of, shown)
+        public_lines(step['log'], roster_of, shown, ill_pub)
         kinds = {}
         for side, sid in enumerate(('p1', 'p2')):
             if sid in step['input']:

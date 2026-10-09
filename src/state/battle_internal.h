@@ -18,6 +18,7 @@
  * v3 adds the groups of decision 0006 section 3; the combat of the closure
  * (src/combat/turn.c) writes them for CLOSURE data.
  */
+#include <stdbool.h>
 #include <stdint.h>
 
 #include <duoforge/duoforge.h>
@@ -335,6 +336,10 @@ typedef struct dfi_tail_side {
     uint8_t hazard_order;                      /* tail rev 4: the creation order of the hazards that are up, 2 bits per slot (see above) */
     dfi_tail_illusion illusion;                /* tail rev 5 (decision 0026): the foe's shown state of the holder, zero until Illusion */
 } dfi_tail_side;
+
+/* Illusion (decision 0026): the position's disguise is up (1) or not (0). ability_state is the state of the occupant's current ability
+ * (rev 4), so it is the disguise only while the occupant is a holder: the sheet's Illusion (id + 1). Defined in state/invariants.c. */
+bool dfi_illusion_disguise_up(const dfi_side *side, const dfi_tail_side *ts, uint32_t p);
 
 /* party_order (step G46, decision 0015 section 7): the side.pokemon order of the pin, per side, as the permutation of the
  * brought members. Entry k (k = 0..5, the Showdown index in side.pokemon: the two actives, then the bench) holds roster index

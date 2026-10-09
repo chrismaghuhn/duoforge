@@ -205,6 +205,15 @@ static bool dfi_fold_illusion_break(dfi_tail_illusion *ill, dfi_side *viewer, co
         }
     }
     dfi_ill_snapshot_restore(d, ill->snapshot);
+    if (ill->snapshot[0] == 0u) {
+        /* Decision 0026 section 4, amended by I2: a disguise is never fainted (P1: the first non-fainted member to the right), so a
+         * snapshot at 0 means the foe had never seen the member. It was brought and never on the field: the foe knows it at full HP,
+         * no status, no revealed fact, no move use (its row is BENCH: it is seen, and not on the field). */
+        d->hp_percent = 100u;
+        d->hp_flag = (uint8_t)DUOFORGE_HP_FLAG_NONE;
+        d->revealed = 0u;
+        memset(d->moves_used, 0, sizeof d->moves_used);
+    }
     viewer->seen_mask = (uint8_t)((uint32_t)viewer->seen_mask | 1u << truth); /* wide-operands-reviewed: < 64 */
     *occupant = truth;
     holder[slot] = truth;
@@ -232,7 +241,7 @@ bool dfi_events_fold_knowledge(const struct duoforge_battle *before, struct duof
         for (uint32_t slot = 0u; slot < DUOFORGE_ACTIVE_PER_SIDE; ++slot) {
             occupant[slot] = before->sides[foe].positions[slot].occupant;
             holder[slot] = occupant[slot];
-            disg[slot] = before->tail.sides[foe].positions[slot].ability_state != 0u;
+            disg[slot] = dfi_illusion_disguise_up(&before->sides[foe], &before->tail.sides[foe], slot) != 0;
             if (disg[slot] && after->tail.sides[foe].illusion.shown != 0u) {
                 occupant[slot] = (uint32_t)after->tail.sides[foe].illusion.shown - 1u; /* the name the foe sees */
             }

@@ -102,7 +102,7 @@ static uint32_t dfi_illusion_holder_index(const dfi_side *side)
 static uint32_t dfi_shown_occupant(const struct duoforge_battle *b, uint32_t viewer, uint32_t s, uint32_t p)
 {
     const uint32_t occ = b->sides[s].positions[p].occupant;
-    if (s != viewer && b->tail.sides[s].positions[p].ability_state != 0u && b->tail.sides[s].illusion.shown != 0u) {
+    if (s != viewer && dfi_illusion_disguise_up(&b->sides[s], &b->tail.sides[s], p) != 0 && b->tail.sides[s].illusion.shown != 0u) {
         return (uint32_t)b->tail.sides[s].illusion.shown - 1u;
     }
     return occ;
@@ -399,7 +399,7 @@ duoforge_status duoforge_battle_observe_ext(const duoforge_context *ctx, const d
                     vol |= (uint32_t)DUOFORGE_POSITION_EXT_RAGE_POWDER;
                 }
                 /* Illusion (decision 0026 section 4, bit 19): the owner's own disguise is up; the foe's is never shown by the bit */
-                if (s == viewer && tail->ability_state != 0u) {
+                if (s == viewer && dfi_illusion_disguise_up(&battle->sides[s], &battle->tail.sides[s], p) != 0) {
                     vol |= (uint32_t)DUOFORGE_POSITION_EXT_ILLUSION_UP;
                 }
                 o.sides[s].positions[p].volatiles = vol;

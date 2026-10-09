@@ -306,11 +306,13 @@ static void dfi_view_hide_foe_party(uint8_t *s, uint32_t foe)
 /* Illusion (decision 0026 section 4): the foe's record hides what the foe was never shown. The disguise flag of each foe position
  * (ability_state: the holder's disguise is up) and the snapshot and pending counts of the foe's side are the engine's truth; the
  * shown name and the override stay (the foe saw them). */
-static void dfi_view_hide_foe_illusion(uint8_t *s, uint32_t foe)
+static void dfi_view_hide_foe_illusion(uint8_t *s, uint32_t foe, const duoforge_battle *b)
 {
     for (uint32_t p = 0u; p < DUOFORGE_ACTIVE_PER_SIDE; ++p) {
-        s[DFI_ENC_TAIL_OFF + DFI_ENC_TAIL_SIDES_OFF + foe * DFI_ENC_TAIL_SIDE_SIZE + DFI_ENC_TAIL_POS_OFF + p * DFI_ENC_TAIL_POS_SIZE +
-          DFI_ENC_TAIL_POS_ABILITY_STATE_OFF] = 0u;
+        if (dfi_illusion_disguise_up(&b->sides[foe], &b->tail.sides[foe], p) != 0) {
+            s[DFI_ENC_TAIL_OFF + DFI_ENC_TAIL_SIDES_OFF + foe * DFI_ENC_TAIL_SIDE_SIZE + DFI_ENC_TAIL_POS_OFF + p * DFI_ENC_TAIL_POS_SIZE +
+              DFI_ENC_TAIL_POS_ABILITY_STATE_OFF] = 0u;
+        }
     }
     uint8_t *il = s + DFI_ENC_TAIL_OFF + DFI_ENC_TAIL_REV4_SIZE + DFI_ENC_TAIL5_SIDES_OFF + foe * DFI_ENC_TAIL5_SIDE_SIZE;
     memset(il + DFI_ENC_TAIL5_ILL_SNAPSHOT_OFF, 0, 7u); /* bytes 7..8 (the holder's status and location as the foe knew them) stay */
@@ -443,7 +445,7 @@ static duoforge_status dfi_view_encode(const duoforge_context *ctx, const duofor
     const size_t n = dfi_encode_unchecked(ctx, b, s);
     if (dfi_kind_limits_of(ctx->data_kind).pool_rules) {
         dfi_view_hide_foe_party(s, foe); /* step G46: the foe's party_order past the leads is hidden (decision 0023) */
-        dfi_view_hide_foe_illusion(s, foe); /* Illusion (decision 0026 section 4): the foe's record hides the disguise's truth */
+        dfi_view_hide_foe_illusion(s, foe, b); /* Illusion (decision 0026 section 4): the foe's record hides the disguise's truth */
     }
     uint8_t order[DFI_QUEUE_CAPACITY] = {0};
     queue_canonical(s, order);
