@@ -33,7 +33,7 @@
 #include "reference/conformance_pool.h"
 #include "support/pool.h"
 #define DF_CONF_FORMES dfi_pool_formes
-#define DF_POOL_DATA_BATTLES 485u /* the recorded pool battles of the lane A batch: main (G42, G44, G46, G47, G48, G49, G50, G45) and G56, G52, G54 */
+#define DF_POOL_DATA_BATTLES 492u /* the recorded pool battles of the lane A batch: main (G42, G44, G46, G47, G48, G49, G50, G45) and G56, G52, G54; G31 Yawn under the terrains (H6, seven) */
 #elif defined(DF_CONFORMANCE_TEAM_C)
 #include "data/extended_tables.h"
 #include "reference/conformance_team_c.h"
