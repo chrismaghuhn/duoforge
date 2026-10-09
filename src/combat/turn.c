@@ -3086,7 +3086,7 @@ static void dfi_after_faint(dfi_run *r, uint32_t length, bool by_move, uint32_t 
         return;
     }
     uint8_t atk_up[DFI_STAT_STAGE_COUNT] = {6u, 6u, 6u, 6u, 6u, 6u, 6u}; /* biased by 6 */
-    atk_up[DFI_STAGE_ATK] = (uint8_t)(6u + length); /* length <= DFI_POSITIONS */
+    atk_up[DFI_STAGE_ATK] = (uint8_t)(6u + length); /* wide-operands-reviewed: length <= DFI_POSITIONS */
     (void)dfi_boost(r, src, atk_up, src, dfi_effect(DUOFORGE_CAUSE_ABILITY, 1u + DFI_ABILITY_MOXIE, DFI_BOOST_PRIMARY));
 }
 
