@@ -112,6 +112,7 @@ class SpectatorTracker(Tracker):
         self.epoch += 1
         self._step_lines, self._lines = self._lines, []
         self._boundary = point.boundary
+        self._revive = point.revive  # a Revival Blessing request (step G52): superset offers the fainted members
         if point.boundary != TEAM_SELECTION:
             if self._hindsight_picks is None:
                 raise lines.Stop("picks-incomplete")
@@ -120,6 +121,9 @@ class SpectatorTracker(Tracker):
             self._asked = [(1, 0), (1, 0)]
         elif point.boundary == TURN:
             self._asked = [(1, self._occupied(s)) for s in (0, 1)]
+        elif point.revive:
+            user = point.run[0]
+            self._asked = [((1, 1 << (user % 2)) if s == user // 2 else (0, 0)) for s in (0, 1)]
         else:
             for pos in point.run:
                 self._at(pos).flag = 1  # a position that switches was asked (also for pivot causes not folded)

@@ -15,6 +15,7 @@ import jax
 import jax.numpy as jnp
 import numpy as np
 
+from . import model
 from .columns import NATURE_DIM as _NATURE_DIM
 from .selfplay import TEAM_TABLE
 
@@ -170,7 +171,7 @@ def apply(params, cfg, cols, obs, slots, mask):
     hidden = jax.nn.relu(_layer(params["option2"], jax.nn.relu(_layer(params["option1"], option_in))))
     out = _layer(params["option_out"], hidden)                                # (B,2,32,2)
     pairs = out[:, 0, :, 0][:, :, None] + out[:, 1, :, 1][:, None, :]
-    pairs = jnp.where(mask, pairs, MASKED).reshape(b, -1)
+    pairs = model.pair_log_softmax(pairs, mask)
 
     own = h[:, 0]                                                             # (B,6,Dm)
     team_ctx = jax.nn.relu(_layer(params["team_context"], x))
@@ -185,4 +186,4 @@ def apply(params, cfg, cols, obs, slots, mask):
     team = (scores[:, t[:, 0], 0] + scores[:, t[:, 1], 1] + pair[:, t[:, 0], t[:, 1]]
             + scores[:, t[:, 2], 2] + scores[:, t[:, 3], 2])                  # (B,360)
     value = _layer(params["value"], x)[:, 0]
-    return jax.nn.log_softmax(pairs), jax.nn.log_softmax(team), value
+    return pairs, jax.nn.log_softmax(team), value

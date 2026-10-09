@@ -47,7 +47,7 @@ class FoeSensitiveNet:
         b = obs.shape[0]
         legal = np.asarray(mask, bool).reshape(b, -1)
         slot_term = np.asarray(slots, np.float32).reshape(b, -1, features.SLOT_FEATURES) @ params["slot"]
-        pair = obs @ params["pair"] + np.resize(slot_term, (b, 1024))
+        pair = obs @ params["pair"] + np.tile(slot_term, (1, 1024 // slot_term.shape[1]))  # each row its own
         pair = self._log_softmax(pair, legal | ~legal.any(axis=1, keepdims=True))
         team = self._log_softmax(obs @ params["team"], np.ones((b, TEAM_TABLE.shape[0]), bool))
         return pair, team, np.tanh(obs @ params["value"])
@@ -128,6 +128,24 @@ class FullSpace(unittest.TestCase):
         sparse = float(np.sum(policy.probs * (np.log(policy.probs) - full_legal[policy.ids])))
         self.assertAlmostEqual(kl_full, sparse, places=12)
         self.assertGreater(kl_full - kl_cand, 0.1)
+
+
+class FakeNet(unittest.TestCase):
+    def test_fake_net_rows_are_independent(self):
+        # Each row's outputs depend on that row only (P2 batching tests rely on it).
+        net = FoeSensitiveNet()
+        rng = np.random.default_rng(5)
+        obs = rng.normal(size=(5, features.obs_size(4))).astype(np.float32)
+        slots = rng.normal(size=(5, 2, 32, features.SLOT_FEATURES)).astype(np.float32)
+        mask = rng.random((5, 32, 32)) < 0.3
+        together = net.apply(net.params, obs, slots, mask)
+        for r in range(5):  # same batch shape, every other row replaced: row r unchanged bit for bit
+            others = np.arange(5) != r
+            o, s, k = obs.copy(), slots.copy(), mask.copy()
+            o[others], s[others], k[others] = obs[::-1][others], slots[::-1][others], ~mask[others]
+            changed = net.apply(net.params, o, s, k)
+            for a, b in zip(together, changed):
+                np.testing.assert_array_equal(a[r], b[r])
 
 
 class ReduceBudget(unittest.TestCase):
@@ -508,6 +526,206 @@ class Teacher(unittest.TestCase):
                     ex.restore_teacher(smaller, b, data, cfg, m)  # the search must run the configuration
                 with self.assertRaisesRegex(ValueError, "fresh"):
                     ex.restore_teacher(search, b, data, cfg, m)  # never merged into a live history
+
+
+    # Decision-byte digests of _three_labels, pinned before the P2 two-phase refactor (plan Task 2 step 0)
+    # per machine conditions: the fake net's float32 matmuls follow the BLAS/CPU, so another machine skips.
+    PINNED_TWO_PHASE = {
+        "Windows|AMD64 Family 25 Model 33 Stepping 2, AuthenticAMD|numpy 2.5.3":
+            "6b61c312c0b190e123f43cbf0ef5e9a0e396bf6a416c1b92ad0391a3ddb4abaa",
+        "Linux|AMD Ryzen 7 5800X 8-Core Processor|numpy 2.5.3":
+            "7816fb90c21ddad524eca4b7b6481cb52cbc7626ceb11979df8415e0b6b39bf4",
+    }
+
+    @staticmethod
+    def _two_phase_conditions():
+        import platform
+        cpu = platform.processor()
+        try:
+            with open("/proc/cpuinfo", encoding="utf-8") as f:
+                cpu = next(line.split(":", 1)[1].strip() for line in f if line.startswith("model name"))
+        except (OSError, StopIteration):
+            pass
+        return f"{platform.system()}|{cpu}|numpy {np.__version__}"
+
+    def _three_labels(self, ctx, search):
+        from duoforge_search import expert as ex
+        cfg = self.config(audit_threshold=2**64)
+        with duoforge.Batch(ctx, np.repeat(duoforge.reference_setups([0]), 3), 2, 42) as b:
+            b.query_factored()
+            ex.observe(search, b, [0, 1, 2], [0, 0, 0])
+            self.start_turn(b)
+            ex.observe(search, b, [0, 1, 2], [0, 0, 0])
+            out = []
+            for e, game in ((0, 500), (1, 502), (2, 504)):
+                key = DecisionKey(game, 0, int(b.requests[e, 0]["epoch"]))
+                out.append(ex.decision_bytes(ex.label_decision(search, b, env=e, seat=0, key=key,
+                                                               raw_action=self.low_raw(search, b, e, 0),
+                                                               raw_logp=-1.25, last_step=False, config=cfg,
+                                                               manifest=self.manifest)))
+            return out
+
+    def test_two_phase_matches_decision_in_process(self):
+        prepared, finished, copies = [], [], []
+        with duoforge.Context(C["DUOFORGE_DATA_KIND_POOL"]) as ctx, self.make(ctx) as search:
+            real_prepare, real_finish = search._prepare, search._finish
+            fields = ("rows", "step", "encode", "results", "tiebreaks", "open", "choices", "foe_pairs", "qs")
+
+            def prepare(*args, **kwargs):
+                request = real_prepare(*args, **kwargs)
+                prepared.append(request)
+                copies.append({name: np.copy(getattr(request, name)) for name in fields})
+                return request
+
+            def finish(*args, **kwargs):
+                result = real_finish(*args, **kwargs)
+                finished.append(result)
+                return result
+
+            with mock.patch.object(search, "_prepare", side_effect=prepare), \
+                    mock.patch.object(search, "_finish", side_effect=finish):
+                self._three_labels(ctx, search)
+            self.assertEqual(len(prepared), 6)  # a primary and its K+1 audit per root
+            first = prepared[0]
+            self.assertEqual(first.rows.shape, (8 * 8 * 16, features.obs_size(4)))
+            self.assertEqual(first.rows.dtype, np.float32)
+            np.testing.assert_array_equal(first.open, (first.step == 0) & (first.results == 0))
+            # Later roots overwrote the search's worlds and leaf batch; every request kept its own copies.
+            for request, copy in zip(prepared, copies):
+                for name in fields:
+                    np.testing.assert_array_equal(getattr(request, name), copy[name], name)
+            # Root A finishes again after B and C with the same table bytes.
+            costs = {k: 0.0 for k in ("public_records", "world_builds", "team_head", "leaves", "network", "solve")}
+            again = search._finish(first, search._values(first, costs), np.zeros(first.own.size), costs)
+            self.assertEqual(np.asarray(again["tables"]).tobytes(), np.asarray(finished[0]["tables"]).tobytes())
+            self.assertEqual((again["x"], again["pi_X"]), (finished[0]["x"], finished[0]["pi_X"]))
+
+    def test_label_tick_bytes_equal_per_root(self):
+        from duoforge_search import expert as ex
+        from duoforge_search import matrix
+        games = (500, 502, 504, 506)
+
+        def roots_of(b, envs):
+            return [ex.TickRoot(e, 0, DecisionKey(games[e], 0, int(b.requests[e, 0]["epoch"])), None, -1.25)
+                    for e in envs]
+
+        def per_root(search, b, tick, cfg):
+            return [ex.decision_bytes(ex.label_decision(search, b, env=r.env, seat=0, key=r.key,
+                                                        raw_action=r.raw_action, raw_logp=r.raw_logp,
+                                                        last_step=False, config=cfg, manifest=self.manifest))
+                    for r in tick]
+
+        with duoforge.Context(C["DUOFORGE_DATA_KIND_POOL"]) as ctx, self.make(ctx) as search, \
+                self.turn_roots(ctx, search, envs=4) as b:
+            cfg = self.config(audit_threshold=2**64)  # every root also prepares its K+1 audit
+            tick = [dataclasses.replace(r, raw_action=self.low_raw(search, b, r.env, 0)) for r in roots_of(b, range(4))]
+            want = per_root(search, b, tick, cfg)
+            got = ex.label_tick(search, b, tick, last_step=False, config=cfg, manifest=self.manifest)
+            self.assertEqual([ex.decision_bytes(d) for d in got], want)
+            got_actions = [d.action for d in got]
+            # Root order does not matter; results come back in input order.
+            order = [2, 0, 3, 1]
+            got = ex.label_tick(search, b, [tick[i] for i in order], last_step=False, config=cfg, manifest=self.manifest)
+            self.assertEqual([ex.decision_bytes(d) for d in got], [want[i] for i in order])
+            # One query of the encoded rows per tick; each root's audit is prepared before the next root's worlds.
+            calls = []
+            real_query, real_hyp, real_prep = b.query_encoded, search._hypotheses, search._prepare
+            with mock.patch.object(b, "query_encoded", side_effect=lambda *a: (calls.append("query"), real_query(*a))[1]), \
+                    mock.patch.object(search, "_hypotheses", side_effect=lambda *a: (calls.append("worlds"), real_hyp(*a))[1]), \
+                    mock.patch.object(search, "_prepare", side_effect=lambda *a, **k: (calls.append("prepare"), real_prep(*a, **k))[1]):
+                ex.label_tick(search, b, tick, last_step=False, config=cfg, manifest=self.manifest)
+            self.assertEqual(calls, ["query"] + ["worlds", "prepare", "prepare"] * 4)
+            # A tiny budget exhausts every root on its own, a value call per tick of 1024 rows each.
+            tiny = self.config(audit_threshold=0, budget=matrix.WorkBudget(float_pivots=1))
+            exhausted = ex.label_tick(search, b, tick, last_step=False, config=tiny, manifest=self.manifest)
+            self.assertEqual({d.status for d in exhausted}, {ex.RowStatus.WORK_EXHAUSTED})
+            self.assertEqual([ex.decision_bytes(d) for d in exhausted], per_root(search, b, tick, tiny))
+            # Exhaustion of one root's primary, or of another root's audit, stays with that root.
+            from duoforge_search.expert_data import selection_word
+            world = {selection_word(r.key, cfg.seed, domain="world"): i for i, r in enumerate(tick)}
+            real_finish = search._finish
+
+            def finish(request, values, own_p, costs, budget=None):
+                root, audit = world[request.key], request.own.size == 9
+                if (root, audit) in ((1, False), (3, True)):
+                    raise matrix.WorkBudgetExceeded(matrix.WorkStatus.EXACT_OPS, budget.consumed)
+                return real_finish(request, values, own_p, costs, budget)
+
+            with mock.patch.object(search, "_finish", side_effect=finish):
+                partial = ex.label_tick(search, b, tick, last_step=False, config=cfg, manifest=self.manifest)
+            self.assertEqual((partial[1].status, partial[1].cause), (ex.RowStatus.WORK_EXHAUSTED, "work:exact_ops"))
+            self.assertIsNotNone(partial[1].world_digest)
+            self.assertEqual(partial[3].status, ex.RowStatus.TARGET)
+            self.assertEqual(partial[3].audit["status"], "exhausted:exact_ops")
+            for i in (0, 2):
+                self.assertEqual(ex.decision_bytes(partial[i]), want[i])
+            self.assertEqual(partial[3].action, got_actions[3])
+            # A root that fails its checks stops the tick before any root builds worlds.
+            bad = dataclasses.replace(tick[2], key=DecisionKey(games[2], 1, tick[2].key.request_epoch))
+            with mock.patch.object(search, "_hypotheses", side_effect=AssertionError("worlds built first")), \
+                    self.assertRaisesRegex(ValueError, "key"):
+                ex.label_tick(search, b, [tick[0], tick[1], bad], last_step=False, config=cfg, manifest=self.manifest)
+            # Visible sleep in one environment: that root refuses publicly, the others are unchanged.
+            decode = b._lib.duoforge_battle_decode
+            decode.restype = ctypes.c_uint32
+            decode.argtypes = (ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_size_t)
+            fixture = np.frombuffer(b.encode(1), np.uint8).copy()  # privileged codec fixture only
+            fixture[215 + 109 + 27] = C["DUOFORGE_AILMENT_SLEEP"]
+            fixture[215 + 109 + 28] = 2
+            self.assertEqual(decode(ctx.handle, b._battle(1), fixture.ctypes.data, fixture.size), 0)
+            b.query_factored()
+            ex.observe(search, b, [0, 1, 2, 3], [0] * 4)
+            tick = [dataclasses.replace(r, raw_action=self.low_raw(search, b, r.env, 0)) for r in roots_of(b, range(4))]
+            mixed = ex.label_tick(search, b, tick, last_step=False, config=cfg, manifest=self.manifest)
+            self.assertEqual(mixed[1].status, ex.RowStatus.PUBLIC_REFUSAL)
+            self.assertEqual([ex.decision_bytes(d) for d in mixed], per_root(search, b, tick, cfg))
+            with self.assertRaises(ValueError):  # one root per environment
+                ex.label_tick(search, b, [tick[0], tick[0]], last_step=False, config=cfg, manifest=self.manifest)
+
+    def test_tickbench_paths_agree(self):
+        # The P2 measurement harness: per-root, per-tick without and with dedup label the same roots with the
+        # same bytes; the tick table's counters are consistent and dedup never adds rows.
+        from duoforge_search import tickbench
+        with duoforge.Context(C["DUOFORGE_DATA_KIND_POOL"]) as ctx:
+            def roots():
+                return duoforge.Batch(ctx, np.repeat(duoforge.reference_setups([0]), 4), 2, 42)
+
+            cfg = self.config(audit_threshold=2**64)
+            got = {path: tickbench.run(lambda: self.make(ctx), roots, path=path, steps=4, config=cfg,
+                                       manifest=self.manifest, seed=11, select=lambda key: True)
+                   for path in tickbench.PATHS}
+        self.assertEqual(len({r["digest"] for r in got.values()}), 1)
+        self.assertGreater(got["per_root"]["labels"], 0)
+        self.assertEqual({r["labels"] for r in got.values()}, {got["per_root"]["labels"]})
+        plain, dedup = got["tick_nodedup"], got["tick"]
+        self.assertEqual((plain["leaves"], plain["open_leaves"]), (dedup["leaves"], dedup["open_leaves"]))
+        self.assertEqual(plain["unique"], plain["open_leaves"])
+        self.assertLessEqual(dedup["unique"], plain["unique"])
+        self.assertLessEqual(dedup["tick_value_calls"], plain["tick_value_calls"])
+
+    def test_tickbench_cli_refuses_unpinned_shapes(self):
+        # The bench manifest pins even game counts up to 512 and 4/8/14 workers; anything else is refused before
+        # the checkpoint or JAX is touched.
+        import contextlib
+        import io
+        import tempfile
+        from duoforge_search import tickbench
+        with tempfile.TemporaryDirectory() as tmp:
+            base = ["--checkpoint", tmp + "/missing.ckpt", "--device", "cpu", "--out", tmp + "/out.json"]
+            for extra in (["--envs", "7"], ["--envs", "514"], ["--envs", "0"], ["--workers", "6"]):
+                with self.subTest(extra=extra), self.assertRaises(SystemExit) as caught, \
+                        contextlib.redirect_stderr(io.StringIO()):
+                    tickbench.main(base + extra)
+                self.assertEqual(caught.exception.code, 2)
+
+    def test_two_phase_decision_bytes_pinned(self):
+        import hashlib
+        conditions = self._two_phase_conditions()
+        if conditions not in self.PINNED_TWO_PHASE:
+            self.skipTest(f"two-phase decision bytes are pinned under {sorted(self.PINNED_TWO_PHASE)}, here {conditions}")
+        with duoforge.Context(C["DUOFORGE_DATA_KIND_POOL"]) as ctx, self.make(ctx) as search:
+            digest = hashlib.sha256(b"".join(self._three_labels(ctx, search))).hexdigest()
+        self.assertEqual(digest, self.PINNED_TWO_PHASE[conditions])
 
 
 if __name__ == "__main__":

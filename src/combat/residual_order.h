@@ -54,6 +54,9 @@
 #define DFI_RES_DISABLE 14u    /* Disable: order 17, -end|X|Disable */
 #define DFI_RES_PERISH 15u     /* Perish Song: order 24, a callback with a duration (step G26) */
 #define DFI_RES_TAUNT 16u      /* Taunt: order 15, -end|X|move: Taunt (step G31; Perish Song keeps 15 as merged first) */
+/* lockedmove (Outrage, Thrash, Petal Dance; data/conditions.ts:253-285; step G56): no order, sub-order 2 (a condition), a
+ * duration and a callback: its countdown and its end (a callback that ends in a residual of an earlier turn's lock). */
+#define DFI_RES_LOCK 17u
 #define DFI_RES_NO_ORDER 0xFFFFFFFFu
 
 /* The exact test's bounds: the lists of the engine have at most 3 + 4 * 2 + 19 * 4 entries, a few draws and a few
@@ -91,7 +94,7 @@ static inline uint32_t dfi_residual_compare(const dfi_residual_entry *a, const d
 static inline bool dfi_residual_is_volatile(const dfi_residual_entry *e)
 {
     return e->kind == DFI_RES_DURATION || e->kind == DFI_RES_ENCORE || e->kind == DFI_RES_TAUNT || e->kind == DFI_RES_HEAL_BLOCK ||
-           e->kind == DFI_RES_YAWN || e->kind == DFI_RES_DISABLE || e->kind == DFI_RES_PERISH;
+           e->kind == DFI_RES_YAWN || e->kind == DFI_RES_DISABLE || e->kind == DFI_RES_PERISH || e->kind == DFI_RES_LOCK;
 }
 
 /* What is known about the age of a Pokemon's volatiles. The counters of the turn (Protect, the stall counter, flinch, a charge,
@@ -106,7 +109,8 @@ static inline bool dfi_residual_is_counter(const dfi_residual_entry *e)
 }
 static inline bool dfi_residual_is_old_ending(const dfi_residual_entry *e)
 {
-    return e->callback && (e->kind == DFI_RES_HEAL_BLOCK || e->kind == DFI_RES_TAUNT || e->kind == DFI_RES_YAWN || e->kind == DFI_RES_DISABLE); /* not Perish Song: its count line is a callback every turn, so a cast of this turn may come after or before a Protect of this turn */
+    return e->callback && (e->kind == DFI_RES_HEAL_BLOCK || e->kind == DFI_RES_TAUNT || e->kind == DFI_RES_YAWN || e->kind == DFI_RES_DISABLE ||
+                           e->kind == DFI_RES_LOCK); /* not Perish Song: its count line is a callback every turn, so a cast of this turn may come after or before a Protect of this turn */
 }
 static inline bool dfi_residual_arrangement_possible(const dfi_residual_entry *seg, uint32_t len)
 {

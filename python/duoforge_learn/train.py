@@ -8,11 +8,13 @@ JSON line per update to <out>/log.jsonl. The first --self-play-share of the
 environments play self-play; the others play the learner against frozen
 snapshots of itself in --league-slots slots (league.py), which reload a
 snapshot drawn from the run's pool every --slot-refresh updates, at an
-episode boundary. Snapshots go to <out>/params-<update>.npz (checkpoint
-format 2) every --snapshot-every updates and at each evaluation; every
---eval-every updates the greedy policy plays the evaluation suite (suite.py)
-against the random baseline and the previous evaluation's parameters
-(vs_previous above 0.5: still improving), with a score per team.
+episode boundary: uniformly, or with --league-pfsp-share and
+--league-anchor-share partly by prioritized fictitious self-play over the
+league's win rates and partly from the earliest snapshots (league.Refill).
+Snapshots go to <out>/params-<update>.npz (checkpoint format 2) every
+--snapshot-every updates and at each evaluation; every --eval-every updates
+the greedy policy plays the evaluation suite (suite.py) against the random
+baseline and the previous evaluation's parameters (vs_previous above 0.5: still improving), with a score per team.
 
 The run state (runstate.py) is saved every --save-minutes, at the end and
 after SIGTERM or SIGINT (then the run ends at the next update boundary).
@@ -45,7 +47,14 @@ _RESUMABLE = ("envs", "workers", "minutes", "updates", "self_play_share", "leagu
               "slot_refresh", "entropy", "eval_every", "eval_games", "eval_budget", "save_minutes", "teams",
               "team_weights", "teams_root", "opponent_precision", "minibatch", "learning_rate_schedule", "kl_ref",
               "kl_coef", "kl_refresh", "stop_cpu_core_seconds", "stop_gpu_seconds", "update_gpu_share",
-              "act_gpu_share")
+              "act_gpu_share", "league_pfsp_share", "league_anchor_share", "league_anchors", "pfsp_weighting",
+              "pfsp_min_weight", "pfsp_prior", "pfsp_prior_games")
+# The refill options (league.Refill) and their defaults, which reproduce the uniform refills of the runs before them;
+# a run saves one only where it differs from its default, so a run without them saves what such a run saved.
+_REFILL = {"league_pfsp_share": ("pfsp_share", 0.0), "league_anchor_share": ("anchor_share", 0.0),
+           "league_anchors": ("anchors", 1), "pfsp_weighting": ("weighting", "hard"),
+           "pfsp_min_weight": ("min_weight", 0.05), "pfsp_prior": ("prior", 0.5),
+           "pfsp_prior_games": ("prior_games", 4.0)}
 DATA_KINDS = {"closure": _layout.CONSTANTS["DUOFORGE_DATA_KIND_CLOSURE"],
               "team_c": _layout.CONSTANTS["DUOFORGE_DATA_KIND_TEAM_C"],
               "pool": _layout.CONSTANTS["DUOFORGE_DATA_KIND_POOL"]}
@@ -193,6 +202,21 @@ def _parser(suppress=False):
     add("--league-slots", type=int, default=4, help="frozen snapshots playing the league environments")
     add("--snapshot-every", type=int, default=200, help="updates between snapshots of the learner")
     add("--slot-refresh", type=int, default=50, help="updates between league slot reloads")
+    add("--league-pfsp-share", type=float, default=_REFILL["league_pfsp_share"][1],
+        help="share of slot reloads drawn by prioritized fictitious self-play over the learner's win rates (the "
+             "rest not given to --league-anchor-share is uniform; self-play environments stay --self-play-share)")
+    add("--league-anchor-share", type=float, default=_REFILL["league_anchor_share"][1],
+        help="share of slot reloads drawn from the --league-anchors earliest snapshots")
+    add("--league-anchors", type=int, default=_REFILL["league_anchors"][1],
+        help="the earliest snapshots that are anchors (1: params-0, the initial or --init network)")
+    add("--pfsp-weighting", choices=league.WEIGHTINGS, default=_REFILL["pfsp_weighting"][1],
+        help="f(p) of a snapshot the learner beats with rate p: hard (1-p)^2, linear 1-p, variance p(1-p)")
+    add("--pfsp-min-weight", type=float, default=_REFILL["pfsp_min_weight"][1],
+        help="the least PFSP weight of a snapshot, so none starves (f is at most 1)")
+    add("--pfsp-prior", type=float, default=_REFILL["pfsp_prior"][1],
+        help="the win rate a snapshot starts from (an unseen snapshot's p)")
+    add("--pfsp-prior-games", type=float, default=_REFILL["pfsp_prior_games"][1],
+        help="the pseudo-games of --pfsp-prior added to each snapshot's record")
     add("--save-minutes", type=float, default=10.0, help="minutes between saves of the run state")
     add("--teams", default=None, help="registry team ids, comma-separated (default: Teams A and B of the "
                                       "reference setups)")
@@ -379,10 +403,10 @@ class _Pool:
             self.updates.remove(u)
         return newer, folder
 
-    def draw(self, seed, update):
-        u = pairing.draw(seed, pairing.LEAGUE_SNAPSHOT, np.array([update]), np.array([0]))
-        chosen = self.updates[int(pairing.pick(u, np.ones(len(self.updates)))[0])]
-        return chosen, self.load(chosen)
+    def draw(self, seed, update, refill, stats):
+        """(chosen update, its parameters, source) of a slot's refill (league.Refill)."""
+        chosen, source = refill.draw(seed, update, self.updates, stats)
+        return chosen, self.load(chosen), source
 
 
 def _default_pool():
@@ -440,6 +464,10 @@ def _run(args, pool, on_start, stop):
         if explicit is not None and explicit != stored:
             raise SystemExit(f"a resume cannot change ext_supported ({stored:#x} -> {explicit:#x})")
         args, changes = _merged(args, saved_state["train"])
+    try:
+        refill = league.Refill(**{name: getattr(args, option) for option, (name, _) in _REFILL.items()})
+    except ValueError as err:
+        raise SystemExit(str(err)) from None
     init = _load_init(args) if saved_state is None and args.init is not None else None
     context = duoforge.Context(data_kind=DATA_KINDS[args.data_kind])
     if init is not None and init[1]["data"]["fingerprint"] != context.fingerprint().hex():
@@ -469,6 +497,9 @@ def _run(args, pool, on_start, stop):
     train_config = {k: v for k, v in vars(args).items() if not k.startswith("_") and k not in ("resume",)}
     train_config["entropy"] = str(entropy)
     train_config["learning_rate_schedule"] = str(lr_scale)
+    for option, (_, default) in _REFILL.items():
+        if train_config[option] == default:
+            del train_config[option]
     if saved_state is not None and saved_state["data"]["fingerprint"] != context.fingerprint().hex():
         # Other tables (the data kind cannot change on resume): the run goes on when every id its network embeds
         # still names the same row (spec 12.4), and is refused otherwise.
@@ -710,10 +741,13 @@ def _run(args, pool, on_start, stop):
                 state.tick(update)
                 slot = state.ready()
                 if slot >= 0:
-                    chosen, snapshot = snapshots.draw(args.seed, update)
+                    chosen, snapshot, source = snapshots.draw(args.seed, update, refill, state.stats)
                     opponents.set(slot, snapshot)
                     state.load(slot, str(chosen))
                     record["league_load"] = {"slot": slot, "snapshot": chosen}
+                    if refill.enabled:  # a run without PFSP or anchors logs what the uniform runs logged
+                        p = float(refill.win_rates([chosen], state.stats)[0])
+                        record["league_load"] |= {"source": source, "win_rate": round(p, 4)}
             if evaluating:
                 rows = suite.make_suite(len(pool.ids), args.seed, games=args.eval_games, budget=args.eval_budget)
                 me = evaluate.Player(net, params, encoder, "learner", ext_supported)

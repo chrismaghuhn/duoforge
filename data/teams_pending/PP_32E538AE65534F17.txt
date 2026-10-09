@@ -1,0 +1,59 @@
+Manectric (M) @ Manectite
+Ability: Lightning Rod
+Level: 50
+EVs: 2 HP / 32 SpA / 32 Spe
+Timid Nature
+- Volt Switch
+- Snarl
+- Overheat
+- Protect
+
+Milotic (M) @ Leftovers
+Ability: Competitive
+Level: 50
+EVs: 31 HP / 31 Def / 3 SpD / 1 Spe
+Bold Nature
+- Muddy Water
+- Coil
+- Hypnosis
+- Recover
+
+Sneasler (M) @ White Herb
+Ability: Unburden
+Level: 50
+EVs: 2 HP / 32 Atk / 32 Spe
+Adamant Nature
+- Fake Out
+- Close Combat
+- Dire Claw
+- Feint
+
+Vanilluxe (M) @ Choice Scarf
+Ability: Snow Warning
+Level: 50
+EVs: 1 HP / 1 Def / 32 SpA / 32 Spe
+Timid Nature
+- Blizzard
+- Freeze-Dry
+- Icy Wind
+- Ice Shard
+
+Volcarona (M) @ Miracle Seed
+Ability: Flame Body
+Level: 50
+EVs: 1 HP / 1 Def / 32 SpA / 32 Spe
+Modest Nature
+- Heat Wave
+- Giga Drain
+- Quiver Dance
+- Protect
+
+Aegislash (M) @ Focus Sash
+Ability: Stance Change
+Level: 50
+EVs: 2 HP / 32 Atk / 32 Spe
+Adamant Nature
+- Poltergeist
+- Iron Head
+- Sacred Sword
+- Shadow Sneak

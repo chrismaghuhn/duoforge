@@ -800,6 +800,16 @@ class Library(unittest.TestCase):
         with self.assertRaises(trace_to_c.ConversionError) as ctx:
             trace_to_c.drop_reason(draw(stall_first, 4), before, after(True))
         self.assertEqual(ctx.exception.rule, 'no-order-end-tie')
+        # G56: one lockedmove (a callback) and the silent ends of stall and Protect: the tie is dropped; the other shapes stay refused
+        lock_group = ['H:lockedmove:p2b:cb', 'H:stall:p2b:end']
+        self.assertTrue(trace_to_c.lock_counter_tie(lock_group))
+        self.assertTrue(trace_to_c.lock_counter_tie(['H:protect:p1a:end', 'H:lockedmove:p2b:cb', 'H:stall:p2b:end']))
+        self.assertIn('lockedmove', trace_to_c.drop_reason(draw(lock_group, 4), before, after(False)))
+        for group in (['H:lockedmove:p2b:cb', 'H:lockedmove:p1b:cb', 'H:stall:p2b:end'], ['H:lockedmove:p2b:cb', 'H:disable:p2b:end']):
+            self.assertFalse(trace_to_c.lock_counter_tie(group), group)
+            with self.assertRaises(trace_to_c.ConversionError) as ctx:
+                trace_to_c.drop_reason(draw(group, 4), before, after(False))
+            self.assertEqual(ctx.exception.rule, 'residual-tie-callbacks', group)
 
     # ---- the weather step (Sandstorm, Snowscape; decision 0018, view bits 0 and 1) ----
     WEATHER_BATTLES = ('w1_sand_stream', 'w2_sandstorm_move', 'w3_snow_warning', 'w4_snowscape_move',
@@ -2219,7 +2229,7 @@ class Library(unittest.TestCase):
         marked = [n for n in re.findall(r'\[DFI_MOVE_(\w+)\] = 1u', read('src', 'data', 'support_manifest.c'))
                   if n in ids and ids[n] >= ext_moves]
         self.assertEqual(len(names), ext_moves + len(ids))
-        self.assertEqual(len(marked), 171)  # Roost and Stomping Tantrum (G42), Double Shock (G50), the eleven of step G44, the four of step G46, the four of step G48, Taunt and Yawn (G31) and the rows of the earlier steps as before
+        self.assertEqual(len(marked), 180)  # the seven of step G54 (Icicle Spear, Scale Shot, Quick Guard, Upper Hand, Heal Pulse, Strength Sap, Sing), and the 171 of main (Roost and Stomping Tantrum of G42, Double Shock of G50 among them)  # Roost and Stomping Tantrum (G42), Double Shock (G50), the eleven of step G44, the four of step G46, the four of step G48, Taunt and Yawn (G31) and the rows of the earlier steps as before
         pool = [n for n in os.listdir(os.path.join(ROOT, 'tests', 'reference', 'specs'))
                 if trace_to_c.is_pool(ROOT, n[:-5])]
         logs = []
@@ -2235,7 +2245,7 @@ class Library(unittest.TestCase):
                         for after in lines[i + 1:]:
                             if after.startswith('|move|') or after.startswith('|turn|'):
                                 break
-                            done = done or after.startswith(('|-damage|', '|-boost|', '|-heal|', '|-start|', '|-weather|') + (('|-status|',) if name in ('Will-O-Wisp', 'Stun Spore', 'Sleep Powder', 'Poison Powder') else ()))
+                            done = done or after.startswith(('|-damage|', '|-boost|', '|-heal|', '|-start|', '|-weather|') + (('|-status|',) if name in ('Will-O-Wisp', 'Stun Spore', 'Sleep Powder', 'Poison Powder', 'Sing') else ()))
                             # A status move of one target with a primary drop (Charm, Fake Tears, step G39): its -unboost line.
                             done = done or (name in ('Charm', 'Fake Tears') and after.startswith('|-unboost|'))
                             # A forced switch (step G46: Whirlwind; Dragon Tail is damaging, so its damage line counts): the drag line.
@@ -2409,6 +2419,27 @@ class Library(unittest.TestCase):
             seen[n] = sum(1 for step in trace['steps'] for l in step['log'] if '[from] U-turn' in l)
         self.assertEqual(seen['g5_uturn_b'], 0)  # Protect: no pivot
         self.assertTrue(all(seen[n] > 0 for n in names if n not in ('g5_uturn_b',)), seen)
+
+    def test_magic_bounce_move_line_is_accepted_and_another_ability_is_refused(self):
+        """Step G57: `[from] ability: Magic Bounce` on a move line is the bounced move (cause ABILITY, id2 the ability + 1, and
+        other the source, also for a foeSide hazard, whose label is real then); every other `[from] ability:` on a move line
+        still raises move-attribute (a negative control: the acceptance is for Magic Bounce alone)."""
+        tables = trace_to_c.load_tables(ROOT, True)
+        cause, mb = trace_to_c.CAUSE['ABILITY'], tables['ABILITY'][trace_to_c.key('Magic Bounce')] + 1
+        for name in ('g57_mb_whirlwind', 'g57_mb_stealth_rock'):
+            spec, trace = trace_to_c.load_battle(ROOT, name)
+            data = trace_to_c.convert_battle(name, spec, trace, tables)
+            bounced = [e for st in data['steps'] for evs in st['events'] for e in evs
+                       if e[0] == trace_to_c.EV['MOVE'] and e[3] == cause]
+            self.assertTrue(bounced, name)
+            self.assertTrue(all(e[5] == mb for e in bounced), name)
+            self.assertTrue(all(e[2] != trace_to_c.NOPOS for e in bounced), name)
+        spec, trace = trace_to_c.load_battle(ROOT, 'g57_mb_whirlwind')
+        for step in trace['steps']:
+            step['log'] = [line.replace('[from] ability: Magic Bounce', '[from] ability: Soundproof') for line in step['log']]
+        with self.assertRaises(trace_to_c.ConversionError) as cm:
+            trace_to_c.convert_battle('g57_mb_whirlwind', spec, trace, tables)
+        self.assertEqual(cm.exception.rule, 'move-attribute')
 
     def test_pass_for_both_slots_converts_per_slot(self):
         """A choice that passes both slots of a switch request: each slot is

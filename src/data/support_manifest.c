@@ -183,7 +183,10 @@
  * before each later hit, 20 x the hit as the power), each hit with its
  * own critical hit roll, damage roll and DamagingHit handlers; the hit count is the number of -damage lines, so the protocol's
  * -hitcount line is derived and no event is new. Mirror Armor (the drops that another Pokemon causes go back to it, one stat
- * at a time), recorded as g33_* under the POOL kind. */
+ * at a time), recorded as g33_* under the POOL kind.
+ * Step G57 (decision 0015, entry 5bg) marks Magic Bounce (the reflectable moves of the twenty marked rows bounce back at their user:
+ * a single target after Protect, and a foeSide hazard through its holder on the foes' side; two holders refuse) and the Mega Stones
+ * Absolite and Sablenite (Absol-Mega, with Justified, and Sableye-Mega, with Prankster). Recorded as g57_* under the POOL kind. */
 const dfi_support_manifest dfi_support = {
     .turn_core = 1u,
     .switching = 1u,
@@ -362,6 +365,7 @@ const dfi_support_manifest dfi_support = {
             [DFI_MOVE_TERRAINPULSE] = 1u,
             [DFI_MOVE_TAUNT] = 1u,
             [DFI_MOVE_YAWN] = 1u,
+    [DFI_MOVE_REVIVALBLESSING] = 1u,
             /* Step G42: Roost (the heal, then the Flying type is off for the turn) and Stomping Tantrum (base power x2 after a
              * FALSE last move result; the move_result of tail rev 4, decision 0015 section 7). */
             [DFI_MOVE_ROOST] = 1u,
@@ -447,6 +451,21 @@ const dfi_support_manifest dfi_support = {
             [DFI_MOVE_HAMMERARM] = 1u,
             [DFI_MOVE_TROPKICK] = 1u,
             [DFI_MOVE_METEORMASH] = 1u,
+            /* Step G56 (Outrage, decision 0015 item 5au): the lock (lockedmove; a random count of 2 or 3 uses, the
+             * confusion when it ends, the switch-out and the faint clear it). Thrash and Petal Dance stay unmarked:
+             * no recorded battle yet. */
+            [DFI_MOVE_OUTRAGE] = 1u,
+            /* Step G54 (decision 0015 item 5at). Handlers: Icicle Spear and Scale Shot (2 to 5 hits, the Champions weighted count,
+             * Scale Shot's self boost after the last hit), Quick Guard (Wide Guard's shape against the priority moves), Upper Hand
+             * (Sucker Punch's queue read: a queued priority move), Heal Pulse (half of the target's HP) and Strength Sap (heals by
+             * the target's Attack and lowers it). Data row: Sing. Left out: Haze, Steel Beam and Final Gambit (decision 0015 5at). */
+            [DFI_MOVE_ICICLESPEAR] = 1u,
+            [DFI_MOVE_SCALESHOT] = 1u,
+            [DFI_MOVE_QUICKGUARD] = 1u,
+            [DFI_MOVE_UPPERHAND] = 1u,
+            [DFI_MOVE_HEALPULSE] = 1u,
+            [DFI_MOVE_STRENGTHSAP] = 1u,
+            [DFI_MOVE_SING] = 1u,
         },
     .abilities =
         {
@@ -534,6 +553,7 @@ const dfi_support_manifest dfi_support = {
             [DFI_ABILITY_REGENERATOR] = 1u,
             [DFI_ABILITY_TOXICDEBRIS] = 1u, /* step G37: a Physical hit puts Toxic Spikes on the attacker's side */
             [DFI_ABILITY_SHADOWTAG] = 1u, /* step G41 */
+            [DFI_ABILITY_PRESSURE] = 1u, /* step G53: a foe's move costs one more PP per standing Pressure target */
             [DFI_ABILITY_SUCTIONCUPS] = 1u, /* step G46: a DragOut blocker (the forced switch is not made) */
             [DFI_ABILITY_GUARDDOG] = 1u,    /* step G46: a DragOut blocker */
             [DFI_ABILITY_STEADFAST] = 1u, /* step G45: a flinch that stops the move raises Speed by 1 */
@@ -551,6 +571,9 @@ const dfi_support_manifest dfi_support = {
             [DFI_ABILITY_FIREMANE] = 1u,     /* Pyroar-Mega: Fire moves x1.5 (data/abilities.ts:1295-1310) */
             [DFI_ABILITY_SPICYSPRAY] = 1u,   /* Scovillain-Mega: a damaging hit burns the attacker (data/abilities.ts:4466-4475) */
             [DFI_ABILITY_MEGASOL] = 1u,      /* Meganium-Mega: sun for the holder's moves (data/abilities.ts:2558-2569) */
+            [DFI_ABILITY_KEENEYE] = 1u,   /* step G51: the base ability of Pidgeot (with Pidgeotite), an engine row */
+            [DFI_ABILITY_BIGPECKS] = 1u,  /* step G51: the other base ability of Pidgeot, an engine row */
+            [DFI_ABILITY_MAGICBOUNCE] = 1u, /* step G57: reflects the reflectable moves (decision 0015 5bg) */
         },
     .items =
         {
@@ -578,6 +601,11 @@ const dfi_support_manifest dfi_support = {
             [DFI_ITEM_MUSCLEBAND] = 1u,  /* step G49 */
             [DFI_ITEM_WISEGLASSES] = 1u, /* step G49 */
             [DFI_ITEM_BRIGHTPOWDER] = 1u, /* step G49 */
+            [DFI_ITEM_DAMPROCK] = 1u,      /* step G55 */
+            [DFI_ITEM_HEATROCK] = 1u,      /* step G55 */
+            [DFI_ITEM_SMOOTHROCK] = 1u,    /* step G55 */
+            [DFI_ITEM_ICYROCK] = 1u,       /* step G55 */
+            [DFI_ITEM_TERRAINEXTENDER] = 1u, /* step G55 */
             [DFI_ITEM_EJECTBUTTON] = 1u, /* step G32 */
             [DFI_ITEM_ELECTRICSEED] = 1u, /* step G25 */
             [DFI_ITEM_MISTYSEED] = 1u,    /* step G25 */
@@ -613,6 +641,20 @@ const dfi_support_manifest dfi_support = {
             [DFI_ITEM_METAGROSSITE] = 1u,
             [DFI_ITEM_LUCARIONITEZ] = 1u,
             [DFI_ITEM_FROSLASSITE] = 1u,
+            /* Step G51 (Mega batch 4, mark only for the stones; Keen Eye and Big Pecks are engine rows): ten Mega Stones whose Mega
+             * ability is marked already (Infiltrator, Solar Power, Adaptability, Regenerator, Iron Fist, Levitate, Refrigerate,
+             * Aerilate, Prankster, No Guard) and whose base forme's ability is marked: Chandelurite, Houndoominite, Lucarionite (not
+             * the Z stone), Dragalgite, Crabominite, Chimechite, Glalitite, Pinsirite, Banettite and Pidgeotite. */
+            [DFI_ITEM_CHANDELURITE] = 1u,
+            [DFI_ITEM_HOUNDOOMINITE] = 1u,
+            [DFI_ITEM_LUCARIONITE] = 1u,
+            [DFI_ITEM_DRAGALGITE] = 1u,
+            [DFI_ITEM_CRABOMINITE] = 1u,
+            [DFI_ITEM_CHIMECHITE] = 1u,
+            [DFI_ITEM_GLALITITE] = 1u,
+            [DFI_ITEM_PINSIRITE] = 1u,
+            [DFI_ITEM_BANETTITE] = 1u,
+            [DFI_ITEM_PIDGEOTITE] = 1u,
             /* Step G43 (Mega batch 3, mark only): ten Mega Stones whose Mega ability is marked already (Multiscale, Adaptability,
              * Speed Boost, Sharpness, Electric Surge, Scrappy, Trace, Technician, Inner Focus) and whose base formes' abilities are
              * marked: Dragoninite, Glimmoranite, Blazikenite, Absolite Z, Raichunite X, Lopunnite, Alakazite, Meowsticite (both
@@ -627,6 +669,10 @@ const dfi_support_manifest dfi_support = {
             [DFI_ITEM_MEOWSTICITE] = 1u,
             [DFI_ITEM_SCIZORITE] = 1u,
             [DFI_ITEM_GALLADITE] = 1u,
+            /* Step G57 (Mega batch 4): Absolite (Absol-Mega, with the base's Justified) and Sablenite (Sableye-Mega, with the base's
+             * Prankster). Absolite Z is marked by G43; Clefablite stays unmarked (Clefable's abilities are unmarked). */
+            [DFI_ITEM_ABSOLITE] = 1u,
+            [DFI_ITEM_SABLENITE] = 1u,
             [DFI_ITEM_BLACKBELT] = 1u,
             [DFI_ITEM_BLACKGLASSES] = 1u,
             [DFI_ITEM_CHARCOAL] = 1u,
@@ -710,5 +756,7 @@ const dfi_support_manifest dfi_support = {
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_STEALTH_ROCK) |
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_SPIKES) |
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_TOXIC_SPIKES) |
-                         ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_STICKY_WEB) | ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_ROOST),
+                         ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_STICKY_WEB) |
+                         ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_ROOST) |
+                         ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_QUICK_GUARD)
 };

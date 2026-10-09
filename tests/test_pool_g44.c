@@ -61,7 +61,7 @@ static void check_marks(df_test *t)
     DF_CHECK_EQ_U64(t, DFI_SPECIAL_TRI_ATTACK, DFI_SPECIAL_ICE_FANG + 1u);
     DF_CHECK_EQ_U64(t, DFI_SPECIAL_ROOST, DFI_SPECIAL_DOUBLE_SHOCK + 1u); /* step G42, after Double Shock (G50) */
     DF_CHECK_EQ_U64(t, DFI_SPECIAL_STOMPING_TANTRUM, DFI_SPECIAL_ROOST + 1u); /* step G42 */
-    DF_CHECK_EQ_U64(t, DFI_SPECIAL_UNMODELED, DFI_SPECIAL_STOMPING_TANTRUM + 1u);
+    DF_CHECK_EQ_U64(t, DFI_SPECIAL_UNMODELED, DFI_SPECIAL_STRENGTH_SAP + 1u);
 }
 
 static void check_pins(df_test *t)
@@ -133,10 +133,7 @@ static void check_pins(df_test *t)
 
 static void check_unmarked(df_test *t)
 {
-    /* Scale Shot: a hit count of 2 to 5 is a draw of its own (the Champions sample of 20 values), and no draw site of the
-     * reference has it: the row stays UNMODELED */
-    DF_CHECK(t, dfi_support.moves[DFI_MOVE_SCALESHOT] == 0u);
-    DF_CHECK_EQ_U64(t, dfi_pool_moves[DFI_MOVE_SCALESHOT].special, DFI_SPECIAL_UNMODELED);
+    /* Scale Shot was left out of this step (its hit count is a draw of its own); step G54 marks it (test_pool_g54.c) */
     /* Thunder can hit through Fly (a semi-invulnerable target): Fly is not marked, so no battle has that case */
     DF_CHECK(t, dfi_support.moves[DFI_MOVE_FLY] == 0u);
 }

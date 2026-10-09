@@ -108,7 +108,7 @@ EMBEDDINGS = ("species", "move", "item", "ability", "nature")
 _TABLES = {"species": data.TABLE_SPECIES, "move": data.TABLE_MOVE, "item": data.TABLE_ITEM,
            "ability": data.TABLE_ABILITY, "nature": data.TABLE_NATURE}
 # Format-2 layouts load_current can map to this encoder by column name.
-WIDENABLE_ENCODERS = (2, 3, features.ENCODER)
+WIDENABLE_ENCODERS = (2, 3, 4, features.ENCODER)  # 4: params-49333 and its kin, widened by encoder 5's 12 columns
 
 
 def ids_of(context):
@@ -154,7 +154,7 @@ def save(path, params, config):
 def load_current(path):
     """(params, config) of a checkpoint widened to the current encoder layout
     (features.FEATURE_NAMES): format 2 by column name, and a network of
-    encoder 2 or 3 widened so is one of features.ENCODER (its new rows are
+    encoder 2, 3 or 4 widened so is one of features.ENCODER (its new rows are
     zero; its ext_supported, none for encoder 2, still lies inside the
     columns it had); a format-1 file must have the width of its own encoder
     version (widen_594 converts the 594-feature ones) and keeps it."""
@@ -173,6 +173,27 @@ def load_current(path):
         params, config = widen(params, config, features.FEATURE_NAMES, features.SLOT_FEATURE_NAMES)
         config["encoder"] = features.ENCODER
     return params, config
+
+
+def load_trained(path):
+    """(params, config) of a format-2 checkpoint in the layout its network was trained with: never widened to
+    the current encoder (load_current does that). Stage 3 P1 pins encoder 4: its rows are encoded by version 4,
+    and params-49333's network must read them as trained. ValueError for another format or for a feature list
+    that is not encoder_of(config)'s layout."""
+    params, config = load(path)
+    if config.get("format") != 2:
+        raise ValueError(f"{path}: load_trained reads format-2 checkpoints")
+    encoder = encoder_of(config)
+    if list(config.get("features", ())) != list(features.feature_names(encoder)) or \
+            list(config.get("slot_features", ())) != list(features.SLOT_FEATURE_NAMES):
+        raise ValueError(f"{path}: its features are not encoder {encoder}'s layout")
+    return params, config
+
+
+def trained_model(config, params):
+    """The policy.Model of a load_trained checkpoint, reading its own encoder's columns."""
+    from . import policy
+    return policy.make(model_config(config, params), config["features"], config["slot_features"])
 
 
 def model_config(config, params):

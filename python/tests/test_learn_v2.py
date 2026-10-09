@@ -1030,8 +1030,9 @@ class RegistryTrainingTest(unittest.TestCase):
 
 # Encoder 4 (850 columns) since 2026-10-03: encoder 3's block feeds the global, side, position and member layers,
 # and encoder 4's two position columns add 2 x position rows to the position layer (encoder 3: S 392303, M 2089999,
-# L 7901839).
-PRESET_COUNTS = {"S": 392431, "M": 2090255, "L": 7902351}
+# L 7901839). Encoder 5 (862 columns, step G52): its three position columns add 3 x position rows (encoder 4: S 392431,
+# M 2090255, L 7902351).
+PRESET_COUNTS = {"S": 392623, "M": 2090639, "L": 7903119}
 
 
 if __name__ == "__main__":
