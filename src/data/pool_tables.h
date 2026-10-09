@@ -903,7 +903,8 @@
 #define DFI_SPECIAL_UPPER_HAND 79u
 #define DFI_SPECIAL_HEAL_PULSE 80u
 #define DFI_SPECIAL_STRENGTH_SAP 81u
-#define DFI_SPECIAL_UNMODELED 82u
+#define DFI_SPECIAL_SUBSTITUTE 82u
+#define DFI_SPECIAL_UNMODELED 83u
 
 /* ---- the second flags byte of every move (step G8: the general byte for the flags that the first one has no room
  * for; bits 4 to 128 are free) and the secondary kinds that it comes with ---- */
@@ -1402,6 +1403,9 @@ extern const uint8_t dfi_pool_move_heal[DFI_POOL_MOVE_COUNT][2];
  * last parts of the canonical pool bytes. */
 extern const uint32_t dfi_pool_move_static_flags[DFI_POOL_MOVE_COUNT];
 extern const uint8_t dfi_pool_move_static_hits[DFI_POOL_MOVE_COUNT][2];
+/* The bypasssub column (step G60, decision 0032): 1 for a move with flags.bypasssub in the pin, 0 otherwise; the very last
+ * part of the canonical pool bytes. A Substitute does not take a hit of such a move. */
+extern const uint8_t dfi_pool_move_bypasssub[DFI_POOL_MOVE_COUNT];
 extern const dfi_pool_alias dfi_pool_forme_aliases[DFI_POOL_ALIAS_COUNT];
 
 /* ---- names ----
@@ -1426,7 +1430,7 @@ extern const char *const dfi_pool_item_unmodeled[DFI_POOL_ITEM_COUNT];
 extern const char *const dfi_pool_ability_unmodeled[DFI_POOL_ABILITY_COUNT];
 
 /* SHA-256 of the canonical pool bytes (written by the generator). */
-#define DFI_POOL_CANONICAL_SIZE 54153u
+#define DFI_POOL_CANONICAL_SIZE 54664u
 extern const uint8_t dfi_pool_table_hash[32];
 /* The canonical bytes of the closure layout over the first `formes`, `moves`,
  * `items` and `abilities` rows of the tables above, with every immunity byte

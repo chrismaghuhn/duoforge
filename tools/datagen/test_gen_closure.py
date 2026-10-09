@@ -739,7 +739,7 @@ class PoolMoves(unittest.TestCase):
                           'TRICK', 'SWITCHEROO', 'THIEF', 'COVET', 'SUPER_FANG', 'TAUNT', 'YAWN',
                           'RAGE_FIST', 'STONE_AXE', 'CEASELESS_EDGE', 'MULTI_HIT_10', 'POWER_TRIP', 'THUNDER', 'ICE_FANG', 'TRI_ATTACK', 'DOUBLE_SHOCK', 'ROOST', 'STOMPING_TANTRUM',
                           'LOCKED_MOVE', 'REVIVAL_BLESSING',
-                          'MULTI_HIT_2_5', 'SCALE_SHOT', 'QUICK_GUARD', 'UPPER_HAND', 'HEAL_PULSE', 'STRENGTH_SAP', 'UNMODELED'])
+                          'MULTI_HIT_2_5', 'SCALE_SHOT', 'QUICK_GUARD', 'UPPER_HAND', 'HEAL_PULSE', 'STRENGTH_SAP', 'SUBSTITUTE', 'UNMODELED'])
         self.assertEqual(len(gen_closure.G2_HANDLERS), 7)
         # Step G16: Knock Off's handler is 24 in the tables; step G15's Expanding Force is 25, step G19's Glaive Rush 26,
         # step G20's Aurora Veil 27, Spiky Shield 28, the four of step G28 29 to 32, the eight of step G32 33 to 40 and
@@ -784,14 +784,15 @@ class PoolMoves(unittest.TestCase):
         self.assertEqual([gen_closure.SPECIAL_IDS_P.index(h) for h in gen_closure.G56_HANDLERS], [74])  # G56: LOCKED_MOVE
         self.assertEqual([gen_closure.SPECIAL_IDS_P.index(h) for h in gen_closure.G52_HANDLERS], [75])  # G52: REVIVAL_BLESSING
         self.assertEqual([gen_closure.SPECIAL_IDS_P.index(h) for h in gen_closure.G54_HANDLERS], [76, 77, 78, 79, 80, 81])
-        self.assertEqual(gen_closure.SPECIAL_IDS_P.index('UNMODELED'), 82)
+        self.assertEqual([gen_closure.SPECIAL_IDS_P.index(h) for h in gen_closure.G60_HANDLERS], [82])  # G60: SUBSTITUTE
+        self.assertEqual(gen_closure.SPECIAL_IDS_P.index('UNMODELED'), 83)
         # Scald and Recover became data in step G10: their ids stay defined and no move maps to them.
         self.assertEqual({v[0] for k, v in gen_closure.SPECIAL_P.items() if k not in gen_closure.SPECIAL_C},
                          (set(gen_closure.G2_HANDLERS) - {'SCALD', 'RECOVER'}) | set(gen_closure.WEATHER_HANDLERS) |
                          set(gen_closure.G16_HANDLERS) | set(gen_closure.G15_HANDLERS) | set(gen_closure.G19_HANDLERS) |
                          set(gen_closure.G20_HANDLERS) | set(gen_closure.G20_PROTECT_HANDLERS) | set(gen_closure.G28_HANDLERS) |
                          set(gen_closure.G30_HANDLERS) | set(gen_closure.G32_HANDLERS) | set(gen_closure.G34_HANDLERS) |
-                         set(gen_closure.G27_HANDLERS) | set(gen_closure.G25_HANDLERS) | set(gen_closure.G26_HANDLERS) | set(gen_closure.G33_HANDLERS) | set(gen_closure.G38_HANDLERS) | set(gen_closure.G29_HANDLERS) | set(gen_closure.G39_HANDLERS) | set(gen_closure.G31_HANDLERS) | set(gen_closure.G48_HANDLERS) | set(gen_closure.G44_HANDLERS) | set(gen_closure.G50_HANDLERS) | set(gen_closure.G42_HANDLERS) | set(gen_closure.G56_HANDLERS) | set(gen_closure.G52_HANDLERS) | set(gen_closure.G54_HANDLERS) | {'DARKEST_LARIAT'})
+                         set(gen_closure.G27_HANDLERS) | set(gen_closure.G25_HANDLERS) | set(gen_closure.G26_HANDLERS) | set(gen_closure.G33_HANDLERS) | set(gen_closure.G38_HANDLERS) | set(gen_closure.G29_HANDLERS) | set(gen_closure.G39_HANDLERS) | set(gen_closure.G31_HANDLERS) | set(gen_closure.G48_HANDLERS) | set(gen_closure.G44_HANDLERS) | set(gen_closure.G50_HANDLERS) | set(gen_closure.G42_HANDLERS) | set(gen_closure.G56_HANDLERS) | set(gen_closure.G52_HANDLERS) | set(gen_closure.G54_HANDLERS) | set(gen_closure.G60_HANDLERS) | {'DARKEST_LARIAT'})
 
     def test_taunt_and_yawn_are_handlers_whose_conditions_are_the_pinned_text(self):
         for mid, text, special in (('taunt', TAUNT, 'TAUNT'), ('yawn', YAWN, 'YAWN')):
@@ -1096,7 +1097,7 @@ class PoolMoves(unittest.TestCase):
         # Every handler move is one of the rows, and every set move is a pool move or one of the rows.
         self.assertTrue({k for k in gen_closure.SPECIAL_P if k not in gen_closure.SPECIAL_C} <=
                         set(gen_closure.G2_MOVES) | {'outrage', 'thrash', 'petaldance', 'sandstorm', 'snowscape', 'knockoff', 'expandingforce', 'glaiverush', 'auroraveil', 'spikyshield',
-                                                                'shellsmash', 'acrobatics', 'blizzard', 'feint',
+                                                                'substitute', 'shellsmash', 'acrobatics', 'blizzard', 'feint',
                                                                 'ragepowder', 'psychicfangs', 'solarbeam', 'eruption', 'waterspout',
                                                                 'bodypress', 'foulplay', 'psyshock', 'raindance', 'sunnyday', 'freezedry',
                                                                 'clangingscales', 'steelroller', 'clangoroussoul', 'brickbreak', 'disable',
@@ -1577,7 +1578,8 @@ class WholePoolNames(unittest.TestCase):
             wrong.entry('a')
 
     def test_the_inert_reads_name_the_move_whose_modelling_would_matter(self):
-        self.assertEqual(gen_closure.INERT_FLAG_READS, {'bypasssub': 'substitute', 'pledgecombo': None})
+        self.assertEqual(gen_closure.INERT_FLAG_READS, {'pledgecombo': None})
+        self.assertEqual(gen_closure.COLUMN_FLAGS, {'bypasssub'})  # step G60: held by dfi_pool_move_bypasssub
 
 
 class WeatherFacts(unittest.TestCase):

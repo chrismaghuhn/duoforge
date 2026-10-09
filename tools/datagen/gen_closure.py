@@ -385,6 +385,10 @@ def parse_move(mid, base, champ, ext=False, pool=False, unmodeled=None):
                 fail('move %s: %s is not the pinned text' % (mid, name))
     if pool and handled[0] == 'TAUNT' and ('condition' not in f or norm(f['condition'][1]) != TAUNT_CONDITION):
         fail('move %s: the condition is not the pinned text' % mid)
+    if pool and handled[0] == 'SUBSTITUTE':
+        for name, text in (('onTryHit', SUBSTITUTE_ONTRYHIT), ('onHit', SUBSTITUTE_ONHIT), ('condition', SUBSTITUTE_CONDITION)):
+            if name not in f or norm(f[name][1]) != text:
+                fail('move %s: %s is not the pinned text (decision 0032)' % (mid, name))
     if pool and handled[0] == 'YAWN':
         if 'onTryHit' not in f or norm(f['onTryHit'][1]) != YAWN_ONTRYHIT:
             fail('move %s: onTryHit is not the pinned text' % mid)
@@ -421,11 +425,14 @@ def parse_move(mid, base, champ, ext=False, pool=False, unmodeled=None):
 
     flags = 0
     flags2 = 0
+    bypass = 0  # step G60: flags.bypasssub (pool tables only; a generated 0/1 column, not a flag bit: decision 0032)
     static_flags = 0  # decision 0020: the public static flags of every row, from the pin's flags object (pool tables only)
     flag_bits = FLAG_BITS_C if ext else FLAG_BITS
     for fl in re.findall(r'(\w+): 1', f['flags'][1]):
         flags2 |= FLAGS2_BITS.get(fl, 0)
         static_flags |= STATIC_FLAG_BITS.get(fl, 0)
+        if fl == 'bypasssub':
+            bypass = 1
         if fl in flag_bits:
             flags |= flag_bits[fl]
         elif lenient:
@@ -482,7 +489,7 @@ def parse_move(mid, base, champ, ext=False, pool=False, unmodeled=None):
         'type': TYPES.index(get('type')), 'category': CATEGORIES[get('category')],
         'base_power': get('basePower'), 'accuracy': 0 if acc is True else acc, 'pp_base': pp_base, 'pp_max': pp_max,
         'priority': get('priority') + 8, 'target_class': target_class,
-        'crit_ratio': get('critRatio', 1), 'flags': flags, 'flags2': flags2, 'heal': [0, 0],
+        'crit_ratio': get('critRatio', 1), 'flags': flags, 'flags2': flags2, 'bypass': bypass, 'heal': [0, 0],
         'recoil': [0, 0], 'drain': [0, 0], 'sec_chance': 0, 'sec_kind': 0, 'sec_param': 0,
         'boost_role': 0, 'boosts': [0] * 7, 'primary_status': 0, 'side_condition': 0, 'pseudo_weather': 0,
         'special': (SPECIAL_IDS_P if pool else SPECIAL_IDS_C if ext else SPECIAL_IDS).index(handled[0]),
@@ -1932,6 +1939,32 @@ G49_ITEM_FACTS = (
 # for a turn and has no move queued), order 15, onBeforeMove priority 5 and the Status-category bar; Yawn's duration 2,
 # order 23 and the silent end that calls trySetStatus('slp').
 G31_HANDLERS = ['TAUNT', 'YAWN']
+# Step G60 (decision 0032): Substitute (data/moves.ts:18305-18374). The turn code implements the move: the gate of each hit
+# that a Substitute takes (the pin's onTryPrimaryHit), the HP cost, the break and the events of the decision. The generator
+# checks the three texts, whitespace aside. Its bypasssub flag is the generated column dfi_pool_move_bypasssub (COLUMN_FLAGS).
+G60_HANDLERS = ['SUBSTITUTE']
+SUBSTITUTE_ONTRYHIT = (
+    "onTryHit(source) { if (source.volatiles['substitute']) { this.add('-fail', source, 'move: Substitute'); "
+    "return this.NOT_FAIL; } if (source.hp <= source.maxhp / 4 || source.maxhp === 1) { // Shedinja clause "
+    "this.add('-fail', source, 'move: Substitute', '[weak]'); return this.NOT_FAIL; } },")
+SUBSTITUTE_ONHIT = "onHit(target) { this.directDamage(target.maxhp / 4); },"
+SUBSTITUTE_CONDITION = (
+    "condition: { onStart(target, source, effect) { if (effect?.id === 'shedtail') { "
+    "this.add('-start', target, 'Substitute', '[from] move: Shed Tail'); } else { this.add('-start', target, 'Substitute'); } "
+    "this.effectState.hp = Math.floor(target.maxhp / 4); if (target.volatiles['partiallytrapped']) { "
+    "this.add('-end', target, target.volatiles['partiallytrapped'].sourceEffect, '[partiallytrapped]', '[silent]'); "
+    "delete target.volatiles['partiallytrapped']; } }, onTryPrimaryHitPriority: -1, onTryPrimaryHit(target, source, move) { "
+    "if (target === source || move.flags['bypasssub'] || move.infiltrates) { return; } let damage = "
+    "this.actions.getDamage(source, target, move); if (!damage && damage !== 0) { this.add('-fail', source); "
+    "this.attrLastMove('[still]'); return null; } if (damage > target.volatiles['substitute'].hp) { "
+    "damage = target.volatiles['substitute'].hp as number; } target.volatiles['substitute'].hp -= damage; "
+    "source.lastDamage = damage; if (target.volatiles['substitute'].hp <= 0) { if (move.ohko) this.add('-ohko'); "
+    "target.removeVolatile('substitute'); } else { this.add('-activate', target, 'move: Substitute', '[damage]'); } "
+    "if (damage) { this.actions.applyRecoilDamage(damage, move, source); } if (move.drain) { "
+    "this.heal(Math.ceil(damage * move.drain[0] / move.drain[1]), source, target, 'drain'); } "
+    "this.singleEvent('AfterSubDamage', move, null, target, source, move, damage); "
+    "this.runEvent('AfterSubDamage', target, source, move, damage); return this.HIT_SUBSTITUTE; }, "
+    "onEnd(target) { this.add('-end', target, 'Substitute'); }, },")
 # Step G52 (decision 0025 item 6): Revival Blessing (data/moves.ts:15110-15136). onTryHit fails when the user's side has no fainted
 # Pokemon; selfSwitch and the slot condition make the user's slot a revive at its PIVOT (sim/side.ts 925-985, sim/battle.ts
 # 2781-2797). The turn code implements the move (DFI_SWITCH_REVIVE_BLESSING and the revive action); the generator checks onTryHit.
@@ -2084,6 +2117,7 @@ SPECIAL_P = dict(SPECIAL_C, **{
     'disable': ('DISABLE', {'onTryHit'}),                                 # G27: bars the target's last move
     'spikyshield': ('SPIKY_SHIELD', {'onPrepareHit', 'onHit'}),           # G20: Protect that damages a contact attacker
     'taunt': ('TAUNT', set()),                                            # G31: bars the Status moves for three or four turns
+    'substitute': ('SUBSTITUTE', {'onTryHit', 'onHit'}),                  # G60: a 1/4 HP decoy that takes the hits (decision 0032)
     'yawn': ('YAWN', {'onTryHit'}),                                       # G31: sleep at the end of the next turn
     'revivalblessing': ('REVIVAL_BLESSING', {'onTryHit'}),                # G52: the revive at the PIVOT of the user's slot
     'roost': ('ROOST', set()),                                            # G42: heals, then the Flying type is off for the turn
@@ -2227,7 +2261,7 @@ G54_FACTS = (
                      "const success = this.boost({ atk: -1 }, target, source, null, false, true);",
                      'return !!(this.heal(atk, source, target) || success);', 'target: "normal",', 'type: "Grass",']),
 )
-SPECIAL_IDS_P = SPECIAL_IDS_C + G2_HANDLERS + WEATHER_HANDLERS + G16_HANDLERS + G15_HANDLERS + G19_HANDLERS + G20_HANDLERS + G20_PROTECT_HANDLERS + G28_HANDLERS + G30_HANDLERS + G32_HANDLERS + G34_HANDLERS + G27_HANDLERS + G25_HANDLERS + G26_HANDLERS + G33_HANDLERS + G38_HANDLERS + G29_HANDLERS + G39_HANDLERS + G31_HANDLERS + G48_HANDLERS + G44_HANDLERS + G50_HANDLERS + G42_HANDLERS + G56_HANDLERS + G52_HANDLERS + G54_HANDLERS + ['UNMODELED']# Step G10 made two of these handlers data: Scald (thawsTarget) and Recover (heal) are read into the second flags# byte (bit 4, thaws the target) and the heal column, and have the special NONE; their ids stay defined (the ids after
+SPECIAL_IDS_P = SPECIAL_IDS_C + G2_HANDLERS + WEATHER_HANDLERS + G16_HANDLERS + G15_HANDLERS + G19_HANDLERS + G20_HANDLERS + G20_PROTECT_HANDLERS + G28_HANDLERS + G30_HANDLERS + G32_HANDLERS + G34_HANDLERS + G27_HANDLERS + G25_HANDLERS + G26_HANDLERS + G33_HANDLERS + G38_HANDLERS + G29_HANDLERS + G39_HANDLERS + G31_HANDLERS + G48_HANDLERS + G44_HANDLERS + G50_HANDLERS + G42_HANDLERS + G56_HANDLERS + G52_HANDLERS + G54_HANDLERS + G60_HANDLERS + ['UNMODELED']# Step G10 made two of these handlers data: Scald (thawsTarget) and Recover (heal) are read into the second flags# byte (bit 4, thaws the target) and the heal column, and have the special NONE; their ids stay defined (the ids after
 # them keep their values). First Impression and Low Kick keep theirs: the turn code implements them.
 POOL_COLUMN_KEYS = {'thawsTarget', 'heal'}
 G2_OWNED_FIELDS = {
@@ -2238,6 +2272,7 @@ G2_OWNED_FIELDS = {
     'DISABLE': {'volatileStatus': "volatileStatus: 'disable',"},
     'SPIKY_SHIELD': {'volatileStatus': "volatileStatus: 'spikyshield',"},
     'TAUNT': {'volatileStatus': "volatileStatus: 'taunt',"},
+    'SUBSTITUTE': {'volatileStatus': "volatileStatus: 'substitute',"},
     'YAWN': {'volatileStatus': "volatileStatus: 'yawn',"},
     'REVIVAL_BLESSING': {'slotCondition': "slotCondition: 'revivalblessing', // No this not a real switchout move // This is needed "
                                          "to trigger a switch protocol to choose a fainted party member // Feel free to refactor"},
@@ -2272,7 +2307,8 @@ G2_OWNED_FIELDS = {
 G2_OWNED_SECONDARY = {'STONE_AXE': 'secondary: {}, // Sheer Force-boosted', 'CEASELESS_EDGE': 'secondary: {}, // Sheer Force-boosted', 'TRI_ATTACK': "secondary: { chance: 20, onHit(target, source) { const status = this.sample(['brn', 'par', 'frz']); "
                   "target.trySetStatus(status, source); }, },"}
 G2_OWNED_CONDITION = {'ROOST', 'ENCORE', 'WIDE_GUARD', 'QUICK_GUARD', 'GLAIVE_RUSH', 'AURORA_VEIL', 'SPIKY_SHIELD', 'RAGE_POWDER', 'DISABLE',
-                      'ELECTRIC_TERRAIN', 'MISTY_TERRAIN', 'PERISH_SONG', 'IMPRISON', 'TAUNT', 'YAWN', 'REVIVAL_BLESSING'}
+                      'ELECTRIC_TERRAIN', 'MISTY_TERRAIN', 'PERISH_SONG', 'IMPRISON', 'TAUNT', 'YAWN', 'REVIVAL_BLESSING',
+                      'SUBSTITUTE'}
 # Step G8 (Throat Chop and Psychic Noise): the two secondaries become modelled kinds, and the column that their
 # consumers read is the move's second flags byte (the first is full): the `sound` flag (Throat Chop bars the sound
 # moves) and the `heal` flag (Heal Block bars the moves that heal). Both are derived for every pool move, the prefix
@@ -2420,7 +2456,9 @@ FLAGS_THAT_MATTER = set()
 # modelling would make it matter (build_pool fails if that row is modelled):
 #   bypasssub -- Chople Berry reads it next to the substitute volatile, which no modelled row has (Substitute is
 #                UNMODELED); pledgecombo -- Lightning Rod reads it; only the pledge moves have it, none is in the pool.
-INERT_FLAG_READS = {'bypasssub': 'substitute', 'pledgecombo': None}
+# Step G60 (decision 0032): bypasssub is held by the generated column dfi_pool_move_bypasssub, so it is no flag that matters.
+COLUMN_FLAGS = {'bypasssub'}
+INERT_FLAG_READS = {'pledgecombo': None}
 HANDLER_IDS = ['NONE', 'UNMODELED']
 # Items and abilities that a step of the expansion implements in the turn code by id (they have no family): modelled
 # by definition, like the closure and Team C rows. The step that marks such a row in the support manifest adds its id
@@ -3217,7 +3255,7 @@ def build_pool(root, repo, dx):
     check_g56_facts(Source(root, 'data/conditions.ts', READER_INPUTS), moves_ts)
     FLAGS_THAT_MATTER.clear()
     FLAGS_THAT_MATTER.update(prefix_flag_reads((items_ts, champ_items, abil_ts, champ_abil, moves_ts, champ_moves), dx)
-                             - set(FLAG_BITS_C) - set(INERT_FLAG_READS))
+                             - set(FLAG_BITS_C) - set(INERT_FLAG_READS) - COLUMN_FLAGS)
     # The prefix rows keep the closure's "none" (0xFF) for the forme ids of a Mega link in the extended data; the pool
     # rows use None for it, because a forme id above 254 is real here.
     items, abilities = [dict(it, mega_base=None if it['mega_base'] == 0xFF else it['mega_base'],
@@ -3524,6 +3562,12 @@ def static_flags_bytes(d):
     return bytes(b)
 
 
+def bypass_bytes(d):
+    """The bypasssub column of every move (step G60: flags.bypasssub of the pin, 0 or 1), in id order, in the canonical
+    pool bytes; the very last part."""
+    return bytes(m['bypass'] for m in d['moves'])
+
+
 def static_hits_bytes(d):
     """The hit counts (minimum, maximum) of every move (decision 0020), in id order, in the canonical pool bytes."""
     b = bytearray()
@@ -3568,7 +3612,7 @@ def canonical_pool(d):
     b.extend(d['immunity'])
     for n in d['natures']:
         b.extend([n['plus'], n['minus']])
-    return bytes(b) + family_bytes(d) + handler_bytes(d) + forme_legal_bytes(d) + flags2_bytes(d) + heal_bytes(d) +         static_flags_bytes(d) + static_hits_bytes(d)
+    return bytes(b) + family_bytes(d) + handler_bytes(d) + forme_legal_bytes(d) + flags2_bytes(d) + heal_bytes(d) +         static_flags_bytes(d) + static_hits_bytes(d) + bypass_bytes(d)
 
 
 def closure_projection(rows, key):
@@ -3869,6 +3913,9 @@ extern const uint8_t dfi_pool_move_heal[DFI_POOL_MOVE_COUNT][2];
  * last parts of the canonical pool bytes. */
 extern const uint32_t dfi_pool_move_static_flags[DFI_POOL_MOVE_COUNT];
 extern const uint8_t dfi_pool_move_static_hits[DFI_POOL_MOVE_COUNT][2];
+/* The bypasssub column (step G60, decision 0032): 1 for a move with flags.bypasssub in the pin, 0 otherwise; the very last
+ * part of the canonical pool bytes. A Substitute does not take a hit of such a move. */
+extern const uint8_t dfi_pool_move_bypasssub[DFI_POOL_MOVE_COUNT];
 extern const dfi_pool_alias dfi_pool_forme_aliases[DFI_POOL_ALIAS_COUNT];
 
 /* ---- names ----
@@ -4004,6 +4051,11 @@ size_t dfi_pool_canonical_bytes(uint8_t *out, size_t capacity);
           'const uint8_t dfi_pool_move_static_hits[DFI_POOL_MOVE_COUNT][2] = {']
     for m in dp['moves']:
         c.append('    [DFI_MOVE_%s] = {%du, %du}, /* %s */' % (m['id'].upper(), m['hits'][0], m['hits'][1], m['name']))
+    c += ['};', '', '/* The bypasssub column (step G60): flags.bypasssub of the pin, 1 for a move that a Substitute does not take. */',
+          'const uint8_t dfi_pool_move_bypasssub[DFI_POOL_MOVE_COUNT] = {']
+    for m in dp['moves']:
+        if m['bypass']:
+            c.append('    [DFI_MOVE_%s] = 1u, /* %s */' % (m['id'].upper(), m['name']))
     c += ['};', '', '/* Cosmetic formes: a name for the row of the base forme (decision 0015 section 4.2). */',
           'const dfi_pool_alias dfi_pool_forme_aliases[DFI_POOL_ALIAS_COUNT] = {']
     for alias, base in dp['aliases']:
@@ -4245,6 +4297,9 @@ size_t dfi_pool_canonical_bytes(uint8_t *out, size_t capacity)
     for (uint32_t i = 0u; i < DFI_POOL_MOVE_COUNT; ++i) {
         out[n++] = dfi_pool_move_static_hits[i][0];
         out[n++] = dfi_pool_move_static_hits[i][1];
+    }
+    for (uint32_t i = 0u; i < DFI_POOL_MOVE_COUNT; ++i) {
+        out[n++] = dfi_pool_move_bypasssub[i];
     }
     return n;
 }
