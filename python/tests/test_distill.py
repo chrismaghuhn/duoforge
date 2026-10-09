@@ -442,6 +442,44 @@ class _StopAfter:
         return self.checks >= self.n
 
 
+class CliTest(unittest.TestCase):
+    """Task 5 end to end: write_manifest and shards in, a finished fit and a loadable params-best out."""
+
+    def test_cli_fits_from_a_manifest_and_refuses_a_finished_resume(self):
+        import json
+        import jax
+        from duoforge_search import expert_data as ed
+        from duoforge_learn import checkpoint, distill, policy
+        with tempfile.TemporaryDirectory(prefix="duoforge_synthetic_distill_cli_") as tmp:
+            root = Path(tmp)
+            m = dataclasses.replace(_manifest(ed), encoder=features.ENCODER,
+                                    obs_width=features.obs_size(features.ENCODER))
+            ed.write_manifest(root / "manifest.json", m)
+            (train_a, train_b), (held,) = _games(ed, m.split_seed, 2, 1)
+            S, rows = ed.RowStatus, []
+            for game in (train_a, train_b, held):
+                g = _Rows(ed, m, game, seat=ed.learner_seat(game) if hasattr(ed, "learner_seat") else 0)
+                rows += [g.act(S.TARGET, .4), g.wait(.3), g.act(S.UNSELECTED, .2, reward=1., done=True)]
+            (root / "shards").mkdir()
+            ed.write_shard(root / "shards" / "0.json", rows, m)
+            cfg = policy.v2_config("S")
+            params = policy.make(cfg).init(jax.random.PRNGKey(5))
+            config = {"model": cfg, "encoder": features.ENCODER, "features": list(features.FEATURE_NAMES),
+                      "slot_features": list(features.SLOT_FEATURE_NAMES), "data": {}, "teams": {}, "update": 0,
+                      "decisions": 0, "ids": {}}
+            checkpoint.save(root / "start.npz", params, config)
+            argv = ["--init", str(root / "start.npz"), "--reference", str(root / "start.npz"), "--shards",
+                    str(root / "shards"), "--manifest", str(root / "manifest.json"), "--out", str(root / "fit"),
+                    "--allow-other-init"]
+            self.assertEqual(distill.main(argv), 0)
+            best, best_config = checkpoint.load_current(root / "fit" / "params-best.npz")
+            self.assertEqual(best_config["model"], cfg)
+            self.assertIn(best_config["distill"]["stop"], ("no_gain", "max_epochs", "ref_kl"))
+            log = [json.loads(line) for line in (root / "fit" / "log.jsonl").read_text().splitlines()]
+            self.assertEqual(log[-1]["stop"], best_config["distill"]["stop"])
+            self.assertEqual(distill.main(argv + ["--resume"]), 2)  # a finished fit is not resumed
+
+
 class ResumeTest(unittest.TestCase):
     """Task 5: an interrupted fit resumes bitwise; a resume with other inputs or constants is refused."""
 
