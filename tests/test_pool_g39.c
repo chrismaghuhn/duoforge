@@ -56,7 +56,7 @@ static void check_marks(df_test *t)
     }
     DF_CHECK_EQ_U64(t, dfi_pool_moves[DFI_MOVE_SACREDSWORD].special, DFI_SPECIAL_DARKEST_LARIAT);
     DF_CHECK_EQ_U64(t, dfi_pool_moves[DFI_MOVE_SUPERFANG].special, DFI_SPECIAL_SUPER_FANG);
-    DF_CHECK_EQ_U64(t, DFI_SPECIAL_UNMODELED, DFI_SPECIAL_STOMPING_TANTRUM + 1u); /* Taunt and Yawn (G31), the four of G48, the four of G44, Double Shock (G50) and Roost and Stomping Tantrum (G42) follow */
+    DF_CHECK_EQ_U64(t, DFI_SPECIAL_UNMODELED, DFI_SPECIAL_LOCKED_MOVE + 1u); /* Taunt and Yawn (G31), the four of G48, the four of G44 and the lock of G56 follow */
     DF_CHECK_EQ_U64(t, dfi_pool_moves[DFI_MOVE_SUPERFANG].base_power, 0u);
     DF_CHECK_EQ_U64(t, dfi_pool_moves[DFI_MOVE_SUPERFANG].accuracy, 90u);
     DF_CHECK_EQ_U64(t, dfi_pool_moves[DFI_MOVE_CHARM].boost_role, DFI_BOOST_ROLE_PRIMARY_TARGET);
@@ -67,7 +67,7 @@ static void check_marks(df_test *t)
     DF_CHECK_EQ_U64(t, dfi_pool_moves[DFI_MOVE_FAKETEARS].boosts[3], 4u);
     /* Static's draw is the site 19 (Flame Body has 18, 17 is Cursed Body's) */
     DF_CHECK_EQ_U64(t, DFI_SITE_STATIC, 19u);
-    DF_CHECK_EQ_U64(t, DFI_SITE_COUNT, 21u); /* step G46: DFI_SITE_DRAG */
+    DF_CHECK_EQ_U64(t, DFI_SITE_COUNT, 22u); /* step G46: DFI_SITE_DRAG; G56: DFI_SITE_LOCK_TURNS */
 }
 
 /* Damp and Sturdy are inert only while what they would act on is unmarked. */

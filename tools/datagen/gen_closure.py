@@ -2066,6 +2066,9 @@ G30_ABILITY_FACTS = (
 SPECIAL_P = dict(SPECIAL_C, **{
     'perishsong': ('PERISH_SONG', {'onHitField'}),                        # G26: a volatile on every active Pokemon, faints at 0
     'glaiverush': ('GLAIVE_RUSH', set()),                                 # G19: the volatile that makes its user hit as vulnerable
+    'outrage': ('LOCKED_MOVE', set()),                                    # G56: a two-to-three turn lock, then confusion
+    'thrash': ('LOCKED_MOVE', set()),                                     # G56: the same lock as Outrage
+    'petaldance': ('LOCKED_MOVE', set()),                                 # G56: the same lock as Outrage
     'knockoff': ('KNOCK_OFF', {'onAfterHit', 'onBasePower'}),             # G16: takes the target's item, x1.5 while it has one
     'encore': ('ENCORE', set()),                                          # G9 (implemented): last move, a volatile, a queue change
     'disable': ('DISABLE', {'onTryHit'}),                                 # G27: bars the target's last move
@@ -2141,6 +2144,28 @@ PROTECT_COPY_FIELDS = ('onPrepareHit', 'onHit', 'stallingMove', 'volatileStatus'
 # HURRICANE), ICE_FANG (two secondaries, a freeze roll then a flinch roll, each random(100) < 10) and TRI_ATTACK (a secondary
 # of chance 20 whose onHit draws sample(['brn', 'par', 'frz']), the status pick of SITE_STATUS_PICK). G44_FACTS checks their texts.
 G44_HANDLERS = ['POWER_TRIP', 'THUNDER', 'ICE_FANG', 'TRI_ATTACK']
+# Step G56: Outrage, Thrash and Petal Dance: a self volatile lockedmove (data/conditions.ts:253-285). Its duration is 2
+# and its count a random(2, 4) drawn in onStart; the countdown runs in onResidual; onAfterMove removes it at duration 1;
+# onEnd adds confusion unless the count is above 1. The turn code runs these; the facts below are read from the pin.
+G56_HANDLERS = ['LOCKED_MOVE']
+G56_LOCKED_MOVES = ('outrage', 'thrash', 'petaldance')
+LOCKED_MOVE_CONDITION_FACTS = (
+    'duration: 2,',
+    'this.effectState.trueDuration = this.random(2, 4);',
+    'this.effectState.move = effect.id;',
+    'this.effectState.trueDuration--;',
+    "if (this.effectState.duration === 1) { pokemon.removeVolatile('lockedmove'); }",
+    'if (this.effectState.trueDuration > 1) return;',
+    "target.addVolatile('confusion');",
+    "delete target.volatiles['lockedmove'];",
+    'if (this.effectState.trueDuration >= 2) { this.effectState.duration = 2; }',
+    'if (this.effectState.duration === 1) {',
+)
+LOCKED_MOVE_MOVE_FACTS = {
+    'outrage': ('basePower: 120,', 'accuracy: 100,', 'category: "Physical",', 'target: "randomNormal",', 'type: "Dragon",'),
+    'thrash': ('basePower: 120,', 'accuracy: 100,', 'category: "Physical",', 'target: "randomNormal",', 'type: "Normal",'),
+    'petaldance': ('basePower: 120,', 'accuracy: 100,', 'category: "Special",', 'target: "randomNormal",', 'type: "Grass",'),
+}
 G44_FACTS = (
     ('powertrip', ['accuracy: 100,', 'basePower: 20,',
                    'basePowerCallback(pokemon, target, move) { const bp = move.basePower + 20 * pokemon.positiveBoosts();',
@@ -2156,7 +2181,7 @@ G44_FACTS = (
     ('triattack', ['accuracy: 100,', 'basePower: 80,', 'category: "Special",', 'priority: 0,',
                    'flags: { protect: 1, mirror: 1, metronome: 1 },', 'target: "normal",', 'type: "Normal",']),
 )
-SPECIAL_IDS_P = SPECIAL_IDS_C + G2_HANDLERS + WEATHER_HANDLERS + G16_HANDLERS + G15_HANDLERS + G19_HANDLERS + G20_HANDLERS + G20_PROTECT_HANDLERS + G28_HANDLERS + G30_HANDLERS + G32_HANDLERS + G34_HANDLERS + G27_HANDLERS + G25_HANDLERS + G26_HANDLERS + G33_HANDLERS + G38_HANDLERS + G29_HANDLERS + G39_HANDLERS + G31_HANDLERS + G48_HANDLERS + G44_HANDLERS + G50_HANDLERS + G42_HANDLERS + ['UNMODELED']
+SPECIAL_IDS_P = SPECIAL_IDS_C + G2_HANDLERS + WEATHER_HANDLERS + G16_HANDLERS + G15_HANDLERS + G19_HANDLERS + G20_HANDLERS + G20_PROTECT_HANDLERS + G28_HANDLERS + G30_HANDLERS + G32_HANDLERS + G34_HANDLERS + G27_HANDLERS + G25_HANDLERS + G26_HANDLERS + G33_HANDLERS + G38_HANDLERS + G29_HANDLERS + G39_HANDLERS + G31_HANDLERS + G48_HANDLERS + G44_HANDLERS + G50_HANDLERS + G42_HANDLERS + G56_HANDLERS + ['UNMODELED']
 # Step G10 made two of these handlers data: Scald (thawsTarget) and Recover (heal) are read into the second flags
 # byte (bit 4, thaws the target) and the heal column, and have the special NONE; their ids stay defined (the ids after
 # them keep their values). First Impression and Low Kick keep theirs: the turn code implements them.
@@ -2177,6 +2202,7 @@ G2_OWNED_FIELDS = {
     'SHELL_SMASH': {'boosts': "boosts: { def: -1, spd: -1, atk: 2, spa: 2, spe: 2, },"},
     'FEINT': {'breaksProtect': "breaksProtect: true, // Breaking protection implemented in scripts.js"},
     'GLAIVE_RUSH': {'self': "self: { volatileStatus: 'glaiverush', },"},
+    'LOCKED_MOVE': {'self': "self: { volatileStatus: 'lockedmove', },"},
     'RAGE_POWDER': {'volatileStatus': "volatileStatus: 'ragepowder',"},
     'MULTI_HIT_2': {'multihit': 'multihit: 2,'},
     'DOUBLE_SHOCK': {'self': "self: { onHit(pokemon) { pokemon.setType(pokemon.getTypes(true).map(type => type === \"Electric\" ? \"???\" : type)); this.add('-start', pokemon, 'typechange', pokemon.getTypes().join('/'), '[from] move: Double Shock'); }, },"},
@@ -2899,6 +2925,25 @@ WEATHER_BALL_FACTS = ("case 'sandstorm': move.type = 'Rock'; break; case 'hail':
                       "case 'sandstorm': move.basePower *= 2; break; case 'hail': case 'snowscape': move.basePower *= 2; break;")
 
 
+def check_g56_facts(conditions_ts, moves_ts):
+    """Step G56: the lockedmove condition and the three moves are the pinned text the turn code reads."""
+    e = conditions_ts.entry('lockedmove')
+    if e is None:
+        fail('condition lockedmove not found')
+    text = norm('\n'.join(e[2]))
+    for fact in LOCKED_MOVE_CONDITION_FACTS:
+        if norm(fact) not in text:
+            fail('condition lockedmove: the entry no longer has "%s"' % fact)
+    for mid in G56_LOCKED_MOVES:
+        e = moves_ts.entry(mid)
+        if e is None:
+            fail('move %s not found' % mid)
+        text = norm('\n'.join(e[2]))
+        for fact in LOCKED_MOVE_MOVE_FACTS[mid]:
+            if norm(fact) not in text:
+                fail('move %s: the entry no longer has "%s"' % (mid, fact))
+
+
 def check_weather_facts(conditions_ts, moves_ts):
     """Every fact of WEATHER_FACTS is in the pinned condition entry, the absent ones are not, and Weather Ball has the
     types and the doubling that the engine reads for every weather."""
@@ -3120,6 +3165,7 @@ def build_pool(root, repo, dx):
     check_g37_facts(abil_ts, champ_abil)
     check_g32_entries(items_ts, champ_items, abil_ts, champ_abil)
     check_weather_facts(Source(root, 'data/conditions.ts', READER_INPUTS), moves_ts)
+    check_g56_facts(Source(root, 'data/conditions.ts', READER_INPUTS), moves_ts)
     FLAGS_THAT_MATTER.clear()
     FLAGS_THAT_MATTER.update(prefix_flag_reads((items_ts, champ_items, abil_ts, champ_abil, moves_ts, champ_moves), dx)
                              - set(FLAG_BITS_C) - set(INERT_FLAG_READS))

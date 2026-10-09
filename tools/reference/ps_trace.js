@@ -69,6 +69,9 @@ const CONDITION_SITES = {
     'frz:BeforeMove': 'FREEZE_THAW',
     'par:BeforeMove': 'FULL_PARALYSIS',
     'confusion:Start': 'CONFUSION_TURNS',
+    // The lock of Outrage, Thrash and Petal Dance (step G56): lockedmove's onStart, random(2, 4) = 2 or 3 turns
+    // (data/conditions.ts:265). It was an UNKNOWN draw before the G56 battles; the harness version stays (as above).
+    'lockedmove:Start': 'LOCK_TURNS',
     'confusion:BeforeMove': 'CONFUSION_HIT',
     'trace:Update': 'TRACE', // Trace's this.sample(possibleTargets): one draw, also for a single candidate
     // Poison Touch (step G14): its randomChance(3, 10) in onSourceDamagingHit. No committed trace had one before, so

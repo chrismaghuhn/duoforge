@@ -134,6 +134,13 @@ static duoforge_status dfi_slot_candidates(const duoforge_context *ctx, const st
                        ? DUOFORGE_OK
                        : DUOFORGE_E_INVARIANT;
         }
+        /* A lockedmove (step G56; sim/pokemon.ts getMoveRequestData: only the locked move, no Mega, and the Pokemon is trapped):
+         * Outrage, Thrash and Petal Dance target a random foe, drawn when the move is used, so the request names none. */
+        if (b->tail.sides[s].positions[slot].lock_turns != 0u && own->locked_move != 0u) {
+            return dfi_list_push(out, DUOFORGE_SLOT_MOVE, (uint32_t)own->locked_move - 1u, DUOFORGE_TARGET_NONE, 0u, 0u)
+                       ? DUOFORGE_OK
+                       : DUOFORGE_E_INVARIANT;
+        }
         const uint32_t megas = (mem->mega_capable != 0u && side->mega_used == 0u) ? 2u : 1u;
         /* A choice lock (Team C): choicelock's onDisableMove disables every
          * other slot (data/conditions.ts); the lock does not trap, and with

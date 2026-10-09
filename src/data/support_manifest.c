@@ -447,6 +447,10 @@ const dfi_support_manifest dfi_support = {
             [DFI_MOVE_HAMMERARM] = 1u,
             [DFI_MOVE_TROPKICK] = 1u,
             [DFI_MOVE_METEORMASH] = 1u,
+            /* Step G56 (Outrage, decision 0015 item 5au): the lock (lockedmove; a random count of 2 or 3 uses, the
+             * confusion when it ends, the switch-out and the faint clear it). Thrash and Petal Dance stay unmarked:
+             * no recorded battle yet. */
+            [DFI_MOVE_OUTRAGE] = 1u,
         },
     .abilities =
         {
