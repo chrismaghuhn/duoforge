@@ -366,6 +366,8 @@ const dfi_support_manifest dfi_support = {
              * FALSE last move result; the move_result of tail rev 4, decision 0015 section 7). */
             [DFI_MOVE_ROOST] = 1u,
             [DFI_MOVE_STOMPINGTANTRUM] = 1u,
+            /* Step G50: Double Shock (Pawmot only: the Electric and Fighting types become ??? and Fighting; decision 0025). */
+            [DFI_MOVE_DOUBLESHOCK] = 1u,
             /* Step G32: Eruption and Water Spout (power by the user's HP), Life Dew (the user and its ally), Body Press, Foul Play
              * and Psyshock (the stat overrides), Rain Dance and Sunny Day, Volt Switch (a pivot of its own), Clanging Scales (the
              * user's Defense falls after the hit) and Freeze-Dry (Water takes it super effective). */

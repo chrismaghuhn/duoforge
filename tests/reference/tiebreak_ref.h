@@ -3751,6 +3751,52 @@ static const df_tb_stop tb_g4_rock_head_struggle[] = {
     {12u, 0u, 1u, 1u, {4u, 3u}, {695u, 448u}, {0x404e5125f0f30329ull, 0x4043ec81f3014cabull}},
     {13u, 0u, 1u, 1u, {4u, 3u}, {628u, 384u}, {0x404b1223f4eb130bull, 0x40413771ec130f29ull}},
 };
+static const df_tb_stop tb_g50_double_shock_fail[] = {
+    {0u, 0u, 1u, 3u, {6u, 6u}, {1148u, 1122u}, {0x4059000000000000ull, 0x4059000000000000ull}},
+    {1u, 0u, 1u, 3u, {4u, 4u}, {780u, 778u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {2u, 0u, 1u, 1u, {4u, 3u}, {780u, 611u}, {0x4050aaaaaaaaaaabull, 0x4049000000000000ull}},
+    {3u, 0u, 1u, 1u, {4u, 3u}, {780u, 611u}, {0x4050aaaaaaaaaaabull, 0x4049000000000000ull}},
+    {4u, 0u, 1u, 1u, {4u, 3u}, {780u, 611u}, {0x4050aaaaaaaaaaabull, 0x4049000000000000ull}},
+};
+static const df_tb_stop tb_g50_double_shock_ground[] = {
+    {0u, 0u, 1u, 3u, {6u, 6u}, {1148u, 1122u}, {0x4059000000000000ull, 0x4059000000000000ull}},
+    {1u, 0u, 1u, 3u, {4u, 4u}, {780u, 778u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {2u, 0u, 1u, 1u, {4u, 3u}, {691u, 611u}, {0x404d24a3eac9858bull, 0x4049000000000000ull}},
+};
+static const df_tb_stop tb_g50_double_shock_no_target[] = {
+    {0u, 0u, 3u, 4u, {6u, 6u}, {1148u, 1148u}, {0x4059000000000000ull, 0x4059000000000000ull}},
+    {1u, 0u, 1u, 3u, {4u, 4u}, {784u, 759u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {2u, 0u, 1u, 3u, {4u, 4u}, {784u, 759u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {3u, 0u, 2u, 2u, {4u, 4u}, {638u, 657u}, {0x404b0fd5c5f02a3bull, 0x404cce901718af8full}},
+    {6u, 0u, 2u, 1u, {3u, 4u}, {434u, 554u}, {0x4041d153729043e4ull, 0x404861eab3afff9cull}},
+    {9u, 0u, 2u, 1u, {3u, 4u}, {402u, 535u}, {0x40407f5f46a129b3ull, 0x404790fb6aab9990ull}},
+    {12u, 0u, 2u, 1u, {2u, 3u}, {377u, 469u}, {0x403eb16cfd7720f3ull, 0x4044dd0c6ee62113ull}},
+    {15u, 0u, 2u, 1u, {2u, 3u}, {307u, 394u}, {0x403907f584beacacull, 0x4041691217355568ull}},
+    {18u, 0u, 2u, 1u, {2u, 3u}, {282u, 349u}, {0x403704a9412342bbull, 0x403ead5e2b968335ull}},
+    {21u, 0u, 2u, 2u, {2u, 2u}, {226u, 248u}, {0x403265d2a75e670full, 0x4036621cdb4f8fdfull}},
+    {24u, 0u, 1u, 1u, {2u, 1u}, {162u, 121u}, {0x402a5eb56cf9492cull, 0x4026c9858b545e7full}},
+    {25u, 0u, 1u, 1u, {2u, 1u}, {162u, 56u}, {0x402a5eb56cf9492cull, 0x4015179f9401edafull}},
+    {26u, 1u, 1u, 0u, {2u, 0u}, {162u, 0u}, {0x402a5eb56cf9492cull, 0x0000000000000000ull}},
+};
+static const df_tb_stop tb_g50_double_shock_soak[] = {
+    {0u, 0u, 1u, 3u, {6u, 6u}, {1148u, 1122u}, {0x4059000000000000ull, 0x4059000000000000ull}},
+    {1u, 0u, 1u, 3u, {4u, 4u}, {780u, 778u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {2u, 0u, 1u, 3u, {4u, 4u}, {780u, 778u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {3u, 0u, 1u, 3u, {4u, 4u}, {780u, 778u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+};
+static const df_tb_stop tb_g50_double_shock_soak_after[] = {
+    {0u, 0u, 1u, 3u, {6u, 6u}, {1148u, 1122u}, {0x4059000000000000ull, 0x4059000000000000ull}},
+    {1u, 0u, 1u, 3u, {4u, 4u}, {780u, 778u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {2u, 0u, 1u, 2u, {4u, 4u}, {780u, 612u}, {0x4050aaaaaaaaaaabull, 0x40490cc6426d596cull}},
+    {3u, 0u, 1u, 1u, {4u, 3u}, {769u, 397u}, {0x405068606bfe1252ull, 0x4040b770ed180417ull}},
+};
+static const df_tb_stop tb_g50_double_shock_switch[] = {
+    {0u, 0u, 1u, 3u, {6u, 6u}, {1148u, 1122u}, {0x4059000000000000ull, 0x4059000000000000ull}},
+    {1u, 0u, 1u, 3u, {4u, 4u}, {780u, 778u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {2u, 0u, 1u, 1u, {4u, 3u}, {688u, 611u}, {0x404d007b6b82a6cfull, 0x4049000000000000ull}},
+    {3u, 0u, 1u, 1u, {4u, 3u}, {688u, 611u}, {0x404d007b6b82a6cfull, 0x4049000000000000ull}},
+    {4u, 0u, 1u, 1u, {4u, 3u}, {487u, 556u}, {0x4044d5da28400d7bull, 0x4046bb24547d0afcull}},
+};
 static const df_tb_stop tb_g5_uturn_a[] = {
     {0u, 0u, 2u, 3u, {6u, 6u}, {1078u, 1126u}, {0x4059000000000000ull, 0x4059000000000000ull}},
     {1u, 0u, 2u, 3u, {4u, 4u}, {754u, 775u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
@@ -5493,6 +5539,12 @@ static const df_tb_battle tb_battles[] = {
     {"g4_focus_sash_unburden", 4u, tb_g4_focus_sash_unburden, sizeof tb_g4_focus_sash_unburden / sizeof tb_g4_focus_sash_unburden[0]},
     {"g4_rock_head", 4u, tb_g4_rock_head, sizeof tb_g4_rock_head / sizeof tb_g4_rock_head[0]},
     {"g4_rock_head_struggle", 13u, tb_g4_rock_head_struggle, sizeof tb_g4_rock_head_struggle / sizeof tb_g4_rock_head_struggle[0]},
+    {"g50_double_shock_fail", 4u, tb_g50_double_shock_fail, sizeof tb_g50_double_shock_fail / sizeof tb_g50_double_shock_fail[0]},
+    {"g50_double_shock_ground", 2u, tb_g50_double_shock_ground, sizeof tb_g50_double_shock_ground / sizeof tb_g50_double_shock_ground[0]},
+    {"g50_double_shock_no_target", 26u, tb_g50_double_shock_no_target, sizeof tb_g50_double_shock_no_target / sizeof tb_g50_double_shock_no_target[0]},
+    {"g50_double_shock_soak", 3u, tb_g50_double_shock_soak, sizeof tb_g50_double_shock_soak / sizeof tb_g50_double_shock_soak[0]},
+    {"g50_double_shock_soak_after", 3u, tb_g50_double_shock_soak_after, sizeof tb_g50_double_shock_soak_after / sizeof tb_g50_double_shock_soak_after[0]},
+    {"g50_double_shock_switch", 4u, tb_g50_double_shock_switch, sizeof tb_g50_double_shock_switch / sizeof tb_g50_double_shock_switch[0]},
     {"g5_uturn_a", 6u, tb_g5_uturn_a, sizeof tb_g5_uturn_a / sizeof tb_g5_uturn_a[0]},
     {"g5_uturn_b", 3u, tb_g5_uturn_b, sizeof tb_g5_uturn_b / sizeof tb_g5_uturn_b[0]},
     {"g5_uturn_c", 9u, tb_g5_uturn_c, sizeof tb_g5_uturn_c / sizeof tb_g5_uturn_c[0]},
@@ -5620,7 +5672,7 @@ static const df_tb_battle tb_battles[] = {
     {"w8_sand_soak", 7u, tb_w8_sand_soak, sizeof tb_w8_sand_soak / sizeof tb_w8_sand_soak[0]},
 };
 
-/* 3892 stops: 142 of an ended battle; decided by the count 1028,
- * the HP percentage 1270, the total HP 1387, a tie 65;
- * winners: side 0 1977, side 1 1850, tie 65 */
+/* 3926 stops: 143 of an ended battle; decided by the count 1043,
+ * the HP percentage 1273, the total HP 1401, a tie 66;
+ * winners: side 0 2003, side 1 1857, tie 66 */
 #endif
