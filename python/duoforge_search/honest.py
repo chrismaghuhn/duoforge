@@ -51,13 +51,16 @@ class Unreconstructible(Exception):
 
 
 def spread_table(ctx, root=None, sources=SPREAD_SOURCES):
-    """Read the pinned A/B/C and PP_ stated spreads, never LL_ importer guesses.
+    """Read the pinned A/B/C and PP_ stated spreads, never LL_ importer guesses
+    (sources=None: every A/B/C and PP_ team of an explicitly chosen root).
 
     Sets absent from the context's tables cannot occur there; count those
     exclusions. Source ids, counts and hashes are saved beside the table hash.
     """
     root = Path(root) if root is not None else Path(__file__).resolve().parents[2] / "data/teams"
     registry = {r["id"]: r for r in json.loads((root / "index.json").read_text(encoding="utf-8"))["teams"]}
+    if sources is None:  # an explicitly chosen registry: all of its stated A/B/C and PP_ teams
+        sources = [x for x in registry if x in ("A", "B", "C") or x.startswith("PP_")]
     missing = [x for x in sources if x not in registry]
     if missing:
         raise SearchError(f"pinned spread sources missing from the registry: {missing}")
