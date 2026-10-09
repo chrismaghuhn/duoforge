@@ -169,7 +169,9 @@ _OLD_TRAIN_KEYS = {"envs", "workers", "rollout", "minutes", "updates", "epochs",
                    "eval_games", "eval_budget", "seed", "max_steps", "out", "model", "preset", "embed", "member",
                    "position", "hidden", "layers", "option", "self_play_share", "opponent_precision",
                    "league_slots", "snapshot_every", "slot_refresh", "save_minutes", "teams", "team_weights",
-                   "teams_root", "data_kind", "init", "ext_supported"}
+                   "teams_root", "data_kind", "init", "ext_supported",
+                   # main's compute ledger (#249), merged before PFSP
+                   "ledger", "stop_cpu_core_seconds", "stop_gpu_seconds", "update_gpu_share", "act_gpu_share"}
 _OLD_LEAGUE_KEYS = {"self_play", "learner_seat", "slot_of", "slots", "refresh", "seed", "snapshots", "draining",
                     "next_drain", "active", "stats"}
 

@@ -23,7 +23,9 @@ environment starts its next episode, so no battle seed repeats; options
 given on the command line replace the saved ones where a resume allows it.
 """
 import argparse
+import contextlib
 import json
+import math
 import os
 import re
 import sys
@@ -35,7 +37,7 @@ import numpy as np
 import duoforge
 from duoforge import _layout, features, teams
 
-from . import checkpoint, evaluate, league, pairing, policy, ppo, runstate, schedule, suite
+from . import checkpoint, evaluate, league, ledger, pairing, policy, ppo, runstate, schedule, suite
 from .returns import gae, samples_of
 from .selfplay import SelfPlay
 
@@ -44,8 +46,9 @@ _DIMS = ("embed", "member", "position", "hidden", "layers", "option")
 _RESUMABLE = ("envs", "workers", "minutes", "updates", "self_play_share", "league_slots", "snapshot_every",
               "slot_refresh", "entropy", "eval_every", "eval_games", "eval_budget", "save_minutes", "teams",
               "team_weights", "teams_root", "opponent_precision", "minibatch", "learning_rate_schedule", "kl_ref",
-              "kl_coef", "kl_refresh", "league_pfsp_share", "league_anchor_share", "league_anchors",
-              "pfsp_weighting", "pfsp_min_weight", "pfsp_prior", "pfsp_prior_games")
+              "kl_coef", "kl_refresh", "stop_cpu_core_seconds", "stop_gpu_seconds", "update_gpu_share",
+              "act_gpu_share", "league_pfsp_share", "league_anchor_share", "league_anchors", "pfsp_weighting",
+              "pfsp_min_weight", "pfsp_prior", "pfsp_prior_games")
 # The refill options (league.Refill) and their defaults, which reproduce the uniform refills of the runs before them;
 # a run saves one only where it differs from its default, so a run without them saves what such a run saved.
 _REFILL = {"league_pfsp_share": ("pfsp_share", 0.0), "league_anchor_share": ("anchor_share", 0.0),
@@ -68,6 +71,12 @@ def model_config(args):
             raise SystemExit(f"model v1 takes only --hidden, not {extra}")
         return {**policy.V1_DEFAULT, **dims}
     return policy.v2_config(args.preset, **dims)
+
+
+def _on_default(index, share):
+    """Whether the index-th call of a share runs on the default device: floor((index + 1) * share) > floor(index *
+    share), so share 1 is every call, 0 none, and a resume continues the pattern."""
+    return math.floor((index + 1) * share) > math.floor(index * share)
 
 
 def _rows(o, e):
@@ -218,6 +227,17 @@ def _parser(suppress=False):
         help="a checkpoint (format 2) a new run starts from, a behavior-cloning network (M11 BC spec section 8): "
              "its model and data kind unless given, fresh optimizer, league and counters; a resume never re-applies "
              "it")
+    add("--ledger", default=None, help="a compute ledger (ledger.py, stage 3 P1): CPU core-seconds and GPU-seconds of "
+                                       "the run, summed over its restarts")
+    add("--stop-cpu-core-seconds", type=float, default=0.0,
+        help="stop at the first update where the ledger's CPU core-seconds reach this (0: no such stop)")
+    add("--stop-gpu-seconds", type=float, default=0.0,
+        help="stop at the first update where the ledger's GPU-seconds reach this (0: no such stop)")
+    add("--update-gpu-share", type=float, default=1.0,
+        help="the share of updates on the default device, the rest on the CPU (update u, from 0: on the default "
+             "device when floor((u+1)q) > floor(uq))")
+    add("--act-gpu-share", type=float, default=1.0,
+        help="the same share for the collection's network calls (learner and league opponents)")
     add("--ext-supported", type=lambda s: int(s, 0), default=None,
         help="the view-extension features the network reads (decision 0018), a mask of DUOFORGE_VIEWEXT_FEATURE_* "
              "bits (default: every feature the library supports under the data kind)")
@@ -235,8 +255,16 @@ def parse(argv):
         p.error("give --out for a new run or --resume for an existing one")
     if args.init is not None and args.resume is not None:
         p.error("--init starts a new run: a resume keeps the run's own parameters")
+    for share in ("update_gpu_share", "act_gpu_share"):
+        if not 0.0 <= getattr(args, share) <= 1.0:
+            p.error(f"--{share.replace('_', '-')} must lie between 0 and 1")
+    budget = args.stop_cpu_core_seconds > 0 or args.stop_gpu_seconds > 0
     if args.resume is None:
-        if args.minutes <= 0 and args.updates <= 0:
+        if budget and args.ledger is None:
+            p.error("--stop-cpu-core-seconds and --stop-gpu-seconds need --ledger")
+        if budget and "minutes" not in args._given:
+            args.minutes = 0.0  # the ledger's budget replaces the 60-minute default
+        if args.minutes <= 0 and args.updates <= 0 and not budget:
             p.error("give --minutes or --updates")
     return args
 
@@ -463,6 +491,9 @@ def _run(args, pool, on_start, stop):
     lr_scale = schedule.Schedule.parse(args.learning_rate_schedule)
     if args.kl_coef and not args.kl_ref:
         raise SystemExit("--kl-coef needs --kl-ref: the reference policy of the KL anchor")
+    if (args.stop_cpu_core_seconds > 0 or args.stop_gpu_seconds > 0) and not args.ledger:
+        raise SystemExit("--stop-cpu-core-seconds and --stop-gpu-seconds need --ledger")
+    book = ledger.Ledger(args.ledger) if args.ledger else None
     train_config = {k: v for k, v in vars(args).items() if not k.startswith("_") and k not in ("resume",)}
     train_config["entropy"] = str(entropy)
     train_config["learning_rate_schedule"] = str(lr_scale)
@@ -546,7 +577,7 @@ def _run(args, pool, on_start, stop):
         params = net.init(sub) if init is None else jax.device_put(init_params)
         opt_state = tx.init(params)
         rng = np.random.default_rng(args.seed)
-        update = decisions = episodes = last_eval = 0
+        update = decisions = episodes = last_eval = act_calls = 0
         snapshots.save(0, params, snapshot_config(train_config, model_cfg, context, pool, 0, 0, encoder,
                                                   ext_supported))
         previous = params
@@ -563,6 +594,7 @@ def _run(args, pool, on_start, stop):
         rng.bit_generator.state = saved_state["numpy_rng"]
         c = saved_state["counters"]
         update, decisions, episodes, last_eval = c["update"], c["decisions"], c["episodes"], c["last_eval"]
+        act_calls = c.get("act_calls", 0)
         abandoned, abandoned_dir = snapshots.set_aside(update)
         previous = snapshots.load(last_eval) if last_eval in snapshots.updates else params
         old = saved_state["league"]
@@ -588,13 +620,45 @@ def _run(args, pool, on_start, stop):
         runstate.save_state(out, {
             "params": params, "opt_leaves": jax.tree_util.tree_leaves(opt_state), "episodes_seen": everyone,
             "jax_key": np.asarray(key), "counters": {"update": update, "decisions": decisions, "episodes": episodes,
-                                                     "last_eval": last_eval},
+                                                     "last_eval": last_eval, "act_calls": calls["act"]},
             "league": state.to_dict(), "numpy_rng": rng.bit_generator.state, "teams": _teams_json(pool),
             "data": _data_json(args.data_kind, context), "model": model_cfg,
             "features": list(features.FEATURE_NAMES), "slot_features": list(features.SLOT_FEATURE_NAMES),
             "encoder": encoder, "ext_supported": ext_supported, "ids": ids, "train": train_config})
+        if book is not None:
+            book.save()
 
-    act = net.act
+    # The continuation control of stage 3 P1: a ledger, and each update and collection call on the default device
+    # or the CPU by a deterministic share. Without them the run is as before.
+    controlled = book is not None or args.update_gpu_share != 1.0 or args.act_gpu_share != 1.0
+    default_device, cpu_device = (jax.devices()[0], jax.devices("cpu")[0]) if controlled else (None, None)
+    calls = {"act": act_calls, "default": 0, "device": None, "on": False}
+    placed = {}
+
+    def section(on_default):
+        return book.device() if book is not None and on_default else contextlib.nullcontext()
+
+    def phase(name):
+        return book.phase(name) if book is not None else contextlib.nullcontext()
+
+    def controlled_act(p, k, obs, slots, mask, is_team):
+        on = _on_default(calls["act"], args.act_gpu_share)
+        calls["act"] += 1
+        calls["default"] += on
+        device = default_device if on else cpu_device
+        calls["device"], calls["on"] = device, on
+        with section(on):
+            if device not in placed:
+                placed[device] = jax.device_put(p, device)
+            return jax.block_until_ready(net.act(placed[device], jax.device_put(k, device), obs, slots, mask,
+                                                 is_team))
+
+    class _ControlledOpponents:
+        def act(self, k, obs, slot_part, mask, is_team, slot_idx):
+            with section(calls["on"]):
+                return opponents.act(k, obs, slot_part, mask, is_team, slot_idx, device=calls["device"])
+
+    act = controlled_act if controlled else net.act
     start = time.perf_counter()
     saved_at = start
     with open(os.path.join(out, "log.jsonl"), "a", encoding="utf-8") as log:
@@ -611,23 +675,36 @@ def _run(args, pool, on_start, stop):
             t0 = time.perf_counter()
             timings = {}
             cuts_before, unresolved_before, refused_before = env.cuts, env.unresolved, env.engine_unsupported
-            rollout, bootstrap, ended, key = collect(env, params, act, key, args.rollout, state, opponents, timings)
-            advantages, _, value_targets = gae(rollout["values"], rollout["rewards"], rollout["done"],
-                                               rollout["acting"], bootstrap)
-            samples = samples_of(rollout, advantages, value_targets, learner_rows)
+            calls["default"] = 0
+            placed.clear()
+            players = _ControlledOpponents() if controlled and opponents is not None else opponents
+            with phase("collect"):
+                rollout, bootstrap, ended, key = collect(env, params, act, key, args.rollout, state, players, timings)
+                advantages, _, value_targets = gae(rollout["values"], rollout["rewards"], rollout["done"],
+                                                   rollout["acting"], bootstrap)
+                samples = samples_of(rollout, advantages, value_targets, learner_rows)
             acted = int(samples["acting"].sum())
             t1 = time.perf_counter()
             entropy_coef = entropy(decisions)
             magnet_refreshed = magnet and (ref_params is None or update % args.kl_refresh == 0)
             if magnet_refreshed:  # the magnet: the learner as it is now, frozen until the next refresh
                 ref_params = jax.tree_util.tree_map(lambda x: x, params)
-            if ref_params is not None:  # the reference's log-probability of each taken action, once per update
-                samples["ref_logp"] = ppo.reference_logp(ref_params, samples, net.evaluate, args.minibatch)
             scale = lr_scale(decisions)
-            params, opt_state, stats = ppo.update(params, opt_state, tx, samples, rng, net.evaluate,
-                                                  epochs=args.epochs, minibatch=args.minibatch,
-                                                  entropy_coef=entropy_coef, kl_coef=args.kl_coef,
-                                                  lr_scale=scale)
+            on_default = _on_default(update - 1, args.update_gpu_share)
+            device = default_device if on_default else cpu_device
+            with phase("update"), section(on_default and controlled), \
+                    (jax.default_device(device) if controlled else contextlib.nullcontext()):
+                if controlled:
+                    params, opt_state = jax.device_put(params, device), jax.device_put(opt_state, device)
+                if ref_params is not None:  # the reference's log-probability of each taken action, once per update
+                    ref = jax.device_put(ref_params, device) if controlled else ref_params
+                    samples["ref_logp"] = ppo.reference_logp(ref, samples, net.evaluate, args.minibatch)
+                params, opt_state, stats = ppo.update(params, opt_state, tx, samples, rng, net.evaluate,
+                                                      epochs=args.epochs, minibatch=args.minibatch,
+                                                      entropy_coef=entropy_coef, kl_coef=args.kl_coef,
+                                                      lr_scale=scale)
+                if controlled:
+                    jax.block_until_ready(params)
             t2 = time.perf_counter()
             decisions += acted
             episodes += ended
@@ -642,10 +719,21 @@ def _run(args, pool, on_start, stop):
             record |= {k: round(v, 4) for k, v in timings.items()}
             record["t_other"] = round(max(0.0, (t1 - t0) - sum(timings.values())), 4)
             record |= {k: round(float(v), 5) for k, v in stats.items()}
+            if controlled:
+                record["update_device"] = "default" if on_default else "cpu"
+                record["act_default_calls"] = calls["default"]
+            budget = False
+            if book is not None:
+                totals = book.totals()
+                record["ledger"] = {k: round(totals[k], 3) for k in ("cpu_core_seconds", "gpu_seconds")}
+                budget = bool((args.stop_cpu_core_seconds > 0
+                               and totals["cpu_core_seconds"] >= args.stop_cpu_core_seconds)
+                              or (args.stop_gpu_seconds > 0 and totals["gpu_seconds"] >= args.stop_gpu_seconds))
             elapsed_min = (t2 - start) / 60
             last = ((args.updates and update >= args.updates) or (args.minutes and elapsed_min >= args.minutes)
-                    or stop.requested)
-            evaluating = update % args.eval_every == 0 or (last and not stop.requested)
+                    or stop.requested or budget)
+            # A budget stop plays no final suites: whatever it played would be charged to the arm.
+            evaluating = update % args.eval_every == 0 or (last and not stop.requested and not budget)
             if update % args.snapshot_every == 0 or evaluating:
                 snapshots.save(update, params, snapshot_config(train_config, model_cfg, context, pool, update,
                                                                decisions, encoder, ext_supported))
@@ -679,6 +767,8 @@ def _run(args, pool, on_start, stop):
                 previous, last_eval = params, update
             if stop.requested:
                 record["stopped"] = "signal"
+            elif budget:
+                record["stopped"] = "budget"
             log.write(json.dumps(record) + "\n")
             log.flush()
             print(json.dumps(record), flush=True)
