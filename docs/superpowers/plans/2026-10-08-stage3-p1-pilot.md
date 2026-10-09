@@ -173,3 +173,44 @@ Existing main source `f985bbea` (before P1 code), checkpoint hash above, library
 | 14 | 15.90 | 23.60 | 102.58 |
 
 **Freeze 14 workers and 14 logical CPU affinity slots in both pilot and control**, under the same 28800 measured CPU-second cap. Highest median whole-probe rate chooses 14; 14-vs-8 is only about 4.6%, not a broad scaling claim. Valid comparison CPU cost 247.62s (0.069 core-hours); all nine decision/table/X-policy digests agree. Superseded setup probes remain private and are excluded from the throughput comparison; record profiling/setup charges separately before the production resource freeze. No private paths/tables/games are published. This short first-turn-prefix probe does not replace the generation forecast smoke or its budget/refusal gates.
+
+## Owner amendment: Trick Room diagnostic (2026-10-09)
+
+Trick Room (TR) is a plan that spans several turns. The search (one turn plus a value) sees it only through the net, so the owner expects weaknesses here. This amendment adds a **diagnostic** to the P1 evaluation. It needs no extra run: the 12288 evaluation games carry its fields in their records. It changes no gate, no promotion and no schedule; `evaluate_records` ignores the new fields.
+
+**Record fields** (`expert_eval.TR_FIELDS`, part of `RECORD_FIELDS`). Every field is an integer per game. *Student* is the evaluated arm's seat, *opponent* the other seat.
+
+| Field | Meaning |
+|---|---|
+| `tr_setter_student`, `tr_setter_opponent` | 1 if a member of that side's team knows Trick Room (the side's own view at the first observation), else 0 |
+| `tr_sets_student`, `tr_sets_opponent` | turns on which that side set TR |
+| `tr_first_set_turn_student` | the view's `turn` before the student's first set; 0 if never |
+| `tr_reversals_student` | the student ended an active TR **the opponent set** with its own Trick Room |
+| `tr_blocks_student` | the student's chosen block attempts against the opponent's TR (see below) |
+| `tr_turns` | observed turns that began with `trick_room_turns > 0` |
+| `tr_unattributed` | field changes this rule cannot attribute |
+| `tr_last_turn_choice` | 1 if a side chose Trick Room on the game's last turn, whose field change is never observed |
+
+**Attribution** uses only public engine output and the chosen actions. No battle rule is re-implemented in Python:
+- The field is `trick_room_turns` of the student's view before and after each turn.
+- A turn **sets** TR when it goes from 0 to above 0.
+- It **ends TR early** when it goes from above 1 to 0.
+- The change is attributed to a side only if exactly that side chose a Trick Room move that turn (the move id of the chosen slot's move in that side's own view). Otherwise it counts in `tr_unattributed`; it is never assigned silently.
+
+**Block attempts:** a chosen action while TR is inactive and the opponent's team has a setter, of one of these kinds:
+- Taunt or Fake Out aimed at an opponent position whose occupant knows Trick Room;
+- Imprison by a student occupant that knows Trick Room, while an opponent occupant knowing it is active.
+
+Block attempts are chosen actions, not results.
+
+Move identity comes from the data API: the named constant `TR_MOVES` (`trickroom`, `taunt`, `fakeout`, `imprison`), resolved with `data.find(ctx, TABLE_MOVE, name)`. This list classifies actions for the report only; it is no battle rule, and nothing in it feeds any decision. The tracker `expert_eval.TrickRoomTracker` is vectorized over the batch; the evaluation runner (Learner v2) calls it once per query and once per game end. Known limit: a field change on the turn that ends the battle is not observed. The report text states it with the count of games where `tr_last_turn_choice` is 1.
+
+**Report** (`expert_eval.trick_room_report(records)`), per arm and per suite, plus pooled over suites:
+- **(a)** Games where the student's team has a setter, and games where the opponent's team has one, each with score rate and a 95% bootstrap interval (`BOOTSTRAP_SEED`, `RESAMPLES`, resampling games).
+- **(b)** Set rate of the student, and the distribution of the first set turn.
+- **(c)** Reversals and block attempts per game in which the opponent set TR, or (for blocks) the opponent team has a setter.
+- **(d)** Score rate in games with `tr_turns > 0` against games without, each with its interval.
+
+Unfinished games count for none of these.
+
+Tests: `test_trick_room_tracker_attribution` (synthetic observations: set, early end, natural expiry, both sides choosing TR → unattributed, a mid-turn switch request, blocks, last-turn choice) and `test_trick_room_report_groups`. CLI: the report is part of the `expert_eval` output JSON.
