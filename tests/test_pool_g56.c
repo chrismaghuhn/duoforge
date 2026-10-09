@@ -231,6 +231,17 @@ int main(void)
         duoforge_battle_destroy(f);
     }
 
+    /* A locked user that is confused (a lock may start under confusion, and the confusion's self-hit stops its move: refused,
+     * as the lock then reaches the residual unused; the campaign's three UNSUPPORTED battles are this shape). The self-hit is
+     * a roll: refused for some seeds, carried on for the others. */
+    {
+        duoforge_battle *cf = NULL;
+        DF_CHECK(&t, duoforge_battle_clone(kp, base, &cf) == DUOFORGE_OK && cf != NULL);
+        cf->sides[0].positions[g_lead].confusion_turns = 3u;
+        check_chance(&t, kp, cf, "confusion self-hit");
+        duoforge_battle_destroy(cf);
+    }
+
     /* A freeze with two turns to go: the thaw is a roll of one in four; the frozen user's move is stopped (refused), and the
      * thawed one moves (carried on). */
     {

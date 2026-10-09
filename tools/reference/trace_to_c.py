@@ -423,6 +423,19 @@ def modifier_subsets(kinds, values):
     return out
 
 
+def lock_counter_tie(group):
+    """A residual tie of one lockedmove (Outrage, Thrash, Petal Dance: onResidual, a callback with no order) and the ends of
+    silent duration counters (stall, Protect: `H:stall:...:end`, `H:protect:...:end`, which print nothing and change no state
+    that the lock reads). The reference shuffles the tie (speedSort), the engine draws only for two callbacks, and neither
+    order shows in a line or a draw: the lock's countdown (trueDuration--, and the sleep's delete) and its end (confusion,
+    which draws CONFUSION_TURNS) do not depend on the counters' ends (data/conditions.ts:253-285; stall and protect have no
+    line of their end). Returns True only for exactly this shape."""
+    locks = [g for g in group if g.startswith('H:lockedmove:') and g.endswith(':cb')]
+    others = [g for g in group if g not in locks]
+    return len(locks) == 1 and bool(others) and \
+        all(g.startswith(('H:stall:', 'H:protect:')) and g.endswith(':end') for g in others)
+
+
 def drop_reason(d, state, after=None, log=None):
     """Why draw `d` is not a tape entry, or None; `state` is the state before the step, `after` the one after
     it (an entering Pokemon stands in its slot there), `log` the step's protocol lines (needed for the residual tie of
@@ -538,6 +551,8 @@ def drop_reason(d, state, after=None, log=None):
             return 'residual tie of duration counters'
         if all(g.startswith('H:') and g.endswith(':cb') for g in group):
             return None  # callbacks (burn, Grassy Terrain): the engine draws
+        if lock_counter_tie(group):
+            return 'residual tie of a lockedmove with the silent ends of stall and Protect (no line, no state read by the lock)'
         raise ConversionError('residual-tie-callbacks', 'trace_to_c: residual tie with callbacks: %s' % group,
                               detail=tie_effects(group))
     if site == 'SPEED_TIE' and ctx in ('event:AfterMove', 'event:AfterMega'):

@@ -800,6 +800,16 @@ class Library(unittest.TestCase):
         with self.assertRaises(trace_to_c.ConversionError) as ctx:
             trace_to_c.drop_reason(draw(stall_first, 4), before, after(True))
         self.assertEqual(ctx.exception.rule, 'no-order-end-tie')
+        # G56: one lockedmove (a callback) and the silent ends of stall and Protect: the tie is dropped; the other shapes stay refused
+        lock_group = ['H:lockedmove:p2b:cb', 'H:stall:p2b:end']
+        self.assertTrue(trace_to_c.lock_counter_tie(lock_group))
+        self.assertTrue(trace_to_c.lock_counter_tie(['H:protect:p1a:end', 'H:lockedmove:p2b:cb', 'H:stall:p2b:end']))
+        self.assertIn('lockedmove', trace_to_c.drop_reason(draw(lock_group, 4), before, after(False)))
+        for group in (['H:lockedmove:p2b:cb', 'H:lockedmove:p1b:cb', 'H:stall:p2b:end'], ['H:lockedmove:p2b:cb', 'H:disable:p2b:end']):
+            self.assertFalse(trace_to_c.lock_counter_tie(group), group)
+            with self.assertRaises(trace_to_c.ConversionError) as ctx:
+                trace_to_c.drop_reason(draw(group, 4), before, after(False))
+            self.assertEqual(ctx.exception.rule, 'residual-tie-callbacks', group)
 
     # ---- the weather step (Sandstorm, Snowscape; decision 0018, view bits 0 and 1) ----
     WEATHER_BATTLES = ('w1_sand_stream', 'w2_sandstorm_move', 'w3_snow_warning', 'w4_snowscape_move',
