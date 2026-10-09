@@ -3744,6 +3744,30 @@ static const df_tb_stop tb_g52_fail_no_fainted_pawmot[] = {
     {32u, 0u, 2u, 1u, {1u, 2u}, {7u, 198u}, {0x3fe4a04b6ecab9c1ull, 0x40305b6780b144dbull}},
     {33u, 1u, 2u, 0u, {0u, 2u}, {0u, 198u}, {0x0000000000000000ull, 0x40305b6780b144dbull}},
 };
+static const df_tb_stop tb_g52_instaswitch_faint_earlier_slot_empty[] = {
+    {0u, 0u, 3u, 4u, {6u, 6u}, {1148u, 1148u}, {0x4059000000000000ull, 0x4059000000000000ull}},
+    {1u, 0u, 3u, 4u, {4u, 4u}, {773u, 773u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {2u, 0u, 3u, 4u, {4u, 4u}, {773u, 773u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {3u, 0u, 1u, 2u, {4u, 4u}, {773u, 755u}, {0x4050aaaaaaaaaaabull, 0x40504b9dfe4f6b4dull}},
+    {6u, 0u, 1u, 2u, {4u, 4u}, {766u, 417u}, {0x4050807b6b82a6cfull, 0x404292e2f41ae2e0ull}},
+    {9u, 0u, 1u, 1u, {4u, 3u}, {773u, 397u}, {0x4050aaaaaaaaaaabull, 0x4041642c8590b216ull}},
+    {12u, 0u, 1u, 1u, {4u, 2u}, {773u, 379u}, {0x4050aaaaaaaaaaabull, 0x4040aaaaaaaaaaabull}},
+    {15u, 0u, 1u, 1u, {4u, 1u}, {773u, 159u}, {0x4050aaaaaaaaaaabull, 0x402df18966b073b5ull}},
+    {18u, 0u, 1u, 1u, {4u, 1u}, {773u, 177u}, {0x4050aaaaaaaaaaabull, 0x4030aaaaaaaaaaabull}},
+    {19u, 0u, 1u, 1u, {4u, 2u}, {773u, 278u}, {0x4050aaaaaaaaaaabull, 0x4039000000000000ull}},
+};
+static const df_tb_stop tb_g52_instaswitch_faint_previous_turn[] = {
+    {0u, 0u, 3u, 4u, {6u, 6u}, {1148u, 1148u}, {0x4059000000000000ull, 0x4059000000000000ull}},
+    {1u, 0u, 3u, 4u, {4u, 4u}, {773u, 773u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {2u, 0u, 3u, 4u, {4u, 4u}, {773u, 773u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {3u, 0u, 1u, 2u, {4u, 4u}, {773u, 755u}, {0x4050aaaaaaaaaaabull, 0x40504b9dfe4f6b4dull}},
+    {6u, 0u, 1u, 2u, {4u, 4u}, {766u, 417u}, {0x4050807b6b82a6cfull, 0x404292e2f41ae2e0ull}},
+    {9u, 0u, 1u, 1u, {4u, 3u}, {773u, 397u}, {0x4050aaaaaaaaaaabull, 0x4041642c8590b216ull}},
+    {12u, 0u, 1u, 1u, {4u, 2u}, {773u, 379u}, {0x4050aaaaaaaaaaabull, 0x4040aaaaaaaaaaabull}},
+    {15u, 0u, 1u, 1u, {4u, 1u}, {773u, 159u}, {0x4050aaaaaaaaaaabull, 0x402df18966b073b5ull}},
+    {16u, 0u, 1u, 1u, {4u, 1u}, {773u, 159u}, {0x4050aaaaaaaaaaabull, 0x402df18966b073b5ull}},
+    {17u, 0u, 1u, 1u, {4u, 2u}, {773u, 271u}, {0x4050aaaaaaaaaaabull, 0x40385743035ff093ull}},
+};
 static const df_tb_stop tb_g52_revive_later_switch_primarina[] = {
     {0u, 0u, 3u, 4u, {6u, 6u}, {1148u, 1148u}, {0x4059000000000000ull, 0x4059000000000000ull}},
     {1u, 0u, 2u, 3u, {4u, 4u}, {739u, 773u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
@@ -5531,6 +5555,8 @@ static const df_tb_battle tb_battles[] = {
     {"g50_double_shock_switch", 4u, tb_g50_double_shock_switch, sizeof tb_g50_double_shock_switch / sizeof tb_g50_double_shock_switch[0]},
     {"g52_benched_revive_kingambit", 18u, tb_g52_benched_revive_kingambit, sizeof tb_g52_benched_revive_kingambit / sizeof tb_g52_benched_revive_kingambit[0]},
     {"g52_fail_no_fainted_pawmot", 33u, tb_g52_fail_no_fainted_pawmot, sizeof tb_g52_fail_no_fainted_pawmot / sizeof tb_g52_fail_no_fainted_pawmot[0]},
+    {"g52_instaswitch_faint_earlier_slot_empty", 19u, tb_g52_instaswitch_faint_earlier_slot_empty, sizeof tb_g52_instaswitch_faint_earlier_slot_empty / sizeof tb_g52_instaswitch_faint_earlier_slot_empty[0]},
+    {"g52_instaswitch_faint_previous_turn", 17u, tb_g52_instaswitch_faint_previous_turn, sizeof tb_g52_instaswitch_faint_previous_turn / sizeof tb_g52_instaswitch_faint_previous_turn[0]},
     {"g52_revive_later_switch_primarina", 35u, tb_g52_revive_later_switch_primarina, sizeof tb_g52_revive_later_switch_primarina / sizeof tb_g52_revive_later_switch_primarina[0]},
     {"g52_revive_pivot_no_reserve_ceruledge", 25u, tb_g52_revive_pivot_no_reserve_ceruledge, sizeof tb_g52_revive_pivot_no_reserve_ceruledge / sizeof tb_g52_revive_pivot_no_reserve_ceruledge[0]},
     {"g52_revive_win_milotic", 31u, tb_g52_revive_win_milotic, sizeof tb_g52_revive_win_milotic / sizeof tb_g52_revive_win_milotic[0]},
@@ -5661,7 +5687,7 @@ static const df_tb_battle tb_battles[] = {
     {"w8_sand_soak", 7u, tb_w8_sand_soak, sizeof tb_w8_sand_soak / sizeof tb_w8_sand_soak[0]},
 };
 
-/* 3933 stops: 148 of an ended battle; decided by the count 1068,
- * the HP percentage 1261, the total HP 1387, a tie 69;
- * winners: side 0 1992, side 1 1872, tie 69 */
+/* 3953 stops: 148 of an ended battle; decided by the count 1078,
+ * the HP percentage 1265, the total HP 1387, a tie 75;
+ * winners: side 0 2006, side 1 1872, tie 75 */
 #endif
