@@ -315,7 +315,8 @@ duoforge_status duoforge_battle_observe_ext(const duoforge_context *ctx, const d
         for (uint32_t s = 0u; s < DUOFORGE_SIDE_COUNT; ++s) {
             /* Step G7: Wide Guard of the side (public: [-singleturn] Wide Guard). It lasts the turn and ends in the
              * residual, so it is set only at a boundary inside a turn (a PIVOT), as decision 0018 section 3.3 says. */
-            o.sides[s].guard_flags = battle->tail.sides[s].wide_guard != 0u ? (uint8_t)DUOFORGE_SIDE_GUARD_WIDE_GUARD : 0u;
+            o.sides[s].guard_flags = (uint8_t)((battle->tail.sides[s].wide_guard != 0u ? DUOFORGE_SIDE_GUARD_WIDE_GUARD : 0u) | /* wide-operands-reviewed */
+                                               (battle->tail.sides[s].quick_guard != 0u ? DUOFORGE_SIDE_GUARD_QUICK_GUARD : 0u));
             /* Step G20: Aurora Veil's turns left (public: -sidestart ... move: Aurora Veil, 5 turns or 8 with Light Clay on
              * the setter, then counted down in the residual until the -sideend line; the sheet has the item). The state
              * keeps the same count, so the view is the tail's field. */

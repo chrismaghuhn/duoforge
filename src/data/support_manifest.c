@@ -452,6 +452,17 @@ const dfi_support_manifest dfi_support = {
              * confusion when it ends, the switch-out and the faint clear it). Thrash and Petal Dance stay unmarked:
              * no recorded battle yet. */
             [DFI_MOVE_OUTRAGE] = 1u,
+            /* Step G54 (decision 0015 item 5at). Handlers: Icicle Spear and Scale Shot (2 to 5 hits, the Champions weighted count,
+             * Scale Shot's self boost after the last hit), Quick Guard (Wide Guard's shape against the priority moves), Upper Hand
+             * (Sucker Punch's queue read: a queued priority move), Heal Pulse (half of the target's HP) and Strength Sap (heals by
+             * the target's Attack and lowers it). Data row: Sing. Left out: Haze, Steel Beam and Final Gambit (decision 0015 5at). */
+            [DFI_MOVE_ICICLESPEAR] = 1u,
+            [DFI_MOVE_SCALESHOT] = 1u,
+            [DFI_MOVE_QUICKGUARD] = 1u,
+            [DFI_MOVE_UPPERHAND] = 1u,
+            [DFI_MOVE_HEALPULSE] = 1u,
+            [DFI_MOVE_STRENGTHSAP] = 1u,
+            [DFI_MOVE_SING] = 1u,
         },
     .abilities =
         {
@@ -716,5 +727,7 @@ const dfi_support_manifest dfi_support = {
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_STEALTH_ROCK) |
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_SPIKES) |
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_TOXIC_SPIKES) |
-                         ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_STICKY_WEB) | ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_ROOST),
+                         ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_STICKY_WEB) |
+                         ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_ROOST) |
+                         ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_QUICK_GUARD)
 };

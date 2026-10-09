@@ -895,8 +895,15 @@
 #define DFI_SPECIAL_DOUBLE_SHOCK 71u
 #define DFI_SPECIAL_ROOST 72u
 #define DFI_SPECIAL_STOMPING_TANTRUM 73u
-#define DFI_SPECIAL_REVIVAL_BLESSING 74u
-#define DFI_SPECIAL_UNMODELED 75u
+#define DFI_SPECIAL_LOCKED_MOVE 74u
+#define DFI_SPECIAL_REVIVAL_BLESSING 75u
+#define DFI_SPECIAL_MULTI_HIT_2_5 76u
+#define DFI_SPECIAL_SCALE_SHOT 77u
+#define DFI_SPECIAL_QUICK_GUARD 78u
+#define DFI_SPECIAL_UPPER_HAND 79u
+#define DFI_SPECIAL_HEAL_PULSE 80u
+#define DFI_SPECIAL_STRENGTH_SAP 81u
+#define DFI_SPECIAL_UNMODELED 82u
 
 /* ---- the second flags byte of every move (step G8: the general byte for the flags that the first one has no room
  * for; bits 4 to 128 are free) and the secondary kinds that it comes with ---- */

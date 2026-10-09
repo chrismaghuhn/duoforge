@@ -46,7 +46,8 @@
                                     * sample(the bench, non-fainted, in side.pokemon order): random(n), n >= 1 (sim/battle.ts:1570-1588) */
 #define DFI_SITE_LOCK_TURNS 21u    /* the lock of Outrage, Thrash and Petal Dance (POOL data, step G56): lockedmove's onStart,
                                     * random(2, 4) = 2 or 3 turns (data/conditions.ts:265) */
-#define DFI_SITE_COUNT 22u
+#define DFI_SITE_MULTIHIT_COUNT 22u /* Scale Shot, Icicle Spear (POOL data, step G54): sample of 20 hit counts, random(20) */
+#define DFI_SITE_COUNT 23u
 
 typedef struct dfi_tape_entry {
     uint32_t site;

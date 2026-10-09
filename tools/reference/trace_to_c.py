@@ -138,7 +138,8 @@ SITES = {'SPEED_TIE': 1, 'ACCURACY': 2, 'CRIT': 3, 'DAMAGE_ROLL': 4, 'SECONDARY'
          'CONFUSION_HIT': 11, 'RANDOM_TARGET': 12, 'STATUS_PICK': 13, 'INSERT_TIE': 14, 'TRACE': 15, 'POISON_TOUCH': 16,
          'CURSED_BODY': 17, 'FLAME_BODY': 18, 'STATIC': 19,  # 17: step G27, 18: step G30, 19: step G39
          'DRAG': 20,  # 20: step G46, the drag's draw (DFI_SITE_DRAG)
-         'LOCK_TURNS': 21}  # 21: step G56, the lock's count of Outrage, Thrash and Petal Dance (DFI_SITE_LOCK_TURNS)
+         'LOCK_TURNS': 21,
+         'MULTIHIT_COUNT': 22}  # 21: step G56, the lock's count of Outrage, Thrash and Petal Dance (DFI_SITE_LOCK_TURNS)
 STATS = ['HP', 'Atk', 'Def', 'SpA', 'SpD', 'Spe']
 GENDER = {'M': 1, 'F': 2}
 GENDERLESS = 3
@@ -830,6 +831,7 @@ FIELD_PSYCHIC_TERRAIN = 3  # DUOFORGE_FIELD_PSYCHIC_TERRAIN (Team C)
 FIELD_ELECTRIC_TERRAIN = 4  # DUOFORGE_FIELD_ELECTRIC_TERRAIN (POOL, step G25)
 FIELD_MISTY_TERRAIN = 5  # DUOFORGE_FIELD_MISTY_TERRAIN (POOL, step G25)
 BLOCK_WIDE_GUARD = 4  # DUOFORGE_BLOCK_WIDE_GUARD (POOL), a detail of BLOCKED
+BLOCK_QUICK_GUARD = 6  # DUOFORGE_BLOCK_QUICK_GUARD (POOL, decision 0029): -activate move: Quick Guard
 FOE_SIDE_MOVES = ('Stealth Rock', 'Spikes', 'Toxic Spikes', 'Sticky Web')  # the moves with the target class foeSide (POOL, step G37)
 RESULT = {'p1': 1, 'p2': 2, '': 3}
 
@@ -1249,6 +1251,8 @@ def step_events(log, viewer, roster_of, maxhp, tables, rb_pending=None):
                 e = ev_tuple(EV['SINGLE_TURN'], ev_pos(args[0]), of, 0, tables['MOVE'][key(args[1])])
             elif args[1] == 'Wide Guard' and not attrs:  # POOL: the side condition of the user's side, one turn
                 e = ev_tuple(EV['SINGLE_TURN'], ev_pos(args[0]), NOPOS, 0, tables['MOVE'][key(args[1])])
+            elif args[1] == 'Quick Guard' and not attrs:  # POOL (step G54): the same line for Quick Guard's side condition
+                e = ev_tuple(EV['SINGLE_TURN'], ev_pos(args[0]), NOPOS, 0, tables['MOVE'][key(args[1])])
             elif args[1] == 'move: Roost' and not attrs:  # POOL, step G42: the Flying type is off for the turn (no [of])
                 e = ev_tuple(EV['SINGLE_TURN'], ev_pos(args[0]), NOPOS, 0, tables['MOVE'][key('Roost')])
             elif args[1] in ('move: Follow Me', 'move: Rage Powder') and not attrs:
@@ -1277,6 +1281,8 @@ def step_events(log, viewer, roster_of, maxhp, tables, rb_pending=None):
                 e = ev_tuple(EV['BLOCKED'], pos, detail=FIELD_PSYCHIC_TERRAIN)
             elif what == 'move: Wide Guard':  # POOL: a spread move stopped at a target of the guarded side
                 e = ev_tuple(EV['BLOCKED'], pos, detail=BLOCK_WIDE_GUARD)
+            elif what == 'move: Quick Guard':  # POOL (step G54): a priority move stopped at a target of the guarded side
+                e = ev_tuple(EV['BLOCKED'], pos, detail=BLOCK_QUICK_GUARD)
             elif what == 'confusion':
                 e = ev_tuple(EV['CONFUSED'], pos)
             elif what.startswith('ability: '):

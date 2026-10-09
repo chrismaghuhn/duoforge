@@ -7,6 +7,7 @@
 #include "combat/events.h"
 #include "combat/item_family.h"
 #include "combat/move_rules.h"
+#include "combat/multihit_count.h"
 #include "combat/power_trip.h"
 #include "combat/secondary_rolls.h"
 
@@ -665,6 +666,11 @@ static void dfi_break_protect(dfi_run *r, uint32_t flat, uint32_t move_id)
     }
     if (b->tail.sides[flat / 2u].wide_guard != 0u) {
         b->tail.sides[flat / 2u].wide_guard = 0u;
+        broke = true;
+    }
+    /* hitStepBreakProtect also removes Quick Guard from the target's side (sim/battle-actions.ts:756-770, gen 9). */
+    if (b->tail.sides[flat / 2u].quick_guard != 0u) {
+        b->tail.sides[flat / 2u].quick_guard = 0u;
         broke = true;
     }
     if (broke) {
@@ -3774,6 +3780,30 @@ static duoforge_status dfi_run_wide_guard(dfi_run *r, uint32_t user)
     return DUOFORGE_OK;
 }
 
+/* Quick Guard (step G54, data/moves.ts:14489-14531): Wide Guard's shape for the priority moves. Its onTry fails unless a
+ * move is still to come (queue.willAct, as Wide Guard's does); the side gets the turn's flag and its -singleturn line
+ * (id Quick Guard), the user the stall counter of onHitSide without a roll, and a second one of the side changes nothing.
+ * The flag ends in the residual of the turn (the tail's quick_guard, cleared with Wide Guard's). */
+static duoforge_status dfi_run_quick_guard(dfi_run *r, uint32_t user)
+{
+    struct duoforge_battle *b = r->b;
+    if (!dfi_will_act(b)) {
+        dfi_fail_still(r, user);
+        return DUOFORGE_OK;
+    }
+    dfi_tail_side *ts = &b->tail.sides[user / 2u];
+    if (ts->quick_guard == 0u) {
+        ts->quick_guard = (uint8_t)DFI_TAIL_QUICK_GUARD_MAX;
+        duoforge_event e = dfi_ev(DUOFORGE_EVENT_SINGLE_TURN, user, DUOFORGE_CAUSE_NONE, 0u, DUOFORGE_NO_POSITION);
+        e.id = (uint16_t)DFI_MOVE_QUICKGUARD;
+        dfi_emit(r, &e); /* [-singleturn] user|Quick Guard */
+    }
+    dfi_active_slot *pos = dfi_pos(b, user);
+    pos->stall_level = (uint8_t)(pos->stall_level < DFI_STALL_LEVEL_MAX ? pos->stall_level + 1u : pos->stall_level); /* wide-operands-reviewed */
+    pos->stall_turns = (uint8_t)DFI_STALL_DURATION;
+    return DUOFORGE_OK;
+}
+
 /* Aurora Veil (POOL data, data/moves.ts:830-877; the side's turns are in the state tail). Its onTry (:840) fails the
  * move unless the weather is snow (Field.isWeather, sim/field.ts:118; nothing here suppresses a weather: Cloud Nine and
  * Air Lock are not marked): -fail with [still], as every failed side move. addSideCondition does not restart an active
@@ -4301,10 +4331,21 @@ static duoforge_status dfi_run_follow_me(dfi_run *r, uint32_t user, uint32_t mov
  * drain, this move) passes, where Heal Block refuses it (dfi_heal_blocked). A
  * blocked user never gets here: its heal moves are disabled in the request and
  * stopped before the move (the heal flag, flags2 bit 2: [cant] Heal Block). */
+/* The heal of a heal move by the fraction num/den of the target's maximum HP (step G54: Heal Pulse, 1/2, at the table's
+ * rounding: Math.round, which is Math.ceil for the halves of Heal Pulse's Math.ceil(baseMaxhp * 0.5), at least 1). */
+static duoforge_status dfi_run_heal_fraction(dfi_run *r, uint32_t num, uint32_t den, bool still, uint32_t user,
+                                             uint32_t move_id, const uint32_t *targets, uint32_t count);
+
 static duoforge_status dfi_run_heal_move(dfi_run *r, uint32_t user, uint32_t move_id, const uint32_t *targets,
                                          uint32_t count)
 {
-    (void)user;
+    return dfi_run_heal_fraction(r, dfi_pool_move_heal[move_id][0], dfi_pool_move_heal[move_id][1], true, user, move_id,
+                                 targets, count);
+}
+
+static duoforge_status dfi_run_heal_fraction(dfi_run *r, uint32_t num, uint32_t den, bool still, uint32_t user,
+                                             uint32_t move_id, const uint32_t *targets, uint32_t count)
+{
     bool did = false;
     /* moveHit's heal, once per target in the order of the list (sim/battle-actions.ts:1201-1222; Life Dew, step G32, heals
      * the user and its standing ally, each at its own full-HP check and with its own -fail or -heal line). A target under
@@ -4316,14 +4357,16 @@ static duoforge_status dfi_run_heal_move(dfi_run *r, uint32_t user, uint32_t mov
             continue;
         }
         if (m->hp >= m->hp_max) {
-            dfi_fail_still(r, t);
+            if (still) {
+                dfi_fail_still(r, t);
+            } else {
+                dfi_emit_plain(r, DUOFORGE_EVENT_FAIL, t); /* Heal Pulse: -fail|X|heal, no [still] (data/moves.ts:8418-8420) */
+            }
             continue;
         }
         if (dfi_heal_blocked(r->b, t)) {
             return DUOFORGE_E_UNSUPPORTED;
         }
-        const uint32_t num = dfi_pool_move_heal[move_id][0];
-        const uint32_t den = dfi_pool_move_heal[move_id][1];
         uint32_t amount = ((uint32_t)m->hp_max * num * 2u + den) / (2u * den); /* Math.round(hp_max * num / den) */
         amount = amount < 1u ? 1u : amount;
         dfi_heal(r, t, amount, DUOFORGE_CAUSE_NONE, 0u, DUOFORGE_NO_POSITION);
@@ -4363,6 +4406,69 @@ static duoforge_status dfi_run_heal_move(dfi_run *r, uint32_t user, uint32_t mov
         return DUOFORGE_OK;
     }
     return dfi_status_hit_end(r);
+}
+
+/* Heal Pulse's heal (step G54, data/moves.ts:8399-8428): the target heals by Math.ceil(baseMaxhp / 2); a target at full HP shows
+ * the plain fail of the heal move (dfi_run_heal_fraction), the Mega Launcher's 3/4 is not marked. */
+/* Heal Pulse's heal after the hit steps: a target that Protect (or an immunity) stopped is not healed and shows no fail;
+ * the others heal by half of their maximum HP, or fail at full HP with the plain line. */
+static duoforge_status dfi_run_heal_pulse(dfi_run *r, const uint32_t *targets, const bool *hit, uint32_t count)
+{
+    uint32_t live[DFI_POSITIONS] = {0u, 0u, 0u, 0u};
+    uint32_t n = 0u;
+    for (uint32_t i = 0u; i < count; ++i) {
+        if (hit[i]) {
+            live[n] = targets[i];
+            n += 1u;
+        }
+    }
+    if (n == 0u) {
+        return DUOFORGE_OK;
+    }
+    /* Heal Pulse is not Roost: the user and the move are only read by the Roost branch below */
+    return dfi_run_heal_fraction(r, 1u, 2u, false, DFI_POSITIONS, DFI_MOVE_HEALPULSE, live, n);
+}
+
+/* Strength Sap (step G54, data/moves.ts:18174-18193, data/mods/champions/moves.ts:981-984): onHit. A target at -6 Attack fails
+ * it (return false). Otherwise the target's Attack stat as it is now (the stage applied; getStat(atk, false, true) has no item
+ * or ability modifier) is drained: the target's Attack falls one stage (boost with no effect of its own, the user as the
+ * source, so Mirror Armor bounces it), then the user heals by that stat (heal(atk, source, target): the user, through
+ * dfi_heal, so Heal Block refuses it). The move fails when neither the heal nor the drop did anything. */
+static duoforge_status dfi_run_strength_sap(dfi_run *r, uint32_t user, const uint32_t *targets, uint32_t count,
+                                            const bool *hit)
+{
+    struct duoforge_battle *b = r->b;
+    if (count == 0u || !hit[0]) {
+        return DUOFORGE_OK; /* a miss or a Protect: its line is shown by the hit loop */
+    }
+    const uint32_t t = targets[0];
+    dfi_member *tm = dfi_at(b, t);
+    dfi_active_slot *tp = dfi_pos(b, t);
+    if (tm == NULL || tm->hp == 0u) {
+        return DUOFORGE_OK;
+    }
+    /* A target at Attack -6 fails it (`if (target.boosts.atk === -6) return false`). The reference draws the accuracy first
+     * and fails after it (tests/reference/traces/g54_strength_sap_b.json, step 7: ACCURACY, then -fail with [still]). */
+    if (tp->stages[DFI_STAGE_ATK] == 0u) {
+        dfi_fail_still(r, user);
+        return DUOFORGE_OK;
+    }
+    uint32_t atk = 0u;
+    const duoforge_status st = dfi_staged_stat(tm, tp, 0u, &atk); /* index 0: attack */
+    if (st != DUOFORGE_OK) {
+        return st;
+    }
+    static const uint8_t atk_down[DFI_STAT_STAGE_COUNT] = {5u, 6u, 6u, 6u, 6u, 6u, 6u};
+    const bool dropped = dfi_boost(r, t, atk_down, user, dfi_effect(DUOFORGE_CAUSE_NONE, 0u, DFI_BOOST_PRIMARY));
+    dfi_member *um = dfi_at(b, user);
+    const bool healed = um != NULL && um->hp != 0u && um->hp < um->hp_max && !dfi_heal_blocked(b, user);
+    if (healed) {
+        dfi_heal(r, user, atk, DUOFORGE_CAUSE_NONE, 0u, DUOFORGE_NO_POSITION);
+    }
+    if (!healed && !dropped) {
+        dfi_fail_still(r, user);
+    }
+    return DUOFORGE_OK;
 }
 
 /* The recharge turn (step G17): the action {choice: 'move', moveid: 'recharge'} of a Pokemon with mustrecharge
@@ -4977,6 +5083,9 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
     if (md->special == DFI_SPECIAL_WIDE_GUARD) {
         return dfi_run_wide_guard(r, user);
     }
+    if (md->special == DFI_SPECIAL_QUICK_GUARD) {
+        return dfi_run_quick_guard(r, user);
+    }
     if (md->special == DFI_SPECIAL_AURORA_VEIL) {
         return dfi_run_aurora_veil(r, user);
     }
@@ -5100,7 +5209,7 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
     /* A status move whose only effect is its forced switch (Roar, Whirlwind; step G46) is modelled by the forced-switch step
      * below, not refused here. */
     if (status_move && md->primary_status == DFI_STATUS_NONE && md->special != DFI_SPECIAL_PARTING_SHOT &&
-        md->special != DFI_SPECIAL_SOAK && md->special != DFI_SPECIAL_ENCORE && md->special != DFI_SPECIAL_DISABLE &&
+        md->special != DFI_SPECIAL_STRENGTH_SAP && md->special != DFI_SPECIAL_HEAL_PULSE && md->special != DFI_SPECIAL_SOAK && md->special != DFI_SPECIAL_ENCORE && md->special != DFI_SPECIAL_DISABLE &&
         md->special != DFI_SPECIAL_TRICK && md->special != DFI_SPECIAL_SWITCHEROO &&
         md->special != DFI_SPECIAL_TAUNT && md->special != DFI_SPECIAL_YAWN &&
         md->boost_role != DFI_BOOST_ROLE_PRIMARY_TARGET &&
@@ -5143,7 +5252,11 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
         md->special != DFI_SPECIAL_TAUNT && md->special != DFI_SPECIAL_YAWN &&
         md->special != DFI_SPECIAL_ROOST && md->special != DFI_SPECIAL_STOMPING_TANTRUM &&
         md->special != DFI_SPECIAL_POWER_TRIP && md->special != DFI_SPECIAL_THUNDER && md->special != DFI_SPECIAL_ICE_FANG &&
-        md->special != DFI_SPECIAL_TRI_ATTACK && md->special != DFI_SPECIAL_LOCKED_MOVE) {
+        md->special != DFI_SPECIAL_TRI_ATTACK && md->special != DFI_SPECIAL_LOCKED_MOVE &&
+        md->special != DFI_SPECIAL_MULTI_HIT_2_5 &&
+        md->special != DFI_SPECIAL_SCALE_SHOT && md->special != DFI_SPECIAL_QUICK_GUARD &&
+        md->special != DFI_SPECIAL_UPPER_HAND && md->special != DFI_SPECIAL_HEAL_PULSE &&
+        md->special != DFI_SPECIAL_STRENGTH_SAP) {
         return DUOFORGE_E_INVARIANT;
     }
     /* Steel Roller's onTry (step G34, data/moves.ts:17893-17913): it fails without a terrain, with -fail and [still]. */
@@ -5183,6 +5296,26 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
                       b->tail.sides[targets[0] / 2u].positions[targets[0] % 2u].must_recharge == 0u;
         }
         if (!attacks) {
+            dfi_fail_still(r, user);
+            return DUOFORGE_OK;
+        }
+    }
+    /* Upper Hand (step G54, data/moves.ts:20187-20209): its onTry fails unless the target's queued action is a move (willMove)
+     * with priority above 0 that is not a Status move; a recharge turn and a Struggle are not. A holder of Prankster or Gale
+     * Wings can raise the priority of its queued move beyond what the table shows (dfi_move_priority, at the queue), so such a
+     * target is refused (E_UNSUPPORTED) rather than judged on the table. The flinch is the move's secondary (the generic path). */
+    if (md->special == DFI_SPECIAL_UPPER_HAND) {
+        const dfi_member *ut = dfi_at(b, targets[0]);
+        if (dfi_ability(b, ut, DFI_ABILITY_PRANKSTER) || dfi_ability(b, ut, DFI_ABILITY_GALEWINGS)) {
+            return DUOFORGE_E_UNSUPPORTED;
+        }
+        const dfi_queue_record *next = dfi_will_move(b, targets[0]);
+        bool first = false;
+        if (next != NULL && next->move_slot != DUOFORGE_MOVE_SLOT_RECHARGE && next->move_slot != DUOFORGE_MOVE_SLOT_STRUGGLE) {
+            const dfi_move_data *qm = &dfi_pool_moves[dfi_move_of(ut, next->move_slot)];
+            first = qm->priority > DFI_PRIORITY_BIAS && qm->category != DFI_CATEGORY_STATUS;
+        }
+        if (!first) {
             dfi_fail_still(r, user);
             return DUOFORGE_OK;
         }
@@ -5250,6 +5383,21 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
                 guarded[i] = true;
                 duoforge_event e = dfi_event_make(DUOFORGE_EVENT_BLOCKED, t);
                 e.detail = (uint8_t)DUOFORGE_BLOCK_WIDE_GUARD; /* [-activate] move: Wide Guard */
+                dfi_emit(r, &e);
+            }
+        }
+    }
+    /* Quick Guard (step G54, data/moves.ts:14489-14531): its onTryHit at priority 4 stops a move with positive priority
+     * (dfi_move_priority, Prankster and Gale Wings included) that has the protect flag and targets a side with the guard. The
+     * test is checkMoveBypassesProtect (sim/battle.ts:1300-1313): a protect move is not bypassing, a move without the flag is,
+     * so only the protect moves are stopped. One -activate line per guarded target (the BLOCKED event, detail 6). */
+    if ((md->flags & DFI_MOVE_FLAG_PROTECT) != 0u && dfi_move_priority(b, dfi_at(b, user), md) > DFI_PRIORITY_BIAS) {
+        for (uint32_t i = 0u; i < count; ++i) {
+            const uint32_t t = targets[i];
+            if (b->tail.sides[t / 2u].quick_guard != 0u && !guarded[i]) {
+                guarded[i] = true;
+                duoforge_event e = dfi_event_make(DUOFORGE_EVENT_BLOCKED, t);
+                e.detail = (uint8_t)DUOFORGE_BLOCK_QUICK_GUARD; /* [-activate] move: Quick Guard */
                 dfi_emit(r, &e);
             }
         }
@@ -5509,6 +5657,12 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
             }
         }
     }
+    if (md->special == DFI_SPECIAL_STRENGTH_SAP) {
+        return dfi_run_strength_sap(r, user, targets, count, hit);
+    }
+    if (md->special == DFI_SPECIAL_HEAL_PULSE) {
+        return dfi_run_heal_pulse(r, targets, hit, count);
+    }
     /* trySpreadMoveHit ends a spread move's line with [spread] and the
      * slots still hit (sim/battle-actions.ts:618): the hit loop keeps every
      * target that reaches it. */
@@ -5647,8 +5801,22 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
     for (uint32_t i = 0u; i < count; ++i) {
         r->mres |= hit[i] ? DFI_MRES_TRUE : 0u; /* spreadDamage returns a number for a hit target (also 0): true */
     }
-    const uint32_t hits_total = dfi_move_hits(md);
-    if (hits_total != 1u && (count != 1u || spread)) {
+    uint32_t hits_total = dfi_move_hits(md);
+    bool reaches_loop = false; /* hitStepMoveHitLoop is entered only when a target survived the hit steps (an immunity: no) */
+    for (uint32_t i = 0u; i < count; ++i) {
+        reaches_loop = reaches_loop || hit[i];
+    }
+    if ((md->special == DFI_SPECIAL_MULTI_HIT_2_5 || md->special == DFI_SPECIAL_SCALE_SHOT) && reaches_loop) {
+        /* Icicle Spear and Scale Shot (step G54, Champions hit loop scripts.ts:437-446, data/mods/champions/scripts.ts): the count
+         * is sample([2 x7, 3 x7, 4 x3, 5 x3]) at the start of the loop, one draw of random(20) (SITE_MULTIHIT_COUNT), after the
+         * accuracy, Protect and immunity checks above. Skill Link (the count is its maximum) and Loaded Dice are not marked. */
+        uint32_t pick = 0u;
+        st = dfi_draw(r->draws, DFI_SITE_MULTIHIT_COUNT, 0u, 20u, &pick);
+        if (st != DUOFORGE_OK) {
+            return st;
+        }
+        hits_total = dfi_multihit_count(pick);
+    }    if (hits_total != 1u && (count != 1u || spread)) {
         return DUOFORGE_E_UNSUPPORTED; /* a multi-hit spread move: Dragon Darts and the like are not modelled */
     }
     const bool multi_accuracy = md->special == DFI_SPECIAL_TRIPLE_AXEL || md->special == DFI_SPECIAL_MULTI_HIT_10; /* multiaccuracy: true */
@@ -6308,6 +6476,12 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
     if (any && md->special == DFI_SPECIAL_CLANGING_SCALES && m->hp != 0u) {
         static const uint8_t def_down[DFI_STAT_STAGE_COUNT] = {6u, 5u, 6u, 6u, 6u, 6u, 6u};
         (void)dfi_boost(r, user, def_down, DFI_POSITIONS, dfi_effect(DUOFORGE_CAUSE_MOVE, 0u, DFI_BOOST_SELF));
+    }
+    /* Scale Shot (step G54, data/moves.ts:15779-15799): selfBoost {def: -1, spe: 1}, the same moveHit with isSelf after the loop
+     * and only when the move hit something; the boosts go in the pin's order (def, then spe: the stage index order). */
+    if (any && md->special == DFI_SPECIAL_SCALE_SHOT && m->hp != 0u) {
+        static const uint8_t def_down_spe_up[DFI_STAT_STAGE_COUNT] = {6u, 5u, 6u, 6u, 7u, 6u, 6u};
+        (void)dfi_boost(r, user, def_down_spe_up, DFI_POSITIONS, dfi_effect(DUOFORGE_CAUSE_MOVE, 0u, DFI_BOOST_SELF));
     }
     /* AfterMoveSecondarySelf: Life Orb takes a tenth of the holder's HP
      * (at least 1) after a damaging move that hit something, unless the holder
@@ -7603,9 +7777,11 @@ static duoforge_status dfi_residual_events_run(dfi_run *r, dfi_noorder_snapshot 
                 tail->throat_chop_turns = (uint8_t)((uint32_t)tail->throat_chop_turns - 1u); /* wide-operands-reviewed */
             }
         }
-        /* Wide Guard's side condition has duration 1 and no end line: it is gone after this residual. */
+        /* Wide Guard's side condition has duration 1 and no end line: it is gone after this residual. Quick Guard (step G54)
+         * has duration 1 as well, and no end line. */
         for (uint32_t s = 0u; s < DUOFORGE_SIDE_COUNT; ++s) {
             b->tail.sides[s].wide_guard = 0u;
+            b->tail.sides[s].quick_guard = 0u;
         }
     }
     /* The duration handlers in their order: the side conditions (26), Trick
