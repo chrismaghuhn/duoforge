@@ -19,6 +19,7 @@
 #define ROWS (ENVS * 2u)
 #define SEED 0x2026100300000500u
 #define V4 850u
+#define V5 862u
 
 static const duoforge_context_config team_c_config = {DUOFORGE_DATA_KIND_TEAM_C, 6u, 4u, 0u, 0u, NULL};
 
@@ -98,8 +99,8 @@ int main(void)
 
     /* test_widths */
     {
-        static const uint32_t want[6] = {0u, 607u, 607u, 842u, 850u, 0u};
-        for (uint32_t v = 0u; v < 6u; ++v) {
+        static const uint32_t want[7] = {0u, 607u, 607u, 842u, 850u, 862u, 0u};
+        for (uint32_t v = 0u; v < 7u; ++v) {
             uint32_t size = 7u;
             const duoforge_status st = duoforge_encoder_size(v, &size);
             DF_CHECK(&t, want[v] == 0u ? st == DUOFORGE_E_INVALID_ARGUMENT && size == 7u
@@ -127,7 +128,7 @@ int main(void)
         const uint64_t record_bit = UINT64_C(1) << DUOFORGE_VIEWEXT_FEATURE_STEALTH_ROCK;
         const uint64_t roost = UINT64_C(1) << DUOFORGE_VIEWEXT_FEATURE_ROOST;
         DF_CHECK(&t, duoforge_encode(4u, 0u, NULL, d, NULL, row_obs, row_slots, row_pairs) == DUOFORGE_E_NULL_ARGUMENT);
-        DF_CHECK(&t, duoforge_encode(5u, 0u, ob, d, NULL, row_obs, row_slots, row_pairs) ==
+        DF_CHECK(&t, duoforge_encode(6u, 0u, ob, d, NULL, row_obs, row_slots, row_pairs) ==
                          DUOFORGE_E_INVALID_ARGUMENT);
         DF_CHECK(&t, duoforge_encode(2u, record_bit, ob, d, NULL, row_obs, row_slots, row_pairs) ==
                          DUOFORGE_E_INVALID_ARGUMENT);
@@ -219,6 +220,104 @@ int main(void)
             DF_CHECK(&t, duoforge_batch_reset_terminal(a) == DUOFORGE_OK && duoforge_batch_reset_terminal(b) == DUOFORGE_OK);
         }
         duoforge_batch_destroy(a);
+        duoforge_batch_destroy(b);
+    }
+
+    /* test_encoder5: the TRANSFORMED columns (decision 0028 A), the REVIVE row (C), the record checks (A), and the
+     * versions 1 to 4 (B, C): REVIVE refused, volatile bit 21 accepted and unshown. */
+    {
+        duoforge_batch *b = make(&t, ctx, setups, 1u);
+        DF_CHECK(&t, duoforge_batch_query_factored(b, one.requests, one.observations, one.domains) == DUOFORGE_OK);
+        const duoforge_observation *ob = &one.observations[0];
+        const duoforge_factored_domain *d = &one.domains[0];
+        const uint32_t viewer = ob->player;
+        const uint32_t foe = 1u - viewer;
+        const uint64_t transform = UINT64_C(1) << DUOFORGE_VIEWEXT_FEATURE_TRANSFORM;
+        static float v5[V5];
+        static float v5b[V5];
+        static float v4[V4];
+        static float v4b[V4];
+        static float s5[DUOFORGE_ENCODER_SLOT_VALUES];
+        static uint8_t p5[DUOFORGE_ENCODER_PAIR_VALUES];
+        duoforge_observation_ext x;
+        memset(&x, 0, sizeof x);
+        x.revision = DUOFORGE_OBSERVATION_EXT_REVISION;
+        x.player = ob->player;
+        x.epoch = ob->epoch;
+        x.supported = transform;
+        /* own position 0 copies the foe's roster 2, own position 1 the own ally's roster 4, foe position 0 our roster 0 */
+        x.sides[viewer].positions[0].volatiles = DUOFORGE_POSITION_EXT_TRANSFORMED;
+        x.sides[viewer].positions[0].transform_source = (uint8_t)(1u + foe * 6u + 2u);
+        x.sides[viewer].positions[1].volatiles = DUOFORGE_POSITION_EXT_TRANSFORMED;
+        x.sides[viewer].positions[1].transform_source = (uint8_t)(1u + viewer * 6u + 4u);
+        x.sides[foe].positions[0].volatiles = DUOFORGE_POSITION_EXT_TRANSFORMED;
+        x.sides[foe].positions[0].transform_source = (uint8_t)(1u + viewer * 6u + 0u);
+
+        /* the twelve columns in order: own position 0, 1, foe position 0, 1; transformed, foe source, roster / 5 */
+        const float r2 = (float)(2.0 / 5.0);
+        const float r4 = (float)(4.0 / 5.0);
+        const float want[12] = {1.0f, 1.0f, r2, 1.0f, 0.0f, r4, 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f};
+        DF_CHECK(&t, duoforge_encode(5u, transform, ob, d, &x, v5, s5, p5) == DUOFORGE_OK);
+        DF_CHECK(&t, memcmp(&v5[V4], want, sizeof want) == 0);
+        /* the first 850 columns are encoder 4's, the same bytes as encoder 4 on the same record */
+        DF_CHECK(&t, duoforge_encode(4u, 0u, ob, d, &x, v4, s5, p5) == DUOFORGE_OK);
+        DF_CHECK(&t, memcmp(v4, v5, sizeof v4) == 0);
+        /* without the mask bit the twelve are zero, and the rest is unchanged */
+        DF_CHECK(&t, duoforge_encode(5u, 0u, ob, d, &x, v5b, s5, p5) == DUOFORGE_OK);
+        DF_CHECK(&t, memcmp(v5b, v5, sizeof v4) == 0);
+        bool zero = true;
+        for (uint32_t k = V4; k < V5; ++k) {
+            zero = zero && v5b[k] == 0.0f;
+        }
+        DF_CHECK(&t, zero);
+
+        /* encoder 4 accepts volatile bit 21 and writes nothing for it: the same bytes as the record without it */
+        duoforge_observation_ext y = x;
+        for (uint32_t s = 0u; s < DUOFORGE_SIDE_COUNT; ++s) {
+            for (uint32_t p = 0u; p < DUOFORGE_ACTIVE_PER_SIDE; ++p) {
+                y.sides[s].positions[p].volatiles &= ~DUOFORGE_POSITION_EXT_TRANSFORMED;
+                y.sides[s].positions[p].transform_source = 0u;
+            }
+        }
+        DF_CHECK(&t, duoforge_encode(4u, 0u, ob, d, &x, v4, s5, p5) == DUOFORGE_OK);
+        DF_CHECK(&t, duoforge_encode(4u, 0u, ob, d, &y, v4b, s5, p5) == DUOFORGE_OK);
+        DF_CHECK(&t, memcmp(v4, v4b, sizeof v4) == 0);
+        DF_CHECK(&t, duoforge_encode(4u, transform, ob, d, &x, v4, s5, p5) == DUOFORGE_E_INVALID_ARGUMENT);
+
+        /* the record checks: a source exactly with the flag, a roster in 0 to 5 of a side 0 or 1, volatile bit 22 never */
+        duoforge_observation_ext z = x;
+        z.sides[viewer].positions[0].transform_source = 0u; /* TRANSFORMED without a source */
+        DF_CHECK(&t, duoforge_encode(5u, transform, ob, d, &z, v5, s5, p5) == DUOFORGE_E_INVALID_ARGUMENT);
+        z = x;
+        z.sides[viewer].positions[0].volatiles = 0u; /* a source without TRANSFORMED */
+        DF_CHECK(&t, duoforge_encode(5u, transform, ob, d, &z, v5, s5, p5) == DUOFORGE_E_INVALID_ARGUMENT);
+        z = x;
+        z.sides[viewer].positions[0].transform_source = 13u; /* side 1, roster 6: no such Pokemon */
+        DF_CHECK(&t, duoforge_encode(5u, transform, ob, d, &z, v5, s5, p5) == DUOFORGE_E_INVALID_ARGUMENT);
+        z = x;
+        z.sides[viewer].positions[1].volatiles |= UINT32_C(1) << 22; /* volatile bit 22 does not exist */
+        DF_CHECK(&t, duoforge_encode(4u, 0u, ob, d, &z, v4, s5, p5) == DUOFORGE_E_INVALID_ARGUMENT);
+        DF_CHECK(&t, duoforge_encode(5u, 0u, ob, d, &z, v5, s5, p5) == DUOFORGE_E_INVALID_ARGUMENT);
+
+        /* a REVIVE row (Revival Blessing, decision 0025 item 8): valid, no kind column, the reserve / 5 in column 11 */
+        duoforge_factored_domain dr = *d;
+        dr.kind = DUOFORGE_CHOICE_SLOTS;
+        memset(dr.slot_count, 0, sizeof dr.slot_count);
+        dr.slot_count[0] = 1u;
+        memset(dr.slots, 0, sizeof dr.slots);
+        dr.slots[0][0] = (duoforge_slot_command){.kind = DUOFORGE_SLOT_REVIVE, .reserve = 3u};
+        memset(dr.allowed, 0, sizeof dr.allowed);
+        dr.allowed[0] = 1u;
+        duoforge_observation orr = *ob;
+        orr.requested = 1u;
+        DF_CHECK(&t, duoforge_encode(5u, 0u, &orr, &dr, NULL, v5, s5, p5) == DUOFORGE_OK);
+        bool row = s5[0] == 1.0f && s5[11] == (float)(3.0 / 5.0);
+        for (uint32_t k = 1u; k <= 10u; ++k) {
+            row = row && (k == 11u || s5[k] == 0.0f);
+        }
+        DF_CHECK(&t, row);
+        DF_CHECK(&t, duoforge_encode(4u, 0u, &orr, &dr, NULL, v4, s5, p5) == DUOFORGE_E_UNSUPPORTED);
+        DF_CHECK(&t, duoforge_encode(1u, 0u, &orr, &dr, NULL, v4, s5, p5) == DUOFORGE_E_UNSUPPORTED);
         duoforge_batch_destroy(b);
     }
 

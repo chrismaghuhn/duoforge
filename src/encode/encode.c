@@ -49,19 +49,22 @@ _Static_assert(sizeof(float) == sizeof(uint32_t) && sizeof(double) == sizeof(uin
 #define DFI_ENC_EXT       (5u + DUOFORGE_SIDE_COUNT * DFI_ENC_EXT_SIDE)
 #define DFI_ENC_V3        (DFI_ENC_BASE + DFI_ENC_EXT)
 #define DFI_ENC_V4        (DFI_ENC_V3 + DUOFORGE_SIDE_COUNT * DUOFORGE_ACTIVE_PER_SIDE * 2u)
+#define DFI_ENC_V5        (DFI_ENC_V4 + DUOFORGE_SIDE_COUNT * DUOFORGE_ACTIVE_PER_SIDE * 3u)
 /* encoder 3's volatile columns (bits 0 to 19); bit 20 (ROOST) is an appended column of encoder 4 */
 #define DFI_ENC_VOLATILES 20u
-#define DFI_ENC_VOLATILE_BITS 21u
+/* the volatile bits a record may hold: 0 to 21; bit 21 (TRANSFORMED) has columns from encoder 5 only (decision 0028 B) */
+#define DFI_ENC_VOLATILE_BITS 22u
 #define DFI_ENC_ALL       ((UINT64_C(1) << DUOFORGE_VIEWEXT_FEATURE_TRANSFORM) - 1u) /* encoder 4: bits 0 to 41 (decision 0028 adds 42 for encoder 5) */
 #define DFI_ENC_APPENDED  ((UINT64_C(1) << DUOFORGE_VIEWEXT_FEATURE_ROOST) | (UINT64_C(1) << DUOFORGE_VIEWEXT_FEATURE_MOVE_FAILED))
+#define DFI_ENC_ALL5      ((UINT64_C(1) << DUOFORGE_VIEWEXT_FEATURE_COUNT) - 1u) /* encoder 5: all bits through TRANSFORM (42) */
 
-typedef char dfi_enc_size_check[(DFI_ENC_BASE == 607u && DFI_ENC_V3 == 842u && DFI_ENC_V4 == 850u &&
+typedef char dfi_enc_size_check[(DFI_ENC_BASE == 607u && DFI_ENC_V3 == 842u && DFI_ENC_V4 == 850u && DFI_ENC_V5 == 862u &&
                                  DUOFORGE_VIEWEXT_FEATURE_COUNT == 43u) ? 1 : -1];
 
 /* The feature bits a version has columns for (features.version_features). */
 static uint64_t dfi_version_features(uint32_t version)
 {
-    return version >= 4u ? DFI_ENC_ALL : version == 3u ? (DFI_ENC_ALL & ~DFI_ENC_APPENDED) : 0u;
+    return version >= 5u ? DFI_ENC_ALL5 : version == 4u ? DFI_ENC_ALL : version == 3u ? (DFI_ENC_ALL & ~DFI_ENC_APPENDED) : 0u;
 }
 
 /* The feature bits read from the observation itself (BASE_VALUE_FEATURES). */
@@ -195,6 +198,9 @@ static duoforge_status dfi_check_record(const duoforge_observation *ob, const du
         for (uint32_t p = 0u; p < DUOFORGE_ACTIVE_PER_SIDE && !bad; ++p) {
             const duoforge_position_ext *q = &x->positions[p];
             bad = (q->volatiles >> DFI_ENC_VOLATILE_BITS) != 0u;
+            /* decision 0028 A: a source exactly when TRANSFORMED is set, and the source is side * 6 + roster + 1 with a side of 0 or 1 */
+            bad = bad || (q->transform_source != 0u) != ((q->volatiles & DUOFORGE_POSITION_EXT_TRANSFORMED) != 0u) ||
+                  q->transform_source > 12u;
             bad = bad || ((q->type_now[0] != 0u || q->type_now[1] != 0u) &&
                           (q->volatiles & DUOFORGE_POSITION_EXT_TYPE_CHANGED) == 0u);
         }
@@ -289,6 +295,21 @@ static void dfi_block(const duoforge_observation *ob, const duoforge_observation
                 dfi_put(a++, mask, DUOFORGE_VIEWEXT_FEATURE_ROOST,
                         dfi_bool(q != NULL && (q->volatiles & DUOFORGE_POSITION_EXT_ROOST) != 0u));
                 dfi_put(a++, mask, DUOFORGE_VIEWEXT_FEATURE_MOVE_FAILED, q != NULL ? (float)q->move_failed : 0.0f);
+            }
+        }
+    }
+    if (version >= 5u) { /* appended by encoder 5 (decision 0028 A): per side (own first) and position: transformed, the
+                            source is a foe, the source roster / 5; all zero when not transformed */
+        float *t = &o[DFI_ENC_EXT + 8u];
+        for (uint32_t k = 0u; k < DUOFORGE_SIDE_COUNT; ++k) {
+            const uint32_t abs = k == 0u ? viewer : 1u - viewer;
+            for (uint32_t p = 0u; p < DUOFORGE_ACTIVE_PER_SIDE; ++p) {
+                const duoforge_position_ext *q = present ? &ext->sides[abs].positions[p] : NULL;
+                const bool tr = q != NULL && (q->volatiles & DUOFORGE_POSITION_EXT_TRANSFORMED) != 0u;
+                const uint32_t src = tr ? (uint32_t)q->transform_source - 1u : 0u; /* side * 6 + roster */
+                dfi_put(t++, mask, DUOFORGE_VIEWEXT_FEATURE_TRANSFORM, dfi_bool(tr));
+                dfi_put(t++, mask, DUOFORGE_VIEWEXT_FEATURE_TRANSFORM, dfi_bool(tr && src / 6u != viewer));
+                dfi_put(t++, mask, DUOFORGE_VIEWEXT_FEATURE_TRANSFORM, tr ? dfi_r64(src % 6u, 5.0) : 0.0f);
             }
         }
     }
@@ -403,6 +424,9 @@ static duoforge_status dfi_slots(const duoforge_factored_domain *d, uint32_t vie
     /* the checks over every valid entry, one kind of check at a time, as the reference */
     for (uint32_t s = 0u; s < DUOFORGE_ACTIVE_PER_SIDE; ++s) {
         for (uint32_t i = 0u; i < d->slot_count[s]; ++i) {
+            if (d->slots[s][i].kind == DUOFORGE_SLOT_REVIVE) {
+                continue; /* a REVIVE row has no kind column (encoder 5, decision 0028 C); versions 1 to 4 refuse it below */
+            }
             const duoforge_status st = dfi_one_hot(&dfi_v_slot_kind, d->slots[s][i].kind, 0u,
                                                    &slots[(s * DUOFORGE_MAX_SLOT_OPTIONS + i) * 12u + 1u]);
             if (st != DUOFORGE_OK) {
@@ -438,7 +462,7 @@ static duoforge_status dfi_slots(const duoforge_factored_domain *d, uint32_t vie
                     f[6u + rel] = 1.0f;
                 }
                 f[10] = (float)c->mega;
-            } else if (c->kind == DUOFORGE_SLOT_SWITCH) {
+            } else if (c->kind == DUOFORGE_SLOT_SWITCH || c->kind == DUOFORGE_SLOT_REVIVE) {
                 f[11] = dfi_r64(c->reserve, 5.0);
             }
         }
@@ -458,6 +482,15 @@ static duoforge_status dfi_slots(const duoforge_factored_domain *d, uint32_t vie
             }
         }
     }
+    if (version < 5u) { /* encoder 5 added the REVIVE row (Revival Blessing, decision 0025 item 8); 1 to 4 refuse it */
+        for (uint32_t s = 0u; s < DUOFORGE_ACTIVE_PER_SIDE; ++s) {
+            for (uint32_t i = 0u; i < d->slot_count[s]; ++i) {
+                if (d->slots[s][i].kind == DUOFORGE_SLOT_REVIVE) {
+                    return DUOFORGE_E_UNSUPPORTED;
+                }
+            }
+        }
+    }
     return DUOFORGE_OK;
 }
 
@@ -471,7 +504,7 @@ duoforge_status duoforge_encoder_size(uint32_t version, uint32_t *out_obs_size)
     if (version < DUOFORGE_ENCODER_MIN || version > DUOFORGE_ENCODER_MAX) {
         return DUOFORGE_E_INVALID_ARGUMENT;
     }
-    *out_obs_size = version >= 4u ? DFI_ENC_V4 : version == 3u ? DFI_ENC_V3 : DFI_ENC_BASE;
+    *out_obs_size = version >= 5u ? DFI_ENC_V5 : version == 4u ? DFI_ENC_V4 : version == 3u ? DFI_ENC_V3 : DFI_ENC_BASE;
     return DUOFORGE_OK;
 }
 
