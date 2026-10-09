@@ -20,8 +20,13 @@ machine_lock_pid() {
 }
 
 machine_lock_alive() { # pid
+    local out
     if command -v tasklist > /dev/null 2>&1; then
-        tasklist //FI "PID eq $1" //NH 2> /dev/null | grep -q " $1 "
+        # No path conversion, whatever the caller exported (a wsl.exe command needs MSYS_NO_PATHCONV=1): the
+        # switches go to tasklist as written. A tasklist that cannot answer counts as alive: a lock is taken over
+        # only when its holder is known to be gone.
+        out=$(MSYS_NO_PATHCONV=1 MSYS2_ARG_CONV_EXCL='*' tasklist /FI "PID eq $1" /NH 2> /dev/null) || return 0
+        printf '%s\n' "$out" | grep -q " $1 "
     else
         kill -0 "$1" 2> /dev/null
     fi

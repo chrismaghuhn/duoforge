@@ -1237,6 +1237,21 @@ class Lock(unittest.TestCase):
     """The chunks as processes under tools/ci/machine_lock.sh, with DUOFORGE_MACHINE_LOCK in a temporary directory:
     never the real lock."""
 
+    def test_a_live_holder_is_alive_whatever_the_callers_path_conversion(self):
+        # machine_lock_alive decides whether a lock is stale. A caller that exported MSYS_NO_PATHCONV=1 (for a wsl.exe
+        # command) made Git Bash pass tasklist's `//FI` unconverted: every live holder looked dead and its lock was
+        # taken over (2026-10-09). This test process is a live holder; a pid far above any real one is not.
+        script = os.path.join(ROOT, 'tools', 'ci', 'machine_lock.sh').replace('\\', '/')
+        for conv in ('', '1'):
+            env = dict(os.environ)
+            env.pop('MSYS_NO_PATHCONV', None)
+            if conv:
+                env['MSYS_NO_PATHCONV'] = conv
+            for pid, alive in ((os.getpid(), True), (987654321, False)):
+                done = subprocess.run([rnd.find_bash(), '-c', 'source "%s"; machine_lock_alive %d' % (script, pid)],
+                                      capture_output=True, text=True, timeout=60, env=env)
+                self.assertEqual(done.returncode == 0, alive, (conv, pid, done.stderr))
+
     def test_each_chunk_holds_the_lock_and_the_lock_is_free_between_chunks(self):
         with tempfile.TemporaryDirectory() as tmp:
             lock = os.path.join(tmp, 'lock')
