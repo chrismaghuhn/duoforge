@@ -510,5 +510,52 @@ class Teacher(unittest.TestCase):
                     ex.restore_teacher(search, b, data, cfg, m)  # never merged into a live history
 
 
+    # Decision-byte digests of _three_labels, pinned before the P2 two-phase refactor (plan Task 2 step 0)
+    # per machine conditions: the fake net's float32 matmuls follow the BLAS/CPU, so another machine skips.
+    PINNED_TWO_PHASE = {
+        "Windows|AMD64 Family 25 Model 33 Stepping 2, AuthenticAMD|numpy 2.5.3":
+            "3b856e67f9390e3cad582b67ccabd98c9b47469642a0e611eaef82b858852744",
+        "Linux|AMD Ryzen 7 5800X 8-Core Processor|numpy 2.5.3":
+            "baa4f827d47f1e1165663470616972784a6e7d51133d30a74da3380fad56965c",
+    }
+
+    @staticmethod
+    def _two_phase_conditions():
+        import platform
+        cpu = platform.processor()
+        try:
+            with open("/proc/cpuinfo", encoding="utf-8") as f:
+                cpu = next(line.split(":", 1)[1].strip() for line in f if line.startswith("model name"))
+        except (OSError, StopIteration):
+            pass
+        return f"{platform.system()}|{cpu}|numpy {np.__version__}"
+
+    def _three_labels(self, ctx, search):
+        from duoforge_search import expert as ex
+        cfg = self.config(audit_threshold=2**64)
+        with duoforge.Batch(ctx, np.repeat(duoforge.reference_setups([0]), 3), 2, 42) as b:
+            b.query_factored()
+            ex.observe(search, b, [0, 1, 2], [0, 0, 0])
+            self.start_turn(b)
+            ex.observe(search, b, [0, 1, 2], [0, 0, 0])
+            out = []
+            for e, game in ((0, 500), (1, 502), (2, 504)):
+                key = DecisionKey(game, 0, int(b.requests[e, 0]["epoch"]))
+                out.append(ex.decision_bytes(ex.label_decision(search, b, env=e, seat=0, key=key,
+                                                               raw_action=self.low_raw(search, b, e, 0),
+                                                               raw_logp=-1.25, last_step=False, config=cfg,
+                                                               manifest=self.manifest)))
+            return out
+
+    def test_two_phase_decision_bytes_pinned(self):
+        import hashlib
+        conditions = self._two_phase_conditions()
+        if conditions not in self.PINNED_TWO_PHASE:
+            self.skipTest(f"two-phase decision bytes are pinned under {sorted(self.PINNED_TWO_PHASE)}, here {conditions}")
+        with duoforge.Context(C["DUOFORGE_DATA_KIND_POOL"]) as ctx, self.make(ctx) as search:
+            digest = hashlib.sha256(b"".join(self._three_labels(ctx, search))).hexdigest()
+        self.assertEqual(digest, self.PINNED_TWO_PHASE[conditions])
+
+
 if __name__ == "__main__":
     unittest.main()
