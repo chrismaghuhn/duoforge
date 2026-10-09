@@ -342,6 +342,7 @@ def parse_move(mid, base, champ, ext=False, pool=False, unmodeled=None):
                 bad('move %s: callback %s is not mapped to a handler' % (mid, name), 'callback %s' % name)
         elif (name not in DATA_KEYS and name not in IGNORED_KEYS and name not in owned_fields and name not in owned
               and not (pool and name in POOL_COLUMN_KEYS)
+              and not (pool and name == 'forceSwitch' and mid in G46_FORCE_SWITCH_MOVES)
               and not (pool and name == 'tags' and norm(f[name][1]) == TAGS_PAST_UNOBTAINABLE)):
             bad('move %s: unknown field %s' % (mid, name), 'field %s' % name)
     missing = handled[1] - set(n for n, v in f.items() if v[0])
@@ -389,6 +390,12 @@ def parse_move(mid, base, champ, ext=False, pool=False, unmodeled=None):
             fail('move %s: onTryHit is not the pinned text' % mid)
         if 'condition' not in f or norm(f['condition'][1]) != YAWN_CONDITION:
             fail('move %s: the condition is not the pinned text' % mid)
+    if pool and handled[0] == 'ROOST' and ('condition' not in f or norm(f['condition'][1]) != ROOST_CONDITION):
+        fail('move %s: the condition is not the pinned text' % mid)
+    if pool and handled[0] == 'STOMPING_TANTRUM':
+        for name, text in STOMPING_TANTRUM_CALLBACKS.items():
+            if name not in f or norm(f[name][1]) != norm(text):
+                fail('move %s: %s is not the pinned text' % (mid, name))
     if pool and handled[0] == 'AURORA_VEIL' and ('onTry' not in f or norm(f['onTry'][1]) != AURORA_VEIL_ONTRY):
         fail('move %s: onTry is not the pinned text' % mid)
     if pool and handled[0] in G20_PROTECT_HANDLERS:
@@ -482,6 +489,12 @@ def parse_move(mid, base, champ, ext=False, pool=False, unmodeled=None):
             if len(nums) != 2:
                 fail('move %s: %s is not a fraction' % (mid, key))
             rec[key] = nums
+    if pool and 'forceSwitch' in f:
+        # Step G46: the four moves of G46_FORCE_SWITCH_MOVES, with the pinned text; the turn code forces the switch
+        if mid in G46_FORCE_SWITCH_MOVES and norm(f['forceSwitch'][1]) == 'forceSwitch: true,':
+            rec['flags2'] |= FLAG2_FORCE_SWITCH
+        else:
+            bad('move %s: forceSwitch is not "forceSwitch: true," of a G46 move' % mid, 'field forceSwitch')
     if pool and 'thawsTarget' in f:
         if norm(f['thawsTarget'][1]) != 'thawsTarget: true,':
             bad('move %s: thawsTarget is not "thawsTarget: true,"' % mid, 'field thawsTarget')
@@ -1687,6 +1700,62 @@ G53_ABILITY_FACTS = (
                   "onDeductPP(target, source) { if (target.isAlly(source)) return; return 1; },",
                   'flags: {},')),
 )
+# Step G45 (six abilities of the simple kind): Steadfast, Moxie, Weak Armor, Telepathy, Volt Absorb and Punk Rock
+# are engine rows (ENGINE_ROWS) that the turn code reads by id; the pinned callbacks they hard-code are checked here, whole,
+# whitespace aside. The Champions mod overrides none of them (check_g34_facts). Mold Breaker, Teravolt and Turboblaze are not
+# marked, and Mycelium Might is not in the pool, so no marked ability ignores the `breakable` flag of Telepathy, Volt Absorb or
+# Punk Rock (tests/test_pool_g45.c pins the refusals).
+G45_ABILITY_FACTS = (
+    ('steadfast', ("onFlinch(pokemon) { this.boost({ spe: 1 }); },", 'flags: {},')),
+    ('weakarmor', ("onDamagingHit(damage, target, source, move) { if (move.category === 'Physical') { "
+                   "this.boost({ def: -1, spe: 2 }, target, target); } },", 'flags: {},')),
+    ('telepathy', ("onTryHit(target, source, move) { if (target !== source && target.isAlly(source) && move.category !== 'Status') { "
+                   "this.add('-activate', target, 'ability: Telepathy'); return null; } },", 'flags: { breakable: 1 },')),
+    ('voltabsorb', ("onTryHit(target, source, move) { if (target !== source && move.type === 'Electric') { "
+                    "if (!this.heal(target.baseMaxhp / 4)) { this.add('-immune', target, '[from] ability: Volt Absorb'); } return null; } },",
+                    'flags: { breakable: 1 },')),
+    ('punkrock', ('onBasePowerPriority: 7,',
+                  "onBasePower(basePower, attacker, defender, move) { if (move.flags['sound']) { this.debug('Punk Rock boost'); "
+                  "return this.chainModify([5325, 4096]); } },",
+                  "onSourceModifyDamage(damage, source, target, move) { if (move.flags['sound']) { this.debug('Punk Rock weaken'); "
+                  "return this.chainModify(0.5); } },",
+                  'flags: { breakable: 1 },')),
+    ('moxie', ("onSourceAfterFaint(length, target, source, effect) { if (effect && effect.effectType === 'Move') { "
+                   "this.boost({ atk: length }, source); } },", 'flags: {},')),
+)
+# Step G47, the status and volatile cures: Synchronize and Oblivious (abilities) and Lum Berry and Mental Herb (items) are engine
+# rows read by id (src/combat/turn.c dfi_synchronize, dfi_lum_berry, dfi_mental_herb; Oblivious in dfi_try_status' TryHit chain,
+# the Intimidate guard and dfi_trace). Their texts, whitespace aside, are the facts the engine hard-codes; the Champions mod
+# has no entry for any of the four (check_g34_facts). The Champions Encore override (moves.ts:330) is a move, checked by hand.
+# Each fact is a balanced statement or block of the pinned entry (the entry's own parser counts the braces), without the
+# comment lines between the statements that the pin has.
+G47_ABILITY_FACTS = (
+    ('synchronize', ('if (!source || source === target) return;',
+                     "if (effect && effect.id === 'toxicspikes') return;",
+                     "if (status.id === 'slp' || status.id === 'frz') return;",
+                     "this.add('-activate', target, 'ability: Synchronize');",
+                     "source.trySetStatus(status, target, { status: status.id, id: 'synchronize' } as Effect);",
+                     'flags: {},')),
+    ('oblivious', ("if (pokemon.volatiles['attract']) { this.add('-activate', pokemon, 'ability: Oblivious'); "
+                   "pokemon.removeVolatile('attract'); this.add('-end', pokemon, 'move: Attract', '[from] ability: Oblivious'); }",
+                   "pokemon.removeVolatile('taunt');",
+                   "if (type === 'attract') return false;",
+                   "if (move.id === 'attract' || move.id === 'captivate' || move.id === 'taunt') { "
+                   "this.add('-immune', pokemon, '[from] ability: Oblivious'); return null; }",
+                   "if (effect.name === 'Intimidate' && boost.atk) { delete boost.atk; "
+                   "this.add('-fail', target, 'unboost', 'atk', '[from] ability: Oblivious', `[of] ${target}`); }",
+                   'flags: { breakable: 1 },')),
+)
+G47_ITEM_FACTS = (
+    ('lumberry', ('onAfterSetStatusPriority: -1,',
+                  'onAfterSetStatus(status, pokemon) { pokemon.eatItem(); },',
+                  "onUpdate(pokemon) { if (pokemon.status || pokemon.volatiles['confusion']) { pokemon.eatItem(); } },",
+                  "onEat(pokemon) { pokemon.cureStatus(); pokemon.removeVolatile('confusion'); },")),
+    ('mentalherb', ("const conditions = ['attract', 'taunt', 'encore', 'torment', 'disable', 'healblock'];",
+                    'if (!pokemon.useItem()) return;',
+                    'pokemon.removeVolatile(secondCondition);',
+                    "this.add('-end', pokemon, 'move: Attract', '[from] item: Mental Herb');")),
+)
 G34_ITEM_FACTS = (
     ('widelens', ('onSourceModifyAccuracyPriority: -2,',
                   "onSourceModifyAccuracy(accuracy) { if (typeof accuracy === 'number') { return this.chainModify([4505, 4096]); } },")),
@@ -1850,6 +1919,11 @@ G49_ITEM_FACTS = (
 # for a turn and has no move queued), order 15, onBeforeMove priority 5 and the Status-category bar; Yawn's duration 2,
 # order 23 and the silent end that calls trySetStatus('slp').
 G31_HANDLERS = ['TAUNT', 'YAWN']
+# Step G50 (decision 0025 items 1 and 2): Double Shock. Its onTryMove fails without the Electric type (data/moves.ts:3954-3959);
+# its self onHit sets the type ??? in place of Electric and shows -start|X|typechange|???/Fighting (data/moves.ts:3960-3964). The
+# Champions mod adds the punch flag (its flags column) and nothing else. The self text is owned by the handler (G2_OWNED_FIELDS),
+# whole, so a change at the pin fails the generator.
+G50_HANDLERS = ['DOUBLE_SHOCK']
 TAUNT_CONDITION = (
     "condition: { duration: 3, onStart(target) { if (target.activeTurns && !this.queue.willMove(target)) { "
     "this.effectState.duration!++; } this.add('-start', target, 'move: Taunt'); }, onResidualOrder: 15, onEnd(target) { "
@@ -1863,6 +1937,23 @@ YAWN_CONDITION = (
     "condition: { noCopy: true, // doesn't get copied by Baton Pass duration: 2, onStart(target, source) { "
     "this.add('-start', target, 'move: Yawn', `[of] ${source}`); }, onResidualOrder: 23, onEnd(target) { "
     "this.add('-end', target, 'move: Yawn', '[silent]'); target.trySetStatus('slp', this.effectState.source); }, },")
+# Step G42: Roost (data/moves.ts:15428-15463) heals the user (the heal column, the heal flag) and then, through its self
+# volatile, takes the Flying type off until the residual of order 25; its condition is the handler ROOST (the tail's
+# single_turn bit). Stomping Tantrum's basePowerCallback doubles its power when the user's last move result is `false`.
+# The generator checks both texts, whitespace aside.
+G42_HANDLERS = ['ROOST', 'STOMPING_TANTRUM']
+ROOST_SELF = "self: { volatileStatus: 'roost', },"
+ROOST_CONDITION = (
+    "condition: { duration: 1, onResidualOrder: 25, onStart(target) { if (target.terastallized) { "
+    "if (target.hasType('Flying')) { this.add('-hint', \"If a Terastallized Pokemon uses Roost, it remains Flying-type.\"); } "
+    "return false; } this.add('-singleturn', target, 'move: Roost'); }, onTypePriority: -1, "
+    "onType(types, pokemon) { this.effectState.typeWas = types; return types.filter(type => type !== 'Flying'); }, },")
+STOMPING_TANTRUM_CALLBACKS = {
+    'basePowerCallback': "basePowerCallback(pokemon, target, move) { if (pokemon.moveLastTurnResult === false) { "
+                         "this.debug('doubling Stomping Tantrum BP due to previous move failure'); "
+                         "return move.basePower * 2; } return move.basePower; },",
+}
+
 # Step G25 (Electric Terrain, Misty Terrain): the two terrain moves keep their `terrain` field and their condition as handlers of
 # their own that the turn code implements (setTerrain, then the terrain's rules in the damage chain and in SetStatus and
 # TryAddVolatile), and Rising Voltage and Terrain Pulse keep the callback that reads the terrain (base power; type and
@@ -1972,6 +2063,8 @@ SPECIAL_P = dict(SPECIAL_C, **{
     'spikyshield': ('SPIKY_SHIELD', {'onPrepareHit', 'onHit'}),           # G20: Protect that damages a contact attacker
     'taunt': ('TAUNT', set()),                                            # G31: bars the Status moves for three or four turns
     'yawn': ('YAWN', {'onTryHit'}),                                       # G31: sleep at the end of the next turn
+    'roost': ('ROOST', set()),                                            # G42: heals, then the Flying type is off for the turn
+    'stompingtantrum': ('STOMPING_TANTRUM', {'basePowerCallback'}),        # G42: base power x2 after a failed last move
     'auroraveil': ('AURORA_VEIL', {'onTry'}),                             # G20: a screen against both categories, in snow only
     'trick': ('TRICK', {'onTryImmunity', 'onHit'}),                         # G29: swaps the two items
     'switcheroo': ('SWITCHEROO', {'onTryImmunity', 'onHit'}),               # G29: Trick's text with its own name in the lines
@@ -2020,7 +2113,8 @@ SPECIAL_P = dict(SPECIAL_C, **{
     'ragefist': ('RAGE_FIST', {'basePowerCallback'}),                     # G48: 50 + 50 per hit the user took, at most 350
     'stoneaxe': ('STONE_AXE', {'onAfterHit', 'onAfterSubDamage'}),        # G48: Stealth Rock on the foe's side after a hit
     'ceaselessedge': ('CEASELESS_EDGE', {'onAfterHit', 'onAfterSubDamage'}),  # G48: a Spikes layer on the foe's side after a hit
-    'populationbomb': ('MULTI_HIT_10', set()),                            # G48: ten hits, a check for each (multiaccuracy)
+    'populationbomb': ('MULTI_HIT_10', set()),
+    'doubleshock': ('DOUBLE_SHOCK', {'onTryMove'}),                       # G50: fails without Electric; its self effect is owned                            # G48: ten hits, a check for each (multiaccuracy)
 })
 # Step G13: Detect is Protect (data/moves.ts:3526-3547 against 13961-14005): the same handler (not one of the G2 handlers,
 # so it is added to the pool's map only), and the generator checks that its stalling fields and both callbacks are,
@@ -2053,12 +2147,13 @@ G44_FACTS = (
     ('triattack', ['accuracy: 100,', 'basePower: 80,', 'category: "Special",', 'priority: 0,',
                    'flags: { protect: 1, mirror: 1, metronome: 1 },', 'target: "normal",', 'type: "Normal",']),
 )
-SPECIAL_IDS_P = SPECIAL_IDS_C + G2_HANDLERS + WEATHER_HANDLERS + G16_HANDLERS + G15_HANDLERS + G19_HANDLERS + G20_HANDLERS + G20_PROTECT_HANDLERS + G28_HANDLERS + G30_HANDLERS + G32_HANDLERS + G34_HANDLERS + G27_HANDLERS + G25_HANDLERS + G26_HANDLERS + G33_HANDLERS + G38_HANDLERS + G29_HANDLERS + G39_HANDLERS + G31_HANDLERS + G48_HANDLERS + G44_HANDLERS + ['UNMODELED']
+SPECIAL_IDS_P = SPECIAL_IDS_C + G2_HANDLERS + WEATHER_HANDLERS + G16_HANDLERS + G15_HANDLERS + G19_HANDLERS + G20_HANDLERS + G20_PROTECT_HANDLERS + G28_HANDLERS + G30_HANDLERS + G32_HANDLERS + G34_HANDLERS + G27_HANDLERS + G25_HANDLERS + G26_HANDLERS + G33_HANDLERS + G38_HANDLERS + G29_HANDLERS + G39_HANDLERS + G31_HANDLERS + G48_HANDLERS + G44_HANDLERS + G50_HANDLERS + G42_HANDLERS + ['UNMODELED']
 # Step G10 made two of these handlers data: Scald (thawsTarget) and Recover (heal) are read into the second flags
 # byte (bit 4, thaws the target) and the heal column, and have the special NONE; their ids stay defined (the ids after
 # them keep their values). First Impression and Low Kick keep theirs: the turn code implements them.
 POOL_COLUMN_KEYS = {'thawsTarget', 'heal'}
 G2_OWNED_FIELDS = {
+    'ROOST': {'self': ROOST_SELF},
     'ENCORE': {'volatileStatus': "volatileStatus: 'encore',"},
     'WIDE_GUARD': {'sideCondition': "sideCondition: 'wideguard',"},
     'AURORA_VEIL': {'sideCondition': "sideCondition: 'auroraveil',"},
@@ -2075,6 +2170,7 @@ G2_OWNED_FIELDS = {
     'GLAIVE_RUSH': {'self': "self: { volatileStatus: 'glaiverush', },"},
     'RAGE_POWDER': {'volatileStatus': "volatileStatus: 'ragepowder',"},
     'MULTI_HIT_2': {'multihit': 'multihit: 2,'},
+    'DOUBLE_SHOCK': {'self': "self: { onHit(pokemon) { pokemon.setType(pokemon.getTypes(true).map(type => type === \"Electric\" ? \"???\" : type)); this.add('-start', pokemon, 'typechange', pokemon.getTypes().join('/'), '[from] move: Double Shock'); }, },"},
     'TRIPLE_AXEL': {'multihit': 'multihit: 3,', 'multiaccuracy': 'multiaccuracy: true,'},
     'MULTI_HIT_10': {'multihit': 'multihit: 10,', 'multiaccuracy': 'multiaccuracy: true,'},
     'BODY_PRESS': {'overrideOffensiveStat': "overrideOffensiveStat: 'def',"},
@@ -2091,7 +2187,7 @@ G2_OWNED_FIELDS = {
 # draws the roll and does nothing else; the engine's special case is in dfi_run_move.
 G2_OWNED_SECONDARY = {'STONE_AXE': 'secondary: {}, // Sheer Force-boosted', 'CEASELESS_EDGE': 'secondary: {}, // Sheer Force-boosted', 'TRI_ATTACK': "secondary: { chance: 20, onHit(target, source) { const status = this.sample(['brn', 'par', 'frz']); "
                   "target.trySetStatus(status, source); }, },"}
-G2_OWNED_CONDITION = {'ENCORE', 'WIDE_GUARD', 'GLAIVE_RUSH', 'AURORA_VEIL', 'SPIKY_SHIELD', 'RAGE_POWDER', 'DISABLE',
+G2_OWNED_CONDITION = {'ROOST', 'ENCORE', 'WIDE_GUARD', 'GLAIVE_RUSH', 'AURORA_VEIL', 'SPIKY_SHIELD', 'RAGE_POWDER', 'DISABLE',
                       'ELECTRIC_TERRAIN', 'MISTY_TERRAIN', 'PERISH_SONG', 'IMPRISON', 'TAUNT', 'YAWN'}
 # Step G8 (Throat Chop and Psychic Noise): the two secondaries become modelled kinds, and the column that their
 # consumers read is the move's second flags byte (the first is full): the `sound` flag (Throat Chop bars the sound
@@ -2113,6 +2209,11 @@ STATIC_FLAG_POWER_RULE = 1024
 FLAG2_RECHARGE = 8  # step G17: flags.recharge with self: {volatileStatus: 'mustrecharge'} (data/moves.ts, Hyper Beam 9113-9128)
 RECHARGE_SELF = "self: { volatileStatus: 'mustrecharge', },"
 FLAG2_THAWS_TARGET = 4  # step G10: thawsTarget (data/moves.ts:15770), the move cures a frozen target after the secondaries
+# Step G46: forceSwitch (data/moves.ts: Roar 15157-15171, Whirlwind 20760-20774, Dragon Tail 4208-4221, Circle Throw
+# 2451-2464). The four moves whose forced switch the turn code runs (battle-actions.ts runMoveEffects and forceSwitch,
+# through scripts.ts:374 and :392); any other move with the key stays UNMODELED.
+FLAG2_FORCE_SWITCH = 128
+G46_FORCE_SWITCH_MOVES = ('roar', 'whirlwind', 'dragontail', 'circlethrow')  # each marked with its battle (g46_roar_drag, g46_whirlwind_drag, g46_dragontail_drag, g46_circlethrow_drag)
 # What the engine hard-codes about the two conditions, read from the pin (build_pool checks it): the duration and the
 # residual order of Throat Chop's condition, and Heal Block's (the move healblock) order and Psychic Noise duration.
 G8_CONDITION_FACTS = (
@@ -2243,7 +2344,7 @@ HANDLER_IDS = ['NONE', 'UNMODELED']
 # still has the UNMODELED handler fails duoforge.data.pool_tables. G4: Focus Sash, Rock Head. G12: Floettite (the Mega
 # Stone of Floette-Eternal), Flower Veil and Fairy Aura. G14: Rough Skin, Poison Touch and Thermal Exchange. G16: Sticky Hold (Knock Off reads it by id). AC1: Trace (the entry copy of a foe's ability). G15: Psychic Seed (Grassy Seed's rule for the other terrain). G22: Sand Rush, Swift Swim, Slush Rush and Chlorophyll (the doubled Speed in their weather, tools/datagen/pool_families.js ENGINE_ORDER), Sand Rush's immunity to Sandstorm, Inner Focus (no flinch, no Intimidate drop) and Liquid Voice (a sound move becomes Water). G23-C: Levitate (isGrounded and the Ground immunity). G49: Muscle Band, Wise Glasses (base power by category) and Bright Powder (the target's accuracy).
 ENGINE_ROWS = {'items': ['focussash', 'floettite', 'psychicseed', 'electricseed', 'mistyseed', 'expertbelt', 'ejectbutton',
-                         'widelens', 'muscleband', 'wiseglasses', 'brightpowder'],
+                         'widelens', 'muscleband', 'wiseglasses', 'brightpowder', 'redcard', 'lumberry', 'mentalherb'],
                'abilities': ['rockhead', 'flowerveil', 'fairyaura', 'roughskin', 'poisontouch', 'thermalexchange',
                              'stickyhold', 'trace', 'levitate', 'sandrush', 'swiftswim', 'slushrush', 'chlorophyll',
                              'innerfocus', 'liquidvoice', 'flamebody', 'clearbody', 'hospitality', 'overcoat',
@@ -2261,7 +2362,8 @@ ENGINE_ROWS = {'items': ['focussash', 'floettite', 'psychicseed', 'electricseed'
                              'justified',
                              'limber',
                              'solarpower',
-                             'regenerator', 'toxicdebris', 'shadowtag', 'pressure']}
+                             'regenerator', 'toxicdebris', 'shadowtag', 'suctioncups', 'guarddog',
+                             'steadfast', 'weakarmor', 'telepathy', 'voltabsorb', 'punkrock', 'moxie', 'synchronize', 'oblivious', 'pressure']}
 # The moves of the whole pool that the turn code pivots with a switch flag of their own (dfi_pivot_moves,
 # src/state/closure_member.c) beyond Flip Turn and U-turn, which are rows of the steps. Empty: Volt Switch comes with the
 # step that gives it a flag value, and adds its id here.
@@ -2638,7 +2740,7 @@ def parse_pool_move(mid, moves_ts, champ_moves):
     if rec['unmodeled']:
         rec.update(sec_chance=0, sec_kind=0, sec_param=0, boost_role=0, boosts=[0] * 7, primary_status=0,
                    side_condition=0, pseudo_weather=0, special=SPECIAL_IDS_P.index('UNMODELED'), heal=[0, 0],
-                   flags2=rec['flags2'] & ~(FLAG2_THAWS_TARGET | FLAG2_RECHARGE))
+                   flags2=rec['flags2'] & ~(FLAG2_THAWS_TARGET | FLAG2_RECHARGE | FLAG2_FORCE_SWITCH))
     return rec
 
 
@@ -2889,11 +2991,32 @@ def check_g28_items(items_ts, only=None):
                 fail('item %s: the entry no longer has "%s"' % (iid, fact))
 
 
+# Step G46: the blockers of a forced switch and Red Card (the turn code runs them by id). Suction Cups and Guard Dog return
+# null from onDragOut (data/abilities.ts:4693-4698 and :1728-1732), so the drag is not made, and print -activate. Red Card:
+# data/items.ts:5152-5171 (its gates, the consumption before the attacker's DragOut, and the flag it sets).
+G46_ABILITY_FACTS = (
+    ('suctioncups', ('onDragOutPriority: 1,',
+                     "onDragOut(pokemon) { this.add('-activate', pokemon, 'ability: Suction Cups'); return null; },")),
+    ('guarddog', ('onDragOutPriority: 1,',
+                  "onDragOut(pokemon) { this.add('-activate', pokemon, 'ability: Guard Dog'); return null; },",
+                  'onTryBoostPriority: 2,',
+                  "onTryBoost(boost, target, source, effect) { if (effect.name === 'Intimidate' && boost.atk) { "
+                  "delete boost.atk; this.boost({ atk: 1 }, target, target, null, false, true); } },")),
+)
+G46_ITEM_FACTS = (
+    ('redcard', ("onAfterMoveSecondary(target, source, move) { if (source && source !== target && source.hp && target.hp && "
+                 "move && move.category !== 'Status') { if (!source.isActive || !this.canSwitch(source.side) || "
+                 "source.forceSwitchFlag || target.forceSwitchFlag) { return; } // The item is used up even against a pokemon "
+                 "with Ingrain or that otherwise can't be forced out if (target.useItem(source)) { if (this.runEvent('DragOut', "
+                 "source, target, move)) { source.forceSwitchFlag = true; } } } },",)),
+)
+
+
 def check_g34_facts(abil_ts, champ_abil, items_ts, champ_items):
     """Steps G34, G35, Mega batch 2 and G39: every fact of G34_ABILITY_FACTS, G35_ABILITY_FACTS, MEGA2_ABILITY_FACTS, G39_ABILITY_FACTS and G34_ITEM_FACTS is in the pinned entry, whitespace aside, and the
     Champions mod has no entry of its own for it (an override would change what the engine reads)."""
-    for kind, facts_by_id, src, champ in (('ability', G34_ABILITY_FACTS + G35_ABILITY_FACTS + MEGA2_ABILITY_FACTS + G39_ABILITY_FACTS + G41_ABILITY_FACTS + G53_ABILITY_FACTS, abil_ts, champ_abil),
-                                          ('item', G34_ITEM_FACTS, items_ts, champ_items)):
+    for kind, facts_by_id, src, champ in (('ability', G34_ABILITY_FACTS + G35_ABILITY_FACTS + MEGA2_ABILITY_FACTS + G39_ABILITY_FACTS + G41_ABILITY_FACTS + G45_ABILITY_FACTS + G46_ABILITY_FACTS + G47_ABILITY_FACTS + G53_ABILITY_FACTS, abil_ts, champ_abil),
+                                          ('item', G34_ITEM_FACTS + G46_ITEM_FACTS + G47_ITEM_FACTS, items_ts, champ_items)):
         for rid, facts in facts_by_id:
             e = src.entry(rid)
             if e is None:
@@ -3442,6 +3565,7 @@ def render_pool(dp, dx):
 #define DFI_MOVE_FLAG2_POWDER 16u /* flags.powder (step G30): a Grass type, Overcoat and Safety Goggles are immune to the move */
 #define DFI_MOVE_FLAG2_PUNCH 32u /* flags.punch (step G34): Iron Fist boosts these moves (internal; the public static flag is not read) */
 #define DFI_MOVE_FLAG2_SLICING 64u /* flags.slicing (step G34): Sharpness boosts these moves */
+#define DFI_MOVE_FLAG2_FORCE_SWITCH 128u /* forceSwitch (step G46): Roar, Whirlwind, Dragon Tail, Circle Throw force the target out */
 #define DFI_BOOST_ROLE_PRIMARY_ALLY 4u /* step G19: a status move whose primary boosts go to the adjacent ally (Coaching) */
 #define DFI_BOOST_ROLE_SECONDARY_SELF 5u /* step G28: the secondary's roll gives these boosts to the user (Ancient Power) */
 #define DFI_BOOST_ROLE_PRIMARY_TARGET 6u /* step G39: a status move whose primary boosts go to its one target (Charm, Fake Tears) */
@@ -3760,7 +3884,7 @@ size_t dfi_pool_canonical_bytes(uint8_t *out, size_t capacity);
         names = [n for n, bit in (('DFI_MOVE_FLAG2_SOUND', 1), ('DFI_MOVE_FLAG2_HEAL', 2),
                                   ('DFI_MOVE_FLAG2_THAWS_TARGET', 4), ('DFI_MOVE_FLAG2_RECHARGE', 8),
                                   ('DFI_MOVE_FLAG2_POWDER', 16), ('DFI_MOVE_FLAG2_PUNCH', 32),
-                                  ('DFI_MOVE_FLAG2_SLICING', 64)) if m['flags2'] & bit]
+                                  ('DFI_MOVE_FLAG2_SLICING', 64), ('DFI_MOVE_FLAG2_FORCE_SWITCH', 128)) if m['flags2'] & bit]
         c.append('    [DFI_MOVE_%s] = %s, /* %s */' % (m['id'].upper(), ' | '.join(names) if names else '0u', m['name']))
     c += ['};', '', '/* The heal fraction of the moves that heal by one (step G10): numerator, denominator. */',
           'const uint8_t dfi_pool_move_heal[DFI_POOL_MOVE_COUNT][2] = {']

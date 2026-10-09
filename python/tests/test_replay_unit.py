@@ -299,6 +299,11 @@ class LinesTest(unittest.TestCase):
                      "|-item|p1a: Staraptor|Life Orb|[from] move: Covet|[of] p2a: Gholdengo"):
             self.assertEqual(self.stop(line), "feature:ITEM_CHANGE", line)
 
+    def test_drag_folds(self):
+        # Step G46: a forced switch brings a member in as a switch does (the tracker folds it as one, or stops)
+        self.assertEqual(lines.check("|drag|p2a: Gholdengo|Gholdengo, L50|100/100", self.view), "fold")
+        self.assertEqual(lines.check("|drag|p1a: Staraptor|Staraptor, L50, F|100/100", self.view), "fold")
+
     def test_unknown_lines_stop(self):
         self.assertEqual(self.stop("|-sethp|p1a: Staraptor|50/100"), "line:-sethp")
         self.assertEqual(self.stop("|move|p1a: Staraptor|Baton Pass|p1a: Staraptor"), "line:move Baton Pass")
@@ -344,6 +349,14 @@ class LinesTest(unittest.TestCase):
                                      view), "keep")
         with self.assertRaises(lines.Stop):
             lines.check("|-fail|p1a: Dragonite|unboost|Power|[from] ability: Inner Focus|[of] p1a: Dragonite", view)
+
+    def test_roost_single_turn_is_its_feature(self):
+        # G42: -singleturn|X|move: Roost is the ROOST feature: folded once the library supports it, else a Stop
+        line = "|-singleturn|p1a: Staraptor|move: Roost"
+        if lines.SUPPORTED >> lines.FEATURES["ROOST"] & 1:
+            self.assertEqual(lines.check(line, self.view), "fold")
+        else:
+            self.assertEqual(self.stop(line), "feature:ROOST")
 
     def test_activate_of_own_ability_folds(self):
         # G45/G47: Synchronize, Telepathy and the like announce the holder's own ability; their effects come in
@@ -429,6 +442,36 @@ class LinesTest(unittest.TestCase):
 
 
 TEAMS = data.ROOT / "tests" / "reference" / "teams"
+
+
+class PointsTest(unittest.TestCase):
+    """The decision points of a log (points.find)."""
+
+    _HEAD = ["|showteam|p1|x", "|showteam|p2|y", "|start", "|switch|p1a: Dragalge|Dragalge, L50|100/100",
+             "|switch|p2a: Gholdengo|Gholdengo, L50|100/100", "|turn|1"]
+
+    def test_a_switch_out_effect_of_the_answer_is_not_in_the_point(self):
+        # G51 (#281): Regenerator heals at the switch-out, a line of the PIVOT's answer printed before its |switch|;
+        # the player was asked before it (the engine shows the HP before the heal at the request)
+        from duoforge_replay import points
+        log = self._HEAD + ["|move|p1a: Dragalge|Flip Turn|p2a: Gholdengo", "|-damage|p2a: Gholdengo|80/100",
+                            "|-heal|p1a: Dragalge|53/100|[from] ability: Regenerator|[silent]",
+                            "|switch|p1a: Staraptor|Staraptor, L50|100/100|[from] Flip Turn", "|upkeep"]
+        pivot = [pt for pt in points.find(log) if pt.boundary == points.PIVOT]
+        self.assertEqual(len(pivot), 1)
+        self.assertEqual(log[pivot[0].line], "|-heal|p1a: Dragalge|53/100|[from] ability: Regenerator|[silent]")
+        # Natural Cure cures at the switch-out the same way
+        cure = self._HEAD + ["|move|p1a: Dragalge|U-turn|p2a: Gholdengo", "|-damage|p2a: Gholdengo|80/100",
+                             "|-curestatus|p1a: Dragalge|slp|[from] ability: Natural Cure",
+                             "|switch|p1a: Staraptor|Staraptor, L50|100/100|[from] U-turn", "|upkeep"]
+        pivot = [pt for pt in points.find(cure) if pt.boundary == points.PIVOT]
+        self.assertEqual(cure[pivot[0].line], "|-curestatus|p1a: Dragalge|slp|[from] ability: Natural Cure")
+        # a heal of another position, or one without a switch-out ability, stays in the point
+        other = self._HEAD + ["|move|p1a: Dragalge|Flip Turn|p2a: Gholdengo",
+                              "|-heal|p2a: Gholdengo|90/100|[from] item: Leftovers",
+                              "|switch|p1a: Staraptor|Staraptor, L50|100/100|[from] Flip Turn", "|upkeep"]
+        pivot = [pt for pt in points.find(other) if pt.boundary == points.PIVOT]
+        self.assertTrue(other[pivot[0].line].startswith("|switch|"))
 
 
 class PriorTest(unittest.TestCase):

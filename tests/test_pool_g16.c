@@ -258,7 +258,10 @@ static void check_battles(df_test *t, const duoforge_context *ctx, uint32_t *com
                         }
                     }
                 }
-                if (!DF_CHECK(t, memcmp(&ext[viewer], &want, sizeof want) == 0)) {
+                for (uint32_t g42f = 0u; g42f < 4u; ++g42f) { /* step G42: move_failed is the last move result FALSE */
+                    const uint32_t g42last = ((uint32_t)b->tail.sides[g42f / 2u].positions[g42f % 2u].move_result >> 2) & 3u;
+                    want.sides[g42f / 2u].positions[g42f % 2u].move_failed = g42last == 2u ? 1u : 0u;
+                }                if (!DF_CHECK(t, memcmp(&ext[viewer], &want, sizeof want) == 0)) {
                     fprintf(stderr, "  %s step %u viewer %u: the extension differs from the protocol's (gone 0x%x)\n",
                             battle_names[n], si, viewer, gone);
                 }
@@ -423,7 +426,7 @@ int main(void)
     DF_CHECK_EQ_U64(&t, DFI_SPECIAL_KNOCK_OFF, 24u);
     DF_CHECK_EQ_U64(&t, DFI_SPECIAL_EXPANDING_FORCE, 25u); /* step G15 */
     DF_CHECK_EQ_U64(&t, DFI_SPECIAL_GLAIVE_RUSH, 26u); /* step G19 */
-    DF_CHECK_EQ_U64(&t, DFI_SPECIAL_UNMODELED, DFI_SPECIAL_TRI_ATTACK + 1u); /* step G48 moved it past Rage Fist, Stone Axe, Ceaseless Edge and Population Bomb; after Aurora Veil (G20), Spiky Shield, the four of step G28, the three of step G30, the eight of step G32, the three of step G34, Disable (G27), the four of step G25 and Super Fang (G39) */
+    DF_CHECK_EQ_U64(&t, DFI_SPECIAL_UNMODELED, DFI_SPECIAL_STOMPING_TANTRUM + 1u); /* step G48 moved it past Rage Fist, Stone Axe, Ceaseless Edge and Population Bomb; after Aurora Veil (G20), Spiky Shield, the four of step G28, the three of step G30, the eight of step G32, the three of step G34, Disable (G27), the four of step G25 and Super Fang (G39) */
     DF_CHECK(&t, dfi_support.moves[DFI_MOVE_KNOCKOFF] != 0u && dfi_support.abilities[DFI_ABILITY_STICKYHOLD] != 0u);
     DF_CHECK(&t, (dfi_support.view_ext_features & ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_ITEM_CHANGE)) != 0u);
     /* Trick, Switcheroo, Thief and Covet were unmarked here (item_now was 0 or 255 only); step G29 marks them (the item that a

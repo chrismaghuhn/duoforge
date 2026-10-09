@@ -7,10 +7,14 @@ one snapshot each; a league environment takes a slot when its episode
 starts (a draw over the open slots), so an opponent changes only at an
 episode boundary. Every `refresh` updates the next slot in round robin
 starts draining: it takes no new episodes and, once its last episode has
-ended, loads a snapshot drawn from the pool. One slot drains at a time.
+ended, loads a snapshot drawn from the pool (Refill: uniformly by default,
+or mixed with prioritized fictitious self-play and anchors). One slot
+drains at a time.
 
 LeagueState is NumPy only; Opponents (JAX) plays the slots' snapshots.
 """
+import math
+
 import numpy as np
 
 from . import pairing
@@ -104,6 +108,100 @@ class LeagueState:
         st.active = np.array(d["active"], dtype=np.int64)
         st.stats = {k: list(v) for k, v in d["stats"].items()}
         return st
+
+
+WEIGHTINGS = ("hard", "linear", "variance")
+SOURCES = ("uniform", "pfsp", "anchor")
+
+
+class Refill:
+    """Which snapshot a drained slot loads: prioritized fictitious self-play
+    (PFSP, AlphaStar) mixed with uniform and anchor refills.
+
+    A refill at update u first draws its source over the shares (uniform
+    1 - pfsp_share - anchor_share, pfsp_share, anchor_share) with
+    pairing.draw(seed, LEAGUE_SOURCE, u, 0), then the snapshot within the
+    source with pairing.draw(seed, LEAGUE_SNAPSHOT, u, 0), the draw the
+    uniform scheme always used; so the refills are a pure function of the
+    seed, the update, the pool and the league's stats (persisted in the run
+    state). With both shares 0 (the default) a refill is exactly the
+    uniform draw of the code before PFSP and the source draw is not made.
+
+    - uniform: every snapshot of the pool alike.
+    - pfsp: snapshot s weighted max(f(p_s), min_weight), p_s the learner's
+      win rate against s from LeagueState.stats [games, wins, draws], a draw
+      counting half: p_s = (wins + draws / 2 + prior * prior_games) /
+      (games + prior_games), so an unseen snapshot has p = prior. f is
+      "hard" (1 - p)^2 (AlphaStar), "linear" 1 - p or "variance" p (1 - p).
+      The stats count every game since the snapshot first played, not a
+      recent window.
+    - anchor: the `anchors` earliest snapshots alike (1: params-0, the
+      initial or --init network), so old weaknesses stay in the games.
+    """
+
+    def __init__(self, pfsp_share=0.0, anchor_share=0.0, anchors=1, weighting="hard", min_weight=0.05, prior=0.5,
+                 prior_games=4.0):
+        pfsp_share, anchor_share = float(pfsp_share), float(anchor_share)
+        for name, value in (("pfsp_share", pfsp_share), ("anchor_share", anchor_share), ("min_weight", min_weight),
+                            ("prior", prior), ("prior_games", prior_games)):
+            if not math.isfinite(float(value)):
+                raise ValueError(f"pfsp {name} {value} is not finite")
+        if not (0.0 <= pfsp_share <= 1.0 and 0.0 <= anchor_share <= 1.0 and pfsp_share + anchor_share <= 1.0):
+            raise ValueError(f"the league's pfsp share {pfsp_share} and anchor share {anchor_share} must lie in "
+                             f"[0, 1] with a sum of at most 1 (the rest refills uniformly)")
+        if weighting not in WEIGHTINGS:
+            raise ValueError(f"pfsp weighting {weighting!r} is not one of {WEIGHTINGS}")
+        if not 0.0 < float(min_weight) <= 1.0:
+            raise ValueError(f"pfsp min_weight {min_weight} is not in (0, 1]")
+        if not 0.0 <= float(prior) <= 1.0:
+            raise ValueError(f"pfsp prior {prior} is not in [0, 1]")
+        if not float(prior_games) > 0.0:
+            raise ValueError(f"pfsp prior_games {prior_games} must be positive (an unseen snapshot needs a win rate)")
+        if int(anchors) < 1:
+            raise ValueError(f"league anchors {anchors} must be at least 1")
+        self.pfsp_share, self.anchor_share, self.anchors = pfsp_share, anchor_share, int(anchors)
+        self.weighting, self.min_weight = weighting, float(min_weight)
+        self.prior, self.prior_games = float(prior), float(prior_games)
+
+    @property
+    def enabled(self):
+        return self.pfsp_share > 0.0 or self.anchor_share > 0.0
+
+    @property
+    def shares(self):
+        """(uniform, pfsp, anchor); uniform clamped at 0 against rounding (1 - 0.07 - 0.93 < 0)."""
+        return (max(0.0, 1.0 - self.pfsp_share - self.anchor_share), self.pfsp_share, self.anchor_share)
+
+    def win_rates(self, updates, stats):
+        """The learner's smoothed win rate against each snapshot of updates."""
+        record = np.array([stats.get(str(u), (0, 0, 0)) for u in updates], dtype=np.float64).reshape(-1, 3)
+        games, wins, draws = record.T
+        return (wins + 0.5 * draws + self.prior * self.prior_games) / (games + self.prior_games)
+
+    def weights_of(self, p):
+        p = np.asarray(p, dtype=np.float64)
+        f = {"hard": (1.0 - p) ** 2, "linear": 1.0 - p, "variance": p * (1.0 - p)}[self.weighting]
+        return np.maximum(f, self.min_weight)
+
+    def draw(self, seed, update, updates, stats):
+        """(chosen update, source) of the refill at update from the pool's
+        updates (in the pool's order)."""
+        if not updates:
+            raise ValueError("the snapshot pool is empty")
+        u = pairing.draw(seed, pairing.LEAGUE_SNAPSHOT, np.array([update]), np.array([0]))
+        source = "uniform"
+        if self.enabled:
+            s = pairing.draw(seed, pairing.LEAGUE_SOURCE, np.array([update]), np.array([0]))
+            source = SOURCES[int(pairing.pick(s, self.shares)[0])]
+        if source == "uniform":
+            candidates, weights = list(updates), np.ones(len(updates))
+        elif source == "pfsp":
+            candidates = list(updates)
+            weights = self.weights_of(self.win_rates(candidates, stats))
+        else:
+            candidates = sorted(updates)[:self.anchors]
+            weights = np.ones(len(candidates))
+        return candidates[int(pairing.pick(u, weights)[0])], source
 
 
 def learner_results(state, envs, rewards):

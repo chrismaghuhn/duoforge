@@ -1,0 +1,26 @@
+{
+  "name": "g42_roost_pivot",
+  "purpose": "Roost and a pivot in the same turn: Dragonite (Jolly, faster than Quaquaval) is chipped by the Sandstorm and Roosts on turn 2; Quaquaval then U-turns on it, so the pivot boundary (a request inside the turn, before the residual) shows the Roost volatile on Dragonite and Quaquaval has left its position. Turn 3 Dragonite Dragon Claws, and the Roost bit is gone.",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,000000000000000000000000000000000000000000000000000000000000125d",
+  "teams": [
+    "Dragonite (M)\nAbility: Inner Focus\nLevel: 50\nJolly Nature\n- Roost\n- Stomping Tantrum\n- Dragon Claw\n- Protect\n\nTyranitar (M) @ Charcoal\nAbility: Sand Stream\nLevel: 50\nAdamant Nature\n- Protect\n- Stomping Tantrum\n- Crunch\n- Rock Slide\n\nKingambit (M) @ Black Glasses\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Protect\n- Swords Dance\n- Sucker Punch\n\nMilotic (F) @ Leftovers\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Protect\n- Scald\n- Recover\n\nGholdengo @ Focus Sash\nAbility: Good as Gold\nLevel: 50\nEVs: 32 HP / 2 SpA / 32 SpD\nCalm Nature\n- Protect\n- Shadow Ball\n\nSneasler (M) @ Mystic Water\nAbility: Poison Touch\nLevel: 50\nEVs: 2 HP / 32 Atk / 32 Spe\nJolly Nature\n- Protect",
+    "Tyranitar (M) @ Charcoal\nAbility: Sand Stream\nLevel: 50\nAdamant Nature\n- Stomping Tantrum\n- Crunch\n- Protect\n\nQuaquaval (M) @ Life Orb\nAbility: Torrent\nLevel: 50\nAdamant Nature\n- U-turn\n- Protect\n\nGholdengo @ Black Glasses\nAbility: Good as Gold\nLevel: 50\nEVs: 32 HP / 2 SpA / 32 SpD\nCalm Nature\n- Protect\n- Shadow Ball\n- Make It Rain\n\nPrimarina (F) @ Fairy Feather\nAbility: Torrent\nLevel: 50\nEVs: 32 HP / 2 Def / 32 SpD\nCalm Nature\n- Protect\n- Moonblast\n\nStaraptor (M) @ Leftovers\nAbility: Intimidate\nLevel: 50\nEVs: 2 HP / 32 Atk / 32 Spe\nJolly Nature\n- Tailwind\n- Brave Bird\n- Protect\n\nSneasler (M) @ Mystic Water\nAbility: Poison Touch\nLevel: 50\nEVs: 2 HP / 32 Atk / 32 Spe\nJolly Nature\n- Protect"
+  ],
+  "plan": {
+    "p1": [
+      "move 4, move 1",
+      "move 1, move 1",
+      "move 3 1, move 1",
+      "move 3 1, move 1"
+    ],
+    "p2": [
+      "move 3, move 2",
+      "move 3, move 1 1",
+      "move 3, move 1",
+      "move 3, move 1"
+    ],
+    "max_steps": 4
+  }
+}

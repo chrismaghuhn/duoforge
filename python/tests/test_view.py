@@ -51,6 +51,38 @@ class Views(unittest.TestCase):
             self.assertGreater(checked, 200)
             self.assertGreater(pivots, 0)
 
+    def test_public_causes_name_the_view_refusals(self):
+        # decision 0026 section 4: the mask depends only on the player's view, and public refuses exactly while it is
+        # nonzero (a zero mask with a refusal is another cause: a PIVOT, a foe Substitute, ...)
+        C = _layout.CONSTANTS
+        sleep, confusion = C["DUOFORGE_PUBLIC_CAUSE_VISIBLE_SLEEP"], C["DUOFORGE_PUBLIC_CAUSE_VISIBLE_CONFUSION"]
+        with duoforge.Context(C["DUOFORGE_DATA_KIND_POOL"]) as ctx, \
+                duoforge.Batch(ctx, duoforge.reference_setups([0, 1, 2, 3]), 3, 52) as roots:
+            players = np.array([0, 1, 1, 0], np.uint32)
+            policy = duoforge.RandomPolicy(54, 4)
+            seen = {sleep: 0, confusion: 0}
+            for _ in range(160):
+                roots.query_factored()
+                _, statuses = roots.public(players)
+                masks, cause_statuses = roots.public_causes(players)
+                self.assertFalse(cause_statuses.any())
+                for e, p in enumerate(players):
+                    ob = roots.observations[e, p]
+                    asleep = bool((ob["sides"]["members"]["status"] == C["DUOFORGE_AILMENT_SLEEP"]).any())
+                    confused = bool(ob["sides"]["positions"]["confused"].any())
+                    self.assertEqual(bool(masks[e] & sleep), asleep, e)
+                    self.assertEqual(bool(masks[e] & confusion), confused, e)
+                    self.assertEqual(int(masks[e]) & ~(sleep | confusion), 0)  # ILLUSION_POSSIBLE stays 0 until Illusion
+                    if masks[e]:
+                        self.assertEqual(int(statuses[e]), C["DUOFORGE_E_UNSUPPORTED"])
+                    seen[sleep] += asleep
+                    seen[confusion] += confused
+                roots.step_factored(policy.choose_factored(roots))
+                roots.reset_terminal()
+            self.assertGreater(seen[sleep], 0)
+            with self.assertRaises(ValueError):
+                roots.public_causes(np.array([0, 2, 0, 0], np.uint32))
+
     def test_guards_and_atomic_failures(self):
         with duoforge.Context() as ctx, duoforge.Batch(ctx, duoforge.reference_setups([0, 1]), 2, 42) as b:
             players = np.array([0, 1], np.uint32)
