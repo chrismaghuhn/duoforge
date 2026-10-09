@@ -1098,6 +1098,53 @@ int main(void)
         duoforge_battle_destroy(w);
     }
 
+    /* A Revival Blessing pivot offers the brought fainted members only: a side with one fainted and one standing reserve
+     * has exactly one revive candidate, the fainted member, and the standing one is never offered (decision 0025 item 8). */
+    {
+        duoforge_battle *w = df_make_battle(kp, &teams);
+        duoforge_decision_bundle bd;
+        team_bundle(&bd, w);
+        step_expect(&t, kp, w, &bd, DUOFORGE_OK, "team selection (revive pivot)");
+        uint32_t fainted = DUOFORGE_MAX_ROSTER;
+        uint32_t living = DUOFORGE_MAX_ROSTER;
+        for (uint32_t m = 0u; m < DUOFORGE_MAX_ROSTER && m < w->sides[0].member_count; ++m) {
+            const bool brought = ((uint32_t)w->sides[0].brought_mask >> m & 1u) != 0u;
+            const bool active = w->sides[0].positions[0].occupant == m || w->sides[0].positions[1].occupant == m;
+            if (!brought || active) {
+                continue;
+            }
+            if (fainted == DUOFORGE_MAX_ROSTER) {
+                fainted = m;
+            } else if (living == DUOFORGE_MAX_ROSTER) {
+                living = m;
+            }
+        }
+        DF_CHECK(&t, fainted < DUOFORGE_MAX_ROSTER && living < DUOFORGE_MAX_ROSTER);
+        w->sides[0].members[fainted].hp = 0u;
+        w->boundary_kind = (uint8_t)DUOFORGE_BOUNDARY_PIVOT;
+        w->sides[0].requested_slots = 1u;
+        w->sides[1].requested_slots = 0u; /* only side 0 is asked at this pivot */
+        w->queue[0] = (dfi_queue_record){0u, (uint8_t)DFI_Q_RESIDUAL, 0u, 0u, 0u, 0u, 0u};
+        w->queue_len = 1u; /* a PIVOT has the rest of its turn queued: here the residual record only */
+        w->request_mask = 1u;
+        w->sides[0].positions[0].switch_flag = (uint8_t)DFI_SWITCH_REVIVE_BLESSING;
+        expect_inv(&t, kp, w, DFI_INV_NONE, "a revive pivot with one fainted and one standing reserve");
+        duoforge_factored_domain dom;
+        DF_CHECK(&t, duoforge_battle_factored(kp, w, 0u, &dom) == DUOFORGE_OK);
+        uint32_t revives = 0u;
+        bool living_offered = false;
+        for (uint32_t i = 0u; i < dom.slot_count[0]; ++i) {
+            const duoforge_slot_command *c = &dom.slots[0][i];
+            if (c->kind == DUOFORGE_SLOT_REVIVE) {
+                revives += 1u;
+                living_offered = living_offered || c->reserve == living;
+            }
+        }
+        DF_CHECK_EQ_U64(&t, revives, 1u);
+        DF_CHECK(&t, !living_offered);
+        duoforge_battle_destroy(w);
+    }
+
     duoforge_context_destroy(k1);
     duoforge_context_destroy(k2);
     duoforge_context_destroy(kc);
