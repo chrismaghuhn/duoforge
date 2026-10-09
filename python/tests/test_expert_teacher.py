@@ -622,6 +622,7 @@ class Teacher(unittest.TestCase):
             want = per_root(search, b, tick, cfg)
             got = ex.label_tick(search, b, tick, last_step=False, config=cfg, manifest=self.manifest)
             self.assertEqual([ex.decision_bytes(d) for d in got], want)
+            got_actions = [d.action for d in got]
             # Root order does not matter; results come back in input order.
             order = [2, 0, 3, 1]
             got = ex.label_tick(search, b, [tick[i] for i in order], last_step=False, config=cfg, manifest=self.manifest)
@@ -639,6 +640,31 @@ class Teacher(unittest.TestCase):
             exhausted = ex.label_tick(search, b, tick, last_step=False, config=tiny, manifest=self.manifest)
             self.assertEqual({d.status for d in exhausted}, {ex.RowStatus.WORK_EXHAUSTED})
             self.assertEqual([ex.decision_bytes(d) for d in exhausted], per_root(search, b, tick, tiny))
+            # Exhaustion of one root's primary, or of another root's audit, stays with that root.
+            from duoforge_search.expert_data import selection_word
+            world = {selection_word(r.key, cfg.seed, domain="world"): i for i, r in enumerate(tick)}
+            real_finish = search._finish
+
+            def finish(request, values, own_p, costs, budget=None):
+                root, audit = world[request.key], request.own.size == 9
+                if (root, audit) in ((1, False), (3, True)):
+                    raise matrix.WorkBudgetExceeded(matrix.WorkStatus.EXACT_OPS, budget.consumed)
+                return real_finish(request, values, own_p, costs, budget)
+
+            with mock.patch.object(search, "_finish", side_effect=finish):
+                partial = ex.label_tick(search, b, tick, last_step=False, config=cfg, manifest=self.manifest)
+            self.assertEqual((partial[1].status, partial[1].cause), (ex.RowStatus.WORK_EXHAUSTED, "work:exact_ops"))
+            self.assertIsNotNone(partial[1].world_digest)
+            self.assertEqual(partial[3].status, ex.RowStatus.TARGET)
+            self.assertEqual(partial[3].audit["status"], "exhausted:exact_ops")
+            for i in (0, 2):
+                self.assertEqual(ex.decision_bytes(partial[i]), want[i])
+            self.assertEqual(partial[3].action, got_actions[3])
+            # A root that fails its checks stops the tick before any root builds worlds.
+            bad = dataclasses.replace(tick[2], key=DecisionKey(games[2], 1, tick[2].key.request_epoch))
+            with mock.patch.object(search, "_hypotheses", side_effect=AssertionError("worlds built first")), \
+                    self.assertRaisesRegex(ValueError, "key"):
+                ex.label_tick(search, b, [tick[0], tick[1], bad], last_step=False, config=cfg, manifest=self.manifest)
             # Visible sleep in one environment: that root refuses publicly, the others are unchanged.
             decode = b._lib.duoforge_battle_decode
             decode.restype = ctypes.c_uint32
@@ -676,6 +702,21 @@ class Teacher(unittest.TestCase):
         self.assertEqual(plain["unique"], plain["open_leaves"])
         self.assertLessEqual(dedup["unique"], plain["unique"])
         self.assertLessEqual(dedup["tick_value_calls"], plain["tick_value_calls"])
+
+    def test_tickbench_cli_refuses_unpinned_shapes(self):
+        # The bench manifest pins even game counts up to 512 and 4/8/14 workers; anything else is refused before
+        # the checkpoint or JAX is touched.
+        import contextlib
+        import io
+        import tempfile
+        from duoforge_search import tickbench
+        with tempfile.TemporaryDirectory() as tmp:
+            base = ["--checkpoint", tmp + "/missing.ckpt", "--device", "cpu", "--out", tmp + "/out.json"]
+            for extra in (["--envs", "7"], ["--envs", "514"], ["--envs", "0"], ["--workers", "6"]):
+                with self.subTest(extra=extra), self.assertRaises(SystemExit) as caught, \
+                        contextlib.redirect_stderr(io.StringIO()):
+                    tickbench.main(base + extra)
+                self.assertEqual(caught.exception.code, 2)
 
     def test_two_phase_decision_bytes_pinned(self):
         import hashlib
