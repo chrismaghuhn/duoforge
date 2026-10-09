@@ -487,8 +487,8 @@ class CliTest(unittest.TestCase):
                 self.assertEqual(checkpoint.load_current(path)[1]["encoder"], features.ENCODER)
             bad = Path(tmp) / "bad.npz"
             np.savez(bad, config=np.array('{"format": 2, "encoder": 4, "features": ["x"], "slot_features": []}'),
-                     **{"t1/w": np.zeros((1, 1))})
-            with self.assertRaisesRegex(ValueError, "layout"):
+                     **{"['t1']['w']": np.zeros((1, 1))})
+            with self.assertRaisesRegex(ValueError, "its features are not encoder 4's layout"):
                 checkpoint.load_trained(bad)
 
     def test_cli_fits_from_a_manifest_and_refuses_a_finished_resume(self):

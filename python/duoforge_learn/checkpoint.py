@@ -184,7 +184,8 @@ def load_trained(path):
     if config.get("format") != 2:
         raise ValueError(f"{path}: load_trained reads format-2 checkpoints")
     encoder = encoder_of(config)
-    if list(config.get("features", ())) != list(features.feature_names(encoder)) or             list(config.get("slot_features", ())) != list(features.SLOT_FEATURE_NAMES):
+    if list(config.get("features", ())) != list(features.feature_names(encoder)) or \
+            list(config.get("slot_features", ())) != list(features.SLOT_FEATURE_NAMES):
         raise ValueError(f"{path}: its features are not encoder {encoder}'s layout")
     return params, config
 

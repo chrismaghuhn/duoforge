@@ -452,7 +452,8 @@ def main(argv=None):
         if checkpoint.encoder_of(config) != manifest.encoder or len(config["features"]) != manifest.obs_width:
             raise ValueError(f"--init is encoder {checkpoint.encoder_of(config)} ({len(config['features'])} "
                              f"features), the manifest's rows encoder {manifest.encoder} ({manifest.obs_width})")
-        if (checkpoint.model_config(ref_config, ref), ref_config["features"]) !=                 (checkpoint.model_config(config, init), config["features"]):
+        if (checkpoint.model_config(ref_config, ref), ref_config["features"]) != \
+                (checkpoint.model_config(config, init), config["features"]):
             raise ValueError("the reference's model or layout differs from the init's")
         model = checkpoint.trained_model(config, init)
         data = distill_data.load(args.shards, manifest)
