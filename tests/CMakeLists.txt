@@ -211,6 +211,8 @@ duoforge_add_test(NAME duoforge.state.pool_g50 SOURCES test_pool_g50.c WHITEBOX 
 duoforge_add_test(NAME duoforge.state.pool_g34 SOURCES test_pool_g34.c WHITEBOX TIMEOUT 60)
 duoforge_add_test(NAME duoforge.state.pool_g41 SOURCES test_pool_g41.c WHITEBOX TIMEOUT 60)
 duoforge_add_test(NAME duoforge.state.pool_g60 SOURCES test_pool_g60.c WHITEBOX LIBS duoforge_batch TIMEOUT 60)
+# Step G57: Magic Bounce and the Mega Stones Absolite and Sablenite (the reflectable column against the pinned Dex, the marks).
+duoforge_add_test(NAME duoforge.state.pool_g57 SOURCES test_pool_g57.c WHITEBOX TIMEOUT 60)
 # Step G42: Roost and Stomping Tantrum: the move result classes (this and last) at every boundary of the g42 battles, the Roost
 # volatile (the pivot boundary inside its turn), the view bits (40 supported, 41 not), the unclassified refusal.
 duoforge_add_test(NAME duoforge.state.pool_g42 SOURCES test_pool_g42.c WHITEBOX TIMEOUT 60)
@@ -250,8 +252,8 @@ foreach(_gen IN ITEMS
         "closure_tables.c=490de42298e34cfd38192d979fd022367bf53693a5fa1855f1cc6ad034d8450a"
         "extended_tables.h=b2abef243fcbfdd87654940076b9fe2fe80b117d74893a7567741f26b9075a7d"
         "extended_tables.c=9e736fa467713283418c4edf8f56b8d844452e596ba422adbd52483d20f7cc17"
-        "pool_tables.h=117e9c48ca70b01408869d8e6862c1751ac98f113b5f67547c143d610b79d47f"
-        "pool_tables.c=5b9d3e107f7a43d2e3af2ecad4dd2b23de7deaab6f11e3612d268e8a520e3e9f")
+        "pool_tables.h=a13e88ab7d297712ccaa9af748ed05d918ef9a0946670a4e2f1ac920db010f1c"
+        "pool_tables.c=d1b7049486e7453f04a05461084f94acfe3203bb72ab9cc5687e92d6f5e5cb9d")
     string(REPLACE "=" ";" _parts "${_gen}")
     list(GET _parts 0 _file)
     list(GET _parts 1 _expected)
@@ -291,6 +293,12 @@ if(DUOFORGE_PS_REFERENCE_DIR)
                 "${DUOFORGE_PS_REFERENCE_DIR}" "${PROJECT_SOURCE_DIR}"
                 --check "${CMAKE_CURRENT_SOURCE_DIR}/reference/tiebreak_ref.h")
         set_tests_properties(duoforge.reference.tiebreak_ref PROPERTIES TIMEOUT 900 LABELS reference)
+        # Step G57: the reflectable moves of the Champions Dex (flags.reflectable), recomputed by the pinned Showdown; the
+        # generated bit DFI_MOVE_FLAG3_REFLECTABLE (dfi_pool_move_flags3) is checked against them by duoforge.state.pool_g57.
+        add_test(NAME duoforge.reference.reflect_ref
+            COMMAND "${DUOFORGE_NODE}" "${PROJECT_SOURCE_DIR}/tools/reference/reflect_ref.js"
+                "${DUOFORGE_PS_REFERENCE_DIR}" --check "${CMAKE_CURRENT_SOURCE_DIR}/reference/reflect_ref.h")
+        set_tests_properties(duoforge.reference.reflect_ref PROPERTIES TIMEOUT 120 LABELS reference)
         # The family columns of the pool tables (decision 0015), against the pinned handlers: every
         # family member's handler is called with a probe for each of the 18 types and must agree
         # with the generated type, weather or terrain; the pool's ids are also validated by the
@@ -518,8 +526,9 @@ if(Python3_Interpreter_FOUND)
     # what it normalises and reports, what it refuses, and what it writes, with a stand-in for the pokedex.
     add_test(NAME duoforge.reference.team_registry
         COMMAND "${Python3_EXECUTABLE}" "${PROJECT_SOURCE_DIR}/tools/reference/test_team_registry.py")
-    # 600 s: the 1,042 teams took 95 s (MSVC release), 136 s (GCC debug) and 171 s (GCC ASan on WSL) in the parallel
-    # local CI of 2026-10-09, more than the 120 s that fitted the first registry.
+    # The committed registry is checked whole once; the tests of the checks and of adding use a small copy of it
+    # (copy_registry), so the time grows with that one check only: 18 s alone (GCC debug, 1,414 teams, 2026-10-09; it was
+    # 161 s when every subtest checked a whole copy). 600 s is the margin for ASan and a busy machine.
     set_tests_properties(duoforge.reference.team_registry PROPERTIES TIMEOUT 600 ENVIRONMENT PYTHONDONTWRITEBYTECODE=1)
     add_test(NAME duoforge.reference.import_paste
         COMMAND "${Python3_EXECUTABLE}" "${PROJECT_SOURCE_DIR}/tools/reference/test_import_paste.py")
@@ -672,7 +681,7 @@ foreach(_py layout lib equivalence recipes policies_features example learn_numpy
 endforeach()
 
 # The learner pipeline (decisions 0014, 0017) needs JAX: DUOFORGE_LEARN_PYTHON.
-foreach(_learn learn learn_v2 bc search honest luck ledger pfsp value_rows distill)
+foreach(_learn learn learn_v2 bc search honest luck ledger pfsp value_rows distill collect_expert learner_contract)
     if(DUOFORGE_LEARN_PYTHON)
         add_test(NAME duoforge.python.${_learn}
             COMMAND "${DUOFORGE_LEARN_PYTHON}" -m unittest -v python.tests.test_${_learn}
@@ -743,3 +752,6 @@ endif()
 # Step G51 (Mega batch 4): ten Mega Stones marked with no new rule, Keen Eye and Big Pecks as engine rows (turn.c), the marks, the
 # Mega of each pair, the setup, the API, and the Keen Eye ignoreEvasion check (white-box).
 duoforge_add_test(NAME duoforge.state.pool_g51 SOURCES test_pool_g51.c WHITEBOX TIMEOUT 60)
+
+# Step G53 (decision 0030): Pressure and the foe's derived PP.
+duoforge_add_test(NAME duoforge.state.pool_g53 SOURCES test_pool_g53.c WHITEBOX TIMEOUT 60)

@@ -13,10 +13,12 @@ MAX_ROWS = 196608  # unique open rows per tick: 196608 x 850 float32 rows is abo
 
 
 class TickTable:
-    def __init__(self, width, max_rows=MAX_ROWS):
-        self.width, self.max_rows = int(width), int(max_rows)
+    def __init__(self, width, max_rows=MAX_ROWS, dedup=True):
+        """dedup=False keeps every open leaf as its own row (the P2 ablation)."""
+        self.width, self.max_rows, self.dedup = int(width), int(max_rows), bool(dedup)
         self._index = {}
         self._rows = []
+        self.leaves = self.open_leaves = 0  # counters for the P2 measurement
 
     @property
     def unique(self):
@@ -29,13 +31,17 @@ class TickTable:
         if rows.dtype != np.float32 or rows.ndim != 2 or rows.shape[1] != self.width or open_.shape != rows.shape[:1]:
             raise ValueError(f"a request needs (L, {self.width}) float32 rows and an (L,) open mask")
         index = np.full(rows.shape[0], -1, np.int64)
+        self.leaves += rows.shape[0]
+        self.open_leaves += int(open_.sum())
         for leaf in np.flatnonzero(open_):
             key = rows[leaf].tobytes()
-            found = self._index.get(key)
+            found = self._index.get(key) if self.dedup else None
             if found is None:
                 if len(self._rows) >= self.max_rows:
                     raise ValueError(f"the tick exceeds its limit of {self.max_rows} unique rows")
-                found = self._index[key] = len(self._rows)
+                found = len(self._rows)
+                if self.dedup:
+                    self._index[key] = found
                 self._rows.append(rows[leaf].copy())
             index[leaf] = found
         return index

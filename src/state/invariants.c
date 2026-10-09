@@ -516,9 +516,12 @@ static bool dfi_queue_valid(const struct duoforge_battle *b)
 static bool dfi_field_valid(const duoforge_context *ctx, const struct duoforge_battle *b)
 {
     const dfi_kind_limits lim = dfi_kind_limits_of(ctx->data_kind);
-    return b->weather <= lim.weather_max && b->weather_turns <= DFI_FIELD_TURNS_MAX &&
+    /* Step G55: in the POOL kinds weather and terrain last up to 8 turns (the rock items and Terrain Extender, pool rows
+     * only); every other kind keeps 5. Trick Room stays at 5 in all kinds. */
+    const uint32_t field_max = lim.pool_rules ? DFI_FIELD_TURNS_EXTENDED_MAX : DFI_FIELD_TURNS_MAX;
+    return b->weather <= lim.weather_max && b->weather_turns <= field_max &&
            (b->weather == DFI_WEATHER_NONE) == (b->weather_turns == 0u) && b->terrain <= lim.terrain_max &&
-           b->terrain_turns <= DFI_FIELD_TURNS_MAX &&
+           b->terrain_turns <= field_max &&
            (b->terrain == DFI_TERRAIN_NONE) == (b->terrain_turns == 0u) &&
            b->trick_room_turns <= DFI_FIELD_TURNS_MAX;
 }

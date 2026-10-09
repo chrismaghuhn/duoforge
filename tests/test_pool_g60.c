@@ -5,7 +5,7 @@
  *   - the approved public values (VOLATILE_SUBSTITUTE 9, FAIL_SUBSTITUTE_EXISTS 1, FAIL_SUBSTITUTE_WEAK 2, the public cause
  *     SUBSTITUTE 8), with the view bit that the position's presence uses;
  *   - the marks: the Substitute is supported; Baton Pass, Shed Tail, Tidy Up and Defog are not (decision 0032 section 7);
- *   - the bypasssub column (dfi_pool_move_bypasssub, generated, appended last to the canonical pool bytes): the moves that carry
+ *   - flags3 bit 2 (DFI_MOVE_FLAG3_BYPASSSUB, lane B's third flags byte): the moves that carry
  *     flags.bypasssub in the pin have 1, the Substitute and the moves that do not carry it have 0;
  *   - the public record of a battle with a Substitute on either side refuses (E_UNSUPPORTED) with the cause bit set, and a battle
  *     without one is not refused by the cause (the causes mask is the one predicate of both).
@@ -72,18 +72,21 @@ static void check_values_and_marks(df_test *t)
     DF_CHECK(t, dfi_support.moves[DFI_MOVE_DEFOG] == 0u);
 }
 
-/* The generated column: 1 for each marked move with flags.bypasssub in the pin (data/moves.ts), 0 for the others. */
-static void check_bypass_column(df_test *t)
+/* The flags3 bit 2 (DFI_MOVE_FLAG3_BYPASSSUB): set for each move with flags.bypasssub in the pin (data/moves.ts), clear for the
+ * others. */
+static void check_bypass_bit(df_test *t)
 {
-    DF_CHECK_EQ_U64(t, dfi_pool_move_bypasssub[DFI_MOVE_ENCORE], 1u);     /* data/moves.ts:4732 */
-    DF_CHECK_EQ_U64(t, dfi_pool_move_bypasssub[DFI_MOVE_COACHING], 1u);   /* data/moves.ts:2598 */
-    DF_CHECK_EQ_U64(t, dfi_pool_move_bypasssub[DFI_MOVE_DISABLE], 1u);    /* data/moves.ts:3656 */
-    DF_CHECK_EQ_U64(t, dfi_pool_move_bypasssub[DFI_MOVE_TAUNT], 1u);      /* data/moves.ts:18982 */
-    DF_CHECK_EQ_U64(t, dfi_pool_move_bypasssub[DFI_MOVE_IMPRISON], 1u);   /* data/moves.ts:9497 */
-    DF_CHECK_EQ_U64(t, dfi_pool_move_bypasssub[DFI_MOVE_PERISHSONG], 1u); /* data/moves.ts:13241 */
-    DF_CHECK_EQ_U64(t, dfi_pool_move_bypasssub[DFI_MOVE_SUBSTITUTE], 0u); /* data/moves.ts:18312: snatch, nonsky, metronome */
-    DF_CHECK_EQ_U64(t, dfi_pool_move_bypasssub[DFI_MOVE_YAWN], 0u);       /* data/moves.ts:21139: no bypasssub */
-    DF_CHECK_EQ_U64(t, dfi_pool_move_bypasssub[DFI_MOVE_PROTECT], 0u);
+#define G60_BYPASS(move) ((dfi_pool_move_flags3[(move)] & DFI_MOVE_FLAG3_BYPASSSUB) != 0u)
+    DF_CHECK_EQ_U64(t, G60_BYPASS(DFI_MOVE_ENCORE), 1u);     /* data/moves.ts:4732 */
+    DF_CHECK_EQ_U64(t, G60_BYPASS(DFI_MOVE_COACHING), 1u);   /* data/moves.ts:2598 */
+    DF_CHECK_EQ_U64(t, G60_BYPASS(DFI_MOVE_DISABLE), 1u);    /* data/moves.ts:3656 */
+    DF_CHECK_EQ_U64(t, G60_BYPASS(DFI_MOVE_TAUNT), 1u);      /* data/moves.ts:18982 */
+    DF_CHECK_EQ_U64(t, G60_BYPASS(DFI_MOVE_IMPRISON), 1u);   /* data/moves.ts:9497 */
+    DF_CHECK_EQ_U64(t, G60_BYPASS(DFI_MOVE_PERISHSONG), 1u); /* data/moves.ts:13241 */
+    DF_CHECK_EQ_U64(t, G60_BYPASS(DFI_MOVE_SUBSTITUTE), 0u); /* data/moves.ts:18312: snatch, nonsky, metronome */
+    DF_CHECK_EQ_U64(t, G60_BYPASS(DFI_MOVE_YAWN), 0u);       /* data/moves.ts:21139: no bypasssub */
+    DF_CHECK_EQ_U64(t, G60_BYPASS(DFI_MOVE_PROTECT), 0u);
+#undef G60_BYPASS
 }
 
 static const df_conf_battle *find(const char *name)
@@ -265,7 +268,7 @@ int main(void)
     duoforge_context *ctx = df_make_context(&df_config_pool);
     DF_CHECK(&t, ctx != NULL);
     check_values_and_marks(&t);
-    check_bypass_column(&t);
+    check_bypass_bit(&t);
     if (ctx != NULL) {
         check_public_refusal(&t, ctx);
         check_observation_bit(&t, ctx);

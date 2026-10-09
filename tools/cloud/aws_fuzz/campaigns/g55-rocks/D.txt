@@ -1,0 +1,48 @@
+Politoed (M) @ Damp Rock
+Ability: Drizzle
+Level: 50
+EVs: 32 HP / 2 SpD / 32 SpA
+Modest Nature
+- Protect
+- Hydro Pump
+
+Torkoal (F) @ Heat Rock
+Ability: Drought
+Level: 50
+EVs: 32 HP / 2 SpD / 32 SpA
+Modest Nature
+- Sunny Day
+- Heat Wave
+- Protect
+
+Hippowdon (M) @ Smooth Rock
+Ability: Sand Stream
+Level: 50
+EVs: 32 HP / 32 Atk / 2 SpD
+Adamant Nature
+- Earthquake
+- Protect
+
+Abomasnow (M) @ Icy Rock
+Ability: Snow Warning
+Level: 50
+EVs: 32 HP / 32 SpA / 2 SpD
+Modest Nature
+- Blizzard
+- Protect
+
+Pelipper (M) @ Leftovers
+Ability: Rain Dish
+Level: 50
+EVs: 32 HP / 32 SpA / 2 SpD
+Modest Nature
+- Rain Dance
+- Protect
+
+Gholdengo @ Life Orb
+Ability: Good as Gold
+Level: 50
+EVs: 17 HP / 2 Def / 17 SpA / 16 SpD / 14 Spe
+Modest Nature
+- Shadow Ball
+- Protect

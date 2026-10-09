@@ -1,0 +1,46 @@
+Corviknight (M) @ Leftovers
+Ability: Pressure
+Level: 50
+EVs: 32 HP / 32 Def / 2 SpD
+Jolly Nature
+- Brave Bird
+- Protect
+
+Weavile (M) @ Focus Sash
+Ability: Pressure
+Level: 50
+EVs: 2 HP / 32 Atk / 32 Spe
+Jolly Nature
+- Ice Shard
+- Protect
+
+Spiritomb (M) @ Life Orb
+Ability: Pressure
+Level: 50
+EVs: 32 HP / 2 SpD / 32 Spe
+Relaxed Nature
+- Shadow Sneak
+- Protect
+
+Ariados (M) @ Mystic Water
+Ability: Swarm
+Level: 50
+EVs: 2 HP / 32 Atk / 32 Spe
+Jolly Nature
+- Sticky Web
+- Protect
+
+Gardevoir (F) @ Twisted Spoon
+Ability: Trace
+Level: 50
+EVs: 2 HP / 32 SpA / 32 Spe
+Timid Nature
+- Moonblast
+- Protect
+
+Sneasler (M) @ Sitrus Berry
+Ability: Pressure
+Level: 50
+EVs: 2 HP / 32 Atk / 32 Spe
+Jolly Nature
+- Protect

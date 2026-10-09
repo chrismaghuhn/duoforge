@@ -1887,7 +1887,7 @@ const dfi_pool_item_data dfi_pool_items[DFI_POOL_ITEM_COUNT] = {
     {41u, 42u},
     /* Crabominite -- data/items.ts:1214-1225, data/mods/champions/items.ts:186-189 */
     {276u, 277u},
-    /* Damp Rock -- data/items.ts:1261-1269  [unmodelled: read by id in data/conditions.ts] */
+    /* Damp Rock -- data/items.ts:1261-1269 */
     {DFI_FORME_NONE, DFI_FORME_NONE},
     /* Delphoxite -- data/items.ts:1378-1389, data/mods/champions/items.ts:206-209 */
     {227u, 228u},
@@ -1937,13 +1937,13 @@ const dfi_pool_item_data dfi_pool_items[DFI_POOL_ITEM_COUNT] = {
     {72u, 73u},
     /* Hawluchanite -- data/items.ts:2789-2800, data/mods/champions/items.ts:438-441 */
     {258u, 259u},
-    /* Heat Rock -- data/items.ts:2841-2849  [unmodelled: read by id in data/conditions.ts] */
+    /* Heat Rock -- data/items.ts:2841-2849 */
     {DFI_FORME_NONE, DFI_FORME_NONE},
     /* Heracronite -- data/items.ts:2877-2888, data/mods/champions/items.ts:462-465 */
     {103u, 104u},
     /* Houndoominite -- data/items.ts:2901-2912, data/mods/champions/items.ts:470-473 */
     {107u, 108u},
-    /* Icy Rock -- data/items.ts:3010-3018  [unmodelled: read by id in data/conditions.ts] */
+    /* Icy Rock -- data/items.ts:3010-3018 */
     {DFI_FORME_NONE, DFI_FORME_NONE},
     /* Iron Ball -- data/items.ts:3050-3067  [unmodelled: callback onEffectiveness; callback onModifySpe; read by id in data/moves.ts; read by id in sim/pokemon.ts] */
     {DFI_FORME_NONE, DFI_FORME_NONE},
@@ -2035,7 +2035,7 @@ const dfi_pool_item_data dfi_pool_items[DFI_POOL_ITEM_COUNT] = {
     {105u, 106u},
     /* Slowbronite -- data/items.ts:5808-5819, data/mods/champions/items.ts:870-873 */
     {55u, 56u},
-    /* Smooth Rock -- data/items.ts:5820-5828  [unmodelled: read by id in data/conditions.ts] */
+    /* Smooth Rock -- data/items.ts:5820-5828 */
     {DFI_FORME_NONE, DFI_FORME_NONE},
     /* Starminite -- data/items.ts:6021-6032, data/mods/champions/items.ts:906-909 */
     {63u, 64u},
@@ -2043,7 +2043,7 @@ const dfi_pool_item_data dfi_pool_items[DFI_POOL_ITEM_COUNT] = {
     {98u, 99u},
     /* Swampertite -- data/items.ts:6180-6191, data/mods/champions/items.ts:946-949 */
     {115u, 116u},
-    /* Terrain Extender -- data/items.ts:6283-6291  [unmodelled: read by id in data/moves.ts] */
+    /* Terrain Extender -- data/items.ts:6283-6291 */
     {DFI_FORME_NONE, DFI_FORME_NONE},
     /* Tyranitarite -- data/items.ts:7392-7403, data/mods/champions/items.ts:978-981 */
     {109u, 110u},
@@ -2144,7 +2144,7 @@ const dfi_pool_item_data dfi_pool_items[DFI_POOL_ITEM_COUNT] = {
  *   liquidooze -- data/abilities.ts:2402-2415  [unmodelled: callback onSourceTryHeal]
  *   liquidvoice -- data/abilities.ts:2416-2427
  *   longreach -- data/abilities.ts:2428-2436  [unmodelled: callback onModifyMove]
- *   magicbounce -- data/abilities.ts:2437-2464  [unmodelled: callback onAllyTryHitSide; callback onTryHit; callback onTryHitPriority]
+ *   magicbounce -- data/abilities.ts:2437-2464
  *   magicguard -- data/abilities.ts:2465-2476  [unmodelled: callback onDamage; read by id in data/items.ts]
  *   magician -- data/abilities.ts:2477-2500  [unmodelled: callback onAfterMoveSecondarySelf]
  *   magmaarmor -- data/abilities.ts:2501-2515  [unmodelled: callback onImmunity; callback onUpdate]
@@ -2174,7 +2174,7 @@ const dfi_pool_item_data dfi_pool_items[DFI_POOL_ITEM_COUNT] = {
  *   poisonheal -- data/abilities.ts:3331-3343  [unmodelled: callback onDamage; callback onDamagePriority]
  *   poisonpoint -- data/abilities.ts:3344-3356  [unmodelled: callback onDamagingHit]
  *   poisontouch -- data/abilities.ts:3370-3384
- *   pressure -- data/abilities.ts:3437-3449  [unmodelled: callback onDeductPP; callback onStart]
+ *   pressure -- data/abilities.ts:3437-3449
  *   protean -- data/abilities.ts:3497-3512  [unmodelled: callback onPrepareHit]
  *   punkrock -- data/abilities.ts:3589-3607
  *   purepower -- data/abilities.ts:3608-3617  [unmodelled: callback onModifyAtk; callback onModifyAtkPriority]
@@ -2730,7 +2730,7 @@ const uint8_t dfi_pool_item_handler[DFI_POOL_ITEM_COUNT] = {
     [DFI_ITEM_CHIMECHITE] = DFI_HANDLER_NONE,
     [DFI_ITEM_CLEFABLITE] = DFI_HANDLER_NONE,
     [DFI_ITEM_CRABOMINITE] = DFI_HANDLER_NONE,
-    [DFI_ITEM_DAMPROCK] = DFI_HANDLER_UNMODELED,
+    [DFI_ITEM_DAMPROCK] = DFI_HANDLER_NONE,
     [DFI_ITEM_DELPHOXITE] = DFI_HANDLER_NONE,
     [DFI_ITEM_DRAGALGITE] = DFI_HANDLER_NONE,
     [DFI_ITEM_DRAGONINITE] = DFI_HANDLER_NONE,
@@ -2755,10 +2755,10 @@ const uint8_t dfi_pool_item_handler[DFI_POOL_ITEM_COUNT] = {
     [DFI_ITEM_GRENINJITE] = DFI_HANDLER_NONE,
     [DFI_ITEM_GYARADOSITE] = DFI_HANDLER_NONE,
     [DFI_ITEM_HAWLUCHANITE] = DFI_HANDLER_NONE,
-    [DFI_ITEM_HEATROCK] = DFI_HANDLER_UNMODELED,
+    [DFI_ITEM_HEATROCK] = DFI_HANDLER_NONE,
     [DFI_ITEM_HERACRONITE] = DFI_HANDLER_NONE,
     [DFI_ITEM_HOUNDOOMINITE] = DFI_HANDLER_NONE,
-    [DFI_ITEM_ICYROCK] = DFI_HANDLER_UNMODELED,
+    [DFI_ITEM_ICYROCK] = DFI_HANDLER_NONE,
     [DFI_ITEM_IRONBALL] = DFI_HANDLER_UNMODELED,
     [DFI_ITEM_KANGASKHANITE] = DFI_HANDLER_NONE,
     [DFI_ITEM_KINGSROCK] = DFI_HANDLER_UNMODELED,
@@ -2804,11 +2804,11 @@ const uint8_t dfi_pool_item_handler[DFI_POOL_ITEM_COUNT] = {
     [DFI_ITEM_SHELLBELL] = DFI_HANDLER_UNMODELED,
     [DFI_ITEM_SKARMORITE] = DFI_HANDLER_NONE,
     [DFI_ITEM_SLOWBRONITE] = DFI_HANDLER_NONE,
-    [DFI_ITEM_SMOOTHROCK] = DFI_HANDLER_UNMODELED,
+    [DFI_ITEM_SMOOTHROCK] = DFI_HANDLER_NONE,
     [DFI_ITEM_STARMINITE] = DFI_HANDLER_NONE,
     [DFI_ITEM_STEELIXITE] = DFI_HANDLER_NONE,
     [DFI_ITEM_SWAMPERTITE] = DFI_HANDLER_NONE,
-    [DFI_ITEM_TERRAINEXTENDER] = DFI_HANDLER_UNMODELED,
+    [DFI_ITEM_TERRAINEXTENDER] = DFI_HANDLER_NONE,
     [DFI_ITEM_TYRANITARITE] = DFI_HANDLER_NONE,
     [DFI_ITEM_VENUSAURITE] = DFI_HANDLER_NONE,
     [DFI_ITEM_VICTREEBELITE] = DFI_HANDLER_NONE,
@@ -2923,7 +2923,7 @@ const uint8_t dfi_pool_ability_handler[DFI_POOL_ABILITY_COUNT] = {
     [DFI_ABILITY_LIQUIDOOZE] = DFI_HANDLER_UNMODELED,
     [DFI_ABILITY_LIQUIDVOICE] = DFI_HANDLER_NONE,
     [DFI_ABILITY_LONGREACH] = DFI_HANDLER_UNMODELED,
-    [DFI_ABILITY_MAGICBOUNCE] = DFI_HANDLER_UNMODELED,
+    [DFI_ABILITY_MAGICBOUNCE] = DFI_HANDLER_NONE,
     [DFI_ABILITY_MAGICGUARD] = DFI_HANDLER_UNMODELED,
     [DFI_ABILITY_MAGICIAN] = DFI_HANDLER_UNMODELED,
     [DFI_ABILITY_MAGMAARMOR] = DFI_HANDLER_UNMODELED,
@@ -2953,7 +2953,7 @@ const uint8_t dfi_pool_ability_handler[DFI_POOL_ABILITY_COUNT] = {
     [DFI_ABILITY_POISONHEAL] = DFI_HANDLER_UNMODELED,
     [DFI_ABILITY_POISONPOINT] = DFI_HANDLER_UNMODELED,
     [DFI_ABILITY_POISONTOUCH] = DFI_HANDLER_NONE,
-    [DFI_ABILITY_PRESSURE] = DFI_HANDLER_UNMODELED,
+    [DFI_ABILITY_PRESSURE] = DFI_HANDLER_NONE,
     [DFI_ABILITY_PROTEAN] = DFI_HANDLER_UNMODELED,
     [DFI_ABILITY_PUNKROCK] = DFI_HANDLER_NONE,
     [DFI_ABILITY_PUREPOWER] = DFI_HANDLER_UNMODELED,
@@ -4745,6 +4745,7 @@ const uint32_t dfi_pool_move_static_flags[DFI_POOL_MOVE_COUNT] = {
     [DFI_MOVE_ICEHAMMER] = 0x5u, /* Ice Hammer */
     [DFI_MOVE_ICESPINNER] = 0x1u, /* Ice Spinner */
     [DFI_MOVE_ICYWIND] = 0x80u, /* Icy Wind */
+    [DFI_MOVE_IMPRISON] = 0x800u, /* Imprison */
     [DFI_MOVE_INFERNALPARADE] = 0x400u, /* Infernal Parade */
     [DFI_MOVE_INFESTATION] = 0x1u, /* Infestation */
     [DFI_MOVE_IRONTAIL] = 0x1u, /* Iron Tail */
@@ -4816,7 +4817,9 @@ const uint32_t dfi_pool_move_static_flags[DFI_POOL_MOVE_COUNT] = {
     [DFI_MOVE_SNORE] = 0x2u, /* Snore */
     [DFI_MOVE_SOLARBLADE] = 0x41u, /* Solar Blade */
     [DFI_MOVE_SPARKLINGARIA] = 0x2u, /* Sparkling Aria */
+    [DFI_MOVE_SPIKES] = 0x800u, /* Spikes */
     [DFI_MOVE_SPITUP] = 0x400u, /* Spit Up */
+    [DFI_MOVE_STEALTHROCK] = 0x800u, /* Stealth Rock */
     [DFI_MOVE_STEELROLLER] = 0x1u, /* Steel Roller */
     [DFI_MOVE_STEELWING] = 0x1u, /* Steel Wing */
     [DFI_MOVE_STOMPINGTANTRUM] = 0x401u, /* Stomping Tantrum */
@@ -4837,6 +4840,7 @@ const uint32_t dfi_pool_move_static_flags[DFI_POOL_MOVE_COUNT] = {
     [DFI_MOVE_THUNDERFANG] = 0x9u, /* Thunder Fang */
     [DFI_MOVE_THUNDERPUNCH] = 0x5u, /* Thunder Punch */
     [DFI_MOVE_TORCHSONG] = 0x2u, /* Torch Song */
+    [DFI_MOVE_TOXICSPIKES] = 0x800u, /* Toxic Spikes */
     [DFI_MOVE_TRAILBLAZE] = 0x1u, /* Trailblaze */
     [DFI_MOVE_TRIPLEAXEL] = 0x401u, /* Triple Axel */
     [DFI_MOVE_TROPKICK] = 0x1u, /* Trop Kick */
@@ -5370,60 +5374,105 @@ const uint8_t dfi_pool_move_static_hits[DFI_POOL_MOVE_COUNT][2] = {
     [DFI_MOVE_ZINGZAP] = {1u, 1u}, /* Zing Zap */
 };
 
-/* The bypasssub column (step G60): flags.bypasssub of the pin, 1 for a move that a Substitute does not take. */
-const uint8_t dfi_pool_move_bypasssub[DFI_POOL_MOVE_COUNT] = {
-    [DFI_MOVE_SNARL] = 1u, /* Snarl */
-    [DFI_MOVE_PARTINGSHOT] = 1u, /* Parting Shot */
-    [DFI_MOVE_HYPERVOICE] = 1u, /* Hyper Voice */
-    [DFI_MOVE_HELPINGHAND] = 1u, /* Helping Hand */
-    [DFI_MOVE_ENCORE] = 1u, /* Encore */
-    [DFI_MOVE_PSYCHICNOISE] = 1u, /* Psychic Noise */
-    [DFI_MOVE_AFTERYOU] = 1u, /* After You */
-    [DFI_MOVE_ALLURINGVOICE] = 1u, /* Alluring Voice */
-    [DFI_MOVE_AROMATICMIST] = 1u, /* Aromatic Mist */
-    [DFI_MOVE_ATTRACT] = 1u, /* Attract */
-    [DFI_MOVE_BOOMBURST] = 1u, /* Boomburst */
-    [DFI_MOVE_BUGBUZZ] = 1u, /* Bug Buzz */
-    [DFI_MOVE_CLANGINGSCALES] = 1u, /* Clanging Scales */
-    [DFI_MOVE_COACHING] = 1u, /* Coaching */
-    [DFI_MOVE_CURSE] = 1u, /* Curse */
-    [DFI_MOVE_DEFOG] = 1u, /* Defog */
-    [DFI_MOVE_DESTINYBOND] = 1u, /* Destiny Bond */
-    [DFI_MOVE_DISABLE] = 1u, /* Disable */
-    [DFI_MOVE_DRAGONCHEER] = 1u, /* Dragon Cheer */
-    [DFI_MOVE_EERIESPELL] = 1u, /* Eerie Spell */
-    [DFI_MOVE_FAIRYLOCK] = 1u, /* Fairy Lock */
-    [DFI_MOVE_GUARDSWAP] = 1u, /* Guard Swap */
-    [DFI_MOVE_HAZE] = 1u, /* Haze */
-    [DFI_MOVE_HEALBELL] = 1u, /* Heal Bell */
-    [DFI_MOVE_HOWL] = 1u, /* Howl */
-    [DFI_MOVE_IMPRISON] = 1u, /* Imprison */
-    [DFI_MOVE_INSTRUCT] = 1u, /* Instruct */
-    [DFI_MOVE_LIFEDEW] = 1u, /* Life Dew */
-    [DFI_MOVE_MAGNETICFLUX] = 1u, /* Magnetic Flux */
-    [DFI_MOVE_METALSOUND] = 1u, /* Metal Sound */
-    [DFI_MOVE_NOBLEROAR] = 1u, /* Noble Roar */
-    [DFI_MOVE_OVERDRIVE] = 1u, /* Overdrive */
-    [DFI_MOVE_PERISHSONG] = 1u, /* Perish Song */
-    [DFI_MOVE_POWERSWAP] = 1u, /* Power Swap */
-    [DFI_MOVE_PSYCHUP] = 1u, /* Psych Up */
-    [DFI_MOVE_REFLECTTYPE] = 1u, /* Reflect Type */
-    [DFI_MOVE_ROAR] = 1u, /* Roar */
-    [DFI_MOVE_ROLEPLAY] = 1u, /* Role Play */
-    [DFI_MOVE_ROUND] = 1u, /* Round */
-    [DFI_MOVE_SCREECH] = 1u, /* Screech */
-    [DFI_MOVE_SING] = 1u, /* Sing */
-    [DFI_MOVE_SKILLSWAP] = 1u, /* Skill Swap */
-    [DFI_MOVE_SNORE] = 1u, /* Snore */
-    [DFI_MOVE_SPARKLINGARIA] = 1u, /* Sparkling Aria */
-    [DFI_MOVE_SPEEDSWAP] = 1u, /* Speed Swap */
-    [DFI_MOVE_SPITE] = 1u, /* Spite */
-    [DFI_MOVE_TAUNT] = 1u, /* Taunt */
-    [DFI_MOVE_TEATIME] = 1u, /* Teatime */
-    [DFI_MOVE_TORCHSONG] = 1u, /* Torch Song */
-    [DFI_MOVE_TORMENT] = 1u, /* Torment */
-    [DFI_MOVE_UPROAR] = 1u, /* Uproar */
-    [DFI_MOVE_WHIRLWIND] = 1u, /* Whirlwind */
+/* The third flags byte (DFI_MOVE_FLAG3_*): REFLECTABLE (step G57), MUST_PRESSURE (step G53). */
+const uint8_t dfi_pool_move_flags3[DFI_POOL_MOVE_COUNT] = {
+    [DFI_MOVE_HYPNOSIS] = 1u, /* Hypnosis */
+    [DFI_MOVE_SNARL] = 4u, /* Snarl */
+    [DFI_MOVE_PARTINGSHOT] = 5u, /* Parting Shot */
+    [DFI_MOVE_HYPERVOICE] = 4u, /* Hyper Voice */
+    [DFI_MOVE_HELPINGHAND] = 4u, /* Helping Hand */
+    [DFI_MOVE_ENCORE] = 5u, /* Encore */
+    [DFI_MOVE_SOAK] = 1u, /* Soak */
+    [DFI_MOVE_PSYCHICNOISE] = 4u, /* Psychic Noise */
+    [DFI_MOVE_AFTERYOU] = 4u, /* After You */
+    [DFI_MOVE_ALLURINGVOICE] = 4u, /* Alluring Voice */
+    [DFI_MOVE_AROMATICMIST] = 4u, /* Aromatic Mist */
+    [DFI_MOVE_ATTRACT] = 5u, /* Attract */
+    [DFI_MOVE_BABYDOLLEYES] = 1u, /* Baby-Doll Eyes */
+    [DFI_MOVE_BLOCK] = 1u, /* Block */
+    [DFI_MOVE_BOOMBURST] = 4u, /* Boomburst */
+    [DFI_MOVE_BUGBUZZ] = 4u, /* Bug Buzz */
+    [DFI_MOVE_CHARM] = 1u, /* Charm */
+    [DFI_MOVE_CLANGINGSCALES] = 4u, /* Clanging Scales */
+    [DFI_MOVE_COACHING] = 4u, /* Coaching */
+    [DFI_MOVE_CONFUSERAY] = 1u, /* Confuse Ray */
+    [DFI_MOVE_CORROSIVEGAS] = 1u, /* Corrosive Gas */
+    [DFI_MOVE_COTTONSPORE] = 1u, /* Cotton Spore */
+    [DFI_MOVE_CURSE] = 4u, /* Curse */
+    [DFI_MOVE_DEFOG] = 5u, /* Defog */
+    [DFI_MOVE_DESTINYBOND] = 4u, /* Destiny Bond */
+    [DFI_MOVE_DISABLE] = 5u, /* Disable */
+    [DFI_MOVE_DRAGONCHEER] = 4u, /* Dragon Cheer */
+    [DFI_MOVE_EERIEIMPULSE] = 1u, /* Eerie Impulse */
+    [DFI_MOVE_EERIESPELL] = 4u, /* Eerie Spell */
+    [DFI_MOVE_ENTRAINMENT] = 1u, /* Entrainment */
+    [DFI_MOVE_FAIRYLOCK] = 4u, /* Fairy Lock */
+    [DFI_MOVE_FAKETEARS] = 1u, /* Fake Tears */
+    [DFI_MOVE_FEATHERDANCE] = 1u, /* Feather Dance */
+    [DFI_MOVE_FLATTER] = 1u, /* Flatter */
+    [DFI_MOVE_FORESTSCURSE] = 1u, /* Forest's Curse */
+    [DFI_MOVE_GASTROACID] = 1u, /* Gastro Acid */
+    [DFI_MOVE_GLARE] = 1u, /* Glare */
+    [DFI_MOVE_GUARDSWAP] = 4u, /* Guard Swap */
+    [DFI_MOVE_HAZE] = 4u, /* Haze */
+    [DFI_MOVE_HEALBELL] = 4u, /* Heal Bell */
+    [DFI_MOVE_HEALPULSE] = 1u, /* Heal Pulse */
+    [DFI_MOVE_HOWL] = 4u, /* Howl */
+    [DFI_MOVE_IMPRISON] = 6u, /* Imprison */
+    [DFI_MOVE_INSTRUCT] = 4u, /* Instruct */
+    [DFI_MOVE_LEECHSEED] = 1u, /* Leech Seed */
+    [DFI_MOVE_LIFEDEW] = 4u, /* Life Dew */
+    [DFI_MOVE_MAGICPOWDER] = 1u, /* Magic Powder */
+    [DFI_MOVE_MAGNETICFLUX] = 4u, /* Magnetic Flux */
+    [DFI_MOVE_MEANLOOK] = 1u, /* Mean Look */
+    [DFI_MOVE_METALSOUND] = 5u, /* Metal Sound */
+    [DFI_MOVE_NOBLEROAR] = 5u, /* Noble Roar */
+    [DFI_MOVE_OVERDRIVE] = 4u, /* Overdrive */
+    [DFI_MOVE_PERISHSONG] = 4u, /* Perish Song */
+    [DFI_MOVE_POISONPOWDER] = 1u, /* Poison Powder */
+    [DFI_MOVE_POWERSWAP] = 4u, /* Power Swap */
+    [DFI_MOVE_PSYCHUP] = 4u, /* Psych Up */
+    [DFI_MOVE_REFLECTTYPE] = 4u, /* Reflect Type */
+    [DFI_MOVE_ROAR] = 5u, /* Roar */
+    [DFI_MOVE_ROLEPLAY] = 4u, /* Role Play */
+    [DFI_MOVE_ROUND] = 4u, /* Round */
+    [DFI_MOVE_SCARYFACE] = 1u, /* Scary Face */
+    [DFI_MOVE_SCREECH] = 5u, /* Screech */
+    [DFI_MOVE_SIMPLEBEAM] = 1u, /* Simple Beam */
+    [DFI_MOVE_SING] = 5u, /* Sing */
+    [DFI_MOVE_SKILLSWAP] = 4u, /* Skill Swap */
+    [DFI_MOVE_SLEEPPOWDER] = 1u, /* Sleep Powder */
+    [DFI_MOVE_SNORE] = 4u, /* Snore */
+    [DFI_MOVE_SPARKLINGARIA] = 4u, /* Sparkling Aria */
+    [DFI_MOVE_SPEEDSWAP] = 4u, /* Speed Swap */
+    [DFI_MOVE_SPICYEXTRACT] = 1u, /* Spicy Extract */
+    [DFI_MOVE_SPIKES] = 3u, /* Spikes */
+    [DFI_MOVE_SPITE] = 5u, /* Spite */
+    [DFI_MOVE_STEALTHROCK] = 3u, /* Stealth Rock */
+    [DFI_MOVE_STICKYWEB] = 1u, /* Sticky Web */
+    [DFI_MOVE_STRENGTHSAP] = 1u, /* Strength Sap */
+    [DFI_MOVE_STRINGSHOT] = 1u, /* String Shot */
+    [DFI_MOVE_STUNSPORE] = 1u, /* Stun Spore */
+    [DFI_MOVE_SWAGGER] = 1u, /* Swagger */
+    [DFI_MOVE_SWEETKISS] = 1u, /* Sweet Kiss */
+    [DFI_MOVE_SWEETSCENT] = 1u, /* Sweet Scent */
+    [DFI_MOVE_TAUNT] = 5u, /* Taunt */
+    [DFI_MOVE_TEARFULLOOK] = 1u, /* Tearful Look */
+    [DFI_MOVE_TEATIME] = 4u, /* Teatime */
+    [DFI_MOVE_THUNDERWAVE] = 1u, /* Thunder Wave */
+    [DFI_MOVE_TICKLE] = 1u, /* Tickle */
+    [DFI_MOVE_TOPSYTURVY] = 1u, /* Topsy-Turvy */
+    [DFI_MOVE_TORCHSONG] = 4u, /* Torch Song */
+    [DFI_MOVE_TORMENT] = 5u, /* Torment */
+    [DFI_MOVE_TOXIC] = 1u, /* Toxic */
+    [DFI_MOVE_TOXICSPIKES] = 3u, /* Toxic Spikes */
+    [DFI_MOVE_TOXICTHREAD] = 1u, /* Toxic Thread */
+    [DFI_MOVE_TRICKORTREAT] = 1u, /* Trick-or-Treat */
+    [DFI_MOVE_UPROAR] = 4u, /* Uproar */
+    [DFI_MOVE_WHIRLWIND] = 5u, /* Whirlwind */
+    [DFI_MOVE_WILLOWISP] = 1u, /* Will-O-Wisp */
+    [DFI_MOVE_WORRYSEED] = 1u, /* Worry Seed */
+    [DFI_MOVE_YAWN] = 1u, /* Yawn */
 };
 
 /* Cosmetic formes: a name for the row of the base forme (decision 0015 section 4.2). */
@@ -6944,10 +6993,7 @@ const char *const dfi_pool_item_unmodeled[DFI_POOL_ITEM_COUNT] = {
     [DFI_ITEM_BINDINGBAND] = "read by id in data/conditions.ts",
     [DFI_ITEM_CHERIBERRY] = "callback onEat; callback onUpdate",
     [DFI_ITEM_CHESTOBERRY] = "callback onEat; callback onUpdate",
-    [DFI_ITEM_DAMPROCK] = "read by id in data/conditions.ts",
     [DFI_ITEM_FOCUSBAND] = "callback onDamage; callback onDamagePriority",
-    [DFI_ITEM_HEATROCK] = "read by id in data/conditions.ts",
-    [DFI_ITEM_ICYROCK] = "read by id in data/conditions.ts",
     [DFI_ITEM_IRONBALL] = "callback onEffectiveness; callback onModifySpe; read by id in data/moves.ts; read by id in sim/pokemon.ts",
     [DFI_ITEM_KINGSROCK] = "callback onModifyMove; callback onModifyMovePriority",
     [DFI_ITEM_LEEK] = "callback onModifyCritRatio",
@@ -6963,8 +7009,6 @@ const char *const dfi_pool_item_unmodeled[DFI_POOL_ITEM_COUNT] = {
     [DFI_ITEM_SCOPELENS] = "callback onModifyCritRatio",
     [DFI_ITEM_SHEDSHELL] = "callback onMaybeTrapPokemon; callback onMaybeTrapPokemonPriority; callback onTrapPokemon; callback onTrapPokemonPriority",
     [DFI_ITEM_SHELLBELL] = "callback onAfterMoveSecondarySelf; callback onAfterMoveSecondarySelfPriority",
-    [DFI_ITEM_SMOOTHROCK] = "read by id in data/conditions.ts",
-    [DFI_ITEM_TERRAINEXTENDER] = "read by id in data/moves.ts",
     [DFI_ITEM_ZOOMLENS] = "callback onSourceModifyAccuracy; callback onSourceModifyAccuracyPriority",
 };
 
@@ -7023,7 +7067,6 @@ const char *const dfi_pool_ability_unmodeled[DFI_POOL_ABILITY_COUNT] = {
     [DFI_ABILITY_LIGHTMETAL] = "callback onModifyWeight",
     [DFI_ABILITY_LIQUIDOOZE] = "callback onSourceTryHeal",
     [DFI_ABILITY_LONGREACH] = "callback onModifyMove",
-    [DFI_ABILITY_MAGICBOUNCE] = "callback onAllyTryHitSide; callback onTryHit; callback onTryHitPriority",
     [DFI_ABILITY_MAGICGUARD] = "callback onDamage; read by id in data/items.ts",
     [DFI_ABILITY_MAGICIAN] = "callback onAfterMoveSecondarySelf",
     [DFI_ABILITY_MAGMAARMOR] = "callback onImmunity; callback onUpdate",
@@ -7047,7 +7090,6 @@ const char *const dfi_pool_ability_unmodeled[DFI_POOL_ABILITY_COUNT] = {
     [DFI_ABILITY_PLUS] = "callback onModifySpA; callback onModifySpAPriority; read by id in data/abilities.ts; read by id in data/moves.ts",
     [DFI_ABILITY_POISONHEAL] = "callback onDamage; callback onDamagePriority",
     [DFI_ABILITY_POISONPOINT] = "callback onDamagingHit",
-    [DFI_ABILITY_PRESSURE] = "callback onDeductPP; callback onStart",
     [DFI_ABILITY_PROTEAN] = "callback onPrepareHit",
     [DFI_ABILITY_PUREPOWER] = "callback onModifyAtk; callback onModifyAtkPriority",
     [DFI_ABILITY_PURIFYINGSALT] = "callback onSetStatus; callback onSourceModifyAtk; callback onSourceModifyAtkPriority; callback onSourceModifySpA; callback onSourceModifySpAPriority; callback onTryAddVolatile",
@@ -7097,10 +7139,10 @@ const char *const dfi_pool_ability_unmodeled[DFI_POOL_ABILITY_COUNT] = {
 };
 
 const uint8_t dfi_pool_table_hash[32] = {
-    0x13u, 0x7eu, 0x8du, 0xd2u, 0xfeu, 0x33u, 0x48u, 0x21u,
-    0x16u, 0xc1u, 0x15u, 0xa7u, 0xeau, 0xccu, 0xbfu, 0xcau,
-    0xc7u, 0x7cu, 0x99u, 0xf4u, 0x75u, 0x87u, 0x7bu, 0x22u,
-    0x60u, 0xcau, 0x41u, 0xd6u, 0xd1u, 0x06u, 0x5bu, 0xf2u,
+    0x31u, 0x40u, 0xd3u, 0xe9u, 0x05u, 0x87u, 0x2fu, 0x84u,
+    0x3fu, 0x67u, 0xb4u, 0xf3u, 0xb8u, 0x78u, 0xa9u, 0x4fu,
+    0xe2u, 0x8au, 0x28u, 0x43u, 0xceu, 0x46u, 0xd8u, 0x2eu,
+    0xe0u, 0x7cu, 0xd5u, 0x29u, 0x2du, 0xc7u, 0xc1u, 0x3au,
 };
 
 static size_t dfi_pool_put_u16(uint8_t *out, size_t n, uint32_t v)
@@ -7320,7 +7362,7 @@ size_t dfi_pool_canonical_bytes(uint8_t *out, size_t capacity)
         out[n++] = dfi_pool_move_static_hits[i][1];
     }
     for (uint32_t i = 0u; i < DFI_POOL_MOVE_COUNT; ++i) {
-        out[n++] = dfi_pool_move_bypasssub[i];
+        out[n++] = dfi_pool_move_flags3[i];
     }
     return n;
 }

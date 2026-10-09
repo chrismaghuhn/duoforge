@@ -290,8 +290,10 @@ static void check_unmodelled_sources(df_test *t)
     }
     DF_CHECK_EQ_U64(t, dfi_support.abilities[DFI_ABILITY_SANDRUSH], 1u); /* step G22: its immunity is dfi_sand_immune */
     DF_CHECK_EQ_U64(t, dfi_support.abilities[DFI_ABILITY_SANDVEIL], 1u); /* step G39: so is Sand Veil's */
-    DF_CHECK_EQ_U64(t, dfi_support.items[DFI_ITEM_SMOOTHROCK], 0u); /* Sandstorm for 8 turns */
-    DF_CHECK_EQ_U64(t, dfi_support.items[DFI_ITEM_ICYROCK], 0u);    /* Snowscape for 8 turns */
+    /* Step G55 marks the rocks (Sandstorm and Snowscape for 8 turns with Smooth Rock and Icy Rock); the rule is checked in
+     * tests/test_pool_g55.c and by the recorded battles g55_*. */
+    DF_CHECK(t, dfi_support.items[DFI_ITEM_SMOOTHROCK] != 0u);
+    DF_CHECK(t, dfi_support.items[DFI_ITEM_ICYROCK] != 0u);
     /* Sand Stream and Snow Warning, the two moves, and the immunity bit of exactly three types. */
     DF_CHECK(t, dfi_support.abilities[DFI_ABILITY_SANDSTREAM] != 0u && dfi_support.abilities[DFI_ABILITY_SNOWWARNING] != 0u);
     DF_CHECK(t, dfi_support.moves[DFI_MOVE_SANDSTORM] != 0u && dfi_support.moves[DFI_MOVE_SNOWSCAPE] != 0u);
@@ -334,8 +336,12 @@ static void check_state(df_test *t)
     x->weather = (uint8_t)DUOFORGE_WEATHER_SAND;
     x->weather_turns = 0u; /* a weather has turns */
     DF_CHECK(t, duoforge_battle_check(pool, x) == DUOFORGE_E_INVARIANT);
-    x->weather_turns = 6u; /* never more than 5 (the rock items are not marked) */
+    /* Step G55 (decision 0015 item 5bf): the bound is 8, the turns of a weather set by a holder of its rock. This is a rule
+     * change of G55 (it was 5 before the rock items were marked), not a weakened test: 9 is refused, 8 is accepted. */
+    x->weather_turns = 9u;
     DF_CHECK(t, duoforge_battle_check(pool, x) == DUOFORGE_E_INVARIANT);
+    x->weather_turns = 8u;
+    DF_CHECK(t, duoforge_battle_check(pool, x) == DUOFORGE_OK);
     duoforge_battle_destroy(x);
     duoforge_battle_destroy(b);
     /* Not in the kinds that have no Sandstorm: the same state under TEAM_C and CLOSURE is E_INVARIANT. */

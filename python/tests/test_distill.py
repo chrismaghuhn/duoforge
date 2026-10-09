@@ -450,41 +450,78 @@ class _StopAfter:
         return self.checks >= self.n
 
 
+P1_ENCODER = 4  # P1 pins encoder 4 (params-49333's), whatever features.ENCODER is
+
+
+def _checkpoint(path, encoder, seed=5):
+    """A format-2 checkpoint of an untrained v2-S network trained on encoder `encoder`'s layout."""
+    import jax
+    from duoforge_learn import checkpoint, policy
+    cfg = policy.v2_config("S")
+    names = list(features.feature_names(encoder))
+    params = policy.make(cfg, names).init(jax.random.PRNGKey(seed))
+    checkpoint.save(path, params, {"model": cfg, "encoder": encoder, "features": names,
+                                   "slot_features": list(features.SLOT_FEATURE_NAMES), "data": {}, "teams": {},
+                                   "update": 0, "decisions": 0, "ids": {}})
+    return cfg, params
+
+
 class CliTest(unittest.TestCase):
-    """Task 5 end to end: write_manifest and shards in, a finished fit and a loadable params-best out."""
+    """Task 5 end to end: write_manifest and shards in, a finished fit and a loadable params-best out, in the
+    pinned encoder-4 layout (the checkpoint is never widened to the current encoder)."""
+
+    def test_load_trained_keeps_the_trained_layout(self):
+        import jax
+        from duoforge_learn import checkpoint, policy
+        with tempfile.TemporaryDirectory(prefix="duoforge_synthetic_distill_layout_") as tmp:
+            path = Path(tmp) / "enc4.npz"
+            cfg, params = _checkpoint(path, P1_ENCODER)
+            got, config = checkpoint.load_trained(path)
+            self.assertEqual(config["encoder"], P1_ENCODER)
+            self.assertEqual(config["features"], list(features.feature_names(P1_ENCODER)))
+            for a, b in zip(jax.tree_util.tree_leaves(got), jax.tree_util.tree_leaves(params)):
+                np.testing.assert_array_equal(np.asarray(a), np.asarray(b))
+            model = checkpoint.trained_model(config, got)
+            self.assertEqual(model.feature_names, tuple(features.feature_names(P1_ENCODER)))
+            if features.ENCODER != P1_ENCODER:  # load_current widens to the current encoder; load_trained never
+                self.assertEqual(checkpoint.load_current(path)[1]["encoder"], features.ENCODER)
+            bad = Path(tmp) / "bad.npz"
+            np.savez(bad, config=np.array('{"format": 2, "encoder": 4, "features": ["x"], "slot_features": []}'),
+                     **{"['t1']['w']": np.zeros((1, 1))})
+            with self.assertRaisesRegex(ValueError, "its features are not encoder 4's layout"):
+                checkpoint.load_trained(bad)
 
     def test_cli_fits_from_a_manifest_and_refuses_a_finished_resume(self):
         import json
-        import jax
-        from duoforge_search import expert_data as ed
-        from duoforge_learn import checkpoint, distill, policy
+        from duoforge_search import expert, expert_data as ed
+        from duoforge_learn import checkpoint, distill
         with tempfile.TemporaryDirectory(prefix="duoforge_synthetic_distill_cli_") as tmp:
             root = Path(tmp)
-            m = _manifest(ed)  # P1 pins encoder 4 (expert_data.validate_manifest), also with encoder 5 the default
+            m = dataclasses.replace(_manifest(ed), encoder=P1_ENCODER, obs_width=features.obs_size(P1_ENCODER))
             ed.write_manifest(root / "manifest.json", m)
             (train_a, train_b), (held,) = _games(ed, m.split_seed, 2, 1)
             S, rows = ed.RowStatus, []
             for game in (train_a, train_b, held):
-                g = _Rows(ed, m, game, seat=ed.learner_seat(game) if hasattr(ed, "learner_seat") else 0)
+                g = _Rows(ed, m, game, seat=expert.learner_seat(game))
                 rows += [g.act(S.TARGET, .4), g.wait(.3), g.act(S.UNSELECTED, .2, reward=1., done=True)]
             (root / "shards").mkdir()
             ed.write_shard(root / "shards" / "0.json", rows, m)
-            cfg = policy.v2_config("S")
-            params = policy.make(cfg, features.feature_names(4)).init(jax.random.PRNGKey(5))
-            config = {"model": cfg, "encoder": 4, "features": list(features.feature_names(4)),
-                      "slot_features": list(features.SLOT_FEATURE_NAMES), "data": {}, "teams": {}, "update": 0,
-                      "decisions": 0, "ids": {}}
-            checkpoint.save(root / "start.npz", params, config)
-            argv = ["--init", str(root / "start.npz"), "--reference", str(root / "start.npz"), "--shards",
-                    str(root / "shards"), "--manifest", str(root / "manifest.json"), "--out", str(root / "fit"),
-                    "--allow-other-init"]
-            self.assertEqual(distill.main(argv), 0)
-            best, best_config = checkpoint.load_current(root / "fit" / "params-best.npz")
-            self.assertEqual(best_config["model"], cfg)
+            cfg, _ = _checkpoint(root / "start.npz", P1_ENCODER)
+
+            def argv(init, out):
+                return ["--init", str(init), "--reference", str(init), "--shards", str(root / "shards"),
+                        "--manifest", str(root / "manifest.json"), "--out", str(root / out), "--allow-other-init"]
+
+            self.assertEqual(distill.main(argv(root / "start.npz", "fit")), 0)
+            best, best_config = checkpoint.load_trained(root / "fit" / "params-best.npz")
+            self.assertEqual((best_config["model"], best_config["encoder"]), (cfg, P1_ENCODER))
             self.assertIn(best_config["distill"]["stop"], ("no_gain", "max_epochs", "ref_kl"))
             log = [json.loads(line) for line in (root / "fit" / "log.jsonl").read_text().splitlines()]
             self.assertEqual(log[-1]["stop"], best_config["distill"]["stop"])
-            self.assertEqual(distill.main(argv + ["--resume"]), 2)  # a finished fit is not resumed
+            self.assertEqual(distill.main(argv(root / "start.npz", "fit") + ["--resume"]), 2)  # finished
+            if features.ENCODER != P1_ENCODER:  # a checkpoint of another layout than the manifest's is refused
+                _checkpoint(root / "current.npz", features.ENCODER)
+                self.assertEqual(distill.main(argv(root / "current.npz", "other")), 2)
 
 
 class ResumeTest(unittest.TestCase):

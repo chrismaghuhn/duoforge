@@ -75,6 +75,17 @@ class TickTable(unittest.TestCase):
         head.value = lambda params, rows: (seen.append(np.array(rows)), _Head.value(head, params, rows))[1]
         table.evaluate(head, None, buffer)
         self.assertFalse(seen[1][6:].any())
+        # Counters for the P2 measurement, and the no-dedup ablation (every open leaf its own row).
+        table = ticks.TickTable(WIDTH)
+        for r in (a, b, c):
+            table.add(r)
+        self.assertEqual((table.leaves, table.open_leaves, table.unique), (12, 9, 6))
+        plain = ticks.TickTable(WIDTH, dedup=False)
+        index = [plain.add(r) for r in (a, b, c)]
+        self.assertEqual((plain.open_leaves, plain.unique), (9, 9))
+        values = plain.evaluate(_Head(), None, buffer)
+        for idx, r in zip(index, (a, b, c)):
+            np.testing.assert_array_equal(ticks.scatter(idx, values), _per_request(_Head(), r))
         # A hard limit on unique rows, with an explicit error.
         small = ticks.TickTable(WIDTH, max_rows=4)
         small.add(_request(pool[:4], np.ones(4, bool)))
