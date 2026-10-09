@@ -14,7 +14,7 @@ set -euo pipefail
 EX_DONE=0 EX_CRASH=1 EX_USAGE=2
 EX_INPUTS=10 EX_SETUP=11 EX_REFUSED=13
 EX_SMOKE_T0=20 EX_GEN_BUDGET=21 EX_WORK_FALLBACK=22 EX_PROD_INCOMPLETE=23
-EX_INFEASIBLE=30 EX_COMPUTE=31 EX_CONTROL_NO_BUDGET_STOP=32
+EX_INFEASIBLE=30 EX_COMPUTE=31 EX_CONTROL_NO_BUDGET_STOP=32 EX_CALIBRATION_CAP=33
 EX_EVAL_SMOKE=40 EX_EXPERT_EVAL=41
 EX_NO_M12_TOOL=50 EX_INTERRUPTED=60
 
@@ -31,26 +31,48 @@ EVAL_FIRST_GAME_ID=1000000000
 GENERATION_CPU_BUDGET=28800
 LABELS=16384
 
-HERE=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)
-REPO=$(cd "$HERE/../../.." && pwd)
+HERE=$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)
+REPO=$(cd "$HERE/../../.." && pwd -P)
 
 MODE=run
 LOCAL_INPUTS=
 case "${1:-}" in
     "") ;;
+    --check-env)
+        MODE=check
+        [[ $# -eq 1 ]] || { echo "run.sh --check-env takes no argument" >&2; exit $EX_USAGE; }
+        ;;
     --dry-run)
         MODE=dry
         LOCAL_INPUTS=${2:-}
         [[ -n $LOCAL_INPUTS && -d $LOCAL_INPUTS ]] || { echo "usage: run.sh --dry-run LOCAL_INPUTS_DIR" >&2; exit $EX_USAGE; }
-        LOCAL_INPUTS=$(cd "$LOCAL_INPUTS" && pwd)
+        LOCAL_INPUTS=$(cd "$LOCAL_INPUTS" && pwd -P)
         [[ $# -eq 2 ]] || { echo "run.sh --dry-run takes one directory" >&2; exit $EX_USAGE; }
         ;;
     --on-interrupt)
         MODE=interrupt
         [[ $# -eq 1 ]] || { echo "run.sh --on-interrupt takes no argument" >&2; exit $EX_USAGE; }
         ;;
-    *) echo "usage: run.sh [--dry-run LOCAL_INPUTS_DIR | --on-interrupt]" >&2; exit $EX_USAGE ;;
+    *) echo "usage: run.sh [--dry-run LOCAL_INPUTS_DIR | --on-interrupt | --check-env]" >&2; exit $EX_USAGE ;;
 esac
+
+log() { printf '%s run.sh: %s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$*"; }
+die() { local code=$1; shift; log "EXIT $code: $*"; exit "$code"; }
+
+# BUCKET, RUN_PREFIX and RUN_ID of a run (and of --on-interrupt): RUN_ID is one path segment that cannot be read as
+# another prefix (no leading '.', not "inputs"), and RUN_PREFIX is exactly p1/<RUN_ID>/.
+require_cloud_env() {
+    [[ -n ${BUCKET:-} && -n ${RUN_PREFIX:-} && -n ${RUN_ID:-} ]] || die $EX_USAGE "BUCKET, RUN_PREFIX and RUN_ID are required"
+    [[ $RUN_ID =~ ^[A-Za-z0-9_-][A-Za-z0-9._-]*$ ]] \
+        || die $EX_USAGE "RUN_ID must start with a letter, digit, _ or - and hold only letters, digits, . _ - (got '$RUN_ID')"
+    [[ $RUN_ID != inputs ]] || die $EX_USAGE "RUN_ID 'inputs' is the inputs prefix"
+    [[ $RUN_PREFIX == "p1/$RUN_ID/" ]] || die $EX_USAGE "RUN_PREFIX must be p1/<RUN_ID>/ (got '$RUN_PREFIX', RUN_ID '$RUN_ID')"
+}
+if [[ $MODE == check ]]; then  # the environment checks alone: no file, no aws call
+    require_cloud_env
+    echo "run.sh: BUCKET, RUN_PREFIX and RUN_ID are valid"
+    exit 0
+fi
 
 WORKERS=${WORKERS:-14}
 case $WORKERS in 4|8|14) ;; *) echo "WORKERS must be 4, 8 or 14 (the P1 probe's counts), not $WORKERS" >&2; exit $EX_USAGE ;; esac
@@ -68,24 +90,15 @@ else
     WORK_DIR=${WORK_DIR:-$HOME/p1-work}
 fi
 mkdir -p "$WORK_DIR"
-WORK_DIR=$(cd "$WORK_DIR" && pwd)
+WORK_DIR=$(cd "$WORK_DIR" && pwd -P)
 OUT=$WORK_DIR/out
 case "$WORK_DIR/" in "$REPO"/*) echo "WORK_DIR $WORK_DIR lies inside the repository $REPO" >&2; exit $EX_USAGE ;; esac
-
-log() { printf '%s run.sh: %s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$*"; }
-die() { local code=$1; shift; log "EXIT $code: $*"; exit "$code"; }
 
 # The only AWS calls this script makes: aws s3 cp / sync / ls, never in a dry run.
 s3() {
     [[ $MODE != dry ]] || { log "internal error: an aws call in a dry run: s3 $*"; exit $EX_CRASH; }
     case "${1:-}" in cp|sync|ls) ;; *) log "internal error: aws s3 $1 is not allowed"; exit $EX_CRASH ;; esac
     aws s3 "$@" --only-show-errors
-}
-
-require_cloud_env() {
-    [[ -n ${BUCKET:-} && -n ${RUN_PREFIX:-} && -n ${RUN_ID:-} ]] || die $EX_USAGE "BUCKET, RUN_PREFIX and RUN_ID are required"
-    [[ $RUN_PREFIX == "p1/$RUN_ID/" ]] || die $EX_USAGE "RUN_PREFIX must be p1/<RUN_ID>/ (got $RUN_PREFIX, RUN_ID $RUN_ID)"
-    [[ $RUN_ID =~ ^[A-Za-z0-9._-]+$ ]] || die $EX_USAGE "RUN_ID may hold letters, digits, . _ - only"
 }
 
 # Uploads the whole output tree; --delete because the local tree was restored from the prefix first and is the
@@ -131,15 +144,30 @@ if [[ $MODE == interrupt ]]; then
 fi
 
 [[ $MODE == dry ]] || require_cloud_env
-rm -f "$WORK_DIR/INTERRUPTED" "$WORK_DIR/phase.pid"
+rm -f "$WORK_DIR/INTERRUPTED" "$WORK_DIR/phase.pid" "$WORK_DIR/.restored"
 mkdir -p "$OUT"/{logs,markers,manifests,ledgers,run-info,status}
 STARTED=$(date -u +%Y%m%dT%H%M%SZ)
-# One log per start: the restore below may replace files of out/logs with their uploaded copies.
+# One log per start: the restore below may replace files of out/logs with their uploaded copies. fds 3/4 keep the
+# console, so on_exit can close the tee (and wait for it) before the final upload.
+exec 3>&1 4>&2
 exec > >(tee -a "$OUT/logs/run-$STARTED.log") 2>&1
+TEE_PID=$!
 log "start mode=$MODE work=$WORK_DIR repo=$REPO"
+
+# Waits up to INTERRUPT_WAIT seconds for the phase process (if any) to exit.
+wait_phase() {
+    local child
+    [[ -f $WORK_DIR/phase.pid ]] || return 0
+    child=$(cat "$WORK_DIR/phase.pid")
+    kill -0 "$child" 2>/dev/null || return 0
+    kill -TERM "$child" 2>/dev/null || true
+    for _ in $(seq "$INTERRUPT_WAIT"); do kill -0 "$child" 2>/dev/null || return 0; sleep 1; done
+    log "phase process $child still running after ${INTERRUPT_WAIT}s"
+}
 
 on_exit() {
     local code=$?
+    trap '' TERM INT
     trap - EXIT
     local meaning
     case $code in
@@ -147,18 +175,16 @@ on_exit() {
         11) meaning=setup-failed ;; 13) meaning=phase-cli-refusal ;; 20) meaning=smoke-t0 ;;
         21) meaning=generation-cpu-budget ;; 22) meaning=work-fallback-above-1pct ;; 23) meaning=production-incomplete ;;
         30) meaning=matching-infeasible ;; 31) meaning=compute-mismatch ;; 32) meaning=control-no-budget-stop ;;
-        40) meaning=eval-smoke-stop ;; 41) meaning=expert-eval-refusal ;; 50) meaning=missing-m12-tool ;;
-        60) meaning=interrupted ;; *) meaning=unknown ;;
+        33) meaning=calibration-over-cap ;; 40) meaning=eval-smoke-stop ;; 41) meaning=expert-eval-refusal ;;
+        50) meaning=missing-m12-tool ;; 60) meaning=interrupted ;; *) meaning=unknown ;;
     esac
     [[ -n ${UPLOADER:-} ]] && kill "$UPLOADER" 2>/dev/null || true
-    local child
-    if [[ -f $WORK_DIR/phase.pid ]]; then
-        child=$(cat "$WORK_DIR/phase.pid")
-        kill -0 "$child" 2>/dev/null && kill -TERM "$child" 2>/dev/null || true
-    fi
+    wait_phase  # the phase saves its state on SIGTERM; upload only after it has
     printf '{"exit": %d, "meaning": "%s", "mode": "%s", "started": "%s", "ended": "%s"}\n' \
         "$code" "$meaning" "$MODE" "$STARTED" "$(date -u +%Y%m%dT%H%M%SZ)" | tee "$OUT/status/exit-$STARTED.json" >"$OUT/STATUS.json"
     log "exit $code ($meaning)"
+    exec 1>&3 2>&4  # close the tee, so the run log is complete before it is uploaded
+    for _ in $(seq 10); do kill -0 "$TEE_PID" 2>/dev/null || break; sleep 1; done
     upload_state || log "final upload failed"  # also after an interrupt: the flock orders it after run.sh --on-interrupt's
     exit "$code"
 }
@@ -170,6 +196,13 @@ if [[ $MODE == run ]]; then
     log "restore s3://$BUCKET/$RUN_PREFIX"
     s3 sync "s3://$BUCKET/$RUN_PREFIX" "$OUT"
 fi
+# The tools' states hold absolute paths (shards, run directories): a resume must use the same WORK_DIR.
+for info in "$OUT"/run-info/run-info-*.json; do
+    [[ -f $info ]] || continue
+    earlier=$(sed -n 's/^ *"work_dir": "\(.*\)",\{0,1\}$/\1/p' "$info")
+    [[ -z $earlier || $earlier == "$WORK_DIR" ]] \
+        || die $EX_SETUP "the run's earlier starts used WORK_DIR=$earlier ($(basename "$info")); this one is $WORK_DIR: resume with the same WORK_DIR"
+done
 touch "$WORK_DIR/.restored"
 if [[ $MODE == run ]]; then  # long phases (production collection, the control) upload their progress meanwhile
     ( trap - EXIT TERM INT; while sleep "$UPLOAD_EVERY"; do upload_state || log "periodic upload failed"; done ) &
@@ -302,9 +335,13 @@ if bad:
 if devices[0].platform != "gpu":
     sys.exit(f"no GPU: JAX's default device is {devices[0]}")
 EOF
+    # Every tool of every phase must come from this one commit: M12's evaluation manifest CLI is checked before any
+    # phase runs, never after hours of training.
+    "$PY" -c 'import duoforge_search.eval_manifest' \
+        || die $EX_NO_M12_TOOL "M12's duoforge_search.eval_manifest is not importable from this commit: no phase is run"
 
     local info=$OUT/run-info/run-info-$STARTED.json
-    RI_MODE=$MODE RI_COMMIT=$COMMIT RI_HEAD=$HEAD_COMMIT RI_DIRTY=$DIRTY RI_RUN_ID=${RUN_ID:-dry} \
+    RI_MODE=$MODE RI_COMMIT=$COMMIT RI_HEAD=$HEAD_COMMIT RI_DIRTY=$DIRTY RI_RUN_ID=${RUN_ID:-dry} RI_WORK=$WORK_DIR \
     RI_WORKERS=$WORKERS RI_AFFINITY=$AFFINITY RI_LADDER=$LADDER_FILE RI_ENV="${RUNTIME_ENV[*]}" RI_IN=$IN \
     RI_PHASE_COLLECT="${PHASE_ENV_COLLECT[*]}" RI_PHASE_TRAIN="${PHASE_ENV_TRAIN[*]}" RI_PHASE_EVAL="${PHASE_ENV_EVAL[*]}" \
     RI_SEEDS="collect=$COLLECT_SEED split=$COLLECT_SPLIT_SEED distill=$DISTILL_SEED control=$CONTROL_SEED eval=$EVAL_SEED eval_first_game_id=$EVAL_FIRST_GAME_ID" \
@@ -324,7 +361,7 @@ with open(os.path.join(os.environ["RI_IN"], "SHA256SUMS")) as f:
         sums[name.strip().lstrip("*")] = sha
 info = {
     "mode": os.environ["RI_MODE"], "run_id": os.environ["RI_RUN_ID"], "commit": os.environ["RI_COMMIT"],
-    "git_head": os.environ["RI_HEAD"], "tracked_changes": os.environ["RI_DIRTY"],
+    "git_head": os.environ["RI_HEAD"], "tracked_changes": os.environ["RI_DIRTY"], "work_dir": os.environ["RI_WORK"],
     "workers": int(os.environ["RI_WORKERS"]), "affinity": os.environ["RI_AFFINITY"],
     "ladder_file": os.environ["RI_LADDER"], "seeds": os.environ["RI_SEEDS"],
     "runtime_env": {k: os.environ.get(k) for k in os.environ["RI_ENV"].split()},
@@ -355,6 +392,7 @@ launch() {
     local shown="$*"
     shown=${shown//"$TEAM_IDS"/<teams.txt>}
     shown=${shown//"$TEAM_WEIGHTS"/<team_weights.txt>}
+    [[ ! -e $WORK_DIR/INTERRUPTED ]] || die $EX_INTERRUPTED "interrupted: $name is not started"
     log "phase $name: $shown"
     timing "$name" start
     taskset -c "$AFFINITY" "$@" >>"$stdout" 2>>"$OUT/logs/$name.log" &
@@ -364,9 +402,9 @@ launch() {
     rm -f "$WORK_DIR/phase.pid"
     timing "$name" "end-$rc"
     log "phase $name: exit $rc"
-    if [[ $rc -ne 0 && -e $WORK_DIR/INTERRUPTED ]]; then
-        die $EX_INTERRUPTED "interrupted during $name"
-    fi
+    # An interrupt decides, whatever the exit code: train answers SIGTERM by saving and exiting 0, which must not
+    # count as a finished phase.
+    [[ ! -e $WORK_DIR/INTERRUPTED ]] || die $EX_INTERRUPTED "interrupted during $name (exit $rc); the next start resumes"
     return "$rc"
 }
 # A tool's exit code: 2 is a refusal before work, 3 a signal stop (resume next start), else a crash.
@@ -425,6 +463,43 @@ collect() {  # NAME DIR MANIFEST
     launch "$name" "$dir/result.jsonl" env "${PHASE_ENV_COLLECT[@]}" "$PY" -m duoforge_learn.collect_expert "${args[@]}" || rc=$?
     [[ $rc -eq 0 ]] || tool_failed "$name" "$rc"
 }
+
+# ---- evaluation manifest + p1_eval smoke (used twice: before training with stand-ins, after it for real) ----
+# eval_smoke NAME DIR PILOT CONTROL: writes DIR/manifest.json (eval_manifest, once) and DIR/smoke.json (p1_eval
+# --smoke, once; its compute goes to the shared evaluation ledger), STOPs (exit 40) unless the smoke says GO, and
+# leaves the --checkpoint arguments in EVAL_CHECKPOINTS.
+eval_smoke() {
+    local name=$1 dir=$2 pilot=$3 control=$4 rc=0
+    mkdir -p "$dir"
+    EVAL_CHECKPOINTS=(--checkpoint "pilot=$pilot" --checkpoint "control=$control" --checkpoint "frozen=$INIT"
+                      --checkpoint "BC=$IN/params-0.npz" --checkpoint "3600=$IN/params-3600.npz"
+                      --checkpoint "11000=$IN/params-11000.npz" --checkpoint "ladder=$IN/$LADDER_FILE")
+    if [[ ! -f $dir/manifest.json ]]; then
+        launch "$name-manifest" "$dir/manifest.stdout" env "${PHASE_ENV_EVAL[@]}" "$PY" -m duoforge_search.eval_manifest \
+            --teams "$TEAM_IDS" --team-weights "$TEAM_WEIGHTS" --teams-root "$TEAMS_ROOT" --seed "$EVAL_SEED" \
+            --first-game-id "$EVAL_FIRST_GAME_ID" "${EVAL_CHECKPOINTS[@]}" --out "$dir/manifest.json" || rc=$?
+        [[ $rc -eq 0 ]] || tool_failed "$name-manifest" "$rc"
+    fi
+    if [[ ! -f $dir/smoke.json ]]; then
+        launch "$name-smoke" "$dir/smoke.stdout" env "${PHASE_ENV_EVAL[@]}" "$PY" -m duoforge_learn.p1_eval \
+            --manifest "$dir/manifest.json" "${EVAL_CHECKPOINTS[@]}" --teams "$TEAM_IDS" --team-weights "$TEAM_WEIGHTS" \
+            --teams-root "$TEAMS_ROOT" --workers "$WORKERS" --ledger "$EVAL_LEDGER" --smoke --out "$dir/smoke.json" || rc=$?
+        [[ $rc -eq 0 ]] || tool_failed "$name-smoke" "$rc"
+    fi
+    local status
+    status=$(json_get "$(cat "$dir/smoke.json")" status)
+    log "$name smoke: $status $(json_get "$(cat "$dir/smoke.json")" stop_reasons)"
+    [[ $status == GO ]] || die $EX_EVAL_SMOKE "the $name smoke says $status ($dir/smoke.json): STOP"
+}
+
+# ======== phase 0: pre-training evaluation smoke ========
+# Throughput, JIT and cut-offs of the evaluation before any training spend (plan C5: "STOP/re-plan before training").
+# params-49333 stands in for pilot and control; its manifest (eval-pretrain/manifest.json) is never used for the gate.
+# The post-training smoke (phase 4) checks the real students again.
+if ! marked eval-pretrain; then
+    eval_smoke eval-pretrain "$OUT/eval-pretrain" "$INIT" "$INIT"
+    mark eval-pretrain
+fi
 
 # ======== phase 1: collection ========
 SMOKE=$OUT/collect-smoke
@@ -531,6 +606,11 @@ train() {  # NAME ARGS...
     [[ $rc -eq 0 ]] || tool_failed "$name" "$rc"
 }
 
+reached() {  # NAME UPDATES: the saved run state must hold exactly that many updates (a signal or --minutes cut fails)
+    local got
+    got=$(state_update)
+    [[ $got -eq $2 ]] || die $EX_CRASH "$1: the control's saved state is at update $got, not $2 (cut short; the next start resumes)"
+}
 if ! marked control-cal-a; then
     if [[ -f $CONTROL/state.npz ]]; then
         if (( $(state_update) < CAL_A )); then
@@ -541,12 +621,14 @@ if ! marked control-cal-a; then
         train control-cal-a --out "$CONTROL" --init "$INIT" --keep-init-encoder --ledger "$CONTROL_LEDGER" "${RECIPE[@]}" \
             --updates "$CAL_A" --update-gpu-share 0 --act-gpu-share 0
     fi
+    reached control-cal-a "$CAL_A"
     mark control-cal-a
 fi
 if ! marked control-cal-b; then
     if (( $(state_update) < CAL_B )); then
         train control-cal-b --resume "$CONTROL" --updates "$CAL_B" --update-gpu-share 1 --act-gpu-share 0
     fi
+    reached control-cal-b "$CAL_B"
     mark control-cal-b
 fi
 if ! marked control-match; then
@@ -558,21 +640,34 @@ if ! marked control-match; then
         0) ;;
         3) if [[ $MODE == dry ]]; then log "dry run: matching INFEASIBLE (control/match.json); continuing the rehearsal"
            else die $EX_INFEASIBLE "the control cannot match the pilot's compute (control/match.json): STOP"; fi ;;
+        4) if [[ $MODE == dry ]]; then log "dry run: the calibration exceeds 10 % of a pilot axis (control/match.json); continuing the rehearsal"
+           else die $EX_CALIBRATION_CAP "the calibration spent more than 10 % of a pilot axis (control/match.json): STOP"; fi ;;
         *) die $EX_CRASH "p1_match failed with exit $rc" ;;
     esac
     mark control-match
 fi
 
+# "Budget reached" from the saved run: the control's ledger file (saved together with its state) against the stops
+# p1_match set. Exit 0 yes, 1 no.
+budget_reached() {
+    "$PY" - "$CONTROL_LEDGER" "$OUT/control/match.json" <<'EOF'
+import json, sys
+ledger, match = (json.load(open(p)) for p in sys.argv[1:3])
+stop_c, stop_g = match["pilot"]["cpu_core_seconds"], match["pilot"]["gpu_seconds"]
+hit = ledger["cpu_core_seconds"] >= stop_c or (stop_g > 0 and ledger["gpu_seconds"] >= stop_g)
+print(f"control ledger cpu {ledger['cpu_core_seconds']:.1f} / stop {stop_c:.1f}, gpu {ledger['gpu_seconds']:.1f} / "
+      f"stop {stop_g:.1f}: {'reached' if hit else 'not reached'}")
+sys.exit(0 if hit else 1)
+EOF
+}
 if [[ $MODE == run ]]; then
     if ! marked control-final; then
         mapfile -t FLAGS < <("$PY" -c 'import json,sys; print("\n".join(json.load(open(sys.argv[1]))["resume_flags"]))' "$OUT/control/match.json")
-        last=$(grep -E '"update"' "$CONTROL/log.jsonl" | tail -1)
-        if [[ $(json_get "$last" stopped 2>/dev/null || true) != budget ]]; then
+        (( ${#FLAGS[@]} > 0 )) && [[ -n ${FLAGS[0]} ]] || die $EX_CRASH "control/match.json gives no resume flags"
+        if ! budget_reached; then
             train control-final --resume "$CONTROL" "${FLAGS[@]}"
         fi
-        last=$(grep -E '"update"' "$CONTROL/log.jsonl" | tail -1)
-        [[ $(json_get "$last" stopped 2>/dev/null || true) == budget ]] \
-            || die $EX_CONTROL_NO_BUDGET_STOP "the control ended without its ledger budget stop (last record: $last)"
+        budget_reached || die $EX_CONTROL_NO_BUDGET_STOP "the control ended without reaching its ledger budget (logs/control-final.log)"
         mark control-final
     fi
 fi
@@ -613,28 +708,9 @@ fi
 # ======== phase 4: evaluation ========
 EVAL=$OUT/eval
 mkdir -p "$EVAL"
-"$PY" -c 'import importlib.util, sys; sys.exit(importlib.util.find_spec("duoforge_search.eval_manifest") is None)' \
-    || die $EX_NO_M12_TOOL "M12's python -m duoforge_search.eval_manifest is not in this commit"
-CHECKPOINTS=(--checkpoint "pilot=$DISTILL/params-best.npz" --checkpoint "control=$CONTROL_FINAL"
-             --checkpoint "frozen=$INIT" --checkpoint "BC=$IN/params-0.npz" --checkpoint "3600=$IN/params-3600.npz"
-             --checkpoint "11000=$IN/params-11000.npz" --checkpoint "ladder=$IN/$LADDER_FILE")
-if [[ ! -f $EVAL/manifest.json ]]; then
-    rc=0
-    launch eval-manifest "$EVAL/manifest.stdout" env "${PHASE_ENV_EVAL[@]}" "$PY" -m duoforge_search.eval_manifest --teams "$TEAM_IDS" \
-        --team-weights "$TEAM_WEIGHTS" --teams-root "$TEAMS_ROOT" --seed "$EVAL_SEED" --first-game-id "$EVAL_FIRST_GAME_ID" \
-        "${CHECKPOINTS[@]}" --out "$EVAL/manifest.json" || rc=$?
-    [[ $rc -eq 0 ]] || tool_failed eval-manifest "$rc"
-fi
-EVAL_ARGS=(--manifest "$EVAL/manifest.json" "${CHECKPOINTS[@]}" --teams "$TEAM_IDS" --team-weights "$TEAM_WEIGHTS"
+eval_smoke eval "$EVAL" "$DISTILL/params-best.npz" "$CONTROL_FINAL"  # the real students: the gate's manifest
+EVAL_ARGS=(--manifest "$EVAL/manifest.json" "${EVAL_CHECKPOINTS[@]}" --teams "$TEAM_IDS" --team-weights "$TEAM_WEIGHTS"
            --teams-root "$TEAMS_ROOT" --workers "$WORKERS" --ledger "$EVAL_LEDGER")
-if [[ ! -f $EVAL/smoke.json ]]; then
-    rc=0
-    launch eval-smoke "$EVAL/smoke.stdout" env "${PHASE_ENV_EVAL[@]}" "$PY" -m duoforge_learn.p1_eval "${EVAL_ARGS[@]}" --smoke --out "$EVAL/smoke.json" || rc=$?
-    [[ $rc -eq 0 ]] || tool_failed eval-smoke "$rc"
-fi
-status=$(json_get "$(cat "$EVAL/smoke.json")" status)
-log "evaluation smoke: $status $(json_get "$(cat "$EVAL/smoke.json")" stop_reasons)"
-[[ $status == GO ]] || die $EX_EVAL_SMOKE "the evaluation smoke says $status (eval/smoke.json): STOP before the evaluation"
 if [[ $MODE == dry ]]; then
     log "dry run complete (the full evaluation and expert_eval are not part of the rehearsal)"
     exit $EX_DONE
@@ -648,7 +724,11 @@ if [[ ! -f $EVAL/REPORT.json ]]; then
     rc=0
     launch expert-eval "$EVAL/expert_eval.stdout" "$PY" -m duoforge_search.expert_eval --manifest "$EVAL/manifest.json" \
         --pilot "$PILOT_LEDGER" --control "$CONTROL_LEDGER" --baseline "$EVAL/B.json" --out "$EVAL/REPORT.json" || rc=$?
-    [[ $rc -eq 0 ]] || die $EX_EXPERT_EVAL "expert_eval refused (exit $rc, logs/expert-eval.log)"
+    case $rc in
+        0) ;;
+        2) die $EX_EXPERT_EVAL "expert_eval refused (exit 2, logs/expert-eval.log)" ;;
+        *) die $EX_CRASH "expert_eval crashed with exit $rc (logs/expert-eval.log)" ;;
+    esac
 fi
 log "report status: $(json_get "$(cat "$EVAL/REPORT.json")" status)"
 mark done

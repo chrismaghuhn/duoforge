@@ -17,7 +17,8 @@ P_c --stop-gpu-seconds P_g (the ledger totals are cumulative, so the stops are t
 decisions of the whole run (--learning-rate-schedule 0:1,D:0.1).
 
 usage: python p1_match.py --pilot-ledger PILOT.json --control-run RUN_DIR --control-ledger CONTROL.json [--out F]
-exit: 0 OK, 3 INFEASIBLE (run.sh: STOP), 2 bad input.
+exit: 0 OK, 3 INFEASIBLE (run.sh: STOP 30), 4 the calibration spent more than 10 % of a pilot axis (run.sh: STOP
+33), 2 bad input.
 """
 import argparse
 import json
@@ -26,6 +27,8 @@ import sys
 from pathlib import Path
 
 INFEASIBLE = 3
+OVER_CAP = 4
+CALIBRATION_CAP = 0.10  # of each pilot axis
 
 
 def per_update(records, device):
@@ -70,6 +73,15 @@ def solve(pilot, spent, records):
            "per_update": {"cpu_on_cpu": c_cpu, "cpu_on_gpu": c_gpu, "gpu_on_gpu": g_gpu, "wall_on_cpu": w_cpu,
                           "wall_on_gpu": w_gpu, "warm_updates": [n_cpu, n_gpu]},
            "calibration_updates": records[-1]["update"]}
+    # The calibration is charged to the control and capped at CALIBRATION_CAP of each pilot axis (Learner v2 plan,
+    # task 7): over the cap is a STOP for the owner, not a rescaled run.
+    caps = {"cpu_core_seconds": CALIBRATION_CAP * target_c, "gpu_seconds": CALIBRATION_CAP * target_g}
+    over = sorted(axis for axis in caps if spent[axis] > caps[axis])
+    out["calibration_cap"] = {"share": CALIBRATION_CAP, "caps": caps, "over": over, "ok": not over}
+    if over:
+        out["status"] = (f"STOP: the calibration spent more than {CALIBRATION_CAP:.0%} of the pilot's "
+                         f"{', '.join(over)}")
+        return out, OVER_CAP
     if rem_c <= 0 or rem_g < 0:
         out["status"] = "INFEASIBLE: the calibration already spent the pilot's budget on an axis"
         return out, INFEASIBLE
