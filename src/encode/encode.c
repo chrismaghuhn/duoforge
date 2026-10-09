@@ -52,11 +52,11 @@ _Static_assert(sizeof(float) == sizeof(uint32_t) && sizeof(double) == sizeof(uin
 /* encoder 3's volatile columns (bits 0 to 19); bit 20 (ROOST) is an appended column of encoder 4 */
 #define DFI_ENC_VOLATILES 20u
 #define DFI_ENC_VOLATILE_BITS 21u
-#define DFI_ENC_ALL       ((UINT64_C(1) << DUOFORGE_VIEWEXT_FEATURE_COUNT) - 1u)
+#define DFI_ENC_ALL       ((UINT64_C(1) << DUOFORGE_VIEWEXT_FEATURE_TRANSFORM) - 1u) /* encoder 4: bits 0 to 41 (decision 0028 adds 42 for encoder 5) */
 #define DFI_ENC_APPENDED  ((UINT64_C(1) << DUOFORGE_VIEWEXT_FEATURE_ROOST) | (UINT64_C(1) << DUOFORGE_VIEWEXT_FEATURE_MOVE_FAILED))
 
 typedef char dfi_enc_size_check[(DFI_ENC_BASE == 607u && DFI_ENC_V3 == 842u && DFI_ENC_V4 == 850u &&
-                                 DUOFORGE_VIEWEXT_FEATURE_COUNT == 42u) ? 1 : -1];
+                                 DUOFORGE_VIEWEXT_FEATURE_COUNT == 43u) ? 1 : -1];
 
 /* The feature bits a version has columns for (features.version_features). */
 static uint64_t dfi_version_features(uint32_t version)
