@@ -1748,6 +1748,40 @@ G47_ITEM_FACTS = (
                     'pokemon.removeVolatile(secondCondition);',
                     "this.add('-end', pokemon, 'move: Attract', '[from] item: Mental Herb');")),
 )
+# Step G59, six Mega abilities: Mega Launcher (Blastoise-Mega), Huge Power (Mawile-Mega), Thick Fat (Venusaur-Mega), Fire Mane
+# (Pyroar-Mega), Spicy Spray (Scovillain-Mega) and Mega Sol (Meganium-Mega) are engine rows (ENGINE_ROWS) that the turn code reads
+# by id (src/combat/turn.c: the BasePower chain at priority 19, the ModifyAtk and ModifySpA chain, the weather modifier of the
+# holder's moves, dfi_spicy_spray, dfi_mega_sol_refused). Their pinned callbacks, whole and whitespace-collapsed, are the facts the
+# engine hard-codes. The Champions mod has no entry for Mega Launcher, Huge Power or Thick Fat; Fire Mane, Spicy Spray and Mega
+# Sol have one that only inherits and un-marks the Future tag (`inherit: true`, `isNonstandard: null`), which
+# G59_INHERIT_ONLY allows and nothing else. Mega Sol's effectiveWeather side (sim/pokemon.ts) is read by the refusal of
+# dfi_mega_sol_refused, checked by check_g59_pokemon.
+G59_ABILITY_FACTS = (
+    ('megalauncher', ('onBasePowerPriority: 19,',
+                      "onBasePower(basePower, attacker, defender, move) { if (move.flags['pulse']) { return this.chainModify(1.5); } },",
+                      'flags: {},')),
+    ('hugepower', ('onModifyAtkPriority: 5,', 'onModifyAtk(atk) { return this.chainModify(2); },', 'flags: {},')),
+    ('thickfat', ('onSourceModifyAtkPriority: 6,',
+                  "onSourceModifyAtk(atk, attacker, defender, move) { if (move.type === 'Ice' || move.type === 'Fire') { "
+                  "this.debug('Thick Fat weaken'); return this.chainModify(0.5); } },",
+                  'onSourceModifySpAPriority: 5,',
+                  "onSourceModifySpA(atk, attacker, defender, move) { if (move.type === 'Ice' || move.type === 'Fire') { "
+                  "this.debug('Thick Fat weaken'); return this.chainModify(0.5); } },",
+                  'flags: { breakable: 1 },')),
+    ('firemane', ('onModifyAtkPriority: 5,',
+                  "onModifyAtk(atk, attacker, defender, move) { if (move.type === 'Fire') { this.debug('Fire Mane boost'); "
+                  "return this.chainModify(1.5); } },",
+                  'onModifySpAPriority: 5,',
+                  "onModifySpA(atk, attacker, defender, move) { if (move.type === 'Fire') { this.debug('Fire Mane boost'); "
+                  "return this.chainModify(1.5); } },",
+                  'flags: {},')),
+    ('spicyspray', ("onDamagingHit(damage, target, source, move) { source.trySetStatus('brn', target); },", 'flags: {},')),
+    ('megasol', ('onWeatherModifyDamagePriority: 1,',
+                 "(this.dex.conditions.getByID('sunnyday' as ID) as any).onWeatherModifyDamage .call(this, damage, attacker, defender, move);",
+                 'return damage; // fast exit from event',
+                 'flags: {},')),
+)
+G59_INHERIT_ONLY = ('firemane', 'spicyspray', 'megasol')
 G34_ITEM_FACTS = (
     ('widelens', ('onSourceModifyAccuracyPriority: -2,',
                   "onSourceModifyAccuracy(accuracy) { if (typeof accuracy === 'number') { return this.chainModify([4505, 4096]); } },")),
@@ -2355,7 +2389,8 @@ ENGINE_ROWS = {'items': ['focussash', 'floettite', 'psychicseed', 'electricseed'
                              'limber',
                              'solarpower',
                              'regenerator', 'toxicdebris', 'shadowtag', 'suctioncups', 'guarddog',
-                             'steadfast', 'weakarmor', 'telepathy', 'voltabsorb', 'punkrock', 'moxie', 'synchronize', 'oblivious']}
+                             'steadfast', 'weakarmor', 'telepathy', 'voltabsorb', 'punkrock', 'moxie', 'synchronize', 'oblivious',
+                             'megalauncher', 'hugepower', 'thickfat', 'firemane', 'spicyspray', 'megasol']}
 # The moves of the whole pool that the turn code pivots with a switch flag of their own (dfi_pivot_moves,
 # src/state/closure_member.c) beyond Flip Turn and U-turn, which are rows of the steps. Empty: Volt Switch comes with the
 # step that gives it a flag value, and adds its id here.
@@ -3006,19 +3041,54 @@ G46_ITEM_FACTS = (
 
 def check_g34_facts(abil_ts, champ_abil, items_ts, champ_items):
     """Steps G34, G35, Mega batch 2 and G39: every fact of G34_ABILITY_FACTS, G35_ABILITY_FACTS, MEGA2_ABILITY_FACTS, G39_ABILITY_FACTS and G34_ITEM_FACTS is in the pinned entry, whitespace aside, and the
-    Champions mod has no entry of its own for it (an override would change what the engine reads)."""
-    for kind, facts_by_id, src, champ in (('ability', G34_ABILITY_FACTS + G35_ABILITY_FACTS + MEGA2_ABILITY_FACTS + G39_ABILITY_FACTS + G41_ABILITY_FACTS + G45_ABILITY_FACTS + G46_ABILITY_FACTS + G47_ABILITY_FACTS, abil_ts, champ_abil),
+    Champions mod has no entry of its own for it (an override would change what the engine reads). Step G59: the Champions
+    entry of a G59_INHERIT_ONLY ability may only inherit (`inherit: true`, `isNonstandard: null`), which is no override."""
+    for kind, facts_by_id, src, champ in (('ability', G34_ABILITY_FACTS + G35_ABILITY_FACTS + MEGA2_ABILITY_FACTS + G39_ABILITY_FACTS + G41_ABILITY_FACTS + G45_ABILITY_FACTS + G46_ABILITY_FACTS + G47_ABILITY_FACTS + G59_ABILITY_FACTS, abil_ts, champ_abil),
                                           ('item', G34_ITEM_FACTS + G46_ITEM_FACTS + G47_ITEM_FACTS, items_ts, champ_items)):
         for rid, facts in facts_by_id:
             e = src.entry(rid)
             if e is None:
                 fail('%s %s not found' % (kind, rid))
-            if champ.entry(rid) is not None:
-                fail('%s %s: the champions mod overrides the entry' % (kind, rid))
+            override = champ.entry(rid)
+            if override is not None:
+                lines = [' '.join(line.split()) for line in override[2]]
+                inner = [line for line in lines[1:] if line not in ('', '},', '}')]
+                inherit_only = (rid in G59_INHERIT_ONLY and lines[0].endswith('{') and
+                                inner == ['inherit: true,', 'isNonstandard: null,'])
+                if not inherit_only:
+                    fail('%s %s: the champions mod overrides the entry' % (kind, rid))
             text = norm(chr(10).join(e[2]))
             for fact in facts:
                 if norm(fact) not in text:
                     fail('%s %s: the entry no longer has "%s"' % (kind, rid, fact))
+
+
+# Step G59: the facts of Mega Sol's effectiveWeather side (sim/pokemon.ts, Pokemon#effectiveWeather: the holder's active move
+# reads as sun for its effects of kind Move, Weather or Mega Sol itself) and of the sunnyday handler that Mega Sol calls
+# (data/conditions.ts). The refusal of dfi_mega_sol_refused rests on them, and the modifier of the engine on the handler's Fire
+# and Water lines.
+G59_POKEMON_FACTS = (
+    "if (this.battle.activePokemon?.hasAbility('megasol') && sourceEffect &&",
+    "(sourceEffect.id === 'megasol' || sourceEffect.effectType === 'Move' || sourceEffect.effectType === 'Weather') &&",
+    "sourceEffect.id !== 'electroshot') {",
+    "return 'sunnyday' as ID;",
+)
+G59_SUNNY_FACTS = (
+    "if (defender.effectiveWeather() !== 'sunnyday') return;",
+    "if (move.type === 'Fire') { this.debug('Sunny Day fire boost'); return this.chainModify(1.5); }",
+    "if (move.type === 'Water') { this.debug('Sunny Day water suppress'); return this.chainModify(0.5); }",
+)
+
+
+def check_g59_facts(abil_ts, champ_abil, pokemon_ts, conditions_ts):
+    """Step G59: the texts of the six Mega abilities (G59_ABILITY_FACTS, through check_g34_facts), and the two sides of Mega Sol
+    that the engine's refusal and modifier rest on (G59_POKEMON_FACTS, G59_SUNNY_FACTS) are in the pinned files, whitespace
+    collapsed."""
+    for src, facts in ((pokemon_ts, G59_POKEMON_FACTS), (conditions_ts, G59_SUNNY_FACTS)):
+        text = norm(chr(10).join(src.lines))
+        for fact in facts:
+            if norm(fact) not in text:
+                fail('%s: the pin no longer has "%s"' % (src.rel, fact))
 
 
 def check_g49_facts(items_ts, champ_items):
@@ -3100,6 +3170,8 @@ def build_pool(root, repo, dx):
     check_g28_items(items_ts)
     check_g34_facts(abil_ts, champ_abil, items_ts, champ_items)
     check_g49_facts(items_ts, champ_items)
+    check_g59_facts(abil_ts, champ_abil, Source(root, 'sim/pokemon.ts', READER_INPUTS),
+                    Source(root, 'data/conditions.ts', READER_INPUTS))
     check_g37_facts(abil_ts, champ_abil)
     check_g32_entries(items_ts, champ_items, abil_ts, champ_abil)
     check_weather_facts(Source(root, 'data/conditions.ts', READER_INPUTS), moves_ts)
@@ -3753,8 +3825,8 @@ extern const uint8_t dfi_pool_move_flags2[DFI_POOL_MOVE_COUNT];
 extern const uint8_t dfi_pool_move_heal[DFI_POOL_MOVE_COUNT][2];
 /* Decision 0020: the static flags of every move (DUOFORGE_MOVE_STATIC_FLAG_*: one bit per Showdown flag name, plus
  * POWER_RULE for a move with a basePowerCallback) and its hit counts (the pin's multihit; 1 and 1 for a single hit), by
- * move id, for every row, modelled or not. The engine reads neither: they are data for duoforge_data_move_static, and the
- * last parts of the canonical pool bytes. */
+ * move id, for every row, modelled or not. The data is read by duoforge_data_move_static; the engine reads one bit of it, PULSE
+ * (step G59, Mega Launcher's BasePower in src/combat/turn.c), and no other. The last parts of the canonical pool bytes. */
 extern const uint32_t dfi_pool_move_static_flags[DFI_POOL_MOVE_COUNT];
 extern const uint8_t dfi_pool_move_static_hits[DFI_POOL_MOVE_COUNT][2];
 extern const dfi_pool_alias dfi_pool_forme_aliases[DFI_POOL_ALIAS_COUNT];

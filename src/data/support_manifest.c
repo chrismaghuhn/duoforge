@@ -544,6 +544,13 @@ const dfi_support_manifest dfi_support = {
             [DFI_ABILITY_MOXIE] = 1u, /* step G45: a Move's knock-out raises Attack by the number of faints it caused at once */
             [DFI_ABILITY_SYNCHRONIZE] = 1u, /* step G47: the status passed back to a source (data/abilities.ts:4857-4871) */
             [DFI_ABILITY_OBLIVIOUS] = 1u,   /* step G47: Taunt, and Intimidate's Attack drop (data/abilities.ts:3008-3040) */
+            /* step G59, six Mega abilities (engine rows; the Mega formes of the six stones below): */
+            [DFI_ABILITY_MEGALAUNCHER] = 1u, /* Blastoise-Mega: pulse moves x1.5 (data/abilities.ts:2546-2556) */
+            [DFI_ABILITY_HUGEPOWER] = 1u,    /* Mawile-Mega: Attack x2 (data/abilities.ts:1886-1896) */
+            [DFI_ABILITY_THICKFAT] = 1u,     /* Venusaur-Mega: Ice and Fire moves at the holder x0.5 (data/abilities.ts:5014-5030) */
+            [DFI_ABILITY_FIREMANE] = 1u,     /* Pyroar-Mega: Fire moves x1.5 (data/abilities.ts:1295-1310) */
+            [DFI_ABILITY_SPICYSPRAY] = 1u,   /* Scovillain-Mega: a damaging hit burns the attacker (data/abilities.ts:4466-4475) */
+            [DFI_ABILITY_MEGASOL] = 1u,      /* Meganium-Mega: sun for the holder's moves (data/abilities.ts:2558-2569) */
         },
     .items =
         {
@@ -592,6 +599,14 @@ const dfi_support_manifest dfi_support = {
             [DFI_ITEM_MALAMARITE] = 1u,
             [DFI_ITEM_SCEPTILITE] = 1u,
             [DFI_ITEM_SCRAFTINITE] = 1u,
+            /* step G59: six Mega Stones, mark only (their Mega abilities are marked above; the base abilities Torrent, Rain Dish,
+             * Hyper Cutter, Intimidate, Chlorophyll, Unnerve and Overgrow are marked already) */
+            [DFI_ITEM_BLASTOISINITE] = 1u,
+            [DFI_ITEM_MAWILITE] = 1u,
+            [DFI_ITEM_VENUSAURITE] = 1u,
+            [DFI_ITEM_PYROARITE] = 1u,
+            [DFI_ITEM_SCOVILLAINITE] = 1u,
+            [DFI_ITEM_MEGANIUMITE] = 1u,
             /* Mega batch 2: Swampertite (Swift Swim), Metagrossite (Tough Claws), Lucarionite Z (Aura Guard) and Froslassite
              * (Snow Warning); the base formes' abilities (Torrent, Clear Body, Inner Focus, Cursed Body since G27) are marked. */
             [DFI_ITEM_SWAMPERTITE] = 1u,

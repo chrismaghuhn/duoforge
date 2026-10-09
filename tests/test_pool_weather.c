@@ -276,13 +276,14 @@ static void check_view(df_test *t, const duoforge_context *ctx)
  * Sand Rush, Sand Veil; the item that does so, Safety Goggles, is not in the pool) or protection from
  * indirect damage (Magic Guard): the engine has an immunity for Sand Rush (step G22), Overcoat (step G30) and Sand Veil (step G39) in
  * dfi_sand_immune, so the others stay unmarked. The abilities that suppress or override the weather that the Speed abilities of step G22 read
- * (Cloud Nine; Mega Sol makes Pokemon#effectiveWeather sunny for its holder's moves; Air Lock and Utility Umbrella are
- * not in the pool at all) stay unmarked too, and so do the ones that break an ability (Inner Focus is breakable): no
- * battle holds any of them. The pinned-data side of this list is checked by tools/datagen/pool_families.js. */
+ * (Cloud Nine; Air Lock and Utility Umbrella are not in the pool at all) stay unmarked too, and so do the ones that break an
+ * ability (Inner Focus is breakable): no battle holds any of them. Mega Sol makes Pokemon#effectiveWeather sunny for its holder's
+ * moves; step G59 marks it (its two weather-reading moves are refused off sun, tests/test_pool_g59.c). The pinned-data side of
+ * this list is checked by tools/datagen/pool_families.js. */
 static void check_unmodelled_sources(df_test *t)
 {
     static const uint32_t abilities[] = {DFI_ABILITY_SANDFORCE,
-                                         DFI_ABILITY_MAGICGUARD, DFI_ABILITY_CLOUDNINE, DFI_ABILITY_MEGASOL,
+                                         DFI_ABILITY_MAGICGUARD, DFI_ABILITY_CLOUDNINE,
                                          DFI_ABILITY_MOLDBREAKER};
     for (size_t i = 0u; i < sizeof abilities / sizeof abilities[0]; ++i) {
         DF_CHECK_EQ_U64(t, dfi_support.abilities[abilities[i]], 0u);

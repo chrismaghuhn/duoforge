@@ -1390,8 +1390,8 @@ extern const uint8_t dfi_pool_move_flags2[DFI_POOL_MOVE_COUNT];
 extern const uint8_t dfi_pool_move_heal[DFI_POOL_MOVE_COUNT][2];
 /* Decision 0020: the static flags of every move (DUOFORGE_MOVE_STATIC_FLAG_*: one bit per Showdown flag name, plus
  * POWER_RULE for a move with a basePowerCallback) and its hit counts (the pin's multihit; 1 and 1 for a single hit), by
- * move id, for every row, modelled or not. The engine reads neither: they are data for duoforge_data_move_static, and the
- * last parts of the canonical pool bytes. */
+ * move id, for every row, modelled or not. The data is read by duoforge_data_move_static; the engine reads one bit of it, PULSE
+ * (step G59, Mega Launcher's BasePower in src/combat/turn.c), and no other. The last parts of the canonical pool bytes. */
 extern const uint32_t dfi_pool_move_static_flags[DFI_POOL_MOVE_COUNT];
 extern const uint8_t dfi_pool_move_static_hits[DFI_POOL_MOVE_COUNT][2];
 extern const dfi_pool_alias dfi_pool_forme_aliases[DFI_POOL_ALIAS_COUNT];
