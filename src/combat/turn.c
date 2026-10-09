@@ -4514,24 +4514,26 @@ static duoforge_status dfi_run_heal_fraction(dfi_run *r, uint32_t num, uint32_t 
     return dfi_status_hit_end(r);
 }
 
-/* queue.willMove (sim/battle-queue.ts:324-331): the index of the queued move of the Pokemon at `flat`, or -1. A fainted or empty
+/* queue.willMove (sim/battle-queue.ts:324-331): true with the index of the queued move of the Pokemon at `flat` in `*out`, false
+ * when it has none. A fainted or empty
  * position has none (willMove's `pokemon.fainted`); the record must belong to the occupant (its activation), as `action.pokemon`
  * is that Pokemon. */
-static int dfi_queued_move_index(struct duoforge_battle *b, uint32_t flat)
+static bool dfi_queued_move_index(struct duoforge_battle *b, uint32_t flat, uint32_t *out)
 {
     const dfi_member *m = dfi_at(b, flat);
     if (m == NULL || m->hp == 0u) {
-        return -1;
+        return false;
     }
     const dfi_active_slot *pos = dfi_pos(b, flat);
     for (uint32_t i = 0u; i < b->queue_len; ++i) {
         const dfi_queue_record *q = &b->queue[i];
         if (q->kind == DFI_Q_MOVE && (uint32_t)q->side * 2u + (uint32_t)q->slot == flat &&
             q->activation_id == pos->activation_id) {
-            return (int)i;
+            *out = i;
+            return true;
         }
     }
-    return -1;
+    return false;
 }
 
 /* A successful hit of a single-target move that is not a damaging one (After You, Quash): the Champions hit loop runs the Update
@@ -4572,15 +4574,15 @@ static duoforge_status dfi_run_after_you(dfi_run *r, uint32_t user, uint32_t mov
         return DUOFORGE_OK;
     }
     const uint32_t t = targets[0];
-    const int idx = dfi_queued_move_index(r->b, t);
-    if (idx < 0) {
+    uint32_t idx = 0u;
+    if (!dfi_queued_move_index(r->b, t, &idx)) {
         r->mres |= DFI_MRES_FALSE; /* onHit returns false */
         dfi_fail_still(r, user);
         return DUOFORGE_OK;
     }
     /* prioritizeAction (sim/battle-queue.ts:282-292) removes the action and unshifts it: the front of the list, the rest in their
      * order. The sort's ties read the list's positions (a selection sort that swaps), so the record moves too. */
-    dfi_queue_move_to_front(r->b, (uint32_t)idx);
+    dfi_queue_move_to_front(r->b, idx);
     r->b->queue[0].reserve = DFI_QRES_PRIORITIZED;
     const duoforge_event e = dfi_ev(DUOFORGE_EVENT_ACTIVATE, t, DUOFORGE_CAUSE_MOVE, move_id, DUOFORGE_NO_POSITION);
     dfi_emit(r, &e);
@@ -4597,8 +4599,8 @@ static duoforge_status dfi_run_quash(dfi_run *r, uint32_t user, uint32_t move_id
         return DUOFORGE_OK;
     }
     const uint32_t t = targets[0];
-    const int idx = dfi_queued_move_index(r->b, t);
-    if (idx < 0) {
+    uint32_t idx = 0u;
+    if (!dfi_queued_move_index(r->b, t, &idx)) {
         r->mres |= DFI_MRES_FALSE; /* onHit returns false */
         dfi_fail_still(r, user);
         return DUOFORGE_OK;
