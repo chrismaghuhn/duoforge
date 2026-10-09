@@ -996,7 +996,10 @@ duoforge_status duoforge_battle_observe_ext(const duoforge_context *ctx, const d
 #define DUOFORGE_EVENT_IMMUNE          12u /* [-immune] position; cause ABILITY + id2 when an ability did it */
 #define DUOFORGE_EVENT_FAIL            13u /* [-fail] position; detail: the ailment it already has, when that is why.
                                               POOL kinds: cause ABILITY + id2 (Inner Focus), other the holder:
-                                              [-fail] unboost atk [from] ability: Inner Focus, an Intimidate drop. */
+                                              [-fail] unboost atk [from] ability: Inner Focus, an Intimidate drop.
+                                              Substitute (decision 0032): cause MOVE + id2 = the Substitute move, detail
+                                              DUOFORGE_FAIL_SUBSTITUTE_EXISTS or _WEAK. The detail has these meanings ONLY with
+                                              that cause; without it the detail keeps its ailment meaning. */
 #define DUOFORGE_EVENT_PROTECT         14u /* [-singleturn Protect] position */
 #define DUOFORGE_EVENT_BLOCKED         15u /* [-activate move: Protect] position: the protected Pokemon
                                               (detail 0); detail DUOFORGE_FIELD_PSYCHIC_TERRAIN: [-activate move:
@@ -1116,6 +1119,12 @@ duoforge_status duoforge_battle_observe_ext(const duoforge_context *ctx, const d
 #define DUOFORGE_VOLATILE_TAUNT      6u /* VOLATILE_START / VOLATILE_END: Taunt (-start|X|move: Taunt, -end|X|move: Taunt) */
 #define DUOFORGE_VOLATILE_YAWN       7u /* VOLATILE_START: Yawn (-start|X|move: Yawn|[of] source; other: the source). No END: the end line is
                                               silent, and the sleep it brings is the STATUS event of the residual */
+#define DUOFORGE_VOLATILE_SUBSTITUTE 9u /* VOLATILE_START / VOLATILE_END (POOL kinds, decision 0032): the Substitute (-start|X|Substitute,
+                                              -end|X|Substitute when it breaks or Tidy Up removes it). Presence only: its HP is never in an event.
+                                              A switch-out removes it with no END (the pin's clearVolatile). */
+/* FAIL details of a Substitute, valid only with cause MOVE and id2 = the Substitute move (decision 0032). */
+#define DUOFORGE_FAIL_SUBSTITUTE_EXISTS 1u /* the user already has a Substitute: -fail|X|move: Substitute */
+#define DUOFORGE_FAIL_SUBSTITUTE_WEAK   2u /* the user's HP is a quarter of its maximum or less: -fail|X|move: Substitute|[weak] */
 #define DUOFORGE_FIELD_GRASSY_TERRAIN 1u
 #define DUOFORGE_FIELD_TRICK_ROOM     2u
 #define DUOFORGE_FIELD_PSYCHIC_TERRAIN 3u /* Team C */
