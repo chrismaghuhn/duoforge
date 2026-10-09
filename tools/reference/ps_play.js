@@ -229,6 +229,12 @@ function drawSwitch(side, rng) {
         }
         budget -= 1;
     }
+    // A Revival Blessing slot is accepted with no living reserve too (its branch takes no unit): the random player revives
+    // there now and then, so that the pivots of a side without standing reserves are played as well.
+    for (const slot of flagged) {
+        if (chosen.has(slot) || !revivalSlot(side, slot) || !fainted.length) continue;
+        if (rng.chance(0.5)) chosen.set(slot, fainted.splice(rng.below(fainted.length), 1)[0]);
+    }
     return side.active.map((_, slot) => (chosen.has(slot) ? `switch ${chosen.get(slot) + 1}` : 'pass')).join(', ');
 }
 
