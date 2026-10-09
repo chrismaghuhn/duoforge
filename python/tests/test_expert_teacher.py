@@ -47,7 +47,7 @@ class FoeSensitiveNet:
         b = obs.shape[0]
         legal = np.asarray(mask, bool).reshape(b, -1)
         slot_term = np.asarray(slots, np.float32).reshape(b, -1, features.SLOT_FEATURES) @ params["slot"]
-        pair = obs @ params["pair"] + np.resize(slot_term, (b, 1024))
+        pair = obs @ params["pair"] + np.tile(slot_term, (1, 1024 // slot_term.shape[1]))  # each row its own
         pair = self._log_softmax(pair, legal | ~legal.any(axis=1, keepdims=True))
         team = self._log_softmax(obs @ params["team"], np.ones((b, TEAM_TABLE.shape[0]), bool))
         return pair, team, np.tanh(obs @ params["value"])
@@ -128,6 +128,24 @@ class FullSpace(unittest.TestCase):
         sparse = float(np.sum(policy.probs * (np.log(policy.probs) - full_legal[policy.ids])))
         self.assertAlmostEqual(kl_full, sparse, places=12)
         self.assertGreater(kl_full - kl_cand, 0.1)
+
+
+class FakeNet(unittest.TestCase):
+    def test_fake_net_rows_are_independent(self):
+        # Each row's outputs depend on that row only (P2 batching tests rely on it).
+        net = FoeSensitiveNet()
+        rng = np.random.default_rng(5)
+        obs = rng.normal(size=(5, features.obs_size(4))).astype(np.float32)
+        slots = rng.normal(size=(5, 2, 32, features.SLOT_FEATURES)).astype(np.float32)
+        mask = rng.random((5, 32, 32)) < 0.3
+        together = net.apply(net.params, obs, slots, mask)
+        for r in range(5):  # same batch shape, every other row replaced: row r unchanged bit for bit
+            others = np.arange(5) != r
+            o, s, k = obs.copy(), slots.copy(), mask.copy()
+            o[others], s[others], k[others] = obs[::-1][others], slots[::-1][others], ~mask[others]
+            changed = net.apply(net.params, o, s, k)
+            for a, b in zip(together, changed):
+                np.testing.assert_array_equal(a[r], b[r])
 
 
 class ReduceBudget(unittest.TestCase):
@@ -514,9 +532,9 @@ class Teacher(unittest.TestCase):
     # per machine conditions: the fake net's float32 matmuls follow the BLAS/CPU, so another machine skips.
     PINNED_TWO_PHASE = {
         "Windows|AMD64 Family 25 Model 33 Stepping 2, AuthenticAMD|numpy 2.5.3":
-            "3b856e67f9390e3cad582b67ccabd98c9b47469642a0e611eaef82b858852744",
+            "6b61c312c0b190e123f43cbf0ef5e9a0e396bf6a416c1b92ad0391a3ddb4abaa",
         "Linux|AMD Ryzen 7 5800X 8-Core Processor|numpy 2.5.3":
-            "baa4f827d47f1e1165663470616972784a6e7d51133d30a74da3380fad56965c",
+            "7816fb90c21ddad524eca4b7b6481cb52cbc7626ceb11979df8415e0b6b39bf4",
     }
 
     @staticmethod
