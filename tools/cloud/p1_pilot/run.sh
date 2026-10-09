@@ -227,6 +227,18 @@ if [[ -n $HEAD_COMMIT && $HEAD_COMMIT != "$COMMIT" ]]; then
 fi
 DIRTY=$(git -C "$REPO" status --porcelain --untracked-files=no 2>/dev/null | wc -l) || DIRTY=unknown
 
+# ---- per-phase runtime environment (added to setup's shared base) ----
+# collector: JAX on the CPU, as its manifest pins device cpu.
+# training phases of both arms (distill; the control's calibration and matched run): the platform allocator
+#   (cudaMalloc/cudaFree, no pool). With the default pool and PREALLOCATE=false, distill's held-out evaluation leaves
+#   its pool reserved and loading jit__step fails with a CUBIN-load CUDA out of memory on an 8 GB card. Both arms'
+#   training phases share it, so their GPU-seconds compare fairly.
+# evaluation (eval_manifest, p1_eval smoke and full): a shared phase charged half to each arm, so its allocator does
+#   not bias the comparison: JAX's default pool allocator (about 5x the games/s of the platform one in the dry run).
+PHASE_ENV_COLLECT=(JAX_PLATFORMS=cpu)
+PHASE_ENV_TRAIN=(XLA_PYTHON_CLIENT_ALLOCATOR=platform)
+PHASE_ENV_EVAL=()
+
 # ---- setup: native library, Python, runtime environment ----
 setup() {
     local tool
@@ -259,24 +271,23 @@ setup() {
     PY=$VENV/bin/python
     [[ -x $PY ]] || die $EX_SETUP "$PY is missing"
 
-    # The runtime environment: identical for every phase of both arms (the collector adds JAX_PLATFORMS=cpu,
-    # as its manifest pins device cpu). Written to the log and to run-info.
-    unset JAX_PLATFORMS JAX_ENABLE_X64 XLA_PYTHON_CLIENT_MEM_FRACTION CUDA_VISIBLE_DEVICES
+    # The runtime environment: one shared base for every phase, plus a per-phase addition (PHASE_ENV_*, above).
+    # Written to the log and to run-info.
+    unset JAX_PLATFORMS JAX_ENABLE_X64 XLA_PYTHON_CLIENT_MEM_FRACTION XLA_PYTHON_CLIENT_ALLOCATOR CUDA_VISIBLE_DEVICES
     export DUOFORGE_LIBRARY=$LIB
     export PYTHONPATH=$REPO/python
     export PYTHONDONTWRITEBYTECODE=1
     export XLA_FLAGS=--xla_gpu_deterministic_ops=true
     export XLA_PYTHON_CLIENT_PREALLOCATE=false
-    # The platform allocator (cudaMalloc/cudaFree, no BFC pool): with the default pool and no preallocation, the
-    # memory distill's held-out evaluation grew stays reserved, and loading the next kernel (jit__step) fails with
-    # CUDA out of memory on an 8 GB card. Same for both arms (README_run.md).
-    export XLA_PYTHON_CLIENT_ALLOCATOR=platform
     export OMP_NUM_THREADS=4
     export OPENBLAS_NUM_THREADS=4
     RUNTIME_ENV=(DUOFORGE_LIBRARY PYTHONPATH PYTHONDONTWRITEBYTECODE XLA_FLAGS XLA_PYTHON_CLIENT_PREALLOCATE
-                 XLA_PYTHON_CLIENT_ALLOCATOR OMP_NUM_THREADS OPENBLAS_NUM_THREADS)
+                 OMP_NUM_THREADS OPENBLAS_NUM_THREADS)
     local name
     for name in "${RUNTIME_ENV[@]}"; do log "env $name=${!name}"; done
+    log "env collector: ${PHASE_ENV_COLLECT[*]}"
+    log "env training (distill, control calibration and matched run): ${PHASE_ENV_TRAIN[*]}"
+    log "env evaluation (eval_manifest, p1_eval smoke and full): ${PHASE_ENV_EVAL[*]:-nothing added (the default BFC allocator of JAX)}"
     log "affinity taskset -c $AFFINITY, workers $WORKERS"
 
     "$PY" - <<'EOF' || die $EX_SETUP "the Python environment is not the pinned one or has no GPU (logs/run-$STARTED.log)"
@@ -295,6 +306,7 @@ EOF
     local info=$OUT/run-info/run-info-$STARTED.json
     RI_MODE=$MODE RI_COMMIT=$COMMIT RI_HEAD=$HEAD_COMMIT RI_DIRTY=$DIRTY RI_RUN_ID=${RUN_ID:-dry} \
     RI_WORKERS=$WORKERS RI_AFFINITY=$AFFINITY RI_LADDER=$LADDER_FILE RI_ENV="${RUNTIME_ENV[*]}" RI_IN=$IN \
+    RI_PHASE_COLLECT="${PHASE_ENV_COLLECT[*]}" RI_PHASE_TRAIN="${PHASE_ENV_TRAIN[*]}" RI_PHASE_EVAL="${PHASE_ENV_EVAL[*]}" \
     RI_SEEDS="collect=$COLLECT_SEED split=$COLLECT_SPLIT_SEED distill=$DISTILL_SEED control=$CONTROL_SEED eval=$EVAL_SEED eval_first_game_id=$EVAL_FIRST_GAME_ID" \
     RI_COMPILER="$(gcc --version | head -1); $(cmake --version | head -1)" \
         "$PY" - "$info" <<'EOF' || die $EX_SETUP "run-info failed"
@@ -316,7 +328,8 @@ info = {
     "workers": int(os.environ["RI_WORKERS"]), "affinity": os.environ["RI_AFFINITY"],
     "ladder_file": os.environ["RI_LADDER"], "seeds": os.environ["RI_SEEDS"],
     "runtime_env": {k: os.environ.get(k) for k in os.environ["RI_ENV"].split()},
-    "collector_extra_env": {"JAX_PLATFORMS": "cpu"},
+    "phase_env": {phase: dict(kv.split("=", 1) for kv in os.environ[f"RI_PHASE_{phase.upper()}"].split())
+                  for phase in ("collect", "train", "eval")},
     "versions": {"python": platform.python_version(), "jax": jax.__version__, "jaxlib": jaxlib.__version__,
                  "optax": optax.__version__, "numpy": numpy.__version__,
                  "jax_plugins": run([sys.executable, "-m", "pip", "list", "--format=freeze"]).splitlines()},
@@ -386,7 +399,7 @@ manifest_write() {  # ROLE ROUNDS FIRST_GAME_ID OUT
     local role=$1 rounds=$2 first=$3 out=$4
     [[ -f $out ]] && { log "manifest $out exists"; return 0; }
     local rc=0
-    launch "manifest-$role" "$OUT/logs/manifest-$role.log" env JAX_PLATFORMS=cpu "$PY" "$HERE/p1_manifest.py" write \
+    launch "manifest-$role" "$OUT/logs/manifest-$role.log" env "${PHASE_ENV_COLLECT[@]}" "$PY" "$HERE/p1_manifest.py" write \
         --init "$INIT" --out "$out" --rounds "$rounds" --first-game-id "$first" --workers "$WORKERS" \
         --seed "$COLLECT_SEED" --split-seed "$COLLECT_SPLIT_SEED" --source-commit "$COMMIT" --role "$role" \
         --compiler "$(gcc --version | head -1), Release" --teams "$TEAM_IDS" --team-weights "$TEAM_WEIGHTS" \
@@ -409,7 +422,7 @@ collect() {  # NAME DIR MANIFEST
     else
         set_aside "$dir/data"
     fi
-    launch "$name" "$dir/result.jsonl" env JAX_PLATFORMS=cpu "$PY" -m duoforge_learn.collect_expert "${args[@]}" || rc=$?
+    launch "$name" "$dir/result.jsonl" env "${PHASE_ENV_COLLECT[@]}" "$PY" -m duoforge_learn.collect_expert "${args[@]}" || rc=$?
     [[ $rc -eq 0 ]] || tool_failed "$name" "$rc"
 }
 
@@ -483,12 +496,12 @@ if ! marked distill; then
               --seed "$DISTILL_SEED" --ledger "$PILOT_LEDGER")
         if [[ -f $DISTILL/distill-state.npz ]]; then args+=(--resume); else set_aside "$DISTILL"; fi
         rc=0
-        distill_env=()
+        distill_env=("${PHASE_ENV_TRAIN[@]}")
         if [[ $MODE == dry && ${DRY_DISTILL_DEVICE:-gpu} == cpu ]]; then
             # Rehearsal only: distill's 4096-row step does not fit an 8 GB GPU (CUDA out of memory), so a local dry
             # run may put it on the CPU. A run never does.
             log "dry run: distill on the CPU (DRY_DISTILL_DEVICE=cpu)"
-            distill_env=(JAX_PLATFORMS=cpu)
+            distill_env+=(JAX_PLATFORMS=cpu)
         fi
         launch distill "$OUT/distill-meta/result.jsonl" env "${distill_env[@]}" "$PY" -m duoforge_learn.distill "${args[@]}" || rc=$?
         [[ $rc -eq 0 ]] || tool_failed distill "$rc"
@@ -514,7 +527,7 @@ state_update() {  # the update of the control's saved run state, 0 without one
 train() {  # NAME ARGS...
     local name=$1; shift
     local rc=0
-    launch "$name" "$OUT/logs/$name.stdout" "$PY" -m duoforge_learn.train "$@" || rc=$?
+    launch "$name" "$OUT/logs/$name.stdout" env "${PHASE_ENV_TRAIN[@]}" "$PY" -m duoforge_learn.train "$@" || rc=$?
     [[ $rc -eq 0 ]] || tool_failed "$name" "$rc"
 }
 
@@ -607,7 +620,7 @@ CHECKPOINTS=(--checkpoint "pilot=$DISTILL/params-best.npz" --checkpoint "control
              --checkpoint "11000=$IN/params-11000.npz" --checkpoint "ladder=$IN/$LADDER_FILE")
 if [[ ! -f $EVAL/manifest.json ]]; then
     rc=0
-    launch eval-manifest "$EVAL/manifest.stdout" "$PY" -m duoforge_search.eval_manifest --teams "$TEAM_IDS" \
+    launch eval-manifest "$EVAL/manifest.stdout" env "${PHASE_ENV_EVAL[@]}" "$PY" -m duoforge_search.eval_manifest --teams "$TEAM_IDS" \
         --team-weights "$TEAM_WEIGHTS" --teams-root "$TEAMS_ROOT" --seed "$EVAL_SEED" --first-game-id "$EVAL_FIRST_GAME_ID" \
         "${CHECKPOINTS[@]}" --out "$EVAL/manifest.json" || rc=$?
     [[ $rc -eq 0 ]] || tool_failed eval-manifest "$rc"
@@ -616,7 +629,7 @@ EVAL_ARGS=(--manifest "$EVAL/manifest.json" "${CHECKPOINTS[@]}" --teams "$TEAM_I
            --teams-root "$TEAMS_ROOT" --workers "$WORKERS" --ledger "$EVAL_LEDGER")
 if [[ ! -f $EVAL/smoke.json ]]; then
     rc=0
-    launch eval-smoke "$EVAL/smoke.stdout" "$PY" -m duoforge_learn.p1_eval "${EVAL_ARGS[@]}" --smoke --out "$EVAL/smoke.json" || rc=$?
+    launch eval-smoke "$EVAL/smoke.stdout" env "${PHASE_ENV_EVAL[@]}" "$PY" -m duoforge_learn.p1_eval "${EVAL_ARGS[@]}" --smoke --out "$EVAL/smoke.json" || rc=$?
     [[ $rc -eq 0 ]] || tool_failed eval-smoke "$rc"
 fi
 status=$(json_get "$(cat "$EVAL/smoke.json")" status)
@@ -628,7 +641,7 @@ if [[ $MODE == dry ]]; then
 fi
 if [[ ! -f $EVAL/B.json ]]; then
     rc=0
-    launch eval-full "$EVAL/full.stdout" "$PY" -m duoforge_learn.p1_eval "${EVAL_ARGS[@]}" --out "$EVAL/B.json" || rc=$?
+    launch eval-full "$EVAL/full.stdout" env "${PHASE_ENV_EVAL[@]}" "$PY" -m duoforge_learn.p1_eval "${EVAL_ARGS[@]}" --out "$EVAL/B.json" || rc=$?
     [[ $rc -eq 0 ]] || tool_failed eval-full "$rc"
 fi
 if [[ ! -f $EVAL/REPORT.json ]]; then
