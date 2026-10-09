@@ -477,7 +477,12 @@ class Guards(unittest.TestCase):
     # ------------------------------------------------------------------ the user data, run with stand-ins
     def run_box(self, workload, soft_deadline_seconds=30, minutes=180):
         """Runs the rendered user data with stand-ins for shutdown, aws, git, curl, nvidia-smi and setsid, its paths
-        moved into the temporary directory and its intervals shortened. Returns (exit status, events, log, seconds)."""
+        moved into the temporary directory and its intervals shortened. Returns (exit status, events, log, seconds).
+        Not on Windows: there `shutdown -h` is the system's own command (hibernate), and a stand-in that is not found
+        first would put the developer's machine to sleep. The Linux jobs run these tests (no root: a real shutdown
+        fails there)."""
+        if os.name == 'nt':
+            self.skipTest("the user data's run powers off: never on a Windows developer machine")
         box = os.path.join(self.tmp, 'box')
         os.makedirs(os.path.join(box, 'bin'))
         for name, body in BOX_STUBS.items():
