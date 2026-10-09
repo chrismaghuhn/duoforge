@@ -1,9 +1,9 @@
 {
  "harness": 14,
  "pin": "b2cb775b0616115b775534eaeff50300e1fc81fc",
- "spec": "g70_skillswap_ally_trace.json",
+ "spec": "g70_skillswap_unburden.json",
  "format": "gen9championsvgc2026regmc",
- "seed": "sodium,0000000000000000000000000000000000000000000000000000000000006401",
+ "seed": "sodium,0000000000000000000000000000000000000000000000000000000000006408",
  "start": {
   "log": [
    "|gametype|doubles",
@@ -15,7 +15,7 @@
    "|rule|Item Clause: Limit 1 of each item",
    "|clearpoke",
    "|poke|p1|Gardevoir, L50, F|",
-   "|poke|p1|Espeon, L50, F|",
+   "|poke|p1|Liepard, L50, F|",
    "|poke|p1|Gyarados, L50, M|",
    "|poke|p1|Gengar, L50, F|",
    "|poke|p1|Rillaboom, L50, M|",
@@ -88,13 +88,13 @@
        "locked": null
       },
       {
-       "species": "Espeon",
-       "set_species": "Espeon",
+       "species": "Liepard",
+       "set_species": "Liepard",
        "mega": 0,
        "switch_flag": 0,
-       "hp": 172,
-       "maxhp": 172,
-       "item": "",
+       "hp": 171,
+       "maxhp": 171,
+       "item": "focussash",
        "status": "",
        "status_time": 0,
        "confusion": 0,
@@ -109,9 +109,10 @@
         0
        ],
        "pp": [
-        20,
         12,
-        20
+        20,
+        20,
+        12
        ],
        "volatiles": [],
        "locked": null
@@ -456,8 +457,8 @@
     "|switch|p1a: Gardevoir|Gardevoir, L50, F|175/175",
     "|switch|p1a: Gardevoir|Gardevoir, L50, F|100/100",
     "|split|p1",
-    "|switch|p1b: Espeon|Espeon, L50, F|172/172",
-    "|switch|p1b: Espeon|Espeon, L50, F|100/100",
+    "|switch|p1b: Liepard|Liepard, L50, F|171/171",
+    "|switch|p1b: Liepard|Liepard, L50, F|100/100",
     "|split|p2",
     "|switch|p2a: Malamar|Malamar, L50, M|193/193",
     "|switch|p2a: Malamar|Malamar, L50, M|100/100",
@@ -493,6 +494,7 @@
         1
        ],
        [
+        1,
         1,
         1,
         1
@@ -534,13 +536,13 @@
         "locked": null
        },
        {
-        "species": "Espeon",
-        "set_species": "Espeon",
+        "species": "Liepard",
+        "set_species": "Liepard",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 172,
-        "maxhp": 172,
-        "item": "",
+        "hp": 171,
+        "maxhp": 171,
+        "item": "focussash",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -555,9 +557,10 @@
          0
         ],
         "pp": [
-         20,
          12,
-         20
+         20,
+         20,
+         12
         ],
         "volatiles": [],
         "locked": null
@@ -771,8 +774,8 @@
   },
   {
    "input": {
-    "p1": "move 1 -2, move 1",
-    "p2": "move 2 1, move 1 1"
+    "p1": "move 2, move 3",
+    "p2": "move 4 2, move 1 1"
    },
    "draws": [
     {
@@ -780,59 +783,53 @@
      "context": "",
      "lo": 0,
      "hi": 100,
-     "value": 64
+     "value": 60
     },
     {
      "site": "CRIT",
      "context": "",
      "lo": 0,
      "hi": 24,
-     "value": 4
+     "value": 1
     },
     {
      "site": "DAMAGE_ROLL",
      "context": "",
      "lo": 0,
      "hi": 16,
-     "value": 15
-    },
-    {
-     "site": "SECONDARY",
-     "context": "",
-     "lo": 0,
-     "hi": 100,
-     "value": 8
-    },
-    {
-     "site": "CRIT",
-     "context": "",
-     "lo": 0,
-     "hi": 24,
      "value": 13
     },
     {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 18
+    },
+    {
      "site": "DAMAGE_ROLL",
      "context": "",
      "lo": 0,
      "hi": 16,
-     "value": 10
+     "value": 6
     }
    ],
    "log": [
-    "|move|p1b: Espeon|Calm Mind|p1b: Espeon",
-    "|-boost|p1b: Espeon|spa|1",
-    "|-boost|p1b: Espeon|spd|1",
-    "|move|p1a: Gardevoir|Skill Swap|p1b: Espeon",
-    "|-activate|p1a: Gardevoir|Skill Swap|||[of] p1b: Espeon",
-    "|-hint|Skill Swap does not announce the abilities of the Pokémon when used between allies.",
-    "|move|p2a: Malamar|Dark Pulse|p1a: Gardevoir",
+    "|move|p1b: Liepard|Nasty Plot|p1b: Liepard",
+    "|-boost|p1b: Liepard|spa|2",
+    "|move|p1a: Gardevoir|Calm Mind|p1a: Gardevoir",
+    "|-unboost|p1a: Gardevoir|spa|1",
+    "|-unboost|p1a: Gardevoir|spd|1",
+    "|move|p2a: Malamar|Knock Off|p1b: Liepard",
+    "|-resisted|p1b: Liepard|1",
     "|split|p1",
-    "|-damage|p1a: Gardevoir|148/175",
-    "|-damage|p1a: Gardevoir|84/100",
+    "|-damage|p1b: Liepard|108/171",
+    "|-damage|p1b: Liepard|63/100",
+    "|-enditem|p1b: Liepard|Focus Sash|[from] move: Knock Off|[of] p2a: Malamar",
     "|move|p2b: Kingambit|Kowtow Cleave|p1a: Gardevoir",
     "|split|p1",
-    "|-damage|p1a: Gardevoir|25/175",
-    "|-damage|p1a: Gardevoir|14/100",
+    "|-damage|p1a: Gardevoir|46/175",
+    "|-damage|p1a: Gardevoir|26/100",
     "|upkeep",
     "|turn|2"
    ],
@@ -861,6 +858,7 @@
         1
        ],
        [
+        0,
         1,
         1,
         1
@@ -876,7 +874,7 @@
         "set_species": "Gardevoir",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 25,
+        "hp": 46,
         "maxhp": 175,
         "item": "",
         "status": "",
@@ -886,15 +884,15 @@
         "boosts": [
          0,
          0,
-         0,
-         0,
+         -1,
+         -1,
          0,
          0,
          0
         ],
         "pp": [
-         11,
-         20,
+         12,
+         19,
          12,
          20
         ],
@@ -902,12 +900,12 @@
         "locked": null
        },
        {
-        "species": "Espeon",
-        "set_species": "Espeon",
+        "species": "Liepard",
+        "set_species": "Liepard",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 172,
-        "maxhp": 172,
+        "hp": 108,
+        "maxhp": 171,
         "item": "",
         "status": "",
         "status_time": 0,
@@ -916,18 +914,21 @@
         "boosts": [
          0,
          0,
-         1,
-         1,
+         2,
+         0,
          0,
          0,
          0
         ],
         "pp": [
-         19,
          12,
-         20
+         20,
+         19,
+         12
         ],
-        "volatiles": [],
+        "volatiles": [
+         "unburden"
+        ],
         "locked": null
        },
        {
@@ -1038,9 +1039,9 @@
         ],
         "pp": [
          16,
-         15,
+         16,
          20,
-         20
+         19
         ],
         "volatiles": [],
         "locked": null
@@ -1139,8 +1140,8 @@
   },
   {
    "input": {
-    "p1": "move 2, move 1",
-    "p2": "move 1 2, move 1 2"
+    "p1": "move 1 -2, move 3",
+    "p2": "move 2 1, move 1 1"
    },
    "draws": [
     {
@@ -1148,14 +1149,14 @@
      "context": "",
      "lo": 0,
      "hi": 100,
-     "value": 71
+     "value": 75
     },
     {
      "site": "CRIT",
      "context": "",
      "lo": 0,
      "hi": 24,
-     "value": 18
+     "value": 2
     },
     {
      "site": "DAMAGE_ROLL",
@@ -1165,38 +1166,42 @@
      "value": 12
     },
     {
+     "site": "SECONDARY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 84
+    },
+    {
      "site": "CRIT",
      "context": "",
      "lo": 0,
      "hi": 24,
-     "value": 18
+     "value": 7
     },
     {
      "site": "DAMAGE_ROLL",
      "context": "",
      "lo": 0,
      "hi": 16,
-     "value": 5
+     "value": 9
     }
    ],
    "log": [
-    "|move|p1b: Espeon|Calm Mind|p1b: Espeon",
-    "|-unboost|p1b: Espeon|spa|1",
-    "|-unboost|p1b: Espeon|spd|1",
-    "|move|p1a: Gardevoir|Calm Mind|p1a: Gardevoir",
-    "|-boost|p1a: Gardevoir|spa|1",
-    "|-boost|p1a: Gardevoir|spd|1",
-    "|move|p2a: Malamar|Foul Play|p1b: Espeon",
-    "|-supereffective|p1b: Espeon|1",
+    "|move|p1b: Liepard|Nasty Plot|p1b: Liepard",
+    "|-boost|p1b: Liepard|spa|2",
+    "|move|p1a: Gardevoir|Skill Swap|p1b: Liepard",
+    "|-activate|p1a: Gardevoir|Skill Swap|||[of] p1b: Liepard",
+    "|-hint|Skill Swap does not announce the abilities of the Pokémon when used between allies.",
+    "|move|p2a: Malamar|Dark Pulse|p1a: Gardevoir",
     "|split|p1",
-    "|-damage|p1b: Espeon|64/172",
-    "|-damage|p1b: Espeon|37/100",
-    "|move|p2b: Kingambit|Kowtow Cleave|p1b: Espeon",
-    "|-supereffective|p1b: Espeon|1",
+    "|-damage|p1a: Gardevoir|4/175",
+    "|-damage|p1a: Gardevoir|2/100",
+    "|move|p2b: Kingambit|Kowtow Cleave|p1a: Gardevoir",
     "|split|p1",
-    "|-damage|p1b: Espeon|0 fnt",
-    "|-damage|p1b: Espeon|0 fnt",
-    "|faint|p1b: Espeon",
+    "|-damage|p1a: Gardevoir|0 fnt",
+    "|-damage|p1a: Gardevoir|0 fnt",
+    "|faint|p1a: Gardevoir",
     "|upkeep"
    ],
    "state": {
@@ -1226,39 +1231,9 @@
         "species": "Gardevoir",
         "set_species": "Gardevoir",
         "mega": 0,
-        "switch_flag": 0,
-        "hp": 25,
-        "maxhp": 175,
-        "item": "",
-        "status": "",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": false,
-        "boosts": [
-         0,
-         0,
-         1,
-         1,
-         0,
-         0,
-         0
-        ],
-        "pp": [
-         11,
-         19,
-         12,
-         20
-        ],
-        "volatiles": [],
-        "locked": null
-       },
-       {
-        "species": "Espeon",
-        "set_species": "Espeon",
-        "mega": 0,
         "switch_flag": 1,
         "hp": 0,
-        "maxhp": 172,
+        "maxhp": 175,
         "item": "",
         "status": "fnt",
         "status_time": 0,
@@ -1274,9 +1249,40 @@
          0
         ],
         "pp": [
-         18,
+         11,
+         19,
          12,
          20
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Liepard",
+        "set_species": "Liepard",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 108,
+        "maxhp": 171,
+        "item": "",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         4,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         20,
+         18,
+         12
         ],
         "volatiles": [],
         "locked": null
@@ -1376,10 +1382,10 @@
          0
         ],
         "pp": [
-         15,
+         16,
          15,
          20,
-         20
+         19
         ],
         "volatiles": [],
         "locked": null
@@ -1398,321 +1404,6 @@
         "fainted": false,
         "boosts": [
          0,
-         0,
-         0,
-         0,
-         0,
-         0,
-         0
-        ],
-        "pp": [
-         10,
-         16,
-         16
-        ],
-        "volatiles": [],
-        "locked": null
-       },
-       {
-        "species": "Chimecho",
-        "set_species": "Chimecho",
-        "mega": 0,
-        "switch_flag": 0,
-        "hp": 182,
-        "maxhp": 182,
-        "item": "",
-        "status": "",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": false,
-        "boosts": [
-         0,
-         0,
-         0,
-         0,
-         0,
-         0,
-         0
-        ],
-        "pp": [
-         20,
-         12,
-         8
-        ],
-        "volatiles": [],
-        "locked": null
-       },
-       {
-        "species": "Spiritomb",
-        "set_species": "Spiritomb",
-        "mega": 0,
-        "switch_flag": 0,
-        "hp": 157,
-        "maxhp": 157,
-        "item": "",
-        "status": "",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": false,
-        "boosts": [
-         0,
-         0,
-         0,
-         0,
-         0,
-         0,
-         0
-        ],
-        "pp": [
-         8,
-         16,
-         16
-        ],
-        "volatiles": [],
-        "locked": null
-       }
-      ]
-     }
-    ]
-   }
-  },
-  {
-   "input": {
-    "p1": "pass, switch 3"
-   },
-   "draws": [],
-   "log": [
-    "|split|p1",
-    "|switch|p1b: Gyarados|Gyarados, L50, M|202/202",
-    "|switch|p1b: Gyarados|Gyarados, L50, M|100/100",
-    "|-ability|p1b: Gyarados|Intimidate|boost",
-    "|-boost|p2a: Malamar|atk|1",
-    "|-unboost|p2b: Kingambit|atk|1",
-    "|turn|3"
-   ],
-   "state": {
-    "turn": 3,
-    "ended": false,
-    "winner": "",
-    "weather": "",
-    "weather_turns": 0,
-    "terrain": "",
-    "terrain_turns": 0,
-    "trick_room": 0,
-    "sides": [
-     {
-      "request": "move",
-      "conditions": [
-       0,
-       0,
-       0
-      ],
-      "enabled": [
-       [
-        1,
-        1,
-        1,
-        1
-       ],
-       [
-        1,
-        1,
-        1
-       ]
-      ],
-      "active": [
-       0,
-       1
-      ],
-      "pokemon": [
-       {
-        "species": "Gardevoir",
-        "set_species": "Gardevoir",
-        "mega": 0,
-        "switch_flag": 0,
-        "hp": 25,
-        "maxhp": 175,
-        "item": "",
-        "status": "",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": false,
-        "boosts": [
-         0,
-         0,
-         1,
-         1,
-         0,
-         0,
-         0
-        ],
-        "pp": [
-         11,
-         19,
-         12,
-         20
-        ],
-        "volatiles": [],
-        "locked": null
-       },
-       {
-        "species": "Gyarados",
-        "set_species": "Gyarados",
-        "mega": 0,
-        "switch_flag": 0,
-        "hp": 202,
-        "maxhp": 202,
-        "item": "",
-        "status": "",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": false,
-        "boosts": [
-         0,
-         0,
-         0,
-         0,
-         0,
-         0,
-         0
-        ],
-        "pp": [
-         20,
-         12,
-         16
-        ],
-        "volatiles": [],
-        "locked": null
-       },
-       {
-        "species": "Espeon",
-        "set_species": "Espeon",
-        "mega": 0,
-        "switch_flag": 0,
-        "hp": 0,
-        "maxhp": 172,
-        "item": "",
-        "status": "",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": true,
-        "boosts": [
-         0,
-         0,
-         0,
-         0,
-         0,
-         0,
-         0
-        ],
-        "pp": [
-         18,
-         12,
-         20
-        ],
-        "volatiles": [],
-        "locked": null
-       },
-       {
-        "species": "Gengar",
-        "set_species": "Gengar",
-        "mega": 0,
-        "switch_flag": 0,
-        "hp": 167,
-        "maxhp": 167,
-        "item": "",
-        "status": "",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": false,
-        "boosts": [
-         0,
-         0,
-         0,
-         0,
-         0,
-         0,
-         0
-        ],
-        "pp": [
-         16,
-         16,
-         8
-        ],
-        "volatiles": [],
-        "locked": null
-       }
-      ]
-     },
-     {
-      "request": "move",
-      "conditions": [
-       0,
-       0,
-       0
-      ],
-      "enabled": [
-       [
-        1,
-        1,
-        1,
-        1
-       ],
-       [
-        1,
-        1,
-        1
-       ]
-      ],
-      "active": [
-       0,
-       1
-      ],
-      "pokemon": [
-       {
-        "species": "Malamar",
-        "set_species": "Malamar",
-        "mega": 0,
-        "switch_flag": 0,
-        "hp": 193,
-        "maxhp": 193,
-        "item": "",
-        "status": "",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": false,
-        "boosts": [
-         1,
-         0,
-         0,
-         0,
-         0,
-         0,
-         0
-        ],
-        "pp": [
-         15,
-         15,
-         20,
-         20
-        ],
-        "volatiles": [],
-        "locked": null
-       },
-       {
-        "species": "Kingambit",
-        "set_species": "Kingambit",
-        "mega": 0,
-        "switch_flag": 0,
-        "hp": 207,
-        "maxhp": 207,
-        "item": "",
-        "status": "",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": false,
-        "boosts": [
-         -1,
          0,
          0,
          0,

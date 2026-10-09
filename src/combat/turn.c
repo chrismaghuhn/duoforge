@@ -8007,24 +8007,41 @@ static duoforge_status dfi_skill_swap_start(dfi_run *r, uint32_t flat)
     return DUOFORGE_OK;
 }
 
+uint32_t dfi_skill_swap_decision(struct duoforge_battle *b, uint32_t user, uint32_t target)
+{
+    const dfi_member *um = dfi_at(b, user);
+    const dfi_member *tm = dfi_at(b, target);
+    if (um == NULL || tm == NULL) {
+        return DFI_SKILL_SWAP_INVALID;
+    }
+    if (um->hp == 0u || tm->hp == 0u || dfi_fails_skillswap(b, um) || dfi_fails_skillswap(b, tm)) {
+        return DFI_SKILL_SWAP_FAILS;
+    }
+    if (dfi_skill_swap_update_due(b, user, dfi_ability_code(b, tm)) ||
+        dfi_skill_swap_update_due(b, target, dfi_ability_code(b, um))) {
+        return DFI_SKILL_SWAP_REFUSED;
+    }
+    return DFI_SKILL_SWAP_PROCEED;
+}
+
 static duoforge_status dfi_skill_swap(dfi_run *r, uint32_t user, uint32_t target, uint32_t move_id, bool *did)
 {
     struct duoforge_battle *b = r->b;
-    const dfi_member *um = dfi_at(b, user);
-    const dfi_member *tm = dfi_at(b, target);
     *did = false;
-    if (um == NULL || tm == NULL) {
+    /* The decision reads the state only: a refusal (an Update handler on a state the holder has) comes before anything changes. */
+    const uint32_t decision = dfi_skill_swap_decision(b, user, target);
+    if (decision == DFI_SKILL_SWAP_INVALID) {
         return DUOFORGE_E_INVARIANT;
     }
-    if (um->hp == 0u || tm->hp == 0u || dfi_fails_skillswap(b, um) || dfi_fails_skillswap(b, tm)) {
+    if (decision == DFI_SKILL_SWAP_FAILS) {
         dfi_fail_still(r, user); /* skillSwap returns false: the move's -fail and [still] */
         return DUOFORGE_OK;
     }
-    const uint32_t user_now = dfi_ability_code(b, um);   /* 1 + id */
-    const uint32_t target_now = dfi_ability_code(b, tm);
-    if (dfi_skill_swap_update_due(b, user, target_now) || dfi_skill_swap_update_due(b, target, user_now)) {
-        return DUOFORGE_E_UNSUPPORTED; /* a state an Update handler acts on: refused before anything changes */
+    if (decision == DFI_SKILL_SWAP_REFUSED) {
+        return DUOFORGE_E_UNSUPPORTED;
     }
+    const uint32_t user_now = dfi_ability_code(b, dfi_at(b, user));   /* 1 + id */
+    const uint32_t target_now = dfi_ability_code(b, dfi_at(b, target));
     /* -activate|user|Skill Swap|A|B|[of] target: the user now has the target's ability (A), the target the user's (B). */
     duoforge_event first = dfi_ev(DUOFORGE_EVENT_ABILITY, user, DUOFORGE_CAUSE_MOVE, move_id, target);
     first.id = (uint16_t)target_now;
