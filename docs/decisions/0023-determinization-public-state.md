@@ -144,6 +144,8 @@ The engine state decided these details. `include/duoforge/duoforge_view.h` docum
 - **A built world that fails the full check** is `E_MALFORMED`, as the strict decoder reports it.
 - **The proof (`tests/test_view.c`):** 80 random games each under CLOSURE, TEAM_C and POOL (Teams A, B and C), about 8,500 views. Each view is a byte-equal round trip; 4 random hypotheses per view give back the same public state and the same observation and extension; hidden sleep, confusion and charging targets all occur.
 
+- **A revived foe member (G52, decision 0025; not implemented, open).** A foe's Revival Blessing revive sets its HP to half its maximum, and the owner's knowledge shows a percentage like any heal. The record keeps no revive history and no marker, so the refusal "a public record that holds a foe REVIVE is E_UNSUPPORTED" cannot be decided from the public state without a new public marker (a layout change of the public record). Until HauptSession and the owner decide that marker, a world built from such a record uses the uniform draw over the public percentage, which is consistent with the public facts but not the revived value.
+
 ## 5. PR B: batches and PIVOT queues
 
 The batch calls use the existing worker hooks, allocate no storage, report per-environment statuses and preserve each refused output/environment. Invalid batch arguments are checked before any worker runs.
