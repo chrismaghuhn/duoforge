@@ -319,11 +319,49 @@ typedef struct dfi_tail_side {
     uint8_t hazard_order;                      /* tail rev 4: the creation order of the hazards that are up, 2 bits per slot (see above) */
 } dfi_tail_side;
 
+/* party_order (step G46, decision 0015 section 7): the side.pokemon order of the pin, per side, as the permutation of the
+ * brought members. Entry k (k = 0..5, the Showdown index in side.pokemon: the two actives, then the bench) holds roster index
+ * + 1 in 3 bits, 0 = empty; the entries are packed little-endian into 3 bytes per side (entry k at bits 3k..3k+2 of the
+ * 24-bit value; bits 18-23 are unused and zero). Entries 0..n-1 are the n brought members, n = popcount(brought_mask), and
+ * the rest are 0: so the zeroed block is valid before the picks. It is written at team selection (pick order: the leads
+ * first) and every switch-in swaps the incoming member's entry with the outgoing one's (sim/battle-actions.ts:120-133),
+ * so a drag's draw (getRandomSwitchable: the bench in this order) and Ally Switch read it. Illusion reads it later. */
+#define DFI_PARTY_BYTES_PER_SIDE 3u
+#define DFI_PARTY_ENTRY_BITS 3u
+#define DFI_PARTY_ENTRY_MASK 7u
+#define DFI_PARTY_USED_BITS (DUOFORGE_MAX_ROSTER * DFI_PARTY_ENTRY_BITS)
+/* A public view hides the foe's bench entries (positions 2 and up): the value 7 is no roster index + 1 (the roster is 6), so
+ * it is never a state's entry and a from-view world replaces it with the hypothesis's order (view.c). */
+#define DFI_PARTY_HIDDEN 7u
+_Static_assert(DUOFORGE_MAX_ROSTER < DFI_PARTY_HIDDEN, "the hidden party entry is no roster index + 1");
+
 typedef struct dfi_pool_tail {
     dfi_tail_side sides[DUOFORGE_SIDE_COUNT];
     uint8_t gravity_turns;
-    uint8_t field_pad; /* always zero: keeps the struct without padding (the encoded field block reserves 7 bytes) */
+    uint8_t party_order[DUOFORGE_SIDE_COUNT][DFI_PARTY_BYTES_PER_SIDE]; /* step G46, see above */
+    uint8_t field_pad; /* always zero: the reserved byte +7 of the encoded field block */
 } dfi_pool_tail;
+
+/* The packed value of one side's party order, and one entry of it (roster index + 1, 0 = empty). */
+static inline uint32_t dfi_party_word(const dfi_pool_tail *t, uint32_t side)
+{
+    return (uint32_t)t->party_order[side][0] | (uint32_t)t->party_order[side][1] << 8 | (uint32_t)t->party_order[side][2] << 16;
+}
+
+static inline uint32_t dfi_party_entry(const dfi_pool_tail *t, uint32_t side, uint32_t k)
+{
+    return dfi_party_word(t, side) >> (k * DFI_PARTY_ENTRY_BITS) & DFI_PARTY_ENTRY_MASK;
+}
+
+static inline void dfi_party_put(dfi_pool_tail *t, uint32_t side, uint32_t k, uint32_t value)
+{
+    uint32_t w = dfi_party_word(t, side);
+    w &= ~(DFI_PARTY_ENTRY_MASK << (k * DFI_PARTY_ENTRY_BITS));
+    w |= (value & DFI_PARTY_ENTRY_MASK) << (k * DFI_PARTY_ENTRY_BITS);
+    t->party_order[side][0] = (uint8_t)(w & 0xFFu); /* wide-operands-reviewed: masked to 8 bits */
+    t->party_order[side][1] = (uint8_t)(w >> 8 & 0xFFu); /* wide-operands-reviewed: masked to 8 bits */
+    t->party_order[side][2] = (uint8_t)(w >> 16 & 0xFFu); /* wide-operands-reviewed: masked to 8 bits */
+}
 
 struct duoforge_battle {
     uint8_t context_fingerprint[DUOFORGE_DIGEST_SIZE];

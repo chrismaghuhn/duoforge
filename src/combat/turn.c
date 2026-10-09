@@ -5533,6 +5533,30 @@ static void dfi_cancel_actions(struct duoforge_battle *b, uint32_t activation_id
     b->queue_len = (uint8_t)n; /* <= len */
 }
 
+/* party_order (step G46, sim/battle-actions.ts:119-133): the incoming member takes the outgoing one's entry of side.pokemon and
+ * the outgoing one takes the incoming's old entry, a fainted outgoing too. A slot with no occupant changes nothing (the pin's
+ * `if (oldActive)`: only the start, where the leads come in through team selection). POOL kinds only: the tail is zero
+ * under the other kinds. */
+static void dfi_party_switch(dfi_run *r, uint32_t side, uint32_t slot, uint32_t incoming)
+{
+    struct duoforge_battle *b = r->b;
+    if (!dfi_kind_limits_of(r->ctx->data_kind).pool_rules || b->sides[side].positions[slot].occupant == DFI_OCCUPANT_NONE) {
+        return;
+    }
+    uint32_t j = DUOFORGE_MAX_ROSTER;
+    for (uint32_t k = 0u; k < DUOFORGE_MAX_ROSTER; ++k) {
+        if (dfi_party_entry(&b->tail, side, k) == incoming + 1u) {
+            j = k;
+        }
+    }
+    if (j >= DUOFORGE_MAX_ROSTER) {
+        return; /* a brought member is always in the order (invariant TAIL_PARTY); nothing to do otherwise */
+    }
+    const uint32_t outgoing = dfi_party_entry(&b->tail, side, slot);
+    dfi_party_put(&b->tail, side, slot, incoming + 1u);
+    dfi_party_put(&b->tail, side, j, outgoing);
+}
+
 /* switchIn (sim/battle-actions.ts:57-149): the Pokemon in the slot leaves
  * (its position is cleared; a fainted one simply makes room), the reserve
  * comes in with a fresh activation and is seen by the opponent, and its
@@ -5589,6 +5613,7 @@ static duoforge_status dfi_run_switch(dfi_run *r, const dfi_queue_record *q)
          * standing loses its queued actions. */
         dfi_cancel_actions(b, sd->positions[slot].activation_id);
     }
+    dfi_party_switch(r, side, slot, reserve); /* step G46: side.pokemon order, sim/battle-actions.ts:119-133 */
     if (sd->positions[slot].occupant != DFI_OCCUPANT_NONE) {
         const duoforge_status vs = dfi_vacate(b, where);
         if (vs != DUOFORGE_OK) {
