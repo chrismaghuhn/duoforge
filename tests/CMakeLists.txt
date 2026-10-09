@@ -210,6 +210,9 @@ duoforge_add_test(NAME duoforge.state.pool_g38 SOURCES test_pool_g38.c WHITEBOX 
 duoforge_add_test(NAME duoforge.state.pool_mega2 SOURCES test_pool_mega2.c WHITEBOX TIMEOUT 60)
 # Step G39: thirteen abilities and four moves: the marks, the rows, what keeps Damp and Sturdy inert, Hyper Cutter against Flower Veil.
 duoforge_add_test(NAME duoforge.state.pool_g39 SOURCES test_pool_g39.c WHITEBOX TIMEOUT 60)
+# Step G45: six abilities of the simple kind (Steadfast, Moxie, Weak Armor, Telepathy, Volt Absorb, Punk Rock): the marks,
+# the handler column, and the state after the recorded g45_* battles that show each rule.
+duoforge_add_test(NAME duoforge.state.pool_g45 SOURCES test_pool_g45.c WHITEBOX TIMEOUT 60)
 # Step G20, Spiky Shield: the protect_kind of the position (POOL tail rev 3), the state round trip, the volatile.
 duoforge_add_test(NAME duoforge.state.pool_g20_protect SOURCES test_pool_g20_protect.c WHITEBOX TIMEOUT 60)
 # Step G31: Taunt and Yawn in the tail's taunt_turns and yawn_turns, the request, the cant line, the residual and the POOL view
@@ -230,7 +233,7 @@ foreach(_gen IN ITEMS
         "extended_tables.h=b2abef243fcbfdd87654940076b9fe2fe80b117d74893a7567741f26b9075a7d"
         "extended_tables.c=9e736fa467713283418c4edf8f56b8d844452e596ba422adbd52483d20f7cc17"
         "pool_tables.h=debe1fce378c7deb09a05a0593a21b4241506eed8801433d9fde2c1a7ccb0a02"
-        "pool_tables.c=c3b99d1a5be13f3cc24ce87c1768df626d4f80fa5dbbc3561d13665616c0e402")
+        "pool_tables.c=13e0199433a82aa457d19372048c75ad7a23cbe89fc27f125d5afa0f834e4f9e")
     string(REPLACE "=" ";" _parts "${_gen}")
     list(GET _parts 0 _file)
     list(GET _parts 1 _expected)

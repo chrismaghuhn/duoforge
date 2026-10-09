@@ -1679,6 +1679,29 @@ G41_ABILITY_FACTS = (
                    "pokemon.maybeTrapped = true; } },",
                    'flags: {},')),
 )
+# Step G45 (six abilities of the simple kind): Steadfast, Moxie, Weak Armor, Telepathy, Volt Absorb and Punk Rock
+# are engine rows (ENGINE_ROWS) that the turn code reads by id; the pinned callbacks they hard-code are checked here, whole,
+# whitespace aside. The Champions mod overrides none of them (check_g34_facts). Mold Breaker, Teravolt and Turboblaze are not
+# marked, and Mycelium Might is not in the pool, so no marked ability ignores the `breakable` flag of Telepathy, Volt Absorb or
+# Punk Rock (tests/test_pool_g45.c pins the refusals).
+G45_ABILITY_FACTS = (
+    ('steadfast', ("onFlinch(pokemon) { this.boost({ spe: 1 }); },", 'flags: {},')),
+    ('weakarmor', ("onDamagingHit(damage, target, source, move) { if (move.category === 'Physical') { "
+                   "this.boost({ def: -1, spe: 2 }, target, target); } },", 'flags: {},')),
+    ('telepathy', ("onTryHit(target, source, move) { if (target !== source && target.isAlly(source) && move.category !== 'Status') { "
+                   "this.add('-activate', target, 'ability: Telepathy'); return null; } },", 'flags: { breakable: 1 },')),
+    ('voltabsorb', ("onTryHit(target, source, move) { if (target !== source && move.type === 'Electric') { "
+                    "if (!this.heal(target.baseMaxhp / 4)) { this.add('-immune', target, '[from] ability: Volt Absorb'); } return null; } },",
+                    'flags: { breakable: 1 },')),
+    ('punkrock', ('onBasePowerPriority: 7,',
+                  "onBasePower(basePower, attacker, defender, move) { if (move.flags['sound']) { this.debug('Punk Rock boost'); "
+                  "return this.chainModify([5325, 4096]); } },",
+                  "onSourceModifyDamage(damage, source, target, move) { if (move.flags['sound']) { this.debug('Punk Rock weaken'); "
+                  "return this.chainModify(0.5); } },",
+                  'flags: { breakable: 1 },')),
+    ('moxie', ("onSourceAfterFaint(length, target, source, effect) { if (effect && effect.effectType === 'Move') { "
+                   "this.boost({ atk: length }, source); } },", 'flags: {},')),
+)
 G34_ITEM_FACTS = (
     ('widelens', ('onSourceModifyAccuracyPriority: -2,',
                   "onSourceModifyAccuracy(accuracy) { if (typeof accuracy === 'number') { return this.chainModify([4505, 4096]); } },")),
@@ -2181,7 +2204,8 @@ ENGINE_ROWS = {'items': ['focussash', 'floettite', 'psychicseed', 'electricseed'
                              'justified',
                              'limber',
                              'solarpower',
-                             'regenerator', 'toxicdebris', 'shadowtag']}
+                             'regenerator', 'toxicdebris', 'shadowtag',
+                             'steadfast', 'weakarmor', 'telepathy', 'voltabsorb', 'punkrock', 'moxie']}
 # The moves of the whole pool that the turn code pivots with a switch flag of their own (dfi_pivot_moves,
 # src/state/closure_member.c) beyond Flip Turn and U-turn, which are rows of the steps. Empty: Volt Switch comes with the
 # step that gives it a flag value, and adds its id here.
@@ -2812,7 +2836,7 @@ def check_g28_items(items_ts, only=None):
 def check_g34_facts(abil_ts, champ_abil, items_ts, champ_items):
     """Steps G34, G35, Mega batch 2 and G39: every fact of G34_ABILITY_FACTS, G35_ABILITY_FACTS, MEGA2_ABILITY_FACTS, G39_ABILITY_FACTS and G34_ITEM_FACTS is in the pinned entry, whitespace aside, and the
     Champions mod has no entry of its own for it (an override would change what the engine reads)."""
-    for kind, facts_by_id, src, champ in (('ability', G34_ABILITY_FACTS + G35_ABILITY_FACTS + MEGA2_ABILITY_FACTS + G39_ABILITY_FACTS + G41_ABILITY_FACTS, abil_ts, champ_abil),
+    for kind, facts_by_id, src, champ in (('ability', G34_ABILITY_FACTS + G35_ABILITY_FACTS + MEGA2_ABILITY_FACTS + G39_ABILITY_FACTS + G41_ABILITY_FACTS + G45_ABILITY_FACTS, abil_ts, champ_abil),
                                           ('item', G34_ITEM_FACTS, items_ts, champ_items)):
         for rid, facts in facts_by_id:
             e = src.entry(rid)
