@@ -90,6 +90,8 @@ Each item has its test in the owning task: 1 in Task 3, 2 and 3 in Task 2, 4 in 
 | `python/tests/test_learn_v2.py` (modify) | Task 1 test |
 | `python/tests/test_distill.py` (new; registered) | Tasks 2–5 |
 | `python/tests/test_ledger.py` (new; registered) | Tasks 6–7 |
+| `python/duoforge_learn/collect_expert.py` (new) | the teacher-data collector: lockstep games, raw draw, admission, shards (Task 8) |
+| `python/tests/test_collect_expert.py` (new; registered) | Task 8 |
 
 ---
 
@@ -357,6 +359,69 @@ Each item has its test in the owning task: 1 in Task 3, 2 and 3 in Task 2, 4 in 
 3. **Run.** `--stop-cpu-core-seconds = pilot_cpu − calibration_cpu`, `--stop-gpu-seconds = pilot_gpu − calibration_gpu`.
 4. **Check.** Run M12's `validate_compute` on both ledgers. If either axis misses 5 %, the control is **incomplete**: back to the owner, never extended or cut.
 
+### Task 8: the teacher-data collector (added 2026-10-09)
+
+The [P1 plan](2026-10-08-stage3-p1-pilot.md) gives the collection loop to Learner v2 and the teacher to M12. This task was missing from the first version of this plan. The boundary was agreed with M12 on 2026-10-09.
+- **M12 C3 provides:**
+  - `label_decision(search, roots, *, env, seat, key, raw_action, raw_logp, config)`, for admitted roots only. It returns TARGET (action ~ tau, behavior_logp = log tau(action)) or PUBLIC_REFUSAL / WORK_EXHAUSTED (raw action and raw_logp).
+  - `raw_decision(status, raw_action, raw_logp, legal_count)`: a pure function for UNSELECTED, CAP_RAW and FORCED. No worlds, network or search.
+  - `teacher_row(decision | None, step: StepData, manifest) -> ExpertRow`, which calls `validate_row`. A waiting row is `None`, giving UNREQUESTED.
+  - `learner_seat(game_id)`.
+  - The teacher's history checkpoint.
+- **Learner v2 does everything else** in this task.
+
+**Files:** create `python/duoforge_learn/collect_expert.py`, `python/tests/test_collect_expert.py` (registered, learn/JAX).
+
+**Interfaces:**
+- Consumes:
+  - M12 C1: `expert_data` (keys, `selection_word`, `is_selected`, `admit_tick`/`commit_tick`, `write_shard`/`write_manifest`, `MAX_SHARD_ROWS`);
+  - M12 C3 (above);
+  - Task 1 `full_joint_log_probs`;
+  - Task 6 `Ledger`;
+  - `SelfPlay` / the batch runtime for the lockstep games.
+- Produces:
+  - `collect(manifest, model, params, opponents, out_dir, *, rounds, ledger=None, resume=False, stop=None) -> CollectResult(games, rows, targets, counters)`;
+  - CLI `python -m duoforge_learn.collect_expert` with the same refusals as Task 5 (output outside the repository, pinned params-49333, exit 2).
+
+**Per logical tick of the `parallel_games` lockstep games:**
+1. **Encode.** Encode every game's learner row, acting or waiting, with `logical_tick` = its step index in the game. The boundary (TURN, REPLACEMENT, PIVOT, TEAM_SELECTION) and the legal masks come from the native request; Python infers no rule.
+2. **Raw draw.** For each requested learner row, draw the student's raw action from its **full legal** distribution: `full_joint_log_probs`, or the team head on preview rows.
+   - The draw uses the keyed uniform of domain `raw` (`selection_word`) by inverse CDF over the ids in ascending order.
+   - It happens before any selection, and the row records `raw_logp`.
+3. **Eligibility and selection.** Eligible roots are TURN, REPLACEMENT and PIVOT with ≥2 legal actions. They are selected by `is_selected(key)`. Selected roots go as `AdmissionRequest`s into `admit_tick`, in logical order.
+4. **Decisions.**
+   - admitted → `label_decision`;
+   - capped → `raw_decision(CAP_RAW, ...)`;
+   - unselected → `raw_decision(UNSELECTED, ...)`;
+   - one legal action → `raw_decision(FORCED, ...)`;
+   - waiting → `None`.
+
+   Then `commit_tick` with the outcomes. No actor advances before the whole tick is committed.
+5. **Opponents.** The opponent seat plays the frozen self-play/league policy. Its rows are never stored.
+6. **Step.** Step the engine, then record `reward`, `done` and `collector_value` (params-49333's value of the learner row).
+   - A game cut at `max_steps` is truncated: its last row has `done = False`, and its `bootstrap` is the value after the last step.
+7. **Write.** Build the rows with `teacher_row(decision, step, manifest)`. Write a shard whenever `MAX_SHARD_ROWS` are pending. `write_manifest` runs once at the start.
+
+**Resume and determinism:**
+- The collection state (the label cursor, the round, shards written, counters, RNG keys, M12's teacher history) is saved at **round boundaries**.
+- An interrupted round is re-run from its start: its partial shards are deleted, and its keys make it identical. No engine snapshot is needed.
+- Nothing depends on worker count, arrival order or timing. Admission is ordered by logical id inside `admit_tick`.
+- The ledger phase is `generate`. The wall watchdog aborts an incomplete run and never chooses raw on time.
+
+- [ ] **Step 1: Write the failing tests** (a tiny configuration: a few games, stub search budgets, CPU):
+  - `test_collect_is_deterministic_and_round_trips`: two collections with one seed give byte-identical shard files. `distill_data.load` reads them, so ticks are contiguous, there is one seat per game and `done` only on the last row.
+  - `test_raw_draw_is_keyed_and_follows_the_full_policy`: over 20000 keys on a fixed 3-action row, the frequencies match `exp(logp)` within 4 binomial standard deviations. The draw does not depend on batch grouping.
+  - `test_resume_at_a_round_boundary_equals_uninterrupted`: a stop in round 2 followed by a resume gives byte-identical shards and the same label cursor.
+  - `test_admission_and_statuses`:
+    - a capped game stays raw for the rest of the collection;
+    - FORCED rows appear exactly at one legal action;
+    - waiting rows are UNREQUESTED;
+    - no TARGET exists without a stored target.
+- [ ] **Step 2: Run them.** `python -m unittest test_collect_expert -v`. Expected: **ERROR**, no module.
+- [ ] **Step 3: Implement `collect` and the CLI.**
+- [ ] **Step 4: Run them.** Expected: **OK**.
+- [ ] **Step 5: Commit.** Open the PR with review.
+
 ---
 
 ## What the owner decides with this plan
@@ -382,4 +447,5 @@ Each item has its test in the owning task: 1 in Task 3, 2 and 3 in Task 2, 4 in 
   - continuation with its own data and matched compute → Tasks 6–7;
   - privacy → Task 5 refusals, outputs outside the repo.
 - **C4 step 11** (normalization, illegal = `-inf`, zero-legal refused, gradient, the candidate-only counterexample) → Task 1.
+- **Collection loop** (the P1 plan gives it to Learner v2) → Task 8, added 2026-10-09 with the boundary agreed with M12.
 - **What this plan does not do:** P2+ (batching, routing, hindsight); M12's teacher, schema and evaluator.
