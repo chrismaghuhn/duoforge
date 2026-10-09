@@ -4,8 +4,10 @@ The teacher labels admitted learner roots with the honest search's mixed
 rule X over the K own candidates, the student's raw action always among
 them. Its foe model is its own frozen network; only C builds worlds.
 """
+import dataclasses
 from dataclasses import dataclass, field
 import hashlib
+import json
 import math
 from types import MappingProxyType
 from typing import Mapping
@@ -17,8 +19,10 @@ from duoforge import _layout
 
 from . import lookahead, matrix
 from .errors import SearchError
-from .expert_data import (DECISION_BOUNDARIES, KEY_VERSION, MASS_TOLERANCE, DecisionKey, ExpertRow, RowStatus,
-                          SparsePolicy, selection_word, validate_row)
+from .expert_data import (DECISION_BOUNDARIES, KEY_VERSION, MASS_TOLERANCE, DecisionKey, ExpertRow, LabelCursor,
+                          RowStatus, SparsePolicy, cursor_bytes, restore_cursor, selection_word, validate_manifest,
+                          validate_row)
+from .expert_data import _canonical, _object, _sha
 from .honest import Unreconstructible
 
 C = _layout.CONSTANTS
@@ -391,3 +395,101 @@ def _counts(work):
 def _plain_audit(audit):
     return {k: v for k, v in audit.items() if k != "work"}
 
+
+
+CHECKPOINT_VERSION = 1
+_CHECKPOINT_FIELDS = {"version", "manifest_sha256", "config", "key_version", "envs", "cursor", "histories",
+                      "content_sha256"}
+_HISTORY_FIELDS = {"env", "seat", "episode", "observed", "preview", "turn_start"}
+
+
+def decision_bytes(decision) -> bytes:
+    """Canonical bytes of a TeacherDecision (action, likelihood, target,
+    status, cause, work, audit, digests) for determinism comparisons."""
+    if not isinstance(decision, TeacherDecision):
+        raise ValueError("decision_bytes needs a TeacherDecision")
+    return _canonical(decision)
+
+
+def _config(config):
+    return dataclasses.asdict(config)
+
+
+def teacher_checkpoint(search, roots, cursor, config, manifest) -> bytes:
+    """The teacher's resume state beside the label cursor: every recorded
+    public history (episode, team preview, turn start, observed request) of
+    roots, bound to the manifest, the teacher configuration and the key
+    version. The collector restores its battles; restore_teacher the rest."""
+    config.check(search)
+    validate_manifest(manifest)
+    if not isinstance(cursor, LabelCursor):
+        raise ValueError("teacher_checkpoint needs the label cursor")
+    histories = []
+    for (e, p), h in sorted(search.history.get(roots, {}).items()):
+        histories.append({"env": int(e), "seat": int(p), "episode": int(h["episode"]),
+                          "observed": h.get("observed"),
+                          "preview": h["preview"].tobytes().hex() if "preview" in h else None,
+                          "turn_start": h["turn_start"].tobytes().hex() if "turn_start" in h else None})
+    content = {"version": CHECKPOINT_VERSION, "manifest_sha256": _sha(manifest), "config": _config(config),
+               "key_version": KEY_VERSION, "envs": int(roots.envs),
+               "cursor": cursor_bytes(cursor, manifest).decode("ascii"), "histories": histories}
+    return _canonical({**content, "content_sha256": _sha(content)})
+
+
+def _record(value):
+    if value is None:
+        return None
+    if not isinstance(value, str):
+        raise ValueError("a checkpoint record must be hex text")
+    raw = bytes.fromhex(value)
+    if len(raw) != _layout.PUBLIC_STATE.itemsize:
+        raise ValueError("a checkpoint record does not have the public record size")
+    return np.frombuffer(raw, _layout.PUBLIC_STATE).reshape(()).copy()
+
+
+def restore_teacher(search, roots, data, config, manifest) -> LabelCursor:
+    """Restores teacher_checkpoint into a fresh search for the restored
+    roots and returns the label cursor (pending reservations kept). Any
+    mismatch of manifest, configuration, key version, environments or
+    episodes, and any partial or altered checkpoint, raises."""
+    config.check(search)
+    validate_manifest(manifest)
+    if search.history.get(roots):
+        raise ValueError("restore_teacher needs a fresh search without history for these roots")
+    try:
+        state = json.loads(data, object_pairs_hook=_object)
+    except (TypeError, ValueError) as err:
+        raise ValueError("the teacher checkpoint is not complete JSON") from err
+    if not isinstance(state, dict) or set(state) != _CHECKPOINT_FIELDS:
+        raise ValueError("invalid teacher checkpoint fields")
+    content = {k: v for k, v in state.items() if k != "content_sha256"}
+    if state["content_sha256"] != _sha(content):
+        raise ValueError("teacher checkpoint integrity mismatch")
+    if state["version"] != CHECKPOINT_VERSION or state["key_version"] != KEY_VERSION:
+        raise ValueError("unsupported teacher checkpoint or key version")
+    if state["manifest_sha256"] != _sha(manifest) or state["config"] != json.loads(_canonical(_config(config))):
+        raise ValueError("the teacher checkpoint belongs to another manifest or configuration")
+    if state["envs"] != roots.envs:
+        raise ValueError("the teacher checkpoint was taken on another number of environments")
+    cursor = restore_cursor(state["cursor"].encode("ascii"), manifest)
+    restored = {}
+    for h in state["histories"]:
+        if not isinstance(h, dict) or set(h) != _HISTORY_FIELDS:
+            raise ValueError("invalid teacher history fields")
+        e, p = h["env"], h["seat"]
+        if type(e) is not int or type(p) is not int or not 0 <= e < roots.envs or p not in (0, 1) or (e, p) in restored:
+            raise ValueError("invalid teacher history seat")
+        if h["episode"] != roots.episode(e):
+            raise ValueError("the restored roots are in another episode than the checkpoint")
+        if h["observed"] is not None and type(h["observed"]) is not int:
+            raise ValueError("invalid observed request epoch")
+        entry = {"episode": h["episode"]}
+        if h["observed"] is not None:
+            entry["observed"] = h["observed"]
+        for name in ("preview", "turn_start"):
+            record = _record(h[name])
+            if record is not None:
+                entry[name] = record
+        restored[(e, p)] = entry
+    search.history.setdefault(roots, {}).update(restored)
+    return cursor
