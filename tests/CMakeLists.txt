@@ -254,7 +254,7 @@ foreach(_gen IN ITEMS
         "extended_tables.h=b2abef243fcbfdd87654940076b9fe2fe80b117d74893a7567741f26b9075a7d"
         "extended_tables.c=9e736fa467713283418c4edf8f56b8d844452e596ba422adbd52483d20f7cc17"
         "pool_tables.h=faf5d15bfcc4d5c1649c019bdee038fe24d34f6432f56ace0b5395b7c35078a1"
-        "pool_tables.c=3d6fb30b635351a106d3f55ce9876c2d8b67e92c6ff4cf25cc63fdb8f041d949")
+        "pool_tables.c=15ce5d16050724842acc9c9c50cb5dce29a8fb0e590398f00394a43cec05b4e8")
     string(REPLACE "=" ";" _parts "${_gen}")
     list(GET _parts 0 _file)
     list(GET _parts 1 _expected)
@@ -762,3 +762,6 @@ duoforge_add_test(NAME duoforge.state.pool_g51 SOURCES test_pool_g51.c WHITEBOX 
 
 # Step G53 (decision 0030): Pressure and the foe's derived PP.
 duoforge_add_test(NAME duoforge.state.pool_g53 SOURCES test_pool_g53.c WHITEBOX TIMEOUT 60)
+
+# Step G63 (decision 0015 5bj): the simple Mega abilities Sand Force, Shell Armor, Filter and Stalwart, and their six stones.
+duoforge_add_test(NAME duoforge.state.pool_g63 SOURCES test_pool_g63.c WHITEBOX TIMEOUT 60)

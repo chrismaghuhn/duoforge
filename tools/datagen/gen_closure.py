@@ -2526,7 +2526,8 @@ ENGINE_ROWS = {'items': ['focussash', 'floettite', 'psychicseed', 'electricseed'
                              'limber',
                              'solarpower',
                              'regenerator', 'toxicdebris', 'shadowtag', 'suctioncups', 'guarddog',
-                             'steadfast', 'weakarmor', 'telepathy', 'voltabsorb', 'punkrock', 'moxie', 'synchronize', 'oblivious', 'keeneye', 'bigpecks', 'magicbounce', 'pressure']}
+                             'steadfast', 'weakarmor', 'telepathy', 'voltabsorb', 'punkrock', 'moxie', 'synchronize', 'oblivious', 'keeneye', 'bigpecks', 'magicbounce', 'pressure',
+                             'sandforce', 'shellarmor', 'filter', 'stalwart']}
 # The moves of the whole pool that the turn code pivots with a switch flag of their own (dfi_pivot_moves,
 # src/state/closure_member.c) beyond Flip Turn and U-turn, which are rows of the steps. Empty: Volt Switch comes with the
 # step that gives it a flag value, and adds its id here.
@@ -3214,6 +3215,29 @@ G57_ABILITY_FACTS = (
 )
 
 
+# Step G63 (simple Mega abilities): Sand Force, Shell Armor, Filter and Stalwart are engine rows (ENGINE_ROWS) that the turn code reads
+# by id. The pinned callbacks they hard-code are checked here, whole: Sand Force's BasePower (priority 21, Rock, Ground and Steel in
+# sandstorm, chainModify 5325/4096) and its sandstorm immunity (data/abilities.ts:3956-3973); Shell Armor's onCriticalHit false
+# (4222-4228); Filter's damage step, the same as Solid Rock's (1283-1294); Stalwart's tracksTarget (4503-4513). Sand Force, Shell
+# Armor and Filter are breakable (Mold Breaker is not marked); Stalwart is not. No entry is overridden by the Champions mod.
+G63_ABILITY_FACTS = (
+    ('sandforce', ('onBasePowerPriority: 21,',
+                   "onBasePower(basePower, attacker, defender, move) { if (this.field.isWeather('sandstorm')) { "
+                   "if (move.type === 'Rock' || move.type === 'Ground' || move.type === 'Steel') { "
+                   "this.debug('Sand Force boost'); return this.chainModify([5325, 4096]); } } },",
+                   "onImmunity(type, pokemon) { if (type === 'sandstorm') return false; },")),
+    ('shellarmor', ('onCriticalHit: false,', 'flags: { breakable: 1 },')),
+    ('filter', ("onSourceModifyDamage(damage, source, target, move) { if (target.getMoveHitData(move).typeMod > 0) { "
+                "this.debug('Filter neutralize'); return this.chainModify(0.75); } },",
+                'flags: { breakable: 1 },')),
+    ('stalwart', ('onModifyMovePriority: 1,',
+                  'onModifyMove(move) {',
+                  '// most of the implementation is in Battle#getTarget',
+                  "move.tracksTarget = move.target !== 'scripted';",
+                  '},')),
+)
+
+
 def check_g57_facts(abil_ts, champ_abil):
     """Step G57: the texts of Magic Bounce that the engine reproduces (G57_ABILITY_FACTS) are in the pinned entry, whitespace
     aside, and the Champions mod has no entry of its own for it."""
@@ -3232,7 +3256,7 @@ def check_g57_facts(abil_ts, champ_abil):
 def check_g34_facts(abil_ts, champ_abil, items_ts, champ_items):
     """Steps G34, G35, Mega batch 2 and G39: every fact of G34_ABILITY_FACTS, G35_ABILITY_FACTS, MEGA2_ABILITY_FACTS, G39_ABILITY_FACTS and G34_ITEM_FACTS is in the pinned entry, whitespace aside, and the
     Champions mod has no entry of its own for it (an override would change what the engine reads)."""
-    for kind, facts_by_id, src, champ in (('ability', G34_ABILITY_FACTS + G35_ABILITY_FACTS + MEGA2_ABILITY_FACTS + G39_ABILITY_FACTS + G41_ABILITY_FACTS + G45_ABILITY_FACTS + G46_ABILITY_FACTS + G47_ABILITY_FACTS + G51_ABILITY_FACTS + G53_ABILITY_FACTS, abil_ts, champ_abil),
+    for kind, facts_by_id, src, champ in (('ability', G34_ABILITY_FACTS + G35_ABILITY_FACTS + MEGA2_ABILITY_FACTS + G39_ABILITY_FACTS + G41_ABILITY_FACTS + G45_ABILITY_FACTS + G46_ABILITY_FACTS + G47_ABILITY_FACTS + G51_ABILITY_FACTS + G53_ABILITY_FACTS + G63_ABILITY_FACTS, abil_ts, champ_abil),
                                           ('item', G34_ITEM_FACTS + G46_ITEM_FACTS + G47_ITEM_FACTS, items_ts, champ_items)):
         for rid, facts in facts_by_id:
             e = src.entry(rid)

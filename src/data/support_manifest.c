@@ -576,6 +576,10 @@ const dfi_support_manifest dfi_support = {
             [DFI_ABILITY_KEENEYE] = 1u,   /* step G51: the base ability of Pidgeot (with Pidgeotite), an engine row */
             [DFI_ABILITY_BIGPECKS] = 1u,  /* step G51: the other base ability of Pidgeot, an engine row */
             [DFI_ABILITY_MAGICBOUNCE] = 1u, /* step G57: reflects the reflectable moves (decision 0015 5bg) */
+            [DFI_ABILITY_SANDFORCE] = 1u, /* step G63: Garchomp-Mega and Steelix-Mega (BasePower, the Sandstorm immunity) */
+            [DFI_ABILITY_SHELLARMOR] = 1u, /* step G63: Slowbro-Mega and Scolipede-Mega (no critical hit against the holder) */
+            [DFI_ABILITY_FILTER] = 1u, /* step G63: Aggron-Mega (Solid Rock's damage step, typeMod > 0) */
+            [DFI_ABILITY_STALWART] = 1u, /* step G63: Skarmory-Mega (its single-target moves are not redirected) */
         },
     .items =
         {
@@ -667,6 +671,17 @@ const dfi_support_manifest dfi_support = {
              * Prankster). Absolite Z is marked by G43; Clefablite stays unmarked (Clefable's abilities are unmarked). */
             [DFI_ITEM_ABSOLITE] = 1u,
             [DFI_ITEM_SABLENITE] = 1u,
+            /* Step G63 (simple Mega abilities, mark only for the stones): six Mega Stones whose Mega ability is marked (Sand Force,
+             * Shell Armor, Filter, Stalwart; the engine rows of G63) and whose base forme has a marked ability (Steelix's Sheer
+             * Force, Slowbro's Own Tempo, Scolipede's Poison Point and Aggron's Heavy Metal stay unmarked, so those sets are
+             * refused): Garchompite, Steelixite, Slowbronite, Scolipite, Aggronite and Skarmorite. Heracronite (Skill Link) is
+             * not marked: no modelled multi-hit move is in Heracross's learnset (decision 0015 5bj). */
+            [DFI_ITEM_GARCHOMPITE] = 1u,
+            [DFI_ITEM_STEELIXITE] = 1u,
+            [DFI_ITEM_SLOWBRONITE] = 1u,
+            [DFI_ITEM_SCOLIPITE] = 1u,
+            [DFI_ITEM_AGGRONITE] = 1u,
+            [DFI_ITEM_SKARMORITE] = 1u,
             [DFI_ITEM_BLACKBELT] = 1u,
             [DFI_ITEM_BLACKGLASSES] = 1u,
             [DFI_ITEM_CHARCOAL] = 1u,
