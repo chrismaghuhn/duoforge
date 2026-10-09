@@ -108,6 +108,13 @@ typedef struct duoforge_hypothesis {
  * sides (the owner's request does not show it either), so an honest world cannot rebuild it: the public record and
  * duoforge_battle_from_view refuse with this cause. */
 #define DUOFORGE_PUBLIC_CAUSE_SUBSTITUTE 8u
+/* RAISED_THIS_TURN (step G72b, decision 0015 5ce): a PIVOT boundary (a switch inside a turn, the step stops there) while an
+ * active Pokemon of either side has Alluring Voice among its known moves. The view does not carry stats_raised_this_turn
+ * (set by any positive boost of the turn, cleared in endTurn and on switch-out, sim/battle.ts:1678, sim/battle-actions.ts:123),
+ * so duoforge_battle_from_view and the public record cannot rebuild it mid-turn and refuse with this cause. A turn boundary
+ * is not affected (the bit is zero there, endTurn cleared it), and neither is a REPLACEMENT at the end of a turn: the bit is
+ * reset for the next turn anyway. */
+#define DUOFORGE_PUBLIC_CAUSE_RAISED_THIS_TURN 32u
 
 /* Argument errors touch no output. Otherwise statuses are per environment,
  * the return is the first failure, and each failing environment is atomic.
