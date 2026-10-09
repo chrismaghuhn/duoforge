@@ -281,6 +281,13 @@ def check(line, view):
             return _feature("ITEM_CHANGE")  # Trick's announcement before its -item lines (G29; Switcheroo prints none)
         if effect in _START:
             return _feature(_START[effect])
+        if effect.startswith("ability: "):
+            # the holder announcing its own current ability (Synchronize, Telepathy, ...): its effects come in their
+            # own lines (-status, -immune, a skipped hit), so this line changes no field; another holder's ability
+            # stays unknown (an ability change shows in its own -ability line)
+            ability = tables["ABILITY"].get(trace_to_c.key(effect[len("ability: "):]))
+            if ability is not None and ability + 1 == view.ability_now(args[0]):
+                return "fold"
         _unknown(kind, effect)
     if kind == "-singleturn":
         if effect in _FOLD_SINGLE_TURN:

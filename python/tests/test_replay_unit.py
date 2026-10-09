@@ -345,6 +345,17 @@ class LinesTest(unittest.TestCase):
         with self.assertRaises(lines.Stop):
             lines.check("|-fail|p1a: Dragonite|unboost|Power|[from] ability: Inner Focus|[of] p1a: Dragonite", view)
 
+    def test_activate_of_own_ability_folds(self):
+        # G45/G47: Synchronize, Telepathy and the like announce the holder's own ability; their effects come in
+        # their own lines (-status, the skipped hit), so the -activate line itself changes no field
+        view = _View({"p1: Umbreon": ("UMBREON", "LEFTOVERS", "SYNCHRONIZE"),
+                      "p2: Staraptor": ("STARAPTOR", "SITRUSBERRY", "INTIMIDATE")})
+        self.assertEqual(lines.check("|-activate|p1a: Umbreon|ability: Synchronize", view), "fold")
+        with self.assertRaises(lines.Stop):  # not the holder's current ability: unknown, as before
+            lines.check("|-activate|p2a: Staraptor|ability: Synchronize", view)
+        with self.assertRaises(lines.Stop):  # an ability the tables lack
+            lines.check("|-activate|p1a: Umbreon|ability: No Such Ability", view)
+
     def test_fold_and_room_lines(self):
         self.assertEqual(lines.check("|-enditem|p1a: Staraptor|Sitrus Berry|[eat]", self.view), "fold")
         self.assertEqual(lines.check("|-ability|p1a: Staraptor|Intimidate|boost", self.view), "fold")
