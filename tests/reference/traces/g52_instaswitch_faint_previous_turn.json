@@ -1,0 +1,7926 @@
+{
+ "harness": 14,
+ "pin": "b2cb775b0616115b775534eaeff50300e1fc81fc",
+ "spec": "g52_instaswitch_faint_previous_turn.json",
+ "format": "gen9championsvgc2026regmc",
+ "seed": "sodium,6fa2cee1bc7dda54e87849113ec70fc66f8744dc436afcd63e235c587460ba7c",
+ "start": {
+  "log": [
+   "|gametype|doubles",
+   "|player|p1|p1||",
+   "|player|p2|p2||",
+   "|gen|9",
+   "|tier|[Gen 9 Champions] VGC 2026 Reg M-C",
+   "|rule|Species Clause: Limit one of each Pokémon",
+   "|rule|Item Clause: Limit 1 of each item",
+   "|clearpoke",
+   "|poke|p1|Ceruledge, L50, M|",
+   "|poke|p1|Gholdengo, L50|",
+   "|poke|p1|Kingambit, L50, M|",
+   "|poke|p1|Pawmot, L50, M|",
+   "|poke|p1|Primarina, L50, F|",
+   "|poke|p1|Milotic, L50, F|",
+   "|poke|p2|Ceruledge, L50, M|",
+   "|poke|p2|Milotic, L50, F|",
+   "|poke|p2|Kingambit, L50, M|",
+   "|poke|p2|Primarina, L50, F|",
+   "|poke|p2|Gholdengo, L50|",
+   "|poke|p2|Pawmot, L50, M|",
+   "|teampreview|4",
+   "|split|p1",
+   "|uhtml|otsrequest|<button name=\"send\" value=\"/acceptopenteamsheets\" class=\"button\" style=\"margin-right: 10px;\"><strong>Accept Open Team Sheets</strong></button><button name=\"send\" value=\"/rejectopenteamsheets\" class=\"button\" style=\"margin-top: 10px\"><strong>Deny Open Team Sheets</strong></button>",
+   "",
+   "|split|p2",
+   "|uhtml|otsrequest|<button name=\"send\" value=\"/acceptopenteamsheets\" class=\"button\" style=\"margin-right: 10px;\"><strong>Accept Open Team Sheets</strong></button><button name=\"send\" value=\"/rejectopenteamsheets\" class=\"button\" style=\"margin-top: 10px\"><strong>Deny Open Team Sheets</strong></button>",
+   ""
+  ],
+  "state": {
+   "turn": 0,
+   "ended": false,
+   "winner": "",
+   "weather": "",
+   "weather_turns": 0,
+   "terrain": "",
+   "terrain_turns": 0,
+   "trick_room": 0,
+   "sides": [
+    {
+     "request": "teampreview",
+     "conditions": [
+      0,
+      0,
+      0
+     ],
+     "enabled": [],
+     "active": [
+      -1,
+      -1
+     ],
+     "pokemon": [
+      {
+       "species": "Ceruledge",
+       "set_species": "Ceruledge",
+       "mega": 0,
+       "switch_flag": 0,
+       "hp": 181,
+       "maxhp": 181,
+       "item": "charcoal",
+       "status": "",
+       "status_time": 0,
+       "confusion": 0,
+       "fainted": false,
+       "boosts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "pp": [
+        8
+       ],
+       "volatiles": [],
+       "locked": null
+      },
+      {
+       "species": "Gholdengo",
+       "set_species": "Gholdengo",
+       "mega": 0,
+       "switch_flag": 0,
+       "hp": 194,
+       "maxhp": 194,
+       "item": "lifeorb",
+       "status": "",
+       "status_time": 0,
+       "confusion": 0,
+       "fainted": false,
+       "boosts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "pp": [
+        8,
+        16,
+        8
+       ],
+       "volatiles": [],
+       "locked": null
+      },
+      {
+       "species": "Kingambit",
+       "set_species": "Kingambit",
+       "mega": 0,
+       "switch_flag": 0,
+       "hp": 207,
+       "maxhp": 207,
+       "item": "blackglasses",
+       "status": "",
+       "status_time": 0,
+       "confusion": 0,
+       "fainted": false,
+       "boosts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "pp": [
+        8,
+        16,
+        8,
+        20
+       ],
+       "volatiles": [],
+       "locked": null
+      },
+      {
+       "species": "Pawmot",
+       "set_species": "Pawmot",
+       "mega": 0,
+       "switch_flag": 0,
+       "hp": 177,
+       "maxhp": 177,
+       "item": "leftovers",
+       "status": "",
+       "status_time": 0,
+       "confusion": 0,
+       "fainted": false,
+       "boosts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "pp": [
+        16,
+        1,
+        16,
+        8
+       ],
+       "volatiles": [],
+       "locked": null
+      },
+      {
+       "species": "Primarina",
+       "set_species": "Primarina",
+       "mega": 0,
+       "switch_flag": 0,
+       "hp": 187,
+       "maxhp": 187,
+       "item": "fairyfeather",
+       "status": "",
+       "status_time": 0,
+       "confusion": 0,
+       "fainted": false,
+       "boosts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "pp": [
+        8,
+        16,
+        20
+       ],
+       "volatiles": [],
+       "locked": null
+      },
+      {
+       "species": "Milotic",
+       "set_species": "Milotic",
+       "mega": 0,
+       "switch_flag": 0,
+       "hp": 202,
+       "maxhp": 202,
+       "item": "rockyhelmet",
+       "status": "",
+       "status_time": 0,
+       "confusion": 0,
+       "fainted": false,
+       "boosts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "pp": [
+        8,
+        16,
+        8,
+        20
+       ],
+       "volatiles": [],
+       "locked": null
+      }
+     ]
+    },
+    {
+     "request": "teampreview",
+     "conditions": [
+      0,
+      0,
+      0
+     ],
+     "enabled": [],
+     "active": [
+      -1,
+      -1
+     ],
+     "pokemon": [
+      {
+       "species": "Ceruledge",
+       "set_species": "Ceruledge",
+       "mega": 0,
+       "switch_flag": 0,
+       "hp": 181,
+       "maxhp": 181,
+       "item": "charcoal",
+       "status": "",
+       "status_time": 0,
+       "confusion": 0,
+       "fainted": false,
+       "boosts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "pp": [
+        8
+       ],
+       "volatiles": [],
+       "locked": null
+      },
+      {
+       "species": "Milotic",
+       "set_species": "Milotic",
+       "mega": 0,
+       "switch_flag": 0,
+       "hp": 202,
+       "maxhp": 202,
+       "item": "rockyhelmet",
+       "status": "",
+       "status_time": 0,
+       "confusion": 0,
+       "fainted": false,
+       "boosts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "pp": [
+        8,
+        16,
+        8,
+        20
+       ],
+       "volatiles": [],
+       "locked": null
+      },
+      {
+       "species": "Kingambit",
+       "set_species": "Kingambit",
+       "mega": 0,
+       "switch_flag": 0,
+       "hp": 207,
+       "maxhp": 207,
+       "item": "blackglasses",
+       "status": "",
+       "status_time": 0,
+       "confusion": 0,
+       "fainted": false,
+       "boosts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "pp": [
+        8,
+        16,
+        8,
+        20
+       ],
+       "volatiles": [],
+       "locked": null
+      },
+      {
+       "species": "Primarina",
+       "set_species": "Primarina",
+       "mega": 0,
+       "switch_flag": 0,
+       "hp": 187,
+       "maxhp": 187,
+       "item": "fairyfeather",
+       "status": "",
+       "status_time": 0,
+       "confusion": 0,
+       "fainted": false,
+       "boosts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "pp": [
+        8,
+        16,
+        20
+       ],
+       "volatiles": [],
+       "locked": null
+      },
+      {
+       "species": "Gholdengo",
+       "set_species": "Gholdengo",
+       "mega": 0,
+       "switch_flag": 0,
+       "hp": 194,
+       "maxhp": 194,
+       "item": "lifeorb",
+       "status": "",
+       "status_time": 0,
+       "confusion": 0,
+       "fainted": false,
+       "boosts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "pp": [
+        8,
+        16,
+        8
+       ],
+       "volatiles": [],
+       "locked": null
+      },
+      {
+       "species": "Pawmot",
+       "set_species": "Pawmot",
+       "mega": 0,
+       "switch_flag": 0,
+       "hp": 177,
+       "maxhp": 177,
+       "item": "leftovers",
+       "status": "",
+       "status_time": 0,
+       "confusion": 0,
+       "fainted": false,
+       "boosts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "pp": [
+        16,
+        1,
+        16,
+        8
+       ],
+       "volatiles": [],
+       "locked": null
+      }
+     ]
+    }
+   ]
+  }
+ },
+ "steps": [
+  {
+   "input": {
+    "p1": "team 5634",
+    "p2": "team 2436"
+   },
+   "draws": [
+    {
+     "site": "TEAM_ORDER",
+     "context": "queue",
+     "lo": 4,
+     "hi": 6,
+     "value": 4,
+     "group": [
+      "A:team:p1c:",
+      "A:team:p2c:"
+     ],
+     "start": 4
+    },
+    {
+     "site": "TEAM_ORDER",
+     "context": "queue",
+     "lo": 6,
+     "hi": 8,
+     "value": 7,
+     "group": [
+      "A:team:p1undefined:",
+      "A:team:p2undefined:"
+     ],
+     "start": 6
+    },
+    {
+     "site": "INSERT_TIE",
+     "context": "queue",
+     "lo": 0,
+     "hi": 2,
+     "value": 0,
+     "group": [
+      "A:runSwitch:p1b::0",
+      "A:runSwitch:p1a::0"
+     ]
+    },
+    {
+     "site": "INSERT_TIE",
+     "context": "queue",
+     "lo": 2,
+     "hi": 4,
+     "value": 3,
+     "group": [
+      "A:runSwitch:p2a::0",
+      "A:runSwitch:p1b::0",
+      "A:runSwitch:p1a::0"
+     ]
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "switch-order",
+     "lo": 0,
+     "hi": 2,
+     "value": 1,
+     "group": [
+      "P:p1b:0:S",
+      "P:p2a:0:S"
+     ],
+     "start": 0
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "switch-order",
+     "lo": 2,
+     "hi": 4,
+     "value": 2,
+     "group": [
+      "P:p1a:0:S",
+      "P:p2b:0:S"
+     ],
+     "start": 2
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 0,
+     "hi": 2,
+     "value": 1,
+     "group": [
+      "P:p1b:0:",
+      "P:p2a:0:"
+     ],
+     "start": 0
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 2,
+     "hi": 4,
+     "value": 3,
+     "group": [
+      "P:p1a:0:",
+      "P:p2b:0:"
+     ],
+     "start": 2
+    }
+   ],
+   "log": [
+    "|teamsize|p1|4",
+    "|teamsize|p2|4",
+    "|start",
+    "|split|p1",
+    "|uhtmlchange|otsrequest|",
+    "",
+    "|split|p2",
+    "|uhtmlchange|otsrequest|",
+    "",
+    "|split|p1",
+    "|switch|p1a: Primarina|Primarina, L50, F|187/187",
+    "|switch|p1a: Primarina|Primarina, L50, F|100/100",
+    "|split|p1",
+    "|switch|p1b: Milotic|Milotic, L50, F|202/202",
+    "|switch|p1b: Milotic|Milotic, L50, F|100/100",
+    "|split|p2",
+    "|switch|p2a: Milotic|Milotic, L50, F|202/202",
+    "|switch|p2a: Milotic|Milotic, L50, F|100/100",
+    "|split|p2",
+    "|switch|p2b: Primarina|Primarina, L50, F|187/187",
+    "|switch|p2b: Primarina|Primarina, L50, F|100/100",
+    "|turn|1"
+   ],
+   "state": {
+    "turn": 1,
+    "ended": false,
+    "winner": "",
+    "weather": "",
+    "weather_turns": 0,
+    "terrain": "",
+    "terrain_turns": 0,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Primarina",
+        "set_species": "Primarina",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 187,
+        "maxhp": 187,
+        "item": "fairyfeather",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         16,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 202,
+        "maxhp": 202,
+        "item": "rockyhelmet",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         16,
+         8,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Kingambit",
+        "set_species": "Kingambit",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 207,
+        "maxhp": 207,
+        "item": "blackglasses",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         16,
+         8,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Pawmot",
+        "set_species": "Pawmot",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 177,
+        "maxhp": 177,
+        "item": "leftovers",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         16,
+         1,
+         16,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 202,
+        "maxhp": 202,
+        "item": "rockyhelmet",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         16,
+         8,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Primarina",
+        "set_species": "Primarina",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 187,
+        "maxhp": 187,
+        "item": "fairyfeather",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         16,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Kingambit",
+        "set_species": "Kingambit",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 207,
+        "maxhp": 207,
+        "item": "blackglasses",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         16,
+         8,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Pawmot",
+        "set_species": "Pawmot",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 177,
+        "maxhp": 177,
+        "item": "leftovers",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         16,
+         1,
+         16,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": {
+    "p1": "move 3, move 1",
+    "p2": "move 3, move 3"
+   },
+   "draws": [
+    {
+     "site": "SPEED_TIE",
+     "context": "queue",
+     "lo": 2,
+     "hi": 4,
+     "value": 3,
+     "group": [
+      "A:move:p1a:calmmind",
+      "A:move:p2b:calmmind"
+     ],
+     "start": 2
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:BeforeTurn",
+     "lo": 0,
+     "hi": 2,
+     "value": 1,
+     "group": [
+      "P:p1b:0:",
+      "P:p2a:0:"
+     ],
+     "start": 0
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:BeforeTurn",
+     "lo": 2,
+     "hi": 4,
+     "value": 3,
+     "group": [
+      "P:p1a:0:",
+      "P:p2b:0:"
+     ],
+     "start": 2
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 0,
+     "hi": 2,
+     "value": 0,
+     "group": [
+      "P:p1b:0:",
+      "P:p2a:0:"
+     ],
+     "start": 0
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 2,
+     "hi": 4,
+     "value": 2,
+     "group": [
+      "P:p1a:0:",
+      "P:p2b:0:"
+     ],
+     "start": 2
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "queue",
+     "lo": 2,
+     "hi": 4,
+     "value": 3,
+     "group": [
+      "A:move:p2b:calmmind",
+      "A:move:p1a:calmmind"
+     ],
+     "start": 2
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 0,
+     "hi": 2,
+     "value": 1,
+     "group": [
+      "P:p1b:0:",
+      "P:p2a:0:"
+     ],
+     "start": 0
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 2,
+     "hi": 4,
+     "value": 2,
+     "group": [
+      "P:p1a:0:",
+      "P:p2b:0:"
+     ],
+     "start": 2
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 0,
+     "hi": 2,
+     "value": 0,
+     "group": [
+      "P:p1b:0:",
+      "P:p2a:0:"
+     ],
+     "start": 0
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 2,
+     "hi": 4,
+     "value": 2,
+     "group": [
+      "P:p1a:0:",
+      "P:p2b:0:"
+     ],
+     "start": 2
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 0,
+     "hi": 2,
+     "value": 1,
+     "group": [
+      "P:p1b:0:",
+      "P:p2a:0:"
+     ],
+     "start": 0
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 2,
+     "hi": 4,
+     "value": 2,
+     "group": [
+      "P:p1a:0:",
+      "P:p2b:0:"
+     ],
+     "start": 2
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "queue",
+     "lo": 1,
+     "hi": 3,
+     "value": 1,
+     "group": [
+      "A:move:p1a:calmmind",
+      "A:move:p2b:calmmind"
+     ],
+     "start": 1
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 0,
+     "hi": 2,
+     "value": 1,
+     "group": [
+      "P:p1b:0:",
+      "P:p2a:0:"
+     ],
+     "start": 0
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 2,
+     "hi": 4,
+     "value": 3,
+     "group": [
+      "P:p1a:0:",
+      "P:p2b:0:"
+     ],
+     "start": 2
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "queue",
+     "lo": 0,
+     "hi": 2,
+     "value": 1,
+     "group": [
+      "A:move:p1a:calmmind",
+      "A:move:p2b:calmmind"
+     ],
+     "start": 0
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 0,
+     "hi": 2,
+     "value": 1,
+     "group": [
+      "P:p1b:0:",
+      "P:p2a:0:"
+     ],
+     "start": 0
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 2,
+     "hi": 4,
+     "value": 2,
+     "group": [
+      "P:p1a:0:",
+      "P:p2b:0:"
+     ],
+     "start": 2
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 0,
+     "hi": 2,
+     "value": 1,
+     "group": [
+      "P:p1b:0:",
+      "P:p2a:0:"
+     ],
+     "start": 0
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 2,
+     "hi": 4,
+     "value": 2,
+     "group": [
+      "P:p1a:0:",
+      "P:p2b:0:"
+     ],
+     "start": 2
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 0,
+     "hi": 2,
+     "value": 1,
+     "group": [
+      "P:p1b:0:",
+      "P:p2a:0:"
+     ],
+     "start": 0
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 2,
+     "hi": 4,
+     "value": 2,
+     "group": [
+      "P:p1a:0:",
+      "P:p2b:0:"
+     ],
+     "start": 2
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 0,
+     "hi": 2,
+     "value": 0,
+     "group": [
+      "P:p1b:0:",
+      "P:p2a:0:"
+     ],
+     "start": 0
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 2,
+     "hi": 4,
+     "value": 2,
+     "group": [
+      "P:p1a:0:",
+      "P:p2b:0:"
+     ],
+     "start": 2
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 0,
+     "hi": 2,
+     "value": 1,
+     "group": [
+      "P:p1b:0:",
+      "P:p2a:0:"
+     ],
+     "start": 0
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 2,
+     "hi": 4,
+     "value": 3,
+     "group": [
+      "P:p1a:0:",
+      "P:p2b:0:"
+     ],
+     "start": 2
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 0,
+     "hi": 2,
+     "value": 0,
+     "group": [
+      "P:p1b:0:",
+      "P:p2a:0:"
+     ],
+     "start": 0
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 2,
+     "hi": 4,
+     "value": 2,
+     "group": [
+      "P:p1a:0:",
+      "P:p2b:0:"
+     ],
+     "start": 2
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "field:Residual",
+     "lo": 0,
+     "hi": 2,
+     "value": 0,
+     "group": [
+      "H:protect:p1b:end",
+      "H:stall:p1b:end"
+     ],
+     "start": 0
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 0,
+     "hi": 2,
+     "value": 0,
+     "group": [
+      "P:p1b:0:",
+      "P:p2a:0:"
+     ],
+     "start": 0
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 2,
+     "hi": 4,
+     "value": 2,
+     "group": [
+      "P:p1a:0:",
+      "P:p2b:0:"
+     ],
+     "start": 2
+    }
+   ],
+   "log": [
+    "|move|p1b: Milotic|Protect|p1b: Milotic",
+    "|-singleturn|p1b: Milotic|Protect",
+    "|move|p2a: Milotic|Recover||[still]",
+    "|-fail|p2a: Milotic|heal",
+    "|move|p2b: Primarina|Calm Mind|p2b: Primarina",
+    "|-boost|p2b: Primarina|spa|1",
+    "|-boost|p2b: Primarina|spd|1",
+    "|move|p1a: Primarina|Calm Mind|p1a: Primarina",
+    "|-boost|p1a: Primarina|spa|1",
+    "|-boost|p1a: Primarina|spd|1",
+    "|upkeep",
+    "|turn|2"
+   ],
+   "state": {
+    "turn": 2,
+    "ended": false,
+    "winner": "",
+    "weather": "",
+    "weather_turns": 0,
+    "terrain": "",
+    "terrain_turns": 0,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Primarina",
+        "set_species": "Primarina",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 187,
+        "maxhp": 187,
+        "item": "fairyfeather",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         1,
+         1,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         16,
+         19
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 202,
+        "maxhp": 202,
+        "item": "rockyhelmet",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         7,
+         16,
+         8,
+         20
+        ],
+        "volatiles": [
+         "stall"
+        ],
+        "locked": null
+       },
+       {
+        "species": "Kingambit",
+        "set_species": "Kingambit",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 207,
+        "maxhp": 207,
+        "item": "blackglasses",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         16,
+         8,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Pawmot",
+        "set_species": "Pawmot",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 177,
+        "maxhp": 177,
+        "item": "leftovers",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         16,
+         1,
+         16,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 202,
+        "maxhp": 202,
+        "item": "rockyhelmet",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         16,
+         7,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Primarina",
+        "set_species": "Primarina",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 187,
+        "maxhp": 187,
+        "item": "fairyfeather",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         1,
+         1,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         16,
+         19
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Kingambit",
+        "set_species": "Kingambit",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 207,
+        "maxhp": 207,
+        "item": "blackglasses",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         16,
+         8,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Pawmot",
+        "set_species": "Pawmot",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 177,
+        "maxhp": 177,
+        "item": "leftovers",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         16,
+         1,
+         16,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": {
+    "p1": "move 1, move 2 1",
+    "p2": "move 4, switch 4"
+   },
+   "draws": [
+    {
+     "site": "SPEED_TIE",
+     "context": "queue",
+     "lo": 2,
+     "hi": 4,
+     "value": 3,
+     "group": [
+      "A:move:p2a:coil",
+      "A:move:p1b:scald"
+     ],
+     "start": 2
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:BeforeTurn",
+     "lo": 0,
+     "hi": 2,
+     "value": 1,
+     "group": [
+      "P:p1b:0:",
+      "P:p2a:0:"
+     ],
+     "start": 0
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:BeforeTurn",
+     "lo": 2,
+     "hi": 4,
+     "value": 3,
+     "group": [
+      "P:p1a:0:",
+      "P:p2b:0:"
+     ],
+     "start": 2
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 0,
+     "hi": 2,
+     "value": 1,
+     "group": [
+      "P:p1b:0:",
+      "P:p2a:0:"
+     ],
+     "start": 0
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 2,
+     "hi": 4,
+     "value": 2,
+     "group": [
+      "P:p1a:0:",
+      "P:p2b:0:"
+     ],
+     "start": 2
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 0,
+     "hi": 2,
+     "value": 0,
+     "group": [
+      "P:p1b:0:",
+      "P:p2a:0:"
+     ],
+     "start": 0
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 2,
+     "hi": 4,
+     "value": 2,
+     "group": [
+      "P:p1a:0:",
+      "P:p2b:0:"
+     ],
+     "start": 2
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 1,
+     "hi": 3,
+     "value": 2,
+     "group": [
+      "P:p1b:0:",
+      "P:p2a:0:"
+     ],
+     "start": 1
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "switch-order",
+     "lo": 1,
+     "hi": 3,
+     "value": 2,
+     "group": [
+      "P:p1b:0:-",
+      "P:p2a:0:-"
+     ],
+     "start": 1
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 1,
+     "hi": 3,
+     "value": 2,
+     "group": [
+      "P:p1b:0:",
+      "P:p2a:0:"
+     ],
+     "start": 1
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "queue",
+     "lo": 1,
+     "hi": 3,
+     "value": 2,
+     "group": [
+      "A:move:p1b:scald",
+      "A:move:p2a:coil"
+     ],
+     "start": 1
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 1,
+     "hi": 3,
+     "value": 2,
+     "group": [
+      "P:p1b:0:",
+      "P:p2a:0:"
+     ],
+     "start": 1
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 1,
+     "hi": 3,
+     "value": 1,
+     "group": [
+      "P:p1b:0:",
+      "P:p2a:0:"
+     ],
+     "start": 1
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 1,
+     "hi": 3,
+     "value": 1,
+     "group": [
+      "P:p1b:0:",
+      "P:p2a:0:"
+     ],
+     "start": 1
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "queue",
+     "lo": 0,
+     "hi": 2,
+     "value": 1,
+     "group": [
+      "A:move:p2a:coil",
+      "A:move:p1b:scald"
+     ],
+     "start": 0
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 77
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 17
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 4
+    },
+    {
+     "site": "SECONDARY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 31
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 1,
+     "hi": 3,
+     "value": 2,
+     "group": [
+      "P:p1b:0:",
+      "P:p2a:0:"
+     ],
+     "start": 1
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 1,
+     "hi": 3,
+     "value": 1,
+     "group": [
+      "P:p1b:0:",
+      "P:p2a:0:"
+     ],
+     "start": 1
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 1,
+     "hi": 3,
+     "value": 2,
+     "group": [
+      "P:p1b:0:",
+      "P:p2a:0:"
+     ],
+     "start": 1
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 1,
+     "hi": 3,
+     "value": 1,
+     "group": [
+      "P:p1b:0:",
+      "P:p2a:0:"
+     ],
+     "start": 1
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 1,
+     "hi": 3,
+     "value": 1,
+     "group": [
+      "P:p1b:0:",
+      "P:p2a:0:"
+     ],
+     "start": 1
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 1,
+     "hi": 3,
+     "value": 2,
+     "group": [
+      "P:p1b:0:",
+      "P:p2a:0:"
+     ],
+     "start": 1
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "field:Residual",
+     "lo": 2,
+     "hi": 4,
+     "value": 3,
+     "group": [
+      "H:stall:p1a:end",
+      "H:protect:p1a:end"
+     ],
+     "start": 2
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 1,
+     "hi": 3,
+     "value": 2,
+     "group": [
+      "P:p1b:0:",
+      "P:p2a:0:"
+     ],
+     "start": 1
+    }
+   ],
+   "log": [
+    "|split|p2",
+    "|switch|p2b: Pawmot|Pawmot, L50, M|177/177",
+    "|switch|p2b: Pawmot|Pawmot, L50, M|100/100",
+    "|move|p1a: Primarina|Protect|p1a: Primarina",
+    "|-singleturn|p1a: Primarina|Protect",
+    "|move|p1b: Milotic|Scald|p2a: Milotic",
+    "|-resisted|p2a: Milotic|1",
+    "|split|p2",
+    "|-damage|p2a: Milotic|184/202",
+    "|-damage|p2a: Milotic|91/100",
+    "|move|p2a: Milotic|Coil|p2a: Milotic",
+    "|-boost|p2a: Milotic|atk|1",
+    "|-boost|p2a: Milotic|def|1",
+    "|-boost|p2a: Milotic|accuracy|1",
+    "|upkeep",
+    "|turn|3"
+   ],
+   "state": {
+    "turn": 3,
+    "ended": false,
+    "winner": "",
+    "weather": "",
+    "weather_turns": 0,
+    "terrain": "",
+    "terrain_turns": 0,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Primarina",
+        "set_species": "Primarina",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 187,
+        "maxhp": 187,
+        "item": "fairyfeather",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         1,
+         1,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         7,
+         16,
+         19
+        ],
+        "volatiles": [
+         "stall"
+        ],
+        "locked": null
+       },
+       {
+        "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 202,
+        "maxhp": 202,
+        "item": "rockyhelmet",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         7,
+         15,
+         8,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Kingambit",
+        "set_species": "Kingambit",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 207,
+        "maxhp": 207,
+        "item": "blackglasses",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         16,
+         8,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Pawmot",
+        "set_species": "Pawmot",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 177,
+        "maxhp": 177,
+        "item": "leftovers",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         16,
+         1,
+         16,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 184,
+        "maxhp": 202,
+        "item": "rockyhelmet",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         1,
+         1,
+         0,
+         0,
+         0,
+         1,
+         0
+        ],
+        "pp": [
+         8,
+         16,
+         7,
+         19
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Pawmot",
+        "set_species": "Pawmot",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 177,
+        "maxhp": 177,
+        "item": "leftovers",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         16,
+         1,
+         16,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Kingambit",
+        "set_species": "Kingambit",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 207,
+        "maxhp": 207,
+        "item": "blackglasses",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         16,
+         8,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Primarina",
+        "set_species": "Primarina",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 187,
+        "maxhp": 187,
+        "item": "fairyfeather",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         16,
+         19
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": {
+    "p1": "move 2 2, switch 4",
+    "p2": "move 2 -2, switch 3"
+   },
+   "draws": [
+    {
+     "site": "SPEED_TIE",
+     "context": "each:BeforeTurn",
+     "lo": 1,
+     "hi": 3,
+     "value": 1,
+     "group": [
+      "P:p1b:0:",
+      "P:p2a:0:"
+     ],
+     "start": 1
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 1,
+     "hi": 3,
+     "value": 1,
+     "group": [
+      "P:p1b:0:",
+      "P:p2a:0:"
+     ],
+     "start": 1
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 1,
+     "hi": 3,
+     "value": 1,
+     "group": [
+      "P:p1b:0:",
+      "P:p2a:0:"
+     ],
+     "start": 1
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 0,
+     "hi": 2,
+     "value": 1,
+     "group": [
+      "P:p1b:0:",
+      "P:p2a:0:"
+     ],
+     "start": 0
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "switch-order",
+     "lo": 0,
+     "hi": 2,
+     "value": 0,
+     "group": [
+      "P:p1b:0:-",
+      "P:p2a:0:-"
+     ],
+     "start": 0
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 0,
+     "hi": 2,
+     "value": 0,
+     "group": [
+      "P:p1b:0:",
+      "P:p2a:0:"
+     ],
+     "start": 0
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 0,
+     "hi": 2,
+     "value": 1,
+     "group": [
+      "P:p1b:0:",
+      "P:p2a:0:"
+     ],
+     "start": 0
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 94
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 13
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 6
+    },
+    {
+     "site": "SECONDARY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 31
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 58
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 21
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 15
+    },
+    {
+     "site": "SECONDARY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 87
+    }
+   ],
+   "log": [
+    "|split|p2",
+    "|switch|p2b: Kingambit|Kingambit, L50, M|207/207",
+    "|switch|p2b: Kingambit|Kingambit, L50, M|100/100",
+    "|split|p1",
+    "|switch|p1b: Pawmot|Pawmot, L50, M|177/177",
+    "|switch|p1b: Pawmot|Pawmot, L50, M|100/100",
+    "|move|p2a: Milotic|Scald|p2b: Kingambit",
+    "|split|p2",
+    "|-damage|p2b: Kingambit|150/207",
+    "|-damage|p2b: Kingambit|72/100",
+    "|move|p1a: Primarina|Moonblast|p2b: Kingambit",
+    "|split|p2",
+    "|-damage|p2b: Kingambit|18/207",
+    "|-damage|p2b: Kingambit|8/100",
+    "|upkeep",
+    "|turn|4"
+   ],
+   "state": {
+    "turn": 4,
+    "ended": false,
+    "winner": "",
+    "weather": "",
+    "weather_turns": 0,
+    "terrain": "",
+    "terrain_turns": 0,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Primarina",
+        "set_species": "Primarina",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 187,
+        "maxhp": 187,
+        "item": "fairyfeather",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         1,
+         1,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         7,
+         15,
+         19
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Pawmot",
+        "set_species": "Pawmot",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 177,
+        "maxhp": 177,
+        "item": "leftovers",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         16,
+         1,
+         16,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Kingambit",
+        "set_species": "Kingambit",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 207,
+        "maxhp": 207,
+        "item": "blackglasses",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         16,
+         8,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 202,
+        "maxhp": 202,
+        "item": "rockyhelmet",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         7,
+         15,
+         8,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 184,
+        "maxhp": 202,
+        "item": "rockyhelmet",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         1,
+         1,
+         0,
+         0,
+         0,
+         1,
+         0
+        ],
+        "pp": [
+         8,
+         15,
+         7,
+         19
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Kingambit",
+        "set_species": "Kingambit",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 18,
+        "maxhp": 207,
+        "item": "blackglasses",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         16,
+         8,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Pawmot",
+        "set_species": "Pawmot",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 177,
+        "maxhp": 177,
+        "item": "leftovers",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         16,
+         1,
+         16,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Primarina",
+        "set_species": "Primarina",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 187,
+        "maxhp": 187,
+        "item": "fairyfeather",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         16,
+         19
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": {
+    "p1": "move 2 2, move 3 1",
+    "p2": "move 3, switch 4"
+   },
+   "draws": [
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 2,
+     "hi": 4,
+     "value": 3,
+     "group": [
+      "P:p1a:0:",
+      "P:p2b:0:"
+     ],
+     "start": 2
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "switch-order",
+     "lo": 2,
+     "hi": 4,
+     "value": 2,
+     "group": [
+      "P:p1a:0:-",
+      "P:p2b:0:S"
+     ],
+     "start": 2
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 2,
+     "hi": 4,
+     "value": 2,
+     "group": [
+      "P:p1a:0:",
+      "P:p2b:0:"
+     ],
+     "start": 2
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 27
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 13
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 13
+    },
+    {
+     "site": "SECONDARY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 1
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 2,
+     "hi": 4,
+     "value": 2,
+     "group": [
+      "P:p1a:0:",
+      "P:p2b:0:"
+     ],
+     "start": 2
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 2,
+     "hi": 4,
+     "value": 2,
+     "group": [
+      "P:p1a:0:",
+      "P:p2b:0:"
+     ],
+     "start": 2
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 2,
+     "hi": 4,
+     "value": 3,
+     "group": [
+      "P:p1a:0:",
+      "P:p2b:0:"
+     ],
+     "start": 2
+    },
+    {
+     "site": "FREEZE_THAW",
+     "context": "BeforeMove",
+     "lo": 0,
+     "hi": 4,
+     "value": 0
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 2,
+     "hi": 4,
+     "value": 2,
+     "group": [
+      "P:p1a:0:",
+      "P:p2b:0:"
+     ],
+     "start": 2
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 2,
+     "hi": 4,
+     "value": 3,
+     "group": [
+      "P:p1a:0:",
+      "P:p2b:0:"
+     ],
+     "start": 2
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 2,
+     "hi": 4,
+     "value": 3,
+     "group": [
+      "P:p1a:0:",
+      "P:p2b:0:"
+     ],
+     "start": 2
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 65
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 16
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 12
+    },
+    {
+     "site": "SECONDARY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 96
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 2,
+     "hi": 4,
+     "value": 2,
+     "group": [
+      "P:p1a:0:",
+      "P:p2b:0:"
+     ],
+     "start": 2
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 2,
+     "hi": 4,
+     "value": 2,
+     "group": [
+      "P:p1a:0:",
+      "P:p2b:0:"
+     ],
+     "start": 2
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 2,
+     "hi": 4,
+     "value": 3,
+     "group": [
+      "P:p1a:0:",
+      "P:p2b:0:"
+     ],
+     "start": 2
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 2,
+     "hi": 4,
+     "value": 3,
+     "group": [
+      "P:p1a:0:",
+      "P:p2b:0:"
+     ],
+     "start": 2
+    }
+   ],
+   "log": [
+    "|split|p2",
+    "|switch|p2b: Primarina|Primarina, L50, F|187/187",
+    "|switch|p2b: Primarina|Primarina, L50, F|100/100",
+    "|move|p1b: Pawmot|Ice Punch|p2a: Milotic",
+    "|-resisted|p2a: Milotic|1",
+    "|split|p2",
+    "|-damage|p2a: Milotic|168/202",
+    "|-damage|p2a: Milotic|83/100",
+    "|-status|p2a: Milotic|frz",
+    "|split|p1",
+    "|-damage|p1b: Pawmot|148/177|[from] item: Rocky Helmet|[of] p2a: Milotic",
+    "|-damage|p1b: Pawmot|83/100|[from] item: Rocky Helmet|[of] p2a: Milotic",
+    "|-curestatus|p2a: Milotic|frz|[msg]",
+    "|move|p2a: Milotic|Recover|p2a: Milotic",
+    "|split|p2",
+    "|-heal|p2a: Milotic|202/202",
+    "|-heal|p2a: Milotic|100/100",
+    "|move|p1a: Primarina|Moonblast|p2b: Primarina",
+    "|split|p2",
+    "|-damage|p2b: Primarina|108/187",
+    "|-damage|p2b: Primarina|57/100",
+    "|split|p1",
+    "|-heal|p1b: Pawmot|159/177|[from] item: Leftovers",
+    "|-heal|p1b: Pawmot|89/100|[from] item: Leftovers",
+    "|upkeep",
+    "|turn|5"
+   ],
+   "state": {
+    "turn": 5,
+    "ended": false,
+    "winner": "",
+    "weather": "",
+    "weather_turns": 0,
+    "terrain": "",
+    "terrain_turns": 0,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Primarina",
+        "set_species": "Primarina",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 187,
+        "maxhp": 187,
+        "item": "fairyfeather",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         1,
+         1,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         7,
+         14,
+         19
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Pawmot",
+        "set_species": "Pawmot",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 159,
+        "maxhp": 177,
+        "item": "leftovers",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         16,
+         1,
+         15,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Kingambit",
+        "set_species": "Kingambit",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 207,
+        "maxhp": 207,
+        "item": "blackglasses",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         16,
+         8,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 202,
+        "maxhp": 202,
+        "item": "rockyhelmet",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         7,
+         15,
+         8,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 202,
+        "maxhp": 202,
+        "item": "rockyhelmet",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         1,
+         1,
+         0,
+         0,
+         0,
+         1,
+         0
+        ],
+        "pp": [
+         8,
+         15,
+         6,
+         19
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Primarina",
+        "set_species": "Primarina",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 108,
+        "maxhp": 187,
+        "item": "fairyfeather",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         16,
+         19
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Pawmot",
+        "set_species": "Pawmot",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 177,
+        "maxhp": 177,
+        "item": "leftovers",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         16,
+         1,
+         16,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Kingambit",
+        "set_species": "Kingambit",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 18,
+        "maxhp": 207,
+        "item": "blackglasses",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         16,
+         8,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": {
+    "p1": "move 2 1, move 1 2",
+    "p2": "move 4, move 1"
+   },
+   "draws": [
+    {
+     "site": "SPEED_TIE",
+     "context": "each:BeforeTurn",
+     "lo": 2,
+     "hi": 4,
+     "value": 3,
+     "group": [
+      "P:p1a:0:",
+      "P:p2b:0:"
+     ],
+     "start": 2
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 2,
+     "hi": 4,
+     "value": 2,
+     "group": [
+      "P:p1a:0:",
+      "P:p2b:0:"
+     ],
+     "start": 2
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 2,
+     "hi": 4,
+     "value": 2,
+     "group": [
+      "P:p1a:0:",
+      "P:p2b:0:"
+     ],
+     "start": 2
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 2,
+     "hi": 4,
+     "value": 2,
+     "group": [
+      "P:p1a:0:",
+      "P:p2b:0:"
+     ],
+     "start": 2
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 2,
+     "hi": 4,
+     "value": 2,
+     "group": [
+      "P:p1a:0:",
+      "P:p2b:0:"
+     ],
+     "start": 2
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 2,
+     "hi": 4,
+     "value": 2,
+     "group": [
+      "P:p1a:0:",
+      "P:p2b:0:"
+     ],
+     "start": 2
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 2,
+     "hi": 4,
+     "value": 2,
+     "group": [
+      "P:p1a:0:",
+      "P:p2b:0:"
+     ],
+     "start": 2
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 2,
+     "hi": 4,
+     "value": 3,
+     "group": [
+      "P:p1a:0:",
+      "P:p2b:0:"
+     ],
+     "start": 2
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 2,
+     "hi": 4,
+     "value": 2,
+     "group": [
+      "P:p1a:0:",
+      "P:p2b:0:"
+     ],
+     "start": 2
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 28
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 22
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 12
+    },
+    {
+     "site": "SECONDARY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 2
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 2,
+     "hi": 4,
+     "value": 2,
+     "group": [
+      "P:p1a:0:",
+      "P:p2b:0:"
+     ],
+     "start": 2
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 2,
+     "hi": 4,
+     "value": 2,
+     "group": [
+      "P:p1a:0:",
+      "P:p2b:0:"
+     ],
+     "start": 2
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 2,
+     "hi": 4,
+     "value": 2,
+     "group": [
+      "P:p1a:0:",
+      "P:p2b:0:"
+     ],
+     "start": 2
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "field:Residual",
+     "lo": 1,
+     "hi": 3,
+     "value": 2,
+     "group": [
+      "H:protect:p2b:end",
+      "H:stall:p2b:end"
+     ],
+     "start": 1
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 2,
+     "hi": 4,
+     "value": 2,
+     "group": [
+      "P:p1a:0:",
+      "P:p2b:0:"
+     ],
+     "start": 2
+    }
+   ],
+   "log": [
+    "|move|p2b: Primarina|Protect|p2b: Primarina",
+    "|-singleturn|p2b: Primarina|Protect",
+    "|move|p1b: Pawmot|Thunderbolt|p2b: Primarina",
+    "|-activate|p2b: Primarina|move: Protect",
+    "|move|p2a: Milotic|Coil|p2a: Milotic",
+    "|-boost|p2a: Milotic|atk|1",
+    "|-boost|p2a: Milotic|def|1",
+    "|-boost|p2a: Milotic|accuracy|1",
+    "|move|p1a: Primarina|Moonblast|p2a: Milotic",
+    "|split|p2",
+    "|-damage|p2a: Milotic|114/202",
+    "|-damage|p2a: Milotic|56/100",
+    "|-unboost|p2a: Milotic|spa|1",
+    "|-ability|p2a: Milotic|Competitive|boost",
+    "|-boost|p2a: Milotic|spa|2",
+    "|split|p1",
+    "|-heal|p1b: Pawmot|170/177|[from] item: Leftovers",
+    "|-heal|p1b: Pawmot|96/100|[from] item: Leftovers",
+    "|upkeep",
+    "|turn|6"
+   ],
+   "state": {
+    "turn": 6,
+    "ended": false,
+    "winner": "",
+    "weather": "",
+    "weather_turns": 0,
+    "terrain": "",
+    "terrain_turns": 0,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Primarina",
+        "set_species": "Primarina",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 187,
+        "maxhp": 187,
+        "item": "fairyfeather",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         1,
+         1,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         7,
+         13,
+         19
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Pawmot",
+        "set_species": "Pawmot",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 170,
+        "maxhp": 177,
+        "item": "leftovers",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         15,
+         1,
+         15,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Kingambit",
+        "set_species": "Kingambit",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 207,
+        "maxhp": 207,
+        "item": "blackglasses",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         16,
+         8,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 202,
+        "maxhp": 202,
+        "item": "rockyhelmet",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         7,
+         15,
+         8,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 114,
+        "maxhp": 202,
+        "item": "rockyhelmet",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         2,
+         2,
+         1,
+         0,
+         0,
+         2,
+         0
+        ],
+        "pp": [
+         8,
+         15,
+         6,
+         18
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Primarina",
+        "set_species": "Primarina",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 108,
+        "maxhp": 187,
+        "item": "fairyfeather",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         7,
+         16,
+         19
+        ],
+        "volatiles": [
+         "stall"
+        ],
+        "locked": null
+       },
+       {
+        "species": "Pawmot",
+        "set_species": "Pawmot",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 177,
+        "maxhp": 177,
+        "item": "leftovers",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         16,
+         1,
+         16,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Kingambit",
+        "set_species": "Kingambit",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 18,
+        "maxhp": 207,
+        "item": "blackglasses",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         16,
+         8,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": {
+    "p1": "move 3, move 2",
+    "p2": "move 3, move 1"
+   },
+   "draws": [
+    {
+     "site": "SPEED_TIE",
+     "context": "each:BeforeTurn",
+     "lo": 2,
+     "hi": 4,
+     "value": 3,
+     "group": [
+      "P:p1a:0:",
+      "P:p2b:0:"
+     ],
+     "start": 2
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 2,
+     "hi": 4,
+     "value": 2,
+     "group": [
+      "P:p1a:0:",
+      "P:p2b:0:"
+     ],
+     "start": 2
+    },
+    {
+     "site": "STALL",
+     "context": "StallMove",
+     "lo": 0,
+     "hi": 3,
+     "value": 1
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 2,
+     "hi": 4,
+     "value": 2,
+     "group": [
+      "P:p1a:0:",
+      "P:p2b:0:"
+     ],
+     "start": 2
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 2,
+     "hi": 4,
+     "value": 3,
+     "group": [
+      "P:p1a:0:",
+      "P:p2b:0:"
+     ],
+     "start": 2
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 2,
+     "hi": 4,
+     "value": 3,
+     "group": [
+      "P:p1a:0:",
+      "P:p2b:0:"
+     ],
+     "start": 2
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 2,
+     "hi": 4,
+     "value": 3,
+     "group": [
+      "P:p1a:0:",
+      "P:p2b:0:"
+     ],
+     "start": 2
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 2,
+     "hi": 4,
+     "value": 2,
+     "group": [
+      "P:p1a:0:",
+      "P:p2b:0:"
+     ],
+     "start": 2
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 2,
+     "hi": 4,
+     "value": 2,
+     "group": [
+      "P:p1a:0:",
+      "P:p2b:0:"
+     ],
+     "start": 2
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 2,
+     "hi": 4,
+     "value": 3,
+     "group": [
+      "P:p1a:0:",
+      "P:p2b:0:"
+     ],
+     "start": 2
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 2,
+     "hi": 4,
+     "value": 2,
+     "group": [
+      "P:p1a:0:",
+      "P:p2b:0:"
+     ],
+     "start": 2
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 2,
+     "hi": 4,
+     "value": 2,
+     "group": [
+      "P:p1a:0:",
+      "P:p2b:0:"
+     ],
+     "start": 2
+    }
+   ],
+   "log": [
+    "|move|p2b: Primarina|Protect||[still]",
+    "|-fail|p2b: Primarina",
+    "|move|p1b: Pawmot|Revival Blessing||[still]",
+    "|-fail|p1b: Pawmot",
+    "|move|p2a: Milotic|Recover|p2a: Milotic",
+    "|split|p2",
+    "|-heal|p2a: Milotic|202/202",
+    "|-heal|p2a: Milotic|100/100",
+    "|move|p1a: Primarina|Calm Mind|p1a: Primarina",
+    "|-boost|p1a: Primarina|spa|1",
+    "|-boost|p1a: Primarina|spd|1",
+    "|split|p1",
+    "|-heal|p1b: Pawmot|177/177|[from] item: Leftovers",
+    "|-heal|p1b: Pawmot|100/100|[from] item: Leftovers",
+    "|upkeep",
+    "|turn|7"
+   ],
+   "state": {
+    "turn": 7,
+    "ended": false,
+    "winner": "",
+    "weather": "",
+    "weather_turns": 0,
+    "terrain": "",
+    "terrain_turns": 0,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        0,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Primarina",
+        "set_species": "Primarina",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 187,
+        "maxhp": 187,
+        "item": "fairyfeather",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         2,
+         2,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         7,
+         13,
+         18
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Pawmot",
+        "set_species": "Pawmot",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 177,
+        "maxhp": 177,
+        "item": "leftovers",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         15,
+         0,
+         15,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Kingambit",
+        "set_species": "Kingambit",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 207,
+        "maxhp": 207,
+        "item": "blackglasses",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         16,
+         8,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 202,
+        "maxhp": 202,
+        "item": "rockyhelmet",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         7,
+         15,
+         8,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 202,
+        "maxhp": 202,
+        "item": "rockyhelmet",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         2,
+         2,
+         1,
+         0,
+         0,
+         2,
+         0
+        ],
+        "pp": [
+         8,
+         15,
+         5,
+         18
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Primarina",
+        "set_species": "Primarina",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 108,
+        "maxhp": 187,
+        "item": "fairyfeather",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         6,
+         16,
+         19
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Pawmot",
+        "set_species": "Pawmot",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 177,
+        "maxhp": 177,
+        "item": "leftovers",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         16,
+         1,
+         16,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Kingambit",
+        "set_species": "Kingambit",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 18,
+        "maxhp": 207,
+        "item": "blackglasses",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         16,
+         8,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": {
+    "p1": "move 2 2, move 3 2",
+    "p2": "move 1, move 2 -1"
+   },
+   "draws": [
+    {
+     "site": "SPEED_TIE",
+     "context": "queue",
+     "lo": 2,
+     "hi": 4,
+     "value": 3,
+     "group": [
+      "A:move:p1a:moonblast",
+      "A:move:p2b:moonblast"
+     ],
+     "start": 2
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:BeforeTurn",
+     "lo": 2,
+     "hi": 4,
+     "value": 3,
+     "group": [
+      "P:p1a:0:",
+      "P:p2b:0:"
+     ],
+     "start": 2
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 2,
+     "hi": 4,
+     "value": 3,
+     "group": [
+      "P:p1a:0:",
+      "P:p2b:0:"
+     ],
+     "start": 2
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "queue",
+     "lo": 2,
+     "hi": 4,
+     "value": 3,
+     "group": [
+      "A:move:p2b:moonblast",
+      "A:move:p1a:moonblast"
+     ],
+     "start": 2
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 2,
+     "hi": 4,
+     "value": 3,
+     "group": [
+      "P:p1a:0:",
+      "P:p2b:0:"
+     ],
+     "start": 2
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 2,
+     "hi": 4,
+     "value": 2,
+     "group": [
+      "P:p1a:0:",
+      "P:p2b:0:"
+     ],
+     "start": 2
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 2,
+     "hi": 4,
+     "value": 2,
+     "group": [
+      "P:p1a:0:",
+      "P:p2b:0:"
+     ],
+     "start": 2
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "queue",
+     "lo": 1,
+     "hi": 3,
+     "value": 2,
+     "group": [
+      "A:move:p1a:moonblast",
+      "A:move:p2b:moonblast"
+     ],
+     "start": 1
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 77
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 1
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 12
+    },
+    {
+     "site": "SECONDARY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 68
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 2,
+     "hi": 4,
+     "value": 2,
+     "group": [
+      "P:p1a:0:",
+      "P:p2b:0:"
+     ],
+     "start": 2
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 2,
+     "hi": 4,
+     "value": 2,
+     "group": [
+      "P:p1a:0:",
+      "P:p2b:0:"
+     ],
+     "start": 2
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 2,
+     "hi": 4,
+     "value": 2,
+     "group": [
+      "P:p1a:0:",
+      "P:p2b:0:"
+     ],
+     "start": 2
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "queue",
+     "lo": 0,
+     "hi": 2,
+     "value": 1,
+     "group": [
+      "A:move:p2b:moonblast",
+      "A:move:p1a:moonblast"
+     ],
+     "start": 0
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 43
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 19
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 15
+    },
+    {
+     "site": "SECONDARY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 18
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 2,
+     "hi": 4,
+     "value": 3,
+     "group": [
+      "P:p1a:0:",
+      "P:p2b:0:"
+     ],
+     "start": 2
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "field:Residual",
+     "lo": 1,
+     "hi": 3,
+     "value": 1,
+     "group": [
+      "H:protect:p2a:end",
+      "H:stall:p2a:end"
+     ],
+     "start": 1
+    }
+   ],
+   "log": [
+    "|move|p2a: Milotic|Protect|p2a: Milotic",
+    "|-singleturn|p2a: Milotic|Protect",
+    "|move|p1b: Pawmot|Ice Punch|p2b: Primarina",
+    "|-resisted|p2b: Primarina|1",
+    "|split|p2",
+    "|-damage|p2b: Primarina|75/187",
+    "|-damage|p2b: Primarina|40/100",
+    "|move|p1a: Primarina|Moonblast|p2b: Primarina",
+    "|split|p2",
+    "|-damage|p2b: Primarina|0 fnt",
+    "|-damage|p2b: Primarina|0 fnt",
+    "|faint|p2b: Primarina",
+    "|upkeep"
+   ],
+   "state": {
+    "turn": 7,
+    "ended": false,
+    "winner": "",
+    "weather": "",
+    "weather_turns": 0,
+    "terrain": "",
+    "terrain_turns": 0,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Primarina",
+        "set_species": "Primarina",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 187,
+        "maxhp": 187,
+        "item": "fairyfeather",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         2,
+         2,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         7,
+         12,
+         18
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Pawmot",
+        "set_species": "Pawmot",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 177,
+        "maxhp": 177,
+        "item": "leftovers",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         15,
+         0,
+         14,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Kingambit",
+        "set_species": "Kingambit",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 207,
+        "maxhp": 207,
+        "item": "blackglasses",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         16,
+         8,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 202,
+        "maxhp": 202,
+        "item": "rockyhelmet",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         7,
+         15,
+         8,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "switch",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 202,
+        "maxhp": 202,
+        "item": "rockyhelmet",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         2,
+         2,
+         1,
+         0,
+         0,
+         2,
+         0
+        ],
+        "pp": [
+         7,
+         15,
+         5,
+         18
+        ],
+        "volatiles": [
+         "stall"
+        ],
+        "locked": null
+       },
+       {
+        "species": "Primarina",
+        "set_species": "Primarina",
+        "mega": 0,
+        "switch_flag": 1,
+        "hp": 0,
+        "maxhp": 187,
+        "item": "fairyfeather",
+        "status": "fnt",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         6,
+         16,
+         19
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Pawmot",
+        "set_species": "Pawmot",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 177,
+        "maxhp": 177,
+        "item": "leftovers",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         16,
+         1,
+         16,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Kingambit",
+        "set_species": "Kingambit",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 18,
+        "maxhp": 207,
+        "item": "blackglasses",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         16,
+         8,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": {
+    "p2": "pass, switch 4"
+   },
+   "draws": [],
+   "log": [
+    "|split|p2",
+    "|switch|p2b: Kingambit|Kingambit, L50, M|18/207",
+    "|switch|p2b: Kingambit|Kingambit, L50, M|8/100",
+    "|turn|8"
+   ],
+   "state": {
+    "turn": 8,
+    "ended": false,
+    "winner": "",
+    "weather": "",
+    "weather_turns": 0,
+    "terrain": "",
+    "terrain_turns": 0,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        0,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Primarina",
+        "set_species": "Primarina",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 187,
+        "maxhp": 187,
+        "item": "fairyfeather",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         2,
+         2,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         7,
+         12,
+         18
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Pawmot",
+        "set_species": "Pawmot",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 177,
+        "maxhp": 177,
+        "item": "leftovers",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         15,
+         0,
+         14,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Kingambit",
+        "set_species": "Kingambit",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 207,
+        "maxhp": 207,
+        "item": "blackglasses",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         16,
+         8,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 202,
+        "maxhp": 202,
+        "item": "rockyhelmet",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         7,
+         15,
+         8,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 202,
+        "maxhp": 202,
+        "item": "rockyhelmet",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         2,
+         2,
+         1,
+         0,
+         0,
+         2,
+         0
+        ],
+        "pp": [
+         7,
+         15,
+         5,
+         18
+        ],
+        "volatiles": [
+         "stall"
+        ],
+        "locked": null
+       },
+       {
+        "species": "Kingambit",
+        "set_species": "Kingambit",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 18,
+        "maxhp": 207,
+        "item": "blackglasses",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         16,
+         8,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Pawmot",
+        "set_species": "Pawmot",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 177,
+        "maxhp": 177,
+        "item": "leftovers",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         16,
+         1,
+         16,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Primarina",
+        "set_species": "Primarina",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 187,
+        "item": "fairyfeather",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         6,
+         16,
+         19
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": {
+    "p1": "move 2 2, move 4",
+    "p2": "move 2 2, move 3"
+   },
+   "draws": [
+    {
+     "site": "SPEED_TIE",
+     "context": "field:Residual",
+     "lo": 1,
+     "hi": 3,
+     "value": 2,
+     "group": [
+      "H:stall:p1b:end",
+      "H:protect:p1b:end"
+     ],
+     "start": 1
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "field:Residual",
+     "lo": 4,
+     "hi": 6,
+     "value": 5,
+     "group": [
+      "H:protect:p2b:end",
+      "H:stall:p2b:end"
+     ],
+     "start": 4
+    }
+   ],
+   "log": [
+    "|move|p1b: Pawmot|Protect|p1b: Pawmot",
+    "|-singleturn|p1b: Pawmot|Protect",
+    "|move|p2b: Kingambit|Protect|p2b: Kingambit",
+    "|-singleturn|p2b: Kingambit|Protect",
+    "|move|p2a: Milotic|Scald|p1b: Pawmot",
+    "|-activate|p1b: Pawmot|move: Protect",
+    "|move|p1a: Primarina|Moonblast|p2b: Kingambit",
+    "|-activate|p2b: Kingambit|move: Protect",
+    "|upkeep",
+    "|turn|9"
+   ],
+   "state": {
+    "turn": 9,
+    "ended": false,
+    "winner": "",
+    "weather": "",
+    "weather_turns": 0,
+    "terrain": "",
+    "terrain_turns": 0,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        0,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Primarina",
+        "set_species": "Primarina",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 187,
+        "maxhp": 187,
+        "item": "fairyfeather",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         2,
+         2,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         7,
+         11,
+         18
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Pawmot",
+        "set_species": "Pawmot",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 177,
+        "maxhp": 177,
+        "item": "leftovers",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         15,
+         0,
+         14,
+         7
+        ],
+        "volatiles": [
+         "stall"
+        ],
+        "locked": null
+       },
+       {
+        "species": "Kingambit",
+        "set_species": "Kingambit",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 207,
+        "maxhp": 207,
+        "item": "blackglasses",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         16,
+         8,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 202,
+        "maxhp": 202,
+        "item": "rockyhelmet",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         7,
+         15,
+         8,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 202,
+        "maxhp": 202,
+        "item": "rockyhelmet",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         2,
+         2,
+         1,
+         0,
+         0,
+         2,
+         0
+        ],
+        "pp": [
+         7,
+         14,
+         5,
+         18
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Kingambit",
+        "set_species": "Kingambit",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 18,
+        "maxhp": 207,
+        "item": "blackglasses",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         16,
+         7,
+         20
+        ],
+        "volatiles": [
+         "stall"
+        ],
+        "locked": null
+       },
+       {
+        "species": "Pawmot",
+        "set_species": "Pawmot",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 177,
+        "maxhp": 177,
+        "item": "leftovers",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         16,
+         1,
+         16,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Primarina",
+        "set_species": "Primarina",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 187,
+        "item": "fairyfeather",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         6,
+         16,
+         19
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": {
+    "p1": "move 1, switch 3",
+    "p2": "move 2 -2, move 2 1"
+   },
+   "draws": [
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 2,
+     "hi": 4,
+     "value": 2,
+     "group": [
+      "P:p1b:0:",
+      "P:p2b:0:"
+     ],
+     "start": 2
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "switch-order",
+     "lo": 2,
+     "hi": 4,
+     "value": 2,
+     "group": [
+      "P:p1b:0:S",
+      "P:p2b:0:-"
+     ],
+     "start": 2
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 2,
+     "hi": 4,
+     "value": 3,
+     "group": [
+      "P:p1b:0:",
+      "P:p2b:0:"
+     ],
+     "start": 2
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 2,
+     "hi": 4,
+     "value": 3,
+     "group": [
+      "P:p1b:0:",
+      "P:p2b:0:"
+     ],
+     "start": 2
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 2,
+     "hi": 4,
+     "value": 3,
+     "group": [
+      "P:p1b:0:",
+      "P:p2b:0:"
+     ],
+     "start": 2
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 2,
+     "hi": 4,
+     "value": 3,
+     "group": [
+      "P:p1b:0:",
+      "P:p2b:0:"
+     ],
+     "start": 2
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 71
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 22
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 7
+    },
+    {
+     "site": "SECONDARY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 64
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 2,
+     "hi": 4,
+     "value": 2,
+     "group": [
+      "P:p1b:0:",
+      "P:p2b:0:"
+     ],
+     "start": 2
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "field:Residual",
+     "lo": 0,
+     "hi": 2,
+     "value": 1,
+     "group": [
+      "H:protect:p1a:end",
+      "H:stall:p1a:end"
+     ],
+     "start": 0
+    }
+   ],
+   "log": [
+    "|split|p1",
+    "|switch|p1b: Kingambit|Kingambit, L50, M|207/207",
+    "|switch|p1b: Kingambit|Kingambit, L50, M|100/100",
+    "|move|p1a: Primarina|Protect|p1a: Primarina",
+    "|-singleturn|p1a: Primarina|Protect",
+    "|move|p2a: Milotic|Scald|p2b: Kingambit",
+    "|split|p2",
+    "|-damage|p2b: Kingambit|0 fnt",
+    "|-damage|p2b: Kingambit|0 fnt",
+    "|faint|p2b: Kingambit",
+    "|upkeep"
+   ],
+   "state": {
+    "turn": 9,
+    "ended": false,
+    "winner": "",
+    "weather": "",
+    "weather_turns": 0,
+    "terrain": "",
+    "terrain_turns": 0,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Primarina",
+        "set_species": "Primarina",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 187,
+        "maxhp": 187,
+        "item": "fairyfeather",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         2,
+         2,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         6,
+         11,
+         18
+        ],
+        "volatiles": [
+         "stall"
+        ],
+        "locked": null
+       },
+       {
+        "species": "Kingambit",
+        "set_species": "Kingambit",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 207,
+        "maxhp": 207,
+        "item": "blackglasses",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         16,
+         8,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Pawmot",
+        "set_species": "Pawmot",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 177,
+        "maxhp": 177,
+        "item": "leftovers",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         15,
+         0,
+         14,
+         7
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 202,
+        "maxhp": 202,
+        "item": "rockyhelmet",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         7,
+         15,
+         8,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "switch",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 202,
+        "maxhp": 202,
+        "item": "rockyhelmet",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         2,
+         2,
+         1,
+         0,
+         0,
+         2,
+         0
+        ],
+        "pp": [
+         7,
+         13,
+         5,
+         18
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Kingambit",
+        "set_species": "Kingambit",
+        "mega": 0,
+        "switch_flag": 1,
+        "hp": 0,
+        "maxhp": 207,
+        "item": "blackglasses",
+        "status": "fnt",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         16,
+         7,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Pawmot",
+        "set_species": "Pawmot",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 177,
+        "maxhp": 177,
+        "item": "leftovers",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         16,
+         1,
+         16,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Primarina",
+        "set_species": "Primarina",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 187,
+        "item": "fairyfeather",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         6,
+         16,
+         19
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": {
+    "p2": "pass, switch 3"
+   },
+   "draws": [],
+   "log": [
+    "|split|p2",
+    "|switch|p2b: Pawmot|Pawmot, L50, M|177/177",
+    "|switch|p2b: Pawmot|Pawmot, L50, M|100/100",
+    "|turn|10"
+   ],
+   "state": {
+    "turn": 10,
+    "ended": false,
+    "winner": "",
+    "weather": "",
+    "weather_turns": 0,
+    "terrain": "",
+    "terrain_turns": 0,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Primarina",
+        "set_species": "Primarina",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 187,
+        "maxhp": 187,
+        "item": "fairyfeather",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         2,
+         2,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         6,
+         11,
+         18
+        ],
+        "volatiles": [
+         "stall"
+        ],
+        "locked": null
+       },
+       {
+        "species": "Kingambit",
+        "set_species": "Kingambit",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 207,
+        "maxhp": 207,
+        "item": "blackglasses",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         16,
+         8,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Pawmot",
+        "set_species": "Pawmot",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 177,
+        "maxhp": 177,
+        "item": "leftovers",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         15,
+         0,
+         14,
+         7
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 202,
+        "maxhp": 202,
+        "item": "rockyhelmet",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         7,
+         15,
+         8,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 202,
+        "maxhp": 202,
+        "item": "rockyhelmet",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         2,
+         2,
+         1,
+         0,
+         0,
+         2,
+         0
+        ],
+        "pp": [
+         7,
+         13,
+         5,
+         18
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Pawmot",
+        "set_species": "Pawmot",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 177,
+        "maxhp": 177,
+        "item": "leftovers",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         16,
+         1,
+         16,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Kingambit",
+        "set_species": "Kingambit",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 207,
+        "item": "blackglasses",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         16,
+         7,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Primarina",
+        "set_species": "Primarina",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 187,
+        "item": "fairyfeather",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         6,
+         16,
+         19
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": {
+    "p1": "move 2 -2, move 3",
+    "p2": "move 4, move 1 2"
+   },
+   "draws": [
+    {
+     "site": "SPEED_TIE",
+     "context": "field:Residual",
+     "lo": 2,
+     "hi": 4,
+     "value": 2,
+     "group": [
+      "H:stall:p1b:end",
+      "H:protect:p1b:end"
+     ],
+     "start": 2
+    }
+   ],
+   "log": [
+    "|move|p1b: Kingambit|Protect|p1b: Kingambit",
+    "|-singleturn|p1b: Kingambit|Protect",
+    "|move|p2b: Pawmot|Thunderbolt|p1b: Kingambit",
+    "|-activate|p1b: Kingambit|move: Protect",
+    "|move|p2a: Milotic|Coil|p2a: Milotic",
+    "|-boost|p2a: Milotic|atk|1",
+    "|-boost|p2a: Milotic|def|1",
+    "|-boost|p2a: Milotic|accuracy|1",
+    "|move|p1a: Primarina|Moonblast|p1b: Kingambit",
+    "|-activate|p1b: Kingambit|move: Protect",
+    "|upkeep",
+    "|turn|11"
+   ],
+   "state": {
+    "turn": 11,
+    "ended": false,
+    "winner": "",
+    "weather": "",
+    "weather_turns": 0,
+    "terrain": "",
+    "terrain_turns": 0,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Primarina",
+        "set_species": "Primarina",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 187,
+        "maxhp": 187,
+        "item": "fairyfeather",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         2,
+         2,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         6,
+         10,
+         18
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Kingambit",
+        "set_species": "Kingambit",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 207,
+        "maxhp": 207,
+        "item": "blackglasses",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         16,
+         7,
+         20
+        ],
+        "volatiles": [
+         "stall"
+        ],
+        "locked": null
+       },
+       {
+        "species": "Pawmot",
+        "set_species": "Pawmot",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 177,
+        "maxhp": 177,
+        "item": "leftovers",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         15,
+         0,
+         14,
+         7
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 202,
+        "maxhp": 202,
+        "item": "rockyhelmet",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         7,
+         15,
+         8,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 202,
+        "maxhp": 202,
+        "item": "rockyhelmet",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         3,
+         3,
+         1,
+         0,
+         0,
+         3,
+         0
+        ],
+        "pp": [
+         7,
+         13,
+         5,
+         17
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Pawmot",
+        "set_species": "Pawmot",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 177,
+        "maxhp": 177,
+        "item": "leftovers",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         15,
+         1,
+         16,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Kingambit",
+        "set_species": "Kingambit",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 207,
+        "item": "blackglasses",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         16,
+         7,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Primarina",
+        "set_species": "Primarina",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 187,
+        "item": "fairyfeather",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         6,
+         16,
+         19
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": {
+    "p1": "move 1, move 1 -1",
+    "p2": "move 1, move 3 -1"
+   },
+   "draws": [
+    {
+     "site": "SPEED_TIE",
+     "context": "field:Residual",
+     "lo": 1,
+     "hi": 3,
+     "value": 1,
+     "group": [
+      "H:protect:p2a:end",
+      "H:stall:p2a:end"
+     ],
+     "start": 1
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "field:Residual",
+     "lo": 3,
+     "hi": 5,
+     "value": 3,
+     "group": [
+      "H:stall:p1a:end",
+      "H:protect:p1a:end"
+     ],
+     "start": 3
+    }
+   ],
+   "log": [
+    "|move|p2a: Milotic|Protect|p2a: Milotic",
+    "|-singleturn|p2a: Milotic|Protect",
+    "|move|p1a: Primarina|Protect|p1a: Primarina",
+    "|-singleturn|p1a: Primarina|Protect",
+    "|move|p1b: Kingambit|Sucker Punch||[still]",
+    "|-fail|p1b: Kingambit",
+    "|move|p2b: Pawmot|Ice Punch|p2a: Milotic",
+    "|-activate|p2a: Milotic|move: Protect",
+    "|upkeep",
+    "|turn|12"
+   ],
+   "state": {
+    "turn": 12,
+    "ended": false,
+    "winner": "",
+    "weather": "",
+    "weather_turns": 0,
+    "terrain": "",
+    "terrain_turns": 0,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Primarina",
+        "set_species": "Primarina",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 187,
+        "maxhp": 187,
+        "item": "fairyfeather",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         2,
+         2,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         5,
+         10,
+         18
+        ],
+        "volatiles": [
+         "stall"
+        ],
+        "locked": null
+       },
+       {
+        "species": "Kingambit",
+        "set_species": "Kingambit",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 207,
+        "maxhp": 207,
+        "item": "blackglasses",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         7,
+         16,
+         7,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Pawmot",
+        "set_species": "Pawmot",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 177,
+        "maxhp": 177,
+        "item": "leftovers",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         15,
+         0,
+         14,
+         7
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 202,
+        "maxhp": 202,
+        "item": "rockyhelmet",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         7,
+         15,
+         8,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 202,
+        "maxhp": 202,
+        "item": "rockyhelmet",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         3,
+         3,
+         1,
+         0,
+         0,
+         3,
+         0
+        ],
+        "pp": [
+         6,
+         13,
+         5,
+         17
+        ],
+        "volatiles": [
+         "stall"
+        ],
+        "locked": null
+       },
+       {
+        "species": "Pawmot",
+        "set_species": "Pawmot",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 177,
+        "maxhp": 177,
+        "item": "leftovers",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         15,
+         1,
+         15,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Kingambit",
+        "set_species": "Kingambit",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 207,
+        "item": "blackglasses",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         16,
+         7,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Primarina",
+        "set_species": "Primarina",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 187,
+        "item": "fairyfeather",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         6,
+         16,
+         19
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": {
+    "p1": "move 2 1, move 3",
+    "p2": "move 4, move 3 -1"
+   },
+   "draws": [
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 37
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 13
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 14
+    },
+    {
+     "site": "SECONDARY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 20
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 58
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 0
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 2
+    },
+    {
+     "site": "SECONDARY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 31
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "field:Residual",
+     "lo": 2,
+     "hi": 4,
+     "value": 2,
+     "group": [
+      "H:stall:p1b:end",
+      "H:protect:p1b:end"
+     ],
+     "start": 2
+    }
+   ],
+   "log": [
+    "|move|p1b: Kingambit|Protect|p1b: Kingambit",
+    "|-singleturn|p1b: Kingambit|Protect",
+    "|move|p2b: Pawmot|Ice Punch|p2a: Milotic",
+    "|-resisted|p2a: Milotic|1",
+    "|split|p2",
+    "|-damage|p2a: Milotic|192/202",
+    "|-damage|p2a: Milotic|95/100",
+    "|split|p2",
+    "|-damage|p2b: Pawmot|148/177|[from] item: Rocky Helmet|[of] p2a: Milotic",
+    "|-damage|p2b: Pawmot|83/100|[from] item: Rocky Helmet|[of] p2a: Milotic",
+    "|move|p2a: Milotic|Coil|p2a: Milotic",
+    "|-boost|p2a: Milotic|atk|1",
+    "|-boost|p2a: Milotic|def|1",
+    "|-boost|p2a: Milotic|accuracy|1",
+    "|move|p1a: Primarina|Moonblast|p2a: Milotic",
+    "|-crit|p2a: Milotic",
+    "|split|p2",
+    "|-damage|p2a: Milotic|0 fnt",
+    "|-damage|p2a: Milotic|0 fnt",
+    "|faint|p2a: Milotic",
+    "|split|p2",
+    "|-heal|p2b: Pawmot|159/177|[from] item: Leftovers",
+    "|-heal|p2b: Pawmot|89/100|[from] item: Leftovers",
+    "|upkeep",
+    "|turn|13"
+   ],
+   "state": {
+    "turn": 13,
+    "ended": false,
+    "winner": "",
+    "weather": "",
+    "weather_turns": 0,
+    "terrain": "",
+    "terrain_turns": 0,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Primarina",
+        "set_species": "Primarina",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 187,
+        "maxhp": 187,
+        "item": "fairyfeather",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         2,
+         2,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         5,
+         9,
+         18
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Kingambit",
+        "set_species": "Kingambit",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 207,
+        "maxhp": 207,
+        "item": "blackglasses",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         7,
+         16,
+         6,
+         20
+        ],
+        "volatiles": [
+         "stall"
+        ],
+        "locked": null
+       },
+       {
+        "species": "Pawmot",
+        "set_species": "Pawmot",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 177,
+        "maxhp": 177,
+        "item": "leftovers",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         15,
+         0,
+         14,
+         7
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 202,
+        "maxhp": 202,
+        "item": "rockyhelmet",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         7,
+         15,
+         8,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 202,
+        "item": "rockyhelmet",
+        "status": "fnt",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         6,
+         13,
+         5,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Pawmot",
+        "set_species": "Pawmot",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 159,
+        "maxhp": 177,
+        "item": "leftovers",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         15,
+         1,
+         14,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Kingambit",
+        "set_species": "Kingambit",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 207,
+        "item": "blackglasses",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         16,
+         7,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Primarina",
+        "set_species": "Primarina",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 187,
+        "item": "fairyfeather",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         6,
+         16,
+         19
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": {
+    "p1": "move 1, move 3",
+    "p2": "pass, move 2"
+   },
+   "draws": [
+    {
+     "site": "STALL",
+     "context": "StallMove",
+     "lo": 0,
+     "hi": 3,
+     "value": 1
+    }
+   ],
+   "log": [
+    "|move|p1a: Primarina|Protect|p1a: Primarina",
+    "|-singleturn|p1a: Primarina|Protect",
+    "|move|p1b: Kingambit|Protect||[still]",
+    "|-fail|p1b: Kingambit",
+    "|move|p2b: Pawmot|Revival Blessing|p2b: Pawmot"
+   ],
+   "state": {
+    "turn": 13,
+    "ended": false,
+    "winner": "",
+    "weather": "",
+    "weather_turns": 0,
+    "terrain": "",
+    "terrain_turns": 0,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Primarina",
+        "set_species": "Primarina",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 187,
+        "maxhp": 187,
+        "item": "fairyfeather",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         2,
+         2,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         4,
+         9,
+         18
+        ],
+        "volatiles": [
+         "protect",
+         "stall"
+        ],
+        "locked": null
+       },
+       {
+        "species": "Kingambit",
+        "set_species": "Kingambit",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 207,
+        "maxhp": 207,
+        "item": "blackglasses",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         7,
+         16,
+         5,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Pawmot",
+        "set_species": "Pawmot",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 177,
+        "maxhp": 177,
+        "item": "leftovers",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         15,
+         0,
+         14,
+         7
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 202,
+        "maxhp": 202,
+        "item": "rockyhelmet",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         7,
+         15,
+         8,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "switch",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 202,
+        "item": "rockyhelmet",
+        "status": "fnt",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         6,
+         13,
+         5,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Pawmot",
+        "set_species": "Pawmot",
+        "mega": 0,
+        "switch_flag": 1,
+        "hp": 159,
+        "maxhp": 177,
+        "item": "leftovers",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         15,
+         0,
+         14,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Kingambit",
+        "set_species": "Kingambit",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 207,
+        "item": "blackglasses",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         16,
+         7,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Primarina",
+        "set_species": "Primarina",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 187,
+        "item": "fairyfeather",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         6,
+         16,
+         19
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": {
+    "p2": "pass, switch 1"
+   },
+   "draws": [
+    {
+     "site": "SPEED_TIE",
+     "context": "field:Residual",
+     "lo": 1,
+     "hi": 3,
+     "value": 1,
+     "group": [
+      "H:stall:p1a:end",
+      "H:protect:p1a:end"
+     ],
+     "start": 1
+    }
+   ],
+   "log": [
+    "|split|p2",
+    "|-heal|p2: Milotic|101/202|[from] move: Revival Blessing",
+    "|-heal|p2: Milotic|50/100y|[from] move: Revival Blessing",
+    "|split|p2",
+    "|-heal|p2b: Pawmot|170/177|[from] item: Leftovers",
+    "|-heal|p2b: Pawmot|96/100|[from] item: Leftovers",
+    "|upkeep",
+    "|split|p2",
+    "|switch|p2a: Milotic|Milotic, L50, F|101/202",
+    "|switch|p2a: Milotic|Milotic, L50, F|50/100y",
+    "|turn|14"
+   ],
+   "state": {
+    "turn": 14,
+    "ended": false,
+    "winner": "",
+    "weather": "",
+    "weather_turns": 0,
+    "terrain": "",
+    "terrain_turns": 0,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Primarina",
+        "set_species": "Primarina",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 187,
+        "maxhp": 187,
+        "item": "fairyfeather",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         2,
+         2,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         4,
+         9,
+         18
+        ],
+        "volatiles": [
+         "stall"
+        ],
+        "locked": null
+       },
+       {
+        "species": "Kingambit",
+        "set_species": "Kingambit",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 207,
+        "maxhp": 207,
+        "item": "blackglasses",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         7,
+         16,
+         5,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Pawmot",
+        "set_species": "Pawmot",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 177,
+        "maxhp": 177,
+        "item": "leftovers",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         15,
+         0,
+         14,
+         7
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 202,
+        "maxhp": 202,
+        "item": "rockyhelmet",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         7,
+         15,
+         8,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        0,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 101,
+        "maxhp": 202,
+        "item": "rockyhelmet",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         6,
+         13,
+         5,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Pawmot",
+        "set_species": "Pawmot",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 170,
+        "maxhp": 177,
+        "item": "leftovers",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         15,
+         0,
+         14,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Kingambit",
+        "set_species": "Kingambit",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 207,
+        "item": "blackglasses",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         16,
+         7,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Primarina",
+        "set_species": "Primarina",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 187,
+        "item": "fairyfeather",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         6,
+         16,
+         19
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  }
+ ]
+}

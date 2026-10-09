@@ -18,6 +18,8 @@
 #include <duoforge/duoforge_view.h>
 
 #include "codec/state_codec.h"
+#include "data/pool_tables.h"
+#include "reference/conformance_pool.h"
 #include "state/battle_internal.h"
 #include "support/check.h"
 #include "support/fixtures.h"
@@ -335,6 +337,120 @@ static void test_batch(df_test *t, const duoforge_context *ctx)
     }
 }
 
+/* decision 0023 (the PP proxy, HauptSession): the record refuses while a foe's Revival Blessing slot shows derived PP 0,
+ * whether or not a revive happened (the record keeps no history), with the generic cause (the mask stays 0); a foe's
+ * slot at PP 1 is not refused for this, and an own slot at PP 0 is never refused for it. The battle is the recorded fail
+ * battle g52_fail_no_fainted_pawmot (side 0 is Pawmot with Revival Blessing in slot 1); the viewer is player 1, so
+ * side 0 is the foe; the viewer's knowledge of the foe's moves is set directly. */
+static const df_conf_battle *find_conf_battle(const char *name)
+{
+    for (size_t i = 0u; i < sizeof conf_battles / sizeof conf_battles[0]; ++i) {
+        if (strcmp(conf_battles[i].name, name) == 0) {
+            return &conf_battles[i];
+        }
+    }
+    return NULL;
+}
+
+static void build_pool_setup(const df_conf_battle *cb, duoforge_battle_setup *s)
+{
+    memset(s, 0, sizeof *s);
+    s->rng_initstate = 1u;
+    s->rng_initseq = 2u;
+    for (uint32_t side = 0; side < 2u; ++side) {
+        s->sides[side].member_count = cb->member_count;
+        for (uint32_t m = 0; m < cb->member_count; ++m) {
+            const df_conf_member *src = &cb->members[side][m];
+            duoforge_member_setup *dst = &s->sides[side].members[m];
+            dst->species_id = src->species;
+            dst->gender = src->gender;
+            dst->nature = src->nature;
+            for (uint32_t i = 0; i < 6u; ++i) {
+                dst->stat_points[i] = src->sp[i];
+            }
+            dst->ability = src->ability;
+            dst->item = src->item;
+            dst->move_count = src->move_count;
+            for (uint32_t k = 0; k < src->move_count; ++k) {
+                dst->moves[k].move_id = src->moves[k];
+            }
+        }
+    }
+}
+
+static void test_foe_revive_proxy(df_test *t, const duoforge_context *kp)
+{
+    const df_conf_battle *cb = find_conf_battle("g52_fail_no_fainted_pawmot");
+    if (!DF_CHECK(t, cb != NULL)) {
+        return;
+    }
+    duoforge_battle_setup setup;
+    build_pool_setup(cb, &setup);
+    duoforge_battle *b = NULL;
+    DF_CHECK(t, duoforge_battle_create(kp, &setup, &b) == DUOFORGE_OK && b != NULL);
+    duoforge_decision_bundle bd;
+    team_bundle(&bd, b);
+    duoforge_step_result res;
+    DF_CHECK(t, duoforge_battle_step(kp, b, &bd, &res) == DUOFORGE_OK);
+    DF_CHECK(t, b->boundary_kind == DUOFORGE_BOUNDARY_TURN);
+
+    const uint32_t viewer = 1u;
+    const uint32_t foe = 0u;
+    /* the foe member with Revival Blessing (any roster member: the record shows the foe's moves of seen members) */
+    uint32_t lead = DUOFORGE_MAX_ROSTER;
+    uint32_t rb = DUOFORGE_MAX_MOVE_SLOTS;
+    for (uint32_t m = 0u; m < b->sides[foe].member_count && lead == DUOFORGE_MAX_ROSTER; ++m) {
+        for (uint32_t k = 0u; k < b->sides[foe].members[m].move_count; ++k) {
+            if (b->sides[foe].members[m].moves[k].move_id == DFI_MOVE_REVIVALBLESSING) {
+                lead = m;
+                rb = k;
+                break;
+            }
+        }
+    }
+    if (!DF_CHECK(t, lead < DUOFORGE_MAX_ROSTER && rb < DUOFORGE_MAX_MOVE_SLOTS)) {
+        duoforge_battle_destroy(b);
+        return;
+    }
+    dfi_member *fm = &b->sides[foe].members[lead];
+    const uint32_t pp_max = fm->moves[rb].pp_max;
+    b->sides[viewer].seen_mask = (uint8_t)(b->sides[viewer].seen_mask | (1u << lead));
+    duoforge_public_state v;
+
+    /* the foe used it once (derived PP 0), no revive: refused, mask 0 */
+    b->sides[viewer].knowledge[lead].moves_used[rb] = (uint8_t)pp_max;
+    DF_CHECK(t, duoforge_battle_public(kp, b, viewer, &v) == DUOFORGE_E_UNSUPPORTED);
+    DF_CHECK(t, causes_of(t, kp, b, viewer) == 0u);
+
+    /* the same knowledge with an actual revive (the foe's member at half its maximum, as a revive leaves it): refused */
+    dfi_member *mm = &b->sides[foe].members[lead];
+    const uint16_t hp = mm->hp;
+    mm->hp = (uint16_t)(mm->hp_max / 2u);
+    DF_CHECK(t, duoforge_battle_public(kp, b, viewer, &v) == DUOFORGE_E_UNSUPPORTED);
+    DF_CHECK(t, causes_of(t, kp, b, viewer) == 0u);
+    mm->hp = hp;
+
+    /* the foe's slot at PP 1 (never used): not refused for this reason */
+    b->sides[viewer].knowledge[lead].moves_used[rb] = 0u;
+    DF_CHECK(t, duoforge_battle_public(kp, b, viewer, &v) == DUOFORGE_OK);
+    duoforge_battle_destroy(b);
+
+    /* the own side's Revival Blessing at PP 0 (the own PP is exact): not refused for this reason. Viewer 0 sees side 0. */
+    duoforge_battle *o = NULL;
+    DF_CHECK(t, duoforge_battle_create(kp, &setup, &o) == DUOFORGE_OK && o != NULL);
+    team_bundle(&bd, o);
+    DF_CHECK(t, duoforge_battle_step(kp, o, &bd, &res) == DUOFORGE_OK);
+    for (uint32_t m = 0u; m < o->sides[0].member_count; ++m) {
+        for (uint32_t k = 0u; k < o->sides[0].members[m].move_count; ++k) {
+            if (o->sides[0].members[m].moves[k].move_id == DFI_MOVE_REVIVALBLESSING) {
+                o->sides[0].members[m].moves[k].pp = 0u;
+            }
+        }
+    }
+    DF_CHECK(t, duoforge_battle_public(kp, o, 0u, &v) == DUOFORGE_OK);
+    duoforge_battle_destroy(o);
+}
+
 int main(void)
 {
     df_test t;
@@ -344,6 +460,7 @@ int main(void)
     test_arguments(&t);
     test_causes_cases(&t, k1);
     test_causes_cases(&t, kp);
+    test_foe_revive_proxy(&t, kp);
     test_other_refusal_is_mask_zero(&t);
     test_hidden_values_do_not_change_the_mask(&t, k1);
     test_hidden_values_do_not_change_the_mask(&t, kp);

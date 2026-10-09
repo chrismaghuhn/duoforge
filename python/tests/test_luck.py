@@ -120,7 +120,7 @@ class StepTerms(unittest.TestCase):
 def _v2s():
     import jax
     from duoforge_learn import policy
-    model = policy.make(policy.v2_config("S"))
+    model = policy.make(policy.v2_config("S"), features.feature_names(4))  # the suite plays encoder 4
     return model, model.init(jax.random.PRNGKey(7))
 
 

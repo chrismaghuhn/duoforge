@@ -86,6 +86,10 @@ def domain(tracker):
     else:
         asked = tracker._asked[side][1]
         request["forceSwitch"] = [bool(asked >> k & 1) for k in (0, 1)]
+        if getattr(tracker, "_revive", False):
+            for k in (0, 1):
+                if asked >> k & 1:
+                    pokemon[k]["reviving"] = True  # the Revival Blessing user's slot chooses a fainted member
     lists = options.slot_options(request, side, roster_of, locked)
     for k, needs in enumerate(struggle_too):
         has = any(o.kind == options.MOVE and o.move_slot == options.STRUGGLE for o in lists[k])

@@ -1,0 +1,108 @@
+{
+  "name": "g52_revive_pivot_no_reserve_ceruledge",
+  "purpose": "Revival Blessing revives a benched Ceruledge (M) at a pivot with no living reserve (the two actives stand), answered with switch 3 and pass. Team X3 against the g50 team Y, random play of diff_driver seed 5402.",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,101a94770e4c56c2e55469bc2c2eba0ab6c34acaed79f5c6470167c448f69e14",
+  "teams": [
+    "Milotic (F) @ Rocky Helmet\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Protect\n- Scald\n- Recover\n- Coil\n\nGholdengo @ Life Orb\nAbility: Good as Gold\nLevel: 50\nEVs: 32 HP / 2 SpA / 32 SpD\nCalm Nature\n- Protect\n- Shadow Ball\n- Make It Rain\n\nCeruledge (M) @ Charcoal\nAbility: Flash Fire\nLevel: 50\nEVs: 31 HP / 7 Atk / 24 Def / 3 SpD / 1 Spe\nBrave Nature\n- Protect\n\nPawmot (M) @ Leftovers\nAbility: Iron Fist\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Thunderbolt\n- Revival Blessing\n- Ice Punch\n- Protect\n\nKingambit (M) @ Black Glasses\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Sucker Punch\n- Iron Head\n- Protect\n- Swords Dance\n\nPrimarina (F) @ Fairy Feather\nAbility: Torrent\nLevel: 50\nEVs: 32 HP / 2 Def / 32 SpD\nCalm Nature\n- Protect\n- Moonblast\n- Calm Mind",
+    "Milotic (F) @ Leftovers\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Protect\n- Scald\n- Recover\n- Coil\n\nPrimarina (F) @ Fairy Feather\nAbility: Torrent\nLevel: 50\nEVs: 32 HP / 2 Def / 32 SpD\nCalm Nature\n- Protect\n- Moonblast\n- Calm Mind\n\nSamurott-Hisui (F) @ Mystic Water\nAbility: Torrent\nLevel: 50\nEVs: 2 HP / 32 Atk / 32 Spe\nJolly Nature\n- Soak\n- Protect\n- Aqua Jet\n- Swords Dance\n\nGholdengo @ Black Glasses\nAbility: Good as Gold\nLevel: 50\nEVs: 32 HP / 2 SpA / 32 SpD\nCalm Nature\n- Protect\n- Shadow Ball\n- Make It Rain\n\nGarchomp (M) @ Focus Sash\nAbility: Rough Skin\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Earthquake\n- Protect\n- Swords Dance\n- Dragon Claw\n\nSneasler (M) @ Charcoal\nAbility: Poison Touch\nLevel: 50\nEVs: 2 HP / 32 Atk / 32 Spe\nJolly Nature\n- Protect"
+  ],
+  "choices": [
+    {
+      "p1": "team 6342",
+      "p2": "team 5362"
+    },
+    {
+      "p1": "move 1, switch 4",
+      "p2": "move 1, move 1 1"
+    },
+    {
+      "p1": "move 3, move 1",
+      "p2": "move 2, move 2"
+    },
+    {
+      "p1": "move 3, move 1",
+      "p2": "switch 3, switch 4"
+    },
+    {
+      "p1": "move 1, move 3",
+      "p2": "switch 3, move 1"
+    },
+    {
+      "p1": "switch 4, move 3",
+      "p2": "move 3, move 3"
+    },
+    {
+      "p1": "move 1, move 3",
+      "p2": "move 3, move 1"
+    },
+    {
+      "p1": "pass, switch 4"
+    },
+    {
+      "p1": "move 1, move 2 2",
+      "p2": "move 1, move 3"
+    },
+    {
+      "p1": "switch 3, pass",
+      "p2": "pass, switch 4"
+    },
+    {
+      "p1": "move 4, pass",
+      "p2": "move 4 -2, move 4"
+    },
+    {
+      "p2": "pass, switch 3"
+    },
+    {
+      "p1": "move 4, pass",
+      "p2": "move 2, move 1"
+    },
+    {
+      "p1": "move 4, pass",
+      "p2": "move 3, move 1"
+    },
+    {
+      "p1": "move 4, pass",
+      "p2": "move 2, move 1"
+    },
+    {
+      "p1": "move 2, pass",
+      "p2": "move 3, move 1"
+    },
+    {
+      "p1": "pass, pass"
+    },
+    {
+      "p1": "switch 3, pass"
+    },
+    {
+      "p1": "pass, switch 3"
+    },
+    {
+      "p1": "move 3 -2, move 1",
+      "p2": "move 1, move 1"
+    },
+    {
+      "p1": "pass, move 1",
+      "p2": "move 2, pass"
+    },
+    {
+      "p1": "pass, move 1",
+      "p2": "move 3, pass"
+    },
+    {
+      "p1": "pass, move 1",
+      "p2": "move 2, pass"
+    },
+    {
+      "p1": "pass, move 1",
+      "p2": "move 4 1, pass"
+    },
+    {
+      "p1": "pass, move 1",
+      "p2": "move 1, pass"
+    }
+  ]
+}

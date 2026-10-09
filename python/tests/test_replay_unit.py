@@ -407,7 +407,8 @@ class LinesTest(unittest.TestCase):
         self.assertEqual(lines.FEATURES["WEATHER_SAND"], 0)
         self.assertEqual(lines.FEATURES["RAGE_POWDER"], 39)
         self.assertEqual(lines.FEATURES["MOVE_FAILED"], 41)
-        self.assertEqual(len(lines.FEATURES), 42)  # tail revision 4: ROOST 40, MOVE_FAILED 41
+        self.assertEqual(lines.FEATURES["TRANSFORM"], 42)
+        self.assertEqual(len(lines.FEATURES), 43)  # tail revision 4: ROOST 40, MOVE_FAILED 41; 0028: TRANSFORM 42
 
     def test_supported_mask_forms(self):
         f = lines.FEATURES
