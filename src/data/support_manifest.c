@@ -732,6 +732,8 @@ const dfi_support_manifest dfi_support = {
      * ended in the residual of order 25, verified against the g42 battles). MOVE_FAILED (bit 41) stays clear: the field is exact
      * only when the last result is classified, and an unclassified exit (decision 0015 section 7) reads 0 where the reference
      * may read 1. The expression stays plain terms: python/duoforge_live/lines.py parses it. */
+    /* Step G60: Substitute (bit 23: the SUBSTITUTE volatile of the position, public: its start and end lines; its HP is never in
+     * an event). Decision 0032 section 9 names the bit as supported once the step lands; verified against the g60 battles. */
     .view_ext_features = ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_THROAT_CHOP) |
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_HEAL_BLOCK) |
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_TYPE_CHANGE) |
@@ -758,5 +760,6 @@ const dfi_support_manifest dfi_support = {
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_TOXIC_SPIKES) |
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_STICKY_WEB) |
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_ROOST) |
-                         ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_QUICK_GUARD)
+                         ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_QUICK_GUARD) |
+                         ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_SUBSTITUTE)
 };
