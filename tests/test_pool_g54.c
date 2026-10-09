@@ -92,7 +92,7 @@ static void check_marks(df_test *t)
     DF_CHECK_EQ_U64(t, DFI_SPECIAL_HEAL_PULSE, DFI_SPECIAL_UPPER_HAND + 1u);
     DF_CHECK_EQ_U64(t, DFI_SPECIAL_STRENGTH_SAP, DFI_SPECIAL_HEAL_PULSE + 1u);
     DF_CHECK_EQ_U64(t, DFI_SPECIAL_HAZE, DFI_SPECIAL_SHEER_COLD + 1u); /* step G62 (decision 0031), after the four of G64 */
-    DF_CHECK_EQ_U64(t, DFI_SPECIAL_UNMODELED, DFI_SPECIAL_PHANTOM_FORCE + 1u); /* step G60 (decision 0032) comes after Quash */ /* G62 added Haze, After You and Quash after it */
+    DF_CHECK_EQ_U64(t, DFI_SPECIAL_UNMODELED, DFI_SPECIAL_THUNDER_WAVE + 1u); /* step G60 (decision 0032) comes after Quash */ /* G62 added Haze, After You and Quash after it */
 }
 
 /* The pinned numbers that the rows of this step depend on (data/moves.ts; the Champions mod changes none of them). */
@@ -124,7 +124,7 @@ static void check_pins(df_test *t)
 static void check_unmarked(df_test *t)
 {
     /* Haze was unmarked here until step G62 (decision 0031) marked it; its check is in duoforge.state.pool_g62 */
-    DF_CHECK(t, dfi_support.moves[DFI_MOVE_STEELBEAM] == 0u);
+    DF_CHECK(t, dfi_support.moves[DFI_MOVE_STEELBEAM] != 0u); /* marked by step G68 (decision 0015 item 5cc): the drop of G54 is no longer dropped */
     DF_CHECK(t, dfi_support.moves[DFI_MOVE_FINALGAMBIT] == 0u);
     /* the abilities whose rule would change a hit count (Skill Link: the maximum) or a pulse (Mega Launcher) stay unmarked */
     DF_CHECK_EQ_U64(t, dfi_support.abilities[DFI_ABILITY_SKILLLINK], 0u);
