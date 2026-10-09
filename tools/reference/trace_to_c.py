@@ -977,6 +977,9 @@ IGNORED_VOLATILES = {
     # Pool step G38 (Imprison): the start line, the moves of the foes' requests (the hidden disable, `hidden` of the state
     # row), the cant line and the view bit.
     'imprison': 'the start line, the moves of the requests, the cant line and the view bit',
+    # Pool step G60 (Substitute, decision 0032): its HP is never shown; the start and end lines and the absorbed hits (the
+    # -activate lines with [damage], no amount) show its presence and the hits it takes.
+    'substitute': 'the start line, the end line and the absorbed hits (the HP is never shown)',
 }
 HP_EXACT, HP_PERCENT = 1, 2
 HP_FLAGS_EV = {'': 0, 'r': 1, 'y': 2, 'g': 3}
