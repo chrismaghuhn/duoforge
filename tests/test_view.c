@@ -463,7 +463,7 @@ static void test_uniforms(df_test *t)
 {
     duoforge_hypothesis h;
     memset(&h, 0, sizeof h);
-    DF_CHECK(t, sizeof(duoforge_public_state) == 1336u);
+    DF_CHECK(t, sizeof(duoforge_public_state) == 1396u); /* the state array holds the POOL state of tail rev 5 (1357 bytes); was 1336 */
     DF_CHECK(t, sizeof(duoforge_hypothesis) == 280u);
 }
 
