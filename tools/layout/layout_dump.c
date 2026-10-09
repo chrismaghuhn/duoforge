@@ -342,7 +342,8 @@ int main(void)
     CONSTANT(DUOFORGE_TYPE_PSYCHIC, false);
     CONSTANT(DUOFORGE_TYPE_ROCK, false);
     CONSTANT(DUOFORGE_TYPE_STEEL, false);
-    CONSTANT(DUOFORGE_TYPE_WATER, true);
+    CONSTANT(DUOFORGE_TYPE_WATER, false);
+    CONSTANT(DUOFORGE_TYPE_NONE, true);
     printf("  }\n}\n");
     return 0;
 }
