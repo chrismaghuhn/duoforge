@@ -111,8 +111,9 @@ def guard(best, best_kl, stale, epoch, metrics):
 
 
 def drift(history):
-    """(stop, best_epoch) after the epochs of history (history[0]: the start, epoch 0), as fit decides: guard
-    for every epoch, and a stop at MAX_EPOCHS."""
+    """(stop, best_epoch) after the epochs of history (history[0]: the start, epoch 0): the held-out guard's
+    verdict (guard for every epoch, the shared code) and the stop at MAX_EPOCHS. fit additionally stops at
+    MAX_STEPS and on a nonfinite training step, which a history of held-out metrics cannot show."""
     if not np.isfinite(list(history[0].values())).all():
         return True, 0
     best, best_kl, stale = 0, history[0]["held_teacher_kl"], 0

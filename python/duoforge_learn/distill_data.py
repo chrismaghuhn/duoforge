@@ -81,9 +81,10 @@ def value_targets(game_id, seat, logical_tick, acting, reward, done, collector_v
     game_id, seat, tick = (np.asarray(x, np.int64) for x in (game_id, seat, logical_tick))
     acting, done = np.asarray(acting, bool), np.asarray(done, bool)
     out = np.zeros(game_id.shape, np.float32)
-    for g, s in sorted(set(zip(game_id.tolist(), seat.tolist()))):
-        idx = np.flatnonzero((game_id == g) & (seat == s))
-        idx = idx[np.argsort(tick[idx], kind="stable")]
+    order = np.lexsort((tick, seat, game_id))  # one sort: (game, seat) groups, each in tick order
+    starts = np.flatnonzero(np.r_[True, (np.diff(game_id[order]) != 0) | (np.diff(seat[order]) != 0)])
+    for idx in np.split(order, starts[1:]):
+        g, s = int(game_id[idx[0]]), int(seat[idx[0]])
         if not np.array_equal(tick[idx], np.arange(idx.size)):
             raise ValueError(f"game {g} seat {s}: logical ticks have a gap or repeat")
         if done[idx[:-1]].any():

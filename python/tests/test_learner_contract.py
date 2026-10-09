@@ -16,8 +16,9 @@ def _scenes():
 
 
 class _HeadModel:
-    """A Model whose apply returns the fixture's head outputs through the model's own normalization: params are
-    {"pairs": (B, 1024) logits, "team": (B, 360) logits, "value": (B,)}."""
+    """A Model whose apply returns the fixture's head outputs: the pairs through the model's own normalization
+    (model.pair_log_softmax), the team head as model.apply normalizes it (a log-softmax over all 360 teams,
+    inline there); params are {"pairs": (B, 1024) logits, "team": (B, 360) logits, "value": (B,)}."""
 
     def apply(self, params, obs, slots, mask):
         import jax
