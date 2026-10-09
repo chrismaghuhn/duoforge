@@ -502,11 +502,29 @@ class Guards(unittest.TestCase):
             with open(run_sh, 'w', newline='\n') as f:
                 f.write('#!/bin/bash\n' + RUN_SH[workload])
             env['STUB_RUN_SH'] = posix(run_sh)
+        # Git for Windows' bin/bash.exe (what CTest finds) puts /mingw64/bin and /usr/bin in front of the PATH it is
+        # given, and the real git, curl or (on Windows, in System32) shutdown must never run here: the stand-ins are
+        # put first inside bash, every one is checked to resolve to them, and only then is the user data started.
+        start_sh = os.path.join(box, 'start.sh')
+        with open(start_sh, 'w', newline='\n') as f:
+            f.write('#!/bin/bash\n'
+                    'BIN=$(cd "$(dirname "$0")/bin" && pwd) || exit 97\n'
+                    'export PATH="$BIN:$PATH"\n'
+                    'for c in %s; do\n'
+                    '    p=$(command -v "$c") || { echo "STAND-IN MISSING: $c"; exit 97; }\n'
+                    '    [ "$p" = "$BIN/$c" ] || { echo "STAND-IN NOT FIRST: $c is $p"; exit 97; }\n'
+                    'done\n'
+                    'exec bash "$1"\n' % ' '.join(sorted(BOX_STUBS)))
         start = time.monotonic()
         # the output goes to a file: a background sleep that outlives the script must not hold a pipe of this test
-        with open(os.path.join(box, 'stdout.txt'), 'w') as out:
-            r = subprocess.run([BASH, posix(script)], env=env, stdout=out, stderr=subprocess.STDOUT, timeout=120)
+        stdout = os.path.join(box, 'stdout.txt')
+        with open(stdout, 'w') as out:
+            r = subprocess.run([BASH, posix(start_sh), posix(script)], env=env, stdout=out, stderr=subprocess.STDOUT,
+                               timeout=120)
         seconds = time.monotonic() - start
+        if r.returncode == 97:
+            with open(stdout, encoding='utf-8') as f:
+                self.fail('the stand-ins are not what the user data would run: ' + f.read())
         with open(events, encoding='utf-8') as f:
             ev = [line.rstrip('\n') for line in f if line.strip()]
         with open(os.path.join(box, 'box.log'), encoding='utf-8') as f:
