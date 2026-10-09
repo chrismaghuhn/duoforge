@@ -370,6 +370,28 @@ function checkWeather(dex, source) {
     expect('Weather Ball without weather', [none.type, none.basePower], ['Normal', 50]);
 }
 
+// Step G55, the rock items and Terrain Extender: the duration of each weather and terrain with the setter's item (the
+// callbacks of data/conditions.ts and data/moves.ts read source.hasItem): 8 with its own item, 5 with any other item or none.
+const G55_WEATHER_ROCK = {raindance: 'damprock', sunnyday: 'heatrock', sandstorm: 'smoothrock', snowscape: 'icyrock'};
+const G55_TERRAINS = ['grassyterrain', 'psychicterrain', 'electricterrain', 'mistyterrain'];
+const G55_ITEMS = ['damprock', 'heatrock', 'smoothrock', 'icyrock', 'terrainextender'];
+function checkG55(dex) {
+    const holding = (item) => ({hasItem: (i) => i === item});
+    for (const [weather, rock] of Object.entries(G55_WEATHER_ROCK)) {
+        const cond = dex.conditions.get(weather);
+        expect(weather + ' duration by the setter\'s rock (' + G55_ITEMS.join(', ') + ')',
+            G55_ITEMS.map((item) => call(cond.durationCallback, battle(cond), [holding(item)])),
+            G55_ITEMS.map((item) => (item === rock ? 8 : 5)));
+        expect(weather + ' duration without an item', call(cond.durationCallback, battle(cond), [holding('')]), 5);
+    }
+    for (const id of G55_TERRAINS) {
+        const terrain = dex.moves.get(id).condition;
+        expect(id + ' duration by the setter\'s item (' + G55_ITEMS.join(', ') + ')',
+            G55_ITEMS.map((item) => call(terrain.durationCallback, battle(terrain), [holding(item)])),
+            G55_ITEMS.map((item) => (item === 'terrainextender' ? 8 : 5)));
+    }
+}
+
 // Step G28, Expert Belt, Acrobatics, Blizzard, Shell Smash, Ancient Power and Feint: what the engine reads about them
 // (src/combat/turn.c), called on the pinned handlers and read from the pinned data.
 function checkG28(dex) {
@@ -1046,8 +1068,43 @@ function checkG61(dex, headers, moveIds, moveRows, unmodeledMoves) {
 }
 
 // The pinned counts of checkG61: stripped and boost-only pool moves (marked or not), as of step G61.
-const PINNED_SF_STRIPPED = 101; // every pool move, marked or not (63 of the marked ones)
+const PINNED_SF_STRIPPED = 102; // every pool move, marked or not (63 of the marked ones)
 const PINNED_SF_BOOST_ONLY = 1;
+
+// Step G54 (moves): the multi-hit rows and the side condition, read from the pinned data as the generator's facts read them.
+// Scale Shot's self boost is after the last hit (its selfBoost), Icicle Spear and Scale Shot draw a count of 2 to 5 hits,
+// Quick Guard is a priority 3 side condition, Upper Hand a priority 3 move whose flinch is its secondary, Heal Pulse never
+// misses and Strength Sap has accuracy 100 (its -6 check is its onTryHit, before the accuracy check).
+function checkG54(dex) {
+    const ice = dex.moves.get('iciclespear');
+    expect('Icicle Spear accuracy and multihit', [ice.accuracy, ice.multihit], [100, [2, 5]]);
+    const sc = dex.moves.get('scaleshot');
+    expect('Scale Shot accuracy and multihit', [sc.accuracy, sc.multihit], [90, [2, 5]]);
+    expect('Scale Shot self boost', sc.selfBoost, {boosts: {def: -1, spe: 1}});
+    const qg = dex.moves.get('quickguard');
+    expect('Quick Guard side condition and priority', [qg.sideCondition, qg.priority], ['quickguard', 3]);
+    const uh = dex.moves.get('upperhand');
+    expect('Upper Hand priority', uh.priority, 3);
+    expect('Upper Hand flinch', uh.secondary, {chance: 100, volatileStatus: 'flinch'});
+    expect('Heal Pulse accuracy', dex.moves.get('healpulse').accuracy, true);
+    expect('Strength Sap accuracy', dex.moves.get('strengthsap').accuracy, 100);
+    return 1;
+}
+
+// Step G62 (Haze, decision 0031): accuracy true, a field target and no protect flag; onHitField clears the boosts of the
+// standing actives (getAllActive, the default that skips a fainted Pokemon), checked by its text in gen_closure.py.
+function checkG62(dex) {
+    const haze = dex.moves.get('haze');
+    expect('Haze accuracy and target', [haze.accuracy, haze.target], [true, 'all']);
+    expect('Haze has no protect flag', haze.flags.protect === undefined, true);
+    expect('Haze priority', haze.priority, 0);
+    // After You (no protect flag, accuracy true) and Quash (a protect move, accuracy 100), both priority 0 Status moves.
+    const ay = dex.moves.get('afteryou');
+    expect('After You accuracy, priority, protect', [ay.accuracy, ay.priority, ay.flags.protect === undefined], [true, 0, true]);
+    const qu = dex.moves.get('quash');
+    expect('Quash accuracy, priority, protect', [qu.accuracy, qu.priority, qu.flags.protect], [100, 0, 1]);
+    return 1;
+}
 
 function checkG32(dex) {
     for (const id of ['eruption', 'waterspout']) {
@@ -1497,12 +1554,12 @@ function checkFormes(dex, validator, rows, moves, abilities) {
 // The UNMODELED markers of gen_closure.py --pool, re-derived from the pinned data in this file's own words: the
 // special column of a move, the handler column of an item and of an ability, and the lists of unmodelled features.
 // implemented in the turn code by id (G4: Focus Sash, Rock Head; G12: Floettite, Flower Veil, Fairy Aura)
-const ENGINE_ROWS = {items: ['focussash', 'floettite', 'psychicseed', 'electricseed', 'mistyseed', 'expertbelt', 'ejectbutton', 'widelens', 'muscleband', 'wiseglasses', 'brightpowder', 'redcard', 'lumberry', 'mentalherb'],
+const ENGINE_ROWS = {items: ['focussash', 'floettite', 'psychicseed', 'electricseed', 'mistyseed', 'expertbelt', 'ejectbutton', 'widelens', 'muscleband', 'wiseglasses', 'brightpowder', 'redcard', 'lumberry', 'mentalherb', 'damprock', 'heatrock', 'smoothrock', 'icyrock', 'terrainextender'],
     abilities: ['rockhead', 'flowerveil', 'fairyaura', 'roughskin', 'poisontouch', 'thermalexchange', 'stickyhold', 'trace',
         'levitate', 'sandrush', 'swiftswim', 'slushrush', 'chlorophyll', 'innerfocus', 'liquidvoice',
         'flamebody', 'clearbody', 'hospitality', 'overcoat', 'soundproof', 'unnerve', 'speedboost',
         'compoundeyes', 'ironfist', 'sharpness', 'solidrock', 'technician', 'multiscale', 'galewings', 'raindish', 'friendguard', 'cursedbody', 'mirrorarmor', 'auraguard', 'hypercutter', 'scrappy', 'infiltrator', 'queenlymajesty', 'damp', 'sturdy', 'snowcloak', 'sandveil', 'static', 'justified', 'limber', 'solarpower', 'regenerator', 'toxicdebris', 'shadowtag', 'suctioncups', 'guarddog',
-        'steadfast', 'weakarmor', 'telepathy', 'voltabsorb', 'punkrock', 'moxie', 'synchronize', 'oblivious', 'sheerforce']};
+        'steadfast', 'weakarmor', 'telepathy', 'voltabsorb', 'punkrock', 'moxie', 'synchronize', 'oblivious', 'keeneye', 'bigpecks', 'magicbounce', 'pressure', 'sheerforce']};
 const ENGINE_TARGETS = new Set(['normal', 'any', 'adjacentAlly', 'adjacentFoe', 'self', 'allAdjacentFoes', 'allySide', 'all',
     'randomNormal', 'allAdjacent', 'allies', 'foeSide']); // foeSide: step G37 (the four hazards)
 // The fields of a move that the tables model (gen_closure.py DATA_KEYS and IGNORED_KEYS), nothing else.
@@ -1528,6 +1585,8 @@ const ENGINE_PIVOTS = ['uturn', 'voltswitch'];
 const PROTECT_COPIES = {detect: 'protect'};
 // Step G46: the four forced-switch moves; their forceSwitch: true is modelled (gen_closure.py G46_FORCE_SWITCH_MOVES).
 const G46_FORCE_SWITCH_MOVES = ['roar', 'whirlwind', 'dragontail', 'circlethrow'];
+// Step G56: the three lock moves; their self volatileStatus 'lockedmove' is modelled (gen_closure.py G56_LOCKED_MOVES).
+const G56_LOCKED_MOVES = ['outrage', 'thrash', 'petaldance'];
 
 function moveIsModelled(raw, id) {
     if (raw.selfSwitch !== undefined && !ENGINE_PIVOTS.includes(id)) {
@@ -1540,6 +1599,10 @@ function moveIsModelled(raw, id) {
         }
         // Step G46: forceSwitch: true of the four moves of G46_FORCE_SWITCH_MOVES, and nothing else of it.
         if (key === 'forceSwitch' && value === true && G46_FORCE_SWITCH_MOVES.includes(id)) {
+            continue;
+        }
+        // Step G56: self: { volatileStatus: 'lockedmove' } of the three moves of G56_LOCKED_MOVES, and nothing else of it.
+        if (key === 'self' && G56_LOCKED_MOVES.includes(id) && JSON.stringify(value) === JSON.stringify({ volatileStatus: 'lockedmove' })) {
             continue;
         }
         if (typeof value === 'function' || !MOVE_KEYS.has(key)) {
@@ -1869,6 +1932,7 @@ function main() {
     checkFocusSash(dex, root);
     checkWeather(dex, source);
     checkTerrains(dex);
+    checkG55(dex);
     checkG28(dex);
     checkG10Moves(dex);
     checkEncore(dex, repo);
@@ -1882,6 +1946,8 @@ function main() {
     const g61 = checkG61(dex, headers, moveIds, moveColumns(source, defineOf(header, 'DFI_POOL_MOVE_COUNT')), unmodeledMoves);
     checkG47(dex);
     checkG44(dex);
+    checkG54(dex);
+    checkG62(dex);
     checkG22(dex, formeRowsList, new Set(definedIds(headers, 'ITEM').values()), new Set(abilityIds.values()));
     const abilities = checkAbilities(dex, abilityRows, moveIds, unmodeledAbilities, unmodeledMoves);
     // "All 18": a booster and a resist berry for each type, and nothing else in the families.

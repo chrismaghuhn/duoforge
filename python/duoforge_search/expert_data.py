@@ -162,6 +162,11 @@ def _plain(value):
     raise ValueError("metadata must be finite JSON values")
 
 
+def _dumps(plain):
+    """Canonical JSON bytes of an already plain (JSON-ready) value."""
+    return json.dumps(plain, sort_keys=True, separators=(",", ":"), ensure_ascii=True, allow_nan=False).encode("ascii")
+
+
 def _canonical(value):
     return json.dumps(_plain(value), sort_keys=True, separators=(",", ":"), ensure_ascii=True,
                       allow_nan=False).encode("ascii")
@@ -216,6 +221,13 @@ def _array(value, dtype, shape, name):
 
 def validate_row(row: ExpertRow, manifest: DataManifest) -> None:
     validate_manifest(manifest)
+    _validate_row(row, manifest)
+    _canonical(row)
+
+
+def _validate_row(row, manifest):
+    """validate_row's checks for a manifest already validated, without the
+    serialization check (shards serialize every row themselves)."""
     if not isinstance(row, ExpertRow) or not isinstance(row.status, RowStatus):
         raise ValueError("invalid row/status")
     _key(row.key)
@@ -304,7 +316,6 @@ def validate_row(row: ExpertRow, manifest: DataManifest) -> None:
         raise ValueError("work/audit provenance must be mappings")
     for name, count in row.work.items():
         _uint(count, f"work {name}")
-    _canonical(row)
 
 
 def _check_streams(rows):
@@ -336,17 +347,21 @@ def write_shard(path: Path, rows: Sequence[ExpertRow], manifest: DataManifest) -
     if len(rows) > MAX_SHARD_ROWS:
         raise ValueError(f"a shard holds at most {MAX_SHARD_ROWS} rows")
     for row in rows:
-        validate_row(row, manifest)
+        _validate_row(row, manifest)
     _check_streams(rows)
-    payload = {"schema_version": SCHEMA_VERSION, "manifest": _plain(manifest),
-               "manifest_sha256": _sha(manifest), "rows": [_plain(r) for r in rows]}
+    # Each row is serialized once here; _plain refuses what validate_row's serialization check refuses.
+    manifest_plain = _plain(manifest)
+    payload = {"schema_version": SCHEMA_VERSION, "manifest": manifest_plain,
+               "manifest_sha256": hashlib.sha256(_dumps(manifest_plain)).hexdigest(),
+               "rows": [_plain(r) for r in rows]}
     return _write_private(path, payload)
 
 
 def _write_private(path, payload):
     """Canonical JSON with its content hash, created exclusively and fsynced;
     returns the file's SHA-256."""
-    data = _canonical({**payload, "content_sha256": _sha(payload)}) + b"\n"
+    payload = _plain(payload)
+    data = _dumps({**payload, "content_sha256": hashlib.sha256(_dumps(payload)).hexdigest()}) + b"\n"
     path.parent.mkdir(parents=True, exist_ok=True)
     # Exclusive creation prevents accidental loss of private data. A partial
     # failed file is not valid and cannot be read back.
@@ -439,9 +454,9 @@ def read_shard(path: Path, expected: DataManifest) -> tuple[ExpertRow, ...]:
     if set(payload) != {"schema_version", "manifest", "manifest_sha256", "rows", "content_sha256"}:
         raise ValueError("invalid shard fields")
     content = {k: v for k, v in payload.items() if k != "content_sha256"}
-    if payload["content_sha256"] != _sha(content):
+    if payload["content_sha256"] != hashlib.sha256(_dumps(content)).hexdigest():  # parsed JSON is plain
         raise ValueError("shard integrity mismatch")
-    if payload["manifest_sha256"] != _sha(payload["manifest"]) or payload["manifest_sha256"] != _sha(expected):
+    if payload["manifest_sha256"] != hashlib.sha256(_dumps(payload["manifest"])).hexdigest() or             payload["manifest_sha256"] != _sha(expected):
         raise ValueError("incompatible shard manifest")
     if not isinstance(payload["rows"], list) or len(payload["rows"]) > MAX_SHARD_ROWS:
         raise ValueError(f"invalid shard rows (at most {MAX_SHARD_ROWS})")
@@ -463,7 +478,7 @@ def read_shard(path: Path, expected: DataManifest) -> tuple[ExpertRow, ...]:
             row = ExpertRow(**v)
         except (KeyError, TypeError) as err:
             raise ValueError("invalid shard row fields") from err
-        validate_row(row, expected)
+        _validate_row(row, expected)  # rows of a canonical file serialize by construction
         rows.append(row)
     _check_streams(rows)
     return tuple(rows)

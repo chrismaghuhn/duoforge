@@ -1,0 +1,59 @@
+Farigiraf (M) @ Colbur Berry
+Ability: Armor Tail
+Level: 50
+EVs: 24 HP / 27 Def / 15 SpD
+Relaxed Nature
+- Psychic Fangs
+- Thunderbolt
+- Trick Room
+- Helping Hand
+
+Gallade (M) @ Focus Sash
+Ability: Sharpness
+Level: 50
+EVs: 32 HP / 32 Atk / 2 SpD
+Brave Nature
+- Sacred Sword
+- Psycho Cut
+- Leaf Blade
+- Wide Guard
+
+Kangaskhan (F) @ Kangaskhanite
+Ability: Scrappy
+Level: 50
+EVs: 21 HP / 23 Atk / 22 Def
+Relaxed Nature
+- Crunch
+- Double-Edge
+- Fake Out
+- Hammer Arm
+
+Reuniclus (M) @ Wise Glasses
+Ability: Overcoat
+Level: 50
+EVs: 29 HP / 9 Def / 15 SpA / 13 SpD
+Quiet Nature
+- Shadow Ball
+- Psychic
+- Trick Room
+- Energy Ball
+
+Conkeldurr (M) @ Life Orb
+Ability: Sheer Force
+Level: 50
+EVs: 21 HP / 4 Atk / 25 Def / 16 SpD
+Brave Nature
+- Ice Punch
+- Poison Jab
+- Fire Punch
+- Thunder Punch
+
+Torkoal (M) @ Charcoal
+Ability: Drought
+Level: 50
+EVs: 30 HP / 1 Def / 32 SpA / 3 SpD
+Quiet Nature
+- Protect
+- Eruption
+- Weather Ball
+- Earth Power

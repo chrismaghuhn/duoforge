@@ -107,9 +107,12 @@ def _records(observations, supported=ALL):
 
 
 def _with_all_volatiles(sides):
-    """sides with every volatiles bit set at every position."""
+    """sides with every volatiles bit set at every position, TRANSFORMED (bit 21, decision 0028) with its source:
+    foe member 3 of each position's side."""
     sides = sides.copy()
-    sides["positions"]["volatiles"] = (1 << len(VOLATILES)) - 1
+    sides["positions"]["volatiles"] = ((1 << len(VOLATILES)) - 1) | C["DUOFORGE_POSITION_EXT_TRANSFORMED"]
+    sides["positions"]["transform_source"][..., 0, :] = 1 + 6 + 3
+    sides["positions"]["transform_source"][..., 1, :] = 1 + 3
     return sides
 
 
@@ -129,12 +132,13 @@ class FeaturesExtTest(unittest.TestCase):
         cls.ctx.close()
 
     def test_layout_appends_the_block(self):
-        self.assertEqual((features.ENCODER, features.ENCODERS), (4, (1, 2, 3, 4)))
+        self.assertEqual((features.ENCODER, features.ENCODERS), (5, (1, 2, 3, 4, 5)))
         self.assertEqual((features.BASE_OBS_SIZE, features.EXT3_SIZE, features.EXT_SIZE, features.OBS_SIZE),
-                         (607, 235, 243, 850))
-        self.assertEqual(len(set(features.FEATURE_NAMES)), 850)
-        self.assertEqual([features.obs_size(v) for v in (1, 2, 3, 4)], [607, 607, 842, 850])
-        self.assertEqual(features.feature_names(4), features.FEATURE_NAMES)
+                         (607, 235, 255, 862))
+        self.assertEqual(len(set(features.FEATURE_NAMES)), 862)
+        self.assertEqual([features.obs_size(v) for v in (1, 2, 3, 4, 5)], [607, 607, 842, 850, 862])
+        self.assertEqual(features.feature_names(5), features.FEATURE_NAMES)
+        self.assertEqual(features.feature_names(4), features.FEATURE_NAMES[:850])
         self.assertEqual(features.feature_names(3), features.FEATURE_NAMES[:842])
         self.assertEqual(features.feature_names(2), features.FEATURE_NAMES[:607])
         self.assertEqual(features.feature_names(1), features.FEATURE_NAMES[:607])
@@ -153,8 +157,12 @@ class FeaturesExtTest(unittest.TestCase):
         self.assertEqual(ext[84:90], tuple(f"ext.own.mem0.{n}" for n in member))
         self.assertEqual(ext[229:235], tuple(f"ext.foe.mem5.{n}" for n in member))
         # Encoder 4 appends, per side and position, the Roost volatile and move_failed.
-        self.assertEqual(ext[235:], tuple(f"ext.{o}.pos{k}.{n}" for o in ("own", "foe") for k in range(2)
-                                          for n in ("volatile.roost", "move_failed")))
+        self.assertEqual(ext[235:243], tuple(f"ext.{o}.pos{k}.{n}" for o in ("own", "foe") for k in range(2)
+                                             for n in ("volatile.roost", "move_failed")))
+        # Encoder 5 appends, per side and position, the transformed volatile and its source (decision 0028).
+        self.assertEqual(ext[243:], tuple(f"ext.{o}.pos{k}.{n}" for o in ("own", "foe") for k in range(2)
+                                          for n in ("volatile.transformed", "transform_source.foe",
+                                                    "transform_source.roster")))
 
     def test_every_column_has_one_feature_bit(self):
         bits = features.EXT_COLUMN_FEATURES
@@ -171,10 +179,12 @@ class FeaturesExtTest(unittest.TestCase):
         for name, feature in want.items():
             self.assertEqual(int(bits[COL[name] - features.BASE_OBS_SIZE]), BIT[feature], name)
         self.assertEqual(features.BASE_VALUE_FEATURES, _mask(*BASE_BITS))
-        self.assertEqual({int(b) for b in bits[235:]}, {BIT["ROOST"], BIT["MOVE_FAILED"]})
+        self.assertEqual({int(b) for b in bits[235:243]}, {BIT["ROOST"], BIT["MOVE_FAILED"]})
+        self.assertEqual({int(b) for b in bits[243:]}, {BIT["TRANSFORM"]})
         self.assertEqual((features.version_features(1), features.version_features(2)), (0, 0))
         self.assertEqual(features.version_features(3), (1 << 40) - 1)
-        self.assertEqual(features.version_features(4), ALL)
+        self.assertEqual(features.version_features(4), (1 << 42) - 1)
+        self.assertEqual(features.version_features(5), ALL)
 
     def test_closure_battles_keep_encoder_2_and_an_empty_block(self):
         # Under CLOSURE the records have revision 0: the first 607 columns are encoder 2's, and the block is that of
@@ -375,7 +385,7 @@ class FeaturesExtTest(unittest.TestCase):
                  ("sticky_web", lambda e: e["sides"]["sticky_web"].__setitem__((0, 1), 2)),
                  ("guard_flags", lambda e: e["sides"]["guard_flags"].__setitem__((0, 1), 4)),
                  ("volatiles", lambda e: e["sides"]["positions"]["volatiles"].__setitem__(
-                     (0, 1, 1), e["sides"]["positions"]["volatiles"][0, 1, 1] | (1 << 21))),  # bit 21: none yet
+                     (0, 1, 1), e["sides"]["positions"]["volatiles"][0, 1, 1] | (1 << 22))),  # bit 22: none yet
                  ("encore_slot", lambda e: e["sides"]["positions"]["encore_slot"].__setitem__((0, 1, 1), 5)),
                  ("disable_slot", lambda e: e["sides"]["positions"]["disable_slot"].__setitem__((0, 1, 1), 5)),
                  ("stockpile", lambda e: e["sides"]["positions"]["stockpile"].__setitem__((0, 1, 1), 4)),
@@ -400,7 +410,8 @@ class FeaturesExtTest(unittest.TestCase):
         from python.tests import _reference_features as reference
         ob, d = self.obs, self.domains
         part = features.encode_batch(ob, d, _records(ob), ALL)[0]
-        self.assertIs(features.as_encoder(part, ob, 4), part)
+        self.assertIs(features.as_encoder(part, ob, 5), part)
+        self.assertTrue(np.array_equal(features.as_encoder(part, ob, 4), part[:, :850]))
         self.assertTrue(np.array_equal(features.as_encoder(part, ob, 3), part[:, :842]))
         self.assertTrue(np.array_equal(features.as_encoder(part, ob, 2), part[:, :607]))
         old = features.as_encoder(part, ob, 1)
@@ -423,6 +434,89 @@ class FeaturesExtTest(unittest.TestCase):
         with self.assertRaises(TypeError):
             features.as_encoder(part[:, :607], ob, 2)  # only an obs_part of this encoder
 
+    def _transformed(self, ob):
+        """_records with side 0 position 0 transformed into foe member 2 and side 1 position 1 into its ally,
+        member 4 of side 1 (0028: transform_source = 1 + side * 6 + roster)."""
+        ext = _records(ob)
+        pos = ext["sides"]["positions"]
+        flag = C["DUOFORGE_POSITION_EXT_TRANSFORMED"]
+        pos["volatiles"][:, 0, 0] |= flag
+        pos["transform_source"][:, 0, 0] = 1 + 1 * 6 + 2
+        pos["volatiles"][:, 1, 1] |= flag
+        pos["transform_source"][:, 1, 1] = 1 + 1 * 6 + 4
+        ext["sides"]["positions"] = pos
+        return ext
+
+    def test_encoder_5_shows_the_transformed_state(self):
+        ob, d = self.obs, self.domains
+        part = features.encode_batch(ob, d, self._transformed(ob), ALL)[0]
+        for n in range(ob.shape[0]):
+            viewer = int(ob[n]["player"])
+            for s in range(2):
+                o = _side_name(ob[n], s)
+                for k in range(2):
+                    p = f"ext.{o}.pos{k}."
+                    got = tuple(float(part[n, COL[p + c]]) for c in ("volatile.transformed", "transform_source.foe",
+                                                                     "transform_source.roster"))
+                    if (s, k) == (0, 0):
+                        want = (1.0, float(viewer != 1), float(np.float32(2 / 5)))  # the source is on side 1
+                    elif (s, k) == (1, 1):
+                        want = (1.0, float(viewer != 1), float(np.float32(4 / 5)))  # an ally source: side 1 as well
+                    else:
+                        want = (0.0, 0.0, 0.0)
+                    self.assertEqual(got, want, (n, s, k))
+        cleared = features.encode_batch(ob, d, self._transformed(ob), ALL & ~_mask("TRANSFORM"))[0]
+        self.assertFalse(cleared[:, 850:].any())  # a clear bit zeros the 12 columns
+        self.assertTrue(np.array_equal(features.as_encoder(part, ob, 4), part[:, :850]))  # unshown for encoder 4
+
+    def test_illusion_up_shows_only_on_the_own_side(self):
+        # decision 0026 option B: the foe sees the disguise, so its ILLUSION_UP bit (volatile 19) is never shown;
+        # the viewer's own holder knows its Illusion (lane A's encode.c v5 zeroes the same column)
+        ob, d = self.obs, self.domains
+        ext = _records(ob)
+        pos = ext["sides"]["positions"]
+        pos["volatiles"][:, :, 0] |= C["DUOFORGE_POSITION_EXT_ILLUSION_UP"]  # both sides, position 0
+        ext["sides"]["positions"] = pos
+        part = features.encode_batch(ob, d, ext, ALL)[0]
+        self.assertTrue((part[:, COL["ext.own.pos0.volatile.illusion_up"]] == 1.0).all())
+        self.assertFalse(part[:, COL["ext.foe.pos0.volatile.illusion_up"]].any())
+
+    def test_transform_source_and_bit_go_together(self):
+        ob, d = self.obs, self.domains
+        flag = C["DUOFORGE_POSITION_EXT_TRANSFORMED"]
+        for change in ("source_without_bit", "bit_without_source", "roster_out_of_range"):
+            ext = _records(ob)
+            pos = ext["sides"]["positions"]
+            if change == "source_without_bit":
+                pos["transform_source"][:, 0, 1] = 3
+            elif change == "bit_without_source":
+                pos["volatiles"][:, 0, 1] |= flag
+            else:
+                pos["volatiles"][:, 0, 1] |= flag
+                pos["transform_source"][:, 0, 1] = 1 + 6 + 6  # roster 6 does not exist
+            ext["sides"]["positions"] = pos
+            with self.assertRaisesRegex(ValueError, "transform", msg=change):
+                features.encode_batch(ob, d, ext, ALL)
+
+    def test_a_revival_blessing_option_is_a_blank_kind_with_its_reserve(self):
+        ob, d = self.obs, self.domains
+        n, s, i = next((n, s, i) for n in range(d.shape[0]) for s in range(2) for i in range(int(d[n]["slot_count"][s]))
+                       if int(d[n]["slots"][s, i]["kind"]) == C["DUOFORGE_SLOT_SWITCH"])
+        revive = d.copy()
+        revive["slots"]["kind"][n, s, i] = C["DUOFORGE_SLOT_REVIVE"]
+        revive["slots"]["reserve"][n, s, i] = 3
+        slots = features.encode_batch(ob, revive)[1]
+        row = slots[n, s, i]
+        names = features.SLOT_FEATURE_NAMES
+        self.assertEqual(row[names.index("valid")], 1.0)
+        self.assertFalse(row[[names.index(f"kind.{k}") for k in ("NONE", "MOVE", "SWITCH", "PASS")]].any())
+        self.assertEqual(row[names.index("reserve")], np.float32(3 / 5))
+        self.assertEqual(int(np.count_nonzero(row)), 2)
+        self.assertIs(features.slots_as_encoder(slots, 5), slots)
+        for version in (1, 2, 3, 4):
+            with self.assertRaisesRegex(ValueError, "Revival Blessing"):
+                features.slots_as_encoder(slots, version)
+
     def test_recharge_is_move_slot_five(self):
         ob, d = self.obs, self.domains
         n, s, i = next((n, s, i) for n in range(d.shape[0]) for s in range(2) for i in range(int(d[n]["slot_count"][s]))
@@ -434,6 +528,7 @@ class FeaturesExtTest(unittest.TestCase):
         self.assertEqual(slots[n, s, i, features.SLOT_FEATURE_NAMES.index("move_slot")], 1.25)
         self.assertIs(features.slots_as_encoder(slots, 3), slots)
         self.assertIs(features.slots_as_encoder(slots, 4), slots)
+        self.assertIs(features.slots_as_encoder(slots, 5), slots)
         for version in (1, 2):
             with self.assertRaisesRegex(ValueError, "Recharge"):
                 features.slots_as_encoder(slots, version)

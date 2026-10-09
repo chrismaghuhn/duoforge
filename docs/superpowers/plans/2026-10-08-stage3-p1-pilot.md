@@ -173,3 +173,74 @@ Existing main source `f985bbea` (before P1 code), checkpoint hash above, library
 | 14 | 15.90 | 23.60 | 102.58 |
 
 **Freeze 14 workers and 14 logical CPU affinity slots in both pilot and control**, under the same 28800 measured CPU-second cap. Highest median whole-probe rate chooses 14; 14-vs-8 is only about 4.6%, not a broad scaling claim. Valid comparison CPU cost 247.62s (0.069 core-hours); all nine decision/table/X-policy digests agree. Superseded setup probes remain private and are excluded from the throughput comparison; record profiling/setup charges separately before the production resource freeze. No private paths/tables/games are published. This short first-turn-prefix probe does not replace the generation forecast smoke or its budget/refusal gates.
+
+## Evaluation seeds and runner order (2026-10-09, agreed with Learner v2)
+
+The engine derives a battle's RNG from the batch seed, the environment index and the episode only (`duoforge_batch.h`), never from a per-game seed. So every row of a (suite, opponent, bucket) block carries **one batch seed**, the same for all its pairs, both arms and both seats. The runner (`duoforge_learn.p1_eval` over `evaluate.play_suite`) plays one batch per (block, arm, bucket, seat), with that seed and the block's pairs in pair order (environment = pair, episode 1). Pair p's battle RNG is therefore `duoforge_batch_seeds(seed, p, 1)` on both seats and in both arms. `_check_records` still requires each pair's seed to equal the schedule. Games cut off at the step limit stay unfinished and leave their group INCOMPLETE (owner, 2026-10-09). The 64-game smoke reports their count, and any cut-off is a STOP before the run.
+
+## Owner amendment: Trick Room diagnostic (2026-10-09)
+
+Trick Room (TR) is a plan that spans several turns. The search (one turn plus a value) sees it only through the net, so the owner expects weaknesses here. This amendment adds a **diagnostic** to the P1 evaluation. It needs no extra run: the 12288 evaluation games carry its fields in their records. It changes no gate, no promotion and no schedule. `evaluate_records` requires the new fields (a record without them is broken, not a game without TR) and includes them in `records_sha256`, but no gate status reads them.
+
+**Record fields** (`expert_eval.TR_FIELDS`, part of `RECORD_FIELDS`). Every field is an integer per game. *Student* is the evaluated arm's seat, *opponent* the other seat.
+
+| Field | Meaning |
+|---|---|
+| `tr_setter_student`, `tr_setter_opponent` | 1 if a member of that side's team sheet (brought or not) knows Trick Room (the side's own view at the first observation), else 0 |
+| `tr_sets_student`, `tr_sets_opponent` | turns on which that side set TR |
+| `tr_first_set_turn_student` | the view's `turn` before the student's first set; 0 if never |
+| `tr_reversals_student` | the student ended an active TR **the opponent set** with its own Trick Room |
+| `tr_blocks_student` | the student's chosen block attempts against the opponent's TR (see below) |
+| `tr_turns` | observed turns that began with `trick_room_turns > 0` (at their TURN boundary; a same-turn replacement does not count) |
+| `tr_unattributed` | field changes this rule cannot attribute |
+| `tr_last_turn_choice` | 1 if a side chose Trick Room on the game's last turn, whose field change is never observed |
+
+**Attribution** uses only public engine output and the chosen actions. No battle rule is re-implemented in Python:
+- The field is `trick_room_turns` of the student's view before and after each turn.
+- A turn **sets** TR when it goes from 0 to above 0.
+- It **ends TR early** when it goes from above 1 to 0.
+- The change is attributed to a side only if exactly that side chose a Trick Room move that turn (the move id of the chosen slot's move in that side's own view). Otherwise it counts in `tr_unattributed`; it is never assigned silently.
+
+**Block attempts:** a chosen action while TR is inactive and the opponent's team has a setter, of one of these kinds:
+- Taunt or Fake Out aimed at an opponent position whose occupant knows Trick Room;
+- Imprison by a student occupant that knows Trick Room, while an opponent occupant knowing it is active.
+
+Block attempts are chosen actions, not results.
+
+Move identity comes from the data API: the named constant `TR_MOVES` (`trickroom`, `taunt`, `fakeout`, `imprison`), resolved with `data.find(ctx, TABLE_MOVE, name)`. This list classifies actions for the report only; it is no battle rule, and nothing in it feeds any decision. The tracker `expert_eval.TrickRoomTracker` is vectorized over the batch and has the hook form of `duoforge_learn.luck.Luck`: `start(n, seats)`, `before(batch, indices, active, step, last_step)` after each query and before the step, `after(batch, dead)`, then `fields`. It reads only the batch buffers of that query and changes none. Learner v2 hooks it into `evaluate.play_suite` and writes `fields` into the records. Known limit: a field change on the turn that ends the battle is not observed. The report text states it with the count of games where `tr_last_turn_choice` is 1.
+
+**Report** (`expert_eval.trick_room_report(records)`), per arm and per suite, plus pooled over suites:
+- **(a)** Games where the student's team has a setter, and games where the opponent's team has one, each with score rate and a 95% bootstrap interval (`BOOTSTRAP_SEED`, `RESAMPLES`, resampling games).
+- **(b)** Set rate of the student, and the distribution of the first set turn.
+- **(c)** Reversals and block attempts per game in which the opponent set TR, or (for blocks) the opponent team has a setter.
+- **(d)** Score rate in games with `tr_turns > 0` against games without, each with its interval.
+
+Unfinished games count for none of these.
+
+Tests: `test_trick_room_tracker_attribution` (synthetic observations: set, early end, natural expiry, both sides choosing TR → unattributed, a mid-turn switch request, blocks, last-turn choice) and `test_trick_room_report_groups`. CLI: the report is part of the `expert_eval` output JSON.
+
+## Owner amendment: the pilot runs on AWS (2026-10-09)
+
+The first local attempt is superseded. On 2026-10-09 the generation finished locally on main `d3631151`: R = 39 frozen from the smoke (t = 534/512), 19968 games, 16384 targets, 0 cut-offs, 6173 CPU core-seconds. Distill then failed with a CUDA out-of-memory error on the local 8 GB GPU at its first step, after about 25 minutes of single-threaded shard loading that its ledger did not charge. The owner then moved the whole pilot to AWS. Its local shards serve only as a determinism cross-check against the AWS generation (shard SHA-256 lists) and are not used.
+
+**Hardware:** one g6.4xlarge Spot machine (NVIDIA L4 24 GB, 16 vCPU, 64 GB, Frankfurt). It runs generation, distill, the control arm and the evaluation, so both arms' CPU core-seconds and GPU-seconds come from identical hardware and stay comparable within 5%. Ledgers from the local attempt are not mixed in. The worker freeze stays at 14 native workers on 14 logical CPUs, with OMP/OpenBLAS 4. Generation stays on the CPU, as frozen. One allocator setting holds for every GPU phase of both arms and is recorded in the report.
+
+**Operation:**
+- Only HauptSession starts and stops AWS machines, with the owner; every machine terminates itself.
+- The run script is `tools/cloud/p1_pilot/run.sh` (Learner v2).
+- Code, results, checkpoints, ledgers and logs stay in the private S3 bucket only.
+- A Spot interruption is a pause at the last completed phase boundary. The run resumes from that boundary with the same commit and its own ledger. Work lost to an interruption is charged to its arm.
+
+**Evaluation:**
+- **Pool:** the 49333 training pool (652 teams: A/B/C and PP_ in the PP bucket, LL_ in the LL bucket, with its weights), approved by the owner as the LL_ registry. Its hash is pinned in the evaluation manifest.
+- **Checkpoints** (file SHA-256 via `python -m duoforge_search.eval_manifest`, written after both arms are trained and before the evaluation smoke):
+  - pilot and control: the arms' results;
+  - frozen: params-49333;
+  - panel: params-0 (BC), params-3600 and params-11000 of the many-c4e96e6 run;
+  - ladder: params-39400 of the same run. The plan names a ladder opponent but never defines it. 39400 is the strongest ladder rung below 49333 (ladder Elo 749, 49333 768), so the separate ladder output faces a strong near opponent instead of duplicating BC. This is an M12 decision, not a gate: no gate group reads the ladder.
+- **Seed and ids:** seed `0x2026100900000301`, first game id 10^9 (its own namespace).
+- **Rate gate of the 64-game smoke:** measured on one extra warm call at full evaluation width (one block seat, 256 pairs, same players and form). That call is not recorded, but it is charged to the shared evaluation reserve, and its cut-offs and refusals count for STOP.
+  - warm_rate comes from that call.
+  - forecast = JIT + 12288 / warm_rate.
+  - The thresholds are unchanged: any cut-off, any refusal, warm_rate < 5 games/s or forecast > 3600 s is a STOP.
+  - The report shows both the narrow and the full-width rate.

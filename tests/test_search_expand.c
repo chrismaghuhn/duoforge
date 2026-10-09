@@ -630,7 +630,7 @@ int main(void)
         /* version and mask, as duoforge_batch_query_encoded checks them */
         const uint64_t roost = UINT64_C(1) << DUOFORGE_VIEWEXT_FEATURE_ROOST;
         DF_CHECK_EQ_U64(&t, expand(lv, roots, 0u, 0u, &query, pl, 1u, o), DUOFORGE_E_INVALID_ARGUMENT);
-        DF_CHECK_EQ_U64(&t, expand(lv, roots, 5u, 0u, &query, pl, 1u, o), DUOFORGE_E_INVALID_ARGUMENT);
+        DF_CHECK_EQ_U64(&t, expand(lv, roots, 6u, 0u, &query, pl, 1u, o), DUOFORGE_E_INVALID_ARGUMENT);
         DF_CHECK_EQ_U64(&t, expand(lv, roots, 3u, roost, &query, pl, 1u, o), DUOFORGE_E_INVALID_ARGUMENT);
         DF_CHECK_EQ_U64(&t, expand(lv, roots, 4u, UINT64_C(1) << 42, &query, pl, 1u, o), DUOFORGE_E_INVALID_ARGUMENT);
         /* the same batch, the count, a root environment, a viewer */

@@ -23,6 +23,7 @@ import json
 import os
 import re
 import shutil
+import subprocess
 import sys
 import tempfile
 import threading
@@ -1236,6 +1237,21 @@ class Lock(unittest.TestCase):
     """The chunks as processes under tools/ci/machine_lock.sh, with DUOFORGE_MACHINE_LOCK in a temporary directory:
     never the real lock."""
 
+    def test_a_live_holder_is_alive_whatever_the_callers_path_conversion(self):
+        # machine_lock_alive decides whether a lock is stale. A caller that exported MSYS_NO_PATHCONV=1 (for a wsl.exe
+        # command) made Git Bash pass tasklist's `//FI` unconverted: every live holder looked dead and its lock was
+        # taken over (2026-10-09). This test process is a live holder; a pid far above any real one is not.
+        script = os.path.join(ROOT, 'tools', 'ci', 'machine_lock.sh').replace('\\', '/')
+        for conv in ('', '1'):
+            env = dict(os.environ)
+            env.pop('MSYS_NO_PATHCONV', None)
+            if conv:
+                env['MSYS_NO_PATHCONV'] = conv
+            for pid, alive in ((os.getpid(), True), (987654321, False)):
+                done = subprocess.run([rnd.find_bash(), '-c', 'source "%s"; machine_lock_alive %d' % (script, pid)],
+                                      capture_output=True, text=True, timeout=60, env=env)
+                self.assertEqual(done.returncode == 0, alive, (conv, pid, done.stderr))
+
     def test_each_chunk_holds_the_lock_and_the_lock_is_free_between_chunks(self):
         with tempfile.TemporaryDirectory() as tmp:
             lock = os.path.join(tmp, 'lock')
@@ -1290,6 +1306,52 @@ class Lock(unittest.TestCase):
                        lock.replace('\\', '/')]  # the child exits with 75 only while the lock is held
             with mock.patch.dict(os.environ, {'DUOFORGE_MACHINE_LOCK': lock}):
                 self.assertEqual(rnd.run_process(command), rnd.PAUSED_STATUS)
+            self.assertFalse(os.path.exists(lock))
+
+    def test_a_free_lock_goes_to_the_oldest_live_waiter(self):
+        # First come, first served: a waiter takes a ticket; the lock goes to the oldest ticket whose process lives,
+        # not to whoever polls first (2026-10-09: short jobs queued for an hour behind later arrivals). The stand-in
+        # sleep counts the rounds; an older live waiter (pid 4242) leaves the queue in round 3, and a dead waiter's
+        # ticket (pid 987654321) is no obstacle.
+        with tempfile.TemporaryDirectory() as tmp:
+            lock = os.path.join(tmp, 'lock')
+            queue = lock + '.queue'
+            os.mkdir(queue)
+            for name in ('0000000000000000001-987654321', '0000000000000000002-4242'):
+                with io.open(os.path.join(queue, name), 'w', encoding='ascii', newline='\n') as f:
+                    f.write('%s other since 2026-10-09 12:00:00\n' % name.split('-')[1])
+            script = os.path.join(ROOT, 'tools', 'ci', 'machine_lock.sh').replace('\\', '/')
+            shell = ('source "%s"; machine_lock_alive() { [ "$1" = 4242 ] || [ "$1" = "$(machine_lock_pid)" ]; }; n=0; '
+                     'sleep() { n=$((n + 1)); if [ $n -eq 3 ]; then rm -f "$MACHINE_LOCK.queue/"*-4242; fi; }; '
+                     'machine_lock_acquire fuzz && echo "rounds $n" && ls "$MACHINE_LOCK.queue" | wc -l && '
+                     'machine_lock_release' % script)
+            done = subprocess.run([rnd.find_bash(), '-c', shell], capture_output=True, text=True, timeout=60,
+                                  env=dict(os.environ, DUOFORGE_MACHINE_LOCK=lock.replace('\\', '/')))
+            self.assertEqual(done.returncode, 0, done.stderr)
+            self.assertEqual(done.stdout.split(), ['rounds', '3', '0'])  # waited for 4242, its ticket gone, no ticket left
+            self.assertFalse(os.path.exists(lock))
+
+    def test_a_chunk_that_waits_names_the_holder_and_the_minutes_waited_every_five_minutes(self):
+        # The script is sourced with two stand-ins: sleep counts the rounds (15 s each) and the holder releases the lock
+        # in the 21st, and the holder's pid is alive without asking tasklist (one call is about a second on Windows).
+        with tempfile.TemporaryDirectory() as tmp:
+            lock = os.path.join(tmp, 'lock')
+            os.mkdir(lock)
+            with io.open(os.path.join(lock, 'owner'), 'w', encoding='ascii', newline='\n') as f:
+                f.write('4242 local_ci other-checkout since 2026-10-09 12:00:00\n')
+            script = os.path.join(ROOT, 'tools', 'ci', 'machine_lock.sh').replace('\\', '/')
+            shell = ('source "%s"; machine_lock_alive() { [ "$1" = 4242 ]; }; n=0; '
+                     'sleep() { n=$((n + 1)); if [ $n -eq 21 ]; then rm -rf "$MACHINE_LOCK"; fi; }; '
+                     'machine_lock_acquire fuzz && cat "$MACHINE_LOCK/owner" && machine_lock_release' % script)
+            done = subprocess.run([rnd.find_bash(), '-c', shell], capture_output=True, text=True, timeout=60,
+                                  env=dict(os.environ, DUOFORGE_MACHINE_LOCK=lock.replace('\\', '/')))
+            self.assertEqual(done.returncode, 0, done.stderr)
+            holder = '4242 local_ci other-checkout since 2026-10-09 12:00:00'
+            self.assertEqual(done.stderr.splitlines(), [
+                'machine lock: waiting for %s (0 min so far)' % holder,  # at once: who holds it and since when
+                'machine lock: waiting for %s (5 min so far)' % holder,  # then every 300 s: how long this one waited
+            ])
+            self.assertRegex(done.stdout, r'^\d+ fuzz since \d{4}-\d\d-\d\d \d\d:\d\d:\d\d\n$')  # then it is ours
             self.assertFalse(os.path.exists(lock))
 
 

@@ -511,5 +511,30 @@ class ExpertDataTest(unittest.TestCase):
             ed.read_manifest(Path(__file__))
 
 
+    def test_schema_refusal_and_private_roundtrip_once_per_shard(self):
+        # Validation once per shard (the manifest once, rows serialized once) refuses exactly what the
+        # per-row path refuses; a validated row list round-trips unchanged.
+        from duoforge_search import expert_data as ed
+        m = manifest(ed)
+        row = target_row(ed, m)
+        rows = [dataclasses.replace(row, logical_tick=i, key=ed.DecisionKey(0, 0, i + 1)) for i in range(3)]
+        with tempfile.TemporaryDirectory(prefix="duoforge_synthetic_once_") as temp:
+            path = Path(temp)/"ok.json"
+            ed.write_shard(path, rows, m)
+            back = ed.read_shard(path, m)
+            self.assertEqual([ed._canonical(r) for r in back], [ed._canonical(r) for r in rows])
+            for name, bad in (("audit", dataclasses.replace(row, audit={"x": float("nan")})),
+                              ("work", dataclasses.replace(row, work={"leaves": 1.5})),
+                              ("audit key", dataclasses.replace(row, audit={1: "x"}))):
+                with self.subTest(name):
+                    with self.assertRaises(ValueError):
+                        ed.validate_row(bad, m)
+                    with self.assertRaises(ValueError):
+                        ed.write_shard(Path(temp)/f"{name}.json", [bad], m)
+                    self.assertFalse((Path(temp)/f"{name}.json").exists())
+            with self.assertRaises(ValueError):
+                ed.write_shard(Path(temp)/"bad_manifest.json", rows, dataclasses.replace(m, workers=7))
+
+
 if __name__ == "__main__":
     unittest.main()

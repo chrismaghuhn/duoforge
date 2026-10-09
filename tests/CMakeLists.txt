@@ -162,7 +162,12 @@ duoforge_add_test(NAME duoforge.state.pool_tail SOURCES test_pool_tail.c WHITEBO
 duoforge_add_test(NAME duoforge.state.pool_g8 SOURCES test_pool_g8.c WHITEBOX TIMEOUT 60)
 duoforge_add_test(NAME duoforge.state.ability_now SOURCES test_ability_now.c WHITEBOX TIMEOUT 60)
 # The residual handler list: when the order of a Pokemon's volatiles (not stored) cannot change the outcome (brute force).
-duoforge_add_test(NAME duoforge.combat.residual_order SOURCES test_residual_order.c WHITEBOX TIMEOUT 120)
+# Its 40000 random lists run in four shards (the trials [i * 10000, (i + 1) * 10000)): in one test they took 125 to
+# 177 s under ASan+UBSan (Debug, a loaded machine, 2026-10-09), over the 120 s limit; one shard takes 13 to 28 s there.
+foreach(_shard RANGE 3)
+    duoforge_add_test(NAME duoforge.combat.residual_order.${_shard} SOURCES test_residual_order.c WHITEBOX TIMEOUT 120
+        ARGS ${_shard} 4)
+endforeach()
 # Step G7: Wide Guard in the tail, the stall counter and the POOL view extension.
 duoforge_add_test(NAME duoforge.state.pool_g7 SOURCES test_pool_g7.c WHITEBOX TIMEOUT 60)
 # Sandstorm and Snowscape (the weather step): the view of the weather battles against the protocol lines, the sources of
@@ -201,13 +206,19 @@ duoforge_add_test(NAME duoforge.state.pool_g37 SOURCES test_pool_g37.c WHITEBOX 
 # Steel Roller, Clangorous Soul, Brick Break): the marks, the flag bits and the commutation test of the ModifyDamage chain.
 duoforge_add_test(NAME duoforge.state.pool_g33 SOURCES test_pool_g33.c WHITEBOX TIMEOUT 60)
 duoforge_add_test(NAME duoforge.state.pool_g48 SOURCES test_pool_g48.c WHITEBOX TIMEOUT 60)
+duoforge_add_test(NAME duoforge.state.pool_g52 SOURCES test_pool_g52.c WHITEBOX TIMEOUT 60)
 duoforge_add_test(NAME duoforge.state.pool_g50 SOURCES test_pool_g50.c WHITEBOX TIMEOUT 60)
 duoforge_add_test(NAME duoforge.state.pool_g34 SOURCES test_pool_g34.c WHITEBOX TIMEOUT 60)
 duoforge_add_test(NAME duoforge.state.pool_g41 SOURCES test_pool_g41.c WHITEBOX TIMEOUT 60)
+# Step G57: Magic Bounce and the Mega Stones Absolite and Sablenite (the reflectable column against the pinned Dex, the marks).
+duoforge_add_test(NAME duoforge.state.pool_g57 SOURCES test_pool_g57.c WHITEBOX TIMEOUT 60)
 # Step G42: Roost and Stomping Tantrum: the move result classes (this and last) at every boundary of the g42 battles, the Roost
 # volatile (the pivot boundary inside its turn), the view bits (40 supported, 41 not), the unclassified refusal.
 duoforge_add_test(NAME duoforge.state.pool_g42 SOURCES test_pool_g42.c WHITEBOX TIMEOUT 60)
 duoforge_add_test(NAME duoforge.state.pool_g44 SOURCES test_pool_g44.c WHITEBOX TIMEOUT 60)
+duoforge_add_test(NAME duoforge.state.pool_g54 SOURCES test_pool_g54.c WHITEBOX TIMEOUT 60)
+duoforge_add_test(NAME duoforge.state.pool_g64 SOURCES test_pool_g64.c WHITEBOX TIMEOUT 60)
+duoforge_add_test(NAME duoforge.state.pool_g62 SOURCES test_pool_g62.c WHITEBOX TIMEOUT 60)
 duoforge_add_test(NAME duoforge.state.pool_g46_party SOURCES test_pool_g46_party.c WHITEBOX TIMEOUT 120)
 # Step G35: ten data rows, Rain Dish and Friend Guard: the marks, the flags, Gigaton Hammer left out, and Friend Guard in the
 # commutation test and the refusal of the ModifyDamage chain.
@@ -244,8 +255,8 @@ foreach(_gen IN ITEMS
         "closure_tables.c=490de42298e34cfd38192d979fd022367bf53693a5fa1855f1cc6ad034d8450a"
         "extended_tables.h=b2abef243fcbfdd87654940076b9fe2fe80b117d74893a7567741f26b9075a7d"
         "extended_tables.c=9e736fa467713283418c4edf8f56b8d844452e596ba422adbd52483d20f7cc17"
-        "pool_tables.h=a45bddf39a207d955ea1be488bec166abbbb2971d4a6df21f63c54788eeccdbb"
-        "pool_tables.c=40d9aa156307f865e7fadd230b8406e41947a11bd9c816eb54d2f2481b170fd8")
+        "pool_tables.h=faf5d15bfcc4d5c1649c019bdee038fe24d34f6432f56ace0b5395b7c35078a1"
+        "pool_tables.c=6c2ab9db035885e5c3cb27ecea8984514eaa432ac7f26a455f23b8b615380a7c")
     string(REPLACE "=" ";" _parts "${_gen}")
     list(GET _parts 0 _file)
     list(GET _parts 1 _expected)
@@ -285,6 +296,12 @@ if(DUOFORGE_PS_REFERENCE_DIR)
                 "${DUOFORGE_PS_REFERENCE_DIR}" "${PROJECT_SOURCE_DIR}"
                 --check "${CMAKE_CURRENT_SOURCE_DIR}/reference/tiebreak_ref.h")
         set_tests_properties(duoforge.reference.tiebreak_ref PROPERTIES TIMEOUT 900 LABELS reference)
+        # Step G57: the reflectable moves of the Champions Dex (flags.reflectable), recomputed by the pinned Showdown; the
+        # generated bit DFI_MOVE_FLAG3_REFLECTABLE (dfi_pool_move_flags3) is checked against them by duoforge.state.pool_g57.
+        add_test(NAME duoforge.reference.reflect_ref
+            COMMAND "${DUOFORGE_NODE}" "${PROJECT_SOURCE_DIR}/tools/reference/reflect_ref.js"
+                "${DUOFORGE_PS_REFERENCE_DIR}" --check "${CMAKE_CURRENT_SOURCE_DIR}/reference/reflect_ref.h")
+        set_tests_properties(duoforge.reference.reflect_ref PROPERTIES TIMEOUT 120 LABELS reference)
         # The family columns of the pool tables (decision 0015), against the pinned handlers: every
         # family member's handler is called with a probe for each of the 18 types and must agree
         # with the generated type, weather or terrain; the pool's ids are also validated by the
@@ -512,8 +529,9 @@ if(Python3_Interpreter_FOUND)
     # what it normalises and reports, what it refuses, and what it writes, with a stand-in for the pokedex.
     add_test(NAME duoforge.reference.team_registry
         COMMAND "${Python3_EXECUTABLE}" "${PROJECT_SOURCE_DIR}/tools/reference/test_team_registry.py")
-    # 600 s: the 1,042 teams took 95 s (MSVC release), 136 s (GCC debug) and 171 s (GCC ASan on WSL) in the parallel
-    # local CI of 2026-10-09, more than the 120 s that fitted the first registry.
+    # The committed registry is checked whole once; the tests of the checks and of adding use a small copy of it
+    # (copy_registry), so the time grows with that one check only: 18 s alone (GCC debug, 1,414 teams, 2026-10-09; it was
+    # 161 s when every subtest checked a whole copy). 600 s is the margin for ASan and a busy machine.
     set_tests_properties(duoforge.reference.team_registry PROPERTIES TIMEOUT 600 ENVIRONMENT PYTHONDONTWRITEBYTECODE=1)
     add_test(NAME duoforge.reference.import_paste
         COMMAND "${Python3_EXECUTABLE}" "${PROJECT_SOURCE_DIR}/tools/reference/test_import_paste.py")
@@ -536,6 +554,12 @@ if(Python3_Interpreter_FOUND)
         add_test(NAME duoforge.cloud.aws_fuzz_guards
             COMMAND "${Python3_EXECUTABLE}" "${PROJECT_SOURCE_DIR}/tools/cloud/aws_fuzz/test_guards.py")
         set_tests_properties(duoforge.cloud.aws_fuzz_guards PROPERTIES TIMEOUT 300
+            ENVIRONMENT "PYTHONDONTWRITEBYTECODE=1;DUOFORGE_BASH=${DUOFORGE_BASH}")
+        # The P1 pilot launcher (tools/cloud/p1_pilot): the same guards with a stub aws, and the user data run with
+        # stand-ins for shutdown, aws, git and the workload (the three self-termination mechanisms).
+        add_test(NAME duoforge.cloud.p1_pilot_guards
+            COMMAND "${Python3_EXECUTABLE}" "${PROJECT_SOURCE_DIR}/tools/cloud/p1_pilot/test_guards.py")
+        set_tests_properties(duoforge.cloud.p1_pilot_guards PROPERTIES TIMEOUT 600
             ENVIRONMENT "PYTHONDONTWRITEBYTECODE=1;DUOFORGE_BASH=${DUOFORGE_BASH}")
         # The Google Cloud watchdog (tools/cloud/gcp_watch): the same, with a stub gcloud and the round with stand-ins.
         add_test(NAME duoforge.cloud.gcp_watch_guards
@@ -650,7 +674,7 @@ endif()
 # The Python package (M7, decision 0013), run with DUOFORGE_PYTHON; without
 # an interpreter each test reports skipped instead of passing silently.
 
-foreach(_py layout lib equivalence recipes policies_features example learn_numpy live_unit live_client replay_unit openings book expert_data expert_teacher expert_contract expert_eval book_preview preview_search data batch_setups learn_v2_numpy teams features_ext bc_numpy encode_c search_numpy search_expand repo_hygiene view vgcpastes_engine)
+foreach(_py layout lib equivalence recipes policies_features example learn_numpy live_unit live_client replay_unit openings book expert_data expert_teacher expert_contract expert_eval ticks book_preview preview_search data batch_setups learn_v2_numpy teams features_ext bc_numpy encode_c search_numpy search_expand repo_hygiene view vgcpastes_engine perft)
     if(DUOFORGE_PYTHON)
         add_test(NAME duoforge.python.${_py}
             COMMAND "${DUOFORGE_PYTHON}" -m unittest -v python.tests.test_${_py}
@@ -666,7 +690,7 @@ foreach(_py layout lib equivalence recipes policies_features example learn_numpy
 endforeach()
 
 # The learner pipeline (decisions 0014, 0017) needs JAX: DUOFORGE_LEARN_PYTHON.
-foreach(_learn learn learn_v2 bc search honest luck ledger pfsp)
+foreach(_learn learn learn_v2 bc search honest luck ledger pfsp value_rows distill collect_expert learner_contract p1_eval)
     if(DUOFORGE_LEARN_PYTHON)
         add_test(NAME duoforge.python.${_learn}
             COMMAND "${DUOFORGE_LEARN_PYTHON}" -m unittest -v python.tests.test_${_learn}
@@ -734,3 +758,9 @@ if(Python3_Interpreter_FOUND)
     set_tests_properties(duoforge.data.model_pool_hash PROPERTIES TIMEOUT 60
         ENVIRONMENT PYTHONDONTWRITEBYTECODE=1)
 endif()
+# Step G51 (Mega batch 4): ten Mega Stones marked with no new rule, Keen Eye and Big Pecks as engine rows (turn.c), the marks, the
+# Mega of each pair, the setup, the API, and the Keen Eye ignoreEvasion check (white-box).
+duoforge_add_test(NAME duoforge.state.pool_g51 SOURCES test_pool_g51.c WHITEBOX TIMEOUT 60)
+
+# Step G53 (decision 0030): Pressure and the foe's derived PP.
+duoforge_add_test(NAME duoforge.state.pool_g53 SOURCES test_pool_g53.c WHITEBOX TIMEOUT 60)

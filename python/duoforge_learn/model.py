@@ -12,6 +12,12 @@ import jax.numpy as jnp
 MASKED = -1e9  # a pair outside the mask: exp() underflows to exactly 0
 
 
+def pair_log_softmax(pairs, mask):
+    """The pair head's distribution: the log-softmax of each row's pair logits with every pair outside mask set
+    to MASKED (exp underflows to exactly 0), flattened to (B, 1024). Both model versions normalize with it."""
+    return jax.nn.log_softmax(jnp.where(mask, pairs, MASKED).reshape(pairs.shape[0], -1))
+
+
 def _dense(key, n_in, n_out, scale=1.0):
     w = jax.random.normal(key, (n_in, n_out), dtype=jnp.float32) * (scale * jnp.sqrt(2.0 / n_in))
     return {"w": w, "b": jnp.zeros((n_out,), dtype=jnp.float32)}
@@ -45,10 +51,10 @@ def apply(params, obs, slots, mask):
                          + _layer(params["option_features"], slots))
     out = _layer(params["option_out"], hidden)  # (B, 2, 32, 2): output s scores slot list s
     pairs = out[:, 0, :, 0][:, :, None] + out[:, 1, :, 1][:, None, :]
-    pairs = jnp.where(mask, pairs, MASKED).reshape(obs.shape[0], -1)
+    pairs = pair_log_softmax(pairs, mask)
     team = _layer(params["team"], h)
     value = _layer(params["value"], h)[:, 0]
-    return jax.nn.log_softmax(pairs), jax.nn.log_softmax(team), value
+    return pairs, jax.nn.log_softmax(team), value
 
 
 def _entropy(logp):

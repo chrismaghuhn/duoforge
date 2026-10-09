@@ -217,6 +217,8 @@ int main(void)
     expect_inv(&t, c1, w, DFI_INV_FIELD, "weather turns without weather");
     RESET();
     w->weather = (uint8_t)DFI_WEATHER_SUN;
+    /* A closure context keeps the bound 5; the POOL kinds' bound 8 of step G55 (the rock items) is checked in
+     * tests/test_pool_g55.c. */
     w->weather_turns = 6u;
     expect_inv(&t, c1, w, DFI_INV_FIELD, "weather turns 6");
     RESET();
@@ -577,8 +579,18 @@ int main(void)
     w->queue[0].target = 4u;
     expect_inv(&t, c1, w, DFI_INV_QUEUE, "move target 4");
     RESET_TO(f5);
-    w->queue[0].reserve = 1u;
-    expect_inv(&t, c1, w, DFI_INV_QUEUE, "move with a reserve");
+    /* step G62 (decision 0015 entry 5az): a move's reserve is its order class, 0 plain, 1 After You, 2 Quash; 3 is refused. */
+    w->queue[0].reserve = 3u;
+    expect_inv(&t, c1, w, DFI_INV_QUEUE, "move with reserve 3");
+    RESET_TO(f5);
+    w->queue[0].reserve = DFI_QRES_PRIORITIZED;
+    expect_ok(&t, c1, w, "move with After You's reserve");
+    RESET_TO(f5);
+    w->queue[0].reserve = DFI_QRES_QUASHED;
+    expect_ok(&t, c1, w, "move with Quash's reserve");
+    RESET_TO(f5);
+    w->queue[2].reserve = 1u; /* the residual has no order class of its own */
+    expect_inv(&t, c1, w, DFI_INV_QUEUE, "residual with a reserve");
     RESET_TO(f5);
     w->queue[0].activation_id = 0u;
     expect_inv(&t, c1, w, DFI_INV_QUEUE, "move without a binding");
