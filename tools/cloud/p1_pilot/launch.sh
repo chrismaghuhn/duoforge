@@ -3,6 +3,7 @@
 # runs tools/cloud/p1_pilot/run.sh of the given commit.
 #
 # usage: launch.sh --commit SHA --bucket B [--max-hours H] [--max-price P] [--types t1,t2] [--sg-name NAME]
+#                  [--resume RUN_ID]
 #                  [--i-have-owner-approval]
 #   --commit    the exact 40-digit sha of a commit on main that has tools/cloud/p1_pilot/run.sh
 #   --bucket    the results bucket (objects go under p1/<run id>/ only)
@@ -27,6 +28,7 @@ max_price=$DF_DEFAULT_PRICE
 types=$DF_DEFAULT_TYPES
 sg_name=$DF_SG_NAME
 approved=no
+resume=
 while [ $# -gt 0 ]; do
     case $1 in
         --commit) [ $# -ge 2 ] || df_die '--commit needs a value'; commit=$2; shift 2 ;;
@@ -35,6 +37,7 @@ while [ $# -gt 0 ]; do
         --max-price) [ $# -ge 2 ] || df_die '--max-price needs a value'; max_price=$2; shift 2 ;;
         --types) [ $# -ge 2 ] || df_die '--types needs a value'; types=$2; shift 2 ;;
         --sg-name) [ $# -ge 2 ] || df_die '--sg-name needs a value'; sg_name=$2; shift 2 ;;
+        --resume) [ $# -ge 2 ] || df_die '--resume needs a run id'; resume=$2; shift 2 ;;
         --i-have-owner-approval) approved=yes; shift ;;
         -h | --help) sed -n '2,18p' "${BASH_SOURCE[0]}"; exit 0 ;;
         *) df_die "unknown argument '$1' (see --help)" ;;
@@ -59,8 +62,16 @@ for t in "${type_list[@]}"; do
 done
 df_check_commit_on_main "$commit"
 
-run_id="${commit:0:12}-$(date -u +%Y%m%dT%H%M%SZ)"
-df_valid_run_id "$run_id" || df_die "internal error: the run id '$run_id' is malformed"
+if [ -n "$resume" ]; then
+    # a resume keeps the run id: run.sh restores its markers from p1/<run id>/ and goes on after the last phase done
+    df_valid_run_id "$resume" || df_die "--resume '$resume': not a run id (<12 hex>-<YYYYMMDDTHHMMSSZ>)"
+    keys=$(df_aws s3api list-objects-v2 --bucket "$bucket" --prefix "$DF_S3_TOP/$resume/markers/" --max-keys 1         --query 'KeyCount' --output text 2> /dev/null) || df_die "--resume '$resume': its prefix cannot be listed"
+    [[ $keys =~ ^[1-9][0-9]*$ ]] || df_die "--resume '$resume': no markers under s3://$bucket/$DF_S3_TOP/$resume/markers/"
+    run_id=$resume
+else
+    run_id="${commit:0:12}-$(date -u +%Y%m%dT%H%M%SZ)"
+    df_valid_run_id "$run_id" || df_die "internal error: the run id '$run_id' is malformed"
+fi
 
 # --- one box at a time
 active=$(df_active_pilots) || df_die 'describe-instances failed: cannot tell whether a pilot box is still up'
