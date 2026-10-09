@@ -1,9 +1,9 @@
 {
  "harness": 14,
  "pin": "b2cb775b0616115b775534eaeff50300e1fc81fc",
- "spec": "g66_kings_contact_drop.json",
+ "spec": "g66_blade_shield_cycle.json",
  "format": "gen9championsvgc2026regmc",
- "seed": "sodium,00000000000000000000000000000000000000000000000000000000000066a1",
+ "seed": "sodium,00000000000000000000000000000000000000000000000000000000000066c1",
  "start": {
   "log": [
    "|gametype|doubles",
@@ -454,7 +454,7 @@
      "context": "queue",
      "lo": 6,
      "hi": 8,
-     "value": 6,
+     "value": 7,
      "group": [
       "A:team:p1undefined:",
       "A:team:p2undefined:"
@@ -478,7 +478,7 @@
      "context": "switch-order",
      "lo": 2,
      "hi": 4,
-     "value": 3,
+     "value": 2,
      "group": [
       "P:p1b:0:S",
       "P:p2b:0:S"
@@ -819,7 +819,7 @@
   },
   {
    "input": {
-    "p1": "move 1, move 3 1",
+    "p1": "move 2 1, move 1 1",
     "p2": "move 1 1, move 1"
    },
    "draws": [
@@ -828,6 +828,18 @@
      "context": "each:BeforeTurn",
      "lo": 2,
      "hi": 4,
+     "value": 3,
+     "group": [
+      "P:p1b:0:",
+      "P:p2b:0:"
+     ],
+     "start": 2
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 2,
+     "hi": 4,
      "value": 2,
      "group": [
       "P:p1b:0:",
@@ -872,6 +884,27 @@
      "start": 2
     },
     {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 22
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 3
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 15
+    },
+    {
      "site": "SPEED_TIE",
      "context": "each:Update",
      "lo": 2,
@@ -889,18 +922,6 @@
      "lo": 2,
      "hi": 4,
      "value": 3,
-     "group": [
-      "P:p1b:0:",
-      "P:p2b:0:"
-     ],
-     "start": 2
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 2,
-     "hi": 4,
-     "value": 2,
      "group": [
       "P:p1b:0:",
       "P:p2b:0:"
@@ -924,21 +945,78 @@
      "context": "",
      "lo": 0,
      "hi": 100,
-     "value": 13
+     "value": 43
     },
     {
      "site": "CRIT",
      "context": "",
      "lo": 0,
      "hi": 24,
-     "value": 7
+     "value": 14
     },
     {
      "site": "DAMAGE_ROLL",
      "context": "",
      "lo": 0,
      "hi": 16,
-     "value": 11
+     "value": 0
+    },
+    {
+     "site": "SECONDARY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 78
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 2,
+     "hi": 4,
+     "value": 3,
+     "group": [
+      "P:p1b:0:",
+      "P:p2b:0:"
+     ],
+     "start": 2
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 2,
+     "hi": 4,
+     "value": 3,
+     "group": [
+      "P:p1b:0:",
+      "P:p2b:0:"
+     ],
+     "start": 2
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 2,
+     "hi": 4,
+     "value": 3,
+     "group": [
+      "P:p1b:0:",
+      "P:p2b:0:"
+     ],
+     "start": 2
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 5
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 15
     },
     {
      "site": "SPEED_TIE",
@@ -969,19 +1047,7 @@
      "context": "each:Update",
      "lo": 2,
      "hi": 4,
-     "value": 3,
-     "group": [
-      "P:p1b:0:",
-      "P:p2b:0:"
-     ],
-     "start": 2
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 2,
-     "hi": 4,
-     "value": 3,
+     "value": 2,
      "group": [
       "P:p1b:0:",
       "P:p2b:0:"
@@ -995,29 +1061,17 @@
      "hi": 2,
      "value": 0,
      "group": [
-      "H:kingsshield:p1a:end",
-      "H:stall:p1a:end"
-     ],
-     "start": 0
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "field:Residual",
-     "lo": 2,
-     "hi": 4,
-     "value": 3,
-     "group": [
       "H:protect:p2b:end",
       "H:stall:p2b:end"
      ],
-     "start": 2
+     "start": 0
     },
     {
      "site": "SPEED_TIE",
      "context": "each:Update",
      "lo": 2,
      "hi": 4,
-     "value": 2,
+     "value": 3,
      "group": [
       "P:p1b:0:",
       "P:p2b:0:"
@@ -1026,20 +1080,28 @@
     }
    ],
    "log": [
-    "|move|p1a: Aegislash|King's Shield|p1a: Aegislash",
-    "|-singleturn|p1a: Aegislash|Protect",
     "|move|p2b: Kingambit|Protect|p2b: Kingambit",
     "|-singleturn|p2b: Kingambit|Protect",
-    "|move|p1b: Kingambit|Sucker Punch|p2a: Garchomp",
+    "|move|p2a: Garchomp|Dragon Claw|p1a: Aegislash",
+    "|-resisted|p1a: Aegislash|1",
+    "|split|p1",
+    "|-damage|p1a: Aegislash|147/167",
+    "|-damage|p1a: Aegislash|88/100",
+    "|-formechange|p1a: Aegislash|Aegislash-Blade|",
+    "|move|p1a: Aegislash|Iron Head|p2a: Garchomp",
     "|split|p2",
-    "|-damage|p2a: Garchomp|157/215",
-    "|-damage|p2a: Garchomp|73/100",
+    "|-damage|p2a: Garchomp|140/215",
+    "|-damage|p2a: Garchomp|65/100",
+    "|split|p1",
+    "|-damage|p1a: Aegislash|127/167|[from] ability: Rough Skin|[of] p2a: Garchomp",
+    "|-damage|p1a: Aegislash|76/100|[from] ability: Rough Skin|[of] p2a: Garchomp",
+    "|move|p1b: Kingambit|Kowtow Cleave|p2a: Garchomp",
+    "|split|p2",
+    "|-damage|p2a: Garchomp|73/215",
+    "|-damage|p2a: Garchomp|33/100",
     "|split|p1",
     "|-damage|p1b: Kingambit|182/207|[from] ability: Rough Skin|[of] p2a: Garchomp",
     "|-damage|p1b: Kingambit|87/100|[from] ability: Rough Skin|[of] p2a: Garchomp",
-    "|move|p2a: Garchomp|Dragon Claw|p1a: Aegislash",
-    "|-activate|p1a: Aegislash|move: Protect",
-    "|-unboost|p2a: Garchomp|atk|1",
     "|upkeep",
     "|turn|2"
    ],
@@ -1080,11 +1142,11 @@
       ],
       "pokemon": [
        {
-        "species": "Aegislash",
+        "species": "Aegislash-Blade",
         "set_species": "Aegislash",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 167,
+        "hp": 127,
         "maxhp": 167,
         "item": "",
         "status": "",
@@ -1101,14 +1163,12 @@
          0
         ],
         "pp": [
-         7,
-         16,
+         8,
+         15,
          8,
          16
         ],
-        "volatiles": [
-         "stall"
-        ],
+        "volatiles": [],
         "locked": null
        },
        {
@@ -1133,9 +1193,9 @@
          0
         ],
         "pp": [
-         12,
+         11,
          8,
-         7,
+         8,
          16
         ],
         "volatiles": [],
@@ -1227,7 +1287,7 @@
         "set_species": "Garchomp",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 157,
+        "hp": 73,
         "maxhp": 215,
         "item": "",
         "status": "",
@@ -1235,7 +1295,7 @@
         "confusion": 0,
         "fainted": false,
         "boosts": [
-         -1,
+         0,
          0,
          0,
          0,
@@ -1344,7 +1404,7 @@
   },
   {
    "input": {
-    "p1": "move 3, move 1 1",
+    "p1": "move 1, move 1 1",
     "p2": "move 1 1, move 1"
    },
    "draws": [
@@ -1353,7 +1413,7 @@
      "context": "each:BeforeTurn",
      "lo": 2,
      "hi": 4,
-     "value": 2,
+     "value": 3,
      "group": [
       "P:p1b:0:",
       "P:p2b:0:"
@@ -1373,42 +1433,35 @@
      "start": 2
     },
     {
-     "site": "STALL",
-     "context": "StallMove",
-     "lo": 0,
-     "hi": 3,
-     "value": 0
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 2,
-     "hi": 4,
-     "value": 2,
-     "group": [
-      "P:p1b:0:",
-      "P:p2b:0:"
-     ],
-     "start": 2
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 2,
-     "hi": 4,
-     "value": 2,
-     "group": [
-      "P:p1b:0:",
-      "P:p2b:0:"
-     ],
-     "start": 2
-    },
-    {
      "site": "SPEED_TIE",
      "context": "each:Update",
      "lo": 2,
      "hi": 4,
      "value": 3,
+     "group": [
+      "P:p1b:0:",
+      "P:p2b:0:"
+     ],
+     "start": 2
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 2,
+     "hi": 4,
+     "value": 2,
+     "group": [
+      "P:p1b:0:",
+      "P:p2b:0:"
+     ],
+     "start": 2
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 2,
+     "hi": 4,
+     "value": 2,
      "group": [
       "P:p1b:0:",
       "P:p2b:0:"
@@ -1427,57 +1480,7 @@
      "context": "each:Update",
      "lo": 2,
      "hi": 4,
-     "value": 3,
-     "group": [
-      "P:p1b:0:",
-      "P:p2b:0:"
-     ],
-     "start": 2
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 2,
-     "hi": 4,
-     "value": 3,
-     "group": [
-      "P:p1b:0:",
-      "P:p2b:0:"
-     ],
-     "start": 2
-    },
-    {
-     "site": "CRIT",
-     "context": "",
-     "lo": 0,
-     "hi": 24,
-     "value": 3
-    },
-    {
-     "site": "DAMAGE_ROLL",
-     "context": "",
-     "lo": 0,
-     "hi": 16,
-     "value": 13
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 2,
-     "hi": 4,
-     "value": 3,
-     "group": [
-      "P:p1b:0:",
-      "P:p2b:0:"
-     ],
-     "start": 2
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 2,
-     "hi": 4,
-     "value": 3,
+     "value": 2,
      "group": [
       "P:p1b:0:",
       "P:p2b:0:"
@@ -1497,49 +1500,101 @@
      "start": 2
     },
     {
-     "site": "SPEED_TIE",
-     "context": "field:Residual",
+     "site": "CRIT",
+     "context": "",
      "lo": 0,
-     "hi": 2,
-     "value": 0,
-     "group": [
-      "H:stall:p1a:end",
-      "H:protect:p1a:end"
-     ],
-     "start": 0
+     "hi": 24,
+     "value": 21
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 1
     },
     {
      "site": "SPEED_TIE",
      "context": "each:Update",
      "lo": 2,
      "hi": 4,
-     "value": 3,
+     "value": 2,
      "group": [
       "P:p1b:0:",
       "P:p2b:0:"
      ],
      "start": 2
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 1,
+     "hi": 3,
+     "value": 1,
+     "group": [
+      "P:p1b:0:",
+      "P:p2b:0:"
+     ],
+     "start": 1
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 1,
+     "hi": 3,
+     "value": 2,
+     "group": [
+      "P:p1b:0:",
+      "P:p2b:0:"
+     ],
+     "start": 1
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "field:Residual",
+     "lo": 0,
+     "hi": 2,
+     "value": 1,
+     "group": [
+      "H:kingsshield:p1a:end",
+      "H:stall:p1a:end"
+     ],
+     "start": 0
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 1,
+     "hi": 3,
+     "value": 2,
+     "group": [
+      "P:p1b:0:",
+      "P:p2b:0:"
+     ],
+     "start": 1
     }
    ],
    "log": [
-    "|move|p1a: Aegislash|Protect|p1a: Aegislash",
+    "|-formechange|p1a: Aegislash|Aegislash|",
+    "|move|p1a: Aegislash|King's Shield|p1a: Aegislash",
     "|-singleturn|p1a: Aegislash|Protect",
     "|move|p2b: Kingambit|Protect||[still]",
     "|-fail|p2b: Kingambit",
     "|move|p2a: Garchomp|Dragon Claw|p1a: Aegislash",
     "|-activate|p1a: Aegislash|move: Protect",
+    "|-unboost|p2a: Garchomp|atk|1",
     "|move|p1b: Kingambit|Kowtow Cleave|p2a: Garchomp",
     "|split|p2",
-    "|-damage|p2a: Garchomp|88/215",
-    "|-damage|p2a: Garchomp|40/100",
+    "|-damage|p2a: Garchomp|0 fnt",
+    "|-damage|p2a: Garchomp|0 fnt",
     "|split|p1",
     "|-damage|p1b: Kingambit|157/207|[from] ability: Rough Skin|[of] p2a: Garchomp",
     "|-damage|p1b: Kingambit|75/100|[from] ability: Rough Skin|[of] p2a: Garchomp",
-    "|upkeep",
-    "|turn|3"
+    "|faint|p2a: Garchomp",
+    "|upkeep"
    ],
    "state": {
-    "turn": 3,
+    "turn": 2,
     "ended": false,
     "winner": "",
     "weather": "",
@@ -1549,26 +1604,13 @@
     "trick_room": 0,
     "sides": [
      {
-      "request": "move",
+      "request": "",
       "conditions": [
        0,
        0,
        0
       ],
-      "enabled": [
-       [
-        1,
-        1,
-        1,
-        1
-       ],
-       [
-        1,
-        1,
-        1,
-        1
-       ]
-      ],
+      "enabled": [],
       "active": [
        0,
        1
@@ -1579,7 +1621,7 @@
         "set_species": "Aegislash",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 167,
+        "hp": 127,
         "maxhp": 167,
         "item": "",
         "status": "",
@@ -1597,8 +1639,8 @@
         ],
         "pp": [
          7,
-         16,
-         7,
+         15,
+         8,
          16
         ],
         "volatiles": [
@@ -1628,9 +1670,9 @@
          0
         ],
         "pp": [
-         11,
+         10,
          8,
-         7,
+         8,
          16
         ],
         "volatiles": [],
@@ -1695,23 +1737,13 @@
       ]
      },
      {
-      "request": "move",
+      "request": "switch",
       "conditions": [
        0,
        0,
        0
       ],
-      "enabled": [
-       [
-        1,
-        1,
-        1
-       ],
-       [
-        1,
-        1
-       ]
-      ],
+      "enabled": [],
       "active": [
        0,
        1
@@ -1721,16 +1753,16 @@
         "species": "Garchomp",
         "set_species": "Garchomp",
         "mega": 0,
-        "switch_flag": 0,
-        "hp": 88,
+        "switch_flag": 1,
+        "hp": 0,
         "maxhp": 215,
         "item": "",
-        "status": "",
+        "status": "fnt",
         "status_time": 0,
         "confusion": 0,
-        "fainted": false,
+        "fainted": true,
         "boosts": [
-         -1,
+         0,
          0,
          0,
          0,
@@ -1772,540 +1804,6 @@
          8
         ],
         "volatiles": [],
-        "locked": null
-       },
-       {
-        "species": "Rillaboom",
-        "set_species": "Rillaboom",
-        "mega": 0,
-        "switch_flag": 0,
-        "hp": 193,
-        "maxhp": 193,
-        "item": "miracleseed",
-        "status": "",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": false,
-        "boosts": [
-         0,
-         0,
-         0,
-         0,
-         0,
-         0,
-         0
-        ],
-        "pp": [
-         12,
-         8
-        ],
-        "volatiles": [],
-        "locked": null
-       },
-       {
-        "species": "Ceruledge",
-        "set_species": "Ceruledge",
-        "mega": 0,
-        "switch_flag": 0,
-        "hp": 181,
-        "maxhp": 181,
-        "item": "grassyseed",
-        "status": "",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": false,
-        "boosts": [
-         0,
-         0,
-         0,
-         0,
-         0,
-         0,
-         0
-        ],
-        "pp": [
-         8,
-         16
-        ],
-        "volatiles": [],
-        "locked": null
-       }
-      ]
-     }
-    ]
-   }
-  },
-  {
-   "input": {
-    "p1": "move 1, move 1 1",
-    "p2": "move 1 1, move 1"
-   },
-   "draws": [
-    {
-     "site": "SPEED_TIE",
-     "context": "each:BeforeTurn",
-     "lo": 2,
-     "hi": 4,
-     "value": 3,
-     "group": [
-      "P:p1b:0:",
-      "P:p2b:0:"
-     ],
-     "start": 2
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 2,
-     "hi": 4,
-     "value": 2,
-     "group": [
-      "P:p1b:0:",
-      "P:p2b:0:"
-     ],
-     "start": 2
-    },
-    {
-     "site": "STALL",
-     "context": "StallMove",
-     "lo": 0,
-     "hi": 9,
-     "value": 3
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 2,
-     "hi": 4,
-     "value": 3,
-     "group": [
-      "P:p1b:0:",
-      "P:p2b:0:"
-     ],
-     "start": 2
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 2,
-     "hi": 4,
-     "value": 2,
-     "group": [
-      "P:p1b:0:",
-      "P:p2b:0:"
-     ],
-     "start": 2
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 2,
-     "hi": 4,
-     "value": 2,
-     "group": [
-      "P:p1b:0:",
-      "P:p2b:0:"
-     ],
-     "start": 2
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 2,
-     "hi": 4,
-     "value": 2,
-     "group": [
-      "P:p1b:0:",
-      "P:p2b:0:"
-     ],
-     "start": 2
-    },
-    {
-     "site": "ACCURACY",
-     "context": "",
-     "lo": 0,
-     "hi": 100,
-     "value": 44
-    },
-    {
-     "site": "CRIT",
-     "context": "",
-     "lo": 0,
-     "hi": 24,
-     "value": 16
-    },
-    {
-     "site": "DAMAGE_ROLL",
-     "context": "",
-     "lo": 0,
-     "hi": 16,
-     "value": 1
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 2,
-     "hi": 4,
-     "value": 2,
-     "group": [
-      "P:p1b:0:",
-      "P:p2b:0:"
-     ],
-     "start": 2
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 2,
-     "hi": 4,
-     "value": 2,
-     "group": [
-      "P:p1b:0:",
-      "P:p2b:0:"
-     ],
-     "start": 2
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 2,
-     "hi": 4,
-     "value": 2,
-     "group": [
-      "P:p1b:0:",
-      "P:p2b:0:"
-     ],
-     "start": 2
-    },
-    {
-     "site": "CRIT",
-     "context": "",
-     "lo": 0,
-     "hi": 24,
-     "value": 11
-    },
-    {
-     "site": "DAMAGE_ROLL",
-     "context": "",
-     "lo": 0,
-     "hi": 16,
-     "value": 10
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 2,
-     "hi": 4,
-     "value": 3,
-     "group": [
-      "P:p1b:0:",
-      "P:p2b:0:"
-     ],
-     "start": 2
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 2,
-     "hi": 4,
-     "value": 2,
-     "group": [
-      "P:p1b:0:",
-      "P:p2b:0:"
-     ],
-     "start": 2
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 2,
-     "hi": 4,
-     "value": 3,
-     "group": [
-      "P:p1b:0:",
-      "P:p2b:0:"
-     ],
-     "start": 2
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "field:Residual",
-     "lo": 0,
-     "hi": 2,
-     "value": 1,
-     "group": [
-      "H:protect:p2b:end",
-      "H:stall:p2b:end"
-     ],
-     "start": 0
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 2,
-     "hi": 4,
-     "value": 3,
-     "group": [
-      "P:p1b:0:",
-      "P:p2b:0:"
-     ],
-     "start": 2
-    }
-   ],
-   "log": [
-    "|move|p1a: Aegislash|King's Shield||[still]",
-    "|-fail|p1a: Aegislash",
-    "|move|p2b: Kingambit|Protect|p2b: Kingambit",
-    "|-singleturn|p2b: Kingambit|Protect",
-    "|move|p2a: Garchomp|Dragon Claw|p1a: Aegislash",
-    "|-resisted|p1a: Aegislash|1",
-    "|split|p1",
-    "|-damage|p1a: Aegislash|152/167",
-    "|-damage|p1a: Aegislash|91/100",
-    "|move|p1b: Kingambit|Kowtow Cleave|p2a: Garchomp",
-    "|split|p2",
-    "|-damage|p2a: Garchomp|18/215",
-    "|-damage|p2a: Garchomp|8/100",
-    "|split|p1",
-    "|-damage|p1b: Kingambit|132/207|[from] ability: Rough Skin|[of] p2a: Garchomp",
-    "|-damage|p1b: Kingambit|63/100|[from] ability: Rough Skin|[of] p2a: Garchomp",
-    "|upkeep",
-    "|turn|4"
-   ],
-   "state": {
-    "turn": 4,
-    "ended": false,
-    "winner": "",
-    "weather": "",
-    "weather_turns": 0,
-    "terrain": "",
-    "terrain_turns": 0,
-    "trick_room": 0,
-    "sides": [
-     {
-      "request": "move",
-      "conditions": [
-       0,
-       0,
-       0
-      ],
-      "enabled": [
-       [
-        1,
-        1,
-        1,
-        1
-       ],
-       [
-        1,
-        1,
-        1,
-        1
-       ]
-      ],
-      "active": [
-       0,
-       1
-      ],
-      "pokemon": [
-       {
-        "species": "Aegislash",
-        "set_species": "Aegislash",
-        "mega": 0,
-        "switch_flag": 0,
-        "hp": 152,
-        "maxhp": 167,
-        "item": "",
-        "status": "",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": false,
-        "boosts": [
-         0,
-         0,
-         0,
-         0,
-         0,
-         0,
-         0
-        ],
-        "pp": [
-         6,
-         16,
-         7,
-         16
-        ],
-        "volatiles": [],
-        "locked": null
-       },
-       {
-        "species": "Kingambit",
-        "set_species": "Kingambit",
-        "mega": 0,
-        "switch_flag": 0,
-        "hp": 132,
-        "maxhp": 207,
-        "item": "",
-        "status": "",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": false,
-        "boosts": [
-         0,
-         0,
-         0,
-         0,
-         0,
-         0,
-         0
-        ],
-        "pp": [
-         10,
-         8,
-         7,
-         16
-        ],
-        "volatiles": [],
-        "locked": null
-       },
-       {
-        "species": "Rillaboom",
-        "set_species": "Rillaboom",
-        "mega": 0,
-        "switch_flag": 0,
-        "hp": 193,
-        "maxhp": 193,
-        "item": "miracleseed",
-        "status": "",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": false,
-        "boosts": [
-         0,
-         0,
-         0,
-         0,
-         0,
-         0,
-         0
-        ],
-        "pp": [
-         12,
-         8
-        ],
-        "volatiles": [],
-        "locked": null
-       },
-       {
-        "species": "Ceruledge",
-        "set_species": "Ceruledge",
-        "mega": 0,
-        "switch_flag": 0,
-        "hp": 181,
-        "maxhp": 181,
-        "item": "grassyseed",
-        "status": "",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": false,
-        "boosts": [
-         0,
-         0,
-         0,
-         0,
-         0,
-         0,
-         0
-        ],
-        "pp": [
-         8,
-         16
-        ],
-        "volatiles": [],
-        "locked": null
-       }
-      ]
-     },
-     {
-      "request": "move",
-      "conditions": [
-       0,
-       0,
-       0
-      ],
-      "enabled": [
-       [
-        1,
-        1,
-        1
-       ],
-       [
-        1,
-        1
-       ]
-      ],
-      "active": [
-       0,
-       1
-      ],
-      "pokemon": [
-       {
-        "species": "Garchomp",
-        "set_species": "Garchomp",
-        "mega": 0,
-        "switch_flag": 0,
-        "hp": 18,
-        "maxhp": 215,
-        "item": "",
-        "status": "",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": false,
-        "boosts": [
-         -1,
-         0,
-         0,
-         0,
-         0,
-         0,
-         0
-        ],
-        "pp": [
-         13,
-         8,
-         12
-        ],
-        "volatiles": [],
-        "locked": null
-       },
-       {
-        "species": "Kingambit",
-        "set_species": "Kingambit",
-        "mega": 0,
-        "switch_flag": 0,
-        "hp": 207,
-        "maxhp": 207,
-        "item": "chopleberry",
-        "status": "",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": false,
-        "boosts": [
-         0,
-         0,
-         0,
-         0,
-         0,
-         0,
-         0
-        ],
-        "pp": [
-         5,
-         8
-        ],
-        "volatiles": [
-         "stall"
-        ],
         "locked": null
        },
        {

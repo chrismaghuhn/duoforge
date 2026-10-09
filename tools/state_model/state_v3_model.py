@@ -1930,7 +1930,7 @@ def tail_example():
                            stockpile_def=1, glaive_rush=1, substitute_hp=1, move_result=15, hits_taken=1, ability_state=1,
                            lock_turns=1)
     a['ability_now'][:2] = [5, POOL_ABILITY_COUNT]
-    a['forme_now'][:3] = [300, POOL_FORME_COUNT, 1]
+    a['forme_now'][:3] = [300, POOL_FORME_COUNT - 2, 1]  # not the Blade (the last forme): step G66's strict stats rule
     a['soak'][:2] = [5, 18]
     a['item_now'][:4] = [12, TAIL_ITEM_NONE, POOL_ITEM_COUNT, 1]
     a['type2'][:2] = [TYPE_COUNT, TAIL_TYPE2_TYPELESS]

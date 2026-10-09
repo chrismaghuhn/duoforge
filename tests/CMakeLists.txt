@@ -238,6 +238,7 @@ duoforge_add_test(NAME duoforge.state.pool_g39 SOURCES test_pool_g39.c WHITEBOX 
 duoforge_add_test(NAME duoforge.state.pool_g45 SOURCES test_pool_g45.c WHITEBOX TIMEOUT 60)
 # Step G20, Spiky Shield: the protect_kind of the position (POOL tail rev 3), the state round trip, the volatile.
 duoforge_add_test(NAME duoforge.state.pool_g20_protect SOURCES test_pool_g20_protect.c WHITEBOX TIMEOUT 60)
+duoforge_add_test(NAME duoforge.state.pool_g66 SOURCES test_pool_g66.c WHITEBOX LIBS duoforge_batch TIMEOUT 60)
 # Step G31: Taunt and Yawn in the tail's taunt_turns and yawn_turns, the request, the cant line, the residual and the POOL view
 # extension (the position's TAUNT and YAWN bits, 14 and 25).
 duoforge_add_test(NAME duoforge.state.pool_g31 SOURCES test_pool_g31.c WHITEBOX TIMEOUT 60)

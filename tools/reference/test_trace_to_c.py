@@ -2585,5 +2585,58 @@ class Cli(unittest.TestCase):
             self.assertEqual(self.run_cli(tmp, '--check').returncode, 0)
 
 
+class FormeStance(unittest.TestCase):
+    """NAMED RULE FORME-STANCE (step G66, decision 0040): a `-formechange` line with no attribute is accepted only for
+    Aegislash or Aegislash-Blade, only right before the move line of the same position, and the Shield's forme only before
+    King's Shield. Each negative control changes an in-memory copy of a committed battle and asserts the rule."""
+
+    NAME = 'g66_blade_shield_cycle'
+    CASE = '|-formechange|p1a: Aegislash|Aegislash-Blade|'
+
+    def mutated(self, fn):
+        spec, trace = battle(self.NAME)
+        changed = 0
+        for st in trace['steps']:
+            new = []
+            for line in st['log']:
+                if line.startswith('|-formechange|'):
+                    line = fn(line)
+                    changed += 1
+                new.append(line)
+            st['log'] = new
+        self.assertGreater(changed, 0, 'the committed battle has the -formechange lines')
+        return spec, trace
+
+    def test_committed_lines_convert(self):
+        spec, trace = battle(self.NAME)
+        convert(self.NAME, spec, trace)  # no ConversionError: the rule accepts the recorded shapes
+
+    def test_species_other_than_aegislash_refused(self):
+        spec, trace = self.mutated(lambda l: l.replace('|Aegislash-Blade|', '|Garchomp|', 1))
+        with self.assertRaises(trace_to_c.ConversionError) as cm:
+            convert(self.NAME, spec, trace)
+        self.assertEqual(cm.exception.rule, 'formechange-line')
+
+    def test_shield_forme_before_another_move_refused(self):
+        # The Blade move (Iron Head) with the Shield's species: the Shield changes only before King's Shield.
+        spec, trace = self.mutated(lambda l: l.replace('|Aegislash-Blade|', '|Aegislash|', 1))
+        with self.assertRaises(trace_to_c.ConversionError) as cm:
+            convert(self.NAME, spec, trace)
+        self.assertEqual(cm.exception.rule, 'formechange-line')
+
+    def test_blade_forme_before_king_s_shield_refused(self):
+        # Turn 2: the Shield forme before King's Shield. Making it the Blade is refused (King's Shield never gives the Blade).
+        spec, trace = self.mutated(lambda l: l.replace('|p1a: Aegislash|Aegislash|', '|p1a: Aegislash|Aegislash-Blade|'))
+        with self.assertRaises(trace_to_c.ConversionError) as cm:
+            convert(self.NAME, spec, trace)
+        self.assertEqual(cm.exception.rule, 'formechange-line')
+
+    def test_attribute_from_another_ability_refused(self):
+        spec, trace = self.mutated(lambda l: l + '[from] ability: Trace' if l.endswith('|') else l)
+        with self.assertRaises(trace_to_c.ConversionError) as cm:
+            convert(self.NAME, spec, trace)
+        self.assertEqual(cm.exception.rule, 'formechange-line')
+
+
 if __name__ == '__main__':
     unittest.main()

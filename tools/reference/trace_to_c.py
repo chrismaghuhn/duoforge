@@ -309,7 +309,7 @@ def heal_block_end_tie(d, log):
     return (SITES['SPEED_TIE'], 0, 2, d['value'] - d['start'])
 
 
-NO_ORDER_PAIR = (['protect', 'stall'], ['spikyshield', 'stall'])
+NO_ORDER_PAIR = (['protect', 'stall'], ['spikyshield', 'stall'], ['kingsshield', 'stall'])  # kingsshield: step G66
 
 
 def standing(after, holder):
@@ -927,7 +927,7 @@ NOPOS = 0xFF
 # Any other volatile is refused: a new mechanic's volatile must be placed in
 # one of the two tables before its traces convert. Spiky Shield (step G20, POOL) is Protect's bit: its own volatile
 # is the Protect volatile of the engine, with the variant in the tail (never both at once).
-COMPARED_VOLATILES = (('protect', 1), ('spikyshield', 1), ('flashfire', 2), ('twoturnmove', 4), ('choicelock', 8), ('unburden', 16),
+COMPARED_VOLATILES = (('protect', 1), ('spikyshield', 1), ('kingsshield', 1), ('flashfire', 2), ('twoturnmove', 4), ('choicelock', 8), ('unburden', 16),
                       ('helpinghand', 32), ('followme', 64), ('flinch', 128))
 IGNORED_VOLATILES = {
     # data/moves.ts disable (step G27): compared through the request (the barred slot) and the start and end lines.
@@ -1530,6 +1530,33 @@ def step_events(log, viewer, roster_of, maxhp, tables, rb_pending=None):
                          tables['MOVE'][key(move_name)], tables['ITEM'][key(args[1])] + 1)
         elif kind == 'detailschange':
             e = ev_tuple(EV['FORME'], ev_pos(args[0]), ident=tables['FORME'][key(args[1].split(',')[0])])
+        elif kind == '-formechange':
+            # NAMED RULE FORME-STANCE (step G66, decision 0040). The only temporary forme in the pool is Stance Change's: the
+            # species is Aegislash (the Shield) or Aegislash-Blade, and the line names no other. The pin's formeChange takes its
+            # source from this.battle.effect: a move's use gives `-formechange|P|SPECIES|` with NO attribute (the pin prints no
+            # `[from]` here: the empty third field is the message, battle.add joins an undefined message as ''), and an ability
+            # source would give `[from] ability: Stance Change`. The line does not say the cause: the FORME event's cause ABILITY
+            # and id2 = Stance Change + 1 come from the engine's knowledge of Stance Change, which the conformance compares.
+            # The no-attribute shape is accepted only right before the move line of the same position (ModifyMove runs before
+            # the move line): the Shield's forme only before King's Shield, the Blade's forme before any other move.
+            species = args[1] if len(args) > 1 else ''
+            if species not in ('Aegislash', 'Aegislash-Blade') or len(args) != 3 or args[2] != '':
+                raise ConversionError('formechange-line', 'trace_to_c: unknown -formechange %r' % line, detail=line)
+            cause, cause_id, of = ev_cause(attrs, tables)
+            if attrs:
+                if cause != CAUSE['ABILITY'] or cause_id != tables['ABILITY']['STANCECHANGE'] + 1 or of != NOPOS:
+                    raise ConversionError('formechange-line', 'trace_to_c: unknown -formechange %r' % line, detail=line)
+            else:
+                follow = (log[i + 1] if i + 1 < len(log) else '').split('|')
+                if len(follow) < 4 or follow[1] != 'move' or follow[2] != args[0]:
+                    raise ConversionError('formechange-line', 'trace_to_c: -formechange without [from] not before its move line %r'
+                                          % line, detail=line)
+                is_shield_move = follow[3] == "King's Shield"
+                if (species == 'Aegislash') != is_shield_move:
+                    raise ConversionError('formechange-line', 'trace_to_c: -formechange %s does not match the move %r'
+                                          % (species, follow[3]), detail=line)
+            e = ev_tuple(EV['FORME'], ev_pos(args[0]), NOPOS, CAUSE['ABILITY'], tables['FORME'][key(args[1])],
+                         tables['ABILITY']['STANCECHANGE'] + 1)
         elif kind == '-mega':
             e = ev_tuple(EV['MEGA'], ev_pos(args[0]), NOPOS, 0, 0, tables['ITEM'][key(args[2])] + 1)
         elif kind == '-prepare':

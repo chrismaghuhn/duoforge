@@ -42,7 +42,7 @@ static const char ENVELOPE_HEX[] = "8944554f0d0a1a0a02000305030000004d050000";
 static const char TAIL_HEX[] =
     "05d10800d108000001080201030101b10102030205030403050100060301040201030203010014002500000602060603"
     "000000000500000102010100000001000000000000010100000101000000000f000101010000000005002c01050c0012"
-    "0100d7005b0112ff00ff00000000010000a6000001000000000000010000000000000000000000000000000000000000"
+    "0100d700590112ff00ff00000000010000a6000001000000000000010000000000000000000000000000000000000000"
     "000000000000000001000001040401000300000000000000000001010000000000000000000000040003000000000000"
     "000000000000000000000001030000000000000000000000ff0100090200000000000000010000000100000100000000"
     "000000000000000000000000000000000000000000000000000000000000000000000000000000000700006400000100"
@@ -148,7 +148,7 @@ static const unsigned sweep[DFI_ENC_TAIL_SIZE][SWEEP_COLUMNS] = {
     {0, 0, 0, 0, 0, 255, 0, 0},
     {215, 0, 0, 40, 0, 0, 0, 0},
     {0, 0, 0, 255, 0, 0, 0, 0},
-    {91, 0, 0, 164, 0, 0, 0, 0},
+    {90, 0, 0, 165, 0, 0, 0, 0},
     {1, 0, 0, 254, 0, 0, 0, 0},
     {19, 0, 0, 236, 0, 0, 0, 0},
     {167, 0, 0, 88, 0, 0, 0, 0},
@@ -158,7 +158,7 @@ static const unsigned sweep[DFI_ENC_TAIL_SIZE][SWEEP_COLUMNS] = {
     {0, 0, 0, 0, 0, 255, 0, 0},
     {215, 0, 0, 40, 0, 0, 0, 0},
     {0, 0, 0, 255, 0, 0, 0, 0},
-    {91, 0, 0, 164, 0, 0, 0, 0},
+    {90, 0, 0, 165, 0, 0, 0, 0},
     {1, 0, 0, 254, 0, 0, 0, 0},
     {18, 0, 0, 237, 0, 0, 0, 0},
     {167, 0, 0, 88, 0, 0, 0, 0},
@@ -530,7 +530,7 @@ static void set_example_tail(duoforge_battle *b)
     a->ability_now[0] = 5u;
     a->ability_now[1] = DFI_POOL_ABILITY_COUNT;
     a->forme_now[0] = 300u;
-    a->forme_now[1] = DFI_POOL_FORME_COUNT;
+    a->forme_now[1] = DFI_POOL_FORME_COUNT - 2u; /* not the Blade (step G66 strict rule); the model's example is the same value */
     a->forme_now[2] = 1u;
     a->soak_type[0] = 5u;
     a->soak_type[1] = 18u;
@@ -975,7 +975,7 @@ MUT(v_maxima, {
                                       .single_turn = DFI_SINGLE_TURN_ROOST, .hits_taken = 6u, .ability_state = 6u,
                                       .lock_turns = 3u};
     ts->ability_now[0] = DFI_POOL_ABILITY_COUNT;
-    ts->forme_now[5] = DFI_POOL_FORME_COUNT;
+    ts->forme_now[5] = DFI_POOL_FORME_COUNT - 2u; /* not the Blade (forme count - 1 is the Blade's id; step G66 strict rule) */
     ts->item_now[2] = DFI_POOL_ITEM_COUNT;
     ts->item_now[3] = DFI_TAIL_ITEM_NONE;
     ts->soak_type[1] = 18u;
@@ -1442,7 +1442,9 @@ int main(void)
                     got[1] += 1u;
                 } else if (st == DUOFORGE_E_MALFORMED && inv == DFI_INV_TAIL_POSITION) {
                     got[2] += 1u;
-                } else if (st == DUOFORGE_E_MALFORMED && inv == DFI_INV_TAIL_MEMBER) {
+                } else if (st == DUOFORGE_E_MALFORMED && (inv == DFI_INV_TAIL_MEMBER || inv == DFI_INV_MEMBER_EXTRA)) {
+                    /* MEMBER_EXTRA: a forme_now of the Blade (347) with the sheet's stats, refused by the strict stats rule of
+                     * step G66. The python model does not state that rule, so its row keeps 91 (see the sweep rows below). */
                     got[3] += 1u;
                 } else if (st == DUOFORGE_E_MALFORMED && inv == DFI_INV_TAIL_FIELD) {
                     got[4] += 1u;

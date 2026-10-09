@@ -1,0 +1,22 @@
+{
+  "name": "g66_intimidate_blade",
+  "purpose": "Intimidate and Stance Change (decision 0040): Incineroar (M) leads and its Intimidate drops Aegislash's Attack by one (the Shield, before any move); Kingambit's Defiant answers with +2. Turn 1 Iron Head makes the Blade, which keeps the Attack stage (no forme line for the stage).",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,00000000000000000000000000000000000000000000000000000000000066c6",
+  "teams": [
+    "Aegislash (M)\nAbility: Stance Change\nLevel: 50\nEVs: 32 HP / 32 Def / 2 SpD\nImpish Nature\n- King's Shield\n- Iron Head\n- Protect\n- Shadow Ball\n\nKingambit (M)\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 2 Atk / 32 SpD\nImpish Nature\n- Kowtow Cleave\n- Protect\n- Sucker Punch\n- Iron Head\n\nRillaboom (M) @ Miracle Seed\nAbility: Grassy Surge\nLevel: 50\nEVs: 18 HP / 32 Atk / 2 Def / 6 SpD / 8 Spe\nAdamant Nature\n- Fake Out\n- Protect\n\nCeruledge (M) @ Grassy Seed\nAbility: Flash Fire\nLevel: 50\nEVs: 31 HP / 7 Atk / 24 Def / 3 SpD / 1 Spe\nAdamant Nature\n- Protect\n- Shadow Ball\n\nGholdengo @ Life Orb\nAbility: Good as Gold\nLevel: 50\nEVs: 17 HP / 2 Def / 17 SpA / 16 SpD / 14 Spe\nModest Nature\n- Protect\n- Shadow Ball\n\nPolitoed (M) @ Mystic Water\nAbility: Drizzle\nLevel: 50\nEVs: 32 HP / 2 Def / 32 SpD\nCalm Nature\n- Protect\n- Earthquake",
+    "Incineroar (M)\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 2 Atk / 32 SpD\nAdamant Nature\n- Protect\n- Iron Head\n\nKingambit (M) @ Chople Berry\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 2 Atk / 32 SpD\nImpish Nature\n- Protect\n- Sucker Punch\n\nGarchomp (M)\nAbility: Rough Skin\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Spe\nJolly Nature\n- Dragon Claw\n- Protect\n- Rockslide\n\nRillaboom (M) @ Miracle Seed\nAbility: Grassy Surge\nLevel: 50\nEVs: 18 HP / 32 Atk / 2 Def / 6 SpD / 8 Spe\nAdamant Nature\n- Fake Out\n- Protect\n\nCeruledge (M) @ Grassy Seed\nAbility: Flash Fire\nLevel: 50\nEVs: 31 HP / 7 Atk / 24 Def / 3 SpD / 1 Spe\nAdamant Nature\n- Protect\n- Shadow Ball\n\nGholdengo @ Life Orb\nAbility: Good as Gold\nLevel: 50\nEVs: 17 HP / 2 Def / 17 SpA / 16 SpD / 14 Spe\nModest Nature\n- Protect\n- Shadow Ball"
+  ],
+  "plan": {
+    "p1": [
+      "move 2, move 2",
+      "move 2, move 2"
+    ],
+    "p2": [
+      "move 1, move 1",
+      "move 1, move 1"
+    ],
+    "max_steps": 3
+  }
+}

@@ -198,7 +198,24 @@ static dfi_invariant dfi_check_side(const struct duoforge_context *ctx, const st
             const dfi_member *seen = validated != NULL ? &validated->sides[s].members[m] : NULL;
             const bool same = seen != NULL && m < validated->sides[s].member_count &&
                               dfi_bytes_equal((const uint8_t *)&side->members[m], (const uint8_t *)seen, sizeof *seen);
-            const dfi_invariant inv = same ? DFI_INV_NONE : dfi_check_member(ctx, &side->members[m], full);
+            dfi_invariant inv = DFI_INV_NONE;
+            if (!same && b->tail.sides[s].forme_now[m] == DFI_FORME_AEGISLASHBLADE + 1u && dfi_context_is_closure(ctx)) {
+                /* Step G66 (decision 0040), strict: the Blade's stats are allowed only for an Aegislash on the Blade forme
+                 * (forme_now = the Blade's id + 1). The formula check runs on a copy with the sheet's stats. */
+                dfi_member sheet = side->members[m];
+                uint16_t want[DFI_MEMBER_STAT_COUNT];
+                if (side->members[m].species_id != DFI_FORME_AEGISLASH ||
+                    !dfi_closure_member_derive(&sheet) ||
+                    !dfi_closure_member_forme_stats(&side->members[m], DFI_FORME_AEGISLASHBLADE, want) ||
+                    !dfi_bytes_equal((const uint8_t *)want, (const uint8_t *)side->members[m].stats, sizeof want)) {
+                    inv = DFI_INV_MEMBER_EXTRA;
+                } else {
+                    inv = dfi_check_member(ctx, &sheet, full);
+                }
+            } else if (!same) {
+                /* Every other case (the sheet's forme, or a permanent one): the stats are the sheet's, checked as always. */
+                inv = dfi_check_member(ctx, &side->members[m], full);
+            }
             if (inv != DFI_INV_NONE) {
                 return inv;
             }
