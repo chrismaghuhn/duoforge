@@ -330,6 +330,10 @@ typedef struct dfi_tail_side {
 #define DFI_PARTY_ENTRY_BITS 3u
 #define DFI_PARTY_ENTRY_MASK 7u
 #define DFI_PARTY_USED_BITS (DUOFORGE_MAX_ROSTER * DFI_PARTY_ENTRY_BITS)
+/* A public view hides the foe's bench entries (positions 2 and up): the value 7 is no roster index + 1 (the roster is 6), so
+ * it is never a state's entry and a from-view world replaces it with the hypothesis's order (view.c). */
+#define DFI_PARTY_HIDDEN 7u
+_Static_assert(DUOFORGE_MAX_ROSTER < DFI_PARTY_HIDDEN, "the hidden party entry is no roster index + 1");
 
 typedef struct dfi_pool_tail {
     dfi_tail_side sides[DUOFORGE_SIDE_COUNT];
@@ -354,9 +358,9 @@ static inline void dfi_party_put(dfi_pool_tail *t, uint32_t side, uint32_t k, ui
     uint32_t w = dfi_party_word(t, side);
     w &= ~(DFI_PARTY_ENTRY_MASK << (k * DFI_PARTY_ENTRY_BITS));
     w |= (value & DFI_PARTY_ENTRY_MASK) << (k * DFI_PARTY_ENTRY_BITS);
-    t->party_order[side][0] = (uint8_t)(w & 0xFFu);
-    t->party_order[side][1] = (uint8_t)(w >> 8 & 0xFFu);
-    t->party_order[side][2] = (uint8_t)(w >> 16 & 0xFFu);
+    t->party_order[side][0] = (uint8_t)(w & 0xFFu); /* wide-operands-reviewed: masked to 8 bits */
+    t->party_order[side][1] = (uint8_t)(w >> 8 & 0xFFu); /* wide-operands-reviewed: masked to 8 bits */
+    t->party_order[side][2] = (uint8_t)(w >> 16 & 0xFFu); /* wide-operands-reviewed: masked to 8 bits */
 }
 
 struct duoforge_battle {
