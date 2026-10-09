@@ -1,0 +1,26 @@
+{
+  "name": "g42_roost_full",
+  "purpose": "Roost at full HP fails (no volatile, result false): the Stomping Tantrum of Dragonite on turn 2 is doubled and hits Gholdengo. Gholdengo Protects on turn 3 (the Tantrum is blocked: null), and the turn-4 Tantrum is not doubled (null is no failure), visible on Gholdengo.",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,000000000000000000000000000000000000000000000000000000004201",
+  "teams": [
+    "Dragonite (M)\nAbility: Inner Focus\nLevel: 50\nAdamant Nature\n- Roost\n- Stomping Tantrum\n- Dragon Claw\n- Protect\n\nTyranitar (M) @ Charcoal\nAbility: Sand Stream\nLevel: 50\nAdamant Nature\n- Protect\n- Stomping Tantrum\n- Crunch\n- Rock Slide\n\nKingambit (M) @ Black Glasses\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Protect\n- Swords Dance\n- Sucker Punch\n\nMilotic (F) @ Leftovers\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Protect\n- Scald\n- Recover\n\nGholdengo @ Focus Sash\nAbility: Good as Gold\nLevel: 50\nEVs: 32 HP / 2 SpA / 32 SpD\nCalm Nature\n- Protect\n- Shadow Ball\n\nSneasler (M) @ Mystic Water\nAbility: Poison Touch\nLevel: 50\nEVs: 2 HP / 32 Atk / 32 Spe\nJolly Nature\n- Protect",
+    "Gholdengo @ Black Glasses\nAbility: Good as Gold\nLevel: 50\nEVs: 32 HP / 2 SpA / 32 SpD\nCalm Nature\n- Protect\n- Shadow Ball\n- Make It Rain\n\nMilotic (F) @ Rocky Helmet\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Coil\n- Scald\n- Protect\n\nPrimarina (F) @ Fairy Feather\nAbility: Torrent\nLevel: 50\nEVs: 32 HP / 2 Def / 32 SpD\nCalm Nature\n- Protect\n- Moonblast\n- Calm Mind\n\nStaraptor (M) @ Life Orb\nAbility: Intimidate\nLevel: 50\nEVs: 2 HP / 32 Atk / 32 Spe\nJolly Nature\n- Tailwind\n- U-turn\n- Brave Bird\n- Protect\n\nSneasler (M) @ Mystic Water\nAbility: Poison Touch\nLevel: 50\nEVs: 2 HP / 32 Atk / 32 Spe\nJolly Nature\n- Protect\n\nCeruledge (M) @ Charcoal\nAbility: Flash Fire\nLevel: 50\nEVs: 31 HP / 7 Atk / 24 Def / 3 SpD / 1 Spe\nBrave Nature\n- Protect"
+  ],
+  "plan": {
+    "p1": [
+      "move 1, move 1",
+      "move 2 2, move 1",
+      "move 2 2, move 1",
+      "move 2 2, move 1"
+    ],
+    "p2": [
+      "move 1, move 1",
+      "move 1, move 1",
+      "move 1, move 3",
+      "move 1, move 1"
+    ],
+    "max_steps": 5
+  }
+}

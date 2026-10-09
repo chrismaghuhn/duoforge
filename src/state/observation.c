@@ -342,6 +342,8 @@ duoforge_status duoforge_battle_observe_ext(const duoforge_context *ctx, const d
                 vol |= tail->glaive_rush != 0u ? (uint32_t)DUOFORGE_POSITION_EXT_GLAIVE_RUSH : 0u; /* step G19 */
                 /* Step G38: the occupant has used Imprison (-start|X|move: Imprison, public; it ends with the occupant). */
                 vol |= tail->imprison != 0u ? (uint32_t)DUOFORGE_POSITION_EXT_IMPRISON : 0u;
+                /* Step G42: Roost's Flying type is off until the residual of order 25 (-singleturn move: Roost, public). */
+                vol |= (tail->single_turn & DFI_SINGLE_TURN_ROOST) != 0u ? (uint32_t)DUOFORGE_POSITION_EXT_ROOST : 0u;
                 /* Step G30: Rage Powder draws the foes' single-target moves this turn ([-singleturn] move: Rage Powder), set
                  * only at a boundary inside a turn (a PIVOT: the residual ends it), as decision 0018 sections 3.4.1 and 6.1 say. */
                 if (((uint32_t)battle->sides[s].positions[p].flags & DFI_VOL_FOLLOW_ME) != 0u &&
@@ -350,6 +352,10 @@ duoforge_status duoforge_battle_observe_ext(const duoforge_context *ctx, const d
                     vol |= (uint32_t)DUOFORGE_POSITION_EXT_RAGE_POWDER;
                 }
                 o.sides[s].positions[p].volatiles = vol;
+                /* Step G42: move_failed is 1 iff the occupant's last move result is FALSE. It is exact only when the result is
+                 * classified; an unclassified result (the bit of decision 0015 section 7) reads 0 here (documented, not refused). */
+                o.sides[s].positions[p].move_failed =
+                    ((((uint32_t)tail->move_result >> DFI_MOVE_RESULT_LAST_SHIFT) & 3u) == DFI_MOVE_RESULT_FALSE) ? 1u : 0u;
                 /* Step G9, Encore: the one move slot (slot + 1) that the occupant may use, public (-start|X|Encore: the
                  * slot is the one of its last move line); the turns are never shown. */
                 o.sides[s].positions[p].encore_slot = tail->encore_slot;
