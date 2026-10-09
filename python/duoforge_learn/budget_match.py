@@ -4,6 +4,8 @@ end within 5 % of the pilot's (expert_eval.validate_compute), whatever the JIT, 
 
 A step is what the ledger books from one decision point (after an update) to the next: the next collection plus
 the update on the chosen device. Before each step:
+  - overshoot: an axis above CEILING (1.05), because a step cost more than expected (an unmeasured first step):
+    stop, never as matched;
   - matched: both axes at FLOOR (0.95) of the pilot or above: stop;
   - a device fits when its expected step keeps both axes at CEILING (1.05) or below; the expected step is the most
     expensive one measured for that device: among the warm steps once the device ran in this process, among the
@@ -74,11 +76,13 @@ class Costs:
 
 
 def choose(totals, targets, costs):
-    """(device, None) for the next update, or (None, "matched" | "incomplete") to stop. totals and targets:
-    (cpu_core_seconds, gpu_seconds), targets both positive."""
+    """(device, None) for the next update, or (None, "matched" | "incomplete" | "overshoot") to stop. totals and
+    targets: (cpu_core_seconds, gpu_seconds), targets both positive."""
     c, g = totals
     pc, pg = targets
     fc, fg = c / pc, g / pg
+    if fc > CEILING or fg > CEILING:
+        return None, "overshoot"
     if fc >= FLOOR and fg >= FLOOR:
         return None, "matched"
 

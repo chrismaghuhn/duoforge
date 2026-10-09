@@ -96,6 +96,11 @@ class ChooseTest(unittest.TestCase):
             book.observe(device, *cost)
         self.assertEqual(bm.choose((500.0, 9.0), (1000.0, 10.0), book), (None, "incomplete"))
 
+    def test_an_axis_above_the_ceiling_is_an_overshoot_not_a_match(self):
+        # An expected step can be wrong (an unmeasured first step): past 1.05 the run stops, never as matched.
+        self.assertEqual(bm.choose((1089.0, 10.45), (1000.0, 10.0), bm.Costs()), (None, "overshoot"))
+        self.assertEqual(bm.choose((600.0, 10.6), (1000.0, 10.0), bm.Costs()), (None, "overshoot"))
+
     def test_matched_at_the_floor(self):
         self.assertEqual(bm.choose((950.0, 9.5), (1000.0, 10.0), bm.Costs()), (None, "matched"))
 

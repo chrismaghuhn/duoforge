@@ -103,7 +103,8 @@ directory left without a resumable state is moved to `<dir>.aside-<time>`, never
      step keeps both axes at 105 % or below. The expected step is the most expensive one measured for that device,
      the first one of a process (JIT, start-up) until the device ran in this process; an unmeasured step counts as
      25 % of each axis it spends. The run stops `matched` when both axes reach 95 %, or `incomplete` when no device
-     fits, or the GPU axis is below 95 % and no GPU update fits (STOP 30, re-plan). Restarts and JIT are absorbed:
+     fits, or the GPU axis is below 95 % and no GPU update fits, or `overshoot` when a step cost more than
+     expected and an axis passed 105 % (both STOP 30, re-plan). Restarts and JIT are absorbed:
      a resumed process reads the measured steps from the run's log; only a restart in the last updates of the GPU
      phase (GPU axis 83-95 %) cannot fit its JIT. The run plays no end suites (its ledger is training only). The
      device sequence depends on measured costs; each update logs it (`update_device`, `match`).
@@ -183,7 +184,7 @@ control and the evaluation then use `pilot-source/ledgers/pilot.json` (read only
 | 21 | STOP: forecast or actual generation CPU above 28800 core-seconds |
 | 22 | STOP: primary work fallbacks above 1 % |
 | 23 | production incomplete: fewer than 16384 targets (re-plan) |
-| 30 | the control is incomplete: no device fits within 105 % before both axes reach 95 % (`control-fresh/run/log.jsonl`) |
+| 30 | the control is incomplete (no device fits within 105 % before both axes reach 95 %) or overshot 105 % (`control-fresh/run/log.jsonl`) |
 | 31 | compute mismatch above 5 % (`control-fresh/compute-check.json`) |
 | 32 | the control ended without its budget stop (the `--minutes` cap); the next start resumes it |
 | 40 | evaluation smoke STOP (pre-training or post-training) |
@@ -202,7 +203,8 @@ checking them exactly as above, and writes to `$WORK_DIR/out`.
   t = 0 stops; a budget or fallback STOP is only reported.
 - **Distillation:** on the smoke's shards with the smoke manifest. `DRY_DISTILL_DEVICE=cpu` (dry run only; a run
   refuses it with 2) puts it on the CPU.
-- **Control:** as in the run, with an `--updates 4` cap; a stop by the cap or as incomplete is only reported, and
+- **Control:** as in the run, with an `--updates 4` cap; a stop by the cap, as incomplete or as overshoot (the
+  dry pilot's budget is a few updates, so an unmeasured first step can pass 105 %) is only reported, and
   the compute check is only reported. A pilot ledger without GPU-seconds (distill on the CPU) gets a 1 s target.
 - **Pilot from an earlier dry run:** `DRY_PILOT_DIR=<earlier WORK_DIR>/out` rehearses the import with `cp`.
 - **Evaluation:** the manifest and the `p1_eval` smoke on the real students. The run exits 0 on GO and 40 on STOP.

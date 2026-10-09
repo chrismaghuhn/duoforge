@@ -776,7 +776,7 @@ if ! marked control-fresh; then
     fi
     stopped=$(control_stopped)
     case $stopped in
-        matched|incomplete) log "control: stopped already ($stopped)" ;;
+        matched|incomplete|overshoot) log "control: stopped already ($stopped)" ;;
         *)
             if [[ -f $CONTROL/state.npz ]]; then
                 train control-fresh --resume "$CONTROL"
@@ -791,9 +791,9 @@ if ! marked control-fresh; then
     log "control: stopped ${stopped:-without a stop}, ledger $(cat "$CONTROL_LEDGER" 2>/dev/null | tr -d '\n ' | head -c 200)"
     case $stopped in
         matched) ;;
-        incomplete)
-            [[ $MODE == dry ]] || die $EX_CONTROL_INCOMPLETE "the control cannot match the pilot's compute within 5 % (control-fresh/run/log.jsonl): STOP, re-plan"
-            log "dry run: the control stopped incomplete; continuing the rehearsal" ;;
+        incomplete|overshoot)
+            [[ $MODE == dry ]] || die $EX_CONTROL_INCOMPLETE "the control stopped $stopped: it cannot match the pilot's compute within 5 % (control-fresh/run/log.jsonl): STOP, re-plan"
+            log "dry run: the control stopped $stopped; continuing the rehearsal" ;;
         *)
             [[ $MODE == dry ]] || die $EX_CONTROL_NO_BUDGET_STOP "the control ended without its budget stop (stopped: ${stopped:-none}, logs/control-fresh.log); the next start resumes it"
             log "dry run: the control stopped at its update cap; continuing the rehearsal" ;;

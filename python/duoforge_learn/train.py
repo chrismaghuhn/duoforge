@@ -862,7 +862,7 @@ def _run(args, pool, on_start, stop):
                 previous, last_eval = params, update
             if stop.requested:
                 record["stopped"] = "signal"
-            elif budget:  # the ledger's budget; with match: "matched" or "incomplete" (budget_match.choose)
+            elif budget:  # the ledger's budget; with match: "matched", "incomplete" or "overshoot" (budget_match)
                 record["stopped"] = match_stop if match else "budget"
             log.write(json.dumps(record) + "\n")
             log.flush()
