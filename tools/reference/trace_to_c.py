@@ -1550,15 +1550,17 @@ def convert_battle(name, spec, trace, tables):
             sd = new_state['sides'][s]
             row = [roster_of[s][name_of(sd['pokemon'][i])] if i >= 0 else 0xFF for i in sd['active']]
             occ.append(tuple(row))
-        # The positions that received a Pokemon, in the reference's order
-        # (each switch is logged twice, for the two audiences).
+        # The positions that received a Pokemon, in the reference's order of their LAST entry (each switch or drag is
+        # logged twice, for the two audiences). A position entered again in the same step (a drag of a Pokemon that
+        # switched in) moves to the end: the engine's activation ids of the positions are those of their last entry.
         entries = []
         for line in step['log']:
-            if line.startswith('|switch|'):
+            if line.startswith('|switch|') or line.startswith('|drag|'):
                 who = line.split('|')[2].split(':')[0]
                 flat = (int(who[1]) - 1) * 2 + (ord(who[2]) - ord('a'))
-                if flat not in entries:
-                    entries.append(flat)
+                if flat in entries:
+                    entries.remove(flat)
+                entries.append(flat)
         ent = entries + [0xFF] * (4 - len(entries))
         # The moves the reference's request offers per slot: bit k for move k,
         # 0x10 for Struggle, 0x20 for the recharge turn, 0xFF where there is nothing to compare.

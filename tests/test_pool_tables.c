@@ -1435,6 +1435,12 @@ int main(void)
         DF_CHECK_EQ_U64(&t, dfi_support.moves[DFI_MOVE_SUBSTITUTE] != 0u ? 1u : 0u, 0u);
         DF_CHECK_EQ_U64(&t, dfi_support.abilities[DFI_ABILITY_MOLDBREAKER] != 0u ? 1u : 0u, 0u);
         DF_CHECK_EQ_U64(&t, dfi_support.abilities[DFI_ABILITY_SHEERFORCE] != 0u ? 1u : 0u, 0u);
+        /* Step G46, the forceSwitchFlag gates of the pin (decision 0015 section 7): Shell Bell (items.ts:5658) and Pickpocket
+         * (abilities.ts:3242) are skipped while the holder has a forceSwitchFlag. Both are unmodelled and stay UNMARKED; once
+         * one is marked it must read the drag_pending bit of dfi_run for its holder (as Emergency Exit and the Eject Button
+         * do). Wimp Out (abilities.ts:5495, champions :99) has no pool row; if one is added it must read the same bit. */
+        DF_CHECK_EQ_U64(&t, dfi_support.items[DFI_ITEM_SHELLBELL] != 0u ? 1u : 0u, 0u);
+        DF_CHECK_EQ_U64(&t, dfi_support.abilities[DFI_ABILITY_PICKPOCKET] != 0u ? 1u : 0u, 0u);
         DF_CHECK_EQ_U64(&t, marked_count, 153u); /* Whirlwind and Dragon Tail (G46, the forced switches), Taunt and Yawn (G31), the four hazards (G37), the four of step G39, the four of step G29, Imprison (G38), the three of step G33, Perish Song (G26), the four of step G25, Disable (G27), the ten of step G35, Toxic and Poison Fang (G36), the ten of step G30, the eleven of step G32 and the seven of step G34 */
     }
 

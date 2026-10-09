@@ -5539,8 +5539,10 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
         (void)dfi_boost(r, user, def_down, DFI_POSITIONS, dfi_effect(DUOFORGE_CAUSE_MOVE, 0u, DFI_BOOST_SELF));
     }
     /* AfterMoveSecondarySelf: Life Orb takes a tenth of the holder's HP
-     * (at least 1) after a damaging move that hit something. */
-    if (any && dfi_holds(r->b, m, DFI_ITEM_LIFEORB)) {
+     * (at least 1) after a damaging move that hit something, unless the holder
+     * has a forceSwitchFlag (items.ts:3414): a Red Card drag of the user, which
+     * runs before this, sets it (drag_pending, step G46). */
+    if (any && dfi_holds(r->b, m, DFI_ITEM_LIFEORB) && ((r->drag_pending >> user) & 1u) == 0u) {
         const uint32_t recoil = (uint32_t)m->hp_max / 10u;
         const uint32_t user_before = m->hp;
         st = dfi_deal(r, user, recoil == 0u ? 1u : recoil, DUOFORGE_CAUSE_ITEM, 1u + DFI_ITEM_LIFEORB,
@@ -7517,6 +7519,14 @@ duoforge_status dfi_turn_run(const duoforge_context *ctx, struct duoforge_battle
         /* The epilogue: faints and the win rule; before a further
          * replacement nothing else; before a move action, speeds and
          * priorities are recomputed and the rest of the queue is sorted. */
+        /* A move's own faintMessages (sim/battle-actions.ts:347, at the end of useMove, with its checkWin) comes before the
+         * phazing loop of runAction (sim/battle.ts:2822-2827), so the faints of the move (an item's recoil included) and a
+         * win they cause are shown first; the phazing still runs after a win (the reference drags after its [win]). The
+         * other actions have no such step; the rest of the faints follow the phazing (dfi_process_faints). */
+        if (q.kind == DFI_Q_MOVE) {
+            const bool fresh = r.faint_announced < r.faint_count && r.early_result == DFI_RESULT_NONE;
+            dfi_announce_faints(&r, fresh);
+        }
         st = dfi_phaze(&r); /* the phazing loop of runAction, before the faints (sim/battle.ts:2822-2827; step G46) */
         if (st != DUOFORGE_OK) {
             return st;
