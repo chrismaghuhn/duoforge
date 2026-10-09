@@ -273,6 +273,8 @@ _EXT_SIDE = 7 + 2 * 36 + 6 * 6
 _VOLATILE_SHIFTS = np.arange(len(_VOLATILES3))
 _ROOST = C["DUOFORGE_POSITION_EXT_ROOST"]
 _TRANSFORMED = C["DUOFORGE_POSITION_EXT_TRANSFORMED"]
+# The ILLUSION_UP column of both foe positions in a side's columns (volatile bit 19, 0026 option B: own side only).
+_FOE_ILLUSION_UP = [7 + 36 * k + [v[0] for v in _VOLATILES3].index("ILLUSION_UP") for k in range(2)]
 _SLOT_REVIVE = C["DUOFORGE_SLOT_REVIVE"]
 _EYE5 = np.eye(5)
 # One side's columns of an empty record: no Encore and no Disable at either position ("none" of each one-hot).
@@ -490,6 +492,7 @@ def _ext_block(ob, ext, present, viewer):
         absolute = np.concatenate([head, position.reshape(n, 2, 72), member.reshape(n, 2, 36)], axis=-1)
         absolute[~present] = _EMPTY_SIDE
         sides[...] = absolute[rows, order]
+        sides[:, 1, _FOE_ILLUSION_UP] = 0.0  # decision 0026 option B: the foe's Illusion is never shown
         appended = np.stack([(pos["volatiles"].astype(np.int64) & _ROOST) != 0, pos["move_failed"]], axis=-1)
         appended[~present] = 0  # (N, 2, 2, 2): side, position, (roost, move_failed)
         block[:, EXT3_SIZE:EXT4_SIZE] = appended[rows, order].reshape(n, 8)

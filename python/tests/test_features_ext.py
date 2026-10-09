@@ -469,6 +469,18 @@ class FeaturesExtTest(unittest.TestCase):
         self.assertFalse(cleared[:, 850:].any())  # a clear bit zeros the 12 columns
         self.assertTrue(np.array_equal(features.as_encoder(part, ob, 4), part[:, :850]))  # unshown for encoder 4
 
+    def test_illusion_up_shows_only_on_the_own_side(self):
+        # decision 0026 option B: the foe sees the disguise, so its ILLUSION_UP bit (volatile 19) is never shown;
+        # the viewer's own holder knows its Illusion (lane A's encode.c v5 zeroes the same column)
+        ob, d = self.obs, self.domains
+        ext = _records(ob)
+        pos = ext["sides"]["positions"]
+        pos["volatiles"][:, :, 0] |= C["DUOFORGE_POSITION_EXT_ILLUSION_UP"]  # both sides, position 0
+        ext["sides"]["positions"] = pos
+        part = features.encode_batch(ob, d, ext, ALL)[0]
+        self.assertTrue((part[:, COL["ext.own.pos0.volatile.illusion_up"]] == 1.0).all())
+        self.assertFalse(part[:, COL["ext.foe.pos0.volatile.illusion_up"]].any())
+
     def test_transform_source_and_bit_go_together(self):
         ob, d = self.obs, self.domains
         flag = C["DUOFORGE_POSITION_EXT_TRANSFORMED"]
