@@ -74,15 +74,17 @@ class MatchSolveTest(unittest.TestCase):
         self.assertEqual(code, p1_match.INFEASIBLE)
         self.assertTrue(out["status"].startswith("INFEASIBLE"))
 
-    def test_calibration_over_ten_percent_is_a_stop(self):
+    def test_calibration_share_is_reported_not_a_stop(self):
+        # Owner decision 2026-10-09 (the AWS run on 2be0afe3 stopped with 33): the calibration is the control's own compute,
+        # charged in full; its share of the pilot is reported, and only the 5 % match of both totals binds.
         records, spent = calibration()
         # spent CPU ~2560 core-s and GPU ~47 s: a 10000/200 pilot makes both exceed 10 %.
         out, code = p1_match.solve({"cpu_core_seconds": 10000.0, "gpu_seconds": 200.0}, spent, records)
-        self.assertEqual(code, p1_match.OVER_CAP)
+        self.assertEqual(code, p1_match.OK)
         self.assertEqual(out["calibration_cap"]["over"], ["cpu_core_seconds", "gpu_seconds"])
         self.assertFalse(out["calibration_cap"]["ok"])
-        out, code = p1_match.solve({"cpu_core_seconds": 40000.0, "gpu_seconds": 200.0}, spent, records)
-        self.assertEqual((code, out["calibration_cap"]["over"]), (p1_match.OVER_CAP, ["gpu_seconds"]))
+        self.assertEqual(out["calibration_cap"]["binding"], False)
+        self.assertEqual(out["status"], "OK")
 
     def test_no_warm_update_asks_for_more_calibration(self):
         records, spent = calibration()
@@ -95,11 +97,11 @@ class MatchSolveTest(unittest.TestCase):
         self.assertEqual((code, out["calibrate_more"]), (p1_match.CALIBRATE_MORE, ["cpu", "gpu"]))
         self.assertTrue(out["status"].startswith("CALIBRATE MORE"))
 
-    def test_the_cap_is_checked_before_more_calibration(self):
+    def test_more_calibration_even_over_the_reported_share(self):
         records, spent = calibration()
         out, code = p1_match.solve({"cpu_core_seconds": 1e4, "gpu_seconds": 800.0}, spent, records[:6])
-        self.assertEqual(code, p1_match.OVER_CAP)
-        self.assertNotIn("calibrate_more", out)
+        self.assertEqual((code, out["calibrate_more"]), (p1_match.CALIBRATE_MORE, ["gpu"]))
+        self.assertFalse(out["calibration_cap"]["ok"])
 
     def test_extra_calibration_decision(self):
         more = {"calibrate_more": ["cpu", "gpu"]}
