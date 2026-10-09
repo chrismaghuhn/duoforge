@@ -1,17 +1,19 @@
 /*
- * duoforge.state.pool_tail (white-box): the POOL state tail of decision 0015 section 7, schema 0x0403 = "v3 + pool
- * tail rev 4".
+ * duoforge.state.pool_tail (white-box): the POOL state tail of decision 0015 section 7, schema 0x0503 = "v3 + pool
+ * tail rev 5".
  *
- * The tail is part of the state under the two POOL kinds only: 288 more bytes (1297 in all) that the encoder, the
+ * The tail is part of the state under the two POOL kinds only: 348 more bytes (1357 in all) that the encoder, the
  * decoder, the digest, equal, the invariants, clone and copy all carry; under CLOSURE, CLOSURE_DEV, TEAM_C and
  * TEAM_C_DEV it is absent (all zero in memory, not in the encoding) and the states of those kinds are byte for byte
  * what they were: the digests below were taken from the tree before the tail existed. Rev 1 (schema 0x0103, 42
  * bytes) is not decodable: pool states are not frozen, there is no migration. Rev 2 adds the volatile, side and
  * field conditions and the member overrides that decision 0018 declares as view fields; rev 3 the Protect variant; rev 4
  * the move result, the single-turn markers, the hits taken, the ability state, the lock counter, Quick Guard, the second
- * type and the member flags (tail-rev4-proposal.md, cut B). Rev 4 has no mechanic yet, so the tests set its fields by hand.
+ * type and the member flags (tail-rev4-proposal.md, cut B); rev 5 (the 60-byte block after the rev 4 part) the Illusion
+ * state per side (decision 0026) and the two lane A bytes per position, with 16 reserve bytes. Rev 4 and rev 5 have no
+ * mechanic yet, so the tests set their fields by hand, and the rev 5 bytes can only be zero: any other value is refused.
  *
- * The independent oracle is tools/state_model/state_v3_model.py (run with --pool-tail): the envelope, the 288 tail
+ * The independent oracle is tools/state_model/state_v3_model.py (run with --pool-tail): the envelope, the 348 tail
  * bytes of the example and, for every tail byte, how many of the 255 other values the decoder accepts or refuses
  * with which invariant, are its output.
  */
@@ -33,314 +35,377 @@
 #include "support/pool.h"
 #include "support/team_c.h"
 
-/* The model's envelope of a POOL state (tools/state_model, "pool_tail envelope"): magic, kind 2, schema 0x0403,
- * semantics 3, length 1297. */
-static const char ENVELOPE_HEX[] = "8944554f0d0a1a0a020003040300000011050000";
+/* The model's envelope of a POOL state (tools/state_model, "pool_tail envelope"): magic, kind 2, schema 0x0503,
+ * semantics 3, length 1357. */
+static const char ENVELOPE_HEX[] = "8944554f0d0a1a0a02000305030000004d050000";
 /* The model's tail bytes of the example below ("pool_tail example"). */
 static const char TAIL_HEX[] =
-    "050000000000000001080201030101b101020302050304030501000603010402010302030100140025000006020606030000"
-    "00000500000102010100000001000000000000010100000101000000000f000101010000000005002c01050c00120100d700"
-    "5a0112ff00ff00000000010000a6000001000000000000010000000000000000000000000000000000000000000000000000"
-    "0000010000010404010003000000000000000000010100000000000000000000000400030000000000000000000000000000"
-    "00000001030000000000000000000000ff010009020000000000000001000000010000010000000000000000000000000000"
-    "0000000000000000000000000000000000000000000000000000000000000700006400000100";
+    "05d10800d108000001080201030101b10102030205030403050100060301040201030203010014002500000602060603"
+    "000000000500000102010100000001000000000000010100000101000000000f000101010000000005002c01050c0012"
+    "0100d7005a0112ff00ff00000000010000a6000001000000000000010000000000000000000000000000000000000000"
+    "000000000000000001000001040401000300000000000000000001010000000000000000000000040003000000000000"
+    "000000000000000000000001030000000000000000000000ff0100090200000000000000010000000100000100000000"
+    "000000000000000000000000000000000000000000000000000000000000000000000000000000000700006400000100"
+    "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
+    "000000000000000000000000";
 
 /* The maximum HP of the members 0 and 1 of both sides at the first TURN boundary (the Substitute bound is a quarter
  * of it): the model's LEAD_HP_MAX, asserted below. */
 static const unsigned lead_hp_max[2][2] = {{193, 192}, {197, 182}};
 
-/* For every tail byte of the example: how many of the 255 other values give OK, TAIL_SIDE, TAIL_POSITION,
+/* Step G50: a soak_type of 255 (Double Shock) is OK for a standing member with a second type, which moves the two soak bytes
+ * (offsets 92 and 232) from 18 to 19 OK values and from 237 to 236 member refusals. For every tail byte of the example: how many of the 255 other values give OK, TAIL_SIDE, TAIL_POSITION,
  * TAIL_MEMBER, TAIL_FIELD and TAIL_RESERVED ("pool_tail_sweep_c" of the model). */
-enum { SWEEP_COLUMNS = 6 };
+enum { SWEEP_COLUMNS = 7 }; /* step G46: TAIL_PARTY is the seventh */
 static const unsigned sweep[DFI_ENC_TAIL_SIZE][SWEEP_COLUMNS] = {
-    {5, 0, 0, 0, 250, 0},
-    {0, 0, 0, 0, 0, 255},
-    {0, 0, 0, 0, 0, 255},
-    {0, 0, 0, 0, 0, 255},
-    {0, 0, 0, 0, 0, 255},
-    {0, 0, 0, 0, 0, 255},
-    {0, 0, 0, 0, 0, 255},
-    {0, 0, 0, 0, 0, 255},
-    {1, 254, 0, 0, 0, 0},
-    {8, 247, 0, 0, 0, 0},
-    {1, 254, 0, 0, 0, 0},
-    {0, 255, 0, 0, 0, 0},
-    {2, 253, 0, 0, 0, 0},
-    {0, 255, 0, 0, 0, 0},
-    {1, 254, 0, 0, 0, 0},
-    {23, 232, 0, 0, 0, 0},
-    {5, 0, 250, 0, 0, 0},
-    {3, 0, 252, 0, 0, 0},
-    {3, 0, 252, 0, 0, 0},
-    {2, 0, 253, 0, 0, 0},
-    {5, 0, 250, 0, 0, 0},
-    {4, 0, 251, 0, 0, 0},
-    {4, 0, 251, 0, 0, 0},
-    {3, 0, 252, 0, 0, 0},
-    {4, 0, 251, 0, 0, 0},
-    {1, 0, 254, 0, 0, 0},
-    {1, 0, 254, 0, 0, 0},
-    {7, 0, 248, 0, 0, 0},
-    {2, 0, 253, 0, 0, 0},
-    {1, 0, 254, 0, 0, 0},
-    {3, 0, 252, 0, 0, 0},
-    {2, 0, 253, 0, 0, 0},
-    {1, 0, 254, 0, 0, 0},
-    {0, 0, 255, 0, 0, 0},
-    {3, 0, 252, 0, 0, 0},
-    {3, 0, 252, 0, 0, 0},
-    {1, 0, 254, 0, 0, 0},
-    {1, 0, 254, 0, 0, 0},
-    {48, 0, 207, 0, 0, 0},
-    {0, 0, 255, 0, 0, 0},
-    {254, 0, 1, 0, 0, 0},
-    {1, 0, 254, 0, 0, 0},
-    {0, 0, 255, 0, 0, 0},
-    {15, 0, 240, 0, 0, 0},
-    {1, 0, 254, 0, 0, 0},
-    {6, 0, 249, 0, 0, 0},
-    {6, 0, 249, 0, 0, 0},
-    {3, 0, 252, 0, 0, 0},
-    {0, 0, 0, 0, 0, 255},
-    {0, 0, 0, 0, 0, 255},
-    {0, 0, 0, 0, 0, 255},
-    {0, 0, 0, 0, 0, 255},
-    {5, 0, 250, 0, 0, 0},
-    {0, 0, 255, 0, 0, 0},
-    {0, 0, 255, 0, 0, 0},
-    {2, 0, 253, 0, 0, 0},
-    {5, 0, 250, 0, 0, 0},
-    {4, 0, 251, 0, 0, 0},
-    {4, 0, 251, 0, 0, 0},
-    {0, 0, 255, 0, 0, 0},
-    {0, 0, 255, 0, 0, 0},
-    {1, 0, 254, 0, 0, 0},
-    {1, 0, 254, 0, 0, 0},
-    {0, 0, 255, 0, 0, 0},
-    {0, 0, 255, 0, 0, 0},
-    {0, 0, 255, 0, 0, 0},
-    {3, 0, 252, 0, 0, 0},
-    {2, 0, 253, 0, 0, 0},
-    {1, 0, 254, 0, 0, 0},
-    {2, 0, 253, 0, 0, 0},
-    {1, 0, 254, 0, 0, 0},
-    {1, 0, 254, 0, 0, 0},
-    {1, 0, 254, 0, 0, 0},
-    {1, 0, 254, 0, 0, 0},
-    {48, 0, 207, 0, 0, 0},
-    {0, 0, 255, 0, 0, 0},
-    {0, 0, 255, 0, 0, 0},
-    {0, 0, 255, 0, 0, 0},
-    {0, 0, 255, 0, 0, 0},
-    {15, 0, 240, 0, 0, 0},
-    {1, 0, 254, 0, 0, 0},
-    {6, 0, 249, 0, 0, 0},
-    {6, 0, 249, 0, 0, 0},
-    {3, 0, 252, 0, 0, 0},
-    {0, 0, 0, 0, 0, 255},
-    {0, 0, 0, 0, 0, 255},
-    {0, 0, 0, 0, 0, 255},
-    {0, 0, 0, 0, 0, 255},
-    {215, 0, 0, 40, 0, 0},
-    {0, 0, 0, 255, 0, 0},
-    {90, 0, 0, 165, 0, 0},
-    {1, 0, 0, 254, 0, 0},
-    {18, 0, 0, 237, 0, 0},
-    {167, 0, 0, 88, 0, 0},
-    {0, 0, 0, 255, 0, 0},
-    {19, 0, 0, 236, 0, 0},
-    {1, 0, 0, 254, 0, 0},
-    {0, 0, 0, 0, 0, 255},
-    {215, 0, 0, 40, 0, 0},
-    {0, 0, 0, 255, 0, 0},
-    {90, 0, 0, 165, 0, 0},
-    {1, 0, 0, 254, 0, 0},
-    {18, 0, 0, 237, 0, 0},
-    {167, 0, 0, 88, 0, 0},
-    {0, 0, 0, 255, 0, 0},
-    {19, 0, 0, 236, 0, 0},
-    {1, 0, 0, 254, 0, 0},
-    {0, 0, 0, 0, 0, 255},
-    {0, 0, 0, 255, 0, 0},
-    {0, 0, 0, 255, 0, 0},
-    {255, 0, 0, 0, 0, 0},
-    {1, 0, 0, 254, 0, 0},
-    {0, 0, 0, 255, 0, 0},
-    {167, 0, 0, 88, 0, 0},
-    {0, 0, 0, 255, 0, 0},
-    {0, 0, 0, 255, 0, 0},
-    {1, 0, 0, 254, 0, 0},
-    {0, 0, 0, 0, 0, 255},
-    {0, 0, 0, 255, 0, 0},
-    {0, 0, 0, 255, 0, 0},
-    {255, 0, 0, 0, 0, 0},
-    {1, 0, 0, 254, 0, 0},
-    {0, 0, 0, 255, 0, 0},
-    {167, 0, 0, 88, 0, 0},
-    {0, 0, 0, 255, 0, 0},
-    {0, 0, 0, 255, 0, 0},
-    {1, 0, 0, 254, 0, 0},
-    {0, 0, 0, 0, 0, 255},
-    {0, 0, 0, 255, 0, 0},
-    {0, 0, 0, 255, 0, 0},
-    {255, 0, 0, 0, 0, 0},
-    {1, 0, 0, 254, 0, 0},
-    {0, 0, 0, 255, 0, 0},
-    {167, 0, 0, 88, 0, 0},
-    {0, 0, 0, 255, 0, 0},
-    {0, 0, 0, 255, 0, 0},
-    {1, 0, 0, 254, 0, 0},
-    {0, 0, 0, 0, 0, 255},
-    {0, 0, 0, 255, 0, 0},
-    {0, 0, 0, 255, 0, 0},
-    {255, 0, 0, 0, 0, 0},
-    {1, 0, 0, 254, 0, 0},
-    {0, 0, 0, 255, 0, 0},
-    {167, 0, 0, 88, 0, 0},
-    {0, 0, 0, 255, 0, 0},
-    {0, 0, 0, 255, 0, 0},
-    {1, 0, 0, 254, 0, 0},
-    {0, 0, 0, 0, 0, 255},
-    {1, 254, 0, 0, 0, 0},
-    {8, 247, 0, 0, 0, 0},
-    {0, 255, 0, 0, 0, 0},
-    {1, 254, 0, 0, 0, 0},
-    {2, 253, 0, 0, 0, 0},
-    {0, 255, 0, 0, 0, 0},
-    {1, 254, 0, 0, 0, 0},
-    {0, 255, 0, 0, 0, 0},
-    {5, 0, 250, 0, 0, 0},
-    {3, 0, 252, 0, 0, 0},
-    {3, 0, 252, 0, 0, 0},
-    {2, 0, 253, 0, 0, 0},
-    {5, 0, 250, 0, 0, 0},
-    {4, 0, 251, 0, 0, 0},
-    {4, 0, 251, 0, 0, 0},
-    {0, 0, 255, 0, 0, 0},
-    {0, 0, 255, 0, 0, 0},
-    {1, 0, 254, 0, 0, 0},
-    {1, 0, 254, 0, 0, 0},
-    {0, 0, 255, 0, 0, 0},
-    {0, 0, 255, 0, 0, 0},
-    {0, 0, 255, 0, 0, 0},
-    {3, 0, 252, 0, 0, 0},
-    {2, 0, 253, 0, 0, 0},
-    {1, 0, 254, 0, 0, 0},
-    {3, 0, 252, 0, 0, 0},
-    {0, 0, 255, 0, 0, 0},
-    {0, 0, 255, 0, 0, 0},
-    {1, 0, 254, 0, 0, 0},
-    {1, 0, 254, 0, 0, 0},
-    {49, 0, 206, 0, 0, 0},
-    {0, 0, 255, 0, 0, 0},
-    {0, 0, 255, 0, 0, 0},
-    {0, 0, 255, 0, 0, 0},
-    {0, 0, 255, 0, 0, 0},
-    {15, 0, 240, 0, 0, 0},
-    {1, 0, 254, 0, 0, 0},
-    {6, 0, 249, 0, 0, 0},
-    {6, 0, 249, 0, 0, 0},
-    {3, 0, 252, 0, 0, 0},
-    {0, 0, 0, 0, 0, 255},
-    {0, 0, 0, 0, 0, 255},
-    {0, 0, 0, 0, 0, 255},
-    {0, 0, 0, 0, 0, 255},
-    {5, 0, 250, 0, 0, 0},
-    {0, 0, 255, 0, 0, 0},
-    {0, 0, 255, 0, 0, 0},
-    {2, 0, 253, 0, 0, 0},
-    {5, 0, 250, 0, 0, 0},
-    {4, 0, 251, 0, 0, 0},
-    {4, 0, 251, 0, 0, 0},
-    {0, 0, 255, 0, 0, 0},
-    {0, 0, 255, 0, 0, 0},
-    {1, 0, 254, 0, 0, 0},
-    {1, 0, 254, 0, 0, 0},
-    {7, 0, 248, 0, 0, 0},
-    {2, 0, 253, 0, 0, 0},
-    {1, 0, 254, 0, 0, 0},
-    {3, 0, 252, 0, 0, 0},
-    {2, 0, 253, 0, 0, 0},
-    {1, 0, 254, 0, 0, 0},
-    {3, 0, 252, 0, 0, 0},
-    {0, 0, 255, 0, 0, 0},
-    {0, 0, 255, 0, 0, 0},
-    {1, 0, 254, 0, 0, 0},
-    {1, 0, 254, 0, 0, 0},
-    {45, 0, 210, 0, 0, 0},
-    {0, 0, 255, 0, 0, 0},
-    {255, 0, 0, 0, 0, 0},
-    {1, 0, 254, 0, 0, 0},
-    {0, 0, 255, 0, 0, 0},
-    {15, 0, 240, 0, 0, 0},
-    {1, 0, 254, 0, 0, 0},
-    {6, 0, 249, 0, 0, 0},
-    {6, 0, 249, 0, 0, 0},
-    {3, 0, 252, 0, 0, 0},
-    {0, 0, 0, 0, 0, 255},
-    {0, 0, 0, 0, 0, 255},
-    {0, 0, 0, 0, 0, 255},
-    {0, 0, 0, 0, 0, 255},
-    {215, 0, 0, 40, 0, 0},
-    {0, 0, 0, 255, 0, 0},
-    {255, 0, 0, 0, 0, 0},
-    {1, 0, 0, 254, 0, 0},
-    {18, 0, 0, 237, 0, 0},
-    {167, 0, 0, 88, 0, 0},
-    {0, 0, 0, 255, 0, 0},
-    {19, 0, 0, 236, 0, 0},
-    {1, 0, 0, 254, 0, 0},
-    {0, 0, 0, 0, 0, 255},
-    {215, 0, 0, 40, 0, 0},
-    {0, 0, 0, 255, 0, 0},
-    {255, 0, 0, 0, 0, 0},
-    {1, 0, 0, 254, 0, 0},
-    {18, 0, 0, 237, 0, 0},
-    {167, 0, 0, 88, 0, 0},
-    {0, 0, 0, 255, 0, 0},
-    {19, 0, 0, 236, 0, 0},
-    {1, 0, 0, 254, 0, 0},
-    {0, 0, 0, 0, 0, 255},
-    {0, 0, 0, 255, 0, 0},
-    {0, 0, 0, 255, 0, 0},
-    {255, 0, 0, 0, 0, 0},
-    {1, 0, 0, 254, 0, 0},
-    {0, 0, 0, 255, 0, 0},
-    {167, 0, 0, 88, 0, 0},
-    {0, 0, 0, 255, 0, 0},
-    {0, 0, 0, 255, 0, 0},
-    {1, 0, 0, 254, 0, 0},
-    {0, 0, 0, 0, 0, 255},
-    {0, 0, 0, 255, 0, 0},
-    {0, 0, 0, 255, 0, 0},
-    {255, 0, 0, 0, 0, 0},
-    {1, 0, 0, 254, 0, 0},
-    {0, 0, 0, 255, 0, 0},
-    {167, 0, 0, 88, 0, 0},
-    {0, 0, 0, 255, 0, 0},
-    {0, 0, 0, 255, 0, 0},
-    {1, 0, 0, 254, 0, 0},
-    {0, 0, 0, 0, 0, 255},
-    {0, 0, 0, 255, 0, 0},
-    {0, 0, 0, 255, 0, 0},
-    {255, 0, 0, 0, 0, 0},
-    {1, 0, 0, 254, 0, 0},
-    {0, 0, 0, 255, 0, 0},
-    {167, 0, 0, 88, 0, 0},
-    {0, 0, 0, 255, 0, 0},
-    {0, 0, 0, 255, 0, 0},
-    {1, 0, 0, 254, 0, 0},
-    {0, 0, 0, 0, 0, 255},
-    {0, 0, 0, 255, 0, 0},
-    {0, 0, 0, 255, 0, 0},
-    {255, 0, 0, 0, 0, 0},
-    {1, 0, 0, 254, 0, 0},
-    {0, 0, 0, 255, 0, 0},
-    {167, 0, 0, 88, 0, 0},
-    {0, 0, 0, 255, 0, 0},
-    {0, 0, 0, 255, 0, 0},
-    {1, 0, 0, 254, 0, 0},
-    {0, 0, 0, 0, 0, 255},
+    {5, 0, 0, 0, 250, 0, 0},
+    {5, 0, 0, 0, 0, 0, 250},
+    {0, 0, 0, 0, 0, 0, 255},
+    {0, 0, 0, 0, 0, 0, 255},
+    {5, 0, 0, 0, 0, 0, 250},
+    {0, 0, 0, 0, 0, 0, 255},
+    {0, 0, 0, 0, 0, 0, 255},
+    {0, 0, 0, 0, 0, 255, 0},
+    {1, 254, 0, 0, 0, 0, 0},
+    {8, 247, 0, 0, 0, 0, 0},
+    {1, 254, 0, 0, 0, 0, 0},
+    {0, 255, 0, 0, 0, 0, 0},
+    {2, 253, 0, 0, 0, 0, 0},
+    {0, 255, 0, 0, 0, 0, 0},
+    {1, 254, 0, 0, 0, 0, 0},
+    {23, 232, 0, 0, 0, 0, 0},
+    {5, 0, 250, 0, 0, 0, 0},
+    {3, 0, 252, 0, 0, 0, 0},
+    {3, 0, 252, 0, 0, 0, 0},
+    {2, 0, 253, 0, 0, 0, 0},
+    {5, 0, 250, 0, 0, 0, 0},
+    {4, 0, 251, 0, 0, 0, 0},
+    {4, 0, 251, 0, 0, 0, 0},
+    {3, 0, 252, 0, 0, 0, 0},
+    {4, 0, 251, 0, 0, 0, 0},
+    {1, 0, 254, 0, 0, 0, 0},
+    {1, 0, 254, 0, 0, 0, 0},
+    {7, 0, 248, 0, 0, 0, 0},
+    {2, 0, 253, 0, 0, 0, 0},
+    {1, 0, 254, 0, 0, 0, 0},
+    {3, 0, 252, 0, 0, 0, 0},
+    {2, 0, 253, 0, 0, 0, 0},
+    {1, 0, 254, 0, 0, 0, 0},
+    {0, 0, 255, 0, 0, 0, 0},
+    {3, 0, 252, 0, 0, 0, 0},
+    {3, 0, 252, 0, 0, 0, 0},
+    {1, 0, 254, 0, 0, 0, 0},
+    {1, 0, 254, 0, 0, 0, 0},
+    {48, 0, 207, 0, 0, 0, 0},
+    {0, 0, 255, 0, 0, 0, 0},
+    {254, 0, 1, 0, 0, 0, 0},
+    {1, 0, 254, 0, 0, 0, 0},
+    {0, 0, 255, 0, 0, 0, 0},
+    {24, 0, 231, 0, 0, 0, 0},
+    {1, 0, 254, 0, 0, 0, 0},
+    {6, 0, 249, 0, 0, 0, 0},
+    {6, 0, 249, 0, 0, 0, 0},
+    {3, 0, 252, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 255, 0},
+    {0, 0, 0, 0, 0, 255, 0},
+    {0, 0, 0, 0, 0, 255, 0},
+    {0, 0, 0, 0, 0, 255, 0},
+    {5, 0, 250, 0, 0, 0, 0},
+    {0, 0, 255, 0, 0, 0, 0},
+    {0, 0, 255, 0, 0, 0, 0},
+    {2, 0, 253, 0, 0, 0, 0},
+    {5, 0, 250, 0, 0, 0, 0},
+    {4, 0, 251, 0, 0, 0, 0},
+    {4, 0, 251, 0, 0, 0, 0},
+    {0, 0, 255, 0, 0, 0, 0},
+    {0, 0, 255, 0, 0, 0, 0},
+    {1, 0, 254, 0, 0, 0, 0},
+    {1, 0, 254, 0, 0, 0, 0},
+    {0, 0, 255, 0, 0, 0, 0},
+    {0, 0, 255, 0, 0, 0, 0},
+    {0, 0, 255, 0, 0, 0, 0},
+    {3, 0, 252, 0, 0, 0, 0},
+    {2, 0, 253, 0, 0, 0, 0},
+    {1, 0, 254, 0, 0, 0, 0},
+    {2, 0, 253, 0, 0, 0, 0},
+    {1, 0, 254, 0, 0, 0, 0},
+    {1, 0, 254, 0, 0, 0, 0},
+    {1, 0, 254, 0, 0, 0, 0},
+    {1, 0, 254, 0, 0, 0, 0},
+    {48, 0, 207, 0, 0, 0, 0},
+    {0, 0, 255, 0, 0, 0, 0},
+    {0, 0, 255, 0, 0, 0, 0},
+    {0, 0, 255, 0, 0, 0, 0},
+    {0, 0, 255, 0, 0, 0, 0},
+    {24, 0, 231, 0, 0, 0, 0},
+    {1, 0, 254, 0, 0, 0, 0},
+    {6, 0, 249, 0, 0, 0, 0},
+    {6, 0, 249, 0, 0, 0, 0},
+    {3, 0, 252, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 255, 0},
+    {0, 0, 0, 0, 0, 255, 0},
+    {0, 0, 0, 0, 0, 255, 0},
+    {0, 0, 0, 0, 0, 255, 0},
+    {215, 0, 0, 40, 0, 0, 0},
+    {0, 0, 0, 255, 0, 0, 0},
+    {90, 0, 0, 165, 0, 0, 0},
+    {1, 0, 0, 254, 0, 0, 0},
+    {19, 0, 0, 236, 0, 0, 0},
+    {167, 0, 0, 88, 0, 0, 0},
+    {0, 0, 0, 255, 0, 0, 0},
+    {19, 0, 0, 236, 0, 0, 0},
+    {1, 0, 0, 254, 0, 0, 0},
+    {0, 0, 0, 0, 0, 255, 0},
+    {215, 0, 0, 40, 0, 0, 0},
+    {0, 0, 0, 255, 0, 0, 0},
+    {90, 0, 0, 165, 0, 0, 0},
+    {1, 0, 0, 254, 0, 0, 0},
+    {18, 0, 0, 237, 0, 0, 0},
+    {167, 0, 0, 88, 0, 0, 0},
+    {0, 0, 0, 255, 0, 0, 0},
+    {19, 0, 0, 236, 0, 0, 0},
+    {1, 0, 0, 254, 0, 0, 0},
+    {0, 0, 0, 0, 0, 255, 0},
+    {0, 0, 0, 255, 0, 0, 0},
+    {0, 0, 0, 255, 0, 0, 0},
+    {255, 0, 0, 0, 0, 0, 0},
+    {1, 0, 0, 254, 0, 0, 0},
+    {0, 0, 0, 255, 0, 0, 0},
+    {167, 0, 0, 88, 0, 0, 0},
+    {0, 0, 0, 255, 0, 0, 0},
+    {0, 0, 0, 255, 0, 0, 0},
+    {1, 0, 0, 254, 0, 0, 0},
+    {0, 0, 0, 0, 0, 255, 0},
+    {0, 0, 0, 255, 0, 0, 0},
+    {0, 0, 0, 255, 0, 0, 0},
+    {255, 0, 0, 0, 0, 0, 0},
+    {1, 0, 0, 254, 0, 0, 0},
+    {0, 0, 0, 255, 0, 0, 0},
+    {167, 0, 0, 88, 0, 0, 0},
+    {0, 0, 0, 255, 0, 0, 0},
+    {0, 0, 0, 255, 0, 0, 0},
+    {1, 0, 0, 254, 0, 0, 0},
+    {0, 0, 0, 0, 0, 255, 0},
+    {0, 0, 0, 255, 0, 0, 0},
+    {0, 0, 0, 255, 0, 0, 0},
+    {255, 0, 0, 0, 0, 0, 0},
+    {1, 0, 0, 254, 0, 0, 0},
+    {0, 0, 0, 255, 0, 0, 0},
+    {167, 0, 0, 88, 0, 0, 0},
+    {0, 0, 0, 255, 0, 0, 0},
+    {0, 0, 0, 255, 0, 0, 0},
+    {1, 0, 0, 254, 0, 0, 0},
+    {0, 0, 0, 0, 0, 255, 0},
+    {0, 0, 0, 255, 0, 0, 0},
+    {0, 0, 0, 255, 0, 0, 0},
+    {255, 0, 0, 0, 0, 0, 0},
+    {1, 0, 0, 254, 0, 0, 0},
+    {0, 0, 0, 255, 0, 0, 0},
+    {167, 0, 0, 88, 0, 0, 0},
+    {0, 0, 0, 255, 0, 0, 0},
+    {0, 0, 0, 255, 0, 0, 0},
+    {1, 0, 0, 254, 0, 0, 0},
+    {0, 0, 0, 0, 0, 255, 0},
+    {1, 254, 0, 0, 0, 0, 0},
+    {8, 247, 0, 0, 0, 0, 0},
+    {0, 255, 0, 0, 0, 0, 0},
+    {1, 254, 0, 0, 0, 0, 0},
+    {2, 253, 0, 0, 0, 0, 0},
+    {0, 255, 0, 0, 0, 0, 0},
+    {1, 254, 0, 0, 0, 0, 0},
+    {0, 255, 0, 0, 0, 0, 0},
+    {5, 0, 250, 0, 0, 0, 0},
+    {3, 0, 252, 0, 0, 0, 0},
+    {3, 0, 252, 0, 0, 0, 0},
+    {2, 0, 253, 0, 0, 0, 0},
+    {5, 0, 250, 0, 0, 0, 0},
+    {4, 0, 251, 0, 0, 0, 0},
+    {4, 0, 251, 0, 0, 0, 0},
+    {0, 0, 255, 0, 0, 0, 0},
+    {0, 0, 255, 0, 0, 0, 0},
+    {1, 0, 254, 0, 0, 0, 0},
+    {1, 0, 254, 0, 0, 0, 0},
+    {0, 0, 255, 0, 0, 0, 0},
+    {0, 0, 255, 0, 0, 0, 0},
+    {0, 0, 255, 0, 0, 0, 0},
+    {3, 0, 252, 0, 0, 0, 0},
+    {2, 0, 253, 0, 0, 0, 0},
+    {1, 0, 254, 0, 0, 0, 0},
+    {3, 0, 252, 0, 0, 0, 0},
+    {0, 0, 255, 0, 0, 0, 0},
+    {0, 0, 255, 0, 0, 0, 0},
+    {1, 0, 254, 0, 0, 0, 0},
+    {1, 0, 254, 0, 0, 0, 0},
+    {49, 0, 206, 0, 0, 0, 0},
+    {0, 0, 255, 0, 0, 0, 0},
+    {0, 0, 255, 0, 0, 0, 0},
+    {0, 0, 255, 0, 0, 0, 0},
+    {0, 0, 255, 0, 0, 0, 0},
+    {24, 0, 231, 0, 0, 0, 0},
+    {1, 0, 254, 0, 0, 0, 0},
+    {6, 0, 249, 0, 0, 0, 0},
+    {6, 0, 249, 0, 0, 0, 0},
+    {3, 0, 252, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 255, 0},
+    {0, 0, 0, 0, 0, 255, 0},
+    {0, 0, 0, 0, 0, 255, 0},
+    {0, 0, 0, 0, 0, 255, 0},
+    {5, 0, 250, 0, 0, 0, 0},
+    {0, 0, 255, 0, 0, 0, 0},
+    {0, 0, 255, 0, 0, 0, 0},
+    {2, 0, 253, 0, 0, 0, 0},
+    {5, 0, 250, 0, 0, 0, 0},
+    {4, 0, 251, 0, 0, 0, 0},
+    {4, 0, 251, 0, 0, 0, 0},
+    {0, 0, 255, 0, 0, 0, 0},
+    {0, 0, 255, 0, 0, 0, 0},
+    {1, 0, 254, 0, 0, 0, 0},
+    {1, 0, 254, 0, 0, 0, 0},
+    {7, 0, 248, 0, 0, 0, 0},
+    {2, 0, 253, 0, 0, 0, 0},
+    {1, 0, 254, 0, 0, 0, 0},
+    {3, 0, 252, 0, 0, 0, 0},
+    {2, 0, 253, 0, 0, 0, 0},
+    {1, 0, 254, 0, 0, 0, 0},
+    {3, 0, 252, 0, 0, 0, 0},
+    {0, 0, 255, 0, 0, 0, 0},
+    {0, 0, 255, 0, 0, 0, 0},
+    {1, 0, 254, 0, 0, 0, 0},
+    {1, 0, 254, 0, 0, 0, 0},
+    {45, 0, 210, 0, 0, 0, 0},
+    {0, 0, 255, 0, 0, 0, 0},
+    {255, 0, 0, 0, 0, 0, 0},
+    {1, 0, 254, 0, 0, 0, 0},
+    {0, 0, 255, 0, 0, 0, 0},
+    {24, 0, 231, 0, 0, 0, 0},
+    {1, 0, 254, 0, 0, 0, 0},
+    {6, 0, 249, 0, 0, 0, 0},
+    {6, 0, 249, 0, 0, 0, 0},
+    {3, 0, 252, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 255, 0},
+    {0, 0, 0, 0, 0, 255, 0},
+    {0, 0, 0, 0, 0, 255, 0},
+    {0, 0, 0, 0, 0, 255, 0},
+    {215, 0, 0, 40, 0, 0, 0},
+    {0, 0, 0, 255, 0, 0, 0},
+    {255, 0, 0, 0, 0, 0, 0},
+    {1, 0, 0, 254, 0, 0, 0},
+    {19, 0, 0, 236, 0, 0, 0},
+    {167, 0, 0, 88, 0, 0, 0},
+    {0, 0, 0, 255, 0, 0, 0},
+    {19, 0, 0, 236, 0, 0, 0},
+    {1, 0, 0, 254, 0, 0, 0},
+    {0, 0, 0, 0, 0, 255, 0},
+    {215, 0, 0, 40, 0, 0, 0},
+    {0, 0, 0, 255, 0, 0, 0},
+    {255, 0, 0, 0, 0, 0, 0},
+    {1, 0, 0, 254, 0, 0, 0},
+    {18, 0, 0, 237, 0, 0, 0},
+    {167, 0, 0, 88, 0, 0, 0},
+    {0, 0, 0, 255, 0, 0, 0},
+    {19, 0, 0, 236, 0, 0, 0},
+    {1, 0, 0, 254, 0, 0, 0},
+    {0, 0, 0, 0, 0, 255, 0},
+    {0, 0, 0, 255, 0, 0, 0},
+    {0, 0, 0, 255, 0, 0, 0},
+    {255, 0, 0, 0, 0, 0, 0},
+    {1, 0, 0, 254, 0, 0, 0},
+    {0, 0, 0, 255, 0, 0, 0},
+    {167, 0, 0, 88, 0, 0, 0},
+    {0, 0, 0, 255, 0, 0, 0},
+    {0, 0, 0, 255, 0, 0, 0},
+    {1, 0, 0, 254, 0, 0, 0},
+    {0, 0, 0, 0, 0, 255, 0},
+    {0, 0, 0, 255, 0, 0, 0},
+    {0, 0, 0, 255, 0, 0, 0},
+    {255, 0, 0, 0, 0, 0, 0},
+    {1, 0, 0, 254, 0, 0, 0},
+    {0, 0, 0, 255, 0, 0, 0},
+    {167, 0, 0, 88, 0, 0, 0},
+    {0, 0, 0, 255, 0, 0, 0},
+    {0, 0, 0, 255, 0, 0, 0},
+    {1, 0, 0, 254, 0, 0, 0},
+    {0, 0, 0, 0, 0, 255, 0},
+    {0, 0, 0, 255, 0, 0, 0},
+    {0, 0, 0, 255, 0, 0, 0},
+    {255, 0, 0, 0, 0, 0, 0},
+    {1, 0, 0, 254, 0, 0, 0},
+    {0, 0, 0, 255, 0, 0, 0},
+    {167, 0, 0, 88, 0, 0, 0},
+    {0, 0, 0, 255, 0, 0, 0},
+    {0, 0, 0, 255, 0, 0, 0},
+    {1, 0, 0, 254, 0, 0, 0},
+    {0, 0, 0, 0, 0, 255, 0},
+    {0, 0, 0, 255, 0, 0, 0},
+    {0, 0, 0, 255, 0, 0, 0},
+    {255, 0, 0, 0, 0, 0, 0},
+    {1, 0, 0, 254, 0, 0, 0},
+    {0, 0, 0, 255, 0, 0, 0},
+    {167, 0, 0, 88, 0, 0, 0},
+    {0, 0, 0, 255, 0, 0, 0},
+    {0, 0, 0, 255, 0, 0, 0},
+    {1, 0, 0, 254, 0, 0, 0},
+    {0, 0, 0, 0, 0, 255, 0},
+    {0, 255, 0, 0, 0, 0, 0},
+    {0, 255, 0, 0, 0, 0, 0},
+    {0, 255, 0, 0, 0, 0, 0},
+    {0, 255, 0, 0, 0, 0, 0},
+    {0, 255, 0, 0, 0, 0, 0},
+    {0, 255, 0, 0, 0, 0, 0},
+    {0, 255, 0, 0, 0, 0, 0},
+    {0, 255, 0, 0, 0, 0, 0},
+    {0, 255, 0, 0, 0, 0, 0},
+    {0, 255, 0, 0, 0, 0, 0},
+    {0, 255, 0, 0, 0, 0, 0},
+    {0, 255, 0, 0, 0, 0, 0},
+    {0, 255, 0, 0, 0, 0, 0},
+    {0, 255, 0, 0, 0, 0, 0},
+    {0, 255, 0, 0, 0, 0, 0},
+    {0, 255, 0, 0, 0, 0, 0},
+    {0, 255, 0, 0, 0, 0, 0},
+    {0, 255, 0, 0, 0, 0, 0},
+    {0, 255, 0, 0, 0, 0, 0},
+    {0, 255, 0, 0, 0, 0, 0},
+    {0, 255, 0, 0, 0, 0, 0},
+    {0, 255, 0, 0, 0, 0, 0},
+    {0, 255, 0, 0, 0, 0, 0},
+    {0, 255, 0, 0, 0, 0, 0},
+    {0, 255, 0, 0, 0, 0, 0},
+    {0, 255, 0, 0, 0, 0, 0},
+    {0, 255, 0, 0, 0, 0, 0},
+    {0, 255, 0, 0, 0, 0, 0},
+    {0, 255, 0, 0, 0, 0, 0},
+    {0, 255, 0, 0, 0, 0, 0},
+    {0, 255, 0, 0, 0, 0, 0},
+    {0, 255, 0, 0, 0, 0, 0},
+    {0, 255, 0, 0, 0, 0, 0},
+    {0, 255, 0, 0, 0, 0, 0},
+    {0, 255, 0, 0, 0, 0, 0},
+    {0, 255, 0, 0, 0, 0, 0},
+    {0, 0, 255, 0, 0, 0, 0},
+    {0, 0, 255, 0, 0, 0, 0},
+    {0, 0, 255, 0, 0, 0, 0},
+    {0, 0, 255, 0, 0, 0, 0},
+    {0, 0, 255, 0, 0, 0, 0},
+    {0, 0, 255, 0, 0, 0, 0},
+    {0, 0, 255, 0, 0, 0, 0},
+    {0, 0, 255, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 255, 0},
+    {0, 0, 0, 0, 0, 255, 0},
+    {0, 0, 0, 0, 0, 255, 0},
+    {0, 0, 0, 0, 0, 255, 0},
+    {0, 0, 0, 0, 0, 255, 0},
+    {0, 0, 0, 0, 0, 255, 0},
+    {0, 0, 0, 0, 0, 255, 0},
+    {0, 0, 0, 0, 0, 255, 0},
+    {0, 0, 0, 0, 0, 255, 0},
+    {0, 0, 0, 0, 0, 255, 0},
+    {0, 0, 0, 0, 0, 255, 0},
+    {0, 0, 0, 0, 0, 255, 0},
+    {0, 0, 0, 0, 0, 255, 0},
+    {0, 0, 0, 0, 0, 255, 0},
+    {0, 0, 0, 0, 0, 255, 0},
+    {0, 0, 0, 0, 0, 255, 0},
 };
 
 /* Digests of the states of the four other kinds (Team A against B, or against Team C), at creation, after team
@@ -430,7 +495,11 @@ static duoforge_battle *turn_battle(df_test *t, const duoforge_context *ctx, boo
  * need (DFI_TAIL_TOXIC_STATUS). */
 static void set_example_tail(duoforge_battle *b)
 {
+    /* step G46: the party order is the pick order of the team selection, not part of the example: kept. */
+    uint8_t party[DUOFORGE_SIDE_COUNT][DFI_PARTY_BYTES_PER_SIDE];
+    memcpy(party, b->tail.party_order, sizeof party);
     memset(&b->tail, 0, sizeof b->tail);
+    memcpy(b->tail.party_order, party, sizeof party);
     b->tail.gravity_turns = 5u;
     dfi_tail_side *a = &b->tail.sides[0];
     a->wide_guard = 1u;
@@ -670,6 +739,12 @@ typedef struct tail_case {
 
 MUT(m_gravity, y->tail.gravity_turns = 6u)
 MUT(m_field_pad, y->tail.field_pad = 1u)
+/* step G46, party_order (the brought members are 0..3 on both sides, the leads 0 and 1): */
+MUT(m_party_dup, dfi_party_put(&y->tail, 0u, 1u, dfi_party_entry(&y->tail, 0u, 0u)))  /* the lead twice */
+MUT(m_party_hole, dfi_party_put(&y->tail, 1u, 0u, 0u))                              /* an empty lead */
+MUT(m_party_bench_filled, dfi_party_put(&y->tail, 0u, 4u, 5u))                      /* a fifth entry for four brought */
+MUT(m_party_not_brought, dfi_party_put(&y->tail, 0u, 3u, 6u))                       /* roster 5, not brought */
+MUT(m_party_bits_high, y->tail.party_order[1][2] = 0x04u)                           /* bit 18, above the entries */
 MUT(m_wide_guard, ts->wide_guard = 2u)
 MUT(m_aurora, ts->aurora_veil_turns = 9u)
 MUT(m_toxic_spikes, ts->toxic_spikes = 3u)
@@ -751,7 +826,9 @@ MUT(m_protect_above, {
     p0->protect_kind = 2u;
 })
 MUT(m_protect_no_volatile, p0->protect_kind = 1u) /* the volatile is down */
-MUT(m_move_result_high, p0->move_result = 0x10u) /* bits 4-7 are zero */
+MUT(m_move_result_high, p0->move_result = 0x40u) /* bits 6-7 are zero (step G42: bits 4 and 5 are the unclassified bits) */
+MUT(m_unclass_now_with_result, p0->move_result = 0x11u) /* unclassified this turn, but this turn is TRUE */
+MUT(m_unclass_last_with_result, p0->move_result = 0x28u) /* unclassified last turn, but last turn is FALSE */
 MUT(m_single_turn_bit2, p0->single_turn = 4u)
 MUT(m_rage_no_follow_me, p0->single_turn = DFI_SINGLE_TURN_RAGE_POWDER) /* the Follow Me flag is down */
 MUT(m_hits_taken7, p0->hits_taken = 7u)
@@ -860,6 +937,13 @@ MUT(m_type2_fainted, {
     ts->type2[1] = 1u;
 })
 MUT(m_member_flags2, ts->member_flags[0] = 2u)
+/* rev 5 (decision 0026; nothing writes these yet): every byte of the Illusion state and of the two position bytes is refused */
+MUT(m_ill_shown, ts->illusion.shown = 1u)
+MUT(m_ill_override, ts->illusion.override[3] = 1u)
+MUT(m_ill_snapshot, ts->illusion.snapshot[8] = 1u)
+MUT(m_ill_pending, ts->illusion.pending[0] = 1u)
+MUT(m_slot_pending, p0->slot_pending = 1u)
+MUT(m_future_sight, p0->future_sight = 1u)
 MUT(m_member_flags_high, ts->member_flags[3] = 0x80u)
 /* Valid: the edges. */
 MUT(v_struggle, p0->last_move = 5u)
@@ -895,6 +979,8 @@ MUT(v_maxima, {
 /* No valid case for Rage Powder's marker: the Follow Me flag it needs lives only at a PIVOT boundary, and these states are at a
  * TURN one; the invalid case above (the marker without the flag) and the model say what the rule is. */
 MUT(v_move_result_null, p0->move_result = (uint8_t)((DFI_MOVE_RESULT_NULL << DFI_MOVE_RESULT_LAST_SHIFT) | DFI_MOVE_RESULT_FALSE))
+MUT(v_unclass_now, p0->move_result = DFI_MOVE_RESULT_UNCLASSIFIED_NOW)
+MUT(v_unclass_both, p0->move_result = DFI_MOVE_RESULT_UNCLASSIFIED_NOW | DFI_MOVE_RESULT_UNCLASSIFIED_LAST)
 MUT(v_hazard_order_two, {
     ts->spikes = 2u;
     ts->toxic_spikes = 1u;
@@ -927,6 +1013,11 @@ MUT(v_ally_trap, {
 static const tail_case cases[] = {
     {"gravity above 5", DFI_INV_TAIL_FIELD, false, m_gravity},
     {"the pad byte of the field block", DFI_INV_TAIL_FIELD, false, m_field_pad},
+    {"a lead twice in the party order (step G46)", DFI_INV_TAIL_PARTY, false, m_party_dup},
+    {"an empty lead in the party order", DFI_INV_TAIL_PARTY, false, m_party_hole},
+    {"a bench entry for a fifth member of four brought", DFI_INV_TAIL_PARTY, false, m_party_bench_filled},
+    {"a party entry for a member that is not brought", DFI_INV_TAIL_PARTY, false, m_party_not_brought},
+    {"a party bit above the six entries", DFI_INV_TAIL_PARTY, false, m_party_bits_high},
     {"wide guard above 1", DFI_INV_TAIL_SIDE, false, m_wide_guard},
     {"aurora veil above 8", DFI_INV_TAIL_SIDE, false, m_aurora},
     {"toxic spikes above 2", DFI_INV_TAIL_SIDE, false, m_toxic_spikes},
@@ -965,7 +1056,9 @@ static const tail_case cases[] = {
     {"Glaive Rush above 1", DFI_INV_TAIL_POSITION, false, m_glaive},
     {"protect kind above 1", DFI_INV_TAIL_POSITION, false, m_protect_above},
     {"protect kind without the Protect volatile", DFI_INV_TAIL_POSITION, false, m_protect_no_volatile},
-    {"a move result above its two nibbles", DFI_INV_TAIL_POSITION, false, m_move_result_high},
+    {"a move result above its two nibbles and its two unclassified bits", DFI_INV_TAIL_POSITION, false, m_move_result_high},
+    {"an unclassified this-turn bit with a this-turn result", DFI_INV_TAIL_POSITION, false, m_unclass_now_with_result},
+    {"an unclassified last-turn bit with a last-turn result", DFI_INV_TAIL_POSITION, false, m_unclass_last_with_result},
     {"a single-turn bit that is not defined", DFI_INV_TAIL_POSITION, false, m_single_turn_bit2},
     {"Rage Powder's marker without the Follow Me flag", DFI_INV_TAIL_POSITION, false, m_rage_no_follow_me},
     {"hits taken above 6", DFI_INV_TAIL_POSITION, false, m_hits_taken7},
@@ -1012,6 +1105,12 @@ static const tail_case cases[] = {
     {"a second type on a fainted member", DFI_INV_TAIL_MEMBER, false, m_type2_fainted},
     {"member flags with an undefined bit", DFI_INV_TAIL_MEMBER, false, m_member_flags2},
     {"member flags with the top bit", DFI_INV_TAIL_MEMBER, false, m_member_flags_high},
+    {"Illusion shown index (rev 5)", DFI_INV_TAIL_SIDE, false, m_ill_shown},
+    {"Illusion override byte (rev 5)", DFI_INV_TAIL_SIDE, false, m_ill_override},
+    {"Illusion snapshot byte (rev 5)", DFI_INV_TAIL_SIDE, false, m_ill_snapshot},
+    {"Illusion pending byte (rev 5)", DFI_INV_TAIL_SIDE, false, m_ill_pending},
+    {"slot pending bit at a standing lead (rev 5)", DFI_INV_TAIL_POSITION, false, m_slot_pending},
+    {"Future Sight byte at a standing lead (rev 5)", DFI_INV_TAIL_POSITION, false, m_future_sight},
     {"Struggle as the last move is valid for any move count", DFI_INV_NONE, false, v_struggle},
     {"the last Encore turn and slot 4 are valid", DFI_INV_NONE, false, v_encore_edge},
     {"every maximum at once is valid", DFI_INV_NONE, false, v_maxima},
@@ -1021,11 +1120,16 @@ static const tail_case cases[] = {
     {"the item and forme of a reserve and a fainted member are valid", DFI_INV_NONE, false, v_bench_overrides},
     {"a trap by the ally is valid", DFI_INV_NONE, false, v_ally_trap},
     {"a Protect variant under its volatile is valid", DFI_INV_NONE, false, v_protect_variant},
-    {"a move result of this turn false and last turn null is valid", DFI_INV_NONE, false, v_move_result_null}};
+    {"a move result of this turn false and last turn null is valid", DFI_INV_NONE, false, v_move_result_null},
+    {"an unclassified this-turn bit with an undefined this-turn result is valid", DFI_INV_NONE, false, v_unclass_now},
+    {"both unclassified bits with both results undefined are valid", DFI_INV_NONE, false, v_unclass_both}};
 
 /* True iff the byte at `off` of the encoded tail is a reserved one (by the layout alone). */
 static bool is_reserved_offset(size_t off)
 {
+    if (off >= DFI_ENC_TAIL_REV4_SIZE) { /* the rev 5 block: its 16 reserve bytes are the last ones */
+        return off - DFI_ENC_TAIL_REV4_SIZE >= DFI_ENC_TAIL5_RESERVED_OFF;
+    }
     if (off < DFI_ENC_TAIL_FIELD_SIZE) {
         return off >= DFI_ENC_TAIL_FIELD_RESERVED_OFF;
     }
@@ -1053,13 +1157,17 @@ int main(void)
 
     /* The layout: sizes, schema ids, which kinds carry the tail. */
     {
-        DF_CHECK_EQ_U64(&t, DFI_STATE_POOL_ENCODED_SIZE, 1297u);
+        DF_CHECK_EQ_U64(&t, DFI_STATE_POOL_ENCODED_SIZE, 1357u);
         DF_CHECK_EQ_U64(&t, DFI_STATE_ENCODED_MAX, DF_STATE_ENCODED_MAX);
         DF_CHECK_EQ_U64(&t, DFI_ENC_TAIL_OFF, 1009u);
-        DF_CHECK_EQ_U64(&t, DFI_ENC_TAIL_SIZE, 288u);
-        DF_CHECK_EQ_U64(&t, DFI_ENC_TAIL_RESERVED_COUNT, 35u); /* 43 in rev 3: rev 4 adds 40 bytes and defines 48 */
+        DF_CHECK_EQ_U64(&t, DFI_ENC_TAIL_SIZE, 348u);
+        DF_CHECK_EQ_U64(&t, DFI_ENC_TAIL_REV4_SIZE, 288u);
+        DF_CHECK_EQ_U64(&t, DFI_ENC_TAIL5_SIZE, 60u);
+        DF_CHECK_EQ_U64(&t, DFI_ENC_TAIL5_RESERVED_OFF, 44u);
+        DF_CHECK_EQ_U64(&t, DFI_ENC_TAIL_RESERVED_COUNT, 45u); /* step G46: party_order takes 6 of the 7 field bytes (35 before); rev 5: 16 more */
         DF_CHECK_EQ_U64(&t, DFI_STATE_SCHEMA_V3, 3u);
-        DF_CHECK_EQ_U64(&t, DFI_STATE_SCHEMA_POOL_TAIL_REV4, 0x0403u);
+        DF_CHECK_EQ_U64(&t, DFI_STATE_SCHEMA_POOL_TAIL_REV5, 0x0503u);
+        DF_CHECK_EQ_U64(&t, DFI_STATE_SCHEMA_POOL_TAIL_REV4, 0x0403u); /* refused since rev 5 */
         DF_CHECK_EQ_U64(&t, DFI_STATE_SCHEMA_POOL_TAIL_REV3, 0x0303u); /* refused since rev 4 */
         DF_CHECK_EQ_U64(&t, DFI_STATE_SCHEMA_POOL_TAIL_REV2, 0x0203u); /* refused since rev 3 */
         DF_CHECK_EQ_U64(&t, DFI_STATE_SCHEMA_POOL_TAIL_REV1, 0x0103u);
@@ -1071,22 +1179,23 @@ int main(void)
         DF_CHECK_EQ_U64(&t, DFI_ENC_TAIL_SIDE_RESERVED_SIZE, 0u);
         DF_CHECK_EQ_U64(&t, DFI_ENC_TAIL_MEMBER_TYPE2_OFF, 7u);
         DF_CHECK_EQ_U64(&t, DFI_ENC_TAIL_MEMBER_FLAGS_OFF, 8u);
-        DF_CHECK(&t, DFI_STATE_SCHEMA_POOL_TAIL_REV4 != 4u); /* schema 4 stays free: certified pool teams */
+        DF_CHECK(&t, DFI_STATE_SCHEMA_POOL_TAIL_REV5 != 4u); /* schema 4 stays free: certified pool teams */
         /* The tail in memory: the encoded size without the reserved bytes, and the one pad byte of the field block. */
-        DF_CHECK_EQ_U64(&t, sizeof(dfi_pool_tail), 254u); /* a position and a side have none since rev 4 */
-        DF_CHECK_EQ_U64(&t, sizeof(dfi_tail_side), 126u);
-        DF_CHECK_EQ_U64(&t, sizeof(dfi_tail_pos), 32u);
+        DF_CHECK_EQ_U64(&t, sizeof(dfi_pool_tail), 304u); /* a position and a side have none; step G46 adds party_order (6); rev 5 adds the Illusion state and the 2 position bytes */
+        DF_CHECK_EQ_U64(&t, sizeof(dfi_tail_side), 148u);
+        DF_CHECK_EQ_U64(&t, sizeof(dfi_tail_pos), 34u);
+        DF_CHECK_EQ_U64(&t, sizeof(dfi_tail_illusion), 18u);
         unsigned reserved = 0u;
         for (size_t off = 0u; off < DFI_ENC_TAIL_SIZE; ++off) {
             reserved += is_reserved_offset(off) ? 1u : 0u;
         }
-        DF_CHECK_EQ_U64(&t, reserved, 35u);
+        DF_CHECK_EQ_U64(&t, reserved, 45u);
         const duoforge_context *with[] = {kp, kq};
         const duoforge_context *without[] = {k1, k2, kc, kd, c1};
         for (size_t i = 0u; i < 2u; ++i) {
             DF_CHECK(&t, dfi_context_has_pool_tail(with[i]));
-            DF_CHECK_EQ_U64(&t, dfi_state_schema_of(with[i]), 0x0403u);
-            DF_CHECK_EQ_U64(&t, dfi_state_encoded_size_of(with[i]), 1297u);
+            DF_CHECK_EQ_U64(&t, dfi_state_schema_of(with[i]), 0x0503u);
+            DF_CHECK_EQ_U64(&t, dfi_state_encoded_size_of(with[i]), 1357u);
         }
         for (size_t i = 0u; i < 5u; ++i) {
             DF_CHECK(&t, !dfi_context_has_pool_tail(without[i]));
@@ -1160,13 +1269,26 @@ int main(void)
         }
         uint8_t zero_tail[DFI_ENC_TAIL_SIZE];
         memset(zero_tail, 0, sizeof zero_tail);
-        DF_CHECK_EQ_U64(&t, df_encode_n(kp, w, zero_enc), 1297u);
-        DF_CHECK_BYTES(&t, zero_enc + DFI_ENC_TAIL_OFF, zero_tail, sizeof zero_tail, "an empty tail is 288 zero bytes");
+        /* step G46: after team selection the party order holds the pick order of the 4 brought members (the leads, then the
+         * bench); the rest of the tail is zero. */
+        {
+            dfi_pool_tail pt;
+            memset(&pt, 0, sizeof pt);
+            for (uint32_t s = 0u; s < DUOFORGE_SIDE_COUNT; ++s) {
+                for (uint32_t k = 0u; k < 4u; ++k) {
+                    dfi_party_put(&pt, s, k, (uint32_t)w->sides[s].brought_order[k] + 1u);
+                }
+            }
+            memcpy(zero_tail + DFI_ENC_TAIL_FIELD_PARTY_OFF, pt.party_order, sizeof pt.party_order);
+        }
+        DF_CHECK_EQ_U64(&t, df_encode_n(kp, w, zero_enc), 1357u);
+        DF_CHECK_BYTES(&t, zero_enc + DFI_ENC_TAIL_OFF, zero_tail, sizeof zero_tail,
+                       "a tail after team selection: zero but the party order (step G46)");
         digest_of(&t, kp, w, d0);
 
         set_example_tail(w);
         const size_t n = df_encode_n(kp, w, enc);
-        DF_CHECK_EQ_U64(&t, n, 1297u);
+        DF_CHECK_EQ_U64(&t, n, 1357u);
         check_hex(&t, enc, ENVELOPE_HEX, DFI_ENVELOPE_SIZE, "envelope of a POOL state (model)");
         check_hex(&t, enc + DFI_ENC_TAIL_OFF, TAIL_HEX, DFI_ENC_TAIL_SIZE, "tail of the example (model)");
         /* The rest of the state is untouched by the tail. */
@@ -1182,7 +1304,7 @@ int main(void)
         digest_of(&t, kp, w, d1);
         DF_CHECK(&t, memcmp(d0, d1, sizeof d0) != 0);
         size_t size = 0u;
-        DF_CHECK(&t, duoforge_battle_encoded_size(kp, w, &size) == DUOFORGE_OK && size == 1297u);
+        DF_CHECK(&t, duoforge_battle_encoded_size(kp, w, &size) == DUOFORGE_OK && size == 1357u);
     }
 
     /* Round trip, equality, clone, copy, load into an existing handle; nothing of the tail is lost. */
@@ -1194,7 +1316,7 @@ int main(void)
         DF_CHECK(&t, duoforge_battle_equal(kp, w, d, &eq) == DUOFORGE_OK && eq);
         DF_CHECK(&t, memcmp(&d->tail, &w->tail, sizeof w->tail) == 0);
         uint8_t again[DF_STATE_ENCODED_MAX];
-        DF_CHECK_EQ_U64(&t, df_encode_n(kp, d, again), 1297u);
+        DF_CHECK_EQ_U64(&t, df_encode_n(kp, d, again), 1357u);
         DF_CHECK_BYTES(&t, again, enc, DFI_STATE_POOL_ENCODED_SIZE, "decode then encode");
         uint8_t dd[DUOFORGE_DIGEST_SIZE];
         digest_of(&t, kp, d, dd);
@@ -1284,7 +1406,7 @@ int main(void)
         unsigned wrong = 0u;
         unsigned all_reserved = 0u;
         for (size_t off = 0u; off < DFI_ENC_TAIL_SIZE; ++off) {
-            unsigned got[SWEEP_COLUMNS] = {0u, 0u, 0u, 0u, 0u, 0u};
+            unsigned got[SWEEP_COLUMNS] = {0u, 0u, 0u, 0u, 0u, 0u, 0u};
             uint8_t m[DF_STATE_ENCODED_MAX];
             memcpy(m, enc, DFI_STATE_POOL_ENCODED_SIZE);
             for (unsigned v = 0u; v < 256u; ++v) {
@@ -1306,6 +1428,8 @@ int main(void)
                     got[4] += 1u;
                 } else if (st == DUOFORGE_E_MALFORMED && inv == DFI_INV_TAIL_RESERVED) {
                     got[5] += 1u;
+                } else if (st == DUOFORGE_E_MALFORMED && inv == DFI_INV_TAIL_PARTY) {
+                    got[6] += 1u; /* step G46: a party order bit or entry that is not a permutation of the brought members */
                 } else {
                     DF_CHECK(&t, false);
                     fprintf(stderr, "  tail byte %u = %u: %s (%s)\n", (unsigned)off, v, duoforge_status_name(st), inv_name(inv));
@@ -1324,7 +1448,7 @@ int main(void)
             }
         }
         DF_CHECK_EQ_U64(&t, wrong, 0u);
-        DF_CHECK_EQ_U64(&t, all_reserved, 35u);
+        DF_CHECK_EQ_U64(&t, all_reserved, 45u); /* 29 reserved bytes of the rev 4 part (the field block's +1..+6 are party_order) and 16 of rev 5 */
     }
 
     /* The schema is the one of the context's kind; sizes, schema ids and truncations. */
@@ -1338,11 +1462,11 @@ int main(void)
         DF_CHECK(&t, decode_both(&t, kq, m, 1009u, &inv) == DUOFORGE_E_CONTEXT_MISMATCH); /* the POOL fingerprint */
         /* Pool schema and no tail; schema 3 with a tail. */
         memcpy(m, enc, DFI_STATE_POOL_ENCODED_SIZE);
-        set_envelope(m, 0x0403u, 1009u);
+        set_envelope(m, 0x0503u, 1009u);
         DF_CHECK(&t, decode_both(&t, kp, m, 1009u, &inv) == DUOFORGE_E_MALFORMED && inv == DFI_INV_NONE);
         memcpy(m, enc, DFI_STATE_POOL_ENCODED_SIZE);
-        set_envelope(m, 3u, 1297u);
-        DF_CHECK(&t, decode_both(&t, kp, m, 1297u, &inv) == DUOFORGE_E_MALFORMED && inv == DFI_INV_NONE);
+        set_envelope(m, 3u, 1357u);
+        DF_CHECK(&t, decode_both(&t, kp, m, 1357u, &inv) == DUOFORGE_E_MALFORMED && inv == DFI_INV_NONE);
         /* Rev 1 is refused, explicitly: a genuine rev 1 artifact (the 1009 bytes of schema 3, schema 0x0103, 42 more
          * bytes, length 1051) under either POOL kind, and under the other kinds; its schema is no schema of this
          * build. The same bytes with the schema of rev 2 are the wrong size. */
@@ -1352,7 +1476,7 @@ int main(void)
         DF_CHECK(&t, decode_both(&t, kp, m, 1051u, &inv) == DUOFORGE_E_SCHEMA_MISMATCH && inv == DFI_INV_NONE);
         DF_CHECK(&t, decode_both(&t, kq, m, 1051u, &inv) == DUOFORGE_E_SCHEMA_MISMATCH);
         DF_CHECK(&t, decode_both(&t, k1, m, 1051u, &inv) == DUOFORGE_E_SCHEMA_MISMATCH);
-        set_envelope(m, 0x0403u, 1051u);
+        set_envelope(m, 0x0503u, 1051u);
         DF_CHECK(&t, decode_both(&t, kp, m, 1051u, &inv) == DUOFORGE_E_MALFORMED && inv == DFI_INV_NONE);
         /* Rev 2 is refused the same way (schema 0x0203): a genuine rev 2 artifact is the 1009 bytes of schema 3 and the 248
          * bytes of the rev 2 tail, length 1257, under either POOL kind and under the other kinds. */
@@ -1370,25 +1494,33 @@ int main(void)
         DF_CHECK(&t, decode_both(&t, kq, m, 1257u, &inv) == DUOFORGE_E_SCHEMA_MISMATCH);
         DF_CHECK(&t, decode_both(&t, k1, m, 1257u, &inv) == DUOFORGE_E_SCHEMA_MISMATCH);
         DF_CHECK(&t, decode_both(&t, kc, m, 1257u, &inv) == DUOFORGE_E_SCHEMA_MISMATCH);
-        set_envelope(m, 0x0403u, 1257u);
+        set_envelope(m, 0x0503u, 1257u);
         DF_CHECK(&t, decode_both(&t, kp, m, 1257u, &inv) == DUOFORGE_E_MALFORMED && inv == DFI_INV_NONE);
-        /* A rev 4 artifact that says rev 1, 2 or 3 is refused too, whatever the length says. */
-        static const uint32_t older[] = {0x0103u, 0x0203u, 0x0303u};
+        /* Rev 4 (0x0403) is refused by name since rev 5: a genuine rev 4 artifact is the 1009 bytes of schema 3 and the 288
+         * bytes of the rev 4 part (the same bytes as the first 288 of the rev 5 tail), length 1297, under either POOL kind
+         * and under the other kinds. */
+        memcpy(m, enc, DFI_ENC_TAIL_OFF + DFI_ENC_TAIL_REV4_SIZE);
+        set_envelope(m, 0x0403u, 1297u);
+        DF_CHECK(&t, decode_both(&t, kp, m, 1297u, &inv) == DUOFORGE_E_SCHEMA_MISMATCH && inv == DFI_INV_NONE);
+        DF_CHECK(&t, decode_both(&t, kq, m, 1297u, &inv) == DUOFORGE_E_SCHEMA_MISMATCH);
+        DF_CHECK(&t, decode_both(&t, k1, m, 1297u, &inv) == DUOFORGE_E_SCHEMA_MISMATCH);
+        /* A rev 5 state that says rev 1, 2, 3 or 4 is refused too, whatever the length says. */
+        static const uint32_t older[] = {0x0103u, 0x0203u, 0x0303u, 0x0403u};
         for (size_t i = 0u; i < sizeof older / sizeof older[0]; ++i) {
             memcpy(m, enc, DFI_STATE_POOL_ENCODED_SIZE);
-            set_envelope(m, older[i], 1297u);
-            DF_CHECK(&t, decode_both(&t, kp, m, 1297u, &inv) == DUOFORGE_E_SCHEMA_MISMATCH);
+            set_envelope(m, older[i], 1357u);
+            DF_CHECK(&t, decode_both(&t, kp, m, 1357u, &inv) == DUOFORGE_E_SCHEMA_MISMATCH);
         }
         static const uint32_t unknown[] = {0u,      1u,      2u,      4u,      0x0100u, 0x0103u, 0x0104u, 0x0204u,
-                                           0x0203u, 0x0303u, 0x0404u, 0x0503u, 0x8203u, 0x8403u, 0xFFFFu};
+                                           0x0203u, 0x0303u, 0x0404u, 0x0504u, 0x0603u, 0x8203u, 0x8503u, 0xFFFFu};
         for (size_t i = 0u; i < sizeof unknown / sizeof unknown[0]; ++i) {
             memcpy(m, enc, DFI_STATE_POOL_ENCODED_SIZE);
-            set_envelope(m, unknown[i], 1297u);
-            DF_CHECK(&t, decode_both(&t, kp, m, 1297u, &inv) == DUOFORGE_E_SCHEMA_MISMATCH);
+            set_envelope(m, unknown[i], 1357u);
+            DF_CHECK(&t, decode_both(&t, kp, m, 1357u, &inv) == DUOFORGE_E_SCHEMA_MISMATCH);
         }
-        /* Every length from 0 to 1296 bytes, and one byte more, is malformed (the length field says 1297). */
+        /* Every length from 0 to 1356 bytes, and one byte more, is malformed (the length field says 1357). */
         unsigned not_malformed = 0u;
-        for (size_t n = 0u; n <= 1296u; ++n) {
+        for (size_t n = 0u; n <= 1356u; ++n) {
             not_malformed += decode_both(&t, kp, enc, n, NULL) != DUOFORGE_E_MALFORMED ? 1u : 0u;
         }
         memcpy(m, enc, DFI_STATE_POOL_ENCODED_SIZE);
@@ -1412,8 +1544,8 @@ int main(void)
                 if (with_tail != 0u) {
                     DF_CHECK(&t, df_hex_to_bytes(TAIL_HEX, m + 1009u, DFI_ENC_TAIL_SIZE));
                 }
-                set_envelope(m, 0x0403u, 1297u);
-                DF_CHECK(&t, decode_both(&t, kinds[i], m, 1297u, &inv) == DUOFORGE_E_MALFORMED &&
+                set_envelope(m, 0x0503u, 1357u);
+                DF_CHECK(&t, decode_both(&t, kinds[i], m, 1357u, &inv) == DUOFORGE_E_MALFORMED &&
                                  inv == DFI_INV_TAIL_SCHEMA);
             }
             duoforge_battle_destroy(b);
@@ -1584,16 +1716,40 @@ int main(void)
                 tp->perish = (uint8_t)(tp->perish != 0u ? tp->perish - 1u : 0u); /* step G26: the residual's count */
                 /* step G27: Disable counts down in the residual (the example's 5 turns are 4 after the turn, its slot stays) */
                 tp->disable_turns = (uint8_t)(tp->disable_turns != 0u ? tp->disable_turns - 1u : 0u);
+                /* step G42: Roost's volatile ends in the residual of order 25 (silent) */
+                tp->single_turn = (uint8_t)(tp->single_turn & ~DFI_SINGLE_TURN_ROOST);
             }
         }
         duoforge_decision_bundle bd;
         turn_bundle(&bd, x);
-        step_ok(&t, kp, x, &bd, "a turn with a tail");
+        /* step G48: timesAttacked, the tail's hits_taken, counts the damaging hits of a move on the position it hit (saturating
+         * at 6). The hits are the step's own move damage: the public DAMAGE events with cause NONE (the events are public, so
+         * player 0's buffer has every one of them). */
+        static duoforge_event hit_ev[2][DUOFORGE_MAX_EVENTS];
+        duoforge_event_buffer hit_buffers[2] = {{hit_ev[0], DUOFORGE_MAX_EVENTS, 0u}, {hit_ev[1], DUOFORGE_MAX_EVENTS, 0u}};
+        duoforge_step_result hit_res;
+        DF_CHECK(&t, duoforge_battle_step_events(kp, x, &bd, &hit_res, hit_buffers) == DUOFORGE_OK);
+        uint32_t landed[DUOFORGE_SIDE_COUNT * DUOFORGE_ACTIVE_PER_SIDE] = {0u, 0u, 0u, 0u};
+        for (uint32_t k = 0u; k < hit_buffers[0].count; ++k) {
+            const duoforge_event *e = &hit_buffers[0].events[k];
+            if (e->kind == (uint8_t)DUOFORGE_EVENT_DAMAGE && e->cause == (uint8_t)DUOFORGE_CAUSE_NONE && e->position < 4u) {
+                landed[e->position] += 1u;
+            }
+        }
         for (uint32_t s = 0u; s < DUOFORGE_SIDE_COUNT; ++s) {
             for (uint32_t p = 0u; p < DUOFORGE_ACTIVE_PER_SIDE; ++p) {
+                const uint32_t before_hits = want.sides[s].positions[p].hits_taken;
+                const uint32_t after_hits = before_hits + landed[s * DUOFORGE_ACTIVE_PER_SIDE + p];
+                want.sides[s].positions[p].hits_taken = (uint8_t)(after_hits > DFI_TAIL_HITS_TAKEN_MAX ? DFI_TAIL_HITS_TAKEN_MAX : after_hits);
                 /* each position that acted used slot 0 (turn_bundle's plan): last_move 1; one that did not has none */
                 DF_CHECK(&t, x->tail.sides[s].positions[p].last_move <= 1u);
                 want.sides[s].positions[p].last_move = x->tail.sides[s].positions[p].last_move;
+                /* step G42: the move results of this turn are the actions' own (the engine writes them while the turn runs and
+                 * the end of the turn shifts them to the last turn; the shift is checked by the recorded battles of
+                 * test_pool_g42.c), so this model takes them as they are, and only the bits outside the layout are checked. */
+                const uint32_t mr = x->tail.sides[s].positions[p].move_result;
+                DF_CHECK_EQ_U64(&t, mr & 0xC0u, 0u);
+                want.sides[s].positions[p].move_result = (uint8_t)mr;
             }
         }
         DF_CHECK(&t, memcmp(&x->tail, &want, sizeof want) == 0);
@@ -1601,18 +1757,59 @@ int main(void)
         duoforge_battle_destroy(x);
     }
 
-    /* Capacity: a POOL state needs its 1297 bytes, the others 1009; POOL_DEV is a POOL kind. */
+    /* The rev 5 block (tail rev 5, decision 0026): the codec's own mapping carries every byte of it to its place. The checked
+     * encoder never writes these bytes (no state can hold them: the invariant refuses them), so this uses the unchecked one,
+     * whose output the decoder then refuses byte by byte in the sweep above. Every byte of the Illusion state of each side and
+     * the two lane A bytes of each position, with a distinct nonzero value. */
+    {
+        duoforge_battle *x = turn_battle(&t, kp, false);
+        uint8_t out[DF_STATE_ENCODED_MAX];
+        for (uint32_t s = 0u; s < DUOFORGE_SIDE_COUNT; ++s) {
+            uint8_t *ill = (uint8_t *)&x->tail.sides[s].illusion;
+            for (uint32_t i = 0u; i < sizeof x->tail.sides[s].illusion; ++i) {
+                ill[i] = (uint8_t)(0x40u + 0x10u * s + i);
+            }
+        }
+        for (uint32_t p = 0u; p < DUOFORGE_SIDE_COUNT * DUOFORGE_ACTIVE_PER_SIDE; ++p) {
+            dfi_tail_pos *tp = &x->tail.sides[p / DUOFORGE_ACTIVE_PER_SIDE].positions[p % DUOFORGE_ACTIVE_PER_SIDE];
+            tp->slot_pending = (uint8_t)(0x80u + p);
+            tp->future_sight = (uint8_t)(0xC0u + p);
+        }
+        DF_CHECK_EQ_U64(&t, dfi_encode_unchecked(kp, x, out), DFI_STATE_POOL_ENCODED_SIZE);
+        const size_t r5 = DFI_ENC_TAIL_OFF + DFI_ENC_TAIL_REV4_SIZE;
+        for (uint32_t s = 0u; s < DUOFORGE_SIDE_COUNT; ++s) {
+            const uint8_t *ill = (const uint8_t *)&x->tail.sides[s].illusion;
+            DF_CHECK_BYTES(&t, out + r5 + DFI_ENC_TAIL5_SIDES_OFF + s * DFI_ENC_TAIL5_SIDE_SIZE, ill, DFI_ENC_TAIL5_SIDE_SIZE,
+                           "the Illusion state of a side, at its place of the rev 5 block");
+        }
+        for (uint32_t p = 0u; p < DUOFORGE_SIDE_COUNT * DUOFORGE_ACTIVE_PER_SIDE; ++p) {
+            const dfi_tail_pos *tp = &x->tail.sides[p / DUOFORGE_ACTIVE_PER_SIDE].positions[p % DUOFORGE_ACTIVE_PER_SIDE];
+            const uint8_t *po = out + r5 + DFI_ENC_TAIL5_POS_OFF + p * DFI_ENC_TAIL5_POS_SIZE;
+            DF_CHECK(&t, po[DFI_ENC_TAIL5_SLOT_PENDING_OFF] == tp->slot_pending);
+            DF_CHECK(&t, po[DFI_ENC_TAIL5_FUTURE_SIGHT_OFF] == tp->future_sight);
+        }
+        /* and the reserve after them is zero, whatever the block holds */
+        for (uint32_t i = 0u; i < DFI_ENC_TAIL5_RESERVED_SIZE; ++i) {
+            DF_CHECK(&t, out[r5 + DFI_ENC_TAIL5_RESERVED_OFF + i] == 0u);
+        }
+        /* the state holds values that no state can yet: the checked path refuses it */
+        DF_CHECK(&t, dfi_state_check(kp, x, NULL) == DUOFORGE_E_INVARIANT);
+        duoforge_battle_destroy(x);
+    }
+
+    /* Capacity: a POOL state needs its 1357 bytes, the others 1009; POOL_DEV is a POOL kind. */
     {
         uint8_t big[DF_STATE_ENCODED_MAX];
         size_t written = 0u;
         DF_CHECK(&t, duoforge_battle_encode(kp, w, big, 1009u, &written) == DUOFORGE_E_CAPACITY);
         DF_CHECK(&t, duoforge_battle_encode(kp, w, big, 1051u, &written) == DUOFORGE_E_CAPACITY); /* rev 1's size */
         DF_CHECK(&t, duoforge_battle_encode(kp, w, big, 1257u, &written) == DUOFORGE_E_CAPACITY); /* rev 3's size */
-        DF_CHECK(&t, duoforge_battle_encode(kp, w, big, 1296u, &written) == DUOFORGE_E_CAPACITY);
-        DF_CHECK(&t, duoforge_battle_encode(kp, w, big, 1297u, &written) == DUOFORGE_OK && written == 1297u);
+        DF_CHECK(&t, duoforge_battle_encode(kp, w, big, 1297u, &written) == DUOFORGE_E_CAPACITY); /* rev 4's size */
+        DF_CHECK(&t, duoforge_battle_encode(kp, w, big, 1356u, &written) == DUOFORGE_E_CAPACITY);
+        DF_CHECK(&t, duoforge_battle_encode(kp, w, big, 1357u, &written) == DUOFORGE_OK && written == 1357u);
         duoforge_battle *q = turn_battle(&t, kq, false);
         set_example_tail(q);
-        DF_CHECK(&t, duoforge_battle_encode(kq, q, big, 1297u, &written) == DUOFORGE_OK && written == 1297u);
+        DF_CHECK(&t, duoforge_battle_encode(kq, q, big, 1357u, &written) == DUOFORGE_OK && written == 1357u);
         DF_CHECK(&t, duoforge_battle_check(kq, q) == DUOFORGE_OK);
         duoforge_battle_destroy(q);
         duoforge_battle *b1 = turn_battle(&t, k1, false);

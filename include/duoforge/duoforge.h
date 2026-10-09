@@ -830,6 +830,9 @@ duoforge_status duoforge_battle_observe(const duoforge_context *ctx, const duofo
 #define DUOFORGE_TYPE_ROCK     15u
 #define DUOFORGE_TYPE_STEEL    16u
 #define DUOFORGE_TYPE_WATER    17u
+/* The typeless slot ??? (decision 0025, Double Shock): not a type id. It is the detail of DUOFORGE_EVENT_TYPE_CHANGE only, and
+   type_now is 0 in a slot that holds it (the other slot's id + 1 stays). */
+#define DUOFORGE_TYPE_NONE     255u
 
 /* Bits of duoforge_position_ext.volatiles (bits 21 to 31 are reserved, 0). */
 #define DUOFORGE_POSITION_EXT_SUBSTITUTE   0x00000001u
@@ -1030,12 +1033,18 @@ duoforge_status duoforge_battle_observe_ext(const duoforge_context *ctx, const d
                                               game shows: -start|X|move: Heal Block) */
 #define DUOFORGE_EVENT_VOLATILE_END    40u /* [-end] position (POOL kinds), detail: DUOFORGE_VOLATILE_* */
 #define DUOFORGE_EVENT_TYPE_CHANGE     41u /* [-start|X|typechange|TYPE] position (POOL kinds): the occupant's type is now the single
-                                              type in detail (DUOFORGE_TYPE_*; Soak: Water); cause MOVE, id2: the move */
+                                              type in detail (DUOFORGE_TYPE_*; Soak: Water, amount 0); cause MOVE, id2: the move.
+                                              Double Shock (decision 0025): detail DUOFORGE_TYPE_NONE (the ??? slot) and amount =
+                                              the second type id + 1 (Fighting: 6); amount 0 means one type only */
 #define DUOFORGE_EVENT_ITEM_START      42u /* [-item|X|Item|[from] move: M[|[of] Y]] position (POOL kinds): the Pokemon now holds the
                                               item that move M gave it (Trick, Switcheroo, Thief, Covet); id2: the item + 1, cause
                                               MOVE with id: the move, other: the Pokemon it came from when the line says [of]
                                               (Thief, Covet), else DUOFORGE_NO_POSITION. The item that left the other Pokemon is
                                               ITEM_END with the cause ITEM_TAKEN (Thief, Trick, Switcheroo), or no line (Covet) */
+#define DUOFORGE_EVENT_DRAG            45u /* [drag] position: the slot the dragged-in member enters; id: its roster index, HP;
+                                              cause NONE (the line has no [from]). POOL kinds: the forced switch of Roar,
+                                              Whirlwind, Dragon Tail and Circle Throw, and of a Red Card holder's attacker
+                                              (decision 0015 section 7, step G46). 43 and 44 are REVIVE and TRANSFORM. */
 
 /* Causes ([from] and [of] in the protocol). */
 #define DUOFORGE_CAUSE_NONE      0u /* the move or the plain mechanic */

@@ -48,12 +48,14 @@
  *                    +29 item, +30 item_consumed, +31 ability (u8 each),
  *                    +32 + 4*k move k: move_id (u16), pp (u8), pp_max (u8)
  *
- * The POOL state tail (docs/decisions/0015 section 7, schema 0x0403 = "v3 +
- * pool tail rev 4", 288 more bytes: 1297 in all). It is present exactly under
- * the two POOL data kinds, whose states carry that schema; the four other
- * kinds (and SYNTHETIC) keep schema 3 and the 1009 bytes above, unchanged. The
- * rev 1 tail (schema 0x0103, 42 bytes), the rev 2 tail (0x0203, 248 bytes) and
- * the rev 3 tail (0x0303, 248 bytes, protect_kind at +26 of a position) are not
+ * The POOL state tail (docs/decisions/0015 section 7, schema 0x0503 = "v3 +
+ * pool tail rev 5", 348 more bytes: 1357 in all: the rev 4 part of 288 bytes
+ * described below, then the 60-byte rev 5 block, see DFI_ENC_TAIL5_*). It is
+ * present exactly under the two POOL data kinds, whose states carry that
+ * schema; the four other kinds (and SYNTHETIC) keep schema 3 and the 1009 bytes
+ * above, unchanged. The rev 1 tail (schema 0x0103, 42 bytes), the rev 2 tail
+ * (0x0203, 248 bytes), the rev 3 tail (0x0303, 248 bytes, protect_kind at +26 of
+ * a position) and the rev 4 tail (0x0403, 288 bytes, refused since rev 5) are not
  * decodable: pool states are not frozen, there is no migration.
  *
  *  1009     8  the field block: +0 gravity_turns (u8), +1 7 reserved (zero)
@@ -122,17 +124,42 @@
 #define DFI_STATE_SCHEMA_POOL_TAIL_REV1 0x0103u /* refused: kept for the test that says so */
 #define DFI_STATE_SCHEMA_POOL_TAIL_REV2 0x0203u /* refused since rev 3: kept for the test that says so */
 #define DFI_STATE_SCHEMA_POOL_TAIL_REV3 0x0303u /* refused since rev 4: kept for the test that says so */
-#define DFI_STATE_SCHEMA_POOL_TAIL_REV4 0x0403u
-/* The POOL tail: the field block, then the two sides. */
+#define DFI_STATE_SCHEMA_POOL_TAIL_REV4 0x0403u /* refused since rev 5: kept for the test that says so */
+#define DFI_STATE_SCHEMA_POOL_TAIL_REV5 0x0503u
+/* The POOL tail: the field block, then the two sides (the rev 4 part, 288 bytes), then the rev 5 block (60 bytes, see
+ * below). DFI_ENC_TAIL_SIZE is the whole tail. */
 #define DFI_ENC_TAIL_OFF DUOFORGE_STATE_V3_ENCODED_SIZE
 #define DFI_ENC_TAIL_FIELD_SIZE 8u
 #define DFI_ENC_TAIL_FIELD_GRAVITY_OFF 0u
-#define DFI_ENC_TAIL_FIELD_RESERVED_OFF 1u
-#define DFI_ENC_TAIL_FIELD_RESERVED_SIZE 7u
+/* step G46: party_order, 3 bytes per side (3 bits per entry, see battle_internal.h), then one reserved byte (+7) */
+#define DFI_ENC_TAIL_FIELD_PARTY_OFF 1u
+#define DFI_ENC_TAIL_FIELD_PARTY_SIZE 6u
+#define DFI_ENC_TAIL_FIELD_RESERVED_OFF 7u
+#define DFI_ENC_TAIL_FIELD_RESERVED_SIZE 1u
 #define DFI_ENC_TAIL_SIDES_OFF DFI_ENC_TAIL_FIELD_SIZE
 #define DFI_ENC_TAIL_SIDE_SIZE 140u
-#define DFI_ENC_TAIL_SIZE (DFI_ENC_TAIL_FIELD_SIZE + DUOFORGE_SIDE_COUNT * DFI_ENC_TAIL_SIDE_SIZE)
-/* One side (offsets within its 120 bytes). */
+/* The rev 4 part of the tail: 8 + 2 * 140 bytes. */
+#define DFI_ENC_TAIL_REV4_SIZE (DFI_ENC_TAIL_FIELD_SIZE + DUOFORGE_SIDE_COUNT * DFI_ENC_TAIL_SIDE_SIZE)
+/* The rev 5 block (decision 0015 section 7, the byte ledger; decision 0026 for the Illusion bytes), appended after the rev 4
+ * part, offsets relative to the start of the tail: per side 18 bytes (the Illusion state), then per position 2 bytes (lane A)
+ * in flat order (side 0 positions 0 and 1, then side 1), then 16 bytes of general reserve (zero, refused otherwise). Nothing
+ * writes these bytes yet: every one is zero, and the invariants refuse any other value. */
+#define DFI_ENC_TAIL5_SIDES_OFF 0u           /* relative to the rev 5 block, which starts at DFI_ENC_TAIL_REV4_SIZE */
+#define DFI_ENC_TAIL5_SIDE_SIZE 18u
+#define DFI_ENC_TAIL5_ILL_SHOWN_OFF 0u       /* u8 */
+#define DFI_ENC_TAIL5_ILL_OVERRIDE_OFF 1u    /* 4 bytes */
+#define DFI_ENC_TAIL5_ILL_SNAPSHOT_OFF 5u    /* 9 bytes */
+#define DFI_ENC_TAIL5_ILL_PENDING_OFF 14u    /* 4 bytes */
+#define DFI_ENC_TAIL5_POS_OFF (DFI_ENC_TAIL5_SIDES_OFF + DUOFORGE_SIDE_COUNT * DFI_ENC_TAIL5_SIDE_SIZE)
+#define DFI_ENC_TAIL5_POS_SIZE 2u
+#define DFI_ENC_TAIL5_SLOT_PENDING_OFF 0u    /* u8 */
+#define DFI_ENC_TAIL5_FUTURE_SIGHT_OFF 1u    /* u8 */
+#define DFI_ENC_TAIL5_RESERVED_OFF (DFI_ENC_TAIL5_POS_OFF + DUOFORGE_ACTIVE_PER_SIDE * DUOFORGE_SIDE_COUNT * DFI_ENC_TAIL5_POS_SIZE)
+#define DFI_ENC_TAIL5_RESERVED_SIZE 16u
+#define DFI_ENC_TAIL5_SIZE (DFI_ENC_TAIL5_RESERVED_OFF + DFI_ENC_TAIL5_RESERVED_SIZE)
+/* The whole tail: rev 4 (288) and rev 5 (60). */
+#define DFI_ENC_TAIL_SIZE (DFI_ENC_TAIL_REV4_SIZE + DFI_ENC_TAIL5_SIZE)
+/* One side (offsets within its 140 bytes). */
 #define DFI_ENC_TAIL_WIDE_GUARD_OFF 0u
 #define DFI_ENC_TAIL_AURORA_VEIL_OFF 1u
 #define DFI_ENC_TAIL_TOXIC_SPIKES_OFF 2u
@@ -190,12 +217,13 @@
 #define DFI_ENC_TAIL_MEMBER_FLAGS_OFF 8u /* rev 4 */
 #define DFI_ENC_TAIL_MEMBER_RESERVED_OFF 9u
 #define DFI_ENC_TAIL_MEMBER_RESERVED_SIZE 1u
-/* The reserved bytes of the whole tail. */
+/* The reserved bytes of the whole tail: the rev 4 part's, then the rev 5 reserve. */
 #define DFI_ENC_TAIL_RESERVED_COUNT                                                                                   \
     (DFI_ENC_TAIL_FIELD_RESERVED_SIZE +                                                                                \
      DUOFORGE_SIDE_COUNT * (DFI_ENC_TAIL_SIDE_RESERVED_SIZE +                                                          \
                             DUOFORGE_ACTIVE_PER_SIDE * DFI_ENC_TAIL_POS_RESERVED_SIZE +                                \
-                            DUOFORGE_MAX_ROSTER * DFI_ENC_TAIL_MEMBER_RESERVED_SIZE))
+                            DUOFORGE_MAX_ROSTER * DFI_ENC_TAIL_MEMBER_RESERVED_SIZE) +                                 \
+     DFI_ENC_TAIL5_RESERVED_SIZE)
 /* The encoded size of a state under a POOL kind, and the largest of any kind: buffers of tests and tools that do
  * not ask duoforge_battle_encoded_size. Not a public constant. */
 #define DFI_STATE_POOL_ENCODED_SIZE (DFI_ENC_TAIL_OFF + DFI_ENC_TAIL_SIZE)
@@ -300,17 +328,28 @@ _Static_assert(DFI_ENC_TAIL_MEMBER_TYPE2_OFF == DFI_ENC_TAIL_MEMBER_TOXIC_OFF + 
                "the member's rev 4 bytes follow the toxic stage");
 _Static_assert(DFI_ENC_TAIL_MEMBER_RESERVED_OFF + DFI_ENC_TAIL_MEMBER_RESERVED_SIZE == DFI_ENC_TAIL_MEMBER_SIZE,
                "tail member block is 10 bytes");
-_Static_assert(DFI_ENC_TAIL_SIZE == 288u, "the tail is 288 bytes");
-_Static_assert(DFI_ENC_TAIL_RESERVED_COUNT == 35u, "35 of them are reserved (43 in rev 3: rev 4 adds 40 bytes and defines 48)");
-_Static_assert(DFI_STATE_POOL_ENCODED_SIZE == 1297u, "the state with the POOL tail is 1297 bytes");
+_Static_assert(DFI_ENC_TAIL_REV4_SIZE == 288u, "the rev 4 part of the tail is 288 bytes");
+_Static_assert(DFI_ENC_TAIL5_SIZE == 60u, "the rev 5 block is 60 bytes");
+_Static_assert(DFI_ENC_TAIL_SIZE == 348u, "the tail is 348 bytes");
+_Static_assert(DFI_ENC_TAIL5_ILL_PENDING_OFF + 4u == DFI_ENC_TAIL5_SIDE_SIZE, "the Illusion state ends the side's 18 bytes");
+_Static_assert(DFI_ENC_TAIL5_ILL_SNAPSHOT_OFF + 9u == DFI_ENC_TAIL5_ILL_PENDING_OFF, "the snapshot is 9 bytes");
+_Static_assert(DFI_ENC_TAIL5_POS_OFF + DUOFORGE_ACTIVE_PER_SIDE * DUOFORGE_SIDE_COUNT * DFI_ENC_TAIL5_POS_SIZE ==
+                   DFI_ENC_TAIL5_RESERVED_OFF,
+               "the positions' rev 5 bytes end the block's data");
+_Static_assert(DFI_ENC_TAIL_RESERVED_COUNT == 45u,
+               "45 of them are reserved (29 of rev 4: step G46 takes 6 of the field block's 7; 35 before it, 43 in rev 3; "
+               "16 more in rev 5)");
+_Static_assert(DFI_STATE_POOL_ENCODED_SIZE == 1357u, "the state with the POOL tail is 1357 bytes");
 /* No padding: every field of the tail in memory is a byte or an aligned u16, so the structs are the encoded data
  * and nothing else (the encoded size without the reserved bytes, plus the pad byte of the field block: a position and a side
- * have an even number of data bytes since rev 4 and need none). */
-_Static_assert(sizeof(dfi_tail_pos) == DFI_ENC_TAIL_POS_SIZE - DFI_ENC_TAIL_POS_RESERVED_SIZE,
+ * have an even number of data bytes and need none; rev 5 adds 2 bytes per position and the 18-byte Illusion block). */
+_Static_assert(sizeof(dfi_tail_pos) == DFI_ENC_TAIL_POS_SIZE - DFI_ENC_TAIL_POS_RESERVED_SIZE + DFI_ENC_TAIL5_POS_SIZE,
                "a position's tail in memory has no padding and none of the reserved bytes");
+_Static_assert(sizeof(dfi_tail_illusion) == DFI_ENC_TAIL5_SIDE_SIZE, "the Illusion block is its 18 bytes");
 _Static_assert(sizeof(dfi_tail_side) == DFI_ENC_TAIL_SIDE_SIZE - DFI_ENC_TAIL_SIDE_RESERVED_SIZE -
                                             DUOFORGE_ACTIVE_PER_SIDE * DFI_ENC_TAIL_POS_RESERVED_SIZE -
-                                            DUOFORGE_MAX_ROSTER * DFI_ENC_TAIL_MEMBER_RESERVED_SIZE,
+                                            DUOFORGE_MAX_ROSTER * DFI_ENC_TAIL_MEMBER_RESERVED_SIZE +
+                                            DUOFORGE_ACTIVE_PER_SIDE * DFI_ENC_TAIL5_POS_SIZE + DFI_ENC_TAIL5_SIDE_SIZE,
                "a side's tail in memory has no padding and none of the reserved bytes");
 _Static_assert(sizeof(dfi_pool_tail) == DFI_ENC_TAIL_SIZE - DFI_ENC_TAIL_RESERVED_COUNT + 1u,
                "the tail in memory has no padding and none of the reserved bytes but the field block's pad");
@@ -318,7 +357,7 @@ _Static_assert(sizeof(dfi_pool_tail) == DFI_ENC_TAIL_SIZE - DFI_ENC_TAIL_RESERVE
 /* True for the kinds whose states carry the POOL tail: _POOL and _POOL_DEV. */
 bool dfi_context_has_pool_tail(const struct duoforge_context *ctx);
 /* The schema id and the encoded size of the states of a context: schema 3 and 1009 bytes, or with the POOL tail
- * DFI_STATE_SCHEMA_POOL_TAIL_REV4 and 1297. */
+ * DFI_STATE_SCHEMA_POOL_TAIL_REV5 and 1357. */
 uint16_t dfi_state_schema_of(const struct duoforge_context *ctx);
 size_t dfi_state_encoded_size_of(const struct duoforge_context *ctx);
 
@@ -330,7 +369,7 @@ size_t dfi_encode_unchecked(const struct duoforge_context *ctx, const struct duo
 
 /* Strict decode into *out (only written on OK). Order: MALFORMED (size < 20,
  * magic) -> SCHEMA_MISMATCH (kind, a schema that is not v3 or v3 + pool tail
- * rev 4: rev 1, 0x0103, rev 2, 0x0203, and rev 3, 0x0303, are refused here like any other unknown schema)
+ * rev 5: rev 1, 0x0103, rev 2, 0x0203, rev 3, 0x0303, and rev 4, 0x0403, are refused here like any other unknown schema)
  * -> SEMANTICS_MISMATCH -> MALFORMED (total_length != size, size not
  * that of the schema) -> CONTEXT_MISMATCH (embedded fingerprint) -> parse ->
  * MALFORMED (invariant; id in *out_invariant if non-NULL). The schema must

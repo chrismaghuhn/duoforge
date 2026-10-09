@@ -213,6 +213,26 @@ function call(fn, thisArg, args) {
     }
 }
 
+// Step G49, Muscle Band and Wise Glasses: the base power of every move of their category (whatever its type) gets the same
+// modifier, and no other category does. They are engine rows (ENGINE_ROWS), not families.
+const CATEGORY_BOOSTERS = {muscleband: 'Physical', wiseglasses: 'Special'};
+function categoryBoosted(item) {
+    const categories = new Set();
+    const modifiers = new Set();
+    let fired = 0;
+    for (const category of ['Physical', 'Special', 'Status']) {
+        for (const type of TYPES) {
+            const r = call(item.onBasePower, battle(item), [100, {}, {}, moveOf(type, {category})]);
+            if (r !== undefined) {
+                fired += 1;
+                categories.add(category);
+                modifiers.add(JSON.stringify(r.chain));
+            }
+        }
+    }
+    return {categories: [...categories], modifiers: [...modifiers], fired};
+}
+
 // The types for which an item's onBasePower gives a modifier, and the modifiers.
 function boostedTypes(item) {
     const fired = [];
@@ -498,7 +518,10 @@ function checkItems(dex, rows, unmodeled) {
             // type, a resist berry exactly one resisted type. An UNMODELED row is refused whatever it does (Muscle Band
             // boosts every Physical move, Occa-like berries of other families are not in the pool).
             if (!unmodeled.has(row.id)) {
-                if (typeof item.onBasePower === 'function') {
+                if (row.id in CATEGORY_BOOSTERS) {
+                    expect(row.id + ' category booster probe', categoryBoosted(item),
+                        {categories: [CATEGORY_BOOSTERS[row.id]], modifiers: ['[4505,4096]'], fired: TYPES.length});
+                } else if (typeof item.onBasePower === 'function') {
                     expect(row.id + ' (no family) type booster probe', boostedTypes(item).fired, []);
                 }
                 if (typeof item.onSourceModifyDamage === 'function') {
@@ -775,6 +798,62 @@ function checkG41(dex) {
     return 1;
 }
 
+// Step G47, the status and volatile cures: the pinned handlers of Synchronize, Oblivious, Lum Berry and Mental Herb, called on
+// stubs with their own arguments (the calls and log lines the engine reproduces: dfi_synchronize, dfi_lum_berry, dfi_mental_herb
+// and the Oblivious branches of turn.c). Synchronize passes psn, tox, brn and par on, never slp or frz, never from Toxic Spikes,
+// never to itself or with no source; Oblivious refuses Taunt and cuts Intimidate's Attack drop; Lum Berry eats a status or a
+// confusion; Mental Herb is used when a volatile it cures is there and removes them in the list's order.
+function checkG47(dex) {
+    const sync = dex.abilities.get('synchronize');
+    const target = {name: 'T', toString() { return 'T'; }};
+    const syncRun = (status, source, effect) => {
+        const log = [];
+        const b = battle(sync, {add: (...a) => log.push(a)});
+        const src = source === 'none' ? undefined : (source === 'self' ? target
+            : {name: 'S', trySetStatus: (st, tg, eff) => log.push(['trySetStatus', st.id, tg.name, eff])});
+        call(sync.onAfterSetStatus, b, [{id: status}, target, src, effect]);
+        return log;
+    };
+    const activate = ['-activate', target, 'ability: Synchronize'];
+    expect('Synchronize passes psn on to the source', syncRun('psn', 'S', undefined),
+        [activate, ['trySetStatus', 'psn', 'T', {status: 'psn', id: 'synchronize'}]]);
+    expect('Synchronize passes par on', syncRun('par', 'S', undefined)[1][1], 'par');
+    expect('Synchronize passes tox on', syncRun('tox', 'S', undefined)[1][1], 'tox');
+    expect('Synchronize passes brn on', syncRun('brn', 'S', undefined)[1][1], 'brn');
+    expect('Synchronize does not pass slp on', syncRun('slp', 'S', undefined), []);
+    expect('Synchronize does not pass frz on', syncRun('frz', 'S', undefined), []);
+    expect('Synchronize is not passed back to a source with no source', syncRun('psn', 'none', undefined), []);
+    expect('Synchronize does nothing for its own status', syncRun('psn', 'self', undefined), []);
+    expect('Synchronize does not answer Toxic Spikes', syncRun('psn', 'S', {id: 'toxicspikes'}), []);
+    const obl = dex.abilities.get('oblivious');
+    const holder = {name: 'H', toString() { return 'H'; }};
+    const oblLog = [];
+    const b1 = battle(obl, {add: (...a) => oblLog.push(a)});
+    const taunted = call(obl.onTryHit, b1, [holder, holder, {id: 'taunt'}]);
+    expect('Oblivious refuses Taunt, with the -immune line', [taunted, oblLog],
+        [null, [['-immune', holder, '[from] ability: Oblivious']]]);
+    oblLog.length = 0;
+    expect('Oblivious does not refuse a tackle', call(obl.onTryHit, b1, [holder, holder, {id: 'tackle'}]), undefined);
+    const boost = {atk: -1, spe: -1};
+    const intimidate = {name: 'Intimidate'};
+    call(obl.onTryBoost, b1, [boost, holder, holder, intimidate]);
+    expect('Oblivious cuts the Attack drop of Intimidate, with -fail', [boost, oblLog],
+        [{spe: -1}, [['-fail', holder, 'unboost', 'atk', '[from] ability: Oblivious', '[of] H']]]);
+    const herbLog = [];
+    const holding = {status: '', volatiles: {taunt: {}}, useItem: () => { herbLog.push('useItem'); return true; },
+        removeVolatile: (id) => herbLog.push('remove:' + id)};
+    call(dex.items.get('mentalherb').onUpdate, battle(dex.items.get('mentalherb')), [holding]);
+    expect('Mental Herb is used and removes its volatiles in the list order', herbLog,
+        ['useItem', 'remove:attract', 'remove:taunt', 'remove:encore', 'remove:torment', 'remove:disable', 'remove:healblock']);
+    const lumLog = [];
+    const lum = dex.items.get('lumberry');
+    call(lum.onUpdate, battle(lum), [{status: '', volatiles: {}, eatItem: () => lumLog.push('eat')}]);
+    call(lum.onUpdate, battle(lum), [{status: 'par', volatiles: {}, eatItem: () => lumLog.push('eat')}]);
+    call(lum.onUpdate, battle(lum), [{status: '', volatiles: {confusion: {}}, eatItem: () => lumLog.push('eat')}]);
+    expect('Lum Berry is eaten for a status or a confusion, not otherwise', lumLog, ['eat', 'eat']);
+    return 1;
+}
+
 // Step G33, the multi-hit batch and Mirror Armor: the pinned facts that the engine hard-codes (decision 0015, item 5y). The
 // four moves' hit counts and Triple Axel's rising power; Mirror Armor's handler against stubs: it deletes every drop of
 // another Pokemon that is still one (a stat at -6 has none), shows its ability line and gives the drop to a source that
@@ -844,6 +923,43 @@ function checkG33(dex) {
         }
     }
     expect('multiaccuracy pairs', pairs, 169);
+    return 1;
+}
+
+// Step G44 (simple moves): the four handlers' pinned rules, called with stubs as the probes above do. Power Trip adds 20 per
+// positive stage (Pokemon.positiveBoosts, sim/pokemon.ts:1201-1208: a negative stage adds nothing); Thunder's onModifyMove is
+// Hurricane's (true in rain, 50 under sun, the target's weather); Ice Fang's secondaries are the freeze and the flinch, in
+// this order; Tri Attack's onHit draws sample(['brn', 'par', 'frz']) and sets that status.
+function checkG44(dex) {
+    const pt = dex.moves.get('powertrip');
+    const positive = (boosts) => Object.values(boosts).reduce((n, b) => (b > 0 ? n + b : n), 0);
+    const powerOf = (boosts) => call(pt.basePowerCallback, battle(pt), [{positiveBoosts: () => positive(boosts)}, {}, {basePower: 20}]);
+    expect('Power Trip, no boost', powerOf({}), 20);
+    expect('Power Trip, a negative stage adds nothing', powerOf({atk: -2}), 20);
+    expect('Power Trip, two positive and one negative', powerOf({atk: 2, def: -1, spe: 1}), 80);
+    expect('Power Trip, every stat at +6 and accuracy and evasion too', powerOf({atk: 6, def: 6, spa: 6, spd: 6, spe: 6, accuracy: 6, evasion: 6}), 860);
+    const th = dex.moves.get('thunder');
+    const thunderAccuracy = (weather) => {
+        const move = {accuracy: 70};
+        call(th.onModifyMove, battle(th), [move, {}, {effectiveWeather: () => weather}]);
+        return move.accuracy;
+    };
+    expect('Thunder accuracy by weather', ['raindance', 'primordialsea', 'sunnyday', 'desolateland', ''].map(thunderAccuracy),
+        [true, true, 50, 50, 70]);
+    expect('Thunder secondary', th.secondary, {chance: 30, status: 'par'});
+    const fang = dex.moves.get('icefang');
+    expect('Ice Fang secondaries', fang.secondaries, [{chance: 10, status: 'frz'}, {chance: 10, volatileStatus: 'flinch'}]);
+    const tri = dex.moves.get('triattack');
+    expect('Tri Attack secondary chance', tri.secondary.chance, 20);
+    const picks = [0, 1, 2].map((v) => {
+        const sampled = [];
+        const set = [];
+        const b = battle(tri, {sample: (list) => { sampled.push(list.join(',')); return list[v]; }});
+        call(tri.secondary.onHit, b, [{trySetStatus: (status) => set.push(status)}, {}]);
+        return {sampled, set};
+    });
+    expect('Tri Attack draws one pick of three', picks, [
+        {sampled: ['brn,par,frz'], set: ['brn']}, {sampled: ['brn,par,frz'], set: ['par']}, {sampled: ['brn,par,frz'], set: ['frz']}]);
     return 1;
 }
 
@@ -1295,11 +1411,12 @@ function checkFormes(dex, validator, rows, moves, abilities) {
 // The UNMODELED markers of gen_closure.py --pool, re-derived from the pinned data in this file's own words: the
 // special column of a move, the handler column of an item and of an ability, and the lists of unmodelled features.
 // implemented in the turn code by id (G4: Focus Sash, Rock Head; G12: Floettite, Flower Veil, Fairy Aura)
-const ENGINE_ROWS = {items: ['focussash', 'floettite', 'psychicseed', 'electricseed', 'mistyseed', 'expertbelt', 'ejectbutton', 'widelens'],
+const ENGINE_ROWS = {items: ['focussash', 'floettite', 'psychicseed', 'electricseed', 'mistyseed', 'expertbelt', 'ejectbutton', 'widelens', 'muscleband', 'wiseglasses', 'brightpowder', 'redcard', 'lumberry', 'mentalherb'],
     abilities: ['rockhead', 'flowerveil', 'fairyaura', 'roughskin', 'poisontouch', 'thermalexchange', 'stickyhold', 'trace',
         'levitate', 'sandrush', 'swiftswim', 'slushrush', 'chlorophyll', 'innerfocus', 'liquidvoice',
         'flamebody', 'clearbody', 'hospitality', 'overcoat', 'soundproof', 'unnerve', 'speedboost',
-        'compoundeyes', 'ironfist', 'sharpness', 'solidrock', 'technician', 'multiscale', 'galewings', 'raindish', 'friendguard', 'cursedbody', 'mirrorarmor', 'auraguard', 'hypercutter', 'scrappy', 'infiltrator', 'queenlymajesty', 'damp', 'sturdy', 'snowcloak', 'sandveil', 'static', 'justified', 'limber', 'solarpower', 'regenerator', 'toxicdebris', 'shadowtag']};
+        'compoundeyes', 'ironfist', 'sharpness', 'solidrock', 'technician', 'multiscale', 'galewings', 'raindish', 'friendguard', 'cursedbody', 'mirrorarmor', 'auraguard', 'hypercutter', 'scrappy', 'infiltrator', 'queenlymajesty', 'damp', 'sturdy', 'snowcloak', 'sandveil', 'static', 'justified', 'limber', 'solarpower', 'regenerator', 'toxicdebris', 'shadowtag', 'suctioncups', 'guarddog',
+        'steadfast', 'weakarmor', 'telepathy', 'voltabsorb', 'punkrock', 'moxie', 'synchronize', 'oblivious']};
 const ENGINE_TARGETS = new Set(['normal', 'any', 'adjacentAlly', 'adjacentFoe', 'self', 'allAdjacentFoes', 'allySide', 'all',
     'randomNormal', 'allAdjacent', 'allies', 'foeSide']); // foeSide: step G37 (the four hazards)
 // The fields of a move that the tables model (gen_closure.py DATA_KEYS and IGNORED_KEYS), nothing else.
@@ -1323,6 +1440,9 @@ function isBoostBlock(b) {
 const ENGINE_PIVOTS = ['uturn', 'voltswitch'];
 // Step G13: the moves that are another move's handler under another name (gen_closure.py PROTECT_COPIES).
 const PROTECT_COPIES = {detect: 'protect'};
+// Step G46: the four forced-switch moves; their forceSwitch: true is modelled (gen_closure.py G46_FORCE_SWITCH_MOVES).
+const G46_FORCE_SWITCH_MOVES = ['roar', 'whirlwind', 'dragontail', 'circlethrow'];
+
 function moveIsModelled(raw, id) {
     if (raw.selfSwitch !== undefined && !ENGINE_PIVOTS.includes(id)) {
         return false;
@@ -1330,6 +1450,10 @@ function moveIsModelled(raw, id) {
     for (const [key, value] of Object.entries(raw)) {
         // Step G13: Light of Ruin's tags (the Champions mod clears isNonstandard); no other tag value is read.
         if (key === 'tags' && JSON.stringify(value) === JSON.stringify(['Past Unobtainable'])) {
+            continue;
+        }
+        // Step G46: forceSwitch: true of the four moves of G46_FORCE_SWITCH_MOVES, and nothing else of it.
+        if (key === 'forceSwitch' && value === true && G46_FORCE_SWITCH_MOVES.includes(id)) {
             continue;
         }
         if (typeof value === 'function' || !MOVE_KEYS.has(key)) {
@@ -1669,6 +1793,8 @@ function main() {
     checkG32(dex);
     checkG33(dex);
     checkG41(dex);
+    checkG47(dex);
+    checkG44(dex);
     checkG22(dex, formeRowsList, new Set(definedIds(headers, 'ITEM').values()), new Set(abilityIds.values()));
     const abilities = checkAbilities(dex, abilityRows, moveIds, unmodeledAbilities, unmodeledMoves);
     // "All 18": a booster and a resist berry for each type, and nothing else in the families.

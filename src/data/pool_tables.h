@@ -884,7 +884,18 @@
 #define DFI_SPECIAL_SUPER_FANG 60u
 #define DFI_SPECIAL_TAUNT 61u
 #define DFI_SPECIAL_YAWN 62u
-#define DFI_SPECIAL_UNMODELED 63u
+#define DFI_SPECIAL_RAGE_FIST 63u
+#define DFI_SPECIAL_STONE_AXE 64u
+#define DFI_SPECIAL_CEASELESS_EDGE 65u
+#define DFI_SPECIAL_MULTI_HIT_10 66u
+#define DFI_SPECIAL_POWER_TRIP 67u
+#define DFI_SPECIAL_THUNDER 68u
+#define DFI_SPECIAL_ICE_FANG 69u
+#define DFI_SPECIAL_TRI_ATTACK 70u
+#define DFI_SPECIAL_DOUBLE_SHOCK 71u
+#define DFI_SPECIAL_ROOST 72u
+#define DFI_SPECIAL_STOMPING_TANTRUM 73u
+#define DFI_SPECIAL_UNMODELED 74u
 
 /* ---- the second flags byte of every move (step G8: the general byte for the flags that the first one has no room
  * for; bits 4 to 128 are free) and the secondary kinds that it comes with ---- */
@@ -895,6 +906,7 @@
 #define DFI_MOVE_FLAG2_POWDER 16u /* flags.powder (step G30): a Grass type, Overcoat and Safety Goggles are immune to the move */
 #define DFI_MOVE_FLAG2_PUNCH 32u /* flags.punch (step G34): Iron Fist boosts these moves (internal; the public static flag is not read) */
 #define DFI_MOVE_FLAG2_SLICING 64u /* flags.slicing (step G34): Sharpness boosts these moves */
+#define DFI_MOVE_FLAG2_FORCE_SWITCH 128u /* forceSwitch (step G46): Roar, Whirlwind, Dragon Tail, Circle Throw force the target out */
 #define DFI_BOOST_ROLE_PRIMARY_ALLY 4u /* step G19: a status move whose primary boosts go to the adjacent ally (Coaching) */
 #define DFI_BOOST_ROLE_SECONDARY_SELF 5u /* step G28: the secondary's roll gives these boosts to the user (Ancient Power) */
 #define DFI_BOOST_ROLE_PRIMARY_TARGET 6u /* step G39: a status move whose primary boosts go to its one target (Charm, Fake Tears) */

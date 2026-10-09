@@ -190,7 +190,9 @@ def main(argv=None):
         for config in configs:
             if config.get("format") == 2:
                 checkpoint.check_ids(config, context)
-        table, source_ids, belief_info = honest.spread_table(context, args.belief_root)
+        # An explicit --belief-root keeps its whole stated registry; the default is the pinned belief.
+        table, source_ids, belief_info = honest.spread_table(
+            context, args.belief_root, sources=None if args.belief_root else honest.SPREAD_SOURCES)
         results = run(context, pool, players[0], dict(zip(("R", "BC", "3600", "11000"), players)), table, source_ids, args)
     conditions = {"search": "honest", "preview_only": True, "k": 8, "m": 8, "worlds": args.worlds,
                   "lam": .5, "capacity": args.capacity, "workers": args.workers,

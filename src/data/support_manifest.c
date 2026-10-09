@@ -192,6 +192,10 @@ const dfi_support_manifest dfi_support = {
         {
             [DFI_MOVE_HIGHHORSEPOWER] = 1u,
             [DFI_MOVE_PROTECT] = 1u,
+            [DFI_MOVE_ROAR] = 1u,        /* step G46: forceSwitch, the drag (decision 0015 section 4) */
+            [DFI_MOVE_WHIRLWIND] = 1u,   /* step G46 */
+            [DFI_MOVE_DRAGONTAIL] = 1u,  /* step G46 */
+            [DFI_MOVE_CIRCLETHROW] = 1u, /* step G46 */
             [DFI_MOVE_MUDDYWATER] = 1u,
             [DFI_MOVE_COIL] = 1u,
             [DFI_MOVE_SHADOWSNEAK] = 1u,
@@ -358,6 +362,12 @@ const dfi_support_manifest dfi_support = {
             [DFI_MOVE_TERRAINPULSE] = 1u,
             [DFI_MOVE_TAUNT] = 1u,
             [DFI_MOVE_YAWN] = 1u,
+            /* Step G42: Roost (the heal, then the Flying type is off for the turn) and Stomping Tantrum (base power x2 after a
+             * FALSE last move result; the move_result of tail rev 4, decision 0015 section 7). */
+            [DFI_MOVE_ROOST] = 1u,
+            [DFI_MOVE_STOMPINGTANTRUM] = 1u,
+            /* Step G50: Double Shock (Pawmot only: the Electric and Fighting types become ??? and Fighting; decision 0025). */
+            [DFI_MOVE_DOUBLESHOCK] = 1u,
             /* Step G32: Eruption and Water Spout (power by the user's HP), Life Dew (the user and its ally), Body Press, Foul Play
              * and Psyshock (the stat overrides), Rain Dance and Sunny Day, Volt Switch (a pivot of its own), Clanging Scales (the
              * user's Defense falls after the hit) and Freeze-Dry (Water takes it super effective). */
@@ -376,6 +386,13 @@ const dfi_support_manifest dfi_support = {
             [DFI_MOVE_DUALWINGBEAT] = 1u,
             [DFI_MOVE_TRIPLEAXEL] = 1u,
             [DFI_MOVE_TWINBEAM] = 1u,
+            /* Step G48: Population Bomb (ten hits, multiaccuracy; accuracy 90, which the later-hit proof of G33 covers), Rage Fist
+             * (its power is 50 + 50 per hit the user took, the tail's hits_taken), Stone Axe and Ceaseless Edge (a hazard on the
+             * foe's side after a hit, the G37 add). Recorded as g48_*. */
+            [DFI_MOVE_POPULATIONBOMB] = 1u,
+            [DFI_MOVE_RAGEFIST] = 1u,
+            [DFI_MOVE_STONEAXE] = 1u,
+            [DFI_MOVE_CEASELESSEDGE] = 1u,
             /* Step G28: Shell Smash (its boosts in the pin's order), Acrobatics (doubled without an item), Blizzard (never misses
              * in snow), Ancient Power (a secondary that boosts its user), Feint (breaks Protect and Wide Guard). */
             [DFI_MOVE_SHELLSMASH] = 1u,
@@ -415,6 +432,21 @@ const dfi_support_manifest dfi_support = {
             [DFI_MOVE_FAKETEARS] = 1u,
             [DFI_MOVE_SACREDSWORD] = 1u,
             [DFI_MOVE_SUPERFANG] = 1u,
+            /* Step G44 (simple moves, decision 0015 item 5an). Handlers: Thunder (never misses in rain, 50 under sun), Power Trip
+             * (20 plus 20 per positive stage of the user), Ice Fang (a freeze roll, then a flinch roll) and Tri Attack (a
+             * 20 percent pick of burn, paralysis or freeze). Data rows: Breaking Swipe, Vacuum Wave, Stone Edge, Aqua Cutter,
+             * Hammer Arm, Trop Kick and Meteor Mash. */
+            [DFI_MOVE_THUNDER] = 1u,
+            [DFI_MOVE_POWERTRIP] = 1u,
+            [DFI_MOVE_ICEFANG] = 1u,
+            [DFI_MOVE_TRIATTACK] = 1u,
+            [DFI_MOVE_BREAKINGSWIPE] = 1u,
+            [DFI_MOVE_VACUUMWAVE] = 1u,
+            [DFI_MOVE_STONEEDGE] = 1u,
+            [DFI_MOVE_AQUACUTTER] = 1u,
+            [DFI_MOVE_HAMMERARM] = 1u,
+            [DFI_MOVE_TROPKICK] = 1u,
+            [DFI_MOVE_METEORMASH] = 1u,
         },
     .abilities =
         {
@@ -502,6 +534,16 @@ const dfi_support_manifest dfi_support = {
             [DFI_ABILITY_REGENERATOR] = 1u,
             [DFI_ABILITY_TOXICDEBRIS] = 1u, /* step G37: a Physical hit puts Toxic Spikes on the attacker's side */
             [DFI_ABILITY_SHADOWTAG] = 1u, /* step G41 */
+            [DFI_ABILITY_SUCTIONCUPS] = 1u, /* step G46: a DragOut blocker (the forced switch is not made) */
+            [DFI_ABILITY_GUARDDOG] = 1u,    /* step G46: a DragOut blocker */
+            [DFI_ABILITY_STEADFAST] = 1u, /* step G45: a flinch that stops the move raises Speed by 1 */
+            [DFI_ABILITY_WEAKARMOR] = 1u, /* step G45: a Physical hit lowers Defense by 1 and raises Speed by 2, each hit */
+            [DFI_ABILITY_TELEPATHY] = 1u, /* step G45: a damaging move of an ally is stopped */
+            [DFI_ABILITY_VOLTABSORB] = 1u, /* step G45: an Electric move heals a quarter of the HP, or is stopped */
+            [DFI_ABILITY_PUNKROCK] = 1u, /* step G45: sound moves: x1.3 for the holder, x0.5 against it */
+            [DFI_ABILITY_MOXIE] = 1u, /* step G45: a Move's knock-out raises Attack by the number of faints it caused at once */
+            [DFI_ABILITY_SYNCHRONIZE] = 1u, /* step G47: the status passed back to a source (data/abilities.ts:4857-4871) */
+            [DFI_ABILITY_OBLIVIOUS] = 1u,   /* step G47: Taunt, and Intimidate's Attack drop (data/abilities.ts:3008-3040) */
         },
     .items =
         {
@@ -526,6 +568,9 @@ const dfi_support_manifest dfi_support = {
             [DFI_ITEM_PSYCHICSEED] = 1u,
             [DFI_ITEM_EXPERTBELT] = 1u, /* step G28 */
             [DFI_ITEM_WIDELENS] = 1u,   /* step G34 */
+            [DFI_ITEM_MUSCLEBAND] = 1u,  /* step G49 */
+            [DFI_ITEM_WISEGLASSES] = 1u, /* step G49 */
+            [DFI_ITEM_BRIGHTPOWDER] = 1u, /* step G49 */
             [DFI_ITEM_EJECTBUTTON] = 1u, /* step G32 */
             [DFI_ITEM_ELECTRICSEED] = 1u, /* step G25 */
             [DFI_ITEM_MISTYSEED] = 1u,    /* step G25 */
@@ -537,6 +582,7 @@ const dfi_support_manifest dfi_support = {
             [DFI_ITEM_GARCHOMPITEZ] = 1u,
             [DFI_ITEM_DELPHOXITE] = 1u,
             [DFI_ITEM_GENGARITE] = 1u, /* step G41: the Mega Stone of Gengar, whose Mega has Shadow Tag */
+            [DFI_ITEM_REDCARD] = 1u,   /* step G46: forced switch of the attacker, without the Sheer Force gate (Champions) */
             [DFI_ITEM_GARDEVOIRITE] = 1u,
             [DFI_ITEM_ABOMASITE] = 1u,
             [DFI_ITEM_BARBARACITE] = 1u,
@@ -552,6 +598,20 @@ const dfi_support_manifest dfi_support = {
             [DFI_ITEM_METAGROSSITE] = 1u,
             [DFI_ITEM_LUCARIONITEZ] = 1u,
             [DFI_ITEM_FROSLASSITE] = 1u,
+            /* Step G43 (Mega batch 3, mark only): ten Mega Stones whose Mega ability is marked already (Multiscale, Adaptability,
+             * Speed Boost, Sharpness, Electric Surge, Scrappy, Trace, Technician, Inner Focus) and whose base formes' abilities are
+             * marked: Dragoninite, Glimmoranite, Blazikenite, Absolite Z, Raichunite X, Lopunnite, Alakazite, Meowsticite (both
+             * Meowstic formes), Scizorite and Galladite. */
+            [DFI_ITEM_DRAGONINITE] = 1u,
+            [DFI_ITEM_GLIMMORANITE] = 1u,
+            [DFI_ITEM_BLAZIKENITE] = 1u,
+            [DFI_ITEM_ABSOLITEZ] = 1u,
+            [DFI_ITEM_RAICHUNITEX] = 1u,
+            [DFI_ITEM_LOPUNNITE] = 1u,
+            [DFI_ITEM_ALAKAZITE] = 1u,
+            [DFI_ITEM_MEOWSTICITE] = 1u,
+            [DFI_ITEM_SCIZORITE] = 1u,
+            [DFI_ITEM_GALLADITE] = 1u,
             [DFI_ITEM_BLACKBELT] = 1u,
             [DFI_ITEM_BLACKGLASSES] = 1u,
             [DFI_ITEM_CHARCOAL] = 1u,
@@ -566,6 +626,8 @@ const dfi_support_manifest dfi_support = {
             [DFI_ITEM_SILKSCARF] = 1u,
             [DFI_ITEM_SILVERPOWDER] = 1u,
             [DFI_ITEM_SOFTSAND] = 1u,
+            [DFI_ITEM_LUMBERRY] = 1u,   /* step G47: a status or a confusion is cured by the berry (data/items.ts:3537-3560) */
+            [DFI_ITEM_MENTALHERB] = 1u, /* step G47: the four volatiles (data/items.ts:3889-3926) */
             [DFI_ITEM_SPELLTAG] = 1u,
             [DFI_ITEM_TWISTEDSPOON] = 1u,
             [DFI_ITEM_BABIRIBERRY] = 1u,
@@ -605,6 +667,10 @@ const dfi_support_manifest dfi_support = {
      * Step AC1: the ability change of Trace (bit 2: position_ext.ability_now, public, verified against the ac1 battles in
      * duoforge.state.pool_ac1). Every other source of a changed ability stays E_UNSUPPORTED (an unmarked move or
      * ability), so the bit is exact: a zero is "no change". */
+    /* Step G42: Roost (bit 40: the ROOST volatile of the position, public: the -singleturn line of Roost, set at its heal and
+     * ended in the residual of order 25, verified against the g42 battles). MOVE_FAILED (bit 41) stays clear: the field is exact
+     * only when the last result is classified, and an unclassified exit (decision 0015 section 7) reads 0 where the reference
+     * may read 1. The expression stays plain terms: python/duoforge_live/lines.py parses it. */
     .view_ext_features = ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_THROAT_CHOP) |
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_HEAL_BLOCK) |
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_TYPE_CHANGE) |
@@ -629,5 +695,5 @@ const dfi_support_manifest dfi_support = {
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_STEALTH_ROCK) |
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_SPIKES) |
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_TOXIC_SPIKES) |
-                         ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_STICKY_WEB),
+                         ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_STICKY_WEB) | ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_ROOST),
 };

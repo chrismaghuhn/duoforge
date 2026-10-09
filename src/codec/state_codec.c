@@ -14,7 +14,7 @@ bool dfi_context_has_pool_tail(const struct duoforge_context *ctx)
 
 uint16_t dfi_state_schema_of(const struct duoforge_context *ctx)
 {
-    return dfi_context_has_pool_tail(ctx) ? (uint16_t)DFI_STATE_SCHEMA_POOL_TAIL_REV4 : (uint16_t)DFI_STATE_SCHEMA_V3;
+    return dfi_context_has_pool_tail(ctx) ? (uint16_t)DFI_STATE_SCHEMA_POOL_TAIL_REV5 : (uint16_t)DFI_STATE_SCHEMA_V3;
 }
 
 size_t dfi_state_encoded_size_of(const struct duoforge_context *ctx)
@@ -60,9 +60,43 @@ static void dfi_encode_tail_pos(const dfi_tail_pos *tp, uint8_t *po)
     }
 }
 
+/* The rev 5 block (decision 0015 section 7; decision 0026 for the Illusion bytes), at the start of its 60 bytes: per side the
+ * Illusion state, per position (flat order) the two lane A bytes, then the reserve, zero. Bounded loops, no stored index. */
+static void dfi_encode_tail5(const dfi_pool_tail *tail, uint8_t *out)
+{
+    for (uint32_t s = 0u; s < DUOFORGE_SIDE_COUNT; ++s) {
+        const dfi_tail_illusion *il = &tail->sides[s].illusion;
+        uint8_t *so = out + DFI_ENC_TAIL5_SIDES_OFF + s * DFI_ENC_TAIL5_SIDE_SIZE;
+        so[DFI_ENC_TAIL5_ILL_SHOWN_OFF] = il->shown;
+        for (uint32_t i = 0u; i < sizeof il->override; ++i) {
+            so[DFI_ENC_TAIL5_ILL_OVERRIDE_OFF + i] = il->override[i];
+        }
+        for (uint32_t i = 0u; i < sizeof il->snapshot; ++i) {
+            so[DFI_ENC_TAIL5_ILL_SNAPSHOT_OFF + i] = il->snapshot[i];
+        }
+        for (uint32_t i = 0u; i < sizeof il->pending; ++i) {
+            so[DFI_ENC_TAIL5_ILL_PENDING_OFF + i] = il->pending[i];
+        }
+    }
+    for (uint32_t f = 0u; f < DUOFORGE_SIDE_COUNT * DUOFORGE_ACTIVE_PER_SIDE; ++f) {
+        const dfi_tail_pos *tp = &tail->sides[f / DUOFORGE_ACTIVE_PER_SIDE].positions[f % DUOFORGE_ACTIVE_PER_SIDE];
+        uint8_t *po = out + DFI_ENC_TAIL5_POS_OFF + f * DFI_ENC_TAIL5_POS_SIZE;
+        po[DFI_ENC_TAIL5_SLOT_PENDING_OFF] = tp->slot_pending;
+        po[DFI_ENC_TAIL5_FUTURE_SIGHT_OFF] = tp->future_sight;
+    }
+    for (uint32_t i = 0u; i < DFI_ENC_TAIL5_RESERVED_SIZE; ++i) {
+        out[DFI_ENC_TAIL5_RESERVED_OFF + i] = 0u;
+    }
+}
+
 static void dfi_encode_tail(const dfi_pool_tail *tail, uint8_t *out)
 {
     out[DFI_ENC_TAIL_FIELD_GRAVITY_OFF] = tail->gravity_turns;
+    for (uint32_t s = 0u; s < DUOFORGE_SIDE_COUNT; ++s) {
+        for (uint32_t i = 0u; i < DFI_PARTY_BYTES_PER_SIDE; ++i) {
+            out[DFI_ENC_TAIL_FIELD_PARTY_OFF + s * DFI_PARTY_BYTES_PER_SIDE + i] = tail->party_order[s][i];
+        }
+    }
     for (uint32_t i = 0u; i < DFI_ENC_TAIL_FIELD_RESERVED_SIZE; ++i) {
         out[DFI_ENC_TAIL_FIELD_RESERVED_OFF + i] = 0u;
     }
@@ -92,6 +126,7 @@ static void dfi_encode_tail(const dfi_pool_tail *tail, uint8_t *out)
             mo[DFI_ENC_TAIL_MEMBER_RESERVED_OFF] = 0u;
         }
     }
+    dfi_encode_tail5(tail, out + DFI_ENC_TAIL_REV4_SIZE);
 }
 
 /* True iff the reserved bytes of an encoded tail are all zero (bounded loops, no stored index). */
@@ -111,6 +146,9 @@ static bool dfi_tail_reserved_zero(const uint8_t *in)
         for (uint32_t m = 0u; m < DUOFORGE_MAX_ROSTER; ++m) {
             any |= so[DFI_ENC_TAIL_MEMBER_OFF + m * DFI_ENC_TAIL_MEMBER_SIZE + DFI_ENC_TAIL_MEMBER_RESERVED_OFF];
         }
+    }
+    for (uint32_t i = 0u; i < DFI_ENC_TAIL5_RESERVED_SIZE; ++i) {
+        any |= in[DFI_ENC_TAIL_REV4_SIZE + DFI_ENC_TAIL5_RESERVED_OFF + i];
     }
     return any == 0u;
 }
@@ -149,9 +187,39 @@ static void dfi_parse_tail_pos(const uint8_t *po, dfi_tail_pos *tp)
     tp->trap_move = dfi_load_u16le(po + DFI_ENC_TAIL_POS_TRAP_MOVE_OFF);
 }
 
+/* The rev 5 block, the inverse of dfi_encode_tail5 (its reserve is checked before, by dfi_tail_reserved_zero). */
+static void dfi_parse_tail5(const uint8_t *in, dfi_pool_tail *tail)
+{
+    for (uint32_t s = 0u; s < DUOFORGE_SIDE_COUNT; ++s) {
+        dfi_tail_illusion *il = &tail->sides[s].illusion;
+        const uint8_t *so = in + DFI_ENC_TAIL5_SIDES_OFF + s * DFI_ENC_TAIL5_SIDE_SIZE;
+        il->shown = so[DFI_ENC_TAIL5_ILL_SHOWN_OFF];
+        for (uint32_t i = 0u; i < sizeof il->override; ++i) {
+            il->override[i] = so[DFI_ENC_TAIL5_ILL_OVERRIDE_OFF + i];
+        }
+        for (uint32_t i = 0u; i < sizeof il->snapshot; ++i) {
+            il->snapshot[i] = so[DFI_ENC_TAIL5_ILL_SNAPSHOT_OFF + i];
+        }
+        for (uint32_t i = 0u; i < sizeof il->pending; ++i) {
+            il->pending[i] = so[DFI_ENC_TAIL5_ILL_PENDING_OFF + i];
+        }
+    }
+    for (uint32_t f = 0u; f < DUOFORGE_SIDE_COUNT * DUOFORGE_ACTIVE_PER_SIDE; ++f) {
+        dfi_tail_pos *tp = &tail->sides[f / DUOFORGE_ACTIVE_PER_SIDE].positions[f % DUOFORGE_ACTIVE_PER_SIDE];
+        const uint8_t *po = in + DFI_ENC_TAIL5_POS_OFF + f * DFI_ENC_TAIL5_POS_SIZE;
+        tp->slot_pending = po[DFI_ENC_TAIL5_SLOT_PENDING_OFF];
+        tp->future_sight = po[DFI_ENC_TAIL5_FUTURE_SIGHT_OFF];
+    }
+}
+
 static void dfi_parse_tail(const uint8_t *in, dfi_pool_tail *tail)
 {
     tail->gravity_turns = in[DFI_ENC_TAIL_FIELD_GRAVITY_OFF];
+    for (uint32_t s = 0u; s < DUOFORGE_SIDE_COUNT; ++s) {
+        for (uint32_t i = 0u; i < DFI_PARTY_BYTES_PER_SIDE; ++i) {
+            tail->party_order[s][i] = in[DFI_ENC_TAIL_FIELD_PARTY_OFF + s * DFI_PARTY_BYTES_PER_SIDE + i];
+        }
+    }
     tail->field_pad = 0u;
     for (uint32_t s = 0u; s < DUOFORGE_SIDE_COUNT; ++s) {
         dfi_tail_side *ts = &tail->sides[s];
@@ -178,6 +246,7 @@ static void dfi_parse_tail(const uint8_t *in, dfi_pool_tail *tail)
             ts->member_flags[m] = mo[DFI_ENC_TAIL_MEMBER_FLAGS_OFF];
         }
     }
+    dfi_parse_tail5(in + DFI_ENC_TAIL_REV4_SIZE, tail);
 }
 
 size_t dfi_encode_unchecked(const struct duoforge_context *ctx, const struct duoforge_battle *b, uint8_t *out)
@@ -421,11 +490,12 @@ duoforge_status dfi_decode_state(const duoforge_context *ctx, const uint8_t *byt
     if (!dfi_bytes_equal(bytes, dfi_envelope_magic, DFI_ENVELOPE_MAGIC_SIZE)) {
         return DUOFORGE_E_MALFORMED;
     }
-    /* The two schemas of this build: v3 and v3 + pool tail rev 4 (0x0403). Rev 1 (0x0103), rev 2 (0x0203) and rev 3
-     * (0x0303) are none of them: they are refused here like every unknown schema, there is no migration. Which of the two a context takes is decided below. */
+    /* The two schemas of this build: v3 and v3 + pool tail rev 5 (0x0503). Rev 1 (0x0103), rev 2 (0x0203), rev 3
+     * (0x0303) and rev 4 (0x0403) are none of them: they are refused here like every unknown schema, there is no migration.
+     * Which of the two a context takes is decided below. */
     const uint32_t schema = dfi_load_u16le(bytes + DFI_ENVELOPE_SCHEMA_OFF);
     if (dfi_load_u16le(bytes + DFI_ENVELOPE_KIND_OFF) != DFI_ARTIFACT_BATTLE_STATE ||
-        (schema != DFI_STATE_SCHEMA_V3 && schema != DFI_STATE_SCHEMA_POOL_TAIL_REV4)) {
+        (schema != DFI_STATE_SCHEMA_V3 && schema != DFI_STATE_SCHEMA_POOL_TAIL_REV5)) {
         return DUOFORGE_E_SCHEMA_MISMATCH;
     }
     if (dfi_load_u32le(bytes + DFI_ENVELOPE_SEMANTICS_OFF) != DUOFORGE_SEMANTICS_ID) {
@@ -435,7 +505,7 @@ duoforge_status dfi_decode_state(const duoforge_context *ctx, const uint8_t *byt
     if ((uint64_t)dfi_load_u32le(bytes + DFI_ENVELOPE_LENGTH_OFF) != (uint64_t)size) {
         return DUOFORGE_E_MALFORMED;
     }
-    const bool tailed = schema == DFI_STATE_SCHEMA_POOL_TAIL_REV4;
+    const bool tailed = schema == DFI_STATE_SCHEMA_POOL_TAIL_REV5;
     if (size != (tailed ? (size_t)DFI_STATE_POOL_ENCODED_SIZE : (size_t)DUOFORGE_STATE_V3_ENCODED_SIZE)) {
         return DUOFORGE_E_MALFORMED;
     }
@@ -574,7 +644,7 @@ duoforge_status duoforge_battle_digest(const duoforge_context *ctx, const duofor
     uint8_t digest[DUOFORGE_DIGEST_SIZE] = {0};
     const size_t size = dfi_encode_unchecked(ctx, battle, encoded);
     if (!dfi_sha256(encoded, size, digest)) {
-        return DUOFORGE_E_INVARIANT; /* unreachable: at most 1297 bytes */
+        return DUOFORGE_E_INVARIANT; /* unreachable: at most 1357 bytes */
     }
     for (uint32_t i = 0u; i < DUOFORGE_DIGEST_SIZE; ++i) {
         out_digest[i] = digest[i];

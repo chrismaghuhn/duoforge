@@ -95,9 +95,14 @@ class GeneratedRowsTest(unittest.TestCase):
                 self.assertEqual(d.target_type(move), data.TARGET_TYPES[target_class], (kind, "move", move))
             for item, (holder, mega) in enumerate(items):
                 where = (kind, "item", item)
+                if holder is not None and mega is not None:  # the item row names the stone's first pair
+                    self.assertEqual(d.mega_of(holder, item + 1), mega, where)
                 for forme in range(len(formes)):
-                    expected = mega if holder is not None and mega is not None and holder == forme else None
-                    self.assertEqual(d.mega_of(forme, item + 1), expected, where + (forme,))
+                    got = d.mega_of(forme, item + 1)
+                    if mega is None:
+                        self.assertIsNone(got, where + (forme,))  # no stone, no Mega
+                    elif got is not None:  # another holder of the same stone (Meowsticite): its own Mega
+                        self.assertEqual(formes[got][1], forme, where + (forme,))
                 self.assertIsNone(d.mega_of(0, 0))
 
 
@@ -144,7 +149,10 @@ class DataTest(unittest.TestCase):
         for base, stone, mega in (("CHARIZARD", "CHARIZARDITEX", "CHARIZARDMEGAX"),
                                   ("CHARIZARD", "CHARIZARDITEY", "CHARIZARDMEGAY"),
                                   ("GARCHOMP", "GARCHOMPITE", "GARCHOMPMEGA"),
-                                  ("GARCHOMP", "GARCHOMPITEZ", "GARCHOMPMEGAZ")):
+                                  ("GARCHOMP", "GARCHOMPITEZ", "GARCHOMPMEGAZ"),
+                                  # one stone, two holders: Meowsticite takes each Meowstic to its own Mega
+                                  ("MEOWSTIC", "MEOWSTICITE", "MEOWSTICMMEGA"),
+                                  ("MEOWSTICF", "MEOWSTICITE", "MEOWSTICFMEGA")):
             self.assertEqual(self.pool.mega_of(f[base], i[stone] + 1), f[mega], stone)
             self.assertEqual(self.pool.base_forme(f[mega]), f[base], mega)
             self.assertIsNone(self.pool.mega_of(f["SALAMENCE"], i[stone] + 1), stone)  # another forme's stone
@@ -291,6 +299,11 @@ class LinesTest(unittest.TestCase):
                      "|-item|p1a: Staraptor|Life Orb|[from] move: Covet|[of] p2a: Gholdengo"):
             self.assertEqual(self.stop(line), "feature:ITEM_CHANGE", line)
 
+    def test_drag_folds(self):
+        # Step G46: a forced switch brings a member in as a switch does (the tracker folds it as one, or stops)
+        self.assertEqual(lines.check("|drag|p2a: Gholdengo|Gholdengo, L50|100/100", self.view), "fold")
+        self.assertEqual(lines.check("|drag|p1a: Staraptor|Staraptor, L50, F|100/100", self.view), "fold")
+
     def test_unknown_lines_stop(self):
         self.assertEqual(self.stop("|-sethp|p1a: Staraptor|50/100"), "line:-sethp")
         self.assertEqual(self.stop("|move|p1a: Staraptor|Baton Pass|p1a: Staraptor"), "line:move Baton Pass")
@@ -336,6 +349,25 @@ class LinesTest(unittest.TestCase):
                                      view), "keep")
         with self.assertRaises(lines.Stop):
             lines.check("|-fail|p1a: Dragonite|unboost|Power|[from] ability: Inner Focus|[of] p1a: Dragonite", view)
+
+    def test_roost_single_turn_is_its_feature(self):
+        # G42: -singleturn|X|move: Roost is the ROOST feature: folded once the library supports it, else a Stop
+        line = "|-singleturn|p1a: Staraptor|move: Roost"
+        if lines.SUPPORTED >> lines.FEATURES["ROOST"] & 1:
+            self.assertEqual(lines.check(line, self.view), "fold")
+        else:
+            self.assertEqual(self.stop(line), "feature:ROOST")
+
+    def test_activate_of_own_ability_folds(self):
+        # G45/G47: Synchronize, Telepathy and the like announce the holder's own ability; their effects come in
+        # their own lines (-status, the skipped hit), so the -activate line itself changes no field
+        view = _View({"p1: Umbreon": ("UMBREON", "LEFTOVERS", "SYNCHRONIZE"),
+                      "p2: Staraptor": ("STARAPTOR", "SITRUSBERRY", "INTIMIDATE")})
+        self.assertEqual(lines.check("|-activate|p1a: Umbreon|ability: Synchronize", view), "fold")
+        with self.assertRaises(lines.Stop):  # not the holder's current ability: unknown, as before
+            lines.check("|-activate|p2a: Staraptor|ability: Synchronize", view)
+        with self.assertRaises(lines.Stop):  # an ability the tables lack
+            lines.check("|-activate|p1a: Umbreon|ability: No Such Ability", view)
 
     def test_fold_and_room_lines(self):
         self.assertEqual(lines.check("|-enditem|p1a: Staraptor|Sitrus Berry|[eat]", self.view), "fold")
@@ -410,6 +442,36 @@ class LinesTest(unittest.TestCase):
 
 
 TEAMS = data.ROOT / "tests" / "reference" / "teams"
+
+
+class PointsTest(unittest.TestCase):
+    """The decision points of a log (points.find)."""
+
+    _HEAD = ["|showteam|p1|x", "|showteam|p2|y", "|start", "|switch|p1a: Dragalge|Dragalge, L50|100/100",
+             "|switch|p2a: Gholdengo|Gholdengo, L50|100/100", "|turn|1"]
+
+    def test_a_switch_out_effect_of_the_answer_is_not_in_the_point(self):
+        # G51 (#281): Regenerator heals at the switch-out, a line of the PIVOT's answer printed before its |switch|;
+        # the player was asked before it (the engine shows the HP before the heal at the request)
+        from duoforge_replay import points
+        log = self._HEAD + ["|move|p1a: Dragalge|Flip Turn|p2a: Gholdengo", "|-damage|p2a: Gholdengo|80/100",
+                            "|-heal|p1a: Dragalge|53/100|[from] ability: Regenerator|[silent]",
+                            "|switch|p1a: Staraptor|Staraptor, L50|100/100|[from] Flip Turn", "|upkeep"]
+        pivot = [pt for pt in points.find(log) if pt.boundary == points.PIVOT]
+        self.assertEqual(len(pivot), 1)
+        self.assertEqual(log[pivot[0].line], "|-heal|p1a: Dragalge|53/100|[from] ability: Regenerator|[silent]")
+        # Natural Cure cures at the switch-out the same way
+        cure = self._HEAD + ["|move|p1a: Dragalge|U-turn|p2a: Gholdengo", "|-damage|p2a: Gholdengo|80/100",
+                             "|-curestatus|p1a: Dragalge|slp|[from] ability: Natural Cure",
+                             "|switch|p1a: Staraptor|Staraptor, L50|100/100|[from] U-turn", "|upkeep"]
+        pivot = [pt for pt in points.find(cure) if pt.boundary == points.PIVOT]
+        self.assertEqual(cure[pivot[0].line], "|-curestatus|p1a: Dragalge|slp|[from] ability: Natural Cure")
+        # a heal of another position, or one without a switch-out ability, stays in the point
+        other = self._HEAD + ["|move|p1a: Dragalge|Flip Turn|p2a: Gholdengo",
+                              "|-heal|p2a: Gholdengo|90/100|[from] item: Leftovers",
+                              "|switch|p1a: Staraptor|Staraptor, L50|100/100|[from] Flip Turn", "|upkeep"]
+        pivot = [pt for pt in points.find(other) if pt.boundary == points.PIVOT]
+        self.assertTrue(other[pivot[0].line].startswith("|switch|"))
 
 
 class PriorTest(unittest.TestCase):
@@ -681,13 +743,20 @@ class GameTest(unittest.TestCase):
         for row in last:
             self.assertNotIn(labels.MOVE_HIDDEN, row.label.reasons, row.side)
 
-    def test_weather_extended_by_an_item_stops(self):
-        # review C2: Politoed's Drizzle with Damp Rock lasts 8 turns, and no line says so
+    def test_weather_extended_by_an_item_lasts_eight_turns(self):
+        # review C2: Politoed's Drizzle with Damp Rock lasts 8 turns, and no line says so: the setter's open sheet
+        # holds the rock (data/conditions.ts durationCallback: source.hasItem), so the fold counts 8, not 5
         lines = [line.replace("|MysticWater|", "|DampRock|", 1) if line.startswith("|showteam|p2|") else line
                  for line in self.log]
         result = self.run_game(lines)
-        self.assertEqual(result.counters["perspectives.stopped.line:-weather RainDance Damp Rock"], 2)
-        self.assertTrue(all(int(r.observation["boundary_kind"]) == 1 for r in result.rows))
+        stopped = [k for k in result.counters if k.startswith("perspectives.stopped.line:-weather")]
+        self.assertEqual(stopped, [])
+        plain = self.run_game(self.log)
+        def turns(res):
+            return [int(r.observation["weather_turns"]) for r in res.rows if int(r.observation["weather"]) != 0]
+        self.assertTrue(turns(plain) and max(turns(plain)) <= 5)
+        self.assertTrue(turns(result) and max(turns(result)) > 5, turns(result))
+        self.assertLessEqual(max(turns(result)), 8)
 
     def test_sheet_the_converter_refuses_skips(self):
         # review I2: a refusal of the converter is a counted skip, not an escaping SystemExit
