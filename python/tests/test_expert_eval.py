@@ -332,19 +332,25 @@ class ComputeLedger(unittest.TestCase):
 class FakeBatch:
     """One game (E=1) as play_suite's query leaves it: both players' own views, the chosen candidate at index 0."""
 
-    def __init__(self, moves, *, turn, trick_room, picks, requested=(True, True)):
+    def __init__(self, moves, *, turn, trick_room, picks, requested=(True, True), boundary="TURN", mirror=False,
+                 setters=(True, True)):
         from duoforge import _layout
         c_ = _layout.CONSTANTS
         tr, taunt, fake, imprison, plain = (moves[k] for k in ("trickroom", "taunt", "fakeout", "imprison", "plain"))
         # Side 0: A0 knows Trick Room and Imprison, A1 Taunt and Fake Out. Side 1: B0 the setter, B1 knows no TR.
-        team = (((plain, tr, imprison, fake), (taunt, fake, plain, plain)),
-                ((tr, plain, plain, plain), (plain, plain, plain, plain)))
+        # mirror swaps the two teams (the student's side 1 plays side 0's team); setters[0] False takes Trick Room
+        # from A0's moves, setters[1] False from B0's.
+        team = [[(plain, tr if setters[0] else plain, imprison, fake), (taunt, fake, plain, plain)],
+                [(tr if setters[1] else plain, plain, plain, plain), (plain, plain, plain, plain)]]
+        if mirror:
+            team.reverse()
         self.requests = np.zeros((1, 2), dtype=_layout.REQUEST)
         self.observations = np.zeros((1, 2), dtype=_layout.OBSERVATION)
         self.candidates = np.zeros((1, 2, _layout.MAX_CANDIDATES), dtype=_layout.SIDE_CHOICE)
         for p in range(2):
             self.requests["requested"][0, p] = requested[p]
-            self.requests["boundary_kind"][0, p] = c_["DUOFORGE_BOUNDARY_TURN"]
+            self.requests["boundary_kind"][0, p] = c_[f"DUOFORGE_BOUNDARY_{boundary}"]
+            self.observations["boundary_kind"][0, p] = c_[f"DUOFORGE_BOUNDARY_{boundary}"]
             self.observations["turn"][0, p] = turn
             self.observations["trick_room_turns"][0, p] = trick_room
             sides = self.observations["sides"][0, p]
@@ -353,7 +359,7 @@ class FakeBatch:
                 sides["occupant"][s] = (0, 1)
                 for m in range(2):
                     sides["members"]["move_count"][s, m] = 4
-                    if s == p:  # the foe's moves stay hidden: the tracker reads each side's own view only
+                    if s == p:  # foe moves left zero (stricter than the engine's open sheets): own views only
                         sides["members"]["move_ids"][s, m] = team[s][m]
             self.candidates["kind"][0, p, 0] = c_["DUOFORGE_CHOICE_SLOTS"] if requested[p] else 0
             slots = self.candidates["slots"][0, p, 0]
@@ -379,18 +385,31 @@ class TrickRoom(unittest.TestCase):
     def tearDownClass(cls):
         cls.ctx.close()
 
-    def play(self, steps, seat=0):
-        """steps: (turn, trick_room, picks[, requested]); returns the game's TR fields."""
+    @staticmethod
+    def mirrored(steps):
+        """The same game with the sides swapped: picks and requests change sides, foe targets change side."""
+        def flip(pick):
+            return None if pick is None else (pick[0], pick[1] ^ 2 if pick[1] < 4 else pick[1])
+        out = []
+        for step in steps:
+            picks = tuple(tuple(flip(x) for x in side) for side in step[2][::-1])
+            requested = tuple(step[3][::-1]) if len(step) > 3 else (True, True)
+            out.append((step[0], step[1], picks, requested, *step[4:]))
+        return out
+
+    def play(self, steps, seat=0, **batch):
+        """steps: (turn, trick_room, picks[, requested[, boundary]]); returns the game's TR fields."""
         from duoforge_search import expert_eval as ev
         tracker = ev.TrickRoomTracker(self.ctx)
         moves = {**ev.tr_moves(self.ctx), "plain": self.plain}
         tracker.start(1, np.array([seat]))
         for i, step in enumerate(steps):
             turn, trick_room, picks = step[:3]
-            batch = FakeBatch(moves, turn=turn, trick_room=trick_room, picks=picks,
-                              requested=step[3] if len(step) > 3 else (True, True))
-            tracker.before(batch, batch.indices, np.array([True]), i, False)
-            tracker.after(batch, np.array([False]))
+            fake = FakeBatch(moves, turn=turn, trick_room=trick_room, picks=picks,
+                             requested=step[3] if len(step) > 3 else (True, True),
+                             boundary=step[4] if len(step) > 4 else "TURN", **batch)
+            tracker.before(fake, fake.indices, np.array([True]), i, False)
+            tracker.after(fake, np.array([False]))
         self.assertEqual(set(tracker.fields), set(ev.TR_FIELDS))
         return {k: int(v[0]) for k, v in tracker.fields.items()}
 
@@ -429,6 +448,23 @@ class TrickRoom(unittest.TestCase):
         got = self.play([(1, 0, ((IMPRISON, TAUNT1), (B_PLAIN, None))), (2, 0, ((FAKE0, FAKE1), (B_TR, None))),
                          (3, 4, ((PLAIN, TAUNT1), (B_PLAIN, None)))])
         self.assertEqual((got["tr_blocks_student"], got["tr_sets_opponent"]), (2, 1))
+        # The set seen first at the same turn's end-of-turn replacement (a faint): it is attributed there, and
+        # tr_turns counts the turns that begin with TR (TURN boundaries), not turn 1.
+        both = (True, True)
+        got = self.play([(1, 0, ((TR, None), (B_PLAIN, None))), (1, 4, ((PLAIN, None), (None, None)), both, "REPLACEMENT"),
+                         (2, 4, ((PLAIN, None), (B_PLAIN, None))), (3, 3, ((PLAIN, None), (B_PLAIN, None)))])
+        self.assertEqual((got["tr_sets_student"], got["tr_unattributed"], got["tr_turns"]), (1, 0, 2))
+        # Seat 1 with the teams mirrored plays the same game: blocks and reversals follow the student's seat.
+        for steps in ([(1, 0, ((IMPRISON, TAUNT1), (B_PLAIN, None))), (2, 0, ((FAKE0, FAKE1), (B_TR, None))),
+                       (3, 4, ((PLAIN, TAUNT1), (B_PLAIN, None)))],
+                      [(1, 0, ((PLAIN, None), (B_TR, None))), (2, 4, ((TR, None), (B_PLAIN, None))),
+                       (3, 0, ((PLAIN, None), (B_PLAIN, None)))]):
+            self.assertEqual(self.play(self.mirrored(steps), seat=1, mirror=True), self.play(steps))
+        # Only one team knows Trick Room: the setter flags follow the student's seat.
+        for seat, mirror, want in ((0, False, (1, 0)), (1, False, (0, 1)), (1, True, (1, 0))):
+            got = self.play([(1, 0, ((PLAIN, None), (B_PLAIN, None)))], seat=seat, mirror=mirror,
+                            setters=(True, False))
+            self.assertEqual((got["tr_setter_student"], got["tr_setter_opponent"]), want)
         # Trick Room chosen on the game's last observed turn: its effect is never seen.
         got = self.play([(1, 0, ((PLAIN, None), (B_PLAIN, None))), (2, 0, ((TR, None), (B_PLAIN, None)))])
         self.assertEqual((got["tr_last_turn_choice"], got["tr_sets_student"]), (1, 0))
@@ -466,7 +502,7 @@ class TrickRoom(unittest.TestCase):
         f = tracker.fields
         self.assertTrue(f["tr_setter_student"].all() and f["tr_setter_opponent"].all())  # B and C both know TR
         self.assertGreater(int(starts.sum()), 0)
-        self.assertTrue((f["tr_sets_student"] + f["tr_sets_opponent"] + f["tr_unattributed"] >= starts).all())
+        self.assertTrue((f["tr_sets_student"] + f["tr_sets_opponent"] + f["tr_unattributed"] == starts).all())
         self.assertTrue(((f["tr_first_set_turn_student"] > 0) == (f["tr_sets_student"] > 0)).all())
 
     def test_trick_room_report_groups(self):
