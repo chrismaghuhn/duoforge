@@ -90,7 +90,7 @@ directory left without a resumable state is moved to `<dir>.aside-<time>`, never
 
 **Uploads.** Everything in `out/` goes to `s3://$BUCKET/$RUN_PREFIX` as `sync --delete`. The local tree is the
 authoritative state after the restore; without a completed restore only the logs are uploaded, under `logs-unrestored/`.
-- What `out/` holds: manifests, ledgers, logs, timings, run-info, shards and their SHA list, distill and control run
+- What `out/` holds: manifests, ledgers, logs (`logs/run-<start>.log` per start, one log per phase, `timings.jsonl`), run-info, shards and their SHA list, distill and control run
   directories (final params of both arms), evaluation records and reports, and `STATUS.json`.
 - When uploads happen: after every phase, every `UPLOAD_EVERY` seconds, and at exit, including on failure.
 
@@ -126,7 +126,7 @@ The main `run.sh` then exits 60.
 checking them exactly as above, and writes to `$WORK_DIR/out`.
 - **Collection:** the collector smoke only (1 round of 512 games, the size the manifest pins). Then the freeze. A
   t = 0 stops; a budget or fallback STOP is only reported.
-- **Distillation:** on the smoke's shards with the smoke manifest.
+- **Distillation:** on the smoke's shards with the smoke manifest. `DRY_DISTILL_DEVICE=cpu` (dry run only) puts it on the CPU: distill's 4096-row step runs out of memory on the local 8 GB GPU.
 - **Control:** calibration 2 + 2 updates, then `p1_match.py`. Its result is printed only; INFEASIBLE is expected,
   because the pilot ledger has no production. Then the export, and the compute check, which is only reported.
 - **Evaluation:** exit 50 if `eval_manifest` is absent. Otherwise the manifest and the `p1_eval` smoke. The run exits

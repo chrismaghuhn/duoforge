@@ -59,6 +59,9 @@ LADDER_FILE=${LADDER_FILE:-params-39400.npz}
 TEAMS_DIR=${TEAMS_DIR:-teams}
 INTERRUPT_WAIT=${INTERRUPT_WAIT:-60}
 UPLOAD_EVERY=${UPLOAD_EVERY:-900}
+if [[ $MODE != dry && -n ${DRY_DISTILL_DEVICE:-} ]]; then
+    echo "DRY_DISTILL_DEVICE is for --dry-run only" >&2; exit $EX_USAGE
+fi
 if [[ $MODE == dry ]]; then
     WORK_DIR=${WORK_DIR:-$HOME/p1-dry/work}
 else
@@ -131,7 +134,8 @@ fi
 rm -f "$WORK_DIR/INTERRUPTED" "$WORK_DIR/phase.pid"
 mkdir -p "$OUT"/{logs,markers,manifests,ledgers,run-info,status}
 STARTED=$(date -u +%Y%m%dT%H%M%SZ)
-exec > >(tee -a "$OUT/logs/run.log") 2>&1
+# One log per start: the restore below may replace files of out/logs with their uploaded copies.
+exec > >(tee -a "$OUT/logs/run-$STARTED.log") 2>&1
 log "start mode=$MODE work=$WORK_DIR repo=$REPO"
 
 on_exit() {
@@ -271,7 +275,7 @@ setup() {
     for name in "${RUNTIME_ENV[@]}"; do log "env $name=${!name}"; done
     log "affinity taskset -c $AFFINITY, workers $WORKERS"
 
-    "$PY" - <<'EOF' || die $EX_SETUP "the Python environment is not the pinned one or has no GPU (logs/run.log)"
+    "$PY" - <<'EOF' || die $EX_SETUP "the Python environment is not the pinned one or has no GPU (logs/run-$STARTED.log)"
 import jax, optax, numpy, sys
 want = {"jax": "0.11.2", "optax": "0.2.8", "numpy": "2.5.3"}
 got = {"jax": jax.__version__, "optax": optax.__version__, "numpy": numpy.__version__}
@@ -331,7 +335,9 @@ cd "$WORK_DIR"  # never the repository: no tool default may resolve into it
 launch() {
     local name=$1 stdout=$2; shift 2
     local rc=0 pid
-    log "phase $name: $*"
+    local shown="$*"
+    (( ${#shown} <= 400 )) || shown="${shown:0:400} ... (${#shown} characters; team lists elided)"
+    log "phase $name: $shown"
     timing "$name" start
     taskset -c "$AFFINITY" "$@" >>"$stdout" 2>>"$OUT/logs/$name.log" &
     pid=$!
@@ -472,7 +478,14 @@ if ! marked distill; then
               --seed "$DISTILL_SEED" --ledger "$PILOT_LEDGER")
         if [[ -f $DISTILL/distill-state.npz ]]; then args+=(--resume); else set_aside "$DISTILL"; fi
         rc=0
-        launch distill "$OUT/distill-meta/result.jsonl" "$PY" -m duoforge_learn.distill "${args[@]}" || rc=$?
+        distill_env=()
+        if [[ $MODE == dry && ${DRY_DISTILL_DEVICE:-gpu} == cpu ]]; then
+            # Rehearsal only: distill's 4096-row step does not fit an 8 GB GPU (CUDA out of memory), so a local dry
+            # run may put it on the CPU. A run never does.
+            log "dry run: distill on the CPU (DRY_DISTILL_DEVICE=cpu)"
+            distill_env=(JAX_PLATFORMS=cpu)
+        fi
+        launch distill "$OUT/distill-meta/result.jsonl" env "${distill_env[@]}" "$PY" -m duoforge_learn.distill "${args[@]}" || rc=$?
         [[ $rc -eq 0 ]] || tool_failed distill "$rc"
     fi
     [[ -f $DISTILL/params-best.npz ]] || die $EX_CRASH "distill finished without params-best.npz"
