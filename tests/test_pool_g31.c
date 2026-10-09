@@ -169,9 +169,38 @@ static const struct {
     {"g31_yawn_tie_b", 3u, {0u, 0u, 0u, 0u}},
     {"g31_yawn_tie_b", 4u, {0u, 0u, 0u, 0u}},
     {"g31_yawn_tie_b", 5u, {0u, 0u, 0u, 0u}},
+    /* step G31 Yawn fix (decision 0015): the seven yawn battles under the terrains, from their traces */
+    {"g31_yawn_electric", 0u, {0u, 0u, 0u, 0u}},
+    {"g31_yawn_electric", 1u, {0u, 0u, 0u, 0u}},
+    {"g31_yawn_electric", 2u, {0u, 0u, 0u, 0u}},
+    {"g31_yawn_electric", 3u, {0u, 0u, 0u, 0u}},
+    {"g31_yawn_electric_flying", 0u, {0u, 0u, 0u, 0u}},
+    {"g31_yawn_electric_flying", 1u, {0u, 2u, 0u, 0u}},
+    {"g31_yawn_electric_flying", 2u, {0u, 0u, 0u, 0u}},
+    {"g31_yawn_electric_flying", 3u, {0u, 0u, 0u, 0u}},
+    {"g31_yawn_electric_residual", 0u, {0u, 0u, 0u, 0u}},
+    {"g31_yawn_electric_residual", 1u, {2u, 0u, 0u, 0u}},
+    {"g31_yawn_electric_residual", 2u, {2u, 0u, 0u, 0u}},
+    {"g31_yawn_electric_residual", 3u, {2u, 0u, 0u, 0u}},
+    {"g31_yawn_electric_tantrum", 0u, {0u, 0u, 0u, 0u}},
+    {"g31_yawn_electric_tantrum", 1u, {0u, 0u, 0u, 0u}},
+    {"g31_yawn_electric_tantrum", 2u, {0u, 0u, 0u, 0u}},
+    {"g31_yawn_electric_tantrum", 3u, {0u, 0u, 0u, 0u}},
+    {"g31_yawn_flower_veil_yawning", 0u, {0u, 0u, 0u, 0u}},
+    {"g31_yawn_flower_veil_yawning", 1u, {2u, 0u, 0u, 0u}},
+    {"g31_yawn_flower_veil_yawning", 2u, {0u, 0u, 0u, 0u}},
+    {"g31_yawn_flower_veil_yawning", 3u, {0u, 0u, 0u, 0u}},
+    {"g31_yawn_misty", 0u, {0u, 0u, 0u, 0u}},
+    {"g31_yawn_misty", 1u, {2u, 0u, 0u, 0u}},
+    {"g31_yawn_misty", 2u, {2u, 0u, 0u, 0u}},
+    {"g31_yawn_misty", 3u, {2u, 0u, 0u, 0u}},
+    {"g31_yawn_misty_steel_roller", 0u, {0u, 0u, 0u, 0u}},
+    {"g31_yawn_misty_steel_roller", 1u, {2u, 0u, 0u, 0u}},
+    {"g31_yawn_misty_steel_roller", 2u, {0u, 0u, 0u, 0u}},
+    {"g31_yawn_misty_steel_roller", 3u, {0u, 0u, 0u, 0u}},
 };
 
-static const char *const names[] = {"g31_taunt_a", "g31_taunt_encore", "g31_taunt_switch", "g31_taunt_tie_a", "g31_taunt_tie_b", "g31_yawn_a", "g31_yawn_flower_veil", "g31_yawn_switch", "g31_yawn_tie_a", "g31_yawn_tie_b"};
+static const char *const names[] = {"g31_taunt_a", "g31_taunt_encore", "g31_taunt_switch", "g31_taunt_tie_a", "g31_taunt_tie_b", "g31_yawn_a", "g31_yawn_flower_veil", "g31_yawn_switch", "g31_yawn_tie_a", "g31_yawn_tie_b", "g31_yawn_electric", "g31_yawn_electric_flying", "g31_yawn_electric_residual", "g31_yawn_electric_tantrum", "g31_yawn_flower_veil_yawning", "g31_yawn_misty", "g31_yawn_misty_steel_roller"};
 
 int main(void)
 {
