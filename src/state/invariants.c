@@ -598,8 +598,10 @@ static bool dfi_tail_pos_valid(const dfi_kind_limits *lim, const dfi_tail_pos *t
                          ((tp->single_turn & DFI_SINGLE_TURN_RAGE_POWDER) == 0u || ((uint32_t)slot->flags & DFI_VOL_FOLLOW_ME) != 0u) &&
                          tp->hits_taken <= DFI_TAIL_HITS_TAKEN_MAX && tp->ability_state <= DFI_TAIL_ABILITY_STATE_MAX &&
                          tp->lock_turns <= DFI_TAIL_LOCK_TURNS_MAX;
+    /* Rev 5 (lane A): the slot's pending effect and Future Sight, zero until the steps that write them. */
+    const bool rev5_ok = tp->slot_pending == 0u && tp->future_sight == 0u;
     return encore_ok && bars_ok && disable_ok && flags_ok && substitute_ok && trap_ok && leech_ok && stockpile_ok &&
-           protect_ok && rev4_ok;
+           protect_ok && rev4_ok && rev5_ok;
 }
 
 /* party_order (step G46, battle_internal.h): the first n entries of a side are its n brought members, each once, and the
@@ -659,6 +661,10 @@ static dfi_invariant dfi_check_tail(const duoforge_context *ctx, const struct du
             ts->quick_guard > DFI_TAIL_QUICK_GUARD_MAX || !dfi_hazard_order_valid(ts)) {
             return DFI_INV_TAIL_SIDE;
         }
+        /* Rev 5 (decision 0026): the Illusion state, zero until the step that writes it. */
+        if (!dfi_bytes_zero(&ts->illusion, sizeof ts->illusion)) {
+            return DFI_INV_TAIL_SIDE;
+        }
         for (uint32_t p = 0u; p < DUOFORGE_ACTIVE_PER_SIDE; ++p) {
             const dfi_tail_pos *tp = &ts->positions[p];
             const uint32_t occupant = side->positions[p].occupant;
@@ -699,8 +705,13 @@ static dfi_invariant dfi_check_tail(const duoforge_context *ctx, const struct du
             /* The type ends when the member leaves or faints, and a Mega Evolution that comes after it ends it too
              * (setSpecies); a Pokemon that is already Mega Evolved can be Soaked, so is_mega is no part of the rule
              * (step G11: the research note had assumed it was; the rule is only weaker, no encoded state changes). */
-            if (ts->soak_type[m] != 0u && (ts->soak_type[m] > DFI_TYPE_COUNT || !standing_on_field)) {
-                return DFI_INV_TAIL_MEMBER;
+            /* Double Shock (decision 0025): the typeless first slot, DFI_TAIL_TYPE2_TYPELESS, only with a second type in type2. */
+            if (ts->soak_type[m] != 0u) {
+                const bool typeless = ts->soak_type[m] == DFI_TAIL_TYPE2_TYPELESS;
+                const bool second_ok = ts->type2[m] != 0u && ts->type2[m] <= DFI_TYPE_COUNT;
+                if ((!typeless && ts->soak_type[m] > DFI_TYPE_COUNT) || (typeless && !second_ok) || !standing_on_field) {
+                    return DFI_INV_TAIL_MEMBER;
+                }
             }
             /* A current ability that something swapped in ends when the member leaves or faints. */
             if (ts->ability_now[m] != 0u && (ts->ability_now[m] > lim.ability_count || !standing_on_field)) {

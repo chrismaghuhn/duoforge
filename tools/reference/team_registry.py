@@ -269,8 +269,8 @@ def set_problems(block):
 def team_problems(text, tables_for=None):
     """[(category, message)] of the paste `text` of a team: its form, the form of each set (category 'form'), the gender
     of each Pokemon as the converter reads it (category 'gender': it is stated unless the species has none, and it is one
-    the species can have) when `tables_for` (trace_to_c tables by the team_c flag) knows every name of the team; a team that
-    names something the tables do not have is only checked for its form."""
+    the species can have) as `tables_for` (trace_to_c tables by the team_c flag) reads it, first the closure, then the pool
+    tables; a team that names something neither has is a problem (category 'names'): the converter cannot read it."""
     problems = []
     if '\r' in text:
         problems.append(('form', 'carriage returns: the registry has LF line ends'))
@@ -294,8 +294,11 @@ def team_problems(text, tables_for=None):
         except trace_to_c.ConversionError as e:
             problems.append(('gender' if e.rule.startswith('gender') else 'form', e.code))
             break
-        except KeyError:
-            continue  # a name that these tables do not have: the next, and then no check
+        except KeyError as e:
+            if team_c:  # neither the closure nor the pool tables have it: the converter cannot read the team
+                problems.append(('names', "the converter's tables have no %s" % (e.args[0] if e.args else '(unnamed)')))
+                break
+            continue  # a name that the closure tables do not have: the pool tables
         except (AttributeError, IndexError, ValueError) as e:
             problems.append(('form', 'a paste that the converter cannot read (%s: %s)' % (type(e).__name__, e)))
             break
@@ -307,7 +310,7 @@ def problems(root, tables_for=None):
     """What is wrong with the registry of `root`, as [(category, message)]; empty when it is as it must be. Categories: index
     (index.json, its entries and their keys), files (a file that is no team of the index, or a team without its file, or a
     name that is no id), sha256 (a file that is not what the index says: a team never changes under its id), form (a
-    paste that is not in the importer's form) and gender."""
+    paste that is not in the importer's form), gender and names (a name the converter's tables do not have)."""
     found = []
     registry = registry_dir(root)
     try:

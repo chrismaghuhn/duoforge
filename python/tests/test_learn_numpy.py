@@ -477,7 +477,7 @@ class ExtSupportedTest(unittest.TestCase):
             for mask in (library | (1 << first), features.BASE_VALUE_FEATURES | (1 << first)):
                 with self.assertRaisesRegex(ValueError, name):
                     SelfPlay(2, 1, 0x2026100300000033, pool=self._pool(ctx), context=ctx, ext_supported=mask)
-            for bad in (-1, 1 << 40, 1.0):
+            for bad in (-1, 1 << features.ALL_FEATURES.bit_length(), 1.0):  # beyond every feature bit, not a fixed 40
                 with self.assertRaisesRegex(ValueError, "ext_supported"):
                     SelfPlay(2, 1, 0x2026100300000033, pool=self._pool(ctx), context=ctx, ext_supported=bad)
             low = library & -library

@@ -152,6 +152,7 @@ static void copy_named_fields(duoforge_battle *x, const duoforge_battle *src)
         dt->sticky_web = st->sticky_web;
         dt->quick_guard = st->quick_guard;
         dt->hazard_order = st->hazard_order;
+        dt->illusion = st->illusion; /* tail rev 5 (decision 0026) */
         for (unsigned p = 0; p < DUOFORGE_ACTIVE_PER_SIDE; ++p) {
             const dfi_tail_pos *sp = &st->positions[p];
             dfi_tail_pos *dp = &dt->positions[p];
@@ -185,6 +186,8 @@ static void copy_named_fields(duoforge_battle *x, const duoforge_battle *src)
             dp->hits_taken = sp->hits_taken;
             dp->ability_state = sp->ability_state;
             dp->lock_turns = sp->lock_turns;
+            dp->slot_pending = sp->slot_pending; /* tail rev 5 */
+            dp->future_sight = sp->future_sight;
         }
         for (unsigned m = 0; m < DUOFORGE_MAX_ROSTER; ++m) {
             dt->ability_now[m] = st->ability_now[m];

@@ -192,6 +192,10 @@ const dfi_support_manifest dfi_support = {
         {
             [DFI_MOVE_HIGHHORSEPOWER] = 1u,
             [DFI_MOVE_PROTECT] = 1u,
+            [DFI_MOVE_ROAR] = 1u,        /* step G46: forceSwitch, the drag (decision 0015 section 4) */
+            [DFI_MOVE_WHIRLWIND] = 1u,   /* step G46 */
+            [DFI_MOVE_DRAGONTAIL] = 1u,  /* step G46 */
+            [DFI_MOVE_CIRCLETHROW] = 1u, /* step G46 */
             [DFI_MOVE_MUDDYWATER] = 1u,
             [DFI_MOVE_COIL] = 1u,
             [DFI_MOVE_SHADOWSNEAK] = 1u,
@@ -359,6 +363,8 @@ const dfi_support_manifest dfi_support = {
             [DFI_MOVE_TAUNT] = 1u,
             [DFI_MOVE_YAWN] = 1u,
     [DFI_MOVE_REVIVALBLESSING] = 1u,
+            /* Step G50: Double Shock (Pawmot only: the Electric and Fighting types become ??? and Fighting; decision 0025). */
+            [DFI_MOVE_DOUBLESHOCK] = 1u,
             /* Step G32: Eruption and Water Spout (power by the user's HP), Life Dew (the user and its ally), Body Press, Foul Play
              * and Psyshock (the stat overrides), Rain Dance and Sunny Day, Volt Switch (a pivot of its own), Clanging Scales (the
              * user's Defense falls after the hit) and Freeze-Dry (Water takes it super effective). */
@@ -525,6 +531,8 @@ const dfi_support_manifest dfi_support = {
             [DFI_ABILITY_REGENERATOR] = 1u,
             [DFI_ABILITY_TOXICDEBRIS] = 1u, /* step G37: a Physical hit puts Toxic Spikes on the attacker's side */
             [DFI_ABILITY_SHADOWTAG] = 1u, /* step G41 */
+            [DFI_ABILITY_SUCTIONCUPS] = 1u, /* step G46: a DragOut blocker (the forced switch is not made) */
+            [DFI_ABILITY_GUARDDOG] = 1u,    /* step G46: a DragOut blocker */
         },
     .items =
         {
@@ -549,6 +557,9 @@ const dfi_support_manifest dfi_support = {
             [DFI_ITEM_PSYCHICSEED] = 1u,
             [DFI_ITEM_EXPERTBELT] = 1u, /* step G28 */
             [DFI_ITEM_WIDELENS] = 1u,   /* step G34 */
+            [DFI_ITEM_MUSCLEBAND] = 1u,  /* step G49 */
+            [DFI_ITEM_WISEGLASSES] = 1u, /* step G49 */
+            [DFI_ITEM_BRIGHTPOWDER] = 1u, /* step G49 */
             [DFI_ITEM_EJECTBUTTON] = 1u, /* step G32 */
             [DFI_ITEM_ELECTRICSEED] = 1u, /* step G25 */
             [DFI_ITEM_MISTYSEED] = 1u,    /* step G25 */
@@ -560,6 +571,7 @@ const dfi_support_manifest dfi_support = {
             [DFI_ITEM_GARCHOMPITEZ] = 1u,
             [DFI_ITEM_DELPHOXITE] = 1u,
             [DFI_ITEM_GENGARITE] = 1u, /* step G41: the Mega Stone of Gengar, whose Mega has Shadow Tag */
+            [DFI_ITEM_REDCARD] = 1u,   /* step G46: forced switch of the attacker, without the Sheer Force gate (Champions) */
             [DFI_ITEM_GARDEVOIRITE] = 1u,
             [DFI_ITEM_ABOMASITE] = 1u,
             [DFI_ITEM_BARBARACITE] = 1u,

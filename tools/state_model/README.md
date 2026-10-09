@@ -5,7 +5,7 @@
 - canonical context bytes (with the target-class table hash) and fingerprint;
 - synthetic setup validation and init (a TEAM_SELECTION state);
 - the invariant checker v3 in its fixed order (50 ids, the seven TAIL ids of the POOL tail included);
-- canonical encoding v3 (1009 bytes) and strict decoding; for the POOL kinds the schema 0x0403 encoding with the 288-byte state tail (1297 bytes, decision 0015 section 7; rev 1, 0x0103, rev 2, 0x0203, and rev 3, 0x0303, are refused), its tail rules and the decode order with the two schemas;
+- canonical encoding v3 (1009 bytes) and strict decoding; for the POOL kinds the schema 0x0503 encoding with the 348-byte state tail (1357 bytes, decision 0015 section 7: the rev 4 part and the rev 5 block; rev 1, 0x0103, rev 2, 0x0203, rev 3, 0x0303, and rev 4, 0x0403, are refused), its tail rules and the decode order with the two schemas;
 - the mechanics-free team-selection transition (it starts turn 1);
 - the knowledge record: what each player saw last of the opposing members;
 - the complete side-choice domains in documented order (team picks; TURN, REPLACEMENT and PIVOT joint slot choices with the reserve, Mega and forced-switch constraints; Struggle when no move has PP left; for closure data Fake Out disabled after a move action and a locked move offered alone; nothing at TERMINAL);

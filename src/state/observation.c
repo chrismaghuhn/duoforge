@@ -374,7 +374,13 @@ duoforge_status duoforge_battle_observe_ext(const duoforge_context *ctx, const d
                 const uint32_t soak = occupant < DUOFORGE_MAX_ROSTER ? battle->tail.sides[s].soak_type[occupant] : 0u;
                 if (soak != 0u) {
                     o.sides[s].positions[p].volatiles = vol | (uint32_t)DUOFORGE_POSITION_EXT_TYPE_CHANGED;
-                    o.sides[s].positions[p].type_now[0] = (uint8_t)soak; /* type id + 1: one type, the second slot stays 0 */
+                    if (soak == DFI_TAIL_TYPE2_TYPELESS) {
+                        /* Double Shock (decision 0025): the ??? slot is 0 (no type there), the second type is type2, id + 1 */
+                        o.sides[s].positions[p].type_now[0] = 0u;
+                        o.sides[s].positions[p].type_now[1] = battle->tail.sides[s].type2[occupant];
+                    } else {
+                        o.sides[s].positions[p].type_now[0] = (uint8_t)soak; /* type id + 1: one type, the second slot stays 0 */
+                    }
                 }
             }
         }
