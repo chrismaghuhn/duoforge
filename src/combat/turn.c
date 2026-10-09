@@ -6014,6 +6014,16 @@ static duoforge_status dfi_switch_in(dfi_run *r, uint32_t side, uint32_t slot, u
     /* Illusion, one shown name per side (amended by I2, decision 0026 section 3): while a name is still shown on the bench, the
      * holder may enter only disguised as that same name. Any other entry of the holder would need a second name, which the single
      * state cannot hold: refused before any change. */
+    /* The shown name's own member entering while the holder stands disguised as it on the other position: two positions would show one
+     * name (the fold ends the name on that member's line, and the holder's disguise would outlive it). Refused before any change; the
+     * member's entry in its own position (the unbroken switch-out of the holder) is not this case. */
+    if (pool_rules && b->tail.sides[side].illusion.shown != 0u && reserve == (uint32_t)b->tail.sides[side].illusion.shown - 1u) {
+        for (uint32_t other = 0u; other < DUOFORGE_ACTIVE_PER_SIDE; ++other) {
+            if (other != slot && dfi_illusion_disguise_up(sd, &b->tail.sides[side], other) != 0) {
+                return DUOFORGE_E_UNSUPPORTED;
+            }
+        }
+    }
     if (pool_rules && b->tail.sides[side].illusion.shown != 0u && reserve != (uint32_t)b->tail.sides[side].illusion.shown - 1u &&
         dfi_ability(b, &sd->members[reserve], DFI_ABILITY_ILLUSION) &&
         (!disguised || disguise != (uint32_t)b->tail.sides[side].illusion.shown - 1u)) {

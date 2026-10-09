@@ -344,6 +344,22 @@ static void check_possible_fainted(df_test *t, const duoforge_context *ctx)
     duoforge_battle_destroy(b);
 }
 
+/* A disguise up always has its name shown (one name per side). Without the name (shown and override zero, the disguise still up), the
+ * state is invalid: the campaign showed such a state after the holder re-entered beside its own disguise name (fz_9730000_74). */
+static void check_disguise_needs_name(df_test *t, const duoforge_context *ctx)
+{
+    duoforge_battle *b = replay(t, ctx, "i2_illusion_break", 1u);
+    if (b == NULL) {
+        return;
+    }
+    uint32_t causes = 0u;
+    DF_CHECK(t, duoforge_battle_public_causes(ctx, b, 1u, &causes) == DUOFORGE_OK); /* the real state is valid */
+    b->tail.sides[0].illusion.shown = 0u;
+    memset(b->tail.sides[0].illusion.override, 0, sizeof b->tail.sides[0].illusion.override);
+    DF_CHECK(t, duoforge_battle_public_causes(ctx, b, 1u, &causes) == DUOFORGE_E_INVARIANT);
+    duoforge_battle_destroy(b);
+}
+
 int main(void)
 {
     df_test t;
@@ -356,5 +372,6 @@ int main(void)
     check_encoder_refusal(&t);
     check_disguise_status(&t, ctx);
     check_possible_fainted(&t, ctx);
+    check_disguise_needs_name(&t, ctx);
     return df_test_end(&t);
 }

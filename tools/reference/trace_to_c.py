@@ -1059,6 +1059,33 @@ def hit_key(text):
     return (m.group(1), m.group(2))
 
 
+def ill_hp_put(ill, key, text):
+    """The HP text of a line for ill['last_hp'][key]: its own status token when it has one, else the status the name showed before
+    (a damage or heal line prints none; see step_events)."""
+    parts = text.split(' ')
+    prev = ill['last_hp'].get(key)
+    if len(parts) > 1 and parts[1] != 'fnt':
+        ill['last_hp'][key] = text
+    elif parts[0] == '0':
+        ill['last_hp'][key] = '0 fnt'
+    else:
+        status = None
+        if prev is not None and len(prev.split(' ')) > 1 and prev.split(' ')[1] != 'fnt':
+            status = prev.split(' ')[1]
+        ill['last_hp'][key] = parts[0] + (' ' + status if status else '')
+
+
+def ill_status_set(ill, key, status):
+    """`-status` (status set) and `-curestatus` (status None) of a name: the status on the HP text it showed last."""
+    prev = ill['last_hp'].get(key)
+    if prev is None:
+        return
+    hp = prev.split(' ')[0]
+    if hp == '0':
+        return
+    ill['last_hp'][key] = hp + (' ' + status if status else '')
+
+
 def step_events(log, viewer, roster_of, maxhp, tables, ill=None):
     """The events `viewer` sees in one step, in protocol order.
 
@@ -1094,12 +1121,18 @@ def step_events(log, viewer, roster_of, maxhp, tables, ill=None):
             continue
         args = [x for x in parts[2:] if not x.startswith('[')]
         e = None
-        # The last HP text each name showed (Illusion: the break shows the disguise's last value).
+        # The last HP text each name showed, with its status (Illusion: the break shows the disguise's last values, pin:
+        # sim/battle.ts `-status` and `-curestatus` print the status on the name the Pokemon has at that time, and a damage or heal
+        # line prints no status, so the one shown before stands). `-status|X|brn` sets it, `-curestatus|X|brn` clears it.
         if kind in ('switch', 'drag') and len(args) >= 3:
-            ill['last_hp'][(ev_pos(args[0]) // 2, args[0].split(': ', 1)[1])] = args[2]
+            ill_hp_put(ill, (ev_pos(args[0]) // 2, args[0].split(': ', 1)[1]), args[2])
             ill['shown_at'][(ev_pos(args[0]) // 2, ev_pos(args[0]) % 2)] = args[0].split(': ', 1)[1]
         elif kind in ('-damage', '-heal', '-sethp') and len(args) >= 2:
-            ill['last_hp'][(ev_pos(args[0]) // 2, args[0].split(': ', 1)[1])] = args[1]
+            ill_hp_put(ill, (ev_pos(args[0]) // 2, args[0].split(': ', 1)[1]), args[1])
+        elif kind == '-status' and len(args) >= 2:
+            ill_status_set(ill, (ev_pos(args[0]) // 2, args[0].split(': ', 1)[1]), args[1])
+        elif kind == '-curestatus' and len(args) >= 2:
+            ill_status_set(ill, (ev_pos(args[0]) // 2, args[0].split(': ', 1)[1]), None)
         elif kind == 'faint' and len(args) >= 1:
             ill['last_hp'][(ev_pos(args[0]) // 2, args[0].split(': ', 1)[1])] = '0 fnt'
         if kind == 'move':

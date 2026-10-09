@@ -702,7 +702,8 @@ static dfi_invariant dfi_check_tail(const duoforge_context *ctx, const struct du
                                  !dfi_bytes_zero(il->override, sizeof il->override))) ||
             (il->shown != 0u && (il->snapshot[7] > DFI_STATUS_TOX || il->snapshot[8] > 1u)) || /* location: 0 undetermined, 1 bench */
             il->override[2] > DFI_STATUS_TOX || (il->override[3] & 0xF8u) != 0u ||
-            (!any_disguise && (!dfi_bytes_zero(il->snapshot, 7u) || !dfi_bytes_zero(il->pending, sizeof il->pending)))) {
+            (!any_disguise && (!dfi_bytes_zero(il->snapshot, 7u) || !dfi_bytes_zero(il->pending, sizeof il->pending))) ||
+            (any_disguise && il->shown == 0u)) { /* a disguise up always has its name shown (one name per side) */
             return DFI_INV_TAIL_SIDE;
         }
         for (uint32_t p = 0u; p < DUOFORGE_ACTIVE_PER_SIDE; ++p) {
