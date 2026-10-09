@@ -33,7 +33,7 @@
 #include "reference/conformance_pool.h"
 #include "support/pool.h"
 #define DF_CONF_FORMES dfi_pool_formes
-#define DF_POOL_DATA_BATTLES 332u /* the recorded pool battles (step G49: eight more) */
+#define DF_POOL_DATA_BATTLES 354u /* the recorded pool battles (step G48: eleven more; step G43: eleven more; step G49: eight more) */
 #elif defined(DF_CONFORMANCE_TEAM_C)
 #include "data/extended_tables.h"
 #include "reference/conformance_team_c.h"

@@ -691,7 +691,8 @@ def name_of(p):
 # Set species whose protocol name is another (the base species), decision 0009. Arcanine-Hisui and Floette-Eternal
 # are called Arcanine and Floette in the switch line (pool step G2); the species clause keeps the alias unique.
 BASE_SPECIES_NAME = {'Indeedee-F': 'Indeedee', 'Arcanine-Hisui': 'Arcanine', 'Floette-Eternal': 'Floette',
-                     'Ninetales-Alola': 'Ninetales', 'Meowstic-F': 'Meowstic', 'Lycanroc-Dusk': 'Lycanroc'}
+                     'Ninetales-Alola': 'Ninetales', 'Meowstic-F': 'Meowstic', 'Lycanroc-Dusk': 'Lycanroc',
+                     'Samurott-Hisui': 'Samurott'}  # step G48: Ceaseless Edge's user, shown as Samurott (sim/pokemon.ts:329-330)
 
 
 def abs_target(side, loc):

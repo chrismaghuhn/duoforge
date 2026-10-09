@@ -243,8 +243,16 @@ static void check_state(df_test *t, const duoforge_context *ctx, const duoforge_
                 ty->charging += sb[15u + 21u * q + 18u] == DUOFORGE_VIEW_HIDDEN_TARGET;
             }
         }
-        const size_t n = bytes_of(ctx, b, want);
         DF_CHECK(t, duoforge_battle_from_view(ctx, &view, &h, world) == DUOFORGE_OK);
+        /* Step G46 (decision 0023): the foe's bench order past its actives is not public, so an honest world takes it from
+         * the hypothesis. Every other byte must equal the true state; the foe's actives must equal the truth. */
+        static struct duoforge_battle truth;
+        const uint32_t foe = p ^ 1u;
+        DF_CHECK(t, dfi_party_entry(&world->tail, foe, 0u) == dfi_party_entry(&b->tail, foe, 0u));
+        DF_CHECK(t, dfi_party_entry(&world->tail, foe, 1u) == dfi_party_entry(&b->tail, foe, 1u));
+        truth = *b;
+        memcpy(truth.tail.party_order[foe], world->tail.party_order[foe], sizeof truth.tail.party_order[foe]);
+        const size_t n = bytes_of(ctx, &truth, want);
         DF_CHECK(t, bytes_of(ctx, world, got) == n);
         DF_CHECK(t, memcmp(want, got, n) == 0);
         duoforge_observation obs_true;
@@ -288,6 +296,86 @@ static void check_state(df_test *t, const duoforge_context *ctx, const duoforge_
             DF_CHECK(t, memcmp(&ext, &ext_true, sizeof ext) == 0);
         }
     }
+}
+
+/* Step G46 (decision 0023): the foe's party_order past the leads is hidden like its pick order. Varying the foe's TRUE bench
+ * order (its positions 2 and 3 swapped, a permutation, with everything public unchanged) leaves the public record, the
+ * observation and the honest world's encoding byte for byte equal; the honest world's foe bench is the hypothesis's order. */
+static void test_party_order_information_safety(df_test *t)
+{
+    duoforge_context *ctx = df_make_context(&df_config_pool);
+    duoforge_battle_setup s;
+    df_setup_teams(&s);
+    duoforge_battle *b = df_make_battle(ctx, &s);
+    duoforge_decision_bundle bd;
+    memset(&bd, 0, sizeof bd);
+    bd.epoch = b->request_epoch;
+    bd.response_mask = 3u;
+    for (uint32_t side = 0u; side < 2u; ++side) {
+        duoforge_side_choice *c = &bd.responses[side];
+        c->epoch = b->request_epoch;
+        c->side = (uint8_t)side;
+        c->kind = (uint8_t)DUOFORGE_CHOICE_TEAM_SELECTION;
+        c->pick_count = 4u;
+        for (uint32_t i = 0u; i < 4u; ++i) {
+            c->picks[i] = (uint8_t)i;
+        }
+    }
+    duoforge_step_result res;
+    DF_CHECK(t, duoforge_battle_step(ctx, b, &bd, &res) == DUOFORGE_OK);
+    static uint8_t enc_world_a[DF_STATE_ENCODED_MAX];
+    static uint8_t enc_world_b[DF_STATE_ENCODED_MAX];
+    for (uint32_t p = 0u; p < 2u; ++p) {
+        const uint32_t foe = p ^ 1u;
+        duoforge_public_state pub;
+        memset(&pub, 0, sizeof pub);
+        DF_CHECK(t, duoforge_battle_public(ctx, b, p, &pub) == DUOFORGE_OK);
+        duoforge_hypothesis h;
+        memset(&h, 0, sizeof h);
+        DF_CHECK(t, duoforge_battle_hypothesis(ctx, b, p, &h) == DUOFORGE_OK);
+        duoforge_battle *w1 = df_make_battle(ctx, &s);
+        DF_CHECK(t, duoforge_battle_from_view(ctx, &pub, &h, w1) == DUOFORGE_OK);
+        DF_CHECK(t, duoforge_battle_check(ctx, w1) == DUOFORGE_OK);
+        /* the foe's bench of the honest world is the hypothesis's brought order, minus the two actives */
+        const uint32_t a = dfi_party_entry(&w1->tail, foe, 0u);
+        const uint32_t c = dfi_party_entry(&w1->tail, foe, 1u);
+        uint32_t want = 2u;
+        for (uint32_t i = 0u; i < 4u; ++i) {
+            const uint32_t r = (uint32_t)h.pick_order[i] + 1u;
+            if (r != a && r != c) {
+                DF_CHECK_EQ_U64(t, dfi_party_entry(&w1->tail, foe, want), r);
+                want += 1u;
+            }
+        }
+        /* the true foe bench order swapped: a valid permutation, nothing public changes */
+        struct duoforge_battle v = *b;
+        const uint32_t e2 = dfi_party_entry(&v.tail, foe, 2u);
+        const uint32_t e3 = dfi_party_entry(&v.tail, foe, 3u);
+        DF_CHECK(t, e2 != e3);
+        dfi_party_put(&v.tail, foe, 2u, e3);
+        dfi_party_put(&v.tail, foe, 3u, e2);
+        DF_CHECK(t, duoforge_battle_check(ctx, &v) == DUOFORGE_OK);
+        duoforge_public_state pub_v;
+        memset(&pub_v, 0, sizeof pub_v);
+        DF_CHECK(t, duoforge_battle_public(ctx, &v, p, &pub_v) == DUOFORGE_OK);
+        DF_CHECK(t, memcmp(&pub, &pub_v, sizeof pub) == 0);
+        duoforge_observation obs_b;
+        duoforge_observation obs_v;
+        memset(&obs_b, 0, sizeof obs_b);
+        memset(&obs_v, 0, sizeof obs_v);
+        DF_CHECK(t, duoforge_battle_observe(ctx, b, p, &obs_b) == DUOFORGE_OK);
+        DF_CHECK(t, duoforge_battle_observe(ctx, &v, p, &obs_v) == DUOFORGE_OK);
+        DF_CHECK(t, memcmp(&obs_b, &obs_v, sizeof obs_b) == 0);
+        duoforge_battle *w2 = df_make_battle(ctx, &s);
+        DF_CHECK(t, duoforge_battle_from_view(ctx, &pub_v, &h, w2) == DUOFORGE_OK);
+        const size_t na = df_encode_n(ctx, w1, enc_world_a);
+        const size_t nb = df_encode_n(ctx, w2, enc_world_b);
+        DF_CHECK(t, na == nb && memcmp(enc_world_a, enc_world_b, na) == 0);
+        duoforge_battle_destroy(w1);
+        duoforge_battle_destroy(w2);
+    }
+    duoforge_battle_destroy(b);
+    duoforge_context_destroy(ctx);
 }
 
 static void play(df_test *t, const duoforge_context_config *config, const char *pairs, uint32_t games, uint64_t seed,
@@ -611,6 +699,7 @@ int main(void)
     test_counter_information_safety(&t);
     test_batch(&t);
     test_early_pivot_information_boundary(&t);
+    test_party_order_information_safety(&t);
     tally closure = {0};
     tally team_c = {0};
     tally pool = {0};
