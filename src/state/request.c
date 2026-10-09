@@ -334,12 +334,35 @@ static bool dfi_pair_allowed(const duoforge_slot_command *a, const duoforge_slot
         return false; /* one Mega declaration per side per choice */
     }
     if (forced) {
-        uint32_t switches = 0u;
-        switches += (a->kind == DUOFORGE_SLOT_SWITCH || a->kind == DUOFORGE_SLOT_REVIVE) ? 1u : 0u;
-        switches += (c->kind == DUOFORGE_SLOT_SWITCH || c->kind == DUOFORGE_SLOT_REVIVE) ? 1u : 0u;
-        if (switches != need) {
-            return false; /* exactly min(requested, reserves) actors switch */
+        /* The choice is read slot by slot, as sim/side.ts does: forcedSwitchesLeft = min(requested, reserves) and
+         * forcedPassesLeft = requested - that. A normal switch takes a unit (chooseSwitch throws without one); a revive
+         * takes one if any is left and is accepted regardless (its branch, sim/side.ts:966-977); a pass takes a forced
+         * pass. The choice is done with no unit left. */
+        const uint32_t requested = (a->kind != DUOFORGE_SLOT_NONE ? 1u : 0u) + (c->kind != DUOFORGE_SLOT_NONE ? 1u : 0u);
+        if (need > requested) {
+            return false;
         }
+        uint32_t units = need;
+        uint32_t passes = requested - need;
+        const duoforge_slot_command *cmds[2] = {a, c};
+        for (uint32_t i = 0u; i < 2u; ++i) {
+            if (cmds[i]->kind == DUOFORGE_SLOT_SWITCH) {
+                if (units == 0u) {
+                    return false;
+                }
+                units -= 1u;
+            } else if (cmds[i]->kind == DUOFORGE_SLOT_REVIVE) {
+                if (units > 0u) {
+                    units -= 1u;
+                }
+            } else if (cmds[i]->kind == DUOFORGE_SLOT_PASS) {
+                if (passes == 0u) {
+                    return false;
+                }
+                passes -= 1u;
+            }
+        }
+        return units == 0u;
     }
     return true;
 }
