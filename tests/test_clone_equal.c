@@ -197,6 +197,11 @@ static void copy_named_fields(duoforge_battle *x, const duoforge_battle *src)
         }
     }
     x->tail.gravity_turns = src->tail.gravity_turns;
+    for (uint32_t s = 0u; s < DUOFORGE_SIDE_COUNT; ++s) {
+        for (uint32_t i = 0u; i < DFI_PARTY_BYTES_PER_SIDE; ++i) {
+            x->tail.party_order[s][i] = src->tail.party_order[s][i]; /* step G46 */
+        }
+    }
     x->tail.field_pad = src->tail.field_pad;
 }
 

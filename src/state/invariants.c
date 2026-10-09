@@ -602,6 +602,38 @@ static bool dfi_tail_pos_valid(const dfi_kind_limits *lim, const dfi_tail_pos *t
            protect_ok && rev4_ok;
 }
 
+/* party_order (step G46, battle_internal.h): the first n entries of a side are its n brought members, each once, and the
+ * rest are empty; no bit above the 18 entry bits. Bounded loops, no stored index beyond the roster. */
+static bool dfi_party_side_ok(const dfi_pool_tail *t, const dfi_side *side, uint32_t s)
+{
+    if ((dfi_party_word(t, s) >> DFI_PARTY_USED_BITS) != 0u) {
+        return false;
+    }
+    uint32_t n = 0u;
+    for (uint32_t r = 0u; r < DUOFORGE_MAX_ROSTER; ++r) {
+        n += (uint32_t)side->brought_mask >> r & 1u;
+    }
+    uint32_t seen = 0u;
+    for (uint32_t k = 0u; k < DUOFORGE_MAX_ROSTER; ++k) {
+        const uint32_t v = dfi_party_entry(t, s, k);
+        if (k >= n) {
+            if (v != 0u) {
+                return false;
+            }
+            continue;
+        }
+        if (v == 0u || v > DUOFORGE_MAX_ROSTER) {
+            return false;
+        }
+        const uint32_t bit = 1u << (v - 1u);
+        if ((side->brought_mask & bit) == 0u || (seen & bit) != 0u) {
+            return false;
+        }
+        seen |= bit;
+    }
+    return true;
+}
+
 /* The POOL tail (decision 0015 section 7). Runs after the side checks, so every occupant is below the member count
  * and every move count is 1..4; each index is still bounded here. Under the other kinds the tail is absent: zero. */
 static dfi_invariant dfi_check_tail(const duoforge_context *ctx, const struct duoforge_battle *b)
@@ -612,6 +644,11 @@ static dfi_invariant dfi_check_tail(const duoforge_context *ctx, const struct du
     }
     if (b->tail.gravity_turns > DFI_TAIL_GRAVITY_MAX || b->tail.field_pad != 0u) {
         return DFI_INV_TAIL_FIELD;
+    }
+    for (uint32_t s = 0u; s < DUOFORGE_SIDE_COUNT; ++s) {
+        if (!dfi_party_side_ok(&b->tail, &b->sides[s], s)) {
+            return DFI_INV_TAIL_PARTY;
+        }
     }
     for (uint32_t s = 0u; s < DUOFORGE_SIDE_COUNT; ++s) {
         const dfi_tail_side *ts = &b->tail.sides[s];
@@ -877,6 +914,8 @@ const char *dfi_invariant_name(dfi_invariant id)
         return "TAIL_RESERVED";
     case DFI_INV_TAIL_FIELD:
         return "TAIL_FIELD";
+    case DFI_INV_TAIL_PARTY:
+        return "TAIL_PARTY";
     case DFI_INV_COUNT:
     default:
         return "UNKNOWN";

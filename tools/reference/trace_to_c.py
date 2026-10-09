@@ -57,6 +57,12 @@ checks its precondition and fails loudly otherwise:
                     or the target of the move and passes the accuracy on
                     otherwise, so every order of them gives the same value; a
                     tie with any other handler is refused (tie-context)
+  SPEED_TIE event:ModifyAccuracy
+                    only between Wide Lens and Bright Powder (step G49, both
+                    priority -2): the engine refuses a move whose two orders
+                    give different accuracies (E_UNSUPPORTED), so the draw
+                    decides nothing it models; a tie with any other handler
+                    is refused (tie-context)
   SPEED_TIE event:AfterMove, event:AfterMega
                     never: White Herb's are the only handlers of these events
                     in the data, and the engine draws every tie among them
@@ -597,6 +603,13 @@ def drop_reason(d, state, after=None, log=None):
         # the source or the target of the move and the accuracy it was given otherwise. Whichever of the tied
         # handlers runs first, a true passes on as true and the accuracy stays what it was: one order, one value.
         return 'No Guard handlers whose order changes nothing'
+    if site == 'SPEED_TIE' and ctx == 'event:ModifyAccuracy' and all(g.endswith(':cb') for g in group) and \
+            sorted(g.split(':')[1] for g in group) == ['brightpowder', 'widelens']:
+        # Step G49: Wide Lens (onSourceModifyAccuracy of the attacker, data/items.ts:7719-7726) and Bright Powder (the
+        # target's onModifyAccuracy, data/items.ts:665-670) are both priority -2, so the order of the two is the holders'
+        # Speed, and an equal Speed draws. The two orders give one accuracy whenever the engine accepts the move (it refuses
+        # the others, E_UNSUPPORTED: turn.c, the priority -2 group), so the draw decides nothing the engine models.
+        return 'Wide Lens and Bright Powder, whose order the engine refuses where it changes the accuracy'
     if site == 'SPEED_TIE' and ctx == 'event:BasePower' and all(
             g.startswith('H:fairyaura:') and g.endswith(':cb') for g in group):
         # data/abilities.ts fairyaura (step G12): onAnyBasePower gives the move to the first holder that runs
@@ -678,7 +691,8 @@ def name_of(p):
 # Set species whose protocol name is another (the base species), decision 0009. Arcanine-Hisui and Floette-Eternal
 # are called Arcanine and Floette in the switch line (pool step G2); the species clause keeps the alias unique.
 BASE_SPECIES_NAME = {'Indeedee-F': 'Indeedee', 'Arcanine-Hisui': 'Arcanine', 'Floette-Eternal': 'Floette',
-                     'Ninetales-Alola': 'Ninetales', 'Meowstic-F': 'Meowstic', 'Lycanroc-Dusk': 'Lycanroc'}
+                     'Ninetales-Alola': 'Ninetales', 'Meowstic-F': 'Meowstic', 'Lycanroc-Dusk': 'Lycanroc',
+                     'Samurott-Hisui': 'Samurott'}  # step G48: Ceaseless Edge's user, shown as Samurott (sim/pokemon.ts:329-330)
 
 
 def abs_target(side, loc):
