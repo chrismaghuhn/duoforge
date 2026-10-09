@@ -276,6 +276,8 @@ def check(line, view):
             return "fold"
         if effect in _GUARD_ACTIVATE:
             return _feature(_GUARD_ACTIVATE[effect])
+        if effect in ("move: Electric Terrain", "move: Misty Terrain"):
+            return _feature(_FIELD[effect])  # the terrain blocking Yawn or its sleep: its own feature, as -fieldstart
         if effect in ("move: Skill Swap",):
             return _feature("ABILITY_CHANGE")
         if effect == "move: Trick":
