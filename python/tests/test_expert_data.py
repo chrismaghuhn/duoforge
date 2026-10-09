@@ -462,5 +462,54 @@ class ExpertDataTest(unittest.TestCase):
             self.assertFalse((Path(temp)/"over.json").exists())
 
 
+    def test_schema_refusal_and_private_roundtrip_manifest_file(self):
+        from duoforge_search import expert_data as ed
+        m = manifest(ed)
+        with tempfile.TemporaryDirectory(prefix="duoforge_synthetic_manifest_") as temp:
+            path = Path(temp)/"manifest.json"
+            sha = ed.write_manifest(path, m)
+            self.assertEqual(sha, hashlib.sha256(path.read_bytes()).hexdigest())
+            loaded = ed.read_manifest(path)
+            self.assertEqual(loaded, m)
+            with self.assertRaises(TypeError):
+                loaded.teacher_config["k"] = 9  # frozen like any manifest
+            # The file carries the same manifest hash as every shard, so the pair always agrees.
+            shard = Path(temp)/"shard.json"
+            ed.write_shard(shard, [target_row(ed, m)], m)
+            self.assertEqual(json.loads(path.read_text(encoding="utf-8"))["manifest_sha256"],
+                             json.loads(shard.read_text(encoding="utf-8"))["manifest_sha256"])
+            self.assertEqual(len(ed.read_shard(shard, loaded)), 1)
+            with self.assertRaises(FileExistsError):
+                ed.write_manifest(path, m)
+
+            def tampered(name, change, manifest_hash=True):
+                data = json.loads(path.read_text(encoding="utf-8"))
+                change(data)
+                if manifest_hash:
+                    data["manifest_sha256"] = hashlib.sha256(canonical(data["manifest"])).hexdigest()
+                out = Path(temp)/f"{name}.json"
+                out.write_bytes(rehash(data))
+                return out
+
+            for name, change, hashed in (
+                    ("missing", lambda d: d["manifest"].pop("first_game_id"), True),
+                    ("extra", lambda d: d["manifest"].__setitem__("bogus", 1), True),
+                    ("invalid", lambda d: d["manifest"].__setitem__("workers", 7), True),
+                    ("float_count", lambda d: d["manifest"].__setitem__("rounds", 2.0), True),
+                    ("schema", lambda d: d.__setitem__("schema_version", 2), True),
+                    ("stale_hash", lambda d: d["manifest"].__setitem__("seed", 8), False)):
+                with self.subTest(name), self.assertRaises(ValueError):
+                    ed.read_manifest(tampered(name, change, hashed))
+            data = json.loads(path.read_text(encoding="utf-8"))
+            data["manifest"]["seed"] = 8
+            (Path(temp)/"unhashed.json").write_text(json.dumps(data), encoding="utf-8")
+            with self.assertRaisesRegex(ValueError, "integrity"):
+                ed.read_manifest(Path(temp)/"unhashed.json")
+        with self.assertRaisesRegex(ValueError, "repository"):
+            ed.write_manifest(Path(__file__).parent/"private-manifest.json", m)
+        with self.assertRaisesRegex(ValueError, "repository"):
+            ed.read_manifest(Path(__file__))
+
+
 if __name__ == "__main__":
     unittest.main()
