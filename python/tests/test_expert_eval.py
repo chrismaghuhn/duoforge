@@ -24,11 +24,25 @@ def pool():
     return teams.TeamPool.from_setups(IDS, duoforge.reference_setups([0, 1, 2])["sides"].reshape(-1))
 
 
-def manifest(ev, **kw):
-    hexes = {name: f"{i:x}" * 64 for i, name in enumerate(("pilot", "control", "frozen", "BC", "3600", "11000",
-                                                           "ladder"), start=1)}
-    fields = {"seed": 99, "first_game_id": 10**6, "pool_sha256": ev.pool_sha256(pool()), "checkpoints": hexes}
-    return ev.EvalManifest(**{**fields, **kw})
+HEXES = {name: f"{i:x}" * 64 for i, name in enumerate(("pilot", "control", "frozen", "BC", "3600", "11000",
+                                                        "ladder"), start=1)}
+
+
+def manifest(ev, seed=99, **kw):
+    """The manifest make_manifest pins for the synthetic pool; kw replaces fields (validated again)."""
+    base = ev.make_manifest(pool(), seed=seed, first_game_id=10**6, checkpoints=HEXES)
+    return dataclasses.replace(base, **kw) if kw else base
+
+
+def ledger_map(cpu, gpu, phases=None):
+    phases = phases or {"generation": {"cpu_core_seconds": cpu * 0.75, "gpu_seconds": 0.0},
+                        "distill": {"cpu_core_seconds": cpu * 0.25, "gpu_seconds": gpu}}
+    return {"schema": 1, "cpu_core_seconds": cpu, "gpu_seconds": gpu, "processes": 2, "phases": phases}
+
+
+def arms(ev):
+    same = ev.ComputeLedger.from_mapping(ledger_map(1000.0, 200.0))
+    return same, same
 
 
 def scored(rows, rule):
@@ -97,13 +111,17 @@ class EvalGate(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "pool"):
             ev.make_eval_rows(pool().with_weights(np.arange(1, 7)), m)  # another pool than the manifest pins
         # Gates on synthetic results: a clear win passes every group, the ladder is reported, not gated.
-        result = ev.evaluate_records(scored(rows, strong), m)
+        result = ev.evaluate_records(scored(rows, strong), m, arms(ev))
         self.assertIs(result.status, ev.GateStatus.PASS)
         self.assertEqual(set(result.groups), {"h2h_continuation", "h2h_frozen", "panel", "panel_PP", "panel_LL"})
         self.assertAlmostEqual(result.groups["h2h_continuation"]["point"], 308 / 512, places=12)  # i % 10 < 6, 512 pairs
         self.assertGreater(result.groups["h2h_continuation"]["low"], 0.5)
         self.assertIn("ladder", result.scores)
-        self.assertEqual(ev.evaluate_records(scored(rows, strong), m), result)  # fixed bootstrap seeds
+        self.assertEqual(ev.evaluate_records(scored(rows, strong), m, arms(ev)), result)  # fixed bootstrap seeds
+        shuffled = scored(rows, strong)
+        order = np.random.default_rng(3).permutation(n)
+        shuffled = {k: v[order] for k, v in shuffled.items()}
+        self.assertEqual(ev.evaluate_records(shuffled, m, arms(ev)), result)  # row order is irrelevant
 
         def variant(over):
             def rule(suite, opponent, arm, bucket, pair):
@@ -117,6 +135,9 @@ class EvalGate(unittest.TestCase):
             # 264/512 = 0.516: below the 0.52 point bar, its interval still reaching above 0.50: inconclusive.
             "borderline": (variant({("h2h_continuation", "pilot", None): lambda i: 1.0 if i < 264 else 0.0}),
                            ev.GateStatus.INCONCLUSIVE, "h2h_continuation"),
+            # 268/512 = 0.523 meets the point bar, but its lower bound stays at or below 0.50.
+            "ci stop": (variant({("h2h_continuation", "pilot", None): lambda i: 1.0 if i < 268 else 0.0}),
+                        ev.GateStatus.INCONCLUSIVE, "h2h_continuation"),
             "lost": (variant({("h2h_continuation", "pilot", None): lambda i: 1.0 if i % 10 < 4 else 0.0}),
                      ev.GateStatus.FAIL, "h2h_continuation"),
             "frozen bar": (variant({("h2h_frozen", "pilot", None): lambda i: 1.0 if i < 266 else 0.0}),
@@ -126,26 +147,58 @@ class EvalGate(unittest.TestCase):
         }
         for name, (rule, status, group) in cases.items():
             with self.subTest(name):
-                got = ev.evaluate_records(scored(rows, rule), m)
+                got = ev.evaluate_records(scored(rows, rule), m, arms(ev))
                 self.assertIs(got.groups[group]["status"], status)
                 self.assertIs(got.status, status)
         # Unfinished or nonfinite results and an absent required bucket leave the result incomplete.
         unfinished = scored(rows, strong)
         unfinished["finished"][5] = False
-        self.assertIs(ev.evaluate_records(unfinished, m).status, ev.GateStatus.INCOMPLETE)
+        self.assertIs(ev.evaluate_records(unfinished, m, arms(ev)).status, ev.GateStatus.INCOMPLETE)
         nan = scored(rows, strong)
         nan["score"][7] = math.nan
-        self.assertIs(ev.evaluate_records(nan, m).status, ev.GateStatus.INCOMPLETE)
+        self.assertIs(ev.evaluate_records(nan, m, arms(ev)).status, ev.GateStatus.INCOMPLETE)
+        null = {k: v.tolist() for k, v in scored(rows, strong).items()}  # as JSON lists, an unfinished null
+        null["score"][7], null["finished"][7] = None, False
+        self.assertIs(ev.evaluate_records(null, m, arms(ev)).status, ev.GateStatus.INCOMPLETE)
         records = scored(rows, strong)
         keep = records["bucket"] != "LL"
         without_ll = {k: v[keep] for k, v in records.items()}
-        got = ev.evaluate_records(without_ll, m)
+        got = ev.evaluate_records(without_ll, m, arms(ev))
         self.assertIs(got.status, ev.GateStatus.INCOMPLETE)
         self.assertIs(got.groups["panel_LL"]["status"], ev.GateStatus.INCOMPLETE)
         # Pairing and schedule errors are refused, never repaired or re-chosen.
         broken = scored(rows, strong)
         broken["student_seat"][1] = broken["student_seat"][0]  # both games of a pair on one seat
+        def changed(rule):
+            records = scored(rows, strong)
+            rule(records)
+            return records
+
+        first_pp = np.flatnonzero((rows["suite"] == "panel") & (rows["bucket"] == "PP"))[:2]
+        ll_team = IDS.index("LL_one")
+
+        def relabel(records):  # both seats and the mirrored arm: consistent, but not the predeclared draw
+            same = ((records["suite"] == "panel") & (records["opponent"] == records["opponent"][first_pp[0]])
+                    & (records["bucket"] == "PP") & (records["pair"] == records["pair"][first_pp[0]]))
+            records["student_team"][same] = ll_team
+
+        def reseed(records):
+            pair = (records["suite"] == "h2h_frozen") & (records["pair"] == 3) & (records["bucket"] == "LL")
+            records["seed"][pair] += 1
+
+        def mirror(records):
+            pair = ((records["suite"] == "ladder") & (records["arm"] == "control") & (records["pair"] == 0)
+                    & (records["bucket"] == "PP"))
+            records["opponent_team"][pair] = (records["opponent_team"][pair] + 1) % len(IDS)
+
         refusals = {
+            "relabelled teams": changed(relabel),
+            "other seed": changed(reseed),
+            "mirror": changed(mirror),
+            "game id": changed(lambda r: r["game_id"].__setitem__(9, r["game_id"][9] + 1)),
+            "fractional pair": {**scored(rows, strong), "pair": rows["pair"] + 0.4},
+            "text finished": {**scored(rows, strong), "finished": np.array(["no"] * n)},
+            "text score": {**scored(rows, strong), "score": np.array(["1.0"] * n)},
             "same seat": broken,
             "half pair": {k: v[1:] for k, v in scored(rows, strong).items()},
             "extra suite": {**scored(rows, strong), "suite": np.where(rows["suite"] == "ladder", "best_of", rows["suite"])},
@@ -154,19 +207,19 @@ class EvalGate(unittest.TestCase):
         }
         for name, bad in refusals.items():
             with self.subTest(name), self.assertRaises(ValueError):
-                ev.evaluate_records(bad, m)
+                ev.evaluate_records(bad, m, arms(ev))
+        with self.assertRaises(TypeError):
+            ev.evaluate_records(scored(rows, strong), m)  # the compute ledgers are required
         for bad in ({"play": "search"}, {"book": True}, {"preview_search": True}, {"resamples": 1000},
-                    {"checkpoints": {**m.checkpoints, "BC": "no"}}, {"seed": -1}):
+                    {"checkpoints": {**m.checkpoints, "BC": "no"}}, {"seed": -1}, {"first_game_id": 2**63},
+                    {"schedule": {**m.schedule, "panel/BC/pilot/PP": "no"}},
+                    {"schedule": {k: v for k, v in m.schedule.items() if k != "ladder/ladder/control/LL"}}):
             with self.subTest(manifest=bad), self.assertRaises(ValueError):
                 manifest(ev, **bad)
 
 
 class ComputeLedger(unittest.TestCase):
-    @staticmethod
-    def ledger(cpu, gpu, phases=None):
-        phases = phases or {"generation": {"cpu_core_seconds": cpu * 0.75, "gpu_seconds": 0.0},
-                            "distill": {"cpu_core_seconds": cpu * 0.25, "gpu_seconds": gpu}}
-        return {"schema": 1, "cpu_core_seconds": cpu, "gpu_seconds": gpu, "processes": 2, "phases": phases}
+    ledger = staticmethod(ledger_map)
 
     def test_eval_compute_tolerance_cost_and_privacy(self):
         from duoforge_search import expert_eval as ev
@@ -184,7 +237,8 @@ class ComputeLedger(unittest.TestCase):
         for bad in ({**self.ledger(1.0, 1.0), "cap_seconds": 1.0}, {**self.ledger(1.0, 1.0), "schema": 2},
                     {**self.ledger(1.0, -1.0)}, {**self.ledger(math.nan, 1.0)},
                     self.ledger(1.0, 1.0, {"x": {"cpu_core_seconds": 2.0, "gpu_seconds": 0.0}}),  # phases exceed total
-                    self.ledger(1.0, 1.0, {"x": {"cpu_core_seconds": 0.5}})):
+                    self.ledger(1.0, 1.0, {"x": {"cpu_core_seconds": 0.5}}),
+                    {**self.ledger(1.0, 1.0), "schema": 1.0}, {**self.ledger(1.0, 1.0), "processes": 0}):
             with self.subTest(bad=bad), self.assertRaises(ValueError):
                 load(bad)
         # The shared evaluation is charged half to each arm.
@@ -193,6 +247,17 @@ class ComputeLedger(unittest.TestCase):
         self.assertEqual((a.cpu_core_seconds, a.gpu_seconds), (1200.0, 250.0))
         self.assertEqual(a.phases["evaluation_share"], {"cpu_core_seconds": 200.0, "gpu_seconds": 50.0})
         self.assertEqual((b.cpu_core_seconds, b.gpu_seconds), (1200.0, 250.0))
+        with self.assertRaises(ValueError):
+            ev.charge_shared(a, b, shared)  # charged once only
+        # A ledger.py file as the learner writes it loads unchanged.
+        from duoforge_learn.ledger import Ledger
+        with tempfile.TemporaryDirectory(prefix="duoforge_synthetic_ledger_") as temp:
+            written = Ledger(Path(temp) / "arm.json")
+            with written.phase("generation"):
+                sum(i * i for i in range(20000))
+            written.save()
+            real = load(json.loads((Path(temp) / "arm.json").read_text()))
+            self.assertGreaterEqual(real.cpu_core_seconds, real.phases["generation"]["cpu_core_seconds"])
         # CLI: private paths in, a structured report out; strength failures still exit 0.
         m = manifest(ev)
         rows = ev.make_eval_rows(pool(), m)
@@ -232,7 +297,12 @@ class ComputeLedger(unittest.TestCase):
             self.assertEqual(json.loads((d / "lost.json").read_text(encoding="utf-8"))["status"], "FAIL")
             broken = scored(rows, strong)
             broken["student_seat"][1] = broken["student_seat"][0]
+            # The 5% match is on the arms' own use: a large shared charge cannot dilute it.
+            paths_far = {"--pilot": write("p28800.json", self.ledger(28800.0, 1800.0)),
+                         "--control": write("c30300.json", self.ledger(30300.0, 1980.0)),
+                         "--baseline": write("big_shared.json", baseline(scored(rows, strong), self.ledger(3600.0, 3600.0)))}
             for name, change, cause in (
+                    ("diluted", paths_far, "cpu_core_seconds"),
                     ("compute", {"--control": write("far.json", self.ledger(2000.0, 200.0))}, "cpu_core_seconds"),
                     ("pairing", {"--baseline": write("broken.json", baseline(broken))}, "seat"),
                     ("manifest", {"--manifest": write("bad_manifest.json", {**ev.manifest_mapping(m), "book": True})},
@@ -246,7 +316,8 @@ class ComputeLedger(unittest.TestCase):
             code, err = run("report.json")  # never overwrites a report
             self.assertEqual(code, 2)
             inside = Path(__file__).with_name("private-eval-report.json")
-            code, err = ev.main(sum(([k, v] for k, v in {**paths, "--out": str(inside)}.items()), [])), ""
+            with contextlib.redirect_stderr(io.StringIO()):
+                code = ev.main(sum(([k, v] for k, v in {**paths, "--out": str(inside)}.items()), []))
             self.assertEqual(code, 2)
             self.assertFalse(inside.exists())
             # No CLI option can alter seeds, panel or budgets.
