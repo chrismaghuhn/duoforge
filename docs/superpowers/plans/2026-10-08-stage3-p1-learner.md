@@ -380,7 +380,7 @@ The [P1 plan](2026-10-08-stage3-p1-pilot.md) gives the collection loop to Learne
   - Task 6 `Ledger`;
   - `SelfPlay` / the batch runtime for the lockstep games.
 - Produces:
-  - `collect(manifest, model, params, pool, search, out_dir, *, rounds=None, max_steps=500, label_limit=None, budget=None, audit_threshold=None, workers=None, ledger=None, resume=False, stop=None, identity=None) -> CollectResult(games, rows, targets, counters, complete, next_round)`;
+  - `collect(manifest, model, params, pool, search, out_dir, *, source_ids, rounds=None, max_steps=500, label_limit=None, budget=None, audit_threshold=None, workers=None, ledger=None, resume=False, stop=None, identity=None) -> CollectResult(games, rows, targets, counters, complete, next_round)`;
   - `raw_draws(logps, legal, keys, seed)`, `distributions(model, params, obs, slots, mask, is_team)`, `pairing_of(manifest, pool, game_ids)`;
   - CLI `python -m duoforge_learn.collect_expert` with the same refusals as Task 5 (output outside the repository, pinned params-49333, exit 2).
 
@@ -400,6 +400,10 @@ The [P1 plan](2026-10-08-stage3-p1-pilot.md) gives the collection loop to Learne
   - `label_decision` gets `last_step=True` on the last step before the cut.
   - A step the engine refuses with E_UNSUPPORTED ends the game as a loss, as in SelfPlay.
   - Any other early stop (a stop request, a crash, a watchdog) discards the whole round, which is re-run. No truncated trajectory (`done = False` with a bootstrap, the C1 contract) is ever written by the normal run.
+- **Leave-foe-source-out (D0023, frozen by the spec; as `arena.py`).** For each round, `exclude_teams[env]` is `source_ids.get(pool.ids[foe team of env])`, where the foe team is the team of the seat opposite the learner.
+  - `source_ids` is the spread-source index of `honest.spread_table(ctx)`.
+  - A foe team that is no spread source (an LL_ team) gives None.
+  - The collector requires `source_ids` and sets the search's exclusions whenever a round's teams are set.
 - **Belief.** `manifest.belief_hash` must equal `search.table_info["sha256"]`. Production uses `honest.spread_table(ctx)` with the pinned 79 sources, sha256 `1795524c1e81d3857a26d6c99a194c536069df8d208d502413c3005ff75099d4`.
 - **Shards.**
   - `write_manifest` runs once, at `out/manifest.json`.
@@ -411,7 +415,8 @@ The [P1 plan](2026-10-08-stage3-p1-pilot.md) gives the collection loop to Learne
     - the label cursor (`cursor_bytes`);
     - the teacher checkpoint (`expert.teacher_checkpoint`, taken against the next round's fresh roots);
     - the counters, the shard list with SHA-256s, the seed;
-    - the identity: manifest, teacher configuration, cut-off, label cap, shard size, encoder, network and search digests, belief, exclusions, pool, and the CLI's checkpoint hash.
+    - the identity: manifest, teacher configuration, cut-off, label cap, shard size, encoder, network and search digests, belief, spread-source index, pool, and the CLI's checkpoint hash.
+  - The teacher checkpoint binds the search's `exclude_teams`. The collector sets them per round together with that round's roots, so a resume restores the same list for its round.
   - A resume restores the teacher with `restore_teacher` into a fresh search. It refuses another identity or manifest, and missing or altered shards.
   - The interrupted round's shards are moved to `out/discarded/attempt-NNNN/`, kept for diagnosis as EXPERT_DATA.md asks of failed writes and never read as data. The round is replayed from its start; its keys make it identical.
 - **Compute ledger.** It is optional, phase `generate`. GPU-seconds count only device work that runs on a GPU.
@@ -420,7 +425,11 @@ The [P1 plan](2026-10-08-stage3-p1-pilot.md) gives the collection loop to Learne
   - Counters: eligible, selected, admitted, targets, public refusals, work exhausted, capped, forced, unselected, unrequested, audits, games, rows, cuts, unresolved, engine-unsupported.
 - **CLI.** `--init`, `--manifest`, `--out`, `--rounds`, `--workers` (must equal the manifest's), `--max-steps`, `--teams`/`--team-weights`/`--teams-root`, `--ledger`, `--resume`, `--allow-other-init` (tests only, recorded in the identity).
   - It refuses `--out` inside the repository and an init whose SHA-256 is not params-49333's.
-  - It also refuses a manifest whose `checkpoint_hash` is not the init file's SHA-256, or whose `pool_hash` is not `pool_digest(pool)`.
+  - It also refuses a manifest whose hashes differ from the ones it computes (agreed with M12 on 2026-10-09):
+    - `checkpoint_hash`: the init file's SHA-256;
+    - `model_hash`: the SHA-256 of `checkpoint.model_config(config, params)` as canonical JSON (sorted keys, compact separators);
+    - `pool_hash`: `expert_eval.pool_sha256(pool)`;
+    - `belief_hash`: the pinned spread table's SHA-256 (`honest.spread_table`).
   - Exit 0 is complete, 3 is stopped by a signal (resume with `--resume`), 2 is a refusal.
 - **Tests only:** `label_limit` below 16384 (the initial `LabelCursor.remaining`) and a smaller `SHARD_ROWS`. Production keeps the manifest's 16384 and `MAX_SHARD_ROWS`.
 
@@ -458,7 +467,9 @@ The [P1 plan](2026-10-08-stage3-p1-pilot.md) gives the collection loop to Learne
     - FORCED rows appear exactly at one legal action;
     - waiting rows are UNREQUESTED;
     - no TARGET exists without a stored target.
-  - `test_cli_refusals_exit_2`: an output inside the repository, another init than params-49333, and a manifest pinning another checkpoint each exit 2.
+  - `test_cli_refusals_exit_2`: each of these exits 2: an output inside the repository, another init than params-49333, and a manifest pinning another checkpoint, model or pool.
+  - `test_the_foe_source_is_left_out`: a foe that is a spread source excludes exactly that source, and a non-source foe gives None. The resume test checks that the boundary checkpoint binds the next round's own exclusions, and that another source index is refused.
+  - The determinism test also checks the ledger: a CPU collection gives `gpu_seconds == 0` with `cpu_core_seconds > 0`.
 - [ ] **Step 2: Run them.** `python -m unittest test_collect_expert -v`. Expected: **ERROR**, no module.
 - [ ] **Step 3: Implement `collect` and the CLI.**
 - [ ] **Step 4: Run them.** Expected: **OK**.

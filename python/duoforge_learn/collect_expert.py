@@ -172,9 +172,28 @@ def manifest_digest(manifest):
     return _sha({f.name: getattr(manifest, f.name) for f in dataclasses.fields(manifest)})
 
 
-def pool_digest(pool):
-    """SHA-256 of the pool's team ids, file hashes and weights as canonical JSON."""
-    return _sha({"ids": list(pool.ids), "sha256": list(pool.sha256), "weights": [float(w) for w in pool.weights]})
+def model_hash(model_config):
+    """The manifest's model_hash: SHA-256 of the model configuration as canonical JSON (sorted keys, compact)."""
+    return hashlib.sha256(json.dumps(model_config, sort_keys=True, separators=(",", ":")).encode("ascii")).hexdigest()
+
+
+def _source_ids(source_ids):
+    if not isinstance(source_ids, Mapping) or not all(
+            isinstance(k, str) and type(v) is int and v >= 0 for k, v in source_ids.items()):
+        raise ValueError("source_ids maps team ids to spread-source indices (honest.spread_table)")
+    return dict(source_ids)
+
+
+def exclusions(manifest, pool, source_ids, r):
+    """The teacher's leave-foe-source-out of round r (decision 0023, as arena.py): for each environment the spread
+    source of its game's foe team (the team of the seat opposite expert.learner_seat), None when that team is no
+    spread source (an LL_ team). source_ids: team id -> source index, as honest.spread_table returns it."""
+    from duoforge_search import expert as ex
+    source_ids = _source_ids(source_ids)
+    n = manifest.parallel_games
+    games = manifest.first_game_id + r * n + np.arange(n)
+    pairs = pairing_of(manifest, pool, games)
+    return [source_ids.get(pool.ids[int(pairs[e, 1 - ex.learner_seat(int(g))])]) for e, g in enumerate(games)]
 
 
 def read_state(out):
@@ -209,8 +228,9 @@ def _file_sha(path):
 class _Collection:
     """One collection run: its inputs, the label cursor, the counters and the shards written."""
 
-    def __init__(self, manifest, model, params, pool, search, out, config, max_steps, workers, ledger):
+    def __init__(self, manifest, model, params, pool, search, out, config, max_steps, workers, ledger, source_ids):
         self.manifest, self.model, self.params, self.pool, self.search = manifest, model, params, pool, search
+        self.source_ids = source_ids
         self.out, self.config, self.max_steps, self.workers, self.ledger = out, config, max_steps, workers, ledger
         self.shard_dir = out / "shards"
         self.context = search.leaves.context
@@ -219,11 +239,14 @@ class _Collection:
         self.on_gpu = ledger is not None and device_platform(params) != "cpu"
 
     def roots(self, r):
-        """The batch of round r: environment e plays game first_game_id + r * parallel_games + e as its episode r."""
+        """The batch of round r: environment e plays game first_game_id + r * parallel_games + e as its episode r.
+        The search's exclusions become round r's (leave-foe-source-out) with it, before the teacher's checkpoint
+        of the round boundary binds them."""
         m = self.manifest
         n = m.parallel_games
         pairs = pairing_of(m, self.pool, m.first_game_id + r * n + np.arange(n))
         setups = self.pool.setups(pairs[:, 0], pairs[:, 1])
+        excluded = exclusions(m, self.pool, self.source_ids, r)
         roots = duoforge.Batch(self.context, setups, self.workers, m.seed)
         try:
             if r:
@@ -231,6 +254,7 @@ class _Collection:
         except BaseException:
             roots.close()
             raise
+        self.search.exclude_teams = excluded
         return roots
 
     def device(self):
@@ -400,19 +424,22 @@ class _Collection:
         return cursor, shards
 
 
-def collect(manifest, model, params, pool, search, out_dir, *, rounds=None, max_steps=MAX_STEPS, label_limit=None,
-            budget=None, audit_threshold=None, workers=None, ledger=None, resume=False, stop=None, identity=None):
+def collect(manifest, model, params, pool, search, out_dir, *, source_ids, rounds=None, max_steps=MAX_STEPS,
+            label_limit=None, budget=None, audit_threshold=None, workers=None, ledger=None, resume=False, stop=None,
+            identity=None):
     """Plays rounds [next round, rounds) of the manifest's collection into out_dir and returns a CollectResult.
 
     manifest: M12's DataManifest (written once as out_dir/manifest.json); model, params: the collector network,
     which plays both seats (self-play); pool: the teams the pairings index; search: the teacher's honest search
     (expert.TeacherConfig.from_manifest must match it, its spread table must be the manifest's belief_hash; a
-    resume needs a fresh one). rounds: the rounds to have played at the end (default the manifest's);
-    max_steps: the cut-off; label_limit: the label cap (default and production expert_data.LABEL_LIMIT; smaller only
-    in tests); budget, audit_threshold: the teacher's overrides; workers: the roots' native workers (default the
-    manifest's; results do not depend on it); ledger: a ledger.Ledger, phase "generate" (the network pass is a device
-    section only when it runs on a GPU, see device_platform; the teacher's search runs on the CPU); resume: continue out_dir
-    from its last completed round (refused for another manifest or configuration); stop: an object whose
+    resume needs a fresh one; the collector sets its exclude_teams to each round's exclusions); source_ids: team
+    id -> spread-source index of the search's table (honest.spread_table's), for D0023's leave-foe-source-out
+    (required; a team absent from it is no source and excludes nothing). rounds: the rounds to have played at the
+    end (default the manifest's); max_steps: the cut-off; label_limit: the label cap (default and production
+    expert_data.LABEL_LIMIT; smaller only in tests); budget, audit_threshold: the teacher's overrides; workers: the
+    roots' native workers (default the manifest's; results do not depend on it); ledger: a ledger.Ledger, phase
+    "generate" (the network pass is a device section only when it runs on a GPU, see device_platform; the teacher's
+    search runs on the CPU); resume: continue out_dir from its last completed round (refused for another manifest or configuration); stop: an object whose
     `requested` ends the run at the next tick (the round in play is played again on resume); identity: more
     fields a resume must match (the CLI's checkpoint hash). Shards go to out_dir/shards (round-RRRR-shard-SSSS.json,
     in write order). ValueError for any refusal."""
@@ -438,15 +465,15 @@ def collect(manifest, model, params, pool, search, out_dir, *, rounds=None, max_
     config = ex.TeacherConfig.from_manifest(manifest, search_seed=search.seed, **overrides)
     config.check(search)
     workers = manifest.workers if workers is None else workers
-    excluded = None if search.exclude_teams is None else [None if x is None else int(x) for x in search.exclude_teams]
+    source_ids = _source_ids(source_ids)
     ident = {"manifest_sha256": manifest_digest(manifest), "teacher": _plain(config), "max_steps": max_steps,
              "label_limit": label_limit, "shard_rows": SHARD_ROWS, "encoder": search.encoder,
              "ext_supported": int(search.ext_supported), "params_sha256": params_digest(params),
              "search_params_sha256": params_digest(search.params), "belief_sha256": search.table_info["sha256"],
-             "exclude_teams": excluded, "pool": {"ids": list(pool.ids), "sha256": list(pool.sha256),
-                                                 "weights": [float(w) for w in pool.weights]},
+             "source_ids": dict(sorted(source_ids.items())),
+             "pool": {"ids": list(pool.ids), "sha256": list(pool.sha256), "weights": [float(w) for w in pool.weights]},
              **_plain(identity or {})}
-    run = _Collection(manifest, model, params, pool, search, out, config, max_steps, workers, ledger)
+    run = _Collection(manifest, model, params, pool, search, out, config, max_steps, workers, ledger, source_ids)
     with contextlib.ExitStack() as stack:
         if ledger is not None:  # charged to phase generate; saved on every exit, after the phase has closed
             stack.callback(ledger.save)
@@ -534,7 +561,7 @@ def main(argv=None):
     try:
         from duoforge_replay.dataset import refuse_repository
         from duoforge import teams
-        from duoforge_search import expert_data as ed, honest
+        from duoforge_search import expert_data as ed, expert_eval, honest
         from . import checkpoint, policy, runstate
         from .train import DATA_KINDS
         refuse_repository(args.out)
@@ -548,7 +575,10 @@ def main(argv=None):
             raise ValueError(f"the manifest pins {manifest.workers} workers (--workers {args.workers})")
         params, config = checkpoint.load_current(args.init)
         encoder, ext = checkpoint.encoder_of(config), checkpoint.ext_supported_of(config)
-        model = policy.make(checkpoint.model_config(config, params))
+        model_config = checkpoint.model_config(config, params)
+        if manifest.model_hash != model_hash(model_config):
+            raise ValueError(f"the manifest pins model {manifest.model_hash}, --init's is {model_hash(model_config)}")
+        model = policy.make(model_config)
         context = duoforge.Context(data_kind=DATA_KINDS[config["data"]["kind"]])
         weights = None if args.team_weights is None else [float(w) for w in args.team_weights.split(",")]
         if args.teams is None:
@@ -557,19 +587,25 @@ def main(argv=None):
         else:
             pool = teams.load(context, [t.strip() for t in args.teams.split(",")], root=args.teams_root,
                               weights=weights)
-        if manifest.pool_hash != pool_digest(pool):
-            raise ValueError(f"the manifest pins pool {manifest.pool_hash}, the given teams are {pool_digest(pool)}")
+        if manifest.pool_hash != expert_eval.pool_sha256(pool):
+            raise ValueError(f"the manifest pins pool {manifest.pool_hash}, the given teams are "
+                             f"{expert_eval.pool_sha256(pool)}")
+        # The pinned spread table (79 sources) and its source index, for leave-foe-source-out.
+        table, source_ids, info = honest.spread_table(context)
+        if manifest.belief_hash != info["sha256"]:
+            raise ValueError(f"the manifest pins belief {manifest.belief_hash}, the spread table is {info['sha256']}")
         tc = manifest.teacher_config
         search = honest.Honest(context, model, params, encoder, ext, k=tc["k"], m=tc["m"], s=tc["worlds"],
-                               rule="mix", capacity=manifest.capacity, workers=manifest.workers, lam=tc["lam"])
+                               rule="mix", capacity=manifest.capacity, workers=manifest.workers, lam=tc["lam"],
+                               table=table)
         book = None
         if args.ledger:
             from . import ledger as ledger_mod
             book = ledger_mod.Ledger(args.ledger)
         stop = runstate.StopFlag().install()
         try:
-            result = collect(manifest, model, params, pool, search, args.out, rounds=args.rounds,
-                             max_steps=args.max_steps, ledger=book, resume=args.resume, stop=stop,
+            result = collect(manifest, model, params, pool, search, args.out, source_ids=source_ids,
+                             rounds=args.rounds, max_steps=args.max_steps, ledger=book, resume=args.resume, stop=stop,
                              identity={"init_sha256": sha, "allow_other_init": args.allow_other_init})
         finally:
             stop.restore()
