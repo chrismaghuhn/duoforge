@@ -208,6 +208,8 @@ duoforge_add_test(NAME duoforge.state.pool_g38 SOURCES test_pool_g38.c WHITEBOX 
 # Mega batch 2: Swampertite, Metagrossite, Lucarionite Z and Aura Guard: the marks, the Mega of each pair, Aura Guard in the
 # commutation test and the refusal of the ModifyDamage chain.
 duoforge_add_test(NAME duoforge.state.pool_mega2 SOURCES test_pool_mega2.c WHITEBOX TIMEOUT 60)
+# Step G49, the item rows Muscle Band, Wise Glasses and Bright Powder: the marks, the chain orders of Wide Lens and Bright Powder.
+duoforge_add_test(NAME duoforge.state.pool_g49 SOURCES test_pool_g49.c WHITEBOX TIMEOUT 60)
 # Step G39: thirteen abilities and four moves: the marks, the rows, what keeps Damp and Sturdy inert, Hyper Cutter against Flower Veil.
 duoforge_add_test(NAME duoforge.state.pool_g39 SOURCES test_pool_g39.c WHITEBOX TIMEOUT 60)
 # Step G20, Spiky Shield: the protect_kind of the position (POOL tail rev 3), the state round trip, the volatile.
@@ -230,7 +232,7 @@ foreach(_gen IN ITEMS
         "extended_tables.h=b2abef243fcbfdd87654940076b9fe2fe80b117d74893a7567741f26b9075a7d"
         "extended_tables.c=9e736fa467713283418c4edf8f56b8d844452e596ba422adbd52483d20f7cc17"
         "pool_tables.h=debe1fce378c7deb09a05a0593a21b4241506eed8801433d9fde2c1a7ccb0a02"
-        "pool_tables.c=c3b99d1a5be13f3cc24ce87c1768df626d4f80fa5dbbc3561d13665616c0e402")
+        "pool_tables.c=cb6a032b7edfdc6877d532402278f5dc8d42e85988b5cb2db673a0c7a2a06c38")
     string(REPLACE "=" ";" _parts "${_gen}")
     list(GET _parts 0 _file)
     list(GET _parts 1 _expected)
