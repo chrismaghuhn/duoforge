@@ -127,6 +127,9 @@ class ControlTest(unittest.TestCase):
         second = json.loads(Path(self.book).read_text())
         self.assertEqual(second["processes"], 2)
         self.assertGreater(second["cpu_core_seconds"], first["cpu_core_seconds"])
+        # A resume cannot move the arm's spending to another ledger.
+        with self.assertRaisesRegex(SystemExit, "ledger"):
+            _train(["--resume", self.out, "--ledger", os.path.join(self.tmp.name, "other.json"), "--updates", "4"])
 
     def test_device_shares_are_deterministic_and_resumable(self):
         self.assertEqual(_train(["--out", self.out, "--ledger", self.book, "--updates", "3",
@@ -141,7 +144,7 @@ class ControlTest(unittest.TestCase):
         other = os.path.join(self.tmp.name, "cpu-only")
         book = os.path.join(self.tmp.name, "cpu-only.json")
         self.assertEqual(_train(["--out", other, "--ledger", book, "--updates", "2", "--update-gpu-share", "0",
-                                 "--act-gpu-share", "0"] + _SMALL), 0)
+                                 "--act-gpu-share", "0"] + _SMALL + _LEAGUE), 0)  # league opponents too
         self.assertEqual(json.loads(Path(book).read_text())["gpu_seconds"], 0.0)
         from duoforge_learn import train
         for bad in ("-0.1", "1.5"):

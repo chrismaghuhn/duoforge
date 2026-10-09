@@ -44,7 +44,7 @@ _DIMS = ("embed", "member", "position", "hidden", "layers", "option")
 _RESUMABLE = ("envs", "workers", "minutes", "updates", "self_play_share", "league_slots", "snapshot_every",
               "slot_refresh", "entropy", "eval_every", "eval_games", "eval_budget", "save_minutes", "teams",
               "team_weights", "teams_root", "opponent_precision", "minibatch", "learning_rate_schedule", "kl_ref",
-              "kl_coef", "kl_refresh", "ledger", "stop_cpu_core_seconds", "stop_gpu_seconds", "update_gpu_share",
+              "kl_coef", "kl_refresh", "stop_cpu_core_seconds", "stop_gpu_seconds", "update_gpu_share",
               "act_gpu_share")
 DATA_KINDS = {"closure": _layout.CONSTANTS["DUOFORGE_DATA_KIND_CLOSURE"],
               "team_c": _layout.CONSTANTS["DUOFORGE_DATA_KIND_TEAM_C"],
@@ -600,8 +600,8 @@ def _run(args, pool, on_start, stop):
     # The continuation control of stage 3 P1: a ledger, and each update and collection call on the default device
     # or the CPU by a deterministic share. Without them the run is as before.
     controlled = book is not None or args.update_gpu_share != 1.0 or args.act_gpu_share != 1.0
-    default_device, cpu_device = jax.devices()[0], jax.devices("cpu")[0]
-    calls = {"act": act_calls, "default": 0, "device": None}
+    default_device, cpu_device = (jax.devices()[0], jax.devices("cpu")[0]) if controlled else (None, None)
+    calls = {"act": act_calls, "default": 0, "device": None, "on": False}
     placed = {}
 
     def section(on_default):
@@ -615,16 +615,16 @@ def _run(args, pool, on_start, stop):
         calls["act"] += 1
         calls["default"] += on
         device = default_device if on else cpu_device
-        calls["device"] = device
-        if device not in placed:
-            placed[device] = jax.device_put(p, device)
+        calls["device"], calls["on"] = device, on
         with section(on):
+            if device not in placed:
+                placed[device] = jax.device_put(p, device)
             return jax.block_until_ready(net.act(placed[device], jax.device_put(k, device), obs, slots, mask,
                                                  is_team))
 
     class _ControlledOpponents:
         def act(self, k, obs, slot_part, mask, is_team, slot_idx):
-            with section(calls["device"] is default_device):
+            with section(calls["on"]):
                 return opponents.act(k, obs, slot_part, mask, is_team, slot_idx, device=calls["device"])
 
     act = controlled_act if controlled else net.act
