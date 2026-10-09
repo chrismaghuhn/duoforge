@@ -10,6 +10,16 @@ import numpy as np
 from duoforge import features
 
 
+def _scenes():
+    """test_learn_v2's real observations, both when the tests run as a package (CTest: python.tests.test_distill)
+    and from python/tests."""
+    if __package__:
+        from .test_learn_v2 import _scenes as scenes
+    else:
+        from test_learn_v2 import _scenes as scenes
+    return scenes()
+
+
 def _manifest(ed):
     return ed.DataManifest(source_commit="a" * 40, checkpoint_hash="b" * 64, model_hash="c" * 64, encoder=4,
                            ids_hash="d" * 64, pool_hash="e" * 64, belief_hash="f" * 64, seed=7, split_seed=9,
@@ -191,7 +201,6 @@ class LossTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         import jax
-        from test_learn_v2 import _scenes
         from duoforge_learn import policy
         cls.jax = jax
         team, turn = _scenes()
@@ -281,7 +290,6 @@ class LossTest(unittest.TestCase):
 def _small_data(targets=16, held_targets=4, policy=24, value_only=8, held_policy=6):
     """DistillData of real observations (repeated), with a known layout; held rows carry a value target of 1e6, so
     a held row in a training batch would show in the step's value loss."""
-    from test_learn_v2 import _scenes
     from duoforge_learn import distill_data
     _, turn = _scenes()
     obs, slots, mask = turn
