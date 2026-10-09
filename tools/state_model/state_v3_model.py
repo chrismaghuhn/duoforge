@@ -124,7 +124,8 @@ WEATHER_NONE, WEATHER_RAIN, WEATHER_SUN = 0, 1, 2
 WEATHER_SAND, WEATHER_SNOW = 3, 4  # POOL kinds only (Sandstorm, Snowscape)
 TERRAIN_NONE, TERRAIN_GRASSY = 0, 1
 TERRAIN_PSYCHIC = 2  # TEAM_C kinds only (Psychic Surge)
-FIELD_TURNS_MAX = 5
+FIELD_TURNS_MAX = 5  # Trick Room, and weather and terrain without a rock or Terrain Extender
+FIELD_TURNS_EXTENDED_MAX = 8  # step G55: the weather and terrain bound (DFI_FIELD_TURNS_EXTENDED_MAX)
 SCREEN_TURNS_MAX = 8
 TAILWIND_TURNS_MAX = 4
 STAGE_COUNT = 7
@@ -292,7 +293,7 @@ KD = TeamCContext(KIND_TEAM_C_DEV, 6, 4)
 # which tests/test_pool_tables.c recomputes from the pool canonical bytes: the
 # pool layout over the pool data, then the family columns, the handler columns
 # and the moves and abilities that each forme may have.
-POOL_TABLE_HASH = bytes.fromhex('2838eda9c3d06f488b83ab2b00054a0294700010fe3f2de29fd901fe2545895f')  # steps G44, G46, G48, G49, G50
+POOL_TABLE_HASH = bytes.fromhex('033bf62d382f032ac9e5b68e9ccc16585f1101ca074cf5b7786b754d9c40d894')  # steps G44, G46, G48, G49, G50, G55
 KIND_POOL, KIND_POOL_DEV = 6, 7
 
 
@@ -908,10 +909,11 @@ def check_state(ctx, st):
         return 'TURN_COUNTER'
     if st['result'] > RESULT_TIE or (st['boundary'] == TERMINAL) != (st['result'] != RESULT_NONE):
         return 'RESULT'
-    if (st['weather'] > (WEATHER_SNOW if ctx.data_kind in POOL_KINDS else WEATHER_SUN) or st['weather_turns'] > FIELD_TURNS_MAX
+    if (st['weather'] > (WEATHER_SNOW if ctx.data_kind in POOL_KINDS else WEATHER_SUN)
+            or st['weather_turns'] > FIELD_TURNS_EXTENDED_MAX
             or (st['weather'] == 0) != (st['weather_turns'] == 0)
             or st['terrain'] > (TERRAIN_PSYCHIC if ctx.data_kind in EXTENDED_KINDS else TERRAIN_GRASSY)
-            or st['terrain_turns'] > FIELD_TURNS_MAX
+            or st['terrain_turns'] > FIELD_TURNS_EXTENDED_MAX
             or (st['terrain'] == 0) != (st['terrain_turns'] == 0)
             or st['trick_room_turns'] > FIELD_TURNS_MAX):
         return 'FIELD'

@@ -262,12 +262,8 @@ static void check_facts(df_test *t)
         DF_CHECK_EQ_U64(t, dfi_pool_item_handler[items[i]], DFI_HANDLER_NONE);
         DF_CHECK_EQ_U64(t, dfi_pool_item_family[items[i]].family, DFI_ITEM_FAMILY_NONE);
     }
-    /* The duration rows stay unmarked: their step is not this one. */
-    static const uint32_t unmarked[] = {DFI_ITEM_DAMPROCK, DFI_ITEM_HEATROCK, DFI_ITEM_SMOOTHROCK, DFI_ITEM_ICYROCK,
-                                        DFI_ITEM_TERRAINEXTENDER};
-    for (size_t i = 0u; i < sizeof unmarked / sizeof unmarked[0]; ++i) {
-        DF_CHECK(t, dfi_support.items[unmarked[i]] == 0u);
-    }
+    /* The duration rows (Damp, Heat, Smooth and Icy Rock, Terrain Extender) were unmarked at this step; step G55 marks them,
+     * and tests/test_pool_g55.c owns that check. */
     /* The modifiers as the pin writes them: 4505/4096 is 1.1 and 3686/4096 is 0.9 of the base accuracy or power. */
     DF_CHECK_EQ_U64(t, modified(100u, 4505u), 110u);
     DF_CHECK_EQ_U64(t, modified(100u, 3686u), 90u);

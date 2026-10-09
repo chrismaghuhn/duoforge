@@ -1887,7 +1887,7 @@ const dfi_pool_item_data dfi_pool_items[DFI_POOL_ITEM_COUNT] = {
     {41u, 42u},
     /* Crabominite -- data/items.ts:1214-1225, data/mods/champions/items.ts:186-189 */
     {276u, 277u},
-    /* Damp Rock -- data/items.ts:1261-1269  [unmodelled: read by id in data/conditions.ts] */
+    /* Damp Rock -- data/items.ts:1261-1269 */
     {DFI_FORME_NONE, DFI_FORME_NONE},
     /* Delphoxite -- data/items.ts:1378-1389, data/mods/champions/items.ts:206-209 */
     {227u, 228u},
@@ -1937,13 +1937,13 @@ const dfi_pool_item_data dfi_pool_items[DFI_POOL_ITEM_COUNT] = {
     {72u, 73u},
     /* Hawluchanite -- data/items.ts:2789-2800, data/mods/champions/items.ts:438-441 */
     {258u, 259u},
-    /* Heat Rock -- data/items.ts:2841-2849  [unmodelled: read by id in data/conditions.ts] */
+    /* Heat Rock -- data/items.ts:2841-2849 */
     {DFI_FORME_NONE, DFI_FORME_NONE},
     /* Heracronite -- data/items.ts:2877-2888, data/mods/champions/items.ts:462-465 */
     {103u, 104u},
     /* Houndoominite -- data/items.ts:2901-2912, data/mods/champions/items.ts:470-473 */
     {107u, 108u},
-    /* Icy Rock -- data/items.ts:3010-3018  [unmodelled: read by id in data/conditions.ts] */
+    /* Icy Rock -- data/items.ts:3010-3018 */
     {DFI_FORME_NONE, DFI_FORME_NONE},
     /* Iron Ball -- data/items.ts:3050-3067  [unmodelled: callback onEffectiveness; callback onModifySpe; read by id in data/moves.ts; read by id in sim/pokemon.ts] */
     {DFI_FORME_NONE, DFI_FORME_NONE},
@@ -2035,7 +2035,7 @@ const dfi_pool_item_data dfi_pool_items[DFI_POOL_ITEM_COUNT] = {
     {105u, 106u},
     /* Slowbronite -- data/items.ts:5808-5819, data/mods/champions/items.ts:870-873 */
     {55u, 56u},
-    /* Smooth Rock -- data/items.ts:5820-5828  [unmodelled: read by id in data/conditions.ts] */
+    /* Smooth Rock -- data/items.ts:5820-5828 */
     {DFI_FORME_NONE, DFI_FORME_NONE},
     /* Starminite -- data/items.ts:6021-6032, data/mods/champions/items.ts:906-909 */
     {63u, 64u},
@@ -2043,7 +2043,7 @@ const dfi_pool_item_data dfi_pool_items[DFI_POOL_ITEM_COUNT] = {
     {98u, 99u},
     /* Swampertite -- data/items.ts:6180-6191, data/mods/champions/items.ts:946-949 */
     {115u, 116u},
-    /* Terrain Extender -- data/items.ts:6283-6291  [unmodelled: read by id in data/moves.ts] */
+    /* Terrain Extender -- data/items.ts:6283-6291 */
     {DFI_FORME_NONE, DFI_FORME_NONE},
     /* Tyranitarite -- data/items.ts:7392-7403, data/mods/champions/items.ts:978-981 */
     {109u, 110u},
@@ -2730,7 +2730,7 @@ const uint8_t dfi_pool_item_handler[DFI_POOL_ITEM_COUNT] = {
     [DFI_ITEM_CHIMECHITE] = DFI_HANDLER_NONE,
     [DFI_ITEM_CLEFABLITE] = DFI_HANDLER_NONE,
     [DFI_ITEM_CRABOMINITE] = DFI_HANDLER_NONE,
-    [DFI_ITEM_DAMPROCK] = DFI_HANDLER_UNMODELED,
+    [DFI_ITEM_DAMPROCK] = DFI_HANDLER_NONE,
     [DFI_ITEM_DELPHOXITE] = DFI_HANDLER_NONE,
     [DFI_ITEM_DRAGALGITE] = DFI_HANDLER_NONE,
     [DFI_ITEM_DRAGONINITE] = DFI_HANDLER_NONE,
@@ -2755,10 +2755,10 @@ const uint8_t dfi_pool_item_handler[DFI_POOL_ITEM_COUNT] = {
     [DFI_ITEM_GRENINJITE] = DFI_HANDLER_NONE,
     [DFI_ITEM_GYARADOSITE] = DFI_HANDLER_NONE,
     [DFI_ITEM_HAWLUCHANITE] = DFI_HANDLER_NONE,
-    [DFI_ITEM_HEATROCK] = DFI_HANDLER_UNMODELED,
+    [DFI_ITEM_HEATROCK] = DFI_HANDLER_NONE,
     [DFI_ITEM_HERACRONITE] = DFI_HANDLER_NONE,
     [DFI_ITEM_HOUNDOOMINITE] = DFI_HANDLER_NONE,
-    [DFI_ITEM_ICYROCK] = DFI_HANDLER_UNMODELED,
+    [DFI_ITEM_ICYROCK] = DFI_HANDLER_NONE,
     [DFI_ITEM_IRONBALL] = DFI_HANDLER_UNMODELED,
     [DFI_ITEM_KANGASKHANITE] = DFI_HANDLER_NONE,
     [DFI_ITEM_KINGSROCK] = DFI_HANDLER_UNMODELED,
@@ -2804,11 +2804,11 @@ const uint8_t dfi_pool_item_handler[DFI_POOL_ITEM_COUNT] = {
     [DFI_ITEM_SHELLBELL] = DFI_HANDLER_UNMODELED,
     [DFI_ITEM_SKARMORITE] = DFI_HANDLER_NONE,
     [DFI_ITEM_SLOWBRONITE] = DFI_HANDLER_NONE,
-    [DFI_ITEM_SMOOTHROCK] = DFI_HANDLER_UNMODELED,
+    [DFI_ITEM_SMOOTHROCK] = DFI_HANDLER_NONE,
     [DFI_ITEM_STARMINITE] = DFI_HANDLER_NONE,
     [DFI_ITEM_STEELIXITE] = DFI_HANDLER_NONE,
     [DFI_ITEM_SWAMPERTITE] = DFI_HANDLER_NONE,
-    [DFI_ITEM_TERRAINEXTENDER] = DFI_HANDLER_UNMODELED,
+    [DFI_ITEM_TERRAINEXTENDER] = DFI_HANDLER_NONE,
     [DFI_ITEM_TYRANITARITE] = DFI_HANDLER_NONE,
     [DFI_ITEM_VENUSAURITE] = DFI_HANDLER_NONE,
     [DFI_ITEM_VICTREEBELITE] = DFI_HANDLER_NONE,
@@ -6900,10 +6900,7 @@ const char *const dfi_pool_item_unmodeled[DFI_POOL_ITEM_COUNT] = {
     [DFI_ITEM_BINDINGBAND] = "read by id in data/conditions.ts",
     [DFI_ITEM_CHERIBERRY] = "callback onEat; callback onUpdate",
     [DFI_ITEM_CHESTOBERRY] = "callback onEat; callback onUpdate",
-    [DFI_ITEM_DAMPROCK] = "read by id in data/conditions.ts",
     [DFI_ITEM_FOCUSBAND] = "callback onDamage; callback onDamagePriority",
-    [DFI_ITEM_HEATROCK] = "read by id in data/conditions.ts",
-    [DFI_ITEM_ICYROCK] = "read by id in data/conditions.ts",
     [DFI_ITEM_IRONBALL] = "callback onEffectiveness; callback onModifySpe; read by id in data/moves.ts; read by id in sim/pokemon.ts",
     [DFI_ITEM_KINGSROCK] = "callback onModifyMove; callback onModifyMovePriority",
     [DFI_ITEM_LEEK] = "callback onModifyCritRatio",
@@ -6921,8 +6918,6 @@ const char *const dfi_pool_item_unmodeled[DFI_POOL_ITEM_COUNT] = {
     [DFI_ITEM_SCOPELENS] = "callback onModifyCritRatio",
     [DFI_ITEM_SHEDSHELL] = "callback onMaybeTrapPokemon; callback onMaybeTrapPokemonPriority; callback onTrapPokemon; callback onTrapPokemonPriority",
     [DFI_ITEM_SHELLBELL] = "callback onAfterMoveSecondarySelf; callback onAfterMoveSecondarySelfPriority",
-    [DFI_ITEM_SMOOTHROCK] = "read by id in data/conditions.ts",
-    [DFI_ITEM_TERRAINEXTENDER] = "read by id in data/moves.ts",
     [DFI_ITEM_ZOOMLENS] = "callback onSourceModifyAccuracy; callback onSourceModifyAccuracyPriority",
 };
 
@@ -7065,10 +7060,10 @@ const char *const dfi_pool_ability_unmodeled[DFI_POOL_ABILITY_COUNT] = {
 };
 
 const uint8_t dfi_pool_table_hash[32] = {
-    0x28u, 0x38u, 0xedu, 0xa9u, 0xc3u, 0xd0u, 0x6fu, 0x48u,
-    0x8bu, 0x83u, 0xabu, 0x2bu, 0x00u, 0x05u, 0x4au, 0x02u,
-    0x94u, 0x70u, 0x00u, 0x10u, 0xfeu, 0x3fu, 0x2du, 0xe2u,
-    0x9fu, 0xd9u, 0x01u, 0xfeu, 0x25u, 0x45u, 0x89u, 0x5fu,
+    0x03u, 0x3bu, 0xf6u, 0x2du, 0x38u, 0x2fu, 0x03u, 0x2au,
+    0xc9u, 0xe5u, 0xb6u, 0x8eu, 0x9cu, 0xccu, 0x16u, 0x58u,
+    0x5fu, 0x11u, 0x01u, 0xcau, 0x07u, 0x4cu, 0xf5u, 0xb7u,
+    0x78u, 0x6bu, 0x75u, 0x4du, 0x9cu, 0x40u, 0xd8u, 0x94u,
 };
 
 static size_t dfi_pool_put_u16(uint8_t *out, size_t n, uint32_t v)

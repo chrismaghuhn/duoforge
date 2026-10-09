@@ -1843,6 +1843,16 @@ G49_ITEM_FACTS = (
                       "onModifyAccuracy(accuracy) { if (typeof accuracy !== 'number') return; this.debug('brightpowder - decreasing accuracy'); "
                       "return this.chainModify([3686, 4096]); },")),
 )
+# Step G55 (the duration rows): the terrain durations of Grassy Terrain and Psychic Terrain (data/moves.ts:7673-7691 and
+# :14095-14113; Electric and Misty are G25_FACTS), which read Terrain Extender through their durationCallback. The engine
+# hard-codes the callback's 8 and 5 (dfi_field_start_turns); the five rock items are read by id (ENGINE_ROWS) and have no
+# callback of their own, and the weather rows (Damp, Heat, Smooth and Icy Rock) are WEATHER_FACTS and G32_WEATHER_FACTS.
+G55_TERRAIN_DURATION = "durationCallback(source, effect) { if (source?.hasItem('terrainextender')) { return 8; } return 5; },"
+G55_FACTS = (
+    ('grassyterrain', [G55_TERRAIN_DURATION, 'duration: 5,']),
+    ('psychicterrain', [G55_TERRAIN_DURATION, 'duration: 5,']),
+)
+G55_ITEMS = ('damprock', 'heatrock', 'smoothrock', 'icyrock', 'terrainextender')
 # Step G31: Taunt (data/moves.ts:18974-19016) and Yawn (:21131-21162) are handlers of their own that the turn code implements
 # (a condition whose state is the tail's taunt_turns / yawn_turns). The Champions mod changes neither. The generator checks
 # the whole condition text of both and Yawn's onTryHit, whitespace aside: Taunt's duration 3 (4 when the target has been out
@@ -2254,7 +2264,8 @@ HANDLER_IDS = ['NONE', 'UNMODELED']
 # still has the UNMODELED handler fails duoforge.data.pool_tables. G4: Focus Sash, Rock Head. G12: Floettite (the Mega
 # Stone of Floette-Eternal), Flower Veil and Fairy Aura. G14: Rough Skin, Poison Touch and Thermal Exchange. G16: Sticky Hold (Knock Off reads it by id). AC1: Trace (the entry copy of a foe's ability). G15: Psychic Seed (Grassy Seed's rule for the other terrain). G22: Sand Rush, Swift Swim, Slush Rush and Chlorophyll (the doubled Speed in their weather, tools/datagen/pool_families.js ENGINE_ORDER), Sand Rush's immunity to Sandstorm, Inner Focus (no flinch, no Intimidate drop) and Liquid Voice (a sound move becomes Water). G23-C: Levitate (isGrounded and the Ground immunity). G49: Muscle Band, Wise Glasses (base power by category) and Bright Powder (the target's accuracy).
 ENGINE_ROWS = {'items': ['focussash', 'floettite', 'psychicseed', 'electricseed', 'mistyseed', 'expertbelt', 'ejectbutton',
-                         'widelens', 'muscleband', 'wiseglasses', 'brightpowder', 'redcard'],
+                         'widelens', 'muscleband', 'wiseglasses', 'brightpowder', 'redcard', 'damprock', 'heatrock',
+                         'smoothrock', 'icyrock', 'terrainextender'],
                'abilities': ['rockhead', 'flowerveil', 'fairyaura', 'roughskin', 'poisontouch', 'thermalexchange',
                              'stickyhold', 'trace', 'levitate', 'sandrush', 'swiftswim', 'slushrush', 'chlorophyll',
                              'innerfocus', 'liquidvoice', 'flamebody', 'clearbody', 'hospitality', 'overcoat',
@@ -2953,6 +2964,19 @@ def check_g49_facts(items_ts, champ_items):
                 fail('item %s: the entry no longer has "%s"' % (rid, fact))
 
 
+def check_g55_items(items_ts, champ_items):
+    """Step G55: the five rock items and Terrain Extender are data rows of the pinned items.ts (no callback of their own: the
+    durations are the callbacks of the weather and terrain conditions), and the Champions mod has no entry for them."""
+    for rid in G55_ITEMS:
+        e = items_ts.entry(rid)
+        if e is None:
+            fail('item %s not found' % rid)
+        if champ_items.entry(rid) is not None:
+            fail('item %s: the champions mod overrides the entry' % rid)
+        if re.search(r'on[A-Z]\w*\(|durationCallback|condition:', chr(10).join(e[2])):
+            fail('item %s: a callback, which the rows of G55 do not model' % rid)
+
+
 def check_g37_facts(abil_ts, champ_abil):
     """Step G37: the text of Toxic Debris that the engine hard-codes (G37_ABILITY_FACTS) is in the pinned entry, whitespace aside, and
     the Champions mod has no entry of its own for it."""
@@ -2988,7 +3012,7 @@ def check_g8_conditions(moves_ts, only=None):
     must be in the pinned entry, as one normalised text. `only`: a tuple of (move id, facts) to check instead of all of
     them (the generator's tests)."""
     for mid, facts in (G8_CONDITION_FACTS + G20_CONDITION_FACTS + G28_FACTS + G32_FACTS + G34_FACTS + G25_FACTS +
-                       G33_FACTS + G38_FACTS + G39_FACTS + G37_FACTS + G44_FACTS + G48_FACTS if only is None else only):
+                       G33_FACTS + G38_FACTS + G39_FACTS + G37_FACTS + G44_FACTS + G48_FACTS + G55_FACTS if only is None else only):
         e = moves_ts.entry(mid)
         if e is None:
             fail('move %s not found' % mid)
@@ -3017,6 +3041,7 @@ def build_pool(root, repo, dx):
     check_g28_items(items_ts)
     check_g34_facts(abil_ts, champ_abil, items_ts, champ_items)
     check_g49_facts(items_ts, champ_items)
+    check_g55_items(items_ts, champ_items)
     check_g37_facts(abil_ts, champ_abil)
     check_g32_entries(items_ts, champ_items, abil_ts, champ_abil)
     check_weather_facts(Source(root, 'data/conditions.ts', READER_INPUTS), moves_ts)

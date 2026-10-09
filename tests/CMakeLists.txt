@@ -237,7 +237,7 @@ foreach(_gen IN ITEMS
         "extended_tables.h=b2abef243fcbfdd87654940076b9fe2fe80b117d74893a7567741f26b9075a7d"
         "extended_tables.c=9e736fa467713283418c4edf8f56b8d844452e596ba422adbd52483d20f7cc17"
         "pool_tables.h=d6ad3baa11dd6f4a192143219faed5c2e6f50ac43056ac8dd9f4fa688589c748"
-        "pool_tables.c=8de5fcf10584819283186df900ed8f7b0c933387ab28802202d6064f609de18d")
+        "pool_tables.c=b5a1183056c48443ab9f3929840520bf428eaecfe1509c2968b3e7e5e11a16a3")
     string(REPLACE "=" ";" _parts "${_gen}")
     list(GET _parts 0 _file)
     list(GET _parts 1 _expected)
@@ -719,3 +719,6 @@ if(Python3_Interpreter_FOUND)
     set_tests_properties(duoforge.data.model_pool_hash PROPERTIES TIMEOUT 60
         ENVIRONMENT PYTHONDONTWRITEBYTECODE=1)
 endif()
+# Step G55 (decision 0015 item 5bf): Damp Rock, Heat Rock, Smooth Rock, Icy Rock and Terrain Extender: the marks, the bounds of the
+# weather and the terrain (8; Trick Room stays at 5), and the recorded battles g55_* turn by turn.
+duoforge_add_test(NAME duoforge.state.pool_g55 SOURCES test_pool_g55.c WHITEBOX TIMEOUT 60)

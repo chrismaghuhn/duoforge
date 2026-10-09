@@ -56,7 +56,8 @@ typedef struct dfi_move_slot {
 #define DFI_TERRAIN_PSYCHIC 2u /* Team C: Psychic Surge */
 #define DFI_TERRAIN_ELECTRIC 3u /* POOL (step G25): Electric Surge, Electric Terrain */
 #define DFI_TERRAIN_MISTY 4u    /* POOL (step G25): Misty Terrain */
-#define DFI_FIELD_TURNS_MAX 5u  /* weather, terrain and Trick Room */
+#define DFI_FIELD_TURNS_MAX 5u  /* Trick Room, and weather and terrain without the rock or Terrain Extender */
+#define DFI_FIELD_TURNS_EXTENDED_MAX 8u /* step G55: weather or terrain set with its rock or Terrain Extender */
 #define DFI_SCREEN_TURNS_MAX 8u /* Reflect and Light Screen with Light Clay */
 #define DFI_TAILWIND_TURNS_MAX 4u
 

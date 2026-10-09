@@ -215,6 +215,31 @@ static bool dfi_holds(const struct duoforge_battle *b, const dfi_member *m, uint
     return m != NULL && dfi_item_code(b, m) == 1u + id;
 }
 
+/* Step G55: the rock that lengthens the weather w (data/conditions.ts durationCallback: Rain Dance with Damp Rock, Sunny Day
+ * with Heat Rock, Sandstorm with Smooth Rock, Snowscape with Icy Rock; Champions changes none). */
+static uint32_t dfi_weather_rock(uint32_t w)
+{
+    switch (w) {
+    case DFI_WEATHER_RAIN:
+        return DFI_ITEM_DAMPROCK;
+    case DFI_WEATHER_SUN:
+        return DFI_ITEM_HEATROCK;
+    case DFI_WEATHER_SAND:
+        return DFI_ITEM_SMOOTHROCK;
+    default:
+        return DFI_ITEM_ICYROCK; /* DFI_WEATHER_SNOW, the last weather of the POOL kinds */
+    }
+}
+
+/* Step G55: the turns that a weather or terrain lasts when its setter starts it. Field.setWeather and Field.setTerrain call the
+ * durationCallback with the setter as the source (sim/field.ts:78-81 and :147-149; a setter from an ability has the holder as
+ * the event target, :41-42): 8 while the setter holds the lengthening item (the rock of the weather, or Terrain Extender for a
+ * terrain: data/moves.ts terrains), else 5. The item is read when the field starts, as the callback reads it. */
+static uint32_t dfi_field_start_turns(const struct duoforge_battle *b, const dfi_member *setter, uint32_t item)
+{
+    return dfi_holds(b, setter, item) ? DFI_FIELD_TURNS_EXTENDED_MAX : DFI_FIELD_TURNS_MAX;
+}
+
 /* singleEvent TakeItem of the item (data/items.ts, the onTakeItem of the Mega Stones: they refuse their own species,
  * Floettite's variant at :2194 gives the same result; the Champions mod changes none): a Pokemon that holds an item
  * that can be taken from it. The only items of the pool with an onTakeItem are the Mega Stones, and takeItem() asks
@@ -4647,7 +4672,7 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
             return DUOFORGE_OK;
         }
         b->weather = (uint8_t)w;
-        b->weather_turns = (uint8_t)DFI_FIELD_TURNS_MAX;
+        b->weather_turns = (uint8_t)dfi_field_start_turns(b, dfi_at(b, user), dfi_weather_rock(w)); /* G55 */
         duoforge_event e = dfi_event_make(DUOFORGE_EVENT_WEATHER, DUOFORGE_NO_POSITION);
         e.detail = (uint8_t)w; /* DUOFORGE_WEATHER_* */
         dfi_emit(r, &e);
@@ -4664,7 +4689,7 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
             return DUOFORGE_OK;
         }
         b->terrain = (uint8_t)terrain;
-        b->terrain_turns = (uint8_t)DFI_FIELD_TURNS_MAX;
+        b->terrain_turns = (uint8_t)dfi_field_start_turns(b, dfi_at(b, user), DFI_ITEM_TERRAINEXTENDER); /* G55 */
         duoforge_event e = dfi_event_make(DUOFORGE_EVENT_FIELD_START, DUOFORGE_NO_POSITION);
         e.detail = (uint8_t)dfi_terrain_field_detail(terrain);
         dfi_emit(r, &e);
@@ -6181,7 +6206,7 @@ static duoforge_status dfi_entry_ability(dfi_run *r, uint32_t flat)
     if (w != DFI_WEATHER_NONE) {
         if (b->weather != w) {
             b->weather = (uint8_t)w;
-            b->weather_turns = (uint8_t)DFI_FIELD_TURNS_MAX;
+            b->weather_turns = (uint8_t)dfi_field_start_turns(b, m, dfi_weather_rock(w)); /* G55 */
             /* -weather|...|[from] ability: X|[of] holder */
             duoforge_event e = dfi_ev(DUOFORGE_EVENT_WEATHER, DUOFORGE_NO_POSITION, DUOFORGE_CAUSE_ABILITY, a, flat);
             e.detail = (uint8_t)w; /* DUOFORGE_WEATHER_* */
@@ -6190,7 +6215,7 @@ static duoforge_status dfi_entry_ability(dfi_run *r, uint32_t flat)
     } else if (terrain != DFI_TERRAIN_NONE) {
         if (b->terrain != terrain) {
             b->terrain = (uint8_t)terrain;
-            b->terrain_turns = (uint8_t)DFI_FIELD_TURNS_MAX;
+            b->terrain_turns = (uint8_t)dfi_field_start_turns(b, m, DFI_ITEM_TERRAINEXTENDER); /* G55 */
             /* -fieldstart|move: X Terrain|[from] ability: X|[of] holder */
             duoforge_event e =
                 dfi_ev(DUOFORGE_EVENT_FIELD_START, DUOFORGE_NO_POSITION, DUOFORGE_CAUSE_ABILITY, a, flat);
