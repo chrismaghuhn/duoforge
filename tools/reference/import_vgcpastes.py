@@ -163,10 +163,11 @@ def converter_readable(tables):
 
 
 def decide(rows, pastes, known, info_of, check, registry_ids=(), readable=None):
-    """The decision for every row with EVs = Yes and a paste link, in the import order: a dict with row, status (pool,
-    pending, illegal, name, evs-missing, paste-error, duplicate, in-registry, not-fetched), id, sets, notes, blockers,
-    detail and duplicate_of. `known` maps content_key -> id of the registry's teams; `check(text)` is the engine's
-    verdict on a registry paste: (status, blockers or detail)."""
+    """The decision for every row with EVs = Yes, in the import order: a dict with row, status (pool, pending, illegal,
+    name, evs-missing, paste-error, unreadable, duplicate, in-registry, not-fetched, no-link), id, sets, notes,
+    blockers, detail and duplicate_of. `known` maps content_key -> id of the registry's teams; `check(text)` is the
+    engine's verdict on a registry paste: (status, blockers or detail); `readable(text)` is None for a paste the
+    converter reads, else why not (converter_readable)."""
     order = {t: n for n, t in enumerate(TABS)}
     wanted = [r for r in rows if r['evs'] == 'Yes']
     wanted = sorted(enumerate(wanted), key=lambda x: (order.get(x[1]['tab'], len(TABS)), x[0]))
@@ -329,7 +330,10 @@ def engine_check(context):
         return ('illegal', '%s: %s' % (status_name(status), '; '.join(why_illegal(members)) or 'no member rule'))
 
     def why_illegal(members):
-        """The data API's legality rules a refused team breaks, set by set (what the setup validated)."""
+        """The data API's legality rules a refused team breaks, set by set (what the setup validated).
+
+        Diagnostics only, for the report's detail: the verdict is the engine's status alone, and nothing here decides
+        or overrides it (a refused team whose rule this misses says 'no member rule')."""
         out, dex = [], set()
         for k, m in enumerate(members):
             f = data.find(context, data.TABLE_SPECIES, data.to_id(m['species']))

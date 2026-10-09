@@ -6,6 +6,7 @@ pending (with blockers) or illegal (with the rules named).
 import re
 import sys
 import unittest
+from unittest import mock
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -13,7 +14,7 @@ sys.path.insert(0, str(ROOT / "tools" / "reference"))
 sys.dont_write_bytecode = True
 
 import duoforge  # noqa: E402
-from duoforge import _layout, data  # noqa: E402
+from duoforge import _layout, data, teams  # noqa: E402
 
 import import_vgcpastes as ivp  # noqa: E402
 
@@ -75,6 +76,35 @@ class EngineCheckTest(unittest.TestCase):
         verdict, blockers = self.check(with_set(TEAM_A, "Raichu", line, re.sub(r"@ .+", "@ " + name, line)))
         self.assertEqual(verdict, "pending")
         self.assertTrue(any("Mega Evolution of Raichu" in b for b in blockers), blockers)
+
+
+    def test_the_held_stone_is_found_beyond_the_first(self):
+        # A stand-in for mega_at: Raichu's first stone is another, supported one, the held Raichunite Y is the second
+        # and unsupported. The blocker must name it (forme_info.mega_stone, the first stone only, would miss it).
+        raichu = data.find(self.ctx, data.TABLE_SPECIES, "raichu")
+        held = data.find(self.ctx, data.TABLE_ITEM, "raichunitey")
+        other = data.find(self.ctx, data.TABLE_ITEM, "raichunitex")
+        real_count, real_at = data.mega_count, data.mega_at
+
+        def count(ctx, species):
+            return 2 if species == raichu else real_count(ctx, species)
+
+        def at(ctx, species, i):
+            if species != raichu:
+                return real_at(ctx, species, i)
+            return {"stone": (other, held)[i], "supported": i == 0}
+
+        unsupported = _layout.CONSTANTS["DUOFORGE_E_UNSUPPORTED"]
+        with mock.patch.object(data, "mega_count", count), mock.patch.object(data, "mega_at", at), \
+                mock.patch.object(teams, "check", return_value=unsupported):
+            verdict, blockers = self.check(TEAM_A)
+        self.assertEqual(verdict, "pending")
+        self.assertEqual([b for b in blockers if "Mega" in b],
+                         ["set %d: Mega Evolution of Raichu with Raichunite Y" % self.set_of("Raichu")])
+
+    @staticmethod
+    def set_of(species):
+        return 1 + [b.startswith(species) for b in TEAM_A.strip("\n").split("\n\n")].index(True)
 
 
 if __name__ == "__main__":
