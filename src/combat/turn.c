@@ -67,6 +67,8 @@ typedef struct dfi_run {
      * yet (bit flat). Transient: it lives in the run, never in the state, and only the phazing step after the action
      * clears it. Emergency Exit and Eject Button ignore such a holder (Champions abilities.ts:24, items.ts:270). */
     uint32_t drag_pending;
+    /* step G42: the classification of the current move action's result (DFI_MRES_*, bits; 0 = none seen). */
+    uint32_t mres;
 } dfi_run;
 
 #define DFI_MOVE_TARGET_NONE DFI_POSITIONS          /* no target Pokemon */
@@ -119,6 +121,34 @@ static const dfi_pool_forme_data *dfi_forme_of(const dfi_member *m)
 /* The member's types now (Pokemon.getTypes): its forme's, or the one type that Soak set (setType, sim/pokemon.ts:2109;
  * the POOL tail's soak_type of the member, zero under every other kind), which lasts until the Pokemon leaves the field,
  * faints or Mega Evolves (setSpecies resets the types, sim/pokemon.ts:1392). `m` is a member of `b`. */
+/* The move result classes of one move action (step G42; dfi_run_move, the pin's moveThisTurnResult of sim/battle-actions.ts):
+ * TRUE when a target took the move, FALSE for a literal `false` of the hit steps (a miss, an immunity, a failed effect, a
+ * Psychic Terrain block that returns null and is normalised to false, an action that is stopped before it moves), NULL for a
+ * target that Protect or Wide Guard took (NOT_FAIL, which is no failure), and UNCLASSIFIED for any exit the classifier does
+ * not map exactly. TRUE wins over FALSE, FALSE over NULL (trySpreadMoveHit: `!targets.length && !atLeastOneFailure` is null). */
+#define DFI_MRES_TRUE 1u
+#define DFI_MRES_FALSE 2u
+#define DFI_MRES_NULL 4u
+#define DFI_MRES_UNCLASS 8u
+
+/* Roost's volatile (single_turn bit) of the member's position, when the member is on the field. */
+static bool dfi_roosted(const struct duoforge_battle *b, const dfi_member *m)
+{
+    for (uint32_t s = 0u; s < DUOFORGE_SIDE_COUNT; ++s) {
+        const dfi_member *first = &b->sides[s].members[0];
+        if (m >= first && m < first + DUOFORGE_MAX_ROSTER) {
+            const uint32_t idx = (uint32_t)(m - first); /* wide-operands-reviewed: a pointer difference inside one array */
+            for (uint32_t p = 0u; p < DUOFORGE_ACTIVE_PER_SIDE; ++p) {
+                if (b->sides[s].positions[p].occupant == idx) {
+                    return (b->tail.sides[s].positions[p].single_turn & DFI_SINGLE_TURN_ROOST) != 0u;
+                }
+            }
+            return false;
+        }
+    }
+    return false;
+}
+
 static void dfi_types_of(const struct duoforge_battle *b, const dfi_member *m, uint32_t types[2])
 {
     const dfi_pool_forme_data *f = dfi_forme_of(m);
@@ -138,8 +168,26 @@ static void dfi_types_of(const struct duoforge_battle *b, const dfi_member *m, u
                 types[0] = soak - 1u; /* a single type */
                 types[1] = DFI_CLOSURE_NONE;
             }
-            return;
+            break;
         }
+    }
+    /* Roost (step G42, the onType of data/moves.ts:15444-15455): the Flying type is filtered out after the other types.
+     * An empty list is Normal from gen 5 (Pokemon.getTypes, sim/pokemon.ts:2143), so a pure Flying Pokemon is Normal for
+     * the turn. Not a type change: type_now and the TYPE_CHANGED view stay as they are. */
+    if (dfi_roosted(b, m)) {
+        uint32_t kept[2] = {DFI_CLOSURE_NONE, DFI_CLOSURE_NONE};
+        uint32_t n = 0u;
+        for (uint32_t i = 0u; i < 2u; ++i) {
+            if (types[i] != DFI_CLOSURE_NONE && types[i] != DFI_TYPE_FLYING) {
+                kept[n] = types[i];
+                n += 1u;
+            }
+        }
+        if (n == 0u) {
+            kept[0] = DFI_TYPE_NORMAL;
+        }
+        types[0] = kept[0];
+        types[1] = kept[1];
     }
 }
 
@@ -388,6 +436,7 @@ static void dfi_fail_still(dfi_run *r, uint32_t user)
 {
     dfi_emit_plain(r, DUOFORGE_EVENT_FAIL, user);
     dfi_still(r);
+    r->mres |= DFI_MRES_FALSE; /* a [still] failure returns false (sim/battle-actions.ts, useMoveInner and runMoveEffects) */
 }
 
 /* -immune for `flat`, with [from] ability when an ability did it. */
@@ -1377,6 +1426,16 @@ static duoforge_status dfi_get_damage(dfi_run *r, uint32_t user, uint32_t target
         /* Acrobatics' basePowerCallback (step G28, data/moves.ts:117-141): doubled while the user holds no item (the item it
          * holds now: one that was eaten, knocked off or used up is gone). */
         if (dfi_item_code(r->b, a) == 0u) {
+            power *= 2u;
+        }
+    } else if (md->special == DFI_SPECIAL_STOMPING_TANTRUM) {
+        /* basePowerCallback (data/moves.ts:18054-18058): x2 when the user's last move result is FALSE (strictly; null is
+         * not a failure). An unclassified last result is refused, never guessed (step G42). */
+        const uint32_t last_res = r->b->tail.sides[user / 2u].positions[user % 2u].move_result;
+        if ((last_res & DFI_MOVE_RESULT_UNCLASSIFIED_LAST) != 0u) {
+            return DUOFORGE_E_UNSUPPORTED;
+        }
+        if (((last_res >> DFI_MOVE_RESULT_LAST_SHIFT) & 3u) == DFI_MOVE_RESULT_FALSE) {
             power *= 2u;
         }
     } else if (md->special == DFI_SPECIAL_HP_POWER) {
@@ -2684,6 +2743,7 @@ static duoforge_status dfi_run_imprison(dfi_run *r, uint32_t user)
     duoforge_event e = dfi_event_make(DUOFORGE_EVENT_VOLATILE_START, user);
     e.detail = (uint8_t)DUOFORGE_VOLATILE_IMPRISON;
     dfi_emit(r, &e); /* [-start] move: Imprison */
+    r->mres |= DFI_MRES_TRUE;
     return DUOFORGE_OK;
 }
 
@@ -3260,6 +3320,7 @@ static bool dfi_soak(dfi_run *r, uint32_t flat, uint32_t move_id)
 static duoforge_status dfi_terrain_change(dfi_run *r);
 static duoforge_status dfi_status_hit_end(dfi_run *r)
 {
+    r->mres |= DFI_MRES_TRUE; /* the effect applied: the move's hit returns true (sim/battle-actions.ts, runMoveEffects) */
     const duoforge_status st = dfi_update(r);
     if (st != DUOFORGE_OK) {
         return st;
@@ -3278,6 +3339,7 @@ static duoforge_status dfi_run_protect(dfi_run *r, uint32_t user, uint32_t kind)
 {
     dfi_active_slot *pos = dfi_pos(r->b, user);
     if (!dfi_will_act(r->b)) {
+        r->mres |= DFI_MRES_FALSE;
         dfi_fail_still(r, user); /* onPrepareHit fails; the stall counter stays */
         return DUOFORGE_OK;
     }
@@ -3295,6 +3357,7 @@ static duoforge_status dfi_run_protect(dfi_run *r, uint32_t user, uint32_t kind)
         if (!success) {
             pos->stall_level = 0u;
             pos->stall_turns = 0u;
+            r->mres |= DFI_MRES_FALSE;
             dfi_fail_still(r, user);
             return DUOFORGE_OK;
         }
@@ -3304,6 +3367,7 @@ static duoforge_status dfi_run_protect(dfi_run *r, uint32_t user, uint32_t kind)
     pos->stall_level = (uint8_t)(level < DFI_STALL_LEVEL_MAX ? level + 1u : level); /* wide-operands-reviewed */
     pos->stall_turns = (uint8_t)DFI_STALL_DURATION;
     dfi_emit_plain(r, DUOFORGE_EVENT_PROTECT, user); /* [-singleturn] Protect (all three print `move: Protect`) */
+    r->mres |= DFI_MRES_TRUE;
     return dfi_status_hit_end(r);
 }
 
@@ -3426,6 +3490,7 @@ static duoforge_status dfi_run_wide_guard(dfi_run *r, uint32_t user)
     dfi_active_slot *pos = dfi_pos(b, user);
     pos->stall_level = (uint8_t)(pos->stall_level < DFI_STALL_LEVEL_MAX ? pos->stall_level + 1u : pos->stall_level); /* wide-operands-reviewed */
     pos->stall_turns = (uint8_t)DFI_STALL_DURATION;
+    r->mres |= DFI_MRES_TRUE; /* Wide Guard's effect applies (a second one of the side prints nothing, and is still a success) */
     return DUOFORGE_OK;
 }
 
@@ -3450,6 +3515,7 @@ static duoforge_status dfi_run_aurora_veil(dfi_run *r, uint32_t user)
     e.detail = (uint8_t)side;
     e.amount = (uint8_t)DUOFORGE_SIDE_AURORA_VEIL;
     dfi_emit(r, &e);
+    r->mres |= DFI_MRES_TRUE; /* addSideCondition returns true */
     return DUOFORGE_OK;
 }
 
@@ -3504,6 +3570,7 @@ static duoforge_status dfi_run_perish_song(dfi_run *r, uint32_t user, const dfi_
         dfi_fail_still(r, user);
         return DUOFORGE_OK;
     }
+    r->mres |= DFI_MRES_TRUE; /* at least one holder took the volatile or was stopped: the hit returns true */
     if (message) {
         /* -fieldactivate|move: Perish Song: the ACTIVATE event of the move, with no position */
         const duoforge_event e = dfi_ev(DUOFORGE_EVENT_ACTIVATE, DUOFORGE_NO_POSITION, DUOFORGE_CAUSE_MOVE,
@@ -3516,6 +3583,7 @@ static duoforge_status dfi_run_perish_song(dfi_run *r, uint32_t user, const dfi_
 /* Nothing to hit: [notarget] on the last move line, then -fail. */
 static duoforge_status dfi_no_target(dfi_run *r, uint32_t user)
 {
+    r->mres |= DFI_MRES_FALSE; /* the move returns false with no target (sim/battle-actions.ts:461-465, :510-514) */
     duoforge_event *mv = dfi_last_move(r);
     if (mv != NULL) {
         mv->flags = (uint8_t)((uint32_t)mv->flags | DUOFORGE_EVENT_FLAG_NOTARGET); /* wide-operands-reviewed: < 256 */
@@ -3838,6 +3906,7 @@ static duoforge_status dfi_run_helping_hand(dfi_run *r, uint32_t user, uint32_t 
 {
     if (dfi_ability(r->b, dfi_at(r->b, ally), DFI_ABILITY_GOODASGOLD)) {
         dfi_immune(r, ally, 1u + DFI_ABILITY_GOODASGOLD); /* the move steps stop: no Update */
+        r->mres |= DFI_MRES_FALSE; /* the TryHit of the ally returns false: the move fails */
         return DUOFORGE_OK;
     }
     dfi_active_slot *pos = dfi_pos(r->b, ally);
@@ -3865,12 +3934,14 @@ static duoforge_status dfi_run_coaching(dfi_run *r, uint32_t user, uint32_t ally
 {
     if (dfi_ability(r->b, dfi_at(r->b, ally), DFI_ABILITY_GOODASGOLD)) {
         dfi_immune(r, ally, 1u + DFI_ABILITY_GOODASGOLD); /* the move steps stop: no Update */
+        r->mres |= DFI_MRES_FALSE; /* the TryHit of the ally returns false: the move fails */
         return DUOFORGE_OK;
     }
     if (dfi_boost(r, ally, md->boosts, user, dfi_effect(DUOFORGE_CAUSE_MOVE, 0u, DFI_BOOST_PRIMARY))) {
         return dfi_status_hit_end(r);
     }
-    return DUOFORGE_OK; /* nothing changed: the hit loop stops */
+    r->mres |= DFI_MRES_FALSE; /* nothing changed: the hit returns false (runMoveEffects) */
+    return DUOFORGE_OK; /* the hit loop stops */
 }
 
 /* Clangorous Soul (step G34, data/moves.ts:2498-2526; the Champions mod makes its accuracy true, mods/champions/moves.ts:121-124):
@@ -3886,7 +3957,8 @@ static duoforge_status dfi_run_clangorous_soul(dfi_run *r, uint32_t user, const 
         return DUOFORGE_OK;
     }
     if (!dfi_boost(r, user, md->boosts, DFI_POSITIONS, dfi_effect(DUOFORGE_CAUSE_MOVE, 0u, DFI_BOOST_PRIMARY))) {
-        return DUOFORGE_OK; /* nothing changed: the hit loop stops */
+        r->mres |= DFI_MRES_FALSE; /* nothing changed: the hit returns false (runMoveEffects) */
+    return DUOFORGE_OK; /* the hit loop stops */
     }
     uint32_t cost = (uint32_t)m->hp_max * 33u / 100u;
     cost = cost == 0u ? 1u : cost;
@@ -3994,6 +4066,19 @@ static duoforge_status dfi_run_heal_move(dfi_run *r, uint32_t user, uint32_t mov
      * before its eachEvent('Update') when every target's heal failed (damage[i] is false for a target at full HP): no Update,
      * so no Sitrus Berry check. This is what the single-target branch did before step G32 (an early return); the spread
      * rewrite of step G32 fell through to the hit end and drew the Update's speed ties of the Sitrus holders too. */
+    /* Roost (step G42): selfDrops applies its self volatile only to a target that did not fail (battle-actions.ts:1088-1096),
+     * after the heal's line and before the hit end. A full-HP user gets no volatile and a false result. */
+    if (did && move_id == DFI_MOVE_ROOST) {
+        const dfi_tail_pos *tail = &r->b->tail.sides[user / 2u].positions[user % 2u];
+        if ((tail->single_turn & DFI_SINGLE_TURN_ROOST) != 0u) {
+            return DUOFORGE_E_INVARIANT;
+        }
+        r->b->tail.sides[user / 2u].positions[user % 2u].single_turn |= DFI_SINGLE_TURN_ROOST;
+        duoforge_event e = dfi_ev(DUOFORGE_EVENT_SINGLE_TURN, user, DUOFORGE_CAUSE_NONE, 0u, DUOFORGE_NO_POSITION);
+        e.id = (uint16_t)move_id;
+        dfi_emit(r, &e); /* -singleturn|user|move: Roost */
+    }
+    r->mres |= did ? DFI_MRES_TRUE : DFI_MRES_FALSE;
     if (!did) {
         return DUOFORGE_OK;
     }
@@ -4029,6 +4114,9 @@ static duoforge_status dfi_run_recharge(dfi_run *r, uint32_t user)
     }
     bool can = false;
     st = dfi_before_move(r, user, DFI_MOVE_STRUGGLE, &dfi_pool_moves[DFI_MOVE_STRUGGLE], &can);
+    if (st == DUOFORGE_OK && !can) {
+        r->mres |= DFI_MRES_NULL; /* mustrecharge's BeforeMove returns null (data/conditions.ts:367-377) */
+    }
     return st != DUOFORGE_OK ? st : (can ? DUOFORGE_E_INVARIANT : DUOFORGE_OK);
 }
 
@@ -4165,6 +4253,8 @@ static duoforge_status dfi_no_target_or_try(dfi_run *r, uint32_t user, const dfi
 
 /* runMove and useMove for one move action (sim/battle-actions.ts:210-548,
  * the hit steps at 550-620 and the Champions hit loop). */
+static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool *ran);
+
 /* Forced switches (step G46: the drag of Roar, Whirlwind, Dragon Tail, Circle Throw and the attacker of Red Card).
  * dfi_drag_blocked is DragOut of Suction Cups and Guard Dog (data/abilities.ts:4693-4698, :1728-1732): the holder's
  * onDragOut returns null and prints -activate, so no switch flag is set and nothing else shows. */
@@ -4250,7 +4340,7 @@ static void dfi_red_card(dfi_run *r, uint32_t user, uint32_t holder)
     }
 }
 
-static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool *ran)
+static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, bool *ran)
 {
     r->hit_index = 1u;
     struct duoforge_battle *b = r->b;
@@ -4308,12 +4398,15 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
      * on the locked turn of a two-turn move its charge ends (twoturnmove's
      * onMoveAborted). */
     const bool locked = pos->charge_turns != 0u;
+    /* A recharging occupant's BeforeMove (mustrecharge) returns null, every other stop returns false (step G42). */
+    const bool recharging = b->tail.sides[side].positions[q->slot].must_recharge != 0u;
     bool can = false;
     st = dfi_before_move(r, user, move_id, md, &can);
     if (st != DUOFORGE_OK) {
         return st;
     }
     if (!can) {
+        r->mres |= recharging ? DFI_MRES_NULL : DFI_MRES_FALSE;
         if (locked) {
             pos->charge_turns = 0u;
             pos->locked_target = 0u;
@@ -4330,6 +4423,7 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
     if (q->move_slot < DUOFORGE_MAX_MOVE_SLOTS && !locked) {
         dfi_move_slot *slot = &m->moves[q->move_slot];
         if (slot->pp == 0u) {
+            r->mres |= DFI_MRES_FALSE; /* "cant nopp": the move returns false (battle-actions.ts useMoveInner) */
             return DUOFORGE_OK; /* "cant nopp"; the domain never offers it */
         }
         slot->pp = (uint8_t)((uint32_t)slot->pp - 1u); /* wide-operands-reviewed: pp > 0 */
@@ -4525,6 +4619,7 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
             pos->charge_turns = (uint8_t)DFI_CHARGE_TURNS_MAX;
             pos->locked_move = (uint8_t)((uint32_t)q->move_slot + 1u); /* wide-operands-reviewed: <= 4 */
             pos->locked_target = q->target;
+            r->mres |= DFI_MRES_NULL; /* the charge turn's onTryMove returns null (data/moves.ts) */
             return DUOFORGE_OK;
         }
     }
@@ -4548,6 +4643,7 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
                 if (shield != 0u) {
                     /* [still], then cant|holder|ability: Armor Tail|move|[of] user */
                     dfi_still(r);
+                    r->mres |= DFI_MRES_FALSE; /* onFoeTryMove returns false (data/abilities.ts armortail) */
                     duoforge_event e = dfi_ev(DUOFORGE_EVENT_CANT, (1u - side) * 2u + slot, DUOFORGE_CAUSE_ABILITY, shield, user);
                     e.id = (uint16_t)move_id;
                     dfi_emit(r, &e);
@@ -4606,6 +4702,8 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
         }
         if (!added) {
             dfi_fail_still(r, user);
+        } else {
+            r->mres |= DFI_MRES_TRUE; /* addSideCondition succeeded */
         }
         return DUOFORGE_OK;
     }
@@ -4630,6 +4728,7 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
         e.detail = (uint8_t)side;
         e.amount = (uint8_t)md->side_condition; /* DUOFORGE_SIDE_* */
         dfi_emit(r, &e);
+        r->mres |= DFI_MRES_TRUE; /* addSideCondition returns true */
         return DUOFORGE_OK;
     }
     if (status_move && (md->special == DFI_SPECIAL_SANDSTORM || md->special == DFI_SPECIAL_SNOWSCAPE ||
@@ -4651,6 +4750,7 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
         duoforge_event e = dfi_event_make(DUOFORGE_EVENT_WEATHER, DUOFORGE_NO_POSITION);
         e.detail = (uint8_t)w; /* DUOFORGE_WEATHER_* */
         dfi_emit(r, &e);
+        r->mres |= DFI_MRES_TRUE; /* Field.setWeather returns true */
         return DUOFORGE_OK;
     }
     if (status_move && (md->special == DFI_SPECIAL_ELECTRIC_TERRAIN || md->special == DFI_SPECIAL_MISTY_TERRAIN)) {
@@ -4668,6 +4768,7 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
         duoforge_event e = dfi_event_make(DUOFORGE_EVENT_FIELD_START, DUOFORGE_NO_POSITION);
         e.detail = (uint8_t)dfi_terrain_field_detail(terrain);
         dfi_emit(r, &e);
+        r->mres |= DFI_MRES_TRUE; /* Field.setTerrain returns true */
         return dfi_terrain_change(r);
     }
     if (status_move && md->pseudo_weather == DFI_PSEUDO_WEATHER_TRICK_ROOM) {
@@ -4680,6 +4781,7 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
                                   DUOFORGE_CAUSE_NONE, 0u, of);
         e.detail = (uint8_t)DUOFORGE_FIELD_TRICK_ROOM;
         dfi_emit(r, &e);
+        r->mres |= DFI_MRES_TRUE; /* addPseudoWeather (or its end) returns true */
         return DUOFORGE_OK;
     }
     /* A status move whose only effect is its forced switch (Roar, Whirlwind; step G46) is modelled by the forced-switch step
@@ -4701,7 +4803,8 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
         if (dfi_boost(r, user, md->boosts, DFI_POSITIONS, own)) {
             return dfi_status_hit_end(r);
         }
-        return DUOFORGE_OK; /* nothing changed: the hit loop stops */
+        r->mres |= DFI_MRES_FALSE; /* nothing changed: the hit returns false (runMoveEffects) */
+    return DUOFORGE_OK; /* the hit loop stops */
     }
     /* A handler this build does not have fails explicitly; the Team C
      * specials of later steps are also kept out by the support manifest. */
@@ -4725,6 +4828,7 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
         md->special != DFI_SPECIAL_IMPRISON && md->special != DFI_SPECIAL_TRICK && md->special != DFI_SPECIAL_SWITCHEROO &&
         md->special != DFI_SPECIAL_THIEF && md->special != DFI_SPECIAL_COVET && md->special != DFI_SPECIAL_SUPER_FANG &&
         md->special != DFI_SPECIAL_TAUNT && md->special != DFI_SPECIAL_YAWN &&
+        md->special != DFI_SPECIAL_ROOST && md->special != DFI_SPECIAL_STOMPING_TANTRUM &&
         md->special != DFI_SPECIAL_POWER_TRIP && md->special != DFI_SPECIAL_THUNDER && md->special != DFI_SPECIAL_ICE_FANG &&
         md->special != DFI_SPECIAL_TRI_ATTACK) {
         return DUOFORGE_E_INVARIANT;
@@ -4857,16 +4961,19 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
         const uint32_t t = targets[i];
         const dfi_active_slot *tp = dfi_pos(b, t);
         if (guarded[i]) {
+            r->mres |= DFI_MRES_NULL; /* Wide Guard's TryHit returns NOT_FAIL (data/moves.ts:20838-20848) */
             continue;
         }
         if (psychic_block && t / 2u != side && dfi_grounded(b, dfi_at(b, t))) {
             duoforge_event e = dfi_event_make(DUOFORGE_EVENT_BLOCKED, t);
             e.detail = (uint8_t)DUOFORGE_FIELD_PSYCHIC_TERRAIN; /* [-activate] move: Psychic Terrain */
             dfi_emit(r, &e);
+            r->mres |= DFI_MRES_FALSE; /* its TryHit returns null, which the hit steps normalise to false (battle-actions.ts:650) */
             continue;
         }
         hit[i] = !((((uint32_t)tp->flags & DFI_VOL_PROTECT) != 0u) && ((md->flags & DFI_MOVE_FLAG_PROTECT) != 0u));
         if (!hit[i]) {
+            r->mres |= DFI_MRES_NULL; /* Protect's TryHit returns NOT_FAIL (data/moves.ts:13998): no failure */
             dfi_emit_plain(r, DUOFORGE_EVENT_BLOCKED, t); /* [-activate] move: Protect */
             /* Step G20: the contact punishment of Spiky Shield, in the same onTryHit after the -activate line
              * (data/moves.ts:17550-17559; checkMoveMakesContact is the contact flag: Protective Pads are not in the
@@ -4881,6 +4988,11 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
                 }
             }
         }
+    }
+    /* Snapshot for the drops of the immunity steps below (each a literal false of the hit steps). */
+    bool hit_pre_immunity[DFI_POSITIONS];
+    for (uint32_t i = 0u; i < DFI_POSITIONS; ++i) {
+        hit_pre_immunity[i] = hit[i];
     }
     /* TryHit after Protect: Flash Fire takes Fire moves (and starts its
      * boost), Lightning Rod takes Electric moves (Special Attack +1, the
@@ -4971,6 +5083,13 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
             dfi_immune(r, targets[i], 0u);
         }
     }
+    for (uint32_t i = 0u; i < count; ++i) {
+        r->mres |= hit_pre_immunity[i] && !hit[i] ? DFI_MRES_FALSE : 0u;
+    }
+    bool hit_pre_accuracy[DFI_POSITIONS];
+    for (uint32_t i = 0u; i < DFI_POSITIONS; ++i) {
+        hit_pre_accuracy[i] = hit[i];
+    }
     if (base_accuracy != 0u) {
         for (uint32_t i = 0u; i < count; ++i) {
             if (!hit[i]) {
@@ -5039,6 +5158,9 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
                 dfi_emit(r, &miss);
             }
         }
+    }
+    for (uint32_t i = 0u; i < count; ++i) {
+        r->mres |= hit_pre_accuracy[i] && !hit[i] ? DFI_MRES_FALSE : 0u; /* a miss: the accuracy step is a literal false */
     }
     /* hitStepBreakProtect, after the accuracy check (sim/battle-actions.ts:568-571): Feint removes the protections of every
      * target that is still hit. */
@@ -5152,6 +5274,15 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
             }
             did = did || dfi_at(b, targets[i])->status != before;
         }
+        if (did) {
+            r->mres |= DFI_MRES_TRUE;
+        } else {
+            /* Without a did, the reference's damage of a hit target may be false or undefined (battle-actions.ts:1296-1310):
+             * not classified. A status move with no target left keeps the classes of the hit steps. */
+            for (uint32_t i = 0u; i < count; ++i) {
+                r->mres |= hit[i] ? DFI_MRES_FALSE : 0u; /* the hit's moveHit returns false: -fail [still] (runMoveEffects) */
+            }
+        }
         return did ? dfi_status_hit_end(r) : DUOFORGE_OK;
     }
     /* Psychic Fangs' and Brick Break's onTryHit (step G30, data/moves.ts:14060-14078; step G34, 1822-1840, the same text): spreadMoveHit's singleEvent TryHit, after the
@@ -5175,6 +5306,9 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
      * has fainted (that hit still counts). The faints are shown once, after the last hit; recoil, Life Orb and the
      * AfterMoveSecondary handlers come once, after the loop. The hit count is the number of -damage lines on the target:
      * the converter checks it against `-hitcount` and drops that line. */
+    for (uint32_t i = 0u; i < count; ++i) {
+        r->mres |= hit[i] ? DFI_MRES_TRUE : 0u; /* spreadDamage returns a number for a hit target (also 0): true */
+    }
     const uint32_t hits_total = dfi_move_hits(md);
     if (hits_total != 1u && (count != 1u || spread)) {
         return DUOFORGE_E_UNSUPPORTED; /* a multi-hit spread move: Dragon Darts and the like are not modelled */
@@ -5822,6 +5956,36 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
  * with. Among tied entries the reference draws a position; the engine does
  * not, because entries queued together run as one batch, ordered by Speed
  * in dfi_run_entries (decision 0006 section 5.1, converter rule INSERT_TIE). */
+/* One move action: the body, then the result the action leaves in the user's position (step G42, tail rev 4's move_result,
+ * decision 0015 section 7). Only the POOL kinds carry the tail. An action that did not run (an inactive actor) writes nothing. */
+static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool *ran)
+{
+    r->mres = 0u;
+    const duoforge_status st = dfi_run_move_body(r, q, ran);
+    if (st != DUOFORGE_OK || !*ran || !dfi_kind_limits_of(r->ctx->data_kind).pool_rules) {
+        return st;
+    }
+    uint32_t value = DFI_MOVE_RESULT_UNDEFINED;
+    bool unclassified = true;
+    if ((r->mres & DFI_MRES_UNCLASS) == 0u) {
+        if ((r->mres & DFI_MRES_TRUE) != 0u) {
+            value = DFI_MOVE_RESULT_TRUE;
+            unclassified = false;
+        } else if ((r->mres & DFI_MRES_FALSE) != 0u) {
+            value = DFI_MOVE_RESULT_FALSE;
+            unclassified = false;
+        } else if ((r->mres & DFI_MRES_NULL) != 0u) {
+            value = DFI_MOVE_RESULT_NULL;
+            unclassified = false;
+        }
+    }
+    dfi_tail_pos *tp = &r->b->tail.sides[q->side].positions[q->slot];
+    /* This turn's bits (0-1) and the unclassified-now bit (4) are the action's; the last turn's bits stay. */
+    const uint32_t kept = (uint32_t)tp->move_result & ~0x13u;
+    tp->move_result = (uint8_t)(kept | value | (unclassified ? DFI_MOVE_RESULT_UNCLASSIFIED_NOW : 0u)); /* wide-operands-reviewed: <= 0x3F */
+    return DUOFORGE_OK;
+}
+
 static duoforge_status dfi_insert_run_switch(dfi_run *r, uint32_t side, uint32_t slot, uint32_t activation)
 {
     struct duoforge_battle *b = r->b;
@@ -6443,7 +6607,7 @@ static uint8_t *dfi_side_turns(struct duoforge_battle *b, uint32_t s, uint32_t k
  * (DFI_RES_PER_POSITION) a status (burn or poison), the volatiles' handlers (seven duration ends: Protect, the stall
  * counter, flinch, a charge, Helping Hand, Follow Me and mustrecharge; Heal Block, Throat Chop, Encore, Disable (step G27),
  * Perish Song (step G26), Taunt and Yawn (step G31)), an item (Leftovers or White Herb), Speed Boost (step G32) and Grassy Terrain. */
-#define DFI_RES_PER_POSITION 19u /* 14 before Speed Boost (G32), Disable (G27), Perish Song (G26), Taunt and Yawn (G31) */
+#define DFI_RES_PER_POSITION 20u /* 14 before Speed Boost (G32), Disable (G27), Perish Song (G26), Taunt and Yawn (G31) */
 #define DFI_RES_MAX (3u + 4u * DUOFORGE_SIDE_COUNT + DFI_RES_PER_POSITION * DFI_POSITIONS)
 _Static_assert(DFI_RES_MAX <= DFI_RES_MODEL_MAX, "the exact test of residual_order.h must hold the whole list");
 
@@ -6676,6 +6840,12 @@ static duoforge_status dfi_residual_events_run(dfi_run *r, dfi_noorder_snapshot 
              * Heal Block's (20) and Disable's (17) end lines, which are entries of the same list. */
             if (vt->perish != 0u) {
                 list[n] = (dfi_residual_entry){DFI_RES_PERISH, flat, 24u, speed, 2u, true};
+                n += 1u;
+            }
+            /* Roost's volatile (duration 1, onResidualOrder 25, data/moves.ts:15444-15455): its end is silent, the bit goes at
+             * that entry (step G42). */
+            if ((vt->single_turn & DFI_SINGLE_TURN_ROOST) != 0u) {
+                list[n] = (dfi_residual_entry){DFI_RES_DURATION, flat, 25u, speed, 2u, false};
                 n += 1u;
             }
         }
@@ -6912,6 +7082,10 @@ static duoforge_status dfi_residual_events_run(dfi_run *r, dfi_noorder_snapshot 
             continue;
         }
         if (e->kind == DFI_RES_DURATION) {
+            if (e->order == 25u) { /* Roost's end (step G42): silent, the Flying type is back for the rest of the residual */
+                uint8_t *single = &r->b->tail.sides[e->flat / 2u].positions[e->flat % 2u].single_turn;
+                *single = (uint8_t)((uint32_t)*single & ~(uint32_t)DFI_SINGLE_TURN_ROOST); /* wide-operands-reviewed: MSVC C4310 */
+            }
             continue; /* Throat Chop's (order 22): silent, its count goes down below */
         }
         if (e->kind == DFI_RES_LEFTOVERS) {
@@ -7415,6 +7589,12 @@ static duoforge_status dfi_end_turn(dfi_run *r)
         dfi_choice_lock_ends(b, flat);
         dfi_active_slot *pos = dfi_pos(b, flat);
         pos->flags = (uint8_t)((uint32_t)pos->flags & ~DFI_VOL_NEWLY_SWITCHED); /* wide-operands-reviewed */
+        /* moveLastTurnResult = moveThisTurnResult, then this turn's is undefined (sim/battle.ts:1674-1675). The unclassified
+         * bit moves with the result (step G42). */
+        dfi_tail_pos *tp = &b->tail.sides[flat / 2u].positions[flat % 2u];
+        const uint32_t mr = tp->move_result;
+        tp->move_result = (uint8_t)(((mr & 3u) << DFI_MOVE_RESULT_LAST_SHIFT) | /* wide-operands-reviewed: <= 0x3F */
+                                    ((mr & DFI_MOVE_RESULT_UNCLASSIFIED_NOW) != 0u ? DFI_MOVE_RESULT_UNCLASSIFIED_LAST : 0u));
     }
     duoforge_event e = dfi_event_make(DUOFORGE_EVENT_TURN, DUOFORGE_NO_POSITION);
     e.id = b->turn; /* [turn] */
@@ -7580,7 +7760,7 @@ duoforge_status dfi_turn_start(const duoforge_context *ctx, struct duoforge_batt
     if (!dfi_closure_battle_supported(&dfi_support, b)) {
         return DUOFORGE_E_UNSUPPORTED;
     }
-    dfi_run r = {ctx, b, draws, {0u, 0u, 0u, 0u}, 0u, 0u, 0u, false, DFI_RESULT_NONE, {0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u}, events, UINT32_MAX, false, DFI_MOVE_TARGET_NONE, 1u, 0u};
+    dfi_run r = {ctx, b, draws, {0u, 0u, 0u, 0u}, 0u, 0u, 0u, false, DFI_RESULT_NONE, {0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u}, events, UINT32_MAX, false, DFI_MOVE_TARGET_NONE, 1u, 0u, 0u};
     dfi_init_speeds(&r);
     /* The leads entered one by one (insertChoice updated each speed); their
      * entries run together. */
@@ -7695,7 +7875,7 @@ duoforge_status dfi_turn_run(const duoforge_context *ctx, struct duoforge_battle
     if (!dfi_closure_battle_supported(&dfi_support, b) || ((replacement || pivot) && dfi_support.switching == 0u)) {
         return DUOFORGE_E_UNSUPPORTED;
     }
-    dfi_run r = {ctx, b, draws, {0u, 0u, 0u, 0u}, 0u, 0u, 0u, false, DFI_RESULT_NONE, {0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u}, events, UINT32_MAX, false, DFI_MOVE_TARGET_NONE, 1u, 0u};
+    dfi_run r = {ctx, b, draws, {0u, 0u, 0u, 0u}, 0u, 0u, 0u, false, DFI_RESULT_NONE, {0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u}, events, UINT32_MAX, false, DFI_MOVE_TARGET_NONE, 1u, 0u, 0u};
     dfi_init_speeds(&r);
     duoforge_status st = DUOFORGE_OK;
     uint32_t exits = 0u; /* Emergency Exit after the residual action */

@@ -204,6 +204,9 @@ duoforge_add_test(NAME duoforge.state.pool_g48 SOURCES test_pool_g48.c WHITEBOX 
 duoforge_add_test(NAME duoforge.state.pool_g50 SOURCES test_pool_g50.c WHITEBOX TIMEOUT 60)
 duoforge_add_test(NAME duoforge.state.pool_g34 SOURCES test_pool_g34.c WHITEBOX TIMEOUT 60)
 duoforge_add_test(NAME duoforge.state.pool_g41 SOURCES test_pool_g41.c WHITEBOX TIMEOUT 60)
+# Step G42: Roost and Stomping Tantrum: the move result classes (this and last) at every boundary of the g42 battles, the Roost
+# volatile (the pivot boundary inside its turn), the view bits (40 supported, 41 not), the unclassified refusal.
+duoforge_add_test(NAME duoforge.state.pool_g42 SOURCES test_pool_g42.c WHITEBOX TIMEOUT 60)
 duoforge_add_test(NAME duoforge.state.pool_g44 SOURCES test_pool_g44.c WHITEBOX TIMEOUT 60)
 duoforge_add_test(NAME duoforge.state.pool_g46_party SOURCES test_pool_g46_party.c WHITEBOX TIMEOUT 120)
 # Step G35: ten data rows, Rain Dish and Friend Guard: the marks, the flags, Gigaton Hammer left out, and Friend Guard in the
@@ -236,8 +239,8 @@ foreach(_gen IN ITEMS
         "closure_tables.c=490de42298e34cfd38192d979fd022367bf53693a5fa1855f1cc6ad034d8450a"
         "extended_tables.h=b2abef243fcbfdd87654940076b9fe2fe80b117d74893a7567741f26b9075a7d"
         "extended_tables.c=9e736fa467713283418c4edf8f56b8d844452e596ba422adbd52483d20f7cc17"
-        "pool_tables.h=d6ad3baa11dd6f4a192143219faed5c2e6f50ac43056ac8dd9f4fa688589c748"
-        "pool_tables.c=8de5fcf10584819283186df900ed8f7b0c933387ab28802202d6064f609de18d")
+        "pool_tables.h=a45bddf39a207d955ea1be488bec166abbbb2971d4a6df21f63c54788eeccdbb"
+        "pool_tables.c=259db9f53e2654c508079ef2d698d8948fefed88f556d2d38f49f2c6704f31d8")
     string(REPLACE "=" ";" _parts "${_gen}")
     list(GET _parts 0 _file)
     list(GET _parts 1 _expected)

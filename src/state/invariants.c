@@ -593,7 +593,12 @@ static bool dfi_tail_pos_valid(const dfi_kind_limits *lim, const dfi_tail_pos *t
     /* Rev 4 (tail-rev4-proposal.md section 4.1): the move result is two two-bit values (bits 4-7 are zero); the single-turn
      * markers are the two defined bits, and Rage Powder's belongs to the Follow Me flag that the same move sets (both end
      * together, in the residual, on switch-out and on faint); the counters and the ability state have their bounds. */
-    const bool rev4_ok = (tp->move_result & ~DFI_TAIL_MOVE_RESULT_MASK) == 0u &&
+    /* An unclassified bit (step G42) only with the result bits of its slot zero: the result is then not known. */
+    const bool unclassified_ok =
+        ((tp->move_result & DFI_MOVE_RESULT_UNCLASSIFIED_NOW) == 0u || (tp->move_result & 3u) == 0u) &&
+        ((tp->move_result & DFI_MOVE_RESULT_UNCLASSIFIED_LAST) == 0u ||
+         ((tp->move_result >> DFI_MOVE_RESULT_LAST_SHIFT) & 3u) == 0u);
+    const bool rev4_ok = (tp->move_result & ~DFI_TAIL_MOVE_RESULT_MASK) == 0u && unclassified_ok &&
                          (tp->single_turn & ~DFI_TAIL_SINGLE_TURN_MASK) == 0u &&
                          ((tp->single_turn & DFI_SINGLE_TURN_RAGE_POWDER) == 0u || ((uint32_t)slot->flags & DFI_VOL_FOLLOW_ME) != 0u) &&
                          tp->hits_taken <= DFI_TAIL_HITS_TAKEN_MAX && tp->ability_state <= DFI_TAIL_ABILITY_STATE_MAX &&
