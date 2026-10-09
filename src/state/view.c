@@ -21,7 +21,7 @@
 #include "state/invariants.h"
 #include "state/knowledge.h"
 
-_Static_assert(sizeof(duoforge_public_state) == 1336u, "public state layout");
+_Static_assert(sizeof(duoforge_public_state) == 1396u, "public state layout (the state array is DUOFORGE_VIEW_STATE_MAX, 1357, since tail rev 5)");
 _Static_assert(sizeof(duoforge_hypothesis) == 280u, "hypothesis layout");
 _Static_assert(sizeof(((duoforge_hypothesis *)0)->queue_order) == DFI_QUEUE_CAPACITY, "queue permutation capacity");
 
@@ -214,28 +214,45 @@ static uint32_t dfi_target_candidates(uint32_t target_class, uint32_t user, uint
 
 /* ---- the public state ---- */
 
-/* Elapsed status attempts are not stored in schema 3. Never invent their
- * posterior: reject only statuses visible in this player's observation. */
-static duoforge_status dfi_view_counter_support(const duoforge_context *ctx, const duoforge_battle *b, uint32_t player)
+/* The causes of a public refusal that the player's view decides (decision 0023; the bits are DUOFORGE_PUBLIC_CAUSE_*). This
+ * is the ONE predicate of both the public record (duoforge_battle_public refuses while it is nonzero) and the causes call
+ * (duoforge_battle_public_causes writes it), so the two can never disagree. It reads only the player's observation, never a
+ * hidden counter. Elapsed status attempts are not stored in schema 3. Never invent their posterior: a visible sleep or
+ * confusion is a cause, nothing else is. ILLUSION_POSSIBLE stays 0 until Illusion (decision 0026, section 4). */
+static duoforge_status dfi_view_visible_causes(const duoforge_context *ctx, const duoforge_battle *b, uint32_t player,
+                                               uint32_t *out_mask)
 {
     duoforge_observation observation;
     const duoforge_status st = duoforge_battle_observe(ctx, b, player, &observation);
     if (st != DUOFORGE_OK) {
         return st;
     }
+    uint32_t mask = 0u;
     for (uint32_t side = 0u; side < DUOFORGE_SIDE_COUNT; ++side) {
         for (uint32_t m = 0u; m < DUOFORGE_MAX_ROSTER; ++m) {
             if (observation.sides[side].members[m].status == DUOFORGE_AILMENT_SLEEP) {
-                return DUOFORGE_E_UNSUPPORTED;
+                mask |= DUOFORGE_PUBLIC_CAUSE_VISIBLE_SLEEP;
             }
         }
         for (uint32_t p = 0u; p < DUOFORGE_ACTIVE_PER_SIDE; ++p) {
             if (observation.sides[side].positions[p].confused != 0u) {
-                return DUOFORGE_E_UNSUPPORTED;
+                mask |= DUOFORGE_PUBLIC_CAUSE_VISIBLE_CONFUSION;
             }
         }
     }
+    *out_mask = mask;
     return DUOFORGE_OK;
+}
+
+/* The counter refusal of duoforge_battle_public: E_UNSUPPORTED while the one predicate names a cause. */
+static duoforge_status dfi_view_counter_support(const duoforge_context *ctx, const duoforge_battle *b, uint32_t player)
+{
+    uint32_t causes = 0u;
+    const duoforge_status st = dfi_view_visible_causes(ctx, b, player, &causes);
+    if (st != DUOFORGE_OK) {
+        return st;
+    }
+    return causes == 0u ? DUOFORGE_OK : DUOFORGE_E_UNSUPPORTED;
 }
 
 /* party_order in a public view (step G46; decision 0023): the foe's bench entries (positions 2 and up) are the order of the
@@ -311,8 +328,8 @@ static duoforge_status dfi_view_world_foe_party(uint8_t *s, uint32_t foe, uint32
     return DUOFORGE_OK;
 }
 
-static duoforge_status dfi_view_encode(const duoforge_context *ctx, const duoforge_battle *b, uint32_t player,
-                                       uint8_t *s, size_t *out_size)
+/* The argument checks of the public calls, in their order (shared by the record and the causes call). */
+static duoforge_status dfi_view_check_args(const duoforge_context *ctx, const duoforge_battle *b, uint32_t player)
 {
     if (ctx == NULL || b == NULL) {
         return DUOFORGE_E_NULL_ARGUMENT;
@@ -325,6 +342,16 @@ static duoforge_status dfi_view_encode(const duoforge_context *ctx, const duofor
     }
     if (dfi_state_check(ctx, b, NULL) != DUOFORGE_OK) {
         return DUOFORGE_E_INVARIANT;
+    }
+    return DUOFORGE_OK;
+}
+
+static duoforge_status dfi_view_encode(const duoforge_context *ctx, const duoforge_battle *b, uint32_t player,
+                                       uint8_t *s, size_t *out_size)
+{
+    const duoforge_status args = dfi_view_check_args(ctx, b, player);
+    if (args != DUOFORGE_OK) {
+        return args;
     }
     const duoforge_status counter_support = dfi_view_counter_support(ctx, b, player);
     if (counter_support != DUOFORGE_OK) {
@@ -447,6 +474,29 @@ duoforge_status duoforge_battle_public(const duoforge_context *ctx, const duofor
         }
     }
     memcpy(out->state, s, n);
+    return DUOFORGE_OK;
+}
+
+/* The causes of the public refusal (decision 0023, decision 0026 section 4): a pure call. Its checks are those of
+ * duoforge_battle_public, in the same order. It writes the mask of the causes that the view decides, the same predicate
+ * that duoforge_battle_public refuses on. A mask of 0 with a refusing duoforge_battle_public means another refusal (a
+ * PIVOT, sealed commands, a Substitute, a partial trap, a locked move). Depends on the player's view only. */
+duoforge_status duoforge_battle_public_causes(const duoforge_context *ctx, const duoforge_battle *battle, uint32_t player,
+                                              uint32_t *out_mask)
+{
+    if (out_mask == NULL) {
+        return DUOFORGE_E_NULL_ARGUMENT;
+    }
+    const duoforge_status args = dfi_view_check_args(ctx, battle, player);
+    if (args != DUOFORGE_OK) {
+        return args;
+    }
+    uint32_t causes = 0u;
+    const duoforge_status st = dfi_view_visible_causes(ctx, battle, player, &causes);
+    if (st != DUOFORGE_OK) {
+        return st;
+    }
+    *out_mask = causes;
     return DUOFORGE_OK;
 }
 

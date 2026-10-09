@@ -186,11 +186,12 @@ typedef struct dfi_side {
     uint8_t tailwind_turns;
 } dfi_side;
 
-/* The POOL state tail (docs/decisions/0015 section 7, "v3 + pool tail rev 4"): the room that the pool mechanics need
+/* The POOL state tail (docs/decisions/0015 section 7, "v3 + pool tail rev 5"): the room that the pool mechanics need
  * beyond the schema-3 state (Encore, Throat Chop, Heal Block, Soak and Wide Guard of rev 1; the volatile, side and
  * field conditions and the per-member overrides that decision 0018 declares as view fields, rev 2; the Protect
  * variant, rev 3; the move result, the single-turn markers, the hits taken, the ability state, the lock counter, Quick
- * Guard, the second type and the member flags, rev 4) and nothing else.
+ * Guard, the second type and the member flags, rev 4; the Illusion state of decision 0026 and the slot and Future Sight
+ * fields of lane A, rev 5, all zero until their steps) and nothing else.
  * It is part of the state only under the two POOL kinds (encode, decode, digest, equal, invariants); under the four
  * other kinds it is absent: all zero in memory (an invariant) and not in the encoding. Of the fields that rev 2
  * adds, only item_now is written so far (Knock Off, step G16). Every field is a plain byte or an aligned u16, so the structs have no padding and no pointer, and
@@ -226,8 +227,15 @@ typedef struct dfi_side {
 #define DFI_MOVE_RESULT_TRUE 1u
 #define DFI_MOVE_RESULT_FALSE 2u
 #define DFI_MOVE_RESULT_NULL 3u
-#define DFI_TAIL_MOVE_RESULT_MASK 0x0Fu /* bits 4-7 are zero */
 #define DFI_MOVE_RESULT_LAST_SHIFT 2u
+/* Step G42 (Stomping Tantrum, Roost): the result of the occupant's move was not classified exactly (an engine exit that
+ * the classifier does not map to the pin's value, turn.c dfi_move_result_*): bit 4 while this turn runs, bit 5 for the last
+ * turn once the turn ends (dfi_end_turn shifts it with the result). A set bit means the result bits of its slot are zero.
+ * Stomping Tantrum refuses (E_UNSUPPORTED) when its user's last result carries bit 5; nothing else reads it. This is an
+ * internal bit of rev 4 (no public value): the layout stays 288 bytes, and bits 6-7 are zero. */
+#define DFI_MOVE_RESULT_UNCLASSIFIED_NOW 0x10u
+#define DFI_MOVE_RESULT_UNCLASSIFIED_LAST 0x20u
+#define DFI_TAIL_MOVE_RESULT_MASK 0x3Fu /* bits 6-7 are zero */
 /* single_turn: one-turn volatiles that the position's flags byte (full) cannot hold; both end in the residual of the turn, on
  * switch-out and on faint. RAGE_POWDER belongs to the Follow Me flag (the move that set it also sets that flag). */
 #define DFI_SINGLE_TURN_RAGE_POWDER 1u
@@ -296,7 +304,21 @@ typedef struct dfi_tail_pos {
     uint8_t hits_taken;        /* tail rev 4: damaging hits the occupant has taken since it came in, 0..DFI_TAIL_HITS_TAKEN_MAX (Rage Fist) */
     uint8_t ability_state;     /* tail rev 4: the state of the occupant's current ability, 0..DFI_TAIL_ABILITY_STATE_MAX (its meaning goes with the ability) */
     uint8_t lock_turns;        /* tail rev 4: the turns that a lockedmove volatile has left, 0..DFI_TAIL_LOCK_TURNS_MAX */
+    uint8_t slot_pending;      /* tail rev 5 (lane A, the slot's pending effect; bit 0 Healing Wish): zero, nothing writes it yet */
+    uint8_t future_sight;      /* tail rev 5 (lane A): 2 bits of turns, 3 bits for the source, 3 spare; zero, nothing writes it yet */
 } dfi_tail_pos;
+
+/* tail rev 5 (decision 0026, Illusion), per side: the foe's shown state of the holder on this side. Nothing writes it yet,
+ * every byte is zero and refused otherwise. shown: the roster index + 1 of the member whose name carries the values the foe
+ * was shown for the holder, else 0; override: the values shown on that name (HP percent, HP colour flag, status, flags);
+ * snapshot: the foe's knowledge of the disguise's row before it came in (hp percent, hp flag, revealed, moves used, status,
+ * location); pending: the uses of the holder's moves that are not on the disguise's open sheet, per holder slot. */
+typedef struct dfi_tail_illusion {
+    uint8_t shown;
+    uint8_t override[4];
+    uint8_t snapshot[9];
+    uint8_t pending[4];
+} dfi_tail_illusion; /* 18 bytes, no padding */
 
 typedef struct dfi_tail_side {
     dfi_tail_pos positions[DUOFORGE_ACTIVE_PER_SIDE];
@@ -310,13 +332,15 @@ typedef struct dfi_tail_side {
     uint8_t spikes;                            /* layers */
     uint8_t sticky_web;                        /* 0/1 */
     uint8_t quick_guard;                       /* tail rev 4: 0/1, this turn only */
-    uint8_t soak_type[DUOFORGE_MAX_ROSTER];    /* per roster member: 0 none, else type id + 1 (the type Soak set) */
+    uint8_t soak_type[DUOFORGE_MAX_ROSTER];    /* per roster member: 0 none, else type id + 1 (the type Soak set); DFI_TAIL_TYPE2_TYPELESS
+                                                * (Double Shock, decision 0025): the first slot is ???, type2 is the second type (nonzero) */
     uint8_t item_now[DUOFORGE_MAX_ROSTER];     /* per roster member: 0 = as the member says, 1..254 = item id + 1,
                                                 * DFI_TAIL_ITEM_NONE = holds nothing (Trick, Knock Off) */
     uint8_t toxic_stage[DUOFORGE_MAX_ROSTER];  /* per roster member: the toxic counter, 0 = none */
     uint8_t type2[DUOFORGE_MAX_ROSTER];        /* tail rev 4, per roster member: 0 none, type id + 1, DFI_TAIL_TYPE2_TYPELESS (Burn Up, Double Shock) */
     uint8_t member_flags[DUOFORGE_MAX_ROSTER]; /* tail rev 4, per roster member: DFI_TAIL_MEMBER_FLAG_* (Zero to Hero's message shown) */
     uint8_t hazard_order;                      /* tail rev 4: the creation order of the hazards that are up, 2 bits per slot (see above) */
+    dfi_tail_illusion illusion;                /* tail rev 5 (decision 0026): the foe's shown state of the holder, zero until Illusion */
 } dfi_tail_side;
 
 /* party_order (step G46, decision 0015 section 7): the side.pokemon order of the pin, per side, as the permutation of the
