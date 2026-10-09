@@ -44,7 +44,7 @@ def paste(names, evs=True):
         lines = ['%s @ Sitrus Berry' % name, 'Ability: Pressure']
         if evs:
             lines.append('EVs: 32 HP / 2 Def / 32 SpD')
-        lines += ['Calm Nature', '- Protect', '- Tackle']
+        lines += ['Calm Nature', '- Protect', '- Fake Out']  # moves the converter's tables have (team_problems refuses others)
         sets.append('\n'.join(lines))
     return '\n\n'.join(sets) + '\n'
 
@@ -60,7 +60,7 @@ def check_by_first(text):
     if first == 'Rillaboom':
         return ('pool', None)
     if first == 'Charizard':
-        return ('pending', ['move tackle (unsupported)'])
+        return ('pending', ['move fake out (unsupported)'])
     return ('illegal', 'DUOFORGE_E_INVALID_ARGUMENT')
 
 
@@ -129,7 +129,7 @@ class DecideTest(unittest.TestCase):
         self.assertEqual(out['MC3']['status'], 'pool')
         self.assertEqual(out['MC3']['id'], 'PP_' + 'A' * 16)
         self.assertEqual(out['MC2']['status'], 'pending')
-        self.assertEqual(out['MC2']['blockers'], ['move tackle (unsupported)'])
+        self.assertEqual(out['MC2']['blockers'], ['move fake out (unsupported)'])
         self.assertEqual(out['MC1']['status'], 'illegal')
         self.assertNotIn('MC0', out)  # the sheet says the paste has no EVs: not imported
         self.assertEqual(out['MB9']['status'], 'evs-missing')  # the sheet says Yes, a set has no EVs line
@@ -202,9 +202,9 @@ class PendingTest(unittest.TestCase):
         t = out['teams'][0]
         self.assertEqual((t['url'], t['tab'], t['team_id'], t['creator'], t['blockers']),
                          ('https://pokepast.es/' + 'b' * 16, 'Champions M-C', 'MC2', 'Bob',
-                          ['move tackle (unsupported)']))
+                          ['move fake out (unsupported)']))
         self.assertNotIn('Charizard', repr(out))  # no paste text, no species
-        self.assertEqual(out['blocker_counts'], {'move tackle (unsupported)': 1})
+        self.assertEqual(out['blocker_counts'], {'move fake out (unsupported)': 1})
 
 
 class WriteTest(unittest.TestCase):
