@@ -1385,6 +1385,8 @@ const ENGINE_PIVOTS = ['uturn', 'voltswitch'];
 const PROTECT_COPIES = {detect: 'protect'};
 // Step G46: the four forced-switch moves; their forceSwitch: true is modelled (gen_closure.py G46_FORCE_SWITCH_MOVES).
 const G46_FORCE_SWITCH_MOVES = ['roar', 'whirlwind', 'dragontail', 'circlethrow'];
+// Step G56: the three lock moves; their self volatileStatus 'lockedmove' is modelled (gen_closure.py G56_LOCKED_MOVES).
+const G56_LOCKED_MOVES = ['outrage', 'thrash', 'petaldance'];
 
 function moveIsModelled(raw, id) {
     if (raw.selfSwitch !== undefined && !ENGINE_PIVOTS.includes(id)) {
@@ -1397,6 +1399,10 @@ function moveIsModelled(raw, id) {
         }
         // Step G46: forceSwitch: true of the four moves of G46_FORCE_SWITCH_MOVES, and nothing else of it.
         if (key === 'forceSwitch' && value === true && G46_FORCE_SWITCH_MOVES.includes(id)) {
+            continue;
+        }
+        // Step G56: self: { volatileStatus: 'lockedmove' } of the three moves of G56_LOCKED_MOVES, and nothing else of it.
+        if (key === 'self' && G56_LOCKED_MOVES.includes(id) && JSON.stringify(value) === JSON.stringify({ volatileStatus: 'lockedmove' })) {
             continue;
         }
         if (typeof value === 'function' || !MOVE_KEYS.has(key)) {

@@ -188,7 +188,10 @@ static void dfi_view_position(const struct duoforge_battle *b, uint32_t viewer, 
     }
     out->confused = slot->confusion_turns != 0u ? 1u : 0u;
     out->charging = slot->charge_turns != 0u ? 1u : 0u;
-    const uint32_t locked_index = slot->locked_move != 0u ? (uint32_t)slot->locked_move - 1u : DUOFORGE_MOVE_SLOT_NONE;
+    /* A lockedmove (step G56) is shown by the request alone (its one move is forced): no locked slot, as the reference has none. */
+    const bool lockedmove = b->tail.sides[s].positions[p].lock_turns != 0u;
+    const uint32_t locked_index =
+        slot->locked_move != 0u && !lockedmove ? (uint32_t)slot->locked_move - 1u : DUOFORGE_MOVE_SLOT_NONE;
     out->locked_slot = (uint8_t)locked_index; /* <= 0xFF */
     if (slot->charge_turns != 0u && s == viewer) {
         out->locked_target = slot->locked_target; /* a choice lock has no target (Team C) */

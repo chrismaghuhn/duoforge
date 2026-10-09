@@ -137,7 +137,8 @@ SITES = {'SPEED_TIE': 1, 'ACCURACY': 2, 'CRIT': 3, 'DAMAGE_ROLL': 4, 'SECONDARY'
          'SLEEP_TURNS': 7, 'FREEZE_THAW': 8, 'FULL_PARALYSIS': 9, 'CONFUSION_TURNS': 10,
          'CONFUSION_HIT': 11, 'RANDOM_TARGET': 12, 'STATUS_PICK': 13, 'INSERT_TIE': 14, 'TRACE': 15, 'POISON_TOUCH': 16,
          'CURSED_BODY': 17, 'FLAME_BODY': 18, 'STATIC': 19,  # 17: step G27, 18: step G30, 19: step G39
-         'DRAG': 20}  # 20: step G46, the drag's draw (DFI_SITE_DRAG)
+         'DRAG': 20,  # 20: step G46, the drag's draw (DFI_SITE_DRAG)
+         'LOCK_TURNS': 21}  # 21: step G56, the lock's count of Outrage, Thrash and Petal Dance (DFI_SITE_LOCK_TURNS)
 STATS = ['HP', 'Atk', 'Def', 'SpA', 'SpD', 'Spe']
 GENDER = {'M': 1, 'F': 2}
 GENDERLESS = 3
@@ -925,6 +926,10 @@ IGNORED_VOLATILES = {
     # Pool step G17 (the recharge turn): the volatile shows in the request of the next turn (the one candidate, the
     # recharge slot), the start line (`-mustrecharge`) and the cant line (`cant|X|recharge`), and the view bit.
     'mustrecharge': 'the request of the recharge turn, the start line and the cant line',
+    # Pool step G56 (Outrage, Thrash, Petal Dance: the lock, decision 0015 5au): the count is not a field of the record;
+    # the request offers only the locked move, the `[from] lockedmove` move lines show each locked use, and the
+    # confusion start line shows the end of a lock that ends in confusion (no line shows a silent end).
+    'lockedmove': 'the request (only the locked move), the locked move lines and the confusion start that ends the lock',
     # Pool step G19 (Glaive Rush): `-singlemove|X|Glaive Rush|[silent]` is not shown; the volatile shows in the accuracy
     # draws that are missing (the moves against it cannot miss) and in the doubled damage of every move that hits it.
     'glaiverush': 'the damage of the moves against it and the accuracy draws that it removes',

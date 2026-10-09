@@ -67,6 +67,10 @@ typedef struct dfi_run {
      * yet (bit flat). Transient: it lives in the run, never in the state, and only the phazing step after the action
      * clears it. Emergency Exit and Eject Button ignore such a holder (Champions abilities.ts:24, items.ts:270). */
     uint32_t drag_pending;
+    /* step G56: the positions whose lockedmove (Outrage, Thrash, Petal Dance) duration is 2 in this step: started, or
+     * restarted with a count of 2 or more (onRestart). Transient, like drag_pending; read by onAfterMove and by the
+     * residual's countdown, and cleared by the residual. */
+    uint32_t lock_restarted;
 } dfi_run;
 
 #define DFI_MOVE_TARGET_NONE DFI_POSITIONS          /* no target Pokemon */
@@ -2206,6 +2210,30 @@ static void dfi_choice_lock_ends(struct duoforge_battle *b, uint32_t flat)
     }
 }
 
+/* lockedmove (step G56, data/conditions.ts:253-285): the volatile is removed, and onEnd adds confusion when the count is 1 or
+ * less (trueDuration > 1 returns). dfi_lock_remove is the silent removal (a faint, a switch, a sleep at the countdown: the
+ * pin's clearVolatile and its onResidual delete, which have no onEnd). The locked move is the choice lock's or the charge's
+ * too, so it is cleared only when neither holds. */
+static void dfi_lock_remove(struct duoforge_battle *b, uint32_t flat)
+{
+    b->tail.sides[flat / 2u].positions[flat % 2u].lock_turns = 0u;
+    dfi_active_slot *pos = dfi_pos(b, flat);
+    if (((uint32_t)pos->flags & DFI_VOL_CHOICE_LOCK) == 0u && pos->charge_turns == 0u) {
+        pos->locked_move = 0u;
+    }
+}
+
+/* onEnd of the lock: removed, then confusion (addVolatile) when the count was 1 or less. */
+static duoforge_status dfi_lock_end(dfi_run *r, uint32_t flat)
+{
+    const uint32_t left = r->b->tail.sides[flat / 2u].positions[flat % 2u].lock_turns;
+    dfi_lock_remove(r->b, flat);
+    if (left > 1u) {
+        return DUOFORGE_OK;
+    }
+    return dfi_add_volatile(r, flat, DFI_VOLATILE_CONFUSION);
+}
+
 /* Knock Off's onAfterHit (data/moves.ts:9959-9984; run by spreadMoveHit for each damaged target, also for a target that
  * this hit knocked out (its faint is not processed yet) and, in the Champions mod, also when the user has fainted since
  * (the base game asks whether the user has HP: sim/battle-actions.ts:1123; data/mods/champions/scripts.ts:411 does not)):
@@ -4260,7 +4288,9 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
     dfi_choice_lock_ends(b, user);
     /* deductPP; a locked move uses none. The opponent counts the use from
      * the move line (dfi_events_fold_knowledge). */
-    if (q->move_slot < DUOFORGE_MAX_MOVE_SLOTS && !locked) {
+    /* A lockedmove's move is the locked one too: getLockedMove skips the PP (sim/battle-actions.ts:286-291; step G56). */
+    const bool lock_move = b->tail.sides[side].positions[q->slot].lock_turns != 0u;
+    if (q->move_slot < DUOFORGE_MAX_MOVE_SLOTS && !locked && !lock_move) {
         dfi_move_slot *slot = &m->moves[q->move_slot];
         if (slot->pp == 0u) {
             return DUOFORGE_OK; /* "cant nopp"; the domain never offers it */
@@ -4334,7 +4364,7 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
          * nothing to hit, the line names no position. */
         e.other = (uint8_t)(count == 1u && target_class != DFI_TARGET_CLASS_FOE_SIDE ? aimed : DUOFORGE_NO_POSITION); /* wide-operands-reviewed: < 256 */
         const uint32_t spread_flag = count > 1u ? DUOFORGE_EVENT_FLAG_SPREAD : 0u;
-        const uint32_t locked_flag = locked ? DUOFORGE_EVENT_FLAG_LOCKED : 0u;
+        const uint32_t locked_flag = locked || lock_move ? DUOFORGE_EVENT_FLAG_LOCKED : 0u; /* a lockedmove's use: [from] lockedmove */
         e.flags = (uint8_t)(spread_flag | locked_flag); /* wide-operands-reviewed: flags < 256 */
         r->last_move = r->events != NULL ? r->events->count : UINT32_MAX;
         dfi_emit(r, &e);
@@ -4658,7 +4688,7 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
         md->special != DFI_SPECIAL_THIEF && md->special != DFI_SPECIAL_COVET && md->special != DFI_SPECIAL_SUPER_FANG &&
         md->special != DFI_SPECIAL_TAUNT && md->special != DFI_SPECIAL_YAWN &&
         md->special != DFI_SPECIAL_POWER_TRIP && md->special != DFI_SPECIAL_THUNDER && md->special != DFI_SPECIAL_ICE_FANG &&
-        md->special != DFI_SPECIAL_TRI_ATTACK) {
+        md->special != DFI_SPECIAL_TRI_ATTACK && md->special != DFI_SPECIAL_LOCKED_MOVE) {
         return DUOFORGE_E_INVARIANT;
     }
     /* Steel Roller's onTry (step G34, data/moves.ts:17893-17913): it fails without a terrain, with -fail and [still]. */
@@ -5269,6 +5299,32 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
             }
             if (hit_any) {
                 b->tail.sides[side].positions[q->slot].glaive_rush = 1u;
+            }
+        }
+        /* Outrage, Thrash and Petal Dance (step G56; the self volatile lockedmove, data/moves.ts:13082-13097, 13291-13306,
+         * 19373-19388, applied like the recharge's selfDrops once a target was not ruled out). A new lock draws its count,
+         * random(2, 4) (onStart, data/conditions.ts:265); a lock already up is restarted (onRestart): its duration is 2 only
+         * when the count is 2 or more. Either way the duration is 2 in this step (lock_restarted), which the countdown and the
+         * end of the lock read. */
+        if (md->special == DFI_SPECIAL_LOCKED_MOVE) {
+            bool hit_any = false;
+            for (uint32_t i = 0u; i < count; ++i) {
+                hit_any = hit_any || hit[i];
+            }
+            if (hit_any) {
+                dfi_tail_pos *ut = &b->tail.sides[side].positions[q->slot];
+                if (ut->lock_turns == 0u) {
+                    uint32_t count_turns = 0u;
+                    st = dfi_draw(r->draws, DFI_SITE_LOCK_TURNS, 2u, 4u, &count_turns);
+                    if (st != DUOFORGE_OK) {
+                        return st;
+                    }
+                    ut->lock_turns = (uint8_t)count_turns; /* wide-operands-reviewed: 2 or 3 */
+                    dfi_pos(b, user)->locked_move = (uint8_t)((uint32_t)q->move_slot + 1u); /* wide-operands-reviewed: <= 4 */
+                    r->lock_restarted |= 1u << user;
+                } else if (ut->lock_turns >= 2u) {
+                    r->lock_restarted |= 1u << user;
+                }
             }
         }
         /* The empty secondary of Stone Axe and Ceaseless Edge (step G48, `secondary: {}`, the Sheer Force placeholder): without
@@ -6351,7 +6407,7 @@ static uint8_t *dfi_side_turns(struct duoforge_battle *b, uint32_t s, uint32_t k
  * (DFI_RES_PER_POSITION) a status (burn or poison), the volatiles' handlers (seven duration ends: Protect, the stall
  * counter, flinch, a charge, Helping Hand, Follow Me and mustrecharge; Heal Block, Throat Chop, Encore, Disable (step G27),
  * Perish Song (step G26), Taunt and Yawn (step G31)), an item (Leftovers or White Herb), Speed Boost (step G32) and Grassy Terrain. */
-#define DFI_RES_PER_POSITION 19u /* 14 before Speed Boost (G32), Disable (G27), Perish Song (G26), Taunt and Yawn (G31) */
+#define DFI_RES_PER_POSITION 20u /* 14 before Speed Boost (G32), Disable (G27), Perish Song (G26), Taunt and Yawn (G31), the lockedmove (G56) */
 #define DFI_RES_MAX (3u + 4u * DUOFORGE_SIDE_COUNT + DFI_RES_PER_POSITION * DFI_POSITIONS)
 _Static_assert(DFI_RES_MAX <= DFI_RES_MODEL_MAX, "the exact test of residual_order.h must hold the whole list");
 
@@ -6481,6 +6537,22 @@ static void dfi_speed_boost(dfi_run *r, uint32_t flat)
     (void)dfi_boost(r, flat, spe_up, DFI_POSITIONS, dfi_effect(DUOFORGE_CAUSE_ABILITY, 1u + DFI_ABILITY_SPEEDBOOST, DFI_BOOST_PRIMARY));
 }
 
+/* lockedmove's onResidual (step G56, data/conditions.ts:253-285): its count goes down for a lock used this turn (done at
+ * the use, see the AfterMove block), and a lock whose holder is asleep is deleted silently (no end, no confusion). A lock
+ * not used this turn and not asleep (a flinch, a full paralysis or a freeze that stopped its move) is refused where that
+ * happens (dfi_lock_skipped), so every lock that stands here was used this turn. */
+static duoforge_status dfi_residual_lock(dfi_run *r, uint32_t flat)
+{
+    if (r->b->tail.sides[flat / 2u].positions[flat % 2u].lock_turns == 0u) {
+        return DUOFORGE_OK;
+    }
+    const dfi_member *lm = dfi_at(r->b, flat);
+    if (lm != NULL && lm->status == DFI_STATUS_SLP) {
+        dfi_lock_remove(r->b, flat);
+    }
+    return DUOFORGE_OK;
+}
+
 static duoforge_status dfi_residual_events_run(dfi_run *r, dfi_noorder_snapshot *ps)
 {
     struct duoforge_battle *b = r->b;
@@ -6584,6 +6656,12 @@ static duoforge_status dfi_residual_events_run(dfi_run *r, dfi_noorder_snapshot 
              * Heal Block's (20) and Disable's (17) end lines, which are entries of the same list. */
             if (vt->perish != 0u) {
                 list[n] = (dfi_residual_entry){DFI_RES_PERISH, flat, 24u, speed, 2u, true};
+                n += 1u;
+            }
+            /* lockedmove (step G56, data/conditions.ts:253-285): no order (the pin's onResidual has no onResidualOrder), sub-order 2
+             * (a condition), and a callback with a duration: the countdown, or its end when no Outrage was used this turn. */
+            if (vt->lock_turns != 0u) {
+                list[n] = (dfi_residual_entry){DFI_RES_LOCK, flat, DFI_RES_NO_ORDER, speed, 2u, true};
                 n += 1u;
             }
         }
@@ -6819,6 +6897,9 @@ static duoforge_status dfi_residual_events_run(dfi_run *r, dfi_noorder_snapshot 
             }
             continue;
         }
+        if (e->kind == DFI_RES_LOCK) {
+            continue; /* a lockedmove has no order: its countdown runs in the order-less stage (dfi_residual_lock) */
+        }
         if (e->kind == DFI_RES_DURATION) {
             continue; /* Throat Chop's (order 22): silent, its count goes down below */
         }
@@ -7046,6 +7127,13 @@ static duoforge_status dfi_residual_events_run(dfi_run *r, dfi_noorder_snapshot 
             pos->stall_turns = (uint8_t)((uint32_t)pos->stall_turns - 1u); /* wide-operands-reviewed */
             if (pos->stall_turns == 0u) {
                 pos->stall_level = 0u;
+            }
+        }
+        /* lockedmove (step G56): an order-less callback in this Speed order, after the counters it shares a sub-order with. */
+        if (dfi_alive(b, flat) && b->tail.sides[flat / 2u].positions[flat % 2u].lock_turns != 0u) {
+            st = dfi_residual_lock(r, flat);
+            if (st != DUOFORGE_OK) {
+                return st;
             }
         }
         if (keeps && r->faint_count != 0u) {
@@ -7488,7 +7576,7 @@ duoforge_status dfi_turn_start(const duoforge_context *ctx, struct duoforge_batt
     if (!dfi_closure_battle_supported(&dfi_support, b)) {
         return DUOFORGE_E_UNSUPPORTED;
     }
-    dfi_run r = {ctx, b, draws, {0u, 0u, 0u, 0u}, 0u, 0u, 0u, false, DFI_RESULT_NONE, {0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u}, events, UINT32_MAX, false, DFI_MOVE_TARGET_NONE, 1u, 0u};
+    dfi_run r = {ctx, b, draws, {0u, 0u, 0u, 0u}, 0u, 0u, 0u, false, DFI_RESULT_NONE, {0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u}, events, UINT32_MAX, false, DFI_MOVE_TARGET_NONE, 1u, 0u, 0u};
     dfi_init_speeds(&r);
     /* The leads entered one by one (insertChoice updated each speed); their
      * entries run together. */
@@ -7603,7 +7691,7 @@ duoforge_status dfi_turn_run(const duoforge_context *ctx, struct duoforge_battle
     if (!dfi_closure_battle_supported(&dfi_support, b) || ((replacement || pivot) && dfi_support.switching == 0u)) {
         return DUOFORGE_E_UNSUPPORTED;
     }
-    dfi_run r = {ctx, b, draws, {0u, 0u, 0u, 0u}, 0u, 0u, 0u, false, DFI_RESULT_NONE, {0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u}, events, UINT32_MAX, false, DFI_MOVE_TARGET_NONE, 1u, 0u};
+    dfi_run r = {ctx, b, draws, {0u, 0u, 0u, 0u}, 0u, 0u, 0u, false, DFI_RESULT_NONE, {0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u}, events, UINT32_MAX, false, DFI_MOVE_TARGET_NONE, 1u, 0u, 0u};
     dfi_init_speeds(&r);
     duoforge_status st = DUOFORGE_OK;
     uint32_t exits = 0u; /* Emergency Exit after the residual action */
@@ -7622,9 +7710,21 @@ duoforge_status dfi_turn_run(const duoforge_context *ctx, struct duoforge_battle
         dfi_queue_pop(b, &q);
         if (q.kind == DFI_Q_MOVE) {
             bool ran = false;
+            /* lockedmove (step G56): a locked user whose move is stopped before its use (a flinch, a freeze, a full paralysis)
+             * keeps the lock into the residual, where its end (fieldEvent, onEnd) would need the lock's count and the
+             * order of that end, which is not modelled: refused. A sleeping holder is not refused (its lock is deleted
+             * silently at the residual, as the pin does). */
+            const uint32_t mover = (uint32_t)q.side * 2u + (uint32_t)q.slot;
+            const bool lock_before = b->tail.sides[mover / 2u].positions[mover % 2u].lock_turns != 0u;
             st = dfi_run_move(&r, &q, &ran);
             if (st != DUOFORGE_OK) {
                 return st;
+            }
+            if (lock_before && !r.move_used) {
+                const dfi_member *mm = dfi_at(b, mover);
+                if (mm != NULL && mm->hp != 0u && mm->status != DFI_STATUS_SLP) {
+                    return DUOFORGE_E_UNSUPPORTED;
+                }
             }
             if (!ran) {
                 continue; /* runAction returned before its epilogue */
@@ -7646,10 +7746,41 @@ duoforge_status dfi_turn_run(const duoforge_context *ctx, struct duoforge_battle
                     }
                     collected = r.move_target < DFI_POSITIONS && !dfi_faint_shown(&r, r.move_target);
                 }
+                /* lockedmove's confusion (step G56) at the end of this use, after the White Herb's AnyAfterMove: when both would
+                 * print (a holder whose stat is down, and a lock that ends with a count of 1 or less), their order is not modelled. */
+                const bool lock_ends_here = b->tail.sides[user / 2u].positions[user % 2u].lock_turns != 0u &&
+                                            ((r.lock_restarted >> user) & 1u) == 0u && b->tail.sides[user / 2u].positions[user % 2u].lock_turns <= 1u &&
+                                            dfi_at(b, user) != NULL && dfi_at(b, user)->hp != 0u;
+                if (lock_ends_here && dfi_herbs_matter(&r)) {
+                    return DUOFORGE_E_UNSUPPORTED;
+                }
                 if (collected) {
                     st = dfi_herb_event(&r, user);
                     if (st != DUOFORGE_OK) {
                         return st;
+                    }
+                }
+                /* lockedmove (step G56, data/conditions.ts:253-285). A use that restarted the lock (lock_restarted: a hit with a
+                 * count of 2 or more, or the start) keeps it: its count goes down by the residual of this turn, which is done
+                 * here, at the use, so that no residual of a later call (a replacement's pause) has to remember the restart.
+                 * A use that did not restart it: onAfterMove removes it at duration 1 (after any result), and onEnd confuses
+                 * when the count is 1 or less. A fainted user has no handler (its volatiles were cleared). */
+                const dfi_member *um = dfi_at(b, user);
+                const bool restarted_use = ((r.lock_restarted >> user) & 1u) != 0u;
+                r.lock_restarted &= ~(1u << user); /* wide-operands-reviewed: user < 4 */
+                if (b->tail.sides[user / 2u].positions[user % 2u].lock_turns != 0u && um != NULL && um->hp != 0u) {
+                    if (restarted_use) {
+                        dfi_tail_pos *ut = &b->tail.sides[user / 2u].positions[user % 2u];
+                        ut->lock_turns = (uint8_t)((uint32_t)ut->lock_turns - 1u); /* wide-operands-reviewed: >= 1 */
+                    } else {
+                        if (b->tail.sides[user / 2u].positions[user % 2u].lock_turns <= 1u && dfi_herbs_matter(&r)) {
+                            /* the White Herb's AnyAfterMove and this confusion would both print: the order is not modelled */
+                            return DUOFORGE_E_UNSUPPORTED;
+                        }
+                        st = dfi_lock_end(&r, user);
+                        if (st != DUOFORGE_OK) {
+                            return st;
+                        }
                     }
                 }
             }
