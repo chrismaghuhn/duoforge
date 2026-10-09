@@ -1584,7 +1584,8 @@ class WholePoolNames(unittest.TestCase):
 
     def test_the_inert_reads_name_the_move_whose_modelling_would_matter(self):
         self.assertEqual(gen_closure.INERT_FLAG_READS, {'pledgecombo': None})
-        self.assertEqual(gen_closure.COLUMN_FLAGS, {'bypasssub'})  # step G60: held by dfi_pool_move_bypasssub
+        # step G60: bypasssub is no column of its own; it is bit 2 (value 4) of the third flags byte, FLAGS3_BITS
+        self.assertEqual(gen_closure.FLAGS3_BITS['bypasssub'], 4)  # held by dfi_pool_move_bypasssub
 
 
 class WeatherFacts(unittest.TestCase):
