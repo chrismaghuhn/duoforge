@@ -113,7 +113,9 @@ class WithThePin(unittest.TestCase):
         self.assertEqual(sorted(re.search(r'added to (\S+):', n).group(1) for n in notes if 'gender (' in n),
                          ['Blissey', 'Charizard', 'Rillaboom', 'Salamence'])
         self.assertEqual(len(notes), 3 + 3 + 5 + 1 + 4)
-        self.assertEqual(reg.team_problems(reg.file_text(sets).decode('utf-8'), tables), [])
+        # Blissey is in the pokedex but not in the converter's tables: the paste is made, and the registry names that.
+        self.assertEqual(reg.team_problems(reg.file_text(sets).decode('utf-8'), tables),
+                         [('names', "the converter's tables have no BLISSEY")])
 
     def test_the_command_line_end_to_end(self):
         with tempfile.TemporaryDirectory() as tmp:

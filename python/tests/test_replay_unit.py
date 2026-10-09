@@ -350,6 +350,17 @@ class LinesTest(unittest.TestCase):
         with self.assertRaises(lines.Stop):
             lines.check("|-fail|p1a: Dragonite|unboost|Power|[from] ability: Inner Focus|[of] p1a: Dragonite", view)
 
+    def test_activate_of_own_ability_folds(self):
+        # G45/G47: Synchronize, Telepathy and the like announce the holder's own ability; their effects come in
+        # their own lines (-status, the skipped hit), so the -activate line itself changes no field
+        view = _View({"p1: Umbreon": ("UMBREON", "LEFTOVERS", "SYNCHRONIZE"),
+                      "p2: Staraptor": ("STARAPTOR", "SITRUSBERRY", "INTIMIDATE")})
+        self.assertEqual(lines.check("|-activate|p1a: Umbreon|ability: Synchronize", view), "fold")
+        with self.assertRaises(lines.Stop):  # not the holder's current ability: unknown, as before
+            lines.check("|-activate|p2a: Staraptor|ability: Synchronize", view)
+        with self.assertRaises(lines.Stop):  # an ability the tables lack
+            lines.check("|-activate|p1a: Umbreon|ability: No Such Ability", view)
+
     def test_fold_and_room_lines(self):
         self.assertEqual(lines.check("|-enditem|p1a: Staraptor|Sitrus Berry|[eat]", self.view), "fold")
         self.assertEqual(lines.check("|-ability|p1a: Staraptor|Intimidate|boost", self.view), "fold")
@@ -694,13 +705,20 @@ class GameTest(unittest.TestCase):
         for row in last:
             self.assertNotIn(labels.MOVE_HIDDEN, row.label.reasons, row.side)
 
-    def test_weather_extended_by_an_item_stops(self):
-        # review C2: Politoed's Drizzle with Damp Rock lasts 8 turns, and no line says so
+    def test_weather_extended_by_an_item_lasts_eight_turns(self):
+        # review C2: Politoed's Drizzle with Damp Rock lasts 8 turns, and no line says so: the setter's open sheet
+        # holds the rock (data/conditions.ts durationCallback: source.hasItem), so the fold counts 8, not 5
         lines = [line.replace("|MysticWater|", "|DampRock|", 1) if line.startswith("|showteam|p2|") else line
                  for line in self.log]
         result = self.run_game(lines)
-        self.assertEqual(result.counters["perspectives.stopped.line:-weather RainDance Damp Rock"], 2)
-        self.assertTrue(all(int(r.observation["boundary_kind"]) == 1 for r in result.rows))
+        stopped = [k for k in result.counters if k.startswith("perspectives.stopped.line:-weather")]
+        self.assertEqual(stopped, [])
+        plain = self.run_game(self.log)
+        def turns(res):
+            return [int(r.observation["weather_turns"]) for r in res.rows if int(r.observation["weather"]) != 0]
+        self.assertTrue(turns(plain) and max(turns(plain)) <= 5)
+        self.assertTrue(turns(result) and max(turns(result)) > 5, turns(result))
+        self.assertLessEqual(max(turns(result)), 8)
 
     def test_sheet_the_converter_refuses_skips(self):
         # review I2: a refusal of the converter is a counted skip, not an escaping SystemExit
