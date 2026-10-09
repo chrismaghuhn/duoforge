@@ -1589,9 +1589,25 @@ int main(void)
         }
         duoforge_decision_bundle bd;
         turn_bundle(&bd, x);
-        step_ok(&t, kp, x, &bd, "a turn with a tail");
+        /* step G48: timesAttacked, the tail's hits_taken, counts the damaging hits of a move on the position it hit (saturating
+         * at 6). The hits are the step's own move damage: the public DAMAGE events with cause NONE (the events are public, so
+         * player 0's buffer has every one of them). */
+        static duoforge_event hit_ev[2][DUOFORGE_MAX_EVENTS];
+        duoforge_event_buffer hit_buffers[2] = {{hit_ev[0], DUOFORGE_MAX_EVENTS, 0u}, {hit_ev[1], DUOFORGE_MAX_EVENTS, 0u}};
+        duoforge_step_result hit_res;
+        DF_CHECK(&t, duoforge_battle_step_events(kp, x, &bd, &hit_res, hit_buffers) == DUOFORGE_OK);
+        uint32_t landed[DUOFORGE_SIDE_COUNT * DUOFORGE_ACTIVE_PER_SIDE] = {0u, 0u, 0u, 0u};
+        for (uint32_t k = 0u; k < hit_buffers[0].count; ++k) {
+            const duoforge_event *e = &hit_buffers[0].events[k];
+            if (e->kind == (uint8_t)DUOFORGE_EVENT_DAMAGE && e->cause == (uint8_t)DUOFORGE_CAUSE_NONE && e->position < 4u) {
+                landed[e->position] += 1u;
+            }
+        }
         for (uint32_t s = 0u; s < DUOFORGE_SIDE_COUNT; ++s) {
             for (uint32_t p = 0u; p < DUOFORGE_ACTIVE_PER_SIDE; ++p) {
+                const uint32_t before_hits = want.sides[s].positions[p].hits_taken;
+                const uint32_t after_hits = before_hits + landed[s * DUOFORGE_ACTIVE_PER_SIDE + p];
+                want.sides[s].positions[p].hits_taken = (uint8_t)(after_hits > DFI_TAIL_HITS_TAKEN_MAX ? DFI_TAIL_HITS_TAKEN_MAX : after_hits);
                 /* each position that acted used slot 0 (turn_bundle's plan): last_move 1; one that did not has none */
                 DF_CHECK(&t, x->tail.sides[s].positions[p].last_move <= 1u);
                 want.sides[s].positions[p].last_move = x->tail.sides[s].positions[p].last_move;

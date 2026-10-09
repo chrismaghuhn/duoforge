@@ -679,7 +679,7 @@ def name_of(p):
 # are called Arcanine and Floette in the switch line (pool step G2); the species clause keeps the alias unique.
 BASE_SPECIES_NAME = {'Indeedee-F': 'Indeedee', 'Arcanine-Hisui': 'Arcanine', 'Floette-Eternal': 'Floette',
                      'Ninetales-Alola': 'Ninetales', 'Meowstic-F': 'Meowstic', 'Lycanroc-Dusk': 'Lycanroc',
-                     'Samurott-Hisui': 'Samurott'}  # step G50: Double Shock's Samurott-Hisui is shown as Samurott (sim/pokemon.ts:329-330)
+                     'Samurott-Hisui': 'Samurott'}  # steps G48 and G50: Ceaseless Edge's and Double Shock's user, shown as Samurott (sim/pokemon.ts:329-330)
 
 
 def abs_target(side, loc):
