@@ -200,7 +200,18 @@ def switch_label(log, point, side, lists, member_of, stop_line):
             continue
         position = side * 2 + k
         lines_k = [line for line in segment if line_kind(line) == "switch" and flat_position(line.split("|")[2]) == position]
-        if lines_k and position in point.run:
+        revives = [line for line in segment if line_kind(line) == "-heal" and "[from] move: Revival Blessing" in line
+                   and line.split("|")[2].startswith(f"p{side + 1}: ")]
+        if getattr(point, "revive", False) and position in point.run:
+            # Revival Blessing's choice (step G52): the member its -heal line names
+            if revives:
+                member = member_of(revives[0].split("|")[2].split(": ", 1)[1])
+                found = [i for i, o in enumerate(options_list) if o.kind == options.REVIVE and o.reserve == member]
+            elif end < point.end:
+                found = []
+            else:  # no revive before the next action: the request was passed (it comes again)
+                found = [i for i, o in enumerate(options_list) if o.kind == options.PASS]
+        elif lines_k and position in point.run:
             member = member_of(lines_k[0].split("|")[3])
             found = [i for i, o in enumerate(options_list) if o.kind == options.SWITCH and o.reserve == member]
         elif end < point.end:
