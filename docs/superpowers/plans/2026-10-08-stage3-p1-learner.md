@@ -429,7 +429,16 @@ The [P1 plan](2026-10-08-stage3-p1-pilot.md) gives the collection loop to Learne
     - `checkpoint_hash`: the init file's SHA-256;
     - `model_hash`: the SHA-256 of `checkpoint.model_config(config, params)` as canonical JSON (sorted keys, compact separators);
     - `pool_hash`: `expert_eval.pool_sha256(pool)`;
-    - `belief_hash`: the pinned spread table's SHA-256 (`honest.spread_table`).
+    - `belief_hash`: the pinned spread table's SHA-256 (`honest.spread_table`);
+    - `ids_hash`: the SHA-256 of `checkpoint.ids_of(context)` (what every embedded id means) as canonical JSON (sorted keys, compact separators). Neither M12's code nor the docs defined it, so the collector defines it here.
+  - Refusals (exit 2) are only the checks before play:
+    - the CLI's input checks;
+    - `collect`'s own `Refusal`: invalid inputs, the network on another device platform than `manifest.device`, an existing collection, a mismatching resume.
+  - Any other error during the collection is a crash and propagates (exit 1). The run resumes from the last round boundary.
+- **Setup.** A fresh start writes `manifest.json` and the first state only after round 0's roots exist. If that setup fails, it removes its own files, so the directory still takes a fresh start.
+- **Deferred:**
+  - the wall watchdog: for now an external SIGTERM stops the run, and it resumes at a round boundary;
+  - deduplicating the `params_digest` and `_file_sha` helpers.
   - Exit 0 is complete, 3 is stopped by a signal (resume with `--resume`), 2 is a refusal.
 - **Tests only:** `label_limit` below 16384 (the initial `LabelCursor.remaining`) and a smaller `SHARD_ROWS`. Production keeps the manifest's 16384 and `MAX_SHARD_ROWS`.
 

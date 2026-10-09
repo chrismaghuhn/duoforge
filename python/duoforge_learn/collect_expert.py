@@ -64,6 +64,18 @@ def _ed():
 SHARD_ROWS = _ed().MAX_SHARD_ROWS  # rows per shard (at most expert_data.MAX_SHARD_ROWS)
 
 
+class Refusal(ValueError):
+    """A collection refused before it plays anything: invalid or mismatching inputs, an existing collection, a
+    resume of another manifest or configuration. The CLI exits 2 for it; any other error is a crash."""
+
+
+def ids_hash(context):
+    """The manifest's ids_hash: SHA-256 of checkpoint.ids_of(context) (what every embedded id means) as canonical
+    JSON (sorted keys, compact separators)."""
+    from . import checkpoint
+    return model_hash(checkpoint.ids_of(context))
+
+
 @dataclasses.dataclass(frozen=True)
 class CollectResult:
     """The collection so far: games finished, rows and targets written, the counters, whether every requested
@@ -115,11 +127,12 @@ def raw_draws(logps, legal, keys, seed):
     return actions, out
 
 
-def distributions(model, params, obs, slots, mask, is_team):
-    """One network pass over rows (B, ...): (pairs (B, 1024) float32, team (B, 360) float32, value (B,) float32).
-    pairs is the pair head's log-softmax at the legal joint actions of mask and -inf elsewhere, which is
-    Model.full_joint_log_probs (full_joint_log_probs_traced's definition, here on the rows of one fixed-shape pass);
-    team is the team head (Model.apply's), for the team-preview rows is_team. Ids are checked first, as act does."""
+def distributions(model, params, obs, slots, mask):
+    """One network pass (Model.apply) over every row (B, ...): (pairs (B, 1024) float32, team (B, 360) float32,
+    value (B,) float32). pairs is the pair head's log-softmax at the legal joint actions of mask and -inf elsewhere,
+    which is Model.full_joint_log_probs (full_joint_log_probs_traced's definition, on the rows of one fixed-shape
+    pass); team is the team head's log-softmax over the 360 team actions. Both are given for every row: the caller
+    reads a team-preview row's team and any other requested row's pairs. Ids are checked first, as act does."""
     import jax
     obs, slots, mask = np.asarray(obs), np.asarray(slots), np.asarray(mask, bool)
     model.check(obs)
@@ -173,7 +186,8 @@ def manifest_digest(manifest):
 
 
 def model_hash(model_config):
-    """The manifest's model_hash: SHA-256 of the model configuration as canonical JSON (sorted keys, compact)."""
+    """The manifest's model_hash: SHA-256 of the model configuration as canonical JSON (sorted keys, compact
+    separators); ids_hash uses the same canonical form."""
     return hashlib.sha256(json.dumps(model_config, sort_keys=True, separators=(",", ":")).encode("ascii")).hexdigest()
 
 
@@ -200,7 +214,7 @@ def read_state(out):
     """The collection state of out (a dict); ValueError without one."""
     path = Path(out) / STATE
     if not path.exists():
-        raise ValueError(f"{out}: no collection state to resume ({STATE})")
+        raise Refusal(f"{out}: no collection state to resume ({STATE})")
     return json.loads(path.read_text(encoding="ascii"))
 
 
@@ -307,7 +321,7 @@ class _Collection:
             with self.device():
                 pair_logp, team_logp, value = distributions(
                     self.model, self.params, obs.reshape(2 * n, -1), slots.reshape((2 * n,) + slots.shape[2:]),
-                    pairs.reshape(2 * n, *pairs.shape[2:]), team.reshape(-1))
+                    pairs.reshape(2 * n, *pairs.shape[2:]))
             pair_logp, team_logp, value = (x.reshape((n, 2) + x.shape[1:]) for x in (pair_logp, team_logp, value))
             # Raw draws of every request of both seats, before any selection.
             raw_action, raw_logp = np.zeros((n, 2), np.int64), np.zeros((n, 2), np.float64)
@@ -439,16 +453,63 @@ def collect(manifest, model, params, pool, search, out_dir, *, source_ids, round
     expert_data.LABEL_LIMIT; smaller only in tests); budget, audit_threshold: the teacher's overrides; workers: the
     roots' native workers (default the manifest's; results do not depend on it); ledger: a ledger.Ledger, phase
     "generate" (the network pass is a device section only when it runs on a GPU, see device_platform; the teacher's
-    search runs on the CPU); resume: continue out_dir from its last completed round (refused for another manifest or configuration); stop: an object whose
-    `requested` ends the run at the next tick (the round in play is played again on resume); identity: more
-    fields a resume must match (the CLI's checkpoint hash). Shards go to out_dir/shards (round-RRRR-shard-SSSS.json,
-    in write order). ValueError for any refusal."""
+    search runs on the CPU; the network must run on manifest.device); resume: continue out_dir from its last
+    completed round (refused for another manifest or configuration); stop: an object whose `requested` ends the
+    run at the next tick (the round in play is played again on resume); identity: more fields a resume must match
+    (the CLI's checkpoint hash). Shards go to out_dir/shards (round-RRRR-shard-SSSS.json, in write order).
+    Refusal (a ValueError) for anything refused before play; any other error is a crash."""
+    try:
+        out, rounds, label_limit, config, workers, source_ids, ident = _prepare(
+            manifest, params, pool, search, out_dir, source_ids, rounds, max_steps, label_limit, budget,
+            audit_threshold, workers, identity)
+    except Refusal:
+        raise
+    except ValueError as err:
+        raise Refusal(str(err)) from err
+    run = _Collection(manifest, model, params, pool, search, out, config, max_steps, workers, ledger, source_ids)
+    with contextlib.ExitStack() as stack:
+        if ledger is not None:  # charged to phase generate; saved on every exit, after the phase has closed
+            stack.callback(ledger.save)
+            stack.enter_context(ledger.phase("generate"))
+        roots = None
+        try:
+            if resume:
+                r, counters, shards, roots, cursor = _resume(run, ident, rounds, out)
+            else:
+                r, counters, shards, roots, cursor = _start(run, ident, label_limit, out)
+            while r < rounds:
+                played = run.play(r, roots, cursor, counters, stop)
+                if played is None:
+                    state = read_state(out)
+                    return CollectResult(state["counters"]["games"], state["counters"]["rows"],
+                                         state["counters"]["targets"], dict(state["counters"]), False, r)
+                cursor, written = played
+                shards = shards + written
+                r += 1
+                roots.close()
+                roots = run.roots(r) if r < manifest.rounds else None
+                run.save(ident, r, cursor, roots, counters, shards)
+                if stop is not None and stop.requested and r < rounds:
+                    return CollectResult(counters["games"], counters["rows"], counters["targets"], dict(counters),
+                                         False, r)
+        finally:
+            if roots is not None:
+                roots.close()
+    return CollectResult(counters["games"], counters["rows"], counters["targets"], dict(counters), True, r)
+
+
+def _prepare(manifest, params, pool, search, out_dir, source_ids, rounds, max_steps, label_limit, budget,
+             audit_threshold, workers, identity):
+    """The checks before anything is written, and the identity a resume must match. ValueError for a refusal."""
     from duoforge_replay.dataset import refuse_repository
     from duoforge_search import expert as ex
     ed = _ed()
     ed.validate_manifest(manifest)
     out = Path(out_dir)
     refuse_repository(out)
+    platform = device_platform(params)
+    if platform != manifest.device:
+        raise ValueError(f"the network runs on device {platform}, the manifest pins device {manifest.device}")
     rounds = manifest.rounds if rounds is None else rounds
     label_limit = ed.LABEL_LIMIT if label_limit is None else label_limit
     for name, value, high in (("rounds", rounds, manifest.rounds), ("max_steps", max_steps, None),
@@ -473,73 +534,83 @@ def collect(manifest, model, params, pool, search, out_dir, *, source_ids, round
              "source_ids": dict(sorted(source_ids.items())),
              "pool": {"ids": list(pool.ids), "sha256": list(pool.sha256), "weights": [float(w) for w in pool.weights]},
              **_plain(identity or {})}
-    run = _Collection(manifest, model, params, pool, search, out, config, max_steps, workers, ledger, source_ids)
-    with contextlib.ExitStack() as stack:
-        if ledger is not None:  # charged to phase generate; saved on every exit, after the phase has closed
-            stack.callback(ledger.save)
-            stack.enter_context(ledger.phase("generate"))
-        if resume:
-            state = read_state(out)
-            if state.get("version") != STATE_VERSION:
-                raise ValueError(f"resume refused: collection state version {state.get('version')!r}")
-            changed = sorted(k for k in set(ident) | set(state["identity"]) if ident.get(k) != state["identity"].get(k))
-            if changed:
-                raise ValueError(f"resume refused: {', '.join(changed)} differ from the collection's")
-            if ed.read_manifest(out / "manifest.json") != manifest:
-                raise ValueError("resume refused: the manifest differs from the collection's")
-            shards = state["shards"]
-            for s in shards:
-                path = run.shard_dir / s["name"]
-                if not path.exists() or _file_sha(path) != s["sha256"]:
-                    raise ValueError(f"resume refused: shard {s['name']} is missing or altered")
-            listed = {s["name"] for s in shards}
-            stray = sorted(p for p in run.shard_dir.glob("*") if p.name not in listed)
-            if stray:  # an interrupted round's shards: set aside for diagnosis, never read as data
-                discarded = out / "discarded"
-                attempt = discarded / f"attempt-{len(list(discarded.glob('attempt-*'))):04d}"
-                attempt.mkdir(parents=True)
-                for p in stray:
-                    os.replace(p, attempt / p.name)
-            r, counters = state["next_round"], dict(state["counters"])
-            roots = None
-            if r < rounds:
-                roots = run.roots(r)
-                cursor = ex.restore_teacher(search, roots, state["teacher"].encode("ascii"), config, manifest)
-        else:
-            if (out / STATE).exists() or (out / "manifest.json").exists() or \
-                    (run.shard_dir.exists() and any(run.shard_dir.iterdir())):
-                raise ValueError(f"{out}: a collection exists there (resume it, or choose another directory)")
-            run.shard_dir.mkdir(parents=True, exist_ok=True)
-            ed.write_manifest(out / "manifest.json", manifest)
-            r, counters, shards = 0, {k: 0 for k in COUNTERS}, []
-            cursor = ed.LabelCursor(remaining=label_limit)
-            roots = run.roots(0)
-            run.save(ident, 0, cursor, roots, counters, shards)
+    return out, rounds, label_limit, config, workers, source_ids, ident
+
+
+def _resume(run, ident, rounds, out):
+    """The collection state of out, checked against this run; the next round's roots with the teacher restored
+    (a fresh search), the interrupted round's shards set aside. Refusal for any mismatch."""
+    from duoforge_search import expert as ex
+    ed = _ed()
+    state = read_state(out)
+    if state.get("version") != STATE_VERSION:
+        raise Refusal(f"resume refused: collection state version {state.get('version')!r}")
+    changed = sorted(k for k in set(ident) | set(state["identity"]) if ident.get(k) != state["identity"].get(k))
+    if changed:
+        raise Refusal(f"resume refused: {', '.join(changed)} differ from the collection's")
+    try:
+        same = ed.read_manifest(out / "manifest.json") == run.manifest
+    except ValueError as err:
+        raise Refusal(f"resume refused: {err}") from err
+    if not same:
+        raise Refusal("resume refused: the manifest differs from the collection's")
+    shards = state["shards"]
+    for s in shards:
+        path = run.shard_dir / s["name"]
+        if not path.exists() or _file_sha(path) != s["sha256"]:
+            raise Refusal(f"resume refused: shard {s['name']} is missing or altered")
+    r, counters, roots, cursor = state["next_round"], dict(state["counters"]), None, None
+    if r < rounds:
+        roots = run.roots(r)
         try:
-            while r < rounds:
-                played = run.play(r, roots, cursor, counters, stop)
-                if played is None:
-                    state = read_state(out)
-                    return CollectResult(state["counters"]["games"], state["counters"]["rows"],
-                                         state["counters"]["targets"], dict(state["counters"]), False, r)
-                cursor, written = played
-                shards = shards + written
-                r += 1
-                roots.close()
-                roots = run.roots(r) if r < manifest.rounds else None
-                run.save(ident, r, cursor, roots, counters, shards)
-                if stop is not None and stop.requested and r < rounds:
-                    return CollectResult(counters["games"], counters["rows"], counters["targets"], dict(counters),
-                                         False, r)
-        finally:
-            if roots is not None:
-                roots.close()
-    return CollectResult(counters["games"], counters["rows"], counters["targets"], dict(counters), True, r)
+            cursor = ex.restore_teacher(run.search, roots, state["teacher"].encode("ascii"), run.config,
+                                        run.manifest)
+        except ValueError as err:
+            roots.close()
+            raise Refusal(f"resume refused: {err}") from err
+        except BaseException:
+            roots.close()
+            raise
+    listed = {s["name"] for s in shards}
+    stray = sorted(p for p in run.shard_dir.glob("*") if p.name not in listed)
+    if stray:  # an interrupted round's shards: set aside for diagnosis, never read as data
+        discarded = out / "discarded"
+        attempt = discarded / f"attempt-{len(list(discarded.glob('attempt-*'))):04d}"
+        attempt.mkdir(parents=True)
+        for p in stray:
+            os.replace(p, attempt / p.name)
+    return r, counters, shards, roots, cursor
+
+
+def _start(run, ident, label_limit, out):
+    """A fresh collection: round 0's roots, then the manifest and the first state. A setup that fails leaves no
+    manifest or state behind, so the directory still takes a fresh start."""
+    ed = _ed()
+    if (out / STATE).exists() or (out / "manifest.json").exists() or \
+            (run.shard_dir.exists() and any(run.shard_dir.iterdir())):
+        raise Refusal(f"{out}: a collection exists there (resume it, or choose another directory)")
+    run.shard_dir.mkdir(parents=True, exist_ok=True)
+    counters, shards = {k: 0 for k in COUNTERS}, []
+    cursor = ed.LabelCursor(remaining=label_limit)
+    roots = run.roots(0)
+    written = []
+    try:
+        written.append(out / "manifest.json")
+        ed.write_manifest(out / "manifest.json", run.manifest)
+        written.append(out / STATE)
+        run.save(ident, 0, cursor, roots, counters, shards)
+    except BaseException:
+        roots.close()
+        for path in written:
+            path.unlink(missing_ok=True)  # this call's own files: the directory stays a fresh start
+        raise
+    return 0, counters, shards, roots, cursor
 
 
 def main(argv=None):
     """python -m duoforge_learn.collect_expert: exit 0 after the requested rounds, 3 when a signal stopped it
-    (resume with --resume), 2 for a refusal (its cause on stderr)."""
+    (resume with --resume), 2 for a refusal before play (its cause on stderr). Any other error during the
+    collection is a crash and propagates (exit 1); resume from the last round boundary."""
     import argparse
     import sys
     p = argparse.ArgumentParser(prog="python -m duoforge_learn.collect_expert",
@@ -580,6 +651,8 @@ def main(argv=None):
             raise ValueError(f"the manifest pins model {manifest.model_hash}, --init's is {model_hash(model_config)}")
         model = policy.make(model_config)
         context = duoforge.Context(data_kind=DATA_KINDS[config["data"]["kind"]])
+        if manifest.ids_hash != ids_hash(context):
+            raise ValueError(f"the manifest pins ids {manifest.ids_hash}, the context's are {ids_hash(context)}")
         weights = None if args.team_weights is None else [float(w) for w in args.team_weights.split(",")]
         if args.teams is None:
             pool = teams.TeamPool.from_setups(("A", "B"), duoforge.reference_setups([0])["sides"][0])
@@ -602,6 +675,14 @@ def main(argv=None):
         if args.ledger:
             from . import ledger as ledger_mod
             book = ledger_mod.Ledger(args.ledger)
+    except (ValueError, OSError, KeyError) as err:  # the inputs before any play: a refusal
+        print(f"collect_expert: {err}", file=sys.stderr)
+        if search is not None:
+            search.close()
+        if context is not None:
+            context.close()
+        return 2
+    try:
         stop = runstate.StopFlag().install()
         try:
             result = collect(manifest, model, params, pool, search, args.out, source_ids=source_ids,
@@ -609,7 +690,7 @@ def main(argv=None):
                              identity={"init_sha256": sha, "allow_other_init": args.allow_other_init})
         finally:
             stop.restore()
-    except (ValueError, OSError, KeyError) as err:
+    except Refusal as err:  # collect's own checks before play; any other error inside the collection is a crash
         print(f"collect_expert: {err}", file=sys.stderr)
         return 2
     finally:
