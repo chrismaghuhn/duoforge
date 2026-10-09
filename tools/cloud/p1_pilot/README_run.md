@@ -23,7 +23,7 @@ are `aws s3 cp/sync/ls`.
 | `AFFINITY` | `taskset` CPU list for every phase of both arms (default `0-(WORKERS-1)`) |
 | `LADDER_FILE` | the ladder checkpoint among the inputs (default `params-39400.npz`, M12 2026-10-09) |
 | `TEAMS_DIR` | the team registry directory among the inputs (default `teams`) |
-| `WORK_DIR` | work directory outside the repository (default `~/p1-work`, dry run `~/p1-dry/work`). Outputs are in `$WORK_DIR/out`. The tools' states hold absolute paths, so a resume must use the same `WORK_DIR`: it is recorded in run-info, and a restore from another one stops with 11 |
+| `WORK_DIR` | work directory outside the repository (default `~/p1-work`, dry run `~/p1-dry/work`). Outputs are in `$WORK_DIR/out`. The tools' states hold absolute paths, so a resume must use the same `WORK_DIR`. Every start records `work_dir`, `run_id` and `mode` in run-info; a start whose earlier run-info differs in any of them (another WORK_DIR, a new RUN_ID, a run after a dry run in the same directory) stops with 11, so it never inherits markers or outputs. `--check-env` with `WORK_DIR` set also checks this |
 | `VENV` | an existing Python environment to use instead of creating `$WORK_DIR/venv` |
 | `UPLOAD_EVERY`, `INTERRUPT_WAIT` | periodic upload interval (900 s); how long an interrupt waits for the phase to save (60 s) |
 
@@ -156,7 +156,7 @@ exit code (train answers SIGTERM by saving and exiting 0): `run.sh` exits 60, an
 | 1 | crash (a tool error, a failed export or check, a calibration block cut short, expert_eval crash) |
 | 2 | usage (missing or invalid environment, bad arguments) |
 | 10 | inputs: a file missing (the ladder too), SHA256SUMS not exact, any hash mismatch |
-| 11 | setup: a tool, build, venv, version pin or GPU missing; commit mismatch; another WORK_DIR than the run's |
+| 11 | setup: a tool, build, venv, version pin or GPU missing; commit mismatch; earlier starts in WORK_DIR with another work_dir, run_id or mode |
 | 13 | a phase CLI refused its inputs (exit 2) |
 | 20 | smoke STOP: t = 0 |
 | 21 | STOP: forecast or actual generation CPU above 28800 core-seconds |

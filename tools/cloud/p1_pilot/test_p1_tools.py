@@ -219,6 +219,29 @@ class RunIdGuardTest(unittest.TestCase):
                            text=True, timeout=60)
         return r.returncode
 
+    def test_earlier_starts_must_be_this_run(self):
+        work = tempfile.mkdtemp()
+        try:
+            os.makedirs(os.path.join(work, "out", "run-info"))
+            bash_path = subprocess.run([BASH, "-c", 'cd "$1" && pwd -P', "_", work], capture_output=True,
+                                       text=True).stdout.strip()
+
+            def check(**info):
+                with open(os.path.join(work, "out", "run-info", "run-info-20261010T000000Z.json"), "w") as f:
+                    json.dump({"mode": "run", "run_id": "run1", "work_dir": bash_path} | info, f, indent=1,
+                              sort_keys=True)
+                env = {k: v for k, v in os.environ.items()} | {"BUCKET": "b", "RUN_PREFIX": "p1/run1/",
+                                                                 "RUN_ID": "run1", "WORK_DIR": work}
+                return subprocess.run([BASH, os.path.join(HERE, "run.sh"), "--check-env"], env=env,
+                                      capture_output=True, text=True, timeout=60).returncode
+
+            self.assertEqual(check(), 0)
+            self.assertEqual(check(run_id="run0"), 11)
+            self.assertEqual(check(mode="dry", run_id="dry"), 11)
+            self.assertEqual(check(work_dir="/elsewhere"), 11)
+        finally:
+            shutil.rmtree(work)
+
     def test_valid(self):
         self.assertEqual(self.check("20261010-a1", "p1/20261010-a1/"), 0)
         self.assertEqual(self.check("run.2", "p1/run.2/"), 0)

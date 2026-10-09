@@ -68,8 +68,26 @@ require_cloud_env() {
     [[ $RUN_ID != inputs ]] || die $EX_USAGE "RUN_ID 'inputs' is the inputs prefix"
     [[ $RUN_PREFIX == "p1/$RUN_ID/" ]] || die $EX_USAGE "RUN_PREFIX must be p1/<RUN_ID>/ (got '$RUN_PREFIX', RUN_ID '$RUN_ID')"
 }
-if [[ $MODE == check ]]; then  # the environment checks alone: no file, no aws call
+# The earlier starts recorded in OUT/run-info must be this run: the same WORK_DIR (the tools' states hold absolute
+# paths), RUN_ID and mode, so a new RUN_ID, or a run after a dry run in the same WORK_DIR, never inherits markers or
+# outputs. Exit 11 otherwise.
+check_earlier_starts() {  # OUT WORK_DIR RUN_ID MODE
+    local out=$1 work=$2 run_id=$3 mode=$4 info key want got
+    for info in "$out"/run-info/run-info-*.json; do
+        [[ -f $info ]] || continue
+        for key in work_dir run_id mode; do
+            case $key in work_dir) want=$work ;; run_id) want=$run_id ;; mode) want=$mode ;; esac
+            got=$(sed -n "s/^ *\"$key\": \"\(.*\)\",\{0,1\}\$/\1/p" "$info")
+            [[ -z $got || $got == "$want" ]] \
+                || die $EX_SETUP "$(basename "$info") of an earlier start has $key '$got', this start '$want': use a fresh WORK_DIR (or the earlier run's settings)"
+        done
+    done
+}
+if [[ $MODE == check ]]; then  # the environment checks alone: no aws call; with WORK_DIR set, also its earlier starts
     require_cloud_env
+    if [[ -n ${WORK_DIR:-} && -d $WORK_DIR ]]; then
+        check_earlier_starts "$(cd "$WORK_DIR" && pwd -P)/out" "$(cd "$WORK_DIR" && pwd -P)" "$RUN_ID" run
+    fi
     echo "run.sh: BUCKET, RUN_PREFIX and RUN_ID are valid"
     exit 0
 fi
@@ -178,7 +196,10 @@ on_exit() {
         33) meaning=calibration-over-cap ;; 40) meaning=eval-smoke-stop ;; 41) meaning=expert-eval-refusal ;;
         50) meaning=missing-m12-tool ;; 60) meaning=interrupted ;; *) meaning=unknown ;;
     esac
-    [[ -n ${UPLOADER:-} ]] && kill "$UPLOADER" 2>/dev/null || true
+    if [[ -n ${UPLOADER:-} ]]; then  # with its children: its sleep would hold the log pipe open
+        pkill -TERM -P "$UPLOADER" 2>/dev/null || true
+        kill "$UPLOADER" 2>/dev/null || true
+    fi
     wait_phase  # the phase saves its state on SIGTERM; upload only after it has
     printf '{"exit": %d, "meaning": "%s", "mode": "%s", "started": "%s", "ended": "%s"}\n' \
         "$code" "$meaning" "$MODE" "$STARTED" "$(date -u +%Y%m%dT%H%M%SZ)" | tee "$OUT/status/exit-$STARTED.json" >"$OUT/STATUS.json"
@@ -196,16 +217,10 @@ if [[ $MODE == run ]]; then
     log "restore s3://$BUCKET/$RUN_PREFIX"
     s3 sync "s3://$BUCKET/$RUN_PREFIX" "$OUT"
 fi
-# The tools' states hold absolute paths (shards, run directories): a resume must use the same WORK_DIR.
-for info in "$OUT"/run-info/run-info-*.json; do
-    [[ -f $info ]] || continue
-    earlier=$(sed -n 's/^ *"work_dir": "\(.*\)",\{0,1\}$/\1/p' "$info")
-    [[ -z $earlier || $earlier == "$WORK_DIR" ]] \
-        || die $EX_SETUP "the run's earlier starts used WORK_DIR=$earlier ($(basename "$info")); this one is $WORK_DIR: resume with the same WORK_DIR"
-done
+check_earlier_starts "$OUT" "$WORK_DIR" "${RUN_ID:-dry}" "$MODE"
 touch "$WORK_DIR/.restored"
 if [[ $MODE == run ]]; then  # long phases (production collection, the control) upload their progress meanwhile
-    ( trap - EXIT TERM INT; while sleep "$UPLOAD_EVERY"; do upload_state || log "periodic upload failed"; done ) &
+    ( trap - EXIT TERM INT; while true; do sleep "$UPLOAD_EVERY" & wait $!; upload_state || log "periodic upload failed"; done ) &
     UPLOADER=$!
 fi
 
@@ -662,6 +677,7 @@ if ! marked control-match; then
                share=$(json_get "$next" update_gpu_share)
                target=$(( $(state_update) + $(json_get "$next" updates) ))
                log "calibrate more: $device has no warm update; extra block to update $target"
+               [[ ! -e $WORK_DIR/INTERRUPTED ]] || die $EX_INTERRUPTED "interrupted before an extra calibration block"
                # The count first: a crash inside the block then counts it too (the bound holds across restarts).
                "$PY" -c 'import json, sys, pathlib; p = pathlib.Path(sys.argv[1]); d = json.loads(p.read_text()) if p.exists() else {}; d[sys.argv[2]] = d.get(sys.argv[2], 0) + 1; p.write_text(json.dumps(d))' \
                    "$EXTRAS" "$device"
