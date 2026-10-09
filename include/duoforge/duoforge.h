@@ -1028,7 +1028,11 @@ duoforge_status duoforge_battle_observe_ext(const duoforge_context *ctx, const d
 #define DUOFORGE_EVENT_SIDE_END        28u /* [-sideend] as SIDE_START */
 #define DUOFORGE_EVENT_ITEM_END        29u /* [-enditem] position, id2: item + 1; flags EATEN; detail 1: the
                                               [weaken] line of a resist berry (Team C) */
-#define DUOFORGE_EVENT_FORME           30u /* [detailschange] position, id: the new forme */
+/* FORME (decision 0040, step G66): position, id: the new forme. Two meanings, by cause. Cause NONE is a PERMANENT change,
+ * [detailschange] (Mega Evolution, Palafin-Hero, Mimikyu-Busted). Cause ABILITY with id2 = the ability id + 1 is a TEMPORARY
+ * change, [-formechange] (Stance Change: Aegislash <-> Aegislash-Blade), which ends when the member leaves the field (the forme
+ * goes back to the sheet's). Neither temporary form is emitted before its step. */
+#define DUOFORGE_EVENT_FORME           30u
 #define DUOFORGE_EVENT_MEGA            31u /* [-mega] position, id2: the stone (item + 1) */
 #define DUOFORGE_EVENT_PREPARE         32u /* [-prepare] position, id: the move it charges */
 #define DUOFORGE_EVENT_ANIMATION       33u /* [-anim] position, other, id: the move shown; flags MISS, NOTARGET

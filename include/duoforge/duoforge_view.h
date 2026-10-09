@@ -108,6 +108,10 @@ typedef struct duoforge_hypothesis {
  * sides (the owner's request does not show it either), so an honest world cannot rebuild it: the public record and
  * duoforge_battle_from_view refuse with this cause. */
 #define DUOFORGE_PUBLIC_CAUSE_SUBSTITUTE 8u
+/* TEMP_FORME (decision 0040, step G66): either side, any position in a temporary forme (Stance Change: Aegislash-Blade).
+ * The view does not show that forme yet (member_ext.forme stays unfilled in G66, a later step), so duoforge_battle_from_view
+ * and the public record refuse with this cause. */
+#define DUOFORGE_PUBLIC_CAUSE_TEMP_FORME 16u
 
 /* Argument errors touch no output. Otherwise statuses are per environment,
  * the return is the first failure, and each failing environment is atomic.
