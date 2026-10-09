@@ -40,6 +40,14 @@ void dfi_events_push(dfi_events *events, const duoforge_event *e)
 void dfi_event_project(const duoforge_event *in, uint32_t player, duoforge_event *out)
 {
     *out = *in;
+    /* The side channel of a disguised switch-in (reserved[0] = the shown roster index + 1, decision 0026 section 4) is internal:
+     * the projection strips it, and the foe's copy names the disguise (the id). The owner's copy keeps the true roster index. */
+    out->reserved[0] = 0u;
+    out->reserved[1] = 0u;
+    if ((in->kind == DUOFORGE_EVENT_SWITCH || in->kind == DUOFORGE_EVENT_DRAG) && in->reserved[0] != 0u &&
+        in->position != DUOFORGE_NO_POSITION && (uint32_t)in->position / 2u != player) {
+        out->id = (uint16_t)(in->reserved[0] - 1u);
+    }
     if (in->hp_kind != DUOFORGE_HP_EXACT || in->position == DUOFORGE_NO_POSITION ||
         (uint32_t)in->position / 2u == player) {
         return;

@@ -1040,6 +1040,10 @@ duoforge_status duoforge_battle_observe_ext(const duoforge_context *ctx, const d
                                               cause NONE (the line has no [from]). POOL kinds: the forced switch of Roar,
                                               Whirlwind, Dragon Tail and Circle Throw, and of a Red Card holder's attacker
                                               (decision 0015 section 7, step G46). 43 and 44 are REVIVE and TRANSFORM. */
+#define DUOFORGE_EVENT_ILLUSION_END    46u /* [replace] + [-end] Illusion, one event (decision 0026, step I2a): the disguise of
+                                              the holder at position ends with a damaging move hit; id: the holder's true roster
+                                              index, HP and status as shown. Both players receive it. The break is shown with the
+                                              holder's true name, so both buffers carry the same record. */
 
 /* Causes ([from] and [of] in the protocol). */
 #define DUOFORGE_CAUSE_NONE      0u /* the move or the plain mechanic */
