@@ -271,6 +271,34 @@ int main(void)
         }
         DF_CHECK(&t, zero);
 
+        /* ILLUSION_UP (volatile bit 19) is shown for the own side only from encoder 5 (decision 0026, option B): the foe's
+         * bit moves no column of encoder 5, and encoder 4 still shows it on the foe's side */
+        {
+            const uint64_t illusion = UINT64_C(1) << DUOFORGE_VIEWEXT_FEATURE_ILLUSION;
+            static float none5[V5];
+            static float own5[V5];
+            static float foe5[V5];
+            static float none4[V4];
+            static float foe4[V4];
+            duoforge_observation_ext i;
+            memset(&i, 0, sizeof i);
+            i.revision = DUOFORGE_OBSERVATION_EXT_REVISION;
+            i.player = ob->player;
+            i.epoch = ob->epoch;
+            i.supported = illusion;
+            DF_CHECK(&t, duoforge_encode(5u, illusion, ob, d, &i, none5, s5, p5) == DUOFORGE_OK);
+            DF_CHECK(&t, duoforge_encode(4u, illusion, ob, d, &i, none4, s5, p5) == DUOFORGE_OK);
+            i.sides[viewer].positions[0].volatiles = DUOFORGE_POSITION_EXT_ILLUSION_UP;
+            DF_CHECK(&t, duoforge_encode(5u, illusion, ob, d, &i, own5, s5, p5) == DUOFORGE_OK);
+            DF_CHECK(&t, memcmp(own5, none5, sizeof none5) != 0);
+            i.sides[viewer].positions[0].volatiles = 0u;
+            i.sides[foe].positions[0].volatiles = DUOFORGE_POSITION_EXT_ILLUSION_UP;
+            DF_CHECK(&t, duoforge_encode(5u, illusion, ob, d, &i, foe5, s5, p5) == DUOFORGE_OK);
+            DF_CHECK(&t, memcmp(foe5, none5, sizeof none5) == 0);
+            DF_CHECK(&t, duoforge_encode(4u, illusion, ob, d, &i, foe4, s5, p5) == DUOFORGE_OK);
+            DF_CHECK(&t, memcmp(foe4, none4, sizeof none4) != 0);
+        }
+
         /* encoder 4 accepts volatile bit 21 and writes nothing for it: the same bytes as the record without it */
         duoforge_observation_ext y = x;
         for (uint32_t s = 0u; s < DUOFORGE_SIDE_COUNT; ++s) {
