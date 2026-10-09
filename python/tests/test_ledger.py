@@ -159,16 +159,17 @@ class ControlTest(unittest.TestCase):
             with self.assertRaises(SystemExit):
                 train.parse(["--out", self.out, "--ledger", self.book] + argv + _SMALL)
 
-    def test_match_stops_incomplete_when_no_device_fits(self):
+    def test_match_resumed_past_its_targets_plays_nothing(self):
         self.assertEqual(_train(["--out", self.out, "--ledger", self.book, "--update-gpu-share", "match",
                                  "--stop-cpu-core-seconds", "1e9", "--stop-gpu-seconds", "1e9", "--updates", "1"]
                                 + _SMALL), 0)
-        # Resumed with targets the ledger already exceeds on the CPU axis: no device fits, nothing is played.
+        # Resumed with targets the ledger already exceeds on the CPU axis: an overshoot, nothing is played (the
+        # incomplete stop is tested in test_budget_match).
         self.assertEqual(_train(["--resume", self.out, "--stop-cpu-core-seconds", "1e-6", "--stop-gpu-seconds", "1e9",
                                  "--updates", "5"]), 0)
         self.assertEqual([r["update"] for r in _log(self.out)], [1])
         with open(os.path.join(self.out, "log.jsonl"), encoding="utf-8") as f:
-            self.assertEqual(json.loads(f.read().splitlines()[-1]), {"stopped": "incomplete", "at_update": 1})
+            self.assertEqual(json.loads(f.read().splitlines()[-1]), {"stopped": "overshoot", "at_update": 1})
 
     def test_match_runs_the_gpu_axis_first_and_the_budget_lr(self):
         # Unreachable targets: the GPU axis stays below its floor, so every update goes to the default device; the
