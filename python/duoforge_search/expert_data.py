@@ -20,6 +20,9 @@ from duoforge_replay.dataset import refuse_repository, fsync_dir
 SCHEMA_VERSION = 1
 KEY_VERSION = 1
 MASS_TOLERANCE = 1e-6
+LABEL_LIMIT = 16384
+MAX_SHARD_ROWS = 4096  # ~10.7 KB/row JSON: a shard stays near 44 MB for json.loads
+DECISION_BOUNDARIES = ("TURN", "REPLACEMENT", "PIVOT")
 
 
 class RowStatus(Enum):
@@ -79,6 +82,7 @@ class DataManifest:
     parallel_games: int
     game_count: int
     rounds: int
+    first_game_id: int
     obs_width: int
     slot_width: int
     teacher_config: Mapping
@@ -176,8 +180,9 @@ def validate_manifest(manifest: DataManifest) -> None:
         if not isinstance(value, str) or not re.fullmatch(f"[0-9a-f]{{{size}}}", value):
             raise ValueError(f"invalid manifest {name}")
     for name in ("seed", "split_seed", "encoder", "capacity", "workers", "parallel_games", "game_count",
-                 "rounds", "obs_width", "slot_width"):
+                 "rounds", "first_game_id", "obs_width", "slot_width"):
         _uint(getattr(manifest, name), name)
+    _uint(manifest.first_game_id + manifest.game_count - 1, "last game id")
     if manifest.encoder != 4 or manifest.obs_width != features.obs_size(4) or manifest.slot_width != features.SLOT_FEATURES:
         raise ValueError("manifest encoder/feature dimensions must match P1 encoder 4")
     if (manifest.device, manifest.capacity, manifest.parallel_games) != ("cpu", 1024, 512) or manifest.workers not in (4, 8, 14):
@@ -197,8 +202,8 @@ def validate_manifest(manifest: DataManifest) -> None:
         if not isinstance(getattr(manifest, name), Mapping) or not getattr(manifest, name):
             raise ValueError(f"manifest {name} must be recorded")
     _uint(manifest.budget.get("labels"), "labels")
-    if manifest.budget.get("labels") != 16384:
-        raise ValueError("manifest label cap must be 16384")
+    if manifest.budget.get("labels") != LABEL_LIMIT:
+        raise ValueError(f"manifest label cap must be {LABEL_LIMIT}")
     _canonical(manifest)
 
 
@@ -214,10 +219,14 @@ def validate_row(row: ExpertRow, manifest: DataManifest) -> None:
     if not isinstance(row, ExpertRow) or not isinstance(row.status, RowStatus):
         raise ValueError("invalid row/status")
     _key(row.key)
+    if not manifest.first_game_id <= row.key.game_id < manifest.first_game_id + manifest.game_count:
+        raise ValueError("game id outside the manifest's logical game ids")
     _uint(row.logical_tick, "per-game logical tick")
     _array(row.obs, "<f4", (manifest.obs_width,), "obs")
     _array(row.slots, "<f4", (2, 32, manifest.slot_width), "slots")
-    if row.boundary not in ("TURN", "REPLACEMENT", "PIVOT", "TEAM_SELECTION", "TERMINAL"):
+    if row.boundary == "TERMINAL":
+        raise ValueError("terminal rows are not stored: done on the last row ends the episode (returns.gae)")
+    if row.boundary not in DECISION_BOUNDARIES + ("TEAM_SELECTION",):
         raise ValueError("unsupported row boundary")
     shape = (360,) if row.boundary == "TEAM_SELECTION" else (32,32)
     _array(row.legal_mask, "bool", shape, "legal_mask")
@@ -230,8 +239,6 @@ def validate_row(row: ExpertRow, manifest: DataManifest) -> None:
             raise ValueError(f"{name} must be finite")
     if not row.learner:
         raise ValueError("only learner public-view rows belong in expert shards")
-    if row.boundary == "TERMINAL" and row.requested:
-        raise ValueError("terminal cannot request an action")
     if row.acting != row.requested or (row.value_mask and not row.learner):
         raise ValueError("invalid acting/learner/value masks")
     if row.status is RowStatus.UNREQUESTED:
@@ -248,10 +255,14 @@ def validate_row(row: ExpertRow, manifest: DataManifest) -> None:
                 raise ValueError(f"illegal {name}")
         if row.behavior_logp is None or not math.isfinite(row.behavior_logp) or row.behavior_logp > 0:
             raise ValueError("invalid behavior likelihood")
+        legal = int(np.count_nonzero(row.legal_mask))
+        if (row.status is RowStatus.FORCED) != (legal == 1):
+            raise ValueError("a requested row is FORCED exactly when it has one legal action")
+        if row.status in (RowStatus.TARGET, RowStatus.CAP_RAW, RowStatus.PUBLIC_REFUSAL, RowStatus.WORK_EXHAUSTED) and (
+                row.boundary not in DECISION_BOUNDARIES or legal < 2):
+            raise ValueError("only TURN/REPLACEMENT/PIVOT roots with >=2 legal actions can be admitted or capped")
     if row.status is RowStatus.TARGET:
-        if row.boundary not in ("TURN", "REPLACEMENT", "PIVOT"):
-            raise ValueError("preview/terminal cannot carry teacher labels")
-        if not row.admitted or not row.learner or np.count_nonzero(row.legal_mask) < 2:
+        if not row.admitted or not row.learner:
             raise ValueError("target requires admitted eligible learner")
         policy = row.sparse_policy
         if not isinstance(policy, SparsePolicy) or not isinstance(policy.ids, np.ndarray) or policy.ids.ndim != 1:
@@ -287,13 +298,30 @@ def validate_row(row: ExpertRow, manifest: DataManifest) -> None:
             raise ValueError("fallback must name a cause")
         if not fallback and row.cause is not None:
             raise ValueError("unexpected fallback cause")
-        if row.status is RowStatus.FORCED and (np.count_nonzero(row.legal_mask) != 1 or row.behavior_logp != 0.):
-            raise ValueError("forced row must have one legal action and logp zero")
+        if row.status is RowStatus.FORCED and row.behavior_logp != 0.:
+            raise ValueError("forced row must have logp zero")
     if not isinstance(row.work, Mapping) or not isinstance(row.audit, Mapping):
         raise ValueError("work/audit provenance must be mappings")
     for name, count in row.work.items():
         _uint(count, f"work {name}")
     _canonical(row)
+
+
+def _check_streams(rows):
+    """Per game and seat: strictly increasing logical ticks; acting rows also
+    strictly increasing request epochs (waiting rows may repeat a key)."""
+    ticks, epochs = {}, {}
+    for row in rows:
+        stream = (row.key.game_id, row.key.seat)
+        if stream in ticks and row.logical_tick == ticks[stream]:
+            raise ValueError("duplicate learner row tick in shard")
+        if stream in ticks and row.logical_tick < ticks[stream]:
+            raise ValueError("regressing learner row tick in shard")
+        ticks[stream] = row.logical_tick
+        if row.acting:
+            if stream in epochs and row.key.request_epoch <= epochs[stream]:
+                raise ValueError("acting rows repeat or regress a request epoch in shard")
+            epochs[stream] = row.key.request_epoch
 
 
 def _sha(value):
@@ -305,17 +333,11 @@ def write_shard(path: Path, rows: Sequence[ExpertRow], manifest: DataManifest) -
     refuse_repository(path)
     validate_manifest(manifest)
     rows = tuple(rows)
-    keys, ticks = set(), {}
+    if len(rows) > MAX_SHARD_ROWS:
+        raise ValueError(f"a shard holds at most {MAX_SHARD_ROWS} rows")
     for row in rows:
         validate_row(row, manifest)
-        identity = (row.key.game_id, row.key.seat, row.logical_tick)
-        if identity in keys:
-            raise ValueError("duplicate learner row tick in shard")
-        stream = (row.key.game_id,row.key.seat)
-        if stream in ticks and row.logical_tick <= ticks[stream]:
-            raise ValueError("regressing learner row tick in shard")
-        keys.add(identity)
-        ticks[stream] = row.logical_tick
+    _check_streams(rows)
     payload = {"schema_version": SCHEMA_VERSION, "manifest": _plain(manifest),
                "manifest_sha256": _sha(manifest), "rows": [_plain(r) for r in rows]}
     data = _canonical({**payload, "content_sha256": _sha(payload)}) + b"\n"
@@ -356,6 +378,9 @@ def _restore_array(value):
     return np.frombuffer(raw, dtype).reshape(shape)
 
 
+_ROW_FIELDS = frozenset(f.name for f in dataclasses.fields(ExpertRow))
+
+
 def read_shard(path: Path, expected: DataManifest) -> tuple[ExpertRow, ...]:
     path = Path(path)
     refuse_repository(path)
@@ -372,10 +397,12 @@ def read_shard(path: Path, expected: DataManifest) -> tuple[ExpertRow, ...]:
         raise ValueError("shard integrity mismatch")
     if payload["manifest_sha256"] != _sha(payload["manifest"]) or payload["manifest_sha256"] != _sha(expected):
         raise ValueError("incompatible shard manifest")
-    if not isinstance(payload["rows"], list):
-        raise ValueError("invalid shard rows")
-    rows, keys, ticks = [], set(), {}
+    if not isinstance(payload["rows"], list) or len(payload["rows"]) > MAX_SHARD_ROWS:
+        raise ValueError(f"invalid shard rows (at most {MAX_SHARD_ROWS})")
+    rows = []
     for value in payload["rows"]:
+        if not isinstance(value, dict) or set(value) != _ROW_FIELDS:
+            raise ValueError("invalid shard row fields (no defaults)")
         try:
             v = dict(value)
             v["key"] = DecisionKey(**v["key"])
@@ -391,15 +418,8 @@ def read_shard(path: Path, expected: DataManifest) -> tuple[ExpertRow, ...]:
         except (KeyError, TypeError) as err:
             raise ValueError("invalid shard row fields") from err
         validate_row(row, expected)
-        identity = (row.key.game_id, row.key.seat, row.logical_tick)
-        if identity in keys:
-            raise ValueError("duplicate learner row tick in shard")
-        stream = (row.key.game_id,row.key.seat)
-        if stream in ticks and row.logical_tick <= ticks[stream]:
-            raise ValueError("regressing learner row tick in shard")
-        keys.add(identity)
-        ticks[stream] = row.logical_tick
         rows.append(row)
+    _check_streams(rows)
     return tuple(rows)
 
 
@@ -438,8 +458,6 @@ def is_held_out(game_id: int, split_seed: int) -> bool:
     return selection_word(DecisionKey(game_id, 0, 0), split_seed, domain="split") < HELD_OUT_THRESHOLD
 
 
-LABEL_LIMIT = 16384
-
 
 @dataclass
 class LabelCursor:
@@ -473,18 +491,37 @@ class AdmissionBatch:
 
 
 @dataclass(frozen=True)
+class AdmissionRequest:
+    """An eligible selected root: TURN/REPLACEMENT/PIVOT with >=2 legal actions."""
+    key: DecisionKey
+    boundary: str
+    legal_count: int
+
+
+@dataclass(frozen=True)
 class AdmissionOutcome:
     key: DecisionKey
     status: RowStatus
 
 
-def _requests(requests):
-    keys = tuple(requests)
+def _keys(keys):
+    keys = tuple(keys)
     for k in keys:
         _key(k)
     if len(keys) > 512 or len({k.game_id for k in keys}) != len(keys):
         raise ValueError("tick needs unique learner game requests, at most 512")
     return tuple(sorted(keys))
+
+
+def _requests(requests):
+    requests = tuple(requests)
+    for r in requests:
+        if not isinstance(r, AdmissionRequest) or r.boundary not in DECISION_BOUNDARIES:
+            raise ValueError("admission needs AdmissionRequest roots at TURN/REPLACEMENT/PIVOT")
+        _uint(r.legal_count, "legal action count", 1024)
+        if r.legal_count < 2:
+            raise ValueError("admission needs >=2 legal actions")
+    return _keys(r.key for r in requests)
 
 
 def _validate_cursor(cursor):
@@ -503,7 +540,7 @@ def _validate_cursor(cursor):
         return
     pending = cursor.pending_reservations
     raw = cursor.cap_raw_keys
-    _requests(pending + raw)
+    _keys(pending + raw)
     if pending != tuple(sorted(pending)) or raw != tuple(sorted(raw)):
         raise ValueError("pending admission keys must be canonical")
     if cursor.remaining + len(pending) > LABEL_LIMIT:
