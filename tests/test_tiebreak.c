@@ -259,8 +259,8 @@ int main(void)
     /* No committed stop depends on the order of a bench. */
     DF_CHECK_EQ_U64(&t, counts.ambiguous, 0u);
 #if defined(DF_CONFORMANCE_POOL_DATA)
-    DF_CHECK_EQ_U64(&t, battles, 326u); /* step G46: g46_whirlwind_drag (4 stops) and g46_dragontail_drag (5 stops): 1874 -> 1883 */
-    DF_CHECK_EQ_U64(&t, counts.stops, 1883u);
+    DF_CHECK_EQ_U64(&t, battles, 332u); /* step G46: the drag battles (Whirlwind, Dragon Tail, Roar, Circle Throw, Red Card x3, Guard Dog): 1874 -> 1907 stops */
+    DF_CHECK_EQ_U64(&t, counts.stops, 1907u);
 #else
     /* Every kind of decision of the pin is among the stops (the pool battles are too few for that). */
     DF_CHECK(&t, counts.by_stage[1] > 0u && counts.by_stage[2] > 0u && counts.by_stage[3] > 0u &&
