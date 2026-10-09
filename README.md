@@ -1,39 +1,28 @@
 # DuoForge
 
-DuoForge is a deterministic, headless Pokémon Doubles simulation engine designed for machine-learning workloads.
+DuoForge is a deterministic C17 battle engine for Pokémon Champions VGC 2026 Reg M-C doubles, built for machine-learning workloads. It is an authoritative simulation core: every rule lives in C, and the Python bindings and ML tooling on top contain none. The rules basis and the reference are owner selections (`docs/decisions/0004`): the format `[Gen 9 Champions] VGC 2026 Reg M-C` and Pokémon Showdown at the pinned revision `b2cb775b0616115b775534eaeff50300e1fc81fc`. The library version is 0.44.0 (`include/duoforge/duoforge.h`). The engine does not claim full Gen 9 support: a mechanic it does not implement is refused at setup with `DUOFORGE_E_UNSUPPORTED`, never approximated.
 
-**Status: M2 (requests, joint commands and the information boundary).** DuoForge is still **not** a Pokémon battle simulator. It contains the deterministic foundation and the decision surface the simulator will be built on:
+## Components
 
-- the pinned PCG32 gameplay RNG;
-- checked integer helpers;
-- an immutable (synthetic) context with a content fingerprint and a synthetic move target-class table;
-- an owned, pointer-free battle state v3 with stable identities, decision boundaries (including TERMINAL), request epochs, sealed commitments, per-player knowledge (HP as last seen) and an invariant checker, plus the combat fields (field and side conditions, volatile blocks, action queue);
-- a canonical, versioned binary encoding with a SHA-256 digest;
-- clone/copy (snapshot/restore) and reseeding for forks;
-- team selection (ordered picks) and complete joint side-choice domains per turn, enumerated in a documented deterministic order, with per-player requests, request epochs and simultaneous decision bundles;
-- a perspective-safe observation, since observation v2 exactly what a human player sees (decision 0007): open team sheets with abilities, items, natures and maximum PP; own exact HP and PP; the opponent's HP at the Champions percent precision as last seen and its PP derived from the uses seen; statuses, stat stages, confusion, charging moves, Mega formes, items used up; weather, terrain, Trick Room and the side conditions with remaining turns; which sides must answer. Sleep, freeze and confusion turns stay hidden on both sides;
-- a per-player event log of every step (decision 0007 section 11): one event per line of the battle protocol the game shows that player, in the game's order, with the own HP exact and the opponent's as the percent display; each player's knowledge of the opponent is folded from these events only (section 12);
-- a benchmark driver and API (`bench/`, decision 0008): STEP_CORE, REQUEST, SNAPSHOT and EPISODE_NATIVE on the reference teams with a reproducible manifest, wall and process CPU time per repetition (a busy machine shows as disturbed), and a tally of what each side's policy chose (moves by id, Mega, switches, replacements, passes, targets);
-- generated data tables of the two reference teams from the pinned Showdown revision, and the Champions stat and PP formulas (step 1a of the combat closure);
-- the state v3 layout of the combat closure with its invariants, codec and oracle (step 1b-1);
-- contexts over the real closure data, validation of real sets with derived stats and PP, and the support gate (step 1b-2), which both real teams pass since step 12;
-- the turn core for development teams: turn order with speed ties, damage, accuracy, critical hits, stat stages, secondary stat changes, PP, Struggle and Protect, replaying recorded reference battles draw for draw (step 2);
-- switching, fainting, replacement and the win rule: development teams play complete battles to TERMINAL (step 3);
-- burn, paralysis, sleep and freeze in their Champions variants, flinch and confusion (step 4);
-- the entry abilities Drizzle, Grassy Surge and Intimidate, rain, Grassy Terrain and the ordered residual phase (step 5);
-- Tailwind, Reflect, Light Screen and Trick Room (step 6);
-- the reactive abilities of the base formes: Stamina, Competitive, Flash Fire, Lightning Rod, Good as Gold, Armor Tail, Prankster and Blaze (step 7);
-- the items Leftovers, Sitrus Berry, Grassy Seed, Life Orb, Mystic Water and Light Clay (step 8);
-- recoil, drain and self-drops: Wood Hammer, Brave Bird, Bitter Blade, Leech Life, Close Combat, Make It Rain, with Miracle Seed (step 9);
-- Weather Ball, Grass Knot, Grassy Glide and Fake Out with its Champions disable rule (step 10a);
-- Electro Shot with its charge turn and the locked move in the request (step 10b);
-- Mega Evolution with Drought, Contrary, No Guard and Tough Claws (step 11);
-- Parting Shot and Emergency Exit with real PIVOT boundaries in the middle of a turn, and Emergency Exit at its end (step 12);
-- the closure gate (step 13): both teams of decision 0004 play from team selection to the end in all four pairings, conform to recorded reference battles, replay byte for byte and keep information equivalence.
+- **C core** (`src/`, `include/duoforge/`): PCG32 RNG, owned pointer-free battle state with a canonical encoding and digest, requests and joint choices, the turn core, the perspective-safe observation and per-player event log, the batch runtime, the C encoder and the search support. Headers: `duoforge.h`, `duoforge_batch.h`, `duoforge_encode.h`, `duoforge_search.h`, `duoforge_view.h`.
+- **Data kinds** (`DUOFORGE_DATA_KIND_*`): `SYNTHETIC` (no combat), `CLOSURE` (the two reference teams), `TEAM_C` (the extended tables, decision 0009), `POOL` (the growing tables of the content expansion, decision 0015), and a `_DEV` variant of each real kind for development fixtures.
+- **`python/duoforge`**: ctypes and NumPy bindings, the batch runtime, views and encoders (current feature encoder version 5, `python/duoforge/features.py`), the random and scripted baselines and trajectory recipes.
+- **`python/duoforge_live`**: Showdown protocol adapter for live play (decision 0016).
+- **`python/duoforge_replay`**: turns human Reg M-C replays into behaviour-cloning data (decision 0019).
+- **`python/duoforge_learn`**: self-play PPO, Learner v2, league and PFSP opponent sampling, behaviour-cloning prior and distillation (decisions 0014, 0017).
+- **`python/duoforge_search`**: honest search over public information and expert iteration (decisions 0022 to 0024).
+- **`tools/reference`**: records battles from the pinned Showdown and drives differential testing of the engine against it; `tools/difftest` is the C side of that runner.
+- **`bench/`**: the benchmark driver and API (decision 0008).
 
-**The combat closure is complete for the two reference teams.** Under CLOSURE data they play complete battles: turns, switches, faints, replacements, pivots, statuses, Mega Evolution and the end of the battle. Development teams (data kind `CLOSURE_DEV`) may also use No Ability. Any other mechanic is outside the closure and is rejected at setup with `DUOFORGE_E_UNSUPPORTED`. The event log of decision 0007 (what happened since the last decision) is not built yet. Under SYNTHETIC data every combat bundle is unsupported. No batch environments, Python bindings or ML code exist. The owner has selected the rules basis (**Pokémon Champions, VGC 2026 Reg M-C**), the reference revision (**Pokémon Showdown `b2cb775`**) and two teams (`docs/decisions/0004`).
+## Current goals
 
-State snapshots and decodability are foundation evidence, **not proof that unimplemented future mechanics restore correctly**.
+Plan for the week of 2026-10-09.
+
+- **Main goal: engine coverage of the Reg M-C metagame.** Target: at least 99 % of Reg M-C games playable with both sides fully supported. Measured on main on 2026-10-09 15:10: 50.0 % (23.8 % at the start of the week); 69 % of the distinct teams are fully supported. Unsupported mechanics are refused explicitly at setup (`DUOFORGE_E_UNSUPPORTED`), never silently approximated.
+- **How:** two parallel expansion lanes, A for moves and B for abilities, items and Mega Evolutions. Each mechanic is differentially tested against recorded Showdown battles, each lane lands as one batch PR, and new public values need a decision note under `docs/decisions`.
+- **Performance:** lockstep batching with tick deduplication of network rows for the search teacher (stage 3 P2), measured at 1.43 to 1.48 times on CPU (`docs/learning/2026-10-09-stage3-p2/README.md`).
+- **Learning, next:** the stage-3 P1 pilot, expert-iteration data collection and distillation into the policy (`docs/superpowers/plans/2026-10-08-stage3-p1-pilot.md`), with a Trick Room diagnostic in its evaluation.
+- **Not now:** no long or overnight training runs this week. Cloud runs only once coverage covers the metagame.
 
 ## Requirements
 
@@ -87,7 +76,7 @@ Every test is finite and has a timeout. Test groups:
 |---|---|
 | `duoforge.unit.*` | Checked arithmetic, byte order, SHA-256, damage and stat arithmetic against the reference, draw sites and tape |
 | `duoforge.combat.*` | The turn core through the public API: one turn, determinism, continuation across encode/decode, honest `E_UNSUPPORTED`, random play; the closure gate with the real teams (`closure_gate`) and the Team C gate (`team_c_gate`) |
-| `duoforge.reference.*` | Fifty-eight recorded reference battles replayed draw for draw, with the request compared after every step (`conformance`), the generated tables against the traces; with a checkout: traces and arithmetic regenerated |
+| `duoforge.reference.*` | The recorded reference battles (`tests/reference/traces`) replayed draw for draw, with the request compared after every step (`conformance`), the generated tables against the traces; with a checkout: traces and arithmetic regenerated |
 | `duoforge.rng.*` | PCG32 known-answer vectors and contract |
 | `duoforge.state.*` | Context, setup, identity, knowledge (HP display as last seen), closure setup (real sets, gate, member invariant), invariants, clone/equal/reseed, setup sweep |
 | `duoforge.codec.*` | Goldens, negative decoding (including "rejected: schema 1"), exhaustive mutation sweep |
@@ -120,7 +109,7 @@ python -m duoforge.examples.generate --envs 64 --episodes 10 --policy random --w
 
 For an RL loop, `Batch.step_query(indices, autoreset=True)` steps, starts every ended episode anew and queries the next boundary in one call. `python -m duoforge.examples.throughput` measures the Python loop against the native mode (`docs/benchmarks/2026-10-02-python-loop/`).
 
-## Learning (decision 0014)
+## Learning (decisions 0014, 0017)
 
 `python/duoforge_learn` trains a policy by self-play PPO on the batch runtime: JAX on the GPU, which needs Linux, so in WSL with its own venv and a Release library built there.
 
@@ -138,20 +127,21 @@ The log (`log.jsonl`) has one line per update; every `--eval-every` updates it a
 ## Public API (provisional, `include/duoforge/duoforge.h`)
 
 - **Status:** `duoforge_status` (`uint32_t`) codes and `duoforge_status_name`.
-- **Context:** `duoforge_context_create` (with the synthetic move target-class table), `duoforge_context_destroy` and `duoforge_context_fingerprint`. The context is synthetic, immutable and shareable read-only.
-- **Battle lifecycle:** `duoforge_battle_create` (from a synthetic setup; the battle starts at TEAM_SELECTION), `duoforge_battle_create_decoded`, `duoforge_battle_clone` and `duoforge_battle_destroy`.
-- **Model-facing decision surface:** `duoforge_battle_request` (one player's request with the exact candidate count), `duoforge_battle_candidates` (the complete joint side-choice domain in documented order; too small a buffer returns `E_CAPACITY` and only the required count), `duoforge_battle_step` (one decision bundle for exactly the requested sides), `duoforge_battle_step_events` (the same step with each player's events; a too-small buffer returns `E_CAPACITY` and the required count) and `duoforge_battle_observe` (the perspective-safe observation prototype). Requests, candidates and observations are pure.
+- **Context:** `duoforge_context_create` (for a data kind), `duoforge_context_destroy` and `duoforge_context_fingerprint`. The context is immutable and shareable read-only; the `duoforge_data_*` queries read its tables.
+- **Battle lifecycle:** `duoforge_battle_create` (from a setup; the battle starts at TEAM_SELECTION), `duoforge_battle_create_decoded`, `duoforge_battle_clone` and `duoforge_battle_destroy`.
+- **Model-facing decision surface:** `duoforge_battle_request` (one player's request with the exact candidate count), `duoforge_battle_candidates` (the complete joint side-choice domain in documented order; too small a buffer returns `E_CAPACITY` and only the required count), `duoforge_battle_step` (one decision bundle for exactly the requested sides), `duoforge_battle_step_events` (the same step with each player's events; a too-small buffer returns `E_CAPACITY` and the required count) and `duoforge_battle_observe` and `duoforge_battle_observe_ext` (the perspective-safe observation), `duoforge_battle_factored` (the factored choice domain) and `duoforge_battle_result` (the outcome at TERMINAL). Requests, candidates and observations are pure.
 - **Snapshots and codec:** `duoforge_battle_copy` (snapshot/restore), `duoforge_battle_decode`, `duoforge_battle_encoded_size`, `duoforge_battle_encode`, `duoforge_battle_digest` and `duoforge_battle_equal`.
 - **Checking and forks:** `duoforge_battle_check` and `duoforge_battle_reseed` (decorrelates a forked copy for search).
 
-Every call is failure-atomic: on error nothing is mutated or leaked, and the only out-parameter written on error is the required count of a model-facing query on `E_CAPACITY`. Encode, decode, digest, equal, check and reseed are **privileged**: they see hidden state and must never feed a model directly. The ABI is not frozen.
+Every call is failure-atomic: on error nothing is mutated or leaked, and the only out-parameter written on error is the required count of a model-facing query on `E_CAPACITY`. Encode, decode, digest, equal, check and reseed are **privileged**: they see hidden state and must never feed a model directly. The batch runtime (`duoforge_batch.h`) and the encoder, search and view headers sit beside it. The ABI is not frozen.
 
 ## Documentation
 
-- Decisions: `docs/decisions/0001` (RNG), `0002` (state, identity, encoding), `0003` (build and evidence), `0004` (owner selections), `0005` (requests, commands, information boundary, state v2), `0006` (combat closure design, built), `0007` (player view: observation v2, event log, knowledge from events), `0008` (benchmark API and action tally)
-- Architecture proposal and contracts: `docs/ARCHITECTURE.md`, `docs/DECISION_CONTRACT.md`, `docs/DETERMINISM_AND_REPLAY.md`, `docs/ROADMAP.md`
-- Status manifest: `docs/support/README.md`; open decisions: `docs/OPEN_DECISIONS.md`
-- Task statements: `tasks/M0_BOOTSTRAP.md`, `tasks/M1_DETERMINISTIC_PRIMITIVES.md`, `tasks/M2_REQUESTS_AND_COMMANDS.md`, `tasks/M3_M4_COMBAT_CLOSURE.md` (next, not started)
+- Decisions: `docs/decisions/` (0001 to 0029, one file each; 0004 holds the owner selections, 0009 and 0015 the content expansion, 0016 to 0024 the live adapter, learner, replay data and search, 0025 to 0029 newer public values and mechanics)
+- Roadmap and status: `docs/ROADMAP.md`, `docs/support/README.md` (status manifest), `docs/OPEN_DECISIONS.md`
+- Architecture and contracts: `docs/ARCHITECTURE.md`, `docs/DECISION_CONTRACT.md`, `docs/DETERMINISM_AND_REPLAY.md`, `docs/TESTING_AND_BENCHMARKS.md`, `docs/SOURCES.md`
+- Evidence: `docs/certification/closure-v1/`, `docs/benchmarks/`, `docs/learning/` (with `docs/learning/RUNBOOK.md`)
+- Plans: `docs/superpowers/plans/`; task statements: `tasks/`
 - Research drafts (unverified): `docs/research/`
 
 ## License
@@ -166,4 +156,4 @@ Third-party parts keep their own licenses (`THIRD_PARTY_NOTICES.md`):
 - **pcg-c-basic.** `third_party/pcg-c-basic/` and `src/rng/pcg32_derived.{h,c}` contain material from it, licensed by its author under the Apache License 2.0 (see `third_party/pcg-c-basic/LICENSE.txt`).
 - **Pokémon Showdown.** The generated tables and the recorded traces derive from it, under the MIT License.
 
-DuoForge makes no claim of full Gen 9 support, VGC compatibility, Pokémon Showdown parity or high performance.
+DuoForge makes no claim of full Gen 9 support, VGC compatibility beyond the supported mechanics, Pokémon Showdown parity or high performance.

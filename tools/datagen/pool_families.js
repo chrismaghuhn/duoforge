@@ -370,6 +370,28 @@ function checkWeather(dex, source) {
     expect('Weather Ball without weather', [none.type, none.basePower], ['Normal', 50]);
 }
 
+// Step G55, the rock items and Terrain Extender: the duration of each weather and terrain with the setter's item (the
+// callbacks of data/conditions.ts and data/moves.ts read source.hasItem): 8 with its own item, 5 with any other item or none.
+const G55_WEATHER_ROCK = {raindance: 'damprock', sunnyday: 'heatrock', sandstorm: 'smoothrock', snowscape: 'icyrock'};
+const G55_TERRAINS = ['grassyterrain', 'psychicterrain', 'electricterrain', 'mistyterrain'];
+const G55_ITEMS = ['damprock', 'heatrock', 'smoothrock', 'icyrock', 'terrainextender'];
+function checkG55(dex) {
+    const holding = (item) => ({hasItem: (i) => i === item});
+    for (const [weather, rock] of Object.entries(G55_WEATHER_ROCK)) {
+        const cond = dex.conditions.get(weather);
+        expect(weather + ' duration by the setter\'s rock (' + G55_ITEMS.join(', ') + ')',
+            G55_ITEMS.map((item) => call(cond.durationCallback, battle(cond), [holding(item)])),
+            G55_ITEMS.map((item) => (item === rock ? 8 : 5)));
+        expect(weather + ' duration without an item', call(cond.durationCallback, battle(cond), [holding('')]), 5);
+    }
+    for (const id of G55_TERRAINS) {
+        const terrain = dex.moves.get(id).condition;
+        expect(id + ' duration by the setter\'s item (' + G55_ITEMS.join(', ') + ')',
+            G55_ITEMS.map((item) => call(terrain.durationCallback, battle(terrain), [holding(item)])),
+            G55_ITEMS.map((item) => (item === 'terrainextender' ? 8 : 5)));
+    }
+}
+
 // Step G28, Expert Belt, Acrobatics, Blizzard, Shell Smash, Ancient Power and Feint: what the engine reads about them
 // (src/combat/turn.c), called on the pinned handlers and read from the pinned data.
 function checkG28(dex) {
@@ -1431,12 +1453,12 @@ function checkFormes(dex, validator, rows, moves, abilities) {
 // The UNMODELED markers of gen_closure.py --pool, re-derived from the pinned data in this file's own words: the
 // special column of a move, the handler column of an item and of an ability, and the lists of unmodelled features.
 // implemented in the turn code by id (G4: Focus Sash, Rock Head; G12: Floettite, Flower Veil, Fairy Aura)
-const ENGINE_ROWS = {items: ['focussash', 'floettite', 'psychicseed', 'electricseed', 'mistyseed', 'expertbelt', 'ejectbutton', 'widelens', 'muscleband', 'wiseglasses', 'brightpowder', 'redcard', 'lumberry', 'mentalherb'],
+const ENGINE_ROWS = {items: ['focussash', 'floettite', 'psychicseed', 'electricseed', 'mistyseed', 'expertbelt', 'ejectbutton', 'widelens', 'muscleband', 'wiseglasses', 'brightpowder', 'redcard', 'lumberry', 'mentalherb', 'damprock', 'heatrock', 'smoothrock', 'icyrock', 'terrainextender'],
     abilities: ['rockhead', 'flowerveil', 'fairyaura', 'roughskin', 'poisontouch', 'thermalexchange', 'stickyhold', 'trace',
         'levitate', 'sandrush', 'swiftswim', 'slushrush', 'chlorophyll', 'innerfocus', 'liquidvoice',
         'flamebody', 'clearbody', 'hospitality', 'overcoat', 'soundproof', 'unnerve', 'speedboost',
         'compoundeyes', 'ironfist', 'sharpness', 'solidrock', 'technician', 'multiscale', 'galewings', 'raindish', 'friendguard', 'cursedbody', 'mirrorarmor', 'auraguard', 'hypercutter', 'scrappy', 'infiltrator', 'queenlymajesty', 'damp', 'sturdy', 'snowcloak', 'sandveil', 'static', 'justified', 'limber', 'solarpower', 'regenerator', 'toxicdebris', 'shadowtag', 'suctioncups', 'guarddog',
-        'steadfast', 'weakarmor', 'telepathy', 'voltabsorb', 'punkrock', 'moxie', 'synchronize', 'oblivious', 'keeneye', 'bigpecks']};
+        'steadfast', 'weakarmor', 'telepathy', 'voltabsorb', 'punkrock', 'moxie', 'synchronize', 'oblivious', 'keeneye', 'bigpecks', 'magicbounce', 'pressure']};
 const ENGINE_TARGETS = new Set(['normal', 'any', 'adjacentAlly', 'adjacentFoe', 'self', 'allAdjacentFoes', 'allySide', 'all',
     'randomNormal', 'allAdjacent', 'allies', 'foeSide']); // foeSide: step G37 (the four hazards)
 // The fields of a move that the tables model (gen_closure.py DATA_KEYS and IGNORED_KEYS), nothing else.
@@ -1809,6 +1831,7 @@ function main() {
     checkFocusSash(dex, root);
     checkWeather(dex, source);
     checkTerrains(dex);
+    checkG55(dex);
     checkG28(dex);
     checkG10Moves(dex);
     checkEncore(dex, repo);

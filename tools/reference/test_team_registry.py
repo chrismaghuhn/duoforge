@@ -28,7 +28,10 @@ import trace_to_c  # noqa: E402
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.normpath(os.path.join(HERE, '..', '..'))
-BASE = [e['id'] for e in reg.entries(ROOT)]  # the teams of the committed registry (a test that adds one expects them first)
+_IDS = [e['id'] for e in reg.entries(ROOT)]
+_FIRST = [next(i for i in _IDS if i.startswith(p)) for p in ('PP_', 'LL_')]
+# The teams of copy_registry's small registry, in the committed order (a test that adds one expects them first).
+BASE = [i for i in _IDS if i in ('A', 'B', 'C') or i in _FIRST]
 OLD_FILES = {'A': os.path.join('tests', 'reference', 'teams', 'team_a.txt'),
              'B': os.path.join('tests', 'reference', 'teams', 'team_b.txt'),
              'C': os.path.join('docs', 'research', 'third-team', 'team-c.txt')}
@@ -45,6 +48,20 @@ def tables(team_c):
 def read(path):
     with io.open(path, 'rb') as f:
         return f.read()
+
+
+def copy_registry(root):
+    """A small registry at `root` for the tests of the checks and of adding: A, B, C and the first PP_ and LL_ teams of
+    the committed one (their files, their entries, the README). Checking the whole committed registry is
+    Committed.test_the_registry_is_as_it_must_be's, once; a copy of it in every subtest made this test grow with it."""
+    index = reg.read_index(ROOT)
+    os.makedirs(reg.registry_dir(root))
+    shutil.copy(os.path.join(reg.registry_dir(ROOT), 'README.md'), reg.registry_dir(root))
+    for team_id in BASE:
+        shutil.copy(reg.team_path(ROOT, team_id), reg.team_path(root, team_id))
+    small = dict(index, teams=[e for e in index['teams'] if e['id'] in BASE])
+    with io.open(reg.index_path(root), 'wb') as f:
+        f.write(reg.dumps_index(small))
 
 
 class Committed(unittest.TestCase):
@@ -100,13 +117,13 @@ class Committed(unittest.TestCase):
 
 
 class Made(unittest.TestCase):
-    """Made-up registries: a copy of the committed one in a temporary directory, changed one way at a time."""
+    """Made-up registries: a small copy of the committed one (copy_registry) in a temporary directory, changed one way at a time."""
 
     def setUp(self):
         self.tmp = tempfile.TemporaryDirectory()
         self.addCleanup(self.tmp.cleanup)
         self.root = self.tmp.name
-        shutil.copytree(reg.registry_dir(ROOT), reg.registry_dir(self.root))
+        copy_registry(self.root)
 
     def problems(self):
         return reg.problems(self.root, tables)
@@ -251,7 +268,7 @@ class Adding(unittest.TestCase):
         self.tmp = tempfile.TemporaryDirectory()
         self.addCleanup(self.tmp.cleanup)
         self.root = self.tmp.name
-        shutil.copytree(reg.registry_dir(ROOT), reg.registry_dir(self.root))
+        copy_registry(self.root)
         self.sets = reg.read_team_file(reg.team_path(ROOT, 'A'))
 
     def entry(self, team_id, **kw):
