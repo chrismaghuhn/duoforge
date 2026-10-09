@@ -422,6 +422,21 @@ const dfi_support_manifest dfi_support = {
             [DFI_MOVE_FAKETEARS] = 1u,
             [DFI_MOVE_SACREDSWORD] = 1u,
             [DFI_MOVE_SUPERFANG] = 1u,
+            /* Step G44 (simple moves, decision 0015 item 5an). Handlers: Thunder (never misses in rain, 50 under sun), Power Trip
+             * (20 plus 20 per positive stage of the user), Ice Fang (a freeze roll, then a flinch roll) and Tri Attack (a
+             * 20 percent pick of burn, paralysis or freeze). Data rows: Breaking Swipe, Vacuum Wave, Stone Edge, Aqua Cutter,
+             * Hammer Arm, Trop Kick and Meteor Mash. */
+            [DFI_MOVE_THUNDER] = 1u,
+            [DFI_MOVE_POWERTRIP] = 1u,
+            [DFI_MOVE_ICEFANG] = 1u,
+            [DFI_MOVE_TRIATTACK] = 1u,
+            [DFI_MOVE_BREAKINGSWIPE] = 1u,
+            [DFI_MOVE_VACUUMWAVE] = 1u,
+            [DFI_MOVE_STONEEDGE] = 1u,
+            [DFI_MOVE_AQUACUTTER] = 1u,
+            [DFI_MOVE_HAMMERARM] = 1u,
+            [DFI_MOVE_TROPKICK] = 1u,
+            [DFI_MOVE_METEORMASH] = 1u,
         },
     .abilities =
         {
@@ -533,6 +548,9 @@ const dfi_support_manifest dfi_support = {
             [DFI_ITEM_PSYCHICSEED] = 1u,
             [DFI_ITEM_EXPERTBELT] = 1u, /* step G28 */
             [DFI_ITEM_WIDELENS] = 1u,   /* step G34 */
+            [DFI_ITEM_MUSCLEBAND] = 1u,  /* step G49 */
+            [DFI_ITEM_WISEGLASSES] = 1u, /* step G49 */
+            [DFI_ITEM_BRIGHTPOWDER] = 1u, /* step G49 */
             [DFI_ITEM_EJECTBUTTON] = 1u, /* step G32 */
             [DFI_ITEM_ELECTRICSEED] = 1u, /* step G25 */
             [DFI_ITEM_MISTYSEED] = 1u,    /* step G25 */
