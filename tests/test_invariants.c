@@ -217,14 +217,10 @@ int main(void)
     expect_inv(&t, c1, w, DFI_INV_FIELD, "weather turns without weather");
     RESET();
     w->weather = (uint8_t)DFI_WEATHER_SUN;
-    /* Step G55 (rule change, decision 0015 item 5bf): the weather bound is 8 (a rock or Terrain Extender holder), so 6 is valid
-     * and 9 is refused; this is the rule the step changes, not a weakened check. */
-    w->weather_turns = 9u;
-    expect_inv(&t, c1, w, DFI_INV_FIELD, "weather turns 9");
-    RESET();
-    w->weather = (uint8_t)DFI_WEATHER_SUN;
-    w->weather_turns = 8u;
-    expect_ok(&t, c1, w, "weather turns 8 (step G55)");
+    /* A closure context keeps the bound 5; the POOL kinds' bound 8 of step G55 (the rock items) is checked in
+     * tests/test_pool_g55.c. */
+    w->weather_turns = 6u;
+    expect_inv(&t, c1, w, DFI_INV_FIELD, "weather turns 6");
     RESET();
     w->terrain = 2u;
     w->terrain_turns = 1u;

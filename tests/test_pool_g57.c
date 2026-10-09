@@ -4,7 +4,7 @@
  *
  * Magic Bounce (data/abilities.ts:2437-2464) bounces a reflectable move that is aimed at its holder, or a hazard that a foe
  * sets on the holder's side, back at the move's user. The bounced run is in src/combat/turn.c (dfi_bounce). The reflectable
- * moves are a generated column (dfi_pool_move_reflectable, tools/datagen/gen_closure.py), checked here against the pinned Dex
+ * moves are a bit of a generated column (DFI_MOVE_FLAG3_REFLECTABLE of dfi_pool_move_flags3, tools/datagen/gen_closure.py), checked here against the pinned Dex
  * (tests/reference/reflect_ref.h, tools/reference/reflect_ref.js). The bounce is handled for the twenty marked ones below; a
  * marked reflectable move outside this list fails the guard until it has a bounced path (or is refused).
  *
@@ -68,8 +68,8 @@ static void test_reflect_column_matches_the_dex(df_test *t)
     for (uint32_t id = 0u; id < DFI_POOL_MOVE_COUNT; ++id) {
         const char *name = dfi_pool_move_names[id];
         const bool dex = name != NULL && in_reflect_ref(name);
-        DF_CHECK(t, (dfi_pool_move_reflectable[id] != 0u) == dex);
-        pool_reflect += dfi_pool_move_reflectable[id] != 0u ? 1u : 0u;
+        DF_CHECK(t, ((dfi_pool_move_flags3[id] & DFI_MOVE_FLAG3_REFLECTABLE) != 0u) == dex);
+        pool_reflect += (dfi_pool_move_flags3[id] & DFI_MOVE_FLAG3_REFLECTABLE) != 0u ? 1u : 0u;
     }
     /* Every reflectable Dex move of the list is a pool row (the list is the Champions Dex, the pool is its moves). */
     uint32_t listed = 0u;
@@ -89,7 +89,7 @@ static void test_marked_reflectable_moves_are_the_handled_list(df_test *t)
 {
     uint32_t marked = 0u;
     for (uint32_t id = 0u; id < DFI_POOL_MOVE_COUNT; ++id) {
-        if (dfi_support.moves[id] == 0u || dfi_pool_move_reflectable[id] == 0u) {
+        if (dfi_support.moves[id] == 0u || (dfi_pool_move_flags3[id] & DFI_MOVE_FLAG3_REFLECTABLE) == 0u) {
             continue;
         }
         const char *name = dfi_pool_move_names[id];
@@ -105,7 +105,7 @@ static void test_marked_reflectable_moves_are_the_handled_list(df_test *t)
 static void test_marked_reflectable_moves_are_not_spread(df_test *t)
 {
     for (uint32_t id = 0u; id < DFI_POOL_MOVE_COUNT; ++id) {
-        if (dfi_support.moves[id] == 0u || dfi_pool_move_reflectable[id] == 0u) {
+        if (dfi_support.moves[id] == 0u || (dfi_pool_move_flags3[id] & DFI_MOVE_FLAG3_REFLECTABLE) == 0u) {
             continue;
         }
         const uint32_t target = dfi_pool_moves[id].target_class;

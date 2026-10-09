@@ -5374,8 +5374,8 @@ const uint8_t dfi_pool_move_static_hits[DFI_POOL_MOVE_COUNT][2] = {
     [DFI_MOVE_ZINGZAP] = {1u, 1u}, /* Zing Zap */
 };
 
-/* The reflectable column (step G57): flags.reflectable of the pin, 1 for a move that Magic Bounce reflects. */
-const uint8_t dfi_pool_move_reflectable[DFI_POOL_MOVE_COUNT] = {
+/* The third flags byte (DFI_MOVE_FLAG3_*): REFLECTABLE (step G57), MUST_PRESSURE (step G53). */
+const uint8_t dfi_pool_move_flags3[DFI_POOL_MOVE_COUNT] = {
     [DFI_MOVE_HYPNOSIS] = 1u, /* Hypnosis */
     [DFI_MOVE_PARTINGSHOT] = 1u, /* Parting Shot */
     [DFI_MOVE_ENCORE] = 1u, /* Encore */
@@ -5398,6 +5398,7 @@ const uint8_t dfi_pool_move_reflectable[DFI_POOL_MOVE_COUNT] = {
     [DFI_MOVE_GASTROACID] = 1u, /* Gastro Acid */
     [DFI_MOVE_GLARE] = 1u, /* Glare */
     [DFI_MOVE_HEALPULSE] = 1u, /* Heal Pulse */
+    [DFI_MOVE_IMPRISON] = 2u, /* Imprison */
     [DFI_MOVE_LEECHSEED] = 1u, /* Leech Seed */
     [DFI_MOVE_MAGICPOWDER] = 1u, /* Magic Powder */
     [DFI_MOVE_MEANLOOK] = 1u, /* Mean Look */
@@ -5411,9 +5412,9 @@ const uint8_t dfi_pool_move_reflectable[DFI_POOL_MOVE_COUNT] = {
     [DFI_MOVE_SING] = 1u, /* Sing */
     [DFI_MOVE_SLEEPPOWDER] = 1u, /* Sleep Powder */
     [DFI_MOVE_SPICYEXTRACT] = 1u, /* Spicy Extract */
-    [DFI_MOVE_SPIKES] = 1u, /* Spikes */
+    [DFI_MOVE_SPIKES] = 3u, /* Spikes */
     [DFI_MOVE_SPITE] = 1u, /* Spite */
-    [DFI_MOVE_STEALTHROCK] = 1u, /* Stealth Rock */
+    [DFI_MOVE_STEALTHROCK] = 3u, /* Stealth Rock */
     [DFI_MOVE_STICKYWEB] = 1u, /* Sticky Web */
     [DFI_MOVE_STRENGTHSAP] = 1u, /* Strength Sap */
     [DFI_MOVE_STRINGSHOT] = 1u, /* String Shot */
@@ -5428,7 +5429,7 @@ const uint8_t dfi_pool_move_reflectable[DFI_POOL_MOVE_COUNT] = {
     [DFI_MOVE_TOPSYTURVY] = 1u, /* Topsy-Turvy */
     [DFI_MOVE_TORMENT] = 1u, /* Torment */
     [DFI_MOVE_TOXIC] = 1u, /* Toxic */
-    [DFI_MOVE_TOXICSPIKES] = 1u, /* Toxic Spikes */
+    [DFI_MOVE_TOXICSPIKES] = 3u, /* Toxic Spikes */
     [DFI_MOVE_TOXICTHREAD] = 1u, /* Toxic Thread */
     [DFI_MOVE_TRICKORTREAT] = 1u, /* Trick-or-Treat */
     [DFI_MOVE_WHIRLWIND] = 1u, /* Whirlwind */
@@ -7102,10 +7103,10 @@ const char *const dfi_pool_ability_unmodeled[DFI_POOL_ABILITY_COUNT] = {
 };
 
 const uint8_t dfi_pool_table_hash[32] = {
-    0x84u, 0x3cu, 0x0fu, 0xa3u, 0x90u, 0x8fu, 0x93u, 0x02u,
-    0x7eu, 0x0bu, 0x29u, 0x81u, 0x00u, 0xadu, 0xdau, 0x46u,
-    0xb5u, 0x21u, 0x50u, 0xc5u, 0x24u, 0xc8u, 0xf0u, 0x3au,
-    0x5bu, 0x01u, 0x8fu, 0xa4u, 0x00u, 0x4cu, 0xaau, 0x08u,
+    0x86u, 0x6au, 0x69u, 0x46u, 0xd1u, 0xf3u, 0x77u, 0xd8u,
+    0x58u, 0x11u, 0x26u, 0xfeu, 0xf6u, 0xcdu, 0xb9u, 0xdbu,
+    0xbbu, 0xcau, 0x0du, 0x66u, 0x9au, 0x71u, 0x1fu, 0x07u,
+    0xb8u, 0x2eu, 0xebu, 0x04u, 0xb2u, 0x04u, 0x28u, 0xa5u,
 };
 
 static size_t dfi_pool_put_u16(uint8_t *out, size_t n, uint32_t v)
@@ -7325,7 +7326,7 @@ size_t dfi_pool_canonical_bytes(uint8_t *out, size_t capacity)
         out[n++] = dfi_pool_move_static_hits[i][1];
     }
     for (uint32_t i = 0u; i < DFI_POOL_MOVE_COUNT; ++i) {
-        out[n++] = dfi_pool_move_reflectable[i];
+        out[n++] = dfi_pool_move_flags3[i];
     }
     return n;
 }

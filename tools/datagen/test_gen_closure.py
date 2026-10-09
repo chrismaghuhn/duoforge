@@ -1952,7 +1952,8 @@ class SimpleMovesG44(unittest.TestCase):
 
 class SmallRulesG53(unittest.TestCase):
     """Step G53: Pressure is an engine row whose pinned texts (the switch-in line and the foe's DeductPP) are demanded whole, and
-    the mustpressure flag is a static bit of the move table (DUOFORGE_MOVE_STATIC_FLAG_MUST_PRESSURE)."""
+    the mustpressure flag is a static bit of the move table (DUOFORGE_MOVE_STATIC_FLAG_MUST_PRESSURE) and the engine bit
+    DFI_MOVE_FLAG3_MUST_PRESSURE."""
 
     def abilities(self, skip=(None, None)):
         out = []

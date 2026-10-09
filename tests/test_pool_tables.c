@@ -45,7 +45,7 @@
 #include "state/closure_member.h"
 #include "support/check.h"
 
-#define POOL_HASH_HEX "843c0fa3908f93027e0b298100adda46b52150c524c8f03a5b018fa4004caa08" /* the canonical hash of the rows of the lane A batch (G42, G44, G46, G47, G48, G49, G50, G56, G52, G54) */
+#define POOL_HASH_HEX "866a6946d1f377d8581126fef6cdb9dbbbca0d669a711f07b82eeb04b20428a5" /* the canonical hash of the rows of the lane A batch (G42, G44, G46, G47, G48, G49, G50, G56, G52, G54) */
 /* SHA-256 of the closure-layout bytes of the rows of the steps (P1 and G2: 28 formes, 72 moves, 52 items, 29
  * abilities). The whole-pool step must not move one of them (decision 0015 section 4.2); the pool generator before it
  * produced the same bytes. Step G10 moved two of them on purpose: Scald and Recover are data now (the thaw bit and
@@ -1026,8 +1026,8 @@ int main(void)
                        : 0u;
         }
         at += 2u * DFI_POOL_MOVE_COUNT;
-        for (uint32_t i = 0u; i < DFI_POOL_MOVE_COUNT; ++i) { /* the reflectable column (step G57), the very last part */
-            bad += bytes[at + i] != dfi_pool_move_reflectable[i] ? 1u : 0u;
+        for (uint32_t i = 0u; i < DFI_POOL_MOVE_COUNT; ++i) { /* the third flags byte (steps G57, G53), the very last part */
+            bad += bytes[at + i] != dfi_pool_move_flags3[i] ? 1u : 0u;
         }
         at += DFI_POOL_MOVE_COUNT;
         DF_CHECK_EQ_U64(&t, bad, 0u);

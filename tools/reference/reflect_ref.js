@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Reference values of the reflectable moves (step G57, Magic Bounce): every move of the Champions format whose
 // flags.reflectable is set in the pinned Dex, with its target class. Magic Bounce (data/abilities.ts:2437-2464) bounces
-// a reflectable move aimed at its holder, so the C test compares the generated column dfi_pool_move_reflectable with this
+// a reflectable move aimed at its holder, so the C test compares the generated bit DFI_MOVE_FLAG3_REFLECTABLE (dfi_pool_move_flags3) with this
 // list, and the marked moves with a fixed set of handled moves.
 //
 //   node tools/reference/reflect_ref.js <checkout> > tests/reference/reflect_ref.h

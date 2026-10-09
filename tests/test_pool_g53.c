@@ -12,7 +12,8 @@
  * in duoforge.reference.conformance_pool_data, which compares the engine's PP with what the reference's lines allow the
  * viewer to attribute. Here the facts that battle comparison does not state:
  *
- *   - the marks and the flag: Pressure is supported; mustpressure (DUOFORGE_MOVE_STATIC_FLAG_MUST_PRESSURE, 0x800) is on
+ *   - the marks and the flag: Pressure is supported; mustpressure (DUOFORGE_MOVE_STATIC_FLAG_MUST_PRESSURE, 0x800, and the
+ *     engine bit DFI_MOVE_FLAG3_MUST_PRESSURE) is on
  *     Imprison, Spikes, Stealth Rock and Toxic Spikes, and on none of the moves the battles use without it;
  *   - at every boundary of every g53 battle, for both players and every move slot, the foe's derived PP equals the owner's
  *     exact PP, except the hidden extra of a [still] move, which is pinned below: g53_still_pressure, where the Sucker Punch
@@ -234,6 +235,17 @@ static void check_marks(df_test *t)
     for (size_t i = 0u; i < sizeof plain / sizeof plain[0]; ++i) {
         DF_CHECK(t, (dfi_pool_move_static_flags[plain[i]] & DUOFORGE_MOVE_STATIC_FLAG_MUST_PRESSURE) == 0u);
     }
+    /* The engine reads the third flags byte (DFI_MOVE_FLAG3_MUST_PRESSURE; decision 0020: the static flags have no engine
+     * reader): it carries the public flag's value for every move, and its free bits are 0. */
+    uint32_t must_rows = 0u;
+    for (uint32_t id = 0u; id < DFI_POOL_MOVE_COUNT; ++id) {
+        const bool pub = (dfi_pool_move_static_flags[id] & DUOFORGE_MOVE_STATIC_FLAG_MUST_PRESSURE) != 0u;
+        const bool eng = (dfi_pool_move_flags3[id] & DFI_MOVE_FLAG3_MUST_PRESSURE) != 0u;
+        DF_CHECK(t, pub == eng);
+        DF_CHECK_EQ_U64(t, (uint32_t)dfi_pool_move_flags3[id] & ~(DFI_MOVE_FLAG3_REFLECTABLE | DFI_MOVE_FLAG3_MUST_PRESSURE), 0u);
+        must_rows += eng ? 1u : 0u;
+    }
+    DF_CHECK(t, must_rows >= sizeof must / sizeof must[0]);
 }
 
 /* A two-turn charge into a Pressure foe is accepted and deducted: Solar Beam of Forretress (side 0, slot 0) at Kingambit costs 2

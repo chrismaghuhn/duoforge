@@ -421,14 +421,13 @@ def parse_move(mid, base, champ, ext=False, pool=False, unmodeled=None):
 
     flags = 0
     flags2 = 0
-    reflect = 0  # step G57: flags.reflectable (pool tables only; a generated 0/1 column, not a flag bit)
+    flags3 = 0  # the third flags byte (pool tables only): REFLECTABLE (step G57), MUST_PRESSURE (step G53), FLAGS3_BITS
     static_flags = 0  # decision 0020: the public static flags of every row, from the pin's flags object (pool tables only)
     flag_bits = FLAG_BITS_C if ext else FLAG_BITS
     for fl in re.findall(r'(\w+): 1', f['flags'][1]):
         flags2 |= FLAGS2_BITS.get(fl, 0)
         static_flags |= STATIC_FLAG_BITS.get(fl, 0)
-        if fl == 'reflectable':
-            reflect = 1
+        flags3 |= FLAGS3_BITS.get(fl, 0)
         if fl in flag_bits:
             flags |= flag_bits[fl]
         elif lenient:
@@ -485,7 +484,7 @@ def parse_move(mid, base, champ, ext=False, pool=False, unmodeled=None):
         'type': TYPES.index(get('type')), 'category': CATEGORIES[get('category')],
         'base_power': get('basePower'), 'accuracy': 0 if acc is True else acc, 'pp_base': pp_base, 'pp_max': pp_max,
         'priority': get('priority') + 8, 'target_class': target_class,
-        'crit_ratio': get('critRatio', 1), 'flags': flags, 'flags2': flags2, 'reflect': reflect, 'heal': [0, 0],
+        'crit_ratio': get('critRatio', 1), 'flags': flags, 'flags2': flags2, 'flags3': flags3, 'heal': [0, 0],
         'recoil': [0, 0], 'drain': [0, 0], 'sec_chance': 0, 'sec_kind': 0, 'sec_param': 0,
         'boost_role': 0, 'boosts': [0] * 7, 'primary_status': 0, 'side_condition': 0, 'pseudo_weather': 0,
         'special': (SPECIAL_IDS_P if pool else SPECIAL_IDS_C if ext else SPECIAL_IDS).index(handled[0]),
@@ -1701,7 +1700,8 @@ G41_ABILITY_FACTS = (
 )
 # Step G53: Pressure is an engine row read by id (dfi_pressure_extra, src/combat/turn.c). Its onStart is the announcement at
 # switch-in (as Unnerve's); its onDeductPP is the extra PP that a foe's move costs (useMoveInner, sim/battle-actions.ts:473-484).
-# The move flag mustpressure is read from the move table (DUOFORGE_MOVE_STATIC_FLAG_MUST_PRESSURE). The Champions mod has no entry.
+# The move flag mustpressure is the engine column dfi_pool_move_flags3 (DFI_MOVE_FLAG3_MUST_PRESSURE); the public static flag
+# DUOFORGE_MOVE_STATIC_FLAG_MUST_PRESSURE gives it out (decision 0020: no engine reader). The Champions mod has no entry.
 G53_ABILITY_FACTS = (
     ('pressure', ("onStart(pokemon) { this.add('-ability', pokemon, 'Pressure'); },",
                   "onDeductPP(target, source) { if (target.isAlly(source)) return; return 1; },",
@@ -2305,6 +2305,8 @@ G8_SECONDARIES = {
     "secondary: { chance: 100, volatileStatus: 'healblock', },": (SECONDARY_HEAL_BLOCK, False),
 }
 FLAGS2_BITS = {'sound': 1, 'heal': 2, 'powder': 16, 'punch': 32, 'slicing': 64}  # steps G30 (powder) and G34 (punch, slicing)
+# The third flags byte (DFI_MOVE_FLAG3_*, pool tables only): one bit per Showdown flag name, assigned centrally (HauptSession).
+FLAGS3_BITS = {'reflectable': 1, 'mustpressure': 2}  # steps G57 (Magic Bounce) and G53 (Pressure)
 # Decision 0020: the public static flags of a move (DUOFORGE_MOVE_STATIC_FLAG_*, include/duoforge/duoforge.h), one bit per
 # Showdown flag name, additive only; the generated column dfi_pool_move_static_flags holds them for every pool row and has
 # no engine reader. POWER_RULE is not a flag of the pin: the move has a basePowerCallback (its basePower is not the damage).
@@ -3326,7 +3328,7 @@ def build_pool(root, repo, dx):
     # The second flags byte (step G8) of the prefix moves, read from the pin as the new rows are: the prefix rows
     # themselves (the CLOSURE and extended bytes) do not have it.
     moves = [dict(m, flags2=parse_move(m['id'], moves_ts, champ_moves, ext=True, pool=True)['flags2'],
-                  reflect=parse_move(m['id'], moves_ts, champ_moves, ext=True, pool=True)['reflect'])
+                  flags3=parse_move(m['id'], moves_ts, champ_moves, ext=True, pool=True)['flags3'])
              for m in dx['moves']]
     for mid in G2_MOVES:
         if any(m['id'] == mid for m in moves):
@@ -3605,10 +3607,10 @@ def static_hits_bytes(d):
     return bytes(b)
 
 
-def reflect_bytes(d):
-    """The reflectable column of every move (step G57: flags.reflectable of the pin, 0 or 1), in id order, in the canonical
-    pool bytes; the very last part."""
-    return bytes(m['reflect'] for m in d['moves'])
+def flags3_bytes(d):
+    """The third flags byte of every move (DFI_MOVE_FLAG3_*: REFLECTABLE of step G57, MUST_PRESSURE of step G53), in id
+    order, in the canonical pool bytes; the very last part."""
+    return bytes(m['flags3'] for m in d['moves'])
 
 
 def canonical_pool(d):
@@ -3647,7 +3649,7 @@ def canonical_pool(d):
     b.extend(d['immunity'])
     for n in d['natures']:
         b.extend([n['plus'], n['minus']])
-    return bytes(b) + family_bytes(d) + handler_bytes(d) + forme_legal_bytes(d) + flags2_bytes(d) + heal_bytes(d) +         static_flags_bytes(d) + static_hits_bytes(d) + reflect_bytes(d)
+    return bytes(b) + family_bytes(d) + handler_bytes(d) + forme_legal_bytes(d) + flags2_bytes(d) + heal_bytes(d) +         static_flags_bytes(d) + static_hits_bytes(d) + flags3_bytes(d)
 
 
 def closure_projection(rows, key):
@@ -3948,9 +3950,13 @@ extern const uint8_t dfi_pool_move_heal[DFI_POOL_MOVE_COUNT][2];
  * last parts of the canonical pool bytes. */
 extern const uint32_t dfi_pool_move_static_flags[DFI_POOL_MOVE_COUNT];
 extern const uint8_t dfi_pool_move_static_hits[DFI_POOL_MOVE_COUNT][2];
-/* The reflectable column (step G57): 1 for a move with flags.reflectable in the pin, 0 otherwise; the very last part of the
- * canonical pool bytes. Magic Bounce (DFI_ABILITY_MAGICBOUNCE) bounces the moves with 1 only. */
-extern const uint8_t dfi_pool_move_reflectable[DFI_POOL_MOVE_COUNT];
+/* The third flags byte of every move (DFI_MOVE_FLAG3_*), by move id; the very last part of the canonical pool bytes. It is
+ * the engine's copy of pin flags that the static flags (decision 0020, no engine reader) also give out. The bits are
+ * assigned centrally (HauptSession); bits 3 to 7 are free. */
+#define DFI_MOVE_FLAG3_REFLECTABLE 1u    /* flags.reflectable (step G57): Magic Bounce (DFI_ABILITY_MAGICBOUNCE) bounces the move */
+#define DFI_MOVE_FLAG3_MUST_PRESSURE 2u  /* flags.mustpressure (step G53): a foe's Pressure costs PP whatever the move targets */
+/* bit 2 (4u): reserved for BYPASSSUB (lane A, step G60) */
+extern const uint8_t dfi_pool_move_flags3[DFI_POOL_MOVE_COUNT];
 extern const dfi_pool_alias dfi_pool_forme_aliases[DFI_POOL_ALIAS_COUNT];
 
 /* ---- names ----
@@ -4086,11 +4092,11 @@ size_t dfi_pool_canonical_bytes(uint8_t *out, size_t capacity);
           'const uint8_t dfi_pool_move_static_hits[DFI_POOL_MOVE_COUNT][2] = {']
     for m in dp['moves']:
         c.append('    [DFI_MOVE_%s] = {%du, %du}, /* %s */' % (m['id'].upper(), m['hits'][0], m['hits'][1], m['name']))
-    c += ['};', '', '/* The reflectable column (step G57): flags.reflectable of the pin, 1 for a move that Magic Bounce reflects. */',
-          'const uint8_t dfi_pool_move_reflectable[DFI_POOL_MOVE_COUNT] = {']
+    c += ['};', '', '/* The third flags byte (DFI_MOVE_FLAG3_*): REFLECTABLE (step G57), MUST_PRESSURE (step G53). */',
+          'const uint8_t dfi_pool_move_flags3[DFI_POOL_MOVE_COUNT] = {']
     for m in dp['moves']:
-        if m['reflect']:
-            c.append('    [DFI_MOVE_%s] = 1u, /* %s */' % (m['id'].upper(), m['name']))
+        if m['flags3']:
+            c.append('    [DFI_MOVE_%s] = %du, /* %s */' % (m['id'].upper(), m['flags3'], m['name']))
     c += ['};', '', '/* Cosmetic formes: a name for the row of the base forme (decision 0015 section 4.2). */',
           'const dfi_pool_alias dfi_pool_forme_aliases[DFI_POOL_ALIAS_COUNT] = {']
     for alias, base in dp['aliases']:
@@ -4334,7 +4340,7 @@ size_t dfi_pool_canonical_bytes(uint8_t *out, size_t capacity)
         out[n++] = dfi_pool_move_static_hits[i][1];
     }
     for (uint32_t i = 0u; i < DFI_POOL_MOVE_COUNT; ++i) {
-        out[n++] = dfi_pool_move_reflectable[i];
+        out[n++] = dfi_pool_move_flags3[i];
     }
     return n;
 }

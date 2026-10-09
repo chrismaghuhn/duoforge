@@ -158,8 +158,11 @@ static uint32_t dfi_pressure_charge(const dfi_own_pressure *o, const duoforge_ev
     if ((e->flags & DUOFORGE_EVENT_FLAG_STILL) != 0u) {
         return 0u; /* a [still] line blanks the targets: none can be known (the tracker's rule too) */
     }
+    if (e->id >= DFI_POOL_MOVE_COUNT) {
+        return 0u; /* no move row: a corrupt line (the fold counts its use against no slot either) */
+    }
     const uint32_t cls = dfi_pool_moves[e->id].target_class;
-    if ((dfi_pool_move_static_flags[e->id] & DUOFORGE_MOVE_STATIC_FLAG_MUST_PRESSURE) != 0u) {
+    if ((dfi_pool_move_flags3[e->id] & DFI_MOVE_FLAG3_MUST_PRESSURE) != 0u) {
         return standing;
     }
     if (cls == DFI_TARGET_CLASS_FOE_SIDE) {

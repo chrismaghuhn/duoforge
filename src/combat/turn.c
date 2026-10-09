@@ -4651,7 +4651,7 @@ static uint32_t dfi_pressure_extra(struct duoforge_battle *b, uint32_t user, uin
                                    const uint32_t *targets, uint32_t count)
 {
     const uint32_t foes = (1u - user / 2u) * 2u; /* the first foe position */
-    if ((dfi_pool_move_static_flags[move_id] & DUOFORGE_MOVE_STATIC_FLAG_MUST_PRESSURE) != 0u || cls == DUOFORGE_TARGET_CLASS_ALL) {
+    if ((dfi_pool_move_flags3[move_id] & DFI_MOVE_FLAG3_MUST_PRESSURE) != 0u || cls == DUOFORGE_TARGET_CLASS_ALL) {
         uint32_t holders = 0u;
         for (uint32_t slot = 0u; slot < DUOFORGE_ACTIVE_PER_SIDE; ++slot) {
             holders += dfi_pressure_holder(b, foes + slot) ? 1u : 0u;
@@ -5681,7 +5681,7 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
         /* Magic Bounce (step G57): a standing holder on the foes' side bounces a reflectable hazard back to the user (its
          * onAllyTryHitSide, data/abilities.ts:2449-2459); two holders are not modelled (the speed order of the TryHitSide
          * handlers, with a shuffle on a tie). */
-        if (dfi_pool_move_reflectable[move_id] != 0u) {
+        if ((dfi_pool_move_flags3[move_id] & DFI_MOVE_FLAG3_REFLECTABLE) != 0u) {
             uint32_t holders = 0u;
             uint32_t holder = DFI_POSITIONS;
             for (uint32_t slot = 0u; slot < DUOFORGE_ACTIVE_PER_SIDE; ++slot) {
@@ -5996,7 +5996,7 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
     /* Magic Bounce (step G57): the TryHit of a standing holder that the reflectable move aims at (data/abilities.ts:2437-2448,
      * priority 1, after Protect's 3 and Psychic Terrain's 4, both above). A spread reflectable move is not modelled (none is
      * marked): a holder among its targets refuses it. */
-    if (dfi_pool_move_reflectable[move_id] != 0u) {
+    if ((dfi_pool_move_flags3[move_id] & DFI_MOVE_FLAG3_REFLECTABLE) != 0u) {
         for (uint32_t i = 0u; i < count; ++i) {
             const uint32_t t = targets[i];
             if (!hit[i] || t == user || !dfi_ability(b, dfi_at(b, t), DFI_ABILITY_MAGICBOUNCE)) {

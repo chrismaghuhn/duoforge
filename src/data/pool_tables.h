@@ -1402,9 +1402,13 @@ extern const uint8_t dfi_pool_move_heal[DFI_POOL_MOVE_COUNT][2];
  * last parts of the canonical pool bytes. */
 extern const uint32_t dfi_pool_move_static_flags[DFI_POOL_MOVE_COUNT];
 extern const uint8_t dfi_pool_move_static_hits[DFI_POOL_MOVE_COUNT][2];
-/* The reflectable column (step G57): 1 for a move with flags.reflectable in the pin, 0 otherwise; the very last part of the
- * canonical pool bytes. Magic Bounce (DFI_ABILITY_MAGICBOUNCE) bounces the moves with 1 only. */
-extern const uint8_t dfi_pool_move_reflectable[DFI_POOL_MOVE_COUNT];
+/* The third flags byte of every move (DFI_MOVE_FLAG3_*), by move id; the very last part of the canonical pool bytes. It is
+ * the engine's copy of pin flags that the static flags (decision 0020, no engine reader) also give out. The bits are
+ * assigned centrally (HauptSession); bits 3 to 7 are free. */
+#define DFI_MOVE_FLAG3_REFLECTABLE 1u    /* flags.reflectable (step G57): Magic Bounce (DFI_ABILITY_MAGICBOUNCE) bounces the move */
+#define DFI_MOVE_FLAG3_MUST_PRESSURE 2u  /* flags.mustpressure (step G53): a foe's Pressure costs PP whatever the move targets */
+/* bit 2 (4u): reserved for BYPASSSUB (lane A, step G60) */
+extern const uint8_t dfi_pool_move_flags3[DFI_POOL_MOVE_COUNT];
 extern const dfi_pool_alias dfi_pool_forme_aliases[DFI_POOL_ALIAS_COUNT];
 
 /* ---- names ----

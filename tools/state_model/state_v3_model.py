@@ -296,7 +296,7 @@ KD = TeamCContext(KIND_TEAM_C_DEV, 6, 4)
 # which tests/test_pool_tables.c recomputes from the pool canonical bytes: the
 # pool layout over the pool data, then the family columns, the handler columns
 # and the moves and abilities that each forme may have.
-POOL_TABLE_HASH = bytes.fromhex('843c0fa3908f93027e0b298100adda46b52150c524c8f03a5b018fa4004caa08')
+POOL_TABLE_HASH = bytes.fromhex('866a6946d1f377d8581126fef6cdb9dbbbca0d669a711f07b82eeb04b20428a5')
 KIND_POOL, KIND_POOL_DEV = 6, 7
 
 
@@ -912,11 +912,13 @@ def check_state(ctx, st):
         return 'TURN_COUNTER'
     if st['result'] > RESULT_TIE or (st['boundary'] == TERMINAL) != (st['result'] != RESULT_NONE):
         return 'RESULT'
+    # step G55: the rock items and Terrain Extender (pool rows) lengthen weather and terrain to 8 in the POOL kinds only
+    field_max = FIELD_TURNS_EXTENDED_MAX if ctx.data_kind in POOL_KINDS else FIELD_TURNS_MAX
     if (st['weather'] > (WEATHER_SNOW if ctx.data_kind in POOL_KINDS else WEATHER_SUN)
-            or st['weather_turns'] > FIELD_TURNS_EXTENDED_MAX
+            or st['weather_turns'] > field_max
             or (st['weather'] == 0) != (st['weather_turns'] == 0)
             or st['terrain'] > (TERRAIN_PSYCHIC if ctx.data_kind in EXTENDED_KINDS else TERRAIN_GRASSY)
-            or st['terrain_turns'] > FIELD_TURNS_EXTENDED_MAX
+            or st['terrain_turns'] > field_max
             or (st['terrain'] == 0) != (st['terrain_turns'] == 0)
             or st['trick_room_turns'] > FIELD_TURNS_MAX):
         return 'FIELD'

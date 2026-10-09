@@ -96,7 +96,7 @@ static void rows_move(df_test *t, const duoforge_context *ctx, uint32_t count)
         DF_CHECK(t, got.hits_min >= 1u && got.hits_min <= got.hits_max);
         DF_CHECK(t, (int32_t)got.priority >= -7 && (int32_t)got.priority <= 5);
         DF_CHECK(t, got.pp >= 1u);
-        DF_CHECK(t, (got.flags & ~0x7FFu) == 0u);
+        DF_CHECK(t, (got.flags & ~0xFFFu) == 0u); /* through MUST_PRESSURE 0x800 (step G53) */
         DF_CHECK(t, got.category != DUOFORGE_MOVE_CATEGORY_STATUS || got.base_power == 0u);
     }
 }
@@ -450,7 +450,7 @@ static void coverage(df_test *t, const duoforge_context *pool)
     }
     /* 1..15 but ADJACENT_FOE (5), which no row of the pool has (the pin has it for a few moves outside the format) */
     DF_CHECK_EQ_U64(t, classes, 0xFFDEu);
-    DF_CHECK_EQ_U64(t, flags, 0x7FFu);
+    DF_CHECK_EQ_U64(t, flags, 0xFFFu); /* every public flag is on some pool row, MUST_PRESSURE (step G53) too */
     DF_CHECK_EQ_U64(t, items, 0x7u);
     DF_CHECK_EQ_U64(t, abilities, 0x1Fu);
 }
