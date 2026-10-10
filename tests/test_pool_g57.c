@@ -36,6 +36,7 @@ static const char *const handled[] = {
     "poisonpowder", "toxic", "stealthrock", "spikes", "toxicspikes", "stickyweb", "taunt", "yawn", "charm", "faketears",
     "sing",
     "thunderwave", /* primary status, bounced on Hypnosis's path; lane A G68/H10 */
+    "confuseray", "swagger", "flatter", /* primary confusion (step G92, decision 0062): the CONFUSE handler runs for the bounced move */
 };
 
 /* The marked reflectable moves whose bounced run is not modelled (marked by lane A's G54 batch): dfi_bounce_kind_ok refuses
@@ -98,7 +99,7 @@ static void test_marked_reflectable_moves_are_the_handled_list(df_test *t)
                                      in_list(name, refused, sizeof refused / sizeof refused[0])));
         marked += 1u;
     }
-    DF_CHECK_EQ_U64(t, marked, 24u); /* 23 on main, and Thunder Wave of step G68 */
+    DF_CHECK_EQ_U64(t, marked, 27u); /* 23 on main, Thunder Wave of step G68, and Confuse Ray, Swagger and Flatter of step G92 */
 }
 
 /* Every marked reflectable move is a single-target or a foeSide move: a spread one would need the TryHit of every target
