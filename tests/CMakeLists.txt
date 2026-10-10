@@ -227,6 +227,8 @@ duoforge_add_test(NAME duoforge.state.pool_g72b SOURCES test_pool_g72b.c WHITEBO
 duoforge_add_test(NAME duoforge.state.pool_g42 SOURCES test_pool_g42.c WHITEBOX TIMEOUT 60)
 duoforge_add_test(NAME duoforge.state.pool_g44 SOURCES test_pool_g44.c WHITEBOX TIMEOUT 60)
 duoforge_add_test(NAME duoforge.state.pool_g54 SOURCES test_pool_g54.c WHITEBOX TIMEOUT 60)
+# Step G56: lockedmove (Outrage, Thrash, Petal Dance): the count, its refusals and the information safety of its length.
+duoforge_add_test(NAME duoforge.state.pool_g56 SOURCES test_pool_g56.c WHITEBOX LIBS duoforge_batch TIMEOUT 60)
 duoforge_add_test(NAME duoforge.state.pool_g64 SOURCES test_pool_g64.c WHITEBOX TIMEOUT 60)
 duoforge_add_test(NAME duoforge.state.pool_g68 SOURCES test_pool_g68.c WHITEBOX TIMEOUT 60)
 duoforge_add_test(NAME duoforge.state.pool_g62 SOURCES test_pool_g62.c WHITEBOX TIMEOUT 60)
@@ -268,7 +270,7 @@ foreach(_gen IN ITEMS
         "extended_tables.h=b2abef243fcbfdd87654940076b9fe2fe80b117d74893a7567741f26b9075a7d"
         "extended_tables.c=9e736fa467713283418c4edf8f56b8d844452e596ba422adbd52483d20f7cc17"
         "pool_tables.h=edf639eb35dac1c54eefde4b2a66bdaf8ec18819f2d0d1fc8042ac3858920582"
-        "pool_tables.c=b66ad14efa46520eecb028292fc44a05c6a3e05c29040705600cb6647d77b2eb")
+        "pool_tables.c=1a2c5d327dc9eaf6d6f21e289b74a4111f196708c08af0f1b53811cc9634fb89")
     string(REPLACE "=" ";" _parts "${_gen}")
     list(GET _parts 0 _file)
     list(GET _parts 1 _expected)
@@ -514,7 +516,8 @@ if(Python3_Interpreter_FOUND)
     # converter makes them) and committed battles through the real runner.
     add_test(NAME duoforge.reference.diff_random
         COMMAND "${Python3_EXECUTABLE}" "${PROJECT_SOURCE_DIR}/tools/reference/test_diff_random.py")
-    set_tests_properties(duoforge.reference.diff_random PROPERTIES TIMEOUT 300
+    # 600 s: the machine lock tests start many bash processes, slow on Windows (about 4 min of the file there).
+    set_tests_properties(duoforge.reference.diff_random PROPERTIES TIMEOUT 600
         ENVIRONMENT "PYTHONDONTWRITEBYTECODE=1;DUOFORGE_DIFF_RUNNER=$<TARGET_FILE:duoforge_diff_runner>")
     # The corpus of kept fuzz battles (decision 0015 section 6, tests/reference/corpus): every battle through the
     # converter and the runner of this build, from the stored traces and without Node; all of them must PASS. It runs
@@ -770,6 +773,8 @@ if(Python3_Interpreter_FOUND)
     set_tests_properties(duoforge.data.model_pool_hash PROPERTIES TIMEOUT 60
         ENVIRONMENT PYTHONDONTWRITEBYTECODE=1)
 endif()
+# Step I2 (decision 0026, amended by I2): Illusion, the disguise, the break, the foe view, the causes (white-box).
+duoforge_add_test(NAME duoforge.state.pool_i2 SOURCES test_pool_i2.c WHITEBOX LIBS duoforge_batch TIMEOUT 60)
 duoforge_add_test(NAME duoforge.state.pool_g59 SOURCES test_pool_g59.c WHITEBOX TIMEOUT 60)
 
 # Step G51 (Mega batch 4): ten Mega Stones marked with no new rule, Keen Eye and Big Pecks as engine rows (turn.c), the marks, the
@@ -781,3 +786,10 @@ duoforge_add_test(NAME duoforge.state.pool_g53 SOURCES test_pool_g53.c WHITEBOX 
 
 # Step G63 (decision 0015 5bj): the simple Mega abilities Sand Force, Shell Armor, Filter and Stalwart, and their six stones.
 duoforge_add_test(NAME duoforge.state.pool_g63 SOURCES test_pool_g63.c WHITEBOX TIMEOUT 60)
+
+# Step G69 (decision 0015 5bm): Symbiosis, the pass of the item to an ally that has used up its own.
+duoforge_add_test(NAME duoforge.state.pool_g69 SOURCES test_pool_g69.c WHITEBOX TIMEOUT 60)
+
+# Step G65 (decision 0015 5bk): the simple modifier abilities Unaware, Marvel Scale, Water Bubble, Reckless and Super Luck (their
+# rows, the recoil and crash facts Reckless reads, and the Trace refusal of Water Bubble onto a burned holder; white-box).
+duoforge_add_test(NAME duoforge.state.pool_g65 SOURCES test_pool_g65.c WHITEBOX TIMEOUT 60)

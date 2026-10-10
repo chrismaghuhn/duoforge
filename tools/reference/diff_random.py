@@ -488,6 +488,9 @@ def convert_and_run(name, spec, text, trace, ended, runner, tables_for, kinds, s
         seconds['run'] += clock() - t0
         return Evaluated(base.child_failure_result(name, e), text, trace, ended)
     seconds['run'] += clock() - t0
+    gap = base.duplicate_gap(name, data, run)
+    if gap is not None:
+        return Evaluated(gap, text, trace, ended, sets)
     bucket = runner_bucket(run.verdict, ended or not cap)
     if bucket == 'CAP':
         result = base.new_result(name, 'CAP', detail='the battle did not end within %d steps' % run.steps,

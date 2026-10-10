@@ -33,7 +33,7 @@
 #include "reference/conformance_pool.h"
 #include "support/pool.h"
 #define DF_CONF_FORMES dfi_pool_formes
-#define DF_POOL_DATA_BATTLES 708u /* the recorded pool battles: the 705 of the G74 branch, sub_sitrus_tie and the two Sitrus-tie Baton Pass battles (decision 0042 section 14)(the Substitute update fix, decision 0032 addendum); the rest as before: g72b_av_sheer_force (Alluring Voice from a Trace-copied Sheer Force), 672 of the lane A batch, the G74 battles g74_pass_confused, g74_pass_sub_damaged, g74_pass_no_reserve and g74_pass_helping_hand (decision 0042) */
+#define DF_POOL_DATA_BATTLES 724u /* the recorded pool battles: main's 717 and the seven G74 battles (decision 0042 section 14, the Sitrus-tie Baton Pass battles included) */
 #elif defined(DF_CONFORMANCE_TEAM_C)
 #include "data/extended_tables.h"
 #include "reference/conformance_team_c.h"

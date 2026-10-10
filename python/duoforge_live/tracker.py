@@ -253,6 +253,10 @@ class Tracker:
         index = self._names[side].get(name)
         return None if index is None else self._member(side)[index].sheet
 
+    def side_sheets(self, ident):
+        """The open sheets of every member of the side a protocol ident names (lines.check: a possible Illusion)."""
+        return [m.sheet for m in self._member(int(ident[1]) - 1)]
+
     def ability_now(self, ident):
         """The current ability + 1 of the member a protocol ident names."""
         return self._member_of(ident).ability
