@@ -3518,7 +3518,14 @@ static duoforge_status dfi_each_order(dfi_run *r, uint32_t bearers, uint32_t lis
  * at the first Update after its switch-out, so the check reads the member, not the position. */
 static bool dfi_attract_source_active(const struct duoforge_battle *b, uint32_t code)
 {
-    return dfi_attract_source_flat(b, code) != DUOFORGE_NO_POSITION;
+    const uint32_t side = (code - 1u) / DUOFORGE_MAX_ROSTER;
+    const uint32_t src = (code - 1u) % DUOFORGE_MAX_ROSTER;
+    for (uint32_t p = 0u; p < DUOFORGE_ACTIVE_PER_SIDE; ++p) {
+        if (b->sides[side].positions[p].occupant == src && b->sides[side].members[src].hp != 0u) {
+            return true;
+        }
+    }
+    return false;
 }
 
 /* Step G71 (decision 0034): the volatile's onUpdate and the attract half of Oblivious's onUpdate, for the holder at flat (pin order:
