@@ -973,8 +973,9 @@ def hazard_order_valid(ts):
 
 
 def position_flags_valid(pf):
-    """Rev 5 (G72b): bit 0 (Healing Wish) and bits 4-7 are zero, and the Dragon Cheer stage (bits 2-3) is at most 2."""
-    return pf & ~0x0F == 0 and pf & 0x01 == 0 and (pf >> 2) & 3 <= 2
+    """Rev 5 (G72b; bit 0 from G82, decision 0045): bit 0 (Healing Wish) may stand at any position, bits 4-7 are zero, and the
+    Dragon Cheer stage (bits 2-3) is at most 2."""
+    return pf & ~0x0F == 0 and (pf >> 2) & 3 <= 2
 
 
 def tail_pos_valid(ctx, tp, flat, mem, slot_flags=0):
@@ -1053,7 +1054,9 @@ def check_tail(ctx, st):
                 # Rev 5 (G72b): the position flags may outlive a fainted occupant (the occupant is still there, as in the C
                 # invariant); an empty position has none.
                 flags_only = all(v == 0 for k, v in tp.items() if k != 'position_flags')
-                if not (flags_only and (tp['position_flags'] == 0 or (occ < MAX_ROSTER and position_flags_valid(tp['position_flags'])))):
+                pf = tp['position_flags']
+                # G82 (decision 0045): bit 0 (Healing Wish) is the slot's, it may wait at an empty position; the others need an occupant.
+                if not (flags_only and position_flags_valid(pf) and ((pf & ~0x01) == 0 or occ < MAX_ROSTER)):
                     return 'TAIL_POSITION'
                 continue
             if not tail_pos_valid(ctx, tp, 2 * s + p, sd['members'][occ], sd['pos'][p]['flags']):

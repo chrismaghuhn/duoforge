@@ -865,6 +865,7 @@ duoforge_status duoforge_battle_observe(const duoforge_context *ctx, const duofo
 #define DUOFORGE_POSITION_EXT_ILLUSION_UP  0x00080000u
 #define DUOFORGE_POSITION_EXT_ROOST        0x00100000u /* Roost: the Flying type is off until the end of the turn */
 #define DUOFORGE_POSITION_EXT_TRANSFORMED  0x00200000u /* Transform: the occupant is a copy of another Pokemon (decision 0028) */
+#define DUOFORGE_POSITION_EXT_HEALING_WISH 0x00400000u /* Healing Wish: the position's slot condition is pending (decision 0045) */
 /* Bits of duoforge_side_ext.guard_flags (this turn only). */
 #define DUOFORGE_SIDE_GUARD_WIDE_GUARD  1u
 #define DUOFORGE_SIDE_GUARD_QUICK_GUARD 2u
@@ -915,7 +916,8 @@ duoforge_status duoforge_battle_observe(const duoforge_context *ctx, const duofo
 #define DUOFORGE_VIEWEXT_FEATURE_ROOST            40u
 #define DUOFORGE_VIEWEXT_FEATURE_MOVE_FAILED      41u
 #define DUOFORGE_VIEWEXT_FEATURE_TRANSFORM        42u
-#define DUOFORGE_VIEWEXT_FEATURE_COUNT            43u
+#define DUOFORGE_VIEWEXT_FEATURE_HEALING_WISH    43u /* Healing Wish: the position's wish bit (decision 0045) */
+#define DUOFORGE_VIEWEXT_FEATURE_COUNT            44u
 
 /* Field-wide, public. */
 typedef struct duoforge_field_ext {

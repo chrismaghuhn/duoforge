@@ -5197,6 +5197,52 @@ static duoforge_status dfi_run_revival_blessing(dfi_run *r, uint32_t user)
     return DUOFORGE_OK;
 }
 
+static bool dfi_has_reserve(const struct duoforge_battle *b, uint32_t side);
+
+/* The slot condition of a position: bit 0 of its position_flags (side.slotConditions[position], sim/side.ts:464-495). */
+static bool dfi_wish_pending(const struct duoforge_battle *b, uint32_t flat)
+{
+    return (b->tail.sides[flat / 2u].positions[flat % 2u].position_flags & DFI_POSFLAG_HEALING_WISH) != 0u;
+}
+
+/* Healing Wish (data/moves.ts:8348-8382; decision 0045, step G82). onTryHit fails with [still] when the user's side has no living
+ * bench (canSwitch, sim/battle.ts:1566-1586). Otherwise addSlotCondition: a position that already holds the wish refuses the
+ * second one (sim/side.ts:474-476), and then the move does nothing more: no faint and no -fail (sim/battle-actions.ts:1287,
+ * 1303-1306, selfdestruct skips it). A new wish sets bit 0 of the user's position, and the user faints (selfdestruct ifHit,
+ * sim/battle-actions.ts:1287-1289). A hit that did something runs the Champions hit loop's Updates: the Update, the faint lines,
+ * the Update (data/mods/champions/scripts.ts:537, :574), that is dfi_status_hit_end. A refused second wish runs none (the loop
+ * breaks before :537, and :574 returns on the all-false damage). */
+static duoforge_status dfi_run_healing_wish(dfi_run *r, uint32_t user)
+{
+    struct duoforge_battle *b = r->b;
+    const uint32_t side = user / 2u;
+    if (!dfi_has_reserve(b, side)) {
+        dfi_fail_still(r, user);
+        return DUOFORGE_OK;
+    }
+    if (dfi_wish_pending(b, user)) {
+        return DUOFORGE_OK; /* the second wish: no effect, no faint, no line (the pin's silent no-op) */
+    }
+    b->tail.sides[side].positions[user % 2u].position_flags =
+        (uint8_t)(b->tail.sides[side].positions[user % 2u].position_flags | DFI_POSFLAG_HEALING_WISH); /* wide-operands-reviewed */
+    dfi_member *m = dfi_at(b, user);
+    if (m == NULL || m->hp == 0u) {
+        return DUOFORGE_E_INVARIANT;
+    }
+    if (dfi_support.switching == 0u) {
+        return DUOFORGE_E_UNSUPPORTED;
+    }
+    /* selfdestruct ifHit: the user faints in the hit (the faint queue of dfi_deal, which a damage faint uses) */
+    m->hp = 0u;
+    if (r->faint_count < DFI_POSITIONS) {
+        r->faint_queue[r->faint_count] = user;
+        r->faint_count += 1u;
+        r->last_faint_by = user;
+        r->last_faint_move = true;
+    }
+    return dfi_status_hit_end(r);
+}
+
 /* Double Shock's onTryMove (decision 0025, data/moves.ts:3954-3959): without the Electric type it fails, -fail and [still]
  * (*stopped). A user that has the type is played only as Pawmot with its own two types (dfi_double_shock_shape); any other
  * shape is refused, never guessed. Shared by the hit path and the no-target path, since TryMove runs before the no-targets
@@ -6423,6 +6469,9 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
     }
     if (move_id == DFI_MOVE_REVIVALBLESSING) {
         return dfi_run_revival_blessing(r, user);
+    }
+    if (move_id == DFI_MOVE_HEALINGWISH) {
+        return dfi_run_healing_wish(r, user);
     }
     const bool status_move = md->category == DFI_CATEGORY_STATUS;
     /* flags.powder (step G30): the second flags byte's bit; Struggle has none. */
@@ -8377,6 +8426,36 @@ static duoforge_status dfi_skill_swap(dfi_run *r, uint32_t user, uint32_t target
     return DUOFORGE_OK;
 }
 
+/* The entrant of a slot with a pending wish (decision 0045, step G82): the condition's onSwitchIn runs its onSwap
+ * (data/moves.ts:8366-8377, found by sim/battle.ts:1139-1151 for the occupant). A fainted entrant does nothing (the pin's
+ * !target.fainted). The heal is full HP and the status ends with it (clearStatus is silent: sim/pokemon.ts:1755-1761, "does not give
+ * cure message"; no CURE event, decision 0045 option A). The -heal line is the HEAL event (cause MOVE, id2 the move). A full-HP entrant
+ * without a status keeps the wish. */
+static duoforge_status dfi_wish_heal(dfi_run *r, uint32_t flat)
+{
+    struct duoforge_battle *b = r->b;
+    if (!dfi_wish_pending(b, flat)) {
+        return DUOFORGE_OK;
+    }
+    dfi_member *m = dfi_at(b, flat);
+    if (m == NULL || m->hp == 0u) {
+        return DUOFORGE_OK;
+    }
+    if (m->hp >= m->hp_max && m->status == DFI_STATUS_NONE) {
+        return DUOFORGE_OK; /* the wish waits for the next entrant */
+    }
+    m->hp = m->hp_max;
+    if (m->status == DFI_STATUS_TOX) {
+        b->tail.sides[flat / 2u].toxic_stage[dfi_pos(b, flat)->occupant] = 0u;
+    }
+    m->status = (uint8_t)DFI_STATUS_NONE;
+    m->status_counter = 0u;
+    b->tail.sides[flat / 2u].positions[flat % 2u].position_flags =
+        (uint8_t)(b->tail.sides[flat / 2u].positions[flat % 2u].position_flags & ~DFI_POSFLAG_HEALING_WISH); /* wide-operands-reviewed */
+    dfi_emit_hp(r, dfi_ev(DUOFORGE_EVENT_HEAL, flat, DUOFORGE_CAUSE_MOVE, DFI_MOVE_HEALINGWISH, DUOFORGE_NO_POSITION));
+    return DUOFORGE_OK;
+}
+
 /* runSwitch (sim/battle-actions.ts:177-192): every active Pokemon, a
  * fainted one included, is sorted by its last speed (Battle.speedSort, ties
  * shuffled); the SwitchIn handlers then run in that order. A tie decides
@@ -8417,8 +8496,11 @@ static duoforge_status dfi_run_entries(dfi_run *r, uint32_t entering)
         for (uint32_t i = 0u; i < count; ++i) {
             const uint32_t flat = list[next[i]];
             const dfi_member *m = dfi_at(b, flat);
+            /* A pending wish of the entrant's slot is a SwitchIn handler whatever its HP and status: the callback exists, so
+             * ps_trace.js:186-189 counts it in the group, and trace_to_c.py:541-548 keeps the tie when that count is not 0. The engine
+             * counts it the same way (decision 0045, the lead's rule), so a full-HP wish entrant keeps the draw too (R6). */
             bearers += (((entering >> flat) & 1u) != 0u && m->hp != 0u &&
-                        (dfi_has_switch_in(b, m) || dfi_side_has_hazard(b, flat / 2u)))
+                        (dfi_has_switch_in(b, m) || dfi_side_has_hazard(b, flat / 2u) || dfi_wish_pending(b, flat)))
                            ? 1u
                            : 0u;
             herbs += dfi_herb_holder(b, flat) ? 1u : 0u;
@@ -8471,6 +8553,12 @@ static duoforge_status dfi_run_entries(dfi_run *r, uint32_t entering)
                 continue;
             }
             if (pass == 0u) {
+                /* The slot condition (subOrder 3, sim/battle.ts:975-977) runs before the hazards (4) and the ability (7) of the same
+                 * entrant (comparePriority, sim/battle.ts:393-411): the Healing Wish heal comes first, after the priority +1 pass. */
+                const duoforge_status ws = dfi_wish_heal(r, flat);
+                if (ws != DUOFORGE_OK) {
+                    return ws;
+                }
                 const duoforge_status hs = dfi_hazards_enter(r, flat); /* faintMessages after each of its handlers */
                 if (hs != DUOFORGE_OK) {
                     return hs;

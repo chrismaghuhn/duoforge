@@ -583,10 +583,11 @@ static bool dfi_hazard_order_valid(const dfi_tail_side *ts)
 
 /* The tail of a standing occupant's position: the ranges, the pairs that are zero together and the sources that are
  * never the occupant itself (flat is its position, side * 2 + slot). */
-/* The position flags (tail rev 5, G72b): bit 0 (Healing Wish) and bits 4-7 are zero, and the Dragon Cheer stage is at most 2. */
+/* The position flags (tail rev 5, G72b; bit 0 from G82, decision 0045): bit 0 (Healing Wish) may stand at any position, bits 4-7
+ * are zero, and the Dragon Cheer stage is at most 2. */
 static bool dfi_position_flags_ok(uint8_t pf)
 {
-    return (pf & ~DFI_POSFLAG_VALID_MASK) == 0u && (pf & DFI_POSFLAG_HEALING_WISH) == 0u &&
+    return (pf & ~DFI_POSFLAG_VALID_MASK) == 0u &&
            ((pf & DFI_POSFLAG_DRAGON_CHEER_MASK) >> DFI_POSFLAG_DRAGON_CHEER_SHIFT) <= DFI_POSFLAG_DRAGON_CHEER_MAX;
 }
 
@@ -714,14 +715,15 @@ static dfi_invariant dfi_check_tail(const duoforge_context *ctx, const struct du
                                   side->members[occupant].hp != 0u;
             if (!standing) {
                 /* Rev 5 (G72b): the position flags of a fainted occupant stay until the turn ends or it is replaced (it is still
-                 * there, as in the state model); an empty position has none. The rest of the tail is cleared when the occupant
-                 * leaves or faints. */
+                 * there, as in the state model). An empty position has none, except bit 0 (G82, decision 0045): the Healing Wish
+                 * of a slot waits for its next entrant. The rest of the tail is cleared when the occupant leaves or faints. */
                 dfi_tail_pos rest = *tp;
                 rest.position_flags = 0u;
                 if (!dfi_bytes_zero(&rest, sizeof rest)) {
                     return DFI_INV_TAIL_POSITION; /* cleared when the occupant leaves or faints */
                 }
-                if (tp->position_flags != 0u && (occupant >= DUOFORGE_MAX_ROSTER || !dfi_position_flags_ok(tp->position_flags))) {
+                const uint8_t occupant_flags = (uint8_t)(tp->position_flags & ~DFI_POSFLAG_HEALING_WISH);
+                if (!dfi_position_flags_ok(tp->position_flags) || (occupant_flags != 0u && occupant >= DUOFORGE_MAX_ROSTER)) {
                     return DFI_INV_TAIL_POSITION;
                 }
                 continue;

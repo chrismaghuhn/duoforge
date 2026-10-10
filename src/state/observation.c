@@ -353,6 +353,9 @@ duoforge_status duoforge_battle_observe_ext(const duoforge_context *ctx, const d
                 /* Step G72b (decision 0015 5ce): Dragon Cheer's volatile is up while its stage is (-start|X|move: Dragon Cheer; a
                  * switch-out clears the stage with the position's tail, so the bit ends with it). */
                 vol |= (tail->position_flags & DFI_POSFLAG_DRAGON_CHEER_MASK) != 0u ? (uint32_t)DUOFORGE_POSITION_EXT_DRAGON_CHEER : 0u;
+                /* Step G82 (decision 0045): the slot's Healing Wish is pending. Public (the user's move and faint, and the heal that
+                 * ends it); set at every position, an empty one included, since the wish waits for the next entrant. */
+                vol |= (tail->position_flags & DFI_POSFLAG_HEALING_WISH) != 0u ? (uint32_t)DUOFORGE_POSITION_EXT_HEALING_WISH : 0u;
                 /* Step G30: Rage Powder draws the foes' single-target moves this turn ([-singleturn] move: Rage Powder), set
                  * only at a boundary inside a turn (a PIVOT: the residual ends it), as decision 0018 sections 3.4.1 and 6.1 say. */
                 if (((uint32_t)battle->sides[s].positions[p].flags & DFI_VOL_FOLLOW_ME) != 0u &&

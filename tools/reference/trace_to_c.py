@@ -1313,6 +1313,19 @@ def step_events(log, viewer, roster_of, maxhp, tables, rb_pending=None, swap_ids
             e = ev_tuple(EV['REVIVE'], user, NOPOS, CAUSE['MOVE'], roster_of[side][name],
                          tables['MOVE'][key('Revival Blessing')], *hp)
             revived = (side, name)
+        elif kind == '-heal' and '[from] move: Healing Wish' in attrs:
+            # Step G82 (decision 0045, option A): the entrant of a slot with a pending wish is healed to full HP and cured in
+            # the same step (data/moves.ts:8370-8377: target.heal(maxhp), clearStatus, then this line). clearStatus prints
+            # nothing, so the cure has no line of its own (no CURE event). The pin heals only when the entrant is hurt or
+            # statused, so the line always leaves the entrant at full HP with no status: the text is the precondition, and a
+            # line with another HP text or a status suffix is a ConversionError (the rule 'healing-wish-heal').
+            pos = ev_pos(args[0])
+            side = pos // 2
+            if args[1] != '100/100':
+                raise ConversionError('healing-wish-heal', 'trace_to_c: a Healing Wish heal that is not full HP and status-free',
+                                      detail='%s %s' % (args[0], args[1]))
+            hp = ev_hp(args[1], side, viewer, maxhp[side][args[0].split(': ', 1)[1]])
+            e = ev_tuple(EV['HEAL'], pos, NOPOS, CAUSE['MOVE'], 0, tables['MOVE'][key('Healing Wish')], *hp)
         elif kind in ('-damage', '-heal'):
             pos = ev_pos(args[0])
             side = pos // 2
