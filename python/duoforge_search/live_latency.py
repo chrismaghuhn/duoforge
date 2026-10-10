@@ -71,6 +71,7 @@ def main(argv=None):
     encoder, ext_supported = searcher.encoder, searcher.ext_supported
     seconds = {label: [] for label in kinds.values()}
     causes = {label: {} for label in kinds.values()}
+    reasons = {label: {} for label in kinds.values()}  # of the fallbacks, without the ids a reason may name
     first = {}
     setups = duoforge.reference_setups([0, 1, 2, 3])
     try:
@@ -110,6 +111,9 @@ def main(argv=None):
                         first.setdefault(label, elapsed)
                         seconds[label].append(elapsed)
                         causes[label][outcome.cause] = causes[label].get(outcome.cause, 0) + 1
+                        if outcome.fallback is not None:
+                            why = (outcome.reason or outcome.cause).split(" [")[0]
+                            reasons[label][why] = reasons[label].get(why, 0) + 1
                         if outcome.action is not None:
                             actions[0, 0] = outcome.action
                     choices_of(b, actions, choices)
@@ -119,7 +123,8 @@ def main(argv=None):
     report = {"games": args.games, "max_steps": args.max_steps, "seed": args.seed, "runtime": "jax-cpu",
               "settings": settings, "table_sha256": searcher.table_info["sha256"],
               "warmup": {"load_seconds": load_seconds, "first_seconds": first},
-              "boundaries": {label: {"n": len(s), **_quantiles(s), "causes": causes[label]}
+              "boundaries": {label: {"n": len(s), **_quantiles(s), "causes": causes[label],
+                                     "reasons": reasons[label]}
                              for label, s in seconds.items() if s}}
     out = Path(args.out)
     out.mkdir(parents=True, exist_ok=True)

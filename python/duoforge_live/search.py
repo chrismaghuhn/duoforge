@@ -112,7 +112,10 @@ class LiveSearch:
         if kind in _NO_FALLBACK:
             return Outcome(None, kind, None, None, seconds)
         if kind == "unreconstructible":
-            return Outcome(None, kind, "a", record.get("reason"), seconds)
+            reason, causes = record.get("reason"), [c for c in record.get("causes", ()) if c != record.get("reason")]
+            if causes:  # Honest's named causes of a refused public record (visible sleep, Substitute, ...)
+                reason = f"{reason} ({', '.join(causes)})"
+            return Outcome(None, kind, "a", reason, seconds)
         return Outcome(None, "error", "b", f"unknown decision kind {kind!r}", seconds)
 
     def decide(self, parts, obs_part, slot_part, pair_mask, *, key, episode, budget):
