@@ -5980,6 +5980,21 @@ static const df_tb_stop tb_g8_throat_chop[] = {
     {7u, 0u, 1u, 2u, {3u, 3u}, {532u, 425u}, {0x404695a47babe744ull, 0x4041ed25b496d25cull}},
     {8u, 0u, 1u, 2u, {3u, 3u}, {532u, 425u}, {0x404695a47babe744ull, 0x4041ed25b496d25cull}},
 };
+static const df_tb_stop tb_h18_absorbed_secondary_psychic_sitrus_mirror[] = {
+    {0u, 0u, 3u, 4u, {6u, 6u}, {1190u, 1190u}, {0x4059000000000000ull, 0x4059000000000000ull}},
+    {1u, 0u, 2u, 3u, {4u, 4u}, {746u, 806u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {2u, 0u, 2u, 3u, {4u, 4u}, {746u, 806u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {3u, 0u, 2u, 2u, {4u, 4u}, {687u, 806u}, {0x404eb343205d7975ull, 0x4050aaaaaaaaaaabull}},
+    {6u, 0u, 1u, 1u, {4u, 3u}, {524u, 466u}, {0x4047b2d2858894b9ull, 0x4042762cbccb80cdull}},
+    {9u, 0u, 1u, 1u, {4u, 3u}, {471u, 466u}, {0x404501643671afc9ull, 0x4042762cbccb80cdull}},
+    {12u, 0u, 1u, 1u, {4u, 3u}, {471u, 466u}, {0x404501643671afc9ull, 0x4042762cbccb80cdull}},
+    {15u, 0u, 1u, 1u, {3u, 2u}, {467u, 361u}, {0x4044d567bb4856efull, 0x403be712379c48ddull}},
+    {18u, 0u, 1u, 1u, {3u, 2u}, {377u, 227u}, {0x4040b0a1b8742f55ull, 0x4032ad8f1831491cull}},
+    {21u, 0u, 1u, 1u, {2u, 1u}, {318u, 75u}, {0x403bf278b7278b73ull, 0x4012ba01eae807acull}},
+    {24u, 0u, 1u, 1u, {2u, 1u}, {318u, 75u}, {0x403bf278b7278b73ull, 0x4012ba01eae807acull}},
+    {26u, 0u, 1u, 1u, {2u, 1u}, {318u, 9u}, {0x403bf278b7278b73ull, 0x3fe1fa3f47e8fd1full}},
+    {27u, 1u, 1u, 0u, {2u, 0u}, {318u, 0u}, {0x403bf278b7278b73ull, 0x0000000000000000ull}},
+};
 static const df_tb_stop tb_h18_heal_pulse_full_hp_sitrus_mirror[] = {
     {0u, 0u, 3u, 4u, {6u, 6u}, {1133u, 1133u}, {0x4059000000000000ull, 0x4059000000000000ull}},
     {1u, 0u, 3u, 4u, {4u, 4u}, {769u, 769u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
@@ -8076,6 +8091,7 @@ static const df_tb_battle tb_battles[] = {
     {"g8_heal_block_tie_a", 6u, tb_g8_heal_block_tie_a, sizeof tb_g8_heal_block_tie_a / sizeof tb_g8_heal_block_tie_a[0]},
     {"g8_heal_block_tie_b", 6u, tb_g8_heal_block_tie_b, sizeof tb_g8_heal_block_tie_b / sizeof tb_g8_heal_block_tie_b[0]},
     {"g8_throat_chop", 8u, tb_g8_throat_chop, sizeof tb_g8_throat_chop / sizeof tb_g8_throat_chop[0]},
+    {"h18_absorbed_secondary_psychic_sitrus_mirror", 27u, tb_h18_absorbed_secondary_psychic_sitrus_mirror, sizeof tb_h18_absorbed_secondary_psychic_sitrus_mirror / sizeof tb_h18_absorbed_secondary_psychic_sitrus_mirror[0]},
     {"h18_heal_pulse_full_hp_sitrus_mirror", 3u, tb_h18_heal_pulse_full_hp_sitrus_mirror, sizeof tb_h18_heal_pulse_full_hp_sitrus_mirror / sizeof tb_h18_heal_pulse_full_hp_sitrus_mirror[0]},
     {"h18_imprison_sitrus_mirror", 3u, tb_h18_imprison_sitrus_mirror, sizeof tb_h18_imprison_sitrus_mirror / sizeof tb_h18_imprison_sitrus_mirror[0]},
     {"h18_magic_bounce_substitute_sitrus_mirror", 3u, tb_h18_magic_bounce_substitute_sitrus_mirror, sizeof tb_h18_magic_bounce_substitute_sitrus_mirror / sizeof tb_h18_magic_bounce_substitute_sitrus_mirror[0]},
@@ -8211,7 +8227,7 @@ static const df_tb_battle tb_battles[] = {
     {"xr3_sheercold_sub_miss", 3u, tb_xr3_sheercold_sub_miss, sizeof tb_xr3_sheercold_sub_miss / sizeof tb_xr3_sheercold_sub_miss[0]},
 };
 
-/* 5514 stops: 150 of an ended battle; decided by the count 1326,
- * the HP percentage 1722, the total HP 2148, a tie 168;
- * winners: side 0 2613, side 1 2733, tie 168 */
+/* 5527 stops: 151 of an ended battle; decided by the count 1334,
+ * the HP percentage 1723, the total HP 2150, a tie 169;
+ * winners: side 0 2622, side 1 2736, tie 169 */
 #endif

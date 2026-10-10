@@ -7427,7 +7427,9 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
         if (md->special == DFI_SPECIAL_ALLURING_VOICE && !dfi_sf_strips(r->b, m, md)) {
             /* Sheer Force strips this secondary for its holder (pool_families checkG61; the pin deletes secondaries): no draw, no confusion. */
             for (uint32_t i = 0u; i < count; ++i) {
-                if (!hit[i]) {
+                /* A target whose last hit a Substitute took is a non-false target too: the roll is drawn (sim/battle-actions.ts
+                 * 1336-1349, the null target), and the effect is not (moveHit of a null target does nothing). Decision 0042 / G60. */
+                if (!hit[i] && !sub_off[i]) {
                     continue;
                 }
                 uint32_t roll = 0u;
@@ -7435,7 +7437,7 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
                 if (st != DUOFORGE_OK) {
                     return st;
                 }
-                if (roll < 100u && dfi_stats_raised(r->b, targets[i])) {
+                if (hit[i] && roll < 100u && dfi_stats_raised(r->b, targets[i])) {
                     st = dfi_add_volatile(r, targets[i], DFI_VOLATILE_CONFUSION);
                     if (st != DUOFORGE_OK) {
                         return st;
@@ -7449,7 +7451,8 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
          * `moveData.secondaries` test of a stripped move). */
         if (md->sec_chance != 0u && !dfi_sf_strips(r->b, m, md)) {
             for (uint32_t i = 0u; i < count; ++i) {
-                if (!hit[i]) {
+                /* the absorbed target draws too (see Alluring Voice above) but takes no effect */
+                if (!hit[i] && !sub_off[i]) {
                     continue;
                 }
                 uint32_t roll = 0u;
@@ -7457,7 +7460,7 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
                 if (st != DUOFORGE_OK) {
                     return st;
                 }
-                if (roll >= md->sec_chance) {
+                if (!hit[i] || roll >= md->sec_chance) {
                     continue;
                 }
                 if (md->sec_kind == DFI_SECONDARY_BOOST) {
