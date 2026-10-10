@@ -1,0 +1,22 @@
+{
+ "name": "g88_av_sub",
+ "purpose": "Step G88: Milotic's Substitute takes Raichu's Thunderbolt on turn 2 (the hit is HIT_SUBSTITUTE, no spread damage, so no HURT_THIS_TURN, sim/battle-actions.ts:1062-1065 and data/moves.ts:18341-18370); Umbreon's Assurance on Milotic is then not doubled.",
+ "data": "pool",
+ "format": "gen9championsvgc2026regmc",
+ "seed": "sodium,0000000000000000000000000000000000000000000000000000000000088005",
+ "teams": [
+  "Raichu (F) @ Raichunite Y\nAbility: Lightning Rod\nLevel: 50\nEVs: 29 HP / 5 Def / 32 Spe\nTimid Nature\n- Thunderbolt\n- Protect\n\nUmbreon (F) @ Leftovers\nAbility: Synchronize\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Lash Out\n- Protect\n- Assurance\n- Alluring Voice\n\nSylveon (F) @ Light Clay\nAbility: Pixilate\nLevel: 50\nEVs: 32 HP / 2 SpD / 32 Spe\nTimid Nature\n- Alluring Voice\n- Protect\n\nArchaludon (M) @ Mystic Water\nAbility: Stamina\nLevel: 50\nEVs: 32 HP / 10 Def / 24 SpD\nBold Nature\n- Iron Head\n- Protect\n\nMilotic (F) @ Sitrus Berry\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Dragon Cheer\n- Protect\n- Hypnosis\n- Alluring Voice\n\nGholdengo @ Life Orb\nAbility: Good as Gold\nLevel: 50\nEVs: 17 HP / 2 Def / 17 SpA / 16 SpD / 14 Spe\nModest Nature\n- Shadow Ball\n- Protect",
+  "Milotic (F) @ Sitrus Berry\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Substitute\n- Protect\n- Alluring Voice\n- Dragon Cheer\n\nGolurk @ Choice Scarf\nAbility: No Guard\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Earthquake\n- Protect\n- Close Combat\n\nKingambit (M) @ Black Glasses\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Sucker Punch\n- Protect\n- Taunt\n\nGholdengo @ Focus Sash\nAbility: Good as Gold\nLevel: 50\nEVs: 17 HP / 2 Def / 17 SpA / 16 SpD / 14 Spe\nModest Nature\n- Shadow Ball\n- Protect\n\nCeruledge (M) @ Fairy Feather\nAbility: Flash Fire\nLevel: 50\nEVs: 31 HP / 7 Atk / 24 Def / 3 SpD / 1 Spe\nAdamant Nature\n- Protect\n\nSalamence (M) @ Leftovers\nAbility: Intimidate\nLevel: 50\nEVs: 2 HP / 32 Atk / 32 Spe\nJolly Nature\n- Dragon Claw\n- Protect"
+ ],
+ "plan": {
+  "p1": [
+   "move 2, move 3 1",
+   "move 1 1, move 3 1"
+  ],
+  "p2": [
+   "move 1, move 2",
+   "move 3 1, move 2"
+  ],
+  "max_steps": 3
+ }
+}
