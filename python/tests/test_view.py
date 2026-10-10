@@ -9,6 +9,8 @@ import duoforge
 from duoforge import _layout, privileged, view
 from tools.layout.gen_view_layout import generate
 
+from ._pivot_fixture import SETUP, play_to_pivot
+
 STEPS = 128  # lockstep steps of the random round trip
 
 
@@ -63,8 +65,27 @@ class Views(unittest.TestCase):
                 for w in worlds:
                     w.close()
             self.assertGreater(checked, 200)
-            self.assertGreater(pivots, 0)
             self.assertGreater(refused_pivots, 0)
+            # Random play almost never reaches a public PIVOT (one needs a Protect up and no move left): the scripted one.
+            with duoforge.Batch(ctx, duoforge.reference_setups([SETUP]), 1, 45) as b,                     duoforge.Batch(ctx, duoforge.reference_setups([SETUP]), 1, 46) as w:
+                play_to_pivot(b)
+                for p in (0, 1):
+                    record, st = b.public(np.array([p], np.uint32))
+                    self.assertEqual(int(st[0]), 0)
+                    self.assertEqual(int(record["boundary"][0]), C["DUOFORGE_BOUNDARY_PIVOT"])
+                    self.assertEqual(int(record["foe_pending_mask"][0]), 0)
+                    record = record.copy()
+                    h = view.hypotheses(1)
+                    h[0] = privileged.hypothesis(b, 0, p)
+                    self.assertFalse(w.from_view(record, h).any())
+                    again, ws = w.public(np.array([p], np.uint32))
+                    self.assertFalse(ws.any())
+                    np.testing.assert_array_equal(record, again)
+                    w.query_factored()
+                    np.testing.assert_array_equal(b.observations[0, p], w.observations[0, p])
+                    np.testing.assert_array_equal(b.domains[0, p], w.domains[0, p])
+                    pivots += 1
+            self.assertGreater(pivots, 0)
 
     def test_public_causes_name_the_view_refusals(self):
         # decision 0026 section 4: the mask depends only on the player's view, and public refuses exactly while it is
