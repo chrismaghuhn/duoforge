@@ -898,6 +898,8 @@ EV['DRAG'] = 45
 EV['CLEAR_ALL_BOOSTS'] = 47
 # DUOFORGE_EVENT_SWAP = 49 (Ally Switch, decision 0044, step G80): by value; 48 is lane B's ITEM_SHOWN.
 EV['SWAP'] = 49
+# DUOFORGE_EVENT_COPY_BOOST = 50 (Psych Up, decision 0044, step G80): by value, as SWAP.
+EV['COPY_BOOST'] = 50
 CAUSE = {'NONE': 0, 'MOVE': 1, 'ITEM': 2, 'ABILITY': 3, 'RECOIL': 4, 'DRAIN': 5, 'BURN': 6, 'CONFUSION': 7,
          'TERRAIN': 8, 'PARALYSIS': 9, 'SLEEP': 10, 'FREEZE': 11, 'FLINCH': 12, 'NO_PP': 13, 'POISON': 14,
          'HEAL_BLOCK': 15, 'WEATHER': 16, 'ITEM_TAKEN': 17, 'RECHARGE': 18, 'DISABLE': 19, 'TAUNT': 20, 'IMPRISON': 21}
@@ -1265,6 +1267,16 @@ def step_events(log, viewer, roster_of, maxhp, tables, rb_pending=None, swap_ids
             revived = None
             hp = ev_hp(args[2], side, viewer, maxhp[side][name])
             e = ev_tuple(EV['SWITCH' if kind == 'switch' else 'DRAG'], pos, NOPOS, cause, roster_of[side][name], id2, *hp)
+        elif kind == '-copyboost':
+            # Psych Up (step G80, decision 0044; data/moves.ts:14211-14240, onHit): `-copyboost|USER|TARGET|[from] move: Psych
+            # Up`, the user takes the target's seven stages. Public: both players see the line. Anything else is refused.
+            if len(args) != 2 or attrs != ['[from] move: Psych Up']:
+                raise ConversionError('protocol-line', 'trace_to_c: unsupported -copyboost %r' % line, detail='copyboost')
+            user, target = ev_pos(args[0]), ev_pos(args[1])
+            if user is None or target is None:
+                raise ConversionError('protocol-line', 'trace_to_c: -copyboost of a side %r' % line, detail='copyboost')
+            cause, id2, _ = ev_cause(attrs, tables)
+            e = ev_tuple(EV['COPY_BOOST'], user, target, cause, 0, id2)
         elif kind == 'swap':
             # Ally Switch (decision 0044, step G80; data/moves.ts:302-357, swapPosition sim/battle.ts:1588-1607): the line
             # `|swap|POKEMON|POSITION|[from] move: Ally Switch` names the user and the slot it moves to, on its own side.

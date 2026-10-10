@@ -192,6 +192,15 @@ class Refusals(unittest.TestCase):
                      'protocol-line', "trace_to_c: unsupported |swap| line '|swap|p1a: Bulbasaur|2|[from] move: Ally Switch'",
                      'swap')
 
+    def test_a_copyboost_line_that_is_not_psych_ups_is_refused(self):
+        """Step G80 (decision 0044): `-copyboost` maps only as Psych Up's own line, between two Pokemon (not a side)."""
+        self.control('s2_turn_core_1', lambda spec, trace: trace['steps'][1]['log'].append('|-copyboost|p1a: Bulbasaur|p2a: Raichu'),
+                     'protocol-line', "trace_to_c: unsupported -copyboost '|-copyboost|p1a: Bulbasaur|p2a: Raichu'", 'copyboost')
+        self.control('s2_turn_core_1', lambda spec, trace: trace['steps'][1]['log'].append(
+            '|-copyboost|p1a: Bulbasaur|p2a: Raichu|[from] move: Swords Dance'),
+                     'protocol-line', "trace_to_c: unsupported -copyboost '|-copyboost|p1a: Bulbasaur|p2a: Raichu|[from] move: Swords Dance'",
+                     'copyboost')
+
     def test_a_hitcount_line_is_asserted_against_the_damage_lines_and_dropped(self):
         """`|-hitcount|P|N` (multi-hit moves, data/mods/champions/scripts.ts:427-549) is no event: N must be the number of
         -damage lines the move showed on that Pokemon. A wrong N is refused; a missing line is not an error (the Champions loop

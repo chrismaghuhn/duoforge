@@ -586,6 +586,12 @@ def parse_move(mid, base, champ, ext=False, pool=False, unmodeled=None):
             # (BOOST_ROLE PRIMARY_TARGET); a spread class (Growl) or a Pokemon of any distance stays UNMODELED.
             rec['boost_role'], rec['boosts'] = BOOST_ROLE['PRIMARY_TARGET'], boosts_of(f['boosts'][1])
             vectors += 1
+        elif pool and rec['target_class'] == TARGET_CLASS_POOL['allies'] and rec['category'] == CATEGORIES['Status']:
+            # Step G80: Howl, a status move whose primary boosts go to each standing member of the user's side (the user and
+            # its ally: alliesAndSelf in slot order, sim/pokemon.ts:818-819). The turn code runs BOOST_ROLE PRIMARY_TARGET over
+            # every target of the allies class (the Life Dew list), so the role is the same one Charm uses.
+            rec['boost_role'], rec['boosts'] = BOOST_ROLE['PRIMARY_TARGET'], boosts_of(f['boosts'][1])
+            vectors += 1
         elif rec['target_class'] != TARGET_CLASS['self']:
             bad('move %s: primary boosts on a non-self target' % mid, 'primary boosts on a non-self target')
         else:

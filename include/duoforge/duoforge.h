@@ -1078,6 +1078,10 @@ duoforge_status duoforge_battle_observe_ext(const duoforge_context *ctx, const d
                                               other: the slot it moved to, cause MOVE + id2 = the move (Ally Switch), every other
                                               field 0. Public: both players get it. The two occupants exchange their slots; nothing
                                               else is written by the event. 48 is ITEM_SHOWN (lane B). */
+#define DUOFORGE_EVENT_COPY_BOOST 50u /* [-copyboost] (Psych Up, decision 0044, step G80; data/moves.ts:14211-14240): position:
+                                              the user, other: the target, cause MOVE + id2 = Psych Up, every other field 0. Public:
+                                              both players get it. The user takes the target's seven stages and its Focus Energy and
+                                              Dragon Cheer state; those starts are [silent] and write no event of their own. */
 
 /* Causes ([from] and [of] in the protocol). */
 #define DUOFORGE_CAUSE_NONE      0u /* the move or the plain mechanic */
