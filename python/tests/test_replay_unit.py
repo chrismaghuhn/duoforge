@@ -289,8 +289,32 @@ class LinesTest(unittest.TestCase):
         # Trace's copy folds (ABILITY_CHANGE); an ability source the engine does not model stops on its line
         self.assertEqual(lines.check("|-ability|p2a: Gholdengo|Intimidate|[from] ability: Trace|[of] p1a: Staraptor",
                                      self.view), "fold")
-        self.assertEqual(self.stop("|-ability|p2a: Gholdengo|Mummy|[from] ability: Mummy|[of] p1a: Staraptor"),
-                         "line:-ability [from] ability: Mummy")
+        self.assertEqual(self.stop("|-ability|p2a: Gholdengo|Pressure|Good as Gold|[from] move: Role Play|"
+                                   "[of] p1a: Staraptor"), "line:-ability [from] move: Role Play")
+
+    def test_unmodelled_ability_changes_stop_on_their_line(self):
+        # Mummy and Lingering Aroma print -activate|holder|ability: X|attacker|[ability] Old (sim/pokemon.ts setAbility,
+        # :1928-1930), Wandering Spirit the Skill Swap line of battle.skillSwap; the engine models none of them
+        # (DFI_HANDLER_UNMODELED), so each stops with its own reason, never through a converter refusal
+        view = _View({"p1: Staraptor": ("STARAPTOR", "SITRUSBERRY", "INTIMIDATE"),
+                      "p2: Cofagrigus": ("COFAGRIGUS", "LEFTOVERS", "MUMMY"),
+                      "p2: Runerigus": ("RUNERIGUS", "LEFTOVERS", "WANDERINGSPIRIT"),
+                      "p2: Gholdengo": ("GHOLDENGO", "LIFEORB", "GOODASGOLD")})
+
+        def stop(line):
+            with self.assertRaises(lines.Stop) as caught:
+                lines.check(line, view)
+            return caught.exception.reason
+        self.assertEqual(stop("|-activate|p2a: Cofagrigus|ability: Mummy|p1a: Staraptor|[ability] Intimidate"),
+                         "line:-activate ability: Mummy")
+        self.assertEqual(stop("|-activate|p2a: Cofagrigus|ability: Lingering Aroma|p1a: Staraptor|[ability] Intimidate"),
+                         "line:-activate ability: Lingering Aroma")
+        self.assertEqual(stop("|-activate|p1a: Staraptor|Skill Swap|Wandering Spirit|Intimidate|[of] p2b: Runerigus"),
+                         "line:-activate Skill Swap Wandering Spirit")
+        self.assertEqual(stop("|-activate|p2a: Cofagrigus|Skill Swap|||[of] p2b: Runerigus"),
+                         "line:-activate Skill Swap Wandering Spirit")  # an ally swap: the holder's current ability
+        self.assertEqual(lines.check("|-activate|p1a: Staraptor|Skill Swap|Good as Gold|Intimidate|[of] p2a: Gholdengo",
+                                     view), "fold")  # Skill Swap of two modelled abilities folds
         # Knock Off folds (ITEM_CHANGE); an item source the engine does not model stops on its line
         self.assertEqual(lines.check("|-enditem|p1a: Staraptor|Sitrus Berry|[from] move: Knock Off|[of] p2a: Gholdengo",
                                      self.view), "fold")

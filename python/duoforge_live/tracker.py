@@ -395,8 +395,11 @@ class Tracker:
             forme = self.data.forme(mon["details"].split(",")[0])
             member.is_mega = 1 if self.data.base_forme(forme) != forme else 0
             # baseAbility: the sheet's or the Mega forme's (formeChange), which the member view shows; "ability" is the
-            # current one, which Trace or Skill Swap may have changed (the position's ability_now, from the lines)
-            ability = trace_to_c.key(mon.get("baseAbility", mon["ability"]))  # "noability": No Ability, 0
+            # current one, which Trace or Skill Swap may have changed (the position's ability_now, from the lines). The
+            # pin sends it for every member (sim/pokemon.ts getSwitchRequestData, :1176; a Mega sets it, :1489).
+            if "baseAbility" not in mon:
+                raise ValueError(f"a request member without baseAbility: {mon.get('ident')!r}")
+            ability = trace_to_c.key(mon["baseAbility"])  # "noability": No Ability, 0 as parse_team has it
             member.ability = 0 if ability == "NOABILITY" else self.data.tables["ABILITY"][ability] + 1
             member.item_used = 1 if member.sheet["item"] != 0 and mon["item"] == "" else 0
         if "active" in request:

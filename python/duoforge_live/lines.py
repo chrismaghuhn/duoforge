@@ -171,6 +171,9 @@ _ITEM_CHANGE_FROM = {"move: Trick", "move: Switcheroo", "move: Thief", "move: Co
 # (-item). The converter checks each line's shape. Every other source of _ITEM_CHANGE_FROM stops on its line.
 _ITEM_TAKEN_FOLD = {"move: Knock Off", "move: Thief", "move: Trick", "move: Switcheroo", "stealeat"}
 _ITEM_GIVEN_FOLD = {"move: Trick", "move: Switcheroo", "move: Thief", "move: Covet"}
+# Ability changes by the holder's own ability on contact, which the engine does not model (DFI_HANDLER_UNMODELED, or
+# not in the pool): their -activate line stops.
+_ABILITY_ACTIVATE_UNMODELED = {"ability: Mummy", "ability: Lingering Aroma"}
 
 # The fold's own effects, beside the generic kinds (the converter's step_events and the tracker's _event).
 # The -activate effects of the committed reference battles (python/tests/test_replay.py checks that their spectator
@@ -303,7 +306,19 @@ def check(line, view):
         if effect in ("move: Electric Terrain", "move: Misty Terrain"):
             return _feature(_FIELD[effect])  # the terrain blocking Yawn or its sleep: its own feature, as -fieldstart
         if effect in ("move: Skill Swap", "Skill Swap"):  # the pin prints it without "move: " (decision 0041)
+            # Wandering Spirit swaps through battle.skillSwap too (data/abilities.ts wanderingspirit, onDamagingHit),
+            # with the same line; the engine does not model the ability (DFI_HANDLER_UNMODELED), so a swap that
+            # involves it (named in the line, or the current ability of either holder for an ally swap) stops
+            spirit = tables["ABILITY"].get("WANDERINGSPIRIT")
+            holders = [args[0]] + [a[len("[of] "):] for a in attrs if a.startswith("[of] ")]
+            if "Wandering Spirit" in args[2:4] or (spirit is not None and any(
+                    flat_position(h) is not None and view.ability_now(h) == spirit + 1 for h in holders)):
+                raise Stop("line:-activate Skill Swap Wandering Spirit")
             return _feature("ABILITY_CHANGE")
+        if effect in _ABILITY_ACTIVATE_UNMODELED:
+            # Mummy and Lingering Aroma give the attacker the holder's ability, printed as -activate|holder|ability:
+            # Mummy|attacker|[ability] Old (sim/pokemon.ts setAbility); the engine does not model either
+            raise Stop(f"line:-activate {effect}")
         if effect == "move: Poltergeist" and len(args) == 3:
             # Poltergeist (step G64): it names the item its target holds; the open sheet's item is no news (an
             # ACTIVATE without state). Any other item stops: the view does not know it.
@@ -372,8 +387,9 @@ def check(line, view):
         if froms:
             if froms[0] == "ability: Trace":
                 return _feature("ABILITY_CHANGE")  # Trace's copy (step AC1); Skill Swap's comes as an -activate line
-            # another source of a new ability (Mummy, Lingering Aroma, Wandering Spirit, Role Play, Entrainment, ...):
-            # the engine models none of them, so no fold can follow it
+            # another source of a new ability (Role Play, Entrainment, Worry Seed, Simple Beam, Receiver, ...): the
+            # engine models none of them, so no fold can follow it (Mummy and Lingering Aroma print an -activate
+            # line, Wandering Spirit a Skill Swap line: both stop above)
             _unknown(kind, f"[from] {froms[0]}")
         ability = tables["ABILITY"].get(trace_to_c.key(effect))
         if ability is not None and ability + 1 == view.ability_now(args[0]):
