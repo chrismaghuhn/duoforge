@@ -284,8 +284,9 @@ class LinesTest(unittest.TestCase):
         return caught.exception.reason
 
     def test_feature_lines_stop(self):
-        self.assertEqual(self.stop("|-fieldstart|move: Electric Terrain|[from] ability: Electric Surge|[of] p2a: Gholdengo"),
-                         "feature:TERRAIN_ELECTRIC")
+        self.assertEqual(self.stop("|-fieldstart|move: Gravity"), "feature:GRAVITY")
+        self.assertEqual(lines.check("|-fieldstart|move: Electric Terrain|[from] ability: Electric Surge|[of] p2a: Gholdengo",
+                                     self.view), "fold")  # a base-value feature: the observation's terrain
         # Trace's copy folds (ABILITY_CHANGE); an ability source the engine does not model stops on its line
         self.assertEqual(lines.check("|-ability|p2a: Gholdengo|Intimidate|[from] ability: Trace|[of] p1a: Staraptor",
                                      self.view), "fold")
@@ -396,7 +397,7 @@ class LinesTest(unittest.TestCase):
         # The Yawn fix: Electric Terrain blocks the Yawn volatile and its sleep, Misty Terrain the sleep
         # (data/moves.ts electricterrain/mistyterrain onTryAddVolatile/onSetStatus): the terrain's own feature, as
         # its -fieldstart line, not an unknown line
-        self.assertEqual(self.stop("|-activate|p2a: Gholdengo|move: Electric Terrain"), "feature:TERRAIN_ELECTRIC")
+        self.assertEqual(lines.check("|-activate|p2a: Gholdengo|move: Electric Terrain", self.view), "fold")
         self.assertEqual(self.stop("|-activate|p2a: Gholdengo|move: Misty Terrain"), "feature:TERRAIN_MISTY")
 
     def test_a_line_that_does_not_fit_its_name_under_a_possible_illusion_is_the_illusion_feature(self):

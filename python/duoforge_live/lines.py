@@ -134,7 +134,7 @@ LIBRARY_SUPPORTED = supported()
 # extension record (M11 BC spec section 5). Electric and Misty terrain join when the library supports them (#163),
 # with tests of their own. Every other feature still stops until its fold is here. The replay rows carry no extension
 # record yet: a BC mask keeps only the base-value features (duoforge_learn.bc_data.bc_mask).
-BASE_FOLDS = sum(1 << FEATURES[n] for n in ("WEATHER_SAND", "WEATHER_SNOW", "AILMENT_TOX"))
+BASE_FOLDS = sum(1 << FEATURES[n] for n in ("WEATHER_SAND", "WEATHER_SNOW", "AILMENT_TOX", "TERRAIN_ELECTRIC"))
 # The view-extension folds (tracker.EXT_FIELDS: the record fields the tracker fills; test_replay compares them with
 # DuoForge's record byte for byte and requires each to be shown at compared points of both viewers, own and foe side).
 EXT_FOLDS = sum(1 << FEATURES[n] for n in ("THROAT_CHOP", "AURORA_VEIL", "PERISH", "ENCORE", "ABILITY_CHANGE", "ITEM_CHANGE",

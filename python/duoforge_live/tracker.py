@@ -65,7 +65,7 @@ ITEM_NOW_NONE = C["DUOFORGE_ITEM_NOW_NONE"]  # duoforge_member_ext.item_now: the
 # volatiles; ("position" | "member" | "side", F): field F of every position, member or side record. The base-value
 # features show in the base observation alone (lines.BASE_FOLDS).
 EXT_FIELDS = {
-    "WEATHER_SAND": (), "WEATHER_SNOW": (), "AILMENT_TOX": (),
+    "WEATHER_SAND": (), "WEATHER_SNOW": (), "AILMENT_TOX": (), "TERRAIN_ELECTRIC": (),
     "THROAT_CHOP": (("bit", EXT_THROAT_CHOP),),
     "MUST_RECHARGE": (("bit", C["DUOFORGE_POSITION_EXT_MUST_RECHARGE"]),),
     "TOXIC_SPIKES": (("side", "toxic_spikes"),),
@@ -82,6 +82,10 @@ EXT_FIELDS = {
 # The presence bits of a position's volatiles: _Position attribute -> DUOFORGE_POSITION_EXT_* bit.
 _PRESENCE_BITS = (("throat_chop", EXT_THROAT_CHOP), ("must_recharge", C["DUOFORGE_POSITION_EXT_MUST_RECHARGE"]),
                   ("taunt", C["DUOFORGE_POSITION_EXT_TAUNT"]), ("yawn", C["DUOFORGE_POSITION_EXT_YAWN"]))
+# DUOFORGE_FIELD_* of a terrain's FIELD_START event -> DUOFORGE_TERRAIN_* of the observation
+_TERRAIN = {1: C["DUOFORGE_TERRAIN_GRASSY"], trace_to_c.FIELD_PSYCHIC_TERRAIN: C["DUOFORGE_TERRAIN_PSYCHIC"],
+            trace_to_c.FIELD_ELECTRIC_TERRAIN: C["DUOFORGE_TERRAIN_ELECTRIC"],
+            trace_to_c.FIELD_MISTY_TERRAIN: C["DUOFORGE_TERRAIN_MISTY"]}
 # The folded _Position fields that Baton Pass gives the entering member (src/combat/turn.c dfi_pass_give: Throat Chop's
 # and Perish Song's tail counters among them); Encore, the recharge, a changed type or ability stay with the leaver.
 _PASSED = ("throat_chop", "perish", "taunt")
@@ -766,7 +770,9 @@ class Tracker:
             if detail == 2:
                 self._trick_room = FIELD_TURNS
             else:
-                self._terrain, self._terrain_turns = (1 if detail == 1 else 2), self._field_turns_next
+                # DUOFORGE_FIELD_* -> the observation's DUOFORGE_TERRAIN_*: Grassy, Psychic (Team C), Electric and Misty
+                # (POOL, step G25)
+                self._terrain, self._terrain_turns = _TERRAIN[detail], self._field_turns_next
         elif kind == EV["FIELD_END"]:
             if detail == 2:
                 self._trick_room = 0
