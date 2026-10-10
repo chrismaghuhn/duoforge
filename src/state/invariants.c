@@ -590,6 +590,16 @@ static bool dfi_position_flags_ok(uint8_t pf)
            ((pf & DFI_POSFLAG_DRAGON_CHEER_MASK) >> DFI_POSFLAG_DRAGON_CHEER_SHIFT) <= DFI_POSFLAG_DRAGON_CHEER_MAX;
 }
 
+/* The Ally Switch volatile of a standing occupant (tail rev 5, step G80, decision 0044): zero, or a level 1..6 (the counter is
+ * 3^level) with 1 or 2 turns left. */
+static bool dfi_ally_switch_ok(uint8_t as)
+{
+    const uint32_t level = (uint32_t)as >> DFI_ALLY_SWITCH_LEVEL_SHIFT;
+    const uint32_t turns = (uint32_t)as & 3u;
+    return as <= DFI_ALLY_SWITCH_MAX && level >= 1u && level <= DFI_ALLY_SWITCH_LEVEL_MAX && turns >= 1u &&
+           turns <= DFI_ALLY_SWITCH_TURNS_MAX;
+}
+
 static bool dfi_tail_pos_valid(const dfi_kind_limits *lim, const dfi_tail_pos *tp, uint32_t flat,
                                const dfi_member *occupant, const dfi_active_slot *slot)
 {
@@ -725,6 +735,10 @@ static dfi_invariant dfi_check_tail(const duoforge_context *ctx, const struct du
                     return DFI_INV_TAIL_POSITION;
                 }
                 continue;
+            }
+            /* step G80: the Ally Switch volatile is one of the standing occupant's; its pad byte is always zero */
+            if (tp->ally_switch_pad != 0u || (tp->ally_switch != 0u && !dfi_ally_switch_ok(tp->ally_switch))) {
+                return DFI_INV_TAIL_POSITION;
             }
             if (!dfi_tail_pos_valid(&lim, tp, s * DUOFORGE_ACTIVE_PER_SIDE + p, &side->members[occupant],
                                     &side->positions[p])) {

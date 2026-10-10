@@ -919,7 +919,9 @@
 #define DFI_SPECIAL_KINGS_SHIELD 94u
 #define DFI_SPECIAL_ALLURING_VOICE 95u
 #define DFI_SPECIAL_DRAGON_CHEER 96u
-#define DFI_SPECIAL_UNMODELED 97u
+#define DFI_SPECIAL_PSYCH_UP 97u
+#define DFI_SPECIAL_ALLY_SWITCH 98u
+#define DFI_SPECIAL_UNMODELED 99u
 
 /* ---- the second flags byte of every move (step G8: the general byte for the flags that the first one has no room
  * for; bits 4 to 128 are free) and the secondary kinds that it comes with ---- */

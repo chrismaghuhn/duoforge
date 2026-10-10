@@ -2297,6 +2297,8 @@ SPECIAL_P = dict(SPECIAL_C, **{
     'populationbomb': ('MULTI_HIT_10', set()),
     'alluringvoice': ('ALLURING_VOICE', set()),                       # G72b: confusion when the target's stats were raised this turn
     'dragoncheer': ('DRAGON_CHEER', set()),    # G72b: the crit stage of its target (the ally), by its Dragon type at start
+    'psychup': ('PSYCH_UP', {'onHit'}),        # G80: the user takes the target's boosts, Focus Energy and Dragon Cheer (its copies are [silent])
+    'allyswitch': ('ALLY_SWITCH', {'onHit', 'onPrepareHit'}),  # G80: swaps the user with its ally; the allyswitch volatile's counter
     'doubleshock': ('DOUBLE_SHOCK', {'onTryMove'}),                       # G50: fails without Electric; its self effect is owned                            # G48: ten hits, a check for each (multiaccuracy)
     'steelbeam': ('STEEL_BEAM', {'onMoveFail'}),                          # G68: mindBlownRecoil (half the maximum HP on a hit and in MoveFail)
     'thunderwave': ('THUNDER_WAVE', set()),                               # G68: ignoreImmunity false (Ground is immune to the Electric move)
@@ -2386,6 +2388,31 @@ G72B_DRAGON_CHEER_FACTS = (
     "if (target.volatiles['focusenergy']) return false;", "this.add('-start', target, 'move: Dragon Cheer');",
     'this.effectState.hasDragonType = target.hasType("Dragon");',
     'return critRatio + (this.effectState.hasDragonType ? 2 : 1);', 'target: "adjacentAlly",', 'type: "Dragon",',
+)
+# Step G80, Psych Up (data/moves.ts:14211-14240; no Champions override): the user takes the target's seven stages, then its
+# crit-stage volatiles are removed and the target's copies are added (Focus Energy and Dragon Cheer; the Dragon Cheer stage is
+# copied as the stored Dragon flag, not recomputed). Laser Focus and Gmax Chi Strike are not in the pool (checked by the generator).
+G80_HANDLERS = ['PSYCH_UP', 'ALLY_SWITCH']
+G80_ALLYSWITCH_FACTS = (
+    'accuracy: true,', 'basePower: 0,', 'category: "Status",', 'priority: 2,', 'flags: { metronome: 1 },',
+    'onPrepareHit(pokemon) {', "return pokemon.addVolatile('allyswitch');",
+    'const newPosition = (pokemon.position === 0 ? pokemon.side.active.length - 1 : 0);',
+    'if (!pokemon.side.active[newPosition]) success = false;', 'if (pokemon.side.active[newPosition].fainted) success = false;',
+    "this.add('-fail', pokemon, 'move: Ally Switch');", 'this.attrLastMove(\'[still]\');', 'return this.NOT_FAIL;',
+    "this.swapPosition(pokemon, newPosition, '[from] move: Ally Switch');",
+    'duration: 2,', 'counterMax: 729,', 'this.effectState.counter = 3;',
+    'const success = this.randomChance(1, counter);', 'delete pokemon.volatiles[\'allyswitch\'];', 'return false;',
+    'this.effectState.counter *= 3;', 'this.effectState.duration = 2;', 'target: "self",', 'type: "Psychic",',
+)
+G80_FACTS = (
+    'accuracy: true,', 'basePower: 0,', 'category: "Status",', 'priority: 0,',
+    'flags: { bypasssub: 1, allyanim: 1, metronome: 1 },', 'target: "normal",', 'type: "Normal",',
+    'for (i in target.boosts) {', 'source.boosts[i] = target.boosts[i];',
+    "const volatilesToCopy = ['dragoncheer', 'focusenergy', 'gmaxchistrike', 'laserfocus'];",
+    'for (const volatile of volatilesToCopy) source.removeVolatile(volatile);',
+    'if (target.volatiles[volatile]) {', 'source.addVolatile(volatile);',
+    "if (volatile === 'dragoncheer') source.volatiles[volatile].hasDragonType = target.volatiles[volatile].hasDragonType;",
+    "this.add('-copyboost', source, target, '[from] move: Psych Up');",
 )
 G58_FACTS = (
     'accuracy: 100,', 'basePower: 90,', 'category: "Physical",', 'priority: 0,', 'target: "normal",', 'type: "Ghost",',
@@ -2478,7 +2505,7 @@ G68_FACTS = (
                      'flags: { protect: 1, reflectable: 1, mirror: 1, metronome: 1 },', "status: 'par',",
                      'ignoreImmunity: false,', 'target: "normal",', 'type: "Electric",']),
 )
-SPECIAL_IDS_P = SPECIAL_IDS_C + G2_HANDLERS + WEATHER_HANDLERS + G16_HANDLERS + G15_HANDLERS + G19_HANDLERS + G20_HANDLERS + G20_PROTECT_HANDLERS + G28_HANDLERS + G30_HANDLERS + G32_HANDLERS + G34_HANDLERS + G27_HANDLERS + G25_HANDLERS + G26_HANDLERS + G33_HANDLERS + G38_HANDLERS + G29_HANDLERS + G39_HANDLERS + G31_HANDLERS + G48_HANDLERS + G44_HANDLERS + G50_HANDLERS + G42_HANDLERS + G56_HANDLERS + G52_HANDLERS + G54_HANDLERS + G64_HANDLERS + G62_HANDLERS + G60_HANDLERS + G58_HANDLERS + G68_HANDLERS + G70_HANDLERS + G66_HANDLERS + G72B_HANDLERS + ['UNMODELED']# Step G10 made two of these handlers data: Scald (thawsTarget) and Recover (heal) are read into the second flags# byte (bit 4, thaws the target) and the heal column, and have the special NONE; their ids stay defined (the ids after
+SPECIAL_IDS_P = SPECIAL_IDS_C + G2_HANDLERS + WEATHER_HANDLERS + G16_HANDLERS + G15_HANDLERS + G19_HANDLERS + G20_HANDLERS + G20_PROTECT_HANDLERS + G28_HANDLERS + G30_HANDLERS + G32_HANDLERS + G34_HANDLERS + G27_HANDLERS + G25_HANDLERS + G26_HANDLERS + G33_HANDLERS + G38_HANDLERS + G29_HANDLERS + G39_HANDLERS + G31_HANDLERS + G48_HANDLERS + G44_HANDLERS + G50_HANDLERS + G42_HANDLERS + G56_HANDLERS + G52_HANDLERS + G54_HANDLERS + G64_HANDLERS + G62_HANDLERS + G60_HANDLERS + G58_HANDLERS + G68_HANDLERS + G70_HANDLERS + G66_HANDLERS + G72B_HANDLERS + G80_HANDLERS + ['UNMODELED']# Step G10 made two of these handlers data: Scald (thawsTarget) and Recover (heal) are read into the second flags# byte (bit 4, thaws the target) and the heal column, and have the special NONE; their ids stay defined (the ids after
 # them keep their values). First Impression and Low Kick keep theirs: the turn code implements them.
 POOL_COLUMN_KEYS = {'thawsTarget', 'heal'}
 G2_OWNED_FIELDS = {
@@ -2532,7 +2559,7 @@ G2_OWNED_SECONDARY = {'STONE_AXE': 'secondary: {}, // Sheer Force-boosted', 'CEA
                   "target.trySetStatus(status, source); }, },"}
 G2_OWNED_CONDITION = {'ROOST', 'ENCORE', 'WIDE_GUARD', 'QUICK_GUARD', 'GLAIVE_RUSH', 'AURORA_VEIL', 'SPIKY_SHIELD', 'RAGE_POWDER', 'DISABLE',
                       'ELECTRIC_TERRAIN', 'MISTY_TERRAIN', 'PERISH_SONG', 'IMPRISON', 'TAUNT', 'YAWN', 'REVIVAL_BLESSING',
-                      'SUBSTITUTE', 'PHANTOM_FORCE', 'KINGS_SHIELD', 'DRAGON_CHEER'}
+                      'SUBSTITUTE', 'PHANTOM_FORCE', 'KINGS_SHIELD', 'DRAGON_CHEER', 'ALLY_SWITCH'}
 # Step G8 (Throat Chop and Psychic Noise): the two secondaries become modelled kinds, and the column that their
 # consumers read is the move's second flags byte (the first is full): the `sound` flag (Throat Chop bars the sound
 # moves) and the `heal` flag (Heal Block bars the moves that heal). Both are derived for every pool move, the prefix
@@ -3282,6 +3309,19 @@ def check_g72b_facts(moves_ts):
                 fail('move %s: the entry no longer has "%s"' % (mid, fact))
 
 
+def check_g80_facts(moves_ts):
+    """Step G80: the Psych Up and Ally Switch entries are the pinned texts the turn code reads (boosts, copied volatiles, the
+    log lines; the swap, the priority, the counter and its draw)."""
+    for mid, facts in (('psychup', G80_FACTS), ('allyswitch', G80_ALLYSWITCH_FACTS)):
+        e = moves_ts.entry(mid)
+        if e is None:
+            fail('move %s not found' % mid)
+        text = norm('\n'.join(e[2]))
+        for fact in facts:
+            if norm(fact) not in text:
+                fail('move %s: the entry no longer has "%s"' % (mid, fact))
+
+
 def check_weather_facts(conditions_ts, moves_ts):
     """Every fact of WEATHER_FACTS is in the pinned condition entry, the absent ones are not, and Weather Ball has the
     types and the doubling that the engine reads for every weather."""
@@ -3689,6 +3729,7 @@ def build_pool(root, repo, dx):
     check_g56_facts(Source(root, 'data/conditions.ts', READER_INPUTS), moves_ts)
     check_g58_facts(moves_ts)
     check_g72b_facts(moves_ts)
+    check_g80_facts(moves_ts)
     FLAGS_THAT_MATTER.clear()
     FLAGS_THAT_MATTER.update(prefix_flag_reads((items_ts, champ_items, abil_ts, champ_abil, moves_ts, champ_moves), dx)
                              - set(FLAG_BITS_C) - set(INERT_FLAG_READS) - set(FLAGS3_BITS))

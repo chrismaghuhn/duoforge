@@ -394,10 +394,10 @@ static const unsigned sweep[DFI_ENC_TAIL_SIZE][SWEEP_COLUMNS] = {
     {0, 0, 0, 0, 0, 255, 0, 0},
     {0, 0, 0, 0, 0, 255, 0, 0},
     {0, 0, 0, 0, 0, 255, 0, 0},
-    {0, 0, 0, 0, 0, 255, 0, 0},
-    {0, 0, 0, 0, 0, 255, 0, 0},
-    {0, 0, 0, 0, 0, 255, 0, 0},
-    {0, 0, 0, 0, 0, 255, 0, 0},
+    {12, 0, 243, 0, 0, 0, 0, 0},
+    {12, 0, 243, 0, 0, 0, 0, 0},
+    {12, 0, 243, 0, 0, 0, 0, 0},
+    {12, 0, 243, 0, 0, 0, 0, 0},
     {0, 0, 0, 0, 0, 255, 0, 0},
     {0, 0, 0, 0, 0, 255, 0, 0},
     {0, 0, 0, 0, 0, 255, 0, 0},
@@ -1145,8 +1145,13 @@ static const tail_case cases[] = {
 /* True iff the byte at `off` of the encoded tail is a reserved one (by the layout alone). */
 static bool is_reserved_offset(size_t off)
 {
-    if (off >= DFI_ENC_TAIL_REV4_SIZE) { /* the rev 5 block: its 16 reserve bytes are the last ones */
-        return off - DFI_ENC_TAIL_REV4_SIZE >= DFI_ENC_TAIL5_RESERVED_OFF;
+    if (off >= DFI_ENC_TAIL_REV4_SIZE) { /* the rev 5 block: its 16 reserve bytes are the last ones, the Ally Switch bytes (4..7) not */
+        const size_t in5 = off - DFI_ENC_TAIL_REV4_SIZE;
+        if (in5 < DFI_ENC_TAIL5_RESERVED_OFF) {
+            return false;
+        }
+        const size_t r = in5 - DFI_ENC_TAIL5_RESERVED_OFF;
+        return !(r >= DFI_ENC_TAIL5_ALLY_SWITCH_OFF && r < DFI_ENC_TAIL5_ALLY_SWITCH_OFF + DFI_ENC_TAIL5_ALLY_SWITCH_COUNT);
     }
     if (off < DFI_ENC_TAIL_FIELD_SIZE) {
         return off >= DFI_ENC_TAIL_FIELD_RESERVED_OFF;
@@ -1182,7 +1187,7 @@ int main(void)
         DF_CHECK_EQ_U64(&t, DFI_ENC_TAIL_REV4_SIZE, 288u);
         DF_CHECK_EQ_U64(&t, DFI_ENC_TAIL5_SIZE, 60u);
         DF_CHECK_EQ_U64(&t, DFI_ENC_TAIL5_RESERVED_OFF, 44u);
-        DF_CHECK_EQ_U64(&t, DFI_ENC_TAIL_RESERVED_COUNT, 45u); /* step G46: party_order takes 6 of the 7 field bytes (35 before); rev 5: 16 more */
+        DF_CHECK_EQ_U64(&t, DFI_ENC_TAIL_RESERVED_COUNT, 41u); /* step G46: party_order takes 6 of the 7 field bytes (35 before); rev 5: 12 (16 less the Ally Switch bytes, step G80) */
         DF_CHECK_EQ_U64(&t, DFI_STATE_SCHEMA_V3, 3u);
         DF_CHECK_EQ_U64(&t, DFI_STATE_SCHEMA_POOL_TAIL_REV5, 0x0503u);
         DF_CHECK_EQ_U64(&t, DFI_STATE_SCHEMA_POOL_TAIL_REV4, 0x0403u); /* refused since rev 5 */

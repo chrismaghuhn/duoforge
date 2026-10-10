@@ -4471,6 +4471,168 @@ static bool dfi_dragon_cheer(dfi_run *r, uint32_t user, uint32_t flat)
     return true;
 }
 
+/* Psych Up (data/moves.ts:14211-14240, no Champions change; step G80, decision 0044). Accuracy true, no onTry: it always
+ * succeeds, even when the target has nothing to copy. The user takes the target's seven stages (a plain assignment in the pin:
+ * no boost event, so no statsRaisedThisTurn flag). Its crit-stage volatiles go first (Focus Energy, Dragon Cheer; Laser Focus
+ * and Gmax Chi Strike are not in the pool), then the target's copies: Focus Energy is the focus_energy byte, and the Dragon Cheer
+ * stage is copied as stored (the pin copies hasDragonType, it does not recompute it from the user's type). The copies' starts
+ * are [silent] and write no event. Then -copyboost|user|target|[from] move: Psych Up: DUOFORGE_EVENT_COPY_BOOST, other the target.
+ * The flat target `flat` is the one the hit loop gives (normal: a Pokemon other than the user). */
+static bool dfi_psych_up(dfi_run *r, uint32_t user, uint32_t flat)
+{
+    struct duoforge_battle *b = r->b;
+    const dfi_member *tm = dfi_at(b, flat);
+    if (tm == NULL || tm->hp == 0u || flat == user) {
+        return false;
+    }
+    const dfi_active_slot *tp = dfi_pos(b, flat);
+    dfi_active_slot *up = dfi_pos(b, user);
+    const dfi_tail_pos *ttail = &b->tail.sides[flat / 2u].positions[flat % 2u];
+    dfi_tail_pos *utail = &b->tail.sides[user / 2u].positions[user % 2u];
+    for (uint32_t i = 0u; i < DFI_STAT_STAGE_COUNT; ++i) {
+        up->stages[i] = tp->stages[i];
+    }
+    utail->focus_energy = ttail->focus_energy;
+    utail->position_flags = (uint8_t)(((uint32_t)utail->position_flags & ~(uint32_t)DFI_POSFLAG_DRAGON_CHEER_MASK) |
+                                      ((uint32_t)ttail->position_flags & (uint32_t)DFI_POSFLAG_DRAGON_CHEER_MASK)); /* wide-operands-reviewed */
+    const duoforge_event act = dfi_ev(DUOFORGE_EVENT_COPY_BOOST, user, DUOFORGE_CAUSE_MOVE, DFI_MOVE_PSYCHUP, flat);
+    dfi_emit(r, &act);
+    return true;
+}
+
+/* Ally Switch's onPrepareHit (data/moves.ts:311-313 and the allyswitch condition :332-357; step G80, decision 0044). No volatile:
+ * it starts at level 1 (counter 3) with 2 turns, with no draw (onStart). A live volatile restarts: the success roll is
+ * randomChance(1, 3^level) (DFI_SITE_ALLY_SWITCH, random(3^level) == 0); on success the level rises while the counter is below
+ * 729 (level 6 holds) and the turns are 2 again; on a failed roll the volatile is deleted and the move fails (`passed` false). The
+ * counter advances here, before the hit, so a later failure (no partner, onHit) keeps it. */
+static duoforge_status dfi_ally_switch_prepare(dfi_run *r, uint32_t user, bool *passed)
+{
+    dfi_tail_pos *tail = &r->b->tail.sides[user / 2u].positions[user % 2u];
+    *passed = true;
+    if (tail->ally_switch == 0u) {
+        tail->ally_switch = (uint8_t)((1u << DFI_ALLY_SWITCH_LEVEL_SHIFT) | DFI_ALLY_SWITCH_TURNS_MAX); /* <= DFI_ALLY_SWITCH_MAX */
+        return DUOFORGE_OK;
+    }
+    const uint32_t level = (uint32_t)tail->ally_switch >> DFI_ALLY_SWITCH_LEVEL_SHIFT;
+    uint32_t counter = 1u;
+    for (uint32_t i = 0u; i < level; ++i) {
+        counter *= 3u; /* level <= 6: at most 729 */
+    }
+    bool success = false;
+    const duoforge_status st = dfi_draw_chance(r->draws, DFI_SITE_ALLY_SWITCH, 1u, counter, &success);
+    if (st != DUOFORGE_OK) {
+        return st;
+    }
+    if (!success) {
+        tail->ally_switch = 0u; /* the volatile is deleted: the next use starts at level 1 */
+        *passed = false;
+        return DUOFORGE_OK;
+    }
+    const uint32_t next = level < DFI_ALLY_SWITCH_LEVEL_MAX ? level + 1u : level;
+    tail->ally_switch = (uint8_t)((next << DFI_ALLY_SWITCH_LEVEL_SHIFT) | DFI_ALLY_SWITCH_TURNS_MAX);
+    return DUOFORGE_OK;
+}
+
+/* The swap of Ally Switch (sim/battle.ts swapPosition, sim/battle.ts:1588-1607; step G80, decision 0044 section 2). The two slots
+ * of the user's side exchange their occupant with everything that goes with it: the slot record (stages, flags, stall, confusion,
+ * charge, locked move, move actions, switch flag, activation id), and the position's tail (the moves, the Follow Me and Protect
+ * state, the Ally Switch counter, the stats-raised flag and the Dragon Cheer stage). What stays with the slot: locked_target (a slot
+ * location in the pin) and position_flags bit 0 (Healing Wish, a slot condition). A flat trapper or seeder named by another
+ * position's trap_source or leech_seed_source follows the Pokemon to its new slot. party_order entries 0 and 1 of the side swap.
+ * Queued moves and switches of the two Pokemon follow them (their slot); the target of a queued move is a slot and does not change.
+ * `|swap|` is the event SWAP: position the user's old slot, other the new one. The Healing Wish Swap rule (G76) is not on main; when
+ * it lands it runs here for both arrivals (ally first, then the user). */
+static void dfi_ally_switch_swap(dfi_run *r, uint32_t user, uint32_t partner)
+{
+    struct duoforge_battle *b = r->b;
+    const uint32_t side = user / 2u;
+    const uint32_t us = user % 2u;
+    const uint32_t ps = partner % 2u;
+    dfi_active_slot *a = dfi_pos(b, user);
+    dfi_active_slot *c = dfi_pos(b, partner);
+    const uint8_t locked_a = a->locked_target;
+    const uint8_t locked_c = c->locked_target;
+    const dfi_active_slot slot_tmp = *a;
+    *a = *c;
+    *c = slot_tmp;
+    a->locked_target = locked_a; /* a slot location: it stays with the slot */
+    c->locked_target = locked_c;
+    dfi_tail_pos *ta = &b->tail.sides[side].positions[us];
+    dfi_tail_pos *tc = &b->tail.sides[side].positions[ps];
+    const uint8_t hw_a = (uint8_t)(ta->position_flags & DFI_POSFLAG_HEALING_WISH);
+    const uint8_t hw_c = (uint8_t)(tc->position_flags & DFI_POSFLAG_HEALING_WISH);
+    const dfi_tail_pos tail_tmp = *ta;
+    *ta = *tc;
+    *tc = tail_tmp;
+    ta->position_flags = (uint8_t)((ta->position_flags & ~DFI_POSFLAG_HEALING_WISH) | hw_a); /* the slot condition stays */
+    tc->position_flags = (uint8_t)((tc->position_flags & ~DFI_POSFLAG_HEALING_WISH) | hw_c);
+    for (uint32_t f = 0u; f < DUOFORGE_SIDE_COUNT * DUOFORGE_ACTIVE_PER_SIDE; ++f) {
+        dfi_tail_pos *tp = &b->tail.sides[f / DUOFORGE_ACTIVE_PER_SIDE].positions[f % DUOFORGE_ACTIVE_PER_SIDE];
+        if (tp->trap_source == user + 1u) {
+            tp->trap_source = (uint8_t)(partner + 1u);
+        } else if (tp->trap_source == partner + 1u) {
+            tp->trap_source = (uint8_t)(user + 1u);
+        }
+        if (tp->leech_seed_source == user + 1u) {
+            tp->leech_seed_source = (uint8_t)(partner + 1u);
+        } else if (tp->leech_seed_source == partner + 1u) {
+            tp->leech_seed_source = (uint8_t)(user + 1u);
+        }
+    }
+    const uint32_t e_us = dfi_party_entry(&b->tail, side, us);
+    const uint32_t e_ps = dfi_party_entry(&b->tail, side, ps);
+    dfi_party_put(&b->tail, side, us, e_ps);
+    dfi_party_put(&b->tail, side, ps, e_us);
+    for (uint32_t i = 0u; i < b->queue_len; ++i) {
+        dfi_queue_record *q = &b->queue[i];
+        if (q->side != side || (q->kind != DFI_Q_MOVE && q->kind != DFI_Q_SWITCH)) {
+            continue; /* a replacement enters its slot and keeps it; an action of the two Pokemon follows them */
+        }
+        if (q->slot == us) {
+            q->slot = (uint8_t)ps;
+        } else if (q->slot == ps) {
+            q->slot = (uint8_t)us;
+        }
+    }
+    const duoforge_event e = dfi_ev(DUOFORGE_EVENT_SWAP, user, DUOFORGE_CAUSE_MOVE, DFI_MOVE_ALLYSWITCH, partner);
+    dfi_emit(r, &e);
+}
+
+/* Ally Switch (data/moves.ts:302-357; step G80, decision 0044): the user's onPrepareHit (dfi_ally_switch_prepare), then onHit: the
+ * other slot of its side must hold a standing Pokemon, else the move fails with `-fail|X|move: Ally Switch` and [still] (the cause
+ * MOVE with Ally Switch, detail 0, lead's approval). A side whose partner may be Illusion (the Illusion row is unmodelled until
+ * decision 0026) is refused with E_UNSUPPORTED before anything changes. The move's own fail (the failed roll) is dfi_fail_still. */
+static duoforge_status dfi_run_ally_switch(dfi_run *r, uint32_t user, bool *ok)
+{
+    struct duoforge_battle *b = r->b;
+    const uint32_t partner = (user / 2u) * 2u + (1u - user % 2u);
+    *ok = false;
+    const dfi_member *um = dfi_at(b, user);
+    const dfi_member *pm = dfi_at(b, partner);
+    if ((um != NULL && dfi_ability(b, um, DFI_ABILITY_ILLUSION)) || (pm != NULL && dfi_ability(b, pm, DFI_ABILITY_ILLUSION))) {
+        return DUOFORGE_E_UNSUPPORTED; /* Ally Switch with a possible Illusion holder: refused until decision 0026 lands */
+    }
+    bool passed = false;
+    const duoforge_status st = dfi_ally_switch_prepare(r, user, &passed);
+    if (st != DUOFORGE_OK) {
+        return st;
+    }
+    if (!passed) {
+        dfi_fail_still(r, user); /* -fail|X with [still]: the consecutive roll failed */
+        return DUOFORGE_OK;
+    }
+    if (!dfi_alive(b, partner)) {
+        const duoforge_event f = dfi_ev(DUOFORGE_EVENT_FAIL, user, DUOFORGE_CAUSE_MOVE, DFI_MOVE_ALLYSWITCH, DUOFORGE_NO_POSITION);
+        dfi_emit(r, &f);
+        dfi_still(r);
+        r->mres |= DFI_MRES_FALSE;
+        return DUOFORGE_OK;
+    }
+    dfi_ally_switch_swap(r, user, partner);
+    *ok = true;
+    return DUOFORGE_OK;
+}
+
 /* Yawn (data/moves.ts:21131-21162, no Champions change; accuracy true: no draw). Its own onTryHit fails the move
  * (-fail|user with [still]) for a target that has a status or is immune to sleep (no marked ability, item or type of
  * the pool is: the Immunity handlers of Insomnia, Vital Spirit, Sweet Veil and Comatose are unmarked; Electric Terrain's
@@ -5790,6 +5952,23 @@ static duoforge_status dfi_status_effects(dfi_run *r, uint32_t user, uint32_t mo
             }
             if (md->special == DFI_SPECIAL_DRAGON_CHEER) {
                 did = dfi_dragon_cheer(r, user, targets[i]) || did;
+                continue;
+            }
+            if (md->special == DFI_SPECIAL_PSYCH_UP) {
+                did = dfi_psych_up(r, user, targets[i]) || did;
+                continue;
+            }
+            if (md->special == DFI_SPECIAL_ALLY_SWITCH) {
+                /* self-targeted: the one target is the user (its ally is found in dfi_run_ally_switch) */
+                bool swapped = false;
+                st = dfi_run_ally_switch(r, user, &swapped);
+                if (st != DUOFORGE_OK) {
+                    return st;
+                }
+                if (swapped) {
+                    r->mres |= DFI_MRES_TRUE;
+                }
+                did = swapped || did;
                 continue;
             }
             if (md->special == DFI_SPECIAL_YAWN) {
@@ -9330,6 +9509,18 @@ static duoforge_status dfi_residual_events_run(dfi_run *r, dfi_noorder_snapshot 
             pos->stall_turns = (uint8_t)((uint32_t)pos->stall_turns - 1u); /* wide-operands-reviewed */
             if (pos->stall_turns == 0u) {
                 pos->stall_level = 0u;
+            }
+        }
+        /* Ally Switch's volatile (step G80, decision 0044): its duration counts down here, silently; at 0 it is gone and the
+         * counter with it. The turns are the low two bits of ally_switch. */
+        {
+            dfi_tail_pos *atp = &b->tail.sides[flat / 2u].positions[flat % 2u];
+            if (atp->ally_switch != 0u) {
+                if (((uint32_t)atp->ally_switch & 3u) == 1u) {
+                    atp->ally_switch = 0u;
+                } else {
+                    atp->ally_switch = (uint8_t)((uint32_t)atp->ally_switch - 1u); /* turns 2 -> 1 */
+                }
             }
         }
         /* lockedmove (step G56): an order-less callback in this Speed order, after the counters it shares a sub-order with. */

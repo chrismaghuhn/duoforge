@@ -49,6 +49,7 @@ TAIL_REV4_SIZE = TAIL_FIELD_SIZE + 2 * TAIL_SIDE_SIZE              # 288
 TAIL5_SIDE_SIZE = 18
 TAIL5_POS_SIZE = 2
 TAIL5_RESERVED_SIZE = 16
+TAIL5_ALLY_OFF = 4                  # step G80 (decision 0044): reserve bytes 4..7 are the Ally Switch volatile, one per flat position
 TAIL5_SIZE = 2 * TAIL5_SIDE_SIZE + 4 * TAIL5_POS_SIZE + TAIL5_RESERVED_SIZE        # 60
 TAIL_SIZE = TAIL_REV4_SIZE + TAIL5_SIZE                             # 348
 POOL_STATE_SIZE = STATE_SIZE + TAIL_SIZE
@@ -298,7 +299,7 @@ KD = TeamCContext(KIND_TEAM_C_DEV, 6, 4)
 # which tests/test_pool_tables.c recomputes from the pool canonical bytes: the
 # pool layout over the pool data, then the family columns, the handler columns
 # and the moves and abilities that each forme may have.
-POOL_TABLE_HASH = bytes.fromhex('5ef14015b774e5d9ed87b714b1f578310ff877da50cf93a3cb86a9b286da797a')
+POOL_TABLE_HASH = bytes.fromhex('e8f92562d2b9191daa9d4c00fa7101462a5f4b412e413cbbabe5b72d1668b027')
 KIND_POOL, KIND_POOL_DEV = 6, 7
 
 
@@ -379,6 +380,7 @@ def empty_tail_pos():
         p[f] = 0
     for f in TAIL_POS_REV5_FIELDS:
         p[f] = 0
+    p['ally_switch'] = 0  # step G80: the Ally Switch volatile, in reserve byte 4 + flat position (not a position byte)
     return p
 
 
@@ -972,6 +974,11 @@ def hazard_order_valid(ts):
     return set(slots[:n]) == present and len(set(slots[:n])) == n and all(v == 0 for v in slots[n:])
 
 
+def ally_switch_valid(v):
+    """Step G80: the Ally Switch byte is zero, or (level << 2) | turns with level 1..6 and turns 1..2 (the counter is 3^level)."""
+    return v == 0 or (1 <= v >> 2 <= 6 and 1 <= v & 3 <= 2)
+
+
 def position_flags_valid(pf):
     """Rev 5 (G72b): bit 0 (Healing Wish) and bits 4-7 are zero, and the Dragon Cheer stage (bits 2-3) is at most 2."""
     return pf & ~0x0F == 0 and pf & 0x01 == 0 and (pf >> 2) & 3 <= 2
@@ -1019,6 +1026,9 @@ def tail_pos_valid(ctx, tp, flat, mem, slot_flags=0):
     if not position_flags_valid(tp['position_flags']):
         return False
     if tp['future_sight'] != 0:
+        return False
+    # Step G80 (decision 0044): the Ally Switch volatile of a standing occupant: zero, or level 1..6 with 1 or 2 turns.
+    if not ally_switch_valid(tp['ally_switch']):
         return False
     return (tp['stockpile'] <= TAIL_STOCKPILE_MAX and tp['stockpile_def'] <= tp['stockpile']
             and tp['stockpile_spd'] <= tp['stockpile'])
@@ -1153,14 +1163,17 @@ def tail_bytes(tail):
     for flat in range(4):
         tp = tail['sides'][flat // 2]['pos'][flat % 2]
         out += bytes([tp[f] for f in TAIL_POS_REV5_FIELDS])
-    out += bytes(TAIL5_RESERVED_SIZE)
+    reserve = bytearray(TAIL5_RESERVED_SIZE)
+    for flat in range(4):  # step G80: reserve bytes 4..7, the Ally Switch volatile of each flat position
+        reserve[TAIL5_ALLY_OFF + flat] = tail['sides'][flat // 2]['pos'][flat % 2]['ally_switch']
+    out += bytes(reserve)
     assert len(out) == TAIL_SIZE
     return bytes(out)
 
 
 def tail_reserved_offsets():
-    """The offsets (within the tail) of the 45 reserved bytes: 29 of the rev 4 part (step G46: the field block's +1..+6 are
-    party_order) and the 16 of the rev 5 reserve at the end."""
+    """The offsets (within the tail) of the 41 reserved bytes: 29 of the rev 4 part (step G46: the field block's +1..+6 are
+    party_order) and the 12 of the rev 5 reserve at the end that are not the Ally Switch bytes 4..7 (step G80)."""
     offs = [TAIL_FIELD_SIZE - 1]
     for s in range(2):
         so = TAIL_FIELD_SIZE + TAIL_SIDE_SIZE * s
@@ -1169,8 +1182,8 @@ def tail_reserved_offsets():
         offs += [so + 80 + TAIL_MEMBER_SIZE * m + 9 for m in range(MAX_ROSTER)]
     assert len(offs) == 29
     rev5_reserve = TAIL_REV4_SIZE + TAIL5_SIZE - TAIL5_RESERVED_SIZE
-    offs += [rev5_reserve + i for i in range(TAIL5_RESERVED_SIZE)]
-    assert len(offs) == 45
+    offs += [rev5_reserve + i for i in range(TAIL5_RESERVED_SIZE) if not TAIL5_ALLY_OFF <= i < TAIL5_ALLY_OFF + 4]
+    assert len(offs) == 41
     return offs
 
 
@@ -1217,6 +1230,7 @@ def parse_tail(b):
         tp = tail['sides'][flat // 2]['pos'][flat % 2]
         q = r5 + 2 * TAIL5_SIDE_SIZE + TAIL5_POS_SIZE * flat
         tp['position_flags'], tp['future_sight'] = b[q], b[q + 1]
+        tp['ally_switch'] = b[r5 + TAIL5_SIZE - TAIL5_RESERVED_SIZE + TAIL5_ALLY_OFF + flat]  # step G80
     return tail
 
 

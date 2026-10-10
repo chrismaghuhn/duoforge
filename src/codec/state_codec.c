@@ -87,6 +87,11 @@ static void dfi_encode_tail5(const dfi_pool_tail *tail, uint8_t *out)
     for (uint32_t i = 0u; i < DFI_ENC_TAIL5_RESERVED_SIZE; ++i) {
         out[DFI_ENC_TAIL5_RESERVED_OFF + i] = 0u;
     }
+    /* step G80: the Ally Switch volatile of each flat position, in reserve bytes 4..7 (the rest of the reserve stays zero) */
+    for (uint32_t f = 0u; f < DUOFORGE_SIDE_COUNT * DUOFORGE_ACTIVE_PER_SIDE; ++f) {
+        const dfi_tail_pos *tp = &tail->sides[f / DUOFORGE_ACTIVE_PER_SIDE].positions[f % DUOFORGE_ACTIVE_PER_SIDE];
+        out[DFI_ENC_TAIL5_RESERVED_OFF + DFI_ENC_TAIL5_ALLY_SWITCH_OFF + f] = tp->ally_switch;
+    }
 }
 
 static void dfi_encode_tail(const dfi_pool_tail *tail, uint8_t *out)
@@ -148,6 +153,9 @@ static bool dfi_tail_reserved_zero(const uint8_t *in)
         }
     }
     for (uint32_t i = 0u; i < DFI_ENC_TAIL5_RESERVED_SIZE; ++i) {
+        if (i >= DFI_ENC_TAIL5_ALLY_SWITCH_OFF && i < DFI_ENC_TAIL5_ALLY_SWITCH_OFF + DFI_ENC_TAIL5_ALLY_SWITCH_COUNT) {
+            continue; /* step G80: the Ally Switch bytes are read by dfi_parse_tail5 and checked by the invariants */
+        }
         any |= in[DFI_ENC_TAIL_REV4_SIZE + DFI_ENC_TAIL5_RESERVED_OFF + i];
     }
     return any == 0u;
@@ -209,6 +217,8 @@ static void dfi_parse_tail5(const uint8_t *in, dfi_pool_tail *tail)
         const uint8_t *po = in + DFI_ENC_TAIL5_POS_OFF + f * DFI_ENC_TAIL5_POS_SIZE;
         tp->position_flags = po[DFI_ENC_TAIL5_POSITION_FLAGS_OFF];
         tp->future_sight = po[DFI_ENC_TAIL5_FUTURE_SIGHT_OFF];
+        tp->ally_switch = in[DFI_ENC_TAIL5_RESERVED_OFF + DFI_ENC_TAIL5_ALLY_SWITCH_OFF + f]; /* step G80 */
+        tp->ally_switch_pad = 0u;
     }
 }
 
