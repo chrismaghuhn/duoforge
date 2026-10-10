@@ -63,6 +63,7 @@ class Row:
     prior_level: tuple  # six levels (prior.LEVELS = no paste)
     belief_level: tuple = None  # a belief game: the own six members' set levels (0 or 1), then the foe's six
     revealed: tuple = None  # a belief game: per own member, the bits of the sheet move slots the game showed
+    ext: object = None  # the OBSERVATION_EXT record of the tracker view at the point (decision 0018), as live
 
 
 @dataclass
@@ -272,20 +273,21 @@ def _perspective(lines, points, side, sheets, data, prior, stats, counters, extr
             done = point.line
             if own_requested(tracker):
                 domain, lists = superset.domain(tracker)
-                taken.append((point, tracker.observation().copy(), domain.copy(), lists, labels.context(tracker)))
+                taken.append((point, tracker.observation().copy(), domain.copy(), lists, labels.context(tracker),
+                              tracker.observation_ext().copy()))
         feed_lines(tracker, lines, done, len(lines))  # a stop after the last point still cuts the last labels
     except line_classes.Stop as e:
         stop = e
     stop_line = len(lines) if stop is None else stop.line
     rows = []
-    for point, observation, domain, lists, ctx in taken:
+    for point, observation, domain, lists, ctx, ext in taken:
         label = labels.compute(ctx, lines, point, lists, stop_line, leads, back)
         if extra is None:
-            rows.append(Row(observation, domain, side, point.index, label, prior_level))
+            rows.append(Row(observation, domain, side, point.index, label, prior_level, ext=ext))
         else:
             levels, revealed = extra
             rows.append(Row(observation, domain, side, point.index, label, prior_level,
-                            tuple(levels[side]) + tuple(levels[1 - side]), tuple(revealed[side])))
+                            tuple(levels[side]) + tuple(levels[1 - side]), tuple(revealed[side]), ext))
         if point.boundary == TEAM_SELECTION:
             counters["labels.TEAM"] += 1
         else:

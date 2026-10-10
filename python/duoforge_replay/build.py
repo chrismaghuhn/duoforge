@@ -320,7 +320,8 @@ def _run(paths, prior_path, out, wanted, done, run, workers, limit_parts, format
     counters = dict(sorted(total.items()))
     dataset.write_json_atomic(out / "counters.json", counters)
     dataset.write_json_atomic(out / "manifest.json", {
-        "format_version": dataset.FORMAT_VERSION, "source": options["mode"], "layout": "parts", "inputs": wanted,
+        "format_version": dataset.FORMAT_VERSION, "source": options["mode"], "tracker_folds": dataset.tracker_folds(),
+        "ext_revision": dataset.EXT_REVISION, "layout": "parts", "inputs": wanted,
         "parts": parts,
         "counters": counters,
         "run": {"workers": workers, "parts_written": run["parts.written"], "seconds": round(seconds, 1),

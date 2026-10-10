@@ -215,11 +215,26 @@ class BcDataTest(unittest.TestCase):
         named = self.bc_data.load([self.out], self.context, self.mask, source_weights={"sheet": 2.0})
         np.testing.assert_allclose(named.weight, self.rows.weight * 2.0)
 
-    def test_an_old_dataset_is_a_sheet_dataset(self):
-        # format version 1 (before the source existed) was always a sheet build
-        old = self.with_manifest("old", lambda m: (m.pop("source"), m.update(format_version=1)))
+    def test_an_old_dataset_is_a_sheet_dataset_but_never_loads(self):
+        # format version 1 (before the source existed) was always a sheet build; versions 1 and 2 carry no extension
+        # record, and since #334 their rows can hold fold states the encoder cannot see: rebuild them
+        old = self.with_manifest("old", lambda m: (m.pop("source"), m.pop("tracker_folds"), m.pop("ext_revision"),
+                                                   m.update(format_version=1)))
         self.assertEqual(self.bc_data.dataset_source(old), "sheet")
-        np.testing.assert_allclose(self.bc_data.load([old], self.context, self.mask).weight, self.rows.weight)
+        for version in (1, 2):
+            legacy = self.with_manifest(f"legacy{version}", lambda m: (m.pop("tracker_folds"), m.pop("ext_revision"),
+                                                                      m.update(format_version=version)))
+            with self.subTest(version), self.assertRaisesRegex(ValueError, "extension record"):
+                self.bc_data.load([legacy], self.context, self.mask)
+
+    def test_rows_folded_under_other_folds_are_refused(self):
+        other = self.with_manifest("folds", lambda m: m.update(tracker_folds=lines.TRACKER_FOLDS ^ 1))
+        with self.assertRaisesRegex(ValueError, "other folds"):
+            self.bc_data.load([other], self.context, self.mask)
+
+    def test_the_mask_takes_the_extension_features_the_tracker_folds(self):
+        library = self.bc_data.library_mask(self.context)
+        self.assertEqual(self.bc_data.bc_mask(self.context), library & lines.TRACKER_FOLDS)
 
     def test_a_new_manifest_without_its_source_is_refused(self):
         # a version 2 build always writes its source: one without it is no sheet dataset by default
