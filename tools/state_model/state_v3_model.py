@@ -302,7 +302,7 @@ KD = TeamCContext(KIND_TEAM_C_DEV, 6, 4)
 # which tests/test_pool_tables.c recomputes from the pool canonical bytes: the
 # pool layout over the pool data, then the family columns, the handler columns
 # and the moves and abilities that each forme may have.
-POOL_TABLE_HASH = bytes.fromhex('c9dc88ea6a57c6f941bb0e40cd26f52aad8990181ae53a3c41a45608b329e2a8')
+POOL_TABLE_HASH = bytes.fromhex('9b1fc6119a24893999e98fdd94e5d1ec9a002d850d5ed6ef83dc94c2a4a57fd7')
 KIND_POOL, KIND_POOL_DEV = 6, 7
 
 
@@ -1007,7 +1007,7 @@ def tail_pos_valid(ctx, tp, flat, mem, slot_flags=0, sub_cap=0):
         return False
     if not (tp['trap_turns'] <= TAIL_TRAP_TURNS_MAX and tp['trap_source'] <= TAIL_SOURCE_MAX
             and tp['trap_source'] != flat + 1 and tp['trap_move'] <= ctx.move_count
-            and (tp['trap_turns'] == 0) == (tp['trap_source'] == 0) and (tp['trap_turns'] == 0) == (tp['trap_move'] == 0)
+            and (tp['trap_turns'] != 0 or tp['trap_source'] == 0) and (tp['trap_turns'] == 0) == (tp['trap_move'] == 0)
             and tp['trap_band'] <= TAIL_FLAG_MAX and (tp['trap_turns'] != 0 or tp['trap_band'] == 0)):
         return False
     if not (tp['leech_seed'] <= TAIL_SOURCE_MAX and tp['leech_seed'] != flat + 1):

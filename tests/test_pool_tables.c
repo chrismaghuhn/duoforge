@@ -45,7 +45,7 @@
 #include "state/closure_member.h"
 #include "support/check.h"
 
-#define POOL_HASH_HEX "c9dc88ea6a57c6f941bb0e40cd26f52aad8990181ae53a3c41a45608b329e2a8" /* the canonical hash of the rows of the lane A batch (G42, G44, G46, G47, G48, G49, G50, G56, G52, G54, G64, G68, G74, G76, G78) */
+#define POOL_HASH_HEX "9b1fc6119a24893999e98fdd94e5d1ec9a002d850d5ed6ef83dc94c2a4a57fd7" /* the canonical hash of the rows of the lane A batch (G42, G44, G46, G47, G48, G49, G50, G56, G52, G54, G64, G68, G74, G76, G78, G90) */
 /* SHA-256 of the closure-layout bytes of the rows of the steps (P1 and G2: 28 formes, 72 moves, 52 items, 29
  * abilities). The whole-pool step must not move one of them (decision 0015 section 4.2); the pool generator before it
  * produced the same bytes. Step G10 moved two of them on purpose: Scald and Recover are data now (the thaw bit and

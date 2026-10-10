@@ -59,6 +59,9 @@ const SITE_RULES = [
     ['BattleActions.selfDrops', 'SECONDARY'], // its random(100) passes without a chance
     ['BattleActions.getDamage', 'CRIT'],
     ['Battle.onStallMove', 'STALL'],
+    // The partial trap's turns (step G90, decision 0060): durationCallback's random(5, 7) of addVolatile (data/conditions.ts:225-227);
+    // the only durationCallback of the pin that draws. It was an UNKNOWN draw before, so the harness version stays.
+    ['Battle.durationCallback', 'PARTIAL_TRAP_TURNS'],
 ];
 
 // Draws inside a condition's own handler, named by the effect and event the

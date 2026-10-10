@@ -929,6 +929,10 @@ MUT(m_trap_no_move, {
     p0->trap_turns = 1u;
     p0->trap_source = 2u;
 })
+MUT(m_trap_no_source_no_move, {
+    p0->trap_turns = 1u;
+})
+/* decision 0060: a trap whose source left keeps its turns and move (the source is 0): valid, the residual ends it silently. */
 MUT(m_trap_no_source, {
     p0->trap_turns = 1u;
     p0->trap_move = 1u;
@@ -1170,7 +1174,8 @@ static const tail_case cases[] = {
     {"a trap with a source alone", DFI_INV_TAIL_POSITION, false, m_trap_source_only},
     {"a trap with a move alone", DFI_INV_TAIL_POSITION, false, m_trap_move_only},
     {"a trap without its move", DFI_INV_TAIL_POSITION, false, m_trap_no_move},
-    {"a trap without its source", DFI_INV_TAIL_POSITION, false, m_trap_no_source},
+    {"a trap whose source left (source 0, decision 0060) is valid", DFI_INV_NONE, false, m_trap_no_source},
+    {"a trap with neither source nor move", DFI_INV_TAIL_POSITION, false, m_trap_no_source_no_move},
     {"a trap above 8 turns", DFI_INV_TAIL_POSITION, false, m_trap_turns9},
     {"a trap source above 4", DFI_INV_TAIL_POSITION, false, m_trap_source5},
     {"a trap whose source is the occupant", DFI_INV_TAIL_POSITION, false, m_trap_own},

@@ -2314,6 +2314,9 @@ SPECIAL_P = dict(SPECIAL_C, **{
     'steelbeam': ('STEEL_BEAM', {'onMoveFail'}),                          # G68: mindBlownRecoil (half the maximum HP on a hit and in MoveFail)
     'thunderwave': ('THUNDER_WAVE', set()),                               # G68: ignoreImmunity false (Ground is immune to the Electric move)
     'dragondarts': ('DRAGON_DARTS', set()),                               # G78: two hits, the second on the partner (decision 0043)
+    # G90 (decision 0060): the six moves that apply the volatile partiallytrapped (G2_OWNED_FIELDS owns the volatileStatus line)
+    'bind': ('PARTIAL_TRAP', set()), 'wrap': ('PARTIAL_TRAP', set()), 'firespin': ('PARTIAL_TRAP', set()),
+    'sandtomb': ('PARTIAL_TRAP', set()), 'infestation': ('PARTIAL_TRAP', set()),  # Snap Trap is dropped (decision 0060 section 8)
 })
 # Step G13: Detect is Protect (data/moves.ts:3526-3547 against 13961-14005): the same handler (not one of the G2 handlers,
 # so it is added to the pool's map only), and the generator checks that its stalling fields and both callbacks are,
@@ -2426,6 +2429,21 @@ G76_FINAL_GAMBIT_FACTS = (
 # Step G78, Dragon Darts (decision 0043, lead's approval of 2026-10-10): the split of its two hits (smartTarget) over the
 # chosen foe and its partner; the hit count is the number 2 (no draw), the hit loop is the Champions one.
 G78_HANDLERS = ['DRAGON_DARTS']
+# Step G90, the partial trap (decision 0060, lead's approval 2026-10-11): the volatile partiallytrapped of six moves. The pin's
+# volatile (data/conditions.ts:222-258: the duration draw random(5, 7) or 8 with a Grip Claw, the Binding Band divisor, the
+# residual at order 13, the end line, the trapped flag of the source) is what the turn code reads; the moves are plain hits.
+G90_HANDLERS = ['PARTIAL_TRAP']
+G90_MOVES = ('bind', 'wrap', 'firespin', 'sandtomb', 'infestation')
+G90_MOVE_FACTS = ("volatileStatus: 'partiallytrapped',", 'target: "normal",')
+G90_CONDITION_FACTS = (
+    'durationCallback(target, source) {', "if (source?.hasItem('gripclaw')) return 8;", 'return this.random(5, 7);',
+    "this.effectState.boundDivisor = source.hasItem('bindingband') ? 6 : 8;", 'onResidualOrder: 13,',
+    'if (source && (!source.isActive || source.hp <= 0 || !source.activeTurns) && !gmaxEffect) {',
+    "this.add('-end', pokemon, this.effectState.sourceEffect, '[partiallytrapped]', '[silent]');",
+    'this.damage(pokemon.baseMaxhp / this.effectState.boundDivisor);',
+    "this.add('-end', pokemon, this.effectState.sourceEffect, '[partiallytrapped]');",
+    'if (this.effectState.source?.isActive || gmaxEffect) pokemon.tryTrap();',
+)
 G78_FACTS = (
     'accuracy: 100,', 'basePower: 50,', 'category: "Physical",', 'priority: 0,',
     'flags: { protect: 1, mirror: 1, metronome: 1, noparentalbond: 1 },', 'multihit: 2,', 'smartTarget: true,',
@@ -2522,7 +2540,7 @@ G68_FACTS = (
                      'flags: { protect: 1, reflectable: 1, mirror: 1, metronome: 1 },', "status: 'par',",
                      'ignoreImmunity: false,', 'target: "normal",', 'type: "Electric",']),
 )
-SPECIAL_IDS_P = SPECIAL_IDS_C + G2_HANDLERS + WEATHER_HANDLERS + G16_HANDLERS + G15_HANDLERS + G19_HANDLERS + G20_HANDLERS + G20_PROTECT_HANDLERS + G28_HANDLERS + G30_HANDLERS + G32_HANDLERS + G34_HANDLERS + G27_HANDLERS + G25_HANDLERS + G26_HANDLERS + G33_HANDLERS + G38_HANDLERS + G29_HANDLERS + G39_HANDLERS + G31_HANDLERS + G48_HANDLERS + G44_HANDLERS + G50_HANDLERS + G42_HANDLERS + G56_HANDLERS + G52_HANDLERS + G54_HANDLERS + G64_HANDLERS + G62_HANDLERS + G60_HANDLERS + G58_HANDLERS + G68_HANDLERS + G70_HANDLERS + G66_HANDLERS + G72B_HANDLERS + G74_HANDLERS + G76_HANDLERS + G78_HANDLERS + ['UNMODELED']# Step G10 made two of these handlers data: Scald (thawsTarget) and Recover (heal) are read into the second flags# byte (bit 4, thaws the target) and the heal column, and have the special NONE; their ids stay defined (the ids after
+SPECIAL_IDS_P = SPECIAL_IDS_C + G2_HANDLERS + WEATHER_HANDLERS + G16_HANDLERS + G15_HANDLERS + G19_HANDLERS + G20_HANDLERS + G20_PROTECT_HANDLERS + G28_HANDLERS + G30_HANDLERS + G32_HANDLERS + G34_HANDLERS + G27_HANDLERS + G25_HANDLERS + G26_HANDLERS + G33_HANDLERS + G38_HANDLERS + G29_HANDLERS + G39_HANDLERS + G31_HANDLERS + G48_HANDLERS + G44_HANDLERS + G50_HANDLERS + G42_HANDLERS + G56_HANDLERS + G52_HANDLERS + G54_HANDLERS + G64_HANDLERS + G62_HANDLERS + G60_HANDLERS + G58_HANDLERS + G68_HANDLERS + G70_HANDLERS + G66_HANDLERS + G72B_HANDLERS + G74_HANDLERS + G76_HANDLERS + G78_HANDLERS + G90_HANDLERS + ['UNMODELED']# Step G10 made two of these handlers data: Scald (thawsTarget) and Recover (heal) are read into the second flags# byte (bit 4, thaws the target) and the heal column, and have the special NONE; their ids stay defined (the ids after
 # them keep their values). First Impression and Low Kick keep theirs: the turn code implements them.
 POOL_COLUMN_KEYS = {'thawsTarget', 'heal'}
 G2_OWNED_FIELDS = {
@@ -2571,6 +2589,7 @@ G2_OWNED_FIELDS = {
     'THUNDER_WAVE': {'ignoreImmunity': 'ignoreImmunity: false,'},
     'BATON_PASS': {'self': BATON_PASS_SELF},
     'DRAGON_DARTS': {'multihit': 'multihit: 2,', 'smartTarget': 'smartTarget: true,'},
+    'PARTIAL_TRAP': {'volatileStatus': "volatileStatus: 'partiallytrapped',"},
 }
 # Step G48: the empty secondary of Stone Axe and Ceaseless Edge (the Sheer Force placeholder). Without Sheer Force the pin runs
 # it for every hit target (moveHit of an empty secondary with chance undefined, sim/battle-actions.ts:1336-1349): the engine
@@ -3319,6 +3338,25 @@ def check_g58_facts(moves_ts):
             fail('move phantomforce: the entry no longer has "%s"' % fact)
 
 
+def check_g90_facts(conditions_ts, moves_ts):
+    """Step G90: the partiallytrapped condition and the six moves are the pinned text the turn code reads."""
+    e = conditions_ts.entry('partiallytrapped')
+    if e is None:
+        fail('condition partiallytrapped not found')
+    text = norm('\n'.join(e[2]))
+    for fact in G90_CONDITION_FACTS:
+        if norm(fact) not in text:
+            fail('condition partiallytrapped: the entry no longer has "%s"' % fact)
+    for mid in G90_MOVES:
+        e = moves_ts.entry(mid)
+        if e is None:
+            fail('move %s not found' % mid)
+        text = norm('\n'.join(e[2]))
+        for fact in G90_MOVE_FACTS:
+            if norm(fact) not in text:
+                fail('move %s: the entry no longer has "%s"' % (mid, fact))
+
+
 def check_g78_facts(moves_ts):
     """Step G78: the Dragon Darts entry is the pinned text the turn code reads (its hits, its smartTarget, its target)."""
     e = moves_ts.entry('dragondarts')
@@ -3889,6 +3927,7 @@ def build_pool(root, repo, dx):
     check_g72b_facts(moves_ts)
     check_g76_facts(moves_ts)
     check_g78_facts(moves_ts)
+    check_g90_facts(Source(root, 'data/conditions.ts', READER_INPUTS), moves_ts)
     FLAGS_THAT_MATTER.clear()
     FLAGS_THAT_MATTER.update(prefix_flag_reads((items_ts, champ_items, abil_ts, champ_abil, moves_ts, champ_moves), dx)
                              - set(FLAG_BITS_C) - set(INERT_FLAG_READS) - set(FLAGS3_BITS))

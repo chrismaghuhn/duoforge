@@ -47,7 +47,8 @@
 #define DFI_SITE_LOCK_TURNS 21u    /* the lock of Outrage, Thrash and Petal Dance (POOL data, step G56): lockedmove's onStart,
                                     * random(2, 4) = 2 or 3 turns (data/conditions.ts:265) */
 #define DFI_SITE_MULTIHIT_COUNT 22u /* Scale Shot, Icicle Spear (POOL data, step G54): sample of 20 hit counts, random(20) */
-#define DFI_SITE_COUNT 23u
+#define DFI_SITE_PARTIAL_TRAP_TURNS 23u /* the partial trap's turns (POOL data, step G90, decision 0060): random(5, 7), data/conditions.ts:222-258 */
+#define DFI_SITE_COUNT 24u
 
 typedef struct dfi_tape_entry {
     uint32_t site;

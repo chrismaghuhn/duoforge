@@ -225,6 +225,7 @@ duoforge_add_test(NAME duoforge.state.pool_g72b SOURCES test_pool_g72b.c WHITEBO
 duoforge_add_test(NAME duoforge.state.pool_g76 SOURCES test_pool_g76.c WHITEBOX LIBS duoforge_batch TIMEOUT 60)
 # Step G78 (decision 0015 5ch, decision 0043): Dragon Darts, the split of its two hits; the recorded battles are duoforge.reference.conformance_pool_data.
 duoforge_add_test(NAME duoforge.state.pool_g78 SOURCES test_pool_g78.c WHITEBOX LIBS duoforge_batch TIMEOUT 60)
+duoforge_add_test(NAME duoforge.state.pool_g90 SOURCES test_pool_g90.c WHITEBOX LIBS duoforge_batch TIMEOUT 60)
 # Step G42: Roost and Stomping Tantrum: the move result classes (this and last) at every boundary of the g42 battles, the Roost
 # volatile (the pivot boundary inside its turn), the view bits (40 supported, 41 not), the unclassified refusal.
 duoforge_add_test(NAME duoforge.state.pool_g42 SOURCES test_pool_g42.c WHITEBOX TIMEOUT 60)

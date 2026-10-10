@@ -682,7 +682,7 @@ static bool dfi_tail_pos_valid(const dfi_kind_limits *lim, const dfi_tail_pos *t
     /* A partial trap: turns, source (another position) and move together, the band only with them. */
     const bool trap_ok = tp->trap_turns <= DFI_TAIL_TRAP_TURNS_MAX && tp->trap_source <= DFI_TAIL_SOURCE_MAX &&
                          tp->trap_source != flat + 1u && tp->trap_move <= lim->move_count &&
-                         (tp->trap_turns == 0u) == (tp->trap_source == 0u) &&
+                         (tp->trap_turns != 0u || tp->trap_source == 0u) &&
                          (tp->trap_turns == 0u) == (tp->trap_move == 0u) && tp->trap_band <= DFI_TAIL_FLAG_MAX &&
                          (tp->trap_turns != 0u || tp->trap_band == 0u);
     const bool leech_ok = tp->leech_seed_source <= DFI_TAIL_SOURCE_MAX && tp->leech_seed_source != flat + 1u;

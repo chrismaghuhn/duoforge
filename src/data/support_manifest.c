@@ -370,6 +370,10 @@ const dfi_support_manifest dfi_support = {
             [DFI_MOVE_BATONPASS] = 1u, /* step G74 (decision 0042): the user switches out at a PIVOT and copies its volatiles (Shed Tail stays refused) */
             [DFI_MOVE_DRAGONCHEER] = 1u,   /* step G72b: the volatile's crit stage (position flags) and its start line */
             [DFI_MOVE_DRAGONDARTS] = 1u,   /* step G78 (decision 0043): the split of the two hits, smartTarget; the partner by the target's side */
+            /* Step G90 (decision 0060): the partial trap of six moves (the volatile partiallytrapped: the draw of its turns, the residual
+             * damage with the Binding Band divisor, the trapped flag, the silent ends and the end line). */
+            [DFI_MOVE_BIND] = 1u, [DFI_MOVE_WRAP] = 1u, [DFI_MOVE_FIRESPIN] = 1u,
+            [DFI_MOVE_SANDTOMB] = 1u, [DFI_MOVE_INFESTATION] = 1u, /* Snap Trap stays unmarked: decision 0060 section 8 */
     [DFI_MOVE_REVIVALBLESSING] = 1u,
             /* Step G42: Roost (the heal, then the Flying type is off for the turn) and Stomping Tantrum (base power x2 after a
              * FALSE last move result; the move_result of tail rev 4, decision 0015 section 7). */

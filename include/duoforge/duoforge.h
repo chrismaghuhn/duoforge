@@ -1186,6 +1186,11 @@ duoforge_status duoforge_battle_observe_ext(const duoforge_context *ctx, const d
 #define DUOFORGE_VOLATILE_DRAGONCHEER 10u /* VOLATILE_START (POOL kinds, step G72b, decision 0015 5ce): Dragon Cheer's volatile
                                               (-start|X|move: Dragon Cheer). Presence only; no END: a switch-out removes it with no
                                               line. The crit stage it gives is in the position flags (tail rev 5), not in an event. */
+/* VOLATILE_START / VOLATILE_END (POOL kinds, step G90, decision 0060): the partial trap of Bind, Wrap, Fire Spin, Sand Tomb,
+   Snap Trap and Infestation. The start is an ACTIVATE (cause MOVE, id2 the move, other the source), the residual damage a DAMAGE
+   (cause MOVE, id2 the move), the end of the duration -end|X|move: M|[partiallytrapped] a VOLATILE_END with id = the move. The silent
+   ends (the source left, a Substitute, a fainted source) emit nothing. The turns are a drawn counter, hidden from both viewers. */
+#define DUOFORGE_VOLATILE_PARTIAL_TRAP 12u
 /* FAIL details of a Substitute, valid only with cause MOVE and id2 = the Substitute move (decision 0032). */
 #define DUOFORGE_FAIL_SUBSTITUTE_EXISTS 1u /* the user already has a Substitute: -fail|X|move: Substitute */
 #define DUOFORGE_FAIL_SUBSTITUTE_WEAK   2u /* the user's HP is a quarter of its maximum or less: -fail|X|move: Substitute|[weak] */

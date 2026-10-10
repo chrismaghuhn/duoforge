@@ -534,7 +534,7 @@ static duoforge_status dfi_view_encode(const duoforge_context *ctx, const duofor
             /* Step G66: a temporary forme (Stance Change) is refused too: its forme is not in the view (the TEMP_FORME cause). */
             const uint32_t occupant = b->sides[side].positions[p].occupant;
             const bool temp_forme = occupant < DUOFORGE_MAX_ROSTER && b->tail.sides[side].forme_now[occupant] != 0u;
-            if (tp->trap_turns != 0u || maybe_locked || tp->substitute_hp != 0u || temp_forme) {
+            if (maybe_locked || tp->substitute_hp != 0u || temp_forme) {
                 return DUOFORGE_E_UNSUPPORTED;
             }
         }
@@ -554,6 +554,17 @@ static duoforge_status dfi_view_encode(const duoforge_context *ctx, const duofor
         }
     }
     memset(s + DFI_ENC_RNG_STATE_OFF, 0, 24u);
+    /* Step G90 (decision 0060, approved 2026-10-11): the partial trap's drawn turns are hidden for both viewers (the owner too:
+     * the duration is never shown, decision 0007). The presence, the source, the move and the band are public. */
+    for (uint32_t side = 0u; side < DUOFORGE_SIDE_COUNT; ++side) {
+        for (uint32_t p = 0u; p < DUOFORGE_ACTIVE_PER_SIDE; ++p) {
+            uint8_t *tt = s + DFI_ENC_TAIL_OFF + DFI_ENC_TAIL_SIDES_OFF + side * DFI_ENC_TAIL_SIDE_SIZE + DFI_ENC_TAIL_POS_OFF +
+                          p * DFI_ENC_TAIL_POS_SIZE + DFI_ENC_TAIL_POS_TRAP_TURNS_OFF;
+            if (*tt != 0u) {
+                *tt = (uint8_t)DUOFORGE_VIEW_HIDDEN;
+            }
+        }
+    }
     for (uint32_t side = 0u; side < DUOFORGE_SIDE_COUNT; ++side) {
         for (uint32_t m = 0u; m < DUOFORGE_MAX_ROSTER; ++m) {
             uint8_t *mb = member_at(s, side, m);
@@ -729,6 +740,16 @@ duoforge_status duoforge_battle_from_view(const duoforge_context *ctx, const duo
     }
     uint8_t s[DUOFORGE_VIEW_STATE_MAX];
     memcpy(s, view->state, n);
+    /* Step G90 (decision 0060, decision 0023): a view with a partial trap is not rebuilt: its turns are hidden, and the
+     * hypothesis does not draw them (no mechanic draws the turns of a trap yet). */
+    for (uint32_t side = 0u; side < DUOFORGE_SIDE_COUNT; ++side) {
+        for (uint32_t p = 0u; p < DUOFORGE_ACTIVE_PER_SIDE; ++p) {
+            if (s[DFI_ENC_TAIL_OFF + DFI_ENC_TAIL_SIDES_OFF + side * DFI_ENC_TAIL_SIDE_SIZE + DFI_ENC_TAIL_POS_OFF +
+                 p * DFI_ENC_TAIL_POS_SIZE + DFI_ENC_TAIL_POS_TRAP_TURNS_OFF] != 0u) {
+                return DUOFORGE_E_UNSUPPORTED;
+            }
+        }
+    }
     const uint32_t player = view->player;
     const uint32_t foe = player ^ 1u;
     uint8_t *fs = side_at(s, foe);

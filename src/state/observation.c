@@ -405,6 +405,9 @@ duoforge_status duoforge_battle_observe_ext(const duoforge_context *ctx, const d
                 vol |= (tail->single_turn & DFI_SINGLE_TURN_ROOST) != 0u ? (uint32_t)DUOFORGE_POSITION_EXT_ROOST : 0u;
                 /* Step G60 (decision 0032): the Substitute is up: presence only, its HP is never in the observation. */
                 vol |= tail->substitute_hp != 0u ? (uint32_t)DUOFORGE_POSITION_EXT_SUBSTITUTE : 0u;
+                /* Step G90 (decision 0060): the partial trap is up (-activate at its start, -end at its end): presence only; the
+                 * turns are drawn and hidden, the source is public (the -activate line names it). */
+                vol |= tail->trap_turns != 0u ? (uint32_t)DUOFORGE_POSITION_EXT_PARTIAL_TRAP : 0u;
                 /* Step G72b (decision 0015 5ce): Dragon Cheer's volatile is up while its stage is (-start|X|move: Dragon Cheer; a
                  * switch-out clears the stage with the position's tail, so the bit ends with it). */
                 vol |= (tail->position_flags & DFI_POSFLAG_DRAGON_CHEER_MASK) != 0u ? (uint32_t)DUOFORGE_POSITION_EXT_DRAGON_CHEER : 0u;
