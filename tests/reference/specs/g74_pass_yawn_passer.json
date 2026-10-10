@@ -1,0 +1,302 @@
+{
+  "name": "g74_pass_yawn_passer",
+  "purpose": "Baton Pass of a passer with Yawn (decision 0042 section 14, the noCopy conditions): Umbreon (p2, the random battle 236 of run 74) has Yawn from the Umbreon of p1 when it passes to Kingambit. Yawn is noCopy in the pin (data/moves.ts:21147), so the entering Kingambit does not inherit it and nothing falls asleep at the end of step 24. A copied Yawn would draw SLEEP_TURNS there, which the reference does not draw.",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,116c1eeab0afa5aaa051abcc42a1e6f9eff813ee81f862d45bc6d81b0ee0cea5",
+  "teams": [
+    "Umbreon (M) @ Leftovers\nAbility: Inner Focus\nLevel: 50\nEVs: 32 HP / 2 Def / 32 SpD\nCalm Nature\n- Protect\n- Yawn\n- Substitute\n- Baton Pass\n\nKingambit (M) @ Black Glasses\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 2 Atk / 32 SpD\nImpish Nature\n- Protect\n\nNinetales (M) @ Sitrus Berry\nAbility: Drought\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nModest Nature\n- Nasty Plot\n- Shadow Ball\n- Substitute\n- Encore\n\nPolitoed (M) @ Mystic Water\nAbility: Drizzle\nLevel: 50\nEVs: 32 HP / 2 Def / 32 SpD\nCalm Nature\n- Protect\n\nEspeon (M)\nAbility: Synchronize\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nTimid Nature\n- Calm Mind\n- Baton Pass\n- Protect\n- Shadow Ball\n\nGholdengo @ Life Orb\nAbility: Good as Gold\nLevel: 50\nEVs: 17 HP / 2 Def / 17 SpA / 16 SpD / 14 Spe\nModest Nature\n- Protect\n- Shadow Ball",
+    "Ninetales (M) @ Sitrus Berry\nAbility: Drought\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nModest Nature\n- Nasty Plot\n- Shadow Ball\n- Substitute\n- Encore\n\nKingambit (M) @ Black Glasses\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 2 Atk / 32 SpD\nImpish Nature\n- Protect\n\nPolitoed (M) @ Mystic Water\nAbility: Drizzle\nLevel: 50\nEVs: 32 HP / 2 Def / 32 SpD\nCalm Nature\n- Protect\n\nEspeon (M)\nAbility: Synchronize\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nTimid Nature\n- Calm Mind\n- Baton Pass\n- Protect\n- Shadow Ball\n\nUmbreon (M) @ Leftovers\nAbility: Inner Focus\nLevel: 50\nEVs: 32 HP / 2 Def / 32 SpD\nCalm Nature\n- Protect\n- Yawn\n- Substitute\n- Baton Pass\n\nGholdengo @ Life Orb\nAbility: Good as Gold\nLevel: 50\nEVs: 17 HP / 2 Def / 17 SpA / 16 SpD / 14 Spe\nModest Nature\n- Protect\n- Shadow Ball"
+  ],
+  "choices": [
+    {
+      "p1": "team 1253",
+      "p2": "team 1532"
+    },
+    {
+      "p1": "move 3, move 1",
+      "p2": "move 1, move 3"
+    },
+    {
+      "p1": "move 1, move 1",
+      "p2": "move 1, move 2 1"
+    },
+    {
+      "p1": "move 2 2, move 1",
+      "p2": "move 4 -2, move 1"
+    },
+    {
+      "p1": "move 2 2, move 1",
+      "p2": "move 2 2, move 1"
+    },
+    {
+      "p1": "move 1, move 1",
+      "p2": "move 1, move 4"
+    },
+    {
+      "p2": "pass, switch 3"
+    },
+    {
+      "p1": "move 1, move 1",
+      "p2": "move 2 1, move 1"
+    },
+    {
+      "p1": "switch 3, move 1",
+      "p2": "move 3, move 1"
+    },
+    {
+      "p1": "move 1, move 1",
+      "p2": "move 4 -2, move 1"
+    },
+    {
+      "p1": "move 1, move 1",
+      "p2": "move 2 -2, move 1"
+    },
+    {
+      "p1": "move 2, move 1",
+      "p2": "move 3, move 1"
+    },
+    {
+      "p1": "switch 3, pass"
+    },
+    {
+      "p1": "move 4, move 1",
+      "p2": "move 1, switch 3"
+    },
+    {
+      "p1": "switch 3, pass"
+    },
+    {
+      "p1": "move 4 -2, switch 4",
+      "p2": "move 2 2, move 1"
+    },
+    {
+      "p1": "pass, switch 4"
+    },
+    {
+      "p1": "switch 3, move 1",
+      "p2": "move 3, move 4"
+    },
+    {
+      "p2": "pass, switch 4"
+    },
+    {
+      "p1": "pass, switch 3"
+    },
+    {
+      "p1": "move 2 -2, move 3",
+      "p2": "move 1, move 1"
+    },
+    {
+      "p1": "move 3, move 2",
+      "p2": "move 2 1, move 1"
+    },
+    {
+      "p1": "move 2 2, move 2",
+      "p2": "move 1, switch 4"
+    },
+    {
+      "p1": "move 2 1, move 4 1",
+      "p2": "move 2 2, move 4"
+    },
+    {
+      "p2": "pass, switch 4"
+    },
+    {
+      "p1": "move 1, pass",
+      "p2": "move 3, move 1"
+    },
+    {
+      "p1": "move 1, pass",
+      "p2": "move 2 1, move 1"
+    },
+    {
+      "p1": "move 1, pass",
+      "p2": "move 2 1, move 1"
+    },
+    {
+      "p1": "move 2 -2, pass",
+      "p2": "move 4 1, move 1"
+    },
+    {
+      "p1": "move 1, pass",
+      "p2": "move 4 -2, move 1"
+    },
+    {
+      "p1": "move 4, pass",
+      "p2": "move 1, move 1"
+    },
+    {
+      "p1": "move 3, pass",
+      "p2": "move 2 -2, move 1"
+    },
+    {
+      "p1": "move 4, pass",
+      "p2": "move 1, switch 4"
+    },
+    {
+      "p1": "move 4, pass",
+      "p2": "move 1, move 2 2"
+    },
+    {
+      "p1": "move 4, pass",
+      "p2": "move 3, move 3"
+    },
+    {
+      "p1": "move 2 -2, pass",
+      "p2": "move 1, move 2 -1"
+    },
+    {
+      "p1": "move 3, pass",
+      "p2": "move 2 2, move 2 -1"
+    },
+    {
+      "p1": "move 2 -2, pass",
+      "p2": "move 2 -2, move 3"
+    },
+    {
+      "p1": "move 4, pass",
+      "p2": "move 4 2, move 4"
+    },
+    {
+      "p2": "pass, switch 3"
+    },
+    {
+      "p1": "move 2 -2, pass",
+      "p2": "move 3, move 1"
+    },
+    {
+      "p1": "move 2 1, pass",
+      "p2": "move 1, move 1"
+    },
+    {
+      "p1": "move 2 2, pass",
+      "p2": "move 4 2, move 1"
+    },
+    {
+      "p1": "move 2 1, pass",
+      "p2": "move 1, move 1"
+    },
+    {
+      "p1": "move 3, pass",
+      "p2": "move 1, move 1"
+    },
+    {
+      "p1": "move 4, pass",
+      "p2": "move 3, move 1"
+    },
+    {
+      "p1": "move 4, pass",
+      "p2": "switch 3, move 1"
+    },
+    {
+      "p2": "pass, switch 3"
+    },
+    {
+      "p1": "move 3, pass",
+      "p2": "move 2 2, move 3"
+    },
+    {
+      "p1": "move 3, pass",
+      "p2": "move 1, move 3"
+    },
+    {
+      "p1": "move 3, pass",
+      "p2": "move 4, move 1"
+    },
+    {
+      "p2": "switch 4, pass"
+    },
+    {
+      "p1": "move 4, pass",
+      "p2": "move 1, move 3"
+    },
+    {
+      "p1": "move 4, pass",
+      "p2": "move 1, move 3"
+    },
+    {
+      "p2": "switch 4, pass"
+    },
+    {
+      "p1": "move 3, pass",
+      "p2": "move 2 -2, move 4 1"
+    },
+    {
+      "p1": "move 4, pass",
+      "p2": "move 3, move 2 2"
+    },
+    {
+      "p1": "move 4, pass",
+      "p2": "move 4, move 2 2"
+    },
+    {
+      "p1": "move 4, pass",
+      "p2": "move 2 1, move 1"
+    },
+    {
+      "p1": "move 4, pass",
+      "p2": "move 2 2, move 2 -1"
+    },
+    {
+      "p1": "move 3, pass",
+      "p2": "move 3, move 4 2"
+    },
+    {
+      "p1": "move 4, pass",
+      "p2": "move 3, move 1"
+    },
+    {
+      "p1": "move 4, pass",
+      "p2": "move 3, move 3"
+    },
+    {
+      "p1": "move 4, pass",
+      "p2": "move 1, move 1"
+    },
+    {
+      "p1": "move 4, pass",
+      "p2": "move 3, move 1"
+    },
+    {
+      "p1": "move 4, pass",
+      "p2": "move 3, move 2 1"
+    },
+    {
+      "p1": "move 4, pass",
+      "p2": "move 2 1, move 2 2"
+    },
+    {
+      "p1": "move 4, pass",
+      "p2": "move 3, move 2 2"
+    },
+    {
+      "p1": "move 3, pass",
+      "p2": "move 4, move 1"
+    },
+    {
+      "p1": "move 3, pass",
+      "p2": "move 4, move 2 -1"
+    },
+    {
+      "p1": "move 3, pass",
+      "p2": "move 1, move 1"
+    },
+    {
+      "p1": "move 3, pass",
+      "p2": "move 4, move 1"
+    },
+    {
+      "p1": "move 3, pass",
+      "p2": "move 2 1, pass"
+    },
+    {
+      "p1": "move 3, pass",
+      "p2": "move 1, pass"
+    },
+    {
+      "p1": "move 1, pass",
+      "p2": "move 2 2, pass"
+    }
+  ]
+}

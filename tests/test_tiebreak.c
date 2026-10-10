@@ -259,7 +259,7 @@ int main(void)
     /* No committed stop depends on the order of a bench. */
     DF_CHECK_EQ_U64(&t, counts.ambiguous, 0u);
 #if defined(DF_CONFORMANCE_POOL_DATA)
-    DF_CHECK_EQ_U64(&t, battles, 724u); /* the pool battles of test_conformance: main's 717 and the seven G74 battles */
+    DF_CHECK_EQ_U64(&t, battles, 725u); /* the pool battles of test_conformance: main's 717 and the eight G74 battles */
     DF_CHECK_EQ_U64(&t, counts.stops, 3955u); /* main's 3904 plus the seven G74 battles (the Sitrus-tie Baton Pass battles and their stops) */
 #else
     /* Every kind of decision of the pin is among the stops (the pool battles are too few for that). */

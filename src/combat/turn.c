@@ -8130,7 +8130,10 @@ static duoforge_status dfi_run_revive(dfi_run *r, const dfi_queue_record *q)
 /* Baton Pass (decision 0042; sim/pokemon.ts copyVolatileFrom, the noCopy set left out). The leaver's volatiles that the pin
  * copies are taken before its position is cleared and given to the entering member after it: the stages, the confusion and
  * stall counters, Helping Hand and Follow Me, the Substitute's HP (hidden: no event, no view, no encoder carries it), the
- * bars and counters, the leech seed, the charge-type flags, the stockpile, the partial trap and the Dragon Cheer stage.
+ * bars and counters, the leech seed, the charge-type flags, the partial trap and the Dragon Cheer stage.
+ * Not copied, because their condition is noCopy in the pin (data/moves.ts: Yawn 21147, Imprison 9500, Stockpile 17974,
+ * Glaive Rush 6660): Yawn, Imprison, Stockpile and Glaive Rush stay with the leaver. A Yawn copied to the entering member
+ * put it to sleep at the end of the turn (a SLEEP_TURNS draw the reference does not make; battle fz_74_236 step 24).
  * Not copied, as the pin's clearVolatile does: the last move, the move results, hits taken, the ability state, the
  * stats-raised bit and the flinch, the choice lock and the Flash Fire flag. */
 typedef struct dfi_pass_copy {
@@ -8171,16 +8174,10 @@ static void dfi_pass_give(struct duoforge_battle *b, uint32_t flat, const dfi_pa
     t->taunt_turns = s->taunt_turns;
     t->heal_block_turns = s->heal_block_turns;
     t->perish = s->perish;
-    t->yawn_turns = s->yawn_turns;
     t->throat_chop_turns = s->throat_chop_turns;
-    t->imprison = s->imprison;
     t->leech_seed_source = s->leech_seed_source;
     t->focus_energy = s->focus_energy;
-    t->stockpile = s->stockpile;
-    t->stockpile_def = s->stockpile_def;
-    t->stockpile_spd = s->stockpile_spd;
     t->charge = s->charge;
-    t->glaive_rush = s->glaive_rush;
     t->trap_turns = s->trap_turns;
     t->trap_source = s->trap_source;
     t->trap_band = s->trap_band;

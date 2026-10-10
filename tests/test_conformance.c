@@ -33,7 +33,7 @@
 #include "reference/conformance_pool.h"
 #include "support/pool.h"
 #define DF_CONF_FORMES dfi_pool_formes
-#define DF_POOL_DATA_BATTLES 724u /* the recorded pool battles: main's 717 and the seven G74 battles (decision 0042 section 14, the Sitrus-tie Baton Pass battles included) */
+#define DF_POOL_DATA_BATTLES 725u /* the recorded pool battles: main's 717 and the eight G74 battles (decision 0042 section 14, the Sitrus-tie Baton Pass battles included) */
 #elif defined(DF_CONFORMANCE_TEAM_C)
 #include "data/extended_tables.h"
 #include "reference/conformance_team_c.h"
