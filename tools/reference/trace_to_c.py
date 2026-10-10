@@ -984,6 +984,11 @@ IGNORED_VOLATILES = {
     'stall': 'the stall field',
     # data/conditions.ts confusion: compared as df_conf_mon.confusion (its turns).
     'confusion': 'the confusion field',
+    # data/moves.ts attract (step G71, decision 0034): its presence and its effects are the start, activate, cant and end events
+    # (compared with the event stream); the source is the state's attract byte, not a field of the record. Reason: Attract's
+    # presence and source are verified through its start event, its activate and cant lines and its end events, the same path
+    # Taunt and Yawn use, because df_conf_mon.vols has no free bit and the source is not in the trace state.
+    'attract': 'the start, activate, cant and end events (the event stream), the source byte is no record field',
     # twoturnmove's onStart adds the move's own volatile with the target
     # (data/conditions.ts twoturnmove); compared as locked_slot and
     # locked_target. twoturnmove's onEnd and Electro Shot's onTryMove remove

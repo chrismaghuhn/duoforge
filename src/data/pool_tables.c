@@ -2089,7 +2089,7 @@ const dfi_pool_item_data dfi_pool_items[DFI_POOL_ITEM_COUNT] = {
  *   cudchew -- data/abilities.ts:742-771  [unmodelled: callback onEatItem; callback onResidual; callback onResidualOrder; callback onResidualSubOrder; read by id in data/moves.ts]
  *   curiousmedicine -- data/abilities.ts:772-783  [unmodelled: callback onStart]
  *   cursedbody -- data/abilities.ts:784-797
- *   cutecharm -- data/abilities.ts:798-810  [unmodelled: callback onDamagingHit]
+ *   cutecharm -- data/abilities.ts:798-810
  *   damp -- data/abilities.ts:811-828
  *   disguise -- data/abilities.ts:970-1016  [unmodelled: callback onCriticalHit; callback onDamage; callback onDamagePriority; callback onEffectiveness; callback onUpdate; read by id in data/mods/champions/scripts.ts; read by id in sim/pokemon.ts]
  *   dragonize -- data/abilities.ts:1036-1057, data/mods/champions/abilities.ts:14-17
@@ -2868,7 +2868,7 @@ const uint8_t dfi_pool_ability_handler[DFI_POOL_ABILITY_COUNT] = {
     [DFI_ABILITY_CUDCHEW] = DFI_HANDLER_UNMODELED,
     [DFI_ABILITY_CURIOUSMEDICINE] = DFI_HANDLER_UNMODELED,
     [DFI_ABILITY_CURSEDBODY] = DFI_HANDLER_NONE,
-    [DFI_ABILITY_CUTECHARM] = DFI_HANDLER_UNMODELED,
+    [DFI_ABILITY_CUTECHARM] = DFI_HANDLER_NONE,
     [DFI_ABILITY_DAMP] = DFI_HANDLER_NONE,
     [DFI_ABILITY_DISGUISE] = DFI_HANDLER_UNMODELED,
     [DFI_ABILITY_DRAGONIZE] = DFI_HANDLER_NONE,
@@ -7023,7 +7023,6 @@ const char *const dfi_pool_ability_unmodeled[DFI_POOL_ABILITY_COUNT] = {
     [DFI_ABILITY_CORROSION] = "read by id in sim/pokemon.ts",
     [DFI_ABILITY_CUDCHEW] = "callback onEatItem; callback onResidual; callback onResidualOrder; callback onResidualSubOrder; read by id in data/moves.ts",
     [DFI_ABILITY_CURIOUSMEDICINE] = "callback onStart",
-    [DFI_ABILITY_CUTECHARM] = "callback onDamagingHit",
     [DFI_ABILITY_DISGUISE] = "callback onCriticalHit; callback onDamage; callback onDamagePriority; callback onEffectiveness; callback onUpdate; read by id in data/mods/champions/scripts.ts; read by id in sim/pokemon.ts",
     [DFI_ABILITY_DRYSKIN] = "callback onSourceBasePower; callback onSourceBasePowerPriority; callback onTryHit; callback onWeather",
     [DFI_ABILITY_EARLYBIRD] = "read by id in data/conditions.ts",
@@ -7116,10 +7115,10 @@ const char *const dfi_pool_ability_unmodeled[DFI_POOL_ABILITY_COUNT] = {
 };
 
 const uint8_t dfi_pool_table_hash[32] = {
-    0xc8u, 0x05u, 0xfcu, 0xc5u, 0xf2u, 0x18u, 0x53u, 0x68u,
-    0x30u, 0x07u, 0x1cu, 0x67u, 0x53u, 0x7bu, 0xebu, 0x6au,
-    0x69u, 0x72u, 0x4fu, 0x3fu, 0x78u, 0x4bu, 0x26u, 0xdbu,
-    0x65u, 0xbeu, 0x0cu, 0x19u, 0x3fu, 0xacu, 0xe7u, 0x30u,
+    0x46u, 0x91u, 0x17u, 0x81u, 0x1cu, 0xadu, 0x0cu, 0x10u,
+    0x6cu, 0xc9u, 0xccu, 0x24u, 0xafu, 0xa1u, 0x24u, 0x83u,
+    0x1au, 0x7cu, 0x28u, 0x45u, 0xeeu, 0x84u, 0x28u, 0x04u,
+    0x9eu, 0xd5u, 0xdeu, 0xe2u, 0x97u, 0x61u, 0xf1u, 0xe3u,
 };
 
 static size_t dfi_pool_put_u16(uint8_t *out, size_t n, uint32_t v)
