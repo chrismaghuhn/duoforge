@@ -52,9 +52,14 @@ def pause_file():
     return os.environ.get("DUOFORGE_FUZZ_PAUSE") or os.path.join(tempfile.gettempdir(), "duoforge-fuzz.pause")
 
 
-def _init(prior_path, stats_factory, node, ps_dir, format_prefix, out_dir, part_manifest):
+def _init(prior_path, stats_factory, node, ps_dir, format_prefix, out_dir, part_manifest, options=None):
     from .stats import StatSource
     _STATE["data"] = live_data.load(kind="pool")
+    _STATE["options"] = options = dict(options or {"mode": "sheet", "k": 1, "seed": 0, "split": None})
+    _STATE["belief"] = None
+    if options["mode"] != "sheet":
+        from . import corpus, setbelief
+        _STATE["belief"] = setbelief.SetBelief(corpus.load(options["corpus"]), _STATE["data"])
     _STATE["prior"] = Prior.load(prior_path)
     _STATE["stats"] = stats_factory() if stats_factory is not None else StatSource(node, ps_dir)
     _STATE["format_prefix"] = format_prefix
@@ -69,11 +74,22 @@ def _work_unit(unit):
     examples = []
     results = []
     tmp = _STATE["out"] / f"part-{unit.id}.tmp"
-    part_manifest = {**_STATE["manifest"], "unit": unit.id, "source": Path(unit.path).name}
-    rows = source.select(source.read_unit(unit, _STATE["format_prefix"], counters), _STATE["format_prefix"], counters)
-    for replay_id, format_id, log in rows:
+    options = _STATE["options"]
+    part_manifest = {**_STATE["manifest"], "unit": unit.id, "source_file": Path(unit.path).name}
+    rows = source.select(source.read_unit(unit, _STATE["format_prefix"], counters), _STATE["format_prefix"], counters,
+                         options["mode"], options["split"])
+    draws = ((replay_id, format_id, log, dropped, d) for replay_id, format_id, log, dropped in rows
+             for d in range(options["k"]))
+    for replay_id, format_id, log, dropped, draw in draws:
+        if draw:  # each draw of a game is a game of the dataset (the funnel adds up per draw)
+            counters["games.read"] += 1
+            funnel.count(counters, format_id, "read")
         try:
-            result = game.process(replay_id, format_id, log, _STATE["data"], _STATE["prior"], _STATE["stats"])
+            if _STATE["belief"] is None:
+                result = game.process(replay_id, format_id, log, _STATE["data"], _STATE["prior"], _STATE["stats"])
+            else:
+                result = game.process(replay_id, format_id, log, _STATE["data"], _STATE["prior"], _STATE["stats"],
+                                      belief=_STATE["belief"], seed=options["seed"], draw=draw, known_sheets=dropped)
         except game.Skip as e:
             counters[f"games.skipped.{e.reason}"] += 1
             funnel.count(counters, format_id, f"skipped.{e.reason}")
@@ -94,7 +110,7 @@ def _work_unit(unit):
                 funnel.count(counters, format_id, key, n)
         funnel.count(counters, format_id, "rows", len(result.rows))
         results.append(result)
-    writer = dataset.Writer(tmp, {**part_manifest, "internal_examples": examples})
+    writer = dataset.Writer(tmp, {**part_manifest, "internal_examples": examples}, source=options["mode"])
     for result in results:
         writer.add(result)
     writer.counters.update(counters)
@@ -130,9 +146,15 @@ def _prefix_record(format_prefix):
     return p[0] if len(p) == 1 else list(p)
 
 
-def inputs(paths, prior_path, format_prefix, unit_lines, ps_dir):
-    """What a dataset's parts depend on: a resumed run must have the same."""
-    return {**provenance(ps_dir),
+def inputs(paths, prior_path, format_prefix, unit_lines, ps_dir, options=None):
+    """What a dataset's parts depend on: a resumed run must have the same. A sheet build without a split records what
+    it always did (an old dataset resumes); any other build records its mode, corpus, seed, k and split."""
+    extra = {}
+    if options is not None and (options["mode"] != "sheet" or options["split"] is not None):
+        extra = {"belief": {"mode": options["mode"], "split": options["split"], "seed": options["seed"],
+                            "k": options["k"],
+                            "corpus_sha256": _sha256(options["corpus"]) if options.get("corpus") else None}}
+    return {**provenance(ps_dir), **extra,
         "code": {"commit": _git(live_data.ROOT, "rev-parse", "HEAD"),
                  "dirty": bool(_git(live_data.ROOT, "status", "--porcelain", "--untracked-files=no"))},
         "sources": [{"file": p.name, "bytes": p.stat().st_size, "sha256": _sha256(p)} for p in source.files(paths)],
@@ -201,7 +223,8 @@ def _prepare(out, wanted, run):
 
 
 def build(paths, prior_path, out_dir, workers=1, limit_parts=None, format_prefix=source.FORMAT_PREFIX,
-          unit_lines=4096, stats_factory=None, node="node", ps_dir=None, log=None):
+          unit_lines=4096, stats_factory=None, node="node", ps_dir=None, log=None, mode="sheet", corpus=None, seed=0,
+          k=1, split_of=None):
     """Builds or resumes the dataset; returns the counters of the whole output, plus parts.written,
     parts.skipped.done and parts.redone.broken for this run, and internal.examples: the replay ids of internal errors
     (bugs) in any part of the output."""
@@ -214,24 +237,36 @@ def build(paths, prior_path, out_dir, workers=1, limit_parts=None, format_prefix
         if REG_MA.startswith(prefix) or prefix.startswith(REG_MA):
             raise ValueError(f"Reg M-A is excluded (another mechanics era, owner 2026-10-10): the prefix {prefix!r} "
                              "would take its games")
-    wanted = inputs(paths, prior_path, format_prefix, unit_lines, ps_dir)
+    if mode not in source.MODES:
+        raise ValueError(f"mode {mode!r} is none of {source.MODES}")
+    if mode == "sheet" and (corpus is not None or k != 1):
+        raise ValueError("a sheet build has no corpus and k 1: the belief options need mode bo1_belief or drop_sheets")
+    if mode != "sheet" and corpus is None:
+        raise ValueError(f"a {mode} build needs a corpus (python -m duoforge_replay corpus)")
+    if type(k) is not int or k < 1:
+        raise ValueError("k must be a positive number of draws")
+    if split_of not in (None, "train", "test"):
+        raise ValueError("split must be train, test or none")
+    options = {"mode": mode, "corpus": str(corpus) if corpus is not None else None, "seed": int(seed), "k": k,
+               "split": "test" if mode == "drop_sheets" and split_of is None else split_of}
+    wanted = inputs(paths, prior_path, format_prefix, unit_lines, ps_dir, options)
     run = collections.Counter()
     done = _prepare(out, wanted, run)
     try:
         return _run(paths, prior_path, out, wanted, done, run, workers, limit_parts, format_prefix, unit_lines,
-                    stats_factory, node, ps_dir, log)
+                    stats_factory, node, ps_dir, log, options)
     finally:
         (out / LOCK).unlink()
 
 
 def _run(paths, prior_path, out, wanted, done, run, workers, limit_parts, format_prefix, unit_lines, stats_factory,
-         node, ps_dir, log):
+         node, ps_dir, log, options):
     units = source.units(paths, unit_lines)
     run["parts.skipped.done"] = sum(1 for u in units if u.id in done)
     todo = [u for u in units if u.id not in done]
     if limit_parts is not None:
         todo = todo[:limit_parts]
-    initargs = (prior_path, stats_factory, node, ps_dir, format_prefix, out, {"inputs": wanted})
+    initargs = (prior_path, stats_factory, node, ps_dir, format_prefix, out, {"inputs": wanted}, options)
     start = time.monotonic()
     games_now = 0
 
@@ -283,7 +318,8 @@ def _run(paths, prior_path, out, wanted, done, run, workers, limit_parts, format
     counters = dict(sorted(total.items()))
     dataset.write_json_atomic(out / "counters.json", counters)
     dataset.write_json_atomic(out / "manifest.json", {
-        "format_version": dataset.FORMAT_VERSION, "layout": "parts", "inputs": wanted, "parts": parts,
+        "format_version": dataset.FORMAT_VERSION, "source": options["mode"], "layout": "parts", "inputs": wanted,
+        "parts": parts,
         "counters": counters,
         "run": {"workers": workers, "parts_written": run["parts.written"], "seconds": round(seconds, 1),
                 "games_per_second": round(games_now / max(seconds, 1e-9), 1)},

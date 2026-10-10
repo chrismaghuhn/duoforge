@@ -11,7 +11,10 @@ import re
 from dataclasses import dataclass
 from pathlib import Path
 
-from . import funnel
+from . import funnel, split
+
+MODES = ("sheet", "bo1_belief", "drop_sheets")  # the open-sheet games; the games without sheets; test-split sheet
+# games with their sheets dropped (the Bo1 belief validation, M11 Bo1 spec section 6)
 
 FORMAT_PREFIX = "gen9championsvgc2026regmc"
 
@@ -103,16 +106,38 @@ def _parquet():
     return pq
 
 
-def select(rows, format_prefix, counters):
-    """The rows of the format with exactly two |showteam| lines; the others counted under games.skipped.<reason>."""
+def select(rows, format_prefix, counters, mode="sheet", split_of=None):
+    """(id, format id, log, dropped sheet hashes) of the games a build of `mode` takes; the others counted under
+    games.skipped.<reason> and their funnel stage. sheet: exactly two |showteam| lines (skip:sheets). bo1_belief: none
+    (skip:has-sheets). drop_sheets: exactly two, yielded without them and with their hashes. split_of ("train",
+    "test" or None): only games of that player split (skip:split-<the other>; skip:split-players without both
+    |player| lines)."""
+    from .game import _hash8
     for replay_id, format_id, log in rows:
         counters["games.read"] += 1
         funnel.count(counters, format_id, "read")
+        shown = log.count("\n|showteam|") + log.startswith("|showteam|")
+        reason = None
         if not format_id.startswith(format_prefix):
-            counters["games.skipped.skip:format"] += 1
-            funnel.count(counters, format_id, "skipped.skip:format")
-        elif log.count("\n|showteam|") + log.startswith("|showteam|") != 2:
-            counters["games.skipped.skip:sheets"] += 1
-            funnel.count(counters, format_id, "skipped.skip:sheets")
-        else:
-            yield replay_id, format_id, log
+            reason = "skip:format"
+        elif mode == "bo1_belief" and shown:
+            reason = "skip:has-sheets"
+        elif mode != "bo1_belief" and shown != 2:
+            reason = "skip:sheets"
+        elif split_of is not None:
+            try:
+                got = split.of_game(split.players_of(log.split("\n")))
+            except ValueError:
+                got = "players"
+            if got != split_of:
+                reason = f"skip:split-{got}"
+        if reason is not None:
+            counters[f"games.skipped.{reason}"] += 1
+            funnel.count(counters, format_id, f"skipped.{reason}")
+            continue
+        dropped = ()
+        if mode == "drop_sheets":
+            lines = log.split("\n")
+            dropped = tuple(_hash8(line.split("|", 3)[3]) for line in lines if line.startswith("|showteam|"))
+            log = "\n".join(line for line in lines if not line.startswith("|showteam|"))
+        yield replay_id, format_id, log, dropped

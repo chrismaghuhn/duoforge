@@ -1958,5 +1958,110 @@ class BeliefGameTest(unittest.TestCase):
         self.assertEqual(self.process(seed=3, draw=2).record.draw, 2)
 
 
+class BeliefBuildTest(unittest.TestCase):
+    """The bo1_belief and drop_sheets modes of a build and their marked datasets (M11 Bo1 plan Task 5)."""
+
+    @classmethod
+    def setUpClass(cls):
+        import json
+        from duoforge_live import teams
+        cls.tmp = Path(tempfile.mkdtemp(prefix="duoforge_belief_build_"))
+        cls.data = data.load(kind="pool")
+        log = FIXTURE.read_text(encoding="utf-8")
+        cls.prior_path = cls.tmp / "prior.json"
+        cls.prior_path.write_text(json.dumps({"version": 1, "pastes": 0, "skipped": {}, "levels": [{}, {}, {}, {}]}),
+                                  encoding="utf-8")
+        sheets = [teams.unpack(line.split("|", 3)[3]) for line in log.split(chr(10)) if line.startswith("|showteam|")]
+        sets = collections.defaultdict(list)
+        for s in sheets[0] + sheets[1]:
+            sets[trace_to_c.key(cls.data.canonical(s["species"]))].append(
+                [s["item"], s["ability"], s["nature"], sorted(s["moves"]), 5])
+        cls.corpus = cls.tmp / "corpus.json"
+        cls.corpus.write_text(json.dumps({"version": 1, "sheet_hashes": [], "sets": sets}), encoding="utf-8")
+        test, (a, b) = player_names()
+
+        def named(text, p1, p2):
+            return text.replace("|player|p1|p1||", f"|player|p1|{p1}||").replace("|player|p2|p2||", f"|player|p2|{p2}||")
+        bo1 = chr(10).join(line for line in log.split(chr(10)) if not line.startswith("|showteam|"))
+        cls.games = {"open-train": named(log, a, b), "open-test": named(log, test, b), "bo1-train": named(bo1, a, b),
+                     "bo1-test": named(bo1, test, a)}
+
+    @classmethod
+    def tearDownClass(cls):
+        shutil.rmtree(cls.tmp, ignore_errors=True)
+
+    def source(self, name, ids):
+        import json
+        path = self.tmp / f"{name}.jsonl"
+        with open(path, "w", encoding="utf-8", newline=chr(10)) as f:
+            for gid in ids:
+                f.write(json.dumps({"id": gid, "formatid": "gen9championsvgc2026regmc", "log": self.games[gid]}) + chr(10))
+        return path
+
+    def build(self, name, ids, **kw):
+        from duoforge_replay import build
+        return build.build([self.source(name, ids)], self.prior_path, self.tmp / name, unit_lines=8,
+                           stats_factory=stats_factory, log=lambda _: None, **kw)
+
+    def manifest(self, name):
+        import json
+        return json.loads((self.tmp / name / "manifest.json").read_text(encoding="utf-8"))
+
+    def test_bo1_mode_takes_only_games_without_sheets(self):
+        from duoforge_replay import dataset
+        c = self.build("bo1", ["open-train", "bo1-train"], mode="bo1_belief", corpus=self.corpus, seed=1)
+        self.assertEqual((c["games.processed"], c["games.skipped.skip:has-sheets"]), (1, 1))
+        shards = list(dataset.read(self.tmp / "bo1"))
+        self.assertTrue(shards)
+        for shard in shards:
+            self.assertEqual(shard["belief_level"].shape[1:], (12,))
+            self.assertEqual(shard["revealed"].shape[1:], (6,))
+        self.assertEqual(self.manifest("bo1")["source"], "bo1_belief")
+
+    def test_drop_mode_takes_test_split_sheet_games_without_their_sheets(self):
+        c = self.build("drop", ["open-test", "open-train", "bo1-test"], mode="drop_sheets", corpus=self.corpus)
+        self.assertEqual(c["games.processed"], 1)
+        self.assertEqual(c["games.skipped.skip:split-train"], 1)
+        self.assertEqual(c["games.skipped.skip:sheets"], 1)
+        from duoforge_replay import funnel
+        f = funnel.report(c)["gen9championsvgc2026regmc"]
+        self.assertEqual(f["skipped"].get("skip:split-train"), 1)
+        self.assertEqual(f["read"], sum(f["skipped"].values()) + f["internal"] + f["processed"])
+        self.assertEqual(self.manifest("drop")["source"], "drop_sheets")
+
+    def test_k_draws_are_k_games_with_their_draw(self):
+        from duoforge_replay import dataset
+        c = self.build("k3", ["bo1-train"], mode="bo1_belief", corpus=self.corpus, k=3)
+        self.assertEqual((c["games.read"], c["games.processed"]), (3, 3))
+        games = dataset.read_games(next(iter(dataset.parts(self.tmp / "k3"))))
+        self.assertEqual(sorted(games["draw"].tolist()), [0, 1, 2])
+
+    def test_a_sheet_build_names_its_source_and_has_no_belief_fields(self):
+        from duoforge_replay import dataset
+        self.build("sheet", ["open-train", "bo1-train"])
+        m = self.manifest("sheet")
+        self.assertEqual((m["source"], m["format_version"]), ("sheet", dataset.FORMAT_VERSION))
+        self.assertEqual(dataset.FORMAT_VERSION, 2)
+        for shard in dataset.read(self.tmp / "sheet"):
+            self.assertNotIn("belief_level", shard)
+        part = next(iter(dataset.parts(self.tmp / "sheet")))
+        self.assertNotIn("draw", dataset.read_games(part))
+
+    def test_the_options_must_fit_the_mode(self):
+        for kw, part in (({"mode": "sheet", "corpus": self.corpus}, "corpus"), ({"mode": "bo1_belief"}, "corpus"),
+                         ({"mode": "sheet", "k": 2}, "k"), ({"mode": "nonsense"}, "mode")):
+            with self.subTest(kw), self.assertRaisesRegex(ValueError, part):
+                self.build("bad", ["bo1-train"], **kw)
+
+    def test_a_writer_refuses_rows_of_the_other_source(self):
+        from duoforge_replay import dataset, game, prior, setbelief, corpus
+        belief = setbelief.SetBelief(corpus.load(self.corpus), self.data)
+        result = game.process("x", "gen9championsvgc2026regmc", self.games["bo1-train"], self.data,
+                              prior.Prior.load(self.prior_path), _Stats(), belief=belief)
+        writer = dataset.Writer(self.tmp / "mixed", {}, source="sheet")
+        with self.assertRaisesRegex(ValueError, "belief rows"):
+            writer.add(result)
+
+
 if __name__ == "__main__":
     unittest.main()
