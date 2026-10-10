@@ -1,0 +1,117 @@
+{
+ "name": "h18_absorbed_secondary_psychic_sitrus_mirror",
+ "purpose": "The SECONDARY roll of a damaging hit that a Substitute absorbs (fz_7418_299 of seed 7418, step 22): Hatterene Psychic (10 percent Sp. Def secondary) into the standing Substitute of the foe Snorlax, mirrored Sitrus holders. The pin draws random(100) for the absorbed target (sim/battle-actions.ts:1336-1349, a null target is not false) and the effect is not applied (the port of 0b3fd447 hunks, G74).",
+ "data": "pool",
+ "format": "gen9championsvgc2026regmc",
+ "seed": "sodium,457cbf23d36461da234cae7704b064ad98824c4e6f28a5527da5d4df0ae74ec3",
+ "teams": [
+  "Pawmot (M) @ Leftovers\nAbility: Iron Fist\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Thunderbolt\n- Revival Blessing\n- Ice Punch\n- Protect\n\nGholdengo @ Life Orb\nAbility: Good as Gold\nLevel: 50\nEVs: 32 HP / 2 SpA / 32 SpD\nCalm Nature\n- Protect\n- Shadow Ball\n- Make It Rain\n\nCeruledge (M) @ Charcoal\nAbility: Flash Fire\nLevel: 50\nEVs: 31 HP / 7 Atk / 24 Def / 3 SpD / 1 Spe\nBrave Nature\n- Protect\n\nKingambit (M) @ Black Glasses\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Sucker Punch\n- Iron Head\n- Protect\n- Swords Dance\n\nHatterene (F) @ Mystic Water\nAbility: Magic Bounce\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nModest Nature\n- Protect\n- Dazzling Gleam\n- Psychic\n\nSnorlax (M) @ Sitrus Berry\nAbility: Thick Fat\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Spe\nAdamant Nature\n- Yawn\n- Stomping Tantrum\n- Protect\n- Substitute",
+  "Snorlax (M) @ Sitrus Berry\nAbility: Thick Fat\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Spe\nAdamant Nature\n- Yawn\n- Stomping Tantrum\n- Protect\n- Substitute\n\nGholdengo @ Life Orb\nAbility: Good as Gold\nLevel: 50\nEVs: 32 HP / 2 SpA / 32 SpD\nCalm Nature\n- Protect\n- Shadow Ball\n- Make It Rain\n\nCeruledge (M) @ Charcoal\nAbility: Flash Fire\nLevel: 50\nEVs: 31 HP / 7 Atk / 24 Def / 3 SpD / 1 Spe\nBrave Nature\n- Protect\n\nPawmot (M) @ Leftovers\nAbility: Iron Fist\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Thunderbolt\n- Revival Blessing\n- Ice Punch\n- Protect\n\nHatterene (F) @ Mystic Water\nAbility: Magic Bounce\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nModest Nature\n- Protect\n- Dazzling Gleam\n- Psychic\n\nKingambit (M) @ Black Glasses\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Sucker Punch\n- Iron Head\n- Protect\n- Swords Dance"
+ ],
+ "choices": [
+  {
+   "p1": "team 2354",
+   "p2": "team 5312"
+  },
+  {
+   "p1": "move 3, move 1",
+   "p2": "move 1, move 1"
+  },
+  {
+   "p1": "move 3, move 1",
+   "p2": "move 2, move 1"
+  },
+  {
+   "p1": "move 3, move 1",
+   "p2": "move 2, switch 3"
+  },
+  {
+   "p2": "switch 4, pass"
+  },
+  {
+   "p1": "move 2 1, switch 4",
+   "p2": "move 2 1, move 3"
+  },
+  {
+   "p1": "switch 4, switch 3",
+   "p2": "switch 3, move 2 2"
+  },
+  {
+   "p1": "move 1, move 3 2",
+   "p2": "move 1, move 3"
+  },
+  {
+   "p1": "move 1, move 1",
+   "p2": "move 1, move 1 1"
+  },
+  {
+   "p1": "move 1, switch 4",
+   "p2": "move 1, move 3"
+  },
+  {
+   "p1": "move 1, move 1",
+   "p2": "move 1, move 4"
+  },
+  {
+   "p1": "move 1, move 1",
+   "p2": "move 1, move 1 1"
+  },
+  {
+   "p1": "move 1, move 3",
+   "p2": "switch 3, move 1 -1"
+  },
+  {
+   "p1": "pass, switch 4"
+  },
+  {
+   "p1": "move 1, move 1",
+   "p2": "move 3, move 2 -1"
+  },
+  {
+   "p2": "switch 3, pass"
+  },
+  {
+   "p1": "move 1, move 1",
+   "p2": "move 1, move 4"
+  },
+  {
+   "p1": "move 1, move 1",
+   "p2": "move 1, move 2 2"
+  },
+  {
+   "p1": "move 1, move 1",
+   "p2": "move 1, move 2 -1"
+  },
+  {
+   "p1": "switch 3, pass"
+  },
+  {
+   "p1": "move 1 -2, move 1",
+   "p2": "pass, move 3"
+  },
+  {
+   "p1": "move 1 1, move 1",
+   "p2": "pass, move 4"
+  },
+  {
+   "p1": "move 4, move 3 1",
+   "p2": "pass, move 1 1"
+  },
+  {
+   "p1": "move 1 2, move 2",
+   "p2": "pass, move 3"
+  },
+  {
+   "p1": "move 1 -2, move 1",
+   "p2": "pass, move 4"
+  },
+  {
+   "p1": "move 3, move 2",
+   "p2": "pass, move 4"
+  },
+  {
+   "p1": "move 4, move 3 2",
+   "p2": "pass, move 4"
+  }
+ ]
+}
