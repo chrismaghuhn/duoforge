@@ -28,6 +28,7 @@ import hashlib
 import json
 import multiprocessing
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -67,6 +68,14 @@ def _init(prior_path, stats_factory, node, ps_dir, format_prefix, out_dir, part_
     _STATE["manifest"] = part_manifest
 
 
+def _refused_turns(counters, format_id, log):
+    """The turns of a game the build took but did not set up (a Skip, an internal error), both perspectives: they
+    stay in the turn coverage's denominator (none kept), so the coverage over every game taken is not optimistic."""
+    turns = 2 * max((int(m) for m in re.findall(r"(?m)^\|turn\|(\d+)", log)), default=0)
+    counters["turns.refused"] += turns
+    funnel.count(counters, format_id, "turns.refused", turns)
+
+
 def _work_unit(unit):
     """Writes one part; returns (unit id, counters, internal examples, seconds)."""
     start = time.monotonic()
@@ -93,6 +102,7 @@ def _work_unit(unit):
         except game.Skip as e:
             counters[f"games.skipped.{e.reason}"] += 1
             funnel.count(counters, format_id, f"skipped.{e.reason}")
+            _refused_turns(counters, format_id, log)
             continue
         except KeyboardInterrupt:
             raise
@@ -100,13 +110,14 @@ def _work_unit(unit):
             key = f"internal:{type(e).__name__}"
             counters[key] += 1
             funnel.count(counters, format_id, key)
+            _refused_turns(counters, format_id, log)
             if len(examples) < EXAMPLES:
                 examples.append(f"{replay_id}: {type(e).__name__}: {str(e)[:120]}")
             continue
         counters["games.processed"] += 1
         funnel.count(counters, format_id, "processed")
         for key, n in result.counters.items():
-            if key.startswith("perspectives."):
+            if key.startswith(("perspectives.", "turns.")) or key == "games.both_kept":
                 funnel.count(counters, format_id, key, n)
         funnel.count(counters, format_id, "rows", len(result.rows))
         results.append(result)

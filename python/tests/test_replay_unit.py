@@ -914,6 +914,24 @@ class GameTest(unittest.TestCase):
         self.assertEqual(result.record.winner, 1)
         self.assertEqual(result.record.turns, 10)
 
+    def test_turn_coverage_of_a_clean_game_is_every_turn(self):
+        # turns.total: the game's turns per perspective; turns.kept: the turns complete before the perspective's stop
+        result = self.run_game(self.log)
+        self.assertEqual((result.counters["turns.total"], result.counters["turns.kept"]),
+                         (2 * result.record.turns, 2 * result.record.turns))
+
+    def test_turn_coverage_ends_at_the_stop(self):
+        result = self.run_game(self.insert_after("|turn|2", "|-start|p2a: Politoed|move: Heal Block"))
+        self.assertEqual(result.counters["turns.total"], 2 * result.record.turns)
+        self.assertEqual(result.counters["turns.kept"], 2 * 1)  # turn 1 complete, turn 2 stopped
+        self.assertEqual(result.counters["games.both_kept"], 0)
+
+    def test_a_match_counts_when_both_perspectives_run_to_the_end(self):
+        self.assertEqual(self.run_game(self.log).counters["games.both_kept"], 1)
+        # a stop in one perspective is enough: the Rage Powder before p1's own pivot stops p1 only
+        one = self.run_game(self.insert_after("|turn|3", "|-start|p2a: Politoed|Rage Powder"))
+        self.assertEqual(one.counters["games.both_kept"], 1 if one.counters["perspectives.kept"] == 2 else 0)
+
     def test_a_feature_stops_after_turn_two(self):
         # a feature the tracker does not fold (Heal Block; Sand folds since the BC PR) ends both perspectives there:
         # the points before it are written, the later ones dropped
@@ -1435,6 +1453,18 @@ class DatasetTest(unittest.TestCase):
         for format_id in report:
             self.assertIn(format_id, text)
 
+    def test_the_funnel_counts_turns(self):
+        from duoforge_replay import funnel
+        c = self.build("turns")
+        f = funnel.report(c)["gen9championsvgc2026regmcbo3"]
+        self.assertEqual(f["turns"], {"total": c["turns.total"], "kept": c["turns.kept"], "refused": 0})
+        self.assertGreater(f["turns"]["total"], 0)
+        text = funnel.text(funnel.report(c))
+        self.assertIn("turns without a stop, of all its games taken", text)
+        self.assertIn("turns without a stop, of the games set up", text)
+        self.assertEqual(f["both_kept"], c["games.both_kept"])
+        self.assertIn("matches with both perspectives to the end", text)
+
     def test_the_funnel_command_reads_a_dataset(self):
         import contextlib
         import io
@@ -1467,10 +1497,14 @@ class DatasetTest(unittest.TestCase):
         f = funnel.report(c)["gen9championsvgc2026regmc"]
         self.assertEqual((f["read"], f["skipped"], f["internal"], f["processed"]),
                          (2, {"name:FORME Fakemon": 1}, 0, 1))
+        # a refused game's turns stay in the denominator of the turn coverage, both perspectives, none kept
+        turns = max(int(line.split("|")[2]) for line in lines if line.startswith("|turn|"))
+        self.assertEqual(f["turns"]["refused"], 2 * turns)
         c = build.build([self.source], self.prior_path, self.tmp / "internal", unit_lines=2,
                         stats_factory=broken_stats_factory, log=lambda _: None)
         f = funnel.report(c)["gen9championsvgc2026regmcbo3"]
         self.assertEqual((f["read"], f["internal"], f["processed"], f["rows"]), (3, 3, 0, 0))
+        self.assertGreater(f["turns"]["refused"], 0)  # an internal error's turns too
         self.assertEqual(f["internal"], c["internal:RuntimeError"])
 
     def test_the_funnel_command_refuses_a_dataset_without_funnel(self):
