@@ -3,7 +3,7 @@
  "pin": "b2cb775b0616115b775534eaeff50300e1fc81fc",
  "spec": "g71_oblivious.json",
  "format": "gen9championsvgc2026regmc",
- "seed": "sodium,0000000000000000000000000000000000000000000000000000000000b71001",
+ "seed": "sodium,0000000000000000000000000000000000000000000000000000000000c71003",
  "start": {
   "log": [
    "|gametype|doubles",
@@ -449,7 +449,7 @@
      "context": "queue",
      "lo": 4,
      "hi": 6,
-     "value": 5,
+     "value": 4,
      "group": [
       "A:team:p1c:",
       "A:team:p2c:"
@@ -461,7 +461,7 @@
      "context": "queue",
      "lo": 6,
      "hi": 8,
-     "value": 6,
+     "value": 7,
      "group": [
       "A:team:p1undefined:",
       "A:team:p2undefined:"
@@ -813,35 +813,35 @@
      "context": "",
      "lo": 0,
      "hi": 100,
-     "value": 15
+     "value": 56
     },
     {
      "site": "CRIT",
      "context": "",
      "lo": 0,
      "hi": 24,
-     "value": 21
+     "value": 6
     },
     {
      "site": "DAMAGE_ROLL",
      "context": "",
      "lo": 0,
      "hi": 16,
-     "value": 9
+     "value": 2
     },
     {
      "site": "CUTE_CHARM",
      "context": "DamagingHit",
      "lo": 0,
      "hi": 10,
-     "value": 9
+     "value": 0
     },
     {
      "site": "SPEED_TIE",
      "context": "field:Residual",
      "lo": 1,
      "hi": 3,
-     "value": 2,
+     "value": 1,
      "group": [
       "H:protect:p2b:end",
       "H:stall:p2b:end"
@@ -872,8 +872,8 @@
     "|-boost|p1b: Milotic|accuracy|1",
     "|move|p2a: Slowbro|Drain Punch|p1b: Milotic",
     "|split|p1",
-    "|-damage|p1b: Milotic|188/202",
-    "|-damage|p1b: Milotic|93/100",
+    "|-damage|p1b: Milotic|187/202",
+    "|-damage|p1b: Milotic|92/100",
     "|upkeep",
     "|turn|2"
    ],
@@ -950,7 +950,7 @@
         "set_species": "Milotic",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 188,
+        "hp": 187,
         "maxhp": 202,
         "item": "sitrusberry",
         "status": "",
