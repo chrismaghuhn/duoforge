@@ -41,7 +41,11 @@ def main(argv=None):
     args = parser.parse_args(argv)
     if args.command == "funnel":
         counters = json.loads((args.dir / "counters.json").read_text(encoding="utf-8"))
-        print(funnel.text(funnel.report(counters), top=args.top), end="")
+        report = funnel.report(counters)
+        if not report:
+            print(f"{args.dir}: no funnel counters (a dataset built before the funnel): rebuild it", file=sys.stderr)
+            return 2
+        print(funnel.text(report, top=args.top), end="")
         return 0
     if args.command == "prior":
         dataset.refuse_repository(args.out)  # derived from public pastes, kept with the data (decision 0019)

@@ -826,6 +826,12 @@ class GameTest(unittest.TestCase):
                  for line in self.log]
         self.assertEqual(self.skip_reason(lines), "skip:illusion")
 
+    def test_two_sheets_of_one_side_are_a_refusal_of_their_own(self):
+        # review of #331: two |showteam| lines of the same side pass source.select (two lines) but are no pair of
+        # sheets; the game is refused under its own reason, not counted as a game without sheets
+        lines = [line.replace("|showteam|p2|", "|showteam|p1|", 1) for line in self.log]
+        self.assertEqual(self.skip_reason(lines), "skip:sheets-one-side")
+
     def test_session_line_skips_game(self):
         self.assertEqual(self.skip_reason(self.insert_after("|turn|3", "|init|battle")), "skip:session")
 
@@ -1311,6 +1317,47 @@ class DatasetTest(unittest.TestCase):
             self.assertEqual(cli.main(["funnel", str(self.tmp / "cli")]), 0)
         self.assertIn("gen9championsvgc2026regmcbo3", out.getvalue())
         self.assertIn("rows", out.getvalue())
+
+    def test_the_funnel_counts_refused_games_and_internal_errors(self):
+        # review of #331: the funnel stages of game.Skip and of an internal error, each in a build of its own
+        import json
+        from duoforge_replay import funnel
+        lines = self.log.split(chr(10))
+        i = next(i for i, line in enumerate(lines) if line.startswith("|showteam|p1|"))
+        head, packed = lines[i].split("|", 3)[:3], lines[i].split("|", 3)[3]
+        first = packed.split("]")[0].split("|")
+        first[1] = "Fakemon"  # a species the tables lack: name:FORME Fakemon
+        lines[i] = "|".join(head + ["]".join(["|".join(first)] + packed.split("]")[1:])])
+        mixed = self.tmp / "mixed.jsonl"
+        with open(mixed, "w", encoding="utf-8", newline=chr(10)) as f:
+            fake = chr(10).join(lines)
+            f.write(json.dumps({"id": "fake", "formatid": "gen9championsvgc2026regmc", "log": fake}) + chr(10))
+            f.write(json.dumps({"id": "ok", "formatid": "gen9championsvgc2026regmc", "log": self.log}) + chr(10))
+        from duoforge_replay import build
+        c = build.build([mixed], self.prior_path, self.tmp / "refused", unit_lines=2, stats_factory=stats_factory,
+                        log=lambda _: None)
+        f = funnel.report(c)["gen9championsvgc2026regmc"]
+        self.assertEqual((f["read"], f["skipped"], f["internal"], f["processed"]),
+                         (2, {"name:FORME Fakemon": 1}, 0, 1))
+        c = build.build([self.source], self.prior_path, self.tmp / "internal", unit_lines=2,
+                        stats_factory=broken_stats_factory, log=lambda _: None)
+        f = funnel.report(c)["gen9championsvgc2026regmcbo3"]
+        self.assertEqual((f["read"], f["internal"], f["processed"], f["rows"]), (3, 3, 0, 0))
+        self.assertEqual(f["internal"], c["internal:RuntimeError"])
+
+    def test_the_funnel_command_refuses_a_dataset_without_funnel(self):
+        # review of #331: a dataset built before the funnel has none; an empty report would read as "no games"
+        import contextlib
+        import io
+        import json
+        from duoforge_replay import __main__ as cli
+        old = self.tmp / "old"
+        old.mkdir()
+        (old / "counters.json").write_text(json.dumps({"games.read": 3, "games.processed": 3}), encoding="utf-8")
+        err = io.StringIO()
+        with contextlib.redirect_stderr(err):
+            self.assertEqual(cli.main(["funnel", str(old)]), 2)
+        self.assertIn("no funnel", err.getvalue())
 
     def test_reg_ma_is_excluded(self):
         # owner, 2026-10-10: Reg M-A ran under another mechanics era (Showdown before Champions 1.1.0); no prefix that

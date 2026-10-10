@@ -4,13 +4,16 @@
     -> set up (processed) -> perspectives to the end / stopped by reason -> rows
 
 The build counts every stage under "funnel.<format id>.<stage>" beside the totals (source.read_unit, source.select,
-build._work_unit), so the funnel of a dataset is its counters.json. Reg M-A is never built (build.REG_MA): its row
+build._work_unit), so the funnel of a dataset is its counters.json. Reg M-A is never built (REG_MA): its row
 says why.
 """
 import collections
 
 PREFIX = "funnel."
-EXCLUDED = {"gen9championsvgc2026regma": "excluded: other mechanics era (owner, 2026-10-10)"}
+# Reg M-A ran under another mechanics era (Showdown before Champions 1.1.0, then a mod of its own): never built
+# (owner, 2026-10-10; build.build refuses a prefix that would take its games).
+REG_MA = "gen9championsvgc2026regma"
+EXCLUDED = {REG_MA: "excluded: other mechanics era (owner, 2026-10-10)"}
 
 
 def count(counters, format_id, stage, n=1):

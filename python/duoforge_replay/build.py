@@ -44,9 +44,7 @@ DATA_KIND_POOL = 6  # DUOFORGE_DATA_KIND_POOL (include/duoforge/duoforge.h)
 MARKER = dataset.MARKER
 LOCK = "build.lock"
 EXAMPLES = 10  # replay ids kept per internal error type
-# Reg M-A ran under another mechanics era (Showdown before Champions 1.1.0 and its own mod): never built
-# (owner, 2026-10-10).
-REG_MA = "gen9championsvgc2026regma"
+REG_MA = funnel.REG_MA  # never built (owner, 2026-10-10)
 _STATE = {}
 
 

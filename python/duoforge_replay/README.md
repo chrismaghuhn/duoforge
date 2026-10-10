@@ -20,7 +20,8 @@ The writer refuses an output directory inside the repository. Tests use only our
 ```sh
 python -m duoforge_replay prior --pastes <dir of pastes> --out <prior.json>
 python -m duoforge_replay build --source <parquet or jsonl files or dirs> --prior <prior.json> --out <dir> \
-    [--workers N] [--limit-parts N] [--unit-lines N] [--ps-dir <pinned Showdown>] [--node node]     [--format-prefix gen9championsvgc2026regmc gen9championsvgc2026regmb]
+    [--workers N] [--limit-parts N] [--unit-lines N] [--ps-dir <pinned Showdown>] [--node node] \
+    [--format-prefix gen9championsvgc2026regmc gen9championsvgc2026regmb]
 python -m duoforge_replay funnel <dir> [--top N]
 ```
 
