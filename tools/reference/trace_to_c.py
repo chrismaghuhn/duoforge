@@ -2316,6 +2316,8 @@ def convert_battle(name, spec, trace, tables):
         # The positions that received a Pokemon, in the reference's order of their LAST entry (each switch or drag is
         # logged twice, for the two audiences). A position entered again in the same step (a drag of a Pokemon that
         # switched in) moves to the end: the engine's activation ids of the positions are those of their last entry.
+        # An Ally Switch (step G80) moves the entrant with its activation id: a `|swap|` line exchanges the two positions in the
+        # list, so each entry follows its Pokemon (the engine's activation ids of the slots move with the occupants).
         entries = []
         for line in step['log']:
             if line.startswith('|switch|') or line.startswith('|drag|'):
@@ -2324,6 +2326,12 @@ def convert_battle(name, spec, trace, tables):
                 if flat in entries:
                     entries.remove(flat)
                 entries.append(flat)
+            elif line.startswith('|swap|'):
+                parts = line.split('|')
+                who = parts[2].split(':')[0]
+                pos = (int(who[1]) - 1) * 2 + (ord(who[2]) - ord('a'))
+                new = (pos // 2) * 2 + int(parts[3])
+                entries = [new if f == pos else pos if f == new else f for f in entries]
         ent = entries + [0xFF] * (4 - len(entries))
         # The moves the reference's request offers per slot: bit k for move k,
         # 0x10 for Struggle, 0x20 for the recharge turn, 0xFF where there is nothing to compare.
