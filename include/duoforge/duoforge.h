@@ -33,9 +33,9 @@ extern "C" {
 #endif
 
 #define DUOFORGE_VERSION_MAJOR 0
-#define DUOFORGE_VERSION_MINOR 44
+#define DUOFORGE_VERSION_MINOR 45
 #define DUOFORGE_VERSION_PATCH 0
-#define DUOFORGE_VERSION_STRING "0.44.0"
+#define DUOFORGE_VERSION_STRING "0.45.0"
 
 /* Identifiers of the artifacts that exist now (registry: decisions 0002, 0005, 0006). */
 #define DUOFORGE_SEMANTICS_ID           3u   /* "duoforge-m3-closure" */
@@ -397,6 +397,10 @@ duoforge_status duoforge_data_forme_static(const duoforge_context *ctx, uint32_t
 #define DUOFORGE_MOVE_STATIC_FLAG_MUST_PRESSURE 0x800u /* flags.mustpressure (step G53): a foe's Pressure costs one PP for
                                                           this move whatever its target (Imprison, Spikes, Stealth Rock,
                                                           Toxic Spikes in the pool) */
+#define DUOFORGE_MOVE_STATIC_FLAG_LOCKED_MOVE 0x1000u /* lockedmove (step G56): its use locks the user into it for 2 or 3
+                                                         turns (Outrage, Thrash, Petal Dance). A public fact of the move: the
+                                                         engine's observation hides a foe's locked slot while its last move
+                                                         has it (view audit 2026-10-10), and the live tracker does the same */
 
 /* A move. 64 bytes. */
 typedef struct duoforge_move_static {
@@ -868,10 +872,32 @@ duoforge_status duoforge_battle_observe(const duoforge_context *ctx, const duofo
 /* Bits of duoforge_side_ext.guard_flags (this turn only). */
 #define DUOFORGE_SIDE_GUARD_WIDE_GUARD  1u
 #define DUOFORGE_SIDE_GUARD_QUICK_GUARD 2u
+/* The reserve bitfields of encoder 6 (decision 0050): every bit of them has a fixed encoder column from encoder 6 on, so a
+   new public presence effect of the content expansion needs no new encoder. A family's columns are shown under its feature
+   (DUOFORGE_VIEWEXT_FEATURE_RESERVE_VOLATILES, _VOLATILES2, _RESERVE_GUARDS, _SIDE_CONDITIONS, _FIELD_FLAGS), and a bit with a
+   feature of its own name (DUOFORGE_POSITION_EXT_X, DUOFORGE_POSITION_EXT2_X, DUOFORGE_SIDE_GUARD_X,
+   DUOFORGE_SIDE_CONDITION_X or DUOFORGE_FIELD_FLAG_X with DUOFORGE_VIEWEXT_FEATURE_X) only under that one as well. Families:
+   duoforge_position_ext.volatiles bits 22 to 31, duoforge_observation_ext.volatiles2 (32 bits per position),
+   duoforge_side_ext.guard_flags bits 2 to 7, duoforge_side_ext.conditions (8 bits), duoforge_field_ext.flags (16 bits).
+   No bit of the new fields is defined yet (DUOFORGE_POSITION_EXT2_*, DUOFORGE_SIDE_CONDITION_*, DUOFORGE_FIELD_FLAG_*): each
+   stays zero until a step defines it, as every field here. A new bit with a feature of its own adds one entry to
+   DUOFORGE_VIEWEXT_RESERVE_OWN below, next to its definition; nothing else (the C encoder reads the list, features.py
+   derives the same from the names, and python/tests/test_encoder6.py checks that the two agree). */
+/* X(family feature, bit number in the family's field, own feature): X(RESERVE_VOLATILES, 22u, HEALING_WISH) says
+   DUOFORGE_POSITION_EXT_HEALING_WISH (bit 22 of volatiles) is shown only under DUOFORGE_VIEWEXT_FEATURE_HEALING_WISH as
+   well. Empty while no reserve bit has a feature of its own. */
+#define DUOFORGE_VIEWEXT_RESERVE_OWN(X)
+/* X(family, bit number in the family's field): a defined reserve bit WITHOUT a feature of its own, shown under the family's
+   feature alone (POSITION_FLAGS: the observation's position flags, always), checked by its step: the comment beside the
+   entry names the decision or the evidence. Every defined reserve bit is in exactly one of the two lists
+   (python/tests/test_encoder6.py), so no bit becomes visible only because its family counts as supported. Empty now. */
+#define DUOFORGE_VIEWEXT_RESERVE_CHECKED(X)
 /* duoforge_member_ext.item_now: the member holds nothing (Knock Off, Thief). */
 #define DUOFORGE_ITEM_NOW_NONE 255u
 
-/* Bit numbers of duoforge_observation_ext.supported, by tier (decision 0018 section 7.1). Bits 43 to 63 are free. */
+/* Bit numbers of duoforge_observation_ext.supported, by tier (decision 0018 section 7.1). Bits 0 to COUNT - 1 are the tiers;
+   bits 43 to 58 are assigned to the content expansion's lanes (HauptSession), bits 59 to 63 are the reserve families of
+   encoder 6 (decision 0050). */
 #define DUOFORGE_VIEWEXT_FEATURE_WEATHER_SAND     0u
 #define DUOFORGE_VIEWEXT_FEATURE_WEATHER_SNOW     1u
 #define DUOFORGE_VIEWEXT_FEATURE_ABILITY_CHANGE   2u
@@ -916,11 +942,19 @@ duoforge_status duoforge_battle_observe(const duoforge_context *ctx, const duofo
 #define DUOFORGE_VIEWEXT_FEATURE_MOVE_FAILED      41u
 #define DUOFORGE_VIEWEXT_FEATURE_TRANSFORM        42u
 #define DUOFORGE_VIEWEXT_FEATURE_COUNT            43u
+/* The reserve families of encoder 6 (decision 0050), outside the tiers (COUNT does not count them). */
+#define DUOFORGE_VIEWEXT_FEATURE_RESERVE_VOLATILES 59u /* duoforge_position_ext.volatiles bits 22 to 31 */
+#define DUOFORGE_VIEWEXT_FEATURE_VOLATILES2        60u /* duoforge_observation_ext.volatiles2 */
+#define DUOFORGE_VIEWEXT_FEATURE_RESERVE_GUARDS    61u /* duoforge_side_ext.guard_flags bits 2 to 7 */
+#define DUOFORGE_VIEWEXT_FEATURE_SIDE_CONDITIONS   62u /* duoforge_side_ext.conditions */
+#define DUOFORGE_VIEWEXT_FEATURE_FIELD_FLAGS       63u /* duoforge_field_ext.flags */
 
 /* Field-wide, public. */
 typedef struct duoforge_field_ext {
     uint8_t gravity_turns; /* 0 to 5: remaining turns */
-    uint8_t reserved[15];  /* zero */
+    uint8_t reserved0;     /* zero */
+    uint16_t flags;        /* DUOFORGE_FIELD_FLAG_* presence bits (decision 0050; none defined yet) */
+    uint8_t reserved[12];  /* zero */
 } duoforge_field_ext; /* 16 bytes */
 
 /* One active position; all zero when empty. */
@@ -953,7 +987,8 @@ typedef struct duoforge_side_ext {
     uint8_t toxic_spikes;      /* 0 to 2 layers */
     uint8_t sticky_web;        /* 0/1 */
     uint8_t guard_flags;       /* DUOFORGE_SIDE_GUARD_*: this turn only, so only at a PIVOT boundary */
-    uint8_t reserved[2];       /* zero */
+    uint8_t conditions;        /* DUOFORGE_SIDE_CONDITION_* presence bits (decision 0050; none defined yet) */
+    uint8_t reserved;          /* zero */
 } duoforge_side_ext; /* 64 bytes */
 
 typedef struct duoforge_observation_ext {
@@ -964,7 +999,10 @@ typedef struct duoforge_observation_ext {
     uint64_t supported;   /* bit DUOFORGE_VIEWEXT_FEATURE_* set: the feature's mechanic is implemented and tested */
     duoforge_field_ext field;
     duoforge_side_ext sides[DUOFORGE_SIDE_COUNT];
-    uint8_t reserved1[32]; /* zero: room for a whole new record */
+    /* DUOFORGE_POSITION_EXT2_* presence bits per side (absolute, as sides[]) and position, the second word of
+       duoforge_position_ext.volatiles (decision 0050; none defined yet) */
+    uint32_t volatiles2[DUOFORGE_SIDE_COUNT][DUOFORGE_ACTIVE_PER_SIDE];
+    uint8_t reserved1[16]; /* zero: room for a whole new record */
 } duoforge_observation_ext; /* DUOFORGE_OBSERVATION_EXT_SIZE bytes */
 /* A size mismatch is a compile error here (negative array size), in C and in C++. */
 typedef char duoforge_observation_ext_size_check[(sizeof(duoforge_observation_ext) == DUOFORGE_OBSERVATION_EXT_SIZE) ? 1 : -1];
@@ -1050,7 +1088,7 @@ duoforge_status duoforge_battle_observe_ext(const duoforge_context *ctx, const d
                                                     id the item + 1 that the holder passed to the user. Every other ACTIVATE has id 0 */
 #define DUOFORGE_EVENT_UPKEEP          36u /* [upkeep] the end-of-turn effects are done */
 #define DUOFORGE_EVENT_RESULT          37u /* [win] or [tie] detail: DUOFORGE_RESULT_* */
-#define DUOFORGE_EVENT_SINGLE_TURN     38u /* [-singleturn] position (Team C): id: the move; other: the user ([of]) for
+#define DUOFORGE_EVENT_SINGLE_TURN     38u /* [-singleturn], or for Destiny Bond [-singlemove] (step G76); id: the move; other: the user ([of]) for
                                               Helping Hand, DUOFORGE_NO_POSITION for Follow Me */
 #define DUOFORGE_EVENT_VOLATILE_START  39u /* [-start] position (POOL kinds), detail: DUOFORGE_VOLATILE_* (a volatile that the
                                               game shows: -start|X|move: Heal Block) */

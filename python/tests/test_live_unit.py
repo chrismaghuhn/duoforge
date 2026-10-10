@@ -134,5 +134,93 @@ class OptionsTest(unittest.TestCase):
             options.slot_options(request, 0, {"p1: Archaludon": 2, "p1: Farigiraf": 3}, {0: 3})
 
 
+class TrackerRequestTest(unittest.TestCase):
+    """The tracker reads a request member's baseAbility (the sheet's or its Mega forme's, which the member view
+    shows), not its current ability, which Trace or Skill Swap may have changed; the pin always sends it."""
+
+    @classmethod
+    def setUpClass(cls):
+        import json
+        cls.fixture = json.loads((data.ROOT / "python" / "tests" / "data" / "live_stream_ab.json")
+                                 .read_text(encoding="utf-8"))
+        cls.data = data.load()
+
+    def feed(self, change):
+        """A tracker fed the fixture's messages up to its first request, `change` applied to that request."""
+        import json
+        from duoforge_live.tracker import Tracker
+        tracker = Tracker(self.data, self.fixture["team"])
+        for message in self.fixture["messages"]:
+            out = []
+            for line in message:
+                if line.startswith("|request|"):
+                    request = json.loads(line[len("|request|"):])
+                    change(request["side"]["pokemon"][0])
+                    line = "|request|" + json.dumps(request)
+                out.append(line)
+            tracker.feed(out)
+            if tracker.request is not None:
+                return tracker
+        raise AssertionError("no request in the fixture")
+
+    def test_base_ability_is_read(self):
+        def changed(mon):
+            self.assertEqual((mon["ident"], mon["baseAbility"]), ("p1: Ceruledge", "flashfire"))
+            mon["ability"] = "intimidate"  # as a Trace or a Skill Swap would leave it
+        tracker = self.feed(changed)
+        member = tracker._own_members[tracker._names[0]["Ceruledge"]]
+        self.assertEqual(member.ability, self.data.tables["ABILITY"]["FLASHFIRE"] + 1)
+
+    def test_a_request_without_base_ability_fails(self):
+        with self.assertRaisesRegex(ValueError, "without baseAbility"):
+            self.feed(lambda mon: mon.pop("baseAbility"))
+
+
+class TrackerStopTest(unittest.TestCase):
+    """Explicit stops of the view-extension folds that the committed battles never reach."""
+
+    @staticmethod
+    def tracker():
+        from duoforge_live import tracker
+        t = tracker.Tracker.__new__(tracker.Tracker)
+        t.side, t._spectator = 0, False
+        t._positions = [[tracker._Position(), tracker._Position()] for _ in (0, 1)]
+        for side in t._positions:
+            for k, p in enumerate(side):
+                p.occupant = k
+        return t
+
+    def test_throat_chop_takes_only_the_pins_silent_form(self):
+        from duoforge_live import lines
+        t = self.tracker()
+        t._throat_chop("|-start|p2a: Salamence|Throat Chop|[silent]".split("|"))
+        self.assertEqual(t._positions[1][0].throat_chop, 1)
+        t._throat_chop("|-end|p2a: Salamence|Throat Chop|[silent]".split("|"))
+        self.assertEqual(t._positions[1][0].throat_chop, 0)
+        for line in ("|-start|p2a: Salamence|Throat Chop", "|-start|p2a: Salamence|Throat Chop|[silent]|[of] p1a: X",
+                     "|-end|p2: Salamence|Throat Chop|[silent]"):
+            with self.assertRaises(lines.Stop, msg=line) as caught:
+                t._throat_chop(line.split("|"))
+            self.assertEqual(caught.exception.reason, f"line:{line.split('|')[1]} Throat Chop")
+
+    def test_encore_takes_the_slot_of_the_last_move_line(self):
+        from duoforge_live import lines
+        from duoforge_live.data import trace_to_c
+        t = self.tracker()
+        start, end = (trace_to_c.ev_tuple(trace_to_c.EV[k], 2, detail=trace_to_c.VOLATILE_ENCORE)
+                      for k in ("VOLATILE_START", "VOLATILE_END"))
+        p = t._positions[1][0]
+        p.last_slot = 3
+        t._event(start)
+        self.assertEqual(p.encore_slot, 3)
+        t._event(end)
+        self.assertEqual(p.encore_slot, 0)
+        for last in (0, 5, None):  # no move line yet, Struggle, a move not on the sheet
+            p.last_slot = last
+            with self.assertRaises(lines.Stop, msg=last) as caught:
+                t._event(start)
+            self.assertEqual(caught.exception.reason, "encore-slot-unknown")
+
+
 if __name__ == "__main__":
     unittest.main()

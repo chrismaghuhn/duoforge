@@ -96,7 +96,7 @@ class Collector(unittest.TestCase):
     def search(cls):
         from duoforge_search import honest, lookahead
         with duoforge.Batch(cls.ctx, duoforge.reference_setups([0]), 1, 42) as b:
-            mask = int(b.observe_ext()[0, 0]["supported"])
+            mask = int(b.observe_ext()[0, 0]["supported"]) & features.version_features(4)  # encoder 4 (0050)
         return honest.Honest(cls.ctx, cls.net, cls.net.params, 4, mask, k=8, m=8, s=16, rule="mix", capacity=1024,
                              workers=2, table=_table(), seed=lookahead.SEARCH_SEED)
 

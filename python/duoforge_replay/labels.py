@@ -31,6 +31,9 @@ TEAM_BYTES = (len(TEAM_TABLE) + 7) // 8
 REDIRECT_TURN = {"move: Follow Me", "move: Rage Powder", "Rage Powder", "move: Spotlight", "Spotlight"}
 # Abilities whose -activate right before a move line draws it (sim: onAnyRedirectTarget).
 _REDIRECT_ABILITY = {"ability: Lightning Rod", "ability: Storm Drain"}
+# Moves whose line may name another target than the chosen one by their own rule (data/moves.ts smartTarget, step G78):
+# Dragon Darts goes to the chosen foe's ally when the chosen foe cannot be hit, and the line names the ally.
+_SMART_TARGET = {"DRAGONDARTS"}
 
 
 @dataclass(frozen=True)
@@ -161,7 +164,8 @@ def _move_label(segment, index, parts, side, options_list, moves, mega, tables, 
     if targets == {options.TARGET_NONE}:
         return _mask(candidates), EXACT
     shown = flat_position(parts[4]) if len(parts) > 4 else None
-    uncertain = shown is None or "[notarget]" in attrs or any(a.startswith("[spread]") for a in attrs)
+    uncertain = shown is None or "[notarget]" in attrs or any(a.startswith("[spread]") for a in attrs) \
+        or trace_to_c.key(name) in _SMART_TARGET
     if not uncertain and any(position // 2 == shown // 2 for position in vacant):
         uncertain = True  # a position of the target's side was empty at the point: Showdown retargets
     if not uncertain:

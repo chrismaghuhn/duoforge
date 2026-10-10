@@ -211,6 +211,7 @@ duoforge_add_test(NAME duoforge.state.pool_g50 SOURCES test_pool_g50.c WHITEBOX 
 duoforge_add_test(NAME duoforge.state.pool_g34 SOURCES test_pool_g34.c WHITEBOX TIMEOUT 60)
 duoforge_add_test(NAME duoforge.state.pool_g41 SOURCES test_pool_g41.c WHITEBOX TIMEOUT 60)
 duoforge_add_test(NAME duoforge.state.pool_g60 SOURCES test_pool_g60.c WHITEBOX LIBS duoforge_batch TIMEOUT 60)
+duoforge_add_test(NAME duoforge.state.pool_g74 SOURCES test_pool_g74.c WHITEBOX LIBS duoforge_batch TIMEOUT 60)
 duoforge_add_test(NAME duoforge.state.pool_g70 SOURCES test_pool_g70.c WHITEBOX TIMEOUT 60)
 # Step G57: Magic Bounce and the Mega Stones Absolite and Sablenite (the reflectable column against the pinned Dex, the marks).
 duoforge_add_test(NAME duoforge.state.pool_g57 SOURCES test_pool_g57.c WHITEBOX TIMEOUT 60)
@@ -221,7 +222,11 @@ duoforge_add_test(NAME duoforge.state.pool_g72 SOURCES test_pool_g72.c WHITEBOX 
 # Step G72b: Alluring Voice (the stats-raised position flag) and Dragon Cheer (the crit stage), the PIVOT refusal of the public
 # record (decision 0015 5ce); the recorded battles are duoforge.reference.conformance_pool_data.
 duoforge_add_test(NAME duoforge.state.pool_g72b SOURCES test_pool_g72b.c WHITEBOX LIBS duoforge_batch TIMEOUT 60)
+duoforge_add_test(NAME duoforge.state.pool_g76 SOURCES test_pool_g76.c WHITEBOX LIBS duoforge_batch TIMEOUT 60)
+# Step G78 (decision 0015 5ch, decision 0043): Dragon Darts, the split of its two hits; the recorded battles are duoforge.reference.conformance_pool_data.
+duoforge_add_test(NAME duoforge.state.pool_g78 SOURCES test_pool_g78.c WHITEBOX LIBS duoforge_batch TIMEOUT 60)
 duoforge_add_test(NAME duoforge.state.pool_g80 SOURCES test_pool_g80.c WHITEBOX LIBS duoforge_batch TIMEOUT 60)
+
 # Step G42: Roost and Stomping Tantrum: the move result classes (this and last) at every boundary of the g42 battles, the Roost
 # volatile (the pivot boundary inside its turn), the view bits (40 supported, 41 not), the unclassified refusal.
 duoforge_add_test(NAME duoforge.state.pool_g42 SOURCES test_pool_g42.c WHITEBOX TIMEOUT 60)
@@ -269,8 +274,9 @@ foreach(_gen IN ITEMS
         "closure_tables.c=490de42298e34cfd38192d979fd022367bf53693a5fa1855f1cc6ad034d8450a"
         "extended_tables.h=b2abef243fcbfdd87654940076b9fe2fe80b117d74893a7567741f26b9075a7d"
         "extended_tables.c=9e736fa467713283418c4edf8f56b8d844452e596ba422adbd52483d20f7cc17"
-        "pool_tables.h=6a89fa5b49b0b75b29544c7018c197ea27fd805ca0a1b3d42f2ee04ebdf577c8"
-        "pool_tables.c=63a93910b606c291f0fb6496609c08095fffd5d57557c69f67a7a31058d4f20f")
+        "pool_tables.h=97e9183d9bbbf908f387efbd3c3f14c60b380a131050a50adc7b6389a0b7747e"
+        "pool_tables.c=3bf89d996be2da5c5f09cd84c59f307e25ddcde45178ce151c1409cac8982906")
+
     string(REPLACE "=" ";" _parts "${_gen}")
     list(GET _parts 0 _file)
     list(GET _parts 1 _expected)
@@ -689,7 +695,7 @@ endif()
 # The Python package (M7, decision 0013), run with DUOFORGE_PYTHON; without
 # an interpreter each test reports skipped instead of passing silently.
 
-foreach(_py layout lib equivalence recipes policies_features example learn_numpy live_unit live_client replay_unit openings book expert_data expert_teacher expert_contract expert_eval ticks book_preview preview_search data batch_setups learn_v2_numpy teams features_ext bc_numpy encode_c search_numpy search_expand repo_hygiene view vgcpastes_engine perft)
+foreach(_py layout lib equivalence recipes policies_features example learn_numpy live_unit live_client replay_unit openings book expert_data expert_teacher expert_contract expert_eval ticks book_preview preview_search data batch_setups learn_v2_numpy teams features_ext encoder6 bc_numpy encode_c search_numpy search_expand repo_hygiene view vgcpastes_engine perft)
     if(DUOFORGE_PYTHON)
         add_test(NAME duoforge.python.${_py}
             COMMAND "${DUOFORGE_PYTHON}" -m unittest -v python.tests.test_${_py}
@@ -704,8 +710,27 @@ foreach(_py layout lib equivalence recipes policies_features example learn_numpy
     endif()
 endforeach()
 
+# The random training teams (tools/reference/random_teams.py): the paste translation, the composition and the output
+# guard with DUOFORGE_PYTHON (it reads pastes with duoforge.teams); with the pinned Showdown also its generator.
+if(DUOFORGE_PYTHON)
+    add_test(NAME duoforge.reference.random_teams
+        COMMAND "${DUOFORGE_PYTHON}" "${PROJECT_SOURCE_DIR}/tools/reference/test_random_teams.py")
+    set_tests_properties(duoforge.reference.random_teams PROPERTIES TIMEOUT 120 LABELS python ENVIRONMENT
+        "DUOFORGE_LIBRARY=$<TARGET_FILE:duoforge_shared>;PYTHONDONTWRITEBYTECODE=1")
+    if(DUOFORGE_PS_REFERENCE_DIR AND DUOFORGE_NODE)
+        add_test(NAME duoforge.reference.random_teams_pin
+            COMMAND "${DUOFORGE_PYTHON}" "${PROJECT_SOURCE_DIR}/tools/reference/test_random_teams.py"
+                "${DUOFORGE_NODE}" "${DUOFORGE_PS_REFERENCE_DIR}")
+        set_tests_properties(duoforge.reference.random_teams_pin PROPERTIES TIMEOUT 300 LABELS reference
+            ENVIRONMENT "DUOFORGE_LIBRARY=$<TARGET_FILE:duoforge_shared>;PYTHONDONTWRITEBYTECODE=1")
+    endif()
+else()
+    add_test(NAME duoforge.reference.random_teams COMMAND "${CMAKE_COMMAND}" -E echo "DUOFORGE_SKIP: DUOFORGE_PYTHON is empty")
+    set_tests_properties(duoforge.reference.random_teams PROPERTIES SKIP_REGULAR_EXPRESSION "DUOFORGE_SKIP:")
+endif()
+
 # The learner pipeline (decisions 0014, 0017) needs JAX: DUOFORGE_LEARN_PYTHON.
-foreach(_learn learn learn_v2 bc search honest luck ledger pfsp value_rows distill collect_expert learner_contract p1_eval)
+foreach(_learn learn learn_v2 bc search honest luck ledger pfsp value_rows distill collect_expert learner_contract p1_eval encoder6_net)
     if(DUOFORGE_LEARN_PYTHON)
         add_test(NAME duoforge.python.${_learn}
             COMMAND "${DUOFORGE_LEARN_PYTHON}" -m unittest -v python.tests.test_${_learn}
