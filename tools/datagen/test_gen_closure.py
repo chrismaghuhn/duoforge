@@ -2070,5 +2070,116 @@ class SmallRulesG53(unittest.TestCase):
         self.assertNotIn('mustpressure', gen_closure.FLAGS2_BITS)
 
 
+class CheapMoveFactsC2(unittest.TestCase):
+    """Step C2: the pin facts of the 30 cheap moves (gen_closure.C2_FACTS) are the fields of the pinned entry, each with its
+    value, nested objects included; a wrong value, a field the facts do not list, a missing field and a Champions override
+    fail the generator."""
+
+    @staticmethod
+    def value_text(v):
+        if isinstance(v, set):
+            return '{ %s }' % ', '.join('%s: 1' % f for f in sorted(v))
+        if isinstance(v, dict):
+            return '{ %s }' % ', '.join('%s: %s' % (k, CheapMoveFactsC2.value_text(x)) for k, x in v.items())
+        if isinstance(v, list):
+            return '[%s]' % ', '.join(CheapMoveFactsC2.value_text(x) for x in v)
+        if v is True:
+            return 'true'
+        if isinstance(v, str):
+            return "'%s'" % v
+        return str(v)
+
+    @classmethod
+    def render(cls, mid, expected, drop=None, change=None, extra=None):
+        lines = ['\t%s: {' % mid, '\t\tnum: 1,', '\t\tname: "Name",']
+        for key, want in expected.items():
+            if key == drop:
+                continue
+            if change and change[0] == key:
+                want = change[1]
+            lines.append('\t\t%s: %s,' % (key, cls.value_text(want)))
+        if extra:
+            lines.append('\t\t%s' % extra)
+        lines.append('\t\tzMove: { effect: \'clearnegativeboost\' },')
+        lines.append('\t},')
+        return '\n'.join(lines)
+
+    @staticmethod
+    def override_text(mid, base):
+        return '\t%s: {\n\t\tinherit: true,\n\t\tbasePower: %d,\n\t},' % (mid, base)
+
+    def champ(self):
+        """The Champions mod with its three base power overrides, as the pin has them."""
+        return TextSource('data/mods/champions/moves.ts', '\n'.join(
+            self.override_text(mid, base) for mid, base in gen_closure.C2_CHAMPIONS_OVERRIDES.items()))
+
+    def source(self):
+        return TextSource('data/moves.ts', '\n'.join(self.render(mid, exp) for mid, exp in gen_closure.C2_FACTS))
+
+    def test_the_pin_facts_are_accepted(self):
+        gen_closure.check_c2_facts(self.source(), self.champ())
+
+    def test_every_move_is_listed_once_with_its_thirty_names(self):
+        ids = [mid for mid, _ in gen_closure.C2_FACTS]
+        self.assertEqual(len(ids), 30)
+        self.assertEqual(len(set(ids)), 30)
+
+    def test_a_wrong_value_fails(self):
+        exp = dict(gen_closure.C2_FACTS)['lunge']
+        moves = TextSource('data/moves.ts', self.render('lunge', exp, change=('basePower', 70)))
+        with self.assertRaises(SystemExit) as cm:
+            gen_closure.check_c2_facts(moves, self.champ(), only=(('lunge', exp),))
+        self.assertIn('move lunge: basePower is 70 in the pin, not 80', str(cm.exception.code))
+
+    def test_a_wrong_nested_value_fails(self):
+        exp = dict(gen_closure.C2_FACTS)['torchsong']
+        moves = TextSource('data/moves.ts', self.render('torchsong', exp, change=('secondary', {
+            'chance': 100, 'self': {'boosts': {'spa': 2}}})))
+        with self.assertRaises(SystemExit) as cm:
+            gen_closure.check_c2_facts(moves, self.champ(), only=(('torchsong', exp),))
+        self.assertIn('move torchsong: secondary is', str(cm.exception.code))
+
+    def test_a_wrong_secondary_chance_in_a_list_fails(self):
+        exp = dict(gen_closure.C2_FACTS)['thunderfang']
+        moves = TextSource('data/moves.ts', self.render('thunderfang', exp, change=('secondaries', [
+            {'chance': 10, 'status': 'par'}, {'chance': 20, 'volatileStatus': 'flinch'}])))
+        with self.assertRaises(SystemExit) as cm:
+            gen_closure.check_c2_facts(moves, self.champ(), only=(('thunderfang', exp),))
+        self.assertIn('move thunderfang: secondaries is', str(cm.exception.code))
+
+    def test_a_missing_field_fails(self):
+        for mid, exp in gen_closure.C2_FACTS:
+            for key in exp:
+                with self.subTest(mid=mid, field=key), self.assertRaises(SystemExit) as cm:
+                    gen_closure.check_c2_facts(TextSource('data/moves.ts', self.render(mid, exp, drop=key)),
+                                               self.champ(), only=((mid, exp),))
+                self.assertIn('move %s: the pin has no %s' % (mid, key), str(cm.exception.code))
+
+    def test_a_field_the_facts_do_not_list_fails(self):
+        mid, exp = gen_closure.C2_FACTS[0]
+        moves = TextSource('data/moves.ts', self.render(mid, exp, extra='critRatio: 2,'))
+        with self.assertRaises(SystemExit) as cm:
+            gen_closure.check_c2_facts(moves, self.champ(), only=((mid, exp),))
+        self.assertIn('the pin has fields the C2 facts do not list: critRatio', str(cm.exception.code))
+
+    def test_a_champions_override_fails_unless_it_is_a_base_power_override(self):
+        mid, exp = gen_closure.C2_FACTS[0]
+        with self.assertRaises(SystemExit) as cm:
+            gen_closure.check_c2_facts(TextSource('data/moves.ts', self.render(mid, exp)),
+                                       TextSource('data/mods/champions/moves.ts', self.render(mid, exp)), only=((mid, exp),))
+        self.assertIn('the Champions mod overrides it', str(cm.exception.code))
+        appleacid = dict(gen_closure.C2_FACTS)['appleacid']
+        with self.assertRaises(SystemExit) as cm:
+            gen_closure.check_c2_facts(TextSource('data/moves.ts', self.render('appleacid', appleacid)),
+                                       TextSource('data/mods/champions/moves.ts', self.override_text('appleacid', 85)),
+                                       only=(('appleacid', appleacid),))
+        self.assertIn('the Champions mod entry is not the base power override 90', str(cm.exception.code))
+
+    def test_a_reader_refuses_what_it_does_not_know(self):
+        with self.assertRaises(SystemExit):
+            gen_closure.c2_literal('{ flags: { protect: 1 }, basePower: 1 + 2 }')
+        self.assertEqual(gen_closure.c2_literal('{ a: [1, -2,], b: { c: true, }, }'), {'a': [1, -2], 'b': {'c': True}})
+
+
 if __name__ == '__main__':
     unittest.main()
