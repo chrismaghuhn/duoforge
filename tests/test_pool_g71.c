@@ -17,6 +17,7 @@
 #include "codec/state_codec.h"
 #include "data/pool_tables.h"
 #include "reference/conformance_pool.h"
+#include "rng/draw.h"
 #include "state/battle_internal.h"
 #include "state/identity.h"
 #include "support/check.h"
@@ -136,6 +137,11 @@ static void test_constants(df_test *t)
     DF_CHECK_EQ_U64(t, DFI_ENC_TAIL_OFF + DFI_ENC_TAIL_REV4_SIZE + DFI_ENC_TAIL5_ATTRACT_OFF, 1341u);
     DF_CHECK_EQ_U64(t, DFI_ENC_TAIL5_ATTRACT_SIZE, 4u);
     DF_CHECK_EQ_U64(t, DFI_STATE_POOL_ENCODED_SIZE, 1357u);
+    /* the two draw sites of Cute Charm and Attract (lead's Q5; G73 owns 23) */
+    DF_CHECK_EQ_U64(t, DFI_SITE_MOODY, 23u);
+    DF_CHECK_EQ_U64(t, DFI_SITE_CUTE_CHARM, 24u);
+    DF_CHECK_EQ_U64(t, DFI_SITE_ATTRACT, 25u);
+    DF_CHECK_EQ_U64(t, DFI_SITE_COUNT, 26u);
 }
 
 /* The source bytes are written to the reserve and read back, and the bytes after them stay zero. */

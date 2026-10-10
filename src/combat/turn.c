@@ -3518,14 +3518,7 @@ static duoforge_status dfi_each_order(dfi_run *r, uint32_t bearers, uint32_t lis
  * at the first Update after its switch-out, so the check reads the member, not the position. */
 static bool dfi_attract_source_active(const struct duoforge_battle *b, uint32_t code)
 {
-    const uint32_t side = (code - 1u) / DUOFORGE_MAX_ROSTER;
-    const uint32_t src = (code - 1u) % DUOFORGE_MAX_ROSTER;
-    for (uint32_t p = 0u; p < DUOFORGE_ACTIVE_PER_SIDE; ++p) {
-        if (b->sides[side].positions[p].occupant == src && b->sides[side].members[src].hp != 0u) {
-            return true;
-        }
-    }
-    return false;
+    return dfi_attract_source_flat(b, code) != DUOFORGE_NO_POSITION;
 }
 
 /* Step G71 (decision 0034): the volatile's onUpdate and the attract half of Oblivious's onUpdate, for the holder at flat (pin order:
@@ -3878,6 +3871,20 @@ static bool dfi_faint_shown(const dfi_run *r, uint32_t flat)
     return false;
 }
 
+/* Step G71 (decision 0034): the flat position of an Attract source (code = 1 + side * 6 + roster index) while the member stands on
+ * the field and is not fainted; DUOFORGE_NO_POSITION otherwise (the pin's source.isActive, data/moves.ts:722-727). */
+static uint32_t dfi_attract_source_flat(const struct duoforge_battle *b, uint32_t code)
+{
+    const uint32_t side = (code - 1u) / DUOFORGE_MAX_ROSTER;
+    const uint32_t src = (code - 1u) % DUOFORGE_MAX_ROSTER;
+    for (uint32_t p = 0u; p < DUOFORGE_ACTIVE_PER_SIDE; ++p) {
+        if (b->sides[side].positions[p].occupant == src && b->sides[side].members[src].hp != 0u) {
+            return side * DUOFORGE_ACTIVE_PER_SIDE + p;
+        }
+    }
+    return DUOFORGE_NO_POSITION;
+}
+
 /* ---------------------------------------------------------------- moves */
 
 /* runEvent('BeforeMove') in handler priority order: sleep and freeze (10),
@@ -4020,6 +4027,24 @@ static duoforge_status dfi_before_move(dfi_run *r, uint32_t user, uint32_t move_
                 }
                 return dfi_deal(r, user, damage, DUOFORGE_CAUSE_CONFUSION, 0u, DUOFORGE_NO_POSITION);
             }
+        }
+    }
+    /* Attract (step G71, decision 0034; data/moves.ts:731-741, onBeforeMovePriority 2): after confusion (3), before paralysis (1).
+     * The line -activate|X|move: Attract|[of] Y comes before the roll; randomChance(1, 2) stops the move (cant, no PP). */
+    if (r->b->tail.attract_source[user] != 0u) {
+        const uint32_t src = dfi_attract_source_flat(r->b, r->b->tail.attract_source[user]);
+        const duoforge_event act = dfi_ev(DUOFORGE_EVENT_ACTIVATE, user, DUOFORGE_CAUSE_MOVE, DFI_MOVE_ATTRACT, src);
+        dfi_emit(r, &act);
+        bool stop = false;
+        st = dfi_draw_chance(r->draws, DFI_SITE_ATTRACT, 1u, 2u, &stop);
+        if (st != DUOFORGE_OK) {
+            return st;
+        }
+        if (stop) {
+            duoforge_event e = dfi_ev(DUOFORGE_EVENT_CANT, user, DUOFORGE_CAUSE_ATTRACT, 0u, DUOFORGE_NO_POSITION);
+            e.id = (uint16_t)move_id;
+            dfi_emit(r, &e); /* [cant] Attract */
+            return DUOFORGE_OK;
         }
     }
     if (m->status == DFI_STATUS_PAR) {
@@ -4226,6 +4251,53 @@ static duoforge_status dfi_flame_body(dfi_run *r, uint32_t user, uint32_t holder
  * After a contact move that hit it, randomChance(3, 10) (one draw of the site STATIC per target, also when the hit knocked
  * the holder out), then trySetStatus('par', holder) on the attacker: [-status] par [from] ability: Static [of] the holder;
  * nothing for an Electric type, an attacker with a status or down, or Limber, or a Flower Veil that covers it. */
+/* Step G71 (decision 0034): Cute Charm's addVolatile('attract', holder) on the attacker at `inf` (data/moves.ts:706-761, onStart).
+ * The caller has drawn the roll already. Silent refusals, as the pin: the attacker is down (addVolatile returns false), it is
+ * infatuated already (no onRestart), Oblivious blocks it (runStatusImmunity: an ability source, so no -immune line), and a gender
+ * pair that is not 1 and 2 fails the Start (no line). Otherwise the byte is the holder's member code and the line is
+ * -start|X|Attract|[from] ability: Cute Charm|[of] Y (VOLATILE_START, cause ABILITY, id2 = Cute Charm + 1, other = the holder).
+ * A holder that faints from the hit still starts it (the pin runs DamagingHit while the holder is active); the next Update ends
+ * it, as its source is not active (dfi_attract_update). */
+static duoforge_status dfi_attract_start(dfi_run *r, uint32_t holder, uint32_t inf)
+{
+    struct duoforge_battle *b = r->b;
+    const dfi_member *im = dfi_at(b, inf);
+    const dfi_member *hm = dfi_at(b, holder);
+    if (im == NULL || hm == NULL || im->hp == 0u || b->tail.attract_source[inf] != 0u) {
+        return DUOFORGE_OK;
+    }
+    if (dfi_ability(b, im, DFI_ABILITY_OBLIVIOUS)) {
+        return DUOFORGE_OK;
+    }
+    const bool pair = (im->gender == DFI_GENDER_MALE && hm->gender == DFI_GENDER_FEMALE) ||
+                      (im->gender == DFI_GENDER_FEMALE && hm->gender == DFI_GENDER_MALE);
+    if (!pair) {
+        return DUOFORGE_OK;
+    }
+    const uint32_t hside = holder / DUOFORGE_ACTIVE_PER_SIDE;
+    const uint32_t hmember = b->sides[hside].positions[holder % DUOFORGE_ACTIVE_PER_SIDE].occupant;
+    b->tail.attract_source[inf] = (uint8_t)(1u + hside * DUOFORGE_MAX_ROSTER + hmember);
+    duoforge_event start = dfi_ev(DUOFORGE_EVENT_VOLATILE_START, inf, DUOFORGE_CAUSE_ABILITY, 1u + DFI_ABILITY_CUTECHARM, holder);
+    start.detail = DUOFORGE_VOLATILE_ATTRACT;
+    dfi_emit(r, &start);
+    return DUOFORGE_OK;
+}
+
+/* Cute Charm (step G71, data/abilities.ts:798-810, onDamagingHit): a contact hit on a damaged holder draws randomChance(3, 10), and
+ * the draw is taken for every such hit, also when the attacker cannot be infatuated (the refusals are in dfi_attract_start). */
+static duoforge_status dfi_cute_charm(dfi_run *r, uint32_t user, uint32_t holder, const dfi_move_data *md)
+{
+    if ((md->flags & DFI_MOVE_FLAG_CONTACT) == 0u || !dfi_ability(r->b, dfi_at(r->b, holder), DFI_ABILITY_CUTECHARM)) {
+        return DUOFORGE_OK;
+    }
+    uint32_t roll = 0u;
+    const duoforge_status st = dfi_draw(r->draws, DFI_SITE_CUTE_CHARM, 0u, 10u, &roll);
+    if (st != DUOFORGE_OK || roll >= 3u) {
+        return st;
+    }
+    return dfi_attract_start(r, holder, user);
+}
+
 static duoforge_status dfi_static(dfi_run *r, uint32_t user, uint32_t holder, const dfi_move_data *md)
 {
     if ((md->flags & DFI_MOVE_FLAG_CONTACT) == 0u || !dfi_ability(r->b, dfi_at(r->b, holder), DFI_ABILITY_STATIC)) {
@@ -7641,6 +7713,10 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
                 if (st != DUOFORGE_OK) {
                     return st;
                 }
+                st = dfi_cute_charm(r, user, targets[i], md); /* step G71: one ability per holder too (Cute Charm) */
+                if (st != DUOFORGE_OK) {
+                    return st;
+                }
                 st = dfi_poison_touch(r, user, targets[i], md);
                 if (st != DUOFORGE_OK) {
                     return st;
@@ -7712,6 +7788,11 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
             }
             /* Static (step G39): the target's own unordered handler, like Flame Body's. */
             st = dfi_static(r, user, targets[i], md);
+            if (st != DUOFORGE_OK) {
+                return st;
+            }
+            /* Cute Charm (step G71): the target's own handler too (one ability per holder). */
+            st = dfi_cute_charm(r, user, targets[i], md);
             if (st != DUOFORGE_OK) {
                 return st;
             }

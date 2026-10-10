@@ -49,7 +49,9 @@
 #define DFI_SITE_MULTIHIT_COUNT 22u /* Scale Shot, Icicle Spear (POOL data, step G54): sample of 20 hit counts, random(20) */
 #define DFI_SITE_MOODY 23u         /* Moody (POOL data, step G73): sample of the stats that can rise (random(n), n = the list length, one
                                     * draw), then of the stats that can fall (random(n), no draw for an empty list); data/abilities.ts:2701-2734 */
-#define DFI_SITE_COUNT 24u
+#define DFI_SITE_CUTE_CHARM 24u    /* Cute Charm (POOL data, step G71, decision 0034): randomChance(3, 10), random(10) < 3, per contact hit on a damaged holder */
+#define DFI_SITE_ATTRACT 25u       /* Attract (POOL data, step G71, decision 0034): randomChance(1, 2) at BeforeMove priority 2, random(2) < 1 */
+#define DFI_SITE_COUNT 26u
 
 typedef struct dfi_tape_entry {
     uint32_t site;
