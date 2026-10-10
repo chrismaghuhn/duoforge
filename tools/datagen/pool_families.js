@@ -343,6 +343,9 @@ const ALL_TYPES_X = (chain) => Object.fromEntries(TYPES.map((t) => [t, chain]));
 const ENGINE_STAT_MODIFIERS = {
     hugepower: {onModifyAtk: ALL_TYPES_X(2)},
     firemane: {onModifyAtk: {Fire: 1.5}, onModifySpA: {Fire: 1.5}},
+    // Step G65: Water Bubble's holder, x2 for its Water moves (data/abilities.ts:5390-5399). Its onSourceModifyAtk and
+    // onSourceModifySpA (x0.5 for a Fire move against the holder) are probed by g65Probes, not here.
+    waterbubble: {onModifyAtk: {Water: 2}, onModifySpA: {Water: 2}},
 };
 
 // What an entry ability sets for a source Pokemon.
@@ -1393,6 +1396,55 @@ function orderCallbacks(raw) {
         ...ORDER_CALLBACKS.filter((k) => raw.condition && raw.condition[k] !== undefined).map((k) => 'condition.' + k)];
 }
 
+// Step G65: the callbacks of the five engine rows that the stat probe above does not reach (it runs onModifyAtk and
+// onModifySpA only), checked against the pinned texts (data/abilities.ts): the priorities, the breakable flags, Marvel
+// Scale's Defense for a status, Super Luck's ratio, Reckless's recoil modifier, and Water Bubble's onSource halves.
+// Thick Fat's onSource callbacks have no probe of their own; the Water Bubble half here is the first.
+const RECKLESS_CRASH_CLAUSE = false; // the engine does not model hasCrashDamage (checkG65 refuses a modelled crash move)
+const G65_PROBES = {
+    unaware(ability) {
+        expect('unaware breakable', ability.flags.breakable, 1);
+        expect('unaware onAnyModifyBoost', typeof ability.onAnyModifyBoost, 'function');
+    },
+    marvelscale(ability) {
+        expect('marvelscale onModifyDefPriority', ability.onModifyDefPriority, 6);
+        expect('marvelscale breakable', ability.flags.breakable, 1);
+        expect('marvelscale statused Defense', call(ability.onModifyDef, battle(ability), [100, {status: 'par'}]), {chain: 1.5});
+        expect('marvelscale asleep Defense', call(ability.onModifyDef, battle(ability), [100, {status: 'slp'}]), {chain: 1.5});
+        expect('marvelscale healthy Defense', call(ability.onModifyDef, battle(ability), [100, {status: ''}]), undefined);
+    },
+    waterbubble(ability) {
+        expect('waterbubble onSourceModifyAtkPriority', ability.onSourceModifyAtkPriority, 5);
+        expect('waterbubble onSourceModifySpAPriority', ability.onSourceModifySpAPriority, 5);
+        expect('waterbubble breakable', ability.flags.breakable, 1);
+        for (const callback of ['onSourceModifyAtk', 'onSourceModifySpA']) {
+            expect('waterbubble ' + callback + ' of a Fire move', call(ability[callback], battle(ability), [100, {}, {}, moveOf('Fire')]), {chain: 0.5});
+            expect('waterbubble ' + callback + ' of a Water move', call(ability[callback], battle(ability), [100, {}, {}, moveOf('Water')]), undefined);
+        }
+    },
+    reckless(ability) {
+        expect('reckless onBasePowerPriority', ability.onBasePowerPriority, 23);
+        expect('reckless recoil move', call(ability.onBasePower, battle(ability), [100, {}, {}, moveOf('Normal', {recoil: [1, 4]})]), {chain: [4915, 4096]});
+        expect('reckless crash move (pinned, not modelled)', call(ability.onBasePower, battle(ability), [100, {}, {}, moveOf('Normal', {hasCrashDamage: true})]), {chain: [4915, 4096]});
+        expect('reckless plain move', call(ability.onBasePower, battle(ability), [100, {}, {}, moveOf('Normal')]), undefined);
+    },
+    superluck(ability) {
+        expect('superluck ratio 1 to 2', call(ability.onModifyCritRatio, battle(ability), [1]), 2);
+        expect('superluck ratio 0 to 1', call(ability.onModifyCritRatio, battle(ability), [0]), 1);
+        expect('superluck breakable', ability.flags.breakable, undefined);
+    },
+};
+
+// Step G65 (Reckless's crash clause): a modelled move with hasCrashDamage needs the clause, which the engine does not have.
+function checkG65(dex, moveNames, unmodeledMoves) {
+    for (const id of moveNames) {
+        const move = dex.moves.get(id);
+        if (move.exists && move.hasCrashDamage && !unmodeledMoves.has(id) && !RECKLESS_CRASH_CLAUSE) {
+            bad(id + ' is a modelled move with hasCrashDamage: Reckless has no crash clause (step G65)');
+        }
+    }
+}
+
 function checkAbilities(dex, rows, moveIds, unmodeled, unmodeledMoves) {
     const counts = {};
     for (const row of rows) {
@@ -1429,6 +1481,9 @@ function checkAbilities(dex, rows, moveIds, unmodeled, unmodeledMoves) {
                 }
                 if (typeof ability.onStart === 'function' && /\.field\.set(Weather|Terrain)\(/.test(ability.onStart.toString())) {
                     bad(row.id + ' (no family) sets weather or terrain on entry');
+                }
+                if (G65_PROBES[row.id] !== undefined) {
+                    G65_PROBES[row.id](ability);
                 }
             }
             continue;
@@ -1597,7 +1652,8 @@ const ENGINE_ROWS = {items: ['focussash', 'floettite', 'psychicseed', 'electrics
         'flamebody', 'clearbody', 'hospitality', 'overcoat', 'soundproof', 'unnerve', 'speedboost',
         'compoundeyes', 'ironfist', 'sharpness', 'solidrock', 'technician', 'multiscale', 'galewings', 'raindish', 'friendguard', 'cursedbody', 'mirrorarmor', 'auraguard', 'hypercutter', 'scrappy', 'infiltrator', 'queenlymajesty', 'damp', 'sturdy', 'snowcloak', 'sandveil', 'static', 'justified', 'limber', 'solarpower', 'regenerator', 'toxicdebris', 'shadowtag', 'suctioncups', 'guarddog',
         'steadfast', 'weakarmor', 'telepathy', 'voltabsorb', 'punkrock', 'moxie', 'synchronize', 'oblivious', 'keeneye', 'bigpecks', 'magicbounce', 'pressure',
-        'sandforce', 'shellarmor', 'filter', 'stalwart', 'megalauncher', 'hugepower', 'thickfat', 'firemane', 'spicyspray', 'megasol', 'sheerforce']};
+        'sandforce', 'shellarmor', 'filter', 'stalwart', 'megalauncher', 'hugepower', 'thickfat', 'firemane', 'spicyspray', 'megasol', 'sheerforce',
+        'unaware', 'marvelscale', 'waterbubble', 'reckless', 'superluck']};
 const ENGINE_TARGETS = new Set(['normal', 'any', 'adjacentAlly', 'adjacentFoe', 'self', 'allAdjacentFoes', 'allySide', 'all',
     'randomNormal', 'allAdjacent', 'allies', 'foeSide']); // foeSide: step G37 (the four hazards)
 // The fields of a move that the tables model (gen_closure.py DATA_KEYS and IGNORED_KEYS), nothing else.
@@ -1988,6 +2044,7 @@ function main() {
     checkG62(dex);
     checkG22(dex, formeRowsList, new Set(definedIds(headers, 'ITEM').values()), new Set(abilityIds.values()));
     const abilities = checkAbilities(dex, abilityRows, moveIds, unmodeledAbilities, unmodeledMoves);
+    checkG65(dex, [...moveIds.values()], unmodeledMoves);
     // "All 18": a booster and a resist berry for each type, and nothing else in the families.
     expect('type boosters', items.TYPE_BOOSTER, 18);
     expect('resist berries', items.RESIST_BERRY, 18);

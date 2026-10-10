@@ -2609,7 +2609,8 @@ ENGINE_ROWS = {'items': ['focussash', 'floettite', 'psychicseed', 'electricseed'
                              'solarpower',
                              'regenerator', 'toxicdebris', 'shadowtag', 'suctioncups', 'guarddog',
                              'steadfast', 'weakarmor', 'telepathy', 'voltabsorb', 'punkrock', 'moxie', 'synchronize', 'oblivious', 'keeneye', 'bigpecks', 'magicbounce', 'pressure',
-                             'sandforce', 'shellarmor', 'filter', 'stalwart', 'megalauncher', 'hugepower', 'thickfat', 'firemane', 'spicyspray', 'megasol', 'sheerforce']}
+                             'sandforce', 'shellarmor', 'filter', 'stalwart', 'megalauncher', 'hugepower', 'thickfat', 'firemane', 'spicyspray', 'megasol', 'sheerforce',
+                             'unaware', 'marvelscale', 'waterbubble', 'reckless', 'superluck']}
 # The moves of the whole pool that the turn code pivots with a switch flag of their own (dfi_pivot_moves,
 # src/state/closure_member.c) beyond Flip Turn and U-turn, which are rows of the steps. Empty: Volt Switch comes with the
 # step that gives it a flag value, and adds its id here.
@@ -3405,6 +3406,81 @@ G63_ABILITY_FACTS = (
 )
 
 
+# Step G65 (simple modifier abilities): Unaware, Marvel Scale, Water Bubble, Reckless and Super Luck are engine rows (ENGINE_ROWS)
+# that the turn code reads by id. The pinned callbacks they hard-code are checked here, whole: Unaware's onAnyModifyBoost (the
+# zeroed stages of the two sides, data/abilities.ts:5214-5234); Marvel Scale's onModifyDef (priority 6, x1.5 with a status,
+# 2534-2545); Water Bubble's Fire halves, Water doubles, the burn refusal and its cure (5377-5417); Reckless's recoil modifier
+# (priority 23, 3799-3811); Super Luck's ratio (4703-4711). None is overridden by the Champions mod; all but Reckless and Super
+# Luck are breakable and Mold Breaker is not marked.
+G65_ABILITY_FACTS = (
+    ('unaware', ('onAnyModifyBoost(boosts, pokemon) {',
+                 'if (unawareUser === pokemon) return;',
+                 'if (unawareUser === this.activePokemon && pokemon === this.activeTarget) {',
+                 "boosts['def'] = 0;",
+                 "boosts['spd'] = 0;",
+                 "boosts['evasion'] = 0;",
+                 '}',
+                 'if (pokemon === this.activePokemon && unawareUser === this.activeTarget) {',
+                 "boosts['atk'] = 0;",
+                 "boosts['def'] = 0;",
+                 "boosts['spa'] = 0;",
+                 "boosts['accuracy'] = 0;",
+                 '}',
+                 '},',
+                 'flags: { breakable: 1 },')),
+    ('marvelscale', ('onModifyDefPriority: 6,',
+                     'onModifyDef(def, pokemon) {',
+                     'if (pokemon.status) {',
+                     'return this.chainModify(1.5);',
+                     '}',
+                     '},',
+                     'flags: { breakable: 1 },')),
+    ('waterbubble', ('onSourceModifyAtkPriority: 5,',
+                     'onSourceModifyAtk(atk, attacker, defender, move) {',
+                     "if (move.type === 'Fire') {",
+                     'return this.chainModify(0.5);',
+                     '}',
+                     '},',
+                     'onSourceModifySpAPriority: 5,',
+                     'onSourceModifySpA(atk, attacker, defender, move) {',
+                     "if (move.type === 'Fire') {",
+                     'return this.chainModify(0.5);',
+                     '}',
+                     '},',
+                     'onModifyAtk(atk, attacker, defender, move) {',
+                     "if (move.type === 'Water') {",
+                     'return this.chainModify(2);',
+                     '}',
+                     '},',
+                     'onUpdate(pokemon) {',
+                     "if (pokemon.status === 'brn') {",
+                     "this.add('-activate', pokemon, 'ability: Water Bubble');",
+                     'pokemon.cureStatus();',
+                     '}',
+                     '},',
+                     'onSetStatus(status, target, source, effect) {',
+                     "if (status.id !== 'brn') return;",
+                     'if ((effect as Move)?.status) {',
+                     "this.add('-immune', target, '[from] ability: Water Bubble');",
+                     '}',
+                     'return false;',
+                     '},',
+                     'flags: { breakable: 1 },')),
+    ('reckless', ('onBasePowerPriority: 23,',
+                  'onBasePower(basePower, attacker, defender, move) {',
+                  'if (move.recoil || move.hasCrashDamage) {',
+                  "this.debug('Reckless boost');",
+                  'return this.chainModify([4915, 4096]);',
+                  '}',
+                  '},',
+                  'flags: {},')),
+    ('superluck', ('onModifyCritRatio(critRatio) {',
+                   'return critRatio + 1;',
+                   '},',
+                   'flags: {},')),
+)
+
+
 def check_g57_facts(abil_ts, champ_abil):
     """Step G57: the texts of Magic Bounce that the engine reproduces (G57_ABILITY_FACTS) are in the pinned entry, whitespace
     aside, and the Champions mod has no entry of its own for it."""
@@ -3424,7 +3500,7 @@ def check_g34_facts(abil_ts, champ_abil, items_ts, champ_items):
     """Steps G34, G35, Mega batch 2 and G39: every fact of G34_ABILITY_FACTS, G35_ABILITY_FACTS, MEGA2_ABILITY_FACTS, G39_ABILITY_FACTS and G34_ITEM_FACTS is in the pinned entry, whitespace aside, and the
     Champions mod has no entry of its own for it (an override would change what the engine reads). Step G59: the Champions
     entry of a G59_INHERIT_ONLY ability may only inherit (`inherit: true`, `isNonstandard: null`), which is no override."""
-    for kind, facts_by_id, src, champ in (('ability', G34_ABILITY_FACTS + G35_ABILITY_FACTS + MEGA2_ABILITY_FACTS + G39_ABILITY_FACTS + G41_ABILITY_FACTS + G45_ABILITY_FACTS + G46_ABILITY_FACTS + G47_ABILITY_FACTS + G51_ABILITY_FACTS + G53_ABILITY_FACTS + G63_ABILITY_FACTS + G59_ABILITY_FACTS, abil_ts, champ_abil),
+    for kind, facts_by_id, src, champ in (('ability', G34_ABILITY_FACTS + G35_ABILITY_FACTS + MEGA2_ABILITY_FACTS + G39_ABILITY_FACTS + G41_ABILITY_FACTS + G45_ABILITY_FACTS + G46_ABILITY_FACTS + G47_ABILITY_FACTS + G51_ABILITY_FACTS + G53_ABILITY_FACTS + G63_ABILITY_FACTS + G65_ABILITY_FACTS + G59_ABILITY_FACTS, abil_ts, champ_abil),
                                           ('item', G34_ITEM_FACTS + G46_ITEM_FACTS + G47_ITEM_FACTS, items_ts, champ_items)):
         for rid, facts in facts_by_id:
             e = src.entry(rid)

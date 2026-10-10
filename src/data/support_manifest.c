@@ -595,6 +595,11 @@ const dfi_support_manifest dfi_support = {
             [DFI_ABILITY_SHELLARMOR] = 1u, /* step G63: Slowbro-Mega and Scolipede-Mega (no critical hit against the holder) */
             [DFI_ABILITY_FILTER] = 1u, /* step G63: Aggron-Mega (Solid Rock's damage step, typeMod > 0) */
             [DFI_ABILITY_STALWART] = 1u, /* step G63: Skarmory-Mega (its single-target moves are not redirected) */
+            [DFI_ABILITY_UNAWARE] = 1u, /* step G65: Clefable and Skeledirge (the stat stages of the other side ignored) */
+            [DFI_ABILITY_MARVELSCALE] = 1u, /* step G65: Milotic (Defense x1.5 while statused) */
+            [DFI_ABILITY_WATERBUBBLE] = 1u, /* step G65: Araquanid (Fire x0.5 at the holder, Water x2, no burn) */
+            [DFI_ABILITY_RECKLESS] = 1u, /* step G65: Staraptor, Rhyperior and Emboar (recoil moves x1.2) */
+            [DFI_ABILITY_SUPERLUCK] = 1u, /* step G65: Absol (crit ratio +1) */
         },
     .items =
         {
