@@ -1419,6 +1419,10 @@ def step_events(log, viewer, roster_of, maxhp, tables, rb_pending=None, swap_ids
                 if cause != CAUSE['ABILITY'] or other == NOPOS:
                     raise ConversionError('fail-line', 'trace_to_c: unknown -fail unboost %r' % line, detail='unboost')
                 e = ev_tuple(EV['FAIL'], ev_pos(args[0]), other, cause, 0, id2)
+            elif len(args) == 2 and args[1] == 'move: Ally Switch':
+                # Ally Switch with no partner (step G80, decision 0044; data/moves.ts:326-328, NOT_FAIL): FAIL with cause MOVE, id2
+                # Ally Switch, detail 0 (the lead's approved representation). The consecutive roll's `-fail|X` has no move name.
+                e = ev_tuple(EV['FAIL'], ev_pos(args[0]), NOPOS, CAUSE['MOVE'], 0, tables['MOVE'][key('Ally Switch')])
             else:
                 e = ev_tuple(EV['FAIL'], ev_pos(args[0]),
                              detail=AILMENT[args[1]] if len(args) > 1 and args[1] != 'heal' else 0)
