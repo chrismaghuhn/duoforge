@@ -45,7 +45,7 @@
 #include "state/closure_member.h"
 #include "support/check.h"
 
-#define POOL_HASH_HEX "c9dc88ea6a57c6f941bb0e40cd26f52aad8990181ae53a3c41a45608b329e2a8" /* the canonical hash of the rows of the lane A batch (G42, G44, G46, G47, G48, G49, G50, G56, G52, G54, G64, G68, G74, G76, G78) */
+#define POOL_HASH_HEX "4538cfe5127cf1f31f8b4a66786f4d4b05b09362740f2e8feabc3f154fe18653" /* the canonical hash of the rows of the lane A batch (G42, G44, G46, G47, G48, G49, G50, G56, G52, G54, G64, G68, G74, G76, G78, C3) */
 /* SHA-256 of the closure-layout bytes of the rows of the steps (P1 and G2: 28 formes, 72 moves, 52 items, 29
  * abilities). The whole-pool step must not move one of them (decision 0015 section 4.2); the pool generator before it
  * produced the same bytes. Step G10 moved two of them on purpose: Scald and Recover are data now (the thaw bit and
@@ -723,7 +723,7 @@ int main(void)
         DF_CHECK_EQ_U64(&t, DFI_SPECIAL_DESTINY_BOND, DFI_SPECIAL_BATON_PASS + 1u); /* step G76 (decision 0015 5cg) */
         DF_CHECK_EQ_U64(&t, DFI_SPECIAL_FINAL_GAMBIT, DFI_SPECIAL_DESTINY_BOND + 1u);
         DF_CHECK_EQ_U64(&t, DFI_SPECIAL_DRAGON_DARTS, DFI_SPECIAL_FINAL_GAMBIT + 1u); /* step G78 (decision 0043) */
-        DF_CHECK_EQ_U64(&t, DFI_SPECIAL_UNMODELED, DFI_SPECIAL_DRAGON_DARTS + 1u);
+        DF_CHECK_EQ_U64(&t, DFI_SPECIAL_UNMODELED, DFI_SPECIAL_TRIPLE_ARROWS + 1u);
         DF_CHECK_EQ_U64(&t, dfi_pool_moves[DFI_MOVE_TAUNT].special, DFI_SPECIAL_TAUNT);
         DF_CHECK_EQ_U64(&t, dfi_pool_moves[DFI_MOVE_YAWN].special, DFI_SPECIAL_YAWN);
         DF_CHECK_EQ_U64(&t, dfi_pool_moves[DFI_MOVE_PERISHSONG].special, DFI_SPECIAL_PERISH_SONG);

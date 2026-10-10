@@ -2314,6 +2314,16 @@ SPECIAL_P = dict(SPECIAL_C, **{
     'steelbeam': ('STEEL_BEAM', {'onMoveFail'}),                          # G68: mindBlownRecoil (half the maximum HP on a hit and in MoveFail)
     'thunderwave': ('THUNDER_WAVE', set()),                               # G68: ignoreImmunity false (Ground is immune to the Electric move)
     'dragondarts': ('DRAGON_DARTS', set()),                               # G78: two hits, the second on the partner (decision 0043)
+    # Step C3 (decision 0015 entry 5cr): the multi-hit 2-5 moves run the Champions count of MULTI_HIT_2_5 (as Icicle Spear);
+    # Solar Blade's onTryMove and onBasePower are Solar Beam's; Stored Power's basePowerCallback is Power Trip's.
+    'rockblast': ('MULTI_HIT_2_5', set()),
+    'bulletseed': ('MULTI_HIT_2_5', set()),
+    'pinmissile': ('MULTI_HIT_2_5', set()),
+    'bonerush': ('MULTI_HIT_2_5', set()),
+    'solarblade': ('SOLAR_BEAM', {'onBasePower', 'onTryMove'}),
+    'storedpower': ('POWER_TRIP', {'basePowerCallback'}),
+    'skyattack': ('SKY_ATTACK', {'onTryMove'}),                           # C3: a charge with no weather skip, not semi-invulnerable
+    'triplearrows': ('TRIPLE_ARROWS', set()),                             # C3: two secondaries (G2_OWNED_FIELDS owns the text)
 })
 # Step G13: Detect is Protect (data/moves.ts:3526-3547 against 13961-14005): the same handler (not one of the G2 handlers,
 # so it is added to the pool's map only), and the generator checks that its stalling fields and both callbacks are,
@@ -2426,6 +2436,48 @@ G76_FINAL_GAMBIT_FACTS = (
 # Step G78, Dragon Darts (decision 0043, lead's approval of 2026-10-10): the split of its two hits (smartTarget) over the
 # chosen foe and its partner; the hit count is the number 2 (no draw), the hit loop is the Champions one.
 G78_HANDLERS = ['DRAGON_DARTS']
+# Step C3 (decision 0015 entry 5cr): two handlers the generic columns cannot hold. SKY_ATTACK: a charge (-prepare, the twoturnmove
+# lock) with no weather skip and no semi-invulnerability (Phantom Force's is one). TRIPLE_ARROWS: two secondaries in the pin's
+# order, def -1 at 50 then flinch at 30, each its own random(100) draw (as ICE_FANG). The ids are the generator's (UNMODELED last).
+C3_HANDLERS = ['SKY_ATTACK', 'TRIPLE_ARROWS']
+# Step C3: the pinned texts of the twelve moves (data/moves.ts at b2cb775; the Champions overrides of Bone Rush, Crabhammer and
+# Meteor Assault are merged by the generator, the pin's base values are listed here). check_g8_conditions reads them.
+C3_FACTS = (
+    ('rockblast', ['accuracy: 90,', 'basePower: 25,', 'category: "Physical",', 'priority: 0,',
+                   'flags: { protect: 1, mirror: 1, metronome: 1, bullet: 1 },', 'multihit: [2, 5],', 'target: "normal",', 'type: "Rock",']),
+    ('bulletseed', ['accuracy: 100,', 'basePower: 25,', 'category: "Physical",', 'priority: 0,',
+                    'flags: { protect: 1, mirror: 1, metronome: 1, bullet: 1 },', 'multihit: [2, 5],', 'target: "normal",', 'type: "Grass",']),
+    ('pinmissile', ['accuracy: 95,', 'basePower: 25,', 'category: "Physical",', 'priority: 0,',
+                    'flags: { protect: 1, mirror: 1, metronome: 1 },', 'multihit: [2, 5],', 'target: "normal",', 'type: "Bug",']),
+    ('bonerush', ['accuracy: 90,', 'basePower: 25,', 'category: "Physical",', 'priority: 0,',
+                  'flags: { protect: 1, mirror: 1, metronome: 1 },', 'multihit: [2, 5],', 'target: "normal",', 'type: "Ground",']),
+    ('crabhammer', ['accuracy: 90,', 'basePower: 100,', 'category: "Physical",', 'priority: 0,',
+                    'flags: { contact: 1, protect: 1, mirror: 1, metronome: 1 },', 'critRatio: 2,', 'target: "normal",', 'type: "Water",']),
+    ('crosschop', ['accuracy: 80,', 'basePower: 100,', 'category: "Physical",', 'priority: 0,',
+                   'flags: { contact: 1, protect: 1, mirror: 1, metronome: 1 },', 'critRatio: 2,', 'target: "normal",', 'type: "Fighting",']),
+    ('aircutter', ['accuracy: 95,', 'basePower: 60,', 'category: "Special",', 'priority: 0,',
+                   'flags: { protect: 1, mirror: 1, metronome: 1, slicing: 1, wind: 1 },', 'critRatio: 2,',
+                   'target: "allAdjacentFoes",', 'type: "Flying",']),
+    ('meteorassault', ['accuracy: 100,', 'basePower: 150,', 'category: "Physical",', 'priority: 0,',
+                       'flags: { recharge: 1, protect: 1, mirror: 1, failinstruct: 1 },', 'self: {', "volatileStatus: 'mustrecharge',",
+                       'target: "normal",', 'type: "Fighting",']),
+    ('solarblade', ['accuracy: 100,', 'basePower: 125,', 'category: "Physical",', 'priority: 0,',
+                    'flags: { contact: 1, charge: 1, protect: 1, mirror: 1, metronome: 1, nosleeptalk: 1, failinstruct: 1, slicing: 1 },',
+                    "if (['sunnyday', 'desolateland'].includes(attacker.effectiveWeather(undefined, true))) {",
+                    "const weakWeathers = ['raindance', 'primordialsea', 'sandstorm', 'hail', 'snowscape'];",
+                    'return this.chainModify(0.5);', 'target: "normal",', 'type: "Grass",']),
+    ('storedpower', ['accuracy: 100,', 'basePower: 20,', 'const bp = move.basePower + 20 * pokemon.positiveBoosts();',
+                     'category: "Special",', 'priority: 0,', 'flags: { protect: 1, mirror: 1, metronome: 1 },', 'target: "normal",',
+                     'type: "Psychic",']),
+    ('skyattack', ['accuracy: 90,', 'basePower: 140,', 'category: "Physical",', 'priority: 0,',
+                   'flags: { charge: 1, protect: 1, mirror: 1, distance: 1, metronome: 1, nosleeptalk: 1, failinstruct: 1 },',
+                   "this.add('-prepare', attacker, move.name);", "if (!this.runEvent('ChargeMove', attacker, defender, move)) {",
+                   "attacker.addVolatile('twoturnmove', defender);", 'critRatio: 2,', 'chance: 30,', "volatileStatus: 'flinch',",
+                   'target: "any",', 'type: "Flying",']),
+    ('triplearrows', ['accuracy: 100,', 'basePower: 90,', 'category: "Physical",', 'priority: 0,',
+                      'flags: { protect: 1, mirror: 1, metronome: 1 },', 'critRatio: 2,', 'chance: 50,', 'boosts: {', 'def: -1,',
+                      'chance: 30,', "volatileStatus: 'flinch',", 'target: "normal",', 'type: "Fighting",']),
+)
 G78_FACTS = (
     'accuracy: 100,', 'basePower: 50,', 'category: "Physical",', 'priority: 0,',
     'flags: { protect: 1, mirror: 1, metronome: 1, noparentalbond: 1 },', 'multihit: 2,', 'smartTarget: true,',
@@ -2522,7 +2574,7 @@ G68_FACTS = (
                      'flags: { protect: 1, reflectable: 1, mirror: 1, metronome: 1 },', "status: 'par',",
                      'ignoreImmunity: false,', 'target: "normal",', 'type: "Electric",']),
 )
-SPECIAL_IDS_P = SPECIAL_IDS_C + G2_HANDLERS + WEATHER_HANDLERS + G16_HANDLERS + G15_HANDLERS + G19_HANDLERS + G20_HANDLERS + G20_PROTECT_HANDLERS + G28_HANDLERS + G30_HANDLERS + G32_HANDLERS + G34_HANDLERS + G27_HANDLERS + G25_HANDLERS + G26_HANDLERS + G33_HANDLERS + G38_HANDLERS + G29_HANDLERS + G39_HANDLERS + G31_HANDLERS + G48_HANDLERS + G44_HANDLERS + G50_HANDLERS + G42_HANDLERS + G56_HANDLERS + G52_HANDLERS + G54_HANDLERS + G64_HANDLERS + G62_HANDLERS + G60_HANDLERS + G58_HANDLERS + G68_HANDLERS + G70_HANDLERS + G66_HANDLERS + G72B_HANDLERS + G74_HANDLERS + G76_HANDLERS + G78_HANDLERS + ['UNMODELED']# Step G10 made two of these handlers data: Scald (thawsTarget) and Recover (heal) are read into the second flags# byte (bit 4, thaws the target) and the heal column, and have the special NONE; their ids stay defined (the ids after
+SPECIAL_IDS_P = SPECIAL_IDS_C + G2_HANDLERS + WEATHER_HANDLERS + G16_HANDLERS + G15_HANDLERS + G19_HANDLERS + G20_HANDLERS + G20_PROTECT_HANDLERS + G28_HANDLERS + G30_HANDLERS + G32_HANDLERS + G34_HANDLERS + G27_HANDLERS + G25_HANDLERS + G26_HANDLERS + G33_HANDLERS + G38_HANDLERS + G29_HANDLERS + G39_HANDLERS + G31_HANDLERS + G48_HANDLERS + G44_HANDLERS + G50_HANDLERS + G42_HANDLERS + G56_HANDLERS + G52_HANDLERS + G54_HANDLERS + G64_HANDLERS + G62_HANDLERS + G60_HANDLERS + G58_HANDLERS + G68_HANDLERS + G70_HANDLERS + G66_HANDLERS + G72B_HANDLERS + G74_HANDLERS + G76_HANDLERS + G78_HANDLERS + C3_HANDLERS + ['UNMODELED']# Step G10 made two of these handlers data: Scald (thawsTarget) and Recover (heal) are read into the second flags# byte (bit 4, thaws the target) and the heal column, and have the special NONE; their ids stay defined (the ids after
 # them keep their values). First Impression and Low Kick keep theirs: the turn code implements them.
 POOL_COLUMN_KEYS = {'thawsTarget', 'heal'}
 G2_OWNED_FIELDS = {
@@ -2563,6 +2615,7 @@ G2_OWNED_FIELDS = {
     'CLANGING_SCALES': {'selfBoost': "selfBoost: { boosts: { def: -1, }, },"},
     'IMPRISON': {'volatileStatus': "volatileStatus: 'imprison',"},
     'ICE_FANG': {'secondaries': "secondaries: [ { chance: 10, status: 'frz', }, { chance: 10, volatileStatus: 'flinch', }, ],"},
+    'TRIPLE_ARROWS': {'secondaries': "secondaries: [ { chance: 50, boosts: { def: -1, }, }, { chance: 30, volatileStatus: 'flinch', }, ],"},
     'MULTI_HIT_2_5': {'multihit': 'multihit: [2, 5],'},
     'SCALE_SHOT': {'multihit': 'multihit: [2, 5],', 'selfBoost': "selfBoost: { boosts: { def: -1, spe: 1, }, },"},
     'QUICK_GUARD': {'sideCondition': "sideCondition: 'quickguard',"},
@@ -3846,7 +3899,7 @@ def check_g8_conditions(moves_ts, only=None):
     must be in the pinned entry, as one normalised text. `only`: a tuple of (move id, facts) to check instead of all of
     them (the generator's tests)."""
     for mid, facts in (G8_CONDITION_FACTS + G20_CONDITION_FACTS + G28_FACTS + G32_FACTS + G34_FACTS + G25_FACTS +
-                       G33_FACTS + G38_FACTS + G39_FACTS + G37_FACTS + G44_FACTS + G48_FACTS + G55_FACTS + G54_FACTS + G64_FACTS + G62_FACTS + G68_FACTS if only is None else only):
+                       G33_FACTS + G38_FACTS + G39_FACTS + G37_FACTS + G44_FACTS + G48_FACTS + G55_FACTS + G54_FACTS + G64_FACTS + G62_FACTS + G68_FACTS + C3_FACTS if only is None else only):
         e = moves_ts.entry(mid)
         if e is None:
             fail('move %s not found' % mid)

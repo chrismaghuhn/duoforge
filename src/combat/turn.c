@@ -6723,8 +6723,10 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
      * effectiveWeather asks Utility Umbrella (sun and rain are ignored for its holder) and Mega Sol (sun for a Mega Sol
      * user's moves): neither is marked, tests/test_pool_g30.c checks it; ChargeMove is Power Herb's event, which is not
      * in the pool either. */
+    /* Step C3 (decision 0015 entry 5cr): Sky Attack is a charge with no weather skip (data/moves.ts:16651-16679), not
+     * semi-invulnerable (dfi_semi_invulnerable reads Phantom Force only): its charge always stands, as Phantom Force's does. */
     const bool charge_move = md->special == DFI_SPECIAL_ELECTRO_SHOT || md->special == DFI_SPECIAL_SOLAR_BEAM ||
-                             md->special == DFI_SPECIAL_PHANTOM_FORCE;
+                             md->special == DFI_SPECIAL_PHANTOM_FORCE || md->special == DFI_SPECIAL_SKY_ATTACK;
     /* Pressure (step G53, dfi_pressure_extra): after the move's own PP and the redirection, before TryMove (the pin's order,
      * sim/battle-actions.ts:473-484). The extra comes off the user's slot as deductPP does, clamped at 0. A locked turn has
      * none (its source is the lockedmove condition, sim/battle-actions.ts:289, not a move with PP). The state is exact
@@ -6752,8 +6754,9 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
         }
         /* Step G58: Phantom Force (data/moves.ts:13307-13335) has no weather that skips its charge (no ChargeMove but Power Herb's,
          * which is unmarked): its charge always stands. */
+        const bool no_skip = md->special == DFI_SPECIAL_PHANTOM_FORCE || md->special == DFI_SPECIAL_SKY_ATTACK;
         const uint32_t skip_weather = md->special == DFI_SPECIAL_SOLAR_BEAM ? DFI_WEATHER_SUN : DFI_WEATHER_RAIN;
-        if (md->special != DFI_SPECIAL_PHANTOM_FORCE && b->weather == skip_weather) {
+        if (!no_skip && b->weather == skip_weather) {
             /* addMove('-anim'): from now on the last move line, which later
              * attributes ([miss], [notarget]) amend. */
             duoforge_event anim = dfi_event_make(DUOFORGE_EVENT_ANIMATION, user);
@@ -6762,7 +6765,7 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
             r->last_move = r->events != NULL ? r->events->count : UINT32_MAX;
             dfi_emit(r, &anim);
         }
-        if (md->special == DFI_SPECIAL_PHANTOM_FORCE || b->weather != skip_weather) {
+        if (no_skip || b->weather != skip_weather) {
             pos->charge_turns = (uint8_t)DFI_CHARGE_TURNS_MAX;
             pos->locked_move = (uint8_t)((uint32_t)q->move_slot + 1u); /* wide-operands-reviewed: <= 4 */
             pos->locked_target = q->target;
@@ -7021,7 +7024,8 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
         md->special != DFI_SPECIAL_SKILL_SWAP &&
         md->special != DFI_SPECIAL_ALLURING_VOICE && md->special != DFI_SPECIAL_DRAGON_CHEER &&
         md->special != DFI_SPECIAL_FINAL_GAMBIT &&
-        md->special != DFI_SPECIAL_DRAGON_DARTS) {
+        md->special != DFI_SPECIAL_DRAGON_DARTS && md->special != DFI_SPECIAL_SKY_ATTACK &&
+        md->special != DFI_SPECIAL_TRIPLE_ARROWS) {
         return DUOFORGE_E_INVARIANT;
     }
     /* Steel Roller's onTry (step G34, data/moves.ts:17893-17913): it fails without a terrain, with -fail and [still]. */
@@ -7808,6 +7812,35 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
                     return st;
                 }
                 if (roll < 10u) {
+                    st = dfi_add_volatile(r, targets[i], DFI_VOLATILE_FLINCH);
+                    if (st != DUOFORGE_OK) {
+                        return st;
+                    }
+                }
+            }
+        }
+        /* Triple Arrows (step C3, data/moves.ts:19991-20001): two secondaries in the pin's order, each its own random(100) draw
+         * per target (the loop of secondaries(), as Ice Fang's): def -1 at 50, then flinch at 30. The draws of an absorbed hit
+         * (sub_off) come as in the generic secondary path above, its effects do not. */
+        if (md->special == DFI_SPECIAL_TRIPLE_ARROWS && !dfi_sf_strips(r->b, m, md)) {
+            static const uint8_t tri_def_down[DFI_STAGE_COUNT] = {6u, 5u, 6u, 6u, 6u, 6u, 6u};
+            for (uint32_t i = 0u; i < count; ++i) {
+                if (!hit[i] && !sub_off[i]) {
+                    continue;
+                }
+                uint32_t roll = 0u;
+                st = dfi_draw(r->draws, DFI_SITE_SECONDARY, 0u, 100u, &roll);
+                if (st != DUOFORGE_OK) {
+                    return st;
+                }
+                if (hit[i] && roll < 50u) {
+                    dfi_boost(r, targets[i], tri_def_down, user, dfi_effect(DUOFORGE_CAUSE_MOVE, 0u, DFI_BOOST_SECONDARY));
+                }
+                st = dfi_draw(r->draws, DFI_SITE_SECONDARY, 0u, 100u, &roll);
+                if (st != DUOFORGE_OK) {
+                    return st;
+                }
+                if (hit[i] && roll < 30u) {
                     st = dfi_add_volatile(r, targets[i], DFI_VOLATILE_FLINCH);
                     if (st != DUOFORGE_OK) {
                         return st;

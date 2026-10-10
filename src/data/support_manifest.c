@@ -504,6 +504,25 @@ const dfi_support_manifest dfi_support = {
             [DFI_MOVE_DESTINYBOND] = 1u,
             /* Step G76 (decision 0015 5cg): Final Gambit (damage equal to the user's HP; the user faints in the damage call). */
             [DFI_MOVE_FINALGAMBIT] = 1u,
+            /* Step C3 (decision 0015 entry 5cr, cheap moves: multi-hit, high crit, charge and special). Rock Blast, Bullet Seed,
+             * Pin Missile and Bone Rush: two to five hits (MULTI_HIT_2_5, the Champions count of Icicle Spear). Crabhammer,
+             * Cross Chop and Air Cutter: critRatio 2, data only (Crabhammer's accuracy 95 is the Champions override). Solar Blade:
+             * Solar Beam's charge and weather (sun skips it, rain, sand, snow and hail halve it). Stored Power: Power Trip's
+             * basePowerCallback. Meteor Assault: the recharge flag (Sirfetch'd, Steadfast and Scrappy are marked). Sky Attack: a
+             * charge with no weather skip, not semi-invulnerable (SKY_ATTACK), flinch 30 percent. Triple Arrows: def -1 at 50 and
+             * flinch at 30 (TRIPLE_ARROWS), critRatio 2. */
+            [DFI_MOVE_ROCKBLAST] = 1u,
+            [DFI_MOVE_BULLETSEED] = 1u,
+            [DFI_MOVE_PINMISSILE] = 1u,
+            [DFI_MOVE_BONERUSH] = 1u,
+            [DFI_MOVE_CRABHAMMER] = 1u,
+            [DFI_MOVE_CROSSCHOP] = 1u,
+            [DFI_MOVE_AIRCUTTER] = 1u,
+            [DFI_MOVE_SOLARBLADE] = 1u,
+            [DFI_MOVE_STOREDPOWER] = 1u,
+            [DFI_MOVE_METEORASSAULT] = 1u,
+            [DFI_MOVE_SKYATTACK] = 1u,
+            [DFI_MOVE_TRIPLEARROWS] = 1u,
         },
     .abilities =
         {

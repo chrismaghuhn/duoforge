@@ -740,7 +740,7 @@ class PoolMoves(unittest.TestCase):
                           'TRICK', 'SWITCHEROO', 'THIEF', 'COVET', 'SUPER_FANG', 'TAUNT', 'YAWN',
                           'RAGE_FIST', 'STONE_AXE', 'CEASELESS_EDGE', 'MULTI_HIT_10', 'POWER_TRIP', 'THUNDER', 'ICE_FANG', 'TRI_ATTACK', 'DOUBLE_SHOCK', 'ROOST', 'STOMPING_TANTRUM',
                           'LOCKED_MOVE', 'REVIVAL_BLESSING',
-                          'MULTI_HIT_2_5', 'SCALE_SHOT', 'QUICK_GUARD', 'UPPER_HAND', 'HEAL_PULSE', 'STRENGTH_SAP', 'BEAT_UP', 'BUG_BITE', 'POLTERGEIST', 'SHEER_COLD', 'HAZE', 'AFTER_YOU', 'QUASH', 'SUBSTITUTE', 'PHANTOM_FORCE', 'STEEL_BEAM', 'THUNDER_WAVE', 'SKILL_SWAP', 'KINGS_SHIELD', 'ALLURING_VOICE', 'DRAGON_CHEER', 'BATON_PASS', 'DESTINY_BOND', 'FINAL_GAMBIT', 'DRAGON_DARTS', 'UNMODELED'])
+                          'MULTI_HIT_2_5', 'SCALE_SHOT', 'QUICK_GUARD', 'UPPER_HAND', 'HEAL_PULSE', 'STRENGTH_SAP', 'BEAT_UP', 'BUG_BITE', 'POLTERGEIST', 'SHEER_COLD', 'HAZE', 'AFTER_YOU', 'QUASH', 'SUBSTITUTE', 'PHANTOM_FORCE', 'STEEL_BEAM', 'THUNDER_WAVE', 'SKILL_SWAP', 'KINGS_SHIELD', 'ALLURING_VOICE', 'DRAGON_CHEER', 'BATON_PASS', 'DESTINY_BOND', 'FINAL_GAMBIT', 'DRAGON_DARTS', 'SKY_ATTACK', 'TRIPLE_ARROWS', 'UNMODELED'])
         self.assertEqual(len(gen_closure.G2_HANDLERS), 7)
         # Step G16: Knock Off's handler is 24 in the tables; step G15's Expanding Force is 25, step G19's Glaive Rush 26,
         # step G20's Aurora Veil 27, Spiky Shield 28, the four of step G28 29 to 32, the eight of step G32 33 to 40 and
@@ -796,7 +796,8 @@ class PoolMoves(unittest.TestCase):
         self.assertEqual([gen_closure.SPECIAL_IDS_P.index(h) for h in gen_closure.G74_HANDLERS], [97])  # G74: Baton Pass (decision 0042)
         self.assertEqual([gen_closure.SPECIAL_IDS_P.index(h) for h in gen_closure.G76_HANDLERS], [98, 99])  # G76: Destiny Bond, Final Gambit (decision 0015 5cg)
         self.assertEqual([gen_closure.SPECIAL_IDS_P.index(h) for h in gen_closure.G78_HANDLERS], [100])  # G78: Dragon Darts (decision 0043)
-        self.assertEqual(gen_closure.SPECIAL_IDS_P.index('UNMODELED'), 101)
+        self.assertEqual([gen_closure.SPECIAL_IDS_P.index(h) for h in gen_closure.C3_HANDLERS], [101, 102])  # C3: Sky Attack, Triple Arrows (decision 0015 entry 5cr)
+        self.assertEqual(gen_closure.SPECIAL_IDS_P.index('UNMODELED'), 103)
         # Scald and Recover became data in step G10: their ids stay defined and no move maps to them.
         self.assertEqual({v[0] for k, v in gen_closure.SPECIAL_P.items() if k not in gen_closure.SPECIAL_C},
                          (set(gen_closure.G2_HANDLERS) - {'SCALD', 'RECOVER'}) | set(gen_closure.G70_HANDLERS) | set(gen_closure.G66_HANDLERS) | set(gen_closure.G72B_HANDLERS) | set(gen_closure.G74_HANDLERS) | set(gen_closure.G76_HANDLERS) | set(gen_closure.G78_HANDLERS) | set(gen_closure.G64_HANDLERS) | set(gen_closure.WEATHER_HANDLERS) |
@@ -1111,7 +1112,7 @@ class PoolMoves(unittest.TestCase):
                                                                 'substitute', 'kingsshield', 'shellsmash', 'acrobatics', 'blizzard', 'feint', 'alluringvoice', 'dragoncheer', 'dragondarts',
                                                                 'ragepowder', 'psychicfangs', 'solarbeam', 'eruption', 'waterspout',
                                                                 'bodypress', 'foulplay', 'psyshock', 'raindance', 'sunnyday', 'freezedry',
-                                                                'clangingscales', 'steelroller', 'clangoroussoul', 'brickbreak', 'disable',
+                                                                'clangingscales', 'rockblast', 'bulletseed', 'pinmissile', 'bonerush', 'solarblade', 'storedpower', 'skyattack', 'triplearrows', 'steelroller', 'clangoroussoul', 'brickbreak', 'disable',
                                                                 'electricterrain', 'mistyterrain', 'risingvoltage', 'terrainpulse', 'perishsong',
                                                                 'dualwingbeat', 'twinbeam', 'tripleaxel', 'imprison', 'batonpass',
                                                                 'trick', 'switcheroo', 'thief', 'covet', 'sacredsword', 'superfang', 'taunt', 'yawn',
