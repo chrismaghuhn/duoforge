@@ -99,7 +99,7 @@ static void test_marked_reflectable_moves_are_the_handled_list(df_test *t)
                                      in_list(name, refused, sizeof refused / sizeof refused[0])));
         marked += 1u;
     }
-    DF_CHECK_EQ_U64(t, marked, 24u); /* 23 on main, and Thunder Wave of step G68 */
+    DF_CHECK_EQ_U64(t, marked, 25u); /* main's 24 (23 and Thunder Wave of step G68), and Leech Seed of step G84 */
 }
 
 /* Every marked reflectable move is a single-target or a foeSide move: a spread one would need the TryHit of every target
@@ -527,7 +527,7 @@ static void test_ghost_curse_is_refused(df_test *t)
     duoforge_battle_setup setup;
     build_setup(cb, &setup);
     const uint32_t gholdengo[2] = {DFI_MOVE_CURSE, DFI_MOVE_PROTECT};
-    set_member(&setup, 0u, 0u, DFI_FORME_GHOLDENGO, 0u, DFI_ABILITY_GOODASGOLD + 1u, 2u, gholdengo);
+    set_member(&setup, 0u, 0u, DFI_FORME_GHOLDENGO, DUOFORGE_GENDER_NONE, DFI_ABILITY_GOODASGOLD + 1u, 2u, gholdengo);
     duoforge_battle *b = start(t, ctx, cb, &setup);
     if (b != NULL) {
         duoforge_slot_command cmd[2][2] = {{slot(0, 2), slot(0, DUOFORGE_TARGET_NONE)}, {slot(0, 0), slot(0, DUOFORGE_TARGET_NONE)}};
