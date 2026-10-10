@@ -48,7 +48,7 @@ def _rows(envs=32, steps=5):
             b.step_factored(policy.choose_factored(b))
             b.reset_terminal()
         b.query_factored()
-        mask = int(b.observe_ext()[0, 0]["supported"])
+        mask = int(b.observe_ext()[0, 0]["supported"]) & features.version_features(4)  # encoder 4 (0050)
         obs, slots, pairs = (x.copy() for x in b.query_encoded(4, mask))
     return (obs.reshape(2 * envs, -1), slots.reshape((2 * envs,) + slots.shape[2:]),
             pairs.reshape((2 * envs,) + pairs.shape[2:]))
@@ -94,7 +94,7 @@ class LookaheadDecisions(unittest.TestCase):
             cls.roots.step_factored(policy.choose_factored(cls.roots))
             cls.roots.reset_terminal()
         cls.roots.query_factored()
-        cls.mask = int(cls.roots.observe_ext()[0, 0]["supported"])
+        cls.mask = int(cls.roots.observe_ext()[0, 0]["supported"]) & features.version_features(4)  # encoder 4 (0050)
         _, _, pairs = cls.roots.query_encoded(4, cls.mask)
         seats = np.arange(ENVS) % 2
         every = np.arange(ENVS)
@@ -380,7 +380,7 @@ class LookaheadKinds(unittest.TestCase):
         with duoforge.Context(C["DUOFORGE_DATA_KIND_POOL"]) as ctx, \
                 duoforge.Batch(ctx, np.resize(reference_setups([0, 1, 2, 3]), ENVS), 2, SEED) as roots:
             roots.query_factored()
-            mask = int(roots.observe_ext()[0, 0]["supported"])
+            mask = int(roots.observe_ext()[0, 0]["supported"]) & features.version_features(4)  # encoder 4 (0050)
             with lookahead.Lookahead(ctx, self.model, self.params, 4, mask, k=2, m=2, s=2, capacity=64,
                                      workers=2) as look:
                 every = np.arange(ENVS)
@@ -433,7 +433,7 @@ class LookaheadKinds(unittest.TestCase):
             for e in (2, 7, 11):
                 roots.reset(e, 2)  # back at team selection
             roots.query_factored()
-            mask = int(roots.observe_ext()[0, 0]["supported"])
+            mask = int(roots.observe_ext()[0, 0]["supported"]) & features.version_features(4)  # encoder 4 (0050)
             every = np.arange(ENVS)
             seats = every % 2
             asked = roots.requests["requested"][every, seats] != 0
@@ -492,7 +492,7 @@ class ArenaSearch(unittest.TestCase):
         cls.pool = teams.load(cls.ctx, ["A", "B", "C"])
         cls.rows = suite.make_suite(3, SEED, games=2)[:32]
         with duoforge.Batch(cls.ctx, reference_setups([0]), 1, SEED) as b:
-            cls.mask = int(b.observe_ext()[0, 0]["supported"])
+            cls.mask = int(b.observe_ext()[0, 0]["supported"]) & features.version_features(4)  # encoder 4 (0050)
         cls.raw = evaluate.Player(cls.model, cls.params, 4, "R", ext_supported=cls.mask)
 
     @classmethod

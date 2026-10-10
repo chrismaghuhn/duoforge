@@ -919,9 +919,13 @@
 #define DFI_SPECIAL_KINGS_SHIELD 94u
 #define DFI_SPECIAL_ALLURING_VOICE 95u
 #define DFI_SPECIAL_DRAGON_CHEER 96u
-#define DFI_SPECIAL_LEECH_SEED 97u
-#define DFI_SPECIAL_CURSE 98u
-#define DFI_SPECIAL_UNMODELED 99u
+#define DFI_SPECIAL_BATON_PASS 97u
+#define DFI_SPECIAL_DESTINY_BOND 98u
+#define DFI_SPECIAL_FINAL_GAMBIT 99u
+#define DFI_SPECIAL_DRAGON_DARTS 100u
+#define DFI_SPECIAL_LEECH_SEED 101u
+#define DFI_SPECIAL_CURSE 102u
+#define DFI_SPECIAL_UNMODELED 103u
 
 /* ---- the second flags byte of every move (step G8: the general byte for the flags that the first one has no room
  * for; bits 4 to 128 are free) and the secondary kinds that it comes with ---- */

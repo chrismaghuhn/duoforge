@@ -312,9 +312,14 @@ class PoliciesFeaturesTest(unittest.TestCase):
             from python.tests import _reference_features as reference
             for bad in (8, 16, 32, 64, 128):
                 ob["sides"][me]["positions"][0]["reserved"] = bad
-                for encoder in (features, reference):
-                    with self.assertRaisesRegex(ValueError, "position flags"):
-                        encoder.encode(ob, d)
+                with self.assertRaisesRegex(ValueError, "position flags"):
+                    reference.encode(ob, d)
+                # encoder 6's reserve (decision 0050): encoders up to 5 refuse the bit, encoder 6 shows it in its column
+                with self.assertRaisesRegex(features.EncoderAwaitingBit, "position flag"):
+                    features.encode(ob, d, encoder=5)
+                bit = bad.bit_length() - 1
+                part = features.encode(ob, d)[0]
+                self.assertEqual(part[features.FEATURE_NAMES.index(f"ext6.own.pos0.flag.bit{bit}")], 1.0)
 
     def test_encode_psychic_terrain(self):
         # Psychic Terrain (TEAM_C) is the third entry of the terrain one-hot
@@ -414,7 +419,7 @@ class PoliciesFeaturesTest(unittest.TestCase):
             part = features.encode(ob, d)[0]
             self.assertEqual(features.as_encoder(part, ob, 1)[_OWN_PRESENT].tolist(), [0.0] + [1.0] * 5)
             self.assertEqual(part[_OWN_PRESENT].tolist(), [1.0] * 6)  # one record, untouched
-            for bad in (0, 6, "2", None, True, 1.0):  # only ints count: True == 1, 1.0 == 1; 6 is past ENCODER
+            for bad in (0, 7, "2", None, True, 1.0):  # only ints count: True == 1, 1.0 == 1; 7 is past ENCODER (6)
                 with self.assertRaisesRegex(ValueError, "encoder"):
                     features.as_encoder(part, ob, bad)
             for odd in (part[:-1], part.astype(np.float64), np.stack([part, part])):
