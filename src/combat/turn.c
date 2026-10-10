@@ -1313,7 +1313,7 @@ static duoforge_status dfi_random_foe(dfi_run *r, uint32_t side, uint32_t *out)
 /* getTarget and getMoveTargets (sim/battle.ts:2437-2523,
  * sim/pokemon.ts:791-862) for the target classes of the turn core. */
 static duoforge_status dfi_move_targets(dfi_run *r, uint32_t user, uint32_t cls, uint32_t chosen,
-                                        uint32_t targets[DFI_POSITIONS], uint32_t *count)
+                                        uint32_t targets[DFI_POSITIONS], uint32_t *count, bool smart)
 {
     const uint32_t side = user / 2u;
     *count = 0u;
@@ -1392,13 +1392,17 @@ static duoforge_status dfi_move_targets(dfi_run *r, uint32_t user, uint32_t cls,
              * retargeted (the move fails); an empty slot falls through to a
              * random foe (sim/battle.ts:2461-2486). */
             const dfi_member *ally = dfi_at(r->b, chosen);
-            if (ally != NULL) {
-                if (ally->hp != 0u) {
-                    targets[0] = chosen;
-                    *count = 1u;
-                }
+            if (ally != NULL && ally->hp != 0u) {
+                targets[0] = chosen;
+                *count = 1u;
                 return DUOFORGE_OK;
             }
+            if (ally != NULL && !smart) {
+                return DUOFORGE_OK; /* a fainted ally of a move that is not smart: the move fails (sim/pokemon.ts:829-843) */
+            }
+            /* step G78 (decision 0043): a smart move (Dragon Darts) retargets a fainted ally at random like any fainted target:
+             * getTarget's smartTarget branch returns getRandomTarget when the chosen Pokemon is fainted (sim/battle.ts:2451-2454).
+             * A fainted ally falls through to the random foe below, with its draw, as an empty slot does. */
         } else if (dfi_alive(r->b, chosen)) {
             targets[0] = chosen;
             *count = 1u;
@@ -6140,7 +6144,8 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
      * draw happens even when the Pokemon then cannot move. */
     uint32_t targets[DFI_POSITIONS] = {0};
     uint32_t count = 0u;
-    duoforge_status st = dfi_move_targets(r, user, md->target_class, q->target, targets, &count);
+    duoforge_status st = dfi_move_targets(r, user, md->target_class, q->target, targets, &count,
+                                          md->special == DFI_SPECIAL_DRAGON_DARTS);
     if (st != DUOFORGE_OK) {
         return st;
     }
@@ -6239,7 +6244,8 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
      * getMoveTargets then collects the foes. runMove's own target (r->move_target, AfterMove's) stays the old one. */
     const uint32_t target_class = dfi_effective_target_class(b, m, md);
     if (target_class != md->target_class) {
-        st = dfi_move_targets(r, user, target_class, q->target, targets, &count);
+        st = dfi_move_targets(r, user, target_class, q->target, targets, &count,
+                              md->special == DFI_SPECIAL_DRAGON_DARTS);
         if (st != DUOFORGE_OK) {
             return st;
         }
