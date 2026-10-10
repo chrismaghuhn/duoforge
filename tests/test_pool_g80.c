@@ -247,8 +247,9 @@ static void test_illusion_refusal(df_test *t)
         return;
     }
     b->tail.sides[0].ability_now[partner_member] = (uint16_t)(DFI_ABILITY_ILLUSION + 1u);
-    /* Chimecho (slot 0) uses Ally Switch; Audino (slot 1) uses Protect (move 3, no target); the foe's Malamar aims at our slot 0 */
-    static const g80_cmd turn1[2][2] = {{MV(0, NO), MV(3, NO)}, {MV(0, 0u), MV(0, 0u)}};
+    /* As the recorded swap battle's first turn: Chimecho (slot 0) and Audino (slot 1) use Ally Switch (move 0, no target); the
+     * foe's Malamar aims Foul Play at our slot 0 and Spiritomb at our slot 1 (targets are flat positions) */
+    static const g80_cmd turn1[2][2] = {{MV(0, NO), MV(0, NO)}, {MV(0, 0u), MV(0, NO)}};
     turn_bundle(&bd, b, turn1);
     const duoforge_status st = duoforge_battle_step(ctx, b, &bd, &res);
     DF_CHECK_EQ_U64(t, st, DUOFORGE_E_UNSUPPORTED);
