@@ -150,6 +150,11 @@ duoforge_configure_target(duoforge_shared)
 add_executable(duoforge_layout_dump tools/layout/layout_dump.c)
 target_include_directories(duoforge_layout_dump PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/include")
 duoforge_configure_target(duoforge_layout_dump)
+# The canonical state encoding's offsets (DFI_ENC_*, internal) for the generated python/duoforge/_state_layout.py.
+add_executable(duoforge_state_layout_dump tools/layout/state_layout_dump.c)
+target_include_directories(duoforge_state_layout_dump PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/include"
+                           "${CMAKE_CURRENT_SOURCE_DIR}/src")
+duoforge_configure_target(duoforge_state_layout_dump)
 
 set(DUOFORGE_PYTHON "" CACHE FILEPATH
     "Python 3.10+ with NumPy 2 for the duoforge.python tests (empty: the tests report skipped)")
