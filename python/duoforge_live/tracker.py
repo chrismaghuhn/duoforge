@@ -56,6 +56,15 @@ FIELD_TURNS_EXTENDED = 8  # DFI_FIELD_TURNS_MAX: a weather rock or Terrain Exten
 TAILWIND_TURNS, SCREEN_TURNS, SCREEN_TURNS_CLAY = 4, 5, 8  # DFI_TAILWIND_TURNS_MAX, 5, DFI_SCREEN_TURNS_MAX
 STALL_DURATION, STALL_LEVEL_MAX = 2, 6  # DFI_STALL_DURATION (src/combat/turn.c), DFI_STALL_LEVEL_MAX
 CHARGE_TURNS = 2  # twoturnmove's duration: the charge and the locked turn end in the second residual
+EXT_REVISION = C["DUOFORGE_OBSERVATION_EXT_REVISION"]
+EXT_THROAT_CHOP = C["DUOFORGE_POSITION_EXT_THROAT_CHOP"]
+# The view-extension fields (OBSERVATION_EXT, decision 0018) of each feature the tracker folds: what observation_ext
+# writes, and all that restrict_ext keeps of DuoForge's record for a comparison. ("bit", B): bit B of a position's
+# volatiles; ("position" | "member" | "side", F): field F of every position, member or side record. The base-value
+# features show in the base observation alone (lines.BASE_FOLDS).
+EXT_FIELDS = {
+    "WEATHER_SAND": (), "WEATHER_SNOW": (), "AILMENT_TOX": (),
+}
 STATUS = {"brn": 1, "frz": 2, "par": 3, "slp": 4, "psn": 5}
 
 ROOM_LINES = lines.ROOM_LINES
@@ -779,6 +788,19 @@ class Tracker:
         else:
             v["hp_kind"], v["location"] = HP_UNKNOWN, UNDETERMINED
 
+    def observation_ext(self):
+        """The OBSERVATION_EXT record (decision 0018) DuoForge shows this player at the current decision point: the
+        fields of the features this tracker folds (EXT_FIELDS), from the public lines; all zero under a kind without
+        the extension (not POOL), as duoforge_battle_observe_ext gives it."""
+        if not self.ready:
+            raise ValueError("no decision point")
+        o = np.zeros((), dtype=_layout.OBSERVATION_EXT)
+        if self.data.kind != "pool":
+            return o
+        o["revision"], o["player"], o["epoch"] = EXT_REVISION, self.side, self.epoch
+        o["supported"] = lines.LIBRARY_SUPPORTED
+        return o
+
     def domain(self):
         """The FACTORED_DOMAIN of the decision point (the provisional pair mask), and the slot lists."""
         r = self.request
@@ -791,3 +813,26 @@ class Tracker:
                      for mon in r["side"]["pokemon"]}
         lists = options.slot_options(r, self.side, roster_of, locked)
         return options.domain(lists, self.epoch), lists
+
+
+def restrict_ext(ext, folds):
+    """DuoForge's OBSERVATION_EXT record `ext` as a tracker that folds the features of the mask `folds` shows it: the
+    header (revision, player, epoch, supported) and the EXT_FIELDS of those features, everything else zero. KeyError
+    for a feature of the mask without an EXT_FIELDS entry."""
+    out = np.zeros((), dtype=_layout.OBSERVATION_EXT)
+    for name in ("revision", "player", "epoch", "supported"):
+        out[name] = ext[name]
+    for name, bit in lines.FEATURES.items():
+        if not folds >> bit & 1:
+            continue
+        for where, field in EXT_FIELDS[name]:
+            for s in (0, 1):
+                src, dst = ext["sides"][s], out["sides"][s]
+                if where == "bit":
+                    dst["positions"]["volatiles"] = dst["positions"]["volatiles"] | (src["positions"]["volatiles"] & field)
+                elif where == "side":
+                    dst[field] = src[field]
+                else:
+                    group = "positions" if where == "position" else "members"
+                    dst[group][field] = src[group][field]
+    return out

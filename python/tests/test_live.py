@@ -61,10 +61,11 @@ class Point:
 
 
 class Battle:
-    def __init__(self, name, views, streams):
+    def __init__(self, name, views, streams, exts):
         self.name = name
         self.spec, self.trace = trace_to_c.load_battle(str(data.ROOT), name)
         self.views = views
+        self.exts = exts  # (k, player) -> DuoForge's view extension bytes (all zero: closure battles)
         self.streams = streams  # player -> list of messages (lists of lines)
         state = self.trace["start"]["state"]
         self.roster_names = []  # as convert_battle names a Pokemon in a choice
@@ -111,20 +112,21 @@ class Reference:
         results = [line.split(" ") for line in out.stdout.splitlines() if line.startswith("R ")]
         if out.returncode != 0 or not results or any(r[2] != "PASS" for r in results):
             raise AssertionError(f"the runner: {out.returncode} {out.stderr} {out.stdout[-2000:]}")
-        views = {}
+        views, exts = {}, {}
         with open(views_path, encoding="ascii") as f:
             for line in f:
-                _, name, k, viewer, obs, dom = line.split()
+                _, name, k, viewer, obs, dom, ext = line.split()
                 views.setdefault(name, {})[(int(k), int(viewer))] = (
                     np.frombuffer(bytes.fromhex(obs), dtype=_layout.OBSERVATION)[0],
                     np.frombuffer(bytes.fromhex(dom), dtype=_layout.FACTORED_DOMAIN)[0])
+                exts.setdefault(name, {})[(int(k), int(viewer))] = bytes.fromhex(ext)
         streams = {}
         for line in node_tool(root, "--all").splitlines():
             m = json.loads(line)
             streams.setdefault(m["battle"], ([], []))[int(m["to"][1]) - 1].append(m["lines"])
         if sorted(streams) != sorted(views):
             raise AssertionError("the client streams and the views name other battles")
-        self.battles = [Battle(name, views[name], streams[name]) for name in sorted(views)]
+        self.battles = [Battle(name, views[name], streams[name], exts[name]) for name in sorted(views)]
         self.data = data.load()
 
 
@@ -316,8 +318,8 @@ def differences(a, b, path=""):
 
 
 def run_tracker(battle, player, stream=None, sheet_text=None):
-    """[(k, tracker observation, tracker domain, lists)] at every decision point of `player`, feeding the
-    stream message by message and the recorded own choices as accepted."""
+    """[(k, tracker observation, tracker domain, lists, tracker view extension)] at every decision point of `player`,
+    feeding the stream message by message and the recorded own choices as accepted."""
     from duoforge_live.tracker import Tracker
     tracker = Tracker(Reference.get().data, sheet_text or battle.spec["teams"][player])
     pid = f"p{player + 1}"
@@ -328,7 +330,7 @@ def run_tracker(battle, player, stream=None, sheet_text=None):
             done = tracker.epoch
             k = done - 1
             dom, lists = tracker.domain()
-            out.append((k, tracker.observation(), dom, lists))
+            out.append((k, tracker.observation(), dom, lists, tracker.observation_ext()))
             step = battle.trace["steps"][k] if k < len(battle.trace["steps"]) else None
             if step is not None and pid in step["input"]:
                 tracker.accepted(step["input"][pid])
@@ -390,11 +392,12 @@ class TrackerTest(unittest.TestCase):
     def assertSameView(self, battle, player, points):
         expected = sum(1 for _ in battle.points(player))
         self.assertEqual([p[0] for p in points], list(range(expected)), (battle.name, player))
-        for k, obs, dom, _ in points:
+        for k, obs, dom, _, ext in points:
             theirs, their_dom = battle.views[(k, player)]
             where = f"{battle.name} k={k} viewer={player}"
             diff = differences(obs, theirs)
             self.assertFalse(diff, f"{where}: " + "; ".join(diff[:12]))
+            self.assertEqual(ext.tobytes(), battle.exts[(k, player)], where)  # closure kinds: both all zero
             self.assertEqual((int(dom["epoch"]), int(dom["kind"])), (int(their_dom["epoch"]), int(their_dom["kind"])),
                              where)
             if int(dom["kind"]) == TEAM:

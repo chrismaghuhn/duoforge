@@ -7,6 +7,7 @@ and the runner (DUOFORGE_DIFF_RUNNER); CTest registers it only with all of
 them and reports it skipped otherwise. Every input is our own: the committed
 reference battles, replayed by the pinned Showdown as spectator logs.
 """
+import collections
 import json
 import os
 import subprocess
@@ -82,6 +83,7 @@ def spectate(battle, side, source):
                                          true_stats_of(battle, side, source), log)
     leads, back = spectator.hindsight(log, side, Reference.get().data, battle_sheets(battle))
     out = []
+    exts = EXTS[(battle.name, side)] = []  # the tracker's OBSERVATION_EXT at each point of `out`
     reached = 0  # points walked: the first point a stop loses is this index
     try:
         for point in spectator.walk(tracker, log, pts):
@@ -90,6 +92,7 @@ def spectate(battle, side, source):
                 domain, lists = superset_of(tracker)
                 out.append((point, tracker.observation().copy(), (domain, lists), label_of(tracker, log, point, lists,
                                                                                            leads, back)))
+                exts.append(tracker.observation_ext().copy())
     except lines.Stop as stop:
         if not allowed_stop(stop.reason):
             raise
@@ -100,6 +103,7 @@ def spectate(battle, side, source):
 # Stops for information only the player had (spec section 6), allowed in reference logs; every other stop fails.
 HIDDEN = {"charge-target-hidden"}
 STOPS = {}
+EXTS = {}  # (battle, side) -> the tracker's view extension at each point spectate() returned
 
 
 # Features the library models but its view does not show yet: its honest search refuses them with a named, counted
@@ -224,6 +228,41 @@ class SpectatorTest(unittest.TestCase):
                     own["brought_order"] = their_own["brought_order"]
                     diff = differences(ours, theirs)
                     self.assertFalse(diff, f"{where}: " + "; ".join(diff[:12]))
+
+    def test_view_ext_equals_duoforge(self):
+        # decision 0018: the tracker's view extension is DuoForge's, byte for byte, in the header and in the fields of
+        # every feature it folds (tracker.EXT_FIELDS of lines.SUPPORTED); the other features' lines stop before a
+        # point could show them
+        from duoforge_live import tracker
+        for battle in self.ref.battles:
+            for side in (0, 1):
+                for (_, obs, *_), ours in zip(self.runs[(battle.name, side)], EXTS[(battle.name, side)], strict=True):
+                    k = int(obs["epoch"]) - 1
+                    theirs = tracker.restrict_ext(battle.exts[(k, side)], lines.SUPPORTED)
+                    diff = differences(ours, theirs)
+                    self.assertFalse(diff, f"{battle.name} k={k} side={side}: " + "; ".join(diff[:12]))
+
+    def test_view_ext_covers_every_fold(self):
+        # a fold counts only where the comparison above saw it: every folded feature with an extension field shows
+        # (non-zero in DuoForge's record) at compared points of both viewers, on the viewer's own side and on the foe's
+        from duoforge_live import tracker
+        want = {(viewer, whose) for viewer in (0, 1) for whose in ("own", "foe")}
+        folded = {name: bit for name, bit in lines.FEATURES.items()
+                  if lines.SUPPORTED >> bit & 1 and tracker.EXT_FIELDS[name]}
+        seen = {name: collections.Counter() for name in folded}
+        empty = bytes(_layout.SIDE_EXT.itemsize)
+        for battle in self.ref.battles:
+            for side in (0, 1):
+                for _, obs, *_ in self.runs[(battle.name, side)]:
+                    ext = battle.exts[(int(obs["epoch"]) - 1, side)]
+                    for name, bit in folded.items():
+                        shown = tracker.restrict_ext(ext, 1 << bit)["sides"]
+                        for s in (0, 1):
+                            if shown[s].tobytes() != empty:
+                                seen[name][(side, "own" if s == side else "foe")] += 1
+        print(f"\nview extension points per fold (viewer, side): {dict(sorted(seen.items()))}")
+        missing = {name: sorted(want - set(counts)) for name, counts in seen.items() if want - set(counts)}
+        self.assertFalse(missing, missing)
 
     def test_stats_equal_duoforge(self):
         # test_view_equals_duoforge compares stats and stat points with the true team as the prior; this names a

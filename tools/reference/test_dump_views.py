@@ -7,7 +7,8 @@ Runs with DUOFORGE_PYTHON and DUOFORGE_LIBRARY (the first view is compared
 with the Python package). Checks, over every committed closure battle:
 - every battle passes and has 2 * (steps + 1) view lines, decision index k
   ascending and viewer 0 before 1, each with the observation's epoch k + 1
-  and player equal to the viewer, and sizes of 736 and 652 bytes;
+  and player equal to the viewer, and sizes of 736, 652 and 192 bytes (the
+  view extension: all zero for a closure battle, no POOL kind);
 - the first views of m5_real_ab_1 (Team A against Team B) equal what the
   public API gives for the battle's setup, built from its record's member
   lines (a Batch's query_factored());
@@ -30,15 +31,15 @@ def run(args):
 
 
 def read_views(path):
-    """{(battle, k, viewer): (observation bytes, domain bytes)} and the order of the keys."""
+    """{(battle, k, viewer): (observation bytes, domain bytes, extension bytes)} and the order of the keys."""
     views, order = {}, []
     with open(path, encoding="ascii") as f:
         for line in f:
-            tag, name, k, viewer, obs, dom = line.rstrip("\n").split(" ")
+            tag, name, k, viewer, obs, dom, ext = line.rstrip("\n").split(" ")
             if tag != "V":
                 raise AssertionError("not a view line: %r" % line[:40])
             key = (name, int(k), int(viewer))
-            views[key] = (bytes.fromhex(obs), bytes.fromhex(dom))
+            views[key] = (bytes.fromhex(obs), bytes.fromhex(dom), bytes.fromhex(ext))
             order.append(key)
     return views, order
 
@@ -94,8 +95,9 @@ class DumpViewsTest(unittest.TestCase):
         steps = {name: s for name, _, s in rows}
         slots = _layout.CONSTANTS["DUOFORGE_CHOICE_SLOTS"]
         terminal = _layout.CONSTANTS["DUOFORGE_BOUNDARY_TERMINAL"]
-        for (name, k, viewer), (obs, dom) in views.items():
-            self.assertEqual((len(obs), len(dom)), (736, 652), name)
+        for (name, k, viewer), (obs, dom, ext) in views.items():
+            self.assertEqual((len(obs), len(dom), len(ext)), (736, 652, 192), name)
+            self.assertEqual(ext, bytes(192), name)  # duoforge_battle_observe_ext: a closure kind has no extension
             o = np.frombuffer(obs, dtype=_layout.OBSERVATION)[0]
             d = np.frombuffer(dom, dtype=_layout.FACTORED_DOMAIN)[0]
             where = (name, k, viewer)
@@ -130,7 +132,7 @@ class DumpViewsTest(unittest.TestCase):
         try:
             batch.query_factored()
             for viewer in (0, 1):
-                obs, dom = views[("m5_real_ab_1", 0, viewer)]
+                obs, dom, _ = views[("m5_real_ab_1", 0, viewer)]
                 self.assertEqual(obs, batch.observations[0, viewer].tobytes(), viewer)
                 self.assertEqual(dom, batch.domains[0, viewer].tobytes(), viewer)
         finally:
