@@ -516,6 +516,7 @@ const dfi_support_manifest dfi_support = {
             [DFI_ABILITY_FLOWERVEIL] = 1u,
             [DFI_ABILITY_FAIRYAURA] = 1u,
             [DFI_ABILITY_TRACE] = 1u,
+            [DFI_ABILITY_ILLUSION] = 1u, /* step I2 (decision 0026): the disguise, the break, the faint, the foe view (amended by I2) */
             [DFI_ABILITY_ROUGHSKIN] = 1u,
             [DFI_ABILITY_POISONTOUCH] = 1u,
             [DFI_ABILITY_THERMALEXCHANGE] = 1u,
@@ -782,6 +783,7 @@ const dfi_support_manifest dfi_support = {
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_AURORA_VEIL) |
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_RAGE_POWDER) |
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_AILMENT_TOX) |
+                         ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_ILLUSION) |
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_DISABLE) |
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_TERRAIN_ELECTRIC) |
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_TERRAIN_MISTY) |

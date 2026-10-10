@@ -392,6 +392,20 @@ def oracle_gap(name, e):
                       messages=['%s: %s' % (type(e).__name__, e)])
 
 
+def duplicate_gap(name, data, run):
+    """The ORACLE_GAP of a battle whose converter exempted a duplicate name (decision 0026 section 4): the engine must refuse
+    it (UNSUPPORTED) at or before the step at which the name is shown twice, or the exemption would hide a compared step.
+    Any other answer, or a refusal later than that step, is an ORACLE_GAP. None when the answer is the right one."""
+    step = data.get('illusion_duplicate_step')
+    if step is None or (run.verdict == 'UNSUPPORTED' and run.step is not None and run.step <= step):
+        return None
+    where = '' if run.step is None else ' at step %d' % run.step
+    return new_result(name, 'ORACLE_GAP', rule='illusion-duplicate-unrefused',
+                      detail='the duplicate name shown from step %d is not refused at or before it (the engine answers %s%s)'
+                      % (step, run.verdict, where), step=run.step, steps=run.steps, context=run.context,
+                      messages=run.messages)
+
+
 def child_failure_result(name, failure):
     """The bucket of a battle on which a child died or hung: a runner that did is a DIVERGENCE (the engine crashed or
     looped on this battle), a worker that did is a REF_ERROR; what the child wrote to stderr is the message."""
@@ -436,6 +450,9 @@ def process_battle(name, spec, committed, worker, runner, tables_for, pool_kind=
         run = runner.run(name, records.getvalue())
     except ChildFailure as e:
         return child_failure_result(name, e)
+    gap = duplicate_gap(name, data, run)
+    if gap is not None:
+        return gap
     return new_result(name, run.verdict, detail=None if run.verdict == 'PASS' else run.detail, step=run.step,
                       steps=run.steps, context=run.context, messages=run.messages)
 

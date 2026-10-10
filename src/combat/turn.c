@@ -7198,12 +7198,29 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
                 }
             }
         }
+        /* Illusion (decision 0026 section 4; the pin's DamagingHit, sim/battle-actions.ts:1118-1130): a damaging move hit of
+         * any user, an ally included, ends the disguise of the target. Its replace and -end lines are one ILLUSION_END event,
+         * after the self effects and secondaries of the hit and before the DamagingHit handlers, as the pin orders them (an unboost of the
+         * same hit shows before the replace line). The owner's and the foe's folds read it. */
         /* DamagingHit, its handlers by order, then target (compareLeftToRightOrder,
          * sim/battle.ts:421-426). Rocky Helmet (Team C, onDamagingHitOrder 2,
          * data/items.ts:5295-5309) comes first, also when the hit knocked its
          * holder out (the faint is not processed yet): a contact move costs the
          * attacker floor(maxHP / 6), at least 1. */
         const uint32_t user_before_hit = m->hp;
+        /* The break of each target that this hit damaged (the DamagingHit step, after the secondaries). */
+        for (uint32_t i = 0u; i < count; ++i) {
+            if (!hit[i]) {
+                continue;
+            }
+            dfi_tail_pos *dp = &b->tail.sides[targets[i] / 2u].positions[targets[i] % 2u];
+            if (dp->ability_state != 0u && dfi_ability(b, dfi_at(b, targets[i]), DFI_ABILITY_ILLUSION)) {
+                dp->ability_state = 0u;
+                duoforge_event ie = dfi_event_make(DUOFORGE_EVENT_ILLUSION_END, targets[i]);
+                ie.id = (uint16_t)b->sides[targets[i] / 2u].positions[targets[i] % 2u].occupant;
+                dfi_emit_hp(r, ie);
+            }
+        }
         /* Rough Skin (POOL data, data/abilities.ts:3938-3950) is the order-1 handler, before Rocky Helmet's 2: a contact
          * move costs the attacker floor(maxHP / 8), at least 1, with [from] ability: Rough Skin [of] the holder, also
          * when the hit knocked the holder out. A contact move is one with the contact flag (checkMoveMakesContact,
@@ -7726,6 +7743,61 @@ static duoforge_status dfi_run_revive(dfi_run *r, const dfi_queue_record *q)
  * (step G46, `drag`) skips BeforeSwitchOut and its Update (sim/battle-actions.ts:80-85), takes no pivot or Parting Shot
  * cause, and its line is [drag] (DUOFORGE_EVENT_DRAG). The entry (runSwitch) is queued, or, for a drag, run at once by the
  * caller. `*activation` is the reserve's activation id. */
+/* Illusion (decision 0026 sections 2 and 4; pin data/abilities.ts:2056-2069, onBeforeSwitchIn): the disguise of a holder that
+ * enters `slot` is the last non-fainted member to the right of it in side.pokemon, which is the party order (the entries above
+ * `slot`, highest first). `word` is the side's party word after the switch (the holder at entry `slot`). The other active may
+ * be the disguise only when every bench member to the right has fainted; the caller refuses that case. */
+static uint32_t dfi_party_entry_of(uint32_t word, uint32_t k)
+{
+    return word >> (k * DFI_PARTY_ENTRY_BITS) & DFI_PARTY_ENTRY_MASK;
+}
+
+static uint32_t dfi_party_word_put(uint32_t word, uint32_t k, uint32_t value)
+{
+    word &= ~(DFI_PARTY_ENTRY_MASK << (k * DFI_PARTY_ENTRY_BITS));
+    return word | ((value & DFI_PARTY_ENTRY_MASK) << (k * DFI_PARTY_ENTRY_BITS));
+}
+
+/* The party word of `side` after dfi_party_switch(slot, incoming), computed without writing it (sim/battle-actions.ts:119-133). */
+static uint32_t dfi_party_word_after(const struct duoforge_battle *b, uint32_t side, uint32_t slot, uint32_t incoming, bool pool)
+{
+    uint32_t w = dfi_party_word(&b->tail, side);
+    if (!pool || b->sides[side].positions[slot].occupant == DFI_OCCUPANT_NONE) {
+        return w;
+    }
+    for (uint32_t k = 0u; k < DUOFORGE_MAX_ROSTER; ++k) {
+        if (dfi_party_entry_of(w, k) == incoming + 1u) {
+            const uint32_t outgoing = dfi_party_entry_of(w, slot);
+            w = dfi_party_word_put(w, slot, incoming + 1u);
+            return dfi_party_word_put(w, k, outgoing);
+        }
+    }
+    return w;
+}
+
+static bool dfi_illusion_disguise(const struct duoforge_battle *b, uint32_t side, uint32_t word, uint32_t slot, uint32_t *roster)
+{
+    for (uint32_t k = DUOFORGE_MAX_ROSTER; k > slot + 1u; --k) {
+        const uint32_t e = dfi_party_entry_of(word, k - 1u);
+        if (e != 0u && b->sides[side].members[e - 1u].hp != 0u) {
+            *roster = e - 1u;
+            return true;
+        }
+    }
+    return false;
+}
+
+/* The disguise of the lead that stands in `slot` at team start (decision 0026 section 2; the leads come first in the party order,
+ * and no switch has happened yet). False when the holder has no Illusion or no disguise. */
+bool dfi_illusion_lead_disguise(const struct duoforge_battle *b, uint32_t side, uint32_t slot, uint32_t *roster)
+{
+    const uint32_t occupant = b->sides[side].positions[slot].occupant;
+    if (occupant >= DUOFORGE_MAX_ROSTER || !dfi_ability(b, &b->sides[side].members[occupant], DFI_ABILITY_ILLUSION)) {
+        return false;
+    }
+    return dfi_illusion_disguise(b, side, dfi_party_word(&b->tail, side), slot, roster);
+}
+
 static duoforge_status dfi_switch_in(dfi_run *r, uint32_t side, uint32_t slot, uint32_t reserve, bool drag,
                                      bool insta, uint32_t *activation)
 {
@@ -7751,6 +7823,55 @@ static duoforge_status dfi_switch_in(dfi_run *r, uint32_t side, uint32_t slot, u
     }
     /* an instaswitch has no leaving Pokemon: the member is revived, not switched out (the reference would run its
      * SwitchOut, which Regenerator answers; that is refused below) */
+    /* Illusion (decision 0026): the disguise is decided before anything is written, from the party order after the switch.
+     * A disguise that would be the other active (every bench member to the right has fainted) shows one roster index in two
+     * positions: refused explicitly, before any change. */
+    const bool pool_rules = dfi_kind_limits_of(r->ctx->data_kind).pool_rules;
+    bool disguised = false;
+    uint32_t disguise = 0u;
+    if (pool_rules && dfi_ability(b, &sd->members[reserve], DFI_ABILITY_ILLUSION)) {
+        const uint32_t word = dfi_party_word_after(b, side, slot, reserve, pool_rules);
+        disguised = dfi_illusion_disguise(b, side, word, slot, &disguise);
+        if (disguised && disguise == sd->positions[1u - slot].occupant) {
+            return DUOFORGE_E_UNSUPPORTED;
+        }
+    }
+    /* Illusion, one shown name per side (amended by I2, decision 0026 section 3): while a name is still shown on the bench, the
+     * holder may enter only disguised as that same name. Any other entry of the holder would need a second name, which the single
+     * state cannot hold: refused before any change. */
+    /* The shown name's own member entering while the holder stands disguised as it on the other position: two positions would show one
+     * name (the fold ends the name on that member's line, and the holder's disguise would outlive it). Refused before any change; the
+     * member's entry in its own position (the unbroken switch-out of the holder) is not this case. */
+    if (pool_rules && b->tail.sides[side].illusion.shown != 0u && reserve == (uint32_t)b->tail.sides[side].illusion.shown - 1u) {
+        for (uint32_t other = 0u; other < DUOFORGE_ACTIVE_PER_SIDE; ++other) {
+            if (other != slot && dfi_illusion_shown_occupant(sd, &b->tail.sides[side], other) != sd->positions[other].occupant) {
+                return DUOFORGE_E_UNSUPPORTED;
+            }
+        }
+    }
+    if (pool_rules && b->tail.sides[side].illusion.shown != 0u && reserve != (uint32_t)b->tail.sides[side].illusion.shown - 1u &&
+        dfi_ability(b, &sd->members[reserve], DFI_ABILITY_ILLUSION) &&
+        (!disguised || disguise != (uint32_t)b->tail.sides[side].illusion.shown - 1u)) {
+        return DUOFORGE_E_UNSUPPORTED;
+    }
+    /* A holder fainted under its shown name (decision 0026 section 4, amended by I2, lead decision B): the faint of a disguised holder
+     * is shown under the name, and the name stays after the holder has left the field (the replacement of the fainted holder puts
+     * another member on its position). The real disguise member (the name's member) entering while that holder stands fainted, on
+     * the field or on the bench, would clear the name, and the view would read the holder's true fainted state. Refused before any
+     * change (option B, no deduction). */
+    if (pool_rules && b->tail.sides[side].illusion.shown != 0u && reserve == (uint32_t)b->tail.sides[side].illusion.shown - 1u) {
+        for (uint32_t m = 0u; m < sd->member_count; ++m) {
+            if (m != reserve && sd->members[m].ability == DFI_ABILITY_ILLUSION + 1u && sd->members[m].hp == 0u &&
+                ((uint32_t)sd->brought_mask >> m & 1u) != 0u) {
+                return DUOFORGE_E_UNSUPPORTED;
+            }
+        }
+    }
+    /* An instaswitch (a revived holder, decision 0025) and a disguise together: the revive line has no disguise in the reference,
+     * so the combination is refused explicitly, before any change (decision 0026, one composition not modelled). */
+    if (insta && disguised) {
+        return DUOFORGE_E_UNSUPPORTED;
+    }
     const dfi_member *leaving = insta ? NULL : dfi_at(b, side * 2u + slot);
     const uint32_t flag = sd->positions[slot].switch_flag;
     const bool parting_shot = leaving != NULL && leaving->hp != 0u && flag == DFI_SWITCH_MOVE && !drag;
@@ -7796,6 +7917,10 @@ static duoforge_status dfi_switch_in(dfi_run *r, uint32_t side, uint32_t slot, u
     if (ps != DUOFORGE_OK) {
         return ps;
     }
+    if (disguised) {
+        /* the disguise: its roster index + 1 (tail rev 4, ability_state, cleared with the occupant or by the break) */
+        b->tail.sides[side].positions[slot].ability_state = (uint8_t)(disguise + 1u); /* wide-operands-reviewed: roster index + 1, at most 6 */
+    }
     /* newlySwitched until the end of the turn (Team C: only Helping Hand
      * reads it). */
     dfi_active_slot *entered = dfi_pos(b, side * 2u + slot);
@@ -7804,6 +7929,10 @@ static duoforge_status dfi_switch_in(dfi_run *r, uint32_t side, uint32_t slot, u
     /* [switch], with [from] and the move (Parting Shot, Flip Turn, U-turn) when the move made it */
     duoforge_event e = dfi_event_make(drag ? DUOFORGE_EVENT_DRAG : DUOFORGE_EVENT_SWITCH, side * 2u + slot);
     e.id = (uint16_t)reserve;
+    if (disguised) {
+        /* the shown roster index (side channel of the record; the projection strips it, decision 0026 section 4) */
+        e.reserved[0] = (uint8_t)(disguise + 1u); /* wide-operands-reviewed: roster index + 1, at most 6 */
+    }
     if (insta) {
         e.cause = (uint8_t)DUOFORGE_CAUSE_MOVE; /* the [switch] line has no [from]; the revive is the cause (decision 0025) */
         e.id2 = (uint16_t)DFI_MOVE_REVIVALBLESSING; /* wide-operands-reviewed: a move id of the pool tables, a u16 */
@@ -7964,7 +8093,8 @@ static duoforge_status dfi_trace(dfi_run *r, uint32_t flat)
         const dfi_member *t = dfi_at(b, foe * 2u + slot);
         if (t != NULL && t->hp != 0u) {
             const uint32_t code = dfi_ability_code(b, t);
-            if (code != 0u && code != 1u + DFI_ABILITY_TRACE) {
+            /* notrace (pin flags, decision 0026 section 2): Trace copies neither Trace nor Illusion */
+            if (code != 0u && code != 1u + DFI_ABILITY_TRACE && code != 1u + DFI_ABILITY_ILLUSION) {
                 candidates[n] = foe * 2u + slot;
                 n += 1u;
             }

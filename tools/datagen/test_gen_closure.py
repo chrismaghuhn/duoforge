@@ -97,6 +97,7 @@ class Secondary(unittest.TestCase):
 
 
 # ---- the family patterns of the pool tables (entries as in data/items.ts and data/abilities.ts at the pin) ----
+
 def entry(rid, *lines):
     return '\t%s: {\n%s\n\t},' % (rid, '\n'.join('\t\t' + line for line in lines))
 
@@ -1440,7 +1441,7 @@ class ItemAbilityFeatures(unittest.TestCase):
                                                                  'solarpower', 'regenerator', 'toxicdebris', 'shadowtag', 'suctioncups', 'guarddog',
                                                                  'steadfast', 'weakarmor', 'telepathy', 'voltabsorb', 'punkrock', 'moxie',
                                                                  'synchronize', 'oblivious', 'keeneye', 'bigpecks', 'magicbounce', 'pressure',
-                                                                 'sandforce', 'shellarmor', 'filter', 'stalwart', 'megalauncher', 'hugepower', 'thickfat', 'firemane', 'spicyspray', 'megasol', 'sheerforce']})
+                                                                 'sandforce', 'shellarmor', 'filter', 'stalwart', 'megalauncher', 'hugepower', 'thickfat', 'firemane', 'spicyspray', 'megasol', 'sheerforce', 'illusion']})
 
 
 class Bounds(unittest.TestCase):

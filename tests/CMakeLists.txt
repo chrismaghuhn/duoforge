@@ -258,7 +258,7 @@ foreach(_gen IN ITEMS
         "extended_tables.h=b2abef243fcbfdd87654940076b9fe2fe80b117d74893a7567741f26b9075a7d"
         "extended_tables.c=9e736fa467713283418c4edf8f56b8d844452e596ba422adbd52483d20f7cc17"
         "pool_tables.h=21ae65b4d5cc039990cab7ec5d28773e309a8551ba3df2f0f53016c339800511"
-        "pool_tables.c=57be6048d6142eadc2cc4b4c59bccbcc1a1f12ea17f6c162e294eafb65e4b10f")
+        "pool_tables.c=e108ec43bdea3c52d12a9f8edfd9bd8d9e7cb19a7177cf26a98ac3a3faddcf71")
     string(REPLACE "=" ";" _parts "${_gen}")
     list(GET _parts 0 _file)
     list(GET _parts 1 _expected)
@@ -760,6 +760,8 @@ if(Python3_Interpreter_FOUND)
     set_tests_properties(duoforge.data.model_pool_hash PROPERTIES TIMEOUT 60
         ENVIRONMENT PYTHONDONTWRITEBYTECODE=1)
 endif()
+# Step I2 (decision 0026, amended by I2): Illusion, the disguise, the break, the foe view, the causes (white-box).
+duoforge_add_test(NAME duoforge.state.pool_i2 SOURCES test_pool_i2.c WHITEBOX LIBS duoforge_batch TIMEOUT 60)
 duoforge_add_test(NAME duoforge.state.pool_g59 SOURCES test_pool_g59.c WHITEBOX TIMEOUT 60)
 
 # Step G51 (Mega batch 4): ten Mega Stones marked with no new rule, Keen Eye and Big Pecks as engine rows (turn.c), the marks, the

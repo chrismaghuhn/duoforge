@@ -263,6 +263,9 @@ class _View:
     def ability_now(self, ident):
         return self.sheet_of(ident)["ability"]
 
+    def side_sheets(self, ident):
+        return [m for k, m in self._members.items() if k[:2] == ident[:2]]
+
 
 class LinesTest(unittest.TestCase):
     """The line classes of the shared fold (Task 3, spec section 5)."""
@@ -337,6 +340,18 @@ class LinesTest(unittest.TestCase):
         # its -fieldstart line, not an unknown line
         self.assertEqual(self.stop("|-activate|p2a: Gholdengo|move: Electric Terrain"), "feature:TERRAIN_ELECTRIC")
         self.assertEqual(self.stop("|-activate|p2a: Gholdengo|move: Misty Terrain"), "feature:TERRAIN_MISTY")
+
+    def test_a_line_that_does_not_fit_its_name_under_a_possible_illusion_is_the_illusion_feature(self):
+        # Step I2 (decision 0026): under a disguise the lines name the disguise, so an item or ability that is not the
+        # named member's can be the Illusion holder's (a Focus Sash used up under the disguise); with an Illusion holder
+        # on that side's sheet the line stops on feature:ILLUSION, without one it stays an unknown line
+        view = _View({"p1: Staraptor": ("STARAPTOR", "SITRUSBERRY", "INTIMIDATE"),
+                      "p2: Gholdengo": ("GHOLDENGO", "LIFEORB", "GOODASGOLD"),
+                      "p2: Zoroark": ("ZOROARKHISUI", "FOCUSSASH", "ILLUSION")})
+        with self.assertRaises(lines.Stop) as caught:
+            lines.check("|-enditem|p2a: Gholdengo|Focus Sash", view)
+        self.assertEqual(caught.exception.reason, "feature:ILLUSION")
+        self.assertEqual(self.stop("|-enditem|p1a: Staraptor|Focus Sash"), "line:-enditem Focus Sash")
 
     def test_drag_folds(self):
         # Step G46: a forced switch brings a member in as a switch does (the tracker folds it as one, or stops)

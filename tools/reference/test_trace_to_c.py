@@ -2159,7 +2159,8 @@ class Library(unittest.TestCase):
     def test_the_data_has_the_df_conf_shape(self):
         spec, trace = battle('s2_turn_core_1')
         data = convert('s2_turn_core_1', spec, trace)
-        self.assertEqual(sorted(data), ['dropped_total', 'member_count', 'members', 'name', 'purpose', 'steps'])
+        self.assertEqual(sorted(data), ['dropped_total', 'illusion_duplicate_step', 'member_count', 'members', 'name', 'purpose', 'steps'])
+        self.assertIsNone(data['illusion_duplicate_step'])  # no disguise shown beside its real member in this battle
         self.assertEqual((data['name'], data['purpose']), ('s2_turn_core_1', spec['purpose']))
         self.assertEqual(data['member_count'], 4)
         self.assertEqual([len(rows) for rows in data['members']], [4, 4])
@@ -2583,6 +2584,213 @@ class Cli(unittest.TestCase):
                 with io.open(path, 'w', encoding='ascii', newline='\n') as f:
                     f.write(good)
             self.assertEqual(self.run_cli(tmp, '--check').returncode, 0)
+
+class IllusionPP(unittest.TestCase):
+    """The foe's knowledge of PP under an Illusion (decision 0026 section 4; trace_to_c.ill_pp_fold, step I2). Hand-made
+    states: side 1 has the holder Zoroark (roster 0; Shadow Ball, Sludge Bomb, Protect) shown as the disguise Milotic (roster 1;
+    Protect, Scald). Without the fold the foe's PP is the true PP, and the checks on a disguised row fail."""
+
+    def state(self, zoroark_pp, milotic_pp, active=(0, -1)):
+        def mon(species, pp):
+            return {'species': species, 'set_species': species, 'pp': list(pp)}
+        return {'sides': [{'pokemon': [mon('Ceruledge', [8])], 'active': [0, -1]},
+                          {'pokemon': [mon('Zoroark', zoroark_pp), mon('Milotic', milotic_pp)], 'active': list(active)}]}
+
+    def plain_uses(self, log, tables):
+        """The charge of every move line at 1 (no Pressure in these states), as the event pass of the converter gives them."""
+        uses = [[], []]
+        for line in log:
+            parts = line.split('|')
+            if len(parts) >= 4 and parts[1] == 'move' and '[from] lockedmove' not in parts[5:]:
+                uses[int(parts[2][1]) - 1].append((tables['MOVE'][trace_to_c.key(parts[3])], 1))
+        return uses
+
+    def tables_and_teams(self):
+        tables = {'MOVE': {trace_to_c.key(n): i + 1 for i, n in enumerate(
+            ['Shadow Ball', 'Sludge Bomb', 'Protect', 'Scald'])}, 'ABILITY': {trace_to_c.key('Illusion'): 4}}
+        teams = [[{'ability': 0, 'moves': [1]}],
+                 [{'ability': 5, 'moves': [1, 2, 3]}, {'ability': 0, 'moves': [3, 4]}]]
+        return tables, teams
+
+    def run_fold(self, steps):
+        """The foe's PP of every row after each step: the start PP less the counts the fold attributes (pp_foe)."""
+        tables, teams = self.tables_and_teams()
+        roster_of = [{'Ceruledge': 0}, {'Zoroark': 0, 'Milotic': 1}]
+        win, spent, out = [None, None], {}, []
+        start = self.state([16, 12, 8], [8, 16])
+        start_pp = {}
+        for s in range(2):
+            for p in start['sides'][s]['pokemon']:
+                start_pp[(s, roster_of[s][p['species']])] = list(p['pp']) + [0] * (4 - len(p['pp']))
+        prev = start
+        for log, new in steps:
+            trace_to_c.ill_pp_fold(log, prev, new, roster_of, teams, tables, 4, win, spent, {}, self.plain_uses(log, tables))
+            out.append({key: tuple(max(0, start_pp[key][k] - spent.get(key, [0, 0, 0, 0])[k]) for k in range(4))
+                        for key in start_pp})
+            prev = new
+        return out
+
+    ENTER = ['|switch|p2a: Milotic|Milotic, L50, F|167/167']
+
+    def test_a_move_not_on_the_disguise_sheet_is_pending_until_the_break(self):
+        # Zoroark, disguised as Milotic, uses Sludge Bomb under the name Milotic: the foe still counts 12 on Zoroark.
+        steps = [(self.ENTER, self.state([16, 12, 8], [8, 16])),
+                 (['|move|p2a: Milotic|Sludge Bomb|p1a: Ceruledge'], self.state([16, 11, 8], [8, 16]))]
+        known = self.run_fold(steps)
+        self.assertEqual(known[1][(1, 0)], (16, 12, 8, 0))  # the holder's row, frozen (true 11)
+        self.assertEqual(known[1][(1, 1)], (8, 16, 0, 0))   # the disguise's row is not touched by Sludge Bomb
+
+    def test_a_move_on_the_disguise_sheet_counts_on_the_disguise_row(self):
+        # Zoroark uses Protect (on both sheets) under the name Milotic: the foe counts it on Milotic, not on Zoroark.
+        steps = [(self.ENTER, self.state([16, 12, 8], [8, 16])),
+                 (['|move|p2a: Milotic|Protect|p2a: Milotic'], self.state([16, 12, 7], [8, 16]))]
+        known = self.run_fold(steps)
+        self.assertEqual(known[1][(1, 0)], (16, 12, 8, 0))  # Zoroark's Protect stays 8 for the foe
+        self.assertEqual(known[1][(1, 1)], (7, 16, 0, 0))   # Milotic's Protect shows the use
+
+    def test_the_break_brings_the_holder_to_the_truth(self):
+        steps = [(self.ENTER, self.state([16, 12, 8], [8, 16])),
+                 (['|move|p2a: Milotic|Sludge Bomb|p1a: Ceruledge'], self.state([16, 11, 8], [8, 16])),
+                 (['|replace|p2a: Zoroark|Zoroark, L50, F|167/167', '|-end|p2a: Zoroark|Illusion'], self.state([16, 11, 8], [8, 16]))]
+        known = self.run_fold(steps)
+        self.assertEqual(known[2][(1, 0)], (16, 11, 8, 0))  # the pending use is attributed at the break
+        self.assertEqual(known[2][(1, 1)], (8, 16, 0, 0))   # the disguise's row restored to its value before the disguise
+
+    def test_negative_control_the_foe_knows_pp_foe_and_the_owner_the_true_pp(self):
+        """Negative control: where the true PP and the foe's PP differ (Sludge Bomb used under the disguise's name), the row
+        the converter emits carries both: the true PP for the owner (conformance_compare.c uses pp for the owner's viewer)
+        and pp_foe for the foe. A converter that put the true PP into pp_foe fails the foe assertion below."""
+        steps = [(self.ENTER, self.state([16, 12, 8], [8, 16])),
+                 (['|move|p2a: Milotic|Sludge Bomb|p1a: Ceruledge'], self.state([16, 11, 8], [8, 16]))]
+        out = self.run_fold(steps)
+        true_row = steps[1][1]['sides'][1]['pokemon'][0]['pp'] + [0]
+        shown_row = out[1][(1, 0)]
+        self.assertEqual(true_row, [16, 11, 8, 0])            # the owner's row: the true PP
+        self.assertEqual(shown_row, (16, 12, 8, 0))           # the foe's row: what it was shown
+        self.assertNotEqual(tuple(true_row), shown_row)       # the two differ, so the negative control has teeth
+
+    def status_state(self, zoro, milo):
+        """A state with the statuses of the two Pokemon of side 1: zoro = (pp, status), milo = (pp, status)."""
+        def mon(species, pp, status):
+            return {'species': species, 'set_species': species, 'pp': list(pp), 'status': status}
+        return {'sides': [{'pokemon': [mon('Ceruledge', [8], '')], 'active': [0, -1]},
+                          {'pokemon': [mon('Zoroark', zoro[0], zoro[1]), mon('Milotic', milo[0], milo[1])], 'active': [0, -1]}]}
+
+    def run_status_fold(self, steps):
+        tables, teams = self.tables_and_teams()
+        roster_of = [{'Ceruledge': 0}, {'Zoroark': 0, 'Milotic': 1}]
+        win, spent, sst = [None, None], {}, {}
+        prev = self.status_state(([16, 12, 8], ''), ([8, 16], ''))
+        for log, new in steps:
+            trace_to_c.ill_pp_fold(log, prev, new, roster_of, teams, tables, 4, win, spent, sst, self.plain_uses(log, tables))
+            prev = new
+        return win, sst
+
+    def test_negative_control_the_foe_shows_the_status_of_the_name(self):
+        """Negative control (decision 0026 section 4, shown_status): the holder is burned under the disguise's name. The foe's
+        holder row keeps the status it knew before (none), the disguise's row shows the burn, and the owner's row is the truth
+        (the converter emits shown_status for the foe and the true status is compared for the owner). A converter that put the
+        true status into shown_status fails the foe assertions."""
+        steps = [(self.ENTER, self.status_state(([16, 12, 8], ''), ([8, 16], ''))),
+                 (['|-status|p2a: Milotic|brn'], self.status_state(([16, 12, 8], 'brn'), ([8, 16], '')))]
+        win, sst = self.run_status_fold(steps)
+        true_holder = steps[1][1]['sides'][1]['pokemon'][0]['status']
+        self.assertEqual(true_holder, 'brn')                              # the owner's row: the true status
+        self.assertEqual(trace_to_c.status_map(steps[1][1], [{'Ceruledge': 0}, {'Zoroark': 0, 'Milotic': 1}])[(1, 0)], 'brn')
+        self.assertEqual(sst.get((1, 0)), '')                             # the foe's holder row: frozen, none
+        self.assertEqual(sst.get((1, 1)), 'brn')                          # the foe's disguise row: the burn of the name
+        self.assertNotEqual(sst.get((1, 0)), true_holder)                 # the two differ, so the control has teeth
+
+    def test_the_break_gives_the_holder_the_last_status_shown(self):
+        steps = [(self.ENTER, self.status_state(([16, 12, 8], ''), ([8, 16], ''))),
+                 (['|-status|p2a: Milotic|brn'], self.status_state(([16, 12, 8], 'brn'), ([8, 16], ''))),
+                 (['|replace|p2a: Zoroark|Zoroark, L50, M', '|-end|p2a: Zoroark|Illusion'],
+                  self.status_state(([16, 12, 8], 'brn'), ([8, 16], '')))]
+        win, sst = self.run_status_fold(steps)
+        self.assertEqual(sst.get((1, 0)), 'brn')   # the holder takes the status the name showed last
+        self.assertIn(sst.get((1, 1)), (None, ''))  # the disguise's row goes back to its status before the disguise (None: the true one)
+
+    def test_a_disguise_without_a_use_is_the_truth(self):
+        known = self.run_fold([(self.ENTER, self.state([16, 12, 8], [8, 16]))])
+        self.assertEqual(known[0][(1, 0)], (16, 12, 8, 0))
+        self.assertEqual(known[0][(1, 1)], (8, 16, 0, 0))
+
+
+
+def trace_ev(kind, pos, other, cause, ident, ident2, hp, hpmax, hp_kind, flags=0):
+    """An event tuple as convert_battle reads it: the kind, position, other, cause, id, id2, hp, hp max, hp kind, flags at 13."""
+    return (trace_to_c.EV[kind], pos, other, cause, ident, ident2, hp, hpmax, hp_kind, 0, 0, 0, 0, flags)
+
+
+class IllusionPressure(unittest.TestCase):
+    """A disguised holder's move that hits a Pressure target (decision 0026 section 4 with decision 0030 section 1): the move is
+    charged 1 plus the Pressure extra of the owner's standing Pressure Pokemon that it targets. On the disguise's sheet the charge
+    goes to the disguise's row; off it, the charge is pending and reaches the holder only at the break. The owner (side 0, Ceruledge
+    with Pressure) is the viewer; side 1 is the holder Zoroark (roster 0, sheet Shadow Ball, Sludge Bomb, Protect) disguised as
+    Milotic (roster 1, sheet Protect, Scald)."""
+
+    def tables_teams(self):
+        tables = {'MOVE': {trace_to_c.key(n): i + 1 for i, n in enumerate(
+                      ['Shadow Ball', 'Sludge Bomb', 'Protect', 'Scald'])},
+                  'ABILITY': {trace_to_c.key('Illusion'): 4, trace_to_c.key('Pressure'): 2},
+                  'MOVE_CLASS': {1: 0, 2: 0, 3: 0, 4: 0}, 'MOVE_MUST': {1: 0, 2: 0, 3: 0, 4: 0}}
+        teams = [[{'ability': 3, 'moves': [1]}],  # the owner's Pressure Pokemon (the sheet's ability is id + 1)
+                 [{'ability': 5, 'moves': [1, 2, 3]}, {'ability': 0, 'moves': [3, 4]}]]
+        return tables, teams
+
+    def state(self, zoro_pp, milo_pp):
+        def mon(species, pp):
+            return {'species': species, 'set_species': species, 'pp': list(pp)}
+        return {'sides': [{'pokemon': [mon('Ceruledge', [8])], 'active': [0, -1]},
+                          {'pokemon': [mon('Zoroark', zoro_pp), mon('Milotic', milo_pp)], 'active': [0, -1]}]}
+
+    def fold(self, steps):
+        """steps: (log, new state, the owner's events of the step). Returns (spent, the window after each step, the charges)."""
+        tables, teams = self.tables_teams()
+        roster_of = [{'Ceruledge': 0}, {'Zoroark': 0, 'Milotic': 1}]
+        pressure = trace_to_c.FoePressure(tables, teams)
+        win, spent, sst = [None, None], {}, {}
+        prev = self.state([16, 12, 8], [8, 16])
+        windows, charges = [], []
+        for log, new, owner_events in steps:
+            uses = pressure.step([owner_events, []])
+            charges.append(uses)
+            trace_to_c.ill_pp_fold(log, prev, new, roster_of, teams, tables, 4, win, spent, sst, uses)
+            windows.append(win[1])
+            prev = new
+        return spent, windows, charges
+
+    def own_switch(self):
+        # the owner's Ceruledge enters at position 0, healthy (EV SWITCH, id = roster 0, hp 100)
+        return (trace_ev('SWITCH', 0, 0xFF, 0, 0, 0, 100, 100, 1),)
+
+    ENTER = ['|switch|p2a: Milotic|Milotic, L50, F|167/167']
+
+    def test_a_move_on_the_disguise_sheet_is_charged_to_the_disguise_with_the_pressure_extra(self):
+        # Milotic (the disguise) uses Scald at the owner's Ceruledge: Scald is on the disguise's sheet, one extra PP: 2 counts.
+        steps = [(self.ENTER, self.state([16, 12, 8], [8, 16]), self.own_switch()),
+                 (['|move|p2a: Milotic|Scald|p1a: Ceruledge'], self.state([16, 12, 8], [8, 16]),
+                  (trace_ev('MOVE', 2, 0, 0, 4, 0, 0, 0, 0),))]
+        spent, windows, charges = self.fold(steps)
+        self.assertEqual(charges[1], [[], [(4, 2)]])                 # Scald, 1 plus the extra of the standing Pressure target
+        self.assertEqual(spent[(1, 1)], [0, 2, 0, 0])                # the disguise's row: Scald is slot 1 of its sheet
+        self.assertEqual(spent.get((1, 0), [0, 0, 0, 0]), [0, 0, 0, 0])  # the holder's row stays what the foe knew
+        self.assertEqual(windows[1]['pending'], [0, 0, 0, 0])
+
+    def test_a_move_off_the_disguise_sheet_is_pending_and_reaches_the_holder_at_the_break(self):
+        # The disguise (Milotic) is shown using Shadow Ball, which is not on its sheet: the 2 counts stay pending, out of every row.
+        steps = [(self.ENTER, self.state([16, 12, 8], [8, 16]), self.own_switch()),
+                 (['|move|p2a: Milotic|Shadow Ball|p1a: Ceruledge'], self.state([16, 12, 8], [8, 16]),
+                  (trace_ev('MOVE', 2, 0, 0, 1, 0, 0, 0, 0),)),
+                 (['|replace|p2a: Zoroark|Zoroark, L50, F|167/167', '|-end|p2a: Zoroark|Illusion'],
+                  self.state([14, 12, 8], [8, 16]), ())]
+        spent, windows, charges = self.fold(steps)
+        self.assertEqual(charges[1], [[], [(1, 2)]])
+        self.assertEqual(windows[1]['pending'], [2, 0, 0, 0])        # Shadow Ball is slot 0 of the holder's sheet
+        self.assertEqual(spent.get((1, 1), [0, 0, 0, 0]), [0, 0, 0, 0])   # nothing on the disguise's row
+        self.assertIsNone(windows[2])                                 # the break ends the disguise
+        self.assertEqual(spent[(1, 0)], [2, 0, 0, 0])                 # the holder takes the pending 2 at the break
+        self.assertEqual(spent[(1, 1)], [0, 0, 0, 0])                 # the disguise's row restored to its snapshot
 
 
 if __name__ == '__main__':

@@ -2609,7 +2609,7 @@ ENGINE_ROWS = {'items': ['focussash', 'floettite', 'psychicseed', 'electricseed'
                              'solarpower',
                              'regenerator', 'toxicdebris', 'shadowtag', 'suctioncups', 'guarddog',
                              'steadfast', 'weakarmor', 'telepathy', 'voltabsorb', 'punkrock', 'moxie', 'synchronize', 'oblivious', 'keeneye', 'bigpecks', 'magicbounce', 'pressure',
-                             'sandforce', 'shellarmor', 'filter', 'stalwart', 'megalauncher', 'hugepower', 'thickfat', 'firemane', 'spicyspray', 'megasol', 'sheerforce']}
+                             'sandforce', 'shellarmor', 'filter', 'stalwart', 'megalauncher', 'hugepower', 'thickfat', 'firemane', 'spicyspray', 'megasol', 'sheerforce', 'illusion']}
 # The moves of the whole pool that the turn code pivots with a switch flag of their own (dfi_pivot_moves,
 # src/state/closure_member.c) beyond Flip Turn and U-turn, which are rows of the steps. Empty: Volt Switch comes with the
 # step that gives it a flag value, and adds its id here.
@@ -3290,6 +3290,27 @@ G46_ITEM_FACTS = (
 )
 
 
+# Step I2a: Illusion (decision 0026) is an engine row (ENGINE_ROWS): the turn code implements its four callbacks by id and
+# hard-codes these texts. The disguise is the last non-fainted member to the right (onBeforeSwitchIn, data/abilities.ts:2056-2069),
+# the break is the damaging hit (onDamagingHit, which the DamagingHit event of sim/battle-actions.ts:1118-1130 runs), the end
+# prints `replace` and `-end|Illusion` (onEnd), and the faint clears it (onFaint). Its flags are the notrace of Trace's rule.
+I2_ABILITY_FACTS = (
+    ('illusion', (
+        "onBeforeSwitchIn(pokemon) { pokemon.illusion = null;",
+        "for (let i = pokemon.side.pokemon.length - 1; i > pokemon.position; i--) {",
+        "if (!possibleTarget.fainted) {",
+        "pokemon.illusion = possibleTarget;",
+        "onDamagingHit(damage, target, source, move) { if (target.illusion) { "
+        "this.singleEvent('End', this.dex.abilities.get('Illusion'), target.abilityState, target, source, move); } },",
+        "onEnd(pokemon) { if (pokemon.illusion && !pokemon.beingCalledBack) {",
+        "this.add('replace', pokemon, details);",
+        "this.add('-end', pokemon, 'Illusion');",
+        "onFaint(pokemon) { pokemon.illusion = null; },",
+        "flags: { failroleplay: 1, noreceiver: 1, noentrain: 1, notrace: 1, failskillswap: 1 },",
+    )),
+)
+
+
 # Step G61, Sheer Force (an engine row read by id, data/abilities.ts:4202-4221): the pinned texts the turn code hard-codes.
 # Its onModifyMove strips a move's secondaries and self effects, and sets hasSheerForce, only when the move has secondaries
 # and is not hasSheerForceBoost (Electro Shot); onBasePower is x5325/4096 for either flag, at priority 21. The engine's
@@ -3403,6 +3424,21 @@ G63_ABILITY_FACTS = (
                   "move.tracksTarget = move.target !== 'scripted';",
                   '},')),
 )
+
+
+def check_i2_facts(abil_ts, champ_abil):
+    """Step I2 (decision 0026): the Illusion texts that the turn code hard-codes (I2_ABILITY_FACTS) are in the pinned entry,
+    whitespace aside, and the Champions mod has no entry of its own for it (an override would change what the engine reads)."""
+    for rid, facts in I2_ABILITY_FACTS:
+        e = abil_ts.entry(rid)
+        if e is None:
+            fail('ability %s not found' % rid)
+        if champ_abil.entry(rid) is not None:
+            fail('ability %s: the champions mod overrides the entry' % rid)
+        text = norm(chr(10).join(e[2]))
+        for fact in facts:
+            if norm(fact) not in text:
+                fail('ability %s: the entry no longer has "%s"' % (rid, fact))
 
 
 def check_g57_facts(abil_ts, champ_abil):
@@ -3570,6 +3606,7 @@ def build_pool(root, repo, dx):
     check_g55_items(items_ts, champ_items)
     check_g37_facts(abil_ts, champ_abil)
     check_g57_facts(abil_ts, champ_abil)
+    check_i2_facts(abil_ts, champ_abil)
     check_g32_entries(items_ts, champ_items, abil_ts, champ_abil)
     check_weather_facts(Source(root, 'data/conditions.ts', READER_INPUTS), moves_ts)
     check_g56_facts(Source(root, 'data/conditions.ts', READER_INPUTS), moves_ts)
