@@ -1,10 +1,12 @@
-/* The canonical state encoding's offsets (src/codec/state_codec.h, DFI_ENC_*) as JSON, for the generated
- * python/duoforge/_state_layout.py (tools/layout/gen_state_layout.py). The live tracker assembles a public record in
+/* The canonical state encoding's offsets (src/codec/state_codec.h, DFI_ENC_*) and the values of the encoded bytes that
+ * name something (src/state/battle_internal.h: the position's volatile bits, the switch reasons, the revealed facts, the
+ * queue kinds) as JSON, for the generated python/duoforge/_state_layout.py (tools/layout/gen_state_layout.py). The live tracker assembles a public record in
  * this layout; the engine checks it (from_view, then public, byte for byte). tests: duoforge.python.state_layout keeps
  * this list complete against the header. */
 #include <stdio.h>
 
 #include "codec/state_codec.h"
+#include "state/battle_internal.h"
 
 static int first = 1;
 
@@ -18,7 +20,7 @@ static void entry(const char *name, unsigned long long value)
 
 int main(void)
 {
-    printf("{");
+    printf("{\"offsets\": {");
     ENTRY(DFI_ENC_FINGERPRINT_OFF);
     ENTRY(DFI_ENC_RNG_STATE_OFF);
     ENTRY(DFI_ENC_RNG_INC_OFF);
@@ -167,6 +169,32 @@ int main(void)
     ENTRY(DFI_ENC_MEMBER_ABILITY_OFF);
     ENTRY(DFI_ENC_MOVE_OFF);
     ENTRY(DFI_ENC_MOVE_SIZE);
-    printf("\n}\n");
+    /* the values: what an encoded byte holds, layout only (no rule reads them here) */
+    printf("\n}, \"values\": {");
+    first = 1;
+    ENTRY(DFI_OCCUPANT_NONE);
+    ENTRY(DFI_STAGE_NEUTRAL);
+    ENTRY(DFI_VOL_FLINCH);
+    ENTRY(DFI_VOL_PROTECT);
+    ENTRY(DFI_VOL_FLASH_FIRE);
+    ENTRY(DFI_VOL_FOLLOW_ME);
+    ENTRY(DFI_VOL_HELPING_HAND);
+    ENTRY(DFI_VOL_UNBURDEN);
+    ENTRY(DFI_VOL_CHOICE_LOCK);
+    ENTRY(DFI_VOL_NEWLY_SWITCHED);
+    ENTRY(DFI_SWITCH_NONE);
+    ENTRY(DFI_SWITCH_MOVE);
+    ENTRY(DFI_SWITCH_EMERGENCY_EXIT);
+    ENTRY(DFI_SWITCH_FAINTED);
+    ENTRY(DFI_SWITCH_FLIP_TURN);
+    ENTRY(DFI_SWITCH_UTURN);
+    ENTRY(DFI_SWITCH_VOLT_SWITCH);
+    ENTRY(DFI_SWITCH_REVIVE_BLESSING);
+    ENTRY(DFI_REVEALED_ITEM_CONSUMED);
+    ENTRY(DFI_REVEALED_MEGA);
+    ENTRY(DFI_Q_NONE);
+    ENTRY(DFI_Q_MOVE);
+    ENTRY(DFI_Q_RESIDUAL);
+    printf("\n}}\n");
     return 0;
 }
