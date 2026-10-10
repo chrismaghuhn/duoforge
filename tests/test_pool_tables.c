@@ -1540,7 +1540,7 @@ int main(void)
                              id == DFI_MOVE_KINGSSHIELD || /* step G66: King's Shield, its own handler (protect_kind 2) */
                              id == DFI_MOVE_ALLURINGVOICE || id == DFI_MOVE_DRAGONCHEER || /* step G72b (decision 0015 5ce) */
                              (id == DFI_MOVE_WIDEGUARD && dfi_pool_moves[id].special == DFI_SPECIAL_WIDE_GUARD) ||
-                             id == DFI_MOVE_SKILLSWAP ||
+                             id == DFI_MOVE_SKILLSWAP || id == DFI_MOVE_HEALINGWISH || /* step G82 (decision 0045) */
                              (id == DFI_MOVE_DETECT && dfi_pool_moves[id].special == DFI_SPECIAL_PROTECT));
             DF_CHECK(&t, !want || dfi_pool_moves[id].special != DFI_SPECIAL_UNMODELED);
             marked_count += dfi_support.moves[id] != 0u ? 1u : 0u;

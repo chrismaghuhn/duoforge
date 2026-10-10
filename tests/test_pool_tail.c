@@ -952,8 +952,8 @@ MUT(m_ill_pending, ts->illusion.pending[0] = 1u)
 /* G82 (decision 0045): bit 0 (Healing Wish) is the slot's; it is valid at a standing lead and at an empty position. A bit that
  * ends with the occupant (the raised flag, bit 1) stays refused at an empty position. */
 MUT(v_healing_wish_bit, p0->position_flags = 0x01u)
-MUT(v_healing_wish_empty, dfi_slot_clear(&y->sides[0].positions[0]), y->sides[0].requested_slots = 1u, p0->position_flags = 0x01u)
-MUT(m_empty_stats_raised, dfi_slot_clear(&y->sides[0].positions[0]), y->sides[0].requested_slots = 1u, p0->position_flags = 0x02u)
+MUT(v_healing_wish_empty, dfi_slot_clear(&y->sides[0].positions[0]), p0->position_flags = 0x01u)
+MUT(m_empty_stats_raised, dfi_slot_clear(&y->sides[0].positions[0]), p0->position_flags = 0x02u)
 MUT(m_position_flags_bit4, p0->position_flags = 0x10u)
 MUT(m_dragon_stage_3, p0->position_flags = 0x0Cu) /* the Dragon Cheer stage 3 is invalid */
 MUT(m_future_sight, p0->future_sight = 1u)
