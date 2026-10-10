@@ -104,3 +104,17 @@ To be written after the research for each row (commit to follow). Psych Up (`dat
 - Cross-row (after G76 and G78 are merged): Healing Wish heals the arrival; Dragon Darts that targets its own user after the swap.
 
 Mutants (one edit each, in `src/combat/turn.c`): the counter not restarted, a failed roll not removing the volatile, the swap not moving the Pokemon state, the Healing Wish bit moving, the trap source not relinked, the party order not swapped, the Swap rule for the wrong arrival, the event not emitted. Campaign: about 300 random battles with Ally Switch users, Follow Me, traps and Dragon Darts (the lead's batch campaign).
+
+## 9. Implementation status (builder H17, 2026-10-10; unverified, tests pending)
+
+- **Event 49 SWAP** (lead's allocation) and **event 50 COPY_BOOST** (HauptSession): header, `layout_dump.c`, `_layout.py`, converter branches in `tools/reference/trace_to_c.py` (`|swap|` only as Ally Switch's own line, `-copyboost` only as Psych Up's), refusal tests.
+- **Tail**: the Ally Switch byte per position in reserve bytes 4..7 (lead's allocation; bytes 0..3 are lane B's, 8..15 free). Codec round trip, invariant (zero, or level 1..6 with turns 1..2 on a standing occupant), an explicit pad byte, reserved count 45 -> 41, sweep rows 336..339 = `{12, 0, 243, 0, 0, 0, 0, 0}` from the Python model.
+- **Draw**: `DFI_SITE_ALLY_SWITCH` 23 (count 24) for the consecutive roll.
+- **Engine**: `dfi_psych_up`, `dfi_ally_switch_prepare`, `dfi_ally_switch_swap`, `dfi_run_ally_switch` (`src/combat/turn.c`), the residual countdown of the volatile after the stall countdown.
+- **Pool**: Psych Up (special PSYCH_UP 97), Ally Switch (special ALLY_SWITCH 98), Howl (the allies class with PRIMARY_TARGET, the Charm role). Canonical hash `e8f92562...`.
+
+**Healing Wish slot bit interaction: with the Healing Wish step.** Position bit 0 (`DFI_POSFLAG_HEALING_WISH`) stays with the slot in the swap. The Swap rule of Healing Wish (data/moves.ts:8348-8385, onSwap at :8370) belongs to the Healing Wish step, not to G80: no hook is called here. Known issue for that step: `dfi_tail_clear_occupant` (`src/state/identity.c`) clears the whole position, bit 0 included; the Healing Wish step must keep bit 0 across a switch-out, because the pin's slot condition outlives its occupant.
+
+**Open, to check with a recorded battle:** the residual countdown of the allyswitch volatile sits after the stall countdown in the per-position residual loop. The pin's duration end is a no-order, no-callback handler; whether the reference draws a SPEED_TIE for it next to another handler of the same holder (as decision 0031 found for the Protect and stall pair) is not yet known. A battle in which such a tie can occur must be recorded and checked (not done: needs the machine lock).
+
+**Not verified yet:** the layout dump test, every C test for these rows, the recorded battles, the mutants, the campaign and the full ctest (all waiting for the machine lock).

@@ -4540,8 +4540,8 @@ static duoforge_status dfi_ally_switch_prepare(dfi_run *r, uint32_t user, bool *
  * location in the pin) and position_flags bit 0 (Healing Wish, a slot condition). A flat trapper or seeder named by another
  * position's trap_source or leech_seed_source follows the Pokemon to its new slot. party_order entries 0 and 1 of the side swap.
  * Queued moves and switches of the two Pokemon follow them (their slot); the target of a queued move is a slot and does not change.
- * `|swap|` is the event SWAP: position the user's old slot, other the new one. The Healing Wish Swap rule (G76) is not on main; when
- * it lands it runs here for both arrivals (ally first, then the user). */
+ * `|swap|` is the event SWAP: position the user's old slot, other the new one. The Healing Wish slot bit stays with the slot (see
+ * decision 0044, "Healing Wish slot bit interaction": the Swap rule belongs to the Healing Wish step). */
 static void dfi_ally_switch_swap(dfi_run *r, uint32_t user, uint32_t partner)
 {
     struct duoforge_battle *b = r->b;
