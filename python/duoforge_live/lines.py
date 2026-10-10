@@ -188,14 +188,14 @@ _FOLD_FIELD = {"move: Grassy Terrain", "move: Psychic Terrain", "move: Trick Roo
 _FOLD_SIDE = {"move: Tailwind", "Reflect", "move: Reflect", "move: Light Screen"}
 
 
-# Effects whose state is a view bit encoder 5 cannot show yet (features._AWAITING_ENCODER, EncoderAwaitingBit): every
-# line of them stops by the bit's name until an encoder shows it (step G71, decision 0034: Attract's start, its
-# announcement before a move, its cant, its silent and its cured end).
-_AWAITING = {"Attract": "DUOFORGE_POSITION_EXT_ATTRACT", "move: Attract": "DUOFORGE_POSITION_EXT_ATTRACT"}
+# Effects whose state is a view bit this tracker does not fold yet (encoder 6 has its column; the fold and its byte
+# comparison against the engine come as their own step): every line of them stops by the bit's name (step G71,
+# decision 0034: Attract's start, its announcement before a move, its cant, its silent and its cured end).
+UNFOLDED = {"Attract": "DUOFORGE_POSITION_EXT_ATTRACT", "move: Attract": "DUOFORGE_POSITION_EXT_ATTRACT"}
 
 
-def _awaiting(effect):
-    raise Stop(f"awaiting-encoder:{_AWAITING[effect]}")
+def _unfolded(effect):
+    raise Stop(f"unfolded:{UNFOLDED[effect]}")
 
 
 def _feature(name):
@@ -286,8 +286,8 @@ def check(line, view):
         return "fold"
     if kind == "-fail" and len(args) > 1 and args[1] == "unboost":
         return _kept_drop(args, attrs, view)
-    if kind == "cant" and len(args) > 1 and args[1] in _AWAITING:
-        _awaiting(args[1])
+    if kind == "cant" and len(args) > 1 and args[1] in UNFOLDED:
+        _unfolded(args[1])
     if kind in GENERIC:
         return "fold"
     if kind == "-ohko" and not args and not attrs:
@@ -297,8 +297,8 @@ def check(line, view):
     if kind == "-clearnegativeboost" and attrs == ["[silent]"]:
         return "fold"  # White Herb (Team C): the [silent] line the converter skips; the tracker folds it
     effect = args[1] if len(args) > 1 else ""
-    if kind in ("-activate", "-start", "-end") and effect in _AWAITING:
-        _awaiting(effect)
+    if kind in ("-activate", "-start", "-end") and effect in UNFOLDED:
+        _unfolded(effect)
     if kind == "-activate":
         if effect in _FOLD_ACTIVATE:
             return "fold"
