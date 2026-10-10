@@ -3703,6 +3703,91 @@ def check_g8_conditions(moves_ts, only=None):
                 fail('move %s: the condition no longer has "%s"' % (mid, fact))
 
 
+# Step C1 (cheap moves, decision 0015 entry 5co): the pinned fields of the 21 moves of the first cheap batch, read from
+# data/moves.ts at b2cb775. Every field of the pin entry must be listed here, with the value the pin gives (numbers, true,
+# the target and type names, the flag names, boosts, status and the heal fraction), and the Champions mod must not
+# override any of them. Jet Punch is listed for its pin values only: it is not marked (no POOL team can use it).
+C1_IGNORED_KEYS = {'num', 'name', 'zMove', 'contestType'}
+C1_FACTS = (
+    ('slackoff', {'accuracy': True, 'basePower': 0, 'category': 'Status', 'pp': 5, 'priority': 0, 'target': 'self', 'type': 'Normal',
+                  'flags': {'snatch', 'heal', 'metronome'}, 'heal': (1, 2)}),
+    ('cottonguard', {'accuracy': True, 'basePower': 0, 'category': 'Status', 'pp': 10, 'priority': 0, 'target': 'self',
+                     'type': 'Grass', 'flags': {'snatch', 'metronome'}, 'boosts': {'def': 3}}),
+    ('shelter', {'accuracy': True, 'basePower': 0, 'category': 'Status', 'pp': 10, 'priority': 0, 'target': 'self', 'type': 'Steel',
+                 'flags': {'snatch', 'metronome'}, 'boosts': {'def': 2}}),
+    ('glare', {'accuracy': 100, 'basePower': 0, 'category': 'Status', 'pp': 30, 'priority': 0, 'target': 'normal', 'type': 'Normal',
+               'flags': {'protect', 'reflectable', 'mirror', 'metronome'}, 'status': 'par'}),
+    ('acidarmor', {'accuracy': True, 'basePower': 0, 'category': 'Status', 'pp': 20, 'priority': 0, 'target': 'self', 'type': 'Poison',
+                   'flags': {'snatch', 'metronome'}, 'boosts': {'def': 2}}),
+    ('featherdance', {'accuracy': 100, 'basePower': 0, 'category': 'Status', 'pp': 15, 'priority': 0, 'target': 'normal',
+                      'type': 'Flying', 'flags': {'protect', 'reflectable', 'mirror', 'dance', 'allyanim', 'metronome'},
+                      'boosts': {'atk': -2}}),
+    ('babydolleyes', {'accuracy': 100, 'basePower': 0, 'category': 'Status', 'pp': 30, 'priority': 1, 'target': 'normal',
+                      'type': 'Fairy', 'flags': {'protect', 'reflectable', 'mirror', 'allyanim', 'metronome'}, 'boosts': {'atk': -1}}),
+    ('metalsound', {'accuracy': 85, 'basePower': 0, 'category': 'Status', 'pp': 40, 'priority': 0, 'target': 'normal', 'type': 'Steel',
+                    'flags': {'protect', 'reflectable', 'mirror', 'sound', 'bypasssub', 'allyanim', 'metronome'},
+                    'boosts': {'spd': -2}}),
+    ('shiftgear', {'accuracy': True, 'basePower': 0, 'category': 'Status', 'pp': 10, 'priority': 0, 'target': 'self', 'type': 'Steel',
+                   'flags': {'snatch', 'metronome'}, 'boosts': {'spe': 2, 'atk': 1}}),
+    ('rockpolish', {'accuracy': True, 'basePower': 0, 'category': 'Status', 'pp': 20, 'priority': 0, 'target': 'self', 'type': 'Rock',
+                    'flags': {'snatch', 'metronome'}, 'boosts': {'spe': 2}}),
+    ('jetpunch', {'accuracy': 100, 'basePower': 60, 'category': 'Physical', 'pp': 15, 'priority': 1, 'target': 'normal', 'type': 'Water',
+                  'flags': {'contact', 'protect', 'mirror', 'punch'}}),
+    ('aerialace', {'accuracy': True, 'basePower': 60, 'category': 'Physical', 'pp': 20, 'priority': 0, 'target': 'any', 'type': 'Flying',
+                   'flags': {'contact', 'protect', 'mirror', 'distance', 'metronome', 'slicing'}}),
+    ('seedbomb', {'accuracy': 100, 'basePower': 80, 'category': 'Physical', 'pp': 15, 'priority': 0, 'target': 'normal', 'type': 'Grass',
+                  'flags': {'protect', 'mirror', 'metronome', 'bullet'}}),
+    ('megahorn', {'accuracy': 85, 'basePower': 120, 'category': 'Physical', 'pp': 10, 'priority': 0, 'target': 'normal', 'type': 'Bug',
+                  'flags': {'contact', 'protect', 'mirror', 'metronome'}}),
+    ('megakick', {'accuracy': 75, 'basePower': 120, 'category': 'Physical', 'pp': 5, 'priority': 0, 'target': 'normal', 'type': 'Normal',
+                  'flags': {'contact', 'protect', 'mirror', 'metronome'}}),
+    ('drillpeck', {'accuracy': 100, 'basePower': 80, 'category': 'Physical', 'pp': 20, 'priority': 0, 'target': 'any', 'type': 'Flying',
+                   'flags': {'contact', 'protect', 'mirror', 'distance', 'metronome'}}),
+    ('smartstrike', {'accuracy': True, 'basePower': 70, 'category': 'Physical', 'pp': 10, 'priority': 0, 'target': 'normal',
+                     'type': 'Steel', 'flags': {'contact', 'protect', 'mirror', 'metronome'}}),
+    ('aquatail', {'accuracy': 90, 'basePower': 90, 'category': 'Physical', 'pp': 10, 'priority': 0, 'target': 'normal', 'type': 'Water',
+                  'flags': {'contact', 'protect', 'mirror', 'metronome'}}),
+    ('shadowpunch', {'accuracy': True, 'basePower': 60, 'category': 'Physical', 'pp': 20, 'priority': 0, 'target': 'normal',
+                     'type': 'Ghost', 'flags': {'contact', 'protect', 'mirror', 'punch', 'metronome'}}),
+    ('brutalswing', {'accuracy': 100, 'basePower': 60, 'category': 'Physical', 'pp': 20, 'priority': 0, 'target': 'allAdjacent',
+                     'type': 'Dark', 'flags': {'contact', 'protect', 'mirror', 'metronome'}}),
+    ('petalblizzard', {'accuracy': 100, 'basePower': 90, 'category': 'Physical', 'pp': 15, 'priority': 0, 'target': 'allAdjacent',
+                       'type': 'Grass', 'flags': {'protect', 'mirror', 'metronome', 'wind'}}),
+)
+
+
+def c1_value(key, text):
+    """The value of one pin field, read as the pin writes it: a flag set, a heal fraction, a boosts dict, or a scalar."""
+    if key == 'flags':
+        return set(re.findall(r'(\w+): 1\b', text))
+    if key == 'heal':
+        return tuple(int(x) for x in re.findall(r'\d+', text.split(':', 1)[1]))
+    if key == 'boosts':
+        return {name: int(val) for name, val in re.findall(r'(\w+): (-?\d+)', text)}
+    return scalar(text)
+
+
+def check_c1_facts(moves_ts, champ_moves, only=None):
+    """Step C1: the pin entry of every listed move has exactly the listed fields (nothing else but C1_IGNORED_KEYS), each
+    with its value, and the Champions mod has no entry for it. `only`: a tuple of (move id, expected) for the tests."""
+    for mid, expected in (C1_FACTS if only is None else only):
+        if champ_moves.entry(mid) is not None:
+            fail('move %s: the Champions mod overrides it; the C1 facts must be read again' % mid)
+        e = moves_ts.entry(mid)
+        if e is None:
+            fail('move %s not found' % mid)
+        got = fields(e[2])
+        extra = sorted(set(got) - set(expected) - C1_IGNORED_KEYS)
+        if extra:
+            fail('move %s: the pin has fields the C1 facts do not list: %s' % (mid, ', '.join(extra)))
+        for key, want in expected.items():
+            if key not in got:
+                fail('move %s: the pin has no %s' % (mid, key))
+            have = c1_value(key, got[key][1])
+            if have != want:
+                fail('move %s: %s is %r in the pin, not %r' % (mid, key, have, want))
+
+
 def build_pool(root, repo, dx):
     """The pool tables: the extended data as the prefix, then the new rows of step P1 (POOL_ITEMS, POOL_ABILITIES),
     then those of step G2 (G2_MOVES, G2_ITEMS, G2_ABILITIES and the formes of SETS_G2), then every other move, item,
@@ -3717,6 +3802,7 @@ def build_pool(root, repo, dx):
     formats, learn = Source(root, 'data/mods/champions/formats-data.ts'), Source(root, 'data/mods/champions/learnsets.ts')
     legal = load_legal_pool(repo)
     check_g8_conditions(moves_ts)
+    check_c1_facts(moves_ts, champ_moves)
     check_g15_facts(moves_ts, items_ts)
     check_g30_facts(abil_ts, champ_abil)
     check_g28_items(items_ts)

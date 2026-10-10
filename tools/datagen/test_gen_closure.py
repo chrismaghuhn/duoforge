@@ -2066,5 +2066,82 @@ class SmallRulesG53(unittest.TestCase):
         self.assertNotIn('mustpressure', gen_closure.FLAGS2_BITS)
 
 
+class CheapMoveFacts(unittest.TestCase):
+    """Step C1: the pin facts of the 21 cheap moves (gen_closure.C1_FACTS) are the fields of the pinned entry, each with its
+    value; a wrong value, a field that the facts do not list, or a Champions override fails the generator."""
+
+    @staticmethod
+    def render(mid, expected, drop=None, change=None):
+        lines = ['\t%s: {' % mid, '\t\tnum: 1,']
+        for key, want in expected.items():
+            if key == drop:
+                continue
+            if key == 'flags':
+                text = 'flags: { %s }' % ', '.join('%s: 1' % f for f in sorted(want))
+            elif key == 'heal':
+                text = 'heal: [%d, %d],' % want
+            elif key == 'boosts':
+                lines.append('\t\tboosts: {')
+                lines.extend('\t\t\t%s: %d,' % (n, v) for n, v in want.items())
+                lines.append('\t\t},')
+                continue
+            elif key in ('accuracy',) and want is True:
+                text = 'accuracy: true,'
+            elif key == 'status':
+                text = "status: '%s'," % want
+            elif isinstance(want, str):
+                text = '%s: "%s",' % (key, want)
+            else:
+                text = '%s: %d,' % (key, want)
+            if change and change[0] == key:
+                text = text.replace(str(want), str(change[1]))
+            lines.append('\t\t' + text)
+        lines.append('\t\tzMove: { effect: \'clearnegativeboost\' },')
+        lines.append('\t},')
+        return '\n'.join(lines)
+
+    def source(self):
+        return TextSource('data/moves.ts', '\n'.join(self.render(mid, exp) for mid, exp in gen_closure.C1_FACTS))
+
+    def test_the_pin_facts_are_accepted(self):
+        gen_closure.check_c1_facts(self.source(), TextSource('data/mods/champions/moves.ts', ''))
+
+    def test_every_move_is_listed_once(self):
+        ids = [mid for mid, _ in gen_closure.C1_FACTS]
+        self.assertEqual(len(ids), 21)
+        self.assertEqual(len(set(ids)), 21)
+
+    def test_a_wrong_value_fails(self):
+        moves = TextSource('data/moves.ts', self.render('jetpunch', dict(gen_closure.C1_FACTS)['jetpunch'],
+                                                        change=('priority', 0)))
+        with self.assertRaises(SystemExit) as cm:
+            gen_closure.check_c1_facts(moves, TextSource('data/mods/champions/moves.ts', ''),
+                                       only=(('jetpunch', dict(gen_closure.C1_FACTS)['jetpunch']),))
+        self.assertIn('move jetpunch: priority is 0 in the pin, not 1', str(cm.exception.code))
+
+    def test_a_missing_field_fails(self):
+        for mid, exp in gen_closure.C1_FACTS:
+            for key in exp:
+                with self.subTest(mid=mid, field=key), self.assertRaises(SystemExit) as cm:
+                    gen_closure.check_c1_facts(TextSource('data/moves.ts', self.render(mid, exp, drop=key)),
+                                               TextSource('data/mods/champions/moves.ts', ''), only=((mid, exp),))
+                self.assertIn('move %s: the pin has no %s' % (mid, key), str(cm.exception.code))
+
+    def test_a_field_the_facts_do_not_list_fails(self):
+        mid, exp = gen_closure.C1_FACTS[0]
+        text = self.render(mid, exp).replace('\t},', '\t\tsecondary: { chance: 10, status: \'brn\' },\n\t},')
+        with self.assertRaises(SystemExit) as cm:
+            gen_closure.check_c1_facts(TextSource('data/moves.ts', text), TextSource('data/mods/champions/moves.ts', ''),
+                                       only=((mid, exp),))
+        self.assertIn('the pin has fields the C1 facts do not list: secondary', str(cm.exception.code))
+
+    def test_a_champions_override_fails(self):
+        mid, exp = gen_closure.C1_FACTS[0]
+        champ = TextSource('data/mods/champions/moves.ts', self.render(mid, exp))
+        with self.assertRaises(SystemExit) as cm:
+            gen_closure.check_c1_facts(TextSource('data/moves.ts', self.render(mid, exp)), champ, only=((mid, exp),))
+        self.assertIn('the Champions mod overrides it', str(cm.exception.code))
+
+
 if __name__ == '__main__':
     unittest.main()
