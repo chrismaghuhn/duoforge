@@ -109,7 +109,7 @@ jobs:
           -DDUOFORGE_WARNINGS_AS_ERRORS=ON
           -DDUOFORGE_ENABLE_IPO=${{ matrix.build_type == 'Release' && 'ON' || 'OFF' }}
       - name: Build
-        run: cmake --build build --parallel
+        run: cmake --build build --parallel 4
       - name: Test
         run: ctest --test-dir build --output-on-failure --no-tests=error --timeout 120
 
@@ -171,7 +171,7 @@ jobs:
           -DDUOFORGE_LEARN_PYTHON="$RUNNER_TEMP/py/bin/python"
           -DDUOFORGE_PS_REFERENCE_DIR="$GITHUB_WORKSPACE/pokemon-showdown"
       - name: Build
-        run: cmake --build build --parallel
+        run: cmake --build build --parallel 4
       - name: Test
         run: |
           set -o pipefail
@@ -222,7 +222,7 @@ jobs:
           -DDUOFORGE_ENABLE_SANITIZERS=ON
           -DDUOFORGE_WARNINGS_AS_ERRORS=ON
       - name: Build
-        run: cmake --build build --parallel
+        run: cmake --build build --parallel 4
       - name: Test
         run: ctest --test-dir build --output-on-failure --no-tests=error --timeout 120
 
@@ -250,7 +250,7 @@ jobs:
           -DDUOFORGE_ENABLE_TSAN=ON
           -DDUOFORGE_WARNINGS_AS_ERRORS=ON
       - name: Build
-        run: cmake --build build --parallel
+        run: cmake --build build --parallel 4
       - name: Test
         # setarch -R: ThreadSanitizer cannot map its shadow memory under the
         # runner kernel's full address-space randomization.
@@ -280,7 +280,7 @@ jobs:
           -DDUOFORGE_WARNINGS_AS_ERRORS=ON
           -DDUOFORGE_ENABLE_IPO=${{ matrix.arch == 'x64' && matrix.config == 'Release' && 'ON' || 'OFF' }}
       - name: Build
-        run: cmake --build build --config ${{ matrix.config }} --parallel
+        run: cmake --build build --config ${{ matrix.config }} --parallel 4
       - name: Test
         run: ctest --test-dir build -C ${{ matrix.config }} --output-on-failure --no-tests=error --timeout 120
       - name: Check tested bitness
@@ -350,7 +350,7 @@ jobs:
             -DPython3_EXECUTABLE="$py" -DDUOFORGE_PYTHON="$py" \
             -DDUOFORGE_PS_REFERENCE_DIR="$(cygpath -m "$GITHUB_WORKSPACE")/pokemon-showdown"
       - name: Build
-        run: cmake --build build --parallel
+        run: cmake --build build --parallel 4
       - name: Test
         run: ctest --test-dir build --output-on-failure --no-tests=error --timeout 120 --parallel 4 2>&1 | tee ctest.log
       - name: No Python or reference test skipped (the JAX tests are Linux-only)
@@ -392,7 +392,7 @@ jobs:
           -DCMAKE_C_COMPILER=gcc -DCMAKE_CXX_COMPILER=g++
           -DBUILD_TESTING=ON -DDUOFORGE_WARNINGS_AS_ERRORS=ON -DDUOFORGE_ENABLE_IPO=ON
       - name: Build
-        run: cmake --build build --parallel
+        run: cmake --build build --parallel 4
       - name: Test
         run: ctest --test-dir build --output-on-failure --no-tests=error --timeout 120
 
@@ -427,6 +427,6 @@ jobs:
           -DCMAKE_RC_COMPILER="C:/Program Files/LLVM/bin/llvm-rc.exe"
           -DBUILD_TESTING=ON -DDUOFORGE_WARNINGS_AS_ERRORS=ON
       - name: Build
-        run: cmake --build build --parallel
+        run: cmake --build build --parallel 4
       - name: Test
         run: ctest --test-dir build --output-on-failure --no-tests=error --timeout 120
