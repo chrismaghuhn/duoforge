@@ -5908,6 +5908,23 @@ static const df_tb_stop tb_g72b_dc_switch[] = {
     {4u, 0u, 2u, 2u, {4u, 4u}, {636u, 739u}, {0x404d0afbc68c4037ull, 0x4050aaaaaaaaaaabull}},
     {5u, 0u, 2u, 2u, {4u, 4u}, {603u, 679u}, {0x404bae77f93dad34ull, 0x404eeaf9d1013c99ull}},
 };
+static const df_tb_stop tb_g73_moody_faint_turn[] = {
+    {0u, 0u, 1u, 3u, {6u, 6u}, {1147u, 1132u}, {0x4059000000000000ull, 0x4059000000000000ull}},
+    {1u, 0u, 1u, 3u, {4u, 4u}, {775u, 738u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {2u, 0u, 2u, 2u, {4u, 4u}, {707u, 707u}, {0x404e4d9364d9364dull, 0x404fefdb195e8efdull}},
+    {3u, 0u, 2u, 1u, {3u, 4u}, {436u, 572u}, {0x4041ec7451ff0bebull, 0x4049656fefb1e84cull}},
+};
+static const df_tb_stop tb_g73_moody_residual_faint[] = {
+    {0u, 0u, 1u, 3u, {6u, 6u}, {1147u, 1132u}, {0x4059000000000000ull, 0x4059000000000000ull}},
+    {1u, 0u, 1u, 3u, {4u, 4u}, {775u, 740u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {2u, 0u, 1u, 2u, {4u, 4u}, {764u, 718u}, {0x40506bebebebebecull, 0x40502d2d2d2d2d2dull}},
+    {3u, 0u, 2u, 2u, {4u, 4u}, {742u, 718u}, {0x404fdcdcdcdcdcdcull, 0x40502d2d2d2d2d2dull}},
+    {6u, 0u, 2u, 2u, {4u, 4u}, {610u, 718u}, {0x4049fafafafafafbull, 0x40502d2d2d2d2d2dull}},
+    {9u, 0u, 2u, 1u, {3u, 4u}, {588u, 718u}, {0x4049000000000000ull, 0x40502d2d2d2d2d2dull}},
+    {12u, 0u, 2u, 1u, {3u, 4u}, {494u, 582u}, {0x4044f11f5ae9933dull, 0x404a24096199e37full}},
+    {13u, 0u, 2u, 1u, {2u, 4u}, {335u, 557u}, {0x403c95b0dd330263ull, 0x404901db6e1a365cull}},
+    {14u, 0u, 2u, 1u, {2u, 4u}, {335u, 557u}, {0x403c95b0dd330263ull, 0x404901db6e1a365cull}},
+};
 static const df_tb_stop tb_g73_moody_speed_tie[] = {
     {0u, 0u, 3u, 4u, {6u, 6u}, {1147u, 1147u}, {0x4059000000000000ull, 0x4059000000000000ull}},
     {1u, 0u, 3u, 4u, {4u, 4u}, {775u, 775u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
@@ -8026,6 +8043,8 @@ static const df_tb_battle tb_battles[] = {
     {"g72b_dc_nondragon", 3u, tb_g72b_dc_nondragon, sizeof tb_g72b_dc_nondragon / sizeof tb_g72b_dc_nondragon[0]},
     {"g72b_dc_second", 3u, tb_g72b_dc_second, sizeof tb_g72b_dc_second / sizeof tb_g72b_dc_second[0]},
     {"g72b_dc_switch", 5u, tb_g72b_dc_switch, sizeof tb_g72b_dc_switch / sizeof tb_g72b_dc_switch[0]},
+    {"g73_moody_faint_turn", 3u, tb_g73_moody_faint_turn, sizeof tb_g73_moody_faint_turn / sizeof tb_g73_moody_faint_turn[0]},
+    {"g73_moody_residual_faint", 14u, tb_g73_moody_residual_faint, sizeof tb_g73_moody_residual_faint / sizeof tb_g73_moody_residual_faint[0]},
     {"g73_moody_speed_tie", 3u, tb_g73_moody_speed_tie, sizeof tb_g73_moody_speed_tie / sizeof tb_g73_moody_speed_tie[0]},
     {"g73_moody_turns", 5u, tb_g73_moody_turns, sizeof tb_g73_moody_turns / sizeof tb_g73_moody_turns[0]},
     {"g73_moody_white_herb", 3u, tb_g73_moody_white_herb, sizeof tb_g73_moody_white_herb / sizeof tb_g73_moody_white_herb[0]},
@@ -8164,7 +8183,7 @@ static const df_tb_battle tb_battles[] = {
     {"xr3_sheercold_sub_miss", 3u, tb_xr3_sheercold_sub_miss, sizeof tb_xr3_sheercold_sub_miss / sizeof tb_xr3_sheercold_sub_miss[0]},
 };
 
-/* 5485 stops: 150 of an ended battle; decided by the count 1325,
- * the HP percentage 1706, the total HP 2156, a tie 148;
- * winners: side 0 2618, side 1 2719, tie 148 */
+/* 5498 stops: 150 of an ended battle; decided by the count 1330,
+ * the HP percentage 1710, the total HP 2160, a tie 148;
+ * winners: side 0 2623, side 1 2727, tie 148 */
 #endif

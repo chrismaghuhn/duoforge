@@ -2,18 +2,15 @@
  * duoforge.state.pool_g73 (white-box): step G73 of the content expansion (decision 0015, item 5bo), Moody, POOL build.
  *
  * Moody (data/abilities.ts:2701-2734) is an engine row read by id in combat/turn.c (dfi_moody):
- *   - the residual entry of order 28, sub-order 2, the key of Speed Boost (DFI_RES_MOODY, a callback), so a tie of two Moody
- *     holders is a shuffle as Speed Boost's is;
- *   - two samples in the same DFI_SITE_MOODY (23): the stats below +6 (accuracy and evasion left out), then the stats above -6
- *     and not the raised one; an empty list draws nothing, a list of one draws (random(1), one rng.next() at the pin);
- *   - one boost {raised: +2, lowered: -1} with the raised key first (positives_first), the ability's own line.
+ *   - the residual entry of order 28, sub-order 2, the key of Speed Boost (DFI_RES_MOODY, a callback);
+ *   - two samples on DFI_SITE_MOODY (23): the stats below +6 (accuracy and evasion left out), then the stats above -6 and not
+ *     the raised one; an empty list draws nothing, a list of one draws (random(1));
+ *   - one boost {raised +2, lowered -1}, the raised key first (positives_first in dfi_boost_effect).
  *
- * The recorded battles (g73_* under "data": "pool") are replayed by duoforge.reference.conformance_pool_data, which compares
- * every event, HP and draw with the reference. Here are the facts they do not show by themselves:
- *   - the marks and the handler columns: Moody is a marked engine row (family NONE, handler NONE), not breakable;
- *   - Opportunist (a foe's onFoeAfterBoost copies a rise, which Moody's rise reaches) stays unmarked and UNMODELLED, so no team
- *     with it is played, and Mirror Herb and Simple are not pool rows;
- *   - the draw site: DFI_SITE_MOODY is 23 and DFI_SITE_COUNT 24 (the site list is the one of draw.h; G71 takes 24 and 25 later).
+ * The behaviour is checked by the recorded battles (g73_* under "data": "pool") that duoforge.reference.conformance_pool_data
+ * replays against the reference, including the fainted holder's residual (g73_moody_faint_turn: no draw, no line) and the
+ * residual faint by poison (g73_moody_residual_faint). A start state with the holder's stages set directly is not built here:
+ * the turn step refuses such a state (see the 5bo entry), so the four-stats-at-+6 draw count is a known gap.
  */
 #include <stdio.h>
 #include <string.h>
@@ -41,7 +38,7 @@ static void check_facts(df_test *t)
     /* the draw site of Moody's samples, and the count of the sites after it */
     DF_CHECK_EQ_U64(t, DFI_SITE_MOODY, 23u);
     DF_CHECK_EQ_U64(t, DFI_SITE_COUNT, 24u);
-    /* the residual kind of the entry: after the kinds of residual_order.h before it (Speed Boost 11, the duration kinds up to 17) */
+    /* the residual kind of the entry (after the kinds of residual_order.h before it) */
     DF_CHECK_EQ_U64(t, DFI_RES_MOODY, 18u);
 }
 
@@ -58,7 +55,8 @@ static const df_conf_battle *find(const char *name)
 
 static void check_battles_present(df_test *t)
 {
-    static const char *const names[] = {"g73_moody_turns", "g73_moody_white_herb", "g73_moody_speed_tie"};
+    static const char *const names[] = {"g73_moody_turns", "g73_moody_white_herb", "g73_moody_speed_tie", "g73_moody_faint_turn",
+                                        "g73_moody_residual_faint"};
     for (size_t i = 0u; i < sizeof names / sizeof names[0]; ++i) {
         DF_CHECK(t, find(names[i]) != NULL);
     }
