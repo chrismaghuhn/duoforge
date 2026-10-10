@@ -5845,6 +5845,27 @@ static const df_tb_stop tb_g74_pass_no_reserve[] = {
     {22u, 0u, 2u, 1u, {2u, 3u}, {342u, 509u}, {0x403bce26dd5c17a9ull, 0x4046eaaaaaaaaaabull}},
     {23u, 0u, 2u, 1u, {2u, 3u}, {354u, 509u}, {0x403ccb9dfe4f6b4dull, 0x4046eaaaaaaaaaabull}},
 };
+static const df_tb_stop tb_g74_pass_no_reserve_sitrus[] = {
+    {0u, 0u, 2u, 3u, {6u, 6u}, {1137u, 1181u}, {0x4059000000000000ull, 0x4059000000000000ull}},
+    {1u, 0u, 2u, 3u, {4u, 4u}, {750u, 793u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {2u, 0u, 2u, 3u, {4u, 4u}, {750u, 793u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {3u, 0u, 2u, 2u, {4u, 4u}, {659u, 793u}, {0x404d7be28b7a95e0ull, 0x4050aaaaaaaaaaabull}},
+    {6u, 0u, 2u, 2u, {4u, 4u}, {574u, 793u}, {0x4049e36942462c2full, 0x4050aaaaaaaaaaabull}},
+    {9u, 0u, 2u, 1u, {3u, 4u}, {553u, 793u}, {0x4049000000000000ull, 0x4050aaaaaaaaaaabull}},
+    {12u, 0u, 2u, 1u, {2u, 4u}, {381u, 793u}, {0x4040aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {15u, 0u, 2u, 1u, {2u, 4u}, {342u, 793u}, {0x403db3b971efca9bull, 0x4050aaaaaaaaaaabull}},
+    {18u, 0u, 2u, 1u, {2u, 4u}, {301u, 793u}, {0x4039e27175c01e83ull, 0x4050aaaaaaaaaaabull}},
+    {21u, 0u, 2u, 1u, {2u, 4u}, {247u, 764u}, {0x4034db4ad86e9981ull, 0x4050118806c252ccull}},
+    {22u, 0u, 2u, 1u, {2u, 4u}, {230u, 733u}, {0x4033461405b87ddbull, 0x404edbab82f50439ull}},
+};
+static const df_tb_stop tb_g74_pass_sitrus_tie[] = {
+    {0u, 0u, 2u, 3u, {6u, 6u}, {1137u, 1181u}, {0x4059000000000000ull, 0x4059000000000000ull}},
+    {1u, 0u, 2u, 3u, {4u, 4u}, {750u, 793u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {2u, 0u, 2u, 3u, {4u, 4u}, {750u, 793u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {3u, 0u, 2u, 3u, {4u, 4u}, {750u, 793u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {4u, 0u, 2u, 3u, {4u, 4u}, {750u, 793u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {5u, 0u, 2u, 3u, {4u, 4u}, {750u, 793u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+};
 static const df_tb_stop tb_g74_pass_sub_damaged[] = {
     {0u, 0u, 2u, 3u, {6u, 6u}, {1137u, 1145u}, {0x4059000000000000ull, 0x4059000000000000ull}},
     {1u, 0u, 2u, 3u, {4u, 4u}, {733u, 785u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
@@ -7918,6 +7939,8 @@ static const df_tb_battle tb_battles[] = {
     {"g74_pass_confused", 4u, tb_g74_pass_confused, sizeof tb_g74_pass_confused / sizeof tb_g74_pass_confused[0]},
     {"g74_pass_helping_hand", 5u, tb_g74_pass_helping_hand, sizeof tb_g74_pass_helping_hand / sizeof tb_g74_pass_helping_hand[0]},
     {"g74_pass_no_reserve", 23u, tb_g74_pass_no_reserve, sizeof tb_g74_pass_no_reserve / sizeof tb_g74_pass_no_reserve[0]},
+    {"g74_pass_no_reserve_sitrus", 22u, tb_g74_pass_no_reserve_sitrus, sizeof tb_g74_pass_no_reserve_sitrus / sizeof tb_g74_pass_no_reserve_sitrus[0]},
+    {"g74_pass_sitrus_tie", 5u, tb_g74_pass_sitrus_tie, sizeof tb_g74_pass_sitrus_tie / sizeof tb_g74_pass_sitrus_tie[0]},
     {"g74_pass_sub_damaged", 6u, tb_g74_pass_sub_damaged, sizeof tb_g74_pass_sub_damaged / sizeof tb_g74_pass_sub_damaged[0]},
     {"g7_wide_guard_a", 6u, tb_g7_wide_guard_a, sizeof tb_g7_wide_guard_a / sizeof tb_g7_wide_guard_a[0]},
     {"g7_wide_guard_ally", 6u, tb_g7_wide_guard_ally, sizeof tb_g7_wide_guard_ally / sizeof tb_g7_wide_guard_ally[0]},
@@ -8052,7 +8075,7 @@ static const df_tb_battle tb_battles[] = {
     {"xr3_sheercold_sub_miss", 3u, tb_xr3_sheercold_sub_miss, sizeof tb_xr3_sheercold_sub_miss / sizeof tb_xr3_sheercold_sub_miss[0]},
 };
 
-/* 5415 stops: 150 of an ended battle; decided by the count 1301,
- * the HP percentage 1699, the total HP 2120, a tie 145;
- * winners: side 0 2578, side 1 2692, tie 145 */
+/* 5432 stops: 150 of an ended battle; decided by the count 1307,
+ * the HP percentage 1701, the total HP 2129, a tie 145;
+ * winners: side 0 2578, side 1 2709, tie 145 */
 #endif

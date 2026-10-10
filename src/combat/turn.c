@@ -5281,8 +5281,10 @@ static duoforge_status dfi_run_baton_pass(dfi_run *r, uint32_t user)
     const dfi_tail_pos *tp = &b->tail.sides[side].positions[slot];
     const dfi_active_slot *act = dfi_pos(b, user);
     /* No reserve (or a commanded passer, unmarked): onHit fails first, cleanly (data/moves.ts:1097-1103): attrLastMove('[still]')
-     * on the move line (no target shown: dfi_still), then -fail|user. The pin returns NOT_FAIL, so the move's result is not a
-     * failure (no DFI_MRES_FALSE, unlike dfi_fail_still). Nothing is copied, so no refusal below applies to this path. */
+     * on the move line (no target shown: dfi_still), then -fail|user. The Hit event returns NOT_FAIL (data/moves.ts:1101),
+     * the selfSwitch block combines false (sim/battle-actions.ts:1292-1295), so damage[0] is false in runMoveEffects
+     * (combineResults keeps the boolean), and the hit loop breaks before its Updates (data/mods/champions/scripts.ts:526, the
+     * fill at :544): no Update on this path. Nothing is copied, so no refusal below applies to it. */
     if (!dfi_can_switch(b, side)) {
         dfi_emit_plain(r, DUOFORGE_EVENT_FAIL, user);
         dfi_still(r);
@@ -5299,8 +5301,13 @@ static duoforge_status dfi_run_baton_pass(dfi_run *r, uint32_t user)
     if (b->tail.sides[side].illusion.shown != 0u) {
         return DUOFORGE_E_UNSUPPORTED; /* Illusion on the passer's side (decision 0026, until 0026 lands) */
     }
-    dfi_pos(b, user)->switch_flag = DFI_SWITCH_BATON_PASS; /* the PIVOT of the user's slot (battle-actions.ts:1311-1313) */
-    return DUOFORGE_OK;
+    /* The PIVOT of the user's slot: runMoveEffects sets switchFlag = move.id after the hit (sim/battle-actions.ts:1290-1296,
+     * 1311-1312, reached through data/mods/champions/scripts.ts:374). Success: onHit returns nothing, the hit is true
+     * (sim/battle.ts singleEvent, relayVar true), damage[0] is true, so the hit loop runs its two Updates after the flag is set
+     * and before the switch request, which is made after the action (sim/battle.ts:2877 switches, 2912 makeRequest):
+     * data/mods/champions/scripts.ts:537 and :574, the same pair as dfi_status_hit_end. */
+    dfi_pos(b, user)->switch_flag = DFI_SWITCH_BATON_PASS;
+    return dfi_status_hit_end(r);
 }
 
 /* The Substitute of a target takes a hit of a move (decision 0032, data/moves.ts:18341-18366: onTryPrimaryHit, run for every
