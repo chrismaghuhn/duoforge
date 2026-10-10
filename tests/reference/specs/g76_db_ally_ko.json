@@ -10,8 +10,8 @@
  ],
  "plan": {
   "p1": [
-   "move 2 1, move 3",
-   "move 1, move 3"
+   "move 2 1, move 2",
+   "move 1, move 1"
   ],
   "p2": [
    "move 3, move 2",

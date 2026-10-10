@@ -3281,6 +3281,8 @@ static bool dfi_imprison_forbids(struct duoforge_battle *b, uint32_t user, uint3
  * handlers), and onMoveAborted removes it when a BeforeMove stops the attempt (:3517-3519). So an attempt ends it unless
  * Destiny Bond is the move that goes on; that one is judged at its PrepareHit (dfi_run_destiny_bond). Called after
  * dfi_before_move with its `can`. */
+static duoforge_status dfi_status_hit_end(dfi_run *r); /* defined with the status moves, below */
+
 static void dfi_destiny_bond_attempt(dfi_run *r, uint32_t user, uint32_t move_id, bool can)
 {
     if (can && move_id == DFI_MOVE_DESTINYBOND) {
@@ -3305,8 +3307,10 @@ static duoforge_status dfi_run_destiny_bond(dfi_run *r, uint32_t user, uint32_t 
     duoforge_event e = dfi_ev(DUOFORGE_EVENT_SINGLE_TURN, user, DUOFORGE_CAUSE_NONE, 0u, DUOFORGE_NO_POSITION);
     e.id = (uint16_t)move_id;
     dfi_emit(r, &e); /* [-singlemove] user|Destiny Bond */
-    r->mres |= DFI_MRES_TRUE;
-    return DUOFORGE_OK;
+    /* A successful use goes through the Champions hit loop (scripts.ts:537, 574, via hitStepMoveHitLoop): its Update, the
+     * faint lines, then its Update, as a status move that applied (dfi_status_hit_end). A refused use (PrepareHit, above)
+     * stops before the loop and has none. */
+    return dfi_status_hit_end(r);
 }
 
 /* Imprison itself (the status move, target self): addVolatile('imprison'); a Pokemon that has it already fails
