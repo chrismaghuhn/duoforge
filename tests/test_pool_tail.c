@@ -1443,8 +1443,9 @@ int main(void)
                 } else if (st == DUOFORGE_E_MALFORMED && inv == DFI_INV_TAIL_POSITION) {
                     got[2] += 1u;
                 } else if (st == DUOFORGE_E_MALFORMED && (inv == DFI_INV_TAIL_MEMBER || inv == DFI_INV_MEMBER_EXTRA)) {
-                    /* MEMBER_EXTRA: a forme_now of the Blade (347) with the sheet's stats, refused by the strict stats rule of
-                     * step G66. The python model does not state that rule, so its row keeps 91 (see the sweep rows below). */
+                    /* MEMBER_EXTRA: a forme_now of the Blade (347) on a member that is not an Aegislash, or with the sheet's stats,
+                     * refused by the strict stats rule of step G66. The python model states the species half of that rule
+                     * (tools/state_model/state_v3_model.py, TAIL_MEMBER), and its sweep row is this one. */
                     got[3] += 1u;
                 } else if (st == DUOFORGE_E_MALFORMED && inv == DFI_INV_TAIL_FIELD) {
                     got[4] += 1u;

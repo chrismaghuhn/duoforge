@@ -91,6 +91,8 @@ TAIL_TOXIC_STAGE_MAX = 15
 TAIL_TOXIC_STATUS = 6               # DUOFORGE_AILMENT_TOX: no state has it yet (the status bound of every kind is below)
 # What the pool tables hold (decision 0015 section 2, tests/test_pool_tables.c): the bounds of the member overrides.
 POOL_FORME_COUNT, POOL_MOVE_COUNT, POOL_ITEM_COUNT, POOL_ABILITY_COUNT = 347, 511, 166, 215
+POOL_AEGISLASH_FORME = 244              # DFI_FORME_AEGISLASH (src/data/pool_tables.h)
+POOL_AEGISLASH_BLADE_FORME = 346        # DFI_FORME_AEGISLASHBLADE: the last pool row (step G66, decision 0040)
 # The byte fields of a position's tail in their encoded order (offset 0 to 21), then two u16: substitute_hp at 22 and
 # trap_move at 24, then (rev 3) protect_kind at 26, (rev 4) move_result, single_turn, hits_taken, ability_state and lock_turns
 # at 27 to 31 and 4 reserved bytes.
@@ -1059,6 +1061,12 @@ def check_tail(ctx, st):
             if ab != 0 and (ab > POOL_ABILITY_COUNT or not on_field):
                 return 'TAIL_MEMBER'
             if fo > POOL_FORME_COUNT:
+                return 'TAIL_MEMBER'
+            # Step G66 (decision 0040), the species half of the strict stats rule of src/state/invariants.c: the Blade's forme
+            # (forme_now = the Blade's id + 1) belongs to an Aegislash only. The stats half (the Blade's stats for that forme,
+            # the sheet's stats otherwise) needs the pool's base stats and nature table; this model keeps member stats at zero
+            # and checks no stats, so that half is tested in C only (tests/test_pool_g66.c).
+            if fo == POOL_AEGISLASH_BLADE_FORME + 1 and mem['species'] != POOL_AEGISLASH_FORME:
                 return 'TAIL_MEMBER'
             if it != 0 and it != TAIL_ITEM_NONE and it > POOL_ITEM_COUNT:
                 return 'TAIL_MEMBER'
