@@ -25,16 +25,57 @@ on:
       - "**/*.md"
   schedule:
     - cron: "17 3 * * *"
+  # On demand, an intermediate state of a branch can run the quick profile:
+  #   gh workflow run ci.yml --ref <branch> -f profile=quick
+  # It runs Linux GCC Debug, Linux GCC ASan+UBSan and Windows GCC Debug with the
+  # Python and reference tests; every other job shows as skipped (a job-level
+  # `if`). Pull requests, pushes to main and the nightly run always run the full
+  # matrix, and the merge gate stays the full matrix on the pull request's head.
+  # Only for a branch without an open pull request: its checks land on the same
+  # commit as the pull request's, so the job quick-guard fails such a run.
   workflow_dispatch:
+    inputs:
+      profile:
+        description: "full: the whole matrix; quick: Linux GCC Debug, Linux GCC ASan+UBSan, Windows GCC Debug"
+        type: choice
+        options: [full, quick]
+        default: full
 
 permissions:
   contents: read
 
+# One group per ref, event and profile: a newer push cancels the older run of the
+# same kind, but a dispatch never cancels a push or nightly run (or the reverse).
 concurrency:
-  group: ci-${{ github.ref }}
+  group: ci-${{ github.ref }}-${{ github.event_name }}-${{ inputs.profile || 'full' }}
   cancel-in-progress: true
 
 jobs:
+  # A quick run on a branch with an open pull request would put skipped checks
+  # on the pull request's head commit beside the full run's: refused, red.
+  quick-guard:
+    name: Quick profile / no open pull request
+    if: github.event_name == 'workflow_dispatch' && inputs.profile == 'quick'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      pull-requests: read
+    steps:
+      - name: No open pull request from this branch
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          open=$(gh pr list --repo "$GITHUB_REPOSITORY" --head "$GITHUB_REF_NAME" --state open --json number --jq 'map("#" + (.number | tostring)) | join(" ")')
+          if [ -n "$open" ]; then
+            echo "::error::profile=quick is for branches without an open pull request; $GITHUB_REF_NAME has $open. Its skipped jobs would sit on the pull request's head commit: run the full profile or rely on the pull request's own run."
+            exit 1
+          fi
+          echo "no open pull request from $GITHUB_REF_NAME"
+
+  # The Linux matrix is two jobs with the same steps because a job-level `if`
+  # cannot see the matrix: GCC Debug runs in every profile, the Clang jobs not
+  # in the quick one. The check names are those of the former single matrix.
   linux:
     name: Linux / ${{ matrix.cc }} / ${{ matrix.build_type }}
     if: github.event_name != 'pull_request' || !github.event.pull_request.draft
@@ -45,6 +86,36 @@ jobs:
       matrix:
         include:
           - { cc: gcc, build_type: Debug }
+    env:
+      CC: ${{ matrix.cc }}
+    steps:
+      - name: Check out source
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0 (verified via git ls-remote 2026-09-30)
+      - name: Toolchain versions
+        run: |
+          cmake --version
+          "$CC" --version
+      - name: Configure
+        run: >-
+          cmake -S . -B build
+          -DCMAKE_BUILD_TYPE=${{ matrix.build_type }}
+          -DBUILD_TESTING=ON
+          -DDUOFORGE_WARNINGS_AS_ERRORS=ON
+          -DDUOFORGE_ENABLE_IPO=${{ matrix.build_type == 'Release' && 'ON' || 'OFF' }}
+      - name: Build
+        run: cmake --build build --parallel 4
+      - name: Test
+        run: ctest --test-dir build --output-on-failure --no-tests=error --timeout 120
+
+  linux-clang:
+    name: Linux / ${{ matrix.cc }} / ${{ matrix.build_type }}
+    if: (github.event_name != 'pull_request' || !github.event.pull_request.draft) && inputs.profile != 'quick'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
           - { cc: clang, build_type: Debug }
           - { cc: clang, build_type: Release }
     env:
@@ -75,7 +146,7 @@ jobs:
   # worker and the differential tools).
   linux-full:
     name: Linux / gcc / Release / Python, JAX, reference
-    if: github.event_name != 'pull_request' || !github.event.pull_request.draft
+    if: (github.event_name != 'pull_request' || !github.event.pull_request.draft) && inputs.profile != 'quick'
     runs-on: ubuntu-24.04
     timeout-minutes: 40
     env:
@@ -183,7 +254,7 @@ jobs:
 
   linux-tsan:
     name: Linux / clang / TSan
-    if: github.event_name != 'pull_request' || !github.event.pull_request.draft
+    if: (github.event_name != 'pull_request' || !github.event.pull_request.draft) && inputs.profile != 'quick'
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     env:
@@ -213,7 +284,7 @@ jobs:
 
   windows:
     name: Windows / MSVC / ${{ matrix.arch }} / ${{ matrix.config }}
-    if: github.event_name != 'pull_request' || !github.event.pull_request.draft
+    if: (github.event_name != 'pull_request' || !github.event.pull_request.draft) && inputs.profile != 'quick'
     runs-on: windows-latest
     timeout-minutes: 20
     strategy:
@@ -319,7 +390,7 @@ jobs:
 
   windows-gcc-release-ipo:
     name: Windows / gcc / Release / IPO
-    if: github.event_name != 'pull_request' || !github.event.pull_request.draft
+    if: (github.event_name != 'pull_request' || !github.event.pull_request.draft) && inputs.profile != 'quick'
     runs-on: windows-latest
     timeout-minutes: 20
     defaults:
@@ -353,7 +424,7 @@ jobs:
 
   windows-clang:
     name: Windows / clang / Release
-    if: github.event_name != 'pull_request' || !github.event.pull_request.draft
+    if: (github.event_name != 'pull_request' || !github.event.pull_request.draft) && inputs.profile != 'quick'
     runs-on: windows-latest
     timeout-minutes: 20
     defaults:
