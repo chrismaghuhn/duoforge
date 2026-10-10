@@ -259,8 +259,8 @@ int main(void)
     /* No committed stop depends on the order of a bench. */
     DF_CHECK_EQ_U64(&t, counts.ambiguous, 0u);
 #if defined(DF_CONFORMANCE_POOL_DATA)
-    DF_CHECK_EQ_U64(&t, battles, 702u); /* 672 of the lane A batch, and main's lane B G63 eight, G59 eight, G61 twelve; the Substitute update fix adds sub_sitrus_tie (decision 0032 addendum) */
-    DF_CHECK_EQ_U64(&t, counts.stops, 3819u); /* 3670 of the lane A batch, main's G63 32, G59 48, G61 60, the Sheer Force Alluring Voice battle 4, and sub_sitrus_tie (5 stops) */
+    DF_CHECK_EQ_U64(&t, battles, 709u); /* step G88 adds seven (the G88 battles; 702 before, 672 of the lane A batch, and main's lane B G63 eight, G59 eight, G61 twelve; the Substitute update fix adds sub_sitrus_tie (decision 0032 addendum) */
+    DF_CHECK_EQ_U64(&t, counts.stops, 3847u); /* the seven G88 battles add 28 stops (3819 before); 3670 of the lane A batch, main's G63 32, G59 48, G61 60, the Sheer Force Alluring Voice battle 4, and sub_sitrus_tie (5 stops) */
 #else
     /* Every kind of decision of the pin is among the stops (the pool battles are too few for that). */
     DF_CHECK(&t, counts.by_stage[1] > 0u && counts.by_stage[2] > 0u && counts.by_stage[3] > 0u &&

@@ -726,7 +726,7 @@ class PoolMoves(unittest.TestCase):
                         gen_closure.check_g8_conditions(entries((mid, i)), gen_closure.G8_CONDITION_FACTS)
                     self.assertIn('move %s: the condition no longer has' % mid, str(cm.exception.code))
 
-    def test_the_handlers_are_the_seven_new_specials_in_order(self):
+    def test_the_handlers_are_the_new_specials_in_order(self):
         seven = len(gen_closure.SPECIAL_IDS_C) + len(gen_closure.G2_HANDLERS)
         self.assertEqual(gen_closure.SPECIAL_IDS_P[len(gen_closure.SPECIAL_IDS_C):seven], gen_closure.G2_HANDLERS)
         # UNMODELED (decision 0015 section 4.2) follows them, as the last id.
@@ -739,7 +739,7 @@ class PoolMoves(unittest.TestCase):
                           'TRICK', 'SWITCHEROO', 'THIEF', 'COVET', 'SUPER_FANG', 'TAUNT', 'YAWN',
                           'RAGE_FIST', 'STONE_AXE', 'CEASELESS_EDGE', 'MULTI_HIT_10', 'POWER_TRIP', 'THUNDER', 'ICE_FANG', 'TRI_ATTACK', 'DOUBLE_SHOCK', 'ROOST', 'STOMPING_TANTRUM',
                           'LOCKED_MOVE', 'REVIVAL_BLESSING',
-                          'MULTI_HIT_2_5', 'SCALE_SHOT', 'QUICK_GUARD', 'UPPER_HAND', 'HEAL_PULSE', 'STRENGTH_SAP', 'BEAT_UP', 'BUG_BITE', 'POLTERGEIST', 'SHEER_COLD', 'HAZE', 'AFTER_YOU', 'QUASH', 'SUBSTITUTE', 'PHANTOM_FORCE', 'STEEL_BEAM', 'THUNDER_WAVE', 'SKILL_SWAP', 'KINGS_SHIELD', 'ALLURING_VOICE', 'DRAGON_CHEER', 'UNMODELED'])
+                          'MULTI_HIT_2_5', 'SCALE_SHOT', 'QUICK_GUARD', 'UPPER_HAND', 'HEAL_PULSE', 'STRENGTH_SAP', 'BEAT_UP', 'BUG_BITE', 'POLTERGEIST', 'SHEER_COLD', 'HAZE', 'AFTER_YOU', 'QUASH', 'SUBSTITUTE', 'PHANTOM_FORCE', 'STEEL_BEAM', 'THUNDER_WAVE', 'SKILL_SWAP', 'KINGS_SHIELD', 'ALLURING_VOICE', 'DRAGON_CHEER', 'LASH_OUT', 'ASSURANCE', 'UNMODELED'])  # G88 (decision 0046) adds two before UNMODELED
         self.assertEqual(len(gen_closure.G2_HANDLERS), 7)
         # Step G16: Knock Off's handler is 24 in the tables; step G15's Expanding Force is 25, step G19's Glaive Rush 26,
         # step G20's Aurora Veil 27, Spiky Shield 28, the four of step G28 29 to 32, the eight of step G32 33 to 40 and
@@ -1104,7 +1104,7 @@ class PoolMoves(unittest.TestCase):
         # Every handler move is one of the rows, and every set move is a pool move or one of the rows.
         self.assertTrue({k for k in gen_closure.SPECIAL_P if k not in gen_closure.SPECIAL_C} <=
                         set(gen_closure.G2_MOVES) | {'outrage', 'thrash', 'petaldance', 'sandstorm', 'snowscape', 'knockoff', 'expandingforce', 'glaiverush', 'auroraveil', 'spikyshield',
-                                                                'substitute', 'kingsshield', 'shellsmash', 'acrobatics', 'blizzard', 'feint', 'alluringvoice', 'dragoncheer',
+                                                                'substitute', 'kingsshield', 'shellsmash', 'acrobatics', 'blizzard', 'feint', 'alluringvoice', 'dragoncheer', 'lashout', 'assurance',
                                                                 'ragepowder', 'psychicfangs', 'solarbeam', 'eruption', 'waterspout',
                                                                 'bodypress', 'foulplay', 'psyshock', 'raindance', 'sunnyday', 'freezedry',
                                                                 'clangingscales', 'steelroller', 'clangoroussoul', 'brickbreak', 'disable',

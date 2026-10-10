@@ -263,7 +263,7 @@ static void check_row(df_test *t)
 {
     /* the merged order of batch 4: Steel Beam and Thunder Wave (G68, 91 and 92) come between Phantom Force and Skill Swap */
     DF_CHECK_EQ_U64(t, DFI_SPECIAL_SKILL_SWAP, DFI_SPECIAL_THUNDER_WAVE + 1u);
-    DF_CHECK_EQ_U64(t, DFI_SPECIAL_UNMODELED, DFI_SPECIAL_DRAGON_CHEER + 1u); /* G66 and G72b follow Skill Swap */
+    DF_CHECK_EQ_U64(t, DFI_SPECIAL_UNMODELED, DFI_SPECIAL_ASSURANCE + 1u); /* G66 and G72b follow Skill Swap */
     DF_CHECK_EQ_U64(t, DFI_MOVE_SKILLSWAP, 405u);
     DF_CHECK(t, dfi_support.moves[DFI_MOVE_SKILLSWAP] != 0u);
     DF_CHECK_EQ_U64(t, dfi_pool_moves[DFI_MOVE_SKILLSWAP].special, DFI_SPECIAL_SKILL_SWAP);
