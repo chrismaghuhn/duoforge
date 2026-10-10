@@ -69,6 +69,7 @@ EXT_FIELDS = {
     "THROAT_CHOP": (("bit", EXT_THROAT_CHOP),),
     "MUST_RECHARGE": (("bit", C["DUOFORGE_POSITION_EXT_MUST_RECHARGE"]),),
     "TOXIC_SPIKES": (("side", "toxic_spikes"),),
+    "TAUNT": (("bit", C["DUOFORGE_POSITION_EXT_TAUNT"]),),
     "TYPE_CHANGE": (("bit", C["DUOFORGE_POSITION_EXT_TYPE_CHANGED"]), ("position", "type_now")),
     "AURORA_VEIL": (("side", "aurora_veil_turns"),),
     "PERISH": (("position", "perish"),),
@@ -77,10 +78,11 @@ EXT_FIELDS = {
     "ITEM_CHANGE": (("member", "item_now"),),
 }
 # The presence bits of a position's volatiles: _Position attribute -> DUOFORGE_POSITION_EXT_* bit.
-_PRESENCE_BITS = (("throat_chop", EXT_THROAT_CHOP), ("must_recharge", C["DUOFORGE_POSITION_EXT_MUST_RECHARGE"]))
+_PRESENCE_BITS = (("throat_chop", EXT_THROAT_CHOP), ("must_recharge", C["DUOFORGE_POSITION_EXT_MUST_RECHARGE"]),
+                  ("taunt", C["DUOFORGE_POSITION_EXT_TAUNT"]))
 # The folded _Position fields that Baton Pass gives the entering member (src/combat/turn.c dfi_pass_give: Throat Chop's
 # and Perish Song's tail counters among them); Encore, the recharge, a changed type or ability stay with the leaver.
-_PASSED = ("throat_chop", "perish")
+_PASSED = ("throat_chop", "perish", "taunt")
 # DUOFORGE_SIDE_* of a SIDE_START or SIDE_END event (tailwind 1, reflect 2, light screen 3, Aurora Veil 4) -> the index
 # of the side's turns in Tracker._conditions
 _SIDE_CONDITION = {1: 2, 2: 0, 3: 1, 4: 3}
@@ -129,6 +131,7 @@ class _Position:
         # The POOL view extension (decision 0018), all ended with the occupant (a switch or a faint):
         self.throat_chop = 0  # Throat Chop's volatile is up (presence only)
         self.must_recharge = 0  # a recharge move hit: the next action is cant|recharge (presence only)
+        self.taunt = 0  # Taunt's volatile is up (presence only)
         self.type_now = (0, 0)  # the types (id + 1, 0: none) a move set until the occupant leaves (Soak, Double Shock)
         self.perish = 0  # the Perish count the game showed last, 3 to 1 (0: none)
         self.last_slot = 0  # the move slot + 1 of the occupant's last move line (5: Struggle; None: not on its sheet)
@@ -639,6 +642,10 @@ class Tracker:
                 raise lines.Stop("line:-start typechange (no Soak)")
             p = self._at(pos)
             p.type_now = (0, amount) if detail == trace_to_c.TYPE_NONE else (detail + 1, 0)
+        elif kind in (EV["VOLATILE_START"], EV["VOLATILE_END"]) and detail == trace_to_c.VOLATILE_TAUNT:
+            # Taunt (step G31): -start|X|move: Taunt and -end|X|move: Taunt (the duration, Mental Herb, Oblivious); the
+            # occupant's leaving ends it with no line; its count is never shown
+            self._at(pos).taunt = 1 if kind == EV["VOLATILE_START"] else 0
         elif kind == EV["VOLATILE_START"] and detail == trace_to_c.VOLATILE_MUST_RECHARGE:
             self._at(pos).must_recharge = 1  # -mustrecharge|X: a recharge move hit (step G17)
         elif kind == EV["CONFUSED"]:

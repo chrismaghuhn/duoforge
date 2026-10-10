@@ -344,7 +344,7 @@ class LinesTest(unittest.TestCase):
                          "line:-enditem [from] move: Incinerate")
         self.assertEqual(self.stop("|-item|p1a: Staraptor|Sitrus Berry|[from] move: Recycle"),
                          "line:-item [from] move: Recycle")
-        self.assertEqual(self.stop("|-start|p1a: Staraptor|move: Taunt"), "feature:TAUNT")
+        self.assertEqual(self.stop("|-start|p1a: Staraptor|move: Leech Seed"), "feature:LEECH_SEED")
         self.assertEqual(lines.check("|-start|p1a: Staraptor|Encore", self.view), "fold")  # the tracker folds Encore
         self.assertEqual(lines.check("|-status|p1a: Staraptor|tox", self.view), "fold")  # Tox folds (BC spec 5)
         self.assertEqual(self.stop("|replace|p1a: Zoroark|Zoroark-Hisui, L50, M"), "feature:ILLUSION")
