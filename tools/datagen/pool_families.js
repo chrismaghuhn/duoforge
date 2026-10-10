@@ -1098,6 +1098,40 @@ function checkG61(dex, headers, moveIds, moveRows, unmodeledMoves) {
     return {checked, stripped, boostOnly, strippedIds};
 }
 
+// Step G69, Symbiosis (decision 0015 5bm): the pinned onAllyAfterUseItem on probes. The holder's item moves to the user when the
+// user is not switching (switchFlag) and the holder holds one; then the one line -activate|holder|ability: Symbiosis|Item|[of] user.
+// Nothing changes for a switching user or an empty holder. The engine refuses the other cases (dfi_symbiosis, src/combat/turn.c).
+function checkG69(dex) {
+    const sym = dex.abilities.get('symbiosis');
+    const pokemon = (name, item) => ({name, item, hp: 1, isActive: true, switchFlag: false, toString() { return name; },
+        takeItem() {
+            if (!this.item) return undefined;
+            const taken = {id: this.item, toString() { return 'Focus Sash'; }};
+            this.item = '';
+            return taken;
+        },
+        setItem(it) { this.item = it.id; return true; }});
+    const probe = (holderItem, userSwitching) => {
+        const holder = pokemon('Floette-Eternal', holderItem);
+        const user = pokemon('Gardevoir', '');
+        user.switchFlag = userSwitching;
+        const lines = [];
+        const b = battle(sym, {effectState: {target: holder}, singleEvent: () => true,
+            add: (...args) => lines.push(args.map(String).join('|'))});
+        call(sym.onAllyAfterUseItem, b, [{id: 'sitrusberry'}, user]);
+        return {holder: holder.item, user: user.item, lines};
+    };
+    expect('Symbiosis passes the item to a user that is not switching',
+        probe('focussash', false),
+        {holder: '', user: 'focussash', lines: ['-activate|Floette-Eternal|ability: Symbiosis|Focus Sash|[of] Gardevoir']});
+    expect('Symbiosis gives nothing to a switching user',
+        probe('focussash', true), {holder: 'focussash', user: '', lines: []});
+    expect('Symbiosis gives nothing from an empty holder',
+        probe('', false), {holder: '', user: '', lines: []});
+    expect('Symbiosis has no flags', sym.flags, {});
+    return {checked: 4};
+}
+
 // The pinned counts of checkG61: stripped and boost-only pool moves (marked or not), as of step G61.
 const PINNED_SF_STRIPPED = 103; // every pool move, marked or not (G72b's Alluring Voice makes 103; its secondary is stripped)
 const PINNED_SF_BOOST_ONLY = 1;
@@ -1600,7 +1634,7 @@ const ENGINE_ROWS = {items: ['focussash', 'floettite', 'psychicseed', 'electrics
         'flamebody', 'clearbody', 'hospitality', 'overcoat', 'soundproof', 'unnerve', 'speedboost',
         'compoundeyes', 'ironfist', 'sharpness', 'solidrock', 'technician', 'multiscale', 'galewings', 'raindish', 'friendguard', 'cursedbody', 'mirrorarmor', 'auraguard', 'hypercutter', 'scrappy', 'infiltrator', 'queenlymajesty', 'damp', 'sturdy', 'snowcloak', 'sandveil', 'static', 'justified', 'limber', 'solarpower', 'regenerator', 'toxicdebris', 'shadowtag', 'suctioncups', 'guarddog',
         'steadfast', 'weakarmor', 'telepathy', 'voltabsorb', 'punkrock', 'moxie', 'synchronize', 'oblivious', 'keeneye', 'bigpecks', 'magicbounce', 'pressure', 'stancechange',
-        'sandforce', 'shellarmor', 'filter', 'stalwart', 'megalauncher', 'hugepower', 'thickfat', 'firemane', 'spicyspray', 'megasol', 'sheerforce']};
+        'sandforce', 'shellarmor', 'filter', 'stalwart', 'megalauncher', 'hugepower', 'thickfat', 'firemane', 'spicyspray', 'megasol', 'sheerforce', 'illusion', 'symbiosis']};
 const ENGINE_TARGETS = new Set(['normal', 'any', 'adjacentAlly', 'adjacentFoe', 'self', 'allAdjacentFoes', 'allySide', 'all',
     'randomNormal', 'allAdjacent', 'allies', 'foeSide']); // foeSide: step G37 (the four hazards)
 // The fields of a move that the tables model (gen_closure.py DATA_KEYS and IGNORED_KEYS), nothing else.
@@ -1989,6 +2023,7 @@ function main() {
     checkG44(dex);
     checkG54(dex);
     checkG62(dex);
+    checkG69(dex);
     checkG22(dex, formeRowsList, new Set(definedIds(headers, 'ITEM').values()), new Set(abilityIds.values()));
     const abilities = checkAbilities(dex, abilityRows, moveIds, unmodeledAbilities, unmodeledMoves);
     // "All 18": a booster and a resist berry for each type, and nothing else in the families.

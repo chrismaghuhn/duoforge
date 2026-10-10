@@ -13,11 +13,14 @@ import numpy as np
 
 import duoforge
 from duoforge import _layout, privileged, view
+
+from ._pivot_fixture import SETUP, play_to_pivot
 from duoforge_search import arena, belief, honest
 from python.tests.test_search import _v2s
 from python.tests import test_search as search_tests
 
 C = _layout.CONSTANTS
+PIVOT_STEPS = 160  # lockstep steps of the PIVOT record test
 
 
 class CanonicalReduction(unittest.TestCase):
@@ -148,12 +151,27 @@ class HonestSearch(unittest.TestCase):
                 search.decide(b, [0, 0], [0, 0], [1, 1], [False, False])
 
     def test_pivot_records_and_queue_sampling(self):
-        with duoforge.Context(C["DUOFORGE_DATA_KIND_POOL"]) as ctx, \
-                duoforge.Batch(ctx, np.resize(duoforge.reference_setups([0, 1, 2, 3]), 8), 3, 42) as b, \
-                self.make(ctx, 1) as search:
+        def check_searched(b, search, r, p):
+            # Since the view audit of 2026-10-10 a public PIVOT record has no move left to run (one with a move left is
+            # refused: a silent flinch may be outstanding), so no foe command is sampled and neither the queue mask nor
+            # the turn-start record is needed: a stale one and a queue mask that must not be queried leave it searched.
+            self.assertEqual(r["foe_pairs"], [[-1], [-1]])
+            public, st = b.public(np.full(b.envs, p, np.uint32))
+            self.assertEqual(int(st[r["env"]]), 0)
+            self.assertEqual(int(public[r["env"]]["foe_pending_mask"]), 0)
+            self.assertEqual(r["queue_pairs"], [])
+            history = search.history[b][(r["env"], p)]
+            saved_start = history["turn_start"].copy()
+            history["turn_start"]["turn"] -= 1
+            with mock.patch.object(duoforge, "queue_mask", side_effect=AssertionError("no queue mask")):
+                _, again = search.decide(b, [r["env"]], [p], [r["key"]], [False])
+            self.assertEqual(again[0]["kind"], "searched")
+            history["turn_start"] = saved_start
+
+        counted = searched = refused = 0
+        with duoforge.Context(C["DUOFORGE_DATA_KIND_POOL"]) as ctx,                 duoforge.Batch(ctx, np.resize(duoforge.reference_setups([0, 1, 2, 3]), 8), 3, 42) as b,                 self.make(ctx, 1) as search:
             policy = duoforge.RandomPolicy(71, 8)
-            counted = searched = 0
-            for _ in range(160):
+            for _ in range(PIVOT_STEPS):
                 b.query_factored()
                 for p in (0, 1):
                     envs = np.flatnonzero(b.requests["requested"][:, p])
@@ -169,28 +187,32 @@ class HonestSearch(unittest.TestCase):
                             self.assertIn(r["kind"], ("forced", "searched", "unreconstructible"))
                             if r["kind"] == "searched":
                                 searched += 1
-                                self.assertEqual(r["foe_pairs"], [[-1], [-1]])
-                                players = np.full(b.envs, p, np.uint32)
-                                public, st = b.public(players)
-                                self.assertEqual(int(st[r["env"]]), 0)
-                                current = public[r["env"]:r["env"] + 1].reshape(())
-                                mask = duoforge.queue_mask(ctx, search.history[b][(r["env"], p)]["turn_start"], current)
-                                self.assertEqual(len(r["queue_pairs"]), 2)
-                                self.assertTrue(all(mask.reshape(-1)[x] for x in r["queue_pairs"]))
-                                history = search.history[b][(r["env"], p)]
-                                saved_start = history["turn_start"].copy()
-                                history["turn_start"]["turn"] -= 1
-                                with mock.patch.object(duoforge, "queue_mask", side_effect=AssertionError("stale C query")):
-                                    _, fallback = search.decide(b, [r["env"]], [p], [r["key"]], [False])
-                                self.assertEqual(fallback[0]["kind"], "unreconstructible")
-                                self.assertIn("turn-start", fallback[0]["reason"])
-                                history["turn_start"] = saved_start
+                                check_searched(b, search, r, p)
+                            elif r["kind"] == "unreconstructible":
+                                refused += 1
                 b.step_factored(policy.choose_factored(b))
                 b.reset_terminal()
-                if counted >= 4 and searched:
+                if counted >= 4 and refused:
                     break
-            self.assertGreaterEqual(counted, 4)
-            self.assertGreater(searched, 0)
+        self.assertGreaterEqual(counted, 4)
+        self.assertGreater(refused, 0)  # PIVOTs with a move left are refused, not searched
+        # Random play almost never reaches a public PIVOT (a Protect up and no move left): the scripted one.
+        with duoforge.Context(C["DUOFORGE_DATA_KIND_POOL"]) as ctx,                 duoforge.Batch(ctx, duoforge.reference_setups([SETUP]), 1, 43) as b,                 self.make(ctx, 1) as search:
+            keys = iter(range(100, 200))
+
+            def observe(batch):  # the searcher's history: the team preview and the turn-start records
+                for p in (0, 1):
+                    if batch.requests["requested"][0, p]:
+                        search.decide(batch, [0], [p], [next(keys)], [False])
+
+            play_to_pivot(b, before_step=observe)
+            search.k = 2
+            _, records = search.decide(b, [0], [0], [7], [False])
+            self.assertEqual(records[0]["boundary"], "PIVOT")
+            self.assertEqual(records[0]["kind"], "searched")
+            check_searched(b, search, records[0], 0)
+            searched += 1
+        self.assertGreater(searched, 0)
 
     def test_pinned_abc_decisions(self):
         with duoforge.Context(C["DUOFORGE_DATA_KIND_POOL"]) as ctx:
@@ -314,6 +336,10 @@ class HonestSearch(unittest.TestCase):
             history["turn_start"] = record.copy()
             record["turn"] += 1
             record["boundary"] = C["DUOFORGE_BOUNDARY_PIVOT"]
+            # Only a PIVOT record with a pending foe command needs its turn-start record (the queue mask). Since the
+            # view audit of 2026-10-10 the engine's public records never carry one, so this hand-made record sets it;
+            # a public PIVOT without one is searched from its own record (test_pivot_records_and_queue_sampling).
+            record["foe_pending_mask"] = 1
             costs = {k: 0. for k in ("public_records", "world_builds", "team_head", "network")}
             with mock.patch.object(duoforge, "queue_mask", side_effect=AssertionError("stale record must not reach C")):
                 with self.assertRaisesRegex(honest.Unreconstructible, "stale"):
