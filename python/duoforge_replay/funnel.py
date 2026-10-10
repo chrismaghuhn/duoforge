@@ -50,6 +50,8 @@ def report(counters):
             raise ValueError(f"funnel stage {stage!r} of {format_id} is no stage of the funnel")
     for f in out.values():
         f["with_sheets"] = f["read"] - f["skipped"].get("skip:format", 0) - f["skipped"].get("skip:sheets", 0)
+        selection = sum(v for k, v in f["skipped"].items() if k == "skip:has-sheets" or k.startswith("skip:split-"))
+        f["taken"] = f["with_sheets"] - selection  # what the build's mode and split take (bo1_belief: no sheets)
         f["skipped"] = dict(f["skipped"])
         f["perspectives"]["stopped"] = dict(f["perspectives"]["stopped"])
     return out
@@ -69,12 +71,18 @@ def text(report, top=8):
             lines.append(f"{format_id}: {f['read']} games, {why}")
             continue
         other = f["skipped"].get("skip:format", 0)
-        refused = {k: v for k, v in f["skipped"].items() if k not in ("skip:format", "skip:sheets")}
+        selection = {k: v for k, v in f["skipped"].items() if k == "skip:has-sheets" or k.startswith("skip:split-")}
+        refused = {k: v for k, v in f["skipped"].items()
+                   if k not in ("skip:format", "skip:sheets") and k not in selection}
         p = f["perspectives"]
         lines.append(f"{format_id}: read {f['read']}")
         if other:
             lines.append(f"  not in this build's formats {other}")
         lines.append(f"  without two sheets {f['skipped'].get('skip:sheets', 0)}, with sheets {f['with_sheets']}")
+        if selection:
+            lines.append(f"  not in this build's selection {sum(selection.values())} (has sheets, other split): "
+                         + ", ".join(f"{k} {v}" for k, v in sorted(selection.items())))
+        lines.append(f"  taken by this build {f['taken']}")
         lines.append(f"  refused {sum(refused.values())}, internal errors {f['internal']}, set up {f['processed']}")
         for reason, n in sorted(refused.items(), key=lambda kv: (-kv[1], kv[0]))[:top]:
             lines.append(f"    {n} {reason}")

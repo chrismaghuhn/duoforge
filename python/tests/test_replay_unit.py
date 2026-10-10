@@ -6,6 +6,7 @@ teams and a committed spectator log of one reference battle
 (python/tests/data/replay/). No replay of the unlicensed dataset is a test
 input.
 """
+import collections
 import re
 import shutil
 import sys
@@ -1695,6 +1696,590 @@ class SourceTest(unittest.TestCase):
         self.assertEqual(counters["funnel.gen9championsvgc2026regmcbo3.read"], 2)
         self.assertEqual(counters["funnel.gen9championsvgc2026regmcbo3.skipped.skip:sheets"], 1)
         self.assertEqual(counters["funnel.gen9ou.skipped.skip:format"], 1)
+
+
+class SplitTest(unittest.TestCase):
+    """The player split of the Bo1 belief validation (M11 Bo1 spec section 6): no player in training and test."""
+
+    def test_a_test_player_makes_a_test_game(self):
+        from duoforge_replay import split
+        self.assertTrue(split.is_test_player(40))
+        self.assertFalse(split.is_test_player(41))
+        self.assertEqual(split.of_game((40, 41)), "test")
+        self.assertEqual(split.of_game((41, 40)), "test")
+        self.assertEqual(split.of_game((41, 43)), "train")
+
+    def test_players_of_hashes_the_two_player_lines(self):
+        from duoforge_replay import game, split
+        lines = ["|player|p1|Alice|1|1500", "|player|p2|Bob B|2|", "|player|p1|Alice|1|1500"]
+        self.assertEqual(split.players_of(lines), (game._hash8("alice"), game._hash8("bobb")))
+        with self.assertRaisesRegex(ValueError, "player"):
+            split.players_of(["|player|p1|Alice|1|"])
+
+
+P1_PREVIEW = ["Kingambit, L50, M", "Incineroar, L50, M", "Charizard, L50, M", "Rillaboom, L50, M",
+              "Garchomp, L50, F", "Gholdengo, L50"]
+P2_PREVIEW = ["Politoed, L50, M", "Farigiraf, L50, F", "Sneasler, L50, F", "Tyranitar, L50, M",
+              "Sinistcha, L50", "Dragonite, L50, M"]
+
+
+def facts_log(*body, p1=P1_PREVIEW, p2=P2_PREVIEW):
+    """A made-up Bo1 log without sheets: preview, leads Kingambit "Gambit" and Incineroar "Roar" against Politoed
+    "Frog" and Farigiraf "Giraffe", then the body."""
+    return (["|player|p1|Alice|1|", "|player|p2|Bob|2|", "|gametype|doubles"]
+            + [f"|poke|p1|{s}|" for s in p1] + [f"|poke|p2|{s}|" for s in p2]
+            + ["|teampreview|4", "|start", "|switch|p1a: Gambit|Kingambit, L50, M|100/100",
+               "|switch|p1b: Roar|Incineroar, L50, M|100/100", "|switch|p2a: Frog|Politoed, L50, M|100/100",
+               "|switch|p2b: Giraffe|Farigiraf, L50, F|100/100", "|turn|1"] + list(body))
+
+
+class FactsTest(unittest.TestCase):
+    """What a log without sheets reveals of each member (M11 Bo1 spec section 3), on made-up logs."""
+
+    @classmethod
+    def setUpClass(cls):
+        from duoforge_replay import facts, points
+        cls.F, cls.Skip = facts, points.Skip
+        cls.data = data.load(kind="pool")
+
+    def facts(self, *body, side=0, **kw):
+        return self.F.side_facts(facts_log(*body, **kw), side, self.data)
+
+    def skip(self, *body, **kw):
+        with self.assertRaises(self.Skip) as cm:
+            self.facts(*body, **kw)
+        return cm.exception.reason
+
+    def test_preview_species_and_gender(self):
+        f = self.facts()
+        self.assertEqual([m.species for m in f], ["Kingambit", "Incineroar", "Charizard", "Rillaboom", "Garchomp",
+                                                  "Gholdengo"])
+        self.assertEqual([m.gender for m in f], ["M", "M", "M", "M", "F", ""])
+        self.assertEqual({m.moves for m in f}, {frozenset()})
+        self.assertEqual({(m.item, m.ability) for m in f}, {(None, None)})
+
+    def test_moves_by_nickname_and_no_called_moves(self):
+        body = ["|move|p1a: Gambit|Kowtow Cleave|p2a: Frog", "|move|p1b: Roar|Fake Out|p2b: Giraffe",
+                "|move|p1a: Gambit|Sucker Punch|p2a: Frog|[from]lockedmove",
+                "|move|p1b: Roar|Protect|p1b: Roar|[from]move: Copycat",
+                "|move|p1b: Roar|Taunt|p2a: Frog|[from] ability: Dancer",
+                "|switch|p1a: Zard|Charizard, L50, M|100/100", "|move|p1a: Zard|Heat Wave|p2a: Frog|[spread] p2a,p2b",
+                "|move|p2a: Frog|Weather Ball|p1a: Zard|[from]move: Instruct"]
+        f = self.facts(*body)
+        self.assertEqual(f[0].moves, frozenset({"Kowtow Cleave", "Sucker Punch"}))
+        self.assertEqual(f[1].moves, frozenset({"Fake Out"}))
+        self.assertEqual(f[2].moves, frozenset({"Heat Wave"}))
+        self.assertEqual(self.facts(*body, side=1)[0].moves, frozenset({"Weather Ball"}))  # Instruct: its own move
+
+    def test_ally_switch_swaps_the_occupants(self):
+        # review C1: after |swap| both positions name the other member
+        f = self.facts("|move|p1b: Roar|Ally Switch|p1b: Roar", "|swap|p1b: Roar|0|[from] move: Ally Switch",
+                       "|move|p1a: Roar|Fake Out|p2a: Frog", "|move|p1b: Gambit|Kowtow Cleave|p2a: Frog",
+                       "|-enditem|p1a: Roar|Sitrus Berry|[eat]")
+        self.assertEqual(f[0].moves, frozenset({"Kowtow Cleave"}))
+        self.assertEqual(f[1].moves, frozenset({"Ally Switch", "Fake Out"}))
+        self.assertEqual((f[0].item, f[1].item), (None, "Sitrus Berry"))
+
+    def test_an_absorbing_heal_names_no_attacker_and_bug_bite_no_biter(self):
+        # review I1: a -heal [from] ability names the attacker as [of] (Volt Absorb); a Bug Bite's heal names the
+        # victim's berry on the biter
+        f = self.facts("|move|p1a: Gambit|Kowtow Cleave|p2a: Frog",
+                       "|-heal|p2a: Frog|100/100|[from] ability: Volt Absorb|[of] p1a: Gambit")
+        self.assertEqual(f[0].ability, None)
+        bite = ["|-enditem|p2a: Frog|Sitrus Berry|[from] stealeat|[move] Bug Bite|[of] p1a: Gambit",
+                "|-heal|p1a: Gambit|100/100|[from] item: Sitrus Berry"]
+        self.assertIsNone(self.facts(*bite)[0].item)
+        self.assertEqual(self.facts(*bite, side=1)[0].item, "Sitrus Berry")
+
+    def test_struggle_and_a_mimicked_move_are_no_moves(self):
+        f = self.facts("|move|p1a: Gambit|Struggle|p2a: Frog", "|move|p1b: Roar|Fake Out|p2a: Frog",
+                       "|-start|p1b: Roar|Mimic|Weather Ball", "|move|p1b: Roar|Weather Ball|p2a: Frog")
+        self.assertEqual(f[0].moves, frozenset())
+        self.assertEqual(f[1].moves, frozenset({"Fake Out"}))
+
+    def test_item_from_enditem_mega_and_from_item(self):
+        f = self.facts("|-enditem|p1b: Roar|Sitrus Berry|[eat]",
+                       "|-damage|p2b: Giraffe|90/100|[from] item: Rocky Helmet|[of] p1a: Gambit",
+                       "|-heal|p2a: Frog|80/100|[from] item: Leftovers",
+                       "|switch|p1a: Zard|Charizard, L50, M|100/100",
+                       "|detailschange|p1a: Zard|Charizard-Mega-Y, L50, M", "|-mega|p1a: Zard|Charizard|Charizardite Y")
+        self.assertEqual([m.item for m in f[:3]], ["Rocky Helmet", "Sitrus Berry", "Charizardite Y"])
+        self.assertEqual(self.facts("|-heal|p2a: Frog|80/100|[from] item: Leftovers", side=1)[0].item, "Leftovers")
+
+    def test_an_of_on_the_other_side_names_no_own_member(self):
+        # the effect's holder is the [of] member; when it is the foe, the subject learns nothing
+        body = ["|-damage|p1a: Gambit|80/100|[from] ability: Rough Skin|[of] p2a: Frog",
+                "|-damage|p1a: Gambit|70/100|[from] item: Rocky Helmet|[of] p2b: Giraffe"]
+        self.assertEqual((self.facts(*body)[0].ability, self.facts(*body)[0].item), (None, None))
+        self.assertEqual(self.facts(*body, side=1)[0].ability, "Rough Skin")
+        self.assertEqual(self.facts(*body, side=1)[1].item, "Rocky Helmet")
+
+    def test_frisk_names_the_foe_item(self):
+        body = ["|-item|p2a: Frog|Leftovers|[from] ability: Frisk|[of] p1b: Roar"]
+        self.assertEqual(self.facts(*body, side=1)[0].item, "Leftovers")
+        self.assertEqual(self.facts(*body)[1].ability, "Frisk")
+
+    def test_no_item_after_trick(self):
+        f = self.facts("|-damage|p1a: Gambit|90/100|[from] item: Life Orb",
+                       "|-activate|p1a: Gambit|move: Trick|[of] p2a: Frog",
+                       "|-item|p2a: Frog|Life Orb|[from] move: Trick", "|-item|p1a: Gambit|Leftovers|[from] move: Trick",
+                       "|-heal|p1a: Gambit|100/100|[from] item: Leftovers",
+                       "|-heal|p2a: Frog|100/100|[from] item: Mystic Water")
+        self.assertEqual(f[0].item, "Life Orb")  # seen before the trick: its own
+        self.assertIsNone(self.facts("|-activate|p1a: Gambit|move: Trick|[of] p2a: Frog",
+                                     "|-item|p2a: Frog|Life Orb|[from] move: Trick", side=1)[0].item)
+
+    def test_trace_is_the_original_ability(self):
+        body = ["|-ability|p2b: Giraffe|Intimidate|[from] ability: Trace|[of] p1b: Roar"]
+        self.assertEqual(self.facts(*body, side=1)[1].ability, "Trace")
+        self.assertEqual(self.facts(*body)[1].ability, "Intimidate")
+        self.assertEqual(self.facts("|-ability|p1b: Roar|Intimidate|boost")[1].ability, "Intimidate")
+
+    def test_no_ability_after_skill_swap_or_mega(self):
+        f = self.facts("|-activate|p1a: Gambit|move: Skill Swap|Defiant|Drizzle|[of] p2a: Frog",
+                       "|-ability|p1a: Gambit|Drizzle", "|switch|p1a: Zard|Charizard, L50, M|100/100",
+                       "|detailschange|p1a: Zard|Charizard-Mega-Y, L50, M", "|-ability|p1a: Zard|Drought")
+        self.assertEqual((f[0].ability, f[2].ability), (None, None))
+
+    def test_a_mega_forme_is_its_preview_member(self):
+        f = self.facts("|switch|p1a: Zard|Charizard, L50, M|100/100",
+                       "|detailschange|p1a: Zard|Charizard-Mega-Y, L50, M", "|move|p1a: Zard|Solar Beam|p2a: Frog")
+        self.assertEqual((f[2].species, f[2].moves), ("Charizard", frozenset({"Solar Beam"})))
+
+    def test_a_wildcard_preview_is_resolved_by_its_switch_or_skipped(self):
+        p1 = P1_PREVIEW[:4] + ["Rotom-*, L50"] + P1_PREVIEW[5:]
+        f = self.facts("|switch|p1a: Fridge|Rotom-Wash, L50|100/100", p1=p1)
+        self.assertEqual(f[4].species, "Rotom-Wash")
+        f = self.facts("|switch|p1a: Fridge|Rotom, L50|100/100", p1=p1)  # the base forme itself (review minor)
+        self.assertEqual(f[4].species, "Rotom")
+        self.assertEqual(self.skip(p1=p1), "skip:belief-preview")
+
+    def test_skips(self):
+        self.assertEqual(self.skip(p1=P1_PREVIEW[:5] + ["Zoroark-Hisui, L50, M"]), "skip:illusion")
+        self.assertEqual(self.skip("|-transform|p1a: Gambit|p2a: Frog"), "skip:belief-transform")
+        five = [f"|move|p1a: Gambit|{m}|p2a: Frog" for m in ("Kowtow Cleave", "Sucker Punch", "Iron Head", "Protect",
+                                                            "Swords Dance")]
+        self.assertEqual(self.skip(*five), "skip:belief-moves")
+        self.assertEqual(self.skip(p1=P1_PREVIEW[:5]), "skip:belief-preview")
+        self.assertEqual(self.skip("|switch|p1a: Stranger|Dragonite, L50, M|100/100"), "skip:belief-preview")
+
+
+def packed_set(species, item, ability, moves, nature, gender="M"):
+    return "|".join([species, "", item, ability, ",".join(moves), nature, "", gender, "", "", "50", ""])
+
+
+def player_names():
+    """A test player's name and two training players' names (bucket 0 of 20 or not)."""
+    from duoforge_replay import game, split
+    names = [f"player{i}" for i in range(200)]
+    test = next(n for n in names if split.is_test_player(game._hash8(n)))
+    train = [n for n in names if not split.is_test_player(game._hash8(n))][:2]
+    return test, train
+
+
+class CorpusTest(unittest.TestCase):
+    """The set corpus of the Bo1 belief (M11 Bo1 spec section 3): training-split sheets, one count per team."""
+
+    @classmethod
+    def setUpClass(cls):
+        import json
+        cls.data = data.load(kind="pool")
+        cls.tmp = Path(tempfile.mkdtemp(prefix="duoforge_corpus_"))
+        test, (a, b) = player_names()
+        team1 = "]".join([packed_set("Kingambit", "ChopleBerry", "Defiant", ["KowtowCleave", "SuckerPunch"], "Adamant"),
+                          packed_set("Incineroar", "SitrusBerry", "Intimidate", ["FakeOut", "PartingShot"], "Careful")])
+        team2 = packed_set("Politoed", "MysticWater", "Drizzle", ["WeatherBall", "Protect"], "Modest")
+        team3 = packed_set("Dragonite", "ChoiceBand", "Multiscale", ["ExtremeSpeed"], "Adamant")
+        team4 = packed_set("Garchomp", "FakeItem", "RoughSkin", ["Earthquake"], "Jolly")  # an item outside the tables
+        cls.teams = (team1, team2, team3, team4)
+
+        def game(p1, p2, s1, s2):
+            return "\n".join([f"|player|p1|{p1}|1|", f"|player|p2|{p2}|2|", f"|showteam|p1|{s1}", f"|showteam|p2|{s2}"])
+        cls.source = cls.tmp / "games.jsonl"
+        with open(cls.source, "w", encoding="utf-8", newline="\n") as f:
+            for gid, log in (("g1", game(a, b, team1, team2)), ("g2", game(a, b, team1, team2)),  # one Bo3, twice
+                             ("g3", game(test, a, team3, team1)),  # a test player: team3, and team1 is in a test game
+                             ("g4", game(a, b, team4, team2))):
+                f.write(json.dumps({"id": gid, "formatid": "gen9championsvgc2026regmcbo3", "log": log}) + "\n")
+        cls.registry = cls.tmp / "registry"
+        (cls.registry / "data" / "teams").mkdir(parents=True)
+        (cls.registry / "data" / "teams" / "index.json").write_text(json.dumps(
+            {"registry": 1, "teams": [{"id": "PP_X", "name": "x", "source": {}, "notes": "", "sha256": ""}]}))
+        (cls.registry / "data" / "teams" / "PP_X.txt").write_text(
+            "Garchomp (F) @ Life Orb\nAbility: Rough Skin\nLevel: 50\nJolly Nature\n- Earthquake\n- Protect\n")
+
+    @classmethod
+    def tearDownClass(cls):
+        shutil.rmtree(cls.tmp, ignore_errors=True)
+
+    def build(self, name):
+        from duoforge_replay import corpus
+        out = self.tmp / name
+        corpus.build([self.source], ("gen9championsvgc2026regmc",), self.registry, out, self.data)
+        return corpus.load(out)
+
+    def test_corpus_takes_the_training_split_once_per_team(self):
+        from duoforge_replay import game
+        c = self.build("c1.json")
+        self.assertEqual([s[4] for s in c.sets("POLITOED")], [1])  # one team, however often its player played it
+        self.assertEqual(c.sets("DRAGONITE"), [])
+        # team1 was played in a test game too (by the training opponent): out, so no test game draws from itself
+        self.assertEqual(c.sets("KINGAMBIT"), [])
+        self.assertEqual(c.sets("GARCHOMP"), [("Life Orb", "Rough Skin", "Jolly", ("Earthquake", "Protect"), 1)])
+        self.assertEqual(c.sheet_hashes, frozenset({game._hash8(self.teams[1]), game._hash8(self.teams[3])}))
+
+    def test_corpus_adds_the_registry_and_refuses_the_repository(self):
+        from duoforge_replay import corpus
+        c = self.build("c2.json")
+        # the registry's Garchomp; the sheet Garchomp with an item outside the tables is not taken
+        self.assertEqual(c.sets("GARCHOMP"), [("Life Orb", "Rough Skin", "Jolly", ("Earthquake", "Protect"), 1)])
+        with self.assertRaisesRegex(ValueError, "inside the repository"):
+            corpus.build([self.source], ("gen9championsvgc2026regmc",), self.registry, data.ROOT / "corpus.json",
+                         self.data)
+
+
+class SetBeliefTest(unittest.TestCase):
+    """Whole sets drawn from the corpus, agreeing with every fact (L0) or completed from frequencies (L1)."""
+
+    @classmethod
+    def setUpClass(cls):
+        from duoforge_replay import corpus, facts, points, setbelief
+        cls.C, cls.F, cls.B, cls.Skip = corpus, facts, setbelief, points.Skip
+        cls.data = data.load(kind="pool")
+        cls.corpus = corpus.Corpus({"KINGAMBIT": [
+            ("ChopleBerry", "Defiant", "Adamant", ("KowtowCleave", "SuckerPunch", "IronHead", "Protect"), 3),
+            ("BlackGlasses", "Defiant", "Adamant", ("SuckerPunch", "IronHead", "LowKick", "Protect"), 5)]},
+            frozenset(), "test")
+
+    def member(self, moves=(), item=None, ability=None):
+        return self.F.MemberFacts("Kingambit", "M", frozenset(moves), item, ability)
+
+    def test_l0_draw_agrees_with_every_fact(self):
+        belief = self.B.SetBelief(self.corpus, self.data)
+        for w in range(0, 2 ** 64, 2 ** 60):
+            s, level = belief.draw(self.member(moves={"Kowtow Cleave"}), w)
+            self.assertEqual((level, s["item"]), (0, "ChopleBerry"))
+            self.assertEqual((s["species"], s["gender"], s["level"], s["evs"]), ("Kingambit", "M", 50, [0] * 6))
+        s, level = belief.draw(self.member(item="Black Glasses"), 0)  # a revealed item keeps the log's spelling
+        self.assertEqual((level, s["item"], s["moves"][0]), (0, "Black Glasses", "SuckerPunch"))
+
+    def test_l1_keeps_used_moves_and_fills_from_frequencies(self):
+        belief = self.B.SetBelief(self.corpus, self.data)
+        s, level = belief.draw(self.member(moves={"Swords Dance"}), 12345)
+        self.assertEqual(level, 1)
+        self.assertIn("Swords Dance", s["moves"])
+        self.assertEqual(len(s["moves"]), 4)
+        self.assertEqual(len({trace_to_c.key(m) for m in s["moves"]}), 4)
+        self.assertTrue(set(s["moves"]) - {"Swords Dance"} <= {"KowtowCleave", "SuckerPunch", "IronHead", "Protect",
+                                                               "LowKick"})
+
+    def test_l1_fill_has_no_move_twice_under_two_spellings(self):
+        # review I2: sheets spell "FakeOut", pastes "Fake Out"; the fill keys moves by trace_to_c.key
+        mixed = self.C.Corpus({"KINGAMBIT": [
+            ("ChopleBerry", "Defiant", "Adamant", ("FakeOut", "KnockOff", "SuckerPunch", "IronHead"), 3),
+            ("Black Glasses", "Defiant", "Adamant", ("Fake Out", "Knock Off", "Sucker Punch", "Iron Head"), 3)]},
+            frozenset(), "test")
+        belief = self.B.SetBelief(mixed, self.data)
+        for w in range(0, 2 ** 64, 2 ** 57):
+            s, level = belief.draw(self.member(moves={"Throat Chop"}), w)
+            self.assertEqual(level, 1)
+            self.assertEqual(len({trace_to_c.key(m) for m in s["moves"]}), len(s["moves"]), s["moves"])
+
+    def test_unsupported_species_is_a_counted_skip(self):
+        belief = self.B.SetBelief(self.corpus, self.data, min_sets=9)
+        with self.assertRaises(self.Skip) as cm:
+            belief.draw(self.member(), 0)
+        self.assertEqual(cm.exception.reason, "skip:belief-unsupported Kingambit")
+        with self.assertRaises(self.Skip) as cm:
+            self.B.SetBelief(self.corpus, self.data).draw(self.member(item="Leftovers"), 0)
+        self.assertEqual(cm.exception.reason, "skip:belief-unsupported Kingambit")
+
+    def test_words_do_not_depend_on_order(self):
+        w = self.B.word(1, "r", 0, 2, 0, 0)
+        self.assertEqual(w, self.B.word(1, "r", 0, 2, 0, 0))
+        others = [self.B.word(2, "r", 0, 2, 0, 0), self.B.word(1, "s", 0, 2, 0, 0), self.B.word(1, "r", 1, 2, 0, 0),
+                  self.B.word(1, "r", 0, 3, 0, 0), self.B.word(1, "r", 0, 2, 1, 0), self.B.word(1, "r", 0, 2, 0, 1)]
+        self.assertEqual(len(set(others + [w])), 7)
+        self.assertTrue(0 <= w < 2 ** 64)
+
+    def test_same_word_same_set(self):
+        belief = self.B.SetBelief(self.corpus, self.data)
+        self.assertEqual(belief.draw(self.member(), 99), belief.draw(self.member(), 99))
+
+
+class BeliefGameTest(unittest.TestCase):
+    """A game without sheets on sampled sheets of both sides (option B), on the fixture with its sheets removed."""
+
+    @classmethod
+    def setUpClass(cls):
+        from duoforge_live import teams
+        from duoforge_replay import corpus, game, prior, setbelief
+        cls.G, cls.SB = game, setbelief
+        cls.data = data.load(kind="pool")
+        log = FIXTURE.read_text(encoding="utf-8").split("\n")
+        cls.sheets = [teams.unpack(line.split("|", 3)[3]) for line in log if line.startswith("|showteam|")]
+        cls.log = [line for line in log if not line.startswith("|showteam|")]
+        cls.with_sheets = log
+        cls.prior = prior.Prior({"version": 1, "pastes": 0, "skipped": {}, "levels": [{}, {}, {}, {}]})
+        sets = collections.defaultdict(list)
+        for s in cls.sheets[0] + cls.sheets[1]:
+            key = trace_to_c.key(cls.data.canonical(s["species"]))
+            sets[key].append((s["item"], s["ability"], s["nature"], tuple(sorted(s["moves"])), 3))
+            sets[key].append((s["item"], s["ability"], "Hardy" if s["nature"] != "Hardy" else "Bold",
+                              tuple(sorted(s["moves"])), 1))  # a second set: draws can differ
+        cls.corpus = corpus.Corpus(dict(sets), frozenset(), "test")
+        cls.belief = setbelief.SetBelief(cls.corpus, cls.data, min_sets=1)
+
+    def process(self, log=None, belief=None, **kw):
+        return self.G.process("fixture-belief", "gen9championsvgc2026regmc", "\n".join(log or self.log), self.data,
+                              self.prior, _Stats(), belief=belief or self.belief, **kw)
+
+    def test_a_belief_game_gives_rows_with_levels(self):
+        result = self.process(seed=1)
+        self.assertGreater(len(result.rows), 10)
+        for row in result.rows:
+            self.assertEqual(len(row.belief_level), 12)
+            self.assertTrue(set(row.belief_level) <= {0, 1})
+            self.assertEqual(len(row.revealed), 6)
+            for slot, reason in zip(row.label.slots, row.label.reasons):
+                self.assertTrue(slot or reason == 0)  # every asked slot has a label set (its option is in the domain)
+        self.assertEqual(result.record.draw, 0)
+
+    def test_the_played_move_is_always_in_the_drawn_set(self):
+        from duoforge_replay import facts
+        for draw in range(4):
+            sheets, levels, revealed = self.G.draw_sheets(self.log, "gen9championsvgc2026regmc", self.data, self.belief,
+                                                          7, "fixture-belief", draw)
+            for side in (0, 1):
+                for member, s, bits in zip(facts.side_facts(self.log, side, self.data), sheets[side], revealed[side]):
+                    drawn = [trace_to_c.key(m) for m in s["moves"]]
+                    self.assertTrue({trace_to_c.key(m) for m in member.moves} <= set(drawn), (member, s))
+                    self.assertEqual(bin(bits).count("1"), len(member.moves))
+
+    def test_a_revealed_name_outside_the_tables_is_a_name_skip(self):
+        # the 2026-10-10 run: an item a log reveals (Assault Vest) that the tables lack was a KeyError
+        at = next(i for i, line in enumerate(self.log) if line.startswith("|switch|p1a: Kingambit|")) + 1
+        log = self.log[:at] + ["|-enditem|p1a: Kingambit|Assault Vest|[from] move: Knock Off|[of] p2a: Politoed"] \
+            + self.log[at:]
+        with self.assertRaises(self.G.Skip) as cm:
+            self.process(log=log)
+        self.assertEqual(cm.exception.reason, "name:ITEM Assault Vest")
+
+    def test_a_game_with_sheets_is_refused(self):
+        with self.assertRaisesRegex(ValueError, "has sheets"):
+            self.process(log=self.with_sheets)
+
+    def test_the_own_sheet_in_the_corpus_is_refused(self):
+        # review question: a training player can share a test player's team (a rental): the game is a counted
+        # skip, never drawn from its own sheet
+        from duoforge_replay import corpus, setbelief
+        own = corpus.Corpus(self.corpus._sets, frozenset({12345}), "test")
+        with self.assertRaises(self.G.Skip) as cm:
+            self.process(belief=setbelief.SetBelief(own, self.data, min_sets=1), known_sheets=(12345, 6789))
+        self.assertEqual(cm.exception.reason, "skip:sheet-in-corpus")
+
+    def test_an_illegal_draw_is_redrawn_then_skipped(self):
+        from duoforge_replay import corpus, setbelief
+        sets = dict(self.corpus._sets)
+        sets["KINGAMBIT"] = [("ChopleBerry", "Drizzle", "Adamant", ("KowtowCleave", "Protect", "IronHead", "SuckerPunch"),
+                              1)]
+        bad = setbelief.SetBelief(corpus.Corpus(sets, frozenset(), "test"), self.data, min_sets=1)
+        with self.assertRaises(self.G.Skip) as cm:
+            self.process(belief=bad)
+        self.assertEqual(cm.exception.reason, "skip:belief-illegal")
+
+    def test_a_refusal_a_redraw_cannot_fix_keeps_its_reason(self):
+        # review minor: only a legality refusal is redrawn; a sheet rule refusal (a gender, say) keeps its reason
+        from unittest import mock
+        for reason, want in (("sheet:gender-none", "sheet:gender-none"),
+                             ("skip:pool-illegal Kingambit move Protect", "skip:belief-illegal")):
+            with self.subTest(reason), mock.patch.object(self.G, "_check_sheets", side_effect=self.G.Skip(reason)):
+                with self.assertRaises(self.G.Skip) as cm:
+                    self.process()
+                self.assertEqual(cm.exception.reason, want)
+
+    def test_draws_are_deterministic(self):
+        a, b = self.process(seed=3), self.process(seed=3)
+        self.assertEqual([r.observation.tobytes() for r in a.rows], [r.observation.tobytes() for r in b.rows])
+        drawn = {repr(self.G.draw_sheets(self.log, "gen9championsvgc2026regmc", self.data, self.belief, 3,
+                                         "fixture-belief", d)[0]) for d in range(8)}
+        self.assertGreater(len(drawn), 1)
+        self.assertEqual(self.process(seed=3, draw=2).record.draw, 2)
+
+
+class _BeliefFixture:
+    """The fixture log as games of chosen player splits, with and without sheets, a corpus of its own sets."""
+
+    @classmethod
+    def setUpClass(cls):
+        import json
+        from duoforge_live import teams
+        cls.tmp = Path(tempfile.mkdtemp(prefix="duoforge_belief_build_"))
+        cls.data = data.load(kind="pool")
+        log = FIXTURE.read_text(encoding="utf-8")
+        cls.prior_path = cls.tmp / "prior.json"
+        cls.prior_path.write_text(json.dumps({"version": 1, "pastes": 0, "skipped": {}, "levels": [{}, {}, {}, {}]}),
+                                  encoding="utf-8")
+        sheets = [teams.unpack(line.split("|", 3)[3]) for line in log.split(chr(10)) if line.startswith("|showteam|")]
+        sets = collections.defaultdict(list)
+        for s in sheets[0] + sheets[1]:
+            sets[trace_to_c.key(cls.data.canonical(s["species"]))].append(
+                [s["item"], s["ability"], s["nature"], sorted(s["moves"]), 5])
+        cls.corpus = cls.tmp / "corpus.json"
+        cls.corpus.write_text(json.dumps({"version": 1, "sheet_hashes": [], "sets": sets}), encoding="utf-8")
+        test, (a, b) = player_names()
+
+        def named(text, p1, p2):
+            return text.replace("|player|p1|p1||", f"|player|p1|{p1}||").replace("|player|p2|p2||", f"|player|p2|{p2}||")
+        bo1 = chr(10).join(line for line in log.split(chr(10)) if not line.startswith("|showteam|"))
+        cls.games = {"open-train": named(log, a, b), "open-test": named(log, test, b), "bo1-train": named(bo1, a, b),
+                     "bo1-test": named(bo1, test, a)}
+
+    @classmethod
+    def tearDownClass(cls):
+        shutil.rmtree(cls.tmp, ignore_errors=True)
+
+    def source(self, name, ids):
+        import json
+        path = self.tmp / f"{name}.jsonl"
+        with open(path, "w", encoding="utf-8", newline=chr(10)) as f:
+            for gid in ids:
+                f.write(json.dumps({"id": gid, "formatid": "gen9championsvgc2026regmc", "log": self.games[gid]}) + chr(10))
+        return path
+
+    def build(self, name, ids, **kw):
+        from duoforge_replay import build
+        return build.build([self.source(name, ids)], self.prior_path, self.tmp / name, unit_lines=8,
+                           stats_factory=stats_factory, log=lambda _: None, **kw)
+
+    def manifest(self, name):
+        import json
+        return json.loads((self.tmp / name / "manifest.json").read_text(encoding="utf-8"))
+
+
+
+class BeliefBuildTest(_BeliefFixture, unittest.TestCase):
+    """The bo1_belief and drop_sheets modes of a build and their marked datasets (M11 Bo1 plan Task 5)."""
+
+    def test_bo1_mode_takes_only_games_without_sheets(self):
+        from duoforge_replay import dataset, funnel
+        c = self.build("bo1", ["open-train", "bo1-train"], mode="bo1_belief", corpus=self.corpus, seed=1)
+        self.assertEqual((c["games.processed"], c["games.skipped.skip:has-sheets"]), (1, 1))
+        f = funnel.report(c)["gen9championsvgc2026regmc"]
+        self.assertEqual(f["taken"], 1)
+        self.assertIn("taken by this build 1", funnel.text(funnel.report(c)))
+        shards = list(dataset.read(self.tmp / "bo1"))
+        self.assertTrue(shards)
+        for shard in shards:
+            self.assertEqual(shard["belief_level"].shape[1:], (12,))
+            self.assertEqual(shard["revealed"].shape[1:], (6,))
+        self.assertEqual(self.manifest("bo1")["source"], "bo1_belief")
+
+    def test_drop_mode_takes_test_split_sheet_games_without_their_sheets(self):
+        c = self.build("drop", ["open-test", "open-train", "bo1-test"], mode="drop_sheets", corpus=self.corpus)
+        self.assertEqual(c["games.processed"], 1)
+        self.assertEqual(c["games.skipped.skip:split-train"], 1)
+        self.assertEqual(c["games.skipped.skip:sheets"], 1)
+        from duoforge_replay import funnel
+        f = funnel.report(c)["gen9championsvgc2026regmc"]
+        self.assertEqual(f["skipped"].get("skip:split-train"), 1)
+        self.assertEqual(f["read"], sum(f["skipped"].values()) + f["internal"] + f["processed"])
+        self.assertEqual(self.manifest("drop")["source"], "drop_sheets")
+
+    def test_k_draws_are_k_games_with_their_draw(self):
+        from duoforge_replay import dataset
+        c = self.build("k3", ["bo1-train"], mode="bo1_belief", corpus=self.corpus, k=3)
+        self.assertEqual((c["games.read"], c["games.processed"]), (3, 3))
+        games = dataset.read_games(next(iter(dataset.parts(self.tmp / "k3"))))
+        self.assertEqual(sorted(games["draw"].tolist()), [0, 1, 2])
+
+    def test_a_sheet_build_names_its_source_and_has_no_belief_fields(self):
+        from duoforge_replay import dataset
+        self.build("sheet", ["open-train", "bo1-train"])
+        m = self.manifest("sheet")
+        self.assertEqual((m["source"], m["format_version"]), ("sheet", dataset.FORMAT_VERSION))
+        self.assertEqual(dataset.FORMAT_VERSION, 2)
+        for shard in dataset.read(self.tmp / "sheet"):
+            self.assertNotIn("belief_level", shard)
+        part = next(iter(dataset.parts(self.tmp / "sheet")))
+        self.assertNotIn("draw", dataset.read_games(part))
+
+    def test_the_options_must_fit_the_mode(self):
+        for kw, part in (({"mode": "sheet", "corpus": self.corpus}, "corpus"), ({"mode": "bo1_belief"}, "corpus"),
+                         ({"mode": "sheet", "k": 2}, "k"), ({"mode": "nonsense"}, "mode"),
+                         ({"mode": "drop_sheets", "corpus": self.corpus, "split_of": "train"}, "test split"),
+                         ({"mode": "bo1_belief", "corpus": self.corpus, "k": 256}, "k")):
+            with self.subTest(kw), self.assertRaisesRegex(ValueError, part):
+                self.build("bad", ["bo1-train"], **kw)
+
+    def test_a_writer_refuses_rows_of_the_other_source(self):
+        from duoforge_replay import dataset, game, prior, setbelief, corpus
+        belief = setbelief.SetBelief(corpus.load(self.corpus), self.data)
+        result = game.process("x", "gen9championsvgc2026regmc", self.games["bo1-train"], self.data,
+                              prior.Prior.load(self.prior_path), _Stats(), belief=belief)
+        writer = dataset.Writer(self.tmp / "mixed", {}, source="sheet")
+        with self.assertRaisesRegex(ValueError, "belief rows"):
+            writer.add(result)
+
+
+class ValidateTest(_BeliefFixture, unittest.TestCase):
+    """Validation (a) set recovery and (b) row difference (M11 Bo1 spec section 6), aggregates only."""
+
+    def test_set_recovery_counts(self):
+        from duoforge_replay import facts, prior, validate
+        true = {"species": "Kingambit", "item": "ChopleBerry", "ability": "Defiant", "nature": "Adamant",
+                "moves": ["KowtowCleave", "SuckerPunch", "IronHead", "Protect"]}
+        drawn = {"species": "Kingambit", "item": "ChopleBerry", "ability": "Defiant", "nature": "Jolly",
+                 "moves": ["KowtowCleave", "SuckerPunch", "IronHead", "LowKick"]}
+        fact = facts.MemberFacts("Kingambit", "M", frozenset({"Kowtow Cleave"}), None, "Defiant")
+        c = validate.set_recovery([true], [drawn], [fact], [1], prior.Prior.load(self.prior_path))
+        self.assertEqual(dict(c), {"members": 1, "members.level1": 1, "moves.exact": 0, "moves.unseen": 3,
+                                   "moves.unseen_hit": 2, "item.unrevealed": 1, "item.hit": 1, "ability.unrevealed": 0,
+                                   "ability.hit": 0, "nature.hit": 0, "prior_level.same": 1, "prior_points.same": 1})
+
+    def test_validate_sets_on_the_fixture(self):
+        import json
+        from duoforge_replay import validate
+        out = self.tmp / "sets.json"
+        report = validate.sets([self.source("v", ["open-test", "open-train"])], ("gen9championsvgc2026regmc",),
+                               self.corpus, 1, out, self.data, self.prior_path)
+        self.assertEqual(report["games"], 1)
+        self.assertEqual(report["counters"]["members"], 12)
+        self.assertEqual(report["skipped"], {"skip:split-train": 1})
+        text = out.read_text(encoding="utf-8")
+        self.assertEqual(json.loads(text), report)
+        self.assertNotIn("open-test", text)
+
+    def test_compare_rows_on_the_fixture(self):
+        import json
+        from duoforge_replay import validate
+        self.build("cmp-sheet", ["open-test"], split_of="test")
+        self.build("cmp-drop", ["open-test"], mode="drop_sheets", corpus=self.corpus, seed=1)
+        report = validate.compare_rows(self.tmp / "cmp-sheet", self.tmp / "cmp-drop")
+        self.assertGreater(report["both"], 10)
+        self.assertEqual(report["both"] + report["only_sheet"], report["rows_sheet"])
+        self.assertTrue(0 <= report["mask_jaccard_mean"] <= 1)
+        for group in ("own_members", "foe_members", "positions", "header"):
+            self.assertTrue(0 <= report["observation_differs"][group] <= 1)
+        self.assertEqual(report["label"]["same"] + report["label"]["differs"], report["both"])
+        self.assertNotIn("open-test", json.dumps(report))
+        # review I3: this corpus holds exactly the true sets, so by move identity every row agrees
+        self.assertEqual(report["mask_jaccard_mean"], 1.0)
+        self.assertEqual(report["label"]["differs"], 0)
+        self.assertEqual(report["observation_differs"]["own_members"], 0.0)
+        self.assertEqual(report["observation_differs"]["foe_members"], 0.0)
+
+    def test_compare_rows_refuses_two_draws_of_a_row(self):
+        from duoforge_replay import validate
+        self.build("cmp-k2", ["open-test"], mode="drop_sheets", corpus=self.corpus, k=2)
+        with self.assertRaisesRegex(ValueError, "draw"):
+            validate.compare_rows(self.tmp / "cmp-k2", self.tmp / "cmp-k2")
+
+    def test_reports_are_refused_in_the_repository(self):
+        from duoforge_replay import validate
+        with self.assertRaisesRegex(ValueError, "inside the repository"):
+            validate.sets([self.source("r", ["open-test"])], ("gen9championsvgc2026regmc",), self.corpus, 1,
+                          data.ROOT / "sets.json", self.data, self.prior_path)
 
 
 if __name__ == "__main__":
