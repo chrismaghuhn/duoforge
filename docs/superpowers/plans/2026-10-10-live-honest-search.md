@@ -122,3 +122,77 @@ A play mode `--search honest` in `python -m duoforge_live`:
 - **Setup:** a local pinned Showdown server, search mode against raw mode, with the predeclared numbers above.
 - **Report:** aggregates only.
 - **Ladder:** only after the owner's go.
+
+## Deferred: visible sleep and confusion in the public record
+
+**Status (2026-10-10):** not built.
+
+The share of decisions whose public record is refused for a visible sleep or confusion was measured with params-49333 self-play on its 652-team pool: about 13,000 games, about 122,000 decisions per arm.
+- **With the pool's own weights:**
+  - turns: 2.1% (sleep 1.6%, confusion 0.5%);
+  - replacements: 1.7%;
+  - all decisions: about 2.6%.
+- **Weighted by Smogon usage:**
+  - turns: 1.5%;
+  - all decisions: about 1.9%.
+
+Both are under the 5% gate of class (a). Spore is not in the pool.
+
+Build it when Spore or another common sleep source joins the pool, or when the owner asks for it (HauptSession, 2026-10-10). The design follows.
+
+### Today
+
+- Python holds no rule. `belief.sample` passes uniform words (`h["sleep"]`, `h["confusion"]`).
+- `view.c` turns those words into counters with the engine's own tables:
+  - `dfi_sleep_weights {3,3,2}` for `sample([2,3,3])`;
+  - `dfi_confusion_weights {4,4,3,2,1}` for `random(2,6)`.
+- That is the unconditional distribution of a *running* counter. The state (schema 3) does not store elapsed attempts. That is why the public record refuses every visible sleep or confusion. The cause bits are `VISIBLE_SLEEP` and `VISIBLE_CONFUSION`, and the comment at `view.c:221` says: "never invent their posterior".
+
+### Rule at the pin
+
+- **Sleep** (`mods/champions/conditions.ts`):
+  - `startTime = sample([2,3,3])`.
+  - Every move attempt does `time--`. At `time <= 0` the Pokémon wakes up; otherwise the attempt shows a `cant|slp` line.
+  - After k slept attempts, P(remaining = t | k) ∝ P(S = t + k) for t ≥ 1. So k=0 gives {2: 1/3, 3: 2/3}, k=1 gives {1: 1/3, 2: 2/3}, and k=2 gives {1: 1}, a certain wake.
+- **Confusion** (`conditions.ts`):
+  - `time = random(min, 6)`, min = 2 (3 for Axe Kick), uniform over 2..5.
+  - Every attempt does `time--`. At 0 the confusion ends; otherwise the attempt shows an `-activate|confusion` line.
+  - The posterior has the same form: P(t | k) ∝ 1 for 2 ≤ t + k ≤ 5, t ≥ 1.
+- **Special cases** (`data.supported` = False in the pool today): Rest (time = 3 fixed), Early Bird (−2 per attempt), Sleep Talk, Axe Kick. Spore is not in the pool at all.
+  - The design refuses these explicitly: a new cause bit or `E_UNSUPPORTED`, never a posterior from the wrong distribution.
+  - Each gets its posterior once it becomes supported.
+
+### Proposal
+
+1. **State:** store the public elapsed count.
+   - Per member: `sleep_attempts` (0..2).
+   - Per active position: `confusion_attempts` (0..4).
+   - Both go into the POOL tail, using reserved bytes and a new tail revision (rev 6).
+   - The engine increments them exactly where `time--` happens and resets them at the start and end.
+   - Invariants:
+     - attempts + remaining = start ∈ the draw site's support;
+     - sleep attempts are only allowed with SLP status;
+     - confusion attempts are only allowed with confusion.
+   - HS assigns the values and offsets from M12's reserve (number blocks).
+2. **Public record:** the attempt counts are public (derivable per 0023 §4, because the start line and every `cant slp` / `-activate confusion` line are public). The remaining counter stays HIDDEN. `VISIBLE_SLEEP`/`VISIBLE_CONFUSION` are then no longer causes. They stay causes only for the unsupported special cases above.
+3. **from_view:** the remaining counter is drawn from the conditional posterior in C. It uses the same weights table that holds the draw site's constants (one source; a static assert ties it to the start draw). The word comes from the hypothesis as before, so Python is unchanged.
+4. **Tracker (HS):** fold the counts. Count `cant|slp` per member since its `-status|slp`. Count `-activate|confusion` per position since `-start|confusion`. Switching out does not reset sleep but does end confusion.
+
+### Tests
+
+- **Pairs:**
+  - Two states that differ only in the remaining counter (same attempt count) give byte-identical records for both players.
+  - Two states that differ in the attempt count give different records.
+- **Posterior:**
+  - Over a dense word grid, the drawn remaining counter after k sleep attempts has exactly the frequencies k=0 → 1/3 : 2/3 (values 2 and 3), k=1 → 1/3 : 2/3 (values 1 and 2), and k=2 → 1 (value 1).
+  - The same check for confusion with k = 0..3.
+  - The check runs on an exact integer grid, with no sampling noise.
+- **Round trip:** from_view(record) gives back public(world) = record for every attempt count. Together with honest's `_check_worlds`, this is the live path's check.
+- **Engine:** the counters run along exactly with the `cant slp` lines of the reference traces (differential against Showdown via the existing closure/pool battles with sleep).
+- **Special cases:** Rest, Early Bird, Sleep Talk and Axe Kick are refused explicitly with a pinned refusal.
+
+### Scope and order
+
+- Order: C (state, invariants, encode/decode, engine increment, view), then the Python mirror (`_layout`, `state_layout`), `state_v3_model.py` with the tail revision, golden pins, and the tracker fold (HS).
+- Its own part with review, after follow-up (A) is merged.
+- Confusion goes in with it. It is the same pattern, and the measurement shows its share.
