@@ -33,6 +33,7 @@
 #include "reference/conformance_pool.h"
 #include "rng/draw.h"
 #include "state/battle_internal.h"
+#include "state/request.h"
 #include "support/check.h"
 #include "support/fixtures.h"
 #include "support/pool.h"
@@ -221,7 +222,7 @@ static void check_seed_refusal(df_test *t, const duoforge_context *ctx)
     }
     duoforge_battle_setup setup;
     build_setup(cb, &setup);
-    setup.sides[0].members[0].item = DFI_ITEM_PSYCHICSEED; /* the holder's sheet item */
+    setup.sides[0].members[0].item = (uint8_t)(DFI_ITEM_PSYCHICSEED + 1u); /* the holder's sheet item, id + 1 as the conformance tables */
     duoforge_battle *b = NULL;
     if (!DF_CHECK(t, duoforge_battle_create(ctx, &setup, &b) == DUOFORGE_OK && b != NULL)) {
         return;

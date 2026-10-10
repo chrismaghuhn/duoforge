@@ -3425,15 +3425,11 @@ def check_g57_facts(abil_ts, champ_abil):
 # on the user, the holder's item cleared, and the one line `-activate|holder|ability: Symbiosis|Item|[of] user` (no item line).
 # The Champions mod has no entry of its own (checked by check_g34_facts for every G-step ability).
 G69_ABILITY_FACTS = (
-    ('symbiosis', ('onAllyAfterUseItem(item, pokemon) {',
-                   'if (pokemon.switchFlag) return;',
-                   'const source = this.effectState.target;',
-                   'const myItem = source.takeItem();',
-                   'if (!myItem) return;',
-                   "!this.singleEvent('TakeItem', myItem, source.itemState, pokemon, source, this.effect, myItem) ||",
-                   '!pokemon.setItem(myItem)',
-                   'source.item = myItem.id;',
-                   "this.add('-activate', source, 'ability: Symbiosis', myItem, `[of] ${pokemon}`);",
+    ('symbiosis', ('onAllyAfterUseItem(item, pokemon) { if (pokemon.switchFlag) return; '
+                   'const source = this.effectState.target; const myItem = source.takeItem(); if (!myItem) return; '
+                   "if ( !this.singleEvent('TakeItem', myItem, source.itemState, pokemon, source, this.effect, myItem) || "
+                   '!pokemon.setItem(myItem) ) { source.item = myItem.id; return; } '
+                   "this.add('-activate', source, 'ability: Symbiosis', myItem, `[of] ${pokemon}`); },",
                    'flags: {},')),
 )
 
