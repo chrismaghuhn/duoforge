@@ -267,7 +267,7 @@ foreach(_gen IN ITEMS
         "extended_tables.h=b2abef243fcbfdd87654940076b9fe2fe80b117d74893a7567741f26b9075a7d"
         "extended_tables.c=9e736fa467713283418c4edf8f56b8d844452e596ba422adbd52483d20f7cc17"
         "pool_tables.h=184b661e1e0c41b665b6751652ced874b377c917954f784fb7ee9a331ac0fd84"
-        "pool_tables.c=1e258a6867edde02a52b073043ceb1d13dbe3eb76e7a563db46c446867475301")
+        "pool_tables.c=76955dcffa729ed0331d387ca7428cf74a33a03f2cf487abd0f8f455b1f1cda3")
     string(REPLACE "=" ";" _parts "${_gen}")
     list(GET _parts 0 _file)
     list(GET _parts 1 _expected)
@@ -769,6 +769,8 @@ if(Python3_Interpreter_FOUND)
     set_tests_properties(duoforge.data.model_pool_hash PROPERTIES TIMEOUT 60
         ENVIRONMENT PYTHONDONTWRITEBYTECODE=1)
 endif()
+# Step I2 (decision 0026, amended by I2): Illusion, the disguise, the break, the foe view, the causes (white-box).
+duoforge_add_test(NAME duoforge.state.pool_i2 SOURCES test_pool_i2.c WHITEBOX LIBS duoforge_batch TIMEOUT 60)
 duoforge_add_test(NAME duoforge.state.pool_g59 SOURCES test_pool_g59.c WHITEBOX TIMEOUT 60)
 
 # Step G51 (Mega batch 4): ten Mega Stones marked with no new rule, Keen Eye and Big Pecks as engine rows (turn.c), the marks, the
@@ -780,3 +782,6 @@ duoforge_add_test(NAME duoforge.state.pool_g53 SOURCES test_pool_g53.c WHITEBOX 
 
 # Step G63 (decision 0015 5bj): the simple Mega abilities Sand Force, Shell Armor, Filter and Stalwart, and their six stones.
 duoforge_add_test(NAME duoforge.state.pool_g63 SOURCES test_pool_g63.c WHITEBOX TIMEOUT 60)
+
+# Step G69 (decision 0015 5bm): Symbiosis, the pass of the item to an ally that has used up its own.
+duoforge_add_test(NAME duoforge.state.pool_g69 SOURCES test_pool_g69.c WHITEBOX TIMEOUT 60)
