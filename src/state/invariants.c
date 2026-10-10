@@ -722,7 +722,7 @@ static dfi_invariant dfi_check_tail(const duoforge_context *ctx, const struct du
                 if (!dfi_bytes_zero(&rest, sizeof rest)) {
                     return DFI_INV_TAIL_POSITION; /* cleared when the occupant leaves or faints */
                 }
-                const uint8_t occupant_flags = (uint8_t)(tp->position_flags & ~DFI_POSFLAG_HEALING_WISH);
+                const uint8_t occupant_flags = (uint8_t)(tp->position_flags & ~DFI_POSFLAG_HEALING_WISH); /* wide-operands-reviewed: a byte mask */
                 if (!dfi_position_flags_ok(tp->position_flags) || (occupant_flags != 0u && occupant >= DUOFORGE_MAX_ROSTER)) {
                     return DFI_INV_TAIL_POSITION;
                 }

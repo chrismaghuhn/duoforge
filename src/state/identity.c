@@ -42,7 +42,7 @@ void dfi_tail_clear_occupant(struct duoforge_battle *b, uint32_t flat)
      * it stays across a switch-out, a faint and the replacement's entry, and only the heal of an entrant clears it. The other
      * bits end with the occupant, as before. */
     dfi_tail_pos *tp = &ts->positions[flat % DUOFORGE_ACTIVE_PER_SIDE];
-    const uint8_t healing_wish = (uint8_t)(tp->position_flags & DFI_POSFLAG_HEALING_WISH);
+    const uint8_t healing_wish = (uint8_t)(tp->position_flags & DFI_POSFLAG_HEALING_WISH); /* wide-operands-reviewed: a mask of one bit */
     *tp = (dfi_tail_pos){0u};
     tp->position_flags = healing_wish;
     if (occupant < DUOFORGE_MAX_ROSTER) {
