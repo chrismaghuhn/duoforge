@@ -887,7 +887,8 @@ duoforge_status duoforge_battle_observe(const duoforge_context *ctx, const duofo
 /* X(family, bit number in the family's field): a defined reserve bit WITHOUT a feature of its own, shown under the family's
    feature alone (POSITION_FLAGS: the observation's position flags, always), checked by its step: the comment beside the
    entry names the decision or the evidence. Every defined reserve bit is in exactly one of the two lists
-   (python/tests/test_encoder6.py), so no bit becomes visible only because its family counts as supported. Empty now. */
+   (python/tests/test_encoder6.py), so no bit becomes visible only because its family counts as supported. ATTRACT is the first
+   entry (decision 0034, step G71). */
 #define DUOFORGE_VIEWEXT_RESERVE_CHECKED(X) \
     X(RESERVE_VOLATILES, 27u) /* ATTRACT, decision 0034, step G71 */
 /* duoforge_member_ext.item_now: the member holds nothing (Knock Off, Thief). */
