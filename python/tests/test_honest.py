@@ -12,7 +12,7 @@ from unittest import mock
 import numpy as np
 
 import duoforge
-from duoforge import _layout, privileged, view
+from duoforge import _layout, features, privileged, view
 
 from ._pivot_fixture import SETUP, play_to_pivot
 from duoforge_search import arena, belief, honest
@@ -398,6 +398,37 @@ class HonestSearch(unittest.TestCase):
                 b.step_factored(policy.choose_factored(b))
                 b.reset_terminal()
             self.assertGreater(compared, 20)
+
+    def test_live_search_on_live_features_gives_the_batch_decision(self):
+        # The live path (plan 2026-10-10-live-honest-search, Task 5) encodes its own features (features.encode of the
+        # tracker's observation and domain; zero slots and pairs at team preview) and LiveSearch converts them to the
+        # network's encoder: over a batch's parts it decides as decide() on the batch.
+        from duoforge_live import search as live_search
+        with duoforge.Context(C["DUOFORGE_DATA_KIND_POOL"]) as ctx, \
+                duoforge.Batch(ctx, duoforge.reference_setups([0]), 1, 42) as b, \
+                self.make(ctx) as search, self.make(ctx) as twin:
+            live = live_search.LiveSearch(twin)
+            try:
+                for turn in (False, True):
+                    if turn:
+                        self.start_turn(b)
+                    else:
+                        b.query_factored()
+                    records, statuses = b.public(np.zeros(1, np.uint32))
+                    causes, _ = b.public_causes(np.zeros(1, np.uint32))
+                    parts = {"request": b.requests[0, 0], "observation": b.observations[0, 0],
+                             "record": records[0].copy(), "status": int(statuses[0]), "causes": int(causes[0])}
+                    obs_part, slot_part, pair_mask = features.encode(b.observations[0, 0], b.domains[0, 0],
+                                                                     b.observe_ext()[0, 0], twin.ext_supported)
+                    want, _ = search.decide(b, [0], [0], [456], [False])
+                    got = live.decide(parts, obs_part, slot_part, pair_mask if turn else None, key=456,
+                                      episode=b.episode(0), budget=600.0)
+                    if turn:
+                        self.assertEqual((got.cause, got.fallback, got.action), ("searched", None, int(want[0])))
+                    else:
+                        self.assertEqual((got.cause, got.fallback), ("team", None))
+            finally:
+                live.close()
 
     def test_assembled_record_is_checked_and_named(self):
         # A record assembled outside the engine (the live tracker's) is not searched unless the engine accepts it and
