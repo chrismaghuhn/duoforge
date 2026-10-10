@@ -86,6 +86,11 @@ tools/cloud/p1_pilot/launch.sh --commit <sha> --bucket <BUCKET> --resume <run id
 # a new run that reads the pilot (generation, distillation) of an earlier run, read only (PILOT_RUN_ID for run.sh):
 tools/cloud/p1_pilot/launch.sh --commit <sha> --bucket <BUCKET> --from-run <earlier run id> --i-have-owner-approval
 
+# option C2: a new run that reads only the generation of an earlier run and distils again with the preset c2
+# (PILOT_PART=generation and DISTILL_PRESET=c2 for run.sh):
+tools/cloud/p1_pilot/launch.sh --commit <sha> --bucket <BUCKET> --from-run <earlier run id> \
+    --pilot-part generation --distill-preset c2 --i-have-owner-approval
+
 # the results
 aws s3 ls s3://<BUCKET>/p1/<run id>/ --recursive
 ```
