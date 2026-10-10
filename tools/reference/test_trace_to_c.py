@@ -449,6 +449,39 @@ class Refusals(unittest.TestCase):
         self.control('c11_follow_me', mutate, 'unknown-volatile',
                      "trace_to_c: unknown volatile 'zzunknown' of Indeedee-F", 'zzunknown')
 
+    def test_attract_lines_are_folded_only_as_the_pin_prints_them(self):
+        """Decision 0034 (step G71): the Attract lines of the pin, each with a negative control on the committed g65_water_bubble
+        battle. A line is inserted after the first move line of the battle. The start must come from Cute Charm (`[from] ability:
+        Cute Charm|[of] Y`), the visible ends from Mental Herb or Oblivious (with the cause and no `[of]`), the source of the check
+        is named, and the cant names no move. A silent end (`[silent]`, the source left) is no event, so it converts."""
+        def insert(line):
+            def mutate(spec, trace):
+                for step in trace['steps']:
+                    for i, existing in enumerate(step['log']):
+                        if existing.startswith('|move|'):
+                            step['log'].insert(i + 1, line)
+                            return
+                self.fail('no move line')
+            return mutate
+
+        cases = [
+            ('|-start|p1a: Araquanid|Attract|[from] ability: Taunt|[of] p2a: Incineroar', 'attract-start',
+             'trace_to_c: unknown -start %r', 'Attract source'),
+            ('|-end|p1a: Araquanid|move: Attract', 'attract-end', 'trace_to_c: unknown -end %r', 'Attract end cause'),
+            ('|-end|p1a: Araquanid|move: Attract|[from] ability: Taunt', 'attract-end', 'trace_to_c: unknown -end %r',
+             'Attract end cause'),
+            ('|-activate|p1a: Araquanid|move: Attract', 'activate-line', 'trace_to_c: unknown -activate %r', 'Attract source'),
+            ('|cant|p1a: Araquanid|Attract|[from] move: Tackle', 'cant-line', 'trace_to_c: unknown cant %r', 'Attract line'),
+            ('|-activate|p1a: Araquanid|ability: Oblivious|[of] p2a: Incineroar', 'activate-line',
+             'trace_to_c: unknown -activate %r', 'ability: Oblivious'),
+        ]
+        for line, rule, template, detail in cases:
+            with self.subTest(line=line):
+                self.control('g65_water_bubble', insert(line), rule, template % line, detail)
+        spec, trace = battle('g65_water_bubble')
+        insert('|-end|p1a: Araquanid|Attract|[silent]')(spec, trace)
+        convert('g65_water_bubble', spec, trace)  # the silent end is no event: the battle still converts
+
     def test_two_turn_move_volatile_without_twoturnmove(self):
         def mutate(spec, trace):
             mon = trace['steps'][0]['state']['sides'][1]['pokemon'][1]

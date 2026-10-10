@@ -943,7 +943,8 @@ EV['ILLUSION_END'] = 46
 EV['CLEAR_ALL_BOOSTS'] = 47
 CAUSE = {'NONE': 0, 'MOVE': 1, 'ITEM': 2, 'ABILITY': 3, 'RECOIL': 4, 'DRAIN': 5, 'BURN': 6, 'CONFUSION': 7,
          'TERRAIN': 8, 'PARALYSIS': 9, 'SLEEP': 10, 'FREEZE': 11, 'FLINCH': 12, 'NO_PP': 13, 'POISON': 14,
-         'HEAL_BLOCK': 15, 'WEATHER': 16, 'ITEM_TAKEN': 17, 'RECHARGE': 18, 'DISABLE': 19, 'TAUNT': 20, 'IMPRISON': 21}
+         'HEAL_BLOCK': 15, 'WEATHER': 16, 'ITEM_TAKEN': 17, 'RECHARGE': 18, 'DISABLE': 19, 'TAUNT': 20, 'IMPRISON': 21,
+         'ATTRACT': 36}  # 36: DUOFORGE_CAUSE_ATTRACT (step G71, decision 0034; lane B block CAUSE_ 36-49)
 VOLATILE_HEAL_BLOCK = 1  # DUOFORGE_VOLATILE_HEAL_BLOCK: the detail of VOLATILE_START and VOLATILE_END
 VOLATILE_ENCORE = 2      # DUOFORGE_VOLATILE_ENCORE (step G9)
 VOLATILE_DISABLE = 4     # DUOFORGE_VOLATILE_DISABLE (step G27)
@@ -954,6 +955,7 @@ VOLATILE_TAUNT = 6       # DUOFORGE_VOLATILE_TAUNT (step G31)
 VOLATILE_YAWN = 7        # DUOFORGE_VOLATILE_YAWN (step G31)
 VOLATILE_SUBSTITUTE = 9  # DUOFORGE_VOLATILE_SUBSTITUTE (decision 0032): START and END, presence only
 VOLATILE_DRAGONCHEER = 10  # DUOFORGE_VOLATILE_DRAGONCHEER (step G72b, decision 0015 5ce): START only, presence only
+VOLATILE_ATTRACT = 11      # DUOFORGE_VOLATILE_ATTRACT (step G71, decision 0034): START, and the visible END of Mental Herb and Oblivious
 FAIL_SUBSTITUTE_EXISTS = 1  # DUOFORGE_FAIL_SUBSTITUTE_EXISTS: cause MOVE + id2 Substitute only
 FAIL_SUBSTITUTE_WEAK = 2    # DUOFORGE_FAIL_SUBSTITUTE_WEAK: cause MOVE + id2 Substitute only
 MOVE_SLOT_RECHARGE = 5   # DUOFORGE_MOVE_SLOT_RECHARGE (step G17)
@@ -1637,6 +1639,12 @@ def step_events(log, viewer, roster_of, maxhp, tables, rb_pending=None, ill=None
             elif reason == 'move: Taunt':
                 # data/moves.ts:19004-19010: `cant|X|move: Taunt|MOVE`, the stopped Status move in id (step G31)
                 e = ev_tuple(EV['CANT'], pos, NOPOS, CAUSE['TAUNT'], tables['MOVE'][key(args[2])])
+            elif reason == 'Attract':
+                # data/moves.ts:731-741 onBeforeMove (priority 2): `cant|X|Attract`, no move named and no source (step G71,
+                # decision 0034): CANT with cause ATTRACT and no id, as sleep's and freeze's. Any attribute is refused.
+                if pos is None or len(args) != 2 or attrs:
+                    raise ConversionError('cant-line', 'trace_to_c: unknown cant %r' % line, detail='Attract line')
+                e = ev_tuple(EV['CANT'], pos, NOPOS, CAUSE['ATTRACT'])
             else:
                 cause = {'par': 'PARALYSIS', 'slp': 'SLEEP', 'frz': 'FREEZE', 'flinch': 'FLINCH', 'nopp': 'NO_PP',
                          'recharge': 'RECHARGE'}
@@ -1724,6 +1732,20 @@ def step_events(log, viewer, roster_of, maxhp, tables, rb_pending=None, ill=None
                 except KeyError:
                     raise ConversionError('activate-line', 'trace_to_c: unknown -activate %r' % line, detail='Poltergeist item')
                 e = ev_tuple(EV['ACTIVATE'], pos, NOPOS, CAUSE['MOVE'], 0, tables['MOVE'][key('Poltergeist')])
+            elif what == 'move: Attract' and len(args) == 2 and len(attrs) == 1 and attrs[0].startswith('[of] '):
+                # Step G71 (decision 0034; data/moves.ts:731-741, onBeforeMove): `-activate|X|move: Attract|[of] Y`, the check of an
+                # infatuated occupant before its move (its roll follows). ACTIVATE with cause MOVE, id2 Attract, other the source's
+                # position. Both positions must be on the field.
+                source = ev_pos(attrs[0][5:])
+                if pos is None or source is None:
+                    raise ConversionError('activate-line', 'trace_to_c: unknown -activate %r' % line, detail='Attract position')
+                e = ev_tuple(EV['ACTIVATE'], pos, source, CAUSE['MOVE'], 0, tables['MOVE'][key('Attract')])
+            elif what == 'ability: Oblivious' and len(args) == 2 and not attrs:
+                # Step G71 (data/abilities.ts:3009-3016, onUpdate, the Attract half): `-activate|X|ability: Oblivious`, printed before
+                # the infatuation ends (the visible -end follows). ACTIVATE with cause ABILITY, id2 Oblivious + 1.
+                if pos is None:
+                    raise ConversionError('activate-line', 'trace_to_c: unknown -activate %r' % line, detail='Oblivious position')
+                e = ev_tuple(EV['ACTIVATE'], pos, NOPOS, CAUSE['ABILITY'], 0, tables['ABILITY'][key('Oblivious')] + 1)
             elif what == 'ability: Symbiosis' and len(args) == 3 and len(attrs) == 1 and attrs[0].startswith('[of] '):
                 # Step G69 (Symbiosis, data/abilities.ts:4837-4856): `-activate|holder|ability: Symbiosis|Item|[of] user`, the holder
                 # passes the item it holds to its ally, which has none. ACTIVATE with the cause ABILITY, id2 Symbiosis + 1, other the
@@ -1754,6 +1776,10 @@ def step_events(log, viewer, roster_of, maxhp, tables, rb_pending=None, ill=None
                 # Substitute (decision 0032): an absorbed hit, `-activate|X|move: Substitute|[damage]`. The line names no
                 # amount: the Substitute's HP is never public.
                 e = ev_tuple(EV['ACTIVATE'], pos, NOPOS, CAUSE['MOVE'], 0, tables['MOVE'][key('Substitute')])
+            elif what == 'move: Attract':
+                # Step G71: the Attract check always names its source ([of] Y); without it the generic move line would be taken for
+                # a move's activation, so it is refused here.
+                raise ConversionError('activate-line', 'trace_to_c: unknown -activate %r' % line, detail='Attract source')
             elif what.startswith('move: '):
                 e = ev_tuple(EV['ACTIVATE'], pos, NOPOS, CAUSE['MOVE'], 0, tables['MOVE'][key(what[6:])])
             else:
@@ -1792,6 +1818,23 @@ def step_events(log, viewer, roster_of, maxhp, tables, rb_pending=None, ill=None
                 # from onEnd (the holder faints after the upkeep line). The cast's own `-start|X|perish3|[silent]` is
                 # not shown and never reaches this point.
                 e = ev_tuple(EV['VOLATILE_START'], ev_pos(args[0]), detail=VOLATILE_PERISH, amount=int(what[6]))
+            elif what == 'Attract' and kind == '-start':
+                # Step G71 (decision 0034; data/moves.ts:706-761, onStart): `-start|X|Attract|[from] ability: Cute Charm|[of] Y`, the
+                # infatuation of X by the holder Y. VOLATILE_START, cause ABILITY with Cute Charm + 1, other the holder's position.
+                cause, id2, other = ev_cause(attrs, tables)
+                if cause != CAUSE['ABILITY'] or id2 != tables['ABILITY'][key('Cute Charm')] + 1 or other == NOPOS:
+                    raise ConversionError('attract-start', 'trace_to_c: unknown -start %r' % line, detail='Attract source')
+                e = ev_tuple(EV['VOLATILE_START'], ev_pos(args[0]), other, cause, 0, id2, detail=VOLATILE_ATTRACT)
+            elif what == 'move: Attract' and kind == '-end':
+                # Step G71: the visible end of Mental Herb (`[from] item: Mental Herb`, cause ITEM, id2 the herb + 1) and of Oblivious
+                # (`[from] ability: Oblivious`, cause ABILITY, id2 Oblivious + 1). The silent end of an infatuation (its source left,
+                # or the holder's own switch-out) is [silent] and never reaches this point (it is not an event, decision 0015 5bn).
+                cause, id2, other = ev_cause(attrs, tables)
+                herb = cause == CAUSE['ITEM'] and id2 == tables['ITEM'][key('Mental Herb')] + 1
+                oblivious = cause == CAUSE['ABILITY'] and id2 == tables['ABILITY'][key('Oblivious')] + 1
+                if not (herb or oblivious) or other != NOPOS:
+                    raise ConversionError('attract-end', 'trace_to_c: unknown -end %r' % line, detail='Attract end cause')
+                e = ev_tuple(EV['VOLATILE_END'], ev_pos(args[0]), NOPOS, cause, 0, id2, detail=VOLATILE_ATTRACT)
             elif what == 'move: Heal Block':
                 e = ev_tuple(EV['VOLATILE_START' if kind == '-start' else 'VOLATILE_END'], ev_pos(args[0]),
                              detail=VOLATILE_HEAL_BLOCK)
