@@ -13,7 +13,7 @@ import weakref
 import numpy as np
 
 import duoforge
-from duoforge import _layout, data, teams, view
+from duoforge import _layout, data, state_layout, teams, view
 from duoforge_learn.selfplay import TEAM_TABLE
 
 from . import belief, lookahead, matrix, seeds
@@ -329,12 +329,35 @@ class Honest(lookahead.Lookahead):
             statuses = self._build(record, h)
             costs["world_builds"] += time.perf_counter() - t
             if not statuses.any():
+                self._check_worlds(record, costs)
                 return h, weights, dropped, respreads, queue_pairs
             # The current C API reports a failed world, not the member. Redraw
             # all its spreads; keep its HP/counter/bench/queue words unchanged.
             attempts[statuses != 0] += 1
             respreads += int((statuses != 0).sum())
         raise SearchError(f"a world still contradicts the public view after {MAX_RESPREADS} spread draws")
+
+    def _check_worlds(self, record, costs):
+        """Every world built from the root record gives that record back (from_view, then public, byte for byte). A
+        record assembled outside the engine (the live tracker's) that fills a field the engine masks, or contradicts
+        itself, stops here with the differing fields named, instead of being searched. Engine records always pass
+        (duoforge.view); the check costs one public() call per decision."""
+        t = time.perf_counter()
+        again, statuses = self.worlds.public(np.full(self.worlds.envs, int(record["player"]), np.uint32))
+        costs["public_records"] += time.perf_counter() - t
+        want = np.asarray(record).tobytes()
+        for w in range(self.s):
+            if int(statuses[w]) == 0 and again[w].tobytes() == want:
+                continue
+            if int(statuses[w]) != 0:
+                raise SearchError(f"world {w} built from the root record refuses its public record "
+                                  f"({duoforge.status_name(int(statuses[w]))})")
+            header = [name for name in record.dtype.names if name not in ("state", "pad")
+                      and not np.array_equal(np.asarray(record[name]), np.asarray(again[w][name]))]
+            size = int(record["state_size"])
+            fields = state_layout.diff(np.asarray(record["state"])[:size].tobytes(),
+                                       np.asarray(again[w]["state"])[:size].tobytes(), pool=size > state_layout.V3_SIZE)
+            raise SearchError(f"world {w} does not give the root record back: header {header}, state fields {fields}")
 
     def decide(self, roots, envs, seats, keys, last_step):
         envs, seats = np.asarray(envs, np.int64), np.asarray(seats, np.int64)
