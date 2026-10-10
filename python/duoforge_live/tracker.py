@@ -72,6 +72,7 @@ EXT_FIELDS = {
     "TOXIC_SPIKES": (("side", "toxic_spikes"),),
     "STEALTH_ROCK": (("side", "stealth_rock"),),
     "SPIKES": (("side", "spikes"),),
+    "STICKY_WEB": (("side", "sticky_web"),),
     "TAUNT": (("bit", C["DUOFORGE_POSITION_EXT_TAUNT"]),),
     "YAWN": (("bit", C["DUOFORGE_POSITION_EXT_YAWN"]),),
     "DISABLE": (("position", "disable_slot"),),

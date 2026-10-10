@@ -142,7 +142,7 @@ EXT_FOLDS = sum(1 << FEATURES[n] for n in ("THROAT_CHOP", "AURORA_VEIL", "PERISH
                                           "MUST_RECHARGE", "TOXIC_SPIKES", "TYPE_CHANGE", "TAUNT", "YAWN",
                                           "DISABLE", "IMPRISON", "STEALTH_ROCK",
                                           "GLAIVE_RUSH", "RAGE_POWDER", "HEAL_BLOCK", "SPIKES",
-                                          "WIDE_GUARD"))
+                                          "WIDE_GUARD", "STICKY_WEB"))
 TRACKER_FOLDS = BASE_FOLDS | EXT_FOLDS
 SUPPORTED = LIBRARY_SUPPORTED & TRACKER_FOLDS
 
@@ -310,6 +310,8 @@ def check(line, view):
             return "fold"
         if effect in _GUARD_ACTIVATE:
             return _feature(_GUARD_ACTIVATE[effect])
+        if effect == "move: Sticky Web":
+            return _feature("STICKY_WEB")  # the web slowing an entering member (step G37); its -unboost line follows
         if effect in ("move: Electric Terrain", "move: Misty Terrain"):
             return _feature(_FIELD[effect])  # the terrain blocking Yawn or its sleep: its own feature, as -fieldstart
         if effect in ("move: Skill Swap", "Skill Swap"):  # the pin prints it without "move: " (decision 0041)
