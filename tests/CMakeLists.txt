@@ -273,7 +273,7 @@ foreach(_gen IN ITEMS
         "extended_tables.h=b2abef243fcbfdd87654940076b9fe2fe80b117d74893a7567741f26b9075a7d"
         "extended_tables.c=9e736fa467713283418c4edf8f56b8d844452e596ba422adbd52483d20f7cc17"
         "pool_tables.h=3f15dbd31c57a97aeeed1e9f29f80462d4fbf5c88376ef3c25968e96b9f65a35"
-        "pool_tables.c=87d01faa121f3c988c391587115a2d68c6a40e7055ef7f44b63fb00cd64595bd")
+        "pool_tables.c=6916e77c0fd3c7a6ef11fd5f1c6452cb31667c2b7a5d69d86c73f6b918d95c2e")
     string(REPLACE "=" ";" _parts "${_gen}")
     list(GET _parts 0 _file)
     list(GET _parts 1 _expected)
@@ -815,3 +815,7 @@ duoforge_add_test(NAME duoforge.state.pool_g69 SOURCES test_pool_g69.c WHITEBOX 
 # Step G65 (decision 0015 5bk): the simple modifier abilities Unaware, Marvel Scale, Water Bubble, Reckless and Super Luck (their
 # rows, the recoil and crash facts Reckless reads, and the Trace refusal of Water Bubble onto a burned holder; white-box).
 duoforge_add_test(NAME duoforge.state.pool_g65 SOURCES test_pool_g65.c WHITEBOX TIMEOUT 60)
+
+# Step G67 (decision 0015 entry 5bl, decision 0033): Magic Guard (the class of every indirect damage), Air Balloon (grounding, the
+# pops, the immunity, the switch-in line ITEM_SHOWN) and the fold that ignores ITEM_SHOWN.
+duoforge_add_test(NAME duoforge.state.pool_g67 SOURCES test_pool_g67.c WHITEBOX TIMEOUT 120)
