@@ -1,0 +1,270 @@
+{
+  "name": "c1_cover_a",
+  "purpose": "C1 (decision 0015 entry 5co): a PASS battle of the Substitute-free random differential campaign of run 21022 (diff_driver.py random, seed 21022), adopted as a regression fixture to show the marked moves Acid Armor, Aerial Ace, Aqua Tail, Baby-Doll Eyes, Brutal Swing, Cotton Guard, Drill Peck, Feather Dance, Megahorn, Mega Kick, Metal Sound, Petal Blizzard, Seed Bomb and Smart Strike used in a pool battle. The choices and the seed are those of the campaign; the trace is recorded with the pinned Showdown (b2cb775).",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,728899d9f50fc4a69987f785b60991b65ba8f9f900da9c4b71305f7190c4174c",
+  "teams": [
+    "Empoleon (M) @ Sitrus Berry\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 32 Spe / 2 SpD\nHardy Nature\n- Drill Peck\n- Feather Dance\n- Metal Sound\n- Protect\n\nSamurott-Hisui (M) @ Sharp Beak\nAbility: Torrent\nLevel: 50\nEVs: 32 HP / 32 Spe / 2 SpD\nHardy Nature\n- Megahorn\n- Smart Strike\n- Aqua Tail\n- Protect\n\nHeracross (M) @ Muscle Band\nAbility: Moxie\nLevel: 50\nEVs: 32 HP / 32 Spe / 2 SpD\nHardy Nature\n- Megahorn\n- Close Combat\n- Protect\n- Helping Hand\n\nGarchomp (M) @ Black Glasses\nAbility: Rough Skin\nLevel: 50\nEVs: 32 HP / 32 Spe / 2 SpD\nHardy Nature\n- Brutal Swing\n- Aerial Ace\n- Protect\n- Earthquake\n\nMachamp (M) @ Focus Sash\nAbility: Steadfast\nLevel: 50\nEVs: 32 HP / 32 Spe / 2 SpD\nHardy Nature\n- Mega Kick\n- Close Combat\n- Protect\n- Helping Hand\n\nVenusaur (F) @ Miracle Seed\nAbility: Overgrow\nLevel: 50\nEVs: 32 HP / 32 Spe / 2 SpD\nHardy Nature\n- Petal Blizzard\n- Seed Bomb\n- Protect\n- Sludge Bomb",
+    "Lopunny (F) @ Sitrus Berry\nAbility: Limber\nLevel: 50\nEVs: 32 HP / 32 Spe / 2 SpD\nHardy Nature\n- Cotton Guard\n- Baby-Doll Eyes\n- Mega Kick\n- Protect\n\nPersian (F) @ Silver Powder\nAbility: Technician\nLevel: 50\nEVs: 32 HP / 32 Spe / 2 SpD\nHardy Nature\n- Aerial Ace\n- Fake Out\n- Protect\n- Shadow Claw\n\nGallade (M) @ Life Orb\nAbility: Sharpness\nLevel: 50\nEVs: 32 HP / 32 Spe / 2 SpD\nHardy Nature\n- Aerial Ace\n- Close Combat\n- Protect\n- Helping Hand\n\nCorviknight (M) @ Leftovers\nAbility: Mirror Armor\nLevel: 50\nEVs: 32 HP / 32 Spe / 2 SpD\nHardy Nature\n- Drill Peck\n- Feather Dance\n- Metal Sound\n- Protect\n\nPinsir (M) @ Muscle Band\nAbility: Hyper Cutter\nLevel: 50\nEVs: 32 HP / 32 Spe / 2 SpD\nHardy Nature\n- Brutal Swing\n- Aerial Ace\n- Protect\n- Close Combat\n\nDragalge (M) @ Poison Barb\nAbility: Poison Touch\nLevel: 50\nEVs: 32 HP / 32 Spe / 2 SpD\nHardy Nature\n- Aqua Tail\n- Acid Armor\n- Protect\n- Sludge Bomb"
+  ],
+  "choices": [
+    {
+      "p1": "team 4612",
+      "p2": "team 4615"
+    },
+    {
+      "p1": "move 4, move 3",
+      "p2": "move 3 1, move 3"
+    },
+    {
+      "p1": "move 1, move 3",
+      "p2": "move 4, switch 3"
+    },
+    {
+      "p1": "move 3, switch 3",
+      "p2": "move 3 1, move 4"
+    },
+    {
+      "p1": "move 1, move 2 2",
+      "p2": "move 4, switch 4"
+    },
+    {
+      "p1": "move 3, move 2 1",
+      "p2": "move 3 -2, move 3"
+    },
+    {
+      "p1": "move 1, move 2 2",
+      "p2": "move 3 -2, move 3"
+    },
+    {
+      "p1": "move 3, move 3 2",
+      "p2": "move 2 2, move 3"
+    },
+    {
+      "p1": "move 4, switch 3",
+      "p2": "move 2 1, move 3"
+    },
+    {
+      "p1": "move 2 2, move 2 -1",
+      "p2": "move 3 1, move 4 2"
+    },
+    {
+      "p1": "move 1, move 3",
+      "p2": "move 3 2, switch 3"
+    },
+    {
+      "p1": "move 3, move 1",
+      "p2": "move 1 -2, move 2"
+    },
+    {
+      "p1": "move 1, move 1",
+      "p2": "switch 4, move 2"
+    },
+    {
+      "p1": "move 3, move 2 -1",
+      "p2": "move 3 2, move 3"
+    },
+    {
+      "p1": "move 4, move 4 -1",
+      "p2": "move 1, move 4 1"
+    },
+    {
+      "p1": "switch 4, switch 3"
+    },
+    {
+      "p1": "move 4, move 4",
+      "p2": "move 4, move 4 -1"
+    },
+    {
+      "p1": "move 1 1, move 2 1",
+      "p2": "move 2 1, move 3"
+    },
+    {
+      "p1": "move 2 2, move 3 -1",
+      "p2": "move 4, move 4 -1"
+    },
+    {
+      "p2": "pass, switch 4"
+    },
+    {
+      "p1": "move 4, move 3 2",
+      "p2": "move 2 2, move 1 2"
+    },
+    {
+      "p1": "move 3 -2, move 4",
+      "p2": "move 1, move 1 -1"
+    },
+    {
+      "p1": "move 4, move 4",
+      "p2": "move 2 1, switch 3"
+    },
+    {
+      "p1": "move 3 2, move 4",
+      "p2": "move 4, move 1"
+    },
+    {
+      "p1": "move 4, move 3 -1",
+      "p2": "move 4, move 3"
+    },
+    {
+      "p1": "move 4, move 4",
+      "p2": "move 1, move 1"
+    },
+    {
+      "p1": "move 2 2, move 3 -1",
+      "p2": "move 3 1, move 4 -1"
+    },
+    {
+      "p1": "move 2 2, move 2 2",
+      "p2": "move 1, move 2 -1"
+    },
+    {
+      "p2": "pass, switch 3"
+    },
+    {
+      "p1": "move 2 -2, move 2 1",
+      "p2": "move 2 2, move 1 2"
+    },
+    {
+      "p1": "move 1 1, move 3 -1",
+      "p2": "move 2 -2, move 1 2"
+    },
+    {
+      "p1": "move 3 2, move 3 -1",
+      "p2": "move 1, move 3 -1"
+    },
+    {
+      "p1": "move 3 2, move 4",
+      "p2": "move 1, move 2 -1"
+    },
+    {
+      "p1": "move 2 2, move 1 -1",
+      "p2": "move 4, move 1 -1"
+    },
+    {
+      "p1": "move 4, move 4",
+      "p2": "move 3 -2, move 4"
+    },
+    {
+      "p1": "move 2 -2, move 3 2",
+      "p2": "move 4, move 4"
+    },
+    {
+      "p1": "move 1 1, move 2 2",
+      "p2": "move 3 2, move 3 1"
+    },
+    {
+      "p1": "move 3 2, move 3 2",
+      "p2": "pass, move 1 -1"
+    },
+    {
+      "p1": "move 4, move 2 1",
+      "p2": "pass, move 1 1"
+    },
+    {
+      "p1": "move 4, move 3 1",
+      "p2": "pass, move 4"
+    },
+    {
+      "p1": "move 3 -2, move 4",
+      "p2": "pass, move 4"
+    },
+    {
+      "p1": "move 2 2, move 1 1",
+      "p2": "pass, move 4"
+    },
+    {
+      "p1": "move 2 -2, move 3 1",
+      "p2": "pass, move 3 1"
+    },
+    {
+      "p1": "move 2 1, move 3 -1",
+      "p2": "pass, move 2 1"
+    },
+    {
+      "p1": "move 1 2, move 3 2",
+      "p2": "pass, move 1 -1"
+    },
+    {
+      "p1": "move 1 -2, move 3 1",
+      "p2": "pass, move 2 -1"
+    },
+    {
+      "p1": "move 2 -2, move 2 2",
+      "p2": "pass, move 2 2"
+    },
+    {
+      "p1": "move 2 2, move 3 2",
+      "p2": "pass, move 1 -1"
+    },
+    {
+      "p1": "move 2 1, move 3 2",
+      "p2": "pass, move 3 -1"
+    },
+    {
+      "p1": "move 1 1, move 2 1",
+      "p2": "pass, move 3 1"
+    },
+    {
+      "p1": "move 3 2, move 3 1",
+      "p2": "pass, move 3 2"
+    },
+    {
+      "p1": "move 3 2, move 3 1",
+      "p2": "pass, move 3 -1"
+    },
+    {
+      "p1": "move 3 1, move 1 -1",
+      "p2": "pass, move 2 1"
+    },
+    {
+      "p1": "move 1 -2, move 3 1",
+      "p2": "pass, move 3 2"
+    },
+    {
+      "p1": "move 1 1, move 2 -1",
+      "p2": "pass, move 1 2"
+    },
+    {
+      "p1": "move 1 1, pass",
+      "p2": "pass, move 1 -1"
+    },
+    {
+      "p1": "move 1 1, pass",
+      "p2": "pass, move 3 2"
+    },
+    {
+      "p1": "move 1 -2, pass",
+      "p2": "pass, move 2 1"
+    },
+    {
+      "p1": "move 1 1, pass",
+      "p2": "pass, move 2 1"
+    },
+    {
+      "p1": "move 3 2, pass",
+      "p2": "pass, move 3 1"
+    },
+    {
+      "p1": "move 3 1, pass",
+      "p2": "pass, move 2 2"
+    },
+    {
+      "p1": "move 3 1, pass",
+      "p2": "pass, move 4"
+    },
+    {
+      "p1": "move 1, pass",
+      "p2": "pass, move 2 2"
+    },
+    {
+      "p1": "move 1, pass",
+      "p2": "pass, move 2 1"
+    },
+    {
+      "p1": "move 1, pass",
+      "p2": "pass, move 2 2"
+    }
+  ]
+}
