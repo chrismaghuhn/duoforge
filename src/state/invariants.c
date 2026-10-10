@@ -344,6 +344,15 @@ static dfi_invariant dfi_check_side(const struct duoforge_context *ctx, const st
                 (b->boundary_kind == DUOFORGE_BOUNDARY_REPLACEMENT && ((uint32_t)slot->flags & residual_bits) != 0u)) {
                 return DFI_INV_VOLATILE;
             }
+            /* Step G90 (decision 0060): a partial trap whose source left has source 0 only inside its turn. The residual
+             * (order 13, data/conditions.ts:222-258, sim/battle.ts:522-527) ends a trap whose source is not active, silently,
+             * and it runs before the TURN and REPLACEMENT boundaries (both are after the residual). So neither boundary holds
+             * a trap with turns and no source. */
+            const dfi_tail_pos *trp = &b->tail.sides[s].positions[p];
+            if ((b->boundary_kind == DUOFORGE_BOUNDARY_TURN || b->boundary_kind == DUOFORGE_BOUNDARY_REPLACEMENT) &&
+                trp->trap_turns != 0u && trp->trap_source == 0u) {
+                return DFI_INV_TAIL_POSITION;
+            }
         }
     }
     const uint32_t occupied = dfi_side_occupied_mask(side);

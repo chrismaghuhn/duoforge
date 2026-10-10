@@ -254,6 +254,11 @@ static void test_source_leaves(df_test *t)
     DF_CHECK_EQ_U64(t, tail_of(b, FLAT_P2A)->trap_source, FLAT_P1A + 1u);
     DF_CHECK_EQ_U64(t, tail_of(b, FLAT_P2A)->trap_move, DFI_MOVE_FIRESPIN + 1u);
     const uint32_t hp2 = hp_of(b, FLAT_P2A);
+    /* decision 0060: a trap without its source is valid only inside its turn; at this TURN boundary it is invalid */
+    tail_of(b, FLAT_P2A)->trap_source = 0u;
+    DF_CHECK_EQ_U64(t, dfi_state_check(ctx, b, NULL), DUOFORGE_E_INVARIANT);
+    tail_of(b, FLAT_P2A)->trap_source = FLAT_P1A + 1u;
+    DF_CHECK(t, dfi_state_check(ctx, b, NULL) == DUOFORGE_OK);
     /* step 3: Salamence (slot 0) switches out to reserve 0 (Dragapult); no damage on flat 2 in this turn */
     static const g90_cmd turn3[2][2] = {{SW(0u), MV(1, NO)}, {MV(0, NO), MV(0, NO)}};
     turn_bundle(&bd, b, turn3);

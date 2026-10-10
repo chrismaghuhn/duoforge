@@ -1074,6 +1074,10 @@ def check_tail(ctx, st):
                 if not (flags_only and (tp['position_flags'] == 0 or (occ < MAX_ROSTER and position_flags_valid(tp['position_flags'])))):
                     return 'TAIL_POSITION'
                 continue
+            # Step G90 (decision 0060): a partial trap whose source left (source 0) exists only inside its turn: the residual
+            # ends it silently, before the TURN and REPLACEMENT boundaries.
+            if st['boundary'] in (TURN, REPLACEMENT) and tp['trap_turns'] != 0 and tp['trap_source'] == 0:
+                return 'TAIL_POSITION'
             if not tail_pos_valid(ctx, tp, 2 * s + p, sd['members'][occ], sd['pos'][p]['flags'], substitute_cap(sd)):
                 return 'TAIL_POSITION'
         for m in range(MAX_ROSTER):
