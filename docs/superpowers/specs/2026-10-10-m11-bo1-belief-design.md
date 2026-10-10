@@ -1,6 +1,7 @@
 # M11: Bo1 games without team sheets as a marked belief source (design)
 
-Status: design only, for the owner's review via HauptSession (2026-10-10). No code before the owner's OK.
+Status: approved by the owner via HauptSession (2026-10-10): option B (section 2), the split by player (section 6).
+The BC runs of validation (c) need the owner's OK when they are due.
 
 ## 1. Goal and decisions so far
 
@@ -18,7 +19,7 @@ What every one of these games shows (sample of 2 %, 2026-10-10):
 - **Items and abilities:** only when they trigger.
 - **Stat points:** never shown. Under open sheets they are not shown either.
 
-## 2. The view question (owner decision needed first)
+## 2. The view question (owner decision: B, 2026-10-10)
 
 The player view (decision 0007) assumes open team sheets: the observation holds both sheets, including the foe's moves, item, ability and nature. Closed team sheets are planned as milestone M14 (decision 0023, section "later") and do not exist yet.
 
@@ -30,7 +31,7 @@ In a Bo1 game without sheets the player knew their own team but not the foe's se
   - The foe sheet the row shows is a sample: the player did not see it, and it may be wrong. The label is the action the player chose without that knowledge. No true hidden information leaks, but the rows teach "act as if the foe's sheet were X".
   - Both sheets are marked as sampled (section 5). Whether this helps or hurts is exactly what the validation measures (section 6).
 
-**Recommendation:** B for the validation, because it is cheap and needs no new view. A is decided after M14. The measurement in section 6 tells whether B is worth keeping until then.
+**Decision (owner, 2026-10-10): B.** Sampled sheets for both sides, marked as a source of their own, used for validation and, only after the test of section 6 comes out positive, for training. A is decided after M14.
 
 ## 3. Reconstruction: fixed facts and a set belief
 
@@ -45,6 +46,7 @@ In a Bo1 game without sheets the player knew their own team but not the foe's se
 
 1. **Set corpus:** the sheets of all usable games of the same regulation (Reg M-C Bo3: 46,267 games, about 555,000 sets), plus the registry's `PP_` and `LL_` teams. It is kept outside the repository.
    - **Leave one series out:** the sets of the game's own series (the same sheet hashes, all games of a Bo3) are never drawn. Otherwise the validation would find its own sheet.
+   - **Training split only:** the corpus is built from the sheet games of the training split (section 6) alone, so no set of a test player is ever drawn.
 2. **Set draw per member:** among the corpus sets of its species and forme that agree with every fixed fact, one set is drawn, frequency-weighted, by a world word (as `belief.pick` does).
    - "Agree" means: the used moves are a subset of the set's moves, and the revealed item and ability are equal.
    - The draw yields moves, item, ability and nature.
@@ -75,7 +77,15 @@ In a Bo1 game without sheets the player knew their own team but not the foe's se
 
 ## 6. Validation, the core
 
-Take M-C Bo3 games with sheets, drop the sheets and run them through the same belief pipeline. The test split is the existing BC split (sheet-pair bucket 0 of 20). It is never used to build the corpus or to train.
+Take M-C Bo3 games with sheets, drop the sheets and run them through the same belief pipeline.
+
+**The split is by player, not by game** (HauptSession, 2026-10-10). Each player's hash, the u64 that `games.npz` already stores, falls into bucket 0 of 20 or not.
+- A game is a test game when either of its players is in bucket 0.
+- A game is a training game only when neither is.
+- So no player appears in both. This applies to the sheet games and to the Bo1 games alike: a Bo1 game with a test player is never a training row.
+- The test games are never used to build the corpus or to train.
+- Only the hashes are used. No player name or id goes into the repository.
+- The baseline S of (c) is trained with this split too, so the comparison is fair. It replaces the sheet-pair bucket of `bc.py` for this measurement.
 
 **(a) Set recovery:** per member, against the true sheet:
 - the whole move set right;
