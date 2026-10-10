@@ -139,6 +139,8 @@ bool dfi_closure_member_init(const duoforge_member_setup *src, dfi_member *dst);
 /* hp_max and stats[] of m from its forme, Mega state, item, nature and stat points (decision 0023: a world's foe
  * members); false if the forme data refuses them. */
 bool dfi_closure_member_derive(dfi_member *m);
+/* Step G66 (decision 0040): stats[] of m in the pool forme `forme` (a temporary forme of Stance Change; the HP is not derived). */
+bool dfi_closure_member_forme_stats(const dfi_member *m, uint32_t forme, uint16_t *stats);
 
 /* The member invariant of combat data (reported as DFI_INV_MEMBER_EXTRA):
  * a base forme, a legal gender, nature and Stat Points in range, the current

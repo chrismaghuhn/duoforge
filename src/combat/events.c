@@ -128,6 +128,9 @@ static void dfi_own_event(dfi_own_pressure *o, const struct duoforge_battle *aft
          * holder's ability already, so they change nothing here */
         if (m < DUOFORGE_MAX_ROSTER && e->cause == DUOFORGE_CAUSE_ABILITY && e->other != DUOFORGE_NO_POSITION) {
             o->pressure[m] = e->id2 == 1u + DFI_ABILITY_PRESSURE;
+        } else if (m < DUOFORGE_MAX_ROSTER && e->cause == DUOFORGE_CAUSE_MOVE && e->other != DUOFORGE_NO_POSITION) {
+            /* Skill Swap (step G70, decision 0041): the holder's new ability is in id (ability + 1), the move in id2 */
+            o->pressure[m] = e->id == 1u + DFI_ABILITY_PRESSURE;
         }
         break;
     case DUOFORGE_EVENT_MEGA:

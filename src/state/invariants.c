@@ -198,7 +198,24 @@ static dfi_invariant dfi_check_side(const struct duoforge_context *ctx, const st
             const dfi_member *seen = validated != NULL ? &validated->sides[s].members[m] : NULL;
             const bool same = seen != NULL && m < validated->sides[s].member_count &&
                               dfi_bytes_equal((const uint8_t *)&side->members[m], (const uint8_t *)seen, sizeof *seen);
-            const dfi_invariant inv = same ? DFI_INV_NONE : dfi_check_member(ctx, &side->members[m], full);
+            dfi_invariant inv = DFI_INV_NONE;
+            if (!same && b->tail.sides[s].forme_now[m] == DFI_FORME_AEGISLASHBLADE + 1u && dfi_context_is_closure(ctx)) {
+                /* Step G66 (decision 0040), strict: the Blade's stats are allowed only for an Aegislash on the Blade forme
+                 * (forme_now = the Blade's id + 1). The formula check runs on a copy with the sheet's stats. */
+                dfi_member sheet = side->members[m];
+                uint16_t want[DFI_MEMBER_STAT_COUNT];
+                if (side->members[m].species_id != DFI_FORME_AEGISLASH ||
+                    !dfi_closure_member_derive(&sheet) ||
+                    !dfi_closure_member_forme_stats(&side->members[m], DFI_FORME_AEGISLASHBLADE, want) ||
+                    !dfi_bytes_equal((const uint8_t *)want, (const uint8_t *)side->members[m].stats, sizeof want)) {
+                    inv = DFI_INV_MEMBER_EXTRA;
+                } else {
+                    inv = dfi_check_member(ctx, &sheet, full);
+                }
+            } else if (!same) {
+                /* Every other case (the sheet's forme, or a permanent one): the stats are the sheet's, checked as always. */
+                inv = dfi_check_member(ctx, &side->members[m], full);
+            }
             if (inv != DFI_INV_NONE) {
                 return inv;
             }
@@ -566,6 +583,13 @@ static bool dfi_hazard_order_valid(const dfi_tail_side *ts)
 
 /* The tail of a standing occupant's position: the ranges, the pairs that are zero together and the sources that are
  * never the occupant itself (flat is its position, side * 2 + slot). */
+/* The position flags (tail rev 5, G72b): bit 0 (Healing Wish) and bits 4-7 are zero, and the Dragon Cheer stage is at most 2. */
+static bool dfi_position_flags_ok(uint8_t pf)
+{
+    return (pf & ~DFI_POSFLAG_VALID_MASK) == 0u && (pf & DFI_POSFLAG_HEALING_WISH) == 0u &&
+           ((pf & DFI_POSFLAG_DRAGON_CHEER_MASK) >> DFI_POSFLAG_DRAGON_CHEER_SHIFT) <= DFI_POSFLAG_DRAGON_CHEER_MAX;
+}
+
 static bool dfi_tail_pos_valid(const dfi_kind_limits *lim, const dfi_tail_pos *tp, uint32_t flat,
                                const dfi_member *occupant, const dfi_active_slot *slot)
 {
@@ -612,8 +636,12 @@ static bool dfi_tail_pos_valid(const dfi_kind_limits *lim, const dfi_tail_pos *t
                          tp->hits_taken <= DFI_TAIL_HITS_TAKEN_MAX && tp->ability_state <= DFI_TAIL_ABILITY_STATE_MAX &&
                          tp->lock_turns <= DFI_TAIL_LOCK_TURNS_MAX &&
                          (tp->lock_turns == 0u || slot->locked_move != 0u); /* lockedmove (G56): its move is in the slot */
-    /* Rev 5 (lane A): the slot's pending effect and Future Sight, zero until the steps that write them. */
-    const bool rev5_ok = tp->slot_pending == 0u && tp->future_sight == 0u;
+    /* Rev 5 (lane A, G72b, decision 0015 5ce): the position flags (bit 0 Healing Wish, never set: bits 4-7 are zero; the stats-
+     * raised bit and the Dragon Cheer stage only with an occupant; the stage at most 2). Future Sight stays zero. */
+    const bool posflags_ok = dfi_position_flags_ok(tp->position_flags) &&
+                          ((tp->position_flags & (DFI_POSFLAG_STATS_RAISED | DFI_POSFLAG_DRAGON_CHEER_MASK)) == 0u ||
+                           slot->occupant < DUOFORGE_MAX_ROSTER);
+    const bool rev5_ok = posflags_ok && tp->future_sight == 0u;
     return encore_ok && bars_ok && disable_ok && flags_ok && substitute_ok && trap_ok && leech_ok && stockpile_ok &&
            protect_ok && rev4_ok && rev5_ok;
 }
@@ -685,8 +713,16 @@ static dfi_invariant dfi_check_tail(const duoforge_context *ctx, const struct du
             const bool standing = occupant < DUOFORGE_MAX_ROSTER && occupant < side->member_count &&
                                   side->members[occupant].hp != 0u;
             if (!standing) {
-                if (!dfi_bytes_zero(tp, sizeof *tp)) {
+                /* Rev 5 (G72b): the position flags of a fainted occupant stay until the turn ends or it is replaced (it is still
+                 * there, as in the state model); an empty position has none. The rest of the tail is cleared when the occupant
+                 * leaves or faints. */
+                dfi_tail_pos rest = *tp;
+                rest.position_flags = 0u;
+                if (!dfi_bytes_zero(&rest, sizeof rest)) {
                     return DFI_INV_TAIL_POSITION; /* cleared when the occupant leaves or faints */
+                }
+                if (tp->position_flags != 0u && (occupant >= DUOFORGE_MAX_ROSTER || !dfi_position_flags_ok(tp->position_flags))) {
+                    return DFI_INV_TAIL_POSITION;
                 }
                 continue;
             }

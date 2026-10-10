@@ -338,6 +338,14 @@ class LinesTest(unittest.TestCase):
         self.assertEqual(self.stop("|-activate|p2a: Gholdengo|move: Electric Terrain"), "feature:TERRAIN_ELECTRIC")
         self.assertEqual(self.stop("|-activate|p2a: Gholdengo|move: Misty Terrain"), "feature:TERRAIN_MISTY")
 
+    def test_skill_swap_lines_are_ability_change(self):
+        # Step G70 (decision 0041): the pin prints "Skill Swap" without "move: " for a foe swap (both abilities named)
+        # and an ally swap (none named); both are decision 0018's ABILITY_CHANGE until the tracker folds it
+        for line in ("|-activate|p1a: Staraptor|Skill Swap|Good as Gold|Intimidate|[of] p2a: Gholdengo",
+                     "|-activate|p1a: Staraptor|Skill Swap|||[of] p1b: Staraptor",
+                     "|-activate|p1a: Staraptor|move: Skill Swap|Good as Gold|Intimidate|[of] p2a: Gholdengo"):
+            self.assertEqual(self.stop(line), "feature:ABILITY_CHANGE", line)
+
     def test_drag_folds(self):
         # Step G46: a forced switch brings a member in as a switch does (the tracker folds it as one, or stops)
         self.assertEqual(lines.check("|drag|p2a: Gholdengo|Gholdengo, L50|100/100", self.view), "fold")

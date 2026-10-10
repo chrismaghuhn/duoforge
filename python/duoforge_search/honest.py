@@ -120,14 +120,17 @@ def spread_table(ctx, root=None, sources=SPREAD_SOURCES):
 _CAUSES = ((C["DUOFORGE_PUBLIC_CAUSE_VISIBLE_SLEEP"], "visible_sleep"),
            (C["DUOFORGE_PUBLIC_CAUSE_VISIBLE_CONFUSION"], "visible_confusion"),
            (C["DUOFORGE_PUBLIC_CAUSE_ILLUSION_POSSIBLE"], "illusion_possible"),
-           (C["DUOFORGE_PUBLIC_CAUSE_SUBSTITUTE"], "substitute"))  # decision 0032 (step G60)
+           (C["DUOFORGE_PUBLIC_CAUSE_SUBSTITUTE"], "substitute"),  # decision 0032 (step G60)
+           (C["DUOFORGE_PUBLIC_CAUSE_TEMP_FORME"], "temp_forme"),  # decision 0040 (step G66): Aegislash-Blade
+           (C["DUOFORGE_PUBLIC_CAUSE_RAISED_THIS_TURN"], "raised_this_turn"))  # step G72: Alluring Voice at a PIVOT
 
 
 def visible_causes(roots, env, player):
     """The causes (names) of environment env's public refusal for player, from the library's own predicate
     (duoforge_batch_public_causes, decision 0026 section 4): a visible sleep or confusion, a possible Illusion, a
-    Substitute on either side (decision 0032: its HP is no public fact). The library decides them from the player's
-    view, so no rule is restated here; an empty list is another refusal."""
+    Substitute on either side (decision 0032: its HP is no public fact), a temporary forme the view does not show
+    (decision 0040: Aegislash-Blade). The library decides them from the player's view, so no rule is restated here;
+    an empty list is another refusal."""
     players = np.zeros(roots.envs, dtype=np.uint32)
     players[env] = player
     masks, statuses = roots.public_causes(players)
