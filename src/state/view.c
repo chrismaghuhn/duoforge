@@ -220,21 +220,15 @@ static uint32_t dfi_target_candidates(uint32_t target_class, uint32_t user, uint
  * (duoforge_battle_public_causes writes it), so the two can never disagree. It reads only the player's observation, never a
  * hidden counter. Elapsed status attempts are not stored in schema 3. Never invent their posterior: a visible sleep or
  * confusion is a cause, nothing else is. ILLUSION_POSSIBLE stays 0 until Illusion (decision 0026, section 4). */
-/* Step G72b (decision 0015 5ce; cause DUOFORGE_PUBLIC_CAUSE_RAISED_THIS_TURN): at a PIVOT that still has a move of the turn queued,
- * an active Pokemon of either side that knows Alluring Voice (its move ids are open, the OTS sheet) may have had its stats raised
- * this turn, which the view does not carry (stats_raised_this_turn). Pool data only (the move id is a pool row). A turn boundary is
- * not affected (the bit is zero there), and neither is a replacement after the last move of the turn: nothing of the turn can
- * read the bit then. */
+/* Step G72b (decision 0015 5ce; cause DUOFORGE_PUBLIC_CAUSE_RAISED_THIS_TURN): at any PIVOT boundary (public: b->boundary_kind, the
+ * view's boundary), an active Pokemon of either side that knows Alluring Voice (its move ids are open, the OTS sheet; the position
+ * is public through occupant[]) may have had its stats raised this turn, which the view does not carry (stats_raised_this_turn).
+ * Pool data only (the move id is a pool row). Nothing here reads the engine's queue: the queue holds the foe's chosen moves, which
+ * no player knows (an information leak if read). A turn boundary is not affected (the bit is zero there), and a replacement at the
+ * end of a turn is the REPLACEMENT boundary, not a PIVOT. */
 static bool dfi_view_raised_risk(const duoforge_context *ctx, const duoforge_battle *b, const duoforge_observation *ob)
 {
     if (b->boundary_kind != DUOFORGE_BOUNDARY_PIVOT || !dfi_context_is_pool(ctx)) {
-        return false;
-    }
-    bool moves_left = false;
-    for (uint32_t i = 0u; i < b->queue_len; ++i) {
-        moves_left = moves_left || b->queue[i].kind == DFI_Q_MOVE;
-    }
-    if (!moves_left) {
         return false;
     }
     for (uint32_t side = 0u; side < DUOFORGE_SIDE_COUNT; ++side) {
