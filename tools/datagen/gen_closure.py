@@ -2210,6 +2210,8 @@ G30_ABILITY_FACTS = (
 SPECIAL_P = dict(SPECIAL_C, **{
     'perishsong': ('PERISH_SONG', {'onHitField'}),                        # G26: a volatile on every active Pokemon, faints at 0
     'glaiverush': ('GLAIVE_RUSH', set()),                                 # G19: the volatile that makes its user hit as vulnerable
+    'destinybond': ('DESTINY_BOND', {'onPrepareHit'}),                    # G76: the user's volatile; a foe's KO is answered with its own faint
+    'finalgambit': ('FINAL_GAMBIT', {'damageCallback'}),                  # G76: damage equal to the user's HP, and the user faints
     'outrage': ('LOCKED_MOVE', set()),                                    # G56: a two-to-three turn lock, then confusion
     'thrash': ('LOCKED_MOVE', set()),                                     # G56: the same lock as Outrage
     'petaldance': ('LOCKED_MOVE', set()),                                 # G56: the same lock as Outrage
@@ -2381,6 +2383,28 @@ G72B_DRAGON_CHEER_FACTS = (
     'this.effectState.hasDragonType = target.hasType("Dragon");',
     'return critRatio + (this.effectState.hasDragonType ? 2 : 1);', 'target: "adjacentAlly",', 'type: "Dragon",',
 )
+# Step G76 (decision 0015 5cg, lead's approval 2026-10-10): Destiny Bond. The volatile is the move's volatileStatus on the
+# user; onPrepareHit fails the move while the volatile is up (removeVolatile returns true: a consecutive use fails and
+# removes it); the condition prints the -singlemove start; onBeforeMove (not for Destiny Bond itself) and onMoveAborted
+# remove it; onFaint KOs the foe that faints from a Move (not an ally, not a Future Sight move) with -activate and faint.
+G76_HANDLERS = ['DESTINY_BOND', 'FINAL_GAMBIT']
+G76_DESTINY_BOND_FACTS = (
+    'accuracy: true,', 'basePower: 0,', 'category: "Status",', 'priority: 0,',
+    'flags: { bypasssub: 1, noassist: 1, failcopycat: 1 },', "volatileStatus: 'destinybond',",
+    "onPrepareHit(pokemon) { return !pokemon.removeVolatile('destinybond'); },", 'condition: {', 'noCopy: true,',
+    "this.add('-singlemove', pokemon, 'Destiny Bond');", 'if (!source || !effect || target.isAlly(source)) return;',
+    "if (effect.effectType === 'Move' && !effect.flags['futuremove']) {",
+    "this.add('-activate', target, 'move: Destiny Bond');", 'source.faint();', 'onBeforeMovePriority: -1,',
+    "if (move.id === 'destinybond') return;", "pokemon.removeVolatile('destinybond');",
+    "onMoveAborted(pokemon, target, move) { pokemon.removeVolatile('destinybond'); },", 'target: "self",', 'type: "Ghost",',
+)
+# Final Gambit (data/moves.ts:5301-5322): damage equal to the user's current HP, the user faints in the damageCallback (before
+# the damage is dealt), and selfdestruct ifHit faints it again (a no-op). An immune or a Protected target gives no damage call.
+G76_FINAL_GAMBIT_FACTS = (
+    'accuracy: 100,', 'basePower: 0,', 'damageCallback(pokemon) {', 'const damage = pokemon.hp;', 'pokemon.faint();',
+    'return damage;', 'selfdestruct: "ifHit",', 'category: "Special",', 'priority: 0,',
+    'flags: { protect: 1, metronome: 1, noparentalbond: 1 },', 'target: "normal",', 'type: "Fighting",',
+)
 G58_FACTS = (
     'accuracy: 100,', 'basePower: 90,', 'category: "Physical",', 'priority: 0,', 'target: "normal",', 'type: "Ghost",',
     'flags: { contact: 1, charge: 1, mirror: 1, metronome: 1, nosleeptalk: 1, noassist: 1, failinstruct: 1 },',
@@ -2472,7 +2496,7 @@ G68_FACTS = (
                      'flags: { protect: 1, reflectable: 1, mirror: 1, metronome: 1 },', "status: 'par',",
                      'ignoreImmunity: false,', 'target: "normal",', 'type: "Electric",']),
 )
-SPECIAL_IDS_P = SPECIAL_IDS_C + G2_HANDLERS + WEATHER_HANDLERS + G16_HANDLERS + G15_HANDLERS + G19_HANDLERS + G20_HANDLERS + G20_PROTECT_HANDLERS + G28_HANDLERS + G30_HANDLERS + G32_HANDLERS + G34_HANDLERS + G27_HANDLERS + G25_HANDLERS + G26_HANDLERS + G33_HANDLERS + G38_HANDLERS + G29_HANDLERS + G39_HANDLERS + G31_HANDLERS + G48_HANDLERS + G44_HANDLERS + G50_HANDLERS + G42_HANDLERS + G56_HANDLERS + G52_HANDLERS + G54_HANDLERS + G64_HANDLERS + G62_HANDLERS + G60_HANDLERS + G58_HANDLERS + G68_HANDLERS + G70_HANDLERS + G66_HANDLERS + G72B_HANDLERS + ['UNMODELED']# Step G10 made two of these handlers data: Scald (thawsTarget) and Recover (heal) are read into the second flags# byte (bit 4, thaws the target) and the heal column, and have the special NONE; their ids stay defined (the ids after
+SPECIAL_IDS_P = SPECIAL_IDS_C + G2_HANDLERS + WEATHER_HANDLERS + G16_HANDLERS + G15_HANDLERS + G19_HANDLERS + G20_HANDLERS + G20_PROTECT_HANDLERS + G28_HANDLERS + G30_HANDLERS + G32_HANDLERS + G34_HANDLERS + G27_HANDLERS + G25_HANDLERS + G26_HANDLERS + G33_HANDLERS + G38_HANDLERS + G29_HANDLERS + G39_HANDLERS + G31_HANDLERS + G48_HANDLERS + G44_HANDLERS + G50_HANDLERS + G42_HANDLERS + G56_HANDLERS + G52_HANDLERS + G54_HANDLERS + G64_HANDLERS + G62_HANDLERS + G60_HANDLERS + G58_HANDLERS + G68_HANDLERS + G70_HANDLERS + G66_HANDLERS + G72B_HANDLERS + G76_HANDLERS + ['UNMODELED']# Step G10 made two of these handlers data: Scald (thawsTarget) and Recover (heal) are read into the second flags# byte (bit 4, thaws the target) and the heal column, and have the special NONE; their ids stay defined (the ids after
 # them keep their values). First Impression and Low Kick keep theirs: the turn code implements them.
 POOL_COLUMN_KEYS = {'thawsTarget', 'heal'}
 G2_OWNED_FIELDS = {
@@ -2495,6 +2519,8 @@ G2_OWNED_FIELDS = {
     'SHELL_SMASH': {'boosts': "boosts: { def: -1, spd: -1, atk: 2, spa: 2, spe: 2, },"},
     'FEINT': {'breaksProtect': "breaksProtect: true, // Breaking protection implemented in scripts.js"},
     'GLAIVE_RUSH': {'self': "self: { volatileStatus: 'glaiverush', },"},
+    'DESTINY_BOND': {'volatileStatus': "volatileStatus: 'destinybond',"},
+    'FINAL_GAMBIT': {'selfdestruct': 'selfdestruct: "ifHit",'},
     'LOCKED_MOVE': {'self': "self: { volatileStatus: 'lockedmove', },"},
     'PHANTOM_FORCE': {'breaksProtect': 'breaksProtect: true,'},
     'KINGS_SHIELD': {'volatileStatus': "volatileStatus: 'kingsshield',"},
@@ -2526,7 +2552,7 @@ G2_OWNED_SECONDARY = {'STONE_AXE': 'secondary: {}, // Sheer Force-boosted', 'CEA
                   "target.trySetStatus(status, source); }, },"}
 G2_OWNED_CONDITION = {'ROOST', 'ENCORE', 'WIDE_GUARD', 'QUICK_GUARD', 'GLAIVE_RUSH', 'AURORA_VEIL', 'SPIKY_SHIELD', 'RAGE_POWDER', 'DISABLE',
                       'ELECTRIC_TERRAIN', 'MISTY_TERRAIN', 'PERISH_SONG', 'IMPRISON', 'TAUNT', 'YAWN', 'REVIVAL_BLESSING',
-                      'SUBSTITUTE', 'PHANTOM_FORCE', 'KINGS_SHIELD', 'DRAGON_CHEER'}
+                      'SUBSTITUTE', 'PHANTOM_FORCE', 'KINGS_SHIELD', 'DRAGON_CHEER', 'DESTINY_BOND'}
 # Step G8 (Throat Chop and Psychic Noise): the two secondaries become modelled kinds, and the column that their
 # consumers read is the move's second flags byte (the first is full): the `sound` flag (Throat Chop bars the sound
 # moves) and the `heal` flag (Heal Block bars the moves that heal). Both are derived for every pool move, the prefix
@@ -3276,6 +3302,18 @@ def check_g72b_facts(moves_ts):
                 fail('move %s: the entry no longer has "%s"' % (mid, fact))
 
 
+def check_g76_facts(moves_ts):
+    """Step G76: the Destiny Bond and Final Gambit entries have the pinned texts the turn code reads (data/moves.ts)."""
+    for mid, facts in (('destinybond', G76_DESTINY_BOND_FACTS), ('finalgambit', G76_FINAL_GAMBIT_FACTS)):
+        e = moves_ts.entry(mid)
+        if e is None:
+            fail('move %s not found' % mid)
+        text = norm('\n'.join(e[2]))
+        for fact in facts:
+            if norm(fact) not in text:
+                fail('move %s: the entry no longer has "%s"' % (mid, fact))
+
+
 def check_weather_facts(conditions_ts, moves_ts):
     """Every fact of WEATHER_FACTS is in the pinned condition entry, the absent ones are not, and Weather Ball has the
     types and the doubling that the engine reads for every weather."""
@@ -3683,6 +3721,7 @@ def build_pool(root, repo, dx):
     check_g56_facts(Source(root, 'data/conditions.ts', READER_INPUTS), moves_ts)
     check_g58_facts(moves_ts)
     check_g72b_facts(moves_ts)
+    check_g76_facts(moves_ts)
     FLAGS_THAT_MATTER.clear()
     FLAGS_THAT_MATTER.update(prefix_flag_reads((items_ts, champ_items, abil_ts, champ_abil, moves_ts, champ_moves), dx)
                              - set(FLAG_BITS_C) - set(INERT_FLAG_READS) - set(FLAGS3_BITS))

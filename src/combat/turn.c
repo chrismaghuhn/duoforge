@@ -1531,12 +1531,41 @@ static bool dfi_sf_boosts(const struct duoforge_battle *b, const dfi_member *a, 
 /* getDamage and the Champions modifyDamage (sim/battle-actions.ts:1585-1720,
  * data/mods/champions/scripts.ts:196-312) for a turn-core move: CRIT and
  * DAMAGE_ROLL draws in that order. */
+/* A Pokemon faints now, queued as faint() queues it (sim/pokemon.ts:1581-1590): its HP is 0, it is the next faint of the
+ * queue, with no source and no effect (by_move false). A switch-less build cannot queue a faint (dfi_damage's refusal). */
+static duoforge_status dfi_queue_self_faint(dfi_run *r, uint32_t flat)
+{
+    dfi_member *m = dfi_at(r->b, flat);
+    if (m == NULL || m->hp == 0u) {
+        return DUOFORGE_OK;
+    }
+    if (dfi_support.switching == 0u) {
+        return DUOFORGE_E_UNSUPPORTED;
+    }
+    if (r->faint_count < DFI_POSITIONS) {
+        m->hp = 0u;
+        r->faint_queue[r->faint_count] = flat;
+        r->faint_count += 1u;
+        r->last_faint_by = DFI_POSITIONS;
+        r->last_faint_move = false;
+    }
+    return DUOFORGE_OK;
+}
+
 static duoforge_status dfi_get_damage(dfi_run *r, uint32_t user, uint32_t target, const dfi_move_data *md,
                                       uint32_t move_type, bool spread, uint32_t *out)
 {
     static const uint32_t crit_mult[5] = {0u, 24u, 8u, 2u, 1u};
     const dfi_member *a = dfi_at(r->b, user);
     const dfi_member *d = dfi_at(r->b, target);
+    /* Final Gambit's damageCallback (step G76, data/moves.ts:5301-5320): getDamage takes the user's current HP and then faints
+     * the user (pokemon.faint() in the callback, before the damage is dealt), so the user's faint is queued here, and selfdestruct
+     * 'ifHit' faints it again as a no-op. There is no critical hit roll and no formula; the type immunity, Protect and the
+     * accuracy were judged before. */
+    if (md->special == DFI_SPECIAL_FINAL_GAMBIT) {
+        *out = (uint32_t)a->hp;
+        return dfi_queue_self_faint(r, user);
+    }
     /* Super Fang's damageCallback (step G39, data/moves.ts:18461-18476): getDamage returns clampIntRange(target.hp / 2, 1)
      * before the critical hit roll and the formula (sim/battle-actions.ts:1585-1600), so there is no CRIT or DAMAGE_ROLL
      * draw, no modifier of the damage chain (Multiscale, Friend Guard, the screens, the berries and the items are in
@@ -3247,6 +3276,39 @@ static bool dfi_imprison_forbids(struct duoforge_battle *b, uint32_t user, uint3
     return false;
 }
 
+/* Destiny Bond's volatile ends with the user's next move attempt (step G76, decision 0015 5cg): the pin's onBeforeMove
+ * removes it for every move but Destiny Bond itself (data/moves.ts:3505-3516, priority -1, after the other BeforeMove
+ * handlers), and onMoveAborted removes it when a BeforeMove stops the attempt (:3517-3519). So an attempt ends it unless
+ * Destiny Bond is the move that goes on; that one is judged at its PrepareHit (dfi_run_destiny_bond). Called after
+ * dfi_before_move with its `can`. */
+static void dfi_destiny_bond_attempt(dfi_run *r, uint32_t user, uint32_t move_id, bool can)
+{
+    if (can && move_id == DFI_MOVE_DESTINYBOND) {
+        return;
+    }
+    dfi_tail_pos *tail = &r->b->tail.sides[user / 2u].positions[user % 2u];
+    tail->position_flags = (uint8_t)((uint32_t)tail->position_flags & ~(uint32_t)DFI_POSFLAG_DESTINY_BOND); /* wide-operands-reviewed */
+}
+
+/* Destiny Bond itself (the status move, target self; data/moves.ts:3482-3500). Its PrepareHit fails the move while the
+ * volatile is up: removeVolatile returns true, so the volatile ends too (`-fail|user` with [still]). Otherwise the volatile
+ * starts with its onStart line, -singlemove|user|Destiny Bond (SINGLE_TURN, id: the move, decision 0015 5cg). */
+static duoforge_status dfi_run_destiny_bond(dfi_run *r, uint32_t user, uint32_t move_id)
+{
+    dfi_tail_pos *tail = &r->b->tail.sides[user / 2u].positions[user % 2u];
+    if ((tail->position_flags & DFI_POSFLAG_DESTINY_BOND) != 0u) {
+        tail->position_flags = (uint8_t)((uint32_t)tail->position_flags & ~(uint32_t)DFI_POSFLAG_DESTINY_BOND); /* wide-operands-reviewed */
+        dfi_fail_still(r, user);
+        return DUOFORGE_OK;
+    }
+    tail->position_flags = (uint8_t)((uint32_t)tail->position_flags | DFI_POSFLAG_DESTINY_BOND); /* wide-operands-reviewed */
+    duoforge_event e = dfi_ev(DUOFORGE_EVENT_SINGLE_TURN, user, DUOFORGE_CAUSE_NONE, 0u, DUOFORGE_NO_POSITION);
+    e.id = (uint16_t)move_id;
+    dfi_emit(r, &e); /* [-singlemove] user|Destiny Bond */
+    r->mres |= DFI_MRES_TRUE;
+    return DUOFORGE_OK;
+}
+
 /* Imprison itself (the status move, target self): addVolatile('imprison'); a Pokemon that has it already fails
  * (`-fail`, the move line with [still]); otherwise `-start|user|move: Imprison` (the condition's onStart). */
 static duoforge_status dfi_run_imprison(dfi_run *r, uint32_t user)
@@ -3602,6 +3664,35 @@ static void dfi_after_faint(dfi_run *r, uint32_t length, bool by_move, uint32_t 
     (void)dfi_boost(r, src, atk_up, src, dfi_effect(DUOFORGE_CAUSE_ABILITY, 1u + DFI_ABILITY_MOXIE, DFI_BOOST_PRIMARY));
 }
 
+/* Destiny Bond's onFaint (step G76; data/moves.ts:3505-3520), run for the holder's faint before its volatiles are cleared
+ * (sim/battle.ts:2555-2570): a holder with the flag that faints from a Move of a foe (not an ally, not Future Sight: the pool
+ * has none) shows -activate|holder|move: Destiny Bond (ACTIVATE, cause MOVE, id2 the move) and queues the attacker's faint,
+ * which the faint loop then processes after it. The attacker is not faint()ed again when it is fainted or queued already
+ * (sim/pokemon.ts:1581-1584), but the -activate line shows regardless. The attacker's faint has no effect: the Moxie read
+ * after the queue sees by_move false. */
+static void dfi_destiny_bond_ko(dfi_run *r, uint32_t flat)
+{
+    const dfi_tail_pos *tail = &r->b->tail.sides[flat / 2u].positions[flat % 2u];
+    if ((tail->position_flags & DFI_POSFLAG_DESTINY_BOND) == 0u || !r->last_faint_move) {
+        return;
+    }
+    const uint32_t src = r->last_faint_by;
+    if (src >= DFI_POSITIONS || src / 2u == flat / 2u) {
+        return; /* no source, or the holder's own side (Battle.isAlly) */
+    }
+    const duoforge_event act = dfi_ev(DUOFORGE_EVENT_ACTIVATE, flat, DUOFORGE_CAUSE_MOVE, DFI_MOVE_DESTINYBOND, DUOFORGE_NO_POSITION);
+    dfi_emit(r, &act); /* [-activate] holder|move: Destiny Bond */
+    dfi_member *am = dfi_at(r->b, src);
+    if (am == NULL || am->hp == 0u || r->faint_count >= DFI_POSITIONS) {
+        return;
+    }
+    am->hp = 0u; /* faint() sets the HP to 0 when it queues (sim/pokemon.ts:1586) */
+    r->faint_queue[r->faint_count] = src;
+    r->faint_count += 1u;
+    r->last_faint_by = DFI_POSITIONS;
+    r->last_faint_move = false;
+}
+
 /* faintMessages and checkWin (sim/battle.ts:2535-2590, 404-415): the faints
  * of the action in order, then the win rule. */
 static void dfi_process_faints(dfi_run *r)
@@ -3613,6 +3704,7 @@ static void dfi_process_faints(dfi_run *r)
         if (i >= r->faint_announced) {
             dfi_emit_plain(r, DUOFORGE_EVENT_FAINT, flat); /* [faint] */
         }
+        dfi_destiny_bond_ko(r, flat); /* step G76: before the tail is cleared, which ends the flag */
         dfi_tail_clear_occupant(b, flat); /* the POOL tail ends with the volatiles (decision 0015 section 7) */
         dfi_clear_volatile(dfi_pos(b, flat));
         /* clearVolatile ends with setSpecies, which sets pokemon.speed to the
@@ -4983,6 +5075,7 @@ static duoforge_status dfi_run_recharge(dfi_run *r, uint32_t user)
     }
     bool can = false;
     st = dfi_before_move(r, user, DFI_MOVE_STRUGGLE, &dfi_pool_moves[DFI_MOVE_STRUGGLE], &can);
+    dfi_destiny_bond_attempt(r, user, DFI_MOVE_STRUGGLE, can); /* step G76 */
     if (st == DUOFORGE_OK && !can) {
         r->mres |= DFI_MRES_NULL; /* mustrecharge's BeforeMove returns null (data/conditions.ts:367-377) */
     }
@@ -6097,6 +6190,7 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
     const bool recharging = b->tail.sides[side].positions[q->slot].must_recharge != 0u;
     bool can = false;
     st = dfi_before_move(r, user, move_id, md, &can);
+    dfi_destiny_bond_attempt(r, user, move_id, can); /* step G76: the attempt ends Destiny Bond (BeforeMove / MoveAborted) */
     if (st != DUOFORGE_OK) {
         return st;
     }
@@ -6421,6 +6515,9 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
     if (md->special == DFI_SPECIAL_IMPRISON) {
         return dfi_run_imprison(r, user);
     }
+    if (md->special == DFI_SPECIAL_DESTINY_BOND) {
+        return dfi_run_destiny_bond(r, user, move_id);
+    }
     if (move_id == DFI_MOVE_REVIVALBLESSING) {
         return dfi_run_revival_blessing(r, user);
     }
@@ -6595,7 +6692,8 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
         md->special != DFI_SPECIAL_QUASH && md->special != DFI_SPECIAL_SUBSTITUTE && md->special != DFI_SPECIAL_PHANTOM_FORCE &&
         md->special != DFI_SPECIAL_STEEL_BEAM && md->special != DFI_SPECIAL_THUNDER_WAVE &&
         md->special != DFI_SPECIAL_SKILL_SWAP &&
-        md->special != DFI_SPECIAL_ALLURING_VOICE && md->special != DFI_SPECIAL_DRAGON_CHEER) {
+        md->special != DFI_SPECIAL_ALLURING_VOICE && md->special != DFI_SPECIAL_DRAGON_CHEER &&
+        md->special != DFI_SPECIAL_FINAL_GAMBIT) {
         return DUOFORGE_E_INVARIANT;
     }
     /* Steel Roller's onTry (step G34, data/moves.ts:17893-17913): it fails without a terrain, with -fail and [still]. */

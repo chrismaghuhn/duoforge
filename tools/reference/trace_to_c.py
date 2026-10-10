@@ -951,6 +951,10 @@ IGNORED_VOLATILES = {
     # -singleturn line and the immunity and the damage of a Ground move show it; duoforge.state.pool_g42 reads the tail's bit
     # after every step (a pivot inside the Roost turn is the only boundary where it stands).
     'roost': 'the Ground move lines and the single-turn line',
+    # Step G76 (Destiny Bond, data/moves.ts:3482-3520): not a field of the record; its start line (-singlemove, SINGLE_TURN),
+    # the KO line (-activate, ACTIVATE with cause MOVE) and the consecutive-use fail show it, and duoforge.state.pool_g76 reads
+    # the position bit DESTINY_BOND after every step.
+    'destinybond': 'the start and KO lines and the extension bit DESTINY_BOND',
     'solarbeam': 'the locked slot and target',  # step G30: the same two-turn lock
     # Step G58 (Phantom Force, data/moves.ts:13307-13335): the move's own volatile, which its onTryMove removes on the locked
     # turn, so the lock is twoturnmove's (remembered, as Electro Shot's) and the semi-invulnerability of the charge is shown by
@@ -1389,6 +1393,10 @@ def step_events(log, viewer, roster_of, maxhp, tables, rb_pending=None, swap_ids
             else:
                 e = ev_tuple(EV['FAIL'], ev_pos(args[0]),
                              detail=AILMENT[args[1]] if len(args) > 1 and args[1] != 'heal' else 0)
+        elif kind == '-singlemove' and len(args) == 2 and args[1] == 'Destiny Bond' and not attrs:
+            # Step G76 (decision 0015 5cg; event 38 takes it with the move as id, HauptSession's approval): the start line of
+            # Destiny Bond (data/moves.ts:3493-3495); the single-move line is the SINGLE_TURN event of the user.
+            e = ev_tuple(EV['SINGLE_TURN'], ev_pos(args[0]), NOPOS, 0, tables['MOVE'][key('Destiny Bond')])
         elif kind == '-singleturn':
             if args[1] in ('Protect', 'move: Protect'):  # Spiky Shield and Baneful Bunker (step G20) print `move: Protect`
                 e = ev_tuple(EV['PROTECT'], ev_pos(args[0]))
@@ -1439,6 +1447,8 @@ def step_events(log, viewer, roster_of, maxhp, tables, rb_pending=None, swap_ids
                 e = ev_tuple(EV['BLOCKED'], pos, detail=BLOCK_WIDE_GUARD)
             elif what == 'move: Quick Guard':  # POOL (step G54): a priority move stopped at a target of the guarded side
                 e = ev_tuple(EV['BLOCKED'], pos, detail=BLOCK_QUICK_GUARD)
+            elif what == 'move: Destiny Bond':  # Step G76: the holder's attacker faints after it (cause MOVE, id2 the move)
+                e = ev_tuple(EV['ACTIVATE'], pos, NOPOS, CAUSE['MOVE'], 0, tables['MOVE'][key('Destiny Bond')])
             elif what == 'confusion':
                 e = ev_tuple(EV['CONFUSED'], pos)
             elif what.startswith('ability: '):
