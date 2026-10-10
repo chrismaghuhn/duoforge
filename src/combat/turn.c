@@ -5212,6 +5212,29 @@ static bool dfi_wish_pending(const struct duoforge_battle *b, uint32_t flat)
  * sim/battle-actions.ts:1287-1289). A hit that did something runs the Champions hit loop's Updates: the Update, the faint lines,
  * the Update (data/mods/champions/scripts.ts:537, :574), that is dfi_status_hit_end. A refused second wish runs none (the loop
  * breaks before :537, and :574 returns on the all-false damage). */
+/* selfdestruct ifHit (sim/battle-actions.ts:1287-1289): the user faints in the hit. The check reads damage[i] from BEFORE this
+ * hit's result is folded in (line 1299), and the first hit of the move has none (undefined), so a Healing Wish that is refused
+ * as a second wish faints the user too (the trace of tests/reference/specs/g82_r3_second_wish_false: |move| then |faint|). */
+static duoforge_status dfi_wish_user_faints(dfi_run *r, uint32_t user)
+{
+    struct duoforge_battle *b = r->b;
+    dfi_member *m = dfi_at(b, user);
+    if (m == NULL || m->hp == 0u) {
+        return DUOFORGE_E_INVARIANT;
+    }
+    if (dfi_support.switching == 0u) {
+        return DUOFORGE_E_UNSUPPORTED;
+    }
+    m->hp = 0u;
+    if (r->faint_count < DFI_POSITIONS) {
+        r->faint_queue[r->faint_count] = user;
+        r->faint_count += 1u;
+        r->last_faint_by = user;
+        r->last_faint_move = true;
+    }
+    return DUOFORGE_OK;
+}
+
 static duoforge_status dfi_run_healing_wish(dfi_run *r, uint32_t user)
 {
     struct duoforge_battle *b = r->b;
@@ -5221,31 +5244,20 @@ static duoforge_status dfi_run_healing_wish(dfi_run *r, uint32_t user)
         return DUOFORGE_OK;
     }
     if (dfi_wish_pending(b, user)) {
-        /* The second wish is a failed hit, not a silent success (decision 0045, the lead's check): addSlotCondition returns false
-         * (sim/side.ts:474-476), so the hit's result is false (damage[i] false, sim/battle-actions.ts:1287 no faint); the
-         * hit-result filter leaves no target and atLeastOneFailure keeps moveThisTurnResult (sim/battle-actions.ts:616), and the
-         * wrapper stores the move result FALSE (sim/battle-actions.ts:371-374). The Champions loop breaks before its Updates
-         * (data/mods/champions/scripts.ts:526, the all-false damage), so no Update runs. No -fail line: selfdestruct skips it
-         * (sim/battle-actions.ts:1303-1306). The result is FALSE for Stomping Tantrum's next turn (G42). */
+        /* The second wish (decision 0045, corrected with the trace of g82_r3): addSlotCondition returns false (sim/side.ts:474-476),
+         * the slot is unchanged, and the hit's result is false: the hit-result filter leaves no target and atLeastOneFailure keeps
+         * moveThisTurnResult (sim/battle-actions.ts:616), and the wrapper stores FALSE (sim/battle-actions.ts:371-374). The user
+         * still faints (selfdestruct, see dfi_wish_user_faints). The Champions loop breaks before its Updates (data/mods/champions/
+         * scripts.ts:526: no hit, hit === 1 returns before the faint messages and the Updates at :537 and :574). No -fail line:
+         * selfdestruct skips it (sim/battle-actions.ts:1303-1306). */
         r->mres |= DFI_MRES_FALSE;
-        return DUOFORGE_OK;
+        return dfi_wish_user_faints(r, user);
     }
     b->tail.sides[side].positions[user % 2u].position_flags =
         (uint8_t)(b->tail.sides[side].positions[user % 2u].position_flags | DFI_POSFLAG_HEALING_WISH); /* wide-operands-reviewed */
-    dfi_member *m = dfi_at(b, user);
-    if (m == NULL || m->hp == 0u) {
-        return DUOFORGE_E_INVARIANT;
-    }
-    if (dfi_support.switching == 0u) {
-        return DUOFORGE_E_UNSUPPORTED;
-    }
-    /* selfdestruct ifHit: the user faints in the hit (the faint queue of dfi_deal, which a damage faint uses) */
-    m->hp = 0u;
-    if (r->faint_count < DFI_POSITIONS) {
-        r->faint_queue[r->faint_count] = user;
-        r->faint_count += 1u;
-        r->last_faint_by = user;
-        r->last_faint_move = true;
+    const duoforge_status fs = dfi_wish_user_faints(r, user);
+    if (fs != DUOFORGE_OK) {
+        return fs;
     }
     return dfi_status_hit_end(r);
 }

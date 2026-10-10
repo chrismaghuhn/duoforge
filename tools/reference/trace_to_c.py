@@ -1321,7 +1321,11 @@ def step_events(log, viewer, roster_of, maxhp, tables, rb_pending=None, swap_ids
             # line with another HP text or a status suffix is a ConversionError (the rule 'healing-wish-heal').
             pos = ev_pos(args[0])
             side = pos // 2
-            if args[1] != '100/100':
+            # The owner's copy shows the exact HP (175/175), the foe's the percentage (100/100): both are full HP. A status
+            # suffix would mean a status left, which the pin's clearStatus does not do.
+            hp_text = args[1].split(' ')
+            cur, _, top = hp_text[0].partition('/')
+            if len(hp_text) != 1 or not cur or cur != top:
                 raise ConversionError('healing-wish-heal', 'trace_to_c: a Healing Wish heal that is not full HP and status-free',
                                       detail='%s %s' % (args[0], args[1]))
             hp = ev_hp(args[1], side, viewer, maxhp[side][args[0].split(': ', 1)[1]])

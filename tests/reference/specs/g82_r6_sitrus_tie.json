@@ -1,0 +1,24 @@
+{
+  "name": "g82_r6_sitrus_tie",
+  "purpose": "G82 R6 (decision 0045): Sitrus Berry on both sides with identical Gardevoir sets (equal Speed): the each:Update ties draw; a Healing Wish entrant is healed in the same battle.",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,8200000000000000000000000000000000000000000000000000000000000006",
+  "teams": [
+    "Gardevoir (F) @ Sitrus Berry\nAbility: Trace\nLevel: 50\nEVs: 32 HP / 2 SpD / 32 SpA\nModest Nature\n- Moonblast\n- Protect\n\nLopunny (F) @ Occa Berry\nAbility: Limber\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Healing Wish\n- Protect\n- Quick Attack\n- Fake Out\n\nChimecho (M) @ Leftovers\nAbility: Levitate\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nModest Nature\n- Expanding Force\n- Psychic\n- Helping Hand\n- Protect\n\nKingambit (M) @ Black Glasses\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Sucker Punch\n- Iron Head\n- Protect\n- Swords Dance\n\nPrimarina (F) @ Fairy Feather\nAbility: Torrent\nLevel: 50\nEVs: 32 HP / 2 Def / 32 SpD\nCalm Nature\n- Protect\n- Moonblast\n- Calm Mind\n\nMilotic (F) @ Rocky Helmet\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Protect\n- Scald\n- Recover\n- Coil",
+    "Gardevoir (F) @ Sitrus Berry\nAbility: Trace\nLevel: 50\nEVs: 32 HP / 2 SpD / 32 SpA\nModest Nature\n- Moonblast\n- Protect\n\nPawmot (M) @ Leftovers\nAbility: Iron Fist\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Thunderbolt\n- Revival Blessing\n- Ice Punch\n- Protect\n\nPrimarina (F) @ Fairy Feather\nAbility: Torrent\nLevel: 50\nEVs: 32 HP / 2 Def / 32 SpD\nCalm Nature\n- Protect\n- Moonblast\n- Calm Mind\n\nMilotic (F) @ Rocky Helmet\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Protect\n- Scald\n- Recover\n- Coil\n\nGholdengo @ Life Orb\nAbility: Good as Gold\nLevel: 50\nEVs: 32 HP / 2 SpA / 32 SpD\nCalm Nature\n- Protect\n- Shadow Ball\n- Make It Rain\n\nKingambit (M) @ Black Glasses\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Sucker Punch\n- Iron Head\n- Protect\n- Swords Dance"
+  ],
+  "plan": {
+    "p1": [
+      "move 1 2, move 2",
+      "switch 3, move 1",
+      "move 1 2, move 2"
+    ],
+    "p2": [
+      "move 1 2, move 1 1",
+      "move 1 2, move 1 1",
+      "move 1 2, move 1 1"
+    ],
+    "max_steps": 6
+  }
+}

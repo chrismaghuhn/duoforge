@@ -17,11 +17,15 @@ Pin: Pokemon Showdown b2cb775 (`C:/Dev/src/pokemon-showdown`). Champions overrid
   returns false (:474-476). That makes `didSomething` false, so `damage[i]` is false.
 - Faint (`sim/battle-actions.ts:1287-1289`): `if (selfdestruct === 'ifHit' && damage[i] !== false) battle.faint(source, source, move)`.
   It runs after the slot condition in the same hit loop. The `-fail` at :1303-1306 is skipped for any `selfdestruct` move.
-- **Second wish on an occupied slot** (corrected 2026-10-10, the lead's check): the hit result is FALSE. addSlotCondition
-  returns false (side.ts:474-476), damage[i] is false (battle-actions.ts:1287: no faint), the hit-result filter leaves no
+- **Second wish on an occupied slot** (corrected again with the trace of `g82_r3_second_wish_false`): the hit result is
+  FALSE. addSlotCondition returns false and leaves the slot unchanged (side.ts:474-476). The hit-result filter leaves no
   target, atLeastOneFailure keeps moveThisTurnResult (battle-actions.ts:616), and the wrapper stores FALSE (:371-374).
-  The Champions loop breaks before its Updates (scripts.ts:526). No -fail line (selfdestruct, battle-actions.ts:1303-1306).
-  Engine: `r->mres |= DFI_MRES_FALSE` (turn.c, dfi_run_healing_wish). Next-turn Stomping Tantrum (G42) reads FALSE (doubled).
+  **The user still faints:** the selfdestruct check at battle-actions.ts:1287 reads damage[i] from before this hit's result
+  is folded in (line 1299), and it is undefined on the first hit, so the faint happens. The trace shows `|move|...Healing
+  Wish` then `|faint|...`. The Champions loop breaks before its Updates (scripts.ts:526; hit === 1 returns before the faint
+  messages and the Updates at :537 and :574). No -fail line (selfdestruct, battle-actions.ts:1303-1306).
+  Engine: `r->mres |= DFI_MRES_FALSE` and `dfi_wish_user_faints`, with no hit-end Updates (turn.c, dfi_run_healing_wish).
+  The earlier "no faint" statement in this note was wrong.
 - `singleEvent` returns `relayVar`, which defaults to true when there is no callback (`sim/battle.ts:591-595`). So the
   `Start` event in `addSlotCondition` succeeds; the wish is stored.
 
