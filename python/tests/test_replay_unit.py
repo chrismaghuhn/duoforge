@@ -280,6 +280,20 @@ class LinesTest(unittest.TestCase):
             lines.check(line, self.view)
         return caught.exception.reason
 
+    def test_attract_lines_stop_until_an_encoder_shows_their_bit(self):
+        # Step G71 (decision 0034): Attract is POSITION_EXT_ATTRACT, a view bit encoder 5 cannot show
+        # (features._AWAITING_ENCODER, EncoderAwaitingBit): every Attract line stops by that name, none folds
+        from duoforge import features
+        reason = "awaiting-encoder:DUOFORGE_POSITION_EXT_ATTRACT"
+        self.assertIn("DUOFORGE_POSITION_EXT_ATTRACT", features._AWAITING_ENCODER)
+        for line in ("|-start|p1a: Staraptor|Attract|[from] ability: Cute Charm|[of] p2a: Gholdengo",
+                     "|-activate|p1a: Staraptor|move: Attract|[of] p2a: Gholdengo",
+                     "|cant|p1a: Staraptor|Attract",
+                     "|-end|p1a: Staraptor|Attract|[silent]",
+                     "|-end|p1a: Staraptor|move: Attract|[from] item: Mental Herb",
+                     "|-end|p1a: Staraptor|move: Attract|[from] ability: Oblivious"):
+            self.assertEqual(self.stop(line), reason, line)
+
     def test_feature_lines_stop(self):
         self.assertEqual(self.stop("|-fieldstart|move: Electric Terrain|[from] ability: Electric Surge|[of] p2a: Gholdengo"),
                          "feature:TERRAIN_ELECTRIC")
