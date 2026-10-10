@@ -5423,7 +5423,10 @@ static void dfi_try_hit_abilities(dfi_run *r, uint32_t user, const uint32_t *tar
             hit[i] = false;
         }
     }
-    for (uint32_t i = 0u; i < count && !status_move; ++i) { /* a status move ignores type immunity */
+    /* Thunder Wave (step G68, data/moves.ts:19591-19606: ignoreImmunity false) is the one status move whose type immunity is
+     * judged: hitStepTypeImmunity runs before the accuracy check, so a Ground target is -immune with no accuracy draw. */
+    const bool thunder_wave = md->special == DFI_SPECIAL_THUNDER_WAVE;
+    for (uint32_t i = 0u; i < count && (!status_move || thunder_wave); ++i) { /* a status move ignores type immunity */
         if (!hit[i]) {
             continue;
         }
@@ -6340,7 +6343,8 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
         md->special != DFI_SPECIAL_STRENGTH_SAP && md->special != DFI_SPECIAL_POLTERGEIST &&
         md->special != DFI_SPECIAL_BEAT_UP && md->special != DFI_SPECIAL_SHEER_COLD &&
         md->special != DFI_SPECIAL_BUG_BITE && md->special != DFI_SPECIAL_AFTER_YOU &&
-        md->special != DFI_SPECIAL_QUASH && md->special != DFI_SPECIAL_SUBSTITUTE && md->special != DFI_SPECIAL_PHANTOM_FORCE) {
+        md->special != DFI_SPECIAL_QUASH && md->special != DFI_SPECIAL_SUBSTITUTE && md->special != DFI_SPECIAL_PHANTOM_FORCE &&
+        md->special != DFI_SPECIAL_STEEL_BEAM && md->special != DFI_SPECIAL_THUNDER_WAVE) {
         return DUOFORGE_E_INVARIANT;
     }
     /* Steel Roller's onTry (step G34, data/moves.ts:17893-17913): it fails without a terrain, with -fail and [still]. */
@@ -7293,9 +7297,21 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
      * (:1003). */
     if (any) {
         uint32_t recoil = 0u;
+        uint32_t recoil_cause = DUOFORGE_CAUSE_RECOIL;
+        uint32_t recoil_id2 = 0u;
         if ((md->flags & DFI_MOVE_FLAG_STRUGGLE_RECOIL) != 0u) {
             recoil = ((uint32_t)m->hp_max + 2u) / 4u; /* Math.round(hp_max / 4) */
             recoil = recoil < 1u ? 1u : recoil;
+        } else if (md->special == DFI_SPECIAL_STEEL_BEAM) {
+            /* mindBlownRecoil (step G68, sim/battle-actions.ts:1380-1393): Math.round(maxhp / 2) when the total damage is not 0
+             * (the pin's `if (move.totalDamage)` gate above), with the move's own condition as the effect: the line
+             * `[from] steelbeam`, cause MOVE with the move in id2. Rock Head cancels only the effect 'recoil' (abilities.ts
+             * rockhead, onDamage), so it does not cancel this one. */
+            if (total != 0u) {
+                recoil = ((uint32_t)m->hp_max + 1u) / 2u; /* Math.round(hp_max / 2): .5 rounds up */
+                recoil_cause = DUOFORGE_CAUSE_MOVE;
+                recoil_id2 = move_id;
+            }
         } else if (md->recoil[1] != 0u && total != 0u) {
             recoil = (total * md->recoil[0] * 2u + md->recoil[1]) / (2u * md->recoil[1]);
             recoil = recoil < 1u ? 1u : recoil;
@@ -7310,7 +7326,7 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
         }
         if (recoil != 0u) {
             const uint32_t user_before = m->hp;
-            st = dfi_deal(r, user, recoil, DUOFORGE_CAUSE_RECOIL, 0u, DUOFORGE_NO_POSITION);
+            st = dfi_deal(r, user, recoil, recoil_cause, recoil_id2, DUOFORGE_NO_POSITION);
             if (st != DUOFORGE_OK) {
                 return st;
             }
@@ -7392,6 +7408,22 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
                 dfi_emergency_exit(r, targets[i], hp_before[i]);
             }
         }
+    }
+    /* MoveFail (sim/battle-actions.ts:527-533, step G68): when the hit steps left no target (a miss, a Protect, an
+     * invulnerability), Steel Beam's onMoveFail deals round(maxhp / 2) to the user with the move's own condition: the line
+     * `[from] steelbeam`, cause MOVE with the move in id2, then the EmergencyExit check of useMoveInner (the user is not
+     * the target). A move that stops before its hit steps (TryMove, a failed PP, no target) is not a MoveFail and returned
+     * above. A Substitute's hit counts as a hit (any), so no MoveFail follows it. */
+    /* A Substitute's hit leaves the target null (the pin's HIT_SUBSTITUTE, data/mods/champions/scripts.ts:350-352), so the
+     * move's result is false: a MoveFail for the single target of Steel Beam, even though `any` counts the absorbed hit. */
+    if ((!any || absorbed_any) && md->special == DFI_SPECIAL_STEEL_BEAM && m->hp != 0u) {
+        const uint32_t user_before = m->hp;
+        const uint32_t fail_damage = ((uint32_t)m->hp_max + 1u) / 2u; /* Math.round(maxhp / 2) */
+        st = dfi_deal(r, user, fail_damage, DUOFORGE_CAUSE_MOVE, move_id, DUOFORGE_NO_POSITION);
+        if (st != DUOFORGE_OK) {
+            return st;
+        }
+        dfi_emergency_exit(r, user, user_before);
     }
     /* selfBoost (step G32, sim/battle-actions.ts:520): once the hit loop is done and the move hit something, the user's
      * own stat change of the move (Clanging Scales: Defense -1), before AfterMoveSecondarySelf; moveHit with isSelf, so a

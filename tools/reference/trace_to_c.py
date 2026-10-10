@@ -1039,6 +1039,11 @@ def ev_cause(attrs, tables):
                 # Spiky Shield (step G20, POOL): `-damage|attacker|hp|[from] Spiky Shield|[of] holder`, the condition's own name;
                 # Stealth Rock and Spikes (step G37): `-damage|X|hp|[from] Stealth Rock`, the hazard's own name, the move's id in id2
                 cause, id2 = CAUSE['MOVE'], tables['MOVE'][key(what)]
+            elif what == 'steelbeam':
+                # Step G68 (Steel Beam, mindBlownRecoil and onMoveFail, sim/battle.ts damage): `-damage|user|hp|[from] steelbeam`, the
+                # condition's own id (dex.conditions.get('Steel Beam') has no name of its own), on a hit and on a miss, a Protect or an
+                # invulnerability: cause MOVE with the move in id2, the user in position and no [of].
+                cause, id2 = CAUSE['MOVE'], tables['MOVE'][key('Steel Beam')]
             elif what == 'lockedmove':
                 pass  # a MOVE flag
             else:
