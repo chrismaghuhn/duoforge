@@ -22,8 +22,8 @@ PARTS = {"request": None, "observation": None, "record": None, "status": 0, "cau
 class Searcher:
     """Honest's decide() in shape: one record per decision, scripted by kind."""
 
-    def __init__(self, kind="searched", reason=None, error=None, gate=None):
-        self.kind, self.reason, self.error, self.gate = kind, reason, error, gate
+    def __init__(self, kind="searched", reason=None, error=None, gate=None, causes=None):
+        self.kind, self.reason, self.error, self.gate, self.causes = kind, reason, error, gate, causes
         self.calls = []
 
     def decide(self, roots, envs, seats, keys, last_step):
@@ -35,6 +35,8 @@ class Searcher:
         record = {"kind": self.kind, "choice": 7}
         if self.reason is not None:
             record["reason"] = self.reason
+        if self.causes is not None:
+            record["causes"] = self.causes
         return [7], [record]
 
 
@@ -71,6 +73,16 @@ class LiveSearchTest(unittest.TestCase):
         outcome = _decide(live)
         self.assertEqual((outcome.action, outcome.cause, outcome.fallback), (None, "unreconstructible", "a"))
         self.assertEqual(outcome.reason, "no spread prior for foe species [52]")
+
+    def test_a_refusal_names_the_searchs_causes(self):
+        # A refused public record says why (Honest's visible causes: a visible sleep or confusion, a possible Illusion,
+        # a Substitute, ...); the class (a) count is read by cause, so the reason carries them.
+        live = self.make(Searcher("unreconstructible", "DUOFORGE_E_UNSUPPORTED: public record",
+                                  causes=["visible_sleep", "substitute"]))
+        self.assertEqual(_decide(live).reason, "DUOFORGE_E_UNSUPPORTED: public record (visible_sleep, substitute)")
+        same = self.make(Searcher("unreconstructible", "missing team-preview record",
+                                  causes=["missing team-preview record"]))
+        self.assertEqual(_decide(same).reason, "missing team-preview record")
 
     def test_forced_and_team_decisions_are_raw_without_fallback(self):
         for kind in ("forced", "raw", "team"):

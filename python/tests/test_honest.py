@@ -571,9 +571,11 @@ class LiveLatency(unittest.TestCase):
         self.assertIn("team_selection", report["boundaries"])
         self.assertIn("turn", report["boundaries"])
         for kind, row in report["boundaries"].items():
-            self.assertEqual(set(row), {"n", "p50", "p95", "p99", "max", "causes"}, kind)
+            self.assertEqual(set(row), {"n", "p50", "p95", "p99", "max", "causes", "reasons"}, kind)
             self.assertTrue(row["p50"] <= row["p95"] <= row["p99"] <= row["max"], kind)
             self.assertEqual(sum(row["causes"].values()), row["n"], kind)
+            self.assertEqual(set(row["reasons"]) == set(), all(c in ("searched", "forced", "raw", "team")
+                                                                for c in row["causes"]), kind)
         self.assertEqual(report["settings"]["k"], 2)
 
 
