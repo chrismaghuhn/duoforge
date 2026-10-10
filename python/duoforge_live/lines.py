@@ -136,7 +136,7 @@ LIBRARY_SUPPORTED = supported()
 BASE_FOLDS = sum(1 << FEATURES[n] for n in ("WEATHER_SAND", "WEATHER_SNOW", "AILMENT_TOX"))
 # The view-extension folds (tracker.EXT_FIELDS: the record fields the tracker fills; test_replay compares them with
 # DuoForge's record byte for byte and requires each to be shown at compared points of both viewers, own and foe side).
-EXT_FOLDS = sum(1 << FEATURES[n] for n in ("THROAT_CHOP", "AURORA_VEIL", "PERISH", "ENCORE", "ABILITY_CHANGE"))
+EXT_FOLDS = sum(1 << FEATURES[n] for n in ("THROAT_CHOP", "AURORA_VEIL", "PERISH", "ENCORE", "ABILITY_CHANGE", "ITEM_CHANGE"))
 TRACKER_FOLDS = BASE_FOLDS | EXT_FOLDS
 SUPPORTED = LIBRARY_SUPPORTED & TRACKER_FOLDS
 
@@ -166,6 +166,11 @@ _SINGLE_MOVE = {"Glaive Rush": "GLAIVE_RUSH", "move: Glaive Rush": "GLAIVE_RUSH"
 _ITEM_CHANGE_FROM = {"move: Trick", "move: Switcheroo", "move: Thief", "move: Covet", "move: Recycle",
                      "move: Knock Off", "move: Incinerate", "move: Fling", "move: Bug Bite", "move: Pluck", "stealeat",
                      "ability: Pickpocket", "ability: Magician", "ability: Harvest", "ability: Pickup"}
+# The item changes the engine models (steps G16, G29, G64), which the tracker folds: Knock Off, Thief, Trick and
+# Switcheroo take an item (-enditem), Bug Bite steals a berry (stealeat), Trick, Switcheroo, Thief and Covet give one
+# (-item). The converter checks each line's shape. Every other source of _ITEM_CHANGE_FROM stops on its line.
+_ITEM_TAKEN_FOLD = {"move: Knock Off", "move: Thief", "move: Trick", "move: Switcheroo", "stealeat"}
+_ITEM_GIVEN_FOLD = {"move: Trick", "move: Switcheroo", "move: Thief", "move: Covet"}
 
 # The fold's own effects, beside the generic kinds (the converter's step_events and the tracker's _event).
 # The -activate effects of the committed reference battles (python/tests/test_replay.py checks that their spectator
@@ -248,8 +253,9 @@ def _toxic(parts):
 
 def check(line, view):
     """The class of a protocol line (module docstring). `view` is the tracker: view.data, view.sheet_of(ident) (the
-    member's sheet: species, item, ability ids as parse_team has them) and view.ability_now(ident) (its current
-    ability + 1)."""
+    member's sheet: species, item, ability ids as parse_team has them), view.ability_now(ident) (its current
+    ability + 1) and view.item_now(ident) (the item + 1 it holds as far as the lines showed: the sheet's, or one a move
+    gave it; 0 after one took it)."""
     if not line.startswith("|") or line.startswith("||"):
         return None
     parts = line.split("|")
@@ -302,8 +308,7 @@ def check(line, view):
             # Poltergeist (step G64): it names the item its target holds; the open sheet's item is no news (an
             # ACTIVATE without state). Any other item stops: the view does not know it.
             item = tables["ITEM"].get(trace_to_c.key(args[2]))
-            target = view.sheet_of(args[0])
-            if item is not None and item + 1 == target["item"]:
+            if item is not None and item + 1 == view.item_now(args[0]):
                 return "fold"
             _unknown(kind, effect)
         if effect == "ability: Symbiosis":
@@ -377,9 +382,11 @@ def check(line, view):
     if kind == "-enditem":
         froms = _froms(attrs)
         if any(f in _ITEM_CHANGE_FROM or f.startswith("move: ") for f in froms):
-            return _feature("ITEM_CHANGE")
+            if len(froms) == 1 and froms[0] in _ITEM_TAKEN_FOLD:
+                return _feature("ITEM_CHANGE")
+            _unknown(kind, f"[from] {froms[0]}")  # Incinerate, Fling, Pickpocket, ...: not modelled
         item = tables["ITEM"].get(trace_to_c.key(effect))
-        if not froms and item is not None and item + 1 == view.sheet_of(args[0])["item"]:
+        if not froms and item is not None and item + 1 == view.item_now(args[0]):
             return "fold"  # the holder used its own item up (a berry, Focus Sash, White Herb, a popped balloon)
         if not froms:
             return _not_its_own(kind, effect, args[0], view)
@@ -387,11 +394,13 @@ def check(line, view):
     if kind == "-item":
         froms = _froms(attrs)
         item = tables["ITEM"].get(trace_to_c.key(effect))
-        own = item is not None and item + 1 == view.sheet_of(args[0])["item"]
+        own = item is not None and item + 1 == view.item_now(args[0])
         if own and ("[identify]" in attrs or not froms):
             return "fold"  # Frisk, or the holder's own announcement (Air Balloon): an item the open sheet shows
         if any(f in _ITEM_CHANGE_FROM for f in froms):
-            return _feature("ITEM_CHANGE")
+            if len(froms) == 1 and froms[0] in _ITEM_GIVEN_FOLD:
+                return _feature("ITEM_CHANGE")
+            _unknown(kind, f"[from] {froms[0]}")  # Recycle, Harvest, Pickup, Magician, ...: not modelled
         _unknown(kind, effect)
     if kind == "detailschange":
         sheet = view.sheet_of(args[0])

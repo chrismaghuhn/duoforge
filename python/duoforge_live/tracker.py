@@ -58,6 +58,7 @@ STALL_DURATION, STALL_LEVEL_MAX = 2, 6  # DFI_STALL_DURATION (src/combat/turn.c)
 CHARGE_TURNS = 2  # twoturnmove's duration: the charge and the locked turn end in the second residual
 EXT_REVISION = C["DUOFORGE_OBSERVATION_EXT_REVISION"]
 EXT_THROAT_CHOP = C["DUOFORGE_POSITION_EXT_THROAT_CHOP"]
+ITEM_NOW_NONE = C["DUOFORGE_ITEM_NOW_NONE"]  # duoforge_member_ext.item_now: the member holds nothing
 # The view-extension fields (OBSERVATION_EXT, decision 0018) of each feature the tracker folds: what observation_ext
 # writes, and all that restrict_ext keeps of DuoForge's record for a comparison. ("bit", B): bit B of a position's
 # volatiles; ("position" | "member" | "side", F): field F of every position, member or side record. The base-value
@@ -69,6 +70,7 @@ EXT_FIELDS = {
     "PERISH": (("position", "perish"),),
     "ENCORE": (("position", "encore_slot"),),
     "ABILITY_CHANGE": (("position", "ability_now"),),
+    "ITEM_CHANGE": (("member", "item_now"),),
 }
 # DUOFORGE_SIDE_* of a SIDE_START or SIDE_END event (tailwind 1, reflect 2, light screen 3, Aurora Veil 4) -> the index
 # of the side's turns in Tracker._conditions
@@ -131,6 +133,7 @@ class _Member:
         self.mega_capable = data.mega_capable(sheet["species"], sheet["item"])
         self.is_mega = 0
         self.item_used = 0
+        self.item_now = 0  # the POOL view extension: 0 as the sheet, an item + 1 a move gave it, ITEM_NOW_NONE taken
         self.seen = False
         self.hp_percent = 0
         self.hp_flag = 0
@@ -187,6 +190,7 @@ class Tracker:
         self._pressure = tables["ABILITY"]["PRESSURE"] + 1 if "PRESSURE" in tables["ABILITY"] else None
         self._follow_me = tables["MOVE"].get("FOLLOWME")
         self._struggle = tables["MOVE"].get("STRUGGLE")
+        self._symbiosis = tables["ABILITY"]["SYMBIOSIS"] + 1 if "SYMBIOSIS" in tables["ABILITY"] else None
         # Protect and Detect both show "-singleturn|POKEMON|Protect"; a failed one resets the stall counter
         self._stall_moves = {tables["MOVE"][k] for k in ("PROTECT", "DETECT") if k in tables["MOVE"]}
         self._guard_moves = {tables["MOVE"][k] for k in ("WIDEGUARD", "QUICKGUARD") if k in tables["MOVE"]}
@@ -270,8 +274,7 @@ class Tracker:
             holder = self._member_of(of[0])
         elif self._last_move is not None:
             holder = self._occupant(self._last_move[0])
-        item_id = self.data.tables["ITEM"].get(trace_to_c.key(item))
-        if holder is not None and item_id is not None and holder.sheet["item"] == item_id + 1 and not holder.item_used:
+        if holder is not None and self._holds(holder, trace_to_c.key(item)):
             self._field_turns_next = FIELD_TURNS_EXTENDED
 
     def _turn_scoped_stop(self, boundary):
@@ -310,11 +313,33 @@ class Tracker:
         p = self._at(pos)
         return p.ability_now or self._member(pos // 2)[p.occupant].ability
 
+    def item_now(self, ident):
+        """The item + 1 the member a protocol ident names holds as far as the lines showed, used up or not (lines.check:
+        a line about the holder's own item): the one a move or Symbiosis gave it, 0 after one took it, else the
+        sheet's."""
+        return self._item_of(self._member_of(ident))
+
+    @staticmethod
+    def _item_of(member):
+        if member.item_now == ITEM_NOW_NONE:
+            return 0
+        return member.item_now or member.sheet["item"]
+
     def _holds(self, member, key):
-        """Whether `member` holds the item of ITEM table key `key` now, as far as the lines showed: its open sheet's
-        item, not seen used up or lost."""
+        """Whether `member` holds the item of ITEM table key `key` now, as far as the lines showed: not seen used up or
+        lost (item_used), the sheet's item or the one a move gave it."""
         item = self.data.tables["ITEM"].get(key)
-        return item is not None and not member.item_used and member.sheet["item"] == item + 1
+        return item is not None and not member.item_used and self._item_of(member) == item + 1
+
+    def _item_received(self, pos, code, public):
+        """The occupant of `pos` now holds the item `code` (+ 1) that a move or Symbiosis gave it: its old item is no
+        longer gone, and a Choice item ends its lock (the item's onStart; dfi_set_held)."""
+        m = self._occupant(pos)
+        m.item_now = code
+        if public:
+            m.item_used = 0
+        if code in self._choice_items:
+            self._at(pos).choice_slot = MOVE_SLOT_NONE
 
     def _member_of(self, ident):
         side, name = int(ident[1]) - 1, ident.split(": ", 1)[1]
@@ -490,6 +515,13 @@ class Tracker:
             self._turn = ident
             self._turn_scoped.clear()
             self._guards.clear()
+            for side in (0, 1):
+                for p in self._positions[side]:
+                    # endTurn's DisableMove: choicelock ends for a holder without its Choice item (dfi_end_turn)
+                    if p.choice_slot != MOVE_SLOT_NONE and p.occupant != ROSTER_NONE:
+                        m = self._member(side)[p.occupant]
+                        if m.item_used or self._item_of(m) not in self._choice_items:
+                            p.choice_slot = MOVE_SLOT_NONE
         elif kind in (EV["SWITCH"], EV["DRAG"]):
             # A drag (Step G46) is a switch of the dragged-in member: the occupant is replaced and reset, the HP of the line.
             p = self._at(pos)
@@ -519,14 +551,25 @@ class Tracker:
                 p.guard_undo = (p.chain, p.stall)
                 p.chain = min(p.chain + 1, STALL_LEVEL_MAX)
                 p.stall = STALL_DURATION
-            if (p.choice_slot == MOVE_SLOT_NONE and m.sheet["item"] in self._choice_items and not m.item_used
-                    and ident in m.sheet["moves"]):
+            holds_choice = not m.item_used and self._item_of(m) in self._choice_items
+            if p.choice_slot != MOVE_SLOT_NONE and not holds_choice and e[3] != trace_to_c.CAUSE["ABILITY"]:
+                p.choice_slot = MOVE_SLOT_NONE  # choicelock's onBeforeMove: its Choice item is gone (a Trick, Knock Off)
+            if (p.choice_slot == MOVE_SLOT_NONE and holds_choice and ident in m.sheet["moves"]
+                    and e[3] != trace_to_c.CAUSE["ABILITY"]):
                 # A Choice item locks its holder into the move of its |move| line (data/items.ts onModifyMove,
                 # set right before the line) until it leaves (c07 battles, Choice Scarf).
                 p.choice_slot = m.sheet["moves"].index(ident)
         elif kind == EV["ACTIVATE"]:
             if e[3] == trace_to_c.CAUSE["ABILITY"] and ident2 == self.data.tables["ABILITY"]["EMERGENCYEXIT"] + 1:
                 self._at(pos).flag = 1  # it leaves: asked to switch (id2 names an ability only with cause ABILITY)
+            elif e[3] == trace_to_c.CAUSE["ABILITY"] and ident2 == self._symbiosis:
+                # Symbiosis (step G69): the holder passes its item (id: the item + 1) to its ally ([of], `other`), which
+                # has used its own up; the holder then holds nothing
+                holder = self._occupant(pos)
+                holder.item_now = ITEM_NOW_NONE
+                if public:
+                    holder.item_used = 1
+                self._item_received(e[2], ident, public)
             elif e[3] == trace_to_c.CAUSE["MOVE"] and ident2 in (self._feint, self._phantom_force):
                 # Feint broke something (step G28, sim/battle-actions.ts hitStepBreakProtect, printed only then; Phantom
                 # Force's `[broken]` line the same, step G58): the target's own Protect (its flag) and its stall
@@ -662,8 +705,24 @@ class Tracker:
             m = self._occupant(pos)
             if public:
                 m.item_used = 1
+            if e[3] == trace_to_c.CAUSE["ITEM_TAKEN"]:
+                # a move took the item (Knock Off, Thief, Trick, Switcheroo, Bug Bite; steps G16, G29, G64): the member
+                # holds nothing, also after a switch or a faint (the tail's item_now)
+                m.item_now = ITEM_NOW_NONE
             if self._unburden is not None and self._ability_at(pos) == self._unburden:
                 self._at(pos).flags |= FLAG_UNBURDEN  # Unburden doubles Speed once the item is gone (c08 battles)
+        elif kind == EV["ITEM_START"]:
+            # a move gave the member an item (Trick, Switcheroo, Thief, Covet; step G29): it holds it now, its old item is
+            # no longer "gone"; the one it came from ([of], Thief and Covet) holds nothing. A Choice item that comes
+            # ends the receiver's lock (the item's onStart).
+            self._item_received(pos, ident2, public)
+            if e[2] != NOPOS:
+                giver = self._occupant(e[2])
+                giver.item_now = ITEM_NOW_NONE
+                if e[2] // 2 != self.side or self._spectator:
+                    giver.item_used = 1
+                if self._unburden is not None and self._ability_at(e[2]) == self._unburden and not self._at(e[2]).fainted:
+                    self._at(e[2]).flags |= FLAG_UNBURDEN  # takeItem's TakeItem event (Covet prints no -enditem)
         elif kind == EV["SINGLE_TURN"]:
             if ident == self._follow_me:
                 self._at(pos).flags |= FLAG_FOLLOW_ME  # this turn (c11 battles)
@@ -834,7 +893,10 @@ class Tracker:
             pv["stages"] = p.stages
             pv["confused"], pv["charging"] = p.confused, 1 if p.charge else 0
             pv["locked_slot"] = p.locked_slot if p.locked_slot != MOVE_SLOT_NONE else p.choice_slot
-            pv["reserved"] = p.flags
+            holder = members[p.occupant]
+            gone = holder.item_used or holder.item_now == ITEM_NOW_NONE
+            # Unburden doubles the Speed only while the item is gone: an item a move gave hides the flag
+            pv["reserved"] = p.flags if gone else p.flags & ~FLAG_UNBURDEN
             if own and p.charge:
                 pv["locked_target"] = p.locked_target
             pv["acted"], pv["protect_chain"] = p.acted, p.chain
@@ -859,7 +921,8 @@ class Tracker:
         v["ability"], v["item"] = member.ability, sheet["item"]
         v["move_ids"][:count] = sheet["moves"]
         v["pp_max"][:count] = member.pp_max
-        v["is_mega"], v["item_used"] = member.is_mega, member.item_used
+        # item_used: the sheet's item is gone (a member without one has none to lose, whatever it got and used since)
+        v["is_mega"], v["item_used"] = member.is_mega, member.item_used if sheet["item"] else 0
         active = any(p.occupant == m for p in self._positions[side])
         if own:
             v["hp"], v["hp_max"], v["hp_kind"], v["pp_kind"] = member.hp, member.hp_max, HP_EXACT, PP_EXACT
@@ -899,6 +962,8 @@ class Tracker:
         for side in (0, 1):
             v = o["sides"][side]
             v["aurora_veil_turns"] = self._conditions[side][3]
+            for m, member in enumerate(self._member(side)):
+                v["members"][m]["item_now"] = member.item_now
             for k, p in enumerate(self._positions[side]):
                 if p.occupant == ROSTER_NONE:
                     continue  # an empty position: all zero

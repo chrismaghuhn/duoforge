@@ -263,6 +263,9 @@ class _View:
     def ability_now(self, ident):
         return self.sheet_of(ident)["ability"]
 
+    def item_now(self, ident):
+        return self.sheet_of(ident)["item"]
+
     def side_sheets(self, ident):
         return [m for k, m in self._members.items() if k[:2] == ident[:2]]
 
@@ -288,8 +291,13 @@ class LinesTest(unittest.TestCase):
                                      self.view), "fold")
         self.assertEqual(self.stop("|-ability|p2a: Gholdengo|Mummy|[from] ability: Mummy|[of] p1a: Staraptor"),
                          "line:-ability [from] ability: Mummy")
-        self.assertEqual(self.stop("|-enditem|p1a: Staraptor|Sitrus Berry|[from] move: Knock Off|[of] p2a: Gholdengo"),
-                         "feature:ITEM_CHANGE")
+        # Knock Off folds (ITEM_CHANGE); an item source the engine does not model stops on its line
+        self.assertEqual(lines.check("|-enditem|p1a: Staraptor|Sitrus Berry|[from] move: Knock Off|[of] p2a: Gholdengo",
+                                     self.view), "fold")
+        self.assertEqual(self.stop("|-enditem|p1a: Staraptor|Sitrus Berry|[from] move: Incinerate"),
+                         "line:-enditem [from] move: Incinerate")
+        self.assertEqual(self.stop("|-item|p1a: Staraptor|Sitrus Berry|[from] move: Recycle"),
+                         "line:-item [from] move: Recycle")
         self.assertEqual(self.stop("|-start|p1a: Staraptor|move: Taunt"), "feature:TAUNT")
         self.assertEqual(lines.check("|-start|p1a: Staraptor|Encore", self.view), "fold")  # the tracker folds Encore
         self.assertEqual(lines.check("|-status|p1a: Staraptor|tox", self.view), "fold")  # Tox folds (BC spec 5)
@@ -298,27 +306,27 @@ class LinesTest(unittest.TestCase):
     def test_g64_lines(self):
         # Step G64: Sheer Cold's bare -ohko after the target's faint changes no field (kept, no event); Poltergeist's
         # -activate names the item its target holds, the open sheet's (another stops); Bug Bite's stealeat takes the
-        # target's berry like Knock Off, decision 0018's ITEM_CHANGE
+        # target's berry like Knock Off, decision 0018's ITEM_CHANGE (folded)
         self.assertEqual(lines.check("|-ohko", self.view), "keep")
         self.assertEqual(lines.check("|-activate|p2a: Gholdengo|move: Poltergeist|Life Orb", self.view), "fold")
         self.assertEqual(self.stop("|-activate|p2a: Gholdengo|move: Poltergeist|Leftovers"),
                          "line:-activate move: Poltergeist")
         bug_bite = "|-enditem|p1a: Staraptor|Sitrus Berry|[from] stealeat|[move] Bug Bite|[of] p2a: Gholdengo"
-        self.assertEqual(self.stop(bug_bite), "feature:ITEM_CHANGE")
+        self.assertEqual(lines.check(bug_bite, self.view), "fold")
     def test_phantom_force_breaking_a_protection_folds(self):
         # Step G58: Phantom Force breaks a Protect like Feint (hitStepBreakProtect), printed with [broken]
         self.assertEqual(lines.check("|-activate|p2a: Gholdengo|move: Phantom Force|[broken]", self.view), "fold")
 
     def test_item_transfer_lines_are_item_change(self):
         # G29 (#171): every line of a Trick, Switcheroo, Thief or Covet is decision 0018's ITEM_CHANGE, the
-        # -activate of Trick too (it names the target; Switcheroo prints none)
+        # -activate of Trick too (it names the target; Switcheroo prints none); the tracker folds them
         for line in ("|-activate|p1a: Staraptor|move: Trick|[of] p2a: Gholdengo",
                      "|-item|p1a: Staraptor|Choice Scarf|[from] move: Trick",
                      "|-enditem|p1a: Staraptor|Sitrus Berry|[silent]|[from] move: Switcheroo",
                      "|-item|p1a: Staraptor|Life Orb|[from] move: Thief|[of] p2a: Gholdengo",
                      "|-enditem|p2a: Gholdengo|Life Orb|[silent]|[from] move: Thief|[of] p1a: Staraptor",
                      "|-item|p1a: Staraptor|Life Orb|[from] move: Covet|[of] p2a: Gholdengo"):
-            self.assertEqual(self.stop(line), "feature:ITEM_CHANGE", line)
+            self.assertEqual(lines.check(line, self.view), "fold", line)
 
     def test_haze_folds(self):
         # Step G62 (decision 0031): Haze's -clearallboost is the CLEAR_ALL_BOOSTS event; the tracker folds it
@@ -362,9 +370,8 @@ class LinesTest(unittest.TestCase):
         # partner then holds another item than its sheet's, decision 0018's ITEM_CHANGE, as Trick, Knock Off, Bug Bite
         view = _View({"p1: Staraptor": ("STARAPTOR", "LEFTOVERS", "SYMBIOSIS"),
                       "p1: Gholdengo": ("GHOLDENGO", "FOCUSSASH", "GOODASGOLD")})
-        with self.assertRaises(lines.Stop) as caught:
-            lines.check("|-activate|p1a: Staraptor|ability: Symbiosis|Leftovers|[of] p1b: Gholdengo", view)
-        self.assertEqual(caught.exception.reason, "feature:ITEM_CHANGE")
+        self.assertEqual(lines.check("|-activate|p1a: Staraptor|ability: Symbiosis|Leftovers|[of] p1b: Gholdengo", view),
+                         "fold")  # the tracker folds ITEM_CHANGE
 
     def test_skill_swap_lines_are_ability_change(self):
         # Step G70 (decision 0041): the pin prints "Skill Swap" without "move: " for a foe swap (both abilities named)
