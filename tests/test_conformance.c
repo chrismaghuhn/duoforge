@@ -33,7 +33,7 @@
 #include "reference/conformance_pool.h"
 #include "support/pool.h"
 #define DF_CONF_FORMES dfi_pool_formes
-#define DF_POOL_DATA_BATTLES 759u /* the recorded pool battles: main's 757 (the G74 and G76 battles, the thirteen G78 battles, the nine hit-loop battles of chris/expansion-hitloop-fixes, and the two mirrored replay-tracker battles of main), and the two Substitute battles of chris/expansion-sub-fixes-2 (sub2_rockhead_flareblitz_substitute_arcanine, sub2_ancientpower_substitute_tyrantrum) */
+#define DF_POOL_DATA_BATTLES 760u /* the recorded pool battles: sub2_mark_wild_charge_charge_beam_mirror (batch 6, the marks of Charge Beam and Wild Charge), main's 757 (the G74 and G76 battles, the thirteen G78 battles, the nine hit-loop battles of chris/expansion-hitloop-fixes, and the two mirrored replay-tracker battles of main), and the two Substitute battles of chris/expansion-sub-fixes-2 (sub2_rockhead_flareblitz_substitute_arcanine, sub2_ancientpower_substitute_tyrantrum) */
 #elif defined(DF_CONFORMANCE_TEAM_C)
 #include "data/extended_tables.h"
 #include "reference/conformance_team_c.h"
