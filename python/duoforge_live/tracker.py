@@ -72,6 +72,7 @@ EXT_FIELDS = {
     "TAUNT": (("bit", C["DUOFORGE_POSITION_EXT_TAUNT"]),),
     "YAWN": (("bit", C["DUOFORGE_POSITION_EXT_YAWN"]),),
     "DISABLE": (("position", "disable_slot"),),
+    "IMPRISON": (("bit", C["DUOFORGE_POSITION_EXT_IMPRISON"]),),
     "TYPE_CHANGE": (("bit", C["DUOFORGE_POSITION_EXT_TYPE_CHANGED"]), ("position", "type_now")),
     "AURORA_VEIL": (("side", "aurora_veil_turns"),),
     "PERISH": (("position", "perish"),),
@@ -81,7 +82,8 @@ EXT_FIELDS = {
 }
 # The presence bits of a position's volatiles: _Position attribute -> DUOFORGE_POSITION_EXT_* bit.
 _PRESENCE_BITS = (("throat_chop", EXT_THROAT_CHOP), ("must_recharge", C["DUOFORGE_POSITION_EXT_MUST_RECHARGE"]),
-                  ("taunt", C["DUOFORGE_POSITION_EXT_TAUNT"]), ("yawn", C["DUOFORGE_POSITION_EXT_YAWN"]))
+                  ("taunt", C["DUOFORGE_POSITION_EXT_TAUNT"]), ("yawn", C["DUOFORGE_POSITION_EXT_YAWN"]),
+                  ("imprison", C["DUOFORGE_POSITION_EXT_IMPRISON"]))
 # DUOFORGE_FIELD_* of a terrain's FIELD_START event -> DUOFORGE_TERRAIN_* of the observation
 _TERRAIN = {1: C["DUOFORGE_TERRAIN_GRASSY"], trace_to_c.FIELD_PSYCHIC_TERRAIN: C["DUOFORGE_TERRAIN_PSYCHIC"],
             trace_to_c.FIELD_ELECTRIC_TERRAIN: C["DUOFORGE_TERRAIN_ELECTRIC"],
@@ -139,6 +141,7 @@ class _Position:
         self.must_recharge = 0  # a recharge move hit: the next action is cant|recharge (presence only)
         self.taunt = 0  # Taunt's volatile is up (presence only)
         self.yawn = 0  # Yawn's volatile is up (presence only)
+        self.imprison = 0  # the occupant used Imprison (presence only, until it leaves)
         self.type_now = (0, 0)  # the types (id + 1, 0: none) a move set until the occupant leaves (Soak, Double Shock)
         self.perish = 0  # the Perish count the game showed last, 3 to 1 (0: none)
         self.last_slot = 0  # the move slot + 1 of the occupant's last move line (5: Struggle; None: not on its sheet)
@@ -676,6 +679,8 @@ class Tracker:
                 if ident not in moves:
                     raise lines.Stop("disable-move-unknown")
                 p.disable_slot = moves.index(ident) + 1
+        elif kind == EV["VOLATILE_START"] and detail == trace_to_c.VOLATILE_IMPRISON:
+            self._at(pos).imprison = 1  # -start|X|move: Imprison (step G38): no end line, it ends with the occupant
         elif kind == EV["VOLATILE_START"] and detail == trace_to_c.VOLATILE_YAWN:
             self._at(pos).yawn = 1  # -start|X|move: Yawn|[of] source (step G31); its end line is [silent], above
         elif kind == EV["VOLATILE_START"] and detail == trace_to_c.VOLATILE_MUST_RECHARGE:
