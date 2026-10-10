@@ -2318,7 +2318,7 @@ class Library(unittest.TestCase):
         marked = [n for n in re.findall(r'\[DFI_MOVE_(\w+)\] = 1u', read('src', 'data', 'support_manifest.c'))
                   if n in ids and ids[n] >= ext_moves]
         self.assertEqual(len(names), ext_moves + len(ids))
-        self.assertEqual(len(marked), 197)  # G72b: Alluring Voice and Dragon Cheer make 197 (195 before); the King's Shield of G66 (decision 0015 5cb) makes 195; the Skill Swap of G70 makes 194 (decision 0041) makes 194 from 193; 189 before step G68 (decision 0015 item 5cc: Steel Beam, Thunder Wave, Fire Punch, Ice Hammer); 180 of main, the four of G64 and the three of G62 (Haze, After You, Quash)  # the four of step G64 (Poltergeist, Beat Up, Bug Bite, Sheer Cold; decision 0015 item 5ca), the seven of step G54 (Icicle Spear, Scale Shot, Quick Guard, Upper Hand, Heal Pulse, Strength Sap, Sing), and the 171 of main (Roost and Stomping Tantrum of G42, Double Shock of G50 among them)  # Roost and Stomping Tantrum (G42), Double Shock (G50), the eleven of step G44, the four of step G46, the four of step G48, Taunt and Yawn (G31) and the rows of the earlier steps as before
+        self.assertEqual(len(marked), 200)  # G80: Psych Up, Howl and Ally Switch make 200 (197 before); G72b: Alluring Voice and Dragon Cheer make 197 (195 before); the King's Shield of G66 (decision 0015 5cb) makes 195; the Skill Swap of G70 makes 194 (decision 0041) makes 194 from 193; 189 before step G68 (decision 0015 item 5cc: Steel Beam, Thunder Wave, Fire Punch, Ice Hammer); 180 of main, the four of G64 and the three of G62 (Haze, After You, Quash)  # the four of step G64 (Poltergeist, Beat Up, Bug Bite, Sheer Cold; decision 0015 item 5ca), the seven of step G54 (Icicle Spear, Scale Shot, Quick Guard, Upper Hand, Heal Pulse, Strength Sap, Sing), and the 171 of main (Roost and Stomping Tantrum of G42, Double Shock of G50 among them)  # Roost and Stomping Tantrum (G42), Double Shock (G50), the eleven of step G44, the four of step G46, the four of step G48, Taunt and Yawn (G31) and the rows of the earlier steps as before
         pool = [n for n in os.listdir(os.path.join(ROOT, 'tests', 'reference', 'specs'))
                 if trace_to_c.is_pool(ROOT, n[:-5])]
         logs = []
@@ -2337,6 +2337,9 @@ class Library(unittest.TestCase):
                             done = done or after.startswith(('|-damage|', '|-boost|', '|-heal|', '|-start|', '|-weather|') + (('|-status|',) if name in ('Will-O-Wisp', 'Stun Spore', 'Sleep Powder', 'Poison Powder', 'Sing') else ()))
                             # A status move of one target with a primary drop (Charm, Fake Tears, step G39): its -unboost line.
                             done = done or (name in ('Charm', 'Fake Tears') and after.startswith('|-unboost|'))
+                            # Psych Up (step G80): the -copyboost line of the copy; Ally Switch: its swap line (the consecutive refusals are -fail).
+                            done = done or (name == 'Psych Up' and after.startswith('|-copyboost|'))
+                            done = done or (name == 'Ally Switch' and after.startswith('|swap|'))
                             # A forced switch (step G46: Whirlwind; Dragon Tail is damaging, so its damage line counts): the drag line.
                             done = done or (name in ('Whirlwind', 'Roar', 'Circle Throw') and after.startswith('|drag|'))
                             # A side condition that a status move sets (Aurora Veil, step G20): its -sidestart line.

@@ -799,14 +799,14 @@
     {
      "site": "SPEED_TIE",
      "context": "field:Residual",
-     "lo": 3,
-     "hi": 5,
-     "value": 3,
+     "lo": 2,
+     "hi": 4,
+     "value": 2,
      "group": [
       "H:protect:p2b:end",
       "H:stall:p2b:end"
      ],
-     "start": 3
+     "start": 2
     }
    ],
    "log": [
@@ -1534,14 +1534,14 @@
     {
      "site": "SPEED_TIE",
      "context": "field:Residual",
-     "lo": 2,
-     "hi": 4,
-     "value": 3,
+     "lo": 1,
+     "hi": 3,
+     "value": 2,
      "group": [
       "H:protect:p2b:end",
       "H:stall:p2b:end"
      ],
-     "start": 2
+     "start": 1
     }
    ],
    "log": [
