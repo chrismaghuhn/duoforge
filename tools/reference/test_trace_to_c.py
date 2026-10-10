@@ -482,6 +482,28 @@ class Refusals(unittest.TestCase):
         insert('|-end|p1a: Araquanid|Attract|[silent]')(spec, trace)
         convert('g65_water_bubble', spec, trace)  # the silent end is no event: the battle still converts
 
+    def test_attract_is_an_each_tie_handler_only_with_oblivious(self):
+        """Decision 0034 (step G71), the each-event tie of Update: Attract's onUpdate (data/moves.ts:722-727) is inert in the order
+        (its source-left end is silent and no other handler reads it), so an Attract holder without Oblivious draws no tie order;
+        with Oblivious its cure prints lines, so the order shows and the tie is kept. A handler outside the known inert and effective
+        sets stays a refusal (the negative control)."""
+        # two empty sides with no active slot: the Oblivious check reads them only for an active holder
+        placed = {'sides': [{'active': [None, None], 'pokemon': []}, {'active': [None, None], 'pokemon': []}], 'weather': None}
+        ctx = 'each:Update'
+        # two Attract holders, no Oblivious: inert, one effective holder at most, the draw is dropped
+        self.assertEqual(trace_to_c.each_tie_reason(ctx, ['P:s1a:0:attract', 'P:s2a:0:attract'], placed),
+                         'each-event tie with at most one holder')
+        # an Attract holder with a Sitrus Berry holder: only the Sitrus holder counts, dropped
+        self.assertEqual(trace_to_c.each_tie_reason(ctx, ['P:s1a:0:attract', 'P:s2a:0:sitrusberry'], placed),
+                         'each-event tie with at most one holder')
+        # an Attract holder that is Oblivious (its cure prints lines) with a Sitrus Berry holder: two effective holders, kept
+        self.assertIsNone(trace_to_c.each_tie_reason(ctx, ['P:s1a:0:attract+oblivious', 'P:s2a:0:sitrusberry'], placed))
+        # negative control: a handler the converter does not know, tied with an Attract holder, is still refused
+        with self.assertRaises(SystemExit) as cm:
+            trace_to_c.each_tie_reason(ctx, ['P:s1a:0:attract+oblivious', 'P:s2a:0:zzunknown'], placed)
+        self.assertEqual(cm.exception.rule, 'each-tie-handlers')
+        self.assertEqual(cm.exception.detail, ctx + ':zzunknown')
+
     def test_two_turn_move_volatile_without_twoturnmove(self):
         def mutate(spec, trace):
             mon = trace['steps'][0]['state']['sides'][1]['pokemon'][1]

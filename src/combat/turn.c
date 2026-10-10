@@ -3563,11 +3563,24 @@ static duoforge_status dfi_update(dfi_run *r)
     uint32_t bearers = 0u;
     for (uint32_t flat = 0u; flat < DFI_POSITIONS; ++flat) {
         /* the holders with an Update handler that can act: Sitrus Berry, and step G47's Lum Berry and Mental Herb; step G71: an
-         * infatuated occupant (Attract's source check, Oblivious's cure) */
+         * infatuated occupant that is also Oblivious (its cure prints lines, so its order shows; the converter's each-tie rule, the
+         * same as this set). An Attract holder without Oblivious is inert in the order (its source-left removal is silent) and
+         * draws no tie order: dfi_attract_update below still ends it. */
+        const bool oblivious_infatuated = r->b->tail.attract_source[flat] != 0u &&
+                                          dfi_ability(r->b, dfi_at(r->b, flat), DFI_ABILITY_OBLIVIOUS);
         const bool bears = dfi_holds(r->b, dfi_at(r->b, flat), DFI_ITEM_SITRUSBERRY) ||
                            dfi_holds(r->b, dfi_at(r->b, flat), DFI_ITEM_LUMBERRY) ||
-                           dfi_holds(r->b, dfi_at(r->b, flat), DFI_ITEM_MENTALHERB) || r->b->tail.attract_source[flat] != 0u;
+                           dfi_holds(r->b, dfi_at(r->b, flat), DFI_ITEM_MENTALHERB) || oblivious_infatuated;
         bearers |= bears ? 1u << flat : 0u;
+    }
+    /* the inert infatuated holders: their silent end is state only, and nothing else reads it in this update */
+    for (uint32_t flat = 0u; flat < DFI_POSITIONS; ++flat) {
+        if (r->b->tail.attract_source[flat] != 0u && ((bearers >> flat) & 1u) == 0u) {
+            const duoforge_status inert = dfi_attract_update(r, flat);
+            if (inert != DUOFORGE_OK) {
+                return inert;
+            }
+        }
     }
     if (bearers == 0u) {
         return DUOFORGE_OK;

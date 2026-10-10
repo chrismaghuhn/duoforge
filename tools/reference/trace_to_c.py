@@ -440,6 +440,65 @@ def lock_counter_tie(group):
         all(g.startswith(('H:stall:', 'H:protect:')) and g.endswith(':end') for g in others)
 
 
+def each_tie_reason(ctx, group, placed):
+    """The each-event tie of holders (SPEED_TIE each:*, the draw the reference makes among the handlers that tie): None when the
+    tie is kept (the engine draws), else the reason it is dropped. A holder counts only with its effective handlers (see
+    `inert` and the Attract rule below); a handler outside EACH_HANDLERS is refused."""
+    # Limber's onUpdate (step G39, data/abilities.ts:2368-2386) is the same for paralysis: every paralysis of its holder is
+    # refused by its onSetStatus, so the cure does nothing; a holder that is paralysed (a Trace copy onto a paralysed
+    # Pokemon, which the engine refuses) is an error here too.
+    for g in group:
+        for ability, status in (('thermalexchange', 'brn'), ('limber', 'par')):
+            if ability in g.split(':', 3)[3].split('+'):
+                slot = g.split(':')[1]
+                side = placed['sides'][int(slot[1]) - 1]
+                index = side['active'][' ab'.index(slot[2]) - 1]
+                if index is not None and side['pokemon'][index]['status'] == status:
+                    raise ConversionError('thermal-exchange-burn' if ability == 'thermalexchange' else 'limber-paralysis',
+                                          'trace_to_c: a %s holder has %s: %s' % (ability, status, slot), detail=slot)
+    # Oblivious's onUpdate (step G47, data/abilities.ts:3008-3040) removes a taunt of its holder (and an attract, which no
+    # volatile of the engine is). A taunted Oblivious holder is refused by the engine (dfi_trace), so an Oblivious holder that
+    # is not taunted does nothing here: it is not a holder.
+    for g in group:
+        if 'oblivious' in g.split(':', 3)[3].split('+'):
+            slot = g.split(':')[1]
+            side = placed['sides'][int(slot[1]) - 1]
+            index = side['active'][' ab'.index(slot[2]) - 1]
+            if index is not None and 'taunt' in side['pokemon'][index]['volatiles']:
+                raise ConversionError('oblivious-taunt', 'trace_to_c: a taunted Oblivious holder: %s' % slot, detail=slot)
+    # Trace's onUpdate (step AC1) returns unless its holder is still seeking after an onStart that found no foe to
+    # copy, which the engine refuses (E_UNSUPPORTED): until then it does nothing either, so it is not a holder.
+    # Water Bubble's onUpdate (step G65, data/abilities.ts:5400-5405) cures a burn of its holder: no holder of it has one,
+    # since onSetStatus refuses every burn of the holder, and a Trace copy onto a burned holder is refused (E_UNSUPPORTED,
+    # dfi_trace), so it does nothing and is not a holder.
+    inert = {'thermalexchange', 'trace', 'limber', 'oblivious', 'waterbubble'}
+    # Rain Dish's onWeather (step G35, data/abilities.ts:3759) heals only in rain (RainDance; Primordial Sea is not in the
+    # format): under any other weather its holder has the handler and it does nothing, so it is not a holder. The weather is
+    # the one of the upkeep, which is the one the step ends with (after) or, without it, the one it started with. Solar
+    # Power's onWeather (step G39, data/abilities.ts:4396-4413) is the same for the sun (SunnyDay).
+    for ability, weather in (('raindish', 'raindance'), ('solarpower', 'sunnyday')):
+        if ctx == 'each:Weather' and any(ability in g.split(':', 3)[3].split('+') for g in group) \
+                and placed['weather'] != weather:
+            inert = inert | {ability}
+    # Attract's onUpdate (data/moves.ts:722-727, step G71, decision 0034) only removes the volatile of its holder when the source has
+    # left the field, with a [silent] end: no line, no input to another holder's handler (Mental Herb of the same holder runs in the
+    # holder's own fixed order, after the volatile). So it is inert, and a holder counts with it only when the holder also has
+    # Oblivious, whose cure prints its own lines (data/abilities.ts:3009-3016): then the order of the two holders' lines shows.
+    def effective(g):
+        handlers = g.split(':', 3)[3].split('+')
+        oblivious = 'oblivious' in handlers
+        return [x for x in handlers if x and x not in inert and (x != 'attract' or oblivious)]
+    ids = [x for g in group for x in effective(g)]
+    if not all(x in EACH_HANDLERS or x == 'attract' for x in ids):
+        raise ConversionError('each-tie-handlers',
+                              'trace_to_c: %s tie between Pokemon with handlers: %s' % (ctx, group),
+                              detail=ctx + ':' + '+'.join(sorted(set(ids) - EACH_HANDLERS - {'attract'})))
+    if sum(1 for g in group if effective(g)) <= 1:
+        return 'each-event tie with at most one holder'
+    return None  # the engine draws: the order of the holders' lines
+
+
+
 def drop_reason(d, state, after=None, log=None):
     """Why draw `d` is not a tape entry, or None; `state` is the state before the step, `after` the one after
     it (an entering Pokemon stands in its slot there), `log` the step's protocol lines (needed for the residual tie of
@@ -477,50 +536,7 @@ def drop_reason(d, state, after=None, log=None):
         # the state before the step still shows the one it replaced, which may be burned), else the state before. A
         # holder that is burned is an error.
         placed = state if after is None else after
-        # Limber's onUpdate (step G39, data/abilities.ts:2368-2386) is the same for paralysis: every paralysis of its holder is
-        # refused by its onSetStatus, so the cure does nothing; a holder that is paralysed (a Trace copy onto a paralysed
-        # Pokemon, which the engine refuses) is an error here too.
-        for g in group:
-            for ability, status in (('thermalexchange', 'brn'), ('limber', 'par')):
-                if ability in g.split(':', 3)[3].split('+'):
-                    slot = g.split(':')[1]
-                    side = placed['sides'][int(slot[1]) - 1]
-                    index = side['active'][' ab'.index(slot[2]) - 1]
-                    if index is not None and side['pokemon'][index]['status'] == status:
-                        raise ConversionError('thermal-exchange-burn' if ability == 'thermalexchange' else 'limber-paralysis',
-                                              'trace_to_c: a %s holder has %s: %s' % (ability, status, slot), detail=slot)
-        # Oblivious's onUpdate (step G47, data/abilities.ts:3008-3040) removes a taunt of its holder (and an attract, which no
-        # volatile of the engine is). A taunted Oblivious holder is refused by the engine (dfi_trace), so an Oblivious holder that
-        # is not taunted does nothing here: it is not a holder.
-        for g in group:
-            if 'oblivious' in g.split(':', 3)[3].split('+'):
-                slot = g.split(':')[1]
-                side = placed['sides'][int(slot[1]) - 1]
-                index = side['active'][' ab'.index(slot[2]) - 1]
-                if index is not None and 'taunt' in side['pokemon'][index]['volatiles']:
-                    raise ConversionError('oblivious-taunt', 'trace_to_c: a taunted Oblivious holder: %s' % slot, detail=slot)
-        # Trace's onUpdate (step AC1) returns unless its holder is still seeking after an onStart that found no foe to
-        # copy, which the engine refuses (E_UNSUPPORTED): until then it does nothing either, so it is not a holder.
-        # Water Bubble's onUpdate (step G65, data/abilities.ts:5400-5405) cures a burn of its holder: no holder of it has one,
-        # since onSetStatus refuses every burn of the holder, and a Trace copy onto a burned holder is refused (E_UNSUPPORTED,
-        # dfi_trace), so it does nothing and is not a holder.
-        inert = {'thermalexchange', 'trace', 'limber', 'oblivious', 'waterbubble'}
-        # Rain Dish's onWeather (step G35, data/abilities.ts:3759) heals only in rain (RainDance; Primordial Sea is not in the
-        # format): under any other weather its holder has the handler and it does nothing, so it is not a holder. The weather is
-        # the one of the upkeep, which is the one the step ends with (after) or, without it, the one it started with. Solar
-        # Power's onWeather (step G39, data/abilities.ts:4396-4413) is the same for the sun (SunnyDay).
-        for ability, weather in (('raindish', 'raindance'), ('solarpower', 'sunnyday')):
-            if ctx == 'each:Weather' and any(ability in g.split(':', 3)[3].split('+') for g in group) \
-                    and placed['weather'] != weather:
-                inert = inert | {ability}
-        ids = [x for g in group for x in g.split(':', 3)[3].split('+') if x and x not in inert]
-        if not all(x in EACH_HANDLERS for x in ids):
-            raise ConversionError('each-tie-handlers',
-                                  'trace_to_c: %s tie between Pokemon with handlers: %s' % (ctx, group),
-                                  detail=ctx + ':' + '+'.join(sorted(set(ids) - EACH_HANDLERS)))
-        if sum(1 for g in group if [x for x in g.split(':', 3)[3].split('+') if x and x not in inert]) <= 1:
-            return 'each-event tie with at most one holder'
-        return None  # the engine draws: the order of the holders' lines
+        return each_tie_reason(ctx, group, placed)
     if site == 'SPEED_TIE' and ctx == 'switch-order':
         # P:<slot>:<SwitchIn handlers>:<S entering | - not>[:<onAnySwitchIn
         # effects of a standing Pokemon>]; the order decides something only
