@@ -433,6 +433,12 @@ def check(line, view):
         froms = _froms(attrs)
         item = tables["ITEM"].get(trace_to_c.key(effect))
         own = item is not None and item + 1 == view.item_now(args[0])
+        of = [a for a in attrs if a.startswith("[of] ")]
+        if own and froms == ["ability: Frisk"] and len(of) == 1 and len(args) == 2:
+            # Frisk (-item|holder|Item|[from] ability: Frisk|[of] frisker, [identify] or not): it names the item the
+            # holder holds as the open sheet and the lines show it, so no field changes ("keep": no event; the engine
+            # does not model Frisk, which changes no state). Another item stops below.
+            return "keep"
         if own and ("[identify]" in attrs or not froms):
             return "fold"  # Frisk, or the holder's own announcement (Air Balloon): an item the open sheet shows
         if any(f in _ITEM_CHANGE_FROM for f in froms):

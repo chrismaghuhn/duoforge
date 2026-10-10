@@ -293,6 +293,15 @@ class LinesTest(unittest.TestCase):
         self.assertEqual(self.stop("|-ability|p2a: Gholdengo|Pressure|Good as Gold|[from] move: Role Play|"
                                    "[of] p1a: Staraptor"), "line:-ability [from] move: Role Play")
 
+    def test_frisk_of_the_held_item_is_kept(self):
+        # Frisk names the holder's item: the one the open sheet (or item_now) shows changes no field; another stops
+        self.assertEqual(lines.check("|-item|p1a: Staraptor|Sitrus Berry|[from] ability: Frisk|[of] p2a: Gholdengo",
+                                     self.view), "keep")
+        self.assertEqual(lines.check("|-item|p1a: Staraptor|Sitrus Berry|[from] ability: Frisk|[of] p2a: Gholdengo|"
+                                     "[identify]", self.view), "keep")
+        self.assertEqual(self.stop("|-item|p1a: Staraptor|Leftovers|[from] ability: Frisk|[of] p2a: Gholdengo"),
+                         "line:-item Leftovers")
+
     def test_type_change_lines(self):
         # Soak (no attribute) and Double Shock (???/its other type) are the type changes the engine models (steps G11,
         # G50); every other typechange line stops on its own line
