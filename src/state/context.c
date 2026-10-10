@@ -28,6 +28,11 @@ bool dfi_context_is_closure(const struct duoforge_context *ctx)
     return dfi_kind_is_combat(ctx->data_kind);
 }
 
+bool dfi_context_is_pool(const struct duoforge_context *ctx)
+{
+    return dfi_kind_is_pool(ctx->data_kind);
+}
+
 bool dfi_kind_full_roster(uint32_t data_kind)
 {
     return data_kind == DUOFORGE_DATA_KIND_CLOSURE || data_kind == DUOFORGE_DATA_KIND_TEAM_C ||

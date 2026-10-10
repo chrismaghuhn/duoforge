@@ -382,13 +382,13 @@ static const unsigned sweep[DFI_ENC_TAIL_SIZE][SWEEP_COLUMNS] = {
     {0, 255, 0, 0, 0, 0, 0, 0},
     {0, 255, 0, 0, 0, 0, 0, 0},
     {0, 255, 0, 0, 0, 0, 0, 0},
+    {5, 0, 250, 0, 0, 0, 0, 0},
     {0, 0, 255, 0, 0, 0, 0, 0},
+    {5, 0, 250, 0, 0, 0, 0, 0},
     {0, 0, 255, 0, 0, 0, 0, 0},
+    {5, 0, 250, 0, 0, 0, 0, 0},
     {0, 0, 255, 0, 0, 0, 0, 0},
-    {0, 0, 255, 0, 0, 0, 0, 0},
-    {0, 0, 255, 0, 0, 0, 0, 0},
-    {0, 0, 255, 0, 0, 0, 0, 0},
-    {0, 0, 255, 0, 0, 0, 0, 0},
+    {5, 0, 250, 0, 0, 0, 0, 0},
     {0, 0, 255, 0, 0, 0, 0, 0},
     {0, 0, 0, 0, 0, 255, 0, 0},
     {0, 0, 0, 0, 0, 255, 0, 0},
@@ -945,7 +945,9 @@ MUT(m_ill_shown, ts->illusion.shown = 1u)
 MUT(m_ill_override, ts->illusion.override[3] = 1u)
 MUT(m_ill_snapshot, ts->illusion.snapshot[8] = 1u)
 MUT(m_ill_pending, ts->illusion.pending[0] = 1u)
-MUT(m_slot_pending, p0->slot_pending = 1u)
+MUT(m_healing_wish_bit, p0->position_flags = 1u) /* bit 0 (Healing Wish) is never set yet */
+MUT(m_position_flags_bit4, p0->position_flags = 0x10u)
+MUT(m_dragon_stage_3, p0->position_flags = 0x0Cu) /* the Dragon Cheer stage 3 is invalid */
 MUT(m_future_sight, p0->future_sight = 1u)
 MUT(m_member_flags_high, ts->member_flags[3] = 0x80u)
 /* Valid: the edges. */
@@ -985,6 +987,8 @@ MUT(v_maxima, {
 MUT(v_move_result_null, p0->move_result = (uint8_t)((DFI_MOVE_RESULT_NULL << DFI_MOVE_RESULT_LAST_SHIFT) | DFI_MOVE_RESULT_FALSE))
 MUT(v_unclass_now, p0->move_result = DFI_MOVE_RESULT_UNCLASSIFIED_NOW)
 MUT(v_unclass_both, p0->move_result = DFI_MOVE_RESULT_UNCLASSIFIED_NOW | DFI_MOVE_RESULT_UNCLASSIFIED_LAST)
+MUT(v_position_flags_raised_stage2, p0->position_flags = 0x0Au) /* G72b: stats raised and the Dragon Cheer stage 2 */
+MUT(v_position_flags_stage1, p0->position_flags = 0x04u) /* G72b: the Dragon Cheer stage 1 */
 MUT(v_hazard_order_two, {
     ts->spikes = 2u;
     ts->toxic_spikes = 1u;
@@ -1114,7 +1118,9 @@ static const tail_case cases[] = {
     {"Illusion override byte (rev 5)", DFI_INV_TAIL_SIDE, false, m_ill_override},
     {"Illusion snapshot byte (rev 5)", DFI_INV_TAIL_SIDE, false, m_ill_snapshot},
     {"Illusion pending byte (rev 5)", DFI_INV_TAIL_SIDE, false, m_ill_pending},
-    {"slot pending bit at a standing lead (rev 5)", DFI_INV_TAIL_POSITION, false, m_slot_pending},
+    {"healing wish bit at a standing lead (rev 5)", DFI_INV_TAIL_POSITION, false, m_healing_wish_bit},
+    {"position flag bit 4 at a standing lead (rev 5)", DFI_INV_TAIL_POSITION, false, m_position_flags_bit4},
+    {"dragon cheer stage 3 at a standing lead (rev 5)", DFI_INV_TAIL_POSITION, false, m_dragon_stage_3},
     {"Future Sight byte at a standing lead (rev 5)", DFI_INV_TAIL_POSITION, false, m_future_sight},
     {"Struggle as the last move is valid for any move count", DFI_INV_NONE, false, v_struggle},
     {"the last Encore turn and slot 4 are valid", DFI_INV_NONE, false, v_encore_edge},
@@ -1127,7 +1133,9 @@ static const tail_case cases[] = {
     {"a Protect variant under its volatile is valid", DFI_INV_NONE, false, v_protect_variant},
     {"a move result of this turn false and last turn null is valid", DFI_INV_NONE, false, v_move_result_null},
     {"an unclassified this-turn bit with an undefined this-turn result is valid", DFI_INV_NONE, false, v_unclass_now},
-    {"both unclassified bits with both results undefined are valid", DFI_INV_NONE, false, v_unclass_both}};
+    {"both unclassified bits with both results undefined are valid", DFI_INV_NONE, false, v_unclass_both},
+    {"G72b: stats raised with stage 2 at a standing lead is valid", DFI_INV_NONE, false, v_position_flags_raised_stage2},
+    {"G72b: Dragon Cheer stage 1 at a standing lead is valid", DFI_INV_NONE, false, v_position_flags_stage1}};
 
 /* True iff the byte at `off` of the encoded tail is a reserved one (by the layout alone). */
 static bool is_reserved_offset(size_t off)
@@ -1810,7 +1818,7 @@ int main(void)
         }
         for (uint32_t p = 0u; p < DUOFORGE_SIDE_COUNT * DUOFORGE_ACTIVE_PER_SIDE; ++p) {
             dfi_tail_pos *tp = &x->tail.sides[p / DUOFORGE_ACTIVE_PER_SIDE].positions[p % DUOFORGE_ACTIVE_PER_SIDE];
-            tp->slot_pending = (uint8_t)(0x80u + p);
+            tp->position_flags = (uint8_t)(0x80u + p);
             tp->future_sight = (uint8_t)(0xC0u + p);
         }
         DF_CHECK_EQ_U64(&t, dfi_encode_unchecked(kp, x, out), DFI_STATE_POOL_ENCODED_SIZE);
@@ -1823,7 +1831,7 @@ int main(void)
         for (uint32_t p = 0u; p < DUOFORGE_SIDE_COUNT * DUOFORGE_ACTIVE_PER_SIDE; ++p) {
             const dfi_tail_pos *tp = &x->tail.sides[p / DUOFORGE_ACTIVE_PER_SIDE].positions[p % DUOFORGE_ACTIVE_PER_SIDE];
             const uint8_t *po = out + r5 + DFI_ENC_TAIL5_POS_OFF + p * DFI_ENC_TAIL5_POS_SIZE;
-            DF_CHECK(&t, po[DFI_ENC_TAIL5_SLOT_PENDING_OFF] == tp->slot_pending);
+            DF_CHECK(&t, po[DFI_ENC_TAIL5_POSITION_FLAGS_OFF] == tp->position_flags);
             DF_CHECK(&t, po[DFI_ENC_TAIL5_FUTURE_SIGHT_OFF] == tp->future_sight);
         }
         /* and the reserve after them is zero, whatever the block holds */

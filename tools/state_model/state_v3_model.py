@@ -45,7 +45,7 @@ TAIL_POS_SIZE = 36
 TAIL_MEMBER_SIZE = 10
 TAIL_REV4_SIZE = TAIL_FIELD_SIZE + 2 * TAIL_SIDE_SIZE              # 288
 # The rev 5 block, after the rev 4 part (offsets within it): per side 18 bytes (the Illusion state: shown, override[4],
-# snapshot[9], pending[4]), per position (flat order) 2 bytes (slot_pending, future_sight), 16 bytes of reserve.
+# snapshot[9], pending[4]), per position (flat order) 2 bytes (position_flags, future_sight), 16 bytes of reserve.
 TAIL5_SIDE_SIZE = 18
 TAIL5_POS_SIZE = 2
 TAIL5_RESERVED_SIZE = 16
@@ -100,7 +100,7 @@ TAIL_POS_BYTE_FIELDS = ['last_move', 'encore_slot', 'encore_turns', 'throat_chop
                         'stockpile_spd', 'charge', 'glaive_rush']
 TAIL_POS_REV4_FIELDS = ['move_result', 'single_turn', 'hits_taken', 'ability_state', 'lock_turns']
 # rev 5, per position (lane A; zero, nothing writes them yet) and per side (the Illusion state of decision 0026, zero)
-TAIL_POS_REV5_FIELDS = ['slot_pending', 'future_sight']
+TAIL_POS_REV5_FIELDS = ['position_flags', 'future_sight']
 TAIL_SIDE_BYTE_FIELDS = ['wide_guard', 'aurora_veil', 'toxic_spikes', 'stealth_rock', 'spikes', 'sticky_web', 'quick_guard',
                          'hazard_order']
 # hazard_order (rev 4): the creation order of the hazards that are up, 2 bits per slot (slot 0 in bits 1:0); the kind codes
@@ -296,7 +296,7 @@ KD = TeamCContext(KIND_TEAM_C_DEV, 6, 4)
 # which tests/test_pool_tables.c recomputes from the pool canonical bytes: the
 # pool layout over the pool data, then the family columns, the handler columns
 # and the moves and abilities that each forme may have.
-POOL_TABLE_HASH = bytes.fromhex('b049ce595bdfb6b6750a59834a74005133d2a79667b91690a32e4c52dca3f38c')
+POOL_TABLE_HASH = bytes.fromhex('799be7a05df5f887575e519f055fe8ba6c18a46a3d168f1c95ca2575de522df2')
 KIND_POOL, KIND_POOL_DEV = 6, 7
 
 
@@ -970,6 +970,11 @@ def hazard_order_valid(ts):
     return set(slots[:n]) == present and len(set(slots[:n])) == n and all(v == 0 for v in slots[n:])
 
 
+def position_flags_valid(pf):
+    """Rev 5 (G72b): bit 0 (Healing Wish) and bits 4-7 are zero, and the Dragon Cheer stage (bits 2-3) is at most 2."""
+    return pf & ~0x0F == 0 and pf & 0x01 == 0 and (pf >> 2) & 3 <= 2
+
+
 def tail_pos_valid(ctx, tp, flat, mem, slot_flags=0):
     """The tail of a standing occupant's position (the rules of decision 0015 section 7)."""
     mc = mem['move_count']
@@ -1007,8 +1012,11 @@ def tail_pos_valid(ctx, tp, flat, mem, slot_flags=0):
             and tp['hits_taken'] <= TAIL_HITS_TAKEN_MAX and tp['ability_state'] <= TAIL_ABILITY_STATE_MAX
             and tp['lock_turns'] <= TAIL_LOCK_TURNS_MAX):
         return False
-    # Rev 5 (lane A): nothing writes the slot's pending effect or Future Sight yet, so both are zero.
-    if tp['slot_pending'] != 0 or tp['future_sight'] != 0:
+    # Rev 5 (lane A, G72b, decision 0015 5ce): the position flags are a bitfield: bit 0 (Healing Wish) and bits 4-7 are zero,
+    # the Dragon Cheer stage (bits 2-3) is at most 2, and the stats-raised bit and the stage need an occupant. Future Sight is zero.
+    if not position_flags_valid(tp['position_flags']):
+        return False
+    if tp['future_sight'] != 0:
         return False
     return (tp['stockpile'] <= TAIL_STOCKPILE_MAX and tp['stockpile_def'] <= tp['stockpile']
             and tp['stockpile_spd'] <= tp['stockpile'])
@@ -1040,7 +1048,10 @@ def check_tail(ctx, st):
             occ = sd['pos'][p]['occ']
             standing = occ < MAX_ROSTER and occ < sd['member_count'] and sd['members'][occ]['hp'] != 0
             if not standing:
-                if any(v != 0 for v in tp.values()):
+                # Rev 5 (G72b): the position flags may outlive a fainted occupant (the occupant is still there, as in the C
+                # invariant); an empty position has none.
+                flags_only = all(v == 0 for k, v in tp.items() if k != 'position_flags')
+                if not (flags_only and (tp['position_flags'] == 0 or (occ < MAX_ROSTER and position_flags_valid(tp['position_flags'])))):
                     return 'TAIL_POSITION'
                 continue
             if not tail_pos_valid(ctx, tp, 2 * s + p, sd['members'][occ], sd['pos'][p]['flags']):
@@ -1197,7 +1208,7 @@ def parse_tail(b):
     for flat in range(4):
         tp = tail['sides'][flat // 2]['pos'][flat % 2]
         q = r5 + 2 * TAIL5_SIDE_SIZE + TAIL5_POS_SIZE * flat
-        tp['slot_pending'], tp['future_sight'] = b[q], b[q + 1]
+        tp['position_flags'], tp['future_sight'] = b[q], b[q + 1]
     return tail
 
 
