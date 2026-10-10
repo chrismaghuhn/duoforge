@@ -405,6 +405,12 @@ class LinesTest(unittest.TestCase):
                      "|-activate|p1a: Staraptor|move: Skill Swap|Good as Gold|Intimidate|[of] p2a: Gholdengo"):
             self.assertEqual(lines.check(line, self.view), "fold", line)
 
+    def test_destiny_bond_lines_are_its_feature(self):
+        # Step G76: Destiny Bond's start (-singlemove) and its KO (-activate|TARGET|move: Destiny Bond) are decision
+        # 0018's DESTINY_BOND (feature 35, marked supported by G76) until the tracker folds it
+        for line in ("|-singlemove|p1a: Staraptor|Destiny Bond", "|-activate|p2a: Gholdengo|move: Destiny Bond"):
+            self.assertEqual(self.stop(line), "feature:DESTINY_BOND", line)
+
     def test_drag_folds(self):
         # Step G46: a forced switch brings a member in as a switch does (the tracker folds it as one, or stops)
         self.assertEqual(lines.check("|drag|p2a: Gholdengo|Gholdengo, L50|100/100", self.view), "fold")
@@ -412,7 +418,9 @@ class LinesTest(unittest.TestCase):
 
     def test_unknown_lines_stop(self):
         self.assertEqual(self.stop("|-sethp|p1a: Staraptor|50/100"), "line:-sethp")
-        self.assertEqual(self.stop("|move|p1a: Staraptor|Baton Pass|p1a: Staraptor"), "line:move Baton Pass")
+        self.assertEqual(self.stop("|move|p1a: Staraptor|Shed Tail|p1a: Staraptor"), "line:move Shed Tail")
+        # Step G74 (decision 0042): Baton Pass is folded, its copy rides on the SWITCH event of the receiver
+        self.assertEqual(lines.check("|move|p1a: Staraptor|Baton Pass|p1a: Staraptor", self.view), "fold")
         self.assertEqual(self.stop("|-activate|p1a: Staraptor|move: Court Change"), "line:-activate move: Court Change")
         self.assertEqual(self.stop("|-ability|p1a: Staraptor|Pressure"), "line:-ability Pressure")
 
@@ -534,6 +542,12 @@ class LinesTest(unittest.TestCase):
                   "    .view_ext_features = ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_THROAT_CHOP) |\n"
                   "                         ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_WIDE_GUARD),\n};\n")
         self.assertEqual(lines.extract_supported(source), 1 << f["THROAT_CHOP"] | 1 << f["WIDE_GUARD"])
+        # C comments between the terms (G76 writes one per feature) are no part of the expression
+        source = ("static const dfi_support dfi_support = {\n"
+                  "    .view_ext_features = ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_THROAT_CHOP) | /* G8, a, b */\n"
+                  "                         /* Step G76: Destiny Bond (bit 35, public: * its line). */\n"
+                  "                         ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_DESTINY_BOND), // last\n};\n")
+        self.assertEqual(lines.extract_supported(source), 1 << f["THROAT_CHOP"] | 1 << f["DESTINY_BOND"])
 
     def test_a_feature_the_tracker_does_not_fold_stops(self):
         # the library may support a feature (G8: Heal Block), but its view-extension field stays empty until the
@@ -710,6 +724,20 @@ class LabelsTest(unittest.TestCase):
                           "|move|p1a: Staraptor|Close Combat|p2b: Foe2"])
         self.assertEqual(got.reasons[0], self.L.TARGET_UNKNOWN)
         self.assertEqual({o.target for o in self.options_of(got, 0)}, {1, 2, 3})
+        self.assertEqual({(o.move_slot, o.mega) for o in self.options_of(got, 0)}, {(1, 0)})
+
+    def test_dragon_darts_line_may_name_the_other_foe(self):
+        # data/moves.ts dragondarts smartTarget (step G78): when the chosen foe cannot be hit (here it protects), both
+        # darts go to its ally and the move line names the ally, so the line does not name the chosen target
+        mv = self.tables["MOVE"]
+        moves = ([mv["BRAVEBIRD"], mv["DRAGONDARTS"], mv["TAILWIND"], mv["PROTECT"]], self.moves[1])
+        log = ["|move|p2a: Foe|Protect|p2a: Foe", "|-singleturn|p2a: Foe|Protect",
+               "|move|p1a: Staraptor|Dragon Darts|p2b: Foe2"]
+        point = self.P.Point(1, 0, self.P.TURN, (), len(log))
+        got = self.L.turn_label(log, point, 0, self.lists, moves, lambda details: self.species[details.split(",")[0]],
+                                self.tables, len(log))
+        self.assertEqual(got.reasons[0], self.L.TARGET_UNKNOWN)
+        self.assertTrue({2, 3} <= {o.target for o in self.options_of(got, 0)})  # the chosen p2a is in the label
         self.assertEqual({(o.move_slot, o.mega) for o in self.options_of(got, 0)}, {(1, 0)})
 
     def test_faint_earlier_makes_the_target_unknown(self):

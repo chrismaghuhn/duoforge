@@ -1,0 +1,20 @@
+{
+ "name": "g76_db_sitrus_tie",
+ "purpose": "Step G76 (decision 0015 5cg), evidence for the Destiny Bond hit loop: Gardevoir uses Destiny Bond on turn 1 (it succeeds, -singlemove), and two Sitrus holders (Lucario on each side, Jolly, the same speed) draw the Update order of eachEvent('Update') that the success path runs (dfi_status_hit_end, scripts.ts:537-574).",
+ "data": "pool",
+ "format": "gen9championsvgc2026regmc",
+ "seed": "sodium,0000000000000000000000000000000000000000000000000000000000076008",
+ "teams": [
+  "Gardevoir (F) @ Focus Sash\nAbility: Synchronize\nLevel: 50\nEVs: 32 HP / 2 Def / 2 SpD / 30 SpA\nModest Nature\n- Destiny Bond\n- Shadow Ball\n- Protect\n\nLucario (M) @ Sitrus Berry\nAbility: Inner Focus\nLevel: 50\nEVs: 2 HP / 32 Atk / 32 Spe\nJolly Nature\n- Final Gambit\n- Protect\n\nSalamence (M) @ Leftovers\nAbility: Intimidate\nLevel: 50\nEVs: 2 HP / 32 Atk / 32 Spe\nJolly Nature\n- Dragon Claw\n- Protect\n\nSylveon (F) @ Light Clay\nAbility: Pixilate\nLevel: 50\nEVs: 32 HP / 2 SpD / 32 Spe\nTimid Nature\n- Alluring Voice\n- Protect\n\nRaichu (F) @ Raichunite Y\nAbility: Lightning Rod\nLevel: 50\nEVs: 29 HP / 5 Def / 32 Spe\nTimid Nature\n- Thunderbolt\n- Protect\n\nArchaludon (M) @ Mystic Water\nAbility: Stamina\nLevel: 50\nEVs: 32 HP / 10 Def / 24 SpD\nBold Nature\n- Iron Head\n- Protect",
+  "Lucario (M) @ Sitrus Berry\nAbility: Inner Focus\nLevel: 50\nEVs: 2 HP / 32 Atk / 32 Spe\nJolly Nature\n- Final Gambit\n- Protect\n\nSalamence (M) @ Leftovers\nAbility: Intimidate\nLevel: 50\nEVs: 2 HP / 32 Atk / 32 Spe\nJolly Nature\n- Dragon Claw\n- Protect\n\nSylveon (F) @ Light Clay\nAbility: Pixilate\nLevel: 50\nEVs: 32 HP / 2 SpD / 32 Spe\nTimid Nature\n- Alluring Voice\n- Protect\n\nRaichu (F) @ Raichunite Y\nAbility: Lightning Rod\nLevel: 50\nEVs: 29 HP / 5 Def / 32 Spe\nTimid Nature\n- Thunderbolt\n- Protect\n\nArchaludon (M) @ Mystic Water\nAbility: Stamina\nLevel: 50\nEVs: 32 HP / 10 Def / 24 SpD\nBold Nature\n- Iron Head\n- Protect\n\nGholdengo @ Life Orb\nAbility: Good as Gold\nLevel: 50\nEVs: 17 HP / 2 Def / 17 SpA / 16 SpD / 14 Spe\nModest Nature\n- Shadow Ball\n- Protect"
+ ],
+ "plan": {
+  "p1": [
+   "move 1, move 2"
+  ],
+  "p2": [
+   "move 2, move 2"
+  ],
+  "max_steps": 2
+ }
+}
