@@ -57,6 +57,7 @@
 /* lockedmove (Outrage, Thrash, Petal Dance; data/conditions.ts:253-285; step G56): no order, sub-order 2 (a condition), a
  * duration and a callback: its countdown and its end (a callback that ends in a residual of an earlier turn's lock). */
 #define DFI_RES_LOCK 17u
+#define DFI_RES_MOODY 18u /* Moody's onResidual: order 28, sub-order 2 (step G73; the same key as Speed Boost), a callback that draws */
 #define DFI_RES_NO_ORDER 0xFFFFFFFFu
 
 /* The exact test's bounds: the lists of the engine have at most 3 + 4 * 2 + 19 * 4 entries, a few draws and a few

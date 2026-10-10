@@ -1012,11 +1012,13 @@ typedef struct dfi_boost_effect {
     uint32_t id2;   /* 1 + the item or ability id; 0 for a move */
     uint32_t mode;  /* DFI_BOOST_PRIMARY, _SECONDARY or _SELF */
     bool negatives_first; /* the stats that fall are changed before the ones that rise (Shell Smash, step G28) */
+    bool positives_first; /* the stats that rise (of the input boost) are changed first, then the others (Moody, step G73: the
+                           * reference's key order, raised key inserted first, sim/battle.ts boost loop) */
 } dfi_boost_effect;
 
 static dfi_boost_effect dfi_effect(uint32_t cause, uint32_t id2, uint32_t mode)
 {
-    const dfi_boost_effect e = {cause, id2, mode, false};
+    const dfi_boost_effect e = {cause, id2, mode, false, false};
     return e;
 }
 
@@ -1198,7 +1200,9 @@ static bool dfi_boost(dfi_run *r, uint32_t flat, const uint8_t *boosts, uint32_t
     for (uint32_t k = 0u; k < 2u * DFI_STAT_STAGE_COUNT; ++k) {
         const uint32_t i = k % DFI_STAT_STAGE_COUNT;
         const uint32_t pass = k / DFI_STAT_STAGE_COUNT;
-        if (effect.negatives_first ? ((boosts[i] < DFI_BIAS6) != (pass == 0u)) : pass != 0u) {
+        if (effect.negatives_first ? ((boosts[i] < DFI_BIAS6) != (pass == 0u))
+            : effect.positives_first ? ((boosts[i] > DFI_BIAS6) != (pass == 0u))
+            : pass != 0u) {
             continue;
         }
         if (boosts[i] == DFI_BIAS6 || veil[i] || clear[i] || mirror[i]) {
@@ -8999,6 +9003,67 @@ static void dfi_speed_boost(dfi_run *r, uint32_t flat)
     (void)dfi_boost(r, flat, spe_up, DFI_POSITIONS, dfi_effect(DUOFORGE_CAUSE_ABILITY, 1u + DFI_ABILITY_SPEEDBOOST, DFI_BOOST_PRIMARY));
 }
 
+/* Moody's onResidual (step G73, data/abilities.ts:2701-2734). The stats that can rise are those below +6 (accuracy and
+ * evasion are not in the list), in the table order of the reference's boosts object (atk, def, spa, spd, spe); one of them
+ * is drawn (random(n), n the list length: a list of one still draws, and an empty list does not draw). Then the stats that
+ * can fall are those above -6 and not the raised one, drawn the same way. The boost is the ability's own: one boost call
+ * {raised: +2, lowered: -1} with the raised key first (positives_first), so its line is -ability|holder|Moody|boost, then
+ * -boost for the rise and -unboost for the fall. The draws come before the boost, so a boost that is refused (no foe left)
+ * still draws. A holder that has fainted (or is no longer on the field) does not run it. */
+static duoforge_status dfi_moody(dfi_run *r, uint32_t flat)
+{
+    const dfi_member *m = dfi_at(r->b, flat);
+    if (m == NULL || m->hp == 0u || !dfi_ability(r->b, m, DFI_ABILITY_MOODY)) {
+        return DUOFORGE_OK;
+    }
+    dfi_active_slot *pos = dfi_pos(r->b, flat);
+    uint32_t up[DFI_STAGE_ACCURACY] = {0u, 0u, 0u, 0u, 0u};
+    uint32_t n_up = 0u;
+    for (uint32_t i = 0u; i < DFI_STAGE_ACCURACY; ++i) {
+        if (pos->stages[i] < DFI_STAGE_MAX) {
+            up[n_up] = i;
+            n_up += 1u;
+        }
+    }
+    uint32_t raised = DFI_STAT_STAGE_COUNT; /* none */
+    if (n_up > 0u) {
+        uint32_t v = 0u;
+        const duoforge_status st = dfi_draw(r->draws, DFI_SITE_MOODY, 0u, n_up, &v);
+        if (st != DUOFORGE_OK) {
+            return st;
+        }
+        raised = up[v];
+    }
+    uint32_t down[DFI_STAGE_ACCURACY] = {0u, 0u, 0u, 0u, 0u};
+    uint32_t n_down = 0u;
+    for (uint32_t i = 0u; i < DFI_STAGE_ACCURACY; ++i) {
+        if (pos->stages[i] > 0u && i != raised) {
+            down[n_down] = i;
+            n_down += 1u;
+        }
+    }
+    uint32_t lowered = DFI_STAT_STAGE_COUNT;
+    if (n_down > 0u) {
+        uint32_t v = 0u;
+        const duoforge_status st = dfi_draw(r->draws, DFI_SITE_MOODY, 0u, n_down, &v);
+        if (st != DUOFORGE_OK) {
+            return st;
+        }
+        lowered = down[v];
+    }
+    uint8_t boosts[DFI_STAT_STAGE_COUNT] = {6u, 6u, 6u, 6u, 6u, 6u, 6u}; /* biased by 6: no change */
+    if (raised < DFI_STAT_STAGE_COUNT) {
+        boosts[raised] = 8u; /* +2 */
+    }
+    if (lowered < DFI_STAT_STAGE_COUNT) {
+        boosts[lowered] = 5u; /* -1 */
+    }
+    dfi_boost_effect effect = dfi_effect(DUOFORGE_CAUSE_ABILITY, 1u + DFI_ABILITY_MOODY, DFI_BOOST_PRIMARY);
+    effect.positives_first = true;
+    (void)dfi_boost(r, flat, boosts, DFI_POSITIONS, effect);
+    return DUOFORGE_OK;
+}
+
 /* lockedmove's onResidual (step G56, data/conditions.ts:253-285): its count goes down for a lock used this turn (done at
  * the use, see the AfterMove block), and a lock whose holder is asleep is deleted silently (no end, no confusion). A lock
  * not used this turn and not asleep (a flinch, a full paralysis or a freeze that stopped its move) is refused where that
@@ -9152,6 +9217,12 @@ static duoforge_status dfi_residual_events_run(dfi_run *r, dfi_noorder_snapshot 
             list[n] = (dfi_residual_entry){DFI_RES_SPEED_BOOST, flat, 28u, speed, 2u, true};
             n += 1u;
         }
+        /* Moody's onResidual (step G73, data/abilities.ts:2701-2734): order 28, sub-order 2, as Speed Boost's, and a callback
+         * (its handler is run in every tie; its draws are the sample of dfi_moody). One ability per Pokemon: the same slot. */
+        if (dfi_ability(r->b, m, DFI_ABILITY_MOODY)) {
+            list[n] = (dfi_residual_entry){DFI_RES_MOODY, flat, 28u, speed, 2u, true};
+            n += 1u;
+        }
         if (dfi_holds(r->b, m, DFI_ITEM_LEFTOVERS)) {
             list[n] = (dfi_residual_entry){DFI_RES_LEFTOVERS, flat, 5u, speed, 4u, true};
             n += 1u;
@@ -9176,8 +9247,8 @@ static duoforge_status dfi_residual_events_run(dfi_run *r, dfi_noorder_snapshot 
     uint32_t early_calls = 0u; /* ... of which the callbacks (a tie of them draws) */
     uint32_t herbs = 0u;       /* White Herb's, order 29 */
     for (uint32_t i = 0u; i < n; ++i) {
-        if (list[i].kind == DFI_RES_WHITE_HERB || list[i].kind == DFI_RES_SPEED_BOOST) {
-            herbs += 1u; /* the late callbacks: Speed Boost (28) and White Herb (29) */
+        if (list[i].kind == DFI_RES_WHITE_HERB || list[i].kind == DFI_RES_SPEED_BOOST || list[i].kind == DFI_RES_MOODY) {
+            herbs += 1u; /* the late callbacks: Speed Boost and Moody (28) and White Herb (29) */
         } else if (list[i].order < 26u) {
             early += 1u;
             early_calls += list[i].callback ? 1u : 0u;
@@ -9520,23 +9591,34 @@ static duoforge_status dfi_residual_events_run(dfi_run *r, dfi_noorder_snapshot 
     /* White Herb's onResidual (order 29), each holder's check. The engine
      * keeps the side conditions without their kinds, so the start order of
      * the shuffle above can differ from the reference's: two holders due in
-     * one group of equal speed are E_UNSUPPORTED. With the data no herb is
-     * due here (every lowered stat meets an earlier check). */
+     * one group of equal speed are E_UNSUPPORTED. Moody (order 28, step G73)
+     * runs before the herbs and may lower a stat, so the due check is made
+     * when the first herb is reached: every order-28 handler has run by then
+     * (the sort puts 28 before 29). */
+    bool herb_checked = false;
     for (uint32_t i = herbs_from; i < sorted; ++i) {
-        if (list[i].kind != DFI_RES_WHITE_HERB || !dfi_herb_due(b, list[i].flat)) {
-            continue;
-        }
-        for (uint32_t j = i + 1u; j < sorted; ++j) {
-            if (list[j].kind == DFI_RES_WHITE_HERB && list[j].speed == list[i].speed && dfi_herb_due(b, list[j].flat)) {
-                return DUOFORGE_E_UNSUPPORTED;
+        if (list[i].kind == DFI_RES_WHITE_HERB && !herb_checked) {
+            herb_checked = true;
+            for (uint32_t a = i; a < sorted; ++a) {
+                if (list[a].kind != DFI_RES_WHITE_HERB || !dfi_herb_due(b, list[a].flat)) {
+                    continue;
+                }
+                for (uint32_t j = a + 1u; j < sorted; ++j) {
+                    if (list[j].kind == DFI_RES_WHITE_HERB && list[j].speed == list[a].speed && dfi_herb_due(b, list[j].flat)) {
+                        return DUOFORGE_E_UNSUPPORTED;
+                    }
+                }
             }
         }
-    }
-    for (uint32_t i = herbs_from; i < sorted; ++i) {
-        if ((list[i].kind == DFI_RES_SPEED_BOOST || list[i].kind == DFI_RES_WHITE_HERB) &&
+        if ((list[i].kind == DFI_RES_SPEED_BOOST || list[i].kind == DFI_RES_MOODY || list[i].kind == DFI_RES_WHITE_HERB) &&
             dfi_residual_holder_stands(r, list[i].flat)) {
             if (list[i].kind == DFI_RES_SPEED_BOOST) {
                 dfi_speed_boost(r, list[i].flat);
+            } else if (list[i].kind == DFI_RES_MOODY) {
+                const duoforge_status mst = dfi_moody(r, list[i].flat);
+                if (mst != DUOFORGE_OK) {
+                    return mst;
+                }
             } else {
                 dfi_white_herb(r, list[i].flat);
             }

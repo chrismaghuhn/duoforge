@@ -619,6 +619,7 @@ const dfi_support_manifest dfi_support = {
             [DFI_ABILITY_WATERBUBBLE] = 1u, /* step G65: Araquanid (Fire x0.5 at the holder, Water x2, no burn) */
             [DFI_ABILITY_RECKLESS] = 1u, /* step G65: Staraptor, Rhyperior and Emboar (recoil moves x1.2) */
             [DFI_ABILITY_SUPERLUCK] = 1u, /* step G65: Absol (crit ratio +1) */
+            [DFI_ABILITY_MOODY] = 1u, /* step G73: Glalie and Scovillain (the residual rise and fall, one boost of +2 and -1) */
         },
     .items =
         {
