@@ -288,7 +288,7 @@ static void check_ab_info_safety(df_test *t, const duoforge_context *ctx)
  * does not. The refusal is the first check of the encoder, before the domain is read: the observation alone decides it. */
 static void check_encoder_refusal(df_test *t)
 {
-    static float obs[850];
+    static float obs[1024]; /* at least the widest encoder's obs (duoforge_encoder_size; encoder 5 is 862 wide) */
     static float slots[DUOFORGE_ENCODER_SLOT_VALUES];
     static uint8_t pairs[DUOFORGE_ENCODER_PAIR_VALUES];
     duoforge_factored_domain dom;
@@ -301,6 +301,10 @@ static void check_encoder_refusal(df_test *t)
             ob.sides[side].member_count = 1u;
             ob.sides[side].members[0].ability = with != 0u ? (uint8_t)(DFI_ABILITY_ILLUSION + 1u) : 0u;
             for (uint32_t v = 4u; v <= 5u; ++v) {
+                uint32_t width = 0u;
+                if (!DF_CHECK(t, duoforge_encoder_size(v, &width) == DUOFORGE_OK && width <= sizeof obs / sizeof obs[0])) {
+                    continue; /* never encode past the buffer */
+                }
                 const duoforge_status st = duoforge_encode(v, 0u, &ob, &dom, NULL, obs, slots, pairs);
                 if (v == 4u && with != 0u) {
                     DF_CHECK_EQ_U64(t, st, DUOFORGE_E_UNSUPPORTED);
