@@ -18,6 +18,6 @@
       "move 1, move 1",
       "move 2, move 1"
     ],
-    "max_steps": 3
+    "max_steps": 4
   }
 }
