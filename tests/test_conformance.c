@@ -33,7 +33,7 @@
 #include "reference/conformance_pool.h"
 #include "support/pool.h"
 #define DF_CONF_FORMES dfi_pool_formes
-#define DF_POOL_DATA_BATTLES 755u /* the recorded pool battles: main's 717, sub_sitrus_tie, the G74 and G76 battles, the thirteen G78 battles, and the nine hit-loop battles of chris/expansion-hitloop-fixes (seven h18, the Substitute EXISTS battle, the absorbed secondary battle); PLACEHOLDER, measured in the verification commit */
+#define DF_POOL_DATA_BATTLES 755u /* the recorded pool battles: main's 717, sub_sitrus_tie, the G74 and G76 battles, the thirteen G78 battles, and the nine hit-loop battles of chris/expansion-hitloop-fixes (seven h18, the Substitute EXISTS battle, the absorbed secondary battle); measured: 755 */
 #elif defined(DF_CONFORMANCE_TEAM_C)
 #include "data/extended_tables.h"
 #include "reference/conformance_team_c.h"

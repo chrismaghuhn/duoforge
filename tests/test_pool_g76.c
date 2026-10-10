@@ -163,7 +163,7 @@ static void finish(duoforge_context *ctx, duoforge_battle *b)
 /* The row: the handler ids, the support marks, the view bit and feature of Destiny Bond, the event and the position bit. */
 static void test_row(df_test *t)
 {
-    DF_CHECK_EQ_U64(t, DFI_SPECIAL_DESTINY_BOND, DFI_SPECIAL_DRAGON_CHEER + 1u);
+    DF_CHECK_EQ_U64(t, DFI_SPECIAL_DESTINY_BOND, DFI_SPECIAL_BATON_PASS + 1u); /* batch5: after G74 Baton Pass (97) */
     DF_CHECK_EQ_U64(t, DFI_SPECIAL_FINAL_GAMBIT, DFI_SPECIAL_DESTINY_BOND + 1u);
     DF_CHECK_EQ_U64(t, dfi_pool_moves[DFI_MOVE_DESTINYBOND].special, DFI_SPECIAL_DESTINY_BOND);
     DF_CHECK_EQ_U64(t, dfi_pool_moves[DFI_MOVE_FINALGAMBIT].special, DFI_SPECIAL_FINAL_GAMBIT);
