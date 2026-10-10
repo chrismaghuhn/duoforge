@@ -3672,7 +3672,7 @@ static void dfi_after_faint(dfi_run *r, uint32_t length, bool by_move, uint32_t 
  * after the queue sees by_move false. */
 static void dfi_destiny_bond_ko(dfi_run *r, uint32_t flat)
 {
-    const dfi_tail_pos *tail = &r->b->tail.sides[flat / 2u].positions[flat % 2u];
+    dfi_tail_pos *tail = &r->b->tail.sides[flat / 2u].positions[flat % 2u];
     if ((tail->position_flags & DFI_POSFLAG_DESTINY_BOND) == 0u || !r->last_faint_move) {
         return;
     }
@@ -3680,6 +3680,9 @@ static void dfi_destiny_bond_ko(dfi_run *r, uint32_t flat)
     if (src >= DFI_POSITIONS || src / 2u == flat / 2u) {
         return; /* no source, or the holder's own side (Battle.isAlly) */
     }
+    /* The holder's onFaint runs once, in faintMessages (sim/battle.ts:2555-2570), and clearVolatile ends the flag there: the
+     * flag is cleared here, so that the processing of the faint does not run the KO a second time. */
+    tail->position_flags = (uint8_t)((uint32_t)tail->position_flags & ~(uint32_t)DFI_POSFLAG_DESTINY_BOND); /* wide-operands-reviewed */
     const duoforge_event act = dfi_ev(DUOFORGE_EVENT_ACTIVATE, flat, DUOFORGE_CAUSE_MOVE, DFI_MOVE_DESTINYBOND, DUOFORGE_NO_POSITION);
     dfi_emit(r, &act); /* [-activate] holder|move: Destiny Bond */
     dfi_member *am = dfi_at(r->b, src);
@@ -3742,6 +3745,9 @@ static void dfi_announce_faints(dfi_run *r, bool check_win)
     const uint32_t length = r->faint_count - r->faint_announced; /* the faints this call shows */
     for (uint32_t i = r->faint_announced; i < r->faint_count; ++i) {
         dfi_emit_plain(r, DUOFORGE_EVENT_FAINT, r->faint_queue[i]); /* [faint] */
+        /* Destiny Bond's KO belongs to faintMessages too: the attacker's faint is queued here and shown in this loop, before any
+         * recoil of the attacker's move (sim/battle-actions.ts:976-982, the faintMessages before applyRecoilDamage). */
+        dfi_destiny_bond_ko(r, r->faint_queue[i]);
     }
     r->faint_announced = r->faint_count;
     if (check_win && r->faint_count != 0u) {
