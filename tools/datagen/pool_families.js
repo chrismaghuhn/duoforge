@@ -1621,7 +1621,7 @@ function isBoostBlock(b) {
 // effect each. The move's handler id (G2) or its place in the prefix is decided by the caller.
 // The pool rows that carry selfSwitch and that the turn code pivots with a flag of their own (dfi_pivot_moves): U-turn
 // (a G2 row); Flip Turn is a row of the prefix.
-const ENGINE_PIVOTS = ['uturn', 'voltswitch'];
+const ENGINE_PIVOTS = ['uturn', 'voltswitch', 'batonpass'];
 // Step G13: the moves that are another move's handler under another name (gen_closure.py PROTECT_COPIES).
 const PROTECT_COPIES = {detect: 'protect'};
 // Step G46: the four forced-switch moves; their forceSwitch: true is modelled (gen_closure.py G46_FORCE_SWITCH_MOVES).

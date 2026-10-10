@@ -391,6 +391,8 @@ def parse_move(mid, base, champ, ext=False, pool=False, unmodeled=None):
                 fail('move %s: %s is not the pinned text (decision 0032)' % (mid, name))
     if pool and handled[0] == 'SKILL_SWAP' and ('onHit' not in f or norm(f['onHit'][1]) != norm(SKILL_SWAP_ONHIT)):
         fail('move %s: onHit is not the pinned text' % mid)
+    if pool and handled[0] == 'BATON_PASS' and ('onHit' not in f or norm(f['onHit'][1]) != norm(BATON_PASS_ONHIT)):
+        fail('move %s: onHit is not the pinned text (decision 0042)' % mid)
     if pool and handled[0] == 'YAWN':
         if 'onTryHit' not in f or norm(f['onTryHit'][1]) != YAWN_ONTRYHIT:
             fail('move %s: onTryHit is not the pinned text' % mid)
@@ -454,6 +456,13 @@ def parse_move(mid, base, champ, ext=False, pool=False, unmodeled=None):
             fail('move %s: unknown flag %s' % (mid, fl))
     for key, bit in EXTRA_FLAG_BITS.items():
         value = get(key, False)
+        if key == 'selfSwitch' and value == 'copyvolatile':
+            # Step G74 (decision 0042): Baton Pass is the one row whose selfSwitch carries a copy. It is a pivot of its own
+            # (ENGINE_PIVOT_MOVES, dfi_pivot_moves); any other copyvolatile row, and shedtail, stay refused below.
+            if mid != 'batonpass':
+                bad('move %s: selfSwitch copyvolatile is not Baton Pass' % mid, 'field selfSwitch copyvolatile')
+            flags |= bit
+            continue
         if value is True:
             flags |= bit
             if key == 'selfSwitch' and lenient and mid not in ENGINE_PIVOT_MOVES:
@@ -2044,6 +2053,13 @@ G60_HANDLERS = ['SUBSTITUTE']
 # Step G70 (Skill Swap, decision 0041; data/moves.ts:16590-16606): the handler swaps the two holders' abilities.
 G70_HANDLERS = ['SKILL_SWAP']
 SKILL_SWAP_ONHIT = "onHit(target, source, move) { return this.skillSwap(source, target); },"
+# Step G74: Baton Pass (decision 0042). Its onHit (data/moves.ts:1097-1103) fails with [still] when the target side cannot
+# switch or the target is commanded; its self block (1108-1111) skips the BeforeSwitchOut of the switch that follows.
+# selfSwitch 'copyvolatile' (1113) is the pivot of the row (ENGINE_PIVOT_MOVES, dfi_pivot_moves).
+G74_HANDLERS = ['BATON_PASS']
+BATON_PASS_ONHIT = ("onHit(target) { if (!this.canSwitch(target.side) || target.volatiles['commanded']) { "
+                    "this.attrLastMove('[still]'); this.add('-fail', target); return this.NOT_FAIL; } },")
+BATON_PASS_SELF = "self: { onHit(source) { source.skipBeforeSwitchOutEventFlag = true; }, },"
 SUBSTITUTE_ONTRYHIT = (
     "onTryHit(source) { if (source.volatiles['substitute']) { this.add('-fail', source, 'move: Substitute'); "
     "return this.NOT_FAIL; } if (source.hp <= source.maxhp / 4 || source.maxhp === 1) { // Shedinja clause "
@@ -2221,6 +2237,7 @@ SPECIAL_P = dict(SPECIAL_C, **{
     'taunt': ('TAUNT', set()),                                            # G31: bars the Status moves for three or four turns
     'substitute': ('SUBSTITUTE', {'onTryHit', 'onHit'}),                  # G60: a 1/4 HP decoy that takes the hits (decision 0032)
     'skillswap': ('SKILL_SWAP', {'onHit'}),                               # G70: swaps the two abilities (decision 0041)
+    'batonpass': ('BATON_PASS', {'onHit'}),                               # G74: switches the user out and copies its volatiles (decision 0042)
     'yawn': ('YAWN', {'onTryHit'}),                                       # G31: sleep at the end of the next turn
     'revivalblessing': ('REVIVAL_BLESSING', {'onTryHit'}),                # G52: the revive at the PIVOT of the user's slot
     'roost': ('ROOST', set()),                                            # G42: heals, then the Flying type is off for the turn
@@ -2472,7 +2489,7 @@ G68_FACTS = (
                      'flags: { protect: 1, reflectable: 1, mirror: 1, metronome: 1 },', "status: 'par',",
                      'ignoreImmunity: false,', 'target: "normal",', 'type: "Electric",']),
 )
-SPECIAL_IDS_P = SPECIAL_IDS_C + G2_HANDLERS + WEATHER_HANDLERS + G16_HANDLERS + G15_HANDLERS + G19_HANDLERS + G20_HANDLERS + G20_PROTECT_HANDLERS + G28_HANDLERS + G30_HANDLERS + G32_HANDLERS + G34_HANDLERS + G27_HANDLERS + G25_HANDLERS + G26_HANDLERS + G33_HANDLERS + G38_HANDLERS + G29_HANDLERS + G39_HANDLERS + G31_HANDLERS + G48_HANDLERS + G44_HANDLERS + G50_HANDLERS + G42_HANDLERS + G56_HANDLERS + G52_HANDLERS + G54_HANDLERS + G64_HANDLERS + G62_HANDLERS + G60_HANDLERS + G58_HANDLERS + G68_HANDLERS + G70_HANDLERS + G66_HANDLERS + G72B_HANDLERS + ['UNMODELED']# Step G10 made two of these handlers data: Scald (thawsTarget) and Recover (heal) are read into the second flags# byte (bit 4, thaws the target) and the heal column, and have the special NONE; their ids stay defined (the ids after
+SPECIAL_IDS_P = SPECIAL_IDS_C + G2_HANDLERS + WEATHER_HANDLERS + G16_HANDLERS + G15_HANDLERS + G19_HANDLERS + G20_HANDLERS + G20_PROTECT_HANDLERS + G28_HANDLERS + G30_HANDLERS + G32_HANDLERS + G34_HANDLERS + G27_HANDLERS + G25_HANDLERS + G26_HANDLERS + G33_HANDLERS + G38_HANDLERS + G29_HANDLERS + G39_HANDLERS + G31_HANDLERS + G48_HANDLERS + G44_HANDLERS + G50_HANDLERS + G42_HANDLERS + G56_HANDLERS + G52_HANDLERS + G54_HANDLERS + G64_HANDLERS + G62_HANDLERS + G60_HANDLERS + G58_HANDLERS + G68_HANDLERS + G70_HANDLERS + G66_HANDLERS + G72B_HANDLERS + G74_HANDLERS + ['UNMODELED']# Step G10 made two of these handlers data: Scald (thawsTarget) and Recover (heal) are read into the second flags# byte (bit 4, thaws the target) and the heal column, and have the special NONE; their ids stay defined (the ids after
 # them keep their values). First Impression and Low Kick keep theirs: the turn code implements them.
 POOL_COLUMN_KEYS = {'thawsTarget', 'heal'}
 G2_OWNED_FIELDS = {
@@ -2517,6 +2534,7 @@ G2_OWNED_FIELDS = {
     'SHEER_COLD': {'ohko': "ohko: 'Ice',"},
     'STEEL_BEAM': {'mindBlownRecoil': 'mindBlownRecoil: true,'},
     'THUNDER_WAVE': {'ignoreImmunity': 'ignoreImmunity: false,'},
+    'BATON_PASS': {'self': BATON_PASS_SELF},
 }
 # Step G48: the empty secondary of Stone Axe and Ceaseless Edge (the Sheer Force placeholder). Without Sheer Force the pin runs
 # it for every hit target (moveHit of an empty secondary with chance undefined, sim/battle-actions.ts:1336-1349): the engine
@@ -2709,7 +2727,7 @@ ENGINE_ROWS = {'items': ['focussash', 'floettite', 'psychicseed', 'electricseed'
 # The moves of the whole pool that the turn code pivots with a switch flag of their own (dfi_pivot_moves,
 # src/state/closure_member.c) beyond Flip Turn and U-turn, which are rows of the steps. Empty: Volt Switch comes with the
 # step that gives it a flag value, and adds its id here.
-ENGINE_PIVOT_MOVES = ('voltswitch', 'revivalblessing')  # step G32: switch flag 6
+ENGINE_PIVOT_MOVES = ('voltswitch', 'revivalblessing', 'batonpass')  # step G32: switch flag 6; step G74: Baton Pass, switch flag 8
 # The one ability that the pin tags as not released and that the pool still has: Aura Guard is the ability of
 # Lucario-Mega-Z, whose set the pinned validator accepts (docs/research/expansion/data/legal_pool.json, 'abilities_mega_only').
 # The row exists because the format has the forme; it is UNMODELED like every ability with a callback. Any other tag fails.
