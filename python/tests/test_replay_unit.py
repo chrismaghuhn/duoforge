@@ -924,6 +924,13 @@ class GameTest(unittest.TestCase):
         result = self.run_game(self.insert_after("|turn|2", "|-start|p2a: Politoed|move: Heal Block"))
         self.assertEqual(result.counters["turns.total"], 2 * result.record.turns)
         self.assertEqual(result.counters["turns.kept"], 2 * 1)  # turn 1 complete, turn 2 stopped
+        self.assertEqual(result.counters["games.both_kept"], 0)
+
+    def test_a_match_counts_when_both_perspectives_run_to_the_end(self):
+        self.assertEqual(self.run_game(self.log).counters["games.both_kept"], 1)
+        # a stop in one perspective is enough: the Rage Powder before p1's own pivot stops p1 only
+        one = self.run_game(self.insert_after("|turn|3", "|-start|p2a: Politoed|Rage Powder"))
+        self.assertEqual(one.counters["games.both_kept"], 1 if one.counters["perspectives.kept"] == 2 else 0)
 
     def test_a_feature_stops_after_turn_two(self):
         # a feature the tracker does not fold (Heal Block; Sand folds since the BC PR) ends both perspectives there:
@@ -1455,6 +1462,8 @@ class DatasetTest(unittest.TestCase):
         text = funnel.text(funnel.report(c))
         self.assertIn("turns without a stop, of all its games taken", text)
         self.assertIn("turns without a stop, of the games set up", text)
+        self.assertEqual(f["both_kept"], c["games.both_kept"])
+        self.assertIn("matches with both perspectives to the end", text)
 
     def test_the_funnel_command_reads_a_dataset(self):
         import contextlib

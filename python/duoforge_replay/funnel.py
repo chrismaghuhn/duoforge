@@ -25,7 +25,7 @@ def count(counters, format_id, stage, n=1):
 def _empty():
     return {"read": 0, "skipped": collections.Counter(), "internal": 0, "processed": 0,
             "perspectives": {"kept": 0, "stopped": collections.Counter()}, "rows": 0,
-            "turns": {"total": 0, "kept": 0, "refused": 0}}
+            "turns": {"total": 0, "kept": 0, "refused": 0}, "both_kept": 0}
 
 
 def report(counters):
@@ -43,6 +43,8 @@ def report(counters):
             f["skipped"][stage[len("skipped."):]] += n
         elif stage.startswith("internal:"):
             f["internal"] += n
+        elif stage == "games.both_kept":
+            f["both_kept"] += n
         elif stage in ("turns.total", "turns.kept", "turns.refused"):
             f["turns"][stage[len("turns."):]] += n
         elif stage == "perspectives.kept":
@@ -102,5 +104,12 @@ def text(report, top=8):
         if t["total"]:
             lines.append(f"  turns without a stop, of the games set up {t['kept']} of {t['total']} "
                          f"({100 * t['kept'] / t['total']:.1f} %)")
+        taken = f["processed"] + f["internal"] + sum(v for k, v in f["skipped"].items()
+                                                     if k not in ("skip:format", "skip:sheets", "skip:has-sheets")
+                                                     and not k.startswith("skip:split-"))
+        if taken:
+            lines.append(f"  matches with both perspectives to the end {f['both_kept']} of {taken} taken "
+                         f"({100 * f['both_kept'] / taken:.1f} %), of {f['processed']} set up "
+                         f"({100 * f['both_kept'] / max(f['processed'], 1):.1f} %)")
         lines.append(f"  rows {f['rows']}")
     return "\n".join(lines) + "\n"

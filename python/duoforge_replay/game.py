@@ -13,7 +13,8 @@ Counters:
 - labels.<REASON> per asked slot of the rows, labels.TEAM for team rows;
 - turn-scoped.<NAME>: single-turn feature lines that stopped nothing;
 - turns.total: the game's turns, per perspective; turns.kept: the turns complete before the perspective's stop
-  (all of them without a stop): the turn coverage.
+  (all of them without a stop): the turn coverage;
+- games.both_kept: 1 when both perspectives ran to the end without a stop.
 """
 import collections
 import dataclasses
@@ -243,8 +244,13 @@ def process(replay_id, format_id, log, data, prior, stats, belief=None, seed=0, 
         counters["turns.total"] += 2 * record.turns
         return GameResult(record, [], counters)
     rows = []
+    kept_before = counters["perspectives.kept"]
     for side in (0, 1):
         rows += _perspective(lines, points, side, sheets, data, prior, stats, counters, extra, record.turns)
+    if counters["perspectives.kept"] - kept_before == 2:
+        counters["games.both_kept"] += 1
+    else:
+        counters["games.both_kept"] += 0  # the key is there for every game set up
     counters["points.written"] += len(rows)
     return GameResult(record, rows, counters)
 
