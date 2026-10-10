@@ -1771,6 +1771,96 @@ class SourceTest(unittest.TestCase):
         self.assertEqual(counters["funnel.gen9ou.skipped.skip:format"], 1)
 
 
+class PickHypothesesTest(unittest.TestCase):
+    """Pick hypotheses (M11 pick hypotheses spec): a perspective whose back picks the log does not show is folded once
+    per pick tuple the log allows, marked, and stopped at the earliest stop of any of them."""
+
+    @classmethod
+    def setUpClass(cls):
+        from duoforge_live import teams
+        from duoforge_replay import game, hindsight, prior
+        cls.G, cls.H = game, hindsight
+        cls.data = data.load(kind="pool")
+        log = FIXTURE.read_text(encoding="utf-8").split(chr(10))
+        cut = next(i for i, line in enumerate(log) if line.startswith("|switch|p1a: Salamence|"))
+        cls.short = log[:cut] + ["|win|p2"]  # p1's Salamence never enters: three of p1's four brought are seen
+        cls.full = log
+        cls.sheets = tuple(teams.unpack(line.split("|", 3)[3]) for line in log if line.startswith("|showteam|"))
+        for s in cls.sheets[0] + cls.sheets[1]:
+            s["species"] = cls.data.canonical(s["species"])
+        cls.names = [s["species"] for s in cls.sheets[0]]
+        cls.prior = prior.Prior({"version": 1, "pastes": 0, "skipped": {}, "levels": [{}, {}, {}, {}]})
+
+    def index(self, species):
+        return self.names.index(species)
+
+    def fold(self, log, **kw):
+        return self.G.process("fixture-hyp", "gen9championsvgc2026regmcbo3", chr(10).join(log), self.data, self.prior,
+                              _Stats(), **kw)
+
+    def test_the_hypotheses_are_the_pick_tuples_the_log_allows(self):
+        hyps = self.H.pick_hypotheses(self.short, 0, self.data, self.sheets)
+        leads = (self.index("Kingambit"), self.index("Incineroar"))
+        seen = self.index("Indeedee-F")
+        unseen = {self.index(n) for n in ("Salamence", "Basculegion", "Sneasler")}
+        self.assertEqual(len(hyps), 3)
+        for h in hyps:
+            self.assertEqual(h[:2], leads)
+            self.assertIn(seen, h[2:])
+            self.assertEqual(len(set(h[2:]) - {seen}), 1)
+        self.assertEqual({next(iter(set(h[2:]) - {seen})) for h in hyps}, unseen)
+        cut = next(i for i, line in enumerate(self.short) if line.startswith("|switch|p1a: Indeedee"))
+        two = self.H.pick_hypotheses(self.short[:cut] + ["|win|p2"], 0, self.data, self.sheets)
+        self.assertEqual(len(two), 6)  # only the leads seen: two of the four other members
+        self.assertEqual({h[:2] for h in two}, {leads})
+        self.assertEqual(len({frozenset(h[2:]) for h in two}), 6)
+        # with the four brought known there is one hypothesis: the picks themselves
+        self.assertEqual(self.H.pick_hypotheses(self.full, 0, self.data, self.sheets),
+                         [self.H.hindsight_picks(self.full, 0, self.data, self.sheets)])
+
+    def test_each_hypothesis_gives_its_marked_rows_and_the_team_row_once(self):
+        from duoforge_replay import points
+        result = self.fold(self.short, pick_hypotheses=True)
+        own = [r for r in result.rows if r.side == 0]
+        team = [r for r in own if int(r.observation["boundary_kind"]) == points.TEAM_SELECTION]
+        self.assertEqual([(r.picks_hypotheses, r.hypothesis) for r in team], [(1, 0)])
+        turns = [r for r in own if int(r.observation["boundary_kind"]) != points.TEAM_SELECTION]
+        self.assertEqual({r.picks_hypotheses for r in turns}, {3})
+        self.assertEqual({r.hypothesis for r in turns}, {0, 1, 2})
+        by_hyp = collections.Counter(r.hypothesis for r in turns)
+        self.assertEqual(len(set(by_hyp.values())), 1)  # a common stop: every hypothesis has the same points
+        hyps = self.H.pick_hypotheses(self.short, 0, self.data, self.sheets)
+        for r in turns:  # the own bench follows its hypothesis
+            order = [int(x) for x in r.observation["sides"][0]["brought_order"][:4]]
+            self.assertEqual(sorted(order), sorted(hyps[r.hypothesis]))
+
+    def test_the_headline_counters_do_not_change(self):
+        plain, hyp = self.fold(self.short), self.fold(self.short, pick_hypotheses=True)
+        for key in ("perspectives.kept", "perspectives.stopped.picks-incomplete", "turns.kept", "turns.total"):
+            self.assertEqual(hyp.counters[key], plain.counters[key], key)
+        self.assertGreater(hyp.counters["turns.hypotheses"], 0)
+        self.assertEqual(hyp.counters["perspectives.hypotheses_kept"]
+                         + sum(v for k, v in hyp.counters.items() if k.startswith("perspectives.hypotheses_stopped.")),
+                         plain.counters["perspectives.stopped.picks-incomplete"])
+        self.assertEqual(hyp.counters["points.hypotheses"], sum(1 for r in hyp.rows if r.picks_hypotheses > 1))
+
+    def test_a_stop_in_one_hypothesis_ends_all_at_the_earliest_line(self):
+        from duoforge_replay import points
+
+        class Stop(Exception):
+            def __init__(self, line, reason):
+                self.line, self.reason = line, reason
+        p = [points.Point(i, line, points.TURN, (), line + 1) for i, line in enumerate((10, 20, 30, 40))]
+        runs = [([(q, "row") for q in p], None), ([(q, "row") for q in p[:2]], Stop(25, "feature:X")),
+                ([(q, "row") for q in p[:3]], Stop(35, "feature:Y"))]
+        kept, stop = self.G._common_stop(runs)
+        self.assertEqual((stop.line, stop.reason), (25, "feature:X"))
+        self.assertEqual([[q.line for q, _ in taken] for taken in kept], [[10, 20], [10, 20], [10, 20]])
+        kept, stop = self.G._common_stop([([(q, "row") for q in p], None)] * 2)
+        self.assertIsNone(stop)
+        self.assertEqual([len(t) for t in kept], [4, 4])
+
+
 class SplitTest(unittest.TestCase):
     """The player split of the Bo1 belief validation (M11 Bo1 spec section 6): no player in training and test."""
 
