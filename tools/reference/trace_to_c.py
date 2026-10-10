@@ -498,7 +498,10 @@ def drop_reason(d, state, after=None, log=None):
                     raise ConversionError('oblivious-taunt', 'trace_to_c: a taunted Oblivious holder: %s' % slot, detail=slot)
         # Trace's onUpdate (step AC1) returns unless its holder is still seeking after an onStart that found no foe to
         # copy, which the engine refuses (E_UNSUPPORTED): until then it does nothing either, so it is not a holder.
-        inert = {'thermalexchange', 'trace', 'limber', 'oblivious'}
+        # Water Bubble's onUpdate (step G65, data/abilities.ts:5400-5405) cures a burn of its holder: no holder of it has one,
+        # since onSetStatus refuses every burn of the holder, and a Trace copy onto a burned holder is refused (E_UNSUPPORTED,
+        # dfi_trace), so it does nothing and is not a holder.
+        inert = {'thermalexchange', 'trace', 'limber', 'oblivious', 'waterbubble'}
         # Rain Dish's onWeather (step G35, data/abilities.ts:3759) heals only in rain (RainDance; Primordial Sea is not in the
         # format): under any other weather its holder has the handler and it does nothing, so it is not a holder. The weather is
         # the one of the upkeep, which is the one the step ends with (after) or, without it, the one it started with. Solar
@@ -645,6 +648,12 @@ def drop_reason(d, state, after=None, log=None):
         # the equal-speed holders (one on each side, say) run in: one order, one value. Aura Break (3072) is in no
         # pool forme's abilities.
         return 'Fairy Aura handlers whose order changes nothing'
+    if site == 'SPEED_TIE' and ctx == 'event:ModifyBoost' and all(
+            g.startswith('H:unaware:') and g.endswith(':cb') for g in group):
+        # data/abilities.ts unaware (step G65, onAnyModifyBoost): each holder assigns 0 to the stages it names, only when the
+        # boosted Pokemon is not its own holder, and returns otherwise. Two holders, one on each side, zero the union of those
+        # stages in either order: one result, so the tie decides nothing.
+        return 'Unaware handlers whose zeroed stages do not depend on their order'
     if site == 'SPEED_TIE' and ctx in ('event:BeforeMove', 'event:ModifyMove'):
         # The BeforeMove handlers (data/moves.ts:8307 and :19410, both priority 6) and the ModifyMove handlers (:8314 and
         # :19417) of one Pokemon that holds both Heal Block and Throat Chop: each stops the move only if the move has
