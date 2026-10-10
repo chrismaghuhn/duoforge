@@ -136,7 +136,7 @@ LIBRARY_SUPPORTED = supported()
 BASE_FOLDS = sum(1 << FEATURES[n] for n in ("WEATHER_SAND", "WEATHER_SNOW", "AILMENT_TOX"))
 # The view-extension folds (tracker.EXT_FIELDS: the record fields the tracker fills; test_replay compares them with
 # DuoForge's record byte for byte and requires each to be shown at compared points of both viewers, own and foe side).
-EXT_FOLDS = sum(1 << FEATURES[n] for n in ("THROAT_CHOP", "AURORA_VEIL", "PERISH", "ENCORE"))
+EXT_FOLDS = sum(1 << FEATURES[n] for n in ("THROAT_CHOP", "AURORA_VEIL", "PERISH", "ENCORE", "ABILITY_CHANGE"))
 TRACKER_FOLDS = BASE_FOLDS | EXT_FOLDS
 SUPPORTED = LIBRARY_SUPPORTED & TRACKER_FOLDS
 
@@ -365,9 +365,11 @@ def check(line, view):
     if kind == "-ability":
         froms = _froms(attrs)
         if froms:
-            if froms[0].startswith("ability: ") or froms[0].startswith("move: "):
-                return _feature("ABILITY_CHANGE")
-            _unknown(kind, f"{effect} [from] {froms[0]}")
+            if froms[0] == "ability: Trace":
+                return _feature("ABILITY_CHANGE")  # Trace's copy (step AC1); Skill Swap's comes as an -activate line
+            # another source of a new ability (Mummy, Lingering Aroma, Wandering Spirit, Role Play, Entrainment, ...):
+            # the engine models none of them, so no fold can follow it
+            _unknown(kind, f"[from] {froms[0]}")
         ability = tables["ABILITY"].get(trace_to_c.key(effect))
         if ability is not None and ability + 1 == view.ability_now(args[0]):
             return "fold"  # an announcement of the holder's own ability (Intimidate, Pressure, ...)

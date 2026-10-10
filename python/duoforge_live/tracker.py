@@ -68,6 +68,7 @@ EXT_FIELDS = {
     "AURORA_VEIL": (("side", "aurora_veil_turns"),),
     "PERISH": (("position", "perish"),),
     "ENCORE": (("position", "encore_slot"),),
+    "ABILITY_CHANGE": (("position", "ability_now"),),
 }
 # DUOFORGE_SIDE_* of a SIDE_START or SIDE_END event (tailwind 1, reflect 2, light screen 3, Aurora Veil 4) -> the index
 # of the side's turns in Tracker._conditions
@@ -116,6 +117,7 @@ class _Position:
         self.perish = 0  # the Perish count the game showed last, 3 to 1 (0: none)
         self.last_slot = 0  # the move slot + 1 of the occupant's last move line (5: Struggle; None: not on its sheet)
         self.encore_slot = 0  # the move slot + 1 that Encore forces (0: not encored)
+        self.ability_now = 0  # the ability + 1 that Trace or Skill Swap gave the occupant (0: its own)
         self.flags = 0  # DUOFORGE_POSITION_FLAG_* (TEAM_C and POOL): Follow Me, Helping Hand, Unburden
         self.guard_undo = None  # (chain, stall) before a Wide or Quick Guard, until it is known to have run
 
@@ -293,8 +295,20 @@ class Tracker:
         return [m.sheet for m in self._member(int(ident[1]) - 1)]
 
     def ability_now(self, ident):
-        """The current ability + 1 of the member a protocol ident names."""
-        return self._member_of(ident).ability
+        """The current ability + 1 of the member a protocol ident names: the one Trace or Skill Swap gave it while it
+        stands at the ident's position, else its own (the sheet's, or its Mega forme's)."""
+        member = self._member_of(ident)
+        pos = lines.flat_position(ident)
+        if pos is not None:
+            p = self._at(pos)
+            if p.ability_now and p.occupant != ROSTER_NONE and self._member(pos // 2)[p.occupant] is member:
+                return p.ability_now
+        return member.ability
+
+    def _ability_at(self, pos):
+        """The current ability + 1 of the occupant of flat position `pos` (ability_now)."""
+        p = self._at(pos)
+        return p.ability_now or self._member(pos // 2)[p.occupant].ability
 
     def _holds(self, member, key):
         """Whether `member` holds the item of ITEM table key `key` now, as far as the lines showed: its open sheet's
@@ -355,7 +369,9 @@ class Tracker:
             member.stats = [mon["stats"][k] for k in ("atk", "def", "spa", "spd", "spe")]
             forme = self.data.forme(mon["details"].split(",")[0])
             member.is_mega = 1 if self.data.base_forme(forme) != forme else 0
-            ability = trace_to_c.key(mon["ability"])  # "noability": No Ability, 0 as parse_team has it
+            # baseAbility: the sheet's or the Mega forme's (formeChange), which the member view shows; "ability" is the
+            # current one, which Trace or Skill Swap may have changed (the position's ability_now, from the lines)
+            ability = trace_to_c.key(mon.get("baseAbility", mon["ability"]))  # "noability": No Ability, 0
             member.ability = 0 if ability == "NOABILITY" else self.data.tables["ABILITY"][ability] + 1
             member.item_used = 1 if member.sheet["item"] != 0 and mon["item"] == "" else 0
         if "active" in request:
@@ -439,8 +455,17 @@ class Tracker:
             user = lines.flat_position(parts[2])
             if user is not None:
                 self._rb_pending[user // 2] = user  # its revive comes in the step that answers the request
+        swap_ids = None
+        if parts[1] == "-activate" and parts[3:6] == ["Skill Swap", "", ""] and len(parts) == 7:
+            # an ally Skill Swap names no ability (decision 0041): the two holders' current abilities, known from the
+            # open sheets and the lines folded so far, change places
+            src, tgt = lines.flat_position(parts[2]), lines.flat_position(parts[6][len("[of] "):])
+            if src is not None and tgt is not None and self._at(src).occupant != ROSTER_NONE \
+                    and self._at(tgt).occupant != ROSTER_NONE and self._ability_at(src) and self._ability_at(tgt):
+                swap_ids = {0: (self._ability_at(tgt) - 1, self._ability_at(src) - 1)}
         try:
-            events = trace_to_c.step_events([line], viewer, self._names, maxhp, self.data.tables, self._rb_pending)
+            events = trace_to_c.step_events([line], viewer, self._names, maxhp, self.data.tables, self._rb_pending,
+                                            swap_ids=swap_ids)
         except trace_to_c.ConversionError as e:  # a SystemExit: callers catch one kind of error
             detail = getattr(e, "detail", None)
             raise lines.Stop(f"converter:{e.rule}" + (f" {detail}" if detail else "")) from e
@@ -569,6 +594,17 @@ class Tracker:
             # Perish Song's count (step G26): the residual's -start|X|perishN, N = 3, 2, 1, then perish0 before the
             # holder faints; the cast's own perish3 line is [silent] (no event), so nothing shows until the first count
             self._at(pos).perish = amount
+        elif kind == EV["ABILITY"] and e[3] in (trace_to_c.CAUSE["ABILITY"], trace_to_c.CAUSE["MOVE"]):
+            # An ability that changed until the occupant leaves or Mega Evolves (the tail's ability_now): Trace's copy
+            # (step AC1, -ability|X|NEW|...|[from] ability: Trace: cause ABILITY, the new ability in id2) or a Skill Swap
+            # (step G70, decision 0041: cause MOVE, the holder's new ability in id). A swap ends the old abilities:
+            # Flash Fire's and Unburden's volatiles go with no line (sim/battle.ts:1325-1326).
+            p = self._at(pos)
+            new = ident2 if e[3] == trace_to_c.CAUSE["ABILITY"] else ident
+            if e[3] == trace_to_c.CAUSE["MOVE"]:
+                p.flash_fire = 0
+                p.flags &= ~FLAG_UNBURDEN
+            p.ability_now = new if new != self._member(pos // 2)[p.occupant].ability else 0
         elif kind in (EV["VOLATILE_START"], EV["VOLATILE_END"]) and detail == trace_to_c.VOLATILE_ENCORE:
             # Encore (step G9): -start|X|Encore forces the slot of the target's last move line (the move must be on
             # its sheet, or the pin's onStart fails without the line); -end|X|Encore (the duration, a used-up move,
@@ -626,7 +662,7 @@ class Tracker:
             m = self._occupant(pos)
             if public:
                 m.item_used = 1
-            if self._unburden is not None and m.ability == self._unburden:
+            if self._unburden is not None and self._ability_at(pos) == self._unburden:
                 self._at(pos).flags |= FLAG_UNBURDEN  # Unburden doubles Speed once the item is gone (c08 battles)
         elif kind == EV["SINGLE_TURN"]:
             if ident == self._follow_me:
@@ -637,6 +673,7 @@ class Tracker:
             pass  # the view keeps the set's species; MEGA sets is_mega and the ability
         elif kind == EV["MEGA"]:
             self._mega_used[pos // 2] = 1
+            self._at(pos).ability_now = 0  # the Mega forme's ability replaces a copied one (formeChange -> setAbility)
             if public:
                 m = self._occupant(pos)
                 m.is_mega = 1
@@ -702,7 +739,7 @@ class Tracker:
         foe = 1 - pos // 2
         members = self._member(foe)
         holders = [k for k, p in enumerate(self._positions[foe]) if p.occupant != ROSTER_NONE and not p.fainted
-                   and p.occupant < len(members) and members[p.occupant].ability == self._pressure]
+                   and p.occupant < len(members) and (p.ability_now or members[p.occupant].ability) == self._pressure]
         if not holders:
             return 0
         kind = self.data.target_type(move)
@@ -868,6 +905,8 @@ class Tracker:
                 pv = v["positions"][k]
                 pv["volatiles"] = EXT_THROAT_CHOP if p.throat_chop else 0
                 pv["perish"], pv["encore_slot"] = p.perish, p.encore_slot
+                own = self._member(side)[p.occupant].ability
+                pv["ability_now"] = p.ability_now if p.ability_now != own else 0  # shown when it differs
         return o
 
     def domain(self):

@@ -155,7 +155,7 @@ class PressureExtraTest(unittest.TestCase):
         t._pressure = cls.D.tables["ABILITY"]["PRESSURE"] + 1
         members = [SimpleNamespace(ability=t._pressure), SimpleNamespace(ability=t._pressure)]
         t._member = lambda side: members
-        t._positions = [[SimpleNamespace(occupant=k, fainted=False) for k in (0, 1)] for _ in (0, 1)]
+        t._positions = [[SimpleNamespace(occupant=k, fainted=False, ability_now=0) for k in (0, 1)] for _ in (0, 1)]
         cls.t = t
         cls.FLAG = trace_to_c.FLAG
 

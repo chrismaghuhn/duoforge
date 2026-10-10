@@ -283,8 +283,11 @@ class LinesTest(unittest.TestCase):
     def test_feature_lines_stop(self):
         self.assertEqual(self.stop("|-fieldstart|move: Electric Terrain|[from] ability: Electric Surge|[of] p2a: Gholdengo"),
                          "feature:TERRAIN_ELECTRIC")
-        self.assertEqual(self.stop("|-ability|p2a: Gholdengo|Intimidate|[from] ability: Trace|[of] p1a: Staraptor"),
-                         "feature:ABILITY_CHANGE")
+        # Trace's copy folds (ABILITY_CHANGE); an ability source the engine does not model stops on its line
+        self.assertEqual(lines.check("|-ability|p2a: Gholdengo|Intimidate|[from] ability: Trace|[of] p1a: Staraptor",
+                                     self.view), "fold")
+        self.assertEqual(self.stop("|-ability|p2a: Gholdengo|Mummy|[from] ability: Mummy|[of] p1a: Staraptor"),
+                         "line:-ability [from] ability: Mummy")
         self.assertEqual(self.stop("|-enditem|p1a: Staraptor|Sitrus Berry|[from] move: Knock Off|[of] p2a: Gholdengo"),
                          "feature:ITEM_CHANGE")
         self.assertEqual(self.stop("|-start|p1a: Staraptor|move: Taunt"), "feature:TAUNT")
@@ -365,11 +368,11 @@ class LinesTest(unittest.TestCase):
 
     def test_skill_swap_lines_are_ability_change(self):
         # Step G70 (decision 0041): the pin prints "Skill Swap" without "move: " for a foe swap (both abilities named)
-        # and an ally swap (none named); both are decision 0018's ABILITY_CHANGE until the tracker folds it
+        # and an ally swap (none named); both are decision 0018's ABILITY_CHANGE, which the tracker folds
         for line in ("|-activate|p1a: Staraptor|Skill Swap|Good as Gold|Intimidate|[of] p2a: Gholdengo",
                      "|-activate|p1a: Staraptor|Skill Swap|||[of] p1b: Staraptor",
                      "|-activate|p1a: Staraptor|move: Skill Swap|Good as Gold|Intimidate|[of] p2a: Gholdengo"):
-            self.assertEqual(self.stop(line), "feature:ABILITY_CHANGE", line)
+            self.assertEqual(lines.check(line, self.view), "fold", line)
 
     def test_drag_folds(self):
         # Step G46: a forced switch brings a member in as a switch does (the tracker folds it as one, or stops)
