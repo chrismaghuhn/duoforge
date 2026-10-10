@@ -2002,6 +2002,15 @@ def tail_example():
     return t
 
 
+# Step G71 (decision 0034): the members' genders of the sweep's base battle, the reference pairing 0 of
+# duoforge_reference_setup (src/state/reference_teams.c, the second field of each member): side 0 is team A, side 1 is team B.
+# 1 male, 2 female, 3 genderless. Copied from that table, not chosen.
+REFERENCE_GENDERS_PAIRING0 = (
+    (1, 2, 2, 1, 2, 3),  # team A: Rillaboom M, Staraptor F, Milotic F, Ceruledge M, Raichu F, Gholdengo genderless
+    (1, 2, 1, 2, 1, 1),  # team B: Politoed M, Golisopod F, Archaludon M, Farigiraf F, Charizard M, Grimmsnarl M
+)
+
+
 def tail_model_state():
     st = empty_state(KP)
     for s, sd in enumerate(st['sides']):
@@ -2011,7 +2020,20 @@ def tail_model_state():
         for m, mem in enumerate(sd['members']):
             mem['hp'], mem['move_count'] = 1, 4
             mem['hp_max'] = LEAD_HP_MAX[s][m] if m < 2 else 1
+            mem['gender'] = REFERENCE_GENDERS_PAIRING0[s][m]
     return st
+
+
+def attract_valid_codes(st, flat):
+    """Step G71: the Attract codes (1..12) that the state accepts on flat position `flat` with everything else as it is, by the
+    model's own check (attract_byte_ok): the list the sweep counts as OK at that tail byte."""
+    codes = []
+    for code in range(1, 2 * MAX_ROSTER + 1):
+        st['tail']['attract'][flat] = code
+        if attract_byte_ok(st, flat):
+            codes.append(code)
+    st['tail']['attract'][flat] = 0
+    return codes
 
 
 def tail_outcome(raw):
@@ -2047,6 +2069,11 @@ def print_pool_tail():
         assert (off in reserved) == (counts.get('TAIL_RESERVED', 0) == 255)
         print('pool_tail_sweep %3d %s' % (off, ' '.join('%s=%d' % kv for kv in sorted(counts.items()))))
         print('pool_tail_sweep_c %3d {%s},' % (off, ', '.join(str(counts.get(c, 0)) for c in SWEEP_COLUMNS)))
+    # Step G71: the Attract codes each flat position accepts on the sweep's base (its tail's attract bytes are zero there).
+    st_attract = tail_model_state()
+    st_attract['tail'] = parse_tail(bytes(STATE_SIZE) + base_tail)
+    for flat in range(4):
+        print('pool_tail_attract_codes %d %s' % (flat, attract_valid_codes(st_attract, flat)))
     # Decode order with the tail: the schema of the artifact against the context's kind.
     for ctx_name, ctx in (('C1', C1), ('KP', KP)):
         st = empty_state(ctx)
