@@ -14,13 +14,13 @@
    "|rule|Species Clause: Limit one of each Pokémon",
    "|rule|Item Clause: Limit 1 of each item",
    "|clearpoke",
-   "|poke|p1|Clefable, L50, F|",
+   "|poke|p1|Meganium, L50, F|",
    "|poke|p1|Gholdengo, L50|",
    "|poke|p1|Ceruledge, L50, M|",
    "|poke|p1|Kingambit, L50, M|",
    "|poke|p1|Primarina, L50, F|",
    "|poke|p1|Pawmot, L50, M|",
-   "|poke|p2|Clefable, L50, F|",
+   "|poke|p2|Meganium, L50, F|",
    "|poke|p2|Gholdengo, L50|",
    "|poke|p2|Ceruledge, L50, M|",
    "|poke|p2|Kingambit, L50, M|",
@@ -58,12 +58,12 @@
      ],
      "pokemon": [
       {
-       "species": "Clefable",
-       "set_species": "Clefable",
+       "species": "Meganium",
+       "set_species": "Meganium",
        "mega": 0,
        "switch_flag": 0,
-       "hp": 202,
-       "maxhp": 202,
+       "hp": 187,
+       "maxhp": 187,
        "item": "sitrusberry",
        "status": "",
        "status_time": 0,
@@ -81,7 +81,7 @@
        "pp": [
         12,
         8,
-        16,
+        12,
         12
        ],
        "volatiles": [],
@@ -248,12 +248,12 @@
      ],
      "pokemon": [
       {
-       "species": "Clefable",
-       "set_species": "Clefable",
+       "species": "Meganium",
+       "set_species": "Meganium",
        "mega": 0,
        "switch_flag": 0,
-       "hp": 202,
-       "maxhp": 202,
+       "hp": 187,
+       "maxhp": 187,
        "item": "sitrusberry",
        "status": "",
        "status_time": 0,
@@ -271,7 +271,7 @@
        "pp": [
         12,
         8,
-        16,
+        12,
         12
        ],
        "volatiles": [],
@@ -565,14 +565,14 @@
     "|uhtmlchange|otsrequest|",
     "",
     "|split|p1",
-    "|switch|p1a: Clefable|Clefable, L50, F|202/202",
-    "|switch|p1a: Clefable|Clefable, L50, F|100/100",
+    "|switch|p1a: Meganium|Meganium, L50, F|187/187",
+    "|switch|p1a: Meganium|Meganium, L50, F|100/100",
     "|split|p1",
     "|switch|p1b: Gholdengo|Gholdengo, L50|194/194",
     "|switch|p1b: Gholdengo|Gholdengo, L50|100/100",
     "|split|p2",
-    "|switch|p2a: Clefable|Clefable, L50, F|202/202",
-    "|switch|p2a: Clefable|Clefable, L50, F|100/100",
+    "|switch|p2a: Meganium|Meganium, L50, F|187/187",
+    "|switch|p2a: Meganium|Meganium, L50, F|100/100",
     "|split|p2",
     "|switch|p2b: Gholdengo|Gholdengo, L50|194/194",
     "|switch|p2b: Gholdengo|Gholdengo, L50|100/100",
@@ -614,12 +614,12 @@
       ],
       "pokemon": [
        {
-        "species": "Clefable",
-        "set_species": "Clefable",
+        "species": "Meganium",
+        "set_species": "Meganium",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 202,
-        "maxhp": 202,
+        "hp": 187,
+        "maxhp": 187,
         "item": "sitrusberry",
         "status": "",
         "status_time": 0,
@@ -637,7 +637,7 @@
         "pp": [
          12,
          8,
-         16,
+         12,
          12
         ],
         "volatiles": [],
@@ -757,12 +757,12 @@
       ],
       "pokemon": [
        {
-        "species": "Clefable",
-        "set_species": "Clefable",
+        "species": "Meganium",
+        "set_species": "Meganium",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 202,
-        "maxhp": 202,
+        "hp": 187,
+        "maxhp": 187,
         "item": "sitrusberry",
         "status": "",
         "status_time": 0,
@@ -780,7 +780,7 @@
         "pp": [
          12,
          8,
-         16,
+         12,
          12
         ],
         "volatiles": [],
@@ -902,7 +902,7 @@
      "hi": 4,
      "value": 3,
      "group": [
-      "A:move:p2a:moonblast",
+      "A:move:p2a:energyball",
       "A:move:p1a:healpulse"
      ],
      "start": 2
@@ -975,7 +975,7 @@
      "value": 3,
      "group": [
       "A:move:p1a:healpulse",
-      "A:move:p2a:moonblast"
+      "A:move:p2a:energyball"
      ],
      "start": 2
     },
@@ -1058,7 +1058,7 @@
      "hi": 3,
      "value": 1,
      "group": [
-      "A:move:p2a:moonblast",
+      "A:move:p2a:energyball",
       "A:move:p1a:healpulse"
      ],
      "start": 1
@@ -1142,7 +1142,7 @@
      "hi": 2,
      "value": 0,
      "group": [
-      "A:move:p2a:moonblast",
+      "A:move:p2a:energyball",
       "A:move:p1a:healpulse"
      ],
      "start": 0
@@ -1391,12 +1391,13 @@
     "|-singleturn|p1b: Gholdengo|Protect",
     "|move|p2b: Gholdengo|Protect|p2b: Gholdengo",
     "|-singleturn|p2b: Gholdengo|Protect",
-    "|move|p2a: Clefable|Moonblast|p1a: Clefable",
+    "|move|p2a: Meganium|Energy Ball|p1a: Meganium",
+    "|-resisted|p1a: Meganium|1",
     "|split|p1",
-    "|-damage|p1a: Clefable|159/202",
-    "|-damage|p1a: Clefable|78/100",
-    "|move|p1a: Clefable|Heal Pulse|p2a: Clefable",
-    "|-fail|p2a: Clefable|heal",
+    "|-damage|p1a: Meganium|170/187",
+    "|-damage|p1a: Meganium|90/100",
+    "|move|p1a: Meganium|Heal Pulse|p2a: Meganium",
+    "|-fail|p2a: Meganium|heal",
     "|upkeep",
     "|turn|2"
    ],
@@ -1436,12 +1437,12 @@
       ],
       "pokemon": [
        {
-        "species": "Clefable",
-        "set_species": "Clefable",
+        "species": "Meganium",
+        "set_species": "Meganium",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 159,
-        "maxhp": 202,
+        "hp": 170,
+        "maxhp": 187,
         "item": "sitrusberry",
         "status": "",
         "status_time": 0,
@@ -1459,7 +1460,7 @@
         "pp": [
          11,
          8,
-         16,
+         12,
          12
         ],
         "volatiles": [],
@@ -1581,12 +1582,12 @@
       ],
       "pokemon": [
        {
-        "species": "Clefable",
-        "set_species": "Clefable",
+        "species": "Meganium",
+        "set_species": "Meganium",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 202,
-        "maxhp": 202,
+        "hp": 187,
+        "maxhp": 187,
         "item": "sitrusberry",
         "status": "",
         "status_time": 0,
@@ -1604,7 +1605,7 @@
         "pp": [
          12,
          8,
-         15,
+         11,
          12
         ],
         "volatiles": [],
@@ -1728,7 +1729,7 @@
      "hi": 4,
      "value": 3,
      "group": [
-      "A:move:p2a:moonblast",
+      "A:move:p2a:energyball",
       "A:move:p1a:healpulse"
      ],
      "start": 2
@@ -1801,7 +1802,7 @@
      "value": 3,
      "group": [
       "A:move:p1a:healpulse",
-      "A:move:p2a:moonblast"
+      "A:move:p2a:energyball"
      ],
      "start": 2
     },
@@ -1891,7 +1892,7 @@
      "hi": 3,
      "value": 2,
      "group": [
-      "A:move:p2a:moonblast",
+      "A:move:p2a:energyball",
       "A:move:p1a:healpulse"
      ],
      "start": 1
@@ -1935,7 +1936,7 @@
      "value": 0,
      "group": [
       "A:move:p1a:healpulse",
-      "A:move:p2a:moonblast"
+      "A:move:p2a:energyball"
      ],
      "start": 0
     },
@@ -2153,12 +2154,13 @@
     "|-singleturn|p1b: Gholdengo|Protect",
     "|move|p2b: Gholdengo|Protect||[still]",
     "|-fail|p2b: Gholdengo",
-    "|move|p1a: Clefable|Heal Pulse|p2a: Clefable",
-    "|-fail|p2a: Clefable|heal",
-    "|move|p2a: Clefable|Moonblast|p1a: Clefable",
+    "|move|p1a: Meganium|Heal Pulse|p2a: Meganium",
+    "|-fail|p2a: Meganium|heal",
+    "|move|p2a: Meganium|Energy Ball|p1a: Meganium",
+    "|-resisted|p1a: Meganium|1",
     "|split|p1",
-    "|-damage|p1a: Clefable|114/202",
-    "|-damage|p1a: Clefable|56/100",
+    "|-damage|p1a: Meganium|152/187",
+    "|-damage|p1a: Meganium|81/100",
     "|upkeep",
     "|turn|3"
    ],
@@ -2198,12 +2200,12 @@
       ],
       "pokemon": [
        {
-        "species": "Clefable",
-        "set_species": "Clefable",
+        "species": "Meganium",
+        "set_species": "Meganium",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 114,
-        "maxhp": 202,
+        "hp": 152,
+        "maxhp": 187,
         "item": "sitrusberry",
         "status": "",
         "status_time": 0,
@@ -2221,7 +2223,7 @@
         "pp": [
          10,
          8,
-         16,
+         12,
          12
         ],
         "volatiles": [],
@@ -2343,12 +2345,12 @@
       ],
       "pokemon": [
        {
-        "species": "Clefable",
-        "set_species": "Clefable",
+        "species": "Meganium",
+        "set_species": "Meganium",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 202,
-        "maxhp": 202,
+        "hp": 187,
+        "maxhp": 187,
         "item": "sitrusberry",
         "status": "",
         "status_time": 0,
@@ -2366,7 +2368,7 @@
         "pp": [
          12,
          8,
-         14,
+         10,
          12
         ],
         "volatiles": [],

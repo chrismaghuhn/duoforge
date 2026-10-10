@@ -15,15 +15,15 @@
    "|rule|Item Clause: Limit 1 of each item",
    "|clearpoke",
    "|poke|p1|Primarina, L50, F|",
-   "|poke|p1|Ceruledge, L50, M|",
-   "|poke|p1|Pawmot, L50, M|",
    "|poke|p1|Kingambit, L50, M|",
+   "|poke|p1|Pawmot, L50, M|",
+   "|poke|p1|Ceruledge, L50, M|",
    "|poke|p1|Milotic, L50, F|",
    "|poke|p1|Gholdengo, L50|",
    "|poke|p2|Primarina, L50, F|",
-   "|poke|p2|Ceruledge, L50, M|",
-   "|poke|p2|Pawmot, L50, M|",
    "|poke|p2|Kingambit, L50, M|",
+   "|poke|p2|Pawmot, L50, M|",
+   "|poke|p2|Ceruledge, L50, M|",
    "|poke|p2|Milotic, L50, F|",
    "|poke|p2|Gholdengo, L50|",
    "|teampreview|4",
@@ -88,13 +88,13 @@
        "locked": null
       },
       {
-       "species": "Ceruledge",
-       "set_species": "Ceruledge",
+       "species": "Kingambit",
+       "set_species": "Kingambit",
        "mega": 0,
        "switch_flag": 0,
-       "hp": 181,
-       "maxhp": 181,
-       "item": "charcoal",
+       "hp": 207,
+       "maxhp": 207,
+       "item": "blackglasses",
        "status": "",
        "status_time": 0,
        "confusion": 0,
@@ -109,7 +109,10 @@
         0
        ],
        "pp": [
-        8
+        8,
+        16,
+        8,
+        20
        ],
        "volatiles": [],
        "locked": null
@@ -145,13 +148,13 @@
        "locked": null
       },
       {
-       "species": "Kingambit",
-       "set_species": "Kingambit",
+       "species": "Ceruledge",
+       "set_species": "Ceruledge",
        "mega": 0,
        "switch_flag": 0,
-       "hp": 207,
-       "maxhp": 207,
-       "item": "blackglasses",
+       "hp": 181,
+       "maxhp": 181,
+       "item": "charcoal",
        "status": "",
        "status_time": 0,
        "confusion": 0,
@@ -166,10 +169,7 @@
         0
        ],
        "pp": [
-        8,
-        16,
-        8,
-        20
+        8
        ],
        "volatiles": [],
        "locked": null
@@ -279,13 +279,13 @@
        "locked": null
       },
       {
-       "species": "Ceruledge",
-       "set_species": "Ceruledge",
+       "species": "Kingambit",
+       "set_species": "Kingambit",
        "mega": 0,
        "switch_flag": 0,
-       "hp": 181,
-       "maxhp": 181,
-       "item": "charcoal",
+       "hp": 207,
+       "maxhp": 207,
+       "item": "blackglasses",
        "status": "",
        "status_time": 0,
        "confusion": 0,
@@ -300,7 +300,10 @@
         0
        ],
        "pp": [
-        8
+        8,
+        16,
+        8,
+        20
        ],
        "volatiles": [],
        "locked": null
@@ -336,13 +339,13 @@
        "locked": null
       },
       {
-       "species": "Kingambit",
-       "set_species": "Kingambit",
+       "species": "Ceruledge",
+       "set_species": "Ceruledge",
        "mega": 0,
        "switch_flag": 0,
-       "hp": 207,
-       "maxhp": 207,
-       "item": "blackglasses",
+       "hp": 181,
+       "maxhp": 181,
+       "item": "charcoal",
        "status": "",
        "status_time": 0,
        "confusion": 0,
@@ -357,10 +360,7 @@
         0
        ],
        "pp": [
-        8,
-        16,
-        8,
-        20
+        8
        ],
        "volatiles": [],
        "locked": null
@@ -487,24 +487,24 @@
     {
      "site": "INSERT_TIE",
      "context": "queue",
-     "lo": 1,
-     "hi": 3,
-     "value": 2,
+     "lo": 0,
+     "hi": 2,
+     "value": 1,
      "group": [
-      "A:runSwitch:p1b::0",
-      "A:runSwitch:p1a::0"
+      "A:runSwitch:p1a::0",
+      "A:runSwitch:p1b::0"
      ]
     },
     {
      "site": "INSERT_TIE",
      "context": "queue",
-     "lo": 0,
-     "hi": 2,
-     "value": 0,
+     "lo": 2,
+     "hi": 4,
+     "value": 2,
      "group": [
-      "A:runSwitch:p1b::0",
       "A:runSwitch:p1a::0",
-      "A:runSwitch:p2a::0"
+      "A:runSwitch:p2a::0",
+      "A:runSwitch:p1b::0"
      ]
     },
     {
@@ -514,8 +514,8 @@
      "hi": 2,
      "value": 0,
      "group": [
-      "P:p1b:0:S",
-      "P:p2b:0:S"
+      "P:p1a:0:S",
+      "P:p2a:0:S"
      ],
      "start": 0
     },
@@ -526,8 +526,8 @@
      "hi": 4,
      "value": 3,
      "group": [
-      "P:p2a:0:S",
-      "P:p1a:0:S"
+      "P:p1b:0:S",
+      "P:p2b:0:S"
      ],
      "start": 2
     },
@@ -538,8 +538,8 @@
      "hi": 2,
      "value": 0,
      "group": [
-      "P:p1b:0:",
-      "P:p2b:0:"
+      "P:p1a:0:",
+      "P:p2a:0:"
      ],
      "start": 0
     },
@@ -550,8 +550,8 @@
      "hi": 4,
      "value": 2,
      "group": [
-      "P:p2a:0:",
-      "P:p1a:0:"
+      "P:p1b:0:",
+      "P:p2b:0:"
      ],
      "start": 2
     }
@@ -570,14 +570,14 @@
     "|switch|p1a: Primarina|Primarina, L50, F|187/187",
     "|switch|p1a: Primarina|Primarina, L50, F|100/100",
     "|split|p1",
-    "|switch|p1b: Ceruledge|Ceruledge, L50, M|181/181",
-    "|switch|p1b: Ceruledge|Ceruledge, L50, M|100/100",
+    "|switch|p1b: Kingambit|Kingambit, L50, M|207/207",
+    "|switch|p1b: Kingambit|Kingambit, L50, M|100/100",
     "|split|p2",
     "|switch|p2a: Primarina|Primarina, L50, F|187/187",
     "|switch|p2a: Primarina|Primarina, L50, F|100/100",
     "|split|p2",
-    "|switch|p2b: Ceruledge|Ceruledge, L50, M|181/181",
-    "|switch|p2b: Ceruledge|Ceruledge, L50, M|100/100",
+    "|switch|p2b: Kingambit|Kingambit, L50, M|207/207",
+    "|switch|p2b: Kingambit|Kingambit, L50, M|100/100",
     "|turn|1"
    ],
    "state": {
@@ -605,6 +605,9 @@
         1
        ],
        [
+        1,
+        1,
+        1,
         1
        ]
       ],
@@ -644,13 +647,13 @@
         "locked": null
        },
        {
-        "species": "Ceruledge",
-        "set_species": "Ceruledge",
+        "species": "Kingambit",
+        "set_species": "Kingambit",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 181,
-        "maxhp": 181,
-        "item": "charcoal",
+        "hp": 207,
+        "maxhp": 207,
+        "item": "blackglasses",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -665,7 +668,10 @@
          0
         ],
         "pp": [
-         8
+         8,
+         16,
+         8,
+         20
         ],
         "volatiles": [],
         "locked": null
@@ -701,13 +707,13 @@
         "locked": null
        },
        {
-        "species": "Kingambit",
-        "set_species": "Kingambit",
+        "species": "Ceruledge",
+        "set_species": "Ceruledge",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 207,
-        "maxhp": 207,
-        "item": "blackglasses",
+        "hp": 181,
+        "maxhp": 181,
+        "item": "charcoal",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -722,10 +728,7 @@
          0
         ],
         "pp": [
-         8,
-         16,
-         8,
-         20
+         8
         ],
         "volatiles": [],
         "locked": null
@@ -747,6 +750,9 @@
         1
        ],
        [
+        1,
+        1,
+        1,
         1
        ]
       ],
@@ -786,13 +792,13 @@
         "locked": null
        },
        {
-        "species": "Ceruledge",
-        "set_species": "Ceruledge",
+        "species": "Kingambit",
+        "set_species": "Kingambit",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 181,
-        "maxhp": 181,
-        "item": "charcoal",
+        "hp": 207,
+        "maxhp": 207,
+        "item": "blackglasses",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -807,7 +813,10 @@
          0
         ],
         "pp": [
-         8
+         8,
+         16,
+         8,
+         20
         ],
         "volatiles": [],
         "locked": null
@@ -843,13 +852,13 @@
         "locked": null
        },
        {
-        "species": "Kingambit",
-        "set_species": "Kingambit",
+        "species": "Ceruledge",
+        "set_species": "Ceruledge",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 207,
-        "maxhp": 207,
-        "item": "blackglasses",
+        "hp": 181,
+        "maxhp": 181,
+        "item": "charcoal",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -864,10 +873,7 @@
          0
         ],
         "pp": [
-         8,
-         16,
-         8,
-         20
+         8
         ],
         "volatiles": [],
         "locked": null
@@ -879,262 +885,10 @@
   },
   {
    "input": {
-    "p1": "move 1, move 1",
-    "p2": "move 1, move 1"
+    "p1": "move 1, move 4",
+    "p2": "move 1, move 4"
    },
    "draws": [
-    {
-     "site": "SPEED_TIE",
-     "context": "queue",
-     "lo": 0,
-     "hi": 2,
-     "value": 0,
-     "group": [
-      "A:move:p1b:protect",
-      "A:move:p2b:protect"
-     ],
-     "start": 0
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "queue",
-     "lo": 2,
-     "hi": 4,
-     "value": 2,
-     "group": [
-      "A:move:p2a:perishsong",
-      "A:move:p1a:perishsong"
-     ],
-     "start": 2
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:BeforeTurn",
-     "lo": 0,
-     "hi": 2,
-     "value": 1,
-     "group": [
-      "P:p1b:0:",
-      "P:p2b:0:"
-     ],
-     "start": 0
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:BeforeTurn",
-     "lo": 2,
-     "hi": 4,
-     "value": 3,
-     "group": [
-      "P:p2a:0:",
-      "P:p1a:0:"
-     ],
-     "start": 2
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 0,
-     "hi": 2,
-     "value": 0,
-     "group": [
-      "P:p1b:0:",
-      "P:p2b:0:"
-     ],
-     "start": 0
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 2,
-     "hi": 4,
-     "value": 3,
-     "group": [
-      "P:p2a:0:",
-      "P:p1a:0:"
-     ],
-     "start": 2
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "queue",
-     "lo": 0,
-     "hi": 2,
-     "value": 1,
-     "group": [
-      "A:move:p1b:protect",
-      "A:move:p2b:protect"
-     ],
-     "start": 0
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "queue",
-     "lo": 2,
-     "hi": 4,
-     "value": 2,
-     "group": [
-      "A:move:p2a:perishsong",
-      "A:move:p1a:perishsong"
-     ],
-     "start": 2
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 0,
-     "hi": 2,
-     "value": 0,
-     "group": [
-      "P:p1b:0:",
-      "P:p2b:0:"
-     ],
-     "start": 0
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 2,
-     "hi": 4,
-     "value": 3,
-     "group": [
-      "P:p2a:0:",
-      "P:p1a:0:"
-     ],
-     "start": 2
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 0,
-     "hi": 2,
-     "value": 0,
-     "group": [
-      "P:p1b:0:",
-      "P:p2b:0:"
-     ],
-     "start": 0
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 2,
-     "hi": 4,
-     "value": 3,
-     "group": [
-      "P:p2a:0:",
-      "P:p1a:0:"
-     ],
-     "start": 2
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 0,
-     "hi": 2,
-     "value": 0,
-     "group": [
-      "P:p1b:0:",
-      "P:p2b:0:"
-     ],
-     "start": 0
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 2,
-     "hi": 4,
-     "value": 3,
-     "group": [
-      "P:p2a:0:",
-      "P:p1a:0:"
-     ],
-     "start": 2
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "queue",
-     "lo": 1,
-     "hi": 3,
-     "value": 2,
-     "group": [
-      "A:move:p2a:perishsong",
-      "A:move:p1a:perishsong"
-     ],
-     "start": 1
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 0,
-     "hi": 2,
-     "value": 0,
-     "group": [
-      "P:p1b:0:",
-      "P:p2b:0:"
-     ],
-     "start": 0
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 2,
-     "hi": 4,
-     "value": 2,
-     "group": [
-      "P:p2a:0:",
-      "P:p1a:0:"
-     ],
-     "start": 2
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 0,
-     "hi": 2,
-     "value": 1,
-     "group": [
-      "P:p1b:0:",
-      "P:p2b:0:"
-     ],
-     "start": 0
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 2,
-     "hi": 4,
-     "value": 3,
-     "group": [
-      "P:p2a:0:",
-      "P:p1a:0:"
-     ],
-     "start": 2
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 0,
-     "hi": 2,
-     "value": 0,
-     "group": [
-      "P:p1b:0:",
-      "P:p2b:0:"
-     ],
-     "start": 0
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 2,
-     "hi": 4,
-     "value": 2,
-     "group": [
-      "P:p2a:0:",
-      "P:p1a:0:"
-     ],
-     "start": 2
-    },
     {
      "site": "SPEED_TIE",
      "context": "queue",
@@ -1149,25 +903,37 @@
     },
     {
      "site": "SPEED_TIE",
-     "context": "each:Update",
+     "context": "queue",
+     "lo": 2,
+     "hi": 4,
+     "value": 2,
+     "group": [
+      "A:move:p1b:swordsdance",
+      "A:move:p2b:swordsdance"
+     ],
+     "start": 2
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:BeforeTurn",
      "lo": 0,
      "hi": 2,
      "value": 1,
      "group": [
-      "P:p1b:0:",
-      "P:p2b:0:"
+      "P:p1a:0:",
+      "P:p2a:0:"
      ],
      "start": 0
     },
     {
      "site": "SPEED_TIE",
-     "context": "each:Update",
+     "context": "each:BeforeTurn",
      "lo": 2,
      "hi": 4,
      "value": 3,
      "group": [
-      "P:p2a:0:",
-      "P:p1a:0:"
+      "P:p1b:0:",
+      "P:p2b:0:"
      ],
      "start": 2
     },
@@ -1178,8 +944,92 @@
      "hi": 2,
      "value": 0,
      "group": [
+      "P:p1a:0:",
+      "P:p2a:0:"
+     ],
+     "start": 0
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 2,
+     "hi": 4,
+     "value": 3,
+     "group": [
       "P:p1b:0:",
       "P:p2b:0:"
+     ],
+     "start": 2
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "queue",
+     "lo": 0,
+     "hi": 2,
+     "value": 1,
+     "group": [
+      "A:move:p1a:perishsong",
+      "A:move:p2a:perishsong"
+     ],
+     "start": 0
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "queue",
+     "lo": 2,
+     "hi": 4,
+     "value": 2,
+     "group": [
+      "A:move:p1b:swordsdance",
+      "A:move:p2b:swordsdance"
+     ],
+     "start": 2
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 0,
+     "hi": 2,
+     "value": 0,
+     "group": [
+      "P:p1a:0:",
+      "P:p2a:0:"
+     ],
+     "start": 0
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 2,
+     "hi": 4,
+     "value": 3,
+     "group": [
+      "P:p1b:0:",
+      "P:p2b:0:"
+     ],
+     "start": 2
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "queue",
+     "lo": 1,
+     "hi": 3,
+     "value": 1,
+     "group": [
+      "A:move:p1b:swordsdance",
+      "A:move:p2b:swordsdance"
+     ],
+     "start": 1
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 0,
+     "hi": 2,
+     "value": 1,
+     "group": [
+      "P:p1a:0:",
+      "P:p2a:0:"
      ],
      "start": 0
     },
@@ -1190,87 +1040,57 @@
      "hi": 4,
      "value": 2,
      "group": [
-      "P:p2a:0:",
-      "P:p1a:0:"
+      "P:p1b:0:",
+      "P:p2b:0:"
      ],
      "start": 2
     },
     {
      "site": "SPEED_TIE",
-     "context": "field:Residual",
+     "context": "queue",
      "lo": 0,
      "hi": 2,
-     "value": 0,
+     "value": 1,
      "group": [
-      "H:perishsong:p1b:cb",
-      "H:perishsong:p2b:cb"
+      "A:move:p1b:swordsdance",
+      "A:move:p2b:swordsdance"
      ],
      "start": 0
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "field:Residual",
-     "lo": 2,
-     "hi": 4,
-     "value": 3,
-     "group": [
-      "H:perishsong:p1a:cb",
-      "H:perishsong:p2a:cb"
-     ],
-     "start": 2
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "field:Residual",
-     "lo": 4,
-     "hi": 8,
-     "value": 4,
-     "group": [
-      "H:stall:p1b:end",
-      "H:protect:p2b:end",
-      "H:stall:p2b:end",
-      "H:protect:p1b:end"
-     ],
-     "start": 4
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "field:Residual",
-     "lo": 5,
-     "hi": 8,
-     "value": 7,
-     "group": [
-      "H:stall:p1b:end",
-      "H:protect:p2b:end",
-      "H:stall:p2b:end",
-      "H:protect:p1b:end"
-     ],
-     "start": 4
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "field:Residual",
-     "lo": 6,
-     "hi": 8,
-     "value": 6,
-     "group": [
-      "H:stall:p1b:end",
-      "H:protect:p2b:end",
-      "H:stall:p2b:end",
-      "H:protect:p1b:end"
-     ],
-     "start": 4
     },
     {
      "site": "SPEED_TIE",
      "context": "each:Update",
      "lo": 0,
      "hi": 2,
-     "value": 0,
+     "value": 1,
+     "group": [
+      "P:p1a:0:",
+      "P:p2a:0:"
+     ],
+     "start": 0
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 2,
+     "hi": 4,
+     "value": 2,
      "group": [
       "P:p1b:0:",
       "P:p2b:0:"
      ],
+     "start": 2
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 0,
+     "hi": 2,
+     "value": 0,
+     "group": [
+      "P:p1a:0:",
+      "P:p2a:0:"
+     ],
      "start": 0
     },
     {
@@ -1280,29 +1100,173 @@
      "hi": 4,
      "value": 3,
      "group": [
-      "P:p2a:0:",
-      "P:p1a:0:"
+      "P:p1b:0:",
+      "P:p2b:0:"
+     ],
+     "start": 2
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 0,
+     "hi": 2,
+     "value": 1,
+     "group": [
+      "P:p1a:0:",
+      "P:p2a:0:"
+     ],
+     "start": 0
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 2,
+     "hi": 4,
+     "value": 2,
+     "group": [
+      "P:p1b:0:",
+      "P:p2b:0:"
+     ],
+     "start": 2
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 0,
+     "hi": 2,
+     "value": 0,
+     "group": [
+      "P:p1a:0:",
+      "P:p2a:0:"
+     ],
+     "start": 0
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 2,
+     "hi": 4,
+     "value": 2,
+     "group": [
+      "P:p1b:0:",
+      "P:p2b:0:"
+     ],
+     "start": 2
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 0,
+     "hi": 2,
+     "value": 1,
+     "group": [
+      "P:p1a:0:",
+      "P:p2a:0:"
+     ],
+     "start": 0
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 2,
+     "hi": 4,
+     "value": 3,
+     "group": [
+      "P:p1b:0:",
+      "P:p2b:0:"
+     ],
+     "start": 2
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 0,
+     "hi": 2,
+     "value": 0,
+     "group": [
+      "P:p1a:0:",
+      "P:p2a:0:"
+     ],
+     "start": 0
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 2,
+     "hi": 4,
+     "value": 2,
+     "group": [
+      "P:p1b:0:",
+      "P:p2b:0:"
+     ],
+     "start": 2
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "field:Residual",
+     "lo": 0,
+     "hi": 2,
+     "value": 0,
+     "group": [
+      "H:perishsong:p1a:cb",
+      "H:perishsong:p2a:cb"
+     ],
+     "start": 0
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "field:Residual",
+     "lo": 2,
+     "hi": 4,
+     "value": 3,
+     "group": [
+      "H:perishsong:p1b:cb",
+      "H:perishsong:p2b:cb"
+     ],
+     "start": 2
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 0,
+     "hi": 2,
+     "value": 0,
+     "group": [
+      "P:p1a:0:",
+      "P:p2a:0:"
+     ],
+     "start": 0
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 2,
+     "hi": 4,
+     "value": 3,
+     "group": [
+      "P:p1b:0:",
+      "P:p2b:0:"
      ],
      "start": 2
     }
    ],
    "log": [
-    "|move|p2b: Ceruledge|Protect|p2b: Ceruledge",
-    "|-singleturn|p2b: Ceruledge|Protect",
-    "|move|p1b: Ceruledge|Protect|p1b: Ceruledge",
-    "|-singleturn|p1b: Ceruledge|Protect",
-    "|move|p1a: Primarina|Perish Song|p1a: Primarina",
+    "|move|p2a: Primarina|Perish Song|p2a: Primarina",
     "|-start|p1a: Primarina|perish3|[silent]",
-    "|-start|p1b: Ceruledge|perish3|[silent]",
+    "|-start|p1b: Kingambit|perish3|[silent]",
     "|-start|p2a: Primarina|perish3|[silent]",
-    "|-start|p2b: Ceruledge|perish3|[silent]",
+    "|-start|p2b: Kingambit|perish3|[silent]",
     "|-fieldactivate|move: Perish Song",
-    "|move|p2a: Primarina|Perish Song||[still]",
-    "|-fail|p2a: Primarina",
-    "|-start|p1b: Ceruledge|perish3",
-    "|-start|p2b: Ceruledge|perish3",
-    "|-start|p2a: Primarina|perish3",
+    "|move|p1a: Primarina|Perish Song||[still]",
+    "|-fail|p1a: Primarina",
+    "|move|p2b: Kingambit|Swords Dance|p2b: Kingambit",
+    "|-boost|p2b: Kingambit|atk|2",
+    "|move|p1b: Kingambit|Swords Dance|p1b: Kingambit",
+    "|-boost|p1b: Kingambit|atk|2",
     "|-start|p1a: Primarina|perish3",
+    "|-start|p2a: Primarina|perish3",
+    "|-start|p2b: Kingambit|perish3",
+    "|-start|p1b: Kingambit|perish3",
     "|upkeep",
     "|turn|2"
    ],
@@ -1331,6 +1295,9 @@
         1
        ],
        [
+        1,
+        1,
+        1,
         1
        ]
       ],
@@ -1372,19 +1339,19 @@
         "locked": null
        },
        {
-        "species": "Ceruledge",
-        "set_species": "Ceruledge",
+        "species": "Kingambit",
+        "set_species": "Kingambit",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 181,
-        "maxhp": 181,
-        "item": "charcoal",
+        "hp": 207,
+        "maxhp": 207,
+        "item": "blackglasses",
         "status": "",
         "status_time": 0,
         "confusion": 0,
         "fainted": false,
         "boosts": [
-         0,
+         2,
          0,
          0,
          0,
@@ -1393,11 +1360,13 @@
          0
         ],
         "pp": [
-         7
+         8,
+         16,
+         8,
+         19
         ],
         "volatiles": [
-         "perishsong",
-         "stall"
+         "perishsong"
         ],
         "locked": null
        },
@@ -1432,13 +1401,13 @@
         "locked": null
        },
        {
-        "species": "Kingambit",
-        "set_species": "Kingambit",
+        "species": "Ceruledge",
+        "set_species": "Ceruledge",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 207,
-        "maxhp": 207,
-        "item": "blackglasses",
+        "hp": 181,
+        "maxhp": 181,
+        "item": "charcoal",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -1453,10 +1422,7 @@
          0
         ],
         "pp": [
-         8,
-         16,
-         8,
-         20
+         8
         ],
         "volatiles": [],
         "locked": null
@@ -1478,6 +1444,9 @@
         1
        ],
        [
+        1,
+        1,
+        1,
         1
        ]
       ],
@@ -1519,19 +1488,19 @@
         "locked": null
        },
        {
-        "species": "Ceruledge",
-        "set_species": "Ceruledge",
+        "species": "Kingambit",
+        "set_species": "Kingambit",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 181,
-        "maxhp": 181,
-        "item": "charcoal",
+        "hp": 207,
+        "maxhp": 207,
+        "item": "blackglasses",
         "status": "",
         "status_time": 0,
         "confusion": 0,
         "fainted": false,
         "boosts": [
-         0,
+         2,
          0,
          0,
          0,
@@ -1540,11 +1509,13 @@
          0
         ],
         "pp": [
-         7
+         8,
+         16,
+         8,
+         19
         ],
         "volatiles": [
-         "perishsong",
-         "stall"
+         "perishsong"
         ],
         "locked": null
        },
@@ -1579,13 +1550,13 @@
         "locked": null
        },
        {
-        "species": "Kingambit",
-        "set_species": "Kingambit",
+        "species": "Ceruledge",
+        "set_species": "Ceruledge",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 207,
-        "maxhp": 207,
-        "item": "blackglasses",
+        "hp": 181,
+        "maxhp": 181,
+        "item": "charcoal",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -1600,10 +1571,7 @@
          0
         ],
         "pp": [
-         8,
-         16,
-         8,
-         20
+         8
         ],
         "volatiles": [],
         "locked": null
@@ -1615,8 +1583,8 @@
   },
   {
    "input": {
-    "p1": "move 2, move 1",
-    "p2": "move 2, move 1"
+    "p1": "move 4, move 4",
+    "p2": "move 4, move 4"
    },
    "draws": [
     {
@@ -1626,8 +1594,8 @@
      "hi": 2,
      "value": 0,
      "group": [
-      "A:move:p1b:protect",
-      "A:move:p2b:protect"
+      "A:move:p1a:calmmind",
+      "A:move:p2a:calmmind"
      ],
      "start": 0
     },
@@ -1636,10 +1604,10 @@
      "context": "queue",
      "lo": 2,
      "hi": 4,
-     "value": 3,
+     "value": 2,
      "group": [
-      "A:move:p2a:protect",
-      "A:move:p1a:protect"
+      "A:move:p1b:swordsdance",
+      "A:move:p2b:swordsdance"
      ],
      "start": 2
     },
@@ -1650,8 +1618,8 @@
      "hi": 2,
      "value": 1,
      "group": [
-      "P:p1b:0:",
-      "P:p2b:0:"
+      "P:p1a:0:",
+      "P:p2a:0:"
      ],
      "start": 0
     },
@@ -1660,10 +1628,10 @@
      "context": "each:BeforeTurn",
      "lo": 2,
      "hi": 4,
-     "value": 3,
+     "value": 2,
      "group": [
-      "P:p2a:0:",
-      "P:p1a:0:"
+      "P:p1b:0:",
+      "P:p2b:0:"
      ],
      "start": 2
     },
@@ -1672,10 +1640,10 @@
      "context": "each:Update",
      "lo": 0,
      "hi": 2,
-     "value": 0,
+     "value": 1,
      "group": [
-      "P:p1b:0:",
-      "P:p2b:0:"
+      "P:p1a:0:",
+      "P:p2a:0:"
      ],
      "start": 0
     },
@@ -1686,8 +1654,8 @@
      "hi": 4,
      "value": 3,
      "group": [
-      "P:p2a:0:",
-      "P:p1a:0:"
+      "P:p1b:0:",
+      "P:p2b:0:"
      ],
      "start": 2
     },
@@ -1696,10 +1664,10 @@
      "context": "queue",
      "lo": 0,
      "hi": 2,
-     "value": 0,
+     "value": 1,
      "group": [
-      "A:move:p1b:protect",
-      "A:move:p2b:protect"
+      "A:move:p1a:calmmind",
+      "A:move:p2a:calmmind"
      ],
      "start": 0
     },
@@ -1710,27 +1678,20 @@
      "hi": 4,
      "value": 2,
      "group": [
-      "A:move:p1a:protect",
-      "A:move:p2a:protect"
+      "A:move:p1b:swordsdance",
+      "A:move:p2b:swordsdance"
      ],
      "start": 2
-    },
-    {
-     "site": "STALL",
-     "context": "StallMove",
-     "lo": 0,
-     "hi": 3,
-     "value": 1
     },
     {
      "site": "SPEED_TIE",
      "context": "each:Update",
      "lo": 0,
      "hi": 2,
-     "value": 0,
+     "value": 1,
      "group": [
-      "P:p1b:0:",
-      "P:p2b:0:"
+      "P:p1a:0:",
+      "P:p2a:0:"
      ],
      "start": 0
     },
@@ -1741,8 +1702,56 @@
      "hi": 4,
      "value": 2,
      "group": [
-      "P:p2a:0:",
-      "P:p1a:0:"
+      "P:p1b:0:",
+      "P:p2b:0:"
+     ],
+     "start": 2
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 0,
+     "hi": 2,
+     "value": 0,
+     "group": [
+      "P:p1a:0:",
+      "P:p2a:0:"
+     ],
+     "start": 0
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 2,
+     "hi": 4,
+     "value": 2,
+     "group": [
+      "P:p1b:0:",
+      "P:p2b:0:"
+     ],
+     "start": 2
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 0,
+     "hi": 2,
+     "value": 0,
+     "group": [
+      "P:p1a:0:",
+      "P:p2a:0:"
+     ],
+     "start": 0
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 2,
+     "hi": 4,
+     "value": 2,
+     "group": [
+      "P:p1b:0:",
+      "P:p2b:0:"
      ],
      "start": 2
     },
@@ -1753,51 +1762,20 @@
      "hi": 3,
      "value": 1,
      "group": [
-      "A:move:p1a:protect",
-      "A:move:p2a:protect"
+      "A:move:p1b:swordsdance",
+      "A:move:p2b:swordsdance"
      ],
      "start": 1
     },
     {
-     "site": "STALL",
-     "context": "StallMove",
-     "lo": 0,
-     "hi": 3,
-     "value": 0
-    },
-    {
      "site": "SPEED_TIE",
      "context": "each:Update",
      "lo": 0,
      "hi": 2,
-     "value": 1,
+     "value": 0,
      "group": [
-      "P:p1b:0:",
-      "P:p2b:0:"
-     ],
-     "start": 0
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 2,
-     "hi": 4,
-     "value": 2,
-     "group": [
-      "P:p2a:0:",
-      "P:p1a:0:"
-     ],
-     "start": 2
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 0,
-     "hi": 2,
-     "value": 1,
-     "group": [
-      "P:p1b:0:",
-      "P:p2b:0:"
+      "P:p1a:0:",
+      "P:p2a:0:"
      ],
      "start": 0
     },
@@ -1808,8 +1786,8 @@
      "hi": 4,
      "value": 3,
      "group": [
-      "P:p2a:0:",
-      "P:p1a:0:"
+      "P:p1b:0:",
+      "P:p2b:0:"
      ],
      "start": 2
     },
@@ -1820,8 +1798,8 @@
      "hi": 2,
      "value": 0,
      "group": [
-      "P:p1b:0:",
-      "P:p2b:0:"
+      "P:p1a:0:",
+      "P:p2a:0:"
      ],
      "start": 0
     },
@@ -1832,8 +1810,32 @@
      "hi": 4,
      "value": 3,
      "group": [
-      "P:p2a:0:",
-      "P:p1a:0:"
+      "P:p1b:0:",
+      "P:p2b:0:"
+     ],
+     "start": 2
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 0,
+     "hi": 2,
+     "value": 1,
+     "group": [
+      "P:p1a:0:",
+      "P:p2a:0:"
+     ],
+     "start": 0
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 2,
+     "hi": 4,
+     "value": 2,
+     "group": [
+      "P:p1b:0:",
+      "P:p2b:0:"
      ],
      "start": 2
     },
@@ -1844,8 +1846,8 @@
      "hi": 2,
      "value": 1,
      "group": [
-      "A:move:p1a:protect",
-      "A:move:p2a:protect"
+      "A:move:p1b:swordsdance",
+      "A:move:p2b:swordsdance"
      ],
      "start": 0
     },
@@ -1856,56 +1858,8 @@
      "hi": 2,
      "value": 1,
      "group": [
-      "P:p1b:0:",
-      "P:p2b:0:"
-     ],
-     "start": 0
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 2,
-     "hi": 4,
-     "value": 2,
-     "group": [
-      "P:p2a:0:",
-      "P:p1a:0:"
-     ],
-     "start": 2
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 0,
-     "hi": 2,
-     "value": 0,
-     "group": [
-      "P:p1b:0:",
-      "P:p2b:0:"
-     ],
-     "start": 0
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 2,
-     "hi": 4,
-     "value": 2,
-     "group": [
-      "P:p2a:0:",
-      "P:p1a:0:"
-     ],
-     "start": 2
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 0,
-     "hi": 2,
-     "value": 0,
-     "group": [
-      "P:p1b:0:",
-      "P:p2b:0:"
+      "P:p1a:0:",
+      "P:p2a:0:"
      ],
      "start": 0
     },
@@ -1916,8 +1870,56 @@
      "hi": 4,
      "value": 3,
      "group": [
-      "P:p2a:0:",
-      "P:p1a:0:"
+      "P:p1b:0:",
+      "P:p2b:0:"
+     ],
+     "start": 2
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 0,
+     "hi": 2,
+     "value": 0,
+     "group": [
+      "P:p1a:0:",
+      "P:p2a:0:"
+     ],
+     "start": 0
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 2,
+     "hi": 4,
+     "value": 2,
+     "group": [
+      "P:p1b:0:",
+      "P:p2b:0:"
+     ],
+     "start": 2
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 0,
+     "hi": 2,
+     "value": 0,
+     "group": [
+      "P:p1a:0:",
+      "P:p2a:0:"
+     ],
+     "start": 0
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 2,
+     "hi": 4,
+     "value": 2,
+     "group": [
+      "P:p1b:0:",
+      "P:p2b:0:"
      ],
      "start": 2
     },
@@ -1928,8 +1930,8 @@
      "hi": 2,
      "value": 1,
      "group": [
-      "P:p1b:0:",
-      "P:p2b:0:"
+      "P:p1a:0:",
+      "P:p2a:0:"
      ],
      "start": 0
     },
@@ -1940,8 +1942,56 @@
      "hi": 4,
      "value": 3,
      "group": [
-      "P:p2a:0:",
-      "P:p1a:0:"
+      "P:p1b:0:",
+      "P:p2b:0:"
+     ],
+     "start": 2
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 0,
+     "hi": 2,
+     "value": 1,
+     "group": [
+      "P:p1a:0:",
+      "P:p2a:0:"
+     ],
+     "start": 0
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 2,
+     "hi": 4,
+     "value": 2,
+     "group": [
+      "P:p1b:0:",
+      "P:p2b:0:"
+     ],
+     "start": 2
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 0,
+     "hi": 2,
+     "value": 0,
+     "group": [
+      "P:p1a:0:",
+      "P:p2a:0:"
+     ],
+     "start": 0
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 2,
+     "hi": 4,
+     "value": 3,
+     "group": [
+      "P:p1b:0:",
+      "P:p2b:0:"
      ],
      "start": 2
     },
@@ -1951,57 +2001,33 @@
      "lo": 0,
      "hi": 2,
      "value": 0,
+     "group": [
+      "H:perishsong:p1a:cb",
+      "H:perishsong:p2a:cb"
+     ],
+     "start": 0
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "field:Residual",
+     "lo": 2,
+     "hi": 4,
+     "value": 3,
      "group": [
       "H:perishsong:p1b:cb",
       "H:perishsong:p2b:cb"
      ],
-     "start": 0
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "field:Residual",
-     "lo": 2,
-     "hi": 4,
-     "value": 2,
-     "group": [
-      "H:perishsong:p2a:cb",
-      "H:perishsong:p1a:cb"
-     ],
      "start": 2
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "field:Residual",
-     "lo": 4,
-     "hi": 6,
-     "value": 5,
-     "group": [
-      "H:stall:p2b:end",
-      "H:protect:p2b:end"
-     ],
-     "start": 4
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "field:Residual",
-     "lo": 6,
-     "hi": 8,
-     "value": 6,
-     "group": [
-      "H:protect:p2a:end",
-      "H:stall:p2a:end"
-     ],
-     "start": 6
     },
     {
      "site": "SPEED_TIE",
      "context": "each:Update",
      "lo": 0,
      "hi": 2,
-     "value": 1,
+     "value": 0,
      "group": [
-      "P:p1b:0:",
-      "P:p2b:0:"
+      "P:p1a:0:",
+      "P:p2a:0:"
      ],
      "start": 0
     },
@@ -2012,25 +2038,27 @@
      "hi": 4,
      "value": 2,
      "group": [
-      "P:p2a:0:",
-      "P:p1a:0:"
+      "P:p1b:0:",
+      "P:p2b:0:"
      ],
      "start": 2
     }
    ],
    "log": [
-    "|move|p1b: Ceruledge|Protect||[still]",
-    "|-fail|p1b: Ceruledge",
-    "|move|p2b: Ceruledge|Protect|p2b: Ceruledge",
-    "|-singleturn|p2b: Ceruledge|Protect",
-    "|move|p2a: Primarina|Protect|p2a: Primarina",
-    "|-singleturn|p2a: Primarina|Protect",
-    "|move|p1a: Primarina|Protect||[still]",
-    "|-fail|p1a: Primarina",
-    "|-start|p1b: Ceruledge|perish2",
-    "|-start|p2b: Ceruledge|perish2",
-    "|-start|p2a: Primarina|perish2",
+    "|move|p2a: Primarina|Calm Mind|p2a: Primarina",
+    "|-boost|p2a: Primarina|spa|1",
+    "|-boost|p2a: Primarina|spd|1",
+    "|move|p1a: Primarina|Calm Mind|p1a: Primarina",
+    "|-boost|p1a: Primarina|spa|1",
+    "|-boost|p1a: Primarina|spd|1",
+    "|move|p2b: Kingambit|Swords Dance|p2b: Kingambit",
+    "|-boost|p2b: Kingambit|atk|2",
+    "|move|p1b: Kingambit|Swords Dance|p1b: Kingambit",
+    "|-boost|p1b: Kingambit|atk|2",
     "|-start|p1a: Primarina|perish2",
+    "|-start|p2a: Primarina|perish2",
+    "|-start|p2b: Kingambit|perish2",
+    "|-start|p1b: Kingambit|perish2",
     "|upkeep",
     "|turn|3"
    ],
@@ -2059,6 +2087,9 @@
         1
        ],
        [
+        1,
+        1,
+        1,
         1
        ]
       ],
@@ -2082,17 +2113,17 @@
         "boosts": [
          0,
          0,
-         0,
-         0,
+         1,
+         1,
          0,
          0,
          0
         ],
         "pp": [
          7,
-         7,
+         8,
          16,
-         20
+         19
         ],
         "volatiles": [
          "perishsong"
@@ -2100,19 +2131,19 @@
         "locked": null
        },
        {
-        "species": "Ceruledge",
-        "set_species": "Ceruledge",
+        "species": "Kingambit",
+        "set_species": "Kingambit",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 181,
-        "maxhp": 181,
-        "item": "charcoal",
+        "hp": 207,
+        "maxhp": 207,
+        "item": "blackglasses",
         "status": "",
         "status_time": 0,
         "confusion": 0,
         "fainted": false,
         "boosts": [
-         0,
+         4,
          0,
          0,
          0,
@@ -2121,7 +2152,10 @@
          0
         ],
         "pp": [
-         6
+         8,
+         16,
+         8,
+         18
         ],
         "volatiles": [
          "perishsong"
@@ -2159,13 +2193,13 @@
         "locked": null
        },
        {
-        "species": "Kingambit",
-        "set_species": "Kingambit",
+        "species": "Ceruledge",
+        "set_species": "Ceruledge",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 207,
-        "maxhp": 207,
-        "item": "blackglasses",
+        "hp": 181,
+        "maxhp": 181,
+        "item": "charcoal",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -2180,10 +2214,7 @@
          0
         ],
         "pp": [
-         8,
-         16,
-         8,
-         20
+         8
         ],
         "volatiles": [],
         "locked": null
@@ -2205,6 +2236,9 @@
         1
        ],
        [
+        1,
+        1,
+        1,
         1
        ]
       ],
@@ -2228,38 +2262,37 @@
         "boosts": [
          0,
          0,
-         0,
-         0,
+         1,
+         1,
          0,
          0,
          0
         ],
         "pp": [
          7,
-         7,
+         8,
          16,
-         20
+         19
         ],
         "volatiles": [
-         "perishsong",
-         "stall"
+         "perishsong"
         ],
         "locked": null
        },
        {
-        "species": "Ceruledge",
-        "set_species": "Ceruledge",
+        "species": "Kingambit",
+        "set_species": "Kingambit",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 181,
-        "maxhp": 181,
-        "item": "charcoal",
+        "hp": 207,
+        "maxhp": 207,
+        "item": "blackglasses",
         "status": "",
         "status_time": 0,
         "confusion": 0,
         "fainted": false,
         "boosts": [
-         0,
+         4,
          0,
          0,
          0,
@@ -2268,11 +2301,13 @@
          0
         ],
         "pp": [
-         6
+         8,
+         16,
+         8,
+         18
         ],
         "volatiles": [
-         "perishsong",
-         "stall"
+         "perishsong"
         ],
         "locked": null
        },
@@ -2307,13 +2342,13 @@
         "locked": null
        },
        {
-        "species": "Kingambit",
-        "set_species": "Kingambit",
+        "species": "Ceruledge",
+        "set_species": "Ceruledge",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 207,
-        "maxhp": 207,
-        "item": "blackglasses",
+        "hp": 181,
+        "maxhp": 181,
+        "item": "charcoal",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -2328,10 +2363,7 @@
          0
         ],
         "pp": [
-         8,
-         16,
-         8,
-         20
+         8
         ],
         "volatiles": [],
         "locked": null
@@ -2343,8 +2375,8 @@
   },
   {
    "input": {
-    "p1": "move 2, move 1",
-    "p2": "move 2, move 1"
+    "p1": "move 4, move 4",
+    "p2": "move 4, move 4"
    },
    "draws": [
     {
@@ -2352,10 +2384,10 @@
      "context": "queue",
      "lo": 0,
      "hi": 2,
-     "value": 0,
+     "value": 1,
      "group": [
-      "A:move:p1b:protect",
-      "A:move:p2b:protect"
+      "A:move:p1a:calmmind",
+      "A:move:p2a:calmmind"
      ],
      "start": 0
     },
@@ -2364,10 +2396,10 @@
      "context": "queue",
      "lo": 2,
      "hi": 4,
-     "value": 3,
+     "value": 2,
      "group": [
-      "A:move:p2a:protect",
-      "A:move:p1a:protect"
+      "A:move:p1b:swordsdance",
+      "A:move:p2b:swordsdance"
      ],
      "start": 2
     },
@@ -2378,8 +2410,8 @@
      "hi": 2,
      "value": 0,
      "group": [
-      "P:p1b:0:",
-      "P:p2b:0:"
+      "P:p1a:0:",
+      "P:p2a:0:"
      ],
      "start": 0
     },
@@ -2390,8 +2422,8 @@
      "hi": 4,
      "value": 2,
      "group": [
-      "P:p2a:0:",
-      "P:p1a:0:"
+      "P:p1b:0:",
+      "P:p2b:0:"
      ],
      "start": 2
     },
@@ -2402,8 +2434,8 @@
      "hi": 2,
      "value": 0,
      "group": [
-      "P:p1b:0:",
-      "P:p2b:0:"
+      "P:p1a:0:",
+      "P:p2a:0:"
      ],
      "start": 0
     },
@@ -2412,10 +2444,10 @@
      "context": "each:Update",
      "lo": 2,
      "hi": 4,
-     "value": 2,
+     "value": 3,
      "group": [
-      "P:p2a:0:",
-      "P:p1a:0:"
+      "P:p1b:0:",
+      "P:p2b:0:"
      ],
      "start": 2
     },
@@ -2426,8 +2458,8 @@
      "hi": 2,
      "value": 1,
      "group": [
-      "A:move:p1b:protect",
-      "A:move:p2b:protect"
+      "A:move:p2a:calmmind",
+      "A:move:p1a:calmmind"
      ],
      "start": 0
     },
@@ -2438,17 +2470,10 @@
      "hi": 4,
      "value": 3,
      "group": [
-      "A:move:p1a:protect",
-      "A:move:p2a:protect"
+      "A:move:p1b:swordsdance",
+      "A:move:p2b:swordsdance"
      ],
      "start": 2
-    },
-    {
-     "site": "STALL",
-     "context": "StallMove",
-     "lo": 0,
-     "hi": 9,
-     "value": 5
     },
     {
      "site": "SPEED_TIE",
@@ -2457,8 +2482,8 @@
      "hi": 2,
      "value": 1,
      "group": [
-      "P:p1b:0:",
-      "P:p2b:0:"
+      "P:p1a:0:",
+      "P:p2a:0:"
      ],
      "start": 0
     },
@@ -2469,8 +2494,56 @@
      "hi": 4,
      "value": 2,
      "group": [
-      "P:p2a:0:",
-      "P:p1a:0:"
+      "P:p1b:0:",
+      "P:p2b:0:"
+     ],
+     "start": 2
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 0,
+     "hi": 2,
+     "value": 1,
+     "group": [
+      "P:p1a:0:",
+      "P:p2a:0:"
+     ],
+     "start": 0
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 2,
+     "hi": 4,
+     "value": 2,
+     "group": [
+      "P:p1b:0:",
+      "P:p2b:0:"
+     ],
+     "start": 2
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 0,
+     "hi": 2,
+     "value": 0,
+     "group": [
+      "P:p1a:0:",
+      "P:p2a:0:"
+     ],
+     "start": 0
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 2,
+     "hi": 4,
+     "value": 2,
+     "group": [
+      "P:p1b:0:",
+      "P:p2b:0:"
      ],
      "start": 2
     },
@@ -2479,10 +2552,10 @@
      "context": "queue",
      "lo": 1,
      "hi": 3,
-     "value": 2,
+     "value": 1,
      "group": [
-      "A:move:p2a:protect",
-      "A:move:p1a:protect"
+      "A:move:p2b:swordsdance",
+      "A:move:p1b:swordsdance"
      ],
      "start": 1
     },
@@ -2491,10 +2564,10 @@
      "context": "each:Update",
      "lo": 0,
      "hi": 2,
-     "value": 0,
+     "value": 1,
      "group": [
-      "P:p1b:0:",
-      "P:p2b:0:"
+      "P:p1a:0:",
+      "P:p2a:0:"
      ],
      "start": 0
     },
@@ -2505,32 +2578,8 @@
      "hi": 4,
      "value": 2,
      "group": [
-      "P:p2a:0:",
-      "P:p1a:0:"
-     ],
-     "start": 2
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 0,
-     "hi": 2,
-     "value": 0,
-     "group": [
       "P:p1b:0:",
       "P:p2b:0:"
-     ],
-     "start": 0
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 2,
-     "hi": 4,
-     "value": 2,
-     "group": [
-      "P:p2a:0:",
-      "P:p1a:0:"
      ],
      "start": 2
     },
@@ -2541,8 +2590,8 @@
      "hi": 2,
      "value": 1,
      "group": [
-      "P:p1b:0:",
-      "P:p2b:0:"
+      "P:p1a:0:",
+      "P:p2a:0:"
      ],
      "start": 0
     },
@@ -2553,8 +2602,32 @@
      "hi": 4,
      "value": 2,
      "group": [
-      "P:p2a:0:",
-      "P:p1a:0:"
+      "P:p1b:0:",
+      "P:p2b:0:"
+     ],
+     "start": 2
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 0,
+     "hi": 2,
+     "value": 0,
+     "group": [
+      "P:p1a:0:",
+      "P:p2a:0:"
+     ],
+     "start": 0
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 2,
+     "hi": 4,
+     "value": 2,
+     "group": [
+      "P:p1b:0:",
+      "P:p2b:0:"
      ],
      "start": 2
     },
@@ -2563,53 +2636,22 @@
      "context": "queue",
      "lo": 0,
      "hi": 2,
+     "value": 0,
+     "group": [
+      "A:move:p2b:swordsdance",
+      "A:move:p1b:swordsdance"
+     ],
+     "start": 0
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 0,
+     "hi": 2,
      "value": 1,
      "group": [
-      "A:move:p1a:protect",
-      "A:move:p2a:protect"
-     ],
-     "start": 0
-    },
-    {
-     "site": "STALL",
-     "context": "StallMove",
-     "lo": 0,
-     "hi": 3,
-     "value": 1
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 0,
-     "hi": 2,
-     "value": 0,
-     "group": [
-      "P:p1b:0:",
-      "P:p2b:0:"
-     ],
-     "start": 0
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 2,
-     "hi": 4,
-     "value": 2,
-     "group": [
-      "P:p2a:0:",
-      "P:p1a:0:"
-     ],
-     "start": 2
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 0,
-     "hi": 2,
-     "value": 0,
-     "group": [
-      "P:p1b:0:",
-      "P:p2b:0:"
+      "P:p1a:0:",
+      "P:p2a:0:"
      ],
      "start": 0
     },
@@ -2620,8 +2662,128 @@
      "hi": 4,
      "value": 3,
      "group": [
-      "P:p2a:0:",
-      "P:p1a:0:"
+      "P:p1b:0:",
+      "P:p2b:0:"
+     ],
+     "start": 2
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 0,
+     "hi": 2,
+     "value": 1,
+     "group": [
+      "P:p1a:0:",
+      "P:p2a:0:"
+     ],
+     "start": 0
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 2,
+     "hi": 4,
+     "value": 3,
+     "group": [
+      "P:p1b:0:",
+      "P:p2b:0:"
+     ],
+     "start": 2
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 0,
+     "hi": 2,
+     "value": 0,
+     "group": [
+      "P:p1a:0:",
+      "P:p2a:0:"
+     ],
+     "start": 0
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 2,
+     "hi": 4,
+     "value": 3,
+     "group": [
+      "P:p1b:0:",
+      "P:p2b:0:"
+     ],
+     "start": 2
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 0,
+     "hi": 2,
+     "value": 0,
+     "group": [
+      "P:p1a:0:",
+      "P:p2a:0:"
+     ],
+     "start": 0
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 2,
+     "hi": 4,
+     "value": 3,
+     "group": [
+      "P:p1b:0:",
+      "P:p2b:0:"
+     ],
+     "start": 2
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 0,
+     "hi": 2,
+     "value": 0,
+     "group": [
+      "P:p1a:0:",
+      "P:p2a:0:"
+     ],
+     "start": 0
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 2,
+     "hi": 4,
+     "value": 3,
+     "group": [
+      "P:p1b:0:",
+      "P:p2b:0:"
+     ],
+     "start": 2
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 0,
+     "hi": 2,
+     "value": 0,
+     "group": [
+      "P:p1a:0:",
+      "P:p2a:0:"
+     ],
+     "start": 0
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 2,
+     "hi": 4,
+     "value": 3,
+     "group": [
+      "P:p1b:0:",
+      "P:p2b:0:"
      ],
      "start": 2
     },
@@ -2631,45 +2793,33 @@
      "lo": 0,
      "hi": 2,
      "value": 1,
+     "group": [
+      "H:perishsong:p1a:cb",
+      "H:perishsong:p2a:cb"
+     ],
+     "start": 0
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "field:Residual",
+     "lo": 2,
+     "hi": 4,
+     "value": 3,
      "group": [
       "H:perishsong:p1b:cb",
       "H:perishsong:p2b:cb"
      ],
-     "start": 0
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "field:Residual",
-     "lo": 2,
-     "hi": 4,
-     "value": 3,
-     "group": [
-      "H:perishsong:p2a:cb",
-      "H:perishsong:p1a:cb"
-     ],
      "start": 2
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "field:Residual",
-     "lo": 4,
-     "hi": 6,
-     "value": 5,
-     "group": [
-      "H:protect:p1b:end",
-      "H:stall:p1b:end"
-     ],
-     "start": 4
     },
     {
      "site": "SPEED_TIE",
      "context": "each:Update",
      "lo": 0,
      "hi": 2,
-     "value": 0,
+     "value": 1,
      "group": [
-      "P:p1b:0:",
-      "P:p2b:0:"
+      "P:p1a:0:",
+      "P:p2a:0:"
      ],
      "start": 0
     },
@@ -2680,25 +2830,27 @@
      "hi": 4,
      "value": 3,
      "group": [
-      "P:p2a:0:",
-      "P:p1a:0:"
+      "P:p1b:0:",
+      "P:p2b:0:"
      ],
      "start": 2
     }
    ],
    "log": [
-    "|move|p2b: Ceruledge|Protect||[still]",
-    "|-fail|p2b: Ceruledge",
-    "|move|p1b: Ceruledge|Protect|p1b: Ceruledge",
-    "|-singleturn|p1b: Ceruledge|Protect",
-    "|move|p2a: Primarina|Protect||[still]",
-    "|-fail|p2a: Primarina",
-    "|move|p1a: Primarina|Protect||[still]",
-    "|-fail|p1a: Primarina",
-    "|-start|p2b: Ceruledge|perish1",
-    "|-start|p1b: Ceruledge|perish1",
-    "|-start|p1a: Primarina|perish1",
+    "|move|p1a: Primarina|Calm Mind|p1a: Primarina",
+    "|-boost|p1a: Primarina|spa|1",
+    "|-boost|p1a: Primarina|spd|1",
+    "|move|p2a: Primarina|Calm Mind|p2a: Primarina",
+    "|-boost|p2a: Primarina|spa|1",
+    "|-boost|p2a: Primarina|spd|1",
+    "|move|p2b: Kingambit|Swords Dance|p2b: Kingambit",
+    "|-boost|p2b: Kingambit|atk|2",
+    "|move|p1b: Kingambit|Swords Dance|p1b: Kingambit",
+    "|-boost|p1b: Kingambit|atk|2",
     "|-start|p2a: Primarina|perish1",
+    "|-start|p1a: Primarina|perish1",
+    "|-start|p2b: Kingambit|perish1",
+    "|-start|p1b: Kingambit|perish1",
     "|upkeep",
     "|turn|4"
    ],
@@ -2727,6 +2879,9 @@
         1
        ],
        [
+        1,
+        1,
+        1,
         1
        ]
       ],
@@ -2750,17 +2905,17 @@
         "boosts": [
          0,
          0,
-         0,
-         0,
+         2,
+         2,
          0,
          0,
          0
         ],
         "pp": [
          7,
-         6,
+         8,
          16,
-         20
+         18
         ],
         "volatiles": [
          "perishsong"
@@ -2768,19 +2923,19 @@
         "locked": null
        },
        {
-        "species": "Ceruledge",
-        "set_species": "Ceruledge",
+        "species": "Kingambit",
+        "set_species": "Kingambit",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 181,
-        "maxhp": 181,
-        "item": "charcoal",
+        "hp": 207,
+        "maxhp": 207,
+        "item": "blackglasses",
         "status": "",
         "status_time": 0,
         "confusion": 0,
         "fainted": false,
         "boosts": [
-         0,
+         6,
          0,
          0,
          0,
@@ -2789,11 +2944,13 @@
          0
         ],
         "pp": [
-         5
+         8,
+         16,
+         8,
+         17
         ],
         "volatiles": [
-         "perishsong",
-         "stall"
+         "perishsong"
         ],
         "locked": null
        },
@@ -2828,13 +2985,13 @@
         "locked": null
        },
        {
-        "species": "Kingambit",
-        "set_species": "Kingambit",
+        "species": "Ceruledge",
+        "set_species": "Ceruledge",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 207,
-        "maxhp": 207,
-        "item": "blackglasses",
+        "hp": 181,
+        "maxhp": 181,
+        "item": "charcoal",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -2849,10 +3006,7 @@
          0
         ],
         "pp": [
-         8,
-         16,
-         8,
-         20
+         8
         ],
         "volatiles": [],
         "locked": null
@@ -2874,6 +3028,9 @@
         1
        ],
        [
+        1,
+        1,
+        1,
         1
        ]
       ],
@@ -2897,17 +3054,17 @@
         "boosts": [
          0,
          0,
-         0,
-         0,
+         2,
+         2,
          0,
          0,
          0
         ],
         "pp": [
          7,
-         6,
+         8,
          16,
-         20
+         18
         ],
         "volatiles": [
          "perishsong"
@@ -2915,19 +3072,19 @@
         "locked": null
        },
        {
-        "species": "Ceruledge",
-        "set_species": "Ceruledge",
+        "species": "Kingambit",
+        "set_species": "Kingambit",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 181,
-        "maxhp": 181,
-        "item": "charcoal",
+        "hp": 207,
+        "maxhp": 207,
+        "item": "blackglasses",
         "status": "",
         "status_time": 0,
         "confusion": 0,
         "fainted": false,
         "boosts": [
-         0,
+         6,
          0,
          0,
          0,
@@ -2936,7 +3093,10 @@
          0
         ],
         "pp": [
-         5
+         8,
+         16,
+         8,
+         17
         ],
         "volatiles": [
          "perishsong"
@@ -2974,13 +3134,13 @@
         "locked": null
        },
        {
-        "species": "Kingambit",
-        "set_species": "Kingambit",
+        "species": "Ceruledge",
+        "set_species": "Ceruledge",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 207,
-        "maxhp": 207,
-        "item": "blackglasses",
+        "hp": 181,
+        "maxhp": 181,
+        "item": "charcoal",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -2995,10 +3155,7 @@
          0
         ],
         "pp": [
-         8,
-         16,
-         8,
-         20
+         8
         ],
         "volatiles": [],
         "locked": null
@@ -3010,8 +3167,8 @@
   },
   {
    "input": {
-    "p1": "move 2, move 1",
-    "p2": "move 2, move 1"
+    "p1": "move 4, move 4",
+    "p2": "move 4, move 4"
    },
    "draws": [
     {
@@ -3019,10 +3176,10 @@
      "context": "queue",
      "lo": 0,
      "hi": 2,
-     "value": 0,
+     "value": 1,
      "group": [
-      "A:move:p1b:protect",
-      "A:move:p2b:protect"
+      "A:move:p1a:calmmind",
+      "A:move:p2a:calmmind"
      ],
      "start": 0
     },
@@ -3031,10 +3188,10 @@
      "context": "queue",
      "lo": 2,
      "hi": 4,
-     "value": 3,
+     "value": 2,
      "group": [
-      "A:move:p2a:protect",
-      "A:move:p1a:protect"
+      "A:move:p1b:swordsdance",
+      "A:move:p2b:swordsdance"
      ],
      "start": 2
     },
@@ -3043,10 +3200,10 @@
      "context": "each:BeforeTurn",
      "lo": 0,
      "hi": 2,
-     "value": 0,
+     "value": 1,
      "group": [
-      "P:p1b:0:",
-      "P:p2b:0:"
+      "P:p1a:0:",
+      "P:p2a:0:"
      ],
      "start": 0
     },
@@ -3057,8 +3214,56 @@
      "hi": 4,
      "value": 3,
      "group": [
-      "P:p2a:0:",
-      "P:p1a:0:"
+      "P:p1b:0:",
+      "P:p2b:0:"
+     ],
+     "start": 2
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 0,
+     "hi": 2,
+     "value": 1,
+     "group": [
+      "P:p1a:0:",
+      "P:p2a:0:"
+     ],
+     "start": 0
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 2,
+     "hi": 4,
+     "value": 3,
+     "group": [
+      "P:p1b:0:",
+      "P:p2b:0:"
+     ],
+     "start": 2
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "queue",
+     "lo": 0,
+     "hi": 2,
+     "value": 0,
+     "group": [
+      "A:move:p2a:calmmind",
+      "A:move:p1a:calmmind"
+     ],
+     "start": 0
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "queue",
+     "lo": 2,
+     "hi": 4,
+     "value": 2,
+     "group": [
+      "A:move:p1b:swordsdance",
+      "A:move:p2b:swordsdance"
      ],
      "start": 2
     },
@@ -3069,80 +3274,8 @@
      "hi": 2,
      "value": 0,
      "group": [
-      "P:p1b:0:",
-      "P:p2b:0:"
-     ],
-     "start": 0
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 2,
-     "hi": 4,
-     "value": 3,
-     "group": [
-      "P:p2a:0:",
-      "P:p1a:0:"
-     ],
-     "start": 2
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "queue",
-     "lo": 0,
-     "hi": 2,
-     "value": 1,
-     "group": [
-      "A:move:p1b:protect",
-      "A:move:p2b:protect"
-     ],
-     "start": 0
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "queue",
-     "lo": 2,
-     "hi": 4,
-     "value": 3,
-     "group": [
-      "A:move:p1a:protect",
-      "A:move:p2a:protect"
-     ],
-     "start": 2
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 0,
-     "hi": 2,
-     "value": 1,
-     "group": [
-      "P:p1b:0:",
-      "P:p2b:0:"
-     ],
-     "start": 0
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 2,
-     "hi": 4,
-     "value": 3,
-     "group": [
-      "P:p2a:0:",
-      "P:p1a:0:"
-     ],
-     "start": 2
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 0,
-     "hi": 2,
-     "value": 1,
-     "group": [
-      "P:p1b:0:",
-      "P:p2b:0:"
+      "P:p1a:0:",
+      "P:p2a:0:"
      ],
      "start": 0
     },
@@ -3153,8 +3286,8 @@
      "hi": 4,
      "value": 2,
      "group": [
-      "P:p2a:0:",
-      "P:p1a:0:"
+      "P:p1b:0:",
+      "P:p2b:0:"
      ],
      "start": 2
     },
@@ -3163,10 +3296,10 @@
      "context": "each:Update",
      "lo": 0,
      "hi": 2,
-     "value": 1,
+     "value": 0,
      "group": [
-      "P:p1b:0:",
-      "P:p2b:0:"
+      "P:p1a:0:",
+      "P:p2a:0:"
      ],
      "start": 0
     },
@@ -3177,8 +3310,32 @@
      "hi": 4,
      "value": 3,
      "group": [
-      "P:p2a:0:",
-      "P:p1a:0:"
+      "P:p1b:0:",
+      "P:p2b:0:"
+     ],
+     "start": 2
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 0,
+     "hi": 2,
+     "value": 1,
+     "group": [
+      "P:p1a:0:",
+      "P:p2a:0:"
+     ],
+     "start": 0
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 2,
+     "hi": 4,
+     "value": 2,
+     "group": [
+      "P:p1b:0:",
+      "P:p2b:0:"
      ],
      "start": 2
     },
@@ -3189,27 +3346,20 @@
      "hi": 3,
      "value": 2,
      "group": [
-      "A:move:p2a:protect",
-      "A:move:p1a:protect"
+      "A:move:p1b:swordsdance",
+      "A:move:p2b:swordsdance"
      ],
      "start": 1
-    },
-    {
-     "site": "STALL",
-     "context": "StallMove",
-     "lo": 0,
-     "hi": 3,
-     "value": 2
     },
     {
      "site": "SPEED_TIE",
      "context": "each:Update",
      "lo": 0,
      "hi": 2,
-     "value": 0,
+     "value": 1,
      "group": [
-      "P:p1b:0:",
-      "P:p2b:0:"
+      "P:p1a:0:",
+      "P:p2a:0:"
      ],
      "start": 0
     },
@@ -3220,8 +3370,56 @@
      "hi": 4,
      "value": 2,
      "group": [
-      "P:p2a:0:",
-      "P:p1a:0:"
+      "P:p1b:0:",
+      "P:p2b:0:"
+     ],
+     "start": 2
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 0,
+     "hi": 2,
+     "value": 0,
+     "group": [
+      "P:p1a:0:",
+      "P:p2a:0:"
+     ],
+     "start": 0
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 2,
+     "hi": 4,
+     "value": 3,
+     "group": [
+      "P:p1b:0:",
+      "P:p2b:0:"
+     ],
+     "start": 2
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 0,
+     "hi": 2,
+     "value": 1,
+     "group": [
+      "P:p1a:0:",
+      "P:p2a:0:"
+     ],
+     "start": 0
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 2,
+     "hi": 4,
+     "value": 2,
+     "group": [
+      "P:p1b:0:",
+      "P:p2b:0:"
      ],
      "start": 2
     },
@@ -3230,10 +3428,10 @@
      "context": "queue",
      "lo": 0,
      "hi": 2,
-     "value": 0,
+     "value": 1,
      "group": [
-      "A:move:p1a:protect",
-      "A:move:p2a:protect"
+      "A:move:p2b:swordsdance",
+      "A:move:p1b:swordsdance"
      ],
      "start": 0
     },
@@ -3242,10 +3440,10 @@
      "context": "each:Update",
      "lo": 0,
      "hi": 2,
-     "value": 0,
+     "value": 1,
      "group": [
-      "P:p1b:0:",
-      "P:p2b:0:"
+      "P:p1a:0:",
+      "P:p2a:0:"
      ],
      "start": 0
     },
@@ -3256,32 +3454,8 @@
      "hi": 4,
      "value": 2,
      "group": [
-      "P:p2a:0:",
-      "P:p1a:0:"
-     ],
-     "start": 2
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 0,
-     "hi": 2,
-     "value": 1,
-     "group": [
       "P:p1b:0:",
       "P:p2b:0:"
-     ],
-     "start": 0
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 2,
-     "hi": 4,
-     "value": 3,
-     "group": [
-      "P:p2a:0:",
-      "P:p1a:0:"
      ],
      "start": 2
     },
@@ -3292,32 +3466,8 @@
      "hi": 2,
      "value": 0,
      "group": [
-      "P:p1b:0:",
-      "P:p2b:0:"
-     ],
-     "start": 0
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 2,
-     "hi": 4,
-     "value": 3,
-     "group": [
-      "P:p2a:0:",
-      "P:p1a:0:"
-     ],
-     "start": 2
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 0,
-     "hi": 2,
-     "value": 1,
-     "group": [
-      "P:p1b:0:",
-      "P:p2b:0:"
+      "P:p1a:0:",
+      "P:p2a:0:"
      ],
      "start": 0
     },
@@ -3328,8 +3478,8 @@
      "hi": 4,
      "value": 2,
      "group": [
-      "P:p2a:0:",
-      "P:p1a:0:"
+      "P:p1b:0:",
+      "P:p2b:0:"
      ],
      "start": 2
     },
@@ -3339,67 +3489,45 @@
      "lo": 0,
      "hi": 2,
      "value": 0,
-     "group": [
-      "H:perishsong:p1b:cb",
-      "H:perishsong:p2b:cb"
-     ],
-     "start": 0
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "field:Residual",
-     "lo": 2,
-     "hi": 4,
-     "value": 3,
      "group": [
       "H:perishsong:p1a:cb",
       "H:perishsong:p2a:cb"
      ],
+     "start": 0
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "field:Residual",
+     "lo": 2,
+     "hi": 4,
+     "value": 3,
+     "group": [
+      "H:perishsong:p1b:cb",
+      "H:perishsong:p2b:cb"
+     ],
      "start": 2
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "field:Residual",
-     "lo": 4,
-     "hi": 6,
-     "value": 5,
-     "group": [
-      "H:protect:p2b:end",
-      "H:stall:p2b:end"
-     ],
-     "start": 4
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "field:Residual",
-     "lo": 6,
-     "hi": 8,
-     "value": 6,
-     "group": [
-      "H:stall:p1a:end",
-      "H:protect:p1a:end"
-     ],
-     "start": 6
     }
    ],
    "log": [
-    "|move|p2b: Ceruledge|Protect|p2b: Ceruledge",
-    "|-singleturn|p2b: Ceruledge|Protect",
-    "|move|p1b: Ceruledge|Protect||[still]",
-    "|-fail|p1b: Ceruledge",
-    "|move|p1a: Primarina|Protect|p1a: Primarina",
-    "|-singleturn|p1a: Primarina|Protect",
-    "|move|p2a: Primarina|Protect||[still]",
-    "|-fail|p2a: Primarina",
-    "|-start|p1b: Ceruledge|perish0",
-    "|-start|p2b: Ceruledge|perish0",
-    "|-start|p2a: Primarina|perish0",
+    "|move|p2a: Primarina|Calm Mind|p2a: Primarina",
+    "|-boost|p2a: Primarina|spa|1",
+    "|-boost|p2a: Primarina|spd|1",
+    "|move|p1a: Primarina|Calm Mind|p1a: Primarina",
+    "|-boost|p1a: Primarina|spa|1",
+    "|-boost|p1a: Primarina|spd|1",
+    "|move|p1b: Kingambit|Swords Dance|p1b: Kingambit",
+    "|-boost|p1b: Kingambit|atk|0",
+    "|move|p2b: Kingambit|Swords Dance|p2b: Kingambit",
+    "|-boost|p2b: Kingambit|atk|0",
     "|-start|p1a: Primarina|perish0",
-    "|faint|p1b: Ceruledge",
-    "|faint|p2b: Ceruledge",
-    "|faint|p2a: Primarina",
+    "|-start|p2a: Primarina|perish0",
+    "|-start|p2b: Kingambit|perish0",
+    "|-start|p1b: Kingambit|perish0",
+    "|upkeep",
     "|faint|p1a: Primarina",
-    "|upkeep"
+    "|faint|p2a: Primarina",
+    "|faint|p2b: Kingambit",
+    "|faint|p1b: Kingambit"
    ],
    "state": {
     "turn": 4,
@@ -3447,21 +3575,21 @@
         ],
         "pp": [
          7,
-         5,
+         8,
          16,
-         20
+         17
         ],
         "volatiles": [],
         "locked": null
        },
        {
-        "species": "Ceruledge",
-        "set_species": "Ceruledge",
+        "species": "Kingambit",
+        "set_species": "Kingambit",
         "mega": 0,
         "switch_flag": 1,
         "hp": 0,
-        "maxhp": 181,
-        "item": "charcoal",
+        "maxhp": 207,
+        "item": "blackglasses",
         "status": "fnt",
         "status_time": 0,
         "confusion": 0,
@@ -3476,7 +3604,10 @@
          0
         ],
         "pp": [
-         4
+         8,
+         16,
+         8,
+         16
         ],
         "volatiles": [],
         "locked": null
@@ -3512,13 +3643,13 @@
         "locked": null
        },
        {
-        "species": "Kingambit",
-        "set_species": "Kingambit",
+        "species": "Ceruledge",
+        "set_species": "Ceruledge",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 207,
-        "maxhp": 207,
-        "item": "blackglasses",
+        "hp": 181,
+        "maxhp": 181,
+        "item": "charcoal",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -3533,10 +3664,7 @@
          0
         ],
         "pp": [
-         8,
-         16,
-         8,
-         20
+         8
         ],
         "volatiles": [],
         "locked": null
@@ -3579,21 +3707,21 @@
         ],
         "pp": [
          7,
-         5,
+         8,
          16,
-         20
+         17
         ],
         "volatiles": [],
         "locked": null
        },
        {
-        "species": "Ceruledge",
-        "set_species": "Ceruledge",
+        "species": "Kingambit",
+        "set_species": "Kingambit",
         "mega": 0,
         "switch_flag": 1,
         "hp": 0,
-        "maxhp": 181,
-        "item": "charcoal",
+        "maxhp": 207,
+        "item": "blackglasses",
         "status": "fnt",
         "status_time": 0,
         "confusion": 0,
@@ -3608,7 +3736,10 @@
          0
         ],
         "pp": [
-         4
+         8,
+         16,
+         8,
+         16
         ],
         "volatiles": [],
         "locked": null
@@ -3644,13 +3775,13 @@
         "locked": null
        },
        {
-        "species": "Kingambit",
-        "set_species": "Kingambit",
+        "species": "Ceruledge",
+        "set_species": "Ceruledge",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 207,
-        "maxhp": 207,
-        "item": "blackglasses",
+        "hp": 181,
+        "maxhp": 181,
+        "item": "charcoal",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -3665,10 +3796,7 @@
          0
         ],
         "pp": [
-         8,
-         16,
-         8,
-         20
+         8
         ],
         "volatiles": [],
         "locked": null
@@ -3689,10 +3817,10 @@
      "context": "queue",
      "lo": 0,
      "hi": 2,
-     "value": 1,
+     "value": 0,
      "group": [
-      "A:instaswitch:p1b:",
-      "A:instaswitch:p2b:"
+      "A:instaswitch:p1a:",
+      "A:instaswitch:p2a:"
      ],
      "start": 0
     },
@@ -3701,10 +3829,10 @@
      "context": "queue",
      "lo": 2,
      "hi": 4,
-     "value": 3,
+     "value": 2,
      "group": [
-      "A:instaswitch:p2a:",
-      "A:instaswitch:p1a:"
+      "A:instaswitch:p1b:",
+      "A:instaswitch:p2b:"
      ],
      "start": 2
     },
@@ -3713,23 +3841,23 @@
      "context": "queue",
      "lo": 2,
      "hi": 4,
-     "value": 2,
+     "value": 3,
      "group": [
-      "A:instaswitch:p1a:",
-      "A:instaswitch:p2a:",
-      "A:runSwitch:p2b::0"
+      "A:instaswitch:p1b:",
+      "A:instaswitch:p2b:",
+      "A:runSwitch:p1a::0"
      ]
     },
     {
      "site": "INSERT_TIE",
      "context": "queue",
-     "lo": 0,
-     "hi": 2,
-     "value": 0,
+     "lo": 2,
+     "hi": 4,
+     "value": 3,
      "group": [
       "A:runSwitch:p1a::0",
-      "A:runSwitch:p1b::0",
-      "A:runSwitch:p2b::0"
+      "A:runSwitch:p2a::0",
+      "A:runSwitch:p1b::0"
      ]
     },
     {
@@ -3737,7 +3865,7 @@
      "context": "each:Update",
      "lo": 0,
      "hi": 2,
-     "value": 0,
+     "value": 1,
      "group": [
       "P:p1a:1:sitrusberry",
       "P:p2a:1:sitrusberry"
@@ -3749,7 +3877,7 @@
      "context": "each:Update",
      "lo": 2,
      "hi": 4,
-     "value": 2,
+     "value": 3,
      "group": [
       "P:p1b:0:",
       "P:p2b:0:"
@@ -3761,7 +3889,7 @@
      "context": "switch-order",
      "lo": 0,
      "hi": 2,
-     "value": 1,
+     "value": 0,
      "group": [
       "P:p1a:0:S",
       "P:p2a:0:S"
@@ -3773,7 +3901,7 @@
      "context": "switch-order",
      "lo": 2,
      "hi": 4,
-     "value": 2,
+     "value": 3,
      "group": [
       "P:p1b:0:S",
       "P:p2b:0:S"
@@ -3806,18 +3934,18 @@
     }
    ],
    "log": [
-    "|split|p2",
-    "|switch|p2b: Kingambit|Kingambit, L50, M|207/207",
-    "|switch|p2b: Kingambit|Kingambit, L50, M|100/100",
-    "|split|p1",
-    "|switch|p1b: Kingambit|Kingambit, L50, M|207/207",
-    "|switch|p1b: Kingambit|Kingambit, L50, M|100/100",
     "|split|p1",
     "|switch|p1a: Pawmot|Pawmot, L50, M|177/177",
     "|switch|p1a: Pawmot|Pawmot, L50, M|100/100",
     "|split|p2",
     "|switch|p2a: Pawmot|Pawmot, L50, M|177/177",
     "|switch|p2a: Pawmot|Pawmot, L50, M|100/100",
+    "|split|p1",
+    "|switch|p1b: Ceruledge|Ceruledge, L50, M|181/181",
+    "|switch|p1b: Ceruledge|Ceruledge, L50, M|100/100",
+    "|split|p2",
+    "|switch|p2b: Ceruledge|Ceruledge, L50, M|181/181",
+    "|switch|p2b: Ceruledge|Ceruledge, L50, M|100/100",
     "|turn|5"
    ],
    "state": {
@@ -3845,9 +3973,6 @@
         1
        ],
        [
-        1,
-        1,
-        1,
         1
        ]
       ],
@@ -3887,13 +4012,13 @@
         "locked": null
        },
        {
-        "species": "Kingambit",
-        "set_species": "Kingambit",
+        "species": "Ceruledge",
+        "set_species": "Ceruledge",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 207,
-        "maxhp": 207,
-        "item": "blackglasses",
+        "hp": 181,
+        "maxhp": 181,
+        "item": "charcoal",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -3908,10 +4033,7 @@
          0
         ],
         "pp": [
-         8,
-         16,
-         8,
-         20
+         8
         ],
         "volatiles": [],
         "locked": null
@@ -3939,21 +4061,21 @@
         ],
         "pp": [
          7,
-         5,
+         8,
          16,
-         20
+         17
         ],
         "volatiles": [],
         "locked": null
        },
        {
-        "species": "Ceruledge",
-        "set_species": "Ceruledge",
+        "species": "Kingambit",
+        "set_species": "Kingambit",
         "mega": 0,
         "switch_flag": 0,
         "hp": 0,
-        "maxhp": 181,
-        "item": "charcoal",
+        "maxhp": 207,
+        "item": "blackglasses",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -3968,7 +4090,10 @@
          0
         ],
         "pp": [
-         4
+         8,
+         16,
+         8,
+         16
         ],
         "volatiles": [],
         "locked": null
@@ -3990,9 +4115,6 @@
         1
        ],
        [
-        1,
-        1,
-        1,
         1
        ]
       ],
@@ -4032,13 +4154,13 @@
         "locked": null
        },
        {
-        "species": "Kingambit",
-        "set_species": "Kingambit",
+        "species": "Ceruledge",
+        "set_species": "Ceruledge",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 207,
-        "maxhp": 207,
-        "item": "blackglasses",
+        "hp": 181,
+        "maxhp": 181,
+        "item": "charcoal",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -4053,10 +4175,7 @@
          0
         ],
         "pp": [
-         8,
-         16,
-         8,
-         20
+         8
         ],
         "volatiles": [],
         "locked": null
@@ -4084,21 +4203,21 @@
         ],
         "pp": [
          7,
-         5,
+         8,
          16,
-         20
+         17
         ],
         "volatiles": [],
         "locked": null
        },
        {
-        "species": "Ceruledge",
-        "set_species": "Ceruledge",
+        "species": "Kingambit",
+        "set_species": "Kingambit",
         "mega": 0,
         "switch_flag": 0,
         "hp": 0,
-        "maxhp": 181,
-        "item": "charcoal",
+        "maxhp": 207,
+        "item": "blackglasses",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -4113,7 +4232,10 @@
          0
         ],
         "pp": [
-         4
+         8,
+         16,
+         8,
+         16
         ],
         "volatiles": [],
         "locked": null
@@ -4125,8 +4247,8 @@
   },
   {
    "input": {
-    "p1": "move 2, move 4",
-    "p2": "move 2, move 4"
+    "p1": "move 2, move 1",
+    "p2": "move 2, move 1"
    },
    "draws": [
     {
@@ -4134,10 +4256,10 @@
      "context": "queue",
      "lo": 0,
      "hi": 2,
-     "value": 1,
+     "value": 0,
      "group": [
-      "A:move:p1a:revivalblessing",
-      "A:move:p2a:revivalblessing"
+      "A:move:p1b:protect",
+      "A:move:p2b:protect"
      ],
      "start": 0
     },
@@ -4146,10 +4268,10 @@
      "context": "queue",
      "lo": 2,
      "hi": 4,
-     "value": 3,
+     "value": 2,
      "group": [
-      "A:move:p1b:swordsdance",
-      "A:move:p2b:swordsdance"
+      "A:move:p2a:revivalblessing",
+      "A:move:p1a:revivalblessing"
      ],
      "start": 2
     },
@@ -4158,7 +4280,7 @@
      "context": "each:BeforeTurn",
      "lo": 0,
      "hi": 2,
-     "value": 1,
+     "value": 0,
      "group": [
       "P:p1a:0:",
       "P:p2a:0:"
@@ -4208,8 +4330,8 @@
      "hi": 2,
      "value": 1,
      "group": [
-      "A:move:p2a:revivalblessing",
-      "A:move:p1a:revivalblessing"
+      "A:move:p1b:protect",
+      "A:move:p2b:protect"
      ],
      "start": 0
     },
@@ -4218,10 +4340,118 @@
      "context": "queue",
      "lo": 2,
      "hi": 4,
+     "value": 3,
+     "group": [
+      "A:move:p2a:revivalblessing",
+      "A:move:p1a:revivalblessing"
+     ],
+     "start": 2
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 0,
+     "hi": 2,
+     "value": 0,
+     "group": [
+      "P:p1a:1:sitrusberry",
+      "P:p2a:1:sitrusberry"
+     ],
+     "start": 0
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 2,
+     "hi": 4,
+     "value": 3,
+     "group": [
+      "P:p1b:0:",
+      "P:p2b:0:"
+     ],
+     "start": 2
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 0,
+     "hi": 2,
+     "value": 1,
+     "group": [
+      "P:p1a:1:sitrusberry",
+      "P:p2a:1:sitrusberry"
+     ],
+     "start": 0
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 2,
+     "hi": 4,
      "value": 2,
      "group": [
-      "A:move:p2b:swordsdance",
-      "A:move:p1b:swordsdance"
+      "P:p1b:0:",
+      "P:p2b:0:"
+     ],
+     "start": 2
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 0,
+     "hi": 2,
+     "value": 1,
+     "group": [
+      "P:p1a:1:sitrusberry",
+      "P:p2a:1:sitrusberry"
+     ],
+     "start": 0
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 2,
+     "hi": 4,
+     "value": 2,
+     "group": [
+      "P:p1b:0:",
+      "P:p2b:0:"
+     ],
+     "start": 2
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "queue",
+     "lo": 1,
+     "hi": 3,
+     "value": 1,
+     "group": [
+      "A:move:p1a:revivalblessing",
+      "A:move:p2a:revivalblessing"
+     ],
+     "start": 1
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 0,
+     "hi": 2,
+     "value": 0,
+     "group": [
+      "P:p1a:1:sitrusberry",
+      "P:p2a:1:sitrusberry"
+     ],
+     "start": 0
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 2,
+     "hi": 4,
+     "value": 3,
+     "group": [
+      "P:p1b:0:",
+      "P:p2b:0:"
      ],
      "start": 2
     },
@@ -4266,7 +4496,67 @@
      "context": "each:Update",
      "lo": 2,
      "hi": 4,
+     "value": 2,
+     "group": [
+      "P:p1b:0:",
+      "P:p2b:0:"
+     ],
+     "start": 2
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "queue",
+     "lo": 0,
+     "hi": 2,
+     "value": 1,
+     "group": [
+      "A:move:p1a:revivalblessing",
+      "A:move:p2a:revivalblessing"
+     ],
+     "start": 0
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 0,
+     "hi": 2,
+     "value": 0,
+     "group": [
+      "P:p1a:1:sitrusberry",
+      "P:p2a:1:sitrusberry"
+     ],
+     "start": 0
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 2,
+     "hi": 4,
      "value": 3,
+     "group": [
+      "P:p1b:0:",
+      "P:p2b:0:"
+     ],
+     "start": 2
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 0,
+     "hi": 2,
+     "value": 1,
+     "group": [
+      "P:p1a:1:sitrusberry",
+      "P:p2a:1:sitrusberry"
+     ],
+     "start": 0
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 2,
+     "hi": 4,
+     "value": 2,
      "group": [
       "P:p1b:0:",
       "P:p2b:0:"
@@ -4290,7 +4580,7 @@
      "context": "each:Update",
      "lo": 2,
      "hi": 4,
-     "value": 3,
+     "value": 2,
      "group": [
       "P:p1b:0:",
       "P:p2b:0:"
@@ -4299,6 +4589,401 @@
     }
    ],
    "log": [
+    "|move|p2b: Ceruledge|Protect|p2b: Ceruledge",
+    "|-singleturn|p2b: Ceruledge|Protect",
+    "|move|p1b: Ceruledge|Protect|p1b: Ceruledge",
+    "|-singleturn|p1b: Ceruledge|Protect",
+    "|move|p2a: Pawmot|Revival Blessing|p2a: Pawmot"
+   ],
+   "state": {
+    "turn": 5,
+    "ended": false,
+    "winner": "",
+    "weather": "",
+    "weather_turns": 0,
+    "terrain": "",
+    "terrain_turns": 0,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Pawmot",
+        "set_species": "Pawmot",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 177,
+        "maxhp": 177,
+        "item": "sitrusberry",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         16,
+         1,
+         16,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Ceruledge",
+        "set_species": "Ceruledge",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 181,
+        "maxhp": 181,
+        "item": "charcoal",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         7
+        ],
+        "volatiles": [
+         "protect",
+         "stall"
+        ],
+        "locked": null
+       },
+       {
+        "species": "Primarina",
+        "set_species": "Primarina",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 187,
+        "item": "fairyfeather",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         7,
+         8,
+         16,
+         17
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Kingambit",
+        "set_species": "Kingambit",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 207,
+        "item": "blackglasses",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         16,
+         8,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "switch",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Pawmot",
+        "set_species": "Pawmot",
+        "mega": 0,
+        "switch_flag": 1,
+        "hp": 177,
+        "maxhp": 177,
+        "item": "sitrusberry",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         16,
+         0,
+         16,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Ceruledge",
+        "set_species": "Ceruledge",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 181,
+        "maxhp": 181,
+        "item": "charcoal",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         7
+        ],
+        "volatiles": [
+         "protect",
+         "stall"
+        ],
+        "locked": null
+       },
+       {
+        "species": "Primarina",
+        "set_species": "Primarina",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 187,
+        "item": "fairyfeather",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         7,
+         8,
+         16,
+         17
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Kingambit",
+        "set_species": "Kingambit",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 207,
+        "item": "blackglasses",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         16,
+         8,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": {
+    "p2": "switch 3, pass"
+   },
+   "draws": [
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 0,
+     "hi": 2,
+     "value": 0,
+     "group": [
+      "P:p1a:1:sitrusberry",
+      "P:p2a:1:sitrusberry"
+     ],
+     "start": 0
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 2,
+     "hi": 4,
+     "value": 2,
+     "group": [
+      "P:p1b:0:",
+      "P:p2b:0:"
+     ],
+     "start": 2
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 0,
+     "hi": 2,
+     "value": 1,
+     "group": [
+      "P:p1a:1:sitrusberry",
+      "P:p2a:1:sitrusberry"
+     ],
+     "start": 0
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 2,
+     "hi": 4,
+     "value": 3,
+     "group": [
+      "P:p1b:0:",
+      "P:p2b:0:"
+     ],
+     "start": 2
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 0,
+     "hi": 2,
+     "value": 0,
+     "group": [
+      "P:p1a:1:sitrusberry",
+      "P:p2a:1:sitrusberry"
+     ],
+     "start": 0
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 2,
+     "hi": 4,
+     "value": 2,
+     "group": [
+      "P:p1b:0:",
+      "P:p2b:0:"
+     ],
+     "start": 2
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 0,
+     "hi": 2,
+     "value": 1,
+     "group": [
+      "P:p1a:1:sitrusberry",
+      "P:p2a:1:sitrusberry"
+     ],
+     "start": 0
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 2,
+     "hi": 4,
+     "value": 2,
+     "group": [
+      "P:p1b:0:",
+      "P:p2b:0:"
+     ],
+     "start": 2
+    }
+   ],
+   "log": [
+    "|split|p2",
+    "|-heal|p2: Primarina|93/187|[from] move: Revival Blessing",
+    "|-heal|p2: Primarina|49/100|[from] move: Revival Blessing",
     "|move|p1a: Pawmot|Revival Blessing|p1a: Pawmot"
    ],
    "state": {
@@ -4355,13 +5040,13 @@
         "locked": null
        },
        {
-        "species": "Kingambit",
-        "set_species": "Kingambit",
+        "species": "Ceruledge",
+        "set_species": "Ceruledge",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 207,
-        "maxhp": 207,
-        "item": "blackglasses",
+        "hp": 181,
+        "maxhp": 181,
+        "item": "charcoal",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -4376,12 +5061,12 @@
          0
         ],
         "pp": [
-         8,
-         16,
-         8,
-         20
+         7
         ],
-        "volatiles": [],
+        "volatiles": [
+         "protect",
+         "stall"
+        ],
         "locked": null
        },
        {
@@ -4407,21 +5092,21 @@
         ],
         "pp": [
          7,
-         5,
+         8,
          16,
-         20
+         17
         ],
         "volatiles": [],
         "locked": null
        },
        {
-        "species": "Ceruledge",
-        "set_species": "Ceruledge",
+        "species": "Kingambit",
+        "set_species": "Kingambit",
         "mega": 0,
         "switch_flag": 0,
         "hp": 0,
-        "maxhp": 181,
-        "item": "charcoal",
+        "maxhp": 207,
+        "item": "blackglasses",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -4436,7 +5121,10 @@
          0
         ],
         "pp": [
-         4
+         8,
+         16,
+         8,
+         16
         ],
         "volatiles": [],
         "locked": null
@@ -4479,7 +5167,7 @@
         ],
         "pp": [
          16,
-         1,
+         0,
          16,
          8
         ],
@@ -4487,13 +5175,13 @@
         "locked": null
        },
        {
-        "species": "Kingambit",
-        "set_species": "Kingambit",
+        "species": "Ceruledge",
+        "set_species": "Ceruledge",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 207,
-        "maxhp": 207,
-        "item": "blackglasses",
+        "hp": 181,
+        "maxhp": 181,
+        "item": "charcoal",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -4508,12 +5196,12 @@
          0
         ],
         "pp": [
-         8,
-         16,
-         8,
-         20
+         7
         ],
-        "volatiles": [],
+        "volatiles": [
+         "protect",
+         "stall"
+        ],
         "locked": null
        },
        {
@@ -4521,13 +5209,13 @@
         "set_species": "Primarina",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 0,
+        "hp": 93,
         "maxhp": 187,
         "item": "fairyfeather",
         "status": "",
         "status_time": 0,
         "confusion": 0,
-        "fainted": true,
+        "fainted": false,
         "boosts": [
          0,
          0,
@@ -4539,21 +5227,21 @@
         ],
         "pp": [
          7,
-         5,
+         8,
          16,
-         20
+         17
         ],
         "volatiles": [],
         "locked": null
        },
        {
-        "species": "Ceruledge",
-        "set_species": "Ceruledge",
+        "species": "Kingambit",
+        "set_species": "Kingambit",
         "mega": 0,
         "switch_flag": 0,
         "hp": 0,
-        "maxhp": 181,
-        "item": "charcoal",
+        "maxhp": 207,
+        "item": "blackglasses",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -4568,7 +5256,10 @@
          0
         ],
         "pp": [
-         4
+         8,
+         16,
+         8,
+         16
         ],
         "volatiles": [],
         "locked": null
@@ -4580,8 +5271,7 @@
   },
   {
    "input": {
-    "p1": "switch 3, pass",
-    "p2": "switch 3, pass"
+    "p1": "switch 3, pass"
    },
    "draws": [
     {
@@ -4610,243 +5300,45 @@
     },
     {
      "site": "SPEED_TIE",
-     "context": "queue",
+     "context": "field:Residual",
+     "lo": 0,
+     "hi": 4,
+     "value": 2,
+     "group": [
+      "H:protect:p1b:end",
+      "H:stall:p1b:end",
+      "H:protect:p2b:end",
+      "H:stall:p2b:end"
+     ],
+     "start": 0
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "field:Residual",
      "lo": 1,
-     "hi": 3,
-     "value": 2,
-     "group": [
-      "A:move:p2b:swordsdance",
-      "A:move:p1b:swordsdance"
-     ],
-     "start": 1
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 0,
-     "hi": 2,
-     "value": 1,
-     "group": [
-      "P:p1a:1:sitrusberry",
-      "P:p2a:1:sitrusberry"
-     ],
-     "start": 0
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 2,
-     "hi": 4,
-     "value": 2,
-     "group": [
-      "P:p1b:0:",
-      "P:p2b:0:"
-     ],
-     "start": 2
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 0,
-     "hi": 2,
-     "value": 1,
-     "group": [
-      "P:p1a:1:sitrusberry",
-      "P:p2a:1:sitrusberry"
-     ],
-     "start": 0
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 2,
-     "hi": 4,
-     "value": 2,
-     "group": [
-      "P:p1b:0:",
-      "P:p2b:0:"
-     ],
-     "start": 2
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 0,
-     "hi": 2,
-     "value": 0,
-     "group": [
-      "P:p1a:1:sitrusberry",
-      "P:p2a:1:sitrusberry"
-     ],
-     "start": 0
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 2,
-     "hi": 4,
-     "value": 2,
-     "group": [
-      "P:p1b:0:",
-      "P:p2b:0:"
-     ],
-     "start": 2
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 0,
-     "hi": 2,
-     "value": 1,
-     "group": [
-      "P:p1a:1:sitrusberry",
-      "P:p2a:1:sitrusberry"
-     ],
-     "start": 0
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 2,
-     "hi": 4,
-     "value": 2,
-     "group": [
-      "P:p1b:0:",
-      "P:p2b:0:"
-     ],
-     "start": 2
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "queue",
-     "lo": 0,
-     "hi": 2,
-     "value": 0,
-     "group": [
-      "A:move:p1b:swordsdance",
-      "A:move:p2b:swordsdance"
-     ],
-     "start": 0
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 0,
-     "hi": 2,
-     "value": 0,
-     "group": [
-      "P:p1a:1:sitrusberry",
-      "P:p2a:1:sitrusberry"
-     ],
-     "start": 0
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 2,
-     "hi": 4,
-     "value": 2,
-     "group": [
-      "P:p1b:0:",
-      "P:p2b:0:"
-     ],
-     "start": 2
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 0,
-     "hi": 2,
-     "value": 1,
-     "group": [
-      "P:p1a:1:sitrusberry",
-      "P:p2a:1:sitrusberry"
-     ],
-     "start": 0
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 2,
-     "hi": 4,
-     "value": 2,
-     "group": [
-      "P:p1b:0:",
-      "P:p2b:0:"
-     ],
-     "start": 2
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 0,
-     "hi": 2,
-     "value": 1,
-     "group": [
-      "P:p1a:1:sitrusberry",
-      "P:p2a:1:sitrusberry"
-     ],
-     "start": 0
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 2,
      "hi": 4,
      "value": 3,
      "group": [
-      "P:p1b:0:",
-      "P:p2b:0:"
-     ],
-     "start": 2
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 0,
-     "hi": 2,
-     "value": 0,
-     "group": [
-      "P:p1a:1:sitrusberry",
-      "P:p2a:1:sitrusberry"
+      "H:protect:p1b:end",
+      "H:stall:p1b:end",
+      "H:protect:p2b:end",
+      "H:stall:p2b:end"
      ],
      "start": 0
     },
     {
      "site": "SPEED_TIE",
-     "context": "each:Update",
+     "context": "field:Residual",
      "lo": 2,
      "hi": 4,
      "value": 2,
      "group": [
-      "P:p1b:0:",
-      "P:p2b:0:"
-     ],
-     "start": 2
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 0,
-     "hi": 2,
-     "value": 0,
-     "group": [
-      "P:p1a:1:sitrusberry",
-      "P:p2a:1:sitrusberry"
+      "H:protect:p1b:end",
+      "H:stall:p1b:end",
+      "H:protect:p2b:end",
+      "H:stall:p2b:end"
      ],
      "start": 0
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 2,
-     "hi": 4,
-     "value": 2,
-     "group": [
-      "P:p1b:0:",
-      "P:p2b:0:"
-     ],
-     "start": 2
     },
     {
      "site": "SPEED_TIE",
@@ -4866,30 +5358,6 @@
      "lo": 2,
      "hi": 4,
      "value": 3,
-     "group": [
-      "P:p1b:0:",
-      "P:p2b:0:"
-     ],
-     "start": 2
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 0,
-     "hi": 2,
-     "value": 1,
-     "group": [
-      "P:p1a:1:sitrusberry",
-      "P:p2a:1:sitrusberry"
-     ],
-     "start": 0
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "each:Update",
-     "lo": 2,
-     "hi": 4,
-     "value": 2,
      "group": [
       "P:p1b:0:",
       "P:p2b:0:"
@@ -4901,14 +5369,6 @@
     "|split|p1",
     "|-heal|p1: Primarina|93/187|[from] move: Revival Blessing",
     "|-heal|p1: Primarina|49/100|[from] move: Revival Blessing",
-    "|move|p2a: Pawmot|Revival Blessing|p2a: Pawmot",
-    "|split|p2",
-    "|-heal|p2: Primarina|93/187|[from] move: Revival Blessing",
-    "|-heal|p2: Primarina|49/100|[from] move: Revival Blessing",
-    "|move|p1b: Kingambit|Swords Dance|p1b: Kingambit",
-    "|-boost|p1b: Kingambit|atk|2",
-    "|move|p2b: Kingambit|Swords Dance|p2b: Kingambit",
-    "|-boost|p2b: Kingambit|atk|2",
     "|upkeep",
     "|turn|6"
    ],
@@ -4937,9 +5397,6 @@
         1
        ],
        [
-        1,
-        1,
-        1,
         1
        ]
       ],
@@ -4979,19 +5436,19 @@
         "locked": null
        },
        {
-        "species": "Kingambit",
-        "set_species": "Kingambit",
+        "species": "Ceruledge",
+        "set_species": "Ceruledge",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 207,
-        "maxhp": 207,
-        "item": "blackglasses",
+        "hp": 181,
+        "maxhp": 181,
+        "item": "charcoal",
         "status": "",
         "status_time": 0,
         "confusion": 0,
         "fainted": false,
         "boosts": [
-         2,
+         0,
          0,
          0,
          0,
@@ -5000,12 +5457,11 @@
          0
         ],
         "pp": [
-         8,
-         16,
-         8,
-         19
+         7
         ],
-        "volatiles": [],
+        "volatiles": [
+         "stall"
+        ],
         "locked": null
        },
        {
@@ -5031,21 +5487,21 @@
         ],
         "pp": [
          7,
-         5,
+         8,
          16,
-         20
+         17
         ],
         "volatiles": [],
         "locked": null
        },
        {
-        "species": "Ceruledge",
-        "set_species": "Ceruledge",
+        "species": "Kingambit",
+        "set_species": "Kingambit",
         "mega": 0,
         "switch_flag": 0,
         "hp": 0,
-        "maxhp": 181,
-        "item": "charcoal",
+        "maxhp": 207,
+        "item": "blackglasses",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -5060,7 +5516,10 @@
          0
         ],
         "pp": [
-         4
+         8,
+         16,
+         8,
+         16
         ],
         "volatiles": [],
         "locked": null
@@ -5082,9 +5541,6 @@
         1
        ],
        [
-        1,
-        1,
-        1,
         1
        ]
       ],
@@ -5124,19 +5580,19 @@
         "locked": null
        },
        {
-        "species": "Kingambit",
-        "set_species": "Kingambit",
+        "species": "Ceruledge",
+        "set_species": "Ceruledge",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 207,
-        "maxhp": 207,
-        "item": "blackglasses",
+        "hp": 181,
+        "maxhp": 181,
+        "item": "charcoal",
         "status": "",
         "status_time": 0,
         "confusion": 0,
         "fainted": false,
         "boosts": [
-         2,
+         0,
          0,
          0,
          0,
@@ -5145,12 +5601,11 @@
          0
         ],
         "pp": [
-         8,
-         16,
-         8,
-         19
+         7
         ],
-        "volatiles": [],
+        "volatiles": [
+         "stall"
+        ],
         "locked": null
        },
        {
@@ -5176,21 +5631,21 @@
         ],
         "pp": [
          7,
-         5,
+         8,
          16,
-         20
+         17
         ],
         "volatiles": [],
         "locked": null
        },
        {
-        "species": "Ceruledge",
-        "set_species": "Ceruledge",
+        "species": "Kingambit",
+        "set_species": "Kingambit",
         "mega": 0,
         "switch_flag": 0,
         "hp": 0,
-        "maxhp": 181,
-        "item": "charcoal",
+        "maxhp": 207,
+        "item": "blackglasses",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -5205,7 +5660,10 @@
          0
         ],
         "pp": [
-         4
+         8,
+         16,
+         8,
+         16
         ],
         "volatiles": [],
         "locked": null

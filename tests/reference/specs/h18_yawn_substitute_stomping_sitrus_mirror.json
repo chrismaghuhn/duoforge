@@ -1,5 +1,5 @@
 {
-  "name": "h18_taunt_substitute_stomping_sitrus_mirror",
+  "name": "h18_yawn_substitute_stomping_sitrus_mirror",
   "purpose": "Yawn into the foe's standing Substitute (absorbed: -fail, the Substitute keeps the hit; Yawn has no bypasssub in the pin), then Stomping Tantrum on the next turn: no base power doubling, because the absorbed status move's result is TRUE (fix 6). Mirrored Sitrus Snorlax.",
   "data": "pool",
   "format": "gen9championsvgc2026regmc",
