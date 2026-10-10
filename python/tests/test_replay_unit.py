@@ -346,6 +346,12 @@ class LinesTest(unittest.TestCase):
                      "|-activate|p1a: Staraptor|move: Skill Swap|Good as Gold|Intimidate|[of] p2a: Gholdengo"):
             self.assertEqual(self.stop(line), "feature:ABILITY_CHANGE", line)
 
+    def test_destiny_bond_lines_are_its_feature(self):
+        # Step G76: Destiny Bond's start (-singlemove) and its KO (-activate|TARGET|move: Destiny Bond) are decision
+        # 0018's DESTINY_BOND (feature 35, marked supported by G76) until the tracker folds it
+        for line in ("|-singlemove|p1a: Staraptor|Destiny Bond", "|-activate|p2a: Gholdengo|move: Destiny Bond"):
+            self.assertEqual(self.stop(line), "feature:DESTINY_BOND", line)
+
     def test_drag_folds(self):
         # Step G46: a forced switch brings a member in as a switch does (the tracker folds it as one, or stops)
         self.assertEqual(lines.check("|drag|p2a: Gholdengo|Gholdengo, L50|100/100", self.view), "fold")
@@ -472,6 +478,12 @@ class LinesTest(unittest.TestCase):
                   "    .view_ext_features = ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_THROAT_CHOP) |\n"
                   "                         ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_WIDE_GUARD),\n};\n")
         self.assertEqual(lines.extract_supported(source), 1 << f["THROAT_CHOP"] | 1 << f["WIDE_GUARD"])
+        # C comments between the terms (G76 writes one per feature) are no part of the expression
+        source = ("static const dfi_support dfi_support = {\n"
+                  "    .view_ext_features = ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_THROAT_CHOP) | /* G8, a, b */\n"
+                  "                         /* Step G76: Destiny Bond (bit 35, public: * its line). */\n"
+                  "                         ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_DESTINY_BOND), // last\n};\n")
+        self.assertEqual(lines.extract_supported(source), 1 << f["THROAT_CHOP"] | 1 << f["DESTINY_BOND"])
 
     def test_a_feature_the_tracker_does_not_fold_stops(self):
         # the library may support a feature (G8: Throat Chop), but rows carry no view extension until the tracker
