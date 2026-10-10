@@ -92,7 +92,7 @@ static void check_marks(df_test *t)
     DF_CHECK_EQ_U64(t, DFI_SPECIAL_HEAL_PULSE, DFI_SPECIAL_UPPER_HAND + 1u);
     DF_CHECK_EQ_U64(t, DFI_SPECIAL_STRENGTH_SAP, DFI_SPECIAL_HEAL_PULSE + 1u);
     DF_CHECK_EQ_U64(t, DFI_SPECIAL_HAZE, DFI_SPECIAL_SHEER_COLD + 1u); /* step G62 (decision 0031), after the four of G64 */
-    DF_CHECK_EQ_U64(t, DFI_SPECIAL_UNMODELED, DFI_SPECIAL_DRAGON_CHEER + 1u /* G72b: after Alluring Voice and Dragon Cheer */); /* step G60 (decision 0032) comes after Quash */ /* G62 added Haze, After You and Quash after it */
+    DF_CHECK_EQ_U64(t, DFI_SPECIAL_UNMODELED, DFI_SPECIAL_ALLY_SWITCH + 1u /* G72b: after Alluring Voice and Dragon Cheer */); /* step G60 (decision 0032) comes after Quash */ /* G62 added Haze, After You and Quash after it */
 }
 
 /* The pinned numbers that the rows of this step depend on (data/moves.ts; the Champions mod changes none of them). */
@@ -164,7 +164,7 @@ static void check_multihit_weights(df_test *t)
 static void check_constants(df_test *t)
 {
     DF_CHECK_EQ_U64(t, DFI_SITE_MULTIHIT_COUNT, 22u /* site 20 is the G46 drag, 21 the G56 lock */);
-    DF_CHECK_EQ_U64(t, DFI_SITE_COUNT, 23u);
+    DF_CHECK_EQ_U64(t, DFI_SITE_COUNT, 24u);
     DF_CHECK_EQ_U64(t, DUOFORGE_BLOCK_QUICK_GUARD, 6u); /* decision 0029 */
     DF_CHECK_EQ_U64(t, DUOFORGE_SIDE_GUARD_QUICK_GUARD, 2u);
     DF_CHECK_EQ_U64(t, DUOFORGE_VIEWEXT_FEATURE_QUICK_GUARD, 38u);

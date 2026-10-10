@@ -1713,7 +1713,10 @@ function moveIsModelled(raw, id) {
         const toAlly = raw.target === 'adjacentAlly' && raw.category === 'Status';
         // Step G39: Charm and Fake Tears, a status move of one adjacent target whose primary boosts go to that target.
         const toTarget = raw.target === 'normal' && raw.category === 'Status';
-        if ((raw.target !== 'self' && !toAlly && !toTarget) || !isBoostBlock(raw.boosts)) {
+        // Step G80: Howl, a status move of the allies class (the user and its ally) whose primary boosts go to each of them (the
+        // same role, the turn code runs it over every target of the class).
+        const toAllies = raw.target === 'allies' && raw.category === 'Status';
+        if ((raw.target !== 'self' && !toAlly && !toTarget && !toAllies) || !isBoostBlock(raw.boosts)) {
             return false;
         }
         vectors += 1;

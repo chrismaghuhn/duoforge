@@ -995,6 +995,9 @@ IGNORED_VOLATILES = {
     # Pool step G72b (Dragon Cheer, decision 0015 5ce): the start line; its crit stage shows in the crit draws of the holder's
     # moves (a -crit line, or the draw's bound) and in the view bit.
     'dragoncheer': "the start line and the crit draws of the holder's moves",
+    # Pool step G80 (Ally Switch, decision 0044): its condition prints nothing; the swap lines show the uses that worked and the
+    # `-fail` lines with [still] the refused rolls, and the counter is drawn in the roll (DFI_SITE_ALLY_SWITCH).
+    'allyswitch': 'the swap lines, the refused rolls and the consecutive-roll draws (the counter is not a field of the record)',
 }
 HP_EXACT, HP_PERCENT = 1, 2
 HP_FLAGS_EV = {'': 0, 'r': 1, 'y': 2, 'g': 3}

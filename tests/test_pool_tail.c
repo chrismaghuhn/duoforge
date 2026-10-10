@@ -1204,15 +1204,15 @@ int main(void)
         DF_CHECK_EQ_U64(&t, DFI_ENC_TAIL_MEMBER_FLAGS_OFF, 8u);
         DF_CHECK(&t, DFI_STATE_SCHEMA_POOL_TAIL_REV5 != 4u); /* schema 4 stays free: certified pool teams */
         /* The tail in memory: the encoded size without the reserved bytes, and the one pad byte of the field block. */
-        DF_CHECK_EQ_U64(&t, sizeof(dfi_pool_tail), 304u); /* a position and a side have none; step G46 adds party_order (6); rev 5 adds the Illusion state and the 2 position bytes */
-        DF_CHECK_EQ_U64(&t, sizeof(dfi_tail_side), 148u);
-        DF_CHECK_EQ_U64(&t, sizeof(dfi_tail_pos), 34u);
+        DF_CHECK_EQ_U64(&t, sizeof(dfi_pool_tail), 312u); /* step G80 adds the Ally Switch byte and the pad of each position (4 positions x 2); rev 5 adds the Illusion state and the 2 position bytes */
+        DF_CHECK_EQ_U64(&t, sizeof(dfi_tail_side), 152u);
+        DF_CHECK_EQ_U64(&t, sizeof(dfi_tail_pos), 36u); /* 34 bytes of data, the Ally Switch byte and its pad (step G80) */
         DF_CHECK_EQ_U64(&t, sizeof(dfi_tail_illusion), 18u);
         unsigned reserved = 0u;
         for (size_t off = 0u; off < DFI_ENC_TAIL_SIZE; ++off) {
             reserved += is_reserved_offset(off) ? 1u : 0u;
         }
-        DF_CHECK_EQ_U64(&t, reserved, 45u);
+        DF_CHECK_EQ_U64(&t, reserved, 41u);
         const duoforge_context *with[] = {kp, kq};
         const duoforge_context *without[] = {k1, k2, kc, kd, c1};
         for (size_t i = 0u; i < 2u; ++i) {
@@ -1486,7 +1486,7 @@ int main(void)
             }
         }
         DF_CHECK_EQ_U64(&t, wrong, 0u);
-        DF_CHECK_EQ_U64(&t, all_reserved, 45u); /* 29 reserved bytes of the rev 4 part (the field block's +1..+6 are party_order) and 16 of rev 5 */
+        DF_CHECK_EQ_U64(&t, all_reserved, 41u); /* 29 reserved bytes of the rev 4 part and 12 of rev 5 (the Ally Switch bytes 4..7 are not reserved, step G80) */
     }
 
     /* The schema is the one of the context's kind; sizes, schema ids and truncations. */
