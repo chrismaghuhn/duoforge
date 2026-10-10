@@ -1683,6 +1683,26 @@ class FactsTest(unittest.TestCase):
         self.assertEqual(f[2].moves, frozenset({"Heat Wave"}))
         self.assertEqual(self.facts(*body, side=1)[0].moves, frozenset({"Weather Ball"}))  # Instruct: its own move
 
+    def test_ally_switch_swaps_the_occupants(self):
+        # review C1: after |swap| both positions name the other member
+        f = self.facts("|move|p1b: Roar|Ally Switch|p1b: Roar", "|swap|p1b: Roar|0|[from] move: Ally Switch",
+                       "|move|p1a: Roar|Fake Out|p2a: Frog", "|move|p1b: Gambit|Kowtow Cleave|p2a: Frog",
+                       "|-enditem|p1a: Roar|Sitrus Berry|[eat]")
+        self.assertEqual(f[0].moves, frozenset({"Kowtow Cleave"}))
+        self.assertEqual(f[1].moves, frozenset({"Ally Switch", "Fake Out"}))
+        self.assertEqual((f[0].item, f[1].item), (None, "Sitrus Berry"))
+
+    def test_an_absorbing_heal_names_no_attacker_and_bug_bite_no_biter(self):
+        # review I1: a -heal [from] ability names the attacker as [of] (Volt Absorb); a Bug Bite's heal names the
+        # victim's berry on the biter
+        f = self.facts("|move|p1a: Gambit|Kowtow Cleave|p2a: Frog",
+                       "|-heal|p2a: Frog|100/100|[from] ability: Volt Absorb|[of] p1a: Gambit")
+        self.assertEqual(f[0].ability, None)
+        bite = ["|-enditem|p2a: Frog|Sitrus Berry|[from] stealeat|[move] Bug Bite|[of] p1a: Gambit",
+                "|-heal|p1a: Gambit|100/100|[from] item: Sitrus Berry"]
+        self.assertIsNone(self.facts(*bite)[0].item)
+        self.assertEqual(self.facts(*bite, side=1)[0].item, "Sitrus Berry")
+
     def test_struggle_and_a_mimicked_move_are_no_moves(self):
         f = self.facts("|move|p1a: Gambit|Struggle|p2a: Frog", "|move|p1b: Roar|Fake Out|p2a: Frog",
                        "|-start|p1b: Roar|Mimic|Weather Ball", "|move|p1b: Roar|Weather Ball|p2a: Frog")
@@ -1742,6 +1762,8 @@ class FactsTest(unittest.TestCase):
         p1 = P1_PREVIEW[:4] + ["Rotom-*, L50"] + P1_PREVIEW[5:]
         f = self.facts("|switch|p1a: Fridge|Rotom-Wash, L50|100/100", p1=p1)
         self.assertEqual(f[4].species, "Rotom-Wash")
+        f = self.facts("|switch|p1a: Fridge|Rotom, L50|100/100", p1=p1)  # the base forme itself (review minor)
+        self.assertEqual(f[4].species, "Rotom")
         self.assertEqual(self.skip(p1=p1), "skip:belief-preview")
 
     def test_skips(self):
@@ -1858,6 +1880,18 @@ class SetBeliefTest(unittest.TestCase):
         self.assertTrue(set(s["moves"]) - {"Swords Dance"} <= {"KowtowCleave", "SuckerPunch", "IronHead", "Protect",
                                                                "LowKick"})
 
+    def test_l1_fill_has_no_move_twice_under_two_spellings(self):
+        # review I2: sheets spell "FakeOut", pastes "Fake Out"; the fill keys moves by trace_to_c.key
+        mixed = self.C.Corpus({"KINGAMBIT": [
+            ("ChopleBerry", "Defiant", "Adamant", ("FakeOut", "KnockOff", "SuckerPunch", "IronHead"), 3),
+            ("Black Glasses", "Defiant", "Adamant", ("Fake Out", "Knock Off", "Sucker Punch", "Iron Head"), 3)]},
+            frozenset(), "test")
+        belief = self.B.SetBelief(mixed, self.data)
+        for w in range(0, 2 ** 64, 2 ** 57):
+            s, level = belief.draw(self.member(moves={"Throat Chop"}), w)
+            self.assertEqual(level, 1)
+            self.assertEqual(len({trace_to_c.key(m) for m in s["moves"]}), len(s["moves"]), s["moves"])
+
     def test_unsupported_species_is_a_counted_skip(self):
         belief = self.B.SetBelief(self.corpus, self.data, min_sets=9)
         with self.assertRaises(self.Skip) as cm:
@@ -1934,10 +1968,13 @@ class BeliefGameTest(unittest.TestCase):
             self.process(log=self.with_sheets)
 
     def test_the_own_sheet_in_the_corpus_is_refused(self):
+        # review question: a training player can share a test player's team (a rental): the game is a counted
+        # skip, never drawn from its own sheet
         from duoforge_replay import corpus, setbelief
         own = corpus.Corpus(self.corpus._sets, frozenset({12345}), "test")
-        with self.assertRaisesRegex(ValueError, "own sheet"):
+        with self.assertRaises(self.G.Skip) as cm:
             self.process(belief=setbelief.SetBelief(own, self.data, min_sets=1), known_sheets=(12345, 6789))
+        self.assertEqual(cm.exception.reason, "skip:sheet-in-corpus")
 
     def test_an_illegal_draw_is_redrawn_then_skipped(self):
         from duoforge_replay import corpus, setbelief
@@ -1948,6 +1985,16 @@ class BeliefGameTest(unittest.TestCase):
         with self.assertRaises(self.G.Skip) as cm:
             self.process(belief=bad)
         self.assertEqual(cm.exception.reason, "skip:belief-illegal")
+
+    def test_a_refusal_a_redraw_cannot_fix_keeps_its_reason(self):
+        # review minor: only a legality refusal is redrawn; a sheet rule refusal (a gender, say) keeps its reason
+        from unittest import mock
+        for reason, want in (("sheet:gender-none", "sheet:gender-none"),
+                             ("skip:pool-illegal Kingambit move Protect", "skip:belief-illegal")):
+            with self.subTest(reason), mock.patch.object(self.G, "_check_sheets", side_effect=self.G.Skip(reason)):
+                with self.assertRaises(self.G.Skip) as cm:
+                    self.process()
+                self.assertEqual(cm.exception.reason, want)
 
     def test_draws_are_deterministic(self):
         a, b = self.process(seed=3), self.process(seed=3)
@@ -2054,7 +2101,9 @@ class BeliefBuildTest(_BeliefFixture, unittest.TestCase):
 
     def test_the_options_must_fit_the_mode(self):
         for kw, part in (({"mode": "sheet", "corpus": self.corpus}, "corpus"), ({"mode": "bo1_belief"}, "corpus"),
-                         ({"mode": "sheet", "k": 2}, "k"), ({"mode": "nonsense"}, "mode")):
+                         ({"mode": "sheet", "k": 2}, "k"), ({"mode": "nonsense"}, "mode"),
+                         ({"mode": "drop_sheets", "corpus": self.corpus, "split_of": "train"}, "test split"),
+                         ({"mode": "bo1_belief", "corpus": self.corpus, "k": 256}, "k")):
             with self.subTest(kw), self.assertRaisesRegex(ValueError, part):
                 self.build("bad", ["bo1-train"], **kw)
 
@@ -2109,6 +2158,17 @@ class ValidateTest(_BeliefFixture, unittest.TestCase):
             self.assertTrue(0 <= report["observation_differs"][group] <= 1)
         self.assertEqual(report["label"]["same"] + report["label"]["differs"], report["both"])
         self.assertNotIn("open-test", json.dumps(report))
+        # review I3: this corpus holds exactly the true sets, so by move identity every row agrees
+        self.assertEqual(report["mask_jaccard_mean"], 1.0)
+        self.assertEqual(report["label"]["differs"], 0)
+        self.assertEqual(report["observation_differs"]["own_members"], 0.0)
+        self.assertEqual(report["observation_differs"]["foe_members"], 0.0)
+
+    def test_compare_rows_refuses_two_draws_of_a_row(self):
+        from duoforge_replay import validate
+        self.build("cmp-k2", ["open-test"], mode="drop_sheets", corpus=self.corpus, k=2)
+        with self.assertRaisesRegex(ValueError, "draw"):
+            validate.compare_rows(self.tmp / "cmp-k2", self.tmp / "cmp-k2")
 
     def test_reports_are_refused_in_the_repository(self):
         from duoforge_replay import validate

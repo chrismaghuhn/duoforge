@@ -31,6 +31,7 @@ import duoforge
 from duoforge import _layout, features, teams
 from duoforge_live import lines
 from duoforge_replay import dataset
+from duoforge_replay import split as player_split
 
 TEAM = _layout.CONSTANTS["DUOFORGE_CHOICE_TEAM_SELECTION"]
 OPTIONS = 32
@@ -168,6 +169,8 @@ def dataset_source(out):
 def _source_weight(out, source_weights):
     """The weight of a dataset's source: as named, 1 for sheets otherwise; any other source must be named."""
     source = dataset_source(out)
+    if source == "drop_sheets":
+        raise ValueError(f"{out}: a drop_sheets dataset holds the test split's games for validation; it never trains")
     if source in (source_weights or {}):
         return float(source_weights[source])
     if source == "sheet":
@@ -198,6 +201,7 @@ def load(dirs, context, mask, format_weights=None, weights="rating", source_weig
     for out in dirs:
         _check_dataset(out, context)
     source_weight = {out: _source_weight(out, source_weights) for out in dirs}
+    by_players = {out: dataset_source(out) != "sheet" for out in dirs}  # drawn sheets change with each draw
     n = sum(_shard_rows(out) for out in dirs)
     if n == 0:
         raise ValueError(f"no rows in {list(map(str, dirs))}")
@@ -238,7 +242,10 @@ def load(dirs, context, mask, format_weights=None, weights="rating", source_weig
             rows.z[sl] = np.where(~has_z, 0.0, np.where(winner == side, 1.0, -1.0))
             rows.weight[sl] = [(rating_weight(int(r)) if weights == "rating" else 1.0)
                                * _format_weight(f, format_weights) * source_weight[out] for r, f in zip(rating, fmt)]
-            rows.val[sl] = [split_key(g["sheets"][i]) for i in game]
+            if by_players[out]:
+                rows.val[sl] = [player_split.of_game(tuple(int(h) for h in g["players"][i])) == "test" for i in game]
+            else:
+                rows.val[sl] = [split_key(g["sheets"][i]) for i in game]
             rows.side[sl], rows.fmt[sl], rows.replay[sl] = shard["side"], fmt, g["replay_id"][game]
             rows.point[sl] = shard["point"]
             at += k

@@ -190,6 +190,27 @@ class BcDataTest(unittest.TestCase):
         half = self.bc_data.load([belief], self.context, self.mask, source_weights={"bo1_belief": 0.5})
         np.testing.assert_allclose(half.weight, self.rows.weight * 0.5)
 
+    def test_a_drop_sheets_dataset_never_trains(self):
+        # review minor: drop_sheets holds the test split's games; no weight lets it into training
+        drop = self.with_manifest("drop", lambda m: m.update(source="drop_sheets"))
+        with self.assertRaisesRegex(ValueError, "validation"):
+            self.bc_data.load([drop], self.context, self.mask, source_weights={"drop_sheets": 1.0})
+
+    def test_belief_rows_split_by_player(self):
+        # review I4: a belief game's drawn sheets change with each draw; its split follows its players
+        from duoforge_replay import dataset, split
+        belief = self.with_manifest("belief-split", lambda m: m.update(source="bo1_belief"))
+        part = next(iter(dataset.parts(belief)))
+        games = dataset.read_games(part)
+        want = split.of_game(tuple(int(h) for h in games["players"][0])) == "test"
+        # sheet hashes whose sheet-pair split is the other one: a split by sheets would fail this test
+        other = next(np.array([a, a + 1], dtype=np.uint64) for a in range(1, 10 ** 6)
+                     if bool(self.bc_data.split_key(np.array([a, a + 1], dtype=np.uint64))) != want)
+        games["sheets"] = np.tile(other, (len(games["sheets"]), 1))
+        dataset.write_npz(Path(part) / "games.npz", games)
+        rows = self.bc_data.load([belief], self.context, self.mask, source_weights={"bo1_belief": 1.0})
+        self.assertTrue((rows.val == want).all())
+
     def test_the_source_weight_of_sheets_is_one_unless_named(self):
         named = self.bc_data.load([self.out], self.context, self.mask, source_weights={"sheet": 2.0})
         np.testing.assert_allclose(named.weight, self.rows.weight * 2.0)

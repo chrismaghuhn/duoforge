@@ -23,6 +23,7 @@ from . import corpus as corpus_mod, dataset, facts, game, setbelief, source, spl
 from .prior import Prior
 
 OPTION_FIELDS = ("kind", "move_slot", "target", "mega", "reserve")
+MOVE = 1  # DUOFORGE_SLOT_MOVE
 
 
 def set_recovery(true_sets, drawn_sets, member_facts, levels, prior):
@@ -72,7 +73,8 @@ def sets(paths, format_prefix, corpus_path, seed, out, data, prior_path):
                 skipped[f"skip:split-{got}"] += 1
                 continue
             if {game._hash8(p) for p in packed.values()} & belief.corpus.sheet_hashes:
-                raise ValueError("a test game's own sheet is in the corpus: the corpus must be the training split's")
+                skipped["skip:sheet-in-corpus"] += 1  # a training player's identical team (a rental)
+                continue
             bare = [line for line in lines if not line.startswith("|showteam|")]
             try:
                 drawn, levels, _ = game.draw_sheets(bare, format_id, data, belief, seed, replay_id, 0)
@@ -106,31 +108,53 @@ def _rows(out_dir):
         games = dataset.read_games(Path(out_dir) / shard["part"])
         for i in range(len(shard["game"])):
             k = (str(games["replay_id"][shard["game"][i]]), int(shard["side"][i]), int(shard["point"][i]))
+            if k in out:
+                raise ValueError("a row of a game is in the dataset twice (a build with k > 1 draws): compare one draw")
             out[k] = (shard["observation"][i], shard["domain"][i], tuple(int(x) for x in shard["label_slots"][i]),
                       bytes(shard["label_team"][i]))
     return out
 
 
+def _members(members):
+    """The member views with each member's moves (and their PP) in the order of their ids: a drawn sheet lists the
+    same moves in another order than the true one, which is no difference of the set."""
+    m = members.copy()
+    for k in range(len(m)):
+        n = int(m[k]["move_count"])
+        order = np.argsort(m[k]["move_ids"][:n], kind="stable")
+        for field in ("move_ids", "pp", "pp_max"):
+            m[k][field][:n] = m[k][field][:n][order]
+    return m.tobytes()
+
+
 def _groups(o):
     player = int(o["player"])
     header = b"".join(o[n].tobytes() for n in o.dtype.names if n != "sides")
-    return {"own_members": o["sides"][player]["members"].tobytes(),
-            "foe_members": o["sides"][1 - player]["members"].tobytes(),
+    return {"own_members": _members(o["sides"][player]["members"]),
+            "foe_members": _members(o["sides"][1 - player]["members"]),
             "positions": o["sides"]["positions"].tobytes(), "header": header}
 
 
-def _option(domain, slot, i):
-    return tuple(int(domain["slots"][slot][i][f]) for f in OPTION_FIELDS)
+def _option(o, domain, slot, i):
+    """An option by what it does: a move by its move id (the occupant's move_ids at the option's slot), not by the
+    slot index, which depends on the order of the sheet's moves."""
+    opt = domain["slots"][slot][i]
+    fields = [int(opt[f]) for f in OPTION_FIELDS]
+    side = o["sides"][int(o["player"])]
+    occupant = int(side["occupant"][slot])
+    if fields[0] == MOVE and occupant < len(side["members"]) and fields[1] < 4:
+        fields[1] = int(side["members"][occupant]["move_ids"][fields[1]])
+    return tuple(fields)
 
 
-def _pairs(domain):
+def _pairs(o, domain):
     allowed = domain["allowed"]
-    return {(_option(domain, 0, i), _option(domain, 1, j)) for i in range(32) for j in range(32)
+    return {(_option(o, domain, 0, i), _option(o, domain, 1, j)) for i in range(32) for j in range(32)
             if int(allowed[i]) >> j & 1}
 
 
-def _label(domain, slots):
-    return tuple(frozenset(_option(domain, s, i) for i in range(32) if slots[s] >> i & 1) for s in (0, 1))
+def _label(o, domain, slots):
+    return tuple(frozenset(_option(o, domain, s, i) for i in range(32) if slots[s] >> i & 1) for s in (0, 1))
 
 
 def compare_rows(dir_sheet, dir_drop):
@@ -144,9 +168,9 @@ def compare_rows(dir_sheet, dir_drop):
         ga, gb = _groups(oa), _groups(ob)
         for group in ga:
             differs[group] += ga[group] != gb[group]
-        pa, pb = _pairs(da), _pairs(db)
+        pa, pb = _pairs(oa, da), _pairs(ob, db)
         jaccard.append(len(pa & pb) / len(pa | pb) if pa | pb else 1.0)
-        sa, sb = _label(da, la), _label(db, lb)
+        sa, sb = _label(oa, da, la), _label(ob, db, lb)
         same = sa == sb and ta == tb
         label["same" if same else "differs"] += 1
         label["overlap"] += same or (ta == tb and all((x & y) or not (x or y) for x, y in zip(sa, sb)))

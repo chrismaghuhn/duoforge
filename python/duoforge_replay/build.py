@@ -243,8 +243,10 @@ def build(paths, prior_path, out_dir, workers=1, limit_parts=None, format_prefix
         raise ValueError("a sheet build has no corpus and k 1: the belief options need mode bo1_belief or drop_sheets")
     if mode != "sheet" and corpus is None:
         raise ValueError(f"a {mode} build needs a corpus (python -m duoforge_replay corpus)")
-    if type(k) is not int or k < 1:
-        raise ValueError("k must be a positive number of draws")
+    if type(k) is not int or not 1 <= k <= 255:
+        raise ValueError("k must be a number of draws from 1 to 255 (games.npz keeps the draw as a u8)")
+    if mode == "drop_sheets" and split_of == "train":
+        raise ValueError("drop_sheets takes the test split: the training split's sheets are the corpus")
     if split_of not in (None, "train", "test"):
         raise ValueError("split must be train, test or none")
     options = {"mode": mode, "corpus": str(corpus) if corpus is not None else None, "seed": int(seed), "k": k,

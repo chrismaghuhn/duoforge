@@ -67,12 +67,13 @@ class SetBelief:
         elif fitting:
             base, level = fitting[_pick(w, [s[4] for s in fitting])], 1
             moves = sorted(member.moves)
-            freq = collections.Counter()
+            freq, spelling = collections.Counter(), {}
             for s in fitting:
                 for m in s[3]:
                     if key(m) not in used:
-                        freq[m] += s[4]
-            pool = sorted(freq.items())
+                        freq[key(m)] += s[4]  # one move under every spelling (sheets "FakeOut", pastes "Fake Out")
+                        spelling[key(m)] = min(spelling.get(key(m), m), m)
+            pool = sorted((spelling[k], n) for k, n in freq.items())
             i = 0
             while len(moves) < MOVES and pool:
                 k = _pick(_sub(w, i), [n for _, n in pool])

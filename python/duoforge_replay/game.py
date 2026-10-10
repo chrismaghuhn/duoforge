@@ -184,8 +184,10 @@ def draw_sheets(lines, format_id, data, belief, seed, replay_id, draw):
                 s["species"] = data.canonical(s["species"])
             try:
                 _check_sheets((sheet, sheet), format_id, data)
-            except Skip:
-                continue
+            except Skip as e:
+                if e.reason.startswith(("skip:pool-illegal", "skip:regmb-pp")):
+                    continue  # a drawn set the engine refuses: the next attempt draws another
+                raise
             break
         else:
             raise Skip("skip:belief-illegal")
@@ -204,7 +206,7 @@ def _with_drawn_sheets(replay_id, format_id, lines, data, belief, seed, draw, kn
     if packed:
         raise ValueError("a belief game has sheets: the source drops them (drop_sheets) or takes none (bo1_belief)")
     if set(known_sheets) & belief.corpus.sheet_hashes:
-        raise ValueError("the game's own sheet is in the corpus: a validation would draw it")
+        raise Skip("skip:sheet-in-corpus")  # a training player has this team (a rental): never drawn from itself
     previews = [i for i, line in enumerate(lines) if line.startswith("|teampreview")]
     if len(previews) != 1:
         raise Skip("skip:belief-preview")

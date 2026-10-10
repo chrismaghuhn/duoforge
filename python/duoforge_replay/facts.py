@@ -61,7 +61,7 @@ def side_facts(lines, side, data):
     for text in preview:
         name, gender = _details(text)
         if name.endswith("-*"):
-            found = sorted({s for s in switched if s.startswith(name[:-1])})
+            found = sorted({s for s in switched if s == name[:-2] or s.startswith(name[:-1])})
             if len(found) != 1:
                 raise Skip("skip:belief-preview")
             name = found[0]
@@ -121,6 +121,10 @@ def side_facts(lines, side, data):
                 occupant[subject[:3]] = m
                 by_name[subject.split(": ", 1)[1]] = m
             continue
+        if kind == "swap" and len(parts) > 3 and subject.startswith(p) and parts[3] in ("0", "1"):
+            here, there = subject[:3], p + "ab"[int(parts[3])]  # Ally Switch: the two positions trade occupants
+            occupant[here], occupant[there] = occupant.get(there), occupant.get(here)
+            continue
         m = who(subject)
         if kind in ("detailschange", "-formechange"):
             ability_done.add(m)
@@ -154,6 +158,8 @@ def side_facts(lines, side, data):
             continue
         if kind == "-enditem" and len(parts) > 3:
             note_item(m, parts[3])
+            if "[from] stealeat" in attrs:
+                item_done.add(of)  # Bug Bite, Pluck: the biter's heal names the eaten berry, not its own item
             continue
         if kind == "-ability" and len(parts) > 3:
             froms = _froms(attrs)
@@ -171,11 +177,13 @@ def side_facts(lines, side, data):
             if name in _ABILITY_TAKERS:
                 ability_done.add(of)
             continue
-        holder = of if any(a.startswith("[of] ") for a in attrs) else m  # the effect's holder: [of] when it is named
+        has_of = any(a.startswith("[of] ") for a in attrs)
+        holder = of if has_of else m  # the effect's holder: [of] when it is named
         for a in attrs:
             if a.startswith("[from] item: "):
                 note_item(holder, a[len("[from] item: "):])
-            elif a.startswith("[from] ability: "):
+            elif a.startswith("[from] ability: ") and not (kind == "-heal" and has_of):
+                # a heal by an ability names the attacker as [of] (Volt Absorb) or the holder (Hospitality): unsaid
                 note_ability(holder, a[len("[from] ability: "):])
     ability_done.discard(None)
     for m in range(ROSTER):
