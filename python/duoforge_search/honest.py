@@ -264,7 +264,11 @@ class Honest(lookahead.Lookahead):
         attempts = np.zeros((self.s, 6), np.int64)
         dropped = respreads = 0
         queue_mask = None
-        if int(record["boundary"]) == C["DUOFORGE_BOUNDARY_PIVOT"]:
+        pivot = int(record["boundary"]) == C["DUOFORGE_BOUNDARY_PIVOT"]
+        # A public PIVOT record carries no pending foe command since the view audit of 2026-10-10 (a silent flinch may be
+        # outstanding on a position still to move, so such a PIVOT is refused): the queue mask and its turn-start world
+        # are needed only for a record that still has one.
+        if pivot and int(record["foe_pending_mask"]) != 0:
             start = history.get("turn_start")
             if start is None or int(start["turn"]) != int(record["turn"]) or int(start["player"]) != int(record["player"]):
                 raise Unreconstructible("missing or stale turn-start record")
@@ -318,6 +322,8 @@ class Honest(lookahead.Lookahead):
                     for p in range(2):
                         if int(record["foe_pending_mask"]) & (1 << p):
                             h[w]["queued"][p] = self.worlds.domains[w, foe]["slots"][p, indices[p]]
+            if pivot:
+                for w in range(self.s):
                     h[w]["queue_order"][:int(record["queue_count"])] = np.arange(int(record["queue_count"]), dtype=np.uint8)
             t = time.perf_counter()
             statuses = self._build(record, h)

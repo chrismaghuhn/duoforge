@@ -9,6 +9,10 @@ import duoforge
 from duoforge import _layout, privileged, view
 from tools.layout.gen_view_layout import generate
 
+from ._pivot_fixture import SETUP, play_to_pivot
+
+STEPS = 128  # lockstep steps of the random round trip
+
 
 class Views(unittest.TestCase):
     def test_generated_layout_is_current(self):
@@ -16,39 +20,71 @@ class Views(unittest.TestCase):
         self.assertEqual(source.read_text(encoding="utf-8"), generate(os.environ["DUOFORGE_LAYOUT_DUMP"]))
 
     def test_random_batch_roundtrip_and_reuse(self):
-        with duoforge.Context(_layout.CONSTANTS["DUOFORGE_DATA_KIND_POOL"]) as ctx, \
-                duoforge.Batch(ctx, duoforge.reference_setups([0, 1, 2, 3]), 3, 42) as roots, \
-                duoforge.Batch(ctx, duoforge.reference_setups([0, 1, 2, 3]), 4, 43) as worlds:
-            players = np.array([0, 1, 0, 1], np.uint32)
-            policy = duoforge.RandomPolicy(44, 4)
-            first = None
-            checked = 0
-            pivots = 0
-            for _ in range(128):
-                roots.query_factored()
-                views, statuses = roots.public(players)
-                self.assertTrue(np.isin(statuses, [0, _layout.CONSTANTS["DUOFORGE_E_UNSUPPORTED"]]).all())
-                if first is None:
-                    first = views
-                self.assertIs(first, views)
-                if not statuses.any():
-                    h = view.hypotheses(4)
-                    for e, p in enumerate(players):
-                        h[e] = privileged.hypothesis(roots, e, int(p))
-                    self.assertFalse(worlds.from_view(views, h).any())
-                    again, ws = worlds.public(players)
-                    self.assertFalse(ws.any())
-                    np.testing.assert_array_equal(views, again)
+        # Every supported record round-trips through a one-environment world of its own, so a PIVOT record counts even
+        # when another environment's record is refused: since the view audit of 2026-10-10 a PIVOT is public only when no
+        # move is left to run, and the PIVOTs with a move left are refused (counted, never rebuilt).
+        C = _layout.CONSTANTS
+        setups = duoforge.reference_setups([0, 1, 2, 3])
+        with duoforge.Context(C["DUOFORGE_DATA_KIND_POOL"]) as ctx, \
+                duoforge.Batch(ctx, setups, 3, 42) as roots:
+            worlds = [duoforge.Batch(ctx, setups[e:e + 1], 1, 43 + e) for e in range(4)]
+            try:
+                players = np.array([0, 1, 0, 1], np.uint32)
+                policy = duoforge.RandomPolicy(44, 4)
+                first = None
+                checked = pivots = refused_pivots = 0
+                for _ in range(STEPS):
                     roots.query_factored()
-                    worlds.query_factored()
-                    for e, p in enumerate(players):
-                        np.testing.assert_array_equal(roots.observations[e, p], worlds.observations[e, p])
-                        np.testing.assert_array_equal(roots.domains[e, p], worlds.domains[e, p])
-                    checked += 4
-                    pivots += int((views["boundary"] == _layout.CONSTANTS["DUOFORGE_BOUNDARY_PIVOT"]).sum())
-                roots.step_factored(policy.choose_factored(roots))
-                roots.reset_terminal()
+                    views, statuses = roots.public(players)
+                    self.assertTrue(np.isin(statuses, [0, C["DUOFORGE_E_UNSUPPORTED"]]).all())
+                    if first is None:
+                        first = views
+                    self.assertIs(first, views)
+                    pivot = roots.requests["boundary_kind"][np.arange(4), players] == C["DUOFORGE_BOUNDARY_PIVOT"]
+                    refused_pivots += int((pivot & (statuses != 0)).sum())
+                    for e in np.flatnonzero(statuses == 0):
+                        p = int(players[e])
+                        w = worlds[e]
+                        record = views[e:e + 1].copy()
+                        h = view.hypotheses(1)
+                        h[0] = privileged.hypothesis(roots, int(e), p)
+                        self.assertFalse(w.from_view(record, h).any())
+                        again, ws = w.public(np.array([p], np.uint32))
+                        self.assertFalse(ws.any())
+                        np.testing.assert_array_equal(record, again)
+                        w.query_factored()
+                        np.testing.assert_array_equal(roots.observations[e, p], w.observations[0, p])
+                        np.testing.assert_array_equal(roots.domains[e, p], w.domains[0, p])
+                        checked += 1
+                        if int(record["boundary"][0]) == C["DUOFORGE_BOUNDARY_PIVOT"]:
+                            pivots += 1
+                            self.assertEqual(int(record["foe_pending_mask"][0]), 0)  # no pending command is public
+                    roots.step_factored(policy.choose_factored(roots))
+                    roots.reset_terminal()
+            finally:
+                for w in worlds:
+                    w.close()
             self.assertGreater(checked, 200)
+            self.assertGreater(refused_pivots, 0)
+            # Random play almost never reaches a public PIVOT (one needs a Protect up and no move left): the scripted one.
+            with duoforge.Batch(ctx, duoforge.reference_setups([SETUP]), 1, 45) as b,                     duoforge.Batch(ctx, duoforge.reference_setups([SETUP]), 1, 46) as w:
+                play_to_pivot(b)
+                for p in (0, 1):
+                    record, st = b.public(np.array([p], np.uint32))
+                    self.assertEqual(int(st[0]), 0)
+                    self.assertEqual(int(record["boundary"][0]), C["DUOFORGE_BOUNDARY_PIVOT"])
+                    self.assertEqual(int(record["foe_pending_mask"][0]), 0)
+                    record = record.copy()
+                    h = view.hypotheses(1)
+                    h[0] = privileged.hypothesis(b, 0, p)
+                    self.assertFalse(w.from_view(record, h).any())
+                    again, ws = w.public(np.array([p], np.uint32))
+                    self.assertFalse(ws.any())
+                    np.testing.assert_array_equal(record, again)
+                    w.query_factored()
+                    np.testing.assert_array_equal(b.observations[0, p], w.observations[0, p])
+                    np.testing.assert_array_equal(b.domains[0, p], w.domains[0, p])
+                    pivots += 1
             self.assertGreater(pivots, 0)
 
     def test_public_causes_name_the_view_refusals(self):
