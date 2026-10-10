@@ -2299,7 +2299,7 @@ class Library(unittest.TestCase):
         marked = [n for n in re.findall(r'\[DFI_MOVE_(\w+)\] = 1u', read('src', 'data', 'support_manifest.c'))
                   if n in ids and ids[n] >= ext_moves]
         self.assertEqual(len(names), ext_moves + len(ids))
-        self.assertEqual(len(marked), 197)  # G72b: Alluring Voice and Dragon Cheer make 197 (195 before); the King's Shield of G66 (decision 0015 5cb) makes 195; the Skill Swap of G70 makes 194 (decision 0041) makes 194 from 193; 189 before step G68 (decision 0015 item 5cc: Steel Beam, Thunder Wave, Fire Punch, Ice Hammer); 180 of main, the four of G64 and the three of G62 (Haze, After You, Quash)  # the four of step G64 (Poltergeist, Beat Up, Bug Bite, Sheer Cold; decision 0015 item 5ca), the seven of step G54 (Icicle Spear, Scale Shot, Quick Guard, Upper Hand, Heal Pulse, Strength Sap, Sing), and the 171 of main (Roost and Stomping Tantrum of G42, Double Shock of G50 among them)  # Roost and Stomping Tantrum (G42), Double Shock (G50), the eleven of step G44, the four of step G46, the four of step G48, Taunt and Yawn (G31) and the rows of the earlier steps as before
+        self.assertEqual(len(marked), 198)  # G74: Baton Pass makes 198; G72b: Alluring Voice and Dragon Cheer make 197 (195 before); the King's Shield of G66 (decision 0015 5cb) makes 195; the Skill Swap of G70 makes 194 (decision 0041) makes 194 from 193; 189 before step G68 (decision 0015 item 5cc: Steel Beam, Thunder Wave, Fire Punch, Ice Hammer); 180 of main, the four of G64 and the three of G62 (Haze, After You, Quash)  # the four of step G64 (Poltergeist, Beat Up, Bug Bite, Sheer Cold; decision 0015 item 5ca), the seven of step G54 (Icicle Spear, Scale Shot, Quick Guard, Upper Hand, Heal Pulse, Strength Sap, Sing), and the 171 of main (Roost and Stomping Tantrum of G42, Double Shock of G50 among them)  # Roost and Stomping Tantrum (G42), Double Shock (G50), the eleven of step G44, the four of step G46, the four of step G48, Taunt and Yawn (G31) and the rows of the earlier steps as before
         pool = [n for n in os.listdir(os.path.join(ROOT, 'tests', 'reference', 'specs'))
                 if trace_to_c.is_pool(ROOT, n[:-5])]
         logs = []
@@ -2320,6 +2320,8 @@ class Library(unittest.TestCase):
                             done = done or (name in ('Charm', 'Fake Tears') and after.startswith('|-unboost|'))
                             # A forced switch (step G46: Whirlwind; Dragon Tail is damaging, so its damage line counts): the drag line.
                             done = done or (name in ('Whirlwind', 'Roar', 'Circle Throw') and after.startswith('|drag|'))
+                            # Baton Pass (step G74): its switch line names it as the cause, `|switch|...|[from] Baton Pass`.
+                            done = done or (name == 'Baton Pass' and after.startswith('|switch|') and after.endswith('|[from] Baton Pass'))
                             # A side condition that a status move sets (Aurora Veil, step G20): its -sidestart line.
                             done = done or (after.startswith('|-sidestart|') and after.endswith(('|move: ' + name, '|' + name)))  # Spikes' own line has no move: prefix (step G37)
                             # A terrain that a status move sets (Electric Terrain, Misty Terrain, step G25): its -fieldstart line.
@@ -2486,8 +2488,11 @@ class Library(unittest.TestCase):
         self.assertNotEqual(move['UTURN'], move['FLIPTURN'])
         with self.assertRaises(KeyError):
             trace_to_c.ev_cause(['[from] U-turn'], ext)
+        # Baton Pass (step G74, decision 0042): the switch line of its pivot is `[from] Baton Pass`, the bare move name.
+        self.assertEqual(trace_to_c.ev_cause(['[from] Baton Pass'], pool)[:2], (trace_to_c.CAUSE['MOVE'], move['BATONPASS']))
+        # A name that the converter does not know as a cause (Shed Tail stays refused, decision 0032 section 7) is still refused.
         with self.assertRaises(trace_to_c.ConversionError) as cm:
-            trace_to_c.ev_cause(['[from] Baton Pass'], pool)  # not a move that the converter knows as a cause
+            trace_to_c.ev_cause(['[from] Shed Tail'], pool)
         self.assertEqual(cm.exception.rule, 'from-attribute')
         names = ('g5_uturn_a', 'g5_uturn_b', 'g5_uturn_c', 'g5_uturn_d', 'g5_uturn_e')
         seen = {}
