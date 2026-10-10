@@ -259,6 +259,7 @@ static void test_lock_length_information_safety(df_test *t, const duoforge_conte
         }
         for (uint32_t p = 0u; p < 2u; ++p) {
             DF_CHECK(t, st[0][p] == st[1][p]);
+            DF_CHECK(t, st[0][p] == DUOFORGE_E_UNSUPPORTED); /* refused while a lock may run, not a broken state */
         }
         DF_CHECK(t, locked_slot[0] == locked_slot[1]);
     }
