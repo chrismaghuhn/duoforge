@@ -1512,6 +1512,7 @@ int main(void)
              * family), Low Kick (Grass Knot's), Soak (step G11), Wide Guard (step G7), the two weather moves and Detect
              * (Protect's, step G13), Knock Off (step G16), Aurora Veil and Spiky Shield (step G20), Perish Song (step G26); the others are data. Never the UNMODELED one. */
             DF_CHECK(&t, !want || dfi_pool_moves[id].special == DFI_SPECIAL_NONE ||
+                             id == DFI_MOVE_PSYCHUP || id == DFI_MOVE_ALLYSWITCH || /* step G80: their own handlers (decision 0044) */
                              id == DFI_MOVE_FIRSTIMPRESSION || id == DFI_MOVE_LOWKICK || id == DFI_MOVE_SOAK ||
                              id == DFI_MOVE_ENCORE || id == DFI_MOVE_SANDSTORM || id == DFI_MOVE_SNOWSCAPE ||
                              id == DFI_MOVE_KNOCKOFF || id == DFI_MOVE_EXPANDINGFORCE || id == DFI_MOVE_GLAIVERUSH || id == DFI_MOVE_AURORAVEIL || id == DFI_MOVE_SPIKYSHIELD || id == DFI_MOVE_DISABLE ||
