@@ -232,12 +232,18 @@ class SpectatorTest(unittest.TestCase):
     def test_view_ext_equals_duoforge(self):
         # decision 0018: the tracker's view extension is DuoForge's, byte for byte, in the header and in the fields of
         # every feature it folds (tracker.EXT_FIELDS of lines.SUPPORTED); the other features' lines stop before a
-        # point could show them
+        # point could show them. A closure or Team C battle runs under a kind without the extension (all zero), while
+        # the spectator reads it with the pool tables, as every replay: only the pool battles are compared.
         from duoforge_live import tracker
         for battle in self.ref.battles:
+            pool = battle.spec.get("data") == "pool"
             for side in (0, 1):
                 for (_, obs, *_), ours in zip(self.runs[(battle.name, side)], EXTS[(battle.name, side)], strict=True):
                     k = int(obs["epoch"]) - 1
+                    if not pool:
+                        self.assertEqual(battle.exts[(k, side)].tobytes(), bytes(_layout.OBSERVATION_EXT.itemsize),
+                                         (battle.name, k, side))
+                        continue
                     theirs = tracker.restrict_ext(battle.exts[(k, side)], lines.SUPPORTED)
                     diff = differences(ours, theirs)
                     self.assertFalse(diff, f"{battle.name} k={k} side={side}: " + "; ".join(diff[:12]))
