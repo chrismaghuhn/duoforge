@@ -1470,6 +1470,17 @@ const G65_PROBES = {
     },
 };
 
+// Step G73 (Moody, the order and the flags of its onResidual; the draw and boost logic is checked by G73_ABILITY_FACTS in
+// gen_closure.py and the recorded battles): the order of Speed Boost's key, no breakable flag, and the two callbacks it has.
+const G73_PROBES = {
+    moody(ability) {
+        expect('moody onResidualOrder', ability.onResidualOrder, 28);
+        expect('moody onResidualSubOrder', ability.onResidualSubOrder, 2);
+        expect('moody flags', ability.flags, {});
+        expect('moody onResidual', typeof ability.onResidual, 'function');
+    },
+};
+
 // Step G65 (Reckless's crash clause): a modelled move with hasCrashDamage needs the clause, which the engine does not have.
 function checkG65(dex, moveNames, unmodeledMoves) {
     for (const id of moveNames) {
@@ -1519,6 +1530,9 @@ function checkAbilities(dex, rows, moveIds, unmodeled, unmodeledMoves) {
                 }
                 if (G65_PROBES[row.id] !== undefined) {
                     G65_PROBES[row.id](ability);
+                }
+                if (G73_PROBES[row.id] !== undefined) {
+                    G73_PROBES[row.id](ability);
                 }
             }
             continue;
@@ -1690,7 +1704,7 @@ const ENGINE_ROWS = {items: ['focussash', 'floettite', 'psychicseed', 'electrics
         'compoundeyes', 'ironfist', 'sharpness', 'solidrock', 'technician', 'multiscale', 'galewings', 'raindish', 'friendguard', 'cursedbody', 'mirrorarmor', 'auraguard', 'hypercutter', 'scrappy', 'infiltrator', 'queenlymajesty', 'damp', 'sturdy', 'snowcloak', 'sandveil', 'static', 'justified', 'limber', 'solarpower', 'regenerator', 'toxicdebris', 'shadowtag', 'suctioncups', 'guarddog',
         'steadfast', 'weakarmor', 'telepathy', 'voltabsorb', 'punkrock', 'moxie', 'synchronize', 'oblivious', 'keeneye', 'bigpecks', 'magicbounce', 'pressure', 'stancechange',
         'sandforce', 'shellarmor', 'filter', 'stalwart', 'megalauncher', 'hugepower', 'thickfat', 'firemane', 'spicyspray', 'megasol', 'sheerforce', 'illusion', 'symbiosis',
-        'unaware', 'marvelscale', 'waterbubble', 'reckless', 'superluck']};
+        'unaware', 'marvelscale', 'waterbubble', 'reckless', 'superluck', 'moody']};
 const ENGINE_TARGETS = new Set(['normal', 'any', 'adjacentAlly', 'adjacentFoe', 'self', 'allAdjacentFoes', 'allySide', 'all',
     'randomNormal', 'allAdjacent', 'allies', 'foeSide']); // foeSide: step G37 (the four hazards)
 // The fields of a move that the tables model (gen_closure.py DATA_KEYS and IGNORED_KEYS), nothing else.

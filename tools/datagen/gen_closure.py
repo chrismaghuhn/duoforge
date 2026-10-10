@@ -2706,7 +2706,7 @@ ENGINE_ROWS = {'items': ['focussash', 'floettite', 'psychicseed', 'electricseed'
                              'regenerator', 'toxicdebris', 'shadowtag', 'suctioncups', 'guarddog',
                              'steadfast', 'weakarmor', 'telepathy', 'voltabsorb', 'punkrock', 'moxie', 'synchronize', 'oblivious', 'keeneye', 'bigpecks', 'magicbounce', 'pressure', 'stancechange',
                              'sandforce', 'shellarmor', 'filter', 'stalwart', 'megalauncher', 'hugepower', 'thickfat', 'firemane', 'spicyspray', 'megasol', 'sheerforce', 'illusion', 'symbiosis',
-                             'unaware', 'marvelscale', 'waterbubble', 'reckless', 'superluck']}
+                             'unaware', 'marvelscale', 'waterbubble', 'reckless', 'superluck', 'moody']}
 # The moves of the whole pool that the turn code pivots with a switch flag of their own (dfi_pivot_moves,
 # src/state/closure_member.c) beyond Flip Turn and U-turn, which are rows of the steps. Empty: Volt Switch comes with the
 # step that gives it a flag value, and adds its id here.
@@ -3625,6 +3625,34 @@ G65_ABILITY_FACTS = (
 )
 
 
+# Step G73 (Moody): an engine row (ENGINE_ROWS) that the turn code runs by id (dfi_moody, src/combat/turn.c). Its onResidual is
+# checked whole, whitespace aside: the order (28, sub-order 2, as Speed Boost's), the stat loops over pokemon.boosts with the
+# accuracy and evasion skips and the +6 and -6 tests, the two draws of this.sample, the one boost of {raised: 2, lowered: -1}
+# (data/abilities.ts:2701-2734). No Champions override (check_g34_facts), and no breakable flag: Mold Breaker does not reach it.
+G73_ABILITY_FACTS = (
+    ('moody', ('onResidualOrder: 28,',
+               'onResidualSubOrder: 2,',
+               'onResidual(pokemon) {',
+               'let stats: BoostID[] = [];',
+               'const boost: SparseBoostsTable = {};',
+               'for (statPlus in pokemon.boosts) {',
+               "if (statPlus === 'accuracy' || statPlus === 'evasion') continue;",
+               'if (pokemon.boosts[statPlus] < 6) {',
+               'stats.push(statPlus);',
+               'let randomStat: BoostID | undefined = stats.length ? this.sample(stats) : undefined;',
+               'if (randomStat) boost[randomStat] = 2;',
+               'stats = [];',
+               'for (statMinus in pokemon.boosts) {',
+               "if (statMinus === 'accuracy' || statMinus === 'evasion') continue;",
+               'if (pokemon.boosts[statMinus] > -6 && statMinus !== randomStat) {',
+               'randomStat = stats.length ? this.sample(stats) : undefined;',
+               'if (randomStat) boost[randomStat] = -1;',
+               'this.boost(boost, pokemon, pokemon);',
+               'flags: {},',
+               'name: "Moody",')),
+)
+
+
 def check_g57_facts(abil_ts, champ_abil):
     """Step G57: the texts of Magic Bounce that the engine reproduces (G57_ABILITY_FACTS) are in the pinned entry, whitespace
     aside, and the Champions mod has no entry of its own for it."""
@@ -3658,7 +3686,7 @@ def check_g34_facts(abil_ts, champ_abil, items_ts, champ_items):
     """Steps G34, G35, Mega batch 2 and G39: every fact of G34_ABILITY_FACTS, G35_ABILITY_FACTS, MEGA2_ABILITY_FACTS, G39_ABILITY_FACTS and G34_ITEM_FACTS is in the pinned entry, whitespace aside, and the
     Champions mod has no entry of its own for it (an override would change what the engine reads). Step G59: the Champions
     entry of a G59_INHERIT_ONLY ability may only inherit (`inherit: true`, `isNonstandard: null`), which is no override."""
-    for kind, facts_by_id, src, champ in (('ability', G34_ABILITY_FACTS + G35_ABILITY_FACTS + MEGA2_ABILITY_FACTS + G39_ABILITY_FACTS + G41_ABILITY_FACTS + G45_ABILITY_FACTS + G46_ABILITY_FACTS + G47_ABILITY_FACTS + G51_ABILITY_FACTS + G53_ABILITY_FACTS + G63_ABILITY_FACTS + G59_ABILITY_FACTS + G69_ABILITY_FACTS + G65_ABILITY_FACTS, abil_ts, champ_abil),
+    for kind, facts_by_id, src, champ in (('ability', G34_ABILITY_FACTS + G35_ABILITY_FACTS + MEGA2_ABILITY_FACTS + G39_ABILITY_FACTS + G41_ABILITY_FACTS + G45_ABILITY_FACTS + G46_ABILITY_FACTS + G47_ABILITY_FACTS + G51_ABILITY_FACTS + G53_ABILITY_FACTS + G63_ABILITY_FACTS + G59_ABILITY_FACTS + G69_ABILITY_FACTS + G65_ABILITY_FACTS + G73_ABILITY_FACTS, abil_ts, champ_abil),
                                           ('item', G34_ITEM_FACTS + G46_ITEM_FACTS + G47_ITEM_FACTS, items_ts, champ_items)):
         for rid, facts in facts_by_id:
             e = src.entry(rid)
