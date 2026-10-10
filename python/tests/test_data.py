@@ -99,6 +99,12 @@ class DataTest(unittest.TestCase):
         self.assertTrue(seed["flags"] & c["DUOFORGE_MOVE_STATIC_FLAG_BULLET"])
         low = data.move_static(self.pool, data.find(self.pool, data.TABLE_MOVE, "lowkick"))
         self.assertTrue(low["flags"] & c["DUOFORGE_MOVE_STATIC_FLAG_POWER_RULE"])
+        # lockedmove (step G56): the moves whose use locks the user for 2-3 turns; the live tracker hides a foe's locked
+        # slot after one of them like the engine's observation (view audit 2026-10-10), so it reads this flag, not names.
+        for name, locked in (("outrage", True), ("thrash", True), ("petaldance", True), ("closecombat", False),
+                             ("earthquake", False)):
+            flags = data.move_static(self.pool, data.find(self.pool, data.TABLE_MOVE, name))["flags"]
+            self.assertEqual(bool(flags & c["DUOFORGE_MOVE_STATIC_FLAG_LOCKED_MOVE"]), locked, name)
         self.assertEqual(data.move_static(self.pool, data.find(self.pool, data.TABLE_MOVE, "earthquake"))["target_class"],
                          11)
         self.assertEqual(tuple(sorted(mv)), tuple(sorted(_layout.MOVE_STATIC.names)))

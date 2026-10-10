@@ -141,6 +141,29 @@ static void lock_lead(duoforge_battle *b)
 {
     b->tail.sides[0].positions[g_lead].lock_turns = 2u;
     b->sides[0].positions[g_lead].locked_move = 1u;
+    b->tail.sides[0].positions[g_lead].last_move = 1u; /* a running lock's move is the one used last (Outrage, slot 0) */
+}
+
+/* A running lockedmove has its move as the occupant's last used one (view audit 2026-10-10; the public record's proxy,
+ * dfi_maybe_lockedmove, relies on it): a lock whose last move is none or another move is a broken state, which the public
+ * record refuses explicitly (E_INVARIANT). */
+static void test_lock_needs_its_last_move(df_test *t, const duoforge_context *ctx)
+{
+    duoforge_battle *b = turn_battle(t, ctx);
+    lock_lead(b);
+    DF_CHECK(t, duoforge_battle_check(ctx, b) == DUOFORGE_OK);
+    const uint32_t occ = b->sides[0].positions[g_lead].occupant;
+    DF_CHECK(t, b->sides[0].members[occ].moves[1].move_id != DFI_MOVE_OUTRAGE);
+    for (uint32_t last = 0u; last <= 2u; last += 2u) { /* none, then the move in slot 1 */
+        b->tail.sides[0].positions[g_lead].last_move = (uint8_t)last;
+        /* The state check does not reject it yet: that invariant needs the pinned example tail of test_pool_tail rebuilt on
+         * leads that learn a lockedmove move (follow-up in M12 bundle 6). The public record refuses it explicitly. */
+        for (uint32_t p = 0u; p < 2u; ++p) {
+            duoforge_public_state v;
+            DF_CHECK(t, duoforge_battle_public(ctx, b, p, &v) == DUOFORGE_E_INVARIANT);
+        }
+    }
+    duoforge_battle_destroy(b);
 }
 
 /* The step's state, as the encoding of the battle; a refused step must leave it as it was. */
@@ -237,6 +260,7 @@ static void test_lock_length_information_safety(df_test *t, const duoforge_conte
         }
         for (uint32_t p = 0u; p < 2u; ++p) {
             DF_CHECK(t, st[0][p] == st[1][p]);
+            DF_CHECK(t, st[0][p] == DUOFORGE_E_UNSUPPORTED); /* refused while a lock may run, not a broken state */
         }
         DF_CHECK(t, locked_slot[0] == locked_slot[1]);
     }
@@ -338,6 +362,7 @@ int main(void)
     }
 
     test_lock_length_information_safety(&t, kp);
+    test_lock_needs_its_last_move(&t, kp);
 
     duoforge_battle_destroy(base);
     duoforge_context_destroy(kp);

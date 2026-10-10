@@ -219,6 +219,72 @@ class BreakProtectTest(unittest.TestCase):
             self.assertEqual((t._guards, t._turn_scoped), (set(), set()), move)
 
 
+class LockedMoveSlotTest(unittest.TestCase):
+    """View audit of 2026-10-10 (#323): a foe whose last used move is a lockedmove (Outrage, Thrash, Petal Dance:
+    DUOFORGE_MOVE_STATIC_FLAG_LOCKED_MOVE) shows no locked slot, a Choice lock included, as the C observation hides it
+    (src/state/observation.c dfi_maybe_lockedmove). The last move is pokemon.moveUsed's: set by the position's own
+    move lines (a locked turn included), not by a move another effect makes it use, cleared when it leaves."""
+
+    @classmethod
+    def setUpClass(cls):
+        from duoforge_live import tracker
+        cls.tracker = tracker
+        cls.D = data.load(kind="pool")
+        cls.M = cls.D.tables["MOVE"]
+
+    def setUp(self):
+        from types import SimpleNamespace
+        t = self.tracker.Tracker.__new__(self.tracker.Tracker)
+        t.data, t.side, t._spectator = self.D, 0, False
+        t._guard_moves, t._choice_items = set(), set()
+        t._positions = [[self.tracker._Position(), self.tracker._Position()],
+                        [self.tracker._Position(), self.tracker._Position()]]
+        for side in t._positions:
+            for k, p in enumerate(side):
+                p.occupant = k
+        sheet = {"item": None, "moves": [self.M["OUTRAGE"], self.M["DRAGONCLAW"], self.M["PROTECT"]]}
+        t._occupant = lambda pos: SimpleNamespace(sheet=sheet, uses=[0, 0, 0], item_used=0)
+        t._pressure_extra = lambda *a: 0
+        self.t = t
+
+    def move(self, pos, name, cause=0, flags=0):
+        self.t._event(trace_to_c.ev_tuple(trace_to_c.EV["MOVE"], pos, 0, cause, self.M[name], flags=flags))
+
+    def test_a_foe_after_a_lockedmove_shows_no_locked_slot(self):
+        p = self.t._positions[1][0]
+        p.choice_slot = 0
+        self.move(2, "OUTRAGE")
+        self.assertEqual(self.t._shown_locked_slot(p, own=False), self.tracker.MOVE_SLOT_NONE)
+        self.move(2, "OUTRAGE", flags=trace_to_c.FLAG["LOCKED"])  # a locked turn is a move use too
+        self.assertEqual(self.t._shown_locked_slot(p, own=False), self.tracker.MOVE_SLOT_NONE)
+
+    def test_a_foe_after_another_move_shows_its_choice_slot(self):
+        p = self.t._positions[1][0]
+        p.choice_slot = 1
+        self.move(2, "DRAGONCLAW")
+        self.assertEqual(self.t._shown_locked_slot(p, own=False), 1)
+
+    def test_a_move_used_through_another_effect_is_not_the_last_move(self):
+        p = self.t._positions[1][0]
+        p.choice_slot = 1
+        self.move(2, "DRAGONCLAW")
+        self.move(2, "OUTRAGE", cause=trace_to_c.CAUSE["ABILITY"])  # e.g. reflected by Magic Bounce: no moveUsed
+        self.assertEqual(self.t._shown_locked_slot(p, own=False), 1)
+
+    def test_leaving_clears_the_last_move(self):
+        p = self.t._positions[1][0]
+        self.move(2, "OUTRAGE")
+        p.reset()
+        p.choice_slot = 1
+        self.assertEqual(self.t._shown_locked_slot(p, own=False), 1)
+
+    def test_the_own_side_is_unchanged(self):
+        p = self.t._positions[0][0]
+        p.choice_slot = 0
+        self.move(0, "OUTRAGE")
+        self.assertEqual(self.t._shown_locked_slot(p, own=True), 0)
+
+
 class OptionsTest(unittest.TestCase):
     """Test 1 (the options) and test 2 (the choice text) of the spec."""
 

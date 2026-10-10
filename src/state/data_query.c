@@ -429,6 +429,9 @@ duoforge_status duoforge_data_move_static(const duoforge_context *ctx, uint32_t 
     r.priority = (uint32_t)m->priority - (uint32_t)DFI_PRIORITY_BIAS; /* wraps: the two's complement of a negative priority */
     r.target_class = m->target_class;
     r.flags = dfi_pool_move_static_flags[move_id];
+    if (m->special == DFI_SPECIAL_LOCKED_MOVE) {
+        r.flags |= DUOFORGE_MOVE_STATIC_FLAG_LOCKED_MOVE;
+    }
     r.crit_stage = m->crit_ratio > 0u ? (uint32_t)m->crit_ratio - 1u : 0u;
     r.drain[0] = m->drain[0];
     r.drain[1] = m->drain[1];
