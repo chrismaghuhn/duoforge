@@ -422,9 +422,18 @@ duoforge_status duoforge_battle_observe_ext(const duoforge_context *ctx, const d
                     vol |= (uint32_t)DUOFORGE_POSITION_EXT_ILLUSION_UP;
                 }
                 o.sides[s].positions[p].volatiles = vol;
-                /* Step G94 (decision 0061, lane A block): the used-since-entering bits of the four move slots of the occupant (its
-                 * deductPP since the switch-in), volatiles2 bits 0 to 3. Public for both viewers: each use is a move line. */
-                o.volatiles2[s][p] = dfi_move_used_bits(&battle->tail, s * DUOFORGE_ACTIVE_PER_SIDE + p);
+                /* Step G94 (decision 0061, lane A block): the used-since-entering bits of the four move slots, volatiles2 bits 0 to 3,
+                 * shown only for an occupant that has Last Resort in its current move slots (the open sheet, or a Transform's copy):
+                 * for every other occupant the bits are 0 here (they only decide Last Resort). Public: each use is a move line. */
+                const uint32_t occ = battle->sides[s].positions[p].occupant;
+                if (occ < DUOFORGE_MAX_ROSTER) {
+                    const dfi_member *om = &battle->sides[s].members[occ];
+                    bool holds = false;
+                    for (uint32_t k = 0u; k < om->move_count && k < DUOFORGE_MAX_MOVE_SLOTS; ++k) {
+                        holds = holds || om->moves[k].move_id == DFI_MOVE_LASTRESORT;
+                    }
+                    o.volatiles2[s][p] = holds ? dfi_move_used_bits(&battle->tail, s * DUOFORGE_ACTIVE_PER_SIDE + p) : 0u;
+                }
                 /* Step G42: move_failed is 1 iff the occupant's last move result is FALSE. It is exact only when the result is
                  * classified; an unclassified result (the bit of decision 0015 section 7) reads 0 here (documented, not refused). */
                 o.sides[s].positions[p].move_failed =

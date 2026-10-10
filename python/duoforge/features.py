@@ -218,7 +218,10 @@ def _own_features(prefix, exceptions=None):
 # Encoder 6's reserve families (decision 0050): (bit numbers, the family's feature, the own features of its bits).
 _RES_VOLATILES = (range(22, 32), FEATURE_BITS["RESERVE_VOLATILES"],
                   _own_features("DUOFORGE_POSITION_EXT_", _VOLATILE_FEATURE))
-_RES_VOLATILES2 = (range(32), FEATURE_BITS["VOLATILES2"], _own_features("DUOFORGE_POSITION_EXT2_"))
+# Step G94 (decision 0061): the four Last Resort bits of volatiles2 (move slots 1 to 4) share the feature LAST_RESORT_USED.
+_RES_VOLATILES2 = (range(32), FEATURE_BITS["VOLATILES2"], _own_features("DUOFORGE_POSITION_EXT2_", {
+    "LAST_RESORT_USED_1": "LAST_RESORT_USED", "LAST_RESORT_USED_2": "LAST_RESORT_USED",
+    "LAST_RESORT_USED_3": "LAST_RESORT_USED", "LAST_RESORT_USED_4": "LAST_RESORT_USED"}))
 _RES_GUARDS = (range(2, 8), FEATURE_BITS["RESERVE_GUARDS"], _own_features("DUOFORGE_SIDE_GUARD_"))
 _RES_CONDITIONS = (range(8), FEATURE_BITS["SIDE_CONDITIONS"], _own_features("DUOFORGE_SIDE_CONDITION_"))
 _RES_FIELD = (range(16), FEATURE_BITS["FIELD_FLAGS"], _own_features("DUOFORGE_FIELD_FLAG_"))
