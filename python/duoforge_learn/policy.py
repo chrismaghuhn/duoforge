@@ -92,11 +92,19 @@ class Model:
         self._value = jax.jit(functools.partial(_value, self.apply, len(self.slot_names)))
 
     def init(self, key):
-        """Fresh parameters."""
+        """Fresh parameters. The input rows fed only by encoder 6's reserve columns are zero (columns.reserve_rows,
+        decision 0050); model v1 reads no reserve (its encoders end at 2)."""
         if self.config["version"] == 1:
             return model.init(key, len(self.feature_names), len(self.slot_names), TEAM_ACTIONS,
                               hidden=self.config["hidden"], option_hidden=self.config["option_hidden"])
-        return model_v2.init(key, self.config, self._cols)
+        params = model_v2.init(key, self.config, self._cols)
+        for path, rows in columns.reserve_rows(self.config, self._cols, self.feature_names, self.slot_names).items():
+            if rows:
+                layer = params
+                for k in path:
+                    layer = layer[k]
+                layer["w"] = layer["w"].at[np.asarray(rows)].set(0.0)
+        return params
 
     def check(self, obs):
         """Raises ValueError for an id model v2 cannot embed (v1: nothing)."""

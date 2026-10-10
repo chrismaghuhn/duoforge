@@ -60,7 +60,7 @@ typedef struct dfi_pivot_move {
     uint8_t flag; /* DFI_SWITCH_* */
     uint16_t move; /* the move id of the pool tables: a u16, as everywhere (the pool has 511 moves; Volt Switch is above 255) */
 } dfi_pivot_move;
-#define DFI_PIVOT_MOVE_COUNT 4u
+#define DFI_PIVOT_MOVE_COUNT 5u
 extern const dfi_pivot_move dfi_pivot_moves[DFI_PIVOT_MOVE_COUNT];
 
 /* The entry for a move, or NULL when the move does not pivot with a flag of its own. */

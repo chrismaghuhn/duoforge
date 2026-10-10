@@ -1,0 +1,22 @@
+{
+  "name": "h18_magic_bounce_substitute_sitrus_mirror",
+  "purpose": "Magic Bounce (step G57) of the foe's Hatterene bounces Yawn back at the user, whose own Substitute stands (Snorlax, mirrored Sitrus Snorlax): the bounced Yawn is taken by the Substitute (-fail, the holder's [from] ability line), two hit-loop Updates and a TRUE result for the holder (fix 8; no effect on the user).",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,00000000000000000000000000000000000000000000000000000000000018b8",
+  "teams": [
+    "Snorlax (M) @ Sitrus Berry\nAbility: Thick Fat\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Spe\nAdamant Nature\n- Yawn\n- Stomping Tantrum\n- Protect\n- Substitute\n\nHatterene (F) @ Mystic Water\nAbility: Magic Bounce\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nModest Nature\n- Protect\n- Dazzling Gleam\n- Psychic\n\nGholdengo @ Life Orb\nAbility: Good as Gold\nLevel: 50\nEVs: 32 HP / 2 SpA / 32 SpD\nCalm Nature\n- Protect\n- Shadow Ball\n- Make It Rain\n\nCeruledge (M) @ Charcoal\nAbility: Flash Fire\nLevel: 50\nEVs: 31 HP / 7 Atk / 24 Def / 3 SpD / 1 Spe\nBrave Nature\n- Protect\n\nKingambit (M) @ Black Glasses\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Sucker Punch\n- Iron Head\n- Protect\n- Swords Dance\n\nPawmot (M) @ Leftovers\nAbility: Iron Fist\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Thunderbolt\n- Revival Blessing\n- Ice Punch\n- Protect",
+    "Snorlax (M) @ Sitrus Berry\nAbility: Thick Fat\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Spe\nAdamant Nature\n- Yawn\n- Stomping Tantrum\n- Protect\n- Substitute\n\nHatterene (F) @ Mystic Water\nAbility: Magic Bounce\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nModest Nature\n- Protect\n- Dazzling Gleam\n- Psychic\n\nGholdengo @ Life Orb\nAbility: Good as Gold\nLevel: 50\nEVs: 32 HP / 2 SpA / 32 SpD\nCalm Nature\n- Protect\n- Shadow Ball\n- Make It Rain\n\nCeruledge (M) @ Charcoal\nAbility: Flash Fire\nLevel: 50\nEVs: 31 HP / 7 Atk / 24 Def / 3 SpD / 1 Spe\nBrave Nature\n- Protect\n\nKingambit (M) @ Black Glasses\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Sucker Punch\n- Iron Head\n- Protect\n- Swords Dance\n\nPawmot (M) @ Leftovers\nAbility: Iron Fist\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Thunderbolt\n- Revival Blessing\n- Ice Punch\n- Protect"
+  ],
+  "plan": {
+    "p1": [
+      "move 4, move 1",
+      "move 1 2, move 1"
+    ],
+    "p2": [
+      "move 3, move 1",
+      "move 3, move 2"
+    ],
+    "max_steps": 3
+  }
+}
