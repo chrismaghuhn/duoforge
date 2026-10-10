@@ -176,8 +176,9 @@ class LadderTest(unittest.TestCase):
         self.assertEqual(encoder_of({"encoder": 2}), 2)
         self.assertEqual(encoder_of({"encoder": 3}), 3)
         self.assertEqual(encoder_of({"encoder": 4}), 4)
-        self.assertEqual(encoder_of({"encoder": features.ENCODER}), 5)
-        for bad in (0, 6, "2", None, True, 1.0, 2.0):  # True == 1, 2.0 == 2: only ints count
+        self.assertEqual(encoder_of({"encoder": 5}), 5)
+        self.assertEqual(encoder_of({"encoder": features.ENCODER}), 6)  # decision 0050
+        for bad in (0, 7, "2", None, True, 1.0, 2.0):  # True == 1, 2.0 == 2: only ints count
             with self.assertRaisesRegex(ValueError, "encoder"):
                 encoder_of({"encoder": bad})
 
@@ -359,8 +360,8 @@ class WidenTest(unittest.TestCase):
                 np.savez(path, config=json.dumps(config), **arrays(features.obs_size(encoder)))
                 self.assertEqual(policy.load(path).encoder, encoder)
             # An unknown version, and a network of another width than its version's (607 for 1 and 2, 842 for 3,
-            # 850 for 4, 862 for 5).
-            for config, width in (({"encoder": 6}, features.OBS_SIZE), ({"encoder": 3}, features.OBS_SIZE),
+            # 850 for 4, 862 for 5, 1094 for 6).
+            for config, width in (({"encoder": 7}, features.OBS_SIZE), ({"encoder": 3}, features.OBS_SIZE),
                                   ({"encoder": 5}, features.obs_size(4)),
                                   ({"encoder": 4}, features.obs_size(3)), ({"encoder": 3}, features.BASE_OBS_SIZE),
                                   ({"encoder": 2}, features.OBS_SIZE)):

@@ -76,7 +76,7 @@ def _member_values(s, r):
     return 0x1234 + 16 * s + r, (10 + s if r % 2 == 0 else C["DUOFORGE_ITEM_NOW_NONE"])
 
 
-def _records(observations, supported=ALL):
+def _records(observations, supported=features.ALL_FEATURES):
     """Extension records of revision 1 for the observations, every field set
     (gravity 3, SIDE_VALUES, GUARDS, _position_values, _member_values)."""
     ext = np.zeros(observations.shape, dtype=_layout.OBSERVATION_EXT)
@@ -133,17 +133,18 @@ class FeaturesExtTest(unittest.TestCase):
         cls.ctx.close()
 
     def test_layout_appends_the_block(self):
-        self.assertEqual((features.ENCODER, features.ENCODERS), (5, (1, 2, 3, 4, 5)))
-        self.assertEqual((features.BASE_OBS_SIZE, features.EXT3_SIZE, features.EXT_SIZE, features.OBS_SIZE),
-                         (607, 235, 255, 862))
-        self.assertEqual(len(set(features.FEATURE_NAMES)), 862)
-        self.assertEqual([features.obs_size(v) for v in (1, 2, 3, 4, 5)], [607, 607, 842, 850, 862])
-        self.assertEqual(features.feature_names(5), features.FEATURE_NAMES)
+        self.assertEqual((features.ENCODER, features.ENCODERS), (6, (1, 2, 3, 4, 5, 6)))
+        self.assertEqual((features.BASE_OBS_SIZE, features.EXT3_SIZE, features.EXT5_SIZE, features.OBS_SIZE),
+                         (607, 235, 255, 862 + 232))
+        self.assertEqual(len(set(features.FEATURE_NAMES)), features.OBS_SIZE)
+        self.assertEqual([features.obs_size(v) for v in (1, 2, 3, 4, 5, 6)], [607, 607, 842, 850, 862, 1094])
+        self.assertEqual(features.feature_names(6), features.FEATURE_NAMES)  # encoder 6's reserve: test_encoder6
+        self.assertEqual(features.feature_names(5), features.FEATURE_NAMES[:862])
         self.assertEqual(features.feature_names(4), features.FEATURE_NAMES[:850])
         self.assertEqual(features.feature_names(3), features.FEATURE_NAMES[:842])
         self.assertEqual(features.feature_names(2), features.FEATURE_NAMES[:607])
         self.assertEqual(features.feature_names(1), features.FEATURE_NAMES[:607])
-        ext = features.FEATURE_NAMES[607:]
+        ext = features.FEATURE_NAMES[607:862]
         self.assertEqual(ext[:5], ("ext.global.weather_sand", "ext.global.weather_snow", "ext.global.terrain_electric",
                                    "ext.global.terrain_misty", "ext.global.gravity_turns"))
         side = ("aurora_veil_turns", "stealth_rock", "spikes", "toxic_spikes", "sticky_web", "wide_guard", "quick_guard")
@@ -166,8 +167,10 @@ class FeaturesExtTest(unittest.TestCase):
                                                     "transform_source.roster")))
 
     def test_every_column_has_one_feature_bit(self):
-        bits = features.EXT_COLUMN_FEATURES
-        self.assertEqual(bits.shape, (features.EXT_SIZE,))
+        bits = features.EXT_COLUMN_FEATURES  # encoder 5's columns; the reserve's feature sets: test_encoder6
+        self.assertEqual(bits.shape, (features.EXT5_SIZE,))
+        self.assertTrue(np.array_equal(features.EXT_COLUMN_MASKS[:features.EXT5_SIZE],
+                                       np.uint64(1) << bits.astype(np.uint64)))
         self.assertEqual(set(bits.tolist()), set(range(C["DUOFORGE_VIEWEXT_FEATURE_COUNT"])))
         want = {"ext.global.weather_sand": "WEATHER_SAND", "ext.global.terrain_misty": "TERRAIN_MISTY",
                 "ext.global.gravity_turns": "GRAVITY", "ext.foe.aurora_veil_turns": "AURORA_VEIL",
@@ -292,13 +295,15 @@ class FeaturesExtTest(unittest.TestCase):
         ob, d = self.obs, self.domains
         ext = _records(ob)
         ext["sides"] = _with_all_volatiles(ext["sides"])
-        full = features.encode_batch(ob, d, ext, ALL)[0][:, 607:]
+        full = features.encode_batch(ob, d, ext, ALL)[0][:, 607:862]  # encoder 5's block; the reserve: test_encoder6
         bits = features.EXT_COLUMN_FEATURES
         self.assertFalse(features.encode_batch(ob, d, ext, 0)[0][:, 607:].any())
         for name, bit in BIT.items():
             if name in BASE_BITS:
                 continue  # no base value in this scene: those columns are zero either way
-            one = features.encode_batch(ob, d, ext, 1 << bit)[0][:, 607:]
+            if bit >= features.FEATURE_COUNT:
+                continue  # encoder 6's reserve families: test_encoder6
+            one = features.encode_batch(ob, d, ext, 1 << bit)[0][:, 607:862]
             self.assertTrue(np.array_equal(one[:, bits == bit], full[:, bits == bit]), name)
             self.assertFalse(one[:, bits != bit].any(), name)
             self.assertTrue(full[:, bits == bit].any(), name)
@@ -404,14 +409,15 @@ class FeaturesExtTest(unittest.TestCase):
                 view = {"field": field_ext, "sides": sides}
                 edit(view)
                 ext["field"], ext["sides"] = field_ext, sides
-                with self.assertRaisesRegex(ValueError, field):
-                    features.encode_batch(ob, d, ext, ALL)
+                with self.assertRaisesRegex(ValueError, field):  # guard_flags and volatiles: encoder 6's reserve
+                    features.encode_batch(ob, d, ext, ALL, encoder=5)
 
     def test_as_encoder_serves_the_old_versions(self):
         from python.tests import _reference_features as reference
         ob, d = self.obs, self.domains
         part = features.encode_batch(ob, d, _records(ob), ALL)[0]
-        self.assertIs(features.as_encoder(part, ob, 5), part)
+        self.assertIs(features.as_encoder(part, ob, 6), part)
+        self.assertTrue(np.array_equal(features.as_encoder(part, ob, 5), part[:, :862]))
         self.assertTrue(np.array_equal(features.as_encoder(part, ob, 4), part[:, :850]))
         self.assertTrue(np.array_equal(features.as_encoder(part, ob, 3), part[:, :842]))
         self.assertTrue(np.array_equal(features.as_encoder(part, ob, 2), part[:, :607]))
@@ -483,42 +489,31 @@ class FeaturesExtTest(unittest.TestCase):
         self.assertFalse(part[:, COL["ext.foe.pos0.volatile.illusion_up"]].any())
 
     def test_bits_awaiting_the_next_encoder_raise_their_own_error(self):
-        # Every awaiting volatiles bit and feature bit raises EncoderAwaitingBit naming it; the set is the one
-        # awaiting_encoder() publishes. The mechanism also holds for a stand-in bit while the set is empty.
+        # Lane B's EncoderAwaitingBit (#325), since encoder 6 (decision 0050) without a list of awaiting names: every
+        # volatiles bit from 22 on is encoder 6's reserve. Encoders 1 to 5 refuse a set one with EncoderAwaitingBit
+        # naming its constant (or the field and bit while the library has none), encoder 6 encodes it. A mask bit a
+        # version has no column for is the version check's plain ValueError (C: E_INVALID_ARGUMENT), as before.
         ob, d = self.obs, self.domains
-        self.assertIs(features.awaiting_encoder(), features._AWAITING_ENCODER)
-        stand_in = {1 << 30: "DUOFORGE_POSITION_EXT_STAND_IN"}
-        cases = [(bit, name, {}) for bit, name in features._AWAITING_VOLATILES.items()] + [(1 << 30, None, stand_in)]
-        for bit, name, patch in cases:
-            with self.subTest(name=name or "stand-in"), mock.patch.dict(features._AWAITING_VOLATILES, patch):
+        stand_in = {"DUOFORGE_POSITION_EXT_STAND_IN": 1 << 30}
+        for patch, name in (({}, "volatiles bit 30"), (stand_in, "DUOFORGE_POSITION_EXT_STAND_IN")):
+            with self.subTest(name=name), mock.patch.dict(features.C, patch):
                 ext = _records(ob)
-                ext["sides"]["positions"]["volatiles"][:, 0, 1] |= bit
+                ext["sides"]["positions"]["volatiles"][:, 0, 1] |= 1 << 30
                 with self.assertRaises(features.EncoderAwaitingBit) as raised:
-                    features.encode_batch(ob, d, ext, ALL)
-                self.assertEqual(raised.exception.name, name or stand_in[bit])
+                    features.encode_batch(ob, d, ext, ALL, encoder=5)
+                self.assertEqual(raised.exception.name, name)
                 self.assertIn("volatiles", str(raised.exception))
-        feature_cases = [(bit, name, {}) for bit, name in features._AWAITING_FEATURES.items()] + \
-            [(BIT["GRAVITY"], None, {BIT["GRAVITY"]: "DUOFORGE_VIEWEXT_FEATURE_GRAVITY"})]
-        for bit, name, patch in feature_cases:
-            with self.subTest(name=name or "stand-in feature"), mock.patch.dict(features._AWAITING_FEATURES, patch):
-                with self.assertRaises(features.EncoderAwaitingBit) as raised:
-                    features.encode_batch(ob, d, _records(ob), ALL)
-                self.assertEqual(raised.exception.name, name or "DUOFORGE_VIEWEXT_FEATURE_GRAVITY")
-                features.encode_batch(ob, d, _records(ob), ALL & ~(1 << bit))  # the bit clear: encodes
-        # Without a stand-in, the same volatiles bit is an unknown one: a plain ValueError, not EncoderAwaitingBit.
-        ext = _records(ob)
-        ext["sides"]["positions"]["volatiles"][:, 0, 1] |= 1 << 30
+                features.encode_batch(ob, d, ext, ALL)  # encoder 6: shown in its reserve column
         with self.assertRaises(ValueError) as raised:
-            features.encode_batch(ob, d, ext, ALL)
+            features.encode_batch(ob, d, _records(ob), features.version_features(6), encoder=5)
         self.assertNotIsInstance(raised.exception, features.EncoderAwaitingBit)
 
     def test_encoder_5_columns_do_not_move_with_awaiting_bits(self):
-        # Awaiting bits add no column: encoder 5 keeps its 862 columns, its 22 volatiles bits and its block widths.
-        self.assertEqual(features.OBS_SIZE, 862)
+        # The reserve adds columns after encoder 5's only: it keeps its 862 columns, its 22 volatiles bits and its
+        # block widths.
         self.assertEqual(features.obs_size(5), 862)
         self.assertEqual([v[1] for v in features.VOLATILES], [1 << k for k in range(22)])
-        self.assertEqual(features.EXT_SIZE, features.EXT4_SIZE + 12)
-        self.assertFalse(set(features._AWAITING_FEATURES) & set(features.EXT_COLUMN_FEATURES.tolist()))
+        self.assertEqual(features.EXT5_SIZE, features.EXT4_SIZE + 12)
 
     def test_transform_source_and_bit_go_together(self):
         ob, d = self.obs, self.domains
