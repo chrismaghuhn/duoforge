@@ -31,6 +31,8 @@ on:
   # Python and reference tests; every other job shows as skipped (a job-level
   # `if`). Pull requests, pushes to main and the nightly run always run the full
   # matrix, and the merge gate stays the full matrix on the pull request's head.
+  # Only for a branch without an open pull request: its checks land on the same
+  # commit as the pull request's, so the job quick-guard fails such a run.
   workflow_dispatch:
     inputs:
       profile:
@@ -42,11 +44,35 @@ on:
 permissions:
   contents: read
 
+# One group per ref, event and profile: a newer push cancels the older run of the
+# same kind, but a dispatch never cancels a push or nightly run (or the reverse).
 concurrency:
-  group: ci-${{ github.ref }}
+  group: ci-${{ github.ref }}-${{ github.event_name }}-${{ inputs.profile || 'full' }}
   cancel-in-progress: true
 
 jobs:
+  # A quick run on a branch with an open pull request would put skipped checks
+  # on the pull request's head commit beside the full run's: refused, red.
+  quick-guard:
+    name: Quick profile / no open pull request
+    if: github.event_name == 'workflow_dispatch' && inputs.profile == 'quick'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    permissions:
+      contents: read
+      pull-requests: read
+    steps:
+      - name: No open pull request from this branch
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          open=$(gh pr list --repo "$GITHUB_REPOSITORY" --head "$GITHUB_REF_NAME" --state open --json number --jq 'map("#" + (.number | tostring)) | join(" ")')
+          if [ -n "$open" ]; then
+            echo "::error::profile=quick is for branches without an open pull request; $GITHUB_REF_NAME has $open. Its skipped jobs would sit on the pull request's head commit: run the full profile or rely on the pull request's own run."
+            exit 1
+          fi
+          echo "no open pull request from $GITHUB_REF_NAME"
+
   # The Linux matrix is two jobs with the same steps because a job-level `if`
   # cannot see the matrix: GCC Debug runs in every profile, the Clang jobs not
   # in the quick one. The check names are those of the former single matrix.
@@ -77,7 +103,7 @@ jobs:
           -DDUOFORGE_WARNINGS_AS_ERRORS=ON
           -DDUOFORGE_ENABLE_IPO=${{ matrix.build_type == 'Release' && 'ON' || 'OFF' }}
       - name: Build
-        run: cmake --build build --parallel
+        run: cmake --build build --parallel 4
       - name: Test
         run: ctest --test-dir build --output-on-failure --no-tests=error --timeout 120
 
