@@ -407,7 +407,7 @@ class LinesTest(unittest.TestCase):
         # (data/moves.ts electricterrain/mistyterrain onTryAddVolatile/onSetStatus): the terrain's own feature, as
         # its -fieldstart line, not an unknown line
         self.assertEqual(lines.check("|-activate|p2a: Gholdengo|move: Electric Terrain", self.view), "fold")
-        self.assertEqual(self.stop("|-activate|p2a: Gholdengo|move: Misty Terrain"), "feature:TERRAIN_MISTY")
+        self.assertEqual(lines.check("|-activate|p2a: Gholdengo|move: Misty Terrain", self.view), "fold")
 
     def test_a_line_that_does_not_fit_its_name_under_a_possible_illusion_is_the_illusion_feature(self):
         # Step I2 (decision 0026): under a disguise the lines name the disguise, so an item or ability that is not the

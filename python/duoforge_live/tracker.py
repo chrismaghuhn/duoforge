@@ -66,7 +66,7 @@ ITEM_NOW_NONE = C["DUOFORGE_ITEM_NOW_NONE"]  # duoforge_member_ext.item_now: the
 # position, member or side record. The base-value
 # features show in the base observation alone (lines.BASE_FOLDS).
 EXT_FIELDS = {
-    "WEATHER_SAND": (), "WEATHER_SNOW": (), "AILMENT_TOX": (), "TERRAIN_ELECTRIC": (),
+    "WEATHER_SAND": (), "WEATHER_SNOW": (), "AILMENT_TOX": (), "TERRAIN_ELECTRIC": (), "TERRAIN_MISTY": (),
     "THROAT_CHOP": (("bit", EXT_THROAT_CHOP),),
     "MUST_RECHARGE": (("bit", C["DUOFORGE_POSITION_EXT_MUST_RECHARGE"]),),
     "TOXIC_SPIKES": (("side", "toxic_spikes"),),
