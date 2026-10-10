@@ -5823,6 +5823,14 @@ static const df_tb_stop tb_g74_pass_confused[] = {
     {3u, 0u, 2u, 2u, {4u, 4u}, {709u, 791u}, {0x405015d457515d45ull, 0x4050aaaaaaaaaaabull}},
     {4u, 0u, 2u, 2u, {4u, 4u}, {709u, 791u}, {0x405015d457515d45ull, 0x4050aaaaaaaaaaabull}},
 };
+static const df_tb_stop tb_g74_pass_helping_hand[] = {
+    {0u, 0u, 2u, 3u, {6u, 6u}, {1137u, 1167u}, {0x4059000000000000ull, 0x4059000000000000ull}},
+    {1u, 0u, 2u, 3u, {4u, 4u}, {733u, 791u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {2u, 0u, 2u, 3u, {4u, 4u}, {733u, 791u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {3u, 0u, 2u, 3u, {4u, 4u}, {733u, 791u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {4u, 0u, 1u, 2u, {4u, 4u}, {733u, 775u}, {0x4050aaaaaaaaaaabull, 0x4050562d9faee41full}},
+    {5u, 0u, 1u, 2u, {4u, 4u}, {733u, 775u}, {0x4050aaaaaaaaaaabull, 0x4050562d9faee41full}},
+};
 static const df_tb_stop tb_g74_pass_no_reserve[] = {
     {0u, 0u, 3u, 4u, {6u, 6u}, {1137u, 1137u}, {0x4059000000000000ull, 0x4059000000000000ull}},
     {1u, 0u, 1u, 3u, {4u, 4u}, {768u, 751u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
@@ -7901,6 +7909,7 @@ static const df_tb_battle tb_battles[] = {
     {"g72b_dc_second", 3u, tb_g72b_dc_second, sizeof tb_g72b_dc_second / sizeof tb_g72b_dc_second[0]},
     {"g72b_dc_switch", 5u, tb_g72b_dc_switch, sizeof tb_g72b_dc_switch / sizeof tb_g72b_dc_switch[0]},
     {"g74_pass_confused", 4u, tb_g74_pass_confused, sizeof tb_g74_pass_confused / sizeof tb_g74_pass_confused[0]},
+    {"g74_pass_helping_hand", 5u, tb_g74_pass_helping_hand, sizeof tb_g74_pass_helping_hand / sizeof tb_g74_pass_helping_hand[0]},
     {"g74_pass_no_reserve", 23u, tb_g74_pass_no_reserve, sizeof tb_g74_pass_no_reserve / sizeof tb_g74_pass_no_reserve[0]},
     {"g74_pass_sub_damaged", 6u, tb_g74_pass_sub_damaged, sizeof tb_g74_pass_sub_damaged / sizeof tb_g74_pass_sub_damaged[0]},
     {"g7_wide_guard_a", 6u, tb_g7_wide_guard_a, sizeof tb_g7_wide_guard_a / sizeof tb_g7_wide_guard_a[0]},
@@ -8035,7 +8044,7 @@ static const df_tb_battle tb_battles[] = {
     {"xr3_sheercold_sub_miss", 3u, tb_xr3_sheercold_sub_miss, sizeof tb_xr3_sheercold_sub_miss / sizeof tb_xr3_sheercold_sub_miss[0]},
 };
 
-/* 5404 stops: 150 of an ended battle; decided by the count 1301,
- * the HP percentage 1694, the total HP 2114, a tie 145;
- * winners: side 0 2575, side 1 2684, tie 145 */
+/* 5410 stops: 150 of an ended battle; decided by the count 1301,
+ * the HP percentage 1696, the total HP 2118, a tie 145;
+ * winners: side 0 2577, side 1 2688, tie 145 */
 #endif
