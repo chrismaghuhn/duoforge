@@ -531,7 +531,8 @@ static void test_ghost_curse_is_refused(df_test *t)
     set_member(&setup, 0u, 0u, DFI_FORME_BANETTE, 1u, DFI_ABILITY_CURSEDBODY + 1u, 2u, banette);
     duoforge_battle *b = start(t, ctx, cb, &setup);
     if (b != NULL) {
-        duoforge_slot_command cmd[2][2] = {{slot(0, 2), slot(0, DUOFORGE_TARGET_NONE)}, {slot(0, 0), slot(0, DUOFORGE_TARGET_NONE)}};
+        /* Banette's Curse at the foe (position 0 of side 1); the others protect (Venusaur and Pawmot: move 2 is Protect). */
+        duoforge_slot_command cmd[2][2] = {{slot(0, 2), slot(1, DUOFORGE_TARGET_NONE)}, {slot(0, DUOFORGE_TARGET_NONE), slot(1, DUOFORGE_TARGET_NONE)}};
         uint32_t bounces = 0u;
         DF_CHECK_EQ_U64(t, turn(ctx, b, cmd, &bounces), DUOFORGE_E_UNSUPPORTED);
         duoforge_battle_destroy(b);

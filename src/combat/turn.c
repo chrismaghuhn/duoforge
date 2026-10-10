@@ -7061,6 +7061,14 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
             dfi_immune(r, targets[i], 0u);
         }
     }
+    /* hitStepTryImmunity: Leech Seed's onTryImmunity refuses a Grass target (data/moves.ts:10202-10231): -immune, no volatile and
+     * no accuracy roll (the immunity step is before the accuracy step, sim/battle-actions.ts:565-568; step G84). */
+    for (uint32_t i = 0u; i < count; ++i) {
+        if (hit[i] && md->special == DFI_SPECIAL_LEECH_SEED && dfi_has_type(b, dfi_at(b, targets[i]), DFI_TYPE_GRASS)) {
+            hit[i] = false;
+            dfi_immune(r, targets[i], 0u);
+        }
+    }
     /* hitStepTryImmunity, last: a Prankster-boosted status move fails on a Dark foe. */
     for (uint32_t i = 0u; i < count && status_move && dfi_ability(r->b, m, DFI_ABILITY_PRANKSTER); ++i) {
         if (hit[i] && targets[i] / 2u != side && dfi_has_type(b, dfi_at(b, targets[i]), DFI_TYPE_DARK)) {
