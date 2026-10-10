@@ -4048,8 +4048,8 @@ static duoforge_status dfi_before_move(dfi_run *r, uint32_t user, uint32_t move_
             return st;
         }
         if (stop) {
-            duoforge_event e = dfi_ev(DUOFORGE_EVENT_CANT, user, DUOFORGE_CAUSE_ATTRACT, 0u, DUOFORGE_NO_POSITION);
-            e.id = (uint16_t)move_id;
+            /* cant|X|Attract names no move (the line is the same for any move), so the id stays zero, as sleep's and freeze's */
+            const duoforge_event e = dfi_ev(DUOFORGE_EVENT_CANT, user, DUOFORGE_CAUSE_ATTRACT, 0u, DUOFORGE_NO_POSITION);
             dfi_emit(r, &e); /* [cant] Attract */
             return DUOFORGE_OK;
         }
