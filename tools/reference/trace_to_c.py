@@ -1025,6 +1025,9 @@ IGNORED_VOLATILES = {
     # Pool step G72b (Dragon Cheer, decision 0015 5ce): the start line; its crit stage shows in the crit draws of the holder's
     # moves (a -crit line, or the draw's bound) and in the view bit.
     'dragoncheer': "the start line and the crit draws of the holder's moves",
+    # Step G84 (Leech Seed, decision 0047): the volatile is the tail's leech_seed_source (the view bit LEECH_SEED); its presence
+    # shows in the start line, the drain's damage line `[from] Leech Seed` and the silent heal (the HEAL event, cause LEECH_SEED).
+    'leechseed': 'the start line, the drain damage line and the silent heal of the target',
 }
 HP_EXACT, HP_PERCENT = 1, 2
 HP_FLAGS_EV = {'': 0, 'r': 1, 'y': 2, 'g': 3}
