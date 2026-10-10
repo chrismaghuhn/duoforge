@@ -66,6 +66,7 @@ EXT_FIELDS = {
     "WEATHER_SAND": (), "WEATHER_SNOW": (), "AILMENT_TOX": (),
     "THROAT_CHOP": (("bit", EXT_THROAT_CHOP),),
     "AURORA_VEIL": (("side", "aurora_veil_turns"),),
+    "PERISH": (("position", "perish"),),
 }
 # DUOFORGE_SIDE_* of a SIDE_START or SIDE_END event (tailwind 1, reflect 2, light screen 3, Aurora Veil 4) -> the index
 # of the side's turns in Tracker._conditions
@@ -111,6 +112,7 @@ class _Position:
         self.choice_slot = MOVE_SLOT_NONE  # the move slot a Choice item locks (TEAM_C and POOL)
         # The POOL view extension (decision 0018), all ended with the occupant (a switch or a faint):
         self.throat_chop = 0  # Throat Chop's volatile is up (presence only)
+        self.perish = 0  # the Perish count the game showed last, 3 to 1 (0: none)
         self.flags = 0  # DUOFORGE_POSITION_FLAG_* (TEAM_C and POOL): Follow Me, Helping Hand, Unburden
         self.guard_undo = None  # (chain, stall) before a Wide or Quick Guard, until it is known to have run
 
@@ -506,6 +508,10 @@ class Tracker:
             p = self._at(pos)
             p.reset()  # a faint clears the position's conditions; the occupant stays until replaced
             p.fainted = True
+            if public:
+                # a faint that no damage line announced (Perish Song's perish0, step G26): the display shows 0
+                m = self._occupant(pos)
+                m.hp_percent, m.hp_flag = 0, 0
         elif kind == EV["CANT"]:
             # An ability's block (Armor Tail) names its holder; the move's user, [of], took the action.
             self._at(e[2] if e[3] == trace_to_c.CAUSE["ABILITY"] else pos).acted = 1
@@ -548,6 +554,10 @@ class Tracker:
             self._at(pos).confused = 0
         elif kind == EV["FLASH_FIRE"]:
             self._at(pos).flash_fire = 1
+        elif kind == EV["VOLATILE_START"] and detail == trace_to_c.VOLATILE_PERISH:
+            # Perish Song's count (step G26): the residual's -start|X|perishN, N = 3, 2, 1, then perish0 before the
+            # holder faints; the cast's own perish3 line is [silent] (no event), so nothing shows until the first count
+            self._at(pos).perish = amount
         elif kind == EV["PROTECT"]:
             p = self._at(pos)
             p.protecting = 1
@@ -835,6 +845,7 @@ class Tracker:
                     continue  # an empty position: all zero
                 pv = v["positions"][k]
                 pv["volatiles"] = EXT_THROAT_CHOP if p.throat_chop else 0
+                pv["perish"] = p.perish
         return o
 
     def domain(self):
