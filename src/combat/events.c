@@ -285,8 +285,8 @@ bool dfi_events_fold_knowledge(const struct duoforge_battle *before, struct duof
                 if (e.other < 2u * DUOFORGE_ACTIVE_PER_SIDE && (uint32_t)e.other / 2u == foe) {
                     const uint32_t user = occupant[(uint32_t)e.other % 2u];
                     if (user < DUOFORGE_MAX_ROSTER && user < fs->member_count) {
-                        viewer->knowledge[user].revealed = (uint8_t)((uint32_t)viewer->knowledge[user].revealed &
-                                                                     ~(uint32_t)DFI_REVEALED_ITEM_CONSUMED); /* wide-operands-reviewed */
+                        const uint32_t kept = (uint32_t)viewer->knowledge[user].revealed & ~(uint32_t)DFI_REVEALED_ITEM_CONSUMED;
+                        viewer->knowledge[user].revealed = (uint8_t)kept; /* wide-operands-reviewed: < 256 */
                     }
                 }
             } else if (e.kind == DUOFORGE_EVENT_MEGA) {
