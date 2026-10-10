@@ -515,8 +515,9 @@ static void test_unmodelled_bounces_are_refused(df_test *t)
 }
 
 /* G84 (decision 0047): Curse by a Ghost user is refused explicitly (E_UNSUPPORTED). The pin's client gives no target choice
- * for it, so its effect (the halving, the target's volatile and the residual) is not modelled. Gholdengo (Ghost, Steel;
- * Good as Gold) leads side 0 and uses Curse at the foe in position 0 of the battle of g84_c3_nonghost_curse. */
+ * for it, so its effect (the halving, the target's volatile and the residual) is not modelled. Gengar (Ghost, Cursed Body;
+ * learns Curse, data/mods/champions/learnsets.ts gengar) leads side 0 and uses Curse at the foe in position 0 of the battle
+ * of g84_c3_nonghost_curse. */
 static void test_ghost_curse_is_refused(df_test *t)
 {
     const df_conf_battle *cb = must_find(t, "g84_c3_nonghost_curse");
@@ -526,8 +527,8 @@ static void test_ghost_curse_is_refused(df_test *t)
     duoforge_context *ctx = df_make_context(&df_config_pool);
     duoforge_battle_setup setup;
     build_setup(cb, &setup);
-    const uint32_t gholdengo[2] = {DFI_MOVE_CURSE, DFI_MOVE_PROTECT};
-    set_member(&setup, 0u, 0u, DFI_FORME_GHOLDENGO, DUOFORGE_GENDER_NONE, DFI_ABILITY_GOODASGOLD + 1u, 2u, gholdengo);
+    const uint32_t gengar[2] = {DFI_MOVE_CURSE, DFI_MOVE_PROTECT};
+    set_member(&setup, 0u, 0u, DFI_FORME_GENGAR, 1u, DFI_ABILITY_CURSEDBODY + 1u, 2u, gengar);
     duoforge_battle *b = start(t, ctx, cb, &setup);
     if (b != NULL) {
         duoforge_slot_command cmd[2][2] = {{slot(0, 2), slot(0, DUOFORGE_TARGET_NONE)}, {slot(0, 0), slot(0, DUOFORGE_TARGET_NONE)}};

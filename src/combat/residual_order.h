@@ -62,9 +62,9 @@
 #define DFI_RES_LOCK 17u
 #define DFI_RES_NO_ORDER 0xFFFFFFFFu
 
-/* The exact test's bounds: the lists of the engine have at most 3 + 4 * 2 + 19 * 4 entries, a few draws and a few
- * orders (3 + 4 * 2 + 19 * 4, the count of steps G27, G31 and G32 together). */
-#define DFI_RES_MODEL_MAX 96u
+/* The exact test's bounds: the lists of the engine have at most 3 + 4 * 2 + 22 * 4 entries, a few draws and a few
+ * orders (22 per position: the count of steps G27, G31, G32, G56, G42 and G84 together, DFI_RES_PER_POSITION in turn.c). */
+#define DFI_RES_MODEL_MAX 99u
 #define DFI_RES_DRAW_CAP 4096u
 #define DFI_RES_ARRANGEMENT_CAP 1024u
 #define DFI_RES_REGION_MAX 4u
