@@ -4699,6 +4699,7 @@ static duoforge_status dfi_leech_seed(dfi_run *r, uint32_t user, uint32_t flat, 
     if (dfi_has_type(b, tm, DFI_TYPE_GRASS)) {
         const duoforge_event im = dfi_ev(DUOFORGE_EVENT_IMMUNE, flat, DUOFORGE_CAUSE_NONE, 0u, DUOFORGE_NO_POSITION);
         dfi_emit(r, &im); /* -immune|target (onTryImmunity returns false; no volatile, no [still]) */
+        r->mres |= DFI_MRES_FALSE; /* the failed TryImmunity is a false hit result (sim/battle-actions.ts): classified, no Updates */
         return DUOFORGE_OK;
     }
     if (tail->leech_seed_source != 0u) {
