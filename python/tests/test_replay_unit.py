@@ -1450,9 +1450,11 @@ class DatasetTest(unittest.TestCase):
         from duoforge_replay import funnel
         c = self.build("turns")
         f = funnel.report(c)["gen9championsvgc2026regmcbo3"]
-        self.assertEqual(f["turns"], {"total": c["turns.total"], "kept": c["turns.kept"]})
+        self.assertEqual(f["turns"], {"total": c["turns.total"], "kept": c["turns.kept"], "refused": 0})
         self.assertGreater(f["turns"]["total"], 0)
-        self.assertIn("turns without a stop", funnel.text(funnel.report(c)))
+        text = funnel.text(funnel.report(c))
+        self.assertIn("turns without a stop, of all its games taken", text)
+        self.assertIn("turns without a stop, of the games set up", text)
 
     def test_the_funnel_command_reads_a_dataset(self):
         import contextlib
@@ -1486,10 +1488,14 @@ class DatasetTest(unittest.TestCase):
         f = funnel.report(c)["gen9championsvgc2026regmc"]
         self.assertEqual((f["read"], f["skipped"], f["internal"], f["processed"]),
                          (2, {"name:FORME Fakemon": 1}, 0, 1))
+        # a refused game's turns stay in the denominator of the turn coverage, both perspectives, none kept
+        turns = max(int(line.split("|")[2]) for line in lines if line.startswith("|turn|"))
+        self.assertEqual(f["turns"]["refused"], 2 * turns)
         c = build.build([self.source], self.prior_path, self.tmp / "internal", unit_lines=2,
                         stats_factory=broken_stats_factory, log=lambda _: None)
         f = funnel.report(c)["gen9championsvgc2026regmcbo3"]
         self.assertEqual((f["read"], f["internal"], f["processed"], f["rows"]), (3, 3, 0, 0))
+        self.assertGreater(f["turns"]["refused"], 0)  # an internal error's turns too
         self.assertEqual(f["internal"], c["internal:RuntimeError"])
 
     def test_the_funnel_command_refuses_a_dataset_without_funnel(self):
