@@ -652,6 +652,18 @@ class PointsTest(unittest.TestCase):
         pivot = [pt for pt in points.find(other) if pt.boundary == points.PIVOT]
         self.assertTrue(other[pivot[0].line].startswith("|switch|"))
 
+    def test_an_emergency_exit_in_the_switch_phase_is_a_pivot(self):
+        # g37_exit: a member switched in at the TURN point takes the hazards to half and leaves by Emergency Exit before
+        # any action of the turn; the switch into its position answers a PIVOT, it is no TURN action
+        from duoforge_replay import points
+        log = self._HEAD + ["|switch|p2a: Golisopod|Golisopod, L50|100/100",
+                            "|-damage|p2a: Golisopod|40/100|[from] Stealth Rock",
+                            "|-activate|p2a: Golisopod|ability: Emergency Exit",
+                            "|switch|p2a: Milotic|Milotic, L50|100/100",
+                            "|move|p1a: Dragalge|Protect|p1a: Dragalge", "|upkeep", "|turn|2"]
+        found = [(pt.boundary, pt.run) for pt in points.find(log)]
+        self.assertEqual(found[2:], [(points.PIVOT, (2,)), (points.TURN, ())])
+
 
 class PriorTest(unittest.TestCase):
     """The stat point prior (Task 4, spec section 10), on pastes of our reference teams."""
