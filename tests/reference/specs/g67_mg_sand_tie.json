@@ -1,6 +1,6 @@
 {
   "name": "g67_mg_sand_tie",
-  "purpose": "Step G67 (decision 0015 entry 5bl): the Reuniclus mirror. Two Magic Guard Reuniclus tie in speed in the Sandstorm residual; neither takes the damage (no damage line), so the order of their shuffle is not shown, but the engine draws it (its tie group holds the Pokemon that take the damage). Found by the differential campaign seed 6700000, battle 2. cut at step 9: step 17 hits the pre-existing substitute secondary-draw gap (sim/battle-actions.ts:1346), tracked separately. The full uncut spec is kept outside the repository (for the fixer of that gap).",
+  "purpose": "Step G67 (decision 0015 entry 5bl): the Reuniclus mirror. Two Magic Guard Reuniclus tie in speed in the Sandstorm residual; neither takes the damage (no damage line), so the order of their shuffle is not shown, but the engine draws it (its tie group holds the Pokemon that take the damage). Found by the differential campaign seed 6700000, battle 2.",
   "data": "pool",
   "format": "gen9championsvgc2026regmc",
   "seed": "sodium,0f24646f95b367f6d9e8fc02566a8496ec40fcbc9329e9d3c6e2e9c254b30461",
@@ -46,6 +46,96 @@
     {
       "p1": "move 1 1, move 2",
       "p2": "move 3, switch 3"
+    },
+    {
+      "p2": "switch 4, pass"
+    },
+    {
+      "p1": "move 1 1, move 1 -1",
+      "p2": "move 1 -2, move 3"
+    },
+    {
+      "p1": "move 2, move 2",
+      "p2": "move 3, move 1 2"
+    },
+    {
+      "p1": "move 3, move 1 2",
+      "p2": "move 2, move 3"
+    },
+    {
+      "p1": "move 2, move 4",
+      "p2": "move 1 -2, move 3"
+    },
+    {
+      "p1": "move 3, move 1 1",
+      "p2": "move 3, move 2"
+    },
+    {
+      "p1": "move 3, move 2",
+      "p2": "move 2, switch 3"
+    },
+    {
+      "p1": "move 2, move 4",
+      "p2": "move 1 1, move 1"
+    },
+    {
+      "p1": "move 3, move 3",
+      "p2": "move 1 1, move 3"
+    },
+    {
+      "p1": "move 2, move 1 2",
+      "p2": "move 3, move 2"
+    },
+    {
+      "p2": "pass, switch 3"
+    },
+    {
+      "p1": "move 1 -2, move 3",
+      "p2": "move 2, move 3"
+    },
+    {
+      "p1": "move 2, move 3",
+      "p2": "move 3, move 3"
+    },
+    {
+      "p1": "move 3, move 2",
+      "p2": "move 1 1, move 3"
+    },
+    {
+      "p1": "move 3, move 3",
+      "p2": "move 2, move 1 -1"
+    },
+    {
+      "p1": "move 1 1, move 2",
+      "p2": "move 3, move 2"
+    },
+    {
+      "p1": "move 1 -2, move 2",
+      "p2": "move 3, move 2"
+    },
+    {
+      "p1": "move 1 -2, move 4",
+      "p2": "move 2, move 3"
+    },
+    {
+      "p1": "move 1 -2, move 1 2",
+      "p2": "move 3, move 1 2"
+    },
+    {
+      "p1": "move 3, pass",
+      "p2": "move 1 -2, move 1 1"
+    },
+    {
+      "p1": "move 3, pass",
+      "p2": "move 3, pass"
+    },
+    {
+      "p1": "move 2, pass",
+      "p2": "move 1 1, pass"
+    },
+    {
+      "p1": "move 1 -2, pass",
+      "p2": "move 1 2, pass"
     }
   ]
 }

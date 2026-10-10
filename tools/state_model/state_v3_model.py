@@ -298,7 +298,7 @@ KD = TeamCContext(KIND_TEAM_C_DEV, 6, 4)
 # which tests/test_pool_tables.c recomputes from the pool canonical bytes: the
 # pool layout over the pool data, then the family columns, the handler columns
 # and the moves and abilities that each forme may have.
-POOL_TABLE_HASH = bytes.fromhex('461f77f93ff39a7a566d5bddfe6842ecce72d1817a7a3fcca697b06a427558fc')
+POOL_TABLE_HASH = bytes.fromhex('21a9ffe32b7bfb9ac9eff12fbed298b523a3347d4b07e92339365dcf92a5c6d6')
 KIND_POOL, KIND_POOL_DEV = 6, 7
 
 
@@ -973,11 +973,18 @@ def hazard_order_valid(ts):
 
 
 def position_flags_valid(pf):
-    """Rev 5 (G72b): bit 0 (Healing Wish) and bits 4-7 are zero, and the Dragon Cheer stage (bits 2-3) is at most 2."""
-    return pf & ~0x0F == 0 and pf & 0x01 == 0 and (pf >> 2) & 3 <= 2
+    """Rev 5 (G72b, G76): bit 0 (Healing Wish) and bits 5-7 are zero, the Dragon Cheer stage (bits 2-3) is at most 2, and
+    bit 4 is Destiny Bond (G76)."""
+    return pf & ~0x1F == 0 and pf & 0x01 == 0 and (pf >> 2) & 3 <= 2
 
 
-def tail_pos_valid(ctx, tp, flat, mem, slot_flags=0):
+def substitute_cap(sd):
+    """The bound of a Substitute on a side (decision 0042, lead's decision A): the largest floor(maxhp / 4) among the
+    brought members of the side, since a pass moves a Substitute to another brought member. C: dfi_substitute_cap."""
+    return max([sd['members'][m]['hp_max'] // 4 for m in range(sd['member_count']) if (sd['brought'] >> m) & 1] or [0])
+
+
+def tail_pos_valid(ctx, tp, flat, mem, slot_flags=0, sub_cap=0):
     """The tail of a standing occupant's position (the rules of decision 0015 section 7)."""
     mc = mem['move_count']
     if not (tp['last_move'] <= TAIL_MOVE_MAX and (tp['last_move'] == TAIL_MOVE_MAX or tp['last_move'] <= mc)
@@ -992,7 +999,7 @@ def tail_pos_valid(ctx, tp, flat, mem, slot_flags=0):
         return False
     if not all(tp[f] <= TAIL_FLAG_MAX for f in ('imprison', 'must_recharge', 'focus_energy', 'charge', 'glaive_rush')):
         return False
-    if tp['substitute_hp'] > mem['hp_max'] // 4:
+    if tp['substitute_hp'] > sub_cap:  # decision 0042: the side's cap, not the occupant's quarter
         return False
     if not (tp['trap_turns'] <= TAIL_TRAP_TURNS_MAX and tp['trap_source'] <= TAIL_SOURCE_MAX
             and tp['trap_source'] != flat + 1 and tp['trap_move'] <= ctx.move_count
@@ -1014,8 +1021,9 @@ def tail_pos_valid(ctx, tp, flat, mem, slot_flags=0):
             and tp['hits_taken'] <= TAIL_HITS_TAKEN_MAX and tp['ability_state'] <= TAIL_ABILITY_STATE_MAX
             and tp['lock_turns'] <= TAIL_LOCK_TURNS_MAX):
         return False
-    # Rev 5 (lane A, G72b, decision 0015 5ce): the position flags are a bitfield: bit 0 (Healing Wish) and bits 4-7 are zero,
-    # the Dragon Cheer stage (bits 2-3) is at most 2, and the stats-raised bit and the stage need an occupant. Future Sight is zero.
+    # Rev 5 (lane A, G72b, decision 0015 5ce; G76): the position flags are a bitfield: bit 0 (Healing Wish) and bits 5-7 are
+    # zero, the Dragon Cheer stage (bits 2-3) is at most 2, bit 4 is Destiny Bond, and the stats-raised bit, the stage and
+    # Destiny Bond need an occupant. Future Sight is zero.
     if not position_flags_valid(tp['position_flags']):
         return False
     if tp['future_sight'] != 0:
@@ -1056,7 +1064,7 @@ def check_tail(ctx, st):
                 if not (flags_only and (tp['position_flags'] == 0 or (occ < MAX_ROSTER and position_flags_valid(tp['position_flags'])))):
                     return 'TAIL_POSITION'
                 continue
-            if not tail_pos_valid(ctx, tp, 2 * s + p, sd['members'][occ], sd['pos'][p]['flags']):
+            if not tail_pos_valid(ctx, tp, 2 * s + p, sd['members'][occ], sd['pos'][p]['flags'], substitute_cap(sd)):
                 return 'TAIL_POSITION'
         for m in range(MAX_ROSTER):
             ab, fo, ty, it, tx = ts['ability_now'][m], ts['forme_now'][m], ts['soak'][m], ts['item_now'][m], ts['toxic_stage'][m]

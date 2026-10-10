@@ -28,7 +28,8 @@ from duoforge_live.data import ROOT
 
 from .labels import TEAM_BYTES
 
-FORMAT_VERSION = 1
+FORMAT_VERSION = 2  # 2: every manifest names its "source" (sheet, bo1_belief, drop_sheets); 1 had none (sheet)
+SOURCES = ("sheet", "bo1_belief", "drop_sheets")
 _DATE = (1980, 1, 1, 0, 0, 0)
 
 
@@ -95,8 +96,11 @@ def _sha256(path):
 
 
 class Writer:
-    def __init__(self, out_dir, manifest, shard_rows=65536):
+    def __init__(self, out_dir, manifest, shard_rows=65536, source="sheet"):
+        if source not in SOURCES:
+            raise ValueError(f"source {source!r} is none of {SOURCES}")
         refuse_repository(out_dir)
+        self.source = source
         self.out = Path(out_dir)
         if self.out.exists() and any(self.out.iterdir()):
             raise ValueError(f"the output {out_dir} is not empty: old shards would mix with new ones")
@@ -110,6 +114,10 @@ class Writer:
 
     def add(self, result):
         """One game's rows and counters (game.GameResult)."""
+        belief = self.source != "sheet"
+        if any((row.belief_level is not None) != belief for row in result.rows):
+            raise ValueError(f"a {self.source} dataset takes only {'belief rows' if belief else 'sheet rows'}: "
+                             f"belief rows and sheet rows never mix")
         index = len(self.games)
         self.games.append(result.record)
         self.counters.update(result.counters)
@@ -131,6 +139,9 @@ class Writer:
             "label_team": np.zeros((n, TEAM_BYTES), dtype=np.uint8), "label_reason": np.zeros((n, 2), dtype=np.uint8),
             "prior_level": np.zeros((n, 6), dtype=np.uint8),
         }
+        if self.source != "sheet":
+            arrays["belief_level"] = np.zeros((n, 12), dtype=np.uint8)
+            arrays["revealed"] = np.zeros((n, 6), dtype=np.uint8)
         for i, (game, row) in enumerate(self.rows):
             arrays["observation"][i] = row.observation
             arrays["domain"][i] = row.domain
@@ -139,6 +150,9 @@ class Writer:
             arrays["label_team"][i] = np.frombuffer(row.label.team, dtype=np.uint8)
             arrays["label_reason"][i] = row.label.reasons
             arrays["prior_level"][i] = row.prior_level
+            if self.source != "sheet":
+                arrays["belief_level"][i] = row.belief_level
+                arrays["revealed"][i] = row.revealed
         name = f"rows-{len(self.shards):05d}.npz"
         write_npz(self.out / name, arrays)
         self.shards.append({"file": name, "rows": n, "sha256": _sha256(self.out / name)})
@@ -148,7 +162,7 @@ class Writer:
         """Writes the last shard, the games table, the manifest and the counters; returns the counters."""
         self._flush()
         g = self.games
-        write_npz(self.out / "games.npz", {
+        games = {
             "replay_id": np.array([r.replay_id for r in g], dtype=str),
             "format_id": np.array([r.format_id for r in g], dtype=str),
             "bo3_game": np.array([r.bo3_game for r in g], dtype=np.uint8),
@@ -157,9 +171,13 @@ class Writer:
             "turns": np.array([r.turns for r in g], dtype=np.uint16),
             "players": np.array([r.players for r in g], dtype=np.uint64).reshape(len(g), 2),
             "sheets": np.array([r.sheets for r in g], dtype=np.uint64).reshape(len(g), 2),
-        })
+        }
+        if self.source != "sheet":
+            games["draw"] = np.array([r.draw for r in g], dtype=np.uint8)
+        write_npz(self.out / "games.npz", games)
         counters = dict(sorted(self.counters.items()))
-        manifest = {**self.manifest, "format_version": FORMAT_VERSION, "games": len(g), "shards": self.shards,
+        manifest = {**self.manifest, "format_version": FORMAT_VERSION, "source": self.source, "games": len(g),
+                    "shards": self.shards,
                     "games_sha256": _sha256(self.out / "games.npz"), "counters": counters}
         (self.out / "counters.json").write_text(json.dumps(counters, indent=1) + "\n", encoding="utf-8")
         fsync_file(self.out / "counters.json")
