@@ -215,6 +215,12 @@ duoforge_add_test(NAME duoforge.state.pool_g70 SOURCES test_pool_g70.c WHITEBOX 
 # Step G57: Magic Bounce and the Mega Stones Absolite and Sablenite (the reflectable column against the pinned Dex, the marks).
 duoforge_add_test(NAME duoforge.state.pool_g57 SOURCES test_pool_g57.c WHITEBOX TIMEOUT 60)
 duoforge_add_test(NAME duoforge.state.pool_g58 SOURCES test_pool_g58.c WHITEBOX TIMEOUT 60)
+# Step G72: Yawn on a charging (semi-invulnerable) target under Electric Terrain: the volatile starts on the locked turn, the
+# residual sleep is not refused while the charge is up, and a Yawn without No Guard misses (decision 0015 item 5ce).
+duoforge_add_test(NAME duoforge.state.pool_g72 SOURCES test_pool_g72.c WHITEBOX TIMEOUT 60)
+# Step G72b: Alluring Voice (the stats-raised position flag) and Dragon Cheer (the crit stage), the PIVOT refusal of the public
+# record (decision 0015 5ce); the recorded battles are duoforge.reference.conformance_pool_data.
+duoforge_add_test(NAME duoforge.state.pool_g72b SOURCES test_pool_g72b.c WHITEBOX LIBS duoforge_batch TIMEOUT 60)
 # Step G42: Roost and Stomping Tantrum: the move result classes (this and last) at every boundary of the g42 battles, the Roost
 # volatile (the pivot boundary inside its turn), the view bits (40 supported, 41 not), the unclassified refusal.
 duoforge_add_test(NAME duoforge.state.pool_g42 SOURCES test_pool_g42.c WHITEBOX TIMEOUT 60)
@@ -258,8 +264,8 @@ foreach(_gen IN ITEMS
         "closure_tables.c=490de42298e34cfd38192d979fd022367bf53693a5fa1855f1cc6ad034d8450a"
         "extended_tables.h=b2abef243fcbfdd87654940076b9fe2fe80b117d74893a7567741f26b9075a7d"
         "extended_tables.c=9e736fa467713283418c4edf8f56b8d844452e596ba422adbd52483d20f7cc17"
-        "pool_tables.h=13c7098ec6fbed4bd4b78208ced3a88c4669149858cbdd4378f7e8a5b1092183"
-        "pool_tables.c=065dbc8c94761809feef72ed5cd60da14eaf062ba91ebd26f7b0412e8704e5e3")
+        "pool_tables.h=cf2d1b4e50bdf13590e31d7b54da99e3ab266ced0907e4c221e5435e241d0198"
+        "pool_tables.c=cb43b1d86c7b838b6a1c9ad487c1d4e154e7fdf9df7ddc31ee184cc4e02f3b67")
     string(REPLACE "=" ";" _parts "${_gen}")
     list(GET _parts 0 _file)
     list(GET _parts 1 _expected)

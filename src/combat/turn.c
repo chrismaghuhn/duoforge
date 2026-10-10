@@ -121,6 +121,19 @@ static dfi_member *dfi_at(struct duoforge_battle *b, uint32_t flat)
     return &b->sides[flat / 2u].members[occupant];
 }
 
+/* Tail rev 5 position flags (G72b, decision 0015 5ce): the stats-raised bit of a position (Alluring Voice's statsRaisedThisTurn)
+ * and the Dragon Cheer crit stage (0, 1 or 2; the holder's onModifyCritRatio, read in dfi_get_damage). */
+static bool dfi_stats_raised(const struct duoforge_battle *b, uint32_t flat)
+{
+    return (((uint32_t)b->tail.sides[flat / 2u].positions[flat % 2u].position_flags & DFI_POSFLAG_STATS_RAISED) != 0u);
+}
+
+static uint32_t dfi_dragon_cheer_stage(const struct duoforge_battle *b, uint32_t flat)
+{
+    return ((uint32_t)b->tail.sides[flat / 2u].positions[flat % 2u].position_flags & DFI_POSFLAG_DRAGON_CHEER_MASK) >>
+           DFI_POSFLAG_DRAGON_CHEER_SHIFT;
+}
+
 /* The brought members of a side at 0 HP: side.totalFainted, since the
  * data has no revival and faints are processed before the next action
  * (decision 0009 section 4.1; Last Respects). */
@@ -1191,6 +1204,12 @@ static bool dfi_boost(dfi_run *r, uint32_t flat, const uint8_t *boosts, uint32_t
         one[i] = capped[i];
         dfi_apply_boosts(pos, one);
         const uint32_t after = pos->stages[i];
+        if (after > before && dfi_kind_limits_of(r->ctx->data_kind).pool_rules) {
+            /* statsRaisedThisTurn (sim/battle.ts:2085): a positive boost that changed a stage (any source). The flag is a POOL tail
+             * field: the other kinds keep their tail all zero (invariants.c, dfi_check_tail). */
+            dfi_tail_pos *tp = &r->b->tail.sides[flat / 2u].positions[flat % 2u];
+            tp->position_flags = (uint8_t)((uint32_t)tp->position_flags | DFI_POSFLAG_STATS_RAISED); /* wide-operands-reviewed */
+        }
         const uint32_t by = after > before ? after - before : before - after;
         /* -unboost for a fall, and for any change at -6 */
         const bool down = capped[i] < DFI_BIAS6 || after == 0u;
@@ -1518,7 +1537,9 @@ static duoforge_status dfi_get_damage(dfi_run *r, uint32_t user, uint32_t target
     const dfi_active_slot *ap = dfi_pos(r->b, user);
     const dfi_active_slot *dp = dfi_pos(r->b, target);
     bool crit = false;
-    uint32_t ratio = md->crit_ratio;
+    /* ModifyCritRatio (sim/battle-actions.ts:1624): the attacker's Dragon Cheer stage added to the move's ratio, then the clamp to
+     * 0..4 for gen 9 (sim/battle-actions.ts:1629). */
+    uint32_t ratio = (uint32_t)md->crit_ratio + dfi_dragon_cheer_stage(r->b, user);
     if (ratio > 4u) {
         ratio = 4u;
     }
@@ -4333,6 +4354,32 @@ static bool dfi_taunt(dfi_run *r, uint32_t user, uint32_t flat)
     return true;
 }
 
+/* Dragon Cheer (data/moves.ts:4056-4086, no Champions change; accuracy true, target adjacentAlly; step G72b, decision 0015 5ce).
+ * Its volatile's onStart fails when the target has Focus Energy (the tail's focus_energy byte, which nothing writes yet: the
+ * pin's focusenergy is unmarked) and when the target has the volatile already (addVolatile refuses a second one: no onRestart),
+ * with -fail and [still]. Otherwise the volatile starts (-start|X|move: Dragon Cheer, no END) and stores whether the target is
+ * Dragon-type at its start (hasDragonType): the crit stage is +2 for a Dragon, +1 otherwise, read for the holder when it attacks
+ * (dfi_get_damage). The stage is a position flag, so a switch-out clears it with the rest of the position's tail. */
+static bool dfi_dragon_cheer(dfi_run *r, uint32_t user, uint32_t flat)
+{
+    struct duoforge_battle *b = r->b;
+    const dfi_member *tm = dfi_at(b, flat);
+    dfi_tail_pos *tail = &b->tail.sides[flat / 2u].positions[flat % 2u];
+    if (tm == NULL || tm->hp == 0u) {
+        return false;
+    }
+    if (tail->focus_energy != 0u || dfi_dragon_cheer_stage(b, flat) != 0u) {
+        dfi_fail_still(r, user);
+        return false;
+    }
+    const uint32_t stage = dfi_has_type(b, tm, DFI_TYPE_DRAGON) ? DFI_POSFLAG_DRAGON_CHEER_MAX : 1u;
+    tail->position_flags = (uint8_t)((uint32_t)tail->position_flags | (stage << DFI_POSFLAG_DRAGON_CHEER_SHIFT)); /* wide-operands-reviewed */
+    duoforge_event e = dfi_event_make(DUOFORGE_EVENT_VOLATILE_START, flat);
+    e.detail = (uint8_t)DUOFORGE_VOLATILE_DRAGONCHEER;
+    dfi_emit(r, &e);
+    return true;
+}
+
 /* Yawn (data/moves.ts:21131-21162, no Champions change; accuracy true: no draw). Its own onTryHit fails the move
  * (-fail|user with [still]) for a target that has a status or is immune to sleep (no marked ability, item or type of
  * the pool is: the Immunity handlers of Insomnia, Vital Spirit, Sweet Veil and Comatose are unmarked; Electric Terrain's
@@ -5645,6 +5692,10 @@ static duoforge_status dfi_status_effects(dfi_run *r, uint32_t user, uint32_t mo
                 did = did || swapped;
                 continue;
             }
+            if (md->special == DFI_SPECIAL_DRAGON_CHEER) {
+                did = dfi_dragon_cheer(r, user, targets[i]) || did;
+                continue;
+            }
             if (md->special == DFI_SPECIAL_YAWN) {
                 did = dfi_yawn(r, user, targets[i]) || did;
                 continue;
@@ -6370,7 +6421,7 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
         md->special != DFI_SPECIAL_STRENGTH_SAP && md->special != DFI_SPECIAL_HEAL_PULSE && md->special != DFI_SPECIAL_SOAK && md->special != DFI_SPECIAL_ENCORE && md->special != DFI_SPECIAL_DISABLE &&
         md->special != DFI_SPECIAL_AFTER_YOU && md->special != DFI_SPECIAL_QUASH && /* step G62: their own hit, below (after the Protect and immunity steps) */
         md->special != DFI_SPECIAL_TRICK && md->special != DFI_SPECIAL_SWITCHEROO && md->special != DFI_SPECIAL_SKILL_SWAP &&
-        md->special != DFI_SPECIAL_TAUNT && md->special != DFI_SPECIAL_YAWN &&
+        md->special != DFI_SPECIAL_TAUNT && md->special != DFI_SPECIAL_YAWN && md->special != DFI_SPECIAL_DRAGON_CHEER &&
         md->boost_role != DFI_BOOST_ROLE_PRIMARY_TARGET &&
         (dfi_pool_move_flags2[move_id] & DFI_MOVE_FLAG2_FORCE_SWITCH) == 0u) {
         if (dfi_pool_move_heal[move_id][1] != 0u) {
@@ -6420,7 +6471,8 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
         md->special != DFI_SPECIAL_BUG_BITE && md->special != DFI_SPECIAL_AFTER_YOU &&
         md->special != DFI_SPECIAL_QUASH && md->special != DFI_SPECIAL_SUBSTITUTE && md->special != DFI_SPECIAL_PHANTOM_FORCE &&
         md->special != DFI_SPECIAL_STEEL_BEAM && md->special != DFI_SPECIAL_THUNDER_WAVE &&
-        md->special != DFI_SPECIAL_SKILL_SWAP) {
+        md->special != DFI_SPECIAL_SKILL_SWAP &&
+        md->special != DFI_SPECIAL_ALLURING_VOICE && md->special != DFI_SPECIAL_DRAGON_CHEER) {
         return DUOFORGE_E_INVARIANT;
     }
     /* Steel Roller's onTry (step G34, data/moves.ts:17893-17913): it fails without a terrain, with -fail and [still]. */
@@ -7036,6 +7088,27 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
                 st = dfi_double_shock_self(r, user, move_id);
                 if (st != DUOFORGE_OK) {
                     return st;
+                }
+            }
+        }
+        /* Alluring Voice's secondary (data/moves.ts:282-301: chance 100, confusion when the target's statsRaisedThisTurn; owned by
+         * its handler, the pool row has no secondary field). The draw is the secondaries' (sim/battle-actions.ts:1336-1349: one
+         * random(100) per hit target, even at 100), then the moveHit of the secondary runs the confusion on a raised target. */
+        if (md->special == DFI_SPECIAL_ALLURING_VOICE) {
+            for (uint32_t i = 0u; i < count; ++i) {
+                if (!hit[i]) {
+                    continue;
+                }
+                uint32_t roll = 0u;
+                st = dfi_draw(r->draws, DFI_SITE_SECONDARY, 0u, 100u, &roll);
+                if (st != DUOFORGE_OK) {
+                    return st;
+                }
+                if (roll < 100u && dfi_stats_raised(r->b, targets[i])) {
+                    st = dfi_add_volatile(r, targets[i], DFI_VOLATILE_CONFUSION);
+                    if (st != DUOFORGE_OK) {
+                        return st;
+                    }
                 }
             }
         }
@@ -9421,6 +9494,9 @@ static duoforge_status dfi_end_turn(dfi_run *r)
         dfi_choice_lock_ends(b, flat);
         dfi_active_slot *pos = dfi_pos(b, flat);
         pos->flags = (uint8_t)((uint32_t)pos->flags & ~DFI_VOL_NEWLY_SWITCHED); /* wide-operands-reviewed */
+        /* statsRaisedThisTurn is cleared at the turn's end (sim/battle.ts:1678, endTurn): the raised bit is per turn */
+        b->tail.sides[flat / 2u].positions[flat % 2u].position_flags =
+            (uint8_t)((uint32_t)b->tail.sides[flat / 2u].positions[flat % 2u].position_flags & ~(uint32_t)DFI_POSFLAG_STATS_RAISED); /* wide-operands-reviewed */
         /* moveLastTurnResult = moveThisTurnResult, then this turn's is undefined (sim/battle.ts:1674-1675). The unclassified
          * bit moves with the result (step G42). */
         dfi_tail_pos *tp = &b->tail.sides[flat / 2u].positions[flat % 2u];

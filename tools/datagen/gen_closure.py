@@ -2254,6 +2254,8 @@ SPECIAL_P = dict(SPECIAL_C, **{
     'stoneaxe': ('STONE_AXE', {'onAfterHit', 'onAfterSubDamage'}),        # G48: Stealth Rock on the foe's side after a hit
     'ceaselessedge': ('CEASELESS_EDGE', {'onAfterHit', 'onAfterSubDamage'}),  # G48: a Spikes layer on the foe's side after a hit
     'populationbomb': ('MULTI_HIT_10', set()),
+    'alluringvoice': ('ALLURING_VOICE', set()),                       # G72b: confusion when the target's stats were raised this turn
+    'dragoncheer': ('DRAGON_CHEER', set()),    # G72b: the crit stage of its target (the ally), by its Dragon type at start
     'doubleshock': ('DOUBLE_SHOCK', {'onTryMove'}),                       # G50: fails without Electric; its self effect is owned                            # G48: ten hits, a check for each (multiaccuracy)
     'steelbeam': ('STEEL_BEAM', {'onMoveFail'}),                          # G68: mindBlownRecoil (half the maximum HP on a hit and in MoveFail)
     'thunderwave': ('THUNDER_WAVE', set()),                               # G68: ignoreImmunity false (Ground is immune to the Electric move)
@@ -2329,6 +2331,21 @@ BATTLE_ONLY_ROWS = ['aegislashblade']
 # Step G66, King's Shield (data/moves.ts:9905-9955; Champions: pp 5 only, data/mods/champions/moves.ts:564-568): the Protect
 # variant with -1 Attack on a contact attacker and no block of a Status move (checkMoveBypassesProtect with blockStatus false).
 G66_HANDLERS = ['KINGS_SHIELD']
+# Step G72b (decision 0015 5ce, lead's approval): Alluring Voice's secondary (confusion when the target's stats were raised this
+# turn: the position flag of tail rev 5) and Dragon Cheer's volatile (the crit stage in the position flags).
+G72B_HANDLERS = ['ALLURING_VOICE', 'DRAGON_CHEER']
+G72B_FACTS = (
+    'accuracy: 100,', 'basePower: 80,', 'category: "Special",', 'priority: 0,',
+    'flags: { protect: 1, mirror: 1, sound: 1, bypasssub: 1, metronome: 1 },', 'chance: 100,',
+    'if (target?.statsRaisedThisTurn) {', "target.addVolatile('confusion', source, move);", 'target: "normal",', 'type: "Fairy",',
+)
+G72B_DRAGON_CHEER_FACTS = (
+    'accuracy: true,', 'basePower: 0,', 'category: "Status",', 'priority: 0,',
+    'flags: { bypasssub: 1, allyanim: 1, metronome: 1 },', "volatileStatus: 'dragoncheer',",
+    "if (target.volatiles['focusenergy']) return false;", "this.add('-start', target, 'move: Dragon Cheer');",
+    'this.effectState.hasDragonType = target.hasType("Dragon");',
+    'return critRatio + (this.effectState.hasDragonType ? 2 : 1);', 'target: "adjacentAlly",', 'type: "Dragon",',
+)
 G58_FACTS = (
     'accuracy: 100,', 'basePower: 90,', 'category: "Physical",', 'priority: 0,', 'target: "normal",', 'type: "Ghost",',
     'flags: { contact: 1, charge: 1, mirror: 1, metronome: 1, nosleeptalk: 1, noassist: 1, failinstruct: 1 },',
@@ -2420,7 +2437,7 @@ G68_FACTS = (
                      'flags: { protect: 1, reflectable: 1, mirror: 1, metronome: 1 },', "status: 'par',",
                      'ignoreImmunity: false,', 'target: "normal",', 'type: "Electric",']),
 )
-SPECIAL_IDS_P = SPECIAL_IDS_C + G2_HANDLERS + WEATHER_HANDLERS + G16_HANDLERS + G15_HANDLERS + G19_HANDLERS + G20_HANDLERS + G20_PROTECT_HANDLERS + G28_HANDLERS + G30_HANDLERS + G32_HANDLERS + G34_HANDLERS + G27_HANDLERS + G25_HANDLERS + G26_HANDLERS + G33_HANDLERS + G38_HANDLERS + G29_HANDLERS + G39_HANDLERS + G31_HANDLERS + G48_HANDLERS + G44_HANDLERS + G50_HANDLERS + G42_HANDLERS + G56_HANDLERS + G52_HANDLERS + G54_HANDLERS + G64_HANDLERS + G62_HANDLERS + G60_HANDLERS + G58_HANDLERS + G68_HANDLERS + G70_HANDLERS + G66_HANDLERS + ['UNMODELED']# Step G10 made two of these handlers data: Scald (thawsTarget) and Recover (heal) are read into the second flags# byte (bit 4, thaws the target) and the heal column, and have the special NONE; their ids stay defined (the ids after
+SPECIAL_IDS_P = SPECIAL_IDS_C + G2_HANDLERS + WEATHER_HANDLERS + G16_HANDLERS + G15_HANDLERS + G19_HANDLERS + G20_HANDLERS + G20_PROTECT_HANDLERS + G28_HANDLERS + G30_HANDLERS + G32_HANDLERS + G34_HANDLERS + G27_HANDLERS + G25_HANDLERS + G26_HANDLERS + G33_HANDLERS + G38_HANDLERS + G29_HANDLERS + G39_HANDLERS + G31_HANDLERS + G48_HANDLERS + G44_HANDLERS + G50_HANDLERS + G42_HANDLERS + G56_HANDLERS + G52_HANDLERS + G54_HANDLERS + G64_HANDLERS + G62_HANDLERS + G60_HANDLERS + G58_HANDLERS + G68_HANDLERS + G70_HANDLERS + G66_HANDLERS + G72B_HANDLERS + ['UNMODELED']# Step G10 made two of these handlers data: Scald (thawsTarget) and Recover (heal) are read into the second flags# byte (bit 4, thaws the target) and the heal column, and have the special NONE; their ids stay defined (the ids after
 # them keep their values). First Impression and Low Kick keep theirs: the turn code implements them.
 POOL_COLUMN_KEYS = {'thawsTarget', 'heal'}
 G2_OWNED_FIELDS = {
@@ -2431,6 +2448,7 @@ G2_OWNED_FIELDS = {
     'DISABLE': {'volatileStatus': "volatileStatus: 'disable',"},
     'SPIKY_SHIELD': {'volatileStatus': "volatileStatus: 'spikyshield',"},
     'TAUNT': {'volatileStatus': "volatileStatus: 'taunt',"},
+    'DRAGON_CHEER': {'volatileStatus': "volatileStatus: 'dragoncheer',"},
     'SUBSTITUTE': {'volatileStatus': "volatileStatus: 'substitute',"},
     'YAWN': {'volatileStatus': "volatileStatus: 'yawn',"},
     'REVIVAL_BLESSING': {'slotCondition': "slotCondition: 'revivalblessing', // No this not a real switchout move // This is needed "
@@ -2468,11 +2486,12 @@ G2_OWNED_FIELDS = {
 # Step G48: the empty secondary of Stone Axe and Ceaseless Edge (the Sheer Force placeholder). Without Sheer Force the pin runs
 # it for every hit target (moveHit of an empty secondary with chance undefined, sim/battle-actions.ts:1336-1349): the engine
 # draws the roll and does nothing else; the engine's special case is in dfi_run_move.
-G2_OWNED_SECONDARY = {'STONE_AXE': 'secondary: {}, // Sheer Force-boosted', 'CEASELESS_EDGE': 'secondary: {}, // Sheer Force-boosted', 'TRI_ATTACK': "secondary: { chance: 20, onHit(target, source) { const status = this.sample(['brn', 'par', 'frz']); "
+G2_OWNED_SECONDARY = {'STONE_AXE': 'secondary: {}, // Sheer Force-boosted', 'CEASELESS_EDGE': 'secondary: {}, // Sheer Force-boosted', 'ALLURING_VOICE': "secondary: { chance: 100, onHit(target, source, move) { if (target?.statsRaisedThisTurn) { "
+                  "target.addVolatile('confusion', source, move); } }, },", 'TRI_ATTACK': "secondary: { chance: 20, onHit(target, source) { const status = this.sample(['brn', 'par', 'frz']); "
                   "target.trySetStatus(status, source); }, },"}
 G2_OWNED_CONDITION = {'ROOST', 'ENCORE', 'WIDE_GUARD', 'QUICK_GUARD', 'GLAIVE_RUSH', 'AURORA_VEIL', 'SPIKY_SHIELD', 'RAGE_POWDER', 'DISABLE',
                       'ELECTRIC_TERRAIN', 'MISTY_TERRAIN', 'PERISH_SONG', 'IMPRISON', 'TAUNT', 'YAWN', 'REVIVAL_BLESSING',
-                      'SUBSTITUTE', 'PHANTOM_FORCE', 'KINGS_SHIELD'}
+                      'SUBSTITUTE', 'PHANTOM_FORCE', 'KINGS_SHIELD', 'DRAGON_CHEER'}
 # Step G8 (Throat Chop and Psychic Noise): the two secondaries become modelled kinds, and the column that their
 # consumers read is the move's second flags byte (the first is full): the `sound` flag (Throat Chop bars the sound
 # moves) and the `heal` flag (Heal Block bars the moves that heal). Both are derived for every pool move, the prefix
@@ -3207,6 +3226,18 @@ def check_g58_facts(moves_ts):
             fail('move phantomforce: the entry no longer has "%s"' % fact)
 
 
+def check_g72b_facts(moves_ts):
+    """Step G72b: the Alluring Voice and Dragon Cheer entries are the pinned texts the turn code reads."""
+    for mid, facts in (('alluringvoice', G72B_FACTS), ('dragoncheer', G72B_DRAGON_CHEER_FACTS)):
+        e = moves_ts.entry(mid)
+        if e is None:
+            fail('move %s not found' % mid)
+        text = norm('\n'.join(e[2]))
+        for fact in facts:
+            if norm(fact) not in text:
+                fail('move %s: the entry no longer has "%s"' % (mid, fact))
+
+
 def check_weather_facts(conditions_ts, moves_ts):
     """Every fact of WEATHER_FACTS is in the pinned condition entry, the absent ones are not, and Weather Ball has the
     types and the doubling that the engine reads for every weather."""
@@ -3480,6 +3511,7 @@ def build_pool(root, repo, dx):
     check_weather_facts(Source(root, 'data/conditions.ts', READER_INPUTS), moves_ts)
     check_g56_facts(Source(root, 'data/conditions.ts', READER_INPUTS), moves_ts)
     check_g58_facts(moves_ts)
+    check_g72b_facts(moves_ts)
     FLAGS_THAT_MATTER.clear()
     FLAGS_THAT_MATTER.update(prefix_flag_reads((items_ts, champ_items, abil_ts, champ_abil, moves_ts, champ_moves), dx)
                              - set(FLAG_BITS_C) - set(INERT_FLAG_READS) - set(FLAGS3_BITS))

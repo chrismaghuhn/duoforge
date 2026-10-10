@@ -220,6 +220,34 @@ static uint32_t dfi_target_candidates(uint32_t target_class, uint32_t user, uint
  * (duoforge_battle_public_causes writes it), so the two can never disagree. It reads only the player's observation, never a
  * hidden counter. Elapsed status attempts are not stored in schema 3. Never invent their posterior: a visible sleep or
  * confusion is a cause, nothing else is. ILLUSION_POSSIBLE stays 0 until Illusion (decision 0026, section 4). */
+/* Step G72b (decision 0015 5ce; cause DUOFORGE_PUBLIC_CAUSE_RAISED_THIS_TURN): at any PIVOT boundary (public: b->boundary_kind, the
+ * view's boundary), an active Pokemon of either side that knows Alluring Voice (its move ids are open, the OTS sheet; the position
+ * is public through occupant[]) may have had its stats raised this turn, which the view does not carry (stats_raised_this_turn).
+ * Pool data only (the move id is a pool row). Nothing here reads the engine's queue: the queue holds the foe's chosen moves, which
+ * no player knows (an information leak if read). A turn boundary is not affected (the bit is zero there), and a replacement at the
+ * end of a turn is the REPLACEMENT boundary, not a PIVOT. */
+static bool dfi_view_raised_risk(const duoforge_context *ctx, const duoforge_battle *b, const duoforge_observation *ob)
+{
+    if (b->boundary_kind != DUOFORGE_BOUNDARY_PIVOT || !dfi_context_is_pool(ctx)) {
+        return false;
+    }
+    for (uint32_t side = 0u; side < DUOFORGE_SIDE_COUNT; ++side) {
+        for (uint32_t p = 0u; p < DUOFORGE_ACTIVE_PER_SIDE; ++p) {
+            const uint32_t occ = ob->sides[side].occupant[p];
+            if (occ >= DUOFORGE_MAX_ROSTER) {
+                continue;
+            }
+            const duoforge_member_view *v = &ob->sides[side].members[occ];
+            for (uint32_t k = 0u; k < DUOFORGE_MAX_MOVE_SLOTS && k < v->move_count; ++k) {
+                if (v->move_ids[k] == DFI_MOVE_ALLURINGVOICE) {
+                    return true;
+                }
+            }
+        }
+    }
+    return false;
+}
+
 static duoforge_status dfi_view_visible_causes(const duoforge_context *ctx, const duoforge_battle *b, uint32_t player,
                                                uint32_t *out_mask)
 {
@@ -260,6 +288,9 @@ static duoforge_status dfi_view_visible_causes(const duoforge_context *ctx, cons
                 mask |= DUOFORGE_PUBLIC_CAUSE_TEMP_FORME;
             }
         }
+    }
+    if (dfi_view_raised_risk(ctx, b, &observation)) {
+        mask |= DUOFORGE_PUBLIC_CAUSE_RAISED_THIS_TURN; /* step G72b: a PIVOT with Alluring Voice known on the field */
     }
     *out_mask = mask;
     return DUOFORGE_OK;

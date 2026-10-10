@@ -1138,6 +1138,9 @@ duoforge_status duoforge_battle_observe_ext(const duoforge_context *ctx, const d
 #define DUOFORGE_VOLATILE_SUBSTITUTE 9u /* VOLATILE_START / VOLATILE_END (POOL kinds, decision 0032): the Substitute (-start|X|Substitute,
                                               -end|X|Substitute when it breaks or Tidy Up removes it). Presence only: its HP is never in an event.
                                               A switch-out removes it with no END (the pin's clearVolatile). */
+#define DUOFORGE_VOLATILE_DRAGONCHEER 10u /* VOLATILE_START (POOL kinds, step G72b, decision 0015 5ce): Dragon Cheer's volatile
+                                              (-start|X|move: Dragon Cheer). Presence only; no END: a switch-out removes it with no
+                                              line. The crit stage it gives is in the position flags (tail rev 5), not in an event. */
 /* FAIL details of a Substitute, valid only with cause MOVE and id2 = the Substitute move (decision 0032). */
 #define DUOFORGE_FAIL_SUBSTITUTE_EXISTS 1u /* the user already has a Substitute: -fail|X|move: Substitute */
 #define DUOFORGE_FAIL_SUBSTITUTE_WEAK   2u /* the user's HP is a quarter of its maximum or less: -fail|X|move: Substitute|[weak] */

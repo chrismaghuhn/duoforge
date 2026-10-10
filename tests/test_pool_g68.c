@@ -25,7 +25,7 @@ static void check_handlers(df_test *t)
     DF_CHECK_EQ_U64(t, dfi_pool_moves[DFI_MOVE_THUNDERWAVE].special, DFI_SPECIAL_THUNDER_WAVE);
     DF_CHECK_EQ_U64(t, DFI_SPECIAL_STEEL_BEAM, DFI_SPECIAL_PHANTOM_FORCE + 1u);
     DF_CHECK_EQ_U64(t, DFI_SPECIAL_THUNDER_WAVE, DFI_SPECIAL_STEEL_BEAM + 1u);
-    DF_CHECK_EQ_U64(t, DFI_SPECIAL_UNMODELED, DFI_SPECIAL_KINGS_SHIELD + 1u); /* G66 King's Shield (94) comes after Skill Swap */
+    DF_CHECK_EQ_U64(t, DFI_SPECIAL_UNMODELED, DFI_SPECIAL_DRAGON_CHEER + 1u); /* G72b Dragon Cheer (97 after King's Shield, Alluring Voice and Dragon Cheer) */
     /* Fire Punch and Ice Hammer are data rows of the existing paths. */
     DF_CHECK_EQ_U64(t, dfi_pool_moves[DFI_MOVE_FIREPUNCH].special, DFI_SPECIAL_NONE);
     DF_CHECK_EQ_U64(t, dfi_pool_moves[DFI_MOVE_ICEHAMMER].special, DFI_SPECIAL_NONE);

@@ -908,6 +908,7 @@ VOLATILE_IMPRISON = 8    # DUOFORGE_VOLATILE_IMPRISON (step G38): START only
 VOLATILE_TAUNT = 6       # DUOFORGE_VOLATILE_TAUNT (step G31)
 VOLATILE_YAWN = 7        # DUOFORGE_VOLATILE_YAWN (step G31)
 VOLATILE_SUBSTITUTE = 9  # DUOFORGE_VOLATILE_SUBSTITUTE (decision 0032): START and END, presence only
+VOLATILE_DRAGONCHEER = 10  # DUOFORGE_VOLATILE_DRAGONCHEER (step G72b, decision 0015 5ce): START only, presence only
 FAIL_SUBSTITUTE_EXISTS = 1  # DUOFORGE_FAIL_SUBSTITUTE_EXISTS: cause MOVE + id2 Substitute only
 FAIL_SUBSTITUTE_WEAK = 2    # DUOFORGE_FAIL_SUBSTITUTE_WEAK: cause MOVE + id2 Substitute only
 MOVE_SLOT_RECHARGE = 5   # DUOFORGE_MOVE_SLOT_RECHARGE (step G17)
@@ -986,6 +987,9 @@ IGNORED_VOLATILES = {
     # Pool step G60 (Substitute, decision 0032): its HP is never shown; the start and end lines and the absorbed hits (the
     # -activate lines with [damage], no amount) show its presence and the hits it takes.
     'substitute': 'the start line, the end line and the absorbed hits (the HP is never shown)',
+    # Pool step G72b (Dragon Cheer, decision 0015 5ce): the start line; its crit stage shows in the crit draws of the holder's
+    # moves (a -crit line, or the draw's bound) and in the view bit.
+    'dragoncheer': "the start line and the crit draws of the holder's moves",
 }
 HP_EXACT, HP_PERCENT = 1, 2
 HP_FLAGS_EV = {'': 0, 'r': 1, 'y': 2, 'g': 3}
@@ -1509,6 +1513,10 @@ def step_events(log, viewer, roster_of, maxhp, tables, rb_pending=None, swap_ids
                 # (the duration; a switch-out or a faint clears it with no line) (step G31)
                 e = ev_tuple(EV['VOLATILE_START' if kind == '-start' else 'VOLATILE_END'], ev_pos(args[0]),
                              detail=VOLATILE_TAUNT)
+            elif what == 'move: Dragon Cheer' and kind == '-start':
+                # data/moves.ts:4056-4086 dragoncheer: `-start|X|move: Dragon Cheer` from onStart (no source, no [silent] for the
+                # move itself); no END line, and a switch-out clears it with no line (step G72b)
+                e = ev_tuple(EV['VOLATILE_START'], ev_pos(args[0]), detail=VOLATILE_DRAGONCHEER)
             elif what == 'move: Yawn' and kind == '-start':
                 # data/moves.ts:21131-21162 yawn: `-start|X|move: Yawn|[of] source` from onStart; the end line is [silent]
                 # (dropped) and the sleep it brings is the ordinary STATUS line (step G31)

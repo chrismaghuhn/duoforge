@@ -1,6 +1,6 @@
 # 0040 - Aegislash: Stance Change and King's Shield (step G66, decision 0015 letter 5cb)
 
-Status: DRAFT, phase 1 (design only, no engine code). Lane A batch 4, builder H9. The values in section 3 are proposals and are not approved; HauptSession assigns the numbers.
+Status: **accepted** (HauptSession: FORME 30 second meaning, TEMP_FORME 16, protect_kind 2; Blade row appended). Lane A batch 4, builder H9. Section 3 is the design record; section 8 holds the implementation decisions as built.
 
 Pin: Pokemon Showdown b2cb775 (read only), Champions mod checked first.
 
@@ -120,3 +120,4 @@ Campaign: about 300 random battles with Aegislash teams (Stance Change and King'
 - **The FORME event's cause ABILITY, id2 = Stance Change + 1 comes from the engine's knowledge**, not from the line. The converter (`trace_to_c.py`, the named rule FORME-STANCE) accepts the bare line only when: the species is `Aegislash` or `Aegislash-Blade`; the next line is the move line of the same position; the Shield's forme comes only before King's Shield, and the Blade's forme before any other move. A `-formechange` for any other species, or with another `[from]` ability, is refused (`tools/reference/test_trace_to_c.py`, class FormeStance: negative controls). The conformance then compares the engine's event with the one the reference shows.
 - **Stats, strict rule** (`src/state/invariants.c`): the Blade's stats are allowed ONLY for an Aegislash on the Blade forme (`forme_now` = the Blade's id + 1). In every other case, including `forme_now` 0 (the Shield), the member's stats must be the sheet's. `tests/test_pool_g66.c` checks: Blade stats under the Shield are refused; the Blade's forme with the sheet's stats is refused; the Blade's forme with the Blade's stats is valid and is a temporary forme in the public view.
 - **Battle length.** A spec's `max_steps` is the number of steps including the opening step 0, so a plan of N turns needs `max_steps` = N + 1. Two of the first recordings ran one turn fewer than planned (the second turn's King's Shield and switch-back did not happen); they are re-recorded.
+- **Pin text for the forme change.** The pin prints `-formechange` with no `[from]` (the first bullet above), and the converter has the named FORME-STANCE rule that accepts exactly that bare line for Aegislash and Aegislash-Blade (the second bullet).

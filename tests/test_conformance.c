@@ -33,7 +33,7 @@
 #include "reference/conformance_pool.h"
 #include "support/pool.h"
 #define DF_CONF_FORMES dfi_pool_formes
-#define DF_POOL_DATA_BATTLES 658u /* the recorded pool battles of the lane A batch: G66 ten (King's Shield, Stance Change, Trace); G70 nine (g70_skillswap_*: Skill Swap, decision 0041); G68 twenty-five (Steel Beam, Thunder Wave, Fire Punch, Ice Hammer); main 485, G55 fourteen, G57 seven, G53 fifteen, G64 sixteen, G62 sixteen, G60 thirteen, G58 twenty-six, G46 five (drag Update fix), G31 Yawn under the terrains seven, batch 3 cross-row (xr3_*) ten */
+#define DF_POOL_DATA_BATTLES 669u /* the recorded pool battles of the lane A batch: G72 and G72b (provisional, checked by the converter), G66 ten (King's Shield, Stance Change, Trace); G70 nine (g70_skillswap_*: Skill Swap, decision 0041); G68 twenty-five (Steel Beam, Thunder Wave, Fire Punch, Ice Hammer); main 485, G55 fourteen, G57 seven, G53 fifteen, G64 sixteen, G62 sixteen, G60 thirteen, G58 twenty-six, G46 five (drag Update fix), G31 Yawn under the terrains seven, batch 3 cross-row (xr3_*) ten */
 #elif defined(DF_CONFORMANCE_TEAM_C)
 #include "data/extended_tables.h"
 #include "reference/conformance_team_c.h"

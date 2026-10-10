@@ -186,7 +186,7 @@ static void copy_named_fields(duoforge_battle *x, const duoforge_battle *src)
             dp->hits_taken = sp->hits_taken;
             dp->ability_state = sp->ability_state;
             dp->lock_turns = sp->lock_turns;
-            dp->slot_pending = sp->slot_pending; /* tail rev 5 */
+            dp->position_flags = sp->position_flags; /* tail rev 5 */
             dp->future_sight = sp->future_sight;
         }
         for (unsigned m = 0; m < DUOFORGE_MAX_ROSTER; ++m) {

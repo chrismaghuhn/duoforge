@@ -366,6 +366,8 @@ const dfi_support_manifest dfi_support = {
             [DFI_MOVE_TAUNT] = 1u,
             [DFI_MOVE_YAWN] = 1u,
             [DFI_MOVE_SUBSTITUTE] = 1u, /* step G60 (decision 0032): the Substitute; the rows it touches are marked already and changed with it */
+            [DFI_MOVE_ALLURINGVOICE] = 1u, /* step G72b (decision 0015 5ce): the secondary's confusion on a raised target */
+            [DFI_MOVE_DRAGONCHEER] = 1u,   /* step G72b: the volatile's crit stage (position flags) and its start line */
     [DFI_MOVE_REVIVALBLESSING] = 1u,
             /* Step G42: Roost (the heal, then the Flying type is off for the turn) and Stomping Tantrum (base power x2 after a
              * FALSE last move result; the move_result of tail rev 4, decision 0015 section 7). */
@@ -747,6 +749,8 @@ const dfi_support_manifest dfi_support = {
      * ended in the residual of order 25, verified against the g42 battles). MOVE_FAILED (bit 41) stays clear: the field is exact
      * only when the last result is classified, and an unclassified exit (decision 0015 section 7) reads 0 where the reference
      * may read 1. The expression stays plain terms: python/duoforge_live/lines.py parses it. */
+    /* Step G72b: Dragon Cheer (bit 24: the DRAGON_CHEER position bit, set while the stage is nonzero; its start line is public and the
+     * stage is in the position flags). Verified against the g72b battles. */
     /* Step G60: Substitute (bit 23: the SUBSTITUTE volatile of the position, public: its start and end lines; its HP is never in
      * an event). Decision 0032 section 9 names the bit as supported once the step lands; verified against the g60 battles. */
     .view_ext_features = ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_THROAT_CHOP) |
@@ -776,5 +780,6 @@ const dfi_support_manifest dfi_support = {
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_STICKY_WEB) |
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_ROOST) |
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_QUICK_GUARD) |
-                         ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_SUBSTITUTE)
+                         ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_SUBSTITUTE) |
+                         ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_DRAGON_CHEER)
 };
