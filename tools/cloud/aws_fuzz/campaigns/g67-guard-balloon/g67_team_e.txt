@@ -1,0 +1,52 @@
+Raichu (F) @ Air Balloon
+Ability: Lightning Rod
+Level: 50
+EVs: 29 HP / 5 Def / 32 Spe
+Timid Nature
+- Thunderbolt
+- Substitute
+- Protect
+
+Garchomp (M) @ Focus Sash
+Ability: Rough Skin
+Level: 50
+EVs: 32 HP / 32 Atk / 2 SpD
+Adamant Nature
+- Earthquake
+- Dragon Claw
+- Spikes
+- Protect
+
+Gliscor (M) @ Leftovers
+Ability: Hyper Cutter
+Level: 50
+EVs: 32 HP / 32 Def / 2 SpD
+Impish Nature
+- Toxic Spikes
+- Earthquake
+- Protect
+
+Politoed (M) @ Mystic Water
+Ability: Drizzle
+Level: 50
+EVs: 32 HP / 32 SpA / 2 SpD
+Modest Nature
+- Hydro Pump
+- Protect
+
+Sharpedo (M) @ Sitrus Berry
+Ability: Rough Skin
+Level: 50
+EVs: 32 HP / 2 Def / 32 Spe
+Jolly Nature
+- Liquidation
+- Snarl
+- Protect
+
+Ceruledge (M) @ Grassy Seed
+Ability: Flash Fire
+Level: 50
+EVs: 31 HP / 7 Atk / 24 Def / 3 SpD / 1 Spe
+Brave Nature
+- Shadow Ball
+- Protect
