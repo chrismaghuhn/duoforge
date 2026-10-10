@@ -207,8 +207,10 @@ machine_lock_acquire() { # [--exclusive] label
                     if mkdir "$dir" 2> /dev/null; then got+=("$dir"); else break; fi
                 done
                 if [ "${#got[@]}" -eq "$slots" ]; then
+                    local since
+                    since=$(date '+%Y-%m-%d %H:%M:%S') # one owner line for every slot of the job
                     for dir in "${got[@]}"; do
-                        printf '%s\nslots\n' "$me $label since $(date '+%Y-%m-%d %H:%M:%S')" > "$dir/owner"
+                        printf '%s\nslots\n' "$me $label since $since" > "$dir/owner"
                     done
                     export DUOFORGE_JOBS=$cpus
                     break
