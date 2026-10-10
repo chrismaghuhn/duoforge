@@ -652,6 +652,20 @@ class LabelsTest(unittest.TestCase):
         self.assertEqual({o.target for o in self.options_of(got, 0)}, {1, 2, 3})
         self.assertEqual({(o.move_slot, o.mega) for o in self.options_of(got, 0)}, {(1, 0)})
 
+    def test_dragon_darts_line_may_name_the_other_foe(self):
+        # data/moves.ts dragondarts smartTarget (step G78): when the chosen foe cannot be hit (here it protects), both
+        # darts go to its ally and the move line names the ally, so the line does not name the chosen target
+        mv = self.tables["MOVE"]
+        moves = ([mv["BRAVEBIRD"], mv["DRAGONDARTS"], mv["TAILWIND"], mv["PROTECT"]], self.moves[1])
+        log = ["|move|p2a: Foe|Protect|p2a: Foe", "|-singleturn|p2a: Foe|Protect",
+               "|move|p1a: Staraptor|Dragon Darts|p2b: Foe2"]
+        point = self.P.Point(1, 0, self.P.TURN, (), len(log))
+        got = self.L.turn_label(log, point, 0, self.lists, moves, lambda details: self.species[details.split(",")[0]],
+                                self.tables, len(log))
+        self.assertEqual(got.reasons[0], self.L.TARGET_UNKNOWN)
+        self.assertTrue({2, 3} <= {o.target for o in self.options_of(got, 0)})  # the chosen p2a is in the label
+        self.assertEqual({(o.move_slot, o.mega) for o in self.options_of(got, 0)}, {(1, 0)})
+
     def test_faint_earlier_makes_the_target_unknown(self):
         got = self.label(["|move|p1b: Gholdengo|Make It Rain|p2a: Foe|[spread] p2a,p2b", "|faint|p2a: Foe",
                           "|move|p1a: Staraptor|Brave Bird|p2b: Foe2"])
