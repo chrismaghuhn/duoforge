@@ -771,3 +771,6 @@ duoforge_add_test(NAME duoforge.state.pool_g53 SOURCES test_pool_g53.c WHITEBOX 
 
 # Step G63 (decision 0015 5bj): the simple Mega abilities Sand Force, Shell Armor, Filter and Stalwart, and their six stones.
 duoforge_add_test(NAME duoforge.state.pool_g63 SOURCES test_pool_g63.c WHITEBOX TIMEOUT 60)
+
+# Step G69 (decision 0015 5bm): Symbiosis, the pass of the item to an ally that has used up its own.
+duoforge_add_test(NAME duoforge.state.pool_g69 SOURCES test_pool_g69.c WHITEBOX TIMEOUT 60)

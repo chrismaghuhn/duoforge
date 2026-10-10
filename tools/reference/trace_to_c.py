@@ -1336,6 +1336,18 @@ def step_events(log, viewer, roster_of, maxhp, tables, rb_pending=None):
                 except KeyError:
                     raise ConversionError('activate-line', 'trace_to_c: unknown -activate %r' % line, detail='Poltergeist item')
                 e = ev_tuple(EV['ACTIVATE'], pos, NOPOS, CAUSE['MOVE'], 0, tables['MOVE'][key('Poltergeist')])
+            elif what == 'ability: Symbiosis' and len(args) == 3 and len(attrs) == 1 and attrs[0].startswith('[of] '):
+                # Step G69 (Symbiosis, data/abilities.ts:4837-4856): `-activate|holder|ability: Symbiosis|Item|[of] user`, the holder
+                # passes the item it holds to its ally, which has none. ACTIVATE with the cause ABILITY, id2 Symbiosis + 1, other the
+                # user, id the item + 1 (duoforge.h, ACTIVATE). Both names must be of the tables and both positions on the field.
+                user = ev_pos(attrs[0][5:])
+                if pos is None or user is None:
+                    raise ConversionError('activate-line', 'trace_to_c: unknown -activate %r' % line, detail='Symbiosis position')
+                try:
+                    item_id = tables['ITEM'][key(args[2])] + 1
+                except KeyError:
+                    raise ConversionError('activate-line', 'trace_to_c: unknown -activate %r' % line, detail='Symbiosis item')
+                e = ev_tuple(EV['ACTIVATE'], pos, user, CAUSE['ABILITY'], item_id, tables['ABILITY'][key('Symbiosis')] + 1)
             elif len(args) != 2:
                 raise ConversionError('activate-line', 'trace_to_c: unknown -activate %r' % line, detail=what)
             elif what == 'move: Protect':

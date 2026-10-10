@@ -1,0 +1,28 @@
+{
+  "name": "g69_symbiosis_sitrus",
+  "purpose": "Symbiosis: the Floette-Eternal (Leftovers) passes its item to its ally Milotic when Milotic eats its Sitrus Berry at half HP (AfterUseItem of the eaten berry, the user has no item).",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,0000000000000000000000000000000000000000000000000000000000006901",
+  "teams": [
+    "Floette-Eternal (F) @ Leftovers\nAbility: Symbiosis\nLevel: 50\nEVs: 32 HP / 2 SpA / 32 SpD\nCalm Nature\n- Protect\n- Moonblast\n- Calm Mind\n\nMilotic (F) @ Sitrus Berry\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Protect\n- Scald\n- Recover",
+    "Gholdengo @ Black Glasses\nAbility: Good as Gold\nLevel: 50\nEVs: 32 HP / 2 SpA / 32 SpD\nCalm Nature\n- Protect\n- Shadow Ball\n- Make It Rain\n\nPrimarina (F) @ Fairy Feather\nAbility: Torrent\nLevel: 50\nEVs: 32 HP / 2 Def / 32 SpD\nCalm Nature\n- Protect\n- Moonblast\n- Calm Mind"
+  ],
+  "plan": {
+    "p1": [
+      "move 2 1, move 2",
+      "move 2 1, move 2",
+      "move 2 1, move 2",
+      "move 2 1, move 2",
+      "move 2 1, move 2"
+    ],
+    "p2": [
+      "move 2 2, move 2 2",
+      "move 2 2, move 2 2",
+      "move 2 2, move 2 2",
+      "move 2 2, move 2 2",
+      "move 2 2, move 2 2"
+    ],
+    "max_steps": 8
+  }
+}

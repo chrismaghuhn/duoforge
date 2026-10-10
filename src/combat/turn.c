@@ -94,6 +94,10 @@ typedef struct dfi_run {
     /* Decision 0032: set only while the damage of a Substitute's hit is computed. The damage then ignores the target's resist
      * berry (pin: `hitSub`, data/items.ts:1030-1046 and its siblings: the berry is not eaten for a hit that the Substitute takes). */
     bool sub_hit;
+    /* Step G69, Symbiosis: an E_UNSUPPORTED found inside a handler that returns nothing (dfi_use_item_of and the eaters around
+     * it). The turn runs on a working copy (src/state/request.c), so dfi_turn_run returns it at its end and nothing is
+     * committed. Last in the struct: the initializers of dfi_run are positional. */
+    duoforge_status deferred;
 } dfi_run;
 
 #define DFI_MOVE_TARGET_NONE DFI_POSITIONS          /* no target Pokemon */
@@ -1460,6 +1464,8 @@ static uint32_t dfi_type_mod(const struct duoforge_battle *b, const dfi_member *
 
 static void dfi_use_item(dfi_run *r, uint32_t flat);
 static void dfi_use_item_of(dfi_run *r, uint32_t flat, uint32_t other);
+static void dfi_use_item_core(dfi_run *r, uint32_t flat, uint32_t other);
+static void dfi_symbiosis(dfi_run *r, uint32_t flat);
 
 /* Unnerve (step G32, data/abilities.ts:5258-5275): while a foe's holder stands, `onFoeTryEatItem` returns false, so a Pokemon
  * on the other side cannot eat a berry (eatItem fails: no -enditem, and a resist berry does not weaken the hit; Sitrus
@@ -2259,8 +2265,12 @@ static duoforge_status dfi_lum_berry(dfi_run *r, uint32_t flat)
     if (m == NULL || m->hp == 0u || !dfi_holds(b, m, DFI_ITEM_LUMBERRY) || dfi_unnerved(b, flat)) {
         return DUOFORGE_OK;
     }
-    dfi_use_item(r, flat);
-    return dfi_lum_cure(r, flat);
+    dfi_use_item_core(r, flat, DUOFORGE_NO_POSITION);
+    const duoforge_status cured = dfi_lum_cure(r, flat);
+    if (cured == DUOFORGE_OK) {
+        dfi_symbiosis(r, flat); /* eatItem: Eat (the cure), then AfterUseItem (step G69) */
+    }
+    return cured;
 }
 
 /* Lum Berry's onEat for the Pokemon at `flat`, which has eaten it (step G64: also a Bug Bite user, which holds no berry): cureStatus
@@ -2662,8 +2672,17 @@ static void dfi_use_item(dfi_run *r, uint32_t flat)
     dfi_use_item_of(r, flat, DUOFORGE_NO_POSITION);
 }
 
-/* useItem with a position named in the line ([of] other: Red Card names the attacker, step G46). */
+/* useItem with a position named in the line ([of] other: Red Card names the attacker, step G46). Symbiosis (step G69) is the
+ * ally's AfterUseItem, after the Unburden volatile of this user. */
 static void dfi_use_item_of(dfi_run *r, uint32_t flat, uint32_t other)
+{
+    dfi_use_item_core(r, flat, other);
+    dfi_symbiosis(r, flat);
+}
+
+/* The item line and the Unburden volatile of a use (dfi_use_item_of without Symbiosis). A berry eaten at Update (Sitrus, Lum) calls it
+ * and runs dfi_symbiosis itself after its Eat effect (eatItem: Eat, then AfterUseItem; step G69). */
+static void dfi_use_item_core(dfi_run *r, uint32_t flat, uint32_t other)
 {
     struct duoforge_battle *b = r->b;
     const uint32_t side = flat / 2u;
@@ -2731,6 +2750,8 @@ static duoforge_status dfi_bug_bite(dfi_run *r, uint32_t user, uint32_t target, 
     } else if (item == 1u + DFI_ITEM_LUMBERRY) {
         return dfi_lum_cure(r, user);
     }
+    /* No AfterUseItem here: Bug Bite runs only the Eat singleEvent and EatItem of the berry (data/moves.ts:1920-1930), never
+     * eatItem, so neither Unburden nor Symbiosis of the eater's side is run (step G69). */
     return DUOFORGE_OK;
 }
 
@@ -2937,6 +2958,57 @@ static void dfi_emit_item_left(dfi_run *r, uint32_t flat, uint32_t code, uint32_
     duoforge_event e = dfi_ev(DUOFORGE_EVENT_ITEM_END, flat, DUOFORGE_CAUSE_ITEM_TAKEN, code, to);
     e.id = (uint16_t)move_id;
     dfi_emit(r, &e);
+}
+
+/* Symbiosis (step G69, data/abilities.ts:4837-4856, onAllyAfterUseItem). `flat` is the Pokemon that has just used its item (useItem
+ * or eatItem: AfterUseItem, from dfi_use_item_of, dfi_use_item and the berries of dfi_update and dfi_lum_berry; not Bug Bite, which
+ * never runs AfterUseItem); its ally, the other position of its side, is the holder (`source` of the pin). In the pin's order:
+ *   1. `pokemon.switchFlag` (an Eject Button sets it before its useItem, items.ts:1692-1694): nothing. The engine sets the flag
+ *      first too (dfi_turn_run's Eject Button branch), so the flag is up here.
+ *   2. `source.takeItem()` (sim/pokemon.ts:1851-1866): the holder must be alive and hold an item, and the item's own TakeItem
+ *      refuses a Mega Stone of the holder's species (dfi_item_takeable). A holder has Symbiosis as its one ability, so no Sticky
+ *      Hold stands on it and nothing else of its TakeItem applies.
+ *   3. singleEvent TakeItem with the USER as its second argument (sim/battle.ts:571-660, the handler gets (item, target, source)):
+ *      a Mega Stone of the user's species is refused (dfi_stone_refused_for). A refusal at 2 or 3 changes nothing, and the pin
+ *      gives the item back to the holder without a line.
+ *   4. `pokemon.setItem(item)` (sim/pokemon.ts:1868-1890): the user must be alive and on the field. setItem overwrites whatever
+ *      the user holds; the user of useItem or eatItem has used its item up, so it holds none here (the engine's guard for a held
+ *      item is defensive and E_UNSUPPORTED). The item's Start runs at once: a White Herb with a lowered stat, a terrain seed under
+ *      its terrain (dfi_start_uses_item), refused as well.
+ * On success: `-activate|holder|ability: Symbiosis|Item|[of] user` (no item line, no -enditem). The event is ACTIVATE with the cause
+ * ABILITY, id2 = Symbiosis + 1, position the holder, other the user ([of]), id = the item + 1 (see ACTIVATE in duoforge.h). The
+ * holder's item is none and the user's is the item (dfi_set_held, the Choice lock of a Scarf's rule included). The user's Unburden
+ * is read from its item (the speed rule, line ~548), so its volatile needs no change. pendingStaleness (setItem's restorative-berry
+ * staleness, Trick and Switcheroo only in the pin's own test) has no observable effect here and is not modelled. */
+static void dfi_symbiosis(dfi_run *r, uint32_t flat)
+{
+    struct duoforge_battle *b = r->b;
+    const uint32_t holder = flat ^ 1u; /* the other position of the same side */
+    const dfi_member *hm = dfi_at(b, holder);
+    const dfi_member *um = dfi_at(b, flat);
+    if (hm == NULL || um == NULL || hm->hp == 0u || um->hp == 0u || !dfi_ability(b, hm, DFI_ABILITY_SYMBIOSIS)) {
+        return;
+    }
+    if (dfi_pos(b, flat)->switch_flag != 0u) {
+        return; /* pokemon.switchFlag */
+    }
+    const uint32_t code = dfi_item_code(b, hm);
+    if (code == 0u || !dfi_item_takeable(b, hm) || dfi_stone_refused_for(um, code)) {
+        return; /* nothing held, the holder's own stone, or the user's stone: no change, no line */
+    }
+    if (dfi_item_code(b, um) != 0u) {
+        r->deferred = DUOFORGE_E_UNSUPPORTED; /* defensive: setItem would overwrite a held item silently; never reached (used up) */
+        return;
+    }
+    if (dfi_start_uses_item(b, flat, code)) {
+        r->deferred = DUOFORGE_E_UNSUPPORTED; /* the item's Start would use it at once: decided before anything changes */
+        return;
+    }
+    duoforge_event act = dfi_ev(DUOFORGE_EVENT_ACTIVATE, holder, DUOFORGE_CAUSE_ABILITY, 1u + DFI_ABILITY_SYMBIOSIS, flat);
+    act.id = (uint16_t)code; /* the item + 1 */
+    dfi_emit(r, &act); /* -activate|holder|ability: Symbiosis|Item|[of] user */
+    dfi_set_held(b, holder, 0u);
+    dfi_set_held(b, flat, code);
 }
 
 /* Trick's and Switcheroo's onHit for one target (`did` is whether the move did something: a failure prints -fail and stops
@@ -3366,9 +3438,10 @@ static duoforge_status dfi_update(dfi_run *r)
         const dfi_member *m = dfi_at(r->b, flat);
         if (m->hp != 0u && dfi_holds(r->b, m, DFI_ITEM_SITRUSBERRY) && (uint32_t)m->hp * 2u <= m->hp_max &&
             !dfi_heal_blocked(r->b, flat) && !dfi_unnerved(r->b, flat)) {
-            dfi_use_item(r, flat);
+            dfi_use_item_core(r, flat, DUOFORGE_NO_POSITION);
             dfi_heal(r, flat, (uint32_t)m->hp_max / 4u, DUOFORGE_CAUSE_ITEM, 1u + DFI_ITEM_SITRUSBERRY,
                      DUOFORGE_NO_POSITION);
+            dfi_symbiosis(r, flat); /* eatItem: Eat (the heal), then AfterUseItem (step G69) */
         }
         /* Lum Berry's onUpdate (data/items.ts:3548-3552): a status or a confusion of its holder is eaten (dfi_lum_berry asks
          * Unnerve); Mental Herb's (data/items.ts:3906-3918) cures the holder's volatiles (dfi_mental_herb). One item per holder,
@@ -9509,7 +9582,7 @@ duoforge_status dfi_turn_start(const duoforge_context *ctx, struct duoforge_batt
     if (!dfi_closure_battle_supported(&dfi_support, b)) {
         return DUOFORGE_E_UNSUPPORTED;
     }
-    dfi_run r = {ctx, b, draws, {0u, 0u, 0u, 0u}, 0u, 0u, 0u, false, DFI_RESULT_NONE, {0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u}, events, UINT32_MAX, false, DFI_MOVE_TARGET_NONE, 1u, 0u, 0u, 0u, DFI_POSITIONS, false, {0u, 0u, 0u, 0u, 0u, 0u}, false};
+    dfi_run r = {ctx, b, draws, {0u, 0u, 0u, 0u}, 0u, 0u, 0u, false, DFI_RESULT_NONE, {0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u}, events, UINT32_MAX, false, DFI_MOVE_TARGET_NONE, 1u, 0u, 0u, 0u, DFI_POSITIONS, false, {0u, 0u, 0u, 0u, 0u, 0u}, false, DUOFORGE_OK};
     dfi_init_speeds(&r);
     /* The leads entered one by one (insertChoice updated each speed); their
      * entries run together. */
@@ -9529,6 +9602,9 @@ duoforge_status dfi_turn_start(const duoforge_context *ctx, struct duoforge_batt
     st = r.ended ? DUOFORGE_OK : dfi_update(&r);
     if (st != DUOFORGE_OK) {
         return st;
+    }
+    if (r.deferred != DUOFORGE_OK) {
+        return r.deferred; /* step G69: a Symbiosis pass refused inside an Update (a berry of the residual) */
     }
     return r.ended ? DUOFORGE_E_INVARIANT : DUOFORGE_OK; /* nothing at the start can end the battle */
 }
@@ -9624,7 +9700,7 @@ duoforge_status dfi_turn_run(const duoforge_context *ctx, struct duoforge_battle
     if (!dfi_closure_battle_supported(&dfi_support, b) || ((replacement || pivot) && dfi_support.switching == 0u)) {
         return DUOFORGE_E_UNSUPPORTED;
     }
-    dfi_run r = {ctx, b, draws, {0u, 0u, 0u, 0u}, 0u, 0u, 0u, false, DFI_RESULT_NONE, {0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u}, events, UINT32_MAX, false, DFI_MOVE_TARGET_NONE, 1u, 0u, 0u, 0u, DFI_POSITIONS, false, {0u, 0u, 0u, 0u, 0u, 0u}, false};
+    dfi_run r = {ctx, b, draws, {0u, 0u, 0u, 0u}, 0u, 0u, 0u, false, DFI_RESULT_NONE, {0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u}, events, UINT32_MAX, false, DFI_MOVE_TARGET_NONE, 1u, 0u, 0u, 0u, DFI_POSITIONS, false, {0u, 0u, 0u, 0u, 0u, 0u}, false, DUOFORGE_OK};
     dfi_init_speeds(&r);
     duoforge_status st = DUOFORGE_OK;
     uint32_t exits = 0u; /* Emergency Exit after the residual action */
@@ -9770,7 +9846,7 @@ duoforge_status dfi_turn_run(const duoforge_context *ctx, struct duoforge_battle
         }
         dfi_process_faints(&r);
         if (r.ended) {
-            return dfi_terminal(&r);
+            return r.deferred != DUOFORGE_OK ? r.deferred : dfi_terminal(&r);
         }
         if (b->queue_len > 0u && b->queue[0].kind == DFI_Q_SWITCH_IN) {
             continue;
@@ -9801,7 +9877,7 @@ duoforge_status dfi_turn_run(const duoforge_context *ctx, struct duoforge_battle
             switch_flat = DFI_POSITIONS;
         }
         if (b->queue_len > 0u && dfi_pivot_pending(b)) {
-            return dfi_pivot(b);
+            return r.deferred != DUOFORGE_OK ? r.deferred : dfi_pivot(b);
         }
         if (b->queue_len > 0u && b->queue[0].kind == DFI_Q_MOVE) {
             st = dfi_sort_queue(&r);
@@ -9809,6 +9885,9 @@ duoforge_status dfi_turn_run(const duoforge_context *ctx, struct duoforge_battle
                 return st;
             }
         }
+    }
+    if (r.deferred != DUOFORGE_OK) {
+        return r.deferred; /* step G69: a Symbiosis refusal, see dfi_run.deferred */
     }
     return dfi_finish_turn(&r, exits);
 }
