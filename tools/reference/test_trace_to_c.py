@@ -153,6 +153,37 @@ class Refusals(unittest.TestCase):
         self.control('w1_sand_stream', hail_damage, 'from-attribute', 'trace_to_c: [from] Hail: no Hail in the format',
                      'Hail')
 
+    def test_belly_drum_setboost_is_the_boost_of_the_change_and_its_stage_is_checked(self):
+        """Step G86: Belly Drum's `-setboost|X|atk|N|[from] move: Belly Drum` (sim/battle.ts:2051-2052) converts to a BOOST of
+        the change (N minus the stage before the line), and a wrong printed stage or another move is a named refusal."""
+        spec, trace = battle('g86_belly_sitrus_tie')
+        convert('g86_belly_sitrus_tie', spec, trace)
+        first = [line for step in trace['steps'] for line in step['log'] if line.startswith('|-setboost|')]
+        self.assertEqual(first[0], '|-setboost|p1a: Snorlax|atk|6|[from] move: Belly Drum')
+
+        def wrong_stage(spec, trace):
+            for step in trace['steps']:
+                for i, line in enumerate(step['log']):
+                    if line.startswith('|-setboost|'):
+                        step['log'][i] = line.replace('|atk|6|', '|atk|5|')
+                        return
+            self.fail('no -setboost line')
+
+        def other_move(spec, trace):
+            for step in trace['steps']:
+                for i, line in enumerate(step['log']):
+                    if line.startswith('|-setboost|'):
+                        step['log'][i] = line.replace('[from] move: Belly Drum', '[from] move: Protect')
+                        return
+            self.fail('no -setboost line')
+
+        self.control('g86_belly_sitrus_tie', wrong_stage, 'setboost',
+                     "trace_to_c: -setboost stage 5 does not reach the stage after the step (6, same Pokemon: True): "
+                     "'|-setboost|p1a: Snorlax|atk|5|[from] move: Belly Drum'", 'setboost-stage')
+        self.control('g86_belly_sitrus_tie', other_move, 'setboost',
+                     "trace_to_c: -setboost outside the Belly Drum rule: '|-setboost|p1a: Snorlax|atk|6|[from] move: Protect'",
+                     'setboost')
+
     def test_the_bare_ohko_of_a_sheer_cold_sub_break_is_dropped_only_before_that_break(self):
         """Sheer Cold into a Substitute (step G64 with decision 0032): the sub's break prints `-ohko` right after the move line
         and right before `-end|X|Substitute` (data/moves.ts:18357-18374). The line is dropped only with that exact pair in
@@ -2300,7 +2331,7 @@ class Library(unittest.TestCase):
         marked = [n for n in re.findall(r'\[DFI_MOVE_(\w+)\] = 1u', read('src', 'data', 'support_manifest.c'))
                   if n in ids and ids[n] >= ext_moves]
         self.assertEqual(len(names), ext_moves + len(ids))
-        self.assertEqual(len(marked), 201)  # G78: Dragon Darts makes 201 (200 before); G76: Destiny Bond and Final Gambit make 200 (198 before); G74: Baton Pass makes 198; G72b: Alluring Voice and Dragon Cheer make 197 (195 before); the King's Shield of G66 (decision 0015 5cb) makes 195; the Skill Swap of G70 makes 194 (decision 0041) makes 194 from 193; 189 before step G68 (decision 0015 item 5cc: Steel Beam, Thunder Wave, Fire Punch, Ice Hammer); 180 of main, the four of G64 and the three of G62 (Haze, After You, Quash)  # the four of step G64 (Poltergeist, Beat Up, Bug Bite, Sheer Cold; decision 0015 item 5ca), the seven of step G54 (Icicle Spear, Scale Shot, Quick Guard, Upper Hand, Heal Pulse, Strength Sap, Sing), and the 171 of main (Roost and Stomping Tantrum of G42, Double Shock of G50 among them)  # Roost and Stomping Tantrum (G42), Double Shock (G50), the eleven of step G44, the four of step G46, the four of step G48, Taunt and Yawn (G31) and the rows of the earlier steps as before
+        self.assertEqual(len(marked), 208)  # G86: the seven of this batch make 208 (201 before); G78: Dragon Darts makes 201 (200 before); G76: Destiny Bond and Final Gambit make 200 (198 before); G74: Baton Pass makes 198; G72b: Alluring Voice and Dragon Cheer make 197 (195 before); the King's Shield of G66 (decision 0015 5cb) makes 195; the Skill Swap of G70 makes 194 (decision 0041) makes 194 from 193; 189 before step G68 (decision 0015 item 5cc: Steel Beam, Thunder Wave, Fire Punch, Ice Hammer); 180 of main, the four of G64 and the three of G62 (Haze, After You, Quash)  # the four of step G64 (Poltergeist, Beat Up, Bug Bite, Sheer Cold; decision 0015 item 5ca), the seven of step G54 (Icicle Spear, Scale Shot, Quick Guard, Upper Hand, Heal Pulse, Strength Sap, Sing), and the 171 of main (Roost and Stomping Tantrum of G42, Double Shock of G50 among them)  # Roost and Stomping Tantrum (G42), Double Shock (G50), the eleven of step G44, the four of step G46, the four of step G48, Taunt and Yawn (G31) and the rows of the earlier steps as before
         pool = [n for n in os.listdir(os.path.join(ROOT, 'tests', 'reference', 'specs'))
                 if trace_to_c.is_pool(ROOT, n[:-5])]
         logs = []
@@ -2318,7 +2349,7 @@ class Library(unittest.TestCase):
                                 break
                             done = done or after.startswith(('|-damage|', '|-boost|', '|-heal|', '|-start|', '|-weather|') + (('|-status|',) if name in ('Will-O-Wisp', 'Stun Spore', 'Sleep Powder', 'Poison Powder', 'Sing') else ()))
                             # A status move of one target with a primary drop (Charm, Fake Tears, step G39): its -unboost line.
-                            done = done or (name in ('Charm', 'Fake Tears') and after.startswith('|-unboost|'))
+                            done = done or (name in ('Charm', 'Fake Tears', 'Tickle') and after.startswith('|-unboost|'))  # Tickle: step G86
                             # A forced switch (step G46: Whirlwind; Dragon Tail is damaging, so its damage line counts): the drag line.
                             done = done or (name in ('Whirlwind', 'Roar', 'Circle Throw') and after.startswith('|drag|'))
                             # Baton Pass (step G74): its switch line names it as the cause, `|switch|...|[from] Baton Pass`.

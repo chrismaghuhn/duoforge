@@ -36,6 +36,7 @@ static const char *const handled[] = {
     "poisonpowder", "toxic", "stealthrock", "spikes", "toxicspikes", "stickyweb", "taunt", "yawn", "charm", "faketears",
     "sing",
     "thunderwave", /* primary status, bounced on Hypnosis's path; lane A G68/H10 */
+    "tickle", /* step G86: two primary stat drops (Attack and Defense -1), bounced on Charm's path (decision 0015 5cn) */
 };
 
 /* The marked reflectable moves whose bounced run is not modelled (marked by lane A's G54 batch): dfi_bounce_kind_ok refuses
@@ -98,7 +99,7 @@ static void test_marked_reflectable_moves_are_the_handled_list(df_test *t)
                                      in_list(name, refused, sizeof refused / sizeof refused[0])));
         marked += 1u;
     }
-    DF_CHECK_EQ_U64(t, marked, 24u); /* 23 on main, and Thunder Wave of step G68 */
+    DF_CHECK_EQ_U64(t, marked, 25u); /* 23 on main, Thunder Wave of step G68 (24), and Tickle of step G86 (25, the base of this branch) */
 }
 
 /* Every marked reflectable move is a single-target or a foeSide move: a spread one would need the TryHit of every target

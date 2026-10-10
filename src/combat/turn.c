@@ -1244,6 +1244,11 @@ static bool dfi_boost(dfi_run *r, uint32_t flat, const uint8_t *boosts, uint32_t
                 e.cause = (uint8_t)DUOFORGE_CAUSE_ITEM;
                 e.id2 = (uint16_t)effect.id2;
             }
+            if (effect.cause == DUOFORGE_CAUSE_MOVE && effect.id2 != 0u) {
+                /* A move's boost that names its move ([from] move: X, Belly Drum's -setboost, step G86): id2 is the move id. */
+                e.cause = (uint8_t)DUOFORGE_CAUSE_MOVE;
+                e.id2 = (uint16_t)effect.id2;
+            }
             dfi_emit(r, &e);
             if (capped[i] < DFI_BIAS6 && dfi_ability(r->b, m, DFI_ABILITY_COMPETITIVE) && source < DFI_POSITIONS &&
                 source / 2u != flat / 2u) {
@@ -1762,6 +1767,12 @@ static duoforge_status dfi_get_damage(dfi_run *r, uint32_t user, uint32_t target
         if (r->b->terrain != DFI_TERRAIN_NONE && dfi_grounded(r->b, a)) {
             power *= 2u;
         }
+    } else if (md->special == DFI_SPECIAL_HEAVY_SLAM) {
+        /* Heavy Slam's basePowerCallback (step G86, data/moves.ts:8533-8552): the user's weight against the target's. */
+        power = dfi_heavy_slam_power(dfi_forme_of(a)->weight_hg, dfi_forme_of(d)->weight_hg);
+    } else if (md->special == DFI_SPECIAL_HARD_PRESS) {
+        /* Hard Press's basePowerCallback (step G86, data/moves.ts:8137-8150): the target's current HP (not the user's). */
+        power = dfi_hard_press_power(d->hp, d->hp_max);
     } else if (dfi_move_power_by_weight(md)) {
         power = dfi_weight_power(dfi_forme_of(d)->weight_hg);
     } else if (md->special == DFI_SPECIAL_LAST_RESPECTS) {
@@ -5542,6 +5553,39 @@ static duoforge_status dfi_run_substitute(dfi_run *r, uint32_t user)
     return dfi_status_hit_end(r);
 }
 
+/* Belly Drum (step G86, data/moves.ts:1216-1234; no Champions override, data/mods/champions/moves.ts has no entry). Its onHit
+ * returns false, and the move fails with -fail|user and [still] (no Update), when the user has half its HP or less, Attack at
+ * +6 or more, or a maximum HP of 1 (the Shedinja clause). Otherwise directDamage(maxhp / 2) (floor, clampIntRange; cause NONE
+ * with no [from], sim/battle.ts:2207-2250) and boost({atk: 12}) capped at +6 (Battle.boost: one -setboost line with the new
+ * stage, shown as the BOOST event of cause MOVE with the amount of the change). The directDamage sets no hurtThisTurn (the
+ * pin's directDamage does not), which matters for Counter-like moves (G88, not here). A Contrary holder is refused: its
+ * ChangeBoost reverses the +12 (sim/battle.ts:2032), a case this step does not model. The move result is TRUE after the
+ * effect (dfi_status_hit_end), also when no foe is left for the boost (onHit then returns undefined, not false). */
+static duoforge_status dfi_run_belly_drum(dfi_run *r, uint32_t user)
+{
+    struct duoforge_battle *b = r->b;
+    const dfi_member *m = dfi_at(b, user);
+    if (dfi_ability(b, m, DFI_ABILITY_CONTRARY)) {
+        return DUOFORGE_E_UNSUPPORTED;
+    }
+    dfi_active_slot *pos = dfi_pos(b, user);
+    /* target.hp <= target.maxhp / 2 (a fractional compare: 2 * hp <= maxhp); boosts.atk >= 6 (stages are biased by 6: 12 is +6). */
+    if (2u * (uint32_t)m->hp <= (uint32_t)m->hp_max || pos->stages[DFI_STAGE_ATK] >= 12u || m->hp_max == 1u) {
+        dfi_fail_still(r, user);
+        return DUOFORGE_OK;
+    }
+    const uint32_t half = (uint32_t)m->hp_max / 2u;
+    const duoforge_status cost = dfi_deal(r, user, half, DUOFORGE_CAUSE_NONE, 0u, DUOFORGE_NO_POSITION);
+    if (cost != DUOFORGE_OK) {
+        return cost;
+    }
+    /* boost({atk: 12}): +12 in biased stages (6 + 12), capped at +6 by dfi_boost; the source is the holder itself. */
+    static const uint8_t atk_twelve[DFI_STAT_STAGE_COUNT] = {18u, 6u, 6u, 6u, 6u, 6u, 6u};
+    const dfi_boost_effect eff = dfi_effect(DUOFORGE_CAUSE_MOVE, DFI_MOVE_BELLYDRUM, DFI_BOOST_PRIMARY);
+    (void)dfi_boost(r, user, atk_twelve, DFI_POSITIONS, eff);
+    return dfi_status_hit_end(r);
+}
+
 /* Baton Pass (decision 0042; data/moves.ts:1092-1116, sim/battle-actions.ts:1290-1313). A status move on the user: onHit fails
  * with [still] when no switch is possible (the commanded case is unmarked), otherwise the user's slot is flagged to pivot, and
  * the switch that follows copies the leaver's volatiles (dfi_switch_in). The pin's self block skips the BeforeSwitchOut of the
@@ -6958,6 +7002,10 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
     if (md->special == DFI_SPECIAL_SUBSTITUTE) {
         return dfi_run_substitute(r, user);
     }
+    /* Belly Drum (step G86): its own onHit (the refusal, the half-HP cost and the boost), dfi_run_belly_drum. */
+    if (md->special == DFI_SPECIAL_BELLY_DRUM) {
+        return dfi_run_belly_drum(r, user);
+    }
     /* Baton Pass (decision 0042): its onHit and self block, then the PIVOT of the user (dfi_run_baton_pass). */
     if (md->special == DFI_SPECIAL_BATON_PASS) {
         return dfi_run_baton_pass(r, user);
@@ -7021,7 +7069,9 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
         md->special != DFI_SPECIAL_SKILL_SWAP &&
         md->special != DFI_SPECIAL_ALLURING_VOICE && md->special != DFI_SPECIAL_DRAGON_CHEER &&
         md->special != DFI_SPECIAL_FINAL_GAMBIT &&
-        md->special != DFI_SPECIAL_DRAGON_DARTS) {
+        md->special != DFI_SPECIAL_DRAGON_DARTS &&
+        md->special != DFI_SPECIAL_HEAVY_SLAM && md->special != DFI_SPECIAL_HARD_PRESS &&
+        md->special != DFI_SPECIAL_ICE_SPINNER && md->special != DFI_SPECIAL_BELLY_DRUM) {
         return DUOFORGE_E_INVARIANT;
     }
     /* Steel Roller's onTry (step G34, data/moves.ts:17893-17913): it fails without a terrain, with -fail and [still]. */
@@ -7567,6 +7617,21 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
         }
         /* Steel Roller's onHit (runMoveEffects, right after the damage of the hit): the terrain ends. */
         if (md->special == DFI_SPECIAL_STEEL_ROLLER) {
+            bool any_hit = false;
+            for (uint32_t i = 0u; i < count; ++i) {
+                any_hit = any_hit || hit[i];
+            }
+            if (any_hit) {
+                st = dfi_clear_terrain(r);
+                if (st != DUOFORGE_OK) {
+                    return st;
+                }
+            }
+        }
+        /* Ice Spinner (step G86, data/moves.ts:9417-9434): clearTerrain after a hit that landed (AfterHit, which runs only
+         * while the user still stands, sim/battle-actions.ts:1123) or was absorbed by a Substitute (onAfterSubDamage, if the
+         * source has HP). No onTry: with no terrain the clear does nothing and prints nothing (field.clearTerrain returns false). */
+        if (md->special == DFI_SPECIAL_ICE_SPINNER && dfi_at(b, user)->hp > 0u) {
             bool any_hit = false;
             for (uint32_t i = 0u; i < count; ++i) {
                 any_hit = any_hit || hit[i];

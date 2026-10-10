@@ -1395,7 +1395,7 @@ def swap_partners(trace, teams, roster_of, tables):
     return out
 
 
-def step_events(log, viewer, roster_of, maxhp, tables, rb_pending=None, ill=None, swap_ids=None):
+def step_events(log, viewer, roster_of, maxhp, tables, rb_pending=None, ill=None, swap_ids=None, boost_pre=None):
     """The events `viewer` sees in one step, in protocol order.
 
     ill (decision 0026, Illusion; None = no holder in the battle): 'side' (per side: a holder is on it), 'truth_at' ((side, p) ->
@@ -1772,6 +1772,55 @@ def step_events(log, viewer, roster_of, maxhp, tables, rb_pending=None, ill=None
                 raise ConversionError('protocol-line', 'trace_to_c: -clearallboost with arguments %r' % line,
                                       detail='clearallboost')
             e = ev_tuple(EV['CLEAR_ALL_BOOSTS'])
+        elif kind == '-setboost':
+            # Belly Drum (step G86; sim/battle.ts:2051-2052): the line shows the stage the boost leaves, in place of -boost. It is
+            # the BOOST event of the change (the engine's dfi_boost, cause MOVE with the move's id). Each precondition is a named
+            # refusal: the move is Belly Drum, the stat is Attack, the occupant is the same Pokemon before and after the step, no
+            # earlier boost line of this step names the position (the stage before is then the one of the step's start), the
+            # printed stage is the stage after the step, and the change is positive.
+            cause, id2, other = ev_cause(attrs, tables)
+            flat = ev_pos(args[0])
+            if (cause != CAUSE['MOVE'] or id2 != tables['MOVE'][key('Belly Drum')] or args[1] != 'atk' or flat is None
+                    or boost_pre is None or flat not in boost_pre):
+                raise ConversionError('setboost', 'trace_to_c: -setboost outside the Belly Drum rule: %r' % line, detail='setboost')
+            name_before, before, name_after, after = boost_pre[flat]
+            # The stage the boost starts from: the stage at the step's start, moved by the earlier Attack lines of this step on the
+            # same Pokemon (a Tickle before Belly Drum in the same step, say); a -clearallboost before it is refused.
+            stage = before
+            for prev in log[:i]:
+                pp = prev.split('|')
+                if len(pp) > 1 and pp[1] == '-clearallboost':
+                    raise ConversionError('setboost', 'trace_to_c: -setboost after -clearallboost in the same step: %r' % line,
+                                          detail='setboost-clear')
+                if len(pp) < 5 or pp[2] != parts[2] or pp[3] != 'atk':
+                    continue
+                if pp[1] == '-boost':
+                    stage += int(pp[4])
+                elif pp[1] == '-unboost':
+                    stage -= int(pp[4])
+                elif pp[1] == '-setboost':
+                    stage = int(pp[4])
+            # The printed stage must reach the stage after the step with the later Attack lines of this Pokemon in the step
+            # (a Tickle after Belly Drum, say); a later -setboost is refused.
+            later = 0
+            for nxt in log[i + 1:]:
+                pn = nxt.split('|')
+                if len(pn) < 5 or pn[2] != parts[2] or pn[3] != 'atk':
+                    continue
+                if pn[1] == '-boost':
+                    later += int(pn[4])
+                elif pn[1] == '-unboost':
+                    later -= int(pn[4])
+                elif pn[1] == '-setboost':
+                    raise ConversionError('setboost', 'trace_to_c: a second -setboost of the same Pokemon in the step: %r' % line,
+                                          detail='setboost-twice')
+            if name_before != name_after or int(args[2]) + later != after:
+                raise ConversionError('setboost', 'trace_to_c: -setboost stage %s does not reach the stage after the step (%s, same Pokemon: %s): %r'
+                                      % (args[2], after, name_before == name_after, line), detail='setboost-stage')
+            change = int(args[2]) - stage
+            if change <= 0:
+                raise ConversionError('setboost', 'trace_to_c: -setboost with no positive change: %r' % line, detail='setboost-change')
+            e = ev_tuple(EV['BOOST'], flat, other, cause, 0, id2, detail=EV_STATS.index('atk'), amount=change)
         elif kind in ('-boost', '-unboost'):
             cause, id2, other = ev_cause(attrs, tables)
             e = ev_tuple(EV['BOOST' if kind == '-boost' else 'UNBOOST'], ev_pos(args[0]), other, cause, 0, id2,
@@ -2184,7 +2233,19 @@ def convert_battle(name, spec, trace, tables):
             for p_i in range(2):
                 act = new_state['sides'][sd_i]['active'][p_i]
                 ill_step['truth_at'][(sd_i, p_i)] = name_of(new_state['sides'][sd_i]['pokemon'][act]) if act is not None and act >= 0 else None
-        events = [step_events(step['log'], viewer, roster_of, maxhp, tables, rb_pending, ill_step, swaps[k])
+        # The boost stages of each position before and after the step (step G86, Belly Drum's -setboost): `state` is the state
+        # before this step, `new_state` the one after it.
+        boost_pre = {}
+        for sd_i in range(2):
+            for p_i in range(2):
+                a_pre = state['sides'][sd_i]['active'][p_i]
+                a_post = new_state['sides'][sd_i]['active'][p_i]
+                if a_pre is None or a_pre < 0 or a_post is None or a_post < 0:
+                    continue
+                m_pre = state['sides'][sd_i]['pokemon'][a_pre]
+                m_post = new_state['sides'][sd_i]['pokemon'][a_post]
+                boost_pre[sd_i * 2 + p_i] = (name_of(m_pre), m_pre['boosts'][0], name_of(m_post), m_post['boosts'][0])
+        events = [step_events(step['log'], viewer, roster_of, maxhp, tables, rb_pending, ill_step, swaps[k], boost_pre)
                   for viewer in range(2)]
         for line in step['log']:  # one revive per Revival Blessing: the side's pending user ends with its revive
             if line.startswith('|-heal|') and '[from] move: Revival Blessing' in line:
