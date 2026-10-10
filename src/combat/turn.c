@@ -5397,6 +5397,12 @@ static duoforge_status dfi_run_substitute(dfi_run *r, uint32_t user)
         e = dfi_ev(DUOFORGE_EVENT_FAIL, user, DUOFORGE_CAUSE_MOVE, DFI_MOVE_SUBSTITUTE, DUOFORGE_NO_POSITION);
         e.detail = (uint8_t)DUOFORGE_FAIL_SUBSTITUTE_EXISTS;
         dfi_emit(r, &e);
+        /* onTryHit returns NOT_FAIL (data/moves.ts:18314-18318; hitStepTryHitEvent keeps '' at battle-actions.ts:650). The
+         * reference's next Stomping Tantrum DOUBLES after this fail (trace h18_substitute_exists_stomping_sitrus_mirror, step
+         * 3; the mutant that makes the result NULL leaves the power single and fails the replay), so the move result is FALSE
+         * (doubling is `=== false`, data/moves.ts:18054). The line-by-line path from NOT_FAIL to FALSE through the empty target
+         * list (battle-actions.ts:601-616, :371-374) is not traced here: the trace is the evidence. */
+        r->mres |= DFI_MRES_FALSE;
         return DUOFORGE_OK;
     }
     /* source.hp <= source.maxhp / 4 (a fractional compare, so 4 * hp <= maxhp) or maxhp === 1 (data/moves.ts:18319) */
@@ -5404,6 +5410,7 @@ static duoforge_status dfi_run_substitute(dfi_run *r, uint32_t user)
         e = dfi_ev(DUOFORGE_EVENT_FAIL, user, DUOFORGE_CAUSE_MOVE, DFI_MOVE_SUBSTITUTE, DUOFORGE_NO_POSITION);
         e.detail = (uint8_t)DUOFORGE_FAIL_SUBSTITUTE_WEAK;
         dfi_emit(r, &e);
+        r->mres |= DFI_MRES_FALSE; /* the same NOT_FAIL as EXISTS (data/moves.ts:18319-18321): FALSE, see the EXISTS branch above */
         return DUOFORGE_OK;
     }
     const uint32_t quarter = (uint32_t)m->hp_max / 4u;

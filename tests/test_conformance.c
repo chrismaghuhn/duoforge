@@ -33,7 +33,7 @@
 #include "reference/conformance_pool.h"
 #include "support/pool.h"
 #define DF_CONF_FORMES dfi_pool_formes
-#define DF_POOL_DATA_BATTLES 725u /* the recorded pool battles: main 717 (lane A batches 1-4, lane B batches 1-2, I2 three, G69 four, G65 nine), sub_sitrus_tie (H14, decision 0032 addendum), and the seven h18 hit-loop battles of chris/expansion-hitloop-fixes */
+#define DF_POOL_DATA_BATTLES 726u /* the recorded pool battles: main 717 (lane A batches 1-4, lane B batches 1-2, I2 three, G69 four, G65 nine), sub_sitrus_tie (H14, decision 0032 addendum), the seven h18 hit-loop battles and h18_substitute_exists_stomping_sitrus_mirror (the null result of a Substitute fail) of chris/expansion-hitloop-fixes */
 #elif defined(DF_CONFORMANCE_TEAM_C)
 #include "data/extended_tables.h"
 #include "reference/conformance_team_c.h"
