@@ -5221,7 +5221,14 @@ static duoforge_status dfi_run_healing_wish(dfi_run *r, uint32_t user)
         return DUOFORGE_OK;
     }
     if (dfi_wish_pending(b, user)) {
-        return DUOFORGE_OK; /* the second wish: no effect, no faint, no line (the pin's silent no-op) */
+        /* The second wish is a failed hit, not a silent success (decision 0045, the lead's check): addSlotCondition returns false
+         * (sim/side.ts:474-476), so the hit's result is false (damage[i] false, sim/battle-actions.ts:1287 no faint); the
+         * hit-result filter leaves no target and atLeastOneFailure keeps moveThisTurnResult (sim/battle-actions.ts:616), and the
+         * wrapper stores the move result FALSE (sim/battle-actions.ts:371-374). The Champions loop breaks before its Updates
+         * (data/mods/champions/scripts.ts:526, the all-false damage), so no Update runs. No -fail line: selfdestruct skips it
+         * (sim/battle-actions.ts:1303-1306). The result is FALSE for Stomping Tantrum's next turn (G42). */
+        r->mres |= DFI_MRES_FALSE;
+        return DUOFORGE_OK;
     }
     b->tail.sides[side].positions[user % 2u].position_flags =
         (uint8_t)(b->tail.sides[side].positions[user % 2u].position_flags | DFI_POSFLAG_HEALING_WISH); /* wide-operands-reviewed */

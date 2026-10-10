@@ -17,9 +17,11 @@ Pin: Pokemon Showdown b2cb775 (`C:/Dev/src/pokemon-showdown`). Champions overrid
   returns false (:474-476). That makes `didSomething` false, so `damage[i]` is false.
 - Faint (`sim/battle-actions.ts:1287-1289`): `if (selfdestruct === 'ifHit' && damage[i] !== false) battle.faint(source, source, move)`.
   It runs after the slot condition in the same hit loop. The `-fail` at :1303-1306 is skipped for any `selfdestruct` move.
-- **Second wish on an occupied slot** (pin consequence, not a refusal): the move is used (PP spent), the user does NOT
-  faint, the old wish stays, no line beyond the move line. This is the case of a standing Healing Wish user whose slot
-  still holds a wish from an earlier user.
+- **Second wish on an occupied slot** (corrected 2026-10-10, the lead's check): the hit result is FALSE. addSlotCondition
+  returns false (side.ts:474-476), damage[i] is false (battle-actions.ts:1287: no faint), the hit-result filter leaves no
+  target, atLeastOneFailure keeps moveThisTurnResult (battle-actions.ts:616), and the wrapper stores FALSE (:371-374).
+  The Champions loop breaks before its Updates (scripts.ts:526). No -fail line (selfdestruct, battle-actions.ts:1303-1306).
+  Engine: `r->mres |= DFI_MRES_FALSE` (turn.c, dfi_run_healing_wish). Next-turn Stomping Tantrum (G42) reads FALSE (doubled).
 - `singleEvent` returns `relayVar`, which defaults to true when there is no callback (`sim/battle.ts:591-595`). So the
   `Start` event in `addSlotCondition` succeeds; the wish is stored.
 
