@@ -2070,5 +2070,62 @@ class SmallRulesG53(unittest.TestCase):
         self.assertNotIn('mustpressure', gen_closure.FLAGS2_BITS)
 
 
+class C4Facts(unittest.TestCase):
+    """Step C4: the pinned fields of the twelve data-only moves, rendered as the pin writes them (no checkout needed)."""
+
+    def render(self, mid, fields):
+        lines = ['\t%s: {' % mid]
+        for key, want in fields.items():
+            if key == 'flags':
+                lines.append('\t\tflags: { %s },' % ' '.join('%s: 1,' % f for f in sorted(want)))
+            elif key == 'secondary':
+                chance, boosts = want
+                lines.append('\t\tsecondary: {\n\t\t\tchance: %d,\n\t\t\tself: {\n\t\t\t\tboosts: {\n%s\n\t\t\t\t},\n'
+                             '\t\t\t},\n\t\t},' % (chance, '\n'.join('\t\t\t\t\t%s: %d,' % kv for kv in boosts.items())))
+            elif key == 'boosts':
+                lines.append('\t\tboosts: { %s },' % ' '.join('%s: %d,' % kv for kv in want.items()))
+            elif isinstance(want, bool):
+                lines.append('\t\t%s: %s,' % (key, 'true' if want else 'false'))
+            elif isinstance(want, int):
+                lines.append('\t\t%s: %d,' % (key, want))
+            else:
+                lines.append('\t\t%s: "%s",' % (key, want))
+        lines.append('\t},')
+        return '\n'.join(lines)
+
+    def sources(self, change=None):
+        """The pin text of every fact; `change` = (move, field, value) replaces one value."""
+        out = []
+        for mid, fields in gen_closure.C4_FACTS:
+            fields = dict(fields)
+            if change is not None and change[0] == mid:
+                fields[change[1]] = change[2]
+            out.append(self.render(mid, fields))
+        base = TextSource('data/moves.ts', '\n'.join(out))
+        champ = TextSource('data/mods/champions/moves.ts',
+                           '\n'.join(['\tpsyshieldbash: {', '\t\tinherit: true,', '\t\tbasePower: 90,', '\t},',
+                                      '\tstormthrow: {', '\t\tinherit: true,', '\t\tisNonstandard: null,', '\t},']))
+        return base, champ
+
+    def test_the_pinned_facts_are_accepted(self):
+        gen_closure.check_c4_facts(*self.sources())
+
+    def test_a_changed_value_is_refused(self):
+        for mid, key, value in (('flamecharge', 'basePower', 60), ('steelwing', 'accuracy', 100),
+                                ('screech', 'flags', {'protect', 'reflectable', 'mirror', 'metronome'}),
+                                ('spicyextract', 'boosts', {'atk': 2, 'def': -1})):
+            with self.subTest(move=mid, field=key):
+                with self.assertRaises(SystemExit) as cm:
+                    gen_closure.check_c4_facts(*self.sources((mid, key, value)))
+                self.assertIn('move %s' % mid, str(cm.exception.code))
+
+    def test_an_unlisted_champions_override_is_refused(self):
+        base, _ = self.sources()
+        champ = TextSource('data/mods/champions/moves.ts', '\tflamecharge: {\n\t\tinherit: true,\n\t},')
+        with self.assertRaises(SystemExit) as cm:
+            gen_closure.check_c4_facts(base, champ)
+        self.assertIn('move flamecharge: the Champions mod overrides it', str(cm.exception.code))
+
+
 if __name__ == '__main__':
     unittest.main()
