@@ -197,8 +197,11 @@ static void test_av_turn(df_test *t, const char *name, const g88_cmd turn1[2][2]
     DF_CHECK(t, (flags_of(b, hurt_flat) & DFI_POSFLAG_HURT) == 0u); /* nobody was hurt before the turn */
     turn_bundle(&bd, b, turn1);
     DF_CHECK(t, duoforge_battle_step(ctx, b, &bd, &res) == DUOFORGE_OK);
-    /* Raichu faints at the end of turn 1 in these battles (a REPLACEMENT boundary, decided before endTurn: the flags are still
-     * set there, and endTurn clears them after the replacement). The reset is checked only at a TURN boundary. */
+    /* UNEXPLAINED (not silently widened): this test starts the battle with its own RNG state, not the recorded draw tape, so
+     * its rolls differ from the trace. The trace of this battle shows no faint and no switch request after turn 1 (its log ends
+     * with |upkeep| and |turn|2, after a Sitrus heal), yet this run ends turn 1 at a REPLACEMENT boundary. Its cause is not
+     * identified (not a pivot, Eject Button, Emergency Exit or Red Card in these teams). The conformance replay of the same
+     * battle, which uses the tape, matches the recorded boundary. The reset is checked only at a TURN boundary. */
     DF_CHECK(t, b->boundary_kind == DUOFORGE_BOUNDARY_TURN || b->boundary_kind == DUOFORGE_BOUNDARY_REPLACEMENT);
     if (b->boundary_kind == DUOFORGE_BOUNDARY_TURN) {
         DF_CHECK(t, (flags_of(b, hurt_flat) & DFI_POSFLAG_HURT) == 0u); /* the turn boundary cleared it (endTurn) */
