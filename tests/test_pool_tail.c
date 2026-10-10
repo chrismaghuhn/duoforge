@@ -390,10 +390,10 @@ static const unsigned sweep[DFI_ENC_TAIL_SIZE][SWEEP_COLUMNS] = {
     {0, 0, 255, 0, 0, 0, 0, 0},
     {5, 0, 250, 0, 0, 0, 0, 0},
     {0, 0, 255, 0, 0, 0, 0, 0},
-    {0, 0, 0, 0, 0, 255, 0, 0},
-    {0, 0, 0, 0, 0, 255, 0, 0},
-    {0, 0, 0, 0, 0, 255, 0, 0},
-    {0, 0, 0, 0, 0, 255, 0, 0},
+    {2, 0, 253, 0, 0, 0, 0, 0}, /* 332: step G71, Attract flat 0: the codes 2 and 8 (model: attract_valid_codes) */
+    {2, 0, 253, 0, 0, 0, 0, 0}, /* 333: flat 1: the codes 1 and 7 */
+    {2, 0, 253, 0, 0, 0, 0, 0}, /* 334: flat 2: the codes 2 and 8 */
+    {2, 0, 253, 0, 0, 0, 0, 0}, /* 335: flat 3: the codes 1 and 7 */
     {0, 0, 0, 0, 0, 255, 0, 0},
     {0, 0, 0, 0, 0, 255, 0, 0},
     {0, 0, 0, 0, 0, 255, 0, 0},
@@ -1200,7 +1200,7 @@ int main(void)
         DF_CHECK_EQ_U64(&t, DFI_ENC_TAIL_MEMBER_FLAGS_OFF, 8u);
         DF_CHECK(&t, DFI_STATE_SCHEMA_POOL_TAIL_REV5 != 4u); /* schema 4 stays free: certified pool teams */
         /* The tail in memory: the encoded size without the reserved bytes, and the one pad byte of the field block. */
-        DF_CHECK_EQ_U64(&t, sizeof(dfi_pool_tail), 304u); /* a position and a side have none; step G46 adds party_order (6); rev 5 adds the Illusion state and the 2 position bytes */
+        DF_CHECK_EQ_U64(&t, sizeof(dfi_pool_tail), 308u); /* a position and a side have none; step G46 adds party_order (6); rev 5 adds the Illusion state, the 2 position bytes and (step G71) the 4 Attract sources */
         DF_CHECK_EQ_U64(&t, sizeof(dfi_tail_side), 148u);
         DF_CHECK_EQ_U64(&t, sizeof(dfi_tail_pos), 34u);
         DF_CHECK_EQ_U64(&t, sizeof(dfi_tail_illusion), 18u);
@@ -1208,7 +1208,7 @@ int main(void)
         for (size_t off = 0u; off < DFI_ENC_TAIL_SIZE; ++off) {
             reserved += is_reserved_offset(off) ? 1u : 0u;
         }
-        DF_CHECK_EQ_U64(&t, reserved, 45u);
+        DF_CHECK_EQ_U64(&t, reserved, 41u); /* step G71: the 4 Attract sources of the rev 5 reserve are data, not reserved */
         const duoforge_context *with[] = {kp, kq};
         const duoforge_context *without[] = {k1, k2, kc, kd, c1};
         for (size_t i = 0u; i < 2u; ++i) {
@@ -1438,6 +1438,7 @@ int main(void)
             unsigned got[SWEEP_COLUMNS] = {0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u};
             uint8_t m[DF_STATE_ENCODED_MAX];
             memcpy(m, enc, DFI_STATE_POOL_ENCODED_SIZE);
+            uint32_t accepted_codes = 0u; /* step G71: the values accepted at this byte, as bits (only codes 1..12 matter) */
             for (unsigned v = 0u; v < 256u; ++v) {
                 if (v == enc[DFI_ENC_TAIL_OFF + off]) {
                     continue;
@@ -1447,6 +1448,7 @@ int main(void)
                 const duoforge_status st = decode_both(&t, kp, m, DFI_STATE_POOL_ENCODED_SIZE, &inv);
                 if (st == DUOFORGE_OK) {
                     got[0] += 1u;
+                    accepted_codes |= v <= DFI_ATTRACT_MEMBER_MAX ? 1u << v : 0u;
                 } else if (st == DUOFORGE_E_MALFORMED && inv == DFI_INV_TAIL_SIDE) {
                     got[1] += 1u;
                 } else if (st == DUOFORGE_E_MALFORMED && inv == DFI_INV_TAIL_POSITION) {
@@ -1469,6 +1471,15 @@ int main(void)
                     fprintf(stderr, "  tail byte %u = %u: %s (%s)\n", (unsigned)off, v, duoforge_status_name(st), inv_name(inv));
                 }
             }
+            /* step G71: the Attract sources of the base battle (reference pairing 0): on flat 0 and 2 (male holders) the codes
+             * 2 (the ally Staraptor, F) and 8 (the foe Golisopod, F); on flat 1 and 3 (female holders) 1 (the ally Rillaboom, M) and
+             * 7 (the foe Politoed, M). Derived from src/state/reference_teams.c; the model's listing gives the same pairs. */
+            const size_t attract_first = DFI_ENC_TAIL_REV4_SIZE + DFI_ENC_TAIL5_ATTRACT_OFF;
+            if (off >= attract_first && off < attract_first + DFI_ENC_TAIL5_ATTRACT_SIZE) {
+                const size_t flat = off - attract_first;
+                const uint32_t want = flat % 2u == 0u ? ((1u << 2u) | (1u << 8u)) : ((1u << 1u) | (1u << 7u));
+                DF_CHECK_EQ_U64(&t, accepted_codes, want);
+            }
             if (memcmp(got, sweep[off], sizeof got) != 0) {
                 ++wrong;
                 fprintf(stderr, "  tail byte %u: ok %u side %u position %u member %u field %u reserved %u\n", (unsigned)off,
@@ -1482,7 +1493,7 @@ int main(void)
             }
         }
         DF_CHECK_EQ_U64(&t, wrong, 0u);
-        DF_CHECK_EQ_U64(&t, all_reserved, 45u); /* 29 reserved bytes of the rev 4 part (the field block's +1..+6 are party_order) and 16 of rev 5 */
+        DF_CHECK_EQ_U64(&t, all_reserved, 41u); /* 29 reserved bytes of the rev 4 part (the field block's +1..+6 are party_order) and 12 of rev 5 (step G71: 4 Attract sources) */
     }
 
     /* The schema is the one of the context's kind; sizes, schema ids and truncations. */
