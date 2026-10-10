@@ -29,6 +29,7 @@ DEADLINE_CAP = 2.0  # seconds
 DEADLINE_SHARE = 0.10  # of the remaining turn time
 _TIMER = re.compile(r"^\|inactive\|Time left: (\d+) sec this turn \| \d+ sec total( \| \d+ sec grace)?$")
 _TIMER_ON = "|inactive|Battle timer is ON"
+_TIMER_OFF = "|inactiveoff|"
 _NO_FALLBACK = ("searched", "forced", "raw", "team")
 # The approved spec's search (owner, 2026-10-10): X (mix, lambda 0.5) at K = M = 8 and 16 worlds over the pinned live
 # spread table, a foe species without a spread prior refused.
@@ -55,6 +56,17 @@ def parse_timer(line):
 
 def timer_on(line):
     return line.startswith(_TIMER_ON)
+
+
+def timer_off(line):
+    return line.startswith(_TIMER_OFF)
+
+
+def check_tracker(tracker_class):
+    """The live search reads Tracker.public_parts (HauptSession's record assembler): without it --search honest is
+    refused at start, before anything is loaded."""
+    if not callable(getattr(tracker_class, "public_parts", None)):
+        raise SearchError("--search honest needs Tracker.public_parts (the record assembler), which this tracker lacks")
 
 
 def deadline_seconds(turn_left, received, now):
@@ -92,6 +104,7 @@ class LiveSearch:
         self.searcher, self.roots, self.clock = searcher, roots, clock
         self._executor = ThreadPoolExecutor(1, thread_name_prefix="duoforge-live-search")
         self._running = None  # the future of a search that missed its deadline
+        self._running_episode = None
         self.closers = []  # what load() opened for this search
 
     def close(self):
@@ -130,8 +143,9 @@ class LiveSearch:
             budget -= self.clock() - start
             late, self._running = self._running, None
             failed = self._classify(late, 0.0)
-            if failed.fallback == "b":  # a late search that failed is still an unexpected error
-                return failed
+            if failed.fallback == "b":  # a late search that failed is still an unexpected error, named by its game
+                return Outcome(None, "error", "b", f"{failed.reason} (late, from episode {self._running_episode})",
+                               failed.seconds)
         observation = parts["observation"]
         seat = int(observation["player"])
         obs, slots, pairs = _encoded(self.searcher, observation, obs_part, slot_part, pair_mask)
@@ -141,11 +155,15 @@ class LiveSearch:
         try:
             future.result(timeout=max(0.0, budget))
         except FutureTimeout:
-            self._running = future
+            self._running, self._running_episode = future, episode
             return Outcome(None, "deadline", "deadline", None, self.clock() - start)
         except Exception:
             pass  # classified below
-        return self._classify(future, self.clock() - start)
+        outcome = self._classify(future, self.clock() - start)
+        if outcome.fallback == "a" and parts.get("reason"):  # the tracker's own named reason beside the search's
+            outcome = Outcome(None, outcome.cause, "a", f"{outcome.reason}; tracker: {parts['reason']}",
+                              outcome.seconds)
+        return outcome
 
 
 def load(checkpoint_path, settings=None):

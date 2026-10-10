@@ -28,7 +28,7 @@ from pathlib import Path
 from . import search as live_search, teams
 from .lines import Stop
 from .data import trace_to_c
-from .game import Game
+from .game import Game, check_tables
 from .tracker import ROOM_LINES, _kind
 
 FORMATS = {"gen9championsvgc2026regmc": 1, "gen9championsvgc2026regmcbo3": 3}  # format id -> games in the set
@@ -141,6 +141,7 @@ class _Battle:
 class Bot:
     def __init__(self, config, data, policy, login=login, clock=time.monotonic, team_texts=None, rng=None,
                  search=None):
+        check_tables(data, policy)  # before anything connects
         self.config = config
         self.search = search  # a LiveSearch, or None: raw play
         self.paused = None  # a class (b) search error: no new challenge until the session is restarted
@@ -284,7 +285,8 @@ class Bot:
         log_dir = Path(self.config.log_dir)
         log_dir.mkdir(parents=True, exist_ok=True)
         log_path = log_dir / f"{room}-{toid(self.config.name)}.jsonl"  # two bots of one machine can share a room
-        b = _Battle(room, Game(self.data, self.policy, self.team_texts[team], search=self.search, room=room,
+        search = self.search if self.paused is None else None  # after a class (b) error every game is raw
+        b = _Battle(room, Game(self.data, self.policy, self.team_texts[team], search=search, room=room,
                                episode=self.episodes), log_path)
         self.episodes += 1
         self.battles[room] = b
@@ -309,9 +311,14 @@ class Bot:
             b.write({"in": line})
             if live_search.timer_on(line):
                 b.timer_on = True
+            elif live_search.timer_off(line):
+                b.timer_on, b.timer = False, None
             seconds = live_search.parse_timer(line)
             if seconds is not None:
-                b.timer, b.timer_fresh = (seconds, self.clock()), True
+                # fresh only for a decision point still to answer: a line that comes after its point was answered
+                # (the wait gave up) belongs to that point, not to the next request
+                b.timer = (seconds, self.clock())
+                b.timer_fresh = not (b.game.ready and b.game.epoch <= b.decided)
         for line in lines:
             if line.startswith("|error|"):
                 await self._error(b, line)
@@ -354,8 +361,7 @@ class Bot:
                         b.awaiting = self.clock()
                     if self.clock() - b.awaiting <= TIMER_WAIT:
                         return  # the timer line of this request follows it
-                    b.write({"timer": "missing", "decision": r["rqid"]})
-                    b.timer = None
+                    b.write({"timer": "missing", "decision": r["rqid"]})  # the last line, less the time since
                 budget = live_search.deadline_seconds(*(b.timer or (None, 0.0)), self.clock())
                 b.awaiting, b.timer_fresh = None, False
             if not r.get("update"):  # an updated request is the same decision point

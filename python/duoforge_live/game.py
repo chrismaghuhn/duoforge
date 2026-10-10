@@ -30,8 +30,17 @@ class Candidate:
     probability: float
 
 
+def check_tables(data, policy):
+    """A network that reads view-extension record features needs the POOL tables: under the closure kind the
+    tracker's extension record is revision 0 and the encoder would treat the records as absent, in silence."""
+    if getattr(policy, "ext_supported", 0) & features.RECORD_FEATURES and data.kind != "pool":
+        raise ValueError(f"the network reads view-extension records (ext_supported {policy.ext_supported:#x}); "
+                         f"they need the pool tables, not {data.kind!r}")
+
+
 class Game:
     def __init__(self, data, policy, own_text, search=None, room="", episode=0):
+        check_tables(data, policy)
         self.tracker = Tracker(data, own_text)
         self.policy = policy
         self.search, self.room, self.episode = search, room, episode

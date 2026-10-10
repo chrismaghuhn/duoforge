@@ -32,7 +32,12 @@ def main(argv=None):
     config = client.Config(name=args.name, team=args.team, log_dir=args.log_dir, team_link=args.team_link,
                            challenge=args.challenge, challenge_format=args.challenge_format, server=args.server)
     client.check_arguments(config)  # before anything is loaded or connected
-    net, tables = policy.load(args.checkpoint), data.load()
+    if args.search == "honest":
+        from .tracker import Tracker
+        search.check_tracker(Tracker)
+    from duoforge_learn import checkpoint
+    net = policy.load(args.checkpoint)
+    tables = data.load(kind=policy.table_kind(checkpoint.load(args.checkpoint)[1]))  # the network's data kind
     live = search.load(args.checkpoint) if args.search == "honest" else None
     bot = client.Bot(config, tables, net, search=live)  # bot.close() closes the search too
     try:
