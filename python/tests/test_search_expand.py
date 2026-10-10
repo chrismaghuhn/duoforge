@@ -75,7 +75,7 @@ class SearchExpand(unittest.TestCase):
             cls.roots.reset_terminal()
         cls.roots.query_factored()
         ext = cls.roots.observe_ext()
-        cls.mask = int(ext[0, 0]["supported"])
+        cls.mask = int(ext[0, 0]["supported"]) & features.version_features(4)  # encoder 4 (0050)
         cls.keys = rng.integers(0, 2 ** 63, ROOTS, dtype=np.uint64)
         cls.viewers = (np.arange(ROOTS) % 2).astype(np.uint8)
         cls.root_envs = (np.arange(LEAVES) % ROOTS).astype(np.uint32)

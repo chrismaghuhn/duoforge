@@ -182,7 +182,7 @@ class Teacher(unittest.TestCase):
         net = net or self.net
         table = belief.SpreadTable.from_sides(duoforge.reference_setups([0])["sides"].reshape(-1))
         with duoforge.Batch(ctx, duoforge.reference_setups([0]), 1, 42) as b:
-            mask = int(b.observe_ext()[0, 0]["supported"])
+            mask = int(b.observe_ext()[0, 0]["supported"]) & features.version_features(4)  # encoder 4 (0050)
         return honest.Honest(ctx, net, net.params, 4, mask, k=k, m=8, s=16, rule="mix", capacity=1024,
                              workers=2, table=table, seed=seed, exclude_teams=excluded)
 
