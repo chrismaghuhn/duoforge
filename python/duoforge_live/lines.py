@@ -139,7 +139,8 @@ BASE_FOLDS = sum(1 << FEATURES[n] for n in ("WEATHER_SAND", "WEATHER_SNOW", "AIL
 # DuoForge's record byte for byte and requires each to be shown at compared points of both viewers, own and foe side).
 EXT_FOLDS = sum(1 << FEATURES[n] for n in ("THROAT_CHOP", "AURORA_VEIL", "PERISH", "ENCORE", "ABILITY_CHANGE", "ITEM_CHANGE",
                                           "MUST_RECHARGE", "TOXIC_SPIKES", "TYPE_CHANGE", "TAUNT", "YAWN",
-                                          "DISABLE", "IMPRISON", "STEALTH_ROCK"))
+                                          "DISABLE", "IMPRISON", "STEALTH_ROCK",
+                                          "GLAIVE_RUSH"))
 TRACKER_FOLDS = BASE_FOLDS | EXT_FOLDS
 SUPPORTED = LIBRARY_SUPPORTED & TRACKER_FOLDS
 

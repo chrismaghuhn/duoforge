@@ -74,6 +74,7 @@ EXT_FIELDS = {
     "YAWN": (("bit", C["DUOFORGE_POSITION_EXT_YAWN"]),),
     "DISABLE": (("position", "disable_slot"),),
     "IMPRISON": (("bit", C["DUOFORGE_POSITION_EXT_IMPRISON"]),),
+    "GLAIVE_RUSH": (("bit", C["DUOFORGE_POSITION_EXT_GLAIVE_RUSH"]),),
     "TYPE_CHANGE": (("bit", C["DUOFORGE_POSITION_EXT_TYPE_CHANGED"]), ("position", "type_now")),
     "AURORA_VEIL": (("side", "aurora_veil_turns"),),
     "PERISH": (("position", "perish"),),
@@ -84,7 +85,7 @@ EXT_FIELDS = {
 # The presence bits of a position's volatiles: _Position attribute -> DUOFORGE_POSITION_EXT_* bit.
 _PRESENCE_BITS = (("throat_chop", EXT_THROAT_CHOP), ("must_recharge", C["DUOFORGE_POSITION_EXT_MUST_RECHARGE"]),
                   ("taunt", C["DUOFORGE_POSITION_EXT_TAUNT"]), ("yawn", C["DUOFORGE_POSITION_EXT_YAWN"]),
-                  ("imprison", C["DUOFORGE_POSITION_EXT_IMPRISON"]))
+                  ("imprison", C["DUOFORGE_POSITION_EXT_IMPRISON"]), ("glaive_rush", C["DUOFORGE_POSITION_EXT_GLAIVE_RUSH"]))
 # DUOFORGE_FIELD_* of a terrain's FIELD_START event -> DUOFORGE_TERRAIN_* of the observation
 _TERRAIN = {1: C["DUOFORGE_TERRAIN_GRASSY"], trace_to_c.FIELD_PSYCHIC_TERRAIN: C["DUOFORGE_TERRAIN_PSYCHIC"],
             trace_to_c.FIELD_ELECTRIC_TERRAIN: C["DUOFORGE_TERRAIN_ELECTRIC"],
@@ -143,6 +144,7 @@ class _Position:
         self.taunt = 0  # Taunt's volatile is up (presence only)
         self.yawn = 0  # Yawn's volatile is up (presence only)
         self.imprison = 0  # the occupant used Imprison (presence only, until it leaves)
+        self.glaive_rush = 0  # Glaive Rush's drawback is up until the occupant's next action (presence only)
         self.type_now = (0, 0)  # the types (id + 1, 0: none) a move set until the occupant leaves (Soak, Double Shock)
         self.perish = 0  # the Perish count the game showed last, 3 to 1 (0: none)
         self.last_slot = 0  # the move slot + 1 of the occupant's last move line (5: Struggle; None: not on its sheet)
@@ -274,6 +276,14 @@ class Tracker:
         parts = line.split("|")
         if parts[1] in ("-start", "-end") and parts[3:4] == ["Throat Chop"]:
             self._throat_chop(parts)
+            return
+        if parts[1] == "-singlemove" and parts[3:4] == ["Glaive Rush"]:
+            # Glaive Rush's drawback (step G19): its self effect shows only as -singlemove|X|Glaive Rush|[silent]
+            # (data/moves.ts glaiverush), which the converter skips; the tracker sets the presence bit here
+            pos = lines.flat_position(parts[2])
+            if pos is None or parts[4:] != ["[silent]"]:
+                raise lines.Stop("line:-singlemove Glaive Rush")
+            self._at(pos).glaive_rush = 1
             return
         if parts[1] == "-end" and parts[3:4] == ["move: Yawn"]:
             # Yawn's end (step G31, data/moves.ts yawn onEnd: -end|X|move: Yawn|[silent], before the sleep it brings):
@@ -589,6 +599,8 @@ class Tracker:
             p = self._at(pos)
             p.acted = 1
             self._last_move = (pos, ident, e[2])
+            if e[3] != trace_to_c.CAUSE["ABILITY"]:
+                p.glaive_rush = 0  # the next action ends Glaive Rush's drawback (glaiverush onBeforeMove, step G19)
             if e[3] == trace_to_c.CAUSE["NONE"]:
                 p.last_move = ident  # runMove's moveUsed, a locked turn too; not a move another effect makes it use
             m = self._occupant(pos)
@@ -652,7 +664,9 @@ class Tracker:
                 m.hp_percent, m.hp_flag = 0, 0
         elif kind == EV["CANT"]:
             # An ability's block (Armor Tail) names its holder; the move's user, [of], took the action.
-            self._at(e[2] if e[3] == trace_to_c.CAUSE["ABILITY"] else pos).acted = 1
+            actor = self._at(e[2] if e[3] == trace_to_c.CAUSE["ABILITY"] else pos)
+            actor.acted = 1
+            actor.glaive_rush = 0  # its action began: glaiverush's onBeforeMove ran first (step G19)
             if e[3] == trace_to_c.CAUSE["RECHARGE"]:
                 self._at(pos).must_recharge = 0  # cant|X|recharge: mustrecharge's onBeforeMove ends it (step G17)
         elif kind == EV["TYPE_CHANGE"]:
@@ -688,6 +702,7 @@ class Tracker:
             self._at(pos).must_recharge = 1  # -mustrecharge|X: a recharge move hit (step G17)
         elif kind == EV["CONFUSED"]:
             self._at(pos).acted = 1
+            self._at(pos).glaive_rush = 0  # the action began (a confused self-hit shows no move line)
         elif kind in (EV["DAMAGE"], EV["HEAL"]):
             if public:
                 m = self._occupant(pos)
