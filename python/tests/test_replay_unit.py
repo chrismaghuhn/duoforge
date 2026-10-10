@@ -6,6 +6,7 @@ teams and a committed spectator log of one reference battle
 (python/tests/data/replay/). No replay of the unlicensed dataset is a test
 input.
 """
+import collections
 import re
 import shutil
 import sys
@@ -1877,6 +1878,84 @@ class SetBeliefTest(unittest.TestCase):
     def test_same_word_same_set(self):
         belief = self.B.SetBelief(self.corpus, self.data)
         self.assertEqual(belief.draw(self.member(), 99), belief.draw(self.member(), 99))
+
+
+class BeliefGameTest(unittest.TestCase):
+    """A game without sheets on sampled sheets of both sides (option B), on the fixture with its sheets removed."""
+
+    @classmethod
+    def setUpClass(cls):
+        from duoforge_live import teams
+        from duoforge_replay import corpus, game, prior, setbelief
+        cls.G, cls.SB = game, setbelief
+        cls.data = data.load(kind="pool")
+        log = FIXTURE.read_text(encoding="utf-8").split("\n")
+        cls.sheets = [teams.unpack(line.split("|", 3)[3]) for line in log if line.startswith("|showteam|")]
+        cls.log = [line for line in log if not line.startswith("|showteam|")]
+        cls.with_sheets = log
+        cls.prior = prior.Prior({"version": 1, "pastes": 0, "skipped": {}, "levels": [{}, {}, {}, {}]})
+        sets = collections.defaultdict(list)
+        for s in cls.sheets[0] + cls.sheets[1]:
+            key = trace_to_c.key(cls.data.canonical(s["species"]))
+            sets[key].append((s["item"], s["ability"], s["nature"], tuple(sorted(s["moves"])), 3))
+            sets[key].append((s["item"], s["ability"], "Hardy" if s["nature"] != "Hardy" else "Bold",
+                              tuple(sorted(s["moves"])), 1))  # a second set: draws can differ
+        cls.corpus = corpus.Corpus(dict(sets), frozenset(), "test")
+        cls.belief = setbelief.SetBelief(cls.corpus, cls.data, min_sets=1)
+
+    def process(self, log=None, belief=None, **kw):
+        return self.G.process("fixture-belief", "gen9championsvgc2026regmc", "\n".join(log or self.log), self.data,
+                              self.prior, _Stats(), belief=belief or self.belief, **kw)
+
+    def test_a_belief_game_gives_rows_with_levels(self):
+        result = self.process(seed=1)
+        self.assertGreater(len(result.rows), 10)
+        for row in result.rows:
+            self.assertEqual(len(row.belief_level), 12)
+            self.assertTrue(set(row.belief_level) <= {0, 1})
+            self.assertEqual(len(row.revealed), 6)
+            for slot, reason in zip(row.label.slots, row.label.reasons):
+                self.assertTrue(slot or reason == 0)  # every asked slot has a label set (its option is in the domain)
+        self.assertEqual(result.record.draw, 0)
+
+    def test_the_played_move_is_always_in_the_drawn_set(self):
+        from duoforge_replay import facts
+        for draw in range(4):
+            sheets, levels, revealed = self.G.draw_sheets(self.log, "gen9championsvgc2026regmc", self.data, self.belief,
+                                                          7, "fixture-belief", draw)
+            for side in (0, 1):
+                for member, s, bits in zip(facts.side_facts(self.log, side, self.data), sheets[side], revealed[side]):
+                    drawn = [trace_to_c.key(m) for m in s["moves"]]
+                    self.assertTrue({trace_to_c.key(m) for m in member.moves} <= set(drawn), (member, s))
+                    self.assertEqual(bin(bits).count("1"), len(member.moves))
+
+    def test_a_game_with_sheets_is_refused(self):
+        with self.assertRaisesRegex(ValueError, "has sheets"):
+            self.process(log=self.with_sheets)
+
+    def test_the_own_sheet_in_the_corpus_is_refused(self):
+        from duoforge_replay import corpus, setbelief
+        own = corpus.Corpus(self.corpus._sets, frozenset({12345}), "test")
+        with self.assertRaisesRegex(ValueError, "own sheet"):
+            self.process(belief=setbelief.SetBelief(own, self.data, min_sets=1), known_sheets=(12345, 6789))
+
+    def test_an_illegal_draw_is_redrawn_then_skipped(self):
+        from duoforge_replay import corpus, setbelief
+        sets = dict(self.corpus._sets)
+        sets["KINGAMBIT"] = [("ChopleBerry", "Drizzle", "Adamant", ("KowtowCleave", "Protect", "IronHead", "SuckerPunch"),
+                              1)]
+        bad = setbelief.SetBelief(corpus.Corpus(sets, frozenset(), "test"), self.data, min_sets=1)
+        with self.assertRaises(self.G.Skip) as cm:
+            self.process(belief=bad)
+        self.assertEqual(cm.exception.reason, "skip:belief-illegal")
+
+    def test_draws_are_deterministic(self):
+        a, b = self.process(seed=3), self.process(seed=3)
+        self.assertEqual([r.observation.tobytes() for r in a.rows], [r.observation.tobytes() for r in b.rows])
+        drawn = {repr(self.G.draw_sheets(self.log, "gen9championsvgc2026regmc", self.data, self.belief, 3,
+                                         "fixture-belief", d)[0]) for d in range(8)}
+        self.assertGreater(len(drawn), 1)
+        self.assertEqual(self.process(seed=3, draw=2).record.draw, 2)
 
 
 if __name__ == "__main__":
