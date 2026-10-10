@@ -2057,6 +2057,14 @@ typedef enum dfi_dmg_class {
                                * -activate|source|ability: name, the source being the ability's holder (`other`). */
 } dfi_dmg_class;
 
+/* The one Magic Guard predicate (step G67, data/abilities.ts:2465-2476): a holder takes no damage of a class that Showdown's
+ * Damage event blocks (every class but DIRECT and MOVE). dfi_deal skips such a damage, and the order of a weather tie counts
+ * only the Pokemon that take the damage: a Magic Guard holder has no order to show (decision 0015 entry 5bl). */
+static bool dfi_magic_guard_blocks(const struct duoforge_battle *b, const dfi_member *m, dfi_dmg_class cls)
+{
+    return dfi_ability(b, m, DFI_ABILITY_MAGICGUARD) && cls != DFI_DMG_DIRECT && cls != DFI_DMG_MOVE;
+}
+
 /* Pokemon.damage: HP never below 0; reaching 0 queues the faint. The class (above) is required; a Magic Guard holder takes
  * a DIRECT or MOVE damage and no other, and an UNCLASSIFIED one is refused. An ability's damage blocked by Magic Guard prints
  * -activate with the ability's holder (`other`) as the position, cause ABILITY and id2 the ability, as Showdown's handler does. */
@@ -2068,7 +2076,7 @@ static duoforge_status dfi_deal(dfi_run *r, uint32_t flat, uint32_t amount, uint
     if (hp == 0u) {
         return DUOFORGE_OK;
     }
-    if (dfi_ability(r->b, m, DFI_ABILITY_MAGICGUARD) && cls != DFI_DMG_DIRECT && cls != DFI_DMG_MOVE) {
+    if (dfi_magic_guard_blocks(r->b, m, cls)) {
         if (cls == DFI_DMG_UNCLASSIFIED) {
             return DUOFORGE_E_UNSUPPORTED;
         }
@@ -3457,7 +3465,8 @@ static duoforge_status dfi_sand_damage(dfi_run *r)
     uint32_t bearers = 0u;
     for (uint32_t flat = 0u; flat < DFI_POSITIONS; ++flat) {
         const dfi_member *m = dfi_at(r->b, flat);
-        if (m != NULL && m->hp != 0u && !dfi_sand_immune(r->b, m)) {
+        /* the Pokemon that take the Sandstorm damage: alive, not sand-immune and not a Magic Guard holder (decision 0015 5bl) */
+        if (m != NULL && m->hp != 0u && !dfi_sand_immune(r->b, m) && !dfi_magic_guard_blocks(r->b, m, DFI_DMG_WEATHER)) {
             bearers |= 1u << flat;
         }
     }
