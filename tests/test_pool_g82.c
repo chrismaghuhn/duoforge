@@ -21,7 +21,7 @@ static void test_heal_projection(df_test *t)
     duoforge_event in;
     memset(&in, 0, sizeof in);
     in.kind = DUOFORGE_EVENT_HEAL;
-    in.position = 2u;
+    in.position = 0u; /* side 0: viewer 0 owns it, viewer 1 (the foe) sees the percentage */
     in.id = 0u;
     in.hp = 170u;
     in.hp_max = 170u;
