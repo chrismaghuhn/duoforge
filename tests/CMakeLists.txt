@@ -515,7 +515,8 @@ if(Python3_Interpreter_FOUND)
     # converter makes them) and committed battles through the real runner.
     add_test(NAME duoforge.reference.diff_random
         COMMAND "${Python3_EXECUTABLE}" "${PROJECT_SOURCE_DIR}/tools/reference/test_diff_random.py")
-    set_tests_properties(duoforge.reference.diff_random PROPERTIES TIMEOUT 300
+    # 600 s: the machine lock tests start many bash processes, slow on Windows (about 4 min of the file there).
+    set_tests_properties(duoforge.reference.diff_random PROPERTIES TIMEOUT 600
         ENVIRONMENT "PYTHONDONTWRITEBYTECODE=1;DUOFORGE_DIFF_RUNNER=$<TARGET_FILE:duoforge_diff_runner>")
     # The corpus of kept fuzz battles (decision 0015 section 6, tests/reference/corpus): every battle through the
     # converter and the runner of this build, from the stored traces and without Node; all of them must PASS. It runs
