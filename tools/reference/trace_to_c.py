@@ -309,7 +309,7 @@ def heal_block_end_tie(d, log):
     return (SITES['SPEED_TIE'], 0, 2, d['value'] - d['start'])
 
 
-NO_ORDER_PAIR = (['protect', 'stall'], ['spikyshield', 'stall'], ['kingsshield', 'stall'])  # kingsshield: step G66
+NO_ORDER_PAIR = (['protect', 'stall'], ['spikyshield', 'stall'], ['kingsshield', 'stall'], ['banefulbunker', 'stall'])  # kingsshield: step G66; banefulbunker: G94
 
 
 def standing(after, holder):
@@ -970,7 +970,7 @@ NOPOS = 0xFF
 # Any other volatile is refused: a new mechanic's volatile must be placed in
 # one of the two tables before its traces convert. Spiky Shield (step G20, POOL) is Protect's bit: its own volatile
 # is the Protect volatile of the engine, with the variant in the tail (never both at once).
-COMPARED_VOLATILES = (('protect', 1), ('spikyshield', 1), ('kingsshield', 1), ('flashfire', 2), ('twoturnmove', 4), ('choicelock', 8), ('unburden', 16),
+COMPARED_VOLATILES = (('protect', 1), ('spikyshield', 1), ('kingsshield', 1), ('banefulbunker', 1), ('flashfire', 2), ('twoturnmove', 4), ('choicelock', 8), ('unburden', 16),
                       ('helpinghand', 32), ('followme', 64), ('flinch', 128))
 IGNORED_VOLATILES = {
     # data/moves.ts disable (step G27): compared through the request (the barred slot) and the start and end lines.

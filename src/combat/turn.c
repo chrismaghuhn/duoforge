@@ -5826,6 +5826,16 @@ static duoforge_status dfi_protect_targets(dfi_run *r, uint32_t user, const uint
                     return st;
                 }
             }
+            /* Step G94: Baneful Bunker's contact poison, in the same onTryHit after the -activate line (data/moves.ts:1022-1024):
+             * source.trySetStatus('psn', target), the attacker poisoned by the holder as the source (its effect is the condition,
+             * so the line is a plain -status and no [from]; dfi_try_status with the OTHER origin shows no -immune or -fail line).
+             * Poison and Steel are immune (Team C's psn refusal), and the other status blockers are the existing ones. */
+            if (kind == DFI_PROTECT_BANEFUL_BUNKER && (md->flags & DFI_MOVE_FLAG_CONTACT) != 0u) {
+                st = dfi_try_status(r, user, DFI_STATUS_PSN, t, DFI_NO_SOURCE_MOVE, DFI_ORIGIN_OTHER, 0u);
+                if (st != DUOFORGE_OK) {
+                    return st;
+                }
+            }
             /* Step G66: King's Shield's contact drop, in the same onTryHit after the -activate line (data/moves.ts:9936-9941):
              * the attacker's Attack by -1, the holder as the source (Defiant, Competitive and Mirror Armor see it so). */
             if (kind == DFI_PROTECT_KINGS_SHIELD && (md->flags & DFI_MOVE_FLAG_CONTACT) != 0u) {
@@ -6813,6 +6823,9 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
     }
     if (md->special == DFI_SPECIAL_SPIKY_SHIELD) {
         return dfi_run_protect(r, user, DFI_PROTECT_SPIKY_SHIELD);
+    }
+    if (md->special == DFI_SPECIAL_BANEFUL_BUNKER) {
+        return dfi_run_protect(r, user, DFI_PROTECT_BANEFUL_BUNKER);
     }
     if (md->special == DFI_SPECIAL_WIDE_GUARD) {
         return dfi_run_wide_guard(r, user);

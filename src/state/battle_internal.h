@@ -233,7 +233,9 @@ typedef struct dfi_side {
 #define DFI_PROTECT_SPIKY_SHIELD 1u
 /* step G66 (decision 0015 5cb, decision 0040): King's Shield, Protect that passes Status moves and lowers a contact attacker's Attack */
 #define DFI_PROTECT_KINGS_SHIELD 2u
-#define DFI_TAIL_PROTECT_KIND_MAX 2u
+/* step G94 (decision 0015 5cv, decision 0061 section 1): Baneful Bunker, Protect that poisons a contact attacker (data/moves.ts:985-1037) */
+#define DFI_PROTECT_BANEFUL_BUNKER 3u
+#define DFI_TAIL_PROTECT_KIND_MAX 3u
 /* rev 4, per position (decision 0015 section 7, the audit of tail-rev4-proposal.md section 4.1; no mechanic writes them yet).
  * move_result: two bits for this turn (0-1) and two for the last turn (2-3), each DFI_MOVE_RESULT_*; the pin's
  * moveThisTurnResult and moveLastTurnResult (Stomping Tantrum reads `=== false`, so null must not count as a failure). */

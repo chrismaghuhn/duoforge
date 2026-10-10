@@ -67,7 +67,7 @@ TAIL_SOURCE_MAX = 4
 TAIL_YAWN_MAX = 2
 TAIL_STOCKPILE_MAX = 3
 TAIL_FLAG_MAX = 1
-TAIL_PROTECT_KIND_MAX = 1           # rev 3: 0 Protect and Detect, 1 Spiky Shield (Baneful Bunker would be 2)
+TAIL_PROTECT_KIND_MAX = 3           # rev 3: 0 Protect and Detect, 1 Spiky Shield, 2 King's Shield (G66), 3 Baneful Bunker (G94)
 TAIL_MOVE_RESULT_MASK = 0x3F        # rev 4: two bits this turn, two bits last turn (0 undefined, 1 true, 2 false, 3 null),
                                     # bit 4 unclassified this turn, bit 5 unclassified last turn (step G42); bits 6-7 zero
 UNCLASSIFIED_NOW = 0x10
@@ -302,7 +302,7 @@ KD = TeamCContext(KIND_TEAM_C_DEV, 6, 4)
 # which tests/test_pool_tables.c recomputes from the pool canonical bytes: the
 # pool layout over the pool data, then the family columns, the handler columns
 # and the moves and abilities that each forme may have.
-POOL_TABLE_HASH = bytes.fromhex('c9dc88ea6a57c6f941bb0e40cd26f52aad8990181ae53a3c41a45608b329e2a8')
+POOL_TABLE_HASH = bytes.fromhex('3a48a34fcadeb9bda8d67349fc39ac263f7009a4f40e613f57c886c670678293')
 KIND_POOL, KIND_POOL_DEV = 6, 7
 
 
