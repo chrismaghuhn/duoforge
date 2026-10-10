@@ -336,6 +336,10 @@ class HonestSearch(unittest.TestCase):
             history["turn_start"] = record.copy()
             record["turn"] += 1
             record["boundary"] = C["DUOFORGE_BOUNDARY_PIVOT"]
+            # Only a PIVOT record with a pending foe command needs its turn-start record (the queue mask). Since the
+            # view audit of 2026-10-10 the engine's public records never carry one, so this hand-made record sets it;
+            # a public PIVOT without one is searched from its own record (test_pivot_records_and_queue_sampling).
+            record["foe_pending_mask"] = 1
             costs = {k: 0. for k in ("public_records", "world_builds", "team_head", "network")}
             with mock.patch.object(duoforge, "queue_mask", side_effect=AssertionError("stale record must not reach C")):
                 with self.assertRaisesRegex(honest.Unreconstructible, "stale"):
