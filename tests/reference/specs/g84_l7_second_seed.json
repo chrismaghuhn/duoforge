@@ -1,0 +1,24 @@
+{
+  "name": "g84_l7_second_seed",
+  "purpose": "Second Leech Seed on a seeded target fails (-fail [still], the seed keeps draining; addVolatile returns false, sim/pokemon.ts:1983-1984).",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,8400000000000000000000000000000000000000000000000000000000000009",
+  "teams": [
+    "Venusaur (M) @ Sitrus Berry\nAbility: Overgrow\nLevel: 50\nEVs: 32 HP / 2 Def / 32 SpD\nCalm Nature\n- Leech Seed\n- Protect\n- Sludge Bomb\n- Energy Ball\n\nGengar (M) @ Life Orb\nAbility: Cursed Body\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nTimid Nature\n- Curse\n- Protect\n- Shadow Ball\n- Sludge Bomb\n\nTauros (M) @ Charcoal\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Curse\n- Protect\n- Close Combat\n- Earthquake\n\nMeganium (F) @ Leftovers\nAbility: Overgrow\nLevel: 50\nEVs: 32 HP / 2 Def / 32 SpD\nCalm Nature\n- Leech Seed\n- Protect\n- Energy Ball\n\nChimecho (M) @ Occa Berry\nAbility: Levitate\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nModest Nature\n- Psychic\n- Protect\n- Helping Hand\n- Expanding Force\n\nKingambit (M) @ Black Glasses\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Sucker Punch\n- Iron Head\n- Protect\n- Swords Dance",
+    "Gholdengo @ Charcoal\nAbility: Good as Gold\nLevel: 50\nEVs: 32 HP / 2 SpA / 32 SpD\nCalm Nature\n- Protect\n- Shadow Ball\n- Make It Rain\n\nPawmot (M) @ Sitrus Berry\nAbility: Iron Fist\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Thunderbolt\n- Protect\n- Ice Punch\n- Revival Blessing\n\nPrimarina (F) @ Fairy Feather\nAbility: Torrent\nLevel: 50\nEVs: 32 HP / 2 Def / 32 SpD\nCalm Nature\n- Protect\n- Moonblast\n- Calm Mind\n\nMilotic (F) @ Rocky Helmet\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Protect\n- Scald\n- Recover\n- Coil\n\nMeganium (F) @ Leftovers\nAbility: Overgrow\nLevel: 50\nEVs: 32 HP / 2 Def / 32 SpD\nCalm Nature\n- Leech Seed\n- Protect\n- Energy Ball\n\nKingambit (M) @ Black Glasses\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Sucker Punch\n- Iron Head\n- Protect\n- Swords Dance"
+  ],
+  "plan": {
+    "p1": [
+      "move 1 2, move 2",
+      "move 1 2, move 2",
+      "move 2, move 2"
+    ],
+    "p2": [
+      "move 2 1, move 1 1",
+      "move 2 1, move 1 1",
+      "move 2 1, move 1 1"
+    ],
+    "max_steps": 3
+  }
+}

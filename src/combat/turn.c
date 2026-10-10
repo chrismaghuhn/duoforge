@@ -4622,7 +4622,11 @@ static duoforge_status dfi_leech_seed(dfi_run *r, uint32_t user, uint32_t flat, 
         return DUOFORGE_OK;
     }
     if (tail->leech_seed_source != 0u) {
-        return DUOFORGE_E_UNSUPPORTED; /* a second seed: the pin's refusal is not verified, so it is refused, not guessed */
+        /* A standing seed: addVolatile returns false (no onRestart, sim/pokemon.ts:1983-1984), so the hit fails: `|move|...Leech Seed||
+         * [still]` and `-fail` on the user, the seed unchanged (the trace g84_l7_second_seed: the drain goes on). As Yawn's refusal,
+         * the result is false and the hit loop runs no Updates (nothing started). */
+        dfi_fail_still(r, user);
+        return DUOFORGE_OK;
     }
     tail->leech_seed_source = (uint8_t)(user + 1u); /* the source's flat position + 1 (decision 0047, the tail field) */
     duoforge_event e = dfi_event_make(DUOFORGE_EVENT_VOLATILE_START, flat);

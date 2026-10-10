@@ -165,6 +165,11 @@ target: `Can't move: You can't choose a target for Curse` (side.ts:656-671; the 
 there is no target, champions/moves.ts:172-174). So C1, C2, C4 and C5 (the Ghost half, and with it the Curse residual line
 that decides cause 23) are not recordable without a decision from the lead (see the message of this round).
 
+**Second seed (resolved, lead's request):** `addVolatile` returns false for an existing volatile without `onRestart`
+(`sim/pokemon.ts:1983-1984`). The trace of a second Leech Seed on the same target (recording `g84_l7_second_seed`) shows
+`|move|p1a: Venusaur|Leech Seed||[still]` then `|-fail|p1a: Venusaur|`, and the seed goes on draining. The engine now models it
+as Yawn's refusal: `dfi_fail_still` on the user, result false, no hit-loop Updates. The explicit refusal is gone.
+
 **Phase 2 scope (lead, 2026-10-10):** Leech Seed (L1-L6) and non-Ghost Curse (C3); the Ghost Curse is refused explicitly
 (E_UNSUPPORTED, named, with a guard test at the Curse dispatch for a Ghost user); C1, C2, C4 and C5 are an open gap.
 - **CURSED (bit 7) is NOT needed yet:** the trace of C3 shows the non-Ghost Curse sets no volatile (only the boosts), so no
