@@ -83,9 +83,8 @@ int main(void)
     DF_CHECK_EQ_U64(&t, DFI_SPECIAL_KINGS_SHIELD, DFI_SPECIAL_SKILL_SWAP + 1u); /* merged order: Steel Beam, Thunder Wave (G68) and Skill Swap (G70) come first */
     DF_CHECK_EQ_U64(&t, DFI_FORME_AEGISLASHBLADE, DFI_POOL_FORME_COUNT - 1u);
 
-    /* The marks: King's Shield (move) and Stance Change (ability) are supported; Baneful Bunker stays unmarked. */
+    /* The marks: King's Shield (move) and Stance Change (ability) are supported (Baneful Bunker is marked by step G94). */
     DF_CHECK(&t, dfi_support.moves[DFI_MOVE_KINGSSHIELD] != 0u);
-    DF_CHECK(&t, dfi_support.moves[DFI_MOVE_BANEFULBUNKER] == 0u);
     DF_CHECK(&t, dfi_support.abilities[DFI_ABILITY_STANCECHANGE] != 0u);
     DF_CHECK(&t, dfi_pool_moves[DFI_MOVE_KINGSSHIELD].special == DFI_SPECIAL_KINGS_SHIELD);
 
