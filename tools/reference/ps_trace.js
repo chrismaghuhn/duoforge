@@ -84,6 +84,9 @@ const CONDITION_SITES = {
     'flamebody:DamagingHit': 'FLAME_BODY',
     // Static (step G39): its randomChance(3, 10) in onDamagingHit of the target, as Flame Body's.
     'static:DamagingHit': 'STATIC',
+    // Ally Switch's consecutive use (step G80, decision 0044): randomChance(1, counter) in the condition's onRestart
+    // (data/moves.ts:338-347). It was an UNKNOWN draw before, so the harness version stays (as above).
+    'allyswitch:Restart': 'ALLY_SWITCH',
 };
 
 // The event a draw happens in (innermost last), tracked by wrapping the

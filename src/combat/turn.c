@@ -4493,8 +4493,8 @@ static bool dfi_psych_up(dfi_run *r, uint32_t user, uint32_t flat)
         up->stages[i] = tp->stages[i];
     }
     utail->focus_energy = ttail->focus_energy;
-    utail->position_flags = (uint8_t)(((uint32_t)utail->position_flags & ~(uint32_t)DFI_POSFLAG_DRAGON_CHEER_MASK) |
-                                      ((uint32_t)ttail->position_flags & (uint32_t)DFI_POSFLAG_DRAGON_CHEER_MASK)); /* wide-operands-reviewed */
+    const uint32_t dc_mask = (uint32_t)DFI_POSFLAG_DRAGON_CHEER_MASK;
+    utail->position_flags = (uint8_t)(((uint32_t)utail->position_flags & ~dc_mask) | ((uint32_t)ttail->position_flags & dc_mask)); /* wide-operands-reviewed */
     const duoforge_event act = dfi_ev(DUOFORGE_EVENT_COPY_BOOST, user, DUOFORGE_CAUSE_MOVE, DFI_MOVE_PSYCHUP, flat);
     dfi_emit(r, &act);
     return true;
@@ -4510,7 +4510,7 @@ static duoforge_status dfi_ally_switch_prepare(dfi_run *r, uint32_t user, bool *
     dfi_tail_pos *tail = &r->b->tail.sides[user / 2u].positions[user % 2u];
     *passed = true;
     if (tail->ally_switch == 0u) {
-        tail->ally_switch = (uint8_t)((1u << DFI_ALLY_SWITCH_LEVEL_SHIFT) | DFI_ALLY_SWITCH_TURNS_MAX); /* <= DFI_ALLY_SWITCH_MAX */
+        tail->ally_switch = (uint8_t)((1u << DFI_ALLY_SWITCH_LEVEL_SHIFT) | DFI_ALLY_SWITCH_TURNS_MAX); /* wide-operands-reviewed: <= DFI_ALLY_SWITCH_MAX */
         return DUOFORGE_OK;
     }
     const uint32_t level = (uint32_t)tail->ally_switch >> DFI_ALLY_SWITCH_LEVEL_SHIFT;
@@ -4529,7 +4529,7 @@ static duoforge_status dfi_ally_switch_prepare(dfi_run *r, uint32_t user, bool *
         return DUOFORGE_OK;
     }
     const uint32_t next = level < DFI_ALLY_SWITCH_LEVEL_MAX ? level + 1u : level;
-    tail->ally_switch = (uint8_t)((next << DFI_ALLY_SWITCH_LEVEL_SHIFT) | DFI_ALLY_SWITCH_TURNS_MAX);
+    tail->ally_switch = (uint8_t)((next << DFI_ALLY_SWITCH_LEVEL_SHIFT) | DFI_ALLY_SWITCH_TURNS_MAX); /* wide-operands-reviewed: <= 26 */
     return DUOFORGE_OK;
 }
 
@@ -4559,24 +4559,27 @@ static void dfi_ally_switch_swap(dfi_run *r, uint32_t user, uint32_t partner)
     c->locked_target = locked_c;
     dfi_tail_pos *ta = &b->tail.sides[side].positions[us];
     dfi_tail_pos *tc = &b->tail.sides[side].positions[ps];
-    const uint8_t hw_a = (uint8_t)(ta->position_flags & DFI_POSFLAG_HEALING_WISH);
-    const uint8_t hw_c = (uint8_t)(tc->position_flags & DFI_POSFLAG_HEALING_WISH);
+    const uint32_t hw = (uint32_t)DFI_POSFLAG_HEALING_WISH;
+    const uint8_t hw_a = (uint8_t)((uint32_t)ta->position_flags & hw); /* wide-operands-reviewed: one bit */
+    const uint8_t hw_c = (uint8_t)((uint32_t)tc->position_flags & hw); /* wide-operands-reviewed: one bit */
     const dfi_tail_pos tail_tmp = *ta;
     *ta = *tc;
     *tc = tail_tmp;
-    ta->position_flags = (uint8_t)((ta->position_flags & ~DFI_POSFLAG_HEALING_WISH) | hw_a); /* the slot condition stays */
-    tc->position_flags = (uint8_t)((tc->position_flags & ~DFI_POSFLAG_HEALING_WISH) | hw_c);
+    ta->position_flags = (uint8_t)(((uint32_t)ta->position_flags & ~hw) | hw_a); /* wide-operands-reviewed: the slot condition stays */
+    tc->position_flags = (uint8_t)(((uint32_t)tc->position_flags & ~hw) | hw_c); /* wide-operands-reviewed: the slot condition stays */
+    const uint32_t up = user + 1u;
+    const uint32_t pp = partner + 1u;
     for (uint32_t f = 0u; f < DUOFORGE_SIDE_COUNT * DUOFORGE_ACTIVE_PER_SIDE; ++f) {
         dfi_tail_pos *tp = &b->tail.sides[f / DUOFORGE_ACTIVE_PER_SIDE].positions[f % DUOFORGE_ACTIVE_PER_SIDE];
-        if (tp->trap_source == user + 1u) {
-            tp->trap_source = (uint8_t)(partner + 1u);
-        } else if (tp->trap_source == partner + 1u) {
-            tp->trap_source = (uint8_t)(user + 1u);
+        if ((uint32_t)tp->trap_source == up) {
+            tp->trap_source = (uint8_t)pp; /* wide-operands-reviewed: a flat position + 1 */
+        } else if ((uint32_t)tp->trap_source == pp) {
+            tp->trap_source = (uint8_t)up; /* wide-operands-reviewed: a flat position + 1 */
         }
-        if (tp->leech_seed_source == user + 1u) {
-            tp->leech_seed_source = (uint8_t)(partner + 1u);
-        } else if (tp->leech_seed_source == partner + 1u) {
-            tp->leech_seed_source = (uint8_t)(user + 1u);
+        if ((uint32_t)tp->leech_seed_source == up) {
+            tp->leech_seed_source = (uint8_t)pp; /* wide-operands-reviewed: a flat position + 1 */
+        } else if ((uint32_t)tp->leech_seed_source == pp) {
+            tp->leech_seed_source = (uint8_t)up; /* wide-operands-reviewed: a flat position + 1 */
         }
     }
     const uint32_t e_us = dfi_party_entry(&b->tail, side, us);
@@ -9522,7 +9525,7 @@ static duoforge_status dfi_residual_events_run(dfi_run *r, dfi_noorder_snapshot 
                 if (((uint32_t)atp->ally_switch & 3u) == 1u) {
                     atp->ally_switch = 0u;
                 } else {
-                    atp->ally_switch = (uint8_t)((uint32_t)atp->ally_switch - 1u); /* turns 2 -> 1 */
+                    atp->ally_switch = (uint8_t)((uint32_t)atp->ally_switch - 1u); /* wide-operands-reviewed: turns 2 -> 1 */
                 }
             }
         }
