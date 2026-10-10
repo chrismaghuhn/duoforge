@@ -244,3 +244,34 @@ The first local attempt is superseded. On 2026-10-09 the generation finished loc
   - forecast = JIT + 12288 / warm_rate.
   - The thresholds are unchanged: any cut-off, any refusal, warm_rate < 5 games/s or forecast > 3600 s is a STOP.
   - The report shows both the narrow and the full-width rate.
+
+## P1 result and the C2 repeat (owner decisions, 2026-10-10)
+
+**First result (run 60a8766490bf-20261010T120438Z, INCONCLUSIVE, no promotion).** The pilot against the continuation scored 0.477 [0.447, 0.507] and against frozen 49333 0.506 [0.475, 0.537]. On the panel it was +0.0075 [−0.016, 0.030] better (PP_ PASS, LL_ INCONCLUSIVE). No pairs are added afterwards (no endpoint chosen after the fact).
+
+**Diagnosis, read-only.** The teacher is clearly stronger than raw: P0 gate X +0.2695 [0.213, 0.326]. It also disagrees with the raw move: in a 6/78-shard sample its argmax equals the raw move in 27% of targets, and the median mass it puts on the raw move is 0. The student barely moved. Its held-out teacher KL went from 2.362 to 2.302 (−2.5%), and its KL to 49333 reached only 0.0126 nats, because `REF_KL_MAX = 0.02` stopped distill after 52 steps. The pilot was in effect 49333, so the result says that a step of ≤ 0.02 nats does not help, not that distillation does not.
+
+**The C2 repeat (owner's choice).** Distill trust region, fixed before the run:
+- `REF_KL_MAX` 0.3, learning rate 1e-4, `MAX_EPOCHS` 16, `MAX_STEPS` 512;
+- early stop on the held-out teacher KL with the code's rule unchanged: an epoch is better if it is at least `MIN_GAIN` 1e-4 below the best so far, and distill stops after `PATIENCE` 2 epochs without a gain;
+- params-best is the best epoch within `REF_KL_MAX`;
+- every other distill constant unchanged.
+
+The effective constants go into the distill record (`constants`) and the run info.
+
+**Code base.** The run uses a commit whose engine (`src/`) equals run 1's (2be0afe3). The C2 code is based on 60a87664 for that, and the run takes that branch's head, not a later main.
+
+**Pilot ledger of the repeat.** It is run 1's `generate` phase (4946.99 CPU core-seconds) plus its 0.78 CPU core-seconds outside phases, plus the new distill's own `load` and `distill` phases. Run 1's load and distill (84.67 CPU core-seconds; 170.01 CPU core-seconds and 59.90 GPU-seconds) are not part of this arm. The fresh control matches this sum; it gets more GPU-seconds than in run 1 because 16 epochs cost more.
+
+These are CLI/manifest values written into the run info; the defaults stay the values of the first run, so it remains reproducible. Nothing else changes:
+- **Generation:** reused from run 1, pinned by its manifest and shard SHA-256 (19968 games, 16384 targets).
+- **Control:** a fresh run from params-49333 with the feedback match (`budget_match`) to the new pilot ledger.
+- **Evaluation:** the same manifest rules, pool, checkpoints and seed.
+- **Gates:** all unchanged.
+
+**Target metrics, predeclared.** They are reported only and are no gates:
+- **Learning:** the held-out teacher KL of the chosen epoch is at least 30% below epoch 0 (`held_teacher_kl_rel` ≤ 0.70, about ≤ 1.65 from 2.36). Missing this is reported as "the student did not learn the teacher", whatever the evaluation shows.
+- **Agreement:** the held-out share of decisions where the student's argmax equals the teacher's argmax (`held_argmax_agree`), at epoch 0 and at the chosen epoch.
+- **Distance:** the KL to 49333 of the chosen epoch, which `REF_KL_MAX` bounds.
+
+The evaluation's gate statuses decide promotion as before. A PASS needs both the arm gates and the 5% compute match. This run is the last P1 repeat without a new plan. If the target metric is met and the gates do not pass, the next step is the owner's choice between more labels (a P2 plan) and ending the distillation line.
