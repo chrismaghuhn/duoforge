@@ -135,6 +135,36 @@ is in the pool (`in_duoforge: true`) for the tie. Each of the items, moves and a
 The view bits LEECH_SEED (feature 28) and CURSE (feature 36) are already in encoder 5 (`src/encode/encode.c:81-83`), and
 `python/duoforge/features.py` already knows them, so no encoder change is needed for G84 (checked before the first lock job).
 
-Phase 2: recordings L1-L6 (L6 with the Sitrus tie) and C1-C5; mutants M1-M14, each with its catching test and a green
+### Dry runs (pin, phase 2, before any engine code)
+
+Verified protocol lines (ps_trace, the pin b2cb775):
+- Seed start `|-start|p2b: Pawmot|move: Leech Seed`; residual `|-damage|p2b: Pawmot|138/177|[from] Leech Seed|[of] p1a: Venusaur`.
+- The drain heal to the source is SILENT: `|-heal|p1a: Venusaur|146/187|[silent]` (no [from]). The converter must synthesise
+  the HEAL with cause LEECH_SEED (22), as for Regenerator (trace_to_c.py:1193-1198 drops other [silent] lines).
+- Slot semantics (L4, the SOURCE switches out, the seed stays on the foe): after `|switch|p1a: Tauros`, the residual reads
+  `|-damage|p2b: Pawmot|99/177|[from] Leech Seed|[of] p1a: Tauros|` and the heal goes to Tauros (getAtSlot(sourceSlot)).
+  If the HOLDER switches out, the volatile leaves with it: no drain (the seed does not follow the slot).
+- Grass: `|-immune|p2b: Meganium` with no volatile (L2). Substitute: `|move|p1a: Venusaur|Leech Seed||[still]` and
+  `|-fail|p1a: Venusaur` (L3). Protect: `|-activate|p2b: Pawmot|move: Protect` (L5).
+- Non-Ghost Curse (C3, Tauros): `|-unboost|p1a: Tauros|spe|1`, `|-boost|p1a: Tauros|atk|1`, `|-boost|p1a: Tauros|def|1`, no volatile.
+
+**Ghost Curse bounded check (lead's decision (b), 2026-10-10, no lock, debug copy of ps_trace.js in scratch only):**
+- The request says `["curse","normal",false]` for Gengar (the target is `normal`, as the lead read it).
+- `move 1, move 2` (no target): `Can't move: Curse needs a target`. `move 1 -1` (an ally): `Invalid target for Curse`.
+- `move 1 1` on turn 1 (Gengar in slot 0, foe Gholdengo in slot 0) IS accepted, and the trace shows
+  `|move|p1a: Gengar|Curse|p2a: Gholdengo` with NO following Curse line: no `-start … Curse`, no halving damage, no `-fail`.
+  So the Ghost Curse executes but its effect does not appear in the protocol: the decisive lines of C1 are not produced by
+  the pin as I ran it. The earlier "can't choose a target" and "You need a switch response" messages came from later requests
+  in longer runs, not from the target itself.
+- Outcome: the working choice is not verified (the effect is missing from the protocol), so Ghost Curse is refused explicitly
+  (E_UNSUPPORTED, named, a guard test) in this batch, C1, C2, C4 and C5 are an open gap, and cause 23 is NOT taken until the
+  Ghost Curse line is proven (the open question is why Curse's onHit prints nothing).
+
+BLOCKER (earlier, superseded by the check above): the Ghost Curse cannot be chosen in the pin's client. With no target: `Can't move: Curse needs a target`; with a
+target: `Can't move: You can't choose a target for Curse` (side.ts:656-671; the Champions onModifyMove sets randomNormal when
+there is no target, champions/moves.ts:172-174). So C1, C2, C4 and C5 (the Ghost half, and with it the Curse residual line
+that decides cause 23) are not recordable without a decision from the lead (see the message of this round).
+
+Phase 2: recordings L1-L6 (L6 with the Sitrus tie) and C1-C5 (C1-C5 blocked as above); mutants M1-M14, each with its catching test and a green
 baseline; then the campaign. One lock job at a time, everything in one job; the full run goes through
 `gh workflow run ci.yml --ref <branch>`.
