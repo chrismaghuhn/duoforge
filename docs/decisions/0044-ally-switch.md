@@ -76,6 +76,17 @@ The engine stores a slot's Pokemon state in `dfi_active_slot` (`src/state/battle
 6. Illusion: G80 waits for 0026, or the fold is in 0026?
 7. Psych Up and Howl: no new value (section 7). Please confirm.
 
+## 6a. Lead's answers (2026-10-10)
+
+1. Event SWAP (kind 48): pending HauptSession, who assigns event numbers. No code for it yet.
+2. FAIL with cause MOVE, id2 Ally Switch, detail 0: approved.
+3. The tail byte `ally_switch`: pending HauptSession. The lead asked for 4 bytes (one per position) from the shared rev-5 reserve; position_flags has only bits 5-7 free for this. No byte is taken yet.
+4. The hidden counter is masked for the foe exactly as stall_level is. Confirmed.
+5. Healing Wish's slot bit stays with the slot. G76 and G80 are in the same batch; the integrator sets the order. The G80 side must work whether G76 is present or not: it refers to the position_flags bit 0 constant (DFI_POSFLAG_HEALING_WISH, on main).
+6. Illusion: G80 does not wait for 0026. An Ally Switch is refused while either partner is a possible Illusion holder, with a named cause and a test. 0026 brings the fold later.
+
+Ally Switch engine code stays blocked on items 1 and 3. Psych Up and Howl proceed.
+
 ## 7. Psych Up and Howl (rows 2 and 3)
 
 To be written after the research for each row (commit to follow). Psych Up (`data/moves.ts:14211`) copies the boosts and the crit-stage volatiles of the target. Howl (`data/mods/champions/moves.ts:512`, `data/moves.ts:9009`) is a sound move with `target: allies`, Attack +1.
