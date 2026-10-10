@@ -298,7 +298,7 @@ KD = TeamCContext(KIND_TEAM_C_DEV, 6, 4)
 # which tests/test_pool_tables.c recomputes from the pool canonical bytes: the
 # pool layout over the pool data, then the family columns, the handler columns
 # and the moves and abilities that each forme may have.
-POOL_TABLE_HASH = bytes.fromhex('e84a87734f157e4c382d7bc3e4acc137d4b90cbec28d9bdb64f77293fa6fa632')
+POOL_TABLE_HASH = bytes.fromhex('f52d60a6ef28db55eb75aa43f5e1034813444867d31e271d120196c64a4588ab')
 KIND_POOL, KIND_POOL_DEV = 6, 7
 
 
@@ -973,8 +973,9 @@ def hazard_order_valid(ts):
 
 
 def position_flags_valid(pf):
-    """Rev 5 (G72b): bit 0 (Healing Wish) and bits 4-7 are zero, and the Dragon Cheer stage (bits 2-3) is at most 2."""
-    return pf & ~0x0F == 0 and pf & 0x01 == 0 and (pf >> 2) & 3 <= 2
+    """Rev 5 (G72b, G76): bit 0 (Healing Wish) and bits 5-7 are zero, the Dragon Cheer stage (bits 2-3) is at most 2, and
+    bit 4 is Destiny Bond (G76)."""
+    return pf & ~0x1F == 0 and pf & 0x01 == 0 and (pf >> 2) & 3 <= 2
 
 
 def substitute_cap(sd):
@@ -1020,8 +1021,9 @@ def tail_pos_valid(ctx, tp, flat, mem, slot_flags=0, sub_cap=0):
             and tp['hits_taken'] <= TAIL_HITS_TAKEN_MAX and tp['ability_state'] <= TAIL_ABILITY_STATE_MAX
             and tp['lock_turns'] <= TAIL_LOCK_TURNS_MAX):
         return False
-    # Rev 5 (lane A, G72b, decision 0015 5ce): the position flags are a bitfield: bit 0 (Healing Wish) and bits 4-7 are zero,
-    # the Dragon Cheer stage (bits 2-3) is at most 2, and the stats-raised bit and the stage need an occupant. Future Sight is zero.
+    # Rev 5 (lane A, G72b, decision 0015 5ce; G76): the position flags are a bitfield: bit 0 (Healing Wish) and bits 5-7 are
+    # zero, the Dragon Cheer stage (bits 2-3) is at most 2, bit 4 is Destiny Bond, and the stats-raised bit, the stage and
+    # Destiny Bond need an occupant. Future Sight is zero.
     if not position_flags_valid(tp['position_flags']):
         return False
     if tp['future_sight'] != 0:

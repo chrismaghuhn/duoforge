@@ -498,6 +498,11 @@ const dfi_support_manifest dfi_support = {
              * moves (checkMoveBypassesProtect with blockStatus false), and a contact move that it stops costs the attacker -1 Attack.
              * The learners of this move in the pool are Aegislash (its only ability is Stance Change, marked in the same step). */
             [DFI_MOVE_KINGSSHIELD] = 1u,
+            /* Step G76 (decision 0015 5cg): Destiny Bond (the user's volatile, the consecutive-use failure, the KO of a foe that
+             * faints from a Move; Future Sight, the futuremove the pin excludes, is unmarked, so it cannot reach a holder). */
+            [DFI_MOVE_DESTINYBOND] = 1u,
+            /* Step G76 (decision 0015 5cg): Final Gambit (damage equal to the user's HP; the user faints in the damage call). */
+            [DFI_MOVE_FINALGAMBIT] = 1u,
         },
     .abilities =
         {
@@ -795,6 +800,8 @@ const dfi_support_manifest dfi_support = {
      * stage is in the position flags). Verified against the g72b battles. */
     /* Step G60: Substitute (bit 23: the SUBSTITUTE volatile of the position, public: its start and end lines; its HP is never in
      * an event). Decision 0032 section 9 names the bit as supported once the step lands; verified against the g60 battles. */
+    /* Step G76 (decision 0015 5cg): Destiny Bond (bit 35: the DESTINY_BOND bit of the position's flags, public: its -singlemove
+     * line; verified against the g76 battles). */
     .view_ext_features = ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_THROAT_CHOP) |
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_HEAL_BLOCK) |
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_TYPE_CHANGE) |
@@ -824,5 +831,6 @@ const dfi_support_manifest dfi_support = {
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_ROOST) |
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_QUICK_GUARD) |
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_SUBSTITUTE) |
-                         ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_DRAGON_CHEER)
+                         ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_DRAGON_CHEER) |
+                         ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_DESTINY_BOND)
 };
