@@ -34,7 +34,7 @@ static void check_handlers(df_test *t)
     DF_CHECK_EQ_U64(t, DFI_SPECIAL_KINGS_SHIELD, DFI_SPECIAL_SKILL_SWAP + 1u); /* step G66 (decision 0015 5cb) comes after Skill Swap */
     DF_CHECK_EQ_U64(t, DFI_SPECIAL_ALLURING_VOICE, DFI_SPECIAL_KINGS_SHIELD + 1u); /* step G72b (decision 0015 5ce) comes after King's Shield */
     DF_CHECK_EQ_U64(t, DFI_SPECIAL_DRAGON_CHEER, DFI_SPECIAL_ALLURING_VOICE + 1u);
-    DF_CHECK_EQ_U64(t, DFI_SPECIAL_UNMODELED, DFI_SPECIAL_DRAGON_CHEER + 1u); /* UNMODELED is the last id */
+    DF_CHECK_EQ_U64(t, DFI_SPECIAL_UNMODELED, DFI_SPECIAL_DRAGON_DARTS + 1u); /* UNMODELED is the last id */
 }
 
 /* The marks of the support manifest: Poltergeist is the one row of the step that the turn code plays at this point. */

@@ -1,6 +1,6 @@
 # 0043 - Dragon Darts (G78): the split of a two-target hit
 
-Status: **proposed** (H16, lane A batch 5, step 5ch). Design only: no engine code, no table change, no test. Waits for the lead's answer to the questions at the end.
+Status: **accepted** (H16, lane A batch 5, step 5ch). The lead approved the model on 2026-10-10 (the answers of the coordinator: model and draw order approved as written; R1, R2, R4 and R5 approved as refusals; Emergency Exit modelled with the two battles; the special id at the next free value; the Dragapult learner value stays). The implementation is in `src/combat/turn.c` (`dfi_smart_targets`, the `smart` flag of `dfi_run`, the split in the hit loop, the silent steps); the pool row is `DFI_SPECIAL_DRAGON_DARTS` (97, UNMODELED 98). Results and open points are in the section "Phase 2 results" below.
 
 ## Problem
 
@@ -116,3 +116,55 @@ Campaign: `diff_driver.py random`, 300 battles, the teams of `g78_split` and `g7
 3. Emergency Exit: model the traced arithmetic with the two battles (my recommendation), or refuse any Emergency Exit or Wimp Out holder among the targets.
 4. The pool special id (97, or the lead's number), given that batch 5 builds in parallel.
 5. Value check: only one Champions learner (Dragapult, `learned_by_count` 1). Is +82 still the right value for this row?
+
+## Phase 2 results (H16)
+
+**Engine and tables.** `src/combat/turn.c`: `dfi_smart_targets` (the partner after the redirections, the refusals R2 and R5),
+the `smart` flag (silent while set, cleared by a drop, as in the pin), the split in the hit loop (hit k on the k-th target, the
+`-anim` before hit 2, the move line retargeted on the first hit), `dfi_move_hits` (two hits, a number: no draw), the whitelist of
+handled specials, Emergency Exit skipped for the first target of a split (the pin's damage array). Pool row: `DFI_SPECIAL_DRAGON_DARTS`
+= 97, UNMODELED = 98, marked moves 198 (was 197), UNMODELED moves 180 (was 181); pool hash `34f64221af56...bd14da0`.
+
+**Setup finding.** Sneasler's set in the first draft had Sucker Punch, which is not in DuoForge's learnset for that forme (Showdown
+does not validate learnsets at battle creation; DuoForge does). The G78 set uses Protect and Poison Jab (both learnable and marked).
+
+**Recorded battles (12, `"data": "pool"`, `tests/reference/specs/g78_*.json`).** split, protect_t, protect_p, fairy_p,
+protect_t_fairy_p, pressure2, ally_target, ko_t_hit1 (six turns, the first target falls on hit 1 and the partner takes hit 2),
+partner_absent (seed 1 with the no-protect variant: the first target falls in the same turn and the partner slot is empty, so
+the move is retargeted at random to the foe that stands), fainted_target (seed 26 of the same variant), ee_p (Emergency Exit on the
+partner, check on the second hit), ee_t (Golisopod crosses half on hit 1 of a split: no Emergency Exit, as the pin reads).
+The long battles of the no-protect variant were chosen because the first draft produced approved refusal R1 in the recording
+(two foes protecting on one turn with Dragon Darts): the reference allows that step, so such a step cannot be a conformance battle.
+
+**Tests.** `duoforge.reference.conformance_pool_data`: 713 battles pass. `duoforge.reference.tiebreak_pool_data`: 713 battles,
+3875 stops. `duoforge.state.pool_g78`: 63 checks, 0 failures (the row, the branch states, PP 7 after Pressure of two foes, the
+move result after a blocked split, R1, R2 and R5 refused with E_UNSUPPORTED).
+
+**Mutants (11 of 11 caught).** Each mutant is one edit of `turn.c`; baseline (unmutated head) 2 of 2 green.
+1 partner from the user's side: `pool_g78` (test_split, test_protect_t, the move result, PP, R1, R5) and conformance;
+2 second hit on the first target: `pool_g78` (test_split) and conformance (7 failures);
+3 Protect line printed while smartTarget is set: conformance (6 failures);
+4 no `-anim`: conformance (11 failures);
+5 split as a spread (0.75): conformance (E_INVARIANT battles and the damage lines);
+6 no retarget of the move line: conformance (5 failures);
+7 Pressure counts the first target only: `pool_g78` (test_pressure2) and conformance;
+8 no FALSE for the immunity drop: `pool_g78` (test_protect_t_fairy_p, move result) only;
+9 a fall of the first target ends the loop: conformance (ee_t, fainted_target, ko_t_hit1, partner_absent, protect_t);
+10 Emergency Exit checked on the first target: conformance (ee_t, fainted_target, ko_t_hit1, partner_absent);
+11 accuracy draw of the second target skipped: conformance (six battles, E_INVARIANT at step 1).
+Every mutant result is a red run with the mutation and a green baseline for the same two tests.
+
+**Campaign** (`diff_driver.py random`, seed 78, 300 battles, pairings GG, HH, GH, HG, the two G78 teams; the mirror pairings put a
+Sitrus holder on each side at equal speed, which exercises the SPEED_TIE Update draws): PASS 284, DIVERGENCE 1, ORACLE_GAP 0,
+UNSUPPORTED 15. The 15 refusals are all R1 (both targets of a split use Protect in that turn; 15 of 300 battles, 5%). R2 (Substitute)
+fired 0 times and R5 (Red Card or Eject Button) 0 times in these battles. The DIVERGENCE is `fz_78_146` (pairing GH, index 146), step 19:
+`DUOFORGE_E_INVARIANT` with no draw consumed. The reference step: Kingambit (partner) protects, Dragapult's Dragon Darts, whose ally
+target is empty, is retargeted at random to Milotic, which faints on hit 1. **Open:** the cause is not identified. It is not an
+R1 case, and the step is inside the new code path (random retarget of a smart move whose partner protects). Reproduction:
+`diff_driver.py random ... --start 146 --battles 147`. It is reported, not fixed.
+
+**Local checks run.** Targeted ctest (regex `pool_tables|conformance_pool|tiebreak_pool|converter_api|gen_closure|state_model|python.replay_unit|python.live|pool_g78|pool_setup|pool_g16|pool_g29|pool_g34|pool_g39|pool_g44|pool_g54|pool_g58|pool_g62|pool_g64|pool_g68|pool_g70`): 26 tests, 22 passed, 0 failed, 4 skipped (`duoforge.python.live`, `live_unit`, `live_client`, `replay_unit`: the project venv is absent on this machine). Python unit tests run separately: `tools/datagen/test_gen_closure.py` 132 of 132, `tools/reference/test_trace_to_c.py` 97 of 97. Source lint `cmake -DROOT=... -P cmake/checks/lint_sources.cmake`: OK (78 files). MinGW `-Wall -Wextra -Werror -Wmissing-field-initializers` on `turn.c` and `test_pool_g78.c`: clean.
+
+**Full suite.** On GitHub (`gh workflow run ci.yml`), see the report.
+
+**Open points.** (1) The `fz_78_146` divergence above. (2) R1 is the common refusal (5% of random battles); R2 and R5 were not sampled, so their rates are unknown. (3) The four python live tests were skipped locally.

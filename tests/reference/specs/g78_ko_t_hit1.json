@@ -1,0 +1,20 @@
+{
+ "name": "g78_ko_t_hit1",
+ "purpose": "Step G78: Dragon Darts over several turns: the chosen foe p2a falls on the first hit and the partner p2b still takes the second (no break of the loop, the faint line after it).",
+ "data": "pool",
+ "format": "gen9championsvgc2026regmc",
+ "seed": "sodium,00000000000000000000000000000000000000000000000000000000000130b6",
+ "teams": [
+  "Dragapult (M) @ Life Orb\nAbility: Clear Body\nLevel: 50\nEVs: 32 Atk / 32 Spe / 2 HP\nAdamant Nature\n- Dragon Darts\n- Protect\n- Thunderbolt\n- Shadow Ball\n\nMilotic (F) @ Sitrus Berry\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Protect\n- Coil\n\nSalamence (M) @ Leftovers\nAbility: Intimidate\nLevel: 50\nEVs: 2 HP / 32 Atk / 32 Spe\nJolly Nature\n- Dragon Claw\n- Protect\n\nSylveon (F) @ Light Clay\nAbility: Pixilate\nLevel: 50\nEVs: 32 HP / 2 SpD / 32 Spe\nTimid Nature\n- Alluring Voice\n- Protect\n\nRaichu (F) @ Raichunite Y\nAbility: Lightning Rod\nLevel: 50\nEVs: 29 HP / 5 Def / 32 Spe\nTimid Nature\n- Thunderbolt\n- Protect\n\nArchaludon (M) @ Mystic Water\nAbility: Stamina\nLevel: 50\nEVs: 32 HP / 10 Def / 24 SpD\nBold Nature\n- Iron Head\n- Protect",
+  "Golisopod (F) @ Miracle Seed\nAbility: Emergency Exit\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Leech Life\n- Iron Head\n- Protect\n\nKingambit (M) @ Black Glasses\nAbility: Pressure\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Protect\n- Sucker Punch\n\nSylveon (F) @ Sitrus Berry\nAbility: Pixilate\nLevel: 50\nEVs: 32 HP / 2 SpD / 32 Spe\nTimid Nature\n- Alluring Voice\n- Protect\n\nGholdengo @ Focus Sash\nAbility: Good as Gold\nLevel: 50\nEVs: 17 HP / 2 Def / 17 SpA / 16 SpD / 14 Spe\nModest Nature\n- Shadow Ball\n- Protect\n\nMilotic (F) @ Leftovers\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 30 SpA / 4 Spe\nModest Nature\n- Ice Beam\n- Muddy Water\n- Protect\n\nSneasler (M) @ Mystic Water\nAbility: Pressure\nLevel: 50\nEVs: 2 HP / 32 Atk / 32 Spe\nJolly Nature\n- Protect\n- Poison Jab"
+ ],
+ "plan": {
+  "p1": [
+   "move 1 1, move 2"
+  ],
+  "p2": [
+   "move 2 2, move 2 2"
+  ],
+  "max_steps": 7
+ }
+}
