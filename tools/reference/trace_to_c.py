@@ -1814,7 +1814,10 @@ def step_events(log, viewer, roster_of, maxhp, tables, rb_pending=None, ill=None
                 elif pn[1] == '-setboost':
                     raise ConversionError('setboost', 'trace_to_c: a second -setboost of the same Pokemon in the step: %r' % line,
                                           detail='setboost-twice')
-            if name_before != name_after or int(args[2]) + later != after:
+            # A Pokemon that faints later in the step has its stages cleared (the post-step state reads 0): the printed stage is then
+            # checked against nothing after the step, and the change stands.
+            fainted_later = any(nxt.startswith('|faint|') and nxt.split('|')[2] == parts[2] for nxt in log[i + 1:])
+            if name_before != name_after or (not fainted_later and int(args[2]) + later != after):
                 raise ConversionError('setboost', 'trace_to_c: -setboost stage %s does not reach the stage after the step (%s, same Pokemon: %s): %r'
                                       % (args[2], after, name_before == name_after, line), detail='setboost-stage')
             change = int(args[2]) - stage
