@@ -2338,6 +2338,8 @@ class Library(unittest.TestCase):
                             done = done or (name == 'Thunder Wave' and after.startswith(('|-status|', '|-immune|')))
                             # After You and Quash (step G62): the -activate line of the move on the target.
                             done = done or (name in ('After You', 'Quash') and after.startswith('|-activate|') and after.endswith('|move: ' + name))
+                            # Destiny Bond (step G76): its start line, -singlemove (data/moves.ts:3493-3495).
+                            done = done or (name == 'Destiny Bond' and after.startswith('|-singlemove|'))
                             # Rage Powder (step G30): the single-turn line of its condition.
                             done = done or (name == 'Rage Powder' and after.startswith('|-singleturn|') and after.endswith('|move: Rage Powder'))
                             # An item that a move gave (Trick, Switcheroo, Thief, Covet; step G29): its -item line.
