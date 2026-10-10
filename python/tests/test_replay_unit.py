@@ -1846,6 +1846,21 @@ class PickHypothesesTest(unittest.TestCase):
                          plain.counters["perspectives.stopped.picks-incomplete"])
         self.assertEqual(hyp.counters["points.hypotheses"], sum(1 for r in hyp.rows if r.picks_hypotheses > 1))
 
+    def test_a_single_pick_tuple_makes_no_hypothesis_rows(self):
+        # review: a sheet of four members leaves one pick tuple; its rows would pass for rows with known picks
+        def without(line, names):
+            packed = line.split("|", 3)[3]
+            kept = [m for m in packed.split("]") if not set(m.split("|")[:2]) & set(names)]
+            return "|".join(line.split("|", 3)[:3]) + "|" + "]".join(kept)
+        log = [without(line, ("Basculegion", "Sneasler")) if line.startswith("|showteam|p1|") else line
+               for line in self.short]
+        plain, hyp = self.fold(log), self.fold(log, pick_hypotheses=True)
+        self.assertEqual(plain.counters["perspectives.stopped.picks-incomplete"], 1)
+        self.assertEqual(len(hyp.rows), len(plain.rows))
+        self.assertEqual(hyp.counters["points.written"], plain.counters["points.written"])
+        self.assertEqual(hyp.counters["perspectives.hypotheses_stopped.single-hypothesis"], 1)
+        self.assertEqual(hyp.counters["points.hypotheses"], 0)
+
     def test_a_stop_in_one_hypothesis_ends_all_at_the_earliest_line(self):
         from duoforge_replay import points
 

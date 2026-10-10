@@ -164,7 +164,7 @@ def _prefix_record(format_prefix):
 
 def inputs(paths, prior_path, format_prefix, unit_lines, ps_dir, options=None):
     """What a dataset's parts depend on: a resumed run must have the same. A sheet build without a split records what
-    it always did (an old dataset resumes); any other build records its mode, corpus, seed, k and split. Every
+    it always did; any other build records its mode, corpus, seed, k and split. Every
     build records pick_hypotheses, so a resume refuses the other setting."""
     extra = {}
     if options is not None and (options["mode"] != "sheet" or options["split"] is not None):

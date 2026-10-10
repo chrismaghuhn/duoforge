@@ -244,6 +244,7 @@ def train(args):
               "decisions": int(len(train_index)), "ids": ids,
               "train": {"seed": args.seed, "bc": {
                   "datasets": _dataset_key(dirs), "format_weights": format_weights, "source_weights": source_weights,
+                  "pick_hypotheses_weight": args.pick_hypotheses_weight,
                   "split": "sheet-pair bucket 0/20", "weights": args.weights, "epochs": args.epochs,
                   "best_epoch": best_epoch, "value_coef": value_coef, "learning_rate": args.learning_rate,
                   "batch": args.batch, "patience": args.patience}}}

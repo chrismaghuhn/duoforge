@@ -42,7 +42,7 @@ REGMB = "gen9championsvgc2026regmb"
 REGMB_PP = {"STRENGTHSAP", "WISH"}
 from .points import TEAM_SELECTION, Skip, find
 from .prior import LEVELS
-from .hindsight import pick_hypotheses as hypotheses_of
+from .hindsight import pick_hypotheses as pick_tuples
 from .spectator import SpectatorTracker, feed_lines, hindsight, hindsight_picks, own_requested, walk
 
 REASONS = ("NOT_REQUESTED", "EXACT", "TARGET_UNKNOWN", "MOVE_HIDDEN", "FORCED", "UNKNOWN")
@@ -382,9 +382,12 @@ def _perspective(lines, points, side, sheets, data, prior, stats, counters, extr
         counters[f"perspectives.stopped.{stop.reason}"] += 1
         counters[f"points.dropped.{stop.reason}"] += sum(1 for p in points if p.line >= stop.line)
     if pick_hypotheses and stop is not None and stop.reason == "picks-incomplete":
-        hyps = hypotheses_of(lines, side, data, sheets)
+        hyps = pick_tuples(lines, side, data, sheets)
         if not hyps:
             counters["perspectives.hypotheses_stopped.no-hypotheses"] += 1
+            return rows
+        if len(hyps) == 1:  # a sheet of fewer than six: one tuple, yet the picks are not seen; never rows with H 1
+            counters["perspectives.hypotheses_stopped.single-hypothesis"] += 1
             return rows
         per_hypothesis, common = hypothesis_rows(lines, points, side, sheets, data, prior, stats, hyps, extra)
         for h_rows in per_hypothesis:

@@ -309,7 +309,7 @@ def hypotheses_game(replay_id, format_id, log, data, prior, stats):
 
 
 def _share(n, d):
-    return n / d if d else 0.0
+    return n / d if d else None  # nothing compared: no share
 
 
 def hypotheses_summary(c):
