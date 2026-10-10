@@ -397,6 +397,10 @@ duoforge_status duoforge_data_forme_static(const duoforge_context *ctx, uint32_t
 #define DUOFORGE_MOVE_STATIC_FLAG_MUST_PRESSURE 0x800u /* flags.mustpressure (step G53): a foe's Pressure costs one PP for
                                                           this move whatever its target (Imprison, Spikes, Stealth Rock,
                                                           Toxic Spikes in the pool) */
+#define DUOFORGE_MOVE_STATIC_FLAG_LOCKED_MOVE 0x1000u /* lockedmove (step G56): its use locks the user into it for 2 or 3
+                                                         turns (Outrage, Thrash, Petal Dance). A public fact of the move: the
+                                                         engine's observation hides a foe's locked slot while its last move
+                                                         has it (view audit 2026-10-10), and the live tracker does the same */
 
 /* A move. 64 bytes. */
 typedef struct duoforge_move_static {
