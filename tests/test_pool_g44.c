@@ -61,7 +61,7 @@ static void check_marks(df_test *t)
     DF_CHECK_EQ_U64(t, DFI_SPECIAL_TRI_ATTACK, DFI_SPECIAL_ICE_FANG + 1u);
     DF_CHECK_EQ_U64(t, DFI_SPECIAL_ROOST, DFI_SPECIAL_DOUBLE_SHOCK + 1u); /* step G42, after Double Shock (G50) */
     DF_CHECK_EQ_U64(t, DFI_SPECIAL_STOMPING_TANTRUM, DFI_SPECIAL_ROOST + 1u); /* step G42 */
-    DF_CHECK_EQ_U64(t, DFI_SPECIAL_UNMODELED, DFI_SPECIAL_THUNDER_WAVE + 1u) /* G62: After You and Quash (decision 0015 entry 5az) come after Strength Sap */;
+    DF_CHECK_EQ_U64(t, DFI_SPECIAL_UNMODELED, DFI_SPECIAL_SKILL_SWAP + 1u) /* G62: After You and Quash (decision 0015 entry 5az) come after Strength Sap */;
 }
 
 static void check_pins(df_test *t)

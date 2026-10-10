@@ -914,7 +914,8 @@
 #define DFI_SPECIAL_PHANTOM_FORCE 90u
 #define DFI_SPECIAL_STEEL_BEAM 91u
 #define DFI_SPECIAL_THUNDER_WAVE 92u
-#define DFI_SPECIAL_UNMODELED 93u
+#define DFI_SPECIAL_SKILL_SWAP 93u
+#define DFI_SPECIAL_UNMODELED 94u
 
 /* ---- the second flags byte of every move (step G8: the general byte for the flags that the first one has no room
  * for; bits 4 to 128 are free) and the secondary kinds that it comes with ---- */

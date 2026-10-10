@@ -488,6 +488,9 @@ const dfi_support_manifest dfi_support = {
             [DFI_MOVE_THUNDERWAVE] = 1u,
             [DFI_MOVE_FIREPUNCH] = 1u,
             [DFI_MOVE_ICEHAMMER] = 1u,
+            /* Step G70 (Skill Swap, decision 0041): the two holders swap their abilities (onHit, the ability events and the
+             * Start and End of the abilities that move; an ally swap is modelled, the Mega and the Illusion cases are named). */
+            [DFI_MOVE_SKILLSWAP] = 1u,
         },
     .abilities =
         {

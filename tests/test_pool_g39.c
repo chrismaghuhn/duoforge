@@ -56,7 +56,7 @@ static void check_marks(df_test *t)
     }
     DF_CHECK_EQ_U64(t, dfi_pool_moves[DFI_MOVE_SACREDSWORD].special, DFI_SPECIAL_DARKEST_LARIAT);
     DF_CHECK_EQ_U64(t, dfi_pool_moves[DFI_MOVE_SUPERFANG].special, DFI_SPECIAL_SUPER_FANG);
-    DF_CHECK_EQ_U64(t, DFI_SPECIAL_UNMODELED, DFI_SPECIAL_THUNDER_WAVE + 1u) /* G62: After You and Quash (decision 0015 entry 5az) come after Strength Sap */; /* Taunt and Yawn (G31), the four of G48, the four of G44, Double Shock (G50) and Roost and Stomping Tantrum (G42) follow */
+    DF_CHECK_EQ_U64(t, DFI_SPECIAL_UNMODELED, DFI_SPECIAL_SKILL_SWAP + 1u) /* G62: After You and Quash (decision 0015 entry 5az) come after Strength Sap */; /* Taunt and Yawn (G31), the four of G48, the four of G44, Double Shock (G50) and Roost and Stomping Tantrum (G42) follow */
     DF_CHECK_EQ_U64(t, dfi_pool_moves[DFI_MOVE_SUPERFANG].base_power, 0u);
     DF_CHECK_EQ_U64(t, dfi_pool_moves[DFI_MOVE_SUPERFANG].accuracy, 90u);
     DF_CHECK_EQ_U64(t, dfi_pool_moves[DFI_MOVE_CHARM].boost_role, DFI_BOOST_ROLE_PRIMARY_TARGET);

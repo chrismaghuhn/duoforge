@@ -1990,6 +1990,46 @@ class Library(unittest.TestCase):
             with self.assertRaises(trace_to_c.ConversionError):
                 trace_to_c.step_events([bad], 0, roster, [{'Gardevoir': 100}] * 2, tables)
 
+    def test_skill_swap_foe_and_ally_lines_are_two_ability_events(self):
+        """Step G70 (decision 0041): the foe's line names both abilities (the source now has the first); the ally's line
+        names none, and its pair is the one swap_partners follows from the sheets and the earlier lines of the battle."""
+        tables = trace_to_c.load_tables(ROOT, True)
+        roster = [{'Gardevoir': 0, 'Incineroar': 1}, {'Milotic': 0, 'Pelipper': 1}]
+        maxhp = [{'Gardevoir': 100, 'Incineroar': 100}, {'Milotic': 100, 'Pelipper': 100}]
+        ab = tables['ABILITY']
+        move = tables['MOVE'][trace_to_c.key('Skill Swap')]
+        # foe line: p2a Milotic (the source) swaps with p1a Gardevoir; Milotic now has Intimidate, Gardevoir Multiscale
+        foe = '|-activate|p2a: Milotic|Skill Swap|Intimidate|Multiscale|[of] p1a: Gardevoir'
+        events = trace_to_c.step_events([foe], 0, roster, maxhp, tables)
+        self.assertEqual(len(events), 2)
+        self.assertEqual(events[0][:6], (trace_to_c.EV['ABILITY'], 2, 0, trace_to_c.CAUSE['MOVE'], ab[trace_to_c.key('Intimidate')] + 1, move))
+        self.assertEqual(events[1][:6], (trace_to_c.EV['ABILITY'], 0, 2, trace_to_c.CAUSE['MOVE'], ab[trace_to_c.key('Multiscale')] + 1, move))
+        # ally line: p1a Gardevoir (Trace) swaps with p1b Incineroar (Intimidate); no names in the line
+        teams = [[{'ability': ab[trace_to_c.key('Trace')] + 1}, {'ability': ab[trace_to_c.key('Intimidate')] + 1}],
+                 [{'ability': ab[trace_to_c.key('Multiscale')] + 1}, {'ability': ab[trace_to_c.key('Pressure')] + 1}]]
+        ally = '|-activate|p1a: Gardevoir|Skill Swap|||[of] p1b: Incineroar'
+        enter = ['|switch|p1a: Gardevoir|Gardevoir, L50|100/100', '|switch|p1b: Incineroar|Incineroar, L50|100/100']
+        log = enter + [ally]
+        swaps = trace_to_c.swap_partners({'steps': [{'log': log}]}, teams, roster, tables)
+        self.assertEqual(swaps, [{2: (ab[trace_to_c.key('Intimidate')], ab[trace_to_c.key('Trace')])}])
+        events = trace_to_c.step_events(log, 1, roster, maxhp, tables, None, swaps[0])
+        self.assertEqual(events[-2][:6], (trace_to_c.EV['ABILITY'], 0, 1, trace_to_c.CAUSE['MOVE'], ab[trace_to_c.key('Intimidate')] + 1, move))
+        self.assertEqual(events[-1][:6], (trace_to_c.EV['ABILITY'], 1, 0, trace_to_c.CAUSE['MOVE'], ab[trace_to_c.key('Trace')] + 1, move))
+        # the Trace copy before the ally swap is followed: Incineroar copies Multiscale from p2a, then swaps with Gardevoir
+        log2 = enter + ['|-ability|p1b: Incineroar|Multiscale|Intimidate|[from] ability: Trace|[of] p2a: Milotic', ally]
+        swaps2 = trace_to_c.swap_partners({'steps': [{'log': log2}]}, teams, roster, tables)
+        self.assertEqual(swaps2, [{3: (ab[trace_to_c.key('Multiscale')], ab[trace_to_c.key('Trace')])}])
+        # refusals: an ally line without its pair, and an ally swap of a Mega Evolved holder (its ability is not known)
+        with self.assertRaises(trace_to_c.ConversionError):
+            trace_to_c.step_events([ally], 1, roster, maxhp, tables)
+        mega_log = enter + ['|-mega|p1a: Gardevoir|Gardevoir-Mega|Gardevoirite', ally]
+        with self.assertRaises(trace_to_c.ConversionError):
+            trace_to_c.swap_partners({'steps': [{'log': mega_log}]}, teams, roster, tables)
+        for bad in ('|-activate|p2a: Milotic|Skill Swap|Intimidate|[of] p1a: Gardevoir',
+                    '|-activate|p2a: Milotic|Skill Swap|Intimidate|Multiscale|[of] p1a: Gardevoir|[from] move: X'):
+            with self.assertRaises(trace_to_c.ConversionError):
+                trace_to_c.step_events([bad], 0, roster, maxhp, tables)
+
     def test_perish_song_lines_are_events_and_rows_are_what_the_protocol_lines_say(self):
         """Perish Song (step G26): `-start|X|perishN` is a VOLATILE_START of the volatile PERISH (5) with the count N in
         `amount` (3, 2, 1, and 0 from onEnd, which a `faint` line follows); `-fieldactivate|move: Perish Song` is an ACTIVATE
@@ -2259,7 +2299,7 @@ class Library(unittest.TestCase):
         marked = [n for n in re.findall(r'\[DFI_MOVE_(\w+)\] = 1u', read('src', 'data', 'support_manifest.c'))
                   if n in ids and ids[n] >= ext_moves]
         self.assertEqual(len(names), ext_moves + len(ids))
-        self.assertEqual(len(marked), 193)  # 189 before step G68 (decision 0015 item 5cc: Steel Beam, Thunder Wave, Fire Punch, Ice Hammer); 180 of main, the four of G64 and the three of G62 (Haze, After You, Quash)  # the four of step G64 (Poltergeist, Beat Up, Bug Bite, Sheer Cold; decision 0015 item 5ca), the seven of step G54 (Icicle Spear, Scale Shot, Quick Guard, Upper Hand, Heal Pulse, Strength Sap, Sing), and the 171 of main (Roost and Stomping Tantrum of G42, Double Shock of G50 among them)  # Roost and Stomping Tantrum (G42), Double Shock (G50), the eleven of step G44, the four of step G46, the four of step G48, Taunt and Yawn (G31) and the rows of the earlier steps as before
+        self.assertEqual(len(marked), 194)  # the Skill Swap of G70 (decision 0041) makes 194 from 193; 189 before step G68 (decision 0015 item 5cc: Steel Beam, Thunder Wave, Fire Punch, Ice Hammer); 180 of main, the four of G64 and the three of G62 (Haze, After You, Quash)  # the four of step G64 (Poltergeist, Beat Up, Bug Bite, Sheer Cold; decision 0015 item 5ca), the seven of step G54 (Icicle Spear, Scale Shot, Quick Guard, Upper Hand, Heal Pulse, Strength Sap, Sing), and the 171 of main (Roost and Stomping Tantrum of G42, Double Shock of G50 among them)  # Roost and Stomping Tantrum (G42), Double Shock (G50), the eleven of step G44, the four of step G46, the four of step G48, Taunt and Yawn (G31) and the rows of the earlier steps as before
         pool = [n for n in os.listdir(os.path.join(ROOT, 'tests', 'reference', 'specs'))
                 if trace_to_c.is_pool(ROOT, n[:-5])]
         logs = []

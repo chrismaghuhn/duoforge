@@ -257,7 +257,6 @@ static void check_marks(df_test *t)
     DF_CHECK(t, dfi_support.abilities[DFI_ABILITY_ILLUSION] == 0u);
     DF_CHECK(t, dfi_support.abilities[DFI_ABILITY_WANDERINGSPIRIT] == 0u);
     DF_CHECK(t, dfi_support.abilities[DFI_ABILITY_MUMMY] == 0u);
-    DF_CHECK(t, dfi_support.moves[DFI_MOVE_SKILLSWAP] == 0u);
     DF_CHECK(t, dfi_support.moves[DFI_MOVE_ROLEPLAY] == 0u);
     DF_CHECK(t, dfi_support.moves[DFI_MOVE_ENTRAINMENT] == 0u);
     DF_CHECK(t, dfi_support.moves[DFI_MOVE_GASTROACID] == 0u);
