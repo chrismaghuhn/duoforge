@@ -218,6 +218,19 @@ class Tracker:
             else:
                 self._battle_line(line)
 
+    def _set_boost(self, parts):
+        """Belly Drum's -setboost (step G86): the line shows the Attack stage it leaves; the engine's event is the BOOST of
+        the change (dfi_boost, cause MOVE with the move's id), which the tracker folds as any boost. The converter
+        computes the change from the trace state (trace_to_c, boost_pre); the tracker has the stage itself. A change
+        that is not positive is the converter's refusal setboost-change."""
+        flat = trace_to_c.ev_pos(parts[2])
+        stat = trace_to_c.EV_STATS.index(parts[3])
+        change = STAGE_NEUTRAL + int(parts[4]) - self._at(flat).stages[stat]
+        if change <= 0:
+            raise lines.Stop("converter:setboost-change")
+        self._event(trace_to_c.ev_tuple(EV["BOOST"], flat, trace_to_c.NOPOS, trace_to_c.CAUSE["MOVE"], 0,
+                                        self.data.tables["MOVE"]["BELLYDRUM"], detail=stat, amount=change))
+
     def _battle_line(self, line):
         """A battle line: classified (lines.check), then folded; a single-turn feature line is remembered for the
         turn instead (it can matter only at a PIVOT of the same turn, _turn_scoped_stop)."""
@@ -244,6 +257,9 @@ class Tracker:
         parts = line.split("|")
         if parts[1] in ("-start", "-end") and parts[3:4] == ["Throat Chop"]:
             self._throat_chop(parts)
+            return
+        if parts[1] == "-setboost":
+            self._set_boost(parts)
             return
         self._fold(line)
 
