@@ -75,7 +75,7 @@ class SearchExpand(unittest.TestCase):
             cls.roots.reset_terminal()
         cls.roots.query_factored()
         ext = cls.roots.observe_ext()
-        cls.mask = int(ext[0, 0]["supported"])
+        cls.mask = int(ext[0, 0]["supported"]) & features.version_features(4)  # encoder 4 (0050)
         cls.keys = rng.integers(0, 2 ** 63, ROOTS, dtype=np.uint64)
         cls.viewers = (np.arange(ROOTS) % 2).astype(np.uint8)
         cls.root_envs = (np.arange(LEAVES) % ROOTS).astype(np.uint32)
@@ -172,8 +172,8 @@ class SearchExpand(unittest.TestCase):
                 self._expand(leaves, n=5)
             refused("DUOFORGE_E_INVALID_ARGUMENT", viewers=viewers)
             refused("DUOFORGE_E_INVALID_ARGUMENT", root_envs=np.array([0, 1, ROOTS, 3], np.uint32))  # past the roots
-            with self.assertRaisesRegex(ValueError, "encoder 6 is not one"):
-                self._expand(leaves, n=4, version=6)  # 5 is encoder 5 (decisions 0025/0028)
+            with self.assertRaisesRegex(ValueError, "encoder 7 is not one"):
+                self._expand(leaves, n=4, version=7)  # 5 is encoder 5 (decisions 0025/0028), 6 encoder 6 (0050)
             with self.assertRaisesRegex(ValueError, "not a mask"):  # no mask of the feature bits, as in query_encoded
                 self._expand(leaves, n=4, ext_supported=1 << 43)  # 42 is TRANSFORM (0028): 43 is past every bit
             refused("DUOFORGE_E_INVALID_ARGUMENT", version=3, ext_supported=1 << 40)  # past version 3's features

@@ -90,7 +90,7 @@ def _features():
     """DUOFORGE_VIEWEXT_FEATURE_* of include/duoforge/duoforge.h: name -> bit (decision 0018 section 7.1)."""
     header = (ROOT / "include" / "duoforge" / "duoforge.h").read_text(encoding="ascii")
     return {m.group(1): int(m.group(2))
-            for m in re.finditer(r"#define DUOFORGE_VIEWEXT_FEATURE_([A-Z_]+) +(\d+)u", header) if m.group(1) != "COUNT"}
+            for m in re.finditer(r"#define DUOFORGE_VIEWEXT_FEATURE_([A-Z0-9_]+) +(\d+)u", header) if m.group(1) != "COUNT"}
 
 
 FEATURES = _features()
@@ -105,7 +105,7 @@ def parse_supported(expression):
     mask = 0
     for term in expression.split("|"):
         bit = re.fullmatch(r"\(*\s*(?:\(\s*uint64_t\s*\)\s*)?1(?:u|ull|ul|llu)?\s*<<\s*"
-                           r"DUOFORGE_VIEWEXT_FEATURE_([A-Z_]+)\s*\)*", term.strip())
+                           r"DUOFORGE_VIEWEXT_FEATURE_([A-Z0-9_]+)\s*\)*", term.strip())
         if bit is None or bit.group(1) not in FEATURES:
             raise ValueError(f"support_manifest.c: view_ext_features term {term.strip()!r} is not understood")
         mask |= 1 << FEATURES[bit.group(1)]
