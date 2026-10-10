@@ -12,7 +12,7 @@ Status: **Baneful Bunker** implemented (branch chris/expansion-g94-protect-misc,
 
 - **Pin.** `data/moves.ts:10066-10081`: Physical, 140 power, contact, protect; `onTry` fails when the user has fewer than two move slots, and otherwise unless every slot other than its own Last Resort has `moveSlot.used`. The `used` flag is set by `deductPP` (`sim/pokemon.ts:892`, before the PP test) and cleared at switch-in (`sim/battle-actions.ts:140`). PP cannot give the answer: PP persist across switches while `used` does not.
 - **State (rev-5 reserve, no schema bump).** `dfi_pool_tail.move_used`: a nibble per position in flat order, bit k = move slot k used since the occupant came in. Written in the rev-5 reserve bytes 8 and 9 (the other reserve bytes stay zero). Set where the engine deducts PP, cleared by `dfi_tail_clear_occupant`. The invariant: a bit only on an occupied position and below its move count.
-- **Rule.** `dfi_last_resort_ok` (`turn.c`) at the TryMove stage, after the Armor Tail check, before the target and special dispatch. A failure is silent after the move line (`|move|` only, no further line), PP is spent, the result is FALSE (the pin's `moveThisTurnResult`).
+- **Rule.** `dfi_last_resort_ok` (`turn.c`) at the TryMove stage, after the Armor Tail check, before the target and special dispatch. A failure is the move line with `[still]` and then `-fail|user` (`dfi_fail_still`; recorded in `g94_lr_basic`: `|move|p1a: Kangaskhan|Last Resort||[still]` and `|-fail|p1a: Kangaskhan`). PP is spent (deductPP runs before TryMove), the result is FALSE. An earlier reading of mine said the failure was silent; the recorded trace shows the two lines.
 - **View (approved option c).** `volatiles2` bits 0 to 3 (`DUOFORGE_POSITION_EXT2_LAST_RESORT_USED_1..4`, slot k at bit k-1) are shown only for an occupant that has Last Resort in its current move slots (its open sheet, or a Transform copy). For every other occupant the bits are 0: they decide Last Resort only, and the state keeps them for every occupant (so a copy stays correct). The feature is `DUOFORGE_VIEWEXT_FEATURE_LAST_RESORT_USED` (44), in `DUOFORGE_VIEWEXT_RESERVE_OWN` (four entries). The bits are public: each use is a move line since the switch-in.
 - **Encoder 5.** encode.c refuses a nonzero `volatiles2` for encoders below 6 (`DUOFORGE_E_UNSUPPORTED`). With option c that refusal happens only for a state with a Last Resort holder on the field.
 - **Pair tests (to be run).** (1) a holder with used moves: the bits are visible and encoder 5 returns E_UNSUPPORTED; (2) a non-holder with used moves: the bits are 0 and encoder 5 runs. In C: `tests/test_pool_g94.c`.
@@ -20,3 +20,15 @@ Status: **Baneful Bunker** implemented (branch chris/expansion-g94-protect-misc,
 ## 3. Pins of the tables
 
 Special ids: BANEFUL_BUNKER 101, LAST_RESORT 102, UNMODELED 103 (generator order, after G78). The pool canonical hash and the KP and KPD fingerprints are in `tests/test_pool_setup.c` and `tests/test_pool_tables.c` and `tools/state_model/state_v3_model.py`.
+
+## 4. Edge cases of `moveSlot.used` (checked against the pin)
+
+- **Transform.** `transformInto` replaces the moveSlots with new virtual slots (`used: false`, `sim/pokemon.ts:1305-1323`). Transform is unmarked (no manifest bit), so setup refuses it; a guard test checks the mark.
+- **Called moves.** Sleep Talk, Copycat, Spite, Eerie Spell and Instruct are unmarked (refused by setup). Metronome, Mirror Move, Assist, Mimic and Sketch have no row in the pool (no `DFI_MOVE_*`), so nothing can select them. The pin's `useMove` for a called move deducts PP of the called move's slot (`battle-actions.ts:282`); this cannot arise here.
+- **Encore.** A forced move is an ordinary move action (no lockedmove): deductPP runs, so `used` is set on the encored slot. Encore is marked (`DFI_MOVE_ENCORE`), so the engine's normal PP path covers it; no separate rule.
+- **Struggle.** No slot (`move_slot` 4 is not below `DUOFORGE_MAX_MOVE_SLOTS`): no bit, and the pin's `deductPP` finds no slot.
+- **Pressure.** The extra PP is taken from the user's own slot, which `used` already covers (`battle-actions.ts:482`); the engine's Pressure step does not touch the bits.
+- **PP 0 and disabled slots.** deductPP sets `used` before its PP test (`sim/pokemon.ts:892`); the engine sets the bit before its `pp == 0` check, as the pin. A disabled slot is not in the request, so it is never used.
+- **Locked turns (Outrage, charge second turns).** No deductPP (`battle-actions.ts:286-291`): no bit, as the engine's `!locked && !lock_move` block.
+- **Switches.** Every change of occupant (switch-out, faint replacement, drag, Baton Pass, Revival) clears the nibble (`dfi_tail_clear_occupant`); the pin resets `used` in `switchIn` (`battle-actions.ts:140`).
+- **Refusals.** None needed beyond setup's manifest gate: the copying and calling moves above are unmarked or have no row.
