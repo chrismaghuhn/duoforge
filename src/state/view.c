@@ -410,6 +410,15 @@ static duoforge_status dfi_view_encode(const duoforge_context *ctx, const duofor
              * declaration. Refuse the entire public pre-move phase. */
             return DUOFORGE_E_UNSUPPORTED;
         }
+        /* The silent flinch (view audit 2026-10-10): a secondary's flinch is set without a line and shows only when the
+         * flinched Pokemon tries to move ([cant] flinch), hidden from both players (0007). No public fact tells whether one is
+         * outstanding on a position still to move, so a PIVOT with a queued move left is refused; with none left a flinch has
+         * no effect before the residual ends it, and the record drops the bit (below). */
+        for (uint32_t q = 0u; q < b->queue_len && q < DFI_QUEUE_CAPACITY; ++q) {
+            if (b->queue[q].kind == DFI_Q_MOVE) {
+                return DUOFORGE_E_UNSUPPORTED;
+            }
+        }
     }
     if (b->sides[foe].sealed != 0u) {
         return DUOFORGE_E_UNSUPPORTED;
@@ -425,7 +434,14 @@ static duoforge_status dfi_view_encode(const duoforge_context *ctx, const duofor
             const dfi_tail_pos *tp = &b->tail.sides[side].positions[p];
             /* A Substitute on either side is refused (decision 0032): its HP follows hidden damage and the owner's request does not show
              * it, so no honest world can rebuild it. The cause (DUOFORGE_PUBLIC_CAUSE_SUBSTITUTE) is named by the causes call. */
-            if (tp->trap_turns != 0u || tp->lock_turns != 0u || tp->substitute_hp != 0u) {
+            /* A lockedmove is refused while one may run, decided from the public last move (dfi_maybe_lockedmove), not from
+             * the drawn count, whose silent end would show (view audit 2026-10-10). A running lock outside that is a broken
+             * state. */
+            const bool maybe_locked = dfi_maybe_lockedmove(b, side * 2u + p);
+            if (tp->lock_turns != 0u && !maybe_locked) {
+                return DUOFORGE_E_INVARIANT;
+            }
+            if (tp->trap_turns != 0u || maybe_locked || tp->substitute_hp != 0u) {
                 return DUOFORGE_E_UNSUPPORTED;
             }
         }
@@ -453,6 +469,7 @@ static duoforge_status dfi_view_encode(const duoforge_context *ctx, const duofor
         }
         for (uint32_t p = 0u; p < DUOFORGE_ACTIVE_PER_SIDE; ++p) {
             uint8_t *pb = position_at(s, side, p);
+            pb[DFI_ENC_POS_FLAGS_OFF] = (uint8_t)(pb[DFI_ENC_POS_FLAGS_OFF] & ~DFI_VOL_FLINCH); /* silent; no effect here (above) */
             if (pb[DFI_ENC_POS_CONFUSION_OFF] != 0u) {
                 pb[DFI_ENC_POS_CONFUSION_OFF] = (uint8_t)DUOFORGE_VIEW_HIDDEN;
             }
