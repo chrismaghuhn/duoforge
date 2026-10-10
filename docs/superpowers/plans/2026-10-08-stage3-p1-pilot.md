@@ -245,6 +245,23 @@ The first local attempt is superseded. On 2026-10-09 the generation finished loc
   - The thresholds are unchanged: any cut-off, any refusal, warm_rate < 5 games/s or forecast > 3600 s is a STOP.
   - The report shows both the narrow and the full-width rate.
 
+### Control arm matching on AWS (owner decisions, 2026-10-09 evening)
+
+**First AWS run** (2be0afe30d62-20261009T172944Z): generation took 16 min (4947 CPU core-seconds, 19968 games), loading 85 s and distill 1.3 min. The pilot ledger totals 5202 CPU core-seconds and 59.9 GPU-seconds.
+
+**Calibration cap dropped:** the control's 10% calibration cap could not be met with a GPU budget of 60 seconds. One GPU update costs about 4.5 GPU-seconds and the match needs one warm update per device. The owner dropped the cap. It survives as a report field only; the binding rule stays both axes within 5% of the pilot. Calibration updates use the control recipe and count fully in the control's ledger.
+
+**First control run discarded:** the continuation stopped with a compute mismatch. Control 4142 CPU core-seconds / 62.9 GPU-seconds against the pilot's 5202 / 59.9 put the GPU axis already outside 5% (|Δ| = 3.0 > 2.995) at −20% CPU. More training could not bring it back. Probable cause: the fixed GPU share left out the resume's GPU JIT (~13 GPU-seconds). The owner chose a fresh control run from params-49333. The discarded run and its ledger are reported but not charged. Pilot, generation and distill stay as run.
+
+**The fresh control run** chooses each update's device by feedback (`train --update-gpu-share match`), with no calibration and no p1_match:
+- It runs GPU updates until the GPU axis reaches 0.95, then CPU updates. Only GPU updates raise the GPU axis, and a late restart then pays a CPU JIT (about 3%) instead of a GPU JIT (about 22%).
+- A device is allowed only if the expected step keeps both axes at ≤ 1.05 of the pilot. The expected step is the most expensive one measured. A process's first step on a device (JIT, start) counts as 25% per axis until measured.
+- It stops as matched once both axes are ≥ 0.95. It stops as incomplete when no allowed device remains, and immediately when the GPU axis is below 0.95 with no GPU step allowed. Any axis above 1.05 is an overshoot stop, never matched. Every stop other than matched is a STOP (exit 30).
+- The device sequence depends on measurement and is logged per update (update_device, match). The control's ledger holds training only; it plays no end suites.
+- It runs in one process where possible, since every resume pays a JIT.
+
+`expert_eval.validate_compute` checks the result unchanged: both axes within 5%. The control's learning rate decays over its spent share of the pilot's CPU core-seconds (`--learning-rate-over budget`, schedule 0:1 to 900:0.1 per mille), replacing the forecast decision count D. The exact ledgers of the discarded run were control 4142.374 / 62.9025 against pilot 5202.450 / 59.9023 (GPU |Δ| 3.0002 > 2.9951).
+
 ## P1 result and the C2 repeat (owner decisions, 2026-10-10)
 
 **First result (run 60a8766490bf-20261010T120438Z, INCONCLUSIVE, no promotion).** The pilot against the continuation scored 0.477 [0.447, 0.507] and against frozen 49333 0.506 [0.475, 0.537]. On the panel it was +0.0075 [−0.016, 0.030] better (PP_ PASS, LL_ INCONCLUSIVE). No pairs are added afterwards (no endpoint chosen after the fact).
