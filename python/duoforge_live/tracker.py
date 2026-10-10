@@ -33,6 +33,7 @@ C = _layout.CONSTANTS
 EV = trace_to_c.EV
 FLAG = trace_to_c.FLAG
 _MUST_PRESSURE = _layout.CONSTANTS["DUOFORGE_MOVE_STATIC_FLAG_MUST_PRESSURE"]  # step G53
+_LOCKED_MOVE = _layout.CONSTANTS["DUOFORGE_MOVE_STATIC_FLAG_LOCKED_MOVE"]  # view audit 2026-10-10
 NOPOS = trace_to_c.NOPOS
 ROSTER_NONE = C["DUOFORGE_ROSTER_NONE"]
 MOVE_SLOT_NONE = C["DUOFORGE_MOVE_SLOT_NONE"]
@@ -97,6 +98,7 @@ class _Position:
         self.choice_slot = MOVE_SLOT_NONE  # the move slot a Choice item locks (TEAM_C and POOL)
         self.flags = 0  # DUOFORGE_POSITION_FLAG_* (TEAM_C and POOL): Follow Me, Helping Hand, Unburden
         self.guard_undo = None  # (chain, stall) before a Wide or Quick Guard, until it is known to have run
+        self.last_move = None  # the move id of pokemon.moveUsed: the occupant's own last move line, none after leaving
 
 
 class _Member:
@@ -435,6 +437,8 @@ class Tracker:
             p = self._at(pos)
             p.acted = 1
             self._last_move = (pos, ident, e[2])
+            if e[3] == trace_to_c.CAUSE["NONE"]:
+                p.last_move = ident  # runMove's moveUsed, a locked turn too; not a move another effect makes it use
             m = self._occupant(pos)
             if not flags & FLAG["LOCKED"] and ident in m.sheet["moves"]:
                 m.uses[m.sheet["moves"].index(ident)] += 1 + self._pressure_extra(pos, ident, e[2], flags)
@@ -713,6 +717,13 @@ class Tracker:
             self._view_side(o["sides"][side], side, boundary)
         return o
 
+    def _shown_locked_slot(self, p, own):
+        """The locked slot the view shows: a running two-turn move's or a Choice lock's, but none for a foe whose last
+        move is a lockedmove, whose drawn length may end silently (src/state/observation.c, dfi_maybe_lockedmove)."""
+        if not own and p.last_move is not None and self.data.move_flags(p.last_move) & _LOCKED_MOVE:
+            return MOVE_SLOT_NONE
+        return p.locked_slot if p.locked_slot != MOVE_SLOT_NONE else p.choice_slot
+
     def _view_side(self, v, side, boundary):
         own = side == self.side
         members = self._member(side)
@@ -727,7 +738,7 @@ class Tracker:
                 continue
             pv["stages"] = p.stages
             pv["confused"], pv["charging"] = p.confused, 1 if p.charge else 0
-            pv["locked_slot"] = p.locked_slot if p.locked_slot != MOVE_SLOT_NONE else p.choice_slot
+            pv["locked_slot"] = self._shown_locked_slot(p, own)
             pv["reserved"] = p.flags
             if own and p.charge:
                 pv["locked_target"] = p.locked_target
