@@ -4542,6 +4542,48 @@ static duoforge_status dfi_ally_switch_prepare(dfi_run *r, uint32_t user, bool *
     return DUOFORGE_OK;
 }
 
+/* The flat position `f` after the two Pokemon of a swap have exchanged their positions. */
+static uint32_t dfi_perm_flat(uint32_t f, uint32_t user, uint32_t partner)
+{
+    if (f == user) {
+        return partner;
+    }
+    if (f == partner) {
+        return user;
+    }
+    return f;
+}
+
+/* Bit `a` and bit `b` of `bits` exchanged. */
+static uint32_t dfi_swap_bits(uint32_t bits, uint32_t a, uint32_t b)
+{
+    const uint32_t ba = (bits >> a) & 1u;
+    const uint32_t bb = (bits >> b) & 1u;
+    return (bits & ~((1u << a) | (1u << b))) | (ba << a) | (bb << b);
+}
+
+/* The run's scratch that belongs to a Pokemon, not to its slot, moves with it on a swap of two positions. Battle.swapPosition
+ * (sim/battle.ts:1588-1607) moves the Pokemon objects and leaves every field of the Pokemon alone, and the Pokemon's own speed is
+ * the speed it had at its last updateSpeed (sim/pokemon.ts:556-558, `this.speed = this.getActionSpeed()`). So the cached speed
+ * (speed_seen: dfi_each_order, the Lightning Rod comparison, the ejectors, the residual order) moves with the Pokemon; so do its
+ * residual HP, its queued faint, and the drag and lock bits. The slot-bound parts of the run stay where they are. */
+static void dfi_run_swap_scratch(dfi_run *r, uint32_t user, uint32_t partner)
+{
+    uint32_t t = r->speed_seen[user];
+    r->speed_seen[user] = r->speed_seen[partner];
+    r->speed_seen[partner] = t;
+    t = r->residual_hp[user];
+    r->residual_hp[user] = r->residual_hp[partner];
+    r->residual_hp[partner] = t;
+    for (uint32_t i = 0u; i < r->faint_count && i < DFI_POSITIONS; ++i) {
+        r->faint_queue[i] = dfi_perm_flat(r->faint_queue[i], user, partner);
+    }
+    r->last_fainted = dfi_perm_flat(r->last_fainted, user, partner);
+    r->last_faint_by = dfi_perm_flat(r->last_faint_by, user, partner);
+    r->drag_pending = dfi_swap_bits(r->drag_pending, user, partner);
+    r->lock_restarted = dfi_swap_bits(r->lock_restarted, user, partner);
+}
+
 /* The swap of Ally Switch (sim/battle.ts swapPosition, sim/battle.ts:1588-1607; step G80, decision 0044 section 2). The two slots
  * of the user's side exchange their occupant with everything that goes with it: the slot record (stages, flags, stall, confusion,
  * charge, locked move, move actions, switch flag, activation id), and the position's tail (the moves, the Follow Me and Protect
@@ -4606,6 +4648,7 @@ static void dfi_ally_switch_swap(dfi_run *r, uint32_t user, uint32_t partner)
             q->slot = (uint8_t)us;
         }
     }
+    dfi_run_swap_scratch(r, user, partner);
     const duoforge_event e = dfi_ev(DUOFORGE_EVENT_SWAP, user, DUOFORGE_CAUSE_MOVE, DFI_MOVE_ALLYSWITCH, partner);
     dfi_emit(r, &e);
 }
