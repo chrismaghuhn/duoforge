@@ -5292,8 +5292,17 @@ static duoforge_status dfi_run_substitute(dfi_run *r, uint32_t user)
     e.detail = (uint8_t)DUOFORGE_VOLATILE_SUBSTITUTE;
     dfi_emit(r, &e);
     /* onHit: the -damage line of the user has no [from] (sim/battle.ts directDamage, default branch) */
-    /* the Substitute cost is directDamage (data/moves.ts:18325): no HURT_THIS_TURN (G88) */
-    return dfi_deal_ex(r, user, quarter == 0u ? 1u : quarter, DUOFORGE_CAUSE_NONE, 0u, DUOFORGE_NO_POSITION, false);
+    /* onHit: the cost, inside spreadMoveHit, before the hit loop's Update (data/mods/champions/scripts.ts:537), and the
+     * Update after the damage check (:574): both run on this success path, which gives the status result true. The two
+     * fail paths above (EXISTS and WEAK) return NOT_FAIL from onTryHit (data/moves.ts:18314-18321); hitStepTryHitEvent keeps
+     * that result as '' and the step loop drops the target before hitStepMoveHitLoop (sim/battle-actions.ts:602-611 the
+     * loop and its break, 643-652 hitStepTryHitEvent, 577 the hit-loop step), so neither fail path runs an Update. dfi_status_hit_end is that pair of Updates (plus the faint check).
+     * The cost is directDamage (data/moves.ts:18325): no HURT_THIS_TURN (G88, decision 0046). */
+    const duoforge_status cost = dfi_deal_ex(r, user, quarter == 0u ? 1u : quarter, DUOFORGE_CAUSE_NONE, 0u, DUOFORGE_NO_POSITION, false);
+    if (cost != DUOFORGE_OK) {
+        return cost;
+    }
+    return dfi_status_hit_end(r);
 }
 
 /* The Substitute of a target takes a hit of a move (decision 0032, data/moves.ts:18341-18366: onTryPrimaryHit, run for every
