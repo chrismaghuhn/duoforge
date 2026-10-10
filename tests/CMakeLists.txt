@@ -687,13 +687,13 @@ endif()
 # The Python package (M7, decision 0013), run with DUOFORGE_PYTHON; without
 # an interpreter each test reports skipped instead of passing silently.
 
-foreach(_py layout lib equivalence recipes policies_features example learn_numpy live_unit live_client replay_unit openings book expert_data expert_teacher expert_contract expert_eval ticks book_preview preview_search data batch_setups learn_v2_numpy teams features_ext bc_numpy encode_c search_numpy search_expand repo_hygiene view vgcpastes_engine perft)
+foreach(_py layout lib equivalence recipes policies_features example learn_numpy live_unit live_client replay_unit openings book expert_data expert_teacher expert_contract expert_eval ticks book_preview preview_search data batch_setups learn_v2_numpy teams features_ext bc_numpy encode_c search_numpy search_expand repo_hygiene view vgcpastes_engine perft state_layout)
     if(DUOFORGE_PYTHON)
         add_test(NAME duoforge.python.${_py}
             COMMAND "${DUOFORGE_PYTHON}" -m unittest -v python.tests.test_${_py}
             WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}")
         set_tests_properties(duoforge.python.${_py} PROPERTIES LABELS python TIMEOUT 600 ENVIRONMENT
-            "DUOFORGE_LIBRARY=$<TARGET_FILE:duoforge_shared>;DUOFORGE_LAYOUT_DUMP=$<TARGET_FILE:duoforge_layout_dump>;PYTHONPATH=${PROJECT_SOURCE_DIR}/python;PYTHONDONTWRITEBYTECODE=1")
+            "DUOFORGE_LIBRARY=$<TARGET_FILE:duoforge_shared>;DUOFORGE_LAYOUT_DUMP=$<TARGET_FILE:duoforge_layout_dump>;DUOFORGE_STATE_LAYOUT_DUMP=$<TARGET_FILE:duoforge_state_layout_dump>;PYTHONPATH=${PROJECT_SOURCE_DIR}/python;PYTHONDONTWRITEBYTECODE=1")
     else()
         add_test(NAME duoforge.python.${_py}
             COMMAND "${CMAKE_COMMAND}" -E echo "DUOFORGE_SKIP: DUOFORGE_PYTHON is empty")
