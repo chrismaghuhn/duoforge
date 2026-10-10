@@ -180,6 +180,10 @@ Specs in `tests/reference/specs/g82_*` (teams checked against `legal_pool.json` 
 
 ## 8. Blocked on encoder 6 (decision of HauptSession, 2026-10-10)
 
+**Follow-up after the #329 merge (HauptSession):** G82 needs exactly one entry in the X list `DUOFORGE_VIEWEXT_RESERVE_OWN` in
+`include/duoforge/duoforge.h`, next to the bit definition: `X(RESERVE_VOLATILES, 22u, HEALING_WISH)`. A header test checks it.
+`src/encode/encode.c` stays untouched by G82 (only the family-table entry for feature 43, done by the lead's merge rule).
+
 The view feature 43 (`DUOFORGE_VIEWEXT_FEATURE_HEALING_WISH`, COUNT 44) breaks the C encoder's version-5 size check
 (`src/encode/encode.c:63` requires `DUOFORGE_VIEWEXT_FEATURE_COUNT == 43u`). Decision (B): G82 waits for encoder 6 (#329).
 #329 makes the C encoder path for versions up to 5 generic (the size check accepts COUNT above 43; a state with feature 43 or
