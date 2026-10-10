@@ -1414,8 +1414,10 @@ function checkFormes(dex, validator, rows, moves, abilities) {
             continue;
         }
         const learnBit = (number) => ((row.bytes[number >> 3] >> (number & 7)) & 1) === 1;
-        if (species.isMega) {
-            expect(row.id + ' (Mega) learnable bytes', row.bytes, row.bytes.map(() => 0));
+        // A battle-only forme (the Blade of Stance Change, step G66, decision 0040) is held by no set, like a Mega forme: no
+        // learnable move (the validator's Aegislash moves belong to the Shield's set), its one legal ability.
+        if (species.isMega || species.battleOnly) {
+            expect(row.id + ' (Mega or battle-only) learnable bytes', row.bytes, row.bytes.map(() => 0));
             expect(row.id + ' (Mega) abilities', row.abilities, [Object.values(species.abilities).map((a) => dex.abilities.get(a).id)[0]]);
             expect(row.id + ' (Mega) declares one ability', Object.values(species.abilities).length, 1);
             continue;
