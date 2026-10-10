@@ -5854,7 +5854,7 @@ static const df_tb_stop tb_g71_cute_charm_contact[] = {
 static const df_tb_stop tb_g71_genderless[] = {
     {0u, 0u, 2u, 3u, {6u, 6u}, {1092u, 1142u}, {0x4059000000000000ull, 0x4059000000000000ull}},
     {1u, 0u, 2u, 3u, {4u, 4u}, {713u, 743u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
-    {2u, 0u, 2u, 2u, {4u, 4u}, {676u, 743u}, {0x404fce930288df0cull, 0x4050aaaaaaaaaaabull}},
+    {2u, 0u, 2u, 2u, {4u, 4u}, {673u, 743u}, {0x404faee41e6a7498ull, 0x4050aaaaaaaaaaabull}},
 };
 static const df_tb_stop tb_g71_herb[] = {
     {0u, 0u, 2u, 3u, {6u, 6u}, {1092u, 1148u}, {0x4059000000000000ull, 0x4059000000000000ull}},
@@ -5870,7 +5870,7 @@ static const df_tb_stop tb_g71_moves_through[] = {
 static const df_tb_stop tb_g71_oblivious[] = {
     {0u, 0u, 2u, 3u, {6u, 6u}, {1092u, 1148u}, {0x4059000000000000ull, 0x4059000000000000ull}},
     {1u, 0u, 2u, 3u, {4u, 4u}, {713u, 749u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
-    {2u, 0u, 2u, 2u, {4u, 4u}, {699u, 749u}, {0x405060bd410e5cf0ull, 0x4050aaaaaaaaaaabull}},
+    {2u, 0u, 2u, 2u, {4u, 4u}, {698u, 749u}, {0x40505b75705ea087ull, 0x4050aaaaaaaaaaabull}},
 };
 static const df_tb_stop tb_g71_same_gender[] = {
     {0u, 0u, 2u, 3u, {6u, 6u}, {1092u, 1148u}, {0x4059000000000000ull, 0x4059000000000000ull}},

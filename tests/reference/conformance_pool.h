@@ -8308,7 +8308,7 @@ static const df_conf_member conf_g71_genderless_members[2][6] = {
 };
 static const df_conf_step conf_g71_genderless_steps[] = {
     {1u, 1u, 1u, 16713u, 0u, 1u, 2u, 0u, {{0u, 1u, 2u, 3u, 0u, 0u}, {0u, 1u, 2u, 3u, 0u, 0u}}, {{{0u, 0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u, 0u}}, {{0u, 0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u, 0u}}}, {{0u, 1u}, {0u, 1u}}, {0u, 1u, 2u, 3u}, {0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u}, {{15u, 15u}, {15u, 15u}}, {{{1u, 175u, {12u, 8u, 8u, 20u}, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u, 0u, 255u, 0u, 0u, 1u, 1u, 100u, 0u, 0u, {12u, 8u, 8u, 20u}, 0u}, {1u, 202u, {20u, 12u, 16u, 16u}, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u, 0u, 255u, 0u, 0u, 1u, 1u, 100u, 0u, 0u, {20u, 12u, 16u, 16u}, 0u}, {1u, 179u, {8u, 16u, 20u, 8u}, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u, 0u, 255u, 0u, 0u, 1u, 0u, 0u, 0u, 0u, {8u, 16u, 20u, 8u}, 0u}, {1u, 157u, {8u, 16u, 20u, 12u}, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u, 0u, 255u, 0u, 0u, 1u, 0u, 0u, 0u, 0u, {8u, 16u, 20u, 12u}, 0u}, {0u, 0u, {0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u, 0u, 0u, 0u}, 0u, 0u, 0u, 0u, 0u, 255u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, {0u, 0u, 0u, 0u}, 0u}, {0u, 0u, {0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u, 0u, 0u, 0u}, 0u, 0u, 0u, 0u, 0u, 255u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, {0u, 0u, 0u, 0u}, 0u}}, {{1u, 196u, {12u, 8u, 8u, 12u}, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u, 0u, 255u, 0u, 0u, 1u, 1u, 100u, 0u, 0u, {12u, 8u, 8u, 12u}, 0u}, {1u, 211u, {16u, 16u, 16u, 8u}, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u, 0u, 255u, 0u, 0u, 1u, 1u, 100u, 0u, 0u, {16u, 16u, 16u, 8u}, 0u}, {1u, 179u, {8u, 16u, 20u, 8u}, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u, 0u, 255u, 0u, 0u, 1u, 0u, 0u, 0u, 0u, {8u, 16u, 20u, 8u}, 0u}, {1u, 157u, {8u, 16u, 20u, 12u}, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u, 0u, 255u, 0u, 0u, 1u, 0u, 0u, 0u, 0u, {8u, 16u, 20u, 12u}, 0u}, {0u, 0u, {0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u, 0u, 0u, 0u}, 0u, 0u, 0u, 0u, 0u, 255u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, {0u, 0u, 0u, 0u}, 0u}, {0u, 0u, {0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u, 0u, 0u, 0u}, 0u, 0u, 0u, 0u, 0u, 255u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, {0u, 0u, 0u, 0u}, 0u}}}, {78872u, 78877u}, {5u, 5u}},  /* 2 draws dropped */
-    {0u, 1u, 1u, 16713u, 4u, 2u, 2u, 0u, {{0u, 0u, 0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u, 0u, 0u}}, {{{1u, 1u, 255u, 0u, 0u}, {1u, 0u, 255u, 0u, 0u}}, {{1u, 0u, 1u, 0u, 0u}, {1u, 3u, 255u, 0u, 0u}}}, {{0u, 1u}, {0u, 1u}}, {255u, 255u, 255u, 255u}, {0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u}, {{15u, 15u}, {15u, 15u}}, {{{1u, 175u, {12u, 7u, 8u, 20u}, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 1u, 0u, 0u, 0u, 0u, 255u, 0u, 0u, 1u, 1u, 100u, 0u, 0u, {12u, 7u, 8u, 20u}, 0u}, {1u, 165u, {19u, 12u, 16u, 16u}, {7u, 7u, 6u, 6u, 6u, 7u, 6u}, 0u, 0u, 0u, 0u, 0u, 255u, 0u, 0u, 1u, 1u, 81u, 0u, 0u, {19u, 12u, 16u, 16u}, 0u}, {1u, 179u, {8u, 16u, 20u, 8u}, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u, 0u, 255u, 0u, 0u, 1u, 0u, 0u, 0u, 0u, {8u, 16u, 20u, 8u}, 0u}, {1u, 157u, {8u, 16u, 20u, 12u}, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u, 0u, 255u, 0u, 0u, 1u, 0u, 0u, 0u, 0u, {8u, 16u, 20u, 12u}, 0u}, {0u, 0u, {0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u, 0u, 0u, 0u}, 0u, 0u, 0u, 0u, 0u, 255u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, {0u, 0u, 0u, 0u}, 0u}, {0u, 0u, {0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u, 0u, 0u, 0u}, 0u, 0u, 0u, 0u, 0u, 255u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, {0u, 0u, 0u, 0u}, 0u}}, {{1u, 196u, {11u, 8u, 8u, 12u}, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u, 0u, 255u, 0u, 0u, 1u, 1u, 100u, 0u, 0u, {11u, 8u, 8u, 12u}, 0u}, {1u, 211u, {16u, 16u, 16u, 7u}, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 1u, 0u, 0u, 0u, 0u, 255u, 0u, 0u, 1u, 1u, 100u, 0u, 0u, {16u, 16u, 16u, 7u}, 0u}, {1u, 179u, {8u, 16u, 20u, 8u}, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u, 0u, 255u, 0u, 0u, 1u, 0u, 0u, 0u, 0u, {8u, 16u, 20u, 8u}, 0u}, {1u, 157u, {8u, 16u, 20u, 12u}, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u, 0u, 255u, 0u, 0u, 1u, 0u, 0u, 0u, 0u, {8u, 16u, 20u, 12u}, 0u}, {0u, 0u, {0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u, 0u, 0u, 0u}, 0u, 0u, 0u, 0u, 0u, 255u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, {0u, 0u, 0u, 0u}, 0u}, {0u, 0u, {0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u, 0u, 0u, 0u}, 0u, 0u, 0u, 0u, 0u, 255u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, {0u, 0u, 0u, 0u}, 0u}}}, {78882u, 78894u}, {12u, 12u}},  /* 2 draws dropped */
+    {0u, 1u, 1u, 16713u, 4u, 2u, 2u, 0u, {{0u, 0u, 0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u, 0u, 0u}}, {{{1u, 1u, 255u, 0u, 0u}, {1u, 0u, 255u, 0u, 0u}}, {{1u, 0u, 1u, 0u, 0u}, {1u, 3u, 255u, 0u, 0u}}}, {{0u, 1u}, {0u, 1u}}, {255u, 255u, 255u, 255u}, {0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u}, {{15u, 15u}, {15u, 15u}}, {{{1u, 175u, {12u, 7u, 8u, 20u}, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 1u, 0u, 0u, 0u, 0u, 255u, 0u, 0u, 1u, 1u, 100u, 0u, 0u, {12u, 7u, 8u, 20u}, 0u}, {1u, 162u, {19u, 12u, 16u, 16u}, {7u, 7u, 6u, 6u, 6u, 7u, 6u}, 0u, 0u, 0u, 0u, 0u, 255u, 0u, 0u, 1u, 1u, 80u, 0u, 0u, {19u, 12u, 16u, 16u}, 0u}, {1u, 179u, {8u, 16u, 20u, 8u}, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u, 0u, 255u, 0u, 0u, 1u, 0u, 0u, 0u, 0u, {8u, 16u, 20u, 8u}, 0u}, {1u, 157u, {8u, 16u, 20u, 12u}, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u, 0u, 255u, 0u, 0u, 1u, 0u, 0u, 0u, 0u, {8u, 16u, 20u, 12u}, 0u}, {0u, 0u, {0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u, 0u, 0u, 0u}, 0u, 0u, 0u, 0u, 0u, 255u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, {0u, 0u, 0u, 0u}, 0u}, {0u, 0u, {0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u, 0u, 0u, 0u}, 0u, 0u, 0u, 0u, 0u, 255u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, {0u, 0u, 0u, 0u}, 0u}}, {{1u, 196u, {11u, 8u, 8u, 12u}, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u, 0u, 255u, 0u, 0u, 1u, 1u, 100u, 0u, 0u, {11u, 8u, 8u, 12u}, 0u}, {1u, 211u, {16u, 16u, 16u, 7u}, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 1u, 0u, 0u, 0u, 0u, 255u, 0u, 0u, 1u, 1u, 100u, 0u, 0u, {16u, 16u, 16u, 7u}, 0u}, {1u, 179u, {8u, 16u, 20u, 8u}, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u, 0u, 255u, 0u, 0u, 1u, 0u, 0u, 0u, 0u, {8u, 16u, 20u, 8u}, 0u}, {1u, 157u, {8u, 16u, 20u, 12u}, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u, 0u, 255u, 0u, 0u, 1u, 0u, 0u, 0u, 0u, {8u, 16u, 20u, 12u}, 0u}, {0u, 0u, {0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u, 0u, 0u, 0u}, 0u, 0u, 0u, 0u, 0u, 255u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, {0u, 0u, 0u, 0u}, 0u}, {0u, 0u, {0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u, 0u, 0u, 0u}, 0u, 0u, 0u, 0u, 0u, 255u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, {0u, 0u, 0u, 0u}, 0u}}}, {78882u, 78894u}, {12u, 12u}},  /* 2 draws dropped */
 };
 /* g71_herb: G71 evidence: herb */
 static const df_conf_member conf_g71_herb_members[2][6] = {
@@ -8336,7 +8336,7 @@ static const df_conf_member conf_g71_oblivious_members[2][6] = {
 };
 static const df_conf_step conf_g71_oblivious_steps[] = {
     {1u, 1u, 1u, 16735u, 0u, 1u, 2u, 0u, {{0u, 1u, 2u, 3u, 0u, 0u}, {0u, 1u, 2u, 3u, 0u, 0u}}, {{{0u, 0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u, 0u}}, {{0u, 0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u, 0u}}}, {{0u, 1u}, {0u, 1u}}, {0u, 1u, 2u, 3u}, {0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u}, {{15u, 15u}, {15u, 15u}}, {{{1u, 175u, {12u, 8u, 8u, 20u}, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u, 0u, 255u, 0u, 0u, 1u, 1u, 100u, 0u, 0u, {12u, 8u, 8u, 20u}, 0u}, {1u, 202u, {20u, 12u, 16u, 16u}, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u, 0u, 255u, 0u, 0u, 1u, 1u, 100u, 0u, 0u, {20u, 12u, 16u, 16u}, 0u}, {1u, 179u, {8u, 16u, 20u, 8u}, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u, 0u, 255u, 0u, 0u, 1u, 0u, 0u, 0u, 0u, {8u, 16u, 20u, 8u}, 0u}, {1u, 157u, {8u, 16u, 20u, 12u}, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u, 0u, 255u, 0u, 0u, 1u, 0u, 0u, 0u, 0u, {8u, 16u, 20u, 12u}, 0u}, {0u, 0u, {0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u, 0u, 0u, 0u}, 0u, 0u, 0u, 0u, 0u, 255u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, {0u, 0u, 0u, 0u}, 0u}, {0u, 0u, {0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u, 0u, 0u, 0u}, 0u, 0u, 0u, 0u, 0u, 255u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, {0u, 0u, 0u, 0u}, 0u}}, {{1u, 202u, {12u, 12u, 20u, 8u}, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u, 0u, 255u, 0u, 0u, 1u, 1u, 100u, 0u, 0u, {12u, 12u, 20u, 8u}, 0u}, {1u, 211u, {16u, 16u, 16u, 8u}, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u, 0u, 255u, 0u, 0u, 1u, 1u, 100u, 0u, 0u, {16u, 16u, 16u, 8u}, 0u}, {1u, 179u, {8u, 16u, 20u, 8u}, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u, 0u, 255u, 0u, 0u, 1u, 0u, 0u, 0u, 0u, {8u, 16u, 20u, 8u}, 0u}, {1u, 157u, {8u, 16u, 20u, 12u}, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u, 0u, 255u, 0u, 0u, 1u, 0u, 0u, 0u, 0u, {8u, 16u, 20u, 12u}, 0u}, {0u, 0u, {0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u, 0u, 0u, 0u}, 0u, 0u, 0u, 0u, 0u, 255u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, {0u, 0u, 0u, 0u}, 0u}, {0u, 0u, {0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u, 0u, 0u, 0u}, 0u, 0u, 0u, 0u, 0u, 255u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, {0u, 0u, 0u, 0u}, 0u}}}, {79036u, 79041u}, {5u, 5u}},  /* 2 draws dropped */
-    {0u, 1u, 1u, 16735u, 4u, 2u, 2u, 0u, {{0u, 0u, 0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u, 0u, 0u}}, {{{1u, 1u, 255u, 0u, 0u}, {1u, 0u, 255u, 0u, 0u}}, {{1u, 0u, 1u, 0u, 0u}, {1u, 3u, 255u, 0u, 0u}}}, {{0u, 1u}, {0u, 1u}}, {255u, 255u, 255u, 255u}, {0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u}, {{15u, 15u}, {15u, 15u}}, {{{1u, 175u, {12u, 7u, 8u, 20u}, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 1u, 0u, 0u, 0u, 0u, 255u, 0u, 0u, 1u, 1u, 100u, 0u, 0u, {12u, 7u, 8u, 20u}, 0u}, {1u, 188u, {19u, 12u, 16u, 16u}, {7u, 7u, 6u, 6u, 6u, 7u, 6u}, 0u, 0u, 0u, 0u, 0u, 255u, 0u, 0u, 1u, 1u, 93u, 0u, 0u, {19u, 12u, 16u, 16u}, 0u}, {1u, 179u, {8u, 16u, 20u, 8u}, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u, 0u, 255u, 0u, 0u, 1u, 0u, 0u, 0u, 0u, {8u, 16u, 20u, 8u}, 0u}, {1u, 157u, {8u, 16u, 20u, 12u}, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u, 0u, 255u, 0u, 0u, 1u, 0u, 0u, 0u, 0u, {8u, 16u, 20u, 12u}, 0u}, {0u, 0u, {0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u, 0u, 0u, 0u}, 0u, 0u, 0u, 0u, 0u, 255u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, {0u, 0u, 0u, 0u}, 0u}, {0u, 0u, {0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u, 0u, 0u, 0u}, 0u, 0u, 0u, 0u, 0u, 255u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, {0u, 0u, 0u, 0u}, 0u}}, {{1u, 202u, {11u, 12u, 20u, 8u}, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u, 0u, 255u, 0u, 0u, 1u, 1u, 100u, 0u, 0u, {11u, 12u, 20u, 8u}, 0u}, {1u, 211u, {16u, 16u, 16u, 7u}, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 1u, 0u, 0u, 0u, 0u, 255u, 0u, 0u, 1u, 1u, 100u, 0u, 0u, {16u, 16u, 16u, 7u}, 0u}, {1u, 179u, {8u, 16u, 20u, 8u}, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u, 0u, 255u, 0u, 0u, 1u, 0u, 0u, 0u, 0u, {8u, 16u, 20u, 8u}, 0u}, {1u, 157u, {8u, 16u, 20u, 12u}, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u, 0u, 255u, 0u, 0u, 1u, 0u, 0u, 0u, 0u, {8u, 16u, 20u, 12u}, 0u}, {0u, 0u, {0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u, 0u, 0u, 0u}, 0u, 0u, 0u, 0u, 0u, 255u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, {0u, 0u, 0u, 0u}, 0u}, {0u, 0u, {0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u, 0u, 0u, 0u}, 0u, 0u, 0u, 0u, 0u, 255u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, {0u, 0u, 0u, 0u}, 0u}}}, {79046u, 79058u}, {12u, 12u}},  /* 2 draws dropped */
+    {0u, 1u, 1u, 16735u, 4u, 2u, 2u, 0u, {{0u, 0u, 0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u, 0u, 0u}}, {{{1u, 1u, 255u, 0u, 0u}, {1u, 0u, 255u, 0u, 0u}}, {{1u, 0u, 1u, 0u, 0u}, {1u, 3u, 255u, 0u, 0u}}}, {{0u, 1u}, {0u, 1u}}, {255u, 255u, 255u, 255u}, {0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u}, {{15u, 15u}, {15u, 15u}}, {{{1u, 175u, {12u, 7u, 8u, 20u}, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 1u, 0u, 0u, 0u, 0u, 255u, 0u, 0u, 1u, 1u, 100u, 0u, 0u, {12u, 7u, 8u, 20u}, 0u}, {1u, 187u, {19u, 12u, 16u, 16u}, {7u, 7u, 6u, 6u, 6u, 7u, 6u}, 0u, 0u, 0u, 0u, 0u, 255u, 0u, 0u, 1u, 1u, 92u, 0u, 0u, {19u, 12u, 16u, 16u}, 0u}, {1u, 179u, {8u, 16u, 20u, 8u}, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u, 0u, 255u, 0u, 0u, 1u, 0u, 0u, 0u, 0u, {8u, 16u, 20u, 8u}, 0u}, {1u, 157u, {8u, 16u, 20u, 12u}, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u, 0u, 255u, 0u, 0u, 1u, 0u, 0u, 0u, 0u, {8u, 16u, 20u, 12u}, 0u}, {0u, 0u, {0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u, 0u, 0u, 0u}, 0u, 0u, 0u, 0u, 0u, 255u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, {0u, 0u, 0u, 0u}, 0u}, {0u, 0u, {0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u, 0u, 0u, 0u}, 0u, 0u, 0u, 0u, 0u, 255u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, {0u, 0u, 0u, 0u}, 0u}}, {{1u, 202u, {11u, 12u, 20u, 8u}, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u, 0u, 255u, 0u, 0u, 1u, 1u, 100u, 0u, 0u, {11u, 12u, 20u, 8u}, 0u}, {1u, 211u, {16u, 16u, 16u, 7u}, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 1u, 0u, 0u, 0u, 0u, 255u, 0u, 0u, 1u, 1u, 100u, 0u, 0u, {16u, 16u, 16u, 7u}, 0u}, {1u, 179u, {8u, 16u, 20u, 8u}, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u, 0u, 255u, 0u, 0u, 1u, 0u, 0u, 0u, 0u, {8u, 16u, 20u, 8u}, 0u}, {1u, 157u, {8u, 16u, 20u, 12u}, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u, 0u, 255u, 0u, 0u, 1u, 0u, 0u, 0u, 0u, {8u, 16u, 20u, 12u}, 0u}, {0u, 0u, {0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u, 0u, 0u, 0u}, 0u, 0u, 0u, 0u, 0u, 255u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, {0u, 0u, 0u, 0u}, 0u}, {0u, 0u, {0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u, 0u, 0u, 0u}, 0u, 0u, 0u, 0u, 0u, 255u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, {0u, 0u, 0u, 0u}, 0u}}}, {79046u, 79058u}, {12u, 12u}},  /* 2 draws dropped */
 };
 /* g71_same_gender: G71 evidence: same_gender */
 static const df_conf_member conf_g71_same_gender_members[2][6] = {
@@ -25785,10 +25785,10 @@ static const dfi_tape_entry conf_tape[] = {
     {2u, 0u, 100u, 8u},
     {3u, 0u, 24u, 11u},
     {4u, 0u, 16u, 2u},
-    {2u, 0u, 100u, 15u},
-    {3u, 0u, 24u, 21u},
-    {4u, 0u, 16u, 9u},
-    {24u, 0u, 10u, 9u},
+    {2u, 0u, 100u, 56u},
+    {3u, 0u, 24u, 6u},
+    {4u, 0u, 16u, 2u},
+    {24u, 0u, 10u, 0u},
     {2u, 0u, 100u, 8u},
     {3u, 0u, 24u, 0u},
     {4u, 0u, 16u, 9u},
@@ -25807,10 +25807,10 @@ static const dfi_tape_entry conf_tape[] = {
     {4u, 0u, 16u, 3u},
     {5u, 0u, 100u, 97u},
     {24u, 0u, 10u, 4u},
-    {2u, 0u, 100u, 15u},
-    {3u, 0u, 24u, 21u},
-    {4u, 0u, 16u, 9u},
-    {24u, 0u, 10u, 9u},
+    {2u, 0u, 100u, 56u},
+    {3u, 0u, 24u, 6u},
+    {4u, 0u, 16u, 2u},
+    {24u, 0u, 10u, 0u},
     {2u, 0u, 100u, 15u},
     {3u, 0u, 24u, 21u},
     {4u, 0u, 16u, 9u},
@@ -106305,7 +106305,7 @@ static const duoforge_event conf_events[] = {
     {16u, 1u, 255u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 1u, 1u, 0u, {0u, 0u}},
     {16u, 1u, 255u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 5u, 1u, 0u, {0u, 0u}},
     {3u, 2u, 1u, 0u, 177u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, {0u, 0u}},
-    {4u, 1u, 255u, 0u, 0u, 0u, 165u, 202u, 1u, 0u, 0u, 0u, 0u, 0u, {0u, 0u}},
+    {4u, 1u, 255u, 0u, 0u, 0u, 162u, 202u, 1u, 0u, 0u, 0u, 0u, 0u, {0u, 0u}},
     {36u, 255u, 255u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, {0u, 0u}},
     {1u, 255u, 255u, 0u, 2u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, {0u, 0u}},
     {3u, 3u, 3u, 0u, 7u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, {0u, 0u}},
@@ -106317,7 +106317,7 @@ static const duoforge_event conf_events[] = {
     {16u, 1u, 255u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 1u, 1u, 0u, {0u, 0u}},
     {16u, 1u, 255u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 5u, 1u, 0u, {0u, 0u}},
     {3u, 2u, 1u, 0u, 177u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, {0u, 0u}},
-    {4u, 1u, 255u, 0u, 0u, 0u, 81u, 100u, 2u, 0u, 0u, 0u, 0u, 0u, {0u, 0u}},
+    {4u, 1u, 255u, 0u, 0u, 0u, 80u, 100u, 2u, 0u, 0u, 0u, 0u, 0u, {0u, 0u}},
     {36u, 255u, 255u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, {0u, 0u}},
     {1u, 255u, 255u, 0u, 2u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, {0u, 0u}},
     {2u, 0u, 255u, 0u, 0u, 0u, 175u, 175u, 1u, 0u, 0u, 0u, 0u, 0u, {0u, 0u}},
@@ -106469,7 +106469,7 @@ static const duoforge_event conf_events[] = {
     {16u, 1u, 255u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 1u, 1u, 0u, {0u, 0u}},
     {16u, 1u, 255u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 5u, 1u, 0u, {0u, 0u}},
     {3u, 2u, 1u, 0u, 177u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, {0u, 0u}},
-    {4u, 1u, 255u, 0u, 0u, 0u, 188u, 202u, 1u, 0u, 0u, 0u, 0u, 0u, {0u, 0u}},
+    {4u, 1u, 255u, 0u, 0u, 0u, 187u, 202u, 1u, 0u, 0u, 0u, 0u, 0u, {0u, 0u}},
     {36u, 255u, 255u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, {0u, 0u}},
     {1u, 255u, 255u, 0u, 2u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, {0u, 0u}},
     {3u, 3u, 3u, 0u, 7u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, {0u, 0u}},
@@ -106481,7 +106481,7 @@ static const duoforge_event conf_events[] = {
     {16u, 1u, 255u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 1u, 1u, 0u, {0u, 0u}},
     {16u, 1u, 255u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 5u, 1u, 0u, {0u, 0u}},
     {3u, 2u, 1u, 0u, 177u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, {0u, 0u}},
-    {4u, 1u, 255u, 0u, 0u, 0u, 93u, 100u, 2u, 0u, 0u, 0u, 0u, 0u, {0u, 0u}},
+    {4u, 1u, 255u, 0u, 0u, 0u, 92u, 100u, 2u, 0u, 0u, 0u, 0u, 0u, {0u, 0u}},
     {36u, 255u, 255u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, {0u, 0u}},
     {1u, 255u, 255u, 0u, 2u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, {0u, 0u}},
     {2u, 0u, 255u, 0u, 0u, 0u, 175u, 175u, 1u, 0u, 0u, 0u, 0u, 0u, {0u, 0u}},
