@@ -1,9 +1,9 @@
 {
  "harness": 14,
  "pin": "b2cb775b0616115b775534eaeff50300e1fc81fc",
- "spec": "g80_psychup_dragoncheer.json",
+ "spec": "g80_allyswitch_m2.json",
  "format": "gen9championsvgc2026regmc",
- "seed": "sodium,0000000000000000000000000000000000000000000000000000000000008001",
+ "seed": "sodium,00000000000000000000000000000000000000000000000000000000000000a5",
  "start": {
   "log": [
    "|gametype|doubles",
@@ -14,12 +14,12 @@
    "|rule|Species Clause: Limit one of each Pokémon",
    "|rule|Item Clause: Limit 1 of each item",
    "|clearpoke",
-   "|poke|p1|Salamence, L50, M|",
-   "|poke|p1|Garchomp, L50, M|",
-   "|poke|p1|Gardevoir, L50, F|",
-   "|poke|p1|Audino, L50, F|",
    "|poke|p1|Chimecho, L50, F|",
+   "|poke|p1|Audino, L50, F|",
+   "|poke|p1|Gardevoir, L50, F|",
    "|poke|p1|Milotic, L50, F|",
+   "|poke|p1|Garchomp, L50, M|",
+   "|poke|p1|Salamence, L50, M|",
    "|poke|p2|Malamar, L50, M|",
    "|poke|p2|Spiritomb, L50, M|",
    "|poke|p2|Kingambit, L50, M|",
@@ -58,12 +58,12 @@
      ],
      "pokemon": [
       {
-       "species": "Salamence",
-       "set_species": "Salamence",
+       "species": "Chimecho",
+       "set_species": "Chimecho",
        "mega": 0,
        "switch_flag": 0,
-       "hp": 202,
-       "maxhp": 202,
+       "hp": 182,
+       "maxhp": 182,
        "item": "",
        "status": "",
        "status_time": 0,
@@ -80,20 +80,20 @@
        ],
        "pp": [
         16,
-        16,
-        16,
+        20,
+        12,
         8
        ],
        "volatiles": [],
        "locked": null
       },
       {
-       "species": "Garchomp",
-       "set_species": "Garchomp",
+       "species": "Audino",
+       "set_species": "Audino",
        "mega": 0,
        "switch_flag": 0,
-       "hp": 215,
-       "maxhp": 215,
+       "hp": 210,
+       "maxhp": 210,
        "item": "",
        "status": "",
        "status_time": 0,
@@ -111,7 +111,7 @@
        "pp": [
         16,
         12,
-        16,
+        20,
         8
        ],
        "volatiles": [],
@@ -148,66 +148,6 @@
        "locked": null
       },
       {
-       "species": "Audino",
-       "set_species": "Audino",
-       "mega": 0,
-       "switch_flag": 0,
-       "hp": 210,
-       "maxhp": 210,
-       "item": "",
-       "status": "",
-       "status_time": 0,
-       "confusion": 0,
-       "fainted": false,
-       "boosts": [
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0
-       ],
-       "pp": [
-        16,
-        12,
-        20,
-        8
-       ],
-       "volatiles": [],
-       "locked": null
-      },
-      {
-       "species": "Chimecho",
-       "set_species": "Chimecho",
-       "mega": 0,
-       "switch_flag": 0,
-       "hp": 182,
-       "maxhp": 182,
-       "item": "",
-       "status": "",
-       "status_time": 0,
-       "confusion": 0,
-       "fainted": false,
-       "boosts": [
-        0,
-        0,
-        0,
-        0,
-        0,
-        0,
-        0
-       ],
-       "pp": [
-        20,
-        12,
-        8,
-        16
-       ],
-       "volatiles": [],
-       "locked": null
-      },
-      {
        "species": "Milotic",
        "set_species": "Milotic",
        "mega": 0,
@@ -232,6 +172,66 @@
         16,
         8,
         12,
+        8
+       ],
+       "volatiles": [],
+       "locked": null
+      },
+      {
+       "species": "Garchomp",
+       "set_species": "Garchomp",
+       "mega": 0,
+       "switch_flag": 0,
+       "hp": 215,
+       "maxhp": 215,
+       "item": "",
+       "status": "",
+       "status_time": 0,
+       "confusion": 0,
+       "fainted": false,
+       "boosts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "pp": [
+        16,
+        12,
+        16,
+        8
+       ],
+       "volatiles": [],
+       "locked": null
+      },
+      {
+       "species": "Salamence",
+       "set_species": "Salamence",
+       "mega": 0,
+       "switch_flag": 0,
+       "hp": 202,
+       "maxhp": 202,
+       "item": "",
+       "status": "",
+       "status_time": 0,
+       "confusion": 0,
+       "fainted": false,
+       "boosts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "pp": [
+        16,
+        16,
+        16,
         8
        ],
        "volatiles": [],
@@ -450,20 +450,17 @@
     "|uhtmlchange|otsrequest|",
     "",
     "|split|p1",
-    "|switch|p1a: Salamence|Salamence, L50, M|202/202",
-    "|switch|p1a: Salamence|Salamence, L50, M|100/100",
+    "|switch|p1a: Chimecho|Chimecho, L50, F|182/182",
+    "|switch|p1a: Chimecho|Chimecho, L50, F|100/100",
     "|split|p1",
-    "|switch|p1b: Garchomp|Garchomp, L50, M|215/215",
-    "|switch|p1b: Garchomp|Garchomp, L50, M|100/100",
+    "|switch|p1b: Audino|Audino, L50, F|210/210",
+    "|switch|p1b: Audino|Audino, L50, F|100/100",
     "|split|p2",
     "|switch|p2a: Malamar|Malamar, L50, M|193/193",
     "|switch|p2a: Malamar|Malamar, L50, M|100/100",
     "|split|p2",
     "|switch|p2b: Spiritomb|Spiritomb, L50, M|157/157",
     "|switch|p2b: Spiritomb|Spiritomb, L50, M|100/100",
-    "|-ability|p1a: Salamence|Intimidate|boost",
-    "|-boost|p2a: Malamar|atk|1",
-    "|-unboost|p2b: Spiritomb|atk|1",
     "|-ability|p2b: Spiritomb|Pressure",
     "|turn|1"
    ],
@@ -504,12 +501,12 @@
       ],
       "pokemon": [
        {
-        "species": "Salamence",
-        "set_species": "Salamence",
+        "species": "Chimecho",
+        "set_species": "Chimecho",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 202,
-        "maxhp": 202,
+        "hp": 182,
+        "maxhp": 182,
         "item": "",
         "status": "",
         "status_time": 0,
@@ -526,20 +523,20 @@
         ],
         "pp": [
          16,
-         16,
-         16,
+         20,
+         12,
          8
         ],
         "volatiles": [],
         "locked": null
        },
        {
-        "species": "Garchomp",
-        "set_species": "Garchomp",
+        "species": "Audino",
+        "set_species": "Audino",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 215,
-        "maxhp": 215,
+        "hp": 210,
+        "maxhp": 210,
         "item": "",
         "status": "",
         "status_time": 0,
@@ -557,7 +554,7 @@
         "pp": [
          16,
          12,
-         16,
+         20,
          8
         ],
         "volatiles": [],
@@ -594,12 +591,12 @@
         "locked": null
        },
        {
-        "species": "Audino",
-        "set_species": "Audino",
+        "species": "Milotic",
+        "set_species": "Milotic",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 210,
-        "maxhp": 210,
+        "hp": 202,
+        "maxhp": 202,
         "item": "",
         "status": "",
         "status_time": 0,
@@ -616,8 +613,8 @@
         ],
         "pp": [
          16,
+         8,
          12,
-         20,
          8
         ],
         "volatiles": [],
@@ -663,7 +660,7 @@
         "confusion": 0,
         "fainted": false,
         "boosts": [
-         1,
+         0,
          0,
          0,
          0,
@@ -693,7 +690,7 @@
         "confusion": 0,
         "fainted": false,
         "boosts": [
-         -1,
+         0,
          0,
          0,
          0,
@@ -774,7 +771,7 @@
   },
   {
    "input": {
-    "p1": "move 1 -2, move 1 -1",
+    "p1": "move 1, move 1",
     "p2": "move 1 1, move 1"
    },
    "draws": [
@@ -783,46 +780,47 @@
      "context": "",
      "lo": 0,
      "hi": 100,
-     "value": 69
+     "value": 2
     },
     {
      "site": "CRIT",
      "context": "",
      "lo": 0,
      "hi": 24,
-     "value": 11
+     "value": 12
     },
     {
      "site": "DAMAGE_ROLL",
      "context": "",
      "lo": 0,
      "hi": 16,
-     "value": 8
+     "value": 12
     },
     {
      "site": "SPEED_TIE",
      "context": "field:Residual",
-     "lo": 0,
-     "hi": 2,
-     "value": 1,
+     "lo": 2,
+     "hi": 4,
+     "value": 3,
      "group": [
       "H:protect:p2b:end",
       "H:stall:p2b:end"
      ],
-     "start": 0
+     "start": 2
     }
    ],
    "log": [
     "|move|p2b: Spiritomb|Protect|p2b: Spiritomb",
     "|-singleturn|p2b: Spiritomb|Protect",
-    "|move|p1b: Garchomp|Dragon Cheer|p1a: Salamence",
-    "|-start|p1a: Salamence|move: Dragon Cheer",
-    "|move|p1a: Salamence|Dragon Cheer|p1b: Garchomp",
-    "|-start|p1b: Garchomp|move: Dragon Cheer",
-    "|move|p2a: Malamar|Foul Play|p1a: Salamence",
+    "|move|p1a: Chimecho|Ally Switch|p1a: Chimecho",
+    "|swap|p1a: Chimecho|1|[from] move: Ally Switch",
+    "|move|p1a: Audino|Ally Switch|p1a: Audino",
+    "|swap|p1a: Audino|1|[from] move: Ally Switch",
+    "|move|p2a: Malamar|Foul Play|p1a: Chimecho",
+    "|-supereffective|p1a: Chimecho|1",
     "|split|p1",
-    "|-damage|p1a: Salamence|82/202",
-    "|-damage|p1a: Salamence|40/100",
+    "|-damage|p1a: Chimecho|110/182",
+    "|-damage|p1a: Chimecho|60/100",
     "|upkeep",
     "|turn|2"
    ],
@@ -863,12 +861,12 @@
       ],
       "pokemon": [
        {
-        "species": "Salamence",
-        "set_species": "Salamence",
+        "species": "Chimecho",
+        "set_species": "Chimecho",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 82,
-        "maxhp": 202,
+        "hp": 110,
+        "maxhp": 182,
         "item": "",
         "status": "",
         "status_time": 0,
@@ -885,22 +883,22 @@
         ],
         "pp": [
          15,
-         16,
-         16,
+         20,
+         12,
          8
         ],
         "volatiles": [
-         "dragoncheer"
+         "allyswitch"
         ],
         "locked": null
        },
        {
-        "species": "Garchomp",
-        "set_species": "Garchomp",
+        "species": "Audino",
+        "set_species": "Audino",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 215,
-        "maxhp": 215,
+        "hp": 210,
+        "maxhp": 210,
         "item": "",
         "status": "",
         "status_time": 0,
@@ -918,11 +916,11 @@
         "pp": [
          15,
          12,
-         16,
+         20,
          8
         ],
         "volatiles": [
-         "dragoncheer"
+         "allyswitch"
         ],
         "locked": null
        },
@@ -957,12 +955,12 @@
         "locked": null
        },
        {
-        "species": "Audino",
-        "set_species": "Audino",
+        "species": "Milotic",
+        "set_species": "Milotic",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 210,
-        "maxhp": 210,
+        "hp": 202,
+        "maxhp": 202,
         "item": "",
         "status": "",
         "status_time": 0,
@@ -979,8 +977,8 @@
         ],
         "pp": [
          16,
+         8,
          12,
-         20,
          8
         ],
         "volatiles": [],
@@ -1026,7 +1024,7 @@
         "confusion": 0,
         "fainted": false,
         "boosts": [
-         1,
+         0,
          0,
          0,
          0,
@@ -1056,7 +1054,7 @@
         "confusion": 0,
         "fainted": false,
         "boosts": [
-         -1,
+         0,
          0,
          0,
          0,
@@ -1139,20 +1137,27 @@
   },
   {
    "input": {
-    "p1": "switch 3, move 1 -1",
-    "p2": "move 2 1, move 1"
+    "p1": "move 1, move 1",
+    "p2": "move 1 1, move 1"
    },
    "draws": [
     {
-     "site": "TRACE",
-     "context": "Update",
+     "site": "STALL",
+     "context": "StallMove",
      "lo": 0,
-     "hi": 2,
+     "hi": 3,
+     "value": 2
+    },
+    {
+     "site": "ALLY_SWITCH",
+     "context": "Restart",
+     "lo": 0,
+     "hi": 3,
      "value": 0
     },
     {
-     "site": "STALL",
-     "context": "StallMove",
+     "site": "ALLY_SWITCH",
+     "context": "Restart",
      "lo": 0,
      "hi": 3,
      "value": 0
@@ -1162,55 +1167,35 @@
      "context": "",
      "lo": 0,
      "hi": 100,
-     "value": 96
+     "value": 95
     },
     {
      "site": "CRIT",
      "context": "",
      "lo": 0,
      "hi": 24,
-     "value": 16
+     "value": 19
     },
     {
      "site": "DAMAGE_ROLL",
      "context": "",
      "lo": 0,
      "hi": 16,
-     "value": 15
-    },
-    {
-     "site": "SECONDARY",
-     "context": "",
-     "lo": 0,
-     "hi": 100,
-     "value": 77
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "field:Residual",
-     "lo": 0,
-     "hi": 2,
-     "value": 0,
-     "group": [
-      "H:stall:p2b:end",
-      "H:protect:p2b:end"
-     ],
-     "start": 0
+     "value": 1
     }
    ],
    "log": [
+    "|move|p2b: Spiritomb|Protect||[still]",
+    "|-fail|p2b: Spiritomb",
+    "|move|p1a: Chimecho|Ally Switch|p1a: Chimecho",
+    "|swap|p1a: Chimecho|1|[from] move: Ally Switch",
+    "|move|p1a: Audino|Ally Switch|p1a: Audino",
+    "|swap|p1a: Audino|1|[from] move: Ally Switch",
+    "|move|p2a: Malamar|Foul Play|p1a: Chimecho",
+    "|-supereffective|p1a: Chimecho|1",
     "|split|p1",
-    "|switch|p1a: Gardevoir|Gardevoir, L50, F|175/175",
-    "|switch|p1a: Gardevoir|Gardevoir, L50, F|100/100",
-    "|-ability|p1a: Gardevoir|Contrary|Trace|[from] ability: Trace|[of] p2a: Malamar",
-    "|move|p2b: Spiritomb|Protect|p2b: Spiritomb",
-    "|-singleturn|p2b: Spiritomb|Protect",
-    "|move|p1b: Garchomp|Dragon Cheer|p1a: Gardevoir",
-    "|-start|p1a: Gardevoir|move: Dragon Cheer",
-    "|move|p2a: Malamar|Dark Pulse|p1a: Gardevoir",
-    "|split|p1",
-    "|-damage|p1a: Gardevoir|148/175",
-    "|-damage|p1a: Gardevoir|84/100",
+    "|-damage|p1a: Chimecho|30/182",
+    "|-damage|p1a: Chimecho|16/100",
     "|upkeep",
     "|turn|3"
    ],
@@ -1251,44 +1236,12 @@
       ],
       "pokemon": [
        {
-        "species": "Gardevoir",
-        "set_species": "Gardevoir",
+        "species": "Chimecho",
+        "set_species": "Chimecho",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 148,
-        "maxhp": 175,
-        "item": "",
-        "status": "",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": false,
-        "boosts": [
-         0,
-         0,
-         0,
-         0,
-         0,
-         0,
-         0
-        ],
-        "pp": [
-         12,
-         12,
-         20,
-         20
-        ],
-        "volatiles": [
-         "dragoncheer"
-        ],
-        "locked": null
-       },
-       {
-        "species": "Garchomp",
-        "set_species": "Garchomp",
-        "mega": 0,
-        "switch_flag": 0,
-        "hp": 215,
-        "maxhp": 215,
+        "hp": 30,
+        "maxhp": 182,
         "item": "",
         "status": "",
         "status_time": 0,
@@ -1305,43 +1258,13 @@
         ],
         "pp": [
          14,
+         20,
          12,
-         16,
          8
         ],
         "volatiles": [
-         "dragoncheer"
+         "allyswitch"
         ],
-        "locked": null
-       },
-       {
-        "species": "Salamence",
-        "set_species": "Salamence",
-        "mega": 0,
-        "switch_flag": 0,
-        "hp": 82,
-        "maxhp": 202,
-        "item": "",
-        "status": "",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": false,
-        "boosts": [
-         0,
-         0,
-         0,
-         0,
-         0,
-         0,
-         0
-        ],
-        "pp": [
-         15,
-         16,
-         16,
-         8
-        ],
-        "volatiles": [],
         "locked": null
        },
        {
@@ -1366,9 +1289,71 @@
          0
         ],
         "pp": [
-         16,
+         14,
          12,
          20,
+         8
+        ],
+        "volatiles": [
+         "allyswitch"
+        ],
+        "locked": null
+       },
+       {
+        "species": "Gardevoir",
+        "set_species": "Gardevoir",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 175,
+        "maxhp": 175,
+        "item": "",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         12,
+         20,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 202,
+        "maxhp": 202,
+        "item": "",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         16,
+         8,
+         12,
          8
         ],
         "volatiles": [],
@@ -1414,7 +1399,7 @@
         "confusion": 0,
         "fainted": false,
         "boosts": [
-         1,
+         0,
          0,
          0,
          0,
@@ -1423,8 +1408,8 @@
          0
         ],
         "pp": [
-         15,
-         15,
+         14,
+         16,
          20,
          20
         ],
@@ -1444,7 +1429,7 @@
         "confusion": 0,
         "fainted": false,
         "boosts": [
-         -1,
+         0,
          0,
          0,
          0,
@@ -1457,9 +1442,7 @@
          16,
          16
         ],
-        "volatiles": [
-         "stall"
-        ],
+        "volatiles": [],
         "locked": null
        },
        {
@@ -1527,58 +1510,69 @@
   },
   {
    "input": {
-    "p1": "move 1 -2, move 1 -1",
-    "p2": "move 2 1, move 1"
+    "p1": "move 1, move 1",
+    "p2": "move 1 1, move 1"
    },
    "draws": [
     {
-     "site": "STALL",
-     "context": "StallMove",
+     "site": "ALLY_SWITCH",
+     "context": "Restart",
      "lo": 0,
      "hi": 9,
      "value": 6
+    },
+    {
+     "site": "ALLY_SWITCH",
+     "context": "Restart",
+     "lo": 0,
+     "hi": 9,
+     "value": 0
     },
     {
      "site": "ACCURACY",
      "context": "",
      "lo": 0,
      "hi": 100,
-     "value": 89
+     "value": 33
     },
     {
      "site": "CRIT",
      "context": "",
      "lo": 0,
      "hi": 24,
-     "value": 7
+     "value": 5
     },
     {
      "site": "DAMAGE_ROLL",
      "context": "",
      "lo": 0,
      "hi": 16,
-     "value": 14
+     "value": 5
     },
     {
-     "site": "SECONDARY",
-     "context": "",
-     "lo": 0,
-     "hi": 100,
-     "value": 36
+     "site": "SPEED_TIE",
+     "context": "field:Residual",
+     "lo": 1,
+     "hi": 3,
+     "value": 2,
+     "group": [
+      "H:protect:p2b:end",
+      "H:stall:p2b:end"
+     ],
+     "start": 1
     }
    ],
    "log": [
-    "|move|p2b: Spiritomb|Protect||[still]",
-    "|-fail|p2b: Spiritomb",
-    "|move|p1b: Garchomp|Dragon Cheer||[still]",
-    "|-fail|p1b: Garchomp",
-    "|move|p1a: Gardevoir|Psych Up|p1b: Garchomp",
-    "|-start|p1a: Gardevoir|move: Dragon Cheer|[silent]",
-    "|-copyboost|p1a: Gardevoir|p1b: Garchomp|[from] move: Psych Up",
-    "|move|p2a: Malamar|Dark Pulse|p1a: Gardevoir",
+    "|move|p2b: Spiritomb|Protect|p2b: Spiritomb",
+    "|-singleturn|p2b: Spiritomb|Protect",
+    "|move|p1a: Chimecho|Ally Switch||[still]",
+    "|-fail|p1a: Chimecho",
+    "|move|p1b: Audino|Ally Switch|p1b: Audino",
+    "|swap|p1b: Audino|0|[from] move: Ally Switch",
+    "|move|p2a: Malamar|Foul Play|p1a: Audino",
     "|split|p1",
-    "|-damage|p1a: Gardevoir|121/175",
-    "|-damage|p1a: Gardevoir|69/100",
+    "|-damage|p1a: Audino|182/210",
+    "|-damage|p1a: Audino|86/100",
     "|upkeep",
     "|turn|4"
    ],
@@ -1619,44 +1613,12 @@
       ],
       "pokemon": [
        {
-        "species": "Gardevoir",
-        "set_species": "Gardevoir",
+        "species": "Audino",
+        "set_species": "Audino",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 121,
-        "maxhp": 175,
-        "item": "",
-        "status": "",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": false,
-        "boosts": [
-         0,
-         0,
-         0,
-         0,
-         0,
-         0,
-         0
-        ],
-        "pp": [
-         11,
-         12,
-         20,
-         20
-        ],
-        "volatiles": [
-         "dragoncheer"
-        ],
-        "locked": null
-       },
-       {
-        "species": "Garchomp",
-        "set_species": "Garchomp",
-        "mega": 0,
-        "switch_flag": 0,
-        "hp": 215,
-        "maxhp": 215,
+        "hp": 182,
+        "maxhp": 210,
         "item": "",
         "status": "",
         "status_time": 0,
@@ -1674,20 +1636,80 @@
         "pp": [
          13,
          12,
-         16,
+         20,
          8
         ],
         "volatiles": [
-         "dragoncheer"
+         "allyswitch"
         ],
         "locked": null
        },
        {
-        "species": "Salamence",
-        "set_species": "Salamence",
+        "species": "Chimecho",
+        "set_species": "Chimecho",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 82,
+        "hp": 30,
+        "maxhp": 182,
+        "item": "",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         13,
+         20,
+         12,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Gardevoir",
+        "set_species": "Gardevoir",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 175,
+        "maxhp": 175,
+        "item": "",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         12,
+         20,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 202,
         "maxhp": 202,
         "item": "",
         "status": "",
@@ -1704,39 +1726,9 @@
          0
         ],
         "pp": [
-         15,
          16,
-         16,
-         8
-        ],
-        "volatiles": [],
-        "locked": null
-       },
-       {
-        "species": "Audino",
-        "set_species": "Audino",
-        "mega": 0,
-        "switch_flag": 0,
-        "hp": 210,
-        "maxhp": 210,
-        "item": "",
-        "status": "",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": false,
-        "boosts": [
-         0,
-         0,
-         0,
-         0,
-         0,
-         0,
-         0
-        ],
-        "pp": [
-         16,
+         8,
          12,
-         20,
          8
         ],
         "volatiles": [],
@@ -1782,7 +1774,7 @@
         "confusion": 0,
         "fainted": false,
         "boosts": [
-         1,
+         0,
          0,
          0,
          0,
@@ -1791,8 +1783,8 @@
          0
         ],
         "pp": [
-         15,
-         14,
+         13,
+         16,
          20,
          20
         ],
@@ -1812,7 +1804,7 @@
         "confusion": 0,
         "fainted": false,
         "boosts": [
-         -1,
+         0,
          0,
          0,
          0,
@@ -1822,387 +1814,6 @@
         ],
         "pp": [
          5,
-         16,
-         16
-        ],
-        "volatiles": [],
-        "locked": null
-       },
-       {
-        "species": "Kingambit",
-        "set_species": "Kingambit",
-        "mega": 0,
-        "switch_flag": 0,
-        "hp": 207,
-        "maxhp": 207,
-        "item": "",
-        "status": "",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": false,
-        "boosts": [
-         0,
-         0,
-         0,
-         0,
-         0,
-         0,
-         0
-        ],
-        "pp": [
-         12,
-         16,
-         16
-        ],
-        "volatiles": [],
-        "locked": null
-       },
-       {
-        "species": "Chimecho",
-        "set_species": "Chimecho",
-        "mega": 0,
-        "switch_flag": 0,
-        "hp": 182,
-        "maxhp": 182,
-        "item": "",
-        "status": "",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": false,
-        "boosts": [
-         0,
-         0,
-         0,
-         0,
-         0,
-         0,
-         0
-        ],
-        "pp": [
-         20,
-         12,
-         8
-        ],
-        "volatiles": [],
-        "locked": null
-       }
-      ]
-     }
-    ]
-   }
-  },
-  {
-   "input": {
-    "p1": "move 2, move 1 -1",
-    "p2": "move 2 1, move 1"
-   },
-   "draws": [
-    {
-     "site": "RANDOM_TARGET",
-     "context": "resolve",
-     "lo": 0,
-     "hi": 2,
-     "value": 1
-    },
-    {
-     "site": "RANDOM_TARGET",
-     "context": "action-speed",
-     "lo": 0,
-     "hi": 2,
-     "value": 0
-    },
-    {
-     "site": "RANDOM_TARGET",
-     "context": "action-speed",
-     "lo": 0,
-     "hi": 2,
-     "value": 1
-    },
-    {
-     "site": "RANDOM_TARGET",
-     "context": "action-speed",
-     "lo": 0,
-     "hi": 2,
-     "value": 0
-    },
-    {
-     "site": "RANDOM_TARGET",
-     "context": "action-speed",
-     "lo": 0,
-     "hi": 2,
-     "value": 0
-    },
-    {
-     "site": "RANDOM_TARGET",
-     "context": "execute:allAdjacentFoes",
-     "lo": 0,
-     "hi": 2,
-     "value": 1
-    },
-    {
-     "site": "ACCURACY",
-     "context": "",
-     "lo": 0,
-     "hi": 100,
-     "value": 75
-    },
-    {
-     "site": "CRIT",
-     "context": "",
-     "lo": 0,
-     "hi": 2,
-     "value": 0
-    },
-    {
-     "site": "DAMAGE_ROLL",
-     "context": "",
-     "lo": 0,
-     "hi": 16,
-     "value": 11
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "field:Residual",
-     "lo": 0,
-     "hi": 2,
-     "value": 1,
-     "group": [
-      "H:protect:p2b:end",
-      "H:stall:p2b:end"
-     ],
-     "start": 0
-    }
-   ],
-   "log": [
-    "|move|p2b: Spiritomb|Protect|p2b: Spiritomb",
-    "|-singleturn|p2b: Spiritomb|Protect",
-    "|move|p1b: Garchomp|Dragon Cheer||[still]",
-    "|-fail|p1b: Garchomp",
-    "|move|p1a: Gardevoir|Dazzling Gleam|p2b: Spiritomb|[spread] p2a",
-    "|-activate|p2b: Spiritomb|move: Protect",
-    "|-supereffective|p2a: Malamar|1",
-    "|-crit|p2a: Malamar",
-    "|split|p2",
-    "|-damage|p2a: Malamar|0 fnt",
-    "|-damage|p2a: Malamar|0 fnt",
-    "|faint|p2a: Malamar",
-    "|upkeep"
-   ],
-   "state": {
-    "turn": 4,
-    "ended": false,
-    "winner": "",
-    "weather": "",
-    "weather_turns": 0,
-    "terrain": "",
-    "terrain_turns": 0,
-    "trick_room": 0,
-    "sides": [
-     {
-      "request": "",
-      "conditions": [
-       0,
-       0,
-       0
-      ],
-      "enabled": [],
-      "active": [
-       0,
-       1
-      ],
-      "pokemon": [
-       {
-        "species": "Gardevoir",
-        "set_species": "Gardevoir",
-        "mega": 0,
-        "switch_flag": 0,
-        "hp": 121,
-        "maxhp": 175,
-        "item": "",
-        "status": "",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": false,
-        "boosts": [
-         0,
-         0,
-         0,
-         0,
-         0,
-         0,
-         0
-        ],
-        "pp": [
-         11,
-         10,
-         20,
-         20
-        ],
-        "volatiles": [
-         "dragoncheer"
-        ],
-        "locked": null
-       },
-       {
-        "species": "Garchomp",
-        "set_species": "Garchomp",
-        "mega": 0,
-        "switch_flag": 0,
-        "hp": 215,
-        "maxhp": 215,
-        "item": "",
-        "status": "",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": false,
-        "boosts": [
-         0,
-         0,
-         0,
-         0,
-         0,
-         0,
-         0
-        ],
-        "pp": [
-         12,
-         12,
-         16,
-         8
-        ],
-        "volatiles": [
-         "dragoncheer"
-        ],
-        "locked": null
-       },
-       {
-        "species": "Salamence",
-        "set_species": "Salamence",
-        "mega": 0,
-        "switch_flag": 0,
-        "hp": 82,
-        "maxhp": 202,
-        "item": "",
-        "status": "",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": false,
-        "boosts": [
-         0,
-         0,
-         0,
-         0,
-         0,
-         0,
-         0
-        ],
-        "pp": [
-         15,
-         16,
-         16,
-         8
-        ],
-        "volatiles": [],
-        "locked": null
-       },
-       {
-        "species": "Audino",
-        "set_species": "Audino",
-        "mega": 0,
-        "switch_flag": 0,
-        "hp": 210,
-        "maxhp": 210,
-        "item": "",
-        "status": "",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": false,
-        "boosts": [
-         0,
-         0,
-         0,
-         0,
-         0,
-         0,
-         0
-        ],
-        "pp": [
-         16,
-         12,
-         20,
-         8
-        ],
-        "volatiles": [],
-        "locked": null
-       }
-      ]
-     },
-     {
-      "request": "switch",
-      "conditions": [
-       0,
-       0,
-       0
-      ],
-      "enabled": [],
-      "active": [
-       0,
-       1
-      ],
-      "pokemon": [
-       {
-        "species": "Malamar",
-        "set_species": "Malamar",
-        "mega": 0,
-        "switch_flag": 1,
-        "hp": 0,
-        "maxhp": 193,
-        "item": "",
-        "status": "fnt",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": true,
-        "boosts": [
-         0,
-         0,
-         0,
-         0,
-         0,
-         0,
-         0
-        ],
-        "pp": [
-         15,
-         14,
-         20,
-         20
-        ],
-        "volatiles": [],
-        "locked": null
-       },
-       {
-        "species": "Spiritomb",
-        "set_species": "Spiritomb",
-        "mega": 0,
-        "switch_flag": 0,
-        "hp": 157,
-        "maxhp": 157,
-        "item": "",
-        "status": "",
-        "status_time": 0,
-        "confusion": 0,
-        "fainted": false,
-        "boosts": [
-         -1,
-         0,
-         0,
-         0,
-         0,
-         0,
-         0
-        ],
-        "pp": [
-         4,
          16,
          16
         ],

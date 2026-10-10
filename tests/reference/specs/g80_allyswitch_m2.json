@@ -1,0 +1,20 @@
+{
+  "name": "g80_allyswitch_m2",
+  "purpose": "Ally Switch (step G80, decision 0044; M2): Audino uses Ally Switch on three consecutive turns; the second and third rolls pass (1/3, then 1/9), so the level rises twice. Seed found by a search of 200 seeds (165 is the first hit of the Audino runs with pass, pass, pass).",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,00000000000000000000000000000000000000000000000000000000000000a5",
+  "teams": [
+    "Chimecho (F)\nAbility: Levitate\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nCalm Nature\n- Ally Switch\n- Calm Mind\n- Dazzling Gleam\n- Encore\n\nAudino (F)\nAbility: Regenerator\nLevel: 50\nEVs: 32 HP / 32 Def / 2 Spe\nBold Nature\n- Ally Switch\n- Stomping Tantrum\n- Helping Hand\n- Protect\n\nGardevoir (F)\nAbility: Trace\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nTimid Nature\n- Psych Up\n- Dazzling Gleam\n- Calm Mind\n- Helping Hand\n\nMilotic (F)\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 32 Def / 2 Spe\nBold Nature\n- Scald\n- Recover\n- Ice Beam\n- Protect\n\nGarchomp (M)\nAbility: Rough Skin\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Spe\nAdamant Nature\n- Dragon Cheer\n- Earthquake\n- Dragon Claw\n- Protect\n\nSalamence (M)\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Spe\nAdamant Nature\n- Dragon Cheer\n- Dragon Claw\n- Flamethrower\n- Protect",
+    "Malamar (M)\nAbility: Contrary\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Spe\nAdamant Nature\n- Foul Play\n- Dark Pulse\n- Calm Mind\n- Knock Off\n\nSpiritomb (M)\nAbility: Pressure\nLevel: 50\nEVs: 32 HP / 32 Def / 2 Spe\nCalm Nature\n- Protect\n- Dark Pulse\n- Foul Play\n\nKingambit (M)\nAbility: Pressure\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Spe\nAdamant Nature\n- Kowtow Cleave\n- Iron Head\n- Foul Play\n\nChimecho (F)\nAbility: Levitate\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nCalm Nature\n- Calm Mind\n- Dazzling Gleam\n- Encore\n\nIncineroar (M)\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Spe\nAdamant Nature\n- Fake Out\n- Flamethrower\n- Darkest Lariat\n\nCeruledge (M)\nAbility: Flash Fire\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Spe\nAdamant Nature\n- Close Combat\n- Bitter Blade\n- Bulk Up"
+  ],
+  "plan": {
+    "p1": [
+      "move 1, move 1"
+    ],
+    "p2": [
+      "move 1 1, move 1 2"
+    ],
+    "max_steps": 4
+  }
+}

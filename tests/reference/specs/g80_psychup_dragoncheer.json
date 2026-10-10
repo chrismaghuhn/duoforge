@@ -12,12 +12,13 @@
     "p1": [
       "move 1 -2, move 1",
       "switch 3, move 1",
-      "move 1 -2, move 1"
+      "move 1 -2, move 1",
+      "move 2 1, move 1"
     ],
     "p2": [
       "move 1, move 1",
       "move 2, move 1"
     ],
-    "max_steps": 4
+    "max_steps": 5
   }
 }

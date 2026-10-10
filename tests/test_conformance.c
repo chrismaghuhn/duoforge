@@ -33,7 +33,7 @@
 #include "reference/conformance_pool.h"
 #include "support/pool.h"
 #define DF_CONF_FORMES dfi_pool_formes
-#define DF_POOL_DATA_BATTLES 707u /* the recorded pool battles: the six G80 battles (g80_psychup_dragoncheer, g80_howl_soundproof, g80_allyswitch_swap, g80_allyswitch_tantrum and its two seed variants), 701 before; g72b_av_sheer_force (Alluring Voice from a Trace-copied Sheer Force), 672 of the lane A batch (incl. the three cross-row battles) and lane B G63 eight, G59 eight, G61 twelve (642 on main); main's 614 (lane A batches 1-3, G53, G55, G57), G63 eight, G59 eight and G61 twelve */
+#define DF_POOL_DATA_BATTLES 709u /* the recorded pool battles: the eight G80 battles (g80_psychup_dragoncheer, g80_howl_soundproof, g80_allyswitch_swap, g80_allyswitch_tantrum and its two seed variants, g80_allyswitch_m2, g80_mirror_sitrus), 701 before; g72b_av_sheer_force (Alluring Voice from a Trace-copied Sheer Force), 672 of the lane A batch (incl. the three cross-row battles) and lane B G63 eight, G59 eight, G61 twelve (642 on main); main's 614 (lane A batches 1-3, G53, G55, G57), G63 eight, G59 eight and G61 twelve */
 #elif defined(DF_CONFORMANCE_TEAM_C)
 #include "data/extended_tables.h"
 #include "reference/conformance_team_c.h"
