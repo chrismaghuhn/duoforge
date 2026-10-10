@@ -368,6 +368,10 @@ const dfi_support_manifest dfi_support = {
             [DFI_MOVE_SUBSTITUTE] = 1u, /* step G60 (decision 0032): the Substitute; the rows it touches are marked already and changed with it */
             [DFI_MOVE_ALLURINGVOICE] = 1u, /* step G72b (decision 0015 5ce): the secondary's confusion on a raised target */
             [DFI_MOVE_DRAGONCHEER] = 1u,   /* step G72b: the volatile's crit stage (position flags) and its start line */
+            /* Step G88 (decision 0046): Lash Out (x2 base power when the user's stat fell this turn, LOWERED) and Assurance (x2 when
+             * the target was hurt this turn, HURT). Both need a PIVOT refusal (DUOFORGE_PUBLIC_CAUSE_TURN_HISTORY). */
+            [DFI_MOVE_LASHOUT] = 1u,
+            [DFI_MOVE_ASSURANCE] = 1u,
     [DFI_MOVE_REVIVALBLESSING] = 1u,
             /* Step G42: Roost (the heal, then the Flying type is off for the turn) and Stomping Tantrum (base power x2 after a
              * FALSE last move result; the move_result of tail rev 4, decision 0015 section 7). */

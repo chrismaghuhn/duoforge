@@ -2080,7 +2080,8 @@ static duoforge_status dfi_get_damage(dfi_run *r, uint32_t user, uint32_t target
 }
 
 /* Pokemon.damage: HP never below 0; reaching 0 queues the faint. `spread` is the pin's spreadDamage path (every damage except
- * the directDamage callers: Substitute's cost, Clangorous Soul, the confusion self-hit, Struggle's recoil). Only the spread path
+ * the directDamage callers: Substitute's cost, Clangorous Soul, Struggle's recoil; the confusion self-hit is spreadDamage, see
+ * data/conditions.ts:191-194). Only the spread path
  * sets HURT_THIS_TURN (step G88, sim/battle.ts:2137-2138), and only when the occupant is still alive afterwards (the pin stores
  * target.hp, which is read as a truth value). */
 static duoforge_status dfi_deal_ex(dfi_run *r, uint32_t flat, uint32_t amount, uint32_t cause, uint32_t id2, uint32_t other,
@@ -3855,7 +3856,8 @@ static duoforge_status dfi_before_move(dfi_run *r, uint32_t user, uint32_t move_
                     dfi_use_item(r, user);
                     damage = (uint32_t)m->hp - 1u;
                 }
-                return dfi_deal_ex(r, user, damage, DUOFORGE_CAUSE_CONFUSION, 0u, DUOFORGE_NO_POSITION, false); /* directDamage */
+                /* the confusion self-hit is this.damage(...) (data/conditions.ts:191-194), a spread damage: it sets HURT (G88) */
+                return dfi_deal(r, user, damage, DUOFORGE_CAUSE_CONFUSION, 0u, DUOFORGE_NO_POSITION);
             }
         }
     }
