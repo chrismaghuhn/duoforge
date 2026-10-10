@@ -5259,7 +5259,7 @@ static duoforge_status dfi_run_substitute(dfi_run *r, uint32_t user)
  * with [still] when no switch is possible (the commanded case is unmarked), otherwise the user's slot is flagged to pivot, and
  * the switch that follows copies the leaver's volatiles (dfi_switch_in). The pin's self block skips the BeforeSwitchOut of the
  * switch; no BeforeSwitchOut handler is marked (Pursuit is not, decision 0042 section 3.4), so the engine runs none for it.
- * The refusals of decision 0042 section 6 come first, each one E_UNSUPPORTED (the cause is named here and in the test):
+ * The no-reserve failure comes first; then the refusals of decision 0042 section 6, each one E_UNSUPPORTED (the cause is named here and in the test):
  *   - Encore or Disable on the passer (decision 0042 lead's B: the pin stores a move id, the receiver may not know it);
  *   - a move lock, a two-turn charge, a recharge or Protect on the passer (the pin copies these; no pool passer has one);
  *   - Illusion on the passer's side (decision 0026, until 0026 lands: the tail struct is written by the test only).
@@ -5271,6 +5271,15 @@ static duoforge_status dfi_run_baton_pass(dfi_run *r, uint32_t user)
     const uint32_t slot = user % DUOFORGE_ACTIVE_PER_SIDE;
     const dfi_tail_pos *tp = &b->tail.sides[side].positions[slot];
     const dfi_active_slot *act = dfi_pos(b, user);
+    /* No reserve (or a commanded passer, unmarked): onHit fails first, cleanly (data/moves.ts:1097-1103): attrLastMove('[still]')
+     * on the move line (no target shown: dfi_still), then -fail|user. The pin returns NOT_FAIL, so the move's result is not a
+     * failure (no DFI_MRES_FALSE, unlike dfi_fail_still). Nothing is copied, so no refusal below applies to this path. */
+    if (!dfi_can_switch(b, side)) {
+        dfi_emit_plain(r, DUOFORGE_EVENT_FAIL, user);
+        dfi_still(r);
+        return DUOFORGE_OK;
+    }
+    /* The refusals of decision 0042 section 6: the pass would copy these states, and the engine does not model the copy of them. */
     if (tp->encore_slot != 0u || tp->disable_slot != 0u) {
         return DUOFORGE_E_UNSUPPORTED; /* Encore or Disable on the passer (decision 0042, lead's B) */
     }
@@ -5280,12 +5289,6 @@ static duoforge_status dfi_run_baton_pass(dfi_run *r, uint32_t user)
     }
     if (b->tail.sides[side].illusion.shown != 0u) {
         return DUOFORGE_E_UNSUPPORTED; /* Illusion on the passer's side (decision 0026, until 0026 lands) */
-    }
-    if (!dfi_can_switch(b, side)) {
-        /* onHit: -fail|user with [still] and no request (sim/battle-actions.ts:1290-1296, data/moves.ts:1097-1103) */
-        duoforge_event e = dfi_ev(DUOFORGE_EVENT_FAIL, user, DUOFORGE_CAUSE_NONE, 0u, DUOFORGE_NO_POSITION);
-        dfi_emit(r, &e);
-        return DUOFORGE_OK;
     }
     dfi_pos(b, user)->switch_flag = DFI_SWITCH_BATON_PASS; /* the PIVOT of the user's slot (battle-actions.ts:1311-1313) */
     return DUOFORGE_OK;
