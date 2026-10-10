@@ -1,0 +1,47 @@
+Feraligatr (M) @ Life Orb
+Ability: Sheer Force
+Level: 50
+EVs: 32 HP / 32 Atk / 2 SpD
+Adamant Nature
+- Ice Fang
+- Hydro Pump
+- Protect
+
+Gliscor (M) @ Rocky Helmet
+Ability: Hyper Cutter
+Level: 50
+EVs: 32 HP / 32 Atk / 2 SpD
+Jolly Nature
+- Protect
+
+Primarina (F) @ Expert Belt
+Ability: Torrent
+Level: 50
+EVs: 32 HP / 2 Def / 32 SpD
+Calm Nature
+- Moonblast
+- Protect
+
+Gholdengo @ Focus Sash
+Ability: Good as Gold
+Level: 50
+EVs: 32 HP / 2 SpA / 32 SpD
+Calm Nature
+- Shadow Ball
+- Protect
+
+Milotic (F) @ Black Glasses
+Ability: Competitive
+Level: 50
+EVs: 32 HP / 29 Def / 5 SpD
+Calm Nature
+- Scald
+- Protect
+
+Kingambit (M) @ Charcoal
+Ability: Defiant
+Level: 50
+EVs: 32 HP / 32 Atk / 2 SpD
+Adamant Nature
+- Swords Dance
+- Protect

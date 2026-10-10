@@ -36,7 +36,8 @@ _Static_assert(offsetof(duoforge_position_ext, type_now) == 6u, "position ext la
 _Static_assert(offsetof(duoforge_position_ext, encore_slot) == 8u, "position ext layout: encore_slot");
 _Static_assert(offsetof(duoforge_position_ext, perish) == 11u, "position ext layout: perish");
 _Static_assert(offsetof(duoforge_position_ext, move_failed) == 12u, "position ext layout: move_failed");
-_Static_assert(offsetof(duoforge_position_ext, reserved) == 13u, "position ext layout: reserved");
+_Static_assert(offsetof(duoforge_position_ext, transform_source) == 13u, "position ext layout: transform_source");
+_Static_assert(offsetof(duoforge_position_ext, reserved) == 14u, "position ext layout: reserved");
 _Static_assert(sizeof(duoforge_member_ext) == 4u, "member ext is 4 bytes");
 _Static_assert(offsetof(duoforge_member_ext, item_now) == 2u, "member ext layout: item_now");
 _Static_assert(sizeof(duoforge_side_ext) == 64u, "side ext is 64 bytes");
@@ -237,7 +238,10 @@ static void dfi_view_position(const struct duoforge_battle *b, uint32_t viewer, 
     }
     out->confused = slot->confusion_turns != 0u ? 1u : 0u;
     out->charging = slot->charge_turns != 0u ? 1u : 0u;
-    const uint32_t locked_index = slot->locked_move != 0u ? (uint32_t)slot->locked_move - 1u : DUOFORGE_MOVE_SLOT_NONE;
+    /* A lockedmove (step G56) is shown by the request alone (its one move is forced): no locked slot, as the reference has none. */
+    const bool lockedmove = b->tail.sides[s].positions[p].lock_turns != 0u;
+    const uint32_t locked_index =
+        slot->locked_move != 0u && !lockedmove ? (uint32_t)slot->locked_move - 1u : DUOFORGE_MOVE_SLOT_NONE;
     out->locked_slot = (uint8_t)locked_index; /* <= 0xFF */
     if (slot->charge_turns != 0u && s == viewer) {
         out->locked_target = slot->locked_target; /* a choice lock has no target (Team C) */
@@ -360,7 +364,8 @@ duoforge_status duoforge_battle_observe_ext(const duoforge_context *ctx, const d
         for (uint32_t s = 0u; s < DUOFORGE_SIDE_COUNT; ++s) {
             /* Step G7: Wide Guard of the side (public: [-singleturn] Wide Guard). It lasts the turn and ends in the
              * residual, so it is set only at a boundary inside a turn (a PIVOT), as decision 0018 section 3.3 says. */
-            o.sides[s].guard_flags = battle->tail.sides[s].wide_guard != 0u ? (uint8_t)DUOFORGE_SIDE_GUARD_WIDE_GUARD : 0u;
+            o.sides[s].guard_flags = (uint8_t)((battle->tail.sides[s].wide_guard != 0u ? DUOFORGE_SIDE_GUARD_WIDE_GUARD : 0u) | /* wide-operands-reviewed */
+                                               (battle->tail.sides[s].quick_guard != 0u ? DUOFORGE_SIDE_GUARD_QUICK_GUARD : 0u));
             /* Step G20: Aurora Veil's turns left (public: -sidestart ... move: Aurora Veil, 5 turns or 8 with Light Clay on
              * the setter, then counted down in the residual until the -sideend line; the sheet has the item). The state
              * keeps the same count, so the view is the tail's field. */
@@ -390,6 +395,10 @@ duoforge_status duoforge_battle_observe_ext(const duoforge_context *ctx, const d
                 vol |= tail->glaive_rush != 0u ? (uint32_t)DUOFORGE_POSITION_EXT_GLAIVE_RUSH : 0u; /* step G19 */
                 /* Step G38: the occupant has used Imprison (-start|X|move: Imprison, public; it ends with the occupant). */
                 vol |= tail->imprison != 0u ? (uint32_t)DUOFORGE_POSITION_EXT_IMPRISON : 0u;
+                /* Step G42: Roost's Flying type is off until the residual of order 25 (-singleturn move: Roost, public). */
+                vol |= (tail->single_turn & DFI_SINGLE_TURN_ROOST) != 0u ? (uint32_t)DUOFORGE_POSITION_EXT_ROOST : 0u;
+                /* Step G60 (decision 0032): the Substitute is up: presence only, its HP is never in the observation. */
+                vol |= tail->substitute_hp != 0u ? (uint32_t)DUOFORGE_POSITION_EXT_SUBSTITUTE : 0u;
                 /* Step G30: Rage Powder draws the foes' single-target moves this turn ([-singleturn] move: Rage Powder), set
                  * only at a boundary inside a turn (a PIVOT: the residual ends it), as decision 0018 sections 3.4.1 and 6.1 say. */
                 if (((uint32_t)battle->sides[s].positions[p].flags & DFI_VOL_FOLLOW_ME) != 0u &&
@@ -402,6 +411,10 @@ duoforge_status duoforge_battle_observe_ext(const duoforge_context *ctx, const d
                     vol |= (uint32_t)DUOFORGE_POSITION_EXT_ILLUSION_UP;
                 }
                 o.sides[s].positions[p].volatiles = vol;
+                /* Step G42: move_failed is 1 iff the occupant's last move result is FALSE. It is exact only when the result is
+                 * classified; an unclassified result (the bit of decision 0015 section 7) reads 0 here (documented, not refused). */
+                o.sides[s].positions[p].move_failed =
+                    ((((uint32_t)tail->move_result >> DFI_MOVE_RESULT_LAST_SHIFT) & 3u) == DFI_MOVE_RESULT_FALSE) ? 1u : 0u;
                 /* Step G9, Encore: the one move slot (slot + 1) that the occupant may use, public (-start|X|Encore: the
                  * slot is the one of its last move line); the turns are never shown. */
                 o.sides[s].positions[p].encore_slot = tail->encore_slot;

@@ -261,15 +261,17 @@ class PoolRows(unittest.TestCase):
     def test_nothing_that_grounds_or_lifts_a_pokemon_is_modelled_but_levitate(self):
         """The engine's isGrounded is "not a Flying type and not a Levitate holder" (dfi_grounded, src/combat/turn.c;
         Levitate since step G23-C), which Expanding Force (step G15) reads for its user. The pin also reads Eelevate, Air
-        Balloon and Iron Ball, Gravity, Ingrain, Magnet Rise, Telekinesis, Smack Down and Roost (sim/pokemon.ts:2148-2160):
-        every one of them is an UNMODELED row, so no battle has it; Levitate is an engine row."""
+        Balloon and Iron Ball, Gravity, Ingrain, Magnet Rise, Telekinesis and Smack Down (sim/pokemon.ts:2148-2160):
+        every one of them is an UNMODELED row, so no battle has it; Levitate is an engine row. Roost (step G42) is a
+        modelled row: its Flying removal goes through the type accessor (dfi_types_of, which dfi_grounded reads), so the
+        grounding of its user follows the volatile, and the Normal type of an empty list is the pin's getTypes."""
         def listed(kind, array):
             return {n.lower() for n in dict(re.findall(r'^\s*\[DFI_%s_([A-Z0-9]+)\] = "([^"]+)",$' % kind,
                                                        block('const char *const %s[' % array), re.M))}
         for kind, array, ids, rows in (('ABILITY', 'dfi_pool_ability_unmodeled', ['eelevate'], Rows.abilities),
                                        ('ITEM', 'dfi_pool_item_unmodeled', ['airballoon', 'ironball'], Rows.items),
                                        ('MOVE', 'dfi_pool_move_unmodeled',
-                                        ['gravity', 'ingrain', 'magnetrise', 'telekinesis', 'smackdown', 'roost'],
+                                        ['gravity', 'ingrain', 'magnetrise', 'telekinesis', 'smackdown'],
                                         Rows.moves)):
             # a row of the pool is UNMODELED; an id that the format does not have (Telekinesis) needs no row
             self.assertEqual(sorted(set(ids) & set(rows) - listed(kind, array)), [], kind)
@@ -279,9 +281,9 @@ class PoolRows(unittest.TestCase):
     def test_the_canonical_size(self):
         n_f, n_m, n_i, n_a = len(Rows.formes), len(Rows.moves), len(Rows.items), len(Rows.abilities)
         want = (12 + n_f * 26 + n_m * 29 + n_i * 4 + 18 * 18 + 18 + 25 * 2 + n_i * 2 + n_a * 2 + n_i + n_a +
-                n_f * (define('DFI_POOL_LEARN_BYTES') + 1 + 3) + n_m + 2 * n_m + 4 * n_m + 2 * n_m)  # + the second flags byte of every move
-        # (step G8), the heal fraction of every move (step G10), then the static flags (4 bytes) and the hit counts
-        # (2 bytes) of every move (decision 0020)
+                n_f * (define('DFI_POOL_LEARN_BYTES') + 1 + 3) + n_m + 2 * n_m + 4 * n_m + 2 * n_m + n_m)  # + the second flags byte of
+        # every move (step G8), the heal fraction of every move (step G10), then the static flags (4 bytes) and the hit counts
+        # (2 bytes) of every move (decision 0020), then the third flags byte of every move (steps G57 and G53)
         self.assertEqual(define('DFI_POOL_CANONICAL_SIZE'), want)
 
 

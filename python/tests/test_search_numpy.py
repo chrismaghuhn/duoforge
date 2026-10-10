@@ -669,12 +669,14 @@ class BayesRule(unittest.TestCase):
         # Numeric payoffs only, captured from the stopped 16-world arena
         # pilot. The origin basis produced an empty float strategy and
         # sent this small game into seconds of rational tableau pivots.
-        self._assert_fast_reproduction("bayes-arena-16x8x8.json", 0.5064255588992647)
+        self._assert_fast_reproduction("bayes-arena-16x8x8.json", 0.5064255588992647, float_pivots=61)
 
     def test_arena_tiny_pivot_retries_with_stable_ratio(self):
-        self._assert_fast_reproduction("bayes-arena-16x8x8-tiny-pivot.json", -0.150896305394414)
+        self._assert_fast_reproduction("bayes-arena-16x8x8-tiny-pivot.json", -0.150896305394414, float_pivots=246)
 
-    def _assert_fast_reproduction(self, filename, value):
+    def _assert_fast_reproduction(self, filename, value, float_pivots):
+        # "Fast" is pinned as work, not time: the float path and its stable retry certify the fixture with exactly
+        # this many float pivots and no exact work at all (the WorkLedger counts the same on every machine).
         fixture = Path(__file__).with_name("fixtures") / filename
         saved = json.loads(fixture.read_text())
         tables, weights = saved["tables"], saved["weights"]
@@ -682,9 +684,11 @@ class BayesRule(unittest.TestCase):
         previous = None
         with patch.object(matrix, "_bland", side_effect=AssertionError("unexpected exact rescue")):
             for _ in range(5):
+                ledger = matrix.WorkLedger()
                 start = time.perf_counter()
-                sol = matrix.solve_bayes(tables, weights)
+                sol = matrix.solve_bayes(tables, weights, budget=ledger)
                 timings.append(time.perf_counter() - start)
+                self.assertEqual(ledger.consumed, matrix.WorkCounters(float_pivots=float_pivots))
                 self.assertFalse(sol.exact)
                 self.assertLessEqual(matrix.bayes_certify(tables, weights, sol.x, sol.ys), 1e-9)
                 self.assertAlmostEqual(sol.value, value, delta=1e-9)
@@ -692,8 +696,12 @@ class BayesRule(unittest.TestCase):
                     np.testing.assert_array_equal(sol.x, previous.x)
                     np.testing.assert_array_equal(sol.ys, previous.ys)
                 previous = sol
-        # Median tolerates an isolated scheduler interruption on shared CI.
-        self.assertLess(float(np.median(timings)), 0.050)
+                # The ledger does not change the solve: the same strategies without one.
+                plain = matrix.solve_bayes(tables, weights)
+                np.testing.assert_array_equal(plain.x, sol.x)
+        # Wall time only as a loose guard against a gross regression (the old blowup took seconds); the pinned
+        # pivot count above is the real property and does not depend on the runner's load.
+        self.assertLess(float(np.median(timings)), 1.0)
 
     def test_exact_rescue_remains_certified(self):
         a = np.array([[[1., 0.], [0., 1.]], [[0., 1.], [1., 0.]]])
@@ -1103,7 +1111,9 @@ class SpreadSources(unittest.TestCase):
                 self.assertEqual(honest.spread_table(ctx, copy)[2]["sha256"], info["sha256"])
                 # An explicitly chosen registry (preview_ab --belief-root) reads all of its stated teams.
                 every = honest.spread_table(ctx, copy, sources=None)[2]
-                self.assertEqual(len(every["sources"]), 80)
+                stated = [t["id"] for t in index["teams"] if t["id"] in ("A", "B", "C") or t["id"].startswith("PP_")]
+                self.assertGreater(len(stated), 80)  # the registry has more stated teams than the pinned 79 and the test one
+                self.assertEqual([s["id"] for s in every["sources"]], sorted(stated))
                 self.assertNotEqual(every["sha256"], info["sha256"])
                 index["teams"] = [t for t in index["teams"] if t["id"] != honest.SPREAD_SOURCES[-1]]
                 (copy / "index.json").write_text(json.dumps(index), encoding="utf-8")

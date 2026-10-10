@@ -32,6 +32,7 @@ from .data import trace_to_c
 C = _layout.CONSTANTS
 EV = trace_to_c.EV
 FLAG = trace_to_c.FLAG
+_MUST_PRESSURE = _layout.CONSTANTS["DUOFORGE_MOVE_STATIC_FLAG_MUST_PRESSURE"]  # step G53
 NOPOS = trace_to_c.NOPOS
 ROSTER_NONE = C["DUOFORGE_ROSTER_NONE"]
 MOVE_SLOT_NONE = C["DUOFORGE_MOVE_SLOT_NONE"]
@@ -151,13 +152,16 @@ class Tracker:
         self._last_move = None  # (position, move id, target) of the last MOVE event
         self._parting_shot = data.tables["MOVE"]["PARTINGSHOT"]
         self._feint = data.tables["MOVE"].get("FEINT", -1)
+        self._phantom_force = data.tables["MOVE"].get("PHANTOMFORCE", -1)  # breaks a Protect as Feint does (G58)
         self._turn_scoped = set()  # single-turn features of decision 0018 seen since the turn began (lines.TURN_SCOPED)
         self._guards = set()  # (Wide or Quick Guard feature, side) seen this turn: what a Feint breaks (step G28)
+        self._rb_pending = {}  # side -> its Revival Blessing user's position until its revive (step G52, trace_to_c)
         self._spectator = False  # the own side folded like the foe's, from the public lines (duoforge_replay)
         self.turn_scoped_seen = collections.Counter()  # single-turn feature lines seen, by feature (counters)
         tables = data.tables
         self._choice_items = {tables["ITEM"][k.upper()] + 1 for k in lines.CHOICE_ITEMS if k.upper() in tables["ITEM"]}
         self._unburden = tables["ABILITY"]["UNBURDEN"] + 1 if "UNBURDEN" in tables["ABILITY"] else None
+        self._pressure = tables["ABILITY"]["PRESSURE"] + 1 if "PRESSURE" in tables["ABILITY"] else None
         self._follow_me = tables["MOVE"].get("FOLLOWME")
         # Protect and Detect both show "-singleturn|POKEMON|Protect"; a failed one resets the stall counter
         self._stall_moves = {tables["MOVE"][k] for k in ("PROTECT", "DETECT") if k in tables["MOVE"]}
@@ -384,8 +388,13 @@ class Tracker:
             for name, index in self._names[self.side].items():
                 maxhp[self.side][name] = own[index].hp_max
         viewer = SPECTATOR if self._spectator else self.side
+        parts = line.split("|")
+        if _kind(line) == "move" and parts[3:4] == ["Revival Blessing"]:
+            user = lines.flat_position(parts[2])
+            if user is not None:
+                self._rb_pending[user // 2] = user  # its revive comes in the step that answers the request
         try:
-            events = trace_to_c.step_events([line], viewer, self._names, maxhp, self.data.tables)
+            events = trace_to_c.step_events([line], viewer, self._names, maxhp, self.data.tables, self._rb_pending)
         except trace_to_c.ConversionError as e:  # a SystemExit: callers catch one kind of error
             detail = getattr(e, "detail", None)
             raise lines.Stop(f"converter:{e.rule}" + (f" {detail}" if detail else "")) from e
@@ -424,7 +433,7 @@ class Tracker:
             self._last_move = (pos, ident, e[2])
             m = self._occupant(pos)
             if not flags & FLAG["LOCKED"] and ident in m.sheet["moves"]:
-                m.uses[m.sheet["moves"].index(ident)] += 1
+                m.uses[m.sheet["moves"].index(ident)] += 1 + self._pressure_extra(pos, ident, e[2], flags)
             if ident in self._guard_moves and not flags & FLAG["LOCKED"]:
                 # Wide Guard and Quick Guard add the stall volatile when they run (data/moves.ts onHitSide
                 # addVolatile('stall')), also when the side has the guard already (no -singleturn line then), the
@@ -440,11 +449,12 @@ class Tracker:
         elif kind == EV["ACTIVATE"]:
             if e[3] == trace_to_c.CAUSE["ABILITY"] and ident2 == self.data.tables["ABILITY"]["EMERGENCYEXIT"] + 1:
                 self._at(pos).flag = 1  # it leaves: asked to switch (id2 names an ability only with cause ABILITY)
-            elif e[3] == trace_to_c.CAUSE["MOVE"] and ident2 == self._feint:
-                # Feint broke something (step G28, sim/battle-actions.ts hitStepBreakProtect, printed only then): the
-                # target's own Protect (its flag) and its stall volatile (chain and stall, a guard_undo that is no longer
-                # open), and the Wide Guard and Quick Guard of the target's whole side, a partner's included. Only the
-                # target's stall goes: a partner that set the guard keeps its own chain.
+            elif e[3] == trace_to_c.CAUSE["MOVE"] and ident2 in (self._feint, self._phantom_force):
+                # Feint broke something (step G28, sim/battle-actions.ts hitStepBreakProtect, printed only then; Phantom
+                # Force's `[broken]` line the same, step G58): the target's own Protect (its flag) and its stall
+                # volatile (chain and stall, a guard_undo that is no longer open), and the Wide Guard and Quick Guard of
+                # the target's whole side, a partner's included. Only the target's stall goes: a partner that set the
+                # guard keeps its own chain.
                 p = self._at(pos)
                 p.protecting = p.chain = p.stall = 0
                 p.guard_undo = None
@@ -465,6 +475,14 @@ class Tracker:
             if public:
                 m = self._occupant(pos)
                 m.hp_percent, m.hp_flag = hp, hp_flag
+        elif kind == EV["REVIVE"]:
+            # Step G52 (decision 0025): Revival Blessing brings a fainted member of the user's side back at half HP,
+            # its status cured; ident is its roster index (the line names it without a position)
+            m = self._member(pos // 2)[ident]
+            if public:
+                m.hp_percent, m.hp_flag = hp, hp_flag
+            m.status = 0
+            self._rb_pending.pop(pos // 2, None)
         elif kind == EV["STATUS"]:
             if public:
                 self._occupant(pos).status = detail
@@ -478,6 +496,12 @@ class Tracker:
             if amount > 0 and last is not None and last[1] == self._parting_shot and last[2] == pos:
                 self._at(last[0]).flag = 1  # Parting Shot switches its user once it changes a stat (Contrary too)
             p.stages[detail] = min(12, max(0, p.stages[detail] + sign * amount))
+        elif kind == EV["CLEAR_ALL_BOOSTS"]:
+            # Haze (step G62, decision 0031; data/moves.ts haze onHitField: clearBoosts on getAllActive): every standing
+            # active Pokemon's stages return to neutral
+            for p in (p for side in self._positions for p in side):
+                if p.occupant != ROSTER_NONE and not p.fainted:
+                    p.stages = [STAGE_NEUTRAL] * 7
         elif kind == EV["CONFUSION_START"]:
             self._at(pos).confused = 1
         elif kind == EV["CONFUSION_END"]:
@@ -592,6 +616,32 @@ class Tracker:
                     p.charge -= 1
                     if not p.charge:
                         p.locked_slot, p.locked_target = MOVE_SLOT_NONE, TARGET_NONE
+
+    def _pressure_extra(self, pos, move, target, flags):
+        """The extra PP a move use costs for the user's standing foes with Pressure (decision 0030, step G53), counted
+        only where the line shows the targets: the named target of a single-target move, every standing foe for the
+        spread classes, for "all" and for a MUSTPRESSURE move; none for a foeSide move or a blanked ([still])
+        target, which nobody can know. A [spread] line of a single-target move (Expanding Force on Psychic Terrain:
+        onModifyMove runs before getMoveTargets, sim/battle-actions.ts useMoveInner) counts every standing foe as
+        well: its pressureTargets are all adjacent foes, a foe its Protect leaves out of the [spread] list included."""
+        if self._pressure is None or flags & FLAG["STILL"]:
+            return 0
+        foe = 1 - pos // 2
+        members = self._member(foe)
+        holders = [k for k, p in enumerate(self._positions[foe]) if p.occupant != ROSTER_NONE and not p.fainted
+                   and p.occupant < len(members) and members[p.occupant].ability == self._pressure]
+        if not holders:
+            return 0
+        kind = self.data.target_type(move)
+        if self.data.move_flags(move) & _MUST_PRESSURE or kind in ("all", "allAdjacentFoes", "allAdjacent"):
+            return len(holders)
+        if flags & FLAG["SPREAD"]:
+            # a single-target class turned spread (onModifyMove: allAdjacentFoes) hits every adjacent foe; an "allies"
+            # move's [spread] list is the user's side (alliesAndSelf), no foe
+            return len(holders) if kind in ("normal", "any", "adjacentFoe") else 0
+        if kind == "foeSide" or target == NOPOS or target // 2 != foe:
+            return 0
+        return int(target % 2 in holders)
 
     # ------------------------------------------------------------------ output
     def boundary(self):

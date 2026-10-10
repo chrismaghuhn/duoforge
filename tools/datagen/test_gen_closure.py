@@ -97,6 +97,7 @@ class Secondary(unittest.TestCase):
 
 
 # ---- the family patterns of the pool tables (entries as in data/items.ts and data/abilities.ts at the pin) ----
+
 def entry(rid, *lines):
     return '\t%s: {\n%s\n\t},' % (rid, '\n'.join('\t\t' + line for line in lines))
 
@@ -301,7 +302,7 @@ class PoolFamilies(unittest.TestCase):
         self.assertEqual((len(gen_closure.ITEM_MEMBERS['TYPE_BOOSTER']), len(gen_closure.ITEM_MEMBERS['RESIST_BERRY'])),
                          (18, 18))
         self.assertEqual({k: len(v) for k, v in gen_closure.ABILITY_MEMBERS.items()},
-                         {'ATE': 3, 'PINCH': 4, 'WEATHER_SETTER': 4, 'TERRAIN_SETTER': 3})
+                         {'ATE': 4, 'PINCH': 4, 'WEATHER_SETTER': 4, 'TERRAIN_SETTER': 3})  # step G61: Dragonize joins the ATE family
         every = gen_closure.POOL_ITEMS + gen_closure.POOL_ABILITIES
         self.assertEqual(len(every), len(set(every)))
         self.assertEqual((len(gen_closure.POOL_ITEMS), len(gen_closure.POOL_ABILITIES)), (33, 5))
@@ -737,7 +738,9 @@ class PoolMoves(unittest.TestCase):
                           'STEEL_ROLLER', 'CLANGOROUS_SOUL', 'BRICK_BREAK', 'DISABLE',
                           'ELECTRIC_TERRAIN', 'MISTY_TERRAIN', 'RISING_VOLTAGE', 'TERRAIN_PULSE', 'PERISH_SONG', 'MULTI_HIT_2', 'TRIPLE_AXEL', 'IMPRISON',
                           'TRICK', 'SWITCHEROO', 'THIEF', 'COVET', 'SUPER_FANG', 'TAUNT', 'YAWN',
-                          'RAGE_FIST', 'STONE_AXE', 'CEASELESS_EDGE', 'MULTI_HIT_10', 'POWER_TRIP', 'THUNDER', 'ICE_FANG', 'TRI_ATTACK', 'DOUBLE_SHOCK', 'UNMODELED'])
+                          'RAGE_FIST', 'STONE_AXE', 'CEASELESS_EDGE', 'MULTI_HIT_10', 'POWER_TRIP', 'THUNDER', 'ICE_FANG', 'TRI_ATTACK', 'DOUBLE_SHOCK', 'ROOST', 'STOMPING_TANTRUM',
+                          'LOCKED_MOVE', 'REVIVAL_BLESSING',
+                          'MULTI_HIT_2_5', 'SCALE_SHOT', 'QUICK_GUARD', 'UPPER_HAND', 'HEAL_PULSE', 'STRENGTH_SAP', 'BEAT_UP', 'BUG_BITE', 'POLTERGEIST', 'SHEER_COLD', 'HAZE', 'AFTER_YOU', 'QUASH', 'SUBSTITUTE', 'PHANTOM_FORCE', 'UNMODELED'])
         self.assertEqual(len(gen_closure.G2_HANDLERS), 7)
         # Step G16: Knock Off's handler is 24 in the tables; step G15's Expanding Force is 25, step G19's Glaive Rush 26,
         # step G20's Aurora Veil 27, Spiky Shield 28, the four of step G28 29 to 32, the eight of step G32 33 to 40 and
@@ -773,16 +776,27 @@ class PoolMoves(unittest.TestCase):
         self.assertEqual([gen_closure.SPECIAL_IDS_P.index(h) for h in gen_closure.G31_HANDLERS], [61, 62])
         # step G48: Rage Fist, Stone Axe, Ceaseless Edge and Population Bomb follow Taunt and Yawn (63 to 66)
         self.assertEqual([gen_closure.SPECIAL_IDS_P.index(h) for h in gen_closure.G48_HANDLERS], [63, 64, 65, 66])
-        # step G50: Double Shock follows the eight of steps G48 and G44 (71); UNMODELED moves to 72
+        # step G50: Double Shock follows the eight of steps G48 and G44 (71); Roost and Stomping Tantrum (72, 73); Locked Move (74); Revival Blessing (75); the six of step G54 (76 to 81); UNMODELED moves to 82
         self.assertEqual([gen_closure.SPECIAL_IDS_P.index(h) for h in gen_closure.G50_HANDLERS], [71])
-        self.assertEqual(gen_closure.SPECIAL_IDS_P.index('UNMODELED'), 72)
+        self.assertEqual(gen_closure.G52_HANDLERS, ['REVIVAL_BLESSING'])  # step G52
+        self.assertEqual(gen_closure.SPECIAL_IDS_P.index('REVIVAL_BLESSING'), 75)
+        # step G42: Roost and Stomping Tantrum follow Double Shock (72, 73); Revival Blessing (G52) 74; UNMODELED moves to 75
+        self.assertEqual([gen_closure.SPECIAL_IDS_P.index(h) for h in gen_closure.G42_HANDLERS], [72, 73])
+        self.assertEqual([gen_closure.SPECIAL_IDS_P.index(h) for h in gen_closure.G56_HANDLERS], [74])  # G56: LOCKED_MOVE
+        self.assertEqual([gen_closure.SPECIAL_IDS_P.index(h) for h in gen_closure.G52_HANDLERS], [75])  # G52: REVIVAL_BLESSING
+        self.assertEqual([gen_closure.SPECIAL_IDS_P.index(h) for h in gen_closure.G54_HANDLERS], [76, 77, 78, 79, 80, 81])
+        self.assertEqual([gen_closure.SPECIAL_IDS_P.index(h) for h in gen_closure.G64_HANDLERS], [82, 83, 84, 85])  # G64: Beat Up, Bug Bite, Poltergeist, Sheer Cold
+        self.assertEqual([gen_closure.SPECIAL_IDS_P.index(h) for h in gen_closure.G62_HANDLERS], [86, 87, 88])  # G62: Haze, After You, Quash
+        self.assertEqual([gen_closure.SPECIAL_IDS_P.index(h) for h in gen_closure.G60_HANDLERS], [89])  # G60: SUBSTITUTE
+        self.assertEqual([gen_closure.SPECIAL_IDS_P.index(h) for h in gen_closure.G58_HANDLERS], [90])  # G58: Phantom Force
+        self.assertEqual(gen_closure.SPECIAL_IDS_P.index('UNMODELED'), 91)
         # Scald and Recover became data in step G10: their ids stay defined and no move maps to them.
         self.assertEqual({v[0] for k, v in gen_closure.SPECIAL_P.items() if k not in gen_closure.SPECIAL_C},
-                         (set(gen_closure.G2_HANDLERS) - {'SCALD', 'RECOVER'}) | set(gen_closure.WEATHER_HANDLERS) |
+                         (set(gen_closure.G2_HANDLERS) - {'SCALD', 'RECOVER'}) | set(gen_closure.G64_HANDLERS) | set(gen_closure.WEATHER_HANDLERS) |
                          set(gen_closure.G16_HANDLERS) | set(gen_closure.G15_HANDLERS) | set(gen_closure.G19_HANDLERS) |
                          set(gen_closure.G20_HANDLERS) | set(gen_closure.G20_PROTECT_HANDLERS) | set(gen_closure.G28_HANDLERS) |
                          set(gen_closure.G30_HANDLERS) | set(gen_closure.G32_HANDLERS) | set(gen_closure.G34_HANDLERS) |
-                         set(gen_closure.G27_HANDLERS) | set(gen_closure.G25_HANDLERS) | set(gen_closure.G26_HANDLERS) | set(gen_closure.G33_HANDLERS) | set(gen_closure.G38_HANDLERS) | set(gen_closure.G29_HANDLERS) | set(gen_closure.G39_HANDLERS) | set(gen_closure.G31_HANDLERS) | set(gen_closure.G48_HANDLERS) | set(gen_closure.G44_HANDLERS) | set(gen_closure.G50_HANDLERS) | {'DARKEST_LARIAT'})
+                         set(gen_closure.G27_HANDLERS) | set(gen_closure.G25_HANDLERS) | set(gen_closure.G26_HANDLERS) | set(gen_closure.G33_HANDLERS) | set(gen_closure.G38_HANDLERS) | set(gen_closure.G29_HANDLERS) | set(gen_closure.G39_HANDLERS) | set(gen_closure.G31_HANDLERS) | set(gen_closure.G48_HANDLERS) | set(gen_closure.G44_HANDLERS) | set(gen_closure.G50_HANDLERS) | set(gen_closure.G42_HANDLERS) | set(gen_closure.G56_HANDLERS) | set(gen_closure.G52_HANDLERS) | set(gen_closure.G54_HANDLERS) | set(gen_closure.G62_HANDLERS) | set(gen_closure.G60_HANDLERS) | set(gen_closure.G58_HANDLERS) | {'DARKEST_LARIAT'})
 
     def test_taunt_and_yawn_are_handlers_whose_conditions_are_the_pinned_text(self):
         for mid, text, special in (('taunt', TAUNT, 'TAUNT'), ('yawn', YAWN, 'YAWN')):
@@ -1086,8 +1100,8 @@ class PoolMoves(unittest.TestCase):
         self.assertEqual([s[0] for s in gen_closure.SETS_G2], ['pelipper', 'arcaninehisui', 'annihilape', 'floetteeternal'])
         # Every handler move is one of the rows, and every set move is a pool move or one of the rows.
         self.assertTrue({k for k in gen_closure.SPECIAL_P if k not in gen_closure.SPECIAL_C} <=
-                        set(gen_closure.G2_MOVES) | {'sandstorm', 'snowscape', 'knockoff', 'expandingforce', 'glaiverush', 'auroraveil', 'spikyshield',
-                                                                'shellsmash', 'acrobatics', 'blizzard', 'feint',
+                        set(gen_closure.G2_MOVES) | {'outrage', 'thrash', 'petaldance', 'sandstorm', 'snowscape', 'knockoff', 'expandingforce', 'glaiverush', 'auroraveil', 'spikyshield',
+                                                                'substitute', 'shellsmash', 'acrobatics', 'blizzard', 'feint',
                                                                 'ragepowder', 'psychicfangs', 'solarbeam', 'eruption', 'waterspout',
                                                                 'bodypress', 'foulplay', 'psyshock', 'raindance', 'sunnyday', 'freezedry',
                                                                 'clangingscales', 'steelroller', 'clangoroussoul', 'brickbreak', 'disable',
@@ -1095,7 +1109,9 @@ class PoolMoves(unittest.TestCase):
                                                                 'dualwingbeat', 'twinbeam', 'tripleaxel', 'imprison',
                                                                 'trick', 'switcheroo', 'thief', 'covet', 'sacredsword', 'superfang', 'taunt', 'yawn',
                                                                 'ragefist', 'stoneaxe', 'ceaselessedge', 'populationbomb',
-                                                                'powertrip', 'thunder', 'icefang', 'triattack', 'doubleshock'})
+                                                                'powertrip', 'thunder', 'icefang', 'triattack', 'doubleshock', 'roost', 'stompingtantrum', 'revivalblessing',
+                                                                'iciclespear', 'scaleshot', 'quickguard', 'upperhand', 'healpulse', 'strengthsap', 'beatup', 'bugbite', 'poltergeist', 'sheercold',
+                                                                'haze', 'afteryou', 'quash', 'phantomforce'})
         self.assertEqual(gen_closure.WEATHER_HANDLERS, ['SANDSTORM', 'SNOWSCAPE'])
         for _sp, _ab, item, moves, _mega in gen_closure.SETS_G2:
             self.assertTrue(item in gen_closure.G2_ITEMS or item not in gen_closure.POOL_ITEMS)
@@ -1210,7 +1226,7 @@ class LenientMoves(unittest.TestCase):
         for a basePowerCallback) and the hit counts (multihit: n, [min, max], 1 and 1 otherwise) of every row, modelled or
         not, with their bits in include/duoforge/duoforge.h order."""
         bits = gen_closure.STATIC_FLAG_BITS
-        self.assertEqual(sorted(bits.values()), [1, 2, 4, 8, 16, 32, 64, 128, 256, 512])
+        self.assertEqual(sorted(bits.values()), [1, 2, 4, 8, 16, 32, 64, 128, 256, 512, 2048])  # 2048: mustpressure (step G53)
         self.assertEqual(gen_closure.STATIC_FLAG_POWER_RULE, 1024)
         for flag in bits:
             text = move_entry('plain', 'Plain', category='Physical', base_power=50, flags='%s: 1, protect: 1' % flag)
@@ -1411,7 +1427,8 @@ class ItemAbilityFeatures(unittest.TestCase):
 
     def test_the_rows_that_a_step_implements_by_id_are_listed(self):
         self.assertEqual(gen_closure.ENGINE_ROWS, {'items': ['focussash', 'floettite', 'psychicseed', 'electricseed', 'mistyseed', 'expertbelt',
-                                                           'ejectbutton', 'widelens', 'muscleband', 'wiseglasses', 'brightpowder', 'redcard'],
+                                                           'ejectbutton', 'widelens', 'muscleband', 'wiseglasses', 'brightpowder', 'redcard', 'lumberry', 'mentalherb',
+                                                           'damprock', 'heatrock', 'smoothrock', 'icyrock', 'terrainextender'],
                                                    'abilities': ['rockhead', 'flowerveil', 'fairyaura', 'roughskin',
                                                                  'poisontouch', 'thermalexchange', 'stickyhold', 'trace',
                                                                  'levitate', 'sandrush', 'swiftswim', 'slushrush',
@@ -1421,7 +1438,10 @@ class ItemAbilityFeatures(unittest.TestCase):
                                                                  'sharpness', 'solidrock', 'technician', 'multiscale',
                                                                  'galewings', 'raindish', 'friendguard', 'cursedbody', 'mirrorarmor', 'auraguard', 'hypercutter', 'scrappy', 'infiltrator', 'queenlymajesty', 'damp', 'sturdy',
                                                                  'snowcloak', 'sandveil', 'static', 'justified', 'limber',
-                                                                 'solarpower', 'regenerator', 'toxicdebris', 'shadowtag', 'suctioncups', 'guarddog']})
+                                                                 'solarpower', 'regenerator', 'toxicdebris', 'shadowtag', 'suctioncups', 'guarddog',
+                                                                 'steadfast', 'weakarmor', 'telepathy', 'voltabsorb', 'punkrock', 'moxie',
+                                                                 'synchronize', 'oblivious', 'keeneye', 'bigpecks', 'magicbounce', 'pressure',
+                                                                 'sandforce', 'shellarmor', 'filter', 'stalwart', 'megalauncher', 'hugepower', 'thickfat', 'firemane', 'spicyspray', 'megasol', 'sheerforce', 'illusion']})
 
 
 class Bounds(unittest.TestCase):
@@ -1565,7 +1585,9 @@ class WholePoolNames(unittest.TestCase):
             wrong.entry('a')
 
     def test_the_inert_reads_name_the_move_whose_modelling_would_matter(self):
-        self.assertEqual(gen_closure.INERT_FLAG_READS, {'bypasssub': 'substitute', 'pledgecombo': None})
+        self.assertEqual(gen_closure.INERT_FLAG_READS, {'pledgecombo': None})
+        # step G60: bypasssub is no column of its own; it is bit 2 (value 4) of the third flags byte, FLAGS3_BITS
+        self.assertEqual(gen_closure.FLAGS3_BITS['bypasssub'], 4)  # held by dfi_pool_move_bypasssub
 
 
 class WeatherFacts(unittest.TestCase):
@@ -1774,7 +1796,7 @@ class SmallRules(unittest.TestCase):
         self.assertEqual(gen_closure.SPECIAL_P['eruption'], ('HP_POWER', {'basePowerCallback'}))
         self.assertEqual(gen_closure.SPECIAL_P['waterspout'], ('HP_POWER', {'basePowerCallback'}))
         self.assertEqual(gen_closure.SPECIAL_P['freezedry'], ('FREEZE_DRY', {'onEffectiveness'}))
-        self.assertEqual(gen_closure.ENGINE_PIVOT_MOVES, ('voltswitch',))
+        self.assertEqual(gen_closure.ENGINE_PIVOT_MOVES, ('voltswitch', 'revivalblessing'))
         self.assertIn('allies', gen_closure.ENGINE_TARGETS)
         self.assertIn('ejectbutton', gen_closure.ENGINE_ROWS['items'])
         for ability in ('soundproof', 'unnerve', 'speedboost'):
@@ -1786,10 +1808,10 @@ class SmallRulesG35(unittest.TestCase):
 
     def sources(self, skip=(None, None)):
         abilities = []
-        for aid, facts in gen_closure.G34_ABILITY_FACTS + gen_closure.G35_ABILITY_FACTS + gen_closure.MEGA2_ABILITY_FACTS + gen_closure.G39_ABILITY_FACTS + gen_closure.G41_ABILITY_FACTS + gen_closure.G46_ABILITY_FACTS:
+        for aid, facts in gen_closure.G34_ABILITY_FACTS + gen_closure.G35_ABILITY_FACTS + gen_closure.MEGA2_ABILITY_FACTS + gen_closure.G39_ABILITY_FACTS + gen_closure.G41_ABILITY_FACTS + gen_closure.G45_ABILITY_FACTS + gen_closure.G46_ABILITY_FACTS + gen_closure.G47_ABILITY_FACTS + gen_closure.G51_ABILITY_FACTS + gen_closure.G53_ABILITY_FACTS + gen_closure.G63_ABILITY_FACTS + gen_closure.G59_ABILITY_FACTS:
             kept = [f for i, f in enumerate(facts) if (aid, i) != skip]
             abilities.append(entry(aid, *kept))
-        items = [entry(iid, *facts) for iid, facts in gen_closure.G34_ITEM_FACTS + gen_closure.G46_ITEM_FACTS]
+        items = [entry(iid, *facts) for iid, facts in gen_closure.G34_ITEM_FACTS + gen_closure.G46_ITEM_FACTS + gen_closure.G47_ITEM_FACTS]
         return (TextSource('data/abilities.ts', '\n'.join(abilities)), TextSource('data/mods/champions/abilities.ts', ''),
                 TextSource('data/items.ts', '\n'.join(items)), TextSource('data/mods/champions/items.ts', ''))
 
@@ -1870,10 +1892,10 @@ class SmallRulesG39(unittest.TestCase):
 
     def abilities(self, skip=(None, None)):
         out = []
-        for aid, facts in gen_closure.G34_ABILITY_FACTS + gen_closure.G35_ABILITY_FACTS + gen_closure.MEGA2_ABILITY_FACTS + gen_closure.G39_ABILITY_FACTS + gen_closure.G41_ABILITY_FACTS + gen_closure.G46_ABILITY_FACTS:
+        for aid, facts in gen_closure.G34_ABILITY_FACTS + gen_closure.G35_ABILITY_FACTS + gen_closure.MEGA2_ABILITY_FACTS + gen_closure.G39_ABILITY_FACTS + gen_closure.G41_ABILITY_FACTS + gen_closure.G45_ABILITY_FACTS + gen_closure.G46_ABILITY_FACTS + gen_closure.G47_ABILITY_FACTS + gen_closure.G51_ABILITY_FACTS + gen_closure.G53_ABILITY_FACTS + gen_closure.G63_ABILITY_FACTS + gen_closure.G59_ABILITY_FACTS:
             kept = [f for i, f in enumerate(facts) if (aid, i) != skip]
             out.append(entry(aid, *kept))
-        items = [entry(iid, *facts) for iid, facts in gen_closure.G34_ITEM_FACTS + gen_closure.G46_ITEM_FACTS]
+        items = [entry(iid, *facts) for iid, facts in gen_closure.G34_ITEM_FACTS + gen_closure.G46_ITEM_FACTS + gen_closure.G47_ITEM_FACTS]
         return (TextSource('data/abilities.ts', '\n'.join(out)), TextSource('data/mods/champions/abilities.ts', ''),
                 TextSource('data/items.ts', '\n'.join(items)), TextSource('data/mods/champions/items.ts', ''))
 
@@ -1935,6 +1957,108 @@ class SimpleMovesG44(unittest.TestCase):
         self.assertIn('secondaries', gen_closure.G2_OWNED_FIELDS['ICE_FANG'])
         self.assertIn('TRI_ATTACK', gen_closure.G2_OWNED_SECONDARY)
         self.assertEqual([mid for mid, _ in gen_closure.G44_FACTS], ['powertrip', 'thunder', 'icefang', 'triattack'])
+
+class SmallRulesG59(unittest.TestCase):
+    """Step G59: six Mega abilities are engine rows whose pinned texts are demanded whole (G59_ABILITY_FACTS); the Champions mod
+    may only inherit three of them (G59_INHERIT_ONLY); Mega Sol's effectiveWeather side and the sunnyday handler it calls are
+    demanded (check_g59_facts)."""
+
+    def abilities(self, skip=(None, None)):
+        out = []
+        for aid, facts in gen_closure.G34_ABILITY_FACTS + gen_closure.G35_ABILITY_FACTS + gen_closure.MEGA2_ABILITY_FACTS + gen_closure.G39_ABILITY_FACTS + gen_closure.G41_ABILITY_FACTS + gen_closure.G45_ABILITY_FACTS + gen_closure.G46_ABILITY_FACTS + gen_closure.G47_ABILITY_FACTS + gen_closure.G51_ABILITY_FACTS + gen_closure.G53_ABILITY_FACTS + gen_closure.G59_ABILITY_FACTS + gen_closure.G63_ABILITY_FACTS:
+            kept = [f for i, f in enumerate(facts) if (aid, i) != skip]
+            out.append(entry(aid, *kept))
+        return out
+
+    def champ(self, extra=()):
+        out = [entry(aid, 'inherit: true,', 'isNonstandard: null,') for aid in gen_closure.G59_INHERIT_ONLY]
+        return TextSource('data/mods/champions/abilities.ts', '\n'.join(out + list(extra)))
+
+    def sources(self, skip=(None, None), champ=None):
+        items = [entry(iid, *facts) for iid, facts in gen_closure.G34_ITEM_FACTS + gen_closure.G46_ITEM_FACTS + gen_closure.G47_ITEM_FACTS]
+        return (TextSource('data/abilities.ts', '\n'.join(self.abilities(skip))),
+                self.champ() if champ is None else champ,
+                TextSource('data/items.ts', '\n'.join(items)), TextSource('data/mods/champions/items.ts', ''))
+
+    def test_the_facts_of_the_pin_are_accepted(self):
+        gen_closure.check_g34_facts(*self.sources())
+
+    def test_every_fact_is_demanded(self):
+        self.assertEqual([aid for aid, _ in gen_closure.G59_ABILITY_FACTS],
+                         ['megalauncher', 'hugepower', 'thickfat', 'firemane', 'spicyspray', 'megasol'])
+        for aid, facts in gen_closure.G59_ABILITY_FACTS:
+            for i in range(len(facts)):
+                with self.subTest(ability=aid, fact=facts[i]), self.assertRaises(SystemExit) as cm:
+                    gen_closure.check_g34_facts(*self.sources((aid, i)))
+                self.assertIn('the entry no longer has', str(cm.exception.code))
+
+    def test_the_rows_of_the_step(self):
+        for aid, _ in gen_closure.G59_ABILITY_FACTS:
+            self.assertIn(aid, gen_closure.ENGINE_ROWS['abilities'])
+
+    def test_the_champions_mod_may_only_inherit_three(self):
+        # Control: the three inherit-only entries are accepted.
+        gen_closure.check_g34_facts(*self.sources())
+        # A Champions entry of a row that has none is an override.
+        with self.assertRaises(SystemExit) as cm:
+            gen_closure.check_g34_facts(*self.sources(champ=TextSource('data/mods/champions/abilities.ts',
+                                                                       entry('hugepower', 'inherit: true,'))))
+        self.assertIn('the champions mod overrides the entry', str(cm.exception.code))
+        # An entry of an inherit-only row that also changes a callback is an override too.
+        bad = entry('firemane', 'inherit: true,', 'isNonstandard: null,', 'onModifyAtk() { return 1; },')
+        with self.assertRaises(SystemExit) as cm:
+            gen_closure.check_g34_facts(*self.sources(champ=TextSource('data/mods/champions/abilities.ts', bad)))
+        self.assertIn('the champions mod overrides the entry', str(cm.exception.code))
+
+    def test_mega_sol_side_facts_are_demanded(self):
+        pokemon = TextSource('sim/pokemon.ts', '\n'.join(gen_closure.G59_POKEMON_FACTS))
+        conditions = TextSource('data/conditions.ts', '\n'.join(gen_closure.G59_SUNNY_FACTS))
+        gen_closure.check_g59_facts(None, None, pokemon, conditions)
+        for fact in gen_closure.G59_POKEMON_FACTS:
+            cut = TextSource('sim/pokemon.ts', '\n'.join(f for f in gen_closure.G59_POKEMON_FACTS if f != fact))
+            with self.subTest(fact=fact), self.assertRaises(SystemExit) as cm:
+                gen_closure.check_g59_facts(None, None, cut, conditions)
+            self.assertIn('the pin no longer has', str(cm.exception.code))
+        for fact in gen_closure.G59_SUNNY_FACTS:
+            cut = TextSource('data/conditions.ts', '\n'.join(f for f in gen_closure.G59_SUNNY_FACTS if f != fact))
+            with self.subTest(fact=fact), self.assertRaises(SystemExit) as cm:
+                gen_closure.check_g59_facts(None, None, pokemon, cut)
+            self.assertIn('the pin no longer has', str(cm.exception.code))
+
+
+class SmallRulesG53(unittest.TestCase):
+    """Step G53: Pressure is an engine row whose pinned texts (the switch-in line and the foe's DeductPP) are demanded whole, and
+    the mustpressure flag is a static bit of the move table (DUOFORGE_MOVE_STATIC_FLAG_MUST_PRESSURE) and the engine bit
+    DFI_MOVE_FLAG3_MUST_PRESSURE."""
+
+    def abilities(self, skip=(None, None)):
+        out = []
+        # check_g34_facts reads every family of the facts, so the fixture carries all of them
+        for aid, facts in (gen_closure.G34_ABILITY_FACTS + gen_closure.G35_ABILITY_FACTS + gen_closure.MEGA2_ABILITY_FACTS +
+                           gen_closure.G39_ABILITY_FACTS + gen_closure.G41_ABILITY_FACTS + gen_closure.G45_ABILITY_FACTS +
+                           gen_closure.G46_ABILITY_FACTS + gen_closure.G47_ABILITY_FACTS + gen_closure.G51_ABILITY_FACTS +
+                           gen_closure.G53_ABILITY_FACTS + gen_closure.G63_ABILITY_FACTS + gen_closure.G59_ABILITY_FACTS):
+            kept = [f for i, f in enumerate(facts) if (aid, i) != skip]
+            out.append(entry(aid, *kept))
+        items = [entry(iid, *facts) for iid, facts in gen_closure.G34_ITEM_FACTS + gen_closure.G46_ITEM_FACTS + gen_closure.G47_ITEM_FACTS]
+        return (TextSource('data/abilities.ts', '\n'.join(out)), TextSource('data/mods/champions/abilities.ts', ''),
+                TextSource('data/items.ts', '\n'.join(items)), TextSource('data/mods/champions/items.ts', ''))
+
+    def test_the_facts_of_the_pin_are_accepted(self):
+        gen_closure.check_g34_facts(*self.abilities())
+
+    def test_every_fact_is_demanded(self):
+        self.assertEqual([aid for aid, _ in gen_closure.G53_ABILITY_FACTS], ['pressure'])
+        for aid, facts in gen_closure.G53_ABILITY_FACTS:
+            self.assertIn(aid, gen_closure.ENGINE_ROWS['abilities'])
+            for i in range(len(facts)):
+                with self.subTest(ability=aid, fact=facts[i]), self.assertRaises(SystemExit) as cm:
+                    gen_closure.check_g34_facts(*self.abilities((aid, i)))
+                self.assertIn('the entry no longer has', str(cm.exception.code))
+
+    def test_the_mustpressure_flag_is_the_public_bit(self):
+        self.assertEqual(gen_closure.STATIC_FLAG_BITS['mustpressure'], 2048)
+        self.assertNotIn('mustpressure', gen_closure.FLAGS2_BITS)
 
 
 if __name__ == '__main__':

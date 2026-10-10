@@ -1,0 +1,23 @@
+{
+  "name": "g59_mega_launcher",
+  "purpose": "Mega batch of G59, Mega Launcher: Blastoise (M) with Blastoisinite (base Torrent) uses Aura Sphere (a pulse move) before and after it Mega Evolves into Blastoise-Mega; Pelipper (M) brings the rain of Drizzle.",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,0000000000000000000000000000000000000000000000000000000059000001",
+  "teams": [
+    "Blastoise (M) @ Blastoisinite\nAbility: Torrent\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nModest Nature\n- Aura Sphere\n- Ice Beam\n- Hydro Pump\n- Protect\n\nGholdengo @ Life Orb\nAbility: Good as Gold\nLevel: 50\nEVs: 17 HP / 2 Def / 17 SpA / 16 SpD / 14 Spe\nModest Nature\n- Make It Rain\n- Shadow Ball\n- Nasty Plot\n- Protect\n\nStaraptor (F) @ Sharp Beak\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 2 SpD / 32 Spe\nJolly Nature\n- Brave Bird\n- U-turn\n- Close Combat\n- Protect\n\nKingambit (M) @ Black Belt\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Kowtow Cleave\n- Sucker Punch\n- Iron Head\n- Protect\n\nMilotic (F) @ Mystic Water\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Muddy Water\n- Ice Beam\n- Coil\n- Protect\n\nAnnihilape (M) @ Leftovers\nAbility: Defiant\nLevel: 50\nEVs: 2 HP / 32 Atk / 32 Spe\nJolly Nature\n- Close Combat\n- Ice Punch\n- Shadow Claw\n- U-turn",
+    "Pelipper (M) @ Mystic Water\nAbility: Drizzle\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nModest Nature\n- Hurricane\n- Weather Ball\n- U-turn\n- Protect\n\nMilotic (F) @ Leftovers\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Muddy Water\n- Ice Beam\n- Coil\n- Protect\n\nTyranitar (M) @ Black Glasses\nAbility: Sand Stream\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Spe\nAdamant Nature\n- Earth Power\n- Low Kick\n- Rock Slide\n- Protect\n\nIncineroar (M) @ Charcoal\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 14 Def / 20 SpD\nCareful Nature\n- Fake Out\n- Flare Blitz\n- Parting Shot\n- Darkest Lariat\n\nSneasler (M) @ White Herb\nAbility: Unburden\nLevel: 50\nEVs: 2 HP / 32 Atk / 32 Spe\nAdamant Nature\n- Close Combat\n- Dire Claw\n- U-turn\n- Fake Out\n\nGholdengo @ Life Orb\nAbility: Good as Gold\nLevel: 50\nEVs: 17 HP / 2 Def / 17 SpA / 16 SpD / 14 Spe\nModest Nature\n- Make It Rain\n- Shadow Ball\n- Nasty Plot\n- Protect"
+  ],
+  "plan": {
+    "p1": [
+      "move 1 2, move 3",
+      "move 1 2 mega, move 3",
+      "move 1 2, move 3",
+      "move 2 2, move 3"
+    ],
+    "p2": [
+      "move 1 1, move 3"
+    ],
+    "max_steps": 6
+  }
+}

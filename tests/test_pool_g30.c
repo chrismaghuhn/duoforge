@@ -120,7 +120,7 @@ static void check_facts(df_test *t)
     /* the numbers */
     DF_CHECK_EQ_U64(t, DFI_SITE_FLAME_BODY, 18u);
     DF_CHECK_EQ_U64(t, DFI_SITE_STATIC, 19u); /* step G39: Static's draw; the count was 19 until then */
-    DF_CHECK_EQ_U64(t, DFI_SITE_COUNT, 21u); /* step G46: DFI_SITE_DRAG */
+    DF_CHECK_EQ_U64(t, DFI_SITE_COUNT, 23u); /* step G46 adds the drag (site 20), step G54 the multi-hit count (site 21) */
     DF_CHECK_EQ_U64(t, DFI_SPECIAL_RAGE_POWDER, 33u);
     DF_CHECK_EQ_U64(t, DFI_SPECIAL_PSYCHIC_FANGS, 34u);
     DF_CHECK_EQ_U64(t, DFI_SPECIAL_SOLAR_BEAM, 35u);
@@ -160,8 +160,10 @@ static void check_facts(df_test *t)
     /* what stays unmarked, and why */
     DF_CHECK_EQ_U64(t, dfi_support.moves[DFI_MOVE_COTTONSPORE], 0u);    /* boosts to the foes: no primary boosts on a non-self target */
     DF_CHECK_EQ_U64(t, dfi_support.moves[DFI_MOVE_MAGICPOWDER], 0u);    /* a type change */
-    DF_CHECK_EQ_U64(t, dfi_support.moves[DFI_MOVE_STOMPINGTANTRUM], 0u); /* a last-move-failed flag that the state lacks */
-    DF_CHECK_EQ_U64(t, dfi_support.abilities[DFI_ABILITY_MEGASOL], 0u);  /* effectiveWeather: sun for the Solar Beam of its user */
+    DF_CHECK(t, dfi_support.moves[DFI_MOVE_STOMPINGTANTRUM] != 0u); /* step G42 marks it: the last move result of the tail (rev 4) */
+    /* effectiveWeather: sun for the Solar Beam of its user. Step G59 marks Mega Sol: its holder's Solar Beam and Weather Ball are
+     * refused off sun (dfi_mega_sol_refused, tests/test_pool_g59.c), so the Utility Umbrella and Power Herb claims above stand. */
+    DF_CHECK(t, dfi_support.abilities[DFI_ABILITY_MEGASOL] != 0u);
     for (uint32_t i = 0u; i < DFI_POOL_ITEM_COUNT; ++i) {
         const char *name = dfi_pool_item_names[i];
         if (strcmp(name, "utilityumbrella") == 0 || strcmp(name, "powerherb") == 0 || strcmp(name, "safetygoggles") == 0) {

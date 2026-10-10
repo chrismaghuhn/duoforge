@@ -1,0 +1,20 @@
+{
+  "name": "g57_mb_whirlwind",
+  "purpose": "Magic Bounce (step G57): Whirlwind (Staraptor, a forced switch, accuracy true) aimed at the foes' Espeon (Magic Bounce) is bounced back: the bounced move line carries [from] ability: Magic Bounce, and the original user (Staraptor) is dragged out at the phazing step. Ceruledge (M) protects, so the foe's Yawn on it is stopped.",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,00000000000000000000000000000000000000000000000000000000000000",
+  "teams": [
+    "Staraptor (F) @ Eject Button\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 2 SpD / 32 Spe\nJolly Nature\n- Whirlwind\n- Protect\n\nCeruledge (M) @ Grassy Seed\nAbility: Flash Fire\nLevel: 50\nEVs: 31 HP / 7 Atk / 24 Def / 3 SpD / 1 Spe\nAdamant Nature\n- Taunt\n- Protect\n\nGholdengo @ Leftovers\nAbility: Good as Gold\nLevel: 50\nEVs: 17 HP / 2 Def / 17 SpA / 16 SpD / 14 Spe\nModest Nature\n- Make It Rain\n- Protect\n\nKingambit (M) @ Black Glasses\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Sucker Punch\n- Protect\n\nUmbreon (F) @ Life Orb\nAbility: Inner Focus\nLevel: 50\nEVs: 32 HP / 32 Def / 2 SpD\nBold Nature\n- Protect\n- Foul Play\n\nIndeedee-F (F) @ Rocky Helmet\nAbility: Psychic Surge\nLevel: 50\nEVs: 32 HP / 32 Def / 2 SpD\nRelaxed Nature\n- Protect",
+    "Espeon (F) @ Focus Sash\nAbility: Magic Bounce\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nModest Nature\n- Yawn\n- Protect\n\nUmbreon (F) @ Life Orb\nAbility: Inner Focus\nLevel: 50\nEVs: 32 HP / 32 Def / 2 SpD\nBold Nature\n- Protect\n- Foul Play\n\nCeruledge (M) @ Grassy Seed\nAbility: Flash Fire\nLevel: 50\nEVs: 31 HP / 7 Atk / 24 Def / 3 SpD / 1 Spe\nAdamant Nature\n- Taunt\n- Protect\n\nGholdengo @ Leftovers\nAbility: Good as Gold\nLevel: 50\nEVs: 17 HP / 2 Def / 17 SpA / 16 SpD / 14 Spe\nModest Nature\n- Make It Rain\n- Protect\n\nKingambit (M) @ Black Glasses\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Sucker Punch\n- Protect\n\nIndeedee-F (F) @ Rocky Helmet\nAbility: Psychic Surge\nLevel: 50\nEVs: 32 HP / 32 Def / 2 SpD\nRelaxed Nature\n- Protect"
+  ],
+  "plan": {
+    "p1": [
+      "move 1 1, move 2"
+    ],
+    "p2": [
+      "move 1 2, move 1"
+    ],
+    "max_steps": 2
+  }
+}

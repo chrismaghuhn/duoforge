@@ -288,6 +288,20 @@ class LinesTest(unittest.TestCase):
         self.assertEqual(lines.check("|-status|p1a: Staraptor|tox", self.view), "fold")  # Tox folds (BC spec 5)
         self.assertEqual(self.stop("|replace|p1a: Zoroark|Zoroark-Hisui, L50, M"), "feature:ILLUSION")
 
+    def test_g64_lines(self):
+        # Step G64: Sheer Cold's bare -ohko after the target's faint changes no field (kept, no event); Poltergeist's
+        # -activate names the item its target holds, the open sheet's (another stops); Bug Bite's stealeat takes the
+        # target's berry like Knock Off, decision 0018's ITEM_CHANGE
+        self.assertEqual(lines.check("|-ohko", self.view), "keep")
+        self.assertEqual(lines.check("|-activate|p2a: Gholdengo|move: Poltergeist|Life Orb", self.view), "fold")
+        self.assertEqual(self.stop("|-activate|p2a: Gholdengo|move: Poltergeist|Leftovers"),
+                         "line:-activate move: Poltergeist")
+        bug_bite = "|-enditem|p1a: Staraptor|Sitrus Berry|[from] stealeat|[move] Bug Bite|[of] p2a: Gholdengo"
+        self.assertEqual(self.stop(bug_bite), "feature:ITEM_CHANGE")
+    def test_phantom_force_breaking_a_protection_folds(self):
+        # Step G58: Phantom Force breaks a Protect like Feint (hitStepBreakProtect), printed with [broken]
+        self.assertEqual(lines.check("|-activate|p2a: Gholdengo|move: Phantom Force|[broken]", self.view), "fold")
+
     def test_item_transfer_lines_are_item_change(self):
         # G29 (#171): every line of a Trick, Switcheroo, Thief or Covet is decision 0018's ITEM_CHANGE, the
         # -activate of Trick too (it names the target; Switcheroo prints none)
@@ -298,6 +312,31 @@ class LinesTest(unittest.TestCase):
                      "|-enditem|p2a: Gholdengo|Life Orb|[silent]|[from] move: Thief|[of] p1a: Staraptor",
                      "|-item|p1a: Staraptor|Life Orb|[from] move: Covet|[of] p2a: Gholdengo"):
             self.assertEqual(self.stop(line), "feature:ITEM_CHANGE", line)
+
+    def test_haze_folds(self):
+        # Step G62 (decision 0031): Haze's -clearallboost is the CLEAR_ALL_BOOSTS event; the tracker folds it
+        self.assertEqual(lines.check("|-clearallboost", self.view), "fold")
+
+    def test_after_you_and_quash_fold(self):
+        # Step G62: After You and Quash move their target in the action queue (data/moves.ts afteryou, quash: -activate
+        # of the target); the queue is no field of the view, the move lines that follow show the order
+        self.assertEqual(lines.check("|-activate|p2a: Gholdengo|move: After You", self.view), "fold")
+        self.assertEqual(lines.check("|-activate|p2a: Gholdengo|move: Quash", self.view), "fold")
+    def test_substitute_lines_stop_on_its_feature(self):
+        # Decision 0032 (step G60): every line that shows a Substitute stops on its feature until the tracker folds it,
+        # the absorbed hit's -activate included (it is no unknown line); its -fail lines are FAIL events (fold)
+        for line in ("|-start|p1a: Staraptor|Substitute", "|-end|p1a: Staraptor|Substitute",
+                     "|-activate|p1a: Staraptor|move: Substitute|[damage]"):
+            self.assertEqual(self.stop(line), "feature:SUBSTITUTE", line)
+        for line in ("|-fail|p1a: Staraptor|move: Substitute", "|-fail|p1a: Staraptor|move: Substitute|[weak]"):
+            self.assertEqual(lines.check(line, self.view), "fold", line)
+
+    def test_a_terrain_blocking_yawn_is_its_terrain_feature(self):
+        # The Yawn fix: Electric Terrain blocks the Yawn volatile and its sleep, Misty Terrain the sleep
+        # (data/moves.ts electricterrain/mistyterrain onTryAddVolatile/onSetStatus): the terrain's own feature, as
+        # its -fieldstart line, not an unknown line
+        self.assertEqual(self.stop("|-activate|p2a: Gholdengo|move: Electric Terrain"), "feature:TERRAIN_ELECTRIC")
+        self.assertEqual(self.stop("|-activate|p2a: Gholdengo|move: Misty Terrain"), "feature:TERRAIN_MISTY")
 
     def test_drag_folds(self):
         # Step G46: a forced switch brings a member in as a switch does (the tracker folds it as one, or stops)
@@ -407,7 +446,8 @@ class LinesTest(unittest.TestCase):
         self.assertEqual(lines.FEATURES["WEATHER_SAND"], 0)
         self.assertEqual(lines.FEATURES["RAGE_POWDER"], 39)
         self.assertEqual(lines.FEATURES["MOVE_FAILED"], 41)
-        self.assertEqual(len(lines.FEATURES), 42)  # tail revision 4: ROOST 40, MOVE_FAILED 41
+        self.assertEqual(lines.FEATURES["TRANSFORM"], 42)
+        self.assertEqual(len(lines.FEATURES), 43)  # tail revision 4: ROOST 40, MOVE_FAILED 41; 0028: TRANSFORM 42
 
     def test_supported_mask_forms(self):
         f = lines.FEATURES
@@ -442,6 +482,36 @@ class LinesTest(unittest.TestCase):
 
 
 TEAMS = data.ROOT / "tests" / "reference" / "teams"
+
+
+class PointsTest(unittest.TestCase):
+    """The decision points of a log (points.find)."""
+
+    _HEAD = ["|showteam|p1|x", "|showteam|p2|y", "|start", "|switch|p1a: Dragalge|Dragalge, L50|100/100",
+             "|switch|p2a: Gholdengo|Gholdengo, L50|100/100", "|turn|1"]
+
+    def test_a_switch_out_effect_of_the_answer_is_not_in_the_point(self):
+        # G51 (#281): Regenerator heals at the switch-out, a line of the PIVOT's answer printed before its |switch|;
+        # the player was asked before it (the engine shows the HP before the heal at the request)
+        from duoforge_replay import points
+        log = self._HEAD + ["|move|p1a: Dragalge|Flip Turn|p2a: Gholdengo", "|-damage|p2a: Gholdengo|80/100",
+                            "|-heal|p1a: Dragalge|53/100|[from] ability: Regenerator|[silent]",
+                            "|switch|p1a: Staraptor|Staraptor, L50|100/100|[from] Flip Turn", "|upkeep"]
+        pivot = [pt for pt in points.find(log) if pt.boundary == points.PIVOT]
+        self.assertEqual(len(pivot), 1)
+        self.assertEqual(log[pivot[0].line], "|-heal|p1a: Dragalge|53/100|[from] ability: Regenerator|[silent]")
+        # Natural Cure cures at the switch-out the same way
+        cure = self._HEAD + ["|move|p1a: Dragalge|U-turn|p2a: Gholdengo", "|-damage|p2a: Gholdengo|80/100",
+                             "|-curestatus|p1a: Dragalge|slp|[from] ability: Natural Cure",
+                             "|switch|p1a: Staraptor|Staraptor, L50|100/100|[from] U-turn", "|upkeep"]
+        pivot = [pt for pt in points.find(cure) if pt.boundary == points.PIVOT]
+        self.assertEqual(cure[pivot[0].line], "|-curestatus|p1a: Dragalge|slp|[from] ability: Natural Cure")
+        # a heal of another position, or one without a switch-out ability, stays in the point
+        other = self._HEAD + ["|move|p1a: Dragalge|Flip Turn|p2a: Gholdengo",
+                              "|-heal|p2a: Gholdengo|90/100|[from] item: Leftovers",
+                              "|switch|p1a: Staraptor|Staraptor, L50|100/100|[from] Flip Turn", "|upkeep"]
+        pivot = [pt for pt in points.find(other) if pt.boundary == points.PIVOT]
+        self.assertTrue(other[pivot[0].line].startswith("|switch|"))
 
 
 class PriorTest(unittest.TestCase):
@@ -947,9 +1017,9 @@ class GameTest(unittest.TestCase):
         self.assertEqual(self.skip_reason(self.log + self.log[start:]), "skip:two-games")
 
     def test_a_failure_the_converter_does_not_parse_stops(self):
-        # the converter decides which -fail forms it reads (main reads "heal" since G8); the one it cannot read is a
-        # named stop, never an internal error
-        lines = self.insert_after("|turn|3", "|-fail|p2a: Politoed|move: Substitute")
+        # the converter decides which -fail forms it reads (main reads "heal" since G8, Substitute's since G60); one it
+        # cannot read (Shed Tail's, data/moves.ts:16181) is a named stop, never an internal error
+        lines = self.insert_after("|turn|3", "|-fail|p2a: Politoed|move: Shed Tail|[weak]")
         result = self.run_game(lines)
         stops = [k for k in result.counters if k.startswith("perspectives.stopped.converter:untyped -fail")]
         self.assertEqual(sum(result.counters[k] for k in stops), 2, result.counters)

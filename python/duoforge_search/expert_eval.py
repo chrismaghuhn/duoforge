@@ -6,6 +6,9 @@ mirrored rows. evaluate_records turns their results into fixed groups with
 paired-seat bootstrap intervals and gate statuses; nothing chooses an
 endpoint after the fact. validate_compute compares the two arms' measured
 CPU core-seconds and GPU-seconds (learner ledger.py files) within 5% each.
+TrickRoomTracker and trick_room_report are a diagnostic beside the gate (owner
+amendment 2026-10-09): Trick Room fields per game, read from play_suite's
+batch buffers, and their report; no gate reads them.
 Plays nothing, trains nothing; no battle rules here.
 """
 import argparse
@@ -36,7 +39,14 @@ SCHEDULE = (("h2h_continuation", "control", ("pilot",), 2048), ("h2h_frozen", "f
             *(("panel", opponent, ARMS, 1024) for opponent in PANEL), ("ladder", "ladder", ARMS, 1024))
 SCHEDULE_FIELDS = ("game_id", "suite", "opponent", "arm", "bucket", "pair", "student_seat", "student_team",
                    "opponent_team", "seed")
-RECORD_FIELDS = SCHEDULE_FIELDS + ("score", "finished")
+# The Trick Room diagnostic's fields per game (integers >= 0; plan "Owner amendment: Trick Room diagnostic").
+TR_FIELDS = ("tr_setter_student", "tr_setter_opponent", "tr_sets_student", "tr_sets_opponent",
+             "tr_first_set_turn_student", "tr_reversals_student", "tr_blocks_student", "tr_turns", "tr_unattributed",
+             "tr_last_turn_choice")
+# The moves the diagnostic classifies chosen actions by (data API names). This is reporting only, no battle rule:
+# nothing here feeds a decision of any player.
+TR_MOVES = ("trickroom", "taunt", "fakeout", "imprison")
+RECORD_FIELDS = SCHEDULE_FIELDS + ("score", "finished") + TR_FIELDS
 GAMES = sum(games * len(arms) for _, _, arms, games in SCHEDULE)
 # (point bar, interval bar) of the head-to-head gates, interval bar of the panel gates.
 H2H_BARS = {"h2h_continuation": (0.52, 0.50), "h2h_frozen": (0.53, 0.50)}
@@ -145,10 +155,17 @@ def _layout():
 
 
 def _seeds(seed, index, bucket, pairs):
-    """Battle seeds of a (suite, bucket) block, from their own stream: the
-    same for every pool and both arms."""
+    """The battle seeds of a (suite, bucket) block's pairs: one batch seed
+    for the whole block, from its own stream, the same for every pool, both
+    arms and both seats. The engine derives a battle's RNG from the batch
+    seed, the environment index and the episode only (duoforge_batch.h), so
+    the runner plays a block's pairs of one arm and seat as one batch of
+    that seed, environment = pair, episode 1 (evaluate.play_suite's order):
+    pair p's battle RNG is duoforge_batch_seeds(seed, p, 1) on both seats
+    and arms."""
     rng = np.random.default_rng([seed, index, BUCKETS.index(bucket), 1])
-    return rng.integers(0, 1 << 63, size=pairs, dtype=np.uint64) * 2 + rng.integers(0, 2, size=pairs, dtype=np.uint64)
+    block = rng.integers(0, 1 << 63, dtype=np.uint64) * 2 + rng.integers(0, 2, dtype=np.uint64)
+    return np.full(pairs, block, dtype=np.uint64)
 
 
 def _buckets(pool):
@@ -229,7 +246,7 @@ def _schedule_rows(pool, seed, first_game_id):
 
 _DTYPES = {"game_id": np.int64, "suite": str, "opponent": str, "arm": str, "bucket": str, "pair": np.int64,
            "student_seat": np.int64, "student_team": np.int64, "opponent_team": np.int64, "seed": np.uint64,
-           "score": np.float64, "finished": bool}
+           "score": np.float64, "finished": bool, **{name: np.int64 for name in TR_FIELDS}}
 
 
 def _arrays(cols):
@@ -567,13 +584,220 @@ def main(argv: Sequence[str] | None = None) -> int:
         # The 5% match is on the arms' own use; the shared half is charged for the report only.
         result = evaluate_records(baseline["records"], manifest, (pilot, control))
         pilot, control = charge_shared(pilot, control, shared)
-        data = json.dumps(_report(result, pilot, control), indent=1, sort_keys=True, allow_nan=False)
+        report = _report(result, pilot, control)
+        report["trick_room"] = trick_room_report(baseline["records"])
+        data = json.dumps(report, indent=1, sort_keys=True, allow_nan=False)
         with open(args.out, "x", encoding="utf-8") as f:
             f.write(data)
     except (ValueError, TypeError, KeyError, OSError) as err:
         print(f"expert_eval: {err}", file=sys.stderr)
         return 2
     return 0
+
+
+# ---- the Trick Room diagnostic ----
+
+def tr_moves(context):
+    """The move ids of TR_MOVES in context's data (DuoforgeError for a name the data lacks)."""
+    from duoforge import data
+    return {name: int(data.find(context, data.TABLE_MOVE, name)) for name in TR_MOVES}
+
+
+class TrickRoomTracker:
+    """The Trick Room fields of play_suite's games, in duoforge_learn.luck.Luck's hook form: start(n, seats) for a
+    suite of n games (one per environment, the student on seats), before(batch, indices, active, step,
+    last_step) after each query and before batch.step(indices), after(batch, dead) after it; fields then holds
+    TR_FIELDS -> int64 (n,).
+
+    It reads only the batch's buffers of that query (requests, observations, candidates) and never changes
+    them. trick_room_turns of the student's view before and after a turn: 0 to above 0 sets TR, above 1 to 0
+    ends it early (1 to 0 is its own end). A change goes to a side only when exactly that side chose a Trick
+    Room move (the chosen slot's move id in its own view) on the turn it happened; anything else counts in
+    tr_unattributed. A change on a game's last turn is never observed (play_suite queries no more):
+    tr_last_turn_choice marks a Trick Room choice left without a later observation."""
+
+    def __init__(self, context):
+        from duoforge import _layout
+        moves = tr_moves(context)
+        self._tr, self._imprison = moves["trickroom"], moves["imprison"]
+        self._at_foe = np.array([moves["taunt"], moves["fakeout"]])
+        constants = _layout.CONSTANTS
+        self._slots, self._move = constants["DUOFORGE_CHOICE_SLOTS"], constants["DUOFORGE_SLOT_MOVE"]
+        self._turn_boundary = constants["DUOFORGE_BOUNDARY_TURN"]
+        self._no_choice, self._roster = _layout.NO_CHOICE, _layout.MAX_ROSTER
+        self.seats = None
+
+    def start(self, n, seats):
+        """A new suite of n games, the student on seats (n,)."""
+        seats = np.asarray(seats, dtype=np.int64).reshape(-1)
+        if seats.size != n or not np.isin(seats, (0, 1)).all():
+            raise ValueError("one student seat (0 or 1) per game")
+        self.seats = seats
+        self._f = {name: np.zeros(n, dtype=np.int64) for name in TR_FIELDS}
+        self._started = np.zeros(n, dtype=bool)
+        self._dead = np.zeros(n, dtype=bool)
+        self._turn = np.full(n, -1, dtype=np.int64)  # the last observation's turn
+        self._trick_room = np.zeros(n, dtype=np.int64)
+        self._counted = np.full(n, -1, dtype=np.int64)  # the last turn counted in tr_turns
+        self._chose = np.full((n, 2), -1, dtype=np.int64)  # the turn a side chose Trick Room on, -1: none open
+        self._setter = np.full(n, -1, dtype=np.int64)  # the side that set the running TR, -1 unknown
+
+    @property
+    def fields(self):
+        out = {name: v.copy() for name, v in self._f.items()}
+        out["tr_last_turn_choice"] = (self._chose >= 0).any(axis=1).astype(np.int64)
+        return out
+
+    def _knows(self, obs, n):
+        """Per side (2, n, 6): the members whose own view lists Trick Room."""
+        knows = np.zeros((2, n, self._roster), dtype=bool)
+        for p in range(2):
+            own = obs["sides"][:, p, p]
+            members = own["members"]
+            valid = (np.arange(self._roster)[None, :] < own["member_count"][:, None].astype(np.int64))[:, :, None] & \
+                (np.arange(4)[None, None, :] < members["move_count"][:, :, None].astype(np.int64))
+            knows[p] = ((members["move_ids"] == self._tr) & valid).any(axis=2)
+        return knows
+
+    def before(self, batch, indices, active, step, last_step):
+        if self.seats is None:
+            raise ValueError("start() the suite first")
+        n = self.seats.size
+        rows = np.arange(n)
+        go = np.asarray(active, dtype=bool).reshape(-1) & ~self._dead
+        obs = batch.observations
+        student = obs[rows, self.seats]
+        turn = student["turn"].astype(np.int64)
+        trick_room = student["trick_room_turns"].astype(np.int64)
+        knows = self._knows(obs, n)
+        first = go & ~self._started
+        f = self._f
+        f["tr_setter_student"][first] = knows[self.seats, rows].any(axis=1)[first]
+        f["tr_setter_opponent"][first] = knows[1 - self.seats, rows].any(axis=1)[first]
+        self._started |= first
+
+        # The field change since this game's last observation, and who chose Trick Room on that turn.
+        seen = go & (self._turn >= 0)
+        before = self._trick_room
+        sets = seen & (before == 0) & (trick_room > 0)
+        ends = seen & (before > 1) & (trick_room == 0)
+        change = sets | ends
+        chose = (self._chose == self._turn[:, None]) & (self._turn[:, None] >= 0)
+        one = chose[:, 0] ^ chose[:, 1]
+        side = np.where(chose[:, 0], 0, 1)
+        mine = side == self.seats
+        f["tr_unattributed"] += change & ~one
+        own_set = sets & one & mine
+        f["tr_sets_student"] += own_set
+        f["tr_first_set_turn_student"] = np.where(own_set & (f["tr_first_set_turn_student"] == 0), self._turn,
+                                                  f["tr_first_set_turn_student"])
+        f["tr_sets_opponent"] += sets & one & ~mine
+        f["tr_reversals_student"] += ends & one & mine & (self._setter == 1 - self.seats)
+        self._setter = np.where(sets, np.where(one, side, -1), np.where(ends, -1, self._setter))
+        # A choice is open until a change is attributed or a later turn is observed.
+        self._chose[change] = -1
+        self._chose[go[:, None] & (self._chose >= 0) & (self._chose < turn[:, None])] = -1
+        # A turn that begins with TR: its TURN boundary (a same-turn replacement already shows a fresh set).
+        count = go & (student["boundary_kind"] == self._turn_boundary) & (trick_room > 0) & (turn != self._counted)
+        f["tr_turns"] += count
+        self._counted = np.where(count, turn, self._counted)
+        self._turn = np.where(go, turn, self._turn)
+        self._trick_room = np.where(go, trick_room, self._trick_room)
+
+        # This query's chosen moves: Trick Room choices, and the student's block attempts while TR is inactive.
+        indices = np.asarray(indices, dtype=np.int64).reshape(n, 2)
+        occupied = []
+        for p in range(2):
+            occ = obs["sides"][:, p, p]["occupant"].astype(np.int64)
+            occupied.append(np.where(occ < self._roster, knows[p][rows[:, None], np.minimum(occ, self._roster - 1)],
+                                     False))
+        for p in range(2):
+            idx = indices[:, p]
+            picked = go & (batch.requests["requested"][:, p] != 0) & (idx != self._no_choice) & (idx >= 0)
+            cand = batch.candidates[rows, p, np.where(picked, idx, 0)]
+            picked &= cand["kind"] == self._slots
+            own = obs["sides"][:, p, p]
+            student = picked & (self.seats == p) & (trick_room == 0)
+            for s in range(2):
+                cmd = cand["slots"][:, s]
+                occ = own["occupant"][:, s].astype(np.int64)
+                slot = cmd["move_slot"].astype(np.int64)
+                move_ok = picked & (cmd["kind"] == self._move) & (occ < self._roster) & (slot < 4)
+                move = np.where(move_ok, own["members"]["move_ids"][rows, np.minimum(occ, self._roster - 1),
+                                                                    np.minimum(slot, 3)].astype(np.int64), -1)
+                self._chose[move_ok & (move == self._tr), p] = turn[move_ok & (move == self._tr)]
+                target = cmd["target"].astype(np.int64)
+                at_setter = (target < 4) & ((target >> 1) == 1 - p) & occupied[1 - p][rows, target & 1]
+                imprison = (move == self._imprison) & occupied[p][:, s] & occupied[1 - p].any(axis=1)
+                f["tr_blocks_student"] += student & move_ok & ((np.isin(move, self._at_foe) & at_setter) | imprison)
+
+    def after(self, batch, dead):
+        """After the step: a game the engine refused is no longer followed."""
+        self._dead |= np.asarray(dead, dtype=bool).reshape(-1)
+
+
+def _rate(scores, rng):
+    """{games, score, ci95} of the student's scores; an empty group has no rate."""
+    n = scores.size
+    if n == 0:
+        return {"games": 0, "score": None, "ci95": None}
+    means = np.empty(RESAMPLES)
+    for start in range(0, RESAMPLES, 100):  # bounded memory for large groups
+        stop = min(start + 100, RESAMPLES)
+        means[start:stop] = scores[rng.integers(0, n, size=(stop - start, n))].mean(axis=1)
+    return {"games": int(n), "score": float(scores.mean()), "ci95": list(_interval(means))}
+
+
+def _tr_group(r, rows, key):
+    def rng(i):
+        return np.random.default_rng([BOOTSTRAP_SEED, 0x7452, *key, i])
+    s = r["score"]
+    sets, first = r["tr_sets_student"], r["tr_first_set_turn_student"]
+    opponent_set, opponent_setter = rows & (r["tr_sets_opponent"] > 0), rows & (r["tr_setter_opponent"] > 0)
+    turns = first[rows & (sets > 0)]
+    return {
+        "games": int(rows.sum()),
+        "student_setter": _rate(s[rows & (r["tr_setter_student"] > 0)], rng(0)),
+        "opponent_setter": _rate(s[opponent_setter], rng(1)),
+        "student_sets": {"games_student_setter": int((rows & (r["tr_setter_student"] > 0)).sum()),
+                         "games_with_set": int((rows & (sets > 0)).sum()), "sets": int(sets[rows].sum()),
+                         "first_turn": {str(int(v)): int((turns == v).sum()) for v in np.unique(turns)}},
+        "answers": {"games_opponent_set": int(opponent_set.sum()),
+                    "reversals": int(r["tr_reversals_student"][opponent_set].sum()),
+                    "games_reversed": int((opponent_set & (r["tr_reversals_student"] > 0)).sum()),
+                    "games_opponent_setter": int(opponent_setter.sum()),
+                    "blocks": int(r["tr_blocks_student"][opponent_setter].sum()),
+                    "games_blocked": int((opponent_setter & (r["tr_blocks_student"] > 0)).sum())},
+        "tr_active": _rate(s[rows & (r["tr_turns"] > 0)], rng(2)),
+        "tr_inactive": _rate(s[rows & (r["tr_turns"] == 0)], rng(3)),
+        "unattributed": int(r["tr_unattributed"][rows].sum()),
+    }
+
+
+def trick_room_report(records) -> dict:
+    """The Trick Room diagnostic of the evaluation records, per arm, pooled and per suite: (a) score rate with a
+    95% game bootstrap interval where the student's or the opponent's team has a setter; (b) the student's sets
+    and first set turns; (c) its reversals of the opponent's TR and block attempts against it; (d) score rate
+    with and without an active TR. Finished games only. No gate reads it."""
+    names = ("suite", "arm", "score", "finished") + TR_FIELDS
+    if not isinstance(records, Mapping) or not set(names) <= set(records):
+        raise ValueError(f"the Trick Room report needs the fields {names}")
+    r = {name: _field(name, records[name]) for name in names}
+    if any(v.size != r["suite"].size for v in r.values()):
+        raise ValueError("records fields differ in length")
+    done = r["finished"] & np.isfinite(r["score"])
+    last = int((done & (r["tr_last_turn_choice"] > 0)).sum())
+    suites = tuple(dict.fromkeys(suite for suite, _, _, _ in SCHEDULE))
+    arms = {}
+    for a, arm in enumerate(ARMS):
+        rows = done & (r["arm"] == arm)
+        arms[arm] = {"all": _tr_group(r, rows, (a, len(suites))),
+                     "by_suite": {suite: _tr_group(r, rows & (r["suite"] == suite), (a, i))
+                                  for i, suite in enumerate(suites)}}
+    note = (f"Trick Room diagnostic, no gate. A field change on a game's last turn is not observed: {last} games "
+            f"chose Trick Room on their last turn and are counted without that turn's effect. A setter is a member "
+            f"of the whole team sheet, brought or not.")
+    return {"note": note, "last_turn_unobserved_games": last, "arms": arms}
 
 
 if __name__ == "__main__":

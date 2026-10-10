@@ -193,13 +193,47 @@ function drawTeam(side, rng) {
     return teamText(side, order.slice(0, side.pickedTeamSize()));
 }
 
+// A slot flagged by Revival Blessing (sim/side.ts chooseSwitch): its switch names a fainted Pokemon, not a standing one.
+function revivalSlot(side, slot) {
+    const pokemon = side.active[slot];
+    return !!(pokemon && side.slotConditions && side.slotConditions[pokemon.position] &&
+        side.slotConditions[pokemon.position].revivalblessing);
+}
+
+// Every fainted Pokemon of the side: a revive may name a fainted active ally too (its instaswitch, sim/battle.ts), and
+// the Revival Blessing branch of chooseSwitch takes any fainted Pokemon.
+function faintedReserves(side) {
+    const out = [];
+    for (let i = 0; i < side.pokemon.length; i++) {
+        if (side.pokemon[i].fainted) out.push(i);
+    }
+    return out;
+}
+
 function drawSwitch(side, rng) {
     const flags = side.activeRequest.forceSwitch;
     const free = standingReserves(side);
+    const fainted = faintedReserves(side);
     const chosen = new Map();
-    for (const slot of rng.shuffle([...flags.keys()].filter((i) => flags[i]))) {
-        if (!free.length) break;
-        chosen.set(slot, free.splice(rng.below(free.length), 1)[0]);
+    // sim/side.ts clearChoice: exactly min(flagged, standing reserves) switches; a revive is one of them and names a fainted
+    // Pokemon, a normal switch takes a standing reserve. The rest pass.
+    const flagged = rng.shuffle([...flags.keys()].filter((i) => flags[i]));
+    let budget = Math.min(flagged.length, free.length);
+    for (const slot of flagged) {
+        if (budget <= 0) break;
+        if (revivalSlot(side, slot)) {
+            if (!fainted.length) continue;
+            chosen.set(slot, fainted.splice(rng.below(fainted.length), 1)[0]);
+        } else {
+            chosen.set(slot, free.splice(rng.below(free.length), 1)[0]);
+        }
+        budget -= 1;
+    }
+    // A Revival Blessing slot is accepted with no living reserve too (its branch takes no unit): the random player revives
+    // there now and then, so that the pivots of a side without standing reserves are played as well.
+    for (const slot of flagged) {
+        if (chosen.has(slot) || !revivalSlot(side, slot) || !fainted.length) continue;
+        if (rng.chance(0.5)) chosen.set(slot, fainted.splice(rng.below(fainted.length), 1)[0]);
     }
     return side.active.map((_, slot) => (chosen.has(slot) ? `switch ${chosen.get(slot) + 1}` : 'pass')).join(', ');
 }
@@ -276,8 +310,12 @@ function enumerate(side) {
     const reserves = standingReserves(side);
     if (side.requestState === 'switch') {
         const flags = side.activeRequest.forceSwitch;
-        return joint(side.active.map((_, slot) => (flags[slot] ?
-            ['pass', ...reserves.map((r) => `switch ${r + 1}`)] : ['pass'])));
+        const fainted = faintedReserves(side);
+        return joint(side.active.map((_, slot) => {
+            if (!flags[slot]) return ['pass'];
+            const targets = revivalSlot(side, slot) ? fainted : reserves;
+            return ['pass', ...targets.map((r) => `switch ${r + 1}`)];
+        }));
     }
     if (side.requestState !== 'move') throw new Error(`no choice to enumerate for a ${side.requestState} request`);
     return joint(side.active.map((pokemon, slot) => {
@@ -299,9 +337,15 @@ function enumerate(side) {
 // ---------------------------------------------------------------- the side's answer
 
 // Showdown's verdict on a text, with the choice cleared again: the trial changes nothing that stays.
+// A revive (sim/side.ts chooseSwitch, its Revival Blessing branch) clears the switch flag of the Pokemon it is chosen for,
+// so the switch flags are kept too: a trial that the revive accepts must leave every later trial the same request.
 function trial(side, text) {
+    const flags = side.pokemon.map((p) => p.switchFlag);
     const accepted = side.choose(text);
     side.clearChoice();
+    side.pokemon.forEach((p, i) => {
+        p.switchFlag = flags[i];
+    });
     return accepted;
 }
 

@@ -35,14 +35,15 @@ def cpu_seconds():
 
 class Ledger:
     """The ledger at path for this process: phase(name) and device() measure, save() writes the totals of every
-    earlier process plus this one's."""
+    earlier process plus this one's. path None: this process alone, in memory (totals() only; save refuses)."""
 
-    def __init__(self, path):
+    def __init__(self, path=None):
         from duoforge_replay.dataset import refuse_repository
-        self.path = Path(path)
-        refuse_repository(self.path)
+        self.path = None if path is None else Path(path)
+        if self.path is not None:
+            refuse_repository(self.path)
         self._base = {"schema": SCHEMA, "cpu_core_seconds": 0.0, "gpu_seconds": 0.0, "processes": 0, "phases": {}}
-        if self.path.exists():
+        if self.path is not None and self.path.exists():
             saved = json.loads(self.path.read_text())
             if saved.get("schema") != SCHEMA:
                 raise ValueError(f"{self.path}: ledger schema {saved.get('schema')!r}, expected {SCHEMA}")
@@ -98,6 +99,8 @@ class Ledger:
 
     def save(self):
         """Writes the totals atomically (a temporary file, then a replace)."""
+        if self.path is None:
+            raise ValueError("this ledger has no file (Ledger(None) keeps its totals in memory)")
         tmp = self.path.with_name(self.path.name + ".tmp")
         tmp.write_text(json.dumps(self.totals(), indent=1, sort_keys=True))
         os.replace(tmp, self.path)

@@ -13,7 +13,6 @@ import io
 import json
 import os
 import re
-import shutil
 import subprocess
 import sys
 import tempfile
@@ -28,7 +27,7 @@ import trace_to_c  # noqa: E402
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = os.path.normpath(os.path.join(HERE, '..', '..'))
-BASE = [e['id'] for e in reg.entries(ROOT)]  # the teams of the committed registry (a test that adds one expects them first)
+from test_team_registry import BASE, copy_registry  # noqa: E402  (a small registry: the tests of writing need no more)
 SpeciesInfo = imp.SpeciesInfo  # the real class: main() is run with one that asks the stand-in
 
 _tables = {}
@@ -272,7 +271,7 @@ class Writing(unittest.TestCase):
         self.tmp = tempfile.TemporaryDirectory()
         self.addCleanup(self.tmp.cleanup)
         self.root = self.tmp.name
-        shutil.copytree(reg.registry_dir(ROOT), reg.registry_dir(self.root))
+        copy_registry(self.root)
         os.makedirs(os.path.join(self.root, 'dist', 'sim'))  # what --checkout must have
         self.paste = os.path.join(self.root, 'paste.txt')
         self.write_paste(paste(set_text('Rillaboom @ Miracle Seed'), set_text('Charizard-Mega-Y @ Charizardite Y'),

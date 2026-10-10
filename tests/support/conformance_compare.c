@@ -118,18 +118,19 @@ unsigned df_conf_compare_observation(FILE *out, const duoforge_context *ctx, con
                     ability = 1u + dfi_pool_formes[dfi_mega_of(set->species, set->item)].ability; /* the Mega of (forme, stone) */
                 }
                 bool ok = v->status == status && v->is_mega == e->mega && v->item_used == used && v->ability == ability;
-                /* Own PP exact; the foe's PP is the one it knows (shown_pp, decision 0026: an Illusion holder's counts and its
-                 * disguise's), which is the true PP wherever no Illusion is up. */
-                const uint8_t *want_pp = s == viewer ? e->pp : e->shown_pp;
+                /* The owner sees its PP exact; the other player sees the PP it can attribute (step G53, decision 0030
+                 * section 1), and the Illusion counts of decision 0026 section 4 (pp_foe folds them): the same as the exact PP unless a
+                 * Pressure extra or a disguise is hidden from it. */
+                const uint8_t *want = viewer == s ? e->pp : e->pp_foe;
                 for (uint32_t k = 0; k < v->move_count && k < 4u; ++k) {
-                    ok = ok && v->pp[k] == want_pp[k];
+                    ok = ok && v->pp[k] == want[k];
                 }
                 if (!ok) {
                     fprintf(out,
                             "  %s step %u: player %u sees side %u member %u as status %u mega %u used %u pp %u, "
                             "reference %u %u %u %u\n",
                             cb->name, step, viewer, s, m, v->status, v->is_mega, v->item_used, v->pp[0], status,
-                            e->mega, used, want_pp[0]);
+                            e->mega, used, want[0]);
                     ++bad;
                 }
             }
@@ -330,8 +331,11 @@ unsigned df_conf_compare_state(FILE *out, const duoforge_context *ctx, const duo
              * Hand and Follow Me (Team C) and flinch, at TURN, REPLACEMENT and
              * PIVOT boundaries. */
             if (pos != NULL && b->boundary_kind != DUOFORGE_BOUNDARY_TERMINAL) {
-                const uint32_t lslot = pos->locked_move != 0u ? (uint32_t)pos->locked_move - 1u : 0xFFu;
-                const uint32_t ltarget = pos->locked_move != 0u ? pos->locked_target : 0u;
+                /* Step G56: a lockedmove (Outrage) keeps its slot in locked_move too, but the reference has no locked slot for it
+                 * (its count is the tail's lock_turns; the lock is compared through the request and the move lines). */
+                const bool lockedmove = b->tail.sides[s].positions[pos - b->sides[s].positions].lock_turns != 0u;
+                const uint32_t lslot = pos->locked_move != 0u && !lockedmove ? (uint32_t)pos->locked_move - 1u : 0xFFu;
+                const uint32_t ltarget = pos->locked_move != 0u && !lockedmove ? pos->locked_target : 0u;
                 const uint32_t choice = ((uint32_t)pos->flags & DFI_VOL_CHOICE_LOCK) != 0u ? 8u : 0u;
                 const uint32_t unburden = ((uint32_t)pos->flags & DFI_VOL_UNBURDEN) != 0u ? 16u : 0u;
                 const uint32_t helping = ((uint32_t)pos->flags & DFI_VOL_HELPING_HAND) != 0u ? 32u : 0u;

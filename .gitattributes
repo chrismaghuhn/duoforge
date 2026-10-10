@@ -2,3 +2,4 @@
 third_party/** -text
 tests/lint_fixtures/** -text
 data/teams/** text eol=lf
+data/teams_pending/** text eol=lf

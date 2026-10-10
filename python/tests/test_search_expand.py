@@ -172,10 +172,10 @@ class SearchExpand(unittest.TestCase):
                 self._expand(leaves, n=5)
             refused("DUOFORGE_E_INVALID_ARGUMENT", viewers=viewers)
             refused("DUOFORGE_E_INVALID_ARGUMENT", root_envs=np.array([0, 1, ROOTS, 3], np.uint32))  # past the roots
-            with self.assertRaisesRegex(ValueError, "encoder 5 is not one"):
-                self._expand(leaves, n=4, version=5)
+            with self.assertRaisesRegex(ValueError, "encoder 6 is not one"):
+                self._expand(leaves, n=4, version=6)  # 5 is encoder 5 (decisions 0025/0028)
             with self.assertRaisesRegex(ValueError, "not a mask"):  # no mask of the feature bits, as in query_encoded
-                self._expand(leaves, n=4, ext_supported=1 << 42)
+                self._expand(leaves, n=4, ext_supported=1 << 43)  # 42 is TRANSFORM (0028): 43 is past every bit
             refused("DUOFORGE_E_INVALID_ARGUMENT", version=3, ext_supported=1 << 40)  # past version 3's features
             with self.assertRaises(duoforge.DuoforgeError) as caught:  # leaves == roots
                 leaves.expand(leaves, 4, self.mask, SEED, np.zeros(4, np.uint64), np.zeros(4, np.uint8),

@@ -1,0 +1,2681 @@
+{
+ "harness": 14,
+ "pin": "b2cb775b0616115b775534eaeff50300e1fc81fc",
+ "spec": "g54_upper_hand_followme.json",
+ "format": "gen9championsvgc2026regmc",
+ "seed": "sodium,0000000000000000000000000000000000000000000000000000000000004620",
+ "start": {
+  "log": [
+   "|gametype|doubles",
+   "|player|p1|p1||",
+   "|player|p2|p2||",
+   "|gen|9",
+   "|tier|[Gen 9 Champions] VGC 2026 Reg M-C",
+   "|rule|Species Clause: Limit one of each Pokémon",
+   "|rule|Item Clause: Limit 1 of each item",
+   "|clearpoke",
+   "|poke|p1|Samurott, L50, M|",
+   "|poke|p1|Primarina, L50, F|",
+   "|poke|p1|Gholdengo, L50|",
+   "|poke|p1|Milotic, L50, F|",
+   "|poke|p1|Kingambit, L50, M|",
+   "|poke|p1|Ceruledge, L50, M|",
+   "|poke|p2|Indeedee-F, L50, F|",
+   "|poke|p2|Gholdengo, L50|",
+   "|poke|p2|Milotic, L50, F|",
+   "|poke|p2|Kingambit, L50, M|",
+   "|poke|p2|Ceruledge, L50, M|",
+   "|poke|p2|Salamence, L50, M|",
+   "|teampreview|4",
+   "|split|p1",
+   "|uhtml|otsrequest|<button name=\"send\" value=\"/acceptopenteamsheets\" class=\"button\" style=\"margin-right: 10px;\"><strong>Accept Open Team Sheets</strong></button><button name=\"send\" value=\"/rejectopenteamsheets\" class=\"button\" style=\"margin-top: 10px\"><strong>Deny Open Team Sheets</strong></button>",
+   "",
+   "|split|p2",
+   "|uhtml|otsrequest|<button name=\"send\" value=\"/acceptopenteamsheets\" class=\"button\" style=\"margin-right: 10px;\"><strong>Accept Open Team Sheets</strong></button><button name=\"send\" value=\"/rejectopenteamsheets\" class=\"button\" style=\"margin-top: 10px\"><strong>Deny Open Team Sheets</strong></button>",
+   ""
+  ],
+  "state": {
+   "turn": 0,
+   "ended": false,
+   "winner": "",
+   "weather": "",
+   "weather_turns": 0,
+   "terrain": "",
+   "terrain_turns": 0,
+   "trick_room": 0,
+   "sides": [
+    {
+     "request": "teampreview",
+     "conditions": [
+      0,
+      0,
+      0
+     ],
+     "enabled": [],
+     "active": [
+      -1,
+      -1
+     ],
+     "pokemon": [
+      {
+       "species": "Samurott",
+       "set_species": "Samurott",
+       "mega": 0,
+       "switch_flag": 0,
+       "hp": 172,
+       "maxhp": 172,
+       "item": "mysticwater",
+       "status": "",
+       "status_time": 0,
+       "confusion": 0,
+       "fainted": false,
+       "boosts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "pp": [
+        16,
+        8
+       ],
+       "volatiles": [],
+       "locked": null
+      },
+      {
+       "species": "Primarina",
+       "set_species": "Primarina",
+       "mega": 0,
+       "switch_flag": 0,
+       "hp": 187,
+       "maxhp": 187,
+       "item": "rockyhelmet",
+       "status": "",
+       "status_time": 0,
+       "confusion": 0,
+       "fainted": false,
+       "boosts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "pp": [
+        16,
+        8
+       ],
+       "volatiles": [],
+       "locked": null
+      },
+      {
+       "species": "Gholdengo",
+       "set_species": "Gholdengo",
+       "mega": 0,
+       "switch_flag": 0,
+       "hp": 194,
+       "maxhp": 194,
+       "item": "focussash",
+       "status": "",
+       "status_time": 0,
+       "confusion": 0,
+       "fainted": false,
+       "boosts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "pp": [
+        16,
+        8
+       ],
+       "volatiles": [],
+       "locked": null
+      },
+      {
+       "species": "Milotic",
+       "set_species": "Milotic",
+       "mega": 0,
+       "switch_flag": 0,
+       "hp": 202,
+       "maxhp": 202,
+       "item": "sitrusberry",
+       "status": "",
+       "status_time": 0,
+       "confusion": 0,
+       "fainted": false,
+       "boosts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "pp": [
+        12,
+        8,
+        20
+       ],
+       "volatiles": [],
+       "locked": null
+      },
+      {
+       "species": "Kingambit",
+       "set_species": "Kingambit",
+       "mega": 0,
+       "switch_flag": 0,
+       "hp": 207,
+       "maxhp": 207,
+       "item": "blackglasses",
+       "status": "",
+       "status_time": 0,
+       "confusion": 0,
+       "fainted": false,
+       "boosts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "pp": [
+        20,
+        8
+       ],
+       "volatiles": [],
+       "locked": null
+      },
+      {
+       "species": "Ceruledge",
+       "set_species": "Ceruledge",
+       "mega": 0,
+       "switch_flag": 0,
+       "hp": 181,
+       "maxhp": 181,
+       "item": "expertbelt",
+       "status": "",
+       "status_time": 0,
+       "confusion": 0,
+       "fainted": false,
+       "boosts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "pp": [
+        8
+       ],
+       "volatiles": [],
+       "locked": null
+      }
+     ]
+    },
+    {
+     "request": "teampreview",
+     "conditions": [
+      0,
+      0,
+      0
+     ],
+     "enabled": [],
+     "active": [
+      -1,
+      -1
+     ],
+     "pokemon": [
+      {
+       "species": "Indeedee-F",
+       "set_species": "Indeedee-F",
+       "mega": 0,
+       "switch_flag": 0,
+       "hp": 177,
+       "maxhp": 177,
+       "item": "rockyhelmet",
+       "status": "",
+       "status_time": 0,
+       "confusion": 0,
+       "fainted": false,
+       "boosts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "pp": [
+        20,
+        20,
+        12,
+        8
+       ],
+       "volatiles": [],
+       "locked": null
+      },
+      {
+       "species": "Gholdengo",
+       "set_species": "Gholdengo",
+       "mega": 0,
+       "switch_flag": 0,
+       "hp": 194,
+       "maxhp": 194,
+       "item": "focussash",
+       "status": "",
+       "status_time": 0,
+       "confusion": 0,
+       "fainted": false,
+       "boosts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "pp": [
+        16,
+        8
+       ],
+       "volatiles": [],
+       "locked": null
+      },
+      {
+       "species": "Milotic",
+       "set_species": "Milotic",
+       "mega": 0,
+       "switch_flag": 0,
+       "hp": 202,
+       "maxhp": 202,
+       "item": "sitrusberry",
+       "status": "",
+       "status_time": 0,
+       "confusion": 0,
+       "fainted": false,
+       "boosts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "pp": [
+        12,
+        8,
+        20
+       ],
+       "volatiles": [],
+       "locked": null
+      },
+      {
+       "species": "Kingambit",
+       "set_species": "Kingambit",
+       "mega": 0,
+       "switch_flag": 0,
+       "hp": 207,
+       "maxhp": 207,
+       "item": "blackglasses",
+       "status": "",
+       "status_time": 0,
+       "confusion": 0,
+       "fainted": false,
+       "boosts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "pp": [
+        20,
+        8
+       ],
+       "volatiles": [],
+       "locked": null
+      },
+      {
+       "species": "Ceruledge",
+       "set_species": "Ceruledge",
+       "mega": 0,
+       "switch_flag": 0,
+       "hp": 181,
+       "maxhp": 181,
+       "item": "expertbelt",
+       "status": "",
+       "status_time": 0,
+       "confusion": 0,
+       "fainted": false,
+       "boosts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "pp": [
+        8
+       ],
+       "volatiles": [],
+       "locked": null
+      },
+      {
+       "species": "Salamence",
+       "set_species": "Salamence",
+       "mega": 0,
+       "switch_flag": 0,
+       "hp": 172,
+       "maxhp": 172,
+       "item": "salamencite",
+       "status": "",
+       "status_time": 0,
+       "confusion": 0,
+       "fainted": false,
+       "boosts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "pp": [
+        8
+       ],
+       "volatiles": [],
+       "locked": null
+      }
+     ]
+    }
+   ]
+  }
+ },
+ "steps": [
+  {
+   "input": {
+    "p1": "team 1234",
+    "p2": "team 1234"
+   },
+   "draws": [],
+   "log": [
+    "|teamsize|p1|4",
+    "|teamsize|p2|4",
+    "|start",
+    "|split|p1",
+    "|uhtmlchange|otsrequest|",
+    "",
+    "|split|p2",
+    "|uhtmlchange|otsrequest|",
+    "",
+    "|split|p1",
+    "|switch|p1a: Samurott|Samurott, L50, M|172/172",
+    "|switch|p1a: Samurott|Samurott, L50, M|100/100",
+    "|split|p1",
+    "|switch|p1b: Primarina|Primarina, L50, F|187/187",
+    "|switch|p1b: Primarina|Primarina, L50, F|100/100",
+    "|split|p2",
+    "|switch|p2a: Indeedee|Indeedee-F, L50, F|177/177",
+    "|switch|p2a: Indeedee|Indeedee-F, L50, F|100/100",
+    "|split|p2",
+    "|switch|p2b: Gholdengo|Gholdengo, L50|194/194",
+    "|switch|p2b: Gholdengo|Gholdengo, L50|100/100",
+    "|-fieldstart|move: Psychic Terrain|[from] ability: Psychic Surge|[of] p2a: Indeedee",
+    "|turn|1"
+   ],
+   "state": {
+    "turn": 1,
+    "ended": false,
+    "winner": "",
+    "weather": "",
+    "weather_turns": 0,
+    "terrain": "psychicterrain",
+    "terrain_turns": 5,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1
+       ],
+       [
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Samurott",
+        "set_species": "Samurott",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 172,
+        "maxhp": 172,
+        "item": "mysticwater",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         16,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Primarina",
+        "set_species": "Primarina",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 187,
+        "maxhp": 187,
+        "item": "rockyhelmet",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         16,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Gholdengo",
+        "set_species": "Gholdengo",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 194,
+        "maxhp": 194,
+        "item": "focussash",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         16,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 202,
+        "maxhp": 202,
+        "item": "sitrusberry",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         8,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Indeedee-F",
+        "set_species": "Indeedee-F",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 177,
+        "maxhp": 177,
+        "item": "rockyhelmet",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         20,
+         12,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Gholdengo",
+        "set_species": "Gholdengo",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 194,
+        "maxhp": 194,
+        "item": "focussash",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         16,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 202,
+        "maxhp": 202,
+        "item": "sitrusberry",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         8,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Kingambit",
+        "set_species": "Kingambit",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 207,
+        "maxhp": 207,
+        "item": "blackglasses",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": {
+    "p1": "move 1 1, move 1 1",
+    "p2": "move 1, move 1 1"
+   },
+   "draws": [
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 46
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 14
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 8
+    },
+    {
+     "site": "SECONDARY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 28
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 51
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 20
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 7
+    },
+    {
+     "site": "SECONDARY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 79
+    }
+   ],
+   "log": [
+    "|move|p1a: Samurott|Upper Hand||[still]",
+    "|-fail|p1a: Samurott",
+    "|move|p2a: Indeedee|Follow Me|p2a: Indeedee",
+    "|-singleturn|p2a: Indeedee|move: Follow Me",
+    "|move|p2b: Gholdengo|Shadow Ball|p1a: Samurott",
+    "|split|p1",
+    "|-damage|p1a: Samurott|87/172",
+    "|-damage|p1a: Samurott|50/100g",
+    "|move|p1b: Primarina|Moonblast|p2a: Indeedee",
+    "|split|p2",
+    "|-damage|p2a: Indeedee|108/177",
+    "|-damage|p2a: Indeedee|61/100",
+    "|upkeep",
+    "|turn|2"
+   ],
+   "state": {
+    "turn": 2,
+    "ended": false,
+    "winner": "",
+    "weather": "",
+    "weather_turns": 0,
+    "terrain": "psychicterrain",
+    "terrain_turns": 4,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1
+       ],
+       [
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Samurott",
+        "set_species": "Samurott",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 87,
+        "maxhp": 172,
+        "item": "mysticwater",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         15,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Primarina",
+        "set_species": "Primarina",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 187,
+        "maxhp": 187,
+        "item": "rockyhelmet",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         15,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Gholdengo",
+        "set_species": "Gholdengo",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 194,
+        "maxhp": 194,
+        "item": "focussash",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         16,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 202,
+        "maxhp": 202,
+        "item": "sitrusberry",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         8,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Indeedee-F",
+        "set_species": "Indeedee-F",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 108,
+        "maxhp": 177,
+        "item": "rockyhelmet",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         19,
+         20,
+         12,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Gholdengo",
+        "set_species": "Gholdengo",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 194,
+        "maxhp": 194,
+        "item": "focussash",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         15,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 202,
+        "maxhp": 202,
+        "item": "sitrusberry",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         8,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Kingambit",
+        "set_species": "Kingambit",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 207,
+        "maxhp": 207,
+        "item": "blackglasses",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": {
+    "p1": "move 1 1, move 1 1",
+    "p2": "move 1, move 1 1"
+   },
+   "draws": [
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 87
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 9
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 5
+    },
+    {
+     "site": "SECONDARY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 40
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 35
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 21
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 2
+    },
+    {
+     "site": "SECONDARY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 66
+    }
+   ],
+   "log": [
+    "|move|p1a: Samurott|Upper Hand||[still]",
+    "|-fail|p1a: Samurott",
+    "|move|p2a: Indeedee|Follow Me|p2a: Indeedee",
+    "|-singleturn|p2a: Indeedee|move: Follow Me",
+    "|move|p2b: Gholdengo|Shadow Ball|p1a: Samurott",
+    "|split|p1",
+    "|-damage|p1a: Samurott|0 fnt",
+    "|-damage|p1a: Samurott|0 fnt",
+    "|faint|p1a: Samurott",
+    "|move|p1b: Primarina|Moonblast|p2a: Indeedee",
+    "|split|p2",
+    "|-damage|p2a: Indeedee|35/177",
+    "|-damage|p2a: Indeedee|19/100",
+    "|upkeep"
+   ],
+   "state": {
+    "turn": 2,
+    "ended": false,
+    "winner": "",
+    "weather": "",
+    "weather_turns": 0,
+    "terrain": "psychicterrain",
+    "terrain_turns": 3,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "switch",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Samurott",
+        "set_species": "Samurott",
+        "mega": 0,
+        "switch_flag": 1,
+        "hp": 0,
+        "maxhp": 172,
+        "item": "mysticwater",
+        "status": "fnt",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         14,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Primarina",
+        "set_species": "Primarina",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 187,
+        "maxhp": 187,
+        "item": "rockyhelmet",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         14,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Gholdengo",
+        "set_species": "Gholdengo",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 194,
+        "maxhp": 194,
+        "item": "focussash",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         16,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 202,
+        "maxhp": 202,
+        "item": "sitrusberry",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         8,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Indeedee-F",
+        "set_species": "Indeedee-F",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 35,
+        "maxhp": 177,
+        "item": "rockyhelmet",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         18,
+         20,
+         12,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Gholdengo",
+        "set_species": "Gholdengo",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 194,
+        "maxhp": 194,
+        "item": "focussash",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         14,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 202,
+        "maxhp": 202,
+        "item": "sitrusberry",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         8,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Kingambit",
+        "set_species": "Kingambit",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 207,
+        "maxhp": 207,
+        "item": "blackglasses",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": {
+    "p1": "switch 3, pass"
+   },
+   "draws": [
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 0,
+     "hi": 2,
+     "value": 1,
+     "group": [
+      "P:p1a:0:",
+      "P:p2b:0:"
+     ],
+     "start": 0
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "switch-order",
+     "lo": 0,
+     "hi": 2,
+     "value": 1,
+     "group": [
+      "P:p1a:0:S",
+      "P:p2b:0:-"
+     ],
+     "start": 0
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 0,
+     "hi": 2,
+     "value": 0,
+     "group": [
+      "P:p1a:0:",
+      "P:p2b:0:"
+     ],
+     "start": 0
+    }
+   ],
+   "log": [
+    "|split|p1",
+    "|switch|p1a: Gholdengo|Gholdengo, L50|194/194",
+    "|switch|p1a: Gholdengo|Gholdengo, L50|100/100",
+    "|turn|3"
+   ],
+   "state": {
+    "turn": 3,
+    "ended": false,
+    "winner": "",
+    "weather": "",
+    "weather_turns": 0,
+    "terrain": "psychicterrain",
+    "terrain_turns": 3,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1
+       ],
+       [
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Gholdengo",
+        "set_species": "Gholdengo",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 194,
+        "maxhp": 194,
+        "item": "focussash",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         16,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Primarina",
+        "set_species": "Primarina",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 187,
+        "maxhp": 187,
+        "item": "rockyhelmet",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         14,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Samurott",
+        "set_species": "Samurott",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 172,
+        "item": "mysticwater",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         14,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 202,
+        "maxhp": 202,
+        "item": "sitrusberry",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         8,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Indeedee-F",
+        "set_species": "Indeedee-F",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 35,
+        "maxhp": 177,
+        "item": "rockyhelmet",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         18,
+         20,
+         12,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Gholdengo",
+        "set_species": "Gholdengo",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 194,
+        "maxhp": 194,
+        "item": "focussash",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         14,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 202,
+        "maxhp": 202,
+        "item": "sitrusberry",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         8,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Kingambit",
+        "set_species": "Kingambit",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 207,
+        "maxhp": 207,
+        "item": "blackglasses",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": {
+    "p1": "move 1 1, move 1 1",
+    "p2": "move 1, move 1 1"
+   },
+   "draws": [
+    {
+     "site": "SPEED_TIE",
+     "context": "queue",
+     "lo": 1,
+     "hi": 3,
+     "value": 1,
+     "group": [
+      "A:move:p1a:shadowball",
+      "A:move:p2b:shadowball"
+     ],
+     "start": 1
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:BeforeTurn",
+     "lo": 0,
+     "hi": 2,
+     "value": 1,
+     "group": [
+      "P:p1a:0:",
+      "P:p2b:0:"
+     ],
+     "start": 0
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 0,
+     "hi": 2,
+     "value": 1,
+     "group": [
+      "P:p1a:0:",
+      "P:p2b:0:"
+     ],
+     "start": 0
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "queue",
+     "lo": 1,
+     "hi": 3,
+     "value": 2,
+     "group": [
+      "A:move:p1a:shadowball",
+      "A:move:p2b:shadowball"
+     ],
+     "start": 1
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 0,
+     "hi": 2,
+     "value": 1,
+     "group": [
+      "P:p1a:0:",
+      "P:p2b:0:"
+     ],
+     "start": 0
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 0,
+     "hi": 2,
+     "value": 1,
+     "group": [
+      "P:p1a:0:",
+      "P:p2b:0:"
+     ],
+     "start": 0
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 0,
+     "hi": 2,
+     "value": 1,
+     "group": [
+      "P:p1a:0:",
+      "P:p2b:0:"
+     ],
+     "start": 0
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "queue",
+     "lo": 0,
+     "hi": 2,
+     "value": 0,
+     "group": [
+      "A:move:p2b:shadowball",
+      "A:move:p1a:shadowball"
+     ],
+     "start": 0
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 30
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 18
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 6
+    },
+    {
+     "site": "SECONDARY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 83
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 0,
+     "hi": 2,
+     "value": 1,
+     "group": [
+      "P:p1a:0:",
+      "P:p2b:0:"
+     ],
+     "start": 0
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 0,
+     "hi": 2,
+     "value": 1,
+     "group": [
+      "P:p1a:0:",
+      "P:p2b:0:"
+     ],
+     "start": 0
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 0,
+     "hi": 2,
+     "value": 0,
+     "group": [
+      "P:p1a:0:",
+      "P:p2b:0:"
+     ],
+     "start": 0
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 0,
+     "hi": 2,
+     "value": 1,
+     "group": [
+      "P:p1a:0:",
+      "P:p2b:0:"
+     ],
+     "start": 0
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 41
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 10
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 0
+    },
+    {
+     "site": "SECONDARY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 39
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 0,
+     "hi": 2,
+     "value": 1,
+     "group": [
+      "P:p1a:0:",
+      "P:p2b:0:"
+     ],
+     "start": 0
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 0,
+     "hi": 2,
+     "value": 0,
+     "group": [
+      "P:p1a:0:",
+      "P:p2b:0:"
+     ],
+     "start": 0
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 0,
+     "hi": 2,
+     "value": 0,
+     "group": [
+      "P:p1a:0:",
+      "P:p2b:0:"
+     ],
+     "start": 0
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 0,
+     "hi": 2,
+     "value": 1,
+     "group": [
+      "P:p1a:0:",
+      "P:p2b:0:"
+     ],
+     "start": 0
+    }
+   ],
+   "log": [
+    "|move|p2a: Indeedee|Follow Me|p2a: Indeedee",
+    "|-singleturn|p2a: Indeedee|move: Follow Me",
+    "|move|p2b: Gholdengo|Shadow Ball|p1a: Gholdengo",
+    "|-supereffective|p1a: Gholdengo|1",
+    "|split|p1",
+    "|-damage|p1a: Gholdengo|96/194",
+    "|-damage|p1a: Gholdengo|49/100",
+    "|move|p1a: Gholdengo|Shadow Ball|p2a: Indeedee",
+    "|-immune|p2a: Indeedee",
+    "|move|p1b: Primarina|Moonblast|p2a: Indeedee",
+    "|split|p2",
+    "|-damage|p2a: Indeedee|0 fnt",
+    "|-damage|p2a: Indeedee|0 fnt",
+    "|faint|p2a: Indeedee",
+    "|upkeep"
+   ],
+   "state": {
+    "turn": 3,
+    "ended": false,
+    "winner": "",
+    "weather": "",
+    "weather_turns": 0,
+    "terrain": "psychicterrain",
+    "terrain_turns": 2,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Gholdengo",
+        "set_species": "Gholdengo",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 96,
+        "maxhp": 194,
+        "item": "focussash",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         15,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Primarina",
+        "set_species": "Primarina",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 187,
+        "maxhp": 187,
+        "item": "rockyhelmet",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         13,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Samurott",
+        "set_species": "Samurott",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 172,
+        "item": "mysticwater",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         14,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 202,
+        "maxhp": 202,
+        "item": "sitrusberry",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         8,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "switch",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Indeedee-F",
+        "set_species": "Indeedee-F",
+        "mega": 0,
+        "switch_flag": 1,
+        "hp": 0,
+        "maxhp": 177,
+        "item": "rockyhelmet",
+        "status": "fnt",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         17,
+         20,
+         12,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Gholdengo",
+        "set_species": "Gholdengo",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 194,
+        "maxhp": 194,
+        "item": "focussash",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         13,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 202,
+        "maxhp": 202,
+        "item": "sitrusberry",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         8,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Kingambit",
+        "set_species": "Kingambit",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 207,
+        "maxhp": 207,
+        "item": "blackglasses",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": {
+    "p2": "switch 3, pass"
+   },
+   "draws": [
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 0,
+     "hi": 2,
+     "value": 1,
+     "group": [
+      "P:p1a:0:",
+      "P:p2b:0:"
+     ],
+     "start": 0
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "switch-order",
+     "lo": 0,
+     "hi": 2,
+     "value": 0,
+     "group": [
+      "P:p1a:0:-",
+      "P:p2b:0:-"
+     ],
+     "start": 0
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "each:Update",
+     "lo": 0,
+     "hi": 2,
+     "value": 1,
+     "group": [
+      "P:p1a:0:",
+      "P:p2b:0:"
+     ],
+     "start": 0
+    }
+   ],
+   "log": [
+    "|split|p2",
+    "|switch|p2a: Milotic|Milotic, L50, F|202/202",
+    "|switch|p2a: Milotic|Milotic, L50, F|100/100",
+    "|turn|4"
+   ],
+   "state": {
+    "turn": 4,
+    "ended": false,
+    "winner": "",
+    "weather": "",
+    "weather_turns": 0,
+    "terrain": "psychicterrain",
+    "terrain_turns": 2,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1
+       ],
+       [
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Gholdengo",
+        "set_species": "Gholdengo",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 96,
+        "maxhp": 194,
+        "item": "focussash",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         15,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Primarina",
+        "set_species": "Primarina",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 187,
+        "maxhp": 187,
+        "item": "rockyhelmet",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         13,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Samurott",
+        "set_species": "Samurott",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 172,
+        "item": "mysticwater",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         14,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 202,
+        "maxhp": 202,
+        "item": "sitrusberry",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         8,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Milotic",
+        "set_species": "Milotic",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 202,
+        "maxhp": 202,
+        "item": "sitrusberry",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         8,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Gholdengo",
+        "set_species": "Gholdengo",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 194,
+        "maxhp": 194,
+        "item": "focussash",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         13,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Indeedee-F",
+        "set_species": "Indeedee-F",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 0,
+        "maxhp": 177,
+        "item": "rockyhelmet",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         17,
+         20,
+         12,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Kingambit",
+        "set_species": "Kingambit",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 207,
+        "maxhp": 207,
+        "item": "blackglasses",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  }
+ ]
+}

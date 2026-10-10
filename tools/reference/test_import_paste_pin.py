@@ -13,7 +13,6 @@ and the cosmetic lines with real data, and the command line end to end.
 import io
 import os
 import re
-import shutil
 import subprocess
 import sys
 import tempfile
@@ -23,6 +22,7 @@ sys.dont_write_bytecode = True  # a direct run must not leave __pycache__ in the
 
 import import_paste as imp  # noqa: E402
 import team_registry as reg  # noqa: E402
+from test_team_registry import copy_registry  # noqa: E402
 import trace_to_c  # noqa: E402
 
 HERE = os.path.dirname(os.path.abspath(__file__))
@@ -119,7 +119,7 @@ class WithThePin(unittest.TestCase):
 
     def test_the_command_line_end_to_end(self):
         with tempfile.TemporaryDirectory() as tmp:
-            shutil.copytree(reg.registry_dir(ROOT), reg.registry_dir(tmp))
+            copy_registry(tmp)
             paste_file = os.path.join(tmp, 'raw.txt')
             with io.open(paste_file, 'w', encoding='utf-8', newline='\n') as f:
                 f.write(self.raw[0])

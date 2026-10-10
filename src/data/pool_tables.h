@@ -893,7 +893,26 @@
 #define DFI_SPECIAL_ICE_FANG 69u
 #define DFI_SPECIAL_TRI_ATTACK 70u
 #define DFI_SPECIAL_DOUBLE_SHOCK 71u
-#define DFI_SPECIAL_UNMODELED 72u
+#define DFI_SPECIAL_ROOST 72u
+#define DFI_SPECIAL_STOMPING_TANTRUM 73u
+#define DFI_SPECIAL_LOCKED_MOVE 74u
+#define DFI_SPECIAL_REVIVAL_BLESSING 75u
+#define DFI_SPECIAL_MULTI_HIT_2_5 76u
+#define DFI_SPECIAL_SCALE_SHOT 77u
+#define DFI_SPECIAL_QUICK_GUARD 78u
+#define DFI_SPECIAL_UPPER_HAND 79u
+#define DFI_SPECIAL_HEAL_PULSE 80u
+#define DFI_SPECIAL_STRENGTH_SAP 81u
+#define DFI_SPECIAL_BEAT_UP 82u
+#define DFI_SPECIAL_BUG_BITE 83u
+#define DFI_SPECIAL_POLTERGEIST 84u
+#define DFI_SPECIAL_SHEER_COLD 85u
+#define DFI_SPECIAL_HAZE 86u
+#define DFI_SPECIAL_AFTER_YOU 87u
+#define DFI_SPECIAL_QUASH 88u
+#define DFI_SPECIAL_SUBSTITUTE 89u
+#define DFI_SPECIAL_PHANTOM_FORCE 90u
+#define DFI_SPECIAL_UNMODELED 91u
 
 /* ---- the second flags byte of every move (step G8: the general byte for the flags that the first one has no room
  * for; bits 4 to 128 are free) and the secondary kinds that it comes with ---- */
@@ -1388,10 +1407,18 @@ extern const uint8_t dfi_pool_move_flags2[DFI_POOL_MOVE_COUNT];
 extern const uint8_t dfi_pool_move_heal[DFI_POOL_MOVE_COUNT][2];
 /* Decision 0020: the static flags of every move (DUOFORGE_MOVE_STATIC_FLAG_*: one bit per Showdown flag name, plus
  * POWER_RULE for a move with a basePowerCallback) and its hit counts (the pin's multihit; 1 and 1 for a single hit), by
- * move id, for every row, modelled or not. The engine reads neither: they are data for duoforge_data_move_static, and the
- * last parts of the canonical pool bytes. */
+ * move id, for every row, modelled or not. The data is read by duoforge_data_move_static; the engine reads one bit of it, PULSE
+ * (step G59, Mega Launcher's BasePower in src/combat/turn.c), and no other. The last parts of the canonical pool bytes. */
 extern const uint32_t dfi_pool_move_static_flags[DFI_POOL_MOVE_COUNT];
 extern const uint8_t dfi_pool_move_static_hits[DFI_POOL_MOVE_COUNT][2];
+/* The third flags byte of every move (DFI_MOVE_FLAG3_*), by move id; the very last part of the canonical pool bytes. It is
+ * the engine's copy of pin flags that the static flags (decision 0020, no engine reader) also give out. The bits are
+ * assigned centrally (HauptSession); bits 4 to 7 are free. */
+#define DFI_MOVE_FLAG3_REFLECTABLE 1u    /* flags.reflectable (step G57): Magic Bounce (DFI_ABILITY_MAGICBOUNCE) bounces the move */
+#define DFI_MOVE_FLAG3_MUST_PRESSURE 2u  /* flags.mustpressure (step G53): a foe's Pressure costs PP whatever the move targets */
+#define DFI_MOVE_FLAG3_BYPASSSUB 4u      /* flags.bypasssub (step G60): a Substitute does not take the hit of the move (decision 0032) */
+#define DFI_MOVE_FLAG3_PULSE 8u          /* flags.pulse (step G59): Mega Launcher's BasePower x1.5 for the holder's pulse moves */
+extern const uint8_t dfi_pool_move_flags3[DFI_POOL_MOVE_COUNT];
 extern const dfi_pool_alias dfi_pool_forme_aliases[DFI_POOL_ALIAS_COUNT];
 
 /* ---- names ----
@@ -1416,7 +1443,7 @@ extern const char *const dfi_pool_item_unmodeled[DFI_POOL_ITEM_COUNT];
 extern const char *const dfi_pool_ability_unmodeled[DFI_POOL_ABILITY_COUNT];
 
 /* SHA-256 of the canonical pool bytes (written by the generator). */
-#define DFI_POOL_CANONICAL_SIZE 54153u
+#define DFI_POOL_CANONICAL_SIZE 54664u
 extern const uint8_t dfi_pool_table_hash[32];
 /* The canonical bytes of the closure layout over the first `formes`, `moves`,
  * `items` and `abilities` rows of the tables above, with every immunity byte

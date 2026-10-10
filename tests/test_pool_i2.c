@@ -22,6 +22,7 @@
 #include <duoforge/duoforge_view.h>
 
 #include "combat/events.h"
+#include "codec/state_codec.h"
 #include "combat/turn.h"
 #include "data/pool_tables.h"
 #include "reference/conformance_pool.h"
@@ -639,12 +640,70 @@ static void check_expected_status(df_test *t)
     DF_CHECK_EQ_U64(t, df_conf_expected_status(&e, &plain, 0u, 0u), 0u);                      /* the owner, fainted */
 }
 
+/* Audit (2026-10-10, HauptSession's view.c audit), item (a), decision 0026 section 6 (amended): the foe's public record hides the
+ * secret parts of the disguise: the holder's identity (ability_state's roster index), the disguise flag, snapshot bytes 0..6 and
+ * the pending counts. The shown name (ill_shown) and the override are what the foe saw on the field, so they stay visible.
+ * (i) Masked bytes: with a disguise up, duoforge_battle_public refuses the foe's record (ILLUSION_POSSIBLE, decision 0026 section
+ *     4), so the masked bytes do not leave through the public call at all; the test pins the refusal and the cause.
+ * (ii) Visible bytes: the owner's record carries its own Illusion bytes exactly as the true state holds them (the owner's view is
+ *     not masked). The visible values of the foe's view are the values the reference fold derives from the shown lines alone; that
+ *     is compared per recorded battle by the conformance tables (shown_status, pp_foe in conformance_compare.c). */
+static void check_public_mask(df_test *t, const duoforge_context *ctx)
+{
+    duoforge_battle *b = replay(t, ctx, "i2_illusion_break", 1u);
+    if (b == NULL) {
+        return;
+    }
+    uint32_t causes = 0u;
+    DF_CHECK(t, duoforge_battle_public_causes(ctx, b, 1u, &causes) == DUOFORGE_OK);
+    DF_CHECK_EQ_U64(t, causes & DUOFORGE_PUBLIC_CAUSE_ILLUSION_POSSIBLE, DUOFORGE_PUBLIC_CAUSE_ILLUSION_POSSIBLE);
+    duoforge_public_state foe_pub;
+    DF_CHECK(t, duoforge_battle_public(ctx, b, 1u, &foe_pub) == DUOFORGE_E_UNSUPPORTED);
+    duoforge_public_state own_pub;
+    if (DF_CHECK(t, duoforge_battle_public(ctx, b, 0u, &own_pub) == DUOFORGE_OK)) {
+        const size_t side_off = DFI_ENC_TAIL_OFF + DFI_ENC_TAIL_REV4_SIZE + DFI_ENC_TAIL5_SIDES_OFF + 0u * DFI_ENC_TAIL5_SIDE_SIZE;
+        const dfi_tail_illusion *ill = &b->tail.sides[0].illusion;
+        DF_CHECK(t, memcmp(own_pub.state + side_off + DFI_ENC_TAIL5_ILL_SNAPSHOT_OFF, ill->snapshot, 7u) == 0);
+        DF_CHECK(t, memcmp(own_pub.state + side_off + DFI_ENC_TAIL5_ILL_PENDING_OFF, ill->pending, sizeof ill->pending) == 0);
+        const size_t pos_off = DFI_ENC_TAIL_OFF + DFI_ENC_TAIL_SIDES_OFF + 0u * DFI_ENC_TAIL_SIDE_SIZE + DFI_ENC_TAIL_POS_OFF;
+        DF_CHECK_EQ_U64(t, own_pub.state[pos_off + DFI_ENC_TAIL_POS_ABILITY_STATE_OFF], b->tail.sides[0].positions[0].ability_state);
+        DF_CHECK(t, b->tail.sides[0].positions[0].ability_state != 0u); /* the disguise flag is up, so the owner's copy is not zero */
+    }
+    duoforge_battle_destroy(b);
+}
+
+/* Audit item (b): the predicate ILLUSION_POSSIBLE reads the Illusion state of the sides, which is safe because every public call
+ * checks the state first (dfi_view_check_args runs dfi_state_check, the rev 5 rule of invariants.c: no Illusion byte without a holder
+ * on the side's sheet). Counter-case: a holder-less side (the foe, side 1) with a pending count is refused E_INVARIANT by the public
+ * causes call and by the public record, whatever the player. */
+static void check_illusion_invariant(df_test *t, const duoforge_context *ctx)
+{
+    duoforge_battle *b = replay(t, ctx, "i2_illusion_break", 1u);
+    if (b == NULL) {
+        return;
+    }
+    bool holderless = true;
+    for (uint32_t m = 0u; m < DUOFORGE_MAX_ROSTER; ++m) {
+        holderless = holderless && b->sides[1].members[m].ability != DFI_ABILITY_ILLUSION + 1u;
+    }
+    if (DF_CHECK(t, holderless)) {
+        b->tail.sides[1].illusion.pending[0] = 1u;
+        uint32_t causes = 0u;
+        DF_CHECK(t, duoforge_battle_public_causes(ctx, b, 0u, &causes) == DUOFORGE_E_INVARIANT);
+        duoforge_public_state pub;
+        DF_CHECK(t, duoforge_battle_public(ctx, b, 0u, &pub) == DUOFORGE_E_INVARIANT);
+    }
+    duoforge_battle_destroy(b);
+}
+
 int main(void)
 {
     df_test t;
     df_test_begin(&t, "duoforge.state.pool_i2");
     duoforge_context *ctx = df_make_context(&df_config_pool);
     check_team_start(&t, ctx);
+    check_public_mask(&t, ctx);
+    check_illusion_invariant(&t, ctx);
     check_break(&t, ctx);
     check_unbroken(&t, ctx);
     check_ab_info_safety(&t, ctx);

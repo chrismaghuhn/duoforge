@@ -331,11 +331,11 @@ static bool rd_cmd(dfr_cursor *c, df_conf_cmd *d)
 static bool rd_mon(dfr_cursor *c, df_conf_mon *m)
 {
     return rd_u32(c, &m->present) && rd_u32(c, &m->hp) && rd_u8s(c, m->pp, DFR_COUNT(m->pp)) &&
-           rd_u8s(c, m->shown_pp, DFR_COUNT(m->shown_pp)) && rd_u8(c, &m->shown_status) &&
            rd_u8s(c, m->stages, DFR_COUNT(m->stages)) && rd_u8(c, &m->stall) && rd_u8(c, &m->fainted) &&
            rd_u8(c, &m->status) && rd_u8(c, &m->status_counter) && rd_u8(c, &m->confusion) &&
            rd_u8(c, &m->locked_slot) && rd_u8(c, &m->locked_target) && rd_u8(c, &m->mega) && rd_u8(c, &m->held) &&
-           rd_u8(c, &m->seen) && rd_u8(c, &m->seen_percent) && rd_u8(c, &m->seen_flag) && rd_u8(c, &m->vols);
+           rd_u8(c, &m->seen) && rd_u8(c, &m->seen_percent) && rd_u8(c, &m->seen_flag) && rd_u8(c, &m->vols) &&
+           rd_u8s(c, m->pp_foe, DFR_COUNT(m->pp_foe)) && rd_u8(c, &m->shown_status);
 }
 
 static bool rd_step(dfr_cursor *c, df_conf_step *s)
@@ -432,8 +432,15 @@ static bool command_fits(dfr_reader *r, const df_conf_cmd *c, uint32_t member_co
             return false;
         }
         return true;
+    case DUOFORGE_SLOT_REVIVE:
+        if (c->move_slot != 0u || c->target != 0u || c->mega != 0u || c->reserve >= member_count) {
+            fail(r, "record C: a revive command with the roster index %u of %u members or with other fields than a revive",
+                 (unsigned)c->reserve, (unsigned)member_count);
+            return false;
+        }
+        return true;
     default:
-        fail(r, "record C: slot command kind %u is not 0 to 3", (unsigned)c->kind);
+        fail(r, "record C: slot command kind %u is not 0 to 4", (unsigned)c->kind);
         return false;
     }
 }

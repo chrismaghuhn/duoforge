@@ -273,11 +273,37 @@ static duoforge_status dfi_view_visible_causes(const duoforge_context *ctx, cons
             mask |= DUOFORGE_PUBLIC_CAUSE_ILLUSION_POSSIBLE;
         }
     }
+    /* Step G60 (decision 0032): a Substitute on either side is public presence (the position's volatile, VOLATILE_SUBSTITUTE); its
+     * HP never is, so the presence is a function of the public record only. */
+    for (uint32_t side = 0u; side < DUOFORGE_SIDE_COUNT; ++side) {
+        for (uint32_t p = 0u; p < DUOFORGE_ACTIVE_PER_SIDE; ++p) {
+            if (b->tail.sides[side].positions[p].substitute_hp != 0u) {
+                mask |= DUOFORGE_PUBLIC_CAUSE_SUBSTITUTE;
+            }
+        }
+    }
     *out_mask = mask;
     return DUOFORGE_OK;
 }
 
 /* The counter refusal of duoforge_battle_public: E_UNSUPPORTED while the one predicate names a cause. */
+/* decision 0023 (HauptSession, the PP proxy): the record keeps no revive history, so a foe that may have revived is seen
+ * through its Revival Blessing slot: Revival Blessing has PP 1 and a foe's PP is derived from the moves it used, so a
+ * derived PP of 0 means the move was used once, revive or not. While any foe member shows that, the record refuses (the
+ * generic cause: no cause bit, the causes mask stays 0). It depends only on the observation. Own slots never count. */
+static bool dfi_view_foe_revive_proxy(const duoforge_observation *ob, uint32_t foe)
+{
+    for (uint32_t m = 0u; m < DUOFORGE_MAX_ROSTER; ++m) {
+        const duoforge_member_view *v = &ob->sides[foe].members[m];
+        for (uint32_t k = 0u; k < DUOFORGE_MAX_MOVE_SLOTS && k < v->move_count; ++k) {
+            if (v->move_ids[k] == DFI_MOVE_REVIVALBLESSING && v->pp[k] == 0u) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
 static duoforge_status dfi_view_counter_support(const duoforge_context *ctx, const duoforge_battle *b, uint32_t player)
 {
     uint32_t causes = 0u;
@@ -285,7 +311,15 @@ static duoforge_status dfi_view_counter_support(const duoforge_context *ctx, con
     if (st != DUOFORGE_OK) {
         return st;
     }
-    return causes == 0u ? DUOFORGE_OK : DUOFORGE_E_UNSUPPORTED;
+    if (causes != 0u) {
+        return DUOFORGE_E_UNSUPPORTED;
+    }
+    duoforge_observation observation;
+    const duoforge_status so = duoforge_battle_observe(ctx, b, player, &observation);
+    if (so != DUOFORGE_OK) {
+        return so;
+    }
+    return dfi_view_foe_revive_proxy(&observation, 1u - (player & 1u)) ? DUOFORGE_E_UNSUPPORTED : DUOFORGE_OK;
 }
 
 /* party_order in a public view (step G46; decision 0023): the foe's bench entries (positions 2 and up) are the order of the
@@ -437,7 +471,9 @@ static duoforge_status dfi_view_encode(const duoforge_context *ctx, const duofor
     for (uint32_t side = 0u; side < DUOFORGE_SIDE_COUNT; ++side) {
         for (uint32_t p = 0u; p < DUOFORGE_ACTIVE_PER_SIDE; ++p) {
             const dfi_tail_pos *tp = &b->tail.sides[side].positions[p];
-            if (tp->trap_turns != 0u || tp->lock_turns != 0u || (side == foe && tp->substitute_hp != 0u)) {
+            /* A Substitute on either side is refused (decision 0032): its HP follows hidden damage and the owner's request does not show
+             * it, so no honest world can rebuild it. The cause (DUOFORGE_PUBLIC_CAUSE_SUBSTITUTE) is named by the causes call. */
+            if (tp->trap_turns != 0u || tp->lock_turns != 0u || tp->substitute_hp != 0u) {
                 return DUOFORGE_E_UNSUPPORTED;
             }
         }

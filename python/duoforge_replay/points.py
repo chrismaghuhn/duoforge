@@ -13,7 +13,9 @@ A spectator log has no requests. The points come from the line structure:
   a PIVOT (as trace_to_c.boundary_of). It covers the run of |switch| lines up
   to the next action line; a position that switches a second time starts a
   new point, and a switch "[from]" a move (the user's own switch) shares no
-  run with another switch of its side.
+  run with another switch of its side. The outgoing member's own switch-out
+  effects (Regenerator's heal, Natural Cure) print before its |switch| but
+  answer the request: the point starts before them.
 
 find() decides nothing about who is asked: the tracker's fold state at the
 point does (spectator.SpectatorTracker.at_point).
@@ -30,6 +32,27 @@ TEAM_SELECTION, TURN, REPLACEMENT, PIVOT = (C[f"DUOFORGE_BOUNDARY_{n}"] for n in
 _ACTED = {"move", "cant", "-mega"}
 # Lines that end a run of switch lines: anything that acts or a turn boundary.
 _RUN_ENDS = {"move", "cant", "turn", "upkeep", "win", "tie", "-mega"}
+# Effects of the outgoing member's own switch-out, printed before its |switch| line (data/abilities.ts onSwitchOut):
+# they belong to the answer of the request, not to its point.
+_SWITCH_OUT = {("-heal", "[from] ability: Regenerator"), ("-curestatus", "[from] ability: Natural Cure")}
+
+
+def _before_switch_out(lines, i, position, floor):
+    """The first line of the run of switch-out effect lines of position's outgoing member that ends right before
+    lines[i] (no earlier than floor): where a switch point that starts at lines[i] really begins."""
+    start = i
+    while start - 1 > floor:
+        parts = lines[start - 1].split("|")
+        kind = line_kind(lines[start - 1])
+        if len(parts) < 3 or not any((kind, x) in _SWITCH_OUT for x in parts[3:]):
+            break
+        try:
+            if flat_position(parts[2]) != position:
+                break
+        except (ValueError, KeyError, IndexError):
+            break
+        start -= 1
+    return start
 
 
 class Skip(Exception):
@@ -47,6 +70,7 @@ class Point:
     boundary: int  # DUOFORGE_BOUNDARY_*
     run: tuple = ()  # flat positions side*2+slot that switch in this point's run (switch points)
     end: int = 0  # the label's lines are lines[line:end]: a TURN's until its |upkeep|, a switch point's run
+    revive: bool = False  # a Revival Blessing request (step G52): run holds the user's position, nobody else asked
 
 
 
@@ -70,10 +94,37 @@ def find(lines):
     run = None  # [start line, positions] of the open switch run
     runs = {}  # point index -> its run
     occupants = {}  # flat position -> the protocol name of its occupant (from the switch lines)
+    revive_user = None  # the position of a Revival Blessing user whose revive is still to come (step G52)
+    revive_asked_at = 0  # the line its first request came at
+    revived = None  # (side, name) of a revive whose instaswitch may follow: its |switch| asks nobody
     for i in range(starts[0] + 1, len(lines)):
         kind = line_kind(lines[i])
         if kind in ("win", "tie"):
             break
+        if kind == "move" and lines[i].split("|")[3:4] == ["Revival Blessing"] and "[still]" not in lines[i].split("|"):
+            # the user's side is asked whom to revive right after the move line (a pass there defers it: the request
+            # comes again after the next action, g52_revive_pivot_no_reserve_ceruledge)
+            revive_user = flat_position(lines[i].split("|")[2])
+            points.append(Point(len(points), i + 1, PIVOT, (revive_user,), 0, True))
+            upkeep_since_point, run = False, None
+            revive_asked_at = i + 1
+            continue
+        elif kind == "-heal" and "[from] move: Revival Blessing" in lines[i].split("|")[4:]:
+            start = i - 1 if i > 0 and line_kind(lines[i - 1]) == "split" else i
+            if revive_user is not None and any(line_kind(lines[j]) in ("move", "cant")
+                                               for j in range(revive_asked_at, start)):
+                # passed at the first request: asked again before this line (and the |split| before it)
+                points.append(Point(len(points), start, PIVOT, (revive_user,), 0, True))
+                upkeep_since_point, run = False, None
+            revive_user = None
+            side, name = int(lines[i].split("|")[2][1]) - 1, lines[i].split("|")[2].split(": ", 1)[1]
+            # Showdown switches the revived member straight back in only when it still holds its position (it fainted
+            # there and was never replaced: battle.ts, side.pokemon index < active.length); a benched revive waits for
+            # an ordinary replacement request
+            revived = (side, name) if any(occupants.get(side * 2 + k) == name for k in range(2)) else None
+            continue
+        elif kind in _RUN_ENDS and kind != "upkeep":
+            revived = None  # the instaswitch into a long-empty position comes after the |upkeep| (g52 battles)
         if run is not None and kind in _RUN_ENDS:
             run = None
         if kind == "turn":
@@ -89,6 +140,9 @@ def find(lines):
             incoming = (position // 2, parts[2].split(": ", 1)[1])
             outgoing = occupants.get(position)
             occupants[position] = incoming[1]
+            if revived == incoming and not any(x.startswith("[from]") for x in parts[3:]):
+                revived = None
+                continue  # a revived member into its empty position (0025 item 10): part of the revive's answer
             if len(points) == 1:
                 continue  # the leads at |start|, before |turn|1
             if turn_open and not acted:
@@ -108,11 +162,13 @@ def find(lines):
                 run[3].add((position // 2, outgoing))
                 continue
             boundary = REPLACEMENT if upkeep_since_point else PIVOT
-            run = [i, [position], [own_request], {(position // 2, outgoing)}]
+            start = _before_switch_out(lines, i, position, points[-1].line)  # a Regenerator heal is the answer's
+            run = [start, [position], [own_request], {(position // 2, outgoing)}]
             runs[len(points)] = run
-            points.append(Point(len(points), i, boundary))
+            points.append(Point(len(points), start, boundary))
             upkeep_since_point = False
-    return _ends([p if p.boundary in (TEAM_SELECTION, TURN) else _with_run(p, runs[p.index]) for p in points], lines)
+    return _ends([p if p.boundary in (TEAM_SELECTION, TURN) or p.revive else _with_run(p, runs[p.index])
+                   for p in points], lines)
 
 
 def _with_run(point, run):
@@ -137,5 +193,5 @@ def _ends(points, lines):
                 if p.boundary != TURN and i > p.line and kind in _RUN_ENDS:
                     end = i
                     break
-        out.append(Point(p.index, p.line, p.boundary, p.run, end))
+        out.append(Point(p.index, p.line, p.boundary, p.run, end, p.revive))
     return out

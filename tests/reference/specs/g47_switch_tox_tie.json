@@ -1,0 +1,34 @@
+{
+  "name": "g47_switch_tox_tie",
+  "purpose": "Switch-in order of two badly poisoned Pokemon (step G47, the toxic status SwitchIn handler, data/conditions.ts:151): both Umbreon (female, equal Speed, no HP EVs) are poisoned on turn 1 and faint to the residual on turn 6, and both sides then replace them at once with the poisoned Houndoom (male, switched out on turn 2): two entering tox Pokemon of one Speed, so the reference draws the switch-in order tie.",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,000000000000000000000000000000000000000000000000000000000000c001",
+  "teams": [
+    "Umbreon (F) @ Focus Sash\nAbility: Inner Focus\nLevel: 50\nEVs: 0 HP / 32 Def / 2 SpD\nCalm Nature\n- Toxic\n- Protect\n\nHoundoom (M) @ Charcoal\nAbility: Flash Fire\nLevel: 50\nEVs: 2 HP / 32 SpA / 32 Spe\nTimid Nature\n- Will-O-Wisp\n- Toxic\n- Protect\n\nPolitoed (M) @ Mystic Water\nAbility: Drizzle\nLevel: 50\nEVs: 32 HP / 2 Def / 32 SpD\nCalm Nature\n- Protect\n\nCeruledge (M) @ Grassy Seed\nAbility: Flash Fire\nLevel: 50\nEVs: 31 HP / 7 Atk / 24 Def / 3 SpD / 1 Spe\nAdamant Nature\n- Protect\n\nRillaboom (M) @ Miracle Seed\nAbility: Grassy Surge\nLevel: 50\nEVs: 18 HP / 32 Atk / 2 Def / 6 SpD / 8 Spe\nAdamant Nature\n- Fake Out\n\nMilotic (F) @ Sitrus Berry\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Coil\n- Protect",
+    "Umbreon (F) @ Focus Sash\nAbility: Inner Focus\nLevel: 50\nEVs: 0 HP / 32 Def / 2 SpD\nCalm Nature\n- Toxic\n- Protect\n\nHoundoom (M) @ Charcoal\nAbility: Flash Fire\nLevel: 50\nEVs: 2 HP / 32 SpA / 32 Spe\nTimid Nature\n- Will-O-Wisp\n- Toxic\n- Protect\n\nPolitoed (M) @ Mystic Water\nAbility: Drizzle\nLevel: 50\nEVs: 32 HP / 2 Def / 32 SpD\nCalm Nature\n- Protect\n\nCeruledge (M) @ Grassy Seed\nAbility: Flash Fire\nLevel: 50\nEVs: 31 HP / 7 Atk / 24 Def / 3 SpD / 1 Spe\nAdamant Nature\n- Protect\n\nRillaboom (M) @ Miracle Seed\nAbility: Grassy Surge\nLevel: 50\nEVs: 18 HP / 32 Atk / 2 Def / 6 SpD / 8 Spe\nAdamant Nature\n- Fake Out\n\nMilotic (F) @ Sitrus Berry\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Coil\n- Protect"
+  ],
+  "plan": {
+    "p1": [
+      "move 1 1, move 2 2",
+      "move 2, switch 3",
+      "move 2, move 1",
+      "move 2, move 1",
+      "move 2, move 1",
+      "move 2, move 1",
+      "move 2, move 1",
+      "move 2, move 1"
+    ],
+    "p2": [
+      "move 1 1, move 2 2",
+      "move 2, switch 3",
+      "move 2, move 1",
+      "move 2, move 1",
+      "move 2, move 1",
+      "move 2, move 1",
+      "move 2, move 1",
+      "move 2, move 1"
+    ],
+    "max_steps": 8
+  }
+}

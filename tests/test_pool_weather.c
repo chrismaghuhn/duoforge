@@ -254,7 +254,10 @@ static void check_view(df_test *t, const duoforge_context *ctx)
                 /* w8_sand_soak has Soaked positions (TYPE_CHANGED, type_now: step G11's fields, checked against the
                  * protocol by duoforge.state.pool_g11 for its own battles); the weather needs no other field. */
                 if (strcmp(names[n], "w8_sand_soak") != 0) {
-                    DF_CHECK(t, memcmp(&ext, &want, sizeof want) == 0);
+                    for (uint32_t g42f = 0u; g42f < 4u; ++g42f) { /* step G42: move_failed is the last move result FALSE */
+                        const uint32_t g42last = ((uint32_t)b->tail.sides[g42f / 2u].positions[g42f % 2u].move_result >> 2) & 3u;
+                        want.sides[g42f / 2u].positions[g42f % 2u].move_failed = g42last == 2u ? 1u : 0u;
+                    }                    DF_CHECK(t, memcmp(&ext, &want, sizeof want) == 0);
                 } else {
                     DF_CHECK(t, ext.supported == want.supported && ext.epoch == want.epoch);
                 }
@@ -271,15 +274,15 @@ static void check_view(df_test *t, const duoforge_context *ctx)
 
 /* The abilities and the item that the pinned data gives immunity to Sandstorm damage (onImmunity 'sandstorm': Sand Force,
  * Sand Rush, Sand Veil; the item that does so, Safety Goggles, is not in the pool) or protection from
- * indirect damage (Magic Guard): the engine has an immunity for Sand Rush (step G22), Overcoat (step G30) and Sand Veil (step G39) in
- * dfi_sand_immune, so the others stay unmarked. The abilities that suppress or override the weather that the Speed abilities of step G22 read
- * (Cloud Nine; Mega Sol makes Pokemon#effectiveWeather sunny for its holder's moves; Air Lock and Utility Umbrella are
- * not in the pool at all) stay unmarked too, and so do the ones that break an ability (Inner Focus is breakable): no
- * battle holds any of them. The pinned-data side of this list is checked by tools/datagen/pool_families.js. */
+ * indirect damage (Magic Guard): the engine has an immunity for Sand Rush (step G22), Overcoat (step G30), Sand Veil (step G39)
+ * and Sand Force (step G63) in dfi_sand_immune, so the others stay unmarked. The abilities that suppress or override the weather
+ * that the Speed abilities of step G22 read (Cloud Nine; Air Lock and Utility Umbrella are not in the pool at all) stay unmarked
+ * too, and so do the ones that break an ability (Inner Focus is breakable): no battle holds any of them. Mega Sol makes
+ * Pokemon#effectiveWeather sunny for its holder's moves; step G59 marks it (its two weather-reading moves are refused off sun,
+ * tests/test_pool_g59.c). The pinned-data side of this list is checked by tools/datagen/pool_families.js. */
 static void check_unmodelled_sources(df_test *t)
 {
-    static const uint32_t abilities[] = {DFI_ABILITY_SANDFORCE,
-                                         DFI_ABILITY_MAGICGUARD, DFI_ABILITY_CLOUDNINE, DFI_ABILITY_MEGASOL,
+    static const uint32_t abilities[] = {DFI_ABILITY_MAGICGUARD, DFI_ABILITY_CLOUDNINE,
                                          DFI_ABILITY_MOLDBREAKER};
     for (size_t i = 0u; i < sizeof abilities / sizeof abilities[0]; ++i) {
         DF_CHECK_EQ_U64(t, dfi_support.abilities[abilities[i]], 0u);
@@ -287,8 +290,11 @@ static void check_unmodelled_sources(df_test *t)
     }
     DF_CHECK_EQ_U64(t, dfi_support.abilities[DFI_ABILITY_SANDRUSH], 1u); /* step G22: its immunity is dfi_sand_immune */
     DF_CHECK_EQ_U64(t, dfi_support.abilities[DFI_ABILITY_SANDVEIL], 1u); /* step G39: so is Sand Veil's */
-    DF_CHECK_EQ_U64(t, dfi_support.items[DFI_ITEM_SMOOTHROCK], 0u); /* Sandstorm for 8 turns */
-    DF_CHECK_EQ_U64(t, dfi_support.items[DFI_ITEM_ICYROCK], 0u);    /* Snowscape for 8 turns */
+    DF_CHECK_EQ_U64(t, dfi_support.abilities[DFI_ABILITY_SANDFORCE], 1u); /* step G63: its immunity is dfi_sand_immune too */
+    /* Step G55 marks the rocks (Sandstorm and Snowscape for 8 turns with Smooth Rock and Icy Rock); the rule is checked in
+     * tests/test_pool_g55.c and by the recorded battles g55_*. */
+    DF_CHECK(t, dfi_support.items[DFI_ITEM_SMOOTHROCK] != 0u);
+    DF_CHECK(t, dfi_support.items[DFI_ITEM_ICYROCK] != 0u);
     /* Sand Stream and Snow Warning, the two moves, and the immunity bit of exactly three types. */
     DF_CHECK(t, dfi_support.abilities[DFI_ABILITY_SANDSTREAM] != 0u && dfi_support.abilities[DFI_ABILITY_SNOWWARNING] != 0u);
     DF_CHECK(t, dfi_support.moves[DFI_MOVE_SANDSTORM] != 0u && dfi_support.moves[DFI_MOVE_SNOWSCAPE] != 0u);
@@ -331,8 +337,12 @@ static void check_state(df_test *t)
     x->weather = (uint8_t)DUOFORGE_WEATHER_SAND;
     x->weather_turns = 0u; /* a weather has turns */
     DF_CHECK(t, duoforge_battle_check(pool, x) == DUOFORGE_E_INVARIANT);
-    x->weather_turns = 6u; /* never more than 5 (the rock items are not marked) */
+    /* Step G55 (decision 0015 item 5bf): the bound is 8, the turns of a weather set by a holder of its rock. This is a rule
+     * change of G55 (it was 5 before the rock items were marked), not a weakened test: 9 is refused, 8 is accepted. */
+    x->weather_turns = 9u;
     DF_CHECK(t, duoforge_battle_check(pool, x) == DUOFORGE_E_INVARIANT);
+    x->weather_turns = 8u;
+    DF_CHECK(t, duoforge_battle_check(pool, x) == DUOFORGE_OK);
     duoforge_battle_destroy(x);
     duoforge_battle_destroy(b);
     /* Not in the kinds that have no Sandstorm: the same state under TEAM_C and CLOSURE is E_INVARIANT. */

@@ -139,6 +139,86 @@ class PackTest(unittest.TestCase):
             self.assertEqual(teams.pack(teams.text(name)), node_tool("--pack", str(path)).rstrip("\n"), name)
 
 
+class PressureExtraTest(unittest.TestCase):
+    """Decision 0030 (step G53): the extra PP of the foe's derived PP is Showdown's pressureTargets
+    (sim/pokemon.ts getMoveTargets), counted only where the line shows the targets."""
+
+    @classmethod
+    def setUpClass(cls):
+        from types import SimpleNamespace
+        from duoforge_live import tracker
+        cls.D = data.load(kind="pool")
+        t = tracker.Tracker.__new__(tracker.Tracker)
+        t.data = cls.D
+        t._pressure = cls.D.tables["ABILITY"]["PRESSURE"] + 1
+        members = [SimpleNamespace(ability=t._pressure), SimpleNamespace(ability=t._pressure)]
+        t._member = lambda side: members
+        t._positions = [[SimpleNamespace(occupant=k, fainted=False) for k in (0, 1)] for _ in (0, 1)]
+        cls.t = t
+        cls.FLAG = trace_to_c.FLAG
+
+    def extra(self, move, target, flags=0):
+        return self.t._pressure_extra(0, self.D.tables["MOVE"][move], target, flags)
+
+    def test_a_spread_line_of_a_normal_move_counts_every_standing_pressure_foe(self):
+        # Expanding Force on Psychic Terrain: onModifyMove makes it allAdjacentFoes before getMoveTargets, so
+        # pressureTargets are both foes, also one that Protect leaves out of the [spread] list
+        self.assertEqual(self.extra("EXPANDINGFORCE", trace_to_c.NOPOS, self.FLAG["SPREAD"]), 2)
+
+    def test_a_spread_line_of_an_allies_move_counts_no_foe(self):
+        # target "allies" (Howl, Life Dew): getMoveTargets takes alliesAndSelf, so no foe is a pressureTarget
+        move = next(m for m in ("HOWL", "LIFEDEW", "JUNGLEHEALING", "LUNARBLESSING") if m in self.D.tables["MOVE"])
+        self.assertEqual(self.extra(move, trace_to_c.NOPOS, self.FLAG["SPREAD"]), 0)
+
+    def test_a_single_target_line_counts_its_target(self):
+        self.assertEqual(self.extra("EXPANDINGFORCE", 2), 1)
+
+    def test_a_blanked_target_counts_nothing(self):
+        self.assertEqual(self.extra("EXPANDINGFORCE", trace_to_c.NOPOS, self.FLAG["STILL"] | self.FLAG["SPREAD"]), 0)
+class ClearAllBoostsTest(unittest.TestCase):
+    """Step G62 (decision 0031): Haze's CLEAR_ALL_BOOSTS returns the stages of every standing active Pokemon to
+    neutral (data/moves.ts haze onHitField: getAllActive, sim/pokemon.ts clearBoosts); an empty or fainted position
+    keeps what it holds."""
+
+    def test_every_standing_active_position_returns_to_neutral(self):
+        from types import SimpleNamespace
+        from duoforge_live import tracker
+        t = tracker.Tracker.__new__(tracker.Tracker)
+        t.side, t._spectator = 0, False
+        raised = [8, 4, 6, 6, 6, 9, 6]
+
+        def position(occupant, fainted=False):
+            return SimpleNamespace(occupant=occupant, fainted=fainted, stages=list(raised))
+
+        t._positions = [[position(0), position(1)], [position(2, fainted=True), position(tracker.ROSTER_NONE)]]
+        t._event(trace_to_c.ev_tuple(trace_to_c.EV["CLEAR_ALL_BOOSTS"]))
+        self.assertEqual([p.stages for p in t._positions[0]], [[tracker.STAGE_NEUTRAL] * 7] * 2)
+        self.assertEqual([p.stages for p in t._positions[1]], [raised, raised])
+
+
+class BreakProtectTest(unittest.TestCase):
+    """Steps G28 and G58: a breaksProtect move's -activate (Feint, Phantom Force [broken]) removes the target's Protect
+    and stall and its side's Wide and Quick Guard (sim/battle-actions.ts hitStepBreakProtect, the same for both)."""
+
+    def test_phantom_force_breaks_like_feint(self):
+        from types import SimpleNamespace
+        from duoforge_live import tracker
+        D = data.load(kind="pool")
+        for move in ("FEINT", "PHANTOMFORCE"):
+            t = tracker.Tracker.__new__(tracker.Tracker)
+            t.data, t.side, t._spectator = D, 0, False
+            t._feint = D.tables["MOVE"]["FEINT"]
+            t._phantom_force = D.tables["MOVE"]["PHANTOMFORCE"]
+            target = SimpleNamespace(protecting=1, chain=2, stall=1, guard_undo=(1, 0))
+            t._positions = [[SimpleNamespace(), SimpleNamespace()], [target, SimpleNamespace()]]
+            t._guards = {("WIDE_GUARD", 1)}
+            t._turn_scoped = {"WIDE_GUARD"}
+            t._event(trace_to_c.ev_tuple(trace_to_c.EV["ACTIVATE"], 2, trace_to_c.NOPOS, trace_to_c.CAUSE["MOVE"], 0,
+                                         D.tables["MOVE"][move]))
+            self.assertEqual((target.protecting, target.chain, target.stall, target.guard_undo), (0, 0, 0, None), move)
+            self.assertEqual((t._guards, t._turn_scoped), (set(), set()), move)
+
+
 class OptionsTest(unittest.TestCase):
     """Test 1 (the options) and test 2 (the choice text) of the spec."""
 

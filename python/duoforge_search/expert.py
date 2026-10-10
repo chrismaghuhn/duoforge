@@ -17,7 +17,7 @@ import numpy as np
 import duoforge
 from duoforge import _layout
 
-from . import lookahead, matrix
+from . import lookahead, matrix, ticks
 from .errors import SearchError
 from .expert_data import (DECISION_BOUNDARIES, KEY_VERSION, MASS_TOLERANCE, DecisionKey, ExpertRow, LabelCursor,
                           RowStatus, SparsePolicy, cursor_bytes, restore_cursor, selection_word, validate_manifest,
@@ -225,21 +225,44 @@ def observe(search, roots, envs, seats):
             history["preview_observed"] = True  # even when its record was refused
 
 
-def label_decision(search, roots, *, env, seat, key, raw_action, raw_logp, last_step, config,
-                   manifest) -> TeacherDecision:
-    """The teacher's decision for an admitted learner root (TURN, REPLACEMENT
-    or PIVOT with >= 2 legal pairs) whose ticket was reserved before this
-    call, after observe() recorded its request. TARGET: the action drawn
-    from X over the candidates (raw action included) with the key's X word,
-    its exact play probability as the behavior likelihood. PUBLIC_REFUSAL (no
-    supported public reconstruction) and WORK_EXHAUSTED (the work budget):
-    the pre-drawn raw action with raw_logp and a named cause. Any other
-    failure raises, as does a collector that never observed the game's
-    team preview."""
+def _costs():
+    return {k: 0.0 for k in ("public_records", "world_builds", "team_head", "leaves", "network", "solve")}
+
+
+def _work(ledger, **extra):
+    c = ledger.consumed
+    return {"float_pivots": c.float_pivots, "exact_pivots": c.exact_pivots, "exact_ops": c.exact_ops,
+            "max_bits": c.max_bits, "status": ledger.status.value, **extra}
+
+
+def _check_search(search, config, manifest):
     config.check(search)
     config.check_manifest(manifest)
     if search.table_info["sha256"] != manifest.belief_hash:
         raise ValueError("the search's spread table (belief) differs from the manifest's belief_hash")
+
+
+@dataclass
+class _Root:
+    """A validated admitted root between the teacher's phases."""
+    e: int
+    p: int
+    key: DecisionKey
+    raw_action: int
+    raw_logp: float
+    logp: np.ndarray
+    mask: np.ndarray
+    cand: CandidateSet
+    history: dict
+    record: np.ndarray
+    status: int
+    world_key: int
+    excluded: object
+
+
+def _root(search, roots, encoded, public, *, env, seat, key, raw_action, raw_logp, config, manifest):
+    """The checks and candidates of one admitted root; encoded and public are
+    the roots' query_encoded and public outputs of this tick."""
     e, p = int(env), int(seat)
     if not 0 <= e < roots.envs or p not in (0, 1) or not roots.requests[e, p]["requested"]:
         raise ValueError("label_decision needs a requested learner seat")
@@ -259,62 +282,119 @@ def label_decision(search, roots, *, env, seat, key, raw_action, raw_logp, last_
         raise ValueError("observe() must record this request before label_decision")
     if not history.get("preview_observed"):
         raise ValueError("observe() missed this game's team preview: a collector error, not a public refusal")
-    obs, slots, pairs = roots.query_encoded(search.encoder, search.ext_supported)
+    obs, slots, pairs = encoded
     mask = pairs[e, p]
     if int(mask.sum()) < 2:
         raise ValueError("a labeled root needs at least two legal pairs")
     pp, _, _ = search._policy(obs[e:e + 1, p], slots[e:e + 1, p], pairs[e:e + 1, p])
     candidates, _ = lookahead.select(pp[0], mask, config.k)
     cand = _with_raw(candidates, raw_action, mask, config.k)
-    players = np.zeros(roots.envs, np.uint32)
-    players[e] = p
-    records, statuses = roots.public(players)
-    record = records[e:e + 1].reshape(()).copy()
-    world_key = selection_word(key, config.seed, domain="world")
-    ledger = matrix.WorkLedger(config.budget)
-    costs = {k: 0.0 for k in ("public_records", "world_builds", "team_head", "leaves", "network", "solve")}
-    excluded = None if search.exclude_teams is None else search.exclude_teams[e]
-    search.last = []
-    hypotheses = weights = None
+    records, statuses = public
+    return _Root(e, p, key, int(raw_action), raw_logp, pp[0], mask, cand, history,
+                 records[e:e + 1].reshape(()).copy(), int(statuses[e]), selection_word(key, config.seed, domain="world"),
+                 None if search.exclude_teams is None else search.exclude_teams[e])
 
-    def work(**extra):
-        c = ledger.consumed
-        return {"float_pivots": c.float_pivots, "exact_pivots": c.exact_pivots, "exact_ops": c.exact_ops,
-                "max_bits": c.max_bits, "status": ledger.status.value, **extra}
 
-    def fallback(status, cause):
-        world = None if hypotheses is None else _digest(hypotheses, weights)
-        return TeacherDecision(int(raw_action), int(raw_action), raw_logp, None, status, cause, work(), {}, world,
-                               None, None)
+def _worlds(search, roots, r, costs):
+    """The root's sampled worlds and weights (Unreconstructible: a public refusal)."""
+    if r.status == C["DUOFORGE_E_UNSUPPORTED"]:
+        raise Unreconstructible("+".join(visible_causes(roots, r.e, r.p)) or "public_record_unsupported")
+    if r.status != 0:
+        raise SearchError(f"public record refused: {duoforge.status_name(r.status)}")
+    hypotheses, weights, _, _, _ = search._hypotheses(r.record, roots.observations[r.e, r.p], r.history, r.world_key,
+                                                      r.excluded, costs)
+    return hypotheses, weights
 
-    try:
-        if statuses[e] == C["DUOFORGE_E_UNSUPPORTED"]:
-            raise Unreconstructible("+".join(visible_causes(roots.observations[e, p])) or "public_record_unsupported")
-        if statuses[e] != 0:
-            raise SearchError(f"public record refused: {duoforge.status_name(int(statuses[e]))}")
-        hypotheses, weights, _, _, _ = search._hypotheses(record, roots.observations[e, p], history, world_key,
-                                                          excluded, costs)
-        result = search._decision(p, world_key, cand.ids, np.zeros(cand.ids.size), weights, bool(last_step),
-                                  costs, budget=ledger)
-    except Unreconstructible as err:
-        return fallback(RowStatus.PUBLIC_REFUSAL, f"public:{err}")
-    except matrix.WorkBudgetExceeded as err:
-        return fallback(RowStatus.WORK_EXHAUSTED, f"work:{err.status.value}")
+
+def _fallback(r, status, cause, ledger, hypotheses=None, weights=None):
+    world = None if hypotheses is None else _digest(hypotheses, weights)
+    return TeacherDecision(r.raw_action, r.raw_action, r.raw_logp, None, status, cause, _work(ledger), {}, world,
+                           None, None)
+
+
+def _target(config, r, result, hypotheses, weights, ledger, audit):
+    """TARGET: X's play distribution (sub-floor mass removed, renormalized), the X-word draw, the digests."""
     tables = np.asarray(result["tables"], np.float64)
     world_digest = _digest(hypotheses, weights)
     table_digest = _digest(tables, np.asarray(result["foe_pairs"], np.int64), np.asarray(result["foe_probs"]))
-    # The exact distribution the draw plays: X without sub-floor mass, renormalized.
     pi = np.asarray(result["pi_X"], np.float64)
     play = np.where(pi < matrix.PROBABILITY_FLOOR, 0.0, pi)
     play = play / math.fsum(play.tolist())
-    index = matrix.draw(pi, np.arange(cand.ids.size), _uniform(selection_word(key, config.seed, domain="X")))
-    action, logp = int(cand.ids[index]), math.log(float(play[index]))
-    label_digest = _digest(cand.ids, play, np.array([action], np.int64), np.array([logp]))
+    index = matrix.draw(pi, np.arange(r.cand.ids.size), _uniform(selection_word(r.key, config.seed, domain="X")))
+    action, logp = int(r.cand.ids[index]), math.log(float(play[index]))
+    label_digest = _digest(r.cand.ids, play, np.array([action], np.int64), np.array([logp]))
+    return TeacherDecision(action, r.raw_action, logp, SparsePolicy(r.cand.ids.copy(), play), RowStatus.TARGET,
+                           None, _work(ledger, leaves=int(tables.size)), audit, world_digest, table_digest, label_digest)
+
+
+def _audited(config, r):
+    return selection_word(r.key, config.seed, domain="audit") < config.audit_threshold
+
+
+def _audit_ids(config, r):
+    """The K+1 audit's candidates: the next one added, the raw action kept."""
+    return _with_raw(lookahead.select(r.logp, r.mask, config.k + 1)[0], r.raw_action, r.mask, config.k + 1).ids
+
+
+def _audit_report(config, r, ids, result, primary, weights, action, ledger):
+    index = matrix.draw(np.asarray(result["pi_X"]), np.arange(ids.size),
+                        _uniform(selection_word(r.key, config.seed, domain="X")))
+    return {"selected": True, "status": "ok", "candidates": ids.tolist(), "action": int(ids[index]),
+            "action_changed": int(ids[index]) != action, "value": float(result["value"]),
+            "value_delta": float(result["value"]) - float(primary["value"]),
+            "certificate": float(_certificate(result, weights)), "primary_certificate": float(_certificate(primary, weights)),
+            "leaves": int(np.asarray(result["tables"]).size), "work": _work(ledger)}
+
+
+def _audit_exhausted(ids, err, ledger):
+    return {"selected": True, "status": f"exhausted:{err.status.value}", "candidates": ids.tolist(),
+            "work": _work(ledger)}
+
+
+def label_decision(search, roots, *, env, seat, key, raw_action, raw_logp, last_step, config,
+                   manifest) -> TeacherDecision:
+    """The teacher's decision for an admitted learner root (TURN, REPLACEMENT
+    or PIVOT with >= 2 legal pairs) whose ticket was reserved before this
+    call, after observe() recorded its request. TARGET: the action drawn
+    from X over the candidates (raw action included) with the key's X word,
+    its exact play probability as the behavior likelihood. PUBLIC_REFUSAL (no
+    supported public reconstruction) and WORK_EXHAUSTED (the work budget):
+    the pre-drawn raw action with raw_logp and a named cause. Any other
+    failure raises, as does a collector that never observed the game's
+    team preview. The per-root reference path; label_tick shares a tick's
+    value calls."""
+    _check_search(search, config, manifest)
+    if not 0 <= int(env) < roots.envs or int(seat) not in (0, 1):
+        raise ValueError("label_decision needs a requested learner seat")
+    encoded = roots.query_encoded(search.encoder, search.ext_supported)
+    players = np.zeros(roots.envs, np.uint32)
+    players[int(env)] = int(seat)
+    r = _root(search, roots, encoded, roots.public(players), env=env, seat=seat, key=key, raw_action=raw_action,
+              raw_logp=raw_logp, config=config, manifest=manifest)
+    ledger = matrix.WorkLedger(config.budget)
+    costs = _costs()
+    search.last = []
+    hypotheses = weights = None
+    try:
+        hypotheses, weights = _worlds(search, roots, r, costs)
+        result = search._decision(r.p, r.world_key, r.cand.ids, np.zeros(r.cand.ids.size), weights, bool(last_step),
+                                  costs, budget=ledger)
+    except Unreconstructible as err:
+        return _fallback(r, RowStatus.PUBLIC_REFUSAL, f"public:{err}", ledger)
+    except matrix.WorkBudgetExceeded as err:
+        return _fallback(r, RowStatus.WORK_EXHAUSTED, f"work:{err.status.value}", ledger, hypotheses, weights)
     audit = {"selected": False}
-    if selection_word(key, config.seed, domain="audit") < config.audit_threshold:
-        audit = _audit(search, config, key, world_key, pp[0], mask, raw_action, weights, bool(last_step), result, action)
-    return TeacherDecision(action, int(raw_action), logp, SparsePolicy(cand.ids.copy(), play), RowStatus.TARGET,
-                           None, work(leaves=int(tables.size)), audit, world_digest, table_digest, label_digest)
+    if _audited(config, r):
+        action = _target(config, r, result, hypotheses, weights, ledger, audit).action
+        ids = _audit_ids(config, r)
+        audit_ledger = matrix.WorkLedger(config.budget)
+        try:
+            audited = search._decision(r.p, r.world_key, ids, np.zeros(ids.size), weights, bool(last_step), _costs(),
+                                       budget=audit_ledger)
+            audit = _audit_report(config, r, ids, audited, result, weights, action, audit_ledger)
+        except matrix.WorkBudgetExceeded as err:
+            audit = _audit_exhausted(ids, err, audit_ledger)
+    return _target(config, r, result, hypotheses, weights, ledger, audit)
 
 
 def _certificate(result, weights):
@@ -322,31 +402,95 @@ def _certificate(result, weights):
     return matrix.bayes_certify(tables, weights, np.asarray(result["x"]), [np.asarray(y) for y in result["ys"]])
 
 
-def _audit(search, config, key, world_key, logp, mask, raw_action, weights, last_step, primary, action):
-    """The K+1 audit on the same worlds with its own ledger of identical caps:
-    the next candidate added (the raw action kept), reported beside the
-    label and never replacing it. Exhaustion is an incomplete audit."""
-    ids = _with_raw(lookahead.select(logp, mask, config.k + 1)[0], raw_action, mask, config.k + 1).ids
-    ledger = matrix.WorkLedger(config.budget)
-    costs = {k: 0.0 for k in ("public_records", "world_builds", "team_head", "leaves", "network", "solve")}
+@dataclass(frozen=True)
+class TickRoot:
+    """One admitted root of a tick: label_decision's per-root arguments."""
+    env: int
+    seat: int
+    key: DecisionKey
+    raw_action: int
+    raw_logp: float
 
-    def work():
-        c = ledger.consumed
-        return {"float_pivots": c.float_pivots, "exact_pivots": c.exact_pivots, "exact_ops": c.exact_ops,
-                "max_bits": c.max_bits, "status": ledger.status.value}
 
-    try:
-        result = search._decision(int(key.seat), world_key, ids, np.zeros(ids.size), weights, last_step, costs,
-                                  budget=ledger)
-    except matrix.WorkBudgetExceeded as err:
-        return {"selected": True, "status": f"exhausted:{err.status.value}", "candidates": ids.tolist(), "work": work()}
-    index = matrix.draw(np.asarray(result["pi_X"]), np.arange(ids.size),
-                        _uniform(selection_word(key, config.seed, domain="X")))
-    return {"selected": True, "status": "ok", "candidates": ids.tolist(), "action": int(ids[index]),
-            "action_changed": int(ids[index]) != action, "value": float(result["value"]),
-            "value_delta": float(result["value"]) - float(primary["value"]),
-            "certificate": float(_certificate(result, weights)), "primary_certificate": float(_certificate(primary, weights)),
-            "leaves": int(np.asarray(result["tables"]).size), "work": work()}
+def label_tick(search, roots, tick, *, last_step, config, manifest, dedup=True, stats=None) -> tuple:
+    """label_decision for every admitted root of one logical tick, in input
+    order, with the tick's value calls shared (stage 3 P2): the encoded rows
+    and public records are read once; per root, in input order, its worlds
+    are built and its primary decision prepared, then its K+1 audit on the
+    same worlds, before the next root reuses them; all open leaves go
+    through one deduplicated TickTable in fixed-capacity calls; then every
+    decision is finished with its own ledger. Per-root bytes equal
+    label_decision's where value bits do not depend on a row's position,
+    neighbours or padding at the capacity (rowprobe, P2 Task 1: shown for
+    params-49333 on the owner's CPU and GPU; re-probe for another checkpoint
+    or machine). A tick above ticks.MAX_ROWS unique rows raises ValueError,
+    and any other failure of one root stops the whole tick. dedup=False
+    and stats (a dict filled with the table's counters) serve the P2
+    measurement."""
+    _check_search(search, config, manifest)
+    tick = tuple(tick)
+    if not all(isinstance(x, TickRoot) for x in tick):
+        raise ValueError("label_tick needs TickRoot entries")
+    envs = [int(x.env) for x in tick]
+    if len(set(envs)) != len(envs) or any(not 0 <= e < roots.envs for e in envs):
+        raise ValueError("label_tick needs one admitted root per environment")
+    encoded = roots.query_encoded(search.encoder, search.ext_supported)
+    players = np.zeros(roots.envs, np.uint32)
+    for x in tick:
+        if int(x.seat) not in (0, 1):
+            raise ValueError("label_decision needs a requested learner seat")
+        players[int(x.env)] = int(x.seat)
+    public = roots.public(players)
+    search.last = []
+    table = ticks.TickTable(search._rows.shape[1], dedup=dedup)
+    # Every root is checked before any root builds worlds: a bad root stops the tick before work is spent.
+    checked = [_root(search, roots, encoded, public, env=x.env, seat=x.seat, key=x.key, raw_action=x.raw_action,
+                     raw_logp=x.raw_logp, config=config, manifest=manifest) for x in tick]
+    states = []
+    for r in checked:
+        costs = _costs()
+        try:
+            hypotheses, weights = _worlds(search, roots, r, costs)
+        except Unreconstructible as err:
+            states.append((r, None, err))
+            continue
+        primary = search._prepare(r.p, r.world_key, r.cand.ids, weights, bool(last_step), costs)
+        audit = None
+        if _audited(config, r):
+            ids = _audit_ids(config, r)
+            request = search._prepare(r.p, r.world_key, ids, weights, bool(last_step), _costs())
+            audit = (ids, request, table.add(request))
+        states.append((r, (hypotheses, weights, primary, table.add(primary), costs, audit), None))
+    values = table.evaluate(search.model, search.params, search._rows)
+    if stats is not None:
+        stats.update(leaves=table.leaves, open_leaves=table.open_leaves, unique=table.unique,
+                     value_calls=-(-table.unique // search._rows.shape[0]))
+    out = []
+    for r, prepared, refusal in states:
+        ledger = matrix.WorkLedger(config.budget)
+        if prepared is None:
+            out.append(_fallback(r, RowStatus.PUBLIC_REFUSAL, f"public:{refusal}", ledger))
+            continue
+        hypotheses, weights, primary, index, costs, audit = prepared
+        try:
+            result = search._finish(primary, ticks.scatter(index, values), np.zeros(r.cand.ids.size), costs,
+                                    budget=ledger)
+        except matrix.WorkBudgetExceeded as err:
+            out.append(_fallback(r, RowStatus.WORK_EXHAUSTED, f"work:{err.status.value}", ledger, hypotheses, weights))
+            continue
+        report = {"selected": False}
+        if audit is not None:
+            ids, request, audit_index = audit
+            action = _target(config, r, result, hypotheses, weights, ledger, report).action
+            audit_ledger = matrix.WorkLedger(config.budget)
+            try:
+                audited = search._finish(request, ticks.scatter(audit_index, values), np.zeros(ids.size), _costs(),
+                                         budget=audit_ledger)
+                report = _audit_report(config, r, ids, audited, result, weights, action, audit_ledger)
+            except matrix.WorkBudgetExceeded as err:
+                report = _audit_exhausted(ids, err, audit_ledger)
+        out.append(_target(config, r, result, hypotheses, weights, ledger, report))
+    return tuple(out)
 
 
 _RAW_STATUSES = (RowStatus.UNSELECTED, RowStatus.CAP_RAW, RowStatus.FORCED)

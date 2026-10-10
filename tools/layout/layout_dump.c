@@ -112,7 +112,8 @@ int main(void)
            FIELD(duoforge_position_ext, ability_now), FIELD(duoforge_position_ext, type_now),
            FIELD(duoforge_position_ext, encore_slot), FIELD(duoforge_position_ext, disable_slot),
            FIELD(duoforge_position_ext, stockpile), FIELD(duoforge_position_ext, perish),
-           FIELD(duoforge_position_ext, move_failed), FIELD(duoforge_position_ext, reserved));
+           FIELD(duoforge_position_ext, move_failed), FIELD(duoforge_position_ext, transform_source),
+           FIELD(duoforge_position_ext, reserved));
     STRUCT(duoforge_mega_info, false, FIELD(duoforge_mega_info, base_species), FIELD(duoforge_mega_info, stone),
            FIELD(duoforge_mega_info, mega_species), FIELD(duoforge_mega_info, mega_ability),
            FIELD(duoforge_mega_info, supported));
@@ -161,6 +162,7 @@ int main(void)
     CONSTANT(DUOFORGE_PUBLIC_CAUSE_VISIBLE_SLEEP, false);
     CONSTANT(DUOFORGE_PUBLIC_CAUSE_VISIBLE_CONFUSION, false);
     CONSTANT(DUOFORGE_PUBLIC_CAUSE_ILLUSION_POSSIBLE, false);
+    CONSTANT(DUOFORGE_PUBLIC_CAUSE_SUBSTITUTE, false);
     CONSTANT(DUOFORGE_MAX_CANDIDATES, false);
     CONSTANT(DUOFORGE_MAX_SLOT_OPTIONS, false);
     CONSTANT(DUOFORGE_DIGEST_SIZE, false);
@@ -186,6 +188,8 @@ int main(void)
     CONSTANT(DUOFORGE_SLOT_MOVE, false);
     CONSTANT(DUOFORGE_SLOT_SWITCH, false);
     CONSTANT(DUOFORGE_SLOT_PASS, false);
+    CONSTANT(DUOFORGE_SLOT_REVIVE, false);
+    CONSTANT(DUOFORGE_EVENT_REVIVE, false);
     CONSTANT(DUOFORGE_E_INVALID_ARGUMENT, false);
     CONSTANT(DUOFORGE_E_UNSUPPORTED, false);
     CONSTANT(DUOFORGE_BATCH_MAX_ENVS, false);
@@ -222,6 +226,10 @@ int main(void)
     CONSTANT(DUOFORGE_LOCATION_ACTIVE, false);
     CONSTANT(DUOFORGE_LOCATION_NOT_BROUGHT, false);
     CONSTANT(DUOFORGE_EVENT_DRAG, false);
+    CONSTANT(DUOFORGE_EVENT_CLEAR_ALL_BOOSTS, false);
+    CONSTANT(DUOFORGE_VOLATILE_SUBSTITUTE, false);
+    CONSTANT(DUOFORGE_FAIL_SUBSTITUTE_EXISTS, false);
+    CONSTANT(DUOFORGE_FAIL_SUBSTITUTE_WEAK, false);
     CONSTANT(DUOFORGE_OBSERVATION_EXT_SIZE, false);
     CONSTANT(DUOFORGE_OBSERVATION_EXT_REVISION, false);
     CONSTANT(DUOFORGE_POSITION_EXT_SUBSTITUTE, false);
@@ -245,6 +253,7 @@ int main(void)
     CONSTANT(DUOFORGE_POSITION_EXT_TYPE_CHANGED, false);
     CONSTANT(DUOFORGE_POSITION_EXT_ILLUSION_UP, false);
     CONSTANT(DUOFORGE_POSITION_EXT_ROOST, false);
+    CONSTANT(DUOFORGE_POSITION_EXT_TRANSFORMED, false);
     CONSTANT(DUOFORGE_SIDE_GUARD_WIDE_GUARD, false);
     CONSTANT(DUOFORGE_SIDE_GUARD_QUICK_GUARD, false);
     CONSTANT(DUOFORGE_ITEM_NOW_NONE, false);
@@ -290,6 +299,7 @@ int main(void)
     CONSTANT(DUOFORGE_VIEWEXT_FEATURE_RAGE_POWDER, false);
     CONSTANT(DUOFORGE_VIEWEXT_FEATURE_ROOST, false);
     CONSTANT(DUOFORGE_VIEWEXT_FEATURE_MOVE_FAILED, false);
+    CONSTANT(DUOFORGE_VIEWEXT_FEATURE_TRANSFORM, false);
     CONSTANT(DUOFORGE_VIEWEXT_FEATURE_COUNT, false);
     CONSTANT(DUOFORGE_DATA_KIND_SYNTHETIC, false);
     CONSTANT(DUOFORGE_DATA_KIND_TEAM_C, false);
@@ -321,6 +331,7 @@ int main(void)
     CONSTANT(DUOFORGE_MOVE_STATIC_FLAG_DANCE, false);
     CONSTANT(DUOFORGE_MOVE_STATIC_FLAG_POWDER, false);
     CONSTANT(DUOFORGE_MOVE_STATIC_FLAG_POWER_RULE, false);
+    CONSTANT(DUOFORGE_MOVE_STATIC_FLAG_MUST_PRESSURE, false);
     CONSTANT(DUOFORGE_ITEM_FAMILY_NONE, false);
     CONSTANT(DUOFORGE_ITEM_FAMILY_TYPE_BOOSTER, false);
     CONSTANT(DUOFORGE_ITEM_FAMILY_RESIST_BERRY, false);

@@ -57,7 +57,8 @@ typedef struct dfi_move_slot {
 #define DFI_TERRAIN_PSYCHIC 2u /* Team C: Psychic Surge */
 #define DFI_TERRAIN_ELECTRIC 3u /* POOL (step G25): Electric Surge, Electric Terrain */
 #define DFI_TERRAIN_MISTY 4u    /* POOL (step G25): Misty Terrain */
-#define DFI_FIELD_TURNS_MAX 5u  /* weather, terrain and Trick Room */
+#define DFI_FIELD_TURNS_MAX 5u  /* Trick Room, and weather and terrain without the rock or Terrain Extender */
+#define DFI_FIELD_TURNS_EXTENDED_MAX 8u /* step G55: weather or terrain set with its rock or Terrain Extender */
 #define DFI_SCREEN_TURNS_MAX 8u /* Reflect and Light Screen with Light Clay */
 #define DFI_TAILWIND_TURNS_MAX 4u
 
@@ -88,6 +89,7 @@ typedef struct dfi_move_slot {
 #define DFI_SWITCH_FLIP_TURN 4u /* Flip Turn (the TEAM_C and POOL kinds) */
 #define DFI_SWITCH_UTURN 5u     /* U-turn (the POOL kinds only), step G5 */
 #define DFI_SWITCH_VOLT_SWITCH 6u /* Volt Switch (the POOL kinds only), step G32 */
+#define DFI_SWITCH_REVIVE_BLESSING 7u /* Revival Blessing (the POOL kinds only), decision 0025 item 6: a REVIVE answer */
 #define DFI_REVEALED_ITEM_CONSUMED 1u
 #define DFI_REVEALED_MEGA 2u
 #define DFI_MEMBER_STAT_COUNT 5u  /* atk, def, spa, spd, spe (HP is hp_max) */
@@ -102,6 +104,14 @@ typedef struct dfi_move_slot {
 #define DFI_Q_MEGA 4u       /* order class 104 */
 #define DFI_Q_MOVE 5u       /* order class 200 */
 #define DFI_Q_RESIDUAL 6u   /* order class 300 */
+#define DFI_Q_REVIVE 7u     /* Revival Blessing's revive, order class 6 (decision 0025 item 6) */
+#define DFI_Q_INSTASWITCH 8u /* an instaswitch, appended to the queue (addChoice), order class 3 */
+/* The reserve byte of a MOVE record (step G62, decision 0015 entry 5az; decision 0031): the order class that After You and Quash
+ * give a queued move. 0 is the plain move (order class 200). Persisted with the queue at a PIVOT boundary, like the rest of
+ * the record. */
+#define DFI_QRES_NONE 0u
+#define DFI_QRES_PRIORITIZED 1u /* After You (prioritizeAction): order class 3 */
+#define DFI_QRES_QUASHED 2u     /* Quash (action.order = 201): order class 201 */
 
 typedef struct dfi_member {
     uint16_t species_id; /* SYNTHETIC: caller id; later the base forme id */
@@ -228,8 +238,15 @@ typedef struct dfi_side {
 #define DFI_MOVE_RESULT_TRUE 1u
 #define DFI_MOVE_RESULT_FALSE 2u
 #define DFI_MOVE_RESULT_NULL 3u
-#define DFI_TAIL_MOVE_RESULT_MASK 0x0Fu /* bits 4-7 are zero */
 #define DFI_MOVE_RESULT_LAST_SHIFT 2u
+/* Step G42 (Stomping Tantrum, Roost): the result of the occupant's move was not classified exactly (an engine exit that
+ * the classifier does not map to the pin's value, turn.c dfi_move_result_*): bit 4 while this turn runs, bit 5 for the last
+ * turn once the turn ends (dfi_end_turn shifts it with the result). A set bit means the result bits of its slot are zero.
+ * Stomping Tantrum refuses (E_UNSUPPORTED) when its user's last result carries bit 5; nothing else reads it. This is an
+ * internal bit of rev 4 (no public value): the layout stays 288 bytes, and bits 6-7 are zero. */
+#define DFI_MOVE_RESULT_UNCLASSIFIED_NOW 0x10u
+#define DFI_MOVE_RESULT_UNCLASSIFIED_LAST 0x20u
+#define DFI_TAIL_MOVE_RESULT_MASK 0x3Fu /* bits 6-7 are zero */
 /* single_turn: one-turn volatiles that the position's flags byte (full) cannot hold; both end in the residual of the turn, on
  * switch-out and on faint. RAGE_POWDER belongs to the Follow Me flag (the move that set it also sets that flag). */
 #define DFI_SINGLE_TURN_RAGE_POWDER 1u

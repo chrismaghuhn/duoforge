@@ -68,7 +68,10 @@ TAIL_YAWN_MAX = 2
 TAIL_STOCKPILE_MAX = 3
 TAIL_FLAG_MAX = 1
 TAIL_PROTECT_KIND_MAX = 1           # rev 3: 0 Protect and Detect, 1 Spiky Shield (Baneful Bunker would be 2)
-TAIL_MOVE_RESULT_MASK = 0x0F        # rev 4: two bits this turn, two bits last turn (0 undefined, 1 true, 2 false, 3 null)
+TAIL_MOVE_RESULT_MASK = 0x3F        # rev 4: two bits this turn, two bits last turn (0 undefined, 1 true, 2 false, 3 null),
+                                    # bit 4 unclassified this turn, bit 5 unclassified last turn (step G42); bits 6-7 zero
+UNCLASSIFIED_NOW = 0x10
+UNCLASSIFIED_LAST = 0x20
 TAIL_SINGLE_TURN_MASK = 3           # rev 4: bit 0 RAGE_POWDER (needs the Follow Me flag), bit 1 ROOST
 SINGLE_TURN_RAGE_POWDER = 1
 TAIL_HITS_TAKEN_MAX = 6
@@ -124,7 +127,8 @@ WEATHER_NONE, WEATHER_RAIN, WEATHER_SUN = 0, 1, 2
 WEATHER_SAND, WEATHER_SNOW = 3, 4  # POOL kinds only (Sandstorm, Snowscape)
 TERRAIN_NONE, TERRAIN_GRASSY = 0, 1
 TERRAIN_PSYCHIC = 2  # TEAM_C kinds only (Psychic Surge)
-FIELD_TURNS_MAX = 5
+FIELD_TURNS_MAX = 5  # Trick Room, and weather and terrain without a rock or Terrain Extender
+FIELD_TURNS_EXTENDED_MAX = 8  # step G55: the weather and terrain bound (DFI_FIELD_TURNS_EXTENDED_MAX)
 SCREEN_TURNS_MAX = 8
 TAILWIND_TURNS_MAX = 4
 STAGE_COUNT = 7
@@ -292,7 +296,7 @@ KD = TeamCContext(KIND_TEAM_C_DEV, 6, 4)
 # which tests/test_pool_tables.c recomputes from the pool canonical bytes: the
 # pool layout over the pool data, then the family columns, the handler columns
 # and the moves and abilities that each forme may have.
-POOL_TABLE_HASH = bytes.fromhex('bc9109412665f19e8a7220ac79eaf5dd7f268cbfb61a969ee8bbbee78f7792e1')  # steps G44, G46, G48, G49, G50, I2a
+POOL_TABLE_HASH = bytes.fromhex('9094be046bda68bed9b7c22f4c6030b2a20a12fc536937101855c3a7e3cff277')
 KIND_POOL, KIND_POOL_DEV = 6, 7
 
 
@@ -867,7 +871,7 @@ def queue_record_valid(st, r):
     if r['kind'] in (Q_RUN_SWITCH, Q_MEGA):
         return plain and bound and r['reserve'] == 0
     if r['kind'] == Q_MOVE:
-        return (bound and r['reserve'] == 0 and r['move_slot'] <= MOVE_SLOT_RECHARGE
+        return (bound and r['reserve'] <= 2 and r['move_slot'] <= MOVE_SLOT_RECHARGE  # DFI_QRES_*: 0, 1, 2 (G62)
                 and (r['target'] < 4 or r['target'] == TARGET_NONE))
     return r == qrec(Q_RESIDUAL)
 
@@ -908,10 +912,13 @@ def check_state(ctx, st):
         return 'TURN_COUNTER'
     if st['result'] > RESULT_TIE or (st['boundary'] == TERMINAL) != (st['result'] != RESULT_NONE):
         return 'RESULT'
-    if (st['weather'] > (WEATHER_SNOW if ctx.data_kind in POOL_KINDS else WEATHER_SUN) or st['weather_turns'] > FIELD_TURNS_MAX
+    # step G55: the rock items and Terrain Extender (pool rows) lengthen weather and terrain to 8 in the POOL kinds only
+    field_max = FIELD_TURNS_EXTENDED_MAX if ctx.data_kind in POOL_KINDS else FIELD_TURNS_MAX
+    if (st['weather'] > (WEATHER_SNOW if ctx.data_kind in POOL_KINDS else WEATHER_SUN)
+            or st['weather_turns'] > field_max
             or (st['weather'] == 0) != (st['weather_turns'] == 0)
             or st['terrain'] > (TERRAIN_PSYCHIC if ctx.data_kind in EXTENDED_KINDS else TERRAIN_GRASSY)
-            or st['terrain_turns'] > FIELD_TURNS_MAX
+            or st['terrain_turns'] > field_max
             or (st['terrain'] == 0) != (st['terrain_turns'] == 0)
             or st['trick_room_turns'] > FIELD_TURNS_MAX):
         return 'FIELD'
@@ -991,6 +998,10 @@ def tail_pos_valid(ctx, tp, flat, mem, slot_flags=0):
         return False
     # Rev 4: the move result is two two-bit values, the single-turn markers are the two defined bits (Rage Powder's belongs to
     # the Follow Me flag), the counters and the ability state have their bounds.
+    mr = tp['move_result']
+    # step G42: an unclassified bit only with the result bits of its slot zero
+    if not ((mr & UNCLASSIFIED_NOW == 0 or mr & 3 == 0) and (mr & UNCLASSIFIED_LAST == 0 or (mr >> 2) & 3 == 0)):
+        return False
     if not (tp['move_result'] & ~TAIL_MOVE_RESULT_MASK == 0 and tp['single_turn'] & ~TAIL_SINGLE_TURN_MASK == 0
             and (tp['single_turn'] & SINGLE_TURN_RAGE_POWDER == 0 or slot_flags & VOL_FOLLOW_ME)
             and tp['hits_taken'] <= TAIL_HITS_TAKEN_MAX and tp['ability_state'] <= TAIL_ABILITY_STATE_MAX

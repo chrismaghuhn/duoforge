@@ -213,7 +213,10 @@ static void check_view(df_test *t, const duoforge_context *ctx)
                 want.player = (uint8_t)viewer;
                 want.epoch = ob.epoch;
                 want.supported = dfi_support.view_ext_features;
-                DF_CHECK(t, memcmp(&ext, &want, sizeof want) == 0);
+                for (uint32_t g42f = 0u; g42f < 4u; ++g42f) { /* step G42: move_failed is the last move result FALSE */
+                    const uint32_t g42last = ((uint32_t)b->tail.sides[g42f / 2u].positions[g42f % 2u].move_result >> 2) & 3u;
+                    want.sides[g42f / 2u].positions[g42f % 2u].move_failed = g42last == 2u ? 1u : 0u;
+                }                DF_CHECK(t, memcmp(&ext, &want, sizeof want) == 0);
                 compared += 1u;
             }
         }
@@ -238,7 +241,7 @@ static void check_marks(df_test *t)
         DF_CHECK_EQ_U64(t, dfi_support.abilities[abilities[i]], 0u);
         DF_CHECK_EQ_U64(t, dfi_pool_ability_handler[abilities[i]], DFI_HANDLER_UNMODELED);
     }
-    DF_CHECK_EQ_U64(t, dfi_support.items[DFI_ITEM_TERRAINEXTENDER], 0u);
+    DF_CHECK(t, dfi_support.items[DFI_ITEM_TERRAINEXTENDER] != 0u); /* step G55 marks Terrain Extender (8 turns) */
     DF_CHECK(t, dfi_support.moves[DFI_MOVE_STEELROLLER] != 0u && dfi_pool_moves[DFI_MOVE_STEELROLLER].special == DFI_SPECIAL_STEEL_ROLLER);
     DF_CHECK_EQ_U64(t, dfi_support.moves[DFI_MOVE_ICESPINNER], 0u);
     DF_CHECK_EQ_U64(t, dfi_support.moves[DFI_MOVE_MISTYEXPLOSION], 0u);
@@ -300,8 +303,12 @@ static void check_state(df_test *t)
     x->terrain = (uint8_t)DUOFORGE_TERRAIN_ELECTRIC;
     x->terrain_turns = 0u; /* a terrain has turns */
     DF_CHECK(t, duoforge_battle_check(pool, x) == DUOFORGE_E_INVARIANT);
-    x->terrain_turns = 6u; /* never more than 5 (Terrain Extender is not marked) */
+    /* Step G55 (decision 0015 item 5bf): the bound is 8, the turns of a terrain set by a holder of Terrain Extender. This is a
+     * rule change of G55 (it was 5 before Terrain Extender was marked), not a weakened test: 9 is refused, 8 is accepted. */
+    x->terrain_turns = 9u;
     DF_CHECK(t, duoforge_battle_check(pool, x) == DUOFORGE_E_INVARIANT);
+    x->terrain_turns = 8u;
+    DF_CHECK(t, duoforge_battle_check(pool, x) == DUOFORGE_OK);
     duoforge_battle_destroy(x);
     duoforge_battle_destroy(b);
     /* Not in the kinds that have neither: the same state under TEAM_C and CLOSURE is E_INVARIANT. */
