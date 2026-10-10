@@ -2,7 +2,9 @@
 
 build() reads the games with exactly two sheets of the training split (split.of_game), counts each distinct sheet
 (its hash) once, so a Bo3 team is one team however often it was played, and adds every PP_ and LL_ team of the
-registry once. The file holds sets derived from unlicensed replays: it is refused inside the repository. It keeps
+registry once. A sheet that a test game shows is never taken, also when a training player played it: the training
+opponent of a test player is in a test game, and a validation would draw its own set. A set with a name the tables
+lack (an item, ability, nature or move) is not taken either (counted). The file holds sets derived from unlicensed replays: it is refused inside the repository. It keeps
 the sheet hashes it was built from, so a game whose own sheet is in it can be refused (game.process).
 
     {"version": 1, "format_prefix": [...], "split": "train", "sources": [...], "registry": {...},
@@ -39,11 +41,18 @@ def build(paths, format_prefix, registry_root, out_path, data):
     prefix = (format_prefix,) if isinstance(format_prefix, str) else tuple(format_prefix)
     counts = collections.defaultdict(collections.Counter)
     seen, counters = set(), collections.Counter()
+    trained, tested = {}, set()  # training sheets by hash; the hashes of every test game's sheets
+
+    tables = data.tables
 
     def add(species, item, ability, nature, moves):
         try:
             key = trace_to_c.key(data.canonical(species))
         except ValueError:
+            counters["sets.skipped.name"] += 1
+            return
+        names = [("ITEM", item), ("ABILITY", ability), ("NATURE", nature)] + [("MOVE", m) for m in moves]
+        if any(name and trace_to_c.key(name) not in tables[table] for table, name in names):
             counters["sets.skipped.name"] += 1
             return
         counts[key][(item, ability, nature, tuple(sorted(moves)))] += 1
@@ -65,15 +74,18 @@ def build(paths, format_prefix, registry_root, out_path, data):
                 continue
             if split.of_game(players) != "train":
                 counters["games.skipped.test"] += 1
+                tested.update(_hash8(payload) for payload in packed)
                 continue
             counters["games.read"] += 1
             for payload in packed:
-                h = _hash8(payload)
-                if h in seen:
-                    continue
-                seen.add(h)
-                for s in teams.unpack(payload):
-                    add(s["species"], s["item"], s["ability"], s["nature"], s["moves"])
+                trained.setdefault(_hash8(payload), payload)
+    for h, payload in sorted(trained.items()):
+        if h in tested:
+            counters["sheets.skipped.in-a-test-game"] += 1
+            continue
+        seen.add(h)
+        for s in teams.unpack(payload):
+            add(s["species"], s["item"], s["ability"], s["nature"], s["moves"])
     registry = Path(registry_root) / "data" / "teams"
     index = json.loads((registry / "index.json").read_text(encoding="utf-8"))
     ids = [e["id"] for e in index["teams"] if e["id"].startswith(("PP_", "LL_"))]

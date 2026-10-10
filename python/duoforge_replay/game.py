@@ -174,6 +174,10 @@ def draw_sheets(lines, format_id, data, belief, seed, replay_id, draw):
     sheets, levels, revealed = [], [], []
     for side in (0, 1):
         members = facts_of.side_facts(lines, side, data)
+        for f in members:  # a name the log reveals and the tables lack: as an open sheet's (_check_names)
+            for table, name in [("ITEM", f.item), ("ABILITY", f.ability)] + [("MOVE", m) for m in sorted(f.moves)]:
+                if name and key(name) not in data.tables[table]:
+                    raise Skip(f"name:{table} {name}")
         if format_id.startswith(REGMB) and any(key(m) in REGMB_PP for f in members for m in f.moves):
             raise Skip("skip:regmb-pp")
         for attempt in range(MAX_REDRAWS):

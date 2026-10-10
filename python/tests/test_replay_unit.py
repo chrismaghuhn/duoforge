@@ -1802,14 +1802,16 @@ class CorpusTest(unittest.TestCase):
                           packed_set("Incineroar", "SitrusBerry", "Intimidate", ["FakeOut", "PartingShot"], "Careful")])
         team2 = packed_set("Politoed", "MysticWater", "Drizzle", ["WeatherBall", "Protect"], "Modest")
         team3 = packed_set("Dragonite", "ChoiceBand", "Multiscale", ["ExtremeSpeed"], "Adamant")
-        cls.teams = (team1, team2, team3)
+        team4 = packed_set("Garchomp", "FakeItem", "RoughSkin", ["Earthquake"], "Jolly")  # an item outside the tables
+        cls.teams = (team1, team2, team3, team4)
 
         def game(p1, p2, s1, s2):
             return "\n".join([f"|player|p1|{p1}|1|", f"|player|p2|{p2}|2|", f"|showteam|p1|{s1}", f"|showteam|p2|{s2}"])
         cls.source = cls.tmp / "games.jsonl"
         with open(cls.source, "w", encoding="utf-8", newline="\n") as f:
             for gid, log in (("g1", game(a, b, team1, team2)), ("g2", game(a, b, team1, team2)),  # one Bo3, twice
-                             ("g3", game(test, b, team3, team2))):  # a test player: not in the corpus
+                             ("g3", game(test, a, team3, team1)),  # a test player: team3, and team1 is in a test game
+                             ("g4", game(a, b, team4, team2))):
                 f.write(json.dumps({"id": gid, "formatid": "gen9championsvgc2026regmcbo3", "log": log}) + "\n")
         cls.registry = cls.tmp / "registry"
         (cls.registry / "data" / "teams").mkdir(parents=True)
@@ -1831,14 +1833,17 @@ class CorpusTest(unittest.TestCase):
     def test_corpus_takes_the_training_split_once_per_team(self):
         from duoforge_replay import game
         c = self.build("c1.json")
-        self.assertEqual(c.sets("KINGAMBIT"), [("ChopleBerry", "Defiant", "Adamant", ("KowtowCleave", "SuckerPunch"), 1)])
         self.assertEqual([s[4] for s in c.sets("POLITOED")], [1])  # one team, however often its player played it
         self.assertEqual(c.sets("DRAGONITE"), [])
-        self.assertEqual(c.sheet_hashes, frozenset({game._hash8(self.teams[0]), game._hash8(self.teams[1])}))
+        # team1 was played in a test game too (by the training opponent): out, so no test game draws from itself
+        self.assertEqual(c.sets("KINGAMBIT"), [])
+        self.assertEqual(c.sets("GARCHOMP"), [("Life Orb", "Rough Skin", "Jolly", ("Earthquake", "Protect"), 1)])
+        self.assertEqual(c.sheet_hashes, frozenset({game._hash8(self.teams[1]), game._hash8(self.teams[3])}))
 
     def test_corpus_adds_the_registry_and_refuses_the_repository(self):
         from duoforge_replay import corpus
         c = self.build("c2.json")
+        # the registry's Garchomp; the sheet Garchomp with an item outside the tables is not taken
         self.assertEqual(c.sets("GARCHOMP"), [("Life Orb", "Rough Skin", "Jolly", ("Earthquake", "Protect"), 1)])
         with self.assertRaisesRegex(ValueError, "inside the repository"):
             corpus.build([self.source], ("gen9championsvgc2026regmc",), self.registry, data.ROOT / "corpus.json",
@@ -1963,6 +1968,15 @@ class BeliefGameTest(unittest.TestCase):
                     self.assertTrue({trace_to_c.key(m) for m in member.moves} <= set(drawn), (member, s))
                     self.assertEqual(bin(bits).count("1"), len(member.moves))
 
+    def test_a_revealed_name_outside_the_tables_is_a_name_skip(self):
+        # the 2026-10-10 run: an item a log reveals (Assault Vest) that the tables lack was a KeyError
+        at = next(i for i, line in enumerate(self.log) if line.startswith("|switch|p1a: Kingambit|")) + 1
+        log = self.log[:at] + ["|-enditem|p1a: Kingambit|Assault Vest|[from] move: Knock Off|[of] p2a: Politoed"] \
+            + self.log[at:]
+        with self.assertRaises(self.G.Skip) as cm:
+            self.process(log=log)
+        self.assertEqual(cm.exception.reason, "name:ITEM Assault Vest")
+
     def test_a_game_with_sheets_is_refused(self):
         with self.assertRaisesRegex(ValueError, "has sheets"):
             self.process(log=self.with_sheets)
@@ -2060,9 +2074,12 @@ class BeliefBuildTest(_BeliefFixture, unittest.TestCase):
     """The bo1_belief and drop_sheets modes of a build and their marked datasets (M11 Bo1 plan Task 5)."""
 
     def test_bo1_mode_takes_only_games_without_sheets(self):
-        from duoforge_replay import dataset
+        from duoforge_replay import dataset, funnel
         c = self.build("bo1", ["open-train", "bo1-train"], mode="bo1_belief", corpus=self.corpus, seed=1)
         self.assertEqual((c["games.processed"], c["games.skipped.skip:has-sheets"]), (1, 1))
+        f = funnel.report(c)["gen9championsvgc2026regmc"]
+        self.assertEqual(f["taken"], 1)
+        self.assertIn("taken by this build 1", funnel.text(funnel.report(c)))
         shards = list(dataset.read(self.tmp / "bo1"))
         self.assertTrue(shards)
         for shard in shards:
