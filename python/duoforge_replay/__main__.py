@@ -2,6 +2,8 @@
 python -m duoforge_replay build --source PATH... --prior PRIOR.json --out DIR [--workers N] [--limit-parts N]
 python -m duoforge_replay funnel DIR [--top N]
 python -m duoforge_replay corpus --source PATH... --registry REPO --out CORPUS.json [--format-prefix P...]
+python -m duoforge_replay validate-sets --source PATH... --corpus CORPUS.json --prior PRIOR.json --out REPORT.json
+python -m duoforge_replay compare-rows SHEET_DIR DROP_DIR --out REPORT.json
 
 prior: the stat point prior of a directory of Showdown pastes (Stat Points as EVs).
 build: the replay dataset (docs/superpowers/specs/2026-10-02-m11-replay-data-design.md). Needs NumPy, pyarrow
@@ -14,6 +16,7 @@ corpus: the set corpus of the Bo1 belief (training-split sheets once per team, a
 repository). build --mode bo1_belief takes the games without sheets, --mode drop_sheets the test-split sheet games
 with their sheets dropped (the validation), both on sets drawn from --corpus (M11 Bo1 spec,
 docs/superpowers/specs/2026-10-10-m11-bo1-belief-design.md).
+validate-sets, compare-rows: its validation (a) and (b) (duoforge_replay.validate; aggregates only).
 """
 import argparse
 import json
@@ -51,6 +54,17 @@ def main(argv=None):
     c.add_argument("--registry", required=True, type=Path, help="a checkout whose data/teams is the registry")
     c.add_argument("--out", required=True, type=Path)
     c.add_argument("--format-prefix", nargs="+", default=["gen9championsvgc2026regmc"])
+    v = sub.add_parser("validate-sets", help="validation (a): drawn sets against the true sheets of test games")
+    v.add_argument("--source", required=True, nargs="+", type=Path)
+    v.add_argument("--corpus", required=True, type=Path)
+    v.add_argument("--prior", required=True, type=Path)
+    v.add_argument("--out", required=True, type=Path)
+    v.add_argument("--seed", type=int, default=0)
+    v.add_argument("--format-prefix", nargs="+", default=["gen9championsvgc2026regmc"])
+    r = sub.add_parser("compare-rows", help="validation (b): a sheet build against a drop_sheets build")
+    r.add_argument("sheet", type=Path)
+    r.add_argument("drop", type=Path)
+    r.add_argument("--out", required=True, type=Path)
     f = sub.add_parser("funnel", help="where a dataset's games went, per format id (aggregates only)")
     f.add_argument("dir", type=Path, help="a replay dataset (its counters.json)")
     f.add_argument("--top", type=int, default=8, help="reasons listed per stage")
@@ -62,6 +76,16 @@ def main(argv=None):
             print(f"{args.dir}: no funnel counters (a dataset built before the funnel): rebuild it", file=sys.stderr)
             return 2
         print(funnel.text(report, top=args.top), end="")
+        return 0
+    if args.command in ("validate-sets", "compare-rows"):
+        from . import validate
+        if args.command == "compare-rows":
+            print(validate.write(validate.compare_rows(args.sheet, args.drop), args.out))
+            return 0
+        from duoforge_live import data as live_data
+        report = validate.sets(args.source, args.format_prefix, args.corpus, args.seed, args.out,
+                               live_data.load(kind="pool"), args.prior)
+        print(json.dumps(report, indent=1))
         return 0
     if args.command == "corpus":
         from duoforge_live import data as live_data

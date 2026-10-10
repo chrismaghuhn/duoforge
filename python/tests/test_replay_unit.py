@@ -1958,8 +1958,8 @@ class BeliefGameTest(unittest.TestCase):
         self.assertEqual(self.process(seed=3, draw=2).record.draw, 2)
 
 
-class BeliefBuildTest(unittest.TestCase):
-    """The bo1_belief and drop_sheets modes of a build and their marked datasets (M11 Bo1 plan Task 5)."""
+class _BeliefFixture:
+    """The fixture log as games of chosen player splits, with and without sheets, a corpus of its own sets."""
 
     @classmethod
     def setUpClass(cls):
@@ -2006,6 +2006,11 @@ class BeliefBuildTest(unittest.TestCase):
     def manifest(self, name):
         import json
         return json.loads((self.tmp / name / "manifest.json").read_text(encoding="utf-8"))
+
+
+
+class BeliefBuildTest(_BeliefFixture, unittest.TestCase):
+    """The bo1_belief and drop_sheets modes of a build and their marked datasets (M11 Bo1 plan Task 5)."""
 
     def test_bo1_mode_takes_only_games_without_sheets(self):
         from duoforge_replay import dataset
@@ -2061,6 +2066,55 @@ class BeliefBuildTest(unittest.TestCase):
         writer = dataset.Writer(self.tmp / "mixed", {}, source="sheet")
         with self.assertRaisesRegex(ValueError, "belief rows"):
             writer.add(result)
+
+
+class ValidateTest(_BeliefFixture, unittest.TestCase):
+    """Validation (a) set recovery and (b) row difference (M11 Bo1 spec section 6), aggregates only."""
+
+    def test_set_recovery_counts(self):
+        from duoforge_replay import facts, prior, validate
+        true = {"species": "Kingambit", "item": "ChopleBerry", "ability": "Defiant", "nature": "Adamant",
+                "moves": ["KowtowCleave", "SuckerPunch", "IronHead", "Protect"]}
+        drawn = {"species": "Kingambit", "item": "ChopleBerry", "ability": "Defiant", "nature": "Jolly",
+                 "moves": ["KowtowCleave", "SuckerPunch", "IronHead", "LowKick"]}
+        fact = facts.MemberFacts("Kingambit", "M", frozenset({"Kowtow Cleave"}), None, "Defiant")
+        c = validate.set_recovery([true], [drawn], [fact], [1], prior.Prior.load(self.prior_path))
+        self.assertEqual(dict(c), {"members": 1, "members.level1": 1, "moves.exact": 0, "moves.unseen": 3,
+                                   "moves.unseen_hit": 2, "item.unrevealed": 1, "item.hit": 1, "ability.unrevealed": 0,
+                                   "ability.hit": 0, "nature.hit": 0, "prior_level.same": 1, "prior_points.same": 1})
+
+    def test_validate_sets_on_the_fixture(self):
+        import json
+        from duoforge_replay import validate
+        out = self.tmp / "sets.json"
+        report = validate.sets([self.source("v", ["open-test", "open-train"])], ("gen9championsvgc2026regmc",),
+                               self.corpus, 1, out, self.data, self.prior_path)
+        self.assertEqual(report["games"], 1)
+        self.assertEqual(report["counters"]["members"], 12)
+        self.assertEqual(report["skipped"], {"skip:split-train": 1})
+        text = out.read_text(encoding="utf-8")
+        self.assertEqual(json.loads(text), report)
+        self.assertNotIn("open-test", text)
+
+    def test_compare_rows_on_the_fixture(self):
+        import json
+        from duoforge_replay import validate
+        self.build("cmp-sheet", ["open-test"], split_of="test")
+        self.build("cmp-drop", ["open-test"], mode="drop_sheets", corpus=self.corpus, seed=1)
+        report = validate.compare_rows(self.tmp / "cmp-sheet", self.tmp / "cmp-drop")
+        self.assertGreater(report["both"], 10)
+        self.assertEqual(report["both"] + report["only_sheet"], report["rows_sheet"])
+        self.assertTrue(0 <= report["mask_jaccard_mean"] <= 1)
+        for group in ("own_members", "foe_members", "positions", "header"):
+            self.assertTrue(0 <= report["observation_differs"][group] <= 1)
+        self.assertEqual(report["label"]["same"] + report["label"]["differs"], report["both"])
+        self.assertNotIn("open-test", json.dumps(report))
+
+    def test_reports_are_refused_in_the_repository(self):
+        from duoforge_replay import validate
+        with self.assertRaisesRegex(ValueError, "inside the repository"):
+            validate.sets([self.source("r", ["open-test"])], ("gen9championsvgc2026regmc",), self.corpus, 1,
+                          data.ROOT / "sets.json", self.data, self.prior_path)
 
 
 if __name__ == "__main__":
