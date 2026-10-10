@@ -1,0 +1,2121 @@
+{
+ "harness": 14,
+ "pin": "b2cb775b0616115b775534eaeff50300e1fc81fc",
+ "spec": "sub2_parabolic_charge_substitute_ampharos.json",
+ "format": "gen9championsvgc2026regmc",
+ "seed": "sodium,00000000000000000000000000000000000000000000000000000000000018d2",
+ "start": {
+  "log": [
+   "|gametype|doubles",
+   "|player|p1|p1||",
+   "|player|p2|p2||",
+   "|gen|9",
+   "|tier|[Gen 9 Champions] VGC 2026 Reg M-C",
+   "|rule|Species Clause: Limit one of each Pokémon",
+   "|rule|Item Clause: Limit 1 of each item",
+   "|clearpoke",
+   "|poke|p1|Ampharos, L50, M|",
+   "|poke|p1|Gholdengo, L50|",
+   "|poke|p1|Pawmot, L50, M|",
+   "|poke|p1|Primarina, L50, F|",
+   "|poke|p1|Milotic, L50, F|",
+   "|poke|p1|Kingambit, L50, M|",
+   "|poke|p2|Snorlax, L50, M|",
+   "|poke|p2|Kingambit, L50, M|",
+   "|poke|p2|Gholdengo, L50|",
+   "|poke|p2|Primarina, L50, F|",
+   "|poke|p2|Pawmot, L50, M|",
+   "|poke|p2|Milotic, L50, F|",
+   "|teampreview|4",
+   "|split|p1",
+   "|uhtml|otsrequest|<button name=\"send\" value=\"/acceptopenteamsheets\" class=\"button\" style=\"margin-right: 10px;\"><strong>Accept Open Team Sheets</strong></button><button name=\"send\" value=\"/rejectopenteamsheets\" class=\"button\" style=\"margin-top: 10px\"><strong>Deny Open Team Sheets</strong></button>",
+   "",
+   "|split|p2",
+   "|uhtml|otsrequest|<button name=\"send\" value=\"/acceptopenteamsheets\" class=\"button\" style=\"margin-right: 10px;\"><strong>Accept Open Team Sheets</strong></button><button name=\"send\" value=\"/rejectopenteamsheets\" class=\"button\" style=\"margin-top: 10px\"><strong>Deny Open Team Sheets</strong></button>",
+   ""
+  ],
+  "state": {
+   "turn": 0,
+   "ended": false,
+   "winner": "",
+   "weather": "",
+   "weather_turns": 0,
+   "terrain": "",
+   "terrain_turns": 0,
+   "trick_room": 0,
+   "sides": [
+    {
+     "request": "teampreview",
+     "conditions": [
+      0,
+      0,
+      0
+     ],
+     "enabled": [],
+     "active": [
+      -1,
+      -1
+     ],
+     "pokemon": [
+      {
+       "species": "Ampharos",
+       "set_species": "Ampharos",
+       "mega": 0,
+       "switch_flag": 0,
+       "hp": 167,
+       "maxhp": 167,
+       "item": "focussash",
+       "status": "",
+       "status_time": 0,
+       "confusion": 0,
+       "fainted": false,
+       "boosts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "pp": [
+        20,
+        8,
+        12,
+        16
+       ],
+       "volatiles": [],
+       "locked": null
+      },
+      {
+       "species": "Gholdengo",
+       "set_species": "Gholdengo",
+       "mega": 0,
+       "switch_flag": 0,
+       "hp": 194,
+       "maxhp": 194,
+       "item": "lifeorb",
+       "status": "",
+       "status_time": 0,
+       "confusion": 0,
+       "fainted": false,
+       "boosts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "pp": [
+        8,
+        16,
+        8
+       ],
+       "volatiles": [],
+       "locked": null
+      },
+      {
+       "species": "Pawmot",
+       "set_species": "Pawmot",
+       "mega": 0,
+       "switch_flag": 0,
+       "hp": 177,
+       "maxhp": 177,
+       "item": "leftovers",
+       "status": "",
+       "status_time": 0,
+       "confusion": 0,
+       "fainted": false,
+       "boosts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "pp": [
+        16,
+        1,
+        16,
+        8
+       ],
+       "volatiles": [],
+       "locked": null
+      },
+      {
+       "species": "Primarina",
+       "set_species": "Primarina",
+       "mega": 0,
+       "switch_flag": 0,
+       "hp": 187,
+       "maxhp": 187,
+       "item": "fairyfeather",
+       "status": "",
+       "status_time": 0,
+       "confusion": 0,
+       "fainted": false,
+       "boosts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "pp": [
+        8,
+        16,
+        20
+       ],
+       "volatiles": [],
+       "locked": null
+      },
+      {
+       "species": "Milotic",
+       "set_species": "Milotic",
+       "mega": 0,
+       "switch_flag": 0,
+       "hp": 202,
+       "maxhp": 202,
+       "item": "rockyhelmet",
+       "status": "",
+       "status_time": 0,
+       "confusion": 0,
+       "fainted": false,
+       "boosts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "pp": [
+        8,
+        16,
+        8,
+        20
+       ],
+       "volatiles": [],
+       "locked": null
+      },
+      {
+       "species": "Kingambit",
+       "set_species": "Kingambit",
+       "mega": 0,
+       "switch_flag": 0,
+       "hp": 207,
+       "maxhp": 207,
+       "item": "blackglasses",
+       "status": "",
+       "status_time": 0,
+       "confusion": 0,
+       "fainted": false,
+       "boosts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "pp": [
+        8,
+        16,
+        8,
+        12
+       ],
+       "volatiles": [],
+       "locked": null
+      }
+     ]
+    },
+    {
+     "request": "teampreview",
+     "conditions": [
+      0,
+      0,
+      0
+     ],
+     "enabled": [],
+     "active": [
+      -1,
+      -1
+     ],
+     "pokemon": [
+      {
+       "species": "Snorlax",
+       "set_species": "Snorlax",
+       "mega": 0,
+       "switch_flag": 0,
+       "hp": 267,
+       "maxhp": 267,
+       "item": "sitrusberry",
+       "status": "",
+       "status_time": 0,
+       "confusion": 0,
+       "fainted": false,
+       "boosts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "pp": [
+        12,
+        12,
+        8,
+        12
+       ],
+       "volatiles": [],
+       "locked": null
+      },
+      {
+       "species": "Kingambit",
+       "set_species": "Kingambit",
+       "mega": 0,
+       "switch_flag": 0,
+       "hp": 207,
+       "maxhp": 207,
+       "item": "blackglasses",
+       "status": "",
+       "status_time": 0,
+       "confusion": 0,
+       "fainted": false,
+       "boosts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "pp": [
+        8,
+        16,
+        8,
+        12
+       ],
+       "volatiles": [],
+       "locked": null
+      },
+      {
+       "species": "Gholdengo",
+       "set_species": "Gholdengo",
+       "mega": 0,
+       "switch_flag": 0,
+       "hp": 194,
+       "maxhp": 194,
+       "item": "lifeorb",
+       "status": "",
+       "status_time": 0,
+       "confusion": 0,
+       "fainted": false,
+       "boosts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "pp": [
+        8,
+        16,
+        8
+       ],
+       "volatiles": [],
+       "locked": null
+      },
+      {
+       "species": "Primarina",
+       "set_species": "Primarina",
+       "mega": 0,
+       "switch_flag": 0,
+       "hp": 187,
+       "maxhp": 187,
+       "item": "fairyfeather",
+       "status": "",
+       "status_time": 0,
+       "confusion": 0,
+       "fainted": false,
+       "boosts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "pp": [
+        8,
+        16,
+        20
+       ],
+       "volatiles": [],
+       "locked": null
+      },
+      {
+       "species": "Pawmot",
+       "set_species": "Pawmot",
+       "mega": 0,
+       "switch_flag": 0,
+       "hp": 177,
+       "maxhp": 177,
+       "item": "leftovers",
+       "status": "",
+       "status_time": 0,
+       "confusion": 0,
+       "fainted": false,
+       "boosts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "pp": [
+        16,
+        1,
+        16,
+        8
+       ],
+       "volatiles": [],
+       "locked": null
+      },
+      {
+       "species": "Milotic",
+       "set_species": "Milotic",
+       "mega": 0,
+       "switch_flag": 0,
+       "hp": 202,
+       "maxhp": 202,
+       "item": "rockyhelmet",
+       "status": "",
+       "status_time": 0,
+       "confusion": 0,
+       "fainted": false,
+       "boosts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "pp": [
+        8,
+        16,
+        8,
+        20
+       ],
+       "volatiles": [],
+       "locked": null
+      }
+     ]
+    }
+   ]
+  }
+ },
+ "steps": [
+  {
+   "input": {
+    "p1": "team 1234",
+    "p2": "team 1234"
+   },
+   "draws": [
+    {
+     "site": "TEAM_ORDER",
+     "context": "queue",
+     "lo": 6,
+     "hi": 8,
+     "value": 7,
+     "group": [
+      "A:team:p1undefined:",
+      "A:team:p2undefined:"
+     ],
+     "start": 6
+    }
+   ],
+   "log": [
+    "|teamsize|p1|4",
+    "|teamsize|p2|4",
+    "|start",
+    "|split|p1",
+    "|uhtmlchange|otsrequest|",
+    "",
+    "|split|p2",
+    "|uhtmlchange|otsrequest|",
+    "",
+    "|split|p1",
+    "|switch|p1a: Ampharos|Ampharos, L50, M|167/167",
+    "|switch|p1a: Ampharos|Ampharos, L50, M|100/100",
+    "|split|p1",
+    "|switch|p1b: Gholdengo|Gholdengo, L50|194/194",
+    "|switch|p1b: Gholdengo|Gholdengo, L50|100/100",
+    "|split|p2",
+    "|switch|p2a: Snorlax|Snorlax, L50, M|267/267",
+    "|switch|p2a: Snorlax|Snorlax, L50, M|100/100",
+    "|split|p2",
+    "|switch|p2b: Kingambit|Kingambit, L50, M|207/207",
+    "|switch|p2b: Kingambit|Kingambit, L50, M|100/100",
+    "|turn|1"
+   ],
+   "state": {
+    "turn": 1,
+    "ended": false,
+    "winner": "",
+    "weather": "",
+    "weather_turns": 0,
+    "terrain": "",
+    "terrain_turns": 0,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Ampharos",
+        "set_species": "Ampharos",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 167,
+        "maxhp": 167,
+        "item": "focussash",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         8,
+         12,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Gholdengo",
+        "set_species": "Gholdengo",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 194,
+        "maxhp": 194,
+        "item": "lifeorb",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         16,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Pawmot",
+        "set_species": "Pawmot",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 177,
+        "maxhp": 177,
+        "item": "leftovers",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         16,
+         1,
+         16,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Primarina",
+        "set_species": "Primarina",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 187,
+        "maxhp": 187,
+        "item": "fairyfeather",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         16,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Snorlax",
+        "set_species": "Snorlax",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 267,
+        "maxhp": 267,
+        "item": "sitrusberry",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         12,
+         8,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Kingambit",
+        "set_species": "Kingambit",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 207,
+        "maxhp": 207,
+        "item": "blackglasses",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         16,
+         8,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Gholdengo",
+        "set_species": "Gholdengo",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 194,
+        "maxhp": 194,
+        "item": "lifeorb",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         16,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Primarina",
+        "set_species": "Primarina",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 187,
+        "maxhp": 187,
+        "item": "fairyfeather",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         16,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": {
+    "p1": "move 2, move 2 1",
+    "p2": "move 4, move 4"
+   },
+   "draws": [
+    {
+     "site": "SPEED_TIE",
+     "context": "field:Residual",
+     "lo": 0,
+     "hi": 2,
+     "value": 1,
+     "group": [
+      "H:protect:p1a:end",
+      "H:stall:p1a:end"
+     ],
+     "start": 0
+    }
+   ],
+   "log": [
+    "|move|p1a: Ampharos|Protect|p1a: Ampharos",
+    "|-singleturn|p1a: Ampharos|Protect",
+    "|move|p1b: Gholdengo|Shadow Ball|p2a: Snorlax",
+    "|-immune|p2a: Snorlax",
+    "|move|p2b: Kingambit|Substitute|p2b: Kingambit",
+    "|-start|p2b: Kingambit|Substitute",
+    "|split|p2",
+    "|-damage|p2b: Kingambit|156/207",
+    "|-damage|p2b: Kingambit|75/100",
+    "|move|p2a: Snorlax|Substitute|p2a: Snorlax",
+    "|-start|p2a: Snorlax|Substitute",
+    "|split|p2",
+    "|-damage|p2a: Snorlax|201/267",
+    "|-damage|p2a: Snorlax|75/100",
+    "|upkeep",
+    "|turn|2"
+   ],
+   "state": {
+    "turn": 2,
+    "ended": false,
+    "winner": "",
+    "weather": "",
+    "weather_turns": 0,
+    "terrain": "",
+    "terrain_turns": 0,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Ampharos",
+        "set_species": "Ampharos",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 167,
+        "maxhp": 167,
+        "item": "focussash",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         7,
+         12,
+         16
+        ],
+        "volatiles": [
+         "stall"
+        ],
+        "locked": null
+       },
+       {
+        "species": "Gholdengo",
+        "set_species": "Gholdengo",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 194,
+        "maxhp": 194,
+        "item": "lifeorb",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         15,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Pawmot",
+        "set_species": "Pawmot",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 177,
+        "maxhp": 177,
+        "item": "leftovers",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         16,
+         1,
+         16,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Primarina",
+        "set_species": "Primarina",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 187,
+        "maxhp": 187,
+        "item": "fairyfeather",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         16,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Snorlax",
+        "set_species": "Snorlax",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 201,
+        "maxhp": 267,
+        "item": "sitrusberry",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         12,
+         8,
+         11
+        ],
+        "volatiles": [
+         "substitute"
+        ],
+        "locked": null
+       },
+       {
+        "species": "Kingambit",
+        "set_species": "Kingambit",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 156,
+        "maxhp": 207,
+        "item": "blackglasses",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         16,
+         8,
+         11
+        ],
+        "volatiles": [
+         "substitute"
+        ],
+        "locked": null
+       },
+       {
+        "species": "Gholdengo",
+        "set_species": "Gholdengo",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 194,
+        "maxhp": 194,
+        "item": "lifeorb",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         16,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Primarina",
+        "set_species": "Primarina",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 187,
+        "maxhp": 187,
+        "item": "fairyfeather",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         16,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": {
+    "p1": "move 1, move 1",
+    "p2": "move 2 1, move 2 1"
+   },
+   "draws": [
+    {
+     "site": "RANDOM_TARGET",
+     "context": "resolve",
+     "lo": 0,
+     "hi": 2,
+     "value": 0
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 1
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 0
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 0
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "execute:allAdjacent",
+     "lo": 0,
+     "hi": 2,
+     "value": 0
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 45
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 79
+    },
+    {
+     "site": "CRIT",
+     "context": "TryPrimaryHit",
+     "lo": 0,
+     "hi": 24,
+     "value": 9
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "TryPrimaryHit",
+     "lo": 0,
+     "hi": 16,
+     "value": 6
+    },
+    {
+     "site": "CRIT",
+     "context": "TryPrimaryHit",
+     "lo": 0,
+     "hi": 24,
+     "value": 4
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "TryPrimaryHit",
+     "lo": 0,
+     "hi": 16,
+     "value": 4
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 46
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 22
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 13
+    },
+    {
+     "site": "SECONDARY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 34
+    },
+    {
+     "site": "STATIC",
+     "context": "DamagingHit",
+     "lo": 0,
+     "hi": 10,
+     "value": 8
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 45
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 8
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 1
+    },
+    {
+     "site": "STATIC",
+     "context": "DamagingHit",
+     "lo": 0,
+     "hi": 10,
+     "value": 2
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "field:Residual",
+     "lo": 1,
+     "hi": 3,
+     "value": 2,
+     "group": [
+      "H:protect:p1b:end",
+      "H:stall:p1b:end"
+     ],
+     "start": 1
+    }
+   ],
+   "log": [
+    "|move|p1b: Gholdengo|Protect|p1b: Gholdengo",
+    "|-singleturn|p1b: Gholdengo|Protect",
+    "|move|p1a: Ampharos|Parabolic Charge|p2a: Snorlax|[spread] p2a,p2b",
+    "|-activate|p1b: Gholdengo|move: Protect",
+    "|-activate|p2a: Snorlax|move: Substitute|[damage]",
+    "|-activate|p2b: Kingambit|move: Substitute|[damage]",
+    "|move|p2b: Kingambit|Iron Head|p1a: Ampharos",
+    "|-resisted|p1a: Ampharos|1",
+    "|split|p1",
+    "|-damage|p1a: Ampharos|122/167",
+    "|-damage|p1a: Ampharos|73/100",
+    "|move|p2a: Snorlax|Stomping Tantrum|p1a: Ampharos",
+    "|-supereffective|p1a: Ampharos|1",
+    "|split|p1",
+    "|-damage|p1a: Ampharos|10/167",
+    "|-damage|p1a: Ampharos|5/100",
+    "|-status|p2a: Snorlax|par|[from] ability: Static|[of] p1a: Ampharos",
+    "|upkeep",
+    "|turn|3"
+   ],
+   "state": {
+    "turn": 3,
+    "ended": false,
+    "winner": "",
+    "weather": "",
+    "weather_turns": 0,
+    "terrain": "",
+    "terrain_turns": 0,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Ampharos",
+        "set_species": "Ampharos",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 10,
+        "maxhp": 167,
+        "item": "focussash",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         19,
+         7,
+         12,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Gholdengo",
+        "set_species": "Gholdengo",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 194,
+        "maxhp": 194,
+        "item": "lifeorb",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         7,
+         15,
+         8
+        ],
+        "volatiles": [
+         "stall"
+        ],
+        "locked": null
+       },
+       {
+        "species": "Pawmot",
+        "set_species": "Pawmot",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 177,
+        "maxhp": 177,
+        "item": "leftovers",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         16,
+         1,
+         16,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Primarina",
+        "set_species": "Primarina",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 187,
+        "maxhp": 187,
+        "item": "fairyfeather",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         16,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Snorlax",
+        "set_species": "Snorlax",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 201,
+        "maxhp": 267,
+        "item": "sitrusberry",
+        "status": "par",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         11,
+         8,
+         11
+        ],
+        "volatiles": [
+         "substitute"
+        ],
+        "locked": null
+       },
+       {
+        "species": "Kingambit",
+        "set_species": "Kingambit",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 156,
+        "maxhp": 207,
+        "item": "blackglasses",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         15,
+         8,
+         11
+        ],
+        "volatiles": [
+         "substitute"
+        ],
+        "locked": null
+       },
+       {
+        "species": "Gholdengo",
+        "set_species": "Gholdengo",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 194,
+        "maxhp": 194,
+        "item": "lifeorb",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         16,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Primarina",
+        "set_species": "Primarina",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 187,
+        "maxhp": 187,
+        "item": "fairyfeather",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         16,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": {
+    "p1": "move 1, move 1",
+    "p2": "move 2 1, move 2 1"
+   },
+   "draws": [
+    {
+     "site": "RANDOM_TARGET",
+     "context": "resolve",
+     "lo": 0,
+     "hi": 2,
+     "value": 0
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 0
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 0
+    },
+    {
+     "site": "STALL",
+     "context": "StallMove",
+     "lo": 0,
+     "hi": 3,
+     "value": 1
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 0
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "execute:allAdjacent",
+     "lo": 0,
+     "hi": 2,
+     "value": 1
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 26
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 71
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 12
+    },
+    {
+     "site": "CRIT",
+     "context": "TryPrimaryHit",
+     "lo": 0,
+     "hi": 24,
+     "value": 20
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "TryPrimaryHit",
+     "lo": 0,
+     "hi": 16,
+     "value": 8
+    },
+    {
+     "site": "CRIT",
+     "context": "TryPrimaryHit",
+     "lo": 0,
+     "hi": 24,
+     "value": 19
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "TryPrimaryHit",
+     "lo": 0,
+     "hi": 16,
+     "value": 15
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 13
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 14
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 91
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 21
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 2
+    },
+    {
+     "site": "SECONDARY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 68
+    },
+    {
+     "site": "STATIC",
+     "context": "DamagingHit",
+     "lo": 0,
+     "hi": 10,
+     "value": 9
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 1,
+     "value": 0
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "execute:normal",
+     "lo": 0,
+     "hi": 1,
+     "value": 0
+    },
+    {
+     "site": "FULL_PARALYSIS",
+     "context": "BeforeMove",
+     "lo": 0,
+     "hi": 8,
+     "value": 2
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 84
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 16
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 0
+    }
+   ],
+   "log": [
+    "|move|p1b: Gholdengo|Protect||[still]",
+    "|-fail|p1b: Gholdengo",
+    "|move|p1a: Ampharos|Parabolic Charge|p2b: Kingambit|[spread] p1b,p2a,p2b",
+    "|-end|p2a: Snorlax|Substitute",
+    "|split|p1",
+    "|-heal|p1a: Ampharos|24/167|[from] drain|[of] p2a: Snorlax",
+    "|-heal|p1a: Ampharos|14/100|[from] drain|[of] p2a: Snorlax",
+    "|-end|p2b: Kingambit|Substitute",
+    "|split|p1",
+    "|-heal|p1a: Ampharos|26/167|[from] drain|[of] p2b: Kingambit",
+    "|-heal|p1a: Ampharos|15/100|[from] drain|[of] p2b: Kingambit",
+    "|split|p1",
+    "|-damage|p1b: Gholdengo|164/194",
+    "|-damage|p1b: Gholdengo|84/100",
+    "|split|p1",
+    "|-heal|p1a: Ampharos|41/167|[from] drain|[of] p1b: Gholdengo",
+    "|-heal|p1a: Ampharos|24/100|[from] drain|[of] p1b: Gholdengo",
+    "|move|p2b: Kingambit|Iron Head|p1a: Ampharos",
+    "|-resisted|p1a: Ampharos|1",
+    "|split|p1",
+    "|-damage|p1a: Ampharos|0 fnt",
+    "|-damage|p1a: Ampharos|0 fnt",
+    "|faint|p1a: Ampharos",
+    "|move|p2a: Snorlax|Stomping Tantrum|p1b: Gholdengo",
+    "|-supereffective|p1b: Gholdengo|1",
+    "|split|p1",
+    "|-damage|p1b: Gholdengo|58/194",
+    "|-damage|p1b: Gholdengo|29/100",
+    "|upkeep"
+   ],
+   "state": {
+    "turn": 3,
+    "ended": false,
+    "winner": "",
+    "weather": "",
+    "weather_turns": 0,
+    "terrain": "",
+    "terrain_turns": 0,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "switch",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Ampharos",
+        "set_species": "Ampharos",
+        "mega": 0,
+        "switch_flag": 1,
+        "hp": 0,
+        "maxhp": 167,
+        "item": "focussash",
+        "status": "fnt",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         18,
+         7,
+         12,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Gholdengo",
+        "set_species": "Gholdengo",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 58,
+        "maxhp": 194,
+        "item": "lifeorb",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         6,
+         15,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Pawmot",
+        "set_species": "Pawmot",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 177,
+        "maxhp": 177,
+        "item": "leftovers",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         16,
+         1,
+         16,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Primarina",
+        "set_species": "Primarina",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 187,
+        "maxhp": 187,
+        "item": "fairyfeather",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         16,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Snorlax",
+        "set_species": "Snorlax",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 201,
+        "maxhp": 267,
+        "item": "sitrusberry",
+        "status": "par",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         10,
+         8,
+         11
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Kingambit",
+        "set_species": "Kingambit",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 156,
+        "maxhp": 207,
+        "item": "blackglasses",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         14,
+         8,
+         11
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Gholdengo",
+        "set_species": "Gholdengo",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 194,
+        "maxhp": 194,
+        "item": "lifeorb",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         16,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Primarina",
+        "set_species": "Primarina",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 187,
+        "maxhp": 187,
+        "item": "fairyfeather",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         16,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  }
+ ]
+}

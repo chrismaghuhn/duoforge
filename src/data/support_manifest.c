@@ -375,6 +375,11 @@ const dfi_support_manifest dfi_support = {
              * recoil, the recoil path of the hit loop). Their rows were in the pool tables unmarked. */
             [DFI_MOVE_CHARGEBEAM] = 1u,
             [DFI_MOVE_WILDCHARGE] = 1u,
+            /* Batch 6 (5cq, the spread-into-Substitute fix): Lava Plume (data/moves.ts:10106-10122: Special, Fire, 80, accuracy 100,
+             * target allAdjacent, a 30 percent burn secondary) and Parabolic Charge (data/moves.ts:13151-13164: Special, Electric,
+             * 65, accuracy 100, target allAdjacent, drain [1, 2]). Their rows were in the pool tables unmarked. */
+            [DFI_MOVE_LAVAPLUME] = 1u,
+            [DFI_MOVE_PARABOLICCHARGE] = 1u,
             [DFI_MOVE_DRAGONDARTS] = 1u,   /* step G78 (decision 0043): the split of the two hits, smartTarget; the partner by the target's side */
     [DFI_MOVE_REVIVALBLESSING] = 1u,
             /* Step G42: Roost (the heal, then the Flying type is off for the turn) and Stomping Tantrum (base power x2 after a

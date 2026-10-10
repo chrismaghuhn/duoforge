@@ -1,0 +1,24 @@
+{
+  "name": "sub2_lava_plume_two_substitutes_armarouge",
+  "purpose": "Lava Plume (data/moves.ts:10106-10122, allAdjacent, Fire, 80) into two standing Substitutes (Snorlax and Kingambit, made the turn before, the holders' HP after the cost): the spread damage to each absorbed target, the pin's getDamage per target (spreadHit modifier, sim/battle-actions.ts:551, scripts.ts:203-206) decides the break.",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,00000000000000000000000000000000000000000000000000000000000018d1",
+  "teams": [
+    "Armarouge (M) @ Charcoal\nAbility: Flash Fire\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nModest Nature\n- Lava Plume\n- Protect\n- Fire Blast\n- Overheat\n\nGholdengo @ Life Orb\nAbility: Good as Gold\nLevel: 50\nEVs: 32 HP / 2 SpA / 32 SpD\nCalm Nature\n- Protect\n- Shadow Ball\n- Make It Rain\n\nPawmot (M) @ Leftovers\nAbility: Iron Fist\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Thunderbolt\n- Revival Blessing\n- Ice Punch\n- Protect\n\nPrimarina (F) @ Fairy Feather\nAbility: Torrent\nLevel: 50\nEVs: 32 HP / 2 Def / 32 SpD\nCalm Nature\n- Protect\n- Moonblast\n- Calm Mind\n\nMilotic (F) @ Rocky Helmet\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Protect\n- Scald\n- Recover\n- Coil\n\nSnorlax (M) @ Sitrus Berry\nAbility: Thick Fat\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Spe\nAdamant Nature\n- Yawn\n- Stomping Tantrum\n- Protect\n- Substitute",
+    "Snorlax (M) @ Sitrus Berry\nAbility: Thick Fat\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Spe\nAdamant Nature\n- Yawn\n- Stomping Tantrum\n- Protect\n- Substitute\n\nKingambit (M) @ Black Glasses\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Sucker Punch\n- Iron Head\n- Protect\n- Substitute\n\nGholdengo @ Life Orb\nAbility: Good as Gold\nLevel: 50\nEVs: 32 HP / 2 SpA / 32 SpD\nCalm Nature\n- Protect\n- Shadow Ball\n- Make It Rain\n\nPrimarina (F) @ Fairy Feather\nAbility: Torrent\nLevel: 50\nEVs: 32 HP / 2 Def / 32 SpD\nCalm Nature\n- Protect\n- Moonblast\n- Calm Mind\n\nPawmot (M) @ Leftovers\nAbility: Iron Fist\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Thunderbolt\n- Revival Blessing\n- Ice Punch\n- Protect\n\nMilotic (F) @ Rocky Helmet\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Protect\n- Scald\n- Recover\n- Coil"
+  ],
+  "plan": {
+    "p1": [
+      "move 2, move 2",
+      "move 1, move 1",
+      "move 1, move 1"
+    ],
+    "p2": [
+      "move 4, move 4",
+      "move 2 1, move 2 1",
+      "move 2 1, move 2 1"
+    ],
+    "max_steps": 4
+  }
+}

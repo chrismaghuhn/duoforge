@@ -1,0 +1,24 @@
+{
+  "name": "sub2_parabolic_charge_substitute_ampharos",
+  "purpose": "Parabolic Charge (data/moves.ts:13151-13164, allAdjacent, Electric, 65, drain 1/2) into a standing Substitute (the foe's Snorlax) and into a target without one: the drain comes from the damage the Substitute took (pin: the drain of the hit, sim/battle-actions.ts:1186-1316 with the absorbed target's damage).",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,00000000000000000000000000000000000000000000000000000000000018d2",
+  "teams": [
+    "Ampharos (M) @ Focus Sash\nAbility: Static\nLevel: 50\nEVs: 2 HP / 32 SpA / 32 Spe\nTimid Nature\n- Parabolic Charge\n- Protect\n- Substitute\n- Thunderbolt\n\nGholdengo @ Life Orb\nAbility: Good as Gold\nLevel: 50\nEVs: 32 HP / 2 SpA / 32 SpD\nCalm Nature\n- Protect\n- Shadow Ball\n- Make It Rain\n\nPawmot (M) @ Leftovers\nAbility: Iron Fist\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Thunderbolt\n- Revival Blessing\n- Ice Punch\n- Protect\n\nPrimarina (F) @ Fairy Feather\nAbility: Torrent\nLevel: 50\nEVs: 32 HP / 2 Def / 32 SpD\nCalm Nature\n- Protect\n- Moonblast\n- Calm Mind\n\nMilotic (F) @ Rocky Helmet\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Protect\n- Scald\n- Recover\n- Coil\n\nKingambit (M) @ Black Glasses\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Sucker Punch\n- Iron Head\n- Protect\n- Substitute",
+    "Snorlax (M) @ Sitrus Berry\nAbility: Thick Fat\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Spe\nAdamant Nature\n- Yawn\n- Stomping Tantrum\n- Protect\n- Substitute\n\nKingambit (M) @ Black Glasses\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Sucker Punch\n- Iron Head\n- Protect\n- Substitute\n\nGholdengo @ Life Orb\nAbility: Good as Gold\nLevel: 50\nEVs: 32 HP / 2 SpA / 32 SpD\nCalm Nature\n- Protect\n- Shadow Ball\n- Make It Rain\n\nPrimarina (F) @ Fairy Feather\nAbility: Torrent\nLevel: 50\nEVs: 32 HP / 2 Def / 32 SpD\nCalm Nature\n- Protect\n- Moonblast\n- Calm Mind\n\nPawmot (M) @ Leftovers\nAbility: Iron Fist\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Thunderbolt\n- Revival Blessing\n- Ice Punch\n- Protect\n\nMilotic (F) @ Rocky Helmet\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Protect\n- Scald\n- Recover\n- Coil"
+  ],
+  "plan": {
+    "p1": [
+      "move 2, move 2",
+      "move 1, move 1",
+      "move 1, move 1"
+    ],
+    "p2": [
+      "move 4, move 4",
+      "move 2 1, move 2 1",
+      "move 2 1, move 2 1"
+    ],
+    "max_steps": 4
+  }
+}
