@@ -87,7 +87,7 @@ An empty position (no occupant, or a fainted one) is all zero. Every field belon
 | 5 | `FOCUS_ENERGY` | public | Focus Energy |
 | 6 | `DRAGON_CHEER` | public | Dragon Cheer |
 | 7 | `MUST_RECHARGE` | public | the occupant must recharge on its next action (Hyper Beam class) |
-| 8 | `PARTIAL_TRAP` | public | partially trapped (Infestation, Wrap class); the source is not exposed |
+| 8 | `PARTIAL_TRAP` | public | partially trapped (Infestation, Wrap class); the presence bit is public, and since decision 0060 the source (`trap_source`) and the move are public too (the `-activate` line names the source), while the drawn turn count (`trap_turns`) is hidden for both viewers (`DUOFORGE_VIEW_HIDDEN`) |
 | 9 | `GLAIVE_RUSH` | public | Glaive Rush: the occupant is hit as vulnerable until it moves again |
 | 10 | `DESTINY_BOND` | public | Destiny Bond, until the occupant moves again |
 | 11 | `CURSE` | public | the Ghost-type Curse is on the occupant |
