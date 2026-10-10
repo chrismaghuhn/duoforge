@@ -172,9 +172,10 @@ static void test_lo_intimidate(df_test *t)
     finish(ctx, b);
 }
 
-/* g88_av_hurt and g88_av_control: the HURT bit of the target is set by the spread damage of turn 1 and cleared at the turn
- * boundary, which the recorded trace also reaches as a TURN boundary (no faint, no switch request). */
-static void test_av_turn(df_test *t, const char *name, uint32_t hurt_flat)
+/* The Assurance battles of turn 1. The HURT bit of the Assurance target is set by the spread damage of its hit, and endTurn
+ * (which clears it) runs after the turn's end replacements. The boundary of turn 1 is the recorded one (conf_* in
+ * conformance_pool.h, which the trace gives): TURN for g88_av_hurt, REPLACEMENT for g88_av_control. */
+static void test_av_turn(df_test *t, const char *name, uint32_t hurt_flat, uint32_t expected_boundary, bool hurt_after_turn)
 {
     duoforge_context *ctx = NULL;
     duoforge_battle *b = NULL;
@@ -186,22 +187,25 @@ static void test_av_turn(df_test *t, const char *name, uint32_t hurt_flat)
     DF_CHECK_EQ_U64(t, replay_steps(ctx, b, cb, 0u, 1u), DUOFORGE_OK);
     DF_CHECK(t, (flags_of(b, hurt_flat) & DFI_POSFLAG_HURT) == 0u); /* nobody was hurt before turn 1 */
     DF_CHECK_EQ_U64(t, replay_steps(ctx, b, cb, 1u, 2u), DUOFORGE_OK);
-    DF_CHECK_EQ_U64(t, b->boundary_kind, DUOFORGE_BOUNDARY_TURN);
-    DF_CHECK(t, (flags_of(b, hurt_flat) & DFI_POSFLAG_HURT) == 0u); /* the turn boundary cleared it (endTurn) */
+    DF_CHECK_EQ_U64(t, b->boundary_kind, expected_boundary);
+    DF_CHECK_EQ_U64(t, (flags_of(b, hurt_flat) & DFI_POSFLAG_HURT) != 0u, hurt_after_turn);
     DF_CHECK(t, dfi_state_check(ctx, b, NULL) == DUOFORGE_OK);
     finish(ctx, b);
 }
 
 static void test_av_hurt(df_test *t)
 {
-    /* Raichu's Thunderbolt on Milotic (flat 3) and Umbreon's Assurance on Milotic: the target is hurt in turn 1 */
-    test_av_turn(t, "g88_av_hurt", 3u);
+    /* Raichu's Thunderbolt on Milotic (flat 3) and Umbreon's Assurance on Milotic: Milotic is hurt in turn 1, and the turn ends
+     * at a TURN boundary (Raichu survives at 19/164, as in the trace: no faint, no switch request), where endTurn cleared HURT. */
+    test_av_turn(t, "g88_av_hurt", 3u, DUOFORGE_BOUNDARY_TURN, false);
 }
 
 static void test_av_control(df_test *t)
 {
-    /* Umbreon's Assurance on Salamence (flat 2), which nobody hit this turn: nothing is hurt there */
-    test_av_turn(t, "g88_av_control", 2u);
+    /* Umbreon's Assurance on Salamence (flat 2), which nobody hit before it: unhurt, so 60 base power. Raichu faints in turn 1
+     * (trace: Salamence's Dragon Claw, then Milotic's Alluring Voice |faint|p1a: Raichu|), so the end-of-turn replacement makes the
+     * boundary REPLACEMENT. That boundary comes before endTurn, so Salamence's HURT from Assurance is still set there. */
+    test_av_turn(t, "g88_av_control", 2u, DUOFORGE_BOUNDARY_REPLACEMENT, true);
 }
 
 /* g88_pivot_turn_history: Raichu's Volt Switch makes the PIVOT boundary of turn 1 while Umbreon (flat 1) knows Lash Out and
