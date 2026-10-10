@@ -2407,14 +2407,16 @@ def short_log(log):
     return chr(10).join(lines[:cut] + ["|win|p2"])
 
 
-class PickHypothesesBuildTest(_BeliefFixture, unittest.TestCase):
-    """A sheet build with --pick-hypotheses: its marked rows, manifest, inputs and funnel (M11 pick hypotheses spec,
-    sections 4, 6 and 7)."""
-
+class _ShortFixture(_BeliefFixture):
     @classmethod
     def setUpClass(cls):
         super().setUpClass()
         cls.games["short-train"] = short_log(cls.games["open-train"])
+
+
+class PickHypothesesBuildTest(_ShortFixture, unittest.TestCase):
+    """A sheet build with --pick-hypotheses: its marked rows, manifest, inputs and funnel (M11 pick hypotheses spec,
+    sections 4, 6 and 7)."""
 
     def test_the_hypothesis_rows_are_marked_and_counted_apart(self):
         from duoforge_replay import dataset, funnel
@@ -2463,6 +2465,70 @@ class PickHypothesesBuildTest(_BeliefFixture, unittest.TestCase):
             writer.add(result)
         with self.assertRaisesRegex(ValueError, "sheet"):
             dataset.Writer(self.tmp / "belief-hyp", {}, source="bo1_belief", pick_hypotheses=True)
+
+
+class ValidateHypothesesTest(_ShortFixture, unittest.TestCase):
+    """The validation of the pick hypotheses (M11 pick hypotheses spec, Validation): a seen back pick hidden from the
+    hypothesis builder; the true hypothesis must give the real rows byte for byte."""
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        from duoforge_replay import prior
+        cls.prior = prior.Prior.load(cls.prior_path)
+
+    def counters(self, log):
+        from duoforge_replay import validate
+        return validate.hypotheses_game("fixture-v", "gen9championsvgc2026regmcbo3", log, self.data, self.prior,
+                                        _Stats())
+
+    def test_the_true_hypothesis_of_a_hidden_pick_is_byte_identical(self):
+        c = self.counters(FIXTURE.read_text(encoding="utf-8"))
+        self.assertGreaterEqual(c["perspectives.seen4"], 1)
+        self.assertEqual(c["cases"], 2 * c["perspectives.seen4"])  # each of the two seen back picks hidden once
+        self.assertGreater(c["true.rows"], 0)
+        self.assertEqual((c["true.identical"], c["true.missing"]), (c["true.rows"], 0))
+        self.assertEqual(c["other.rows"] + c["other.missing"], 2 * (c["true.rows"] + c["true.missing"]))
+        self.assertGreater(c["other.differs.own_members"], 0)  # the swapped bench member's location
+        self.assertGreater(c["points"], 0)
+        self.assertEqual(c["all_equal.rows"], 0)  # the own bench of every hypothesis is its own
+        self.assertLessEqual(c["all_equal.beyond_picks"], c["points"])
+
+    def test_a_row_difference_of_the_true_hypothesis_is_counted(self):
+        from unittest import mock
+        from duoforge_replay import game
+        real = game.hypothesis_rows
+
+        def shifted(*args, **kw):
+            rows, stop = real(*args, **kw)
+            for per in rows:
+                for r in per:
+                    r.observation = r.observation.copy()
+                    r.observation["turn"] += 1
+            return rows, stop
+        with mock.patch.object(game, "hypothesis_rows", shifted):
+            c = self.counters(FIXTURE.read_text(encoding="utf-8"))
+        self.assertEqual((c["true.identical"], c["true.differs"]), (0, c["true.rows"]))
+
+    def test_the_real_hypotheses_count_their_equal_points(self):
+        c = self.counters(self.games["short-train"])
+        self.assertEqual(c["real.perspectives"], 1)
+        self.assertGreater(c["real.points"], 0)
+        self.assertEqual(c["real.all_equal.rows"], 0)
+
+    def test_the_report_is_aggregates_of_test_games_only(self):
+        import json
+        from duoforge_replay import validate
+        path = self.source("vh", ["open-train", "open-test"])
+        report = validate.hypotheses([path], "gen9championsvgc2026regmc", self.tmp / "vh.json",
+                                     self.prior_path, stats_factory=stats_factory)
+        f = report["formats"]["gen9championsvgc2026regmc"]
+        self.assertEqual((f["games"], report["skipped"].get("skip:split-train")), (1, 1))
+        self.assertEqual(f["true"]["identical_share"], 1.0)
+        self.assertNotIn("open-test", json.dumps(report))
+        with self.assertRaisesRegex(ValueError, "inside the repository"):
+            validate.hypotheses([path], "gen9championsvgc2026regmc", Path(__file__).resolve().parent / "x.json",
+                                self.prior_path, stats_factory=stats_factory)
 
 
 class ValidateTest(_BeliefFixture, unittest.TestCase):

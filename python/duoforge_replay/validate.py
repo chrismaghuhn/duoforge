@@ -8,6 +8,20 @@
 (b) compare_rows(): a sheet build and a drop_sheets build of the same games, row by row (replay, side, point): which
     rows both have, which observation field groups differ, the overlap of the legal pairs, the agreement of labels.
 
+hypotheses(): the validation of the pick hypotheses (M11 pick hypotheses spec, Validation) on the test-split games
+with two sheets. In each perspective whose four brought members the log shows, each seen back pick is hidden once
+from the hypothesis builder (hindsight.hypotheses_of without it), and the perspective is folded per hypothesis as a
+build folds one (game.hypothesis_rows). Compared are the points whose label lines end before the hidden member's
+first switch-in, so that the labels are complete in every fold:
+- (1) correctness: the true hypothesis's rows against the real rows, byte for byte (observation, domain, extension
+  record, label); any difference is a bug;
+- (2) effect: the other hypotheses' rows against the real rows: the share of rows whose observation field group,
+  domain or extension record differs, the Jaccard of the legal pairs, and the share of informative label slots
+  whose logged action is no option of the hypothesis (label_lost: UNKNOWN where the real row knew it);
+- the share of points at which all H rows are byte-equal: in full, beyond the pick fields (the own brought_order
+  and the own members' location, which differ by construction), and in the domain; for the hidden picks and for
+  the real hypothesis perspectives (picks-incomplete) of the same games.
+
 No report names a replay, a player or a game: counts and shares only. Outputs are refused inside the repository.
 """
 import collections
@@ -19,7 +33,10 @@ import numpy as np
 from duoforge_live import teams
 from duoforge_live.data import trace_to_c
 
-from . import corpus as corpus_mod, dataset, facts, game, setbelief, source, split
+from duoforge_live.lines import line_kind
+
+from . import corpus as corpus_mod, dataset, facts, game, hindsight, labels, points as points_mod, setbelief, source
+from . import split
 from .prior import Prior
 
 OPTION_FIELDS = ("kind", "move_slot", "target", "mega", "reserve")
@@ -181,6 +198,209 @@ def compare_rows(dir_sheet, dir_drop):
                                                                                 "positions", "header")},
             "mask_jaccard_mean": float(np.mean(jaccard)) if jaccard else 0.0,
             "label": {"same": label["same"], "differs": label["differs"], "overlap": label["overlap"]}}
+
+
+def _row_bytes(row):
+    label = row.label
+    return (row.observation.tobytes(), row.domain.tobytes(), row.ext.tobytes(), tuple(label.slots),
+            bytes(label.team), tuple(label.reasons))
+
+
+def _beyond_picks(row):
+    """A row's observation and extension record without the pick fields: the own brought_order and the own members'
+    location (BENCH or NOT_BROUGHT follows the picks)."""
+    o = row.observation.copy()
+    player = int(o["player"])
+    o["sides"]["brought_order"][player] = 0
+    o["sides"]["members"]["location"][player] = 0
+    return o.tobytes(), row.ext.tobytes()
+
+
+def _all_equal(c, prefix, rows):
+    """Counts the points at which all rows (one per hypothesis) are byte-equal: in full; in the observation beyond
+    the pick fields, the extension record and the label; in the domain."""
+    c[f"{prefix}points"] += 1
+    c[f"{prefix}all_equal.rows"] += len({_row_bytes(r) for r in rows}) == 1
+    c[f"{prefix}all_equal.beyond_picks"] += len({(_beyond_picks(r), _row_bytes(r)[3:]) for r in rows}) == 1
+    c[f"{prefix}all_equal.domain"] += len({r.domain.tobytes() for r in rows}) == 1
+
+
+def _first_switch(lines, side, data, sheets, member):
+    """The index of the line at which a member of a side first switches in after |start|."""
+    roster = [data.base_forme(data.forme(m["species"])) for m in sheets[side]]
+    started = False
+    for i, line in enumerate(lines):
+        kind = line_kind(line)
+        if kind == "start":
+            started = True
+        elif kind == "switch" and started and line.split("|")[2][:2] == f"p{side + 1}":
+            try:
+                base = data.base_forme(data.forme(line.split("|")[3].split(",")[0]))
+            except ValueError:
+                continue
+            if roster.index(base) == member:
+                return i
+    raise ValueError(f"member {member} of p{side + 1} never switches in")
+
+
+_INFORMATIVE = (labels.EXACT, labels.TARGET_UNKNOWN, labels.MOVE_HIDDEN)
+
+
+def _effect(c, real, row):
+    ga, gb = _groups(real.observation), _groups(row.observation)
+    for group in ga:
+        c[f"other.differs.{group}"] += ga[group] != gb[group]
+    c["other.differs.domain"] += real.domain.tobytes() != row.domain.tobytes()
+    c["other.differs.ext"] += real.ext.tobytes() != row.ext.tobytes()
+    pa, pb = _pairs(real.observation, real.domain), _pairs(row.observation, row.domain)
+    c["other.jaccard_sum"] += len(pa & pb) / len(pa | pb) if pa | pb else 1.0
+    for a, b in zip(real.label.reasons, row.label.reasons):
+        if a in _INFORMATIVE:
+            c["other.label_slots"] += 1
+            c["other.label_lost"] += b == labels.UNKNOWN
+
+
+def hypotheses_game(replay_id, format_id, log, data, prior, stats):
+    """The counters of one open-sheet game (module docstring, hypotheses()); Skip as game.process raises it."""
+    c = collections.Counter()
+    result = game.process(replay_id, format_id, log, data, prior, stats, pick_hypotheses=True)
+    c["games"] += 1
+    lines = [line.rstrip("\r") for line in log.split("\n")]
+    _, sheets = game._prepass(replay_id, format_id, lines, data)
+    points = points_mod.find(lines)
+    real_hyp = collections.defaultdict(list)
+    for r in result.rows:
+        if r.picks_hypotheses > 1:
+            real_hyp[(r.side, r.point)].append(r)
+    c["real.perspectives"] += len({side for side, _ in real_hyp})
+    for rows in real_hyp.values():
+        _all_equal(c, "real.", rows)
+    for side in (0, 1):
+        picks = hindsight.hindsight_picks(lines, side, data, sheets)
+        if picks is None:
+            continue
+        c["perspectives.seen4"] += 1
+        leads, back = hindsight.hindsight(lines, side, data, sheets)
+        real = {r.point: r for r in result.rows if r.side == side and r.picks_hypotheses == 1}
+        for hidden in sorted(back):
+            c["cases"] += 1
+            end = _first_switch(lines, side, data, sheets, hidden)
+            hyps = hindsight.hypotheses_of(leads, back - {hidden}, len(sheets[side]))
+            truth = hyps.index(picks)
+            per_hypothesis, _ = game.hypothesis_rows(lines, points, side, sheets, data, prior, stats, hyps)
+            by_point = [{r.point: r for r in rows} for rows in per_hypothesis]
+            region = [p.index for p in points if p.end <= end and p.boundary != points_mod.TEAM_SELECTION
+                      and p.index in real]
+            for index in region:
+                for k, rows in enumerate(by_point):
+                    who = "true" if k == truth else "other"
+                    if index not in rows:
+                        c[f"{who}.missing"] += 1
+                        continue
+                    c[f"{who}.rows"] += 1
+                    if k == truth:
+                        same = _row_bytes(rows[index]) == _row_bytes(real[index])
+                        c["true.identical" if same else "true.differs"] += 1
+                    else:
+                        _effect(c, real[index], rows[index])
+                if all(index in rows for rows in by_point):
+                    _all_equal(c, "", [rows[index] for rows in by_point])
+    return c
+
+
+def _share(n, d):
+    return n / d if d else 0.0
+
+
+def hypotheses_summary(c):
+    """The report of one format's counters of hypotheses_game."""
+    other = c["other.rows"]
+    return {
+        "games": c["games"], "perspectives_seen4": c["perspectives.seen4"], "cases": c["cases"],
+        "true": {"rows": c["true.rows"], "identical": c["true.identical"], "differs": c["true.differs"],
+                 "missing": c["true.missing"], "identical_share": _share(c["true.identical"], c["true.rows"])},
+        "other": {"rows": other, "missing": c["other.missing"],
+                  "differs": {g: _share(c[f"other.differs.{g}"], other)
+                              for g in ("own_members", "foe_members", "positions", "header", "domain", "ext")},
+                  "mask_jaccard_mean": _share(c["other.jaccard_sum"], other),
+                  "label_lost": _share(c["other.label_lost"], c["other.label_slots"])},
+        "hidden_points": c["points"],
+        "hidden_all_equal": {k: _share(c[f"all_equal.{k}"], c["points"]) for k in ("rows", "beyond_picks", "domain")},
+        "real_perspectives": c["real.perspectives"], "real_points": c["real.points"],
+        "real_all_equal": {k: _share(c[f"real.all_equal.{k}"], c["real.points"])
+                           for k in ("rows", "beyond_picks", "domain")},
+    }
+
+
+_HYP = {}
+
+
+def _hyp_init(prior_path, stats_factory, node, ps_dir, prefix):
+    from duoforge_live import data as live_data
+    from .stats import StatSource
+    _HYP["data"] = live_data.load(kind="pool")
+    _HYP["prior"] = Prior.load(prior_path)
+    _HYP["stats"] = stats_factory() if stats_factory is not None else StatSource(node, ps_dir)
+    _HYP["prefix"] = prefix
+
+
+def _hyp_unit(unit):
+    """(counters per format id, skipped) of the test-split open-sheet games of one source unit."""
+    per, skipped, read = collections.defaultdict(collections.Counter), collections.Counter(), collections.Counter()
+    for replay_id, format_id, log in source.read_unit(unit, _HYP["prefix"], read):
+        if not format_id.startswith(_HYP["prefix"]):
+            continue
+        lines = log.split("\n")
+        if sum(1 for line in lines if line.startswith("|showteam|")) != 2:
+            skipped["skip:sheets"] += 1
+            continue
+        try:
+            got = split.of_game(split.players_of(lines))
+        except ValueError:
+            got = "players"
+        if got != "test":
+            skipped[f"skip:split-{got}"] += 1
+            continue
+        try:
+            per[format_id] += hypotheses_game(replay_id, format_id, log, _HYP["data"], _HYP["prior"], _HYP["stats"])
+        except game.Skip as e:
+            skipped[e.reason] += 1
+        except game.line_classes.Stop as e:
+            skipped[f"stop:{e.reason}"] += 1
+    return {k: dict(v) for k, v in per.items()}, dict(skipped)
+
+
+def hypotheses(paths, format_prefix, out, prior_path, workers=1, node="node", ps_dir=None, stats_factory=None):
+    """The validation of the pick hypotheses over the sources (module docstring); writes and returns the report."""
+    import concurrent.futures
+    import multiprocessing
+    import os
+    dataset.refuse_repository(out)
+    prefix = (format_prefix,) if isinstance(format_prefix, str) else tuple(format_prefix)
+    ps_dir = ps_dir or os.environ.get("DUOFORGE_PS_REFERENCE_DIR")
+    initargs = (prior_path, stats_factory, node, ps_dir, prefix)
+    units = source.units(paths)
+    per, skipped = collections.defaultdict(collections.Counter), collections.Counter()
+
+    def take(result):
+        counters, skips = result
+        for fid, c in counters.items():
+            per[fid].update(c)
+        skipped.update(skips)
+    if workers == 1:
+        _hyp_init(*initargs)
+        for unit in units:
+            take(_hyp_unit(unit))
+    else:
+        context = multiprocessing.get_context("spawn")
+        with concurrent.futures.ProcessPoolExecutor(workers, mp_context=context, initializer=_hyp_init,
+                                                    initargs=initargs) as pool:
+            for result in pool.map(_hyp_unit, units):
+                take(result)
+    report = {"formats": {fid: hypotheses_summary(c) for fid, c in sorted(per.items())},
+              "skipped": dict(sorted(skipped.items())), "format_prefix": list(prefix)}
+    dataset.write_json_atomic(Path(out), report)
+    return report
 
 
 def write(report, out):
