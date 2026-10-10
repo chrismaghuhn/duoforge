@@ -6450,6 +6450,29 @@ static duoforge_status dfi_smart_targets(dfi_run *r, uint32_t user, uint32_t tar
     return DUOFORGE_OK;
 }
 
+/* Step G94, Last Resort's onTry (data/moves.ts:10066-10081): fails with fewer than two move slots, and otherwise unless every
+ * other slot of the occupant has been used since it came in (the used bits, which deductPP sets and the switch-in clears).
+ * The occupant has its own Last Resort slot, which is the only slot that is not checked. */
+static bool dfi_last_resort_ok(struct duoforge_battle *b, uint32_t user)
+{
+    const dfi_member *m = dfi_at(b, user);
+    if (m == NULL || m->move_count < 2u) {
+        return false;
+    }
+    const uint32_t used = dfi_move_used_bits(&b->tail, user);
+    bool has = false;
+    for (uint32_t k = 0u; k < m->move_count; ++k) {
+        if (dfi_move_of(m, k) == DFI_MOVE_LASTRESORT) {
+            has = true;
+            continue;
+        }
+        if (((used >> k) & 1u) == 0u) {
+            return false;
+        }
+    }
+    return has;
+}
+
 static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, bool *ran)
 {
     r->hit_index = 1u;
@@ -6540,6 +6563,7 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
     const bool lock_move = b->tail.sides[side].positions[q->slot].lock_turns != 0u;
     if (q->move_slot < DUOFORGE_MAX_MOVE_SLOTS && !locked && !lock_move) {
         dfi_move_slot *slot = &m->moves[q->move_slot];
+        dfi_move_used_set(&b->tail, user, q->move_slot); /* step G94: deductPP sets used before its PP test (sim/pokemon.ts:892) */
         if (slot->pp == 0u) {
             r->mres |= DFI_MRES_FALSE; /* "cant nopp": the move returns false (battle-actions.ts useMoveInner) */
             return DUOFORGE_OK; /* "cant nopp"; the domain never offers it */
@@ -6808,6 +6832,12 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
                 }
             }
         }
+    }
+    /* Step G94, Last Resort's onTry (data/moves.ts:10066-10081): it fails silently (the move line is already out, no line
+     * follows, the PP is spent), before the targets are looked at. */
+    if (md->special == DFI_SPECIAL_LAST_RESORT && !dfi_last_resort_ok(b, user)) {
+        r->mres |= DFI_MRES_FALSE;
+        return DUOFORGE_OK;
     }
     if (count == 0u) {
         return dfi_no_target_or_try(r, user, md); /* after TryMove (sim/battle-actions.ts:509-513) */

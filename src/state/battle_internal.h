@@ -403,7 +403,26 @@ typedef struct dfi_pool_tail {
     uint8_t gravity_turns;
     uint8_t party_order[DUOFORGE_SIDE_COUNT][DFI_PARTY_BYTES_PER_SIDE]; /* step G46, see above */
     uint8_t field_pad; /* always zero: the reserved byte +7 of the encoded field block */
+    /* step G94 (decision 0015 5cv, decision 0061): Last Resort's used-since-entering bits. A nibble per position in flat order
+     * (position f in move_used[f / 2], the low nibble for an even f), bit k = the occupant used its move slot k since it came
+     * in (deductPP's used flag, reset at the switch-in). Encoded in the rev 5 reserve bytes 8 and 9 (the state codec). Zero
+     * for an empty position: dfi_tail_clear_occupant clears the nibble when the occupant changes. */
+    uint8_t move_used[2];
 } dfi_pool_tail;
+
+#define DFI_MOVE_USED_NIBBLE_BITS 4u
+static inline uint32_t dfi_move_used_bits(const dfi_pool_tail *t, uint32_t flat)
+{
+    return ((uint32_t)t->move_used[flat / 2u] >> ((flat % 2u) * DFI_MOVE_USED_NIBBLE_BITS)) & 0xFu;
+}
+static inline void dfi_move_used_set(dfi_pool_tail *t, uint32_t flat, uint32_t slot)
+{
+    t->move_used[flat / 2u] = (uint8_t)(t->move_used[flat / 2u] | (1u << (slot + (flat % 2u) * DFI_MOVE_USED_NIBBLE_BITS)));
+}
+static inline void dfi_move_used_clear(dfi_pool_tail *t, uint32_t flat)
+{
+    t->move_used[flat / 2u] = (uint8_t)(t->move_used[flat / 2u] & ~(0xFu << ((flat % 2u) * DFI_MOVE_USED_NIBBLE_BITS)));
+}
 
 /* The packed value of one side's party order, and one entry of it (roster index + 1, 0 = empty). */
 static inline uint32_t dfi_party_word(const dfi_pool_tail *t, uint32_t side)

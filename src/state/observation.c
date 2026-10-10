@@ -422,6 +422,9 @@ duoforge_status duoforge_battle_observe_ext(const duoforge_context *ctx, const d
                     vol |= (uint32_t)DUOFORGE_POSITION_EXT_ILLUSION_UP;
                 }
                 o.sides[s].positions[p].volatiles = vol;
+                /* Step G94 (decision 0061, lane A block): the used-since-entering bits of the four move slots of the occupant (its
+                 * deductPP since the switch-in), volatiles2 bits 0 to 3. Public for both viewers: each use is a move line. */
+                o.volatiles2[s][p] = dfi_move_used_bits(&battle->tail, s * DUOFORGE_ACTIVE_PER_SIDE + p);
                 /* Step G42: move_failed is 1 iff the occupant's last move result is FALSE. It is exact only when the result is
                  * classified; an unclassified result (the bit of decision 0015 section 7) reads 0 here (documented, not refused). */
                 o.sides[s].positions[p].move_failed =

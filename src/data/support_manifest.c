@@ -503,6 +503,9 @@ const dfi_support_manifest dfi_support = {
              * stops poisons its user (the Poison and Steel types are immune). Its only learner in the pool is Toxapex, with Limber or
              * Regenerator (both marked). Its Merciless is not marked, so a Merciless Toxapex is refused. */
             [DFI_MOVE_BANEFULBUNKER] = 1u,
+            /* Step G94 (decision 0015 5cv, decision 0061): Last Resort, fails unless every other move slot of the user was used since it
+             * came in (the used bits of the tail, rev 5 reserve bytes 8 and 9). Its learners are the 26 Champions learnset entries. */
+            [DFI_MOVE_LASTRESORT] = 1u,
             /* Step G76 (decision 0015 5cg): Destiny Bond (the user's volatile, the consecutive-use failure, the KO of a foe that
              * faints from a Move; Future Sight, the futuremove the pin excludes, is unmarked, so it cannot reach a holder). */
             [DFI_MOVE_DESTINYBOND] = 1u,

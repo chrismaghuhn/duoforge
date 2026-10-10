@@ -410,7 +410,9 @@ def parse_move(mid, base, champ, ext=False, pool=False, unmodeled=None):
                 fail('move %s: %s is not the pinned text' % (mid, name))
     if pool and handled[0] == 'AURORA_VEIL' and ('onTry' not in f or norm(f['onTry'][1]) != AURORA_VEIL_ONTRY):
         fail('move %s: onTry is not the pinned text' % mid)
-    if pool and handled[0] in G20_PROTECT_HANDLERS + G94_HANDLERS:
+    if pool and handled[0] == 'LAST_RESORT' and ('onTry' not in f or norm(f['onTry'][1]) != norm(LAST_RESORT_ONTRY)):
+        fail('move %s: onTry is not the pinned text' % mid)
+    if pool and handled[0] in G20_PROTECT_HANDLERS + G94_PROTECT_HANDLERS:
         punish = PROTECT_VARIANT_PUNISHMENT[handled[0]]
         if 'condition' not in f or norm(f['condition'][1]) != PROTECT_VARIANT_CONDITION % (punish, punish):
             fail('move %s: the condition is not the pinned text' % mid)
@@ -1472,7 +1474,9 @@ PROTECT_VARIANT_PUNISHMENT = {'SPIKY_SHIELD': 'this.damage(source.baseMaxhp / 8,
 # on a contact attacker; its only learner in the pool is Toxapex, whose Limber and Regenerator are marked (G39, G20-era
 # Regenerator). Its handler is a row of its own, appended after G78 (before UNMODELED). The template check above covers
 # the whole condition text with the punishment filled in; the move's copied fields are Protect's, as for Spiky Shield.
-G94_HANDLERS = ['BANEFUL_BUNKER']
+G94_PROTECT_HANDLERS = ['BANEFUL_BUNKER']
+G94_LAST_RESORT_HANDLERS = ['LAST_RESORT']
+G94_HANDLERS = G94_PROTECT_HANDLERS + G94_LAST_RESORT_HANDLERS
 # Step G66, King's Shield: the pinned condition (data/moves.ts:9905-9955), whitespace aside. Unlike Spiky Shield's, its
 # onTryHit passes a Status move (checkMoveBypassesProtect with blockStatus false) and its contact drop is -1 Attack on the
 # attacker (both in onTryHit and in onHit for a Z-move). The move's own flags differ from Protect's (failinstruct), so only
@@ -2159,6 +2163,13 @@ G29_CALLBACKS = {
     },
 }
 AURORA_VEIL_ONTRY = "onTry() { return this.field.isWeather(['hail', 'snowscape']); },"
+# Step G94, Last Resort (data/moves.ts:10066-10081; the Champions mod does not override it): onTry fails with fewer than two
+# move slots, and otherwise unless every other slot is used (moveSlot.used, the flag that deductPP sets); the handler of its own
+# is the turn code's (dfi_last_resort_ok), with the used bits of the tail (decision 0061).
+LAST_RESORT_ONTRY = ("onTry(source) { if (source.moveSlots.length < 2) return false; // Last Resort fails unless the user knows at least 2 moves "
+                     "let hasLastResort = false; // User must actually have Last Resort for it to succeed "
+                     "for (const moveSlot of source.moveSlots) { if (moveSlot.id === 'lastresort') { hasLastResort = true; continue; } "
+                     "if (!moveSlot.used) return false; } return hasLastResort; },")
 # Step G26: Perish Song keeps its onHitField and its condition as a handler of its own that the turn code implements: every
 # active Pokemon without the volatile gets it with a duration of 4, the residual (order 24) shows the count and the end
 # shows perish0 and faints the holder (data/moves.ts:13233-13277). The generator checks both texts, whitespace aside.
@@ -2252,6 +2263,7 @@ SPECIAL_P = dict(SPECIAL_C, **{
     'roost': ('ROOST', set()),                                            # G42: heals, then the Flying type is off for the turn
     'stompingtantrum': ('STOMPING_TANTRUM', {'basePowerCallback'}),        # G42: base power x2 after a failed last move
     'auroraveil': ('AURORA_VEIL', {'onTry'}),                             # G20: a screen against both categories, in snow only
+    'lastresort': ('LAST_RESORT', {'onTry'}),                             # G94: fails unless every other move slot was used since the switch-in
     'trick': ('TRICK', {'onTryImmunity', 'onHit'}),                         # G29: swaps the two items
     'switcheroo': ('SWITCHEROO', {'onTryImmunity', 'onHit'}),               # G29: Trick's text with its own name in the lines
     'thief': ('THIEF', {'onAfterHit'}),                                    # G29: takes the target's item after the hit

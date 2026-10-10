@@ -39,6 +39,7 @@ void dfi_tail_clear_occupant(struct duoforge_battle *b, uint32_t flat)
     dfi_tail_side *ts = &b->tail.sides[flat / DUOFORGE_ACTIVE_PER_SIDE];
     const uint32_t occupant = b->sides[flat / DUOFORGE_ACTIVE_PER_SIDE].positions[flat % DUOFORGE_ACTIVE_PER_SIDE].occupant;
     ts->positions[flat % DUOFORGE_ACTIVE_PER_SIDE] = (dfi_tail_pos){0u};
+    dfi_move_used_clear(&b->tail, flat); /* step G94: the used-since-entering bits end with the occupant */
     if (occupant < DUOFORGE_MAX_ROSTER) {
         /* What ends with the occupant's time on the field: the type Soak set, a current ability that something
          * swapped in, the toxic counter. The current item and a permanent forme outlive the switch (a Trick or a Mega

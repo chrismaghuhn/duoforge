@@ -87,6 +87,10 @@ static void dfi_encode_tail5(const dfi_pool_tail *tail, uint8_t *out)
     for (uint32_t i = 0u; i < DFI_ENC_TAIL5_RESERVED_SIZE; ++i) {
         out[DFI_ENC_TAIL5_RESERVED_OFF + i] = 0u;
     }
+    /* step G94: the used-since-entering nibbles of Last Resort (dfi_pool_tail.move_used) */
+    for (uint32_t i = 0u; i < DFI_ENC_TAIL5_LAST_RESORT_SIZE; ++i) {
+        out[DFI_ENC_TAIL5_RESERVED_OFF + DFI_ENC_TAIL5_LAST_RESORT_OFF + i] = tail->move_used[i];
+    }
 }
 
 static void dfi_encode_tail(const dfi_pool_tail *tail, uint8_t *out)
@@ -148,6 +152,9 @@ static bool dfi_tail_reserved_zero(const uint8_t *in)
         }
     }
     for (uint32_t i = 0u; i < DFI_ENC_TAIL5_RESERVED_SIZE; ++i) {
+        if (i >= DFI_ENC_TAIL5_LAST_RESORT_OFF && i < DFI_ENC_TAIL5_LAST_RESORT_OFF + DFI_ENC_TAIL5_LAST_RESORT_SIZE) {
+            continue; /* step G94: move_used, checked by the invariants */
+        }
         any |= in[DFI_ENC_TAIL_REV4_SIZE + DFI_ENC_TAIL5_RESERVED_OFF + i];
     }
     return any == 0u;
@@ -209,6 +216,10 @@ static void dfi_parse_tail5(const uint8_t *in, dfi_pool_tail *tail)
         const uint8_t *po = in + DFI_ENC_TAIL5_POS_OFF + f * DFI_ENC_TAIL5_POS_SIZE;
         tp->position_flags = po[DFI_ENC_TAIL5_POSITION_FLAGS_OFF];
         tp->future_sight = po[DFI_ENC_TAIL5_FUTURE_SIGHT_OFF];
+    }
+    /* step G94: the used-since-entering nibbles (the two reserve bytes 8 and 9) */
+    for (uint32_t i = 0u; i < DFI_ENC_TAIL5_LAST_RESORT_SIZE; ++i) {
+        tail->move_used[i] = in[DFI_ENC_TAIL5_RESERVED_OFF + DFI_ENC_TAIL5_LAST_RESORT_OFF + i];
     }
 }
 

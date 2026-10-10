@@ -869,6 +869,12 @@ duoforge_status duoforge_battle_observe(const duoforge_context *ctx, const duofo
 #define DUOFORGE_POSITION_EXT_ILLUSION_UP  0x00080000u
 #define DUOFORGE_POSITION_EXT_ROOST        0x00100000u /* Roost: the Flying type is off until the end of the turn */
 #define DUOFORGE_POSITION_EXT_TRANSFORMED  0x00200000u /* Transform: the occupant is a copy of another Pokemon (decision 0028) */
+/* duoforge_observation_ext.volatiles2 bits (lane A block 0 to 11, decision 0061): the move slot k (1 to 4) of the occupant has been
+   used since it came in (its deductPP, cleared at the switch-in: Last Resort's condition). Public: the move lines since the switch-in. */
+#define DUOFORGE_POSITION_EXT2_LAST_RESORT_USED_1 0x00000001u
+#define DUOFORGE_POSITION_EXT2_LAST_RESORT_USED_2 0x00000002u
+#define DUOFORGE_POSITION_EXT2_LAST_RESORT_USED_3 0x00000004u
+#define DUOFORGE_POSITION_EXT2_LAST_RESORT_USED_4 0x00000008u
 /* Bits of duoforge_side_ext.guard_flags (this turn only). */
 #define DUOFORGE_SIDE_GUARD_WIDE_GUARD  1u
 #define DUOFORGE_SIDE_GUARD_QUICK_GUARD 2u
@@ -886,7 +892,11 @@ duoforge_status duoforge_battle_observe(const duoforge_context *ctx, const duofo
 /* X(family feature, bit number in the family's field, own feature): X(RESERVE_VOLATILES, 22u, HEALING_WISH) says
    DUOFORGE_POSITION_EXT_HEALING_WISH (bit 22 of volatiles) is shown only under DUOFORGE_VIEWEXT_FEATURE_HEALING_WISH as
    well. Empty while no reserve bit has a feature of its own. */
-#define DUOFORGE_VIEWEXT_RESERVE_OWN(X)
+#define DUOFORGE_VIEWEXT_RESERVE_OWN(X) \
+    X(VOLATILES2, 0u, LAST_RESORT_USED) \
+    X(VOLATILES2, 1u, LAST_RESORT_USED) \
+    X(VOLATILES2, 2u, LAST_RESORT_USED) \
+    X(VOLATILES2, 3u, LAST_RESORT_USED)
 /* X(family, bit number in the family's field): a defined reserve bit WITHOUT a feature of its own, shown under the family's
    feature alone (POSITION_FLAGS: the observation's position flags, always), checked by its step: the comment beside the
    entry names the decision or the evidence. Every defined reserve bit is in exactly one of the two lists
@@ -942,6 +952,9 @@ duoforge_status duoforge_battle_observe(const duoforge_context *ctx, const duofo
 #define DUOFORGE_VIEWEXT_FEATURE_MOVE_FAILED      41u
 #define DUOFORGE_VIEWEXT_FEATURE_TRANSFORM        42u
 #define DUOFORGE_VIEWEXT_FEATURE_COUNT            43u
+/* Lane A (decision 0061, HauptSession's block 44 to 52): Last Resort's used-since-entering bits, the reserve bits of volatiles2 under
+   DUOFORGE_VIEWEXT_RESERVE_OWN below. Public (the move lines since the switch-in). */
+#define DUOFORGE_VIEWEXT_FEATURE_LAST_RESORT_USED 44u
 /* The reserve families of encoder 6 (decision 0050), outside the tiers (COUNT does not count them). */
 #define DUOFORGE_VIEWEXT_FEATURE_RESERVE_VOLATILES 59u /* duoforge_position_ext.volatiles bits 22 to 31 */
 #define DUOFORGE_VIEWEXT_FEATURE_VOLATILES2        60u /* duoforge_observation_ext.volatiles2 */

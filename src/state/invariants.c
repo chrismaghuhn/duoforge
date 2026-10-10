@@ -766,6 +766,18 @@ static dfi_invariant dfi_check_tail(const duoforge_context *ctx, const struct du
     if (b->tail.gravity_turns > DFI_TAIL_GRAVITY_MAX || b->tail.field_pad != 0u) {
         return DFI_INV_TAIL_FIELD;
     }
+    /* Step G94: the used-since-entering bits belong to an occupant and to its move slots (bit k: slot k, below its move count). */
+    for (uint32_t f = 0u; f < DUOFORGE_SIDE_COUNT * DUOFORGE_ACTIVE_PER_SIDE; ++f) {
+        const uint32_t bits = dfi_move_used_bits(&b->tail, f);
+        if (bits == 0u) {
+            continue;
+        }
+        const uint32_t occ = b->sides[f / DUOFORGE_ACTIVE_PER_SIDE].positions[f % DUOFORGE_ACTIVE_PER_SIDE].occupant;
+        if (occ >= DUOFORGE_MAX_ROSTER ||
+            (bits >> b->sides[f / DUOFORGE_ACTIVE_PER_SIDE].members[occ].move_count) != 0u) {
+            return DFI_INV_TAIL_POSITION;
+        }
+    }
     for (uint32_t s = 0u; s < DUOFORGE_SIDE_COUNT; ++s) {
         if (!dfi_party_side_ok(&b->tail, &b->sides[s], s)) {
             return DFI_INV_TAIL_PARTY;

@@ -302,7 +302,7 @@ KD = TeamCContext(KIND_TEAM_C_DEV, 6, 4)
 # which tests/test_pool_tables.c recomputes from the pool canonical bytes: the
 # pool layout over the pool data, then the family columns, the handler columns
 # and the moves and abilities that each forme may have.
-POOL_TABLE_HASH = bytes.fromhex('3a48a34fcadeb9bda8d67349fc39ac263f7009a4f40e613f57c886c670678293')
+POOL_TABLE_HASH = bytes.fromhex('eef0612e8cf809ded3cd18672c155b37e8ff6ffebb9aed3669eb8f0e69716637')
 KIND_POOL, KIND_POOL_DEV = 6, 7
 
 
@@ -1171,14 +1171,17 @@ def tail_bytes(tail):
     for flat in range(4):
         tp = tail['sides'][flat // 2]['pos'][flat % 2]
         out += bytes([tp[f] for f in TAIL_POS_REV5_FIELDS])
-    out += bytes(TAIL5_RESERVED_SIZE)
+    # step G94: the reserve's bytes 8 and 9 are the used-since-entering nibbles of Last Resort (move_used, two bytes)
+    reserve = bytearray(TAIL5_RESERVED_SIZE)
+    reserve[8], reserve[9] = tail.get('move_used', (0, 0))
+    out += bytes(reserve)
     assert len(out) == TAIL_SIZE
     return bytes(out)
 
 
 def tail_reserved_offsets():
-    """The offsets (within the tail) of the 45 reserved bytes: 29 of the rev 4 part (step G46: the field block's +1..+6 are
-    party_order) and the 16 of the rev 5 reserve at the end."""
+    """The offsets (within the tail) of the 43 reserved bytes: 29 of the rev 4 part (step G46: the field block's +1..+6 are
+    party_order) and the 14 of the rev 5 reserve at the end (step G94: its bytes 8 and 9 are move_used, not reserved)."""
     offs = [TAIL_FIELD_SIZE - 1]
     for s in range(2):
         so = TAIL_FIELD_SIZE + TAIL_SIDE_SIZE * s
@@ -1187,8 +1190,8 @@ def tail_reserved_offsets():
         offs += [so + 80 + TAIL_MEMBER_SIZE * m + 9 for m in range(MAX_ROSTER)]
     assert len(offs) == 29
     rev5_reserve = TAIL_REV4_SIZE + TAIL5_SIZE - TAIL5_RESERVED_SIZE
-    offs += [rev5_reserve + i for i in range(TAIL5_RESERVED_SIZE)]
-    assert len(offs) == 45
+    offs += [rev5_reserve + i for i in range(TAIL5_RESERVED_SIZE) if i not in (8, 9)]
+    assert len(offs) == 43
     return offs
 
 
@@ -1199,6 +1202,8 @@ def tail_reserved_zero(b):
 def parse_tail(b):
     o = STATE_SIZE
     tail = {'gravity': b[o], 'party': [list(b[o + 1 + 3 * s:o + 4 + 3 * s]) for s in range(2)], 'sides': []}
+    # step G94: the used-since-entering nibbles, the reserve's bytes 8 and 9 of the rev 5 block
+    tail['move_used'] = (b[o + TAIL_REV4_SIZE + TAIL5_SIZE - TAIL5_RESERVED_SIZE + 8], b[o + TAIL_REV4_SIZE + TAIL5_SIZE - TAIL5_RESERVED_SIZE + 9])
     for s in range(2):
         so = o + TAIL_FIELD_SIZE + TAIL_SIDE_SIZE * s
         ts = {f: b[so + i] for i, f in enumerate(TAIL_SIDE_BYTE_FIELDS)}
