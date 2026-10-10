@@ -72,7 +72,7 @@ GENERIC = {"move", "switch", "-damage", "-heal", "faint", "cant", "-miss", "-cri
 
 # Moves whose effect on the view no line shows: Baton Pass hands stages and volatiles to the incoming Pokemon,
 # Revival Blessing revives a member through a request of its own.
-SILENT_MOVES = {"Baton Pass", "Shed Tail"}  # Revival Blessing: folded since step G52 (the REVIVE event)
+SILENT_MOVES = {"Shed Tail"}  # Revival Blessing: folded since step G52 (REVIVE), Baton Pass since G74 (its SWITCH)
 
 # Showdown's choice items at the pin (isChoice; the reference test checks the list): a holder is locked into the move
 # of its |move| line until it leaves (data/items.ts onModifyMove, data/conditions.ts choicelock).
@@ -120,7 +120,8 @@ def supported(root=ROOT):
 
 def extract_supported(source):
     """The mask of the view_ext_features initializer in a support manifest's source, which may span lines (the
-    expression ends at the comma before the next field or the closing brace)."""
+    expression ends at the comma before the next field or the closing brace). C comments are no part of it."""
+    source = re.sub(r"//[^\n]*", "", re.sub(r"/\*.*?\*/", " ", source, flags=re.S))
     m = re.search(r"\.view_ext_features\s*=\s*(.*?)\s*,?\s*\n\s*(?:\}|\.)", source, re.S)
     if m is None:
         raise ValueError("support_manifest.c: no view_ext_features")
@@ -326,6 +327,8 @@ def check(line, view):
             if item is not None and item + 1 == view.item_now(args[0]):
                 return "fold"
             _unknown(kind, effect)
+        if effect in _SINGLE_MOVE:
+            return _feature(_SINGLE_MOVE[effect])  # Destiny Bond's KO of the attacker (step G76), its start's feature
         if effect == "ability: Symbiosis":
             return _feature("ITEM_CHANGE")  # the holder hands its item to its partner (step G69), as a Trick does
         if effect == "move: Trick":
