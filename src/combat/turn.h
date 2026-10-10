@@ -40,6 +40,8 @@ duoforge_status dfi_turn_run(const duoforge_context *ctx, struct duoforge_battle
  * (step G41) and it is neither a holder nor a Ghost type. Read by the request builder (src/state/request.c); pivots, replacements
  * and forced switches ignore it. */
 bool dfi_switch_trapped(const struct duoforge_battle *b, uint32_t flat);
+/* Illusion (decision 0026): the disguise of the lead at `slot` of `side` at team start, if its holder disguises. */
+bool dfi_illusion_lead_disguise(const struct duoforge_battle *b, uint32_t side, uint32_t slot, uint32_t *roster);
 
 /* Skill Swap's decision before anything changes (decision 0041; dfi_skill_swap_decision in turn.c): the swap proceeds, the move
  * fails silently (-fail and [still]: a fainted holder or failskillswap on either ability), it is refused (an Update handler acts on
