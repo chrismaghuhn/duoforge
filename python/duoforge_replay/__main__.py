@@ -1,18 +1,21 @@
 """python -m duoforge_replay prior --pastes DIR --out PRIOR.json
 python -m duoforge_replay build --source PATH... --prior PRIOR.json --out DIR [--workers N] [--limit-parts N]
+python -m duoforge_replay funnel DIR [--top N]
 
 prior: the stat point prior of a directory of Showdown pastes (Stat Points as EVs).
 build: the replay dataset (docs/superpowers/specs/2026-10-02-m11-replay-data-design.md). Needs NumPy, pyarrow
 for parquet sources, the library, Node and the pinned Showdown checkout (--ps-dir, default
 $DUOFORGE_PS_REFERENCE_DIR). The output must lie outside the repository. Exit status 1 when a game raised an
-internal error (a bug), 2 for a bad command line.
+internal error (a bug), 2 for a bad command line. A prefix that would take Reg M-A games is refused (owner, 2026-10-10).
+funnel: per format id of a built dataset, read -> with sheets -> refused or set up -> perspectives to the end or
+stopped by reason -> rows (duoforge_replay.funnel; aggregates only).
 """
 import argparse
 import json
 import sys
 from pathlib import Path
 
-from . import build, dataset, prior
+from . import build, dataset, funnel, prior
 
 
 def main(argv=None):
@@ -32,7 +35,14 @@ def main(argv=None):
                    help="format id prefixes (several: Reg M-C and Reg M-B)")
     b.add_argument("--node", default="node")
     b.add_argument("--ps-dir", default=None)
+    f = sub.add_parser("funnel", help="where a dataset's games went, per format id (aggregates only)")
+    f.add_argument("dir", type=Path, help="a replay dataset (its counters.json)")
+    f.add_argument("--top", type=int, default=8, help="reasons listed per stage")
     args = parser.parse_args(argv)
+    if args.command == "funnel":
+        counters = json.loads((args.dir / "counters.json").read_text(encoding="utf-8"))
+        print(funnel.text(funnel.report(counters), top=args.top), end="")
+        return 0
     if args.command == "prior":
         dataset.refuse_repository(args.out)  # derived from public pastes, kept with the data (decision 0019)
         built = prior.build(args.pastes)

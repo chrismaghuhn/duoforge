@@ -20,8 +20,12 @@ The writer refuses an output directory inside the repository. Tests use only our
 ```sh
 python -m duoforge_replay prior --pastes <dir of pastes> --out <prior.json>
 python -m duoforge_replay build --source <parquet or jsonl files or dirs> --prior <prior.json> --out <dir> \
-    [--workers N] [--limit-parts N] [--unit-lines N] [--ps-dir <pinned Showdown>] [--node node]
+    [--workers N] [--limit-parts N] [--unit-lines N] [--ps-dir <pinned Showdown>] [--node node]     [--format-prefix gen9championsvgc2026regmc gen9championsvgc2026regmb]
+python -m duoforge_replay funnel <dir> [--top N]
 ```
+
+A prefix that would take Reg M-A games (`gen9championsvgc2026regma`, or a shorter one) is refused. Reg M-A ran under
+another mechanics era: Showdown before Champions 1.1.0, then a mod of its own. The owner excluded it on 2026-10-10.
 
 The opening-book builder reads the same replay sources and writes count and win-rate tables:
 
@@ -211,6 +215,14 @@ Between parts the build waits while the fuzz pause file exists. A full run is an
 - hashed player names and sheets.
 
 `counters.json` counts every game, perspective and point that was skipped or stopped, by reason.
+
+It also counts the **funnel** per format id, as `funnel.<format id>.<stage>`. `python -m duoforge_replay funnel <dir>`
+prints it, aggregates only:
+
+read -> not in the build's formats / without two sheets -> with sheets -> refused (names, legality, Illusion, Reg M-B PP,
+...) or internal error -> set up -> perspectives to the end / stopped by reason -> rows.
+
+Reg M-A shows as one line: its game count and "excluded".
 
 ## Stops
 
