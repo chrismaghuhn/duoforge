@@ -93,6 +93,10 @@ TAIL_TOXIC_STATUS = 6               # DUOFORGE_AILMENT_TOX: no state has it yet 
 POOL_FORME_COUNT, POOL_MOVE_COUNT, POOL_ITEM_COUNT, POOL_ABILITY_COUNT = 347, 511, 166, 215
 POOL_AEGISLASH_FORME = 244              # DFI_FORME_AEGISLASH (src/data/pool_tables.h)
 POOL_AEGISLASH_BLADE_FORME = 346        # DFI_FORME_AEGISLASHBLADE: the last pool row (step G66, decision 0040)
+# The pool moves whose effect is a lockedmove (DFI_SPECIAL_LOCKED_MOVE in src/data/pool_tables.c, step G56): Outrage, Petal
+# Dance and Thrash. A running lock (the tail's lock_turns) has one of them as its occupant's last used move.
+POOL_MOVE_OUTRAGE = 326                 # DFI_MOVE_OUTRAGE
+POOL_LOCKEDMOVE_MOVES = (POOL_MOVE_OUTRAGE, 334, 467)  # DFI_MOVE_OUTRAGE, DFI_MOVE_PETALDANCE, DFI_MOVE_THRASH
 # The byte fields of a position's tail in their encoded order (offset 0 to 21), then two u16: substitute_hp at 22 and
 # trap_move at 24, then (rev 3) protect_kind at 26, (rev 4) move_result, single_turn, hits_taken, ability_state and lock_turns
 # at 27 to 31 and 4 reserved bytes.
@@ -1014,6 +1018,12 @@ def tail_pos_valid(ctx, tp, flat, mem, slot_flags=0):
             and tp['hits_taken'] <= TAIL_HITS_TAKEN_MAX and tp['ability_state'] <= TAIL_ABILITY_STATE_MAX
             and tp['lock_turns'] <= TAIL_LOCK_TURNS_MAX):
         return False
+    # Step G56 (view audit 2026-10-10): a running lockedmove's move is the occupant's last used one, a move of the occupant whose
+    # effect is a lockedmove (none, Struggle or another move with a lock is a broken state). The other half of the lock, its move
+    # in the body's locked_move, is the body's: this model does not carry it (tests/test_pool_tail.c counts it by hand).
+    last = tp['last_move']
+    if tp['lock_turns'] != 0 and not (1 <= last <= mc and mem['moves'][last - 1]['id'] in POOL_LOCKEDMOVE_MOVES):
+        return False
     # Rev 5 (lane A, G72b, decision 0015 5ce): the position flags are a bitfield: bit 0 (Healing Wish) and bits 4-7 are zero,
     # the Dragon Cheer stage (bits 2-3) is at most 2, and the stats-raised bit and the stage need an occupant. Future Sight is zero.
     if not position_flags_valid(tp['position_flags']):
@@ -1916,10 +1926,29 @@ def emit_goldens(encoded):
 
 
 # ---------------------------------------------------------------- the POOL tail (decision 0015 section 7)
-# The maximum HP of the members 0 and 1 of both sides in the state of tests/test_pool_tail.c (Team A against Team B
-# under POOL: the leads). The Substitute bound is a quarter of it, so it is part of the example; the test asserts the
-# values, so a drift of the teams or the formulas is noticed there.
-LEAD_HP_MAX = [[193, 192], [197, 182]]
+# The battle of the example of tests/test_pool_tail.c (example_battle there): reference setup 0 (Team A against Team B) under
+# POOL, with Outrage for Protect in slot 4 of side 1's Archaludon (member 2) and Charizard (member 4), which learn it, so that
+# the example's locks run on leads whose last used move is a lockedmove (step G56, view audit 2026-10-10). Side 0 brings its
+# members 0, 1, 2, 3, side 1 its members 2, 4, 0, 1: the first two of each pick order lead. The pool move ids of every member
+# (the reference teams of src/state/reference_teams.c; only the occupants' moves matter to the tail).
+EXAMPLE_PICKS = [[0, 1, 2, 3], [2, 4, 0, 1]]
+EXAMPLE_MOVES = [
+    [[0, 1, 2, 3], [4, 5, 6, 7], [8, 9, 10, 11], [12, 13, 14, 7], [15, 16, 2, 7], [17, 18, 19, 7]],
+    [[20, 8, 10, 7], [21, 22, 23, 7], [24, 25, 26, POOL_MOVE_OUTRAGE], [27, 28, 29, 7], [30, 20, 31, POOL_MOVE_OUTRAGE],
+     [32, 33, 34, 35]],
+]
+EXAMPLE_LOCK_SLOT = 4  # Outrage's slot + 1 on both leads of side 1: their last_move and the body's locked_move
+# The maximum HP of the leads of both sides (by position) in that state. The Substitute bound is a quarter of it, so it is
+# part of the example; the test asserts the values, so a drift of the teams or the formulas is noticed there.
+LEAD_HP_MAX = [[193, 192], [197, 169]]
+
+
+def party_of(picks):
+    """step G46: the 3 bytes of a side's party order for a pick order (entry k = roster index + 1, 3 bits each)."""
+    w = 0
+    for k, m in enumerate(picks):
+        w |= (m + 1) << (3 * k)
+    return [w & 0xFF, (w >> 8) & 0xFF, (w >> 16) & 0xFF]
 
 
 def tail_pos(**kw):
@@ -1928,14 +1957,15 @@ def tail_pos(**kw):
     return p
 
 
-# A tail with a value in every field that a state can hold, for the state of tests/test_pool_tail.c: both sides have
-# members 0 and 1 on the field (all standing, four moves, none Mega Evolved, no ailment), so the toxic stages are the
-# one thing that stays zero (no state has the status they need). Flat positions: side 0 is 0 and 1, side 1 is 2 and 3.
+# A tail with a value in every field that a state can hold, for the state of tests/test_pool_tail.c: side 0 has its
+# members 0 and 1 on the field, side 1 its members 2 and 4 (all standing, four moves, none Mega Evolved, no ailment), so the
+# toxic stages are the one thing that stays zero (no state has the status they need). Flat positions: side 0 is 0 and 1,
+# side 1 is 2 and 3. The locks run on side 1's leads, whose last used move is Outrage (slot 4).
 def tail_example():
     t = empty_tail()
     t['gravity'] = 5
-    # step G46: the pick order of the four brought members 0, 1, 2, 3 on both sides (entries 1, 2, 3, 4 of 3 bits: 0x8D1)
-    t['party'] = [[0xD1, 0x08, 0x00], [0xD1, 0x08, 0x00]]
+    # step G46: the pick order of the four brought members (side 0: 0, 1, 2, 3, entries 1, 2, 3, 4 of 3 bits: 0x8D1)
+    t['party'] = [party_of(EXAMPLE_PICKS[0]), party_of(EXAMPLE_PICKS[1])]
     a, c = t['sides']
     # all four hazards up, created in the order Spikes, Stealth Rock, Sticky Web, Toxic Spikes: 1 | 0 << 2 | 3 << 4 | 2 << 6
     a.update(wide_guard=1, aurora_veil=8, toxic_spikes=2, stealth_rock=1, spikes=3, sticky_web=1, quick_guard=1,
@@ -1944,10 +1974,9 @@ def tail_example():
                            disable_slot=3, disable_turns=5, imprison=1, trap_turns=6, trap_source=3, trap_band=1,
                            leech_seed=4, yawn=2, focus_energy=1, stockpile=3, stockpile_def=2, stockpile_spd=3,
                            charge=1, substitute_hp=20, trap_move=37, move_result=6, single_turn=2, hits_taken=6,
-                           ability_state=6, lock_turns=3)
+                           ability_state=6)
     a['pos'][1] = tail_pos(last_move=5, throat_chop=1, heal_block=2, perish=1, taunt=1, must_recharge=1, stockpile=1,
-                           stockpile_def=1, glaive_rush=1, substitute_hp=1, move_result=15, hits_taken=1, ability_state=1,
-                           lock_turns=1)
+                           stockpile_def=1, glaive_rush=1, substitute_hp=1, move_result=15, hits_taken=1, ability_state=1)
     a['ability_now'][:2] = [5, POOL_ABILITY_COUNT]
     a['forme_now'][:3] = [300, POOL_FORME_COUNT - 2, 1]  # not the Blade (the last forme): step G66's strict stats rule
     a['soak'][:2] = [5, 18]
@@ -1955,14 +1984,17 @@ def tail_example():
     a['type2'][:2] = [TYPE_COUNT, TAIL_TYPE2_TYPELESS]
     a['member_flags'][:3] = [1, 0, 1]
     c.update(spikes=1, hazard_order=HAZARD_SPIKES)
-    c['pos'][0] = tail_pos(last_move=4, encore_slot=4, encore_turns=1, heal_block=3, leech_seed=1, yawn=1, move_result=4,
-                           hits_taken=3)
-    c['pos'][1] = tail_pos(trap_turns=1, trap_source=3, trap_move=511, move_result=9, single_turn=2)
-    c['ability_now'][0] = 1
+    # the locks (step G56): three turns left at position 0, the last one at position 1, both on Outrage, the last used move
+    c['pos'][0] = tail_pos(last_move=EXAMPLE_LOCK_SLOT, encore_slot=4, encore_turns=1, heal_block=3, leech_seed=1, yawn=1,
+                           move_result=4, hits_taken=3, lock_turns=3)
+    c['pos'][1] = tail_pos(last_move=EXAMPLE_LOCK_SLOT, trap_turns=1, trap_source=3, trap_move=511, move_result=9,
+                           single_turn=2, lock_turns=1)
+    # the overrides of a member on the field: side 1's lead at position 0, its member 2
+    c['ability_now'][2] = 1
     c['forme_now'][5] = 7
-    c['soak'][0] = 1
+    c['soak'][2] = 1
     c['item_now'][5] = 100
-    c['type2'][0] = 1
+    c['type2'][2] = 1
     c['member_flags'][5] = 1
     return t
 
@@ -1970,12 +2002,15 @@ def tail_example():
 def tail_model_state():
     st = empty_state(KP)
     for s, sd in enumerate(st['sides']):
+        picks = EXAMPLE_PICKS[s]
         sd['member_count'] = 6
-        sd['brought'] = 0b1111  # step G46: the four brought members whose pick order is the example's party
-        sd['pos'][0]['occ'], sd['pos'][1]['occ'] = 0, 1
+        sd['brought'] = sum(1 << m for m in picks)  # step G46: the brought members whose pick order is the example's party
+        sd['pos'][0]['occ'], sd['pos'][1]['occ'] = picks[0], picks[1]
         for m, mem in enumerate(sd['members']):
             mem['hp'], mem['move_count'] = 1, 4
-            mem['hp_max'] = LEAD_HP_MAX[s][m] if m < 2 else 1
+            mem['hp_max'] = LEAD_HP_MAX[s][picks.index(m)] if m in picks[:2] else 1
+            for k, move_id in enumerate(EXAMPLE_MOVES[s][m]):
+                mem['moves'][k]['id'] = move_id
     return st
 
 
