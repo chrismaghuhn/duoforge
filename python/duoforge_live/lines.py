@@ -120,7 +120,8 @@ def supported(root=ROOT):
 
 def extract_supported(source):
     """The mask of the view_ext_features initializer in a support manifest's source, which may span lines (the
-    expression ends at the comma before the next field or the closing brace)."""
+    expression ends at the comma before the next field or the closing brace). C comments are no part of it."""
+    source = re.sub(r"//[^\n]*", "", re.sub(r"/\*.*?\*/", " ", source, flags=re.S))
     m = re.search(r"\.view_ext_features\s*=\s*(.*?)\s*,?\s*\n\s*(?:\}|\.)", source, re.S)
     if m is None:
         raise ValueError("support_manifest.c: no view_ext_features")
@@ -293,6 +294,8 @@ def check(line, view):
             if item is not None and item + 1 == target["item"]:
                 return "fold"
             _unknown(kind, effect)
+        if effect in _SINGLE_MOVE:
+            return _feature(_SINGLE_MOVE[effect])  # Destiny Bond's KO of the attacker (step G76), its start's feature
         if effect == "move: Trick":
             return _feature("ITEM_CHANGE")  # Trick's announcement before its -item lines (G29; Switcheroo prints none)
         if effect in _START:
