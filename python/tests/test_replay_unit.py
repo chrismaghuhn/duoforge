@@ -498,16 +498,38 @@ class LinesTest(unittest.TestCase):
         self.assertEqual(lines.extract_supported(source), 1 << f["THROAT_CHOP"] | 1 << f["WIDE_GUARD"])
 
     def test_a_feature_the_tracker_does_not_fold_stops(self):
-        # the library may support a feature (G8: Throat Chop), but rows carry no view extension until the tracker
-        # folds it: the line still stops the perspective
+        # the library may support a feature (G8: Heal Block), but its view-extension field stays empty until the
+        # tracker folds it: the line still stops the perspective
         self.assertEqual(lines.SUPPORTED & ~lines.TRACKER_FOLDS, 0)
-        self.assertEqual(self.stop("|-start|p1a: Staraptor|Throat Chop|[silent]"), "feature:THROAT_CHOP")
+        self.assertTrue(lines.LIBRARY_SUPPORTED >> lines.FEATURES["HEAL_BLOCK"] & 1)
+        self.assertEqual(self.stop("|-start|p1a: Staraptor|move: Heal Block"), "feature:HEAL_BLOCK")
+        # a folded one: Throat Chop's [silent] lines (the tracker sets and clears the presence bit)
+        self.assertEqual(lines.check("|-start|p1a: Staraptor|Throat Chop|[silent]", self.view), "fold")
+        self.assertEqual(lines.check("|-end|p1a: Staraptor|Throat Chop|[silent]", self.view), "fold")
         # the base-value features fold (BC spec section 5): Sand and Snow, which the library supports (#124), and Tox
         f = lines.FEATURES
         self.assertTrue(lines.LIBRARY_SUPPORTED >> f["WEATHER_SAND"] & 1 and lines.LIBRARY_SUPPORTED >> f["WEATHER_SNOW"] & 1)
         self.assertEqual(lines.check("|-weather|Sandstorm|[from] ability: Sand Stream|[of] p2a: Gholdengo", self.view), "fold")
         self.assertEqual(lines.check("|-weather|Snowscape|[from] ability: Snow Warning|[of] p2a: Gholdengo", self.view),
                          "fold")
+
+    def test_every_fold_names_its_view_extension_fields(self):
+        # the base-value folds have no record field, every view-extension fold has some (tracker.EXT_FIELDS: what the
+        # tracker writes and what test_replay compares); restrict_ext keeps only those fields and the header
+        import numpy as np
+        from duoforge import _layout
+        from duoforge_live import tracker
+        for name, bit in lines.FEATURES.items():
+            if lines.TRACKER_FOLDS >> bit & 1:
+                self.assertEqual(bool(tracker.EXT_FIELDS[name]), bool(lines.EXT_FOLDS >> bit & 1), name)
+        self.assertEqual(lines.BASE_FOLDS & lines.EXT_FOLDS, 0)
+        full = np.frombuffer(bytes(range(192)), dtype=_layout.OBSERVATION_EXT)[0]
+        cut = tracker.restrict_ext(full, 0)
+        self.assertEqual((int(cut["revision"]), int(cut["epoch"])), (int(full["revision"]), int(full["epoch"])))
+        self.assertEqual(cut["sides"].tobytes(), bytes(_layout.SIDE_EXT.itemsize * 2))
+        chop = tracker.restrict_ext(full, 1 << lines.FEATURES["THROAT_CHOP"])
+        self.assertEqual(chop["sides"]["positions"]["volatiles"].tolist(),
+                         (full["sides"]["positions"]["volatiles"] & tracker.EXT_THROAT_CHOP).tolist())
 
     def test_choice_items(self):
         self.assertEqual(lines.CHOICE_ITEMS, ("choiceband", "choicescarf", "choicespecs"))
@@ -810,12 +832,12 @@ class GameTest(unittest.TestCase):
         self.assertEqual(result.record.turns, 10)
 
     def test_a_feature_stops_after_turn_two(self):
-        # a feature the tracker does not fold (Throat Chop; Sand folds since the BC PR) ends both perspectives there:
+        # a feature the tracker does not fold (Heal Block; Sand folds since the BC PR) ends both perspectives there:
         # the points before it are written, the later ones dropped
         clean = self.run_game(self.log)
-        result = self.run_game(self.insert_after("|turn|2", "|-start|p2a: Politoed|Throat Chop|[silent]"))
-        self.assertEqual(result.counters["perspectives.stopped.feature:THROAT_CHOP"], 2)
-        self.assertGreater(result.counters["points.dropped.feature:THROAT_CHOP"], 0)
+        result = self.run_game(self.insert_after("|turn|2", "|-start|p2a: Politoed|move: Heal Block"))
+        self.assertEqual(result.counters["perspectives.stopped.feature:HEAL_BLOCK"], 2)
+        self.assertGreater(result.counters["points.dropped.feature:HEAL_BLOCK"], 0)
         turn2 = [int(r.observation["epoch"]) for r in clean.rows if int(r.observation["turn"]) == 2
                  and r.observation["boundary_kind"] == 2]
         self.assertTrue(all(int(r.observation["epoch"]) <= max(turn2) for r in result.rows))

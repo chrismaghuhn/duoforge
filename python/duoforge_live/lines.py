@@ -131,9 +131,13 @@ LIBRARY_SUPPORTED = supported()
 # The features this tracker folds (decision 0018 section 6.1). The base-value features: Sand, Snow and Tox show in the
 # base view's own fields (weather, a member's status), which the converter's events already fill, so they need no
 # extension record (M11 BC spec section 5). Electric and Misty terrain join when the library supports them (#163),
-# with tests of their own. Every other feature still stops until its fold is here: the rows carry no extension.
+# with tests of their own. Every other feature still stops until its fold is here. The replay rows carry no extension
+# record yet: a BC mask keeps only the base-value features (duoforge_learn.bc_data.bc_mask).
 BASE_FOLDS = sum(1 << FEATURES[n] for n in ("WEATHER_SAND", "WEATHER_SNOW", "AILMENT_TOX"))
-TRACKER_FOLDS = BASE_FOLDS
+# The view-extension folds (tracker.EXT_FIELDS: the record fields the tracker fills; test_replay compares them with
+# DuoForge's record byte for byte and requires each to be shown at compared points of both viewers, own and foe side).
+EXT_FOLDS = sum(1 << FEATURES[n] for n in ("THROAT_CHOP",))
+TRACKER_FOLDS = BASE_FOLDS | EXT_FOLDS
 SUPPORTED = LIBRARY_SUPPORTED & TRACKER_FOLDS
 
 # Effects of decision 0018 section 6.1, by line kind: the effect (without "move: " / "ability: ") -> feature.

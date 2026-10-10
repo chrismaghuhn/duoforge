@@ -64,6 +64,7 @@ EXT_THROAT_CHOP = C["DUOFORGE_POSITION_EXT_THROAT_CHOP"]
 # features show in the base observation alone (lines.BASE_FOLDS).
 EXT_FIELDS = {
     "WEATHER_SAND": (), "WEATHER_SNOW": (), "AILMENT_TOX": (),
+    "THROAT_CHOP": (("bit", EXT_THROAT_CHOP),),
 }
 STATUS = {"brn": 1, "frz": 2, "par": 3, "slp": 4, "psn": 5}
 
@@ -104,6 +105,8 @@ class _Position:
         self.flash_fire = 0
         self.protecting = 0
         self.choice_slot = MOVE_SLOT_NONE  # the move slot a Choice item locks (TEAM_C and POOL)
+        # The POOL view extension (decision 0018), all ended with the occupant (a switch or a faint):
+        self.throat_chop = 0  # Throat Chop's volatile is up (presence only)
         self.flags = 0  # DUOFORGE_POSITION_FLAG_* (TEAM_C and POOL): Follow Me, Helping Hand, Unburden
         self.guard_undo = None  # (chain, stall) before a Wide or Quick Guard, until it is known to have run
 
@@ -219,7 +222,21 @@ class Tracker:
             p = self._at(trace_to_c.ev_pos(line.split("|")[2]))
             p.stages = [max(s, STAGE_NEUTRAL) for s in p.stages]
             return
+        parts = line.split("|")
+        if parts[1] in ("-start", "-end") and parts[3:4] == ["Throat Chop"]:
+            self._throat_chop(parts)
+            return
         self._fold(line)
+
+    def _throat_chop(self, parts):
+        """Throat Chop's volatile (decision 0018 THROAT_CHOP, step G8; public by the owner's change): the move's
+        `-start|X|Throat Chop|[silent]` (data/moves.ts throatchop, onStart) sets the presence bit, its residual
+        `-end|X|Throat Chop|[silent]` (onEnd) clears it, and so does the occupant's leaving (the position's reset). The
+        converter skips [silent] lines, so the line is folded here; its count is never shown. Any other form stops."""
+        pos = lines.flat_position(parts[2])
+        if pos is None or parts[4:] != ["[silent]"]:
+            raise lines.Stop(f"line:{parts[1]} Throat Chop")
+        self._at(pos).throat_chop = 1 if parts[1] == "-start" else 0
 
     def _extended_field(self, line):
         """A weather or terrain set by a member that holds the item lengthening it (Damp Rock, Heat Rock, Smooth
@@ -799,6 +816,13 @@ class Tracker:
             return o
         o["revision"], o["player"], o["epoch"] = EXT_REVISION, self.side, self.epoch
         o["supported"] = lines.LIBRARY_SUPPORTED
+        for side in (0, 1):
+            v = o["sides"][side]
+            for k, p in enumerate(self._positions[side]):
+                if p.occupant == ROSTER_NONE:
+                    continue  # an empty position: all zero
+                pv = v["positions"][k]
+                pv["volatiles"] = EXT_THROAT_CHOP if p.throat_chop else 0
         return o
 
     def domain(self):
