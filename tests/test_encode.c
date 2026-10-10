@@ -312,7 +312,9 @@ int main(void)
         DF_CHECK(&t, memcmp(v4, v4b, sizeof v4) == 0);
         DF_CHECK(&t, duoforge_encode(4u, transform, ob, d, &x, v4, s5, p5) == DUOFORGE_E_INVALID_ARGUMENT);
 
-        /* the record checks: a source exactly with the flag, a roster in 0 to 5 of a side 0 or 1, volatile bit 22 never */
+        /* the record checks: a source exactly with the flag, a roster in 0 to 5 of a side 0 or 1; volatile bit 22 is encoder 6's
+           reserve (decision 0050): encoders 4 and 5 cannot show it (E_UNSUPPORTED, after every malformed-record check),
+           encoder 6 can */
         duoforge_observation_ext z = x;
         z.sides[viewer].positions[0].transform_source = 0u; /* TRANSFORMED without a source */
         DF_CHECK(&t, duoforge_encode(5u, transform, ob, d, &z, v5, s5, p5) == DUOFORGE_E_INVALID_ARGUMENT);
@@ -323,8 +325,12 @@ int main(void)
         z.sides[viewer].positions[0].transform_source = 13u; /* side 1, roster 6: no such Pokemon */
         DF_CHECK(&t, duoforge_encode(5u, transform, ob, d, &z, v5, s5, p5) == DUOFORGE_E_INVALID_ARGUMENT);
         z = x;
-        z.sides[viewer].positions[1].volatiles |= UINT32_C(1) << 22; /* volatile bit 22 does not exist */
-        DF_CHECK(&t, duoforge_encode(4u, 0u, ob, d, &z, v4, s5, p5) == DUOFORGE_E_INVALID_ARGUMENT);
+        z.sides[viewer].positions[1].volatiles |= UINT32_C(1) << 22; /* in encoder 6's reserve */
+        DF_CHECK(&t, duoforge_encode(4u, 0u, ob, d, &z, v4, s5, p5) == DUOFORGE_E_UNSUPPORTED);
+        DF_CHECK(&t, duoforge_encode(5u, 0u, ob, d, &z, v5, s5, p5) == DUOFORGE_E_UNSUPPORTED);
+        static float v6[1094];
+        DF_CHECK(&t, duoforge_encode(6u, 0u, ob, d, &z, v6, s5, p5) == DUOFORGE_OK);
+        z.sides[viewer].positions[1].transform_source = 13u; /* and malformed as well: the malformed record decides */
         DF_CHECK(&t, duoforge_encode(5u, 0u, ob, d, &z, v5, s5, p5) == DUOFORGE_E_INVALID_ARGUMENT);
 
         /* a REVIVE row (Revival Blessing, decision 0025 item 8): valid, no kind column, the reserve / 5 in column 11 */

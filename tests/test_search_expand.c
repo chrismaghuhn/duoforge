@@ -392,7 +392,10 @@ int main(void)
                      DUOFORGE_OK);
     static duoforge_observation_ext root_ext[2u * ROOTS];
     DF_CHECK(&t, duoforge_batch_observe_ext(roots, root_ext) == DUOFORGE_OK);
-    const uint64_t supported = root_ext[0].supported;
+    /* The library's mask within encoder 4's features (bits 0 to 41): the library also reports the reserve families of
+       encoder 6 (bits 59 to 63, decision 0050), which encoder 4 has no columns for (features.version_features(4) in the
+       Python tests). */
+    const uint64_t supported = root_ext[0].supported & ((UINT64_C(1) << DUOFORGE_VIEWEXT_FEATURE_TRANSFORM) - 1u);
     DF_CHECK(&t, root_ext[0].revision != 0u && supported != 0u);
 
     /* test_leaves_equal_the_single_battle_sequence, test_worker_counts_agree,
