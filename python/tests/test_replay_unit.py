@@ -1628,5 +1628,130 @@ class SplitTest(unittest.TestCase):
             split.players_of(["|player|p1|Alice|1|"])
 
 
+P1_PREVIEW = ["Kingambit, L50, M", "Incineroar, L50, M", "Charizard, L50, M", "Rillaboom, L50, M",
+              "Garchomp, L50, F", "Gholdengo, L50"]
+P2_PREVIEW = ["Politoed, L50, M", "Farigiraf, L50, F", "Sneasler, L50, F", "Tyranitar, L50, M",
+              "Sinistcha, L50", "Dragonite, L50, M"]
+
+
+def facts_log(*body, p1=P1_PREVIEW, p2=P2_PREVIEW):
+    """A made-up Bo1 log without sheets: preview, leads Kingambit "Gambit" and Incineroar "Roar" against Politoed
+    "Frog" and Farigiraf "Giraffe", then the body."""
+    return (["|player|p1|Alice|1|", "|player|p2|Bob|2|", "|gametype|doubles"]
+            + [f"|poke|p1|{s}|" for s in p1] + [f"|poke|p2|{s}|" for s in p2]
+            + ["|teampreview|4", "|start", "|switch|p1a: Gambit|Kingambit, L50, M|100/100",
+               "|switch|p1b: Roar|Incineroar, L50, M|100/100", "|switch|p2a: Frog|Politoed, L50, M|100/100",
+               "|switch|p2b: Giraffe|Farigiraf, L50, F|100/100", "|turn|1"] + list(body))
+
+
+class FactsTest(unittest.TestCase):
+    """What a log without sheets reveals of each member (M11 Bo1 spec section 3), on made-up logs."""
+
+    @classmethod
+    def setUpClass(cls):
+        from duoforge_replay import facts, points
+        cls.F, cls.Skip = facts, points.Skip
+        cls.data = data.load(kind="pool")
+
+    def facts(self, *body, side=0, **kw):
+        return self.F.side_facts(facts_log(*body, **kw), side, self.data)
+
+    def skip(self, *body, **kw):
+        with self.assertRaises(self.Skip) as cm:
+            self.facts(*body, **kw)
+        return cm.exception.reason
+
+    def test_preview_species_and_gender(self):
+        f = self.facts()
+        self.assertEqual([m.species for m in f], ["Kingambit", "Incineroar", "Charizard", "Rillaboom", "Garchomp",
+                                                  "Gholdengo"])
+        self.assertEqual([m.gender for m in f], ["M", "M", "M", "M", "F", ""])
+        self.assertEqual({m.moves for m in f}, {frozenset()})
+        self.assertEqual({(m.item, m.ability) for m in f}, {(None, None)})
+
+    def test_moves_by_nickname_and_no_called_moves(self):
+        body = ["|move|p1a: Gambit|Kowtow Cleave|p2a: Frog", "|move|p1b: Roar|Fake Out|p2b: Giraffe",
+                "|move|p1a: Gambit|Sucker Punch|p2a: Frog|[from]lockedmove",
+                "|move|p1b: Roar|Protect|p1b: Roar|[from]move: Copycat",
+                "|move|p1b: Roar|Taunt|p2a: Frog|[from] ability: Dancer",
+                "|switch|p1a: Zard|Charizard, L50, M|100/100", "|move|p1a: Zard|Heat Wave|p2a: Frog|[spread] p2a,p2b",
+                "|move|p2a: Frog|Weather Ball|p1a: Zard|[from]move: Instruct"]
+        f = self.facts(*body)
+        self.assertEqual(f[0].moves, frozenset({"Kowtow Cleave", "Sucker Punch"}))
+        self.assertEqual(f[1].moves, frozenset({"Fake Out"}))
+        self.assertEqual(f[2].moves, frozenset({"Heat Wave"}))
+        self.assertEqual(self.facts(*body, side=1)[0].moves, frozenset({"Weather Ball"}))  # Instruct: its own move
+
+    def test_struggle_and_a_mimicked_move_are_no_moves(self):
+        f = self.facts("|move|p1a: Gambit|Struggle|p2a: Frog", "|move|p1b: Roar|Fake Out|p2a: Frog",
+                       "|-start|p1b: Roar|Mimic|Weather Ball", "|move|p1b: Roar|Weather Ball|p2a: Frog")
+        self.assertEqual(f[0].moves, frozenset())
+        self.assertEqual(f[1].moves, frozenset({"Fake Out"}))
+
+    def test_item_from_enditem_mega_and_from_item(self):
+        f = self.facts("|-enditem|p1b: Roar|Sitrus Berry|[eat]",
+                       "|-damage|p2b: Giraffe|90/100|[from] item: Rocky Helmet|[of] p1a: Gambit",
+                       "|-heal|p2a: Frog|80/100|[from] item: Leftovers",
+                       "|switch|p1a: Zard|Charizard, L50, M|100/100",
+                       "|detailschange|p1a: Zard|Charizard-Mega-Y, L50, M", "|-mega|p1a: Zard|Charizard|Charizardite Y")
+        self.assertEqual([m.item for m in f[:3]], ["Rocky Helmet", "Sitrus Berry", "Charizardite Y"])
+        self.assertEqual(self.facts("|-heal|p2a: Frog|80/100|[from] item: Leftovers", side=1)[0].item, "Leftovers")
+
+    def test_an_of_on_the_other_side_names_no_own_member(self):
+        # the effect's holder is the [of] member; when it is the foe, the subject learns nothing
+        body = ["|-damage|p1a: Gambit|80/100|[from] ability: Rough Skin|[of] p2a: Frog",
+                "|-damage|p1a: Gambit|70/100|[from] item: Rocky Helmet|[of] p2b: Giraffe"]
+        self.assertEqual((self.facts(*body)[0].ability, self.facts(*body)[0].item), (None, None))
+        self.assertEqual(self.facts(*body, side=1)[0].ability, "Rough Skin")
+        self.assertEqual(self.facts(*body, side=1)[1].item, "Rocky Helmet")
+
+    def test_frisk_names_the_foe_item(self):
+        body = ["|-item|p2a: Frog|Leftovers|[from] ability: Frisk|[of] p1b: Roar"]
+        self.assertEqual(self.facts(*body, side=1)[0].item, "Leftovers")
+        self.assertEqual(self.facts(*body)[1].ability, "Frisk")
+
+    def test_no_item_after_trick(self):
+        f = self.facts("|-damage|p1a: Gambit|90/100|[from] item: Life Orb",
+                       "|-activate|p1a: Gambit|move: Trick|[of] p2a: Frog",
+                       "|-item|p2a: Frog|Life Orb|[from] move: Trick", "|-item|p1a: Gambit|Leftovers|[from] move: Trick",
+                       "|-heal|p1a: Gambit|100/100|[from] item: Leftovers",
+                       "|-heal|p2a: Frog|100/100|[from] item: Mystic Water")
+        self.assertEqual(f[0].item, "Life Orb")  # seen before the trick: its own
+        self.assertIsNone(self.facts("|-activate|p1a: Gambit|move: Trick|[of] p2a: Frog",
+                                     "|-item|p2a: Frog|Life Orb|[from] move: Trick", side=1)[0].item)
+
+    def test_trace_is_the_original_ability(self):
+        body = ["|-ability|p2b: Giraffe|Intimidate|[from] ability: Trace|[of] p1b: Roar"]
+        self.assertEqual(self.facts(*body, side=1)[1].ability, "Trace")
+        self.assertEqual(self.facts(*body)[1].ability, "Intimidate")
+        self.assertEqual(self.facts("|-ability|p1b: Roar|Intimidate|boost")[1].ability, "Intimidate")
+
+    def test_no_ability_after_skill_swap_or_mega(self):
+        f = self.facts("|-activate|p1a: Gambit|move: Skill Swap|Defiant|Drizzle|[of] p2a: Frog",
+                       "|-ability|p1a: Gambit|Drizzle", "|switch|p1a: Zard|Charizard, L50, M|100/100",
+                       "|detailschange|p1a: Zard|Charizard-Mega-Y, L50, M", "|-ability|p1a: Zard|Drought")
+        self.assertEqual((f[0].ability, f[2].ability), (None, None))
+
+    def test_a_mega_forme_is_its_preview_member(self):
+        f = self.facts("|switch|p1a: Zard|Charizard, L50, M|100/100",
+                       "|detailschange|p1a: Zard|Charizard-Mega-Y, L50, M", "|move|p1a: Zard|Solar Beam|p2a: Frog")
+        self.assertEqual((f[2].species, f[2].moves), ("Charizard", frozenset({"Solar Beam"})))
+
+    def test_a_wildcard_preview_is_resolved_by_its_switch_or_skipped(self):
+        p1 = P1_PREVIEW[:4] + ["Rotom-*, L50"] + P1_PREVIEW[5:]
+        f = self.facts("|switch|p1a: Fridge|Rotom-Wash, L50|100/100", p1=p1)
+        self.assertEqual(f[4].species, "Rotom-Wash")
+        self.assertEqual(self.skip(p1=p1), "skip:belief-preview")
+
+    def test_skips(self):
+        self.assertEqual(self.skip(p1=P1_PREVIEW[:5] + ["Zoroark-Hisui, L50, M"]), "skip:illusion")
+        self.assertEqual(self.skip("|-transform|p1a: Gambit|p2a: Frog"), "skip:belief-transform")
+        five = [f"|move|p1a: Gambit|{m}|p2a: Frog" for m in ("Kowtow Cleave", "Sucker Punch", "Iron Head", "Protect",
+                                                            "Swords Dance")]
+        self.assertEqual(self.skip(*five), "skip:belief-moves")
+        self.assertEqual(self.skip(p1=P1_PREVIEW[:5]), "skip:belief-preview")
+        self.assertEqual(self.skip("|switch|p1a: Stranger|Dragonite, L50, M|100/100"), "skip:belief-preview")
+
+
 if __name__ == "__main__":
     unittest.main()
