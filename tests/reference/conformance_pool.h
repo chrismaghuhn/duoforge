@@ -8246,7 +8246,7 @@ static const df_conf_step conf_g72b_dc_switch_steps[] = {
 };
 /* g76_db_ally_ko: Step G76 (decision 0015 5cg), evidence for the ally rule: Gardevoir (faster) takes two Earthquakes on turn 1, uses Destiny Bond on turn 2, and is then knocked out by its own Golurk's Earthquake (Golurk is slower, so the ally's hit follows the flag). The ally's KO does not trigger Destiny Bond: no -activate line, and no foe faints. */
 static const df_conf_member conf_g76_db_ally_ko_members[2][6] = {
-    {{117u, 2u, 15u, {32u, 0u, 2u, 30u, 2u, 0u}, 197u, 50u, 3u, {161u, 18u, 7u, 0u}}, {221u, 3u, 0u, {32u, 32u, 0u, 0u, 2u, 0u}, 14u, 3u, 2u, {182u, 7u, 0u, 0u}}, {18u, 1u, 11u, {2u, 32u, 0u, 0u, 0u, 32u}, 2u, 9u, 2u, {171u, 7u, 0u, 0u}}, {257u, 2u, 24u, {32u, 0u, 0u, 0u, 2u, 32u}, 22u, 11u, 2u, {82u, 7u, 0u, 0u}}, {5u, 2u, 24u, {29u, 0u, 5u, 0u, 0u, 32u}, 5u, 5u, 2u, {55u, 7u, 0u, 0u}}, {11u, 1u, 2u, {32u, 0u, 10u, 0u, 24u, 0u}, 9u, 7u, 2u, {22u, 7u, 0u, 0u}}, {7u, 3u, 15u, {17u, 0u, 2u, 17u, 16u, 14u}, 6u, 6u, 2u, {18u, 7u, 0u, 0u}}},
+    {{117u, 2u, 15u, {32u, 0u, 2u, 30u, 2u, 0u}, 197u, 50u, 3u, {161u, 18u, 7u, 0u}}, {221u, 3u, 0u, {32u, 32u, 0u, 0u, 2u, 0u}, 14u, 3u, 2u, {182u, 7u, 0u, 0u}}, {18u, 1u, 11u, {2u, 32u, 0u, 0u, 0u, 32u}, 2u, 9u, 2u, {171u, 7u, 0u, 0u}}, {257u, 2u, 24u, {32u, 0u, 0u, 0u, 2u, 32u}, 22u, 11u, 2u, {82u, 7u, 0u, 0u}}, {5u, 2u, 24u, {29u, 0u, 5u, 0u, 0u, 32u}, 5u, 5u, 2u, {55u, 7u, 0u, 0u}}, {7u, 3u, 15u, {17u, 0u, 2u, 17u, 16u, 14u}, 6u, 6u, 2u, {18u, 7u, 0u, 0u}}},
     {{221u, 3u, 0u, {32u, 32u, 0u, 0u, 2u, 0u}, 14u, 9u, 4u, {335u, 7u, 182u, 5u}}, {21u, 1u, 0u, {32u, 32u, 0u, 0u, 2u, 0u}, 19u, 18u, 4u, {45u, 7u, 460u, 22u}}, {311u, 1u, 2u, {32u, 0u, 32u, 2u, 0u, 0u}, 58u, 19u, 2u, {55u, 7u, 0u, 0u}}, {4u, 1u, 0u, {31u, 7u, 24u, 0u, 3u, 1u}, 4u, 21u, 1u, {7u, 0u, 0u, 0u}}, {7u, 3u, 15u, {17u, 0u, 2u, 17u, 16u, 14u}, 6u, 50u, 2u, {18u, 7u, 0u, 0u}}, {11u, 1u, 2u, {32u, 0u, 10u, 0u, 24u, 0u}, 9u, 7u, 2u, {22u, 7u, 0u, 0u}}},
 };
 static const df_conf_step conf_g76_db_ally_ko_steps[] = {
@@ -111513,7 +111513,7 @@ static const df_conf_battle conf_battles[] = {
     {"g72b_dc_nondragon", 6u, conf_g72b_dc_nondragon_members, conf_g72b_dc_nondragon_steps, sizeof conf_g72b_dc_nondragon_steps / sizeof conf_g72b_dc_nondragon_steps[0], 11u},
     {"g72b_dc_second", 6u, conf_g72b_dc_second_members, conf_g72b_dc_second_steps, sizeof conf_g72b_dc_second_steps / sizeof conf_g72b_dc_second_steps[0], 11u},
     {"g72b_dc_switch", 6u, conf_g72b_dc_switch_members, conf_g72b_dc_switch_steps, sizeof conf_g72b_dc_switch_steps / sizeof conf_g72b_dc_switch_steps[0], 26u},
-    {"g76_db_ally_ko", 7u, conf_g76_db_ally_ko_members, conf_g76_db_ally_ko_steps, sizeof conf_g76_db_ally_ko_steps / sizeof conf_g76_db_ally_ko_steps[0], 55u},
+    {"g76_db_ally_ko", 6u, conf_g76_db_ally_ko_members, conf_g76_db_ally_ko_steps, sizeof conf_g76_db_ally_ko_steps / sizeof conf_g76_db_ally_ko_steps[0], 55u},
     {"g76_db_clear", 6u, conf_g76_db_clear_members, conf_g76_db_clear_steps, sizeof conf_g76_db_clear_steps / sizeof conf_g76_db_clear_steps[0], 4u},
     {"g76_db_consecutive", 6u, conf_g76_db_consecutive_members, conf_g76_db_consecutive_steps, sizeof conf_g76_db_consecutive_steps / sizeof conf_g76_db_consecutive_steps[0], 6u},
     {"g76_db_ko", 6u, conf_g76_db_ko_members, conf_g76_db_ko_steps, sizeof conf_g76_db_ko_steps / sizeof conf_g76_db_ko_steps[0], 7u},
