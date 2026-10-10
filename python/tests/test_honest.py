@@ -325,6 +325,71 @@ class HonestSearch(unittest.TestCase):
                 stats = arena.diagnostics(records, 2)
                 self.assertEqual(stats["unreconstructible_by_cause"][cause], {"decisions": 2, "share_of_decisions": 1.0})
 
+    def test_record_roots_reproduce_batch_decisions(self):
+        # The live path (plan 2026-10-10-live-honest-search, Task 2): decide() over RecordRoots filled with a batch's
+        # own parts (request, observation, encoded features, public record, episode) gives the batch's decisions.
+        from duoforge_search.record_roots import RecordRoots
+        with duoforge.Context(C["DUOFORGE_DATA_KIND_POOL"]) as ctx,                 duoforge.Batch(ctx, np.resize(duoforge.reference_setups([0, 1, 2, 3]), 4), 2, 42) as b,                 self.make(ctx) as search, self.make(ctx) as twin:
+            roots = RecordRoots(b.envs)
+            policy = duoforge.RandomPolicy(73, b.envs)
+            compared = 0
+            for step in range(24):
+                b.query_factored()
+                obs, slots, pairs = b.query_encoded(search.encoder, search.ext_supported)
+                for p in (0, 1):
+                    envs = np.flatnonzero(b.requests["requested"][:, p])
+                    if not envs.size:
+                        continue
+                    records, statuses = b.public(np.full(b.envs, p, np.uint32))
+                    records, statuses = records.copy(), statuses.copy()
+                    causes, _ = b.public_causes(np.full(b.envs, p, np.uint32))
+                    for e in envs:
+                        roots.set(e, p, request=b.requests[e, p], observation=b.observations[e, p], obs=obs[e, p],
+                                  slots=slots[e, p], pairs=pairs[e, p], record=records[e], status=statuses[e],
+                                  episode=b.episode(int(e)), causes=causes[e])
+                    roots.requests[:, 1 - p]["requested"] = b.requests[:, 1 - p]["requested"]
+                    keys = np.arange(len(envs), dtype=np.uint64) + 1000 * step
+                    want, want_records = search.decide(b, envs, [p] * len(envs), keys, np.zeros(len(envs), bool))
+                    got, got_records = twin.decide(roots, envs, [p] * len(envs), keys, np.zeros(len(envs), bool))
+                    np.testing.assert_array_equal(got, want)
+                    for w, g in zip(want_records, got_records):
+                        self.assertEqual((g["kind"], g["boundary"], g.get("reason")), (w["kind"], w["boundary"], w.get("reason")))
+                    compared += len(envs)
+                b.step_factored(policy.choose_factored(b))
+                b.reset_terminal()
+            self.assertGreater(compared, 20)
+
+    def test_assembled_record_is_checked_and_named(self):
+        # A record assembled outside the engine (the live tracker's) is not searched unless the engine accepts it and
+        # every world built from it gives it back. A filled masked field (here the foe's exact HP) is refused by the
+        # engine itself; a world that gives another record back is named by field.
+        with duoforge.Context(C["DUOFORGE_DATA_KIND_POOL"]) as ctx,                 duoforge.Batch(ctx, duoforge.reference_setups([0]), 1, 42) as b, self.make(ctx) as search:
+            self.preview(search, b)
+            self.start_turn(b)
+            v, st = b.public(np.zeros(1, np.uint32))
+            self.assertEqual(int(st[0]), 0)
+            record = v[:1].reshape(()).copy()
+            history = search.history[b][(0, 0)]
+            costs = {k: 0. for k in ("public_records", "world_builds", "team_head", "network")}
+            search._hypotheses(record, b.observations[0, 0], history, 1, None, costs)  # the engine's record passes
+            from duoforge import state_layout
+            starts = dict((n, s) for n, s, _ in state_layout.fields())
+            masked = record.copy()
+            masked["state"][starts["side1.member0.hp"]] = 7
+            with self.assertRaisesRegex(honest.SearchError, "MALFORMED"):
+                search._hypotheses(masked, b.observations[0, 0], history, 2, None, costs)
+            public = search.worlds.public
+
+            def other_turn(players):  # worlds that give a record with another weather byte back
+                again, statuses = public(players)
+                again = again.copy()
+                again["state"][:, starts["weather_turns"]] ^= 1
+                return again, statuses
+
+            with mock.patch.object(search.worlds, "public", side_effect=other_turn), \
+                    self.assertRaisesRegex(honest.SearchError, r"state fields \['weather_turns'\]"):
+                search._hypotheses(record, b.observations[0, 0], history, 3, None, costs)
+
     def test_stale_turn_start_counts_as_unreconstructible(self):
         with duoforge.Context(C["DUOFORGE_DATA_KIND_POOL"]) as ctx, \
                 duoforge.Batch(ctx, duoforge.reference_setups([0]), 1, 42) as b, self.make(ctx) as search:
