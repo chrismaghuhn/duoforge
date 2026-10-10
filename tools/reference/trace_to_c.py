@@ -1746,6 +1746,9 @@ def step_events(log, viewer, roster_of, maxhp, tables, rb_pending=None, ill=None
                 if pos is None:
                     raise ConversionError('activate-line', 'trace_to_c: unknown -activate %r' % line, detail='Oblivious position')
                 e = ev_tuple(EV['ACTIVATE'], pos, NOPOS, CAUSE['ABILITY'], 0, tables['ABILITY'][key('Oblivious')] + 1)
+            elif what == 'ability: Oblivious':
+                # Any other Oblivious activation (with attributes) is not a line of the pin: refused, not taken for the generic one.
+                raise ConversionError('activate-line', 'trace_to_c: unknown -activate %r' % line, detail='Oblivious line')
             elif what == 'ability: Symbiosis' and len(args) == 3 and len(attrs) == 1 and attrs[0].startswith('[of] '):
                 # Step G69 (Symbiosis, data/abilities.ts:4837-4856): `-activate|holder|ability: Symbiosis|Item|[of] user`, the holder
                 # passes the item it holds to its ally, which has none. ACTIVATE with the cause ABILITY, id2 Symbiosis + 1, other the

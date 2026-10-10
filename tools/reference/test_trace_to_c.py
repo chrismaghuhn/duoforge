@@ -465,15 +465,15 @@ class Refusals(unittest.TestCase):
             return mutate
 
         cases = [
-            ('|-start|p1a: Araquanid|Attract|[from] ability: Taunt|[of] p2a: Incineroar', 'attract-start',
+            ('|-start|p1a: Araquanid|Attract|[from] ability: Intimidate|[of] p2a: Incineroar', 'attract-start',
              'trace_to_c: unknown -start %r', 'Attract source'),
             ('|-end|p1a: Araquanid|move: Attract', 'attract-end', 'trace_to_c: unknown -end %r', 'Attract end cause'),
-            ('|-end|p1a: Araquanid|move: Attract|[from] ability: Taunt', 'attract-end', 'trace_to_c: unknown -end %r',
+            ('|-end|p1a: Araquanid|move: Attract|[from] ability: Intimidate', 'attract-end', 'trace_to_c: unknown -end %r',
              'Attract end cause'),
             ('|-activate|p1a: Araquanid|move: Attract', 'activate-line', 'trace_to_c: unknown -activate %r', 'Attract source'),
             ('|cant|p1a: Araquanid|Attract|[from] move: Tackle', 'cant-line', 'trace_to_c: unknown cant %r', 'Attract line'),
             ('|-activate|p1a: Araquanid|ability: Oblivious|[of] p2a: Incineroar', 'activate-line',
-             'trace_to_c: unknown -activate %r', 'ability: Oblivious'),
+             'trace_to_c: unknown -activate %r', 'Oblivious line'),
         ]
         for line, rule, template, detail in cases:
             with self.subTest(line=line):
