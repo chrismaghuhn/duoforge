@@ -220,9 +220,10 @@ df_active_pilots() {
 # ---------------------------------------------------------------------------------------------- the request
 
 # $DF_DIR/user_data.sh with its placeholders filled; every value is validated before it gets here.
-df_render_user_data() { # commit bucket max-minutes run-id [pilot-run-id]
+df_render_user_data() { # commit bucket max-minutes run-id [pilot-run-id [pilot-part [distill-preset]]]
     sed -e "s|@COMMIT@|$1|g" -e "s|@BUCKET@|$2|g" -e "s|@MAX_MINUTES@|$3|g" -e "s|@RUN_ID@|$4|g" \
-        -e "s|@PILOT_RUN_ID@|${5:-}|g" "$DF_DIR/user_data.sh"
+        -e "s|@PILOT_RUN_ID@|${5:-}|g" -e "s|@PILOT_PART@|${6:-}|g" -e "s|@DISTILL_PRESET@|${7:-}|g" \
+        "$DF_DIR/user_data.sh"
 }
 
 # Fills DF_RUN_ARGS with the arguments of `aws ec2 run-instances` (without --dry-run): one instance, a one-time spot

@@ -174,9 +174,10 @@ class Guards(unittest.TestCase):
     def real_launches(self):
         return [c for c in self.calls() if ' run-instances ' in (' ' + c + ' ') and '--dry-run' not in c]
 
-    def render(self, minutes=180, commit=SHA, bucket='my-p1-bucket', run_id='b' * 12 + '-20261009T120000Z', pilot=''):
-        script = '. "%s/lib.sh"; df_render_user_data %s %s %s %s "%s"' % (posix(HERE), commit, bucket, minutes, run_id,
-                                                                         pilot)
+    def render(self, minutes=180, commit=SHA, bucket='my-p1-bucket', run_id='b' * 12 + '-20261009T120000Z', pilot='',
+               part='', preset=''):
+        script = '. "%s/lib.sh"; df_render_user_data %s %s %s %s "%s" "%s" "%s"' % (
+            posix(HERE), commit, bucket, minutes, run_id, pilot, part, preset)
         r = subprocess.run([BASH, '-c', script], env=self.env, capture_output=True, text=True)
         self.assertEqual(r.returncode, 0, r.stderr)
         return r.stdout
@@ -248,6 +249,33 @@ class Guards(unittest.TestCase):
         self.assertEqual(self.real_launches(), [])
         self.assertIn("DF_PILOT_RUN_ID='%s'" % old, self.render(pilot=old))
         self.assertIn("DF_PILOT_RUN_ID=''", self.render())
+
+    def test_a_c2_run_takes_only_the_generation_of_an_earlier_run_and_names_its_distill_preset(self):
+        # option C2 of 2026-10-10: the new run reads only the generation of the earlier run (PILOT_PART=generation) and
+        # distils again with the preset c2 (DISTILL_PRESET); the earlier run needs its generation, not its distillation
+        old = 'aaaaaaaaaaaa-20261009T172944Z'
+        c2 = ('--from-run', old, '--pilot-part', 'generation', '--distill-preset', 'c2')
+        r = self.run_script('launch.sh', *self.LAUNCH, *c2, STUB_KEYS='1')
+        self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+        self.assertIn('pilot part    generation (run.sh distils again)', r.stdout)
+        self.assertIn('distill       c2', r.stdout)
+        self.assertTrue(any('--prefix p1/%s/markers/collect-production.done' % old in c for c in self.calls()))
+        self.assertFalse(any('markers/distill.done' in c for c in self.calls()))
+        for bad in (('--pilot-part', 'generation'),  # the generation of which run?
+                    ('--from-run', old, '--distill-preset', 'c2'),  # the default part reuses the distillation
+                    ('--from-run', old, '--pilot-part', 'generation', '--distill-preset', 'big'),
+                    ('--from-run', old, '--pilot-part', 'all'),
+                    ('--from-run', old, '--pilot-part', 'generation', '--distill-preset', 'c2', '--resume', old),
+                    ('--pilot-part',)):
+            r = self.run_script('launch.sh', *self.LAUNCH, *bad, STUB_KEYS='1')
+            self.assertNotEqual(r.returncode, 0, bad)
+        self.assertEqual(self.real_launches(), [])
+        text = self.render(pilot=old, part='generation', preset='c2')
+        self.assertIn("DF_PILOT_PART='generation'", text)
+        self.assertIn("DF_DISTILL_PRESET='c2'", text)
+        text = self.render(pilot=old)
+        self.assertIn("DF_PILOT_PART=''", text)
+        self.assertIn("DF_DISTILL_PRESET=''", text)
 
     def test_a_resume_keeps_the_run_id_of_an_existing_run(self):
         # run.sh resumes from the markers under p1/<run id>/ (EXIT 33 of the first AWS pilot, 2026-10-09): a resume keeps
@@ -513,7 +541,8 @@ class Guards(unittest.TestCase):
         with open(os.path.join(HERE, 'user_data.sh'), encoding='utf-8') as f:
             raw = f.read()
         self.assertEqual(sorted(set(re.findall(r'@[A-Z_]+@', raw))),
-                         ['@BUCKET@', '@COMMIT@', '@MAX_MINUTES@', '@PILOT_RUN_ID@', '@RUN_ID@'])
+                         ['@BUCKET@', '@COMMIT@', '@DISTILL_PRESET@', '@MAX_MINUTES@', '@PILOT_PART@',
+                          '@PILOT_RUN_ID@', '@RUN_ID@'])
 
     # ------------------------------------------------------------------ the user data, run with stand-ins
     def run_box(self, workload, soft_deadline_seconds=30, minutes=180):
