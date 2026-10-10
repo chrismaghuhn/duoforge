@@ -497,6 +497,29 @@ const dfi_support_manifest dfi_support = {
              * moves (checkMoveBypassesProtect with blockStatus false), and a contact move that it stops costs the attacker -1 Attack.
              * The learners of this move in the pool are Aegislash (its only ability is Stance Change, marked in the same step). */
             [DFI_MOVE_KINGSSHIELD] = 1u,
+            /* Step C1 (cheap moves, decision 0015 entry 5co): status and self-boost moves and the plain damage moves, through
+             * the existing paths only (the flags, the boosts, the status, the heal fraction of the pin, the target classes any and
+             * allAdjacent, accuracy true). Jet Punch is not marked: its only learner, Palafin, has no marked ability. */
+            [DFI_MOVE_SLACKOFF] = 1u,
+            [DFI_MOVE_COTTONGUARD] = 1u,
+            [DFI_MOVE_SHELTER] = 1u,
+            [DFI_MOVE_GLARE] = 1u,
+            [DFI_MOVE_ACIDARMOR] = 1u,
+            [DFI_MOVE_FEATHERDANCE] = 1u,
+            [DFI_MOVE_BABYDOLLEYES] = 1u,
+            [DFI_MOVE_METALSOUND] = 1u,
+            [DFI_MOVE_SHIFTGEAR] = 1u,
+            [DFI_MOVE_ROCKPOLISH] = 1u,
+            [DFI_MOVE_AERIALACE] = 1u,
+            [DFI_MOVE_SEEDBOMB] = 1u,
+            [DFI_MOVE_MEGAHORN] = 1u,
+            [DFI_MOVE_MEGAKICK] = 1u,
+            [DFI_MOVE_DRILLPECK] = 1u,
+            [DFI_MOVE_SMARTSTRIKE] = 1u,
+            [DFI_MOVE_AQUATAIL] = 1u,
+            [DFI_MOVE_SHADOWPUNCH] = 1u,
+            [DFI_MOVE_BRUTALSWING] = 1u,
+            [DFI_MOVE_PETALBLIZZARD] = 1u,
         },
     .abilities =
         {
