@@ -9693,9 +9693,8 @@ static duoforge_status dfi_end_turn(dfi_run *r)
         dfi_active_slot *pos = dfi_pos(b, flat);
         pos->flags = (uint8_t)((uint32_t)pos->flags & ~DFI_VOL_NEWLY_SWITCHED); /* wide-operands-reviewed */
         /* statsRaisedThisTurn is cleared at the turn's end (sim/battle.ts:1678, endTurn): the raised bit is per turn */
-        b->tail.sides[flat / 2u].positions[flat % 2u].position_flags =
-            (uint8_t)((uint32_t)b->tail.sides[flat / 2u].positions[flat % 2u].position_flags &
-                      ~(uint32_t)(DFI_POSFLAG_STATS_RAISED | DFI_POSFLAG_LOWERED | DFI_POSFLAG_HURT)); /* wide-operands-reviewed */
+        dfi_tail_pos *rt = &b->tail.sides[flat / 2u].positions[flat % 2u];
+        rt->position_flags = (uint8_t)((uint32_t)rt->position_flags & ~(uint32_t)(DFI_POSFLAG_STATS_RAISED | DFI_POSFLAG_LOWERED | DFI_POSFLAG_HURT)); /* wide-operands-reviewed */
         /* statsLoweredThisTurn (sim/battle.ts:1679) and hurtThisTurn (sim/battle.ts:1682) are cleared here too (G88) */
         /* moveLastTurnResult = moveThisTurnResult, then this turn's is undefined (sim/battle.ts:1674-1675). The unclassified
          * bit moves with the result (step G42). */
