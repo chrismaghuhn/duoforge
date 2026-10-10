@@ -503,6 +503,45 @@ class HonestSearch(unittest.TestCase):
                 self.assertIn(name, stopped.exception.reproduction)
 
 
+class LiveModelPolicy(unittest.TestCase):
+    def test_a_v2_checkpoint_plays_through_its_own_network(self):
+        # The live bot's raw ranking (its play without the search, and the search's fallback) of a model-v2 checkpoint
+        # such as params-49333 (plan 2026-10-10-live-honest-search, Task 4): the checkpoint's own network in its trained
+        # layout, never the v1-only NumPy forward. Over the live features its best team and pair are the network's
+        # argmax over the batch's own rows.
+        from duoforge_learn import checkpoint, policy as learn_policy
+        from duoforge_live import policy as live_policy
+        model_config = learn_policy.v2_config("S")
+        model = learn_policy.make(model_config, features.feature_names(4))
+        params = model.init(__import__("jax").random.PRNGKey(11))
+        with duoforge.Context(C["DUOFORGE_DATA_KIND_POOL"]) as ctx, \
+                duoforge.Batch(ctx, duoforge.reference_setups([0]), 1, 42) as b, \
+                tempfile.TemporaryDirectory() as tmp:
+            path = os.path.join(tmp, "v2.npz")
+            checkpoint.save(path, params, {"model": model_config, "encoder": 4,
+                                           "features": list(features.feature_names(4)),
+                                           "slot_features": list(features.SLOT_FEATURE_NAMES),
+                                           "data": {"kind": "pool", "fingerprint": "00"}, "teams": {}, "update": 0,
+                                           "decisions": 0, "ids": checkpoint.ids_of(ctx)})
+            live = live_policy.load(path)
+            self.assertEqual(live.encoder, 4)
+            for turn in (False, True):
+                if turn:
+                    choices = np.zeros((1, 2), _layout.FACTORED_CHOICE)
+                    choices["picks"][:, :, :4] = np.arange(4, dtype=np.uint8)
+                    b.step_factored(choices)
+                b.query_factored()
+                obs, slots, pairs = b.query_encoded(4, live.ext_supported)
+                logp_pairs, logp_team, _ = (np.asarray(x) for x in model.apply(params, obs[:, 0], slots[:, 0], pairs[:, 0]))
+                obs_part, slot_part, pair_mask = features.encode(b.observations[0, 0], b.domains[0, 0], None,
+                                                                 live.ext_supported)
+                if turn:
+                    i, j, _ = live.rank_pairs(b.observations[0, 0], obs_part, slot_part, pair_mask)[0]
+                    self.assertEqual(i * pair_mask.shape[1] + j, int(np.argmax(logp_pairs[0])))
+                else:
+                    self.assertEqual(live.rank_teams(b.observations[0, 0], obs_part)[0][0], int(np.argmax(logp_team[0])))
+
+
 class HonestArena(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
