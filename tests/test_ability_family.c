@@ -45,6 +45,7 @@ static const ability_type ATES[] = {
     {DFI_ABILITY_AERILATE, DFI_TYPE_FLYING},
     {DFI_ABILITY_PIXILATE, DFI_TYPE_FAIRY},
     {DFI_ABILITY_REFRIGERATE, DFI_TYPE_ICE},
+    {DFI_ABILITY_DRAGONIZE, DFI_TYPE_DRAGON}, /* step G61: an -ate member with the parameter Dragon */
 };
 
 /* PINCH: Atk and SpA x1.5 for a move of the type at a third of the HP or less. */

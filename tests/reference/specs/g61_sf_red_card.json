@@ -1,0 +1,21 @@
+{
+  "name": "g61_sf_red_card",
+  "purpose": "A Sheer Force attacker (Ice Fang, stripped) hits a Red Card holder: Red Card still drags it out (the Champions AfterMoveSecondary is not gated).",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,00000000000000000000000000000000000000000000000000000000000017d8",
+  "teams": [
+    "Feraligatr (M) @ Life Orb\nAbility: Sheer Force\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Ice Fang\n- Protect\n\nGliscor (M) @ Rocky Helmet\nAbility: Hyper Cutter\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nJolly Nature\n- Protect\n\nPrimarina (F) @ Expert Belt\nAbility: Torrent\nLevel: 50\nEVs: 32 HP / 2 Def / 32 SpD\nCalm Nature\n- Moonblast\n- Protect\n\nGholdengo @ Focus Sash\nAbility: Good as Gold\nLevel: 50\nEVs: 32 HP / 2 SpA / 32 SpD\nCalm Nature\n- Shadow Ball\n- Protect\n\nMilotic (F) @ Black Glasses\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Scald\n- Protect\n\nKingambit (M) @ Charcoal\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Swords Dance\n- Protect",
+    "Milotic (F) @ Red Card\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Scald\n- Protect\n\nPrimarina (F) @ Rocky Helmet\nAbility: Torrent\nLevel: 50\nEVs: 32 HP / 2 Def / 32 SpD\nCalm Nature\n- Moonblast\n- Protect\n\nGholdengo @ Focus Sash\nAbility: Good as Gold\nLevel: 50\nEVs: 32 HP / 2 SpA / 32 SpD\nCalm Nature\n- Shadow Ball\n- Protect\n\nKingambit (M) @ Black Glasses\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Swords Dance\n- Protect\n\nCeruledge (M) @ Expert Belt\nAbility: Flash Fire\nLevel: 50\nEVs: 31 HP / 7 Atk / 24 Def / 3 SpD / 1 Spe\nBrave Nature\n- Protect\n\nSalamence (M) @ Salamencite\nAbility: Intimidate\nLevel: 50\nEVs: 2 HP / 32 SpA / 32 Spe\nTimid Nature\n- Protect"
+  ],
+  "plan": {
+    "p1": [
+      "move 1 1, move 1",
+      "move 1 1, move 1"
+    ],
+    "p2": [
+      "move 1 1, move 1 1"
+    ],
+    "max_steps": 4
+  }
+}

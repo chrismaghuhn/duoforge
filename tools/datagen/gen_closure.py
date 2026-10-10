@@ -1812,6 +1812,41 @@ G47_ITEM_FACTS = (
                     'pokemon.removeVolatile(secondCondition);',
                     "this.add('-end', pokemon, 'move: Attract', '[from] item: Mental Herb');")),
 )
+# Step G59, six Mega abilities: Mega Launcher (Blastoise-Mega), Huge Power (Mawile-Mega), Thick Fat (Venusaur-Mega), Fire Mane
+# (Pyroar-Mega), Spicy Spray (Scovillain-Mega) and Mega Sol (Meganium-Mega) are engine rows (ENGINE_ROWS) that the turn code reads
+# by id (src/combat/turn.c: the BasePower chain at priority 19, the ModifyAtk and ModifySpA chain, the weather modifier of the
+# holder's moves, dfi_spicy_spray, dfi_mega_sol_refused). Their pinned callbacks, whole and whitespace-collapsed, are the facts the
+# engine hard-codes. The Champions mod has no entry for Mega Launcher, Huge Power or Thick Fat; Fire Mane, Spicy Spray and Mega
+# Sol have one that only inherits and un-marks the Future tag (`inherit: true`, `isNonstandard: null`), which
+# G59_INHERIT_ONLY allows and nothing else. Mega Sol's effectiveWeather side (sim/pokemon.ts) is read by the refusal of
+# dfi_mega_sol_refused, checked by check_g59_pokemon.
+G59_ABILITY_FACTS = (
+    ('megalauncher', ('onBasePowerPriority: 19,',
+                      "onBasePower(basePower, attacker, defender, move) { if (move.flags['pulse']) { return this.chainModify(1.5); } },",
+                      'flags: {},')),
+    ('hugepower', ('onModifyAtkPriority: 5,', 'onModifyAtk(atk) { return this.chainModify(2); },', 'flags: {},')),
+    ('thickfat', ('onSourceModifyAtkPriority: 6,',
+                  "onSourceModifyAtk(atk, attacker, defender, move) { if (move.type === 'Ice' || move.type === 'Fire') { "
+                  "this.debug('Thick Fat weaken'); return this.chainModify(0.5); } },",
+                  'onSourceModifySpAPriority: 5,',
+                  "onSourceModifySpA(atk, attacker, defender, move) { if (move.type === 'Ice' || move.type === 'Fire') { "
+                  "this.debug('Thick Fat weaken'); return this.chainModify(0.5); } },",
+                  'flags: { breakable: 1 },')),
+    ('firemane', ('onModifyAtkPriority: 5,',
+                  "onModifyAtk(atk, attacker, defender, move) { if (move.type === 'Fire') { this.debug('Fire Mane boost'); "
+                  "return this.chainModify(1.5); } },",
+                  'onModifySpAPriority: 5,',
+                  "onModifySpA(atk, attacker, defender, move) { if (move.type === 'Fire') { this.debug('Fire Mane boost'); "
+                  "return this.chainModify(1.5); } },",
+                  'flags: {},')),
+    ('spicyspray', ("onDamagingHit(damage, target, source, move) { source.trySetStatus('brn', target); },", 'flags: {},')),
+    ('megasol', ('onWeatherModifyDamagePriority: 1,',
+                 "(this.dex.conditions.getByID('sunnyday' as ID) as any).onWeatherModifyDamage .call(this, damage, attacker, defender, move);",
+                 'return damage; // fast exit from event',
+                 'flags: {},')),
+)
+G59_INHERIT_ONLY = ('firemane', 'spicyspray', 'megasol')
+
 # Step G51 (Pidgeotite: Keen Eye and Big Pecks, the base abilities of Pidgeot): both are engine rows (ENGINE_ROWS) that dfi_boost
 # (src/combat/turn.c) reads by id, Hyper Cutter's shape: the pinned TryBoost of the target itself deletes one drop that another
 # Pokemon causes (accuracy for Keen Eye, Defense for Big Pecks), with the line unless the move's secondary. Keen Eye's
@@ -2504,7 +2539,7 @@ G8_SECONDARIES = {
 }
 FLAGS2_BITS = {'sound': 1, 'heal': 2, 'powder': 16, 'punch': 32, 'slicing': 64}  # steps G30 (powder) and G34 (punch, slicing)
 # The third flags byte (DFI_MOVE_FLAG3_*, pool tables only): one bit per Showdown flag name, assigned centrally (HauptSession).
-FLAGS3_BITS = {'reflectable': 1, 'mustpressure': 2, 'bypasssub': 4}  # steps G57 (Magic Bounce), G53 (Pressure) and G60 (Substitute)
+FLAGS3_BITS = {'reflectable': 1, 'mustpressure': 2, 'bypasssub': 4, 'pulse': 8}  # steps G57 (Magic Bounce), G53 (Pressure), G60 (Substitute), G59 (Mega Launcher)
 # Decision 0020: the public static flags of a move (DUOFORGE_MOVE_STATIC_FLAG_*, include/duoforge/duoforge.h), one bit per
 # Showdown flag name, additive only; the generated column dfi_pool_move_static_flags holds them for every pool row and has
 # no engine reader. POWER_RULE is not a flag of the pin: the move has a basePowerCallback (its basePower is not the damage).
@@ -2601,7 +2636,7 @@ FAMILY_PARAM_NONE = 0xFF
 # is never listed here: it comes from the pinned handler. Every id of the pool that is not listed has no family.
 ITEM_MEMBERS = {'TYPE_BOOSTER': ['miracleseed', 'mysticwater'] + POOL_TYPE_BOOSTERS,
                 'RESIST_BERRY': ['chopleberry'] + POOL_RESIST_BERRIES}
-ABILITY_MEMBERS = {'ATE': ['aerilate', 'pixilate', 'refrigerate'],
+ABILITY_MEMBERS = {'ATE': ['aerilate', 'pixilate', 'refrigerate', 'dragonize'],
                    'PINCH': ['blaze', 'overgrow', 'torrent', 'swarm'],
                    'WEATHER_SETTER': ['drizzle', 'drought', 'sandstream', 'snowwarning'],
                    'TERRAIN_SETTER': ['grassysurge', 'psychicsurge', 'electricsurge']}
@@ -2669,7 +2704,8 @@ ENGINE_ROWS = {'items': ['focussash', 'floettite', 'psychicseed', 'electricseed'
                              'limber',
                              'solarpower',
                              'regenerator', 'toxicdebris', 'shadowtag', 'suctioncups', 'guarddog',
-                             'steadfast', 'weakarmor', 'telepathy', 'voltabsorb', 'punkrock', 'moxie', 'synchronize', 'oblivious', 'keeneye', 'bigpecks', 'magicbounce', 'pressure', 'stancechange']}
+                             'steadfast', 'weakarmor', 'telepathy', 'voltabsorb', 'punkrock', 'moxie', 'synchronize', 'oblivious', 'keeneye', 'bigpecks', 'magicbounce', 'pressure', 'stancechange',
+                             'sandforce', 'shellarmor', 'filter', 'stalwart', 'megalauncher', 'hugepower', 'thickfat', 'firemane', 'spicyspray', 'megasol', 'sheerforce']}
 # The moves of the whole pool that the turn code pivots with a switch flag of their own (dfi_pivot_moves,
 # src/state/closure_member.c) beyond Flip Turn and U-turn, which are rows of the steps. Empty: Volt Switch comes with the
 # step that gives it a flag value, and adds its id here.
@@ -2765,8 +2801,9 @@ def resist_berry_type(f, iid):
 ITEM_MATCHERS = [('TYPE_BOOSTER', type_booster_type), ('RESIST_BERRY', resist_berry_type)]
 
 # Abilities. "-ate": Normal moves become the type (ModifyType, priority -1) and get BasePower x4915/4096 (priority 23).
+# isNonstandard is metadata: Dragonize (data/abilities.ts:1036, "Future") is an -ate member the Champions mod makes standard.
 ABILITY_ATE_KEYS = {'onModifyTypePriority', 'onModifyType', 'onBasePowerPriority', 'onBasePower', 'flags', 'name',
-                    'rating', 'num'}
+                    'rating', 'num', 'isNonstandard'}
 ATE_MODIFY_TYPE = (r"onModifyType\(move, pokemon\) \{ const noModifyType = \[ 'judgment', 'multiattack', 'naturalgift', "
                    r"'revelationdance', 'technoblast', 'terrainpulse', 'weatherball', \]; "
                    r"if \(move\.type === 'Normal' && \(!noModifyType\.includes\(move\.id\) \|\| "
@@ -2778,7 +2815,8 @@ ATE_BASE_POWER = (r"onBasePower\(basePower, pokemon, target, move\) \{ "
 
 
 def ate_type(f):
-    shape(f, ABILITY_ATE_KEYS)
+    # isNonstandard is optional: only Dragonize has it, as "Future" in the pin
+    shape(f, ABILITY_ATE_KEYS if 'isNonstandard' in f else ABILITY_ATE_KEYS - {'isNonstandard'})
     field_is(f, 'onModifyTypePriority', 'onModifyTypePriority: -1,')
     field_is(f, 'onBasePowerPriority', 'onBasePowerPriority: 23,')
     field_is(f, 'flags', 'flags: {},')
@@ -3360,6 +3398,78 @@ G46_ITEM_FACTS = (
 )
 
 
+# Step G61, Sheer Force (an engine row read by id, data/abilities.ts:4202-4221): the pinned texts the turn code hard-codes.
+# Its onModifyMove strips a move's secondaries and self effects, and sets hasSheerForce, only when the move has secondaries
+# and is not hasSheerForceBoost (Electro Shot); onBasePower is x5325/4096 for either flag, at priority 21. The engine's
+# predicate (turn.c dfi_sf_strips) and the generator's strip check (pool_families.js checkG61) follow these texts.
+G61_ABILITY_FACTS = (
+    ('sheerforce', ('onModifyMove(move, pokemon) {',
+                    'if (move.secondaries && !move.hasSheerForceBoost) {',
+                    'delete move.secondaries;',
+                    'delete move.self;',
+                    'if (move.id === \'clangoroussoulblaze\') delete move.selfBoost;',
+                    'move.hasSheerForce = true;',
+                    'onBasePowerPriority: 21,',
+                    'if (move.hasSheerForce || move.hasSheerForceBoost) return this.chainModify([5325, 4096]);',
+                    'flags: {},')),
+)
+# Step G61, Dragonize (the Mega ability of Feraligatr, an "-ate" member of the ATE family, param Dragon): the pinned texts
+# of its handlers, which are the -ate pattern of ATE_MODIFY_TYPE and ATE_BASE_POWER. The Champions entry only inherits it
+# and lifts isNonstandard (champions/abilities.ts:14-17); no handler of its own.
+G61_DRAGONIZE_FACTS = (
+    "const noModifyType = [ 'judgment', 'multiattack', 'naturalgift', 'revelationdance', 'technoblast', 'terrainpulse', 'weatherball', ];",
+    'onModifyTypePriority: -1,',
+    'onBasePowerPriority: 23,',
+    "move.type = 'Dragon';",
+    'move.typeChangerBoosted = this.effect;',
+    'if (move.typeChangerBoosted === this.effect) return this.chainModify([4915, 4096]);',
+    'flags: {},',
+)
+# Step G61: the turn code's gates on Sheer Force (turn.c dfi_run_move_body and useMoveInner) are the pinned gates: the base
+# gate on the user's AfterMoveSecondarySelf (Life Orb) and its Emergency Exit, the base and Champions gates on the
+# target's Emergency Exit, and the Champions afterMoveSecondaryEvent that has no Sheer Force test at all (Red Card,
+# Eject Button and the thaw of Scald run under Sheer Force).
+G61_GATE_FACTS = (
+    ('sim/battle-actions.ts', "if (!(move.hasSheerForce && pokemon.hasAbility('sheerforce')) && !move.flags['futuremove']) {"),
+    ('sim/battle-actions.ts', "if (!(move.hasSheerForce && pokemon.hasAbility('sheerforce'))) {"),
+    ('data/mods/champions/scripts.ts', "if (!(move.hasSheerForce && pokemon.hasAbility('sheerforce'))) {"),
+)
+
+
+def check_g61_facts(root, abil_ts, champ_abil):
+    """Step G61: the Sheer Force and Dragonize texts (G61_ABILITY_FACTS, G61_DRAGONIZE_FACTS) are in the pinned entries, whitespace
+    aside. The Champions mod has no entry for Sheer Force, and its Dragonize entry only inherits and lifts isNonstandard. The
+    three gate texts of G61_GATE_FACTS are in their files; the Champions afterMoveSecondaryEvent carries no Sheer Force test."""
+    e = abil_ts.entry('sheerforce')
+    if e is None:
+        fail('ability sheerforce not found')
+    if champ_abil.entry('sheerforce') is not None:
+        fail('ability sheerforce: the champions mod overrides the entry')
+    text = norm(chr(10).join(e[2]))
+    for fact in G61_ABILITY_FACTS[0][1]:
+        if norm(fact) not in text:
+            fail('ability sheerforce: the entry no longer has "%s"' % fact)
+    d = abil_ts.entry('dragonize')
+    if d is None:
+        fail('ability dragonize not found')
+    dtext = norm(chr(10).join(d[2]))
+    for fact in G61_DRAGONIZE_FACTS:
+        if norm(fact) not in dtext:
+            fail('ability dragonize: the entry no longer has "%s"' % fact)
+    cd = champ_abil.entry('dragonize')
+    if cd is None:
+        fail('ability dragonize: the champions mod has no entry (expected inherit only)')
+    ctext = norm(chr(10).join(cd[2]))
+    if 'inherit: true' not in ctext or 'onBasePower' in ctext or 'onModifyType' in ctext:
+        fail('ability dragonize: the champions entry is not an inherit-only entry: %s' % ctext)
+    for rel, fact in G61_GATE_FACTS:
+        src = Source(root, rel, READER_INPUTS if rel in READER_INPUTS else None)
+        if norm(fact) not in norm(chr(10).join(src.lines)):
+            fail('%s: the gate "%s" is gone' % (rel, fact))
+    champ_src = norm(chr(10).join(Source(root, 'data/mods/champions/scripts.ts').lines))
+    start = champ_src.find('afterMoveSecondaryEvent(targets, pokemon, move) {')
+    if start < 0 or 'hasSheerForce' in champ_src[start:start + 260]:
+        fail('champions afterMoveSecondaryEvent: not the ungated form (Sheer Force must not gate it)')
 # Step G57: Magic Bounce is an engine row read by id (src/combat/turn.c, the bounced path of dfi_run_move_body). The turn code
 # hard-codes the pinned callbacks it reproduces: the TryHit priority, the single-target bounce and the side bounce of a
 # foeSide move (data/abilities.ts:2437-2464). Its flags are breakable only: a Mold Breaker attacker would suppress it, and no
@@ -3380,6 +3490,29 @@ G57_ABILITY_FACTS = (
 )
 
 
+# Step G63 (simple Mega abilities): Sand Force, Shell Armor, Filter and Stalwart are engine rows (ENGINE_ROWS) that the turn code reads
+# by id. The pinned callbacks they hard-code are checked here, whole: Sand Force's BasePower (priority 21, Rock, Ground and Steel in
+# sandstorm, chainModify 5325/4096) and its sandstorm immunity (data/abilities.ts:3956-3973); Shell Armor's onCriticalHit false
+# (4222-4228); Filter's damage step, the same as Solid Rock's (1283-1294); Stalwart's tracksTarget (4503-4513). Sand Force, Shell
+# Armor and Filter are breakable (Mold Breaker is not marked); Stalwart is not. No entry is overridden by the Champions mod.
+G63_ABILITY_FACTS = (
+    ('sandforce', ('onBasePowerPriority: 21,',
+                   "onBasePower(basePower, attacker, defender, move) { if (this.field.isWeather('sandstorm')) { "
+                   "if (move.type === 'Rock' || move.type === 'Ground' || move.type === 'Steel') { "
+                   "this.debug('Sand Force boost'); return this.chainModify([5325, 4096]); } } },",
+                   "onImmunity(type, pokemon) { if (type === 'sandstorm') return false; },")),
+    ('shellarmor', ('onCriticalHit: false,', 'flags: { breakable: 1 },')),
+    ('filter', ("onSourceModifyDamage(damage, source, target, move) { if (target.getMoveHitData(move).typeMod > 0) { "
+                "this.debug('Filter neutralize'); return this.chainModify(0.75); } },",
+                'flags: { breakable: 1 },')),
+    ('stalwart', ('onModifyMovePriority: 1,',
+                  'onModifyMove(move) {',
+                  '// most of the implementation is in Battle#getTarget',
+                  "move.tracksTarget = move.target !== 'scripted';",
+                  '},')),
+)
+
+
 def check_g57_facts(abil_ts, champ_abil):
     """Step G57: the texts of Magic Bounce that the engine reproduces (G57_ABILITY_FACTS) are in the pinned entry, whitespace
     aside, and the Champions mod has no entry of its own for it."""
@@ -3397,19 +3530,54 @@ def check_g57_facts(abil_ts, champ_abil):
 
 def check_g34_facts(abil_ts, champ_abil, items_ts, champ_items):
     """Steps G34, G35, Mega batch 2 and G39: every fact of G34_ABILITY_FACTS, G35_ABILITY_FACTS, MEGA2_ABILITY_FACTS, G39_ABILITY_FACTS and G34_ITEM_FACTS is in the pinned entry, whitespace aside, and the
-    Champions mod has no entry of its own for it (an override would change what the engine reads)."""
-    for kind, facts_by_id, src, champ in (('ability', G34_ABILITY_FACTS + G35_ABILITY_FACTS + MEGA2_ABILITY_FACTS + G39_ABILITY_FACTS + G41_ABILITY_FACTS + G45_ABILITY_FACTS + G46_ABILITY_FACTS + G47_ABILITY_FACTS + G51_ABILITY_FACTS + G53_ABILITY_FACTS, abil_ts, champ_abil),
+    Champions mod has no entry of its own for it (an override would change what the engine reads). Step G59: the Champions
+    entry of a G59_INHERIT_ONLY ability may only inherit (`inherit: true`, `isNonstandard: null`), which is no override."""
+    for kind, facts_by_id, src, champ in (('ability', G34_ABILITY_FACTS + G35_ABILITY_FACTS + MEGA2_ABILITY_FACTS + G39_ABILITY_FACTS + G41_ABILITY_FACTS + G45_ABILITY_FACTS + G46_ABILITY_FACTS + G47_ABILITY_FACTS + G51_ABILITY_FACTS + G53_ABILITY_FACTS + G63_ABILITY_FACTS + G59_ABILITY_FACTS, abil_ts, champ_abil),
                                           ('item', G34_ITEM_FACTS + G46_ITEM_FACTS + G47_ITEM_FACTS, items_ts, champ_items)):
         for rid, facts in facts_by_id:
             e = src.entry(rid)
             if e is None:
                 fail('%s %s not found' % (kind, rid))
-            if champ.entry(rid) is not None:
-                fail('%s %s: the champions mod overrides the entry' % (kind, rid))
+            override = champ.entry(rid)
+            if override is not None:
+                lines = [' '.join(line.split()) for line in override[2]]
+                inner = [line for line in lines[1:] if line not in ('', '},', '}')]
+                inherit_only = (rid in G59_INHERIT_ONLY and lines[0].endswith('{') and
+                                inner == ['inherit: true,', 'isNonstandard: null,'])
+                if not inherit_only:
+                    fail('%s %s: the champions mod overrides the entry' % (kind, rid))
             text = norm(chr(10).join(e[2]))
             for fact in facts:
                 if norm(fact) not in text:
                     fail('%s %s: the entry no longer has "%s"' % (kind, rid, fact))
+
+
+# Step G59: the facts of Mega Sol's effectiveWeather side (sim/pokemon.ts, Pokemon#effectiveWeather: the holder's active move
+# reads as sun for its effects of kind Move, Weather or Mega Sol itself) and of the sunnyday handler that Mega Sol calls
+# (data/conditions.ts). The refusal of dfi_mega_sol_refused rests on them, and the modifier of the engine on the handler's Fire
+# and Water lines.
+G59_POKEMON_FACTS = (
+    "if (this.battle.activePokemon?.hasAbility('megasol') && sourceEffect &&",
+    "(sourceEffect.id === 'megasol' || sourceEffect.effectType === 'Move' || sourceEffect.effectType === 'Weather') &&",
+    "sourceEffect.id !== 'electroshot') {",
+    "return 'sunnyday' as ID;",
+)
+G59_SUNNY_FACTS = (
+    "if (defender.effectiveWeather() !== 'sunnyday') return;",
+    "if (move.type === 'Fire') { this.debug('Sunny Day fire boost'); return this.chainModify(1.5); }",
+    "if (move.type === 'Water') { this.debug('Sunny Day water suppress'); return this.chainModify(0.5); }",
+)
+
+
+def check_g59_facts(abil_ts, champ_abil, pokemon_ts, conditions_ts):
+    """Step G59: the texts of the six Mega abilities (G59_ABILITY_FACTS, through check_g34_facts), and the two sides of Mega Sol
+    that the engine's refusal and modifier rest on (G59_POKEMON_FACTS, G59_SUNNY_FACTS) are in the pinned files, whitespace
+    collapsed."""
+    for src, facts in ((pokemon_ts, G59_POKEMON_FACTS), (conditions_ts, G59_SUNNY_FACTS)):
+        text = norm(chr(10).join(src.lines))
+        for fact in facts:
+            if norm(fact) not in text:
+                fail('%s: the pin no longer has "%s"' % (src.rel, fact))
 
 
 def check_g49_facts(items_ts, champ_items):
@@ -3503,7 +3671,10 @@ def build_pool(root, repo, dx):
     check_g30_facts(abil_ts, champ_abil)
     check_g28_items(items_ts)
     check_g34_facts(abil_ts, champ_abil, items_ts, champ_items)
+    check_g61_facts(root, abil_ts, champ_abil)
     check_g49_facts(items_ts, champ_items)
+    check_g59_facts(abil_ts, champ_abil, Source(root, 'sim/pokemon.ts', READER_INPUTS),
+                    Source(root, 'data/conditions.ts', READER_INPUTS))
     check_g55_items(items_ts, champ_items)
     check_g37_facts(abil_ts, champ_abil)
     check_g57_facts(abil_ts, champ_abil)
@@ -4179,16 +4350,17 @@ extern const uint8_t dfi_pool_move_flags2[DFI_POOL_MOVE_COUNT];
 extern const uint8_t dfi_pool_move_heal[DFI_POOL_MOVE_COUNT][2];
 /* Decision 0020: the static flags of every move (DUOFORGE_MOVE_STATIC_FLAG_*: one bit per Showdown flag name, plus
  * POWER_RULE for a move with a basePowerCallback) and its hit counts (the pin's multihit; 1 and 1 for a single hit), by
- * move id, for every row, modelled or not. The engine reads neither: they are data for duoforge_data_move_static, and the
- * last parts of the canonical pool bytes. */
+ * move id, for every row, modelled or not. The data is read by duoforge_data_move_static; the engine reads one bit of it, PULSE
+ * (step G59, Mega Launcher's BasePower in src/combat/turn.c), and no other. The last parts of the canonical pool bytes. */
 extern const uint32_t dfi_pool_move_static_flags[DFI_POOL_MOVE_COUNT];
 extern const uint8_t dfi_pool_move_static_hits[DFI_POOL_MOVE_COUNT][2];
 /* The third flags byte of every move (DFI_MOVE_FLAG3_*), by move id; the very last part of the canonical pool bytes. It is
  * the engine's copy of pin flags that the static flags (decision 0020, no engine reader) also give out. The bits are
- * assigned centrally (HauptSession); bits 3 to 7 are free. */
+ * assigned centrally (HauptSession); bits 4 to 7 are free. */
 #define DFI_MOVE_FLAG3_REFLECTABLE 1u    /* flags.reflectable (step G57): Magic Bounce (DFI_ABILITY_MAGICBOUNCE) bounces the move */
 #define DFI_MOVE_FLAG3_MUST_PRESSURE 2u  /* flags.mustpressure (step G53): a foe's Pressure costs PP whatever the move targets */
 #define DFI_MOVE_FLAG3_BYPASSSUB 4u      /* flags.bypasssub (step G60): a Substitute does not take the hit of the move (decision 0032) */
+#define DFI_MOVE_FLAG3_PULSE 8u          /* flags.pulse (step G59): Mega Launcher's BasePower x1.5 for the holder's pulse moves */
 extern const uint8_t dfi_pool_move_flags3[DFI_POOL_MOVE_COUNT];
 extern const dfi_pool_alias dfi_pool_forme_aliases[DFI_POOL_ALIAS_COUNT];
 
@@ -4325,7 +4497,7 @@ size_t dfi_pool_canonical_bytes(uint8_t *out, size_t capacity);
           'const uint8_t dfi_pool_move_static_hits[DFI_POOL_MOVE_COUNT][2] = {']
     for m in dp['moves']:
         c.append('    [DFI_MOVE_%s] = {%du, %du}, /* %s */' % (m['id'].upper(), m['hits'][0], m['hits'][1], m['name']))
-    c += ['};', '', '/* The third flags byte (DFI_MOVE_FLAG3_*): REFLECTABLE (step G57), MUST_PRESSURE (step G53). */',
+    c += ['};', '', '/* The third flags byte (DFI_MOVE_FLAG3_*): REFLECTABLE (step G57), MUST_PRESSURE (step G53), PULSE (step G59). */',
           'const uint8_t dfi_pool_move_flags3[DFI_POOL_MOVE_COUNT] = {']
     for m in dp['moves']:
         if m['flags3']:

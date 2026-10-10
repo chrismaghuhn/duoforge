@@ -239,6 +239,8 @@ duoforge_add_test(NAME duoforge.state.pool_g38 SOURCES test_pool_g38.c WHITEBOX 
 duoforge_add_test(NAME duoforge.state.pool_mega2 SOURCES test_pool_mega2.c WHITEBOX TIMEOUT 60)
 # Step G49, the item rows Muscle Band, Wise Glasses and Bright Powder: the marks, the chain orders of Wide Lens and Bright Powder.
 duoforge_add_test(NAME duoforge.state.pool_g49 SOURCES test_pool_g49.c WHITEBOX TIMEOUT 60)
+# Step G61: Sheer Force (the strip and boost predicates on every pool move), Dragonize, Cameruptite and Feraligite: the marks and the named moves.
+duoforge_add_test(NAME duoforge.state.pool_g61 SOURCES test_pool_g61.c WHITEBOX TIMEOUT 60)
 # Step G39: thirteen abilities and four moves: the marks, the rows, what keeps Damp and Sturdy inert, Hyper Cutter against Flower Veil.
 duoforge_add_test(NAME duoforge.state.pool_g39 SOURCES test_pool_g39.c WHITEBOX TIMEOUT 60)
 # Step G45: six abilities of the simple kind (Steadfast, Moxie, Weak Armor, Telepathy, Volt Absorb, Punk Rock): the marks,
@@ -264,8 +266,8 @@ foreach(_gen IN ITEMS
         "closure_tables.c=490de42298e34cfd38192d979fd022367bf53693a5fa1855f1cc6ad034d8450a"
         "extended_tables.h=b2abef243fcbfdd87654940076b9fe2fe80b117d74893a7567741f26b9075a7d"
         "extended_tables.c=9e736fa467713283418c4edf8f56b8d844452e596ba422adbd52483d20f7cc17"
-        "pool_tables.h=cf2d1b4e50bdf13590e31d7b54da99e3ab266ced0907e4c221e5435e241d0198"
-        "pool_tables.c=cb43b1d86c7b838b6a1c9ad487c1d4e154e7fdf9df7ddc31ee184cc4e02f3b67")
+        "pool_tables.h=184b661e1e0c41b665b6751652ced874b377c917954f784fb7ee9a331ac0fd84"
+        "pool_tables.c=1e258a6867edde02a52b073043ceb1d13dbe3eb76e7a563db46c446867475301")
     string(REPLACE "=" ";" _parts "${_gen}")
     list(GET _parts 0 _file)
     list(GET _parts 1 _expected)
@@ -767,9 +769,14 @@ if(Python3_Interpreter_FOUND)
     set_tests_properties(duoforge.data.model_pool_hash PROPERTIES TIMEOUT 60
         ENVIRONMENT PYTHONDONTWRITEBYTECODE=1)
 endif()
+duoforge_add_test(NAME duoforge.state.pool_g59 SOURCES test_pool_g59.c WHITEBOX TIMEOUT 60)
+
 # Step G51 (Mega batch 4): ten Mega Stones marked with no new rule, Keen Eye and Big Pecks as engine rows (turn.c), the marks, the
 # Mega of each pair, the setup, the API, and the Keen Eye ignoreEvasion check (white-box).
 duoforge_add_test(NAME duoforge.state.pool_g51 SOURCES test_pool_g51.c WHITEBOX TIMEOUT 60)
 
 # Step G53 (decision 0030): Pressure and the foe's derived PP.
 duoforge_add_test(NAME duoforge.state.pool_g53 SOURCES test_pool_g53.c WHITEBOX TIMEOUT 60)
+
+# Step G63 (decision 0015 5bj): the simple Mega abilities Sand Force, Shell Armor, Filter and Stalwart, and their six stones.
+duoforge_add_test(NAME duoforge.state.pool_g63 SOURCES test_pool_g63.c WHITEBOX TIMEOUT 60)
