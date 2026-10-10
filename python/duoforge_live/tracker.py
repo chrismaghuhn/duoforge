@@ -496,6 +496,15 @@ class Tracker:
             if amount > 0 and last is not None and last[1] == self._parting_shot and last[2] == pos:
                 self._at(last[0]).flag = 1  # Parting Shot switches its user once it changes a stat (Contrary too)
             p.stages[detail] = min(12, max(0, p.stages[detail] + sign * amount))
+        elif kind == EV["SWAP"]:
+            # Ally Switch (step G80, decision 0044; sim/battle.ts swapPosition): the user and its partner change
+            # positions with everything that rides on the Pokemon (stages, volatiles, flags)
+            side = self._positions[pos // 2]
+            side[pos % 2], side[e[2] % 2] = side[e[2] % 2], side[pos % 2]
+        elif kind == EV["COPY_BOOST"]:
+            # Psych Up (step G80): the user takes the target's seven stages (-copyboost; the copied crit volatiles
+            # are silent decision 0018 features)
+            self._at(pos).stages = list(self._at(e[2]).stages)
         elif kind == EV["CLEAR_ALL_BOOSTS"]:
             # Haze (step G62, decision 0031; data/moves.ts haze onHitField: clearBoosts on getAllActive): every standing
             # active Pokemon's stages return to neutral
