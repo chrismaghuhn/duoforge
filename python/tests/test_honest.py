@@ -542,6 +542,41 @@ class LiveModelPolicy(unittest.TestCase):
                     self.assertEqual(live.rank_teams(b.observations[0, 0], obs_part)[0][0], int(np.argmax(logp_team[0])))
 
 
+class LiveLatency(unittest.TestCase):
+    def test_a_short_measurement_reports_every_boundary_kind_it_met(self):
+        # Task 4 of plan 2026-10-10-live-honest-search: the live search's own latency per boundary kind (no deadline),
+        # its warm-up and its outcome causes; private output outside the repository only.
+        from duoforge_learn import checkpoint, policy as learn_policy
+        from duoforge_search import live_latency
+        model_config = learn_policy.v2_config("S")
+        model = learn_policy.make(model_config, features.feature_names(4))
+        params = model.init(__import__("jax").random.PRNGKey(11))
+        with duoforge.Context(C["DUOFORGE_DATA_KIND_POOL"]) as ctx, tempfile.TemporaryDirectory() as tmp:
+            path = os.path.join(tmp, "v2.npz")
+            checkpoint.save(path, params, {"model": model_config, "encoder": 4,
+                                           "features": list(features.feature_names(4)),
+                                           "slot_features": list(features.SLOT_FEATURE_NAMES),
+                                           "data": {"kind": "pool", "fingerprint": "00"}, "teams": {}, "update": 0,
+                                           "decisions": 0, "ids": checkpoint.ids_of(ctx)})
+            out = os.path.join(tmp, "out")
+            with self.assertRaisesRegex(ValueError, "repository"):
+                live_latency.main(["--checkpoint", path, "--out", "python/tests/latency-out", "--games", "1"])
+            live_latency.main(["--checkpoint", path, "--out", out, "--games", "1", "--max-steps", "6",
+                               "--k", "2", "--m", "2", "--worlds", "2"])
+            with open(os.path.join(out, "latency.json"), encoding="utf-8") as f:
+                report = json.load(f)
+        self.assertEqual(report["games"], 1)
+        self.assertEqual(report["runtime"], "jax-cpu")
+        self.assertGreater(report["warmup"]["load_seconds"], 0.0)
+        self.assertIn("team_selection", report["boundaries"])
+        self.assertIn("turn", report["boundaries"])
+        for kind, row in report["boundaries"].items():
+            self.assertEqual(set(row), {"n", "p50", "p95", "p99", "max", "causes"}, kind)
+            self.assertTrue(row["p50"] <= row["p95"] <= row["p99"] <= row["max"], kind)
+            self.assertEqual(sum(row["causes"].values()), row["n"], kind)
+        self.assertEqual(report["settings"]["k"], 2)
+
+
 class HonestArena(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
