@@ -230,3 +230,16 @@ Commits on `chris/expansion-g74-baton-pass`: `51ec1029` (the pool row modelled: 
 **M9 (Helping Hand and Follow Me not copied): equivalent.** Recorded battle `g74_pass_helping_hand` (Ninetales uses Helping Hand on Espeon, priority +5; Espeon passes to Umbreon in the same turn). The copied volatile has duration 1 and ends at the residual of that turn. Umbreon does not act in that turn, Helping Hand boosts only its holder's moves, and no other reader of the flag exists in the pool. No later state or view can carry it: the step after the switch is at turn 2, and the view shows the flag only between the copy and the residual. The battle passes conformance and the replay (`diff_driver replay`, PASS 1), with the copy in place.
 
 **Open:** the 9 unclassified divergences, in particular 236 (an extra engine draw at a Baton Pass switch, possibly G74) and 164 (a RANDOM_TARGET draw at action-speed, not yet checked against the pass). The `each:Update` tie mechanism is for the lead to assign.
+
+## 15. Addendum: the noCopy conditions (2026-10-10, builder H14)
+
+The pin's `copyVolatileFrom` (sim/pokemon.ts:1246-1253) skips every volatile whose condition is `noCopy`. Four fields that `dfi_pass_give` copied are such conditions in the pin:
+
+- Yawn: `noCopy: true`, "doesn't get copied by Baton Pass" (data/moves.ts:21147).
+- Imprison: `noCopy: true` in its condition (data/moves.ts:9500).
+- Stockpile: `noCopy: true` in its condition (data/moves.ts:17974). Section 14 listed it as copied; that was wrong.
+- Glaive Rush: `noCopy: true` in its condition (data/moves.ts:6660).
+
+**Yawn: fixed and proven.** The copied `yawn_turns` put the entering member to sleep at the end of the turn, so the engine drew a SLEEP_TURNS sample (0..3) that the reference does not draw. This is the extra draw of battle fz_74_236 at step 24: the instrumented replay gives `DRAWREQ ... site 7 lo 0 hi 3`, tape 0 of 0, from turn.c:2289 of the unpatched source. `dfi_pass_give` no longer copies `yawn_turns`. The recorded battle `g74_pass_yawn_passer` (the random battle 236 of run 74, recorded with the pinned Showdown) covers it. Mutant Y (the Yawn copy restored in `dfi_pass_give`) is caught: `conformance_pool_data` fails (the Yawn copy changes the draws of the battle; the conformance output does not name the battle, so the catch is attributed to the pool conformance set, not to `g74_pass_yawn_passer` alone), and so does `tiebreak_pool_data`. The fixed source passes the targeted subset with the tiebreak stop count of 3984.
+
+**Imprison, Stockpile, Glaive Rush: not yet covered by a battle.** The fix drops their copies from `dfi_pass_give`, but no recorded battle has one of them active on a passer that passes, so a copy of any of the three is not caught by the battle set. They remain open. Each needs a battle in which the passer has the effect and passes, and a visible effect on the receiver (Imprison's sealed move, Glaive Rush's double damage taken, Stockpile's defense stages).
