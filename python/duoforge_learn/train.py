@@ -548,6 +548,8 @@ def _run(args, pool, on_start, stop):
     keep = bool(args.keep_init_encoder)
     if not keep:
         train_config.pop("keep_init_encoder", None)  # the saved options of a run without it are as before
+    if train_config.get("learning_rate_over") == "decisions":
+        del train_config["learning_rate_over"]  # its default: saved only by a budget-matched run
     if saved_state is not None and saved_state["data"]["fingerprint"] != context.fingerprint().hex():
         # Other tables (the data kind cannot change on resume): the run goes on when every id its network embeds
         # still names the same row (spec 12.4), and is refused otherwise.
