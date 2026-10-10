@@ -175,6 +175,39 @@ class PressureExtraTest(unittest.TestCase):
 
     def test_a_blanked_target_counts_nothing(self):
         self.assertEqual(self.extra("EXPANDINGFORCE", trace_to_c.NOPOS, self.FLAG["STILL"] | self.FLAG["SPREAD"]), 0)
+class BatonPassTest(unittest.TestCase):
+    """Step G74 (decision 0042): the receiver of a Baton Pass (`|switch|...|[from] move: Baton Pass`, no volatile
+    lines) takes the leaver's stages and confusion, the base view's fields; a plain switch resets them. The other
+    copied volatiles are decision 0018 features, which stopped the tracker at their start lines."""
+
+    def _tracker(self):
+        from duoforge_live import tracker
+        from types import SimpleNamespace
+        D = data.load(kind="pool")
+        t = tracker.Tracker.__new__(tracker.Tracker)
+        t.data, t.side, t._spectator = D, 0, False
+        t._baton_pass = D.tables["MOVE"]["BATONPASS"]
+        members = [SimpleNamespace(seen=False, hp_percent=100, hp_flag=0, status=0) for _ in range(6)]
+        t._member = lambda side: members
+        t._positions = [[tracker._Position(), tracker._Position()], [tracker._Position(), tracker._Position()]]
+        leaver = t._positions[0][0]
+        leaver.occupant, leaver.stages, leaver.confused = 0, [8, 6, 6, 4, 6, 6, 6], 1
+        return t, D, tracker
+
+    def test_the_receiver_takes_stages_and_confusion(self):
+        t, D, tracker = self._tracker()
+        t._event(trace_to_c.ev_tuple(trace_to_c.EV["SWITCH"], 0, trace_to_c.NOPOS, trace_to_c.CAUSE["MOVE"], 3,
+                                     D.tables["MOVE"]["BATONPASS"], 100, 100, 1))
+        p = t._positions[0][0]
+        self.assertEqual((p.occupant, p.stages, p.confused), (3, [8, 6, 6, 4, 6, 6, 6], 1))
+
+    def test_a_plain_switch_resets_them(self):
+        t, D, tracker = self._tracker()
+        t._event(trace_to_c.ev_tuple(trace_to_c.EV["SWITCH"], 0, trace_to_c.NOPOS, 0, 3, 0, 100, 100, 1))
+        p = t._positions[0][0]
+        self.assertEqual((p.occupant, p.stages, p.confused), (3, [tracker.STAGE_NEUTRAL] * 7, 0))
+
+
 class ClearAllBoostsTest(unittest.TestCase):
     """Step G62 (decision 0031): Haze's CLEAR_ALL_BOOSTS returns the stages of every standing active Pokemon to
     neutral (data/moves.ts haze onHitField: getAllActive, sim/pokemon.ts clearBoosts); an empty or fainted position

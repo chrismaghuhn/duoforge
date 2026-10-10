@@ -353,7 +353,9 @@ class LinesTest(unittest.TestCase):
 
     def test_unknown_lines_stop(self):
         self.assertEqual(self.stop("|-sethp|p1a: Staraptor|50/100"), "line:-sethp")
-        self.assertEqual(self.stop("|move|p1a: Staraptor|Baton Pass|p1a: Staraptor"), "line:move Baton Pass")
+        self.assertEqual(self.stop("|move|p1a: Staraptor|Shed Tail|p1a: Staraptor"), "line:move Shed Tail")
+        # Step G74 (decision 0042): Baton Pass is folded, its copy rides on the SWITCH event of the receiver
+        self.assertEqual(lines.check("|move|p1a: Staraptor|Baton Pass|p1a: Staraptor", self.view), "fold")
         self.assertEqual(self.stop("|-activate|p1a: Staraptor|move: Court Change"), "line:-activate move: Court Change")
         self.assertEqual(self.stop("|-ability|p1a: Staraptor|Pressure"), "line:-ability Pressure")
 
