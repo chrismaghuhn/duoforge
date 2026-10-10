@@ -199,7 +199,13 @@ static void test_constants(df_test *t)
                      ((uint64_t)1u << 40u) | ((uint64_t)1u << 38u) | /* step G42: Roost (bit 40); step G54: Quick Guard (bit 38) */
                      ((uint64_t)1u << 26u) | /* step I2a: Illusion (bit 26) */
                      ((uint64_t)1u << 23u) | /* step G60: Substitute (bit 23) */
-                     ((uint64_t)1u << 24u))); /* step G72b: Dragon Cheer (bit 24); MOVE_FAILED (bit 41) stays clear, see support_manifest.c */
+                     ((uint64_t)1u << 24u) | /* step G72b: Dragon Cheer (bit 24); MOVE_FAILED (bit 41) stays clear, see support_manifest.c */
+                     /* encoder 6's reserve families (decision 0050), exact while no bit of theirs is defined */
+                     ((uint64_t)1u << 59u) | /* RESERVE_VOLATILES */
+                     ((uint64_t)1u << 60u) | /* VOLATILES2 */
+                     ((uint64_t)1u << 61u) | /* RESERVE_GUARDS */
+                     ((uint64_t)1u << 62u) | /* SIDE_CONDITIONS */
+                     ((uint64_t)1u << 63u))); /* FIELD_FLAGS */
 }
 
 /* The expected extension: all zero, and under POOL the header of the paired observation. */
