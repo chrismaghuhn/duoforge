@@ -145,9 +145,9 @@ class LiveSearch:
         return self._classify(future, self.clock() - start)
 
 
-def load(checkpoint_path):
-    """The LiveSearch of a format-2 checkpoint in its trained layout (HONEST_SETTINGS, the live spread table). Its
-    close() also closes the search and its context."""
+def load(checkpoint_path, settings=None):
+    """The LiveSearch of a format-2 checkpoint in its trained layout (HONEST_SETTINGS unless settings is given, the
+    live spread table). Its close() also closes the search and its context."""
     import duoforge
     from duoforge_learn import checkpoint
     from duoforge_learn.train import DATA_KINDS
@@ -159,7 +159,8 @@ def load(checkpoint_path):
     try:
         table, _, _ = honest.live_spread_table(context)
         searcher = honest.Honest(context, model, params, checkpoint.encoder_of(config),
-                                 checkpoint.ext_supported_of(config), table=table, **HONEST_SETTINGS)
+                                 checkpoint.ext_supported_of(config), table=table,
+                                 **(HONEST_SETTINGS if settings is None else settings))
         live = LiveSearch(searcher)
     except BaseException:
         if searcher is not None:
