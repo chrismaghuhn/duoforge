@@ -3891,15 +3891,24 @@ static bool dfi_soak(dfi_run *r, uint32_t flat, uint32_t move_id)
  * faint lines, then the Update after it (:574). A side or field move does
  * not reach the hit loop. */
 static duoforge_status dfi_terrain_change(dfi_run *r);
-static duoforge_status dfi_status_hit_end(dfi_run *r)
+/* The two Updates of the Champions hit loop after a hit step (data/mods/champions/scripts.ts:537 and :574), with the faint lines
+ * between them. Every status hit that reaches the loop runs them, whatever its result: a true hit, and a hit whose target result is
+ * NOT_FAIL (Ally Switch's onHit when there is no partner: the damage entry is '' (not false), so neither the break at :526 nor the
+ * return at :572 is taken). The result is set by the caller. */
+static duoforge_status dfi_status_updates(dfi_run *r)
 {
-    r->mres |= DFI_MRES_TRUE; /* the effect applied: the move's hit returns true (sim/battle-actions.ts, runMoveEffects) */
     const duoforge_status st = dfi_update(r);
     if (st != DUOFORGE_OK) {
         return st;
     }
     dfi_announce_faints(r, false); /* no status move in the data costs its user HP */
     return dfi_update(r);
+}
+
+static duoforge_status dfi_status_hit_end(dfi_run *r)
+{
+    r->mres |= DFI_MRES_TRUE; /* the effect applied: the move's hit returns true (sim/battle-actions.ts, runMoveEffects) */
+    return dfi_status_updates(r);
 }
 
 /* Protect (data/moves.ts protect, data/conditions.ts stall): fails without a
@@ -4605,11 +4614,12 @@ static void dfi_ally_switch_swap(dfi_run *r, uint32_t user, uint32_t partner)
  * other slot of its side must hold a standing Pokemon, else the move fails with `-fail|X|move: Ally Switch` and [still] (the cause
  * MOVE with Ally Switch, detail 0, lead's approval). A side whose partner may be Illusion (the Illusion row is unmodelled until
  * decision 0026) is refused with E_UNSUPPORTED before anything changes. The move's own fail (the failed roll) is dfi_fail_still. */
-static duoforge_status dfi_run_ally_switch(dfi_run *r, uint32_t user, bool *ok)
+static duoforge_status dfi_run_ally_switch(dfi_run *r, uint32_t user, bool *ok, bool *hit_ran)
 {
     struct duoforge_battle *b = r->b;
     const uint32_t partner = (user / 2u) * 2u + (1u - user % 2u);
     *ok = false;
+    *hit_ran = false; /* true when the onHit ran (the hit loop's Updates follow it, even for the NOT_FAIL of no partner) */
     const dfi_member *um = dfi_at(b, user);
     const dfi_member *pm = dfi_at(b, partner);
     if ((um != NULL && dfi_ability(b, um, DFI_ABILITY_ILLUSION)) || (pm != NULL && dfi_ability(b, pm, DFI_ABILITY_ILLUSION))) {
@@ -4621,10 +4631,11 @@ static duoforge_status dfi_run_ally_switch(dfi_run *r, uint32_t user, bool *ok)
         return st;
     }
     if (!passed) {
-        dfi_fail_still(r, user); /* -fail|X with [still]: the consecutive roll failed */
+        dfi_fail_still(r, user); /* -fail|X with [still]: the consecutive roll failed; PrepareHit fails, no hit loop (no Update) */
         return DUOFORGE_OK;
     }
     if (!dfi_alive(b, partner)) {
+        *hit_ran = true; /* onHit ran: -fail|X|move: Ally Switch, then the hit loop's Updates (the caller) */
         const duoforge_event f = dfi_ev(DUOFORGE_EVENT_FAIL, user, DUOFORGE_CAUSE_MOVE, DFI_MOVE_ALLYSWITCH, DUOFORGE_NO_POSITION);
         dfi_emit(r, &f);
         dfi_still(r);
@@ -5967,9 +5978,15 @@ static duoforge_status dfi_status_effects(dfi_run *r, uint32_t user, uint32_t mo
             if (md->special == DFI_SPECIAL_ALLY_SWITCH) {
                 /* self-targeted: the one target is the user (its ally is found in dfi_run_ally_switch) */
                 bool swapped = false;
-                st = dfi_run_ally_switch(r, user, &swapped);
+                bool hit_ran = false;
+                st = dfi_run_ally_switch(r, user, &swapped, &hit_ran);
                 if (st != DUOFORGE_OK) {
                     return st;
+                }
+                if (hit_ran) {
+                    /* The partner-missing fail: the result stays NULL (dfi_run_ally_switch), and the hit loop's two Updates run
+                     * (scripts.ts:537, :574); no generic else-branch (the FALSE bits of the hit targets) follows it. */
+                    return dfi_status_updates(r);
                 }
                 if (swapped) {
                     r->mres |= DFI_MRES_TRUE;
