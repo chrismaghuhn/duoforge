@@ -5887,6 +5887,13 @@ static const df_tb_stop tb_g80_howl_soundproof[] = {
     {1u, 0u, 2u, 3u, {4u, 4u}, {731u, 739u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
     {2u, 0u, 2u, 2u, {4u, 4u}, {628u, 739u}, {0x404cf9ef8a2dea57ull, 0x4050aaaaaaaaaaabull}},
 };
+static const df_tb_stop tb_g80_mirror_sitrus[] = {
+    {0u, 0u, 3u, 4u, {6u, 6u}, {1186u, 1186u}, {0x4059000000000000ull, 0x4059000000000000ull}},
+    {1u, 0u, 3u, 4u, {4u, 4u}, {769u, 769u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {2u, 0u, 3u, 4u, {4u, 4u}, {769u, 769u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {3u, 0u, 3u, 4u, {4u, 4u}, {769u, 769u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {4u, 0u, 3u, 4u, {4u, 4u}, {769u, 769u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+};
 static const df_tb_stop tb_g80_psychup_dragoncheer[] = {
     {0u, 0u, 1u, 3u, {6u, 6u}, {1186u, 1123u}, {0x4059000000000000ull, 0x4059000000000000ull}},
     {1u, 0u, 1u, 3u, {4u, 4u}, {802u, 739u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
@@ -7929,6 +7936,7 @@ static const df_tb_battle tb_battles[] = {
     {"g80_allyswitch_tantrum_b", 4u, tb_g80_allyswitch_tantrum_b, sizeof tb_g80_allyswitch_tantrum_b / sizeof tb_g80_allyswitch_tantrum_b[0]},
     {"g80_allyswitch_tantrum_c", 4u, tb_g80_allyswitch_tantrum_c, sizeof tb_g80_allyswitch_tantrum_c / sizeof tb_g80_allyswitch_tantrum_c[0]},
     {"g80_howl_soundproof", 2u, tb_g80_howl_soundproof, sizeof tb_g80_howl_soundproof / sizeof tb_g80_howl_soundproof[0]},
+    {"g80_mirror_sitrus", 4u, tb_g80_mirror_sitrus, sizeof tb_g80_mirror_sitrus / sizeof tb_g80_mirror_sitrus[0]},
     {"g80_psychup_dragoncheer", 5u, tb_g80_psychup_dragoncheer, sizeof tb_g80_psychup_dragoncheer / sizeof tb_g80_psychup_dragoncheer[0]},
     {"g8_heal_block", 6u, tb_g8_heal_block, sizeof tb_g8_heal_block / sizeof tb_g8_heal_block[0]},
     {"g8_heal_block_pair", 6u, tb_g8_heal_block_pair, sizeof tb_g8_heal_block_pair / sizeof tb_g8_heal_block_pair[0]},
@@ -8058,7 +8066,7 @@ static const df_tb_battle tb_battles[] = {
     {"xr3_sheercold_sub_miss", 3u, tb_xr3_sheercold_sub_miss, sizeof tb_xr3_sheercold_sub_miss / sizeof tb_xr3_sheercold_sub_miss[0]},
 };
 
-/* 5415 stops: 150 of an ended battle; decided by the count 1299,
- * the HP percentage 1699, the total HP 2123, a tie 144;
- * winners: side 0 2588, side 1 2683, tie 144 */
+/* 5420 stops: 150 of an ended battle; decided by the count 1299,
+ * the HP percentage 1699, the total HP 2123, a tie 149;
+ * winners: side 0 2588, side 1 2683, tie 149 */
 #endif
