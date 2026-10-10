@@ -5498,8 +5498,11 @@ static duoforge_status dfi_substitute_takes(dfi_run *r, uint32_t user, uint32_t 
         const uint32_t amount = (dealt * md->drain[0] + md->drain[1] - 1u) / md->drain[1];
         dfi_heal(r, user, amount, DUOFORGE_CAUSE_DRAIN, 0u, target);
     }
-    /* AfterSubDamage on the Substitute's holder (data/moves.ts:18368-18369, after the recoil and the drain): an Air Balloon pops. */
-    if (dfi_holds(r->b, dfi_at(r->b, target), DFI_ITEM_AIRBALLOON)) {
+    /* AfterSubDamage on the Substitute's holder (data/moves.ts:18368-18369, after the recoil and the drain): an Air Balloon pops.
+     * Struggle's recoil is not in this function (the move body applies it after the hit loop), so for Struggle the pop waits
+     * for that recoil: the move body pops it (step G67, measured in fz_6700000_3: Struggle, the sub's [damage], [from] recoil,
+     * then -enditem). */
+    if ((md->flags & DFI_MOVE_FLAG_STRUGGLE_RECOIL) == 0u && dfi_holds(r->b, dfi_at(r->b, target), DFI_ITEM_AIRBALLOON)) {
         dfi_use_item(r, target);
     }
     return DUOFORGE_OK;
@@ -7156,6 +7159,8 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
     /* The targets whose hit of the previous iteration a Substitute took: their hit is back on for the next hit (the target is
      * still hit by the move; only this hit went to the Substitute). */
     bool sub_off[DFI_POSITIONS] = {false, false, false, false};
+    /* step G67: a target whose Struggle hit a Substitute took: its Air Balloon pops after the Struggle recoil, not at the hit */
+    bool sub_struggle[DFI_POSITIONS] = {false, false, false, false};
     for (uint32_t hit_no = 1u; hit_no <= hits_total; ++hit_no) {
         if (hit_no > 1u) {
             if (!any) {
@@ -7198,6 +7203,7 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
                         sub_off[i] = true;
                         sub_any = true;
                         absorbed_any = true;
+                        sub_struggle[i] = (md->flags & DFI_MOVE_FLAG_STRUGGLE_RECOIL) != 0u;
                     }
                 }
             }
@@ -7839,6 +7845,13 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
                 return st;
             }
             dfi_emergency_exit(r, user, user_before); /* inside applyRecoilDamage */
+        }
+        /* step G67: the Air Balloon of a Substitute's holder that a Struggle hit went to pops after the recoil (see
+         * dfi_substitute_takes). */
+        for (uint32_t i = 0u; i < count; ++i) {
+            if (sub_struggle[i] && dfi_holds(r->b, dfi_at(r->b, targets[i]), DFI_ITEM_AIRBALLOON)) {
+                dfi_use_item(r, targets[i]);
+            }
         }
         st = dfi_update(r);
         if (st != DUOFORGE_OK) {
