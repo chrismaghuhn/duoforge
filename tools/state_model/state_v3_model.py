@@ -298,7 +298,7 @@ KD = TeamCContext(KIND_TEAM_C_DEV, 6, 4)
 # which tests/test_pool_tables.c recomputes from the pool canonical bytes: the
 # pool layout over the pool data, then the family columns, the handler columns
 # and the moves and abilities that each forme may have.
-POOL_TABLE_HASH = bytes.fromhex('5ef14015b774e5d9ed87b714b1f578310ff877da50cf93a3cb86a9b286da797a')
+POOL_TABLE_HASH = bytes.fromhex('45d29bd78c699e1fdd8e301e4e9af140bc062d4fcaa4485a4e0cf199caa6c0fb')
 KIND_POOL, KIND_POOL_DEV = 6, 7
 
 
@@ -973,8 +973,9 @@ def hazard_order_valid(ts):
 
 
 def position_flags_valid(pf):
-    """Rev 5 (G72b): bit 0 (Healing Wish) and bits 4-7 are zero, and the Dragon Cheer stage (bits 2-3) is at most 2."""
-    return pf & ~0x0F == 0 and pf & 0x01 == 0 and (pf >> 2) & 3 <= 2
+    """Rev 5 (G72b, G88): bit 0 (Healing Wish), bit 4 (Destiny Bond, not yet on this branch) and bit 7 are zero; bits 0-3, 5
+    and 6 are the known bits; the Dragon Cheer stage (bits 2-3) is at most 2 (G88 adds LOWERED 0x20 and HURT 0x40)."""
+    return pf & ~0x6F == 0 and pf & 0x01 == 0 and (pf >> 2) & 3 <= 2
 
 
 def tail_pos_valid(ctx, tp, flat, mem, slot_flags=0):

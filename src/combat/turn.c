@@ -135,6 +135,13 @@ static uint32_t dfi_dragon_cheer_stage(const struct duoforge_battle *b, uint32_t
            DFI_POSFLAG_DRAGON_CHEER_SHIFT;
 }
 
+/* Step G88 (decision 0046): the turn-history bits of a position, LOWERED (Lash Out, statsLoweredThisTurn) and HURT (Assurance,
+ * hurtThisTurn). Both are zero at a turn boundary and with the occupant. */
+static bool dfi_pos_flag(const struct duoforge_battle *b, uint32_t flat, uint32_t bit)
+{
+    return (((uint32_t)b->tail.sides[flat / 2u].positions[flat % 2u].position_flags & bit) != 0u);
+}
+
 /* The brought members of a side at 0 HP: side.totalFainted, since the
  * data has no revival and faints are processed before the next action
  * (decision 0009 section 4.1; Last Respects). */
@@ -1211,6 +1218,11 @@ static bool dfi_boost(dfi_run *r, uint32_t flat, const uint8_t *boosts, uint32_t
             dfi_tail_pos *tp = &r->b->tail.sides[flat / 2u].positions[flat % 2u];
             tp->position_flags = (uint8_t)((uint32_t)tp->position_flags | DFI_POSFLAG_STATS_RAISED); /* wide-operands-reviewed */
         }
+        if (after < before && dfi_kind_limits_of(r->ctx->data_kind).pool_rules) {
+            /* statsLoweredThisTurn (sim/battle.ts:2086): a real drop of a stage, any source (step G88, decision 0046). */
+            dfi_tail_pos *tp = &r->b->tail.sides[flat / 2u].positions[flat % 2u];
+            tp->position_flags = (uint8_t)((uint32_t)tp->position_flags | DFI_POSFLAG_LOWERED); /* wide-operands-reviewed */
+        }
         const uint32_t by = after > before ? after - before : before - after;
         /* -unboost for a fall, and for any change at -6 */
         const bool down = capped[i] < DFI_BIAS6 || after == 0u;
@@ -1662,6 +1674,18 @@ static duoforge_status dfi_get_damage(dfi_run *r, uint32_t user, uint32_t target
          * of its positive stages (Pokemon.positiveBoosts, sim/pokemon.ts:1201-1208). A stage is stored biased by 6. */
         const uint32_t positive = dfi_power_trip_positive_stages(ap->stages);
         power = (uint32_t)md->base_power + 20u * positive;
+    } else if (md->special == DFI_SPECIAL_ASSURANCE) {
+        /* Assurance's basePowerCallback (step G88, data/moves.ts:648-653): doubled when the target was hurt this turn (the
+         * HURT_THIS_TURN bit, decision 0046). */
+        if (dfi_pos_flag(r->b, target, DFI_POSFLAG_HURT)) {
+            power *= 2u;
+        }
+    } else if (md->special == DFI_SPECIAL_LASH_OUT) {
+        /* Lash Out's onBasePower (step G88, data/moves.ts:10055-10059): chainModify(2) when the user's stat fell this turn
+         * (LOWERED_THIS_TURN, decision 0046). */
+        if (dfi_pos_flag(r->b, user, DFI_POSFLAG_LOWERED)) {
+            power *= 2u;
+        }
     } else if (md->special == DFI_SPECIAL_RAGE_FIST) {
         /* Rage Fist's basePowerCallback (step G48, data/moves.ts:14583-14596): 50 + 50 x the user's timesAttacked, at most 350.
          * timesAttacked counts the damaging hits the user took since it came in (the Champions loop, scripts.ts:565, and the
@@ -2055,9 +2079,12 @@ static duoforge_status dfi_get_damage(dfi_run *r, uint32_t user, uint32_t target
     return DUOFORGE_OK;
 }
 
-/* Pokemon.damage: HP never below 0; reaching 0 queues the faint. */
-static duoforge_status dfi_deal(dfi_run *r, uint32_t flat, uint32_t amount, uint32_t cause, uint32_t id2,
-                                uint32_t other)
+/* Pokemon.damage: HP never below 0; reaching 0 queues the faint. `spread` is the pin's spreadDamage path (every damage except
+ * the directDamage callers: Substitute's cost, Clangorous Soul, the confusion self-hit, Struggle's recoil). Only the spread path
+ * sets HURT_THIS_TURN (step G88, sim/battle.ts:2137-2138), and only when the occupant is still alive afterwards (the pin stores
+ * target.hp, which is read as a truth value). */
+static duoforge_status dfi_deal_ex(dfi_run *r, uint32_t flat, uint32_t amount, uint32_t cause, uint32_t id2, uint32_t other,
+                                   bool spread)
 {
     dfi_member *m = dfi_at(r->b, flat);
     const uint32_t hp = m->hp;
@@ -2067,6 +2094,10 @@ static duoforge_status dfi_deal(dfi_run *r, uint32_t flat, uint32_t amount, uint
     m->hp = (uint16_t)(hp > amount ? hp - amount : 0u); /* wide-operands-reviewed: <= hp */
     if (amount != 0u) {
         dfi_emit_hp(r, dfi_ev(DUOFORGE_EVENT_DAMAGE, flat, cause, id2, other)); /* [-damage] */
+        if (spread && m->hp != 0u && dfi_kind_limits_of(r->ctx->data_kind).pool_rules) {
+            dfi_tail_pos *tp = &r->b->tail.sides[flat / 2u].positions[flat % 2u];
+            tp->position_flags = (uint8_t)((uint32_t)tp->position_flags | DFI_POSFLAG_HURT); /* wide-operands-reviewed */
+        }
     }
     if (m->hp == 0u) {
         if (dfi_support.switching == 0u) {
@@ -2080,6 +2111,12 @@ static duoforge_status dfi_deal(dfi_run *r, uint32_t flat, uint32_t amount, uint
         }
     }
     return DUOFORGE_OK;
+}
+
+/* The spread path of Pokemon.damage (every caller but the directDamage ones): see dfi_deal_ex. */
+static duoforge_status dfi_deal(dfi_run *r, uint32_t flat, uint32_t amount, uint32_t cause, uint32_t id2, uint32_t other)
+{
+    return dfi_deal_ex(r, flat, amount, cause, id2, other, true);
 }
 
 /* runStatusImmunity('psn') (Team C; Toxic asks for 'psn' too, sim/pokemon.ts:1713): a type whose chart entry carries the
@@ -3818,7 +3855,7 @@ static duoforge_status dfi_before_move(dfi_run *r, uint32_t user, uint32_t move_
                     dfi_use_item(r, user);
                     damage = (uint32_t)m->hp - 1u;
                 }
-                return dfi_deal(r, user, damage, DUOFORGE_CAUSE_CONFUSION, 0u, DUOFORGE_NO_POSITION);
+                return dfi_deal_ex(r, user, damage, DUOFORGE_CAUSE_CONFUSION, 0u, DUOFORGE_NO_POSITION, false); /* directDamage */
             }
         }
     }
@@ -4631,7 +4668,8 @@ static duoforge_status dfi_run_clangorous_soul(dfi_run *r, uint32_t user, const 
     }
     uint32_t cost = (uint32_t)m->hp_max * 33u / 100u;
     cost = cost == 0u ? 1u : cost;
-    const duoforge_status st = dfi_deal(r, user, cost, DUOFORGE_CAUSE_NONE, 0u, DUOFORGE_NO_POSITION);
+    /* directDamage (sim/battle-actions.ts Clangorous Soul, data/moves.ts:2515): not a spread damage, no HURT_THIS_TURN (G88). */
+    const duoforge_status st = dfi_deal_ex(r, user, cost, DUOFORGE_CAUSE_NONE, 0u, DUOFORGE_NO_POSITION, false);
     if (st != DUOFORGE_OK) {
         return st;
     }
@@ -5252,7 +5290,8 @@ static duoforge_status dfi_run_substitute(dfi_run *r, uint32_t user)
     e.detail = (uint8_t)DUOFORGE_VOLATILE_SUBSTITUTE;
     dfi_emit(r, &e);
     /* onHit: the -damage line of the user has no [from] (sim/battle.ts directDamage, default branch) */
-    return dfi_deal(r, user, quarter == 0u ? 1u : quarter, DUOFORGE_CAUSE_NONE, 0u, DUOFORGE_NO_POSITION);
+    /* the Substitute cost is directDamage (data/moves.ts:18325): no HURT_THIS_TURN (G88) */
+    return dfi_deal_ex(r, user, quarter == 0u ? 1u : quarter, DUOFORGE_CAUSE_NONE, 0u, DUOFORGE_NO_POSITION, false);
 }
 
 /* The Substitute of a target takes a hit of a move (decision 0032, data/moves.ts:18341-18366: onTryPrimaryHit, run for every
@@ -6595,7 +6634,8 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
         md->special != DFI_SPECIAL_QUASH && md->special != DFI_SPECIAL_SUBSTITUTE && md->special != DFI_SPECIAL_PHANTOM_FORCE &&
         md->special != DFI_SPECIAL_STEEL_BEAM && md->special != DFI_SPECIAL_THUNDER_WAVE &&
         md->special != DFI_SPECIAL_SKILL_SWAP &&
-        md->special != DFI_SPECIAL_ALLURING_VOICE && md->special != DFI_SPECIAL_DRAGON_CHEER) {
+        md->special != DFI_SPECIAL_ALLURING_VOICE && md->special != DFI_SPECIAL_DRAGON_CHEER &&
+        md->special != DFI_SPECIAL_LASH_OUT && md->special != DFI_SPECIAL_ASSURANCE) {
         return DUOFORGE_E_INVARIANT;
     }
     /* Steel Roller's onTry (step G34, data/moves.ts:17893-17913): it fails without a terrain, with -fail and [still]. */
@@ -7612,7 +7652,10 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
         }
         if (recoil != 0u) {
             const uint32_t user_before = m->hp;
-            st = dfi_deal(r, user, recoil, recoil_cause, recoil_id2, DUOFORGE_NO_POSITION);
+            /* Struggle's recoil is directDamage (strugglerecoil, sim/battle.ts:2246-2248): no HURT_THIS_TURN; every other recoil is
+         * applyRecoilDamage, a spread damage (G88). */
+        st = dfi_deal_ex(r, user, recoil, recoil_cause, recoil_id2, DUOFORGE_NO_POSITION,
+                         (md->flags & DFI_MOVE_FLAG_STRUGGLE_RECOIL) == 0u);
             if (st != DUOFORGE_OK) {
                 return st;
             }
@@ -9640,7 +9683,9 @@ static duoforge_status dfi_end_turn(dfi_run *r)
         pos->flags = (uint8_t)((uint32_t)pos->flags & ~DFI_VOL_NEWLY_SWITCHED); /* wide-operands-reviewed */
         /* statsRaisedThisTurn is cleared at the turn's end (sim/battle.ts:1678, endTurn): the raised bit is per turn */
         b->tail.sides[flat / 2u].positions[flat % 2u].position_flags =
-            (uint8_t)((uint32_t)b->tail.sides[flat / 2u].positions[flat % 2u].position_flags & ~(uint32_t)DFI_POSFLAG_STATS_RAISED); /* wide-operands-reviewed */
+            (uint8_t)((uint32_t)b->tail.sides[flat / 2u].positions[flat % 2u].position_flags &
+                      ~(uint32_t)(DFI_POSFLAG_STATS_RAISED | DFI_POSFLAG_LOWERED | DFI_POSFLAG_HURT)); /* wide-operands-reviewed */
+        /* statsLoweredThisTurn (sim/battle.ts:1679) and hurtThisTurn (sim/battle.ts:1682) are cleared here too (G88) */
         /* moveLastTurnResult = moveThisTurnResult, then this turn's is undefined (sim/battle.ts:1674-1675). The unclassified
          * bit moves with the result (step G42). */
         dfi_tail_pos *tp = &b->tail.sides[flat / 2u].positions[flat % 2u];

@@ -583,7 +583,8 @@ static bool dfi_hazard_order_valid(const dfi_tail_side *ts)
 
 /* The tail of a standing occupant's position: the ranges, the pairs that are zero together and the sources that are
  * never the occupant itself (flat is its position, side * 2 + slot). */
-/* The position flags (tail rev 5, G72b): bit 0 (Healing Wish) and bits 4-7 are zero, and the Dragon Cheer stage is at most 2. */
+/* The position flags (tail rev 5, G72b; G88 adds bits 5 and 6): bit 0 (Healing Wish) and bits 4 and 7 are zero, and the Dragon
+ * Cheer stage is at most 2. */
 static bool dfi_position_flags_ok(uint8_t pf)
 {
     return (pf & ~DFI_POSFLAG_VALID_MASK) == 0u && (pf & DFI_POSFLAG_HEALING_WISH) == 0u &&
@@ -639,7 +640,8 @@ static bool dfi_tail_pos_valid(const dfi_kind_limits *lim, const dfi_tail_pos *t
     /* Rev 5 (lane A, G72b, decision 0015 5ce): the position flags (bit 0 Healing Wish, never set: bits 4-7 are zero; the stats-
      * raised bit and the Dragon Cheer stage only with an occupant; the stage at most 2). Future Sight stays zero. */
     const bool posflags_ok = dfi_position_flags_ok(tp->position_flags) &&
-                          ((tp->position_flags & (DFI_POSFLAG_STATS_RAISED | DFI_POSFLAG_DRAGON_CHEER_MASK)) == 0u ||
+                          ((tp->position_flags & (DFI_POSFLAG_STATS_RAISED | DFI_POSFLAG_DRAGON_CHEER_MASK | DFI_POSFLAG_LOWERED |
+                                                  DFI_POSFLAG_HURT)) == 0u ||
                            slot->occupant < DUOFORGE_MAX_ROSTER);
     const bool rev5_ok = posflags_ok && tp->future_sight == 0u;
     return encore_ok && bars_ok && disable_ok && flags_ok && substitute_ok && trap_ok && leech_ok && stockpile_ok &&

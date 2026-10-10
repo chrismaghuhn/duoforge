@@ -2291,6 +2291,8 @@ SPECIAL_P = dict(SPECIAL_C, **{
     'populationbomb': ('MULTI_HIT_10', set()),
     'alluringvoice': ('ALLURING_VOICE', set()),                       # G72b: confusion when the target's stats were raised this turn
     'dragoncheer': ('DRAGON_CHEER', set()),    # G72b: the crit stage of its target (the ally), by its Dragon type at start
+    'lashout': ('LASH_OUT', {'onBasePower'}),   # G88: 2x power when the user's stat fell this turn (position flag LOWERED, decision 0046)
+    'assurance': ('ASSURANCE', {'basePowerCallback'}),  # G88: 2x power when the target was hurt this turn (position flag HURT)
     'doubleshock': ('DOUBLE_SHOCK', {'onTryMove'}),                       # G50: fails without Electric; its self effect is owned                            # G48: ten hits, a check for each (multiaccuracy)
     'steelbeam': ('STEEL_BEAM', {'onMoveFail'}),                          # G68: mindBlownRecoil (half the maximum HP on a hit and in MoveFail)
     'thunderwave': ('THUNDER_WAVE', set()),                               # G68: ignoreImmunity false (Ground is immune to the Electric move)
@@ -2369,6 +2371,21 @@ G66_HANDLERS = ['KINGS_SHIELD']
 # Step G72b (decision 0015 5ce, lead's approval): Alluring Voice's secondary (confusion when the target's stats were raised this
 # turn: the position flag of tail rev 5) and Dragon Cheer's volatile (the crit stage in the position flags).
 G72B_HANDLERS = ['ALLURING_VOICE', 'DRAGON_CHEER']
+# Step G88 (decision 0046): Lash Out's onBasePower (data/moves.ts:10048-10066) and Assurance's basePowerCallback
+# (data/moves.ts:643-660). Both read a turn-history position flag (LOWERED, HURT); the flags are set and cleared by the engine.
+G88_HANDLERS = ['LASH_OUT', 'ASSURANCE']
+G88_FACTS = {
+    'assurance': (
+        'accuracy: 100,', 'basePower: 60,', 'category: "Physical",', 'priority: 0,',
+        'flags: { contact: 1, protect: 1, mirror: 1, metronome: 1 },', 'if (target.hurtThisTurn) {',
+        'return move.basePower * 2;', 'target: "normal",', 'type: "Dark",',
+    ),
+    'lashout': (
+        'accuracy: 100,', 'basePower: 75,', 'category: "Physical",', 'priority: 0,',
+        'flags: { contact: 1, protect: 1, mirror: 1, metronome: 1 },', 'onBasePower(basePower, source) {',
+        'if (source.statsLoweredThisTurn) {', 'return this.chainModify(2);', 'target: "normal",', 'type: "Dark",',
+    ),
+}
 G72B_FACTS = (
     'accuracy: 100,', 'basePower: 80,', 'category: "Special",', 'priority: 0,',
     'flags: { protect: 1, mirror: 1, sound: 1, bypasssub: 1, metronome: 1 },', 'chance: 100,',
@@ -2472,7 +2489,7 @@ G68_FACTS = (
                      'flags: { protect: 1, reflectable: 1, mirror: 1, metronome: 1 },', "status: 'par',",
                      'ignoreImmunity: false,', 'target: "normal",', 'type: "Electric",']),
 )
-SPECIAL_IDS_P = SPECIAL_IDS_C + G2_HANDLERS + WEATHER_HANDLERS + G16_HANDLERS + G15_HANDLERS + G19_HANDLERS + G20_HANDLERS + G20_PROTECT_HANDLERS + G28_HANDLERS + G30_HANDLERS + G32_HANDLERS + G34_HANDLERS + G27_HANDLERS + G25_HANDLERS + G26_HANDLERS + G33_HANDLERS + G38_HANDLERS + G29_HANDLERS + G39_HANDLERS + G31_HANDLERS + G48_HANDLERS + G44_HANDLERS + G50_HANDLERS + G42_HANDLERS + G56_HANDLERS + G52_HANDLERS + G54_HANDLERS + G64_HANDLERS + G62_HANDLERS + G60_HANDLERS + G58_HANDLERS + G68_HANDLERS + G70_HANDLERS + G66_HANDLERS + G72B_HANDLERS + ['UNMODELED']# Step G10 made two of these handlers data: Scald (thawsTarget) and Recover (heal) are read into the second flags# byte (bit 4, thaws the target) and the heal column, and have the special NONE; their ids stay defined (the ids after
+SPECIAL_IDS_P = SPECIAL_IDS_C + G2_HANDLERS + WEATHER_HANDLERS + G16_HANDLERS + G15_HANDLERS + G19_HANDLERS + G20_HANDLERS + G20_PROTECT_HANDLERS + G28_HANDLERS + G30_HANDLERS + G32_HANDLERS + G34_HANDLERS + G27_HANDLERS + G25_HANDLERS + G26_HANDLERS + G33_HANDLERS + G38_HANDLERS + G29_HANDLERS + G39_HANDLERS + G31_HANDLERS + G48_HANDLERS + G44_HANDLERS + G50_HANDLERS + G42_HANDLERS + G56_HANDLERS + G52_HANDLERS + G54_HANDLERS + G64_HANDLERS + G62_HANDLERS + G60_HANDLERS + G58_HANDLERS + G68_HANDLERS + G70_HANDLERS + G66_HANDLERS + G72B_HANDLERS + G88_HANDLERS + ['UNMODELED']# Step G10 made two of these handlers data: Scald (thawsTarget) and Recover (heal) are read into the second flags# byte (bit 4, thaws the target) and the heal column, and have the special NONE; their ids stay defined (the ids after
 # them keep their values). First Impression and Low Kick keep theirs: the turn code implements them.
 POOL_COLUMN_KEYS = {'thawsTarget', 'heal'}
 G2_OWNED_FIELDS = {
@@ -3264,6 +3281,18 @@ def check_g58_facts(moves_ts):
             fail('move phantomforce: the entry no longer has "%s"' % fact)
 
 
+def check_g88_facts(moves_ts):
+    """Step G88: the Lash Out and Assurance entries are the pinned texts the turn code reads."""
+    for mid, facts in sorted(G88_FACTS.items()):
+        e = moves_ts.entry(mid)
+        if e is None:
+            fail('move %s not found' % mid)
+        text = norm('\n'.join(e[2]))
+        for fact in facts:
+            if norm(fact) not in text:
+                fail('move %s: the entry no longer has "%s"' % (mid, fact))
+
+
 def check_g72b_facts(moves_ts):
     """Step G72b: the Alluring Voice and Dragon Cheer entries are the pinned texts the turn code reads."""
     for mid, facts in (('alluringvoice', G72B_FACTS), ('dragoncheer', G72B_DRAGON_CHEER_FACTS)):
@@ -3683,6 +3712,7 @@ def build_pool(root, repo, dx):
     check_g56_facts(Source(root, 'data/conditions.ts', READER_INPUTS), moves_ts)
     check_g58_facts(moves_ts)
     check_g72b_facts(moves_ts)
+    check_g88_facts(moves_ts)
     FLAGS_THAT_MATTER.clear()
     FLAGS_THAT_MATTER.update(prefix_flag_reads((items_ts, champ_items, abil_ts, champ_abil, moves_ts, champ_moves), dx)
                              - set(FLAG_BITS_C) - set(INERT_FLAG_READS) - set(FLAGS3_BITS))

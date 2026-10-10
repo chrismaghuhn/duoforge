@@ -265,7 +265,13 @@ typedef struct dfi_side {
 #define DFI_POSFLAG_DRAGON_CHEER_SHIFT 2u
 #define DFI_POSFLAG_DRAGON_CHEER_MASK 0x0Cu
 #define DFI_POSFLAG_DRAGON_CHEER_MAX 2u
-#define DFI_POSFLAG_VALID_MASK 0x0Fu
+/* Step G88 (decision 0046): bit 5 LOWERED_THIS_TURN (Lash Out: a stage fell this turn, set in dfi_boost where a stage really
+ * dropped; sim/battle.ts:2086) and bit 6 HURT_THIS_TURN (Assurance: a spread damage left the occupant alive this turn, set in
+ * dfi_deal_ex; sim/battle.ts:2137-2138). Both are cleared at the turn boundary and with the occupant. Bit 4 is Destiny Bond
+ * (G76, batch 5) and stays out of this mask until that batch merges. */
+#define DFI_POSFLAG_LOWERED 0x20u
+#define DFI_POSFLAG_HURT 0x40u
+#define DFI_POSFLAG_VALID_MASK 0x6Fu
 /* rev 4, per side and per roster member */
 #define DFI_TAIL_QUICK_GUARD_MAX 1u     /* set by Quick Guard, ends in the residual of the turn */
 /* hazard_order: the creation order of the hazards that are up on the side (the pin's effectOrder, sim/battle.ts:994-1000), which
