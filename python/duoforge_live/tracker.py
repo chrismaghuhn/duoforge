@@ -18,6 +18,14 @@ of a hidden-trapped last active: Side.emitChoiceError, sim/side.ts:527-534):
 the current move request again, under a new rqid, with what the refusal
 revealed. No battle line comes between, so it is a new request epoch of the
 same decision point: the state stays, the options follow the update.
+
+The public record (public_parts, record.py; M12 option A): the tracker also
+folds the public facts the canonical public record holds and its views do not
+(entry activation ids, move actions since entry, the opponent's knowledge of
+each own member, revealed facts, a freeze's turns, the foe's leads), and
+record.assemble serialises them. duoforge.python.live proves the record equal
+to the engine's at every decision point of every committed closure battle, or
+refused with the engine's status and cause mask.
 """
 import collections
 import json
@@ -25,6 +33,7 @@ import json
 import numpy as np
 
 from duoforge import _layout
+from duoforge._state_layout import VALUES as _ENC
 
 from . import lines, options, teams
 from .data import trace_to_c
@@ -56,6 +65,7 @@ FIELD_TURNS = 5  # weather, terrain, Trick Room
 FIELD_TURNS_EXTENDED = 8  # DFI_FIELD_TURNS_MAX: a weather rock or Terrain Extender held by the setter
 TAILWIND_TURNS, SCREEN_TURNS, SCREEN_TURNS_CLAY = 4, 5, 8  # DFI_TAILWIND_TURNS_MAX, 5, DFI_SCREEN_TURNS_MAX
 STALL_DURATION, STALL_LEVEL_MAX = 2, 6  # DFI_STALL_DURATION (src/combat/turn.c), DFI_STALL_LEVEL_MAX
+FREEZE_TURNS = 3  # a freeze's turns at its start (src/combat/turn.c, the status counter of DFI_STATUS_FRZ)
 CHARGE_TURNS = 2  # twoturnmove's duration: the charge and the locked turn end in the second residual
 EXT_REVISION = C["DUOFORGE_OBSERVATION_EXT_REVISION"]
 EXT_THROAT_CHOP = C["DUOFORGE_POSITION_EXT_THROAT_CHOP"]
@@ -77,6 +87,9 @@ EXT_FIELDS = {
 # of the side's turns in Tracker._conditions
 _SIDE_CONDITION = {1: 2, 2: 0, 3: 1, 4: 3}
 STATUS = {"brn": 1, "frz": 2, "par": 3, "slp": 4, "psn": 5}
+# Why a position must switch (the encoding's switch_flag, DFI_SWITCH_*): the tracker keeps the reason, the views its presence
+SWITCH_MOVE, SWITCH_EMERGENCY_EXIT, SWITCH_FAINTED = (_ENC[f"DFI_SWITCH_{n}"] for n in ("MOVE", "EMERGENCY_EXIT", "FAINTED"))
+REVEALED_ITEM_CONSUMED, REVEALED_MEGA = _ENC["DFI_REVEALED_ITEM_CONSUMED"], _ENC["DFI_REVEALED_MEGA"]
 
 ROOM_LINES = lines.ROOM_LINES
 _kind = lines.line_kind  # lines of the room, not of the battle: nobody folds them
@@ -99,8 +112,11 @@ def _condition(text):
 class _Position:
     def __init__(self):
         self.occupant = ROSTER_NONE
-        self.flag = 0  # Showdown's switchFlag: asked to switch at the next switch request
+        self.flag = 0  # Showdown's switchFlag: asked to switch at the next switch request (its reason, DFI_SWITCH_*)
         self.fainted = False
+        self.activation = 0  # the activation id of the occupant's entry (the public record; switches counted in order)
+        self.move_actions = 0  # the occupant's move actions since its entry (the public record, _move_action)
+        self.confused_action = False  # a confusion -activate began the occupant's current action
         self.reset()
 
     def reset(self):
@@ -136,10 +152,17 @@ class _Member:
         self.is_mega = 0
         self.item_used = 0
         self.item_now = 0  # the POOL view extension: 0 as the sheet, an item + 1 a move gave it, ITEM_NOW_NONE taken
+        # What the opponent knows of the member (the public record's knowledge): seen in battle, its last HP display, the
+        # revealed facts (DFI_REVEALED_*); the moves it used are `uses`. A foe member's from its public lines; an own
+        # member's from the own lines, its HP display from the library (duoforge.view.hp_display of the exact HP).
         self.seen = False
         self.hp_percent = 0
         self.hp_flag = 0
+        self.revealed = 0
         self.status = 0
+        # A freeze's turns (the record's status counter): 3 when it starts, one less at each [cant] frz (src/combat/turn.c:
+        # the counter is drawn by nobody; the thaw chance is). Folded for both sides from the public lines.
+        self.freeze_turns = 0
         # The own side, from the requests.
         self.hp = 0
         self.hp_max = 0
@@ -175,6 +198,11 @@ class Tracker:
         self._trick_room = 0
         self._conditions = [[0, 0, 0, 0], [0, 0, 0, 0]]  # reflect, light screen, tailwind, Aurora Veil turns per side
         self._mega_used = [0, 0]
+        self._next_activation = 1  # the next entry's activation id (the public record)
+        # The library data kind of the public record (record.py): None for the tables' kind; a DEV kind of the same tables
+        # when the game runs under it (the context's fingerprint is in the record)
+        self.record_kind = None
+        self._foe_leads = [ROSTER_NONE, ROSTER_NONE]  # the foe's members at its two positions when the battle started
         self._picks = None
         self._accepted = None  # the own choice accepted at the last TURN decision point (it queued the moves)
         self._last_move = None  # (position, move id, target) of the last MOVE event
@@ -338,6 +366,7 @@ class Tracker:
         longer gone, and a Choice item ends its lock (the item's onStart; dfi_set_held)."""
         m = self._occupant(pos)
         m.item_now = code
+        m.revealed &= ~REVEALED_ITEM_CONSUMED
         if public:
             m.item_used = 0
         if code in self._choice_items:
@@ -532,12 +561,22 @@ class Tracker:
             p = self._at(pos)
             p.occupant, p.flag, p.fainted = ident, 0, False
             p.reset()
+            p.activation, p.move_actions = self._next_activation, 0  # entries are numbered in the order of their lines
+            p.confused_action = False
+            self._next_activation += 1
+            if pos // 2 != self.side and self._foe_leads[pos % 2] == ROSTER_NONE:
+                self._foe_leads[pos % 2] = ident  # the foe's pick order starts with its leads
+            m = self._member(pos // 2)[ident]
             if public:
-                m = self._member(pos // 2)[ident]
                 m.seen, m.hp_percent, m.hp_flag, m.status = True, hp, hp_flag, status
+            else:
+                m.seen = True
+                self._own_display(m, hp, e[7])
         elif kind == EV["MOVE"]:
             p = self._at(pos)
             p.acted = 1
+            if e[3] == trace_to_c.CAUSE["NONE"]:
+                self._move_action(p)
             self._last_move = (pos, ident, e[2])
             if e[3] == trace_to_c.CAUSE["NONE"]:
                 p.last_move = ident  # runMove's moveUsed, a locked turn too; not a move another effect makes it use
@@ -568,12 +607,14 @@ class Tracker:
                 p.choice_slot = m.sheet["moves"].index(ident)
         elif kind == EV["ACTIVATE"]:
             if e[3] == trace_to_c.CAUSE["ABILITY"] and ident2 == self.data.tables["ABILITY"]["EMERGENCYEXIT"] + 1:
-                self._at(pos).flag = 1  # it leaves: asked to switch (id2 names an ability only with cause ABILITY)
+                # it leaves: asked to switch (id2 names an ability only with cause ABILITY)
+                self._at(pos).flag = SWITCH_EMERGENCY_EXIT
             elif e[3] == trace_to_c.CAUSE["ABILITY"] and ident2 == self._symbiosis:
                 # Symbiosis (step G69): the holder passes its item (id: the item + 1) to its ally ([of], `other`), which
                 # has used its own up; the holder then holds nothing
                 holder = self._occupant(pos)
                 holder.item_now = ITEM_NOW_NONE
+                holder.revealed |= REVEALED_ITEM_CONSUMED
                 if public:
                     holder.item_used = 1
                 self._item_received(e[2], ident, public)
@@ -594,39 +635,60 @@ class Tracker:
             p = self._at(pos)
             p.reset()  # a faint clears the position's conditions; the occupant stays until replaced
             p.fainted = True
-            if public:
-                # a faint that no damage line announced (Perish Song's perish0, step G26): the display shows 0
-                m = self._occupant(pos)
-                m.hp_percent, m.hp_flag = 0, 0
+            p.move_actions = 0
+            # a faint that no damage line announced (Perish Song's perish0, step G26): the display shows 0
+            m = self._occupant(pos)
+            m.hp_percent, m.hp_flag = 0, 0
+            m.status, m.freeze_turns = 0, 0  # a fainted member has no status (the views show none; the record holds none)
         elif kind == EV["CANT"]:
             # An ability's block (Armor Tail) names its holder; the move's user, [of], took the action.
-            self._at(e[2] if e[3] == trace_to_c.CAUSE["ABILITY"] else pos).acted = 1
-        elif kind == EV["CONFUSED"]:
-            self._at(pos).acted = 1
-        elif kind in (EV["DAMAGE"], EV["HEAL"]):
-            if public:
+            blocked = e[3] == trace_to_c.CAUSE["ABILITY"]
+            actor = self._at(e[2] if blocked else pos)
+            actor.acted = 1
+            if not blocked:
+                self._move_action(actor)  # a block follows the user's own [move] line: the same action
+            if e[3] == trace_to_c.CAUSE["FREEZE"]:
                 m = self._occupant(pos)
+                m.freeze_turns = max(m.freeze_turns - 1, 0)
+        elif kind == EV["CONFUSED"]:
+            p = self._at(pos)
+            p.acted = 1
+            self._move_action(p)
+            p.confused_action = True  # the action's own move or [cant] line follows, or its self-hit
+        elif kind in (EV["DAMAGE"], EV["HEAL"]):
+            m = self._occupant(pos)
+            if kind == EV["DAMAGE"] and e[3] == trace_to_c.CAUSE["CONFUSION"]:
+                self._at(pos).confused_action = False  # the self-hit ends the action the confusion line began
+            if public:
                 m.hp_percent, m.hp_flag = hp, hp_flag
+            else:
+                self._own_display(m, hp, e[7])
         elif kind == EV["REVIVE"]:
             # Step G52 (decision 0025): Revival Blessing brings a fainted member of the user's side back at half HP,
             # its status cured; ident is its roster index (the line names it without a position)
             m = self._member(pos // 2)[ident]
             if public:
                 m.hp_percent, m.hp_flag = hp, hp_flag
+            else:
+                self._own_display(m, hp, e[7])
             m.status = 0
             self._rb_pending.pop(pos // 2, None)
         elif kind == EV["STATUS"]:
+            m = self._occupant(pos)
             if public:
-                self._occupant(pos).status = detail
+                m.status = detail
+            m.freeze_turns = FREEZE_TURNS if detail == STATUS["frz"] else 0
         elif kind == EV["CURE_STATUS"]:
+            m = self._occupant(pos)
             if public:
-                self._occupant(pos).status = 0
+                m.status = 0
+            m.freeze_turns = 0
         elif kind in (EV["BOOST"], EV["UNBOOST"]):
             p = self._at(pos)
             sign = 1 if kind == EV["BOOST"] else -1
             last = self._last_move
             if amount > 0 and last is not None and last[1] == self._parting_shot and last[2] == pos:
-                self._at(last[0]).flag = 1  # Parting Shot switches its user once it changes a stat (Contrary too)
+                self._at(last[0]).flag = SWITCH_MOVE  # Parting Shot switches its user once it changes a stat (Contrary too)
             p.stages[detail] = min(12, max(0, p.stages[detail] + sign * amount))
         elif kind == EV["CLEAR_ALL_BOOSTS"]:
             # Haze (step G62, decision 0031; data/moves.ts haze onHitField: clearBoosts on getAllActive): every standing
@@ -710,6 +772,7 @@ class Tracker:
             self._conditions[detail][_SIDE_CONDITION[amount]] = 0
         elif kind == EV["ITEM_END"]:
             m = self._occupant(pos)
+            m.revealed |= REVEALED_ITEM_CONSUMED
             if public:
                 m.item_used = 1
             if e[3] == trace_to_c.CAUSE["ITEM_TAKEN"]:
@@ -726,6 +789,7 @@ class Tracker:
             if e[2] != NOPOS:
                 giver = self._occupant(e[2])
                 giver.item_now = ITEM_NOW_NONE
+                giver.revealed |= REVEALED_ITEM_CONSUMED
                 if e[2] // 2 != self.side or self._spectator:
                     giver.item_used = 1
                 if self._unburden is not None and self._ability_at(e[2]) == self._unburden and not self._at(e[2]).fainted:
@@ -740,6 +804,7 @@ class Tracker:
         elif kind == EV["MEGA"]:
             self._mega_used[pos // 2] = 1
             self._at(pos).ability_now = 0  # the Mega forme's ability replaces a copied one (formeChange -> setAbility)
+            self._occupant(pos).revealed |= REVEALED_MEGA
             if public:
                 m = self._occupant(pos)
                 m.is_mega = 1
@@ -763,6 +828,23 @@ class Tracker:
         elif kind == EV["RESULT"]:
             self.ended = True
 
+    @staticmethod
+    def _move_action(p):
+        """One move action of the occupant of `p` (the record's move_actions: every MOVE action the queue runs for a
+        standing occupant, src/combat/turn.c dfi_run_move_body): its first line, a [move], a [cant] or the confusion's
+        -activate; the line after that confusion line belongs to the same action."""
+        if p.confused_action:
+            p.confused_action = False
+            return
+        p.move_actions = min(p.move_actions + 1, 255)
+
+    @staticmethod
+    def _own_display(member, hp, hp_max):
+        """An own member's HP as its opponent is shown it (the public record's knowledge): the display of the exact HP of
+        an own line (hp of hp_max), from the library."""
+        from duoforge import view
+        member.hp_percent, member.hp_flag = view.hp_display(hp, hp_max)
+
     def _own_target(self, slot):
         """The target position the own accepted choice gave the move of `slot`."""
         if self._accepted is None:
@@ -781,7 +863,7 @@ class Tracker:
         self._conditions = [[down(n) for n in c] for c in self._conditions]
         for side in self._positions:
             for p in side:
-                p.flag = 1 if p.fainted else 0  # checkFainted at the end of the turn; no other flag carries over
+                p.flag = SWITCH_FAINTED if p.fainted else 0  # checkFainted at the end of the turn; no other flag carries over
                 p.protecting = 0
                 p.flags &= ~(FLAG_FOLLOW_ME | FLAG_HELPING_HAND)  # single-turn
                 if p.stall:
@@ -961,6 +1043,32 @@ class Tracker:
             v["status"] = member.status if member.hp_percent != 0 else 0
         else:
             v["hp_kind"], v["location"] = HP_UNKNOWN, UNDETERMINED
+
+    def request_record(self):
+        """The REQUEST record of the decision point as the engine sets it (duoforge_battle_request): the epoch, the
+        boundary, the player, whether it is requested and the positions that need a command. candidate_count stays 0: the
+        engine's joint domain excludes pairs by rules the tracker does not hold (its domain() pair mask is provisional), and
+        the honest search does not read it."""
+        if not self.ready:
+            raise ValueError("no decision point")
+        r = np.zeros((), dtype=_layout.REQUEST)
+        boundary = self.boundary()
+        requested, slots = self._requested(self.side, boundary)
+        r["epoch"], r["boundary_kind"], r["player"] = self.epoch, boundary, self.side
+        r["requested"], r["slot_mask"] = requested, slots
+        return r
+
+    def public_parts(self):
+        """The player's parts of the decision point for the honest search (duoforge_search.record_roots.RecordRoots):
+        dict(request, observation, record, status, causes, reason). record is the public record assembled from what the
+        tracker folded (record.assemble) with status 0, or a zero record with status E_UNSUPPORTED, the cause mask that
+        duoforge_battle_public_causes gives (0 for a refusal without a cause bit) and the named reason. An expected refusal
+        never raises; the engine checks an assembled record (record.check, and the search's own round trip)."""
+        from . import record
+        observation = self.observation()
+        rec, status, causes, reason = record.assemble(self, observation)
+        return {"request": self.request_record(), "observation": observation, "record": rec, "status": status,
+                "causes": causes, "reason": reason}
 
     def observation_ext(self):
         """The OBSERVATION_EXT record (decision 0018) DuoForge shows this player at the current decision point: the

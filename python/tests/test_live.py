@@ -122,13 +122,14 @@ class Reference:
                     np.frombuffer(bytes.fromhex(dom), dtype=_layout.FACTORED_DOMAIN)[0])
                 exts.setdefault(name, {})[(int(k), int(viewer))] = bytes.fromhex(ext)
         # The engine's public record of each player at each state (the live search's record assembler, Task 1).
-        self.publics = {}
+        self.publics, self.causes = {}, {}  # causes: duoforge_battle_public_causes beside each record
         with open(public_path, encoding="ascii") as f:
             for line in f:
-                _, name, k, viewer, status, record = line.split()
+                _, name, k, viewer, status, causes, record = line.split()
                 self.publics.setdefault(name, {})[(int(k), int(viewer))] = (
                     int(status), None if record == "-" else
                     np.frombuffer(bytes.fromhex(record), dtype=_layout.PUBLIC_STATE)[0])
+                self.causes.setdefault(name, {})[(int(k), int(viewer))] = int(causes)
         streams = {}
         for line in node_tool(root, "--all").splitlines():
             m = json.loads(line)
@@ -421,13 +422,15 @@ def run_tracker(battle, player, stream=None, sheet_text=None):
 def record_diff(battle_name, k, viewer, record):
     """The tracker's record assembler against the engine (live honest search, plan 2026-10-10 Task 1): the engine's
     public record of `viewer` at decision point k of a committed battle beside an assembled `record`
-    (PUBLIC_STATE). Returns {"boundary", "player", "engine_status", "fields"}: the boundary and player of the engine's
-    view, its status (0, or the refusal), and the differing header fields and state fields (duoforge.state_layout
-    names); fields == [] means byte-identical. A refused engine record compares nothing (fields None)."""
+    (PUBLIC_STATE). Returns {"boundary", "player", "engine_status", "engine_causes", "fields"}: the boundary and player of
+    the engine's view, its status (0, or the refusal), the cause mask of duoforge_battle_public_causes, and the differing
+    header fields and state fields (duoforge.state_layout names); fields == [] means byte-identical. A refused engine
+    record compares nothing (fields None)."""
     from duoforge import state_layout
     status, want = Reference.get().publics[battle_name][(int(k), int(viewer))]
     obs, _ = Reference.get().battles_by_name[battle_name].views[(int(k), int(viewer))]
-    out = {"boundary": int(obs["boundary_kind"]), "player": int(viewer), "engine_status": status, "fields": None}
+    out = {"boundary": int(obs["boundary_kind"]), "player": int(viewer), "engine_status": status, "fields": None,
+           "engine_causes": Reference.get().causes[battle_name][(int(k), int(viewer))]}
     if status != 0:
         return out
     got = np.asarray(record)
@@ -437,6 +440,24 @@ def record_diff(battle_name, k, viewer, record):
                                               np.asarray(got["state"])[:size].tobytes(),
                                               pool=size > state_layout.V3_SIZE)
     return out
+
+
+def record_kind(battle_name):
+    """The library data kind the runner played a battle under, as the tracker's record_kind (None: the tables' kind,
+    CLOSURE; CLOSURE_DEV for a battle the runner created under the DEV fallback): read from the fingerprint of the
+    engine's records, a constant of the context."""
+    from duoforge import state_layout
+    start, size = next((s, n) for name, s, n in state_layout.fields(pool=False) if name == "fingerprint")
+    head = Reference.get().data.record_head()[0]
+    for status, record in Reference.get().publics[battle_name].values():
+        if status == 0:
+            if bytes(record["state"][start:start + size]) == head[start:start + size]:
+                return None
+            dev = 3  # DUOFORGE_DATA_KIND_CLOSURE_DEV (include/duoforge/duoforge.h; not in the Python constants)
+            if bytes(record["state"][start:start + size]) == Reference.get().data.record_head(dev)[0][start:start + size]:
+                return dev
+            raise AssertionError(f"{battle_name}: a record of an unknown context")
+    return None
 
 
 class RecordHarnessTest(unittest.TestCase):
@@ -461,6 +482,113 @@ class RecordHarnessTest(unittest.TestCase):
                 else:
                     self.assertIsNone(result["fields"])
         self.assertGreater(supported, 100)
+
+
+class RecordAssemblerTest(unittest.TestCase):
+    """The tracker's public record (Tracker.public_parts, duoforge_live.record; M12 option A) is the engine's, byte for
+    byte, at every decision point of both players of every committed closure battle; where the engine refuses the
+    record, the tracker refuses with the same status and the cause mask that duoforge_battle_public_causes gives. The
+    engine's own check (from_view, then public) gives every assembled record back and refuses one that fills a masked
+    field; the request is the engine's."""
+
+    @classmethod
+    def setUpClass(cls):
+        from duoforge_live.tracker import Tracker
+        cls.ref = Reference.get()
+        cls.points = {}  # (battle, player) -> [(k, parts)]
+        for battle in cls.ref.battles:
+            for player in (0, 1):
+                tracker, done, pid = Tracker(cls.ref.data, battle.spec["teams"][player]), 0, f"p{player + 1}"
+                tracker.record_kind = record_kind(battle.name)
+                out = cls.points[(battle.name, player)] = []
+                for lines in battle.streams[player]:
+                    tracker.feed(lines)
+                    if not (tracker.ready and tracker.epoch > done):
+                        continue
+                    done = tracker.epoch
+                    k = done - 1
+                    out.append((k, tracker.public_parts()))
+                    step = battle.trace["steps"][k] if k < len(battle.trace["steps"]) else None
+                    if step is not None and pid in step["input"]:
+                        tracker.accepted(step["input"][pid])
+
+    def test_record_equals_engine(self):
+        import collections
+        import re
+        outcome, fields, where = collections.Counter(), collections.Counter(), {}
+        for (name, player), points in self.points.items():
+            for k, parts in points:
+                result = record_diff(name, k, player, parts["record"])
+                if result["engine_status"] != 0:
+                    same = (parts["status"], parts["causes"], parts["record"].tobytes()) == (
+                        result["engine_status"], result["engine_causes"], bytes(_layout.PUBLIC_STATE.itemsize))
+                    key = "refused" if same else f"engine refuses ({result['engine_causes']}): {parts['reason']}"
+                elif parts["status"] != 0:
+                    key = f"tracker refuses: {parts['reason']}"
+                else:
+                    key = "mismatch" if result["fields"] else "equal"
+                    for field in result["fields"]:
+                        fields[re.sub(r"\d+", "#", field)] += 1
+                        where.setdefault(re.sub(r"\d+", "#", field), (name, k, player, field))
+                outcome[key] += 1
+                where.setdefault(key, (name, k, player))
+        print(f"\nrecord assembler: {dict(sorted(outcome.items()))}")
+        self.assertFalse(fields, {field: (n, where[field]) for field, n in fields.most_common()})
+        self.assertEqual(set(outcome) - {"equal", "refused"}, set(), {key: where[key] for key in outcome})
+        self.assertGreater(outcome["equal"], 2000)
+        self.assertGreater(outcome["refused"], 0)
+
+    def test_request_equals_engine(self):
+        for (name, player), points in self.points.items():
+            for k, parts in points:
+                obs, dom = self.ref.battles_by_name[name].views[(k, player)]
+                r, where = parts["request"], (name, k, player)
+                self.assertEqual([int(r[f]) for f in ("epoch", "boundary_kind", "player", "requested", "slot_mask")],
+                                 [int(obs[f]) for f in ("epoch", "boundary_kind", "player", "requested", "slot_mask")],
+                                 where)
+                self.assertEqual(int(r["candidate_count"]), 0, where)  # not assembled (Tracker.request_record)
+
+    def test_engine_gives_every_assembled_record_back(self):
+        import duoforge
+        from duoforge_live import record
+        dev = 3  # DUOFORGE_DATA_KIND_CLOSURE_DEV
+        contexts = {kind: duoforge.Context(data_kind=C["DUOFORGE_DATA_KIND_CLOSURE"] if kind is None else kind)
+                    for kind in (None, dev)}
+        worlds = {kind: duoforge.Batch(ctx, duoforge.reference_setups([0]), 1, 0) for kind, ctx in contexts.items()}
+        try:
+            checked = refused = 0
+            for (name, player), points in self.points.items():
+                kind = record_kind(name)
+                picks = self.ref.battles_by_name[name].trace["steps"][0]["input"][f"p{2 - player}"]
+                brought = len(picks.split(" ")[1])  # the foe's "team 1234"
+                for k, parts in points:
+                    if parts["status"] != 0:
+                        continue
+                    rec = parts["record"]
+                    self.assertEqual(record.check(worlds[kind], rec, brought), (0, []), (name, k, player))
+                    checked += 1
+                    if int(rec["boundary"]) == C["DUOFORGE_BOUNDARY_TURN"] and refused < 50:
+                        # a field the engine masks (the foe's exact HP of a member it saw) filled: refused
+                        foe, seen = 1 - player, int(rec["foe_seen_mask"])
+                        m = (seen & -seen).bit_length() - 1
+                        bad = rec.copy()
+                        start = next(s for f, s, _ in state_layout_fields() if f == f"side{foe}.member{m}.hp")
+                        bad["state"][start] = 1
+                        status = record.check(worlds[kind], bad, brought)[0]
+                        self.assertEqual(duoforge.status_name(status), "DUOFORGE_E_MALFORMED", (name, k, player))
+                        refused += 1
+            self.assertGreater(checked, 2000)
+            self.assertEqual(refused, 50)
+        finally:
+            for w in worlds.values():
+                w.close()
+            for ctx in contexts.values():
+                ctx.close()
+
+
+def state_layout_fields():
+    from duoforge import state_layout
+    return state_layout.fields(pool=False)
 
 
 class TrackerTest(unittest.TestCase):

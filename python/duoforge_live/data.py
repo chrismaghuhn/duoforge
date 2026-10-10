@@ -137,6 +137,32 @@ class Data:
             self._ctx = duoforge.Context(data_kind=_layout.CONSTANTS[_KINDS[self.kind]])
         return self._ctx
 
+    def record_head(self, data_kind=None):
+        """(head, state_size) of a public record under this kind (or the library data kind `data_kind`, a DEV kind of the
+        same tables): the bytes of the canonical encoding before its RNG (the envelope and the context fingerprint,
+        constants of the context) and the encoding's size, read from the engine's own record of a reference battle at team
+        preview (duoforge_batch_public), kept after the first call. The live record assembler (record.py) copies them."""
+        import duoforge
+        import numpy as np
+        from duoforge import _layout, state_layout
+        if data_kind is None:
+            data_kind = _layout.CONSTANTS[_KINDS[self.kind]]
+        heads = self.__dict__.setdefault("_record_heads", {})
+        if data_kind not in heads:
+            context = self._context() if data_kind == _layout.CONSTANTS[_KINDS[self.kind]] else \
+                duoforge.Context(data_kind=data_kind)
+            try:
+                with duoforge.Batch(context, duoforge.reference_setups([0]), 1, 0) as batch:
+                    records, statuses = batch.public(np.zeros(1, np.uint32))
+                    if int(statuses[0]) != 0:
+                        raise ValueError(f"no public record of the reference battle: status {int(statuses[0])}")
+                    start = dict((n, s) for n, s, _ in state_layout.fields(pool=False))["rng.state"]
+                    heads[data_kind] = (bytes(records["state"][0][:start]), int(records["state_size"][0]))
+            finally:
+                if context is not self._ctx:
+                    context.close()
+        return heads[data_kind]
+
     def _find(self, name):
         """The library's row of a name (duoforge_data_find over its Showdown id), or None."""
         from duoforge import data as api
