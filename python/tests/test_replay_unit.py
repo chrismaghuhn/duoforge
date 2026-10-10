@@ -914,6 +914,17 @@ class GameTest(unittest.TestCase):
         self.assertEqual(result.record.winner, 1)
         self.assertEqual(result.record.turns, 10)
 
+    def test_turn_coverage_of_a_clean_game_is_every_turn(self):
+        # turns.total: the game's turns per perspective; turns.kept: the turns complete before the perspective's stop
+        result = self.run_game(self.log)
+        self.assertEqual((result.counters["turns.total"], result.counters["turns.kept"]),
+                         (2 * result.record.turns, 2 * result.record.turns))
+
+    def test_turn_coverage_ends_at_the_stop(self):
+        result = self.run_game(self.insert_after("|turn|2", "|-start|p2a: Politoed|move: Heal Block"))
+        self.assertEqual(result.counters["turns.total"], 2 * result.record.turns)
+        self.assertEqual(result.counters["turns.kept"], 2 * 1)  # turn 1 complete, turn 2 stopped
+
     def test_a_feature_stops_after_turn_two(self):
         # a feature the tracker does not fold (Heal Block; Sand folds since the BC PR) ends both perspectives there:
         # the points before it are written, the later ones dropped
@@ -1434,6 +1445,14 @@ class DatasetTest(unittest.TestCase):
         text = funnel.text(report)
         for format_id in report:
             self.assertIn(format_id, text)
+
+    def test_the_funnel_counts_turns(self):
+        from duoforge_replay import funnel
+        c = self.build("turns")
+        f = funnel.report(c)["gen9championsvgc2026regmcbo3"]
+        self.assertEqual(f["turns"], {"total": c["turns.total"], "kept": c["turns.kept"]})
+        self.assertGreater(f["turns"]["total"], 0)
+        self.assertIn("turns without a stop", funnel.text(funnel.report(c)))
 
     def test_the_funnel_command_reads_a_dataset(self):
         import contextlib

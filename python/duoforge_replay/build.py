@@ -106,7 +106,7 @@ def _work_unit(unit):
         counters["games.processed"] += 1
         funnel.count(counters, format_id, "processed")
         for key, n in result.counters.items():
-            if key.startswith("perspectives."):
+            if key.startswith(("perspectives.", "turns.")):
                 funnel.count(counters, format_id, key, n)
         funnel.count(counters, format_id, "rows", len(result.rows))
         results.append(result)

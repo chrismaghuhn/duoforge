@@ -24,7 +24,8 @@ def count(counters, format_id, stage, n=1):
 
 def _empty():
     return {"read": 0, "skipped": collections.Counter(), "internal": 0, "processed": 0,
-            "perspectives": {"kept": 0, "stopped": collections.Counter()}, "rows": 0}
+            "perspectives": {"kept": 0, "stopped": collections.Counter()}, "rows": 0,
+            "turns": {"total": 0, "kept": 0}}
 
 
 def report(counters):
@@ -42,6 +43,8 @@ def report(counters):
             f["skipped"][stage[len("skipped."):]] += n
         elif stage.startswith("internal:"):
             f["internal"] += n
+        elif stage in ("turns.total", "turns.kept"):
+            f["turns"][stage[len("turns."):]] += n
         elif stage == "perspectives.kept":
             f["perspectives"]["kept"] += n
         elif stage.startswith("perspectives.stopped."):
@@ -91,5 +94,8 @@ def text(report, top=8):
         lines.append(f"  perspectives to the end {p['kept']} of {both}{share}, stopped {sum(p['stopped'].values())}")
         for reason, n in sorted(p["stopped"].items(), key=lambda kv: (-kv[1], kv[0]))[:top]:
             lines.append(f"    {n} {reason}")
+        t = f["turns"]
+        if t["total"]:
+            lines.append(f"  turns without a stop {t['kept']} of {t['total']} ({100 * t['kept'] / t['total']:.1f} %)")
         lines.append(f"  rows {f['rows']}")
     return "\n".join(lines) + "\n"

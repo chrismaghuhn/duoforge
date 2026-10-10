@@ -11,7 +11,9 @@ Counters:
 - points.written (rows); points.dropped.<reason>: the game's decision points
   (either side) after a perspective's stop;
 - labels.<REASON> per asked slot of the rows, labels.TEAM for team rows;
-- turn-scoped.<NAME>: single-turn feature lines that stopped nothing.
+- turn-scoped.<NAME>: single-turn feature lines that stopped nothing;
+- turns.total: the game's turns, per perspective; turns.kept: the turns complete before the perspective's stop
+  (all of them without a stop): the turn coverage.
 """
 import collections
 import dataclasses
@@ -238,15 +240,16 @@ def process(replay_id, format_id, log, data, prior, stats, belief=None, seed=0, 
         points = find(lines)
     except line_classes.Stop as stop:
         counters[f"perspectives.stopped.{stop.reason}"] += 2
+        counters["turns.total"] += 2 * record.turns
         return GameResult(record, [], counters)
     rows = []
     for side in (0, 1):
-        rows += _perspective(lines, points, side, sheets, data, prior, stats, counters, extra)
+        rows += _perspective(lines, points, side, sheets, data, prior, stats, counters, extra, record.turns)
     counters["points.written"] += len(rows)
     return GameResult(record, rows, counters)
 
 
-def _perspective(lines, points, side, sheets, data, prior, stats, counters, extra=None):
+def _perspective(lines, points, side, sheets, data, prior, stats, counters, extra=None, turns=0):
     forme_names = {v: k.lower() for k, v in data.tables["FORME"].items() if k != "COUNT"}
     levels = []
     stat_points = []
@@ -266,6 +269,7 @@ def _perspective(lines, points, side, sheets, data, prior, stats, counters, extr
     except line_classes.Stop as stop:
         counters[f"perspectives.stopped.{stop.reason}"] += 1
         counters[f"points.dropped.{stop.reason}"] += len(points)
+        counters["turns.total"] += turns
         return []
     taken, stop, done = [], None, 0
     try:
@@ -297,6 +301,12 @@ def _perspective(lines, points, side, sheets, data, prior, stats, counters, extr
     for name, n in tracker.turn_scoped_seen.items():
         if stop is None or stop.reason != f"feature:{name}":
             counters[f"turn-scoped.{name}"] += n
+    counters["turns.total"] += turns
+    if stop is None:
+        counters["turns.kept"] += turns
+    else:
+        started = sum(1 for line in lines[:stop.line] if line_kind(line) == "turn")
+        counters["turns.kept"] += max(0, started - 1)  # the turn the stop came in is not complete
     if stop is None:
         counters["perspectives.kept"] += 1
     else:
