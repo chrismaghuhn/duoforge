@@ -1,6 +1,6 @@
 {
   "name": "g67_mg_sand_tie",
-  "purpose": "Step G67 (decision 0015 entry 5bl): the Reuniclus mirror. Two Magic Guard Reuniclus tie in speed in the Sandstorm residual; neither takes the damage (no damage line), so the order of their shuffle is not shown, but the engine draws it (its tie group holds the Pokemon that take the damage). Found by the differential campaign seed 6700000, battle 2 (cut after its step 9: the battle goes on into a Substitute secondary roll, a separate gap).",
+  "purpose": "Step G67 (decision 0015 entry 5bl): the Reuniclus mirror. Two Magic Guard Reuniclus tie in speed in the Sandstorm residual; neither takes the damage (no damage line), so the order of their shuffle is not shown, but the engine draws it (its tie group holds the Pokemon that take the damage). Found by the differential campaign seed 6700000, battle 2. cut at step 9: step 17 hits the pre-existing substitute secondary-draw gap (sim/battle-actions.ts:1346), tracked separately. The full uncut spec is kept outside the repository (for the fixer of that gap).",
   "data": "pool",
   "format": "gen9championsvgc2026regmc",
   "seed": "sodium,0f24646f95b367f6d9e8fc02566a8496ec40fcbc9329e9d3c6e2e9c254b30461",

@@ -1,0 +1,26 @@
+{
+  "name": "i2_illusion_break",
+  "purpose": "Illusion (step I2): Zoroark leads with Ceruledge as its disguise (the last standing member to its right in the party order). Turn 1 the foe Primarina hits it with Moonblast, a damaging move hit: the disguise breaks (replace + -end Illusion) and the holder is shown; Zoroark is then a real Zoroark on the field.",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,0000000000000000000000000000000000000000000000000000000000004301",
+  "teams": [
+    "Zoroark (M) @ Focus Sash\nAbility: Illusion\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Shadow Ball\n- Sludge Bomb\n- Protect\n\nMilotic (F) @ Leftovers\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Protect\n- Scald\n- Recover\n\nPrimarina (F) @ Fairy Feather\nAbility: Torrent\nLevel: 50\nEVs: 32 HP / 2 Def / 32 SpD\nCalm Nature\n- Protect\n- Moonblast\n- Calm Mind\n\nGholdengo @ Life Orb\nAbility: Good as Gold\nLevel: 50\nEVs: 32 HP / 2 SpA / 32 SpD\nCalm Nature\n- Protect\n- Shadow Ball\n\nSneasler (M) @ Mystic Water\nAbility: Poison Touch\nLevel: 50\nEVs: 2 HP / 32 Atk / 32 Spe\nJolly Nature\n- Protect\n\nCeruledge (M) @ Charcoal\nAbility: Flash Fire\nLevel: 50\nEVs: 31 HP / 7 Atk / 24 Def / 3 SpD / 1 Spe\nBrave Nature\n- Protect",
+    "Primarina (F) @ Fairy Feather\nAbility: Torrent\nLevel: 50\nEVs: 32 HP / 2 Def / 32 SpD\nCalm Nature\n- Protect\n- Moonblast\n- Calm Mind\n\nStaraptor (M) @ Life Orb\nAbility: Intimidate\nLevel: 50\nEVs: 2 HP / 32 Atk / 32 Spe\nJolly Nature\n- Tailwind\n- U-turn\n- Brave Bird\n- Protect\n\nMilotic (F) @ Rocky Helmet\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Coil\n- Scald\n- Protect\n\nGholdengo @ Black Glasses\nAbility: Good as Gold\nLevel: 50\nEVs: 32 HP / 2 SpA / 32 SpD\nCalm Nature\n- Protect\n- Shadow Ball\n- Make It Rain\n\nSneasler (M) @ Mystic Water\nAbility: Poison Touch\nLevel: 50\nEVs: 2 HP / 32 Atk / 32 Spe\nJolly Nature\n- Protect\n\nCeruledge (M) @ Charcoal\nAbility: Flash Fire\nLevel: 50\nEVs: 31 HP / 7 Atk / 24 Def / 3 SpD / 1 Spe\nBrave Nature\n- Protect"
+  ],
+  "plan": {
+    "p1": [
+      "move 1 1, move 1",
+      "move 1 1, move 1",
+      "move 1 1, move 1",
+      "move 1 1, move 1"
+    ],
+    "p2": [
+      "move 2 1, move 1",
+      "move 2 1, move 1",
+      "move 2 1, move 1",
+      "move 2 1, move 1"
+    ],
+    "max_steps": 12
+  }
+}

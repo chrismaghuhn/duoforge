@@ -37,6 +37,7 @@ struct duoforge_context {
  * 0009) and _POOL and _POOL_DEV (all of them, decision 0015). Species ids are
  * forme ids and move ids move ids of those tables. */
 bool dfi_context_is_closure(const struct duoforge_context *ctx);
+bool dfi_context_is_pool(const struct duoforge_context *ctx); /* the POOL and POOL_DEV kinds (step G72b) */
 
 /* True for the kinds with the certified profile of decision 0010 (a context
  * of DUOFORGE_MAX_ROSTER and DFI_CLOSURE_BROUGHT_COUNT, exactly

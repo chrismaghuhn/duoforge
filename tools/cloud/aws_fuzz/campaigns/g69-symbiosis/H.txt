@@ -1,0 +1,50 @@
+Gholdengo @ Black Glasses
+Ability: Good as Gold
+Level: 50
+EVs: 32 HP / 2 SpA / 32 SpD
+Calm Nature
+- Protect
+- Shadow Ball
+- Make It Rain
+
+Staraptor (M) @ Life Orb
+Ability: Intimidate
+Level: 50
+EVs: 2 HP / 32 Atk / 32 Spe
+Jolly Nature
+- Tailwind
+- U-turn
+- Brave Bird
+- Protect
+
+Kingambit (M) @ Focus Sash
+Ability: Defiant
+Level: 50
+EVs: 32 HP / 32 Atk / 2 SpD
+Adamant Nature
+- Protect
+- Swords Dance
+- Sucker Punch
+
+Milotic (F) @ Rocky Helmet
+Ability: Competitive
+Level: 50
+EVs: 32 HP / 29 Def / 5 SpD
+Calm Nature
+- Coil
+- Scald
+- Protect
+
+Sneasler (M) @ Mystic Water
+Ability: Poison Touch
+Level: 50
+EVs: 2 HP / 32 Atk / 32 Spe
+Jolly Nature
+- Protect
+
+Ceruledge (M) @ Charcoal
+Ability: Flash Fire
+Level: 50
+EVs: 31 HP / 7 Atk / 24 Def / 3 SpD / 1 Spe
+Brave Nature
+- Protect

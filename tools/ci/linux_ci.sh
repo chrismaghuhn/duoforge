@@ -18,7 +18,7 @@ set -u
 
 SRC=$(cd "$(dirname "$0")/../.." && pwd)
 OUT=$HOME/df-build/ci/$(basename "$SRC")-$(printf '%s' "$SRC" | md5sum | cut -c1-8)
-JOBS=$(nproc)
+JOBS=${DUOFORGE_JOBS:-$(nproc)}  # local_ci.sh passes the share the machine lock gave it
 PY=$HOME/df-venv/bin/python
 mkdir -p "$OUT"
 git config --global --add safe.directory "$SRC" 2>/dev/null

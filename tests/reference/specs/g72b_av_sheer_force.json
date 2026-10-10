@@ -1,0 +1,22 @@
+{
+  "name": "g72b_av_sheer_force",
+  "purpose": "Alluring Voice from a Sheer Force holder (cross-row G61 x G72b, pool_families checkG61, decision 0015 5ce): Gardevoir (F) has Trace and copies Feraligatr's Sheer Force on the switch-in. On both turns Feraligatr (Jolly, faster) raises its Attack with Swords Dance first, so Alluring Voice hits a target whose stats rose this turn. Sheer Force strips the secondary: no confusion and no confusion draw; the move's base power gets the x5325/4096 boost instead (the pin's onModifyMove and onBasePower).",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,00000000000000000000000000000000000000000000000000000000000072c1",
+  "teams": [
+    "Gardevoir (F)\nAbility: Trace\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nTimid Nature\n- Alluring Voice\n- Calm Mind\n- Dazzling Gleam\n- Helping Hand\n\nMilotic (F) @ Black Glasses\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Scald\n- Protect\n\nEspeon (F)\nAbility: Synchronize\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nTimid Nature\n- Calm Mind\n- Dazzling Gleam\n- Helping Hand\n\nGengar (F)\nAbility: Cursed Body\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nTimid Nature\n- Shadow Ball\n- Dark Pulse\n- Focus Blast\n\nRillaboom (M)\nAbility: Grassy Surge\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Def\nAdamant Nature\n- Fake Out\n- Earthquake\n- Drum Beating\n\nPelipper (M)\nAbility: Drizzle\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nBold Nature\n- Hurricane\n- Helping Hand\n- Hydro Pump",
+    "Feraligatr (M) @ Life Orb\nAbility: Sheer Force\nLevel: 50\nEVs: 2 HP / 32 Atk / 32 Spe\nJolly Nature\n- Swords Dance\n- Ice Fang\n- Protect\n\nGliscor (M) @ Rocky Helmet\nAbility: Hyper Cutter\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nJolly Nature\n- Protect\n\nPrimarina (F) @ Expert Belt\nAbility: Torrent\nLevel: 50\nEVs: 32 HP / 2 Def / 32 SpD\nCalm Nature\n- Moonblast\n- Protect\n\nGholdengo @ Focus Sash\nAbility: Good as Gold\nLevel: 50\nEVs: 32 HP / 2 SpA / 32 SpD\nCalm Nature\n- Shadow Ball\n- Protect\n\nMilotic (F) @ Black Glasses\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Scald\n- Protect\n\nKingambit (M) @ Charcoal\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Swords Dance\n- Protect"
+  ],
+  "plan": {
+    "p1": [
+      "move 1 1, move 2",
+      "move 1 1, move 2"
+    ],
+    "p2": [
+      "move 1, move 1",
+      "move 1, move 1"
+    ],
+    "max_steps": 3
+  }
+}

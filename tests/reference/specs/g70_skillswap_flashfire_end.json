@@ -1,0 +1,22 @@
+{
+  "name": "g70_skillswap_flashfire_end",
+  "purpose": "Skill Swap (step G70, decision 0041): Incineroar (M) burns the foe Ceruledge (M, Flash Fire) on turn 1, which takes the Fire hit and gains the flashfire volatile; on turn 2 Gardevoir swaps abilities with it, so Flash Fire ends (silently) and Ceruledge Gardevoir copies the Flash Fire of Ceruledge at its entry, so the swap exchanges two Flash Fire holders and Ceruledge loses its flashfire volatile with a silent end.",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,0000000000000000000000000000000000000000000000000000000000006406",
+  "teams": [
+    "Gardevoir (F)\nAbility: Trace\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nTimid Nature\n- Skill Swap\n- Calm Mind\n- Dazzling Gleam\n- Helping Hand\n\nIncineroar (M)\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Spe\nAdamant Nature\n- Fake Out\n- Flamethrower\n- Darkest Lariat\n\nEspeon (F)\nAbility: Synchronize\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nTimid Nature\n- Calm Mind\n- Dazzling Gleam\n- Helping Hand\n\nGengar (F)\nAbility: Cursed Body\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nTimid Nature\n- Shadow Ball\n- Dark Pulse\n- Focus Blast\n\nRillaboom (M)\nAbility: Grassy Surge\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Def\nAdamant Nature\n- Fake Out\n- Earthquake\n- Drum Beating\n\nPelipper (M)\nAbility: Drizzle\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nBold Nature\n- Hurricane\n- Helping Hand\n- Hydro Pump",
+    "Ceruledge (M)\nAbility: Flash Fire\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Spe\nAdamant Nature\n- Close Combat\n- Bitter Blade\n- Bulk Up\n\nMalamar (M)\nAbility: Contrary\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Spe\nAdamant Nature\n- Foul Play\n- Dark Pulse\n- Calm Mind\n- Knock Off\n\nKingambit (M)\nAbility: Pressure\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Spe\nAdamant Nature\n- Kowtow Cleave\n- Iron Head\n- Foul Play\n\nChimecho (F)\nAbility: Levitate\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nCalm Nature\n- Calm Mind\n- Dazzling Gleam\n- Encore\n\nSpiritomb (M)\nAbility: Pressure\nLevel: 50\nEVs: 32 HP / 32 Def / 2 Spe\nCalm Nature\n- Protect\n- Dark Pulse\n- Foul Play\n\nGyarados (M)\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Spe\nAdamant Nature\n- Dragon Dance\n- Earthquake\n- Crunch"
+  ],
+  "plan": {
+    "p1": [
+      "move 2, move 2 1",
+      "move 1 1, move 3 1"
+    ],
+    "p2": [
+      "move 2 1, move 1 1",
+      "move 1 1, move 2 1"
+    ],
+    "max_steps": 3
+  }
+}

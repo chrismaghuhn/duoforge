@@ -15,7 +15,7 @@ typedef struct df_conf_member {
 typedef struct df_conf_cmd {
     uint8_t kind, move_slot, target, mega, reserve;
 } df_conf_cmd;
-/* present, hp, pp, stages (biased by 6), stall counter present, fainted,
+/* present, hp, pp (the true PP), stages (biased by 6), stall counter present, fainted,
  * status (DFI_STATUS_*), its counter (sleep, freeze), confusion turns, the
  * locked move slot (0xFF none) and its target, Mega forme, the item still
  * held, and what the opponent has seen: seen, HP percent and colour flag
@@ -28,7 +28,9 @@ typedef struct df_conf_mon {
     uint8_t held, seen, seen_percent, seen_flag;
     uint8_t vols; /* volatiles: 1 protect, 2 flashfire, 4 twoturnmove, 8 choicelock, 16 unburden, 32 helpinghand,
                      64 followme, 128 flinch */
-    uint8_t pp_foe[4]; /* the PP the other player attributes to the moves (step G53, decision 0030 section 1) */
+    uint8_t pp_foe[4]; /* the PP the other player attributes to the moves (decisions 0026 and 0030): the true PP unless a Pressure
+                          extra or an Illusion is hidden from it */
+    uint8_t shown_status; /* the status the other player shows (decision 0026 section 4; the true one unless an Illusion is up) */
 } df_conf_mon;
 /* team step, side 0 / side 1 answered, tape slice, the turn, boundary and
  * result afterwards, the picks of a team step, slot commands, the occupants

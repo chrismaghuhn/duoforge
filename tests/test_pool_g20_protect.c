@@ -132,8 +132,8 @@ int main(void)
     (void)conf_events;
     DF_CHECK_EQ_U64(&t, DFI_PROTECT_SPIKY_SHIELD, 1u);
     DF_CHECK_EQ_U64(&t, DFI_STATE_SCHEMA_POOL_TAIL_REV5, 0x0503u); /* the schema of the state since rev 5 (rev 4 is 0x0403) */
-    DF_CHECK(&t, dfi_support.moves[DFI_MOVE_SPIKYSHIELD] != 0u && dfi_support.moves[DFI_MOVE_BANEFULBUNKER] == 0u &&
-                     dfi_support.moves[DFI_MOVE_KINGSSHIELD] == 0u);
+    /* King's Shield was unmarked at G20 and is marked by step G66 (decision 0015 5cb); its protect_kind is tested in test_pool_g66.c */
+    DF_CHECK(&t, dfi_support.moves[DFI_MOVE_SPIKYSHIELD] != 0u && dfi_support.moves[DFI_MOVE_BANEFULBUNKER] == 0u);
     DF_CHECK_EQ_U64(&t, dfi_pool_moves[DFI_MOVE_SPIKYSHIELD].special, DFI_SPECIAL_SPIKY_SHIELD);
     for (size_t n = 0u; n < sizeof names / sizeof names[0]; ++n) {
         const df_conf_battle *cb = find(names[n]);

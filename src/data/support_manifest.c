@@ -366,6 +366,8 @@ const dfi_support_manifest dfi_support = {
             [DFI_MOVE_TAUNT] = 1u,
             [DFI_MOVE_YAWN] = 1u,
             [DFI_MOVE_SUBSTITUTE] = 1u, /* step G60 (decision 0032): the Substitute; the rows it touches are marked already and changed with it */
+            [DFI_MOVE_ALLURINGVOICE] = 1u, /* step G72b (decision 0015 5ce): the secondary's confusion on a raised target */
+            [DFI_MOVE_DRAGONCHEER] = 1u,   /* step G72b: the volatile's crit stage (position flags) and its start line */
     [DFI_MOVE_REVIVALBLESSING] = 1u,
             /* Step G42: Roost (the heal, then the Flying type is off for the turn) and Stomping Tantrum (base power x2 after a
              * FALSE last move result; the move_result of tail rev 4, decision 0015 section 7). */
@@ -481,6 +483,20 @@ const dfi_support_manifest dfi_support = {
              * a Poison-type user's Toxic are the exceptions), and breaksProtect after the accuracy check (Protect, Wide Guard,
              * Quick Guard and the stall counter of the target; the -activate line carries [broken]). No Power Herb (unmarked). */
             [DFI_MOVE_PHANTOMFORCE] = 1u,
+            /* Step G68 (decision 0015 item 5cc). Steel Beam: the recoil of half the maximum HP after a hit and in MoveFail, with the
+             * move's own condition (`[from] steelbeam`). Thunder Wave: the Electric type immunity of the target (Ground). Fire Punch
+             * and Ice Hammer: no handler (a 10 percent burn secondary; a self Speed drop), the existing paths. */
+            [DFI_MOVE_STEELBEAM] = 1u,
+            [DFI_MOVE_THUNDERWAVE] = 1u,
+            [DFI_MOVE_FIREPUNCH] = 1u,
+            [DFI_MOVE_ICEHAMMER] = 1u,
+            /* Step G70 (Skill Swap, decision 0041): the two holders swap their abilities (onHit, the ability events and the
+             * Start and End of the abilities that move; an ally swap is modelled, the Mega and the Illusion cases are named). */
+            [DFI_MOVE_SKILLSWAP] = 1u,
+            /* Step G66 (decision 0015 5cb, decision 0040): King's Shield, the Protect variant with protect_kind 2: it passes Status
+             * moves (checkMoveBypassesProtect with blockStatus false), and a contact move that it stops costs the attacker -1 Attack.
+             * The learners of this move in the pool are Aegislash (its only ability is Stance Change, marked in the same step). */
+            [DFI_MOVE_KINGSSHIELD] = 1u,
         },
     .abilities =
         {
@@ -516,6 +532,7 @@ const dfi_support_manifest dfi_support = {
             [DFI_ABILITY_FLOWERVEIL] = 1u,
             [DFI_ABILITY_FAIRYAURA] = 1u,
             [DFI_ABILITY_TRACE] = 1u,
+            [DFI_ABILITY_ILLUSION] = 1u, /* step I2 (decision 0026): the disguise, the break, the faint, the foe view (amended by I2) */
             [DFI_ABILITY_ROUGHSKIN] = 1u,
             [DFI_ABILITY_POISONTOUCH] = 1u,
             [DFI_ABILITY_THERMALEXCHANGE] = 1u,
@@ -589,13 +606,20 @@ const dfi_support_manifest dfi_support = {
             [DFI_ABILITY_MEGASOL] = 1u,      /* Meganium-Mega: sun for the holder's moves (data/abilities.ts:2558-2569) */
             [DFI_ABILITY_SHEERFORCE] = 1u,  /* step G61: the stripped secondaries and self effects, x5325/4096 (data/abilities.ts:4202-4221) */
             [DFI_ABILITY_DRAGONIZE] = 1u,   /* step G61: an -ate member, Dragon (data/abilities.ts:1036-1055), Feraligatr-Mega's */
+            [DFI_ABILITY_SYMBIOSIS] = 1u,   /* step G69: the item passed to an ally that has used up its own (data/abilities.ts:4837-4856) */
             [DFI_ABILITY_KEENEYE] = 1u,   /* step G51: the base ability of Pidgeot (with Pidgeotite), an engine row */
             [DFI_ABILITY_BIGPECKS] = 1u,  /* step G51: the other base ability of Pidgeot, an engine row */
             [DFI_ABILITY_MAGICBOUNCE] = 1u, /* step G57: reflects the reflectable moves (decision 0015 5bg) */
+            [DFI_ABILITY_STANCECHANGE] = 1u, /* step G66 (decision 0040): Aegislash's forme, a temporary forme (FORME, cause ABILITY) */
             [DFI_ABILITY_SANDFORCE] = 1u, /* step G63: Garchomp-Mega and Steelix-Mega (BasePower, the Sandstorm immunity) */
             [DFI_ABILITY_SHELLARMOR] = 1u, /* step G63: Slowbro-Mega and Scolipede-Mega (no critical hit against the holder) */
             [DFI_ABILITY_FILTER] = 1u, /* step G63: Aggron-Mega (Solid Rock's damage step, typeMod > 0) */
             [DFI_ABILITY_STALWART] = 1u, /* step G63: Skarmory-Mega (its single-target moves are not redirected) */
+            [DFI_ABILITY_UNAWARE] = 1u, /* step G65: Clefable and Skeledirge (the stat stages of the other side ignored) */
+            [DFI_ABILITY_MARVELSCALE] = 1u, /* step G65: Milotic (Defense x1.5 while statused) */
+            [DFI_ABILITY_WATERBUBBLE] = 1u, /* step G65: Araquanid (Fire x0.5 at the holder, Water x2, no burn) */
+            [DFI_ABILITY_RECKLESS] = 1u, /* step G65: Staraptor, Rhyperior and Emboar (recoil moves x1.2) */
+            [DFI_ABILITY_SUPERLUCK] = 1u, /* step G65: Absol (crit ratio +1) */
         },
     .items =
         {
@@ -768,6 +792,8 @@ const dfi_support_manifest dfi_support = {
      * ended in the residual of order 25, verified against the g42 battles). MOVE_FAILED (bit 41) stays clear: the field is exact
      * only when the last result is classified, and an unclassified exit (decision 0015 section 7) reads 0 where the reference
      * may read 1. The expression stays plain terms: python/duoforge_live/lines.py parses it. */
+    /* Step G72b: Dragon Cheer (bit 24: the DRAGON_CHEER position bit, set while the stage is nonzero; its start line is public and the
+     * stage is in the position flags). Verified against the g72b battles. */
     /* Step G60: Substitute (bit 23: the SUBSTITUTE volatile of the position, public: its start and end lines; its HP is never in
      * an event). Decision 0032 section 9 names the bit as supported once the step lands; verified against the g60 battles. */
     .view_ext_features = ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_THROAT_CHOP) |
@@ -784,6 +810,7 @@ const dfi_support_manifest dfi_support = {
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_AURORA_VEIL) |
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_RAGE_POWDER) |
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_AILMENT_TOX) |
+                         ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_ILLUSION) |
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_DISABLE) |
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_TERRAIN_ELECTRIC) |
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_TERRAIN_MISTY) |
@@ -797,5 +824,6 @@ const dfi_support_manifest dfi_support = {
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_STICKY_WEB) |
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_ROOST) |
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_QUICK_GUARD) |
-                         ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_SUBSTITUTE)
+                         ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_SUBSTITUTE) |
+                         ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_DRAGON_CHEER)
 };

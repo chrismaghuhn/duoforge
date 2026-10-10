@@ -588,7 +588,7 @@ static void test_forme_info(df_test *t, const kase *c)
         }
         if (base) {
             /* A member needs a move, and an ability unless No Ability is legal. */
-            DF_CHECK(t, in->move_count >= 1u);
+            DF_CHECK(t, in->move_count >= 1u || sp == DFI_FORME_AEGISLASHBLADE); /* step G66: the battle-only Blade has no set (no learnable move) */
             DF_CHECK(t, in->ability_count >= 1u);
             /* Under the set rule the list is the set: one ability, the set's moves. */
             if (!c->pool_rules) {

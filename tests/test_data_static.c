@@ -419,7 +419,7 @@ static void layout(df_test *t)
     for (uint32_t i = 0u; i < sizeof bits / sizeof bits[0]; ++i) {
         DF_CHECK_EQ_U64(t, bits[i], 1u << i);
     }
-    DF_CHECK_EQ_U64(t, DFI_POOL_CANONICAL_SIZE, 54664u); /* the pool canonical bytes: 4 + 2 bytes more per move, and 1 more per move (step G57) */
+    DF_CHECK_EQ_U64(t, DFI_POOL_CANONICAL_SIZE, 54758u); /* step G66 adds the battle-only Blade row (54664 before). The pool canonical bytes: 4 + 2 bytes more per move, and 1 more per move (step G57) */
 }
 
 /* Every target class 1..15 but one, every item and ability family and every flag occurs in the pool's rows. */

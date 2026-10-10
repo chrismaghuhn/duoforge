@@ -26,6 +26,10 @@
 unsigned df_conf_compare_state(FILE *out, const duoforge_context *ctx, const duoforge_battle *b,
                                const df_conf_step *st, const char *name, uint32_t step);
 
+/* The status a viewer must see on member `set` (side s): the owner's true status, the foe's shown one, and none for a foe that has
+ * seen the member fainted; a holder that fainted under its shown name is the exception (decision 0026 section 4). */
+uint32_t df_conf_expected_status(const df_conf_mon *e, const df_conf_member *set, uint32_t s, uint32_t viewer);
+
 /* Both players' observations. The Mega forme's ability is read from the pool tables, whose prefix is the closure
  * and Team C tables (decision 0015), so one table serves every data kind. */
 unsigned df_conf_compare_observation(FILE *out, const duoforge_context *ctx, const duoforge_battle *b,

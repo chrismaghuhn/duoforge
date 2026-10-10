@@ -1,0 +1,48 @@
+Zoroark (M) @ Focus Sash
+Ability: Illusion
+Level: 50
+EVs: 32 HP / 32 Atk / 2 SpD
+Adamant Nature
+- Shadow Ball
+- Sludge Bomb
+- Protect
+
+Milotic (F) @ Leftovers
+Ability: Competitive
+Level: 50
+EVs: 32 HP / 29 Def / 5 SpD
+Calm Nature
+- Protect
+- Scald
+- Recover
+
+Primarina (F) @ Fairy Feather
+Ability: Torrent
+Level: 50
+EVs: 32 HP / 2 Def / 32 SpD
+Calm Nature
+- Protect
+- Moonblast
+- Calm Mind
+
+Gholdengo @ Life Orb
+Ability: Good as Gold
+Level: 50
+EVs: 32 HP / 2 SpA / 32 SpD
+Calm Nature
+- Protect
+- Shadow Ball
+
+Sneasler (M) @ Mystic Water
+Ability: Poison Touch
+Level: 50
+EVs: 2 HP / 32 Atk / 32 Spe
+Jolly Nature
+- Protect
+
+Ceruledge (M) @ Charcoal
+Ability: Flash Fire
+Level: 50
+EVs: 31 HP / 7 Atk / 24 Def / 3 SpD / 1 Spe
+Brave Nature
+- Protect

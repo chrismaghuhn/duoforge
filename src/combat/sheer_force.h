@@ -28,7 +28,8 @@ static inline bool dfi_sf_strips_move(bool holder_sheer_force, const dfi_move_da
 {
     return holder_sheer_force &&
            (md->sec_chance != 0u || md->special == DFI_SPECIAL_STONE_AXE || md->special == DFI_SPECIAL_CEASELESS_EDGE ||
-            md->special == DFI_SPECIAL_ICE_FANG || md->special == DFI_SPECIAL_TRI_ATTACK);
+            md->special == DFI_SPECIAL_ICE_FANG || md->special == DFI_SPECIAL_TRI_ATTACK ||
+            md->special == DFI_SPECIAL_ALLURING_VOICE);
 }
 
 /* True when the holder's Sheer Force multiplies the move's base power by 5325/4096: a stripped move, and Electro Shot. */

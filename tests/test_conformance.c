@@ -33,7 +33,7 @@
 #include "reference/conformance_pool.h"
 #include "support/pool.h"
 #define DF_CONF_FORMES dfi_pool_formes
-#define DF_POOL_DATA_BATTLES 658u /* the recorded pool battles: main's 642 (lane A batches 1-3, G53, G55, G57, G63, G59, G61 and the rest of main) and the sixteen of step G67 (decision 0015 entry 5bl) */
+#define DF_POOL_DATA_BATTLES 733u /* the recorded pool battles of main (lane A, lane B, I2, G69 and the rest) and the sixteen of step G67 (decision 0015 entry 5bl; g67_mg_sand_tie is cut at step 9, see its spec) */
 #elif defined(DF_CONFORMANCE_TEAM_C)
 #include "data/extended_tables.h"
 #include "reference/conformance_team_c.h"

@@ -102,12 +102,20 @@ HIDDEN = {"charge-target-hidden"}
 STOPS = {}
 
 
+# Features the library models but its view does not show yet: its honest search refuses them with a named, counted
+# public cause, and a spectator rightly stops there (decision 0040: Aegislash-Blade, member_ext.forme not filled).
+VIEW_REFUSED = {"FORME_CHANGE": "DUOFORGE_PUBLIC_CAUSE_TEMP_FORME"}
+
+
 def allowed_stop(reason):
-    """A stop a committed battle may show: information only its player had, or a feature of decision 0018 that the
-    library supports and this tracker does not fold yet (its rows would lack the view extension)."""
+    """A stop a committed battle may show: information only its player had, a feature of decision 0018 that the
+    library supports and this tracker does not fold yet (its rows would lack the view extension), or a feature the
+    library's view refuses with a public cause (VIEW_REFUSED)."""
     if reason in HIDDEN:
         return True
     name = reason[len("feature:"):] if reason.startswith("feature:") else None
+    if name in VIEW_REFUSED and VIEW_REFUSED[name] in C:
+        return True
     pending = lines.LIBRARY_SUPPORTED & ~lines.TRACKER_FOLDS
     return name in lines.FEATURES and bool(pending >> lines.FEATURES[name] & 1)
 

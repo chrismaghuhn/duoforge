@@ -1252,5 +1252,31 @@ class Records(unittest.TestCase):
                 self.assertEqual(out.getvalue(), '')
 
 
+class DuplicateGap(unittest.TestCase):
+    """The duplicate-name rule (decision 0026 section 4): the converter exempts a display from the step at which a disguise and its real
+    member are both shown, so the engine must refuse the battle at or before that step (duplicate_gap)."""
+
+    def run_of(self, verdict, step):
+        return driver.RunnerResult(verdict, None, step, 30, None, [])
+
+    def test_no_duplicate_is_no_gap(self):
+        for verdict, step in (('PASS', None), ('DIVERGENCE', 4), ('UNSUPPORTED', 4)):
+            self.assertIsNone(driver.duplicate_gap('b', {'illusion_duplicate_step': None}, self.run_of(verdict, step)))
+            self.assertIsNone(driver.duplicate_gap('b', {}, self.run_of(verdict, step)))
+
+    def test_refused_at_or_before_the_duplicate_step(self):
+        for step in (3, 5):
+            self.assertIsNone(driver.duplicate_gap('b', {'illusion_duplicate_step': 5}, self.run_of('UNSUPPORTED', step)))
+
+    def test_refused_later_is_an_oracle_gap(self):
+        gap = driver.duplicate_gap('b', {'illusion_duplicate_step': 5}, self.run_of('UNSUPPORTED', 6))
+        self.assertEqual((gap['bucket'], gap['rule'], gap['step']), ('ORACLE_GAP', 'illusion-duplicate-unrefused', 6))
+
+    def test_an_answer_that_is_not_a_refusal_is_an_oracle_gap(self):
+        for verdict, step in (('PASS', None), ('DIVERGENCE', 2), ('UNSUPPORTED', None)):
+            gap = driver.duplicate_gap('b', {'illusion_duplicate_step': 5}, self.run_of(verdict, step))
+            self.assertEqual(gap['bucket'], 'ORACLE_GAP', (verdict, step))
+
+
 if __name__ == '__main__':
     unittest.main()

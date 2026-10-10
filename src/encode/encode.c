@@ -19,6 +19,7 @@
 #include <string.h>
 
 #include "batch/batch_each.h"
+#include "data/pool_tables.h"
 #include "encode/encode_internal.h"
 
 #if defined(FLT_EVAL_METHOD) && FLT_EVAL_METHOD != 0
@@ -513,12 +514,30 @@ duoforge_status duoforge_encoder_size(uint32_t version, uint32_t *out_obs_size)
     return DUOFORGE_OK;
 }
 
+/* Illusion (decision 0026 section 4, amended by I2, point (b)): encoders 1 to 4 know no disguise. A battle in which a member of either
+ * side has the Illusion ability (the public sheet's ability is id + 1) is refused explicitly, as the Recharge row is for versions 1 and 2.
+ * Encoder 5 gets the columns, if any, later. */
+static bool dfi_illusion_on_sheet(const duoforge_observation *ob)
+{
+    for (uint32_t s = 0u; s < DUOFORGE_SIDE_COUNT; ++s) {
+        for (uint32_t m = 0u; m < DUOFORGE_MAX_ROSTER && m < ob->sides[s].member_count; ++m) {
+            if (ob->sides[s].members[m].ability == DFI_ABILITY_ILLUSION + 1u) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
 static duoforge_status dfi_encode(uint32_t version, uint64_t mask, const duoforge_observation *ob,
                                   const duoforge_factored_domain *d, const duoforge_observation_ext *ext, float *obs,
                                   float *slots, uint8_t *pair_mask)
 {
     if (ob->player > 1u) {
         return DUOFORGE_E_INVALID_ARGUMENT;
+    }
+    if (version <= 4u && dfi_illusion_on_sheet(ob)) {
+        return DUOFORGE_E_UNSUPPORTED;
     }
     if (ob->epoch != d->epoch || (ob->requested != 0u) != (d->kind != 0u)) {
         return DUOFORGE_E_INVALID_ARGUMENT; /* the domain of another boundary */
