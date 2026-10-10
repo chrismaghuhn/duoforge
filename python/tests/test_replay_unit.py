@@ -292,6 +292,17 @@ class LinesTest(unittest.TestCase):
         self.assertEqual(self.stop("|-ability|p2a: Gholdengo|Pressure|Good as Gold|[from] move: Role Play|"
                                    "[of] p1a: Staraptor"), "line:-ability [from] move: Role Play")
 
+    def test_type_change_lines(self):
+        # Soak (no attribute) and Double Shock (???/its other type) are the type changes the engine models (steps G11,
+        # G50); every other typechange line stops on its own line
+        self.assertEqual(lines.check("|-start|p1a: Staraptor|typechange|Water", self.view), "fold")
+        self.assertEqual(lines.check("|-start|p1a: Staraptor|typechange|???/Fighting|[from] move: Double Shock",
+                                     self.view), "fold")
+        self.assertEqual(self.stop("|-start|p1a: Staraptor|typechange|Fire|[from] ability: Protean"),
+                         "line:-start typechange [from] ability: Protean")
+        self.assertEqual(self.stop("|-start|p1a: Staraptor|typechange|[from] move: Reflect Type|[of] p2a: Gholdengo"),
+                         "line:-start typechange [from] move: Reflect Type")
+
     def test_hazard_lines(self):
         # Step G37: a -sidestart lays a layer (folded); of the removals only Toxic Spikes absorbed by a grounded Poison
         # type (no [from]) is modelled, Defog, Rapid Spin, Mortal Spin and Tidy Up stop on their line

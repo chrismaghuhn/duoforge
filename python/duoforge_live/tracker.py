@@ -69,6 +69,7 @@ EXT_FIELDS = {
     "THROAT_CHOP": (("bit", EXT_THROAT_CHOP),),
     "MUST_RECHARGE": (("bit", C["DUOFORGE_POSITION_EXT_MUST_RECHARGE"]),),
     "TOXIC_SPIKES": (("side", "toxic_spikes"),),
+    "TYPE_CHANGE": (("bit", C["DUOFORGE_POSITION_EXT_TYPE_CHANGED"]), ("position", "type_now")),
     "AURORA_VEIL": (("side", "aurora_veil_turns"),),
     "PERISH": (("position", "perish"),),
     "ENCORE": (("position", "encore_slot"),),
@@ -125,6 +126,7 @@ class _Position:
         # The POOL view extension (decision 0018), all ended with the occupant (a switch or a faint):
         self.throat_chop = 0  # Throat Chop's volatile is up (presence only)
         self.must_recharge = 0  # a recharge move hit: the next action is cant|recharge (presence only)
+        self.type_now = (0, 0)  # the types (id + 1, 0: none) a move set until the occupant leaves (Soak, Double Shock)
         self.perish = 0  # the Perish count the game showed last, 3 to 1 (0: none)
         self.last_slot = 0  # the move slot + 1 of the occupant's last move line (5: Struggle; None: not on its sheet)
         self.encore_slot = 0  # the move slot + 1 that Encore forces (0: not encored)
@@ -202,6 +204,7 @@ class Tracker:
         self._pressure = tables["ABILITY"]["PRESSURE"] + 1 if "PRESSURE" in tables["ABILITY"] else None
         self._follow_me = tables["MOVE"].get("FOLLOWME")
         self._struggle = tables["MOVE"].get("STRUGGLE")
+        self._soak = tables["MOVE"].get("SOAK")
         self._symbiosis = tables["ABILITY"]["SYMBIOSIS"] + 1 if "SYMBIOSIS" in tables["ABILITY"] else None
         # Protect and Detect both show "-singleturn|POKEMON|Protect"; a failed one resets the stall counter
         self._stall_moves = {tables["MOVE"][k] for k in ("PROTECT", "DETECT") if k in tables["MOVE"]}
@@ -621,6 +624,15 @@ class Tracker:
             self._at(e[2] if e[3] == trace_to_c.CAUSE["ABILITY"] else pos).acted = 1
             if e[3] == trace_to_c.CAUSE["RECHARGE"]:
                 self._at(pos).must_recharge = 0  # cant|X|recharge: mustrecharge's onBeforeMove ends it (step G17)
+        elif kind == EV["TYPE_CHANGE"]:
+            # Soak's single type (detail: its id) or Double Shock's ??? (detail DUOFORGE_TYPE_NONE, amount: the other
+            # type + 1), step G11 and decision 0025, until the occupant leaves or Mega Evolves (the tail's soak_type).
+            # A plain typechange line is Soak's only after a Soak move line (Magic Powder prints the same form).
+            if e[3] == trace_to_c.CAUSE["MOVE"] and ident2 == self._soak and (
+                    self._last_move is None or self._last_move[1] != self._soak):
+                raise lines.Stop("line:-start typechange (no Soak)")
+            p = self._at(pos)
+            p.type_now = (0, amount) if detail == trace_to_c.TYPE_NONE else (detail + 1, 0)
         elif kind == EV["VOLATILE_START"] and detail == trace_to_c.VOLATILE_MUST_RECHARGE:
             self._at(pos).must_recharge = 1  # -mustrecharge|X: a recharge move hit (step G17)
         elif kind == EV["CONFUSED"]:
@@ -768,6 +780,7 @@ class Tracker:
         elif kind == EV["MEGA"]:
             self._mega_used[pos // 2] = 1
             self._at(pos).ability_now = 0  # the Mega forme's ability replaces a copied one (formeChange -> setAbility)
+            self._at(pos).type_now = (0, 0)  # and setType(species.types) ends a type that Soak set
             if public:
                 m = self._occupant(pos)
                 m.is_mega = 1
@@ -1013,6 +1026,9 @@ class Tracker:
                     continue  # an empty position: all zero
                 pv = v["positions"][k]
                 pv["volatiles"] = sum(bit for name, bit in _PRESENCE_BITS if getattr(p, name))
+                if p.type_now != (0, 0):
+                    pv["volatiles"] |= C["DUOFORGE_POSITION_EXT_TYPE_CHANGED"]
+                    pv["type_now"] = p.type_now
                 pv["perish"], pv["encore_slot"] = p.perish, p.encore_slot
                 own = self._member(side)[p.occupant].ability
                 pv["ability_now"] = p.ability_now if p.ability_now != own else 0  # shown when it differs

@@ -138,7 +138,7 @@ BASE_FOLDS = sum(1 << FEATURES[n] for n in ("WEATHER_SAND", "WEATHER_SNOW", "AIL
 # The view-extension folds (tracker.EXT_FIELDS: the record fields the tracker fills; test_replay compares them with
 # DuoForge's record byte for byte and requires each to be shown at compared points of both viewers, own and foe side).
 EXT_FOLDS = sum(1 << FEATURES[n] for n in ("THROAT_CHOP", "AURORA_VEIL", "PERISH", "ENCORE", "ABILITY_CHANGE", "ITEM_CHANGE",
-                                          "MUST_RECHARGE", "TOXIC_SPIKES"))
+                                          "MUST_RECHARGE", "TOXIC_SPIKES", "TYPE_CHANGE"))
 TRACKER_FOLDS = BASE_FOLDS | EXT_FOLDS
 SUPPORTED = LIBRARY_SUPPORTED & TRACKER_FOLDS
 
@@ -362,6 +362,16 @@ def check(line, view):
             return _feature("PERISH")
         if re.fullmatch(r"stockpile[1-3]", effect):
             return _feature("STOCKPILE")
+        if effect == "typechange":
+            # the type changes the engine models: Soak (-start|X|typechange|Water, no attribute; the tracker checks that
+            # the last move line is Soak, as Magic Powder prints the same form) and Double Shock (???/its other type, step
+            # G50). Protean, Libero, Reflect Type, Burn Up and the others stop on their line.
+            froms = _froms(attrs)
+            soak = kind == "-start" and not attrs and len(args) == 3
+            shock = (kind == "-start" and froms == ["move: Double Shock"] and len(attrs) == 1 and len(args) == 3
+                     and args[2].startswith("???/"))
+            if not (soak or shock):
+                _unknown(kind, "typechange" + (f" [from] {froms[0]}" if froms else ""))
         if effect in _START:
             return _feature(_START[effect])
         _unknown(kind, effect)
