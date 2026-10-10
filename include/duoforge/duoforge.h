@@ -1038,7 +1038,10 @@ duoforge_status duoforge_battle_observe_ext(const duoforge_context *ctx, const d
 #define DUOFORGE_EVENT_ACTIVATE        35u /* [-activate] position; cause ABILITY + id2 (Lightning Rod, Emergency Exit) or MOVE + id2 (Struggle);
                                                     Flower Veil's [-block] too: position the protected Pokemon, other the holder ([of]);
                                                     POOL kinds: [-fieldactivate|move: Perish Song] is cause MOVE, id2 the move, position
-                                                    and other DUOFORGE_NO_POSITION */
+                                                    and other DUOFORGE_NO_POSITION;
+                                                    POOL kinds, Symbiosis (step G69): `-activate|holder|ability: Symbiosis|Item|[of] user`
+                                                    is cause ABILITY, id2 Symbiosis + 1, position the holder, other the user ([of]), and
+                                                    id the item + 1 that the holder passed to the user. Every other ACTIVATE has id 0 */
 #define DUOFORGE_EVENT_UPKEEP          36u /* [upkeep] the end-of-turn effects are done */
 #define DUOFORGE_EVENT_RESULT          37u /* [win] or [tie] detail: DUOFORGE_RESULT_* */
 #define DUOFORGE_EVENT_SINGLE_TURN     38u /* [-singleturn] position (Team C): id: the move; other: the user ([of]) for

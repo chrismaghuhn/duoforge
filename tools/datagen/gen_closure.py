@@ -2609,7 +2609,7 @@ ENGINE_ROWS = {'items': ['focussash', 'floettite', 'psychicseed', 'electricseed'
                              'solarpower',
                              'regenerator', 'toxicdebris', 'shadowtag', 'suctioncups', 'guarddog',
                              'steadfast', 'weakarmor', 'telepathy', 'voltabsorb', 'punkrock', 'moxie', 'synchronize', 'oblivious', 'keeneye', 'bigpecks', 'magicbounce', 'pressure',
-                             'sandforce', 'shellarmor', 'filter', 'stalwart', 'megalauncher', 'hugepower', 'thickfat', 'firemane', 'spicyspray', 'megasol', 'sheerforce', 'illusion']}
+                             'sandforce', 'shellarmor', 'filter', 'stalwart', 'megalauncher', 'hugepower', 'thickfat', 'firemane', 'spicyspray', 'megasol', 'sheerforce', 'illusion', 'symbiosis']}
 # The moves of the whole pool that the turn code pivots with a switch flag of their own (dfi_pivot_moves,
 # src/state/closure_member.c) beyond Flip Turn and U-turn, which are rows of the steps. Empty: Volt Switch comes with the
 # step that gives it a flag value, and adds its id here.
@@ -3456,11 +3456,25 @@ def check_g57_facts(abil_ts, champ_abil):
                 fail('ability %s: the entry no longer has "%s"' % (rid, fact))
 
 
+# Step G69, Symbiosis (data/abilities.ts:4837-4856, onAllyAfterUseItem): the pinned texts that dfi_symbiosis (src/combat/turn.c)
+# hard-codes: the switch-flag return, the holder's takeItem and its TakeItem check with the user as the second argument, setItem
+# on the user, the holder's item cleared, and the one line `-activate|holder|ability: Symbiosis|Item|[of] user` (no item line).
+# The Champions mod has no entry of its own (checked by check_g34_facts for every G-step ability).
+G69_ABILITY_FACTS = (
+    ('symbiosis', ('onAllyAfterUseItem(item, pokemon) { if (pokemon.switchFlag) return; '
+                   'const source = this.effectState.target; const myItem = source.takeItem(); if (!myItem) return; '
+                   "if ( !this.singleEvent('TakeItem', myItem, source.itemState, pokemon, source, this.effect, myItem) || "
+                   '!pokemon.setItem(myItem) ) { source.item = myItem.id; return; } '
+                   "this.add('-activate', source, 'ability: Symbiosis', myItem, `[of] ${pokemon}`); },",
+                   'flags: {},')),
+)
+
+
 def check_g34_facts(abil_ts, champ_abil, items_ts, champ_items):
     """Steps G34, G35, Mega batch 2 and G39: every fact of G34_ABILITY_FACTS, G35_ABILITY_FACTS, MEGA2_ABILITY_FACTS, G39_ABILITY_FACTS and G34_ITEM_FACTS is in the pinned entry, whitespace aside, and the
     Champions mod has no entry of its own for it (an override would change what the engine reads). Step G59: the Champions
     entry of a G59_INHERIT_ONLY ability may only inherit (`inherit: true`, `isNonstandard: null`), which is no override."""
-    for kind, facts_by_id, src, champ in (('ability', G34_ABILITY_FACTS + G35_ABILITY_FACTS + MEGA2_ABILITY_FACTS + G39_ABILITY_FACTS + G41_ABILITY_FACTS + G45_ABILITY_FACTS + G46_ABILITY_FACTS + G47_ABILITY_FACTS + G51_ABILITY_FACTS + G53_ABILITY_FACTS + G63_ABILITY_FACTS + G59_ABILITY_FACTS, abil_ts, champ_abil),
+    for kind, facts_by_id, src, champ in (('ability', G34_ABILITY_FACTS + G35_ABILITY_FACTS + MEGA2_ABILITY_FACTS + G39_ABILITY_FACTS + G41_ABILITY_FACTS + G45_ABILITY_FACTS + G46_ABILITY_FACTS + G47_ABILITY_FACTS + G51_ABILITY_FACTS + G53_ABILITY_FACTS + G63_ABILITY_FACTS + G59_ABILITY_FACTS + G69_ABILITY_FACTS, abil_ts, champ_abil),
                                           ('item', G34_ITEM_FACTS + G46_ITEM_FACTS + G47_ITEM_FACTS, items_ts, champ_items)):
         for rid, facts in facts_by_id:
             e = src.entry(rid)

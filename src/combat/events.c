@@ -472,6 +472,19 @@ bool dfi_events_fold_knowledge(const struct duoforge_battle *before, struct duof
             } else if (e.kind == DUOFORGE_EVENT_ITEM_START) {
                 /* The Pokemon now holds the item that a move gave it (step G29): the old item_used is no longer "gone". */
                 k->revealed = (uint8_t)((uint32_t)k->revealed & ~(uint32_t)DFI_REVEALED_ITEM_CONSUMED); /* wide-operands-reviewed */
+            } else if (e.kind == DUOFORGE_EVENT_ACTIVATE && e.cause == DUOFORGE_CAUSE_ABILITY &&
+                       e.id2 == 1u + DFI_ABILITY_SYMBIOSIS) {
+                /* Symbiosis (step G69): the holder (the event's position) has passed its item on, so it is gone, as an ITEM_END
+                 * would say; the user (`other`, on the same side) holds the new item, so its old item_used is no longer "gone",
+                 * as an ITEM_START would say. Both are on the foe's side here (the loop above keeps the foe's events). */
+                k->revealed = (uint8_t)((uint32_t)k->revealed | DFI_REVEALED_ITEM_CONSUMED); /* wide-operands-reviewed */
+                if (e.other < 2u * DUOFORGE_ACTIVE_PER_SIDE && (uint32_t)e.other / 2u == foe) {
+                    const uint32_t user = occupant[(uint32_t)e.other % 2u];
+                    if (user < DUOFORGE_MAX_ROSTER && user < fs->member_count) {
+                        const uint32_t kept = (uint32_t)viewer->knowledge[user].revealed & ~(uint32_t)DFI_REVEALED_ITEM_CONSUMED;
+                        viewer->knowledge[user].revealed = (uint8_t)kept; /* wide-operands-reviewed: < 256 */
+                    }
+                }
             } else if (e.kind == DUOFORGE_EVENT_MEGA) {
                 k->revealed = (uint8_t)((uint32_t)k->revealed | DFI_REVEALED_MEGA); /* wide-operands-reviewed */
             }
