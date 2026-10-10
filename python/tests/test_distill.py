@@ -401,7 +401,7 @@ class FitTest(unittest.TestCase):
         from duoforge_learn import distill
         data = _small_data()
         # The guard and the step cap follow the settings, not the module's constants.
-        result = self._fit(data, settings=distill.Settings(ref_kl_max=0.0))
+        result = self._fit(data, settings=distill.Settings(ref_kl_max=0.0, lr=1e-2))  # a measurable reference KL
         self.assertEqual((result.stop_reason, result.best_epoch), ("ref_kl", 0))
         self._fresh()
         result = self._fit(data, settings=distill.Settings(max_steps=3), MIN_GAIN=-1.0)
@@ -478,7 +478,8 @@ class FitTest(unittest.TestCase):
         self.tmp = tempfile.TemporaryDirectory(prefix="duoforge-distill-")
         self.out = Path(self.tmp.name)
         # (a) the reference KL guard: best stays epoch 0, the init, marked no_gain.
-        result = self._fit(data, REF_KL_MAX=0.0)
+        # LR 1e-2: a reference KL well above float32's rounding after the first epoch (at 3e-5 it may round to 0)
+        result = self._fit(data, REF_KL_MAX=0.0, LR=1e-2)
         self.assertEqual((result.stop_reason, result.best_epoch, len(result.epochs)), ("ref_kl", 0, 2))
         import jax
         for a, b in zip(jax.tree_util.tree_leaves(result.best_params), jax.tree_util.tree_leaves(self.params)):

@@ -40,7 +40,8 @@ def encoded_rows(n, seed, encoder=4, envs=64, workers=4):
     out, seen = [], set()
     with duoforge.Context(_layout.CONSTANTS["DUOFORGE_DATA_KIND_POOL"]) as ctx, \
             duoforge.Batch(ctx, np.resize(duoforge.reference_setups([0, 1, 2, 3]), envs), workers, seed) as batch:
-        mask = int(batch.observe_ext()[0, 0]["supported"])
+        from duoforge import features  # the library's mask within the version's features (the reserve families of encoder 6,
+        mask = int(batch.observe_ext()[0, 0]["supported"]) & features.version_features(encoder)  # decision 0050, are not 4's)
         policy = duoforge.RandomPolicy(seed, envs)
         for _ in range(10_000):
             batch.query_factored()

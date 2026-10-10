@@ -56,10 +56,12 @@
  * (k = 0) and after every step whose comparisons passed (k = step + 1), one
  * line per viewer, viewer 0 first,
  *
- *   V <name> <k> <viewer> <observation hex> <factored domain hex>
+ *   V <name> <k> <viewer> <observation hex> <factored domain hex> <extension hex>
  *
- * (duoforge_battle_observe and duoforge_battle_factored, lowercase hex). A
- * failing observe or factored call ends the battle as a DIVERGENCE "views:
+ * (duoforge_battle_observe, duoforge_battle_factored and
+ * duoforge_battle_observe_ext, lowercase hex; the extension of decision 0018 is
+ * all zero under a kind that has none). A failing observe, factored or
+ * observe_ext call ends the battle as a DIVERGENCE "views:
  * <status> (view K)", whose step column is the step before view K (- for
  * K = 0); a FILE that cannot be opened, written, flushed or closed exits 1.
  * Without the flag the output is the same as before.
@@ -251,9 +253,13 @@ static bool write_views(FILE *views, const dfr_battle *b, uint32_t k, const duof
     for (uint32_t viewer = 0u; viewer < 2u; ++viewer) {
         duoforge_observation obs;
         duoforge_factored_domain dom;
+        duoforge_observation_ext ext;
         duoforge_status st = duoforge_battle_observe(ctx, battle, viewer, &obs);
         if (st == DUOFORGE_OK) {
             st = duoforge_battle_factored(ctx, battle, viewer, &dom);
+        }
+        if (st == DUOFORGE_OK) {
+            st = duoforge_battle_observe_ext(ctx, battle, viewer, &ext);
         }
         if (st != DUOFORGE_OK) {
             char text[160];
@@ -271,6 +277,11 @@ static bool write_views(FILE *views, const dfr_battle *b, uint32_t k, const duof
         fputc(' ', views);
         bytes = (const unsigned char *)&dom;
         for (size_t i = 0u; i < sizeof dom; ++i) {
+            fprintf(views, "%02x", bytes[i]);
+        }
+        fputc(' ', views);
+        bytes = (const unsigned char *)&ext;
+        for (size_t i = 0u; i < sizeof ext; ++i) {
             fprintf(views, "%02x", bytes[i]);
         }
         fputc('\n', views);

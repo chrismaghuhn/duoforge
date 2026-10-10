@@ -45,13 +45,16 @@ _Static_assert(sizeof(duoforge_side_ext) == 64u, "side ext is 64 bytes");
 _Static_assert(offsetof(duoforge_side_ext, members) == 32u, "side ext layout: members");
 _Static_assert(offsetof(duoforge_side_ext, aurora_veil_turns) == 56u, "side ext layout: aurora_veil_turns");
 _Static_assert(offsetof(duoforge_side_ext, guard_flags) == 61u, "side ext layout: guard_flags");
-_Static_assert(offsetof(duoforge_side_ext, reserved) == 62u, "side ext layout: reserved");
+_Static_assert(offsetof(duoforge_side_ext, conditions) == 62u, "side ext layout: conditions");
+_Static_assert(offsetof(duoforge_side_ext, reserved) == 63u, "side ext layout: reserved");
 _Static_assert(sizeof(duoforge_observation_ext) == DUOFORGE_OBSERVATION_EXT_SIZE, "observation ext is 192 bytes");
 _Static_assert(offsetof(duoforge_observation_ext, epoch) == 4u, "observation ext layout: epoch");
 _Static_assert(offsetof(duoforge_observation_ext, supported) == 8u, "observation ext layout: supported");
 _Static_assert(offsetof(duoforge_observation_ext, field) == 16u, "observation ext layout: field");
 _Static_assert(offsetof(duoforge_observation_ext, sides) == 32u, "observation ext layout: sides");
-_Static_assert(offsetof(duoforge_observation_ext, reserved1) == 160u, "observation ext layout: reserved1");
+_Static_assert(offsetof(duoforge_observation_ext, volatiles2) == 160u, "observation ext layout: volatiles2");
+_Static_assert(offsetof(duoforge_observation_ext, reserved1) == 176u, "observation ext layout: reserved1");
+_Static_assert(offsetof(duoforge_field_ext, flags) == 2u && sizeof(duoforge_field_ext) == 16u, "field ext layout: flags");
 
 _Static_assert(sizeof(duoforge_member_view) == 52u, "member view is 52 bytes");
 _Static_assert(offsetof(duoforge_member_view, move_ids) == 6u, "member view layout: move ids");

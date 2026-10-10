@@ -799,6 +799,9 @@ const dfi_support_manifest dfi_support = {
      * may read 1. The expression stays plain terms: python/duoforge_live/lines.py parses it. */
     /* Step G72b: Dragon Cheer (bit 24: the DRAGON_CHEER position bit, set while the stage is nonzero; its start line is public and the
      * stage is in the position flags). Verified against the g72b battles. */
+    /* Encoder 6 (decision 0050): the five reserve families (bits 59 to 63). A family is exact while the library defines none of its
+     * bits (all its fields stay zero), and a step that defines a bit there makes the bit exact before it lands, as for every
+     * feature; a bit with a feature of its own name is shown only under that feature as well. */
     /* Step G60: Substitute (bit 23: the SUBSTITUTE volatile of the position, public: its start and end lines; its HP is never in
      * an event). Decision 0032 section 9 names the bit as supported once the step lands; verified against the g60 battles. */
     /* Step G76 (decision 0015 5cg): Destiny Bond (bit 35: the DESTINY_BOND bit of the position's flags, public: its -singlemove
@@ -833,5 +836,10 @@ const dfi_support_manifest dfi_support = {
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_QUICK_GUARD) |
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_SUBSTITUTE) |
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_DRAGON_CHEER) |
-                         ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_DESTINY_BOND)
+                         ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_DESTINY_BOND) |
+                         ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_RESERVE_VOLATILES) |
+                         ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_VOLATILES2) |
+                         ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_RESERVE_GUARDS) |
+                         ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_SIDE_CONDITIONS) |
+                         ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_FIELD_FLAGS)
 };
