@@ -45,7 +45,7 @@ TAIL_POS_SIZE = 36
 TAIL_MEMBER_SIZE = 10
 TAIL_REV4_SIZE = TAIL_FIELD_SIZE + 2 * TAIL_SIDE_SIZE              # 288
 # The rev 5 block, after the rev 4 part (offsets within it): per side 18 bytes (the Illusion state: shown, override[4],
-# snapshot[9], pending[4]), per position (flat order) 2 bytes (slot_pending, future_sight), 16 bytes of reserve.
+# snapshot[9], pending[4]), per position (flat order) 2 bytes (position_flags, future_sight), 16 bytes of reserve.
 TAIL5_SIDE_SIZE = 18
 TAIL5_POS_SIZE = 2
 TAIL5_RESERVED_SIZE = 16
@@ -90,7 +90,9 @@ TAIL_ITEM_NONE = 255
 TAIL_TOXIC_STAGE_MAX = 15
 TAIL_TOXIC_STATUS = 6               # DUOFORGE_AILMENT_TOX: no state has it yet (the status bound of every kind is below)
 # What the pool tables hold (decision 0015 section 2, tests/test_pool_tables.c): the bounds of the member overrides.
-POOL_FORME_COUNT, POOL_MOVE_COUNT, POOL_ITEM_COUNT, POOL_ABILITY_COUNT = 346, 511, 166, 215
+POOL_FORME_COUNT, POOL_MOVE_COUNT, POOL_ITEM_COUNT, POOL_ABILITY_COUNT = 347, 511, 166, 215
+POOL_AEGISLASH_FORME = 244              # DFI_FORME_AEGISLASH (src/data/pool_tables.h)
+POOL_AEGISLASH_BLADE_FORME = 346        # DFI_FORME_AEGISLASHBLADE: the last pool row (step G66, decision 0040)
 # The byte fields of a position's tail in their encoded order (offset 0 to 21), then two u16: substitute_hp at 22 and
 # trap_move at 24, then (rev 3) protect_kind at 26, (rev 4) move_result, single_turn, hits_taken, ability_state and lock_turns
 # at 27 to 31 and 4 reserved bytes.
@@ -100,7 +102,7 @@ TAIL_POS_BYTE_FIELDS = ['last_move', 'encore_slot', 'encore_turns', 'throat_chop
                         'stockpile_spd', 'charge', 'glaive_rush']
 TAIL_POS_REV4_FIELDS = ['move_result', 'single_turn', 'hits_taken', 'ability_state', 'lock_turns']
 # rev 5, per position (lane A; zero, nothing writes them yet) and per side (the Illusion state of decision 0026, zero)
-TAIL_POS_REV5_FIELDS = ['slot_pending', 'future_sight']
+TAIL_POS_REV5_FIELDS = ['position_flags', 'future_sight']
 TAIL_SIDE_BYTE_FIELDS = ['wide_guard', 'aurora_veil', 'toxic_spikes', 'stealth_rock', 'spikes', 'sticky_web', 'quick_guard',
                          'hazard_order']
 # hazard_order (rev 4): the creation order of the hazards that are up, 2 bits per slot (slot 0 in bits 1:0); the kind codes
@@ -292,17 +294,17 @@ KD = TeamCContext(KIND_TEAM_C_DEV, 6, 4)
 
 # POOL contexts (decision 0015 section 2): the pool tables (the extended tables
 # followed by the rows of the expansion steps and then every other forme, move,
-# item and ability of the legal pool: 346 formes and 511 moves) and their hash,
+# item and ability of the legal pool: 347 formes and 511 moves) and their hash,
 # which tests/test_pool_tables.c recomputes from the pool canonical bytes: the
 # pool layout over the pool data, then the family columns, the handler columns
 # and the moves and abilities that each forme may have.
-POOL_TABLE_HASH = bytes.fromhex('2c928d29fe3a33c68f85fd283fda8253772f9c45f1fba907c0f1472f9fd5e937')
+POOL_TABLE_HASH = bytes.fromhex('5ef14015b774e5d9ed87b714b1f578310ff877da50cf93a3cb86a9b286da797a')
 KIND_POOL, KIND_POOL_DEV = 6, 7
 
 
 class PoolContext(ClosureContext):
     def __init__(self, data_kind, max_roster, brought_count):
-        Context.__init__(self, data_kind, max_roster, brought_count, 346, 511, b'')
+        Context.__init__(self, data_kind, max_roster, brought_count, 347, 511, b'')
 
     def valid(self):
         if self.data_kind == KIND_POOL and (self.max_roster != MAX_ROSTER or self.brought_count != 4):
@@ -970,6 +972,11 @@ def hazard_order_valid(ts):
     return set(slots[:n]) == present and len(set(slots[:n])) == n and all(v == 0 for v in slots[n:])
 
 
+def position_flags_valid(pf):
+    """Rev 5 (G72b): bit 0 (Healing Wish) and bits 4-7 are zero, and the Dragon Cheer stage (bits 2-3) is at most 2."""
+    return pf & ~0x0F == 0 and pf & 0x01 == 0 and (pf >> 2) & 3 <= 2
+
+
 def tail_pos_valid(ctx, tp, flat, mem, slot_flags=0):
     """The tail of a standing occupant's position (the rules of decision 0015 section 7)."""
     mc = mem['move_count']
@@ -1007,8 +1014,11 @@ def tail_pos_valid(ctx, tp, flat, mem, slot_flags=0):
             and tp['hits_taken'] <= TAIL_HITS_TAKEN_MAX and tp['ability_state'] <= TAIL_ABILITY_STATE_MAX
             and tp['lock_turns'] <= TAIL_LOCK_TURNS_MAX):
         return False
-    # Rev 5 (lane A): nothing writes the slot's pending effect or Future Sight yet, so both are zero.
-    if tp['slot_pending'] != 0 or tp['future_sight'] != 0:
+    # Rev 5 (lane A, G72b, decision 0015 5ce): the position flags are a bitfield: bit 0 (Healing Wish) and bits 4-7 are zero,
+    # the Dragon Cheer stage (bits 2-3) is at most 2, and the stats-raised bit and the stage need an occupant. Future Sight is zero.
+    if not position_flags_valid(tp['position_flags']):
+        return False
+    if tp['future_sight'] != 0:
         return False
     return (tp['stockpile'] <= TAIL_STOCKPILE_MAX and tp['stockpile_def'] <= tp['stockpile']
             and tp['stockpile_spd'] <= tp['stockpile'])
@@ -1040,7 +1050,10 @@ def check_tail(ctx, st):
             occ = sd['pos'][p]['occ']
             standing = occ < MAX_ROSTER and occ < sd['member_count'] and sd['members'][occ]['hp'] != 0
             if not standing:
-                if any(v != 0 for v in tp.values()):
+                # Rev 5 (G72b): the position flags may outlive a fainted occupant (the occupant is still there, as in the C
+                # invariant); an empty position has none.
+                flags_only = all(v == 0 for k, v in tp.items() if k != 'position_flags')
+                if not (flags_only and (tp['position_flags'] == 0 or (occ < MAX_ROSTER and position_flags_valid(tp['position_flags'])))):
                     return 'TAIL_POSITION'
                 continue
             if not tail_pos_valid(ctx, tp, 2 * s + p, sd['members'][occ], sd['pos'][p]['flags']):
@@ -1059,6 +1072,12 @@ def check_tail(ctx, st):
             if ab != 0 and (ab > POOL_ABILITY_COUNT or not on_field):
                 return 'TAIL_MEMBER'
             if fo > POOL_FORME_COUNT:
+                return 'TAIL_MEMBER'
+            # Step G66 (decision 0040), the species half of the strict stats rule of src/state/invariants.c: the Blade's forme
+            # (forme_now = the Blade's id + 1) belongs to an Aegislash only. The stats half (the Blade's stats for that forme,
+            # the sheet's stats otherwise) needs the pool's base stats and nature table; this model keeps member stats at zero
+            # and checks no stats, so that half is tested in C only (tests/test_pool_g66.c).
+            if fo == POOL_AEGISLASH_BLADE_FORME + 1 and mem['species'] != POOL_AEGISLASH_FORME:
                 return 'TAIL_MEMBER'
             if it != 0 and it != TAIL_ITEM_NONE and it > POOL_ITEM_COUNT:
                 return 'TAIL_MEMBER'
@@ -1197,7 +1216,7 @@ def parse_tail(b):
     for flat in range(4):
         tp = tail['sides'][flat // 2]['pos'][flat % 2]
         q = r5 + 2 * TAIL5_SIDE_SIZE + TAIL5_POS_SIZE * flat
-        tp['slot_pending'], tp['future_sight'] = b[q], b[q + 1]
+        tp['position_flags'], tp['future_sight'] = b[q], b[q + 1]
     return tail
 
 
@@ -1930,7 +1949,7 @@ def tail_example():
                            stockpile_def=1, glaive_rush=1, substitute_hp=1, move_result=15, hits_taken=1, ability_state=1,
                            lock_turns=1)
     a['ability_now'][:2] = [5, POOL_ABILITY_COUNT]
-    a['forme_now'][:3] = [300, POOL_FORME_COUNT, 1]
+    a['forme_now'][:3] = [300, POOL_FORME_COUNT - 2, 1]  # not the Blade (the last forme): step G66's strict stats rule
     a['soak'][:2] = [5, 18]
     a['item_now'][:4] = [12, TAIL_ITEM_NONE, POOL_ITEM_COUNT, 1]
     a['type2'][:2] = [TYPE_COUNT, TAIL_TYPE2_TYPELESS]

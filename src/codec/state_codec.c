@@ -81,7 +81,7 @@ static void dfi_encode_tail5(const dfi_pool_tail *tail, uint8_t *out)
     for (uint32_t f = 0u; f < DUOFORGE_SIDE_COUNT * DUOFORGE_ACTIVE_PER_SIDE; ++f) {
         const dfi_tail_pos *tp = &tail->sides[f / DUOFORGE_ACTIVE_PER_SIDE].positions[f % DUOFORGE_ACTIVE_PER_SIDE];
         uint8_t *po = out + DFI_ENC_TAIL5_POS_OFF + f * DFI_ENC_TAIL5_POS_SIZE;
-        po[DFI_ENC_TAIL5_SLOT_PENDING_OFF] = tp->slot_pending;
+        po[DFI_ENC_TAIL5_POSITION_FLAGS_OFF] = tp->position_flags;
         po[DFI_ENC_TAIL5_FUTURE_SIGHT_OFF] = tp->future_sight;
     }
     for (uint32_t i = 0u; i < DFI_ENC_TAIL5_RESERVED_SIZE; ++i) {
@@ -207,7 +207,7 @@ static void dfi_parse_tail5(const uint8_t *in, dfi_pool_tail *tail)
     for (uint32_t f = 0u; f < DUOFORGE_SIDE_COUNT * DUOFORGE_ACTIVE_PER_SIDE; ++f) {
         dfi_tail_pos *tp = &tail->sides[f / DUOFORGE_ACTIVE_PER_SIDE].positions[f % DUOFORGE_ACTIVE_PER_SIDE];
         const uint8_t *po = in + DFI_ENC_TAIL5_POS_OFF + f * DFI_ENC_TAIL5_POS_SIZE;
-        tp->slot_pending = po[DFI_ENC_TAIL5_SLOT_PENDING_OFF];
+        tp->position_flags = po[DFI_ENC_TAIL5_POSITION_FLAGS_OFF];
         tp->future_sight = po[DFI_ENC_TAIL5_FUTURE_SIGHT_OFF];
     }
 }

@@ -1,0 +1,26 @@
+{
+ "name": "g72b_dc_switch",
+ "purpose": "Step G72b: the cheer ends with the switch-out (the position's tail is cleared): Salamence comes back on turn 3 and a new Dragon Cheer on turn 4 starts (no -fail).",
+ "data": "pool",
+ "format": "gen9championsvgc2026regmc",
+ "seed": "sodium,0000000000000000000000000000000000000000000000000000000000011948",
+ "teams": [
+  "Milotic (F) @ Sitrus Berry\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Dragon Cheer\n- Alluring Voice\n- Protect\n- Hypnosis\n\nSalamence (M) @ Leftovers\nAbility: Intimidate\nLevel: 50\nEVs: 2 HP / 32 Atk / 32 Spe\nJolly Nature\n- Dragon Claw\n- Protect\n\nSylveon (F) @ Light Clay\nAbility: Pixilate\nLevel: 50\nEVs: 32 HP / 2 SpD / 32 Spe\nTimid Nature\n- Alluring Voice\n- Protect\n\nRaichu (F) @ Raichunite Y\nAbility: Lightning Rod\nLevel: 50\nEVs: 29 HP / 5 Def / 32 Spe\nTimid Nature\n- Thunderbolt\n- Protect\n\nArchaludon (M) @ Mystic Water\nAbility: Stamina\nLevel: 50\nEVs: 32 HP / 10 Def / 24 SpD\nBold Nature\n- Iron Head\n- Protect\n\nGholdengo @ Life Orb\nAbility: Good as Gold\nLevel: 50\nEVs: 17 HP / 2 Def / 17 SpA / 16 SpD / 14 Spe\nModest Nature\n- Shadow Ball\n- Protect",
+  "Golurk @ Leftovers\nAbility: No Guard\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Phantom Force\n- Protect\n- Earthquake\n- Close Combat\n\nKingambit (M) @ Black Glasses\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Sucker Punch\n- Protect\n- Taunt\n- Iron Head\n\nPincurchin (M) @ Charcoal\nAbility: Electric Surge\nLevel: 50\nEVs: 32 HP / 32 Def / 2 SpA\nBold Nature\n- Thunderbolt\n- Protect\n\nCeruledge (M) @ Fairy Feather\nAbility: Flash Fire\nLevel: 50\nEVs: 31 HP / 7 Atk / 24 Def / 3 SpD / 1 Spe\nAdamant Nature\n- Protect\n\nGholdengo @ Focus Sash\nAbility: Good as Gold\nLevel: 50\nEVs: 17 HP / 2 Def / 17 SpA / 16 SpD / 14 Spe\nModest Nature\n- Shadow Ball\n- Protect\n\nArchaludon (M) @ Mystic Water\nAbility: Stamina\nLevel: 50\nEVs: 32 HP / 10 Def / 24 SpD\nBold Nature\n- Iron Head\n- Protect"
+ ],
+ "plan": {
+  "p1": [
+   "move 1, move 2",
+   "move 3, switch 3",
+   "move 3, switch 2",
+   "move 1, move 2"
+  ],
+  "p2": [
+   "move 2, move 2",
+   "move 3, move 2",
+   "move 3, move 2",
+   "move 3, move 2"
+  ],
+  "max_steps": 5
+ }
+}

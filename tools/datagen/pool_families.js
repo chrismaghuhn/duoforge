@@ -1035,8 +1035,9 @@ function specialOf(headers, name) {
 function checkG61(dex, headers, moveIds, moveRows, unmodeledMoves) {
     const special = {stoneaxe: specialOf(headers, 'DFI_SPECIAL_STONE_AXE'),
         ceaselessedge: specialOf(headers, 'DFI_SPECIAL_CEASELESS_EDGE'), icefang: specialOf(headers, 'DFI_SPECIAL_ICE_FANG'),
-        triattack: specialOf(headers, 'DFI_SPECIAL_TRI_ATTACK'), electroshot: specialOf(headers, 'DFI_SPECIAL_ELECTRO_SHOT')};
-    const stripSpecials = [special.stoneaxe, special.ceaselessedge, special.icefang, special.triattack];
+        triattack: specialOf(headers, 'DFI_SPECIAL_TRI_ATTACK'), electroshot: specialOf(headers, 'DFI_SPECIAL_ELECTRO_SHOT'),
+        alluringvoice: specialOf(headers, 'DFI_SPECIAL_ALLURING_VOICE')};
+    const stripSpecials = [special.stoneaxe, special.ceaselessedge, special.icefang, special.triattack, special.alluringvoice];
     const SECONDARY_COLUMN = 14; // sec_chance: the 15th of the 29 numbers of a dfi_move_data row
     const SPECIAL_COLUMN = 28; // special: the last number
     let checked = 0, stripped = 0, boostOnly = 0;
@@ -1098,7 +1099,7 @@ function checkG61(dex, headers, moveIds, moveRows, unmodeledMoves) {
 }
 
 // The pinned counts of checkG61: stripped and boost-only pool moves (marked or not), as of step G61.
-const PINNED_SF_STRIPPED = 102; // every pool move, marked or not (63 of the marked ones)
+const PINNED_SF_STRIPPED = 103; // every pool move, marked or not (G72b's Alluring Voice makes 103; its secondary is stripped)
 const PINNED_SF_BOOST_ONLY = 1;
 
 // Step G54 (moves): the multi-hit rows and the side condition, read from the pinned data as the generator's facts read them.
@@ -1537,8 +1538,10 @@ function checkFormes(dex, validator, rows, moves, abilities) {
             continue;
         }
         const learnBit = (number) => ((row.bytes[number >> 3] >> (number & 7)) & 1) === 1;
-        if (species.isMega) {
-            expect(row.id + ' (Mega) learnable bytes', row.bytes, row.bytes.map(() => 0));
+        // A battle-only forme (the Blade of Stance Change, step G66, decision 0040) is held by no set, like a Mega forme: no
+        // learnable move (the validator's Aegislash moves belong to the Shield's set), its one legal ability.
+        if (species.isMega || species.battleOnly) {
+            expect(row.id + ' (Mega or battle-only) learnable bytes', row.bytes, row.bytes.map(() => 0));
             expect(row.id + ' (Mega) abilities', row.abilities, [Object.values(species.abilities).map((a) => dex.abilities.get(a).id)[0]]);
             expect(row.id + ' (Mega) declares one ability', Object.values(species.abilities).length, 1);
             continue;
@@ -1596,7 +1599,7 @@ const ENGINE_ROWS = {items: ['focussash', 'floettite', 'psychicseed', 'electrics
         'levitate', 'sandrush', 'swiftswim', 'slushrush', 'chlorophyll', 'innerfocus', 'liquidvoice',
         'flamebody', 'clearbody', 'hospitality', 'overcoat', 'soundproof', 'unnerve', 'speedboost',
         'compoundeyes', 'ironfist', 'sharpness', 'solidrock', 'technician', 'multiscale', 'galewings', 'raindish', 'friendguard', 'cursedbody', 'mirrorarmor', 'auraguard', 'hypercutter', 'scrappy', 'infiltrator', 'queenlymajesty', 'damp', 'sturdy', 'snowcloak', 'sandveil', 'static', 'justified', 'limber', 'solarpower', 'regenerator', 'toxicdebris', 'shadowtag', 'suctioncups', 'guarddog',
-        'steadfast', 'weakarmor', 'telepathy', 'voltabsorb', 'punkrock', 'moxie', 'synchronize', 'oblivious', 'keeneye', 'bigpecks', 'magicbounce', 'pressure',
+        'steadfast', 'weakarmor', 'telepathy', 'voltabsorb', 'punkrock', 'moxie', 'synchronize', 'oblivious', 'keeneye', 'bigpecks', 'magicbounce', 'pressure', 'stancechange',
         'sandforce', 'shellarmor', 'filter', 'stalwart', 'megalauncher', 'hugepower', 'thickfat', 'firemane', 'spicyspray', 'megasol', 'sheerforce']};
 const ENGINE_TARGETS = new Set(['normal', 'any', 'adjacentAlly', 'adjacentFoe', 'self', 'allAdjacentFoes', 'allySide', 'all',
     'randomNormal', 'allAdjacent', 'allies', 'foeSide']); // foeSide: step G37 (the four hazards)

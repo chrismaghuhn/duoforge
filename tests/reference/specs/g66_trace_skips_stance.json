@@ -1,0 +1,16 @@
+{
+  "name": "g66_trace_skips_stance",
+  "purpose": "Trace and Stance Change (decision 0040): Gardevoir (F) leads with Trace against Aegislash (M, Stance Change, notrace) and Politoed (Drizzle). Trace's candidates are the foes whose ability has no notrace flag, so Aegislash is never copied: Gardevoir copies Drizzle from Politoed, the only candidate.",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,00000000000000000000000000000000000000000000000000000000000066c9",
+  "teams": [
+    "Gardevoir (F)\nAbility: Trace\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nModest Nature\n- Calm Mind\n- Dazzling Gleam\n\nKingambit (M) @ Chople Berry\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 2 Atk / 32 SpD\nImpish Nature\n- Protect\n- Sucker Punch\n\nRillaboom (M) @ Miracle Seed\nAbility: Grassy Surge\nLevel: 50\nEVs: 18 HP / 32 Atk / 2 Def / 6 SpD / 8 Spe\nAdamant Nature\n- Fake Out\n- Protect\n\nCeruledge (M) @ Grassy Seed\nAbility: Flash Fire\nLevel: 50\nEVs: 31 HP / 7 Atk / 24 Def / 3 SpD / 1 Spe\nAdamant Nature\n- Protect\n- Shadow Ball\n\nGholdengo @ Life Orb\nAbility: Good as Gold\nLevel: 50\nEVs: 17 HP / 2 Def / 17 SpA / 16 SpD / 14 Spe\nModest Nature\n- Protect\n- Shadow Ball\n\nPolitoed (M) @ Mystic Water\nAbility: Drizzle\nLevel: 50\nEVs: 32 HP / 2 Def / 32 SpD\nCalm Nature\n- Protect\n- Earthquake",
+    "Aegislash (M)\nAbility: Stance Change\nLevel: 50\nEVs: 32 HP / 32 Def / 2 SpD\nImpish Nature\n- King's Shield\n- Iron Head\n- Protect\n- Shadow Ball\n\nPolitoed (M) @ Mystic Water\nAbility: Drizzle\nLevel: 50\nEVs: 32 HP / 2 Def / 32 SpD\nCalm Nature\n- Protect\n- Earthquake\n\nGarchomp (M)\nAbility: Rough Skin\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Spe\nJolly Nature\n- Dragon Claw\n- Protect\n- Rockslide\n\nRillaboom (M) @ Miracle Seed\nAbility: Grassy Surge\nLevel: 50\nEVs: 18 HP / 32 Atk / 2 Def / 6 SpD / 8 Spe\nAdamant Nature\n- Fake Out\n- Protect\n\nCeruledge (M) @ Grassy Seed\nAbility: Flash Fire\nLevel: 50\nEVs: 31 HP / 7 Atk / 24 Def / 3 SpD / 1 Spe\nAdamant Nature\n- Protect\n- Shadow Ball\n\nGholdengo @ Life Orb\nAbility: Good as Gold\nLevel: 50\nEVs: 17 HP / 2 Def / 17 SpA / 16 SpD / 14 Spe\nModest Nature\n- Protect\n- Shadow Ball"
+  ],
+  "plan": {
+    "p1": ["move 1, move 2", "move 1, move 2"],
+    "p2": ["move 1, move 2", "move 1, move 2"],
+    "max_steps": 3
+  }
+}

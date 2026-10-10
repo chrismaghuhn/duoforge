@@ -42,7 +42,7 @@ static const char ENVELOPE_HEX[] = "8944554f0d0a1a0a02000305030000004d050000";
 static const char TAIL_HEX[] =
     "05d10800d108000001080201030101b10102030205030403050100060301040201030203010014002500000602060603"
     "000000000500000102010100000001000000000000010100000101000000000f000101010000000005002c01050c0012"
-    "0100d7005a0112ff00ff00000000010000a6000001000000000000010000000000000000000000000000000000000000"
+    "0100d700590112ff00ff00000000010000a6000001000000000000010000000000000000000000000000000000000000"
     "000000000000000001000001040401000300000000000000000001010000000000000000000000040003000000000000"
     "000000000000000000000001030000000000000000000000ff0100090200000000000000010000000100000100000000"
     "000000000000000000000000000000000000000000000000000000000000000000000000000000000700006400000100"
@@ -382,13 +382,13 @@ static const unsigned sweep[DFI_ENC_TAIL_SIZE][SWEEP_COLUMNS] = {
     {0, 255, 0, 0, 0, 0, 0, 0},
     {0, 255, 0, 0, 0, 0, 0, 0},
     {0, 255, 0, 0, 0, 0, 0, 0},
+    {5, 0, 250, 0, 0, 0, 0, 0},
     {0, 0, 255, 0, 0, 0, 0, 0},
+    {5, 0, 250, 0, 0, 0, 0, 0},
     {0, 0, 255, 0, 0, 0, 0, 0},
+    {5, 0, 250, 0, 0, 0, 0, 0},
     {0, 0, 255, 0, 0, 0, 0, 0},
-    {0, 0, 255, 0, 0, 0, 0, 0},
-    {0, 0, 255, 0, 0, 0, 0, 0},
-    {0, 0, 255, 0, 0, 0, 0, 0},
-    {0, 0, 255, 0, 0, 0, 0, 0},
+    {5, 0, 250, 0, 0, 0, 0, 0},
     {0, 0, 255, 0, 0, 0, 0, 0},
     {0, 0, 0, 0, 0, 255, 0, 0},
     {0, 0, 0, 0, 0, 255, 0, 0},
@@ -530,7 +530,7 @@ static void set_example_tail(duoforge_battle *b)
     a->ability_now[0] = 5u;
     a->ability_now[1] = DFI_POOL_ABILITY_COUNT;
     a->forme_now[0] = 300u;
-    a->forme_now[1] = DFI_POOL_FORME_COUNT;
+    a->forme_now[1] = DFI_POOL_FORME_COUNT - 2u; /* not the Blade (step G66 strict rule); the model's example is the same value */
     a->forme_now[2] = 1u;
     a->soak_type[0] = 5u;
     a->soak_type[1] = 18u;
@@ -825,7 +825,11 @@ MUT(m_charge, p0->charge = 2u)
 MUT(m_glaive, p0->glaive_rush = 2u)
 MUT(m_protect_above, {
     y->sides[0].positions[0].flags = (uint8_t)(y->sides[0].positions[0].flags | DFI_VOL_PROTECT);
-    p0->protect_kind = 2u;
+    p0->protect_kind = 3u; /* above DFI_TAIL_PROTECT_KIND_MAX (2, King's Shield of step G66) */
+})
+MUT(m_protect_kings, { /* King's Shield, protect_kind 2 (step G66, decision 0015 5cb): a valid kind */
+    y->sides[0].positions[0].flags = (uint8_t)(y->sides[0].positions[0].flags | DFI_VOL_PROTECT);
+    p0->protect_kind = DFI_PROTECT_KINGS_SHIELD;
 })
 MUT(m_protect_no_volatile, p0->protect_kind = 1u) /* the volatile is down */
 MUT(m_move_result_high, p0->move_result = 0x40u) /* bits 6-7 are zero (step G42: bits 4 and 5 are the unclassified bits) */
@@ -945,7 +949,9 @@ MUT(m_ill_shown, ts->illusion.shown = 1u)
 MUT(m_ill_override, ts->illusion.override[3] = 1u)
 MUT(m_ill_snapshot, ts->illusion.snapshot[8] = 1u)
 MUT(m_ill_pending, ts->illusion.pending[0] = 1u)
-MUT(m_slot_pending, p0->slot_pending = 1u)
+MUT(m_healing_wish_bit, p0->position_flags = 1u) /* bit 0 (Healing Wish) is never set yet */
+MUT(m_position_flags_bit4, p0->position_flags = 0x10u)
+MUT(m_dragon_stage_3, p0->position_flags = 0x0Cu) /* the Dragon Cheer stage 3 is invalid */
 MUT(m_future_sight, p0->future_sight = 1u)
 MUT(m_member_flags_high, ts->member_flags[3] = 0x80u)
 /* Valid: the edges. */
@@ -971,7 +977,7 @@ MUT(v_maxima, {
                                       .single_turn = DFI_SINGLE_TURN_ROOST, .hits_taken = 6u, .ability_state = 6u,
                                       .lock_turns = 3u};
     ts->ability_now[0] = DFI_POOL_ABILITY_COUNT;
-    ts->forme_now[5] = DFI_POOL_FORME_COUNT;
+    ts->forme_now[5] = DFI_POOL_FORME_COUNT - 2u; /* not the Blade (forme count - 1 is the Blade's id; step G66 strict rule) */
     ts->item_now[2] = DFI_POOL_ITEM_COUNT;
     ts->item_now[3] = DFI_TAIL_ITEM_NONE;
     ts->soak_type[1] = 18u;
@@ -985,6 +991,8 @@ MUT(v_maxima, {
 MUT(v_move_result_null, p0->move_result = (uint8_t)((DFI_MOVE_RESULT_NULL << DFI_MOVE_RESULT_LAST_SHIFT) | DFI_MOVE_RESULT_FALSE))
 MUT(v_unclass_now, p0->move_result = DFI_MOVE_RESULT_UNCLASSIFIED_NOW)
 MUT(v_unclass_both, p0->move_result = DFI_MOVE_RESULT_UNCLASSIFIED_NOW | DFI_MOVE_RESULT_UNCLASSIFIED_LAST)
+MUT(v_position_flags_raised_stage2, p0->position_flags = 0x0Au) /* G72b: stats raised and the Dragon Cheer stage 2 */
+MUT(v_position_flags_stage1, p0->position_flags = 0x04u) /* G72b: the Dragon Cheer stage 1 */
 MUT(v_hazard_order_two, {
     ts->spikes = 2u;
     ts->toxic_spikes = 1u;
@@ -1058,7 +1066,8 @@ static const tail_case cases[] = {
     {"Focus Energy above 1", DFI_INV_TAIL_POSITION, false, m_focus},
     {"Charge above 1", DFI_INV_TAIL_POSITION, false, m_charge},
     {"Glaive Rush above 1", DFI_INV_TAIL_POSITION, false, m_glaive},
-    {"protect kind above 1", DFI_INV_TAIL_POSITION, false, m_protect_above},
+    {"protect kind above 2", DFI_INV_TAIL_POSITION, false, m_protect_above},
+    {"protect kind King's Shield (2) with the volatile", DFI_INV_NONE, false, m_protect_kings},
     {"protect kind without the Protect volatile", DFI_INV_TAIL_POSITION, false, m_protect_no_volatile},
     {"a move result above its two nibbles and its two unclassified bits", DFI_INV_TAIL_POSITION, false, m_move_result_high},
     {"an unclassified this-turn bit with a this-turn result", DFI_INV_TAIL_POSITION, false, m_unclass_now_with_result},
@@ -1114,7 +1123,9 @@ static const tail_case cases[] = {
     {"Illusion override byte (rev 5)", DFI_INV_TAIL_SIDE, false, m_ill_override},
     {"Illusion snapshot byte (rev 5)", DFI_INV_TAIL_SIDE, false, m_ill_snapshot},
     {"Illusion pending byte (rev 5)", DFI_INV_TAIL_SIDE, false, m_ill_pending},
-    {"slot pending bit at a standing lead (rev 5)", DFI_INV_TAIL_POSITION, false, m_slot_pending},
+    {"healing wish bit at a standing lead (rev 5)", DFI_INV_TAIL_POSITION, false, m_healing_wish_bit},
+    {"position flag bit 4 at a standing lead (rev 5)", DFI_INV_TAIL_POSITION, false, m_position_flags_bit4},
+    {"dragon cheer stage 3 at a standing lead (rev 5)", DFI_INV_TAIL_POSITION, false, m_dragon_stage_3},
     {"Future Sight byte at a standing lead (rev 5)", DFI_INV_TAIL_POSITION, false, m_future_sight},
     {"Struggle as the last move is valid for any move count", DFI_INV_NONE, false, v_struggle},
     {"the last Encore turn and slot 4 are valid", DFI_INV_NONE, false, v_encore_edge},
@@ -1127,7 +1138,9 @@ static const tail_case cases[] = {
     {"a Protect variant under its volatile is valid", DFI_INV_NONE, false, v_protect_variant},
     {"a move result of this turn false and last turn null is valid", DFI_INV_NONE, false, v_move_result_null},
     {"an unclassified this-turn bit with an undefined this-turn result is valid", DFI_INV_NONE, false, v_unclass_now},
-    {"both unclassified bits with both results undefined are valid", DFI_INV_NONE, false, v_unclass_both}};
+    {"both unclassified bits with both results undefined are valid", DFI_INV_NONE, false, v_unclass_both},
+    {"G72b: stats raised with stage 2 at a standing lead is valid", DFI_INV_NONE, false, v_position_flags_raised_stage2},
+    {"G72b: Dragon Cheer stage 1 at a standing lead is valid", DFI_INV_NONE, false, v_position_flags_stage1}};
 
 /* True iff the byte at `off` of the encoded tail is a reserved one (by the layout alone). */
 static bool is_reserved_offset(size_t off)
@@ -1437,7 +1450,10 @@ int main(void)
                     got[1] += 1u;
                 } else if (st == DUOFORGE_E_MALFORMED && inv == DFI_INV_TAIL_POSITION) {
                     got[2] += 1u;
-                } else if (st == DUOFORGE_E_MALFORMED && inv == DFI_INV_TAIL_MEMBER) {
+                } else if (st == DUOFORGE_E_MALFORMED && (inv == DFI_INV_TAIL_MEMBER || inv == DFI_INV_MEMBER_EXTRA)) {
+                    /* MEMBER_EXTRA: a forme_now of the Blade (347) on a member that is not an Aegislash, or with the sheet's stats,
+                     * refused by the strict stats rule of step G66. The python model states the species half of that rule
+                     * (tools/state_model/state_v3_model.py, TAIL_MEMBER), and its sweep row is this one. */
                     got[3] += 1u;
                 } else if (st == DUOFORGE_E_MALFORMED && inv == DFI_INV_TAIL_FIELD) {
                     got[4] += 1u;
@@ -1810,7 +1826,7 @@ int main(void)
         }
         for (uint32_t p = 0u; p < DUOFORGE_SIDE_COUNT * DUOFORGE_ACTIVE_PER_SIDE; ++p) {
             dfi_tail_pos *tp = &x->tail.sides[p / DUOFORGE_ACTIVE_PER_SIDE].positions[p % DUOFORGE_ACTIVE_PER_SIDE];
-            tp->slot_pending = (uint8_t)(0x80u + p);
+            tp->position_flags = (uint8_t)(0x80u + p);
             tp->future_sight = (uint8_t)(0xC0u + p);
         }
         DF_CHECK_EQ_U64(&t, dfi_encode_unchecked(kp, x, out), DFI_STATE_POOL_ENCODED_SIZE);
@@ -1823,7 +1839,7 @@ int main(void)
         for (uint32_t p = 0u; p < DUOFORGE_SIDE_COUNT * DUOFORGE_ACTIVE_PER_SIDE; ++p) {
             const dfi_tail_pos *tp = &x->tail.sides[p / DUOFORGE_ACTIVE_PER_SIDE].positions[p % DUOFORGE_ACTIVE_PER_SIDE];
             const uint8_t *po = out + r5 + DFI_ENC_TAIL5_POS_OFF + p * DFI_ENC_TAIL5_POS_SIZE;
-            DF_CHECK(&t, po[DFI_ENC_TAIL5_SLOT_PENDING_OFF] == tp->slot_pending);
+            DF_CHECK(&t, po[DFI_ENC_TAIL5_POSITION_FLAGS_OFF] == tp->position_flags);
             DF_CHECK(&t, po[DFI_ENC_TAIL5_FUTURE_SIGHT_OFF] == tp->future_sight);
         }
         /* and the reserve after them is zero, whatever the block holds */

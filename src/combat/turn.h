@@ -41,6 +41,16 @@ duoforge_status dfi_turn_run(const duoforge_context *ctx, struct duoforge_battle
  * and forced switches ignore it. */
 bool dfi_switch_trapped(const struct duoforge_battle *b, uint32_t flat);
 
+/* Skill Swap's decision before anything changes (decision 0041; dfi_skill_swap_decision in turn.c): the swap proceeds, the move
+ * fails silently (-fail and [still]: a fainted holder or failskillswap on either ability), it is refused (an Update handler acts on
+ * a state the holder has: Limber on a paralysed holder, Thermal Exchange on a burned one, Oblivious on a taunted one), or a holder is
+ * not there. Reads the state only. */
+#define DFI_SKILL_SWAP_PROCEED 0u
+#define DFI_SKILL_SWAP_FAILS 1u
+#define DFI_SKILL_SWAP_REFUSED 2u
+#define DFI_SKILL_SWAP_INVALID 3u
+uint32_t dfi_skill_swap_decision(struct duoforge_battle *b, uint32_t user, uint32_t target);
+
 /* The start of a CLOSURE battle, right after team selection placed the
  * leads: their entry effects run (runSwitch of the reference's 'start'
  * action). A no-op for other data kinds. On failure *b must be discarded. */
