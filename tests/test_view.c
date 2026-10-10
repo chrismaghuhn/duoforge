@@ -252,6 +252,13 @@ static void check_state(df_test *t, const duoforge_context *ctx, const duoforge_
         DF_CHECK(t, dfi_party_entry(&world->tail, foe, 1u) == dfi_party_entry(&b->tail, foe, 1u));
         truth = *b;
         memcpy(truth.tail.party_order[foe], world->tail.party_order[foe], sizeof truth.tail.party_order[foe]);
+        /* The silent flinch is not public (view audit 2026-10-10): the record drops it where it has no effect (no move left
+         * to run before the residual ends it) and refuses the state otherwise, so the world lacks it. */
+        for (uint32_t side = 0u; side < 2u; ++side) {
+            for (uint32_t slot = 0u; slot < 2u; ++slot) {
+                truth.sides[side].positions[slot].flags = (uint8_t)(truth.sides[side].positions[slot].flags & ~DFI_VOL_FLINCH);
+            }
+        }
         const size_t n = bytes_of(ctx, &truth, want);
         DF_CHECK(t, bytes_of(ctx, world, got) == n);
         DF_CHECK(t, memcmp(want, got, n) == 0);
@@ -628,6 +635,81 @@ static void test_early_pivot_information_boundary(df_test *t)
     duoforge_context_destroy(ctx);
 }
 
+/* A PIVOT after a public Protect, the foe's lead (side 1, position 0) still to move when `pending`; `flinch` sets the
+ * silent flinch volatile on that lead (a secondary's roll, never shown until its [cant] line). */
+static duoforge_battle *flinch_pivot(df_test *t, const duoforge_context *ctx, bool pending, bool flinch)
+{
+    duoforge_battle_setup setup;
+    (void)duoforge_reference_setup(0u, &setup);
+    duoforge_battle *b = df_make_battle(ctx, &setup);
+    duoforge_request rq[2];
+    duoforge_factored_domain domains[2];
+    duoforge_factored_choice choices[2] = {0};
+    for (uint32_t p = 0u; p < 2u; ++p) {
+        DF_CHECK(t, duoforge_battle_request(ctx, b, p, &rq[p]) == DUOFORGE_OK);
+        DF_CHECK(t, duoforge_battle_factored(ctx, b, p, &domains[p]) == DUOFORGE_OK);
+        for (uint32_t i = 0u; i < 4u; ++i) {
+            choices[p].picks[i] = (uint8_t)i;
+        }
+    }
+    duoforge_decision_bundle bundle;
+    DF_CHECK(t, build_bundle(rq, domains, choices, &bundle));
+    duoforge_step_result result;
+    DF_CHECK(t, duoforge_battle_step(ctx, b, &bundle, &result) == DUOFORGE_OK);
+    b->boundary_kind = (uint8_t)DUOFORGE_BOUNDARY_PIVOT;
+    b->request_mask = 1u;
+    ++b->request_epoch;
+    b->sides[0].requested_slots = 1u;
+    b->sides[1].requested_slots = 0u;
+    b->sides[0].positions[0].switch_flag = (uint8_t)DFI_SWITCH_EMERGENCY_EXIT;
+    b->sides[0].positions[1].flags = (uint8_t)DFI_VOL_PROTECT; /* the moves of this turn have started, publicly */
+    b->turn = 3u;
+    for (uint32_t side = 0u; side < 2u; ++side) {
+        for (uint32_t slot = 0u; slot < 2u; ++slot) {
+            b->sides[side].positions[slot].move_actions = 2u;
+        }
+    }
+    const uint32_t actor = b->sides[1].positions[0].activation_id;
+    b->queue_len = 0u;
+    if (pending) {
+        b->queue[b->queue_len++] = (dfi_queue_record){actor, (uint8_t)DFI_Q_MOVE, 1u, 0u, 0u, 0u, 0u};
+    }
+    b->queue[b->queue_len++] = (dfi_queue_record){0u, (uint8_t)DFI_Q_RESIDUAL, 0u, 0u, 0u, 0u, 0u};
+    if (flinch) {
+        b->sides[1].positions[0].flags = (uint8_t)(b->sides[1].positions[0].flags | DFI_VOL_FLINCH);
+    }
+    DF_CHECK(t, duoforge_battle_check(ctx, b) == DUOFORGE_OK);
+    return b;
+}
+
+/* Information safety of the silent flinch (view audit 2026-10-10): whether a secondary's flinch landed is hidden from both
+ * players until the flinched Pokemon tries to move. A record with a position still to move is refused (no public fact tells
+ * whether a flinch is outstanding on it); with none left the flinch has no effect and the record does not carry it. */
+static void test_flinch_information_safety(df_test *t)
+{
+    duoforge_context *ctx = df_make_context(&df_config_k1);
+    for (uint32_t pending = 0u; pending < 2u; ++pending) {
+        duoforge_public_state v[2];
+        duoforge_status st[2][2];
+        for (uint32_t flinch = 0u; flinch < 2u; ++flinch) {
+            duoforge_battle *b = flinch_pivot(t, ctx, pending != 0u, flinch != 0u);
+            for (uint32_t p = 0u; p < 2u; ++p) {
+                memset(&v[flinch], 0x55, sizeof v[flinch]);
+                st[flinch][p] = duoforge_battle_public(ctx, b, p, &v[flinch]);
+            }
+            duoforge_battle_destroy(b);
+        }
+        for (uint32_t p = 0u; p < 2u; ++p) {
+            DF_CHECK(t, st[0][p] == st[1][p]);
+            DF_CHECK(t, st[0][p] == (pending != 0u ? DUOFORGE_E_UNSUPPORTED : DUOFORGE_OK));
+        }
+        if (pending == 0u) { /* the last player's records (p = 1) of both battles */
+            DF_CHECK(t, v[0].state_size == v[1].state_size && memcmp(v[0].state, v[1].state, v[0].state_size) == 0);
+        }
+    }
+    duoforge_context_destroy(ctx);
+}
+
 static void test_counter_information_safety(df_test *t)
 {
     duoforge_context *ctx = df_make_context(&df_config_k1);
@@ -699,6 +781,7 @@ int main(void)
     test_counter_information_safety(&t);
     test_batch(&t);
     test_early_pivot_information_boundary(&t);
+    test_flinch_information_safety(&t);
     test_party_order_information_safety(&t);
     tally closure = {0};
     tally team_c = {0};
@@ -714,7 +797,10 @@ int main(void)
     printf("worlds refused for a flagged display: %u\n", closure.contradicted + team_c.contradicted + pool.contradicted);
     DF_CHECK(&t, closure.checked > 0u && team_c.checked > 0u && pool.checked > 0u);
     printf("queue masks: %u sound, %u explicitly unsupported\n", masks_checked, masks_refused);
-    DF_CHECK(&t, masks_checked == 20u && masks_refused == 32u);
-    DF_CHECK(&t, varied_picks > 0u && varied_commands > 0u);
+    /* Since the view audit of 2026-10-10 a PIVOT with a queued move left is refused (a silent flinch may be outstanding on
+     * it), so no public record carries a foe's pending command: the masks checked are those of PIVOTs with no move left
+     * (20 sound and 32 refused before), and no world varies a queued command. */
+    DF_CHECK(&t, masks_checked == 6u && masks_refused == 6u);
+    DF_CHECK(&t, varied_picks > 0u && varied_commands == 0u);
     return df_test_end(&t);
 }

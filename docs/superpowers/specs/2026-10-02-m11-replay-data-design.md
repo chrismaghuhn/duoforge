@@ -171,6 +171,8 @@ Examples:
 
 **Whole-game skips:** a sheet with an Illusion holder skips the game (`skip:illusion`). The disguise binds a protocol name to the wrong member before any line could tell.
 
+A Revival Blessing label (step G52) has the same problem in a milder form. The revive's `-heal` line names the member only by its nickname. The member is the one whose earlier `switch`, `drag` or `replace` lines on its side carry that name, and their details give the forme. If no such line names it, the game is skipped (`skip:revive-unseen`). If those lines name two members, it is skipped too (`skip:revive-ambiguous`). The log does not say who came back, so a guess would be a wrong label.
+
 **A stop ends the perspective.** Its points from the stop line on are dropped and counted under the reason. The points before it are kept, with labels read from their own lines (section 9).
 
 ## 6. The spectator view

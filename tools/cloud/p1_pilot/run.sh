@@ -76,14 +76,19 @@ require_cloud_env() {
 # The earlier starts recorded in OUT/run-info must be this run: the same WORK_DIR (the tools' states hold absolute
 # paths), RUN_ID, mode and pilot source (PILOT_RUN_ID or DRY_PILOT_DIR, "none"), so a new RUN_ID, or a run after a dry run in the same WORK_DIR, never inherits markers or
 # outputs. Exit 11 otherwise.
-check_earlier_starts() {  # OUT WORK_DIR RUN_ID MODE PILOT_SOURCE
-    local out=$1 work=$2 run_id=$3 mode=$4 pilot=$5 info key want got
+check_earlier_starts() {  # OUT WORK_DIR RUN_ID MODE PILOT_SOURCE [PILOT_PART DISTILL_PRESET]
+    local out=$1 work=$2 run_id=$3 mode=$4 pilot=$5 part=${6:-distill} preset=${7:-p1} info key want got
     for info in "$out"/run-info/run-info-*.json; do
         [[ -f $info ]] || continue
-        for key in work_dir run_id mode pilot_source; do
-            case $key in work_dir) want=$work ;; run_id) want=$run_id ;; mode) want=$mode ;; pilot_source) want=$pilot ;; esac
+        for key in work_dir run_id mode pilot_source pilot_part distill_preset; do
+            case $key in
+                work_dir) want=$work ;; run_id) want=$run_id ;; mode) want=$mode ;; pilot_source) want=$pilot ;;
+                pilot_part) want=$part ;; distill_preset) want=$preset ;;
+            esac
             got=$(sed -n "s/^ *\"$key\": \"\(.*\)\",\{0,1\}\$/\1/p" "$info")
-            [[ $key != pilot_source || -n $got ]] || got=none  # a start before PILOT_RUN_ID existed played phases 1-2
+            if [[ -z $got ]]; then  # a start before these keys existed: their defaults
+                case $key in pilot_source) got=none ;; pilot_part) got=distill ;; distill_preset) got=p1 ;; esac
+            fi
             [[ -z $got || $got == "$want" ]] \
                 || die $EX_SETUP "$(basename "$info") of an earlier start has $key '$got', this start '$want': use a fresh WORK_DIR (or the earlier run's settings)"
         done
@@ -92,7 +97,7 @@ check_earlier_starts() {  # OUT WORK_DIR RUN_ID MODE PILOT_SOURCE
 if [[ $MODE == check ]]; then  # the environment checks alone: no aws call; with WORK_DIR set, also its earlier starts
     require_cloud_env
     if [[ -n ${WORK_DIR:-} && -d $WORK_DIR ]]; then
-        check_earlier_starts "$(cd "$WORK_DIR" && pwd -P)/out" "$(cd "$WORK_DIR" && pwd -P)" "$RUN_ID" run "${PILOT_RUN_ID:-none}"
+        check_earlier_starts "$(cd "$WORK_DIR" && pwd -P)/out" "$(cd "$WORK_DIR" && pwd -P)" "$RUN_ID" run "${PILOT_RUN_ID:-none}" "${PILOT_PART:-distill}" "${DISTILL_PRESET:-p1}"
     fi
     echo "run.sh: BUCKET, RUN_PREFIX and RUN_ID are valid"
     exit 0
@@ -117,6 +122,22 @@ if [[ -n ${DRY_PILOT_DIR:-} ]]; then
     DRY_PILOT_DIR=$(cd "$DRY_PILOT_DIR" && pwd -P)
 fi
 PILOT_SOURCE=${PILOT_RUN_ID:-${DRY_PILOT_DIR:-}}
+# PILOT_PART: what the pilot source gives. "distill" (default): the whole pilot arm (phases 1-2, its distill result
+# and ledger). "generation": phase 1 only (its shards, manifest and the generation's ledger); this run distills.
+PILOT_PART=${PILOT_PART:-distill}
+case $PILOT_PART in distill|generation) ;; *) echo "PILOT_PART must be distill or generation, not '$PILOT_PART'" >&2; exit $EX_USAGE ;; esac
+[[ -n $PILOT_SOURCE || $PILOT_PART == distill ]] || { echo "PILOT_PART=generation needs PILOT_RUN_ID (or DRY_PILOT_DIR)" >&2; exit $EX_USAGE; }
+# DISTILL_PRESET: the distill settings (duoforge_learn.distill.Settings), recorded in run-info. "p1": the module's
+# constants, the first P1 run's. "c2": the owner's C2 repeat (2026-10-10), a wider trust region.
+DISTILL_PRESET=${DISTILL_PRESET:-p1}
+case $DISTILL_PRESET in
+    p1) DISTILL_SETTINGS=() ;;
+    c2) DISTILL_SETTINGS=(--lr 1e-4 --ref-kl-max 0.3 --max-epochs 16 --max-steps 512) ;;
+    *) echo "DISTILL_PRESET must be p1 or c2, not '$DISTILL_PRESET'" >&2; exit $EX_USAGE ;;
+esac
+if [[ -n $PILOT_SOURCE && $PILOT_PART == distill && $DISTILL_PRESET != p1 ]]; then
+    echo "DISTILL_PRESET=$DISTILL_PRESET needs a distill in this run: PILOT_PART=generation (or no pilot source)" >&2; exit $EX_USAGE
+fi
 if [[ $MODE == dry ]]; then
     WORK_DIR=${WORK_DIR:-$HOME/p1-dry/work}
 else
@@ -244,7 +265,7 @@ if [[ $MODE == run ]]; then
     log "restore s3://$BUCKET/$RUN_PREFIX"
     s3 sync "s3://$BUCKET/$RUN_PREFIX" "$OUT" "${LAUNCHER_PATHS[@]}"
 fi
-check_earlier_starts "$OUT" "$WORK_DIR" "${RUN_ID:-dry}" "$MODE" "${PILOT_SOURCE:-none}"
+check_earlier_starts "$OUT" "$WORK_DIR" "${RUN_ID:-dry}" "$MODE" "${PILOT_SOURCE:-none}" "$PILOT_PART" "$DISTILL_PRESET"
 touch "$WORK_DIR/.restored"
 if [[ $MODE == run ]]; then  # long phases (production collection, the control) upload their progress meanwhile
     ( trap - EXIT TERM INT; while true; do sleep "$UPLOAD_EVERY" & wait $!; upload_state || log "periodic upload failed"; done ) &
@@ -384,7 +405,8 @@ EOF
 
     local info=$OUT/run-info/run-info-$STARTED.json
     RI_MODE=$MODE RI_COMMIT=$COMMIT RI_HEAD=$HEAD_COMMIT RI_DIRTY=$DIRTY RI_RUN_ID=${RUN_ID:-dry} RI_WORK=$WORK_DIR \
-    RI_PILOT_SOURCE=${PILOT_SOURCE:-none} \
+    RI_PILOT_SOURCE=${PILOT_SOURCE:-none} RI_PILOT_PART=$PILOT_PART RI_DISTILL_PRESET=$DISTILL_PRESET \
+    RI_DISTILL_SETTINGS="${DISTILL_SETTINGS[*]}" \
     RI_WORKERS=$WORKERS RI_AFFINITY=$AFFINITY RI_LADDER=$LADDER_FILE RI_ENV="${RUNTIME_ENV[*]}" RI_IN=$IN \
     RI_PHASE_COLLECT="${PHASE_ENV_COLLECT[*]}" RI_PHASE_TRAIN="${PHASE_ENV_TRAIN[*]}" RI_PHASE_EVAL="${PHASE_ENV_EVAL[*]}" \
     RI_SEEDS="collect=$COLLECT_SEED split=$COLLECT_SPLIT_SEED distill=$DISTILL_SEED control=$CONTROL_SEED eval=$EVAL_SEED eval_first_game_id=$EVAL_FIRST_GAME_ID" \
@@ -404,7 +426,8 @@ with open(os.path.join(os.environ["RI_IN"], "SHA256SUMS")) as f:
         sums[name.strip().lstrip("*")] = sha
 info = {
     "mode": os.environ["RI_MODE"], "run_id": os.environ["RI_RUN_ID"], "commit": os.environ["RI_COMMIT"],
-    "pilot_source": os.environ["RI_PILOT_SOURCE"],
+    "pilot_source": os.environ["RI_PILOT_SOURCE"], "pilot_part": os.environ["RI_PILOT_PART"],
+    "distill_preset": os.environ["RI_DISTILL_PRESET"], "distill_settings": os.environ["RI_DISTILL_SETTINGS"].split(),
     "git_head": os.environ["RI_HEAD"], "tracked_changes": os.environ["RI_DIRTY"], "work_dir": os.environ["RI_WORK"],
     "workers": int(os.environ["RI_WORKERS"]), "affinity": os.environ["RI_AFFINITY"],
     "ladder_file": os.environ["RI_LADDER"], "seeds": os.environ["RI_SEEDS"],
@@ -546,14 +569,22 @@ if ! marked eval-pretrain; then
     mark eval-pretrain
 fi
 
-# ======== phases 1-2 from an earlier run (PILOT_RUN_ID, or DRY_PILOT_DIR in a dry run): read only ========
+# ======== phases 1-2 (or 1) from an earlier run (PILOT_RUN_ID, or DRY_PILOT_DIR in a dry run): read only ========
 # The pilot arm's results are copied into $OUT/pilot-source/; nothing is ever written to the earlier run. They are
-# checked (its markers, the SHA256 its distill phase recorded, the runtime environment, versions and engine sources
-# against the earlier run's run-info) and pinned with their SHA256 in run-info/pilot-source.json. Exit 51: a file
-# is missing; 52: something differs.
+# checked (its markers, the SHA256 its distill phase recorded or its shard list, the runtime environment, versions
+# and engine sources against the earlier run's run-info) and pinned with their SHA256 in run-info/pilot-source.json.
+# Exit 51: a file is missing; 52: something differs. PILOT_PART=generation takes phase 1 only: the shards (checked
+# against the earlier run's shard list) and the manifest; this run's pilot ledger then starts from the earlier one's
+# generation (its generate phase and what lies outside every phase), and this run's distill adds its own phases.
 PILOT_SRC=$OUT/pilot-source
-PILOT_FILES=(markers/distill.done ledgers/pilot.json distill/params-best.npz distill-meta/params-best.sha256)
-[[ $MODE == dry ]] || PILOT_FILES+=(markers/collect-production.done manifests/production.json collect-production/shards.sha256)
+if [[ $MODE == dry ]]; then GEN_DIR=collect-smoke GEN_MANIFEST=manifests/smoke.json; else GEN_DIR=collect-production GEN_MANIFEST=manifests/production.json; fi
+PILOT_FILES=(ledgers/pilot.json)
+if [[ $PILOT_PART == distill ]]; then
+    PILOT_FILES+=(markers/distill.done distill/params-best.npz distill-meta/params-best.sha256)
+    [[ $MODE == dry ]] || PILOT_FILES+=(markers/collect-production.done manifests/production.json collect-production/shards.sha256)
+else
+    PILOT_FILES+=("markers/$GEN_DIR.done" "$GEN_MANIFEST" "$GEN_DIR/shards.sha256")
+fi
 pilot_fetch() {  # REL: the earlier run's file to $PILOT_SRC/REL
     mkdir -p "$(dirname "$PILOT_SRC/$1")"
     if [[ $MODE == dry ]]; then cp "$DRY_PILOT_DIR/$1" "$PILOT_SRC/$1"
@@ -573,9 +604,28 @@ if [[ -n $PILOT_SOURCE ]] && ! marked pilot-import; then
         s3 cp "s3://$BUCKET/p1/$PILOT_RUN_ID/run-info/" "$PILOT_SRC/run-info/" --recursive 2>>"$OUT/logs/pilot-import.log" \
             || die $EX_PILOT_SOURCE "the pilot source $PILOT_SOURCE has no run-info"
     fi
-    want=$(cut -d' ' -f1 "$PILOT_SRC/distill-meta/params-best.sha256")
-    got=$(sha256sum "$PILOT_SRC/distill/params-best.npz" | cut -d' ' -f1)
-    [[ $want == "$got" ]] || die $EX_PILOT_MISMATCH "distill/params-best.npz of $PILOT_SOURCE is $got, its run recorded $want"
+    if [[ $PILOT_PART == distill ]]; then
+        want=$(cut -d' ' -f1 "$PILOT_SRC/distill-meta/params-best.sha256")
+        got=$(sha256sum "$PILOT_SRC/distill/params-best.npz" | cut -d' ' -f1)
+        [[ $want == "$got" ]] || die $EX_PILOT_MISMATCH "distill/params-best.npz of $PILOT_SOURCE is $got, its run recorded $want"
+    else
+        mkdir -p "$PILOT_SRC/$GEN_DIR/data/shards"
+        if [[ $MODE == dry ]]; then
+            cp "$DRY_PILOT_DIR/$GEN_DIR/data/shards/"*.json "$PILOT_SRC/$GEN_DIR/data/shards/" 2>>"$OUT/logs/pilot-import.log" \
+                || die $EX_PILOT_SOURCE "the pilot source $PILOT_SOURCE has no $GEN_DIR shards"
+        else
+            s3 cp "s3://$BUCKET/p1/$PILOT_RUN_ID/$GEN_DIR/data/shards/" "$PILOT_SRC/$GEN_DIR/data/shards/" --recursive \
+                2>>"$OUT/logs/pilot-import.log" || die $EX_PILOT_SOURCE "the pilot source $PILOT_SOURCE has no $GEN_DIR shards"
+        fi
+        # Exactly the listed shards, each with its listed SHA256.
+        listed=$(awk '{print $2}' "$PILOT_SRC/$GEN_DIR/shards.sha256" | sed 's/^\*//' | LC_ALL=C sort)
+        present=$(cd "$PILOT_SRC/$GEN_DIR/data/shards" && ls -1 | LC_ALL=C sort)
+        [[ -n $listed && $listed == "$present" ]] \
+            || die $EX_PILOT_MISMATCH "the shards of $PILOT_SOURCE are not exactly its shard list ($GEN_DIR/shards.sha256)"
+        (cd "$PILOT_SRC/$GEN_DIR/data/shards" && sha256sum --check --strict --quiet "$PILOT_SRC/$GEN_DIR/shards.sha256") \
+            || die $EX_PILOT_MISMATCH "a shard of $PILOT_SOURCE differs from its shard list ($GEN_DIR/shards.sha256)"
+        log "pilot generation: $(echo "$present" | wc -l) shards checked against $GEN_DIR/shards.sha256"
+    fi
     rc=0
     "$PY" - "$PILOT_SRC" "$OUT/run-info/run-info-$STARTED.json" "$OUT/run-info/pilot-source.json" "$PILOT_SOURCE" \
         "$REPO" "$COMMIT" "${PILOT_FILES[@]}" <<'EOF' || rc=$?
@@ -627,16 +677,37 @@ EOF
         52) die $EX_PILOT_MISMATCH "the pilot source $PILOT_SOURCE differs from this run (run-info/pilot-source.json)" ;;
         *) die $EX_CRASH "the pilot import failed with exit $rc" ;;
     esac
+    if [[ $PILOT_PART == generation ]]; then
+        # This run's pilot ledger: the earlier run's generation only (its other phases, load and distill, are its
+        # distill's, which this run replaces). Written once, here: this run's distill then adds to it.
+        "$PY" - "$PILOT_SRC/ledgers/pilot.json" "$PILOT_LEDGER" <<'EOF' || die $EX_CRASH "the pilot ledger could not be written"
+import json, sys
+src = json.load(open(sys.argv[1]))
+axes = ("cpu_core_seconds", "gpu_seconds")
+dropped = {name: phase for name, phase in src["phases"].items() if name != "generate"}
+if "generate" not in src["phases"]:
+    sys.exit("the pilot source's ledger has no generate phase")
+out = {"schema": src["schema"], "processes": src["processes"],
+       "phases": {"generate": src["phases"]["generate"]},
+       **{k: src[k] - sum(phase[k] for phase in dropped.values()) for k in axes}}
+json.dump(out, open(sys.argv[2], "w"), indent=1, sort_keys=True)
+print("pilot ledger from the generation of the pilot source:", json.dumps(out), "dropped:", sorted(dropped))
+EOF
+    fi
     mark pilot-import
 fi
-if [[ -n $PILOT_SOURCE ]]; then
+if [[ -n $PILOT_SOURCE && $PILOT_PART == distill ]]; then
     PILOT_LEDGER=$PILOT_SRC/ledgers/pilot.json  # read only: no phase of this run writes to it
     PILOT_PARAMS=$PILOT_SRC/distill/params-best.npz
 else
     PILOT_PARAMS=$OUT/distill/params-best.npz
 fi
+if [[ -n $PILOT_SOURCE && $PILOT_PART == generation ]]; then
+    DISTILL_SHARDS=$PILOT_SRC/$GEN_DIR/data/shards
+    DISTILL_MANIFEST=$PILOT_SRC/$GEN_MANIFEST
+fi
 
-if [[ -z $PILOT_SOURCE ]]; then  # phases 1-2 (up to "fi  # phases 1-2"): only without a pilot source
+if [[ -z $PILOT_SOURCE ]]; then  # phase 1 (up to "fi  # phase 1"): only without a pilot source
 # ======== phase 1: collection ========
 SMOKE=$OUT/collect-smoke
 PROD=$OUT/collect-production
@@ -694,6 +765,9 @@ else
     DISTILL_MANIFEST=$OUT/manifests/smoke.json
 fi
 
+fi  # phase 1
+
+if [[ -z $PILOT_SOURCE || $PILOT_PART == generation ]]; then  # phase 2 (up to "fi  # phase 2")
 # ======== phase 2: distillation (pilot arm) ========
 DISTILL=$OUT/distill
 if ! marked distill; then
@@ -704,7 +778,7 @@ if ! marked distill; then
         log "distill: finished already ($last)"
     else
         args=(--init "$INIT" --reference "$INIT" --shards "$DISTILL_SHARDS" --manifest "$DISTILL_MANIFEST" --out "$DISTILL"
-              --seed "$DISTILL_SEED" --ledger "$PILOT_LEDGER")
+              --seed "$DISTILL_SEED" --ledger "$PILOT_LEDGER" "${DISTILL_SETTINGS[@]}")
         if [[ -f $DISTILL/distill-state.npz ]]; then args+=(--resume); else set_aside "$DISTILL"; fi
         rc=0
         distill_env=("${PHASE_ENV_TRAIN[@]}")
@@ -721,7 +795,7 @@ if ! marked distill; then
     sha256sum "$DISTILL/params-best.npz" >"$OUT/distill-meta/params-best.sha256"
     mark distill
 fi
-fi  # phases 1-2
+fi  # phase 2
 
 # ======== phase 3: continuation control (fresh, budget-matched) ========
 # One train run from params-49333 with --update-gpu-share match (duoforge_learn.budget_match): before every update

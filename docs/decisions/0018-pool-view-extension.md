@@ -131,7 +131,7 @@ These values never occur under the other kinds. Python's `features.encode` raise
 
 Everything above is **public**, `THROAT_CHOP` included (owner decision, 2026-10-02): the move that causes it, Throat Chop, is a public move line, its secondary effect applies on every hit, and the `[silent]` start line is in both players' streams. The first draft had it own side only; the opponent's field is set exactly like the owner's. No field of revision 1 is own side only.
 
-**Hidden by the game, hence not exposed** (decision 0007 section 9 point C, applied to the new effects). Only presence, or a publicly derivable count, is in the layout:
+**Not shown by the game** (decision 0007 section 9 point C, applied to the new effects). Only presence, or a publicly derivable count, is in the layout. A rolled value stays hidden. A deterministic counter is not shown, but it is derivable from the public history: the observation extension shows presence only, and the public record may carry the value (decision 0023 section 4; owner, 2026-10-10):
 
 | Effect | What Showdown shows | What the layout has |
 |---|---|---|
@@ -229,7 +229,7 @@ The percentages are the replay spike's "share of decisions" with the effect on t
 
 The state side is not designed here. Tail rev 2 (schema 0x0203, decision 0015 section 7) carries the state of the tier-1 and tier-2 fields of this note that rev 1 lacked: perish, Taunt, Disable with its slot, Imprison, Substitute with its HP, must-recharge, partial trap with source, move and turns, Leech Seed with its source, Yawn, Focus Energy, Stockpile, Charge, Glaive Rush, Aurora Veil, Toxic Spikes, Stealth Rock, Spikes, Sticky Web, Gravity, and per member the current ability, item and forme and the toxic stage; only item_now is written so far (Knock Off, step G16: 255, shown in the view with bit 11). A step that needs a byte it does not have revises the tail again (0x0303 and on) and says so. The view reads the state through `dfi_battle` like `duoforge_battle_observe`; it never reads the opponent's hidden state: an own-side-only field is read only for the viewer's side, and a public field only from state that follows from what the viewer saw (the check of 0007 section 7, extended in section 12).
 
-How the tail rev 1 fills the view: `wide_guard` -> `guard_flags` bit `WIDE_GUARD`; `encore_slot` -> `encore_slot`; `throat_chop_turns` != 0 -> `THROAT_CHOP` (both sides); `heal_block_turns` != 0 -> `HEAL_BLOCK`; `soak_type` of the occupant -> `TYPE_CHANGED` and `type_now[0]`. The turn counters of the tail (`encore_turns`, `throat_chop_turns`, `heal_block_turns`) never leave the engine.
+How the tail rev 1 fills the view: `wide_guard` -> `guard_flags` bit `WIDE_GUARD`; `encore_slot` -> `encore_slot`; `throat_chop_turns` != 0 -> `THROAT_CHOP` (both sides); `heal_block_turns` != 0 -> `HEAL_BLOCK`; `soak_type` of the occupant -> `TYPE_CHANGED` and `type_now[0]`. The turn counters of the tail (`encore_turns`, `throat_chop_turns`, `heal_block_turns`) are not in the observation extension. They are not shown, but derivable from the public history, so the public record carries them (decision 0023 section 4; owner, 2026-10-10).
 
 ## 9. Revision and growth rule
 

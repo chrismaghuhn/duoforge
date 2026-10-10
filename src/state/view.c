@@ -220,6 +220,18 @@ static uint32_t dfi_target_candidates(uint32_t target_class, uint32_t user, uint
  * (duoforge_battle_public_causes writes it), so the two can never disagree. It reads only the player's observation, never a
  * hidden counter. Elapsed status attempts are not stored in schema 3. Never invent their posterior: a visible sleep or
  * confusion is a cause, nothing else is. ILLUSION_POSSIBLE stays 0 until Illusion (decision 0026, section 4). */
+/* Any byte of a side's Illusion state is set (point (d) of I2: a public view is refused while the foe side's ill_* is nonzero). */
+static bool dfi_view_ill_nonzero(const dfi_tail_illusion *il)
+{
+    const uint8_t *p = (const uint8_t *)il;
+    for (size_t i = 0u; i < sizeof *il; ++i) {
+        if (p[i] != 0u) {
+            return true;
+        }
+    }
+    return false;
+}
+
 /* Step G72b (decision 0015 5ce; cause DUOFORGE_PUBLIC_CAUSE_RAISED_THIS_TURN): at any PIVOT boundary (public: b->boundary_kind, the
  * view's boundary), an active Pokemon of either side that knows Alluring Voice (its move ids are open, the OTS sheet; the position
  * is public through occupant[]) may have had its stats raised this turn, which the view does not carry (stats_raised_this_turn).
@@ -267,6 +279,26 @@ static duoforge_status dfi_view_visible_causes(const duoforge_context *ctx, cons
             if (observation.sides[side].positions[p].confused != 0u) {
                 mask |= DUOFORGE_PUBLIC_CAUSE_VISIBLE_CONFUSION;
             }
+        }
+    }
+    /* Illusion (decision 0026 section 4, amended by I2, point (a)): the foe's sheet has an Illusion member that the viewer has not
+     * seen fainted under its own name and that is not shown on the field under its own name. The foe side's disguise state (ill_*)
+     * being nonzero counts as well. Facts of the viewer only: the observation and the state of the foe side's disguise. */
+    {
+        const uint32_t foe = 1u - player;
+        for (uint32_t m = 0u; m < observation.sides[foe].member_count && m < DUOFORGE_MAX_ROSTER; ++m) {
+            const duoforge_member_view *v = &observation.sides[foe].members[m];
+            if (v->ability != DFI_ABILITY_ILLUSION + 1u) {
+                continue;
+            }
+            const bool fainted_seen = v->hp_kind == DUOFORGE_HP_PERCENT && v->hp == 0u;
+            const bool shown_own = observation.sides[foe].occupant[0] == m || observation.sides[foe].occupant[1] == m;
+            if (!fainted_seen && !shown_own) {
+                mask |= DUOFORGE_PUBLIC_CAUSE_ILLUSION_POSSIBLE;
+            }
+        }
+        if (dfi_view_ill_nonzero(&b->tail.sides[foe].illusion)) {
+            mask |= DUOFORGE_PUBLIC_CAUSE_ILLUSION_POSSIBLE;
         }
     }
     /* Step G60 (decision 0032): a Substitute on either side is public presence (the position's volatile, VOLATILE_SUBSTITUTE); its
@@ -345,6 +377,22 @@ static void dfi_view_hide_foe_party(uint8_t *s, uint32_t foe)
         dfi_party_put(&t, foe, k, DFI_PARTY_HIDDEN);
     }
     memcpy(pb, t.party_order[foe], DFI_PARTY_BYTES_PER_SIDE);
+}
+
+/* Illusion (decision 0026 section 4): the foe's record hides what the foe was never shown. The disguise flag of each foe position
+ * (ability_state: the holder's disguise is up) and the snapshot and pending counts of the foe's side are the engine's truth; the
+ * shown name and the override stay (the foe saw them). */
+static void dfi_view_hide_foe_illusion(uint8_t *s, uint32_t foe, const duoforge_battle *b)
+{
+    for (uint32_t p = 0u; p < DUOFORGE_ACTIVE_PER_SIDE; ++p) {
+        if (dfi_illusion_disguise_up(&b->sides[foe], &b->tail.sides[foe], p) != 0) {
+            s[DFI_ENC_TAIL_OFF + DFI_ENC_TAIL_SIDES_OFF + foe * DFI_ENC_TAIL_SIDE_SIZE + DFI_ENC_TAIL_POS_OFF + p * DFI_ENC_TAIL_POS_SIZE +
+              DFI_ENC_TAIL_POS_ABILITY_STATE_OFF] = 0u;
+        }
+    }
+    uint8_t *il = s + DFI_ENC_TAIL_OFF + DFI_ENC_TAIL_REV4_SIZE + DFI_ENC_TAIL5_SIDES_OFF + foe * DFI_ENC_TAIL5_SIDE_SIZE;
+    memset(il + DFI_ENC_TAIL5_ILL_SNAPSHOT_OFF, 0, 7u); /* bytes 7..8 (the holder's status and location as the foe knew them) stay */
+    memset(il + DFI_ENC_TAIL5_ILL_PENDING_OFF, 0, 4u);
 }
 
 /* The foe's party_order of a world built from a public view (from_view): the two actives from the view (public), then the
@@ -452,6 +500,15 @@ static duoforge_status dfi_view_encode(const duoforge_context *ctx, const duofor
              * declaration. Refuse the entire public pre-move phase. */
             return DUOFORGE_E_UNSUPPORTED;
         }
+        /* The silent flinch (view audit 2026-10-10): a secondary's flinch is set without a line and shows only when the
+         * flinched Pokemon tries to move ([cant] flinch), hidden from both players (0007). No public fact tells whether one is
+         * outstanding on a position still to move, so a PIVOT with a queued move left is refused; with none left a flinch has
+         * no effect before the residual ends it, and the record drops the bit (below). */
+        for (uint32_t q = 0u; q < b->queue_len && q < DFI_QUEUE_CAPACITY; ++q) {
+            if (b->queue[q].kind == DFI_Q_MOVE) {
+                return DUOFORGE_E_UNSUPPORTED;
+            }
+        }
     }
     if (b->sides[foe].sealed != 0u) {
         return DUOFORGE_E_UNSUPPORTED;
@@ -467,10 +524,17 @@ static duoforge_status dfi_view_encode(const duoforge_context *ctx, const duofor
             const dfi_tail_pos *tp = &b->tail.sides[side].positions[p];
             /* A Substitute on either side is refused (decision 0032): its HP follows hidden damage and the owner's request does not show
              * it, so no honest world can rebuild it. The cause (DUOFORGE_PUBLIC_CAUSE_SUBSTITUTE) is named by the causes call. */
+            /* A lockedmove is refused while one may run, decided from the public last move (dfi_maybe_lockedmove), not from
+             * the drawn count, whose silent end would show (view audit 2026-10-10). A running lock outside that is a broken
+             * state. */
+            const bool maybe_locked = dfi_maybe_lockedmove(b, side * 2u + p);
+            if (tp->lock_turns != 0u && !maybe_locked) {
+                return DUOFORGE_E_INVARIANT;
+            }
             /* Step G66: a temporary forme (Stance Change) is refused too: its forme is not in the view (the TEMP_FORME cause). */
             const uint32_t occupant = b->sides[side].positions[p].occupant;
             const bool temp_forme = occupant < DUOFORGE_MAX_ROSTER && b->tail.sides[side].forme_now[occupant] != 0u;
-            if (tp->trap_turns != 0u || tp->lock_turns != 0u || tp->substitute_hp != 0u || temp_forme) {
+            if (tp->trap_turns != 0u || maybe_locked || tp->substitute_hp != 0u || temp_forme) {
                 return DUOFORGE_E_UNSUPPORTED;
             }
         }
@@ -478,6 +542,7 @@ static duoforge_status dfi_view_encode(const duoforge_context *ctx, const duofor
     const size_t n = dfi_encode_unchecked(ctx, b, s);
     if (dfi_kind_limits_of(ctx->data_kind).pool_rules) {
         dfi_view_hide_foe_party(s, foe); /* step G46: the foe's party_order past the leads is hidden (decision 0023) */
+        dfi_view_hide_foe_illusion(s, foe, b); /* Illusion (decision 0026 section 4): the foe's record hides the disguise's truth */
     }
     uint8_t order[DFI_QUEUE_CAPACITY] = {0};
     queue_canonical(s, order);
@@ -498,6 +563,10 @@ static duoforge_status dfi_view_encode(const duoforge_context *ctx, const duofor
         }
         for (uint32_t p = 0u; p < DUOFORGE_ACTIVE_PER_SIDE; ++p) {
             uint8_t *pb = position_at(s, side, p);
+            /* The silent flinch (above): no move is left that it could stop. Its residual end is one more entry of the
+             * residual's speed order, so a world without it may draw a different number of speed ties there; the
+             * distribution of the outcomes is the same. */
+            pb[DFI_ENC_POS_FLAGS_OFF] = (uint8_t)(pb[DFI_ENC_POS_FLAGS_OFF] & ~DFI_VOL_FLINCH); /* wide-operands-reviewed: flags are 8 bits */
             if (pb[DFI_ENC_POS_CONFUSION_OFF] != 0u) {
                 pb[DFI_ENC_POS_CONFUSION_OFF] = (uint8_t)DUOFORGE_VIEW_HIDDEN;
             }
