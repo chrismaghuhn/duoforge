@@ -1,6 +1,7 @@
 #include "state/identity.h"
 
 #include "core/arith.h"
+#include "state/closure_member.h"
 
 bool dfi_position_valid(dfi_position_id p)
 {
@@ -40,12 +41,26 @@ void dfi_tail_clear_occupant(struct duoforge_battle *b, uint32_t flat)
     ts->positions[flat % DUOFORGE_ACTIVE_PER_SIDE] = (dfi_tail_pos){0u};
     if (occupant < DUOFORGE_MAX_ROSTER) {
         /* What ends with the occupant's time on the field: the type Soak set, a current ability that something
-         * swapped in, the toxic counter. The current item and forme outlive the switch (a Trick or a permanent
-         * forme change stay; a mechanic that gives a temporary forme clears forme_now itself). */
+         * swapped in, the toxic counter. The current item and a permanent forme outlive the switch (a Trick or a Mega
+         * Evolution stay); a temporary forme ends here (forme_now, below). */
         ts->soak_type[occupant] = 0u;
         ts->ability_now[occupant] = 0u;
         ts->toxic_stage[occupant] = 0u;
         ts->type2[occupant] = 0u; /* tail rev 4: a type that a move took away comes back with the Pokemon */
+        /* Step G66 (decision 0040): the temporary forme (Stance Change's Blade, forme_now = its id + 1) ends with the time on
+         * the field: the sheet's forme comes back with its stats (setSpecies in clearVolatile, sim/pokemon.ts:1559). Other
+         * forme_now values are permanent formes and stay. The stats of a pool row always derive (the member's nature and
+         * Stat Points are valid). */
+        if (ts->forme_now[occupant] == DFI_FORME_AEGISLASHBLADE + 1u) {
+            dfi_member *mem = &b->sides[flat / DUOFORGE_ACTIVE_PER_SIDE].members[occupant];
+            uint16_t stats[DFI_MEMBER_STAT_COUNT];
+            ts->forme_now[occupant] = 0u;
+            if (dfi_closure_member_forme_stats(mem, mem->species_id, stats)) {
+                for (uint32_t i = 0u; i < DFI_MEMBER_STAT_COUNT; ++i) {
+                    mem->stats[i] = stats[i];
+                }
+            }
+        }
     }
 }
 

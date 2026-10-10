@@ -1028,13 +1028,19 @@ duoforge_status duoforge_battle_observe_ext(const duoforge_context *ctx, const d
 #define DUOFORGE_EVENT_SIDE_END        28u /* [-sideend] as SIDE_START */
 #define DUOFORGE_EVENT_ITEM_END        29u /* [-enditem] position, id2: item + 1; flags EATEN; detail 1: the
                                               [weaken] line of a resist berry (Team C) */
-#define DUOFORGE_EVENT_FORME           30u /* [detailschange] position, id: the new forme */
+/* FORME (decision 0040, step G66): position, id: the new forme. Two meanings, by cause. Cause NONE is a PERMANENT change,
+ * [detailschange] (Mega Evolution, Palafin-Hero, Mimikyu-Busted). Cause ABILITY with id2 = the ability id + 1 is a TEMPORARY
+ * change, [-formechange] (Stance Change: Aegislash <-> Aegislash-Blade), which ends when the member leaves the field (the forme
+ * goes back to the sheet's). Neither temporary form is emitted before its step. */
+#define DUOFORGE_EVENT_FORME           30u
 #define DUOFORGE_EVENT_MEGA            31u /* [-mega] position, id2: the stone (item + 1) */
 #define DUOFORGE_EVENT_PREPARE         32u /* [-prepare] position, id: the move it charges */
 #define DUOFORGE_EVENT_ANIMATION       33u /* [-anim] position, other, id: the move shown; flags MISS, NOTARGET
                                                     (the last move line once shown) */
 #define DUOFORGE_EVENT_ABILITY         34u /* [-ability] position, id2: ability + 1. POOL kinds, cause ABILITY (Trace copying
-                                               a foe's): other is the foe, id2 the copied ability + 1 */
+                                               a foe's): other is the foe, id2 the copied ability + 1. With cause MOVE
+                                               (Skill Swap, decision 0041): id = the new ability + 1, id2 = the move, other
+                                               the partner; two events per swap, the source first */
 #define DUOFORGE_EVENT_ACTIVATE        35u /* [-activate] position; cause ABILITY + id2 (Lightning Rod, Emergency Exit) or MOVE + id2 (Struggle);
                                                     Flower Veil's [-block] too: position the protected Pokemon, other the holder ([of]);
                                                     POOL kinds: [-fieldactivate|move: Perish Song] is cause MOVE, id2 the move, position
@@ -1080,7 +1086,8 @@ duoforge_status duoforge_battle_observe_ext(const duoforge_context *ctx, const d
 #define DUOFORGE_CAUSE_NONE      0u /* the move or the plain mechanic */
 #define DUOFORGE_CAUSE_MOVE      1u /* id2: move id (Parting Shot's switch; a sleep that a move caused; POOL kinds: the damage that
                                         Spiky Shield does to a contact attacker, [-damage] ... [from] Spiky Shield [of] the holder,
-                                        the holder in other) */
+                                        the holder in other; POOL kinds, ABILITY events of Skill Swap: id is the new ability + 1,
+                                        decision 0041) */
 #define DUOFORGE_CAUSE_ITEM      2u /* id2: item + 1 */
 #define DUOFORGE_CAUSE_ABILITY   3u /* id2: ability + 1; other: its holder when shown */
 #define DUOFORGE_CAUSE_RECOIL    4u
@@ -1138,6 +1145,9 @@ duoforge_status duoforge_battle_observe_ext(const duoforge_context *ctx, const d
 #define DUOFORGE_VOLATILE_SUBSTITUTE 9u /* VOLATILE_START / VOLATILE_END (POOL kinds, decision 0032): the Substitute (-start|X|Substitute,
                                               -end|X|Substitute when it breaks or Tidy Up removes it). Presence only: its HP is never in an event.
                                               A switch-out removes it with no END (the pin's clearVolatile). */
+#define DUOFORGE_VOLATILE_DRAGONCHEER 10u /* VOLATILE_START (POOL kinds, step G72b, decision 0015 5ce): Dragon Cheer's volatile
+                                              (-start|X|move: Dragon Cheer). Presence only; no END: a switch-out removes it with no
+                                              line. The crit stage it gives is in the position flags (tail rev 5), not in an event. */
 /* FAIL details of a Substitute, valid only with cause MOVE and id2 = the Substitute move (decision 0032). */
 #define DUOFORGE_FAIL_SUBSTITUTE_EXISTS 1u /* the user already has a Substitute: -fail|X|move: Substitute */
 #define DUOFORGE_FAIL_SUBSTITUTE_WEAK   2u /* the user's HP is a quarter of its maximum or less: -fail|X|move: Substitute|[weak] */

@@ -292,7 +292,7 @@ def check(line, view):
             return _feature(_GUARD_ACTIVATE[effect])
         if effect in ("move: Electric Terrain", "move: Misty Terrain"):
             return _feature(_FIELD[effect])  # the terrain blocking Yawn or its sleep: its own feature, as -fieldstart
-        if effect in ("move: Skill Swap",):
+        if effect in ("move: Skill Swap", "Skill Swap"):  # the pin prints it without "move: " (decision 0041)
             return _feature("ABILITY_CHANGE")
         if effect == "move: Poltergeist" and len(args) == 3:
             # Poltergeist (step G64): it names the item its target holds; the open sheet's item is no news (an

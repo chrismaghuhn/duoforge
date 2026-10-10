@@ -1,0 +1,22 @@
+{
+  "name": "g70_skillswap_ally_trace",
+  "purpose": "Skill Swap (step G70, decision 0041): Gardevoir (F) copies Contrary from the foe at its entry (Trace), then swaps with its ally Espeon (F, Synchronize) with no names on the line: Espeon has Contrary, Gardevoir has Synchronize.",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,0000000000000000000000000000000000000000000000000000000000006401",
+  "teams": [
+    "Gardevoir (F)\nAbility: Trace\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nTimid Nature\n- Skill Swap\n- Calm Mind\n- Dazzling Gleam\n- Helping Hand\n\nEspeon (F)\nAbility: Synchronize\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nTimid Nature\n- Calm Mind\n- Dazzling Gleam\n- Helping Hand\n\nGyarados (M)\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Spe\nAdamant Nature\n- Dragon Dance\n- Earthquake\n- Crunch\n\nGengar (F)\nAbility: Cursed Body\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nTimid Nature\n- Shadow Ball\n- Dark Pulse\n- Focus Blast\n\nRillaboom (M)\nAbility: Grassy Surge\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Def\nAdamant Nature\n- Fake Out\n- Earthquake\n- Drum Beating\n\nPelipper (M)\nAbility: Drizzle\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nBold Nature\n- Hurricane\n- Helping Hand\n- Hydro Pump",
+    "Malamar (M)\nAbility: Contrary\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Spe\nAdamant Nature\n- Foul Play\n- Dark Pulse\n- Calm Mind\n- Knock Off\n\nKingambit (M)\nAbility: Pressure\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Spe\nAdamant Nature\n- Kowtow Cleave\n- Iron Head\n- Foul Play\n\nChimecho (F)\nAbility: Levitate\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nCalm Nature\n- Calm Mind\n- Dazzling Gleam\n- Encore\n\nSpiritomb (M)\nAbility: Pressure\nLevel: 50\nEVs: 32 HP / 32 Def / 2 Spe\nCalm Nature\n- Protect\n- Dark Pulse\n- Foul Play\n\nIncineroar (M)\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Spe\nAdamant Nature\n- Fake Out\n- Flamethrower\n- Darkest Lariat\n\nCeruledge (M)\nAbility: Flash Fire\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Spe\nAdamant Nature\n- Close Combat\n- Bitter Blade\n- Bulk Up"
+  ],
+  "plan": {
+    "p1": [
+      "move 1 -2, move 1",
+      "move 2, move 1"
+    ],
+    "p2": [
+      "move 2 1, move 1 1",
+      "move 1 2, move 1 2"
+    ],
+    "max_steps": 4
+  }
+}

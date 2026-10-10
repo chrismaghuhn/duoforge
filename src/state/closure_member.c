@@ -376,6 +376,24 @@ static bool dfi_derive_stats(uint32_t species, uint32_t is_mega, uint32_t item, 
     return true;
 }
 
+/* Step G66 (decision 0040): the stats of m in the forme `forme` (a pool forme row, a temporary forme of Stance Change): the
+ * formula of dfi_derive_stats with that forme's base stats, the member's nature and Stat Points. HP is not derived here (a
+ * forme change keeps the HP maximum, sim/pokemon.ts formeChange without isPermanent). False if the row is not a pool forme. */
+bool dfi_closure_member_forme_stats(const dfi_member *m, uint32_t forme, uint16_t *stats)
+{
+    if (forme >= DFI_POOL_FORME_COUNT) {
+        return false;
+    }
+    const dfi_pool_forme_data *cur = &dfi_pool_formes[forme];
+    for (uint32_t i = 0u; i < DFI_MEMBER_STAT_COUNT; ++i) {
+        const uint32_t stat = i + 1u;
+        if (!dfi_champions_stat(stat, cur->base[stat], m->stat_points[stat], m->nature, &stats[i])) {
+            return false;
+        }
+    }
+    return true;
+}
+
 bool dfi_closure_member_derive(dfi_member *m)
 {
     return dfi_derive_stats(m->species_id, m->is_mega, m->item, m->nature, m->stat_points, &m->hp_max, m->stats);

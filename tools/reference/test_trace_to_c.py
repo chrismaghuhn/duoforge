@@ -1990,6 +1990,46 @@ class Library(unittest.TestCase):
             with self.assertRaises(trace_to_c.ConversionError):
                 trace_to_c.step_events([bad], 0, roster, [{'Gardevoir': 100}] * 2, tables)
 
+    def test_skill_swap_foe_and_ally_lines_are_two_ability_events(self):
+        """Step G70 (decision 0041): the foe's line names both abilities (the source now has the first); the ally's line
+        names none, and its pair is the one swap_partners follows from the sheets and the earlier lines of the battle."""
+        tables = trace_to_c.load_tables(ROOT, True)
+        roster = [{'Gardevoir': 0, 'Incineroar': 1}, {'Milotic': 0, 'Pelipper': 1}]
+        maxhp = [{'Gardevoir': 100, 'Incineroar': 100}, {'Milotic': 100, 'Pelipper': 100}]
+        ab = tables['ABILITY']
+        move = tables['MOVE'][trace_to_c.key('Skill Swap')]
+        # foe line: p2a Milotic (the source) swaps with p1a Gardevoir; Milotic now has Intimidate, Gardevoir Multiscale
+        foe = '|-activate|p2a: Milotic|Skill Swap|Intimidate|Multiscale|[of] p1a: Gardevoir'
+        events = trace_to_c.step_events([foe], 0, roster, maxhp, tables)
+        self.assertEqual(len(events), 2)
+        self.assertEqual(events[0][:6], (trace_to_c.EV['ABILITY'], 2, 0, trace_to_c.CAUSE['MOVE'], ab[trace_to_c.key('Intimidate')] + 1, move))
+        self.assertEqual(events[1][:6], (trace_to_c.EV['ABILITY'], 0, 2, trace_to_c.CAUSE['MOVE'], ab[trace_to_c.key('Multiscale')] + 1, move))
+        # ally line: p1a Gardevoir (Trace) swaps with p1b Incineroar (Intimidate); no names in the line
+        teams = [[{'ability': ab[trace_to_c.key('Trace')] + 1}, {'ability': ab[trace_to_c.key('Intimidate')] + 1}],
+                 [{'ability': ab[trace_to_c.key('Multiscale')] + 1}, {'ability': ab[trace_to_c.key('Pressure')] + 1}]]
+        ally = '|-activate|p1a: Gardevoir|Skill Swap|||[of] p1b: Incineroar'
+        enter = ['|switch|p1a: Gardevoir|Gardevoir, L50|100/100', '|switch|p1b: Incineroar|Incineroar, L50|100/100']
+        log = enter + [ally]
+        swaps = trace_to_c.swap_partners({'steps': [{'log': log}]}, teams, roster, tables)
+        self.assertEqual(swaps, [{2: (ab[trace_to_c.key('Intimidate')], ab[trace_to_c.key('Trace')])}])
+        events = trace_to_c.step_events(log, 1, roster, maxhp, tables, None, swap_ids=swaps[0])
+        self.assertEqual(events[-2][:6], (trace_to_c.EV['ABILITY'], 0, 1, trace_to_c.CAUSE['MOVE'], ab[trace_to_c.key('Intimidate')] + 1, move))
+        self.assertEqual(events[-1][:6], (trace_to_c.EV['ABILITY'], 1, 0, trace_to_c.CAUSE['MOVE'], ab[trace_to_c.key('Trace')] + 1, move))
+        # the Trace copy before the ally swap is followed: Incineroar copies Multiscale from p2a, then swaps with Gardevoir
+        log2 = enter + ['|-ability|p1b: Incineroar|Multiscale|Intimidate|[from] ability: Trace|[of] p2a: Milotic', ally]
+        swaps2 = trace_to_c.swap_partners({'steps': [{'log': log2}]}, teams, roster, tables)
+        self.assertEqual(swaps2, [{3: (ab[trace_to_c.key('Multiscale')], ab[trace_to_c.key('Trace')])}])
+        # refusals: an ally line without its pair, and an ally swap of a Mega Evolved holder (its ability is not known)
+        with self.assertRaises(trace_to_c.ConversionError):
+            trace_to_c.step_events([ally], 1, roster, maxhp, tables)
+        mega_log = enter + ['|-mega|p1a: Gardevoir|Gardevoir-Mega|Gardevoirite', ally]
+        with self.assertRaises(trace_to_c.ConversionError):
+            trace_to_c.swap_partners({'steps': [{'log': mega_log}]}, teams, roster, tables)
+        for bad in ('|-activate|p2a: Milotic|Skill Swap|Intimidate|[of] p1a: Gardevoir',
+                    '|-activate|p2a: Milotic|Skill Swap|Intimidate|Multiscale|[of] p1a: Gardevoir|[from] move: X'):
+            with self.assertRaises(trace_to_c.ConversionError):
+                trace_to_c.step_events([bad], 0, roster, maxhp, tables)
+
     def test_perish_song_lines_are_events_and_rows_are_what_the_protocol_lines_say(self):
         """Perish Song (step G26): `-start|X|perishN` is a VOLATILE_START of the volatile PERISH (5) with the count N in
         `amount` (3, 2, 1, and 0 from onEnd, which a `faint` line follows); `-fieldactivate|move: Perish Song` is an ACTIVATE
@@ -2225,7 +2265,7 @@ class Library(unittest.TestCase):
         self.assertEqual(extended['ITEM']['CHOPLEBERRY'], 14)
         self.assertEqual(extended['ITEM']['MYSTICWATER'], 6)
         self.assertNotIn('CHILANBERRY', tables(False)['ITEM'])
-        self.assertEqual(len(extended['GENDER_RULE']), 346)  # the pool's formes: the whole legal pool (decision 0015 4.2)
+        self.assertEqual(len(extended['GENDER_RULE']), 347)  # the pool's formes: the whole legal pool plus the Blade row (decision 0015 4.2, step G66)
 
     def test_the_protocol_names_of_the_formes_with_a_base_species(self):
         """An unnamed Pokemon is called by its base species in the protocol (sim/pokemon.ts:339-341): Indeedee-F,
@@ -2260,7 +2300,7 @@ class Library(unittest.TestCase):
         marked = [n for n in re.findall(r'\[DFI_MOVE_(\w+)\] = 1u', read('src', 'data', 'support_manifest.c'))
                   if n in ids and ids[n] >= ext_moves]
         self.assertEqual(len(names), ext_moves + len(ids))
-        self.assertEqual(len(marked), 189)  # 180 of main, the four of G64 and the three of G62 (Haze, After You, Quash)  # the four of step G64 (Poltergeist, Beat Up, Bug Bite, Sheer Cold; decision 0015 item 5ca), the seven of step G54 (Icicle Spear, Scale Shot, Quick Guard, Upper Hand, Heal Pulse, Strength Sap, Sing), and the 171 of main (Roost and Stomping Tantrum of G42, Double Shock of G50 among them)  # Roost and Stomping Tantrum (G42), Double Shock (G50), the eleven of step G44, the four of step G46, the four of step G48, Taunt and Yawn (G31) and the rows of the earlier steps as before
+        self.assertEqual(len(marked), 197)  # G72b: Alluring Voice and Dragon Cheer make 197 (195 before); the King's Shield of G66 (decision 0015 5cb) makes 195; the Skill Swap of G70 makes 194 (decision 0041) makes 194 from 193; 189 before step G68 (decision 0015 item 5cc: Steel Beam, Thunder Wave, Fire Punch, Ice Hammer); 180 of main, the four of G64 and the three of G62 (Haze, After You, Quash)  # the four of step G64 (Poltergeist, Beat Up, Bug Bite, Sheer Cold; decision 0015 item 5ca), the seven of step G54 (Icicle Spear, Scale Shot, Quick Guard, Upper Hand, Heal Pulse, Strength Sap, Sing), and the 171 of main (Roost and Stomping Tantrum of G42, Double Shock of G50 among them)  # Roost and Stomping Tantrum (G42), Double Shock (G50), the eleven of step G44, the four of step G46, the four of step G48, Taunt and Yawn (G31) and the rows of the earlier steps as before
         pool = [n for n in os.listdir(os.path.join(ROOT, 'tests', 'reference', 'specs'))
                 if trace_to_c.is_pool(ROOT, n[:-5])]
         logs = []
@@ -2291,8 +2331,12 @@ class Library(unittest.TestCase):
                             done = done or (name == 'Detect' and after.startswith('|-singleturn|'))
                             # Spiky Shield (step G20) prints Protect's line, `move: Protect`, for its own volatile.
                             done = done or (name == 'Spiky Shield' and after.startswith('|-singleturn|'))
+                            # King's Shield (step G66) prints the same `-singleturn|X|Protect` line as Protect (data/moves.ts:9929).
+                            done = done or (name == "King's Shield" and after.startswith('|-singleturn|'))
                             # Haze (step G62, decision 0031): its own line, the public -clearallboost.
                             done = done or (name == 'Haze' and after == '|-clearallboost')
+                            # Thunder Wave (step G68): its paralysis (-status) or the Ground or Electric immunity (-immune).
+                            done = done or (name == 'Thunder Wave' and after.startswith(('|-status|', '|-immune|')))
                             # After You and Quash (step G62): the -activate line of the move on the target.
                             done = done or (name in ('After You', 'Quash') and after.startswith('|-activate|') and after.endswith('|move: ' + name))
                             # Rage Powder (step G30): the single-turn line of its condition.
@@ -2791,6 +2835,59 @@ class IllusionPressure(unittest.TestCase):
         self.assertIsNone(windows[2])                                 # the break ends the disguise
         self.assertEqual(spent[(1, 0)], [2, 0, 0, 0])                 # the holder takes the pending 2 at the break
         self.assertEqual(spent[(1, 1)], [0, 0, 0, 0])                 # the disguise's row restored to its snapshot
+
+
+class FormeStance(unittest.TestCase):
+    """NAMED RULE FORME-STANCE (step G66, decision 0040): a `-formechange` line with no attribute is accepted only for
+    Aegislash or Aegislash-Blade, only right before the move line of the same position, and the Shield's forme only before
+    King's Shield. Each negative control changes an in-memory copy of a committed battle and asserts the rule."""
+
+    NAME = 'g66_blade_shield_cycle'
+    CASE = '|-formechange|p1a: Aegislash|Aegislash-Blade|'
+
+    def mutated(self, fn):
+        spec, trace = battle(self.NAME)
+        changed = 0
+        for st in trace['steps']:
+            new = []
+            for line in st['log']:
+                if line.startswith('|-formechange|'):
+                    line = fn(line)
+                    changed += 1
+                new.append(line)
+            st['log'] = new
+        self.assertGreater(changed, 0, 'the committed battle has the -formechange lines')
+        return spec, trace
+
+    def test_committed_lines_convert(self):
+        spec, trace = battle(self.NAME)
+        convert(self.NAME, spec, trace)  # no ConversionError: the rule accepts the recorded shapes
+
+    def test_species_other_than_aegislash_refused(self):
+        spec, trace = self.mutated(lambda l: l.replace('|Aegislash-Blade|', '|Garchomp|', 1))
+        with self.assertRaises(trace_to_c.ConversionError) as cm:
+            convert(self.NAME, spec, trace)
+        self.assertEqual(cm.exception.rule, 'formechange-line')
+
+    def test_shield_forme_before_another_move_refused(self):
+        # The Blade move (Iron Head) with the Shield's species: the Shield changes only before King's Shield.
+        spec, trace = self.mutated(lambda l: l.replace('|Aegislash-Blade|', '|Aegislash|', 1))
+        with self.assertRaises(trace_to_c.ConversionError) as cm:
+            convert(self.NAME, spec, trace)
+        self.assertEqual(cm.exception.rule, 'formechange-line')
+
+    def test_blade_forme_before_king_s_shield_refused(self):
+        # Turn 2: the Shield forme before King's Shield. Making it the Blade is refused (King's Shield never gives the Blade).
+        spec, trace = self.mutated(lambda l: l.replace('|p1a: Aegislash|Aegislash|', '|p1a: Aegislash|Aegislash-Blade|'))
+        with self.assertRaises(trace_to_c.ConversionError) as cm:
+            convert(self.NAME, spec, trace)
+        self.assertEqual(cm.exception.rule, 'formechange-line')
+
+    def test_attribute_from_another_ability_refused(self):
+        spec, trace = self.mutated(lambda l: l + '[from] ability: Trace' if l.endswith('|') else l)
+        with self.assertRaises(trace_to_c.ConversionError) as cm:
+            convert(self.NAME, spec, trace)
+        self.assertEqual(cm.exception.rule, 'formechange-line')
 
 
 if __name__ == '__main__':

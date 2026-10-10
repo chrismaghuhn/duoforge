@@ -230,7 +230,9 @@ typedef struct dfi_side {
 /* rev 3: the variants of the Protect volatile (Protect and Detect, Spiky Shield; Baneful Bunker is next when a Toxapex ability is marked) */
 #define DFI_PROTECT_PLAIN 0u
 #define DFI_PROTECT_SPIKY_SHIELD 1u
-#define DFI_TAIL_PROTECT_KIND_MAX 1u
+/* step G66 (decision 0015 5cb, decision 0040): King's Shield, Protect that passes Status moves and lowers a contact attacker's Attack */
+#define DFI_PROTECT_KINGS_SHIELD 2u
+#define DFI_TAIL_PROTECT_KIND_MAX 2u
 /* rev 4, per position (decision 0015 section 7, the audit of tail-rev4-proposal.md section 4.1; no mechanic writes them yet).
  * move_result: two bits for this turn (0-1) and two for the last turn (2-3), each DFI_MOVE_RESULT_*; the pin's
  * moveThisTurnResult and moveLastTurnResult (Stomping Tantrum reads `=== false`, so null must not count as a failure). */
@@ -255,6 +257,16 @@ typedef struct dfi_side {
 #define DFI_TAIL_HITS_TAKEN_MAX 6u      /* Rage Fist: power 50 + 50 * n is capped at 350 */
 #define DFI_TAIL_ABILITY_STATE_MAX 6u   /* Supreme Overlord 0-5 fallen allies, Protean 0/1, Illusion roster index + 1 */
 #define DFI_TAIL_LOCK_TURNS_MAX 3u      /* lockedmove (Outrage, Thrash, Petal Dance): 2 or 3 turns */
+/* tail rev 5 position flags (position_flags, G72b; decision 0015 5ce). The bitfield of one position: bit 0 Healing Wish (never
+ * set yet), bit 1 DFI_POSFLAG_STATS_RAISED (Alluring Voice: a positive boost reached the occupant this turn; set in dfi_boost,
+ * cleared at the turn boundary and with the occupant), bits 2-3 DFI_POSFLAG_DRAGON_CHEER_MASK (the Dragon Cheer crit stage:
+ * 0 none, 1 = +1, 2 = +2 for a Dragon at start; 3 is invalid). Bits 4-7 are zero. */
+#define DFI_POSFLAG_HEALING_WISH 0x01u
+#define DFI_POSFLAG_STATS_RAISED 0x02u
+#define DFI_POSFLAG_DRAGON_CHEER_SHIFT 2u
+#define DFI_POSFLAG_DRAGON_CHEER_MASK 0x0Cu
+#define DFI_POSFLAG_DRAGON_CHEER_MAX 2u
+#define DFI_POSFLAG_VALID_MASK 0x0Fu
 /* rev 4, per side and per roster member */
 #define DFI_TAIL_QUICK_GUARD_MAX 1u     /* set by Quick Guard, ends in the residual of the turn */
 /* hazard_order: the creation order of the hazards that are up on the side (the pin's effectOrder, sim/battle.ts:994-1000), which
@@ -315,7 +327,9 @@ typedef struct dfi_tail_pos {
     uint8_t hits_taken;        /* tail rev 4: damaging hits the occupant has taken since it came in, 0..DFI_TAIL_HITS_TAKEN_MAX (Rage Fist) */
     uint8_t ability_state;     /* tail rev 4: the state of the occupant's current ability, 0..DFI_TAIL_ABILITY_STATE_MAX (its meaning goes with the ability) */
     uint8_t lock_turns;        /* tail rev 4: the turns that a lockedmove volatile has left, 0..DFI_TAIL_LOCK_TURNS_MAX */
-    uint8_t slot_pending;      /* tail rev 5 (lane A, the slot's pending effect; bit 0 Healing Wish): zero, nothing writes it yet */
+    uint8_t position_flags;    /* tail rev 5 (lane A, G72b): a bitfield, DFI_POSFLAG_* below. Bit 0 is Healing Wish (zero: nothing
+                                * writes it), bit 1 the occupant's stats were raised this turn, bits 2-3 the Dragon Cheer crit stage;
+                                * bits 4-7 are zero. The flags end with the occupant (dfi_tail_clear_occupant). */
     uint8_t future_sight;      /* tail rev 5 (lane A): 2 bits of turns, 3 bits for the source, 3 spare; zero, nothing writes it yet */
 } dfi_tail_pos;
 

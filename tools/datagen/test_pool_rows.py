@@ -93,10 +93,11 @@ class PoolRows(unittest.TestCase):
     def test_the_tables_have_exactly_the_legal_ids(self):
         sp = species()
         formes = [i for i, s in sp.items() if s['kind'] == 'mega' or
-                  (s['kind'] == 'selectable' and s['mechanically_identical_to'] is None)]
+                  (s['kind'] == 'selectable' and s['mechanically_identical_to'] is None) or
+                  (s['kind'] == 'battle_only' and i == 'aegislashblade')]  # step G66: the Blade row
         self.assertEqual(sorted(Rows.formes), sorted(formes))
         self.assertEqual(len(Rows.formes), define('DFI_POOL_FORME_COUNT'))
-        self.assertEqual(len(Rows.formes), 346)
+        self.assertEqual(len(Rows.formes), 347)  # 346 before step G66 (the Blade row)
         self.assertEqual(sorted(Rows.moves), sorted([m['id'] for m in LEGAL['moves']] + ['struggle']))
         self.assertEqual(len(Rows.moves), define('DFI_POOL_MOVE_COUNT'))
         self.assertEqual(sorted(Rows.items), sorted(i['id'] for i in LEGAL['items']))
@@ -147,6 +148,9 @@ class PoolRows(unittest.TestCase):
                     self.assertEqual(Rows.items[mega_item], rec['required_item'])
                     self.assertEqual(set_item, mega_item)
                     self.assertEqual(gender, GENDER[base_rec['gender']])
+                elif rec['kind'] == 'battle_only':
+                    self.assertEqual(base, Rows.formes.index(rec['reached_from']))
+                    self.assertEqual(gender, Rows.forme_rows[base][11])
                 else:
                     self.assertEqual(base, i)
                     self.assertEqual(gender, GENDER[rec['gender']])
@@ -202,7 +206,7 @@ class PoolRows(unittest.TestCase):
                 self.assertEqual(count, len(listed))
                 self.assertLessEqual(count, 3)
                 self.assertEqual(sum(1 for i in range(len(Rows.moves), len(data) * 8) if data[i // 8] >> (i % 8) & 1), 0)
-                if rec['kind'] == 'mega':
+                if rec['kind'] in ('mega', 'battle_only'):
                     self.assertEqual(learned, set())
                     self.assertEqual(listed, rec['abilities_legal'])
                     self.assertEqual(len(rec['abilities_legal']), 1)

@@ -309,7 +309,7 @@ def heal_block_end_tie(d, log):
     return (SITES['SPEED_TIE'], 0, 2, d['value'] - d['start'])
 
 
-NO_ORDER_PAIR = (['protect', 'stall'], ['spikyshield', 'stall'])
+NO_ORDER_PAIR = (['protect', 'stall'], ['spikyshield', 'stall'], ['kingsshield', 'stall'])  # kingsshield: step G66
 
 
 def standing(after, holder):
@@ -941,6 +941,7 @@ VOLATILE_IMPRISON = 8    # DUOFORGE_VOLATILE_IMPRISON (step G38): START only
 VOLATILE_TAUNT = 6       # DUOFORGE_VOLATILE_TAUNT (step G31)
 VOLATILE_YAWN = 7        # DUOFORGE_VOLATILE_YAWN (step G31)
 VOLATILE_SUBSTITUTE = 9  # DUOFORGE_VOLATILE_SUBSTITUTE (decision 0032): START and END, presence only
+VOLATILE_DRAGONCHEER = 10  # DUOFORGE_VOLATILE_DRAGONCHEER (step G72b, decision 0015 5ce): START only, presence only
 FAIL_SUBSTITUTE_EXISTS = 1  # DUOFORGE_FAIL_SUBSTITUTE_EXISTS: cause MOVE + id2 Substitute only
 FAIL_SUBSTITUTE_WEAK = 2    # DUOFORGE_FAIL_SUBSTITUTE_WEAK: cause MOVE + id2 Substitute only
 MOVE_SLOT_RECHARGE = 5   # DUOFORGE_MOVE_SLOT_RECHARGE (step G17)
@@ -960,7 +961,7 @@ NOPOS = 0xFF
 # Any other volatile is refused: a new mechanic's volatile must be placed in
 # one of the two tables before its traces convert. Spiky Shield (step G20, POOL) is Protect's bit: its own volatile
 # is the Protect volatile of the engine, with the variant in the tail (never both at once).
-COMPARED_VOLATILES = (('protect', 1), ('spikyshield', 1), ('flashfire', 2), ('twoturnmove', 4), ('choicelock', 8), ('unburden', 16),
+COMPARED_VOLATILES = (('protect', 1), ('spikyshield', 1), ('kingsshield', 1), ('flashfire', 2), ('twoturnmove', 4), ('choicelock', 8), ('unburden', 16),
                       ('helpinghand', 32), ('followme', 64), ('flinch', 128))
 IGNORED_VOLATILES = {
     # data/moves.ts disable (step G27): compared through the request (the barred slot) and the start and end lines.
@@ -1019,6 +1020,9 @@ IGNORED_VOLATILES = {
     # Pool step G60 (Substitute, decision 0032): its HP is never shown; the start and end lines and the absorbed hits (the
     # -activate lines with [damage], no amount) show its presence and the hits it takes.
     'substitute': 'the start line, the end line and the absorbed hits (the HP is never shown)',
+    # Pool step G72b (Dragon Cheer, decision 0015 5ce): the start line; its crit stage shows in the crit draws of the holder's
+    # moves (a -crit line, or the draw's bound) and in the view bit.
+    'dragoncheer': "the start line and the crit draws of the holder's moves",
 }
 HP_EXACT, HP_PERCENT = 1, 2
 HP_FLAGS_EV = {'': 0, 'r': 1, 'y': 2, 'g': 3}
@@ -1072,6 +1076,11 @@ def ev_cause(attrs, tables):
                 # Spiky Shield (step G20, POOL): `-damage|attacker|hp|[from] Spiky Shield|[of] holder`, the condition's own name;
                 # Stealth Rock and Spikes (step G37): `-damage|X|hp|[from] Stealth Rock`, the hazard's own name, the move's id in id2
                 cause, id2 = CAUSE['MOVE'], tables['MOVE'][key(what)]
+            elif what == 'steelbeam':
+                # Step G68 (Steel Beam, mindBlownRecoil and onMoveFail, sim/battle.ts damage): `-damage|user|hp|[from] steelbeam`, the
+                # condition's own id (dex.conditions.get('Steel Beam') has no name of its own), on a hit and on a miss, a Protect or an
+                # invulnerability: cause MOVE with the move in id2, the user in position and no [of].
+                cause, id2 = CAUSE['MOVE'], tables['MOVE'][key('Steel Beam')]
             elif what == 'lockedmove':
                 pass  # a MOVE flag
             else:
@@ -1294,7 +1303,86 @@ def ill_pp_fold(log, prev_state, new_state, roster_of, teams, tables, ill_key, w
                               (len(uses[0]) + len(uses[1]) - cursor[0] - cursor[1]))
 
 
-def step_events(log, viewer, roster_of, maxhp, tables, rb_pending=None, ill=None):
+def skill_swap_events(args, attrs, line, tables, ally_ids):
+    """Step G70 (Skill Swap, decision 0041; sim/battle.ts:1318-1321): `-activate|SRC|Skill Swap|A|B|[of] TGT` names the two
+    abilities (A is the one SRC now has), and the ally's `-activate|SRC|Skill Swap|||[of] TGT` names none: ally_ids is the
+    pair the pre-pass followed (swap_partners). Two ABILITY events in the line's order, both with cause MOVE: position SRC
+    with id = its new ability + 1 and other TGT, then TGT with its new ability + 1 and other SRC; id2 is the move."""
+    if len(attrs) != 1 or not attrs[0].startswith('[of] '):
+        raise ConversionError('activate-line', 'trace_to_c: unknown -activate %r' % line, detail='Skill Swap')
+    src, tgt = ev_pos(args[0]), ev_pos(attrs[0][len('[of] '):])
+    if src is None or tgt is None:
+        raise ConversionError('activate-line', 'trace_to_c: unknown -activate %r' % line, detail='Skill Swap')
+    if args[2] and args[3]:
+        try:
+            to_src, to_tgt = tables['ABILITY'][key(args[2])], tables['ABILITY'][key(args[3])]
+        except KeyError:
+            raise ConversionError('activate-line', 'trace_to_c: unknown -activate %r' % line, detail='Skill Swap ability')
+    elif not args[2] and not args[3]:
+        if ally_ids is None:
+            raise ConversionError('skill-swap-ally', 'trace_to_c: ally Skill Swap without its ability pair %r' % line,
+                                  detail='ally')
+        to_src, to_tgt = ally_ids
+    else:
+        raise ConversionError('activate-line', 'trace_to_c: unknown -activate %r' % line, detail='Skill Swap')
+    move = tables['MOVE'][key('Skill Swap')]
+    return [ev_tuple(EV['ABILITY'], src, tgt, CAUSE['MOVE'], to_src + 1, move),
+            ev_tuple(EV['ABILITY'], tgt, src, CAUSE['MOVE'], to_tgt + 1, move)]
+
+
+def swap_partners(trace, teams, roster_of, tables):
+    """Step G70 (Skill Swap, decision 0041): the two abilities that an ally swap exchanges, for every `-activate|X|Skill Swap|||
+    [of] Y` line, which names none. The converter follows each holder's current ability over the battle: the sheet's, reset
+    at each entry (switch or drag), a Trace copy (its `-ability` line), a foe swap's two names and an ally swap's exchange
+    itself. A Mega Evolution makes the holder's ability unknown (the forme's ability is not read here), so an ally swap that
+    involves such a holder is refused. Returns one dict per step: line index -> (the source's new ability id, the target's
+    new ability id); ids without the +1 of the events."""
+    now = [[(mon['ability'] - 1) if mon['ability'] else None for mon in teams[s]] for s in range(2)]
+    mega = set()  # (side, roster index) of a Mega Evolved member: its ability is unknown from then on
+    occ = [[None, None], [None, None]]  # the roster index of the holder of each position (side, slot)
+    out = []
+    for step in trace['steps']:
+        marks = {}
+        for i, line in enumerate(step['log']):
+            parts = line.split('|')
+            kind = parts[1] if len(parts) > 1 else ''
+            attrs = [x for x in parts[2:] if x.startswith('[')]
+            args = [x for x in parts[2:] if not x.startswith('[')]
+            if kind in ('switch', 'drag') and args and ev_pos(args[0]) is not None:
+                pos = ev_pos(args[0])
+                side, r = pos // 2, roster_of[pos // 2][args[0].split(': ', 1)[1]]
+                occ[side][pos % 2] = r
+                sheet = (teams[side][r]['ability'] - 1) if teams[side][r]['ability'] else None
+                now[side][r] = None if (side, r) in mega else sheet
+            elif kind == '-ability' and ev_pos(args[0]) is not None and '[from] ability: Trace' in attrs:
+                pos = ev_pos(args[0])
+                now[pos // 2][occ[pos // 2][pos % 2]] = tables['ABILITY'][key(args[1])]
+            elif kind == '-mega' and ev_pos(args[0]) is not None:
+                pos = ev_pos(args[0])
+                r = occ[pos // 2][pos % 2]
+                mega.add((pos // 2, r))
+                now[pos // 2][r] = None
+            elif kind == '-activate' and len(args) == 4 and args[1] == 'Skill Swap' and ev_pos(args[0]) is not None \
+                    and len(attrs) == 1 and attrs[0].startswith('[of] ') and ev_pos(attrs[0][len('[of] '):]) is not None:
+                src, tgt = ev_pos(args[0]), ev_pos(attrs[0][len('[of] '):])
+                rs, rt = occ[src // 2][src % 2], occ[tgt // 2][tgt % 2]
+                if args[2] and args[3]:
+                    now[src // 2][rs] = tables['ABILITY'][key(args[2])]
+                    now[tgt // 2][rt] = tables['ABILITY'][key(args[3])]
+                elif not args[2] and not args[3]:
+                    a, b = now[src // 2][rs], now[tgt // 2][rt]
+                    if a is None or b is None or (src // 2, rs) in mega or (tgt // 2, rt) in mega:
+                        raise ConversionError('skill-swap-ally', 'trace_to_c: ally Skill Swap of an ability that is not known %r'
+                                              % line, detail='ally')
+                    marks[i] = (b, a)
+                    now[src // 2][rs], now[tgt // 2][rt] = b, a
+                else:
+                    raise ConversionError('activate-line', 'trace_to_c: unknown -activate %r' % line, detail='Skill Swap')
+        out.append(marks)
+    return out
+
+
+def step_events(log, viewer, roster_of, maxhp, tables, rb_pending=None, ill=None, swap_ids=None):
     """The events `viewer` sees in one step, in protocol order.
 
     ill (decision 0026, Illusion; None = no holder in the battle): 'side' (per side: a holder is on it), 'truth_at' ((side, p) ->
@@ -1304,6 +1392,7 @@ def step_events(log, viewer, roster_of, maxhp, tables, rb_pending=None, ill=None
     names the disguise (the shown index); the owner's copy names it too, so its truth comes from the step's own state.
     rb_pending maps a side to the position of the last Revival Blessing user of that side: its revive is shown in the step that
     answers the pivot, not in the step of the move (step G52).
+    swap_ids maps the line index of an ally Skill Swap to the pair of ability ids that swap_partners followed (step G70).
     """
     ill = ill if ill is not None else {'side': [False, False], 'truth_at': {}, 'multi': {}, 'replace': {}, 'last_hp': {}, 'shown_at': {}}
     if rb_pending is None:
@@ -1335,6 +1424,10 @@ def step_events(log, viewer, roster_of, maxhp, tables, rb_pending=None, ill=None
                                         (kind == '-heal' and '[from] ability: Regenerator' in attrs)):
             continue
         args = [x for x in parts[2:] if not x.startswith('[')]
+        if kind == '-activate' and len(args) == 4 and args[1] == 'Skill Swap':
+            # Step G70: two ABILITY events, one per holder (skill_swap_events); the ally's pair comes from swap_partners.
+            out.extend(skill_swap_events(args, attrs, line, tables, None if swap_ids is None else swap_ids.get(i)))
+            continue
         e = None
         # The last HP text each name showed, with its status (Illusion: the break shows the disguise's last values, pin:
         # sim/battle.ts `-status` and `-curestatus` print the status on the name the Pokemon has at that time, and a damage or heal
@@ -1715,6 +1808,10 @@ def step_events(log, viewer, roster_of, maxhp, tables, rb_pending=None, ill=None
                 # (the duration; a switch-out or a faint clears it with no line) (step G31)
                 e = ev_tuple(EV['VOLATILE_START' if kind == '-start' else 'VOLATILE_END'], ev_pos(args[0]),
                              detail=VOLATILE_TAUNT)
+            elif what == 'move: Dragon Cheer' and kind == '-start':
+                # data/moves.ts:4056-4086 dragoncheer: `-start|X|move: Dragon Cheer` from onStart (no source, no [silent] for the
+                # move itself); no END line, and a switch-out clears it with no line (step G72b)
+                e = ev_tuple(EV['VOLATILE_START'], ev_pos(args[0]), detail=VOLATILE_DRAGONCHEER)
             elif what == 'move: Yawn' and kind == '-start':
                 # data/moves.ts:21131-21162 yawn: `-start|X|move: Yawn|[of] source` from onStart; the end line is [silent]
                 # (dropped) and the sleep it brings is the ordinary STATUS line (step G31)
@@ -1825,6 +1922,33 @@ def step_events(log, viewer, roster_of, maxhp, tables, rb_pending=None, ill=None
                          tables['MOVE'][key(move_name)], tables['ITEM'][key(args[1])] + 1)
         elif kind == 'detailschange':
             e = ev_tuple(EV['FORME'], ev_pos(args[0]), ident=tables['FORME'][key(args[1].split(',')[0])])
+        elif kind == '-formechange':
+            # NAMED RULE FORME-STANCE (step G66, decision 0040). The only temporary forme in the pool is Stance Change's: the
+            # species is Aegislash (the Shield) or Aegislash-Blade, and the line names no other. The pin's formeChange takes its
+            # source from this.battle.effect: a move's use gives `-formechange|P|SPECIES|` with NO attribute (the pin prints no
+            # `[from]` here: the empty third field is the message, battle.add joins an undefined message as ''), and an ability
+            # source would give `[from] ability: Stance Change`. The line does not say the cause: the FORME event's cause ABILITY
+            # and id2 = Stance Change + 1 come from the engine's knowledge of Stance Change, which the conformance compares.
+            # The no-attribute shape is accepted only right before the move line of the same position (ModifyMove runs before
+            # the move line): the Shield's forme only before King's Shield, the Blade's forme before any other move.
+            species = args[1] if len(args) > 1 else ''
+            if species not in ('Aegislash', 'Aegislash-Blade') or len(args) != 3 or args[2] != '':
+                raise ConversionError('formechange-line', 'trace_to_c: unknown -formechange %r' % line, detail=line)
+            cause, cause_id, of = ev_cause(attrs, tables)
+            if attrs:
+                if cause != CAUSE['ABILITY'] or cause_id != tables['ABILITY']['STANCECHANGE'] + 1 or of != NOPOS:
+                    raise ConversionError('formechange-line', 'trace_to_c: unknown -formechange %r' % line, detail=line)
+            else:
+                follow = (log[i + 1] if i + 1 < len(log) else '').split('|')
+                if len(follow) < 4 or follow[1] != 'move' or follow[2] != args[0]:
+                    raise ConversionError('formechange-line', 'trace_to_c: -formechange without [from] not before its move line %r'
+                                          % line, detail=line)
+                is_shield_move = follow[3] == "King's Shield"
+                if (species == 'Aegislash') != is_shield_move:
+                    raise ConversionError('formechange-line', 'trace_to_c: -formechange %s does not match the move %r'
+                                          % (species, follow[3]), detail=line)
+            e = ev_tuple(EV['FORME'], ev_pos(args[0]), NOPOS, CAUSE['ABILITY'], tables['FORME'][key(args[1])],
+                         tables['ABILITY']['STANCECHANGE'] + 1)
         elif kind == '-mega':
             e = ev_tuple(EV['MEGA'], ev_pos(args[0]), NOPOS, 0, 0, tables['ITEM'][key(args[2])] + 1)
         elif kind == '-prepare':
@@ -1982,6 +2106,7 @@ def convert_battle(name, spec, trace, tables):
     dup_step = None
     dup_rows = set()  # (side, roster) of the real member whose name the holder shows, from dup_step on
     rb_pending = {}  # side -> the position of its last Revival Blessing user (see step_events)
+    swaps = swap_partners(trace, teams, roster_of, tables)  # step G70: the ability pair of every ally Skill Swap
     for k, step in enumerate(trace['steps']):
         public_lines(step['log'], roster_of, shown, ill_pub)
         kinds = {}
@@ -2040,7 +2165,8 @@ def convert_battle(name, spec, trace, tables):
             for p_i in range(2):
                 act = new_state['sides'][sd_i]['active'][p_i]
                 ill_step['truth_at'][(sd_i, p_i)] = name_of(new_state['sides'][sd_i]['pokemon'][act]) if act is not None and act >= 0 else None
-        events = [step_events(step['log'], viewer, roster_of, maxhp, tables, rb_pending, ill_step) for viewer in range(2)]
+        events = [step_events(step['log'], viewer, roster_of, maxhp, tables, rb_pending, ill_step, swaps[k])
+                  for viewer in range(2)]
         for line in step['log']:  # one revive per Revival Blessing: the side's pending user ends with its revive
             if line.startswith('|-heal|') and '[from] move: Revival Blessing' in line:
                 rb_pending.pop(int(line.split('|')[2][1]) - 1, None)
@@ -2237,6 +2363,8 @@ class FoePressure:
             self.alive[v][occ] = False
         elif kind == EV['ABILITY'] and cause == CAUSE['ABILITY'] and other != NOPOS and occ is not None:
             self.has_pressure[v][occ] = ident2 == self.pressure  # Trace's copy (the -ability line with its source)
+        elif kind == EV['ABILITY'] and cause == CAUSE['MOVE'] and occ is not None:
+            self.has_pressure[v][occ] = ident == self.pressure  # Skill Swap (step G70): the holder's new ability is `ident`
         elif kind == EV['MEGA'] and occ is not None:
             self.has_pressure[v][occ] = False  # the Mega formes of the pool that have Pressure lose it (Tough Claws, Magic Bounce)
 
