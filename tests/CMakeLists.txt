@@ -221,6 +221,7 @@ duoforge_add_test(NAME duoforge.state.pool_g72 SOURCES test_pool_g72.c WHITEBOX 
 # Step G72b: Alluring Voice (the stats-raised position flag) and Dragon Cheer (the crit stage), the PIVOT refusal of the public
 # record (decision 0015 5ce); the recorded battles are duoforge.reference.conformance_pool_data.
 duoforge_add_test(NAME duoforge.state.pool_g72b SOURCES test_pool_g72b.c WHITEBOX LIBS duoforge_batch TIMEOUT 60)
+duoforge_add_test(NAME duoforge.state.pool_g76 SOURCES test_pool_g76.c WHITEBOX LIBS duoforge_batch TIMEOUT 60)
 # Step G42: Roost and Stomping Tantrum: the move result classes (this and last) at every boundary of the g42 battles, the Roost
 # volatile (the pivot boundary inside its turn), the view bits (40 supported, 41 not), the unclassified refusal.
 duoforge_add_test(NAME duoforge.state.pool_g42 SOURCES test_pool_g42.c WHITEBOX TIMEOUT 60)
