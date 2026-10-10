@@ -126,9 +126,11 @@ static void check_unmarked(df_test *t)
     /* Haze was unmarked here until step G62 (decision 0031) marked it; its check is in duoforge.state.pool_g62 */
     DF_CHECK(t, dfi_support.moves[DFI_MOVE_STEELBEAM] == 0u);
     DF_CHECK(t, dfi_support.moves[DFI_MOVE_FINALGAMBIT] == 0u);
-    /* the abilities whose rule would change a hit count (Skill Link: the maximum) or a pulse (Mega Launcher) stay unmarked */
+    /* the ability whose rule would change a hit count (Skill Link: the maximum) stays unmarked. Mega Launcher was left unmarked
+     * here until step G59: its two rules now live in src/combat/turn.c (the pulse BasePower by the flags3 bit PULSE, and Heal
+     * Pulse's three quarters in dfi_run_heal_fraction), pinned by tests/test_pool_g59.c and the recorded battle g59_heal_pulse. */
     DF_CHECK_EQ_U64(t, dfi_support.abilities[DFI_ABILITY_SKILLLINK], 0u);
-    DF_CHECK_EQ_U64(t, dfi_support.abilities[DFI_ABILITY_MEGALAUNCHER], 0u);
+    DF_CHECK(t, dfi_support.abilities[DFI_ABILITY_MEGALAUNCHER] != 0u);
     /* Loaded Dice raises the hit count in the same draw: an item of the pool would be marked only with that rule */
     static const char *const items[] = {"loadeddice"};
     for (uint32_t i = 0u; i < DFI_POOL_ITEM_COUNT; ++i) {

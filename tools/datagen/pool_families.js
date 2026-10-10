@@ -315,6 +315,36 @@ function pinchTypes(ability, hp, maxhp) {
     return out;
 }
 
+// The stat multipliers of an ability's onModifyAtk / onModifySpA for each move type at the given HP, whatever the factor
+// (pinchTypes demands x1.5): {callback: {type: chain}} with the types for which the callback fires.
+function statModifiers(ability, hp, maxhp) {
+    const out = {};
+    for (const callback of ['onModifyAtk', 'onModifySpA']) {
+        if (typeof ability[callback] !== 'function') {
+            continue;
+        }
+        out[callback] = {};
+        for (const type of TYPES) {
+            const r = call(ability[callback], battle(ability), [100, {hp, maxhp}, {}, moveOf(type)]);
+            if (r !== undefined) {
+                out[callback][type] = r.chain;
+            }
+        }
+    }
+    return out;
+}
+
+// Step G59: the engine rows without a family whose onModifyAtk / onModifySpA the turn code implements by id
+// (src/combat/turn.c, the G59 attack modifiers): Huge Power doubles Attack for every move (data/abilities.ts hugepower,
+// chainModify(2)); Fire Mane (data/abilities.ts firemane, inherited by the Champions mod) gives x1.5 to a Fire move's
+// Attack and Special Attack. Neither depends on HP, so the probe expects the same at full and at low HP. Any other
+// modelled row without a family must still show no stat modifier (the pinch probe below).
+const ALL_TYPES_X = (chain) => Object.fromEntries(TYPES.map((t) => [t, chain]));
+const ENGINE_STAT_MODIFIERS = {
+    hugepower: {onModifyAtk: ALL_TYPES_X(2)},
+    firemane: {onModifyAtk: {Fire: 1.5}, onModifySpA: {Fire: 1.5}},
+};
+
 // What an entry ability sets for a source Pokemon.
 function setterEffect(ability, speciesId, itemId) {
     const set = {weather: null, terrain: null};
@@ -985,6 +1015,92 @@ function checkG44(dex) {
     return 1;
 }
 
+// Step G61, Sheer Force (data/abilities.ts:4202-4221). The pinned onModifyMove deletes a move's secondaries and self effects
+// (and sets hasSheerForce) only when the move has secondaries and is not hasSheerForceBoost; the x5325/4096 of onBasePower
+// applies to either flag. The turn code decides the same with the move's columns (turn.c dfi_sf_strips: sec_chance != 0, or
+// the special of Stone Axe, Ceaseless Edge, Ice Fang or Tri Attack; dfi_sf_boosts adds Electro Shot). This check runs that
+// rule on EVERY pool move, marked or not, in both directions: a move that the pin strips and the engine does not (or the
+// reverse) fails here, so marking a new move cannot slip past the rule. A move the setup refuses (UNMODELED) is skipped:
+// no battle can carry it. The pinned counts are the pool's today.
+function specialOf(headers, name) {
+    for (const h of headers) {
+        const m = h.match(new RegExp('^#define ' + name + ' (\\d+)u$', 'm'));
+        if (m !== null) {
+            return Number(m[1]);
+        }
+    }
+    throw new Error('#define ' + name + ' not found');
+}
+
+function checkG61(dex, headers, moveIds, moveRows, unmodeledMoves) {
+    const special = {stoneaxe: specialOf(headers, 'DFI_SPECIAL_STONE_AXE'),
+        ceaselessedge: specialOf(headers, 'DFI_SPECIAL_CEASELESS_EDGE'), icefang: specialOf(headers, 'DFI_SPECIAL_ICE_FANG'),
+        triattack: specialOf(headers, 'DFI_SPECIAL_TRI_ATTACK'), electroshot: specialOf(headers, 'DFI_SPECIAL_ELECTRO_SHOT')};
+    const stripSpecials = [special.stoneaxe, special.ceaselessedge, special.icefang, special.triattack];
+    const SECONDARY_COLUMN = 14; // sec_chance: the 15th of the 29 numbers of a dfi_move_data row
+    const SPECIAL_COLUMN = 28; // special: the last number
+    let checked = 0, stripped = 0, boostOnly = 0;
+    const strippedIds = [];
+    for (let number = 0; number < moveRows.length; number++) {
+        const id = moveIds.get(number);
+        if (id === undefined) {
+            bad('pool move number ' + number + ' has no id');
+            continue;
+        }
+        if (unmodeledMoves.has(id)) {
+            continue; // refused by the setup
+        }
+        const mv = dex.moves.get(id);
+        if (!mv.exists) {
+            bad('move ' + id + ' does not exist in the pinned Champions dex');
+            continue;
+        }
+        const row = moveRows[number];
+        const pinStrip = Boolean(mv.secondaries || mv.secondary) && !mv.hasSheerForceBoost;
+        const pinBoost = Boolean(mv.hasSheerForceBoost);
+        const engStrip = row[SECONDARY_COLUMN] !== 0 || stripSpecials.includes(row[SPECIAL_COLUMN]);
+        const engBoost = row[SPECIAL_COLUMN] === special.electroshot;
+        expect('Sheer Force strips ' + id + ' (the pin = the engine)', engStrip, pinStrip);
+        expect('Sheer Force boosts ' + id + ' (the pin = the engine)', engStrip || engBoost, pinStrip || pinBoost);
+        expect('Sheer Force boost-only ' + id, engBoost, pinBoost);
+        checked += 1;
+        if (pinStrip) {
+            stripped += 1;
+            strippedIds.push(id);
+        }
+        if (pinBoost) {
+            boostOnly += 1;
+        }
+    }
+    // The pool's own counts, as of this step: 63 stripped moves (of the marked and unmarked) and one boost-only move.
+    expect('the Sheer Force stripped pool moves', stripped, PINNED_SF_STRIPPED);
+    expect('the Sheer Force boost-only pool moves', boostOnly, PINNED_SF_BOOST_ONLY);
+    // The pinned handler on probes: a move with secondaries loses them and its self effects, and gets the x5325/4096 once;
+    // a boost-only move keeps everything and gets the same multiplier; a move without either is untouched.
+    const sf = dex.abilities.get('sheerforce');
+    const probe = (move) => {
+        const b = battle(sf);
+        call(sf.onModifyMove, b, [move, {}]);
+        const bp = call(sf.onBasePower, battle(sf), [100, {}, {}, move]);
+        return {secondariesGone: move.secondaries === undefined, selfGone: move.self === undefined,
+            hasSheerForce: move.hasSheerForce === true, chain: bp === undefined ? null : bp.chain};
+    };
+    expect('Sheer Force on a move with secondaries', probe(moveOf('Normal', {secondaries: [{chance: 10, status: 'brn'}], self: {boosts: {atk: 1}}})),
+        {secondariesGone: true, selfGone: true, hasSheerForce: true, chain: [5325, 4096]});
+    expect('Sheer Force on a boost-only move', probe(moveOf('Normal', {secondaries: [{chance: 10, status: 'brn'}], self: {boosts: {atk: 1}}, hasSheerForceBoost: true})),
+        {secondariesGone: false, selfGone: false, hasSheerForce: false, chain: [5325, 4096]});
+    expect('Sheer Force on a move without secondaries', probe(moveOf('Normal', {self: {boosts: {atk: 1}}})),
+        {secondariesGone: true, selfGone: false, hasSheerForce: false, chain: null});
+    expect('Sheer Force priority of onBasePower', sf.onBasePowerPriority, 21);
+    expect('Sheer Force has no flags', sf.flags, {});
+    expect('Sheer Force is not notrace (Trace may copy it)', Boolean(sf.flags.notrace), false);
+    return {checked, stripped, boostOnly, strippedIds};
+}
+
+// The pinned counts of checkG61: stripped and boost-only pool moves (marked or not), as of step G61.
+const PINNED_SF_STRIPPED = 102; // every pool move, marked or not (63 of the marked ones)
+const PINNED_SF_BOOST_ONLY = 1;
+
 // Step G54 (moves): the multi-hit rows and the side condition, read from the pinned data as the generator's facts read them.
 // Scale Shot's self boost is after the last hit (its selfBoost), Icicle Spear and Scale Shot draw a count of 2 to 5 hits,
 // Quick Guard is a priority 3 side condition, Upper Hand a priority 3 move whose flinch is its secondary, Heal Pulse never
@@ -1299,9 +1415,16 @@ function checkAbilities(dex, rows, moveIds, unmodeled, unmodeledMoves) {
                 if (typeof ability.onModifyType === 'function') {
                     expect(row.id + ' (no family) "-ate" probe', ateChanges(ability).changed, {});
                 }
-                for (const callback of ['onModifyAtk', 'onModifySpA']) {
-                    if (typeof ability[callback] === 'function') {
-                        expect(row.id + ' (no family) pinch probe ' + callback, pinchTypes(ability, 10, 30)[callback], []);
+                if (ENGINE_STAT_MODIFIERS[row.id] !== undefined) {
+                    for (const [hp, what] of [[30, 'full HP'], [10, 'low HP']]) {
+                        expect(row.id + ' (engine row) stat modifiers at ' + what, statModifiers(ability, hp, 30),
+                            ENGINE_STAT_MODIFIERS[row.id]);
+                    }
+                } else {
+                    for (const callback of ['onModifyAtk', 'onModifySpA']) {
+                        if (typeof ability[callback] === 'function') {
+                            expect(row.id + ' (no family) pinch probe ' + callback, pinchTypes(ability, 10, 30)[callback], []);
+                        }
                     }
                 }
                 if (typeof ability.onStart === 'function' && /\.field\.set(Weather|Terrain)\(/.test(ability.onStart.toString())) {
@@ -1473,7 +1596,8 @@ const ENGINE_ROWS = {items: ['focussash', 'floettite', 'psychicseed', 'electrics
         'levitate', 'sandrush', 'swiftswim', 'slushrush', 'chlorophyll', 'innerfocus', 'liquidvoice',
         'flamebody', 'clearbody', 'hospitality', 'overcoat', 'soundproof', 'unnerve', 'speedboost',
         'compoundeyes', 'ironfist', 'sharpness', 'solidrock', 'technician', 'multiscale', 'galewings', 'raindish', 'friendguard', 'cursedbody', 'mirrorarmor', 'auraguard', 'hypercutter', 'scrappy', 'infiltrator', 'queenlymajesty', 'damp', 'sturdy', 'snowcloak', 'sandveil', 'static', 'justified', 'limber', 'solarpower', 'regenerator', 'toxicdebris', 'shadowtag', 'suctioncups', 'guarddog',
-        'steadfast', 'weakarmor', 'telepathy', 'voltabsorb', 'punkrock', 'moxie', 'synchronize', 'oblivious', 'keeneye', 'bigpecks', 'magicbounce', 'pressure']};
+        'steadfast', 'weakarmor', 'telepathy', 'voltabsorb', 'punkrock', 'moxie', 'synchronize', 'oblivious', 'keeneye', 'bigpecks', 'magicbounce', 'pressure',
+        'sandforce', 'shellarmor', 'filter', 'stalwart', 'megalauncher', 'hugepower', 'thickfat', 'firemane', 'spicyspray', 'megasol', 'sheerforce']};
 const ENGINE_TARGETS = new Set(['normal', 'any', 'adjacentAlly', 'adjacentFoe', 'self', 'allAdjacentFoes', 'allySide', 'all',
     'randomNormal', 'allAdjacent', 'allies', 'foeSide']); // foeSide: step G37 (the four hazards)
 // The fields of a move that the tables model (gen_closure.py DATA_KEYS and IGNORED_KEYS), nothing else.
@@ -1857,6 +1981,7 @@ function main() {
     checkG32(dex);
     checkG33(dex);
     checkG41(dex);
+    const g61 = checkG61(dex, headers, moveIds, moveColumns(source, defineOf(header, 'DFI_POOL_MOVE_COUNT')), unmodeledMoves);
     checkG47(dex);
     checkG44(dex);
     checkG54(dex);
@@ -1866,7 +1991,7 @@ function main() {
     // "All 18": a booster and a resist berry for each type, and nothing else in the families.
     expect('type boosters', items.TYPE_BOOSTER, 18);
     expect('resist berries', items.RESIST_BERRY, 18);
-    expect('"-ate" abilities', abilities.ATE, 3);
+    expect('"-ate" abilities', abilities.ATE, 4); // step G61: Dragonize joins Aerilate, Pixilate and Refrigerate
     expect('pinch abilities', abilities.PINCH, 4);
     expect('weather setters', abilities.WEATHER_SETTER, 4);
     expect('terrain setters', abilities.TERRAIN_SETTER, 3);
