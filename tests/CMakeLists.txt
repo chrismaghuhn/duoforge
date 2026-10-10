@@ -226,6 +226,8 @@ duoforge_add_test(NAME duoforge.state.pool_g72b SOURCES test_pool_g72b.c WHITEBO
 duoforge_add_test(NAME duoforge.state.pool_g42 SOURCES test_pool_g42.c WHITEBOX TIMEOUT 60)
 duoforge_add_test(NAME duoforge.state.pool_g44 SOURCES test_pool_g44.c WHITEBOX TIMEOUT 60)
 duoforge_add_test(NAME duoforge.state.pool_g54 SOURCES test_pool_g54.c WHITEBOX TIMEOUT 60)
+# Step G56: lockedmove (Outrage, Thrash, Petal Dance): the count, its refusals and the information safety of its length.
+duoforge_add_test(NAME duoforge.state.pool_g56 SOURCES test_pool_g56.c WHITEBOX LIBS duoforge_batch TIMEOUT 60)
 duoforge_add_test(NAME duoforge.state.pool_g64 SOURCES test_pool_g64.c WHITEBOX TIMEOUT 60)
 duoforge_add_test(NAME duoforge.state.pool_g68 SOURCES test_pool_g68.c WHITEBOX TIMEOUT 60)
 duoforge_add_test(NAME duoforge.state.pool_g62 SOURCES test_pool_g62.c WHITEBOX TIMEOUT 60)
@@ -513,7 +515,8 @@ if(Python3_Interpreter_FOUND)
     # converter makes them) and committed battles through the real runner.
     add_test(NAME duoforge.reference.diff_random
         COMMAND "${Python3_EXECUTABLE}" "${PROJECT_SOURCE_DIR}/tools/reference/test_diff_random.py")
-    set_tests_properties(duoforge.reference.diff_random PROPERTIES TIMEOUT 300
+    # 600 s: the machine lock tests start many bash processes, slow on Windows (about 4 min of the file there).
+    set_tests_properties(duoforge.reference.diff_random PROPERTIES TIMEOUT 600
         ENVIRONMENT "PYTHONDONTWRITEBYTECODE=1;DUOFORGE_DIFF_RUNNER=$<TARGET_FILE:duoforge_diff_runner>")
     # The corpus of kept fuzz battles (decision 0015 section 6, tests/reference/corpus): every battle through the
     # converter and the runner of this build, from the stored traces and without Node; all of them must PASS. It runs
@@ -685,7 +688,7 @@ endif()
 # The Python package (M7, decision 0013), run with DUOFORGE_PYTHON; without
 # an interpreter each test reports skipped instead of passing silently.
 
-foreach(_py layout lib equivalence recipes policies_features example learn_numpy live_unit live_client replay_unit openings book expert_data expert_teacher expert_contract expert_eval ticks book_preview preview_search data batch_setups learn_v2_numpy teams features_ext bc_numpy encode_c search_numpy search_expand repo_hygiene view vgcpastes_engine perft)
+foreach(_py layout lib equivalence recipes policies_features example learn_numpy live_unit live_client replay_unit openings book expert_data expert_teacher expert_contract expert_eval ticks book_preview preview_search data batch_setups learn_v2_numpy teams features_ext encoder6 bc_numpy encode_c search_numpy search_expand repo_hygiene view vgcpastes_engine perft)
     if(DUOFORGE_PYTHON)
         add_test(NAME duoforge.python.${_py}
             COMMAND "${DUOFORGE_PYTHON}" -m unittest -v python.tests.test_${_py}
@@ -700,8 +703,27 @@ foreach(_py layout lib equivalence recipes policies_features example learn_numpy
     endif()
 endforeach()
 
+# The random training teams (tools/reference/random_teams.py): the paste translation, the composition and the output
+# guard with DUOFORGE_PYTHON (it reads pastes with duoforge.teams); with the pinned Showdown also its generator.
+if(DUOFORGE_PYTHON)
+    add_test(NAME duoforge.reference.random_teams
+        COMMAND "${DUOFORGE_PYTHON}" "${PROJECT_SOURCE_DIR}/tools/reference/test_random_teams.py")
+    set_tests_properties(duoforge.reference.random_teams PROPERTIES TIMEOUT 120 LABELS python ENVIRONMENT
+        "DUOFORGE_LIBRARY=$<TARGET_FILE:duoforge_shared>;PYTHONDONTWRITEBYTECODE=1")
+    if(DUOFORGE_PS_REFERENCE_DIR AND DUOFORGE_NODE)
+        add_test(NAME duoforge.reference.random_teams_pin
+            COMMAND "${DUOFORGE_PYTHON}" "${PROJECT_SOURCE_DIR}/tools/reference/test_random_teams.py"
+                "${DUOFORGE_NODE}" "${DUOFORGE_PS_REFERENCE_DIR}")
+        set_tests_properties(duoforge.reference.random_teams_pin PROPERTIES TIMEOUT 300 LABELS reference
+            ENVIRONMENT "DUOFORGE_LIBRARY=$<TARGET_FILE:duoforge_shared>;PYTHONDONTWRITEBYTECODE=1")
+    endif()
+else()
+    add_test(NAME duoforge.reference.random_teams COMMAND "${CMAKE_COMMAND}" -E echo "DUOFORGE_SKIP: DUOFORGE_PYTHON is empty")
+    set_tests_properties(duoforge.reference.random_teams PROPERTIES SKIP_REGULAR_EXPRESSION "DUOFORGE_SKIP:")
+endif()
+
 # The learner pipeline (decisions 0014, 0017) needs JAX: DUOFORGE_LEARN_PYTHON.
-foreach(_learn learn learn_v2 bc search honest luck ledger pfsp value_rows distill collect_expert learner_contract p1_eval)
+foreach(_learn learn learn_v2 bc search honest luck ledger pfsp value_rows distill collect_expert learner_contract p1_eval encoder6_net)
     if(DUOFORGE_LEARN_PYTHON)
         add_test(NAME duoforge.python.${_learn}
             COMMAND "${DUOFORGE_LEARN_PYTHON}" -m unittest -v python.tests.test_${_learn}

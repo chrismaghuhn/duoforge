@@ -185,3 +185,18 @@ The side.pokemon order (decision 0015 §7) is information the switches reveal, n
 ## PR E: review notes
 
 Review notes for E: stale/missing turn-start records count as unreconstructible. Every stopped-world reproduction includes the search seed, exclusion, preview and turn-start records (or explicit absence), plus the current public view. Redraw failures retain that reproduction. Arena diagnostics report counts and shares per visible-counter cause; sleep and confusion can overlap. Oracle records explicitly label search=oracle. Oracle E also computes N/X for the diagnostic contract; its played E action remains the expected-value maximum, verified against the original path.
+
+## View audit: silent flinch and lock length (amendment, 2026-10-10)
+
+HauptSession's read-only audit of `view.c` (main 843c5150) found no leak of the foe's current choice or the queue order. It found two leaks of rolled values in the public record, both fixed here:
+
+1. **Silent flinch.** A secondary's flinch is set without a line. It shows only when the flinched Pokemon tries to move ([cant] flinch), so it is hidden from both players (0007). The record copied it in the position's flags.
+   - **The fix:** a PIVOT with a queued move left is refused, since no public fact tells whether a flinch is outstanding on a position still to move. With none left, a flinch has no effect before the residual ends it, and the record drops the bit.
+   - **The cost:** no public record now carries a foe's pending command. The PIVOT search over queued foe commands (section 5) is unreachable until a finer public criterion is shown sound. That criterion would be no flinch-capable move used this turn, read from the last moves and calling moves, with users that left the field covered. That is a follow-up, not part of this fix.
+2. **Lock length.** A lockedmove's count (2 or 3) is drawn, and its end shows a fatigue confusion. Misty Terrain stops that confusion silently for a grounded holder, so a refusal or a hidden locked slot keyed to the running count revealed the drawn length.
+   - **The fix:** both now use a public proxy: the occupant's last used move is a lockedmove move (`dfi_maybe_lockedmove`). Every running lock satisfies it; a running lock without it is a broken state (E_INVARIANT). The owner's own observation keeps the running lock, which the owner's request shows anyway.
+3. **Deterministic counters.** The owner decided that counters set without a draw (Taunt, Encore, Disable, Heal Block, Throat Chop, Yawn, the toxic stage, Perish, the freeze counter) are not shown but derivable, as section 4 says. 0007 and 0018 now say the same.
+
+Tests:
+- `duoforge.view`: `test_flinch_information_safety`, and the world-equals-truth check without the dropped bit.
+- `duoforge.state.pool_g56`: `test_lock_length_information_safety`. The test file is now registered; it was not built before.

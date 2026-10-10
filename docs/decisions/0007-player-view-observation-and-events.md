@@ -28,7 +28,8 @@ Anything that follows from 1 to 3 may be handed to the model directly, so it doe
 | Foe PP | unknown | **derived**: maximum PP (open) minus the uses the player saw; equal to the real value in the closure (no Pressure, no PP items). Owner decision A |
 | Foe Stat Points and stats | hidden | hidden |
 | Status (burn, paralysis, sleep, freeze) | not shown | shown for every seen member, both sides |
-| Sleep and freeze turns, confusion turns | not shown | **not shown**, also for the own side: the duration is rolled in secret; the event log shows when it started |
+| Sleep turns, confusion turns | not shown | **not shown**, also for the own side: the duration is rolled in secret; the event log shows when it started |
+| Freeze turns | not shown | not shown, but derivable from the public history: the observation shows presence only, the public record may carry the value (decision 0023 section 4; owner, 2026-10-10) |
 | Stat stages, confusion, charging (Electro Shot) | not shown | shown for the actives of both sides |
 | Weather, terrain, Trick Room, Reflect, Light Screen, Tailwind | not shown | shown with remaining turns (start, duration and Light Clay are public) |
 | Mega Evolution | side-wide flag | per member (the forme is visible) |
