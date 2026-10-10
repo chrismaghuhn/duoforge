@@ -165,6 +165,19 @@ target: `Can't move: You can't choose a target for Curse` (side.ts:656-671; the 
 there is no target, champions/moves.ts:172-174). So C1, C2, C4 and C5 (the Ghost half, and with it the Curse residual line
 that decides cause 23) are not recordable without a decision from the lead (see the message of this round).
 
-Phase 2: recordings L1-L6 (L6 with the Sitrus tie) and C1-C5 (C1-C5 blocked as above); mutants M1-M14, each with its catching test and a green
+**Phase 2 scope (lead, 2026-10-10):** Leech Seed (L1-L6) and non-Ghost Curse (C3); the Ghost Curse is refused explicitly
+(E_UNSUPPORTED, named, with a guard test at the Curse dispatch for a Ghost user); C1, C2, C4 and C5 are an open gap.
+- **CURSED (bit 7) is NOT needed yet:** the trace of C3 shows the non-Ghost Curse sets no volatile (only the boosts), so no
+  curse state can arise without a Ghost user. Bit 7 stays free and is noted here.
+- **Volatiles:** `DUOFORGE_VOLATILE_LEECH_SEED = 13u` (added to `include/duoforge/duoforge.h` and `python/duoforge/_layout.py`).
+  `DUOFORGE_VOLATILE_CURSE` (12) is not used yet (only the Ghost path adds a volatile).
+- **Cause:** `DUOFORGE_CAUSE_LEECH_SEED = 22u` (added). `DUOFORGE_CAUSE_CURSE` (23) is not taken (the Ghost line is not proven).
+- **View bit:** `DUOFORGE_POSITION_EXT_LEECH_SEED` (feature 28) only; CURSE (feature 36) is not set by G84.
+- **Hypothesis for the later Ghost Curse step (not investigated now):** the target of the Ghost Curse in the trace was
+  Gholdengo, whose ability is Good as Gold (a status move aimed at it may be blocked by the ability, which would explain the
+  missing lines). The gap may be smaller than it looks; check the pin (Good as Gold's status-move block) before C1.
+- **Baton Pass:** not on main (G74), so G84 does not record it; the integrator checks the copy after the merge (lead, decision 4).
+
+Phase 2: recordings L1-L6 (L6 with the Sitrus tie) and C3 (C1, C2, C4 and C5 are the open gap above); mutants M1-M14, each with its catching test and a green
 baseline; then the campaign. One lock job at a time, everything in one job; the full run goes through
 `gh workflow run ci.yml --ref <branch>`.
