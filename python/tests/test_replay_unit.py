@@ -758,6 +758,22 @@ class LabelsTest(unittest.TestCase):
         self.assertEqual(got.reasons[0], self.L.TARGET_UNKNOWN)
         self.assertEqual([o.move_slot for o in self.options_of(got, 0)], [2])
 
+    def test_encore_before_the_own_move_hides_the_choice(self):
+        # an Encore that starts on the position before its move line replaced the chosen move: every move option
+        # (the Encored one too, which a player who chose it sees unchanged), no switch
+        got = self.label(["|move|p2a: Foe|Encore|p1a: Staraptor", "|-start|p1a: Staraptor|Encore",
+                          "|move|p1a: Staraptor|Close Combat|p2a: Foe"])
+        self.assertEqual(got.reasons[0], self.L.MOVE_HIDDEN)
+        opts = self.options_of(got, 0)
+        self.assertEqual({o.kind for o in opts}, {self.O.MOVE})
+        self.assertEqual({o.move_slot for o in opts}, {0, 1, 2, 3})
+
+    def test_encore_after_the_own_move_changes_nothing(self):
+        # only the lines before the position's own move line can replace its choice
+        got = self.label(["|move|p1a: Staraptor|Close Combat|p2a: Foe", "|move|p2a: Foe|Encore|p1a: Staraptor",
+                          "|-start|p1a: Staraptor|Encore"])
+        self.assertEqual(got.reasons[0], self.L.EXACT)
+
     def test_locked_move_is_forced(self):
         got = self.label(["|move|p1a: Staraptor|Brave Bird|p2a: Foe|[from]lockedmove"])
         self.assertEqual(got.reasons[0], self.L.FORCED)
@@ -1220,6 +1236,29 @@ class GameTest(unittest.TestCase):
         lines = self.insert_after("|turn|3", "|-fail|p2a: Politoed|unboost|[from] ability: Clear Body|[of] p2a: Politoed")
         result = self.run_game(lines)
         self.assertEqual(result.counters["perspectives.stopped.line:-fail unboost"], 2, result.counters)
+
+    def test_an_encored_position_offers_only_its_encored_move(self):
+        # Incineroar used Fake Out on turn 1; an Encore before the turn's upkeep holds it to Fake Out on turn 2
+        lines = self.insert_after("|move|p2b: Farigiraf|Psychic|p1a: Indeedee", "|-start|p1b: Incineroar|Encore")
+        result = self.run_game(lines)
+        rows = [r for r in result.rows if r.side == 0 and int(r.observation["turn"]) == 2]
+        self.assertTrue(rows, result.counters)
+        domain = rows[0].domain
+        slots = [domain["slots"][1][i] for i in range(int(domain["slot_count"][1]))]
+        from duoforge_live import options
+        moves = {int(o["move_slot"]) for o in slots if int(o["kind"]) == 1} - {options.STRUGGLE}
+        self.assertEqual(len(moves), 1, moves)  # Fake Out only (with its targets); Struggle stays, as everywhere
+        self.assertTrue(any(int(o["kind"]) == 2 for o in slots))  # it can still switch
+        self.assertGreater(int(rows[0].ext["sides"][0]["positions"][1]["encore_slot"]), 0)
+
+    def test_every_row_carries_its_extension_record(self):
+        from duoforge import _layout
+        result = self.run_game(self.log)
+        self.assertTrue(result.rows)
+        for row in result.rows:
+            self.assertEqual(row.ext.dtype, _layout.OBSERVATION_EXT)
+            self.assertEqual(int(row.ext["epoch"]), int(row.observation["epoch"]))
+            self.assertEqual(int(row.ext["player"]), row.side)
 
     def test_bo3_game_number(self):
         lines = ['|uhtml|bestof|<h2><strong>Game 2</strong> of <a href="/game-bestof3-x">a best-of-3</a></h2>'] + self.log
@@ -2193,12 +2232,25 @@ class BeliefBuildTest(_BeliefFixture, unittest.TestCase):
         games = dataset.read_games(next(iter(dataset.parts(self.tmp / "k3"))))
         self.assertEqual(sorted(games["draw"].tolist()), [0, 1, 2])
 
+    def test_a_build_keeps_the_extension_records_and_its_folds(self):
+        from duoforge import _layout
+        from duoforge_live import lines as line_classes
+        from duoforge_replay import dataset
+        self.build("ext", ["open-train"])
+        m = self.manifest("ext")
+        self.assertEqual((m["format_version"], m["tracker_folds"]), (3, line_classes.TRACKER_FOLDS))
+        self.assertEqual(m["ext_revision"], _layout.CONSTANTS["DUOFORGE_OBSERVATION_EXT_REVISION"])
+        for shard in dataset.read(self.tmp / "ext"):
+            self.assertEqual(shard["ext"].dtype, _layout.OBSERVATION_EXT)
+            self.assertEqual(len(shard["ext"]), len(shard["side"]))
+            self.assertTrue((shard["ext"]["epoch"] == shard["observation"]["epoch"]).all())
+
     def test_a_sheet_build_names_its_source_and_has_no_belief_fields(self):
         from duoforge_replay import dataset
         self.build("sheet", ["open-train", "bo1-train"])
         m = self.manifest("sheet")
         self.assertEqual((m["source"], m["format_version"]), ("sheet", dataset.FORMAT_VERSION))
-        self.assertEqual(dataset.FORMAT_VERSION, 2)
+        self.assertEqual(dataset.FORMAT_VERSION, 3)
         for shard in dataset.read(self.tmp / "sheet"):
             self.assertNotIn("belief_level", shard)
         part = next(iter(dataset.parts(self.tmp / "sheet")))
