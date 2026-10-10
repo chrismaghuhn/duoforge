@@ -1540,6 +1540,7 @@ int main(void)
                              id == DFI_MOVE_ALLURINGVOICE || id == DFI_MOVE_DRAGONCHEER || /* step G72b (decision 0015 5ce) */
                              (id == DFI_MOVE_WIDEGUARD && dfi_pool_moves[id].special == DFI_SPECIAL_WIDE_GUARD) ||
                              id == DFI_MOVE_SKILLSWAP ||
+                             id == DFI_MOVE_LASHOUT || id == DFI_MOVE_ASSURANCE || /* step G88 (decision 0046): their handlers */
                              (id == DFI_MOVE_DETECT && dfi_pool_moves[id].special == DFI_SPECIAL_PROTECT));
             DF_CHECK(&t, !want || dfi_pool_moves[id].special != DFI_SPECIAL_UNMODELED);
             marked_count += dfi_support.moves[id] != 0u ? 1u : 0u;
