@@ -583,11 +583,11 @@ class LinesTest(unittest.TestCase):
         self.assertEqual(lines.extract_supported(source), 1 << f["THROAT_CHOP"] | 1 << f["DESTINY_BOND"])
 
     def test_a_feature_the_tracker_does_not_fold_stops(self):
-        # the library may support a feature (G8: Heal Block), but its view-extension field stays empty until the
+        # the library may support a feature (G60: Substitute), but its view-extension field stays empty until the
         # tracker folds it: the line still stops the perspective
         self.assertEqual(lines.SUPPORTED & ~lines.TRACKER_FOLDS, 0)
-        self.assertTrue(lines.LIBRARY_SUPPORTED >> lines.FEATURES["HEAL_BLOCK"] & 1)
-        self.assertEqual(self.stop("|-start|p1a: Staraptor|move: Heal Block"), "feature:HEAL_BLOCK")
+        self.assertTrue(lines.LIBRARY_SUPPORTED >> lines.FEATURES["SUBSTITUTE"] & 1)
+        self.assertEqual(self.stop("|-start|p1a: Staraptor|Substitute"), "feature:SUBSTITUTE")
         # a folded one: Throat Chop's [silent] lines (the tracker sets and clears the presence bit)
         self.assertEqual(lines.check("|-start|p1a: Staraptor|Throat Chop|[silent]", self.view), "fold")
         self.assertEqual(lines.check("|-end|p1a: Staraptor|Throat Chop|[silent]", self.view), "fold")
@@ -931,12 +931,12 @@ class GameTest(unittest.TestCase):
         self.assertEqual(result.record.turns, 10)
 
     def test_a_feature_stops_after_turn_two(self):
-        # a feature the tracker does not fold (Heal Block; Sand folds since the BC PR) ends both perspectives there:
+        # a feature the tracker does not fold (Substitute; Sand folds since the BC PR) ends both perspectives there:
         # the points before it are written, the later ones dropped
         clean = self.run_game(self.log)
-        result = self.run_game(self.insert_after("|turn|2", "|-start|p2a: Politoed|move: Heal Block"))
-        self.assertEqual(result.counters["perspectives.stopped.feature:HEAL_BLOCK"], 2)
-        self.assertGreater(result.counters["points.dropped.feature:HEAL_BLOCK"], 0)
+        result = self.run_game(self.insert_after("|turn|2", "|-start|p2a: Politoed|Substitute"))
+        self.assertEqual(result.counters["perspectives.stopped.feature:SUBSTITUTE"], 2)
+        self.assertGreater(result.counters["points.dropped.feature:SUBSTITUTE"], 0)
         turn2 = [int(r.observation["epoch"]) for r in clean.rows if int(r.observation["turn"]) == 2
                  and r.observation["boundary_kind"] == 2]
         self.assertTrue(all(int(r.observation["epoch"]) <= max(turn2) for r in result.rows))
