@@ -6730,6 +6730,7 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
         md->special != DFI_SPECIAL_AFTER_YOU && md->special != DFI_SPECIAL_QUASH && /* step G62: their own hit, below (after the Protect and immunity steps) */
         md->special != DFI_SPECIAL_TRICK && md->special != DFI_SPECIAL_SWITCHEROO && md->special != DFI_SPECIAL_SKILL_SWAP &&
         md->special != DFI_SPECIAL_TAUNT && md->special != DFI_SPECIAL_YAWN && md->special != DFI_SPECIAL_DRAGON_CHEER &&
+        md->special != DFI_SPECIAL_PSYCH_UP && md->special != DFI_SPECIAL_ALLY_SWITCH && /* step G80: their own hits, in the hit loop */
         md->boost_role != DFI_BOOST_ROLE_PRIMARY_TARGET &&
         (dfi_pool_move_flags2[move_id] & DFI_MOVE_FLAG2_FORCE_SWITCH) == 0u) {
         if (dfi_pool_move_heal[move_id][1] != 0u) {
@@ -6780,7 +6781,8 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
         md->special != DFI_SPECIAL_QUASH && md->special != DFI_SPECIAL_SUBSTITUTE && md->special != DFI_SPECIAL_PHANTOM_FORCE &&
         md->special != DFI_SPECIAL_STEEL_BEAM && md->special != DFI_SPECIAL_THUNDER_WAVE &&
         md->special != DFI_SPECIAL_SKILL_SWAP &&
-        md->special != DFI_SPECIAL_ALLURING_VOICE && md->special != DFI_SPECIAL_DRAGON_CHEER) {
+        md->special != DFI_SPECIAL_ALLURING_VOICE && md->special != DFI_SPECIAL_DRAGON_CHEER &&
+        md->special != DFI_SPECIAL_PSYCH_UP && md->special != DFI_SPECIAL_ALLY_SWITCH) {
         return DUOFORGE_E_INVARIANT;
     }
     /* Steel Roller's onTry (step G34, data/moves.ts:17893-17913): it fails without a terrain, with -fail and [still]. */
