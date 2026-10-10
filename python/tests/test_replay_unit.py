@@ -527,7 +527,7 @@ class LinesTest(unittest.TestCase):
     def test_turn_scoped(self):
         self.assertEqual(lines.check("|-singleturn|p1a: Staraptor|move: Rage Powder", self.view), "fold")  # folded
         self.assertEqual(lines.check("|-singleturn|p1a: Staraptor|Quick Guard", self.view), "turn:QUICK_GUARD")
-        self.assertEqual(lines.check("|-singleturn|p1a: Staraptor|Wide Guard", self.view), "turn:WIDE_GUARD")
+        self.assertEqual(lines.check("|-singleturn|p1a: Staraptor|Wide Guard", self.view), "fold")  # folded
 
     def test_the_protect_variants_single_turn_line_folds(self):
         # Spiky Shield, Baneful Bunker and Burning Bulwark print `move: Protect` (Protect and Detect print `Protect`).
@@ -546,7 +546,7 @@ class LinesTest(unittest.TestCase):
         self.assertNotEqual(other, lines.trace_to_c.NOPOS)
 
     def test_guard_blocks_are_turn_scoped(self):
-        self.assertEqual(lines.check("|-activate|p1a: Staraptor|move: Wide Guard", self.view), "turn:WIDE_GUARD")
+        self.assertEqual(lines.check("|-activate|p1a: Staraptor|move: Wide Guard", self.view), "fold")  # folded
         self.assertEqual(lines.check("|-activate|p1a: Staraptor|move: Quick Guard", self.view), "turn:QUICK_GUARD")
         self.assertEqual(lines.check("|-activate|p2a: Gholdengo|ability: Storm Drain", self.view), "fold")
 
@@ -1112,11 +1112,11 @@ class GameTest(unittest.TestCase):
         tracker = self.at_turn_3()
         tracker.feed(["|move|p2a: Politoed|Wide Guard|p2a: Politoed", "|-singleturn|p2a: Politoed|Wide Guard"])
         self.assertEqual(tracker._positions[1][0].chain, 1)
-        self.assertIn("WIDE_GUARD", tracker._turn_scoped)
+        self.assertIn(("WIDE_GUARD", 1), tracker._guards)  # the side's guard (the view extension's guard_flags)
         tracker.feed(["|move|p1a: Indeedee|Feint|p2b: Farigiraf", "|-activate|p2b: Farigiraf|move: Feint"])
         self.assertEqual((tracker._positions[1][1].chain, tracker._positions[1][1].stall), (0, 0))
         self.assertEqual(tracker._positions[1][0].chain, 1)
-        self.assertNotIn("WIDE_GUARD", tracker._turn_scoped)
+        self.assertNotIn(("WIDE_GUARD", 1), tracker._guards)
 
     def test_a_move_activation_is_no_emergency_exit(self):
         # an ACTIVATE of a move whose id equals Emergency Exit's ability id + 1 (move 8, Muddy Water) asks no switch:

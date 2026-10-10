@@ -140,7 +140,8 @@ BASE_FOLDS = sum(1 << FEATURES[n] for n in ("WEATHER_SAND", "WEATHER_SNOW", "AIL
 EXT_FOLDS = sum(1 << FEATURES[n] for n in ("THROAT_CHOP", "AURORA_VEIL", "PERISH", "ENCORE", "ABILITY_CHANGE", "ITEM_CHANGE",
                                           "MUST_RECHARGE", "TOXIC_SPIKES", "TYPE_CHANGE", "TAUNT", "YAWN",
                                           "DISABLE", "IMPRISON", "STEALTH_ROCK",
-                                          "GLAIVE_RUSH", "RAGE_POWDER", "HEAL_BLOCK", "SPIKES"))
+                                          "GLAIVE_RUSH", "RAGE_POWDER", "HEAL_BLOCK", "SPIKES",
+                                          "WIDE_GUARD"))
 TRACKER_FOLDS = BASE_FOLDS | EXT_FOLDS
 SUPPORTED = LIBRARY_SUPPORTED & TRACKER_FOLDS
 

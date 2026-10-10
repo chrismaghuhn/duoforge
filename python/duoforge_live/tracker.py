@@ -62,7 +62,8 @@ EXT_THROAT_CHOP = C["DUOFORGE_POSITION_EXT_THROAT_CHOP"]
 ITEM_NOW_NONE = C["DUOFORGE_ITEM_NOW_NONE"]  # duoforge_member_ext.item_now: the member holds nothing
 # The view-extension fields (OBSERVATION_EXT, decision 0018) of each feature the tracker folds: what observation_ext
 # writes, and all that restrict_ext keeps of DuoForge's record for a comparison. ("bit", B): bit B of a position's
-# volatiles; ("position" | "member" | "side", F): field F of every position, member or side record. The base-value
+# volatiles; ("side_bit", (F, B)): bit B of side field F; ("position" | "member" | "side", F): field F of every
+# position, member or side record. The base-value
 # features show in the base observation alone (lines.BASE_FOLDS).
 EXT_FIELDS = {
     "WEATHER_SAND": (), "WEATHER_SNOW": (), "AILMENT_TOX": (), "TERRAIN_ELECTRIC": (),
@@ -78,6 +79,7 @@ EXT_FIELDS = {
     "GLAIVE_RUSH": (("bit", C["DUOFORGE_POSITION_EXT_GLAIVE_RUSH"]),),
     "RAGE_POWDER": (("bit", C["DUOFORGE_POSITION_EXT_RAGE_POWDER"]),),
     "HEAL_BLOCK": (("bit", C["DUOFORGE_POSITION_EXT_HEAL_BLOCK"]),),
+    "WIDE_GUARD": (("side_bit", ("guard_flags", C["DUOFORGE_SIDE_GUARD_WIDE_GUARD"])),),
     "TYPE_CHANGE": (("bit", C["DUOFORGE_POSITION_EXT_TYPE_CHANGED"]), ("position", "type_now")),
     "AURORA_VEIL": (("side", "aurora_veil_turns"),),
     "PERISH": (("position", "perish"),),
@@ -230,6 +232,7 @@ class Tracker:
         self._pressure = tables["ABILITY"]["PRESSURE"] + 1 if "PRESSURE" in tables["ABILITY"] else None
         self._follow_me = tables["MOVE"].get("FOLLOWME")
         self._rage_powder = tables["MOVE"].get("RAGEPOWDER")
+        self._wide_guard = tables["MOVE"].get("WIDEGUARD")
         self._struggle = tables["MOVE"].get("STRUGGLE")
         self._soak = tables["MOVE"].get("SOAK")
         self._symbiosis = tables["ABILITY"]["SYMBIOSIS"] + 1 if "SYMBIOSIS" in tables["ABILITY"] else None
@@ -854,6 +857,10 @@ class Tracker:
                 self._at(pos).flags |= FLAG_FOLLOW_ME  # this turn (c11 battles)
             elif ident == self._helping_hand:
                 self._at(pos).flags |= FLAG_HELPING_HAND  # on the boosted ally, this turn (c09 battles)
+            elif ident == self._wide_guard:
+                # Wide Guard (step G7): the side's guard for this turn (the residual ends it, a Feint breaks it), which
+                # only a PIVOT inside the turn shows
+                self._guards.add(("WIDE_GUARD", pos // 2))
             elif ident == self._rage_powder:
                 # Rage Powder (step G30): the extension's RAGE_POWDER bit for this turn, which only a PIVOT inside the
                 # turn shows (the residual ends it); the base view's Follow Me flag stays off for it
@@ -1101,6 +1108,7 @@ class Tracker:
         for side in (0, 1):
             v = o["sides"][side]
             v["aurora_veil_turns"] = self._conditions[side][3]
+            v["guard_flags"] = C["DUOFORGE_SIDE_GUARD_WIDE_GUARD"] if ("WIDE_GUARD", side) in self._guards else 0
             for field, _ in _HAZARD.values():
                 v[field] = self._hazards[side][field]
             for m, member in enumerate(self._member(side)):
@@ -1147,6 +1155,9 @@ def restrict_ext(ext, folds):
                 src, dst = ext["sides"][s], out["sides"][s]
                 if where == "bit":
                     dst["positions"]["volatiles"] = dst["positions"]["volatiles"] | (src["positions"]["volatiles"] & field)
+                elif where == "side_bit":
+                    name, bit = field
+                    dst[name] = dst[name] | (src[name] & bit)
                 elif where == "side":
                     dst[field] = src[field]
                 else:
