@@ -369,6 +369,10 @@ const dfi_support_manifest dfi_support = {
             [DFI_MOVE_ALLURINGVOICE] = 1u, /* step G72b (decision 0015 5ce): the secondary's confusion on a raised target */
             [DFI_MOVE_DRAGONCHEER] = 1u,   /* step G72b: the volatile's crit stage (position flags) and its start line */
     [DFI_MOVE_REVIVALBLESSING] = 1u,
+            /* Step G84 (decision 0047): Leech Seed (the holder's volatile, the source's slot, the residual drain of order 8) and Curse
+             * (a non-Ghost user's self boost; a Ghost user's Curse is refused explicitly, E_UNSUPPORTED). */
+            [DFI_MOVE_LEECHSEED] = 1u,
+            [DFI_MOVE_CURSE] = 1u,
             /* Step G42: Roost (the heal, then the Flying type is off for the turn) and Stomping Tantrum (base power x2 after a
              * FALSE last move result; the move_result of tail rev 4, decision 0015 section 7). */
             [DFI_MOVE_ROOST] = 1u,
@@ -818,5 +822,6 @@ const dfi_support_manifest dfi_support = {
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_ROOST) |
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_QUICK_GUARD) |
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_SUBSTITUTE) |
-                         ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_DRAGON_CHEER)
+                         ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_DRAGON_CHEER) |
+                         ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_LEECH_SEED)
 };

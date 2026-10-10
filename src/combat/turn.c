@@ -4603,6 +4603,36 @@ static bool dfi_yawn(dfi_run *r, uint32_t user, uint32_t flat)
     return true;
 }
 
+/* Leech Seed (decision 0047; data/moves.ts:10202-10231): onTryImmunity refuses a Grass target (`-immune`, no volatile); the
+ * volatile's source is the user's slot (addVolatile, sim/pokemon.ts:2000-2003). A target that already has a seed is not modelled
+ * (the pin's addVolatile refusal is not verified): refused explicitly. The Substitute and Protect come before this (the generic
+ * steps of the hit), since the move's flags are protect and no bypasssub. */
+static duoforge_status dfi_leech_seed(dfi_run *r, uint32_t user, uint32_t flat, bool *started)
+{
+    struct duoforge_battle *b = r->b;
+    *started = false;
+    const dfi_member *tm = dfi_at(b, flat);
+    dfi_tail_pos *tail = &b->tail.sides[flat / 2u].positions[flat % 2u];
+    if (tm == NULL || tm->hp == 0u) {
+        return DUOFORGE_OK;
+    }
+    if (dfi_has_type(b, tm, DFI_TYPE_GRASS)) {
+        const duoforge_event im = dfi_ev(DUOFORGE_EVENT_IMMUNE, flat, DUOFORGE_CAUSE_NONE, 0u, DUOFORGE_NO_POSITION);
+        dfi_emit(r, &im); /* -immune|target (onTryImmunity returns false; no volatile, no [still]) */
+        return DUOFORGE_OK;
+    }
+    if (tail->leech_seed_source != 0u) {
+        return DUOFORGE_E_UNSUPPORTED; /* a second seed: the pin's refusal is not verified, so it is refused, not guessed */
+    }
+    tail->leech_seed_source = (uint8_t)(user + 1u); /* the source's flat position + 1 (decision 0047, the tail field) */
+    duoforge_event e = dfi_event_make(DUOFORGE_EVENT_VOLATILE_START, flat);
+    e.detail = (uint8_t)DUOFORGE_VOLATILE_LEECH_SEED;
+    e.other = (uint8_t)DUOFORGE_NO_POSITION;
+    dfi_emit(r, &e); /* -start|target|move: Leech Seed (no [of]) */
+    *started = true;
+    return DUOFORGE_OK;
+}
+
 /* Cursed Body (POOL data, data/abilities.ts:784-797, onDamagingHit; no order, so it runs after Rough Skin's 1 and Rocky
  * Helmet's 2): a damaging hit that is not Struggle's (nor a max or future move: none in the format) at its holder makes
  * the attacker roll randomChance(3, 10) (random(10) < 3, one draw per hit target) and a success disables the attacker's
@@ -5299,6 +5329,30 @@ static uint16_t *dfi_sub_hp_of(struct duoforge_battle *b, uint32_t flat)
 /* The Substitute move (data/moves.ts:18314-18326 and 18328-18340): onTryHit fails in order (the Substitute is up, then the
  * user's HP is a quarter or less, or its maximum is 1), then the volatile starts with floor(maxhp / 4) HP, and onHit takes
  * directDamage(maxhp / 4) from the user (clamped to at least 1, sim/battle.ts:2215). */
+/* Curse (decision 0047; the Champions override data/mods/champions/moves.ts:165-196): a user without the Ghost type is boosted,
+ * Speed -1 then Attack +1 and Defense +1 (the pin's order: the falls first, negatives_first, sim/battle.ts boost table order), and
+ * no volatile is set. A Ghost user's Curse is refused explicitly (E_UNSUPPORTED): the pin's client accepts no target choice for
+ * it, so its effect (the halving, the target's volatile and the residual) is not modelled (0047, the bounded check). */
+static duoforge_status dfi_run_curse(dfi_run *r, uint32_t user)
+{
+    struct duoforge_battle *b = r->b;
+    if (dfi_has_type(b, dfi_at(b, user), DFI_TYPE_GHOST)) {
+        return DUOFORGE_E_UNSUPPORTED;
+    }
+    uint8_t stages[DFI_STAT_STAGE_COUNT];
+    for (uint32_t i = 0u; i < DFI_STAT_STAGE_COUNT; ++i) {
+        stages[i] = (uint8_t)DFI_STAGE_NEUTRAL;
+    }
+    stages[DFI_STAGE_SPE] = (uint8_t)(DFI_STAGE_NEUTRAL - 1u);
+    stages[DFI_STAGE_ATK] = (uint8_t)(DFI_STAGE_NEUTRAL + 1u);
+    stages[DFI_STAGE_DEF] = (uint8_t)(DFI_STAGE_NEUTRAL + 1u);
+    dfi_boost_effect eff = dfi_effect(DUOFORGE_CAUSE_MOVE, DFI_MOVE_CURSE, DFI_BOOST_PRIMARY);
+    eff.negatives_first = true;
+    const bool any = dfi_boost(r, user, stages, user, eff);
+    r->mres |= any ? DFI_MRES_TRUE : DFI_MRES_FALSE; /* onHit returns the boost's result (champions/moves.ts:185) */
+    return DUOFORGE_OK;
+}
+
 static duoforge_status dfi_run_substitute(dfi_run *r, uint32_t user)
 {
     struct duoforge_battle *b = r->b;
@@ -5869,6 +5923,15 @@ static duoforge_status dfi_status_effects(dfi_run *r, uint32_t user, uint32_t mo
                 did = dfi_yawn(r, user, targets[i]) || did;
                 continue;
             }
+            if (md->special == DFI_SPECIAL_LEECH_SEED) {
+                bool started = false;
+                st = dfi_leech_seed(r, user, targets[i], &started);
+                if (st != DUOFORGE_OK) {
+                    return st;
+                }
+                did = did || started;
+                continue;
+            }
             if (md->special == DFI_SPECIAL_ENCORE) {
                 bool started = false;
                 st = dfi_encore(r, user, targets[i], &started);
@@ -5932,7 +5995,8 @@ static bool dfi_bounce_kind_ok(uint32_t move_id, const dfi_move_data *md)
         return true;
     }
     return md->special == DFI_SPECIAL_PARTING_SHOT || md->special == DFI_SPECIAL_SOAK || md->special == DFI_SPECIAL_ENCORE ||
-           md->special == DFI_SPECIAL_DISABLE || md->special == DFI_SPECIAL_TAUNT || md->special == DFI_SPECIAL_YAWN;
+           md->special == DFI_SPECIAL_DISABLE || md->special == DFI_SPECIAL_TAUNT || md->special == DFI_SPECIAL_YAWN ||
+           md->special == DFI_SPECIAL_LEECH_SEED; /* G84 (decision 0047): the seed bounces like Yawn (the reflectable flag) */
 }
 
 /* The bounced run (useMove, battle-actions.ts:365-548) of a reflectable move: `holder` runs `move_id` aimed at `user`, the
@@ -6610,6 +6674,9 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
      * no effect of its own, so it is dispatched before the generic status check below. */
     if (md->special == DFI_SPECIAL_SUBSTITUTE) {
         return dfi_run_substitute(r, user);
+    }
+    if (md->special == DFI_SPECIAL_CURSE) {
+        return dfi_run_curse(r, user);
     }
     /* A status move whose only effect is its forced switch (Roar, Whirlwind; step G46) is modelled by the forced-switch step
      * below, not refused here. */
@@ -8943,6 +9010,48 @@ static duoforge_status dfi_residual_lock(dfi_run *r, uint32_t flat)
     return DUOFORGE_OK;
 }
 
+/* Leech Seed's residual (decision 0047; data/moves.ts:10216-10226, onResidualOrder 8): the holder's target is the Pokemon that
+ * stands in the source's slot now (getAtSlot(sourceSlot), so a switched-in source's slot still drains into whoever is there), and
+ * nothing happens when it is absent, fainted or at 0 HP. The holder loses baseMaxhp / 8 (this.damage, `[from] Leech Seed [of]
+ * target`); the target then gains that amount (this.heal, silent: no line, so the HEAL event carries cause LEECH_SEED). A holder
+ * that is down does not drain (its volatile handlers do not run: fieldEvent skips fainted holders, sim/battle.ts:514-517). The
+ * source's slot is `leech_seed_source` - 1 (a flat position). Big Root's x1.3 is not modelled (not in the pool). */
+static duoforge_status dfi_leech_drain(dfi_run *r, uint32_t holder)
+{
+    struct duoforge_battle *b = r->b;
+    const uint8_t src = b->tail.sides[holder / 2u].positions[holder % 2u].leech_seed_source;
+    if (src == 0u || src - 1u >= DFI_POSITIONS) {
+        return DUOFORGE_OK;
+    }
+    const uint32_t target = (uint32_t)src - 1u;
+    dfi_member *h = dfi_at(b, holder);
+    dfi_member *t = dfi_at(b, target);
+    if (h == NULL || h->hp == 0u || t == NULL || t->hp == 0u) {
+        return DUOFORGE_OK; /* "Nothing to leech into" (sim/moves.ts:10219-10222), or the holder is down */
+    }
+    const uint32_t amount = (uint32_t)h->hp_max / 8u; /* baseMaxhp / 8 (trunc) */
+    if (amount == 0u) {
+        return DUOFORGE_OK;
+    }
+    const uint32_t before = h->hp;
+    const duoforge_status st = dfi_deal(r, holder, amount, DUOFORGE_CAUSE_LEECH_SEED, 0u, target); /* -damage [from] Leech Seed [of] */
+    if (st != DUOFORGE_OK) {
+        return st;
+    }
+    const uint32_t lost = before - (uint32_t)h->hp; /* the HP the holder really lost (dfi_deal caps it at its HP) */
+    if (lost == 0u || t->hp == 0u) {
+        return DUOFORGE_OK;
+    }
+    /* Pokemon.heal (sim/pokemon.ts:1640-1652): nothing at full HP, else the amount, capped at the max; the line is silent */
+    if (t->hp >= t->hp_max) {
+        return DUOFORGE_OK;
+    }
+    const uint32_t hp = (uint32_t)t->hp + lost;
+    t->hp = (uint16_t)(hp > t->hp_max ? t->hp_max : hp); /* wide-operands-reviewed: <= hp_max */
+    dfi_emit_hp(r, dfi_ev(DUOFORGE_EVENT_HEAL, target, DUOFORGE_CAUSE_LEECH_SEED, 0u, DUOFORGE_NO_POSITION));
+    return DUOFORGE_OK;
+}
+
 static duoforge_status dfi_residual_events_run(dfi_run *r, dfi_noorder_snapshot *ps)
 {
     struct duoforge_battle *b = r->b;
@@ -9006,6 +9115,11 @@ static duoforge_status dfi_residual_events_run(dfi_run *r, dfi_noorder_snapshot 
         } else if (m->status == DFI_STATUS_PSN || m->status == DFI_STATUS_TOX) {
             /* psn and tox have the same handler order (9, data/conditions.ts:123-161) */
             list[n] = (dfi_residual_entry){DFI_RES_POISON, flat, 9u, speed, 0u, true};
+            n += 1u;
+        }
+        /* Leech Seed's drain (order 8, decision 0047): an entry only for a standing holder whose seed has a source */
+        if (m->hp != 0u && b->tail.sides[flat / 2u].positions[flat % 2u].leech_seed_source != 0u) {
+            list[n] = (dfi_residual_entry){DFI_RES_LEECH, flat, 8u, speed, 0u, true};
             n += 1u;
         }
         /* The volatiles with a duration handler of their own, in the one fixed order of residual_order.h (Heal
@@ -9322,6 +9436,17 @@ static duoforge_status dfi_residual_events_run(dfi_run *r, dfi_noorder_snapshot 
                 const uint32_t hp = (uint32_t)m->hp + heal;
                 m->hp = (uint16_t)(hp > m->hp_max ? m->hp_max : hp); /* wide-operands-reviewed: <= hp_max */
                 dfi_emit_hp(r, dfi_ev(DUOFORGE_EVENT_HEAL, e->flat, DUOFORGE_CAUSE_TERRAIN, 0u, DUOFORGE_NO_POSITION));
+            }
+            continue;
+        }
+        if (e->kind == DFI_RES_LEECH) {
+            st = dfi_leech_drain(r, e->flat);
+            if (st != DUOFORGE_OK) {
+                return st;
+            }
+            dfi_process_faints(r);
+            if (r->ended) {
+                return DUOFORGE_OK;
             }
             continue;
         }

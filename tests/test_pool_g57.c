@@ -36,6 +36,7 @@ static const char *const handled[] = {
     "poisonpowder", "toxic", "stealthrock", "spikes", "toxicspikes", "stickyweb", "taunt", "yawn", "charm", "faketears",
     "sing",
     "thunderwave", /* primary status, bounced on Hypnosis's path; lane A G68/H10 */
+    "leechseed", /* step G84 (decision 0047): the seed bounces on the Yawn path (dfi_bounce_kind_ok) */
 };
 
 /* The marked reflectable moves whose bounced run is not modelled (marked by lane A's G54 batch): dfi_bounce_kind_ok refuses

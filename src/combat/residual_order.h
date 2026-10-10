@@ -43,6 +43,9 @@
 #define DFI_RES_FIELD_END 6u /* Trick Room, a side condition: duration only */
 #define DFI_RES_LEFTOVERS 7u
 #define DFI_RES_POISON 8u
+/* Leech Seed's residual drain (decision 0047, data/moves.ts:10216-10226): onResidualOrder 8, a callback (the drain and the heal to
+ * the source slot). It runs before poison (9) and burn (10); a tie of two holders at order 8 draws like any tie of two callbacks. */
+#define DFI_RES_LEECH 18u
 #define DFI_RES_WHITE_HERB 9u
 #define DFI_RES_ENCORE 10u /* Encore: order 16, a callback with a duration (step G9) */
 #define DFI_RES_SPEED_BOOST 11u /* Speed Boost's onResidual: order 28, sub-order 2 (step G32) */
