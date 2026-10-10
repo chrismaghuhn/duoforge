@@ -1312,7 +1312,8 @@ class Lock(unittest.TestCase):
         # First come, first served: a waiter takes a ticket; the lock goes to the oldest ticket whose process lives,
         # not to whoever polls first (2026-10-09: short jobs queued for an hour behind later arrivals). The stand-in
         # sleep counts the rounds; an older live waiter (pid 4242) leaves the queue in round 3, and a dead waiter's
-        # ticket (pid 987654321) is no obstacle.
+        # ticket (pid 987654321) is no obstacle. One slot: with two, the free second slot admits this waiter at once
+        # (test_with_two_slots_the_second_waiter_is_admitted_while_two_slots_are_free).
         with tempfile.TemporaryDirectory() as tmp:
             lock = os.path.join(tmp, 'lock')
             queue = lock + '.queue'
@@ -1326,7 +1327,8 @@ class Lock(unittest.TestCase):
                      'machine_lock_acquire fuzz && echo "rounds $n" && ls "$MACHINE_LOCK.queue" | wc -l && '
                      'machine_lock_release' % script)
             done = subprocess.run([rnd.find_bash(), '-c', shell], capture_output=True, text=True, timeout=60,
-                                  env=dict(os.environ, DUOFORGE_MACHINE_LOCK=lock.replace('\\', '/')))
+                                  env=dict(os.environ, DUOFORGE_MACHINE_LOCK=lock.replace('\\', '/'),
+                                           DUOFORGE_MACHINE_LOCK_SLOTS='1'))
             self.assertEqual(done.returncode, 0, done.stderr)
             self.assertEqual(done.stdout.split(), ['rounds', '3', '0'])  # waited for 4242, its ticket gone, no ticket left
             self.assertFalse(os.path.exists(lock))
@@ -1334,6 +1336,7 @@ class Lock(unittest.TestCase):
     def test_a_chunk_that_waits_names_the_holder_and_the_minutes_waited_every_five_minutes(self):
         # The script is sourced with two stand-ins: sleep counts the rounds (15 s each) and the holder releases the lock
         # in the 21st, and the holder's pid is alive without asking tasklist (one call is about a second on Windows).
+        # One slot, so that one holder fills the machine (two: test_with_two_slots_a_third_job_waits_for_a_free_slot).
         with tempfile.TemporaryDirectory() as tmp:
             lock = os.path.join(tmp, 'lock')
             os.mkdir(lock)
@@ -1344,7 +1347,8 @@ class Lock(unittest.TestCase):
                      'sleep() { n=$((n + 1)); if [ $n -eq 21 ]; then rm -rf "$MACHINE_LOCK"; fi; }; '
                      'machine_lock_acquire fuzz && cat "$MACHINE_LOCK/owner" && machine_lock_release' % script)
             done = subprocess.run([rnd.find_bash(), '-c', shell], capture_output=True, text=True, timeout=60,
-                                  env=dict(os.environ, DUOFORGE_MACHINE_LOCK=lock.replace('\\', '/')))
+                                  env=dict(os.environ, DUOFORGE_MACHINE_LOCK=lock.replace('\\', '/'),
+                                           DUOFORGE_MACHINE_LOCK_SLOTS='1'))
             self.assertEqual(done.returncode, 0, done.stderr)
             holder = '4242 local_ci other-checkout since 2026-10-09 12:00:00'
             self.assertEqual(done.stderr.splitlines(), [
@@ -1353,6 +1357,185 @@ class Lock(unittest.TestCase):
             ])
             self.assertRegex(done.stdout, r'^\d+ fuzz since \d{4}-\d\d-\d\d \d\d:\d\d:\d\d\n$')  # then it is ours
             self.assertFalse(os.path.exists(lock))
+
+    # Slots (2026-10-10): DUOFORGE_MACHINE_LOCK_SLOTS jobs at once, 2 by default. Slot 0 is the lock directory of the
+    # one-slot script ($MACHINE_LOCK), slot k is $MACHINE_LOCK.slot<k>: a holder or waiter of the old script still
+    # counts. The waits below use the stand-ins of the tests above: sleep counts the rounds and changes the scene.
+
+    def lock_shell(self, tmp, body, alive=(), slots=None, cpus='16', holders=(), tickets=()):
+        """Runs `body` in a bash that sourced the lock script, with DUOFORGE_MACHINE_LOCK=<tmp>/lock, the pids `alive`
+        (and its own) alive, NUMBER_OF_PROCESSORS=`cpus`, DUOFORGE_MACHINE_LOCK_SLOTS=`slots` (None: unset, the
+        default), the slot holders `holders` [(slot, owner line)] and the queue tickets `tickets` [(name, text)]."""
+        lock = os.path.join(tmp, 'lock')
+        for slot, owner in holders:
+            path = lock if slot == 0 else '%s.slot%d' % (lock, slot)
+            os.mkdir(path)
+            with io.open(os.path.join(path, 'owner'), 'w', encoding='ascii', newline='\n') as f:
+                f.write(owner + '\n')
+        if tickets:
+            os.mkdir(lock + '.queue')
+        for name, text in tickets:
+            with io.open(os.path.join(lock + '.queue', name), 'w', encoding='ascii', newline='\n') as f:
+                f.write(text)
+        script = os.path.join(ROOT, 'tools', 'ci', 'machine_lock.sh').replace('\\', '/')
+        live = ' || '.join(['[ "$1" = "$(machine_lock_pid)" ]'] + ['[ "$1" = %d ]' % pid for pid in alive])
+        shell = 'source "%s"; machine_lock_alive() { %s; }; n=0; %s' % (script, live, body)
+        env = dict(os.environ, DUOFORGE_MACHINE_LOCK=lock.replace('\\', '/'), NUMBER_OF_PROCESSORS=cpus)
+        env.pop('DUOFORGE_MACHINE_LOCK_SLOTS', None)
+        env.pop('DUOFORGE_JOBS', None)
+        if slots is not None:
+            env['DUOFORGE_MACHINE_LOCK_SLOTS'] = slots
+        return lock, subprocess.run([rnd.find_bash(), '-c', shell], capture_output=True, text=True, timeout=60, env=env)
+
+    def test_with_two_slots_a_job_alone_holds_the_old_lock_directory_and_is_told_half_the_processors(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            lock, done = self.lock_shell(tmp, 'sleep() { n=$((n + 1)); }; machine_lock_acquire fuzz && echo "rounds $n" '
+                                              '&& echo "jobs $DUOFORGE_JOBS" && ls -d "$MACHINE_LOCK"* && '
+                                              'cat "$MACHINE_LOCK/owner" && machine_lock_release')
+            self.assertEqual(done.returncode, 0, done.stderr)
+            lines = done.stdout.splitlines()
+            self.assertEqual(lines[:2], ['rounds 0', 'jobs 8'])  # at once; 16 processors over 2 slots
+            self.assertEqual(sorted(os.path.basename(p) for p in lines[2:-1]), ['lock', 'lock.queue'])  # slot 0 only
+            self.assertRegex(lines[-1], r'^\d+ fuzz since ')
+            self.assertFalse(os.path.exists(lock))
+
+    def test_with_two_slots_a_job_beside_an_old_style_holder_takes_the_second_slot(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            lock, done = self.lock_shell(tmp, 'sleep() { n=$((n + 1)); }; machine_lock_acquire fuzz && echo "rounds $n" '
+                                              '&& cat "$MACHINE_LOCK.slot1/owner" && machine_lock_release',
+                                         alive=(4242,), holders=[(0, '4242 local_ci old-script since 2026-10-09 12:00:00')])
+            self.assertEqual(done.returncode, 0, done.stderr)
+            lines = done.stdout.splitlines()
+            self.assertEqual(lines[0], 'rounds 0')
+            self.assertRegex(lines[1], r'^\d+ fuzz since ')
+            self.assertFalse(os.path.exists(lock + '.slot1'))  # released
+            with io.open(os.path.join(lock, 'owner'), encoding='ascii') as f:  # and the other holder's slot untouched
+                self.assertEqual(f.read(), '4242 local_ci old-script since 2026-10-09 12:00:00\n')
+
+    def test_with_two_slots_a_third_job_waits_for_a_free_slot(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            a = '4242 local_ci one since 2026-10-09 12:00:00'
+            b = '4243 bench two since 2026-10-09 12:01:00'
+            lock, done = self.lock_shell(tmp, 'sleep() { n=$((n + 1)); if [ $n -eq 2 ]; then rm -rf "$MACHINE_LOCK.slot1"; '
+                                              'fi; }; machine_lock_acquire fuzz && echo "rounds $n" && '
+                                              'cat "$MACHINE_LOCK.slot1/owner" && machine_lock_release',
+                                         alive=(4242, 4243), holders=[(0, a), (1, b)])
+            self.assertEqual(done.returncode, 0, done.stderr)
+            self.assertEqual(done.stderr.splitlines(), ['machine lock: waiting for %s; %s (0 min so far)' % (a, b)])
+            lines = done.stdout.splitlines()
+            self.assertEqual(lines[0], 'rounds 2')  # the second holder left in round 2
+            self.assertRegex(lines[1], r'^\d+ fuzz since ')
+            self.assertTrue(os.path.isdir(lock))  # the first holder's slot stays
+
+    def test_with_two_slots_the_second_waiter_is_admitted_while_two_slots_are_free(self):
+        # One older live waiter and two free slots: both can run. The later waiter takes the highest free slot and leaves
+        # slot 0 to the head of the queue, which may run the one-slot script (it knows only slot 0).
+        with tempfile.TemporaryDirectory() as tmp:
+            lock, done = self.lock_shell(tmp, 'sleep() { n=$((n + 1)); }; machine_lock_acquire fuzz && echo "rounds $n" '
+                                              '&& ls -d "$MACHINE_LOCK"* && machine_lock_release',
+                                         alive=(4242,), tickets=[('0000000000000000001-987654321', '987654321 dead\n'),
+                                                                 ('0000000000000000002-4242', '4242 other\n')])
+            self.assertEqual(done.returncode, 0, done.stderr)
+            lines = done.stdout.splitlines()
+            self.assertEqual(lines[0], 'rounds 0')
+            self.assertEqual(sorted(os.path.basename(p) for p in lines[1:]), ['lock.queue', 'lock.slot1'])
+            self.assertEqual(os.listdir(lock + '.queue'), ['0000000000000000002-4242'])  # the dead ticket is gone
+
+    def test_with_two_slots_a_waiter_waits_while_older_waiters_take_the_free_slots(self):
+        # First come, first served with slots: one slot free and one older live waiter, so the slot is the older one's.
+        with tempfile.TemporaryDirectory() as tmp:
+            older = '4243 other since 2026-10-09 12:00:00'
+            lock, done = self.lock_shell(tmp, 'sleep() { n=$((n + 1)); if [ $n -eq 2 ]; then rm -f "$MACHINE_LOCK.queue/"*-4243; '
+                                              'fi; }; machine_lock_acquire fuzz && echo "rounds $n" && '
+                                              'cat "$MACHINE_LOCK.slot1/owner" && machine_lock_release',
+                                         alive=(4242, 4243), holders=[(0, '4242 local_ci one since 2026-10-09 11:00:00')],
+                                         tickets=[('0000000000000000001-4243', older + '\n')])
+            self.assertEqual(done.returncode, 0, done.stderr)
+            self.assertEqual(done.stderr.splitlines(), ['machine lock: waiting for %s (0 min so far)' % older])
+            lines = done.stdout.splitlines()
+            self.assertEqual(lines[0], 'rounds 2')
+            self.assertRegex(lines[1], r'^\d+ fuzz since ')
+
+    def test_a_stale_slot_is_taken_over_whichever_slot_it_is(self):
+        live = '4242 local_ci one since 2026-10-09 12:00:00'
+        dead = '987654321 bench gone since 2026-10-09 11:00:00'
+        for stale_slot in (0, 1):
+            with self.subTest(stale_slot=stale_slot), tempfile.TemporaryDirectory() as tmp:
+                path = '"$MACHINE_LOCK"' if stale_slot == 0 else '"$MACHINE_LOCK.slot1"'
+                lock, done = self.lock_shell(tmp, 'sleep() { n=$((n + 1)); }; machine_lock_acquire fuzz && '
+                                                  'echo "rounds $n" && cat %s/owner && machine_lock_release' % path,
+                                             alive=(4242,), holders=[(stale_slot, dead), (1 - stale_slot, live)])
+                self.assertEqual(done.returncode, 0, done.stderr)
+                self.assertEqual(done.stderr.splitlines(), ['machine lock: removing a stale lock (%s)' % dead])
+                lines = done.stdout.splitlines()
+                self.assertEqual(lines[0], 'rounds 0')
+                self.assertRegex(lines[1], r'^\d+ fuzz since ')  # the stale slot is now this job's
+
+    def test_an_exclusive_job_waits_for_every_slot_and_holds_them_all(self):
+        # Measurements take the whole machine: --exclusive waits until no slot is held, holds every slot and is told
+        # every processor.
+        with tempfile.TemporaryDirectory() as tmp:
+            lock, done = self.lock_shell(tmp, 'sleep() { n=$((n + 1)); if [ $n -eq 2 ]; then rm -rf "$MACHINE_LOCK.slot1"; '
+                                              'fi; }; machine_lock_acquire --exclusive bench && echo "rounds $n" && '
+                                              'echo "jobs $DUOFORGE_JOBS" && cat "$MACHINE_LOCK/owner" '
+                                              '"$MACHINE_LOCK.slot1/owner" && machine_lock_release && ls -d "$MACHINE_LOCK"*',
+                                         alive=(4243,), holders=[(1, '4243 fuzz since 2026-10-09 12:00:00')])
+            self.assertEqual(done.returncode, 0, done.stderr)
+            lines = done.stdout.splitlines()
+            self.assertEqual(lines[:2], ['rounds 2', 'jobs 16'])
+            self.assertRegex(lines[2], r'^\d+ bench since ')
+            self.assertEqual(lines[2], lines[3])
+            self.assertEqual([os.path.basename(p) for p in lines[4:]], ['lock.queue'])  # both slots released
+
+    def test_a_waiter_behind_an_exclusive_waiter_waits_although_slots_are_free(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            older = '4243 bench since 2026-10-09 12:00:00'
+            lock, done = self.lock_shell(tmp, 'sleep() { n=$((n + 1)); rm -f "$MACHINE_LOCK.queue/"*-4243; }; '
+                                              'machine_lock_acquire fuzz && echo "rounds $n" && machine_lock_release',
+                                         alive=(4243,), tickets=[('0000000000000000001-4243', older + '\nexclusive\n')])
+            self.assertEqual(done.returncode, 0, done.stderr)
+            self.assertEqual(done.stderr.splitlines(), ['machine lock: waiting for %s (0 min so far)' % older])
+            self.assertEqual(done.stdout.splitlines(), ['rounds 1'])
+
+    def test_a_slot_count_that_is_not_a_positive_number_is_refused(self):
+        for slots in ('0', 'two', '', '-1'):
+            with self.subTest(slots=slots), tempfile.TemporaryDirectory() as tmp:
+                lock, done = self.lock_shell(tmp, 'sleep() { n=$((n + 1)); }; machine_lock_acquire fuzz; echo "status $?"',
+                                             slots=slots)
+                self.assertEqual(done.stdout.splitlines(), ['status 2'])
+                self.assertIn('DUOFORGE_MACHINE_LOCK_SLOTS', done.stderr)
+                self.assertFalse(os.path.exists(lock))
+
+    def test_two_wrapped_jobs_run_at_the_same_time_and_an_exclusive_one_runs_alone(self):
+        # Real processes, the wrapper form, the default of two slots. Each wrapped command marks that it started and
+        # waits (at most 30 s) until both have: it exits 0 only if the other one ran at the same time.
+        meet = ('import os, sys, time\n'
+                'open(os.path.join(sys.argv[1], sys.argv[2]), "w").write(os.environ["DUOFORGE_JOBS"])\n'
+                'end = time.time() + 30\n'
+                'while len(os.listdir(sys.argv[1])) < 2 and time.time() < end:\n'
+                '    time.sleep(0.1)\n'
+                'sys.exit(0 if len(os.listdir(sys.argv[1])) == 2 else 3)\n')
+        script = os.path.join(ROOT, 'tools', 'ci', 'machine_lock.sh').replace('\\', '/')
+        with tempfile.TemporaryDirectory() as tmp:
+            lock = os.path.join(tmp, 'lock')
+            marks = os.path.join(tmp, 'marks')
+            os.mkdir(marks)
+            env = dict(os.environ, DUOFORGE_MACHINE_LOCK=lock.replace('\\', '/'), NUMBER_OF_PROCESSORS='16')
+            env.pop('DUOFORGE_MACHINE_LOCK_SLOTS', None)
+            jobs = [subprocess.Popen([rnd.find_bash(), script, name, sys.executable.replace('\\', '/'), '-c', meet,
+                                      marks.replace('\\', '/'), name], env=env) for name in ('a', 'b')]
+            self.assertEqual([job.wait(timeout=60) for job in jobs], [0, 0])
+            for name in ('a', 'b'):
+                with io.open(os.path.join(marks, name), encoding='ascii') as f:
+                    self.assertEqual(f.read(), '8')
+            self.assertEqual(sorted(os.listdir(tmp)), ['lock.queue', 'marks'])  # both released
+            held = ('import os, sys; d = sys.argv[1]; '
+                    'print(os.environ["DUOFORGE_JOBS"], os.path.isdir(d), os.path.isdir(d + ".slot1"))')
+            done = subprocess.run([rnd.find_bash(), script, '--exclusive', 'bench', sys.executable.replace('\\', '/'), '-c',
+                                   held, lock.replace('\\', '/')], capture_output=True, text=True, timeout=60, env=env)
+            self.assertEqual(done.returncode, 0, done.stderr)
+            self.assertEqual(done.stdout.split(), ['16', 'True', 'True'])
+            self.assertEqual(sorted(os.listdir(tmp)), ['lock.queue', 'marks'])
 
 
 # ------------------------------------------------------------ the command line
