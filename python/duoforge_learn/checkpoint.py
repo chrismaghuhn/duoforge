@@ -78,8 +78,8 @@ def ext_supported_of(config):
     columns of encoder 3's block it reads. ValueError for a value that is no
     such mask or a nonzero mask of an older encoder version."""
     mask = config.get("ext_supported", 0)
-    if not isinstance(mask, int) or isinstance(mask, bool) or not 0 <= mask <= features.ALL_FEATURES:
-        raise ValueError(f"ext_supported {mask!r} is not a mask of the {features.FEATURE_COUNT} feature bits")
+    if not isinstance(mask, int) or isinstance(mask, bool) or mask < 0 or mask & ~features.ALL_FEATURES:
+        raise ValueError(f"ext_supported {mask!r} is not a mask of the defined feature bits ({features.ALL_FEATURES:#x})")
     encoder = encoder_of(config)
     if mask & ~features.version_features(encoder):
         raise ValueError(f"a checkpoint of encoder {encoder} has no columns for ext_supported {mask:#x} "

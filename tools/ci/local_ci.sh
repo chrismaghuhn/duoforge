@@ -4,31 +4,37 @@
 # GCC, Clang and MSVC, and Linux jobs in WSL (tools/ci/linux_ci.sh). One line
 # per job, logs under build/ci/; exit status 1 if any job fails.
 #
-# usage (Git Bash): tools/ci/local_ci.sh [--quick] [--no-linux] [--no-reference]
+# usage (Git Bash): tools/ci/local_ci.sh [--quick] [--no-linux] [--no-reference] [--ccache]
 #   --quick         Windows GCC Debug and MSVC Release, Linux GCC ASan+UBSan
 #   --no-linux      only the Windows jobs
 #   --no-reference  without the Showdown reference traces
+#   --ccache        the Windows GCC and Clang jobs compile through ccache
+#                   (-DDUOFORGE_CCACHE=ON, one cache for every worktree); the
+#                   MSVC jobs use the Visual Studio generator, which has no
+#                   compiler launcher, and WSL has no ccache installed
 # environment (the defaults fit the owner's machine):
 #   DUOFORGE_CI_GCC_BIN  WinLibs bin directory (gcc, ninja)
 #   DUOFORGE_CI_CLANG    LLVM bin directory (clang, clang++, llvm-rc)
 #   DUOFORGE_CI_PS       pinned Showdown checkout for the reference traces
 #   DUOFORGE_CI_DISTRO   WSL distribution
-#   DUOFORGE_CI_JOBS     parallel build and test jobs
-# The run takes the machine lock (tools/ci/machine_lock.sh): a second CI or
-# benchmark from another session waits until this one is done.
+#   DUOFORGE_CI_JOBS     parallel build and test jobs (default: DUOFORGE_JOBS,
+#                        the share of the processors the machine lock gives)
+# The run takes a slot of the machine lock (tools/ci/machine_lock.sh): when
+# every slot is held, a CI or benchmark from another session waits.
 set -u
 
 ROOT=$(cd "$(dirname "$0")/../.." && pwd)
 # shellcheck source=machine_lock.sh
 source "$ROOT/tools/ci/machine_lock.sh"
-machine_lock_acquire "local_ci $(basename "$ROOT") $*"
+machine_lock_acquire "local_ci $(basename "$ROOT") $*" || exit 2
 trap machine_lock_release EXIT
 GCC_BIN=${DUOFORGE_CI_GCC_BIN:-"$LOCALAPPDATA/Microsoft/WinGet/Packages/BrechtSanders.WinLibs.POSIX.UCRT_Microsoft.Winget.Source_8wekyb3d8bbwe/mingw64/bin"}
 CLANG=${DUOFORGE_CI_CLANG:-"C:/Program Files/LLVM/bin"}
 PS=${DUOFORGE_CI_PS:-"C:/Dev/src/pokemon-showdown"}
 DISTRO=${DUOFORGE_CI_DISTRO:-"Ubuntu-24.04"}
-JOBS=${DUOFORGE_CI_JOBS:-${NUMBER_OF_PROCESSORS:-8}}
+JOBS=${DUOFORGE_CI_JOBS:-$DUOFORGE_JOBS}
 QUICK=0
+CCACHE=OFF
 LINUX=1
 REFERENCE=1
 for arg in "$@"; do
@@ -36,7 +42,8 @@ for arg in "$@"; do
     --quick) QUICK=1 ;;
     --no-linux) LINUX=0 ;;
     --no-reference) REFERENCE=0 ;;
-    *) echo "usage: $0 [--quick] [--no-linux] [--no-reference]" >&2; exit 2 ;;
+    --ccache) CCACHE=ON ;;
+    *) echo "usage: $0 [--quick] [--no-linux] [--no-reference] [--ccache]" >&2; exit 2 ;;
     esac
 done
 export PATH="$GCC_BIN:$PATH"
@@ -92,11 +99,12 @@ if [ -x "$ROOT/.venv/Scripts/python.exe" ]; then
     py=(-DDUOFORGE_PYTHON="$(cygpath -m "$ROOT/.venv/Scripts/python.exe")")
 fi
 
-win_job win-gcc-debug "" -G Ninja -DCMAKE_BUILD_TYPE=Debug -DCMAKE_C_COMPILER=gcc "${ref[@]}" "${py[@]}"
+win_job win-gcc-debug "" -G Ninja -DCMAKE_BUILD_TYPE=Debug -DCMAKE_C_COMPILER=gcc -DDUOFORGE_CCACHE=$CCACHE "${ref[@]}" "${py[@]}"
 win_job win-msvc-release-ipo Release -G "Visual Studio 17 2022" -A x64 -DDUOFORGE_ENABLE_IPO=ON
 if [ "$QUICK" = 0 ]; then
-    win_job win-gcc-release-ipo "" -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=gcc -DDUOFORGE_ENABLE_IPO=ON
-    win_job win-clang-release "" -G Ninja -DCMAKE_BUILD_TYPE=Release "${clang[@]}"
+    win_job win-gcc-release-ipo "" -G Ninja -DCMAKE_BUILD_TYPE=Release -DCMAKE_C_COMPILER=gcc -DDUOFORGE_ENABLE_IPO=ON \
+        -DDUOFORGE_CCACHE=$CCACHE
+    win_job win-clang-release "" -G Ninja -DCMAKE_BUILD_TYPE=Release -DDUOFORGE_CCACHE=$CCACHE "${clang[@]}"
     win_job win-msvc-debug Debug -G "Visual Studio 17 2022" -A x64
     win_job win-msvc-win32-release Release -G "Visual Studio 17 2022" -A Win32
 fi
@@ -120,7 +128,7 @@ if [ "$LINUX" = 1 ]; then
             record "linux-$name" "$status" "$*"
             ;;
         esac
-    done < <(MSYS_NO_PATHCONV=1 wsl.exe -d "$DISTRO" -- bash "$wsl_root/tools/ci/linux_ci.sh" "${linux_jobs[@]}" 2>&1 | tr -d '\000')
+    done < <(MSYS_NO_PATHCONV=1 wsl.exe -d "$DISTRO" -- env DUOFORGE_JOBS="$JOBS" bash "$wsl_root/tools/ci/linux_ci.sh" "${linux_jobs[@]}" 2>&1 | tr -d '\000')
     if [ "${#SUMMARY[@]}" -eq 0 ] || ! printf '%s\n' "${SUMMARY[@]}" | grep -q "^linux-"; then
         record linux FAIL "WSL ($DISTRO) gave no result"
     fi
