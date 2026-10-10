@@ -117,6 +117,12 @@ from . import _layout
 C = _layout.CONSTANTS
 OPTIONS = _layout.MAX_SLOT_OPTIONS
 
+
+class EncoderAwaitingBit(ValueError):
+    """A value encoders 1 to 5 cannot show because it is in encoder 6's reserve (decision 0050): a volatiles bit above
+    21, a guard bit above 1, a nonzero volatiles2, conditions or field flags word, a position flag bit beyond the three
+    known ones. The C encoder answers E_UNSUPPORTED."""
+
 _BOUNDARY_NAMES = ("TEAM_SELECTION", "TURN", "REPLACEMENT", "PIVOT", "TERMINAL")
 _WEATHER_NAMES = ("NONE", "RAIN", "SUN")
 _TERRAIN_NAMES = ("NONE", "GRASSY", "PSYCHIC")
@@ -422,7 +428,8 @@ def _sides(s, tox, encoder=6):
     unknown = bits & ~sum(POSITION_FLAGS)
     if encoder < 6 and unknown.any():
         bad = int(bits[unknown != 0].flat[0])
-        raise ValueError(f"position flags {bad} are not ones this encoder knows: {POSITION_FLAGS}")
+        raise EncoderAwaitingBit(f"position flags {bad} are in encoder 6's reserve (decision 0050), which encoder "
+                                 f"{encoder} cannot show")
     flags = np.stack([pos["confused"].astype(_F64), pos["charging"].astype(_F64),
                       (pos["locked_slot"] != C["DUOFORGE_MOVE_SLOT_NONE"]).astype(_F64), pos["acted"].astype(_F64),
                       np.clip(pos["protect_chain"].astype(_F64) / 3, 0.0, 1.0), pos["flash_fire"].astype(_F64),
@@ -521,20 +528,8 @@ def _check_records(ob, ext, mask, encoder=6):
         if (values > top).any():
             raise ValueError(f"extension field {name} {int(values[values > top].flat[0])} is above {top}")
     guards = rec["sides"]["guard_flags"].astype(np.int64) & ~sum(bit for bit, _ in _GUARDS)
-    if encoder < 6 and guards.any():
-        raise ValueError(f"extension field guard_flags bits {int(guards[guards != 0].flat[0])} are not ones this "
-                         "encoder knows")
     volatiles = rec["sides"]["positions"]["volatiles"].astype(np.int64)
     unknown = volatiles & ~sum(bit for _, bit, _ in VOLATILES)
-    if encoder < 6 and unknown.any():
-        raise ValueError(f"extension field volatiles bits {int(unknown[unknown != 0].flat[0])} are not ones "
-                         "this encoder knows")
-    if encoder < 6:
-        for name, values in (("volatiles2", rec["volatiles2"]), ("conditions", rec["sides"]["conditions"]),
-                             ("field flags", rec["field"]["flags"])):
-            if values.any():
-                raise ValueError(f"extension field {name} {int(values[values != 0].flat[0])} is encoder 6's reserve "
-                                 f"(decision 0050), which encoder {encoder} cannot show")
     source = rec["sides"]["positions"]["transform_source"].astype(np.int64)
     if (source > 2 * _layout.MAX_ROSTER).any():
         raise ValueError(f"extension field transform_source {int(source[source > 2 * _layout.MAX_ROSTER].flat[0])} "
@@ -544,6 +539,12 @@ def _check_records(ob, ext, mask, encoder=6):
     typed = (rec["sides"]["positions"]["type_now"] != 0).any(axis=-1)
     if (typed & ((volatiles & C["DUOFORGE_POSITION_EXT_TYPE_CHANGED"]) == 0)).any():
         raise ValueError("extension field type_now is set while the volatile TYPE_CHANGED is clear")
+    if encoder < 6:  # encoder 6's reserve (decision 0050), after every check of a malformed record, as in C
+        for name, values in (("guard_flags", guards), ("volatiles", unknown), ("volatiles2", rec["volatiles2"]),
+                             ("conditions", rec["sides"]["conditions"]), ("field flags", rec["field"]["flags"])):
+            if values.any():
+                raise EncoderAwaitingBit(f"extension field {name} {int(values[values != 0].flat[0])} is in encoder "
+                                         f"6's reserve (decision 0050), which encoder {encoder} cannot show")
     return present
 
 
@@ -759,8 +760,8 @@ def as_encoder(obs_part, observations, encoder):
     ob = ob.reshape(-1)
     flags = ob["sides"]["positions"]["reserved"].astype(np.int64) & ~sum(POSITION_FLAGS)
     if flags.any():  # encoder 6's reserve (decision 0050): the record reserve needs encode_batch(..., encoder=...)
-        raise ValueError(f"position flags {int(flags[flags != 0].flat[0])} are encoder 6's reserve, which encoder "
-                         f"{encoder} cannot show")
+        raise EncoderAwaitingBit(f"position flags {int(flags[flags != 0].flat[0])} are in encoder 6's reserve "
+                                 f"(decision 0050), which encoder {encoder} cannot show")
     if encoder < 3:
         _one_hot(ob["weather"], WEATHERS, "weather")
         _one_hot(ob["terrain"], TERRAINS, "terrain")

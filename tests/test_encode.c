@@ -128,8 +128,8 @@ int main(void)
         const uint64_t record_bit = UINT64_C(1) << DUOFORGE_VIEWEXT_FEATURE_STEALTH_ROCK;
         const uint64_t roost = UINT64_C(1) << DUOFORGE_VIEWEXT_FEATURE_ROOST;
         DF_CHECK(&t, duoforge_encode(4u, 0u, NULL, d, NULL, row_obs, row_slots, row_pairs) == DUOFORGE_E_NULL_ARGUMENT);
-        DF_CHECK(&t, duoforge_encode(6u, 0u, ob, d, NULL, row_obs, row_slots, row_pairs) ==
-                         DUOFORGE_E_INVALID_ARGUMENT);
+        DF_CHECK(&t, duoforge_encode(7u, 0u, ob, d, NULL, row_obs, row_slots, row_pairs) ==
+                         DUOFORGE_E_INVALID_ARGUMENT); /* 6 is encoder 6 (decision 0050) */
         DF_CHECK(&t, duoforge_encode(2u, record_bit, ob, d, NULL, row_obs, row_slots, row_pairs) ==
                          DUOFORGE_E_INVALID_ARGUMENT);
         DF_CHECK(&t, duoforge_encode(3u, roost, ob, d, NULL, row_obs, row_slots, row_pairs) ==

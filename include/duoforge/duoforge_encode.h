@@ -21,12 +21,12 @@
  *   E_UNSUPPORTED      a value the version or mask cannot show: Sand, Snow,
  *                      Electric or Misty Terrain or Tox without its mask bit,
  *                      a Recharge option under versions 1 and 2, a REVIVE option under versions 1 to 4, a mask bit
- *                      the records' library does not support;
+ *                      the records' library does not support, a value in encoder 6's reserve under versions 1 to 5
+ *                      (decision 0050: features.EncoderAwaitingBit);
  *   E_INVALID_ARGUMENT anything malformed: an unknown version, a mask past
  *                      the version's feature bits or nonzero under versions 1
  *                      and 2, an unknown boundary, weather, terrain, location,
- *                      ailment, occupant, flag (versions 1 to 5; 6 shows the
- *                      reserve bits, decision 0050), slot kind, move slot or
+ *                      ailment, occupant, slot kind, move slot or
  *                      target, a field past its range, records of another
  *                      boundary or revision, a domain of another boundary;
  *   E_NULL_ARGUMENT    a NULL pointer, or ext NULL while the mask has a

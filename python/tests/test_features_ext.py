@@ -75,7 +75,7 @@ def _member_values(s, r):
     return 0x1234 + 16 * s + r, (10 + s if r % 2 == 0 else C["DUOFORGE_ITEM_NOW_NONE"])
 
 
-def _records(observations, supported=ALL):
+def _records(observations, supported=features.ALL_FEATURES):
     """Extension records of revision 1 for the observations, every field set
     (gravity 3, SIDE_VALUES, GUARDS, _position_values, _member_values)."""
     ext = np.zeros(observations.shape, dtype=_layout.OBSERVATION_EXT)
@@ -294,13 +294,15 @@ class FeaturesExtTest(unittest.TestCase):
         ob, d = self.obs, self.domains
         ext = _records(ob)
         ext["sides"] = _with_all_volatiles(ext["sides"])
-        full = features.encode_batch(ob, d, ext, ALL)[0][:, 607:]
+        full = features.encode_batch(ob, d, ext, ALL)[0][:, 607:862]  # encoder 5's block; the reserve: test_encoder6
         bits = features.EXT_COLUMN_FEATURES
         self.assertFalse(features.encode_batch(ob, d, ext, 0)[0][:, 607:].any())
         for name, bit in BIT.items():
             if name in BASE_BITS:
                 continue  # no base value in this scene: those columns are zero either way
-            one = features.encode_batch(ob, d, ext, 1 << bit)[0][:, 607:]
+            if bit >= features.FEATURE_COUNT:
+                continue  # encoder 6's reserve families: test_encoder6
+            one = features.encode_batch(ob, d, ext, 1 << bit)[0][:, 607:862]
             self.assertTrue(np.array_equal(one[:, bits == bit], full[:, bits == bit]), name)
             self.assertFalse(one[:, bits != bit].any(), name)
             self.assertTrue(full[:, bits == bit].any(), name)
@@ -406,14 +408,15 @@ class FeaturesExtTest(unittest.TestCase):
                 view = {"field": field_ext, "sides": sides}
                 edit(view)
                 ext["field"], ext["sides"] = field_ext, sides
-                with self.assertRaisesRegex(ValueError, field):
-                    features.encode_batch(ob, d, ext, ALL)
+                with self.assertRaisesRegex(ValueError, field):  # guard_flags and volatiles: encoder 6's reserve
+                    features.encode_batch(ob, d, ext, ALL, encoder=5)
 
     def test_as_encoder_serves_the_old_versions(self):
         from python.tests import _reference_features as reference
         ob, d = self.obs, self.domains
         part = features.encode_batch(ob, d, _records(ob), ALL)[0]
-        self.assertIs(features.as_encoder(part, ob, 5), part)
+        self.assertIs(features.as_encoder(part, ob, 6), part)
+        self.assertTrue(np.array_equal(features.as_encoder(part, ob, 5), part[:, :862]))
         self.assertTrue(np.array_equal(features.as_encoder(part, ob, 4), part[:, :850]))
         self.assertTrue(np.array_equal(features.as_encoder(part, ob, 3), part[:, :842]))
         self.assertTrue(np.array_equal(features.as_encoder(part, ob, 2), part[:, :607]))

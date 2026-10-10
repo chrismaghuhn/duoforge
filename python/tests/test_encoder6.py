@@ -138,6 +138,37 @@ class Encoder6Test(unittest.TestCase):
         self.assertFalse(off[:, col].any())
         self.assertTrue(on[:, col].all())
 
+    def test_the_header_list_of_own_features_matches_the_names(self):
+        # DUOFORGE_VIEWEXT_RESERVE_OWN (the C encoder's per-bit gates) lists exactly what features.py derives from the
+        # constant names: a lane that defines a reserve bit with a feature of its own adds it there.
+        import os
+        import re
+        header = open(os.path.join(os.path.dirname(__file__), "..", "..", "include", "duoforge", "duoforge.h"),
+                      encoding="ascii").read()
+        start = header.index("#define DUOFORGE_VIEWEXT_RESERVE_OWN(X)")
+        body = header[start:header.index("\n", start)]
+        while body.endswith("\\"):
+            nxt = header.index("\n", start + len(body) + 1)
+            body += header[start + len(body):nxt]
+        listed = {(fam, int(bit), own) for fam, bit, own in
+                  re.findall(r"X\(\s*([A-Z0-9_]+)\s*,\s*(\d+)u?\s*,\s*([A-Z0-9_]+)\s*\)", body)}
+        name = {bit: n for n, bit in features.FEATURE_BITS.items()}
+        derived = {(name[family[1]], bit, name[own]) for family in (features._RES_VOLATILES, features._RES_VOLATILES2,
+                                                                     features._RES_GUARDS, features._RES_CONDITIONS,
+                                                                     features._RES_FIELD)
+                   for bit, own in family[2].items() if bit in family[0]}
+        self.assertEqual(listed, derived)
+
+    def test_a_growing_tier_count_leaves_encoder_5_alone(self):
+        # The expansion's next tier bit (HEALING_WISH 43): a stand-in feature 43 has no column in encoder 5, so a mask
+        # with it is refused there, and encoder 5's columns and version features stay as they are.
+        with mock.patch.dict(features.FEATURE_BITS, {"STAND_IN": 43}), \
+                mock.patch.object(features, "ALL_FEATURES", features.ALL_FEATURES | 1 << 43):
+            self.assertEqual(features.version_features(5), (1 << 43) - 1)
+            with self.assertRaises(ValueError):
+                features.encode_batch(self.obs, self.domains, _records(self.obs, features.ALL_FEATURES), 1 << 43,
+                                      encoder=5)
+
     def test_older_encoders_refuse_the_reserve(self):
         base = _records(self.obs, features.ALL_FEATURES)
         mask = features.version_features(5)
@@ -155,16 +186,16 @@ class Encoder6Test(unittest.TestCase):
                 ext["field"]["flags"][0] = 1 << 9
             features.encode_batch(self.obs, self.domains, ext, mask)  # encoder 6: shown
             for encoder in (3, 4, 5):
-                with self.assertRaises(ValueError, msg=f"{change} encoder {encoder}"):
+                with self.assertRaises(features.EncoderAwaitingBit, msg=f"{change} encoder {encoder}"):
                     features.encode_batch(self.obs, self.domains, ext, mask & features.version_features(encoder),
                                           encoder=encoder)
         obs = self.obs.copy()
         obs["sides"]["positions"]["reserved"][0, 0, 1] |= np.uint8(1 << 7)
         part, _, _ = features.encode_batch(obs, self.domains)
         for encoder in (1, 2, 3, 4, 5):
-            with self.assertRaises(ValueError):
+            with self.assertRaises(features.EncoderAwaitingBit):
                 features.encode_batch(obs, self.domains, encoder=encoder)
-            with self.assertRaises(ValueError):
+            with self.assertRaises(features.EncoderAwaitingBit):
                 features.as_encoder(part, obs, encoder)
         with self.assertRaises(ValueError):  # a mask bit encoder 5 has no column for
             features.encode_batch(self.obs, self.domains, base, FAMILY["VOLATILES2"], encoder=5)

@@ -876,8 +876,13 @@ duoforge_status duoforge_battle_observe(const duoforge_context *ctx, const duofo
    duoforge_position_ext.volatiles bits 22 to 31, duoforge_observation_ext.volatiles2 (32 bits per position),
    duoforge_side_ext.guard_flags bits 2 to 7, duoforge_side_ext.conditions (8 bits), duoforge_field_ext.flags (16 bits).
    No bit of the new fields is defined yet (DUOFORGE_POSITION_EXT2_*, DUOFORGE_SIDE_CONDITION_*, DUOFORGE_FIELD_FLAG_*): each
-   stays zero until a step defines it, as every field here. A new bit adds an entry to src/encode/encode.c's table of its
-   family when it has a feature of its own. */
+   stays zero until a step defines it, as every field here. A new bit with a feature of its own adds one entry to
+   DUOFORGE_VIEWEXT_RESERVE_OWN below, next to its definition; nothing else (the C encoder reads the list, features.py
+   derives the same from the names, and python/tests/test_encoder6.py checks that the two agree). */
+/* X(family feature, bit number in the family's field, own feature): X(RESERVE_VOLATILES, 22u, HEALING_WISH) says
+   DUOFORGE_POSITION_EXT_HEALING_WISH (bit 22 of volatiles) is shown only under DUOFORGE_VIEWEXT_FEATURE_HEALING_WISH as
+   well. Empty while no reserve bit has a feature of its own. */
+#define DUOFORGE_VIEWEXT_RESERVE_OWN(X)
 /* duoforge_member_ext.item_now: the member holds nothing (Knock Off, Thief). */
 #define DUOFORGE_ITEM_NOW_NONE 255u
 

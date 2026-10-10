@@ -73,26 +73,27 @@ _Static_assert(sizeof(float) == sizeof(uint32_t) && sizeof(double) == sizeof(uin
 #define DFI_ENC_VOLATILE_BITS 22u
 #define DFI_ENC_ALL       ((UINT64_C(1) << DUOFORGE_VIEWEXT_FEATURE_TRANSFORM) - 1u) /* encoder 4: bits 0 to 41 (decision 0028 adds 42 for encoder 5) */
 #define DFI_ENC_APPENDED  ((UINT64_C(1) << DUOFORGE_VIEWEXT_FEATURE_ROOST) | (UINT64_C(1) << DUOFORGE_VIEWEXT_FEATURE_MOVE_FAILED))
-#define DFI_ENC_ALL5      ((UINT64_C(1) << DUOFORGE_VIEWEXT_FEATURE_COUNT) - 1u) /* encoder 5: all bits through TRANSFORM (42) */
+#define DFI_ENC_ALL5      ((UINT64_C(1) << (DUOFORGE_VIEWEXT_FEATURE_TRANSFORM + 1u)) - 1u) /* encoder 5: bits 0 to 42 (TRANSFORM),
+                                                                                    whatever COUNT the expansion grows to */
 
+/* The tiers grow with the expansion (COUNT 43 at encoder 5, HEALING_WISH 43 next), below the reserve families (59 to 63). */
 typedef char dfi_enc_size_check[(DFI_ENC_BASE == 607u && DFI_ENC_V3 == 842u && DFI_ENC_V4 == 850u && DFI_ENC_V5 == 862u &&
-                                 DFI_ENC_V6 == 1094u && DUOFORGE_VIEWEXT_FEATURE_COUNT == 43u) ? 1 : -1];
+                                 DFI_ENC_V6 == 1094u && DUOFORGE_VIEWEXT_FEATURE_COUNT >= 43u &&
+                                 DUOFORGE_VIEWEXT_FEATURE_COUNT <= DUOFORGE_VIEWEXT_FEATURE_RESERVE_VOLATILES) ? 1 : -1];
 
-/* The own feature of each reserve bit (decision 0050), as feature + 1, 0 for none: a bit with a feature of its own name
-   (DUOFORGE_POSITION_EXT_X, _EXT2_X, DUOFORGE_SIDE_GUARD_X, _SIDE_CONDITION_X, DUOFORGE_FIELD_FLAG_X and
-   DUOFORGE_VIEWEXT_FEATURE_X) is shown only under that feature as well. features.py derives the same from the names; the
-   parity tests (duoforge.python.encode_c) catch an entry missing here. A step that defines such a bit adds it, e.g.
-   [27u - DFI_RES_VOL_LO] = DUOFORGE_VIEWEXT_FEATURE_ATTRACT + 1u. */
-static const uint8_t dfi_res_volatile_own[DFI_RES_VOLS] = {0u};
-static const uint8_t dfi_res_volatile2_own[DFI_RES_VOLS2] = {0u};
-static const uint8_t dfi_res_guard_own[DFI_RES_GUARDS] = {0u};
-static const uint8_t dfi_res_condition_own[DFI_RES_CONDS] = {0u};
-static const uint8_t dfi_res_field_own[DFI_RES_FIELD] = {0u};
-
-/* The feature set of a reserve column: the family's feature, and the bit's own one (own: feature + 1, 0 none). */
-static uint64_t dfi_res_gate(uint32_t family, uint8_t own)
+/* The feature set of reserve bit `bit` of a family (decision 0050): the family's feature, and the bit's own feature when
+   DUOFORGE_VIEWEXT_RESERVE_OWN (duoforge.h) lists one. The lanes add a bit there, never here. */
+static uint64_t dfi_res_gate(uint32_t family, uint32_t bit)
 {
-    return (UINT64_C(1) << family) | (own != 0u ? UINT64_C(1) << (own - 1u) : 0u);
+    uint64_t gate = UINT64_C(1) << family;
+#define DFI_RES_OWN(fam, b, own)                                                                                          \
+    if (family == DUOFORGE_VIEWEXT_FEATURE_##fam && bit == (b)) {                                                       \
+        gate |= UINT64_C(1) << DUOFORGE_VIEWEXT_FEATURE_##own;                                                          \
+    }
+    DUOFORGE_VIEWEXT_RESERVE_OWN(DFI_RES_OWN)
+#undef DFI_RES_OWN
+    (void)bit; /* unread while the list is empty */
+    return gate;
 }
 
 /* The feature bits a version has columns for (features.version_features). */
@@ -101,19 +102,19 @@ static uint64_t dfi_version_features(uint32_t version)
     if (version >= 6u) {
         uint64_t m = DFI_ENC_ALL5;
         for (uint32_t k = 0u; k < DFI_RES_VOLS; ++k) {
-            m |= dfi_res_gate(DUOFORGE_VIEWEXT_FEATURE_RESERVE_VOLATILES, dfi_res_volatile_own[k]);
+            m |= dfi_res_gate(DUOFORGE_VIEWEXT_FEATURE_RESERVE_VOLATILES, DFI_RES_VOL_LO + k);
         }
         for (uint32_t k = 0u; k < DFI_RES_VOLS2; ++k) {
-            m |= dfi_res_gate(DUOFORGE_VIEWEXT_FEATURE_VOLATILES2, dfi_res_volatile2_own[k]);
+            m |= dfi_res_gate(DUOFORGE_VIEWEXT_FEATURE_VOLATILES2, k);
         }
         for (uint32_t k = 0u; k < DFI_RES_GUARDS; ++k) {
-            m |= dfi_res_gate(DUOFORGE_VIEWEXT_FEATURE_RESERVE_GUARDS, dfi_res_guard_own[k]);
+            m |= dfi_res_gate(DUOFORGE_VIEWEXT_FEATURE_RESERVE_GUARDS, DFI_RES_GUARD_LO + k);
         }
         for (uint32_t k = 0u; k < DFI_RES_CONDS; ++k) {
-            m |= dfi_res_gate(DUOFORGE_VIEWEXT_FEATURE_SIDE_CONDITIONS, dfi_res_condition_own[k]);
+            m |= dfi_res_gate(DUOFORGE_VIEWEXT_FEATURE_SIDE_CONDITIONS, k);
         }
         for (uint32_t k = 0u; k < DFI_RES_FIELD; ++k) {
-            m |= dfi_res_gate(DUOFORGE_VIEWEXT_FEATURE_FIELD_FLAGS, dfi_res_field_own[k]);
+            m |= dfi_res_gate(DUOFORGE_VIEWEXT_FEATURE_FIELD_FLAGS, k);
         }
         return m;
     }
@@ -245,13 +246,15 @@ static duoforge_status dfi_check_record(const duoforge_observation *ob, const du
                   q->move_failed > 1u || q->ability_now > 255u || q->type_now[0] > 18u || q->type_now[1] > 18u;
         }
     }
-    const bool reserve = version >= 6u; /* encoder 6 shows the reserve bits (decision 0050); 1 to 5 refuse them */
+    /* encoder 6 shows the reserve bits (decision 0050); 1 to 5 refuse a value there as one they cannot show (E_UNSUPPORTED,
+       features.EncoderAwaitingBit), after every check of a malformed record */
+    bool awaiting = false;
     for (uint32_t s = 0u; s < DUOFORGE_SIDE_COUNT && !bad; ++s) {
         const duoforge_side_ext *x = &ext->sides[s];
-        bad = !reserve && (x->guard_flags & ~(DUOFORGE_SIDE_GUARD_WIDE_GUARD | DUOFORGE_SIDE_GUARD_QUICK_GUARD)) != 0u;
+        awaiting = awaiting || (x->guard_flags & ~(DUOFORGE_SIDE_GUARD_WIDE_GUARD | DUOFORGE_SIDE_GUARD_QUICK_GUARD)) != 0u;
         for (uint32_t p = 0u; p < DUOFORGE_ACTIVE_PER_SIDE && !bad; ++p) {
             const duoforge_position_ext *q = &x->positions[p];
-            bad = !reserve && (q->volatiles >> DFI_ENC_VOLATILE_BITS) != 0u;
+            awaiting = awaiting || (q->volatiles >> DFI_ENC_VOLATILE_BITS) != 0u;
             /* decision 0028 A: a source exactly when TRANSFORMED is set, and the source is side * 6 + roster + 1 with a side of 0 or 1 */
             bad = bad || (q->transform_source != 0u) != ((q->volatiles & DUOFORGE_POSITION_EXT_TRANSFORMED) != 0u) ||
                   q->transform_source > 12u;
@@ -259,17 +262,18 @@ static duoforge_status dfi_check_record(const duoforge_observation *ob, const du
                           (q->volatiles & DUOFORGE_POSITION_EXT_TYPE_CHANGED) == 0u);
         }
     }
-    if (!reserve && !bad) {
-        bad = ext->field.flags != 0u;
-        for (uint32_t s = 0u; s < DUOFORGE_SIDE_COUNT; ++s) {
-            bad = bad || ext->sides[s].conditions != 0u;
-            for (uint32_t p = 0u; p < DUOFORGE_ACTIVE_PER_SIDE; ++p) {
-                bad = bad || ext->volatiles2[s][p] != 0u;
-            }
-        }
-    }
     if (bad) {
         return DUOFORGE_E_INVALID_ARGUMENT;
+    }
+    awaiting = awaiting || ext->field.flags != 0u;
+    for (uint32_t s = 0u; s < DUOFORGE_SIDE_COUNT; ++s) {
+        awaiting = awaiting || ext->sides[s].conditions != 0u;
+        for (uint32_t p = 0u; p < DUOFORGE_ACTIVE_PER_SIDE; ++p) {
+            awaiting = awaiting || ext->volatiles2[s][p] != 0u;
+        }
+    }
+    if (version < 6u && awaiting) {
+        return DUOFORGE_E_UNSUPPORTED;
     }
     *present = true;
     return DUOFORGE_OK;
@@ -367,36 +371,35 @@ static void dfi_block(const duoforge_observation *ob, const duoforge_observation
     if (version >= 6u) { /* appended by encoder 6 (decision 0050): the reserve, a 0/1 column per bit */
         float *r = &o[DFI_ENC_V5 - DFI_ENC_BASE];
         for (uint32_t k = 0u; k < DFI_RES_FIELD; ++k) {
-            const uint64_t gate = dfi_res_gate(DUOFORGE_VIEWEXT_FEATURE_FIELD_FLAGS, dfi_res_field_own[k]);
-            *r++ = (mask & gate) == gate && present ? (float)((ext->field.flags >> k) & 1u) : 0.0f;
+            const uint64_t gate = dfi_res_gate(DUOFORGE_VIEWEXT_FEATURE_FIELD_FLAGS, k);
+            *r++ = (mask & gate) == gate && present ? (float)(((uint32_t)ext->field.flags >> k) & 1u) : 0.0f;
         }
         for (uint32_t s = 0u; s < DUOFORGE_SIDE_COUNT; ++s) {
             const uint32_t abs = s == 0u ? viewer : 1u - viewer;
             const duoforge_side_ext *x = present ? &ext->sides[abs] : NULL;
             for (uint32_t k = 0u; k < DFI_RES_GUARDS; ++k) {
-                const uint64_t gate = dfi_res_gate(DUOFORGE_VIEWEXT_FEATURE_RESERVE_GUARDS, dfi_res_guard_own[k]);
-                *r++ = (mask & gate) == gate && x != NULL ? (float)((x->guard_flags >> (DFI_RES_GUARD_LO + k)) & 1u) : 0.0f;
+                const uint64_t gate = dfi_res_gate(DUOFORGE_VIEWEXT_FEATURE_RESERVE_GUARDS, DFI_RES_GUARD_LO + k);
+                *r++ = (mask & gate) == gate && x != NULL ? (float)(((uint32_t)x->guard_flags >> (DFI_RES_GUARD_LO + k)) & 1u) : 0.0f;
             }
             for (uint32_t k = 0u; k < DFI_RES_CONDS; ++k) {
-                const uint64_t gate = dfi_res_gate(DUOFORGE_VIEWEXT_FEATURE_SIDE_CONDITIONS, dfi_res_condition_own[k]);
-                *r++ = (mask & gate) == gate && x != NULL ? (float)((x->conditions >> k) & 1u) : 0.0f;
+                const uint64_t gate = dfi_res_gate(DUOFORGE_VIEWEXT_FEATURE_SIDE_CONDITIONS, k);
+                *r++ = (mask & gate) == gate && x != NULL ? (float)(((uint32_t)x->conditions >> k) & 1u) : 0.0f;
             }
             for (uint32_t p = 0u; p < DUOFORGE_ACTIVE_PER_SIDE; ++p) {
                 const uint32_t vol = x != NULL ? x->positions[p].volatiles : 0u;
                 const uint32_t vol2 = x != NULL ? ext->volatiles2[abs][p] : 0u;
                 for (uint32_t k = 0u; k < DFI_RES_VOLS; ++k) {
-                    const uint64_t gate =
-                        dfi_res_gate(DUOFORGE_VIEWEXT_FEATURE_RESERVE_VOLATILES, dfi_res_volatile_own[k]);
+                    const uint64_t gate = dfi_res_gate(DUOFORGE_VIEWEXT_FEATURE_RESERVE_VOLATILES, DFI_RES_VOL_LO + k);
                     *r++ = (mask & gate) == gate ? (float)((vol >> (DFI_RES_VOL_LO + k)) & 1u) : 0.0f;
                 }
                 for (uint32_t k = 0u; k < DFI_RES_VOLS2; ++k) {
-                    const uint64_t gate = dfi_res_gate(DUOFORGE_VIEWEXT_FEATURE_VOLATILES2, dfi_res_volatile2_own[k]);
+                    const uint64_t gate = dfi_res_gate(DUOFORGE_VIEWEXT_FEATURE_VOLATILES2, k);
                     *r++ = (mask & gate) == gate ? (float)((vol2 >> k) & 1u) : 0.0f;
                 }
                 /* the observation's position flags beyond the three known ones: no feature, the view's own field */
                 const uint8_t flags = ob->sides[abs].positions[p].reserved;
                 for (uint32_t k = 0u; k < DFI_RES_FLAGS; ++k) {
-                    *r++ = (float)((flags >> (DFI_RES_FLAG_LO + k)) & 1u);
+                    *r++ = (float)(((uint32_t)flags >> (DFI_RES_FLAG_LO + k)) & 1u);
                 }
             }
         }
@@ -437,7 +440,7 @@ static duoforge_status dfi_side(const duoforge_side_view *s, uint64_t mask, uint
         DUOFORGE_POSITION_FLAG_FOLLOW_ME | DUOFORGE_POSITION_FLAG_HELPING_HAND | DUOFORGE_POSITION_FLAG_UNBURDEN;
     for (uint32_t p = 0u; p < DUOFORGE_ACTIVE_PER_SIDE && version < 6u; ++p) { /* encoder 6: the reserve (decision 0050) */
         if ((s->positions[p].reserved & (uint8_t)~known_flags) != 0u) {
-            return DUOFORGE_E_INVALID_ARGUMENT;
+            return DUOFORGE_E_UNSUPPORTED; /* a value encoders 1 to 5 cannot show (features.EncoderAwaitingBit) */
         }
     }
     for (uint32_t p = 0u; p < DUOFORGE_ACTIVE_PER_SIDE; ++p) {

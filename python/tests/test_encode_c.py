@@ -181,8 +181,9 @@ class EncodeCTest(unittest.TestCase):
                 for row in range(ob.shape[0]):
                     st, *got = c_encode(version, mask, ob[row], d[row], ext[row])
                     what = f"version {version} mask {mask:#x} row {row}"
-                    if err is not None:
-                        self.assertNotEqual(st, 0, what)
+                    if err is not None:  # a value encoders 3 to 5 cannot show: E_UNSUPPORTED, EncoderAwaitingBit
+                        self.assertIsInstance(err, features.EncoderAwaitingBit, what)
+                        self.assertEqual(st, C["DUOFORGE_E_UNSUPPORTED"], what)
                         continue
                     self.assertEqual(st, 0, what)
                     self.assert_same(got, (want[0][row], want[1][row], want[2][row]), what)

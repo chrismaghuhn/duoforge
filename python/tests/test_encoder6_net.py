@@ -75,7 +75,7 @@ class ReserveNetworkTest(unittest.TestCase):
         zero = self.part.copy()
         zero[:, 862:] = 0.0
         for a, b in zip(self._outputs(five, params5, self.part[:, :862]), self._outputs(six, wide, zero)):
-            np.testing.assert_array_equal(a, b)
+            np.testing.assert_allclose(a, b, rtol=1e-6, atol=1e-6)  # wider inputs: another summation order
         # Its reserve rows are zero, so the reserve itself changes nothing either.
         for a, b in zip(self._outputs(six, wide, zero), self._outputs(six, wide, self.part)):
             np.testing.assert_array_equal(a, b)
