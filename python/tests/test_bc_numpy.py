@@ -168,6 +168,44 @@ class BcDataTest(unittest.TestCase):
         self.assertIn(f"{lines.LIBRARY_SUPPORTED ^ 1:#x}", message)
         self.assertIn(f"{lines.LIBRARY_SUPPORTED:#x}", message)
 
+    def with_manifest(self, name, change):
+        """A copy of the fixture dataset whose output manifest.json is changed by `change`."""
+        copy = self.tmp / name
+        if copy.exists():
+            shutil.rmtree(copy)
+        shutil.copytree(self.out, copy)
+        path = copy / "manifest.json"
+        manifest = json.loads(path.read_text(encoding="utf-8"))
+        change(manifest)
+        path.write_text(json.dumps(manifest), encoding="utf-8")
+        return copy
+
+    def test_a_new_dataset_names_its_source(self):
+        self.assertEqual(self.bc_data.dataset_source(self.out), "sheet")
+
+    def test_a_belief_dataset_without_its_weight_is_refused(self):
+        belief = self.with_manifest("belief", lambda m: m.update(source="bo1_belief"))
+        with self.assertRaisesRegex(ValueError, "--source-weight bo1_belief"):
+            self.bc_data.load([belief], self.context, self.mask)
+        half = self.bc_data.load([belief], self.context, self.mask, source_weights={"bo1_belief": 0.5})
+        np.testing.assert_allclose(half.weight, self.rows.weight * 0.5)
+
+    def test_the_source_weight_of_sheets_is_one_unless_named(self):
+        named = self.bc_data.load([self.out], self.context, self.mask, source_weights={"sheet": 2.0})
+        np.testing.assert_allclose(named.weight, self.rows.weight * 2.0)
+
+    def test_an_old_dataset_is_a_sheet_dataset(self):
+        # format version 1 (before the source existed) was always a sheet build
+        old = self.with_manifest("old", lambda m: (m.pop("source"), m.update(format_version=1)))
+        self.assertEqual(self.bc_data.dataset_source(old), "sheet")
+        np.testing.assert_allclose(self.bc_data.load([old], self.context, self.mask).weight, self.rows.weight)
+
+    def test_a_new_manifest_without_its_source_is_refused(self):
+        # a version 2 build always writes its source: one without it is no sheet dataset by default
+        bare = self.with_manifest("bare", lambda m: m.pop("source"))
+        with self.assertRaisesRegex(ValueError, "names no source"):
+            self.bc_data.load([bare], self.context, self.mask)
+
     def test_dataset_of_another_library_is_refused(self):
         other = self.tmp / "other"
         shutil.copytree(self.out, other)

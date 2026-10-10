@@ -151,6 +151,31 @@ def _check_dataset(out, context):
         raise ValueError(f"{out} was built under the library fingerprint {built}, the run's is {run}: rebuild it")
 
 
+def dataset_source(out):
+    """The source of a dataset (its manifest.json): what a format version 2 manifest names ("sheet", "bo1_belief",
+    "drop_sheets"), or "sheet" for format version 1, built before the source existed, when every dataset was a sheet
+    build. ValueError for a later manifest without a source: a belief dataset never passes for sheets."""
+    manifest = json.loads((Path(out) / "manifest.json").read_text(encoding="utf-8"))
+    if "source" in manifest:
+        if manifest["source"] not in dataset.SOURCES:
+            raise ValueError(f"{out}: source {manifest['source']!r} is none of {dataset.SOURCES}")
+        return manifest["source"]
+    if manifest.get("format_version") == 1:
+        return "sheet"
+    raise ValueError(f"{out}: a format version {manifest.get('format_version')} manifest that names no source")
+
+
+def _source_weight(out, source_weights):
+    """The weight of a dataset's source: as named, 1 for sheets otherwise; any other source must be named."""
+    source = dataset_source(out)
+    if source in (source_weights or {}):
+        return float(source_weights[source])
+    if source == "sheet":
+        return 1.0
+    raise ValueError(f"{out}: source {source} needs --source-weight {source}=FACTOR (M11 Bo1 spec section 5: never "
+                     "mixed with sheet rows by default)")
+
+
 def _format_weight(fmt, format_weights):
     for prefix, factor in (format_weights or {}).items():
         if fmt.startswith(prefix):
@@ -164,13 +189,15 @@ def _shard_rows(out):
                for s in json.loads((Path(part) / "manifest.json").read_text(encoding="utf-8"))["shards"])
 
 
-def load(dirs, context, mask, format_weights=None, weights="rating"):
+def load(dirs, context, mask, format_weights=None, weights="rating", source_weights=None):
     """The Rows of every shard of the datasets `dirs`, encoded under `mask`, into arrays allocated once (no copy of
-    the whole set). weights: "rating" (rating_weight) or "uniform"; format_weights: {format prefix: factor}."""
+    the whole set). weights: "rating" (rating_weight) or "uniform"; format_weights: {format prefix: factor};
+    source_weights: {dataset source: factor} (dataset_source; a source other than sheet must be named)."""
     if weights not in ("rating", "uniform"):
         raise ValueError(f"weights must be 'rating' or 'uniform', not {weights!r}")
     for out in dirs:
         _check_dataset(out, context)
+    source_weight = {out: _source_weight(out, source_weights) for out in dirs}
     n = sum(_shard_rows(out) for out in dirs)
     if n == 0:
         raise ValueError(f"no rows in {list(map(str, dirs))}")
@@ -210,7 +237,7 @@ def load(dirs, context, mask, format_weights=None, weights="rating"):
             rows.has_z[sl] = has_z
             rows.z[sl] = np.where(~has_z, 0.0, np.where(winner == side, 1.0, -1.0))
             rows.weight[sl] = [(rating_weight(int(r)) if weights == "rating" else 1.0)
-                               * _format_weight(f, format_weights) for r, f in zip(rating, fmt)]
+                               * _format_weight(f, format_weights) * source_weight[out] for r, f in zip(rating, fmt)]
             rows.val[sl] = [split_key(g["sheets"][i]) for i in game]
             rows.side[sl], rows.fmt[sl], rows.replay[sl] = shard["side"], fmt, g["replay_id"][game]
             rows.point[sl] = shard["point"]
