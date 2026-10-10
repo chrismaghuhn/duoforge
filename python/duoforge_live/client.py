@@ -26,6 +26,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from . import search as live_search, teams
+from .lines import Stop
 from .data import trace_to_c
 from .game import Game
 from .tracker import ROOM_LINES, _kind
@@ -330,6 +331,8 @@ class Bot:
                 b.pending = None
             b.game.feed(battle_lines)
             await self._after_feed(b)
+        except Stop as e:  # a line the tracker cannot represent: counted by its reason (the arena's stops)
+            await self._forfeit(b, INTERNAL, f"stop:{e.reason}")
         except (Exception, trace_to_c.ConversionError) as e:  # ConversionError is a SystemExit
             await self._forfeit(b, INTERNAL, f"{type(e).__name__}: {e}")
 

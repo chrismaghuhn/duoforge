@@ -66,7 +66,7 @@ class Game:
         """The choices of the current decision point, best first (budget: the search's seconds)."""
         observation = self.tracker.observation()
         domain, lists = self.tracker.domain()
-        obs_part, slot_part, pair_mask = features.encode(observation, domain, None,
+        obs_part, slot_part, pair_mask = features.encode(observation, domain, self.tracker.observation_ext(),
                                                          getattr(self.policy, "ext_supported", 0))
         if self.request.get("teamPreview"):
             if len(self.tracker.own_sheets) != 6 or self.request["maxChosenTeamSize"] != 4:

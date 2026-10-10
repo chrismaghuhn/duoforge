@@ -33,9 +33,9 @@ extern "C" {
 #endif
 
 #define DUOFORGE_VERSION_MAJOR 0
-#define DUOFORGE_VERSION_MINOR 44
+#define DUOFORGE_VERSION_MINOR 45
 #define DUOFORGE_VERSION_PATCH 0
-#define DUOFORGE_VERSION_STRING "0.44.0"
+#define DUOFORGE_VERSION_STRING "0.45.0"
 
 /* Identifiers of the artifacts that exist now (registry: decisions 0002, 0005, 0006). */
 #define DUOFORGE_SEMANTICS_ID           3u   /* "duoforge-m3-closure" */
@@ -1088,7 +1088,7 @@ duoforge_status duoforge_battle_observe_ext(const duoforge_context *ctx, const d
                                                     id the item + 1 that the holder passed to the user. Every other ACTIVATE has id 0 */
 #define DUOFORGE_EVENT_UPKEEP          36u /* [upkeep] the end-of-turn effects are done */
 #define DUOFORGE_EVENT_RESULT          37u /* [win] or [tie] detail: DUOFORGE_RESULT_* */
-#define DUOFORGE_EVENT_SINGLE_TURN     38u /* [-singleturn] position (Team C): id: the move; other: the user ([of]) for
+#define DUOFORGE_EVENT_SINGLE_TURN     38u /* [-singleturn], or for Destiny Bond [-singlemove] (step G76); id: the move; other: the user ([of]) for
                                               Helping Hand, DUOFORGE_NO_POSITION for Follow Me */
 #define DUOFORGE_EVENT_VOLATILE_START  39u /* [-start] position (POOL kinds), detail: DUOFORGE_VOLATILE_* (a volatile that the
                                               game shows: -start|X|move: Heal Block) */

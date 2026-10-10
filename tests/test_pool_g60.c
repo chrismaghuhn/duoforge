@@ -66,7 +66,7 @@ static void check_values_and_marks(df_test *t)
     DF_CHECK(t, dfi_support.moves[DFI_MOVE_SUBSTITUTE] != 0u);
     DF_CHECK(t, dfi_support.abilities[DFI_ABILITY_INFILTRATOR] != 0u);
     DF_CHECK(t, dfi_support.abilities[DFI_ABILITY_INTIMIDATE] != 0u);
-    DF_CHECK(t, dfi_support.moves[DFI_MOVE_BATONPASS] == 0u);
+    DF_CHECK(t, dfi_support.moves[DFI_MOVE_BATONPASS] != 0u); /* marked by step G74 (decision 0042); it was refused by 0032 */
     DF_CHECK(t, dfi_support.moves[DFI_MOVE_SHEDTAIL] == 0u);
     DF_CHECK(t, dfi_support.moves[DFI_MOVE_TIDYUP] == 0u);
     DF_CHECK(t, dfi_support.moves[DFI_MOVE_DEFOG] == 0u);

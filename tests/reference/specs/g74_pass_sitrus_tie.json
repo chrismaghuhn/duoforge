@@ -1,0 +1,26 @@
+{
+  "name": "g74_pass_sitrus_tie",
+  "purpose": "Successful Baton Pass with a Sitrus speed tie on both sides (decision 0042 section 14, the Substitute update fix's pattern): Umbreon (M) on each side holds Sitrus Berry and has the same spread, so the two holders tie in speed. Umbreon (p1) uses Baton Pass on turn 1: the hit is true, so the Champions hit loop runs its two Updates (scripts.ts:537, :574) after the switch flag is set and before the switch request; the two Umbreon are still on the field then, so the tie is drawn. Espeon (M) enters as the first standing reserve.",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,00000000000000000000000000000000000000000000000000000000000074f6",
+  "teams": [
+    "Umbreon (M) @ Sitrus Berry\nAbility: Inner Focus\nLevel: 50\nEVs: 32 HP / 2 Def / 32 SpD\nCalm Nature\n- Baton Pass\n- Protect\n- Substitute\n- Yawn\n\nPolitoed (M) @ Mystic Water\nAbility: Drizzle\nLevel: 50\nEVs: 32 HP / 2 Def / 32 SpD\nCalm Nature\n- Protect\n\nEspeon (M)\nAbility: Synchronize\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nTimid Nature\n- Calm Mind\n- Baton Pass\n- Protect\n- Shadow Ball\n\nGholdengo @ Life Orb\nAbility: Good as Gold\nLevel: 50\nEVs: 17 HP / 2 Def / 17 SpA / 16 SpD / 14 Spe\nModest Nature\n- Protect\n- Shadow Ball\n\nKingambit (M) @ Black Glasses\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 2 Atk / 32 SpD\nImpish Nature\n- Protect\n\nNinetales (M) @ Focus Sash\nAbility: Drought\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nModest Nature\n- Protect\n- Shadow Ball",
+    "Umbreon (M) @ Sitrus Berry\nAbility: Inner Focus\nLevel: 50\nEVs: 32 HP / 2 Def / 32 SpD\nCalm Nature\n- Protect\n- Yawn\n- Substitute\n- Taunt\n\nGarchomp (M) @ Chople Berry\nAbility: Rough Skin\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Spe\nJolly Nature\n- Dragon Claw\n- Protect\n\nPolitoed (M) @ Leftovers\nAbility: Drizzle\nLevel: 50\nEVs: 32 HP / 2 Def / 32 SpD\nCalm Nature\n- Protect\n\nGholdengo @ Life Orb\nAbility: Good as Gold\nLevel: 50\nEVs: 17 HP / 2 Def / 17 SpA / 16 SpD / 14 Spe\nModest Nature\n- Protect\n- Shadow Ball\n\nKingambit (M) @ Black Glasses\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 2 Atk / 32 SpD\nImpish Nature\n- Protect\n\nCeruledge (M) @ Grassy Seed\nAbility: Flash Fire\nLevel: 50\nEVs: 31 HP / 7 Atk / 24 Def / 3 SpD / 1 Spe\nAdamant Nature\n- Protect"
+  ],
+  "plan": {
+    "p1": [
+      "move 1, move 1",
+      "move 1, move 1",
+      "move 1, move 1",
+      "move 1, move 1"
+    ],
+    "p2": [
+      "move 1, move 2",
+      "move 1, move 2",
+      "move 1, move 2",
+      "move 1, move 2"
+    ],
+    "max_steps": 5
+  }
+}

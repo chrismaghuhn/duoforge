@@ -59,13 +59,11 @@ def _ranked(logp, allowed):
 class Policy:
     """A checkpoint's network, played greedily on the inputs of its encoder version (features.ENCODERS;
     checkpoint.encoder_of reads it from a config) and view-extension mask (checkpoint.ext_supported_of). The
-    tracker fills no extension records yet, so a mask with a record feature (features.RECORD_FEATURES) is
-    refused; the base values (Sand, Snow, Electric, Misty, Tox) come from the observation."""
+    Game encodes the tracker's OBSERVATION_EXT record (Tracker.observation_ext): a feature the tracker does not fold
+    stops it at the line that would set it (lines._feature), so until then that feature's fields are truly zero
+    (HauptSession, 2026-10-10); the base values (Sand, Snow, Electric, Misty, Tox) come from the observation."""
 
     def __init__(self, params, encoder, ext_supported=0):
-        if ext_supported & features.RECORD_FEATURES:
-            raise ValueError(f"the network reads view-extension records (ext_supported {ext_supported:#x}), which "
-                             "the live tracker does not fill yet")
         self.params = params
         self.encoder = encoder
         self.ext_supported = ext_supported

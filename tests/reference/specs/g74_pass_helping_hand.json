@@ -1,0 +1,26 @@
+{
+  "name": "g74_pass_helping_hand",
+  "purpose": "Helping Hand before Baton Pass (decision 0042, G74 mutant M9): Ninetales (M) helps Espeon (M) on turn 1 (Helping Hand, priority +5, before the pass), and Espeon passes in the same turn to Umbreon (M), the first standing reserve. The Helping Hand volatile is copied to the receiver with no line; it ends at the turn's residual and the receiver does not act that turn.",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,00000000000000000000000000000000000000000000000000000000000074d4",
+  "teams": [
+    "Espeon (M)\nAbility: Synchronize\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nTimid Nature\n- Calm Mind\n- Baton Pass\n- Protect\n- Shadow Ball\n\nNinetales (M) @ Sitrus Berry\nAbility: Drought\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nModest Nature\n- Helping Hand\n- Shadow Ball\n- Protect\n- Substitute\n\nUmbreon (M) @ Leftovers\nAbility: Inner Focus\nLevel: 50\nEVs: 32 HP / 2 Def / 32 SpD\nCalm Nature\n- Protect\n- Yawn\n- Substitute\n- Baton Pass\n\nGholdengo @ Life Orb\nAbility: Good as Gold\nLevel: 50\nEVs: 17 HP / 2 Def / 17 SpA / 16 SpD / 14 Spe\nModest Nature\n- Protect\n- Shadow Ball\n\nKingambit (M) @ Black Glasses\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 2 Atk / 32 SpD\nImpish Nature\n- Protect\n\nPolitoed (M) @ Mystic Water\nAbility: Drizzle\nLevel: 50\nEVs: 32 HP / 2 Def / 32 SpD\nCalm Nature\n- Protect",
+    "Umbreon (M) @ Focus Sash\nAbility: Inner Focus\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nModest Nature\n- Alluring Voice\n- Protect\n\nGarchomp (M) @ Chople Berry\nAbility: Rough Skin\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Spe\nJolly Nature\n- Dragon Claw\n- Protect\n\nRillaboom (M) @ Miracle Seed\nAbility: Grassy Surge\nLevel: 50\nEVs: 18 HP / 32 Atk / 2 Def / 6 SpD / 8 Spe\nAdamant Nature\n- Protect\n\nCeruledge (M) @ Grassy Seed\nAbility: Flash Fire\nLevel: 50\nEVs: 31 HP / 7 Atk / 24 Def / 3 SpD / 1 Spe\nAdamant Nature\n- Protect\n\nGholdengo @ Leftovers\nAbility: Good as Gold\nLevel: 50\nEVs: 17 HP / 2 Def / 17 SpA / 16 SpD / 14 Spe\nModest Nature\n- Protect\n\nPolitoed (M) @ Sitrus Berry\nAbility: Drizzle\nLevel: 50\nEVs: 32 HP / 2 Def / 32 SpD\nCalm Nature\n- Icy Wind\n- Protect"
+  ],
+  "plan": {
+    "p1": [
+      "move 2, move 1 -1",
+      "move 1, move 2",
+      "move 1, move 2",
+      "move 1, move 2"
+    ],
+    "p2": [
+      "move 2, move 2",
+      "move 2, move 2",
+      "move 2, move 2",
+      "move 2, move 2"
+    ],
+    "max_steps": 5
+  }
+}
