@@ -11,6 +11,7 @@ The owner chose option A after P1 and approved this spec (via HauptSession, 2026
   - 0 crashes, 0 class (b) errors, 0 timer losses;
   - class (a) fallbacks ≤ 5% of decisions, deadline fallbacks ≤ 1%;
   - p99 latency within the budget.
+  - tracker stops (an unfolded feature's line: an explicit forfeit, counted as `stop:feature:X` with the feature's name) at most 1% of the games; they are no crashes, which stay at 0 (owner, confirmed to M12 2026-10-10). The arena runs only once the 16 missing folds of params-49333's features are on main.
 - **(iii) A foe species without a spread prior:** raw, counted. The live spread table comes from the registry's playable PP_ pastes (838), pinned by its hash. The 79 SPREAD_SOURCES stay for P1 and the evaluation. Replay aggregates stay private and unused.
 
 Ladder games run only after the owner's go.
@@ -92,6 +93,8 @@ Single-game latency per boundary kind: p50, p95 and p99, plus the warm-up at sta
 - **Runtime:** JAX on the CPU against NumPy `forward` for the value and policy calls; the faster one is chosen.
 - **Budget:** the deadline is min(2 s, 10% of the remaining turn time), with the timer read from `|inactive|`.
 
+**Amendment (M12, 2026-10-10):** params-49333 is model v2, and the NumPy `forward` is model v1's only, so there is no NumPy candidate: the runtime is JAX on the CPU, for the search and for the live raw ranking (`duoforge_live.policy.ModelPolicy`). A NumPy port of model v2 would be its own task with an equivalence test. The tool is `python -m duoforge_search.live_latency` (engine batches over the reference setups, no deadline during the measurement, private output).
+
 ## Task 5: live wiring
 
 A play mode `--search honest` in `python -m duoforge_live`:
@@ -99,6 +102,20 @@ A play mode `--search honest` in `python -m duoforge_live`:
 - the deadline;
 - the dirty-game stop;
 - a per-game summary in the private log.
+
+**As built (M12, 2026-10-10, m12/bundle-6):**
+- `duoforge_live/search.py` holds `LiveSearch` and the outcome classes:
+  - searched;
+  - forced/raw/team without a fallback;
+  - (a) unreconstructible;
+  - deadline/busy;
+  - (b) error.
+- `game.py` plays the searched pair first and the raw ranking after it.
+- `client.py`:
+  - turns class (b) into the dirty game and the session pause (`PAUSED`);
+  - writes a per-game summary.
+- **Timer:** Showdown sends the player's `|inactive|Time left: N sec this turn | M sec total` line right after the request, so with the timer on a new decision point waits up to 1 s for it. After that it logs the line as missing and takes the 2 s cap.
+- **The tracker's parts:** `Tracker.public_parts()` (request, observation, record, status, causes) comes from HauptSession's record assembler. The Game encodes the tracker's `observation_ext()` (HauptSession, 2026-10-10). A feature the tracker does not fold stops it at its line (`lines._feature`): the bot forfeits explicitly, counted as `stop:feature:X` (gate above).
 
 ## Task 6: the live-path arena
 

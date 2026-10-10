@@ -5,7 +5,10 @@ columns(names) splits the encoder's columns (features.FEATURE_NAMES) into
 the groups model v2 reads: global, side and position scalars, the occupant
 one-hots, member scalars and the member ids. The columns of encoder 3's
 block ("ext.global.*", "ext.<side>.*", "ext.<side>.pos<k>.*",
-"ext.<side>.mem<r>.*") join the global, side, position and member scalars.
+"ext.<side>.mem<r>.*") join the global, side, position and member scalars,
+and so do encoder 6's reserve columns ("ext6.global.*", "ext6.<side>.<field>.*",
+"ext6.<side>.pos<k>.*"; decision 0050). reserve_rows names the input rows fed
+by the reserve alone, which a fresh network starts at zero.
 A name the grouping does not know raises, so a new encoder column is never
 dropped silently; a checkpoint keeps its own names, so its groups follow its
 layout.
@@ -52,6 +55,16 @@ def columns(feature_names=features.FEATURE_NAMES, slot_names=features.SLOT_FEATU
     ids = {k: {} for k in _MEMBER_IDS}
     for i, name in enumerate(feature_names):
         parts = name.split(".")
+        if parts[0] == "ext6" and len(parts) >= 3:  # encoder 6's reserve (decision 0050)
+            if parts[1] == "global":
+                glob.append(i)
+            elif parts[1] in _SIDES and parts[2].startswith("pos") and parts[2][3:].isdigit():
+                position.setdefault((_SIDES.index(parts[1]), int(parts[2][3:])), []).append(i)
+            elif parts[1] in _SIDES:
+                side.setdefault(_SIDES.index(parts[1]), []).append(i)
+            else:
+                raise ValueError(f"observation column {name!r} is not one model v2 knows")
+            continue
         if parts[0] == "global" or parts[:2] == ["ext", "global"]:
             glob.append(i)
             continue
@@ -131,6 +144,15 @@ def input_sources(cfg, cols, feature_names, slot_names):
                        + fixed(4 * dp) + fixed(4 * dm)),
         ("option1",): fixed(len(cols.slot_scalar)) + fixed(e + 2 * dm + do),
     }
+
+
+def reserve_rows(cfg, cols, feature_names, slot_names):
+    """{layer path: the indices of its input rows fed only by encoder 6's reserve columns ("ext6." names, decision
+    0050)}. A fresh network starts them at zero: a reserve column is 0 while its bit is undefined or unused, so their
+    gradient is 0 and they stay 0, and a bit that appears later has no effect until training sees it set."""
+    reserve = {i for i, n in enumerate(feature_names) if n.startswith("ext6.")}
+    return {path: [r for r, fed in enumerate(rows) if fed and fed <= reserve]
+            for path, rows in input_sources(cfg, cols, feature_names, slot_names).items()}
 
 
 def decode(obs, index, table):

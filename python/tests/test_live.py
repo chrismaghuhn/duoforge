@@ -61,10 +61,11 @@ class Point:
 
 
 class Battle:
-    def __init__(self, name, views, streams):
+    def __init__(self, name, views, streams, exts):
         self.name = name
         self.spec, self.trace = trace_to_c.load_battle(str(data.ROOT), name)
         self.views = views
+        self.exts = exts  # (k, player) -> DuoForge's view extension bytes (all zero: closure battles)
         self.streams = streams  # player -> list of messages (lists of lines)
         state = self.trace["start"]["state"]
         self.roster_names = []  # as convert_battle names a Pokemon in a choice
@@ -112,13 +113,14 @@ class Reference:
         results = [line.split(" ") for line in out.stdout.splitlines() if line.startswith("R ")]
         if out.returncode != 0 or not results or any(r[2] != "PASS" for r in results):
             raise AssertionError(f"the runner: {out.returncode} {out.stderr} {out.stdout[-2000:]}")
-        views = {}
+        views, exts = {}, {}
         with open(views_path, encoding="ascii") as f:
             for line in f:
-                _, name, k, viewer, obs, dom = line.split()
+                _, name, k, viewer, obs, dom, ext = line.split()
                 views.setdefault(name, {})[(int(k), int(viewer))] = (
                     np.frombuffer(bytes.fromhex(obs), dtype=_layout.OBSERVATION)[0],
                     np.frombuffer(bytes.fromhex(dom), dtype=_layout.FACTORED_DOMAIN)[0])
+                exts.setdefault(name, {})[(int(k), int(viewer))] = bytes.fromhex(ext)
         # The engine's public record of each player at each state (the live search's record assembler, Task 1).
         self.publics = {}
         with open(public_path, encoding="ascii") as f:
@@ -133,7 +135,7 @@ class Reference:
             streams.setdefault(m["battle"], ([], []))[int(m["to"][1]) - 1].append(m["lines"])
         if sorted(streams) != sorted(views):
             raise AssertionError("the client streams and the views name other battles")
-        self.battles = [Battle(name, views[name], streams[name]) for name in sorted(views)]
+        self.battles = [Battle(name, views[name], streams[name], exts[name]) for name in sorted(views)]
         self.battles_by_name = {b.name: b for b in self.battles}
         if sorted(self.publics) != sorted(views):
             raise AssertionError("the public records and the views name other battles")
@@ -165,7 +167,7 @@ class PressureExtraTest(unittest.TestCase):
         t._pressure = cls.D.tables["ABILITY"]["PRESSURE"] + 1
         members = [SimpleNamespace(ability=t._pressure), SimpleNamespace(ability=t._pressure)]
         t._member = lambda side: members
-        t._positions = [[SimpleNamespace(occupant=k, fainted=False) for k in (0, 1)] for _ in (0, 1)]
+        t._positions = [[SimpleNamespace(occupant=k, fainted=False, ability_now=0) for k in (0, 1)] for _ in (0, 1)]
         cls.t = t
         cls.FLAG = trace_to_c.FLAG
 
@@ -187,6 +189,39 @@ class PressureExtraTest(unittest.TestCase):
 
     def test_a_blanked_target_counts_nothing(self):
         self.assertEqual(self.extra("EXPANDINGFORCE", trace_to_c.NOPOS, self.FLAG["STILL"] | self.FLAG["SPREAD"]), 0)
+class BatonPassTest(unittest.TestCase):
+    """Step G74 (decision 0042): the receiver of a Baton Pass (`|switch|...|[from] move: Baton Pass`, no volatile
+    lines) takes the leaver's stages and confusion, the base view's fields; a plain switch resets them. The other
+    copied volatiles are decision 0018 features, which stopped the tracker at their start lines."""
+
+    def _tracker(self):
+        from duoforge_live import tracker
+        from types import SimpleNamespace
+        D = data.load(kind="pool")
+        t = tracker.Tracker.__new__(tracker.Tracker)
+        t.data, t.side, t._spectator = D, 0, False
+        t._baton_pass = D.tables["MOVE"]["BATONPASS"]
+        members = [SimpleNamespace(seen=False, hp_percent=100, hp_flag=0, status=0) for _ in range(6)]
+        t._member = lambda side: members
+        t._positions = [[tracker._Position(), tracker._Position()], [tracker._Position(), tracker._Position()]]
+        leaver = t._positions[0][0]
+        leaver.occupant, leaver.stages, leaver.confused = 0, [8, 6, 6, 4, 6, 6, 6], 1
+        return t, D, tracker
+
+    def test_the_receiver_takes_stages_and_confusion(self):
+        t, D, tracker = self._tracker()
+        t._event(trace_to_c.ev_tuple(trace_to_c.EV["SWITCH"], 0, trace_to_c.NOPOS, trace_to_c.CAUSE["MOVE"], 3,
+                                     D.tables["MOVE"]["BATONPASS"], 100, 100, 1))
+        p = t._positions[0][0]
+        self.assertEqual((p.occupant, p.stages, p.confused), (3, [8, 6, 6, 4, 6, 6, 6], 1))
+
+    def test_a_plain_switch_resets_them(self):
+        t, D, tracker = self._tracker()
+        t._event(trace_to_c.ev_tuple(trace_to_c.EV["SWITCH"], 0, trace_to_c.NOPOS, 0, 3, 0, 100, 100, 1))
+        p = t._positions[0][0]
+        self.assertEqual((p.occupant, p.stages, p.confused), (3, [tracker.STAGE_NEUTRAL] * 7, 0))
+
+
 class ClearAllBoostsTest(unittest.TestCase):
     """Step G62 (decision 0031): Haze's CLEAR_ALL_BOOSTS returns the stages of every standing active Pokemon to
     neutral (data/moves.ts haze onHitField: getAllActive, sim/pokemon.ts clearBoosts); an empty or fainted position
@@ -248,14 +283,17 @@ class LockedMoveSlotTest(unittest.TestCase):
         from types import SimpleNamespace
         t = self.tracker.Tracker.__new__(self.tracker.Tracker)
         t.data, t.side, t._spectator = self.D, 0, False
-        t._guard_moves, t._choice_items = set(), set()
+        from duoforge_live import lines
+        items = self.D.tables["ITEM"]
+        band = next(items[k.upper()] for k in lines.CHOICE_ITEMS if k.upper() in items) + 1  # a Choice holder (#334)
+        t._guard_moves, t._choice_items = set(), {band}
         t._positions = [[self.tracker._Position(), self.tracker._Position()],
                         [self.tracker._Position(), self.tracker._Position()]]
         for side in t._positions:
             for k, p in enumerate(side):
                 p.occupant = k
-        sheet = {"item": None, "moves": [self.M["OUTRAGE"], self.M["DRAGONCLAW"], self.M["PROTECT"]]}
-        t._occupant = lambda pos: SimpleNamespace(sheet=sheet, uses=[0, 0, 0], item_used=0)
+        sheet = {"item": band, "moves": [self.M["OUTRAGE"], self.M["DRAGONCLAW"], self.M["PROTECT"]]}
+        t._occupant = lambda pos: SimpleNamespace(sheet=sheet, uses=[0, 0, 0], item_used=0, item_now=0)
         t._pressure_extra = lambda *a: 0
         self.t = t
 
@@ -394,8 +432,8 @@ def differences(a, b, path=""):
 
 
 def run_tracker(battle, player, stream=None, sheet_text=None):
-    """[(k, tracker observation, tracker domain, lists)] at every decision point of `player`, feeding the
-    stream message by message and the recorded own choices as accepted."""
+    """[(k, tracker observation, tracker domain, lists, tracker view extension)] at every decision point of `player`,
+    feeding the stream message by message and the recorded own choices as accepted."""
     from duoforge_live.tracker import Tracker
     tracker = Tracker(Reference.get().data, sheet_text or battle.spec["teams"][player])
     pid = f"p{player + 1}"
@@ -406,7 +444,7 @@ def run_tracker(battle, player, stream=None, sheet_text=None):
             done = tracker.epoch
             k = done - 1
             dom, lists = tracker.domain()
-            out.append((k, tracker.observation(), dom, lists))
+            out.append((k, tracker.observation(), dom, lists, tracker.observation_ext()))
             step = battle.trace["steps"][k] if k < len(battle.trace["steps"]) else None
             if step is not None and pid in step["input"]:
                 tracker.accepted(step["input"][pid])
@@ -513,11 +551,12 @@ class TrackerTest(unittest.TestCase):
     def assertSameView(self, battle, player, points):
         expected = sum(1 for _ in battle.points(player))
         self.assertEqual([p[0] for p in points], list(range(expected)), (battle.name, player))
-        for k, obs, dom, _ in points:
+        for k, obs, dom, _, ext in points:
             theirs, their_dom = battle.views[(k, player)]
             where = f"{battle.name} k={k} viewer={player}"
             diff = differences(obs, theirs)
             self.assertFalse(diff, f"{where}: " + "; ".join(diff[:12]))
+            self.assertEqual(ext.tobytes(), battle.exts[(k, player)], where)  # closure kinds: both all zero
             self.assertEqual((int(dom["epoch"]), int(dom["kind"])), (int(their_dom["epoch"]), int(their_dom["kind"])),
                              where)
             if int(dom["kind"]) == TEAM:

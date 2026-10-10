@@ -26,8 +26,58 @@ set(DUOFORGE_PCG_REFERENCE_DIR "" CACHE PATH
 set(DUOFORGE_PS_REFERENCE_DIR "" CACHE PATH
     "Optional checkout of Pokemon Showdown at the pinned revision for reference tests")
 
+option(DUOFORGE_CCACHE
+    "Compile C through ccache (local builds; GCC or Clang with the Ninja or a Makefile generator)"
+    OFF
+)
+
 include(CTest)
 include(cmake/DuoforgeTargetOptions.cmake)
+
+# ccache for local builds, opt-in (docs/TESTING_AND_BENCHMARKS.md section 7):
+# one cache (ccache's default directory) shared by every checkout and worktree
+# of the machine. Asked for and not possible fails the configuration; nothing
+# builds without it in silence. base_dir makes the paths of this checkout
+# relative to the build directory and hash_dir=false leaves the build
+# directory out of the hash, so a build directory at the same place inside
+# another worktree hits the same entries; -fdebug-prefix-map writes the debug
+# information relative to the source directory, so a cached object is the
+# object the compiler would write here (no path of another worktree in it).
+# The launcher arguments override CCACHE_* variables and ccache.conf.
+if(DUOFORGE_CCACHE)
+    if(NOT CMAKE_GENERATOR MATCHES "Ninja|Makefiles")
+        message(FATAL_ERROR "duoforge: DUOFORGE_CCACHE needs the Ninja or a Makefile generator "
+                            "(${CMAKE_GENERATOR} does not use compiler launchers)")
+    endif()
+    if(NOT CMAKE_C_COMPILER_ID MATCHES "^(GNU|Clang)$" OR CMAKE_C_COMPILER_FRONTEND_VARIANT STREQUAL "MSVC")
+        message(FATAL_ERROR "duoforge: DUOFORGE_CCACHE supports GCC and Clang (GNU-style driver), "
+                            "not ${CMAKE_C_COMPILER_ID} with the ${CMAKE_C_COMPILER_FRONTEND_VARIANT} front end")
+    endif()
+    find_program(DUOFORGE_CCACHE_PROGRAM ccache)
+    if(NOT DUOFORGE_CCACHE_PROGRAM)
+        message(FATAL_ERROR "duoforge: DUOFORGE_CCACHE is ON but ccache is not on the PATH "
+                            "(set DUOFORGE_CCACHE_PROGRAM, or configure with -DDUOFORGE_CCACHE=OFF)")
+    endif()
+    # The launcher passes settings as KEY=VALUE arguments, which ccache understands since 4.8.
+    execute_process(COMMAND "${DUOFORGE_CCACHE_PROGRAM}" --version
+        OUTPUT_VARIABLE _duoforge_ccache_out RESULT_VARIABLE _duoforge_ccache_rc ERROR_QUIET)
+    string(REGEX MATCH "ccache version ([0-9]+\\.[0-9]+(\\.[0-9]+)?)" _duoforge_ccache_match "${_duoforge_ccache_out}")
+    if(NOT _duoforge_ccache_rc EQUAL 0 OR NOT _duoforge_ccache_match)
+        message(FATAL_ERROR "duoforge: cannot tell the version of ${DUOFORGE_CCACHE_PROGRAM} (ccache --version)")
+    endif()
+    if(CMAKE_MATCH_1 VERSION_LESS 4.8)
+        message(FATAL_ERROR "duoforge: DUOFORGE_CCACHE needs ccache 4.8 or newer (settings on the command line); "
+                            "${DUOFORGE_CCACHE_PROGRAM} is ${CMAKE_MATCH_1}")
+    endif()
+    file(RELATIVE_PATH _duoforge_build_rel "${CMAKE_SOURCE_DIR}" "${CMAKE_BINARY_DIR}")
+    if(_duoforge_build_rel MATCHES "^\\.\\." OR IS_ABSOLUTE "${_duoforge_build_rel}")
+        message(WARNING "duoforge: the build directory is outside the source directory: ccache works, "
+                        "but other worktrees do not share its entries (they need the same build/... path)")
+    endif()
+    set(CMAKE_C_COMPILER_LAUNCHER "${DUOFORGE_CCACHE_PROGRAM}" "base_dir=${CMAKE_SOURCE_DIR}" "hash_dir=false")
+    add_compile_options("$<$<COMPILE_LANGUAGE:C>:-fdebug-prefix-map=${CMAKE_SOURCE_DIR}=.>")
+    message(STATUS "duoforge: compiling C through ${DUOFORGE_CCACHE_PROGRAM}")
+endif()
 
 # Link-time optimization of Release builds, opt-in (decision 0008 section 8):
 # LTO objects are compiler-specific, so a library built with them links only

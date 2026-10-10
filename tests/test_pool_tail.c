@@ -50,9 +50,9 @@ static const char TAIL_HEX[] =
     "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
     "000000000000000000000000";
 
-/* The maximum HP of the leads of both sides (by position) in the example battle at its first TURN boundary (the Substitute
- * bound is a quarter of it): the model's LEAD_HP_MAX, asserted below. Side 1's leads are Archaludon and Charizard. */
-static const unsigned lead_hp_max[2][2] = {{193, 192}, {197, 169}};
+/* The maximum HP of every member of both sides in the example battle at its first TURN boundary (the Substitute bound is the
+ * largest quarter of a side's brought members, decision 0042): the model's EXAMPLE_HP_MAX, asserted below. */
+static const unsigned example_hp_max[2][6] = {{193u, 192u, 202u, 181u, 164u, 179u}, {197u, 182u, 197u, 224u, 169u, 202u}};
 
 /* Step G50: a soak_type of 255 (Double Shock) is OK for a standing member with a second type, which moves the two soak bytes
  * (offsets 92 and 252: side 0's member 0 and side 1's member 2) from 18 to 19 OK values and from 237 to 236 member refusals.
@@ -100,7 +100,7 @@ static const unsigned sweep[DFI_ENC_TAIL_SIZE][SWEEP_COLUMNS] = {
     {3, 0, 252, 0, 0, 0, 0, 0},
     {1, 0, 254, 0, 0, 0, 0, 0},
     {1, 0, 254, 0, 0, 0, 0, 0},
-    {48, 0, 207, 0, 0, 0, 0, 0},
+    {50, 0, 205, 0, 0, 0, 0, 0}, /* G74: the Substitute bound is the largest quarter of the brought members (decision 0042) */
     {0, 0, 255, 0, 0, 0, 0, 0},
     {254, 0, 1, 0, 0, 0, 0, 0},
     {1, 0, 254, 0, 0, 0, 0, 0},
@@ -136,7 +136,7 @@ static const unsigned sweep[DFI_ENC_TAIL_SIZE][SWEEP_COLUMNS] = {
     {1, 0, 254, 0, 0, 0, 0, 0},
     {1, 0, 254, 0, 0, 0, 0, 0},
     {1, 0, 254, 0, 0, 0, 0, 0},
-    {48, 0, 207, 0, 0, 0, 0, 0},
+    {50, 0, 205, 0, 0, 0, 0, 0}, /* G74 */
     {0, 0, 255, 0, 0, 0, 0, 0},
     {0, 0, 255, 0, 0, 0, 0, 0},
     {0, 0, 255, 0, 0, 0, 0, 0},
@@ -240,7 +240,7 @@ static const unsigned sweep[DFI_ENC_TAIL_SIZE][SWEEP_COLUMNS] = {
     {0, 0, 255, 0, 0, 0, 0, 0},
     {1, 0, 254, 0, 0, 0, 0, 0},
     {1, 0, 254, 0, 0, 0, 0, 0},
-    {49, 0, 206, 0, 0, 0, 0, 0},
+    {49, 0, 206, 0, 0, 0, 0, 0}, /* G74 */
     {0, 0, 255, 0, 0, 0, 0, 0},
     {0, 0, 255, 0, 0, 0, 0, 0},
     {0, 0, 255, 0, 0, 0, 0, 0},
@@ -276,7 +276,7 @@ static const unsigned sweep[DFI_ENC_TAIL_SIZE][SWEEP_COLUMNS] = {
     {0, 0, 255, 0, 0, 0, 0, 0},
     {1, 0, 254, 0, 0, 0, 0, 0},
     {1, 0, 254, 0, 0, 0, 0, 0},
-    {42, 0, 213, 0, 0, 0, 0, 0},
+    {49, 0, 206, 0, 0, 0, 0, 0}, /* G74 */
     {0, 0, 255, 0, 0, 0, 0, 0},
     {255, 0, 0, 0, 0, 0, 0, 0},
     {1, 0, 254, 0, 0, 0, 0, 0},
@@ -386,13 +386,13 @@ static const unsigned sweep[DFI_ENC_TAIL_SIZE][SWEEP_COLUMNS] = {
     {0, 255, 0, 0, 0, 0, 0, 0},
     {0, 255, 0, 0, 0, 0, 0, 0},
     {0, 255, 0, 0, 0, 0, 0, 0},
-    {5, 0, 250, 0, 0, 0, 0, 0},
+    {11, 0, 244, 0, 0, 0, 0, 0}, /* G76: position_flags bit 4 (Destiny Bond) is valid, 11 values of the byte decode (5 before) */
     {0, 0, 255, 0, 0, 0, 0, 0},
-    {5, 0, 250, 0, 0, 0, 0, 0},
+    {11, 0, 244, 0, 0, 0, 0, 0},
     {0, 0, 255, 0, 0, 0, 0, 0},
-    {5, 0, 250, 0, 0, 0, 0, 0},
+    {11, 0, 244, 0, 0, 0, 0, 0},
     {0, 0, 255, 0, 0, 0, 0, 0},
-    {5, 0, 250, 0, 0, 0, 0, 0},
+    {11, 0, 244, 0, 0, 0, 0, 0},
     {0, 0, 255, 0, 0, 0, 0, 0},
     {0, 0, 0, 0, 0, 255, 0, 0},
     {0, 0, 0, 0, 0, 255, 0, 0},
@@ -907,7 +907,21 @@ MUT(m_lock_not_lockedmove, { /* the old example's lock: Rillaboom's Wood Hammer 
     p0->last_move = 1u;
     p0->lock_turns = 2u;
 })
-MUT(m_substitute_above, p0->substitute_hp = (uint16_t)(y->sides[0].members[y->sides[0].positions[0].occupant].hp_max / 4u + 1u))
+/* G74 (decision 0042, lead's decision A): a Substitute is bounded by the largest quarter among the brought members of its side,
+ * since a pass moves it to another member. The occupant's own quarter is not the bound. */
+static uint32_t brought_quarter_cap(const dfi_side *s)
+{
+    uint32_t cap = 0u;
+    for (uint32_t m = 0u; m < DUOFORGE_MAX_ROSTER && m < s->member_count; ++m) {
+        if (((uint32_t)s->brought_mask >> m) & 1u) {
+            const uint32_t quarter = (uint32_t)s->members[m].hp_max / 4u;
+            cap = quarter > cap ? quarter : cap;
+        }
+    }
+    return cap;
+}
+MUT(m_substitute_above, p0->substitute_hp = (uint16_t)(brought_quarter_cap(&y->sides[0]) + 1u))
+MUT(v_substitute_pass, p0->substitute_hp = (uint16_t)(y->sides[0].members[y->sides[0].positions[0].occupant].hp_max / 4u + 1u))
 MUT(m_trap_turns_only, p0->trap_turns = 1u)
 MUT(m_trap_source_only, p0->trap_source = 2u)
 MUT(m_trap_move_only, p0->trap_move = 1u)
@@ -1016,7 +1030,8 @@ MUT(m_ill_override, ts->illusion.override[3] = 1u)
 MUT(m_ill_snapshot, ts->illusion.snapshot[8] = 1u)
 MUT(m_ill_pending, ts->illusion.pending[0] = 1u)
 MUT(m_healing_wish_bit, p0->position_flags = 1u) /* bit 0 (Healing Wish) is never set yet */
-MUT(m_position_flags_bit4, p0->position_flags = 0x10u)
+MUT(m_position_flags_bit5, p0->position_flags = 0x20u) /* bits 5-7 are not defined (G76 took bit 4) */
+MUT(v_destiny_bond_standing, p0->position_flags = 0x10u) /* G76: Destiny Bond at a standing lead is valid */
 MUT(m_dragon_stage_3, p0->position_flags = 0x0Cu) /* the Dragon Cheer stage 3 is invalid */
 MUT(m_future_sight, p0->future_sight = 1u)
 MUT(m_member_flags_high, ts->member_flags[3] = 0x80u)
@@ -1069,7 +1084,7 @@ MUT(v_hazard_order_gone, {
     ts->sticky_web = 1u; /* an ended kind leaves, the later ones shift down: Sticky Web alone in slot 0 */
     ts->hazard_order = (uint8_t)DFI_HAZARD_STICKY_WEB;
 })
-MUT(v_substitute_quarter, p0->substitute_hp = (uint16_t)(y->sides[0].members[y->sides[0].positions[0].occupant].hp_max / 4u))
+MUT(v_substitute_quarter, p0->substitute_hp = (uint16_t)brought_quarter_cap(&y->sides[0]))
 MUT(v_bench_overrides, {
     /* the current item and forme outlive the field: a reserve and a fainted member keep them */
     y->sides[0].members[1].hp = 0u;
@@ -1149,7 +1164,8 @@ static const tail_case cases[] = {
     {"lock turns whose last used move is another move", DFI_INV_TAIL_POSITION, false, m_lock_last_other},
     {"lock turns whose last used move is Struggle", DFI_INV_TAIL_POSITION, false, m_lock_last_struggle},
     {"lock turns on a move that is not a lockedmove", DFI_INV_TAIL_POSITION, false, m_lock_not_lockedmove},
-    {"a Substitute above a quarter of the maximum HP", DFI_INV_TAIL_POSITION, false, m_substitute_above},
+    {"a Substitute above the largest quarter of the brought members (decision 0042)", DFI_INV_TAIL_POSITION, false, m_substitute_above},
+    {"a passed Substitute above the occupant's quarter but within a brought member's is valid", DFI_INV_NONE, false, v_substitute_pass},
     {"a trap with turns alone", DFI_INV_TAIL_POSITION, false, m_trap_turns_only},
     {"a trap with a source alone", DFI_INV_TAIL_POSITION, false, m_trap_source_only},
     {"a trap with a move alone", DFI_INV_TAIL_POSITION, false, m_trap_move_only},
@@ -1195,7 +1211,8 @@ static const tail_case cases[] = {
     {"Illusion snapshot byte (rev 5)", DFI_INV_TAIL_SIDE, false, m_ill_snapshot},
     {"Illusion pending byte (rev 5)", DFI_INV_TAIL_SIDE, false, m_ill_pending},
     {"healing wish bit at a standing lead (rev 5)", DFI_INV_TAIL_POSITION, false, m_healing_wish_bit},
-    {"position flag bit 4 at a standing lead (rev 5)", DFI_INV_TAIL_POSITION, false, m_position_flags_bit4},
+    {"position flag bit 5 at a standing lead (rev 5)", DFI_INV_TAIL_POSITION, false, m_position_flags_bit5},
+    {"G76: Destiny Bond at a standing lead is valid", DFI_INV_NONE, false, v_destiny_bond_standing},
     {"dragon cheer stage 3 at a standing lead (rev 5)", DFI_INV_TAIL_POSITION, false, m_dragon_stage_3},
     {"Future Sight byte at a standing lead (rev 5)", DFI_INV_TAIL_POSITION, false, m_future_sight},
     {"a lock on Outrage, in the slot and used last, is valid", DFI_INV_NONE, false, v_lock_outrage},
@@ -1343,22 +1360,23 @@ int main(void)
     uint8_t d1[DUOFORGE_DIGEST_SIZE];
     {
         /* The example is valid because of who stands on the field: side 0's members 0 and 1 and side 1's members 2 and 4,
-         * standing, with four moves, no Mega forme and no ailment (the model's state), and the Substitute bound is a quarter
-         * of the maximum HP of those four. Side 1's leads have Outrage in slot 4, the move of the example's locks. */
+         * standing, with four moves, no Mega forme and no ailment (the model's state), and the Substitute bound is the largest
+         * quarter of the maximum HP of a side's brought members (decision 0042). Side 1's leads have Outrage in slot 4, the
+         * move of the example's locks. */
         for (uint32_t s = 0u; s < 2u; ++s) {
             DF_CHECK_EQ_U64(&t, w->sides[s].member_count, 6u);
             for (uint32_t p = 0u; p < 2u; ++p) {
                 const uint32_t lead = example_picks[s][p];
                 DF_CHECK(&t, w->sides[s].positions[p].occupant == lead);
-                if (!DF_CHECK(&t, w->sides[s].members[lead].hp_max == lead_hp_max[s][p])) {
-                    fprintf(stderr, "  hp_max of side %u member %u is %u\n", (unsigned)s, (unsigned)lead,
-                            (unsigned)w->sides[s].members[lead].hp_max);
-                }
                 DF_CHECK(&t, s == 0u || w->sides[s].members[lead].moves[EXAMPLE_LOCK_SLOT - 1u].move_id == DFI_MOVE_OUTRAGE);
             }
             for (uint32_t m = 0u; m < 6u; ++m) {
                 DF_CHECK(&t, w->sides[s].members[m].hp != 0u && w->sides[s].members[m].move_count == 4u &&
                                  w->sides[s].members[m].is_mega == 0u && w->sides[s].members[m].status == 0u);
+                if (!DF_CHECK(&t, w->sides[s].members[m].hp_max == example_hp_max[s][m])) {
+                    fprintf(stderr, "  hp_max of side %u member %u is %u\n", (unsigned)s, (unsigned)m,
+                            (unsigned)w->sides[s].members[m].hp_max);
+                }
             }
         }
         uint8_t zero_tail[DFI_ENC_TAIL_SIZE];

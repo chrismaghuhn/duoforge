@@ -263,6 +263,9 @@ class _View:
     def ability_now(self, ident):
         return self.sheet_of(ident)["ability"]
 
+    def item_now(self, ident):
+        return self.sheet_of(ident)["item"]
+
     def side_sheets(self, ident):
         return [m for k, m in self._members.items() if k[:2] == ident[:2]]
 
@@ -283,38 +286,71 @@ class LinesTest(unittest.TestCase):
     def test_feature_lines_stop(self):
         self.assertEqual(self.stop("|-fieldstart|move: Electric Terrain|[from] ability: Electric Surge|[of] p2a: Gholdengo"),
                          "feature:TERRAIN_ELECTRIC")
-        self.assertEqual(self.stop("|-ability|p2a: Gholdengo|Intimidate|[from] ability: Trace|[of] p1a: Staraptor"),
-                         "feature:ABILITY_CHANGE")
-        self.assertEqual(self.stop("|-enditem|p1a: Staraptor|Sitrus Berry|[from] move: Knock Off|[of] p2a: Gholdengo"),
-                         "feature:ITEM_CHANGE")
-        self.assertEqual(self.stop("|-start|p1a: Staraptor|Encore"), "feature:ENCORE")
+        # Trace's copy folds (ABILITY_CHANGE); an ability source the engine does not model stops on its line
+        self.assertEqual(lines.check("|-ability|p2a: Gholdengo|Intimidate|[from] ability: Trace|[of] p1a: Staraptor",
+                                     self.view), "fold")
+        self.assertEqual(self.stop("|-ability|p2a: Gholdengo|Pressure|Good as Gold|[from] move: Role Play|"
+                                   "[of] p1a: Staraptor"), "line:-ability [from] move: Role Play")
+
+    def test_unmodelled_ability_changes_stop_on_their_line(self):
+        # Mummy and Lingering Aroma print -activate|holder|ability: X|attacker|[ability] Old (sim/pokemon.ts setAbility,
+        # :1928-1930), Wandering Spirit the Skill Swap line of battle.skillSwap; the engine models none of them
+        # (DFI_HANDLER_UNMODELED), so each stops with its own reason, never through a converter refusal
+        view = _View({"p1: Staraptor": ("STARAPTOR", "SITRUSBERRY", "INTIMIDATE"),
+                      "p2: Cofagrigus": ("COFAGRIGUS", "LEFTOVERS", "MUMMY"),
+                      "p2: Runerigus": ("RUNERIGUS", "LEFTOVERS", "WANDERINGSPIRIT"),
+                      "p2: Gholdengo": ("GHOLDENGO", "LIFEORB", "GOODASGOLD")})
+
+        def stop(line):
+            with self.assertRaises(lines.Stop) as caught:
+                lines.check(line, view)
+            return caught.exception.reason
+        self.assertEqual(stop("|-activate|p2a: Cofagrigus|ability: Mummy|p1a: Staraptor|[ability] Intimidate"),
+                         "line:-activate ability: Mummy")
+        self.assertEqual(stop("|-activate|p2a: Cofagrigus|ability: Lingering Aroma|p1a: Staraptor|[ability] Intimidate"),
+                         "line:-activate ability: Lingering Aroma")
+        self.assertEqual(stop("|-activate|p1a: Staraptor|Skill Swap|Wandering Spirit|Intimidate|[of] p2b: Runerigus"),
+                         "line:-activate Skill Swap Wandering Spirit")
+        self.assertEqual(stop("|-activate|p2a: Cofagrigus|Skill Swap|||[of] p2b: Runerigus"),
+                         "line:-activate Skill Swap Wandering Spirit")  # an ally swap: the holder's current ability
+        self.assertEqual(lines.check("|-activate|p1a: Staraptor|Skill Swap|Good as Gold|Intimidate|[of] p2a: Gholdengo",
+                                     view), "fold")  # Skill Swap of two modelled abilities folds
+        # Knock Off folds (ITEM_CHANGE); an item source the engine does not model stops on its line
+        self.assertEqual(lines.check("|-enditem|p1a: Staraptor|Sitrus Berry|[from] move: Knock Off|[of] p2a: Gholdengo",
+                                     self.view), "fold")
+        self.assertEqual(self.stop("|-enditem|p1a: Staraptor|Sitrus Berry|[from] move: Incinerate"),
+                         "line:-enditem [from] move: Incinerate")
+        self.assertEqual(self.stop("|-item|p1a: Staraptor|Sitrus Berry|[from] move: Recycle"),
+                         "line:-item [from] move: Recycle")
+        self.assertEqual(self.stop("|-start|p1a: Staraptor|move: Taunt"), "feature:TAUNT")
+        self.assertEqual(lines.check("|-start|p1a: Staraptor|Encore", self.view), "fold")  # the tracker folds Encore
         self.assertEqual(lines.check("|-status|p1a: Staraptor|tox", self.view), "fold")  # Tox folds (BC spec 5)
         self.assertEqual(self.stop("|replace|p1a: Zoroark|Zoroark-Hisui, L50, M"), "feature:ILLUSION")
 
     def test_g64_lines(self):
         # Step G64: Sheer Cold's bare -ohko after the target's faint changes no field (kept, no event); Poltergeist's
         # -activate names the item its target holds, the open sheet's (another stops); Bug Bite's stealeat takes the
-        # target's berry like Knock Off, decision 0018's ITEM_CHANGE
+        # target's berry like Knock Off, decision 0018's ITEM_CHANGE (folded)
         self.assertEqual(lines.check("|-ohko", self.view), "keep")
         self.assertEqual(lines.check("|-activate|p2a: Gholdengo|move: Poltergeist|Life Orb", self.view), "fold")
         self.assertEqual(self.stop("|-activate|p2a: Gholdengo|move: Poltergeist|Leftovers"),
                          "line:-activate move: Poltergeist")
         bug_bite = "|-enditem|p1a: Staraptor|Sitrus Berry|[from] stealeat|[move] Bug Bite|[of] p2a: Gholdengo"
-        self.assertEqual(self.stop(bug_bite), "feature:ITEM_CHANGE")
+        self.assertEqual(lines.check(bug_bite, self.view), "fold")
     def test_phantom_force_breaking_a_protection_folds(self):
         # Step G58: Phantom Force breaks a Protect like Feint (hitStepBreakProtect), printed with [broken]
         self.assertEqual(lines.check("|-activate|p2a: Gholdengo|move: Phantom Force|[broken]", self.view), "fold")
 
     def test_item_transfer_lines_are_item_change(self):
         # G29 (#171): every line of a Trick, Switcheroo, Thief or Covet is decision 0018's ITEM_CHANGE, the
-        # -activate of Trick too (it names the target; Switcheroo prints none)
+        # -activate of Trick too (it names the target; Switcheroo prints none); the tracker folds them
         for line in ("|-activate|p1a: Staraptor|move: Trick|[of] p2a: Gholdengo",
                      "|-item|p1a: Staraptor|Choice Scarf|[from] move: Trick",
                      "|-enditem|p1a: Staraptor|Sitrus Berry|[silent]|[from] move: Switcheroo",
                      "|-item|p1a: Staraptor|Life Orb|[from] move: Thief|[of] p2a: Gholdengo",
                      "|-enditem|p2a: Gholdengo|Life Orb|[silent]|[from] move: Thief|[of] p1a: Staraptor",
                      "|-item|p1a: Staraptor|Life Orb|[from] move: Covet|[of] p2a: Gholdengo"):
-            self.assertEqual(self.stop(line), "feature:ITEM_CHANGE", line)
+            self.assertEqual(lines.check(line, self.view), "fold", line)
 
     def test_haze_folds(self):
         # Step G62 (decision 0031): Haze's -clearallboost is the CLEAR_ALL_BOOSTS event; the tracker folds it
@@ -358,17 +394,22 @@ class LinesTest(unittest.TestCase):
         # partner then holds another item than its sheet's, decision 0018's ITEM_CHANGE, as Trick, Knock Off, Bug Bite
         view = _View({"p1: Staraptor": ("STARAPTOR", "LEFTOVERS", "SYMBIOSIS"),
                       "p1: Gholdengo": ("GHOLDENGO", "FOCUSSASH", "GOODASGOLD")})
-        with self.assertRaises(lines.Stop) as caught:
-            lines.check("|-activate|p1a: Staraptor|ability: Symbiosis|Leftovers|[of] p1b: Gholdengo", view)
-        self.assertEqual(caught.exception.reason, "feature:ITEM_CHANGE")
+        self.assertEqual(lines.check("|-activate|p1a: Staraptor|ability: Symbiosis|Leftovers|[of] p1b: Gholdengo", view),
+                         "fold")  # the tracker folds ITEM_CHANGE
 
     def test_skill_swap_lines_are_ability_change(self):
         # Step G70 (decision 0041): the pin prints "Skill Swap" without "move: " for a foe swap (both abilities named)
-        # and an ally swap (none named); both are decision 0018's ABILITY_CHANGE until the tracker folds it
+        # and an ally swap (none named); both are decision 0018's ABILITY_CHANGE, which the tracker folds
         for line in ("|-activate|p1a: Staraptor|Skill Swap|Good as Gold|Intimidate|[of] p2a: Gholdengo",
                      "|-activate|p1a: Staraptor|Skill Swap|||[of] p1b: Staraptor",
                      "|-activate|p1a: Staraptor|move: Skill Swap|Good as Gold|Intimidate|[of] p2a: Gholdengo"):
-            self.assertEqual(self.stop(line), "feature:ABILITY_CHANGE", line)
+            self.assertEqual(lines.check(line, self.view), "fold", line)
+
+    def test_destiny_bond_lines_are_its_feature(self):
+        # Step G76: Destiny Bond's start (-singlemove) and its KO (-activate|TARGET|move: Destiny Bond) are decision
+        # 0018's DESTINY_BOND (feature 35, marked supported by G76) until the tracker folds it
+        for line in ("|-singlemove|p1a: Staraptor|Destiny Bond", "|-activate|p2a: Gholdengo|move: Destiny Bond"):
+            self.assertEqual(self.stop(line), "feature:DESTINY_BOND", line)
 
     def test_drag_folds(self):
         # Step G46: a forced switch brings a member in as a switch does (the tracker folds it as one, or stops)
@@ -377,7 +418,9 @@ class LinesTest(unittest.TestCase):
 
     def test_unknown_lines_stop(self):
         self.assertEqual(self.stop("|-sethp|p1a: Staraptor|50/100"), "line:-sethp")
-        self.assertEqual(self.stop("|move|p1a: Staraptor|Baton Pass|p1a: Staraptor"), "line:move Baton Pass")
+        self.assertEqual(self.stop("|move|p1a: Staraptor|Shed Tail|p1a: Staraptor"), "line:move Shed Tail")
+        # Step G74 (decision 0042): Baton Pass is folded, its copy rides on the SWITCH event of the receiver
+        self.assertEqual(lines.check("|move|p1a: Staraptor|Baton Pass|p1a: Staraptor", self.view), "fold")
         self.assertEqual(self.stop("|-activate|p1a: Staraptor|move: Court Change"), "line:-activate move: Court Change")
         self.assertEqual(self.stop("|-ability|p1a: Staraptor|Pressure"), "line:-ability Pressure")
 
@@ -479,7 +522,10 @@ class LinesTest(unittest.TestCase):
         self.assertEqual(lines.FEATURES["RAGE_POWDER"], 39)
         self.assertEqual(lines.FEATURES["MOVE_FAILED"], 41)
         self.assertEqual(lines.FEATURES["TRANSFORM"], 42)
-        self.assertEqual(len(lines.FEATURES), 43)  # tail revision 4: ROOST 40, MOVE_FAILED 41; 0028: TRANSFORM 42
+        # tail revision 4: ROOST 40, MOVE_FAILED 41; 0028: TRANSFORM 42; 0050: the five reserve families 59 to 63
+        self.assertEqual(len(lines.FEATURES), 43 + 5)
+        self.assertEqual([lines.FEATURES[n] for n in ("RESERVE_VOLATILES", "VOLATILES2", "RESERVE_GUARDS",
+                                                      "SIDE_CONDITIONS", "FIELD_FLAGS")], [59, 60, 61, 62, 63])
 
     def test_supported_mask_forms(self):
         f = lines.FEATURES
@@ -496,18 +542,46 @@ class LinesTest(unittest.TestCase):
                   "    .view_ext_features = ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_THROAT_CHOP) |\n"
                   "                         ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_WIDE_GUARD),\n};\n")
         self.assertEqual(lines.extract_supported(source), 1 << f["THROAT_CHOP"] | 1 << f["WIDE_GUARD"])
+        # C comments between the terms (G76 writes one per feature) are no part of the expression
+        source = ("static const dfi_support dfi_support = {\n"
+                  "    .view_ext_features = ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_THROAT_CHOP) | /* G8, a, b */\n"
+                  "                         /* Step G76: Destiny Bond (bit 35, public: * its line). */\n"
+                  "                         ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_DESTINY_BOND), // last\n};\n")
+        self.assertEqual(lines.extract_supported(source), 1 << f["THROAT_CHOP"] | 1 << f["DESTINY_BOND"])
 
     def test_a_feature_the_tracker_does_not_fold_stops(self):
-        # the library may support a feature (G8: Throat Chop), but rows carry no view extension until the tracker
-        # folds it: the line still stops the perspective
+        # the library may support a feature (G8: Heal Block), but its view-extension field stays empty until the
+        # tracker folds it: the line still stops the perspective
         self.assertEqual(lines.SUPPORTED & ~lines.TRACKER_FOLDS, 0)
-        self.assertEqual(self.stop("|-start|p1a: Staraptor|Throat Chop|[silent]"), "feature:THROAT_CHOP")
+        self.assertTrue(lines.LIBRARY_SUPPORTED >> lines.FEATURES["HEAL_BLOCK"] & 1)
+        self.assertEqual(self.stop("|-start|p1a: Staraptor|move: Heal Block"), "feature:HEAL_BLOCK")
+        # a folded one: Throat Chop's [silent] lines (the tracker sets and clears the presence bit)
+        self.assertEqual(lines.check("|-start|p1a: Staraptor|Throat Chop|[silent]", self.view), "fold")
+        self.assertEqual(lines.check("|-end|p1a: Staraptor|Throat Chop|[silent]", self.view), "fold")
         # the base-value features fold (BC spec section 5): Sand and Snow, which the library supports (#124), and Tox
         f = lines.FEATURES
         self.assertTrue(lines.LIBRARY_SUPPORTED >> f["WEATHER_SAND"] & 1 and lines.LIBRARY_SUPPORTED >> f["WEATHER_SNOW"] & 1)
         self.assertEqual(lines.check("|-weather|Sandstorm|[from] ability: Sand Stream|[of] p2a: Gholdengo", self.view), "fold")
         self.assertEqual(lines.check("|-weather|Snowscape|[from] ability: Snow Warning|[of] p2a: Gholdengo", self.view),
                          "fold")
+
+    def test_every_fold_names_its_view_extension_fields(self):
+        # the base-value folds have no record field, every view-extension fold has some (tracker.EXT_FIELDS: what the
+        # tracker writes and what test_replay compares); restrict_ext keeps only those fields and the header
+        import numpy as np
+        from duoforge import _layout
+        from duoforge_live import tracker
+        for name, bit in lines.FEATURES.items():
+            if lines.TRACKER_FOLDS >> bit & 1:
+                self.assertEqual(bool(tracker.EXT_FIELDS[name]), bool(lines.EXT_FOLDS >> bit & 1), name)
+        self.assertEqual(lines.BASE_FOLDS & lines.EXT_FOLDS, 0)
+        full = np.frombuffer(bytes(range(192)), dtype=_layout.OBSERVATION_EXT)[0]
+        cut = tracker.restrict_ext(full, 0)
+        self.assertEqual((int(cut["revision"]), int(cut["epoch"])), (int(full["revision"]), int(full["epoch"])))
+        self.assertEqual(cut["sides"].tobytes(), bytes(_layout.SIDE_EXT.itemsize * 2))
+        chop = tracker.restrict_ext(full, 1 << lines.FEATURES["THROAT_CHOP"])
+        self.assertEqual(chop["sides"]["positions"]["volatiles"].tolist(),
+                         (full["sides"]["positions"]["volatiles"] & tracker.EXT_THROAT_CHOP).tolist())
 
     def test_choice_items(self):
         self.assertEqual(lines.CHOICE_ITEMS, ("choiceband", "choicescarf", "choicespecs"))
@@ -650,6 +724,20 @@ class LabelsTest(unittest.TestCase):
                           "|move|p1a: Staraptor|Close Combat|p2b: Foe2"])
         self.assertEqual(got.reasons[0], self.L.TARGET_UNKNOWN)
         self.assertEqual({o.target for o in self.options_of(got, 0)}, {1, 2, 3})
+        self.assertEqual({(o.move_slot, o.mega) for o in self.options_of(got, 0)}, {(1, 0)})
+
+    def test_dragon_darts_line_may_name_the_other_foe(self):
+        # data/moves.ts dragondarts smartTarget (step G78): when the chosen foe cannot be hit (here it protects), both
+        # darts go to its ally and the move line names the ally, so the line does not name the chosen target
+        mv = self.tables["MOVE"]
+        moves = ([mv["BRAVEBIRD"], mv["DRAGONDARTS"], mv["TAILWIND"], mv["PROTECT"]], self.moves[1])
+        log = ["|move|p2a: Foe|Protect|p2a: Foe", "|-singleturn|p2a: Foe|Protect",
+               "|move|p1a: Staraptor|Dragon Darts|p2b: Foe2"]
+        point = self.P.Point(1, 0, self.P.TURN, (), len(log))
+        got = self.L.turn_label(log, point, 0, self.lists, moves, lambda details: self.species[details.split(",")[0]],
+                                self.tables, len(log))
+        self.assertEqual(got.reasons[0], self.L.TARGET_UNKNOWN)
+        self.assertTrue({2, 3} <= {o.target for o in self.options_of(got, 0)})  # the chosen p2a is in the label
         self.assertEqual({(o.move_slot, o.mega) for o in self.options_of(got, 0)}, {(1, 0)})
 
     def test_faint_earlier_makes_the_target_unknown(self):
@@ -810,12 +898,12 @@ class GameTest(unittest.TestCase):
         self.assertEqual(result.record.turns, 10)
 
     def test_a_feature_stops_after_turn_two(self):
-        # a feature the tracker does not fold (Throat Chop; Sand folds since the BC PR) ends both perspectives there:
+        # a feature the tracker does not fold (Heal Block; Sand folds since the BC PR) ends both perspectives there:
         # the points before it are written, the later ones dropped
         clean = self.run_game(self.log)
-        result = self.run_game(self.insert_after("|turn|2", "|-start|p2a: Politoed|Throat Chop|[silent]"))
-        self.assertEqual(result.counters["perspectives.stopped.feature:THROAT_CHOP"], 2)
-        self.assertGreater(result.counters["points.dropped.feature:THROAT_CHOP"], 0)
+        result = self.run_game(self.insert_after("|turn|2", "|-start|p2a: Politoed|move: Heal Block"))
+        self.assertEqual(result.counters["perspectives.stopped.feature:HEAL_BLOCK"], 2)
+        self.assertGreater(result.counters["points.dropped.feature:HEAL_BLOCK"], 0)
         turn2 = [int(r.observation["epoch"]) for r in clean.rows if int(r.observation["turn"]) == 2
                  and r.observation["boundary_kind"] == 2]
         self.assertTrue(all(int(r.observation["epoch"]) <= max(turn2) for r in result.rows))
@@ -825,6 +913,12 @@ class GameTest(unittest.TestCase):
         lines = [line.replace("|Defiant|", "|Illusion|", 1) if line.startswith("|showteam|p1|") else line
                  for line in self.log]
         self.assertEqual(self.skip_reason(lines), "skip:illusion")
+
+    def test_two_sheets_of_one_side_are_a_refusal_of_their_own(self):
+        # review of #331: two |showteam| lines of the same side pass source.select (two lines) but are no pair of
+        # sheets; the game is refused under its own reason, not counted as a game without sheets
+        lines = [line.replace("|showteam|p2|", "|showteam|p1|", 1) for line in self.log]
+        self.assertEqual(self.skip_reason(lines), "skip:sheets-one-side")
 
     def test_session_line_skips_game(self):
         self.assertEqual(self.skip_reason(self.insert_after("|turn|3", "|init|battle")), "skip:session")
@@ -1275,6 +1369,100 @@ class DatasetTest(unittest.TestCase):
         self.assertEqual(c["games.processed"], 3)
         self.assertEqual(c["games.skipped.skip:format"], 1)
 
+    def test_the_funnel_per_format_adds_up_to_the_totals(self):
+        from duoforge_replay import funnel
+        c = self.build("funnel")
+        report = funnel.report(c)
+        self.assertEqual(sorted(report), ["gen9championsvgc2026regmcbo3", "gen9ou"])
+        for format_id, f in report.items():
+            self.assertEqual(f["read"], sum(f["skipped"].values()) + f["internal"] + f["processed"], format_id)
+            self.assertEqual(f["perspectives"]["kept"] + sum(f["perspectives"]["stopped"].values()),
+                             2 * f["processed"], format_id)
+            self.assertEqual(f["with_sheets"], f["read"] - f["skipped"].get("skip:format", 0)
+                             - f["skipped"].get("skip:sheets", 0), format_id)
+        self.assertEqual(report["gen9ou"]["skipped"], {"skip:format": 1})
+        self.assertEqual(report["gen9championsvgc2026regmcbo3"]["processed"], 3)
+        total = lambda key: sum(f[key] for f in report.values())  # noqa: E731
+        self.assertEqual(total("read"), c["games.read"])
+        self.assertEqual(total("processed"), c["games.processed"])
+        self.assertEqual(total("rows"), c["points.written"])
+        self.assertEqual(sum(f["perspectives"]["kept"] for f in report.values()), c["perspectives.kept"])
+        for key, n in c.items():
+            if key.startswith("games.skipped."):
+                reason = key[len("games.skipped."):]
+                self.assertEqual(sum(f["skipped"].get(reason, 0) for f in report.values()), n, reason)
+        text = funnel.text(report)
+        for format_id in report:
+            self.assertIn(format_id, text)
+
+    def test_the_funnel_command_reads_a_dataset(self):
+        import contextlib
+        import io
+        from duoforge_replay import __main__ as cli
+        self.build("cli")
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out):
+            self.assertEqual(cli.main(["funnel", str(self.tmp / "cli")]), 0)
+        self.assertIn("gen9championsvgc2026regmcbo3", out.getvalue())
+        self.assertIn("rows", out.getvalue())
+
+    def test_the_funnel_counts_refused_games_and_internal_errors(self):
+        # review of #331: the funnel stages of game.Skip and of an internal error, each in a build of its own
+        import json
+        from duoforge_replay import funnel
+        lines = self.log.split(chr(10))
+        i = next(i for i, line in enumerate(lines) if line.startswith("|showteam|p1|"))
+        head, packed = lines[i].split("|", 3)[:3], lines[i].split("|", 3)[3]
+        first = packed.split("]")[0].split("|")
+        first[1] = "Fakemon"  # a species the tables lack: name:FORME Fakemon
+        lines[i] = "|".join(head + ["]".join(["|".join(first)] + packed.split("]")[1:])])
+        mixed = self.tmp / "mixed.jsonl"
+        with open(mixed, "w", encoding="utf-8", newline=chr(10)) as f:
+            fake = chr(10).join(lines)
+            f.write(json.dumps({"id": "fake", "formatid": "gen9championsvgc2026regmc", "log": fake}) + chr(10))
+            f.write(json.dumps({"id": "ok", "formatid": "gen9championsvgc2026regmc", "log": self.log}) + chr(10))
+        from duoforge_replay import build
+        c = build.build([mixed], self.prior_path, self.tmp / "refused", unit_lines=2, stats_factory=stats_factory,
+                        log=lambda _: None)
+        f = funnel.report(c)["gen9championsvgc2026regmc"]
+        self.assertEqual((f["read"], f["skipped"], f["internal"], f["processed"]),
+                         (2, {"name:FORME Fakemon": 1}, 0, 1))
+        c = build.build([self.source], self.prior_path, self.tmp / "internal", unit_lines=2,
+                        stats_factory=broken_stats_factory, log=lambda _: None)
+        f = funnel.report(c)["gen9championsvgc2026regmcbo3"]
+        self.assertEqual((f["read"], f["internal"], f["processed"], f["rows"]), (3, 3, 0, 0))
+        self.assertEqual(f["internal"], c["internal:RuntimeError"])
+
+    def test_the_funnel_command_refuses_a_dataset_without_funnel(self):
+        # review of #331: a dataset built before the funnel has none; an empty report would read as "no games"
+        import contextlib
+        import io
+        import json
+        from duoforge_replay import __main__ as cli
+        old = self.tmp / "old"
+        old.mkdir()
+        (old / "counters.json").write_text(json.dumps({"games.read": 3, "games.processed": 3}), encoding="utf-8")
+        err = io.StringIO()
+        with contextlib.redirect_stderr(err):
+            self.assertEqual(cli.main(["funnel", str(old)]), 2)
+        self.assertIn("no funnel", err.getvalue())
+
+    def test_reg_ma_is_excluded(self):
+        # owner, 2026-10-10: Reg M-A ran under another mechanics era (Showdown before Champions 1.1.0); no prefix that
+        # takes its games is a build
+        from duoforge_replay import build
+        for prefix in ("gen9championsvgc2026regma", "gen9championsvgc2026regmabo3", "gen9championsvgc2026", "gen9"):
+            with self.subTest(prefix), self.assertRaisesRegex(ValueError, "Reg M-A"):
+                build.build([self.source], self.prior_path, self.tmp / "ma", unit_lines=2, stats_factory=stats_factory,
+                            log=lambda _: None, format_prefix=[prefix])
+        self.assertFalse((self.tmp / "ma").exists())
+
+    def test_the_funnel_names_the_excluded_regulation(self):
+        from duoforge_replay import funnel
+        report = funnel.report({"funnel.gen9championsvgc2026regma.read": 5,
+                                "funnel.gen9championsvgc2026regma.skipped.skip:format": 5})
+        self.assertIn("excluded: other mechanics era (owner, 2026-10-10)", funnel.text(report))
+
     def test_parts_are_source_units(self):
         # two source lines per unit: four games give two parts, each its own directory
         from duoforge_replay import dataset
@@ -1488,6 +1676,10 @@ class SourceTest(unittest.TestCase):
         self.assertEqual(counters["games.skipped.skip:format"], 2)
         self.assertEqual(counters["games.skipped.skip:sheets"], 1)
         self.assertEqual(rows, [])
+        from duoforge_replay import funnel
+        report = funnel.report(counters)  # the unread row group counts per format too
+        self.assertEqual({k: (f["read"], f["skipped"]) for k, f in report.items()},
+                         {"gen9ou": (2, {"skip:format": 2}), "gen9championsvgc2026regmc": (1, {"skip:sheets": 1})})
 
     def test_select(self):
         import collections
@@ -1500,6 +1692,9 @@ class SourceTest(unittest.TestCase):
         self.assertEqual([r[0] for r in kept], ["a", "d"])
         self.assertEqual(counters["games.skipped.skip:format"], 1)
         self.assertEqual(counters["games.skipped.skip:sheets"], 1)
+        self.assertEqual(counters["funnel.gen9championsvgc2026regmcbo3.read"], 2)
+        self.assertEqual(counters["funnel.gen9championsvgc2026regmcbo3.skipped.skip:sheets"], 1)
+        self.assertEqual(counters["funnel.gen9ou.skipped.skip:format"], 1)
 
 
 if __name__ == "__main__":
