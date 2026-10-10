@@ -287,7 +287,8 @@ class LinesTest(unittest.TestCase):
                          "feature:ABILITY_CHANGE")
         self.assertEqual(self.stop("|-enditem|p1a: Staraptor|Sitrus Berry|[from] move: Knock Off|[of] p2a: Gholdengo"),
                          "feature:ITEM_CHANGE")
-        self.assertEqual(self.stop("|-start|p1a: Staraptor|Encore"), "feature:ENCORE")
+        self.assertEqual(self.stop("|-start|p1a: Staraptor|move: Taunt"), "feature:TAUNT")
+        self.assertEqual(lines.check("|-start|p1a: Staraptor|Encore", self.view), "fold")  # the tracker folds Encore
         self.assertEqual(lines.check("|-status|p1a: Staraptor|tox", self.view), "fold")  # Tox folds (BC spec 5)
         self.assertEqual(self.stop("|replace|p1a: Zoroark|Zoroark-Hisui, L50, M"), "feature:ILLUSION")
 

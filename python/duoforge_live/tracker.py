@@ -67,6 +67,7 @@ EXT_FIELDS = {
     "THROAT_CHOP": (("bit", EXT_THROAT_CHOP),),
     "AURORA_VEIL": (("side", "aurora_veil_turns"),),
     "PERISH": (("position", "perish"),),
+    "ENCORE": (("position", "encore_slot"),),
 }
 # DUOFORGE_SIDE_* of a SIDE_START or SIDE_END event (tailwind 1, reflect 2, light screen 3, Aurora Veil 4) -> the index
 # of the side's turns in Tracker._conditions
@@ -113,6 +114,8 @@ class _Position:
         # The POOL view extension (decision 0018), all ended with the occupant (a switch or a faint):
         self.throat_chop = 0  # Throat Chop's volatile is up (presence only)
         self.perish = 0  # the Perish count the game showed last, 3 to 1 (0: none)
+        self.last_slot = 0  # the move slot + 1 of the occupant's last move line (5: Struggle; None: not on its sheet)
+        self.encore_slot = 0  # the move slot + 1 that Encore forces (0: not encored)
         self.flags = 0  # DUOFORGE_POSITION_FLAG_* (TEAM_C and POOL): Follow Me, Helping Hand, Unburden
         self.guard_undo = None  # (chain, stall) before a Wide or Quick Guard, until it is known to have run
 
@@ -181,6 +184,7 @@ class Tracker:
         self._unburden = tables["ABILITY"]["UNBURDEN"] + 1 if "UNBURDEN" in tables["ABILITY"] else None
         self._pressure = tables["ABILITY"]["PRESSURE"] + 1 if "PRESSURE" in tables["ABILITY"] else None
         self._follow_me = tables["MOVE"].get("FOLLOWME")
+        self._struggle = tables["MOVE"].get("STRUGGLE")
         # Protect and Detect both show "-singleturn|POKEMON|Protect"; a failed one resets the stall counter
         self._stall_moves = {tables["MOVE"][k] for k in ("PROTECT", "DETECT") if k in tables["MOVE"]}
         self._guard_moves = {tables["MOVE"][k] for k in ("WIDEGUARD", "QUICKGUARD") if k in tables["MOVE"]}
@@ -474,6 +478,13 @@ class Tracker:
             p.acted = 1
             self._last_move = (pos, ident, e[2])
             m = self._occupant(pos)
+            if e[3] != trace_to_c.CAUSE["ABILITY"]:
+                # the move Encore takes (pokemon.moveUsed after runMove's PP, a locked turn included); a move that Magic
+                # Bounce reflects (cause ABILITY, step G57) is not its user's own move
+                if ident in m.sheet["moves"]:
+                    p.last_slot = m.sheet["moves"].index(ident) + 1
+                else:
+                    p.last_slot = 5 if ident == self._struggle else None
             if not flags & FLAG["LOCKED"] and ident in m.sheet["moves"]:
                 m.uses[m.sheet["moves"].index(ident)] += 1 + self._pressure_extra(pos, ident, e[2], flags)
             if ident in self._guard_moves and not flags & FLAG["LOCKED"]:
@@ -558,6 +569,17 @@ class Tracker:
             # Perish Song's count (step G26): the residual's -start|X|perishN, N = 3, 2, 1, then perish0 before the
             # holder faints; the cast's own perish3 line is [silent] (no event), so nothing shows until the first count
             self._at(pos).perish = amount
+        elif kind in (EV["VOLATILE_START"], EV["VOLATILE_END"]) and detail == trace_to_c.VOLATILE_ENCORE:
+            # Encore (step G9): -start|X|Encore forces the slot of the target's last move line (the move must be on
+            # its sheet, or the pin's onStart fails without the line); -end|X|Encore (the duration, a used-up move,
+            # Mental Herb) and the occupant's leaving end it. A last move the lines do not tie to a slot stops.
+            p = self._at(pos)
+            if kind == EV["VOLATILE_END"]:
+                p.encore_slot = 0
+            elif p.last_slot in (1, 2, 3, 4):
+                p.encore_slot = p.last_slot
+            else:
+                raise lines.Stop("encore-slot-unknown")
         elif kind == EV["PROTECT"]:
             p = self._at(pos)
             p.protecting = 1
@@ -845,7 +867,7 @@ class Tracker:
                     continue  # an empty position: all zero
                 pv = v["positions"][k]
                 pv["volatiles"] = EXT_THROAT_CHOP if p.throat_chop else 0
-                pv["perish"] = p.perish
+                pv["perish"], pv["encore_slot"] = p.perish, p.encore_slot
         return o
 
     def domain(self):
