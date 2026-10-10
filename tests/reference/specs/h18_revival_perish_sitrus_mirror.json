@@ -1,0 +1,45 @@
+{
+  "name": "h18_revival_perish_sitrus_mirror",
+  "purpose": "Revival Blessing (step G52, fix 3) on a mirrored Sitrus Pawmot (M): Perish Song (marked) faints the two leads of each side at the end of turn 3 with no damage roll; the benched Pawmot and Kingambit come in; on turn 4 both Pawmot use Revival Blessing (its hit's two Updates draw the Sitrus speed ties, result TRUE) and the pivot answer revives the fainted Primarina (member 1) on both sides.",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,00000000000000000000000000000000000000000000000000000000000018e1",
+  "teams": [
+    "Primarina (F) @ Fairy Feather\nAbility: Torrent\nLevel: 50\nEVs: 32 HP / 2 Def / 32 SpD\nCalm Nature\n- Perish Song\n- Protect\n- Moonblast\n- Calm Mind\n\nCeruledge (M) @ Charcoal\nAbility: Flash Fire\nLevel: 50\nEVs: 31 HP / 7 Atk / 24 Def / 3 SpD / 1 Spe\nBrave Nature\n- Protect\n\nPawmot (M) @ Sitrus Berry\nAbility: Iron Fist\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Thunderbolt\n- Revival Blessing\n- Ice Punch\n- Protect\n\nKingambit (M) @ Black Glasses\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Sucker Punch\n- Iron Head\n- Protect\n- Swords Dance\n\nMilotic (F) @ Rocky Helmet\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Protect\n- Scald\n- Recover\n- Coil\n\nGholdengo @ Life Orb\nAbility: Good as Gold\nLevel: 50\nEVs: 32 HP / 2 SpA / 32 SpD\nCalm Nature\n- Protect\n- Shadow Ball\n- Make It Rain",
+    "Primarina (F) @ Fairy Feather\nAbility: Torrent\nLevel: 50\nEVs: 32 HP / 2 Def / 32 SpD\nCalm Nature\n- Perish Song\n- Protect\n- Moonblast\n- Calm Mind\n\nCeruledge (M) @ Charcoal\nAbility: Flash Fire\nLevel: 50\nEVs: 31 HP / 7 Atk / 24 Def / 3 SpD / 1 Spe\nBrave Nature\n- Protect\n\nPawmot (M) @ Sitrus Berry\nAbility: Iron Fist\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Thunderbolt\n- Revival Blessing\n- Ice Punch\n- Protect\n\nKingambit (M) @ Black Glasses\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Sucker Punch\n- Iron Head\n- Protect\n- Swords Dance\n\nMilotic (F) @ Rocky Helmet\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Protect\n- Scald\n- Recover\n- Coil\n\nGholdengo @ Life Orb\nAbility: Good as Gold\nLevel: 50\nEVs: 32 HP / 2 SpA / 32 SpD\nCalm Nature\n- Protect\n- Shadow Ball\n- Make It Rain"
+  ],
+  "choices": [
+    {
+      "p1": "team 1234",
+      "p2": "team 1234"
+    },
+    {
+      "p1": "move 1, move 1",
+      "p2": "move 1, move 1"
+    },
+    {
+      "p1": "move 2, move 1",
+      "p2": "move 2, move 1"
+    },
+    {
+      "p1": "move 2, move 1",
+      "p2": "move 2, move 1"
+    },
+    {
+      "p1": "move 2, move 1",
+      "p2": "move 2, move 1"
+    },
+    {
+      "p1": "switch 3, switch 4",
+      "p2": "switch 3, switch 4"
+    },
+    {
+      "p1": "move 2, move 4",
+      "p2": "move 2, move 4"
+    },
+    {
+      "p1": "switch 3, pass",
+      "p2": "switch 3, pass"
+    }
+  ]
+}

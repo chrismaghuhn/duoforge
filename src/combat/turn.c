@@ -494,11 +494,18 @@ static void dfi_still(dfi_run *r)
     }
 }
 
-/* The move failed: -fail for the user, then [still] on its move line. */
-static void dfi_fail_still(dfi_run *r, uint32_t user)
+/* The `-fail` for the user, then [still] on its move line, without a result of the move: a handler that prints them and
+ * returns null (the Substitute's onTryPrimaryHit, data/moves.ts:18341-18347) leaves the result to the hit value. */
+static void dfi_fail_line(dfi_run *r, uint32_t user)
 {
     dfi_emit_plain(r, DUOFORGE_EVENT_FAIL, user);
     dfi_still(r);
+}
+
+/* The move failed: -fail for the user, then [still] on its move line. */
+static void dfi_fail_still(dfi_run *r, uint32_t user)
+{
+    dfi_fail_line(r, user);
     r->mres |= DFI_MRES_FALSE; /* a [still] failure returns false (sim/battle-actions.ts, useMoveInner and runMoveEffects) */
 }
 
@@ -3247,8 +3254,12 @@ static bool dfi_imprison_forbids(struct duoforge_battle *b, uint32_t user, uint3
     return false;
 }
 
+static duoforge_status dfi_status_hit_end(dfi_run *r);
+
 /* Imprison itself (the status move, target self): addVolatile('imprison'); a Pokemon that has it already fails
- * (`-fail`, the move line with [still]); otherwise `-start|user|move: Imprison` (the condition's onStart). */
+ * (`-fail`, the move line with [still]); otherwise `-start|user|move: Imprison` (the condition's onStart). The volatile is
+ * added, so the hit returns true and the Champions hit loop runs its two Updates (data/mods/champions/scripts.ts:537, :574;
+ * data/moves.ts:9488-9506, bypasssub): dfi_status_hit_end sets the TRUE result. */
 static duoforge_status dfi_run_imprison(dfi_run *r, uint32_t user)
 {
     dfi_tail_pos *tail = &r->b->tail.sides[user / 2u].positions[user % 2u];
@@ -3260,8 +3271,7 @@ static duoforge_status dfi_run_imprison(dfi_run *r, uint32_t user)
     duoforge_event e = dfi_event_make(DUOFORGE_EVENT_VOLATILE_START, user);
     e.detail = (uint8_t)DUOFORGE_VOLATILE_IMPRISON;
     dfi_emit(r, &e); /* [-start] move: Imprison */
-    r->mres |= DFI_MRES_TRUE;
-    return DUOFORGE_OK;
+    return dfi_status_hit_end(r);
 }
 
 static void dfi_heal(dfi_run *r, uint32_t flat, uint32_t amount, uint32_t cause, uint32_t id2, uint32_t other)
@@ -4706,6 +4716,7 @@ static duoforge_status dfi_run_heal_fraction(dfi_run *r, uint32_t num, uint32_t 
                                              uint32_t move_id, const uint32_t *targets, uint32_t count)
 {
     bool did = false;
+    bool full_hp_fail = false; /* Heal Pulse (!still) at full HP: its onHit's NOT_FAIL, see the tail */
     /* moveHit's heal, once per target in the order of the list (sim/battle-actions.ts:1201-1222; Life Dew, step G32, heals
      * the user and its standing ally, each at its own full-HP check and with its own -fail or -heal line). A target under
      * Heal Block that is not the user is refused (the heal is `false`, which the engine does not show for an ally). */
@@ -4720,6 +4731,7 @@ static duoforge_status dfi_run_heal_fraction(dfi_run *r, uint32_t num, uint32_t 
                 dfi_fail_still(r, t);
             } else {
                 dfi_emit_plain(r, DUOFORGE_EVENT_FAIL, t); /* Heal Pulse: -fail|X|heal, no [still] (data/moves.ts:8418-8420) */
+                full_hp_fail = true;
             }
             continue;
         }
@@ -4749,10 +4761,11 @@ static duoforge_status dfi_run_heal_fraction(dfi_run *r, uint32_t num, uint32_t 
             mv->amount = (uint8_t)mask; /* < 16 */
         }
     }
-    /* spreadMoveHit's `if (!moveDamage.some(val => val !== false)) break;` (the Champions mod's loop, data/mods/champions/scripts.ts:526 and its Update at :537, the format runs it; sim/battle-actions.ts:954 is the base's) leaves the hit loop
-     * before its eachEvent('Update') when every target's heal failed (damage[i] is false for a target at full HP): no Update,
-     * so no Sitrus Berry check. This is what the single-target branch did before step G32 (an early return); the spread
-     * rewrite of step G32 fell through to the hit end and drew the Update's speed ties of the Sitrus holders too. */
+    /* spreadMoveHit's `if (!moveDamage.some(val => val !== false)) break;` (data/mods/champions/scripts.ts:526, the Champions hit
+     * loop; its Update is at :537) leaves the hit loop before that Update when every target's value is a literal false. For
+     * Recover, Roost and Life Dew (still) a target at full HP gives that false (moveData.heal, sim/battle-actions.ts:1201-1208):
+     * no Update, so no Sitrus Berry check. Heal Pulse (not still) is different: its onHit returns NOT_FAIL at full HP
+     * (data/moves.ts:8408-8421, the value is '' and not false), so the loop does run both Updates and the result is TRUE. */
     /* Roost (step G42): selfDrops applies its self volatile only to a target that did not fail (battle-actions.ts:1088-1096),
      * after the heal's line and before the hit end. A full-HP user gets no volatile and a false result. */
     if (did && move_id == DFI_MOVE_ROOST) {
@@ -4765,8 +4778,9 @@ static duoforge_status dfi_run_heal_fraction(dfi_run *r, uint32_t num, uint32_t 
         e.id = (uint16_t)move_id;
         dfi_emit(r, &e); /* -singleturn|user|move: Roost */
     }
-    r->mres |= did ? DFI_MRES_TRUE : DFI_MRES_FALSE;
-    if (!did) {
+    /* Heal Pulse at full HP for its one target is a hit that returns true (NOT_FAIL, see above): the same hit end as a heal. */
+    if (!did && !full_hp_fail) {
+        r->mres |= DFI_MRES_FALSE;
         return DUOFORGE_OK;
     }
     return dfi_status_hit_end(r);
@@ -4949,9 +4963,12 @@ static duoforge_status dfi_run_strength_sap(dfi_run *r, uint32_t user, const uin
         dfi_heal(r, user, atk, DUOFORGE_CAUSE_NONE, 0u, DUOFORGE_NO_POSITION);
     }
     if (!healed && !dropped) {
-        dfi_fail_still(r, user);
+        dfi_fail_still(r, user); /* `!!(heal || success)` is false (data/moves.ts:18184-18187): the hit loop breaks, no Update */
+        return DUOFORGE_OK;
     }
-    return DUOFORGE_OK;
+    /* `!!(...)` is true: the hit returns true, so the loop runs its two Updates (scripts.ts:537, :574) and the hit end
+     * (data/moves.ts:18184-18190, data/mods/champions/scripts.ts:526). */
+    return dfi_status_hit_end(r);
 }
 
 /* The recharge turn (step G17): the action {choice: 'move', moveid: 'recharge'} of a Pokemon with mustrecharge
@@ -5194,7 +5211,11 @@ static duoforge_status dfi_run_revival_blessing(dfi_run *r, uint32_t user)
         return DUOFORGE_OK;
     }
     dfi_pos(b, user)->switch_flag = DFI_SWITCH_REVIVE_BLESSING;
-    return DUOFORGE_OK;
+    /* The hit returns true (slotCondition's addSlotCondition true and selfSwitch, battle-actions.ts:1244-1247, 1290-1296; the
+     * onTryHit returns undefined, true by singleEvent, sim/battle.ts:593-594): the hit loop's Updates (scripts.ts:537, :574)
+     * run now, during the move, before the action epilogue's Update (sim/battle.ts:2860-2861) and the PIVOT request that
+     * dfi_resume_pivot answers. */
+    return dfi_status_hit_end(r);
 }
 
 /* Double Shock's onTryMove (decision 0025, data/moves.ts:3954-3959): without the Electric type it fails, -fail and [still]
@@ -5257,7 +5278,8 @@ static duoforge_status dfi_run_substitute(dfi_run *r, uint32_t user)
 
 /* The Substitute of a target takes a hit of a move (decision 0032, data/moves.ts:18341-18366: onTryPrimaryHit, run for every
  * target that is not the user, before any effect of the hit). *taken = true: the hit goes to the Substitute and the target is
- * not hit (no damage, secondary, boost, status or contact effect). A status move fails on the user ([still]). A damaging move
+ * not hit (no damage, secondary, boost, status or contact effect). A status move prints the handler's -fail and [still] on the
+ * user; its result is null in the pin, not false (the caller ends the hit as TRUE, see the move body). A damaging move
  * computes its damage as for the target (one roll, the target's resist berry not eaten), the Substitute loses at most its HP
  * of it, and the user takes the recoil and the drain of the damage the Substitute took. A move with flags.bypasssub (flags3 bit 2) and a
  * user with Infiltrator are not taken. */
@@ -5274,7 +5296,9 @@ static duoforge_status dfi_substitute_takes(dfi_run *r, uint32_t user, uint32_t 
     }
     *taken = true;
     if (status_move) {
-        dfi_fail_still(r, user); /* the handler's `-fail|source` and [still]: a status move has no damage (getDamage undefined) */
+        /* the handler's `-fail|source` and [still] (data/moves.ts:18341-18347): a status move has no damage (getDamage undefined),
+         * and the handler returns null, so the move's result is not false (the caller ends the hit as true). */
+        dfi_fail_line(r, user);
         return DUOFORGE_OK;
     }
     uint32_t dealt = 0u;
@@ -5947,7 +5971,18 @@ static duoforge_status dfi_bounce(dfi_run *r, uint32_t user, uint32_t holder, ui
                 st = dfi_accuracy_targets(r, holder, targets, count, hit, md, base_accuracy, acc_compound_eyes, acc_wide_lens, false);
             }
             if (st == DUOFORGE_OK && hit[0]) {
-                st = dfi_status_effects(r, holder, move_id, md, targets, hit, count);
+                /* The bounced move's target is the original user: its Substitute takes a status move without bypasssub, before
+                 * the effects (data/moves.ts:18341-18347 onTryPrimaryHit, data/mods/champions/scripts.ts:343-347; the holder is the
+                 * source). A taken hit is null, not false: its Updates run and the holder's result is TRUE (scripts.ts:537, :574;
+                 * battle-actions.ts:605, :615), as in the move body (dfi_substitute_takes, dfi_status_hit_end). */
+                bool taken = false;
+                st = dfi_substitute_takes(r, holder, user, move_id, md, move_type, false, true, &taken);
+                if (st == DUOFORGE_OK && taken) {
+                    hit[0] = false;
+                    st = dfi_status_hit_end(r);
+                } else if (st == DUOFORGE_OK) {
+                    st = dfi_status_effects(r, holder, move_id, md, targets, hit, count);
+                }
             }
         }
     }
@@ -6851,12 +6886,11 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
     if (md->special == DFI_SPECIAL_AFTER_YOU) {
         return dfi_run_after_you(r, user, move_id, targets, count, hit); /* step G62 (decision 0015 entry 5az) */
     }
-    if (md->special == DFI_SPECIAL_QUASH) {
-        return dfi_run_quash(r, user, move_id, targets, count, hit); /* step G62 (decision 0015 entry 5az) */
-    }
     /* A status move's hit on a foe with a Substitute (decision 0032, onTryPrimaryHit before the move's effects): the Substitute
      * takes it, the move fails on the user, and no effect of the move reaches the target. Damaging moves are gated per hit, in
-     * the hit loop below. */
+     * the hit loop below. This comes before Quash, below: Quash has no bypasssub (data/moves.ts:14454-14475), so a Substitute
+     * takes it before its onHit runs (spreadMoveHit's TryPrimaryHit, data/mods/champions/scripts.ts:343-347, before :374). */
+    bool absorbed = false;
     if (status_move) {
         for (uint32_t i = 0u; i < count; ++i) {
             bool taken = false;
@@ -6867,9 +6901,25 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
                 }
                 if (taken) {
                     hit[i] = false;
+                    absorbed = true;
                 }
             }
         }
+    }
+    /* A status move whose only target was absorbed by a Substitute: its onTryPrimaryHit returns null, not false
+     * (data/moves.ts:18341-18347 after its -fail), and spreadMoveHit's hit value is null (data/mods/champions/scripts.ts:343-347,
+     * 357). The loop does not break at :526 (null is not false), so both Updates run (:537, :574), and the hit keeps its target
+     * (battle-actions.ts:605), so the move result is TRUE (battle-actions.ts:615, :374). That result is what Stomping Tantrum reads
+     * next turn (data/moves.ts:18054). The handlers below do not run: no target is left for them. A spread status move with a
+     * target still hit beside the absorbed one is not modelled (no pool row has it): an explicit refusal. */
+    if (status_move && absorbed) {
+        if (count != 1u) {
+            return DUOFORGE_E_UNSUPPORTED;
+        }
+        return dfi_status_hit_end(r);
+    }
+    if (md->special == DFI_SPECIAL_QUASH) {
+        return dfi_run_quash(r, user, move_id, targets, count, hit); /* step G62 (decision 0015 entry 5az) */
     }
     if (md->special == DFI_SPECIAL_STRENGTH_SAP) {
         return dfi_run_strength_sap(r, user, targets, count, hit);
