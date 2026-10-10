@@ -625,6 +625,12 @@ static bool dfi_tail_pos_valid(const dfi_kind_limits *lim, const dfi_tail_pos *t
     /* Rev 4 (tail-rev4-proposal.md section 4.1): the move result is two two-bit values (bits 4-7 are zero); the single-turn
      * markers are the two defined bits, and Rage Powder's belongs to the Follow Me flag that the same move sets (both end
      * together, in the residual, on switch-out and on faint); the counters and the ability state have their bounds. */
+    /* A running lockedmove's move is the occupant's last used one (view audit 2026-10-10): the public record decides the
+     * lockedmove refusal from that last move (dfi_maybe_lockedmove), so a lock without it is a broken state here too. */
+    const uint32_t last_id = tp->last_move != 0u && tp->last_move <= move_count
+                                 ? (uint32_t)occupant->moves[tp->last_move - 1u].move_id
+                                 : UINT32_MAX;
+    const bool lock_last_ok = last_id < DFI_POOL_MOVE_COUNT && dfi_pool_moves[last_id].special == DFI_SPECIAL_LOCKED_MOVE;
     /* An unclassified bit (step G42) only with the result bits of its slot zero: the result is then not known. */
     const bool unclassified_ok =
         ((tp->move_result & DFI_MOVE_RESULT_UNCLASSIFIED_NOW) == 0u || (tp->move_result & 3u) == 0u) &&
@@ -635,7 +641,8 @@ static bool dfi_tail_pos_valid(const dfi_kind_limits *lim, const dfi_tail_pos *t
                          ((tp->single_turn & DFI_SINGLE_TURN_RAGE_POWDER) == 0u || ((uint32_t)slot->flags & DFI_VOL_FOLLOW_ME) != 0u) &&
                          tp->hits_taken <= DFI_TAIL_HITS_TAKEN_MAX && tp->ability_state <= DFI_TAIL_ABILITY_STATE_MAX &&
                          tp->lock_turns <= DFI_TAIL_LOCK_TURNS_MAX &&
-                         (tp->lock_turns == 0u || slot->locked_move != 0u); /* lockedmove (G56): its move is in the slot */
+                         (tp->lock_turns == 0u || slot->locked_move != 0u) && /* lockedmove (G56): its move is in the slot */
+                         (tp->lock_turns == 0u || lock_last_ok);
     /* Rev 5 (lane A, G72b, decision 0015 5ce): the position flags (bit 0 Healing Wish, never set: bits 4-7 are zero; the stats-
      * raised bit and the Dragon Cheer stage only with an occupant; the stage at most 2). Future Sight stays zero. */
     const bool posflags_ok = dfi_position_flags_ok(tp->position_flags) &&
