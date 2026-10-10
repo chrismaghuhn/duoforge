@@ -8191,7 +8191,18 @@ static duoforge_status dfi_run_move(dfi_run *r, const dfi_queue_record *q, bool 
             unclassified = false;
         }
     }
-    dfi_tail_pos *tp = &r->b->tail.sides[q->side].positions[q->slot];
+    /* The user may have moved during its own move (Ally Switch: the popped record is a copy the swap does not remap). The
+     * activation id belongs to the Pokemon, so the slot that now holds it is the one the result is written to. */
+    uint32_t slot = q->slot;
+    if (q->activation_id != 0u) {
+        for (uint32_t s = 0u; s < 2u; ++s) {
+            const dfi_active_slot *now = dfi_pos(r->b, (uint32_t)q->side * 2u + s);
+            if (now->occupant != DFI_OCCUPANT_NONE && now->activation_id == q->activation_id) {
+                slot = s;
+            }
+        }
+    }
+    dfi_tail_pos *tp = &r->b->tail.sides[q->side].positions[slot];
     /* This turn's bits (0-1) and the unclassified-now bit (4) are the action's; the last turn's bits stay. */
     const uint32_t kept = (uint32_t)tp->move_result & ~0x13u;
     tp->move_result = (uint8_t)(kept | value | (unclassified ? DFI_MOVE_RESULT_UNCLASSIFIED_NOW : 0u)); /* wide-operands-reviewed: <= 0x3F */
