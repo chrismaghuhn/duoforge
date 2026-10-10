@@ -156,6 +156,10 @@
 #define DFI_ENC_TAIL5_FUTURE_SIGHT_OFF 1u    /* u8 */
 #define DFI_ENC_TAIL5_RESERVED_OFF (DFI_ENC_TAIL5_POS_OFF + DUOFORGE_ACTIVE_PER_SIDE * DUOFORGE_SIDE_COUNT * DFI_ENC_TAIL5_POS_SIZE)
 #define DFI_ENC_TAIL5_RESERVED_SIZE 16u
+/* Step G71 (decision 0034, decision 0015 5bn): the first 4 bytes of the reserve are Attract's source per flat position of the
+ * infatuated occupant (0 = not infatuated, else 1 + side * 6 + roster index of the source member); the other 12 stay zero. */
+#define DFI_ENC_TAIL5_ATTRACT_OFF DFI_ENC_TAIL5_RESERVED_OFF
+#define DFI_ENC_TAIL5_ATTRACT_SIZE 4u
 #define DFI_ENC_TAIL5_SIZE (DFI_ENC_TAIL5_RESERVED_OFF + DFI_ENC_TAIL5_RESERVED_SIZE)
 /* The whole tail: rev 4 (288) and rev 5 (60). */
 #define DFI_ENC_TAIL_SIZE (DFI_ENC_TAIL_REV4_SIZE + DFI_ENC_TAIL5_SIZE)
@@ -223,7 +227,7 @@
      DUOFORGE_SIDE_COUNT * (DFI_ENC_TAIL_SIDE_RESERVED_SIZE +                                                          \
                             DUOFORGE_ACTIVE_PER_SIDE * DFI_ENC_TAIL_POS_RESERVED_SIZE +                                \
                             DUOFORGE_MAX_ROSTER * DFI_ENC_TAIL_MEMBER_RESERVED_SIZE) +                                 \
-     DFI_ENC_TAIL5_RESERVED_SIZE)
+     (DFI_ENC_TAIL5_RESERVED_SIZE - DFI_ENC_TAIL5_ATTRACT_SIZE))
 /* The encoded size of a state under a POOL kind, and the largest of any kind: buffers of tests and tools that do
  * not ask duoforge_battle_encoded_size. Not a public constant. */
 #define DFI_STATE_POOL_ENCODED_SIZE (DFI_ENC_TAIL_OFF + DFI_ENC_TAIL_SIZE)
@@ -336,9 +340,10 @@ _Static_assert(DFI_ENC_TAIL5_ILL_SNAPSHOT_OFF + 9u == DFI_ENC_TAIL5_ILL_PENDING_
 _Static_assert(DFI_ENC_TAIL5_POS_OFF + DUOFORGE_ACTIVE_PER_SIDE * DUOFORGE_SIDE_COUNT * DFI_ENC_TAIL5_POS_SIZE ==
                    DFI_ENC_TAIL5_RESERVED_OFF,
                "the positions' rev 5 bytes end the block's data");
-_Static_assert(DFI_ENC_TAIL_RESERVED_COUNT == 45u,
-               "45 of them are reserved (29 of rev 4: step G46 takes 6 of the field block's 7; 35 before it, 43 in rev 3; "
-               "16 more in rev 5)");
+_Static_assert(DFI_ENC_TAIL_RESERVED_COUNT == 41u,
+               "41 of them are reserved (29 of rev 4: step G46 takes 6 of the field block's 7; 35 before it, 43 in rev 3; "
+               "12 in rev 5: the 4 Attract bytes of step G71 are data)");
+_Static_assert(DFI_ENC_TAIL5_ATTRACT_OFF + DFI_ENC_TAIL5_ATTRACT_SIZE <= DFI_ENC_TAIL5_SIZE, "the Attract bytes are in the rev 5 block");
 _Static_assert(DFI_STATE_POOL_ENCODED_SIZE == 1357u, "the state with the POOL tail is 1357 bytes");
 /* No padding: every field of the tail in memory is a byte or an aligned u16, so the structs are the encoded data
  * and nothing else (the encoded size without the reserved bytes, plus the pad byte of the field block: a position and a side

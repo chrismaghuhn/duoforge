@@ -2412,8 +2412,10 @@ static void dfi_volatile_end(dfi_run *r, uint32_t flat, uint32_t which)
 /* Mental Herb (step G47, data/items.ts:3889-3926, onUpdate): when its holder has a taunt, an encore, a disable or a heal
  * block, the herb is used (useItem: -enditem|X|Mental Herb with no [eat]; Unnerve does not refuse it, only TryEatItem asks),
  * and then every one of those volatiles is removed, in the pin's list order (taunt, encore, disable, heal block). The pin's
- * attract and torment are not here: no volatile of either exists in the engine (Attract is unmarked, Torment is not
- * modelled), so no state can hold them. Each removal shows its own -end line through its condition's onEnd. */
+ * torment is not here: no volatile of it exists in the engine (Torment is not modelled), so no state can hold it. Step G71
+ * (decision 0034): attract is the list's first condition, and its visible -end line is the herb's
+ * (-end|X|move: Attract|[from] item: Mental Herb, cause ITEM); its silent end from onEnd is state only. Each removal shows
+ * its own -end line through its condition's onEnd. */
 static duoforge_status dfi_mental_herb(dfi_run *r, uint32_t flat)
 {
     struct duoforge_battle *b = r->b;
@@ -2422,10 +2424,21 @@ static duoforge_status dfi_mental_herb(dfi_run *r, uint32_t flat)
     if (m == NULL || m->hp == 0u || !dfi_holds(b, m, DFI_ITEM_MENTALHERB)) {
         return DUOFORGE_OK;
     }
-    if (tail->taunt_turns == 0u && tail->encore_slot == 0u && tail->disable_slot == 0u && tail->heal_block_turns == 0u) {
+    const bool attract = b->tail.attract_source[flat] != 0u; /* step G71 (decision 0034): the list's first condition */
+    if (!attract && tail->taunt_turns == 0u && tail->encore_slot == 0u && tail->disable_slot == 0u &&
+        tail->heal_block_turns == 0u) {
         return DUOFORGE_OK;
     }
     dfi_use_item(r, flat);
+    if (attract) {
+        /* The pin's list runs attract first (data/items.ts:3899-3918): its silent -end comes from onEnd, the visible line is the
+         * herb's: -end|X|move: Attract|[from] item: Mental Herb (cause ITEM, id2 = the herb + 1). */
+        b->tail.attract_source[flat] = 0u;
+        duoforge_event end = dfi_ev(DUOFORGE_EVENT_VOLATILE_END, flat, DUOFORGE_CAUSE_ITEM, 1u + DFI_ITEM_MENTALHERB,
+                                    DUOFORGE_NO_POSITION);
+        end.detail = DUOFORGE_VOLATILE_ATTRACT;
+        dfi_emit(r, &end);
+    }
     if (tail->taunt_turns != 0u) {
         tail->taunt_turns = 0u;
         dfi_volatile_end(r, flat, DUOFORGE_VOLATILE_TAUNT);
@@ -3500,14 +3513,60 @@ static duoforge_status dfi_each_order(dfi_run *r, uint32_t bearers, uint32_t lis
 
 /* eachEvent('Update'): Sitrus Berry eats at half HP or less and heals a
  * quarter, holder by holder in eachEvent's order. */
+/* Step G71 (decision 0034): the source member of an Attract byte (1 + side * 6 + roster index) is on the field and not fainted: the
+ * pin's source.isActive (data/moves.ts:722-727). A member that switched out and came back is a new entry, but the infatuation ended
+ * at the first Update after its switch-out, so the check reads the member, not the position. */
+static bool dfi_attract_source_active(const struct duoforge_battle *b, uint32_t code)
+{
+    const uint32_t side = (code - 1u) / DUOFORGE_MAX_ROSTER;
+    const uint32_t src = (code - 1u) % DUOFORGE_MAX_ROSTER;
+    for (uint32_t p = 0u; p < DUOFORGE_ACTIVE_PER_SIDE; ++p) {
+        if (b->sides[side].positions[p].occupant == src && b->sides[side].members[src].hp != 0u) {
+            return true;
+        }
+    }
+    return false;
+}
+
+/* Step G71 (decision 0034): the volatile's onUpdate and the attract half of Oblivious's onUpdate, for the holder at flat (pin order:
+ * the volatile first, then the ability, then the item; sim/battle.ts:1107-1130). A source that is not active ends the infatuation
+ * silently: state only, no event (decision 0015 5bn, the Yawn precedent). Oblivious's holder (its ability now, a Skill Swap or
+ * a Trace copy included) prints -activate|X|ability: Oblivious, ends the infatuation silently and prints the visible
+ * -end|X|move: Attract|[from] ability: Oblivious. */
+static duoforge_status dfi_attract_update(dfi_run *r, uint32_t flat)
+{
+    struct duoforge_battle *b = r->b;
+    const uint8_t code = b->tail.attract_source[flat];
+    const dfi_member *m = dfi_at(b, flat);
+    if (code == 0u) {
+        return DUOFORGE_OK;
+    }
+    if (m == NULL || m->hp == 0u || !dfi_attract_source_active(b, code)) {
+        b->tail.attract_source[flat] = 0u; /* silent end: the source left the field */
+        return DUOFORGE_OK;
+    }
+    if (dfi_ability(b, m, DFI_ABILITY_OBLIVIOUS)) {
+        duoforge_event act = dfi_ev(DUOFORGE_EVENT_ACTIVATE, flat, DUOFORGE_CAUSE_ABILITY, 1u + DFI_ABILITY_OBLIVIOUS,
+                                    DUOFORGE_NO_POSITION);
+        dfi_emit(r, &act); /* -activate|X|ability: Oblivious */
+        b->tail.attract_source[flat] = 0u; /* the pin's removeVolatile: its -end is [silent] */
+        duoforge_event end = dfi_ev(DUOFORGE_EVENT_VOLATILE_END, flat, DUOFORGE_CAUSE_ABILITY, 1u + DFI_ABILITY_OBLIVIOUS,
+                                    DUOFORGE_NO_POSITION);
+        end.detail = DUOFORGE_VOLATILE_ATTRACT;
+        dfi_emit(r, &end); /* -end|X|move: Attract|[from] ability: Oblivious */
+    }
+    return DUOFORGE_OK;
+}
+
 static duoforge_status dfi_update(dfi_run *r)
 {
     uint32_t bearers = 0u;
     for (uint32_t flat = 0u; flat < DFI_POSITIONS; ++flat) {
-        /* the holders with an Update handler that can act: Sitrus Berry, and step G47's Lum Berry and Mental Herb */
+        /* the holders with an Update handler that can act: Sitrus Berry, and step G47's Lum Berry and Mental Herb; step G71: an
+         * infatuated occupant (Attract's source check, Oblivious's cure) */
         const bool bears = dfi_holds(r->b, dfi_at(r->b, flat), DFI_ITEM_SITRUSBERRY) ||
                            dfi_holds(r->b, dfi_at(r->b, flat), DFI_ITEM_LUMBERRY) ||
-                           dfi_holds(r->b, dfi_at(r->b, flat), DFI_ITEM_MENTALHERB);
+                           dfi_holds(r->b, dfi_at(r->b, flat), DFI_ITEM_MENTALHERB) || r->b->tail.attract_source[flat] != 0u;
         bearers |= bears ? 1u << flat : 0u;
     }
     if (bearers == 0u) {
@@ -3521,6 +3580,11 @@ static duoforge_status dfi_update(dfi_run *r)
     }
     for (uint32_t i = 0u; i < n; ++i) {
         const uint32_t flat = list[i];
+        /* step G71: the volatile's and the ability's Update handlers come before the item's (sim/battle.ts:1107-1130) */
+        const duoforge_status attract = dfi_attract_update(r, flat);
+        if (attract != DUOFORGE_OK) {
+            return attract;
+        }
         const dfi_member *m = dfi_at(r->b, flat);
         if (m->hp != 0u && dfi_holds(r->b, m, DFI_ITEM_SITRUSBERRY) && (uint32_t)m->hp * 2u <= m->hp_max &&
             !dfi_heal_blocked(r->b, flat) && !dfi_unnerved(r->b, flat)) {

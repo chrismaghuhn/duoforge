@@ -709,6 +709,15 @@ duoforge_status duoforge_battle_from_view(const duoforge_context *ctx, const duo
     }
     uint8_t s[DUOFORGE_VIEW_STATE_MAX];
     memcpy(s, view->state, n);
+    /* Step G71 (decision 0034, decision 0015 5bn, lead's option B): a world with an infatuated occupant (either side) is not built
+     * from a view: the Attract source is in the rev 5 reserve, which the view does not carry as a hypothesis. Explicit refusal. */
+    if (dfi_context_has_pool_tail(ctx)) {
+        for (uint32_t i = 0u; i < DFI_ATTRACT_SLOTS; ++i) {
+            if (s[DFI_ENC_TAIL_OFF + DFI_ENC_TAIL_REV4_SIZE + DFI_ENC_TAIL5_ATTRACT_OFF + i] != 0u) {
+                return DUOFORGE_E_UNSUPPORTED;
+            }
+        }
+    }
     const uint32_t player = view->player;
     const uint32_t foe = player ^ 1u;
     uint8_t *fs = side_at(s, foe);

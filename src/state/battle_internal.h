@@ -392,11 +392,21 @@ uint32_t dfi_illusion_shown_occupant(const dfi_side *side, const dfi_tail_side *
 #define DFI_PARTY_HIDDEN 7u
 _Static_assert(DUOFORGE_MAX_ROSTER < DFI_PARTY_HIDDEN, "the hidden party entry is no roster index + 1");
 
+/* Step G71 (decision 0034): Attract's source bytes, one per flat position (DUOFORGE_ACTIVE_PER_SIDE * DUOFORGE_SIDE_COUNT) and the
+ * member code of a source: 1 + side * DUOFORGE_MAX_ROSTER + roster index, so 1..DFI_ATTRACT_MEMBER_MAX. */
+#define DFI_ATTRACT_SLOTS (DUOFORGE_ACTIVE_PER_SIDE * DUOFORGE_SIDE_COUNT)
+#define DFI_ATTRACT_MEMBER_MAX (DUOFORGE_SIDE_COUNT * DUOFORGE_MAX_ROSTER)
+
 typedef struct dfi_pool_tail {
     dfi_tail_side sides[DUOFORGE_SIDE_COUNT];
     uint8_t gravity_turns;
     uint8_t party_order[DUOFORGE_SIDE_COUNT][DFI_PARTY_BYTES_PER_SIDE]; /* step G46, see above */
     uint8_t field_pad; /* always zero: the reserved byte +7 of the encoded field block */
+    /* Step G71 (decision 0034, decision 0015 5bn): Attract's source, one byte per flat position of the INFATUATED occupant:
+     * 0 = not infatuated, else 1 + side * DUOFORGE_MAX_ROSTER + roster index of the source MEMBER (the Cute Charm holder). It is
+     * the rev 5 reserve bytes 0..3 (state_codec.h DFI_ENC_TAIL5_ATTRACT_*), not part of dfi_tail_pos: a switch-out or a faint of
+     * the infatuated occupant clears its byte explicitly (dfi_tail_clear_occupant). */
+    uint8_t attract_source[DFI_ATTRACT_SLOTS];
 } dfi_pool_tail;
 
 /* The packed value of one side's party order, and one entry of it (roster index + 1, 0 = empty). */

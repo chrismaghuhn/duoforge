@@ -865,6 +865,7 @@ duoforge_status duoforge_battle_observe(const duoforge_context *ctx, const duofo
 #define DUOFORGE_POSITION_EXT_ILLUSION_UP  0x00080000u
 #define DUOFORGE_POSITION_EXT_ROOST        0x00100000u /* Roost: the Flying type is off until the end of the turn */
 #define DUOFORGE_POSITION_EXT_TRANSFORMED  0x00200000u /* Transform: the occupant is a copy of another Pokemon (decision 0028) */
+#define DUOFORGE_POSITION_EXT_ATTRACT      0x08000000u /* Attract (step G71, decision 0034): the occupant is infatuated; presence only, no source */
 /* Bits of duoforge_side_ext.guard_flags (this turn only). */
 #define DUOFORGE_SIDE_GUARD_WIDE_GUARD  1u
 #define DUOFORGE_SIDE_GUARD_QUICK_GUARD 2u
@@ -1116,6 +1117,8 @@ duoforge_status duoforge_battle_observe_ext(const duoforge_context *ctx, const d
                                          (DUOFORGE_ITEM_NOW_NONE) */
 #define DUOFORGE_CAUSE_IMPRISON  21u /* CANT (POOL kinds): a move that the foe's Imprison forbids, queued before it was used
                                          ([cant] move: Imprison|Move); id: the stopped move, no PP is used */
+#define DUOFORGE_CAUSE_ATTRACT   36u /* CANT (POOL kinds, step G71, decision 0034): the infatuated occupant's move is stopped by
+                                         Attract ([cant] Attract); no PP is used. */
 
 #define DUOFORGE_EVENT_FLAG_STILL  1u  /* MOVE: the charge turn of a two-turn move */
 #define DUOFORGE_EVENT_FLAG_LOCKED 2u  /* MOVE: the locked turn ([from] lockedmove) */
@@ -1148,6 +1151,10 @@ duoforge_status duoforge_battle_observe_ext(const duoforge_context *ctx, const d
 #define DUOFORGE_VOLATILE_DRAGONCHEER 10u /* VOLATILE_START (POOL kinds, step G72b, decision 0015 5ce): Dragon Cheer's volatile
                                               (-start|X|move: Dragon Cheer). Presence only; no END: a switch-out removes it with no
                                               line. The crit stage it gives is in the position flags (tail rev 5), not in an event. */
+#define DUOFORGE_VOLATILE_ATTRACT    11u /* VOLATILE_START / VOLATILE_END (POOL kinds, step G71, decision 0034): Attract (-start|X|Attract|
+                                              [from] ability: Cute Charm|[of] Y, other: the holder). Its end lines of Mental Herb and
+                                              Oblivious are VOLATILE_END (cause ITEM or ABILITY); the silent end (the source left) is state
+                                              only, with no event (decision 0015 5bn). */
 /* FAIL details of a Substitute, valid only with cause MOVE and id2 = the Substitute move (decision 0032). */
 #define DUOFORGE_FAIL_SUBSTITUTE_EXISTS 1u /* the user already has a Substitute: -fail|X|move: Substitute */
 #define DUOFORGE_FAIL_SUBSTITUTE_WEAK   2u /* the user's HP is a quarter of its maximum or less: -fail|X|move: Substitute|[weak] */
