@@ -23,7 +23,7 @@ from duoforge_live.lines import flat_position, line_kind
 from duoforge_live.data import trace_to_c
 from duoforge_live.game import TEAM_TABLE
 
-from .points import TEAM_SELECTION, TURN
+from .points import TEAM_SELECTION, TURN, Skip
 
 NOT_REQUESTED, EXACT, TARGET_UNKNOWN, MOVE_HIDDEN, FORCED, UNKNOWN = range(6)
 TEAM_BYTES = (len(TEAM_TABLE) + 7) // 8
@@ -186,6 +186,24 @@ def _move_label(segment, index, parts, side, options_list, moves, mega, tables, 
     return _mask(candidates), TARGET_UNKNOWN
 
 
+def _revived(log, upto, side, name, member_of):
+    """The own member a Revival Blessing -heal line names: that line has only the nickname ("p1: <name>"), so the member
+    is the one whose switch, drag or replace lines before it carry that name (their details name the forme). Skip
+    ("skip:revive-unseen") when no such line names it, Skip("skip:revive-ambiguous") when they name two members: the
+    log does not say who came back."""
+    members = set()
+    for line in log[:upto]:
+        parts = line.split("|")
+        if line_kind(line) in ("switch", "drag", "replace") and len(parts) > 3 and parts[2].startswith(f"p{side + 1}") \
+                and parts[2].split(": ", 1)[1:] == [name]:
+            members.add(member_of(parts[3]))
+    if not members:
+        raise Skip("skip:revive-unseen")
+    if len(members) > 1:
+        raise Skip("skip:revive-ambiguous")
+    return members.pop()
+
+
 def switch_label(log, point, side, lists, member_of, stop_line):
     """The label of a REPLACEMENT or PIVOT point: per asked own slot, the switch of its run, or a pass."""
     end = min(point.end, stop_line)
@@ -205,7 +223,8 @@ def switch_label(log, point, side, lists, member_of, stop_line):
         if getattr(point, "revive", False) and position in point.run:
             # Revival Blessing's choice (step G52): the member its -heal line names
             if revives:
-                member = member_of(revives[0].split("|")[2].split(": ", 1)[1])
+                name = revives[0].split("|")[2].split(": ", 1)[1]
+                member = _revived(log, point.line + segment.index(revives[0]), side, name, member_of)
                 found = [i for i, o in enumerate(options_list) if o.kind == options.REVIVE and o.reserve == member]
             elif end < point.end:
                 found = []
