@@ -213,6 +213,19 @@ class TrackerStopTest(unittest.TestCase):
                 t._throat_chop(line.split("|"))
             self.assertEqual(caught.exception.reason, f"line:{line.split('|')[1]} Throat Chop")
 
+    def test_baton_pass_gives_the_copied_volatiles(self):
+        # dfi_pass_give: Throat Chop's and Perish Song's counters go to the entering member; Encore and the recharge
+        # stay with the leaver (decision 0042)
+        from duoforge_live.data import trace_to_c
+        t = self.tracker()
+        t._baton_pass = 7
+        p = t._positions[0][0]
+        p.throat_chop, p.perish, p.encore_slot, p.must_recharge = 1, 2, 3, 1
+        t._event(trace_to_c.ev_tuple(trace_to_c.EV["SWITCH"], 0, trace_to_c.NOPOS, trace_to_c.CAUSE["MOVE"], 4, 7))
+        self.assertEqual((p.occupant, p.throat_chop, p.perish, p.encore_slot, p.must_recharge), (4, 1, 2, 0, 0))
+        t._event(trace_to_c.ev_tuple(trace_to_c.EV["SWITCH"], 0, trace_to_c.NOPOS, 0, 5, 0))  # a plain switch
+        self.assertEqual((p.occupant, p.throat_chop, p.perish), (5, 0, 0))
+
     def test_encore_takes_the_slot_of_the_last_move_line(self):
         from duoforge_live import lines
         from duoforge_live.data import trace_to_c

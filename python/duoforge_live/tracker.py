@@ -78,6 +78,9 @@ EXT_FIELDS = {
 }
 # The presence bits of a position's volatiles: _Position attribute -> DUOFORGE_POSITION_EXT_* bit.
 _PRESENCE_BITS = (("throat_chop", EXT_THROAT_CHOP), ("must_recharge", C["DUOFORGE_POSITION_EXT_MUST_RECHARGE"]))
+# The folded _Position fields that Baton Pass gives the entering member (src/combat/turn.c dfi_pass_give: Throat Chop's
+# and Perish Song's tail counters among them); Encore, the recharge, a changed type or ability stay with the leaver.
+_PASSED = ("throat_chop", "perish")
 # DUOFORGE_SIDE_* of a SIDE_START or SIDE_END event (tailwind 1, reflect 2, light screen 3, Aurora Veil 4) -> the index
 # of the side's turns in Tracker._conditions
 _SIDE_CONDITION = {1: 2, 2: 0, 3: 1, 4: 3}
@@ -546,13 +549,16 @@ class Tracker:
             passed = None
             if kind == EV["SWITCH"] and e[3] == trace_to_c.CAUSE["MOVE"] and ident2 == self._baton_pass:
                 # Baton Pass (step G74, decision 0042; sim/pokemon.ts copyVolatileFrom): no line shows the copy; of
-                # the base view's fields the receiver keeps the leaver's stages and confusion. The other copied
-                # volatiles are decision 0018 features, which stopped the tracker at their start lines.
-                passed = (list(p.stages), p.confused)
+                # the base view's fields the receiver keeps the leaver's stages and confusion, of the folded view
+                # extension what dfi_pass_give copies (_PASSED). The other copied volatiles are decision 0018 features,
+                # which stopped the tracker at their start lines.
+                passed = (list(p.stages), p.confused, {name: getattr(p, name) for name in _PASSED})
             p.occupant, p.flag, p.fainted = ident, 0, False
             p.reset()
             if passed is not None:
-                p.stages, p.confused = passed
+                p.stages, p.confused = passed[0], passed[1]
+                for name, value in passed[2].items():
+                    setattr(p, name, value)
             if public:
                 m = self._member(pos // 2)[ident]
                 m.seen, m.hp_percent, m.hp_flag, m.status = True, hp, hp_flag, status
