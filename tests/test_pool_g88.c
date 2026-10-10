@@ -3,11 +3,10 @@
  * turn-history position flags of tail rev 5 (LOWERED_THIS_TURN bit 5, HURT_THIS_TURN bit 6) and the PIVOT refusal of the
  * public record with DUOFORGE_PUBLIC_CAUSE_TURN_HISTORY (64).
  *
- * The damage and the base powers are replayed by duoforge.reference.conformance_pool_data: the recorded battles
- * g88_lo_intimidate (Lash Out doubled on turn 1 after Intimidate's drop, not on turn 2), g88_av_hurt (Assurance doubled after
- * Raichu's Thunderbolt), g88_av_control (Assurance on an unhurt target) and g88_pivot_turn_history (Raichu's Volt Switch makes a
- * mid-turn PIVOT while Umbreon knows Lash Out and Assurance). This file checks the flags at the steps that matter, the row and
- * the marks, and the refusal of the public record at the PIVOT. Flat positions: side 0 slots 0 and 1 (flat 0, 1), side 1 (2, 3).
+ * The recorded battles are replayed the way duoforge.reference.conformance_pool_data replays them: every step with its kept
+ * draws (the test-only tape) and its recorded commands, so the path is the trace's. This file checks the flags and the boundary
+ * after the steps that matter, the row and the marks, and the refusal of the public record at the PIVOT. Flat positions: side
+ * 0 slots 0 and 1 (flat 0, 1), side 1 (flat 2, 3).
  */
 #include <stdio.h>
 #include <string.h>
@@ -15,33 +14,22 @@
 #include <duoforge/duoforge.h>
 #include <duoforge/duoforge_view.h>
 
-#include "data/closure_tables.h"
 #include "data/pool_tables.h"
 #include "data/support_manifest.h"
 #include "reference/conformance_pool.h"
 #include "state/battle_internal.h"
 #include "state/invariants.h"
+#include "state/request.h"
 #include "support/check.h"
 #include "support/fixtures.h"
 #include "support/pool.h"
-
-/* One slot's command of a turn: a move (move slot and target flat position) or a switch (the reserve's roster index). */
-typedef struct g88_cmd {
-    uint8_t kind;      /* DUOFORGE_SLOT_MOVE or DUOFORGE_SLOT_SWITCH */
-    uint8_t move_slot; /* 0-based */
-    uint8_t target;    /* flat position, DUOFORGE_TARGET_NONE for none */
-    uint8_t reserve;   /* roster index, for a switch */
-} g88_cmd;
-
-#define MV(slot, target) {DUOFORGE_SLOT_MOVE, (slot), (target), 0u}
-#define NO DUOFORGE_TARGET_NONE
 
 static uint32_t flags_of(const duoforge_battle *b, uint32_t flat)
 {
     return (uint32_t)b->tail.sides[flat / 2u].positions[flat % 2u].position_flags;
 }
 
-/* The recorded battle `name` (conformance_pool.h): its setup, as the conformance test builds it. */
+/* The recorded battle `name` (conformance_pool.h). */
 static const df_conf_battle *find_conf(const char *name)
 {
     for (size_t i = 0u; i < sizeof conf_battles / sizeof conf_battles[0]; ++i) {
@@ -52,6 +40,7 @@ static const df_conf_battle *find_conf(const char *name)
     return NULL;
 }
 
+/* The setup of a recorded battle, as the conformance test builds it. */
 static void setup_from(const df_conf_battle *cb, duoforge_battle_setup *s)
 {
     memset(s, 0, sizeof *s);
@@ -78,70 +67,74 @@ static void setup_from(const df_conf_battle *cb, duoforge_battle_setup *s)
     }
 }
 
-/* The team preview: the first four of each paste (the leads are the first two), as the recorded battles pick them. */
-static void team_bundle(duoforge_decision_bundle *bd, const duoforge_battle *b)
-{
-    memset(bd, 0, sizeof *bd);
-    bd->epoch = b->request_epoch;
-    bd->response_mask = 3u;
-    for (uint32_t side = 0u; side < 2u; ++side) {
-        duoforge_side_choice *c = &bd->responses[side];
-        c->epoch = b->request_epoch;
-        c->side = (uint8_t)side;
-        c->kind = (uint8_t)DUOFORGE_CHOICE_TEAM_SELECTION;
-        c->pick_count = 4u;
-        for (uint32_t i = 0u; i < 4u; ++i) {
-            c->picks[i] = (uint8_t)i;
-        }
-    }
-}
-
-/* One turn: cmd[side][slot]. */
-static void turn_bundle(duoforge_decision_bundle *bd, const duoforge_battle *b, const g88_cmd cmd[2][2])
-{
-    memset(bd, 0, sizeof *bd);
-    bd->epoch = b->request_epoch;
-    bd->response_mask = 3u;
-    for (uint32_t side = 0u; side < 2u; ++side) {
-        duoforge_side_choice *c = &bd->responses[side];
-        c->epoch = b->request_epoch;
-        c->side = (uint8_t)side;
-        c->kind = (uint8_t)DUOFORGE_CHOICE_SLOTS;
-        for (uint32_t slot = 0u; slot < 2u; ++slot) {
-            c->slots[slot].kind = cmd[side][slot].kind;
-            c->slots[slot].move_slot = cmd[side][slot].move_slot;
-            c->slots[slot].target = cmd[side][slot].target;
-            c->slots[slot].reserve = cmd[side][slot].reserve;
-        }
-    }
-}
-
-/* Starts the recorded battle `name`: the context, the battle and the team preview. Returns false when it cannot. */
-static bool start(df_test *t, const char *name, duoforge_context **ctx, duoforge_battle **b, duoforge_decision_bundle *bd,
-                  duoforge_step_result *res)
-{
-    *ctx = df_make_context(&df_config_pool);
-    DF_CHECK(t, *ctx != NULL);
-    const df_conf_battle *cb = find_conf(name);
-    DF_CHECK(t, cb != NULL);
-    if (*ctx == NULL || cb == NULL) {
-        return false;
-    }
-    duoforge_battle_setup s;
-    setup_from(cb, &s);
-    *b = df_make_battle(*ctx, &s);
-    DF_CHECK(t, *b != NULL);
-    if (*b == NULL) {
-        return false;
-    }
-    team_bundle(bd, *b);
-    return duoforge_battle_step(*ctx, *b, bd, res) == DUOFORGE_OK;
-}
-
 static void finish(duoforge_context *ctx, duoforge_battle *b)
 {
     duoforge_battle_destroy(b);
     duoforge_context_destroy(ctx);
+}
+
+/* Creates the recorded battle `name` (no step yet). Returns false when it cannot. */
+static bool start(df_test *t, const char *name, duoforge_context **ctx, duoforge_battle **b, const df_conf_battle **cbo)
+{
+    *ctx = df_make_context(&df_config_pool);
+    DF_CHECK(t, *ctx != NULL);
+    *cbo = find_conf(name);
+    DF_CHECK(t, *cbo != NULL);
+    if (*ctx == NULL || *cbo == NULL) {
+        return false;
+    }
+    duoforge_battle_setup s;
+    setup_from(*cbo, &s);
+    *b = df_make_battle(*ctx, &s);
+    DF_CHECK(t, *b != NULL);
+    return *b != NULL;
+}
+
+/* Steps `from` up to `to` (exclusive) of the recorded battle with its kept draws and its recorded commands, as the conformance
+ * replay does. Returns the first failing status, or OK when every step consumed its whole tape. */
+static duoforge_status replay_steps(duoforge_context *ctx, duoforge_battle *b, const df_conf_battle *cb, uint32_t from, uint32_t to)
+{
+    static duoforge_event ev_buf[2][DUOFORGE_MAX_EVENTS];
+    for (uint32_t si = from; si < to && si < cb->step_count; ++si) {
+        const df_conf_step *st = &cb->steps[si];
+        duoforge_decision_bundle bd;
+        memset(&bd, 0, sizeof bd);
+        bd.epoch = b->request_epoch;
+        bd.response_mask = (uint8_t)(st->answered0 | (st->answered1 << 1u)); /* wide-operands-reviewed */
+        for (uint32_t s = 0u; s < 2u; ++s) {
+            if ((s == 0u && !st->answered0) || (s == 1u && !st->answered1)) {
+                continue;
+            }
+            duoforge_side_choice *r = &bd.responses[s];
+            r->epoch = b->request_epoch;
+            r->side = (uint8_t)s;
+            if (st->team) {
+                r->kind = (uint8_t)DUOFORGE_CHOICE_TEAM_SELECTION;
+                r->pick_count = 4u;
+                for (uint32_t i = 0u; i < 4u; ++i) {
+                    r->picks[i] = st->picks[s][i];
+                }
+            } else {
+                r->kind = (uint8_t)DUOFORGE_CHOICE_SLOTS;
+                for (uint32_t k = 0u; k < 2u; ++k) {
+                    const df_conf_cmd *c = &st->cmds[s][k];
+                    r->slots[k] = (duoforge_slot_command){c->kind, c->move_slot, c->target, c->mega, c->reserve, {0u, 0u, 0u}};
+                }
+            }
+        }
+        duoforge_step_result res;
+        uint32_t used = 0xFFFFFFFFu;
+        duoforge_event_buffer buffers[2] = {{ev_buf[0], DUOFORGE_MAX_EVENTS, 0u}, {ev_buf[1], DUOFORGE_MAX_EVENTS, 0u}};
+        const duoforge_status status =
+            dfi_battle_step_events_tape(ctx, b, &bd, &conf_tape[st->tape_off], st->tape_len, &used, &res, buffers);
+        if (status != DUOFORGE_OK) {
+            return status;
+        }
+        if (used != st->tape_len) {
+            return DUOFORGE_E_INVARIANT;
+        }
+    }
+    return DUOFORGE_OK;
 }
 
 /* The row and the marks: the handler ids, the support marks, the flag bits and the cause value (the manifest, the flags and the
@@ -159,88 +152,70 @@ static void test_row(df_test *t)
 }
 
 /* g88_lo_intimidate: Intimidate lowers Umbreon (flat 0) and Milotic (flat 1) at the start, so LOWERED_THIS_TURN is set before
- * turn 1 (sim/battle.ts:2086); the turn-1 boundary clears it (sim/battle.ts:1679). */
+ * turn 1 (sim/battle.ts:2086); the turn-1 boundary clears it (sim/battle.ts:1679). Step 0 is the team selection, step 1 turn 1. */
 static void test_lo_intimidate(df_test *t)
 {
     duoforge_context *ctx = NULL;
     duoforge_battle *b = NULL;
-    duoforge_decision_bundle bd;
-    duoforge_step_result res;
-    if (!start(t, "g88_lo_intimidate", &ctx, &b, &bd, &res)) {
+    const df_conf_battle *cb = NULL;
+    if (!start(t, "g88_lo_intimidate", &ctx, &b, &cb)) {
         finish(ctx, b);
         return;
     }
+    DF_CHECK_EQ_U64(t, replay_steps(ctx, b, cb, 0u, 1u), DUOFORGE_OK);
     DF_CHECK(t, (flags_of(b, 0u) & DFI_POSFLAG_LOWERED) != 0u);
     DF_CHECK(t, (flags_of(b, 1u) & DFI_POSFLAG_LOWERED) != 0u);
-    /* turn 1: Umbreon's Lash Out on Salamence (flat 2); Milotic protects; Salamence's Dragon Claw on Umbreon; Milotic protects */
-    static const g88_cmd turn1[2][2] = {{MV(0, 2u), MV(1, NO)}, {MV(0, 0u), MV(1, NO)}};
-    turn_bundle(&bd, b, turn1);
-    DF_CHECK(t, duoforge_battle_step(ctx, b, &bd, &res) == DUOFORGE_OK);
+    DF_CHECK_EQ_U64(t, replay_steps(ctx, b, cb, 1u, 2u), DUOFORGE_OK);
     DF_CHECK_EQ_U64(t, b->boundary_kind, DUOFORGE_BOUNDARY_TURN);
     DF_CHECK(t, (flags_of(b, 0u) & DFI_POSFLAG_LOWERED) == 0u); /* the turn boundary cleared it (endTurn) */
     DF_CHECK(t, dfi_state_check(ctx, b, NULL) == DUOFORGE_OK);
     finish(ctx, b);
 }
 
-/* g88_av_hurt and g88_av_control: the HURT bit of Milotic (flat 3) is set by Raichu's Thunderbolt on turn 1 and cleared at the
- * turn boundary; the control battle never sets it on Salamence (flat 2). The doubled Assurance is in the recorded tape. */
-static void test_av_turn(df_test *t, const char *name, const g88_cmd turn1[2][2], uint32_t hurt_flat)
+/* g88_av_hurt and g88_av_control: the HURT bit of the target is set by the spread damage of turn 1 and cleared at the turn
+ * boundary, which the recorded trace also reaches as a TURN boundary (no faint, no switch request). */
+static void test_av_turn(df_test *t, const char *name, uint32_t hurt_flat)
 {
     duoforge_context *ctx = NULL;
     duoforge_battle *b = NULL;
-    duoforge_decision_bundle bd;
-    duoforge_step_result res;
-    if (!start(t, name, &ctx, &b, &bd, &res)) {
+    const df_conf_battle *cb = NULL;
+    if (!start(t, name, &ctx, &b, &cb)) {
         finish(ctx, b);
         return;
     }
-    DF_CHECK(t, (flags_of(b, hurt_flat) & DFI_POSFLAG_HURT) == 0u); /* nobody was hurt before the turn */
-    turn_bundle(&bd, b, turn1);
-    DF_CHECK(t, duoforge_battle_step(ctx, b, &bd, &res) == DUOFORGE_OK);
-    /* UNEXPLAINED (not silently widened): this test starts the battle with its own RNG state, not the recorded draw tape, so
-     * its rolls differ from the trace. The trace of this battle shows no faint and no switch request after turn 1 (its log ends
-     * with |upkeep| and |turn|2, after a Sitrus heal), yet this run ends turn 1 at a REPLACEMENT boundary. Its cause is not
-     * identified (not a pivot, Eject Button, Emergency Exit or Red Card in these teams). The conformance replay of the same
-     * battle, which uses the tape, matches the recorded boundary. The reset is checked only at a TURN boundary. */
-    DF_CHECK(t, b->boundary_kind == DUOFORGE_BOUNDARY_TURN || b->boundary_kind == DUOFORGE_BOUNDARY_REPLACEMENT);
-    if (b->boundary_kind == DUOFORGE_BOUNDARY_TURN) {
-        DF_CHECK(t, (flags_of(b, hurt_flat) & DFI_POSFLAG_HURT) == 0u); /* the turn boundary cleared it (endTurn) */
-    }
+    DF_CHECK_EQ_U64(t, replay_steps(ctx, b, cb, 0u, 1u), DUOFORGE_OK);
+    DF_CHECK(t, (flags_of(b, hurt_flat) & DFI_POSFLAG_HURT) == 0u); /* nobody was hurt before turn 1 */
+    DF_CHECK_EQ_U64(t, replay_steps(ctx, b, cb, 1u, 2u), DUOFORGE_OK);
+    DF_CHECK_EQ_U64(t, b->boundary_kind, DUOFORGE_BOUNDARY_TURN);
+    DF_CHECK(t, (flags_of(b, hurt_flat) & DFI_POSFLAG_HURT) == 0u); /* the turn boundary cleared it (endTurn) */
     DF_CHECK(t, dfi_state_check(ctx, b, NULL) == DUOFORGE_OK);
     finish(ctx, b);
 }
 
 static void test_av_hurt(df_test *t)
 {
-    /* Raichu (flat 0) Thunderbolt on Milotic (flat 3); Umbreon (flat 1) Assurance on Milotic; side 1: Salamence's Dragon Claw on
-     * Raichu, Milotic's Alluring Voice on Raichu */
-    static const g88_cmd turn1[2][2] = {{MV(0, 3u), MV(2, 3u)}, {MV(0, 0u), MV(3, 0u)}};
-    test_av_turn(t, "g88_av_hurt", turn1, 3u);
+    /* Raichu's Thunderbolt on Milotic (flat 3) and Umbreon's Assurance on Milotic: the target is hurt in turn 1 */
+    test_av_turn(t, "g88_av_hurt", 3u);
 }
 
 static void test_av_control(df_test *t)
 {
-    /* Umbreon's Assurance on Salamence (flat 2), which nobody hit this turn; Raichu's Thunderbolt goes to Milotic (flat 3) */
-    static const g88_cmd turn1[2][2] = {{MV(0, 3u), MV(2, 2u)}, {MV(0, 0u), MV(3, 0u)}};
-    test_av_turn(t, "g88_av_control", turn1, 2u);
+    /* Umbreon's Assurance on Salamence (flat 2), which nobody hit this turn: nothing is hurt there */
+    test_av_turn(t, "g88_av_control", 2u);
 }
 
-/* g88_pivot_turn_history: Raichu's Volt Switch on Salamence (flat 2) makes the PIVOT boundary while Umbreon (flat 1) knows Lash
- * Out and Assurance; the public record and the causes call of that state name DUOFORGE_PUBLIC_CAUSE_TURN_HISTORY, and the record
- * refuses. */
+/* g88_pivot_turn_history: Raichu's Volt Switch makes the PIVOT boundary of turn 1 while Umbreon (flat 1) knows Lash Out and
+ * Assurance; the public record and the causes call of that state name DUOFORGE_PUBLIC_CAUSE_TURN_HISTORY, and the record refuses. */
 static void test_pivot_refusal(df_test *t)
 {
     duoforge_context *ctx = NULL;
     duoforge_battle *b = NULL;
-    duoforge_decision_bundle bd;
-    duoforge_step_result res;
-    if (!start(t, "g88_pivot_turn_history", &ctx, &b, &bd, &res)) {
+    const df_conf_battle *cb = NULL;
+    if (!start(t, "g88_pivot_turn_history", &ctx, &b, &cb)) {
         finish(ctx, b);
         return;
     }
-    static const g88_cmd turn1[2][2] = {{MV(0, 2u), MV(2, 3u)}, {MV(0, 0u), MV(3, 0u)}};
-    turn_bundle(&bd, b, turn1);
-    DF_CHECK(t, duoforge_battle_step(ctx, b, &bd, &res) == DUOFORGE_OK);
+    DF_CHECK_EQ_U64(t, replay_steps(ctx, b, cb, 0u, 2u), DUOFORGE_OK);
     DF_CHECK_EQ_U64(t, b->boundary_kind, DUOFORGE_BOUNDARY_PIVOT);
     for (uint32_t player = 0u; player < DUOFORGE_SIDE_COUNT; ++player) {
         uint32_t causes = 0u;
