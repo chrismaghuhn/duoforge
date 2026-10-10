@@ -194,7 +194,8 @@ class TrackerStopTest(unittest.TestCase):
         from duoforge_live import lines
         t = self.tracker()
         t._throat_chop("|-start|p2a: Salamence|Throat Chop|[silent]".split("|"))
-        self.assertEqual(t._positions[1][0].throat_chop, 1)
+        from duoforge_live.tracker import THROAT_CHOP_TURNS
+        self.assertEqual(t._positions[1][0].throat_chop, THROAT_CHOP_TURNS)  # its turns (the record's count)
         t._throat_chop("|-end|p2a: Salamence|Throat Chop|[silent]".split("|"))
         self.assertEqual(t._positions[1][0].throat_chop, 0)
         for line in ("|-start|p2a: Salamence|Throat Chop", "|-start|p2a: Salamence|Throat Chop|[silent]|[of] p1a: X",

@@ -67,11 +67,13 @@
  * Without the flag the output is the same as before.
  * --dump-public FILE (with --dump-views; the live honest search, docs/superpowers/plans/
  * 2026-10-10-live-honest-search.md Task 1) also writes, at the same states, each player's public record
- * (duoforge_battle_public), one line per viewer:
+ * (duoforge_battle_public) and the cause mask of its refusal (duoforge_battle_public_causes, decimal; 0 beside a record),
+ * one line per viewer:
  *
- *   P <name> <k> <viewer> <status> <record hex | ->
+ *   P <name> <k> <viewer> <status> <causes> <record hex | ->
  *
- * a refused record ('-', its status) does not end the battle. A FILE that cannot be written exits 1.
+ * a refused record ('-', its status) does not end the battle; a causes call that fails ends it as a DIVERGENCE
+ * "public causes: <status> (view K)". A FILE that cannot be written exits 1.
  *
  * Heap allocation is fine here: this is a tool, not the engine.
  */
@@ -264,7 +266,17 @@ static bool write_views(FILE *views, const dfr_battle *b, uint32_t k, const duof
     for (uint32_t viewer = 0u; g_public != NULL && viewer < 2u; ++viewer) {
         duoforge_public_state rec;
         const duoforge_status ps = duoforge_battle_public(ctx, battle, viewer, &rec);
-        fprintf(g_public, "P %s %u %u %u ", b->name, (unsigned)k, (unsigned)viewer, (unsigned)ps);
+        uint32_t causes = 0u;
+        const duoforge_status cs = duoforge_battle_public_causes(ctx, battle, viewer, &causes);
+        if (cs != DUOFORGE_OK) {
+            char text[160];
+            (void)snprintf(text, sizeof text, "public causes: %s (view %u)", duoforge_status_name(cs), (unsigned)k);
+            o->has_step = k > 0u;
+            o->step = k > 0u ? k - 1u : 0u;
+            set_detail(o, VERDICT_DIVERGENCE, text);
+            return false;
+        }
+        fprintf(g_public, "P %s %u %u %u %u ", b->name, (unsigned)k, (unsigned)viewer, (unsigned)ps, (unsigned)causes);
         if (ps == DUOFORGE_OK) {
             const unsigned char *bytes = (const unsigned char *)&rec;
             for (size_t i = 0u; i < sizeof rec; ++i) {
