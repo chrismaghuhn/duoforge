@@ -78,7 +78,7 @@ int main(void)
 
     /* The constants: protect_kind 2 is King's Shield (the tail's maximum), the Blade is the last pool forme. */
     DF_CHECK_EQ_U64(&t, DFI_PROTECT_KINGS_SHIELD, 2u);
-    DF_CHECK_EQ_U64(&t, DFI_TAIL_PROTECT_KIND_MAX, 2u);
+    DF_CHECK_EQ_U64(&t, DFI_TAIL_PROTECT_KIND_MAX, 3u); /* step G94: Baneful Bunker is kind 3 */
     DF_CHECK_EQ_U64(&t, DFI_PROTECT_SPIKY_SHIELD, 1u);
     DF_CHECK_EQ_U64(&t, DFI_SPECIAL_KINGS_SHIELD, DFI_SPECIAL_SKILL_SWAP + 1u); /* merged order: Steel Beam, Thunder Wave (G68) and Skill Swap (G70) come first */
     DF_CHECK_EQ_U64(&t, DFI_FORME_AEGISLASHBLADE, DFI_POOL_FORME_COUNT - 1u);

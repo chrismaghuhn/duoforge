@@ -6833,10 +6833,10 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
             }
         }
     }
-    /* Step G94, Last Resort's onTry (data/moves.ts:10066-10081): it fails silently (the move line is already out, no line
-     * follows, the PP is spent), before the targets are looked at. */
+    /* Step G94, Last Resort's onTry (data/moves.ts:10066-10081), before the targets are looked at: a failure is the move line
+     * with [still] and then -fail|user (recorded: g94_lr_basic), and the PP is spent (deductPP ran before TryMove). */
     if (md->special == DFI_SPECIAL_LAST_RESORT && !dfi_last_resort_ok(b, user)) {
-        r->mres |= DFI_MRES_FALSE;
+        dfi_fail_still(r, user);
         return DUOFORGE_OK;
     }
     if (count == 0u) {
