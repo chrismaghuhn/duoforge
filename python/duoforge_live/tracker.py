@@ -66,12 +66,15 @@ ITEM_NOW_NONE = C["DUOFORGE_ITEM_NOW_NONE"]  # duoforge_member_ext.item_now: the
 EXT_FIELDS = {
     "WEATHER_SAND": (), "WEATHER_SNOW": (), "AILMENT_TOX": (),
     "THROAT_CHOP": (("bit", EXT_THROAT_CHOP),),
+    "MUST_RECHARGE": (("bit", C["DUOFORGE_POSITION_EXT_MUST_RECHARGE"]),),
     "AURORA_VEIL": (("side", "aurora_veil_turns"),),
     "PERISH": (("position", "perish"),),
     "ENCORE": (("position", "encore_slot"),),
     "ABILITY_CHANGE": (("position", "ability_now"),),
     "ITEM_CHANGE": (("member", "item_now"),),
 }
+# The presence bits of a position's volatiles: _Position attribute -> DUOFORGE_POSITION_EXT_* bit.
+_PRESENCE_BITS = (("throat_chop", EXT_THROAT_CHOP), ("must_recharge", C["DUOFORGE_POSITION_EXT_MUST_RECHARGE"]))
 # DUOFORGE_SIDE_* of a SIDE_START or SIDE_END event (tailwind 1, reflect 2, light screen 3, Aurora Veil 4) -> the index
 # of the side's turns in Tracker._conditions
 _SIDE_CONDITION = {1: 2, 2: 0, 3: 1, 4: 3}
@@ -116,6 +119,7 @@ class _Position:
         self.choice_slot = MOVE_SLOT_NONE  # the move slot a Choice item locks (TEAM_C and POOL)
         # The POOL view extension (decision 0018), all ended with the occupant (a switch or a faint):
         self.throat_chop = 0  # Throat Chop's volatile is up (presence only)
+        self.must_recharge = 0  # a recharge move hit: the next action is cant|recharge (presence only)
         self.perish = 0  # the Perish count the game showed last, 3 to 1 (0: none)
         self.last_slot = 0  # the move slot + 1 of the occupant's last move line (5: Struggle; None: not on its sheet)
         self.encore_slot = 0  # the move slot + 1 that Encore forces (0: not encored)
@@ -597,6 +601,10 @@ class Tracker:
         elif kind == EV["CANT"]:
             # An ability's block (Armor Tail) names its holder; the move's user, [of], took the action.
             self._at(e[2] if e[3] == trace_to_c.CAUSE["ABILITY"] else pos).acted = 1
+            if e[3] == trace_to_c.CAUSE["RECHARGE"]:
+                self._at(pos).must_recharge = 0  # cant|X|recharge: mustrecharge's onBeforeMove ends it (step G17)
+        elif kind == EV["VOLATILE_START"] and detail == trace_to_c.VOLATILE_MUST_RECHARGE:
+            self._at(pos).must_recharge = 1  # -mustrecharge|X: a recharge move hit (step G17)
         elif kind == EV["CONFUSED"]:
             self._at(pos).acted = 1
         elif kind in (EV["DAMAGE"], EV["HEAL"]):
@@ -971,7 +979,7 @@ class Tracker:
                 if p.occupant == ROSTER_NONE:
                     continue  # an empty position: all zero
                 pv = v["positions"][k]
-                pv["volatiles"] = EXT_THROAT_CHOP if p.throat_chop else 0
+                pv["volatiles"] = sum(bit for name, bit in _PRESENCE_BITS if getattr(p, name))
                 pv["perish"], pv["encore_slot"] = p.perish, p.encore_slot
                 own = self._member(side)[p.occupant].ability
                 pv["ability_now"] = p.ability_now if p.ability_now != own else 0  # shown when it differs

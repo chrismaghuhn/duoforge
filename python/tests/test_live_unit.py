@@ -117,6 +117,16 @@ class OptionsTest(unittest.TestCase):
                    {"ident": "p1: Farigiraf", "condition": "100/224", "active": True,
                     "moves": ["psychic", "grassknot", "trickroom", "protect"]}]}}
 
+    def test_recharge_request(self):
+        # mustrecharge (step G17): the pin's request offers only Recharge, trapped: the engine's RECHARGE slot command
+        import copy
+        from duoforge_live import options
+        request = copy.deepcopy(self.REQUEST)
+        request["active"][0] = {"moves": [{"move": "Recharge", "id": "recharge"}], "trapped": True}
+        lists = options.slot_options(request, 0, {"p1: Archaludon": 2, "p1: Farigiraf": 3}, {})
+        self.assertEqual([(o.kind, o.move_slot, o.target, o.text) for o in lists[0]],
+                         [(options.MOVE, options.RECHARGE, options.TARGET_NONE, "move 1")])
+
     def test_locked_slot_without_target_raises(self):
         from duoforge_live import options
         roster = {"p1: Archaludon": 2, "p1: Farigiraf": 3}
