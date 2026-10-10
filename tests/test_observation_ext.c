@@ -101,9 +101,11 @@ static void test_layout(df_test *t)
     DF_CHECK(t, offsetof(duoforge_observation_ext, supported) == 8u);
     DF_CHECK(t, offsetof(duoforge_observation_ext, field) == 16u);
     DF_CHECK(t, offsetof(duoforge_observation_ext, sides) == 32u);
-    DF_CHECK(t, offsetof(duoforge_observation_ext, reserved1) == 160u);
+    DF_CHECK(t, offsetof(duoforge_observation_ext, volatiles2) == 160u); /* encoder 6's reserve, decision 0050 */
+    DF_CHECK(t, offsetof(duoforge_observation_ext, reserved1) == 176u);
+    DF_CHECK(t, offsetof(duoforge_field_ext, flags) == 2u && offsetof(duoforge_side_ext, conditions) == 62u);
     /* The sections end exactly where the next begins and the struct is full: no padding. */
-    DF_CHECK(t, 160u + 32u == sizeof(duoforge_observation_ext));
+    DF_CHECK(t, 176u + 16u == sizeof(duoforge_observation_ext));
 }
 
 static void test_constants(df_test *t)

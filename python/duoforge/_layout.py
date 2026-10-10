@@ -168,6 +168,11 @@ CONSTANTS = {
     "DUOFORGE_VIEWEXT_FEATURE_MOVE_FAILED": 41,
     "DUOFORGE_VIEWEXT_FEATURE_TRANSFORM": 42,
     "DUOFORGE_VIEWEXT_FEATURE_COUNT": 43,
+    "DUOFORGE_VIEWEXT_FEATURE_RESERVE_VOLATILES": 59,
+    "DUOFORGE_VIEWEXT_FEATURE_VOLATILES2": 60,
+    "DUOFORGE_VIEWEXT_FEATURE_RESERVE_GUARDS": 61,
+    "DUOFORGE_VIEWEXT_FEATURE_SIDE_CONDITIONS": 62,
+    "DUOFORGE_VIEWEXT_FEATURE_FIELD_FLAGS": 63,
     "DUOFORGE_PUBLIC_CAUSE_VISIBLE_SLEEP": 1,
     "DUOFORGE_PUBLIC_CAUSE_VISIBLE_CONFUSION": 2,
     "DUOFORGE_PUBLIC_CAUSE_ILLUSION_POSSIBLE": 4,
@@ -404,7 +409,9 @@ OBSERVATION = _struct([
 # The POOL player-view extension (decision 0018): 192 bytes, alignment 8, all zero under every non-POOL kind.
 FIELD_EXT = _struct([
     ("gravity_turns", _U1, 0),
-    ("reserved", (_U1, (15,)), 1),
+    ("reserved0", _U1, 1),
+    ("flags", _U2, 2),
+    ("reserved", (_U1, (12,)), 4),
 ], 16)
 
 POSITION_EXT = _struct([
@@ -445,7 +452,8 @@ SIDE_EXT = _struct([
     ("toxic_spikes", _U1, 59),
     ("sticky_web", _U1, 60),
     ("guard_flags", _U1, 61),
-    ("reserved", (_U1, (2,)), 62),
+    ("conditions", _U1, 62),
+    ("reserved", _U1, 63),
 ], 64)
 
 OBSERVATION_EXT = _struct([
@@ -456,7 +464,8 @@ OBSERVATION_EXT = _struct([
     ("supported", _U8, 8),
     ("field", FIELD_EXT, 16),
     ("sides", (SIDE_EXT, (2,)), 32),
-    ("reserved1", (_U1, (32,)), 160),
+    ("volatiles2", (_U4, (2, 2)), 160),
+    ("reserved1", (_U1, (16,)), 176),
 ], 192)
 
 # The static data API (decision 0020): every field a uint32 (priority an int32), no padding.

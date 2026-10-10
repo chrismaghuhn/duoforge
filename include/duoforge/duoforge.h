@@ -868,10 +868,22 @@ duoforge_status duoforge_battle_observe(const duoforge_context *ctx, const duofo
 /* Bits of duoforge_side_ext.guard_flags (this turn only). */
 #define DUOFORGE_SIDE_GUARD_WIDE_GUARD  1u
 #define DUOFORGE_SIDE_GUARD_QUICK_GUARD 2u
+/* The reserve bitfields of encoder 6 (decision 0050): every bit of them has a fixed encoder column from encoder 6 on, so a
+   new public presence effect of the content expansion needs no new encoder. A family's columns are shown under its feature
+   (DUOFORGE_VIEWEXT_FEATURE_RESERVE_VOLATILES, _VOLATILES2, _RESERVE_GUARDS, _SIDE_CONDITIONS, _FIELD_FLAGS), and a bit with a
+   feature of its own name (DUOFORGE_POSITION_EXT_X, DUOFORGE_POSITION_EXT2_X, DUOFORGE_SIDE_GUARD_X,
+   DUOFORGE_SIDE_CONDITION_X or DUOFORGE_FIELD_FLAG_X with DUOFORGE_VIEWEXT_FEATURE_X) only under that one as well. Families:
+   duoforge_position_ext.volatiles bits 22 to 31, duoforge_observation_ext.volatiles2 (32 bits per position),
+   duoforge_side_ext.guard_flags bits 2 to 7, duoforge_side_ext.conditions (8 bits), duoforge_field_ext.flags (16 bits).
+   No bit of the new fields is defined yet (DUOFORGE_POSITION_EXT2_*, DUOFORGE_SIDE_CONDITION_*, DUOFORGE_FIELD_FLAG_*): each
+   stays zero until a step defines it, as every field here. A new bit adds an entry to src/encode/encode.c's table of its
+   family when it has a feature of its own. */
 /* duoforge_member_ext.item_now: the member holds nothing (Knock Off, Thief). */
 #define DUOFORGE_ITEM_NOW_NONE 255u
 
-/* Bit numbers of duoforge_observation_ext.supported, by tier (decision 0018 section 7.1). Bits 43 to 63 are free. */
+/* Bit numbers of duoforge_observation_ext.supported, by tier (decision 0018 section 7.1). Bits 0 to COUNT - 1 are the tiers;
+   bits 43 to 58 are assigned to the content expansion's lanes (HauptSession), bits 59 to 63 are the reserve families of
+   encoder 6 (decision 0050). */
 #define DUOFORGE_VIEWEXT_FEATURE_WEATHER_SAND     0u
 #define DUOFORGE_VIEWEXT_FEATURE_WEATHER_SNOW     1u
 #define DUOFORGE_VIEWEXT_FEATURE_ABILITY_CHANGE   2u
@@ -916,11 +928,19 @@ duoforge_status duoforge_battle_observe(const duoforge_context *ctx, const duofo
 #define DUOFORGE_VIEWEXT_FEATURE_MOVE_FAILED      41u
 #define DUOFORGE_VIEWEXT_FEATURE_TRANSFORM        42u
 #define DUOFORGE_VIEWEXT_FEATURE_COUNT            43u
+/* The reserve families of encoder 6 (decision 0050), outside the tiers (COUNT does not count them). */
+#define DUOFORGE_VIEWEXT_FEATURE_RESERVE_VOLATILES 59u /* duoforge_position_ext.volatiles bits 22 to 31 */
+#define DUOFORGE_VIEWEXT_FEATURE_VOLATILES2        60u /* duoforge_observation_ext.volatiles2 */
+#define DUOFORGE_VIEWEXT_FEATURE_RESERVE_GUARDS    61u /* duoforge_side_ext.guard_flags bits 2 to 7 */
+#define DUOFORGE_VIEWEXT_FEATURE_SIDE_CONDITIONS   62u /* duoforge_side_ext.conditions */
+#define DUOFORGE_VIEWEXT_FEATURE_FIELD_FLAGS       63u /* duoforge_field_ext.flags */
 
 /* Field-wide, public. */
 typedef struct duoforge_field_ext {
     uint8_t gravity_turns; /* 0 to 5: remaining turns */
-    uint8_t reserved[15];  /* zero */
+    uint8_t reserved0;     /* zero */
+    uint16_t flags;        /* DUOFORGE_FIELD_FLAG_* presence bits (decision 0050; none defined yet) */
+    uint8_t reserved[12];  /* zero */
 } duoforge_field_ext; /* 16 bytes */
 
 /* One active position; all zero when empty. */
@@ -953,7 +973,8 @@ typedef struct duoforge_side_ext {
     uint8_t toxic_spikes;      /* 0 to 2 layers */
     uint8_t sticky_web;        /* 0/1 */
     uint8_t guard_flags;       /* DUOFORGE_SIDE_GUARD_*: this turn only, so only at a PIVOT boundary */
-    uint8_t reserved[2];       /* zero */
+    uint8_t conditions;        /* DUOFORGE_SIDE_CONDITION_* presence bits (decision 0050; none defined yet) */
+    uint8_t reserved;          /* zero */
 } duoforge_side_ext; /* 64 bytes */
 
 typedef struct duoforge_observation_ext {
@@ -964,7 +985,10 @@ typedef struct duoforge_observation_ext {
     uint64_t supported;   /* bit DUOFORGE_VIEWEXT_FEATURE_* set: the feature's mechanic is implemented and tested */
     duoforge_field_ext field;
     duoforge_side_ext sides[DUOFORGE_SIDE_COUNT];
-    uint8_t reserved1[32]; /* zero: room for a whole new record */
+    /* DUOFORGE_POSITION_EXT2_* presence bits per side (absolute, as sides[]) and position, the second word of
+       duoforge_position_ext.volatiles (decision 0050; none defined yet) */
+    uint32_t volatiles2[DUOFORGE_SIDE_COUNT][DUOFORGE_ACTIVE_PER_SIDE];
+    uint8_t reserved1[16]; /* zero: room for a whole new record */
 } duoforge_observation_ext; /* DUOFORGE_OBSERVATION_EXT_SIZE bytes */
 /* A size mismatch is a compile error here (negative array size), in C and in C++. */
 typedef char duoforge_observation_ext_size_check[(sizeof(duoforge_observation_ext) == DUOFORGE_OBSERVATION_EXT_SIZE) ? 1 : -1];

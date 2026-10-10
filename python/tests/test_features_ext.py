@@ -132,17 +132,18 @@ class FeaturesExtTest(unittest.TestCase):
         cls.ctx.close()
 
     def test_layout_appends_the_block(self):
-        self.assertEqual((features.ENCODER, features.ENCODERS), (5, (1, 2, 3, 4, 5)))
-        self.assertEqual((features.BASE_OBS_SIZE, features.EXT3_SIZE, features.EXT_SIZE, features.OBS_SIZE),
-                         (607, 235, 255, 862))
-        self.assertEqual(len(set(features.FEATURE_NAMES)), 862)
-        self.assertEqual([features.obs_size(v) for v in (1, 2, 3, 4, 5)], [607, 607, 842, 850, 862])
-        self.assertEqual(features.feature_names(5), features.FEATURE_NAMES)
+        self.assertEqual((features.ENCODER, features.ENCODERS), (6, (1, 2, 3, 4, 5, 6)))
+        self.assertEqual((features.BASE_OBS_SIZE, features.EXT3_SIZE, features.EXT5_SIZE, features.OBS_SIZE),
+                         (607, 235, 255, 862 + 232))
+        self.assertEqual(len(set(features.FEATURE_NAMES)), features.OBS_SIZE)
+        self.assertEqual([features.obs_size(v) for v in (1, 2, 3, 4, 5, 6)], [607, 607, 842, 850, 862, 1094])
+        self.assertEqual(features.feature_names(6), features.FEATURE_NAMES)  # encoder 6's reserve: test_encoder6
+        self.assertEqual(features.feature_names(5), features.FEATURE_NAMES[:862])
         self.assertEqual(features.feature_names(4), features.FEATURE_NAMES[:850])
         self.assertEqual(features.feature_names(3), features.FEATURE_NAMES[:842])
         self.assertEqual(features.feature_names(2), features.FEATURE_NAMES[:607])
         self.assertEqual(features.feature_names(1), features.FEATURE_NAMES[:607])
-        ext = features.FEATURE_NAMES[607:]
+        ext = features.FEATURE_NAMES[607:862]
         self.assertEqual(ext[:5], ("ext.global.weather_sand", "ext.global.weather_snow", "ext.global.terrain_electric",
                                    "ext.global.terrain_misty", "ext.global.gravity_turns"))
         side = ("aurora_veil_turns", "stealth_rock", "spikes", "toxic_spikes", "sticky_web", "wide_guard", "quick_guard")
@@ -165,8 +166,10 @@ class FeaturesExtTest(unittest.TestCase):
                                                     "transform_source.roster")))
 
     def test_every_column_has_one_feature_bit(self):
-        bits = features.EXT_COLUMN_FEATURES
-        self.assertEqual(bits.shape, (features.EXT_SIZE,))
+        bits = features.EXT_COLUMN_FEATURES  # encoder 5's columns; the reserve's feature sets: test_encoder6
+        self.assertEqual(bits.shape, (features.EXT5_SIZE,))
+        self.assertTrue(np.array_equal(features.EXT_COLUMN_MASKS[:features.EXT5_SIZE],
+                                       np.uint64(1) << bits.astype(np.uint64)))
         self.assertEqual(set(bits.tolist()), set(range(C["DUOFORGE_VIEWEXT_FEATURE_COUNT"])))
         want = {"ext.global.weather_sand": "WEATHER_SAND", "ext.global.terrain_misty": "TERRAIN_MISTY",
                 "ext.global.gravity_turns": "GRAVITY", "ext.foe.aurora_veil_turns": "AURORA_VEIL",

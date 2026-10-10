@@ -27,7 +27,7 @@ C = _layout.CONSTANTS
 SEED = 0x2026100300000400
 ENVS = 16
 STEPS = 30
-VERSIONS = (1, 2, 3, 4)
+VERSIONS = (1, 2, 3, 4, 5, 6)
 SAND_TEAMS = ("PP_097433EFCC505367", "PP_25161F401C0A2005")  # Sand Stream in the registry
 SLOT_VALUES = 2 * _layout.MAX_SLOT_OPTIONS * features.SLOT_FEATURES
 PAIR_VALUES = _layout.MAX_SLOT_OPTIONS * _layout.MAX_SLOT_OPTIONS
@@ -36,7 +36,7 @@ PAIR_VALUES = _layout.MAX_SLOT_OPTIONS * _layout.MAX_SLOT_OPTIONS
 def reference(version, mask, observations, domains, ext):
     """features.py's inputs of version `version`: (obs, slots, pair_mask), or the ValueError it raises."""
     try:
-        obs, slots, pairs = features.encode_batch(observations, domains, ext, mask)
+        obs, slots, pairs = features.encode_batch(observations, domains, ext, mask, encoder=version)
         return (features.as_encoder(obs, observations, version), features.slots_as_encoder(slots, version),
                 pairs), None
     except ValueError as err:
@@ -63,7 +63,7 @@ def masks_for(version, library, rng, count=3):
     top = library & features.version_features(version)
     out = {0, top & features.BASE_VALUE_FEATURES, top}
     for _ in range(count):
-        out.add(top & int(rng.integers(0, 1 << 62)))
+        out.add(top & (int(rng.integers(0, 1 << 62)) | int(rng.integers(0, 4)) << 62))  # bits 62 and 63 too
     return sorted(out)
 
 
@@ -151,7 +151,7 @@ class EncodeCTest(unittest.TestCase):
         rng = np.random.default_rng(SEED + 1)
         # every field set, and empty records (revision 0: the "none" of Encore and Disable)
         for ext in (_records(ob), np.zeros(ob.shape, dtype=_layout.OBSERVATION_EXT)):
-            for version in (3, 4):
+            for version in (3, 4, 5, 6):
                 for mask in masks_for(version, features.ALL_FEATURES, rng, count=32):
                     want, err = reference(version, mask, ob, d, ext)
                     self.assertIsNone(err)
@@ -160,6 +160,32 @@ class EncodeCTest(unittest.TestCase):
                         self.assertEqual(st, 0, f"version {version} mask {mask:#x} row {row}")
                         self.assert_same(got, (want[0][row], want[1][row], want[2][row]),
                                          f"version {version} mask {mask:#x} row {row}")
+
+    def test_reserve_records_match_the_reference(self):
+        # Encoder 6's reserve (decision 0050): every family filled, shown by version 6, refused by 3 to 5.
+        from python.tests.test_encoder6 import _reserve
+        with duoforge.Context() as ctx, duoforge.Batch(ctx, duoforge.reference_setups(list(range(4))), 1,
+                                                       SEED) as batch:
+            policy = duoforge.RandomPolicy(SEED, 4)
+            policy.start_episodes(np.arange(4), np.zeros(4, dtype=np.uint64))
+            batch.query_factored()
+            batch.step_factored(policy.choose_factored(batch))
+            batch.query_factored()
+            ob, d = batch.observations.reshape(-1).copy(), batch.domains.reshape(-1).copy()
+        ext, ob = _reserve(_records(ob), ob)
+        rng = np.random.default_rng(SEED + 3)
+        for version in (3, 4, 5, 6):
+            for mask in masks_for(version, features.ALL_FEATURES, rng, count=32):
+                want, err = reference(version, mask, ob, d, ext)
+                self.assertEqual(err is None, version == 6, f"version {version}: {err}")
+                for row in range(ob.shape[0]):
+                    st, *got = c_encode(version, mask, ob[row], d[row], ext[row])
+                    what = f"version {version} mask {mask:#x} row {row}"
+                    if err is not None:
+                        self.assertNotEqual(st, 0, what)
+                        continue
+                    self.assertEqual(st, 0, what)
+                    self.assert_same(got, (want[0][row], want[1][row], want[2][row]), what)
 
     def test_fuzzed_rows_refuse_as_the_reference(self):
         with duoforge.Context() as ctx, duoforge.Batch(ctx, duoforge.reference_setups(list(range(4))), 1,
@@ -177,7 +203,7 @@ class EncodeCTest(unittest.TestCase):
             ("ob", ("boundary_kind",), small), ("ob", ("weather",), small), ("ob", ("terrain",), small),
             ("ob", ("player",), (0, 1, 2)), ("ob", ("epoch",), (0, 1, 7)),
             ("ob", ("sides", "members", "location"), small), ("ob", ("sides", "members", "status"), small),
-            ("ob", ("sides", "positions", "reserved"), (0, 1, 2, 4, 7, 8, 16)),
+            ("ob", ("sides", "positions", "reserved"), (0, 1, 2, 4, 7, 8, 16, 128)),
             ("ob", ("sides", "occupant"), (0, 5, 6, 7, 254, 255)),
             ("d", ("kind",), (0, 1, 2, 3)), ("d", ("slot_count",), (0, 1, 31, 32, 33, 255)),
             ("d", ("slots", "kind"), (0, 1, 2, 3, 4)), ("d", ("slots", "move_slot"), (0, 3, 4, 5, 6, 255)),
@@ -185,8 +211,10 @@ class EncodeCTest(unittest.TestCase):
             ("x", ("revision",), (0, 1, 2)), ("x", ("player",), (0, 1, 2)), ("x", ("epoch",), (0, 1, 7)),
             ("x", ("supported",), (0, features.BASE_VALUE_FEATURES, features.ALL_FEATURES)),
             ("x", ("field", "gravity_turns"), (0, 5, 6)), ("x", ("sides", "spikes"), (3, 4)),
-            ("x", ("sides", "guard_flags"), (0, 1, 2, 3, 4)),
-            ("x", ("sides", "positions", "volatiles"), (0, 1 << 19, 1 << 20, 1 << 21, 1 << 31)),
+            ("x", ("sides", "guard_flags"), (0, 1, 2, 3, 4, 128)),
+            ("x", ("sides", "conditions"), (0, 1, 128)), ("x", ("field", "flags"), (0, 1, 1 << 15)),
+            ("x", ("volatiles2",), (0, 1, 1 << 31)),
+            ("x", ("sides", "positions", "volatiles"), (0, 1 << 19, 1 << 20, 1 << 21, 1 << 22, 1 << 31)),
             ("x", ("sides", "positions", "type_now"), (0, 1, 18, 19)),
             ("x", ("sides", "positions", "move_failed"), (0, 1, 2)),
             ("x", ("sides", "positions", "encore_slot"), (0, 4, 5)),
@@ -223,7 +251,7 @@ class EncodeCTest(unittest.TestCase):
                     field = field[name]
                 at = np.unravel_index(int(rng.integers(0, field.size)), field.shape)
                 field[at] = values[int(rng.integers(0, len(values)))]
-            version = VERSIONS[int(rng.integers(0, 4))]
+            version = VERSIONS[int(rng.integers(0, len(VERSIONS)))]
             choices = masks_for(version, features.ALL_FEATURES, rng, count=2)
             mask = choices[int(rng.integers(0, len(choices)))]
             use_ext = ext if (mask & features.RECORD_FEATURES or rng.integers(0, 2)) else None

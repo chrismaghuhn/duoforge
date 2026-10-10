@@ -288,7 +288,7 @@ static void check_ab_info_safety(df_test *t, const duoforge_context *ctx)
  * does not. The refusal is the first check of the encoder, before the domain is read: the observation alone decides it. */
 static void check_encoder_refusal(df_test *t)
 {
-    static float obs[1024]; /* at least the widest encoder's obs (duoforge_encoder_size; encoder 5 is 862 wide) */
+    static float obs[1152]; /* at least the widest encoder's obs (duoforge_encoder_size; encoder 6 is 1094 wide) */
     static float slots[DUOFORGE_ENCODER_SLOT_VALUES];
     static uint8_t pairs[DUOFORGE_ENCODER_PAIR_VALUES];
     duoforge_factored_domain dom;

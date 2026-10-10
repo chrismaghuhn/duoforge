@@ -99,8 +99,8 @@ int main(void)
 
     /* test_widths */
     {
-        static const uint32_t want[7] = {0u, 607u, 607u, 842u, 850u, 862u, 0u};
-        for (uint32_t v = 0u; v < 7u; ++v) {
+        static const uint32_t want[8] = {0u, 607u, 607u, 842u, 850u, 862u, 1094u, 0u};
+        for (uint32_t v = 0u; v < 8u; ++v) {
             uint32_t size = 7u;
             const duoforge_status st = duoforge_encoder_size(v, &size);
             DF_CHECK(&t, want[v] == 0u ? st == DUOFORGE_E_INVALID_ARGUMENT && size == 7u

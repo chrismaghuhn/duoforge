@@ -112,7 +112,7 @@ class CheckpointTest(unittest.TestCase):
             wide, cfg = checkpoint.load_current(path)
         self.assertEqual((cfg["encoder"], cfg["features"]), (features.ENCODER, list(features.FEATURE_NAMES)))
         w = wide["t1"]["w"]
-        self.assertEqual(w.shape[0], features.obs_size(5))
+        self.assertEqual(w.shape[0], features.OBS_SIZE)  # and by encoder 6's reserve (decision 0050)
         self.assertTrue(np.array_equal(w[:len(old)], params["t1"]["w"]))
         self.assertFalse(w[len(old):].any())
 
