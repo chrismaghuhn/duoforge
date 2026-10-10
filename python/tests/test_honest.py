@@ -61,12 +61,13 @@ class HonestSearch(unittest.TestCase):
     def setUpClass(cls):
         cls.model, cls.params = _v2s()
 
-    def make(self, ctx, k=2, rule="mix", table=None, excluded=None, lam=0.5):
+    def make(self, ctx, k=2, rule="mix", table=None, excluded=None, lam=0.5, species_prior=False):
         table = table or belief.SpreadTable.from_sides(duoforge.reference_setups([0])["sides"].reshape(-1))
         with duoforge.Batch(ctx, duoforge.reference_setups([0]), 1, 42) as b:
             mask = int(b.observe_ext()[0, 0]["supported"])
         return honest.Honest(ctx, self.model, self.params, 4, mask, k=k, m=2, s=2, rule=rule,
-                             capacity=16, workers=2, table=table, exclude_teams=excluded, lam=lam)
+                             capacity=16, workers=2, table=table, exclude_teams=excluded, lam=lam,
+                             species_prior=species_prior)
 
     def preview(self, search, roots, seat=0):
         return search.decide(roots, list(range(roots.envs)), [seat] * roots.envs,
@@ -138,6 +139,39 @@ class HonestSearch(unittest.TestCase):
             _, rows = table.candidates(int(table.species[0]), int(table.nature[0]), int(table.item[0]), ids["A"])
             self.assertFalse((table.team[rows] == ids["A"]).any())
             self.assertEqual(sampled["stat_points"].shape, (16, 6, 6))
+
+    def test_live_spread_table_is_pinned(self):
+        # Live play's belief (owner, 2026-10-10): every A/B/C and PP_ team of the registry, pinned by its table hash; P1's
+        # and the evaluation's 79 SPREAD_SOURCES stay as they are. A registry change fails here until it is re-pinned.
+        import json
+        from pathlib import Path
+        with duoforge.Context(C["DUOFORGE_DATA_KIND_POOL"]) as ctx:
+            table, ids, info = honest.live_spread_table(ctx)
+            self.assertEqual(info["sha256"], honest.LIVE_SPREAD_SHA256)
+            registry = json.loads((Path(honest.__file__).resolve().parents[2] / "data/teams/index.json")
+                                  .read_text(encoding="utf-8"))["teams"]
+            self.assertEqual(set(ids), {r["id"] for r in registry if r["id"] in ("A", "B", "C") or r["id"].startswith("PP_")})
+            self.assertTrue(set(honest.SPREAD_SOURCES) < set(ids))
+            with mock.patch.object(honest, "LIVE_SPREAD_SHA256", "0" * 64), \
+                    self.assertRaisesRegex(honest.SearchError, "pinned"):
+                honest.live_spread_table(ctx)
+
+    def test_species_without_prior_is_refused_when_required(self):
+        # Live play (owner, 2026-10-10): a foe species without a stated spread in the table is not drawn from the
+        # belief's nature-only or table-wide fallback; the decision is refused with its cause and played raw (counted).
+        # Off (P1, the arena), the fallback levels stay as they are.
+        with duoforge.Context(C["DUOFORGE_DATA_KIND_POOL"]) as ctx:
+            other = belief.SpreadTable.from_sides(duoforge.reference_setups([2])["sides"].reshape(-1))  # no Politoed team
+            for required, kind in ((True, "unreconstructible"), (False, "searched")):
+                with self.subTest(required=required), \
+                        duoforge.Batch(ctx, duoforge.reference_setups([0]), 1, 42) as b, \
+                        self.make(ctx, table=other, species_prior=required) as search:
+                    self.preview(search, b)
+                    self.start_turn(b)
+                    _, records = search.decide(b, [0], [0], [456], [False])
+                    self.assertEqual(records[0]["kind"], kind)
+                    if required:
+                        self.assertIn("no spread prior", records[0]["reason"])
 
     def test_missing_history_is_counted_and_errors_stop(self):
         with duoforge.Context(C["DUOFORGE_DATA_KIND_POOL"]) as ctx, \
