@@ -48,7 +48,7 @@ _RESUMABLE = ("envs", "workers", "minutes", "updates", "self_play_share", "leagu
               "team_weights", "teams_root", "opponent_precision", "minibatch", "learning_rate_schedule", "kl_ref",
               "kl_coef", "kl_refresh", "stop_cpu_core_seconds", "stop_gpu_seconds", "update_gpu_share",
               "act_gpu_share", "league_pfsp_share", "league_anchor_share", "league_anchors", "pfsp_weighting",
-              "pfsp_min_weight", "pfsp_prior", "pfsp_prior_games")
+              "pfsp_min_weight", "pfsp_prior", "pfsp_prior_games", "random_team_share")
 # The refill options (league.Refill) and their defaults, which reproduce the uniform refills of the runs before them;
 # a run saves one only where it differs from its default, so a run without them saves what such a run saved.
 _REFILL = {"league_pfsp_share": ("pfsp_share", 0.0), "league_anchor_share": ("anchor_share", 0.0),
@@ -232,6 +232,13 @@ def _parser(suppress=False):
                                       "reference setups)")
     add("--team-weights", default=None, help="sampling weights of the teams, comma-separated (default: equal)")
     add("--teams-root", default="data/teams", help="the team registry")
+    add("--random-teams-root", default=None,
+        help="a random-team corpus (tools/reference/random_teams.py, outside the repository) joined to the pool: "
+             "every team loaded and checked by the library, its provenance (pin, seed, count, index and manifest "
+             "sha256) in the run's config; with --random-team-share")
+    add("--random-team-share", type=float, default=None,
+        help="the probability that a side's team is drawn from --random-teams-root (uniform within it), in (0, 1]; "
+             "the registry keeps its weights among the rest")
     add("--data-kind", choices=tuple(DATA_KINDS), default="closure", help="the data kind of the battles")
     add("--init", default=None,
         help="a checkpoint (format 2) a new run starts from, a behavior-cloning network (M11 BC spec section 8): "
@@ -453,11 +460,16 @@ def _default_pool():
 
 
 def _pool_of_args(args, context):
-    """The pool the options name: registry teams (--teams) or Teams A and B."""
+    """The pool the options name: registry teams (--teams) or Teams A and B, joined by the random-team corpus of
+    --random-teams-root at --random-team-share (teams.combine)."""
     weights = None if args.team_weights is None else [float(w) for w in args.team_weights.split(",")]
     if args.teams is None:
-        return _default_pool() if weights is None else _default_pool().with_weights(weights)
-    return teams.load(context, [t.strip() for t in args.teams.split(",")], root=args.teams_root, weights=weights)
+        pool = _default_pool() if weights is None else _default_pool().with_weights(weights)
+    else:
+        pool = teams.load(context, [t.strip() for t in args.teams.split(",")], root=args.teams_root, weights=weights)
+    if args.random_teams_root is not None:
+        pool = teams.combine(pool, teams.load_root(context, args.random_teams_root), args.random_team_share)
+    return pool
 
 
 def _check_teams(saved, pool):
@@ -515,7 +527,21 @@ def _run(args, pool, on_start, stop):
         except ValueError as err:
             raise SystemExit(f"--init {args.init}: the context's tables differ from the checkpoint's: {err}") from None
     ids = checkpoint.ids_of(context)  # what the embedded ids mean (spec 12.4), kept in the run state
-    pool = _pool_of_args(args, context) if pool is None else pool
+    if (args.random_teams_root is None) != (args.random_team_share is None):
+        raise SystemExit("--random-teams-root and --random-team-share go together")
+    random_teams = None
+    if args.random_teams_root is not None:  # the corpus a run records, and keeps across its resumes
+        try:
+            random_teams = teams.corpus_provenance(args.random_teams_root)
+        except teams.TeamError as err:
+            raise SystemExit(str(err)) from None
+        if saved_state is not None and saved_state["train"].get("random_teams") != random_teams:
+            raise SystemExit(f"--random-teams-root {args.random_teams_root} is not the run's corpus "
+                             f"({saved_state['train'].get('random_teams')} -> {random_teams})")
+    try:
+        pool = _pool_of_args(args, context) if pool is None else pool
+    except (teams.TeamError, ValueError) as err:
+        raise SystemExit(str(err)) from None
     if saved_state is not None:
         if list(pool.ids) != saved_state["teams"]["ids"] or \
                 [float(w) for w in pool.weights] != saved_state["teams"]["weights"]:
@@ -550,6 +576,11 @@ def _run(args, pool, on_start, stop):
         train_config.pop("keep_init_encoder", None)  # the saved options of a run without it are as before
     if train_config.get("learning_rate_over") == "decisions":
         del train_config["learning_rate_over"]  # its default: saved only by a budget-matched run
+    if random_teams is None:  # the saved options of a run without a corpus are as before
+        train_config.pop("random_teams_root", None)
+        train_config.pop("random_team_share", None)
+    else:
+        train_config["random_teams"] = random_teams
     if saved_state is not None and saved_state["data"]["fingerprint"] != context.fingerprint().hex():
         # Other tables (the data kind cannot change on resume): the run goes on when every id its network embeds
         # still names the same row (spec 12.4), and is refused otherwise.
@@ -751,8 +782,13 @@ def _run(args, pool, on_start, stop):
     with open(os.path.join(out, "log.jsonl"), "a", encoding="utf-8") as log:
         if saved_state is None and init is not None:
             log.write(json.dumps({"init": train_config["init"]}) + chr(10))
+        if saved_state is None and random_teams is not None:
+            log.write(json.dumps({"random_teams": random_teams, "share": args.random_team_share,
+                                  "teams": len(pool.ids)}) + chr(10))
         if saved_state is not None:
             line = {"resume": changes, "at_update": update}
+            if random_teams is not None:
+                line["random_teams"] = random_teams
             if abandoned:
                 line |= {"abandoned_snapshots": abandoned, "abandoned_dir": abandoned_dir}
             log.write(json.dumps(line) + "\n")

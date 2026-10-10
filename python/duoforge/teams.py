@@ -6,6 +6,9 @@ index hash, maps names to ids with the library's data query API and lets
 the library judge each team by creating a battle of the team against
 itself; a team it refuses raises TeamError naming the team and the status.
 
+load_root loads every team of a registry or random-team corpus (tools/reference/random_teams.py), combine joins a
+corpus to a registry pool with a per-side share, and corpus_provenance is what a run records of the corpus.
+
 A TeamPool holds the teams a run plays: their registry ids, the sha256 of
 their files ("" for teams made from setups), sampling weights and side
 setups (SIDE_SETUP). It builds the battle setups of pairs of team indices;
@@ -232,3 +235,52 @@ def load(context, ids, root="data/teams", weights=None):
         shas.append(sha)
         sides.append(side)
     return TeamPool(tuple(ids), tuple(shas), weights, np.array(sides, dtype=_layout.SIDE_SETUP))
+
+
+def load_root(context, root, weights=None):
+    """The TeamPool of every team of the registry or corpus at root, in its index's order (a random-team corpus of
+    tools/reference/random_teams.py, outside the repository): load of all its ids, so each file must match its hash,
+    parse, map and be accepted by the library, and the first one that does not stops with TeamError."""
+    index_path = os.path.join(root, "index.json")
+    try:
+        with open(index_path, encoding="utf-8") as f:
+            ids = [t["id"] for t in json.load(f)["teams"]]
+    except (OSError, ValueError, KeyError, TypeError) as err:
+        raise TeamError(f"{index_path}: not a team index ({err})") from None
+    if not ids:
+        raise TeamError(f"{index_path} names no team")
+    return load(context, ids, root=root, weights=weights)
+
+
+def combine(registry, corpus, share):
+    """One pool of the registry's teams and a random corpus's, weighted so that each side's team is drawn from the
+    corpus with probability `share` (uniform within it) and from the registry otherwise, by the registry's own
+    weights. share in (0, 1]; ValueError for another or for a team in both."""
+    share = float(share)
+    if not (0.0 < share <= 1.0):
+        raise ValueError(f"random team share {share} must lie in (0, 1]")
+    reg = registry.weights / registry.weights.sum() * (1.0 - share)
+    rnd = np.full(len(corpus.ids), share / len(corpus.ids))
+    return TeamPool(registry.ids + corpus.ids, registry.sha256 + corpus.sha256, np.concatenate([reg, rnd]),
+                    np.concatenate([registry.sides, corpus.sides]))
+
+
+def corpus_provenance(root):
+    """What a run records of the random-team corpus at root: its generator's pin and seed, its team count and the
+    sha256 of its index.json and manifest.json. TeamError when they are missing or the manifest's teams digest is not
+    the index's (an index changed after the corpus was made)."""
+    try:
+        with open(os.path.join(root, "index.json"), "rb") as f:
+            index_raw = f.read()
+        with open(os.path.join(root, "manifest.json"), "rb") as f:
+            manifest_raw = f.read()
+        index, manifest = json.loads(index_raw), json.loads(manifest_raw)
+        shas = [t["sha256"] for t in index["teams"]]
+        pin, seed, digest = manifest["pin"], manifest["seed"], manifest["teams_sha256"]
+    except (OSError, ValueError, KeyError, TypeError) as err:
+        raise TeamError(f"{root}: not a random-team corpus with index.json and manifest.json ({err})") from None
+    if hashlib.sha256("".join(shas).encode()).hexdigest() != digest:
+        raise TeamError(f"{root}: the manifest's teams_sha256 is not the index's (the index changed after the corpus "
+                        "was made)")
+    return {"pin": pin, "seed": seed, "count": len(shas), "index_sha256": hashlib.sha256(index_raw).hexdigest(),
+            "manifest_sha256": hashlib.sha256(manifest_raw).hexdigest()}
