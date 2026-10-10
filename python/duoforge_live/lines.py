@@ -302,6 +302,8 @@ def check(line, view):
             if item is not None and item + 1 == target["item"]:
                 return "fold"
             _unknown(kind, effect)
+        if effect == "ability: Symbiosis":
+            return _feature("ITEM_CHANGE")  # the holder hands its item to its partner (step G69), as a Trick does
         if effect == "move: Trick":
             return _feature("ITEM_CHANGE")  # Trick's announcement before its -item lines (G29; Switcheroo prints none)
         if effect in _START:

@@ -353,6 +353,15 @@ class LinesTest(unittest.TestCase):
         self.assertEqual(caught.exception.reason, "feature:ILLUSION")
         self.assertEqual(self.stop("|-enditem|p1a: Staraptor|Focus Sash"), "line:-enditem Focus Sash")
 
+    def test_symbiosis_passing_its_item_is_item_change(self):
+        # Step G69: Symbiosis hands the holder's item to its partner (`-activate|X|ability: Symbiosis|Item|[of] Y`): the
+        # partner then holds another item than its sheet's, decision 0018's ITEM_CHANGE, as Trick, Knock Off, Bug Bite
+        view = _View({"p1: Staraptor": ("STARAPTOR", "LEFTOVERS", "SYMBIOSIS"),
+                      "p1: Gholdengo": ("GHOLDENGO", "FOCUSSASH", "GOODASGOLD")})
+        with self.assertRaises(lines.Stop) as caught:
+            lines.check("|-activate|p1a: Staraptor|ability: Symbiosis|Leftovers|[of] p1b: Gholdengo", view)
+        self.assertEqual(caught.exception.reason, "feature:ITEM_CHANGE")
+
     def test_drag_folds(self):
         # Step G46: a forced switch brings a member in as a switch does (the tracker folds it as one, or stops)
         self.assertEqual(lines.check("|drag|p2a: Gholdengo|Gholdengo, L50|100/100", self.view), "fold")
