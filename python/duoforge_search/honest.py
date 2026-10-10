@@ -13,7 +13,7 @@ import weakref
 import numpy as np
 
 import duoforge
-from duoforge import _layout, data, teams, view
+from duoforge import _layout, data, state_layout, teams, view
 from duoforge_learn.selfplay import TEAM_TABLE
 
 from . import belief, lookahead, matrix, seeds
@@ -117,6 +117,18 @@ def spread_table(ctx, root=None, sources=SPREAD_SOURCES):
     return table, {s["id"]: i for i, s in enumerate(sources)}, {**counts, "sources": sources, "sha256": table.sha256()}
 
 
+# Live play's spread table (owner, 2026-10-10): every A/B/C and PP_ team of the repository registry (841 sources, 5016
+# sets, 103 species). A registry change fails until this pin is renewed; P1 and the evaluation keep SPREAD_SOURCES.
+LIVE_SPREAD_SHA256 = "292712dbe242b5021a2bf8f262a751f2ea816a9fac208a6e37c32f8f4f1b74af"
+
+
+def live_spread_table(ctx, root=None):
+    table, ids, info = spread_table(ctx, root, sources=None)
+    if info["sha256"] != LIVE_SPREAD_SHA256:
+        raise SearchError(f"live spread table {info['sha256']} differs from the pinned {LIVE_SPREAD_SHA256}")
+    return table, ids, info
+
+
 _CAUSES = ((C["DUOFORGE_PUBLIC_CAUSE_VISIBLE_SLEEP"], "visible_sleep"),
            (C["DUOFORGE_PUBLIC_CAUSE_VISIBLE_CONFUSION"], "visible_confusion"),
            (C["DUOFORGE_PUBLIC_CAUSE_ILLUSION_POSSIBLE"], "illusion_possible"),
@@ -192,7 +204,11 @@ def reduce(tables, weights, qs, prior_rank, uniform, lam, oracle=False, budget=N
 class Honest(lookahead.Lookahead):
     def __init__(self, context, model, params, encoder, ext_supported, k=8, m=8, s=16, rule="mix",
                  seed=lookahead.SEARCH_SEED, capacity=lookahead.CAPACITY, workers=8, lam=0.5,
-                 table=None, exclude_teams=None, preview_mode="raw", preview_only=False, preview_steps=16):
+                 table=None, exclude_teams=None, preview_mode="raw", preview_only=False, preview_steps=16,
+                 species_prior=False):
+        # species_prior (live play, owner 2026-10-10): a foe species without a stated spread in the table refuses the
+        # decision instead of drawing from the belief's nature-only or table-wide fallback (levels 4 and 5).
+        self.species_prior = bool(species_prior)
         if rule not in RULES or not 0 <= lam <= 1:
             raise ValueError("honest search needs nash/ev/mix and 0 <= lam <= 1")
         if preview_mode not in ("raw", "value", "turn1") or type(preview_steps) is not int or preview_steps < 1:
@@ -281,15 +297,26 @@ class Honest(lookahead.Lookahead):
                 raise
             finally:
                 costs["public_records"] += time.perf_counter() - t
+        if self.species_prior:  # from the first draw's level: a redraw raises it (SpreadTable.draw)
+            initial = [self.belief.table.candidates(sp, nature, item, excluded)[0] for sp, nature, item in members]
+            missing = [members[m][0] for m, level in enumerate(initial) if level >= 4]
+            if missing:
+                raise Unreconstructible(f"no spread prior for foe species {missing}")
         for _ in range(MAX_RESPREADS):
             t = time.perf_counter()
             sampled = self.belief.sample(members, self.s, self.seed, key, excluded, attempts)
+            if self.species_prior:
+                past = np.flatnonzero((sampled["levels"][:, :len(members)] >= 4).any(axis=0))
+                if past.size:  # every stated spread of the species contradicted the public view
+                    raise Unreconstructible(f"redraw past the species prior for foe species "
+                                            f"{[members[m][0] for m in past]} after {respreads} respreads")
             weights = sampled["weights"]
             h = view.hypotheses(self.s)
             for name in ("stat_points", "hp", "sleep", "confusion", "charge_target"):
                 h[name] = sampled[name]
             if self._build(history["preview"], h).any():
                 raise SearchError("a sampled spread is invalid at team preview")
+            self._check_worlds(history["preview"], costs)  # the preview record is assembled like the root
             costs["world_builds"] += time.perf_counter() - t
             _, team, elapsed, _, _, _, query_seconds = self._world_policy()
             costs["world_builds"] += query_seconds
@@ -311,6 +338,7 @@ class Honest(lookahead.Lookahead):
                     attempts[st != 0] += 1
                     respreads += int((st != 0).sum())
                     continue
+                self._check_worlds(history["turn_start"], costs)
                 pp, _, elapsed, legal, _, _, query_seconds = self._world_policy()
                 costs["world_builds"] += query_seconds
                 costs["network"] += elapsed
@@ -329,12 +357,35 @@ class Honest(lookahead.Lookahead):
             statuses = self._build(record, h)
             costs["world_builds"] += time.perf_counter() - t
             if not statuses.any():
+                self._check_worlds(record, costs)
                 return h, weights, dropped, respreads, queue_pairs
             # The current C API reports a failed world, not the member. Redraw
             # all its spreads; keep its HP/counter/bench/queue words unchanged.
             attempts[statuses != 0] += 1
             respreads += int((statuses != 0).sum())
         raise SearchError(f"a world still contradicts the public view after {MAX_RESPREADS} spread draws")
+
+    def _check_worlds(self, record, costs):
+        """Every world built from a record (the root, the team preview's, the turn start's) gives it back (from_view, then public, byte for byte). A
+        record assembled outside the engine (the live tracker's) that fills a field the engine masks, or contradicts
+        itself, stops here with the differing fields named, instead of being searched. Engine records always pass
+        (duoforge.view); the check costs one public() call per decision."""
+        t = time.perf_counter()
+        again, statuses = self.worlds.public(np.full(self.worlds.envs, int(record["player"]), np.uint32))
+        costs["public_records"] += time.perf_counter() - t
+        want = np.asarray(record).tobytes()
+        for w in range(self.s):
+            if int(statuses[w]) == 0 and again[w].tobytes() == want:
+                continue
+            if int(statuses[w]) != 0:
+                raise SearchError(f"world {w} built from the record refuses its public record "
+                                  f"({duoforge.status_name(int(statuses[w]))})")
+            header = [name for name in record.dtype.names if name not in ("state", "pad")
+                      and not np.array_equal(np.asarray(record[name]), np.asarray(again[w][name]))]
+            size = int(record["state_size"])
+            fields = state_layout.diff(np.asarray(record["state"])[:size].tobytes(),
+                                       np.asarray(again[w]["state"])[:size].tobytes(), pool=size > state_layout.V3_SIZE)
+            raise SearchError(f"world {w} does not give its record back: header {header}, state fields {fields}")
 
     def decide(self, roots, envs, seats, keys, last_step):
         envs, seats = np.asarray(envs, np.int64), np.asarray(seats, np.int64)

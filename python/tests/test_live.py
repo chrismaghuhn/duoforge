@@ -107,7 +107,8 @@ class Reference:
         subprocess.run([sys.executable, str(data.ROOT / "tools" / "reference" / "conformance_records.py"), "--all",
                         root, "--out", self.tmp], check=True, timeout=600)
         views_path = os.path.join(self.tmp, "views.txt")
-        out = subprocess.run([os.environ["DUOFORGE_DIFF_RUNNER"], "--dump-views", views_path,
+        public_path = os.path.join(self.tmp, "public.txt")
+        out = subprocess.run([os.environ["DUOFORGE_DIFF_RUNNER"], "--dump-views", views_path, "--dump-public", public_path,
                               os.path.join(self.tmp, "closure.records")], capture_output=True, text=True, timeout=600)
         results = [line.split(" ") for line in out.stdout.splitlines() if line.startswith("R ")]
         if out.returncode != 0 or not results or any(r[2] != "PASS" for r in results):
@@ -120,6 +121,14 @@ class Reference:
                     np.frombuffer(bytes.fromhex(obs), dtype=_layout.OBSERVATION)[0],
                     np.frombuffer(bytes.fromhex(dom), dtype=_layout.FACTORED_DOMAIN)[0])
                 exts.setdefault(name, {})[(int(k), int(viewer))] = bytes.fromhex(ext)
+        # The engine's public record of each player at each state (the live search's record assembler, Task 1).
+        self.publics = {}
+        with open(public_path, encoding="ascii") as f:
+            for line in f:
+                _, name, k, viewer, status, record = line.split()
+                self.publics.setdefault(name, {})[(int(k), int(viewer))] = (
+                    int(status), None if record == "-" else
+                    np.frombuffer(bytes.fromhex(record), dtype=_layout.PUBLIC_STATE)[0])
         streams = {}
         for line in node_tool(root, "--all").splitlines():
             m = json.loads(line)
@@ -127,6 +136,9 @@ class Reference:
         if sorted(streams) != sorted(views):
             raise AssertionError("the client streams and the views name other battles")
         self.battles = [Battle(name, views[name], streams[name], exts[name]) for name in sorted(views)]
+        self.battles_by_name = {b.name: b for b in self.battles}
+        if sorted(self.publics) != sorted(views):
+            raise AssertionError("the public records and the views name other battles")
         self.data = data.load()
 
 
@@ -254,6 +266,75 @@ class BreakProtectTest(unittest.TestCase):
             self.assertEqual((t._guards, t._turn_scoped), (set(), set()), move)
 
 
+class LockedMoveSlotTest(unittest.TestCase):
+    """View audit of 2026-10-10 (#323): a foe whose last used move is a lockedmove (Outrage, Thrash, Petal Dance:
+    DUOFORGE_MOVE_STATIC_FLAG_LOCKED_MOVE) shows no locked slot, a Choice lock included, as the C observation hides it
+    (src/state/observation.c dfi_maybe_lockedmove). The last move is pokemon.moveUsed's: set by the position's own
+    move lines (a locked turn included), not by a move another effect makes it use, cleared when it leaves."""
+
+    @classmethod
+    def setUpClass(cls):
+        from duoforge_live import tracker
+        cls.tracker = tracker
+        cls.D = data.load(kind="pool")
+        cls.M = cls.D.tables["MOVE"]
+
+    def setUp(self):
+        from types import SimpleNamespace
+        t = self.tracker.Tracker.__new__(self.tracker.Tracker)
+        t.data, t.side, t._spectator = self.D, 0, False
+        from duoforge_live import lines
+        items = self.D.tables["ITEM"]
+        band = next(items[k.upper()] for k in lines.CHOICE_ITEMS if k.upper() in items) + 1  # a Choice holder (#334)
+        t._guard_moves, t._choice_items = set(), {band}
+        t._positions = [[self.tracker._Position(), self.tracker._Position()],
+                        [self.tracker._Position(), self.tracker._Position()]]
+        for side in t._positions:
+            for k, p in enumerate(side):
+                p.occupant = k
+        sheet = {"item": band, "moves": [self.M["OUTRAGE"], self.M["DRAGONCLAW"], self.M["PROTECT"]]}
+        t._occupant = lambda pos: SimpleNamespace(sheet=sheet, uses=[0, 0, 0], item_used=0, item_now=0)
+        t._pressure_extra = lambda *a: 0
+        self.t = t
+
+    def move(self, pos, name, cause=0, flags=0):
+        self.t._event(trace_to_c.ev_tuple(trace_to_c.EV["MOVE"], pos, 0, cause, self.M[name], flags=flags))
+
+    def test_a_foe_after_a_lockedmove_shows_no_locked_slot(self):
+        p = self.t._positions[1][0]
+        p.choice_slot = 0
+        self.move(2, "OUTRAGE")
+        self.assertEqual(self.t._shown_locked_slot(p, own=False), self.tracker.MOVE_SLOT_NONE)
+        self.move(2, "OUTRAGE", flags=trace_to_c.FLAG["LOCKED"])  # a locked turn is a move use too
+        self.assertEqual(self.t._shown_locked_slot(p, own=False), self.tracker.MOVE_SLOT_NONE)
+
+    def test_a_foe_after_another_move_shows_its_choice_slot(self):
+        p = self.t._positions[1][0]
+        p.choice_slot = 1
+        self.move(2, "DRAGONCLAW")
+        self.assertEqual(self.t._shown_locked_slot(p, own=False), 1)
+
+    def test_a_move_used_through_another_effect_is_not_the_last_move(self):
+        p = self.t._positions[1][0]
+        p.choice_slot = 1
+        self.move(2, "DRAGONCLAW")
+        self.move(2, "OUTRAGE", cause=trace_to_c.CAUSE["ABILITY"])  # e.g. reflected by Magic Bounce: no moveUsed
+        self.assertEqual(self.t._shown_locked_slot(p, own=False), 1)
+
+    def test_leaving_clears_the_last_move(self):
+        p = self.t._positions[1][0]
+        self.move(2, "OUTRAGE")
+        p.reset()
+        p.choice_slot = 1
+        self.assertEqual(self.t._shown_locked_slot(p, own=False), 1)
+
+    def test_the_own_side_is_unchanged(self):
+        p = self.t._positions[0][0]
+        p.choice_slot = 0
+        self.move(0, "OUTRAGE")
+        self.assertEqual(self.t._shown_locked_slot(p, own=True), 0)
+
+
 class OptionsTest(unittest.TestCase):
     """Test 1 (the options) and test 2 (the choice text) of the spec."""
 
@@ -368,6 +449,51 @@ def run_tracker(battle, player, stream=None, sheet_text=None):
             if step is not None and pid in step["input"]:
                 tracker.accepted(step["input"][pid])
     return out
+
+
+def record_diff(battle_name, k, viewer, record):
+    """The tracker's record assembler against the engine (live honest search, plan 2026-10-10 Task 1): the engine's
+    public record of `viewer` at decision point k of a committed battle beside an assembled `record`
+    (PUBLIC_STATE). Returns {"boundary", "player", "engine_status", "fields"}: the boundary and player of the engine's
+    view, its status (0, or the refusal), and the differing header fields and state fields (duoforge.state_layout
+    names); fields == [] means byte-identical. A refused engine record compares nothing (fields None)."""
+    from duoforge import state_layout
+    status, want = Reference.get().publics[battle_name][(int(k), int(viewer))]
+    obs, _ = Reference.get().battles_by_name[battle_name].views[(int(k), int(viewer))]
+    out = {"boundary": int(obs["boundary_kind"]), "player": int(viewer), "engine_status": status, "fields": None}
+    if status != 0:
+        return out
+    got = np.asarray(record)
+    header = [n for n in want.dtype.names if n not in ("state", "pad") and not np.array_equal(want[n], got[n])]
+    size = int(want["state_size"])
+    out["fields"] = header + state_layout.diff(np.asarray(want["state"])[:size].tobytes(),
+                                              np.asarray(got["state"])[:size].tobytes(),
+                                              pool=size > state_layout.V3_SIZE)
+    return out
+
+
+class RecordHarnessTest(unittest.TestCase):
+    """The engine records the tracker's assembler is compared with: one per player and state, refused or self-consistent."""
+
+    def test_engine_records_cover_every_state(self):
+        ref = Reference.get()
+        supported = 0
+        for battle in ref.battles:
+            for (k, viewer), (obs, _) in battle.views.items():
+                status, record = ref.publics[battle.name][(k, viewer)]
+                self.assertIn(status, (0, C["DUOFORGE_E_UNSUPPORTED"]), (battle.name, k, viewer))
+                result = record_diff(battle.name, k, viewer, record if record is not None else np.zeros((), _layout.PUBLIC_STATE))
+                self.assertEqual((result["boundary"], result["player"]), (int(obs["boundary_kind"]), viewer))
+                if status == 0:
+                    supported += 1
+                    self.assertEqual(result["fields"], [], (battle.name, k, viewer))
+                    self.assertEqual(int(record["boundary"]), int(obs["boundary_kind"]))
+                    changed = record.copy()
+                    changed["turn"] += 1
+                    self.assertEqual(record_diff(battle.name, k, viewer, changed)["fields"], ["turn"])
+                else:
+                    self.assertIsNone(result["fields"])
+        self.assertGreater(supported, 100)
 
 
 class TrackerTest(unittest.TestCase):

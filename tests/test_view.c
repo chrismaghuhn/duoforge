@@ -689,13 +689,13 @@ static void test_flinch_information_safety(df_test *t)
 {
     duoforge_context *ctx = df_make_context(&df_config_k1);
     for (uint32_t pending = 0u; pending < 2u; ++pending) {
-        duoforge_public_state v[2];
+        static duoforge_public_state v[2][2]; /* [flinch][player] */
         duoforge_status st[2][2];
         for (uint32_t flinch = 0u; flinch < 2u; ++flinch) {
             duoforge_battle *b = flinch_pivot(t, ctx, pending != 0u, flinch != 0u);
             for (uint32_t p = 0u; p < 2u; ++p) {
-                memset(&v[flinch], 0x55, sizeof v[flinch]);
-                st[flinch][p] = duoforge_battle_public(ctx, b, p, &v[flinch]);
+                memset(&v[flinch][p], 0x55, sizeof v[flinch][p]);
+                st[flinch][p] = duoforge_battle_public(ctx, b, p, &v[flinch][p]);
             }
             duoforge_battle_destroy(b);
         }
@@ -703,8 +703,8 @@ static void test_flinch_information_safety(df_test *t)
             DF_CHECK(t, st[0][p] == st[1][p]);
             DF_CHECK(t, st[0][p] == (pending != 0u ? DUOFORGE_E_UNSUPPORTED : DUOFORGE_OK));
         }
-        if (pending == 0u) { /* the last player's records (p = 1) of both battles */
-            DF_CHECK(t, v[0].state_size == v[1].state_size && memcmp(v[0].state, v[1].state, v[0].state_size) == 0);
+        for (uint32_t p = 0u; pending == 0u && p < 2u; ++p) { /* both players' records, the flinched foe's and its owner's */
+            DF_CHECK(t, memcmp(&v[0][p], &v[1][p], sizeof v[0][p]) == 0);
         }
     }
     duoforge_context_destroy(ctx);
