@@ -56,6 +56,14 @@ CONSTANTS = {
     "DUOFORGE_SLOT_PASS": 3,
     "DUOFORGE_SLOT_REVIVE": 4,
     "DUOFORGE_EVENT_REVIVE": 43,
+    "DUOFORGE_EVENT_MOVE": 3,
+    "DUOFORGE_EVENT_DAMAGE": 4,
+    "DUOFORGE_EVENT_FAINT": 6,
+    "DUOFORGE_EVENT_CANT": 7,
+    "DUOFORGE_EVENT_MISS": 8,
+    "DUOFORGE_EVENT_CRIT": 9,
+    "DUOFORGE_MAX_EVENTS": 512,
+    "DUOFORGE_NO_POSITION": 255,
     "DUOFORGE_E_INVALID_ARGUMENT": 2,
     "DUOFORGE_E_UNSUPPORTED": 11,
     "DUOFORGE_BATCH_MAX_ENVS": 65536,
@@ -304,6 +312,31 @@ SIDE_CHOICE = _struct([
     ("reserved", (_U1, (3,)), 13),
     ("slots", (SLOT_COMMAND, (2,)), 16),
 ], 32)
+
+DECISION_BUNDLE = _struct([
+    ("epoch", _U4, 0),
+    ("response_mask", _U1, 4),
+    ("reserved", (_U1, (3,)), 5),
+    ("responses", (SIDE_CHOICE, (2,)), 8),
+], 72)
+
+EVENT = _struct([
+    ("kind", _U1, 0),
+    ("position", _U1, 1),
+    ("other", _U1, 2),
+    ("cause", _U1, 3),
+    ("id", _U2, 4),
+    ("id2", _U2, 6),
+    ("hp", _U2, 8),
+    ("hp_max", _U2, 10),
+    ("hp_kind", _U1, 12),
+    ("hp_flag", _U1, 13),
+    ("status", _U1, 14),
+    ("detail", _U1, 15),
+    ("amount", _U1, 16),
+    ("flags", _U1, 17),
+    ("reserved", (_U1, (2,)), 18),
+], 20)
 
 FACTORED_DOMAIN = _struct([
     ("epoch", _U4, 0),
@@ -581,6 +614,8 @@ BY_C_NAME = {
     "duoforge_battle_setup": SETUP,
     "duoforge_slot_command": SLOT_COMMAND,
     "duoforge_side_choice": SIDE_CHOICE,
+    "duoforge_decision_bundle": DECISION_BUNDLE,
+    "duoforge_event": EVENT,
     "duoforge_factored_domain": FACTORED_DOMAIN,
     "duoforge_factored_choice": FACTORED_CHOICE,
     "duoforge_request": REQUEST,
