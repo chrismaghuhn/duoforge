@@ -1145,8 +1145,8 @@ static const tail_case cases[] = {
 /* True iff the byte at `off` of the encoded tail is a reserved one (by the layout alone). */
 static bool is_reserved_offset(size_t off)
 {
-    if (off >= DFI_ENC_TAIL_REV4_SIZE) { /* the rev 5 block: its 16 reserve bytes are the last ones */
-        return off - DFI_ENC_TAIL_REV4_SIZE >= DFI_ENC_TAIL5_RESERVED_OFF;
+    if (off >= DFI_ENC_TAIL_REV4_SIZE) { /* the rev 5 block: the last 12 of its 16 reserve bytes (the first 4 are Attract's, step G71) */
+        return off - DFI_ENC_TAIL_REV4_SIZE >= DFI_ENC_TAIL5_RESERVED_OFF + DFI_ENC_TAIL5_ATTRACT_SIZE;
     }
     if (off < DFI_ENC_TAIL_FIELD_SIZE) {
         return off >= DFI_ENC_TAIL_FIELD_RESERVED_OFF;
@@ -1182,7 +1182,8 @@ int main(void)
         DF_CHECK_EQ_U64(&t, DFI_ENC_TAIL_REV4_SIZE, 288u);
         DF_CHECK_EQ_U64(&t, DFI_ENC_TAIL5_SIZE, 60u);
         DF_CHECK_EQ_U64(&t, DFI_ENC_TAIL5_RESERVED_OFF, 44u);
-        DF_CHECK_EQ_U64(&t, DFI_ENC_TAIL_RESERVED_COUNT, 45u); /* step G46: party_order takes 6 of the 7 field bytes (35 before); rev 5: 16 more */
+        DF_CHECK_EQ_U64(&t, DFI_ENC_TAIL_RESERVED_COUNT, 41u); /* step G46: party_order takes 6 of the 7 field bytes (35 before); rev 5: 12 more (G71 takes 4 for Attract) */
+        DF_CHECK_EQ_U64(&t, DFI_ENC_TAIL5_ATTRACT_OFF, 44u);
         DF_CHECK_EQ_U64(&t, DFI_STATE_SCHEMA_V3, 3u);
         DF_CHECK_EQ_U64(&t, DFI_STATE_SCHEMA_POOL_TAIL_REV5, 0x0503u);
         DF_CHECK_EQ_U64(&t, DFI_STATE_SCHEMA_POOL_TAIL_REV4, 0x0403u); /* refused since rev 5 */
@@ -1842,8 +1843,11 @@ int main(void)
             DF_CHECK(&t, po[DFI_ENC_TAIL5_POSITION_FLAGS_OFF] == tp->position_flags);
             DF_CHECK(&t, po[DFI_ENC_TAIL5_FUTURE_SIGHT_OFF] == tp->future_sight);
         }
-        /* and the reserve after them is zero, whatever the block holds */
-        for (uint32_t i = 0u; i < DFI_ENC_TAIL5_RESERVED_SIZE; ++i) {
+        /* the first 4 reserve bytes are the Attract sources (step G71), the other 12 are zero, whatever the block holds */
+        for (uint32_t i = 0u; i < DFI_ENC_TAIL5_ATTRACT_SIZE; ++i) {
+            DF_CHECK(&t, out[r5 + DFI_ENC_TAIL5_ATTRACT_OFF + i] == x->tail.attract_source[i]);
+        }
+        for (uint32_t i = DFI_ENC_TAIL5_ATTRACT_SIZE; i < DFI_ENC_TAIL5_RESERVED_SIZE; ++i) {
             DF_CHECK(&t, out[r5 + DFI_ENC_TAIL5_RESERVED_OFF + i] == 0u);
         }
         /* the state holds values that no state can yet: the checked path refuses it */
