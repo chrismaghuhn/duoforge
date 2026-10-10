@@ -65,11 +65,22 @@ def split_variants(train, val):
     raise AssertionError("no nature pairs for the split")
 
 
-def build_fixture(tmp, copies=2, format_id="gen9championsvgc2026regmc", natures=None, name="dataset"):
+def short_log(log):
+    """The fixture log cut before p1's Salamence enters: three of p1's four brought members are seen."""
+    lines = log.split(chr(10))
+    cut = next(i for i, line in enumerate(lines) if line.startswith("|switch|p1a: Salamence|"))
+    return chr(10).join(lines[:cut] + ["|win|p2"])
+
+
+def build_fixture(tmp, copies=2, format_id="gen9championsvgc2026regmc", natures=None, name="dataset",
+                  pick_hypotheses=False):
     """A dataset of games of the fixture log (ids fixture-0..): `copies` plain copies, or one game per nature pair
-    of `natures` (split_variants); built into tmp/name."""
+    of `natures` (split_variants); built into tmp/name. pick_hypotheses: the copies are the short log (short_log),
+    built with the pick hypotheses."""
     from duoforge_replay import build
     log = FIXTURE.read_text(encoding="utf-8")
+    if pick_hypotheses:
+        log = short_log(log)
     prior_path = tmp / "prior.json"
     prior_path.write_text(json.dumps({"version": 1, "pastes": 0, "skipped": {}, "levels": [{}, {}, {}, {}]}),
                           encoding="utf-8")
@@ -80,7 +91,7 @@ def build_fixture(tmp, copies=2, format_id="gen9championsvgc2026regmc", natures=
             f.write(json.dumps({"id": f"fixture-{i}", "formatid": format_id, "log": text}) + chr(10))
     out = tmp / name
     build.build([source], prior_path, out, stats_factory=stats_factory, log=lambda _: None,
-                format_prefix=format_id[:len("gen9championsvgc2026regmc")])
+                format_prefix=format_id[:len("gen9championsvgc2026regmc")], pick_hypotheses=pick_hypotheses)
     return out
 
 
@@ -226,6 +237,29 @@ class BcDataTest(unittest.TestCase):
                                                                       m.update(format_version=version)))
             with self.subTest(version), self.assertRaisesRegex(ValueError, "extension record"):
                 self.bc_data.load([legacy], self.context, self.mask)
+
+    def test_hypothesis_rows_load_only_with_their_weight(self):
+        # M11 pick hypotheses spec, section 5: left out by default; --pick-hypotheses-weight W gives W/H per row
+        from duoforge_replay import dataset
+        hyp = build_fixture(self.tmp, name="hyp", pick_hypotheses=True)
+        shards = list(dataset.read(hyp))
+        h = np.concatenate([s["picks_hypotheses"] for s in shards])
+        self.assertEqual(set(h.tolist()), {1, 3})
+        plain = self.bc_data.load([hyp], self.context, self.mask)
+        self.assertEqual(len(plain), int((h == 1).sum()))
+        taken = self.bc_data.load([hyp], self.context, self.mask, pick_hypotheses_weight=0.6)
+        self.assertEqual(len(taken), len(h))
+        rating = np.concatenate([[self.bc_data.rating_weight(int(r)) for r in dataset.read_games(Path(hyp) / s["part"])[
+            "ratings"][s["game"].astype(np.int64), s["side"].astype(np.int64)]] for s in shards])
+        np.testing.assert_allclose(taken.weight, rating * np.where(h > 1, 0.6 / h, 1.0), rtol=1e-6)
+        np.testing.assert_allclose(taken.weight[h == 1], plain.weight, rtol=1e-6)
+        for bad in (0.0, -1.0):
+            with self.subTest(bad), self.assertRaisesRegex(ValueError, "pick_hypotheses_weight"):
+                self.bc_data.load([hyp], self.context, self.mask, pick_hypotheses_weight=bad)
+
+    def test_a_version_3_dataset_has_no_hypothesis_rows(self):
+        v3 = self.with_manifest("v3", lambda m: m.update(format_version=3))
+        self.assertEqual(len(self.bc_data.load([v3], self.context, self.mask)), len(self.rows))
 
     def test_rows_folded_under_other_folds_are_refused(self):
         other = self.with_manifest("folds", lambda m: m.update(tracker_folds=lines.TRACKER_FOLDS ^ 1))

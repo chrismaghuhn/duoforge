@@ -59,6 +59,9 @@ def _parser():
                    help="a factor on the rows of a format prefix (repeatable)")
     p.add_argument("--source-weight", action="append", default=[], metavar="SOURCE=FACTOR",
                    help="a factor on the rows of a dataset source (sheet 1 unless named; bo1_belief must be named)")
+    p.add_argument("--pick-hypotheses-weight", type=float, default=None, metavar="W",
+                   help="take the rows of pick hypotheses at W/H each (left out unless given; M11 pick hypotheses "
+                        "spec, section 5)")
     p.add_argument("--seed", type=int, default=0)
     p.add_argument("--cache", default=None, help="a directory (outside the repository) for the encoded rows")
     return p
@@ -112,20 +115,21 @@ def _rows(args, context, mask, dirs, format_weights, source_weights=None):
     from dataclasses import fields
     from pathlib import Path
     from . import bc_data
+    hyp = args.pick_hypotheses_weight
     if args.cache is None:
-        return bc_data.load(dirs, context, mask, format_weights, args.weights, source_weights)
+        return bc_data.load(dirs, context, mask, format_weights, args.weights, source_weights, hyp)
     from duoforge import features
     for d in dirs:  # a cache hit must not skip the library check of the datasets
         bc_data._check_dataset(d, context)
     key = hashlib.sha256(json.dumps(["rows-v2", _dataset_key(dirs), mask, args.weights, format_weights,
-                                     source_weights or {},
+                                     source_weights or {}, hyp,
                                      context.fingerprint().hex(), features.ENCODER, list(features.FEATURE_NAMES)],
                                     sort_keys=True).encode()).hexdigest()[:24]
     path = Path(args.cache) / f"bc-rows-{key}.npz"
     if path.exists():
         with np.load(path) as z:
             return bc_data.Rows(**{f.name: z[f.name] for f in fields(bc_data.Rows)})
-    rows = bc_data.load(dirs, context, mask, format_weights, args.weights, source_weights)
+    rows = bc_data.load(dirs, context, mask, format_weights, args.weights, source_weights, hyp)
     path.parent.mkdir(parents=True, exist_ok=True)
     tmp = path.with_name(path.name + ".tmp.npz")
     np.savez(tmp, **{f.name: getattr(rows, f.name) for f in fields(bc_data.Rows)})

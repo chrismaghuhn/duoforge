@@ -301,8 +301,8 @@ def _kept_turns(lines, stop, turns):
     return max(0, started - 1)  # the turn the stop came in is not complete
 
 
-def _perspective(lines, points, side, sheets, data, prior, stats, counters, extra=None, turns=0,
-                 pick_hypotheses=False):
+def _side(sheets, side, data, prior, stats):
+    """The prior levels of a side's six members and its stats_of(member, forme) for the tracker."""
     forme_names = {v: k.lower() for k, v in data.tables["FORME"].items() if k != "COUNT"}
     levels = []
     stat_points = []
@@ -314,6 +314,43 @@ def _perspective(lines, points, side, sheets, data, prior, stats, counters, extr
 
     def stats_of(m, forme):
         return stats.stats(forme_names[forme], sheets[side][m]["nature"], stat_points[m]), stat_points[m]
+    return prior_level, stats_of
+
+
+def _rows_of(lines, side, leads, back, prior_level, extra, taken, stop, h=1, k=0):
+    """The rows of taken points (_fold) under a stop (labels end at its line), marked with H and the index k."""
+    stop_line = len(lines) if stop is None else stop.line
+    out = []
+    for point, observation, domain, lists, ctx, ext in taken:
+        label = labels.compute(ctx, lines, point, lists, stop_line, leads, back)
+        if extra is None:
+            out.append(Row(observation, domain, side, point.index, label, prior_level, ext=ext,
+                           picks_hypotheses=h, hypothesis=k))
+        else:
+            levels, revealed = extra
+            out.append(Row(observation, domain, side, point.index, label, prior_level,
+                           tuple(levels[side]) + tuple(levels[1 - side]), tuple(revealed[side]), ext, h, k))
+    return out
+
+
+def hypothesis_rows(lines, points, side, sheets, data, prior, stats, hyps, extra=None):
+    """The rows of one perspective folded once per pick tuple of `hyps` (hindsight.pick_hypotheses) past team
+    selection, under their common stop (_common_stop): (rows per pick tuple, each marked H = len(hyps) and its
+    index; the common stop, None when every fold ran to the end). `lines` and `points` as process has them."""
+    prior_level, stats_of = _side(sheets, side, data, prior, stats)
+    leads, back = hindsight(lines, side, data, sheets)
+    runs = []
+    for picks in hyps:  # the team selection row is the one the perspective has: not repeated
+        taken, stop = _fold(SpectatorTracker(data, sheets, side, picks, stats_of, lines), lines, points)
+        runs.append(([t for t in taken if t[0].boundary != TEAM_SELECTION], stop))
+    kept, common = _common_stop(runs)
+    return [_rows_of(lines, side, leads, back, prior_level, extra, taken, common, len(hyps), k)
+            for k, taken in enumerate(kept)], common
+
+
+def _perspective(lines, points, side, sheets, data, prior, stats, counters, extra=None, turns=0,
+                 pick_hypotheses=False):
+    prior_level, stats_of = _side(sheets, side, data, prior, stats)
 
     try:
         leads, back = hindsight(lines, side, data, sheets)
@@ -325,22 +362,7 @@ def _perspective(lines, points, side, sheets, data, prior, stats, counters, extr
         counters["turns.total"] += turns
         return []
     taken, stop = _fold(tracker, lines, points)
-
-    def rows_of(taken, stop, h=1, k=0):
-        stop_line = len(lines) if stop is None else stop.line
-        out = []
-        for point, observation, domain, lists, ctx, ext in taken:
-            label = labels.compute(ctx, lines, point, lists, stop_line, leads, back)
-            if extra is None:
-                out.append(Row(observation, domain, side, point.index, label, prior_level, ext=ext,
-                               picks_hypotheses=h, hypothesis=k))
-            else:
-                levels, revealed = extra
-                out.append(Row(observation, domain, side, point.index, label, prior_level,
-                               tuple(levels[side]) + tuple(levels[1 - side]), tuple(revealed[side]), ext, h, k))
-        return out
-
-    rows = rows_of(taken, stop)
+    rows = _rows_of(lines, side, leads, back, prior_level, extra, taken, stop)
     for point, row in zip((t[0] for t in taken), rows):
         label = row.label
         if point.boundary == TEAM_SELECTION:
@@ -364,14 +386,10 @@ def _perspective(lines, points, side, sheets, data, prior, stats, counters, extr
         if not hyps:
             counters["perspectives.hypotheses_stopped.no-hypotheses"] += 1
             return rows
-        runs = []
-        for picks in hyps:  # the team selection row is the one the perspective has: not repeated
-            h_taken, h_stop = _fold(SpectatorTracker(data, sheets, side, picks, stats_of, lines), lines, points)
-            runs.append(([t for t in h_taken if t[0].boundary != TEAM_SELECTION], h_stop))
-        kept, common = _common_stop(runs)
-        for k, h_taken in enumerate(kept):
-            rows += rows_of(h_taken, common, len(hyps), k)
-        counters["points.hypotheses"] += sum(len(t) for t in kept)
+        per_hypothesis, common = hypothesis_rows(lines, points, side, sheets, data, prior, stats, hyps, extra)
+        for h_rows in per_hypothesis:
+            rows += h_rows
+        counters["points.hypotheses"] += sum(len(r) for r in per_hypothesis)
         counters["turns.hypotheses"] += _kept_turns(lines, common, turns)
         if common is None:
             counters["perspectives.hypotheses_kept"] += 1

@@ -14,6 +14,8 @@ import tempfile
 import unittest
 from pathlib import Path
 
+import numpy as np
+
 from duoforge_live import data, lines
 from duoforge_live.data import trace_to_c
 
@@ -2362,7 +2364,7 @@ class BeliefBuildTest(_BeliefFixture, unittest.TestCase):
         from duoforge_replay import dataset
         self.build("ext", ["open-train"])
         m = self.manifest("ext")
-        self.assertEqual((m["format_version"], m["tracker_folds"]), (3, line_classes.TRACKER_FOLDS))
+        self.assertEqual((m["format_version"], m["tracker_folds"]), (4, line_classes.TRACKER_FOLDS))
         self.assertEqual(m["ext_revision"], _layout.CONSTANTS["DUOFORGE_OBSERVATION_EXT_REVISION"])
         for shard in dataset.read(self.tmp / "ext"):
             self.assertEqual(shard["ext"].dtype, _layout.OBSERVATION_EXT)
@@ -2374,7 +2376,7 @@ class BeliefBuildTest(_BeliefFixture, unittest.TestCase):
         self.build("sheet", ["open-train", "bo1-train"])
         m = self.manifest("sheet")
         self.assertEqual((m["source"], m["format_version"]), ("sheet", dataset.FORMAT_VERSION))
-        self.assertEqual(dataset.FORMAT_VERSION, 3)
+        self.assertEqual(dataset.FORMAT_VERSION, 4)
         for shard in dataset.read(self.tmp / "sheet"):
             self.assertNotIn("belief_level", shard)
         part = next(iter(dataset.parts(self.tmp / "sheet")))
@@ -2396,6 +2398,71 @@ class BeliefBuildTest(_BeliefFixture, unittest.TestCase):
         writer = dataset.Writer(self.tmp / "mixed", {}, source="sheet")
         with self.assertRaisesRegex(ValueError, "belief rows"):
             writer.add(result)
+
+
+def short_log(log):
+    """The fixture log cut before p1's Salamence enters: three of p1's four brought members are seen."""
+    lines = log.split(chr(10))
+    cut = next(i for i, line in enumerate(lines) if line.startswith("|switch|p1a: Salamence|"))
+    return chr(10).join(lines[:cut] + ["|win|p2"])
+
+
+class PickHypothesesBuildTest(_BeliefFixture, unittest.TestCase):
+    """A sheet build with --pick-hypotheses: its marked rows, manifest, inputs and funnel (M11 pick hypotheses spec,
+    sections 4, 6 and 7)."""
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        cls.games["short-train"] = short_log(cls.games["open-train"])
+
+    def test_the_hypothesis_rows_are_marked_and_counted_apart(self):
+        from duoforge_replay import dataset, funnel
+        plain = self.build("plain", ["short-train", "open-train"])
+        hyp = self.build("hyp", ["short-train", "open-train"], pick_hypotheses=True)
+        self.assertEqual((self.manifest("hyp")["pick_hypotheses"], self.manifest("plain")["pick_hypotheses"]),
+                         (True, False))
+        shards = list(dataset.read(self.tmp / "hyp"))
+        h = np.concatenate([s["picks_hypotheses"] for s in shards])
+        k = np.concatenate([s["hypothesis"] for s in shards])
+        self.assertEqual(set(h.tolist()), {1, 3})
+        self.assertEqual(set(k[h == 3].tolist()), {0, 1, 2})
+        self.assertTrue((k[h == 1] == 0).all())
+        for s in dataset.read(self.tmp / "plain"):
+            self.assertTrue((s["picks_hypotheses"] == 1).all())
+        self.assertEqual(int((h == 1).sum()), sum(len(s["side"]) for s in dataset.read(self.tmp / "plain")))
+        fp, fh = (funnel.report(c)["gen9championsvgc2026regmc"] for c in (plain, hyp))
+        self.assertEqual(fh["rows"], fp["rows"])  # the rows column holds the rows without hypotheses
+        self.assertEqual(fh["turns"], fp["turns"])  # the headline turn coverage does not change
+        self.assertEqual(fh["perspectives"], fp["perspectives"])
+        self.assertEqual(fh["hypotheses"]["rows"], int((h == 3).sum()))
+        self.assertGreater(fh["hypotheses"]["turns"], 0)
+        self.assertEqual(fh["hypotheses"]["kept"] + sum(fh["hypotheses"]["stopped"].values()),
+                         fp["perspectives"]["stopped"]["picks-incomplete"])
+        self.assertEqual(fp["hypotheses"], {"kept": 0, "stopped": {}, "turns": 0, "rows": 0})
+        text = funnel.text(funnel.report(hyp))
+        self.assertIn("turns with pick hypotheses", text)
+        self.assertNotIn("turns with pick hypotheses", funnel.text(funnel.report(plain)))
+
+    def test_a_resume_refuses_the_other_setting(self):
+        self.build("resume", ["short-train"])
+        with self.assertRaisesRegex(ValueError, "other inputs"):
+            self.build("resume", ["short-train"], pick_hypotheses=True)
+
+    def test_only_a_sheet_build_makes_hypotheses(self):
+        with self.assertRaisesRegex(ValueError, "pick hypotheses"):
+            self.build("bad-hyp", ["bo1-train"], mode="bo1_belief", corpus=self.corpus, pick_hypotheses=True)
+
+    def test_a_writer_without_the_option_refuses_hypothesis_rows(self):
+        from duoforge_replay import dataset, game, prior
+        result = game.process("x", "gen9championsvgc2026regmc", self.games["short-train"], self.data,
+                              prior.Prior.load(self.prior_path), _Stats(), pick_hypotheses=True)
+        self.assertTrue(any(r.picks_hypotheses > 1 for r in result.rows))
+        writer = dataset.Writer(self.tmp / "no-hyp", {})
+        with self.assertRaisesRegex(ValueError, "pick hypotheses"):
+            writer.add(result)
+        with self.assertRaisesRegex(ValueError, "sheet"):
+            dataset.Writer(self.tmp / "belief-hyp", {}, source="bo1_belief", pick_hypotheses=True)
 
 
 class ValidateTest(_BeliefFixture, unittest.TestCase):

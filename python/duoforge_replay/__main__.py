@@ -49,6 +49,9 @@ def main(argv=None):
     b.add_argument("--k", type=int, default=1, help="draws per game")
     b.add_argument("--split", choices=("train", "test"), default=None,
                    help="only games of this player split (drop_sheets: test)")
+    b.add_argument("--pick-hypotheses", action="store_true",
+                   help="a sheet build: also the marked rows of each pick tuple the log allows where it does not "
+                        "show the back picks (docs/superpowers/specs/2026-10-11-m11-pick-hypotheses-design.md)")
     c = sub.add_parser("corpus", help="the set corpus of the Bo1 belief")
     c.add_argument("--source", required=True, nargs="+", type=Path)
     c.add_argument("--registry", required=True, type=Path, help="a checkout whose data/teams is the registry")
@@ -110,7 +113,7 @@ def main(argv=None):
     counters = build.build(args.source, args.prior, args.out, workers=args.workers, limit_parts=args.limit_parts,
                            format_prefix=args.format_prefix, unit_lines=args.unit_lines, node=args.node,
                            ps_dir=args.ps_dir, mode=args.mode, corpus=args.corpus, seed=args.seed, k=args.k,
-                           split_of=args.split)
+                           split_of=args.split, pick_hypotheses=args.pick_hypotheses)
     examples = counters.pop("internal.examples")
     for key, value in sorted(counters.items()):
         print(f"{key} {value}")

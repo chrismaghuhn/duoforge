@@ -54,8 +54,14 @@ def pick_hypotheses(log, side, data, sheets):
     if any(trace_to_c.key(m.get("ability") or "") == "ILLUSION" for m in sheets[side]):
         return None
     leads, back = hindsight(log, side, data, sheets)
+    return hypotheses_of(leads, back, len(sheets[side]))
+
+
+def hypotheses_of(leads, back, members):
+    """The pick tuples of pick_hypotheses for the leads, the seen back members and a sheet of `members` members;
+    None for more seen back members than the back holds."""
     missing = BROUGHT - 2 - len(back)
     if missing < 0:
         return None
-    unseen = [m for m in range(len(sheets[side])) if m not in leads and m not in back]
-    return [leads + tuple(sorted(back | set(more))) for more in itertools.combinations(unseen, missing)]
+    unseen = [m for m in range(members) if m not in leads and m not in back]
+    return [tuple(leads) + tuple(sorted(set(back) | set(more))) for more in itertools.combinations(unseen, missing)]
