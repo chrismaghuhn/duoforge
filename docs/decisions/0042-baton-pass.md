@@ -180,4 +180,36 @@ The engine keeps the volatile state in `dfi_active_slot` (`src/state/battle_inte
 - The Encore/Disable behaviour when the receiver lacks the move: not read (7).
 - Unburden, Transform, Illusion, Imposter, partial trap under a pass: not read (7).
 - The reserve-byte question (5.3) and the Encore slot question (11.2) are open; the proposal assumes the answers are not "no".
-- No engine code, no tables, no evidence in this step. Phase 2 is blocked until section 11 is answered.
+- Phase 1 had no engine code, no tables and no evidence. Phase 2 is section 13.
+
+## 13. Phase 2: what is built and measured (2026-10-10, builder H14)
+
+Commits on `chris/expansion-g74-baton-pass`: `51ec1029` (the pool row modelled: handler BATON_PASS, pivot flag, table regenerated), `0b3fd447` (the engine checkpoint), `2ec07df5` (the C view proof, the receiver refusal, the guards, the test updates), `e058f894` (the no-reserve failure line, the refusals after it, the third recorded battle). HauptSession's `d0f0659e` (the Python fold) sits on `51ec1029`.
+
+**Decisions applied (lead's answers of section 11):**
+- **A (Substitute bound):** a side's bound is the largest `floor(maxhp/4)` among its brought members. Applied in the C invariant (`dfi_substitute_cap`, `src/state/invariants.c`), the Python state model (`substitute_cap`, `tools/state_model/state_v3_model.py`), and the sweep rows of `tests/test_pool_tail.c` (four pinned rows moved). The negative case uses cap + 1; a passed Substitute within a brought member's quarter is valid.
+- **B (Encore and Disable):** a pass whose copy would carry Encore or Disable on the passer is `E_UNSUPPORTED`. A pass with no reserve fails cleanly first, as in the pin, so it is not refused. Known gap: the pin stores a move id, the engine a slot; no reserve bytes.
+- **C (Transform, Imposter, Illusion):** Transform and the Imposter ability are unmarked (guard in `tests/test_pool_g74.c`). The engine has no state for either, so their refusal path is not reachable. Illusion: a nonzero tail is refused by the state invariant (`DFI_INV_TAIL_SIDE`) until 0026 lands; the dispatch refusal is written but not reachable through a legal state.
+- **D (Pursuit):** Pursuit is unmarked, so the skipped `BeforeSwitchOut` has no pool effect (section 3.4 above).
+
+**Lead's requirements:**
+- *View fold:* `g74_pass_confused` (Calm Mind; Umbreon's Alluring Voice confuses Espeon on turn 1; the pass on turn 2). `check_view_fold` in `tests/test_pool_g74.c` compares the state before and after the switch on both viewers: the receiver's stages (+1 SpA, +1 SpD) and confused flag equal the passer's; the receiver has not acted, and holds no Protect, charge, Flash Fire, locked slot or reserved flag. The confusion turns are not in the view (hidden), as for any foe.
+- *Receiver refusal (cause 8):* `g74_pass_sub_damaged` (Umbreon's Substitute, damaged by two absorbed Icy Winds, passed to Ninetales). `check_receiver_refusal`: the presence bit is on side 0 position 1 for both viewers; `duoforge_battle_public_causes` has the SUBSTITUTE bit; `duoforge_battle_public` is `E_UNSUPPORTED` for both viewers. The HP stays in the engine (`tail.sides[0].positions[1].substitute_hp`) and is in no view. `battle_from_view` takes only a public state, which the record refuses first, so it cannot be reached with this state; that is the same refusal.
+
+**Engine findings (both fixed):**
+- The pin rolls a SECONDARY draw for a target that a Substitute absorbed (a `null` target, not `false`; `sim/battle-actions.ts:1336-1349`). The engine skipped it. Found by `g74_pass_sub_damaged` (step 2: tape 5 of 6). Fixed in the generic secondary loop; the Alluring Voice loop has the same condition, but Alluring Voice carries `bypasssub` (`data/moves.ts:290`), so that loop cannot reach an absorbed target.
+- A failed Baton Pass printed its move line with the target shown. The pin prints `||[still]` with no target. Fixed with `dfi_still`; the no-reserve failure is checked before the refusals (the refusals had turned a clean failure into an `E_UNSUPPORTED`).
+
+**Recorded battles (pool data, genders stated):** `g74_pass_confused`, `g74_pass_sub_damaged`, `g74_pass_no_reserve` (campaign battle fz_74_0 of run 74, recorded as a choice spec). The conformance count is now 704; tiebreak 704 battles and 3837 stops.
+
+**Mutants (one exact edit each, rebuild, targeted tests; `scratchpad/g74/mutate.py`):** 10 mutants, 8 caught.
+- Caught: M2 generic absorbed secondary draw removed (`g74_pass_sub_damaged`, conformance step 2); M3 stages not copied; M4 confusion not copied; M5 Substitute HP not copied; M6 bound back to the occupant's quarter (`pool_tail`, `pool_g74`); M7 Encore not refused; M8 no reserve check (`g74_pass_no_reserve`, conformance); M10 copy never runs.
+- M1 (Alluring Voice's absorbed-draw condition removed): **survives, equivalent mutant.** Alluring Voice has `bypasssub`, so no battle can produce an absorbed target for it. Lead's requirement asked for a battle that catches it; none can exist, so I did not force one.
+- M9 (Helping Hand and Follow Me not copied): **survives; open gap.** No committed battle uses Helping Hand before a pass. Recording one is the next step.
+
+**Random campaign (seed 74, 300 battles, pairings DD, DE, ED, EE, teams D and E from the battles above):** final run PASS 276, DIVERGENCE 24, UNSUPPORTED 0 (the first run had 151 DIVERGENCE; the second 24 DIVERGENCE and 18 UNSUPPORTED; both causes are fixed, see above). Control with the registry teams A and B (AA, BB, AB, BA, 40 battles, same seed): PASS 40.
+- The 24 remaining: 20 "tape not consumed exactly" at step 1 or 2 (speed-tie draws in the `each:Update` group with Sitrus Berry holders on both sides, e.g. `fz_74_4`); 4 `DUOFORGE_E_INVARIANT` (`fz_74_44`, `fz_74_164`, `fz_74_236`, `fz_74_284`, `fz_74_288`: a Substitute on Ninetales and Shadow Ball). Neither bucket contains a Baton Pass line in the failing step; the Substitute cap and the secondary change were excluded by experiment (the cap relaxed, and the generic loop reverted, both still fail). **Not determined**: whether these are pre-existing engine behaviour (speed ties with two item holders, the invariant on a Substitute break) or a G74 interaction. Open; for the lead.
+
+**Quality gates:** full debug ctest 1099 of 1099 on `e058f894` (through `tools/ci/machine_lock.sh`, `DUOFORGE_PYTHON` set to the project venv, `DUOFORGE_PS_REFERENCE_DIR` the pinned checkout); source lint OK (78 files); MinGW `gcc -std=c17 -Wall -Wextra -Werror -Wmissing-field-initializers` clean on the changed sources. Node was on the PATH.
+
+**Not done / open:** the 24 campaign divergences above; the M9 gap (Helping Hand recording); the no-reserve battle's coverage of the commanded case (unmarked); Transform and Imposter refusal paths (no state; guard only); the Illusion dispatch refusal (reachable only after 0026).
