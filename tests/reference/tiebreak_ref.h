@@ -5861,7 +5861,7 @@ static const df_tb_stop tb_g88_av_sub[] = {
     {0u, 0u, 1u, 3u, {6u, 6u}, {1146u, 1137u}, {0x4059000000000000ull, 0x4059000000000000ull}},
     {1u, 0u, 2u, 3u, {4u, 4u}, {765u, 784u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
     {2u, 0u, 1u, 2u, {4u, 4u}, {765u, 734u}, {0x4050aaaaaaaaaaabull, 0x404f4547d0afbc68ull}},
-    {3u, 0u, 1u, 2u, {4u, 4u}, {722u, 694u}, {0x404f25fbd65fbd65ull, 0x404d9ed699c4dbacull}},
+    {3u, 0u, 1u, 2u, {4u, 4u}, {727u, 698u}, {0x404f67063e7063e8ull, 0x404dc9151f42bef1ull}},
 };
 static const df_tb_stop tb_g88_conf_assurance[] = {
     {0u, 0u, 2u, 3u, {6u, 6u}, {1126u, 1137u}, {0x4059000000000000ull, 0x4059000000000000ull}},

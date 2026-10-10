@@ -79,7 +79,7 @@
         0
        ],
        "pp": [
-        16,
+        20,
         8
        ],
        "volatiles": [],
@@ -507,7 +507,7 @@
          0
         ],
         "pp": [
-         16,
+         20,
          8
         ],
         "volatiles": [],
@@ -870,7 +870,7 @@
          0
         ],
         "pp": [
-         16,
+         20,
          7
         ],
         "volatiles": [
@@ -1153,60 +1153,53 @@
      "value": 9
     },
     {
-     "site": "SECONDARY",
+     "site": "ACCURACY",
      "context": "",
      "lo": 0,
      "hi": 100,
      "value": 37
     },
     {
-     "site": "ACCURACY",
-     "context": "",
-     "lo": 0,
-     "hi": 100,
-     "value": 96
-    },
-    {
      "site": "CRIT",
      "context": "",
      "lo": 0,
      "hi": 24,
-     "value": 19
+     "value": 23
     },
     {
      "site": "DAMAGE_ROLL",
      "context": "",
      "lo": 0,
      "hi": 16,
-     "value": 2
+     "value": 13
     },
     {
      "site": "SECONDARY",
      "context": "",
      "lo": 0,
      "hi": 100,
-     "value": 83
+     "value": 18
     },
     {
      "site": "ACCURACY",
      "context": "",
      "lo": 0,
      "hi": 100,
-     "value": 54
+     "value": 83
     },
     {
      "site": "CRIT",
      "context": "",
      "lo": 0,
      "hi": 24,
-     "value": 22
+     "value": 13
     },
     {
      "site": "DAMAGE_ROLL",
      "context": "",
      "lo": 0,
      "hi": 16,
-     "value": 2
+     "value": 14
     },
     {
      "site": "SPEED_TIE",
@@ -1224,17 +1217,16 @@
    "log": [
     "|move|p2b: Golurk|Protect|p2b: Golurk",
     "|-singleturn|p2b: Golurk|Protect",
-    "|move|p1a: Raichu|Thunderbolt|p2a: Milotic",
-    "|-supereffective|p2a: Milotic|1",
+    "|move|p1a: Raichu|Quick Attack|p2a: Milotic",
     "|-end|p2a: Milotic|Substitute",
     "|move|p2a: Milotic|Alluring Voice|p1a: Raichu",
     "|split|p1",
-    "|-damage|p1a: Raichu|121/164",
-    "|-damage|p1a: Raichu|73/100",
+    "|-damage|p1a: Raichu|126/164",
+    "|-damage|p1a: Raichu|76/100",
     "|move|p1b: Umbreon|Assurance|p2a: Milotic",
     "|split|p2",
-    "|-damage|p2a: Milotic|112/202",
-    "|-damage|p2a: Milotic|55/100",
+    "|-damage|p2a: Milotic|116/202",
+    "|-damage|p2a: Milotic|57/100",
     "|upkeep",
     "|turn|3"
    ],
@@ -1277,7 +1269,7 @@
         "set_species": "Raichu",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 121,
+        "hp": 126,
         "maxhp": 164,
         "item": "raichunitey",
         "status": "",
@@ -1294,7 +1286,7 @@
          0
         ],
         "pp": [
-         15,
+         19,
          7
         ],
         "volatiles": [],
@@ -1418,7 +1410,7 @@
         "set_species": "Milotic",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 112,
+        "hp": 116,
         "maxhp": 202,
         "item": "sitrusberry",
         "status": "",

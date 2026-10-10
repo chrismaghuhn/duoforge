@@ -101,3 +101,8 @@ POOL battles, six members a side, unique items, real genders, marked content onl
 ## 8. Status of phase 2
 
 - Approved by the lead. Starts with the cause number (HauptSession). The PIVOT refusal cannot be merged correctly without it (without the refusal the view is wrong at a PIVOT), so engine work that depends on the refusal waits for the number.
+
+## 9. Dependency on G74 (batch 5)
+
+- `g88_av_sub` breaks the Substitute with Raichu's Quick Attack (no secondary), not with Thunderbolt. The reason: the pin draws the secondary roll for a Substitute-absorbed target too (`sim/battle-actions.ts:1336-1349` runs for a `null` target, since only `false` targets are skipped), and the engine's secondary loop draws only for hit targets (`src/combat/turn.c`, the SECONDARY loop). That gap is the secondary roll for an absorbed target: it comes with G74 (batch 5, H14's fix in the Alluring Voice and the generic secondary loops), not with G88. Until G74 is on the branch, a secondary move into a Substitute is not recorded in G88.
+- The Substitute cost and the Substitute break keep their own direct and HURT rules (decision 5), unchanged by this dependency.
