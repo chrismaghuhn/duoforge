@@ -203,7 +203,9 @@ class HonestSearch(unittest.TestCase):
             history["turn_start"] = saved_start
 
         counted = searched = refused = 0
-        with duoforge.Context(C["DUOFORGE_DATA_KIND_POOL"]) as ctx,                 duoforge.Batch(ctx, np.resize(duoforge.reference_setups([0, 1, 2, 3]), 8), 3, 42) as b,                 self.make(ctx, 1) as search:
+        with duoforge.Context(C["DUOFORGE_DATA_KIND_POOL"]) as ctx, \
+                duoforge.Batch(ctx, np.resize(duoforge.reference_setups([0, 1, 2, 3]), 8), 3, 42) as b, \
+                self.make(ctx, 1) as search:
             policy = duoforge.RandomPolicy(71, 8)
             for _ in range(PIVOT_STEPS):
                 b.query_factored()
@@ -231,7 +233,9 @@ class HonestSearch(unittest.TestCase):
         self.assertGreaterEqual(counted, 4)
         self.assertGreater(refused, 0)  # PIVOTs with a move left are refused, not searched
         # Random play almost never reaches a public PIVOT (a Protect up and no move left): the scripted one.
-        with duoforge.Context(C["DUOFORGE_DATA_KIND_POOL"]) as ctx,                 duoforge.Batch(ctx, duoforge.reference_setups([SETUP]), 1, 43) as b,                 self.make(ctx, 1) as search:
+        with duoforge.Context(C["DUOFORGE_DATA_KIND_POOL"]) as ctx, \
+                duoforge.Batch(ctx, duoforge.reference_setups([SETUP]), 1, 43) as b, \
+                self.make(ctx, 1) as search:
             keys = iter(range(100, 200))
 
             def observe(batch):  # the searcher's history: the team preview and the turn-start records
@@ -363,7 +367,9 @@ class HonestSearch(unittest.TestCase):
         # The live path (plan 2026-10-10-live-honest-search, Task 2): decide() over RecordRoots filled with a batch's
         # own parts (request, observation, encoded features, public record, episode) gives the batch's decisions.
         from duoforge_search.record_roots import RecordRoots
-        with duoforge.Context(C["DUOFORGE_DATA_KIND_POOL"]) as ctx,                 duoforge.Batch(ctx, np.resize(duoforge.reference_setups([0, 1, 2, 3]), 4), 2, 42) as b,                 self.make(ctx) as search, self.make(ctx) as twin:
+        with duoforge.Context(C["DUOFORGE_DATA_KIND_POOL"]) as ctx, \
+                duoforge.Batch(ctx, np.resize(duoforge.reference_setups([0, 1, 2, 3]), 4), 2, 42) as b, \
+                self.make(ctx) as search, self.make(ctx) as twin:
             roots = RecordRoots(b.envs)
             policy = duoforge.RandomPolicy(73, b.envs)
             compared = 0
@@ -397,7 +403,8 @@ class HonestSearch(unittest.TestCase):
         # A record assembled outside the engine (the live tracker's) is not searched unless the engine accepts it and
         # every world built from it gives it back. A filled masked field (here the foe's exact HP) is refused by the
         # engine itself; a world that gives another record back is named by field.
-        with duoforge.Context(C["DUOFORGE_DATA_KIND_POOL"]) as ctx,                 duoforge.Batch(ctx, duoforge.reference_setups([0]), 1, 42) as b, self.make(ctx) as search:
+        with duoforge.Context(C["DUOFORGE_DATA_KIND_POOL"]) as ctx, \
+                duoforge.Batch(ctx, duoforge.reference_setups([0]), 1, 42) as b, self.make(ctx) as search:
             self.preview(search, b)
             self.start_turn(b)
             v, st = b.public(np.zeros(1, np.uint32))
