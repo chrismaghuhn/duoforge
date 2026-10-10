@@ -81,9 +81,9 @@ CHOICE_ITEMS = ("choiceband", "choicescarf", "choicespecs")
 TURN_SCOPED = {"RAGE_POWDER", "WIDE_GUARD", "QUICK_GUARD"}
 
 # Kinds whose effect on the view no field holds and the fold does not apply: stops with a readable reason.
-UNREPRESENTABLE_KINDS = {"-sethp", "-clearboost", "-clearpositiveboost", "-copyboost", "-setboost",
-                         "-swapboost", "-invertboost", "-transform", "swap", "-endability", "-swapsideconditions",
-                         "-cureteam"}
+UNREPRESENTABLE_KINDS = {"-sethp", "-clearboost", "-clearpositiveboost", "-setboost",
+                         "-swapboost", "-invertboost", "-transform", "-endability", "-swapsideconditions",
+                         "-cureteam"}  # -copyboost and swap: folded since step G80 (COPY_BOOST, SWAP)
 
 
 def _features():

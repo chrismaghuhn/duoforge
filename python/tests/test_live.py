@@ -175,6 +175,41 @@ class PressureExtraTest(unittest.TestCase):
 
     def test_a_blanked_target_counts_nothing(self):
         self.assertEqual(self.extra("EXPANDINGFORCE", trace_to_c.NOPOS, self.FLAG["STILL"] | self.FLAG["SPREAD"]), 0)
+class AllySwitchPsychUpTest(unittest.TestCase):
+    """Step G80 (decision 0044): SWAP exchanges the two positions of the user's side with everything on them
+    (sim/battle.ts swapPosition moves the Pokemon objects); COPY_BOOST gives the user the target's seven stages."""
+
+    def _tracker(self):
+        from duoforge_live import tracker
+        D = data.load(kind="pool")
+        t = tracker.Tracker.__new__(tracker.Tracker)
+        t.data, t.side, t._spectator = D, 0, False
+        t._positions = [[tracker._Position(), tracker._Position()], [tracker._Position(), tracker._Position()]]
+        a, b = t._positions[0]
+        a.occupant, a.stages, a.confused = 0, [8, 6, 6, 6, 6, 6, 6], 1
+        b.occupant, b.stages = 1, [6, 6, 6, 6, 4, 6, 6]
+        foe = t._positions[1][0]
+        foe.occupant, foe.stages = 2, [10, 6, 6, 6, 6, 6, 5]
+        return t, D
+
+    def test_ally_switch_exchanges_the_positions(self):
+        t, D = self._tracker()
+        a, b = t._positions[0]
+        t._event(trace_to_c.ev_tuple(trace_to_c.EV["SWAP"], 0, 1, trace_to_c.CAUSE["MOVE"], 0,
+                                     D.tables["MOVE"]["ALLYSWITCH"]))
+        self.assertIs(t._positions[0][0], b)
+        self.assertIs(t._positions[0][1], a)
+        self.assertEqual((t._positions[0][1].occupant, t._positions[0][1].confused), (0, 1))
+
+    def test_psych_up_copies_the_targets_stages(self):
+        t, D = self._tracker()
+        t._event(trace_to_c.ev_tuple(trace_to_c.EV["COPY_BOOST"], 0, 2, trace_to_c.CAUSE["MOVE"], 0,
+                                     D.tables["MOVE"]["PSYCHUP"]))
+        self.assertEqual(t._positions[0][0].stages, [10, 6, 6, 6, 6, 6, 5])
+        self.assertEqual(t._positions[1][0].stages, [10, 6, 6, 6, 6, 6, 5])
+        self.assertIsNot(t._positions[0][0].stages, t._positions[1][0].stages)
+
+
 class ClearAllBoostsTest(unittest.TestCase):
     """Step G62 (decision 0031): Haze's CLEAR_ALL_BOOSTS returns the stages of every standing active Pokemon to
     neutral (data/moves.ts haze onHitField: getAllActive, sim/pokemon.ts clearBoosts); an empty or fainted position
