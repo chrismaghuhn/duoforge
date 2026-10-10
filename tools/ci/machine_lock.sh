@@ -11,8 +11,17 @@
 #
 # Slot 0 is the lock directory of the one-slot script before 2026-10-10
 # ($MACHINE_LOCK), slot k the directory $MACHINE_LOCK.slot<k>, and both
-# scripts share the ticket queue: a holder or waiter of the old script (a
-# worktree on an older branch) still counts, as a job in slot 0.
+# scripts share the ticket queue. This script writes "slots" on the second
+# line of its owner files and tickets; a job of the old script (a worktree on
+# an older branch) writes no such line and keeps the machine to itself: an
+# unmarked owner of slot 0 holds every slot, an unmarked ticket lets nobody
+# pass it, and while one waits a new job takes only slot 0 (the one the old
+# script waits for). A job that already runs in another slot when an old one
+# arrives is not stopped: the old job can start beside it once slot 0 is free.
+#
+# The slot count is recorded in $MACHINE_LOCK.queue/.slots by the first job;
+# a job with another DUOFORGE_MACHINE_LOCK_SLOTS is refused while any job
+# holds or waits (the record of an idle machine is replaced).
 #
 # usage (Git Bash):
 #   tools/ci/machine_lock.sh [--exclusive] <label> <command...>   waits, runs, releases
@@ -25,6 +34,9 @@
 set -u
 
 MACHINE_LOCK=${DUOFORGE_MACHINE_LOCK:-"${TEMP:-/tmp}/duoforge-machine.lock"}
+# A slot directory without an owner file this long (seconds) was left by a job killed between mkdir and writing
+# the owner: it is stale.
+MACHINE_LOCK_ORPHAN=300
 
 # The Windows process id of this shell (Git Bash), or its own pid elsewhere.
 machine_lock_pid() {
@@ -48,18 +60,68 @@ machine_lock_slot() { # k: the directory of slot k
     if [ "$1" -eq 0 ]; then echo "$MACHINE_LOCK"; else echo "$MACHINE_LOCK.slot$1"; fi
 }
 
+machine_lock_marked() { # file: written by this script (second line "slots ...")
+    local mark
+    mark=$(sed -n 2p "$1" 2> /dev/null)
+    [ "${mark%% *}" = slots ]
+}
+
+# Whether slot directory $1 is held, after taking over a stale one; prints the holder's line when held.
+machine_lock_held() { # dir
+    local dir=$1 line again pid age
+    [ -d "$dir" ] || return 1
+    line=$(head -n 1 "$dir/owner" 2> /dev/null || true)
+    if [ -z "$line" ]; then
+        age=$(($(date +%s) - $(stat -c %Y "$dir" 2> /dev/null || date +%s)))
+        if [ "$age" -ge "$MACHINE_LOCK_ORPHAN" ] && [ ! -e "$dir/owner" ]; then
+            echo "machine lock: removing an ownerless lock ($dir, $((age / 60)) min old)" >&2
+            rm -rf "$dir"
+            return 1
+        fi
+        echo "a job that is starting"
+        return 0
+    fi
+    pid=${line%% *}
+    if ! machine_lock_alive "$pid"; then
+        # Read again right before removing: another waiter may have taken the stale slot over meanwhile, and the
+        # directory now belongs to a live holder.
+        again=$(head -n 1 "$dir/owner" 2> /dev/null || true)
+        if [ "$again" = "$line" ]; then
+            echo "machine lock: removing a stale lock ($line)" >&2
+            rm -rf "$dir"
+            return 1
+        fi
+        line=${again:-a job that is starting}
+    fi
+    echo "$line"
+}
+
+# True when no slot directory exists and no live ticket waits (other than this shell's).
+machine_lock_idle() { # queue
+    local t dir me
+    me=$(machine_lock_pid)
+    for dir in "$MACHINE_LOCK" "$MACHINE_LOCK".slot*; do
+        [ -d "$dir" ] && return 1
+    done
+    for t in "$1"/*; do
+        [ -e "$t" ] && [ "${t##*-}" != "$me" ] || continue
+        machine_lock_alive "${t##*-}" && return 1
+    done
+    return 0
+}
+
 machine_lock_acquire() { # [--exclusive] label
     # First come, first served: a waiter takes a ticket in $MACHINE_LOCK.queue (its name sorts by the time it was
-    # taken; an exclusive waiter's ticket says so on its second line). A waiter with w older live tickets ahead may
-    # take a slot when more than w slots are free and none of those waiters is exclusive; an exclusive waiter needs
-    # to be first and every slot free. The head of the queue takes the lowest free slot, a later waiter the highest,
-    # so that slot 0 stays for the head (the old script knows only slot 0). A dead waiter's ticket is removed.
+    # taken). A waiter with w older live tickets ahead may take a slot when more than w slots are free and none of
+    # those waiters is exclusive or of the old script; an exclusive waiter needs to be first and every slot free.
+    # The head of the queue takes the lowest free slot, a later waiter the highest, so that slot 0 stays for the
+    # head. A dead waiter's ticket is removed.
     local exclusive=0
     if [ "${1:-}" = --exclusive ]; then
         exclusive=1
         shift
     fi
-    local label=$1 waited=0 holder pid me ticket t k dir ahead blocked free slots cpus
+    local label=$1 waited=0 holder line me ticket t k dir ahead blocked legacy free slots cpus mark recorded
     local queue="$MACHINE_LOCK.queue"
     slots=${DUOFORGE_MACHINE_LOCK_SLOTS-2}
     case "$slots" in
@@ -77,12 +139,23 @@ machine_lock_acquire() { # [--exclusive] label
     esac
     me=$(machine_lock_pid)
     mkdir -p "$queue"
-    ticket="$queue/$(printf '%019d' "$(date +%s%N)")-$me"
-    if [ "$exclusive" = 1 ]; then
-        printf '%s\nexclusive\n' "$me $label since $(date '+%Y-%m-%d %H:%M:%S')" > "$ticket"
-    else
-        echo "$me $label since $(date '+%Y-%m-%d %H:%M:%S')" > "$ticket"
+    if [ ! -e "$queue/.slots" ]; then
+        (set -o noclobber; echo "$slots" > "$queue/.slots") 2> /dev/null
     fi
+    recorded=$(cat "$queue/.slots" 2> /dev/null || true)
+    if [ "$recorded" != "$slots" ]; then
+        if machine_lock_idle "$queue"; then
+            echo "$slots" > "$queue/.slots" # nobody holds or waits: the record is out of date
+        else
+            echo "machine lock: DUOFORGE_MACHINE_LOCK_SLOTS is $slots here, but the jobs that hold or wait run with" \
+                "'$recorded' ($queue/.slots): set the same value in every session" >&2
+            return 2
+        fi
+    fi
+    mark=slots
+    [ "$exclusive" = 1 ] && mark="slots exclusive"
+    ticket="$queue/$(printf '%019d' "$(date +%s%N)")-$me"
+    printf '%s\n%s\n' "$me $label since $(date '+%Y-%m-%d %H:%M:%S')" "$mark" > "$ticket"
     while :; do
         for t in "$queue"/*; do
             [ -e "$t" ] && [ "$t" != "$ticket" ] || continue
@@ -90,17 +163,14 @@ machine_lock_acquire() { # [--exclusive] label
         done
         free=()
         holder=
+        legacy=0
         for ((k = 0; k < slots; k++)); do
             dir=$(machine_lock_slot "$k")
-            if [ -d "$dir" ]; then
-                t=$(cat "$dir/owner" 2> /dev/null || true)
-                pid=${t%% *}
-                if [ -n "$pid" ] && ! machine_lock_alive "$pid"; then
-                    echo "machine lock: removing a stale lock ($t)" >&2
-                    rm -rf "$dir"
-                    free+=("$k")
-                else
-                    holder="${holder:+$holder; }${t:-a job that is starting}"
+            if line=$(machine_lock_held "$dir"); then
+                holder="${holder:+$holder; }$line"
+                # An owner of slot 0 without the mark runs the old script: it holds the whole machine.
+                if [ "$k" -eq 0 ] && [ -e "$dir/owner" ] && ! machine_lock_marked "$dir/owner"; then
+                    legacy=2
                 fi
             else
                 free+=("$k")
@@ -109,14 +179,26 @@ machine_lock_acquire() { # [--exclusive] label
         ahead=0
         blocked=
         while IFS= read -r t; do
-            [ "$t" = "$ticket" ] && break
-            [ -e "$t" ] || continue
+            [ -e "$t" ] && [ "$t" != "$ticket" ] || continue
+            local marked=1
+            if ! machine_lock_marked "$t"; then
+                marked=0
+                [ "$legacy" -eq 0 ] && legacy=1 # an old-script waiter, before or after this one
+            fi
+            [[ "$t" < "$ticket" ]] || continue # behind this ticket: only the mark matters
             [ "$ahead" -eq 0 ] && blocked=$(head -n 1 "$t" 2> /dev/null || true)
             ahead=$((ahead + 1))
-            if [ "$(sed -n 2p "$t" 2> /dev/null)" = exclusive ]; then
-                ahead=$slots # nobody passes an exclusive waiter
+            if [ "$marked" = 0 ] || [ "$(sed -n 2p "$t" 2> /dev/null)" = "slots exclusive" ]; then
+                ahead=$((ahead + slots)) # nobody passes an exclusive waiter or one of the old script
             fi
         done < <(printf '%s\n' "$queue"/* | sort)
+        if [ "$legacy" -eq 2 ]; then
+            free=() # the old script's holder runs alone
+        elif [ "$legacy" -eq 1 ] && [ "$exclusive" = 0 ]; then
+            # An old-script waiter knows only slot 0: a new job takes no other slot, so that the old one never
+            # starts beside it.
+            if [ "${#free[@]}" -gt 0 ] && [ "${free[0]}" -eq 0 ]; then free=(0); else free=(); fi
+        fi
         if [ "$exclusive" = 1 ]; then
             if [ "$ahead" -eq 0 ] && [ "${#free[@]}" -eq "$slots" ]; then
                 local got=()
@@ -126,7 +208,7 @@ machine_lock_acquire() { # [--exclusive] label
                 done
                 if [ "${#got[@]}" -eq "$slots" ]; then
                     for dir in "${got[@]}"; do
-                        echo "$me $label since $(date '+%Y-%m-%d %H:%M:%S')" > "$dir/owner"
+                        printf '%s\nslots\n' "$me $label since $(date '+%Y-%m-%d %H:%M:%S')" > "$dir/owner"
                     done
                     export DUOFORGE_JOBS=$cpus
                     break
@@ -147,7 +229,7 @@ machine_lock_acquire() { # [--exclusive] label
                 fi
             done
             if [ -n "$dir" ]; then
-                echo "$me $label since $(date '+%Y-%m-%d %H:%M:%S')" > "$dir/owner"
+                printf '%s\nslots\n' "$me $label since $(date '+%Y-%m-%d %H:%M:%S')" > "$dir/owner"
                 export DUOFORGE_JOBS=$((cpus / slots > 0 ? cpus / slots : 1))
                 break
             fi
@@ -165,16 +247,20 @@ machine_lock_acquire() { # [--exclusive] label
 }
 
 machine_lock_release() {
-    # Every slot this shell holds (all of them after --exclusive), up to the configured count and beyond it.
-    local me dir holder
+    # Every slot this shell holds (all of them after --exclusive), up to the configured count and beyond it. The
+    # record of the slot count goes when the machine is left idle.
+    local me dir holder queue="$MACHINE_LOCK.queue"
     me=$(machine_lock_pid)
     for dir in "$MACHINE_LOCK" "$MACHINE_LOCK".slot*; do
         [ -d "$dir" ] || continue
-        holder=$(cat "$dir/owner" 2> /dev/null || true)
+        holder=$(head -n 1 "$dir/owner" 2> /dev/null || true)
         if [ "${holder%% *}" = "$me" ]; then
             rm -rf "$dir"
         fi
     done
+    if [ -d "$queue" ] && machine_lock_idle "$queue"; then
+        rm -f "$queue/.slots"
+    fi
 }
 
 if [ "${BASH_SOURCE[0]}" = "$0" ]; then
