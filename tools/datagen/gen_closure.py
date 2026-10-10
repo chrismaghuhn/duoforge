@@ -2715,7 +2715,8 @@ ENGINE_ROWS = {'items': ['focussash', 'floettite', 'psychicseed', 'electricseed'
                              'solarpower',
                              'regenerator', 'toxicdebris', 'shadowtag', 'suctioncups', 'guarddog',
                              'steadfast', 'weakarmor', 'telepathy', 'voltabsorb', 'punkrock', 'moxie', 'synchronize', 'oblivious', 'keeneye', 'bigpecks', 'magicbounce', 'pressure', 'stancechange',
-                             'sandforce', 'shellarmor', 'filter', 'stalwart', 'megalauncher', 'hugepower', 'thickfat', 'firemane', 'spicyspray', 'megasol', 'sheerforce']}
+                             'sandforce', 'shellarmor', 'filter', 'stalwart', 'megalauncher', 'hugepower', 'thickfat', 'firemane', 'spicyspray', 'megasol', 'sheerforce', 'illusion', 'symbiosis',
+                             'unaware', 'marvelscale', 'waterbubble', 'reckless', 'superluck']}
 # The moves of the whole pool that the turn code pivots with a switch flag of their own (dfi_pivot_moves,
 # src/state/closure_member.c) beyond Flip Turn and U-turn, which are rows of the steps. Empty: Volt Switch comes with the
 # step that gives it a flag value, and adds its id here.
@@ -3419,6 +3420,27 @@ G46_ITEM_FACTS = (
 )
 
 
+# Step I2a: Illusion (decision 0026) is an engine row (ENGINE_ROWS): the turn code implements its four callbacks by id and
+# hard-codes these texts. The disguise is the last non-fainted member to the right (onBeforeSwitchIn, data/abilities.ts:2056-2069),
+# the break is the damaging hit (onDamagingHit, which the DamagingHit event of sim/battle-actions.ts:1118-1130 runs), the end
+# prints `replace` and `-end|Illusion` (onEnd), and the faint clears it (onFaint). Its flags are the notrace of Trace's rule.
+I2_ABILITY_FACTS = (
+    ('illusion', (
+        "onBeforeSwitchIn(pokemon) { pokemon.illusion = null;",
+        "for (let i = pokemon.side.pokemon.length - 1; i > pokemon.position; i--) {",
+        "if (!possibleTarget.fainted) {",
+        "pokemon.illusion = possibleTarget;",
+        "onDamagingHit(damage, target, source, move) { if (target.illusion) { "
+        "this.singleEvent('End', this.dex.abilities.get('Illusion'), target.abilityState, target, source, move); } },",
+        "onEnd(pokemon) { if (pokemon.illusion && !pokemon.beingCalledBack) {",
+        "this.add('replace', pokemon, details);",
+        "this.add('-end', pokemon, 'Illusion');",
+        "onFaint(pokemon) { pokemon.illusion = null; },",
+        "flags: { failroleplay: 1, noreceiver: 1, noentrain: 1, notrace: 1, failskillswap: 1 },",
+    )),
+)
+
+
 # Step G61, Sheer Force (an engine row read by id, data/abilities.ts:4202-4221): the pinned texts the turn code hard-codes.
 # Its onModifyMove strips a move's secondaries and self effects, and sets hasSheerForce, only when the move has secondaries
 # and is not hasSheerForceBoost (Electro Shot); onBasePower is x5325/4096 for either flag, at priority 21. The engine's
@@ -3534,6 +3556,96 @@ G63_ABILITY_FACTS = (
 )
 
 
+def check_i2_facts(abil_ts, champ_abil):
+    """Step I2 (decision 0026): the Illusion texts that the turn code hard-codes (I2_ABILITY_FACTS) are in the pinned entry,
+    whitespace aside, and the Champions mod has no entry of its own for it (an override would change what the engine reads)."""
+    for rid, facts in I2_ABILITY_FACTS:
+        e = abil_ts.entry(rid)
+        if e is None:
+            fail('ability %s not found' % rid)
+        if champ_abil.entry(rid) is not None:
+            fail('ability %s: the champions mod overrides the entry' % rid)
+        text = norm(chr(10).join(e[2]))
+        for fact in facts:
+            if norm(fact) not in text:
+                fail('ability %s: the entry no longer has "%s"' % (rid, fact))
+
+
+# Step G65 (simple modifier abilities): Unaware, Marvel Scale, Water Bubble, Reckless and Super Luck are engine rows (ENGINE_ROWS)
+# that the turn code reads by id. The pinned callbacks they hard-code are checked here, whole: Unaware's onAnyModifyBoost (the
+# zeroed stages of the two sides, data/abilities.ts:5214-5234); Marvel Scale's onModifyDef (priority 6, x1.5 with a status,
+# 2534-2545); Water Bubble's Fire halves, Water doubles, the burn refusal and its cure (5377-5417); Reckless's recoil modifier
+# (priority 23, 3799-3811); Super Luck's ratio (4703-4711). None is overridden by the Champions mod; all but Reckless and Super
+# Luck are breakable and Mold Breaker is not marked.
+G65_ABILITY_FACTS = (
+    ('unaware', ('onAnyModifyBoost(boosts, pokemon) {',
+                 'if (unawareUser === pokemon) return;',
+                 'if (unawareUser === this.activePokemon && pokemon === this.activeTarget) {',
+                 "boosts['def'] = 0;",
+                 "boosts['spd'] = 0;",
+                 "boosts['evasion'] = 0;",
+                 '}',
+                 'if (pokemon === this.activePokemon && unawareUser === this.activeTarget) {',
+                 "boosts['atk'] = 0;",
+                 "boosts['def'] = 0;",
+                 "boosts['spa'] = 0;",
+                 "boosts['accuracy'] = 0;",
+                 '}',
+                 '},',
+                 'flags: { breakable: 1 },')),
+    ('marvelscale', ('onModifyDefPriority: 6,',
+                     'onModifyDef(def, pokemon) {',
+                     'if (pokemon.status) {',
+                     'return this.chainModify(1.5);',
+                     '}',
+                     '},',
+                     'flags: { breakable: 1 },')),
+    ('waterbubble', ('onSourceModifyAtkPriority: 5,',
+                     'onSourceModifyAtk(atk, attacker, defender, move) {',
+                     "if (move.type === 'Fire') {",
+                     'return this.chainModify(0.5);',
+                     '}',
+                     '},',
+                     'onSourceModifySpAPriority: 5,',
+                     'onSourceModifySpA(atk, attacker, defender, move) {',
+                     "if (move.type === 'Fire') {",
+                     'return this.chainModify(0.5);',
+                     '}',
+                     '},',
+                     'onModifyAtk(atk, attacker, defender, move) {',
+                     "if (move.type === 'Water') {",
+                     'return this.chainModify(2);',
+                     '}',
+                     '},',
+                     'onUpdate(pokemon) {',
+                     "if (pokemon.status === 'brn') {",
+                     "this.add('-activate', pokemon, 'ability: Water Bubble');",
+                     'pokemon.cureStatus();',
+                     '}',
+                     '},',
+                     'onSetStatus(status, target, source, effect) {',
+                     "if (status.id !== 'brn') return;",
+                     'if ((effect as Move)?.status) {',
+                     "this.add('-immune', target, '[from] ability: Water Bubble');",
+                     '}',
+                     'return false;',
+                     '},',
+                     'flags: { breakable: 1 },')),
+    ('reckless', ('onBasePowerPriority: 23,',
+                  'onBasePower(basePower, attacker, defender, move) {',
+                  'if (move.recoil || move.hasCrashDamage) {',
+                  "this.debug('Reckless boost');",
+                  'return this.chainModify([4915, 4096]);',
+                  '}',
+                  '},',
+                  'flags: {},')),
+    ('superluck', ('onModifyCritRatio(critRatio) {',
+                   'return critRatio + 1;',
+                   '},',
+                   'flags: {},')),
+)
+
+
 def check_g57_facts(abil_ts, champ_abil):
     """Step G57: the texts of Magic Bounce that the engine reproduces (G57_ABILITY_FACTS) are in the pinned entry, whitespace
     aside, and the Champions mod has no entry of its own for it."""
@@ -3549,11 +3661,25 @@ def check_g57_facts(abil_ts, champ_abil):
                 fail('ability %s: the entry no longer has "%s"' % (rid, fact))
 
 
+# Step G69, Symbiosis (data/abilities.ts:4837-4856, onAllyAfterUseItem): the pinned texts that dfi_symbiosis (src/combat/turn.c)
+# hard-codes: the switch-flag return, the holder's takeItem and its TakeItem check with the user as the second argument, setItem
+# on the user, the holder's item cleared, and the one line `-activate|holder|ability: Symbiosis|Item|[of] user` (no item line).
+# The Champions mod has no entry of its own (checked by check_g34_facts for every G-step ability).
+G69_ABILITY_FACTS = (
+    ('symbiosis', ('onAllyAfterUseItem(item, pokemon) { if (pokemon.switchFlag) return; '
+                   'const source = this.effectState.target; const myItem = source.takeItem(); if (!myItem) return; '
+                   "if ( !this.singleEvent('TakeItem', myItem, source.itemState, pokemon, source, this.effect, myItem) || "
+                   '!pokemon.setItem(myItem) ) { source.item = myItem.id; return; } '
+                   "this.add('-activate', source, 'ability: Symbiosis', myItem, `[of] ${pokemon}`); },",
+                   'flags: {},')),
+)
+
+
 def check_g34_facts(abil_ts, champ_abil, items_ts, champ_items):
     """Steps G34, G35, Mega batch 2 and G39: every fact of G34_ABILITY_FACTS, G35_ABILITY_FACTS, MEGA2_ABILITY_FACTS, G39_ABILITY_FACTS and G34_ITEM_FACTS is in the pinned entry, whitespace aside, and the
     Champions mod has no entry of its own for it (an override would change what the engine reads). Step G59: the Champions
     entry of a G59_INHERIT_ONLY ability may only inherit (`inherit: true`, `isNonstandard: null`), which is no override."""
-    for kind, facts_by_id, src, champ in (('ability', G34_ABILITY_FACTS + G35_ABILITY_FACTS + MEGA2_ABILITY_FACTS + G39_ABILITY_FACTS + G41_ABILITY_FACTS + G45_ABILITY_FACTS + G46_ABILITY_FACTS + G47_ABILITY_FACTS + G51_ABILITY_FACTS + G53_ABILITY_FACTS + G63_ABILITY_FACTS + G59_ABILITY_FACTS, abil_ts, champ_abil),
+    for kind, facts_by_id, src, champ in (('ability', G34_ABILITY_FACTS + G35_ABILITY_FACTS + MEGA2_ABILITY_FACTS + G39_ABILITY_FACTS + G41_ABILITY_FACTS + G45_ABILITY_FACTS + G46_ABILITY_FACTS + G47_ABILITY_FACTS + G51_ABILITY_FACTS + G53_ABILITY_FACTS + G63_ABILITY_FACTS + G59_ABILITY_FACTS + G69_ABILITY_FACTS + G65_ABILITY_FACTS, abil_ts, champ_abil),
                                           ('item', G34_ITEM_FACTS + G46_ITEM_FACTS + G47_ITEM_FACTS, items_ts, champ_items)):
         for rid, facts in facts_by_id:
             e = src.entry(rid)
@@ -3699,6 +3825,7 @@ def build_pool(root, repo, dx):
     check_g55_items(items_ts, champ_items)
     check_g37_facts(abil_ts, champ_abil)
     check_g57_facts(abil_ts, champ_abil)
+    check_i2_facts(abil_ts, champ_abil)
     check_g32_entries(items_ts, champ_items, abil_ts, champ_abil)
     check_weather_facts(Source(root, 'data/conditions.ts', READER_INPUTS), moves_ts)
     check_g56_facts(Source(root, 'data/conditions.ts', READER_INPUTS), moves_ts)

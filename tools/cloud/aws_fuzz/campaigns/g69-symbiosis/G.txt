@@ -1,0 +1,52 @@
+Floette-Eternal (F) @ Leftovers
+Ability: Symbiosis
+Level: 50
+EVs: 32 HP / 2 SpA / 32 SpD
+Calm Nature
+- Protect
+- Moonblast
+- Calm Mind
+
+Milotic (F) @ Sitrus Berry
+Ability: Competitive
+Level: 50
+EVs: 32 HP / 29 Def / 5 SpD
+Calm Nature
+- Protect
+- Scald
+- Recover
+
+Lucario (M) @ Focus Sash
+Ability: Inner Focus
+Level: 50
+EVs: 32 HP / 32 Atk / 2 SpD
+Adamant Nature
+- Protect
+- Close Combat
+- Bulk Up
+
+Sneasler (M) @ Eject Button
+Ability: Poison Touch
+Level: 50
+EVs: 2 HP / 32 Atk / 32 Spe
+Jolly Nature
+- Protect
+- Close Combat
+- Dire Claw
+
+Ceruledge (M) @ Red Card
+Ability: Flash Fire
+Level: 50
+EVs: 31 HP / 7 Atk / 24 Def / 3 SpD / 1 Spe
+Brave Nature
+- Protect
+- Bitter Blade
+
+Primarina (F) @ Life Orb
+Ability: Torrent
+Level: 50
+EVs: 32 HP / 2 Def / 32 SpD
+Calm Nature
+- Protect
+- Moonblast
+- Calm Mind

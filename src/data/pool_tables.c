@@ -2127,7 +2127,7 @@ const dfi_pool_item_data dfi_pool_items[DFI_POOL_ITEM_COUNT] = {
  *   hypercutter -- data/abilities.ts:1940-1954
  *   icebody -- data/abilities.ts:1955-1968  [unmodelled: callback onImmunity; callback onWeather]
  *   illuminate -- data/abilities.ts:2037-2054  [unmodelled: callback onModifyMove; callback onTryBoost]
- *   illusion -- data/abilities.ts:2055-2095  [unmodelled: callback onBeforeSwitchIn; callback onDamagingHit; callback onEnd; callback onFaint]
+ *   illusion -- data/abilities.ts:2055-2095
  *   immunity -- data/abilities.ts:2096-2114  [unmodelled: callback onSetStatus; callback onUpdate]
  *   imposter -- data/abilities.ts:2115-2130  [unmodelled: callback onSwitchIn; read by id in data/moves.ts]
  *   infiltrator -- data/abilities.ts:2131-2139
@@ -2150,7 +2150,7 @@ const dfi_pool_item_data dfi_pool_items[DFI_POOL_ITEM_COUNT] = {
  *   magicguard -- data/abilities.ts:2465-2476  [unmodelled: callback onDamage; read by id in data/items.ts]
  *   magician -- data/abilities.ts:2477-2500  [unmodelled: callback onAfterMoveSecondarySelf]
  *   magmaarmor -- data/abilities.ts:2501-2515  [unmodelled: callback onImmunity; callback onUpdate]
- *   marvelscale -- data/abilities.ts:2534-2545  [unmodelled: callback onModifyDef; callback onModifyDefPriority]
+ *   marvelscale -- data/abilities.ts:2534-2545
  *   megalauncher -- data/abilities.ts:2546-2557
  *   megasol -- data/abilities.ts:2558-2571, data/mods/champions/abilities.ts:45-48
  *   merciless -- data/abilities.ts:2572-2580  [unmodelled: callback onModifyCritRatio]
@@ -2187,7 +2187,7 @@ const dfi_pool_item_data dfi_pool_items[DFI_POOL_ITEM_COUNT] = {
  *   raindish -- data/abilities.ts:3759-3770
  *   rattled -- data/abilities.ts:3771-3786  [unmodelled: callback onAfterBoost; callback onDamagingHit]
  *   receiver -- data/abilities.ts:3787-3798  [unmodelled: callback onAllyFaint]
- *   reckless -- data/abilities.ts:3799-3811  [unmodelled: callback onBasePower; callback onBasePowerPriority]
+ *   reckless -- data/abilities.ts:3799-3811
  *   regenerator -- data/abilities.ts:3833-3841, data/mods/champions/abilities.ts:63-70
  *   ripen -- data/abilities.ts:3842-3880  [unmodelled: callback onChangeBoost; callback onEatItem; callback onSourceModifyDamage; callback onSourceModifyDamagePriority; callback onTryEatItem; callback onTryEatItemPriority; callback onTryHeal; read by id in data/items.ts]
  *   rivalry -- data/abilities.ts:3881-3898  [unmodelled: callback onBasePower; callback onBasePowerPriority]
@@ -2230,13 +2230,13 @@ const dfi_pool_item_data dfi_pool_items[DFI_POOL_ITEM_COUNT] = {
  *   strongjaw -- data/abilities.ts:4661-4672  [unmodelled: callback onBasePower; callback onBasePowerPriority]
  *   sturdy -- data/abilities.ts:4673-4691
  *   suctioncups -- data/abilities.ts:4692-4702
- *   superluck -- data/abilities.ts:4703-4711  [unmodelled: callback onModifyCritRatio]
+ *   superluck -- data/abilities.ts:4703-4711
  *   supersweetsyrup -- data/abilities.ts:4712-4729  [unmodelled: callback onStart]
  *   supremeoverlord -- data/abilities.ts:4730-4754  [unmodelled: callback onBasePower; callback onBasePowerPriority; callback onEnd; callback onStart]
  *   surgesurfer -- data/abilities.ts:4755-4765  [unmodelled: callback onModifySpe]
  *   sweetveil -- data/abilities.ts:4786-4807  [unmodelled: callback onAllySetStatus; callback onAllyTryAddVolatile]
  *   swiftswim -- data/abilities.ts:4808-4818
- *   symbiosis -- data/abilities.ts:4837-4856  [unmodelled: callback onAllyAfterUseItem]
+ *   symbiosis -- data/abilities.ts:4837-4856
  *   synchronize -- data/abilities.ts:4857-4871
  *   tangledfeet -- data/abilities.ts:4890-4903  [unmodelled: callback onModifyAccuracy; callback onModifyAccuracyPriority]
  *   technician -- data/abilities.ts:4916-4930
@@ -2245,14 +2245,14 @@ const dfi_pool_item_data dfi_pool_items[DFI_POOL_ITEM_COUNT] = {
  *   thickfat -- data/abilities.ts:5014-5033
  *   toxicdebris -- data/abilities.ts:5104-5117
  *   trace -- data/abilities.ts:5118-5151
- *   unaware -- data/abilities.ts:5214-5234  [unmodelled: callback onAnyModifyBoost]
+ *   unaware -- data/abilities.ts:5214-5234
  *   unnerve -- data/abilities.ts:5258-5275
  *   unseenfist -- data/abilities.ts:5276-5284, data/mods/champions/abilities.ts:86-95  [unmodelled: callback onHitProtect; callback onModifyMove]
  *   vitalspirit -- data/abilities.ts:5315-5339  [unmodelled: callback onSetStatus; callback onTryAddVolatile; callback onUpdate; read by id in data/moves.ts]
  *   voltabsorb -- data/abilities.ts:5340-5353
  *   wanderingspirit -- data/abilities.ts:5354-5362  [unmodelled: callback onDamagingHit]
  *   waterabsorb -- data/abilities.ts:5363-5376  [unmodelled: callback onTryHit]
- *   waterbubble -- data/abilities.ts:5377-5417  [unmodelled: callback onModifyAtk; callback onModifySpA; callback onSetStatus; callback onSourceModifyAtk; callback onSourceModifyAtkPriority; callback onSourceModifySpA; callback onSourceModifySpAPriority; callback onUpdate]
+ *   waterbubble -- data/abilities.ts:5377-5417
  *   weakarmor -- data/abilities.ts:5448-5458
  *   whitesmoke -- data/abilities.ts:5473-5492  [unmodelled: callback onTryBoost]
  *   zerotohero -- data/abilities.ts:5625-5644  [unmodelled: callback onSwitchIn; callback onSwitchOut]
@@ -2906,7 +2906,7 @@ const uint8_t dfi_pool_ability_handler[DFI_POOL_ABILITY_COUNT] = {
     [DFI_ABILITY_HYPERCUTTER] = DFI_HANDLER_NONE,
     [DFI_ABILITY_ICEBODY] = DFI_HANDLER_UNMODELED,
     [DFI_ABILITY_ILLUMINATE] = DFI_HANDLER_UNMODELED,
-    [DFI_ABILITY_ILLUSION] = DFI_HANDLER_UNMODELED,
+    [DFI_ABILITY_ILLUSION] = DFI_HANDLER_NONE,
     [DFI_ABILITY_IMMUNITY] = DFI_HANDLER_UNMODELED,
     [DFI_ABILITY_IMPOSTER] = DFI_HANDLER_UNMODELED,
     [DFI_ABILITY_INFILTRATOR] = DFI_HANDLER_NONE,
@@ -2929,7 +2929,7 @@ const uint8_t dfi_pool_ability_handler[DFI_POOL_ABILITY_COUNT] = {
     [DFI_ABILITY_MAGICGUARD] = DFI_HANDLER_UNMODELED,
     [DFI_ABILITY_MAGICIAN] = DFI_HANDLER_UNMODELED,
     [DFI_ABILITY_MAGMAARMOR] = DFI_HANDLER_UNMODELED,
-    [DFI_ABILITY_MARVELSCALE] = DFI_HANDLER_UNMODELED,
+    [DFI_ABILITY_MARVELSCALE] = DFI_HANDLER_NONE,
     [DFI_ABILITY_MEGALAUNCHER] = DFI_HANDLER_NONE,
     [DFI_ABILITY_MEGASOL] = DFI_HANDLER_NONE,
     [DFI_ABILITY_MERCILESS] = DFI_HANDLER_UNMODELED,
@@ -2966,7 +2966,7 @@ const uint8_t dfi_pool_ability_handler[DFI_POOL_ABILITY_COUNT] = {
     [DFI_ABILITY_RAINDISH] = DFI_HANDLER_NONE,
     [DFI_ABILITY_RATTLED] = DFI_HANDLER_UNMODELED,
     [DFI_ABILITY_RECEIVER] = DFI_HANDLER_UNMODELED,
-    [DFI_ABILITY_RECKLESS] = DFI_HANDLER_UNMODELED,
+    [DFI_ABILITY_RECKLESS] = DFI_HANDLER_NONE,
     [DFI_ABILITY_REGENERATOR] = DFI_HANDLER_NONE,
     [DFI_ABILITY_RIPEN] = DFI_HANDLER_UNMODELED,
     [DFI_ABILITY_RIVALRY] = DFI_HANDLER_UNMODELED,
@@ -3009,13 +3009,13 @@ const uint8_t dfi_pool_ability_handler[DFI_POOL_ABILITY_COUNT] = {
     [DFI_ABILITY_STRONGJAW] = DFI_HANDLER_UNMODELED,
     [DFI_ABILITY_STURDY] = DFI_HANDLER_NONE,
     [DFI_ABILITY_SUCTIONCUPS] = DFI_HANDLER_NONE,
-    [DFI_ABILITY_SUPERLUCK] = DFI_HANDLER_UNMODELED,
+    [DFI_ABILITY_SUPERLUCK] = DFI_HANDLER_NONE,
     [DFI_ABILITY_SUPERSWEETSYRUP] = DFI_HANDLER_UNMODELED,
     [DFI_ABILITY_SUPREMEOVERLORD] = DFI_HANDLER_UNMODELED,
     [DFI_ABILITY_SURGESURFER] = DFI_HANDLER_UNMODELED,
     [DFI_ABILITY_SWEETVEIL] = DFI_HANDLER_UNMODELED,
     [DFI_ABILITY_SWIFTSWIM] = DFI_HANDLER_NONE,
-    [DFI_ABILITY_SYMBIOSIS] = DFI_HANDLER_UNMODELED,
+    [DFI_ABILITY_SYMBIOSIS] = DFI_HANDLER_NONE,
     [DFI_ABILITY_SYNCHRONIZE] = DFI_HANDLER_NONE,
     [DFI_ABILITY_TANGLEDFEET] = DFI_HANDLER_UNMODELED,
     [DFI_ABILITY_TECHNICIAN] = DFI_HANDLER_NONE,
@@ -3024,14 +3024,14 @@ const uint8_t dfi_pool_ability_handler[DFI_POOL_ABILITY_COUNT] = {
     [DFI_ABILITY_THICKFAT] = DFI_HANDLER_NONE,
     [DFI_ABILITY_TOXICDEBRIS] = DFI_HANDLER_NONE,
     [DFI_ABILITY_TRACE] = DFI_HANDLER_NONE,
-    [DFI_ABILITY_UNAWARE] = DFI_HANDLER_UNMODELED,
+    [DFI_ABILITY_UNAWARE] = DFI_HANDLER_NONE,
     [DFI_ABILITY_UNNERVE] = DFI_HANDLER_NONE,
     [DFI_ABILITY_UNSEENFIST] = DFI_HANDLER_UNMODELED,
     [DFI_ABILITY_VITALSPIRIT] = DFI_HANDLER_UNMODELED,
     [DFI_ABILITY_VOLTABSORB] = DFI_HANDLER_NONE,
     [DFI_ABILITY_WANDERINGSPIRIT] = DFI_HANDLER_UNMODELED,
     [DFI_ABILITY_WATERABSORB] = DFI_HANDLER_UNMODELED,
-    [DFI_ABILITY_WATERBUBBLE] = DFI_HANDLER_UNMODELED,
+    [DFI_ABILITY_WATERBUBBLE] = DFI_HANDLER_NONE,
     [DFI_ABILITY_WEAKARMOR] = DFI_HANDLER_NONE,
     [DFI_ABILITY_WHITESMOKE] = DFI_HANDLER_UNMODELED,
     [DFI_ABILITY_ZEROTOHERO] = DFI_HANDLER_UNMODELED,
@@ -7048,7 +7048,6 @@ const char *const dfi_pool_ability_unmodeled[DFI_POOL_ABILITY_COUNT] = {
     [DFI_ABILITY_HYDRATION] = "callback onResidual; callback onResidualOrder; callback onResidualSubOrder",
     [DFI_ABILITY_ICEBODY] = "callback onImmunity; callback onWeather",
     [DFI_ABILITY_ILLUMINATE] = "callback onModifyMove; callback onTryBoost",
-    [DFI_ABILITY_ILLUSION] = "callback onBeforeSwitchIn; callback onDamagingHit; callback onEnd; callback onFaint",
     [DFI_ABILITY_IMMUNITY] = "callback onSetStatus; callback onUpdate",
     [DFI_ABILITY_IMPOSTER] = "callback onSwitchIn; read by id in data/moves.ts",
     [DFI_ABILITY_INNARDSOUT] = "callback onDamagingHit; callback onDamagingHitOrder",
@@ -7062,7 +7061,6 @@ const char *const dfi_pool_ability_unmodeled[DFI_POOL_ABILITY_COUNT] = {
     [DFI_ABILITY_MAGICGUARD] = "callback onDamage; read by id in data/items.ts",
     [DFI_ABILITY_MAGICIAN] = "callback onAfterMoveSecondarySelf",
     [DFI_ABILITY_MAGMAARMOR] = "callback onImmunity; callback onUpdate",
-    [DFI_ABILITY_MARVELSCALE] = "callback onModifyDef; callback onModifyDefPriority",
     [DFI_ABILITY_MERCILESS] = "callback onModifyCritRatio",
     [DFI_ABILITY_MIMICRY] = "callback onStart; callback onSwitchInPriority; callback onTerrainChange",
     [DFI_ABILITY_MINUS] = "callback onModifySpA; callback onModifySpAPriority; read by id in data/abilities.ts; read by id in data/moves.ts",
@@ -7087,7 +7085,6 @@ const char *const dfi_pool_ability_unmodeled[DFI_POOL_ABILITY_COUNT] = {
     [DFI_ABILITY_QUICKFEET] = "callback onModifySpe; read by id in data/conditions.ts",
     [DFI_ABILITY_RATTLED] = "callback onAfterBoost; callback onDamagingHit",
     [DFI_ABILITY_RECEIVER] = "callback onAllyFaint",
-    [DFI_ABILITY_RECKLESS] = "callback onBasePower; callback onBasePowerPriority",
     [DFI_ABILITY_RIPEN] = "callback onChangeBoost; callback onEatItem; callback onSourceModifyDamage; callback onSourceModifyDamagePriority; callback onTryEatItem; callback onTryEatItemPriority; callback onTryHeal; read by id in data/items.ts",
     [DFI_ABILITY_RIVALRY] = "callback onBasePower; callback onBasePowerPriority",
     [DFI_ABILITY_RUNAWAY] = "callback onMaybeTrapPokemon; callback onMaybeTrapPokemonPriority; callback onTrapPokemon; callback onTrapPokemonPriority",
@@ -7104,28 +7101,24 @@ const char *const dfi_pool_ability_unmodeled[DFI_POOL_ABILITY_COUNT] = {
     [DFI_ABILITY_STEELYSPIRIT] = "callback onAllyBasePower; callback onAllyBasePowerPriority",
     [DFI_ABILITY_STENCH] = "callback onModifyMove; callback onModifyMovePriority",
     [DFI_ABILITY_STRONGJAW] = "callback onBasePower; callback onBasePowerPriority",
-    [DFI_ABILITY_SUPERLUCK] = "callback onModifyCritRatio",
     [DFI_ABILITY_SUPERSWEETSYRUP] = "callback onStart",
     [DFI_ABILITY_SUPREMEOVERLORD] = "callback onBasePower; callback onBasePowerPriority; callback onEnd; callback onStart",
     [DFI_ABILITY_SURGESURFER] = "callback onModifySpe",
     [DFI_ABILITY_SWEETVEIL] = "callback onAllySetStatus; callback onAllyTryAddVolatile",
-    [DFI_ABILITY_SYMBIOSIS] = "callback onAllyAfterUseItem",
     [DFI_ABILITY_TANGLEDFEET] = "callback onModifyAccuracy; callback onModifyAccuracyPriority",
-    [DFI_ABILITY_UNAWARE] = "callback onAnyModifyBoost",
     [DFI_ABILITY_UNSEENFIST] = "callback onHitProtect; callback onModifyMove",
     [DFI_ABILITY_VITALSPIRIT] = "callback onSetStatus; callback onTryAddVolatile; callback onUpdate; read by id in data/moves.ts",
     [DFI_ABILITY_WANDERINGSPIRIT] = "callback onDamagingHit",
     [DFI_ABILITY_WATERABSORB] = "callback onTryHit",
-    [DFI_ABILITY_WATERBUBBLE] = "callback onModifyAtk; callback onModifySpA; callback onSetStatus; callback onSourceModifyAtk; callback onSourceModifyAtkPriority; callback onSourceModifySpA; callback onSourceModifySpAPriority; callback onUpdate",
     [DFI_ABILITY_WHITESMOKE] = "callback onTryBoost",
     [DFI_ABILITY_ZEROTOHERO] = "callback onSwitchIn; callback onSwitchOut",
 };
 
 const uint8_t dfi_pool_table_hash[32] = {
-    0x34u, 0xf6u, 0x42u, 0x21u, 0xafu, 0x56u, 0x2fu, 0xc9u,
-    0x6cu, 0xd5u, 0x99u, 0x7eu, 0xd1u, 0x74u, 0xb4u, 0x0eu,
-    0xe1u, 0xc9u, 0x59u, 0xcdu, 0x76u, 0x4cu, 0x5bu, 0x43u,
-    0x41u, 0xbcu, 0x1bu, 0xd8u, 0x9bu, 0xd1u, 0x4du, 0xa0u,
+    0x76u, 0xdeu, 0xcau, 0xddu, 0xf5u, 0x13u, 0x12u, 0x41u,
+    0x0cu, 0xedu, 0x8cu, 0xc6u, 0x4bu, 0xddu, 0xe0u, 0x07u,
+    0x84u, 0x8au, 0x76u, 0x37u, 0x2bu, 0xcbu, 0x69u, 0x2eu,
+    0x85u, 0x23u, 0x73u, 0x7du, 0x7au, 0x08u, 0x18u, 0xa9u,
 };
 
 static size_t dfi_pool_put_u16(uint8_t *out, size_t n, uint32_t v)
