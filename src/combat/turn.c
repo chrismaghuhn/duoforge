@@ -1387,6 +1387,12 @@ static duoforge_status dfi_move_targets(dfi_run *r, uint32_t user, uint32_t cls,
         if (chosen >= DFI_POSITIONS) {
             return DUOFORGE_E_INVARIANT;
         }
+        if (chosen == user && cls != DUOFORGE_TARGET_CLASS_ADJACENT_FOE) {
+            /* getTarget (sim/battle.ts:2459-2462): a move that targets an adjacent ally, any or normal returns null when the
+             * chosen location is the user's own position. Ally Switch (step G80) moves the user onto the slot its target was
+             * chosen for, so the move finds nothing to hit ([notarget], then -fail). */
+            return DUOFORGE_OK;
+        }
         if (chosen / 2u == side) {
             /* The ally: hit while it stands; a fainted ally is not
              * retargeted (the move fails); an empty slot falls through to a
@@ -1419,6 +1425,9 @@ static duoforge_status dfi_move_targets(dfi_run *r, uint32_t user, uint32_t cls,
          * which finds no standing adjacent ally in doubles (sim/battle.ts:
          * 2461-2508). */
         const uint32_t ally = side * 2u + (1u - user % 2u);
+        if (chosen == user) {
+            return DUOFORGE_OK; /* getTarget's null for the user's own location (sim/battle.ts:2459-2462): [notarget] */
+        }
         if (chosen != ally) {
             return DUOFORGE_E_INVARIANT; /* the domain offers only the ally */
         }

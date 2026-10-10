@@ -5946,6 +5946,12 @@ static const df_tb_stop tb_g80_allyswitch_m2[] = {
     {3u, 0u, 2u, 2u, {4u, 4u}, {617u, 739u}, {0x404a5fa5fa5fa5fbull, 0x4050aaaaaaaaaaabull}},
     {4u, 0u, 2u, 2u, {4u, 4u}, {589u, 739u}, {0x4049433433433433ull, 0x4050aaaaaaaaaaabull}},
 };
+static const df_tb_stop tb_g80_allyswitch_selftarget[] = {
+    {0u, 0u, 3u, 4u, {6u, 6u}, {1186u, 1186u}, {0x4059000000000000ull, 0x4059000000000000ull}},
+    {1u, 0u, 1u, 3u, {4u, 4u}, {802u, 761u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {2u, 0u, 1u, 3u, {4u, 4u}, {802u, 761u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {3u, 0u, 1u, 3u, {4u, 4u}, {802u, 761u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+};
 static const df_tb_stop tb_g80_allyswitch_swap[] = {
     {0u, 0u, 1u, 3u, {6u, 6u}, {1186u, 1123u}, {0x4059000000000000ull, 0x4059000000000000ull}},
     {1u, 0u, 1u, 3u, {4u, 4u}, {769u, 739u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
@@ -8066,6 +8072,7 @@ static const df_tb_battle tb_battles[] = {
     {"g7_wide_guard_b", 5u, tb_g7_wide_guard_b, sizeof tb_g7_wide_guard_b / sizeof tb_g7_wide_guard_b[0]},
     {"g7_wide_guard_pivot", 4u, tb_g7_wide_guard_pivot, sizeof tb_g7_wide_guard_pivot / sizeof tb_g7_wide_guard_pivot[0]},
     {"g80_allyswitch_m2", 4u, tb_g80_allyswitch_m2, sizeof tb_g80_allyswitch_m2 / sizeof tb_g80_allyswitch_m2[0]},
+    {"g80_allyswitch_selftarget", 3u, tb_g80_allyswitch_selftarget, sizeof tb_g80_allyswitch_selftarget / sizeof tb_g80_allyswitch_selftarget[0]},
     {"g80_allyswitch_swap", 4u, tb_g80_allyswitch_swap, sizeof tb_g80_allyswitch_swap / sizeof tb_g80_allyswitch_swap[0]},
     {"g80_allyswitch_tantrum", 4u, tb_g80_allyswitch_tantrum, sizeof tb_g80_allyswitch_tantrum / sizeof tb_g80_allyswitch_tantrum[0]},
     {"g80_allyswitch_tantrum_b", 4u, tb_g80_allyswitch_tantrum_b, sizeof tb_g80_allyswitch_tantrum_b / sizeof tb_g80_allyswitch_tantrum_b[0]},
@@ -8204,7 +8211,7 @@ static const df_tb_battle tb_battles[] = {
     {"xr3_sheercold_sub_miss", 3u, tb_xr3_sheercold_sub_miss, sizeof tb_xr3_sheercold_sub_miss / sizeof tb_xr3_sheercold_sub_miss[0]},
 };
 
-/* 5510 stops: 150 of an ended battle; decided by the count 1330,
- * the HP percentage 1721, the total HP 2160, a tie 149;
- * winners: side 0 2622, side 1 2739, tie 149 */
+/* 5514 stops: 150 of an ended battle; decided by the count 1330,
+ * the HP percentage 1721, the total HP 2163, a tie 150;
+ * winners: side 0 2625, side 1 2739, tie 150 */
 #endif

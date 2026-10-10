@@ -1,0 +1,26 @@
+{
+  "name": "g80_allyswitch_selftarget",
+  "purpose": "Ally Switch (step G80, decision 0044) and the partner's target: Chimecho (p2a) uses Ally Switch and Salamence (p2b) uses Dragon Cheer on slot a (move 1 -1, adjacentAlly, priority 0). Ally Switch (priority 2) runs first and moves Salamence onto slot a, so the target -1 is now the user's own location: getTarget returns null (sim/battle.ts:2459-2462), the move shows [notarget] and -fail. Taken from the random differential battle fz_80_2 of run 80 (its first three answers), which the pinned Showdown accepted.",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,46cfc5ccf8a1dfa5b93ed07dc89148c767bb6323f4dbde85eb1bea6b2b8f9972",
+  "teams": [
+    "Gardevoir (F)\nAbility: Trace\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nTimid Nature\n- Psych Up\n- Dazzling Gleam\n- Calm Mind\n- Helping Hand\n\nMilotic (F)\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 32 Def / 2 Spe\nBold Nature\n- Scald\n- Recover\n- Ice Beam\n- Protect\n\nChimecho (F)\nAbility: Levitate\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nCalm Nature\n- Calm Mind\n- Dazzling Gleam\n- Encore\n- Ally Switch\n\nSalamence (M)\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Spe\nAdamant Nature\n- Dragon Cheer\n- Dragon Claw\n- Flamethrower\n- Protect\n\nGarchomp (M)\nAbility: Rough Skin\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Spe\nAdamant Nature\n- Dragon Cheer\n- Earthquake\n- Dragon Claw\n- Protect\n\nAudino (F)\nAbility: Regenerator\nLevel: 50\nEVs: 32 HP / 32 Def / 2 Spe\nBold Nature\n- Ally Switch\n- Stomping Tantrum\n- Helping Hand\n- Protect",
+    "Audino (F) @ Leftovers\nAbility: Regenerator\nLevel: 50\nEVs: 32 HP / 32 Def / 2 Spe\nBold Nature\n- Ally Switch\n- Stomping Tantrum\n- Helping Hand\n- Protect\n\nChimecho (F) @ Sitrus Berry\nAbility: Levitate\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nCalm Nature\n- Ally Switch\n- Calm Mind\n- Dazzling Gleam\n- Encore\n\nSalamence (M)\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Spe\nAdamant Nature\n- Dragon Cheer\n- Dragon Claw\n- Flamethrower\n- Protect\n\nGarchomp (M)\nAbility: Rough Skin\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Spe\nAdamant Nature\n- Dragon Cheer\n- Earthquake\n- Dragon Claw\n- Protect\n\nMilotic (F)\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 32 Def / 2 Spe\nBold Nature\n- Scald\n- Recover\n- Ice Beam\n- Protect\n\nGardevoir (F)\nAbility: Trace\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nTimid Nature\n- Psych Up\n- Dazzling Gleam\n- Calm Mind\n- Helping Hand"
+  ],
+  "choices": [
+    {
+      "p1": "team 5416",
+      "p2": "team 2365"
+    },
+    {
+      "p1": "move 4, move 4",
+      "p2": "move 3, move 2 2"
+    },
+    {
+      "p1": "move 1 -2, move 1 -1",
+      "p2": "move 1, move 1 -1"
+    }
+  ],
+  "max_steps": 3
+}
