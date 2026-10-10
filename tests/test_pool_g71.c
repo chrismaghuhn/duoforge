@@ -482,6 +482,81 @@ static void test_accepted_codes_flat0(df_test *t)
     finish(ctx, b);
 }
 
+/* One turn of the recorded g71_oblivious battle, as a command: a move slot and a target (flat position), or none. */
+typedef struct g71_cmd {
+    uint8_t kind;
+    uint8_t move_slot;
+    uint8_t target;
+    uint8_t reserve;
+} g71_cmd;
+
+#define G71_MV(slot, target) {DUOFORGE_SLOT_MOVE, (slot), (target), 0u}
+#define G71_NO DUOFORGE_TARGET_NONE
+
+static void g71_turn_bundle(duoforge_decision_bundle *bd, const duoforge_battle *b, const g71_cmd cmd[2][2])
+{
+    memset(bd, 0, sizeof *bd);
+    bd->epoch = b->request_epoch;
+    bd->response_mask = 3u;
+    for (uint32_t side = 0u; side < 2u; ++side) {
+        duoforge_side_choice *c = &bd->responses[side];
+        c->epoch = b->request_epoch;
+        c->side = (uint8_t)side;
+        c->kind = (uint8_t)DUOFORGE_CHOICE_SLOTS;
+        for (uint32_t slot = 0u; slot < 2u; ++slot) {
+            c->slots[slot].kind = cmd[side][slot].kind;
+            c->slots[slot].move_slot = cmd[side][slot].move_slot;
+            c->slots[slot].target = cmd[side][slot].target;
+            c->slots[slot].reserve = cmd[side][slot].reserve;
+        }
+    }
+}
+
+/* M08 (the Oblivious cure, step G71, data/abilities.ts:3009-3016): an infatuated Oblivious occupant is cured at the Update of a turn.
+ * The holder is Slowbro (M, Oblivious) on flat 2, the source Milotic (F, Cute Charm) on flat 1: the state's byte is 1 + 0 * 6 + 1.
+ * The Update prints ACTIVATE (cause ABILITY, Oblivious + 1, the holder) and then the visible end (VOLATILE_END, detail ATTRACT,
+ * cause ABILITY, Oblivious + 1), and the byte goes to 0. The moves keep both sides standing: Araquanid's Liquidation on Skeledirge,
+ * Milotic's Coil; Slowbro's Drain Punch on Araquanid, Skeledirge's Protect. */
+static void test_oblivious_cure_at_update(df_test *t)
+{
+    duoforge_context *ctx = NULL;
+    duoforge_battle *b = NULL;
+    if (!start(t, "g71_oblivious", &ctx, &b)) {
+        finish(ctx, b);
+        return;
+    }
+    DF_CHECK_EQ_U64(t, b->sides[1].positions[0].occupant, 0u); /* Slowbro on flat 2 */
+    DF_CHECK_EQ_U64(t, b->sides[0].positions[1].occupant, 1u); /* Milotic on flat 1 */
+    b->tail.attract_source[2] = code_of(0u, 1u);
+    DF_CHECK_EQ_U64(t, duoforge_battle_check(ctx, b), DUOFORGE_OK);
+    static const g71_cmd turn[2][2] = {{G71_MV(0u, 3u), G71_MV(0u, G71_NO)}, {G71_MV(0u, 0u), G71_MV(3u, G71_NO)}};
+    duoforge_decision_bundle bd;
+    g71_turn_bundle(&bd, b, turn);
+    duoforge_event ev0[256];
+    duoforge_event ev1[256];
+    duoforge_event_buffer bufs[DUOFORGE_SIDE_COUNT] = {{ev0, 256u, 0u}, {ev1, 256u, 0u}};
+    duoforge_step_result res;
+    DF_CHECK_EQ_U64(t, duoforge_battle_step_events(ctx, b, &bd, &res, bufs), DUOFORGE_OK);
+    int act = -1;
+    int end = -1;
+    for (uint32_t i = 0u; i < bufs[0].count; ++i) {
+        const duoforge_event *e = &ev0[i];
+        if (act < 0 && e->kind == DUOFORGE_EVENT_ACTIVATE && e->position == 2u && e->cause == DUOFORGE_CAUSE_ABILITY &&
+            e->id2 == 1u + DFI_ABILITY_OBLIVIOUS) {
+            act = (int)i;
+        }
+        if (end < 0 && e->kind == DUOFORGE_EVENT_VOLATILE_END && e->position == 2u && e->detail == DUOFORGE_VOLATILE_ATTRACT &&
+            e->cause == DUOFORGE_CAUSE_ABILITY && e->id2 == 1u + DFI_ABILITY_OBLIVIOUS) {
+            end = (int)i;
+        }
+    }
+    DF_CHECK(t, act >= 0);
+    DF_CHECK(t, end > act);
+    DF_CHECK_EQ_U64(t, b->tail.attract_source[2], 0u);
+    DF_CHECK_EQ_U64(t, duoforge_battle_check(ctx, b), DUOFORGE_OK);
+    finish(ctx, b);
+}
+
 int main(void)
 {
     df_test t;
@@ -497,6 +572,7 @@ int main(void)
     test_rule_gender_pair(&t);
     test_rule_ally_source(&t);
     test_accepted_codes_flat0(&t);
+    test_oblivious_cure_at_update(&t);
     test_constants(&t);
     test_encode_roundtrip(&t);
     test_check_refusals(&t);
