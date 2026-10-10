@@ -1609,5 +1609,24 @@ class SourceTest(unittest.TestCase):
         self.assertEqual(counters["funnel.gen9ou.skipped.skip:format"], 1)
 
 
+class SplitTest(unittest.TestCase):
+    """The player split of the Bo1 belief validation (M11 Bo1 spec section 6): no player in training and test."""
+
+    def test_a_test_player_makes_a_test_game(self):
+        from duoforge_replay import split
+        self.assertTrue(split.is_test_player(40))
+        self.assertFalse(split.is_test_player(41))
+        self.assertEqual(split.of_game((40, 41)), "test")
+        self.assertEqual(split.of_game((41, 40)), "test")
+        self.assertEqual(split.of_game((41, 43)), "train")
+
+    def test_players_of_hashes_the_two_player_lines(self):
+        from duoforge_replay import game, split
+        lines = ["|player|p1|Alice|1|1500", "|player|p2|Bob B|2|", "|player|p1|Alice|1|1500"]
+        self.assertEqual(split.players_of(lines), (game._hash8("alice"), game._hash8("bobb")))
+        with self.assertRaisesRegex(ValueError, "player"):
+            split.players_of(["|player|p1|Alice|1|"])
+
+
 if __name__ == "__main__":
     unittest.main()
