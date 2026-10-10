@@ -128,6 +128,34 @@ class TimerTest(unittest.TestCase):
         self.assertEqual((search.DEADLINE_CAP, search.DEADLINE_SHARE), (2.0, 0.10))
 
 
+class ExtensionRecordTest(unittest.TestCase):
+    def test_the_game_encodes_the_trackers_extension_record(self):
+        # HauptSession, 2026-10-10: a network that reads view-extension record features (params-49333) plays live; the
+        # Game encodes the tracker's OBSERVATION_EXT. A feature the tracker does not fold stops it at the line that
+        # would set it (lines._feature), so until then its fields are truly zero.
+        import numpy as np
+        from duoforge import _layout, features
+        from duoforge_live.game import Game
+        from duoforge_live.policy import Policy
+        rng = np.random.default_rng(2)
+        shapes = {"t1": (features.OBS_SIZE, 8), "t2": (8, 8), "option_torso": (8, 4),
+                  "option_features": (features.SLOT_FEATURES, 4), "option_out": (4, 2), "team": (8, 360),
+                  "value": (8, 1)}
+        params = {k: {"w": rng.normal(0, 1, s).astype(np.float32), "b": np.zeros(s[1], np.float32)}
+                  for k, s in shapes.items()}
+        mask = features.BASE_VALUE_FEATURES | (1 << features.FEATURE_BITS["PERISH"]) | \
+            (1 << features.FEATURE_BITS["ENCORE"])
+        game = Game(data.load(), Policy(params, features.ENCODER, mask), teams.text("A"))
+        with mock.patch.object(features, "encode", wraps=features.encode) as encode:
+            for lines in FIXTURE["messages"][:6]:
+                game.feed(lines)
+            game.candidates()
+        call = encode.call_args_list[-1]
+        self.assertEqual(call.args[3], mask)
+        self.assertEqual(call.args[2].dtype, _layout.OBSERVATION_EXT)
+        self.assertEqual(call.args[2].tobytes(), game.tracker.observation_ext().tobytes())
+
+
 class FakeLive:
     """LiveSearch in shape: picks the highest allowed pair, or answers with a scripted outcome."""
 
@@ -248,6 +276,16 @@ class ClientSearchTest(unittest.TestCase):
         self.assertTrue(self.chosen())
         self.assertEqual(self.live.calls[-1]["budget"], search.DEADLINE_CAP)
         self.assertTrue(any(r.get("timer") == "missing" for r in self.log()))
+
+    def test_a_tracker_stop_forfeits_counted_by_its_reason(self):
+        # Owner, 2026-10-10: a line the tracker cannot represent (an unfolded feature) ends the game with an explicit
+        # forfeit, counted as stop:<reason> (the arena gate's own category), never played on.
+        from duoforge_live import lines
+        self.start(upto=4)
+        with mock.patch.object(tracker.Tracker, "feed", side_effect=lines.Stop("feature:STEALTH_ROCK")):
+            self.feed(room(FIXTURE["messages"][4]))
+        self.assertEqual(self.server.take()[-2:], [f"{ROOM}|{client.INTERNAL}", f"{ROOM}|/forfeit"])
+        self.assertIn({"forfeit": "stop:feature:STEALTH_ROCK"}, self.log())
 
     def test_the_search_option(self):
         import contextlib
