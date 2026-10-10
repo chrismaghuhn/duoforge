@@ -1,24 +1,32 @@
 """Random training teams from the pinned Showdown's Champions random doubles generator, accepted by the engine.
 
     python tools/reference/random_teams.py --checkout PINNED --seed HEX16 --count N --out DIR [--node node]
-                                          [--max-candidates M]
+                                          [--generator-teams G]
 
-The generator (tools/reference/ps_random_teams.js) gives team i of a seed deterministically. Each candidate becomes a
-registry paste with two stated, generator-wide translations, never per team:
-- the level is 50: battles are at level 50 (the generator levels each species for balance, 50 to about 60);
+The generator (tools/reference/ps_random_teams.js) gives team i of a seed deterministically. Its sets become registry
+pastes with two stated, generator-wide translations, never per set:
+- the level is 50: battles are at level 50 (the generator levels each species for balance, 50 to about 60, and tunes
+  the HP stat points for its own level, so at 50 that tuning no longer holds; the stat points stay the generator's);
 - the nature is Serious: the generator gives none, and Showdown battles such a set with a neutral nature.
-The stat points (11 per stat, at most 66), species, item, ability and moves are the generator's. Candidates with a
-shiny line or IVs other than 31 are refused (the registry format has neither). The engine then decides each paste as
-import_vgcpastes does (the POOL data kind, the team against itself): only what it accepts is written. A candidate it
-refuses (Item Clause, an illegal member, a mechanic not supported yet) is counted with its reason and skipped; nothing
-is changed to make it pass, so the kept teams are a filtered sample of the generator, not a repaired one.
+The stat points (11 per stat, at most 66), species, item, ability and moves are the generator's. Sets with a shiny line
+or IVs other than 31 are refused (the registry format has neither).
 
-The output directory (outside the repository) gets RT_<seed>_<index>.txt per kept team, an index.json in the
-registry's form (id, sha256) for duoforge.teams.load, teams.txt (one id per line) and manifest.json (pin commit, seed,
-counts by verdict, the most frequent refusal reasons).
+Whole generator teams almost never pass (the generator has no Item Clause), so the sets of G generator teams form a
+pool: a pre-filter keeps a set only if its names are in the POOL tables and supported and the species may have its
+ability and moves (this narrows the sample; its counts are in the manifest), and teams of six are composed from the
+pool in a seeded order under the Species and Item Clause. The engine then decides every composed team as
+import_vgcpastes does (the POOL data kind, the team against itself): only what it accepts is written, a refusal is
+counted with its reason. Nothing is changed to make a team pass: the kept teams are a filtered sample, not a repaired
+one.
+
+The output directory (outside the repository) gets RT_<sha256 of the paste, 16 digits>.txt per kept team (the id names
+the content, whatever the run), an index.json in the registry's form (id, sha256) for duoforge.teams.load, teams.txt
+(one id per line) and manifest.json (pin commit, seed, generator teams, Python version, counts by verdict, the most
+frequent refusal reasons).
 """
 import argparse
 import collections
+import functools
 import hashlib
 import json
 import os
@@ -63,8 +71,9 @@ def to_paste(team):
     return '\n\n'.join(blocks) + '\n'
 
 
-def team_id(seed, index):
-    return 'RT_%s_%06d' % (seed.upper(), index)
+def team_id(text):
+    """The id of a kept team: the first 16 hex digits of its paste's sha256, so an id always names the same team."""
+    return 'RT_' + hashlib.sha256(text.encode('utf-8')).hexdigest()[:16].upper()
 
 
 def refuse_repository(path):
@@ -76,7 +85,7 @@ def refuse_repository(path):
 
 def generate(node, checkout, seed, first, count):
     out = subprocess.run([node, os.path.join(HERE, 'ps_random_teams.js'), checkout, seed, str(first), str(count)],
-                         capture_output=True, text=True, check=False)
+                         capture_output=True, text=True, encoding='utf-8', check=False)  # Farfetch’d: not the codepage
     if out.returncode != 0:
         raise RandomTeamError('ps_random_teams.js failed: %s' % out.stderr.strip())
     return [json.loads(line) for line in out.stdout.splitlines() if line.strip()]
@@ -174,7 +183,7 @@ def main(argv=None):
         for first in range(0, n_gen, BATCH):
             for cand in generate(args.node, args.checkout, seed, first, min(BATCH, n_gen - first)):
                 for s in cand['team']:
-                    key = json.dumps(s, sort_keys=True)
+                    key = json.dumps(dict(s, moves=sorted(s['moves'])), sort_keys=True)  # the generator shuffles moves
                     if key in seen:
                         set_verdicts['duplicate'] += 1
                         continue
@@ -187,18 +196,19 @@ def main(argv=None):
                         set_verdicts[why.split(':', 1)[0]] += 1
                         reasons['set ' + why] += 1
 
+        @functools.lru_cache(maxsize=None)
         def dex_of(species):
             return data.forme_info(context, data.find(context, data.TABLE_SPECIES, data.to_id(species)))['dex_num']
 
         rng = random.Random(int(seed, 16))
-        for k, team in enumerate(compose(sets, rng, dex_of)):
+        for team in compose(sets, rng, dex_of):
             if len(kept) == args.count:
                 break
             text = to_paste(team)
             status, info = check(text)
             team_verdicts[status] += 1
             if status == 'pool':
-                kept.append((team_id(seed, k), text))
+                kept.append((team_id(text), text))
             else:
                 reasons['team %s: %s' % (status, info if isinstance(info, str) else '; '.join(info))] += 1
     os.makedirs(args.out)
@@ -213,7 +223,8 @@ def main(argv=None):
     with open(os.path.join(args.out, 'teams.txt'), 'w', encoding='utf-8') as f:
         f.write(''.join(t + '\n' for t, _ in kept))
     manifest = {'generator': 'gen9championsrandomdoublesbattle', 'pin': pin_commit(args.checkout), 'seed': seed,
-                'level': LEVEL, 'nature_when_missing': NATURE, 'generator_teams': n_gen, 'sets': dict(set_verdicts),
+                'level': LEVEL, 'nature_when_missing': NATURE, 'generator_teams': n_gen,
+                'python': '%d.%d.%d' % sys.version_info[:3], 'sets': dict(set_verdicts),
                 'teams': dict(team_verdicts), 'kept': len(kept), 'reasons': dict(reasons.most_common(40)),
                 'teams_sha256': hashlib.sha256(''.join(e['sha256'] for e in entries).encode()).hexdigest()}
     with open(os.path.join(args.out, 'manifest.json'), 'w', encoding='utf-8') as f:

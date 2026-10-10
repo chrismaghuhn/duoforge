@@ -96,8 +96,73 @@ class Guards(unittest.TestCase):
             rt.refuse_repository(os.path.join(rt.ROOT, 'data', 'random'))
         rt.refuse_repository(os.path.join(os.path.dirname(rt.ROOT), 'elsewhere'))  # no error
 
-    def test_ids_name_the_seed_and_the_index(self):
-        self.assertEqual(rt.team_id('2026101000000001', 7), 'RT_2026101000000001_000007')
+    def test_an_id_names_the_content(self):
+        a, b = rt.to_paste([gset('Incineroar')]), rt.to_paste([gset('Torkoal')])
+        self.assertRegex(rt.team_id(a), r'^RT_[0-9A-F]{16}$')
+        self.assertEqual(rt.team_id(a), rt.team_id(a))
+        self.assertNotEqual(rt.team_id(a), rt.team_id(b))
+
+
+def registry_sets(team_id):
+    """The sets of a registry team as the generator would give them (a stand-in for ps_random_teams.js)."""
+    with open(os.path.join(rt.ROOT, 'data', 'teams', team_id + '.txt'), encoding='utf-8') as f:
+        members = teams.parse(f.read(), team_id)
+    keys = ('hp', 'atk', 'def', 'spa', 'spd', 'spe')
+    return [{'species': m['species'], 'gender': m['gender'] or '', 'shiny': False, 'level': 50, 'item': m['item'] or '',
+             'ability': m['ability'], 'nature': m['nature'], 'evs': dict(zip(keys, m['stat_points'])),
+             'ivs': dict.fromkeys(keys, 31), 'moves': list(m['moves'])} for m in members]
+
+
+class Main(unittest.TestCase):
+    """main() end to end with the library (DUOFORGE_LIBRARY) and stand-ins for the generator and the composition:
+    only teams the engine accepts are written, a refusal is counted, and a second run writes the same bytes."""
+
+    def setUp(self):
+        import tempfile
+        self.tmp = tempfile.mkdtemp(prefix='random_teams_')
+        self.checkout = os.path.join(self.tmp, 'ps')
+        os.makedirs(os.path.join(self.checkout, 'dist', 'sim'))
+        with open(os.path.join(rt.ROOT, 'data', 'teams', 'index.json'), encoding='utf-8') as f:
+            ids = [t['id'] for t in json.load(f)['teams'] if t['id'].startswith('PP_')]
+        self.good = registry_sets(ids[0])
+        bad = registry_sets(ids[1])
+        bad[0]['evs'].update(hp=32, atk=32, spe=32)  # 96 or more stat points: the pre-filter passes it,
+        # the engine refuses the team (DUOFORGE_STAT_POINTS_TOTAL_MAX)
+        self.bad = bad
+        self.saved = rt.generate, rt.compose
+        rt.generate = lambda node, checkout, seed, first, count: [
+            {'index': first + i, 'seed': 's', 'team': t} for i, t in enumerate([self.good, self.bad][first:first + count])]
+        rt.compose = lambda sets, rng, dex_of, size=6: [self.good, self.bad]
+
+    def tearDown(self):
+        import shutil
+        rt.generate, rt.compose = self.saved
+        shutil.rmtree(self.tmp, ignore_errors=True)
+
+    def run_main(self, name):
+        out = os.path.join(self.tmp, name)
+        code = rt.main(['--checkout', self.checkout, '--seed', '00000000000000aa', '--count', '2',
+                        '--generator-teams', '2', '--out', out])
+        return code, out
+
+    def test_only_accepted_teams_are_written_and_a_rerun_is_byte_identical(self):
+        code, out = self.run_main('a')
+        self.assertEqual(code, 1)  # 1 of 2 teams: the refused one is not replaced
+        with open(os.path.join(out, 'manifest.json'), encoding='utf-8') as f:
+            manifest = json.load(f)
+        self.assertEqual(manifest['kept'], 1)
+        self.assertEqual(manifest['teams'], {'pool': 1, 'illegal': 1})
+        with open(os.path.join(out, 'teams.txt'), encoding='utf-8') as f:
+            [tid] = f.read().split()
+        good_text = rt.to_paste(self.good)
+        self.assertEqual(tid, rt.team_id(good_text))
+        with open(os.path.join(out, tid + '.txt'), encoding='utf-8') as f:
+            self.assertEqual(f.read(), good_text)
+        self.assertEqual(sorted(os.listdir(out)), sorted([tid + '.txt', 'index.json', 'manifest.json', 'teams.txt']))
+        _, again = self.run_main('b')
+        for name in ('index.json', 'manifest.json', 'teams.txt', tid + '.txt'):
+            with open(os.path.join(out, name), 'rb') as f1, open(os.path.join(again, name), 'rb') as f2:
+                self.assertEqual(f1.read(), f2.read(), name)
 
 
 class Pin(unittest.TestCase):
@@ -120,6 +185,14 @@ class Pin(unittest.TestCase):
             for s in cand['team']:
                 self.assertEqual(sum(s['evs'].values()) <= 66, True)
                 teams.parse(rt.to_paste([s]) if not s['shiny'] else rt.to_paste([dict(s, shiny=False)]), 'pin')
+
+    def test_the_pin_gives_the_recorded_first_team(self):
+        # pinned Showdown b2cb775b0616115b775534eaeff50300e1fc81fc; a new pin that changes the generator changes this
+        [cand] = self.run_js('00000000000000aa', 0, 1)
+        self.assertEqual([s['species'] for s in cand['team']],
+                         ['Tauros-Paldea-Combat', 'Greninja', 'Chimecho', 'Skarmory', 'Salamence', 'Alakazam'])
+        self.assertEqual([s['item'] for s in cand['team']],
+                         ['Life Orb', 'Life Orb', 'Sitrus Berry', 'Leftovers', 'Life Orb', 'Alakazite'])
 
     def test_a_bad_seed_is_refused(self):
         out = subprocess.run([NODE, os.path.join(HERE, 'ps_random_teams.js'), CHECKOUT, 'xyz', '0', '1'],
