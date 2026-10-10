@@ -2313,6 +2313,7 @@ SPECIAL_P = dict(SPECIAL_C, **{
     'doubleshock': ('DOUBLE_SHOCK', {'onTryMove'}),                       # G50: fails without Electric; its self effect is owned                            # G48: ten hits, a check for each (multiaccuracy)
     'steelbeam': ('STEEL_BEAM', {'onMoveFail'}),                          # G68: mindBlownRecoil (half the maximum HP on a hit and in MoveFail)
     'thunderwave': ('THUNDER_WAVE', set()),                               # G68: ignoreImmunity false (Ground is immune to the Electric move)
+    'dragondarts': ('DRAGON_DARTS', set()),                               # G78: two hits, the second on the partner (decision 0043)
 })
 # Step G13: Detect is Protect (data/moves.ts:3526-3547 against 13961-14005): the same handler (not one of the G2 handlers,
 # so it is added to the pool's map only), and the generator checks that its stalling fields and both callbacks are,
@@ -2422,6 +2423,14 @@ G76_FINAL_GAMBIT_FACTS = (
     'return damage;', 'selfdestruct: "ifHit",', 'category: "Special",', 'priority: 0,',
     'flags: { protect: 1, metronome: 1, noparentalbond: 1 },', 'target: "normal",', 'type: "Fighting",',
 )
+# Step G78, Dragon Darts (decision 0043, lead's approval of 2026-10-10): the split of its two hits (smartTarget) over the
+# chosen foe and its partner; the hit count is the number 2 (no draw), the hit loop is the Champions one.
+G78_HANDLERS = ['DRAGON_DARTS']
+G78_FACTS = (
+    'accuracy: 100,', 'basePower: 50,', 'category: "Physical",', 'priority: 0,',
+    'flags: { protect: 1, mirror: 1, metronome: 1, noparentalbond: 1 },', 'multihit: 2,', 'smartTarget: true,',
+    'target: "normal",', 'type: "Dragon",',
+)
 G58_FACTS = (
     'accuracy: 100,', 'basePower: 90,', 'category: "Physical",', 'priority: 0,', 'target: "normal",', 'type: "Ghost",',
     'flags: { contact: 1, charge: 1, mirror: 1, metronome: 1, nosleeptalk: 1, noassist: 1, failinstruct: 1 },',
@@ -2513,7 +2522,7 @@ G68_FACTS = (
                      'flags: { protect: 1, reflectable: 1, mirror: 1, metronome: 1 },', "status: 'par',",
                      'ignoreImmunity: false,', 'target: "normal",', 'type: "Electric",']),
 )
-SPECIAL_IDS_P = SPECIAL_IDS_C + G2_HANDLERS + WEATHER_HANDLERS + G16_HANDLERS + G15_HANDLERS + G19_HANDLERS + G20_HANDLERS + G20_PROTECT_HANDLERS + G28_HANDLERS + G30_HANDLERS + G32_HANDLERS + G34_HANDLERS + G27_HANDLERS + G25_HANDLERS + G26_HANDLERS + G33_HANDLERS + G38_HANDLERS + G29_HANDLERS + G39_HANDLERS + G31_HANDLERS + G48_HANDLERS + G44_HANDLERS + G50_HANDLERS + G42_HANDLERS + G56_HANDLERS + G52_HANDLERS + G54_HANDLERS + G64_HANDLERS + G62_HANDLERS + G60_HANDLERS + G58_HANDLERS + G68_HANDLERS + G70_HANDLERS + G66_HANDLERS + G72B_HANDLERS + G74_HANDLERS + G76_HANDLERS + ['UNMODELED']# Step G10 made two of these handlers data: Scald (thawsTarget) and Recover (heal) are read into the second flags# byte (bit 4, thaws the target) and the heal column, and have the special NONE; their ids stay defined (the ids after
+SPECIAL_IDS_P = SPECIAL_IDS_C + G2_HANDLERS + WEATHER_HANDLERS + G16_HANDLERS + G15_HANDLERS + G19_HANDLERS + G20_HANDLERS + G20_PROTECT_HANDLERS + G28_HANDLERS + G30_HANDLERS + G32_HANDLERS + G34_HANDLERS + G27_HANDLERS + G25_HANDLERS + G26_HANDLERS + G33_HANDLERS + G38_HANDLERS + G29_HANDLERS + G39_HANDLERS + G31_HANDLERS + G48_HANDLERS + G44_HANDLERS + G50_HANDLERS + G42_HANDLERS + G56_HANDLERS + G52_HANDLERS + G54_HANDLERS + G64_HANDLERS + G62_HANDLERS + G60_HANDLERS + G58_HANDLERS + G68_HANDLERS + G70_HANDLERS + G66_HANDLERS + G72B_HANDLERS + G74_HANDLERS + G76_HANDLERS + G78_HANDLERS + ['UNMODELED']# Step G10 made two of these handlers data: Scald (thawsTarget) and Recover (heal) are read into the second flags# byte (bit 4, thaws the target) and the heal column, and have the special NONE; their ids stay defined (the ids after
 # them keep their values). First Impression and Low Kick keep theirs: the turn code implements them.
 POOL_COLUMN_KEYS = {'thawsTarget', 'heal'}
 G2_OWNED_FIELDS = {
@@ -2561,6 +2570,7 @@ G2_OWNED_FIELDS = {
     'STEEL_BEAM': {'mindBlownRecoil': 'mindBlownRecoil: true,'},
     'THUNDER_WAVE': {'ignoreImmunity': 'ignoreImmunity: false,'},
     'BATON_PASS': {'self': BATON_PASS_SELF},
+    'DRAGON_DARTS': {'multihit': 'multihit: 2,', 'smartTarget': 'smartTarget: true,'},
 }
 # Step G48: the empty secondary of Stone Axe and Ceaseless Edge (the Sheer Force placeholder). Without Sheer Force the pin runs
 # it for every hit target (moveHit of an empty secondary with chance undefined, sim/battle-actions.ts:1336-1349): the engine
@@ -3309,6 +3319,17 @@ def check_g58_facts(moves_ts):
             fail('move phantomforce: the entry no longer has "%s"' % fact)
 
 
+def check_g78_facts(moves_ts):
+    """Step G78: the Dragon Darts entry is the pinned text the turn code reads (its hits, its smartTarget, its target)."""
+    e = moves_ts.entry('dragondarts')
+    if e is None:
+        fail('move dragondarts not found')
+    text = norm('\n'.join(e[2]))
+    for fact in G78_FACTS:
+        if norm(fact) not in text:
+            fail('move dragondarts: the entry no longer has "%s"' % fact)
+
+
 def check_g72b_facts(moves_ts):
     """Step G72b: the Alluring Voice and Dragon Cheer entries are the pinned texts the turn code reads."""
     for mid, facts in (('alluringvoice', G72B_FACTS), ('dragoncheer', G72B_DRAGON_CHEER_FACTS)):
@@ -3867,6 +3888,7 @@ def build_pool(root, repo, dx):
     check_g58_facts(moves_ts)
     check_g72b_facts(moves_ts)
     check_g76_facts(moves_ts)
+    check_g78_facts(moves_ts)
     FLAGS_THAT_MATTER.clear()
     FLAGS_THAT_MATTER.update(prefix_flag_reads((items_ts, champ_items, abil_ts, champ_abil, moves_ts, champ_moves), dx)
                              - set(FLAG_BITS_C) - set(INERT_FLAG_READS) - set(FLAGS3_BITS))
