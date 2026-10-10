@@ -298,6 +298,9 @@ class LinesTest(unittest.TestCase):
                          "line:-activate move: Poltergeist")
         bug_bite = "|-enditem|p1a: Staraptor|Sitrus Berry|[from] stealeat|[move] Bug Bite|[of] p2a: Gholdengo"
         self.assertEqual(self.stop(bug_bite), "feature:ITEM_CHANGE")
+    def test_phantom_force_breaking_a_protection_folds(self):
+        # Step G58: Phantom Force breaks a Protect like Feint (hitStepBreakProtect), printed with [broken]
+        self.assertEqual(lines.check("|-activate|p2a: Gholdengo|move: Phantom Force|[broken]", self.view), "fold")
 
     def test_item_transfer_lines_are_item_change(self):
         # G29 (#171): every line of a Trick, Switcheroo, Thief or Covet is decision 0018's ITEM_CHANGE, the
@@ -319,6 +322,21 @@ class LinesTest(unittest.TestCase):
         # of the target); the queue is no field of the view, the move lines that follow show the order
         self.assertEqual(lines.check("|-activate|p2a: Gholdengo|move: After You", self.view), "fold")
         self.assertEqual(lines.check("|-activate|p2a: Gholdengo|move: Quash", self.view), "fold")
+    def test_substitute_lines_stop_on_its_feature(self):
+        # Decision 0032 (step G60): every line that shows a Substitute stops on its feature until the tracker folds it,
+        # the absorbed hit's -activate included (it is no unknown line); its -fail lines are FAIL events (fold)
+        for line in ("|-start|p1a: Staraptor|Substitute", "|-end|p1a: Staraptor|Substitute",
+                     "|-activate|p1a: Staraptor|move: Substitute|[damage]"):
+            self.assertEqual(self.stop(line), "feature:SUBSTITUTE", line)
+        for line in ("|-fail|p1a: Staraptor|move: Substitute", "|-fail|p1a: Staraptor|move: Substitute|[weak]"):
+            self.assertEqual(lines.check(line, self.view), "fold", line)
+
+    def test_a_terrain_blocking_yawn_is_its_terrain_feature(self):
+        # The Yawn fix: Electric Terrain blocks the Yawn volatile and its sleep, Misty Terrain the sleep
+        # (data/moves.ts electricterrain/mistyterrain onTryAddVolatile/onSetStatus): the terrain's own feature, as
+        # its -fieldstart line, not an unknown line
+        self.assertEqual(self.stop("|-activate|p2a: Gholdengo|move: Electric Terrain"), "feature:TERRAIN_ELECTRIC")
+        self.assertEqual(self.stop("|-activate|p2a: Gholdengo|move: Misty Terrain"), "feature:TERRAIN_MISTY")
 
     def test_drag_folds(self):
         # Step G46: a forced switch brings a member in as a switch does (the tracker folds it as one, or stops)
@@ -999,9 +1017,9 @@ class GameTest(unittest.TestCase):
         self.assertEqual(self.skip_reason(self.log + self.log[start:]), "skip:two-games")
 
     def test_a_failure_the_converter_does_not_parse_stops(self):
-        # the converter decides which -fail forms it reads (main reads "heal" since G8); the one it cannot read is a
-        # named stop, never an internal error
-        lines = self.insert_after("|turn|3", "|-fail|p2a: Politoed|move: Substitute")
+        # the converter decides which -fail forms it reads (main reads "heal" since G8, Substitute's since G60); one it
+        # cannot read (Shed Tail's, data/moves.ts:16181) is a named stop, never an internal error
+        lines = self.insert_after("|turn|3", "|-fail|p2a: Politoed|move: Shed Tail|[weak]")
         result = self.run_game(lines)
         stops = [k for k in result.counters if k.startswith("perspectives.stopped.converter:untyped -fail")]
         self.assertEqual(sum(result.counters[k] for k in stops), 2, result.counters)

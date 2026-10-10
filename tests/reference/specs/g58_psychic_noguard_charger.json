@@ -1,0 +1,25 @@
+{
+ "name": "g58_psychic_noguard_charger",
+ "purpose": "G58 (decision 0015 5ax, the semi-invulnerable exemptions of the terrains): Psychic Terrain (Indeedee, Psychic Surge) is up; Golurk (No Guard, genderless, Leftovers) charges Phantom Force on turn 1 aiming at its partner Annihilape (M); Kingambit (M, Black Glasses) Sucker Punch hits the charging Golurk on turn 2, which psychicterrain does not block (data/moves.ts:14119, the target is semi-invulnerable), and Golurk faints. Annihilape (M, Life Orb) locked Phantom Force hits Kingambit. Prefix of random battle 52 of run 58 (seed 58).",
+ "data": "pool",
+ "format": "gen9championsvgc2026regmc",
+ "seed": "sodium,de2cf3f5f4085878b51f0c604b09bb213aa0d06aca44e466c99d72a8b5eb4513",
+ "teams": [
+  "Annihilape (M) @ Life Orb\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Phantom Force\n- Protect\n- Close Combat\n- Coaching\n\nGholdengo @ Focus Sash\nAbility: Good as Gold\nLevel: 50\nEVs: 17 HP / 2 Def / 17 SpA / 16 SpD\nModest Nature\n- Shadow Ball\n- Protect\n- Make It Rain\n- Iron Head\n\nGengar (M) @ Mystic Water\nAbility: Cursed Body\nLevel: 50\nEVs: 32 HP / 2 Def / 32 Spe\nTimid Nature\n- Toxic\n- Protect\n- Shadow Ball\n- Taunt\n\nCeruledge (M) @ Grassy Seed\nAbility: Flash Fire\nLevel: 50\nEVs: 31 HP / 7 Atk / 24 Def / 3 SpD / 1 Spe\nAdamant Nature\n- Phantom Force\n- Quick Guard\n- Protect\n- Close Combat\n\nMachamp (M) @ Sitrus Berry\nAbility: Steadfast\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Coaching\n- Protect\n- Close Combat\n- Wide Guard\n\nGolurk @ Leftovers\nAbility: No Guard\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Phantom Force\n- Protect\n- Earthquake\n- Close Combat",
+  "Decidueye (M) @ Sitrus Berry\nAbility: Overgrow\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- U-turn\n- Protect\n- Shadow Sneak\n- Knock Off\n\nKingambit (M) @ Black Glasses\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Sucker Punch\n- Protect\n- Taunt\n- Iron Head\n\nMilotic (F) @ Eject Button\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Protect\n- Coil\n\nRaichu (F) @ Life Orb\nAbility: Lightning Rod\nLevel: 50\nEVs: 29 HP / 5 Def / 32 Spe\nTimid Nature\n- Thunderbolt\n- Protect\n\nIndeedee-F (F) @ Rocky Helmet\nAbility: Psychic Surge\nLevel: 50\nEVs: 32 HP / 32 Def / 2 SpD\nRelaxed Nature\n- Protect\n\nGyarados (M) @ Focus Sash\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 2 Def / 32 Spe\nJolly Nature\n- Roar\n- Protect"
+ ],
+ "choices": [
+  {
+   "p1": "team 1635",
+   "p2": "team 2543"
+  },
+  {
+   "p1": "move 1 1, move 1 -1",
+   "p2": "move 3 -2, move 1"
+  },
+  {
+   "p1": "move 1, move 1",
+   "p2": "move 1 2, switch 3"
+  }
+ ]
+}

@@ -196,6 +196,29 @@ class ClearAllBoostsTest(unittest.TestCase):
         self.assertEqual([p.stages for p in t._positions[1]], [raised, raised])
 
 
+class BreakProtectTest(unittest.TestCase):
+    """Steps G28 and G58: a breaksProtect move's -activate (Feint, Phantom Force [broken]) removes the target's Protect
+    and stall and its side's Wide and Quick Guard (sim/battle-actions.ts hitStepBreakProtect, the same for both)."""
+
+    def test_phantom_force_breaks_like_feint(self):
+        from types import SimpleNamespace
+        from duoforge_live import tracker
+        D = data.load(kind="pool")
+        for move in ("FEINT", "PHANTOMFORCE"):
+            t = tracker.Tracker.__new__(tracker.Tracker)
+            t.data, t.side, t._spectator = D, 0, False
+            t._feint = D.tables["MOVE"]["FEINT"]
+            t._phantom_force = D.tables["MOVE"]["PHANTOMFORCE"]
+            target = SimpleNamespace(protecting=1, chain=2, stall=1, guard_undo=(1, 0))
+            t._positions = [[SimpleNamespace(), SimpleNamespace()], [target, SimpleNamespace()]]
+            t._guards = {("WIDE_GUARD", 1)}
+            t._turn_scoped = {"WIDE_GUARD"}
+            t._event(trace_to_c.ev_tuple(trace_to_c.EV["ACTIVATE"], 2, trace_to_c.NOPOS, trace_to_c.CAUSE["MOVE"], 0,
+                                         D.tables["MOVE"][move]))
+            self.assertEqual((target.protecting, target.chain, target.stall, target.guard_undo), (0, 0, 0, None), move)
+            self.assertEqual((t._guards, t._turn_scoped), (set(), set()), move)
+
+
 class OptionsTest(unittest.TestCase):
     """Test 1 (the options) and test 2 (the choice text) of the spec."""
 

@@ -37,7 +37,7 @@ import numpy as np
 import duoforge
 from duoforge import _layout, features, teams
 
-from . import checkpoint, evaluate, league, ledger, pairing, policy, ppo, runstate, schedule, suite
+from . import budget_match, checkpoint, evaluate, league, ledger, pairing, policy, ppo, runstate, schedule, suite
 from .returns import gae, samples_of
 from .selfplay import SelfPlay
 
@@ -71,6 +71,11 @@ def model_config(args):
             raise SystemExit(f"model v1 takes only --hidden, not {extra}")
         return {**policy.V1_DEFAULT, **dims}
     return policy.v2_config(args.preset, **dims)
+
+
+def _share(text):
+    """--update-gpu-share: a number, or 'match' (budget_match)."""
+    return text if text == "match" else float(text)
 
 
 def _on_default(index, share):
@@ -180,6 +185,9 @@ def _parser(suppress=False):
     add("--learning-rate", type=float, default=3e-4)
     add("--learning-rate-schedule", default="1",
         help="a multiplier of the learning rate over learner decisions, as --entropy (for example 0:1,200M:0.1)")
+    add("--learning-rate-over", choices=("decisions", "budget"), default="decisions",
+        help="the axis of --learning-rate-schedule: learner decisions, or (with --update-gpu-share match) permille "
+             "of --stop-cpu-core-seconds spent by the ledger (0:1,900:0.1: decayed to 0.1 at 90 %%)")
     add("--kl-ref", default=None, help="the reference policy of the KL anchor: a checkpoint of the same model, or "
                                        "'magnet', a frozen copy of the learner refreshed every --kl-refresh updates")
     add("--kl-refresh", type=int, default=500, help="updates between the magnet's refreshes (--kl-ref magnet)")
@@ -235,9 +243,11 @@ def _parser(suppress=False):
         help="stop at the first update where the ledger's CPU core-seconds reach this (0: no such stop)")
     add("--stop-gpu-seconds", type=float, default=0.0,
         help="stop at the first update where the ledger's GPU-seconds reach this (0: no such stop)")
-    add("--update-gpu-share", type=float, default=1.0,
+    add("--update-gpu-share", type=_share, default=1.0,
         help="the share of updates on the default device, the rest on the CPU (update u, from 0: on the default "
-             "device when floor((u+1)q) > floor(uq))")
+             "device when floor((u+1)q) > floor(uq)); or 'match': each update's device chosen from the ledger so that "
+             "both stops are met within 5 %% (budget_match; needs --ledger and both stops, which then end the run "
+             "together: matched, or incomplete when no device fits)")
     add("--act-gpu-share", type=float, default=1.0,
         help="the same share for the collection's network calls (learner and league opponents)")
     add("--keep-init-encoder", action="store_true", default=False,
@@ -263,7 +273,13 @@ def parse(argv):
         p.error("--init starts a new run: a resume keeps the run's own parameters")
     if args.keep_init_encoder and args.resume is None and args.init is None:
         p.error("--keep-init-encoder keeps the layout of --init: give --init")
-    for share in ("update_gpu_share", "act_gpu_share"):
+    match = args.update_gpu_share == "match"
+    if args.resume is None:  # a resume's own options are checked in _run, after merging the saved ones
+        try:
+            _check_match(args)
+        except ValueError as err:
+            p.error(str(err))
+    for share in ("update_gpu_share", "act_gpu_share") if not match else ("act_gpu_share",):
         if not 0.0 <= getattr(args, share) <= 1.0:
             p.error(f"--{share.replace('_', '-')} must lie between 0 and 1")
     budget = args.stop_cpu_core_seconds > 0 or args.stop_gpu_seconds > 0
@@ -275,6 +291,14 @@ def parse(argv):
         if args.minutes <= 0 and args.updates <= 0 and not budget:
             p.error("give --minutes or --updates")
     return args
+
+
+def _check_match(args):
+    """ValueError unless --update-gpu-share match and --learning-rate-over budget have what they need."""
+    if args.update_gpu_share == "match" and not (args.stop_cpu_core_seconds > 0 and args.stop_gpu_seconds > 0):
+        raise ValueError("--update-gpu-share match needs --stop-cpu-core-seconds and --stop-gpu-seconds (and --ledger)")
+    if args.learning_rate_over == "budget" and args.update_gpu_share != "match":
+        raise ValueError("--learning-rate-over budget needs --update-gpu-share match")
 
 
 def _merged(args, saved):
@@ -508,6 +532,12 @@ def _run(args, pool, on_start, stop):
         raise SystemExit("--kl-coef needs --kl-ref: the reference policy of the KL anchor")
     if (args.stop_cpu_core_seconds > 0 or args.stop_gpu_seconds > 0) and not args.ledger:
         raise SystemExit("--stop-cpu-core-seconds and --stop-gpu-seconds need --ledger")
+    try:
+        _check_match(args)
+    except ValueError as err:
+        raise SystemExit(str(err)) from None
+    match = args.update_gpu_share == "match"
+    targets = (args.stop_cpu_core_seconds, args.stop_gpu_seconds)
     book = ledger.Ledger(args.ledger) if args.ledger else None
     train_config = {k: v for k, v in vars(args).items() if not k.startswith("_") and k not in ("resume",)}
     train_config["entropy"] = str(entropy)
@@ -518,6 +548,8 @@ def _run(args, pool, on_start, stop):
     keep = bool(args.keep_init_encoder)
     if not keep:
         train_config.pop("keep_init_encoder", None)  # the saved options of a run without it are as before
+    if train_config.get("learning_rate_over") == "decisions":
+        del train_config["learning_rate_over"]  # its default: saved only by a budget-matched run
     if saved_state is not None and saved_state["data"]["fingerprint"] != context.fingerprint().hex():
         # Other tables (the data kind cannot change on resume): the run goes on when every id its network embeds
         # still names the same row (spec 12.4), and is refused otherwise.
@@ -659,6 +691,8 @@ def _run(args, pool, on_start, stop):
     def save_run():
         everyone = np.maximum(seen, -1)
         everyone[:args.envs] = env.episodes.astype(np.int64)
+        if book is not None:  # the ledger first: a crash between the two never leaves a state ahead of its ledger
+            book.save()
         runstate.save_state(out, {
             "params": params, "opt_leaves": jax.tree_util.tree_leaves(opt_state), "episodes_seen": everyone,
             "jax_key": np.asarray(key), "counters": {"update": update, "decisions": decisions, "episodes": episodes,
@@ -667,7 +701,7 @@ def _run(args, pool, on_start, stop):
             "data": _data_json(args.data_kind, context), "model": model_cfg,
             "features": list(layout[0]), "slot_features": list(layout[1]),
             "encoder": encoder, "ext_supported": ext_supported, "ids": ids, "train": train_config})
-        if book is not None:
+        if book is not None:  # and again with the state's own saving booked
             book.save()
 
     # The continuation control of stage 3 P1: a ledger, and each update and collection call on the default device
@@ -703,6 +737,17 @@ def _run(args, pool, on_start, stop):
     act = controlled_act if controlled else net.act
     start = time.perf_counter()
     saved_at = start
+    next_device = point = None
+    if match:  # budget_match: the steps measured so far (a resume reads them from the log), then the first device
+        log_path = os.path.join(out, "log.jsonl")
+        if os.path.exists(log_path):
+            with open(log_path, encoding="utf-8") as f:
+                costs = budget_match.Costs.from_log(line for line in f if line.strip())
+        else:
+            costs = budget_match.Costs()
+        totals = book.totals()
+        point = (totals["cpu_core_seconds"], totals["gpu_seconds"])
+        next_device, match_stop = budget_match.choose(point, targets, costs)
     with open(os.path.join(out, "log.jsonl"), "a", encoding="utf-8") as log:
         if saved_state is None and init is not None:
             log.write(json.dumps({"init": train_config["init"]}) + chr(10))
@@ -711,7 +756,9 @@ def _run(args, pool, on_start, stop):
             if abandoned:
                 line |= {"abandoned_snapshots": abandoned, "abandoned_dir": abandoned_dir}
             log.write(json.dumps(line) + "\n")
-        while True:
+        if match and next_device is None:  # a resume of a run whose budget is already matched or incomplete
+            log.write(json.dumps({"stopped": match_stop, "at_update": update}) + "\n")
+        while not (match and next_device is None):
             update += 1
             counts[:] = 0
             t0 = time.perf_counter()
@@ -731,8 +778,8 @@ def _run(args, pool, on_start, stop):
             magnet_refreshed = magnet and (ref_params is None or update % args.kl_refresh == 0)
             if magnet_refreshed:  # the magnet: the learner as it is now, frozen until the next refresh
                 ref_params = jax.tree_util.tree_map(lambda x: x, params)
-            scale = lr_scale(decisions)
-            on_default = _on_default(update - 1, args.update_gpu_share)
+            scale = lr_scale(1000 * point[0] / targets[0] if args.learning_rate_over == "budget" else decisions)
+            on_default = next_device == "default" if match else _on_default(update - 1, args.update_gpu_share)
             device = default_device if on_default else cpu_device
             with phase("update"), section(on_default and controlled), \
                     (jax.default_device(device) if controlled else contextlib.nullcontext()):
@@ -768,6 +815,15 @@ def _run(args, pool, on_start, stop):
             if book is not None:
                 totals = book.totals()
                 record["ledger"] = {k: round(totals[k], 3) for k in ("cpu_core_seconds", "gpu_seconds")}
+            if match:  # this step's cost, then the next device or the stop
+                now = (totals["cpu_core_seconds"], totals["gpu_seconds"])
+                costs.observe(next_device, now[0] - point[0], now[1] - point[1])
+                point = now
+                next_device, match_stop = budget_match.choose(point, targets, costs)
+                budget = next_device is None
+                record["match"] = {"fractions": [round(now[0] / targets[0], 5), round(now[1] / targets[1], 5)],
+                                   "next": next_device or match_stop}
+            elif book is not None:
                 budget = bool((args.stop_cpu_core_seconds > 0
                                and totals["cpu_core_seconds"] >= args.stop_cpu_core_seconds)
                               or (args.stop_gpu_seconds > 0 and totals["gpu_seconds"] >= args.stop_gpu_seconds))
@@ -775,7 +831,8 @@ def _run(args, pool, on_start, stop):
             last = ((args.updates and update >= args.updates) or (args.minutes and elapsed_min >= args.minutes)
                     or stop.requested or budget)
             # A budget stop plays no final suites: whatever it played would be charged to the arm.
-            evaluating = update % args.eval_every == 0 or (last and not stop.requested and not budget)
+            # A match run's ledger is training only: no suites, neither periodic nor at an update or minutes cap.
+            evaluating = not match and (update % args.eval_every == 0 or (last and not stop.requested and not budget))
             if update % args.snapshot_every == 0 or evaluating:
                 snapshots.save(update, params, snapshot_config(train_config, model_cfg, context, pool, update,
                                                                decisions, encoder, ext_supported, layout))
@@ -809,8 +866,8 @@ def _run(args, pool, on_start, stop):
                 previous, last_eval = params, update
             if stop.requested:
                 record["stopped"] = "signal"
-            elif budget:
-                record["stopped"] = "budget"
+            elif budget:  # the ledger's budget; with match: "matched", "incomplete" or "overshoot" (budget_match)
+                record["stopped"] = match_stop if match else "budget"
             log.write(json.dumps(record) + "\n")
             log.flush()
             print(json.dumps(record), flush=True)
