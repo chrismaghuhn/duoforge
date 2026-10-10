@@ -910,7 +910,9 @@
 #define DFI_SPECIAL_HAZE 86u
 #define DFI_SPECIAL_AFTER_YOU 87u
 #define DFI_SPECIAL_QUASH 88u
-#define DFI_SPECIAL_UNMODELED 89u
+#define DFI_SPECIAL_SUBSTITUTE 89u
+#define DFI_SPECIAL_PHANTOM_FORCE 90u
+#define DFI_SPECIAL_UNMODELED 91u
 
 /* ---- the second flags byte of every move (step G8: the general byte for the flags that the first one has no room
  * for; bits 4 to 128 are free) and the secondary kinds that it comes with ---- */
@@ -1414,7 +1416,7 @@ extern const uint8_t dfi_pool_move_static_hits[DFI_POOL_MOVE_COUNT][2];
  * assigned centrally (HauptSession); bits 4 to 7 are free. */
 #define DFI_MOVE_FLAG3_REFLECTABLE 1u    /* flags.reflectable (step G57): Magic Bounce (DFI_ABILITY_MAGICBOUNCE) bounces the move */
 #define DFI_MOVE_FLAG3_MUST_PRESSURE 2u  /* flags.mustpressure (step G53): a foe's Pressure costs PP whatever the move targets */
-/* bit 2 (4u): reserved for BYPASSSUB (lane A, step G60) */
+#define DFI_MOVE_FLAG3_BYPASSSUB 4u      /* flags.bypasssub (step G60): a Substitute does not take the hit of the move (decision 0032) */
 #define DFI_MOVE_FLAG3_PULSE 8u          /* flags.pulse (step G59): Mega Launcher's BasePower x1.5 for the holder's pulse moves */
 extern const uint8_t dfi_pool_move_flags3[DFI_POOL_MOVE_COUNT];
 extern const dfi_pool_alias dfi_pool_forme_aliases[DFI_POOL_ALIAS_COUNT];

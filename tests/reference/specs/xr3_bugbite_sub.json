@@ -1,0 +1,24 @@
+{
+  "name": "xr3_bugbite_sub",
+  "purpose": "Bug Bite into a Substitute holder with a Sitrus Berry (data/moves.ts:1911-1925, onHit): on turn 1 and turn 2 the hits go to the sub, so the berry stays (no onHit: runMoveEffects has no target, sim/battle-actions.ts:1215-1290). On turn 3 the hit reaches Milotic and Victreebel eats the berry with [from] stealeat. Victreebel (M); Milotic (F) is faster than Victreebel, so its sub is up before the first Bug Bite.",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,0000000000000000000000000000000000000000000000000000000000000001",
+  "teams": [
+    "Victreebel (M) @ Leftovers\nAbility: Chlorophyll\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Bug Bite\n- Protect\n\nKingambit (M) @ Black Glasses\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 2 Atk / 32 Spe\nAdamant Nature\n- Swords Dance\n- Protect\n\nGholdengo @ Focus Sash\nAbility: Good as Gold\nLevel: 50\nEVs: 32 HP / 2 SpA / 32 SpD\nCalm Nature\n- Shadow Ball\n- Protect\n\nCeruledge (M) @ Expert Belt\nAbility: Flash Fire\nLevel: 50\nEVs: 31 HP / 7 Atk / 24 Def / 3 SpD / 1 Spe\nBrave Nature\n- Protect\n\nSalamence (M) @ Salamencite\nAbility: Intimidate\nLevel: 50\nEVs: 2 HP / 32 SpA / 32 Spe\nTimid Nature\n- Hyper Voice\n- Draco Meteor\n- Protect\n- Tailwind\n\nPrimarina (F) @ Rocky Helmet\nAbility: Torrent\nLevel: 50\nEVs: 32 HP / 2 Def / 32 SpD\nCalm Nature\n- Moonblast\n- Protect",
+    "Milotic (F) @ Sitrus Berry\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Substitute\n- Coil\n- Protect\n\nPrimarina (F) @ Rocky Helmet\nAbility: Torrent\nLevel: 50\nEVs: 32 HP / 2 Def / 32 SpD\nCalm Nature\n- Moonblast\n- Protect\n\nGholdengo @ Focus Sash\nAbility: Good as Gold\nLevel: 50\nEVs: 32 HP / 2 SpA / 32 SpD\nCalm Nature\n- Shadow Ball\n- Protect\n\nKingambit (M) @ Black Glasses\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 2 Atk / 32 Spe\nAdamant Nature\n- Swords Dance\n- Protect\n\nCeruledge (M) @ Expert Belt\nAbility: Flash Fire\nLevel: 50\nEVs: 31 HP / 7 Atk / 24 Def / 3 SpD / 1 Spe\nBrave Nature\n- Protect\n\nSalamence (M) @ Salamencite\nAbility: Intimidate\nLevel: 50\nEVs: 2 HP / 32 SpA / 32 Spe\nTimid Nature\n- Hyper Voice\n- Draco Meteor\n- Protect\n- Tailwind"
+  ],
+  "plan": {
+    "p1": [
+      "move 1 1, move 2",
+      "move 1 1, move 1",
+      "move 1 1, move 1"
+    ],
+    "p2": [
+      "move 1, move 2",
+      "move 2, move 1 1",
+      "move 2, move 1 1"
+    ],
+    "max_steps": 4
+  }
+}

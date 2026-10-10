@@ -365,6 +365,7 @@ const dfi_support_manifest dfi_support = {
             [DFI_MOVE_TERRAINPULSE] = 1u,
             [DFI_MOVE_TAUNT] = 1u,
             [DFI_MOVE_YAWN] = 1u,
+            [DFI_MOVE_SUBSTITUTE] = 1u, /* step G60 (decision 0032): the Substitute; the rows it touches are marked already and changed with it */
     [DFI_MOVE_REVIVALBLESSING] = 1u,
             /* Step G42: Roost (the heal, then the Flying type is off for the turn) and Stomping Tantrum (base power x2 after a
              * FALSE last move result; the move_result of tail rev 4, decision 0015 section 7). */
@@ -475,6 +476,11 @@ const dfi_support_manifest dfi_support = {
             [DFI_MOVE_HAZE] = 1u, /* step G62, decision 0031 */
             [DFI_MOVE_AFTERYOU] = 1u, /* step G62, decision 0015 entry 5az: the queued move of the target goes next */
             [DFI_MOVE_QUASH] = 1u,    /* step G62, decision 0015 entry 5az: the queued move of the target goes last */
+            /* Step G58 (Phantom Force, decision 0015 item 5ax): the two-turn charge (-prepare, no target shown), the
+             * semi-invulnerability of the charge (the Invulnerability step misses a target that is charging it: No Guard and
+             * a Poison-type user's Toxic are the exceptions), and breaksProtect after the accuracy check (Protect, Wide Guard,
+             * Quick Guard and the stall counter of the target; the -activate line carries [broken]). No Power Herb (unmarked). */
+            [DFI_MOVE_PHANTOMFORCE] = 1u,
         },
     .abilities =
         {
@@ -760,6 +766,8 @@ const dfi_support_manifest dfi_support = {
      * ended in the residual of order 25, verified against the g42 battles). MOVE_FAILED (bit 41) stays clear: the field is exact
      * only when the last result is classified, and an unclassified exit (decision 0015 section 7) reads 0 where the reference
      * may read 1. The expression stays plain terms: python/duoforge_live/lines.py parses it. */
+    /* Step G60: Substitute (bit 23: the SUBSTITUTE volatile of the position, public: its start and end lines; its HP is never in
+     * an event). Decision 0032 section 9 names the bit as supported once the step lands; verified against the g60 battles. */
     .view_ext_features = ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_THROAT_CHOP) |
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_HEAL_BLOCK) |
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_TYPE_CHANGE) |
@@ -786,5 +794,6 @@ const dfi_support_manifest dfi_support = {
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_TOXIC_SPIKES) |
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_STICKY_WEB) |
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_ROOST) |
-                         ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_QUICK_GUARD)
+                         ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_QUICK_GUARD) |
+                         ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_SUBSTITUTE)
 };

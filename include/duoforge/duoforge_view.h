@@ -104,6 +104,10 @@ typedef struct duoforge_hypothesis {
 #define DUOFORGE_PUBLIC_CAUSE_VISIBLE_SLEEP 1u
 #define DUOFORGE_PUBLIC_CAUSE_VISIBLE_CONFUSION 2u
 #define DUOFORGE_PUBLIC_CAUSE_ILLUSION_POSSIBLE 4u
+/* SUBSTITUTE (decision 0032): either side, any position with VOLATILE_SUBSTITUTE up. The Substitute's HP is hidden from both
+ * sides (the owner's request does not show it either), so an honest world cannot rebuild it: the public record and
+ * duoforge_battle_from_view refuse with this cause. */
+#define DUOFORGE_PUBLIC_CAUSE_SUBSTITUTE 8u
 
 /* Argument errors touch no output. Otherwise statuses are per environment,
  * the return is the first failure, and each failing environment is atomic.

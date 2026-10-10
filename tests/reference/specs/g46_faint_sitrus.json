@@ -1,0 +1,16 @@
+{
+  "name": "g46_faint_sitrus",
+  "purpose": "Kingambit in slot 1 faints to the Thunderbolt of Raichu in slot 1 of the other side and the Shadow Sneak of the Decidueye holding Sitrus Berry in slot 2 of the other side; the reserve Decidueye holding Sitrus Berry in position 3 is the replacement at the end of the turn (no drag, no pivot: the switch request of a fainted slot), and the two Sitrus holders of equal speed stand together. Control for the step G46 drag fix: a replacement after a faint is queued (insertChoice refreshes the entrant's speed).",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,00000000000000000000000000000000000000000000000000000000000000a5",
+  "teams": [
+    "Kingambit (M) @ Black Glasses\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Sucker Punch\n- Protect\n- Taunt\n- Iron Head\n\nIndeedee-F (F) @ Rocky Helmet\nAbility: Psychic Surge\nLevel: 50\nEVs: 32 HP / 32 Def / 2 SpD\nRelaxed Nature\n- Protect\n\nDecidueye (M) @ Sitrus Berry\nAbility: Overgrow\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- U-turn\n- Protect\n- Shadow Sneak\n- Knock Off\n\nMilotic (F) @ Eject Button\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Protect\n- Coil\n\nRaichu (F) @ Life Orb\nAbility: Lightning Rod\nLevel: 50\nEVs: 29 HP / 5 Def / 32 Spe\nTimid Nature\n- Thunderbolt\n- Protect\n\nGyarados (M) @ Focus Sash\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 2 Def / 32 Spe\nJolly Nature\n- Roar\n- Protect",
+    "Raichu (F) @ Life Orb\nAbility: Lightning Rod\nLevel: 50\nEVs: 29 HP / 5 Def / 32 Spe\nTimid Nature\n- Thunderbolt\n- Protect\n\nDecidueye (M) @ Sitrus Berry\nAbility: Overgrow\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- U-turn\n- Protect\n- Shadow Sneak\n- Knock Off\n\nKingambit (M) @ Black Glasses\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Sucker Punch\n- Protect\n- Taunt\n- Iron Head\n\nMilotic (F) @ Eject Button\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Protect\n- Coil\n\nIndeedee-F (F) @ Rocky Helmet\nAbility: Psychic Surge\nLevel: 50\nEVs: 32 HP / 32 Def / 2 SpD\nRelaxed Nature\n- Protect\n\nGyarados (M) @ Focus Sash\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 2 Def / 32 Spe\nJolly Nature\n- Roar\n- Protect"
+  ],
+  "plan": {
+    "p1": ["move 3 2, move 1"],
+    "p2": ["move 1 1, move 3 1"],
+    "max_steps": 6
+  }
+}

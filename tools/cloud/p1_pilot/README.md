@@ -80,6 +80,12 @@ tools/cloud/p1_pilot/launch.sh --commit <sha of main with run.sh> --bucket <BUCK
 # the lead, with the owner present, after the owner's approval only:
 tools/cloud/p1_pilot/launch.sh --commit <sha> --bucket <BUCKET> --i-have-owner-approval
 
+# continue a stopped run (run.sh resumes after the last phase marked done under p1/<run id>/markers/):
+tools/cloud/p1_pilot/launch.sh --commit <sha> --bucket <BUCKET> --resume <run id> --i-have-owner-approval
+
+# a new run that reads the pilot (generation, distillation) of an earlier run, read only (PILOT_RUN_ID for run.sh):
+tools/cloud/p1_pilot/launch.sh --commit <sha> --bucket <BUCKET> --from-run <earlier run id> --i-have-owner-approval
+
 # the results
 aws s3 ls s3://<BUCKET>/p1/<run id>/ --recursive
 ```

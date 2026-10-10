@@ -153,6 +153,31 @@ class Refusals(unittest.TestCase):
         self.control('w1_sand_stream', hail_damage, 'from-attribute', 'trace_to_c: [from] Hail: no Hail in the format',
                      'Hail')
 
+    def test_the_bare_ohko_of_a_sheer_cold_sub_break_is_dropped_only_before_that_break(self):
+        """Sheer Cold into a Substitute (step G64 with decision 0032): the sub's break prints `-ohko` right after the move line
+        and right before `-end|X|Substitute` (data/moves.ts:18357-18374). The line is dropped only with that exact pair in
+        place: without the -end, or with the -end of another Pokemon, it is refused like any other -ohko."""
+        def drop_the_break(spec, trace):
+            for step in trace['steps']:
+                log = step['log']
+                for i, line in enumerate(log):
+                    if line == '|-ohko' and log[i + 1] == '|-end|p2a: Gengar|Substitute':
+                        del log[i + 1]
+                        return
+            self.fail('no sub break by an OHKO in xr3_sheercold_sub')
+
+        def other_target(spec, trace):
+            for step in trace['steps']:
+                log = step['log']
+                for i, line in enumerate(log):
+                    if line == '|-ohko' and log[i + 1] == '|-end|p2a: Gengar|Substitute':
+                        log[i + 1] = '|-end|p1a: Glalie|Substitute'
+                        return
+            self.fail('no sub break by an OHKO in xr3_sheercold_sub')
+
+        self.control('xr3_sheercold_sub', drop_the_break, 'ohko-line', "trace_to_c: unknown -ohko '|-ohko'", '|-ohko')
+        self.control('xr3_sheercold_sub', other_target, 'ohko-line', "trace_to_c: unknown -ohko '|-ohko'", '|-ohko')
+
     def test_unknown_protocol_line(self):
         self.control('s2_turn_core_1', lambda spec, trace: trace['steps'][1]['log'].append('|foo|bar'),
                      'protocol-line', "trace_to_c: unknown protocol line '|foo|bar'", 'foo')
@@ -419,10 +444,10 @@ class Refusals(unittest.TestCase):
     def test_unknown_volatile(self):
         def mutate(spec, trace):
             mon = trace['steps'][1]['state']['sides'][0]['pokemon'][0]
-            self.assertNotIn('substitute', mon['volatiles'])
-            mon['volatiles'] = sorted(mon['volatiles'] + ['substitute'])
+            self.assertNotIn('zzunknown', mon['volatiles'])
+            mon['volatiles'] = sorted(mon['volatiles'] + ['zzunknown'])
         self.control('c11_follow_me', mutate, 'unknown-volatile',
-                     "trace_to_c: unknown volatile 'substitute' of Indeedee-F", 'substitute')
+                     "trace_to_c: unknown volatile 'zzunknown' of Indeedee-F", 'zzunknown')
 
     def test_two_turn_move_volatile_without_twoturnmove(self):
         def mutate(spec, trace):
@@ -1282,8 +1307,11 @@ class Library(unittest.TestCase):
 
     def test_taunt_and_yawn_rows_are_what_the_protocol_lines_say(self):
         """Decision 0018 section 6.1 for Taunt and Yawn (step G31): a position has Taunt (bit 0) from `|-start|X|move: Taunt`
-        until `|-end|X|move: Taunt`, and Yawn (bit 1) from `|-start|X|move: Yawn|[of] SRC` until the `|-status|X|slp` that it
-        brings, and both end when the occupant leaves (`|switch|` at the position) or faints. The rows of the C test (rows in
+        until `|-end|X|move: Taunt`, and Yawn (bit 1) from `|-start|X|move: Yawn|[of] SRC` until its `|-end|X|move: Yawn|[silent]`:
+        the pin's onEnd of Yawn (data/moves.ts:21153-21156) prints that line and then tries the sleep, which is the
+        `|-status|X|slp` line when it lands, or the terrain's `|-activate|X|move: Electric Terrain` (or Misty) line when the terrain
+        refuses it (data/moves.ts:4518 and 12172); the volatile ends either way, so a refused sleep clears the bit as well.
+        Both end when the occupant leaves (`|switch|` at the position) or faints. The rows of the C test (rows in
         tests/test_pool_g31.c) must be exactly what these lines give for the committed traces; the sleep that Yawn brings
         has no [from], there are `cant|X|move: Taunt|MOVE` lines, and the new public numbers are the header's."""
         self.assertEqual(trace_to_c.CAUSE['TAUNT'], 20)
@@ -1319,6 +1347,8 @@ class Library(unittest.TestCase):
                         bits[flat(part[2])] &= ~1
                     elif part[1] == '-start' and part[3] == 'move: Yawn':
                         bits[flat(part[2])] |= 2
+                    elif part[1] == '-end' and part[3] == 'move: Yawn':
+                        bits[flat(part[2])] &= ~2  # onEnd: the volatile ends (silently), whether the sleep lands or is refused
                     elif part[1] == '-status' and part[3] == 'slp':
                         self.assertEqual(len(part), 4, line)  # no [from]
                         bits[flat(part[2])] &= ~2
@@ -2229,7 +2259,7 @@ class Library(unittest.TestCase):
         marked = [n for n in re.findall(r'\[DFI_MOVE_(\w+)\] = 1u', read('src', 'data', 'support_manifest.c'))
                   if n in ids and ids[n] >= ext_moves]
         self.assertEqual(len(names), ext_moves + len(ids))
-        self.assertEqual(len(marked), 187)  # 180 of main, the four of G64 and the three of G62 (Haze, After You, Quash)  # the four of step G64 (Poltergeist, Beat Up, Bug Bite, Sheer Cold; decision 0015 item 5ca), the seven of step G54 (Icicle Spear, Scale Shot, Quick Guard, Upper Hand, Heal Pulse, Strength Sap, Sing), and the 171 of main (Roost and Stomping Tantrum of G42, Double Shock of G50 among them)  # Roost and Stomping Tantrum (G42), Double Shock (G50), the eleven of step G44, the four of step G46, the four of step G48, Taunt and Yawn (G31) and the rows of the earlier steps as before
+        self.assertEqual(len(marked), 189)  # 180 of main, the four of G64 and the three of G62 (Haze, After You, Quash)  # the four of step G64 (Poltergeist, Beat Up, Bug Bite, Sheer Cold; decision 0015 item 5ca), the seven of step G54 (Icicle Spear, Scale Shot, Quick Guard, Upper Hand, Heal Pulse, Strength Sap, Sing), and the 171 of main (Roost and Stomping Tantrum of G42, Double Shock of G50 among them)  # Roost and Stomping Tantrum (G42), Double Shock (G50), the eleven of step G44, the four of step G46, the four of step G48, Taunt and Yawn (G31) and the rows of the earlier steps as before
         pool = [n for n in os.listdir(os.path.join(ROOT, 'tests', 'reference', 'specs'))
                 if trace_to_c.is_pool(ROOT, n[:-5])]
         logs = []

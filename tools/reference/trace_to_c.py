@@ -907,6 +907,9 @@ VOLATILE_PERISH = 5  # DUOFORGE_VOLATILE_PERISH (step G26)
 VOLATILE_IMPRISON = 8    # DUOFORGE_VOLATILE_IMPRISON (step G38): START only
 VOLATILE_TAUNT = 6       # DUOFORGE_VOLATILE_TAUNT (step G31)
 VOLATILE_YAWN = 7        # DUOFORGE_VOLATILE_YAWN (step G31)
+VOLATILE_SUBSTITUTE = 9  # DUOFORGE_VOLATILE_SUBSTITUTE (decision 0032): START and END, presence only
+FAIL_SUBSTITUTE_EXISTS = 1  # DUOFORGE_FAIL_SUBSTITUTE_EXISTS: cause MOVE + id2 Substitute only
+FAIL_SUBSTITUTE_WEAK = 2    # DUOFORGE_FAIL_SUBSTITUTE_WEAK: cause MOVE + id2 Substitute only
 MOVE_SLOT_RECHARGE = 5   # DUOFORGE_MOVE_SLOT_RECHARGE (step G17)
 # DUOFORGE_TYPE_*: the alphabetical type ids, the detail of TYPE_CHANGE
 TYPE_NONE = 255  # DUOFORGE_TYPE_NONE: the ??? slot of Double Shock (decision 0025)
@@ -948,6 +951,10 @@ IGNORED_VOLATILES = {
     # after every step (a pivot inside the Roost turn is the only boundary where it stands).
     'roost': 'the Ground move lines and the single-turn line',
     'solarbeam': 'the locked slot and target',  # step G30: the same two-turn lock
+    # Step G58 (Phantom Force, data/moves.ts:13307-13335): the move's own volatile, which its onTryMove removes on the locked
+    # turn, so the lock is twoturnmove's (remembered, as Electro Shot's) and the semi-invulnerability of the charge is shown by
+    # the -miss lines of the moves against the charging user (the engine's Invulnerability step, not a field).
+    'phantomforce': 'the locked slot and target; the semi-invulnerability shows in the -miss lines',
     # Pool step G8 (the POOL tail, decision 0015 section 7). Their turns are not a field of the state record; each
     # shows in the steps that the comparison already covers: the moves of the next request (disabled slots, the
     # request that offers Struggle), the cant lines, the heal that is missing, and Heal Block's start and end lines.
@@ -976,6 +983,9 @@ IGNORED_VOLATILES = {
     # Pool step G38 (Imprison): the start line, the moves of the foes' requests (the hidden disable, `hidden` of the state
     # row), the cant line and the view bit.
     'imprison': 'the start line, the moves of the requests, the cant line and the view bit',
+    # Pool step G60 (Substitute, decision 0032): its HP is never shown; the start and end lines and the absorbed hits (the
+    # -activate lines with [damage], no amount) show its presence and the hits it takes.
+    'substitute': 'the start line, the end line and the absorbed hits (the HP is never shown)',
 }
 HP_EXACT, HP_PERCENT = 1, 2
 HP_FLAGS_EV = {'': 0, 'r': 1, 'y': 2, 'g': 3}
@@ -1100,6 +1110,11 @@ def step_events(log, viewer, roster_of, maxhp, tables, rb_pending=None):
             continue
         args = [x for x in parts[2:] if not x.startswith('[')]
         e = None
+        # A hit that a Substitute takes shows no -damage line (decision 0032): `-activate|P|move: Substitute|[damage]` for
+        # an absorbed hit and `-end|P|Substitute` for the hit that breaks it. Both count as hits of the move, for -hitcount.
+        if (kind == '-activate' and len(args) == 2 and args[1] == 'move: Substitute' and attrs == ['[damage]']) or \
+                (kind == '-end' and len(args) == 2 and args[1] == 'Substitute' and not attrs):
+            hits_on[hit_key(args[0])] = hits_on.get(hit_key(args[0]), 0) + 1
         if kind == 'move':
             hits_on.clear()
             last_move_line = parts
@@ -1124,10 +1139,17 @@ def step_events(log, viewer, roster_of, maxhp, tables, rb_pending=None):
             # of faintMessages at :976). The faint of that target is the line right before it (the event is the faint), and the
             # last move line is Sheer Cold aimed at the same Pokemon. It carries no state, so it is checked and dropped; any other
             # `-ohko` is refused.
+            # Sheer Cold into a Substitute (step G64 with decision 0032; data/moves.ts:18357, the sub's onTryPrimaryHit): the
+            # sub's damage is the target's max HP capped at the sub's HP, so the sub always breaks, and the bare `-ohko` comes
+            # right after the move line and right before the `-end|X|Substitute` of that break (removeVolatile's onEnd). The
+            # sub's event is the break, so the line is dropped here too.
             prev = log[i - 1] if i > 0 else ''
+            nxt = log[i + 1] if i + 1 < len(log) else ''
             aimed = last_move_line is not None and len(last_move_line) >= 5 and last_move_line[3] == 'Sheer Cold' and \
                 prev.startswith('|faint|') and prev.split('|')[2] == last_move_line[4]
-            if args or attrs or not aimed:
+            sub_break = last_move_line is not None and len(last_move_line) >= 5 and last_move_line[3] == 'Sheer Cold' and \
+                prev == '|'.join(last_move_line) and nxt.split('|') == ['', '-end', last_move_line[4], 'Substitute']
+            if args or attrs or not (aimed or sub_break):
                 raise ConversionError('ohko-line', 'trace_to_c: unknown -ohko %r' % line, detail=line)
             continue
         if kind == 'turn':
@@ -1252,6 +1274,11 @@ def step_events(log, viewer, roster_of, maxhp, tables, rb_pending=None):
                     (named[args[2]] is not None and id2 != tables['ABILITY'][key(named[args[2]])] + 1):
                 raise ConversionError('fail-line', 'trace_to_c: unknown -fail %r' % line, detail=line)
             e = ev_tuple(EV['FAIL'], ev_pos(args[0]), other, cause, 0, id2)
+        elif kind == '-fail' and len(args) == 2 and args[1] == 'move: Substitute' and attrs in ([], ['[weak]']):
+            # Substitute (decision 0032, data/moves.ts:18314-18322): the user already has one (`-fail|X|move: Substitute`) or
+            # its HP is a quarter or less (`[weak]`). A FAIL with cause MOVE and the move as id2; the detail says which.
+            detail = FAIL_SUBSTITUTE_WEAK if attrs else FAIL_SUBSTITUTE_EXISTS
+            e = ev_tuple(EV['FAIL'], ev_pos(args[0]), NOPOS, CAUSE['MOVE'], 0, tables['MOVE'][key('Substitute')], detail=detail)
         elif kind == '-fail' and len(args) == 2 and args[1] == 'move: Double Shock':
             # Double Shock's onTryMove without the Electric type (decision 0025, data/moves.ts:3954-3959): `-fail|X|move: Double
             # Shock`, a plain FAIL on the user; its move line carries [still], which the move's own line already shows.
@@ -1323,6 +1350,10 @@ def step_events(log, viewer, roster_of, maxhp, tables, rb_pending=None):
                 e = ev_tuple(EV['CONFUSED'], pos)
             elif what.startswith('ability: '):
                 e = ev_tuple(EV['ACTIVATE'], pos, NOPOS, CAUSE['ABILITY'], 0, tables['ABILITY'][key(what[9:])] + 1)
+            elif what == 'move: Substitute' and attrs == ['[damage]']:
+                # Substitute (decision 0032): an absorbed hit, `-activate|X|move: Substitute|[damage]`. The line names no
+                # amount: the Substitute's HP is never public.
+                e = ev_tuple(EV['ACTIVATE'], pos, NOPOS, CAUSE['MOVE'], 0, tables['MOVE'][key('Substitute')])
             elif what.startswith('move: '):
                 e = ev_tuple(EV['ACTIVATE'], pos, NOPOS, CAUSE['MOVE'], 0, tables['MOVE'][key(what[6:])])
             else:
@@ -1378,6 +1409,12 @@ def step_events(log, viewer, roster_of, maxhp, tables, rb_pending=None):
                 # data/moves.ts:9501 onStart: `-start|user|move: Imprison` (step G38); the volatile has no end line, it ends
                 # with the occupant.
                 e = ev_tuple(EV['VOLATILE_START'], ev_pos(args[0]), detail=VOLATILE_IMPRISON)
+            elif what == 'Substitute' and not attrs:
+                # data/moves.ts:18328-18374 (decision 0032): `-start|X|Substitute` from the move's onStart, and `-end|X|Substitute`
+                # from onEnd when the hit breaks it or Tidy Up removes it. A switch-out ends it with no line. The Shed Tail variant
+                # (`[from] move: Shed Tail`) has attrs and is refused by the fall-through below.
+                e = ev_tuple(EV['VOLATILE_START' if kind == '-start' else 'VOLATILE_END'], ev_pos(args[0]),
+                             detail=VOLATILE_SUBSTITUTE)
             elif what == 'move: Taunt':
                 # data/moves.ts:18974-19016 taunt: `-start|X|move: Taunt` from onStart, `-end|X|move: Taunt` from onEnd
                 # (the duration; a switch-out or a faint clears it with no line) (step G31)
@@ -1679,7 +1716,7 @@ def convert_battle(name, spec, trace, tables):
                     if v not in compared and v not in IGNORED_VOLATILES:
                         raise ConversionError('unknown-volatile', 'trace_to_c: unknown volatile %r of %s' %
                                               (v, name_of(p)), detail=v)
-                for charge in ('electroshot', 'solarbeam'):
+                for charge in ('electroshot', 'solarbeam', 'phantomforce'):
                     if charge in p['volatiles'] and 'twoturnmove' not in p['volatiles']:
                         raise ConversionError('unknown-volatile', 'trace_to_c: %s without twoturnmove on %s' %
                                               (charge, name_of(p)), detail=charge)
