@@ -177,3 +177,17 @@ Specs in `tests/reference/specs/g82_*` (teams checked against `legal_pool.json` 
 - R6 `g82_r6_sitrus_tie`: Sitrus Berry on both sides with identical Gardevoir sets; 39 SPEED_TIE each:Update draws.
 - R7 (residual order): covered by R5 in part: the residual Leftovers heals come before the replacement step, and the wish heal only at the entry. No holder dies to residual damage, so the residual KO itself is not recorded.
 - R4 (Revival Blessing into a wish slot): OPEN GAP. The revival target is chosen with `pass, switch 3` after Pawmot's Revival Blessing, but the revived Lopunny goes to the bench: the pin's `instaswitch` happens only when the target's own position is an active one (`sim/battle.ts` revive: `action.target.position < side.active.length`). A member that fainted and was replaced has no active position, so the revived member does not enter the wish slot. Reaching the entry needs the fainted member to still stand at an active position, which the end-of-turn replacement does not leave. Not modelled in this round; the benched revive is covered by the G52 specs.
+
+## 8. Blocked on encoder 6 (decision of HauptSession, 2026-10-10)
+
+The view feature 43 (`DUOFORGE_VIEWEXT_FEATURE_HEALING_WISH`, COUNT 44) breaks the C encoder's version-5 size check
+(`src/encode/encode.c:63` requires `DUOFORGE_VIEWEXT_FEATURE_COUNT == 43u`). Decision (B): G82 waits for encoder 6 (#329).
+#329 makes the C encoder path for versions up to 5 generic (the size check accepts COUNT above 43; a state with feature 43 or
+a position bit above 21 gets an explicit, named refusal there). After that merge: merge origin/main and add only the
+family-table entry for feature 43 in `src/encode/encode.c`. encode.c is not touched before then.
+
+Status at this point: the engine, state, invariant, generator row, converter branch, specs R1, R2, R3, R5, T2, R6 and their
+recorded traces, the C view tests (`tests/test_pool_g82.c`, M11), and the mutant file are committed. The mutants have not run:
+the last combined job stopped at the build (the encode.c assertion), so no mutant is caught yet. Open: the baseline run after
+encoder 6, the eleven mutants with their catching tests, the campaign (300 battles), R4 (open gap, section 7), R7 (partly,
+section 7), and the Python layout check (expected failure at `features.py:155` until lane B's transition is on main).
