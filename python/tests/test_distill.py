@@ -369,13 +369,68 @@ class FitTest(unittest.TestCase):
     def tearDown(self):
         self.tmp.cleanup()
 
-    def _fit(self, data, **patches):
+    def _fit(self, data, settings=None, **patches):
         from unittest import mock
         from duoforge_learn import distill
         consts = {"TARGET_ROWS": 8, "NON_TARGET_ROWS": 24} | patches
         with mock.patch.multiple(distill, **consts), \
                 mock.patch.object(distill, "_save", lambda path, params, config: Path(path).write_text("x")):
-            return distill.fit(data, self.model, self.params, self.params, self.config, self.out, seed=3)
+            return distill.fit(data, self.model, self.params, self.params, self.config, self.out, seed=3,
+                               settings=settings)
+
+    def _fresh(self):
+        self.tmp.cleanup()
+        self.tmp = tempfile.TemporaryDirectory(prefix="duoforge-distill-")
+        self.out = Path(self.tmp.name)
+
+    def test_settings_default_to_the_first_runs_constants(self):
+        from duoforge_learn import distill
+        self.assertEqual(distill.Settings().constants(), distill._constants())
+        self.assertEqual((distill.LR, distill.REF_COEF, distill.REF_KL_MAX, distill.MAX_EPOCHS, distill.MAX_STEPS),
+                         (3e-5, 0.1, 0.02, 4, 128))
+        c2 = distill.Settings(lr=1e-4, ref_kl_max=0.3, max_epochs=16, max_steps=512).constants()
+        changed = {k for k in c2 if c2[k] != distill._constants()[k]}
+        self.assertEqual(changed, {"LR", "REF_KL_MAX", "MAX_EPOCHS", "MAX_STEPS"})
+        self.assertEqual((c2["LR"], c2["REF_KL_MAX"], c2["MAX_EPOCHS"], c2["MAX_STEPS"]), (1e-4, 0.3, 16, 512))
+        for bad in ({"lr": 0.0}, {"ref_kl_max": float("nan")}, {"ref_coef": -1.0}, {"max_epochs": 0},
+                    {"max_steps": 1.5}):
+            with self.assertRaises(ValueError):
+                distill.Settings(**bad)
+
+    def test_fit_settings_override_and_report_fields(self):
+        from duoforge_learn import distill
+        data = _small_data()
+        # The guard and the step cap follow the settings, not the module's constants.
+        result = self._fit(data, settings=distill.Settings(ref_kl_max=0.0))
+        self.assertEqual((result.stop_reason, result.best_epoch), ("ref_kl", 0))
+        self._fresh()
+        result = self._fit(data, settings=distill.Settings(max_steps=3), MIN_GAIN=-1.0)
+        self.assertEqual((result.stop_reason, result.steps), ("max_steps", 3))
+        epochs = [r for r in self._log() if "held_teacher_kl" in r]
+        self.assertEqual(epochs[0]["held_teacher_kl_rel"], 1.0)
+        for r in epochs:
+            self.assertAlmostEqual(r["held_teacher_kl_rel"], r["held_teacher_kl"] / epochs[0]["held_teacher_kl"])
+            self.assertTrue(0.0 <= r["held_argmax_agree"] <= 1.0)
+        # A larger learning rate moves the student further from the reference in the same steps.
+        self._fresh()
+        small = self._fit(data, settings=distill.Settings(max_steps=3), MIN_GAIN=-1.0)
+        self._fresh()
+        large = self._fit(data, settings=distill.Settings(max_steps=3, lr=1e-2), MIN_GAIN=-1.0)
+        self.assertGreater(large.epochs[-1]["held_ref_kl"], small.epochs[-1]["held_ref_kl"])
+
+    def test_argmax_agreement_counts_the_teachers_top_id(self):
+        import jax.numpy as jnp
+        from duoforge_learn import distill
+        data = _small_data()
+        rows = np.flatnonzero(data.held_out & data.has_target)
+        batch = distill.batch_of(data, rows)
+        logp_pairs, _, _ = self.model.apply(self.params, batch["obs"], batch["slots"], batch["mask"])
+        student = np.asarray(jnp.argmax(logp_pairs, axis=1))
+        ids, probs = np.asarray(batch["target_ids"]), np.asarray(batch["target_probs"])
+        teacher = ids[np.arange(len(rows)), probs.argmax(axis=1)]
+        want = float(np.mean(student == teacher))
+        got = distill.evaluate_rows(data, rows, self.model, self.params, self.params, agree=True)
+        self.assertAlmostEqual(got["held_argmax_agree"], want)
 
     def _log(self):
         import json
@@ -762,6 +817,14 @@ class ResumeTest(unittest.TestCase):
             self._fit(out, resume=True, identity={"manifest": "m", "reference": "another file"})
         with mock.patch.object(distill, "LR", 1e-3), self.assertRaisesRegex(ValueError, "LR"):
             self._fit(out, resume=True)
+        with self.assertRaisesRegex(ValueError, "REF_KL_MAX"):  # the settings are part of the constants
+            self._fit(out, resume=True, settings=distill.Settings(ref_kl_max=0.3))
+        import contextlib as _contextlib
+        import io as _io
+        for bad in (["--max-steps", "0"], ["--lr", "-1"]):
+            with self.assertRaises(SystemExit), _contextlib.redirect_stderr(_io.StringIO()):
+                distill.main(["--init", "x", "--reference", "x", "--shards", "x", "--manifest", "x",
+                              "--out", str(self.root / "cli")] + bad)
         with self.assertRaisesRegex(ValueError, "no state"):
             self._fit(self.root / "fresh", resume=True)
         with self.assertRaisesRegex(ValueError, "not empty"):
