@@ -27,6 +27,7 @@
 #include "state/closure_member.h"
 #include "state/context_internal.h"
 #include "state/invariants.h"
+#include "state/knowledge.h"
 
 /* The POOL player-view extension (decision 0018): size and every offset, so that no edit moves a field unseen. */
 _Static_assert(sizeof(duoforge_field_ext) == 16u, "field ext is 16 bytes");
@@ -241,8 +242,10 @@ static void dfi_view_position(const struct duoforge_battle *b, uint32_t viewer, 
     }
     out->confused = slot->confusion_turns != 0u ? 1u : 0u;
     out->charging = slot->charge_turns != 0u ? 1u : 0u;
-    /* A lockedmove (step G56) is shown by the request alone (its one move is forced): no locked slot, as the reference has none. */
-    const bool lockedmove = b->tail.sides[s].positions[p].lock_turns != 0u;
+    /* A lockedmove (step G56) is shown by the request alone (its one move is forced): no locked slot, as the reference has none.
+     * Its owner's request shows whether it runs; the foe sees only the public last move, since the drawn count may end
+     * silently (dfi_maybe_lockedmove, view audit 2026-10-10). */
+    const bool lockedmove = s == viewer ? b->tail.sides[s].positions[p].lock_turns != 0u : dfi_maybe_lockedmove(b, s * 2u + p);
     const uint32_t locked_index =
         slot->locked_move != 0u && !lockedmove ? (uint32_t)slot->locked_move - 1u : DUOFORGE_MOVE_SLOT_NONE;
     out->locked_slot = (uint8_t)locked_index; /* <= 0xFF */

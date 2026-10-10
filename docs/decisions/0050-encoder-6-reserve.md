@@ -4,7 +4,7 @@ Status: **accepted** (owner request 2026-10-10, design approved by HauptSession)
 
 ## Problem
 
-The expansion keeps adding public presence effects: Healing Wish, Attract and others as `duoforge_position_ext.volatiles` bits, new side guards, side and field conditions. Encoder 5 refuses every bit it has no column for, as the explicit-failure rule says, so each new bit meant a new encoder. Lane B's `_AWAITING_ENCODER` was the stopgap. The owner wants one encoder for the whole expansion.
+The expansion keeps adding public presence effects: Healing Wish, Attract and others as `duoforge_position_ext.volatiles` bits, new side guards, side and field conditions. Encoder 5 refuses every bit it has no column for, as the explicit-failure rule says, so each new bit meant a new encoder. Lane B's `_AWAITING_ENCODER` (#325) was the stopgap; encoder 6 replaces it: its class `EncoderAwaitingBit` stays, now raised by encoders 1 to 5 for every reserve value, and the list of awaiting names is gone. The owner wants one encoder for the whole expansion.
 
 ## Decision
 

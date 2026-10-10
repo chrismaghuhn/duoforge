@@ -119,9 +119,26 @@ OPTIONS = _layout.MAX_SLOT_OPTIONS
 
 
 class EncoderAwaitingBit(ValueError):
-    """A value encoders 1 to 5 cannot show because it is in encoder 6's reserve (decision 0050): a volatiles bit above
-    21, a guard bit above 1, a nonzero volatiles2, conditions or field flags word, a position flag bit beyond the three
-    known ones. The C encoder answers E_UNSUPPORTED."""
+    """A set public value an encoder has no column for (Lane B, #325; decision 0050): under encoders 1 to 5 every value
+    in encoder 6's reserve (a volatiles bit above 21, a guard bit above 1, a nonzero volatiles2, conditions or field
+    flags word, a position flag bit beyond the three known ones). `name` is its constant's name, or the field and bit
+    when the library has no name for it, so a caller can count these apart from malformed inputs. The C encoder
+    answers E_UNSUPPORTED."""
+
+    def __init__(self, what, name, encoder=None):
+        version = "this encoder" if encoder is None else f"encoder {encoder}"
+        super().__init__(f"{what} {name} is set, which {version} has no column for (encoder 6's reserve, decision "
+                         "0050)")
+        self.name = name
+
+
+def _reserve_name(prefix, bit, field):
+    """The name of reserve bit `bit` of a field: its constant's (prefix + X) when the library defines one, else the
+    field and the bit."""
+    for name, value in C.items():
+        if name.startswith(prefix) and value == 1 << bit:
+            return name
+    return f"{field} bit {bit}"
 
 _BOUNDARY_NAMES = ("TEAM_SELECTION", "TURN", "REPLACEMENT", "PIVOT", "TERMINAL")
 _WEATHER_NAMES = ("NONE", "RAIN", "SUN")
@@ -169,8 +186,8 @@ BASE_VALUE_FEATURES = sum(1 << FEATURE_BITS[n] for n in ("WEATHER_SAND", "WEATHE
 ALL_FEATURES = sum(1 << bit for bit in FEATURE_BITS.values())
 RECORD_FEATURES = ALL_FEATURES & ~BASE_VALUE_FEATURES
 # (name, its DUOFORGE_POSITION_EXT_* bit, its feature) in bit order: 0..19 of revision 1 (encoder 3's columns), 20
-# ROOST of tail revision 4 (encoder 4's), 21 TRANSFORMED (encoder 5's, decision 0028). A bit beyond them needs a new
-# encoder version: the import fails.
+# ROOST of tail revision 4 (encoder 4's), 21 TRANSFORMED (encoder 5's, decision 0028). A bit beyond them is encoder 6's
+# reserve (decision 0050).
 _VOLATILE_FEATURE = {"TYPE_CHANGED": "TYPE_CHANGE", "ILLUSION_UP": "ILLUSION", "TRANSFORMED": "TRANSFORM"}
 _ALL_VOLATILES = tuple(sorted(((name[len("DUOFORGE_POSITION_EXT_"):], bit,
                                 _VOLATILE_FEATURE.get(name[len("DUOFORGE_POSITION_EXT_"):],
@@ -427,9 +444,9 @@ def _sides(s, tox, encoder=ENCODER):
     bits = pos["reserved"].astype(np.int64)  # DUOFORGE_POSITION_FLAG_* of the TEAM_C kinds (decision 0009 4.2)
     unknown = bits & ~sum(POSITION_FLAGS)
     if encoder < 6 and unknown.any():
-        bad = int(bits[unknown != 0].flat[0])
-        raise EncoderAwaitingBit(f"position flags {bad} are in encoder 6's reserve (decision 0050), which encoder "
-                                 f"{encoder} cannot show")
+        bad = int(unknown[unknown != 0].flat[0])
+        raise EncoderAwaitingBit("position flag", _reserve_name("DUOFORGE_POSITION_FLAG_", (bad & -bad).bit_length() - 1,
+                                                                "position flags"), encoder)
     flags = np.stack([pos["confused"].astype(_F64), pos["charging"].astype(_F64),
                       (pos["locked_slot"] != C["DUOFORGE_MOVE_SLOT_NONE"]).astype(_F64), pos["acted"].astype(_F64),
                       np.clip(pos["protect_chain"].astype(_F64) / 3, 0.0, 1.0), pos["flash_fire"].astype(_F64),
@@ -541,11 +558,15 @@ def _check_records(ob, ext, mask, encoder=ENCODER):
     if (typed & ((volatiles & C["DUOFORGE_POSITION_EXT_TYPE_CHANGED"]) == 0)).any():
         raise ValueError("extension field type_now is set while the volatile TYPE_CHANGED is clear")
     if encoder < 6:  # encoder 6's reserve (decision 0050), after every check of a malformed record, as in C
-        for name, values in (("guard_flags", guards), ("volatiles", unknown), ("volatiles2", rec["volatiles2"]),
-                             ("conditions", rec["sides"]["conditions"]), ("field flags", rec["field"]["flags"])):
+        for field, prefix, values in (("guard_flags", "DUOFORGE_SIDE_GUARD_", guards),
+                                      ("volatiles", "DUOFORGE_POSITION_EXT_", unknown),
+                                      ("volatiles2", "DUOFORGE_POSITION_EXT2_", rec["volatiles2"].astype(np.int64)),
+                                      ("conditions", "DUOFORGE_SIDE_CONDITION_", rec["sides"]["conditions"].astype(np.int64)),
+                                      ("flags", "DUOFORGE_FIELD_FLAG_", rec["field"]["flags"].astype(np.int64))):
             if values.any():
-                raise EncoderAwaitingBit(f"extension field {name} {int(values[values != 0].flat[0])} is in encoder "
-                                         f"6's reserve (decision 0050), which encoder {encoder} cannot show")
+                value = int(values[values != 0].flat[0])
+                raise EncoderAwaitingBit(f"extension field {field} bit", _reserve_name(
+                    prefix, (value & -value).bit_length() - 1, field), encoder)
     return present
 
 
@@ -761,8 +782,9 @@ def as_encoder(obs_part, observations, encoder):
     ob = ob.reshape(-1)
     flags = ob["sides"]["positions"]["reserved"].astype(np.int64) & ~sum(POSITION_FLAGS)
     if flags.any():  # encoder 6's reserve (decision 0050): the record reserve needs encode_batch(..., encoder=...)
-        raise EncoderAwaitingBit(f"position flags {int(flags[flags != 0].flat[0])} are in encoder 6's reserve "
-                                 f"(decision 0050), which encoder {encoder} cannot show")
+        bad = int(flags[flags != 0].flat[0])
+        raise EncoderAwaitingBit("position flag", _reserve_name("DUOFORGE_POSITION_FLAG_", (bad & -bad).bit_length() - 1,
+                                                                "position flags"), encoder)
     if encoder < 3:
         _one_hot(ob["weather"], WEATHERS, "weather")
         _one_hot(ob["terrain"], TERRAINS, "terrain")

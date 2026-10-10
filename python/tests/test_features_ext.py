@@ -15,6 +15,7 @@ and encode with the library's mask at every step.
 """
 import os
 import unittest
+from unittest import mock
 
 import numpy as np
 
@@ -486,6 +487,33 @@ class FeaturesExtTest(unittest.TestCase):
         part = features.encode_batch(ob, d, ext, ALL)[0]
         self.assertTrue((part[:, COL["ext.own.pos0.volatile.illusion_up"]] == 1.0).all())
         self.assertFalse(part[:, COL["ext.foe.pos0.volatile.illusion_up"]].any())
+
+    def test_bits_awaiting_the_next_encoder_raise_their_own_error(self):
+        # Lane B's EncoderAwaitingBit (#325), since encoder 6 (decision 0050) without a list of awaiting names: every
+        # volatiles bit from 22 on is encoder 6's reserve. Encoders 1 to 5 refuse a set one with EncoderAwaitingBit
+        # naming its constant (or the field and bit while the library has none), encoder 6 encodes it. A mask bit a
+        # version has no column for is the version check's plain ValueError (C: E_INVALID_ARGUMENT), as before.
+        ob, d = self.obs, self.domains
+        stand_in = {"DUOFORGE_POSITION_EXT_STAND_IN": 1 << 30}
+        for patch, name in (({}, "volatiles bit 30"), (stand_in, "DUOFORGE_POSITION_EXT_STAND_IN")):
+            with self.subTest(name=name), mock.patch.dict(features.C, patch):
+                ext = _records(ob)
+                ext["sides"]["positions"]["volatiles"][:, 0, 1] |= 1 << 30
+                with self.assertRaises(features.EncoderAwaitingBit) as raised:
+                    features.encode_batch(ob, d, ext, ALL, encoder=5)
+                self.assertEqual(raised.exception.name, name)
+                self.assertIn("volatiles", str(raised.exception))
+                features.encode_batch(ob, d, ext, ALL)  # encoder 6: shown in its reserve column
+        with self.assertRaises(ValueError) as raised:
+            features.encode_batch(ob, d, _records(ob), features.version_features(6), encoder=5)
+        self.assertNotIsInstance(raised.exception, features.EncoderAwaitingBit)
+
+    def test_encoder_5_columns_do_not_move_with_awaiting_bits(self):
+        # The reserve adds columns after encoder 5's only: it keeps its 862 columns, its 22 volatiles bits and its
+        # block widths.
+        self.assertEqual(features.obs_size(5), 862)
+        self.assertEqual([v[1] for v in features.VOLATILES], [1 << k for k in range(22)])
+        self.assertEqual(features.EXT5_SIZE, features.EXT4_SIZE + 12)
 
     def test_transform_source_and_bit_go_together(self):
         ob, d = self.obs, self.domains
