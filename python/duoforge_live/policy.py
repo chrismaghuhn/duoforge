@@ -6,6 +6,9 @@ plays greedily: rank_pairs and rank_teams list the choices best first, ties
 to the lower flat index, so the next one after a rejection is defined. The
 observation part goes through features.as_encoder with the checkpoint's
 encoder version first, so a network sees the inputs it was trained on.
+
+forward is model v1's. A checkpoint of another model version (model v2: params-49333, the honest search's network)
+plays through its own network in its trained layout (ModelPolicy, JAX on the CPU); load picks by the checkpoint.
 """
 import numpy as np
 
@@ -67,13 +70,16 @@ class Policy:
         self.encoder = encoder
         self.ext_supported = ext_supported
 
+    def _forward(self, obs, slots, mask):
+        return forward(self.params, obs, slots, mask)
+
     def _input(self, observation, obs_part):
         return features.as_encoder(np.asarray(obs_part, dtype=np.float32), observation, self.encoder)[None, :]
 
     def rank_pairs(self, observation, obs_part, slot_part, pair_mask):
         """[(i, j, probability)] of the allowed pairs, best first."""
         slots = features.slots_as_encoder(np.asarray(slot_part, dtype=np.float32), self.encoder)
-        logp, _, _ = forward(self.params, self._input(observation, obs_part), slots[None], pair_mask[None])
+        logp, _, _ = self._forward(self._input(observation, obs_part), slots[None], pair_mask[None])
         n = pair_mask.shape[1]
         return [(i // n, i % n, p) for i, p in _ranked(logp[0], np.asarray(pair_mask, dtype=bool).reshape(-1))]
 
@@ -81,14 +87,30 @@ class Policy:
         """[(index into duoforge_learn.selfplay.TEAM_TABLE, probability)], best first."""
         slots = np.zeros((1, 2, features.OPTIONS, features.SLOT_FEATURES), dtype=np.float32)
         mask = np.zeros((1, features.OPTIONS, features.OPTIONS), dtype=bool)
-        _, logp, _ = forward(self.params, self._input(observation, obs_part), slots, mask)
+        _, logp, _ = self._forward(self._input(observation, obs_part), slots, mask)
         return _ranked(logp[0], np.ones(logp.shape[1], dtype=bool))
+
+
+class ModelPolicy(Policy):
+    """A format-2 checkpoint's own network (checkpoint.trained_model) in its trained layout, through JAX."""
+
+    def __init__(self, model, params, encoder, ext_supported=0):
+        super().__init__(params, encoder, ext_supported)
+        self.model = model
+
+    def _forward(self, obs, slots, mask):
+        return tuple(np.asarray(x) for x in self.model.apply(self.params, obs, slots, np.asarray(mask, dtype=bool)))
 
 
 def load(path):
     """The Policy of a checkpoint whose network takes the features of its own encoder version
-    (features.obs_size); a 594-feature file raises."""
+    (features.obs_size); a 594-feature file raises. A format-2 checkpoint of a model version other than 1 is a
+    ModelPolicy."""
     params, config = checkpoint.load(path)
+    if config.get("format") == 2 and checkpoint.model_config(config, params).get("version") != 1:
+        params, config = checkpoint.load_trained(path)
+        return ModelPolicy(checkpoint.trained_model(config, params), params, checkpoint.encoder_of(config),
+                           checkpoint.ext_supported_of(config))
     encoder = checkpoint.encoder_of(config)
     width, want = params["t1"]["w"].shape[0], features.obs_size(encoder)
     if width != want:

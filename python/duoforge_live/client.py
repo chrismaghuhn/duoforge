@@ -8,6 +8,11 @@ tracker, the options or the policy (the converter's ConversionError, a
 SystemExit, included) forfeits with the internal-error message and the bot
 keeps running. The password is read from DUOFORGE_PS_PASSWORD only when a
 login needs it; it is never logged.
+
+With a LiveSearch (--search honest, plan 2026-10-10-live-honest-search Task 5) each decision has a budget of
+min(2 s, 10% of the turn time left), read from the bot's own timer line; with the timer on, a new decision point waits
+for its timer line (it follows the request) up to TIMER_WAIT, then logs it missing and takes the cap. A class (b)
+search error marks the game dirty (its rest is raw) and pauses the session: no new challenge until it is restarted.
 """
 import json
 import os
@@ -20,7 +25,7 @@ import urllib.request
 from dataclasses import dataclass
 from pathlib import Path
 
-from . import teams
+from . import search as live_search, teams
 from .data import trace_to_c
 from .game import Game
 from .tracker import ROOM_LINES, _kind
@@ -35,6 +40,7 @@ MAX_REJECTIONS = 64
 # Showdown can refuse a switch of a trapped last active, or a move disabled by Imprison. Each
 # "[Unavailable choice]" reveals one in an updated request; after two at one decision point, the bot forfeits.
 MAX_UNAVAILABLE = 2
+TIMER_WAIT = 1.0  # seconds a new decision point waits for its timer line when the timer is on
 
 GREETING = "Hi! DuoForge bot here, good luck!"
 GG = "gg"
@@ -43,6 +49,7 @@ BUSY = "Sorry, I'm in a battle right now. Please challenge me again in a few min
 SHEETS = ("I'm a research bot and only play DuoForge Team A or B with open team sheets, "
           "so I'm forfeiting this game.")
 INTERNAL = "Internal error on my side, sorry. Forfeiting."
+PAUSED = "Sorry, I'm paused for a check on my side. Please try again later."
 
 
 @dataclass
@@ -119,6 +126,10 @@ class _Battle:
         self.pending = None  # the choice sent last, accepted once the battle goes on
         self.stopped = False  # forfeited or ended: no more choices
         self.ended = False
+        self.timer_on = False  # the battle timer runs: a decision waits for its timer line
+        self.timer = None  # (seconds left this turn, clock at its line) of the last timer line
+        self.timer_fresh = False  # a timer line arrived since the last decision
+        self.awaiting = None  # the clock since a decision point waits for its timer line
 
     def write(self, record):
         if not self.log.closed:
@@ -127,8 +138,12 @@ class _Battle:
 
 
 class Bot:
-    def __init__(self, config, data, policy, login=login, clock=time.monotonic, team_texts=None, rng=None):
+    def __init__(self, config, data, policy, login=login, clock=time.monotonic, team_texts=None, rng=None,
+                 search=None):
         self.config = config
+        self.search = search  # a LiveSearch, or None: raw play
+        self.paused = None  # a class (b) search error: no new challenge until the session is restarted
+        self.episodes = 0
         self.data = data
         self.policy = policy
         self.login = login
@@ -163,6 +178,8 @@ class Bot:
         """Closes the logs of battles that are still open."""
         for b in self.battles.values():
             b.log.close()
+        if self.search is not None:
+            self.search.close()
 
     async def handle(self, message):
         room, _, rest = message[1:].partition("\n") if message.startswith(">") else ("", "", message)
@@ -181,6 +198,11 @@ class Bot:
         for b in list(self.battles.values()):
             if b.deadline is not None and not b.stopped and not b.game.ready and self.clock() > b.deadline:
                 await self._forfeit(b, self._sheets_message(), "no open team sheets in time")
+            elif b.awaiting is not None and not b.stopped and self.clock() - b.awaiting > TIMER_WAIT:
+                try:
+                    await self._after_feed(b)
+                except (Exception, trace_to_c.ConversionError) as e:
+                    await self._forfeit(b, INTERNAL, f"{type(e).__name__}: {e}")
 
     # ------------------------------------------------------------------ global messages
     async def _global(self, lines):
@@ -220,6 +242,9 @@ class Bot:
         if fmt not in FORMATS:
             await self.send(f"|/reject {user}")
             await self.send(f"|/pm {user}, {WRONG_FORMAT}")
+        elif self.paused is not None:
+            await self.send(f"|/reject {user}")
+            await self.send(f"|/pm {user}, {PAUSED}")
         elif self.busy is not None:
             await self.send(f"|/reject {user}")
             await self.send(f"|/pm {user}, {BUSY}")
@@ -258,7 +283,9 @@ class Bot:
         log_dir = Path(self.config.log_dir)
         log_dir.mkdir(parents=True, exist_ok=True)
         log_path = log_dir / f"{room}-{toid(self.config.name)}.jsonl"  # two bots of one machine can share a room
-        b = _Battle(room, Game(self.data, self.policy, self.team_texts[team]), log_path)
+        b = _Battle(room, Game(self.data, self.policy, self.team_texts[team], search=self.search, room=room,
+                               episode=self.episodes), log_path)
+        self.episodes += 1
         self.battles[room] = b
         return b
 
@@ -279,6 +306,11 @@ class Bot:
             return
         for line in lines:
             b.write({"in": line})
+            if live_search.timer_on(line):
+                b.timer_on = True
+            seconds = live_search.parse_timer(line)
+            if seconds is not None:
+                b.timer, b.timer_fresh = (seconds, self.clock()), True
         for line in lines:
             if line.startswith("|error|"):
                 await self._error(b, line)
@@ -312,14 +344,34 @@ class Bot:
                 await self._forfeit(b, self._sheets_message(), "the foe's team is not Team A or B")
                 return
         if game.asked() and game.epoch > b.decided:
+            budget = None
+            if self.search is not None:
+                if b.timer_on and not r.get("update") and not b.timer_fresh:
+                    if b.awaiting is None:
+                        b.awaiting = self.clock()
+                    if self.clock() - b.awaiting <= TIMER_WAIT:
+                        return  # the timer line of this request follows it
+                    b.write({"timer": "missing", "decision": r["rqid"]})
+                    b.timer = None
+                budget = live_search.deadline_seconds(*(b.timer or (None, 0.0)), self.clock())
+                b.awaiting, b.timer_fresh = None, False
             if not r.get("update"):  # an updated request is the same decision point
                 b.unavailable = 0
                 b.rejections = 0
             b.decided = game.epoch
-            b.candidates = game.candidates()
+            searched = len(game.outcomes)
+            b.candidates = game.candidates() if budget is None else game.candidates(budget)
             b.index = 0
-            b.write({"decision": r["rqid"], "top": [[c.text, c.probability] for c in b.candidates[:3]],
-                     "sent": b.candidates[0].text})
+            record = {"decision": r["rqid"], "top": [[c.text, c.probability] for c in b.candidates[:3]],
+                      "sent": b.candidates[0].text}
+            if len(game.outcomes) > searched:
+                record["search"] = game.outcomes[-1].as_dict()
+            b.write(record)
+            if game.dirty is not None and self.paused is None:
+                self.paused = game.dirty
+                b.write({"dirty": game.dirty})
+                print(f"duoforge_live: search error, game {b.room} plays raw, no new challenges: {game.dirty}",
+                      file=sys.stderr)
             await self._choose(b)
 
     async def _choose(self, b):
@@ -360,6 +412,8 @@ class Bot:
         b.ended = b.stopped = True
         await self.send(f"{b.room}|{GG}")
         b.write({"end": line})
+        if b.game.search is not None:
+            b.write({"summary": b.game.summary()})
         b.log.close()
         del self.battles[b.room]
         self.finished.add(b.room)
