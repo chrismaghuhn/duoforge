@@ -45,7 +45,7 @@ static void test_row(df_test *t)
     DF_CHECK(t, (m->flags & DFI_MOVE_FLAG_PROTECT) == 0u);
     /* the handler is marked, and the unmodelled handler id is the one after Phantom Force */
     DF_CHECK_EQ_U64(t, dfi_support.moves[DFI_MOVE_PHANTOMFORCE], 1u);
-    DF_CHECK_EQ_U64(t, DFI_SPECIAL_UNMODELED, DFI_SPECIAL_SKILL_SWAP + 1u);
+    DF_CHECK_EQ_U64(t, DFI_SPECIAL_UNMODELED, DFI_SPECIAL_KINGS_SHIELD + 1u);
 }
 
 /* The recorded battle `name` (conformance_pool.h): its setup, as the conformance test builds it. */

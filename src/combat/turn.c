@@ -5321,21 +5321,31 @@ static duoforge_status dfi_protect_targets(dfi_run *r, uint32_t user, const uint
             r->mres |= DFI_MRES_FALSE; /* its TryHit returns null, which the hit steps normalise to false (battle-actions.ts:650) */
             continue;
         }
-        hit[i] = !((((uint32_t)tp->flags & DFI_VOL_PROTECT) != 0u) && ((md->flags & DFI_MOVE_FLAG_PROTECT) != 0u));
+        /* Step G66, King's Shield (protect_kind 2; data/moves.ts:9905-9955): checkMoveBypassesProtect with blockStatus false, so a
+         * Status move passes it; a move without the protect flag passes every variant (the flag test above). */
+        const uint32_t kind = r->b->tail.sides[t / 2u].positions[t % 2u].protect_kind;
+        const bool kings_passes = kind == DFI_PROTECT_KINGS_SHIELD && md->category == DFI_CATEGORY_STATUS;
+        hit[i] = !((((uint32_t)tp->flags & DFI_VOL_PROTECT) != 0u) && ((md->flags & DFI_MOVE_FLAG_PROTECT) != 0u) && !kings_passes);
         if (!hit[i]) {
             r->mres |= DFI_MRES_NULL; /* Protect's TryHit returns NOT_FAIL (data/moves.ts:13998): no failure */
             dfi_emit_plain(r, DUOFORGE_EVENT_BLOCKED, t); /* [-activate] move: Protect */
             /* Step G20: the contact punishment of Spiky Shield, in the same onTryHit after the -activate line
              * (data/moves.ts:17550-17559; checkMoveMakesContact is the contact flag: Protective Pads are not in the
              * pool). It costs the attacker floor(maxHP / 8), at least 1, with [-damage] ... [from] Spiky Shield [of] the
-             * holder (CAUSE_MOVE, the move in id2, the holder in other), also when the attacker is knocked out. */
-            const uint32_t kind = r->b->tail.sides[t / 2u].positions[t % 2u].protect_kind;
-            if (kind != DFI_PROTECT_PLAIN && (md->flags & DFI_MOVE_FLAG_CONTACT) != 0u) {
+             * holder (CAUSE_MOVE, the move in id2, the holder in other), also when the attacker is knocked out. Only the
+             * Spiky Shield kind punishes (King's Shield, kind 2, drops Attack instead, below). */
+            if (kind == DFI_PROTECT_SPIKY_SHIELD && (md->flags & DFI_MOVE_FLAG_CONTACT) != 0u) {
                 const uint32_t spikes = (uint32_t)m->hp_max / 8u;
                 st = dfi_deal(r, user, spikes == 0u ? 1u : spikes, DUOFORGE_CAUSE_MOVE, DFI_MOVE_SPIKYSHIELD, t);
                 if (st != DUOFORGE_OK) {
                     return st;
                 }
+            }
+            /* Step G66: King's Shield's contact drop, in the same onTryHit after the -activate line (data/moves.ts:9936-9941):
+             * the attacker's Attack by -1, the holder as the source (Defiant, Competitive and Mirror Armor see it so). */
+            if (kind == DFI_PROTECT_KINGS_SHIELD && (md->flags & DFI_MOVE_FLAG_CONTACT) != 0u) {
+                static const uint8_t kings_drop[DFI_STAT_STAGE_COUNT] = {5u, 6u, 6u, 6u, 6u, 6u, 6u};
+                (void)dfi_boost(r, user, kings_drop, t, dfi_effect(DUOFORGE_CAUSE_MOVE, 0u, DFI_BOOST_PRIMARY));
             }
         }
     }
@@ -5820,6 +5830,48 @@ static duoforge_status dfi_bounce(dfi_run *r, uint32_t user, uint32_t holder, ui
     return DUOFORGE_OK;
 }
 
+/* Step G66 (decision 0040, decision 0015 5cb): Stance Change, onModifyMove of data/abilities.ts:4523-4535, in the ModifyMove
+ * stage (after the move's own ModifyMove and before the move line). A Status move other than King's Shield changes nothing;
+ * King's Shield takes the Shield forme and any other move the Blade. The change is a TEMPORARY formeChange (no isPermanent):
+ * the forme's stats (the HP stays), forme_now (0 = the sheet's Shield forme, else the Blade's id + 1) and the FORME event
+ * with cause ABILITY, id2 = Stance Change + 1, printed as -formechange. The forme ends with the switch-out
+ * (dfi_tail_clear_occupant). A transformed Aegislash is not modelled: Transform is unmarked (refused by the pool). */
+static duoforge_status dfi_stance_change(dfi_run *r, uint32_t user, uint32_t move_id, const dfi_move_data *md)
+{
+    struct duoforge_battle *b = r->b;
+    dfi_member *m = dfi_at(b, user);
+    const uint32_t side = user / 2u;
+    if (m == NULL || m->species_id != DFI_FORME_AEGISLASH || !dfi_ability(b, m, DFI_ABILITY_STANCECHANGE)) {
+        return DUOFORGE_OK;
+    }
+    const bool king = move_id == DFI_MOVE_KINGSSHIELD;
+    if (md->category == DFI_CATEGORY_STATUS && !king) {
+        return DUOFORGE_OK;
+    }
+    const bool want_blade = !king;
+    const uint32_t idx = (uint32_t)(m - &b->sides[side].members[0]); /* wide-operands-reviewed: below DUOFORGE_MAX_ROSTER */
+    uint16_t *forme_slot = &b->tail.sides[side].forme_now[idx];
+    const bool blade_now = *forme_slot != 0u;
+    if (blade_now == want_blade) {
+        return DUOFORGE_OK; /* already in the forme that the move asks for: no line */
+    }
+    const uint32_t forme = want_blade ? DFI_FORME_AEGISLASHBLADE : DFI_FORME_AEGISLASH;
+    uint16_t stats[DFI_MEMBER_STAT_COUNT];
+    if (!dfi_closure_member_forme_stats(m, forme, stats)) {
+        return DUOFORGE_E_INVARIANT;
+    }
+    for (uint32_t i = 0u; i < DFI_MEMBER_STAT_COUNT; ++i) {
+        m->stats[i] = stats[i];
+    }
+    *forme_slot = want_blade ? (uint16_t)(DFI_FORME_AEGISLASHBLADE + 1u) : 0u; /* wide-operands-reviewed: a forme id + 1, < 348 */
+    duoforge_event e = dfi_event_make(DUOFORGE_EVENT_FORME, user);
+    e.id = (uint16_t)forme;
+    e.cause = (uint8_t)DUOFORGE_CAUSE_ABILITY;
+    e.id2 = (uint16_t)(DFI_ABILITY_STANCECHANGE + 1u); /* wide-operands-reviewed: an ability id + 1, < 255 */
+    dfi_emit(r, &e);
+    return DUOFORGE_OK;
+}
+
 static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, bool *ran)
 {
     r->hit_index = 1u;
@@ -5944,6 +5996,13 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
         const duoforge_event e =
             dfi_ev(DUOFORGE_EVENT_ACTIVATE, user, DUOFORGE_CAUSE_MOVE, DFI_MOVE_STRUGGLE, DUOFORGE_NO_POSITION);
         dfi_emit(r, &e);
+    }
+    /* Stance Change (step G66, decision 0040): its forme change comes in ModifyMove, before the move line. */
+    {
+        const duoforge_status sc = dfi_stance_change(r, user, move_id, md);
+        if (sc != DUOFORGE_OK) {
+            return sc;
+        }
     }
     /* ModifyMove's change of the target class (Expanding Force in Psychic Terrain): useMoveInner takes the target again
      * with the new class (getRandomTarget, whose draw only labels the move line, as for any spread move), and
@@ -6157,6 +6216,9 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
     }
     if (md->special == DFI_SPECIAL_PROTECT) {
         return dfi_run_protect(r, user, DFI_PROTECT_PLAIN);
+    }
+    if (md->special == DFI_SPECIAL_KINGS_SHIELD) {
+        return dfi_run_protect(r, user, DFI_PROTECT_KINGS_SHIELD);
     }
     if (md->special == DFI_SPECIAL_SPIKY_SHIELD) {
         return dfi_run_protect(r, user, DFI_PROTECT_SPIKY_SHIELD);
@@ -7844,8 +7906,8 @@ static bool dfi_has_entry(const struct duoforge_battle *b, const dfi_member *m)
 /* Trace (data/abilities.ts:5118-5148, onStart then its Update): the holder copies the ability of one of the foes that
  * are standing and whose ability can be copied. `adjacentFoes()` is every foe in doubles (sim/pokemon.ts:732-735),
  * a foe is a candidate unless its ability is none or has the notrace flag: of the abilities that a battle can hold
- * (the marked ones) only Trace itself has it (tests/test_pool_tables.c; the pin's nine notrace abilities are
- * checked by tools/datagen/pool_families.js), so a foe that is still Trace, or whose Trace has not run yet, is not
+ * (the marked ones) only Trace and Stance Change (step G66) have it (tests/test_pool_tables.c; the pin's nine notrace abilities
+ * are checked by tools/datagen/pool_families.js), so a foe that is still Trace, or whose Trace has not run yet, is not
  * a candidate. The pick is `this.sample(possibleTargets)`, always one draw random(n), also for a single candidate
  * (site TRACE). The copy is the POOL tail's ability_now of the holder until it leaves the field (the switch-out reset
  * of clearVolatile, sim/pokemon.ts:1522) or Mega Evolves, and is shown as
@@ -7867,7 +7929,8 @@ static duoforge_status dfi_trace(dfi_run *r, uint32_t flat)
         const dfi_member *t = dfi_at(b, foe * 2u + slot);
         if (t != NULL && t->hp != 0u) {
             const uint32_t code = dfi_ability_code(b, t);
-            if (code != 0u && code != 1u + DFI_ABILITY_TRACE) {
+            /* The notrace flag: Trace itself and Stance Change (step G66, decision 0040: Aegislash's ability, marked since G66). */
+            if (code != 0u && code != 1u + DFI_ABILITY_TRACE && code != 1u + DFI_ABILITY_STANCECHANGE) {
                 candidates[n] = foe * 2u + slot;
                 n += 1u;
             }

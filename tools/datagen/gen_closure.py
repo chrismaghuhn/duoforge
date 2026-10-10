@@ -416,6 +416,13 @@ def parse_move(mid, base, champ, ext=False, pool=False, unmodeled=None):
         for name in PROTECT_VARIANT_COPY_FIELDS:
             if name not in f or name not in pe or norm(f[name][1]) != norm(pe[name][1]):
                 fail('move %s: %s is not that of protect' % (mid, name))
+    if pool and handled[0] in G66_HANDLERS:
+        if 'condition' not in f or norm(f['condition'][1]) != norm(KINGS_SHIELD_CONDITION):
+            fail('move %s: the condition is not the pinned text' % mid)
+        pe = fields(base.entry('protect')[2])
+        for name in KINGS_SHIELD_COPY_FIELDS:
+            if name not in f or name not in pe or norm(f[name][1]) != norm(pe[name][1]):
+                fail('move %s: %s is not that of protect' % (mid, name))
     if pool and mid in PROTECT_COPIES:
         pe = fields(base.entry(PROTECT_COPIES[mid])[2])
         for name in PROTECT_COPY_FIELDS:
@@ -1451,6 +1458,42 @@ PROTECT_VARIANT_CONDITION = (
     "if (this.checkMoveMakesContact(move, source, target)) { %s } return this.NOT_FAIL; }, "
     "onHit(target, source, move) { if (move.isZOrMaxPowered && this.checkMoveMakesContact(move, source, target)) { %s } }, },")
 PROTECT_VARIANT_PUNISHMENT = {'SPIKY_SHIELD': 'this.damage(source.baseMaxhp / 8, source, target);'}
+# Step G66, King's Shield: the pinned condition (data/moves.ts:9905-9955), whitespace aside. Unlike Spiky Shield's, its
+# onTryHit passes a Status move (checkMoveBypassesProtect with blockStatus false) and its contact drop is -1 Attack on the
+# attacker (both in onTryHit and in onHit for a Z-move). The move's own flags differ from Protect's (failinstruct), so only
+# these fields are copied from Protect: onPrepareHit, onHit, stallingMove, priority, accuracy and target.
+KINGS_SHIELD_COPY_FIELDS = ('onPrepareHit', 'onHit', 'stallingMove', 'priority', 'accuracy', 'target')
+KINGS_SHIELD_CONDITION = """condition: {
+duration: 1,
+onStart(target) {
+this.add('-singleturn', target, 'Protect');
+},
+onTryHitPriority: 3,
+onTryHit(target, source, move) {
+if (this.checkMoveBypassesProtect(move, source, target, false)) return;
+if (move.smartTarget) {
+move.smartTarget = false;
+} else {
+this.add('-activate', target, 'move: Protect');
+}
+const lockedmove = source.getVolatile('lockedmove');
+if (lockedmove) {
+// Outrage counter is reset
+if (source.volatiles['lockedmove'].duration === 2) {
+delete source.volatiles['lockedmove'];
+}
+}
+if (this.checkMoveMakesContact(move, source, target)) {
+this.boost({ atk: -1 }, source, target, this.dex.getActiveMove("King's Shield"));
+}
+return this.NOT_FAIL;
+},
+onHit(target, source, move) {
+if (move.isZOrMaxPowered && this.checkMoveMakesContact(move, source, target)) {
+this.boost({ atk: -1 }, source, target, this.dex.getActiveMove("King's Shield"));
+}
+},
+},"""
 # Step G27: Disable (data/moves.ts:3648-3716 with the Champions override data/mods/champions/moves.ts:228-238) is a handler of its
 # own that the turn code implements (its onTryHit, and a condition whose state is the tail's disable_slot and disable_turns).
 # The generator checks the onTryHit and both condition texts, whitespace aside: the pinned condition (duration 5, the onStart
@@ -2139,6 +2182,7 @@ SPECIAL_P = dict(SPECIAL_C, **{
     'encore': ('ENCORE', set()),                                          # G9 (implemented): last move, a volatile, a queue change
     'disable': ('DISABLE', {'onTryHit'}),                                 # G27: bars the target's last move
     'spikyshield': ('SPIKY_SHIELD', {'onPrepareHit', 'onHit'}),           # G20: Protect that damages a contact attacker
+    'kingsshield': ('KINGS_SHIELD', {'onPrepareHit', 'onHit'}),           # G66: Protect that passes Status moves and lowers a contact attacker's Attack
     'taunt': ('TAUNT', set()),                                            # G31: bars the Status moves for three or four turns
     'substitute': ('SUBSTITUTE', {'onTryHit', 'onHit'}),                  # G60: a 1/4 HP decoy that takes the hits (decision 0032)
     'skillswap': ('SKILL_SWAP', {'onHit'}),                               # G70: swaps the two abilities (decision 0041)
@@ -2278,6 +2322,13 @@ G54_HANDLERS = ['MULTI_HIT_2_5', 'SCALE_SHOT', 'QUICK_GUARD', 'UPPER_HAND', 'HEA
 # volatile phantomforce (duration 2, onInvulnerability false: every move that targets it misses). The move has no protect
 # flag, so Protect does not stop it; its breaksProtect removes the target's protections after the accuracy check.
 G58_HANDLERS = ['PHANTOM_FORCE']
+# Step G66 (decision 0040): the Blade of Stance Change. It is a battle-only forme (kind battle_only in the legal pool, reached
+# from Aegislash), so the selectable rows do not reach it; it gets a row of its own, appended after every other forme, with no
+# legal set (no learnable move, its one ability), like a Mega forme. Its temporary change is the mechanic's, not a set's.
+BATTLE_ONLY_ROWS = ['aegislashblade']
+# Step G66, King's Shield (data/moves.ts:9905-9955; Champions: pp 5 only, data/mods/champions/moves.ts:564-568): the Protect
+# variant with -1 Attack on a contact attacker and no block of a Status move (checkMoveBypassesProtect with blockStatus false).
+G66_HANDLERS = ['KINGS_SHIELD']
 G58_FACTS = (
     'accuracy: 100,', 'basePower: 90,', 'category: "Physical",', 'priority: 0,', 'target: "normal",', 'type: "Ghost",',
     'flags: { contact: 1, charge: 1, mirror: 1, metronome: 1, nosleeptalk: 1, noassist: 1, failinstruct: 1 },',
@@ -2369,7 +2420,7 @@ G68_FACTS = (
                      'flags: { protect: 1, reflectable: 1, mirror: 1, metronome: 1 },', "status: 'par',",
                      'ignoreImmunity: false,', 'target: "normal",', 'type: "Electric",']),
 )
-SPECIAL_IDS_P = SPECIAL_IDS_C + G2_HANDLERS + WEATHER_HANDLERS + G16_HANDLERS + G15_HANDLERS + G19_HANDLERS + G20_HANDLERS + G20_PROTECT_HANDLERS + G28_HANDLERS + G30_HANDLERS + G32_HANDLERS + G34_HANDLERS + G27_HANDLERS + G25_HANDLERS + G26_HANDLERS + G33_HANDLERS + G38_HANDLERS + G29_HANDLERS + G39_HANDLERS + G31_HANDLERS + G48_HANDLERS + G44_HANDLERS + G50_HANDLERS + G42_HANDLERS + G56_HANDLERS + G52_HANDLERS + G54_HANDLERS + G64_HANDLERS + G62_HANDLERS + G60_HANDLERS + G58_HANDLERS + G68_HANDLERS + G70_HANDLERS + ['UNMODELED']# Step G10 made two of these handlers data: Scald (thawsTarget) and Recover (heal) are read into the second flags# byte (bit 4, thaws the target) and the heal column, and have the special NONE; their ids stay defined (the ids after
+SPECIAL_IDS_P = SPECIAL_IDS_C + G2_HANDLERS + WEATHER_HANDLERS + G16_HANDLERS + G15_HANDLERS + G19_HANDLERS + G20_HANDLERS + G20_PROTECT_HANDLERS + G28_HANDLERS + G30_HANDLERS + G32_HANDLERS + G34_HANDLERS + G27_HANDLERS + G25_HANDLERS + G26_HANDLERS + G33_HANDLERS + G38_HANDLERS + G29_HANDLERS + G39_HANDLERS + G31_HANDLERS + G48_HANDLERS + G44_HANDLERS + G50_HANDLERS + G42_HANDLERS + G56_HANDLERS + G52_HANDLERS + G54_HANDLERS + G64_HANDLERS + G62_HANDLERS + G60_HANDLERS + G58_HANDLERS + G68_HANDLERS + G70_HANDLERS + G66_HANDLERS + ['UNMODELED']# Step G10 made two of these handlers data: Scald (thawsTarget) and Recover (heal) are read into the second flags# byte (bit 4, thaws the target) and the heal column, and have the special NONE; their ids stay defined (the ids after
 # them keep their values). First Impression and Low Kick keep theirs: the turn code implements them.
 POOL_COLUMN_KEYS = {'thawsTarget', 'heal'}
 G2_OWNED_FIELDS = {
@@ -2393,6 +2444,7 @@ G2_OWNED_FIELDS = {
     'GLAIVE_RUSH': {'self': "self: { volatileStatus: 'glaiverush', },"},
     'LOCKED_MOVE': {'self': "self: { volatileStatus: 'lockedmove', },"},
     'PHANTOM_FORCE': {'breaksProtect': 'breaksProtect: true,'},
+    'KINGS_SHIELD': {'volatileStatus': "volatileStatus: 'kingsshield',"},
     'RAGE_POWDER': {'volatileStatus': "volatileStatus: 'ragepowder',"},
     'MULTI_HIT_2': {'multihit': 'multihit: 2,'},
     'DOUBLE_SHOCK': {'self': "self: { onHit(pokemon) { pokemon.setType(pokemon.getTypes(true).map(type => type === \"Electric\" ? \"???\" : type)); this.add('-start', pokemon, 'typechange', pokemon.getTypes().join('/'), '[from] move: Double Shock'); }, },"},
@@ -2420,7 +2472,7 @@ G2_OWNED_SECONDARY = {'STONE_AXE': 'secondary: {}, // Sheer Force-boosted', 'CEA
                   "target.trySetStatus(status, source); }, },"}
 G2_OWNED_CONDITION = {'ROOST', 'ENCORE', 'WIDE_GUARD', 'QUICK_GUARD', 'GLAIVE_RUSH', 'AURORA_VEIL', 'SPIKY_SHIELD', 'RAGE_POWDER', 'DISABLE',
                       'ELECTRIC_TERRAIN', 'MISTY_TERRAIN', 'PERISH_SONG', 'IMPRISON', 'TAUNT', 'YAWN', 'REVIVAL_BLESSING',
-                      'SUBSTITUTE', 'PHANTOM_FORCE'}
+                      'SUBSTITUTE', 'PHANTOM_FORCE', 'KINGS_SHIELD'}
 # Step G8 (Throat Chop and Psychic Noise): the two secondaries become modelled kinds, and the column that their
 # consumers read is the move's second flags byte (the first is full): the `sound` flag (Throat Chop bars the sound
 # moves) and the `heal` flag (Heal Block bars the moves that heal). Both are derived for every pool move, the prefix
@@ -2598,7 +2650,7 @@ ENGINE_ROWS = {'items': ['focussash', 'floettite', 'psychicseed', 'electricseed'
                              'limber',
                              'solarpower',
                              'regenerator', 'toxicdebris', 'shadowtag', 'suctioncups', 'guarddog',
-                             'steadfast', 'weakarmor', 'telepathy', 'voltabsorb', 'punkrock', 'moxie', 'synchronize', 'oblivious', 'keeneye', 'bigpecks', 'magicbounce', 'pressure']}
+                             'steadfast', 'weakarmor', 'telepathy', 'voltabsorb', 'punkrock', 'moxie', 'synchronize', 'oblivious', 'keeneye', 'bigpecks', 'magicbounce', 'pressure', 'stancechange']}
 # The moves of the whole pool that the turn code pivots with a switch flag of their own (dfi_pivot_moves,
 # src/state/closure_member.c) beyond Flip Turn and U-turn, which are rows of the steps. Empty: Volt Switch comes with the
 # step that gives it a flag value, and adds its id here.
@@ -2904,7 +2956,7 @@ def forme_legal(formes, pool_moves, pool_abilities, learn, legal_species, abil_t
                     ability_released(abil_ts, champ_abil, aid)
                 if aid in ability_index:
                     abilities.append(ability_index[aid])
-        if fo['is_mega']:
+        if fo['is_mega'] or fo['id'] in BATTLE_ONLY_ROWS:
             if abilities != [fo['ability']] or len(fo['abilities']) != 1:
                 fail('%s: a Mega forme must have exactly its one legal ability in the pool' % fo['id'])
             learnable = set()
@@ -3575,6 +3627,16 @@ def build_pool(root, repo, dx):
                 # that already links one (Charizard-Mega-Y, Raichu-Mega-Y: the closure) keeps it.
                 formes[base_index]['mega_forme'] = forme_index[mega['id']]
                 formes[base_index]['mega_item'] = mf['mega_item']
+    for sid in BATTLE_ONLY_ROWS:
+        rec = species[sid]
+        base_sid = rec.get('reached_from')
+        if rec['kind'] != 'battle_only' or base_sid not in forme_index or sid in forme_index:
+            fail('%s: not a battle-only forme of a row' % sid)
+        fo = new_row(rec, False)
+        fo['base_forme'] = forme_index[base_sid]
+        fo['gender_rule'] = formes[forme_index[base_sid]]['gender_rule']
+        forme_index[sid] = len(formes)
+        formes.append(fo)
     for alias, base in aliases:
         if base not in forme_index:
             fail('the alias %s names %s, which is no row' % (alias, base))

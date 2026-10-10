@@ -491,6 +491,10 @@ const dfi_support_manifest dfi_support = {
             /* Step G70 (Skill Swap, decision 0041): the two holders swap their abilities (onHit, the ability events and the
              * Start and End of the abilities that move; an ally swap is modelled, the Mega and the Illusion cases are named). */
             [DFI_MOVE_SKILLSWAP] = 1u,
+            /* Step G66 (decision 0015 5cb, decision 0040): King's Shield, the Protect variant with protect_kind 2: it passes Status
+             * moves (checkMoveBypassesProtect with blockStatus false), and a contact move that it stops costs the attacker -1 Attack.
+             * The learners of this move in the pool are Aegislash (its only ability is Stance Change, marked in the same step). */
+            [DFI_MOVE_KINGSSHIELD] = 1u,
         },
     .abilities =
         {
@@ -592,6 +596,7 @@ const dfi_support_manifest dfi_support = {
             [DFI_ABILITY_KEENEYE] = 1u,   /* step G51: the base ability of Pidgeot (with Pidgeotite), an engine row */
             [DFI_ABILITY_BIGPECKS] = 1u,  /* step G51: the other base ability of Pidgeot, an engine row */
             [DFI_ABILITY_MAGICBOUNCE] = 1u, /* step G57: reflects the reflectable moves (decision 0015 5bg) */
+            [DFI_ABILITY_STANCECHANGE] = 1u, /* step G66 (decision 0040): Aegislash's forme, a temporary forme (FORME, cause ABILITY) */
         },
     .items =
         {

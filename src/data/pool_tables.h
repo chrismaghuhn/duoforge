@@ -365,7 +365,8 @@
 #define DFI_FORME_BAXCALIBURMEGA 343u
 #define DFI_FORME_SINISTCHA 344u
 #define DFI_FORME_HYDRAPPLE 345u
-#define DFI_POOL_FORME_COUNT 346u
+#define DFI_FORME_AEGISLASHBLADE 346u
+#define DFI_POOL_FORME_COUNT 347u
 #define DFI_FORME_NONE 0xFFFFu /* a forme link that points nowhere */
 
 /* ---- pool moves (appended after the extended ones): step G2, then the legal pool ---- */
@@ -915,7 +916,8 @@
 #define DFI_SPECIAL_STEEL_BEAM 91u
 #define DFI_SPECIAL_THUNDER_WAVE 92u
 #define DFI_SPECIAL_SKILL_SWAP 93u
-#define DFI_SPECIAL_UNMODELED 94u
+#define DFI_SPECIAL_KINGS_SHIELD 94u
+#define DFI_SPECIAL_UNMODELED 95u
 
 /* ---- the second flags byte of every move (step G8: the general byte for the flags that the first one has no room
  * for; bits 4 to 128 are free) and the secondary kinds that it comes with ---- */
@@ -1445,7 +1447,7 @@ extern const char *const dfi_pool_item_unmodeled[DFI_POOL_ITEM_COUNT];
 extern const char *const dfi_pool_ability_unmodeled[DFI_POOL_ABILITY_COUNT];
 
 /* SHA-256 of the canonical pool bytes (written by the generator). */
-#define DFI_POOL_CANONICAL_SIZE 54664u
+#define DFI_POOL_CANONICAL_SIZE 54758u
 extern const uint8_t dfi_pool_table_hash[32];
 /* The canonical bytes of the closure layout over the first `formes`, `moves`,
  * `items` and `abilities` rows of the tables above, with every immunity byte

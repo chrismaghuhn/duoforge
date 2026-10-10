@@ -3,7 +3,7 @@
  *
  * What this test pins, and where the rest of the evidence is:
  *   - the row: Skill Swap is marked (its handler is SKILL_SWAP, id 93 after the Steel Beam and Thunder Wave of G68 at 91 and 92,
- *     and UNMODELED follows it at 94); the other handler
+ *     and UNMODELED follows King's Shield, the G66 handler at 94, at 95); the other handler
  *     rows of the batch are not touched;
  *   - flags3 bit 2 (DFI_MOVE_FLAG3_BYPASSSUB): Skill Swap has flags.bypasssub in the pin (data/moves.ts:16598), so it is set;
  *   - the abilities that the swap moves are marked (no new ability row of this step): Trace, Synchronize, Intimidate, Pressure,
@@ -263,7 +263,7 @@ static void check_row(df_test *t)
 {
     /* the merged order of batch 4: Steel Beam and Thunder Wave (G68, 91 and 92) come between Phantom Force and Skill Swap */
     DF_CHECK_EQ_U64(t, DFI_SPECIAL_SKILL_SWAP, DFI_SPECIAL_THUNDER_WAVE + 1u);
-    DF_CHECK_EQ_U64(t, DFI_SPECIAL_UNMODELED, DFI_SPECIAL_SKILL_SWAP + 1u);
+    DF_CHECK_EQ_U64(t, DFI_SPECIAL_UNMODELED, DFI_SPECIAL_KINGS_SHIELD + 1u); /* G66 King's Shield follows Skill Swap */
     DF_CHECK_EQ_U64(t, DFI_MOVE_SKILLSWAP, 405u);
     DF_CHECK(t, dfi_support.moves[DFI_MOVE_SKILLSWAP] != 0u);
     DF_CHECK_EQ_U64(t, dfi_pool_moves[DFI_MOVE_SKILLSWAP].special, DFI_SPECIAL_SKILL_SWAP);

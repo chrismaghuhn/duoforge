@@ -1,6 +1,6 @@
 # 0041 - Skill Swap (G70): the ability swap, its events and its refusals
 
-Status: **draft** (H11, lane A batch 4). Pending the lead's answers Q1 (the ABILITY event fields under cause MOVE) and Q2 (ally targets, OTS information safety). Builds on 0015 (the POOL kinds, the support gate, the step entry 5cd), 0018 (the view extension: `ability_now`, AC1) and 0028 (the transformed state: setAbility's Start and End). No new public value: the ability event is the existing kind 34 under the existing cause MOVE (1).
+Status: **accepted** (H11, lane A batch 4). Q1 answered: option C, the ABILITY event with cause MOVE, id2 = the Skill Swap move, id = the new ability + 1 (HauptSession checked it). Q2 answered: ally swaps are modelled, not refused; HauptSession confirmed information safety under OTS; a named refusal only where a holder's current ability is not known to the foe; the Mega ally pair is a converter refusal and a known gap. Builds on 0015 (the POOL kinds, the support gate, the step entry 5cd), 0018 (the view extension: `ability_now`, AC1) and 0028 (the transformed state: setAbility's Start and End). No new public value: the ability event is the existing kind 34 under the existing cause MOVE (1).
 
 ## Problem
 
@@ -66,7 +66,7 @@ Ally swaps are modelled, not refused. Both partners' current abilities are publi
 - An ally swap prints no names. The C state and observation carry the new abilities for both viewers, from the same two ABILITY events, in the line's order. The converter maps `-activate|SRC|Skill Swap|||[of] TGT` (and the `-hint`) from the known abilities. No rule in Python.
 - A named refusal (`E_UNSUPPORTED`) only where a holder's current ability is NOT known to the foe. In the pool that is a possible Illusion (lane B's ILLUSION_POSSIBLE). The checked list of other ways an ability can be hidden from the foe is in the phase 2 report; anything found there is refused by name, never guessed.
 
-## Event fields (open: Q1)
+## Event fields (decided: Q1, option C)
 
 The lead's preferred option C: the ABILITY event (34) with **cause MOVE** (1), `id2` = the move id (Skill Swap), and `id` = the new ability + 1. Two events per swap, in the line's order: position = the source, `other` = the target, id = the target's ability + 1; then position = the target, `other` = the source, id = the source's ability + 1. The ABILITY comment in `include/duoforge/duoforge.h` gets "with cause MOVE: id = the new ability + 1, id2 = the move" as a documentation change; no new number. The own-side Pressure timeline (`src/combat/events.c:126-131`) reads both causes: it recomputes both holders' Pressure flags from the events of the step. Not coded until the lead forwards the answer.
 
