@@ -292,6 +292,17 @@ class LinesTest(unittest.TestCase):
         self.assertEqual(self.stop("|-ability|p2a: Gholdengo|Pressure|Good as Gold|[from] move: Role Play|"
                                    "[of] p1a: Staraptor"), "line:-ability [from] move: Role Play")
 
+    def test_hazard_lines(self):
+        # Step G37: a -sidestart lays a layer (folded); of the removals only Toxic Spikes absorbed by a grounded Poison
+        # type (no [from]) is modelled, Defog, Rapid Spin, Mortal Spin and Tidy Up stop on their line
+        self.assertEqual(lines.check("|-sidestart|p1: Staraptor|move: Toxic Spikes", self.view), "fold")
+        self.assertEqual(lines.check("|-sideend|p1: Staraptor|move: Toxic Spikes|[of] p1a: Staraptor", self.view),
+                         "fold")
+        self.assertEqual(self.stop("|-sideend|p1: Staraptor|move: Toxic Spikes|[from] move: Rapid Spin|"
+                                   "[of] p1a: Staraptor"), "line:-sideend move: Toxic Spikes [from] move: Rapid Spin")
+        self.assertEqual(self.stop("|-sideend|p1: Staraptor|Spikes|[from] move: Defog|[of] p2a: Gholdengo"),
+                         "line:-sideend Spikes [from] move: Defog")
+
     def test_unmodelled_ability_changes_stop_on_their_line(self):
         # Mummy and Lingering Aroma print -activate|holder|ability: X|attacker|[ability] Old (sim/pokemon.ts setAbility,
         # :1928-1930), Wandering Spirit the Skill Swap line of battle.skillSwap; the engine models none of them

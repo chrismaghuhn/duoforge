@@ -67,6 +67,7 @@ EXT_FIELDS = {
     "WEATHER_SAND": (), "WEATHER_SNOW": (), "AILMENT_TOX": (),
     "THROAT_CHOP": (("bit", EXT_THROAT_CHOP),),
     "MUST_RECHARGE": (("bit", C["DUOFORGE_POSITION_EXT_MUST_RECHARGE"]),),
+    "TOXIC_SPIKES": (("side", "toxic_spikes"),),
     "AURORA_VEIL": (("side", "aurora_veil_turns"),),
     "PERISH": (("position", "perish"),),
     "ENCORE": (("position", "encore_slot"),),
@@ -78,6 +79,9 @@ _PRESENCE_BITS = (("throat_chop", EXT_THROAT_CHOP), ("must_recharge", C["DUOFORG
 # DUOFORGE_SIDE_* of a SIDE_START or SIDE_END event (tailwind 1, reflect 2, light screen 3, Aurora Veil 4) -> the index
 # of the side's turns in Tracker._conditions
 _SIDE_CONDITION = {1: 2, 2: 0, 3: 1, 4: 3}
+# The entry hazards of a SIDE_START or SIDE_END event (DUOFORGE_SIDE_STEALTH_ROCK 5 to _STICKY_WEB 8, step G37): the
+# duoforge_side_ext field and its most layers
+_HAZARD = {5: ("stealth_rock", 1), 6: ("spikes", 3), 7: ("toxic_spikes", 2), 8: ("sticky_web", 1)}
 STATUS = {"brn": 1, "frz": 2, "par": 3, "slp": 4, "psn": 5}
 
 ROOM_LINES = lines.ROOM_LINES
@@ -176,6 +180,7 @@ class Tracker:
         self._terrain = self._terrain_turns = 0
         self._trick_room = 0
         self._conditions = [[0, 0, 0, 0], [0, 0, 0, 0]]  # reflect, light screen, tailwind, Aurora Veil turns per side
+        self._hazards = [collections.Counter(), collections.Counter()]  # entry hazard layers per side, by ext field
         self._mega_used = [0, 0]
         self._picks = None
         self._accepted = None  # the own choice accepted at the last TURN decision point (it queued the moves)
@@ -701,6 +706,12 @@ class Tracker:
                 self._trick_room = 0
             else:
                 self._terrain = self._terrain_turns = 0
+        elif kind in (EV["SIDE_START"], EV["SIDE_END"]) and amount in _HAZARD:
+            # an entry hazard (step G37): every -sidestart line lays one layer, up to the move's maximum; its -sideend
+            # (Toxic Spikes that a grounded Poison type absorbed, the one removal the engine models) clears it
+            field, top = _HAZARD[amount]
+            layers = self._hazards[detail]
+            layers[field] = min(layers[field] + 1, top) if kind == EV["SIDE_START"] else 0
         elif kind == EV["SIDE_START"]:
             index = _SIDE_CONDITION[amount]
             turns = TAILWIND_TURNS
@@ -973,6 +984,8 @@ class Tracker:
         for side in (0, 1):
             v = o["sides"][side]
             v["aurora_veil_turns"] = self._conditions[side][3]
+            for field, _ in _HAZARD.values():
+                v[field] = self._hazards[side][field]
             for m, member in enumerate(self._member(side)):
                 v["members"][m]["item_now"] = member.item_now
             for k, p in enumerate(self._positions[side]):

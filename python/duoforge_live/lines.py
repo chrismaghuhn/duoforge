@@ -137,7 +137,7 @@ BASE_FOLDS = sum(1 << FEATURES[n] for n in ("WEATHER_SAND", "WEATHER_SNOW", "AIL
 # The view-extension folds (tracker.EXT_FIELDS: the record fields the tracker fills; test_replay compares them with
 # DuoForge's record byte for byte and requires each to be shown at compared points of both viewers, own and foe side).
 EXT_FOLDS = sum(1 << FEATURES[n] for n in ("THROAT_CHOP", "AURORA_VEIL", "PERISH", "ENCORE", "ABILITY_CHANGE", "ITEM_CHANGE",
-                                          "MUST_RECHARGE"))
+                                          "MUST_RECHARGE", "TOXIC_SPIKES"))
 TRACKER_FOLDS = BASE_FOLDS | EXT_FOLDS
 SUPPORTED = LIBRARY_SUPPORTED & TRACKER_FOLDS
 
@@ -159,6 +159,7 @@ _SIDE = {"move: Aurora Veil": "AURORA_VEIL", "Aurora Veil": "AURORA_VEIL", "move
          "Stealth Rock": "STEALTH_ROCK", "move: Spikes": "SPIKES", "Spikes": "SPIKES",
          "move: Toxic Spikes": "TOXIC_SPIKES", "Toxic Spikes": "TOXIC_SPIKES", "move: Sticky Web": "STICKY_WEB",
          "Sticky Web": "STICKY_WEB"}
+_HAZARDS = {"STEALTH_ROCK", "SPIKES", "TOXIC_SPIKES", "STICKY_WEB"}
 _SINGLE_TURN = {"move: Rage Powder": "RAGE_POWDER", "Rage Powder": "RAGE_POWDER", "Wide Guard": "WIDE_GUARD",
                 "move: Wide Guard": "WIDE_GUARD", "Quick Guard": "QUICK_GUARD", "move: Quick Guard": "QUICK_GUARD",
                 "move: Roost": "ROOST", "Roost": "ROOST"}  # Roost's grounded turn (G42; its residual end is silent)
@@ -381,6 +382,11 @@ def check(line, view):
         if effect in _FOLD_SIDE:
             return "fold"
         if effect in _SIDE:
+            froms = _froms(attrs)
+            if kind == "-sideend" and _SIDE[effect] in _HAZARDS and (froms or _SIDE[effect] != "TOXIC_SPIKES"):
+                # a hazard's removal: the engine models only Toxic Spikes absorbed by a grounded Poison type (step G37:
+                # -sideend|side|move: Toxic Spikes|[of] holder); Defog, Rapid Spin, Mortal Spin, Tidy Up stop
+                _unknown(kind, f"{effect}" + (f" [from] {froms[0]}" if froms else ""))
             return _feature(_SIDE[effect])
         _unknown(kind, effect)
     if kind == "-ability":
