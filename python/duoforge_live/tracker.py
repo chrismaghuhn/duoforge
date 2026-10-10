@@ -70,6 +70,7 @@ EXT_FIELDS = {
     "MUST_RECHARGE": (("bit", C["DUOFORGE_POSITION_EXT_MUST_RECHARGE"]),),
     "TOXIC_SPIKES": (("side", "toxic_spikes"),),
     "STEALTH_ROCK": (("side", "stealth_rock"),),
+    "SPIKES": (("side", "spikes"),),
     "TAUNT": (("bit", C["DUOFORGE_POSITION_EXT_TAUNT"]),),
     "YAWN": (("bit", C["DUOFORGE_POSITION_EXT_YAWN"]),),
     "DISABLE": (("position", "disable_slot"),),
