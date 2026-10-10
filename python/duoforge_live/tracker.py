@@ -65,7 +65,11 @@ EXT_THROAT_CHOP = C["DUOFORGE_POSITION_EXT_THROAT_CHOP"]
 EXT_FIELDS = {
     "WEATHER_SAND": (), "WEATHER_SNOW": (), "AILMENT_TOX": (),
     "THROAT_CHOP": (("bit", EXT_THROAT_CHOP),),
+    "AURORA_VEIL": (("side", "aurora_veil_turns"),),
 }
+# DUOFORGE_SIDE_* of a SIDE_START or SIDE_END event (tailwind 1, reflect 2, light screen 3, Aurora Veil 4) -> the index
+# of the side's turns in Tracker._conditions
+_SIDE_CONDITION = {1: 2, 2: 0, 3: 1, 4: 3}
 STATUS = {"brn": 1, "frz": 2, "par": 3, "slp": 4, "psn": 5}
 
 ROOM_LINES = lines.ROOM_LINES
@@ -157,7 +161,7 @@ class Tracker:
         self._field_turns_next = FIELD_TURNS  # set per line by _extended_field
         self._terrain = self._terrain_turns = 0
         self._trick_room = 0
-        self._conditions = [[0, 0, 0], [0, 0, 0]]  # reflect, light screen, tailwind turns per side
+        self._conditions = [[0, 0, 0, 0], [0, 0, 0, 0]]  # reflect, light screen, tailwind, Aurora Veil turns per side
         self._mega_used = [0, 0]
         self._picks = None
         self._accepted = None  # the own choice accepted at the last TURN decision point (it queued the moves)
@@ -285,6 +289,12 @@ class Tracker:
     def ability_now(self, ident):
         """The current ability + 1 of the member a protocol ident names."""
         return self._member_of(ident).ability
+
+    def _holds(self, member, key):
+        """Whether `member` holds the item of ITEM table key `key` now, as far as the lines showed: its open sheet's
+        item, not seen used up or lost."""
+        item = self.data.tables["ITEM"].get(key)
+        return item is not None and not member.item_used and member.sheet["item"] == item + 1
 
     def _member_of(self, ident):
         side, name = int(ident[1]) - 1, ident.split(": ", 1)[1]
@@ -570,15 +580,16 @@ class Tracker:
             else:
                 self._terrain = self._terrain_turns = 0
         elif kind == EV["SIDE_START"]:
-            index = {1: 2, 2: 0, 3: 1}[amount]  # tailwind, reflect, light screen -> the field order
+            index = _SIDE_CONDITION[amount]
             turns = TAILWIND_TURNS
             if amount != 1:
+                # a screen (Reflect, Light Screen, Aurora Veil, step G20): 5 turns, 8 when the user holds Light Clay
+                # (durationCallback); the user is the last move line's
                 user = self._occupant(self._last_move[0])
-                clay = self.data.tables["ITEM"]["LIGHTCLAY"] + 1
-                turns = SCREEN_TURNS_CLAY if user.sheet["item"] == clay else SCREEN_TURNS
+                turns = SCREEN_TURNS_CLAY if self._holds(user, "LIGHTCLAY") else SCREEN_TURNS
             self._conditions[detail][index] = turns
         elif kind == EV["SIDE_END"]:
-            self._conditions[detail][{1: 2, 2: 0, 3: 1}[amount]] = 0
+            self._conditions[detail][_SIDE_CONDITION[amount]] = 0
         elif kind == EV["ITEM_END"]:
             m = self._occupant(pos)
             if public:
@@ -767,7 +778,7 @@ class Tracker:
         v["brought_order"] = order
         requested, slots = self._requested(side, boundary)
         v["requested"], v["requested_slots"] = requested, slots
-        v["reflect_turns"], v["light_screen_turns"], v["tailwind_turns"] = self._conditions[side]
+        v["reflect_turns"], v["light_screen_turns"], v["tailwind_turns"] = self._conditions[side][:3]
 
     def _view_member(self, v, member, m, side, own, boundary):
         sheet = member.sheet
@@ -818,6 +829,7 @@ class Tracker:
         o["supported"] = lines.LIBRARY_SUPPORTED
         for side in (0, 1):
             v = o["sides"][side]
+            v["aurora_veil_turns"] = self._conditions[side][3]
             for k, p in enumerate(self._positions[side]):
                 if p.occupant == ROSTER_NONE:
                     continue  # an empty position: all zero
