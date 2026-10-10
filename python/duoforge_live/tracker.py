@@ -69,6 +69,7 @@ EXT_FIELDS = {
     "THROAT_CHOP": (("bit", EXT_THROAT_CHOP),),
     "MUST_RECHARGE": (("bit", C["DUOFORGE_POSITION_EXT_MUST_RECHARGE"]),),
     "TOXIC_SPIKES": (("side", "toxic_spikes"),),
+    "STEALTH_ROCK": (("side", "stealth_rock"),),
     "TAUNT": (("bit", C["DUOFORGE_POSITION_EXT_TAUNT"]),),
     "YAWN": (("bit", C["DUOFORGE_POSITION_EXT_YAWN"]),),
     "DISABLE": (("position", "disable_slot"),),
