@@ -254,7 +254,7 @@ static void check_marks(df_test *t)
     DF_CHECK(t, dfi_support.moves[DFI_MOVE_SOAK] != 0u);
     DF_CHECK(t, dfi_support.items[DFI_ITEM_SHEDSHELL] == 0u);
     DF_CHECK(t, dfi_support.abilities[DFI_ABILITY_RUNAWAY] == 0u);
-    DF_CHECK(t, dfi_support.abilities[DFI_ABILITY_ILLUSION] == 0u);
+    DF_CHECK(t, dfi_support.abilities[DFI_ABILITY_ILLUSION] != 0u); /* marked by step I2 (decision 0026): this step left it unmarked */
     DF_CHECK(t, dfi_support.abilities[DFI_ABILITY_WANDERINGSPIRIT] == 0u);
     DF_CHECK(t, dfi_support.abilities[DFI_ABILITY_MUMMY] == 0u);
     DF_CHECK(t, dfi_support.moves[DFI_MOVE_ROLEPLAY] == 0u);

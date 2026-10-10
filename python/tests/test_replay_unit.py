@@ -263,6 +263,9 @@ class _View:
     def ability_now(self, ident):
         return self.sheet_of(ident)["ability"]
 
+    def side_sheets(self, ident):
+        return [m for k, m in self._members.items() if k[:2] == ident[:2]]
+
 
 class LinesTest(unittest.TestCase):
     """The line classes of the shared fold (Task 3, spec section 5)."""
@@ -337,6 +340,27 @@ class LinesTest(unittest.TestCase):
         # its -fieldstart line, not an unknown line
         self.assertEqual(self.stop("|-activate|p2a: Gholdengo|move: Electric Terrain"), "feature:TERRAIN_ELECTRIC")
         self.assertEqual(self.stop("|-activate|p2a: Gholdengo|move: Misty Terrain"), "feature:TERRAIN_MISTY")
+
+    def test_a_line_that_does_not_fit_its_name_under_a_possible_illusion_is_the_illusion_feature(self):
+        # Step I2 (decision 0026): under a disguise the lines name the disguise, so an item or ability that is not the
+        # named member's can be the Illusion holder's (a Focus Sash used up under the disguise); with an Illusion holder
+        # on that side's sheet the line stops on feature:ILLUSION, without one it stays an unknown line
+        view = _View({"p1: Staraptor": ("STARAPTOR", "SITRUSBERRY", "INTIMIDATE"),
+                      "p2: Gholdengo": ("GHOLDENGO", "LIFEORB", "GOODASGOLD"),
+                      "p2: Zoroark": ("ZOROARKHISUI", "FOCUSSASH", "ILLUSION")})
+        with self.assertRaises(lines.Stop) as caught:
+            lines.check("|-enditem|p2a: Gholdengo|Focus Sash", view)
+        self.assertEqual(caught.exception.reason, "feature:ILLUSION")
+        self.assertEqual(self.stop("|-enditem|p1a: Staraptor|Focus Sash"), "line:-enditem Focus Sash")
+
+    def test_symbiosis_passing_its_item_is_item_change(self):
+        # Step G69: Symbiosis hands the holder's item to its partner (`-activate|X|ability: Symbiosis|Item|[of] Y`): the
+        # partner then holds another item than its sheet's, decision 0018's ITEM_CHANGE, as Trick, Knock Off, Bug Bite
+        view = _View({"p1: Staraptor": ("STARAPTOR", "LEFTOVERS", "SYMBIOSIS"),
+                      "p1: Gholdengo": ("GHOLDENGO", "FOCUSSASH", "GOODASGOLD")})
+        with self.assertRaises(lines.Stop) as caught:
+            lines.check("|-activate|p1a: Staraptor|ability: Symbiosis|Leftovers|[of] p1b: Gholdengo", view)
+        self.assertEqual(caught.exception.reason, "feature:ITEM_CHANGE")
 
     def test_skill_swap_lines_are_ability_change(self):
         # Step G70 (decision 0041): the pin prints "Skill Swap" without "move: " for a foe swap (both abilities named)
@@ -684,6 +708,70 @@ class LabelsTest(unittest.TestCase):
         self.assertEqual(len(one.team), 45)
 
 
+class RevivalLabelTest(unittest.TestCase):
+    """The revived member of a Revival Blessing label (step G52). Its -heal line names it by its nickname only
+    ("|-heal|p1: <nickname>|..."): the member is the one that switched in under that name before. Made-up logs after
+    the eight patterns of the 2026-10-10 replay run, which stopped with a ValueError (the nickname read as a forme)."""
+
+    @classmethod
+    def setUpClass(cls):
+        from duoforge_live import options
+        from duoforge_replay import labels, points
+        cls.L, cls.P, cls.O = labels, points, options
+        revive = [options.Option(options.REVIVE, 0, 0, 0, r, f"revive {r}") for r in (2, 3)]
+        # slot 0 is not asked; slot 1 (p1b) used Revival Blessing and chooses among the fainted reserves 2 and 3
+        cls.lists = ([options.Option(options.NONE, 0, 0, 0, 0, "pass")],
+                     revive + [options.Option(options.PASS, 0, 0, 0, 0, "pass")])
+        # the stand-in of Context.member_of: species -> roster index; a nickname or a base forme the roster lacks fails
+        cls.roster = {"Milotic": 3, "Floette-Eternal": 2, "Rillaboom": 2}
+
+    def member_of(self, details):
+        return self.roster[details.split(",")[0]]
+
+    def label(self, before, name):
+        log = before + ["|move|p1b: Pawmot|Revival Blessing|p1b: Pawmot", f"|-heal|p1: {name}|50/100|[from] move: Revival Blessing"]
+        point = self.P.Point(1, len(before) + 1, self.P.PIVOT, (1,), len(log), True)
+        return self.L.switch_label(log, point, 0, self.lists, self.member_of, len(log))
+
+    def revived(self, label):
+        [i] = [i for i in range(len(self.lists[1])) if label.slots[1] >> i & 1]
+        return self.lists[1][i]
+
+    def assert_revives(self, before, name, reserve):
+        got = self.label(before, name)
+        self.assertEqual(got.reasons[1], self.L.EXACT)
+        option = self.revived(got)
+        self.assertEqual((option.kind, option.reserve), (self.O.REVIVE, reserve))
+
+    def test_a_plain_nickname(self):  # "Alex", "Darlen", "Dallas", "Babahagen", "Unbehagen"
+        self.assert_revives(["|switch|p1a: Nick|Milotic, L50, F|100/100", "|faint|p1a: Nick"], "Nick", 3)
+
+    def test_a_nickname_with_spaces(self):  # "sorry for doubting"
+        self.assert_revives(["|switch|p1a: three short words|Milotic, L50, F|100/100", "|faint|p1a: three short words"],
+                            "three short words", 3)
+
+    def test_a_nickname_that_is_a_base_forme_the_tables_lack(self):  # "Floette" for Floette-Eternal
+        self.assert_revives(["|switch|p1a: Floette|Floette-Eternal, L50, F|100/100", "|faint|p1a: Floette"], "Floette", 2)
+
+    def test_no_nickname(self):
+        self.assert_revives(["|switch|p1a: Milotic|Milotic, L50, F|100/100", "|faint|p1a: Milotic"], "Milotic", 3)
+
+    def test_the_foe_side_does_not_count(self):
+        self.assert_revives(["|switch|p2a: Nick|Rillaboom, L50, M|100/100", "|switch|p1a: Nick|Milotic, L50, F|100/100",
+                             "|faint|p1a: Nick"], "Nick", 3)
+
+    def test_a_name_that_never_switched_in_is_a_counted_skip(self):
+        with self.assertRaises(self.P.Skip) as cm:
+            self.label(["|switch|p1a: Other|Milotic, L50, F|100/100"], "Nick")
+        self.assertEqual(cm.exception.reason, "skip:revive-unseen")
+
+    def test_a_name_two_members_had_is_a_counted_skip(self):
+        with self.assertRaises(self.P.Skip) as cm:
+            self.label(["|switch|p1a: Nick|Milotic, L50, F|100/100", "|switch|p1a: Nick|Rillaboom, L50, M|100/100",
+                        "|faint|p1a: Nick"], "Nick")
+        self.assertEqual(cm.exception.reason, "skip:revive-ambiguous")
+
+
 
 FIXTURE = Path(__file__).resolve().parent / "data" / "replay" / "c12_real_cb_4.log"
 
@@ -749,6 +837,12 @@ class GameTest(unittest.TestCase):
         lines = [line.replace("|Defiant|", "|Illusion|", 1) if line.startswith("|showteam|p1|") else line
                  for line in self.log]
         self.assertEqual(self.skip_reason(lines), "skip:illusion")
+
+    def test_two_sheets_of_one_side_are_a_refusal_of_their_own(self):
+        # review of #331: two |showteam| lines of the same side pass source.select (two lines) but are no pair of
+        # sheets; the game is refused under its own reason, not counted as a game without sheets
+        lines = [line.replace("|showteam|p2|", "|showteam|p1|", 1) for line in self.log]
+        self.assertEqual(self.skip_reason(lines), "skip:sheets-one-side")
 
     def test_session_line_skips_game(self):
         self.assertEqual(self.skip_reason(self.insert_after("|turn|3", "|init|battle")), "skip:session")
@@ -1199,6 +1293,100 @@ class DatasetTest(unittest.TestCase):
         self.assertEqual(c["games.processed"], 3)
         self.assertEqual(c["games.skipped.skip:format"], 1)
 
+    def test_the_funnel_per_format_adds_up_to_the_totals(self):
+        from duoforge_replay import funnel
+        c = self.build("funnel")
+        report = funnel.report(c)
+        self.assertEqual(sorted(report), ["gen9championsvgc2026regmcbo3", "gen9ou"])
+        for format_id, f in report.items():
+            self.assertEqual(f["read"], sum(f["skipped"].values()) + f["internal"] + f["processed"], format_id)
+            self.assertEqual(f["perspectives"]["kept"] + sum(f["perspectives"]["stopped"].values()),
+                             2 * f["processed"], format_id)
+            self.assertEqual(f["with_sheets"], f["read"] - f["skipped"].get("skip:format", 0)
+                             - f["skipped"].get("skip:sheets", 0), format_id)
+        self.assertEqual(report["gen9ou"]["skipped"], {"skip:format": 1})
+        self.assertEqual(report["gen9championsvgc2026regmcbo3"]["processed"], 3)
+        total = lambda key: sum(f[key] for f in report.values())  # noqa: E731
+        self.assertEqual(total("read"), c["games.read"])
+        self.assertEqual(total("processed"), c["games.processed"])
+        self.assertEqual(total("rows"), c["points.written"])
+        self.assertEqual(sum(f["perspectives"]["kept"] for f in report.values()), c["perspectives.kept"])
+        for key, n in c.items():
+            if key.startswith("games.skipped."):
+                reason = key[len("games.skipped."):]
+                self.assertEqual(sum(f["skipped"].get(reason, 0) for f in report.values()), n, reason)
+        text = funnel.text(report)
+        for format_id in report:
+            self.assertIn(format_id, text)
+
+    def test_the_funnel_command_reads_a_dataset(self):
+        import contextlib
+        import io
+        from duoforge_replay import __main__ as cli
+        self.build("cli")
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out):
+            self.assertEqual(cli.main(["funnel", str(self.tmp / "cli")]), 0)
+        self.assertIn("gen9championsvgc2026regmcbo3", out.getvalue())
+        self.assertIn("rows", out.getvalue())
+
+    def test_the_funnel_counts_refused_games_and_internal_errors(self):
+        # review of #331: the funnel stages of game.Skip and of an internal error, each in a build of its own
+        import json
+        from duoforge_replay import funnel
+        lines = self.log.split(chr(10))
+        i = next(i for i, line in enumerate(lines) if line.startswith("|showteam|p1|"))
+        head, packed = lines[i].split("|", 3)[:3], lines[i].split("|", 3)[3]
+        first = packed.split("]")[0].split("|")
+        first[1] = "Fakemon"  # a species the tables lack: name:FORME Fakemon
+        lines[i] = "|".join(head + ["]".join(["|".join(first)] + packed.split("]")[1:])])
+        mixed = self.tmp / "mixed.jsonl"
+        with open(mixed, "w", encoding="utf-8", newline=chr(10)) as f:
+            fake = chr(10).join(lines)
+            f.write(json.dumps({"id": "fake", "formatid": "gen9championsvgc2026regmc", "log": fake}) + chr(10))
+            f.write(json.dumps({"id": "ok", "formatid": "gen9championsvgc2026regmc", "log": self.log}) + chr(10))
+        from duoforge_replay import build
+        c = build.build([mixed], self.prior_path, self.tmp / "refused", unit_lines=2, stats_factory=stats_factory,
+                        log=lambda _: None)
+        f = funnel.report(c)["gen9championsvgc2026regmc"]
+        self.assertEqual((f["read"], f["skipped"], f["internal"], f["processed"]),
+                         (2, {"name:FORME Fakemon": 1}, 0, 1))
+        c = build.build([self.source], self.prior_path, self.tmp / "internal", unit_lines=2,
+                        stats_factory=broken_stats_factory, log=lambda _: None)
+        f = funnel.report(c)["gen9championsvgc2026regmcbo3"]
+        self.assertEqual((f["read"], f["internal"], f["processed"], f["rows"]), (3, 3, 0, 0))
+        self.assertEqual(f["internal"], c["internal:RuntimeError"])
+
+    def test_the_funnel_command_refuses_a_dataset_without_funnel(self):
+        # review of #331: a dataset built before the funnel has none; an empty report would read as "no games"
+        import contextlib
+        import io
+        import json
+        from duoforge_replay import __main__ as cli
+        old = self.tmp / "old"
+        old.mkdir()
+        (old / "counters.json").write_text(json.dumps({"games.read": 3, "games.processed": 3}), encoding="utf-8")
+        err = io.StringIO()
+        with contextlib.redirect_stderr(err):
+            self.assertEqual(cli.main(["funnel", str(old)]), 2)
+        self.assertIn("no funnel", err.getvalue())
+
+    def test_reg_ma_is_excluded(self):
+        # owner, 2026-10-10: Reg M-A ran under another mechanics era (Showdown before Champions 1.1.0); no prefix that
+        # takes its games is a build
+        from duoforge_replay import build
+        for prefix in ("gen9championsvgc2026regma", "gen9championsvgc2026regmabo3", "gen9championsvgc2026", "gen9"):
+            with self.subTest(prefix), self.assertRaisesRegex(ValueError, "Reg M-A"):
+                build.build([self.source], self.prior_path, self.tmp / "ma", unit_lines=2, stats_factory=stats_factory,
+                            log=lambda _: None, format_prefix=[prefix])
+        self.assertFalse((self.tmp / "ma").exists())
+
+    def test_the_funnel_names_the_excluded_regulation(self):
+        from duoforge_replay import funnel
+        report = funnel.report({"funnel.gen9championsvgc2026regma.read": 5,
+                                "funnel.gen9championsvgc2026regma.skipped.skip:format": 5})
+        self.assertIn("excluded: other mechanics era (owner, 2026-10-10)", funnel.text(report))
+
     def test_parts_are_source_units(self):
         # two source lines per unit: four games give two parts, each its own directory
         from duoforge_replay import dataset
@@ -1412,6 +1600,10 @@ class SourceTest(unittest.TestCase):
         self.assertEqual(counters["games.skipped.skip:format"], 2)
         self.assertEqual(counters["games.skipped.skip:sheets"], 1)
         self.assertEqual(rows, [])
+        from duoforge_replay import funnel
+        report = funnel.report(counters)  # the unread row group counts per format too
+        self.assertEqual({k: (f["read"], f["skipped"]) for k, f in report.items()},
+                         {"gen9ou": (2, {"skip:format": 2}), "gen9championsvgc2026regmc": (1, {"skip:sheets": 1})})
 
     def test_select(self):
         import collections
@@ -1424,6 +1616,9 @@ class SourceTest(unittest.TestCase):
         self.assertEqual([r[0] for r in kept], ["a", "d"])
         self.assertEqual(counters["games.skipped.skip:format"], 1)
         self.assertEqual(counters["games.skipped.skip:sheets"], 1)
+        self.assertEqual(counters["funnel.gen9championsvgc2026regmcbo3.read"], 2)
+        self.assertEqual(counters["funnel.gen9championsvgc2026regmcbo3.skipped.skip:sheets"], 1)
+        self.assertEqual(counters["funnel.gen9ou.skipped.skip:format"], 1)
 
 
 if __name__ == "__main__":

@@ -2,6 +2,7 @@
 
 #include "core/arith.h"
 #include "core/bytes.h"
+#include "data/pool_tables.h"
 #include "state/closure_member.h"
 #include "state/context_internal.h"
 #include "state/identity.h"
@@ -396,6 +397,27 @@ static dfi_invariant dfi_check_side(const struct duoforge_context *ctx, const st
     return DFI_INV_NONE;
 }
 
+/* Illusion (decision 0026): see battle_internal.h. */
+bool dfi_illusion_disguise_up(const dfi_side *side, const dfi_tail_side *ts, uint32_t p)
+{
+    const uint32_t occ = side->positions[p].occupant;
+    return ts->positions[p].ability_state != 0u && occ < DUOFORGE_MAX_ROSTER && occ < side->member_count &&
+           side->members[occ].ability == DFI_ABILITY_ILLUSION + 1u;
+}
+
+uint32_t dfi_illusion_shown_occupant(const dfi_side *side, const dfi_tail_side *ts, uint32_t p)
+{
+    const uint32_t occ = side->positions[p].occupant;
+    if (ts->illusion.shown == 0u || occ >= DUOFORGE_MAX_ROSTER || occ >= side->member_count) {
+        return occ;
+    }
+    if (dfi_illusion_disguise_up(side, ts, p) != 0 ||
+        (side->members[occ].ability == DFI_ABILITY_ILLUSION + 1u && side->members[occ].hp == 0u)) {
+        return (uint32_t)ts->illusion.shown - 1u;
+    }
+    return occ;
+}
+
 /* Knowledge of player p about the opponent: every seen bit names a brought
  * member, and every foe occupant is seen. Runs after both sides passed, so
  * member_count and brought_mask are already in range. */
@@ -411,10 +433,12 @@ static dfi_invariant dfi_check_seen(const struct duoforge_battle *b, uint32_t p)
         return DFI_INV_SEEN_MASK;
     }
     for (uint32_t k = 0u; k < DUOFORGE_ACTIVE_PER_SIDE; ++k) {
-        const uint32_t occupant = opp->positions[k].occupant;
+        uint32_t occupant = opp->positions[k].occupant;
         if (occupant == DFI_OCCUPANT_NONE) {
             continue;
         }
+        /* Illusion (amended by I2): the foe sees the name shown on the position (a disguise up, or a holder fainted under its name). */
+        occupant = dfi_illusion_shown_occupant(opp, &b->tail.sides[1u - p], k);
         if (occupant >= DUOFORGE_MAX_ROSTER || ((seen >> occupant) & 1u) == 0u) {
             return DFI_INV_SEEN_MASK;
         }
@@ -465,13 +489,43 @@ static bool dfi_knowledge_valid(const struct duoforge_battle *b, uint32_t p)
                 return false;
             }
         }
-        if (opp->positions[0].occupant == m || opp->positions[1].occupant == m) {
+        /* Illusion (decision 0026 section 4, the I2 amendment): a disguised holder's own row is what the foe knew before the
+         * disguise (frozen, so exempt here); the HP the foe is shown while it stands disguised is the disguise row's, checked
+         * below. Every other occupant keeps the check. */
+        const uint32_t on_pos = opp->positions[0].occupant == m ? 0u : (opp->positions[1].occupant == m ? 1u : 2u);
+        if (on_pos < DUOFORGE_ACTIVE_PER_SIDE) {
             uint8_t percent = 0u;
             uint8_t flag = 0u;
             dfi_hp_display(mem->hp, mem->hp_max, &percent, &flag);
-            if (k->hp_percent != percent || k->hp_flag != flag) {
+            /* The foe's row of a member under another name on its position is what it knew before that name came: frozen. */
+            const bool frozen = dfi_illusion_shown_occupant(opp, &b->tail.sides[1u - p], on_pos) != m;
+            if (!frozen && (k->hp_percent != percent || k->hp_flag != flag)) {
                 return false;
             }
+        }
+    }
+    /* The disguise row of a disguised holder mirrors the holder's current HP display, and so does ill_override (the shown
+     * values of the name, I2 amendment of 0026 section 3): a disguise up with no name shown is refused. */
+    const dfi_tail_side *ots = &b->tail.sides[1u - p];
+    for (uint32_t pos = 0u; pos < DUOFORGE_ACTIVE_PER_SIDE; ++pos) {
+        if (!dfi_illusion_disguise_up(opp, ots, pos)) {
+            continue;
+        }
+        const dfi_member *holder = &opp->members[opp->positions[pos].occupant];
+        uint8_t percent = 0u;
+        uint8_t flag = 0u;
+        dfi_hp_display(holder->hp, holder->hp_max, &percent, &flag);
+        if (ots->illusion.shown == 0u || ots->illusion.shown - 1u >= DUOFORGE_MAX_ROSTER) {
+            return false;
+        }
+        const uint32_t disguise = (uint32_t)ots->illusion.shown - 1u;
+        if (((seen >> disguise) & 1u) == 0u) {
+            return false;
+        }
+        const dfi_knowledge *kd = &b->sides[p].knowledge[disguise];
+        if (kd->hp_percent != percent || kd->hp_flag != flag || ots->illusion.override[0] != percent ||
+            ots->illusion.override[1] != flag) {
+            return false;
         }
     }
     return true;
@@ -704,8 +758,35 @@ static dfi_invariant dfi_check_tail(const duoforge_context *ctx, const struct du
             ts->quick_guard > DFI_TAIL_QUICK_GUARD_MAX || !dfi_hazard_order_valid(ts)) {
             return DFI_INV_TAIL_SIDE;
         }
-        /* Rev 5 (decision 0026): the Illusion state, zero until the step that writes it. */
-        if (!dfi_bytes_zero(&ts->illusion, sizeof ts->illusion)) {
+        /* Rev 5 (decision 0026 section 3): the Illusion state. Every field is zero when the side has no holder (a member with
+         * the Illusion ability; Species Clause allows one per side). A shown name is a brought member of this side that is not
+         * the holder; with no shown name there is no snapshot, no pending count and no override; the snapshot's reserve bytes
+         * are zero. */
+        const dfi_tail_illusion *il = &ts->illusion;
+        uint32_t holder = DUOFORGE_MAX_ROSTER;
+        for (uint32_t m = 0u; m < DUOFORGE_MAX_ROSTER && m < side->member_count; ++m) {
+            if (side->members[m].ability == DFI_ABILITY_ILLUSION + 1u) { /* the sheet's ability is id + 1 */
+                holder = m;
+                break;
+            }
+        }
+        const bool any_ill = il->shown != 0u || !dfi_bytes_zero(il->snapshot, sizeof il->snapshot) ||
+                             !dfi_bytes_zero(il->pending, sizeof il->pending) || !dfi_bytes_zero(il->override, sizeof il->override);
+        /* Amended by I2 (decision 0026 section 3): snapshot bytes 7..8 (the holder's status and location as the foe knew them) are
+         * set exactly while a name is shown; bytes 0..6 (the disguise row) and the pending counts exist only while a disguise is up. */
+        bool any_disguise = false;
+        for (uint32_t p = 0u; p < DUOFORGE_ACTIVE_PER_SIDE; ++p) {
+            any_disguise = any_disguise || dfi_illusion_disguise_up(side, ts, p) != 0;
+        }
+        if (il->shown > DUOFORGE_MAX_ROSTER || (any_ill && holder == DUOFORGE_MAX_ROSTER) ||
+            (il->shown != 0u && (((uint32_t)side->brought_mask >> ((uint32_t)il->shown - 1u)) & 1u) == 0u) ||
+            (il->shown != 0u && (uint32_t)il->shown - 1u == holder) ||
+            (il->shown == 0u && (!dfi_bytes_zero(il->snapshot, sizeof il->snapshot) || !dfi_bytes_zero(il->pending, sizeof il->pending) ||
+                                 !dfi_bytes_zero(il->override, sizeof il->override))) ||
+            (il->shown != 0u && (il->snapshot[7] > DFI_STATUS_TOX || il->snapshot[8] > 1u)) || /* location: 0 undetermined, 1 bench */
+            il->override[2] > DFI_STATUS_TOX || (il->override[3] & 0xF8u) != 0u ||
+            (!any_disguise && (!dfi_bytes_zero(il->snapshot, 7u) || !dfi_bytes_zero(il->pending, sizeof il->pending))) ||
+            (any_disguise && il->shown == 0u)) { /* a disguise up always has its name shown (one name per side) */
             return DFI_INV_TAIL_SIDE;
         }
         for (uint32_t p = 0u; p < DUOFORGE_ACTIVE_PER_SIDE; ++p) {

@@ -13,6 +13,7 @@
 #include <string.h>
 
 #include <duoforge/duoforge.h>
+#include <duoforge/duoforge_view.h>
 
 #include "codec/state_codec.h"
 #include "data/closure_tables.h"
@@ -204,6 +205,43 @@ static void check_chance(df_test *t, const duoforge_context *ctx, const duoforge
     }
 }
 
+/* Information safety of the lock length (view audit 2026-10-10). The count (2 or 3) is drawn; its end shows a fatigue
+ * confusion, which Misty Terrain stops silently for a grounded holder. A lead that used Outrage last may then still be
+ * locked (count 1 left) or free (a 2-turn lock that ended without a line): both players must see the same refusal, and the
+ * foe's observation the same locked slot of a choice-locked holder. */
+static void test_lock_length_information_safety(df_test *t, const duoforge_context *ctx)
+{
+    for (uint32_t choice = 0u; choice < 2u; ++choice) {
+        duoforge_status st[2][2];
+        uint8_t locked_slot[2];
+        for (uint32_t running = 0u; running < 2u; ++running) {
+            duoforge_battle *b = turn_battle(t, ctx);
+            const uint32_t occ = b->sides[0].positions[g_lead].occupant;
+            b->tail.sides[0].positions[g_lead].last_move = 1u; /* Outrage, slot 0, used last */
+            b->tail.sides[0].positions[g_lead].lock_turns = running != 0u ? 1u : 0u;
+            b->sides[0].positions[g_lead].locked_move = (running != 0u || choice != 0u) ? 1u : 0u;
+            if (choice != 0u) {
+                b->sides[0].members[occ].item = (uint8_t)(1u + DFI_ITEM_CHOICESCARF);
+                b->sides[0].positions[g_lead].flags =
+                    (uint8_t)((uint32_t)b->sides[0].positions[g_lead].flags | DFI_VOL_CHOICE_LOCK);
+            }
+            DF_CHECK(t, duoforge_battle_check(ctx, b) == DUOFORGE_OK);
+            for (uint32_t p = 0u; p < 2u; ++p) {
+                duoforge_public_state v;
+                st[running][p] = duoforge_battle_public(ctx, b, p, &v);
+            }
+            duoforge_observation o;
+            DF_CHECK(t, duoforge_battle_observe(ctx, b, 1u, &o) == DUOFORGE_OK);
+            locked_slot[running] = o.sides[0].positions[g_lead].locked_slot;
+            duoforge_battle_destroy(b);
+        }
+        for (uint32_t p = 0u; p < 2u; ++p) {
+            DF_CHECK(t, st[0][p] == st[1][p]);
+        }
+        DF_CHECK(t, locked_slot[0] == locked_slot[1]);
+    }
+}
+
 int main(void)
 {
     df_test t;
@@ -298,6 +336,8 @@ int main(void)
         duoforge_battle_destroy(after);
         duoforge_battle_destroy(sl);
     }
+
+    test_lock_length_information_safety(&t, kp);
 
     duoforge_battle_destroy(base);
     duoforge_context_destroy(kp);

@@ -272,6 +272,12 @@ A second pass over the Chess Programming Wiki (owner, 2026-10-09), for what we d
 - **Live play:** pondering (searching likely next states while the opponent chooses, and during team preview) and time management (the search budget per decision by complexity and the remaining timer).
 - **SPSA tuning** of search parameters (k, m, s of the N/E/X configurations) instead of a grid.
 
+Ideas recorded by the owner on 2026-10-10 ("use Pokémon's structure instead of adding another famous game-AI algorithm"), with where they fit. Already covered elsewhere: the opponent's next action as a prediction target (lever 18, lever 2), an exploiter league (lever 5), adaptive search time (Gumbel top-k / P3, time management above), the counterfactual matrix under paired seeds (the honest search of M12 is that matrix), and tablebases (assessed above: a depth-limited endgame search instead). New:
+- **Regret mining for distillation:** weight or select the states by how much worse the network's choice is than the search's, and train on the search's value per joint action, not only on its best action. A hard-state buffer keeps the high-regret states. P1 supports it: the teacher's argmax equalled the raw move in only 27 % of targets. It goes into a P2 plan as an option once the C2 repeat shows that the student learns the teacher at all. Reference: regret-guided search control (arXiv 2602.20809).
+- **A belief-robust solver:** the honest search averages its values over the belief worlds, so an action that fails badly in a plausible minority of worlds can look as good as a safe one. A mix of the expected value and a lower tail (for example CVaR over the worst 10–20 % of belief mass), with the weight possibly depending on whether the side is ahead, is measured against the plain average before any use.
+- **Value of information:** an action such as Protect or a harmless attack reveals sets, speed or the foe's plan. It should earn that through the value of the better later decisions, never through a scouting bonus. That needs a search over more than one turn, so it comes after the multi-turn search work. Reference: decision-relevant observation in POMDPs (arXiv 2604.01434).
+- **Latent strategy concepts:** a small discrete latent (speed control, stalling Trick Room, sacrificing a slot for position, …) that the policy conditions on, to generalise strategy across teams. High risk; recorded, not planned.
+
 
 ## M14 — Closed team sheets (the Bo1 ladder)
 

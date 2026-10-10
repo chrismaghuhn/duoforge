@@ -1,0 +1,59 @@
+Clefable (F) @ Leftovers
+Ability: Unaware
+Level: 50
+EVs: 32 HP / 32 SpA / 2 SpD
+Calm Nature
+- Moonblast
+- Double-Edge
+- Calm Mind
+- Protect
+
+Milotic (F) @ Mystic Water
+Ability: Marvel Scale
+Level: 50
+EVs: 32 HP / 29 Def / 5 SpD
+Calm Nature
+- Coil
+- Muddy Water
+- Double-Edge
+- Scald
+
+Skeledirge (F) @ Sitrus Berry
+Ability: Unaware
+Level: 50
+EVs: 32 HP / 32 SpA / 2 SpD
+Modest Nature
+- Will-O-Wisp
+- Shadow Ball
+- Flare Blitz
+- Protect
+
+Kingambit (M) @ Black Belt
+Ability: Defiant
+Level: 50
+EVs: 32 HP / 32 Atk / 2 SpD
+Adamant Nature
+- Foul Play
+- Kowtow Cleave
+- Sucker Punch
+- Swords Dance
+
+Incineroar (M) @ Charcoal
+Ability: Intimidate
+Level: 50
+EVs: 32 HP / 14 Def / 20 SpD
+Careful Nature
+- Fake Out
+- Flare Blitz
+- Parting Shot
+- Protect
+
+Gholdengo @ Life Orb
+Ability: Good as Gold
+Level: 50
+EVs: 17 HP / 2 Def / 17 SpA / 16 SpD / 14 Spe
+Modest Nature
+- Make It Rain
+- Shadow Ball
+- Nasty Plot
+- Protect

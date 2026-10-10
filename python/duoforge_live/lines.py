@@ -225,6 +225,15 @@ def _kept_drop(args, attrs, view):
     _unknown("-fail", "unboost")
 
 
+def _not_its_own(kind, effect, ident, view):
+    """A line whose item or ability is not the named member's: under a possible Illusion (an Illusion holder on that
+    side's open sheet, decision 0026) the name may be the disguise's, so it is the Illusion feature; else unknown."""
+    illusion = view.data.tables["ABILITY"].get("ILLUSION")
+    if illusion is not None and any(s["ability"] == illusion + 1 for s in view.side_sheets(ident)):
+        return _feature("ILLUSION")
+    _unknown(kind, effect)
+
+
 def _froms(attrs):
     return [a[len("[from] "):] for a in attrs if a.startswith("[from] ") or a.startswith("[from]")]
 
@@ -296,6 +305,8 @@ def check(line, view):
             _unknown(kind, effect)
         if effect in _SINGLE_MOVE:
             return _feature(_SINGLE_MOVE[effect])  # Destiny Bond's KO of the attacker (step G76), its start's feature
+        if effect == "ability: Symbiosis":
+            return _feature("ITEM_CHANGE")  # the holder hands its item to its partner (step G69), as a Trick does
         if effect == "move: Trick":
             return _feature("ITEM_CHANGE")  # Trick's announcement before its -item lines (G29; Switcheroo prints none)
         if effect in _START:
@@ -359,7 +370,7 @@ def check(line, view):
         ability = tables["ABILITY"].get(trace_to_c.key(effect))
         if ability is not None and ability + 1 == view.ability_now(args[0]):
             return "fold"  # an announcement of the holder's own ability (Intimidate, Pressure, ...)
-        _unknown(kind, effect)
+        return _not_its_own(kind, effect, args[0], view)
     if kind == "-enditem":
         froms = _froms(attrs)
         if any(f in _ITEM_CHANGE_FROM or f.startswith("move: ") for f in froms):
@@ -367,6 +378,8 @@ def check(line, view):
         item = tables["ITEM"].get(trace_to_c.key(effect))
         if not froms and item is not None and item + 1 == view.sheet_of(args[0])["item"]:
             return "fold"  # the holder used its own item up (a berry, Focus Sash, White Herb, a popped balloon)
+        if not froms:
+            return _not_its_own(kind, effect, args[0], view)
         _unknown(kind, effect)
     if kind == "-item":
         froms = _froms(attrs)

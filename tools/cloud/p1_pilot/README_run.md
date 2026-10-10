@@ -19,12 +19,14 @@ are `aws s3 cp/sync/ls`.
 | `BUCKET`, `RUN_PREFIX`, `RUN_ID` | required for a run. `RUN_ID` is one path segment: letters, digits, `.`, `_`, `-`, no leading `.`, not `inputs`. `RUN_PREFIX` must be exactly `p1/<RUN_ID>/`. `run.sh --check-env` checks these alone (no file, no aws call) |
 | `PILOT_RUN_ID` | optional: take the pilot arm (phases 1-2) from that earlier run, read only, instead of playing them (see "Pilot from an earlier run"). Same format as `RUN_ID`, and another run. The launcher's `--from-run` sets it |
 | `DRY_PILOT_DIR` | the same for a dry run: the `out/` directory of an earlier dry run (dry run only) |
+| `PILOT_PART` | with a pilot source: `distill` (default, the whole pilot arm) or `generation` (phase 1 only: this run distills the earlier run's shards) |
+| `DISTILL_PRESET` | the distill settings: `p1` (default, the first run's constants) or `c2` (the owner's C2 repeat, 2026-10-10: `--lr 1e-4 --ref-kl-max 0.3 --max-epochs 16 --max-steps 512`). Not with `PILOT_PART=distill`, which runs no distill |
 | `DUOFORGE_COMMIT` | the commit the launcher checked out. It must equal `git HEAD` when the source is a checkout, and it is required when it is not |
 | `WORKERS` | native workers, 4, 8 or 14 (default 14, the frozen probe result for 16 vCPU) |
 | `AFFINITY` | `taskset` CPU list for every phase of both arms (default `0-(WORKERS-1)`) |
 | `LADDER_FILE` | the ladder checkpoint among the inputs (default `params-39400.npz`, M12 2026-10-09) |
 | `TEAMS_DIR` | the team registry directory among the inputs (default `teams`) |
-| `WORK_DIR` | work directory outside the repository (default `~/p1-work`, dry run `~/p1-dry/work`). Outputs are in `$WORK_DIR/out`. The tools' states hold absolute paths, so a resume must use the same `WORK_DIR`. Every start records `work_dir`, `run_id`, `mode` and `pilot_source` in run-info; a start whose earlier run-info differs in any of them (another WORK_DIR, a new RUN_ID, a run after a dry run in the same directory) stops with 11, so it never inherits markers or outputs. `--check-env` with `WORK_DIR` set also checks this |
+| `WORK_DIR` | work directory outside the repository (default `~/p1-work`, dry run `~/p1-dry/work`). Outputs are in `$WORK_DIR/out`. The tools' states hold absolute paths, so a resume must use the same `WORK_DIR`. Every start records `work_dir`, `run_id`, `mode`, `pilot_source`, `pilot_part` and `distill_preset` in run-info (with the preset's `distill_settings`); a start whose earlier run-info differs in any of them (another WORK_DIR, a new RUN_ID, a run after a dry run in the same directory) stops with 11, so it never inherits markers or outputs. `--check-env` with `WORK_DIR` set also checks this |
 | `VENV` | an existing Python environment to use instead of creating `$WORK_DIR/venv` |
 | `UPLOAD_EVERY`, `INTERRUPT_WAIT` | periodic upload interval (900 s); how long an interrupt waits for the phase to save (60 s) |
 
@@ -91,8 +93,10 @@ directory left without a resumable state is moved to `<dir>.aside-<time>`, never
      fallbacks, actual generation CPU ≤ 28800, and targets ≥ 16384. It then writes the shard list
      `collect-production/shards.sha256`.
    - Seeds: `0x2026100900000101`, split `0x2026100900000102`.
-2. **Distillation** (pilot ledger): `distill --init/--reference params-49333 --shards collect-production/data/shards`,
-   giving `distill/params-best.npz`.
+2. **Distillation** (pilot ledger): `distill --init/--reference params-49333 --shards collect-production/data/shards`
+   plus the preset's settings, giving `distill/params-best.npz`. Every epoch logs `held_teacher_kl_rel` (its
+   held-out teacher KL over epoch 0's) and `held_argmax_agree` (the held-out share of targets whose student argmax
+   is the teacher's); `distill-meta/result.jsonl` holds the effective `constants`.
 3. **Control** (`ledgers/control-fresh.json`, in `control-fresh/`; owner decision 2026-10-09):
    - **Recipe:** `train --init params-49333 --keep-init-encoder` with magnet + LR decay and `--eval-every 100000`,
      acting on the CPU (`--act-gpu-share 0`). One run from the start, no calibration.
@@ -157,6 +161,13 @@ run. The files: `markers/distill.done`, `ledgers/pilot.json`, `distill/params-be
 It writes `run-info/pilot-source.json` (the source, its commit and run-info, the SHA256 of every copied file). The
 control and the evaluation then use `pilot-source/ledgers/pilot.json` (read only) and
 `pilot-source/distill/params-best.npz`.
+
+With `PILOT_PART=generation` (the C2 repeat) the import takes phase 1 only: `markers/collect-production.done`,
+`manifests/production.json`, `collect-production/shards.sha256`, every shard of `collect-production/data/shards/`
+(exactly the listed ones, each with its listed SHA256, else 52) and `ledgers/pilot.json` (in a dry run the smoke's
+counterparts). This run's `ledgers/pilot.json` is then written once from the earlier one: its `generate` phase and
+what lies outside every phase; its `load` and `distill` are dropped, and this run's distill (phase 2, with
+`DISTILL_PRESET`) adds its own.
 
 ## Deviations from the plans (agreed 2026-10-09)
 

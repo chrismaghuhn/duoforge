@@ -1044,7 +1044,10 @@ duoforge_status duoforge_battle_observe_ext(const duoforge_context *ctx, const d
 #define DUOFORGE_EVENT_ACTIVATE        35u /* [-activate] position; cause ABILITY + id2 (Lightning Rod, Emergency Exit) or MOVE + id2 (Struggle);
                                                     Flower Veil's [-block] too: position the protected Pokemon, other the holder ([of]);
                                                     POOL kinds: [-fieldactivate|move: Perish Song] is cause MOVE, id2 the move, position
-                                                    and other DUOFORGE_NO_POSITION */
+                                                    and other DUOFORGE_NO_POSITION;
+                                                    POOL kinds, Symbiosis (step G69): `-activate|holder|ability: Symbiosis|Item|[of] user`
+                                                    is cause ABILITY, id2 Symbiosis + 1, position the holder, other the user ([of]), and
+                                                    id the item + 1 that the holder passed to the user. Every other ACTIVATE has id 0 */
 #define DUOFORGE_EVENT_UPKEEP          36u /* [upkeep] the end-of-turn effects are done */
 #define DUOFORGE_EVENT_RESULT          37u /* [win] or [tie] detail: DUOFORGE_RESULT_* */
 #define DUOFORGE_EVENT_SINGLE_TURN     38u /* [-singleturn], or for Destiny Bond [-singlemove] (step G76); id: the move; other: the user ([of]) for
@@ -1070,6 +1073,10 @@ duoforge_status duoforge_battle_observe_ext(const duoforge_context *ctx, const d
                                               cause NONE (the line has no [from]). POOL kinds: the forced switch of Roar,
                                               Whirlwind, Dragon Tail and Circle Throw, and of a Red Card holder's attacker
                                               (decision 0015 section 7, step G46). 43 and 44 are REVIVE and TRANSFORM. */
+#define DUOFORGE_EVENT_ILLUSION_END    46u /* [replace] + [-end] Illusion, one event (decision 0026, step I2a): the disguise of
+                                              the holder at position ends with a damaging move hit; id: the holder's true roster
+                                              index, HP and status as shown. Both players receive it. The break is shown with the
+                                              holder's true name, so both buffers carry the same record. */
 #define DUOFORGE_EVENT_CLEAR_ALL_BOOSTS 47u /* [-clearallboost] (Haze, decision 0031, step G62): position NO_POSITION, other
                                               NO_POSITION, cause NONE, every other field 0. Public: both players get it. The
                                               standing active positions (not fainted, as getAllActive takes them) lose every
