@@ -514,7 +514,10 @@ static duoforge_status dfi_view_encode(const duoforge_context *ctx, const duofor
         }
         for (uint32_t p = 0u; p < DUOFORGE_ACTIVE_PER_SIDE; ++p) {
             uint8_t *pb = position_at(s, side, p);
-            pb[DFI_ENC_POS_FLAGS_OFF] = (uint8_t)(pb[DFI_ENC_POS_FLAGS_OFF] & ~DFI_VOL_FLINCH); /* silent; no effect here (above) */
+            /* The silent flinch (above): no move is left that it could stop. Its residual end is one more entry of the
+             * residual's speed order, so a world without it may draw a different number of speed ties there; the
+             * distribution of the outcomes is the same. */
+            pb[DFI_ENC_POS_FLAGS_OFF] = (uint8_t)(pb[DFI_ENC_POS_FLAGS_OFF] & ~DFI_VOL_FLINCH); /* wide-operands-reviewed: flags are 8 bits */
             if (pb[DFI_ENC_POS_CONFUSION_OFF] != 0u) {
                 pb[DFI_ENC_POS_CONFUSION_OFF] = (uint8_t)DUOFORGE_VIEW_HIDDEN;
             }
