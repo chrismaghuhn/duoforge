@@ -107,7 +107,8 @@ int main(void)
            FIELD(duoforge_observation, weather_turns), FIELD(duoforge_observation, terrain),
            FIELD(duoforge_observation, terrain_turns), FIELD(duoforge_observation, trick_room_turns),
            FIELD(duoforge_observation, reserved), FIELD(duoforge_observation, sides));
-    STRUCT(duoforge_field_ext, false, FIELD(duoforge_field_ext, gravity_turns), FIELD(duoforge_field_ext, reserved));
+    STRUCT(duoforge_field_ext, false, FIELD(duoforge_field_ext, gravity_turns), FIELD(duoforge_field_ext, reserved0),
+           FIELD(duoforge_field_ext, flags), FIELD(duoforge_field_ext, reserved));
     STRUCT(duoforge_position_ext, false, FIELD(duoforge_position_ext, volatiles),
            FIELD(duoforge_position_ext, ability_now), FIELD(duoforge_position_ext, type_now),
            FIELD(duoforge_position_ext, encore_slot), FIELD(duoforge_position_ext, disable_slot),
@@ -123,12 +124,12 @@ int main(void)
            FIELD(duoforge_side_ext, aurora_veil_turns), FIELD(duoforge_side_ext, stealth_rock),
            FIELD(duoforge_side_ext, spikes), FIELD(duoforge_side_ext, toxic_spikes),
            FIELD(duoforge_side_ext, sticky_web), FIELD(duoforge_side_ext, guard_flags),
-           FIELD(duoforge_side_ext, reserved));
+           FIELD(duoforge_side_ext, conditions), FIELD(duoforge_side_ext, reserved));
     STRUCT(duoforge_observation_ext, false, FIELD(duoforge_observation_ext, revision),
            FIELD(duoforge_observation_ext, player), FIELD(duoforge_observation_ext, reserved0),
            FIELD(duoforge_observation_ext, epoch), FIELD(duoforge_observation_ext, supported),
            FIELD(duoforge_observation_ext, field), FIELD(duoforge_observation_ext, sides),
-           FIELD(duoforge_observation_ext, reserved1));
+           FIELD(duoforge_observation_ext, volatiles2), FIELD(duoforge_observation_ext, reserved1));
     STRUCT(duoforge_forme_info, false, FIELD(duoforge_forme_info, dex_num), FIELD(duoforge_forme_info, is_mega), FIELD(duoforge_forme_info, setup_legal), FIELD(duoforge_forme_info, base_species), FIELD(duoforge_forme_info, mega_species), FIELD(duoforge_forme_info, mega_stone), FIELD(duoforge_forme_info, mega_ability), FIELD(duoforge_forme_info, mega_supported), FIELD(duoforge_forme_info, gender_mask), FIELD(duoforge_forme_info, no_ability), FIELD(duoforge_forme_info, ability_count), FIELD(duoforge_forme_info, abilities), FIELD(duoforge_forme_info, move_count));
     STRUCT(duoforge_forme_static, false, FIELD(duoforge_forme_static, types), FIELD(duoforge_forme_static, base_stats), FIELD(duoforge_forme_static, weight_hg), FIELD(duoforge_forme_static, default_ability), FIELD(duoforge_forme_static, is_mega));
     STRUCT(duoforge_move_static, false, FIELD(duoforge_move_static, type), FIELD(duoforge_move_static, category), FIELD(duoforge_move_static, base_power), FIELD(duoforge_move_static, accuracy), FIELD(duoforge_move_static, pp), FIELD(duoforge_move_static, priority), FIELD(duoforge_move_static, target_class), FIELD(duoforge_move_static, flags), FIELD(duoforge_move_static, crit_stage), FIELD(duoforge_move_static, drain), FIELD(duoforge_move_static, recoil), FIELD(duoforge_move_static, secondary_chance), FIELD(duoforge_move_static, hits_min), FIELD(duoforge_move_static, hits_max));
@@ -304,6 +305,11 @@ int main(void)
     CONSTANT(DUOFORGE_VIEWEXT_FEATURE_MOVE_FAILED, false);
     CONSTANT(DUOFORGE_VIEWEXT_FEATURE_TRANSFORM, false);
     CONSTANT(DUOFORGE_VIEWEXT_FEATURE_COUNT, false);
+    CONSTANT(DUOFORGE_VIEWEXT_FEATURE_RESERVE_VOLATILES, false);
+    CONSTANT(DUOFORGE_VIEWEXT_FEATURE_VOLATILES2, false);
+    CONSTANT(DUOFORGE_VIEWEXT_FEATURE_RESERVE_GUARDS, false);
+    CONSTANT(DUOFORGE_VIEWEXT_FEATURE_SIDE_CONDITIONS, false);
+    CONSTANT(DUOFORGE_VIEWEXT_FEATURE_FIELD_FLAGS, false);
     CONSTANT(DUOFORGE_DATA_KIND_SYNTHETIC, false);
     CONSTANT(DUOFORGE_DATA_KIND_TEAM_C, false);
     CONSTANT(DUOFORGE_DATA_KIND_POOL, false);

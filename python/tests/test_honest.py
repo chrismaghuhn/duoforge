@@ -64,7 +64,7 @@ class HonestSearch(unittest.TestCase):
     def make(self, ctx, k=2, rule="mix", table=None, excluded=None, lam=0.5, species_prior=False):
         table = table or belief.SpreadTable.from_sides(duoforge.reference_setups([0])["sides"].reshape(-1))
         with duoforge.Batch(ctx, duoforge.reference_setups([0]), 1, 42) as b:
-            mask = int(b.observe_ext()[0, 0]["supported"])
+            mask = int(b.observe_ext()[0, 0]["supported"]) & features.version_features(4)  # encoder 4 (0050)
         return honest.Honest(ctx, self.model, self.params, 4, mask, k=k, m=2, s=2, rule=rule,
                              capacity=16, workers=2, table=table, exclude_teams=excluded, lam=lam,
                              species_prior=species_prior)
