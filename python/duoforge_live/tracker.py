@@ -70,6 +70,7 @@ EXT_FIELDS = {
     "MUST_RECHARGE": (("bit", C["DUOFORGE_POSITION_EXT_MUST_RECHARGE"]),),
     "TOXIC_SPIKES": (("side", "toxic_spikes"),),
     "TAUNT": (("bit", C["DUOFORGE_POSITION_EXT_TAUNT"]),),
+    "YAWN": (("bit", C["DUOFORGE_POSITION_EXT_YAWN"]),),
     "TYPE_CHANGE": (("bit", C["DUOFORGE_POSITION_EXT_TYPE_CHANGED"]), ("position", "type_now")),
     "AURORA_VEIL": (("side", "aurora_veil_turns"),),
     "PERISH": (("position", "perish"),),
@@ -79,7 +80,7 @@ EXT_FIELDS = {
 }
 # The presence bits of a position's volatiles: _Position attribute -> DUOFORGE_POSITION_EXT_* bit.
 _PRESENCE_BITS = (("throat_chop", EXT_THROAT_CHOP), ("must_recharge", C["DUOFORGE_POSITION_EXT_MUST_RECHARGE"]),
-                  ("taunt", C["DUOFORGE_POSITION_EXT_TAUNT"]))
+                  ("taunt", C["DUOFORGE_POSITION_EXT_TAUNT"]), ("yawn", C["DUOFORGE_POSITION_EXT_YAWN"]))
 # The folded _Position fields that Baton Pass gives the entering member (src/combat/turn.c dfi_pass_give: Throat Chop's
 # and Perish Song's tail counters among them); Encore, the recharge, a changed type or ability stay with the leaver.
 _PASSED = ("throat_chop", "perish", "taunt")
@@ -132,6 +133,7 @@ class _Position:
         self.throat_chop = 0  # Throat Chop's volatile is up (presence only)
         self.must_recharge = 0  # a recharge move hit: the next action is cant|recharge (presence only)
         self.taunt = 0  # Taunt's volatile is up (presence only)
+        self.yawn = 0  # Yawn's volatile is up (presence only)
         self.type_now = (0, 0)  # the types (id + 1, 0: none) a move set until the occupant leaves (Soak, Double Shock)
         self.perish = 0  # the Perish count the game showed last, 3 to 1 (0: none)
         self.last_slot = 0  # the move slot + 1 of the occupant's last move line (5: Struggle; None: not on its sheet)
@@ -262,6 +264,14 @@ class Tracker:
         parts = line.split("|")
         if parts[1] in ("-start", "-end") and parts[3:4] == ["Throat Chop"]:
             self._throat_chop(parts)
+            return
+        if parts[1] == "-end" and parts[3:4] == ["move: Yawn"]:
+            # Yawn's end (step G31, data/moves.ts yawn onEnd: -end|X|move: Yawn|[silent], before the sleep it brings):
+            # the converter skips [silent] lines, so the tracker clears the presence bit here; any other form stops
+            pos = lines.flat_position(parts[2])
+            if pos is None or parts[4:] != ["[silent]"]:
+                raise lines.Stop("line:-end move: Yawn")
+            self._at(pos).yawn = 0
             return
         self._fold(line)
 
@@ -579,7 +589,9 @@ class Tracker:
                     p.last_slot = m.sheet["moves"].index(ident) + 1
                 else:
                     p.last_slot = 5 if ident == self._struggle else None
-            if not flags & FLAG["LOCKED"] and ident in m.sheet["moves"]:
+            if not flags & FLAG["LOCKED"] and e[3] != trace_to_c.CAUSE["ABILITY"] and ident in m.sheet["moves"]:
+                # a move Magic Bounce reflects (cause ABILITY, step G57) costs its holder no PP: the pin's useMove
+                # deducts none, as DuoForge's knowledge fold
                 m.uses[m.sheet["moves"].index(ident)] += 1 + self._pressure_extra(pos, ident, e[2], flags)
             if ident in self._guard_moves and not flags & FLAG["LOCKED"]:
                 # Wide Guard and Quick Guard add the stall volatile when they run (data/moves.ts onHitSide
@@ -646,6 +658,8 @@ class Tracker:
             # Taunt (step G31): -start|X|move: Taunt and -end|X|move: Taunt (the duration, Mental Herb, Oblivious); the
             # occupant's leaving ends it with no line; its count is never shown
             self._at(pos).taunt = 1 if kind == EV["VOLATILE_START"] else 0
+        elif kind == EV["VOLATILE_START"] and detail == trace_to_c.VOLATILE_YAWN:
+            self._at(pos).yawn = 1  # -start|X|move: Yawn|[of] source (step G31); its end line is [silent], above
         elif kind == EV["VOLATILE_START"] and detail == trace_to_c.VOLATILE_MUST_RECHARGE:
             self._at(pos).must_recharge = 1  # -mustrecharge|X: a recharge move hit (step G17)
         elif kind == EV["CONFUSED"]:
