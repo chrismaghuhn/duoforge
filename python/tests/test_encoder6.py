@@ -26,6 +26,50 @@ def _side_name(observation, side):
     return "own" if side == int(observation["player"]) else "foe"
 
 
+_HEADER = None
+
+
+def _header():
+    """include/duoforge/duoforge.h as text (the lists and defines below are read from it, not from _layout)."""
+    global _HEADER
+    if _HEADER is None:
+        import os
+        path = os.path.join(os.path.dirname(__file__), "..", "..", "include", "duoforge", "duoforge.h")
+        with open(path, encoding="ascii") as f:
+            _HEADER = f.read()
+    return _HEADER
+
+
+def _x_list(macro):
+    """The X(...) entries of a function-like X-list macro of the header, as tuples of their stripped arguments."""
+    import re
+    text = _header()
+    start = text.index(f"#define {macro}(X)")
+    end = start
+    while True:
+        end = text.index("\n", end + 1)
+        if not text[:end].rstrip().endswith("\\"):
+            break
+    return [tuple(a.strip().rstrip("u") for a in args.split(","))
+            for args in re.findall(r"\bX\(([^)]*)\)", text[start:end])]
+
+
+def _defined_reserve_bits():
+    """{(family, bit number)} of every reserve bit the header defines: a POSITION_EXT bit from 22, any POSITION_EXT2,
+    SIDE_CONDITION or FIELD_FLAG bit, a SIDE_GUARD bit from 2, a POSITION_FLAG bit from 3."""
+    import re
+    families = (("POSITION_EXT", "RESERVE_VOLATILES", 22), ("POSITION_EXT2", "VOLATILES2", 0),
+                ("SIDE_GUARD", "RESERVE_GUARDS", 2), ("SIDE_CONDITION", "SIDE_CONDITIONS", 0),
+                ("FIELD_FLAG", "FIELD_FLAGS", 0), ("POSITION_FLAG", "POSITION_FLAGS", 3))
+    out = set()
+    for prefix, family, low in families:
+        for value in re.findall(rf"#define DUOFORGE_{prefix}_[A-Z0-9_]+\s+(0x[0-9A-Fa-f]+|\d+)u", _header()):
+            v = int(value, 0)
+            if v and v & (v - 1) == 0 and v.bit_length() - 1 >= low:
+                out.add((family, v.bit_length() - 1))
+    return out
+
+
 def _reserve(ext, observations):
     """Records and observations with a distinct pattern in every reserve family, per absolute side and position."""
     ext, observations = ext.copy(), observations.copy()
@@ -141,23 +185,47 @@ class Encoder6Test(unittest.TestCase):
     def test_the_header_list_of_own_features_matches_the_names(self):
         # DUOFORGE_VIEWEXT_RESERVE_OWN (the C encoder's per-bit gates) lists exactly what features.py derives from the
         # constant names: a lane that defines a reserve bit with a feature of its own adds it there.
-        import os
-        import re
-        header = open(os.path.join(os.path.dirname(__file__), "..", "..", "include", "duoforge", "duoforge.h"),
-                      encoding="ascii").read()
-        start = header.index("#define DUOFORGE_VIEWEXT_RESERVE_OWN(X)")
-        body = header[start:header.index("\n", start)]
-        while body.endswith("\\"):
-            nxt = header.index("\n", start + len(body) + 1)
-            body += header[start + len(body):nxt]
-        listed = {(fam, int(bit), own) for fam, bit, own in
-                  re.findall(r"X\(\s*([A-Z0-9_]+)\s*,\s*(\d+)u?\s*,\s*([A-Z0-9_]+)\s*\)", body)}
+        listed = {(fam, int(bit), own) for fam, bit, own in _x_list("DUOFORGE_VIEWEXT_RESERVE_OWN")}
         name = {bit: n for n, bit in features.FEATURE_BITS.items()}
         derived = {(name[family[1]], bit, name[own]) for family in (features._RES_VOLATILES, features._RES_VOLATILES2,
                                                                      features._RES_GUARDS, features._RES_CONDITIONS,
                                                                      features._RES_FIELD)
                    for bit, own in family[2].items() if bit in family[0]}
         self.assertEqual(listed, derived)
+
+    def test_every_defined_reserve_bit_is_listed_once(self):
+        # A defined reserve bit is either gated by a feature of its own (DUOFORGE_VIEWEXT_RESERVE_OWN) or listed as
+        # checked without one (DUOFORGE_VIEWEXT_RESERVE_CHECKED, with its evidence): never visible only because its
+        # family counts as supported (HauptSession's review of #329).
+        own = {(fam, int(bit)) for fam, bit, _ in _x_list("DUOFORGE_VIEWEXT_RESERVE_OWN")}
+        checked = {(fam, int(bit)) for fam, bit in _x_list("DUOFORGE_VIEWEXT_RESERVE_CHECKED")}
+        self.assertFalse(own & checked)
+        self.assertEqual(_defined_reserve_bits(), own | checked)
+        # The parser itself: a bit 22 define would count, bit 21 (TRANSFORMED) does not.
+        self.assertNotIn(("RESERVE_VOLATILES", 21), _defined_reserve_bits())
+        self.assertEqual(_x_list("DUOFORGE_VIEWEXT_RESERVE_OWN"), [])
+
+    def test_batch_refusals_are_the_versions(self):
+        # Batch._refused re-encodes a row the C encoder refused with the version's own refusals: a reserve value under
+        # encoder 5 is EncoderAwaitingBit, not "the encoder and its reference disagree".
+        with duoforge.Batch(self.ctx, duoforge.reference_setups([0]), 1, 7) as batch:
+            batch.query_factored()
+            records = _records(batch.observations.reshape(-1), features.ALL_FEATURES).reshape(1, 2)
+            records["volatiles2"][0, 0, 0, 0] = 1
+            statuses = np.array([C["DUOFORGE_E_UNSUPPORTED"]], dtype=np.uint32)
+            with mock.patch.object(batch, "observe_ext", return_value=records):
+                with self.assertRaises(features.EncoderAwaitingBit):
+                    batch._refused(5, features.version_features(5), C["DUOFORGE_E_UNSUPPORTED"], statuses)
+                with self.assertRaises(RuntimeError):  # encoder 6 shows it: there the two would disagree
+                    batch._refused(6, features.version_features(5), C["DUOFORGE_E_UNSUPPORTED"], statuses)
+
+    def test_masks_are_subsets_of_the_defined_bits(self):
+        from duoforge_learn import checkpoint
+        gap = 1 << 50  # between the tiers and the reserve families: no feature
+        with self.assertRaises(ValueError):
+            features.encode_batch(self.obs, self.domains, None, gap)
+        with self.assertRaises(ValueError):
+            checkpoint.ext_supported_of({"encoder": 6, "ext_supported": gap})
 
     def test_a_growing_tier_count_leaves_encoder_5_alone(self):
         # The expansion's next tier bit (HEALING_WISH 43): a stand-in feature 43 has no column in encoder 5, so a mask

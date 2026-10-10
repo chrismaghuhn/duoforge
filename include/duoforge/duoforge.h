@@ -883,6 +883,11 @@ duoforge_status duoforge_battle_observe(const duoforge_context *ctx, const duofo
    DUOFORGE_POSITION_EXT_HEALING_WISH (bit 22 of volatiles) is shown only under DUOFORGE_VIEWEXT_FEATURE_HEALING_WISH as
    well. Empty while no reserve bit has a feature of its own. */
 #define DUOFORGE_VIEWEXT_RESERVE_OWN(X)
+/* X(family, bit number in the family's field): a defined reserve bit WITHOUT a feature of its own, shown under the family's
+   feature alone (POSITION_FLAGS: the observation's position flags, always), checked by its step: the comment beside the
+   entry names the decision or the evidence. Every defined reserve bit is in exactly one of the two lists
+   (python/tests/test_encoder6.py), so no bit becomes visible only because its family counts as supported. Empty now. */
+#define DUOFORGE_VIEWEXT_RESERVE_CHECKED(X)
 /* duoforge_member_ext.item_now: the member holds nothing (Knock Off, Thief). */
 #define DUOFORGE_ITEM_NOW_NONE 255u
 

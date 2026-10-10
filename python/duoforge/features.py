@@ -413,7 +413,7 @@ def _ratio(values, divisor):
     return (np.asarray(values).astype(_F64) / divisor).astype(_F32)
 
 
-def _sides(s, tox, encoder=6):
+def _sides(s, tox, encoder=ENCODER):
     """The side features of SIDE_VIEW records s (N,): (N, side size); tox: Tox
     is a known status (its old one-hot is all zero). A position flag bit
     beyond the known ones is encoder 6's reserve: refused below 6."""
@@ -461,8 +461,9 @@ def _mask_of(ext_supported):
     """ext_supported as an int mask of DUOFORGE_VIEWEXT_FEATURE_* bits;
     ValueError for anything else."""
     if (not isinstance(ext_supported, (int, np.integer)) or isinstance(ext_supported, bool)
-            or not 0 <= int(ext_supported) <= ALL_FEATURES):
-        raise ValueError(f"ext_supported {ext_supported!r} is not a mask of the {FEATURE_COUNT} feature bits")
+            or int(ext_supported) < 0 or int(ext_supported) & ~ALL_FEATURES):
+        raise ValueError(f"ext_supported {ext_supported!r} is not a mask of the defined feature bits "
+                         f"({ALL_FEATURES:#x})")
     return int(ext_supported)
 
 
@@ -497,7 +498,7 @@ _POSITION_RANGES = (("encore_slot", 4), ("disable_slot", 4), ("stockpile", 3), (
                     ("type_now", 18))
 
 
-def _check_records(ob, ext, mask, encoder=6):
+def _check_records(ob, ext, mask, encoder=ENCODER):
     """The records (OBSERVATION_EXT, ob.shape) as encode_batch reads them:
     TypeError for another dtype or shape, ValueError for records of another
     boundary or revision, a mask bit their library does not support or a

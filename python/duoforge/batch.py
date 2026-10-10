@@ -418,7 +418,7 @@ class Batch:
         for p in range(2):
             record = None if ext is None else ext[e, p]
             obs_part, slot_part, _ = features.encode(self.observations[e, p], self.domains[e, p], record,
-                                                     ext_supported)
+                                                     ext_supported, encoder=version)  # its refusals
             features.as_encoder(obs_part, self.observations[e, p], version)
             features.slots_as_encoder(slot_part, version)
         raise RuntimeError(f"the C encoder refused environment {e} ({status_name(int(statuses[e]))}) where "

@@ -67,7 +67,8 @@ static void test_layout(df_test *t)
     DF_CHECK(t, sizeof(duoforge_observation_ext) == 192u);
     DF_CHECK(t, DUOFORGE_OBSERVATION_EXT_SIZE == 192u && DUOFORGE_OBSERVATION_EXT_REVISION == 1u);
 
-    DF_CHECK(t, offsetof(duoforge_field_ext, gravity_turns) == 0u && offsetof(duoforge_field_ext, reserved) == 1u);
+    DF_CHECK(t, offsetof(duoforge_field_ext, gravity_turns) == 0u && offsetof(duoforge_field_ext, reserved0) == 1u);
+    DF_CHECK(t, offsetof(duoforge_field_ext, flags) == 2u && offsetof(duoforge_field_ext, reserved) == 4u); /* 0050 */
 
     DF_CHECK(t, offsetof(duoforge_position_ext, volatiles) == 0u);
     DF_CHECK(t, offsetof(duoforge_position_ext, ability_now) == 4u);
@@ -92,7 +93,8 @@ static void test_layout(df_test *t)
     DF_CHECK(t, offsetof(duoforge_side_ext, toxic_spikes) == 59u);
     DF_CHECK(t, offsetof(duoforge_side_ext, sticky_web) == 60u);
     DF_CHECK(t, offsetof(duoforge_side_ext, guard_flags) == 61u);
-    DF_CHECK(t, offsetof(duoforge_side_ext, reserved) == 62u);
+    DF_CHECK(t, offsetof(duoforge_side_ext, conditions) == 62u); /* decision 0050 */
+    DF_CHECK(t, offsetof(duoforge_side_ext, reserved) == 63u);
 
     DF_CHECK(t, offsetof(duoforge_observation_ext, revision) == 0u);
     DF_CHECK(t, offsetof(duoforge_observation_ext, player) == 1u);
