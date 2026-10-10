@@ -279,6 +279,39 @@ class Derivation(unittest.TestCase):
 
 # ------------------------------------------------------------ the bucket of a battle
 
+class SitrusMirror(unittest.TestCase):
+    """The default plan of a random run meets the Sitrus speed tie (decision 0032 addendum, battle sub_sitrus_tie) with no
+    argument: a mirror of a registry team that holds a Sitrus Berry, every fourth battle. A mirror has the same sets on both
+    sides, so the Sitrus holders have equal speed."""
+    TEAMS = None
+
+    @classmethod
+    def setUpClass(cls):
+        cls.TEAMS = rnd.read_teams(ROOT)
+
+    def test_the_default_plan_has_a_sitrus_mirror_every_fourth_battle(self):
+        params = rnd.Params(74, 12, rnd.DEFAULT_PAIRINGS, 300, 0.1, 0.5)
+        plan = [params.pairings[i % len(params.pairings)] for i in range(params.battles)]
+        mirrors = [i for i, pairing in enumerate(plan) if pairing in rnd.SITRUS_MIRRORS]
+        self.assertTrue(mirrors)
+        self.assertEqual({i % 4 for i in mirrors}, {2, 3})  # AA on battles 2, 6, 10; BB on 3, 7, 11
+
+    def test_the_mirrored_teams_hold_a_sitrus_berry(self):
+        for team in rnd.SITRUS_TEAMS:
+            self.assertTrue(rnd.holds_sitrus(self.TEAMS[team]), 'team %s has no Sitrus Berry holder' % team)
+
+    def test_a_mirror_puts_the_same_sets_on_both_sides(self):
+        params = rnd.Params(74, 4, rnd.DEFAULT_PAIRINGS, 300, 0.1, 0.5)
+        spec, _, pairing = rnd.derive(params, 2, self.TEAMS)
+        self.assertEqual(pairing, 'AA')
+        left, right = (side.split('\n\n') for side in spec['teams'])
+        self.assertEqual(sorted(left), sorted(right))
+
+    def test_the_guard_refuses_a_plan_without_a_sitrus_mirror(self):
+        self.assertEqual(rnd.sitrus_mirrors_in(('AB', 'BA', 'CC')), [])
+        self.assertEqual(rnd.sitrus_mirrors_in(('AB', 'BB')), ['BB'])
+
+
 class Buckets(unittest.TestCase):
     def test_the_bucket_after_the_runner_says_its_verdict(self):
         for verdict, ended, want in (('PASS', True, 'PASS'), ('PASS', False, 'CAP'), ('DIVERGENCE', True, 'DIVERGENCE'),

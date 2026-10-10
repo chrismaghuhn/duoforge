@@ -141,6 +141,28 @@ import trace_to_c  # noqa: E402
 
 PAIRINGS = ('AB', 'BA', 'AA', 'BB', 'CA', 'AC', 'CB', 'BC', 'CC')
 DEFAULT_PAIRINGS = PAIRINGS[:4]
+# The Sitrus speed tie (decision 0032 addendum, battle sub_sitrus_tie): an each:Update of two Sitrus Berry holders at equal
+# speed draws a SPEED_TIE, which the random loop must meet in every run, so the default plan always has a mirror of a registry
+# team that holds a Sitrus Berry. A mirror puts the same species with the same spread on both sides, so their speeds tie.
+# A and B each hold one Sitrus Berry (data/teams/A.txt, B.txt; test_diff_random.SitrusMirror checks it). Under the default
+# pairings battle i with i % 4 == 2 is AA and i % 4 == 3 is BB.
+SITRUS_TEAMS = ('A', 'B')
+SITRUS_MIRRORS = tuple(team + team for team in SITRUS_TEAMS)
+
+
+def sitrus_mirrors_in(pairings):
+    """The mirror pairings of a Sitrus team that `pairings` contains, in its order."""
+    return [pairing for pairing in pairings if pairing in SITRUS_MIRRORS]
+
+
+def holds_sitrus(sets):
+    """True when one of the six sets of a team holds a Sitrus Berry (the item of the first line, `Name @ Item`)."""
+    return any(s.split('\n')[0].endswith('@ Sitrus Berry') for s in sets)
+
+
+if not sitrus_mirrors_in(DEFAULT_PAIRINGS):  # the guard: the default run cannot lose its Sitrus tie without a loud failure
+    raise RuntimeError('DEFAULT_PAIRINGS %r has no Sitrus mirror (%s); see the Sitrus speed tie above'
+                       % (DEFAULT_PAIRINGS, ','.join(SITRUS_MIRRORS)))
 DEFAULT_MAX_STEPS = 300
 DEFAULT_SWITCH_WEIGHT = 0.1
 DEFAULT_MEGA_WEIGHT = 0.5
