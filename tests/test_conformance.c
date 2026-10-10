@@ -33,7 +33,7 @@
 #include "reference/conformance_pool.h"
 #include "support/pool.h"
 #define DF_CONF_FORMES dfi_pool_formes
-#define DF_POOL_DATA_BATTLES 700u /* the recorded pool battles: 672 of the lane A batch (incl. the three cross-row battles) and lane B G63 eight, G59 eight, G61 twelve (642 on main); main's 614 (lane A batches 1-3, G53, G55, G57), G63 eight, G59 eight and G61 twelve */
+#define DF_POOL_DATA_BATTLES 701u /* the recorded pool battles: g72b_av_sheer_force (Alluring Voice from a Trace-copied Sheer Force), 672 of the lane A batch (incl. the three cross-row battles) and lane B G63 eight, G59 eight, G61 twelve (642 on main); main's 614 (lane A batches 1-3, G53, G55, G57), G63 eight, G59 eight and G61 twelve */
 #elif defined(DF_CONFORMANCE_TEAM_C)
 #include "data/extended_tables.h"
 #include "reference/conformance_team_c.h"

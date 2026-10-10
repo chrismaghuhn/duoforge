@@ -5779,6 +5779,12 @@ static const df_tb_stop tb_g72b_av_raised_turn[] = {
     {1u, 0u, 2u, 3u, {4u, 4u}, {735u, 763u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
     {2u, 0u, 1u, 2u, {4u, 4u}, {735u, 705u}, {0x4050aaaaaaaaaaabull, 0x404eff96778c92c1ull}},
 };
+static const df_tb_stop tb_g72b_av_sheer_force[] = {
+    {0u, 0u, 2u, 3u, {6u, 6u}, {1090u, 1134u}, {0x4059000000000000ull, 0x4059000000000000ull}},
+    {1u, 0u, 2u, 3u, {4u, 4u}, {716u, 725u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {2u, 0u, 1u, 2u, {4u, 4u}, {716u, 617u}, {0x4050aaaaaaaaaaabull, 0x404bc71c71c71c71ull}},
+    {3u, 0u, 1u, 1u, {4u, 3u}, {716u, 563u}, {0x4050aaaaaaaaaaabull, 0x4049000000000000ull}},
+};
 static const df_tb_stop tb_g72b_av_switch[] = {
     {0u, 0u, 2u, 3u, {6u, 6u}, {1116u, 1129u}, {0x4059000000000000ull, 0x4059000000000000ull}},
     {1u, 0u, 2u, 3u, {4u, 4u}, {735u, 763u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
@@ -7859,6 +7865,7 @@ static const df_tb_battle tb_battles[] = {
     {"g72b_av_last_turn", 3u, tb_g72b_av_last_turn, sizeof tb_g72b_av_last_turn / sizeof tb_g72b_av_last_turn[0]},
     {"g72b_av_pivot", 2u, tb_g72b_av_pivot, sizeof tb_g72b_av_pivot / sizeof tb_g72b_av_pivot[0]},
     {"g72b_av_raised_turn", 2u, tb_g72b_av_raised_turn, sizeof tb_g72b_av_raised_turn / sizeof tb_g72b_av_raised_turn[0]},
+    {"g72b_av_sheer_force", 3u, tb_g72b_av_sheer_force, sizeof tb_g72b_av_sheer_force / sizeof tb_g72b_av_sheer_force[0]},
     {"g72b_av_switch", 2u, tb_g72b_av_switch, sizeof tb_g72b_av_switch / sizeof tb_g72b_av_switch[0]},
     {"g72b_dc_dragon", 3u, tb_g72b_dc_dragon, sizeof tb_g72b_dc_dragon / sizeof tb_g72b_dc_dragon[0]},
     {"g72b_dc_nondragon", 3u, tb_g72b_dc_nondragon, sizeof tb_g72b_dc_nondragon / sizeof tb_g72b_dc_nondragon[0]},
@@ -7996,7 +8003,7 @@ static const df_tb_battle tb_battles[] = {
     {"xr3_sheercold_sub_miss", 3u, tb_xr3_sheercold_sub_miss, sizeof tb_xr3_sheercold_sub_miss / sizeof tb_xr3_sheercold_sub_miss[0]},
 };
 
-/* 5377 stops: 150 of an ended battle; decided by the count 1293,
- * the HP percentage 1683, the total HP 2107, a tie 144;
- * winners: side 0 2572, side 1 2661, tie 144 */
+/* 5381 stops: 150 of an ended battle; decided by the count 1294,
+ * the HP percentage 1684, the total HP 2109, a tie 144;
+ * winners: side 0 2574, side 1 2663, tie 144 */
 #endif
