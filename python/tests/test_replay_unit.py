@@ -696,6 +696,70 @@ class LabelsTest(unittest.TestCase):
         self.assertEqual(len(one.team), 45)
 
 
+class RevivalLabelTest(unittest.TestCase):
+    """The revived member of a Revival Blessing label (step G52). Its -heal line names it by its nickname only
+    ("|-heal|p1: <nickname>|..."): the member is the one that switched in under that name before. Made-up logs after
+    the eight patterns of the 2026-10-10 replay run, which stopped with a ValueError (the nickname read as a forme)."""
+
+    @classmethod
+    def setUpClass(cls):
+        from duoforge_live import options
+        from duoforge_replay import labels, points
+        cls.L, cls.P, cls.O = labels, points, options
+        revive = [options.Option(options.REVIVE, 0, 0, 0, r, f"revive {r}") for r in (2, 3)]
+        # slot 0 is not asked; slot 1 (p1b) used Revival Blessing and chooses among the fainted reserves 2 and 3
+        cls.lists = ([options.Option(options.NONE, 0, 0, 0, 0, "pass")],
+                     revive + [options.Option(options.PASS, 0, 0, 0, 0, "pass")])
+        # the stand-in of Context.member_of: species -> roster index; a nickname or a base forme the roster lacks fails
+        cls.roster = {"Milotic": 3, "Floette-Eternal": 2, "Rillaboom": 2}
+
+    def member_of(self, details):
+        return self.roster[details.split(",")[0]]
+
+    def label(self, before, name):
+        log = before + ["|move|p1b: Pawmot|Revival Blessing|p1b: Pawmot", f"|-heal|p1: {name}|50/100|[from] move: Revival Blessing"]
+        point = self.P.Point(1, len(before) + 1, self.P.PIVOT, (1,), len(log), True)
+        return self.L.switch_label(log, point, 0, self.lists, self.member_of, len(log))
+
+    def revived(self, label):
+        [i] = [i for i in range(len(self.lists[1])) if label.slots[1] >> i & 1]
+        return self.lists[1][i]
+
+    def assert_revives(self, before, name, reserve):
+        got = self.label(before, name)
+        self.assertEqual(got.reasons[1], self.L.EXACT)
+        option = self.revived(got)
+        self.assertEqual((option.kind, option.reserve), (self.O.REVIVE, reserve))
+
+    def test_a_plain_nickname(self):  # "Alex", "Darlen", "Dallas", "Babahagen", "Unbehagen"
+        self.assert_revives(["|switch|p1a: Nick|Milotic, L50, F|100/100", "|faint|p1a: Nick"], "Nick", 3)
+
+    def test_a_nickname_with_spaces(self):  # "sorry for doubting"
+        self.assert_revives(["|switch|p1a: three short words|Milotic, L50, F|100/100", "|faint|p1a: three short words"],
+                            "three short words", 3)
+
+    def test_a_nickname_that_is_a_base_forme_the_tables_lack(self):  # "Floette" for Floette-Eternal
+        self.assert_revives(["|switch|p1a: Floette|Floette-Eternal, L50, F|100/100", "|faint|p1a: Floette"], "Floette", 2)
+
+    def test_no_nickname(self):
+        self.assert_revives(["|switch|p1a: Milotic|Milotic, L50, F|100/100", "|faint|p1a: Milotic"], "Milotic", 3)
+
+    def test_the_foe_side_does_not_count(self):
+        self.assert_revives(["|switch|p2a: Nick|Rillaboom, L50, M|100/100", "|switch|p1a: Nick|Milotic, L50, F|100/100",
+                             "|faint|p1a: Nick"], "Nick", 3)
+
+    def test_a_name_that_never_switched_in_is_a_counted_skip(self):
+        with self.assertRaises(self.P.Skip) as cm:
+            self.label(["|switch|p1a: Other|Milotic, L50, F|100/100"], "Nick")
+        self.assertEqual(cm.exception.reason, "skip:revive-unseen")
+
+    def test_a_name_two_members_had_is_a_counted_skip(self):
+        with self.assertRaises(self.P.Skip) as cm:
+            self.label(["|switch|p1a: Nick|Milotic, L50, F|100/100", "|switch|p1a: Nick|Rillaboom, L50, M|100/100",
+                        "|faint|p1a: Nick"], "Nick")
+        self.assertEqual(cm.exception.reason, "skip:revive-ambiguous")
+
+
 
 FIXTURE = Path(__file__).resolve().parent / "data" / "replay" / "c12_real_cb_4.log"
 
