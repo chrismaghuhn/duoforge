@@ -84,6 +84,10 @@ const CONDITION_SITES = {
     'flamebody:DamagingHit': 'FLAME_BODY',
     // Static (step G39): its randomChance(3, 10) in onDamagingHit of the target, as Flame Body's.
     'static:DamagingHit': 'STATIC',
+    // Cute Charm (step G71, decision 0034): its randomChance(3, 10) in onDamagingHit of the holder (data/abilities.ts:798-810).
+    'cutecharm:DamagingHit': 'CUTE_CHARM',
+    // Attract (step G71): its randomChance(1, 2) in onBeforeMove of the infatuated Pokemon (data/moves.ts:731-741, priority 2).
+    'attract:BeforeMove': 'ATTRACT',
 };
 
 // The event a draw happens in (innermost last), tracked by wrapping the
