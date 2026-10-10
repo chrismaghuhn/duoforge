@@ -15,6 +15,7 @@ and encode with the library's mask at every step.
 """
 import os
 import unittest
+from unittest import mock
 
 import numpy as np
 
@@ -289,21 +290,25 @@ class FeaturesExtTest(unittest.TestCase):
 
     def test_attract_bit_is_refused_by_the_encoder(self):
         """Step G71 (decision 0034): DUOFORGE_POSITION_EXT_ATTRACT has no feature column yet (features._AWAITING_ENCODER, the next
-        encoder version). An observation with an infatuated occupant is refused by the unknown-volatile check (ValueError), and
-        is never encoded silently; the same observation without the bit encodes."""
+        encoder version). An observation with an infatuated occupant raises EncoderAwaitingBit naming the constant, and is never
+        encoded silently; the same observation without the bit encodes."""
         ob, d = self.obs, self.domains
-        self.assertEqual(features._AWAITING_ENCODER, ("ATTRACT",))
+        self.assertEqual(features.awaiting_encoder(), frozenset({"DUOFORGE_POSITION_EXT_ATTRACT"}))
         self.assertNotIn(C["DUOFORGE_POSITION_EXT_ATTRACT"], [bit for _, bit, _ in features.VOLATILES])
         ext = _records(ob)
         ext["sides"]["positions"]["volatiles"][...] = 0
         self.assertEqual(features.encode_batch(ob, d, ext, ALL)[0].shape[0], ob.shape[0])
         ext["sides"]["positions"]["volatiles"][:, 0, 0] = C["DUOFORGE_POSITION_EXT_ATTRACT"]
-        with self.assertRaisesRegex(ValueError, "volatiles bits"):
+        with self.assertRaises(features.EncoderAwaitingBit) as raised:
             features.encode_batch(ob, d, ext, ALL)
+        self.assertEqual(raised.exception.name, "DUOFORGE_POSITION_EXT_ATTRACT")
         ext["sides"]["positions"]["volatiles"][:, 0, 0] = (C["DUOFORGE_POSITION_EXT_ATTRACT"]
                                                            | C["DUOFORGE_POSITION_EXT_TAUNT"])
-        with self.assertRaisesRegex(ValueError, "volatiles bits"):
+        with self.assertRaises(features.EncoderAwaitingBit) as raised:
             features.encode_batch(ob, d, ext, ALL)
+        self.assertEqual(raised.exception.name, "DUOFORGE_POSITION_EXT_ATTRACT")
+        ext["sides"]["positions"]["volatiles"][...] = 0
+        self.assertEqual(features.encode_batch(ob, d, ext, ALL)[0].shape[0], ob.shape[0])
 
     def test_a_clear_bit_zeros_its_columns(self):
         ob, d = self.obs, self.domains
@@ -498,6 +503,44 @@ class FeaturesExtTest(unittest.TestCase):
         part = features.encode_batch(ob, d, ext, ALL)[0]
         self.assertTrue((part[:, COL["ext.own.pos0.volatile.illusion_up"]] == 1.0).all())
         self.assertFalse(part[:, COL["ext.foe.pos0.volatile.illusion_up"]].any())
+
+    def test_bits_awaiting_the_next_encoder_raise_their_own_error(self):
+        # Every awaiting volatiles bit and feature bit raises EncoderAwaitingBit naming it; the set is the one
+        # awaiting_encoder() publishes. The mechanism also holds for a stand-in bit while the set is empty.
+        ob, d = self.obs, self.domains
+        self.assertIs(features.awaiting_encoder(), features._AWAITING_ENCODER)
+        stand_in = {1 << 30: "DUOFORGE_POSITION_EXT_STAND_IN"}
+        cases = [(bit, name, {}) for bit, name in features._AWAITING_VOLATILES.items()] + [(1 << 30, None, stand_in)]
+        for bit, name, patch in cases:
+            with self.subTest(name=name or "stand-in"), mock.patch.dict(features._AWAITING_VOLATILES, patch):
+                ext = _records(ob)
+                ext["sides"]["positions"]["volatiles"][:, 0, 1] |= bit
+                with self.assertRaises(features.EncoderAwaitingBit) as raised:
+                    features.encode_batch(ob, d, ext, ALL)
+                self.assertEqual(raised.exception.name, name or stand_in[bit])
+                self.assertIn("volatiles", str(raised.exception))
+        feature_cases = [(bit, name, {}) for bit, name in features._AWAITING_FEATURES.items()] + \
+            [(BIT["GRAVITY"], None, {BIT["GRAVITY"]: "DUOFORGE_VIEWEXT_FEATURE_GRAVITY"})]
+        for bit, name, patch in feature_cases:
+            with self.subTest(name=name or "stand-in feature"), mock.patch.dict(features._AWAITING_FEATURES, patch):
+                with self.assertRaises(features.EncoderAwaitingBit) as raised:
+                    features.encode_batch(ob, d, _records(ob), ALL)
+                self.assertEqual(raised.exception.name, name or "DUOFORGE_VIEWEXT_FEATURE_GRAVITY")
+                features.encode_batch(ob, d, _records(ob), ALL & ~(1 << bit))  # the bit clear: encodes
+        # Without a stand-in, the same volatiles bit is an unknown one: a plain ValueError, not EncoderAwaitingBit.
+        ext = _records(ob)
+        ext["sides"]["positions"]["volatiles"][:, 0, 1] |= 1 << 30
+        with self.assertRaises(ValueError) as raised:
+            features.encode_batch(ob, d, ext, ALL)
+        self.assertNotIsInstance(raised.exception, features.EncoderAwaitingBit)
+
+    def test_encoder_5_columns_do_not_move_with_awaiting_bits(self):
+        # Awaiting bits add no column: encoder 5 keeps its 862 columns, its 22 volatiles bits and its block widths.
+        self.assertEqual(features.OBS_SIZE, 862)
+        self.assertEqual(features.obs_size(5), 862)
+        self.assertEqual([v[1] for v in features.VOLATILES], [1 << k for k in range(22)])
+        self.assertEqual(features.EXT_SIZE, features.EXT4_SIZE + 12)
+        self.assertFalse(set(features._AWAITING_FEATURES) & set(features.EXT_COLUMN_FEATURES.tolist()))
 
     def test_transform_source_and_bit_go_together(self):
         ob, d = self.obs, self.domains
