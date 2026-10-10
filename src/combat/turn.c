@@ -4628,7 +4628,7 @@ static duoforge_status dfi_leech_seed(dfi_run *r, uint32_t user, uint32_t flat, 
         dfi_fail_still(r, user);
         return DUOFORGE_OK;
     }
-    tail->leech_seed_source = (uint8_t)(user + 1u); /* the source's flat position + 1 (decision 0047, the tail field) */
+    tail->leech_seed_source = (uint8_t)(user + 1u); /* wide-operands-reviewed: the source's flat position + 1 (0047) */
     duoforge_event e = dfi_event_make(DUOFORGE_EVENT_VOLATILE_START, flat);
     e.detail = (uint8_t)DUOFORGE_VOLATILE_LEECH_SEED;
     e.other = (uint8_t)DUOFORGE_NO_POSITION;
@@ -5347,9 +5347,9 @@ static duoforge_status dfi_run_curse(dfi_run *r, uint32_t user)
     for (uint32_t i = 0u; i < DFI_STAT_STAGE_COUNT; ++i) {
         stages[i] = (uint8_t)DFI_STAGE_NEUTRAL;
     }
-    stages[DFI_STAGE_SPE] = (uint8_t)(DFI_STAGE_NEUTRAL - 1u);
-    stages[DFI_STAGE_ATK] = (uint8_t)(DFI_STAGE_NEUTRAL + 1u);
-    stages[DFI_STAGE_DEF] = (uint8_t)(DFI_STAGE_NEUTRAL + 1u);
+    stages[DFI_STAGE_SPE] = (uint8_t)(DFI_STAGE_NEUTRAL - 1u); /* wide-operands-reviewed: a stage of 5 */
+    stages[DFI_STAGE_ATK] = (uint8_t)(DFI_STAGE_NEUTRAL + 1u); /* wide-operands-reviewed: a stage of 7 */
+    stages[DFI_STAGE_DEF] = (uint8_t)(DFI_STAGE_NEUTRAL + 1u); /* wide-operands-reviewed: a stage of 7 */
     dfi_boost_effect eff = dfi_effect(DUOFORGE_CAUSE_MOVE, DFI_MOVE_CURSE, DFI_BOOST_PRIMARY);
     eff.negatives_first = true;
     const bool any = dfi_boost(r, user, stages, user, eff);
