@@ -525,7 +525,8 @@ class LinesTest(unittest.TestCase):
         self.assertIsNone(lines.check("|c|☆x|hi|there", self.view))
 
     def test_turn_scoped(self):
-        self.assertEqual(lines.check("|-singleturn|p1a: Staraptor|move: Rage Powder", self.view), "turn:RAGE_POWDER")
+        self.assertEqual(lines.check("|-singleturn|p1a: Staraptor|move: Rage Powder", self.view), "fold")  # folded
+        self.assertEqual(lines.check("|-singleturn|p1a: Staraptor|Quick Guard", self.view), "turn:QUICK_GUARD")
         self.assertEqual(lines.check("|-singleturn|p1a: Staraptor|Wide Guard", self.view), "turn:WIDE_GUARD")
 
     def test_the_protect_variants_single_turn_line_folds(self):
@@ -975,15 +976,16 @@ class GameTest(unittest.TestCase):
         self.assertEqual(record.winner, 1)
         self.assertNotEqual(record.players[0], record.players[1])
 
-    def test_rage_powder_without_pivot_passes(self):
-        result = self.run_game(self.insert_after("|turn|3", "|-singleturn|p2a: Politoed|move: Rage Powder"))
-        self.assertEqual(result.counters["turn-scoped.RAGE_POWDER"], 2)
+    def test_turn_scoped_feature_without_pivot_passes(self):
+        # a single-turn feature the tracker does not fold (Quick Guard; Rage Powder folds since its view-extension fold)
+        result = self.run_game(self.insert_after("|turn|3", "|-singleturn|p2a: Politoed|Quick Guard"))
+        self.assertEqual(result.counters["turn-scoped.QUICK_GUARD"], 2)
         self.assertEqual(result.counters["perspectives.kept"], 2)
 
-    def test_rage_powder_before_an_own_pivot_stops(self):
+    def test_turn_scoped_feature_before_an_own_pivot_stops(self):
         # turn 2: p1's Parting Shot switch is a PIVOT point of side 0
-        result = self.run_game(self.insert_after("|turn|2", "|-singleturn|p2a: Politoed|move: Rage Powder"))
-        self.assertEqual(result.counters["perspectives.stopped.feature:RAGE_POWDER"], 1)
+        result = self.run_game(self.insert_after("|turn|2", "|-singleturn|p2a: Politoed|Quick Guard"))
+        self.assertEqual(result.counters["perspectives.stopped.feature:QUICK_GUARD"], 1)
         self.assertEqual(result.counters["perspectives.kept"], 1)
 
     def test_picks_incomplete(self):

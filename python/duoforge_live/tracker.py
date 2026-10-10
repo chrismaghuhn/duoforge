@@ -75,6 +75,7 @@ EXT_FIELDS = {
     "DISABLE": (("position", "disable_slot"),),
     "IMPRISON": (("bit", C["DUOFORGE_POSITION_EXT_IMPRISON"]),),
     "GLAIVE_RUSH": (("bit", C["DUOFORGE_POSITION_EXT_GLAIVE_RUSH"]),),
+    "RAGE_POWDER": (("bit", C["DUOFORGE_POSITION_EXT_RAGE_POWDER"]),),
     "TYPE_CHANGE": (("bit", C["DUOFORGE_POSITION_EXT_TYPE_CHANGED"]), ("position", "type_now")),
     "AURORA_VEIL": (("side", "aurora_veil_turns"),),
     "PERISH": (("position", "perish"),),
@@ -85,7 +86,8 @@ EXT_FIELDS = {
 # The presence bits of a position's volatiles: _Position attribute -> DUOFORGE_POSITION_EXT_* bit.
 _PRESENCE_BITS = (("throat_chop", EXT_THROAT_CHOP), ("must_recharge", C["DUOFORGE_POSITION_EXT_MUST_RECHARGE"]),
                   ("taunt", C["DUOFORGE_POSITION_EXT_TAUNT"]), ("yawn", C["DUOFORGE_POSITION_EXT_YAWN"]),
-                  ("imprison", C["DUOFORGE_POSITION_EXT_IMPRISON"]), ("glaive_rush", C["DUOFORGE_POSITION_EXT_GLAIVE_RUSH"]))
+                  ("imprison", C["DUOFORGE_POSITION_EXT_IMPRISON"]), ("glaive_rush", C["DUOFORGE_POSITION_EXT_GLAIVE_RUSH"]),
+                  ("rage_powder", C["DUOFORGE_POSITION_EXT_RAGE_POWDER"]))
 # DUOFORGE_FIELD_* of a terrain's FIELD_START event -> DUOFORGE_TERRAIN_* of the observation
 _TERRAIN = {1: C["DUOFORGE_TERRAIN_GRASSY"], trace_to_c.FIELD_PSYCHIC_TERRAIN: C["DUOFORGE_TERRAIN_PSYCHIC"],
             trace_to_c.FIELD_ELECTRIC_TERRAIN: C["DUOFORGE_TERRAIN_ELECTRIC"],
@@ -145,6 +147,7 @@ class _Position:
         self.yawn = 0  # Yawn's volatile is up (presence only)
         self.imprison = 0  # the occupant used Imprison (presence only, until it leaves)
         self.glaive_rush = 0  # Glaive Rush's drawback is up until the occupant's next action (presence only)
+        self.rage_powder = 0  # Rage Powder draws the foes' single-target moves this turn (presence only)
         self.type_now = (0, 0)  # the types (id + 1, 0: none) a move set until the occupant leaves (Soak, Double Shock)
         self.perish = 0  # the Perish count the game showed last, 3 to 1 (0: none)
         self.last_slot = 0  # the move slot + 1 of the occupant's last move line (5: Struggle; None: not on its sheet)
@@ -223,6 +226,7 @@ class Tracker:
         self._unburden = tables["ABILITY"]["UNBURDEN"] + 1 if "UNBURDEN" in tables["ABILITY"] else None
         self._pressure = tables["ABILITY"]["PRESSURE"] + 1 if "PRESSURE" in tables["ABILITY"] else None
         self._follow_me = tables["MOVE"].get("FOLLOWME")
+        self._rage_powder = tables["MOVE"].get("RAGEPOWDER")
         self._struggle = tables["MOVE"].get("STRUGGLE")
         self._soak = tables["MOVE"].get("SOAK")
         self._symbiosis = tables["ABILITY"]["SYMBIOSIS"] + 1 if "SYMBIOSIS" in tables["ABILITY"] else None
@@ -843,6 +847,10 @@ class Tracker:
                 self._at(pos).flags |= FLAG_FOLLOW_ME  # this turn (c11 battles)
             elif ident == self._helping_hand:
                 self._at(pos).flags |= FLAG_HELPING_HAND  # on the boosted ally, this turn (c09 battles)
+            elif ident == self._rage_powder:
+                # Rage Powder (step G30): the extension's RAGE_POWDER bit for this turn, which only a PIVOT inside the
+                # turn shows (the residual ends it); the base view's Follow Me flag stays off for it
+                self._at(pos).rage_powder = 1
         elif kind == EV["FORME"]:
             pass  # the view keeps the set's species; MEGA sets is_mega and the ability
         elif kind == EV["MEGA"]:
@@ -893,6 +901,7 @@ class Tracker:
                 p.flag = 1 if p.fainted else 0  # checkFainted at the end of the turn; no other flag carries over
                 p.protecting = 0
                 p.flags &= ~(FLAG_FOLLOW_ME | FLAG_HELPING_HAND)  # single-turn
+                p.rage_powder = 0
                 if p.stall:
                     p.stall -= 1
                     if not p.stall:
