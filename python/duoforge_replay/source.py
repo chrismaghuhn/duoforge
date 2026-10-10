@@ -5,10 +5,13 @@ pyarrow, imported only here; JSON lines files ({"id", "formatid", "log"} per
 line) serve tests and small samples. select() keeps the open-sheet games of
 the format and counts the rest.
 """
+import collections
 import json
 import re
 from dataclasses import dataclass
 from pathlib import Path
+
+from . import funnel
 
 FORMAT_PREFIX = "gen9championsvgc2026regmc"
 
@@ -84,6 +87,9 @@ def read_unit(unit, format_prefix, counters):
     if not any(f.startswith(format_prefix) for f in formats):
         counters["games.read"] = counters.get("games.read", 0) + len(formats)
         counters["games.skipped.skip:format"] = counters.get("games.skipped.skip:format", 0) + len(formats)
+        for format_id, n in collections.Counter(formats).items():
+            funnel.count(counters, format_id, "read", n)
+            funnel.count(counters, format_id, "skipped.skip:format", n)
         return
     table = parquet.read_row_group(unit.index, columns=["id", "formatid", "log"])
     yield from zip(*(table.column(c).to_pylist() for c in ("id", "formatid", "log")))
@@ -101,9 +107,12 @@ def select(rows, format_prefix, counters):
     """The rows of the format with exactly two |showteam| lines; the others counted under games.skipped.<reason>."""
     for replay_id, format_id, log in rows:
         counters["games.read"] += 1
+        funnel.count(counters, format_id, "read")
         if not format_id.startswith(format_prefix):
             counters["games.skipped.skip:format"] += 1
+            funnel.count(counters, format_id, "skipped.skip:format")
         elif log.count("\n|showteam|") + log.startswith("|showteam|") != 2:
             counters["games.skipped.skip:sheets"] += 1
+            funnel.count(counters, format_id, "skipped.skip:sheets")
         else:
             yield replay_id, format_id, log

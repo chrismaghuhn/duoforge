@@ -1561,9 +1561,11 @@ static duoforge_status dfi_get_damage(dfi_run *r, uint32_t user, uint32_t target
     const dfi_active_slot *ap = dfi_pos(r->b, user);
     const dfi_active_slot *dp = dfi_pos(r->b, target);
     bool crit = false;
-    /* ModifyCritRatio (sim/battle-actions.ts:1624): the attacker's Dragon Cheer stage added to the move's ratio, then the clamp to
-     * 0..4 for gen 9 (sim/battle-actions.ts:1629). */
-    uint32_t ratio = (uint32_t)md->crit_ratio + dfi_dragon_cheer_stage(r->b, user);
+    /* ModifyCritRatio (sim/battle-actions.ts:1624): the attacker's Dragon Cheer stage and Super Luck (step G65,
+     * data/abilities.ts:4703-4711, onModifyCritRatio of the user, not breakable: +1) added to the move's ratio, then the
+     * clamp to 0..4 for gen 9 (sim/battle-actions.ts:1623-1633). */
+    uint32_t ratio = (uint32_t)md->crit_ratio + dfi_dragon_cheer_stage(r->b, user) +
+                     (dfi_ability(r->b, a, DFI_ABILITY_SUPERLUCK) ? 1u : 0u);
     if (ratio > 4u) {
         ratio = 4u;
     }
@@ -1613,6 +1615,20 @@ static duoforge_status dfi_get_damage(dfi_run *r, uint32_t user, uint32_t target
     if (md->special == DFI_SPECIAL_DARKEST_LARIAT) {
         def_stage = DFI_BIAS6;
     }
+    /* Unaware (step G65, data/abilities.ts:5214-5234, onAnyModifyBoost, breakable): the stat stages that the handler zeroes
+     * follow whose stat is READ, not whose stage it is. Each handler returns for its own holder (`unawareUser === pokemon`),
+     * so a self-hit (a confusion hit, user = target) is not touched. When the target holds it, the user's attack-side read
+     * is zeroed (atk, def, spa, accuracy of the user): the Attack, Defense or Special Attack stage of the user, and the
+     * Foul Play case, whose read is the target's own Attack stage (overrideOffensivePokemon) at the user's statUser.
+     * When the user holds it, the target's defence-side read is zeroed (def, spd, evasion of the target), so Psyshock's
+     * Defense too. The two holders of one hit may both apply; each zeroes only its own side's reads. Mold Breaker is not
+     * marked, so no Unaware is ignored (no Mold Breaker row is modelled). */
+    if (user != target && dfi_ability(r->b, d, DFI_ABILITY_UNAWARE)) {
+        atk_stage = DFI_BIAS6;
+    }
+    if (user != target && dfi_ability(r->b, a, DFI_ABILITY_UNAWARE)) {
+        def_stage = DFI_BIAS6;
+    }
     uint32_t attack = 0u;
     uint32_t defense = 0u;
     uint32_t damage = 0u;
@@ -1623,10 +1639,25 @@ static duoforge_status dfi_get_damage(dfi_run *r, uint32_t user, uint32_t target
     /* ModifyDef and ModifySpD (sim/battle-actions.ts:1707-1709) of the weather conditions, priority 10, so the first
      * handler: Sandstorm's onModifySpD gives a Rock type 1.5x its Special Defense, Snowscape's onModifyDef an Ice
      * type 1.5x its Defense (data/conditions.ts:640-645 and 706-711; this.modify(x, 1.5) is 6144/4096). */
+    /* Marvel Scale (step G65, data/abilities.ts:2534-2545, onModifyDefPriority 6, breakable): x1.5 on the holder's Defense while
+     * it has a status, in the ModifyDef event (sim/battle-actions.ts:1707). Psyshock's Defense is in that event too (its
+     * overrideDefensiveStat is 'def'), a special hit's Special Defense is not. runEvent applies the product of all the
+     * handlers' chainModify once (sim/battle.ts:2382), so the weather's 1.5 and this one are one chained modifier. */
+    uint32_t dchain = 4096u;
+    bool dok = true;
     if (r->b->weather == DFI_WEATHER_SAND && def_index == DFI_STAGE_SPD && dfi_has_type(r->b, d, DFI_TYPE_ROCK)) {
-        defense = dfi_modify(defense, 6144u);
+        dok = dfi_chain_modify(dchain, 6144u, &dchain);
     } else if (r->b->weather == DFI_WEATHER_SNOW && def_index == DFI_STAGE_DEF && dfi_has_type(r->b, d, DFI_TYPE_ICE)) {
-        defense = dfi_modify(defense, 6144u);
+        dok = dfi_chain_modify(dchain, 6144u, &dchain);
+    }
+    if (def_index == DFI_STAGE_DEF && d->status != DFI_STATUS_NONE && dfi_ability(r->b, d, DFI_ABILITY_MARVELSCALE)) {
+        dok = dok && dfi_chain_modify(dchain, 6144u, &dchain);
+    }
+    if (!dok) {
+        return DUOFORGE_E_INVARIANT;
+    }
+    if (dchain != 4096u) {
+        defense = dfi_modify(defense, dchain);
     }
     /* BasePower (after the critical hit roll), one chained modifier: Mystic
      * Water (Water) and Miracle Seed (Grass) 4915/4096, Grassy Terrain
@@ -1715,6 +1746,14 @@ static duoforge_status dfi_get_damage(dfi_run *r, uint32_t user, uint32_t target
     /* Iron Fist (step G34, data/abilities.ts:2236-2248, priority 23 like the -ate abilities, which it never meets: one
      * ability): the punch flag, 4915/4096. */
     if ((bp_flags2 & DFI_MOVE_FLAG2_PUNCH) != 0u && dfi_ability(r->b, a, DFI_ABILITY_IRONFIST)) {
+        ok = ok && dfi_chain_modify(bp_chain, 4915u, &bp_chain);
+    }
+    /* Reckless (step G65, data/abilities.ts:3799-3811, onBasePowerPriority 23, not breakable): chainModify([4915, 4096]) for a move
+     * with a recoil of the move data (`move.recoil`, numerator and denominator). Struggle is no such move (its struggleRecoil
+     * is a flag, moves.ts:18228), and the crash moves (hasCrashDamage: Axe Kick, High Jump Kick, Supercell Slam) are not modelled:
+     * the generator refuses a modelled crash move while this row has no clause for it (pool_families.js checkG65). The priority
+     * 23 slot is the one of the -ate abilities and Iron Fist, which the holder cannot have together with it. */
+    if (md->recoil[1] != 0u && dfi_ability(r->b, a, DFI_ABILITY_RECKLESS)) {
         ok = ok && dfi_chain_modify(bp_chain, 4915u, &bp_chain);
     }
     if (dfi_ability(r->b, a, DFI_ABILITY_TOUGHCLAWS) && (md->flags & DFI_MOVE_FLAG_CONTACT) != 0u) {
@@ -1864,6 +1903,16 @@ static duoforge_status dfi_get_damage(dfi_run *r, uint32_t user, uint32_t target
         ok = ok && dfi_chain_modify(atk_chain, 6144u, &atk_chain);
     }
     if ((move_type == DFI_TYPE_ICE || move_type == DFI_TYPE_FIRE) && dfi_ability(r->b, d, DFI_ABILITY_THICKFAT)) {
+        ok = ok && dfi_chain_modify(atk_chain, 2048u, &atk_chain);
+    }
+    /* Water Bubble (step G65, data/abilities.ts:5377-5417, breakable, Mold Breaker not marked): onModifyAtk and onModifySpA of
+     * the holder, x2 for its Water moves of either category (priority 0; every factor of this chain is dyadic, so their order does not change the value);
+     * onSourceModifyAtk and onSourceModifySpA of the target (priority 5), x0.5 for a Fire move against its holder, either
+     * category, as Thick Fat. The two are the holder's one ability, so they never meet a Thick Fat. */
+    if (move_type == DFI_TYPE_WATER && dfi_ability(r->b, a, DFI_ABILITY_WATERBUBBLE)) {
+        ok = ok && dfi_chain_modify(atk_chain, 8192u, &atk_chain);
+    }
+    if (move_type == DFI_TYPE_FIRE && dfi_ability(r->b, d, DFI_ABILITY_WATERBUBBLE)) {
         ok = ok && dfi_chain_modify(atk_chain, 2048u, &atk_chain);
     }
     if (!ok) {
@@ -2175,6 +2224,20 @@ static duoforge_status dfi_try_status(dfi_run *r, uint32_t flat, uint32_t status
         }
         if (primary) {
             dfi_immune(r, flat, 1u + DFI_ABILITY_THERMALEXCHANGE); /* [-immune] [from] ability: Thermal Exchange */
+        }
+        return DUOFORGE_OK;
+    }
+    /* Water Bubble (step G65, data/abilities.ts:5406-5416, onSetStatus, breakable): every burn of its holder is refused, with the
+     * -immune line for a move's own status (effect.status, `primary`) and silently for a secondary, an item or an ability. It is
+     * Thermal Exchange's shape: the same Flower Veil order question (E_UNSUPPORTED with a Flower Veil holder on the field for a
+     * target that is not the user), and the holder's one ability, so it never meets Thermal Exchange. Its onUpdate, the cure of a
+     * burn, can only act for a burned holder that gained the ability (Trace): dfi_trace refuses that. */
+    if (status == DFI_STATUS_BRN && dfi_ability(r->b, m, DFI_ABILITY_WATERBUBBLE)) {
+        if (user != flat && dfi_flower_veil_holder(r->b, flat, &holder)) {
+            return DUOFORGE_E_UNSUPPORTED;
+        }
+        if (primary) {
+            dfi_immune(r, flat, 1u + DFI_ABILITY_WATERBUBBLE); /* [-immune] [from] ability: Water Bubble */
         }
         return DUOFORGE_OK;
     }
@@ -5113,12 +5176,16 @@ static duoforge_status dfi_accuracy_check(dfi_run *r, uint32_t user, uint32_t ta
     if (b->tail.sides[target / 2u].positions[target % 2u].glaive_rush != 0u) {
         return DUOFORGE_OK;
     }
-    /* The user's accuracy stage minus the target's evasion, clamped. */
-    const uint32_t acc = dfi_pos(b, user)->stages[DFI_STAGE_ACCURACY];
+    /* The user's accuracy stage minus the target's evasion, clamped. Unaware (step G65, data/abilities.ts:5214-5234, through
+     * sim/battle-actions.ts:716-720): the target's holder zeroes the user's accuracy stage, the user's holder the target's
+     * evasion; a self-target is not touched (the handler returns for its own holder). */
+    const bool unaware_target = user != target && dfi_ability(b, dfi_at(b, target), DFI_ABILITY_UNAWARE);
+    const bool unaware_user = user != target && dfi_ability(b, dfi_at(b, user), DFI_ABILITY_UNAWARE);
+    const uint32_t acc = unaware_target ? DFI_BIAS6 : (uint32_t)dfi_pos(b, user)->stages[DFI_STAGE_ACCURACY];
     /* Darkest Lariat (Team C): ignoreEvasion (sim/battle-actions.ts:719). Keen Eye (step G51, data/abilities.ts:2260-2276,
      * onModifyMove: move.ignoreEvasion = true for the holder's own moves) sets the same flag, read by the same check. */
     const bool keen_eye_user = dfi_ability(b, dfi_at(b, user), DFI_ABILITY_KEENEYE);
-    const uint32_t eva = md->special == DFI_SPECIAL_DARKEST_LARIAT || keen_eye_user
+    const uint32_t eva = md->special == DFI_SPECIAL_DARKEST_LARIAT || keen_eye_user || unaware_user
                              ? DFI_BIAS6
                              : (uint32_t)dfi_pos(b, target)->stages[DFI_STAGE_EVASION];
     if (later_hit) {
@@ -8370,6 +8437,11 @@ static duoforge_status dfi_trace(dfi_run *r, uint32_t flat)
     /* Limber's onUpdate (step G39) cures a paralysis that its holder has: a paralysed Trace holder that copies it is not
      * modelled (E_UNSUPPORTED, never a guess; no other Update handler of the marked abilities acts on a status). */
     if (copied == 1u + DFI_ABILITY_LIMBER && dfi_at(b, flat)->status == DFI_STATUS_PAR) {
+        return DUOFORGE_E_UNSUPPORTED;
+    }
+    /* Water Bubble's onUpdate (step G65, data/abilities.ts:5400-5405) cures a burn that its holder has, with its -activate line:
+     * a burned Trace holder that copies it is not modelled (E_UNSUPPORTED, never a guess). */
+    if (copied == 1u + DFI_ABILITY_WATERBUBBLE && dfi_at(b, flat)->status == DFI_STATUS_BRN) {
         return DUOFORGE_E_UNSUPPORTED;
     }
     /* Oblivious's onUpdate (step G47, data/abilities.ts:3009-3016) removes a taunt of its holder with its -activate line. The
