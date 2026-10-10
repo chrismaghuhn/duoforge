@@ -1299,6 +1299,12 @@ int main(void)
             }
             memcpy(zero_tail + DFI_ENC_TAIL_FIELD_PARTY_OFF, pt.party_order, sizeof pt.party_order);
         }
+        /* G88 (decision 0046): side 0's lead Staraptor has Intimidate (team_a.txt), which lowers both leads of side 1 at the battle
+         * start (sim/battle.ts:2086). endTurn keeps LOWERED through turn 1 (the gate turn !== 1, sim/battle.ts:1677-1683), so the
+         * position flags of flats 2 and 3 (tail bytes 328 and 330; the position byte is at 324 + 2 * flat) carry
+         * LOWERED_THIS_TURN after team selection. Side 0's own leads are not lowered. */
+        zero_tail[328] = DFI_POSFLAG_LOWERED;
+        zero_tail[330] = DFI_POSFLAG_LOWERED;
         DF_CHECK_EQ_U64(&t, df_encode_n(kp, w, zero_enc), 1357u);
         DF_CHECK_BYTES(&t, zero_enc + DFI_ENC_TAIL_OFF, zero_tail, sizeof zero_tail,
                        "a tail after team selection: zero but the party order (step G46)");

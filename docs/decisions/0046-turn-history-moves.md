@@ -106,3 +106,20 @@ POOL battles, six members a side, unique items, real genders, marked content onl
 
 - `g88_av_sub` breaks the Substitute with Raichu's Quick Attack (no secondary), not with Thunderbolt. The reason: the pin draws the secondary roll for a Substitute-absorbed target too (`sim/battle-actions.ts:1336-1349` runs for a `null` target, since only `false` targets are skipped), and the engine's secondary loop draws only for hit targets (`src/combat/turn.c`, the SECONDARY loop). That gap is the secondary roll for an absorbed target: it comes with G74 (batch 5, H14's fix in the Alluring Voice and the generic secondary loops), not with G88. Until G74 is on the branch, a secondary move into a Substitute is not recorded in G88.
 - The Substitute cost and the Substitute break keep their own direct and HURT rules (decision 5), unchanged by this dependency.
+
+## 10. Information safety at the first decision (turn 1), approved by HauptSession
+
+**The gap.** LOWERED is set by a stat drop at the battle start (Intimidate on entry, through `boost()`, `sim/battle.ts:2086`). `endTurn` clears it only when `this.turn !== 1` (`sim/battle.ts:1677-1683`), so a LOWERED from the start survives into the turn-1 decision (`g88_lo_intimidate`: Lash Out is doubled on turn 1). The view refused only at a PIVOT, so the view at the turn-1 decision did not carry LOWERED and a search from it would compute Lash Out without the doubling. An error of information safety, not a test pin.
+
+**The rule** (cause `DUOFORGE_PUBLIC_CAUSE_TURN_HISTORY` = 64, the same cause, no new value; `src/state/view.c`, `dfi_view_turn_history_risk`): the public record and `duoforge_battle_from_view` refuse while an active Pokemon of either side knows Lash Out at (a) a PIVOT boundary, or (b) the first decision, `b->turn == 1` (after team selection, and any boundary of turn 1 before its endTurn). Both decisions read only view fields: the boundary and the turn, `occupant[p]`, `members[occ].move_ids`. The rule refuses whenever Lash Out is known; it does not look at the stat stages (a negative boost is ambiguous: White Herb, Mirror Armor, Defiant). At a PIVOT, Assurance is refused too (section 3).
+
+**Assurance (HURT) before turn 1: cannot be set, by the pin.** A HURT needs a spread damage that leaves the target alive (`sim/battle.ts:2137-2138`). Nothing deals damage before the first move of the battle:
+- BeforeTurn only cancels actions: `data/conditions.ts:841-843` (`onBeforeTurn` = `queue.cancelAction`).
+- Hazards are set by moves (Stealth Rock, Spikes), never at the start.
+- Damage from abilities and items is one of: a hit (`onDamagingHit` / contact: `data/abilities.ts:82, 327, 1749, 2145, 2228, 3942`; `data/items.ts:3099, 5304, 5395`, Rocky Helmet, Rowap-type berries), an after-move effect (`data/items.ts:3415`, Life Orb), a residual (`data/items.ts:550` Black Sludge-type, `6121` Sticky Barb; `sim/battle.ts` residual), weather (`data/abilities.ts:1118`, `4406`: `onWeather`, which runs at the residual's `Weather` event, not at the start), or an `onUpdate` that needs a prior hit (Mimikyu's Busted, `data/abilities.ts:1006`).
+- `data/abilities.ts:2407` (Liquid Ooze) is a heal reflection, not damage.
+- The Substitute cost is a move effect (`data/moves.ts:18325`), after the move.
+
+So at the first decision HURT is zero, and the rule does not include Assurance there. This is the reason, from the pin lines above; a later pool data change that adds a start-of-battle damage effect would have to extend the rule.
+
+**Tests.** `duoforge.state.pool_g88`: `test_lo_turn1_refusal` (the first decision of `g88_lo_intimidate` has LOWERED and both players refuse with cause 64). `duoforge.state.pool_tail`: the team-selection tail carries LOWERED at tail bytes 328 and 330 (flats 2 and 3, the foe leads of Staraptor's Intimidate); the expectation states the reason. Mutant M9 (the turn-1 extension removed) is caught by `test_lo_turn1_refusal`.

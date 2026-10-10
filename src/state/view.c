@@ -255,7 +255,17 @@ static bool dfi_view_raised_risk(const duoforge_context *ctx, const duoforge_bat
  * The bits are zero at a turn boundary (endTurn clears them). */
 static bool dfi_view_turn_history_risk(const duoforge_context *ctx, const duoforge_battle *b, const duoforge_observation *ob)
 {
-    if (b->boundary_kind != DUOFORGE_BOUNDARY_PIVOT || !dfi_context_is_pool(ctx)) {
+    if (!dfi_context_is_pool(ctx)) {
+        return false;
+    }
+    const bool pivot = b->boundary_kind == DUOFORGE_BOUNDARY_PIVOT;
+    /* The first decision (turn 1, after team selection, and any boundary of turn 1 before its endTurn): the entries of the battle
+     * start can have set LOWERED (Intimidate, sim/battle.ts:2086), and endTurn keeps it at turn 1 (the gate turn !== 1,
+     * sim/battle.ts:1677-1683). The view does not carry LOWERED, so the rebuilt world would be wrong there (decision 0046,
+     * section 3). HURT cannot be set before the first move: no spread damage happens at the start (entries set stages, weather
+     * and terrain; hazards are set by moves), so only Lash Out refuses at the first decision. A negative boost is not the
+     * criterion: the rule refuses whenever Lash Out is known. */
+    if (!pivot && b->turn != 1u) {
         return false;
     }
     for (uint32_t side = 0u; side < DUOFORGE_SIDE_COUNT; ++side) {
@@ -266,7 +276,7 @@ static bool dfi_view_turn_history_risk(const duoforge_context *ctx, const duofor
             }
             const duoforge_member_view *v = &ob->sides[side].members[occ];
             for (uint32_t k = 0u; k < DUOFORGE_MAX_MOVE_SLOTS && k < v->move_count; ++k) {
-                if (v->move_ids[k] == DFI_MOVE_LASHOUT || v->move_ids[k] == DFI_MOVE_ASSURANCE) {
+                if (v->move_ids[k] == DFI_MOVE_LASHOUT || (pivot && v->move_ids[k] == DFI_MOVE_ASSURANCE)) {
                     return true;
                 }
             }

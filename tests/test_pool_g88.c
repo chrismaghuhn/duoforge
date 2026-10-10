@@ -232,11 +232,43 @@ static void test_pivot_refusal(df_test *t)
     finish(ctx, b);
 }
 
+/* g88_lo_intimidate at the first decision (turn 1, after team selection, before any move): Intimidate has lowered Umbreon, and
+ * LOWERED_THIS_TURN survives into turn 1 (sim/battle.ts:1677-1683 keeps it), but the view does not carry the bit. Umbreon knows
+ * Lash Out, so the public record and the causes call of that decision name DUOFORGE_PUBLIC_CAUSE_TURN_HISTORY (decision 0046,
+ * section 3). A counted refusal: both players refuse. */
+static void test_lo_turn1_refusal(df_test *t)
+{
+    duoforge_context *ctx = NULL;
+    duoforge_battle *b = NULL;
+    const df_conf_battle *cb = NULL;
+    if (!start(t, "g88_lo_intimidate", &ctx, &b, &cb)) {
+        finish(ctx, b);
+        return;
+    }
+    DF_CHECK_EQ_U64(t, replay_steps(ctx, b, cb, 0u, 1u), DUOFORGE_OK);
+    DF_CHECK_EQ_U64(t, b->turn, 1u);
+    DF_CHECK(t, (flags_of(b, 0u) & DFI_POSFLAG_LOWERED) != 0u);
+    uint32_t refused = 0u;
+    for (uint32_t player = 0u; player < DUOFORGE_SIDE_COUNT; ++player) {
+        uint32_t causes = 0u;
+        DF_CHECK_EQ_U64(t, duoforge_battle_public_causes(ctx, b, player, &causes), DUOFORGE_OK);
+        DF_CHECK_EQ_U64(t, causes & DUOFORGE_PUBLIC_CAUSE_TURN_HISTORY, DUOFORGE_PUBLIC_CAUSE_TURN_HISTORY);
+        duoforge_public_state pub;
+        if (duoforge_battle_public(ctx, b, player, &pub) == DUOFORGE_E_UNSUPPORTED) {
+            refused += 1u;
+        }
+    }
+    DF_CHECK_EQ_U64(t, refused, 2u);
+    DF_CHECK(t, dfi_state_check(ctx, b, NULL) == DUOFORGE_OK);
+    finish(ctx, b);
+}
+
 int main(void)
 {
     df_test t;
     df_test_begin(&t, "duoforge.state.pool_g88");
     test_row(&t);
+    test_lo_turn1_refusal(&t);
     test_lo_intimidate(&t);
     test_av_hurt(&t);
     test_av_control(&t);
