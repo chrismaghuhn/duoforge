@@ -140,7 +140,9 @@ SITES = {'SPEED_TIE': 1, 'ACCURACY': 2, 'CRIT': 3, 'DAMAGE_ROLL': 4, 'SECONDARY'
          'DRAG': 20,  # 20: step G46, the drag's draw (DFI_SITE_DRAG)
          'LOCK_TURNS': 21,
          'MULTIHIT_COUNT': 22,  # 21: step G56, the lock's count of Outrage, Thrash and Petal Dance (DFI_SITE_LOCK_TURNS)
-         'MOODY': 23}  # 23: step G73, Moody's samples (DFI_SITE_MOODY), one site for both draws
+         'MOODY': 23,  # 23: step G73, Moody's samples (DFI_SITE_MOODY), one site for both draws
+         'CUTE_CHARM': 24,  # 24: step G71, Cute Charm's roll (DFI_SITE_CUTE_CHARM), randomChance(3, 10)
+         'ATTRACT': 25}  # 25: step G71, Attract's roll before the move (DFI_SITE_ATTRACT), randomChance(1, 2)
 STATS = ['HP', 'Atk', 'Def', 'SpA', 'SpD', 'Spe']
 GENDER = {'M': 1, 'F': 2}
 GENDERLESS = 3
