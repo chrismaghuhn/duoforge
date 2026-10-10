@@ -259,8 +259,8 @@ int main(void)
     /* No committed stop depends on the order of a bench. */
     DF_CHECK_EQ_U64(&t, counts.ambiguous, 0u);
 #if defined(DF_CONFORMANCE_POOL_DATA)
-    DF_CHECK_EQ_U64(&t, battles, 709u); /* 672 of the lane A batch, and main's lane B G63 eight, G59 eight, G61 twelve; the Substitute update fix adds sub_sitrus_tie (decision 0032 addendum); the seven h18 hit-loop battles of chris/expansion-hitloop-fixes */
-    DF_CHECK_EQ_U64(&t, counts.stops, 3852u); /* 3670 of the lane A batch, main's G63 32, G59 48, G61 60, the Sheer Force Alluring Voice battle 4, sub_sitrus_tie (5 stops), and the seven h18 battles (33 stops) */
+    DF_CHECK_EQ_U64(&t, battles, 725u); /* main 717, sub_sitrus_tie, the seven h18 battles */
+    DF_CHECK_EQ_U64(&t, counts.stops, 3942u); /* main 3904 (I2 24, G69 28, G65 38), sub_sitrus_tie 5 stops, the seven h18 battles 33 stops */
 #else
     /* Every kind of decision of the pin is among the stops (the pool battles are too few for that). */
     DF_CHECK(&t, counts.by_stage[1] > 0u && counts.by_stage[2] > 0u && counts.by_stage[3] > 0u &&

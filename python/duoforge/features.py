@@ -102,6 +102,32 @@ from . import _layout
 C = _layout.CONSTANTS
 OPTIONS = _layout.MAX_SLOT_OPTIONS
 
+# The public values the library already shows but this encoder has no column for yet (owner decision of 2026-10-10:
+# refused until the next encoder version, which brings their columns): the names of their DUOFORGE_POSITION_EXT_* and
+# DUOFORGE_VIEWEXT_FEATURE_* constants. A set one raises EncoderAwaitingBit; it is never encoded as zeros.
+_AWAITING_ENCODER = frozenset()
+assert _AWAITING_ENCODER <= set(C) and all(name.startswith(("DUOFORGE_POSITION_EXT_", "DUOFORGE_VIEWEXT_FEATURE_"))
+                                           for name in _AWAITING_ENCODER), _AWAITING_ENCODER
+# bit -> name, of the volatiles bits and of the feature bits among them.
+_AWAITING_VOLATILES = {C[n]: n for n in _AWAITING_ENCODER if n.startswith("DUOFORGE_POSITION_EXT_")}
+_AWAITING_FEATURES = {C[n]: n for n in _AWAITING_ENCODER if n.startswith("DUOFORGE_VIEWEXT_FEATURE_")}
+
+
+class EncoderAwaitingBit(ValueError):
+    """A set public value this encoder has no column for yet (awaiting_encoder()); `name` is its constant's name, so
+    a caller can count these apart from malformed inputs."""
+
+    def __init__(self, what, name):
+        super().__init__(f"{what} {name} is set, which this encoder has no column for yet (it awaits the next "
+                         "encoder version)")
+        self.name = name
+
+
+def awaiting_encoder():
+    """The names of the DUOFORGE_POSITION_EXT_* and DUOFORGE_VIEWEXT_FEATURE_* constants this encoder refuses
+    (EncoderAwaitingBit) until the next encoder version: callers can filter on them in advance."""
+    return _AWAITING_ENCODER
+
 _BOUNDARY_NAMES = ("TEAM_SELECTION", "TURN", "REPLACEMENT", "PIVOT", "TERMINAL")
 _WEATHER_NAMES = ("NONE", "RAIN", "SUN")
 _TERRAIN_NAMES = ("NONE", "GRASSY", "PSYCHIC")
@@ -145,13 +171,15 @@ BASE_VALUE_FEATURES = sum(1 << FEATURE_BITS[n] for n in ("WEATHER_SAND", "WEATHE
 ALL_FEATURES = (1 << FEATURE_COUNT) - 1
 RECORD_FEATURES = ALL_FEATURES & ~BASE_VALUE_FEATURES
 # (name, its DUOFORGE_POSITION_EXT_* bit, its feature) in bit order: 0..19 of revision 1 (encoder 3's columns), 20
-# ROOST of tail revision 4 (encoder 4's), 21 TRANSFORMED (encoder 5's, decision 0028). A bit beyond them needs a new
-# encoder version: the import fails.
+# ROOST of tail revision 4 (encoder 4's), 21 TRANSFORMED (encoder 5's, decision 0028). A bit beyond them is either
+# awaiting the next encoder (_AWAITING_ENCODER) or the import fails.
 _VOLATILE_FEATURE = {"TYPE_CHANGED": "TYPE_CHANGE", "ILLUSION_UP": "ILLUSION", "TRANSFORMED": "TRANSFORM"}
 VOLATILES = tuple(sorted(((name[len("DUOFORGE_POSITION_EXT_"):], bit,
                            _VOLATILE_FEATURE.get(name[len("DUOFORGE_POSITION_EXT_"):],
                                                  name[len("DUOFORGE_POSITION_EXT_"):]))
-                          for name, bit in C.items() if name.startswith("DUOFORGE_POSITION_EXT_")), key=lambda v: v[1]))
+                          for name, bit in C.items()
+                          if name.startswith("DUOFORGE_POSITION_EXT_") and name not in _AWAITING_ENCODER),
+                         key=lambda v: v[1]))
 assert [v[1] for v in VOLATILES] == [1 << k for k in range(22)] and VOLATILES[20][0] == "ROOST" \
     and VOLATILES[21][0] == "TRANSFORMED", VOLATILES
 _VOLATILES3 = VOLATILES[:20]  # encoder 3's columns, in place
@@ -263,6 +291,10 @@ _OBS_SIZES = {1: BASE_OBS_SIZE, 2: BASE_OBS_SIZE, 3: BASE_OBS_SIZE + EXT3_SIZE, 
               5: OBS_SIZE}
 # The DUOFORGE_VIEWEXT_FEATURE_* bit of every block column.
 EXT_COLUMN_FEATURES = np.array([bit for _, bit in _EXT], dtype=np.int64)
+# Every feature bit has columns, is a base value or awaits the next encoder.
+assert (set(EXT_COLUMN_FEATURES.tolist()) | {b for b in range(FEATURE_COUNT) if BASE_VALUE_FEATURES >> b & 1}
+        | set(_AWAITING_FEATURES)) == set(range(FEATURE_COUNT)) \
+    and not set(_AWAITING_FEATURES) & set(EXT_COLUMN_FEATURES.tolist()), _AWAITING_FEATURES
 FEATURE_NAMES = tuple(_base_names() + [name for name, _ in _EXT])
 SLOT_FEATURE_NAMES = (("valid",) + tuple(f"kind.{n}" for n in _SLOT_KIND_NAMES) + ("move_slot",)
                       + tuple(f"target.{n}" for n in ("own0", "own1", "foe0", "foe1")) + ("mega", "reserve"))
@@ -375,6 +407,9 @@ def _mask_of(ext_supported):
     if (not isinstance(ext_supported, (int, np.integer)) or isinstance(ext_supported, bool)
             or not 0 <= int(ext_supported) <= ALL_FEATURES):
         raise ValueError(f"ext_supported {ext_supported!r} is not a mask of the {FEATURE_COUNT} feature bits")
+    for bit, name in sorted(_AWAITING_FEATURES.items()):
+        if int(ext_supported) >> bit & 1:
+            raise EncoderAwaitingBit("ext_supported feature bit", name)
     return int(ext_supported)
 
 
@@ -443,6 +478,9 @@ def _check_records(ob, ext, mask):
         raise ValueError(f"extension field guard_flags bits {int(guards[guards != 0].flat[0])} are not ones this "
                          "encoder knows")
     volatiles = rec["sides"]["positions"]["volatiles"].astype(np.int64)
+    for bit, name in sorted(_AWAITING_VOLATILES.items()):
+        if (volatiles & bit).any():
+            raise EncoderAwaitingBit("extension field volatiles bit", name)
     unknown = volatiles & ~sum(bit for _, bit, _ in VOLATILES)
     if unknown.any():
         raise ValueError(f"extension field volatiles bits {int(unknown[unknown != 0].flat[0])} are not ones "

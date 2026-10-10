@@ -111,6 +111,11 @@ class SpectatorTracker(Tracker):
         switching position is not one the switch flag rule asks."""
         self.epoch += 1
         self._step_lines, self._lines = self._lines, []
+        if point.boundary == TEAM_SELECTION and self._own_illusion():
+            # An Illusion holder on the own sheet (decision 0026, step I2): its player knew which member entered,
+            # the spectator log names the disguise; the switch lines do not tell the own occupants, so this
+            # perspective stops on the feature instead of guessing
+            raise lines.Stop("feature:ILLUSION")
         self._boundary = point.boundary
         self._revive = point.revive  # a Revival Blessing request (step G52): superset offers the fainted members
         if point.boundary != TEAM_SELECTION:
@@ -138,6 +143,10 @@ class SpectatorTracker(Tracker):
         if own_requested(self):
             self._turn_scoped_stop(point.boundary)  # only a point of this perspective can show it
             self._check_charge_targets()
+
+    def _own_illusion(self):
+        illusion = self.data.tables["ABILITY"].get("ILLUSION")
+        return illusion is not None and any(m.sheet["ability"] == illusion + 1 for m in self._member(self.side))
 
     # ------------------------------------------------------------------ view
     def _view_member(self, v, member, m, side, own, boundary):
