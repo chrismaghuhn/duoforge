@@ -176,8 +176,9 @@ class LadderTest(unittest.TestCase):
         self.assertEqual(encoder_of({"encoder": 2}), 2)
         self.assertEqual(encoder_of({"encoder": 3}), 3)
         self.assertEqual(encoder_of({"encoder": 4}), 4)
-        self.assertEqual(encoder_of({"encoder": features.ENCODER}), 5)
-        for bad in (0, 6, "2", None, True, 1.0, 2.0):  # True == 1, 2.0 == 2: only ints count
+        self.assertEqual(encoder_of({"encoder": 5}), 5)
+        self.assertEqual(encoder_of({"encoder": features.ENCODER}), 6)  # decision 0050
+        for bad in (0, 7, "2", None, True, 1.0, 2.0):  # True == 1, 2.0 == 2: only ints count
             with self.assertRaisesRegex(ValueError, "encoder"):
                 encoder_of({"encoder": bad})
 
