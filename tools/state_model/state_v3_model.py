@@ -397,7 +397,9 @@ def empty_tail_side():
 
 def empty_tail():
     # party: step G46, per side the 3 bytes of party_order (entry k = roster index + 1 at bits 3k..3k+2, 0 = empty)
-    return {'gravity': 0, 'party': [[0, 0, 0], [0, 0, 0]], 'sides': [empty_tail_side(), empty_tail_side()]}
+    # Step G71 (decision 0034): the Attract source per flat position, the first 4 bytes of the rev 5 reserve (0 = none).
+    return {'gravity': 0, 'party': [[0, 0, 0], [0, 0, 0]], 'sides': [empty_tail_side(), empty_tail_side()],
+            'attract': [0, 0, 0, 0]}
 
 
 def party_entries(party_bytes):
@@ -959,7 +961,7 @@ def tail_is_zero(tail):
                 and all(v == 0 for v in ill_values(ts['ill']))
                 and all(v == 0 for f in TAIL_MEMBER_LIST_FIELDS for v in ts[f]))
     return (tail['gravity'] == 0 and all(v == 0 for p in tail['party'] for v in p)
-            and all(side_zero(ts) for ts in tail['sides']))
+            and all(side_zero(ts) for ts in tail['sides']) and all(v == 0 for v in tail.get('attract', [0] * 4)))
 
 
 def hazard_order_valid(ts):
@@ -1022,6 +1024,32 @@ def tail_pos_valid(ctx, tp, flat, mem, slot_flags=0):
         return False
     return (tp['stockpile'] <= TAIL_STOCKPILE_MAX and tp['stockpile_def'] <= tp['stockpile']
             and tp['stockpile_spd'] <= tp['stockpile'])
+
+
+def attract_byte_ok(st, flat):
+    """Step G71 (decision 0034, decision 0015 5bn): the Attract source of the infatuated occupant at flat position `flat`, as
+    dfi_attract_byte_ok in src/state/invariants.c. Zero is none; else the code 1..12 names a member of its side on the field and
+    not fainted, not the infatuated occupant itself, of the opposite gender (1 and 2), and the occupant stands."""
+    code = st['tail'].get('attract', [0] * 4)[flat]
+    if code == 0:
+        return True
+    if code > 2 * MAX_ROSTER:
+        return False
+    side = flat // 2
+    sd = st['sides'][side]
+    occ = sd['pos'][flat % 2]['occ']
+    if occ >= MAX_ROSTER or occ >= sd['member_count'] or sd['members'][occ]['hp'] == 0:
+        return False
+    src_side, src = (code - 1) // MAX_ROSTER, (code - 1) % MAX_ROSTER
+    ssd = st['sides'][src_side]
+    if src >= ssd['member_count']:
+        return False
+    if src_side == side and src == occ:
+        return False
+    if not any(ssd['pos'][p]['occ'] == src and ssd['members'][src]['hp'] != 0 for p in range(2)):
+        return False
+    pair = (sd['members'][occ]['gender'], ssd['members'][src]['gender'])
+    return pair in ((1, 2), (2, 1))
 
 
 def check_tail(ctx, st):
@@ -1087,6 +1115,9 @@ def check_tail(ctx, st):
                 return 'TAIL_MEMBER'
             if tx != 0 and (tx > TAIL_TOXIC_STAGE_MAX or not on_field or mem['status'] != TAIL_TOXIC_STATUS):
                 return 'TAIL_MEMBER'
+    # Step G71: the Attract sources, one per flat position (attract_byte_ok).
+    if not all(attract_byte_ok(st, f) for f in range(4)):
+        return 'TAIL_POSITION'
     return 'OK'
 
 
@@ -1153,7 +1184,8 @@ def tail_bytes(tail):
     for flat in range(4):
         tp = tail['sides'][flat // 2]['pos'][flat % 2]
         out += bytes([tp[f] for f in TAIL_POS_REV5_FIELDS])
-    out += bytes(TAIL5_RESERVED_SIZE)
+    # Step G71: the first 4 bytes of the reserve are the Attract sources (one per flat position), the other 12 are zero.
+    out += bytes(tail.get('attract', [0] * 4)) + bytes(TAIL5_RESERVED_SIZE - 4)
     assert len(out) == TAIL_SIZE
     return bytes(out)
 
@@ -1169,8 +1201,9 @@ def tail_reserved_offsets():
         offs += [so + 80 + TAIL_MEMBER_SIZE * m + 9 for m in range(MAX_ROSTER)]
     assert len(offs) == 29
     rev5_reserve = TAIL_REV4_SIZE + TAIL5_SIZE - TAIL5_RESERVED_SIZE
-    offs += [rev5_reserve + i for i in range(TAIL5_RESERVED_SIZE)]
-    assert len(offs) == 45
+    # Step G71: the reserve's first 4 bytes are the Attract sources (data), so only its other 12 are reserved.
+    offs += [rev5_reserve + i for i in range(4, TAIL5_RESERVED_SIZE)]
+    assert len(offs) == 41
     return offs
 
 
@@ -1217,6 +1250,8 @@ def parse_tail(b):
         tp = tail['sides'][flat // 2]['pos'][flat % 2]
         q = r5 + 2 * TAIL5_SIDE_SIZE + TAIL5_POS_SIZE * flat
         tp['position_flags'], tp['future_sight'] = b[q], b[q + 1]
+    # Step G71: the Attract sources, the first 4 bytes of the reserve (r5 + 44 = rev 5 block offset 44).
+    tail['attract'] = list(b[r5 + TAIL5_SIZE - TAIL5_RESERVED_SIZE:r5 + TAIL5_SIZE - TAIL5_RESERVED_SIZE + 4])
     return tail
 
 

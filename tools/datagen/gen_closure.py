@@ -1802,6 +1802,17 @@ G47_ABILITY_FACTS = (
                    "this.add('-fail', target, 'unboost', 'atk', '[from] ability: Oblivious', `[of] ${target}`); }",
                    'flags: { breakable: 1 },')),
 )
+# Step G71 (decision 0034, decision 0015 5bn): Cute Charm is an engine row (ENGINE_ROWS, once the draws of Cute Charm and Attract are
+# wired). Its pinned callback, whole: the contact test, the 3/10 roll and the infatuation of the attacker by the holder
+# (data/abilities.ts:798-810). The Attract volatile's facts (data/moves.ts:706-761) and the Oblivious and Mental Herb halves are the
+# G47 facts above. The Champions mod has no entry for Cute Charm (check_g34_facts).
+G71_ABILITY_FACTS = (
+    ('cutecharm', ('onDamagingHit(damage, target, source, move) {',
+                   'if (this.checkMoveMakesContact(move, source, target)) {',
+                   'if (this.randomChance(3, 10)) {',
+                   "source.addVolatile('attract', this.effectState.target);",
+                   'flags: {},')),
+)
 G47_ITEM_FACTS = (
     ('lumberry', ('onAfterSetStatusPriority: -1,',
                   'onAfterSetStatus(status, pokemon) { pokemon.eatItem(); },',
@@ -3658,7 +3669,7 @@ def check_g34_facts(abil_ts, champ_abil, items_ts, champ_items):
     """Steps G34, G35, Mega batch 2 and G39: every fact of G34_ABILITY_FACTS, G35_ABILITY_FACTS, MEGA2_ABILITY_FACTS, G39_ABILITY_FACTS and G34_ITEM_FACTS is in the pinned entry, whitespace aside, and the
     Champions mod has no entry of its own for it (an override would change what the engine reads). Step G59: the Champions
     entry of a G59_INHERIT_ONLY ability may only inherit (`inherit: true`, `isNonstandard: null`), which is no override."""
-    for kind, facts_by_id, src, champ in (('ability', G34_ABILITY_FACTS + G35_ABILITY_FACTS + MEGA2_ABILITY_FACTS + G39_ABILITY_FACTS + G41_ABILITY_FACTS + G45_ABILITY_FACTS + G46_ABILITY_FACTS + G47_ABILITY_FACTS + G51_ABILITY_FACTS + G53_ABILITY_FACTS + G63_ABILITY_FACTS + G59_ABILITY_FACTS + G69_ABILITY_FACTS + G65_ABILITY_FACTS, abil_ts, champ_abil),
+    for kind, facts_by_id, src, champ in (('ability', G34_ABILITY_FACTS + G35_ABILITY_FACTS + MEGA2_ABILITY_FACTS + G39_ABILITY_FACTS + G41_ABILITY_FACTS + G45_ABILITY_FACTS + G46_ABILITY_FACTS + G47_ABILITY_FACTS + G51_ABILITY_FACTS + G53_ABILITY_FACTS + G63_ABILITY_FACTS + G59_ABILITY_FACTS + G69_ABILITY_FACTS + G65_ABILITY_FACTS + G71_ABILITY_FACTS, abil_ts, champ_abil),
                                           ('item', G34_ITEM_FACTS + G46_ITEM_FACTS + G47_ITEM_FACTS, items_ts, champ_items)):
         for rid, facts in facts_by_id:
             e = src.entry(rid)
