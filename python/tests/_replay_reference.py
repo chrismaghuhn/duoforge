@@ -5,7 +5,8 @@
 committed traces and specs.
 
 Decision point k of the battle is the state after k steps; its views are
-views[(k, viewer)] = (OBSERVATION, FACTORED_DOMAIN).
+views[(k, viewer)] = (OBSERVATION, FACTORED_DOMAIN) and its view extension
+exts[(k, viewer)] (OBSERVATION_EXT, decision 0018).
 """
 import atexit
 import json
@@ -25,10 +26,11 @@ STATS = ("HP", "Atk", "Def", "SpA", "SpD", "Spe")
 
 
 class Battle:
-    def __init__(self, name, lines, views):
+    def __init__(self, name, lines, views, exts):
         self.name = name
         self.lines = lines  # the spectator log, one protocol line per entry
         self.views = views
+        self.exts = exts
         self.spec, self.trace = trace_to_c.load_battle(str(data.ROOT), name)
         self.sets = [teams._paste(self.spec["teams"][s]) for s in (0, 1)]  # the true sets: stat points, nature
 
@@ -48,7 +50,7 @@ class Reference:
         root = str(data.ROOT)
         subprocess.run([sys.executable, str(data.ROOT / "tools" / "reference" / "conformance_records.py"), "--all",
                         root, "--out", self.tmp], check=True, timeout=600)
-        views = {}
+        views, exts = {}, {}
         for records in ("closure", "team_c", "pool"):
             path = os.path.join(self.tmp, f"{records}.records")
             views_path = os.path.join(self.tmp, f"{records}.views")
@@ -59,10 +61,12 @@ class Reference:
                 raise AssertionError(f"the runner on {records}: {out.returncode} {out.stderr} {out.stdout[-2000:]}")
             with open(views_path, encoding="ascii") as f:
                 for line in f:
-                    _, name, k, viewer, obs, dom = line.split()
+                    _, name, k, viewer, obs, dom, ext = line.split()
                     views.setdefault(name, {})[(int(k), int(viewer))] = (
                         np.frombuffer(bytes.fromhex(obs), dtype=_layout.OBSERVATION)[0],
                         np.frombuffer(bytes.fromhex(dom), dtype=_layout.FACTORED_DOMAIN)[0])
+                    exts.setdefault(name, {})[(int(k), int(viewer))] = np.frombuffer(
+                        bytes.fromhex(ext), dtype=_layout.OBSERVATION_EXT)[0]
         script = data.ROOT / "tools" / "reference" / "ps_client.js"
         out = subprocess.run([os.environ["DUOFORGE_NODE"], str(script), os.environ["DUOFORGE_PS_REFERENCE_DIR"], root,
                               "--every", "--spectator"], capture_output=True, text=True, encoding="utf-8",
@@ -76,7 +80,7 @@ class Reference:
         if sorted(logs) != sorted(views):
             raise AssertionError(f"logs and views name other battles: {sorted(set(logs) ^ set(views))}")
         self.data = data.load(kind="pool")
-        self.battles = [Battle(name, logs[name], views[name]) for name in sorted(views)]
+        self.battles = [Battle(name, logs[name], views[name], exts[name]) for name in sorted(views)]
 
 
 def true_stats_of(battle, side, source):

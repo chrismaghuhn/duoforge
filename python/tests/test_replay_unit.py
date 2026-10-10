@@ -263,6 +263,9 @@ class _View:
     def ability_now(self, ident):
         return self.sheet_of(ident)["ability"]
 
+    def item_now(self, ident):
+        return self.sheet_of(ident)["item"]
+
     def side_sheets(self, ident):
         return [m for k, m in self._members.items() if k[:2] == ident[:2]]
 
@@ -283,38 +286,71 @@ class LinesTest(unittest.TestCase):
     def test_feature_lines_stop(self):
         self.assertEqual(self.stop("|-fieldstart|move: Electric Terrain|[from] ability: Electric Surge|[of] p2a: Gholdengo"),
                          "feature:TERRAIN_ELECTRIC")
-        self.assertEqual(self.stop("|-ability|p2a: Gholdengo|Intimidate|[from] ability: Trace|[of] p1a: Staraptor"),
-                         "feature:ABILITY_CHANGE")
-        self.assertEqual(self.stop("|-enditem|p1a: Staraptor|Sitrus Berry|[from] move: Knock Off|[of] p2a: Gholdengo"),
-                         "feature:ITEM_CHANGE")
-        self.assertEqual(self.stop("|-start|p1a: Staraptor|Encore"), "feature:ENCORE")
+        # Trace's copy folds (ABILITY_CHANGE); an ability source the engine does not model stops on its line
+        self.assertEqual(lines.check("|-ability|p2a: Gholdengo|Intimidate|[from] ability: Trace|[of] p1a: Staraptor",
+                                     self.view), "fold")
+        self.assertEqual(self.stop("|-ability|p2a: Gholdengo|Pressure|Good as Gold|[from] move: Role Play|"
+                                   "[of] p1a: Staraptor"), "line:-ability [from] move: Role Play")
+
+    def test_unmodelled_ability_changes_stop_on_their_line(self):
+        # Mummy and Lingering Aroma print -activate|holder|ability: X|attacker|[ability] Old (sim/pokemon.ts setAbility,
+        # :1928-1930), Wandering Spirit the Skill Swap line of battle.skillSwap; the engine models none of them
+        # (DFI_HANDLER_UNMODELED), so each stops with its own reason, never through a converter refusal
+        view = _View({"p1: Staraptor": ("STARAPTOR", "SITRUSBERRY", "INTIMIDATE"),
+                      "p2: Cofagrigus": ("COFAGRIGUS", "LEFTOVERS", "MUMMY"),
+                      "p2: Runerigus": ("RUNERIGUS", "LEFTOVERS", "WANDERINGSPIRIT"),
+                      "p2: Gholdengo": ("GHOLDENGO", "LIFEORB", "GOODASGOLD")})
+
+        def stop(line):
+            with self.assertRaises(lines.Stop) as caught:
+                lines.check(line, view)
+            return caught.exception.reason
+        self.assertEqual(stop("|-activate|p2a: Cofagrigus|ability: Mummy|p1a: Staraptor|[ability] Intimidate"),
+                         "line:-activate ability: Mummy")
+        self.assertEqual(stop("|-activate|p2a: Cofagrigus|ability: Lingering Aroma|p1a: Staraptor|[ability] Intimidate"),
+                         "line:-activate ability: Lingering Aroma")
+        self.assertEqual(stop("|-activate|p1a: Staraptor|Skill Swap|Wandering Spirit|Intimidate|[of] p2b: Runerigus"),
+                         "line:-activate Skill Swap Wandering Spirit")
+        self.assertEqual(stop("|-activate|p2a: Cofagrigus|Skill Swap|||[of] p2b: Runerigus"),
+                         "line:-activate Skill Swap Wandering Spirit")  # an ally swap: the holder's current ability
+        self.assertEqual(lines.check("|-activate|p1a: Staraptor|Skill Swap|Good as Gold|Intimidate|[of] p2a: Gholdengo",
+                                     view), "fold")  # Skill Swap of two modelled abilities folds
+        # Knock Off folds (ITEM_CHANGE); an item source the engine does not model stops on its line
+        self.assertEqual(lines.check("|-enditem|p1a: Staraptor|Sitrus Berry|[from] move: Knock Off|[of] p2a: Gholdengo",
+                                     self.view), "fold")
+        self.assertEqual(self.stop("|-enditem|p1a: Staraptor|Sitrus Berry|[from] move: Incinerate"),
+                         "line:-enditem [from] move: Incinerate")
+        self.assertEqual(self.stop("|-item|p1a: Staraptor|Sitrus Berry|[from] move: Recycle"),
+                         "line:-item [from] move: Recycle")
+        self.assertEqual(self.stop("|-start|p1a: Staraptor|move: Taunt"), "feature:TAUNT")
+        self.assertEqual(lines.check("|-start|p1a: Staraptor|Encore", self.view), "fold")  # the tracker folds Encore
         self.assertEqual(lines.check("|-status|p1a: Staraptor|tox", self.view), "fold")  # Tox folds (BC spec 5)
         self.assertEqual(self.stop("|replace|p1a: Zoroark|Zoroark-Hisui, L50, M"), "feature:ILLUSION")
 
     def test_g64_lines(self):
         # Step G64: Sheer Cold's bare -ohko after the target's faint changes no field (kept, no event); Poltergeist's
         # -activate names the item its target holds, the open sheet's (another stops); Bug Bite's stealeat takes the
-        # target's berry like Knock Off, decision 0018's ITEM_CHANGE
+        # target's berry like Knock Off, decision 0018's ITEM_CHANGE (folded)
         self.assertEqual(lines.check("|-ohko", self.view), "keep")
         self.assertEqual(lines.check("|-activate|p2a: Gholdengo|move: Poltergeist|Life Orb", self.view), "fold")
         self.assertEqual(self.stop("|-activate|p2a: Gholdengo|move: Poltergeist|Leftovers"),
                          "line:-activate move: Poltergeist")
         bug_bite = "|-enditem|p1a: Staraptor|Sitrus Berry|[from] stealeat|[move] Bug Bite|[of] p2a: Gholdengo"
-        self.assertEqual(self.stop(bug_bite), "feature:ITEM_CHANGE")
+        self.assertEqual(lines.check(bug_bite, self.view), "fold")
     def test_phantom_force_breaking_a_protection_folds(self):
         # Step G58: Phantom Force breaks a Protect like Feint (hitStepBreakProtect), printed with [broken]
         self.assertEqual(lines.check("|-activate|p2a: Gholdengo|move: Phantom Force|[broken]", self.view), "fold")
 
     def test_item_transfer_lines_are_item_change(self):
         # G29 (#171): every line of a Trick, Switcheroo, Thief or Covet is decision 0018's ITEM_CHANGE, the
-        # -activate of Trick too (it names the target; Switcheroo prints none)
+        # -activate of Trick too (it names the target; Switcheroo prints none); the tracker folds them
         for line in ("|-activate|p1a: Staraptor|move: Trick|[of] p2a: Gholdengo",
                      "|-item|p1a: Staraptor|Choice Scarf|[from] move: Trick",
                      "|-enditem|p1a: Staraptor|Sitrus Berry|[silent]|[from] move: Switcheroo",
                      "|-item|p1a: Staraptor|Life Orb|[from] move: Thief|[of] p2a: Gholdengo",
                      "|-enditem|p2a: Gholdengo|Life Orb|[silent]|[from] move: Thief|[of] p1a: Staraptor",
                      "|-item|p1a: Staraptor|Life Orb|[from] move: Covet|[of] p2a: Gholdengo"):
-            self.assertEqual(self.stop(line), "feature:ITEM_CHANGE", line)
+            self.assertEqual(lines.check(line, self.view), "fold", line)
 
     def test_haze_folds(self):
         # Step G62 (decision 0031): Haze's -clearallboost is the CLEAR_ALL_BOOSTS event; the tracker folds it
@@ -358,17 +394,16 @@ class LinesTest(unittest.TestCase):
         # partner then holds another item than its sheet's, decision 0018's ITEM_CHANGE, as Trick, Knock Off, Bug Bite
         view = _View({"p1: Staraptor": ("STARAPTOR", "LEFTOVERS", "SYMBIOSIS"),
                       "p1: Gholdengo": ("GHOLDENGO", "FOCUSSASH", "GOODASGOLD")})
-        with self.assertRaises(lines.Stop) as caught:
-            lines.check("|-activate|p1a: Staraptor|ability: Symbiosis|Leftovers|[of] p1b: Gholdengo", view)
-        self.assertEqual(caught.exception.reason, "feature:ITEM_CHANGE")
+        self.assertEqual(lines.check("|-activate|p1a: Staraptor|ability: Symbiosis|Leftovers|[of] p1b: Gholdengo", view),
+                         "fold")  # the tracker folds ITEM_CHANGE
 
     def test_skill_swap_lines_are_ability_change(self):
         # Step G70 (decision 0041): the pin prints "Skill Swap" without "move: " for a foe swap (both abilities named)
-        # and an ally swap (none named); both are decision 0018's ABILITY_CHANGE until the tracker folds it
+        # and an ally swap (none named); both are decision 0018's ABILITY_CHANGE, which the tracker folds
         for line in ("|-activate|p1a: Staraptor|Skill Swap|Good as Gold|Intimidate|[of] p2a: Gholdengo",
                      "|-activate|p1a: Staraptor|Skill Swap|||[of] p1b: Staraptor",
                      "|-activate|p1a: Staraptor|move: Skill Swap|Good as Gold|Intimidate|[of] p2a: Gholdengo"):
-            self.assertEqual(self.stop(line), "feature:ABILITY_CHANGE", line)
+            self.assertEqual(lines.check(line, self.view), "fold", line)
 
     def test_drag_folds(self):
         # Step G46: a forced switch brings a member in as a switch does (the tracker folds it as one, or stops)
@@ -498,16 +533,38 @@ class LinesTest(unittest.TestCase):
         self.assertEqual(lines.extract_supported(source), 1 << f["THROAT_CHOP"] | 1 << f["WIDE_GUARD"])
 
     def test_a_feature_the_tracker_does_not_fold_stops(self):
-        # the library may support a feature (G8: Throat Chop), but rows carry no view extension until the tracker
-        # folds it: the line still stops the perspective
+        # the library may support a feature (G8: Heal Block), but its view-extension field stays empty until the
+        # tracker folds it: the line still stops the perspective
         self.assertEqual(lines.SUPPORTED & ~lines.TRACKER_FOLDS, 0)
-        self.assertEqual(self.stop("|-start|p1a: Staraptor|Throat Chop|[silent]"), "feature:THROAT_CHOP")
+        self.assertTrue(lines.LIBRARY_SUPPORTED >> lines.FEATURES["HEAL_BLOCK"] & 1)
+        self.assertEqual(self.stop("|-start|p1a: Staraptor|move: Heal Block"), "feature:HEAL_BLOCK")
+        # a folded one: Throat Chop's [silent] lines (the tracker sets and clears the presence bit)
+        self.assertEqual(lines.check("|-start|p1a: Staraptor|Throat Chop|[silent]", self.view), "fold")
+        self.assertEqual(lines.check("|-end|p1a: Staraptor|Throat Chop|[silent]", self.view), "fold")
         # the base-value features fold (BC spec section 5): Sand and Snow, which the library supports (#124), and Tox
         f = lines.FEATURES
         self.assertTrue(lines.LIBRARY_SUPPORTED >> f["WEATHER_SAND"] & 1 and lines.LIBRARY_SUPPORTED >> f["WEATHER_SNOW"] & 1)
         self.assertEqual(lines.check("|-weather|Sandstorm|[from] ability: Sand Stream|[of] p2a: Gholdengo", self.view), "fold")
         self.assertEqual(lines.check("|-weather|Snowscape|[from] ability: Snow Warning|[of] p2a: Gholdengo", self.view),
                          "fold")
+
+    def test_every_fold_names_its_view_extension_fields(self):
+        # the base-value folds have no record field, every view-extension fold has some (tracker.EXT_FIELDS: what the
+        # tracker writes and what test_replay compares); restrict_ext keeps only those fields and the header
+        import numpy as np
+        from duoforge import _layout
+        from duoforge_live import tracker
+        for name, bit in lines.FEATURES.items():
+            if lines.TRACKER_FOLDS >> bit & 1:
+                self.assertEqual(bool(tracker.EXT_FIELDS[name]), bool(lines.EXT_FOLDS >> bit & 1), name)
+        self.assertEqual(lines.BASE_FOLDS & lines.EXT_FOLDS, 0)
+        full = np.frombuffer(bytes(range(192)), dtype=_layout.OBSERVATION_EXT)[0]
+        cut = tracker.restrict_ext(full, 0)
+        self.assertEqual((int(cut["revision"]), int(cut["epoch"])), (int(full["revision"]), int(full["epoch"])))
+        self.assertEqual(cut["sides"].tobytes(), bytes(_layout.SIDE_EXT.itemsize * 2))
+        chop = tracker.restrict_ext(full, 1 << lines.FEATURES["THROAT_CHOP"])
+        self.assertEqual(chop["sides"]["positions"]["volatiles"].tolist(),
+                         (full["sides"]["positions"]["volatiles"] & tracker.EXT_THROAT_CHOP).tolist())
 
     def test_choice_items(self):
         self.assertEqual(lines.CHOICE_ITEMS, ("choiceband", "choicescarf", "choicespecs"))
@@ -810,12 +867,12 @@ class GameTest(unittest.TestCase):
         self.assertEqual(result.record.turns, 10)
 
     def test_a_feature_stops_after_turn_two(self):
-        # a feature the tracker does not fold (Throat Chop; Sand folds since the BC PR) ends both perspectives there:
+        # a feature the tracker does not fold (Heal Block; Sand folds since the BC PR) ends both perspectives there:
         # the points before it are written, the later ones dropped
         clean = self.run_game(self.log)
-        result = self.run_game(self.insert_after("|turn|2", "|-start|p2a: Politoed|Throat Chop|[silent]"))
-        self.assertEqual(result.counters["perspectives.stopped.feature:THROAT_CHOP"], 2)
-        self.assertGreater(result.counters["points.dropped.feature:THROAT_CHOP"], 0)
+        result = self.run_game(self.insert_after("|turn|2", "|-start|p2a: Politoed|move: Heal Block"))
+        self.assertEqual(result.counters["perspectives.stopped.feature:HEAL_BLOCK"], 2)
+        self.assertGreater(result.counters["points.dropped.feature:HEAL_BLOCK"], 0)
         turn2 = [int(r.observation["epoch"]) for r in clean.rows if int(r.observation["turn"]) == 2
                  and r.observation["boundary_kind"] == 2]
         self.assertTrue(all(int(r.observation["epoch"]) <= max(turn2) for r in result.rows))
