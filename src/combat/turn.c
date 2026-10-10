@@ -663,6 +663,23 @@ static uint32_t dfi_effective_target_class(const struct duoforge_battle *b, cons
     return md->target_class;
 }
 
+/* The target class of a move for its user (step G84; the Curse override of data/mods/champions/moves.ts:165-196): a Curse of a
+ * user without the Ghost type targets the user (onModifyMove sets 'self'), so the request offers no target and the choice has
+ * none. The pool row says normal; a Ghost user keeps it (its Curse is refused by dfi_run_curse). Every other move keeps the class
+ * of its row. */
+uint32_t dfi_user_target_class(const struct duoforge_battle *b, uint32_t user, uint32_t special, uint32_t table_class)
+{
+    if (special != DFI_SPECIAL_CURSE) {
+        return table_class;
+    }
+    const uint32_t occupant = b->sides[user / DUOFORGE_ACTIVE_PER_SIDE].positions[user % DUOFORGE_ACTIVE_PER_SIDE].occupant;
+    if (occupant >= DUOFORGE_MAX_ROSTER) {
+        return table_class;
+    }
+    const dfi_member *m = &b->sides[user / DUOFORGE_ACTIVE_PER_SIDE].members[occupant];
+    return dfi_has_type(b, m, DFI_TYPE_GHOST) ? table_class : DUOFORGE_TARGET_CLASS_SELF;
+}
+
 /* The type a move has when it is used (useMoveInner, sim/battle-actions.ts:430-438: the move's own onModifyType first, then
  * the abilities'): Struggle is typeless; an -ate ability (the ATE family, decision 0015: onModifyType at priority -1)
  * turns a Normal move into its type before immunity and STAB, except the moves of its noModifyType list; Weather Ball
@@ -6291,7 +6308,8 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
      * draw happens even when the Pokemon then cannot move. */
     uint32_t targets[DFI_POSITIONS] = {0};
     uint32_t count = 0u;
-    duoforge_status st = dfi_move_targets(r, user, md->target_class, q->target, targets, &count);
+    duoforge_status st = dfi_move_targets(r, user, dfi_user_target_class(r->b, user, md->special, md->target_class), q->target,
+                                          targets, &count);
     if (st != DUOFORGE_OK) {
         return st;
     }
