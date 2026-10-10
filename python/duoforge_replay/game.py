@@ -116,8 +116,10 @@ def _prepass(replay_id, format_id, log, data):
         elif kind == "uhtml" and len(parts) > 3 and parts[2] == "bestof":
             m = re.search(r"Game (\d+)", parts[3])
             bo3 = int(m.group(1)) if m else 0
-    if sorted(packed) != [0, 1]:
+    if not packed:
         raise Skip("skip:sheets")
+    if sorted(packed) != [0, 1]:
+        raise Skip("skip:sheets-one-side")  # two |showteam| lines of one side: no pair of sheets
     if sum(1 for line in log if line_kind(line) == "start") > 1:
         raise Skip("skip:two-games")  # a Bo3 log that holds a second game's lines: one game per row
     sheets = tuple(teams.unpack(packed[s]) for s in (0, 1))

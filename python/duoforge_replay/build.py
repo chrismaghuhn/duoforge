@@ -37,13 +37,14 @@ from pathlib import Path
 
 from duoforge_live import data as live_data
 
-from . import dataset, game, source
+from . import dataset, funnel, game, source
 from .prior import Prior
 
 DATA_KIND_POOL = 6  # DUOFORGE_DATA_KIND_POOL (include/duoforge/duoforge.h)
 MARKER = dataset.MARKER
 LOCK = "build.lock"
 EXAMPLES = 10  # replay ids kept per internal error type
+REG_MA = funnel.REG_MA  # never built (owner, 2026-10-10)
 _STATE = {}
 
 
@@ -75,16 +76,23 @@ def _work_unit(unit):
             result = game.process(replay_id, format_id, log, _STATE["data"], _STATE["prior"], _STATE["stats"])
         except game.Skip as e:
             counters[f"games.skipped.{e.reason}"] += 1
+            funnel.count(counters, format_id, f"skipped.{e.reason}")
             continue
         except KeyboardInterrupt:
             raise
         except BaseException as e:  # noqa: BLE001 - a bug (a SystemExit too): counted and reported, the run goes on
             key = f"internal:{type(e).__name__}"
             counters[key] += 1
+            funnel.count(counters, format_id, key)
             if len(examples) < EXAMPLES:
                 examples.append(f"{replay_id}: {type(e).__name__}: {str(e)[:120]}")
             continue
         counters["games.processed"] += 1
+        funnel.count(counters, format_id, "processed")
+        for key, n in result.counters.items():
+            if key.startswith("perspectives."):
+                funnel.count(counters, format_id, key, n)
+        funnel.count(counters, format_id, "rows", len(result.rows))
         results.append(result)
     writer = dataset.Writer(tmp, {**part_manifest, "internal_examples": examples})
     for result in results:
@@ -202,6 +210,10 @@ def build(paths, prior_path, out_dir, workers=1, limit_parts=None, format_prefix
     paths = [Path(p) for p in paths]
     out = Path(out_dir)
     format_prefix = prefixes(format_prefix)
+    for prefix in format_prefix:
+        if REG_MA.startswith(prefix) or prefix.startswith(REG_MA):
+            raise ValueError(f"Reg M-A is excluded (another mechanics era, owner 2026-10-10): the prefix {prefix!r} "
+                             "would take its games")
     wanted = inputs(paths, prior_path, format_prefix, unit_lines, ps_dir)
     run = collections.Counter()
     done = _prepare(out, wanted, run)
