@@ -5353,8 +5353,14 @@ static duoforge_status dfi_run_curse(dfi_run *r, uint32_t user)
     dfi_boost_effect eff = dfi_effect(DUOFORGE_CAUSE_MOVE, DFI_MOVE_CURSE, DFI_BOOST_PRIMARY);
     eff.negatives_first = true;
     const bool any = dfi_boost(r, user, stages, user, eff);
-    r->mres |= any ? DFI_MRES_TRUE : DFI_MRES_FALSE; /* onHit returns the boost's result (champions/moves.ts:185) */
-    return DUOFORGE_OK;
+    if (!any) {
+        /* onHit returns the boost's result (champions/moves.ts:185): a failed hit breaks the hit loop before its Updates (:531-532) */
+        r->mres |= DFI_MRES_FALSE;
+        return DUOFORGE_OK;
+    }
+    /* A successful hit: the hit loop's Update, the faint lines and the Update after (scripts.ts:537, :574), as for every status
+     * move that does something to its target (dfi_status_hit_end). A Curse that returns before them would lose the draws. */
+    return dfi_status_hit_end(r);
 }
 
 static duoforge_status dfi_run_substitute(dfi_run *r, uint32_t user)
