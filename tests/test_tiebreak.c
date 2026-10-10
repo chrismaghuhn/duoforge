@@ -259,8 +259,8 @@ int main(void)
     /* No committed stop depends on the order of a bench. */
     DF_CHECK_EQ_U64(&t, counts.ambiguous, 0u);
 #if defined(DF_CONFORMANCE_POOL_DATA)
-    DF_CHECK_EQ_U64(&t, battles, 718u); /* main's 701, I2's three, G69's four, G65's nine and the Substitute update fix's sub_sitrus_tie */
-    DF_CHECK_EQ_U64(&t, counts.stops, 3909u); /* main's 3814, I2's 24, G69's 28, G65's 38 and sub_sitrus_tie (5 stops, provisional until measured) */
+    DF_CHECK_EQ_U64(&t, battles, 725u); /* the pool battles of test_conformance: main's 717, sub_sitrus_tie and the G74 Baton Pass battles */
+    DF_CHECK_EQ_U64(&t, counts.stops, 3984u); /* main's 3904 plus the sub_sitrus_tie and G74 battles and their stops (the Yawn battle included) */
 #else
     /* Every kind of decision of the pin is among the stops (the pool battles are too few for that). */
     DF_CHECK(&t, counts.by_stage[1] > 0u && counts.by_stage[2] > 0u && counts.by_stage[3] > 0u &&

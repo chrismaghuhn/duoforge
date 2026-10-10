@@ -1,0 +1,26 @@
+{
+  "name": "g74_pass_confused",
+  "purpose": "Baton Pass (decision 0042): Espeon (M) raises Calm Mind (+1 SpA, +1 SpD) on turn 1, and Umbreon (M) Alluring Voice hits it the same turn (the confusion of a target whose stats rose this turn), so Espeon is confused. On turn 2 Espeon passes (no self-hit this seed) to Ninetales (M), the first standing reserve. The receiver inherits the boost stages and the confusion counter with no line for the copy. Its own Nasty Plot then adds to the inherited stages on turn 3.",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,00000000000000000000000000000000000000000000000000000000000074a1",
+  "teams": [
+    "Espeon (M)\nAbility: Synchronize\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nTimid Nature\n- Calm Mind\n- Baton Pass\n- Protect\n- Shadow Ball\n\nUmbreon (M) @ Leftovers\nAbility: Inner Focus\nLevel: 50\nEVs: 32 HP / 2 Def / 32 SpD\nCalm Nature\n- Protect\n- Yawn\n- Substitute\n- Baton Pass\n\nNinetales (M) @ Sitrus Berry\nAbility: Drought\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nModest Nature\n- Nasty Plot\n- Shadow Ball\n- Substitute\n- Encore\n\nGholdengo @ Life Orb\nAbility: Good as Gold\nLevel: 50\nEVs: 17 HP / 2 Def / 17 SpA / 16 SpD / 14 Spe\nModest Nature\n- Protect\n- Shadow Ball\n\nKingambit (M) @ Black Glasses\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 2 Atk / 32 SpD\nImpish Nature\n- Protect\n\nPolitoed (M) @ Mystic Water\nAbility: Drizzle\nLevel: 50\nEVs: 32 HP / 2 Def / 32 SpD\nCalm Nature\n- Protect",
+    "Umbreon (M) @ Focus Sash\nAbility: Inner Focus\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nModest Nature\n- Alluring Voice\n- Protect\n\nGarchomp (M) @ Chople Berry\nAbility: Rough Skin\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Spe\nJolly Nature\n- Dragon Claw\n- Protect\n\nRillaboom (M) @ Miracle Seed\nAbility: Grassy Surge\nLevel: 50\nEVs: 18 HP / 32 Atk / 2 Def / 6 SpD / 8 Spe\nAdamant Nature\n- Protect\n\nCeruledge (M) @ Grassy Seed\nAbility: Flash Fire\nLevel: 50\nEVs: 31 HP / 7 Atk / 24 Def / 3 SpD / 1 Spe\nAdamant Nature\n- Protect\n\nGholdengo @ Leftovers\nAbility: Good as Gold\nLevel: 50\nEVs: 17 HP / 2 Def / 17 SpA / 16 SpD / 14 Spe\nModest Nature\n- Protect\n\nPolitoed (M) @ Sitrus Berry\nAbility: Drizzle\nLevel: 50\nEVs: 32 HP / 2 Def / 32 SpD\nCalm Nature\n- Icy Wind\n- Protect"
+  ],
+  "plan": {
+    "p1": [
+      "move 1, move 1",
+      "move 2, move 1",
+      "move 1, move 1",
+      "move 1, move 1"
+    ],
+    "p2": [
+      "move 1 1, move 2",
+      "move 2, move 2",
+      "move 2, move 2",
+      "move 2, move 2"
+    ],
+    "max_steps": 4
+  }
+}

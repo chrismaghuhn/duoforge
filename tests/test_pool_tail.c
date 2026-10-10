@@ -96,7 +96,7 @@ static const unsigned sweep[DFI_ENC_TAIL_SIZE][SWEEP_COLUMNS] = {
     {3, 0, 252, 0, 0, 0, 0, 0},
     {1, 0, 254, 0, 0, 0, 0, 0},
     {1, 0, 254, 0, 0, 0, 0, 0},
-    {48, 0, 207, 0, 0, 0, 0, 0},
+    {50, 0, 205, 0, 0, 0, 0, 0}, /* G74: the Substitute bound is the largest quarter of the brought members (decision 0042) */
     {0, 0, 255, 0, 0, 0, 0, 0},
     {254, 0, 1, 0, 0, 0, 0, 0},
     {1, 0, 254, 0, 0, 0, 0, 0},
@@ -132,7 +132,7 @@ static const unsigned sweep[DFI_ENC_TAIL_SIZE][SWEEP_COLUMNS] = {
     {1, 0, 254, 0, 0, 0, 0, 0},
     {1, 0, 254, 0, 0, 0, 0, 0},
     {1, 0, 254, 0, 0, 0, 0, 0},
-    {48, 0, 207, 0, 0, 0, 0, 0},
+    {50, 0, 205, 0, 0, 0, 0, 0}, /* G74 */
     {0, 0, 255, 0, 0, 0, 0, 0},
     {0, 0, 255, 0, 0, 0, 0, 0},
     {0, 0, 255, 0, 0, 0, 0, 0},
@@ -236,7 +236,7 @@ static const unsigned sweep[DFI_ENC_TAIL_SIZE][SWEEP_COLUMNS] = {
     {0, 0, 255, 0, 0, 0, 0, 0},
     {1, 0, 254, 0, 0, 0, 0, 0},
     {1, 0, 254, 0, 0, 0, 0, 0},
-    {49, 0, 206, 0, 0, 0, 0, 0},
+    {56, 0, 199, 0, 0, 0, 0, 0}, /* G74 */
     {0, 0, 255, 0, 0, 0, 0, 0},
     {0, 0, 255, 0, 0, 0, 0, 0},
     {0, 0, 255, 0, 0, 0, 0, 0},
@@ -272,7 +272,7 @@ static const unsigned sweep[DFI_ENC_TAIL_SIZE][SWEEP_COLUMNS] = {
     {0, 0, 255, 0, 0, 0, 0, 0},
     {1, 0, 254, 0, 0, 0, 0, 0},
     {1, 0, 254, 0, 0, 0, 0, 0},
-    {45, 0, 210, 0, 0, 0, 0, 0},
+    {56, 0, 199, 0, 0, 0, 0, 0}, /* G74 */
     {0, 0, 255, 0, 0, 0, 0, 0},
     {255, 0, 0, 0, 0, 0, 0, 0},
     {1, 0, 254, 0, 0, 0, 0, 0},
@@ -841,7 +841,21 @@ MUT(m_hits_taken7, p0->hits_taken = 7u)
 MUT(m_ability_state7, p0->ability_state = 7u)
 MUT(m_lock_turns4, p0->lock_turns = 4u)
 MUT(m_lock_no_move, p0->lock_turns = 2u) /* a lock whose move is not in the slot (step G56): the body has none here */
-MUT(m_substitute_above, p0->substitute_hp = (uint16_t)(y->sides[0].members[y->sides[0].positions[0].occupant].hp_max / 4u + 1u))
+/* G74 (decision 0042, lead's decision A): a Substitute is bounded by the largest quarter among the brought members of its side,
+ * since a pass moves it to another member. The occupant's own quarter is not the bound. */
+static uint32_t brought_quarter_cap(const dfi_side *s)
+{
+    uint32_t cap = 0u;
+    for (uint32_t m = 0u; m < DUOFORGE_MAX_ROSTER && m < s->member_count; ++m) {
+        if (((uint32_t)s->brought_mask >> m) & 1u) {
+            const uint32_t quarter = (uint32_t)s->members[m].hp_max / 4u;
+            cap = quarter > cap ? quarter : cap;
+        }
+    }
+    return cap;
+}
+MUT(m_substitute_above, p0->substitute_hp = (uint16_t)(brought_quarter_cap(&y->sides[0]) + 1u))
+MUT(v_substitute_pass, p0->substitute_hp = (uint16_t)(y->sides[0].members[y->sides[0].positions[0].occupant].hp_max / 4u + 1u))
 MUT(m_trap_turns_only, p0->trap_turns = 1u)
 MUT(m_trap_source_only, p0->trap_source = 2u)
 MUT(m_trap_move_only, p0->trap_move = 1u)
@@ -1002,7 +1016,7 @@ MUT(v_hazard_order_gone, {
     ts->sticky_web = 1u; /* an ended kind leaves, the later ones shift down: Sticky Web alone in slot 0 */
     ts->hazard_order = (uint8_t)DFI_HAZARD_STICKY_WEB;
 })
-MUT(v_substitute_quarter, p0->substitute_hp = (uint16_t)(y->sides[0].members[y->sides[0].positions[0].occupant].hp_max / 4u))
+MUT(v_substitute_quarter, p0->substitute_hp = (uint16_t)brought_quarter_cap(&y->sides[0]))
 MUT(v_bench_overrides, {
     /* the current item and forme outlive the field: a reserve and a fainted member keep them */
     y->sides[0].members[1].hp = 0u;
@@ -1078,7 +1092,8 @@ static const tail_case cases[] = {
     {"an ability state above 6", DFI_INV_TAIL_POSITION, false, m_ability_state7},
     {"lock turns above 3", DFI_INV_TAIL_POSITION, false, m_lock_turns4},
     {"lock turns without the locked move in the slot", DFI_INV_TAIL_POSITION, false, m_lock_no_move},
-    {"a Substitute above a quarter of the maximum HP", DFI_INV_TAIL_POSITION, false, m_substitute_above},
+    {"a Substitute above the largest quarter of the brought members (decision 0042)", DFI_INV_TAIL_POSITION, false, m_substitute_above},
+    {"a passed Substitute above the occupant's quarter but within a brought member's is valid", DFI_INV_NONE, false, v_substitute_pass},
     {"a trap with turns alone", DFI_INV_TAIL_POSITION, false, m_trap_turns_only},
     {"a trap with a source alone", DFI_INV_TAIL_POSITION, false, m_trap_source_only},
     {"a trap with a move alone", DFI_INV_TAIL_POSITION, false, m_trap_move_only},

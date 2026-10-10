@@ -211,6 +211,7 @@ duoforge_add_test(NAME duoforge.state.pool_g50 SOURCES test_pool_g50.c WHITEBOX 
 duoforge_add_test(NAME duoforge.state.pool_g34 SOURCES test_pool_g34.c WHITEBOX TIMEOUT 60)
 duoforge_add_test(NAME duoforge.state.pool_g41 SOURCES test_pool_g41.c WHITEBOX TIMEOUT 60)
 duoforge_add_test(NAME duoforge.state.pool_g60 SOURCES test_pool_g60.c WHITEBOX LIBS duoforge_batch TIMEOUT 60)
+duoforge_add_test(NAME duoforge.state.pool_g74 SOURCES test_pool_g74.c WHITEBOX LIBS duoforge_batch TIMEOUT 60)
 duoforge_add_test(NAME duoforge.state.pool_g70 SOURCES test_pool_g70.c WHITEBOX TIMEOUT 60)
 # Step G57: Magic Bounce and the Mega Stones Absolite and Sablenite (the reflectable column against the pinned Dex, the marks).
 duoforge_add_test(NAME duoforge.state.pool_g57 SOURCES test_pool_g57.c WHITEBOX TIMEOUT 60)
@@ -268,8 +269,8 @@ foreach(_gen IN ITEMS
         "closure_tables.c=490de42298e34cfd38192d979fd022367bf53693a5fa1855f1cc6ad034d8450a"
         "extended_tables.h=b2abef243fcbfdd87654940076b9fe2fe80b117d74893a7567741f26b9075a7d"
         "extended_tables.c=9e736fa467713283418c4edf8f56b8d844452e596ba422adbd52483d20f7cc17"
-        "pool_tables.h=184b661e1e0c41b665b6751652ced874b377c917954f784fb7ee9a331ac0fd84"
-        "pool_tables.c=4def134e21fc2fd1b8250bdd23497ba88b73db038ec2b344481c1a375665b610")
+        "pool_tables.h=edf639eb35dac1c54eefde4b2a66bdaf8ec18819f2d0d1fc8042ac3858920582"
+        "pool_tables.c=1a2c5d327dc9eaf6d6f21e289b74a4111f196708c08af0f1b53811cc9634fb89")
     string(REPLACE "=" ";" _parts "${_gen}")
     list(GET _parts 0 _file)
     list(GET _parts 1 _expected)
