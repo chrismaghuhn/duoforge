@@ -1753,5 +1753,131 @@ class FactsTest(unittest.TestCase):
         self.assertEqual(self.skip("|switch|p1a: Stranger|Dragonite, L50, M|100/100"), "skip:belief-preview")
 
 
+def packed_set(species, item, ability, moves, nature, gender="M"):
+    return "|".join([species, "", item, ability, ",".join(moves), nature, "", gender, "", "", "50", ""])
+
+
+def player_names():
+    """A test player's name and two training players' names (bucket 0 of 20 or not)."""
+    from duoforge_replay import game, split
+    names = [f"player{i}" for i in range(200)]
+    test = next(n for n in names if split.is_test_player(game._hash8(n)))
+    train = [n for n in names if not split.is_test_player(game._hash8(n))][:2]
+    return test, train
+
+
+class CorpusTest(unittest.TestCase):
+    """The set corpus of the Bo1 belief (M11 Bo1 spec section 3): training-split sheets, one count per team."""
+
+    @classmethod
+    def setUpClass(cls):
+        import json
+        cls.data = data.load(kind="pool")
+        cls.tmp = Path(tempfile.mkdtemp(prefix="duoforge_corpus_"))
+        test, (a, b) = player_names()
+        team1 = "]".join([packed_set("Kingambit", "ChopleBerry", "Defiant", ["KowtowCleave", "SuckerPunch"], "Adamant"),
+                          packed_set("Incineroar", "SitrusBerry", "Intimidate", ["FakeOut", "PartingShot"], "Careful")])
+        team2 = packed_set("Politoed", "MysticWater", "Drizzle", ["WeatherBall", "Protect"], "Modest")
+        team3 = packed_set("Dragonite", "ChoiceBand", "Multiscale", ["ExtremeSpeed"], "Adamant")
+        cls.teams = (team1, team2, team3)
+
+        def game(p1, p2, s1, s2):
+            return "\n".join([f"|player|p1|{p1}|1|", f"|player|p2|{p2}|2|", f"|showteam|p1|{s1}", f"|showteam|p2|{s2}"])
+        cls.source = cls.tmp / "games.jsonl"
+        with open(cls.source, "w", encoding="utf-8", newline="\n") as f:
+            for gid, log in (("g1", game(a, b, team1, team2)), ("g2", game(a, b, team1, team2)),  # one Bo3, twice
+                             ("g3", game(test, b, team3, team2))):  # a test player: not in the corpus
+                f.write(json.dumps({"id": gid, "formatid": "gen9championsvgc2026regmcbo3", "log": log}) + "\n")
+        cls.registry = cls.tmp / "registry"
+        (cls.registry / "data" / "teams").mkdir(parents=True)
+        (cls.registry / "data" / "teams" / "index.json").write_text(json.dumps(
+            {"registry": 1, "teams": [{"id": "PP_X", "name": "x", "source": {}, "notes": "", "sha256": ""}]}))
+        (cls.registry / "data" / "teams" / "PP_X.txt").write_text(
+            "Garchomp (F) @ Life Orb\nAbility: Rough Skin\nLevel: 50\nJolly Nature\n- Earthquake\n- Protect\n")
+
+    @classmethod
+    def tearDownClass(cls):
+        shutil.rmtree(cls.tmp, ignore_errors=True)
+
+    def build(self, name):
+        from duoforge_replay import corpus
+        out = self.tmp / name
+        corpus.build([self.source], ("gen9championsvgc2026regmc",), self.registry, out, self.data)
+        return corpus.load(out)
+
+    def test_corpus_takes_the_training_split_once_per_team(self):
+        from duoforge_replay import game
+        c = self.build("c1.json")
+        self.assertEqual(c.sets("KINGAMBIT"), [("ChopleBerry", "Defiant", "Adamant", ("KowtowCleave", "SuckerPunch"), 1)])
+        self.assertEqual([s[4] for s in c.sets("POLITOED")], [1])  # one team, however often its player played it
+        self.assertEqual(c.sets("DRAGONITE"), [])
+        self.assertEqual(c.sheet_hashes, frozenset({game._hash8(self.teams[0]), game._hash8(self.teams[1])}))
+
+    def test_corpus_adds_the_registry_and_refuses_the_repository(self):
+        from duoforge_replay import corpus
+        c = self.build("c2.json")
+        self.assertEqual(c.sets("GARCHOMP"), [("Life Orb", "Rough Skin", "Jolly", ("Earthquake", "Protect"), 1)])
+        with self.assertRaisesRegex(ValueError, "inside the repository"):
+            corpus.build([self.source], ("gen9championsvgc2026regmc",), self.registry, data.ROOT / "corpus.json",
+                         self.data)
+
+
+class SetBeliefTest(unittest.TestCase):
+    """Whole sets drawn from the corpus, agreeing with every fact (L0) or completed from frequencies (L1)."""
+
+    @classmethod
+    def setUpClass(cls):
+        from duoforge_replay import corpus, facts, points, setbelief
+        cls.C, cls.F, cls.B, cls.Skip = corpus, facts, setbelief, points.Skip
+        cls.data = data.load(kind="pool")
+        cls.corpus = corpus.Corpus({"KINGAMBIT": [
+            ("ChopleBerry", "Defiant", "Adamant", ("KowtowCleave", "SuckerPunch", "IronHead", "Protect"), 3),
+            ("BlackGlasses", "Defiant", "Adamant", ("SuckerPunch", "IronHead", "LowKick", "Protect"), 5)]},
+            frozenset(), "test")
+
+    def member(self, moves=(), item=None, ability=None):
+        return self.F.MemberFacts("Kingambit", "M", frozenset(moves), item, ability)
+
+    def test_l0_draw_agrees_with_every_fact(self):
+        belief = self.B.SetBelief(self.corpus, self.data)
+        for w in range(0, 2 ** 64, 2 ** 60):
+            s, level = belief.draw(self.member(moves={"Kowtow Cleave"}), w)
+            self.assertEqual((level, s["item"]), (0, "ChopleBerry"))
+            self.assertEqual((s["species"], s["gender"], s["level"], s["evs"]), ("Kingambit", "M", 50, [0] * 6))
+        s, level = belief.draw(self.member(item="Black Glasses"), 0)  # a revealed item keeps the log's spelling
+        self.assertEqual((level, s["item"], s["moves"][0]), (0, "Black Glasses", "SuckerPunch"))
+
+    def test_l1_keeps_used_moves_and_fills_from_frequencies(self):
+        belief = self.B.SetBelief(self.corpus, self.data)
+        s, level = belief.draw(self.member(moves={"Swords Dance"}), 12345)
+        self.assertEqual(level, 1)
+        self.assertIn("Swords Dance", s["moves"])
+        self.assertEqual(len(s["moves"]), 4)
+        self.assertEqual(len({trace_to_c.key(m) for m in s["moves"]}), 4)
+        self.assertTrue(set(s["moves"]) - {"Swords Dance"} <= {"KowtowCleave", "SuckerPunch", "IronHead", "Protect",
+                                                               "LowKick"})
+
+    def test_unsupported_species_is_a_counted_skip(self):
+        belief = self.B.SetBelief(self.corpus, self.data, min_sets=9)
+        with self.assertRaises(self.Skip) as cm:
+            belief.draw(self.member(), 0)
+        self.assertEqual(cm.exception.reason, "skip:belief-unsupported Kingambit")
+        with self.assertRaises(self.Skip) as cm:
+            self.B.SetBelief(self.corpus, self.data).draw(self.member(item="Leftovers"), 0)
+        self.assertEqual(cm.exception.reason, "skip:belief-unsupported Kingambit")
+
+    def test_words_do_not_depend_on_order(self):
+        w = self.B.word(1, "r", 0, 2, 0, 0)
+        self.assertEqual(w, self.B.word(1, "r", 0, 2, 0, 0))
+        others = [self.B.word(2, "r", 0, 2, 0, 0), self.B.word(1, "s", 0, 2, 0, 0), self.B.word(1, "r", 1, 2, 0, 0),
+                  self.B.word(1, "r", 0, 3, 0, 0), self.B.word(1, "r", 0, 2, 1, 0), self.B.word(1, "r", 0, 2, 0, 1)]
+        self.assertEqual(len(set(others + [w])), 7)
+        self.assertTrue(0 <= w < 2 ** 64)
+
+    def test_same_word_same_set(self):
+        belief = self.B.SetBelief(self.corpus, self.data)
+        self.assertEqual(belief.draw(self.member(), 99), belief.draw(self.member(), 99))
+
+
 if __name__ == "__main__":
     unittest.main()
