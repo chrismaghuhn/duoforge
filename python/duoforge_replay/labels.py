@@ -131,7 +131,12 @@ def _slot_label(segment, side, k, options_list, moves, member_of, tables, vacant
             if len(parts) > 4 and parts[4]:
                 move = tables["MOVE"].get(trace_to_c.key(parts[4]))
                 if move is not None and moves is not None and move in moves:
-                    return _move_options(options_list, mega, moves.index(move)), TARGET_UNKNOWN
+                    named = _move_options(options_list, mega, moves.index(move))
+                    if named:
+                        return named, TARGET_UNKNOWN
+                    # the named move is no option of the slot (Disabled, or barred under a lock, so the request was
+                    # Struggle: cant|X|Disable|Move, g27_disable_lock): every move option with the shown Mega choice
+                    return _move_options(options_list, mega), MOVE_HIDDEN
             return None, None
         if kind == "-start" and len(parts) > 3 and parts[3] == "Encore" and flat_position(parts[2]) == position:
             encored = True

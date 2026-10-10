@@ -10,7 +10,8 @@ documented order:
 - Mega Evolution when the member holds its stone and its side has not used
   Mega Evolution; never trapped;
 - the reserves: the alive brought members on the bench (hindsight picks);
-- a recharging position only the recharge; a charging position only its locked move with its stored target, a
+- a recharging position only the recharge; an Encored one only its forced slot, never a Disabled slot;
+  a charging position only its locked move with its stored target, a
   choice-locked one only its locked move, Struggle when no usable move has
   PP left;
 - at a REPLACEMENT or PIVOT, forceSwitch for the asked positions.
@@ -73,7 +74,9 @@ def domain(tracker):
             if p.must_recharge:  # -mustrecharge (step G17): only the recharge, and no switch (the request is trapped)
                 request["active"].append({"moves": [{"id": "recharge"}], "trapped": True})
                 continue
+            # Encore forces its slot and Disable bars its own (the view extension's encore_slot, disable_slot)
             usable = [pp[i] > 0 and (p.choice_slot == MOVE_SLOT_NONE or i == p.choice_slot)
+                      and (not p.encore_slot or i == p.encore_slot - 1) and i != p.disable_slot - 1
                       for i in range(len(sheet_moves))]
             if not any(usable):  # no PP left, or none for the choice-locked move: Struggle
                 request["active"].append({"moves": [{"id": "struggle"}]})

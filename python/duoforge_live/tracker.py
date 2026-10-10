@@ -71,6 +71,7 @@ EXT_FIELDS = {
     "TOXIC_SPIKES": (("side", "toxic_spikes"),),
     "TAUNT": (("bit", C["DUOFORGE_POSITION_EXT_TAUNT"]),),
     "YAWN": (("bit", C["DUOFORGE_POSITION_EXT_YAWN"]),),
+    "DISABLE": (("position", "disable_slot"),),
     "TYPE_CHANGE": (("bit", C["DUOFORGE_POSITION_EXT_TYPE_CHANGED"]), ("position", "type_now")),
     "AURORA_VEIL": (("side", "aurora_veil_turns"),),
     "PERISH": (("position", "perish"),),
@@ -138,6 +139,7 @@ class _Position:
         self.perish = 0  # the Perish count the game showed last, 3 to 1 (0: none)
         self.last_slot = 0  # the move slot + 1 of the occupant's last move line (5: Struggle; None: not on its sheet)
         self.encore_slot = 0  # the move slot + 1 that Encore forces (0: not encored)
+        self.disable_slot = 0  # the move slot + 1 that Disable bars (0: none)
         self.ability_now = 0  # the ability + 1 that Trace or Skill Swap gave the occupant (0: its own)
         self.flags = 0  # DUOFORGE_POSITION_FLAG_* (TEAM_C and POOL): Follow Me, Helping Hand, Unburden
         self.guard_undo = None  # (chain, stall) before a Wide or Quick Guard, until it is known to have run
@@ -658,6 +660,18 @@ class Tracker:
             # Taunt (step G31): -start|X|move: Taunt and -end|X|move: Taunt (the duration, Mental Herb, Oblivious); the
             # occupant's leaving ends it with no line; its count is never shown
             self._at(pos).taunt = 1 if kind == EV["VOLATILE_START"] else 0
+        elif kind in (EV["VOLATILE_START"], EV["VOLATILE_END"]) and detail == trace_to_c.VOLATILE_DISABLE:
+            # Disable (step G27): -start|X|Disable|MOVE (also [from] ability: Cursed Body) bars MOVE's slot of the open
+            # sheet; -end|X|Disable (the duration, Mental Herb) and the occupant's leaving end it; its count is never
+            # shown. A barred move that is not on the sheet stops.
+            p = self._at(pos)
+            if kind == EV["VOLATILE_END"]:
+                p.disable_slot = 0
+            else:
+                moves = self._occupant(pos).sheet["moves"]
+                if ident not in moves:
+                    raise lines.Stop("disable-move-unknown")
+                p.disable_slot = moves.index(ident) + 1
         elif kind == EV["VOLATILE_START"] and detail == trace_to_c.VOLATILE_YAWN:
             self._at(pos).yawn = 1  # -start|X|move: Yawn|[of] source (step G31); its end line is [silent], above
         elif kind == EV["VOLATILE_START"] and detail == trace_to_c.VOLATILE_MUST_RECHARGE:
@@ -1056,7 +1070,7 @@ class Tracker:
                 if p.type_now != (0, 0):
                     pv["volatiles"] |= C["DUOFORGE_POSITION_EXT_TYPE_CHANGED"]
                     pv["type_now"] = p.type_now
-                pv["perish"], pv["encore_slot"] = p.perish, p.encore_slot
+                pv["perish"], pv["encore_slot"], pv["disable_slot"] = p.perish, p.encore_slot, p.disable_slot
                 own = self._member(side)[p.occupant].ability
                 pv["ability_now"] = p.ability_now if p.ability_now != own else 0  # shown when it differs
         return o
