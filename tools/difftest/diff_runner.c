@@ -63,6 +63,13 @@
  * <status> (view K)", whose step column is the step before view K (- for
  * K = 0); a FILE that cannot be opened, written, flushed or closed exits 1.
  * Without the flag the output is the same as before.
+ * --dump-public FILE (with --dump-views; the live honest search, docs/superpowers/plans/
+ * 2026-10-10-live-honest-search.md Task 1) also writes, at the same states, each player's public record
+ * (duoforge_battle_public), one line per viewer:
+ *
+ *   P <name> <k> <viewer> <status> <record hex | ->
+ *
+ * a refused record ('-', its status) does not end the battle. A FILE that cannot be written exits 1.
  *
  * Heap allocation is fine here: this is a tool, not the engine.
  */
@@ -74,6 +81,8 @@
 #include <fcntl.h>
 #include <io.h>
 #endif
+
+#include <duoforge/duoforge_view.h>
 
 #include "data/closure_tables.h"
 #include "data/extended_tables.h"
@@ -245,9 +254,29 @@ static bool domain_agrees(const dfr_battle *b, const dfr_domain *d, const duofor
 
 /* The views of both players at decision index k into `views` (--dump-views). False when the battle must end: a
  * failing query (the outcome says so) or a write error (write_failed). */
+static FILE *g_public; /* --dump-public: each player's public record, beside the views */
+
 static bool write_views(FILE *views, const dfr_battle *b, uint32_t k, const duoforge_context *ctx,
                         const duoforge_battle *battle, outcome *o)
 {
+    for (uint32_t viewer = 0u; g_public != NULL && viewer < 2u; ++viewer) {
+        duoforge_public_state rec;
+        const duoforge_status ps = duoforge_battle_public(ctx, battle, viewer, &rec);
+        fprintf(g_public, "P %s %u %u %u ", b->name, (unsigned)k, (unsigned)viewer, (unsigned)ps);
+        if (ps == DUOFORGE_OK) {
+            const unsigned char *bytes = (const unsigned char *)&rec;
+            for (size_t i = 0u; i < sizeof rec; ++i) {
+                fprintf(g_public, "%02x", bytes[i]);
+            }
+        } else {
+            fputc('-', g_public);
+        }
+        fputc('\n', g_public);
+        if (ferror(g_public)) {
+            o->write_failed = true;
+            return false;
+        }
+    }
     for (uint32_t viewer = 0u; viewer < 2u; ++viewer) {
         duoforge_observation obs;
         duoforge_factored_domain dom;
@@ -411,13 +440,21 @@ static void print_result(const dfr_battle *b, const outcome *o)
 int main(int argc, char **argv)
 {
     const char *views_path = NULL;
+    const char *public_path = NULL;
     int arg = 1;
     if (argc > 1 && strcmp(argv[1], "--dump-views") == 0) {
         views_path = argc > 2 ? argv[2] : NULL;
         arg = 3;
     }
-    if (argc > arg + 1 || (arg == 3 && views_path == NULL)) {
-        fputs("usage: duoforge_diff_runner [--dump-views FILE] [records file]\n", stderr);
+    if (views_path != NULL && argc > arg && strcmp(argv[arg], "--dump-public") == 0) {
+        public_path = argc > arg + 1 ? argv[arg + 1] : NULL;
+        arg += 2;
+        if (public_path == NULL) {
+            views_path = NULL; /* the usage error below */
+        }
+    }
+    if (argc > arg + 1 || (arg >= 3 && views_path == NULL)) {
+        fputs("usage: duoforge_diff_runner [--dump-views FILE [--dump-public FILE]] [records file]\n", stderr);
         return 2;
     }
 #ifdef _WIN32
@@ -426,10 +463,20 @@ int main(int argc, char **argv)
     (void)_setmode(_fileno(stdout), _O_BINARY);
 #endif
     FILE *views = NULL;
+    if (public_path != NULL) {
+        g_public = fopen(public_path, "wb");
+        if (g_public == NULL) {
+            fprintf(stderr, "duoforge_diff_runner: cannot open %s\n", public_path);
+            return 1;
+        }
+    }
     if (views_path != NULL) {
         views = fopen(views_path, "wb");
         if (views == NULL) {
             fprintf(stderr, "duoforge_diff_runner: cannot open %s\n", views_path);
+            if (g_public != NULL) {
+                (void)fclose(g_public);
+            }
             return 1;
         }
     }
@@ -440,6 +487,9 @@ int main(int argc, char **argv)
             fprintf(stderr, "duoforge_diff_runner: cannot open %s\n", argv[arg]);
             if (views != NULL) {
                 (void)fclose(views);
+            }
+            if (g_public != NULL) {
+                (void)fclose(g_public);
             }
             return 1;
         }
@@ -505,6 +555,15 @@ int main(int argc, char **argv)
         if (fclose(views) != 0 || !flushed) {
             if (rc == 0) {
                 fprintf(stderr, "duoforge_diff_runner: cannot write %s\n", views_path);
+            }
+            rc = 1;
+        }
+    }
+    if (g_public != NULL) {
+        const bool flushed = fflush(g_public) == 0 && !ferror(g_public);
+        if (fclose(g_public) != 0 || !flushed) {
+            if (rc == 0) {
+                fprintf(stderr, "duoforge_diff_runner: cannot write %s\n", public_path);
             }
             rc = 1;
         }

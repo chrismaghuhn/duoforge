@@ -13,7 +13,7 @@ target_link_libraries(duoforge_difftest_records PUBLIC duoforge)
 duoforge_configure_target(duoforge_difftest_records)
 
 add_executable(duoforge_diff_runner diff_runner.c)
-target_link_libraries(duoforge_diff_runner PRIVATE duoforge_difftest_records duoforge_test_support)
+target_link_libraries(duoforge_diff_runner PRIVATE duoforge_difftest_records duoforge_test_support duoforge_batch)
 duoforge_configure_target(duoforge_diff_runner)
 if(WIN32)
     # fopen is fine in a tool (the MSVC runtime warns, also under Clang).
