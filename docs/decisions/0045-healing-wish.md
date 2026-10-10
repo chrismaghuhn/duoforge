@@ -165,3 +165,15 @@ the mid-turn one a `PIVOT`. Both already exist; no new boundary.
 2. Silent cure: CURE_STATUS without a message, or the HEAL event carries the status (section 3).
 3. Approve: the `dfi_tail_clear_occupant` change, the invariant change and the rewrite of the two `test_pool_tail.c` checks.
 4. Confirm the speed-tie bearer count: `ps_trace.js` must count a wish-holding entrant (the C count is in `dfi_run_entries`, `turn.c:8388-8440`).
+
+## 7. Status of the recordings (2026-10-10, end of the batch round)
+
+Specs in `tests/reference/specs/g82_*` (teams checked against `legal_pool.json` and the support manifest marks; no problems):
+- R1 `g82_r1_normal_heal`: the replacement Gardevoir enters paralysed at 139/175; `-heal 175/175 [from] move: Healing Wish`, status cleared.
+- R2 `g82_r2_full_hp_kept`: a full-HP entrant; no heal line, the wish waits.
+- R3 `g82_r3_second_wish_false`: a second Healing Wish on the occupied slot; `|move|` then `|faint|`, no `-fail`, no heal. FALSE by the pin (see section 2 above).
+- R5 `g82_r5_heal_before_intimidate`: Incineroar (Intimidate) enters hurt; `-heal 202/202` comes before its `-unboost` lines (subOrder 3 before 7).
+- T2 `g82_t2_switch_order_tie_full_hp_wish`: mirror teams; both Kingambits enter at full HP onto pending wishes in one end-of-turn switch; the switch-order SPEED_TIE group is `['P:p2a:1:S', 'P:p1a:1:S']` (one handler each, the wish counted regardless of HP, decision (d)).
+- R6 `g82_r6_sitrus_tie`: Sitrus Berry on both sides with identical Gardevoir sets; 39 SPEED_TIE each:Update draws.
+- R7 (residual order): covered by R5 in part: the residual Leftovers heals come before the replacement step, and the wish heal only at the entry. No holder dies to residual damage, so the residual KO itself is not recorded.
+- R4 (Revival Blessing into a wish slot): OPEN GAP. The revival target is chosen with `pass, switch 3` after Pawmot's Revival Blessing, but the revived Lopunny goes to the bench: the pin's `instaswitch` happens only when the target's own position is an active one (`sim/battle.ts` revive: `action.target.position < side.active.length`). A member that fainted and was replaced has no active position, so the revived member does not enter the wish slot. Reaching the entry needs the fainted member to still stand at an active position, which the end-of-turn replacement does not leave. Not modelled in this round; the benched revive is covered by the G52 specs.
