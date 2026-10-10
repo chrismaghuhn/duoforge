@@ -1558,7 +1558,7 @@ int main(void)
                              id == DFI_MOVE_ICICLESPEAR || id == DFI_MOVE_SCALESHOT || id == DFI_MOVE_QUICKGUARD ||
                              id == DFI_MOVE_UPPERHAND || id == DFI_MOVE_HEALPULSE || id == DFI_MOVE_STRENGTHSAP || id == DFI_MOVE_OUTRAGE || id == DFI_MOVE_REVIVALBLESSING || id == DFI_MOVE_POLTERGEIST || id == DFI_MOVE_SUBSTITUTE || id == DFI_MOVE_BEATUP || id == DFI_MOVE_BUGBITE || id == DFI_MOVE_SHEERCOLD || id == DFI_MOVE_HAZE || id == DFI_MOVE_AFTERYOU || id == DFI_MOVE_QUASH ||
                              id == DFI_MOVE_KINGSSHIELD || /* step G66: King's Shield, its own handler (protect_kind 2) */
-                             id == DFI_MOVE_ALLURINGVOICE || id == DFI_MOVE_DRAGONCHEER || /* step G72b (decision 0015 5ce) */ id == DFI_MOVE_DRAGONDARTS || /* step G78 (decision 0043) */
+                             id == DFI_MOVE_ALLURINGVOICE || id == DFI_MOVE_DRAGONCHEER || /* step G72b (decision 0015 5ce) */ id == DFI_MOVE_DRAGONDARTS || id == DFI_MOVE_HEAVYSLAM || id == DFI_MOVE_HARDPRESS || id == DFI_MOVE_ICESPINNER || id == DFI_MOVE_BELLYDRUM || /* step G78 (decision 0043) */
                              (id == DFI_MOVE_WIDEGUARD && dfi_pool_moves[id].special == DFI_SPECIAL_WIDE_GUARD) ||
                              id == DFI_MOVE_SKILLSWAP ||
                              (id == DFI_MOVE_DETECT && dfi_pool_moves[id].special == DFI_SPECIAL_PROTECT));
