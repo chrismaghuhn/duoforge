@@ -92,7 +92,7 @@ static void check_marks(df_test *t)
     DF_CHECK_EQ_U64(t, DFI_SPECIAL_HEAL_PULSE, DFI_SPECIAL_UPPER_HAND + 1u);
     DF_CHECK_EQ_U64(t, DFI_SPECIAL_STRENGTH_SAP, DFI_SPECIAL_HEAL_PULSE + 1u);
     DF_CHECK_EQ_U64(t, DFI_SPECIAL_HAZE, DFI_SPECIAL_SHEER_COLD + 1u); /* step G62 (decision 0031), after the four of G64 */
-    DF_CHECK_EQ_U64(t, DFI_SPECIAL_UNMODELED, DFI_SPECIAL_DRAGON_CHEER + 1u /* G72b: after Alluring Voice and Dragon Cheer */); /* step G60 (decision 0032) comes after Quash */ /* G62 added Haze, After You and Quash after it */
+    DF_CHECK_EQ_U64(t, DFI_SPECIAL_UNMODELED, DFI_SPECIAL_BATON_PASS + 1u /* G72b: after Alluring Voice and Dragon Cheer */); /* step G60 (decision 0032) comes after Quash */ /* G62 added Haze, After You and Quash after it */
 }
 
 /* The pinned numbers that the rows of this step depend on (data/moves.ts; the Champions mod changes none of them). */

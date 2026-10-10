@@ -5255,6 +5255,42 @@ static duoforge_status dfi_run_substitute(dfi_run *r, uint32_t user)
     return dfi_deal(r, user, quarter == 0u ? 1u : quarter, DUOFORGE_CAUSE_NONE, 0u, DUOFORGE_NO_POSITION);
 }
 
+/* Baton Pass (decision 0042; data/moves.ts:1092-1116, sim/battle-actions.ts:1290-1313). A status move on the user: onHit fails
+ * with [still] when no switch is possible (the commanded case is unmarked), otherwise the user's slot is flagged to pivot, and
+ * the switch that follows copies the leaver's volatiles (dfi_switch_in). The pin's self block skips the BeforeSwitchOut of the
+ * switch; no BeforeSwitchOut handler is marked (Pursuit is not, decision 0042 section 3.4), so the engine runs none for it.
+ * The refusals of decision 0042 section 6 come first, each one E_UNSUPPORTED (the cause is named here and in the test):
+ *   - Encore or Disable on the passer (decision 0042 lead's B: the pin stores a move id, the receiver may not know it);
+ *   - a move lock, a two-turn charge, a recharge or Protect on the passer (the pin copies these; no pool passer has one);
+ *   - Illusion on the passer's side (decision 0026, until 0026 lands: the tail struct is written by the test only).
+ * Transform and Imposter: unmarked (guard test), no engine state yet. */
+static duoforge_status dfi_run_baton_pass(dfi_run *r, uint32_t user)
+{
+    struct duoforge_battle *b = r->b;
+    const uint32_t side = user / DUOFORGE_ACTIVE_PER_SIDE;
+    const uint32_t slot = user % DUOFORGE_ACTIVE_PER_SIDE;
+    const dfi_tail_pos *tp = &b->tail.sides[side].positions[slot];
+    const dfi_active_slot *act = dfi_pos(b, user);
+    if (tp->encore_slot != 0u || tp->disable_slot != 0u) {
+        return DUOFORGE_E_UNSUPPORTED; /* Encore or Disable on the passer (decision 0042, lead's B) */
+    }
+    if (act->locked_move != 0u || act->charge_turns != 0u || tp->must_recharge != 0u ||
+        (act->flags & DFI_VOL_PROTECT) != 0u || (act->flags & DFI_VOL_CHOICE_LOCK) != 0u) {
+        return DUOFORGE_E_UNSUPPORTED; /* a lock, a charge, a recharge or Protect on the passer */
+    }
+    if (b->tail.sides[side].illusion.shown != 0u) {
+        return DUOFORGE_E_UNSUPPORTED; /* Illusion on the passer's side (decision 0026, until 0026 lands) */
+    }
+    if (!dfi_can_switch(b, side)) {
+        /* onHit: -fail|user with [still] and no request (sim/battle-actions.ts:1290-1296, data/moves.ts:1097-1103) */
+        duoforge_event e = dfi_ev(DUOFORGE_EVENT_FAIL, user, DUOFORGE_CAUSE_NONE, 0u, DUOFORGE_NO_POSITION);
+        dfi_emit(r, &e);
+        return DUOFORGE_OK;
+    }
+    dfi_pos(b, user)->switch_flag = DFI_SWITCH_BATON_PASS; /* the PIVOT of the user's slot (battle-actions.ts:1311-1313) */
+    return DUOFORGE_OK;
+}
+
 /* The Substitute of a target takes a hit of a move (decision 0032, data/moves.ts:18341-18366: onTryPrimaryHit, run for every
  * target that is not the user, before any effect of the hit). *taken = true: the hit goes to the Substitute and the target is
  * not hit (no damage, secondary, boost, status or contact effect). A status move fails on the user ([still]). A damaging move
@@ -6538,6 +6574,10 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
     if (md->special == DFI_SPECIAL_SUBSTITUTE) {
         return dfi_run_substitute(r, user);
     }
+    /* Baton Pass (decision 0042): its onHit and self block, then the PIVOT of the user (dfi_run_baton_pass). */
+    if (md->special == DFI_SPECIAL_BATON_PASS) {
+        return dfi_run_baton_pass(r, user);
+    }
     /* A status move whose only effect is its forced switch (Roar, Whirlwind; step G46) is modelled by the forced-switch step
      * below, not refused here. */
     if (status_move && md->primary_status == DFI_STATUS_NONE && md->special != DFI_SPECIAL_PARTING_SHOT &&
@@ -7221,7 +7261,9 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
         if (md->special == DFI_SPECIAL_ALLURING_VOICE && !dfi_sf_strips(r->b, m, md)) {
             /* Sheer Force strips this secondary for its holder (pool_families checkG61; the pin deletes secondaries): no draw, no confusion. */
             for (uint32_t i = 0u; i < count; ++i) {
-                if (!hit[i]) {
+                /* A target whose last hit a Substitute took is a non-false target too: the roll is drawn (sim/battle-actions.ts
+                 * 1336-1349, the null target), and the effect is not (moveHit of a null target does nothing). Decision 0042 / G60. */
+                if (!hit[i] && !sub_off[i]) {
                     continue;
                 }
                 uint32_t roll = 0u;
@@ -7229,7 +7271,7 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
                 if (st != DUOFORGE_OK) {
                     return st;
                 }
-                if (roll < 100u && dfi_stats_raised(r->b, targets[i])) {
+                if (hit[i] && roll < 100u && dfi_stats_raised(r->b, targets[i])) {
                     st = dfi_add_volatile(r, targets[i], DFI_VOLATILE_CONFUSION);
                     if (st != DUOFORGE_OK) {
                         return st;
@@ -7243,7 +7285,8 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
          * `moveData.secondaries` test of a stripped move). */
         if (md->sec_chance != 0u && !dfi_sf_strips(r->b, m, md)) {
             for (uint32_t i = 0u; i < count; ++i) {
-                if (!hit[i]) {
+                /* the absorbed target draws too (see Alluring Voice above) but takes no effect */
+                if (!hit[i] && !sub_off[i]) {
                     continue;
                 }
                 uint32_t roll = 0u;
@@ -7251,7 +7294,7 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
                 if (st != DUOFORGE_OK) {
                     return st;
                 }
-                if (roll >= md->sec_chance) {
+                if (!hit[i] || roll >= md->sec_chance) {
                     continue;
                 }
                 if (md->sec_kind == DFI_SECONDARY_BOOST) {
@@ -7908,6 +7951,67 @@ static duoforge_status dfi_run_revive(dfi_run *r, const dfi_queue_record *q)
  * (step G46, `drag`) skips BeforeSwitchOut and its Update (sim/battle-actions.ts:80-85), takes no pivot or Parting Shot
  * cause, and its line is [drag] (DUOFORGE_EVENT_DRAG). The entry (runSwitch) is queued, or, for a drag, run at once by the
  * caller. `*activation` is the reserve's activation id. */
+/* Baton Pass (decision 0042; sim/pokemon.ts copyVolatileFrom, the noCopy set left out). The leaver's volatiles that the pin
+ * copies are taken before its position is cleared and given to the entering member after it: the stages, the confusion and
+ * stall counters, Helping Hand and Follow Me, the Substitute's HP (hidden: no event, no view, no encoder carries it), the
+ * bars and counters, the leech seed, the charge-type flags, the stockpile, the partial trap and the Dragon Cheer stage.
+ * Not copied, as the pin's clearVolatile does: the last move, the move results, hits taken, the ability state, the
+ * stats-raised bit and the flinch, the choice lock and the Flash Fire flag. */
+typedef struct dfi_pass_copy {
+    uint8_t stages[DFI_STAT_STAGE_COUNT];
+    uint8_t confusion_turns;
+    uint8_t stall_level;
+    uint8_t stall_turns;
+    uint8_t vol_flags;    /* DFI_VOL_HELPING_HAND | DFI_VOL_FOLLOW_ME of the leaver, else 0 */
+    dfi_tail_pos tail;    /* the leaver's tail position; dfi_pass_give takes only the copied fields of it */
+} dfi_pass_copy;
+
+static void dfi_pass_take(struct duoforge_battle *b, uint32_t flat, dfi_pass_copy *c)
+{
+    const dfi_active_slot *a = dfi_pos(b, flat);
+    for (uint32_t i = 0u; i < DFI_STAT_STAGE_COUNT; ++i) {
+        c->stages[i] = a->stages[i];
+    }
+    c->confusion_turns = a->confusion_turns;
+    c->stall_level = a->stall_level;
+    c->stall_turns = a->stall_turns;
+    c->vol_flags = (uint8_t)((uint32_t)a->flags & (DFI_VOL_HELPING_HAND | DFI_VOL_FOLLOW_ME)); /* wide-operands-reviewed: < 256 */
+    c->tail = b->tail.sides[flat / DUOFORGE_ACTIVE_PER_SIDE].positions[flat % DUOFORGE_ACTIVE_PER_SIDE];
+}
+
+static void dfi_pass_give(struct duoforge_battle *b, uint32_t flat, const dfi_pass_copy *c)
+{
+    dfi_active_slot *a = dfi_pos(b, flat);
+    dfi_tail_pos *t = &b->tail.sides[flat / DUOFORGE_ACTIVE_PER_SIDE].positions[flat % DUOFORGE_ACTIVE_PER_SIDE];
+    const dfi_tail_pos *s = &c->tail;
+    for (uint32_t i = 0u; i < DFI_STAT_STAGE_COUNT; ++i) {
+        a->stages[i] = c->stages[i];
+    }
+    a->confusion_turns = c->confusion_turns;
+    a->stall_level = c->stall_level;
+    a->stall_turns = c->stall_turns;
+    a->flags = (uint8_t)(((uint32_t)a->flags & ~(uint32_t)(DFI_VOL_HELPING_HAND | DFI_VOL_FOLLOW_ME)) | c->vol_flags); /* wide-operands-reviewed: < 256 */
+    t->substitute_hp = s->substitute_hp;
+    t->taunt_turns = s->taunt_turns;
+    t->heal_block_turns = s->heal_block_turns;
+    t->perish = s->perish;
+    t->yawn_turns = s->yawn_turns;
+    t->throat_chop_turns = s->throat_chop_turns;
+    t->imprison = s->imprison;
+    t->leech_seed_source = s->leech_seed_source;
+    t->focus_energy = s->focus_energy;
+    t->stockpile = s->stockpile;
+    t->stockpile_def = s->stockpile_def;
+    t->stockpile_spd = s->stockpile_spd;
+    t->charge = s->charge;
+    t->glaive_rush = s->glaive_rush;
+    t->trap_turns = s->trap_turns;
+    t->trap_source = s->trap_source;
+    t->trap_band = s->trap_band;
+    t->trap_move = s->trap_move;
+    t->position_flags = (uint8_t)((uint32_t)s->position_flags & DFI_POSFLAG_DRAGON_CHEER_MASK); /* wide-operands-reviewed: < 256 */
+}
+
 static duoforge_status dfi_switch_in(dfi_run *r, uint32_t side, uint32_t slot, uint32_t reserve, bool drag,
                                      bool insta, uint32_t *activation)
 {
@@ -7967,6 +8071,14 @@ static duoforge_status dfi_switch_in(dfi_run *r, uint32_t side, uint32_t slot, u
         dfi_cancel_actions(b, sd->positions[slot].activation_id);
     }
     dfi_party_switch(r, side, slot, reserve); /* step G46: side.pokemon order, sim/battle-actions.ts:119-133 */
+    /* Baton Pass (decision 0042): the leaver's copied volatiles are taken before its position is cleared (copyVolatileFrom
+     * runs before clearVolatile, sim/battle-actions.ts:114-117) and given to the entering member below. */
+    const uint32_t pass_flat = side * DUOFORGE_ACTIVE_PER_SIDE + slot;
+    const bool passing = leaving != NULL && leaving->hp != 0u && flag == DFI_SWITCH_BATON_PASS && !drag;
+    dfi_pass_copy pass;
+    if (passing) {
+        dfi_pass_take(b, pass_flat, &pass);
+    }
     if (sd->positions[slot].occupant != DFI_OCCUPANT_NONE) {
         const duoforge_status vs = dfi_vacate(b, where);
         if (vs != DUOFORGE_OK) {
@@ -7977,6 +8089,9 @@ static duoforge_status dfi_switch_in(dfi_run *r, uint32_t side, uint32_t slot, u
     const duoforge_status ps = dfi_place(b, where, (uint8_t)reserve, &binding);
     if (ps != DUOFORGE_OK) {
         return ps;
+    }
+    if (passing) {
+        dfi_pass_give(b, pass_flat, &pass); /* the entering member takes the copy (decision 0042) */
     }
     /* newlySwitched until the end of the turn (Team C: only Helping Hand
      * reads it). */

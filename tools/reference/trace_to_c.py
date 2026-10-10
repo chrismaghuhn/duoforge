@@ -1039,7 +1039,7 @@ def ev_cause(attrs, tables):
                 cause, id2 = CAUSE['WEATHER'], WEATHER_CAUSE[what]
             elif what == 'Grassy Terrain':
                 cause = CAUSE['TERRAIN']
-            elif what in ('Parting Shot', 'Flip Turn', 'U-turn', 'Volt Switch', 'Spiky Shield', 'Stealth Rock', 'Spikes'):  # the move that made the switch (U-turn, Volt Switch: pool tables)
+            elif what in ('Parting Shot', 'Flip Turn', 'U-turn', 'Volt Switch', 'Baton Pass', 'Spiky Shield', 'Stealth Rock', 'Spikes'):  # the move that made the switch (U-turn, Volt Switch: pool tables; Baton Pass, step G74: `|switch|...|[from] Baton Pass`, the bare move name of switchIn's sourceEffect)
                 # Spiky Shield (step G20, POOL): `-damage|attacker|hp|[from] Spiky Shield|[of] holder`, the condition's own name;
                 # Stealth Rock and Spikes (step G37): `-damage|X|hp|[from] Stealth Rock`, the hazard's own name, the move's id in id2
                 cause, id2 = CAUSE['MOVE'], tables['MOVE'][key(what)]

@@ -590,8 +590,23 @@ static bool dfi_position_flags_ok(uint8_t pf)
            ((pf & DFI_POSFLAG_DRAGON_CHEER_MASK) >> DFI_POSFLAG_DRAGON_CHEER_SHIFT) <= DFI_POSFLAG_DRAGON_CHEER_MAX;
 }
 
+/* A Substitute is made at a quarter of its maker's maximum HP (floor, decision 0032). A pass (decision 0042, copyVolatileFrom)
+ * moves it to another brought member of the side, so the bound of a side is the largest quarter among its brought members
+ * (decision 0042 section 5.3, lead's decision A). */
+static uint32_t dfi_substitute_cap(const dfi_side *side)
+{
+    uint32_t cap = 0u;
+    for (uint32_t m = 0u; m < DUOFORGE_MAX_ROSTER && m < side->member_count; ++m) {
+        if (((uint32_t)side->brought_mask >> m) & 1u) {
+            const uint32_t quarter = (uint32_t)side->members[m].hp_max / 4u;
+            cap = quarter > cap ? quarter : cap;
+        }
+    }
+    return cap;
+}
+
 static bool dfi_tail_pos_valid(const dfi_kind_limits *lim, const dfi_tail_pos *tp, uint32_t flat,
-                               const dfi_member *occupant, const dfi_active_slot *slot)
+                               const dfi_member *occupant, const dfi_active_slot *slot, uint32_t substitute_cap)
 {
     const uint32_t move_count = occupant->move_count;
     const bool encore_ok = tp->last_move <= DFI_TAIL_MOVE_MAX &&
@@ -608,8 +623,8 @@ static bool dfi_tail_pos_valid(const dfi_kind_limits *lim, const dfi_tail_pos *t
     const bool flags_ok = tp->imprison <= DFI_TAIL_FLAG_MAX && tp->must_recharge <= DFI_TAIL_FLAG_MAX &&
                           tp->focus_energy <= DFI_TAIL_FLAG_MAX && tp->charge <= DFI_TAIL_FLAG_MAX &&
                           tp->glaive_rush <= DFI_TAIL_FLAG_MAX;
-    /* A Substitute has at most a quarter of the maximum HP (floor), as it is made. */
-    const bool substitute_ok = tp->substitute_hp <= (uint32_t)occupant->hp_max / 4u;
+    /* A Substitute has at most the largest quarter of the side's brought members (dfi_substitute_cap): a pass moves it. */
+    const bool substitute_ok = tp->substitute_hp <= substitute_cap;
     /* A partial trap: turns, source (another position) and move together, the band only with them. */
     const bool trap_ok = tp->trap_turns <= DFI_TAIL_TRAP_TURNS_MAX && tp->trap_source <= DFI_TAIL_SOURCE_MAX &&
                          tp->trap_source != flat + 1u && tp->trap_move <= lim->move_count &&
@@ -727,7 +742,7 @@ static dfi_invariant dfi_check_tail(const duoforge_context *ctx, const struct du
                 continue;
             }
             if (!dfi_tail_pos_valid(&lim, tp, s * DUOFORGE_ACTIVE_PER_SIDE + p, &side->members[occupant],
-                                    &side->positions[p])) {
+                                    &side->positions[p], dfi_substitute_cap(side))) {
                 return DFI_INV_TAIL_POSITION;
             }
         }

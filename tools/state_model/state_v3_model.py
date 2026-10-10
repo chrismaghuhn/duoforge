@@ -977,7 +977,13 @@ def position_flags_valid(pf):
     return pf & ~0x0F == 0 and pf & 0x01 == 0 and (pf >> 2) & 3 <= 2
 
 
-def tail_pos_valid(ctx, tp, flat, mem, slot_flags=0):
+def substitute_cap(sd):
+    """The bound of a Substitute on a side (decision 0042, lead's decision A): the largest floor(maxhp / 4) among the
+    brought members of the side, since a pass moves a Substitute to another brought member. C: dfi_substitute_cap."""
+    return max([sd['members'][m]['hp_max'] // 4 for m in range(sd['member_count']) if (sd['brought'] >> m) & 1] or [0])
+
+
+def tail_pos_valid(ctx, tp, flat, mem, slot_flags=0, sub_cap=0):
     """The tail of a standing occupant's position (the rules of decision 0015 section 7)."""
     mc = mem['move_count']
     if not (tp['last_move'] <= TAIL_MOVE_MAX and (tp['last_move'] == TAIL_MOVE_MAX or tp['last_move'] <= mc)
@@ -992,7 +998,7 @@ def tail_pos_valid(ctx, tp, flat, mem, slot_flags=0):
         return False
     if not all(tp[f] <= TAIL_FLAG_MAX for f in ('imprison', 'must_recharge', 'focus_energy', 'charge', 'glaive_rush')):
         return False
-    if tp['substitute_hp'] > mem['hp_max'] // 4:
+    if tp['substitute_hp'] > sub_cap:  # decision 0042: the side's cap, not the occupant's quarter
         return False
     if not (tp['trap_turns'] <= TAIL_TRAP_TURNS_MAX and tp['trap_source'] <= TAIL_SOURCE_MAX
             and tp['trap_source'] != flat + 1 and tp['trap_move'] <= ctx.move_count
@@ -1056,7 +1062,7 @@ def check_tail(ctx, st):
                 if not (flags_only and (tp['position_flags'] == 0 or (occ < MAX_ROSTER and position_flags_valid(tp['position_flags'])))):
                     return 'TAIL_POSITION'
                 continue
-            if not tail_pos_valid(ctx, tp, 2 * s + p, sd['members'][occ], sd['pos'][p]['flags']):
+            if not tail_pos_valid(ctx, tp, 2 * s + p, sd['members'][occ], sd['pos'][p]['flags'], substitute_cap(sd)):
                 return 'TAIL_POSITION'
         for m in range(MAX_ROSTER):
             ab, fo, ty, it, tx = ts['ability_now'][m], ts['forme_now'][m], ts['soak'][m], ts['item_now'][m], ts['toxic_stage'][m]

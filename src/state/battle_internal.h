@@ -89,6 +89,7 @@ typedef struct dfi_move_slot {
 #define DFI_SWITCH_UTURN 5u     /* U-turn (the POOL kinds only), step G5 */
 #define DFI_SWITCH_VOLT_SWITCH 6u /* Volt Switch (the POOL kinds only), step G32 */
 #define DFI_SWITCH_REVIVE_BLESSING 7u /* Revival Blessing (the POOL kinds only), decision 0025 item 6: a REVIVE answer */
+#define DFI_SWITCH_BATON_PASS 8u /* Baton Pass (the POOL kinds only), decision 0042: a PIVOT that copies the leaver's volatiles */
 #define DFI_REVEALED_ITEM_CONSUMED 1u
 #define DFI_REVEALED_MEGA 2u
 #define DFI_MEMBER_STAT_COUNT 5u  /* atk, def, spa, spd, spe (HP is hp_max) */
