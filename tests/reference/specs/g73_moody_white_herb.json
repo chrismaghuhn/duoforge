@@ -1,0 +1,16 @@
+{
+  "name": "g73_moody_white_herb",
+  "purpose": "Moody with a White Herb holder (step G73), six members per side (the strict POOL profile): Glalie (Moody, White Herb) takes no damage (Protect) while its Moody lowers a stat at order 28 in the first turn; White Herb (order 29) then restores it, with -enditem after the -unboost. Scovillain (Moody, Leftovers) is the foe. The bench (Gholdengo, Milotic, Kingambit, Garchomp, Venusaur) does not act.",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,0000000000000000000000000000000000000000000000000000000065007302",
+  "teams": [
+    "Glalie (M) @ White Herb\nAbility: Moody\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Ice Beam\n- Protect\n- Shadow Ball\n- Foul Play\n\nGholdengo @ Life Orb\nAbility: Good as Gold\nLevel: 50\nEVs: 17 HP / 2 Def / 17 SpA / 16 SpD / 14 Spe\nModest Nature\n- Make It Rain\n- Shadow Ball\n- Nasty Plot\n- Protect\n\nMilotic (F) @ Sitrus Berry\nAbility: Marvel Scale\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Coil\n- Muddy Water\n- Double-Edge\n- Protect\n\nKingambit (M) @ Black Glasses\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Foul Play\n- Kowtow Cleave\n- Sucker Punch\n- Protect\n\nGarchomp (M) @ Charcoal\nAbility: Rough Skin\nLevel: 50\nEVs: 2 HP / 32 Atk / 32 Spe\nJolly Nature\n- Earthquake\n- Dragon Claw\n- Protect\n- Swords Dance\n\nVenusaur (F) @ Mystic Water\nAbility: Overgrow\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 SpD\nModest Nature\n- Gigadrain\n- Sludge Bomb\n- Protect\n- Leaf Storm",
+    "Scovillain (F) @ Leftovers\nAbility: Moody\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 SpD\nModest Nature\n- Flamethrower\n- Protect\n- Energy Ball\n- Leaf Storm\n\nGholdengo @ Life Orb\nAbility: Good as Gold\nLevel: 50\nEVs: 17 HP / 2 Def / 17 SpA / 16 SpD / 14 Spe\nModest Nature\n- Make It Rain\n- Shadow Ball\n- Nasty Plot\n- Protect\n\nMilotic (F) @ Sitrus Berry\nAbility: Marvel Scale\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Coil\n- Muddy Water\n- Double-Edge\n- Protect\n\nKingambit (M) @ Black Glasses\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Foul Play\n- Kowtow Cleave\n- Sucker Punch\n- Protect\n\nGarchomp (M) @ Charcoal\nAbility: Rough Skin\nLevel: 50\nEVs: 2 HP / 32 Atk / 32 Spe\nJolly Nature\n- Earthquake\n- Dragon Claw\n- Protect\n- Swords Dance\n\nVenusaur (F) @ Mystic Water\nAbility: Overgrow\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 SpD\nModest Nature\n- Gigadrain\n- Sludge Bomb\n- Protect\n- Leaf Storm"
+  ],
+  "plan": {
+    "p1": ["move 2, move 4", "move 2, move 4", "move 2, move 4"],
+    "p2": ["move 2, move 4", "move 2, move 4", "move 2, move 4"],
+    "max_steps": 3
+  }
+}

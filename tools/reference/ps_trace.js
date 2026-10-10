@@ -84,6 +84,10 @@ const CONDITION_SITES = {
     'flamebody:DamagingHit': 'FLAME_BODY',
     // Static (step G39): its randomChance(3, 10) in onDamagingHit of the target, as Flame Body's.
     'static:DamagingHit': 'STATIC',
+    // Moody (step G73): its two this.sample calls in onResidual (data/abilities.ts:2701-2734), one site for both draws. Both
+    // are random(n) with n the length of the list, a list of one included. The SPEED_TIE shuffles of the same residual are
+    // matched above (before this table), so the tie of two Moody holders stays a SPEED_TIE draw.
+    'moody:Residual': 'MOODY',
 };
 
 // The event a draw happens in (innermost last), tracked by wrapping the
