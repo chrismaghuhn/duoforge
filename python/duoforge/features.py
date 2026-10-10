@@ -148,10 +148,17 @@ RECORD_FEATURES = ALL_FEATURES & ~BASE_VALUE_FEATURES
 # ROOST of tail revision 4 (encoder 4's), 21 TRANSFORMED (encoder 5's, decision 0028). A bit beyond them needs a new
 # encoder version: the import fails.
 _VOLATILE_FEATURE = {"TYPE_CHANGED": "TYPE_CHANGE", "ILLUSION_UP": "ILLUSION", "TRANSFORMED": "TRANSFORM"}
+# Volatile bits that wait for the next encoder version (an owner / HauptSession decision, encoder 6): they have no feature column
+# yet. An observation with one of them is refused by the unknown-volatile check below (ValueError), never encoded silently.
+# ATTRACT (step G71, decision 0034) is the first of them; lane A's POSITION_EXT bit is the other one to come. Do not bump ENCODER here.
+_AWAITING_ENCODER = ("ATTRACT",)
 VOLATILES = tuple(sorted(((name[len("DUOFORGE_POSITION_EXT_"):], bit,
                            _VOLATILE_FEATURE.get(name[len("DUOFORGE_POSITION_EXT_"):],
                                                  name[len("DUOFORGE_POSITION_EXT_"):]))
-                          for name, bit in C.items() if name.startswith("DUOFORGE_POSITION_EXT_")), key=lambda v: v[1]))
+                          for name, bit in C.items()
+                          if name.startswith("DUOFORGE_POSITION_EXT_")
+                          and name[len("DUOFORGE_POSITION_EXT_"):] not in _AWAITING_ENCODER),
+                         key=lambda v: v[1]))
 assert [v[1] for v in VOLATILES] == [1 << k for k in range(22)] and VOLATILES[20][0] == "ROOST" \
     and VOLATILES[21][0] == "TRANSFORMED", VOLATILES
 _VOLATILES3 = VOLATILES[:20]  # encoder 3's columns, in place

@@ -287,6 +287,24 @@ class FeaturesExtTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "revision 0"):
             features.encode_batch(ob, d, odd, ALL)
 
+    def test_attract_bit_is_refused_by_the_encoder(self):
+        """Step G71 (decision 0034): DUOFORGE_POSITION_EXT_ATTRACT has no feature column yet (features._AWAITING_ENCODER, the next
+        encoder version). An observation with an infatuated occupant is refused by the unknown-volatile check (ValueError), and
+        is never encoded silently; the same observation without the bit encodes."""
+        ob, d = self.obs, self.domains
+        self.assertEqual(features._AWAITING_ENCODER, ("ATTRACT",))
+        self.assertNotIn(C["DUOFORGE_POSITION_EXT_ATTRACT"], [bit for _, bit, _ in features.VOLATILES])
+        ext = _records(ob)
+        ext["sides"]["positions"]["volatiles"][...] = 0
+        self.assertEqual(features.encode_batch(ob, d, ext, ALL)[0].shape[0], ob.shape[0])
+        ext["sides"]["positions"]["volatiles"][:, 0, 0] = C["DUOFORGE_POSITION_EXT_ATTRACT"]
+        with self.assertRaisesRegex(ValueError, "volatiles bits"):
+            features.encode_batch(ob, d, ext, ALL)
+        ext["sides"]["positions"]["volatiles"][:, 0, 0] = (C["DUOFORGE_POSITION_EXT_ATTRACT"]
+                                                           | C["DUOFORGE_POSITION_EXT_TAUNT"])
+        with self.assertRaisesRegex(ValueError, "volatiles bits"):
+            features.encode_batch(ob, d, ext, ALL)
+
     def test_a_clear_bit_zeros_its_columns(self):
         ob, d = self.obs, self.domains
         ext = _records(ob)
