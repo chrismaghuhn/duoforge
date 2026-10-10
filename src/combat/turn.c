@@ -4625,7 +4625,10 @@ static duoforge_status dfi_run_ally_switch(dfi_run *r, uint32_t user, bool *ok)
         const duoforge_event f = dfi_ev(DUOFORGE_EVENT_FAIL, user, DUOFORGE_CAUSE_MOVE, DFI_MOVE_ALLYSWITCH, DUOFORGE_NO_POSITION);
         dfi_emit(r, &f);
         dfi_still(r);
-        r->mres |= DFI_MRES_FALSE;
+        /* The pin's onHit returns NOT_FAIL here (data/moves.ts:326-328), not false: hitStepMoveHitLoop drops the target without
+         * atLeastOneFailure (sim/battle-actions.ts:605-606, 616), so moveThisTurnResult becomes null, not false. The PrepareHit
+         * failure above is the one that returns false (dfi_fail_still). */
+        r->mres |= DFI_MRES_NULL;
         return DUOFORGE_OK;
     }
     dfi_ally_switch_swap(r, user, partner);
