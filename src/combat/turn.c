@@ -5636,7 +5636,11 @@ static duoforge_status dfi_substitute_takes(dfi_run *r, uint32_t user, uint32_t 
                                           DUOFORGE_NO_POSITION);
         dfi_emit(r, &act);
     }
-    if (dealt != 0u && md->recoil[1] != 0u) {
+    /* Rock Head cancels a recoil move's recoil on the user (data/abilities.ts rockhead, onDamage with effect 'recoil' returns null,
+     * except Struggle): applyRecoilDamage calls battle.damage(recoil, pokemon, pokemon, 'recoil') (sim/battle-actions.ts:1391-1392)
+     * from the totalDamage gate of the hit loop (data/mods/champions/scripts.ts:552-553). The same gate runs for a hit that a
+     * Substitute took, so the cancel applies here as in the normal recoil path (turn.c, Rock Head, the recoil block of the hit loop). */
+    if (dealt != 0u && md->recoil[1] != 0u && !dfi_ability(b, dfi_at(b, user), DFI_ABILITY_ROCKHEAD)) {
         /* applyRecoilDamage(damage, move, source): round(damage * recoil[0] / recoil[1]), at least 1 (sim/battle-actions.ts:1384) */
         uint32_t recoil = (dealt * md->recoil[0] * 2u + md->recoil[1]) / (2u * md->recoil[1]);
         recoil = recoil < 1u ? 1u : recoil;
@@ -7742,7 +7746,13 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
                 if (st != DUOFORGE_OK) {
                     return st;
                 }
-                if (!hit[i] || roll >= md->sec_chance) {
+                if (roll >= md->sec_chance) {
+                    continue;
+                }
+                /* A self-boost secondary (Ancient Power, Charge Beam) acts on the user even when the target's hit went to a Substitute:
+                 * secondaries() calls moveHit for every target that is not false, and the null target still runs the secondary's
+                 * self (selfDrops, sim/battle-actions.ts:1317-1333 and :1336-1350). The target effects need a hit target. */
+                if (!hit[i] && md->sec_kind != DFI_SECONDARY_SELF_BOOST) {
                     continue;
                 }
                 if (md->sec_kind == DFI_SECONDARY_BOOST) {

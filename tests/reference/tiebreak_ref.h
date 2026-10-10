@@ -7429,6 +7429,18 @@ static const df_tb_stop tb_s9_self_drops[] = {
     {9u, 0u, 2u, 1u, {1u, 2u}, {28u, 233u}, {0x40027b5a67136eafull, 0x4033f78d18806c25ull}},
     {10u, 1u, 2u, 0u, {0u, 2u}, {0u, 224u}, {0x0000000000000000ull, 0x4033309661747c10ull}},
 };
+static const df_tb_stop tb_sub2_ancientpower_substitute_tyrantrum[] = {
+    {0u, 0u, 2u, 3u, {6u, 6u}, {1156u, 1234u}, {0x4059000000000000ull, 0x4059000000000000ull}},
+    {1u, 0u, 2u, 3u, {4u, 4u}, {777u, 855u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {2u, 0u, 1u, 2u, {4u, 4u}, {777u, 789u}, {0x4050aaaaaaaaaaabull, 0x404f45fe1517f854ull}},
+    {3u, 0u, 1u, 2u, {4u, 4u}, {777u, 789u}, {0x4050aaaaaaaaaaabull, 0x404f45fe1517f854ull}},
+};
+static const df_tb_stop tb_sub2_rockhead_flareblitz_substitute_arcanine[] = {
+    {0u, 0u, 2u, 3u, {6u, 6u}, {1139u, 1234u}, {0x4059000000000000ull, 0x4059000000000000ull}},
+    {1u, 0u, 2u, 3u, {4u, 4u}, {760u, 855u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {2u, 0u, 1u, 2u, {4u, 4u}, {760u, 789u}, {0x4050aaaaaaaaaaabull, 0x404f45fe1517f854ull}},
+    {3u, 0u, 1u, 2u, {4u, 4u}, {760u, 789u}, {0x4050aaaaaaaaaaabull, 0x404f45fe1517f854ull}},
+};
 static const df_tb_stop tb_sub_sitrus_tie[] = {
     {0u, 0u, 1u, 3u, {6u, 6u}, {1193u, 1181u}, {0x4059000000000000ull, 0x4059000000000000ull}},
     {1u, 0u, 2u, 3u, {4u, 4u}, {785u, 793u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
@@ -8485,6 +8497,8 @@ static const df_tb_battle tb_battles[] = {
     {"s8_sitrus_leftovers", 11u, tb_s8_sitrus_leftovers, sizeof tb_s8_sitrus_leftovers / sizeof tb_s8_sitrus_leftovers[0]},
     {"s9_recoil_drain", 10u, tb_s9_recoil_drain, sizeof tb_s9_recoil_drain / sizeof tb_s9_recoil_drain[0]},
     {"s9_self_drops", 10u, tb_s9_self_drops, sizeof tb_s9_self_drops / sizeof tb_s9_self_drops[0]},
+    {"sub2_ancientpower_substitute_tyrantrum", 3u, tb_sub2_ancientpower_substitute_tyrantrum, sizeof tb_sub2_ancientpower_substitute_tyrantrum / sizeof tb_sub2_ancientpower_substitute_tyrantrum[0]},
+    {"sub2_rockhead_flareblitz_substitute_arcanine", 3u, tb_sub2_rockhead_flareblitz_substitute_arcanine, sizeof tb_sub2_rockhead_flareblitz_substitute_arcanine / sizeof tb_sub2_rockhead_flareblitz_substitute_arcanine[0]},
     {"sub_sitrus_tie", 4u, tb_sub_sitrus_tie, sizeof tb_sub_sitrus_tie / sizeof tb_sub_sitrus_tie[0]},
     {"w1_sand_stream", 9u, tb_w1_sand_stream, sizeof tb_w1_sand_stream / sizeof tb_w1_sand_stream[0]},
     {"w2_sandstorm_move", 11u, tb_w2_sandstorm_move, sizeof tb_w2_sandstorm_move / sizeof tb_w2_sandstorm_move[0]},
@@ -8508,7 +8522,7 @@ static const df_tb_battle tb_battles[] = {
     {"xr3_sheercold_sub_miss", 3u, tb_xr3_sheercold_sub_miss, sizeof tb_xr3_sheercold_sub_miss / sizeof tb_xr3_sheercold_sub_miss[0]},
 };
 
-/* 5718 stops: 155 of an ended battle; decided by the count 1395,
- * the HP percentage 1769, the total HP 2228, a tie 171;
- * winners: side 0 2675, side 1 2872, tie 171 */
+/* 5726 stops: 155 of an ended battle; decided by the count 1395,
+ * the HP percentage 1773, the total HP 2232, a tie 171;
+ * winners: side 0 2679, side 1 2876, tie 171 */
 #endif

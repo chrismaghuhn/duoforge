@@ -1,0 +1,22 @@
+{
+  "name": "sub2_ancientpower_substitute_tyrantrum",
+  "purpose": "Ancient Power (data/moves.ts:396-420: 10 percent, self all stats +1) into the foe's standing Substitute (Snorlax): the absorbed hit draws the secondary roll, and the self boost applies to the user (secondaries() calls moveHit for every target not false, a null target included, sim/battle-actions.ts:1336-1350, selfDrops :1317-1333). The target effects do nothing. Before the fix, the engine skipped the absorbed target's secondary entirely.",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,00000000000000000000000000000000000000000000000000000000000018be",
+  "teams": [
+    "Tyrantrum (M) @ Sitrus Berry\nAbility: Rock Head\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Spe\nAdamant Nature\n- Ancient Power\n- Protect\n- Substitute\n- Stomping Tantrum\n\nGholdengo @ Life Orb\nAbility: Good as Gold\nLevel: 50\nEVs: 32 HP / 2 SpA / 32 SpD\nCalm Nature\n- Protect\n- Shadow Ball\n- Make It Rain\n\nKingambit (M) @ Black Glasses\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Sucker Punch\n- Iron Head\n- Protect\n- Swords Dance\n\nPrimarina (F) @ Fairy Feather\nAbility: Torrent\nLevel: 50\nEVs: 32 HP / 2 Def / 32 SpD\nCalm Nature\n- Protect\n- Moonblast\n- Calm Mind\n\nPawmot (M) @ Leftovers\nAbility: Iron Fist\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Thunderbolt\n- Revival Blessing\n- Ice Punch\n- Protect\n\nMilotic (F) @ Rocky Helmet\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Protect\n- Scald\n- Recover\n- Coil",
+    "Snorlax (M) @ Sitrus Berry\nAbility: Thick Fat\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Spe\nAdamant Nature\n- Yawn\n- Stomping Tantrum\n- Protect\n- Substitute\n\nGholdengo @ Life Orb\nAbility: Good as Gold\nLevel: 50\nEVs: 32 HP / 2 SpA / 32 SpD\nCalm Nature\n- Protect\n- Shadow Ball\n- Make It Rain\n\nKingambit (M) @ Black Glasses\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Sucker Punch\n- Iron Head\n- Protect\n- Swords Dance\n\nPrimarina (F) @ Fairy Feather\nAbility: Torrent\nLevel: 50\nEVs: 32 HP / 2 Def / 32 SpD\nCalm Nature\n- Protect\n- Moonblast\n- Calm Mind\n\nPawmot (M) @ Leftovers\nAbility: Iron Fist\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Thunderbolt\n- Revival Blessing\n- Ice Punch\n- Protect\n\nMilotic (F) @ Rocky Helmet\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Protect\n- Scald\n- Recover\n- Coil"
+  ],
+  "plan": {
+    "p1": [
+      "move 2, move 1",
+      "move 1 1, move 1"
+    ],
+    "p2": [
+      "move 4, move 1",
+      "move 1 1, move 1"
+    ],
+    "max_steps": 3
+  }
+}
