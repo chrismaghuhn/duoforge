@@ -392,8 +392,8 @@ class FitTest(unittest.TestCase):
         changed = {k for k in c2 if c2[k] != distill._constants()[k]}
         self.assertEqual(changed, {"LR", "REF_KL_MAX", "MAX_EPOCHS", "MAX_STEPS"})
         self.assertEqual((c2["LR"], c2["REF_KL_MAX"], c2["MAX_EPOCHS"], c2["MAX_STEPS"]), (1e-4, 0.3, 16, 512))
-        for bad in ({"lr": 0.0}, {"ref_kl_max": float("nan")}, {"ref_coef": -1.0}, {"max_epochs": 0},
-                    {"max_steps": 1.5}):
+        for bad in ({"lr": 0.0}, {"ref_kl_max": float("nan")}, {"ref_coef": -1.0}, {"max_epochs": -1},
+                    {"max_steps": 0}, {"max_steps": 1.5}):
             with self.assertRaises(ValueError):
                 distill.Settings(**bad)
 

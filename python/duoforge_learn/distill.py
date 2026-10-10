@@ -266,14 +266,15 @@ class Settings:
     max_steps: int = dataclasses.field(default_factory=lambda: MAX_STEPS)
 
     def __post_init__(self):
-        for name in ("lr", "ref_coef", "ref_kl_max"):
+        for name, low in (("lr", 0.0), ("ref_coef", None), ("ref_kl_max", None)):
             value = getattr(self, name)
-            if not (np.isfinite(value) and value > 0):
-                raise ValueError(f"distill {name} must be a positive finite number, not {value}")
-        for name in ("max_epochs", "max_steps"):
+            if not (np.isfinite(value) and (value > low if low is not None else value >= 0)):
+                bound = "above 0" if low is not None else "of at least 0"
+                raise ValueError(f"distill {name} must be a finite number {bound}, not {value}")
+        for name, least in (("max_epochs", 0), ("max_steps", 1)):
             value = getattr(self, name)
-            if not (isinstance(value, int) and value >= 1):
-                raise ValueError(f"distill {name} must be a positive integer, not {value}")
+            if not (isinstance(value, int) and not isinstance(value, bool) and value >= least):
+                raise ValueError(f"distill {name} must be an integer of at least {least}, not {value}")
 
     def constants(self):
         """Every constant of a fit with these settings (the module's, five of them replaced)."""
