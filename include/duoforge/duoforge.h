@@ -1068,6 +1068,13 @@ duoforge_status duoforge_battle_observe_ext(const duoforge_context *ctx, const d
                                               NO_POSITION, cause NONE, every other field 0. Public: both players get it. The
                                               standing active positions (not fainted, as getAllActive takes them) lose every
                                               boost: their seven stages go to neutral; nothing else changes (decision 0031). */
+#define DUOFORGE_EVENT_ITEM_SHOWN      48u /* [-item|X|Item] (decision 0033, step G67): the holder announces its own item at
+                                              its switch-in (Air Balloon's onStart, data/items.ts:191-195, gravity off): position
+                                              the holder, id2: item + 1, cause NONE, every other field 0. Public: the foe knows
+                                              the item already (open team sheets), so the knowledge fold ignores it. RESERVED,
+                                              not mapped yet: the same line with `[from] ability: X|[of] Y` (Frisk), cause
+                                              ABILITY with id = the ability and other = the Frisk user; the converter refuses it
+                                              until a later step maps it. */
 
 /* Causes ([from] and [of] in the protocol). */
 #define DUOFORGE_CAUSE_NONE      0u /* the move or the plain mechanic */

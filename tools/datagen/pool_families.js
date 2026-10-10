@@ -906,6 +906,38 @@ function checkG47(dex) {
     return 1;
 }
 
+// Step G67, Magic Guard and Air Balloon: the pinned handlers against stubs. Magic Guard blocks a damage whose effect is not a Move
+// (returns false), says -activate for an Ability's damage with the damage source as the position, and lets a Move's damage through.
+// The Air Balloon announces itself at switch-in (not with gravity), and its pop of a damaging hit and of a substitute hit prints
+// -enditem; a Move is the only effect that pops it (AfterSubDamage with effectType Move).
+function checkG67(dex) {
+    const guard = dex.abilities.get('magicguard');
+    const runGuard = (effect, source) => {
+        const lines = [];
+        const b = battle(guard, {add: (...a) => lines.push(a)});
+        const result = call(guard.onDamage, b, [10, {}, source, effect]);
+        return {result, lines};
+    };
+    expect('Magic Guard passes a Move damage', runGuard({effectType: 'Move'}, {}), {result: undefined, lines: []});
+    expect('Magic Guard blocks a Condition damage silently', runGuard({effectType: 'Condition'}, {}), {result: false, lines: []});
+    expect('Magic Guard blocks an Item damage silently', runGuard({effectType: 'Item'}, {}), {result: false, lines: []});
+    expect('Magic Guard blocks an Ability damage with -activate of its source', runGuard({effectType: 'Ability', name: 'Rough Skin'}, 'src'),
+        {result: false, lines: [['-activate', 'src', 'ability: Rough Skin']]});
+    const balloon = dex.items.get('airballoon');
+    const shown = (ignoring, gravity) => {
+        const lines = [];
+        const pokemon = {ignoringItem: () => ignoring};
+        const b = battle(balloon, {add: (...a) => lines.push(a),
+            field: {getPseudoWeather: (id) => (gravity && id === 'gravity' ? {} : null)}});
+        call(balloon.onStart, b, [pokemon]);
+        return lines;
+    };
+    expect('Air Balloon is announced at switch-in', shown(false, false), [['-item', {}, 'Air Balloon']]);
+    expect('Air Balloon is not announced when its holder ignores items', shown(true, false), []);
+    expect('Air Balloon is not announced under gravity', shown(false, true), []);
+    return 1;
+}
+
 // Step G33, the multi-hit batch and Mirror Armor: the pinned facts that the engine hard-codes (decision 0015, item 5y). The
 // four moves' hit counts and Triple Axel's rising power; Mirror Armor's handler against stubs: it deletes every drop of
 // another Pokemon that is still one (a stat at -6 has none), shows its ability line and gives the drop to a source that
@@ -1591,8 +1623,8 @@ function checkFormes(dex, validator, rows, moves, abilities) {
 // The UNMODELED markers of gen_closure.py --pool, re-derived from the pinned data in this file's own words: the
 // special column of a move, the handler column of an item and of an ability, and the lists of unmodelled features.
 // implemented in the turn code by id (G4: Focus Sash, Rock Head; G12: Floettite, Flower Veil, Fairy Aura)
-const ENGINE_ROWS = {items: ['focussash', 'floettite', 'psychicseed', 'electricseed', 'mistyseed', 'expertbelt', 'ejectbutton', 'widelens', 'muscleband', 'wiseglasses', 'brightpowder', 'redcard', 'lumberry', 'mentalherb', 'damprock', 'heatrock', 'smoothrock', 'icyrock', 'terrainextender'],
-    abilities: ['rockhead', 'flowerveil', 'fairyaura', 'roughskin', 'poisontouch', 'thermalexchange', 'stickyhold', 'trace',
+const ENGINE_ROWS = {items: ['airballoon', 'focussash', 'floettite', 'psychicseed', 'electricseed', 'mistyseed', 'expertbelt', 'ejectbutton', 'widelens', 'muscleband', 'wiseglasses', 'brightpowder', 'redcard', 'lumberry', 'mentalherb', 'damprock', 'heatrock', 'smoothrock', 'icyrock', 'terrainextender'],
+    abilities: ['magicguard', 'rockhead', 'flowerveil', 'fairyaura', 'roughskin', 'poisontouch', 'thermalexchange', 'stickyhold', 'trace',
         'levitate', 'sandrush', 'swiftswim', 'slushrush', 'chlorophyll', 'innerfocus', 'liquidvoice',
         'flamebody', 'clearbody', 'hospitality', 'overcoat', 'soundproof', 'unnerve', 'speedboost',
         'compoundeyes', 'ironfist', 'sharpness', 'solidrock', 'technician', 'multiscale', 'galewings', 'raindish', 'friendguard', 'cursedbody', 'mirrorarmor', 'auraguard', 'hypercutter', 'scrappy', 'infiltrator', 'queenlymajesty', 'damp', 'sturdy', 'snowcloak', 'sandveil', 'static', 'justified', 'limber', 'solarpower', 'regenerator', 'toxicdebris', 'shadowtag', 'suctioncups', 'guarddog',
@@ -1981,6 +2013,7 @@ function main() {
     checkG32(dex);
     checkG33(dex);
     checkG41(dex);
+    checkG67(dex);
     const g61 = checkG61(dex, headers, moveIds, moveColumns(source, defineOf(header, 'DFI_POOL_MOVE_COUNT')), unmodeledMoves);
     checkG47(dex);
     checkG44(dex);

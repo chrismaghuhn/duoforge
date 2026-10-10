@@ -896,6 +896,8 @@ EV = {name: i + 1 for i, name in enumerate(
 EV['DRAG'] = 45
 # DUOFORGE_EVENT_CLEAR_ALL_BOOSTS = 47 (Haze, decision 0031, step G62): by value, as DRAG; 46 is not used here.
 EV['CLEAR_ALL_BOOSTS'] = 47
+# DUOFORGE_EVENT_ITEM_SHOWN = 48 (decision 0033, step G67): by value.
+EV['ITEM_SHOWN'] = 48
 CAUSE = {'NONE': 0, 'MOVE': 1, 'ITEM': 2, 'ABILITY': 3, 'RECOIL': 4, 'DRAIN': 5, 'BURN': 6, 'CONFUSION': 7,
          'TERRAIN': 8, 'PARALYSIS': 9, 'SLEEP': 10, 'FREEZE': 11, 'FLINCH': 12, 'NO_PP': 13, 'POISON': 14,
          'HEAL_BLOCK': 15, 'WEATHER': 16, 'ITEM_TAKEN': 17, 'RECHARGE': 18, 'DISABLE': 19, 'TAUNT': 20, 'IMPRISON': 21}
@@ -1514,10 +1516,15 @@ def step_events(log, viewer, roster_of, maxhp, tables, rb_pending=None):
                 e = ev_tuple(EV['ITEM_END'], ev_pos(args[0]), ev_pos(of_attacker[0][5:]) if of_attacker else NOPOS, 0, 0,
                              tables['ITEM'][key(args[1])] + 1,
                              detail=1 if '[weaken]' in attrs else 0, flags=FLAG['EATEN'] if '[eat]' in attrs else 0)
+        elif kind == '-item' and not attrs and len(args) == 2:
+            # step G67 (decision 0033): the holder's own announcement at its switch-in (Air Balloon's onStart, items.ts:191-195):
+            # ITEM_SHOWN, position the holder, id2 the item + 1, cause NONE. Only the item of the pool is looked up here.
+            e = ev_tuple(EV['ITEM_SHOWN'], ev_pos(args[0]), NOPOS, 0, 0, tables['ITEM'][key(args[1])] + 1)
         elif kind == '-item':
             # POOL (step G29): `-item|X|Item|[from] move: M[|[of] Y]` is an item that a move gave X (Trick, Switcheroo, Thief,
             # Covet): ITEM_START with the cause MOVE, the move in id, the item in id2 and, when the line says it, the Pokemon it
-            # came from ([of]) in other. Any other `-item` line (an ability's, a Frisk) is refused.
+            # came from ([of]) in other. Any other `-item` line is refused, including the reserved Frisk form
+            # (`[from] ability: Frisk|[of] Y|[identify]`, decision 0033): it is not mapped in this step.
             moves = [a[len('[from] move: '):] for a in attrs if a.startswith('[from] move: ')]
             of = [a for a in attrs if a.startswith('[of] ')]
             extra = [a for a in attrs if not a.startswith('[from] move: ') and a not in of]

@@ -1,0 +1,24 @@
+{
+  "name": "g67_balloon_substitute",
+  "purpose": "Step G67, Air Balloon and Substitute: Raichu makes a Substitute on turn 1; Garchomp hits the substitute on turn 2, which pops the balloon after the hit (AfterSubDamage).",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,00000000000000000000000000000000000000000000000000000000000067a2",
+  "teams": [
+    "Garchomp (M) @ Life Orb\nAbility: Rough Skin\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Earthquake\n- Dragon Claw\n- Protect\n\nStaraptor (F) @ Sharp Beak\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 2 SpD / 32 Spe\nJolly Nature\n- Brave Bird\n- Hurricane\n- Protect\n\nRillaboom (M) @ Miracle Seed\nAbility: Grassy Surge\nLevel: 50\nEVs: 18 HP / 32 Atk / 2 Def / 6 SpD / 8 Spe\nAdamant Nature\n- Fake Out\n\nCeruledge (M) @ Grassy Seed\nAbility: Flash Fire\nLevel: 50\nEVs: 31 HP / 7 Atk / 24 Def / 3 SpD / 1 Spe\nAdamant Nature\n- Protect\n\nMilotic (F) @ Sitrus Berry\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Coil\n\nPolitoed (M) @ Mystic Water\nAbility: Drizzle\nLevel: 50\nEVs: 32 HP / 2 Def / 32 SpD\nCalm Nature\n- Protect",
+    "Raichu (F) @ Air Balloon\nAbility: Lightning Rod\nLevel: 50\nEVs: 29 HP / 5 Def / 32 Spe\nTimid Nature\n- Substitute\n- Thunderbolt\n- Protect\n\nSharpedo (M) @ Sitrus Berry\nAbility: Rough Skin\nLevel: 50\nEVs: 32 HP / 2 Def / 32 Spe\nJolly Nature\n- Liquidation\n- Protect\n- Snarl\n\nCeruledge (M) @ Grassy Seed\nAbility: Flash Fire\nLevel: 50\nEVs: 31 HP / 7 Atk / 24 Def / 3 SpD / 1 Spe\nAdamant Nature\n- Protect\n\nGholdengo @ Life Orb\nAbility: Good as Gold\nLevel: 50\nEVs: 17 HP / 2 Def / 17 SpA / 16 SpD / 14 Spe\nModest Nature\n- Protect\n\nClefable (F) @ Leftovers\nAbility: Magic Guard\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nModest Nature\n- Moonblast\n- Protect\n\nPolitoed (M) @ Mystic Water\nAbility: Drizzle\nLevel: 50\nEVs: 32 HP / 2 Def / 32 SpD\nCalm Nature\n- Protect"
+  ],
+  "plan": {
+    "p1": [
+      "move 3, move 3",
+      "move 2 1, move 3",
+      "move 2 1, move 3"
+    ],
+    "p2": [
+      "move 1, move 2",
+      "move 2 1, move 3",
+      "move 2 1, move 3"
+    ],
+    "max_steps": 3
+  }
+}

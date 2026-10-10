@@ -1839,7 +1839,7 @@ const dfi_pool_item_data dfi_pool_items[DFI_POOL_ITEM_COUNT] = {
     {78u, 79u},
     /* Aggronite -- data/items.ts:147-158, data/mods/champions/items.ts:38-41 */
     {123u, 124u},
-    /* Air Balloon -- data/items.ts:185-214  [unmodelled: callback onAfterSubDamage; callback onDamagingHit; callback onStart; read by id in sim/pokemon.ts] */
+    /* Air Balloon -- data/items.ts:185-214 */
     {DFI_FORME_NONE, DFI_FORME_NONE},
     /* Alakazite -- data/items.ts:215-226, data/mods/champions/items.ts:46-49 */
     {50u, 51u},
@@ -2145,7 +2145,7 @@ const dfi_pool_item_data dfi_pool_items[DFI_POOL_ITEM_COUNT] = {
  *   liquidvoice -- data/abilities.ts:2416-2427
  *   longreach -- data/abilities.ts:2428-2436  [unmodelled: callback onModifyMove]
  *   magicbounce -- data/abilities.ts:2437-2464
- *   magicguard -- data/abilities.ts:2465-2476  [unmodelled: callback onDamage; read by id in data/items.ts]
+ *   magicguard -- data/abilities.ts:2465-2476
  *   magician -- data/abilities.ts:2477-2500  [unmodelled: callback onAfterMoveSecondarySelf]
  *   magmaarmor -- data/abilities.ts:2501-2515  [unmodelled: callback onImmunity; callback onUpdate]
  *   marvelscale -- data/abilities.ts:2534-2545  [unmodelled: callback onModifyDef; callback onModifyDefPriority]
@@ -2706,7 +2706,7 @@ const uint8_t dfi_pool_item_handler[DFI_POOL_ITEM_COUNT] = {
     [DFI_ITEM_ABSOLITEZ] = DFI_HANDLER_NONE,
     [DFI_ITEM_AERODACTYLITE] = DFI_HANDLER_NONE,
     [DFI_ITEM_AGGRONITE] = DFI_HANDLER_NONE,
-    [DFI_ITEM_AIRBALLOON] = DFI_HANDLER_UNMODELED,
+    [DFI_ITEM_AIRBALLOON] = DFI_HANDLER_NONE,
     [DFI_ITEM_ALAKAZITE] = DFI_HANDLER_NONE,
     [DFI_ITEM_ALTARIANITE] = DFI_HANDLER_NONE,
     [DFI_ITEM_AMPHAROSITE] = DFI_HANDLER_NONE,
@@ -2924,7 +2924,7 @@ const uint8_t dfi_pool_ability_handler[DFI_POOL_ABILITY_COUNT] = {
     [DFI_ABILITY_LIQUIDVOICE] = DFI_HANDLER_NONE,
     [DFI_ABILITY_LONGREACH] = DFI_HANDLER_UNMODELED,
     [DFI_ABILITY_MAGICBOUNCE] = DFI_HANDLER_NONE,
-    [DFI_ABILITY_MAGICGUARD] = DFI_HANDLER_UNMODELED,
+    [DFI_ABILITY_MAGICGUARD] = DFI_HANDLER_NONE,
     [DFI_ABILITY_MAGICIAN] = DFI_HANDLER_UNMODELED,
     [DFI_ABILITY_MAGMAARMOR] = DFI_HANDLER_UNMODELED,
     [DFI_ABILITY_MARVELSCALE] = DFI_HANDLER_UNMODELED,
@@ -6984,7 +6984,6 @@ const char *const dfi_pool_move_unmodeled[DFI_POOL_MOVE_COUNT] = {
 };
 
 const char *const dfi_pool_item_unmodeled[DFI_POOL_ITEM_COUNT] = {
-    [DFI_ITEM_AIRBALLOON] = "callback onAfterSubDamage; callback onDamagingHit; callback onStart; read by id in sim/pokemon.ts",
     [DFI_ITEM_ASPEARBERRY] = "callback onEat; callback onUpdate",
     [DFI_ITEM_BIGROOT] = "callback onTryHeal; callback onTryHealPriority",
     [DFI_ITEM_BINDINGBAND] = "read by id in data/conditions.ts",
@@ -7060,7 +7059,6 @@ const char *const dfi_pool_ability_unmodeled[DFI_POOL_ABILITY_COUNT] = {
     [DFI_ABILITY_LIGHTMETAL] = "callback onModifyWeight",
     [DFI_ABILITY_LIQUIDOOZE] = "callback onSourceTryHeal",
     [DFI_ABILITY_LONGREACH] = "callback onModifyMove",
-    [DFI_ABILITY_MAGICGUARD] = "callback onDamage; read by id in data/items.ts",
     [DFI_ABILITY_MAGICIAN] = "callback onAfterMoveSecondarySelf",
     [DFI_ABILITY_MAGMAARMOR] = "callback onImmunity; callback onUpdate",
     [DFI_ABILITY_MARVELSCALE] = "callback onModifyDef; callback onModifyDefPriority",
@@ -7124,10 +7122,10 @@ const char *const dfi_pool_ability_unmodeled[DFI_POOL_ABILITY_COUNT] = {
 };
 
 const uint8_t dfi_pool_table_hash[32] = {
-    0x2cu, 0x92u, 0x8du, 0x29u, 0xfeu, 0x3au, 0x33u, 0xc6u,
-    0x8fu, 0x85u, 0xfdu, 0x28u, 0x3fu, 0xdau, 0x82u, 0x53u,
-    0x77u, 0x2fu, 0x9cu, 0x45u, 0xf1u, 0xfbu, 0xa9u, 0x07u,
-    0xc0u, 0xf1u, 0x47u, 0x2fu, 0x9fu, 0xd5u, 0xe9u, 0x37u,
+    0x0fu, 0x69u, 0xa7u, 0x6du, 0x21u, 0x05u, 0xb5u, 0x94u,
+    0x5cu, 0xfdu, 0x9bu, 0xeeu, 0xecu, 0xb6u, 0x73u, 0xe2u,
+    0xefu, 0xb7u, 0x9du, 0xcdu, 0x4cu, 0xc2u, 0x20u, 0x4au,
+    0x1au, 0x79u, 0x2eu, 0xb0u, 0xd3u, 0x98u, 0x6cu, 0x9bu,
 };
 
 static size_t dfi_pool_put_u16(uint8_t *out, size_t n, uint32_t v)

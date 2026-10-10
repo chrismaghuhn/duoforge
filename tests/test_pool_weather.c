@@ -282,7 +282,7 @@ static void check_view(df_test *t, const duoforge_context *ctx)
  * tests/test_pool_g59.c). The pinned-data side of this list is checked by tools/datagen/pool_families.js. */
 static void check_unmodelled_sources(df_test *t)
 {
-    static const uint32_t abilities[] = {DFI_ABILITY_MAGICGUARD, DFI_ABILITY_CLOUDNINE,
+    static const uint32_t abilities[] = {DFI_ABILITY_CLOUDNINE,
                                          DFI_ABILITY_MOLDBREAKER};
     for (size_t i = 0u; i < sizeof abilities / sizeof abilities[0]; ++i) {
         DF_CHECK_EQ_U64(t, dfi_support.abilities[abilities[i]], 0u);

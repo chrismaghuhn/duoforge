@@ -1,0 +1,2026 @@
+{
+ "harness": 14,
+ "pin": "b2cb775b0616115b775534eaeff50300e1fc81fc",
+ "spec": "g67_magic_guard_toxic_spikes.json",
+ "format": "gen9championsvgc2026regmc",
+ "seed": "sodium,0000000000000000000000000000000000000000000000000000000000006701",
+ "start": {
+  "log": [
+   "|gametype|doubles",
+   "|player|p1|p1||",
+   "|player|p2|p2||",
+   "|gen|9",
+   "|tier|[Gen 9 Champions] VGC 2026 Reg M-C",
+   "|rule|Species Clause: Limit one of each Pokémon",
+   "|rule|Item Clause: Limit 1 of each item",
+   "|clearpoke",
+   "|poke|p1|Gliscor, L50, M|",
+   "|poke|p1|Staraptor, L50, F|",
+   "|poke|p1|Rillaboom, L50, M|",
+   "|poke|p1|Ceruledge, L50, M|",
+   "|poke|p1|Milotic, L50, F|",
+   "|poke|p1|Politoed, L50, M|",
+   "|poke|p2|Garchomp, L50, M|",
+   "|poke|p2|Sharpedo, L50, M|",
+   "|poke|p2|Reuniclus, L50, M|",
+   "|poke|p2|Gholdengo, L50|",
+   "|poke|p2|Raichu, L50, F|",
+   "|poke|p2|Politoed, L50, M|",
+   "|teampreview|4",
+   "|split|p1",
+   "|uhtml|otsrequest|<button name=\"send\" value=\"/acceptopenteamsheets\" class=\"button\" style=\"margin-right: 10px;\"><strong>Accept Open Team Sheets</strong></button><button name=\"send\" value=\"/rejectopenteamsheets\" class=\"button\" style=\"margin-top: 10px\"><strong>Deny Open Team Sheets</strong></button>",
+   "",
+   "|split|p2",
+   "|uhtml|otsrequest|<button name=\"send\" value=\"/acceptopenteamsheets\" class=\"button\" style=\"margin-right: 10px;\"><strong>Accept Open Team Sheets</strong></button><button name=\"send\" value=\"/rejectopenteamsheets\" class=\"button\" style=\"margin-top: 10px\"><strong>Deny Open Team Sheets</strong></button>",
+   ""
+  ],
+  "state": {
+   "turn": 0,
+   "ended": false,
+   "winner": "",
+   "weather": "",
+   "weather_turns": 0,
+   "terrain": "",
+   "terrain_turns": 0,
+   "trick_room": 0,
+   "sides": [
+    {
+     "request": "teampreview",
+     "conditions": [
+      0,
+      0,
+      0
+     ],
+     "enabled": [],
+     "active": [
+      -1,
+      -1
+     ],
+     "pokemon": [
+      {
+       "species": "Gliscor",
+       "set_species": "Gliscor",
+       "mega": 0,
+       "switch_flag": 0,
+       "hp": 182,
+       "maxhp": 182,
+       "item": "leftovers",
+       "status": "",
+       "status_time": 0,
+       "confusion": 0,
+       "fainted": false,
+       "boosts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "pp": [
+        20,
+        8,
+        12
+       ],
+       "volatiles": [],
+       "locked": null
+      },
+      {
+       "species": "Staraptor",
+       "set_species": "Staraptor",
+       "mega": 0,
+       "switch_flag": 0,
+       "hp": 192,
+       "maxhp": 192,
+       "item": "sharpbeak",
+       "status": "",
+       "status_time": 0,
+       "confusion": 0,
+       "fainted": false,
+       "boosts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "pp": [
+        16,
+        12,
+        8
+       ],
+       "volatiles": [],
+       "locked": null
+      },
+      {
+       "species": "Rillaboom",
+       "set_species": "Rillaboom",
+       "mega": 0,
+       "switch_flag": 0,
+       "hp": 193,
+       "maxhp": 193,
+       "item": "miracleseed",
+       "status": "",
+       "status_time": 0,
+       "confusion": 0,
+       "fainted": false,
+       "boosts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "pp": [
+        12
+       ],
+       "volatiles": [],
+       "locked": null
+      },
+      {
+       "species": "Ceruledge",
+       "set_species": "Ceruledge",
+       "mega": 0,
+       "switch_flag": 0,
+       "hp": 181,
+       "maxhp": 181,
+       "item": "grassyseed",
+       "status": "",
+       "status_time": 0,
+       "confusion": 0,
+       "fainted": false,
+       "boosts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "pp": [
+        8
+       ],
+       "volatiles": [],
+       "locked": null
+      },
+      {
+       "species": "Milotic",
+       "set_species": "Milotic",
+       "mega": 0,
+       "switch_flag": 0,
+       "hp": 202,
+       "maxhp": 202,
+       "item": "sitrusberry",
+       "status": "",
+       "status_time": 0,
+       "confusion": 0,
+       "fainted": false,
+       "boosts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "pp": [
+        20
+       ],
+       "volatiles": [],
+       "locked": null
+      },
+      {
+       "species": "Politoed",
+       "set_species": "Politoed",
+       "mega": 0,
+       "switch_flag": 0,
+       "hp": 197,
+       "maxhp": 197,
+       "item": "mysticwater",
+       "status": "",
+       "status_time": 0,
+       "confusion": 0,
+       "fainted": false,
+       "boosts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "pp": [
+        8
+       ],
+       "volatiles": [],
+       "locked": null
+      }
+     ]
+    },
+    {
+     "request": "teampreview",
+     "conditions": [
+      0,
+      0,
+      0
+     ],
+     "enabled": [],
+     "active": [
+      -1,
+      -1
+     ],
+     "pokemon": [
+      {
+       "species": "Garchomp",
+       "set_species": "Garchomp",
+       "mega": 0,
+       "switch_flag": 0,
+       "hp": 215,
+       "maxhp": 215,
+       "item": "rockyhelmet",
+       "status": "",
+       "status_time": 0,
+       "confusion": 0,
+       "fainted": false,
+       "boosts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "pp": [
+        12,
+        8,
+        12
+       ],
+       "volatiles": [],
+       "locked": null
+      },
+      {
+       "species": "Sharpedo",
+       "set_species": "Sharpedo",
+       "mega": 0,
+       "switch_flag": 0,
+       "hp": 177,
+       "maxhp": 177,
+       "item": "sitrusberry",
+       "status": "",
+       "status_time": 0,
+       "confusion": 0,
+       "fainted": false,
+       "boosts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "pp": [
+        12,
+        8,
+        16
+       ],
+       "volatiles": [],
+       "locked": null
+      },
+      {
+       "species": "Reuniclus",
+       "set_species": "Reuniclus",
+       "mega": 0,
+       "switch_flag": 0,
+       "hp": 217,
+       "maxhp": 217,
+       "item": "leftovers",
+       "status": "",
+       "status_time": 0,
+       "confusion": 0,
+       "fainted": false,
+       "boosts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "pp": [
+        12,
+        8,
+        12
+       ],
+       "volatiles": [],
+       "locked": null
+      },
+      {
+       "species": "Gholdengo",
+       "set_species": "Gholdengo",
+       "mega": 0,
+       "switch_flag": 0,
+       "hp": 179,
+       "maxhp": 179,
+       "item": "lifeorb",
+       "status": "",
+       "status_time": 0,
+       "confusion": 0,
+       "fainted": false,
+       "boosts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "pp": [
+        8
+       ],
+       "volatiles": [],
+       "locked": null
+      },
+      {
+       "species": "Raichu",
+       "set_species": "Raichu",
+       "mega": 0,
+       "switch_flag": 0,
+       "hp": 164,
+       "maxhp": 164,
+       "item": "lightclay",
+       "status": "",
+       "status_time": 0,
+       "confusion": 0,
+       "fainted": false,
+       "boosts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "pp": [
+        8
+       ],
+       "volatiles": [],
+       "locked": null
+      },
+      {
+       "species": "Politoed",
+       "set_species": "Politoed",
+       "mega": 0,
+       "switch_flag": 0,
+       "hp": 197,
+       "maxhp": 197,
+       "item": "mysticwater",
+       "status": "",
+       "status_time": 0,
+       "confusion": 0,
+       "fainted": false,
+       "boosts": [
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+       ],
+       "pp": [
+        8
+       ],
+       "volatiles": [],
+       "locked": null
+      }
+     ]
+    }
+   ]
+  }
+ },
+ "steps": [
+  {
+   "input": {
+    "p1": "team 1234",
+    "p2": "team 1234"
+   },
+   "draws": [],
+   "log": [
+    "|teamsize|p1|4",
+    "|teamsize|p2|4",
+    "|start",
+    "|split|p1",
+    "|uhtmlchange|otsrequest|",
+    "",
+    "|split|p2",
+    "|uhtmlchange|otsrequest|",
+    "",
+    "|split|p1",
+    "|switch|p1a: Gliscor|Gliscor, L50, M|182/182",
+    "|switch|p1a: Gliscor|Gliscor, L50, M|100/100",
+    "|split|p1",
+    "|switch|p1b: Staraptor|Staraptor, L50, F|192/192",
+    "|switch|p1b: Staraptor|Staraptor, L50, F|100/100",
+    "|split|p2",
+    "|switch|p2a: Garchomp|Garchomp, L50, M|215/215",
+    "|switch|p2a: Garchomp|Garchomp, L50, M|100/100",
+    "|split|p2",
+    "|switch|p2b: Sharpedo|Sharpedo, L50, M|177/177",
+    "|switch|p2b: Sharpedo|Sharpedo, L50, M|100/100",
+    "|-ability|p1b: Staraptor|Intimidate|boost",
+    "|-unboost|p2a: Garchomp|atk|1",
+    "|-unboost|p2b: Sharpedo|atk|1",
+    "|turn|1"
+   ],
+   "state": {
+    "turn": 1,
+    "ended": false,
+    "winner": "",
+    "weather": "",
+    "weather_turns": 0,
+    "terrain": "",
+    "terrain_turns": 0,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Gliscor",
+        "set_species": "Gliscor",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 182,
+        "maxhp": 182,
+        "item": "leftovers",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         8,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Staraptor",
+        "set_species": "Staraptor",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 192,
+        "maxhp": 192,
+        "item": "sharpbeak",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         16,
+         12,
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Rillaboom",
+        "set_species": "Rillaboom",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 193,
+        "maxhp": 193,
+        "item": "miracleseed",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Ceruledge",
+        "set_species": "Ceruledge",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 181,
+        "maxhp": 181,
+        "item": "grassyseed",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Garchomp",
+        "set_species": "Garchomp",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 215,
+        "maxhp": 215,
+        "item": "rockyhelmet",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         -1,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         8,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Sharpedo",
+        "set_species": "Sharpedo",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 177,
+        "maxhp": 177,
+        "item": "sitrusberry",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         -1,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         8,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Reuniclus",
+        "set_species": "Reuniclus",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 217,
+        "maxhp": 217,
+        "item": "leftovers",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         8,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Gholdengo",
+        "set_species": "Gholdengo",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 179,
+        "maxhp": 179,
+        "item": "lifeorb",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": {
+    "p1": "move 1, move 3",
+    "p2": "move 2, move 2"
+   },
+   "draws": [
+    {
+     "site": "RANDOM_TARGET",
+     "context": "resolve",
+     "lo": 0,
+     "hi": 2,
+     "value": 1
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 1
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 1
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 1
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 1
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 1
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "execute:foeSide",
+     "lo": 0,
+     "hi": 2,
+     "value": 1
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "field:Residual",
+     "lo": 1,
+     "hi": 3,
+     "value": 2,
+     "group": [
+      "H:protect:p1b:end",
+      "H:stall:p1b:end"
+     ],
+     "start": 1
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "field:Residual",
+     "lo": 3,
+     "hi": 5,
+     "value": 3,
+     "group": [
+      "H:protect:p2b:end",
+      "H:stall:p2b:end"
+     ],
+     "start": 3
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "field:Residual",
+     "lo": 5,
+     "hi": 7,
+     "value": 6,
+     "group": [
+      "H:protect:p2a:end",
+      "H:stall:p2a:end"
+     ],
+     "start": 5
+    }
+   ],
+   "log": [
+    "|move|p1b: Staraptor|Protect|p1b: Staraptor",
+    "|-singleturn|p1b: Staraptor|Protect",
+    "|move|p2b: Sharpedo|Protect|p2b: Sharpedo",
+    "|-singleturn|p2b: Sharpedo|Protect",
+    "|move|p2a: Garchomp|Protect|p2a: Garchomp",
+    "|-singleturn|p2a: Garchomp|Protect",
+    "|move|p1a: Gliscor|Toxic Spikes|p2b: Sharpedo",
+    "|-sidestart|p2: p2|move: Toxic Spikes",
+    "|upkeep",
+    "|turn|2"
+   ],
+   "state": {
+    "turn": 2,
+    "ended": false,
+    "winner": "",
+    "weather": "",
+    "weather_turns": 0,
+    "terrain": "",
+    "terrain_turns": 0,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Gliscor",
+        "set_species": "Gliscor",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 182,
+        "maxhp": 182,
+        "item": "leftovers",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         19,
+         8,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Staraptor",
+        "set_species": "Staraptor",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 192,
+        "maxhp": 192,
+        "item": "sharpbeak",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         16,
+         12,
+         7
+        ],
+        "volatiles": [
+         "stall"
+        ],
+        "locked": null
+       },
+       {
+        "species": "Rillaboom",
+        "set_species": "Rillaboom",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 193,
+        "maxhp": 193,
+        "item": "miracleseed",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Ceruledge",
+        "set_species": "Ceruledge",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 181,
+        "maxhp": 181,
+        "item": "grassyseed",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "hazards": [
+       [
+        "toxicspikes",
+        1
+       ]
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Garchomp",
+        "set_species": "Garchomp",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 215,
+        "maxhp": 215,
+        "item": "rockyhelmet",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         -1,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         7,
+         12
+        ],
+        "volatiles": [
+         "stall"
+        ],
+        "locked": null
+       },
+       {
+        "species": "Sharpedo",
+        "set_species": "Sharpedo",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 177,
+        "maxhp": 177,
+        "item": "sitrusberry",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         -1,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         7,
+         16
+        ],
+        "volatiles": [
+         "stall"
+        ],
+        "locked": null
+       },
+       {
+        "species": "Reuniclus",
+        "set_species": "Reuniclus",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 217,
+        "maxhp": 217,
+        "item": "leftovers",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         8,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Gholdengo",
+        "set_species": "Gholdengo",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 179,
+        "maxhp": 179,
+        "item": "lifeorb",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": {
+    "p1": "move 3, move 3",
+    "p2": "move 2, switch 3"
+   },
+   "draws": [
+    {
+     "site": "RANDOM_TARGET",
+     "context": "resolve",
+     "lo": 0,
+     "hi": 2,
+     "value": 1
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 0
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 0
+    },
+    {
+     "site": "STALL",
+     "context": "StallMove",
+     "lo": 0,
+     "hi": 3,
+     "value": 0
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 1
+    },
+    {
+     "site": "STALL",
+     "context": "StallMove",
+     "lo": 0,
+     "hi": 3,
+     "value": 2
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 0
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "execute:allAdjacent",
+     "lo": 0,
+     "hi": 2,
+     "value": 0
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 94
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 56
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 14
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 14
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 16
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 7
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "field:Residual",
+     "lo": 3,
+     "hi": 5,
+     "value": 4,
+     "group": [
+      "H:protect:p1b:end",
+      "H:stall:p1b:end"
+     ],
+     "start": 3
+    }
+   ],
+   "log": [
+    "|split|p2",
+    "|switch|p2b: Reuniclus|Reuniclus, L50, M|217/217",
+    "|switch|p2b: Reuniclus|Reuniclus, L50, M|100/100",
+    "|-status|p2b: Reuniclus|psn",
+    "|move|p1b: Staraptor|Protect|p1b: Staraptor",
+    "|-singleturn|p1b: Staraptor|Protect",
+    "|move|p2a: Garchomp|Protect||[still]",
+    "|-fail|p2a: Garchomp",
+    "|move|p1a: Gliscor|Earthquake|p2a: Garchomp|[spread] p2a,p2b",
+    "|-activate|p1b: Staraptor|move: Protect",
+    "|split|p2",
+    "|-damage|p2a: Garchomp|184/215",
+    "|-damage|p2a: Garchomp|85/100",
+    "|split|p2",
+    "|-damage|p2b: Reuniclus|160/217 psn",
+    "|-damage|p2b: Reuniclus|73/100 psn",
+    "|split|p2",
+    "|-heal|p2b: Reuniclus|173/217 psn|[from] item: Leftovers",
+    "|-heal|p2b: Reuniclus|79/100 psn|[from] item: Leftovers",
+    "|upkeep",
+    "|turn|3"
+   ],
+   "state": {
+    "turn": 3,
+    "ended": false,
+    "winner": "",
+    "weather": "",
+    "weather_turns": 0,
+    "terrain": "",
+    "terrain_turns": 0,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Gliscor",
+        "set_species": "Gliscor",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 182,
+        "maxhp": 182,
+        "item": "leftovers",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         19,
+         8,
+         11
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Staraptor",
+        "set_species": "Staraptor",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 192,
+        "maxhp": 192,
+        "item": "sharpbeak",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         16,
+         12,
+         6
+        ],
+        "volatiles": [
+         "stall"
+        ],
+        "locked": null
+       },
+       {
+        "species": "Rillaboom",
+        "set_species": "Rillaboom",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 193,
+        "maxhp": 193,
+        "item": "miracleseed",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Ceruledge",
+        "set_species": "Ceruledge",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 181,
+        "maxhp": 181,
+        "item": "grassyseed",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "hazards": [
+       [
+        "toxicspikes",
+        1
+       ]
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Garchomp",
+        "set_species": "Garchomp",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 184,
+        "maxhp": 215,
+        "item": "rockyhelmet",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         -1,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         6,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Reuniclus",
+        "set_species": "Reuniclus",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 173,
+        "maxhp": 217,
+        "item": "leftovers",
+        "status": "psn",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         8,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Sharpedo",
+        "set_species": "Sharpedo",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 177,
+        "maxhp": 177,
+        "item": "sitrusberry",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         7,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Gholdengo",
+        "set_species": "Gholdengo",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 179,
+        "maxhp": 179,
+        "item": "lifeorb",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": {
+    "p1": "move 3, move 3",
+    "p2": "move 2, move 1 1"
+   },
+   "draws": [
+    {
+     "site": "RANDOM_TARGET",
+     "context": "resolve",
+     "lo": 0,
+     "hi": 2,
+     "value": 0
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 0
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 1
+    },
+    {
+     "site": "STALL",
+     "context": "StallMove",
+     "lo": 0,
+     "hi": 9,
+     "value": 4
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 0
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 1
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "execute:allAdjacent",
+     "lo": 0,
+     "hi": 2,
+     "value": 0
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 74
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 5
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 14
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 47
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 10
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 9
+    },
+    {
+     "site": "SECONDARY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 30
+    },
+    {
+     "site": "SPEED_TIE",
+     "context": "field:Residual",
+     "lo": 3,
+     "hi": 5,
+     "value": 3,
+     "group": [
+      "H:stall:p2a:end",
+      "H:protect:p2a:end"
+     ],
+     "start": 3
+    }
+   ],
+   "log": [
+    "|move|p1b: Staraptor|Protect||[still]",
+    "|-fail|p1b: Staraptor",
+    "|move|p2a: Garchomp|Protect|p2a: Garchomp",
+    "|-singleturn|p2a: Garchomp|Protect",
+    "|move|p1a: Gliscor|Earthquake|p2a: Garchomp|[spread] p2b",
+    "|-activate|p2a: Garchomp|move: Protect",
+    "|-immune|p1b: Staraptor",
+    "|split|p2",
+    "|-damage|p2b: Reuniclus|121/217 psn",
+    "|-damage|p2b: Reuniclus|55/100 psn",
+    "|move|p2b: Reuniclus|Psychic|p1a: Gliscor",
+    "|split|p1",
+    "|-damage|p1a: Gliscor|73/182",
+    "|-damage|p1a: Gliscor|40/100",
+    "|split|p1",
+    "|-heal|p1a: Gliscor|84/182|[from] item: Leftovers",
+    "|-heal|p1a: Gliscor|46/100|[from] item: Leftovers",
+    "|split|p2",
+    "|-heal|p2b: Reuniclus|134/217 psn|[from] item: Leftovers",
+    "|-heal|p2b: Reuniclus|61/100 psn|[from] item: Leftovers",
+    "|upkeep",
+    "|turn|4"
+   ],
+   "state": {
+    "turn": 4,
+    "ended": false,
+    "winner": "",
+    "weather": "",
+    "weather_turns": 0,
+    "terrain": "",
+    "terrain_turns": 0,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Gliscor",
+        "set_species": "Gliscor",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 84,
+        "maxhp": 182,
+        "item": "leftovers",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         19,
+         8,
+         10
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Staraptor",
+        "set_species": "Staraptor",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 192,
+        "maxhp": 192,
+        "item": "sharpbeak",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         16,
+         12,
+         5
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Rillaboom",
+        "set_species": "Rillaboom",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 193,
+        "maxhp": 193,
+        "item": "miracleseed",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Ceruledge",
+        "set_species": "Ceruledge",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 181,
+        "maxhp": 181,
+        "item": "grassyseed",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "hazards": [
+       [
+        "toxicspikes",
+        1
+       ]
+      ],
+      "enabled": [
+       [
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Garchomp",
+        "set_species": "Garchomp",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 184,
+        "maxhp": 215,
+        "item": "rockyhelmet",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         -1,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         5,
+         12
+        ],
+        "volatiles": [
+         "stall"
+        ],
+        "locked": null
+       },
+       {
+        "species": "Reuniclus",
+        "set_species": "Reuniclus",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 134,
+        "maxhp": 217,
+        "item": "leftovers",
+        "status": "psn",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         11,
+         8,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Sharpedo",
+        "set_species": "Sharpedo",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 177,
+        "maxhp": 177,
+        "item": "sitrusberry",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         7,
+         16
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Gholdengo",
+        "set_species": "Gholdengo",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 179,
+        "maxhp": 179,
+        "item": "lifeorb",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  }
+ ]
+}

@@ -1819,6 +1819,27 @@ G51_ABILITY_FACTS = (
                   "`[of] ${target}`); } } },",
                   'flags: { breakable: 1 },')),
 )
+# Step G67 (decision 0015 entry 5bl): Magic Guard and Air Balloon are engine rows read by id. Magic Guard's callback blocks a
+# damage whose effect is not a Move (the Damage event, which a directDamage never reaches: the turn code classes every
+# indirect damage, src/combat/turn.c dfi_deal); Air Balloon's three callbacks are the ground immunity (isGrounded, sim/pokemon.ts),
+# the announcement at switch-in (ITEM_SHOWN), the pop on a damaging hit and the pop on a substitute hit (AfterSubDamage).
+G67_ABILITY_FACTS = (
+    ('magicguard', ("onDamage(damage, target, source, effect) { if (effect.effectType !== 'Move') { "
+                    "if (effect.effectType === 'Ability') this.add('-activate', source, 'ability: ' + effect.name); "
+                    "return false; } },",
+                    'flags: {},')),
+)
+G67_ITEM_FACTS = (
+    ('airballoon', ("onStart(target) { if (!target.ignoringItem() && !this.field.getPseudoWeather('gravity')) { "
+                    "this.add('-item', target, 'Air Balloon'); } },",
+                    "onDamagingHit(damage, target, source, move) { this.add('-enditem', target, 'Air Balloon'); "
+                    "target.item = ''; this.clearEffectState(target.itemState); "
+                    "this.runEvent('AfterUseItem', target, null, null, this.dex.items.get('airballoon')); },",
+                    "onAfterSubDamage(damage, target, source, effect) { this.debug('effect: ' + effect.id); "
+                    "if (effect.effectType === 'Move') { this.add('-enditem', target, 'Air Balloon'); "
+                    "target.item = ''; this.clearEffectState(target.itemState); "
+                    "this.runEvent('AfterUseItem', target, null, null, this.dex.items.get('airballoon')); } },")),
+)
 G34_ITEM_FACTS = (
     ('widelens', ('onSourceModifyAccuracyPriority: -2,',
                   "onSourceModifyAccuracy(accuracy) { if (typeof accuracy === 'number') { return this.chainModify([4505, 4096]); } },")),
@@ -2587,10 +2608,10 @@ HANDLER_IDS = ['NONE', 'UNMODELED']
 # here, which changes the handler column and so the POOL table hash, as any pool change does; a row that is marked and
 # still has the UNMODELED handler fails duoforge.data.pool_tables. G4: Focus Sash, Rock Head. G12: Floettite (the Mega
 # Stone of Floette-Eternal), Flower Veil and Fairy Aura. G14: Rough Skin, Poison Touch and Thermal Exchange. G16: Sticky Hold (Knock Off reads it by id). AC1: Trace (the entry copy of a foe's ability). G15: Psychic Seed (Grassy Seed's rule for the other terrain). G22: Sand Rush, Swift Swim, Slush Rush and Chlorophyll (the doubled Speed in their weather, tools/datagen/pool_families.js ENGINE_ORDER), Sand Rush's immunity to Sandstorm, Inner Focus (no flinch, no Intimidate drop) and Liquid Voice (a sound move becomes Water). G23-C: Levitate (isGrounded and the Ground immunity). G49: Muscle Band, Wise Glasses (base power by category) and Bright Powder (the target's accuracy).
-ENGINE_ROWS = {'items': ['focussash', 'floettite', 'psychicseed', 'electricseed', 'mistyseed', 'expertbelt', 'ejectbutton',
+ENGINE_ROWS = {'items': ['airballoon', 'focussash', 'floettite', 'psychicseed', 'electricseed', 'mistyseed', 'expertbelt', 'ejectbutton',
                          'widelens', 'muscleband', 'wiseglasses', 'brightpowder', 'redcard', 'lumberry', 'mentalherb', 'damprock', 'heatrock',
                          'smoothrock', 'icyrock', 'terrainextender'],
-               'abilities': ['rockhead', 'flowerveil', 'fairyaura', 'roughskin', 'poisontouch', 'thermalexchange',
+               'abilities': ['magicguard', 'rockhead', 'flowerveil', 'fairyaura', 'roughskin', 'poisontouch', 'thermalexchange',
                              'stickyhold', 'trace', 'levitate', 'sandrush', 'swiftswim', 'slushrush', 'chlorophyll',
                              'innerfocus', 'liquidvoice', 'flamebody', 'clearbody', 'hospitality', 'overcoat',
                              'soundproof', 'unnerve', 'speedboost', 'compoundeyes', 'ironfist', 'sharpness', 'solidrock',
@@ -3424,8 +3445,8 @@ def check_g34_facts(abil_ts, champ_abil, items_ts, champ_items):
     """Steps G34, G35, Mega batch 2 and G39: every fact of G34_ABILITY_FACTS, G35_ABILITY_FACTS, MEGA2_ABILITY_FACTS, G39_ABILITY_FACTS and G34_ITEM_FACTS is in the pinned entry, whitespace aside, and the
     Champions mod has no entry of its own for it (an override would change what the engine reads). Step G59: the Champions
     entry of a G59_INHERIT_ONLY ability may only inherit (`inherit: true`, `isNonstandard: null`), which is no override."""
-    for kind, facts_by_id, src, champ in (('ability', G34_ABILITY_FACTS + G35_ABILITY_FACTS + MEGA2_ABILITY_FACTS + G39_ABILITY_FACTS + G41_ABILITY_FACTS + G45_ABILITY_FACTS + G46_ABILITY_FACTS + G47_ABILITY_FACTS + G51_ABILITY_FACTS + G53_ABILITY_FACTS + G63_ABILITY_FACTS + G59_ABILITY_FACTS, abil_ts, champ_abil),
-                                          ('item', G34_ITEM_FACTS + G46_ITEM_FACTS + G47_ITEM_FACTS, items_ts, champ_items)):
+    for kind, facts_by_id, src, champ in (('ability', G34_ABILITY_FACTS + G35_ABILITY_FACTS + MEGA2_ABILITY_FACTS + G39_ABILITY_FACTS + G41_ABILITY_FACTS + G45_ABILITY_FACTS + G46_ABILITY_FACTS + G47_ABILITY_FACTS + G51_ABILITY_FACTS + G53_ABILITY_FACTS + G63_ABILITY_FACTS + G59_ABILITY_FACTS + G67_ABILITY_FACTS, abil_ts, champ_abil),
+                                          ('item', G34_ITEM_FACTS + G46_ITEM_FACTS + G47_ITEM_FACTS + G67_ITEM_FACTS, items_ts, champ_items)):
         for rid, facts in facts_by_id:
             e = src.entry(rid)
             if e is None:

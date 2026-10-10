@@ -1,0 +1,26 @@
+{
+  "name": "g67_magic_guard_toxic_spikes",
+  "purpose": "Step G67, Magic Guard against poison: Gliscor sets Toxic Spikes on turn 1; the Magic Guard Reuniclus comes in on turn 2 and is poisoned without the poison residual damage (STATUS class).",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,0000000000000000000000000000000000000000000000000000000000006701",
+  "teams": [
+    "Gliscor (M) @ Leftovers\nAbility: Hyper Cutter\nLevel: 50\nEVs: 32 HP / 32 Def / 2 SpD\nImpish Nature\n- Toxic Spikes\n- Protect\n- Earthquake\n\nStaraptor (F) @ Sharp Beak\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 2 SpD / 32 Spe\nJolly Nature\n- Brave Bird\n- Hurricane\n- Protect\n\nRillaboom (M) @ Miracle Seed\nAbility: Grassy Surge\nLevel: 50\nEVs: 18 HP / 32 Atk / 2 Def / 6 SpD / 8 Spe\nAdamant Nature\n- Fake Out\n\nCeruledge (M) @ Grassy Seed\nAbility: Flash Fire\nLevel: 50\nEVs: 31 HP / 7 Atk / 24 Def / 3 SpD / 1 Spe\nAdamant Nature\n- Protect\n\nMilotic (F) @ Sitrus Berry\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Coil\n\nPolitoed (M) @ Mystic Water\nAbility: Drizzle\nLevel: 50\nEVs: 32 HP / 2 Def / 32 SpD\nCalm Nature\n- Protect",
+    "Garchomp (M) @ Rocky Helmet\nAbility: Rough Skin\nLevel: 50\nEVs: 32 HP / 32 Def / 2 SpD\nImpish Nature\n- Rock Slide\n- Protect\n- Dragon Pulse\n\nSharpedo (M) @ Sitrus Berry\nAbility: Rough Skin\nLevel: 50\nEVs: 32 HP / 2 Def / 32 Spe\nJolly Nature\n- Liquidation\n- Protect\n- Snarl\n\nReuniclus (M) @ Leftovers\nAbility: Magic Guard\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nModest Nature\n- Psychic\n- Protect\n- Substitute\n\nGholdengo @ Life Orb\nAbility: Good as Gold\nLevel: 50\nEVs: 17 HP / 2 Def / 17 SpA / 16 SpD / 14 Spe\nModest Nature\n- Protect\n\nRaichu (F) @ Light Clay\nAbility: Lightning Rod\nLevel: 50\nEVs: 29 HP / 5 Def / 32 Spe\nTimid Nature\n- Protect\n\nPolitoed (M) @ Mystic Water\nAbility: Drizzle\nLevel: 50\nEVs: 32 HP / 2 Def / 32 SpD\nCalm Nature\n- Protect"
+  ],
+  "plan": {
+    "p1": [
+      "move 1, move 3",
+      "move 3, move 3",
+      "move 3, move 3",
+      "move 3, move 3"
+    ],
+    "p2": [
+      "move 2, move 2",
+      "move 2, switch 3",
+      "move 2, move 1",
+      "move 2, move 1"
+    ],
+    "max_steps": 4
+  }
+}

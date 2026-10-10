@@ -258,7 +258,7 @@ foreach(_gen IN ITEMS
         "extended_tables.h=b2abef243fcbfdd87654940076b9fe2fe80b117d74893a7567741f26b9075a7d"
         "extended_tables.c=9e736fa467713283418c4edf8f56b8d844452e596ba422adbd52483d20f7cc17"
         "pool_tables.h=21ae65b4d5cc039990cab7ec5d28773e309a8551ba3df2f0f53016c339800511"
-        "pool_tables.c=57be6048d6142eadc2cc4b4c59bccbcc1a1f12ea17f6c162e294eafb65e4b10f")
+        "pool_tables.c=d39acacdccd10874dcba0cabc0ce06c2738020da0fac941b24358411c3ee19a1")
     string(REPLACE "=" ";" _parts "${_gen}")
     list(GET _parts 0 _file)
     list(GET _parts 1 _expected)
@@ -771,3 +771,7 @@ duoforge_add_test(NAME duoforge.state.pool_g53 SOURCES test_pool_g53.c WHITEBOX 
 
 # Step G63 (decision 0015 5bj): the simple Mega abilities Sand Force, Shell Armor, Filter and Stalwart, and their six stones.
 duoforge_add_test(NAME duoforge.state.pool_g63 SOURCES test_pool_g63.c WHITEBOX TIMEOUT 60)
+
+# Step G67 (decision 0015 entry 5bl, decision 0033): Magic Guard (the class of every indirect damage), Air Balloon (grounding, the
+# pops, the immunity, the switch-in line ITEM_SHOWN) and the fold that ignores ITEM_SHOWN.
+duoforge_add_test(NAME duoforge.state.pool_g67 SOURCES test_pool_g67.c WHITEBOX TIMEOUT 120)

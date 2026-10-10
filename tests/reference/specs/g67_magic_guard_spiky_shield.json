@@ -1,0 +1,24 @@
+{
+  "name": "g67_magic_guard_spiky_shield",
+  "purpose": "Step G67, Magic Guard and Spiky Shield: Chesnaught protects with Spiky Shield on turn 1; the Magic Guard Clefable Body Slams it on turn 2 and takes no contact damage (CONDITION class).",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,0000000000000000000000000000000000000000000000000000000000006707",
+  "teams": [
+    "Chesnaught (M) @ Leftovers\nAbility: Overgrow\nLevel: 50\nEVs: 32 HP / 32 Def / 2 SpD\nImpish Nature\n- Spiky Shield\n- Protect\n\nStaraptor (F) @ Sharp Beak\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 2 SpD / 32 Spe\nJolly Nature\n- Brave Bird\n- Hurricane\n- Protect\n\nRillaboom (M) @ Miracle Seed\nAbility: Grassy Surge\nLevel: 50\nEVs: 18 HP / 32 Atk / 2 Def / 6 SpD / 8 Spe\nAdamant Nature\n- Fake Out\n\nCeruledge (M) @ Grassy Seed\nAbility: Flash Fire\nLevel: 50\nEVs: 31 HP / 7 Atk / 24 Def / 3 SpD / 1 Spe\nAdamant Nature\n- Protect\n\nMilotic (F) @ Sitrus Berry\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Coil\n\nPolitoed (M) @ Mystic Water\nAbility: Drizzle\nLevel: 50\nEVs: 32 HP / 2 Def / 32 SpD\nCalm Nature\n- Protect",
+    "Clefable (F) @ Sitrus Berry\nAbility: Magic Guard\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Spe\nAdamant Nature\n- Double-Edge\n- Protect\n- Calm Mind\n\nSharpedo (M) @ Leftovers\nAbility: Rough Skin\nLevel: 50\nEVs: 32 HP / 2 Def / 32 Spe\nJolly Nature\n- Liquidation\n- Protect\n- Snarl\n\nCeruledge (M) @ Grassy Seed\nAbility: Flash Fire\nLevel: 50\nEVs: 31 HP / 7 Atk / 24 Def / 3 SpD / 1 Spe\nAdamant Nature\n- Protect\n\nGholdengo @ Life Orb\nAbility: Good as Gold\nLevel: 50\nEVs: 17 HP / 2 Def / 17 SpA / 16 SpD / 14 Spe\nModest Nature\n- Protect\n\nRaichu (F) @ Light Clay\nAbility: Lightning Rod\nLevel: 50\nEVs: 29 HP / 5 Def / 32 Spe\nTimid Nature\n- Protect\n\nPolitoed (M) @ Mystic Water\nAbility: Drizzle\nLevel: 50\nEVs: 32 HP / 2 Def / 32 SpD\nCalm Nature\n- Protect"
+  ],
+  "plan": {
+    "p1": [
+      "move 1, move 2",
+      "move 1, move 2",
+      "move 1, move 2"
+    ],
+    "p2": [
+      "move 1 1, move 3",
+      "move 1 1, move 3",
+      "move 1 1, move 3"
+    ],
+    "max_steps": 3
+  }
+}

@@ -262,14 +262,15 @@ class PoolRows(unittest.TestCase):
         """The engine's isGrounded is "not a Flying type and not a Levitate holder" (dfi_grounded, src/combat/turn.c;
         Levitate since step G23-C), which Expanding Force (step G15) reads for its user. The pin also reads Eelevate, Air
         Balloon and Iron Ball, Gravity, Ingrain, Magnet Rise, Telekinesis and Smack Down (sim/pokemon.ts:2148-2160):
-        every one of them is an UNMODELED row, so no battle has it; Levitate is an engine row. Roost (step G42) is a
+        every one of them but Air Balloon is an UNMODELED row, so no battle has it; Air Balloon is an engine row since step
+        G67 (dfi_grounded reads the held item), and Levitate is an engine row. Roost (step G42) is a
         modelled row: its Flying removal goes through the type accessor (dfi_types_of, which dfi_grounded reads), so the
         grounding of its user follows the volatile, and the Normal type of an empty list is the pin's getTypes."""
         def listed(kind, array):
             return {n.lower() for n in dict(re.findall(r'^\s*\[DFI_%s_([A-Z0-9]+)\] = "([^"]+)",$' % kind,
                                                        block('const char *const %s[' % array), re.M))}
         for kind, array, ids, rows in (('ABILITY', 'dfi_pool_ability_unmodeled', ['eelevate'], Rows.abilities),
-                                       ('ITEM', 'dfi_pool_item_unmodeled', ['airballoon', 'ironball'], Rows.items),
+                                       ('ITEM', 'dfi_pool_item_unmodeled', ['ironball'], Rows.items),
                                        ('MOVE', 'dfi_pool_move_unmodeled',
                                         ['gravity', 'ingrain', 'magnetrise', 'telekinesis', 'smackdown'],
                                         Rows.moves)):
@@ -277,6 +278,8 @@ class PoolRows(unittest.TestCase):
             self.assertEqual(sorted(set(ids) & set(rows) - listed(kind, array)), [], kind)
         self.assertIn('[DFI_ABILITY_LEVITATE] = DFI_HANDLER_NONE,', block('const uint8_t dfi_pool_ability_handler['))
         self.assertNotIn('levitate', listed('ABILITY', 'dfi_pool_ability_unmodeled'))
+        self.assertIn('[DFI_ITEM_AIRBALLOON] = DFI_HANDLER_NONE,', block('const uint8_t dfi_pool_item_handler['))
+        self.assertNotIn('airballoon', listed('ITEM', 'dfi_pool_item_unmodeled'))
 
     def test_the_canonical_size(self):
         n_f, n_m, n_i, n_a = len(Rows.formes), len(Rows.moves), len(Rows.items), len(Rows.abilities)
