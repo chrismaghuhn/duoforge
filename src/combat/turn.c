@@ -1573,6 +1573,21 @@ static duoforge_status dfi_queue_self_faint(dfi_run *r, uint32_t flat)
     return DUOFORGE_OK;
 }
 
+/* The level of a Champions Pokemon: every one is level 50 (DFI_LEVEL), so a level difference is always 0. */
+static uint32_t dfi_level_of(const dfi_member *m)
+{
+    (void)m;
+    return DFI_LEVEL;
+}
+
+/* The OHKO moves: Sheer Cold (ohko 'Ice', step G64) and the moves with ohko true (Fissure, Guillotine, Horn Drill; step G92).
+ * Their accuracy and immunity steps are the same (hitStepAccuracy's ohko branch); they differ in the accuracy (dfi_ohko_accuracy)
+ * and in the Ice-type immunity, which only Sheer Cold has. */
+static bool dfi_is_ohko(const dfi_move_data *md)
+{
+    return md->special == DFI_SPECIAL_SHEER_COLD || md->special == DFI_SPECIAL_OHKO;
+}
+
 static duoforge_status dfi_get_damage(dfi_run *r, uint32_t user, uint32_t target, const dfi_move_data *md,
                                       uint32_t move_type, bool spread, uint32_t *out)
 {
@@ -1596,10 +1611,18 @@ static duoforge_status dfi_get_damage(dfi_run *r, uint32_t user, uint32_t target
         *out = half < 1u ? 1u : half;
         return DUOFORGE_OK;
     }
-    /* An OHKO move (Sheer Cold, step G64): getDamage returns target.maxhp (sim/battle-actions.ts:1606) before the critical
-     * hit roll, the formula and every effectiveness line; the type and Sturdy immunities were judged before. */
-    if (md->special == DFI_SPECIAL_SHEER_COLD) {
+    /* An OHKO move (Sheer Cold, step G64; Fissure, Guillotine and Horn Drill, step G92): getDamage returns target.maxhp
+     * (sim/battle-actions.ts:1606) before the critical hit roll, the formula and every effectiveness line; the type and
+     * Sturdy immunities were judged before. */
+    if (dfi_is_ohko(md)) {
         *out = (uint32_t)d->hp_max;
+        return DUOFORGE_OK;
+    }
+    /* Night Shade (step G92, data/moves.ts:12725-12738: damage 'level'): getDamage returns source.level (sim/battle-actions.ts:
+     * 1608-1609) before the critical hit ratio and the formula, so there is no CRIT draw and no modifier; the immunities were
+     * judged before. The user is at level DFI_LEVEL. */
+    if (md->special == DFI_SPECIAL_LEVEL_DAMAGE) {
+        *out = dfi_level_of(a);
         return DUOFORGE_OK;
     }
     const dfi_active_slot *ap = dfi_pos(r->b, user);
@@ -2692,6 +2715,38 @@ static duoforge_status dfi_add_volatile(dfi_run *r, uint32_t flat, uint32_t whic
     }
     pos->confusion_turns = (uint8_t)v; /* 2..5 */
     dfi_emit_plain(r, DUOFORGE_EVENT_CONFUSION_START, flat); /* [-start] confusion */
+    return DUOFORGE_OK;
+}
+
+/* A primary confusion (step G92, decision 0062): the volatile of a move without secondaries (Confuse Ray, Swagger, Flatter,
+ * Teeter Dance; runMoveEffects' addVolatile, sim/battle-actions.ts:1236-1238, sim/pokemon.ts:1969-2009). A fainted Pokemon
+ * refuses, and a confused one refuses silently (no TryAddVolatile). Then TryAddVolatile: Misty Terrain's onTryAddVolatile
+ * (data/moves.ts:12170-12177) returns null for a grounded Pokemon that is not semi-invulnerable and prints the -activate
+ * line with `move: Misty Terrain`, because the effect is the move and has no secondaries; it is the line of Thunder Wave under
+ * Misty Terrain (step G68). Otherwise the volatile starts with random(2, 6) turns. `*added` tells whether it did, which the
+ * move's result needs (a refused confusion is false). */
+static duoforge_status dfi_confuse_primary(dfi_run *r, uint32_t flat, bool *added)
+{
+    const dfi_member *m = dfi_at(r->b, flat);
+    dfi_active_slot *pos = dfi_pos(r->b, flat);
+    *added = false;
+    if (m == NULL || m->hp == 0u || pos->confusion_turns != 0u) {
+        return DUOFORGE_OK;
+    }
+    if (r->b->terrain == DFI_TERRAIN_MISTY && dfi_grounded(r->b, m) && !dfi_semi_invulnerable(r, flat)) {
+        const duoforge_event e =
+            dfi_ev(DUOFORGE_EVENT_ACTIVATE, flat, DUOFORGE_CAUSE_MOVE, DFI_MOVE_MISTYTERRAIN, DUOFORGE_NO_POSITION);
+        dfi_emit(r, &e);
+        return DUOFORGE_OK;
+    }
+    uint32_t v = 0u;
+    const duoforge_status st = dfi_draw(r->draws, DFI_SITE_CONFUSION_TURNS, 2u, 6u, &v);
+    if (st != DUOFORGE_OK) {
+        return st;
+    }
+    pos->confusion_turns = (uint8_t)v; /* 2..5 */
+    dfi_emit_plain(r, DUOFORGE_EVENT_CONFUSION_START, flat); /* [-start] confusion */
+    *added = true;
     return DUOFORGE_OK;
 }
 
@@ -5255,17 +5310,25 @@ static duoforge_status dfi_run_recharge(dfi_run *r, uint32_t user)
  * when the user is not an Ice type (gen 7 on), with no stage and no ModifyAccuracy (the item and ability modifiers stay out),
  * plus the level difference, which is 0 here (every Champions Pokemon is level 50). The Accuracy event still runs: No Guard
  * and Glaive Rush's onAccuracy answer first, with no draw. The Ice-type target is judged by the caller (-immune [ohko]). */
-static duoforge_status dfi_ohko_accuracy(dfi_run *r, uint32_t user, uint32_t target, bool *out)
+static duoforge_status dfi_ohko_accuracy(dfi_run *r, uint32_t user, uint32_t target, bool sheer_cold, bool *out)
 {
     struct duoforge_battle *b = r->b;
     *out = true;
+    /* The level test of hitStepAccuracy (sim/battle-actions.ts:700-706): the accuracy gains the user's level minus the target's,
+     * and an OHKO move against a higher target is -immune [ohko] without a draw. Every Pokemon is DFI_LEVEL, so the difference
+     * is 0 and the higher-target branch is never taken; it is refused here, not played. */
+    if (dfi_level_of(dfi_at(b, target)) > dfi_level_of(dfi_at(b, user))) {
+        return DUOFORGE_E_INVARIANT;
+    }
     if (dfi_ability(b, dfi_at(b, user), DFI_ABILITY_NOGUARD) || dfi_ability(b, dfi_at(b, target), DFI_ABILITY_NOGUARD)) {
         return DUOFORGE_OK;
     }
     if (b->tail.sides[target / 2u].positions[target % 2u].glaive_rush != 0u) {
         return DUOFORGE_OK;
     }
-    const uint32_t accuracy = dfi_has_type(b, dfi_at(b, user), DFI_TYPE_ICE) ? 30u : 20u;
+    /* accuracy 30, and for Sheer Cold (ohko 'Ice') 20 when the user is not an Ice type (gen 7 on); the stages are not read.
+     * The OHKO moves with ohko true (step G92) have 30 flat. */
+    const uint32_t accuracy = sheer_cold && !dfi_has_type(b, dfi_at(b, user), DFI_TYPE_ICE) ? 20u : 30u;
     return dfi_draw_chance(r->draws, DFI_SITE_ACCURACY, accuracy, 100u, out);
 }
 
@@ -5882,8 +5945,8 @@ static void dfi_try_hit_abilities(dfi_run *r, uint32_t user, const uint32_t *tar
         } else if (dfi_ability(r->b, tm, DFI_ABILITY_GOODASGOLD) && status_move) {
             dfi_immune(r, t, 1u + DFI_ABILITY_GOODASGOLD);
             hit[i] = false;
-        } else if (md->special == DFI_SPECIAL_SHEER_COLD && dfi_ability(r->b, tm, DFI_ABILITY_STURDY)) {
-            /* Sturdy's onTryHit (step G64, data/abilities.ts:4675-4680): an OHKO move is -immune with [from] ability: Sturdy, and
+        } else if (dfi_is_ohko(md) && dfi_ability(r->b, tm, DFI_ABILITY_STURDY)) {
+            /* Sturdy's onTryHit (step G64, data/abilities.ts:4675-4680; every ohko move, step G92): an OHKO move is -immune with [from] ability: Sturdy, and
              * the hit returns null (no -fail). A target holds one ability, so no other holder's TryHit is in this branch. */
             dfi_immune(r, t, 1u + DFI_ABILITY_STURDY);
             hit[i] = false;
@@ -5978,15 +6041,16 @@ static duoforge_status dfi_accuracy_targets(dfi_run *r, uint32_t user, const uin
             if (!hit[i]) {
                 continue;
             }
-            if (md->special == DFI_SPECIAL_SHEER_COLD) {
-                /* OHKO (step G64): an Ice-type target is -immune with [ohko] and no draw (no miss line either); otherwise the
+            if (dfi_is_ohko(md)) {
+                /* OHKO (step G64; step G92 for ohko true): an Ice-type target is -immune with [ohko] and no draw (no miss line
+                 * either; Sheer Cold only, the ohko 'Ice' test of hitStepAccuracy, sim/battle-actions.ts:703); otherwise the
                  * OHKO accuracy of dfi_ohko_accuracy, and a miss is the same -miss as any single-target move. */
-                if (dfi_has_type(b, dfi_at(b, targets[i]), DFI_TYPE_ICE)) {
+                if (md->special == DFI_SPECIAL_SHEER_COLD && dfi_has_type(b, dfi_at(b, targets[i]), DFI_TYPE_ICE)) {
                     dfi_immune(r, targets[i], 0u);
                     hit[i] = false;
                     continue;
                 }
-                st = dfi_ohko_accuracy(r, user, targets[i], &hit[i]);
+                st = dfi_ohko_accuracy(r, user, targets[i], md->special == DFI_SPECIAL_SHEER_COLD, &hit[i]);
                 if (st != DUOFORGE_OK) {
                     return st;
                 }
@@ -6169,6 +6233,34 @@ static duoforge_status dfi_status_effects(dfi_run *r, uint32_t user, uint32_t mo
                 did = did || started;
                 continue;
             }
+            if (md->special == DFI_SPECIAL_CONFUSE) {
+                /* Confuse Ray, Swagger, Flatter and Teeter Dance (step G92, decision 0062): moveHit runs the boosts first
+                 * (sim/battle-actions.ts:1197-1200, the target's, a move's own change), then the volatile, whose result
+                 * joins the boosts' (:1236-1238). Swagger's attack +2 and Flatter's special attack +1 come through the
+                 * PRIMARY_TARGET role, as Charm's do; a refused change does not stop the confusion. */
+                if (md->boost_role == DFI_BOOST_ROLE_PRIMARY_TARGET) {
+                    did = dfi_boost(r, targets[i], md->boosts, user, dfi_effect(DUOFORGE_CAUSE_MOVE, 0u, DFI_BOOST_PRIMARY)) || did;
+                }
+                bool added = false;
+                st = dfi_confuse_primary(r, targets[i], &added);
+                if (st != DUOFORGE_OK) {
+                    return st;
+                }
+                did = did || added;
+                continue;
+            }
+            if (md->special == DFI_SPECIAL_MEMENTO) {
+                /* Memento (step G92, decision 0062; data/moves.ts:11620-11638): the target's attack and special attack -2, then
+                 * selfdestruct 'ifHit' (runMoveEffects, sim/battle-actions.ts:1287): the user faints when this target's
+                 * damage is not false, which the hit steps decided, not the boosts (a refused boost still faints it). The
+                 * faint is queued like Final Gambit's; the hit loop's Updates are the caller's (dfi_status_hit_end). */
+                did = dfi_boost(r, targets[i], md->boosts, user, dfi_effect(DUOFORGE_CAUSE_MOVE, 0u, DFI_BOOST_PRIMARY)) || did;
+                st = dfi_queue_self_faint(r, user);
+                if (st != DUOFORGE_OK) {
+                    return st;
+                }
+                continue;
+            }
             if (md->boost_role == DFI_BOOST_ROLE_PRIMARY_TARGET) {
                 /* Charm and Fake Tears (step G39, data/moves.ts:2339-2355 and :5110-5126): the primary boosts go to the
                  * target (moveHit's boosts, isSecondary false): the changes go through the target's TryBoost handlers (Clear
@@ -6222,8 +6314,11 @@ static bool dfi_bounce_kind_ok(uint32_t move_id, const dfi_move_data *md)
         md->boost_role == DFI_BOOST_ROLE_PRIMARY_TARGET || md->primary_status != DFI_STATUS_NONE) {
         return true;
     }
+    /* Confuse Ray, Swagger and Flatter (step G92; Teeter Dance is not reflectable) take the same run: the boosts of the holder's
+     * bounce go to the original user, then the confusion (dfi_confuse_primary, with the holder as the source). */
     return md->special == DFI_SPECIAL_PARTING_SHOT || md->special == DFI_SPECIAL_SOAK || md->special == DFI_SPECIAL_ENCORE ||
-           md->special == DFI_SPECIAL_DISABLE || md->special == DFI_SPECIAL_TAUNT || md->special == DFI_SPECIAL_YAWN;
+           md->special == DFI_SPECIAL_DISABLE || md->special == DFI_SPECIAL_TAUNT || md->special == DFI_SPECIAL_YAWN ||
+           md->special == DFI_SPECIAL_CONFUSE;
 }
 
 /* The bounced run (useMove, battle-actions.ts:365-548) of a reflectable move: `holder` runs `move_id` aimed at `user`, the
@@ -7021,7 +7116,9 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
         md->special != DFI_SPECIAL_SKILL_SWAP &&
         md->special != DFI_SPECIAL_ALLURING_VOICE && md->special != DFI_SPECIAL_DRAGON_CHEER &&
         md->special != DFI_SPECIAL_FINAL_GAMBIT &&
-        md->special != DFI_SPECIAL_DRAGON_DARTS) {
+        md->special != DFI_SPECIAL_DRAGON_DARTS &&
+        md->special != DFI_SPECIAL_CONFUSE && md->special != DFI_SPECIAL_OHKO &&
+        md->special != DFI_SPECIAL_MEMENTO && md->special != DFI_SPECIAL_LEVEL_DAMAGE) {
         return DUOFORGE_E_INVARIANT;
     }
     /* Steel Roller's onTry (step G34, data/moves.ts:17893-17913): it fails without a terrain, with -fail and [still]. */
@@ -7310,6 +7407,15 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
     if (status_move && absorbed) {
         if (count != 1u) {
             return DUOFORGE_E_UNSUPPORTED;
+        }
+        if (md->special == DFI_SPECIAL_MEMENTO) {
+            /* Memento's selfdestruct 'ifHit' (step G92): the absorbed target's damage is true (spreadMoveHit's
+             * HIT_SUBSTITUTE, battle-actions.ts:1062-1065), not false, so the user faints after the -fail of the Substitute
+             * (runMoveEffects' selfdestruct check, battle-actions.ts:1287). */
+            const duoforge_status fst = dfi_queue_self_faint(r, user);
+            if (fst != DUOFORGE_OK) {
+                return fst;
+            }
         }
         return dfi_status_hit_end(r);
     }

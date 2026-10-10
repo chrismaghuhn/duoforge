@@ -450,7 +450,8 @@ def parse_move(mid, base, champ, ext=False, pool=False, unmodeled=None):
             # encoded bit holds is recorded when a modelled row reads it (flags_that_matter), and otherwise ignored.
             if fl not in POOL_FLAGS:
                 fail('move %s: unknown flag %s' % (mid, fl))
-            if fl in FLAGS_THAT_MATTER:
+            # Step G92 (decision 0062): cantusetwice (Gigaton Hammer, dropped; Blood Moon) has no reader in the turn code: unmodelled.
+            if fl in FLAGS_THAT_MATTER or fl == 'cantusetwice':
                 unmodeled.append('flag %s' % fl)
         elif fl not in IGNORED_FLAGS and not (pool and fl in G2_IGNORED_FLAGS):
             fail('move %s: unknown flag %s' % (mid, fl))
@@ -2314,6 +2315,17 @@ SPECIAL_P = dict(SPECIAL_C, **{
     'steelbeam': ('STEEL_BEAM', {'onMoveFail'}),                          # G68: mindBlownRecoil (half the maximum HP on a hit and in MoveFail)
     'thunderwave': ('THUNDER_WAVE', set()),                               # G68: ignoreImmunity false (Ground is immune to the Electric move)
     'dragondarts': ('DRAGON_DARTS', set()),                               # G78: two hits, the second on the partner (decision 0043)
+    # Step G92 (decision 0062): the primary confusion of four moves (Swagger and Flatter boost first), the OHKO moves of
+    # Sheer Cold's kind with ohko true, Memento's selfdestruct, Night Shade's damage 'level'.
+    'confuseray': ('CONFUSE', set()),                                     # G92: volatileStatus confusion (G2_OWNED_FIELDS)
+    'swagger': ('CONFUSE', set()),                                        # G92: boosts atk +2 to the target, then the confusion
+    'flatter': ('CONFUSE', set()),                                        # G92: boosts spa +1 to the target, then the confusion
+    'teeterdance': ('CONFUSE', set()),                                    # G92: allAdjacent, the confusion of each adjacent foe
+    'fissure': ('OHKO', set()),                                           # G92: ohko true (no type immunity, level 50 vs 50)
+    'guillotine': ('OHKO', set()),
+    'horndrill': ('OHKO', set()),
+    'memento': ('MEMENTO', set()),                                        # G92: target atk and spa -2, then the user faints
+    'nightshade': ('LEVEL_DAMAGE', set()),                                # G92: damage 'level' (the user's level, no crit draw)
 })
 # Step G13: Detect is Protect (data/moves.ts:3526-3547 against 13961-14005): the same handler (not one of the G2 handlers,
 # so it is added to the pool's map only), and the generator checks that its stalling fields and both callbacks are,
@@ -2431,6 +2443,37 @@ G78_FACTS = (
     'flags: { protect: 1, mirror: 1, metronome: 1, noparentalbond: 1 },', 'multihit: 2,', 'smartTarget: true,',
     'target: "normal",', 'type: "Dragon",',
 )
+# Step G92 (decision 0062, lead's approval 2026-10-11). CONFUSE: the primary volatile confusion of Confuse Ray, Swagger, Flatter and
+# Teeter Dance (moveHit: the boosts first, then addVolatile; Misty Terrain's onTryAddVolatile prints -activate for a move without
+# secondaries). OHKO: ohko true (Fissure, Guillotine, Horn Drill; hitStepAccuracy's ohko branch with accuracy 30 and no type
+# immunity). MEMENTO: the target's boosts, then selfdestruct ifHit. LEVEL_DAMAGE: damage 'level' (Night Shade; no critical hit
+# roll, no modifiers). Gigaton Hammer (cantusetwice) is dropped (decision 0062): its only learner has no marked ability.
+G92_HANDLERS = ['CONFUSE', 'OHKO', 'MEMENTO', 'LEVEL_DAMAGE']
+G92_FACTS = (
+    ('confuseray', ['accuracy: 100,', 'basePower: 0,', 'category: "Status",', 'priority: 0,',
+                    'flags: { protect: 1, reflectable: 1, mirror: 1, metronome: 1 },', "volatileStatus: 'confusion',",
+                    'target: "normal",', 'type: "Ghost",']),
+    ('swagger', ['accuracy: 85,', 'basePower: 0,', 'category: "Status",', 'priority: 0,',
+                 'flags: { protect: 1, reflectable: 1, mirror: 1, allyanim: 1, metronome: 1 },', "volatileStatus: 'confusion',",
+                 'boosts: { atk: 2, },', 'target: "normal",', 'type: "Normal",']),
+    ('flatter', ['accuracy: 100,', 'basePower: 0,', 'category: "Status",', 'priority: 0,',
+                 'flags: { protect: 1, reflectable: 1, mirror: 1, allyanim: 1, metronome: 1 },', "volatileStatus: 'confusion',",
+                 'boosts: { spa: 1, },', 'target: "normal",', 'type: "Dark",']),
+    ('teeterdance', ['accuracy: 100,', 'basePower: 0,', 'category: "Status",', 'priority: 0,',
+                     'flags: { protect: 1, mirror: 1, dance: 1, metronome: 1 },', "volatileStatus: 'confusion',",
+                     'target: "allAdjacent",', 'type: "Normal",']),
+    ('fissure', ['accuracy: 30,', 'basePower: 0,', 'category: "Physical",', 'priority: 0,',
+                 'flags: { protect: 1, mirror: 1, nonsky: 1, metronome: 1 },', 'ohko: true,', 'target: "normal",', 'type: "Ground",']),
+    ('guillotine', ['accuracy: 30,', 'basePower: 0,', 'category: "Physical",', 'priority: 0,',
+                    'flags: { contact: 1, protect: 1, mirror: 1, metronome: 1 },', 'ohko: true,', 'target: "normal",', 'type: "Normal",']),
+    ('horndrill', ['accuracy: 30,', 'basePower: 0,', 'category: "Physical",', 'priority: 0,',
+                   'flags: { contact: 1, protect: 1, mirror: 1, metronome: 1 },', 'ohko: true,', 'target: "normal",', 'type: "Normal",']),
+    ('memento', ['accuracy: 100,', 'basePower: 0,', 'category: "Status",', 'priority: 0,',
+                 'flags: { protect: 1, mirror: 1, metronome: 1 },', 'boosts: { atk: -2, spa: -2, },',
+                 'selfdestruct: "ifHit",', 'target: "normal",', 'type: "Dark",']),
+    ('nightshade', ['accuracy: 100,', 'basePower: 0,', "damage: 'level',", 'category: "Special",', 'priority: 0,',
+                    'flags: { protect: 1, mirror: 1, metronome: 1 },', 'target: "normal",', 'type: "Ghost",']),
+)
 G58_FACTS = (
     'accuracy: 100,', 'basePower: 90,', 'category: "Physical",', 'priority: 0,', 'target: "normal",', 'type: "Ghost",',
     'flags: { contact: 1, charge: 1, mirror: 1, metronome: 1, nosleeptalk: 1, noassist: 1, failinstruct: 1 },',
@@ -2522,7 +2565,7 @@ G68_FACTS = (
                      'flags: { protect: 1, reflectable: 1, mirror: 1, metronome: 1 },', "status: 'par',",
                      'ignoreImmunity: false,', 'target: "normal",', 'type: "Electric",']),
 )
-SPECIAL_IDS_P = SPECIAL_IDS_C + G2_HANDLERS + WEATHER_HANDLERS + G16_HANDLERS + G15_HANDLERS + G19_HANDLERS + G20_HANDLERS + G20_PROTECT_HANDLERS + G28_HANDLERS + G30_HANDLERS + G32_HANDLERS + G34_HANDLERS + G27_HANDLERS + G25_HANDLERS + G26_HANDLERS + G33_HANDLERS + G38_HANDLERS + G29_HANDLERS + G39_HANDLERS + G31_HANDLERS + G48_HANDLERS + G44_HANDLERS + G50_HANDLERS + G42_HANDLERS + G56_HANDLERS + G52_HANDLERS + G54_HANDLERS + G64_HANDLERS + G62_HANDLERS + G60_HANDLERS + G58_HANDLERS + G68_HANDLERS + G70_HANDLERS + G66_HANDLERS + G72B_HANDLERS + G74_HANDLERS + G76_HANDLERS + G78_HANDLERS + ['UNMODELED']# Step G10 made two of these handlers data: Scald (thawsTarget) and Recover (heal) are read into the second flags# byte (bit 4, thaws the target) and the heal column, and have the special NONE; their ids stay defined (the ids after
+SPECIAL_IDS_P = SPECIAL_IDS_C + G2_HANDLERS + WEATHER_HANDLERS + G16_HANDLERS + G15_HANDLERS + G19_HANDLERS + G20_HANDLERS + G20_PROTECT_HANDLERS + G28_HANDLERS + G30_HANDLERS + G32_HANDLERS + G34_HANDLERS + G27_HANDLERS + G25_HANDLERS + G26_HANDLERS + G33_HANDLERS + G38_HANDLERS + G29_HANDLERS + G39_HANDLERS + G31_HANDLERS + G48_HANDLERS + G44_HANDLERS + G50_HANDLERS + G42_HANDLERS + G56_HANDLERS + G52_HANDLERS + G54_HANDLERS + G64_HANDLERS + G62_HANDLERS + G60_HANDLERS + G58_HANDLERS + G68_HANDLERS + G70_HANDLERS + G66_HANDLERS + G72B_HANDLERS + G74_HANDLERS + G76_HANDLERS + G78_HANDLERS + G92_HANDLERS + ['UNMODELED']# Step G10 made two of these handlers data: Scald (thawsTarget) and Recover (heal) are read into the second flags# byte (bit 4, thaws the target) and the heal column, and have the special NONE; their ids stay defined (the ids after
 # them keep their values). First Impression and Low Kick keep theirs: the turn code implements them.
 POOL_COLUMN_KEYS = {'thawsTarget', 'heal'}
 G2_OWNED_FIELDS = {
@@ -2571,6 +2614,11 @@ G2_OWNED_FIELDS = {
     'THUNDER_WAVE': {'ignoreImmunity': 'ignoreImmunity: false,'},
     'BATON_PASS': {'self': BATON_PASS_SELF},
     'DRAGON_DARTS': {'multihit': 'multihit: 2,', 'smartTarget': 'smartTarget: true,'},
+    # Step G92 (decision 0062): the primary volatile of the confusion moves, ohko true, Memento's selfdestruct, Night Shade's damage.
+    'CONFUSE': {'volatileStatus': "volatileStatus: 'confusion',"},
+    'OHKO': {'ohko': 'ohko: true,'},
+    'MEMENTO': {'selfdestruct': 'selfdestruct: "ifHit",'},
+    'LEVEL_DAMAGE': {'damage': "damage: 'level',"},
 }
 # Step G48: the empty secondary of Stone Axe and Ceaseless Edge (the Sheer Force placeholder). Without Sheer Force the pin runs
 # it for every hit target (moveHit of an empty secondary with chance undefined, sim/battle-actions.ts:1336-1349): the engine
@@ -3330,6 +3378,19 @@ def check_g78_facts(moves_ts):
             fail('move dragondarts: the entry no longer has "%s"' % fact)
 
 
+def check_g92_facts(moves_ts):
+    """Step G92: the entries of the confusion, OHKO, Memento and Night Shade moves have the pinned texts that
+    the turn code reads (data/moves.ts; the Champions mod has no override of any of them)."""
+    for mid, facts in G92_FACTS:
+        e = moves_ts.entry(mid)
+        if e is None:
+            fail('move %s not found' % mid)
+        text = norm('\n'.join(e[2]))
+        for fact in facts:
+            if norm(fact) not in text:
+                fail('move %s: the entry no longer has "%s"' % (mid, fact))
+
+
 def check_g72b_facts(moves_ts):
     """Step G72b: the Alluring Voice and Dragon Cheer entries are the pinned texts the turn code reads."""
     for mid, facts in (('alluringvoice', G72B_FACTS), ('dragoncheer', G72B_DRAGON_CHEER_FACTS)):
@@ -3889,6 +3950,7 @@ def build_pool(root, repo, dx):
     check_g72b_facts(moves_ts)
     check_g76_facts(moves_ts)
     check_g78_facts(moves_ts)
+    check_g92_facts(moves_ts)
     FLAGS_THAT_MATTER.clear()
     FLAGS_THAT_MATTER.update(prefix_flag_reads((items_ts, champ_items, abil_ts, champ_abil, moves_ts, champ_moves), dx)
                              - set(FLAG_BITS_C) - set(INERT_FLAG_READS) - set(FLAGS3_BITS))

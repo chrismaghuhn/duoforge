@@ -504,6 +504,19 @@ const dfi_support_manifest dfi_support = {
             [DFI_MOVE_DESTINYBOND] = 1u,
             /* Step G76 (decision 0015 5cg): Final Gambit (damage equal to the user's HP; the user faints in the damage call). */
             [DFI_MOVE_FINALGAMBIT] = 1u,
+            /* Step G92 (decision 0062). CONFUSE: the primary confusion of Confuse Ray, Swagger, Flatter and Teeter Dance (Swagger and
+             * Flatter boost the target first; Misty Terrain refuses it for a grounded target). OHKO: Fissure, Guillotine and Horn
+             * Drill (accuracy 30 flat, Sturdy, no Ice immunity). MEMENTO: the target's -2 boosts, then the user faints.
+             * LEVEL_DAMAGE: Night Shade. Gigaton Hammer is not marked (decision 0062: no learner with a marked ability). */
+            [DFI_MOVE_CONFUSERAY] = 1u,
+            [DFI_MOVE_SWAGGER] = 1u,
+            [DFI_MOVE_FLATTER] = 1u,
+            [DFI_MOVE_TEETERDANCE] = 1u,
+            [DFI_MOVE_FISSURE] = 1u,
+            [DFI_MOVE_GUILLOTINE] = 1u,
+            [DFI_MOVE_HORNDRILL] = 1u,
+            [DFI_MOVE_MEMENTO] = 1u,
+            [DFI_MOVE_NIGHTSHADE] = 1u,
         },
     .abilities =
         {

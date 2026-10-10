@@ -923,7 +923,11 @@
 #define DFI_SPECIAL_DESTINY_BOND 98u
 #define DFI_SPECIAL_FINAL_GAMBIT 99u
 #define DFI_SPECIAL_DRAGON_DARTS 100u
-#define DFI_SPECIAL_UNMODELED 101u
+#define DFI_SPECIAL_CONFUSE 101u
+#define DFI_SPECIAL_OHKO 102u
+#define DFI_SPECIAL_MEMENTO 103u
+#define DFI_SPECIAL_LEVEL_DAMAGE 104u
+#define DFI_SPECIAL_UNMODELED 105u
 
 /* ---- the second flags byte of every move (step G8: the general byte for the flags that the first one has no room
  * for; bits 4 to 128 are free) and the secondary kinds that it comes with ---- */

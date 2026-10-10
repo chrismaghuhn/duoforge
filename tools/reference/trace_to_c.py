@@ -1041,6 +1041,8 @@ HP_EXACT, HP_PERCENT = 1, 2
 HP_FLAGS_EV = {'': 0, 'r': 1, 'y': 2, 'g': 3}
 # Lines that are not events: setup, layout, hints, and what the game does
 # not show ([silent]).
+# The OHKO moves of the pool: Sheer Cold (step G64) and the moves with ohko true (Fissure, Guillotine, Horn Drill; step G92).
+OHKO_MOVES = {'Sheer Cold', 'Fissure', 'Guillotine', 'Horn Drill'}
 NOT_EVENTS = {'', 'split', 't:', 'gametype', 'player', 'teamsize', 'gen', 'tier', 'rule', 'clearpoke', 'poke',
               'teampreview', 'start', 'uhtml', 'uhtmlchange', '-hint', 'j', 'l', 'c', 'raw', 'inactive'}
 
@@ -1491,10 +1493,10 @@ def step_events(log, viewer, roster_of, maxhp, tables, rb_pending=None, ill=None
             # sub's event is the break, so the line is dropped here too.
             prev = log[i - 1] if i > 0 else ''
             nxt = log[i + 1] if i + 1 < len(log) else ''
-            aimed = last_move_line is not None and len(last_move_line) >= 5 and last_move_line[3] == 'Sheer Cold' and \
-                prev.startswith('|faint|') and prev.split('|')[2] == last_move_line[4]
-            sub_break = last_move_line is not None and len(last_move_line) >= 5 and last_move_line[3] == 'Sheer Cold' and \
-                prev == '|'.join(last_move_line) and nxt.split('|') == ['', '-end', last_move_line[4], 'Substitute']
+            # Step G92 (decision 0062): the OHKO moves with ohko true (Fissure, Guillotine, Horn Drill) show the same bare line.
+            ohko_move = last_move_line is not None and len(last_move_line) >= 5 and last_move_line[3] in OHKO_MOVES
+            aimed = ohko_move and prev.startswith('|faint|') and prev.split('|')[2] == last_move_line[4]
+            sub_break = ohko_move and prev == '|'.join(last_move_line) and nxt.split('|') == ['', '-end', last_move_line[4], 'Substitute']
             if args or attrs or not (aimed or sub_break):
                 raise ConversionError('ohko-line', 'trace_to_c: unknown -ohko %r' % line, detail=line)
             continue
