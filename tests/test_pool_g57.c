@@ -514,6 +514,30 @@ static void test_unmodelled_bounces_are_refused(df_test *t)
     }
 }
 
+/* G84 (decision 0047): Curse by a Ghost user is refused explicitly (E_UNSUPPORTED). The pin's client gives no target choice
+ * for it, so its effect (the halving, the target's volatile and the residual) is not modelled. Gholdengo (Ghost, Steel;
+ * Good as Gold) leads side 0 and uses Curse at the foe in position 0 of the battle of g84_c3_nonghost_curse. */
+static void test_ghost_curse_is_refused(df_test *t)
+{
+    const df_conf_battle *cb = must_find(t, "g84_c3_nonghost_curse");
+    if (cb == NULL) {
+        return;
+    }
+    duoforge_context *ctx = df_make_context(&df_config_pool);
+    duoforge_battle_setup setup;
+    build_setup(cb, &setup);
+    const uint32_t gholdengo[2] = {DFI_MOVE_CURSE, DFI_MOVE_PROTECT};
+    set_member(&setup, 0u, 0u, DFI_FORME_GHOLDENGO, 0u, DFI_ABILITY_GOODASGOLD + 1u, 2u, gholdengo);
+    duoforge_battle *b = start(t, ctx, cb, &setup);
+    if (b != NULL) {
+        duoforge_slot_command cmd[2][2] = {{slot(0, 2), slot(0, DUOFORGE_TARGET_NONE)}, {slot(0, 0), slot(0, DUOFORGE_TARGET_NONE)}};
+        uint32_t bounces = 0u;
+        DF_CHECK_EQ_U64(t, turn(ctx, b, cmd, &bounces), DUOFORGE_E_UNSUPPORTED);
+        duoforge_battle_destroy(b);
+    }
+    duoforge_context_destroy(ctx);
+}
+
 int main(void)
 {
     df_test t;
@@ -531,5 +555,6 @@ int main(void)
     test_a_protecting_holder_is_not_bounced(&t);
     test_a_bounce_is_no_move_action_of_the_bouncer(&t);
     test_unmodelled_bounces_are_refused(&t);
+    test_ghost_curse_is_refused(&t);
     return df_test_end(&t);
 }
