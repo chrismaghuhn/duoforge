@@ -79,6 +79,7 @@ case ${distill_preset:-p1} in p1 | c2) ;; *) df_die "--distill-preset '$distill_
 [ -z "$pilot_part" ] || [ -n "$from_run" ] || df_die '--pilot-part needs --from-run (the pilot of which run?)'
 [ -z "$distill_preset" ] || [ "$pilot_part" = generation ] ||
     df_die '--distill-preset needs --pilot-part generation (otherwise the earlier distillation is reused)'
+[ -z "$pilot_part$distill_preset" ] || df_check_run_sh_reads_c2 "$commit"
 if [ -n "$from_run" ]; then
     # a new run that takes the pilot of an earlier run, read only (PILOT_RUN_ID): its generation and distillation, or
     # with --pilot-part generation its generation only (run.sh distils again with DISTILL_PRESET)

@@ -261,14 +261,19 @@ class Guards(unittest.TestCase):
         self.assertIn('distill       c2', r.stdout)
         self.assertTrue(any('--prefix p1/%s/markers/collect-production.done' % old in c for c in self.calls()))
         self.assertFalse(any('markers/distill.done' in c for c in self.calls()))
-        for bad in (('--pilot-part', 'generation'),  # the generation of which run?
-                    ('--from-run', old, '--distill-preset', 'c2'),  # the default part reuses the distillation
-                    ('--from-run', old, '--pilot-part', 'generation', '--distill-preset', 'big'),
-                    ('--from-run', old, '--pilot-part', 'all'),
-                    ('--from-run', old, '--pilot-part', 'generation', '--distill-preset', 'c2', '--resume', old),
-                    ('--pilot-part',)):
+        for bad, why in ((('--pilot-part', 'generation'), 'needs --from-run'),  # the generation of which run?
+                         (('--from-run', old, '--distill-preset', 'c2'), 'needs --pilot-part generation'),
+                         (('--from-run', old, '--pilot-part', 'distill', '--distill-preset', 'c2'),
+                          'needs --pilot-part generation'),  # the distillation of the earlier run is reused
+                         (('--from-run', old, '--pilot-part', 'generation', '--distill-preset', 'big'), 'p1 or c2'),
+                         (('--from-run', old, '--pilot-part', 'all'), 'distill or generation'),
+                         (('--from-run', old, '--pilot-part', 'generation', '--distill-preset', 'c2', '--resume', old),
+                          'exclude each other'),
+                         (('--resume', old, '--pilot-part', 'generation'), 'needs --from-run'),
+                         (('--pilot-part',), 'needs a value')):
             r = self.run_script('launch.sh', *self.LAUNCH, *bad, STUB_KEYS='1')
-            self.assertNotEqual(r.returncode, 0, bad)
+            self.assertEqual(r.returncode, 2, bad)
+            self.assertIn(why, r.stderr, bad)
         self.assertEqual(self.real_launches(), [])
         text = self.render(pilot=old, part='generation', preset='c2')
         self.assertIn("DF_PILOT_PART='generation'", text)
@@ -483,6 +488,34 @@ class Guards(unittest.TestCase):
         r = launch(with_run)
         self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
         self.assertNotIn('fatal', r.stderr)
+        self.assertEqual(len(self.real_launches()), 1)
+
+    def test_the_c2_options_need_a_run_sh_that_reads_them(self):
+        # a run.sh from before #321 ignores PILOT_PART and DISTILL_PRESET: the box would rerun the whole earlier pilot
+        # with the p1 settings under a C2 label, so the launcher refuses such a commit
+        tool, _, with_run, _ = self.fresh_repo()
+        env = dict(self.env, DUOFORGE_P1_NO_GIT_CHECK='', STUB_KEYS='1')
+        old = 'aaaaaaaaaaaa-20261009T172944Z'
+
+        def launch(sha):
+            open(self.log, 'w').close()
+            return subprocess.run([BASH, posix(os.path.join(tool, 'launch.sh')), '--commit', sha, '--bucket', 'my-p1-bucket',
+                                   '--from-run', old, '--pilot-part', 'generation', '--distill-preset', 'c2',
+                                   '--i-have-owner-approval'], env=env, capture_output=True, text=True, timeout=120)
+
+        r = launch(with_run)
+        self.assertEqual(r.returncode, 2, r.stdout + r.stderr)
+        self.assertIn('does not read PILOT_PART and DISTILL_PRESET', r.stderr)
+        self.assertEqual(self.real_launches(), [])
+        repo = os.path.dirname(os.path.dirname(os.path.dirname(tool)))
+        git = ['git', '-C', repo, '-c', 'user.name=t', '-c', 'user.email=t@example.invalid']
+        with open(os.path.join(tool, 'run.sh'), 'w', newline='\n') as f:
+            f.write('#!/bin/bash\nPILOT_PART=${PILOT_PART:-distill}\nDISTILL_PRESET=${DISTILL_PRESET:-p1}\n')
+        subprocess.run(git + ['commit', '-q', '-am', 'run.sh reads the C2 values'], check=True, capture_output=True)
+        reads = subprocess.run(git + ['rev-parse', 'HEAD'], check=True, capture_output=True, text=True).stdout.strip()
+        subprocess.run(git + ['update-ref', 'refs/remotes/origin/main', reads], check=True)
+        r = launch(reads)
+        self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
         self.assertEqual(len(self.real_launches()), 1)
 
     def test_lib_does_not_export_the_path_conversion_switches(self):
