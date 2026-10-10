@@ -182,6 +182,16 @@ class Refusals(unittest.TestCase):
         self.control('s2_turn_core_1', lambda spec, trace: trace['steps'][1]['log'].append('|foo|bar'),
                      'protocol-line', "trace_to_c: unknown protocol line '|foo|bar'", 'foo')
 
+    def test_a_swap_line_that_is_not_an_ally_switch_swap_is_refused(self):
+        """Step G80 (decision 0044): `|swap|` maps only as Ally Switch's own line: the user's slot and the other slot of its
+        side, with `[from] move: Ally Switch`. A swap without that attribute, or to a slot that is not 0 or 1, is refused."""
+        self.control('s2_turn_core_1', lambda spec, trace: trace['steps'][1]['log'].append('|swap|p1a: Bulbasaur|1'),
+                     'protocol-line', "trace_to_c: unsupported |swap| line '|swap|p1a: Bulbasaur|1'", 'swap')
+        self.control('s2_turn_core_1',
+                     lambda spec, trace: trace['steps'][1]['log'].append('|swap|p1a: Bulbasaur|2|[from] move: Ally Switch'),
+                     'protocol-line', "trace_to_c: unsupported |swap| line '|swap|p1a: Bulbasaur|2|[from] move: Ally Switch'",
+                     'swap')
+
     def test_a_hitcount_line_is_asserted_against_the_damage_lines_and_dropped(self):
         """`|-hitcount|P|N` (multi-hit moves, data/mods/champions/scripts.ts:427-549) is no event: N must be the number of
         -damage lines the move showed on that Pokemon. A wrong N is refused; a missing line is not an error (the Champions loop

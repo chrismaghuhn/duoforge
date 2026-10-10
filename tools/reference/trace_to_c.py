@@ -896,6 +896,8 @@ EV = {name: i + 1 for i, name in enumerate(
 EV['DRAG'] = 45
 # DUOFORGE_EVENT_CLEAR_ALL_BOOSTS = 47 (Haze, decision 0031, step G62): by value, as DRAG; 46 is not used here.
 EV['CLEAR_ALL_BOOSTS'] = 47
+# DUOFORGE_EVENT_SWAP = 49 (Ally Switch, decision 0044, step G80): by value; 48 is lane B's ITEM_SHOWN.
+EV['SWAP'] = 49
 CAUSE = {'NONE': 0, 'MOVE': 1, 'ITEM': 2, 'ABILITY': 3, 'RECOIL': 4, 'DRAIN': 5, 'BURN': 6, 'CONFUSION': 7,
          'TERRAIN': 8, 'PARALYSIS': 9, 'SLEEP': 10, 'FREEZE': 11, 'FLINCH': 12, 'NO_PP': 13, 'POISON': 14,
          'HEAL_BLOCK': 15, 'WEATHER': 16, 'ITEM_TAKEN': 17, 'RECHARGE': 18, 'DISABLE': 19, 'TAUNT': 20, 'IMPRISON': 21}
@@ -1263,6 +1265,16 @@ def step_events(log, viewer, roster_of, maxhp, tables, rb_pending=None, swap_ids
             revived = None
             hp = ev_hp(args[2], side, viewer, maxhp[side][name])
             e = ev_tuple(EV['SWITCH' if kind == 'switch' else 'DRAG'], pos, NOPOS, cause, roster_of[side][name], id2, *hp)
+        elif kind == 'swap':
+            # Ally Switch (decision 0044, step G80; data/moves.ts:302-357, swapPosition sim/battle.ts:1588-1607): the line
+            # `|swap|POKEMON|POSITION|[from] move: Ally Switch` names the user and the slot it moves to, on its own side.
+            # Public (both players see it). Anything else is refused, never mapped.
+            pos = ev_pos(args[0]) if args else None
+            if pos is None or len(args) != 2 or args[1] not in ('0', '1') or attrs != ['[from] move: Ally Switch']:
+                raise ConversionError('protocol-line', 'trace_to_c: unsupported |swap| line %r' % line, detail='swap')
+            new_pos = (pos // 2) * 2 + int(args[1])
+            cause, id2, _ = ev_cause(attrs, tables)
+            e = ev_tuple(EV['SWAP'], pos, new_pos, cause, 0, id2)
         elif kind == 'move':
             pos = ev_pos(args[0])
             last_user = pos

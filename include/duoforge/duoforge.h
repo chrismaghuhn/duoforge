@@ -1074,6 +1074,10 @@ duoforge_status duoforge_battle_observe_ext(const duoforge_context *ctx, const d
                                               NO_POSITION, cause NONE, every other field 0. Public: both players get it. The
                                               standing active positions (not fainted, as getAllActive takes them) lose every
                                               boost: their seven stages go to neutral; nothing else changes (decision 0031). */
+#define DUOFORGE_EVENT_SWAP 49u /* [swap] (Ally Switch, decision 0044, step G80): position: the user's slot before the swap,
+                                              other: the slot it moved to, cause MOVE + id2 = the move (Ally Switch), every other
+                                              field 0. Public: both players get it. The two occupants exchange their slots; nothing
+                                              else is written by the event. 48 is ITEM_SHOWN (lane B). */
 
 /* Causes ([from] and [of] in the protocol). */
 #define DUOFORGE_CAUSE_NONE      0u /* the move or the plain mechanic */
