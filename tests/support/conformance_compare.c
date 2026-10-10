@@ -59,6 +59,24 @@ unsigned df_conf_compare_events(FILE *out, const df_conf_step *st, const char *n
  * the derived foe PP equals the real PP, and statuses, Mega formes, items
  * used up, stat stages, confusion, charged moves, the field and the side
  * conditions are what the game shows. */
+/* The status a viewer must see on a member of side s (decision 0026 section 4). The owner sees its true status while the member
+ * stands alive. The foe sees the status it shows (shown_status) while the member stands alive in its knowledge, and none once it has
+ * seen the member fainted. One exception: a holder (the side's Illusion member, `set`) that is truly fainted but was never seen
+ * fainted (its display is nonzero). A faint while disguised drops the disguise under the shown name, and the holder's own row stays
+ * as the foe knew it (section 4, "A faint while disguised"). Every other fainted member shows none. */
+uint32_t df_conf_expected_status(const df_conf_mon *e, const df_conf_member *set, uint32_t s, uint32_t viewer)
+{
+    const bool visible = s == viewer || e->seen != 0u;
+    if (!visible) {
+        return 0u;
+    }
+    if (s == viewer) {
+        return e->fainted == 0u ? e->status : 0u;
+    }
+    const bool holder_fainted_unseen = set->ability == DFI_ABILITY_ILLUSION + 1u && e->fainted != 0u && e->seen_percent != 0u;
+    return (e->fainted == 0u || holder_fainted_unseen) ? e->shown_status : 0u;
+}
+
 unsigned df_conf_compare_observation(FILE *out, const duoforge_context *ctx, const duoforge_battle *b,
                                      const df_conf_step *st, const df_conf_battle *cb, uint32_t step)
 {
@@ -91,8 +109,7 @@ unsigned df_conf_compare_observation(FILE *out, const duoforge_context *ctx, con
                 if (!e->present) {
                     continue;
                 }
-                const bool visible = s == viewer || e->seen != 0u;
-                const uint32_t status = (visible && !e->fainted) ? e->status : 0u;
+                const uint32_t status = df_conf_expected_status(e, &cb->members[s][m], s, viewer);
                 const uint32_t used = (cb->members[s][m].item != 0u && e->held == 0u) ? 1u : 0u;
                 /* The ability on the sheet, the Mega forme's once it evolved. */
                 const df_conf_member *set = &cb->members[s][m];
@@ -102,7 +119,8 @@ unsigned df_conf_compare_observation(FILE *out, const duoforge_context *ctx, con
                 }
                 bool ok = v->status == status && v->is_mega == e->mega && v->item_used == used && v->ability == ability;
                 /* The owner sees its PP exact; the other player sees the PP it can attribute (step G53, decision 0030
-                 * section 1): the same as the exact PP unless a Pressure extra is hidden by a [still] line. */
+                 * section 1), and the Illusion counts of decision 0026 section 4 (pp_foe folds them): the same as the exact PP unless a
+                 * Pressure extra or a disguise is hidden from it. */
                 const uint8_t *want = viewer == s ? e->pp : e->pp_foe;
                 for (uint32_t k = 0; k < v->move_count && k < 4u; ++k) {
                     ok = ok && v->pp[k] == want[k];
@@ -112,7 +130,7 @@ unsigned df_conf_compare_observation(FILE *out, const duoforge_context *ctx, con
                             "  %s step %u: player %u sees side %u member %u as status %u mega %u used %u pp %u, "
                             "reference %u %u %u %u\n",
                             cb->name, step, viewer, s, m, v->status, v->is_mega, v->item_used, v->pp[0], status,
-                            e->mega, used, e->pp[0]);
+                            e->mega, used, want[0]);
                     ++bad;
                 }
             }

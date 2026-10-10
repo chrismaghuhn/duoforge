@@ -1,5 +1,6 @@
 """Pure protocol-log inference shared by openings and the spectator replay pipeline."""
 from duoforge_live import lines
+from duoforge_live.data import trace_to_c
 
 BROUGHT = 4  # The open-sheet VGC formats bring four Pokemon from a six-Pokemon team.
 
@@ -32,7 +33,10 @@ def hindsight(log, side, data, sheets):
 
 
 def hindsight_picks(log, side, data, sheets):
-    """Return the leads and the two visible back Pokemon, or None when the back is not observable."""
+    """Return the leads and the two visible back Pokemon, or None when the back is not observable: also for a side
+    with an Illusion holder on its sheet, whose switch lines may name the disguise (decision 0026, step I2)."""
+    if any(trace_to_c.key(m.get("ability") or "") == "ILLUSION" for m in sheets[side]):
+        return None
     leads, back = hindsight(log, side, data, sheets)
     if len(back) != BROUGHT - 2:
         return None

@@ -2127,7 +2127,7 @@ const dfi_pool_item_data dfi_pool_items[DFI_POOL_ITEM_COUNT] = {
  *   hypercutter -- data/abilities.ts:1940-1954
  *   icebody -- data/abilities.ts:1955-1968  [unmodelled: callback onImmunity; callback onWeather]
  *   illuminate -- data/abilities.ts:2037-2054  [unmodelled: callback onModifyMove; callback onTryBoost]
- *   illusion -- data/abilities.ts:2055-2095  [unmodelled: callback onBeforeSwitchIn; callback onDamagingHit; callback onEnd; callback onFaint]
+ *   illusion -- data/abilities.ts:2055-2095
  *   immunity -- data/abilities.ts:2096-2114  [unmodelled: callback onSetStatus; callback onUpdate]
  *   imposter -- data/abilities.ts:2115-2130  [unmodelled: callback onSwitchIn; read by id in data/moves.ts]
  *   infiltrator -- data/abilities.ts:2131-2139
@@ -2236,7 +2236,7 @@ const dfi_pool_item_data dfi_pool_items[DFI_POOL_ITEM_COUNT] = {
  *   surgesurfer -- data/abilities.ts:4755-4765  [unmodelled: callback onModifySpe]
  *   sweetveil -- data/abilities.ts:4786-4807  [unmodelled: callback onAllySetStatus; callback onAllyTryAddVolatile]
  *   swiftswim -- data/abilities.ts:4808-4818
- *   symbiosis -- data/abilities.ts:4837-4856  [unmodelled: callback onAllyAfterUseItem]
+ *   symbiosis -- data/abilities.ts:4837-4856
  *   synchronize -- data/abilities.ts:4857-4871
  *   tangledfeet -- data/abilities.ts:4890-4903  [unmodelled: callback onModifyAccuracy; callback onModifyAccuracyPriority]
  *   technician -- data/abilities.ts:4916-4930
@@ -2906,7 +2906,7 @@ const uint8_t dfi_pool_ability_handler[DFI_POOL_ABILITY_COUNT] = {
     [DFI_ABILITY_HYPERCUTTER] = DFI_HANDLER_NONE,
     [DFI_ABILITY_ICEBODY] = DFI_HANDLER_UNMODELED,
     [DFI_ABILITY_ILLUMINATE] = DFI_HANDLER_UNMODELED,
-    [DFI_ABILITY_ILLUSION] = DFI_HANDLER_UNMODELED,
+    [DFI_ABILITY_ILLUSION] = DFI_HANDLER_NONE,
     [DFI_ABILITY_IMMUNITY] = DFI_HANDLER_UNMODELED,
     [DFI_ABILITY_IMPOSTER] = DFI_HANDLER_UNMODELED,
     [DFI_ABILITY_INFILTRATOR] = DFI_HANDLER_NONE,
@@ -3015,7 +3015,7 @@ const uint8_t dfi_pool_ability_handler[DFI_POOL_ABILITY_COUNT] = {
     [DFI_ABILITY_SURGESURFER] = DFI_HANDLER_UNMODELED,
     [DFI_ABILITY_SWEETVEIL] = DFI_HANDLER_UNMODELED,
     [DFI_ABILITY_SWIFTSWIM] = DFI_HANDLER_NONE,
-    [DFI_ABILITY_SYMBIOSIS] = DFI_HANDLER_UNMODELED,
+    [DFI_ABILITY_SYMBIOSIS] = DFI_HANDLER_NONE,
     [DFI_ABILITY_SYNCHRONIZE] = DFI_HANDLER_NONE,
     [DFI_ABILITY_TANGLEDFEET] = DFI_HANDLER_UNMODELED,
     [DFI_ABILITY_TECHNICIAN] = DFI_HANDLER_NONE,
@@ -7049,7 +7049,6 @@ const char *const dfi_pool_ability_unmodeled[DFI_POOL_ABILITY_COUNT] = {
     [DFI_ABILITY_HYDRATION] = "callback onResidual; callback onResidualOrder; callback onResidualSubOrder",
     [DFI_ABILITY_ICEBODY] = "callback onImmunity; callback onWeather",
     [DFI_ABILITY_ILLUMINATE] = "callback onModifyMove; callback onTryBoost",
-    [DFI_ABILITY_ILLUSION] = "callback onBeforeSwitchIn; callback onDamagingHit; callback onEnd; callback onFaint",
     [DFI_ABILITY_IMMUNITY] = "callback onSetStatus; callback onUpdate",
     [DFI_ABILITY_IMPOSTER] = "callback onSwitchIn; read by id in data/moves.ts",
     [DFI_ABILITY_INNARDSOUT] = "callback onDamagingHit; callback onDamagingHitOrder",
@@ -7110,7 +7109,6 @@ const char *const dfi_pool_ability_unmodeled[DFI_POOL_ABILITY_COUNT] = {
     [DFI_ABILITY_SUPREMEOVERLORD] = "callback onBasePower; callback onBasePowerPriority; callback onEnd; callback onStart",
     [DFI_ABILITY_SURGESURFER] = "callback onModifySpe",
     [DFI_ABILITY_SWEETVEIL] = "callback onAllySetStatus; callback onAllyTryAddVolatile",
-    [DFI_ABILITY_SYMBIOSIS] = "callback onAllyAfterUseItem",
     [DFI_ABILITY_TANGLEDFEET] = "callback onModifyAccuracy; callback onModifyAccuracyPriority",
     [DFI_ABILITY_UNAWARE] = "callback onAnyModifyBoost",
     [DFI_ABILITY_UNSEENFIST] = "callback onHitProtect; callback onModifyMove",
@@ -7123,10 +7121,10 @@ const char *const dfi_pool_ability_unmodeled[DFI_POOL_ABILITY_COUNT] = {
 };
 
 const uint8_t dfi_pool_table_hash[32] = {
-    0x5eu, 0xf1u, 0x40u, 0x15u, 0xb7u, 0x74u, 0xe5u, 0xd9u,
-    0xedu, 0x87u, 0xb7u, 0x14u, 0xb1u, 0xf5u, 0x78u, 0x31u,
-    0x0fu, 0xf8u, 0x77u, 0xdau, 0x50u, 0xcfu, 0x93u, 0xa3u,
-    0xcbu, 0x86u, 0xa9u, 0xb2u, 0x86u, 0xdau, 0x79u, 0x7au,
+    0xe7u, 0x3cu, 0xedu, 0x61u, 0x49u, 0x1fu, 0xefu, 0xbcu,
+    0x02u, 0x3cu, 0x4bu, 0x3bu, 0x3au, 0x4eu, 0xd3u, 0xd5u,
+    0x03u, 0x3fu, 0xbcu, 0xc5u, 0xe7u, 0xc3u, 0x2eu, 0xb5u,
+    0x3cu, 0x23u, 0x2bu, 0xa2u, 0x7cu, 0x84u, 0x77u, 0xe4u,
 };
 
 static size_t dfi_pool_put_u16(uint8_t *out, size_t n, uint32_t v)
