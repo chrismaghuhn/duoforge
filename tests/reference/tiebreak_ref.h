@@ -5485,6 +5485,15 @@ static const df_tb_stop tb_g69_symbiosis_eject[] = {
     {7u, 0u, 2u, 1u, {2u, 4u}, {279u, 613u}, {0x4038638278bd377full, 0x404c90b6fb99f3b0ull}},
     {8u, 0u, 2u, 1u, {2u, 4u}, {279u, 613u}, {0x4038638278bd377full, 0x404c90b6fb99f3b0ull}},
 };
+static const df_tb_stop tb_g69_symbiosis_sash[] = {
+    {0u, 0u, 2u, 3u, {6u, 6u}, {1085u, 1103u}, {0x4059000000000000ull, 0x4059000000000000ull}},
+    {1u, 0u, 2u, 3u, {4u, 4u}, {717u, 765u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {2u, 0u, 2u, 2u, {4u, 4u}, {570u, 698u}, {0x404987e19008b247ull, 0x404de3075fde49bfull}},
+    {3u, 0u, 2u, 1u, {3u, 4u}, {560u, 679u}, {0x4049000000000000ull, 0x404ce8d2b3183affull}},
+    {6u, 0u, 2u, 1u, {2u, 4u}, {383u, 578u}, {0x4040aaaaaaaaaaabull, 0x4047f16e23b0481dull}},
+    {7u, 0u, 2u, 1u, {2u, 3u}, {254u, 576u}, {0x4036b094b31d9229ull, 0x4047d717c0a8e840ull}},
+    {8u, 0u, 2u, 1u, {2u, 3u}, {254u, 576u}, {0x4036b094b31d9229ull, 0x4047d717c0a8e840ull}},
+};
 static const df_tb_stop tb_g69_symbiosis_sitrus[] = {
     {0u, 0u, 2u, 3u, {6u, 6u}, {1085u, 1103u}, {0x4059000000000000ull, 0x4059000000000000ull}},
     {1u, 0u, 2u, 3u, {4u, 4u}, {717u, 765u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
@@ -7500,6 +7509,7 @@ static const df_tb_battle tb_battles[] = {
     {"g64_sheercold_sash", 4u, tb_g64_sheercold_sash, sizeof tb_g64_sheercold_sash / sizeof tb_g64_sheercold_sash[0]},
     {"g64_sheercold_sturdy", 4u, tb_g64_sheercold_sturdy, sizeof tb_g64_sheercold_sturdy / sizeof tb_g64_sheercold_sturdy[0]},
     {"g69_symbiosis_eject", 8u, tb_g69_symbiosis_eject, sizeof tb_g69_symbiosis_eject / sizeof tb_g69_symbiosis_eject[0]},
+    {"g69_symbiosis_sash", 8u, tb_g69_symbiosis_sash, sizeof tb_g69_symbiosis_sash / sizeof tb_g69_symbiosis_sash[0]},
     {"g69_symbiosis_sitrus", 8u, tb_g69_symbiosis_sitrus, sizeof tb_g69_symbiosis_sitrus / sizeof tb_g69_symbiosis_sitrus[0]},
     {"g69_symbiosis_stone", 8u, tb_g69_symbiosis_stone, sizeof tb_g69_symbiosis_stone / sizeof tb_g69_symbiosis_stone[0]},
     {"g7_wide_guard_a", 6u, tb_g7_wide_guard_a, sizeof tb_g7_wide_guard_a / sizeof tb_g7_wide_guard_a[0]},
@@ -7634,7 +7644,7 @@ static const df_tb_battle tb_battles[] = {
     {"xr3_sheercold_sub_miss", 3u, tb_xr3_sheercold_sub_miss, sizeof tb_xr3_sheercold_sub_miss / sizeof tb_xr3_sheercold_sub_miss[0]},
 };
 
-/* 5180 stops: 150 of an ended battle; decided by the count 1282,
- * the HP percentage 1628, the total HP 1991, a tie 129;
- * winners: side 0 2523, side 1 2528, tie 129 */
+/* 5187 stops: 150 of an ended battle; decided by the count 1286,
+ * the HP percentage 1629, the total HP 1993, a tie 129;
+ * winners: side 0 2523, side 1 2535, tie 129 */
 #endif
