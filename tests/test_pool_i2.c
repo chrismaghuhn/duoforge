@@ -696,6 +696,59 @@ static void check_illusion_invariant(df_test *t, const duoforge_context *ctx)
     duoforge_battle_destroy(b);
 }
 
+/* The instaswitch of a disguised holder (decision 0025 item 10 with decision 0026 section 4): the revived holder goes back into its own
+ * position, and a disguise would be decided at that switch-in. The reference has no line for a revive under a disguise, so the
+ * switch is refused E_UNSUPPORTED before any change and before any event (the explicit refusal of turn.c dfi_switch_in). White-box:
+ * i2_illusion_break at step 1 (Zoroark, the holder, active at position 0 and disguised as roster 3, the name shown). The queue of a
+ * copy holds the instaswitch of the holder into position 0. Negative control: the same instaswitch with no bench member to the right
+ * standing (no disguise decided) is not refused for this reason. */
+static duoforge_status insta_switch(const duoforge_context *ctx, const duoforge_battle *b, dfi_events *events)
+{
+    struct duoforge_battle tmp = *b;
+    /* The pivot boundary keeps the queue (dfi_resume_pivot only puts its own entries in front); the replacement boundary rebuilds
+     * it (dfi_queue_choices). With no request the pivot adds nothing, so the queued instaswitch is the first action. */
+    tmp.boundary_kind = (uint8_t)DUOFORGE_BOUNDARY_PIVOT;
+    tmp.request_mask = 0u;
+    tmp.queue[0] = (dfi_queue_record){0u, (uint8_t)DFI_Q_INSTASWITCH, 0u, 0u, 0u, 0u, 0u};
+    tmp.queue_len = 1u;
+    duoforge_side_choice responses[DUOFORGE_SIDE_COUNT];
+    memset(responses, 0, sizeof responses);
+    memset(events, 0, sizeof *events);
+    dfi_draws draws = dfi_draws_from_rng(&tmp.rng);
+    draws.tape = NULL;
+    draws.tape_len = 0u;
+    return dfi_turn_run(ctx, &tmp, responses, &draws, events);
+}
+
+static void check_insta_disguise(df_test *t, const duoforge_context *ctx)
+{
+    duoforge_battle *b = replay(t, ctx, "i2_illusion_break", 1u);
+    if (b == NULL) {
+        return;
+    }
+    if (!DF_CHECK(t, b->tail.sides[0].illusion.shown == 4u && b->sides[0].positions[0].occupant == 0u &&
+                         b->sides[0].members[0].hp != 0u && dfi_illusion_disguise_up(&b->sides[0], &b->tail.sides[0], 0u) != 0)) {
+        duoforge_battle_destroy(b);
+        return;
+    }
+    dfi_events ev;
+    DF_CHECK_EQ_U64(t, insta_switch(ctx, b, &ev), DUOFORGE_E_UNSUPPORTED);
+    DF_CHECK_EQ_U64(t, ev.count, 0u); /* refused before any event */
+    DF_CHECK_EQ_U64(t, b->tail.sides[0].illusion.shown, 4u); /* and before any change of the disguise */
+    DF_CHECK_EQ_U64(t, b->sides[0].positions[0].occupant, 0u);
+
+    /* negative control: no name is shown and the bench to the right is fainted, so no disguise is decided and the switch is not
+     * refused here (a shown name with no disguise would be the one-name refusal, not this one) */
+    struct duoforge_battle nc = *b;
+    memset(&nc.tail.sides[0].illusion, 0, sizeof nc.tail.sides[0].illusion);
+    nc.tail.sides[0].positions[0].ability_state = 0u;
+    for (uint32_t m = 1u; m < DUOFORGE_MAX_ROSTER && m < nc.sides[0].member_count; ++m) {
+        nc.sides[0].members[m].hp = 0u;
+    }
+    DF_CHECK(t, insta_switch(ctx, &nc, &ev) != DUOFORGE_E_UNSUPPORTED);
+    duoforge_battle_destroy(b);
+}
+
 int main(void)
 {
     df_test t;
@@ -716,6 +769,7 @@ int main(void)
     check_faint_held(&t, ctx);
     check_one_name_switch_in(&t, ctx);
     check_faint_clear(&t, ctx);
+    check_insta_disguise(&t, ctx);
     check_fold_status_line(&t, ctx);
     check_fold_switch_status(&t, ctx);
     return df_test_end(&t);
