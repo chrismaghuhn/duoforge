@@ -250,14 +250,17 @@ class LockedMoveSlotTest(unittest.TestCase):
         from types import SimpleNamespace
         t = self.tracker.Tracker.__new__(self.tracker.Tracker)
         t.data, t.side, t._spectator = self.D, 0, False
-        t._guard_moves, t._choice_items = set(), set()
+        from duoforge_live import lines
+        items = self.D.tables["ITEM"]
+        band = next(items[k.upper()] for k in lines.CHOICE_ITEMS if k.upper() in items) + 1  # a Choice holder (#334)
+        t._guard_moves, t._choice_items = set(), {band}
         t._positions = [[self.tracker._Position(), self.tracker._Position()],
                         [self.tracker._Position(), self.tracker._Position()]]
         for side in t._positions:
             for k, p in enumerate(side):
                 p.occupant = k
-        sheet = {"item": None, "moves": [self.M["OUTRAGE"], self.M["DRAGONCLAW"], self.M["PROTECT"]]}
-        t._occupant = lambda pos: SimpleNamespace(sheet=sheet, uses=[0, 0, 0], item_used=0)
+        sheet = {"item": band, "moves": [self.M["OUTRAGE"], self.M["DRAGONCLAW"], self.M["PROTECT"]]}
+        t._occupant = lambda pos: SimpleNamespace(sheet=sheet, uses=[0, 0, 0], item_used=0, item_now=0)
         t._pressure_extra = lambda *a: 0
         self.t = t
 
