@@ -5392,6 +5392,12 @@ static const df_tb_stop tb_g68_sb_hit[] = {
     {1u, 0u, 3u, 4u, {4u, 4u}, {790u, 790u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
     {2u, 0u, 2u, 2u, {4u, 4u}, {618u, 691u}, {0x4049e9b111c2580full, 0x404cebebebebebecull}},
 };
+static const df_tb_stop tb_g68_sb_kings_shield[] = {
+    {0u, 0u, 1u, 3u, {6u, 6u}, {1143u, 1124u}, {0x4059000000000000ull, 0x4059000000000000ull}},
+    {1u, 0u, 1u, 3u, {4u, 4u}, {790u, 748u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {2u, 0u, 2u, 2u, {4u, 4u}, {693u, 748u}, {0x404d2aaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {3u, 0u, 2u, 1u, {3u, 4u}, {596u, 706u}, {0x4049000000000000ull, 0x404f3cce6f64a9a5ull}},
+};
 static const df_tb_stop tb_g68_sb_ko[] = {
     {0u, 0u, 3u, 4u, {6u, 6u}, {1143u, 1143u}, {0x4059000000000000ull, 0x4059000000000000ull}},
     {1u, 0u, 3u, 4u, {4u, 4u}, {790u, 790u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
@@ -5456,6 +5462,12 @@ static const df_tb_stop tb_g68_tw_hit[] = {
     {1u, 0u, 2u, 3u, {4u, 4u}, {763u, 790u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
     {2u, 0u, 2u, 2u, {4u, 4u}, {696u, 766u}, {0x404e18c527d21da5ull, 0x405021c4ad679622ull}},
 };
+static const df_tb_stop tb_g68_tw_kings_shield[] = {
+    {0u, 0u, 2u, 3u, {6u, 6u}, {1116u, 1124u}, {0x4059000000000000ull, 0x4059000000000000ull}},
+    {1u, 0u, 1u, 3u, {4u, 4u}, {763u, 748u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {2u, 0u, 1u, 3u, {4u, 4u}, {763u, 748u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {3u, 0u, 1u, 3u, {4u, 4u}, {763u, 748u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+};
 static const df_tb_stop tb_g68_tw_limber[] = {
     {0u, 0u, 2u, 3u, {6u, 6u}, {1116u, 1136u}, {0x4059000000000000ull, 0x4059000000000000ull}},
     {1u, 0u, 2u, 3u, {4u, 4u}, {763u, 783u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
@@ -5471,6 +5483,12 @@ static const df_tb_stop tb_g68_tw_protect[] = {
     {0u, 0u, 2u, 3u, {6u, 6u}, {1116u, 1143u}, {0x4059000000000000ull, 0x4059000000000000ull}},
     {1u, 0u, 2u, 3u, {4u, 4u}, {763u, 790u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
     {2u, 0u, 2u, 3u, {4u, 4u}, {763u, 790u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+};
+static const df_tb_stop tb_g70_skillswap_aegislash[] = {
+    {0u, 0u, 1u, 3u, {6u, 6u}, {1124u, 1090u}, {0x4059000000000000ull, 0x4059000000000000ull}},
+    {1u, 0u, 1u, 3u, {4u, 4u}, {748u, 716u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {2u, 0u, 1u, 2u, {4u, 4u}, {748u, 629u}, {0x4050aaaaaaaaaaabull, 0x404dbe857de34620ull}},
+    {3u, 0u, 1u, 2u, {4u, 4u}, {748u, 542u}, {0x4050aaaaaaaaaaabull, 0x404a27b5a67136ebull}},
 };
 static const df_tb_stop tb_g70_skillswap_ally_drizzle[] = {
     {0u, 0u, 2u, 3u, {6u, 6u}, {1090u, 1123u}, {0x4059000000000000ull, 0x4059000000000000ull}},
@@ -7584,6 +7602,7 @@ static const df_tb_battle tb_battles[] = {
     {"g68_mb_thunderwave", 2u, tb_g68_mb_thunderwave, sizeof tb_g68_mb_thunderwave / sizeof tb_g68_mb_thunderwave[0]},
     {"g68_mb_thunderwave_electric", 2u, tb_g68_mb_thunderwave_electric, sizeof tb_g68_mb_thunderwave_electric / sizeof tb_g68_mb_thunderwave_electric[0]},
     {"g68_sb_hit", 2u, tb_g68_sb_hit, sizeof tb_g68_sb_hit / sizeof tb_g68_sb_hit[0]},
+    {"g68_sb_kings_shield", 3u, tb_g68_sb_kings_shield, sizeof tb_g68_sb_kings_shield / sizeof tb_g68_sb_kings_shield[0]},
     {"g68_sb_ko", 3u, tb_g68_sb_ko, sizeof tb_g68_sb_ko / sizeof tb_g68_sb_ko[0]},
     {"g68_sb_miss", 2u, tb_g68_sb_miss, sizeof tb_g68_sb_miss / sizeof tb_g68_sb_miss[0]},
     {"g68_sb_odd", 2u, tb_g68_sb_odd, sizeof tb_g68_sb_odd / sizeof tb_g68_sb_odd[0]},
@@ -7596,9 +7615,11 @@ static const df_tb_battle tb_battles[] = {
     {"g68_tw_electric_terrain", 3u, tb_g68_tw_electric_terrain, sizeof tb_g68_tw_electric_terrain / sizeof tb_g68_tw_electric_terrain[0]},
     {"g68_tw_ground", 2u, tb_g68_tw_ground, sizeof tb_g68_tw_ground / sizeof tb_g68_tw_ground[0]},
     {"g68_tw_hit", 2u, tb_g68_tw_hit, sizeof tb_g68_tw_hit / sizeof tb_g68_tw_hit[0]},
+    {"g68_tw_kings_shield", 3u, tb_g68_tw_kings_shield, sizeof tb_g68_tw_kings_shield / sizeof tb_g68_tw_kings_shield[0]},
     {"g68_tw_limber", 2u, tb_g68_tw_limber, sizeof tb_g68_tw_limber / sizeof tb_g68_tw_limber[0]},
     {"g68_tw_misty", 3u, tb_g68_tw_misty, sizeof tb_g68_tw_misty / sizeof tb_g68_tw_misty[0]},
     {"g68_tw_protect", 2u, tb_g68_tw_protect, sizeof tb_g68_tw_protect / sizeof tb_g68_tw_protect[0]},
+    {"g70_skillswap_aegislash", 3u, tb_g70_skillswap_aegislash, sizeof tb_g70_skillswap_aegislash / sizeof tb_g70_skillswap_aegislash[0]},
     {"g70_skillswap_ally_drizzle", 4u, tb_g70_skillswap_ally_drizzle, sizeof tb_g70_skillswap_ally_drizzle / sizeof tb_g70_skillswap_ally_drizzle[0]},
     {"g70_skillswap_ally_intimidate", 4u, tb_g70_skillswap_ally_intimidate, sizeof tb_g70_skillswap_ally_intimidate / sizeof tb_g70_skillswap_ally_intimidate[0]},
     {"g70_skillswap_ally_trace", 4u, tb_g70_skillswap_ally_trace, sizeof tb_g70_skillswap_ally_trace / sizeof tb_g70_skillswap_ally_trace[0]},
@@ -7751,7 +7772,7 @@ static const df_tb_battle tb_battles[] = {
     {"xr3_sheercold_sub_miss", 3u, tb_xr3_sheercold_sub_miss, sizeof tb_xr3_sheercold_sub_miss / sizeof tb_xr3_sheercold_sub_miss[0]},
 };
 
-/* 5225 stops: 150 of an ended battle; decided by the count 1252,
- * the HP percentage 1639, the total HP 2042, a tie 142;
- * winners: side 0 2498, side 1 2585, tie 142 */
+/* 5237 stops: 150 of an ended battle; decided by the count 1253,
+ * the HP percentage 1642, the total HP 2050, a tie 142;
+ * winners: side 0 2507, side 1 2588, tie 142 */
 #endif

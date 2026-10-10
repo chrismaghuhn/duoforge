@@ -259,8 +259,8 @@ int main(void)
     /* No committed stop depends on the order of a bench. */
     DF_CHECK_EQ_U64(&t, counts.ambiguous, 0u);
 #if defined(DF_CONFORMANCE_POOL_DATA)
-    DF_CHECK_EQ_U64(&t, battles, 669u); /* step G66 adds ten (King's Shield, Stance Change, Trace); step G70 adds nine (Skill Swap, decision 0041) to 639; step G68 adds twenty-five (614 before): the lane A batch: main 485, G55 fourteen, G57 seven, G53 fifteen, G64 sixteen, G62 sixteen, G60 thirteen, G58 twenty-six, G46 five, G31 Yawn seven, batch 3 xr3 ten */
-    DF_CHECK_EQ_U64(&t, counts.stops, 3658u); /* G72 and G72b add 43 (the G72 and G72b battles) to 3615; G66 adds 42 (the ten battles) to 3573; G70 adds 41 (the nine Skill Swap battles) to 3532; G68 adds 80 (3452 before): the lane A batch: 2823 (main), G55 98, G57 24, G53 74, G64 79, G62 90, G60 59, G58 109, G46 20, G31 Yawn 35, batch 3 xr3 41 */
+    DF_CHECK_EQ_U64(&t, battles, 672u); /* the three cross-row battles (G66 x G68, G70) on top of 669 */ /* step G66 adds ten (King's Shield, Stance Change, Trace); step G70 adds nine (Skill Swap, decision 0041) to 639; step G68 adds twenty-five (614 before): the lane A batch: main 485, G55 fourteen, G57 seven, G53 fifteen, G64 sixteen, G62 sixteen, G60 thirteen, G58 twenty-six, G46 five, G31 Yawn seven, batch 3 xr3 ten */
+    DF_CHECK_EQ_U64(&t, counts.stops, 3670u); /* the three cross-row battles add 12 (3658 before) */ /* G72 and G72b add 43 (the G72 and G72b battles) to 3615; G66 adds 42 (the ten battles) to 3573; G70 adds 41 (the nine Skill Swap battles) to 3532; G68 adds 80 (3452 before): the lane A batch: 2823 (main), G55 98, G57 24, G53 74, G64 79, G62 90, G60 59, G58 109, G46 20, G31 Yawn 35, batch 3 xr3 41 */
 #else
     /* Every kind of decision of the pin is among the stops (the pool battles are too few for that). */
     DF_CHECK(&t, counts.by_stage[1] > 0u && counts.by_stage[2] > 0u && counts.by_stage[3] > 0u &&
