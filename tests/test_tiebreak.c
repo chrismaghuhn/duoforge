@@ -259,8 +259,8 @@ int main(void)
     /* No committed stop depends on the order of a bench. */
     DF_CHECK_EQ_U64(&t, counts.ambiguous, 0u);
 #if defined(DF_CONFORMANCE_POOL_DATA)
-    DF_CHECK_EQ_U64(&t, battles, 701u); /* 672 of the lane A batch, and main's lane B G63 eight, G59 eight, G61 twelve */
-    DF_CHECK_EQ_U64(&t, counts.stops, 3814u); /* 3670 of the lane A batch, main's G63 32, G59 48, G61 60, and the Sheer Force Alluring Voice battle 4 */
+    DF_CHECK_EQ_U64(&t, battles, 707u); /* 701 before step G80, whose six battles (psychup, howl, the Ally Switch swap and the three tantrum battles) make 707 */
+    DF_CHECK_EQ_U64(&t, counts.stops, 3842u); /* 3814 before step G80 (the six battles add 28 stops); 3670 of the lane A batch, main's G63 32, G59 48, G61 60, and the Sheer Force Alluring Voice battle 4 */
 #else
     /* Every kind of decision of the pin is among the stops (the pool battles are too few for that). */
     DF_CHECK(&t, counts.by_stage[1] > 0u && counts.by_stage[2] > 0u && counts.by_stage[3] > 0u &&

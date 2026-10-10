@@ -1145,6 +1145,11 @@ def swap_partners(trace, teams, roster_of, tables):
                 occ[side][pos % 2] = r
                 sheet = (teams[side][r]['ability'] - 1) if teams[side][r]['ability'] else None
                 now[side][r] = None if (side, r) in mega else sheet
+            elif kind == 'swap' and len(args) == 2 and ev_pos(args[0]) is not None and args[1] in ('0', '1'):
+                # Ally Switch (step G80): the user and the ally of its side exchange their slots (the occupants move with them).
+                pos = ev_pos(args[0])
+                side, new = pos // 2, (pos // 2) * 2 + int(args[1])
+                occ[side][pos % 2], occ[side][new % 2] = occ[side][new % 2], occ[side][pos % 2]
             elif kind == '-ability' and ev_pos(args[0]) is not None and '[from] ability: Trace' in attrs:
                 pos = ev_pos(args[0])
                 now[pos // 2][occ[pos // 2][pos % 2]] = tables['ABILITY'][key(args[1])]
@@ -2015,7 +2020,9 @@ def attribute_pp(steps, teams, roster_of, trace, tables):
                 slot = pos % 2
                 if pos // 2 == viewer:
                     occ = own_occ[slot]
-                    if kind == EV['SWITCH']:
+                    if kind == EV['SWAP']:
+                        own_occ[slot], own_occ[other % 2] = own_occ[other % 2], own_occ[slot]  # step G80: the occupants exchange
+                    elif kind == EV['SWITCH']:
                         own_occ[slot] = ident
                         alive[ident] = hp != 0
                         has_pressure[ident] = teams[viewer][ident]['ability'] == pressure
@@ -2030,7 +2037,9 @@ def attribute_pp(steps, teams, roster_of, trace, tables):
                     elif kind == EV['MEGA'] and occ is not None:
                         has_pressure[occ] = False  # the Mega formes of the pool that have Pressure lose it (Tough Claws, Magic Bounce)
                 elif pos // 2 == foe:
-                    if kind == EV['SWITCH']:
+                    if kind == EV['SWAP']:
+                        foe_occ[slot], foe_occ[other % 2] = foe_occ[other % 2], foe_occ[slot]  # step G80: the foe's slots exchange
+                    elif kind == EV['SWITCH']:
                         foe_occ[slot] = ident
                     elif kind == EV['MOVE'] and not flags & LOCKED_FLAG and foe_occ[slot] is not None:
                         roster = foe_occ[slot]
