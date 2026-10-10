@@ -43,7 +43,7 @@ Pairs are not added after the fact; the plan forbids choosing an endpoint after 
 
 ## Limits and known issues
 
-- **Unreconstructible PIVOT records:** the generation used main before the view audit fix. Its public record carried a silent flinch at a PIVOT with a public Protect up. That combination is rare, and the fix (refusing a PIVOT with a queued move left) is in the next M12 bundle.
+- **Silent flinch in the teacher's worlds:** the generation used main before the view audit fix, and its public PIVOT record could carry a silent flinch, a leak rather than a refusal. It reached only PIVOT records with a public Protect up and a move left to run. In a sample of 6 of the 78 local shards, 0 of 1386 targets were at a PIVOT. The fix (a PIVOT with a queued move left is refused) is on main.
 - **Load time:** loading the shards took ~25 min single-threaded on the local attempt. Learner v2 parallelised it (85 s on AWS).
 - **Discarded runs:** the discarded control run and the uncharged local distill attempt are listed above and not charged to either arm.
 

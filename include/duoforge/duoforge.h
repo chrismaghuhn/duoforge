@@ -33,9 +33,9 @@ extern "C" {
 #endif
 
 #define DUOFORGE_VERSION_MAJOR 0
-#define DUOFORGE_VERSION_MINOR 44
+#define DUOFORGE_VERSION_MINOR 45
 #define DUOFORGE_VERSION_PATCH 0
-#define DUOFORGE_VERSION_STRING "0.44.0"
+#define DUOFORGE_VERSION_STRING "0.45.0"
 
 /* Identifiers of the artifacts that exist now (registry: decisions 0002, 0005, 0006). */
 #define DUOFORGE_SEMANTICS_ID           3u   /* "duoforge-m3-closure" */
@@ -397,6 +397,10 @@ duoforge_status duoforge_data_forme_static(const duoforge_context *ctx, uint32_t
 #define DUOFORGE_MOVE_STATIC_FLAG_MUST_PRESSURE 0x800u /* flags.mustpressure (step G53): a foe's Pressure costs one PP for
                                                           this move whatever its target (Imprison, Spikes, Stealth Rock,
                                                           Toxic Spikes in the pool) */
+#define DUOFORGE_MOVE_STATIC_FLAG_LOCKED_MOVE 0x1000u /* lockedmove (step G56): its use locks the user into it for 2 or 3
+                                                         turns (Outrage, Thrash, Petal Dance). A public fact of the move: the
+                                                         engine's observation hides a foe's locked slot while its last move
+                                                         has it (view audit 2026-10-10), and the live tracker does the same */
 
 /* A move. 64 bytes. */
 typedef struct duoforge_move_static {
@@ -1084,7 +1088,7 @@ duoforge_status duoforge_battle_observe_ext(const duoforge_context *ctx, const d
                                                     id the item + 1 that the holder passed to the user. Every other ACTIVATE has id 0 */
 #define DUOFORGE_EVENT_UPKEEP          36u /* [upkeep] the end-of-turn effects are done */
 #define DUOFORGE_EVENT_RESULT          37u /* [win] or [tie] detail: DUOFORGE_RESULT_* */
-#define DUOFORGE_EVENT_SINGLE_TURN     38u /* [-singleturn] position (Team C): id: the move; other: the user ([of]) for
+#define DUOFORGE_EVENT_SINGLE_TURN     38u /* [-singleturn], or for Destiny Bond [-singlemove] (step G76); id: the move; other: the user ([of]) for
                                               Helping Hand, DUOFORGE_NO_POSITION for Follow Me */
 #define DUOFORGE_EVENT_VOLATILE_START  39u /* [-start] position (POOL kinds), detail: DUOFORGE_VOLATILE_* (a volatile that the
                                               game shows: -start|X|move: Heal Block) */

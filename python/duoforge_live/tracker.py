@@ -33,6 +33,7 @@ C = _layout.CONSTANTS
 EV = trace_to_c.EV
 FLAG = trace_to_c.FLAG
 _MUST_PRESSURE = _layout.CONSTANTS["DUOFORGE_MOVE_STATIC_FLAG_MUST_PRESSURE"]  # step G53
+_LOCKED_MOVE = _layout.CONSTANTS["DUOFORGE_MOVE_STATIC_FLAG_LOCKED_MOVE"]  # view audit 2026-10-10
 NOPOS = trace_to_c.NOPOS
 ROSTER_NONE = C["DUOFORGE_ROSTER_NONE"]
 MOVE_SLOT_NONE = C["DUOFORGE_MOVE_SLOT_NONE"]
@@ -130,6 +131,7 @@ class _Position:
         self.ability_now = 0  # the ability + 1 that Trace or Skill Swap gave the occupant (0: its own)
         self.flags = 0  # DUOFORGE_POSITION_FLAG_* (TEAM_C and POOL): Follow Me, Helping Hand, Unburden
         self.guard_undo = None  # (chain, stall) before a Wide or Quick Guard, until it is known to have run
+        self.last_move = None  # the move id of pokemon.moveUsed: the occupant's own last move line, none after leaving
 
 
 class _Member:
@@ -187,6 +189,7 @@ class Tracker:
         self._last_move = None  # (position, move id, target) of the last MOVE event
         self._parting_shot = data.tables["MOVE"]["PARTINGSHOT"]
         self._feint = data.tables["MOVE"].get("FEINT", -1)
+        self._baton_pass = data.tables["MOVE"].get("BATONPASS", -1)  # its receiver takes the leaver's copy (G74)
         self._phantom_force = data.tables["MOVE"].get("PHANTOMFORCE", -1)  # breaks a Protect as Feint does (G58)
         self._turn_scoped = set()  # single-turn features of decision 0018 seen since the turn began (lines.TURN_SCOPED)
         self._guards = set()  # (Wide or Quick Guard feature, side) seen this turn: what a Feint breaks (step G28)
@@ -537,8 +540,16 @@ class Tracker:
         elif kind in (EV["SWITCH"], EV["DRAG"]):
             # A drag (Step G46) is a switch of the dragged-in member: the occupant is replaced and reset, the HP of the line.
             p = self._at(pos)
+            passed = None
+            if kind == EV["SWITCH"] and e[3] == trace_to_c.CAUSE["MOVE"] and ident2 == self._baton_pass:
+                # Baton Pass (step G74, decision 0042; sim/pokemon.ts copyVolatileFrom): no line shows the copy; of
+                # the base view's fields the receiver keeps the leaver's stages and confusion. The other copied
+                # volatiles are decision 0018 features, which stopped the tracker at their start lines.
+                passed = (list(p.stages), p.confused)
             p.occupant, p.flag, p.fainted = ident, 0, False
             p.reset()
+            if passed is not None:
+                p.stages, p.confused = passed
             if public:
                 m = self._member(pos // 2)[ident]
                 m.seen, m.hp_percent, m.hp_flag, m.status = True, hp, hp_flag, status
@@ -546,6 +557,8 @@ class Tracker:
             p = self._at(pos)
             p.acted = 1
             self._last_move = (pos, ident, e[2])
+            if e[3] == trace_to_c.CAUSE["NONE"]:
+                p.last_move = ident  # runMove's moveUsed, a locked turn too; not a move another effect makes it use
             m = self._occupant(pos)
             if e[3] != trace_to_c.CAUSE["ABILITY"]:
                 # the move Encore takes (pokemon.moveUsed after runMove's PP, a locked turn included); a move that Magic
@@ -900,6 +913,13 @@ class Tracker:
             self._view_side(o["sides"][side], side, boundary)
         return o
 
+    def _shown_locked_slot(self, p, own):
+        """The locked slot the view shows: a running two-turn move's or a Choice lock's, but none for a foe whose last
+        move is a lockedmove, whose drawn length may end silently (src/state/observation.c, dfi_maybe_lockedmove)."""
+        if not own and p.last_move is not None and self.data.move_flags(p.last_move) & _LOCKED_MOVE:
+            return MOVE_SLOT_NONE
+        return p.locked_slot if p.locked_slot != MOVE_SLOT_NONE else p.choice_slot
+
     def _view_side(self, v, side, boundary):
         own = side == self.side
         members = self._member(side)
@@ -914,7 +934,7 @@ class Tracker:
                 continue
             pv["stages"] = p.stages
             pv["confused"], pv["charging"] = p.confused, 1 if p.charge else 0
-            pv["locked_slot"] = p.locked_slot if p.locked_slot != MOVE_SLOT_NONE else p.choice_slot
+            pv["locked_slot"] = self._shown_locked_slot(p, own)
             holder = members[p.occupant]
             gone = holder.item_used or holder.item_now == ITEM_NOW_NONE
             # Unburden doubles the Speed only while the item is gone: an item a move gave hides the flag

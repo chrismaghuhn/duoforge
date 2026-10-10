@@ -177,6 +177,39 @@ class PressureExtraTest(unittest.TestCase):
 
     def test_a_blanked_target_counts_nothing(self):
         self.assertEqual(self.extra("EXPANDINGFORCE", trace_to_c.NOPOS, self.FLAG["STILL"] | self.FLAG["SPREAD"]), 0)
+class BatonPassTest(unittest.TestCase):
+    """Step G74 (decision 0042): the receiver of a Baton Pass (`|switch|...|[from] move: Baton Pass`, no volatile
+    lines) takes the leaver's stages and confusion, the base view's fields; a plain switch resets them. The other
+    copied volatiles are decision 0018 features, which stopped the tracker at their start lines."""
+
+    def _tracker(self):
+        from duoforge_live import tracker
+        from types import SimpleNamespace
+        D = data.load(kind="pool")
+        t = tracker.Tracker.__new__(tracker.Tracker)
+        t.data, t.side, t._spectator = D, 0, False
+        t._baton_pass = D.tables["MOVE"]["BATONPASS"]
+        members = [SimpleNamespace(seen=False, hp_percent=100, hp_flag=0, status=0) for _ in range(6)]
+        t._member = lambda side: members
+        t._positions = [[tracker._Position(), tracker._Position()], [tracker._Position(), tracker._Position()]]
+        leaver = t._positions[0][0]
+        leaver.occupant, leaver.stages, leaver.confused = 0, [8, 6, 6, 4, 6, 6, 6], 1
+        return t, D, tracker
+
+    def test_the_receiver_takes_stages_and_confusion(self):
+        t, D, tracker = self._tracker()
+        t._event(trace_to_c.ev_tuple(trace_to_c.EV["SWITCH"], 0, trace_to_c.NOPOS, trace_to_c.CAUSE["MOVE"], 3,
+                                     D.tables["MOVE"]["BATONPASS"], 100, 100, 1))
+        p = t._positions[0][0]
+        self.assertEqual((p.occupant, p.stages, p.confused), (3, [8, 6, 6, 4, 6, 6, 6], 1))
+
+    def test_a_plain_switch_resets_them(self):
+        t, D, tracker = self._tracker()
+        t._event(trace_to_c.ev_tuple(trace_to_c.EV["SWITCH"], 0, trace_to_c.NOPOS, 0, 3, 0, 100, 100, 1))
+        p = t._positions[0][0]
+        self.assertEqual((p.occupant, p.stages, p.confused), (3, [tracker.STAGE_NEUTRAL] * 7, 0))
+
+
 class ClearAllBoostsTest(unittest.TestCase):
     """Step G62 (decision 0031): Haze's CLEAR_ALL_BOOSTS returns the stages of every standing active Pokemon to
     neutral (data/moves.ts haze onHitField: getAllActive, sim/pokemon.ts clearBoosts); an empty or fainted position
@@ -219,6 +252,75 @@ class BreakProtectTest(unittest.TestCase):
                                          D.tables["MOVE"][move]))
             self.assertEqual((target.protecting, target.chain, target.stall, target.guard_undo), (0, 0, 0, None), move)
             self.assertEqual((t._guards, t._turn_scoped), (set(), set()), move)
+
+
+class LockedMoveSlotTest(unittest.TestCase):
+    """View audit of 2026-10-10 (#323): a foe whose last used move is a lockedmove (Outrage, Thrash, Petal Dance:
+    DUOFORGE_MOVE_STATIC_FLAG_LOCKED_MOVE) shows no locked slot, a Choice lock included, as the C observation hides it
+    (src/state/observation.c dfi_maybe_lockedmove). The last move is pokemon.moveUsed's: set by the position's own
+    move lines (a locked turn included), not by a move another effect makes it use, cleared when it leaves."""
+
+    @classmethod
+    def setUpClass(cls):
+        from duoforge_live import tracker
+        cls.tracker = tracker
+        cls.D = data.load(kind="pool")
+        cls.M = cls.D.tables["MOVE"]
+
+    def setUp(self):
+        from types import SimpleNamespace
+        t = self.tracker.Tracker.__new__(self.tracker.Tracker)
+        t.data, t.side, t._spectator = self.D, 0, False
+        from duoforge_live import lines
+        items = self.D.tables["ITEM"]
+        band = next(items[k.upper()] for k in lines.CHOICE_ITEMS if k.upper() in items) + 1  # a Choice holder (#334)
+        t._guard_moves, t._choice_items = set(), {band}
+        t._positions = [[self.tracker._Position(), self.tracker._Position()],
+                        [self.tracker._Position(), self.tracker._Position()]]
+        for side in t._positions:
+            for k, p in enumerate(side):
+                p.occupant = k
+        sheet = {"item": band, "moves": [self.M["OUTRAGE"], self.M["DRAGONCLAW"], self.M["PROTECT"]]}
+        t._occupant = lambda pos: SimpleNamespace(sheet=sheet, uses=[0, 0, 0], item_used=0, item_now=0)
+        t._pressure_extra = lambda *a: 0
+        self.t = t
+
+    def move(self, pos, name, cause=0, flags=0):
+        self.t._event(trace_to_c.ev_tuple(trace_to_c.EV["MOVE"], pos, 0, cause, self.M[name], flags=flags))
+
+    def test_a_foe_after_a_lockedmove_shows_no_locked_slot(self):
+        p = self.t._positions[1][0]
+        p.choice_slot = 0
+        self.move(2, "OUTRAGE")
+        self.assertEqual(self.t._shown_locked_slot(p, own=False), self.tracker.MOVE_SLOT_NONE)
+        self.move(2, "OUTRAGE", flags=trace_to_c.FLAG["LOCKED"])  # a locked turn is a move use too
+        self.assertEqual(self.t._shown_locked_slot(p, own=False), self.tracker.MOVE_SLOT_NONE)
+
+    def test_a_foe_after_another_move_shows_its_choice_slot(self):
+        p = self.t._positions[1][0]
+        p.choice_slot = 1
+        self.move(2, "DRAGONCLAW")
+        self.assertEqual(self.t._shown_locked_slot(p, own=False), 1)
+
+    def test_a_move_used_through_another_effect_is_not_the_last_move(self):
+        p = self.t._positions[1][0]
+        p.choice_slot = 1
+        self.move(2, "DRAGONCLAW")
+        self.move(2, "OUTRAGE", cause=trace_to_c.CAUSE["ABILITY"])  # e.g. reflected by Magic Bounce: no moveUsed
+        self.assertEqual(self.t._shown_locked_slot(p, own=False), 1)
+
+    def test_leaving_clears_the_last_move(self):
+        p = self.t._positions[1][0]
+        self.move(2, "OUTRAGE")
+        p.reset()
+        p.choice_slot = 1
+        self.assertEqual(self.t._shown_locked_slot(p, own=False), 1)
+
+    def test_the_own_side_is_unchanged(self):
+        p = self.t._positions[0][0]
+        p.choice_slot = 0
+        self.move(0, "OUTRAGE")
+        self.assertEqual(self.t._shown_locked_slot(p, own=True), 0)
 
 
 class OptionsTest(unittest.TestCase):

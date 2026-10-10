@@ -1,0 +1,99 @@
+{
+  "name": "g74_pass_no_reserve",
+  "purpose": "Baton Pass with no living reserve (decision 0042): the passer (Umbreon, the second position) uses Baton Pass at turn 16 and the move fails with [still] and no request, the first and only line of its failure (campaign battle fz_74_0 of run 74, a random battle of team D against team D, recorded as a choice spec). It caught the failure line the engine printed with the target shown (the move line must read ||[still]).",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,6ea620b88e746743d46c668be8ac0b27c844e01057952124fc6060caf2b0733f",
+  "teams": [
+    "Politoed (M) @ Mystic Water\nAbility: Drizzle\nLevel: 50\nEVs: 32 HP / 2 Def / 32 SpD\nCalm Nature\n- Protect\n\nNinetales (M) @ Sitrus Berry\nAbility: Drought\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nModest Nature\n- Nasty Plot\n- Shadow Ball\n- Substitute\n- Encore\n\nEspeon (M)\nAbility: Synchronize\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nTimid Nature\n- Calm Mind\n- Baton Pass\n- Protect\n- Shadow Ball\n\nGholdengo @ Life Orb\nAbility: Good as Gold\nLevel: 50\nEVs: 17 HP / 2 Def / 17 SpA / 16 SpD / 14 Spe\nModest Nature\n- Protect\n- Shadow Ball\n\nUmbreon (M) @ Leftovers\nAbility: Inner Focus\nLevel: 50\nEVs: 32 HP / 2 Def / 32 SpD\nCalm Nature\n- Protect\n- Yawn\n- Substitute\n- Baton Pass\n\nKingambit (M) @ Black Glasses\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 2 Atk / 32 SpD\nImpish Nature\n- Protect",
+    "Gholdengo @ Life Orb\nAbility: Good as Gold\nLevel: 50\nEVs: 17 HP / 2 Def / 17 SpA / 16 SpD / 14 Spe\nModest Nature\n- Protect\n- Shadow Ball\n\nUmbreon (M) @ Leftovers\nAbility: Inner Focus\nLevel: 50\nEVs: 32 HP / 2 Def / 32 SpD\nCalm Nature\n- Protect\n- Yawn\n- Substitute\n- Baton Pass\n\nKingambit (M) @ Black Glasses\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 2 Atk / 32 SpD\nImpish Nature\n- Protect\n\nPolitoed (M) @ Mystic Water\nAbility: Drizzle\nLevel: 50\nEVs: 32 HP / 2 Def / 32 SpD\nCalm Nature\n- Protect\n\nNinetales (M) @ Sitrus Berry\nAbility: Drought\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nModest Nature\n- Nasty Plot\n- Shadow Ball\n- Substitute\n- Encore\n\nEspeon (M)\nAbility: Synchronize\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nTimid Nature\n- Calm Mind\n- Baton Pass\n- Protect\n- Shadow Ball"
+  ],
+  "choices": [
+    {
+      "p1": "team 5462",
+      "p2": "team 6425"
+    },
+    {
+      "p1": "move 1, move 2 1",
+      "p2": "switch 3, move 1"
+    },
+    {
+      "p1": "move 4, move 2 -1",
+      "p2": "move 1, move 1"
+    },
+    {
+      "p1": "switch 4, pass"
+    },
+    {
+      "p1": "move 1, move 2 -1",
+      "p2": "move 2 1, move 1"
+    },
+    {
+      "p1": "move 1, move 2 -1",
+      "p2": "move 3, move 1"
+    },
+    {
+      "p1": "move 3, move 2 2",
+      "p2": "move 4, move 1"
+    },
+    {
+      "p2": "switch 3, pass"
+    },
+    {
+      "p1": "move 3, move 2 -1",
+      "p2": "move 1, move 1"
+    },
+    {
+      "p1": "switch 4, pass"
+    },
+    {
+      "p1": "move 3, move 1",
+      "p2": "move 1, move 1"
+    },
+    {
+      "p1": "move 4, move 1",
+      "p2": "move 2, move 1"
+    },
+    {
+      "p2": "switch 3, pass"
+    },
+    {
+      "p1": "switch 3, pass"
+    },
+    {
+      "p1": "move 1, move 2 2",
+      "p2": "switch 4, move 1"
+    },
+    {
+      "p1": "move 1, move 2 -1",
+      "p2": "move 2 2, move 1"
+    },
+    {
+      "p1": "pass, switch 3",
+      "p2": "pass, switch 3"
+    },
+    {
+      "p1": "move 1, move 3",
+      "p2": "move 3, move 2"
+    },
+    {
+      "p2": "pass, switch 4"
+    },
+    {
+      "p1": "move 1, move 2 1",
+      "p2": "move 1, move 1"
+    },
+    {
+      "p1": "move 1, move 3",
+      "p2": "move 4 -2, move 1"
+    },
+    {
+      "p1": "move 1, move 3",
+      "p2": "switch 4, move 1"
+    },
+    {
+      "p1": "move 1, move 4",
+      "p2": "move 3, move 1"
+    }
+  ]
+}
