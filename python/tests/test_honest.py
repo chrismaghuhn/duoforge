@@ -173,6 +173,39 @@ class HonestSearch(unittest.TestCase):
                     if required:
                         self.assertIn("no spread prior", records[0]["reason"])
 
+    def test_a_redraw_past_the_species_prior_is_named_apart_from_no_prior(self):
+        # Review of #339: a redraw raises the table level (draw: min_level = initial + redraw), so "no spread prior" is
+        # decided from the first draw's level only. A species with only species-level spreads (level 3) is searched; a
+        # world the public view refuses redraws it past level 3, which is its own named refusal, never "no spread prior".
+        sides = duoforge.reference_setups([0])["sides"].reshape(-1)
+        table = belief.SpreadTable.from_sides(sides)
+        table.nature[:] = (table.nature + 1) % 25  # no stated nature matches: every foe member draws at level 3
+        with duoforge.Context(C["DUOFORGE_DATA_KIND_POOL"]) as ctx:
+            for forced in (False, True):
+                with self.subTest(forced=forced), \
+                        duoforge.Batch(ctx, duoforge.reference_setups([0]), 1, 42) as b, \
+                        self.make(ctx, table=table, species_prior=True) as search:
+                    self.preview(search, b)
+                    self.start_turn(b)
+                    real, refused = search._build, []
+
+                    def build(record, h):
+                        statuses = real(record, h)
+                        if forced and int(record["boundary"]) == C["DUOFORGE_BOUNDARY_TURN"] and not refused:
+                            refused.append(True)  # the turn record refuses world 0 once: its spreads are redrawn
+                            statuses = statuses.copy()
+                            statuses[0] = C["DUOFORGE_E_INVALID_ARGUMENT"]
+                        return statuses
+
+                    with mock.patch.object(search, "_build", side_effect=build):
+                        _, records = search.decide(b, [0], [0], [456], [False])
+                    if forced:
+                        self.assertEqual(records[0]["kind"], "unreconstructible")
+                        self.assertIn("redraw past the species prior", records[0]["reason"])
+                        self.assertNotIn("no spread prior", records[0]["reason"])
+                    else:
+                        self.assertEqual(records[0]["kind"], "searched")
+
     def test_missing_history_is_counted_and_errors_stop(self):
         with duoforge.Context(C["DUOFORGE_DATA_KIND_POOL"]) as ctx, \
                 duoforge.Batch(ctx, duoforge.reference_setups([0]), 1, 42) as b, self.make(ctx) as search:
@@ -461,6 +494,17 @@ class HonestSearch(unittest.TestCase):
             with mock.patch.object(search.worlds, "public", side_effect=other_turn), \
                     self.assertRaisesRegex(honest.SearchError, r"state fields \['weather_turns'\]"):
                 search._hypotheses(record, b.observations[0, 0], history, 3, None, costs)
+
+            def other_preview(players):  # only the team preview's worlds give another record back (review of #339)
+                again, statuses = public(players)
+                if int(again[0]["boundary"]) == C["DUOFORGE_BOUNDARY_TEAM_SELECTION"]:
+                    again = again.copy()
+                    again["state"][:, starts["weather_turns"]] ^= 1
+                return again, statuses
+
+            with mock.patch.object(search.worlds, "public", side_effect=other_preview), \
+                    self.assertRaisesRegex(honest.SearchError, r"state fields \['weather_turns'\]"):
+                search._hypotheses(record, b.observations[0, 0], history, 4, None, costs)
 
     def test_stale_turn_start_counts_as_unreconstructible(self):
         with duoforge.Context(C["DUOFORGE_DATA_KIND_POOL"]) as ctx, \

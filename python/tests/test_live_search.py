@@ -14,7 +14,7 @@ from pathlib import Path
 from unittest import mock
 
 from duoforge_live import client, data, search, teams, tracker
-from python.tests.test_live_client import FIXTURE, FOE, ROOM, FakePolicy, FakeServer, Clock, room
+from python.tests.test_live_client import FIXTURE, FOE, ROOM, UNAVAILABLE, FakePolicy, FakeServer, Clock, room
 
 PARTS = {"request": None, "observation": None, "record": None, "status": 0, "causes": 0}
 
@@ -48,10 +48,11 @@ class Roots:
         self.set_calls.append((env, seat, parts))
 
 
-def _decide(live, budget=1.0):
+def _decide(live, budget=1.0, **parts):
     observation = {"player": 1}
     with mock.patch.object(search, "_encoded", return_value=("obs", "slots", "pairs")):
-        return live.decide({**PARTS, "observation": observation}, None, None, None, key=99, episode=3, budget=budget)
+        return live.decide({**PARTS, "observation": observation, **parts}, None, None, None, key=99, episode=3,
+                           budget=budget)
 
 
 class LiveSearchTest(unittest.TestCase):
@@ -84,6 +85,14 @@ class LiveSearchTest(unittest.TestCase):
                                   causes=["missing team-preview record"]))
         self.assertEqual(_decide(same).reason, "missing team-preview record")
 
+    def test_the_trackers_own_reason_is_logged(self):
+        # A record the tracker's assembler refused carries its named reason (parts["reason"]); the outcome keeps it
+        # beside the search's.
+        live = self.make(Searcher("unreconstructible", "DUOFORGE_E_UNSUPPORTED: public record"))
+        outcome = _decide(live, reason="no record: a foe Illusion is possible")
+        self.assertEqual(outcome.reason, "DUOFORGE_E_UNSUPPORTED: public record; tracker: no record: a foe Illusion "
+                                         "is possible")
+
     def test_forced_and_team_decisions_are_raw_without_fallback(self):
         for kind in ("forced", "raw", "team"):
             outcome = _decide(self.make(Searcher(kind)))
@@ -112,6 +121,17 @@ class LiveSearchTest(unittest.TestCase):
         self.assertEqual(_decide(live).cause, "searched")
         self.assertEqual(len(live.searcher.calls), 2)
 
+    def test_a_late_failure_names_the_episode_it_belongs_to(self):
+        gate = threading.Event()
+        live = self.make(Searcher(gate=gate, error=search.SearchError("late failure")))
+        self.assertEqual(_decide(live, budget=0.05).cause, "deadline")  # episode 3
+        gate.set()
+        with mock.patch.object(search, "_encoded", return_value=("obs", "slots", "pairs")):
+            outcome = live.decide({**PARTS, "observation": {"player": 1}}, None, None, None, key=1, episode=4,
+                                  budget=1.0)
+        self.assertEqual((outcome.cause, outcome.fallback), ("error", "b"))
+        self.assertIn("late, from episode 3", outcome.reason)
+
     def test_a_late_search_that_failed_is_still_class_b(self):
         gate = threading.Event()
         live = self.make(Searcher(gate=gate, error=search.SearchError("late failure")))
@@ -120,6 +140,40 @@ class LiveSearchTest(unittest.TestCase):
         outcome = _decide(live)
         self.assertEqual((outcome.cause, outcome.fallback), ("error", "b"))
         self.assertIn("late failure", outcome.reason)
+
+
+class StartTest(unittest.TestCase):
+    def test_the_live_search_needs_the_trackers_public_parts(self):
+        # Until the record assembler is on the branch, --search honest refuses at start, explicitly, before any
+        # checkpoint is loaded (HauptSession's review of #339).
+        class Bare:
+            pass
+
+        with self.assertRaisesRegex(search.SearchError, "public_parts"):
+            search.check_tracker(Bare)
+        with mock.patch.object(tracker.Tracker, "public_parts", create=True):
+            search.check_tracker(tracker.Tracker)
+        from duoforge_live import __main__ as cli, policy
+        with mock.patch.object(search, "check_tracker", side_effect=search.SearchError("public_parts")), \
+                mock.patch.object(policy, "load") as loaded, \
+                self.assertRaisesRegex(search.SearchError, "public_parts"):
+            cli.main(["--checkpoint", "x.npz", "--name", "DuoForgeBot", "--search", "honest"])
+        loaded.assert_not_called()
+
+    def test_the_tables_follow_the_checkpoints_data_kind(self):
+        from duoforge_live import policy
+        self.assertEqual(policy.table_kind({"format": 2, "data": {"kind": "pool"}}), "pool")
+        self.assertEqual(policy.table_kind({"format": 2, "data": {"kind": "closure"}}), "closure")
+        self.assertEqual(policy.table_kind({}), "closure")  # format 1: the closure network of 2026-10-02
+        with self.assertRaisesRegex(ValueError, "team_c"):
+            policy.table_kind({"format": 2, "data": {"kind": "team_c"}})
+
+    def test_decision_keys_are_a_function_of_room_and_epoch(self):
+        a = search.decision_key("battle-x-1", 3)
+        self.assertEqual(a, search.decision_key("battle-x-1", 3))
+        self.assertNotEqual(a, search.decision_key("battle-x-1", 4))
+        self.assertNotEqual(a, search.decision_key("battle-x-2", 3))
+        self.assertTrue(0 <= a < 2 ** 64)
 
 
 class TimerTest(unittest.TestCase):
@@ -131,6 +185,8 @@ class TimerTest(unittest.TestCase):
         self.assertTrue(search.timer_on("|inactive|Battle timer is ON: inactive players will automatically lose when "
                                         "time's up."))
         self.assertFalse(search.timer_on("|inactive|chris also wants the timer to be on."))
+        self.assertTrue(search.timer_off("|inactiveoff|Battle timer is now OFF."))
+        self.assertFalse(search.timer_off("|inactive|Battle timer is ON: inactive players will automatically lose."))
 
     def test_deadline(self):
         self.assertEqual(search.deadline_seconds(None, 0.0, 5.0), search.DEADLINE_CAP)
@@ -157,7 +213,9 @@ class ExtensionRecordTest(unittest.TestCase):
                   for k, s in shapes.items()}
         mask = features.BASE_VALUE_FEATURES | (1 << features.FEATURE_BITS["PERISH"]) | \
             (1 << features.FEATURE_BITS["ENCORE"])
-        game = Game(data.load(), Policy(params, features.ENCODER, mask), teams.text("A"))
+        with self.assertRaisesRegex(ValueError, "pool"):  # closure tables hold no extension record (revision 0)
+            Game(data.load(), Policy(params, features.ENCODER, mask), teams.text("A"))
+        game = Game(data.load(kind="pool"), Policy(params, features.ENCODER, mask), teams.text("A"))
         with mock.patch.object(features, "encode", wraps=features.encode) as encode:
             for lines in FIXTURE["messages"][:6]:
                 game.feed(lines)
@@ -299,6 +357,18 @@ class ClientSearchTest(unittest.TestCase):
         self.assertEqual(self.server.take()[-2:], [f"{ROOM}|{client.INTERNAL}", f"{ROOM}|/forfeit"])
         self.assertIn({"forfeit": "stop:feature:STEALTH_ROCK"}, self.log())
 
+    def test_an_unfolded_features_line_stops_the_tracker_and_forfeits(self):
+        # The guard of a network that reads record features: a feature the tracker does not fold (here Taunt, taken
+        # out of the folds so the test outlives HauptSession's fold rounds) stops it at its line, the game forfeits
+        # explicitly, counted as stop:feature:TAUNT.
+        from duoforge_live import lines
+        self.start(upto=6)
+        self.server.take()
+        with mock.patch.object(lines, "SUPPORTED", lines.SUPPORTED & ~(1 << lines.FEATURES["TAUNT"])):
+            self.feed(room(["|-start|p1a: Ceruledge|move: Taunt"] + FIXTURE["messages"][6]))
+        self.assertEqual(self.server.take()[-2:], [f"{ROOM}|{client.INTERNAL}", f"{ROOM}|/forfeit"])
+        self.assertIn({"forfeit": "stop:feature:TAUNT"}, self.log())
+
     def test_the_search_option(self):
         import contextlib
         import io
@@ -313,6 +383,72 @@ class ClientSearchTest(unittest.TestCase):
         # live spread table, a missing spread prior refused.
         self.assertEqual(search.HONEST_SETTINGS, {"k": 8, "m": 8, "s": 16, "rule": "mix", "lam": 0.5,
                                                   "species_prior": True})
+
+    def test_a_missing_timer_line_takes_the_last_one_less_the_time_since(self):
+        # The timer line of a new request did not come: the last known line, less the time since it, bounds the budget
+        # (never the bare cap, which would guess when little time is left).
+        self.start(upto=5, extra=["|inactive|Battle timer is ON: inactive players will automatically lose when "
+                                  "time's up.", "|inactive|Time left: 12 sec this turn | 100 sec total"])
+        self.server.take()
+        self.feed(room(FIXTURE["messages"][5]))
+        self.clock.now += client.TIMER_WAIT + 0.5
+        self.tick()
+        self.assertTrue(self.chosen())
+        self.assertAlmostEqual(self.live.calls[-1]["budget"], 0.1 * (12 - client.TIMER_WAIT - 0.5))
+        self.assertTrue(any(r.get("timer") == "missing" for r in self.log()))
+
+    def test_the_timer_going_off_ends_the_wait(self):
+        self.start(upto=5, extra=["|inactive|Battle timer is ON: inactive players will automatically lose when "
+                                  "time's up.", "|inactiveoff|Battle timer is now OFF."])
+        self.server.take()
+        self.feed(room(FIXTURE["messages"][5]))
+        self.assertTrue(self.chosen())
+        self.assertEqual(self.live.calls[-1]["budget"], search.DEADLINE_CAP)
+
+    def test_an_updated_request_keeps_its_decision_points_timer_line(self):
+        # An updated request (Showdown's answer to an unavailable choice) brings no timer line of its own: its budget is
+        # the decision point's line less the time since it.
+        self.start(upto=5, extra=["|inactive|Battle timer is ON: inactive players will automatically lose when "
+                                  "time's up."])
+        self.feed(room(FIXTURE["messages"][5]))
+        self.feed(room(["|inactive|Time left: 10 sec this turn | 300 sec total"]))
+        self.assertTrue(self.chosen())
+        request = next(json.loads(line[len("|request|"):]) for line in FIXTURE["messages"][5]
+                       if line.startswith("|request|"))
+        request["active"][1]["trapped"] = True
+        request.update(update=True, rqid=4)
+        self.clock.now += 3.0
+        self.feed(room([UNAVAILABLE]))
+        self.feed(room(["|request|" + json.dumps(request)]))
+        self.assertTrue(self.chosen())
+        self.assertAlmostEqual(self.live.calls[-1]["budget"], 0.1 * (10 - 3.0))
+
+    def test_a_searched_pair_the_raw_mask_does_not_allow_is_class_b(self):
+        self.live.outcomes = [search.Outcome(None, "team", None, None, 0.0),
+                              search.Outcome(32 * 32 - 1, "searched", None, None, 0.1)]
+        self.start()
+        b = self.bot.battles[ROOM]
+        self.assertEqual(self.chosen()[-1], f"{ROOM}|/choose {b.game.last_raw[0].text}|3")
+        self.assertIn("is not allowed", b.game.dirty)
+        self.assertEqual(b.game.summary()["fallback"], {"b": 1})
+        self.assertTrue(self.bot.paused)
+
+    def test_public_parts_failing_is_class_b(self):
+        with mock.patch.object(tracker.Tracker, "public_parts", create=True,
+                               side_effect=[PARTS, ValueError("assembler refused its own record")]):
+            self.start()
+        b = self.bot.battles[ROOM]
+        self.assertEqual(b.game.dirty, "ValueError: assembler refused its own record")
+        self.assertEqual(self.chosen()[-1], f"{ROOM}|/choose {b.game.last_raw[0].text}|3")
+        self.assertTrue(self.bot.paused)
+
+    def test_after_a_class_b_error_the_next_game_of_a_set_plays_raw(self):
+        self.live.outcomes = [search.Outcome(None, "team", None, None, 0.0),
+                              search.Outcome(None, "error", "b", "SearchError: world 0 refused", 0.1)]
+        self.start()
+        self.assertTrue(self.bot.paused)
+        other = self.bot._open("battle-gen9championsvgc2026regmcbo3-2")  # game 2 of a Bo3 set
+        self.assertIsNone(other.game.search)
 
     def test_raw_mode_is_unchanged(self):
         bot = client.Bot(client.Config(name="DuoForgeBot", team="A", log_dir=self.tmp.name, team_link=None), data.load(),
