@@ -113,9 +113,28 @@ is in the pool (`in_duoforge: true`) for the tie. Each of the items, moves and a
 - A residual order that the engine cannot place (the ambiguity test in `combat/residual_order.h`) keeps its existing refusal.
 - Curse's per-position state: if the lead picks option (b), no refusal; if neither, refuse Curse explicitly.
 
-## Open questions for the lead
+## 8. Decisions (lead, 2026-10-10; phase 2 approved)
 
-1. Curse state: bit 7 of `position_flags` (a) or a new rev 5 byte (b)?
-2. Volatile id `DUOFORGE_VOLATILE_CURSE` (12) and the causes for the Leech Seed and Curse residuals (numbers from HauptSession).
-3. Leech Seed `reflectable`: may it be marked (Magic Bounce, lane B)?
-4. Is Baton Pass marked (a recording needs it)?
+1. **Curse state:** `position_flags` bit 7 = `DFI_POSFLAG_CURSED`, per OCCUPANT: cleared when the occupant changes (a switch-out,
+   a replacement, a faint), unlike the Healing Wish bit 0, which belongs to the slot. The byte is then full. The invariant and
+   the Python state model are extended for it.
+2. **Values (the lane A block, assigned by the lead, reported to HauptSession):**
+   - `DUOFORGE_VOLATILE_CURSE = 12u`.
+   - `DUOFORGE_VOLATILE_LEECH_SEED = 13u`: main has no volatile id for Leech Seed, and its `-start|X|move: Leech Seed` line needs
+     one. If an existing representation covered the start line, 13 would be released; none does (the position bit LEECH_SEED
+     is state, not a start event).
+   - `DUOFORGE_CAUSE_LEECH_SEED = 22u`: the drain, holder plus source, `[from] Leech Seed`.
+   - `DUOFORGE_CAUSE_CURSE = 23u`, provisional: the residual line is checked with ps_trace (phase 2). If it is `[from] Curse`, 23
+     stays; if an existing cause covers it, 23 is released.
+3. **Leech Seed is `reflectable`** (as in the pin, flags 10210). That extends the handled list in `tests/test_pool_g57.c` by one
+   entry; no existing entry and no existing Magic Bounce refusal changes. Evidence: one battle in which Magic Bounce reflects
+   Leech Seed, if a marked Magic Bounce holder fits.
+4. **Baton Pass is not on main** (it is G74, batch 5). So there is no Baton Pass battle in G84. G74 already copies Leech Seed;
+   the integrator checks the copy of Curse and Leech Seed after both are merged.
+
+The view bits LEECH_SEED (feature 28) and CURSE (feature 36) are already in encoder 5 (`src/encode/encode.c:81-83`), and
+`python/duoforge/features.py` already knows them, so no encoder change is needed for G84 (checked before the first lock job).
+
+Phase 2: recordings L1-L6 (L6 with the Sitrus tie) and C1-C5; mutants M1-M14, each with its catching test and a green
+baseline; then the campaign. One lock job at a time, everything in one job; the full run goes through
+`gh workflow run ci.yml --ref <branch>`.
