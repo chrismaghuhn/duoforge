@@ -202,6 +202,7 @@ class BatonPassTest(unittest.TestCase):
         t = tracker.Tracker.__new__(tracker.Tracker)
         t.data, t.side, t._spectator = D, 0, False
         t._baton_pass = D.tables["MOVE"]["BATONPASS"]
+        t._next_activation, t._foe_leads = 1, [tracker.ROSTER_NONE] * 2  # the public record's entry folds
         members = [SimpleNamespace(seen=False, hp_percent=100, hp_flag=0, status=0) for _ in range(6)]
         t._member = lambda side: members
         t._positions = [[tracker._Position(), tracker._Position()], [tracker._Position(), tracker._Position()]]
