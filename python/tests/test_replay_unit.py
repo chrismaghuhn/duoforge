@@ -826,6 +826,12 @@ class GameTest(unittest.TestCase):
                  for line in self.log]
         self.assertEqual(self.skip_reason(lines), "skip:illusion")
 
+    def test_two_sheets_of_one_side_are_a_refusal_of_their_own(self):
+        # review of #331: two |showteam| lines of the same side pass source.select (two lines) but are no pair of
+        # sheets; the game is refused under its own reason, not counted as a game without sheets
+        lines = [line.replace("|showteam|p2|", "|showteam|p1|", 1) for line in self.log]
+        self.assertEqual(self.skip_reason(lines), "skip:sheets-one-side")
+
     def test_session_line_skips_game(self):
         self.assertEqual(self.skip_reason(self.insert_after("|turn|3", "|init|battle")), "skip:session")
 
@@ -1275,6 +1281,100 @@ class DatasetTest(unittest.TestCase):
         self.assertEqual(c["games.processed"], 3)
         self.assertEqual(c["games.skipped.skip:format"], 1)
 
+    def test_the_funnel_per_format_adds_up_to_the_totals(self):
+        from duoforge_replay import funnel
+        c = self.build("funnel")
+        report = funnel.report(c)
+        self.assertEqual(sorted(report), ["gen9championsvgc2026regmcbo3", "gen9ou"])
+        for format_id, f in report.items():
+            self.assertEqual(f["read"], sum(f["skipped"].values()) + f["internal"] + f["processed"], format_id)
+            self.assertEqual(f["perspectives"]["kept"] + sum(f["perspectives"]["stopped"].values()),
+                             2 * f["processed"], format_id)
+            self.assertEqual(f["with_sheets"], f["read"] - f["skipped"].get("skip:format", 0)
+                             - f["skipped"].get("skip:sheets", 0), format_id)
+        self.assertEqual(report["gen9ou"]["skipped"], {"skip:format": 1})
+        self.assertEqual(report["gen9championsvgc2026regmcbo3"]["processed"], 3)
+        total = lambda key: sum(f[key] for f in report.values())  # noqa: E731
+        self.assertEqual(total("read"), c["games.read"])
+        self.assertEqual(total("processed"), c["games.processed"])
+        self.assertEqual(total("rows"), c["points.written"])
+        self.assertEqual(sum(f["perspectives"]["kept"] for f in report.values()), c["perspectives.kept"])
+        for key, n in c.items():
+            if key.startswith("games.skipped."):
+                reason = key[len("games.skipped."):]
+                self.assertEqual(sum(f["skipped"].get(reason, 0) for f in report.values()), n, reason)
+        text = funnel.text(report)
+        for format_id in report:
+            self.assertIn(format_id, text)
+
+    def test_the_funnel_command_reads_a_dataset(self):
+        import contextlib
+        import io
+        from duoforge_replay import __main__ as cli
+        self.build("cli")
+        out = io.StringIO()
+        with contextlib.redirect_stdout(out):
+            self.assertEqual(cli.main(["funnel", str(self.tmp / "cli")]), 0)
+        self.assertIn("gen9championsvgc2026regmcbo3", out.getvalue())
+        self.assertIn("rows", out.getvalue())
+
+    def test_the_funnel_counts_refused_games_and_internal_errors(self):
+        # review of #331: the funnel stages of game.Skip and of an internal error, each in a build of its own
+        import json
+        from duoforge_replay import funnel
+        lines = self.log.split(chr(10))
+        i = next(i for i, line in enumerate(lines) if line.startswith("|showteam|p1|"))
+        head, packed = lines[i].split("|", 3)[:3], lines[i].split("|", 3)[3]
+        first = packed.split("]")[0].split("|")
+        first[1] = "Fakemon"  # a species the tables lack: name:FORME Fakemon
+        lines[i] = "|".join(head + ["]".join(["|".join(first)] + packed.split("]")[1:])])
+        mixed = self.tmp / "mixed.jsonl"
+        with open(mixed, "w", encoding="utf-8", newline=chr(10)) as f:
+            fake = chr(10).join(lines)
+            f.write(json.dumps({"id": "fake", "formatid": "gen9championsvgc2026regmc", "log": fake}) + chr(10))
+            f.write(json.dumps({"id": "ok", "formatid": "gen9championsvgc2026regmc", "log": self.log}) + chr(10))
+        from duoforge_replay import build
+        c = build.build([mixed], self.prior_path, self.tmp / "refused", unit_lines=2, stats_factory=stats_factory,
+                        log=lambda _: None)
+        f = funnel.report(c)["gen9championsvgc2026regmc"]
+        self.assertEqual((f["read"], f["skipped"], f["internal"], f["processed"]),
+                         (2, {"name:FORME Fakemon": 1}, 0, 1))
+        c = build.build([self.source], self.prior_path, self.tmp / "internal", unit_lines=2,
+                        stats_factory=broken_stats_factory, log=lambda _: None)
+        f = funnel.report(c)["gen9championsvgc2026regmcbo3"]
+        self.assertEqual((f["read"], f["internal"], f["processed"], f["rows"]), (3, 3, 0, 0))
+        self.assertEqual(f["internal"], c["internal:RuntimeError"])
+
+    def test_the_funnel_command_refuses_a_dataset_without_funnel(self):
+        # review of #331: a dataset built before the funnel has none; an empty report would read as "no games"
+        import contextlib
+        import io
+        import json
+        from duoforge_replay import __main__ as cli
+        old = self.tmp / "old"
+        old.mkdir()
+        (old / "counters.json").write_text(json.dumps({"games.read": 3, "games.processed": 3}), encoding="utf-8")
+        err = io.StringIO()
+        with contextlib.redirect_stderr(err):
+            self.assertEqual(cli.main(["funnel", str(old)]), 2)
+        self.assertIn("no funnel", err.getvalue())
+
+    def test_reg_ma_is_excluded(self):
+        # owner, 2026-10-10: Reg M-A ran under another mechanics era (Showdown before Champions 1.1.0); no prefix that
+        # takes its games is a build
+        from duoforge_replay import build
+        for prefix in ("gen9championsvgc2026regma", "gen9championsvgc2026regmabo3", "gen9championsvgc2026", "gen9"):
+            with self.subTest(prefix), self.assertRaisesRegex(ValueError, "Reg M-A"):
+                build.build([self.source], self.prior_path, self.tmp / "ma", unit_lines=2, stats_factory=stats_factory,
+                            log=lambda _: None, format_prefix=[prefix])
+        self.assertFalse((self.tmp / "ma").exists())
+
+    def test_the_funnel_names_the_excluded_regulation(self):
+        from duoforge_replay import funnel
+        report = funnel.report({"funnel.gen9championsvgc2026regma.read": 5,
+                                "funnel.gen9championsvgc2026regma.skipped.skip:format": 5})
+        self.assertIn("excluded: other mechanics era (owner, 2026-10-10)", funnel.text(report))
+
     def test_parts_are_source_units(self):
         # two source lines per unit: four games give two parts, each its own directory
         from duoforge_replay import dataset
@@ -1488,6 +1588,10 @@ class SourceTest(unittest.TestCase):
         self.assertEqual(counters["games.skipped.skip:format"], 2)
         self.assertEqual(counters["games.skipped.skip:sheets"], 1)
         self.assertEqual(rows, [])
+        from duoforge_replay import funnel
+        report = funnel.report(counters)  # the unread row group counts per format too
+        self.assertEqual({k: (f["read"], f["skipped"]) for k, f in report.items()},
+                         {"gen9ou": (2, {"skip:format": 2}), "gen9championsvgc2026regmc": (1, {"skip:sheets": 1})})
 
     def test_select(self):
         import collections
@@ -1500,6 +1604,9 @@ class SourceTest(unittest.TestCase):
         self.assertEqual([r[0] for r in kept], ["a", "d"])
         self.assertEqual(counters["games.skipped.skip:format"], 1)
         self.assertEqual(counters["games.skipped.skip:sheets"], 1)
+        self.assertEqual(counters["funnel.gen9championsvgc2026regmcbo3.read"], 2)
+        self.assertEqual(counters["funnel.gen9championsvgc2026regmcbo3.skipped.skip:sheets"], 1)
+        self.assertEqual(counters["funnel.gen9ou.skipped.skip:format"], 1)
 
 
 if __name__ == "__main__":
