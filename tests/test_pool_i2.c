@@ -776,5 +776,6 @@ int main(void)
     check_insta_disguise(&t, ctx);
     check_fold_status_line(&t, ctx);
     check_fold_switch_status(&t, ctx);
+    duoforge_context_destroy(ctx);
     return df_test_end(&t);
 }
