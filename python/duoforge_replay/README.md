@@ -202,9 +202,12 @@ Between parts the build waits while the fuzz pause file exists. A full run is an
 | Array | Content |
 |---|---|
 | `observation` | `_layout.OBSERVATION`, from the player's side. The own side shows HP as the public percentage, PP from the uses seen, and stat points and stats from the prior (`prior_level` per member) |
-| `domain` | `_layout.FACTORED_DOMAIN`: the superset slot lists and the full pair mask, or the team domain |
+| `domain` | `_layout.FACTORED_DOMAIN`: the superset slot lists and the full pair mask, or the team domain. A position under Encore offers only its Encored move (and Struggle, and its switches) |
+| `ext` | `_layout.OBSERVATION_EXT`, the tracker view's extension record at the point (decision 0018), as live. The manifest records the tracker folds (`tracker_folds`) and the record revision; `bc_data` loads only datasets of format version 3 folded under this checkout's folds |
 | `label_slots`, `label_team`, `label_reason` | the options that agree with the log, per slot (a 32-bit mask) or over the 360 team tuples (45 bytes); the reason per slot: `labels.EXACT`, `TARGET_UNKNOWN`, `MOVE_HIDDEN`, `FORCED`, `UNKNOWN`, `NOT_REQUESTED` |
 | `game`, `side`, `point` | the game's index into `games.npz`, the player, the decision point |
+
+An Encore that starts on a position before its move line may have replaced the chosen move: that slot's label is `MOVE_HIDDEN` over every move option, the Encored one too.
 
 `games.npz` holds, per game:
 - the replay id;
