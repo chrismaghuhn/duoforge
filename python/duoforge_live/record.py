@@ -400,8 +400,35 @@ def _party_bytes(entries):
     return list(value.to_bytes(3, "little"))
 
 
+# Folds of the view extension (decision 0018) whose tail fields this assembler does not write yet: their counters (Taunt,
+# Heal Block, Yawn, Disable), layers and creation order (the entry hazards), soak and second types, the recharge, Glaive
+# Rush, Imprison, Rage Powder's Follow Me volatile and the side's Wide Guard. While one is up the record would hold a zero
+# where the engine's has the fold, so the decision point is refused (fold-not-in-record), never approximated.
+_UNRECORDED_POSITION_FOLDS = ("must_recharge", "taunt", "yawn", "imprison", "glaive_rush", "rage_powder", "heal_block",
+                              "disable_slot")
+
+
+def unrecorded_folds(t):
+    """The names of the folded states up at the tracker's point that the record does not carry ([] when none)."""
+    names = []
+    for side in (0, 1):
+        if any(t._hazards[side].values()):
+            names.append(f"side{side}.hazards")
+        if ("WIDE_GUARD", side) in t._guards:
+            names.append(f"side{side}.wide_guard")
+        for k, p in enumerate(t._positions[side]):
+            if p.occupant == OCCUPANT_NONE:
+                continue
+            names += [f"side{side}.position{k}.{name}" for name in _UNRECORDED_POSITION_FOLDS if getattr(p, name)]
+            if p.type_now != (0, 0):
+                names.append(f"side{side}.position{k}.type_now")
+    return names
+
+
 def _tail(t, s, boundary):
     """The POOL kinds' tail (src/codec/state_codec.c dfi_encode_tail) of what the tracker folds."""
+    if unrecorded_folds(t):
+        raise Refusal("fold-not-in-record")
     party = []
     for side in (0, 1):
         entries = [0] * 6

@@ -158,6 +158,9 @@ static const struct {
     {"g19_glaive_rush", 0u, {0u, 0u, 0u, 0u}},
     {"g19_glaive_rush", 1u, {1u, 0u, 0u, 0u}},
     {"g19_glaive_rush", 2u, {0u, 0u, 0u, 0u}},
+    {"g19_glaive_rush_mirror", 0u, {0u, 0u, 0u, 0u}},
+    {"g19_glaive_rush_mirror", 1u, {0u, 0u, 1u, 0u}},
+    {"g19_glaive_rush_mirror", 2u, {0u, 0u, 0u, 0u}},
     {"g19_glaive_rush_flinch", 0u, {0u, 0u, 0u, 0u}},
     {"g19_glaive_rush_flinch", 1u, {1u, 0u, 0u, 0u}},
     {"g19_glaive_rush_flinch", 2u, {0u, 0u, 0u, 0u}},
@@ -172,7 +175,7 @@ static const struct {
     {"g19_glaive_rush_protect", 2u, {0u, 0u, 0u, 0u}},
 };
 
-static const char *const names[] = {"g19_coaching", "g19_coaching_contrary", "g19_coaching_good_as_gold", "g19_coaching_no_ally", "g19_coaching_protect", "g19_glaive_rush", "g19_glaive_rush_flinch", "g19_glaive_rush_immune", "g19_glaive_rush_mega", "g19_glaive_rush_protect"};
+static const char *const names[] = {"g19_coaching", "g19_coaching_contrary", "g19_coaching_good_as_gold", "g19_coaching_no_ally", "g19_coaching_protect", "g19_glaive_rush", "g19_glaive_rush_mirror", "g19_glaive_rush_flinch", "g19_glaive_rush_immune", "g19_glaive_rush_mega", "g19_glaive_rush_protect"};
 
 static const uint8_t *row_of(const char *battle, uint32_t step)
 {
