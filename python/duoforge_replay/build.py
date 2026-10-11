@@ -56,7 +56,8 @@ def pause_file():
 def _init(prior_path, stats_factory, node, ps_dir, format_prefix, out_dir, part_manifest, options=None):
     from .stats import StatSource
     _STATE["data"] = live_data.load(kind="pool")
-    _STATE["options"] = options = dict(options or {"mode": "sheet", "k": 1, "seed": 0, "split": None})
+    _STATE["options"] = options = dict(options or {"mode": "sheet", "k": 1, "seed": 0, "split": None,
+                                                   "pick_hypotheses": False})
     _STATE["belief"] = None
     if options["mode"] != "sheet":
         from . import corpus, setbelief
@@ -95,7 +96,8 @@ def _work_unit(unit):
             funnel.count(counters, format_id, "read")
         try:
             if _STATE["belief"] is None:
-                result = game.process(replay_id, format_id, log, _STATE["data"], _STATE["prior"], _STATE["stats"])
+                result = game.process(replay_id, format_id, log, _STATE["data"], _STATE["prior"], _STATE["stats"],
+                                      pick_hypotheses=options["pick_hypotheses"])
             else:
                 result = game.process(replay_id, format_id, log, _STATE["data"], _STATE["prior"], _STATE["stats"],
                                       belief=_STATE["belief"], seed=options["seed"], draw=draw, known_sheets=dropped)
@@ -119,9 +121,12 @@ def _work_unit(unit):
         for key, n in result.counters.items():
             if key.startswith(("perspectives.", "turns.")) or key == "games.both_kept":
                 funnel.count(counters, format_id, key, n)
-        funnel.count(counters, format_id, "rows", len(result.rows))
+        hypotheses = sum(1 for row in result.rows if row.picks_hypotheses > 1)
+        funnel.count(counters, format_id, "rows", len(result.rows) - hypotheses)
+        funnel.count(counters, format_id, "rows.hypotheses", hypotheses)
         results.append(result)
-    writer = dataset.Writer(tmp, {**part_manifest, "internal_examples": examples}, source=options["mode"])
+    writer = dataset.Writer(tmp, {**part_manifest, "internal_examples": examples}, source=options["mode"],
+                            pick_hypotheses=options["pick_hypotheses"])
     for result in results:
         writer.add(result)
     writer.counters.update(counters)
@@ -159,12 +164,14 @@ def _prefix_record(format_prefix):
 
 def inputs(paths, prior_path, format_prefix, unit_lines, ps_dir, options=None):
     """What a dataset's parts depend on: a resumed run must have the same. A sheet build without a split records what
-    it always did (an old dataset resumes); any other build records its mode, corpus, seed, k and split."""
+    it always did; any other build records its mode, corpus, seed, k and split. Every
+    build records pick_hypotheses, so a resume refuses the other setting."""
     extra = {}
     if options is not None and (options["mode"] != "sheet" or options["split"] is not None):
         extra = {"belief": {"mode": options["mode"], "split": options["split"], "seed": options["seed"],
                             "k": options["k"],
                             "corpus_sha256": _sha256(options["corpus"]) if options.get("corpus") else None}}
+    extra["pick_hypotheses"] = bool(options is not None and options.get("pick_hypotheses"))
     return {**provenance(ps_dir), **extra,
         "code": {"commit": _git(live_data.ROOT, "rev-parse", "HEAD"),
                  "dirty": bool(_git(live_data.ROOT, "status", "--porcelain", "--untracked-files=no"))},
@@ -235,7 +242,7 @@ def _prepare(out, wanted, run):
 
 def build(paths, prior_path, out_dir, workers=1, limit_parts=None, format_prefix=source.FORMAT_PREFIX,
           unit_lines=4096, stats_factory=None, node="node", ps_dir=None, log=None, mode="sheet", corpus=None, seed=0,
-          k=1, split_of=None):
+          k=1, split_of=None, pick_hypotheses=False):
     """Builds or resumes the dataset; returns the counters of the whole output, plus parts.written,
     parts.skipped.done and parts.redone.broken for this run, and internal.examples: the replay ids of internal errors
     (bugs) in any part of the output."""
@@ -260,8 +267,11 @@ def build(paths, prior_path, out_dir, workers=1, limit_parts=None, format_prefix
         raise ValueError("drop_sheets takes the test split: the training split's sheets are the corpus")
     if split_of not in (None, "train", "test"):
         raise ValueError("split must be train, test or none")
+    if pick_hypotheses and mode != "sheet":
+        raise ValueError(f"pick hypotheses are rows of a sheet build, not of a {mode} build (M11 pick hypotheses spec)")
     options = {"mode": mode, "corpus": str(corpus) if corpus is not None else None, "seed": int(seed), "k": k,
-               "split": "test" if mode == "drop_sheets" and split_of is None else split_of}
+               "split": "test" if mode == "drop_sheets" and split_of is None else split_of,
+               "pick_hypotheses": bool(pick_hypotheses)}
     wanted = inputs(paths, prior_path, format_prefix, unit_lines, ps_dir, options)
     run = collections.Counter()
     done = _prepare(out, wanted, run)
@@ -332,7 +342,8 @@ def _run(paths, prior_path, out, wanted, done, run, workers, limit_parts, format
     dataset.write_json_atomic(out / "counters.json", counters)
     dataset.write_json_atomic(out / "manifest.json", {
         "format_version": dataset.FORMAT_VERSION, "source": options["mode"], "tracker_folds": dataset.tracker_folds(),
-        "ext_revision": dataset.EXT_REVISION, "layout": "parts", "inputs": wanted,
+        "ext_revision": dataset.EXT_REVISION, "pick_hypotheses": options["pick_hypotheses"], "layout": "parts",
+        "inputs": wanted,
         "parts": parts,
         "counters": counters,
         "run": {"workers": workers, "parts_written": run["parts.written"], "seconds": round(seconds, 1),

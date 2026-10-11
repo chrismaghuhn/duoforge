@@ -2113,7 +2113,7 @@ class Library(unittest.TestCase):
         committed traces, so the engine's tail and extension are checked against the protocol and not against
         themselves. Every silent line follows such a hit, and no battle shows it for a miss, a block or an immunity."""
         names = sorted(f[:-5] for f in os.listdir(os.path.join(ROOT, 'tests', 'reference', 'specs')) if f.startswith('g19_glaive'))
-        self.assertEqual(len(names), 5)
+        self.assertEqual(len(names), 6)  # with g19_glaive_rush_mirror (the replay tracker's coverage)
         with open(os.path.join(ROOT, 'tests', 'test_pool_g19.c'), encoding='utf-8') as f:
             source = f.read()
         rows = {}

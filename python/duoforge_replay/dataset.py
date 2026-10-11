@@ -2,12 +2,14 @@
 
     rows-00000.npz ...  observation (OBSERVATION), domain (FACTORED_DOMAIN), game (u32), side (u8),
                         point (u16), label_slots (u32 x2), label_team (u8 x45), label_reason (u8 x2),
-                        prior_level (u8 x6), ext (OBSERVATION_EXT: the tracker view's extension record);
+                        prior_level (u8 x6), ext (OBSERVATION_EXT: the tracker view's extension record),
+                        picks_hypotheses (u8: H, 1 when the picks are known) and hypothesis (u8: its index);
                         a belief dataset also belief_level (u8 x12) and revealed (u8 x6)
     games.npz           replay_id, format_id, bo3_game, ratings (i32 x2), winner (i8), turns, players and
                         sheets (u64 x2); a belief dataset also draw (u8)
-    manifest.json       provenance, the shards with rows and SHA-256, the counters, the format version, the
-                        source, the tracker folds and the extension record revision
+    manifest.json       provenance, the shards with rows (and hypothesis_rows, those with H > 1) and SHA-256,
+                        the counters, the format version, the source, the tracker folds, the extension record
+                        revision and pick_hypotheses (whether rows with H > 1 may be in it)
     counters.json       the counters
 
 Writer refuses a directory inside the repository: replays and anything
@@ -30,7 +32,8 @@ from duoforge_live.data import ROOT
 
 from .labels import TEAM_BYTES
 
-FORMAT_VERSION = 3  # 3: every row carries its OBSERVATION_EXT record, the manifest the tracker folds and the record
+FORMAT_VERSION = 4  # 4: every row carries picks_hypotheses and hypothesis, the manifest pick_hypotheses (M11 pick
+# hypotheses spec); 3: every row carries its OBSERVATION_EXT record, the manifest the tracker folds and the record
 # revision; 2: every manifest names its "source" (sheet, bo1_belief, drop_sheets); 1 had none (sheet)
 EXT_REVISION = _layout.CONSTANTS["DUOFORGE_OBSERVATION_EXT_REVISION"]
 SOURCES = ("sheet", "bo1_belief", "drop_sheets")
@@ -107,11 +110,14 @@ def tracker_folds():
 
 
 class Writer:
-    def __init__(self, out_dir, manifest, shard_rows=65536, source="sheet"):
+    def __init__(self, out_dir, manifest, shard_rows=65536, source="sheet", pick_hypotheses=False):
         if source not in SOURCES:
             raise ValueError(f"source {source!r} is none of {SOURCES}")
+        if pick_hypotheses and source != "sheet":
+            raise ValueError(f"pick hypotheses are rows of a sheet dataset, not of a {source} dataset")
         refuse_repository(out_dir)
         self.source = source
+        self.pick_hypotheses = bool(pick_hypotheses)
         self.out = Path(out_dir)
         if self.out.exists() and any(self.out.iterdir()):
             raise ValueError(f"the output {out_dir} is not empty: old shards would mix with new ones")
@@ -131,6 +137,8 @@ class Writer:
         if any((row.belief_level is not None) != belief for row in result.rows):
             raise ValueError(f"a {self.source} dataset takes only {'belief rows' if belief else 'sheet rows'}: "
                              f"belief rows and sheet rows never mix")
+        if not self.pick_hypotheses and any(row.picks_hypotheses != 1 for row in result.rows):
+            raise ValueError("rows with pick hypotheses (H > 1) in a dataset built without pick hypotheses")
         index = len(self.games)
         self.games.append(result.record)
         self.counters.update(result.counters)
@@ -152,6 +160,7 @@ class Writer:
             "label_team": np.zeros((n, TEAM_BYTES), dtype=np.uint8), "label_reason": np.zeros((n, 2), dtype=np.uint8),
             "prior_level": np.zeros((n, 6), dtype=np.uint8),
             "ext": np.zeros(n, dtype=_layout.OBSERVATION_EXT),
+            "picks_hypotheses": np.zeros(n, dtype=np.uint8), "hypothesis": np.zeros(n, dtype=np.uint8),
         }
         if self.source != "sheet":
             arrays["belief_level"] = np.zeros((n, 12), dtype=np.uint8)
@@ -165,12 +174,14 @@ class Writer:
             arrays["label_reason"][i] = row.label.reasons
             arrays["prior_level"][i] = row.prior_level
             arrays["ext"][i] = row.ext
+            arrays["picks_hypotheses"][i], arrays["hypothesis"][i] = row.picks_hypotheses, row.hypothesis
             if self.source != "sheet":
                 arrays["belief_level"][i] = row.belief_level
                 arrays["revealed"][i] = row.revealed
         name = f"rows-{len(self.shards):05d}.npz"
         write_npz(self.out / name, arrays)
-        self.shards.append({"file": name, "rows": n, "sha256": _sha256(self.out / name)})
+        self.shards.append({"file": name, "rows": n, "sha256": _sha256(self.out / name),
+                            "hypothesis_rows": int((arrays["picks_hypotheses"] > 1).sum())})
         self.rows = []
 
     def close(self):
@@ -192,7 +203,8 @@ class Writer:
         write_npz(self.out / "games.npz", games)
         counters = dict(sorted(self.counters.items()))
         manifest = {**self.manifest, "format_version": FORMAT_VERSION, "source": self.source,
-                    "tracker_folds": tracker_folds(), "ext_revision": EXT_REVISION, "games": len(g),
+                    "tracker_folds": tracker_folds(), "ext_revision": EXT_REVISION,
+                    "pick_hypotheses": self.pick_hypotheses, "games": len(g),
                     "shards": self.shards,
                     "games_sha256": _sha256(self.out / "games.npz"), "counters": counters}
         (self.out / "counters.json").write_text(json.dumps(counters, indent=1) + "\n", encoding="utf-8")

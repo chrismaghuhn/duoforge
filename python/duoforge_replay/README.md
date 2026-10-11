@@ -203,11 +203,14 @@ Between parts the build waits while the fuzz pause file exists. A full run is an
 |---|---|
 | `observation` | `_layout.OBSERVATION`, from the player's side. The own side shows HP as the public percentage, PP from the uses seen, and stat points and stats from the prior (`prior_level` per member) |
 | `domain` | `_layout.FACTORED_DOMAIN`: the superset slot lists and the full pair mask, or the team domain. A position under Encore offers only its Encored move (and Struggle, and its switches) |
-| `ext` | `_layout.OBSERVATION_EXT`, the tracker view's extension record at the point (decision 0018), as live. The manifest records the tracker folds (`tracker_folds`) and the record revision; `bc_data` loads only datasets of format version 3 folded under this checkout's folds |
+| `ext` | `_layout.OBSERVATION_EXT`, the tracker view's extension record at the point (decision 0018), as live. The manifest records the tracker folds (`tracker_folds`) and the record revision; `bc_data` loads only datasets of format version 3 or later folded under this checkout's folds |
+| `picks_hypotheses`, `hypothesis` | H, the pick tuples the row's perspective was folded with (1 when the picks are known), and the row's index among them (format version 4; see below) |
 | `label_slots`, `label_team`, `label_reason` | the options that agree with the log, per slot (a 32-bit mask) or over the 360 team tuples (45 bytes); the reason per slot: `labels.EXACT`, `TARGET_UNKNOWN`, `MOVE_HIDDEN`, `FORCED`, `UNKNOWN`, `NOT_REQUESTED` |
 | `game`, `side`, `point` | the game's index into `games.npz`, the player, the decision point |
 
 An Encore that starts on a position before its move line may have replaced the chosen move: that slot's label is `MOVE_HIDDEN` over every move option, the Encored one too.
+
+With `build --pick-hypotheses` (a sheet build only; spec `docs/superpowers/specs/2026-10-11-m11-pick-hypotheses-design.md`), a perspective stopped by `picks-incomplete` is folded once more per pick tuple the log allows (3 or 6). Its rows carry H and their index, all of them stop at the earliest stop of any, and the team row is not repeated. The headline counters and the funnel's rows column stay as without the option; the hypothesis perspectives, turns and rows are counted apart. `bc_data` leaves rows with H > 1 out unless `--pick-hypotheses-weight W` is given (W/H per row). `python -m duoforge_replay validate-hypotheses` hides a seen back pick and compares (aggregates only).
 
 `games.npz` holds, per game:
 - the replay id;
