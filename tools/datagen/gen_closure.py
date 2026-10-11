@@ -2417,6 +2417,7 @@ SPECIAL_P = dict(SPECIAL_C, **{
     'stormthrow': ('WILL_CRIT', set()),                                   # C4: willCrit, the critical hit without a draw (sim/battle-actions.ts:1638)
     'flowertrick': ('WILL_CRIT', set()),                                  # C4: willCrit
     'frostbreath': ('WILL_CRIT', set()),                                  # C4: willCrit
+    'endeavor': ('ENDEAVOR', {'damageCallback', 'onTryImmunity'}),       # C5 (5cy): damage = target HP - user HP; immune if user HP >= target HP
     'haze': ('HAZE', {'onHitField'}),                                     # G62: clears every boost of the standing actives (decision 0031)
     'afteryou': ('AFTER_YOU', {'onHit'}),                                 # G62: the target's queued move goes next (decision 0015 entry 5az)
     'quash': ('QUASH', {'onHit'}),                                        # G62: the target's queued move goes last
@@ -2624,6 +2625,9 @@ G90_CONDITION_FACTS = (
     "this.add('-end', pokemon, this.effectState.sourceEffect, '[partiallytrapped]');",
     'if (this.effectState.source?.isActive || gmaxEffect) pokemon.tryTrap();',
 )
+# Step C5 (decision 0015 entry 5cy): Endeavor, the damageCallback path of Final Gambit (G76) with an onTryImmunity (the user's HP
+# must be below the target's, else -immune). Read by parse_move from SPECIAL_P (the callbacks named there).
+C5_HANDLERS = ['ENDEAVOR']
 G78_FACTS = (
     'accuracy: 100,', 'basePower: 50,', 'category: "Physical",', 'priority: 0,',
     'flags: { protect: 1, mirror: 1, metronome: 1, noparentalbond: 1 },', 'multihit: 2,', 'smartTarget: true,',
@@ -2782,7 +2786,7 @@ G68_FACTS = (
                      'flags: { protect: 1, reflectable: 1, mirror: 1, metronome: 1 },', "status: 'par',",
                      'ignoreImmunity: false,', 'target: "normal",', 'type: "Electric",']),
 )
-SPECIAL_IDS_P = SPECIAL_IDS_C + G2_HANDLERS + WEATHER_HANDLERS + G16_HANDLERS + G15_HANDLERS + G19_HANDLERS + G20_HANDLERS + G20_PROTECT_HANDLERS + G28_HANDLERS + G30_HANDLERS + G32_HANDLERS + G34_HANDLERS + G27_HANDLERS + G25_HANDLERS + G26_HANDLERS + G33_HANDLERS + G38_HANDLERS + G29_HANDLERS + G39_HANDLERS + G31_HANDLERS + G48_HANDLERS + G44_HANDLERS + G50_HANDLERS + G42_HANDLERS + G56_HANDLERS + G52_HANDLERS + G54_HANDLERS + G64_HANDLERS + G62_HANDLERS + G60_HANDLERS + G58_HANDLERS + G68_HANDLERS + G70_HANDLERS + G66_HANDLERS + G72B_HANDLERS + G74_HANDLERS + G76_HANDLERS + G78_HANDLERS + G88_HANDLERS + G94_HANDLERS + G86_HANDLERS + C4_HANDLERS + G84_HANDLERS + G92_HANDLERS + G82_HANDLERS + G90_HANDLERS + ['UNMODELED']# Step G10 made two of these handlers data: Scald (thawsTarget) and Recover (heal) are read into the second flags# byte (bit 4, thaws the target) and the heal column, and have the special NONE; their ids stay defined (the ids after
+SPECIAL_IDS_P = SPECIAL_IDS_C + G2_HANDLERS + WEATHER_HANDLERS + G16_HANDLERS + G15_HANDLERS + G19_HANDLERS + G20_HANDLERS + G20_PROTECT_HANDLERS + G28_HANDLERS + G30_HANDLERS + G32_HANDLERS + G34_HANDLERS + G27_HANDLERS + G25_HANDLERS + G26_HANDLERS + G33_HANDLERS + G38_HANDLERS + G29_HANDLERS + G39_HANDLERS + G31_HANDLERS + G48_HANDLERS + G44_HANDLERS + G50_HANDLERS + G42_HANDLERS + G56_HANDLERS + G52_HANDLERS + G54_HANDLERS + G64_HANDLERS + G62_HANDLERS + G60_HANDLERS + G58_HANDLERS + G68_HANDLERS + G70_HANDLERS + G66_HANDLERS + G72B_HANDLERS + G74_HANDLERS + G76_HANDLERS + G78_HANDLERS + G88_HANDLERS + G94_HANDLERS + G86_HANDLERS + C4_HANDLERS + G84_HANDLERS + G92_HANDLERS + G82_HANDLERS + G90_HANDLERS + C5_HANDLERS + ['UNMODELED']# Step G10 made two of these handlers data: Scald (thawsTarget) and Recover (heal) are read into the second flags# byte (bit 4, thaws the target) and the heal column, and have the special NONE; their ids stay defined (the ids after
 # them keep their values). First Impression and Low Kick keep theirs: the turn code implements them.
 POOL_COLUMN_KEYS = {'thawsTarget', 'heal'}
 G2_OWNED_FIELDS = {
@@ -4549,6 +4553,46 @@ def check_c4_facts(moves_ts, champ_moves, only=None):
                 fail('move %s: %s is %r in the pin, not %r' % (mid, key, have, want))
 
 
+# Step C5 (decision 0015 entry 5cy): the pinned fields of the data-only moves of the step, read from data/moves.ts at b2cb775.
+# Every field of the pin entry must be listed (C5_IGNORED_KEYS aside) with its value, and the Champions mod must have no entry.
+C5_IGNORED_KEYS = {'num', 'name', 'contestType', 'zMove', 'maxMove', 'damageCallback', 'onTryImmunity'}
+C5_FACTS = (
+    ('surf', {'accuracy': 100, 'basePower': 90, 'category': 'Special', 'pp': 15, 'priority': 0, 'target': 'allAdjacent',
+              'type': 'Water', 'flags': {'protect', 'mirror', 'nonsky', 'metronome'}}),
+    # Endeavor (data/moves.ts:4784-4804): the callbacks are checked by the handler (C5_HANDLERS, SPECIAL_P), not here.
+    ('endeavor', {'accuracy': 100, 'basePower': 0, 'category': 'Physical', 'pp': 5, 'priority': 0, 'target': 'normal',
+                  'type': 'Normal', 'flags': {'contact', 'protect', 'mirror', 'metronome', 'noparentalbond'}}),
+)
+
+
+def c5_value(key, text):
+    """The value of one pin field: a flag set or a scalar."""
+    if key == 'flags':
+        return set(re.findall(r'(\w+): 1\b', text))
+    return scalar(text)
+
+
+def check_c5_facts(moves_ts, champ_moves, only=None):
+    """Step C5: each listed move has exactly the listed fields (nothing else but C5_IGNORED_KEYS), each with its pinned value,
+    and no Champions override. `only`: a tuple of (move id, expected) for the tests."""
+    for mid, expected in (C5_FACTS if only is None else only):
+        if champ_moves.entry(mid) is not None:
+            fail('move %s: the Champions mod overrides it; the C5 facts must be read again' % mid)
+        e = moves_ts.entry(mid)
+        if e is None:
+            fail('move %s not found' % mid)
+        got = fields(e[2])
+        extra = sorted(set(got) - set(expected) - C5_IGNORED_KEYS)
+        if extra:
+            fail('move %s: the pin has fields the C5 facts do not list: %s' % (mid, ', '.join(extra)))
+        for key, want in expected.items():
+            if key not in got:
+                fail('move %s: the pin has no %s' % (mid, key))
+            have = c5_value(key, got[key][1])
+            if have != want:
+                fail('move %s: %s is %r in the pin, not %r' % (mid, key, have, want))
+
+
 def build_pool(root, repo, dx):
     """The pool tables: the extended data as the prefix, then the new rows of step P1 (POOL_ITEMS, POOL_ABILITIES),
     then those of step G2 (G2_MOVES, G2_ITEMS, G2_ABILITIES and the formes of SETS_G2), then every other move, item,
@@ -4564,6 +4608,7 @@ def build_pool(root, repo, dx):
     legal = load_legal_pool(repo)
     check_g8_conditions(moves_ts)
     check_c4_facts(moves_ts, champ_moves)
+    check_c5_facts(moves_ts, champ_moves)
     check_g15_facts(moves_ts, items_ts)
     check_g30_facts(abil_ts, champ_abil)
     check_g28_items(items_ts)

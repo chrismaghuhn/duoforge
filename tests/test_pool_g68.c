@@ -25,7 +25,7 @@ static void check_handlers(df_test *t)
     DF_CHECK_EQ_U64(t, dfi_pool_moves[DFI_MOVE_THUNDERWAVE].special, DFI_SPECIAL_THUNDER_WAVE);
     DF_CHECK_EQ_U64(t, DFI_SPECIAL_STEEL_BEAM, DFI_SPECIAL_PHANTOM_FORCE + 1u);
     DF_CHECK_EQ_U64(t, DFI_SPECIAL_THUNDER_WAVE, DFI_SPECIAL_STEEL_BEAM + 1u);
-    DF_CHECK_EQ_U64(t, DFI_SPECIAL_UNMODELED, DFI_SPECIAL_PARTIAL_TRAP + 1u); /* G72b Dragon Cheer (97 after King's Shield, Alluring Voice and Dragon Cheer) */
+    DF_CHECK_EQ_U64(t, DFI_SPECIAL_UNMODELED, DFI_SPECIAL_ENDEAVOR + 1u /* C5 (5cy): UNMODELED follows Endeavor, the last handler (batch 8 merge order) */); /* G72b Dragon Cheer (97 after King's Shield, Alluring Voice and Dragon Cheer) */
     /* Fire Punch and Ice Hammer are data rows of the existing paths. */
     DF_CHECK_EQ_U64(t, dfi_pool_moves[DFI_MOVE_FIREPUNCH].special, DFI_SPECIAL_NONE);
     DF_CHECK_EQ_U64(t, dfi_pool_moves[DFI_MOVE_ICEHAMMER].special, DFI_SPECIAL_NONE);
