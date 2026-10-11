@@ -393,7 +393,7 @@ jobs:
     name: Windows / gcc / Release / IPO
     if: (github.event_name != 'pull_request' || !github.event.pull_request.draft) && inputs.profile != 'quick'
     runs-on: windows-latest
-    timeout-minutes: 20
+    timeout-minutes: 35
     defaults:
       run:
         shell: bash

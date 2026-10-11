@@ -504,14 +504,24 @@ class ExtSupportedTest(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "ext_supported"):
                 ext_supported_of(bad)
 
-    def test_live_policy_refuses_a_mask_that_needs_records(self):
+    def test_live_play_of_a_mask_that_needs_records(self):
+        # HauptSession, 2026-10-10: the live policy takes a network that reads view-extension records, and the Game
+        # encodes the tracker's extension record (Tracker.observation_ext). That record needs the pool tables, so
+        # closure tables are refused; a feature the tracker does not fold stops it at the line that would set it
+        # (test_live_search: the stop forfeits, counted as stop:feature:X).
+        from duoforge_live import data, game
         from duoforge_live.policy import Policy
         params = _random_params(features.OBS_SIZE, 8)
         self.assertEqual(Policy(params, features.ENCODER, features.BASE_VALUE_FEATURES).ext_supported,
                          features.BASE_VALUE_FEATURES)
+        closure, pool = data.load(), data.load(kind="pool")
+        game.check_tables(closure, Policy(params, features.ENCODER, features.BASE_VALUE_FEATURES))
         for name in ("AURORA_VEIL", "ENCORE"):
+            policy = Policy(params, features.ENCODER, 1 << features.FEATURE_BITS[name])
+            self.assertEqual(policy.ext_supported, 1 << features.FEATURE_BITS[name])
             with self.assertRaisesRegex(ValueError, "records"):
-                Policy(params, features.ENCODER, 1 << features.FEATURE_BITS[name])
+                game.check_tables(closure, policy)
+            game.check_tables(pool, policy)
 
 
 if __name__ == "__main__":

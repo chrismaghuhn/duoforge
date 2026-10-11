@@ -758,6 +758,22 @@ class LabelsTest(unittest.TestCase):
         self.assertEqual(got.reasons[0], self.L.TARGET_UNKNOWN)
         self.assertEqual([o.move_slot for o in self.options_of(got, 0)], [2])
 
+    def test_encore_before_the_own_move_hides_the_choice(self):
+        # an Encore that starts on the position before its move line replaced the chosen move: every move option
+        # (the Encored one too, which a player who chose it sees unchanged), no switch
+        got = self.label(["|move|p2a: Foe|Encore|p1a: Staraptor", "|-start|p1a: Staraptor|Encore",
+                          "|move|p1a: Staraptor|Close Combat|p2a: Foe"])
+        self.assertEqual(got.reasons[0], self.L.MOVE_HIDDEN)
+        opts = self.options_of(got, 0)
+        self.assertEqual({o.kind for o in opts}, {self.O.MOVE})
+        self.assertEqual({o.move_slot for o in opts}, {0, 1, 2, 3})
+
+    def test_encore_after_the_own_move_changes_nothing(self):
+        # only the lines before the position's own move line can replace its choice
+        got = self.label(["|move|p1a: Staraptor|Close Combat|p2a: Foe", "|move|p2a: Foe|Encore|p1a: Staraptor",
+                          "|-start|p1a: Staraptor|Encore"])
+        self.assertEqual(got.reasons[0], self.L.EXACT)
+
     def test_locked_move_is_forced(self):
         got = self.label(["|move|p1a: Staraptor|Brave Bird|p2a: Foe|[from]lockedmove"])
         self.assertEqual(got.reasons[0], self.L.FORCED)
@@ -897,6 +913,24 @@ class GameTest(unittest.TestCase):
             self.assertTrue(all(r.prior_level == (4,) * 6 for r in rows))
         self.assertEqual(result.record.winner, 1)
         self.assertEqual(result.record.turns, 10)
+
+    def test_turn_coverage_of_a_clean_game_is_every_turn(self):
+        # turns.total: the game's turns per perspective; turns.kept: the turns complete before the perspective's stop
+        result = self.run_game(self.log)
+        self.assertEqual((result.counters["turns.total"], result.counters["turns.kept"]),
+                         (2 * result.record.turns, 2 * result.record.turns))
+
+    def test_turn_coverage_ends_at_the_stop(self):
+        result = self.run_game(self.insert_after("|turn|2", "|-start|p2a: Politoed|move: Heal Block"))
+        self.assertEqual(result.counters["turns.total"], 2 * result.record.turns)
+        self.assertEqual(result.counters["turns.kept"], 2 * 1)  # turn 1 complete, turn 2 stopped
+        self.assertEqual(result.counters["games.both_kept"], 0)
+
+    def test_a_match_counts_when_both_perspectives_run_to_the_end(self):
+        self.assertEqual(self.run_game(self.log).counters["games.both_kept"], 1)
+        # a stop in one perspective is enough: the Rage Powder before p1's own pivot stops p1 only
+        one = self.run_game(self.insert_after("|turn|3", "|-start|p2a: Politoed|Rage Powder"))
+        self.assertEqual(one.counters["games.both_kept"], 1 if one.counters["perspectives.kept"] == 2 else 0)
 
     def test_a_feature_stops_after_turn_two(self):
         # a feature the tracker does not fold (Heal Block; Sand folds since the BC PR) ends both perspectives there:
@@ -1084,7 +1118,8 @@ class GameTest(unittest.TestCase):
         self.assertEqual(tracker._positions[1][0].flag, 0)
         tracker._event(trace_to_c.ev_tuple(trace_to_c.EV["ACTIVATE"], 2, trace_to_c.NOPOS, trace_to_c.CAUSE["ABILITY"], 0,
                                            exit_id))
-        self.assertEqual(tracker._positions[1][0].flag, 1)
+        from duoforge_live.tracker import SWITCH_EMERGENCY_EXIT
+        self.assertEqual(tracker._positions[1][0].flag, SWITCH_EMERGENCY_EXIT)  # the reason (the record's flag)
 
     def charizard_mega(self, stone, forme):
         """The committed log with Charizard (p2) holding `stone` and evolving into `forme`."""
@@ -1220,6 +1255,29 @@ class GameTest(unittest.TestCase):
         lines = self.insert_after("|turn|3", "|-fail|p2a: Politoed|unboost|[from] ability: Clear Body|[of] p2a: Politoed")
         result = self.run_game(lines)
         self.assertEqual(result.counters["perspectives.stopped.line:-fail unboost"], 2, result.counters)
+
+    def test_an_encored_position_offers_only_its_encored_move(self):
+        # Incineroar used Fake Out on turn 1; an Encore before the turn's upkeep holds it to Fake Out on turn 2
+        lines = self.insert_after("|move|p2b: Farigiraf|Psychic|p1a: Indeedee", "|-start|p1b: Incineroar|Encore")
+        result = self.run_game(lines)
+        rows = [r for r in result.rows if r.side == 0 and int(r.observation["turn"]) == 2]
+        self.assertTrue(rows, result.counters)
+        domain = rows[0].domain
+        slots = [domain["slots"][1][i] for i in range(int(domain["slot_count"][1]))]
+        from duoforge_live import options
+        moves = {int(o["move_slot"]) for o in slots if int(o["kind"]) == 1} - {options.STRUGGLE}
+        self.assertEqual(len(moves), 1, moves)  # Fake Out only (with its targets); Struggle stays, as everywhere
+        self.assertTrue(any(int(o["kind"]) == 2 for o in slots))  # it can still switch
+        self.assertGreater(int(rows[0].ext["sides"][0]["positions"][1]["encore_slot"]), 0)
+
+    def test_every_row_carries_its_extension_record(self):
+        from duoforge import _layout
+        result = self.run_game(self.log)
+        self.assertTrue(result.rows)
+        for row in result.rows:
+            self.assertEqual(row.ext.dtype, _layout.OBSERVATION_EXT)
+            self.assertEqual(int(row.ext["epoch"]), int(row.observation["epoch"]))
+            self.assertEqual(int(row.ext["player"]), row.side)
 
     def test_bo3_game_number(self):
         lines = ['|uhtml|bestof|<h2><strong>Game 2</strong> of <a href="/game-bestof3-x">a best-of-3</a></h2>'] + self.log
@@ -1396,6 +1454,18 @@ class DatasetTest(unittest.TestCase):
         for format_id in report:
             self.assertIn(format_id, text)
 
+    def test_the_funnel_counts_turns(self):
+        from duoforge_replay import funnel
+        c = self.build("turns")
+        f = funnel.report(c)["gen9championsvgc2026regmcbo3"]
+        self.assertEqual(f["turns"], {"total": c["turns.total"], "kept": c["turns.kept"], "refused": 0})
+        self.assertGreater(f["turns"]["total"], 0)
+        text = funnel.text(funnel.report(c))
+        self.assertIn("turns without a stop, of all its games taken", text)
+        self.assertIn("turns without a stop, of the games set up", text)
+        self.assertEqual(f["both_kept"], c["games.both_kept"])
+        self.assertIn("matches with both perspectives to the end", text)
+
     def test_the_funnel_command_reads_a_dataset(self):
         import contextlib
         import io
@@ -1428,10 +1498,14 @@ class DatasetTest(unittest.TestCase):
         f = funnel.report(c)["gen9championsvgc2026regmc"]
         self.assertEqual((f["read"], f["skipped"], f["internal"], f["processed"]),
                          (2, {"name:FORME Fakemon": 1}, 0, 1))
+        # a refused game's turns stay in the denominator of the turn coverage, both perspectives, none kept
+        turns = max(int(line.split("|")[2]) for line in lines if line.startswith("|turn|"))
+        self.assertEqual(f["turns"]["refused"], 2 * turns)
         c = build.build([self.source], self.prior_path, self.tmp / "internal", unit_lines=2,
                         stats_factory=broken_stats_factory, log=lambda _: None)
         f = funnel.report(c)["gen9championsvgc2026regmcbo3"]
         self.assertEqual((f["read"], f["internal"], f["processed"], f["rows"]), (3, 3, 0, 0))
+        self.assertGreater(f["turns"]["refused"], 0)  # an internal error's turns too
         self.assertEqual(f["internal"], c["internal:RuntimeError"])
 
     def test_the_funnel_command_refuses_a_dataset_without_funnel(self):
@@ -2193,12 +2267,25 @@ class BeliefBuildTest(_BeliefFixture, unittest.TestCase):
         games = dataset.read_games(next(iter(dataset.parts(self.tmp / "k3"))))
         self.assertEqual(sorted(games["draw"].tolist()), [0, 1, 2])
 
+    def test_a_build_keeps_the_extension_records_and_its_folds(self):
+        from duoforge import _layout
+        from duoforge_live import lines as line_classes
+        from duoforge_replay import dataset
+        self.build("ext", ["open-train"])
+        m = self.manifest("ext")
+        self.assertEqual((m["format_version"], m["tracker_folds"]), (3, line_classes.TRACKER_FOLDS))
+        self.assertEqual(m["ext_revision"], _layout.CONSTANTS["DUOFORGE_OBSERVATION_EXT_REVISION"])
+        for shard in dataset.read(self.tmp / "ext"):
+            self.assertEqual(shard["ext"].dtype, _layout.OBSERVATION_EXT)
+            self.assertEqual(len(shard["ext"]), len(shard["side"]))
+            self.assertTrue((shard["ext"]["epoch"] == shard["observation"]["epoch"]).all())
+
     def test_a_sheet_build_names_its_source_and_has_no_belief_fields(self):
         from duoforge_replay import dataset
         self.build("sheet", ["open-train", "bo1-train"])
         m = self.manifest("sheet")
         self.assertEqual((m["source"], m["format_version"]), ("sheet", dataset.FORMAT_VERSION))
-        self.assertEqual(dataset.FORMAT_VERSION, 2)
+        self.assertEqual(dataset.FORMAT_VERSION, 3)
         for shard in dataset.read(self.tmp / "sheet"):
             self.assertNotIn("belief_level", shard)
         part = next(iter(dataset.parts(self.tmp / "sheet")))

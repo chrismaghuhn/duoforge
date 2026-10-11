@@ -17,8 +17,9 @@ encodes every row once with features.encode_batch under the BC mask, and gives:
 The mask (bc_mask) is the base-value features the loaded library supports at run
 time (observe_ext's `supported`, as SelfPlay reads it). It must equal the support
 the tracker parsed when it folded the rows (lines.LIBRARY_SUPPORTED); a mismatch
-is an explicit error. The shards carry no extension records, so no record bit
-can be in the mask.
+is an explicit error. The shards carry each row's extension record (format version 3), so the mask holds every
+feature the tracker folds; a dataset built without the records (versions 1 and 2) or folded under other folds is
+refused: its rows can hold fold states the encoder would not see.
 """
 import hashlib
 import json
@@ -60,7 +61,7 @@ def bc_mask(context):
                          f"run-time mask {library:#x}: rebuild the library or the checkout")
     # only the bits the tracker folds: a base-value bit it does not fold never reaches a row (its lines stop), so a
     # network would keep random input rows for it and record it as learned
-    return features.BASE_VALUE_FEATURES & library & lines.TRACKER_FOLDS
+    return library & lines.TRACKER_FOLDS
 
 
 def rating_weight(rating):
@@ -166,6 +167,19 @@ def dataset_source(out):
     raise ValueError(f"{out}: a format version {manifest.get('format_version')} manifest that names no source")
 
 
+def _check_folds(out):
+    """ValueError unless the dataset carries the extension records (format version 3) and was folded under the
+    tracker folds of this checkout."""
+    manifest = json.loads((Path(out) / "manifest.json").read_text(encoding="utf-8"))
+    version = manifest.get("format_version")
+    if not isinstance(version, int) or version < 3:
+        raise ValueError(f"{out} was built without the extension record (format version {version}): since #334 its "
+                         "rows can hold fold states the encoder cannot see; rebuild it")
+    if manifest.get("tracker_folds") != lines.TRACKER_FOLDS:
+        raise ValueError(f"{out}: rows folded under other folds ({manifest.get('tracker_folds')!r}, this checkout "
+                         f"{lines.TRACKER_FOLDS:#x}): rebuild it")
+
+
 def _source_weight(out, source_weights):
     """The weight of a dataset's source: as named, 1 for sheets otherwise; any other source must be named."""
     source = dataset_source(out)
@@ -200,6 +214,7 @@ def load(dirs, context, mask, format_weights=None, weights="rating", source_weig
         raise ValueError(f"weights must be 'rating' or 'uniform', not {weights!r}")
     for out in dirs:
         _check_dataset(out, context)
+        _check_folds(out)
     source_weight = {out: _source_weight(out, source_weights) for out in dirs}
     by_players = {out: dataset_source(out) != "sheet" for out in dirs}  # drawn sheets change with each draw
     n = sum(_shard_rows(out) for out in dirs)
@@ -223,7 +238,7 @@ def load(dirs, context, mask, format_weights=None, weights="rating", source_weig
             k = len(shard["game"])
             sl = slice(at, at + k)
             game, side = shard["game"].astype(np.int64), shard["side"].astype(np.int64)
-            obs, slots, pair_mask = features.encode_batch(shard["observation"], shard["domain"], ext=None,
+            obs, slots, pair_mask = features.encode_batch(shard["observation"], shard["domain"], ext=shard["ext"],
                                                           ext_supported=mask)
             is_team = shard["domain"]["kind"] == TEAM
             pairs = (_bits(shard["label_slots"][:, 0], OPTIONS)[:, :, None]
