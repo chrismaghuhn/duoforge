@@ -217,6 +217,23 @@ typedef struct tally {
     uint32_t contradicted;
 } tally;
 
+/* decision 0060 (approved 2026-10-11): a view with a partial trap is published (its presence, source, move and band are
+   public) but not rebuilt: the drawn turns are hidden, so from_view refuses it with E_UNSUPPORTED. Any trapped position
+   (its trap_turns byte is hidden or nonzero in the view) makes the view a trapped one. */
+static bool view_has_trap(const duoforge_public_state *v)
+{
+    for (uint32_t side = 0u; side < 2u; ++side) {
+        for (uint32_t p = 0u; p < 2u; ++p) {
+            const size_t off = DFI_ENC_TAIL_OFF + DFI_ENC_TAIL_SIDES_OFF + side * DFI_ENC_TAIL_SIDE_SIZE + DFI_ENC_TAIL_POS_OFF +
+                               p * DFI_ENC_TAIL_POS_SIZE + DFI_ENC_TAIL_POS_TRAP_TURNS_OFF;
+            if (v->state[off] != 0u) {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
 static void check_state(df_test *t, const duoforge_context *ctx, const duoforge_battle *b, duoforge_battle *world,
                         uint64_t *rs, tally *ty)
 {
@@ -243,6 +260,12 @@ static void check_state(df_test *t, const duoforge_context *ctx, const duoforge_
                 ty->confused += sb[15u + 21u * q + 15u] == DUOFORGE_VIEW_HIDDEN;
                 ty->charging += sb[15u + 21u * q + 18u] == DUOFORGE_VIEW_HIDDEN_TARGET;
             }
+        }
+        if (view_has_trap(&view)) {
+            /* decision 0060: the trapped view is refused by the rebuild and by nothing else; the untrapped views below keep
+             * the success expectation */
+            DF_CHECK(t, duoforge_battle_from_view(ctx, &view, &h, world) == DUOFORGE_E_UNSUPPORTED);
+            continue;
         }
         DF_CHECK(t, duoforge_battle_from_view(ctx, &view, &h, world) == DUOFORGE_OK);
         /* Step G46 (decision 0023): the foe's bench order past its actives is not public, so an honest world takes it from
