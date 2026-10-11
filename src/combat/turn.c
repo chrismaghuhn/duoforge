@@ -5633,8 +5633,9 @@ static duoforge_status dfi_run_baton_pass(dfi_run *r, uint32_t user)
      * (combineResults keeps the boolean), and the hit loop breaks before its Updates (data/mods/champions/scripts.ts:526, the
      * fill at :544): no Update on this path. Nothing is copied, so no refusal below applies to it. */
     if (!dfi_can_switch(b, side)) {
-        dfi_emit_plain(r, DUOFORGE_EVENT_FAIL, user);
-        dfi_still(r);
+        /* The move's result is false (issue 389; the selfSwitch block of runMoveEffects combines false, sim/battle-actions.ts:1292-
+         * 1295, trySpreadMoveHit sets moveResult false, sim/battle-actions.ts:606-616): dfi_fail_still sets DFI_MRES_FALSE. */
+        dfi_fail_still(r, user);
         return DUOFORGE_OK;
     }
     /* The refusals of decision 0042 section 6: the pass would copy these states, and the engine does not model the copy of them. */
