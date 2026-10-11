@@ -33,7 +33,7 @@
 #include "reference/conformance_pool.h"
 #include "support/pool.h"
 #define DF_CONF_FORMES dfi_pool_formes
-#define DF_POOL_DATA_BATTLES 763u /* the recorded pool battles: the six G90 battles (decision 0060), and before them: main's 717, sub_sitrus_tie, the G74 and G76 battles, the thirteen G78 battles, the nine hit-loop battles of chris/expansion-hitloop-fixes, and the two mirrored replay-tracker battles of main (719 on main) */
+#define DF_POOL_DATA_BATTLES 768u /* the recorded pool battles: the six G90 battles (decision 0060), G73's five Moody battles and main's 757 (main 762): main's 717, sub_sitrus_tie, the G74 and G76 battles, the thirteen G78 battles, the nine hit-loop battles of chris/expansion-hitloop-fixes, and the two mirrored replay-tracker battles of main (719 on main)
 #elif defined(DF_CONFORMANCE_TEAM_C)
 #include "data/extended_tables.h"
 #include "reference/conformance_team_c.h"

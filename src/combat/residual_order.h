@@ -59,7 +59,8 @@
 #define DFI_RES_LOCK 17u
 /* The partial trap (step G90, decision 0060; data/conditions.ts:222-258): order 13, sub-order 2, a callback every turn (its damage
  * line, or the end line at 0 turns). The turns go down first; a trap whose source is gone ends silently in the same handler. */
-#define DFI_RES_PARTIAL_TRAP 18u
+#define DFI_RES_PARTIAL_TRAP 25u
+#define DFI_RES_MOODY 18u /* Moody's onResidual: order 28, sub-order 2 (step G73; the same key as Speed Boost), a callback that draws */
 #define DFI_RES_NO_ORDER 0xFFFFFFFFu
 
 /* The exact test's bounds: the lists of the engine have at most 3 + 4 * 2 + 19 * 4 entries, a few draws and a few

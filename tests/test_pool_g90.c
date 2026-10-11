@@ -182,8 +182,8 @@ static void test_row(df_test *t)
         DF_CHECK(t, dfi_pool_move_unmodeled[moves[i]] == NULL);
     }
     DF_CHECK_EQ_U64(t, DUOFORGE_VOLATILE_PARTIAL_TRAP, 12u);
-    DF_CHECK_EQ_U64(t, DFI_SITE_PARTIAL_TRAP_TURNS, 23u);
-    DF_CHECK_EQ_U64(t, DFI_RES_PARTIAL_TRAP, 18u);
+    DF_CHECK_EQ_U64(t, DFI_SITE_PARTIAL_TRAP_TURNS, 32u);
+    DF_CHECK_EQ_U64(t, DFI_RES_PARTIAL_TRAP, 25u);
 }
 
 /* The start and the residual of Wrap with Binding Band (g90_wrap_band, Milotic on flat 1 hits Golisopod on flat 2 every turn):

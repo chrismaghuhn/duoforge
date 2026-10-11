@@ -138,8 +138,10 @@ def _slot_label(segment, side, k, options_list, moves, member_of, tables, vacant
         if kind == "move" and flat_position(parts[2]) == position:
             if encored:
                 # Encore started on this position before it moved: a queued move of another slot is replaced by the
-                # Encored one (Champions), so the move line is not what was chosen
-                return _all(options_list), UNKNOWN
+                # Encored one (Champions), so the move line may not be what was chosen; it was some move (the
+                # Encored one too: a player who chose it sees no replacement), with the shown Mega choice
+                mask = _move_options(options_list, mega)
+                return (mask, MOVE_HIDDEN) if mask else (_all(options_list), UNKNOWN)
             return _move_label(segment, index, parts, side, options_list, moves, mega, tables, vacant)
     return None, None
 

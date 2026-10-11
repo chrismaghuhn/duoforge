@@ -662,6 +662,18 @@ duoforge_status duoforge_battle_public_causes(const duoforge_context *ctx, const
     return DUOFORGE_OK;
 }
 
+duoforge_status duoforge_hp_display(uint32_t hp, uint32_t hp_max, uint8_t *out_percent, uint8_t *out_flag)
+{
+    if (out_percent == NULL || out_flag == NULL) {
+        return DUOFORGE_E_NULL_ARGUMENT;
+    }
+    if (hp_max == 0u || hp_max > 0xFFFFu || hp > hp_max) {
+        return DUOFORGE_E_INVALID_ARGUMENT;
+    }
+    dfi_hp_display(hp, hp_max, out_percent, out_flag);
+    return DUOFORGE_OK;
+}
+
 /* ---- the world ---- */
 
 static bool dfi_all_zero(const uint8_t *p, size_t n)
