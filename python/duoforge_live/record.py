@@ -413,6 +413,9 @@ def _tail(t, s, boundary):
             entries[2:] = [PARTY_HIDDEN] * 4
         party += _party_bytes(entries)
     s.put_list("tail.field.party_order", party)
+    # tail rev 5 (step G80): Ally Switch's counter per flat position, (level << 2) | turns, 0 = none
+    s.put_list("tail5.ally_switch", [(p.ally_level << 2) | p.ally_turns if p.ally_level else 0
+                                      for side in (0, 1) for p in t._positions[side]])
     for side in (0, 1):
         pre = f"tail.side{side}."
         s.put(pre + "aurora_veil_turns", t._conditions[side][3])

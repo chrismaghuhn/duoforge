@@ -134,7 +134,13 @@ def fields(pool=True):
         out += _block(f"tail5.position{flat}.", tail5 + _o("TAIL5_POS_OFF") + flat * _o("TAIL5_POS_SIZE"), _sub((
             ("position_flags", "TAIL5_POSITION_FLAGS_OFF"), ("future_sight", "TAIL5_FUTURE_SIGHT_OFF"))),
             _o("TAIL5_POS_SIZE"))
-    out.append(("tail5.reserved", tail5 + _o("TAIL5_RESERVED_OFF"), _o("TAIL5_RESERVED_SIZE")))
+    # The reserve block: the Ally Switch counter of each position (step G80: one byte per flat position at its offset, the
+    # rest is reserved and zero).
+    res = tail5 + _o("TAIL5_RESERVED_OFF")
+    ally, ally_n = _o("TAIL5_ALLY_SWITCH_OFF"), _o("TAIL5_ALLY_SWITCH_COUNT")
+    out.append(("tail5.reserved", res, ally))
+    out.append(("tail5.ally_switch", res + ally, ally_n))
+    out.append(("tail5.reserved2", res + ally + ally_n, _o("TAIL5_RESERVED_SIZE") - ally - ally_n))
     return out
 
 

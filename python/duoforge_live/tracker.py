@@ -149,6 +149,10 @@ class _Position:
         self.encore_turns = 0  # Encore's turns left (the record)
         self.hits_taken = 0  # damaging hits of another Pokemon's move since the entry (the record; Rage Fist)
         self.raised = 0  # a stat of the occupant rose this turn (the record's position flag; Alluring Voice)
+        # Ally Switch's volatile (step G80, decision 0044): the level (counter 3^level) and the turns left, 0 = none. It moves
+        # with the occupant on a swap (the position object moves) and ends with it (reset).
+        self.ally_level = 0
+        self.ally_turns = 0
         self.newly_switched = 0  # the occupant came in this turn (the record's flag under the TEAM_C and POOL kinds)
         self.turn_done = True  # no move of the occupant is left this turn (it moved, could not, or came in or fainted)
         self.unburden_unseen = False  # Knock Off hit an Unburden holder and no -enditem followed (record.py refuses)
@@ -235,6 +239,7 @@ class Tracker:
         self._party = None
         self._accepted = None  # the own choice accepted at the last TURN decision point (it queued the moves)
         self._last_move = None  # (position, move id, target) of the last MOVE event
+        self._as_pending = None  # the position of the last Ally Switch move line, until its outcome line (step G80)
         self._parting_shot = data.tables["MOVE"]["PARTINGSHOT"]
         self._feint = data.tables["MOVE"].get("FEINT", -1)
         self._baton_pass = data.tables["MOVE"].get("BATONPASS", -1)  # its receiver takes the leaver's copy (G74)
@@ -259,6 +264,7 @@ class Tracker:
         self._eject_button = tables["ITEM"].get("EJECTBUTTON")
         self._hit_pivots = {tables["MOVE"][k]: v for k, v in _HIT_PIVOTS.items() if k in tables["MOVE"]}
         self._move_pivots = {tables["MOVE"][k]: v for k, v in _MOVE_PIVOTS.items() if k in tables["MOVE"]}
+        self._ally_move = tables["MOVE"].get("ALLYSWITCH")  # step G80
 
     # ------------------------------------------------------------------ input
     def feed(self, lines):
@@ -581,6 +587,11 @@ class Tracker:
         hp, hp_kind, hp_flag, status, detail, amount, flags = e[6], e[8], e[9], e[10], e[11], e[12], e[13]
         foe = pos != NOPOS and pos // 2 != self.side
         public = foe or (self._spectator and pos != NOPOS)  # folded from the public lines
+        if kind == EV["FAIL"] and e[3] == trace_to_c.CAUSE["NONE"] and pos != NOPOS and self._as_pending == pos:
+            # Ally Switch's consecutive roll failed (onPrepareHit false, -fail|X with [still]): the volatile is deleted, the
+            # next use starts at level 1 (data/moves.ts:326-357; the engine: dfi_ally_switch_prepare)
+            self._at(pos).ally_level = self._at(pos).ally_turns = 0
+            self._as_pending = None
         if kind == EV["TURN"]:
             self._turn = ident
             self._after_upkeep = False
@@ -633,6 +644,7 @@ class Tracker:
                 self._own_display(m, hp, e[7])
         elif kind == EV["MOVE"]:
             p = self._at(pos)
+            self._as_pending = pos if ident == self._ally_move else None
             p.acted = 1
             p.result_turn = self._turn
             if e[3] == trace_to_c.CAUSE["NONE"]:
@@ -788,8 +800,13 @@ class Tracker:
         elif kind == EV["SWAP"]:
             # Ally Switch (step G80, decision 0044; sim/battle.ts swapPosition): the user and its partner change
             # positions with everything that rides on the Pokemon (stages, volatiles, flags)
+            self._as_pending = None
+            self._ally_pass(self._at(pos))  # a passed consecutive roll (or the first use): the counter goes up
             side = self._positions[pos // 2]
             side[pos % 2], side[e[2] % 2] = side[e[2] % 2], side[pos % 2]
+            if pos // 2 == self.side and self._party is not None:
+                # side.pokemon: the two actives exchange their entries (sim/battle.ts:1598-1599)
+                self._party[pos % 2], self._party[e[2] % 2] = self._party[e[2] % 2], self._party[pos % 2]
         elif kind == EV["COPY_BOOST"]:
             # Psych Up (step G80): the user takes the target's seven stages (-copyboost; the copied crit volatiles
             # are silent decision 0018 features)
@@ -838,6 +855,9 @@ class Tracker:
             p.protecting = 1
             p.chain = min(p.chain + 1, STALL_LEVEL_MAX)
             p.stall = STALL_DURATION
+        elif kind == EV["FAIL"] and e[3] == trace_to_c.CAUSE["MOVE"] and ident2 == self._ally_move and self._ally_move is not None:
+            self._as_pending = None
+            self._ally_pass(self._at(pos))  # the roll passed; the onHit found no partner (NOT_FAIL, null)
         elif kind == EV["FAIL"] and e[3] == trace_to_c.CAUSE["NONE"] and self._last_move is not None \
                 and self._last_move[0] == pos and self._last_move[1] in self._move_pivots:
             self._at(pos).flag = 0  # Baton Pass or Revival Blessing failed: no switch
@@ -981,9 +1001,22 @@ class Tracker:
             raise ValueError(f"an own two-turn move without a target: {self._accepted!r}")
         return trace_to_c.abs_target(self.side, int(words[2]))
 
+    def _ally_pass(self, p):
+        """Ally Switch's counter after a passed roll: the first use starts at level 1 (no roll), a later one goes up to 6;
+        either way the duration is 2 turns (dfi_ally_switch_prepare)."""
+        p.ally_level = 1 if p.ally_level == 0 else min(6, p.ally_level + 1)
+        p.ally_turns = 2
+
     def _upkeep(self):
         def down(n):
             return n - 1 if n > 0 else 0
+        for side in (0, 1):
+            for p in self._positions[side]:
+                if p.ally_level:
+                    if p.ally_turns <= 1:
+                        p.ally_level = p.ally_turns = 0  # the residual's end: turns 1 -> 0 (the volatile is deleted)
+                    else:
+                        p.ally_turns -= 1
         self._weather_turns = down(self._weather_turns)
         self._terrain_turns = down(self._terrain_turns)
         self._trick_room = down(self._trick_room)
