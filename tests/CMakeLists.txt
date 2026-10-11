@@ -735,7 +735,7 @@ else()
 endif()
 
 # The learner pipeline (decisions 0014, 0017) needs JAX: DUOFORGE_LEARN_PYTHON.
-foreach(_learn learn learn_v2 bc search honest luck ledger pfsp value_rows distill collect_expert learner_contract p1_eval encoder6_net)
+foreach(_learn learn learn_v2 bc search honest luck ledger pfsp value_rows distill collect_expert learner_contract p1_eval encoder6_net mmd)
     if(DUOFORGE_LEARN_PYTHON)
         add_test(NAME duoforge.python.${_learn}
             COMMAND "${DUOFORGE_LEARN_PYTHON}" -m unittest -v python.tests.test_${_learn}

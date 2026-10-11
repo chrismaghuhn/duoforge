@@ -642,6 +642,19 @@ class AttractConfusionTest(unittest.TestCase):
         other = trace_to_c.ev_tuple(EV["ACTIVATE"], 2, 0, CAUSE["MOVE"], 0, moves["TAILWIND"])
         self.assertIsNone(record.move_result_of(self.data, 2, [confused, other, cant]))
 
+    def test_an_event_whose_position_the_log_does_not_name_determines_no_result(self):
+        # replay rebuild 2026-10-11: Shell Bell after a hit that made its target faint names it without a slot
+        # (-heal|p2a: X|45/100|[from] item: Shell Bell|[of] p1: Y), so the event's other position is unknown (None);
+        # the action's result is then not determined (None), never a crash in the library binding
+        from duoforge_live import record
+        from duoforge_live.data import trace_to_c
+        EV, CAUSE, NOPOS = trace_to_c.EV, trace_to_c.CAUSE, trace_to_c.NOPOS
+        move = trace_to_c.ev_tuple(EV["MOVE"], 2, 0, CAUSE["NONE"], self.data.tables["MOVE"]["THUNDERBOLT"])
+        hit = trace_to_c.ev_tuple(EV["DAMAGE"], 0, NOPOS, CAUSE["NONE"])
+        heal = list(trace_to_c.ev_tuple(EV["HEAL"], 2, 0, CAUSE["ITEM"]))
+        heal[2] = None
+        self.assertIsNone(record.move_result_of(self.data, 2, [move, hit, tuple(heal)]))
+
 
 class HpDisplayTest(unittest.TestCase):
     """duoforge.view.hp_display: the library's display (duoforge_hp_display) and its refusals as DuoforgeError."""
