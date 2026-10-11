@@ -1531,7 +1531,16 @@ int main(void)
                                                 DFI_MOVE_MEGAHORN, DFI_MOVE_MEGAKICK, DFI_MOVE_DRILLPECK, DFI_MOVE_SMARTSTRIKE,
                                                 DFI_MOVE_AQUATAIL, DFI_MOVE_SHADOWPUNCH, DFI_MOVE_BRUTALSWING, DFI_MOVE_PETALBLIZZARD,
                                                 /* step G94: Baneful Bunker (decision 0015 5cv, protect_kind 3) */
-                                                DFI_MOVE_BANEFULBUNKER};
+                                                DFI_MOVE_BANEFULBUNKER,
+                                                /* step C2: the twenty-two damaging moves with secondaries or self effects (decision 0015 entry 5cp) */
+                                                DFI_MOVE_ZENHEADBUTT, DFI_MOVE_PYROBALL,
+                                                DFI_MOVE_HEADLONGRUSH, DFI_MOVE_EXTRASENSORY, DFI_MOVE_CHILLINGWATER, DFI_MOVE_WATERPULSE,
+                                                DFI_MOVE_LUNGE, DFI_MOVE_BLAZEKICK, DFI_MOVE_ACIDSPRAY, DFI_MOVE_PARABOLICCHARGE,
+                                                DFI_MOVE_TORCHSONG, DFI_MOVE_LAVAPLUME, DFI_MOVE_LOWSWEEP,
+                                                DFI_MOVE_SKITTERSMACK, DFI_MOVE_ZINGZAP, DFI_MOVE_IRONTAIL,
+                                                DFI_MOVE_DYNAMICPUNCH, DFI_MOVE_MUDSHOT, 
+                                                DFI_MOVE_CROSSPOISON, DFI_MOVE_POUNCE, DFI_MOVE_MUDSLAP,
+                                                DFI_MOVE_APPLEACID};
         uint32_t marked_count = 0u;
         for (uint32_t id = DFI_EXT_MOVE_COUNT; id < DFI_POOL_MOVE_COUNT; ++id) {
             bool want = false;
@@ -1600,7 +1609,7 @@ int main(void)
          * DragOut and the drag-in. Skill Swap is marked (G70, decision 0041), and dfi_drag_blocked reads the holder's ability
          * at the drag-in (dfi_ability, the current one), so the re-check is correct, not equivalent. */
         DF_CHECK_EQ_U64(&t, dfi_support.moves[DFI_MOVE_SKILLSWAP] != 0u ? 1u : 0u, 1u);
-        DF_CHECK_EQ_U64(&t, marked_count, 222u); /* step G94 (decision 0015 5cv): Baneful Bunker makes 222 (221 before); step C1 (decision 0015 entry 5co): eighteen moves make 221 (203 before); step G88 (decision 0046): Lash Out and Assurance make 203 (201 before); step G78: Dragon Darts makes 201 (200 before); step G76: Destiny Bond and Final Gambit make 200 (198 before); step G74: Baton Pass makes 198; step G72b:Alluring Voice and Dragon Cheer make 197 (195 before); the King's Shield of G66 makes 195; the Skill Swap of G70 makes 194 (193 with the four of G68: Steel Beam, Thunder Wave, Fire Punch, Ice Hammer; 189 with the Phantom Force of G58; 188 of G64, G62 and G60) */ /* 187 of G64 and G62, the Substitute of G60 makes 188 */ /* step G64: Poltergeist, Beat Up, Bug Bite and Sheer Cold (decision 0015 item 5ca). Before: 180; seven more: step G54 (Icicle Spear, Scale Shot, Quick Guard, Upper Hand, Heal Pulse, Strength Sap, Sing) */ /* the eleven of step G44 (Thunder, Power Trip, Ice Fang, Tri Attack and seven data rows), the four of step G46 (Roar, Whirlwind, Dragon Tail, Circle Throw), the four of step G48, Taunt and Yawn (G31), the four hazards (G37), the four of step G39, the four of step G29, Imprison (G38), the three of step G33, Perish Song (G26), the four of step G25, Disable (G27), the ten of step G35, Toxic and Poison Fang (G36), the ten of step G30, the eleven of step G32 and the seven of step G34 */
+        DF_CHECK_EQ_U64(&t, marked_count, 244u); /* step C2 (decision 0015 5cp): 22 moves make 244 (222 before); step G94 (decision 0015 5cv): Baneful Bunker makes 222 (221 before); step C1 (decision 0015 entry 5co): eighteen moves make 221 (203 before); step G88 (decision 0046): Lash Out and Assurance make 203 (201 before); step G78: Dragon Darts makes 201 (200 before); step G76: Destiny Bond and Final Gambit make 200 (198 before); step G74: Baton Pass makes 198; step G72b:Alluring Voice and Dragon Cheer make 197 (195 before); the King's Shield of G66 makes 195; the Skill Swap of G70 makes 194 (193 with the four of G68: Steel Beam, Thunder Wave, Fire Punch, Ice Hammer; 189 with the Phantom Force of G58; 188 of G64, G62 and G60) */ /* 187 of G64 and G62, the Substitute of G60 makes 188 */ /* step G64: Poltergeist, Beat Up, Bug Bite and Sheer Cold (decision 0015 item 5ca). Before: 180; seven more: step G54 (Icicle Spear, Scale Shot, Quick Guard, Upper Hand, Heal Pulse, Strength Sap, Sing) */ /* the eleven of step G44 (Thunder, Power Trip, Ice Fang, Tri Attack and seven data rows), the four of step G46 (Roar, Whirlwind, Dragon Tail, Circle Throw), the four of step G48, Taunt and Yawn (G31), the four hazards (G37), the four of step G39, the four of step G29, Imprison (G38), the three of step G33, Perish Song (G26), the four of step G25, Disable (G27), the ten of step G35, Toxic and Poison Fang (G36), the ten of step G30, the eleven of step G32 and the seven of step G34 */
     }
 
     /* Step AC1: Trace copies the ability of a foe unless that has the pin's notrace flag. The turn code excludes only
