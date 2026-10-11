@@ -734,6 +734,47 @@ BASE_SPECIES_NAME = {'Indeedee-F': 'Indeedee', 'Arcanine-Hisui': 'Arcanine', 'Fl
                      'Samurott-Hisui': 'Samurott'}  # steps G48 and G50: Ceaseless Edge's and Double Shock's user, shown as Samurott (sim/pokemon.ts:329-330)
 
 
+def protocol_aliases(trace, roster_of, maxhp=None):
+    """The protocol names of the roster (lead decision 2026-10-11, the forme key). The static BASE_SPECIES_NAME aliases come
+    first, as before. Then every switch, drag and replace line names its Pokemon by an identifier whose short name is the
+    base species for some formes (`|switch|p2b: Decidueye|Decidueye-Hisui, L50, M|195/195`: Decidueye-Hisui, Goodra-Hisui,
+    Stunfisk-Galar). The roster index of such a line is the one of the details species when that is a roster name, else
+    the one of the short name (a Mega Evolution, whose details are its Mega forme, which is no roster name: the Pokemon
+    keeps its team species). The key stays the team species: the alias maps the short name to that index, and nothing is
+    re-keyed. `|detailschange|` lines are not read: a Mega changes the details of the Pokemon, not its identifier. A short
+    name that two different roster members would take, or a line that matches no roster member, is refused (forme-key).
+    roster_of is changed in place; maxhp (optional) gets the same aliases."""
+    found = [{} for _ in range(2)]
+    for step in trace['steps']:
+        for line in step['log']:
+            parts = line.split('|')
+            if len(parts) < 4 or parts[1] not in ('switch', 'drag', 'replace') or ': ' not in parts[2]:
+                continue
+            pos, short = parts[2].split(': ', 1)
+            side = int(pos[1]) - 1
+            details = parts[3].split(', ', 1)[0]
+            if details in roster_of[side]:
+                index = roster_of[side][details]
+            elif short in roster_of[side]:
+                index = roster_of[side][short]
+            else:
+                raise ConversionError('forme-key', 'trace_to_c: %s on side %d (details %r) matches no roster member'
+                                      % (short, side, details), detail=details)
+            if short in roster_of[side] and roster_of[side][short] != index:
+                raise ConversionError('forme-key', 'trace_to_c: the name %s of side %d is the roster member %s and of %s'
+                                      % (short, side, short, details), detail=short)
+            if found[side].setdefault(short, index) != index:
+                raise ConversionError('forme-key', 'trace_to_c: the name %s of side %d takes two roster members'
+                                      % (short, side), detail=short)
+    for side in range(2):
+        for short, index in found[side].items():
+            if short not in roster_of[side]:
+                roster_of[side][short] = index
+                if maxhp is not None:
+                    team = [k for k, v in roster_of[side].items() if v == index and k in maxhp[side]]
+                    maxhp[side][short] = maxhp[side][team[0]]
+
+
 def abs_target(side, loc):
     """A Showdown target location (foes positive, own side negative) as a
     DuoForge position (side * 2 + slot)."""
@@ -2085,6 +2126,7 @@ def convert_battle(name, spec, trace, tables):
             if species in roster_of[s]:
                 roster_of[s][protocol] = roster_of[s][species]
                 maxhp[s][protocol] = maxhp[s][species]
+    protocol_aliases(trace, roster_of, maxhp)  # the formes whose switch line names the base species (lead decision, forme key)
     steps = []
     dropped_total = 0
     # Illusion (decision 0026): a side with an Illusion member (the sheet's ability), and the state the break and the owner's

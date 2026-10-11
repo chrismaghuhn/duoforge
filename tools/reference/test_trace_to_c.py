@@ -2897,5 +2897,65 @@ class FormeStance(unittest.TestCase):
         self.assertEqual(cm.exception.rule, 'formechange-line')
 
 
+class Forme(unittest.TestCase):
+    """The forme key (lead decision 2026-10-11): a switch line names a forme by its base species in the identifier
+    (`|switch|p2b: Decidueye|Decidueye-Hisui, L50, M|`), and the roster key stays the team species. One case each for the
+    formes whose identifier is the base name (Decidueye-Hisui, Goodra-Hisui, Stunfisk-Galar), a Mega Evolution after its
+    detailschange (the key is the team species, the Mega forme is no key), and the refusals."""
+
+    @staticmethod
+    def battle(roster, lines):
+        return {'steps': [{'log': lines}]}, [dict((name, index) for index, name in enumerate(roster[s])) for s in range(2)]
+
+    def test_decidueye_hisui_is_keyed_by_its_team_species(self):
+        trace, roster = self.battle([['Pikachu'], ['Garchomp', 'Decidueye-Hisui']],
+                                    ['|switch|p2b: Decidueye|Decidueye-Hisui, L50, M|195/195'])
+        trace_to_c.protocol_aliases(trace, roster)
+        self.assertEqual(roster[1]['Decidueye'], 1)  # the switch line of side 1 (p2, slot b) names member 1 by its base species
+        self.assertEqual(roster[1]['Decidueye-Hisui'], 1)  # the team species key is unchanged
+
+    def test_goodra_hisui_is_keyed_by_its_team_species(self):
+        trace, roster = self.battle([['Pikachu'], ['Garchomp', 'Goodra-Hisui']],
+                                    ['|switch|p2a: Goodra|Goodra-Hisui, L50, M|160/160'])
+        trace_to_c.protocol_aliases(trace, roster)
+        self.assertEqual(roster[1]['Goodra'], 1)
+        self.assertEqual(roster[1]['Goodra-Hisui'], 1)
+
+    def test_stunfisk_galar_is_keyed_by_its_team_species(self):
+        trace, roster = self.battle([['Pikachu'], ['Stunfisk-Galar']],
+                                    ['|drag|p2a: Stunfisk|Stunfisk-Galar, L50, M|200/200'])
+        trace_to_c.protocol_aliases(trace, roster)
+        self.assertEqual(roster[1]['Stunfisk'], 0)
+
+    def test_a_mega_evolution_keeps_the_team_species_key(self):
+        """detailschange names the Mega forme; the switch that brings it back names the Mega forme in its details. Both leave
+        the key of the team species (the identifier is Charizard), and the Mega forme is not a key."""
+        trace, roster = self.battle([['Charizard', 'Pikachu'], ['Garchomp']],
+                                    ['|switch|p1a: Charizard|Charizard, L50, M|200/200',
+                                     '|detailschange|p1a: Charizard|Charizard-Mega-X, L50, M',
+                                     '|switch|p1b: Pikachu|Pikachu, L50, M|100/100',
+                                     '|switch|p1a: Charizard|Charizard-Mega-X, L50, M|200/200'])
+        before = dict(roster[0])
+        trace_to_c.protocol_aliases(trace, roster)
+        self.assertEqual(roster[0]['Charizard'], 0)
+        self.assertEqual(roster[0]['Pikachu'], 1)
+        self.assertNotIn('Charizard-Mega-X', roster[0])
+        self.assertEqual(roster[0], before)
+
+    def test_a_short_name_that_two_members_take_is_refused(self):
+        trace, roster = self.battle([['Decidueye-Hisui', 'Decidueye'], ['Garchomp']],
+                                    ['|switch|p1a: Decidueye|Decidueye-Hisui, L50, M|195/195'])
+        with self.assertRaises(SystemExit) as cm:
+            trace_to_c.protocol_aliases(trace, roster)
+        self.assertEqual(cm.exception.rule, 'forme-key')
+
+    def test_a_line_that_matches_no_roster_member_is_refused(self):
+        trace, roster = self.battle([['Pikachu'], ['Garchomp']],
+                                    ['|switch|p2a: Foo|Foo-Bar, L50, M|100/100'])
+        with self.assertRaises(SystemExit) as cm:
+            trace_to_c.protocol_aliases(trace, roster)
+        self.assertEqual(cm.exception.rule, 'forme-key')
+
+
 if __name__ == '__main__':
     unittest.main()
