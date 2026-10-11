@@ -1096,6 +1096,16 @@ def ev_pos(text):
     return None
 
 
+def of_position(text, name_slot):
+    """Step G85: the position of an [of] Pokemon. 'p2a: Gholdengo' -> 3 (ev_pos). A fainted Pokemon that has left its slot is named by
+    its side alone, 'p2: Gholdengo' (Showdown's toString without a slot): its slot is the one the name showed last in this log
+    (name_slot). A name that showed no slot, or none at all, is None (the caller refuses the line)."""
+    pos = ev_pos(text)
+    if pos is None and len(text) > 4 and text[0] == 'p' and text[1] in '12' and text[2:4] == ': ':
+        return name_slot.get(text[4:])
+    return pos
+
+
 # Step G85: the ability forms of the item lines (Pickpocket's silent -enditem, Pickpocket's and Magician's -item).
 PICKPOCKET_FROM = '[from] ability: Pickpocket'
 MAGICIAN_FROM = '[from] ability: Magician'
@@ -1464,6 +1474,7 @@ def step_events(log, viewer, roster_of, maxhp, tables, rb_pending=None, ill=None
     last_user = None  # the position of the last move line's user (Revival Blessing's REVIVE names no position)
     last_move_line = None  # the parts of the last move line (Sheer Cold's `-ohko` names its move through it, step G64)
     revived = None  # (side, name) of the member revived last: its instaswitch line has no [from]
+    name_slot = {}  # step G85: the slot each name showed last in this log (a fainted Pokemon is named by its side in an [of])
     for i, line in enumerate(log):
         if i in skip:
             continue
@@ -1474,6 +1485,10 @@ def step_events(log, viewer, roster_of, maxhp, tables, rb_pending=None, ill=None
         out_line = line
         parts = out_line.split('|')
         kind = parts[1] if len(parts) > 1 else ''
+        for part in parts[2:]:
+            text = part[5:] if part.startswith('[of] ') else part
+            if len(text) > 5 and text[0] == 'p' and text[1] in '12' and text[2] in 'ab' and text[3:5] == ': ':
+                name_slot[text[5:]] = (int(text[1]) - 1) * 2 + (ord(text[2]) - ord('a'))
         if kind in NOT_EVENTS or kind.startswith('t:'):
             continue
         attrs = [x for x in parts[2:] if x.startswith('[')]
@@ -1943,9 +1958,10 @@ def step_events(log, viewer, roster_of, maxhp, tables, rb_pending=None, ill=None
             # [of] (the attacker, which is the line's position) in other. Any other shape is refused.
             of = [a for a in attrs if a.startswith('[of] ')]
             extra = [a for a in attrs if a not in (PICKPOCKET_FROM, '[silent]') and not a.startswith('[of] ')]
-            if (len(of) != 1 or extra or '[silent]' not in attrs or len(args) != 2 or ev_pos(of[0][5:]) != ev_pos(args[0])):
+            if (len(of) != 1 or extra or '[silent]' not in attrs or len(args) != 2 or ev_pos(args[0]) is None or
+                    of_position(of[0][5:], name_slot) != ev_pos(args[0])):
                 raise ConversionError('enditem-line', 'trace_to_c: unknown -enditem %r' % line, detail=line)
-            e = ev_tuple(EV['ITEM_END'], ev_pos(args[0]), ev_pos(of[0][5:]), CAUSE['ABILITY'],
+            e = ev_tuple(EV['ITEM_END'], ev_pos(args[0]), of_position(of[0][5:], name_slot), CAUSE['ABILITY'],
                          tables['ABILITY'][key('Pickpocket')] + 1, tables['ITEM'][key(args[1])] + 1)
         elif kind == '-enditem':
             taken = [a for a in attrs if a.startswith('[from] move: ')]
@@ -1992,9 +2008,10 @@ def step_events(log, viewer, roster_of, maxhp, tables, rb_pending=None, ill=None
             ab = [a for a in attrs if a.startswith('[from] ability: ')]
             of = [a for a in attrs if a.startswith('[of] ')]
             extra = [a for a in attrs if a not in ab and a not in of]
-            if len(ab) != 1 or len(of) != 1 or extra or len(args) != 2:
+            if (len(ab) != 1 or len(of) != 1 or extra or len(args) != 2 or ev_pos(args[0]) is None or
+                    of_position(of[0][5:], name_slot) is None):
                 raise ConversionError('item-line', 'trace_to_c: unknown -item %r' % line, detail=line)
-            e = ev_tuple(EV['ITEM_START'], ev_pos(args[0]), ev_pos(of[0][5:]), CAUSE['ABILITY'],
+            e = ev_tuple(EV['ITEM_START'], ev_pos(args[0]), of_position(of[0][5:], name_slot), CAUSE['ABILITY'],
                          tables['ABILITY'][key(ab[0][len('[from] ability: '):])] + 1, tables['ITEM'][key(args[1])] + 1)
         elif kind == '-item' and not attrs and len(args) == 2:
             # step G67 (decision 0033): the holder's own announcement at its switch-in (Air Balloon's onStart, items.ts:191-195):
