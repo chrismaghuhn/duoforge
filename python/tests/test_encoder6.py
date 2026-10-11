@@ -107,8 +107,10 @@ class Encoder6Test(unittest.TestCase):
         self.assertIn("ext6.own.pos0.volatile2.bit0", reserve)
         self.assertIn("ext6.own.guard.bit7", reserve)
         self.assertNotIn("ext6.own.guard.bit1", reserve)  # bits 0 and 1 are WIDE_GUARD and QUICK_GUARD
-        self.assertEqual(features.version_features(5), (1 << C["DUOFORGE_VIEWEXT_FEATURE_COUNT"]) - 1)
-        self.assertEqual(features.version_features(6) & ~features.version_features(5), FAMILIES)
+        self.assertEqual(features.version_features(5), (1 << 43) - 1)  # fixed: a lane's feature is the reserve's
+        self.assertEqual(features.version_features(5), features.ENCODER5_FEATURES)
+        self.assertEqual(features.version_features(6) & ~features.version_features(5), FAMILIES | features.LANE_FEATURES)
+        self.assertEqual(features.LANE_FEATURES, features.ALL_FEATURES & ~features.ENCODER5_FEATURES & ~FAMILIES)
         self.assertEqual({features.FEATURE_BITS[n] for n in features._FAMILIES}, set(range(59, 64)))
 
     def test_encoder5_columns_are_byte_equal(self):
@@ -201,9 +203,43 @@ class Encoder6Test(unittest.TestCase):
         checked = {(fam, int(bit)) for fam, bit in _x_list("DUOFORGE_VIEWEXT_RESERVE_CHECKED")}
         self.assertFalse(own & checked)
         self.assertEqual(_defined_reserve_bits(), own | checked)
-        # The parser itself: a bit 22 define would count, bit 21 (TRANSFORMED) does not.
+        # The parser itself: bit 22 (HEALING_WISH, G82) counts, bit 21 (TRANSFORMED) does not.
         self.assertNotIn(("RESERVE_VOLATILES", 21), _defined_reserve_bits())
-        self.assertEqual(_x_list("DUOFORGE_VIEWEXT_RESERVE_OWN"), [])
+        self.assertIn(("RESERVE_VOLATILES", 22), _defined_reserve_bits())
+        self.assertIn(("RESERVE_VOLATILES", "22", "HEALING_WISH"), _x_list("DUOFORGE_VIEWEXT_RESERVE_OWN"))
+
+    def test_every_lane_feature_gates_a_reserve_column(self):
+        # A lane's feature (bits 43 to 58: HEALING_WISH 43, G82) is shown only through its reserve bit: each one gates
+        # at least one reserve column, together with its family, and is in no column of encoder 5.
+        lane = [b for b in range(64) if features.LANE_FEATURES >> b & 1]
+        self.assertIn(features.FEATURE_BITS["HEALING_WISH"], lane)
+        for bit in lane:
+            gates = [int(g) for g in features.EXT_COLUMN_MASKS[features.EXT5_SIZE:] if int(g) >> bit & 1]
+            self.assertTrue(gates, bit)
+            self.assertTrue(all(g & FAMILIES for g in gates), bit)
+            self.assertFalse((features.EXT_COLUMN_MASKS[:features.EXT5_SIZE] >> np.uint64(bit) & np.uint64(1)).any())
+        healing = COL["ext6.own.pos0.volatile.bit22"] - features.BASE_OBS_SIZE
+        self.assertEqual(int(features.EXT_COLUMN_MASKS[healing]),
+                         FAMILY["RESERVE_VOLATILES"] | 1 << features.FEATURE_BITS["HEALING_WISH"])
+
+    def test_a_feature_without_a_reserve_column_fails_loudly(self):
+        # A new lane feature whose reserve bit has no entry (no constant of its name in a family, no exception) has no
+        # column anywhere: features.py refuses it at import (_require_columns) instead of keeping a mask bit nothing reads.
+        free = next(b for b in range(43, 59) if not features.ALL_FEATURES >> b & 1)
+        with mock.patch.dict(features._FEATURE_NAME, {free: "NEW_LANE_FEATURE"}):
+            with self.assertRaisesRegex(RuntimeError, "NEW_LANE_FEATURE.*DUOFORGE_VIEWEXT_RESERVE_OWN"):
+                features._require_columns(features.ALL_FEATURES | 1 << free, features.EXT_COLUMN_MASKS)
+        features._require_columns(features.ALL_FEATURES, features.EXT_COLUMN_MASKS)  # today's features all have one
+        # With its bit's constant named after it, the family's own features give it the column's gate.
+        with mock.patch.dict(features.C, {"DUOFORGE_POSITION_EXT2_NEW_LANE_FEATURE": 1 << 9}), \
+                mock.patch.dict(features.FEATURE_BITS, {"NEW_LANE_FEATURE": free}):
+            self.assertEqual(features._own_features("DUOFORGE_POSITION_EXT2_"), {9: free})
+        # Several bits of one feature (Last Resort's slots, G94) name it through the family's exceptions.
+        with mock.patch.dict(features.C, {f"DUOFORGE_POSITION_EXT2_NEW_LANE_FEATURE_{k}": 1 << k for k in range(4)}), \
+                mock.patch.dict(features.FEATURE_BITS, {"NEW_LANE_FEATURE": free}):
+            self.assertEqual(features._own_features("DUOFORGE_POSITION_EXT2_"), {})
+            exceptions = {f"NEW_LANE_FEATURE_{k}": "NEW_LANE_FEATURE" for k in range(4)}
+            self.assertEqual(features._own_features("DUOFORGE_POSITION_EXT2_", exceptions), {k: free for k in range(4)})
 
     def test_batch_refusals_are_the_versions(self):
         # Batch._refused re-encodes a row the C encoder refused with the version's own refusals: a reserve value under
@@ -228,14 +264,16 @@ class Encoder6Test(unittest.TestCase):
             checkpoint.ext_supported_of({"encoder": 6, "ext_supported": gap})
 
     def test_a_growing_tier_count_leaves_encoder_5_alone(self):
-        # The expansion's next tier bit (HEALING_WISH 43): a stand-in feature 43 has no column in encoder 5, so a mask
-        # with it is refused there, and encoder 5's columns and version features stay as they are.
-        with mock.patch.dict(features.FEATURE_BITS, {"STAND_IN": 43}), \
-                mock.patch.object(features, "ALL_FEATURES", features.ALL_FEATURES | 1 << 43):
+        # A lane's feature (HEALING_WISH 43, G82) and the next one (a stand-in at the first free lane bit) have no
+        # column in encoder 5, so a mask with either is refused there, and encoder 5's version features stay as they are.
+        free = next(b for b in range(43, 59) if not features.ALL_FEATURES >> b & 1)
+        with mock.patch.dict(features.FEATURE_BITS, {"STAND_IN": free}), \
+                mock.patch.object(features, "ALL_FEATURES", features.ALL_FEATURES | 1 << free):
             self.assertEqual(features.version_features(5), (1 << 43) - 1)
-            with self.assertRaises(ValueError):
-                features.encode_batch(self.obs, self.domains, _records(self.obs, features.ALL_FEATURES), 1 << 43,
-                                      encoder=5)
+            for bit in (features.FEATURE_BITS["HEALING_WISH"], free):
+                with self.assertRaises(ValueError):
+                    features.encode_batch(self.obs, self.domains, _records(self.obs, features.ALL_FEATURES), 1 << bit,
+                                          encoder=5)
 
     def test_older_encoders_refuse_the_reserve(self):
         base = _records(self.obs, features.ALL_FEATURES)
