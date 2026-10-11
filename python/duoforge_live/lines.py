@@ -149,7 +149,8 @@ EXT_FOLDS = sum(1 << FEATURES[n] for n in ("THROAT_CHOP", "AURORA_VEIL", "PERISH
                                           "MUST_RECHARGE", "TOXIC_SPIKES", "TYPE_CHANGE", "TAUNT", "YAWN",
                                           "DISABLE", "IMPRISON", "STEALTH_ROCK", "LEECH_SEED",
                                           "GLAIVE_RUSH", "RAGE_POWDER", "HEAL_BLOCK", "SPIKES",
-                                          "WIDE_GUARD", "STICKY_WEB")) | ATTRACT_FOLD
+                                          "WIDE_GUARD", "STICKY_WEB",
+                                           "CURSE")) | ATTRACT_FOLD
 TRACKER_FOLDS = BASE_FOLDS | EXT_FOLDS
 SUPPORTED = LIBRARY_SUPPORTED & TRACKER_FOLDS
 
@@ -158,7 +159,7 @@ _START = {"move: Taunt": "TAUNT", "Taunt": "TAUNT", "Encore": "ENCORE", "Substit
           "move: Substitute": "SUBSTITUTE",  # the absorbed hit's -activate (decision 0032, step G60)
           "typechange": "TYPE_CHANGE", "Throat Chop": "THROAT_CHOP", "move: Heal Block": "HEAL_BLOCK",
           "Heal Block": "HEAL_BLOCK", "move: Imprison": "IMPRISON", "Disable": "DISABLE", "Stockpile": "STOCKPILE",
-          "move: Yawn": "YAWN", "move: Leech Seed": "LEECH_SEED", "Salt Cure": "SALT_CURE", "Curse": "CURSE",
+          "move: Yawn": "YAWN", "move: Leech Seed": "LEECH_SEED", "Salt Cure": "SALT_CURE",
           "move: No Retreat": "NO_RETREAT", "Charge": "CHARGE", "move: Dragon Cheer": "DRAGON_CHEER",
           "move: Focus Energy": "FOCUS_ENERGY", "Infestation": "PARTIAL_TRAP", "move: Infestation": "PARTIAL_TRAP",
           "Wrap": "PARTIAL_TRAP", "Bind": "PARTIAL_TRAP", "Fire Spin": "PARTIAL_TRAP", "Whirlpool": "PARTIAL_TRAP",
@@ -276,6 +277,16 @@ def _froms(attrs):
     return [a[len("[from] "):] for a in attrs if a.startswith("[from] ") or a.startswith("[from]")]
 
 
+def _curse(kind, args, attrs):
+    """-start|X|Curse|[of] S (step G84b, decision 0063): the Ghost Curse's volatile, VOLATILE_START with S as its other.
+    Both are flat positions and nothing else is on the line. The engine prints no end line (the volatile ends with its
+    holder), so -end|X|Curse and any other form of the line stop."""
+    if (kind == "-start" and len(args) == 2 and len(attrs) == 1 and attrs[0].startswith("[of] ")
+            and flat_position(args[0]) is not None and flat_position(attrs[0][len("[of] "):]) is not None):
+        return _feature("CURSE")
+    _unknown(kind, "Curse")
+
+
 def _toxic(parts):
     """Whether an HP or status field of the line shows Toxic (badly poisoned): Tox of 0018 section 4."""
     return any(p == "tox" or p.endswith(" tox") for p in parts[2:] if not p.startswith("["))
@@ -295,6 +306,12 @@ def check(line, view):
     attrs = [p for p in parts[2:] if p.startswith("[")]
     args = [p for p in parts[2:] if not p.startswith("[")]
     tables = view.data.tables
+    if kind == "-damage" and "[from] Curse" in attrs:
+        # the residual of the Ghost Curse (step G84b, decision 0063): the holder's HP and no source, DAMAGE of cause
+        # CURSE. Any other form stops; the feature is folded with its start line, or the line stops on it
+        if attrs != ["[from] Curse"] or len(args) != 2 or flat_position(args[0]) is None:
+            _unknown(kind, "[from] Curse")
+        _feature("CURSE")
     if _toxic(parts) and kind in ("switch", "-damage", "-heal", "-status", "-curestatus"):
         return _feature("AILMENT_TOX")
     if kind == "replace":
@@ -396,6 +413,8 @@ def check(line, view):
             return _feature(_SINGLE_MOVE[effect])
         _unknown(kind, effect)
     if kind in ("-start", "-end"):
+        if effect == "Curse":
+            return _curse(kind, args, attrs)
         if effect in (_FOLD_START if kind == "-start" else _FOLD_END):
             return "fold"
         if re.fullmatch(r"perish[0-3]", effect):

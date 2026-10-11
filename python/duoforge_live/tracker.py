@@ -78,6 +78,7 @@ HITS_TAKEN_MAX = _ENC["DFI_TAIL_HITS_TAKEN_MAX"]  # where Rage Fist's count stop
 CHARGE_TURNS = 2  # twoturnmove's duration: the charge and the locked turn end in the second residual
 EXT_REVISION = C["DUOFORGE_OBSERVATION_EXT_REVISION"]
 EXT_THROAT_CHOP = C["DUOFORGE_POSITION_EXT_THROAT_CHOP"]
+EXT_CURSE = C["DUOFORGE_POSITION_EXT_CURSE"]
 ITEM_NOW_NONE = C["DUOFORGE_ITEM_NOW_NONE"]  # duoforge_member_ext.item_now: the member holds nothing
 # The view-extension fields (OBSERVATION_EXT, decision 0018) of each feature the tracker folds: what observation_ext
 # writes, and all that restrict_ext keeps of DuoForge's record for a comparison. ("bit", B): bit B of a position's
@@ -109,6 +110,8 @@ EXT_FIELDS = {
     "ITEM_CHANGE": (("member", "item_now"),),
     # Attract (step G71, decision 0034): the presence bit of the infatuated position; its source is the record's byte
     "RESERVE_VOLATILES": (("bit", C["DUOFORGE_POSITION_EXT_ATTRACT"]),),
+    # Ghost Curse (step G84b, decision 0063): the holder's CURSED bit, the view bit of the Curse volatile
+    "CURSE": (("bit", EXT_CURSE),),
 }
 # The presence bits of a position's volatiles: _Position attribute -> DUOFORGE_POSITION_EXT_* bit.
 _PRESENCE_BITS = (("throat_chop", EXT_THROAT_CHOP), ("must_recharge", C["DUOFORGE_POSITION_EXT_MUST_RECHARGE"]),
@@ -116,15 +119,15 @@ _PRESENCE_BITS = (("throat_chop", EXT_THROAT_CHOP), ("must_recharge", C["DUOFORG
                   ("leech_source", C["DUOFORGE_POSITION_EXT_LEECH_SEED"]),
                   ("imprison", C["DUOFORGE_POSITION_EXT_IMPRISON"]), ("glaive_rush", C["DUOFORGE_POSITION_EXT_GLAIVE_RUSH"]),
                   ("rage_powder", C["DUOFORGE_POSITION_EXT_RAGE_POWDER"]), ("heal_block", C["DUOFORGE_POSITION_EXT_HEAL_BLOCK"]),
-                  ("attract", C["DUOFORGE_POSITION_EXT_ATTRACT"]))
+                  ("attract", C["DUOFORGE_POSITION_EXT_ATTRACT"]), ("cursed", EXT_CURSE))
 # DUOFORGE_FIELD_* of a terrain's FIELD_START event -> DUOFORGE_TERRAIN_* of the observation
 _TERRAIN = {1: C["DUOFORGE_TERRAIN_GRASSY"], trace_to_c.FIELD_PSYCHIC_TERRAIN: C["DUOFORGE_TERRAIN_PSYCHIC"],
             trace_to_c.FIELD_ELECTRIC_TERRAIN: C["DUOFORGE_TERRAIN_ELECTRIC"],
             trace_to_c.FIELD_MISTY_TERRAIN: C["DUOFORGE_TERRAIN_MISTY"]}
 # The folded _Position fields that Baton Pass gives the entering member (src/combat/turn.c dfi_pass_give: Throat Chop's
 # and Perish Song's tail counters among them); Encore, the recharge, a changed type or ability stay with the leaver.
-_PASSED = ("throat_chop", "perish", "taunt", "heal_block", "leech_source")  # with their counts (dfi_pass_give copies the turns
-# and Leech Seed's source slot: the seed has no noCopy, decision 0047)
+_PASSED = ("throat_chop", "perish", "taunt", "heal_block", "leech_source", "cursed")  # with their counts (dfi_pass_give copies the turns
+# and Leech Seed's source slot: the seed has no noCopy, decision 0047; the Ghost Curse's flag too, step G84b: turn.c's copy keeps CURSED)
 # DUOFORGE_SIDE_* of a SIDE_START or SIDE_END event (tailwind 1, reflect 2, light screen 3, Aurora Veil 4) -> the index
 # of the side's turns in Tracker._conditions
 _SIDE_CONDITION = {1: 2, 2: 0, 3: 1, 4: 3}
@@ -209,6 +212,7 @@ class _Position:
         # Evolution ends type_now (the soak_type) and keeps it, as dfi_run_mega does; it ends with the occupant
         self.type2 = 0
         self.disable_turns = 0  # Disable's turns left (the record; the view shows only disable_slot)
+        self.cursed = 0  # the Ghost Curse's volatile is up (presence only; it ends with the occupant, step G84b)
         self.encore_turns = 0  # Encore's turns left (the record)
         self.hits_taken = 0  # damaging hits of another Pokemon's move since the entry (the record; Rage Fist)
         self.raised = 0  # a stat of the occupant rose this turn (the record's position flag; Alluring Voice)
@@ -1133,6 +1137,10 @@ class Tracker:
             self._at(pos).confused = 0
         elif kind == EV["FLASH_FIRE"]:
             self._at(pos).flash_fire = 1
+        elif kind == EV["VOLATILE_START"] and detail == trace_to_c.VOLATILE_CURSE:
+            # The Ghost Curse (step G84b, decision 0063): the holder's CURSED bit, shown to both viewers; the holder's
+            # leaving or faint clears it (reset), the source's does not (the residual goes on)
+            self._at(pos).cursed = 1
         elif kind == EV["VOLATILE_START"] and detail == trace_to_c.VOLATILE_PERISH:
             # Perish Song's count (step G26): the residual's -start|X|perishN, N = 3, 2, 1, then perish0 before the
             # holder faints; the cast's own perish3 line is [silent] (no event), so nothing shows until the first count
