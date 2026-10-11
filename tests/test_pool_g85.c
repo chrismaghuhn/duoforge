@@ -260,7 +260,7 @@ static void check_pickpocket_refusal(df_test *t, duoforge_context *ctx)
 }
 
 /* Magician with two targets of one Speed: Delphox (no item, Magician) uses the spread Dazzling Gleam on two foes of Speed 105
- * each (Ceruledge, Serious, no Speed points; Gholdengo, Calm, 8 Speed points: base Speed 85 and 84, both 105 at level 50), so the
+ * each (Gengar, Serious, no Speed points: Speed 130; Gholdengo, Calm, 208 Speed points: Speed 130), so the
  * speedSort of hitTargets draws and the engine refuses. The control keeps the sheet's Weavile and Primarina, of other Speeds. */
 static void check_magician_tie(df_test *t, duoforge_context *ctx)
 {
@@ -279,23 +279,25 @@ static void check_magician_tie(df_test *t, duoforge_context *ctx)
         const uint32_t dl_moves[2] = {DFI_MOVE_DAZZLINGGLEAM, DFI_MOVE_PROTECT};
         set_moves(dl, 2u, dl_moves);
         if (tie) {
-            duoforge_member_setup ceruledge = setup.sides[0].members[4];
-            ceruledge.nature = DFI_NATURE_SERIOUS;
-            ceruledge.stat_points[5] = 0u;
-            ceruledge.item = 0u;
-            const uint32_t c_moves[1] = {DFI_MOVE_BITTERBLADE};
-            set_moves(&ceruledge, 1u, c_moves);
+            /* Gengar (Serious, no Speed points: base 110, Speed 130) and Gholdengo (Calm, 208 Speed points: base 84, Speed 130):
+             * the same moves as the recorded specs (Shadow Ball). Side 1 keeps its Species Clause: its Gengar (member 2) and
+             * Weavile (member 0) change places with the copies, and Gholdengo comes from side 0's row. */
+            duoforge_member_setup gengar = setup.sides[1].members[2];
+            gengar.nature = DFI_NATURE_SERIOUS;
+            gengar.stat_points[5] = 0u;
+            gengar.item = 0u;
+            const uint32_t ge_moves[1] = {DFI_MOVE_SHADOWBALL};
+            set_moves(&gengar, 1u, ge_moves);
             duoforge_member_setup gholdengo = setup.sides[0].members[3];
             gholdengo.nature = DFI_NATURE_CALM;
-            gholdengo.stat_points[5] = 8u;
+            gholdengo.stat_points[5] = 208u;
             gholdengo.item = 0u;
-            const uint32_t g_moves[1] = {DFI_MOVE_SHADOWBALL};
-            set_moves(&gholdengo, 1u, g_moves);
-            /* side 1 keeps its Species Clause: its Ceruledge (member 4) moves to slot 1 and its Primarina (member 1) to member 4 */
-            const duoforge_member_setup primarina = setup.sides[1].members[1];
-            setup.sides[1].members[0] = gholdengo;
-            setup.sides[1].members[1] = ceruledge;
-            setup.sides[1].members[4] = primarina;
+            const uint32_t gh_moves[1] = {DFI_MOVE_SHADOWBALL};
+            set_moves(&gholdengo, 1u, gh_moves);
+            const duoforge_member_setup weavile = setup.sides[1].members[0];
+            setup.sides[1].members[0] = gengar;
+            setup.sides[1].members[1] = gholdengo;
+            setup.sides[1].members[2] = weavile;
         }
         const duoforge_slot_command cmd[2][2] = {{k_move0_none, k_move1_none}, {k_move0_foe0, k_move0_foe0}};
         const duoforge_status st = one_turn(t, ctx, &setup, cb, cmd);
