@@ -85,6 +85,60 @@ and item changes. The folder split must not change any order.
 **Working rule against conflicts:** a PR changes one bounded area and its tests. Shared interfaces, ids and integration
 points are changed one after another, never in parallel.
 
+## Python tests, tool tests and test tiers (owner addition, 2026-10-11)
+
+- **Python tests by area.** The 62 flat files in `python/tests/` move into folders that mirror the packages:
+  `python/tests/{engine,learn,search,live,replay,eval,data}/` plus `python/tests/support/` for the shared helpers
+  (`_pivot_fixture.py`, `_reference_features.py`, `_replay_reference.py`) and their `fixtures/` and `data/`. The PR body
+  carries the old-to-new path table. The CTest names (`duoforge.python.<name>` and friends) stay unchanged in that step.
+- **Tool tests live with their tool:** `tools/<tool>/tests/` (today about 25 `test_*` files sit between the scripts in
+  `tools/reference/`, and the same pattern exists in `tools/datagen/`, `tools/state_model/`, `tools/cloud/p1_pilot/`).
+- **Each test folder registers its own tests**, as for C: no shared `foreach(_py ...)` line.
+- **Every test has exactly one tier label:** `quick` (seconds, no interpreter extras), `full` (the normal suite),
+  `reference` (needs the pinned Showdown / Node), `slow` (minutes, long sweeps or JAX training checks); plus its area
+  label (`items`, `live`, `search`, ...). `ctest -L quick`, `ctest -L live` and similar then run one tier or one area
+  alone. CI selects by label instead of by regex lists (today the TSan job uses `-R "duoforge\.((batch|search)\.|view$|encode$)"`);
+  the full matrix stays the merge gate and the "no Python or reference test skipped" checks stay.
+
+## Runs: one place, one format (owner addition, 2026-10-11)
+
+A *run* is anything that produces results instead of checking code: training, evaluations and arenas, benchmarks and
+latency measurements, coverage measurements, fuzz campaigns, cloud runs. Today their entry points are scattered
+(`duoforge_learn/{train,bc,bc_eval,p1_eval,ladder,distill,collect_expert}.py`, `duoforge_search/{arena,book_ab,
+preview_ab,expert_eval,eval_manifest,live_latency,tickbench,rowprobe,positions}.py`, `duoforge_live/arena.py`,
+`tools/perf/`, `tools/cloud/`), every tool picks its own output layout, and the replay coverage runner exists only
+outside the repository.
+
+- **Code by kind.** Training stays in `duoforge_learn` (`train`, `bc`, `distill`, `collect_expert`); evaluation, arena,
+  A/B, benchmark and latency entry points move to a new package `python/duoforge_eval/` (the search and learn packages
+  keep only search and learning code). The live arena keeps its client code in `duoforge_live` and gets its entry point
+  in `duoforge_eval`. The coverage runner moves into the repository as `tools/coverage/` (data path as an argument; the
+  replay data itself stays private and outside, AGENTS.md).
+- **Run definitions** (the exact command and arguments of a named, repeatable run; the existing `campaign.conf` format
+  is one) live in `runs/<kind>/<name>.*` (`runs/fuzz/` takes `tools/cloud/aws_fuzz/campaigns/`). `runs/` holds
+  definitions only; launch scripts stay in `tools/cloud/`.
+- **Outputs never land in the repository.** Every run takes `--out`; its default is `$DUOFORGE_RUNS/<kind>/<date>-<name>/`
+  (for example `C:\Dev\runs\...`), and a run refuses an output directory inside the repository.
+  `python/tests/test_repo_hygiene.py` gets a check for that. Weights, checkpoints, caches, logs with match or user ids:
+  private, as before.
+- **One manifest per run:** a shared helper (`python/duoforge/runs.py`, no imports from the learn/search packages)
+  writes `manifest.json` with code commit and dirty flag (falling back to `git -C <repo>` when the worktree's gitdir is
+  not resolvable, the cause of `"code": null` in the #411 arena record), the full arguments, seeds, machine, start and
+  end. Existing tools adopt it as they move.
+- **Reports** (aggregates only) go to `docs/benchmarks/<date>-<name>/README.md` from one template: question, answer,
+  setup, predeclared gates and results, provenance (commit, manifest fields), what it does and does not show.
+- **Old commands keep working** for a transition: every moved entry point leaves a thin module that forwards to the new
+  one and prints the new name. Running sessions (M11, M12, Learner v2) use these commands. The forwarders are removed
+  in a later, separate PR once no session uses them.
+
+## Data and leftovers (owner addition, 2026-10-11)
+
+- `data/` stays the home of checked-in data: `data/teams/`, `data/teams_pending/`, `data/positions/`. Generated files
+  (pool tables, reference headers, layouts) are marked `linguist-generated` in `.gitattributes` and carry a "generated
+  by ... do not edit" header, so reviews and diffs show them as such.
+- `tasks/` (the M0-M4 milestone briefs) moves to `docs/history/tasks/`.
+- `bench/` and `certify/` stay where they are (own CMake targets, referenced by CI); they are not moved.
+
 ## Proof suite (every step; results in the PR body)
 
 - **P1 tests:** full CI green; the sorted `ctest -N` inventory before and after is identical (except where the step
@@ -103,16 +157,20 @@ points are changed one after another, never in parallel.
 |--:|---|---|---|
 | 0 | baseline | record the test inventory incl. skipped tests, the per-battle reference digests, generated-data hashes, the exported symbol list and the existing benchmark baseline, into `docs/benchmarks/<date>-restructure-baseline/` (aggregates only) | n/a |
 | 1 | tests and CMake | move test files into the area folders (rename only), each folder registers its tests with `duoforge_add_test()`, the central file includes the areas; **test names kept** | P1 inventory identical; `git diff -M100%` shows only renames plus the CMake changes |
+| 1b | Python and tool tests | move `python/tests/` into the area folders and tool tests into `tools/<tool>/tests/` (rename only), per-folder registration, **CTest names kept**; then add the tier and area labels and switch the CI selection to labels | P1 inventory identical; `git diff -M100%` renames plus CMake/CI; the label run `ctest -L quick` and the CI jobs run the same tests as before (lists in the PR body) |
 | 2 | reference data and pins | generated reference data per battle (one generated file per battle under `tests/reference/battles/<set>/`, registry built from the directory) instead of the monolithic `conformance_pool.h` / `tiebreak_ref.h`; per-battle pins with the global sums derived; `test_live` record-assembler pins per battle | P2 digest of all battle records old vs new byte-equal; build time before/after measured |
 | 3 | items pilot | move the existing item families out of `turn.c` into `src/combat/items/`, then one bounded effect area | P1–P6; bench with IPO on and off |
 | 4 | abilities, mechanics, moves, forms, flow | one PR per area, same pattern; very large functions (`dfi_run_move_body`, the residual runner, `dfi_get_damage`) are cut into named phase functions one phase per PR | P1–P6 per PR |
 | 5 | data generator and number spaces | split `gen_closure.py` by formes/Pokémon, moves, items, abilities; definition files with compile-time guards for draw sites, residual kinds and bits | P5 identical output and IDs; P2; a static-assert table of every old value |
 | 6 | names and labels | rename tests to behaviour names (old G number in a comment), split mixed tests into areas / `tests/interactions/`, add CTest labels per area so areas can be run alone | P1: every old test case still runs (map old to new names in the PR body); the full CI matrix stays the merge gate |
 | 7 | tracker | split `python/duoforge_live/tracker.py` into a package by fold family, with a re-export module | `test_live`, `test_live_unit`, `test_replay` and the per-battle pins unchanged |
+| 8 | runs | `python/duoforge_eval/`, `runs/`, `tools/coverage/`, `python/duoforge/runs.py` with the manifest, `$DUOFORGE_RUNS` defaults, the report template; one PR per kind (eval, bench, coverage, fuzz), forwarders for every old command | P1; every old command line still runs through its forwarder (one smoke run each, outputs outside the repo); a manifest is written and names the commit; `test_repo_hygiene` refuses an output inside the repo |
+| 9 | data and leftovers | `.gitattributes` generated marks and headers, `tasks/` to `docs/history/tasks/` | P1, P5 (no generated byte changes) |
 
-Order rationale: step 1 removes the most frequent conflict for the least risk; step 2 removes the generated-header and
+Order rationale: step 1 (and 1b for Python) removes the most frequent conflict for the least risk; step 2 removes the generated-header and
 pin conflicts; steps 3–4 are the only risky block and go area by area; step 5 must not change a single generated byte;
-step 6 is cosmetic but valuable once the structure exists.
+step 6 is cosmetic but valuable once the structure exists; step 8 comes last because running sessions call those
+commands, and the forwarders keep them working.
 
 ## Risks to watch
 
