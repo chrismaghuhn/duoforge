@@ -206,7 +206,10 @@
 #define DFI_ENC_TAIL_POS_ABILITY_STATE_OFF 30u /* rev 4 */
 #define DFI_ENC_TAIL_POS_LOCK_TURNS_OFF 31u   /* rev 4 */
 #define DFI_ENC_TAIL_POS_RESERVED_OFF 32u
-#define DFI_ENC_TAIL_POS_RESERVED_SIZE 4u
+/* step G97 (Metal Burst, decision 0063): bytes 33-35 of the position are its state, byte 32 stays reserved */
+#define DFI_ENC_TAIL_POS_METAL_SOURCE_OFF 33u /* u8: flat position of the foe + 1, 0 = none */
+#define DFI_ENC_TAIL_POS_METAL_DAMAGE_OFF 34u /* u16 */
+#define DFI_ENC_TAIL_POS_RESERVED_SIZE 1u
 /* One roster member (offsets within its 10 bytes). */
 #define DFI_ENC_TAIL_MEMBER_ABILITY_OFF 0u /* u16 */
 #define DFI_ENC_TAIL_MEMBER_FORME_OFF 2u   /* u16 */
@@ -316,8 +319,7 @@ _Static_assert(DFI_ENC_TAIL_POS_OFF + DUOFORGE_ACTIVE_PER_SIDE * DFI_ENC_TAIL_PO
                "the members follow the positions");
 _Static_assert(DFI_ENC_TAIL_MEMBER_OFF + DUOFORGE_MAX_ROSTER * DFI_ENC_TAIL_MEMBER_SIZE == DFI_ENC_TAIL_SIDE_SIZE,
                "tail side block is 120 bytes");
-_Static_assert(DFI_ENC_TAIL_POS_RESERVED_OFF + DFI_ENC_TAIL_POS_RESERVED_SIZE == DFI_ENC_TAIL_POS_SIZE,
-               "tail position block is 36 bytes");
+_Static_assert(DFI_ENC_TAIL_POS_METAL_DAMAGE_OFF + 2u == DFI_ENC_TAIL_POS_SIZE, "the metal damage ends the position block (36 bytes)");
 _Static_assert(DFI_ENC_TAIL_POS_TRAP_MOVE_OFF + 2u == DFI_ENC_TAIL_POS_PROTECT_KIND_OFF, "the trap move ends the u16 data");
 _Static_assert(DFI_ENC_TAIL_POS_PROTECT_KIND_OFF + 1u == DFI_ENC_TAIL_POS_MOVE_RESULT_OFF, "the rev 4 bytes follow the protect kind");
 _Static_assert(DFI_ENC_TAIL_POS_LOCK_TURNS_OFF + 1u == DFI_ENC_TAIL_POS_RESERVED_OFF, "the lock turns end the data");
@@ -336,23 +338,24 @@ _Static_assert(DFI_ENC_TAIL5_ILL_SNAPSHOT_OFF + 9u == DFI_ENC_TAIL5_ILL_PENDING_
 _Static_assert(DFI_ENC_TAIL5_POS_OFF + DUOFORGE_ACTIVE_PER_SIDE * DUOFORGE_SIDE_COUNT * DFI_ENC_TAIL5_POS_SIZE ==
                    DFI_ENC_TAIL5_RESERVED_OFF,
                "the positions' rev 5 bytes end the block's data");
-_Static_assert(DFI_ENC_TAIL_RESERVED_COUNT == 45u,
-               "45 of them are reserved (29 of rev 4: step G46 takes 6 of the field block's 7; 35 before it, 43 in rev 3; "
-               "16 more in rev 5)");
+_Static_assert(DFI_ENC_TAIL_RESERVED_COUNT == 33u,
+               "33 of them are reserved (the field block's 1, one byte +32 per position (4), one per roster member (12), and "
+               "the 16 of rev 5; step G97 takes bytes 33-35 of each position, decision 0063)");
 _Static_assert(DFI_STATE_POOL_ENCODED_SIZE == 1357u, "the state with the POOL tail is 1357 bytes");
 /* No padding: every field of the tail in memory is a byte or an aligned u16, so the structs are the encoded data
  * and nothing else (the encoded size without the reserved bytes, plus the pad byte of the field block: a position and a side
  * have an even number of data bytes and need none; rev 5 adds 2 bytes per position and the 18-byte Illusion block). */
-_Static_assert(sizeof(dfi_tail_pos) == DFI_ENC_TAIL_POS_SIZE - DFI_ENC_TAIL_POS_RESERVED_SIZE + DFI_ENC_TAIL5_POS_SIZE,
-               "a position's tail in memory has no padding and none of the reserved bytes");
+_Static_assert(sizeof(dfi_tail_pos) == DFI_ENC_TAIL_POS_SIZE + DFI_ENC_TAIL5_POS_SIZE,
+               "a position's tail in memory has no padding: its 36 encoded bytes (the reserved byte is the pad field) and the rev 5 bytes");
 _Static_assert(sizeof(dfi_tail_illusion) == DFI_ENC_TAIL5_SIDE_SIZE, "the Illusion block is its 18 bytes");
 _Static_assert(sizeof(dfi_tail_side) == DFI_ENC_TAIL_SIDE_SIZE - DFI_ENC_TAIL_SIDE_RESERVED_SIZE -
-                                            DUOFORGE_ACTIVE_PER_SIDE * DFI_ENC_TAIL_POS_RESERVED_SIZE -
                                             DUOFORGE_MAX_ROSTER * DFI_ENC_TAIL_MEMBER_RESERVED_SIZE +
                                             DUOFORGE_ACTIVE_PER_SIDE * DFI_ENC_TAIL5_POS_SIZE + DFI_ENC_TAIL5_SIDE_SIZE,
                "a side's tail in memory has no padding and none of the reserved bytes");
-_Static_assert(sizeof(dfi_pool_tail) == DFI_ENC_TAIL_SIZE - DFI_ENC_TAIL_RESERVED_COUNT + 1u,
-               "the tail in memory has no padding and none of the reserved bytes but the field block's pad");
+_Static_assert(sizeof(dfi_pool_tail) ==
+                   DFI_ENC_TAIL_SIZE - DFI_ENC_TAIL_RESERVED_COUNT + 1u +
+                       DUOFORGE_SIDE_COUNT * DUOFORGE_ACTIVE_PER_SIDE * DFI_ENC_TAIL_POS_RESERVED_SIZE,
+               "the tail in memory has no padding and none of the reserved bytes but the field block's pad and the positions' pads");
 
 /* True for the kinds whose states carry the POOL tail: _POOL and _POOL_DEV. */
 bool dfi_context_has_pool_tail(const struct duoforge_context *ctx);

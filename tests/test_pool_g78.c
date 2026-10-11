@@ -167,7 +167,7 @@ static bool full(const duoforge_battle *b, uint32_t side, uint32_t member)
 static void test_row(df_test *t)
 {
     DF_CHECK_EQ_U64(t, DFI_SPECIAL_DRAGON_DARTS, DFI_SPECIAL_FINAL_GAMBIT + 1u); /* batch5: after G76 Final Gambit (99) */
-    DF_CHECK_EQ_U64(t, DFI_SPECIAL_UNMODELED, DFI_SPECIAL_PSYCHIC_TERRAIN + 1u /* G94: Baneful Bunker (101) follows Dragon Darts */);
+    DF_CHECK_EQ_U64(t, DFI_SPECIAL_UNMODELED, DFI_SPECIAL_METAL_BURST + 1u /* G94: Baneful Bunker (101) follows Dragon Darts */);
     DF_CHECK_EQ_U64(t, dfi_pool_moves[DFI_MOVE_DRAGONDARTS].special, DFI_SPECIAL_DRAGON_DARTS);
     DF_CHECK_EQ_U64(t, dfi_support.moves[DFI_MOVE_DRAGONDARTS], 1u);
     DF_CHECK(t, dfi_pool_move_unmodeled[DFI_MOVE_DRAGONDARTS] == NULL);

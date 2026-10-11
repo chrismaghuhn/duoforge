@@ -355,6 +355,12 @@ typedef struct dfi_tail_pos {
                                 * writes it), bit 1 the occupant's stats were raised this turn, bits 2-3 the Dragon Cheer crit stage;
                                 * bits 4-7 are zero. The flags end with the occupant (dfi_tail_clear_occupant). */
     uint8_t future_sight;      /* tail rev 5 (lane A): 2 bits of turns, 3 bits for the source, 3 spare; zero, nothing writes it yet */
+    uint16_t metal_damage;     /* tail rev 5 (step G97, Metal Burst, decision 0063): the HP that the foe's last numeric hit this turn took
+                                * (the pin's moveDamage); zero whenever metal_source is zero */
+    uint8_t metal_source;      /* tail rev 5 (G97): flat position of that foe + 1; 0 = none. Cleared at turn end and with the occupant
+                                * (sim/pokemon.ts:1548-1550 attackedBy, sim/battle.ts:1703) */
+    uint8_t reserved_pad;      /* always zero: the reserved byte +32 of the encoded position (the codec refuses otherwise); the
+                                * in-memory position is even-sized, as the field block's pad keeps the tail */
 } dfi_tail_pos;
 
 /* tail rev 5 (decision 0026, Illusion), per side: the foe's shown state of the holder on this side. Nothing writes it yet,

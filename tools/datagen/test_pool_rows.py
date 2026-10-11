@@ -249,7 +249,7 @@ class PoolRows(unittest.TestCase):
                 self.assertEqual({n for n, s in special.items() if s == unmodeled}, {n.lower() for n in listed})
                 # A target class beyond the closure's is never in a modelled row.
                 for i, row in enumerate(Rows.move_rows):
-                    if row[7] not in ENGINE_TARGETS and row[7] != 4:
+                    if row[7] not in ENGINE_TARGETS and row[7] != 4 and names_[i] != 'metalburst':  # step G97: Metal Burst's scripted target
                         self.assertEqual(row[28], unmodeled, names_[i])
                     if row[28] == unmodeled:
                         # An UNMODELED row claims nothing beyond its plain data.

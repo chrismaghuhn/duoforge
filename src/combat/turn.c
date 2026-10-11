@@ -1414,6 +1414,26 @@ static duoforge_status dfi_move_targets(dfi_run *r, uint32_t user, uint32_t cls,
         }
         return st;
     }
+    if (cls == DFI_TARGET_CLASS_SCRIPTED) {
+        /* Metal Burst's onModifyTarget (step G97, data/moves.ts:11674-11681): getAtSlot(lastDamagedBy.slot), the occupant
+         * of the slot that hit the user last (sim/battle.ts:1611-1617). Without a record the move's onTry fails, judged
+         * before the hit steps, so there is no target. A record whose occupant is gone (empty or fainted) is not modelled
+         * (E_UNSUPPORTED, never a guess; the recorded battle decides the pin's answer). */
+        if (!r->ctx || !dfi_kind_limits_of(r->ctx->data_kind).pool_rules) {
+            return DUOFORGE_E_UNSUPPORTED;
+        }
+        const uint8_t metal = r->b->tail.sides[user / 2u].positions[user % 2u].metal_source;
+        *count = 0u;
+        if (metal == 0u) {
+            return DUOFORGE_OK;
+        }
+        if (!dfi_alive(r->b, (uint32_t)metal - 1u)) {
+            return DUOFORGE_E_UNSUPPORTED;
+        }
+        targets[0] = (uint32_t)metal - 1u;
+        *count = 1u;
+        return DUOFORGE_OK;
+    }
     if (cls == DUOFORGE_TARGET_CLASS_NORMAL || cls == DUOFORGE_TARGET_CLASS_ANY ||
         cls == DUOFORGE_TARGET_CLASS_ADJACENT_FOE) {
         if (chosen >= DFI_POSITIONS) {
@@ -1607,6 +1627,18 @@ static duoforge_status dfi_get_damage(dfi_run *r, uint32_t user, uint32_t target
     if (md->special == DFI_SPECIAL_FINAL_GAMBIT) {
         *out = (uint32_t)a->hp;
         return dfi_queue_self_faint(r, user);
+    }
+    /* Metal Burst's damageCallback (step G97, data/moves.ts:11657-11664): (lastDamagedBy.damage * 1.5) || 1, the record of the
+     * user (the foe's last numeric hit this turn, the onTry judged before). The float is floored by the damage's clamp
+     * (sim/battle.ts:2215, clampIntRange(damage, 1)), so the power is max(1, floor(1.5 * dealt)), with no critical hit roll,
+     * no formula and no modifier (the same early return as Super Fang). Non-pool data never has the record. */
+    if (md->special == DFI_SPECIAL_METAL_BURST) {
+        if (!dfi_kind_limits_of(r->ctx->data_kind).pool_rules) {
+            return DUOFORGE_E_UNSUPPORTED;
+        }
+        const uint32_t power = (uint32_t)r->b->tail.sides[user / 2u].positions[user % 2u].metal_damage * 3u / 2u;
+        *out = power == 0u ? 1u : power;
+        return DUOFORGE_OK;
     }
     /* Super Fang's damageCallback (step G39, data/moves.ts:18461-18476): getDamage returns clampIntRange(target.hp / 2, 1)
      * before the critical hit roll and the formula (sim/battle-actions.ts:1585-1600), so there is no CRIT or DAMAGE_ROLL
@@ -7226,6 +7258,18 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
      * (its onModifyType, before the hit steps). */
     uint32_t move_type = dfi_move_type_now(b, m, md);
     const bool spread = count > 1u && md->special != DFI_SPECIAL_DRAGON_DARTS; /* step G78: spreadHit is never set for smartTarget */
+    /* Metal Burst's Try (step G97, data/moves.ts:11670-11673): onTry fails unless the user's record names a foe's numeric hit
+     * this turn (getLastDamagedBy(true).thisTurn). The Try event comes before the hit steps and their accuracy roll
+     * (sim/battle-actions.ts:592-596): the fail is -fail and [still], and nothing else is drawn. */
+    if (md->special == DFI_SPECIAL_METAL_BURST) {
+        if (!dfi_kind_limits_of(r->ctx->data_kind).pool_rules) {
+            return DUOFORGE_E_UNSUPPORTED;
+        }
+        if (b->tail.sides[side].positions[q->slot].metal_source == 0u) {
+            dfi_fail_still(r, user);
+            return DUOFORGE_OK;
+        }
+    }
     /* Hit steps: Psychic Terrain and Protect (TryHit), type immunity,
      * accuracy per target. Psychic Terrain's onTryHit (Team C, priority 4,
      * before Protect's 3) stops a move with positive priority (Prankster's
@@ -7518,6 +7562,9 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
     const bool split = dd && r->smart && hit[0] && hit[1];
     bool hit_all[DFI_POSITIONS];
     bool hp_set[DFI_POSITIONS] = {false, false, false, false};
+    /* Metal Burst's record of the move (step G97): the last executed hit of each target, numeric or not (see the damage loop) */
+    bool metal_has[DFI_POSITIONS] = {false, false, false, false};
+    uint32_t metal_num[DFI_POSITIONS] = {0u, 0u, 0u, 0u};
     for (uint32_t i = 0u; i < DFI_POSITIONS; ++i) {
         hit_all[i] = hit[i];
     }
@@ -7664,10 +7711,16 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
                 }
                 const uint32_t dealt = before - (uint32_t)dfi_at(b, targets[i])->hp;
                 total += dealt;
+                /* gotAttacked's moveDamage (step G97): the last executed hit's HP lost, numeric (a hit that a Substitute took
+                 * is true there, not a number). The record is applied after the loop. */
+                metal_has[i] = true;
+                metal_num[i] = dealt;
                 if (md->drain[1] != 0u && dealt != 0u) {
                     const uint32_t num = dealt * md->drain[0] * 2u + md->drain[1];
                     dfi_heal(r, user, num / (2u * md->drain[1]), DUOFORGE_CAUSE_DRAIN, 0u, targets[i]); /* round */
                 }
+            } else {
+                metal_has[i] = false; /* a miss or a Substitute's hit: the entry is not a number */
             }
         }
         /* Steel Roller's onHit (runMoveEffects, right after the damage of the hit): the terrain ends. */
@@ -8197,6 +8250,18 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
                 return DUOFORGE_E_UNSUPPORTED; /* step G78: the pin's loop goes on after the user's faint with two targets */
             }
             break; /* the user fainted: that hit counts and the loop ends (:969) */
+        }
+    }
+    /* gotAttacked, once per target after the hit loop (sim/battle-actions.ts:990-997): a foe's numeric entry of the last
+     * executed hit becomes the victim's record (metal_source = the user's flat position + 1). A non-numeric entry adds
+     * nothing: the record that was there stays, as getLastDamagedBy(true) skips it (sim/pokemon.ts:935-942). Pool data only. */
+    if (dfi_kind_limits_of(r->ctx->data_kind).pool_rules) {
+        for (uint32_t i = 0u; i < count; ++i) {
+            if (metal_has[i] && targets[i] != user && targets[i] / 2u != user / 2u) {
+                dfi_tail_pos *victim = &b->tail.sides[targets[i] / 2u].positions[targets[i] % 2u];
+                victim->metal_source = (uint8_t)(user + 1u); /* wide-operands-reviewed: flat position + 1, at most 4 */
+                victim->metal_damage = (uint16_t)metal_num[i];
+            }
         }
     }
     if (split) {
@@ -10559,7 +10624,11 @@ static duoforge_status dfi_end_turn(dfi_run *r)
         /* statsRaisedThisTurn is cleared at the turn's end (sim/battle.ts:1678, endTurn): the raised bit is per turn */
         dfi_tail_pos *rt = &b->tail.sides[flat / 2u].positions[flat % 2u];
         rt->position_flags = (uint8_t)((uint32_t)rt->position_flags & ~(uint32_t)(DFI_POSFLAG_STATS_RAISED | DFI_POSFLAG_LOWERED | DFI_POSFLAG_HURT)); /* wide-operands-reviewed */
-        /* statsLoweredThisTurn (sim/battle.ts:1679) and hurtThisTurn (sim/battle.ts:1682) are cleared here too (G88) */
+        /* statsLoweredThisTurn (sim/battle.ts:1679) and hurtThisTurn (sim/battle.ts:1682) are cleared here too (G88).
+         * The Metal Burst record (G97): every entry of attackedBy is thisTurn false after this, so no record is usable
+         * (getLastDamagedBy(true).thisTurn fails, sim/battle.ts:1703); the record is cleared with it. */
+        rt->metal_source = 0u;
+        rt->metal_damage = 0u;
         /* moveLastTurnResult = moveThisTurnResult, then this turn's is undefined (sim/battle.ts:1674-1675). The unclassified
          * bit moves with the result (step G42). */
         dfi_tail_pos *tp = &b->tail.sides[flat / 2u].positions[flat % 2u];

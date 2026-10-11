@@ -302,7 +302,7 @@ KD = TeamCContext(KIND_TEAM_C_DEV, 6, 4)
 # which tests/test_pool_tables.c recomputes from the pool canonical bytes: the
 # pool layout over the pool data, then the family columns, the handler columns
 # and the moves and abilities that each forme may have.
-POOL_TABLE_HASH = bytes.fromhex('c182fa0429d7c973c2b087ab1d03c7ae5893653df6f540627a209ce7e7c247e3')
+POOL_TABLE_HASH = bytes.fromhex('3b25ec76a86173b5a762b1ec6c159de5d2952f1eac4d82f0b97bf3493de7adf6')
 KIND_POOL, KIND_POOL_DEV = 6, 7
 
 
@@ -383,6 +383,8 @@ def empty_tail_pos():
         p[f] = 0
     for f in TAIL_POS_REV5_FIELDS:
         p[f] = 0
+    p['metal_source'] = 0  # step G97 (Metal Burst, decision 0063): bytes 33-35 of the position
+    p['metal_damage'] = 0
     return p
 
 
@@ -1038,6 +1040,12 @@ def tail_pos_valid(ctx, tp, flat, mem, slot_flags=0, sub_cap=0):
         return False
     if tp['future_sight'] != 0:
         return False
+    # Metal Burst (step G97, decision 0063): the record names a foe position (flat + 1), zero whenever it names none
+    ms, md = tp.get('metal_source', 0), tp.get('metal_damage', 0)
+    if ms > 4 or (ms == 0 and md != 0):
+        return False
+    if ms != 0 and (ms - 1) // 2 == flat // 2:
+        return False
     return (tp['stockpile'] <= TAIL_STOCKPILE_MAX and tp['stockpile_def'] <= tp['stockpile']
             and tp['stockpile_spd'] <= tp['stockpile'])
 
@@ -1161,7 +1169,8 @@ def tail_bytes(tail):
         for tp in ts['pos']:
             out += bytes([tp[f] for f in TAIL_POS_BYTE_FIELDS])
             out += struct.pack('<HH', tp['substitute_hp'], tp['trap_move']) + bytes([tp['protect_kind']])
-            out += bytes([tp[f] for f in TAIL_POS_REV4_FIELDS]) + bytes(4)
+            out += bytes([tp[f] for f in TAIL_POS_REV4_FIELDS]) + bytes(1)  # byte 32 reserved
+            out += bytes([tp['metal_source']]) + struct.pack('<H', tp['metal_damage'])  # bytes 33-35 (G97)
         for m in range(MAX_ROSTER):
             out += struct.pack('<HH', ts['ability_now'][m], ts['forme_now'][m])
             out += bytes([ts['soak'][m], ts['item_now'][m], ts['toxic_stage'][m], ts['type2'][m], ts['member_flags'][m], 0])
@@ -1183,12 +1192,12 @@ def tail_reserved_offsets():
     for s in range(2):
         so = TAIL_FIELD_SIZE + TAIL_SIDE_SIZE * s
         for p in range(2):
-            offs += [so + 8 + TAIL_POS_SIZE * p + 32 + i for i in range(4)]
+            offs += [so + 8 + TAIL_POS_SIZE * p + 32]  # byte 32; bytes 33-35 are the Metal Burst state (G97)
         offs += [so + 80 + TAIL_MEMBER_SIZE * m + 9 for m in range(MAX_ROSTER)]
-    assert len(offs) == 29
+    assert len(offs) == 17
     rev5_reserve = TAIL_REV4_SIZE + TAIL5_SIZE - TAIL5_RESERVED_SIZE
     offs += [rev5_reserve + i for i in range(TAIL5_RESERVED_SIZE)]
-    assert len(offs) == 45
+    assert len(offs) == 33
     return offs
 
 

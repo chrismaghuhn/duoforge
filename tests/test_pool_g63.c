@@ -77,7 +77,8 @@ static void test_no_marked_scripted_move(df_test *t)
         if (dfi_support.moves[id] == 0u) {
             continue;
         }
-        DF_CHECK(t, dfi_pool_moves[id].target_class != DFI_TARGET_CLASS_SCRIPTED);
+        /* step G97 (decision 0063): Metal Burst is the one marked scripted move; its target is the slot of the record */
+        DF_CHECK(t, id == DFI_MOVE_METALBURST || dfi_pool_moves[id].target_class != DFI_TARGET_CLASS_SCRIPTED);
     }
 }
 

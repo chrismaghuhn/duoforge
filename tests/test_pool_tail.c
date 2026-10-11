@@ -111,9 +111,9 @@ static const unsigned sweep[DFI_ENC_TAIL_SIZE][SWEEP_COLUMNS] = {
     {6, 0, 249, 0, 0, 0, 0, 0},
     {0, 0, 255, 0, 0, 0, 0, 0},
     {0, 0, 0, 0, 0, 255, 0, 0},
-    {0, 0, 0, 0, 0, 255, 0, 0},
-    {0, 0, 0, 0, 0, 255, 0, 0},
-    {0, 0, 0, 0, 0, 255, 0, 0},
+    {2, 0, 253, 0, 0, 0, 0, 0},
+    {0, 0, 255, 0, 0, 0, 0, 0},
+    {0, 0, 255, 0, 0, 0, 0, 0},
     {5, 0, 250, 0, 0, 0, 0, 0},
     {0, 0, 255, 0, 0, 0, 0, 0},
     {0, 0, 255, 0, 0, 0, 0, 0},
@@ -147,9 +147,9 @@ static const unsigned sweep[DFI_ENC_TAIL_SIZE][SWEEP_COLUMNS] = {
     {6, 0, 249, 0, 0, 0, 0, 0},
     {0, 0, 255, 0, 0, 0, 0, 0},
     {0, 0, 0, 0, 0, 255, 0, 0},
-    {0, 0, 0, 0, 0, 255, 0, 0},
-    {0, 0, 0, 0, 0, 255, 0, 0},
-    {0, 0, 0, 0, 0, 255, 0, 0},
+    {2, 0, 253, 0, 0, 0, 0, 0},
+    {0, 0, 255, 0, 0, 0, 0, 0},
+    {0, 0, 255, 0, 0, 0, 0, 0},
     {215, 0, 0, 40, 0, 0, 0, 0},
     {0, 0, 0, 255, 0, 0, 0, 0},
     {90, 0, 0, 165, 0, 0, 0, 0},
@@ -251,9 +251,9 @@ static const unsigned sweep[DFI_ENC_TAIL_SIZE][SWEEP_COLUMNS] = {
     {6, 0, 249, 0, 0, 0, 0, 0},
     {2, 0, 252, 0, 0, 0, 0, 1},
     {0, 0, 0, 0, 0, 255, 0, 0},
-    {0, 0, 0, 0, 0, 255, 0, 0},
-    {0, 0, 0, 0, 0, 255, 0, 0},
-    {0, 0, 0, 0, 0, 255, 0, 0},
+    {2, 0, 253, 0, 0, 0, 0, 0},
+    {0, 0, 255, 0, 0, 0, 0, 0},
+    {0, 0, 255, 0, 0, 0, 0, 0},
     {0, 0, 255, 0, 0, 0, 0, 0},
     {0, 0, 255, 0, 0, 0, 0, 0},
     {0, 0, 255, 0, 0, 0, 0, 0},
@@ -287,9 +287,9 @@ static const unsigned sweep[DFI_ENC_TAIL_SIZE][SWEEP_COLUMNS] = {
     {6, 0, 249, 0, 0, 0, 0, 0},
     {2, 0, 252, 0, 0, 0, 0, 1},
     {0, 0, 0, 0, 0, 255, 0, 0},
-    {0, 0, 0, 0, 0, 255, 0, 0},
-    {0, 0, 0, 0, 0, 255, 0, 0},
-    {0, 0, 0, 0, 0, 255, 0, 0},
+    {2, 0, 253, 0, 0, 0, 0, 0},
+    {0, 0, 255, 0, 0, 0, 0, 0},
+    {0, 0, 255, 0, 0, 0, 0, 0},
     {0, 0, 0, 255, 0, 0, 0, 0},
     {0, 0, 0, 255, 0, 0, 0, 0},
     {255, 0, 0, 0, 0, 0, 0, 0},
@@ -1250,7 +1250,7 @@ static bool is_reserved_offset(size_t off)
         return in_side >= DFI_ENC_TAIL_SIDE_RESERVED_OFF;
     }
     if (in_side < DFI_ENC_TAIL_MEMBER_OFF) {
-        return (in_side - DFI_ENC_TAIL_POS_OFF) % DFI_ENC_TAIL_POS_SIZE >= DFI_ENC_TAIL_POS_RESERVED_OFF;
+        return (in_side - DFI_ENC_TAIL_POS_OFF) % DFI_ENC_TAIL_POS_SIZE == DFI_ENC_TAIL_POS_RESERVED_OFF; /* byte 32; 33-35 are the Metal Burst state */
     }
     return (in_side - DFI_ENC_TAIL_MEMBER_OFF) % DFI_ENC_TAIL_MEMBER_SIZE == DFI_ENC_TAIL_MEMBER_RESERVED_OFF;
 }
@@ -1276,7 +1276,7 @@ int main(void)
         DF_CHECK_EQ_U64(&t, DFI_ENC_TAIL_REV4_SIZE, 288u);
         DF_CHECK_EQ_U64(&t, DFI_ENC_TAIL5_SIZE, 60u);
         DF_CHECK_EQ_U64(&t, DFI_ENC_TAIL5_RESERVED_OFF, 44u);
-        DF_CHECK_EQ_U64(&t, DFI_ENC_TAIL_RESERVED_COUNT, 45u); /* step G46: party_order takes 6 of the 7 field bytes (35 before); rev 5: 16 more */
+        DF_CHECK_EQ_U64(&t, DFI_ENC_TAIL_RESERVED_COUNT, 33u); /* step G46: party_order takes 6 of the 7 field bytes; rev 5: 16 more; step G97: bytes 33-35 of a position are state, so one reserved byte (+32) per position */
         DF_CHECK_EQ_U64(&t, DFI_STATE_SCHEMA_V3, 3u);
         DF_CHECK_EQ_U64(&t, DFI_STATE_SCHEMA_POOL_TAIL_REV5, 0x0503u);
         DF_CHECK_EQ_U64(&t, DFI_STATE_SCHEMA_POOL_TAIL_REV4, 0x0403u); /* refused since rev 5 */
@@ -1293,15 +1293,15 @@ int main(void)
         DF_CHECK_EQ_U64(&t, DFI_ENC_TAIL_MEMBER_FLAGS_OFF, 8u);
         DF_CHECK(&t, DFI_STATE_SCHEMA_POOL_TAIL_REV5 != 4u); /* schema 4 stays free: certified pool teams */
         /* The tail in memory: the encoded size without the reserved bytes, and the one pad byte of the field block. */
-        DF_CHECK_EQ_U64(&t, sizeof(dfi_pool_tail), 304u); /* a position and a side have none; step G46 adds party_order (6); rev 5 adds the Illusion state and the 2 position bytes */
-        DF_CHECK_EQ_U64(&t, sizeof(dfi_tail_side), 148u);
-        DF_CHECK_EQ_U64(&t, sizeof(dfi_tail_pos), 34u);
+        DF_CHECK_EQ_U64(&t, sizeof(dfi_pool_tail), 320u); /* a position and a side have none; step G46 adds party_order (6); rev 5 adds the Illusion state and the 2 position bytes */
+        DF_CHECK_EQ_U64(&t, sizeof(dfi_tail_side), 156u); /* step G97: the positions keep their pad byte (+32) in memory */
+        DF_CHECK_EQ_U64(&t, sizeof(dfi_tail_pos), 38u); /* step G97: 36 encoded bytes (the reserved byte is the pad field) and 2 rev 5 bytes */
         DF_CHECK_EQ_U64(&t, sizeof(dfi_tail_illusion), 18u);
         unsigned reserved = 0u;
         for (size_t off = 0u; off < DFI_ENC_TAIL_SIZE; ++off) {
             reserved += is_reserved_offset(off) ? 1u : 0u;
         }
-        DF_CHECK_EQ_U64(&t, reserved, 45u);
+        DF_CHECK_EQ_U64(&t, reserved, 33u);
         const duoforge_context *with[] = {kp, kq};
         const duoforge_context *without[] = {k1, k2, kc, kd, c1};
         for (size_t i = 0u; i < 2u; ++i) {
@@ -1586,7 +1586,7 @@ int main(void)
             }
         }
         DF_CHECK_EQ_U64(&t, wrong, 0u);
-        DF_CHECK_EQ_U64(&t, all_reserved, 45u); /* 29 reserved bytes of the rev 4 part (the field block's +1..+6 are party_order) and 16 of rev 5 */
+        DF_CHECK_EQ_U64(&t, all_reserved, 33u); /* 29 reserved bytes of the rev 4 part (the field block's +1..+6 are party_order) and 16 of rev 5 */
     }
 
     /* The schema is the one of the context's kind; sizes, schema ids and truncations. */

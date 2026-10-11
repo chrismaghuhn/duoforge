@@ -510,6 +510,10 @@ const dfi_support_manifest dfi_support = {
             /* Step G96 (decision 0015 5cz): Psychic Terrain, the terrain setter (5 turns, 8 with Terrain Extender); the block of
              * the priority moves against grounded foes and the Psychic boost are the terrain's rules, already on main. */
             [DFI_MOVE_PSYCHICTERRAIN] = 1u,
+            /* Step G97 (decision 0015 5cz, decision 0063): Metal Burst, the foe's last numeric hit this turn times 1.5 (the record
+             * of the user's position: bytes 33-35 of the tail position), the onTry fail without it, the target at the slot of that
+             * foe; the Pokemon's sheet of the foe's hit is not public, so the view refuses at a PIVOT (cause 64). */
+            [DFI_MOVE_METALBURST] = 1u,
             /* Step G76 (decision 0015 5cg): Destiny Bond (the user's volatile, the consecutive-use failure, the KO of a foe that
              * faints from a Move; Future Sight, the futuremove the pin excludes, is unmarked, so it cannot reach a holder). */
             [DFI_MOVE_DESTINYBOND] = 1u,

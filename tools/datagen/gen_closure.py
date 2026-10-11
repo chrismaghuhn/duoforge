@@ -486,7 +486,9 @@ def parse_move(mid, base, champ, ext=False, pool=False, unmodeled=None):
     if get('target') not in (TARGET_CLASS_POOL if lenient else TARGET_CLASS):
         fail('move %s: unknown target class %s' % (mid, get('target')))
     target_class = (TARGET_CLASS_POOL if lenient else TARGET_CLASS)[get('target')]
-    if lenient and get('target') not in ENGINE_TARGETS:
+    # step G97: 'scripted' is modelled for Metal Burst alone (its target is the slot of the record); Counter and Mirror
+    # Coat are scripted too and stay unmodelled.
+    if lenient and get('target') not in ENGINE_TARGETS and not (mid == 'metalburst' and get('target') == 'scripted'):
         unmodeled.append('target %s' % get('target'))
     for what, table, key in (('type', TYPES, 'type'), ('category', CATEGORIES, 'category')):
         if get(key) not in table:
@@ -2345,6 +2347,7 @@ SPECIAL_P = dict(SPECIAL_C, **{
     'thunderwave': ('THUNDER_WAVE', set()),                               # G68: ignoreImmunity false (Ground is immune to the Electric move)
     'dragondarts': ('DRAGON_DARTS', set()),                               # G78: two hits, the second on the partner (decision 0043)
     'psychicterrain': ('PSYCHIC_TERRAIN', set()),                         # G96: sets the Psychic Terrain (5 turns, 8 with Terrain Extender)
+    'metalburst': ('METAL_BURST', {'damageCallback', 'onModifyTarget', 'onTry'}),  # G97: the foe's last hit, x1.5 (decision 0063)
 })
 # Step G13: Detect is Protect (data/moves.ts:3526-3547 against 13961-14005): the same handler (not one of the G2 handlers,
 # so it is added to the pool's map only), and the generator checks that its stalling fields and both callbacks are,
@@ -2492,6 +2495,19 @@ G96_FACTS = (
         "onFieldEnd() { this.add('-fieldend', 'move: Psychic Terrain'); },",
     ]),
 )
+# Step G97 (Metal Burst, decision 0063): the entry is the pinned text the handler reads (the power, the try, the target, the
+# flags and type). The damageCallback, onTry and onModifyTarget are the handler's own (G2 owned set above).
+G97_HANDLERS = ['METAL_BURST']
+G97_FACTS = (
+    ('metalburst', [
+        'accuracy: 100,', 'basePower: 0,', 'category: "Physical",', 'priority: 0,',
+        'flags: { protect: 1, mirror: 1, metronome: 1, failmefirst: 1 },', 'target: "scripted",', 'type: "Steel",',
+        'damageCallback(pokemon) {', 'const lastDamagedBy = pokemon.getLastDamagedBy(true);',
+        'return (lastDamagedBy.damage * 1.5) || 1;', 'return 0;',
+        'onTry(source) {', 'const lastDamagedBy = source.getLastDamagedBy(true);', 'if (!lastDamagedBy?.thisTurn) return false;',
+        'onModifyTarget(targetRelayVar, source, target, move) {', 'targetRelayVar.target = this.getAtSlot(lastDamagedBy.slot);',
+    ]),
+)
 G78_FACTS = (
     'accuracy: 100,', 'basePower: 50,', 'category: "Physical",', 'priority: 0,',
     'flags: { protect: 1, mirror: 1, metronome: 1, noparentalbond: 1 },', 'multihit: 2,', 'smartTarget: true,',
@@ -2588,7 +2604,7 @@ G68_FACTS = (
                      'flags: { protect: 1, reflectable: 1, mirror: 1, metronome: 1 },', "status: 'par',",
                      'ignoreImmunity: false,', 'target: "normal",', 'type: "Electric",']),
 )
-SPECIAL_IDS_P = SPECIAL_IDS_C + G2_HANDLERS + WEATHER_HANDLERS + G16_HANDLERS + G15_HANDLERS + G19_HANDLERS + G20_HANDLERS + G20_PROTECT_HANDLERS + G28_HANDLERS + G30_HANDLERS + G32_HANDLERS + G34_HANDLERS + G27_HANDLERS + G25_HANDLERS + G26_HANDLERS + G33_HANDLERS + G38_HANDLERS + G29_HANDLERS + G39_HANDLERS + G31_HANDLERS + G48_HANDLERS + G44_HANDLERS + G50_HANDLERS + G42_HANDLERS + G56_HANDLERS + G52_HANDLERS + G54_HANDLERS + G64_HANDLERS + G62_HANDLERS + G60_HANDLERS + G58_HANDLERS + G68_HANDLERS + G70_HANDLERS + G66_HANDLERS + G72B_HANDLERS + G74_HANDLERS + G76_HANDLERS + G78_HANDLERS + G88_HANDLERS + G94_HANDLERS + G96_HANDLERS + ['UNMODELED']# Step G10 made two of these handlers data: Scald (thawsTarget) and Recover (heal) are read into the second flags# byte (bit 4, thaws the target) and the heal column, and have the special NONE; their ids stay defined (the ids after
+SPECIAL_IDS_P = SPECIAL_IDS_C + G2_HANDLERS + WEATHER_HANDLERS + G16_HANDLERS + G15_HANDLERS + G19_HANDLERS + G20_HANDLERS + G20_PROTECT_HANDLERS + G28_HANDLERS + G30_HANDLERS + G32_HANDLERS + G34_HANDLERS + G27_HANDLERS + G25_HANDLERS + G26_HANDLERS + G33_HANDLERS + G38_HANDLERS + G29_HANDLERS + G39_HANDLERS + G31_HANDLERS + G48_HANDLERS + G44_HANDLERS + G50_HANDLERS + G42_HANDLERS + G56_HANDLERS + G52_HANDLERS + G54_HANDLERS + G64_HANDLERS + G62_HANDLERS + G60_HANDLERS + G58_HANDLERS + G68_HANDLERS + G70_HANDLERS + G66_HANDLERS + G72B_HANDLERS + G74_HANDLERS + G76_HANDLERS + G78_HANDLERS + G88_HANDLERS + G94_HANDLERS + G96_HANDLERS + G97_HANDLERS + ['UNMODELED']# Step G10 made two of these handlers data: Scald (thawsTarget) and Recover (heal) are read into the second flags# byte (bit 4, thaws the target) and the heal column, and have the special NONE; their ids stay defined (the ids after
 # them keep their values). First Impression and Low Kick keep theirs: the turn code implements them.
 POOL_COLUMN_KEYS = {'thawsTarget', 'heal'}
 G2_OWNED_FIELDS = {
@@ -3390,6 +3406,18 @@ def check_g58_facts(moves_ts):
 def check_g96_facts(moves_ts):
     """Step G96: the Psychic Terrain entry is the pinned text the turn code reads (the terrain, the duration, the block)."""
     for mid, facts in G96_FACTS:
+        e = moves_ts.entry(mid)
+        if e is None:
+            fail('move %s not found' % mid)
+        text = norm(chr(10).join(e[2]))
+        for fact in facts:
+            if norm(fact) not in text:
+                fail('move %s: the entry no longer has "%s"' % (mid, fact))
+
+
+def check_g97_facts(moves_ts):
+    """Step G97: the Metal Burst entry is the pinned text the handler reads (the power, the try and the target)."""
+    for mid, facts in G97_FACTS:
         e = moves_ts.entry(mid)
         if e is None:
             fail('move %s not found' % mid)
@@ -4207,6 +4235,7 @@ def build_pool(root, repo, dx):
     check_g76_facts(moves_ts)
     check_g78_facts(moves_ts)
     check_g96_facts(moves_ts)
+    check_g97_facts(moves_ts)
     check_g88_facts(moves_ts)
     check_c2_facts(moves_ts, champ_moves)
     FLAGS_THAT_MATTER.clear()

@@ -188,6 +188,9 @@ static void copy_named_fields(duoforge_battle *x, const duoforge_battle *src)
             dp->lock_turns = sp->lock_turns;
             dp->position_flags = sp->position_flags; /* tail rev 5 */
             dp->future_sight = sp->future_sight;
+            dp->metal_damage = sp->metal_damage; /* tail rev 5 (step G97) */
+            dp->metal_source = sp->metal_source;
+            dp->reserved_pad = sp->reserved_pad;
         }
         for (unsigned m = 0; m < DUOFORGE_MAX_ROSTER; ++m) {
             dt->ability_now[m] = st->ability_now[m];

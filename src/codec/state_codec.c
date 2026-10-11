@@ -55,6 +55,8 @@ static void dfi_encode_tail_pos(const dfi_tail_pos *tp, uint8_t *po)
     po[DFI_ENC_TAIL_POS_LOCK_TURNS_OFF] = tp->lock_turns;
     dfi_store_u16le(po + DFI_ENC_TAIL_POS_SUBSTITUTE_OFF, tp->substitute_hp);
     dfi_store_u16le(po + DFI_ENC_TAIL_POS_TRAP_MOVE_OFF, tp->trap_move);
+    po[DFI_ENC_TAIL_POS_METAL_SOURCE_OFF] = tp->metal_source;
+    dfi_store_u16le(po + DFI_ENC_TAIL_POS_METAL_DAMAGE_OFF, tp->metal_damage);
     for (uint32_t i = 0u; i < DFI_ENC_TAIL_POS_RESERVED_SIZE; ++i) {
         po[DFI_ENC_TAIL_POS_RESERVED_OFF + i] = 0u;
     }
@@ -185,6 +187,8 @@ static void dfi_parse_tail_pos(const uint8_t *po, dfi_tail_pos *tp)
     tp->lock_turns = po[DFI_ENC_TAIL_POS_LOCK_TURNS_OFF];
     tp->substitute_hp = dfi_load_u16le(po + DFI_ENC_TAIL_POS_SUBSTITUTE_OFF);
     tp->trap_move = dfi_load_u16le(po + DFI_ENC_TAIL_POS_TRAP_MOVE_OFF);
+    tp->metal_source = po[DFI_ENC_TAIL_POS_METAL_SOURCE_OFF];
+    tp->metal_damage = dfi_load_u16le(po + DFI_ENC_TAIL_POS_METAL_DAMAGE_OFF);
 }
 
 /* The rev 5 block, the inverse of dfi_encode_tail5 (its reserve is checked before, by dfi_tail_reserved_zero). */
