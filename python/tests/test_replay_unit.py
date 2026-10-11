@@ -446,6 +446,52 @@ class LinesTest(unittest.TestCase):
         for line in ("|-singlemove|p1a: Staraptor|Destiny Bond", "|-activate|p2a: Gholdengo|move: Destiny Bond"):
             self.assertEqual(self.stop(line), "feature:DESTINY_BOND", line)
 
+    def test_partial_trap_lines_fold_in_the_engines_forms_only(self):
+        # Step G90 (decision 0060): the start (-activate|T|move: M|[of] S), the residual damage (-damage|T|hp|[from] move: M|
+        # [partiallytrapped]) and the end (-end|T|M|[partiallytrapped], with [silent] for the silent ends) of the six moves
+        # of the engine; the tracker folds them (TRAP_ELAPSED, with PARTIAL_TRAP). Every other form stops on its line.
+        f = lines.FEATURES
+        self.assertTrue(lines.SUPPORTED >> f["TRAP_ELAPSED"] & 1)  # the library claims the count (45)
+        self.assertTrue(lines.TRACKER_FOLDS >> f["PARTIAL_TRAP"] & 1)  # and the tracker folds the presence (18) as well
+        for move in ("Bind", "Wrap", "Fire Spin", "Sand Tomb", "Infestation"):
+            for line in (f"|-activate|p2a: Gholdengo|move: {move}|[of] p1a: Staraptor",
+                         f"|-damage|p2a: Gholdengo|83/100|[from] move: {move}|[partiallytrapped]",
+                         f"|-damage|p2a: Gholdengo|83/182|[from] move: {move}|[partiallytrapped]",
+                         f"|-end|p2a: Gholdengo|move: {move}|[partiallytrapped]",
+                         f"|-end|p2a: Gholdengo|{move}|[partiallytrapped]|[silent]",
+                         f"|-end|p2a: Gholdengo|move: {move}|[partiallytrapped]|[silent]"):
+                self.assertEqual(lines.check(line, self.view), "fold", line)
+        # the moves the engine does not model keep their stop (Snap Trap stays unmarked, decision 0060 section 8), and so does
+        # every other shape
+        for line, reason in (
+                ("|-activate|p2a: Gholdengo|move: Whirlpool|[of] p1a: Staraptor", "line:-activate move: Whirlpool"),
+                ("|-activate|p2a: Gholdengo|move: Snap Trap|[of] p1a: Staraptor", "line:-activate move: Snap Trap"),
+                ("|-damage|p2a: Gholdengo|83/100|[from] move: Snap Trap|[partiallytrapped]",
+                 "line:-damage partiallytrapped"),
+                ("|-activate|p2a: Gholdengo|move: Magma Storm|[of] p1a: Staraptor", "line:-activate move: Magma Storm"),
+                ("|-activate|p2a: Gholdengo|move: Bind", "line:-activate move: Bind"),  # no source
+                ("|-activate|p2a: Gholdengo|move: Bind|[of] p1a: Staraptor|[silent]", "line:-activate move: Bind"),
+                ("|-activate|p2a: Gholdengo|Bind|[of] p1a: Staraptor", "line:-activate Bind"),  # no "move: "
+                ("|-activate|p2a: Gholdengo|move: Bind|x|[of] p1a: Staraptor", "line:-activate move: Bind"),
+                ("|-damage|p2a: Gholdengo|83/100|[partiallytrapped]", "line:-damage partiallytrapped"),
+                ("|-damage|p2a: Gholdengo|83/100|[from] move: Bind", None),  # a plain damage line is the converter's
+                ("|-damage|p2a: Gholdengo|83/100|[from] move: Bind|[of] p1a: Staraptor|[partiallytrapped]",
+                 "line:-damage partiallytrapped"),
+                ("|-damage|p2a: Gholdengo|83/100|[from] move: Whirlpool|[partiallytrapped]",
+                 "line:-damage partiallytrapped"),
+                ("|-damage|p2a: Gholdengo|83/100|[from] item: Leftovers|[partiallytrapped]",
+                 "line:-damage partiallytrapped"),
+                ("|-end|p2a: Gholdengo|move: Whirlpool|[partiallytrapped]", "line:-end move: Whirlpool"),
+                ("|-end|p2a: Gholdengo|move: Bind|[partiallytrapped]|[silent]|[of] p1a: Staraptor",
+                 "line:-end move: Bind"),
+                ("|-end|p2a: Gholdengo|move: Bind|[partiallytrapped]|[from] x", "line:-end move: Bind"),
+                ("|-end|p2a: Gholdengo|move: Bind|[silent]", "line:-end move: Bind"),  # no marker
+                ("|-end|p2a: Gholdengo|move: Bind|[partiallytrapped]|[partiallytrapped]", "line:-end move: Bind")):
+            if reason is None:
+                self.assertEqual(lines.check(line, self.view), "fold", line)
+            else:
+                self.assertEqual(self.stop(line), reason, line)
+
     def test_drag_folds(self):
         # Step G46: a forced switch brings a member in as a switch does (the tracker folds it as one, or stops)
         self.assertEqual(lines.check("|drag|p2a: Gholdengo|Gholdengo, L50|100/100", self.view), "fold")

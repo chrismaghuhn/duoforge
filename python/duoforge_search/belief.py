@@ -44,6 +44,7 @@ WORDS = {
     "confusion": 26,      # 26..29: side * 2 + position
     "charge_target": 30,  # 30..31
     "queue": 32,
+    "trap": 33,           # 33..36: flat position side * 2 + position: the duration of a hidden partial trap (G90)
     "respread": 64,       # 64 + 8 * attempt + m: a spread drawn again (a flagged HP display refused the first)
 }
 _MASK = (1 << 64) - 1
@@ -149,7 +150,8 @@ class Belief:
         a > 0 draws from the word "respread" + 8 * (a - 1) + m.
         Returns a dict of stat_points (n, 6, 6) uint8, hp (n, 6), sleep (n, 2,
         6), confusion (n, 2, 2), charge_target (n, 2) uint64 words, bench and
-        queue (n,) uint64 words, levels (n, 6), and weights (n,) float64."""
+        queue (n,) uint64 words, trap (n, 4) uint64 words (one per flat
+        position, G90), levels (n, 6), and weights (n,) float64."""
         members = list(members)
         if len(members) > ROSTER:
             raise ValueError(f"at most {ROSTER} foe members")
@@ -166,6 +168,7 @@ class Belief:
             "charge_target": np.zeros((n, 2), dtype=np.uint64),
             "bench": np.zeros(n, dtype=np.uint64),
             "queue": np.zeros(n, dtype=np.uint64),
+            "trap": np.zeros((n, 4), dtype=np.uint64),
             "weights": np.full(n, 1.0 / n, dtype=np.float64),
         }
         for w in range(n):
@@ -183,6 +186,7 @@ class Belief:
             out["charge_target"][w] = words[WORDS["charge_target"]:WORDS["charge_target"] + 2]
             out["bench"][w] = words[WORDS["bench"]]
             out["queue"][w] = words[WORDS["queue"]]
+            out["trap"][w] = words[WORDS["trap"]:WORDS["trap"] + 4]
         return out
 
 

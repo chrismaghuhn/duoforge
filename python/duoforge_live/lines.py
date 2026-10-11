@@ -142,7 +142,7 @@ EXT_FOLDS = sum(1 << FEATURES[n] for n in ("THROAT_CHOP", "AURORA_VEIL", "PERISH
                                           "MUST_RECHARGE", "TOXIC_SPIKES", "TYPE_CHANGE", "TAUNT", "YAWN",
                                           "DISABLE", "IMPRISON", "STEALTH_ROCK",
                                           "GLAIVE_RUSH", "RAGE_POWDER", "HEAL_BLOCK", "SPIKES",
-                                          "WIDE_GUARD", "STICKY_WEB"))
+                                          "WIDE_GUARD", "STICKY_WEB", "PARTIAL_TRAP", "TRAP_ELAPSED"))
 TRACKER_FOLDS = BASE_FOLDS | EXT_FOLDS
 SUPPORTED = LIBRARY_SUPPORTED & TRACKER_FOLDS
 
@@ -153,10 +153,11 @@ _START = {"move: Taunt": "TAUNT", "Taunt": "TAUNT", "Encore": "ENCORE", "Substit
           "Heal Block": "HEAL_BLOCK", "move: Imprison": "IMPRISON", "Disable": "DISABLE", "Stockpile": "STOCKPILE",
           "move: Yawn": "YAWN", "move: Leech Seed": "LEECH_SEED", "Salt Cure": "SALT_CURE", "Curse": "CURSE",
           "move: No Retreat": "NO_RETREAT", "Charge": "CHARGE", "move: Dragon Cheer": "DRAGON_CHEER",
-          "move: Focus Energy": "FOCUS_ENERGY", "Infestation": "PARTIAL_TRAP", "move: Infestation": "PARTIAL_TRAP",
-          "Wrap": "PARTIAL_TRAP", "Bind": "PARTIAL_TRAP", "Fire Spin": "PARTIAL_TRAP", "Whirlpool": "PARTIAL_TRAP",
-          "Sand Tomb": "PARTIAL_TRAP", "Magma Storm": "PARTIAL_TRAP", "Snap Trap": "PARTIAL_TRAP",
-          "Thunder Cage": "PARTIAL_TRAP"}
+          "move: Focus Energy": "FOCUS_ENERGY"}
+# The partial trap (step G90, decision 0060) is not in _START: its three line forms are checked whole (_trap_features), for the
+# five moves the engine marks (src/data/support_manifest.c); Snap Trap ("stays unmarked: decision 0060 section 8"), Whirlpool,
+# Magma Storm and Thunder Cage stay unknown lines. The converter reads the sixth, Snap Trap, but no engine battle has it.
+PARTIAL_TRAP_MOVES = ("Bind", "Wrap", "Fire Spin", "Sand Tomb", "Infestation")
 _WEATHER = {"Sandstorm": "WEATHER_SAND", "Snowscape": "WEATHER_SNOW", "Snow": "WEATHER_SNOW"}
 _FIELD = {"move: Electric Terrain": "TERRAIN_ELECTRIC", "move: Misty Terrain": "TERRAIN_MISTY",
           "move: Gravity": "GRAVITY"}
@@ -216,6 +217,13 @@ def _feature(name):
     if name in TURN_SCOPED:
         return f"turn:{name}"
     raise Stop(f"feature:{name}")
+
+
+def _trap_features():
+    """A partial-trap line (step G90): folded when the library supports the elapsed count (TRAP_ELAPSED), the feature of the
+    state the lines build. The presence bit's own feature (PARTIAL_TRAP, 18) is not in the library's mask; the tracker folds
+    it with the count (tracker.EXT_FIELDS), so a library that claims it later is compared at once."""
+    return _feature("TRAP_ELAPSED")
 
 
 def _unknown(kind, effect=None):
@@ -296,6 +304,12 @@ def check(line, view):
         return "fold"
     if kind == "-fail" and len(args) > 1 and args[1] == "unboost":
         return _kept_drop(args, attrs, view)
+    if kind == "-damage" and "[partiallytrapped]" in attrs:
+        # the residual of a partial trap (step G90): -damage|T|hp|[from] move: M|[partiallytrapped], nothing else
+        if (len(args) == 2 and len(attrs) == 2 and attrs[1] == "[partiallytrapped]" and attrs[0].startswith("[from] move: ")
+                and attrs[0][len("[from] move: "):] in PARTIAL_TRAP_MOVES and flat_position(args[0]) is not None):
+            return _trap_features()
+        _unknown(kind, "partiallytrapped")
     if kind in GENERIC:
         return "fold"
     if kind == "-ohko" and not args and not attrs:
@@ -306,6 +320,11 @@ def check(line, view):
         return "fold"  # White Herb (Team C): the [silent] line the converter skips; the tracker folds it
     effect = args[1] if len(args) > 1 else ""
     if kind == "-activate":
+        if effect.startswith("move: ") and effect[len("move: "):] in PARTIAL_TRAP_MOVES:
+            # the start of a partial trap (step G90): -activate|T|move: M|[of] S, nothing else
+            if len(args) == 2 and len(attrs) == 1 and attrs[0].startswith("[of] ") and                     flat_position(args[0]) is not None and flat_position(attrs[0][len("[of] "):]) is not None:
+                return _trap_features()
+            _unknown(kind, effect)
         if effect in _FOLD_ACTIVATE:
             return "fold"
         if effect in _GUARD_ACTIVATE:
@@ -360,6 +379,14 @@ def check(line, view):
     if kind == "-singlemove":
         if effect in _SINGLE_MOVE:
             return _feature(_SINGLE_MOVE[effect])
+        _unknown(kind, effect)
+    if kind == "-end" and "[partiallytrapped]" in attrs:
+        # the end of a partial trap (step G90): -end|T|M|[partiallytrapped] (the duration), or with |[silent] (the source left,
+        # a Substitute, the residual with a fainted source); the pin prints the move with or without "move: "
+        name = effect[len("move: "):] if effect.startswith("move: ") else effect
+        if (name in PARTIAL_TRAP_MOVES and len(args) == 2 and flat_position(args[0]) is not None
+                and attrs in (["[partiallytrapped]"], ["[partiallytrapped]", "[silent]"])):
+            return _trap_features()
         _unknown(kind, effect)
     if kind in ("-start", "-end"):
         if effect in (_FOLD_START if kind == "-start" else _FOLD_END):

@@ -456,6 +456,14 @@ def _tail(t, s, boundary):
             s.put(ppre + "throat_chop_turns", p.throat_chop)
             s.put(ppre + "perish", p.perish)
             s.put(ppre + "hits_taken", p.hits_taken)
+            if p.trap:
+                # the partial trap (step G90, decision 0060): the drawn turns are hidden for both viewers (src/state/view.c); the
+                # source (0 once it left), the move, the band and the elapsed count are public
+                s.put(ppre + "trap_turns", C["DUOFORGE_VIEW_HIDDEN"])
+                s.put(ppre + "trap_source", p.trap_source)
+                s.put(ppre + "trap_move", p.trap_move)
+                s.put(ppre + "trap_band", p.trap_band)
+                s.put(ppre + "trap_elapsed", p.trap_elapsed)
             s.put(f"tail5.position{side * 2 + k}.position_flags", POSFLAG_STATS_RAISED if p.raised else 0)
             if p.ability_now:
                 s.put(f"{pre}member{p.occupant}.ability_now", p.ability_now)
