@@ -53,3 +53,66 @@ DuoForge's observation shows the foe's open sheet (species, moves, item, ability
 - **Open.**
   - The bot does not reconnect when its connection drops. A reconnect's replay fails explicitly (forfeit) instead of folding the log twice.
   - The pair mask could follow DuoForge's forced-switch rule to avoid the refused passes. The spec chose to let Showdown judge.
+
+## 7. PKMN Arena mode (owner, 2026-10-12)
+
+The owner approved playing on PKMN Arena (https://vgc.ellep.dev, spec https://vgc.ellep.dev/llms.txt), a public ladder for VGC bots that speaks the Showdown protocol. The owner registered the bot **Tian-Suan** for open team sheets, `gen9championsvgc2026regmcots`. The mode is `python/duoforge_live/pkmn_arena.py`, started with `--server arena`. The Showdown modes above stay as they are, including the refusal of `--challenge` on the official server.
+
+**Run (WSL, by the owner).** The bot needs JAX (`~/df-learn`), a Linux build of the library from the same commit as the checkout, and `websockets`.
+
+```
+set -a; source ~/.duoforge-arena.env; set +a      # ARENA_BOT_NAME=Tian-Suan, ARENA_BOT_TOKEN=pka_... (mode 600)
+cd /mnt/c/Dev/src/duoforge
+export DUOFORGE_LIBRARY=<Linux build of this commit>/libduoforge_shared.so PYTHONPATH=python JAX_PLATFORMS=cpu
+~/df-learn/bin/python -m duoforge_live --server arena --format gen9championsvgc2026regmcots \
+    --checkpoint /mnt/c/Dev/datasets/m11-bc-runs/bc6-M/bc.npz --team <team paste> --log-dir ~/duoforge-arena-logs
+```
+
+Add `--search honest` to play the turn decisions with the honest search on the same checkpoint. `--team-pool FILE` holds the random ladder's published teams (see below).
+
+**Name and token.**
+- The name comes only from `ARENA_BOT_NAME` and the token only from `ARENA_BOT_TOKEN`. No option takes either.
+- The mode refuses to start when the command line contains the token or anything starting with `pka_`. It checks this before argument parsing, so the token is never echoed.
+- The token is read from the environment at each login and sent only in `|/trn NAME,0,TOKEN`. The bot never stores it, and every printed or logged text replaces it with `[token]`.
+- The host is fixed in code (`pkmn_arena.URL`). The Showdown mode refuses that host.
+
+**Play.**
+- The team (`--team`, a paste with genders) goes with `/utm` after every login, so after every reconnect too. A `|popup|` that rejects the team stops the bot with the server's reasons.
+- The server puts the bot in battles; it plays every one, one at a time, with the request's rqid on every `/choose`. A `wait` request gets no answer.
+- After `[Invalid choice]`, the bot sends the next-best candidate, up to 16 times per decision point.
+- The bot never forfeits and never chats.
+
+**Open team sheets.** At team preview, `|showteam|` reveals both sides' species, items, abilities, moves and natures, but not their stat points. The tracker folds these lines as it does on Showdown (section 2): the foe's members in the observation carry the revealed sets, and their stat points and stats stay unknown, as in DuoForge's own view. The honest search gets the same public record.
+
+**Fallback.** When the engine cannot represent a battle, the rest of that battle is answered with `/choose default`. The server's simulator then picks; Python picks no move. Each such battle and each defaulted decision is counted by its reason in the run log. The reasons are:
+
+| reason | cause |
+|---|---|
+| `closed_team_sheets` | a battle without open team sheets: the tracker needs both |
+| `no_open_sheets` | the sheets did not arrive within 20 s of the team preview request |
+| `stop:<kind>`, `error:<type>` | a tracker Stop, or an exception of the tracker, the options or the policy |
+| `rejections` | more than 16 refused choices at one decision point |
+| `unavailable` | more than two unavailable choices at one decision point |
+| `deadline`, `policy_busy` | the decision took more than 20 s; or a late decision still runs (never two at once) |
+| `reconnect` | after a reconnect, the replayed log differs from the lines already folded |
+| `random_team_unknown`, `random_team_ambiguous` | a random-team battle whose team is not exactly one `--team-pool` team |
+| `format` | a battle of another format |
+
+So every request gets an answer well within the arena timer (45 s, 90 s at team preview).
+
+**Reconnect.**
+- A dropped connection reconnects after 1, 2, 5, 10, then every 30 s; a successful login resets the backoff.
+- Close code 4001 (another login as the bot) stops the bot, so that two instances do not take turns. A refused login (`|nametaken|`) also stops it.
+- The server replays an open battle's log. When the replay starts with every battle line already folded, the new lines are folded, and the open request is answered again with the same choice. A `|sentchoice|` line means the server already holds the choice, so the bot sends nothing.
+
+**Random-team ladder** (`…random`). The team comes from the first request, which lacks the natures and stat points that the tracker's own sheet needs. The policy plays such a battle only when exactly one `--team-pool` team matches the request's species, items, abilities and moves. Otherwise the battle falls back.
+
+**Logs.**
+- One JSONL file per battle (it holds match and user ids) and an aggregate run log, `arena-run-<UTC start>.json`, which holds counts only.
+- Both stay private. The mode refuses a log directory inside the repository.
+- Reports quote aggregate counts only.
+
+**Evidence.**
+- `duoforge.python.pkmn_arena`: a fake websocket only. It covers login, team and token handling, an OTS battle that folds the sheets, every fallback, retries, the deadline, reconnects and the random ladder.
+- `duoforge.python.pkmn_arena_net` (JAX): a tiny synthetic checkpoint in the BC file format (model v2, encoder 6) loads as its own network. It plays the OTS fixture raw and with the honest search, with no fallback.
+- Nothing connects to the arena in tests.
