@@ -45,7 +45,7 @@ static const char TAIL_HEX[] =
     "000000000500000102010100000001000000000000010100000101000000000f000101000000000005002c01050c0012"
     "0100d700590112ff00ff00000000010000a6000001000000000000010000000000000000000000000000000000000000"
     "000000000000000001000001040401000300000000000000000001010000000000000000000000040003000300000000"
-    "040000000000000000000001030000000000000000000000ff0100090200000100000000000000000000000000000000"
+    "040000000000000000000001030000000000000000000000ff0100090200000104000000000000000000000000000000"
     "000000000000000001000000010000010000000000000000000000000000000000000000000000000700006400000100"
     "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
     "000000000000000000000000";
@@ -90,7 +90,7 @@ static const unsigned sweep[DFI_ENC_TAIL_SIZE][SWEEP_COLUMNS] = {
     {1, 0, 254, 0, 0, 0, 0, 0},
     {1, 0, 254, 0, 0, 0, 0, 0},
     {1, 0, 254, 0, 0, 0, 0, 0},
-    {3, 0, 252, 0, 0, 0, 0, 0},
+    {2, 0, 253, 0, 0, 0, 0, 0},
     {1, 0, 254, 0, 0, 0, 0, 0},
     {3, 0, 252, 0, 0, 0, 0, 0},
     {2, 0, 253, 0, 0, 0, 0, 0},
@@ -154,7 +154,7 @@ static const unsigned sweep[DFI_ENC_TAIL_SIZE][SWEEP_COLUMNS] = {
     {0, 0, 0, 255, 0, 0, 0, 0},
     {90, 0, 0, 165, 0, 0, 0, 0},
     {1, 0, 0, 254, 0, 0, 0, 0},
-    {18, 0, 0, 237, 0, 0, 0, 0},
+    {19, 0, 0, 236, 0, 0, 0, 0},
     {167, 0, 0, 88, 0, 0, 0, 0},
     {0, 0, 0, 255, 0, 0, 0, 0},
     {19, 0, 0, 236, 0, 0, 0, 0},
@@ -266,7 +266,7 @@ static const unsigned sweep[DFI_ENC_TAIL_SIZE][SWEEP_COLUMNS] = {
     {1, 0, 254, 0, 0, 0, 0, 0},
     {1, 0, 254, 0, 0, 0, 0, 0},
     {1, 0, 254, 0, 0, 0, 0, 0},
-    {3, 0, 252, 0, 0, 0, 0, 0},
+    {2, 0, 253, 0, 0, 0, 0, 0},
     {1, 0, 254, 0, 0, 0, 0, 0},
     {3, 0, 252, 0, 0, 0, 0, 0},
     {2, 0, 253, 0, 0, 0, 0, 0},
@@ -314,7 +314,7 @@ static const unsigned sweep[DFI_ENC_TAIL_SIZE][SWEEP_COLUMNS] = {
     {0, 0, 0, 255, 0, 0, 0, 0},
     {255, 0, 0, 0, 0, 0, 0, 0},
     {1, 0, 0, 254, 0, 0, 0, 0},
-    {18, 0, 0, 237, 0, 0, 0, 0},
+    {19, 0, 0, 236, 0, 0, 0, 0},
     {167, 0, 0, 88, 0, 0, 0, 0},
     {0, 0, 0, 255, 0, 0, 0, 0},
     {19, 0, 0, 236, 0, 0, 0, 0},
@@ -731,10 +731,10 @@ static size_t build_settings(tail_setting *out)
                                                   W1(po + DFI_ENC_TAIL_POS_DISABLE_TURNS_OFF, 1u), NO_WRITE}};
             out[n++] = (tail_setting){"imprison", {W1(po + DFI_ENC_TAIL_POS_IMPRISON_OFF, 1u), NO_WRITE, NO_WRITE}};
             out[n++] = (tail_setting){"must_recharge", {W1(po + DFI_ENC_TAIL_POS_MUST_RECHARGE_OFF, 1u), NO_WRITE, NO_WRITE}};
-            out[n++] = (tail_setting){"trap", {W1(po + DFI_ENC_TAIL_POS_TRAP_TURNS_OFF, 1u),
+            out[n++] = (tail_setting){"trap", {W1(po + DFI_ENC_TAIL_POS_TRAP_TURNS_OFF, 5u),
                                                W1(po + DFI_ENC_TAIL_POS_TRAP_SOURCE_OFF, other),
                                                W2(po + DFI_ENC_TAIL_POS_TRAP_MOVE_OFF, 1u)}};
-            out[n++] = (tail_setting){"trap_band", {W1(po + DFI_ENC_TAIL_POS_TRAP_TURNS_OFF, 1u),
+            out[n++] = (tail_setting){"trap_band", {W1(po + DFI_ENC_TAIL_POS_TRAP_TURNS_OFF, 5u),
                                                     W1(po + DFI_ENC_TAIL_POS_TRAP_SOURCE_OFF, other),
                                                     W2(po + DFI_ENC_TAIL_POS_TRAP_MOVE_OFF, 1u),
                                                     W1(po + DFI_ENC_TAIL_POS_TRAP_BAND_OFF, 1u)}};
@@ -1057,7 +1057,7 @@ MUT(v_maxima, {
     ts->positions[0] = (dfi_tail_pos){.substitute_hp = 1u, .trap_move = DFI_POOL_MOVE_COUNT, .last_move = 5u,
                                       .encore_slot = 4u, .encore_turns = 4u, .throat_chop_turns = 2u,
                                       .heal_block_turns = 5u, .perish = 4u, .taunt_turns = 4u, .disable_slot = 4u,
-                                      .disable_turns = 5u, .imprison = 1u, .must_recharge = 1u, .trap_turns = 8u,
+                                      .disable_turns = 5u, .imprison = 1u, .must_recharge = 1u, .trap_turns = 6u,
                                       .trap_source = 4u, .trap_band = 1u, .leech_seed_source = 4u, .yawn_turns = 2u,
                                       .focus_energy = 1u, .stockpile = 3u, .stockpile_def = 3u,
                                       .stockpile_spd = 3u, .charge = 1u, .glaive_rush = 1u, .move_result = 0x0Fu,
