@@ -184,6 +184,7 @@ class TrackerStopTest(unittest.TestCase):
         from duoforge_live import tracker
         t = tracker.Tracker.__new__(tracker.Tracker)
         t.side, t._spectator = 0, False
+        t._action = None  # no move action open (Tracker._segment)
         t._positions = [[tracker._Position(), tracker._Position()] for _ in (0, 1)]
         for side in t._positions:
             for k, p in enumerate(side):
@@ -221,6 +222,20 @@ class TrackerStopTest(unittest.TestCase):
             with self.assertRaises(lines.Stop, msg=last) as caught:
                 t._event(start)
             self.assertEqual(caught.exception.reason, "encore-slot-unknown")
+
+
+class HpDisplayTest(unittest.TestCase):
+    """duoforge.view.hp_display: the library's display (duoforge_hp_display) and its refusals as DuoforgeError."""
+
+    def test_values_and_refusals(self):
+        from duoforge import view
+        from duoforge.errors import DuoforgeError
+        self.assertEqual(view.hp_display(150, 193), (77, 0))
+        self.assertEqual(view.hp_display(1, 181), (1, 0))
+        self.assertEqual(view.hp_display(0, 181), (0, 0))
+        for hp, hp_max in ((3, 2), (0, 0), (1, 0x10000)):
+            with self.assertRaisesRegex(DuoforgeError, "INVALID_ARGUMENT"):
+                view.hp_display(hp, hp_max)
 
 
 class CheckpointTablesTest(unittest.TestCase):
