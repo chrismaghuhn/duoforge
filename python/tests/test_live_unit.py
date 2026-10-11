@@ -295,6 +295,12 @@ class TrackerStopTest(unittest.TestCase):
         with self.assertRaises(lines.Stop):
             t._hurt(0, CAUSE["NONE"])  # a plain -damage on its own user that no engine cost explains
 
+    def test_the_direct_costs_are_the_engines_dfi_deal_direct_sites(self):
+        # G86: Belly Drum's half-HP cost is directDamage like Substitute's and Clangorous Soul's (src/combat/turn.c
+        # dfi_run_belly_drum); the three are the plain -damage of the user's own move that sets no HURT
+        from duoforge_live import tracker
+        self.assertEqual(set(tracker.DIRECT_COST_MOVES), {"SUBSTITUTE", "CLANGOROUSSOUL", "BELLYDRUM"})
+
     def test_throat_chop_takes_only_the_pins_silent_form(self):
         from duoforge_live import lines
         t = self.tracker()

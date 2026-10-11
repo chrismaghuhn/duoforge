@@ -1085,6 +1085,68 @@ static void test_move_result(df_test *t)
     ev[0].flags = DUOFORGE_EVENT_FLAG_STILL;
     ev[1] = mr_ev(DUOFORGE_EVENT_FAIL, 1u, none, DUOFORGE_CAUSE_NONE, 0u, 0u);
     DF_CHECK(t, mr_of(t, kp, 1u, ev, 2u) == DFI_MOVE_RESULT_FALSE);
+    /* G86 Belly Drum (dfi_run_belly_drum): the cost (a plain -damage of the user) and the boost, true; its -fail with [still]
+     * (half HP or less, Attack at +6), false. Curse without the Ghost type (dfi_run_curse): the boosts with no [from], true;
+     * its -fail when nothing changed, false. Neither reads a target. */
+    ev[0] = mr_ev(DUOFORGE_EVENT_MOVE, 2u, 2u, DUOFORGE_CAUSE_NONE, DFI_MOVE_BELLYDRUM, 0u);
+    ev[1] = mr_ev(DUOFORGE_EVENT_DAMAGE, 2u, none, DUOFORGE_CAUSE_NONE, 0u, 0u);
+    ev[2] = mr_ev(DUOFORGE_EVENT_BOOST, 2u, none, DUOFORGE_CAUSE_MOVE, 0u, DFI_MOVE_BELLYDRUM);
+    ev[2].amount = 6u;
+    DF_CHECK(t, mr_of(t, kp, 2u, ev, 3u) == DFI_MOVE_RESULT_TRUE);
+    ev[0].flags = DUOFORGE_EVENT_FLAG_STILL;
+    ev[1] = mr_ev(DUOFORGE_EVENT_FAIL, 2u, none, DUOFORGE_CAUSE_NONE, 0u, 0u);
+    DF_CHECK(t, mr_of(t, kp, 2u, ev, 2u) == DFI_MOVE_RESULT_FALSE);
+    ev[0] = mr_ev(DUOFORGE_EVENT_MOVE, 0u, none, DUOFORGE_CAUSE_NONE, DFI_MOVE_CURSE, 0u);
+    ev[1] = mr_ev(DUOFORGE_EVENT_UNBOOST, 0u, none, DUOFORGE_CAUSE_NONE, 0u, 0u);
+    ev[1].amount = 1u;
+    ev[2] = mr_ev(DUOFORGE_EVENT_BOOST, 0u, none, DUOFORGE_CAUSE_NONE, 0u, 0u);
+    ev[2].amount = 1u;
+    DF_CHECK(t, mr_of(t, kp, 0u, ev, 3u) == DFI_MOVE_RESULT_TRUE);
+    ev[0].flags = DUOFORGE_EVENT_FLAG_STILL;
+    ev[1] = mr_ev(DUOFORGE_EVENT_FAIL, 0u, none, DUOFORGE_CAUSE_NONE, 0u, 0u);
+    DF_CHECK(t, mr_of(t, kp, 0u, ev, 2u) == DFI_MOVE_RESULT_FALSE);
+    /* G84 Leech Seed (dfi_leech_seed): the seed that started, true; a Grass target's -immune, false; a standing seed's -fail
+     * with [still], false */
+    ev[0] = mr_ev(DUOFORGE_EVENT_MOVE, 0u, 2u, DUOFORGE_CAUSE_NONE, DFI_MOVE_LEECHSEED, 0u);
+    ev[1] = mr_ev(DUOFORGE_EVENT_VOLATILE_START, 2u, none, DUOFORGE_CAUSE_NONE, 0u, 0u);
+    ev[1].detail = (uint8_t)DUOFORGE_VOLATILE_LEECH_SEED;
+    DF_CHECK(t, mr_of(t, kp, 0u, ev, 2u) == DFI_MOVE_RESULT_TRUE);
+    ev[1] = mr_ev(DUOFORGE_EVENT_IMMUNE, 2u, none, DUOFORGE_CAUSE_NONE, 0u, 0u);
+    DF_CHECK(t, mr_of(t, kp, 0u, ev, 2u) == DFI_MOVE_RESULT_FALSE);
+    ev[0].flags = DUOFORGE_EVENT_FLAG_STILL;
+    ev[1] = mr_ev(DUOFORGE_EVENT_FAIL, 0u, none, DUOFORGE_CAUSE_NONE, 0u, 0u);
+    DF_CHECK(t, mr_of(t, kp, 0u, ev, 2u) == DFI_MOVE_RESULT_FALSE);
+    /* G92 Swagger (dfi_status_effects, DFI_SPECIAL_CONFUSE): the target's boost or its confusion, true; a Misty Terrain's
+     * -activate alone (onTryAddVolatile null, the hit target's false), false; Confuse Ray at a confused target (-fail with
+     * [still]), false */
+    ev[0] = mr_ev(DUOFORGE_EVENT_MOVE, 1u, 3u, DUOFORGE_CAUSE_NONE, DFI_MOVE_SWAGGER, 0u);
+    ev[1] = mr_ev(DUOFORGE_EVENT_BOOST, 3u, none, DUOFORGE_CAUSE_NONE, 0u, 0u);
+    ev[1].amount = 2u;
+    ev[2] = mr_ev(DUOFORGE_EVENT_CONFUSION_START, 3u, none, DUOFORGE_CAUSE_NONE, 0u, 0u);
+    DF_CHECK(t, mr_of(t, kp, 1u, ev, 3u) == DFI_MOVE_RESULT_TRUE);
+    ev[1] = mr_ev(DUOFORGE_EVENT_BOOST, 3u, none, DUOFORGE_CAUSE_NONE, 0u, 0u); /* at +6: -boost 0, only the volatile */
+    DF_CHECK(t, mr_of(t, kp, 1u, ev, 3u) == DFI_MOVE_RESULT_TRUE);
+    ev[0] = mr_ev(DUOFORGE_EVENT_MOVE, 1u, 3u, DUOFORGE_CAUSE_NONE, DFI_MOVE_CONFUSERAY, 0u);
+    ev[1] = mr_ev(DUOFORGE_EVENT_ACTIVATE, 3u, none, DUOFORGE_CAUSE_MOVE, 0u, DFI_MOVE_MISTYTERRAIN);
+    DF_CHECK(t, mr_of(t, kp, 1u, ev, 2u) == DFI_MOVE_RESULT_FALSE);
+    ev[0].flags = DUOFORGE_EVENT_FLAG_STILL;
+    ev[1] = mr_ev(DUOFORGE_EVENT_FAIL, 1u, none, DUOFORGE_CAUSE_NONE, 0u, 0u);
+    DF_CHECK(t, mr_of(t, kp, 1u, ev, 2u) == DFI_MOVE_RESULT_FALSE);
+    /* Teeter Dance (all adjacent): one target Protected (NULL), another one refused by Misty Terrain (a hit target that nothing
+     * changed, false: g92_misty_clamp_boost); with the Protect alone, null */
+    ev[0] = mr_ev(DUOFORGE_EVENT_MOVE, 2u, none, DUOFORGE_CAUSE_NONE, DFI_MOVE_TEETERDANCE, 0u);
+    ev[1] = mr_ev(DUOFORGE_EVENT_BLOCKED, 0u, none, DUOFORGE_CAUSE_NONE, 0u, 0u);
+    DF_CHECK(t, mr_of(t, kp, 2u, ev, 2u) == DFI_MOVE_RESULT_NULL);
+    ev[2] = mr_ev(DUOFORGE_EVENT_ACTIVATE, 1u, none, DUOFORGE_CAUSE_MOVE, 0u, DFI_MOVE_MISTYTERRAIN);
+    DF_CHECK(t, mr_of(t, kp, 2u, ev, 3u) == DFI_MOVE_RESULT_FALSE);
+    /* G92 Memento: the target's falls, true (its user's faint is not the move's); nothing changed, false */
+    ev[0] = mr_ev(DUOFORGE_EVENT_MOVE, 1u, 2u, DUOFORGE_CAUSE_NONE, DFI_MOVE_MEMENTO, 0u);
+    ev[1] = mr_ev(DUOFORGE_EVENT_UNBOOST, 2u, none, DUOFORGE_CAUSE_NONE, 0u, 0u);
+    ev[1].amount = 2u;
+    ev[2] = mr_ev(DUOFORGE_EVENT_FAINT, 1u, none, DUOFORGE_CAUSE_NONE, 0u, 0u);
+    DF_CHECK(t, mr_of(t, kp, 1u, ev, 3u) == DFI_MOVE_RESULT_TRUE);
+    ev[1].amount = 0u;
+    DF_CHECK(t, mr_of(t, kp, 1u, ev, 3u) == DFI_MOVE_RESULT_FALSE);
     /* a [still] -fail: false; the lines of another position before the action are skipped */
     ev[0] = mr_ev(DUOFORGE_EVENT_DAMAGE, 3u, none, DUOFORGE_CAUSE_POISON, 0u, 0u);
     ev[1] = mr_ev(DUOFORGE_EVENT_MOVE, 1u, none, DUOFORGE_CAUSE_NONE, DFI_MOVE_TAILWIND, 0u);
