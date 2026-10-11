@@ -573,6 +573,9 @@ const dfi_support_manifest dfi_support = {
             /* Step C5 (decision 0015 entry 5cy): Endeavor (the ENDEAVOR special, the Final Gambit damage path): damage = target HP
              * - user HP, immune when the user's HP is not below the target's (data/moves.ts:4784-4804). */
             [DFI_MOVE_ENDEAVOR] = 1u,
+            /* Step C5b (decision 0015 entry 5cy): Payback, the PAYBACK special (basePowerCallback: doubled unless the target is newly
+             * switched or queue.willMove(target)); data/moves.ts:13186-13206. */
+            [DFI_MOVE_PAYBACK] = 1u,
         },
     .abilities =
         {

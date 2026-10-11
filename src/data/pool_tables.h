@@ -927,7 +927,8 @@
 #define DFI_SPECIAL_ASSURANCE 102u
 #define DFI_SPECIAL_BANEFUL_BUNKER 103u
 #define DFI_SPECIAL_ENDEAVOR 104u
-#define DFI_SPECIAL_UNMODELED 105u
+#define DFI_SPECIAL_PAYBACK 105u
+#define DFI_SPECIAL_UNMODELED 106u
 
 /* ---- the second flags byte of every move (step G8: the general byte for the flags that the first one has no room
  * for; bits 4 to 128 are free) and the secondary kinds that it comes with ---- */

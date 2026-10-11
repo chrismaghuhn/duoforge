@@ -1594,6 +1594,8 @@ static duoforge_status dfi_queue_self_faint(dfi_run *r, uint32_t flat)
     return DUOFORGE_OK;
 }
 
+static const dfi_queue_record *dfi_will_move(struct duoforge_battle *b, uint32_t flat); /* queue.willMove, defined below */
+
 static duoforge_status dfi_get_damage(dfi_run *r, uint32_t user, uint32_t target, const dfi_move_data *md,
                                       uint32_t move_type, bool spread, uint32_t *out)
 {
@@ -1746,6 +1748,16 @@ static duoforge_status dfi_get_damage(dfi_run *r, uint32_t user, uint32_t target
         /* Acrobatics' basePowerCallback (step G28, data/moves.ts:117-141): doubled while the user holds no item (the item it
          * holds now: one that was eaten, knocked off or used up is gone). */
         if (dfi_item_code(r->b, a) == 0u) {
+            power *= 2u;
+        }
+    } else if (md->special == DFI_SPECIAL_PAYBACK) {
+        /* Payback's basePowerCallback (step C5b, data/moves.ts:13186-13206): doubled unless the target is newly switched
+         * (pokemon.newlySwitched: DFI_VOL_NEWLY_SWITCHED, from its switch-in to the end of the turn) or queue.willMove(target)
+         * (battle-queue.ts:324-332: a queued move of the target, null when it has fainted), so it is doubled when the target
+         * has already moved this turn. The callback draws nothing, so its place in the power chain does not change any draw
+         * (basePowerCallback, battle-actions.ts:1617-1620; the crit roll is at :1638-1647). */
+        const dfi_active_slot *tp = dfi_pos(r->b, target);
+        if (((uint32_t)tp->flags & DFI_VOL_NEWLY_SWITCHED) == 0u && dfi_will_move(r->b, target) == NULL) {
             power *= 2u;
         }
     } else if (md->special == DFI_SPECIAL_STOMPING_TANTRUM) {
@@ -7127,7 +7139,7 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
         md->special != DFI_SPECIAL_STEEL_BEAM && md->special != DFI_SPECIAL_THUNDER_WAVE &&
         md->special != DFI_SPECIAL_SKILL_SWAP &&
         md->special != DFI_SPECIAL_ALLURING_VOICE && md->special != DFI_SPECIAL_DRAGON_CHEER &&
-        md->special != DFI_SPECIAL_FINAL_GAMBIT && md->special != DFI_SPECIAL_ENDEAVOR &&
+        md->special != DFI_SPECIAL_FINAL_GAMBIT && md->special != DFI_SPECIAL_ENDEAVOR && md->special != DFI_SPECIAL_PAYBACK &&
         md->special != DFI_SPECIAL_DRAGON_DARTS &&
         md->special != DFI_SPECIAL_LASH_OUT && md->special != DFI_SPECIAL_ASSURANCE) {
         return DUOFORGE_E_INVARIANT;
