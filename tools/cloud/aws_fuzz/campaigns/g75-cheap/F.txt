@@ -8,7 +8,7 @@ Modest Nature
 - Flare Blitz
 - Protect
 
-Clefable (F) @ Leftovers
+Clefable (F) @ Clefablite
 Ability: Unaware
 Level: 50
 EVs: 32 HP / 32 SpA / 2 SpD

@@ -1,4 +1,4 @@
-Absol (M) @ Black Glasses
+Absol (M) @ Scope Lens
 Ability: Super Luck
 Level: 50
 EVs: 2 HP / 32 Atk / 32 Spe
@@ -8,8 +8,8 @@ Jolly Nature
 - Sucker Punch
 - Protect
 
-Medicham (M) @ Sitrus Berry
-Ability: Telepathy
+Medicham (M) @ Medichamite
+Ability: Pure Power
 Level: 50
 EVs: 32 HP / 32 Atk / 2 SpD
 Adamant Nature
@@ -28,8 +28,8 @@ Calm Nature
 - Coil
 - Protect
 
-Falinks @ Leftovers
-Ability: Defiant
+Falinks (M) @ Leftovers
+Ability: Battle Armor
 Level: 50
 EVs: 32 HP / 32 Atk / 2 SpD
 Adamant Nature
@@ -48,12 +48,12 @@ Modest Nature
 - Nasty Plot
 - Protect
 
-Sneasler (M) @ White Herb
-Ability: Unburden
+Skeledirge (F) @ Sitrus Berry
+Ability: Blaze
 Level: 50
-EVs: 2 HP / 32 Atk / 32 Spe
-Adamant Nature
-- Close Combat
-- Dire Claw
-- U-turn
-- Fake Out
+EVs: 32 HP / 32 SpA / 2 SpD
+Modest Nature
+- Will-O-Wisp
+- Shadow Ball
+- Flare Blitz
+- Protect
