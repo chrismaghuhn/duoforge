@@ -297,19 +297,26 @@ class Honest(lookahead.Lookahead):
                 raise
             finally:
                 costs["public_records"] += time.perf_counter() - t
+        if self.species_prior:  # from the first draw's level: a redraw raises it (SpreadTable.draw)
+            initial = [self.belief.table.candidates(sp, nature, item, excluded)[0] for sp, nature, item in members]
+            missing = [members[m][0] for m, level in enumerate(initial) if level >= 4]
+            if missing:
+                raise Unreconstructible(f"no spread prior for foe species {missing}")
         for _ in range(MAX_RESPREADS):
             t = time.perf_counter()
             sampled = self.belief.sample(members, self.s, self.seed, key, excluded, attempts)
             if self.species_prior:
-                missing = np.flatnonzero((sampled["levels"][:, :len(members)] >= 4).any(axis=0))
-                if missing.size:
-                    raise Unreconstructible(f"no spread prior for foe species {[members[m][0] for m in missing]}")
+                past = np.flatnonzero((sampled["levels"][:, :len(members)] >= 4).any(axis=0))
+                if past.size:  # every stated spread of the species contradicted the public view
+                    raise Unreconstructible(f"redraw past the species prior for foe species "
+                                            f"{[members[m][0] for m in past]} after {respreads} respreads")
             weights = sampled["weights"]
             h = view.hypotheses(self.s)
             for name in ("stat_points", "hp", "sleep", "confusion", "charge_target"):
                 h[name] = sampled[name]
             if self._build(history["preview"], h).any():
                 raise SearchError("a sampled spread is invalid at team preview")
+            self._check_worlds(history["preview"], costs)  # the preview record is assembled like the root
             costs["world_builds"] += time.perf_counter() - t
             _, team, elapsed, _, _, _, query_seconds = self._world_policy()
             costs["world_builds"] += query_seconds
@@ -331,6 +338,7 @@ class Honest(lookahead.Lookahead):
                     attempts[st != 0] += 1
                     respreads += int((st != 0).sum())
                     continue
+                self._check_worlds(history["turn_start"], costs)
                 pp, _, elapsed, legal, _, _, query_seconds = self._world_policy()
                 costs["world_builds"] += query_seconds
                 costs["network"] += elapsed
@@ -358,7 +366,7 @@ class Honest(lookahead.Lookahead):
         raise SearchError(f"a world still contradicts the public view after {MAX_RESPREADS} spread draws")
 
     def _check_worlds(self, record, costs):
-        """Every world built from the root record gives that record back (from_view, then public, byte for byte). A
+        """Every world built from a record (the root, the team preview's, the turn start's) gives it back (from_view, then public, byte for byte). A
         record assembled outside the engine (the live tracker's) that fills a field the engine masks, or contradicts
         itself, stops here with the differing fields named, instead of being searched. Engine records always pass
         (duoforge.view); the check costs one public() call per decision."""
@@ -370,14 +378,14 @@ class Honest(lookahead.Lookahead):
             if int(statuses[w]) == 0 and again[w].tobytes() == want:
                 continue
             if int(statuses[w]) != 0:
-                raise SearchError(f"world {w} built from the root record refuses its public record "
+                raise SearchError(f"world {w} built from the record refuses its public record "
                                   f"({duoforge.status_name(int(statuses[w]))})")
             header = [name for name in record.dtype.names if name not in ("state", "pad")
                       and not np.array_equal(np.asarray(record[name]), np.asarray(again[w][name]))]
             size = int(record["state_size"])
             fields = state_layout.diff(np.asarray(record["state"])[:size].tobytes(),
                                        np.asarray(again[w]["state"])[:size].tobytes(), pool=size > state_layout.V3_SIZE)
-            raise SearchError(f"world {w} does not give the root record back: header {header}, state fields {fields}")
+            raise SearchError(f"world {w} does not give its record back: header {header}, state fields {fields}")
 
     def decide(self, roots, envs, seats, keys, last_step):
         envs, seats = np.asarray(envs, np.int64), np.asarray(seats, np.int64)

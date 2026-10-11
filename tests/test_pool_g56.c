@@ -145,8 +145,8 @@ static void lock_lead(duoforge_battle *b)
 }
 
 /* A running lockedmove has its move as the occupant's last used one (view audit 2026-10-10; the public record's proxy,
- * dfi_maybe_lockedmove, relies on it): a lock whose last move is none or another move is a broken state, which the public
- * record refuses explicitly (E_INVARIANT). */
+ * dfi_maybe_lockedmove, relies on it): a lock whose last move is none or another move is a broken state, refused by the
+ * state check (TAIL_POSITION) as by the public record. */
 static void test_lock_needs_its_last_move(df_test *t, const duoforge_context *ctx)
 {
     duoforge_battle *b = turn_battle(t, ctx);
@@ -156,8 +156,9 @@ static void test_lock_needs_its_last_move(df_test *t, const duoforge_context *ct
     DF_CHECK(t, b->sides[0].members[occ].moves[1].move_id != DFI_MOVE_OUTRAGE);
     for (uint32_t last = 0u; last <= 2u; last += 2u) { /* none, then the move in slot 1 */
         b->tail.sides[0].positions[g_lead].last_move = (uint8_t)last;
-        /* The state check does not reject it yet: that invariant needs the pinned example tail of test_pool_tail rebuilt on
-         * leads that learn a lockedmove move (follow-up in M12 bundle 6). The public record refuses it explicitly. */
+        dfi_invariant inv = DFI_INV_NONE;
+        DF_CHECK(t, dfi_state_check(ctx, b, &inv) == DUOFORGE_E_INVARIANT && inv == DFI_INV_TAIL_POSITION);
+        DF_CHECK(t, duoforge_battle_check(ctx, b) != DUOFORGE_OK);
         for (uint32_t p = 0u; p < 2u; ++p) {
             duoforge_public_state v;
             DF_CHECK(t, duoforge_battle_public(ctx, b, p, &v) == DUOFORGE_E_INVARIANT);

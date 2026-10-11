@@ -89,6 +89,16 @@ class Policy:
         return _ranked(logp[0], np.ones(logp.shape[1], dtype=bool))
 
 
+def table_kind(config):
+    """The live tables' kind (data.load) of a checkpoint's config: its data kind, "closure" for a format-1 file. The
+    tracker's view (and its extension record) is the kind the network was trained under; Team C data has no live
+    tables, so it is refused."""
+    kind = config.get("data", {}).get("kind", "closure") if config.get("format") == 2 else "closure"
+    if kind not in ("closure", "pool"):
+        raise ValueError(f"no live tables of data kind {kind!r}")
+    return kind
+
+
 class ModelPolicy(Policy):
     """A format-2 checkpoint's own network (checkpoint.trained_model) in its trained layout, through JAX."""
 

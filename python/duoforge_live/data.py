@@ -223,16 +223,23 @@ def load(root=ROOT, kind="closure"):
 
 
 def for_config(config, root=ROOT):
-    """The tables of a checkpoint's config (its "data": the kind its network was trained on and the fingerprint of that
-    context): the live tracker reads the battle with them, and its public record is of that context. The kind must be one
-    the tracker has tables for (closure, pool) and the library's context of it must have the checkpoint's fingerprint;
-    anything else raises ValueError before a game starts, never another kind."""
-    entry = config.get("data") if isinstance(config, dict) else None
+    """The tables of a checkpoint's config: its data kind (policy.table_kind: "closure" for a format-1 file, which names
+    none) and, for a format-2 file, the fingerprint of that context (its "data"), which the library's context of the kind
+    must have. The live tracker reads the battle with them, and its public record is of that context. A format-2 config
+    without its data, a kind without live tables (team_c) or another fingerprint raises ValueError before a game starts,
+    never another kind."""
+    from .policy import table_kind
+    if not isinstance(config, dict):
+        raise ValueError("the checkpoint names no data kind and fingerprint (no config)")
+    if config.get("format") != 2:
+        return Data(root, table_kind(config))  # a format-1 network: the closure tables, no fingerprint to check
+    entry = config.get("data")
     if not isinstance(entry, dict) or "kind" not in entry or "fingerprint" not in entry:
         raise ValueError("the checkpoint names no data kind and fingerprint (config['data']): its tables are unknown")
-    kind = entry["kind"]
-    if kind not in _KINDS:
-        raise ValueError(f"the checkpoint's data kind {kind!r} has no live tables (one of {sorted(_KINDS)})")
+    try:
+        kind = table_kind(config)
+    except ValueError as err:
+        raise ValueError(f"the checkpoint's data kind {entry['kind']!r} has no live tables ({err})") from None
     tables = Data(root, kind)
     found = tables.context().fingerprint().hex()
     if found != entry["fingerprint"]:

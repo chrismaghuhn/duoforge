@@ -253,10 +253,11 @@ class CheckpointTablesTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "fingerprint"):
             data.for_config(self.config("pool", closure))  # closure tables named as pool
         with self.assertRaisesRegex(ValueError, "no live tables"):
-            data.for_config({"data": {"kind": "team_c", "fingerprint": closure}})
-        for config in ({}, {"data": {"kind": "pool"}}, None):
+            data.for_config({"format": 2, "data": {"kind": "team_c", "fingerprint": closure}})
+        for config in ({"format": 2}, {"format": 2, "data": {"kind": "pool"}}, None):
             with self.assertRaisesRegex(ValueError, "names no data kind"):
                 data.for_config(config)
+        self.assertEqual(data.for_config({"format": 1}).kind, "closure")  # a format-1 network names no data: closure
 
 
 if __name__ == "__main__":
