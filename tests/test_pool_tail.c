@@ -1702,19 +1702,9 @@ int main(void)
                 uint8_t dg[DUOFORGE_DIGEST_SIZE];
                 size_t written = 77u;
                 size_t size = 0u;
-                /* decision 0060: the trap_turns byte of an occupied position is judged by the per-position check of a turn
-                 * boundary (a trap whose source is 0 is refused there, before the whole-tail check), the other bytes by
-                 * TAIL_KIND. Each byte has its own expected reason; nothing else is accepted. */
-                bool trap_turns_byte = false;
-                for (uint32_t s2 = 0u; s2 < 2u; ++s2) {
-                    for (uint32_t p2 = 0u; p2 < 2u; ++p2) {
-                        if (k == (size_t)((uint8_t *)&b->tail.sides[s2].positions[p2].trap_turns - (uint8_t *)&b->tail) &&
-                            b->sides[s2].positions[p2].occupant != DFI_OCCUPANT_NONE) {
-                            trap_turns_byte = true;
-                        }
-                    }
-                }
-                const dfi_invariant want_inv = trap_turns_byte ? DFI_INV_TAIL_POSITION : DFI_INV_TAIL_KIND;
+                /* a non-pool battle: every tail byte, the trap_turns bytes too, is refused by TAIL_KIND (the per-position trap
+                 * rules are the pool tail's; the boundary rule on the source is gone, decision 0060) */
+                const dfi_invariant want_inv = DFI_INV_TAIL_KIND;
                 if (dfi_state_check(kinds[i], b, &inv) == DUOFORGE_E_INVARIANT && inv == want_inv &&
                     duoforge_battle_check(kinds[i], b) == DUOFORGE_E_INVARIANT &&
                     duoforge_battle_encode(kinds[i], b, out, sizeof out, &written) == DUOFORGE_E_INVARIANT &&
