@@ -193,18 +193,17 @@ static void check_fold_ignores_frisk_item_shown(df_test *t, const duoforge_conte
 static void check_illusion_refusal(df_test *t, const duoforge_context *ctx)
 {
     const df_conf_battle *cb = find("i2_illusion_break");
-    if (!DF_CHECK(t, cb != NULL)) {
+    const df_conf_battle *frisk = find("g81_frisk_two_foes");
+    if (!DF_CHECK(t, cb != NULL && frisk != NULL)) {
         return;
     }
     duoforge_battle_setup setup;
     build_setup(cb, &setup);
-    setup.sides[1].members[0].species_id = DFI_FORME_NOIVERN;
-    setup.sides[1].members[0].ability = DFI_ABILITY_FRISK + 1u;
-    setup.sides[1].members[0].gender = DFI_GENDER_MALE;
-    /* Noivern learns Protect and Hurricane (the setup checks each move of the forme): Primarina's moves are replaced. */
-    setup.sides[1].members[0].move_count = 2u;
-    setup.sides[1].members[0].moves[0].move_id = DFI_MOVE_HURRICANE;
-    setup.sides[1].members[0].moves[1].move_id = DFI_MOVE_PROTECT;
+    duoforge_battle_setup frisk_setup;
+    build_setup(frisk, &frisk_setup);
+    /* Side 1's lead becomes a complete, legal Frisk holder: Noivern of g81_frisk_two_foes (its Focus Sash, Frisk, Hurricane, Dragon
+     * Pulse and Protect; the setup checks each of them against the forme). */
+    setup.sides[1].members[0] = frisk_setup.sides[0].members[0];
     duoforge_battle *b = NULL;
     DF_CHECK_EQ_U64(t, (uint64_t)duoforge_battle_create(ctx, &setup, &b), (uint64_t)DUOFORGE_E_UNSUPPORTED);
     DF_CHECK(t, b == NULL);
