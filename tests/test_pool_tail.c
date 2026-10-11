@@ -89,8 +89,8 @@ static const unsigned sweep[DFI_ENC_TAIL_SIZE][SWEEP_COLUMNS] = {
     {4, 0, 251, 0, 0, 0, 0, 0},
     {1, 0, 254, 0, 0, 0, 0, 0},
     {1, 0, 254, 0, 0, 0, 0, 0},
-    {7, 0, 248, 0, 0, 0, 0, 0},
-    {2, 0, 253, 0, 0, 0, 0, 0},
+    {1, 0, 254, 0, 0, 0, 0, 0},
+    {3, 0, 252, 0, 0, 0, 0, 0},
     {1, 0, 254, 0, 0, 0, 0, 0},
     {3, 0, 252, 0, 0, 0, 0, 0},
     {2, 0, 253, 0, 0, 0, 0, 0},
@@ -110,7 +110,7 @@ static const unsigned sweep[DFI_ENC_TAIL_SIZE][SWEEP_COLUMNS] = {
     {6, 0, 249, 0, 0, 0, 0, 0},
     {6, 0, 249, 0, 0, 0, 0, 0},
     {0, 0, 255, 0, 0, 0, 0, 0},
-    {5, 0, 250, 0, 0, 0, 0, 0}, /* step G90: trap_elapsed of side 0 position 0 (trapped: 1..5 OK, the rest POSITION) */
+    {0, 0, 255, 0, 0, 0, 0, 0}, /* step G90: trap_elapsed of side 0 position 0 (trapped: 1..5 OK, the rest POSITION) */
     {0, 0, 0, 0, 0, 255, 0, 0},
     {0, 0, 0, 0, 0, 255, 0, 0},
     {0, 0, 0, 0, 0, 255, 0, 0},
@@ -154,7 +154,7 @@ static const unsigned sweep[DFI_ENC_TAIL_SIZE][SWEEP_COLUMNS] = {
     {0, 0, 0, 255, 0, 0, 0, 0},
     {90, 0, 0, 165, 0, 0, 0, 0},
     {1, 0, 0, 254, 0, 0, 0, 0},
-    {19, 0, 0, 236, 0, 0, 0, 0},
+    {18, 0, 0, 237, 0, 0, 0, 0},
     {167, 0, 0, 88, 0, 0, 0, 0},
     {0, 0, 0, 255, 0, 0, 0, 0},
     {19, 0, 0, 236, 0, 0, 0, 0},
@@ -265,8 +265,8 @@ static const unsigned sweep[DFI_ENC_TAIL_SIZE][SWEEP_COLUMNS] = {
     {0, 0, 255, 0, 0, 0, 0, 0},
     {1, 0, 254, 0, 0, 0, 0, 0},
     {1, 0, 254, 0, 0, 0, 0, 0},
-    {7, 0, 248, 0, 0, 0, 0, 0},
-    {2, 0, 253, 0, 0, 0, 0, 0},
+    {1, 0, 254, 0, 0, 0, 0, 0},
+    {3, 0, 252, 0, 0, 0, 0, 0},
     {1, 0, 254, 0, 0, 0, 0, 0},
     {3, 0, 252, 0, 0, 0, 0, 0},
     {2, 0, 253, 0, 0, 0, 0, 0},
@@ -286,7 +286,7 @@ static const unsigned sweep[DFI_ENC_TAIL_SIZE][SWEEP_COLUMNS] = {
     {6, 0, 249, 0, 0, 0, 0, 0},
     {6, 0, 249, 0, 0, 0, 0, 0},
     {2, 0, 252, 0, 0, 0, 0, 1},
-    {5, 0, 250, 0, 0, 0, 0, 0}, /* step G90: trap_elapsed of side 1 position 1 (trapped) */
+    {1, 0, 254, 0, 0, 0, 0, 0}, /* step G90: trap_elapsed of side 1 position 1 (trapped) */
     {0, 0, 0, 0, 0, 255, 0, 0},
     {0, 0, 0, 0, 0, 255, 0, 0},
     {0, 0, 0, 0, 0, 255, 0, 0},
@@ -314,7 +314,7 @@ static const unsigned sweep[DFI_ENC_TAIL_SIZE][SWEEP_COLUMNS] = {
     {0, 0, 0, 255, 0, 0, 0, 0},
     {255, 0, 0, 0, 0, 0, 0, 0},
     {1, 0, 0, 254, 0, 0, 0, 0},
-    {19, 0, 0, 236, 0, 0, 0, 0},
+    {18, 0, 0, 237, 0, 0, 0, 0},
     {167, 0, 0, 88, 0, 0, 0, 0},
     {0, 0, 0, 255, 0, 0, 0, 0},
     {19, 0, 0, 236, 0, 0, 0, 0},
@@ -596,7 +596,7 @@ static void set_example_tail(duoforge_battle *b)
                                      .heal_block_turns = 3u, .leech_seed_source = 1u, .yawn_turns = 1u, .move_result = 4u,
                                      .hits_taken = 3u, .lock_turns = 3u};
     c->positions[1] = (dfi_tail_pos){.trap_move = DFI_POOL_MOVE_COUNT, .last_move = EXAMPLE_LOCK_SLOT, .trap_turns = 1u,
-                                     .trap_source = 3u, .move_result = 9u, .single_turn = DFI_SINGLE_TURN_ROOST,
+                                     .trap_source = 3u, .trap_elapsed = 4u, .move_result = 9u, .single_turn = DFI_SINGLE_TURN_ROOST,
                                      .lock_turns = 1u};
     /* the overrides of a member on the field: side 1's lead at position 0, its member 2 */
     c->ability_now[2] = 1u;

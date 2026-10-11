@@ -108,7 +108,9 @@ class Encoder6Test(unittest.TestCase):
         self.assertIn("ext6.own.guard.bit7", reserve)
         self.assertNotIn("ext6.own.guard.bit1", reserve)  # bits 0 and 1 are WIDE_GUARD and QUICK_GUARD
         self.assertEqual(features.version_features(5), (1 << C["DUOFORGE_VIEWEXT_FEATURE_COUNT"]) - 1)
-        self.assertEqual(features.version_features(6) & ~features.version_features(5), FAMILIES)
+        # the families and the own feature of POSITION_EXT2 bits 4 to 6 (TRAP_ELAPSED, decision 0060) are new in version 6
+        self.assertEqual(features.version_features(6) & ~features.version_features(5),
+                         FAMILIES | (1 << features.FEATURE_BITS["TRAP_ELAPSED"]))
         self.assertEqual({features.FEATURE_BITS[n] for n in features._FAMILIES}, set(range(59, 64)))
 
     def test_encoder5_columns_are_byte_equal(self):
@@ -203,7 +205,9 @@ class Encoder6Test(unittest.TestCase):
         self.assertEqual(_defined_reserve_bits(), own | checked)
         # The parser itself: a bit 22 define would count, bit 21 (TRANSFORMED) does not.
         self.assertNotIn(("RESERVE_VOLATILES", 21), _defined_reserve_bits())
-        self.assertEqual(_x_list("DUOFORGE_VIEWEXT_RESERVE_OWN"), [])
+        self.assertEqual(_x_list("DUOFORGE_VIEWEXT_RESERVE_OWN"),
+                         [("VOLATILES2", "4", "TRAP_ELAPSED"), ("VOLATILES2", "5", "TRAP_ELAPSED"),
+                          ("VOLATILES2", "6", "TRAP_ELAPSED")])
 
     def test_batch_refusals_are_the_versions(self):
         # Batch._refused re-encodes a row the C encoder refused with the version's own refusals: a reserve value under

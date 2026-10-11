@@ -327,7 +327,10 @@ static void test_view_turns_hidden(df_test *t)
     }
     const uint32_t turns = tail_of(a, FLAT_P2A)->trap_turns;
     DF_CHECK(t, turns != 0u);
-    tail_of(c, FLAT_P2A)->trap_turns = (uint8_t)(turns == 5u ? 6u : 5u); /* the other draw of random(5, 7) */
+    /* the other draw of random(5, 7) with the same elapsed count: the turns are the other duration minus the elapsed count */
+    const uint32_t elapsed_a = tail_of(a, FLAT_P2A)->trap_elapsed;
+    const uint32_t duration_a = turns + elapsed_a;
+    tail_of(c, FLAT_P2A)->trap_turns = (uint8_t)((duration_a == 5u ? 6u : 5u) - elapsed_a);
     tail_of(d, FLAT_P2A)->trap_source = FLAT_P1A + 1u;                   /* another trapper (flat 0): a different public fact */
     DF_CHECK(t, dfi_state_check(ctx_c, c, NULL) == DUOFORGE_OK);
     DF_CHECK(t, dfi_state_check(ctx_d, d, NULL) == DUOFORGE_OK);

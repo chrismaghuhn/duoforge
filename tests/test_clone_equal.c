@@ -172,6 +172,7 @@ static void copy_named_fields(duoforge_battle *x, const duoforge_battle *src)
             dp->trap_turns = sp->trap_turns;
             dp->trap_source = sp->trap_source;
             dp->trap_band = sp->trap_band;
+            dp->trap_elapsed = sp->trap_elapsed;
             dp->leech_seed_source = sp->leech_seed_source;
             dp->yawn_turns = sp->yawn_turns;
             dp->focus_energy = sp->focus_energy;

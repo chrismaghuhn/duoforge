@@ -559,7 +559,8 @@ class LinesTest(unittest.TestCase):
         self.assertEqual(lines.FEATURES["MOVE_FAILED"], 41)
         self.assertEqual(lines.FEATURES["TRANSFORM"], 42)
         # tail revision 4: ROOST 40, MOVE_FAILED 41; 0028: TRANSFORM 42; 0050: the five reserve families 59 to 63
-        self.assertEqual(len(lines.FEATURES), 43 + 5)
+        # and 45 TRAP_ELAPSED (lane A, G90, decision 0060): one feature of its own inside the lane range
+        self.assertEqual(len(lines.FEATURES), 43 + 1 + 5)
         self.assertEqual([lines.FEATURES[n] for n in ("RESERVE_VOLATILES", "VOLATILES2", "RESERVE_GUARDS",
                                                       "SIDE_CONDITIONS", "FIELD_FLAGS")], [59, 60, 61, 62, 63])
 

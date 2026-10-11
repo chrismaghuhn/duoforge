@@ -2002,7 +2002,7 @@ def tail_example():
     # the locks (step G56): three turns left at position 0, the last one at position 1, both on Outrage, the last used move
     c['pos'][0] = tail_pos(last_move=EXAMPLE_LOCK_SLOT, encore_slot=4, encore_turns=1, heal_block=3, leech_seed=1, yawn=1,
                            move_result=4, hits_taken=3, lock_turns=3)
-    c['pos'][1] = tail_pos(last_move=EXAMPLE_LOCK_SLOT, trap_turns=1, trap_source=3, trap_move=511, move_result=9,
+    c['pos'][1] = tail_pos(last_move=EXAMPLE_LOCK_SLOT, trap_turns=1, trap_elapsed=4, trap_source=3, trap_move=511, move_result=9,
                            single_turn=2, lock_turns=1)
     # the overrides of a member on the field: side 1's lead at position 0, its member 2
     c['ability_now'][2] = 1
