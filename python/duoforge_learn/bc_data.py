@@ -26,7 +26,8 @@ pick_hypotheses_weight W is given; then each weighs W/H. A version 3 dataset has
 
 split="players" (for every source) takes a test player's game (duoforge_replay.split) out of training entirely and
 validates only on the rows whose acting player is the test player; the other side of such a game is in neither (its
-player trains in other games). With memmap (a directory outside the repository) the encoded rows go into one .npy
+player trains in other games). split="test-players" takes only those test players' own rows (a bot whose data a
+players-split model never trained on), validated on the test players of hash bucket 0 of the next 20 buckets. With memmap (a directory outside the repository) the encoded rows go into one .npy
 memmap per field there instead of memory (6.6 million rows are about 51 GB), flushed to disk with rows.json last
 (the key, every array's dtype and shape); load_memmap opens such a directory again and checks them.
 """
@@ -233,7 +234,7 @@ def _hypotheses(shard, version):
     return np.ones(len(shard["game"]), np.int64)
 
 
-SPLITS = ("sheet", "players")
+SPLITS = ("sheet", "players", "test-players")
 # the Rows fields a memmap directory holds as .npy memmaps; fmt and replay (strings) are plain .npy files
 _MEMMAP_FIELDS = ("obs", "slots", "mask_bits", "is_team", "pair_bits", "team_bits", "reason", "z", "has_z", "weight",
                   "val", "side", "point")
@@ -284,8 +285,9 @@ def load_memmap(path, key=None):
     return Rows(**arrays)
 
 
-def _player_plans(out, with_hypotheses):
-    """Per shard of a dataset, in dataset.read's order: (keep, val) of the players split (module docstring)."""
+def _player_plans(out, with_hypotheses, split="players"):
+    """Per shard of a dataset, in dataset.read's order: (keep, val) of the players or the test-players split (module
+    docstring)."""
     plans = []
     for part in dataset.parts(out):
         games = dataset.read_games(part)
@@ -297,10 +299,16 @@ def _player_plans(out, with_hypotheses):
                 game, side = z["game"].astype(np.int64), z["side"].astype(np.int64)
                 h = z["picks_hypotheses"] if "picks_hypotheses" in z.files else np.ones(len(game), np.uint8)
             actor = test[game, side]
-            keep = ~test[game].any(axis=1) | actor
+            if split == "players":
+                keep = ~test[game].any(axis=1) | actor
+                val = actor
+            else:  # test-players: the test players' own rows, validated on a sub-bucket of them
+                keep = actor.copy()
+                pair = games["players"].astype(np.uint64).reshape(-1, 2)
+                val = (pair[game, side] // np.uint64(player_split.BUCKETS)) % np.uint64(player_split.BUCKETS) == 0
             if not with_hypotheses:
                 keep &= h == 1
-            plans.append((keep, actor[keep]))
+            plans.append((keep, val[keep]))
     return plans
 
 
@@ -332,7 +340,8 @@ def load(dirs, context, mask, format_weights=None, weights="rating", source_weig
     source_weight = {out: _source_weight(out, source_weights) for out in dirs}
     # drawn sheets change with each draw: a belief dataset always splits by its players
     by_players = {out: split == "players" or dataset_source(out) != "sheet" for out in dirs}
-    plans = {out: _player_plans(out, with_hypotheses) for out in dirs} if split == "players" else None
+    plans = ({out: _player_plans(out, with_hypotheses, split) for out in dirs} if split in ("players", "test-players")
+             else None)
     if plans is None:
         n = sum(_shard_rows(out, with_hypotheses) for out in dirs)
     else:

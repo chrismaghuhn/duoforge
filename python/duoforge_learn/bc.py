@@ -62,9 +62,10 @@ def _parser():
     p.add_argument("--pick-hypotheses-weight", type=float, default=None, metavar="W",
                    help="take the rows of pick hypotheses at W/H each (left out unless given; M11 pick hypotheses "
                         "spec, section 5)")
-    p.add_argument("--split", choices=("sheet", "players"), default="sheet",
-                   help="the validation split: sheet (the sheet pair; belief datasets by players) or players (a test "
-                        "player's games held out for every source)")
+    p.add_argument("--split", choices=("sheet", "players", "test-players"), default="sheet",
+                   help="the validation split: sheet (the sheet pair; belief datasets by players), players (a test "
+                        "player's games held out for every source) or test-players (only the test players' own rows, "
+                        "a bot the players split never trained on)")
     p.add_argument("--seed", type=int, default=0)
     p.add_argument("--cache", default=None, help="a directory (outside the repository) for the encoded rows")
     return p
@@ -274,8 +275,10 @@ def train(args):
               "train": {"seed": args.seed, "bc": {
                   "datasets": _dataset_key(dirs), "format_weights": format_weights, "source_weights": source_weights,
                   "pick_hypotheses_weight": args.pick_hypotheses_weight,
-                  "split": ("players bucket 0/20 (either player)" if getattr(args, "split", "sheet") == "players"
-                            else "sheet-pair bucket 0/20"), "weights": args.weights, "epochs": args.epochs,
+                  "split": {"players": "players bucket 0/20 (the acting player's rows)",
+                            "test-players": "only test players' own rows; val: their bucket 0/20 of h // 20"}.get(
+                                getattr(args, "split", "sheet"), "sheet-pair bucket 0/20"),
+                  "weights": args.weights, "epochs": args.epochs,
                   "best_epoch": best_epoch, "value_coef": value_coef, "learning_rate": args.learning_rate,
                   "batch": args.batch, "patience": args.patience}}}
     checkpoint.save(str(out / "bc.npz"), best_params, config)
