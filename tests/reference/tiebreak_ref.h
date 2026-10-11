@@ -6307,6 +6307,12 @@ static const df_tb_stop tb_g90_sandtomb_tyranitar[] = {
     {5u, 0u, 2u, 1u, {3u, 4u}, {478u, 715u}, {0x4044948986f89920ull, 0x404ed0a50a50a50bull}},
     {6u, 0u, 2u, 1u, {3u, 4u}, {438u, 693u}, {0x4042e35f82a3b2aeull, 0x404dcec4ec4ec4ecull}},
 };
+static const df_tb_stop tb_g90_substitute_ends_trap[] = {
+    {0u, 0u, 2u, 3u, {6u, 6u}, {1102u, 1114u}, {0x4059000000000000ull, 0x4059000000000000ull}},
+    {1u, 0u, 2u, 3u, {4u, 4u}, {741u, 755u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {2u, 0u, 2u, 2u, {4u, 4u}, {669u, 706u}, {0x404db26c9b26c9b3ull, 0x404ee3629e6737b3ull}},
+    {3u, 0u, 1u, 2u, {4u, 4u}, {653u, 652u}, {0x404ce38e38e38e39ull, 0x404c31909b565af4ull}},
+};
 static const df_tb_stop tb_g90_wrap_band[] = {
     {0u, 0u, 2u, 3u, {6u, 6u}, {1102u, 1129u}, {0x4059000000000000ull, 0x4059000000000000ull}},
     {1u, 0u, 2u, 3u, {4u, 4u}, {741u, 770u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
@@ -8467,6 +8473,7 @@ static const df_tb_battle tb_battles[] = {
     {"g90_ghost_chandelure", 3u, tb_g90_ghost_chandelure, sizeof tb_g90_ghost_chandelure / sizeof tb_g90_ghost_chandelure[0]},
     {"g90_infest_switch", 8u, tb_g90_infest_switch, sizeof tb_g90_infest_switch / sizeof tb_g90_infest_switch[0]},
     {"g90_sandtomb_tyranitar", 6u, tb_g90_sandtomb_tyranitar, sizeof tb_g90_sandtomb_tyranitar / sizeof tb_g90_sandtomb_tyranitar[0]},
+    {"g90_substitute_ends_trap", 3u, tb_g90_substitute_ends_trap, sizeof tb_g90_substitute_ends_trap / sizeof tb_g90_substitute_ends_trap[0]},
     {"g90_wrap_band", 9u, tb_g90_wrap_band, sizeof tb_g90_wrap_band / sizeof tb_g90_wrap_band[0]},
     {"h18_absorbed_secondary_psychic_sitrus_mirror", 27u, tb_h18_absorbed_secondary_psychic_sitrus_mirror, sizeof tb_h18_absorbed_secondary_psychic_sitrus_mirror / sizeof tb_h18_absorbed_secondary_psychic_sitrus_mirror[0]},
     {"h18_heal_pulse_full_hp_sitrus_mirror", 3u, tb_h18_heal_pulse_full_hp_sitrus_mirror, sizeof tb_h18_heal_pulse_full_hp_sitrus_mirror / sizeof tb_h18_heal_pulse_full_hp_sitrus_mirror[0]},
@@ -8604,7 +8611,7 @@ static const df_tb_battle tb_battles[] = {
     {"xr3_sheercold_sub_miss", 3u, tb_xr3_sheercold_sub_miss, sizeof tb_xr3_sheercold_sub_miss / sizeof tb_xr3_sheercold_sub_miss[0]},
 };
 
-/* 5781 stops: 155 of an ended battle; decided by the count 1410,
- * the HP percentage 1787, the total HP 2254, a tie 175;
- * winners: side 0 2696, side 1 2910, tie 175 */
+/* 5785 stops: 155 of an ended battle; decided by the count 1410,
+ * the HP percentage 1789, the total HP 2256, a tie 175;
+ * winners: side 0 2697, side 1 2913, tie 175 */
 #endif
