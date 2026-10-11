@@ -206,6 +206,8 @@ static void copy_named_fields(duoforge_battle *x, const duoforge_battle *src)
         }
     }
     x->tail.field_pad = src->tail.field_pad;
+    x->tail.move_used[0] = src->tail.move_used[0]; /* step G94: Last Resort's used bits */
+    x->tail.move_used[1] = src->tail.move_used[1];
 }
 
 int main(void)

@@ -6563,7 +6563,9 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
     const bool lock_move = b->tail.sides[side].positions[q->slot].lock_turns != 0u;
     if (q->move_slot < DUOFORGE_MAX_MOVE_SLOTS && !locked && !lock_move) {
         dfi_move_slot *slot = &m->moves[q->move_slot];
-        dfi_move_used_set(&b->tail, user, q->move_slot); /* step G94: deductPP sets used before its PP test (sim/pokemon.ts:892) */
+        if (dfi_kind_limits_of(r->ctx->data_kind).pool_rules) {
+            dfi_move_used_set(&b->tail, user, q->move_slot); /* step G94: deductPP sets used before its PP test (sim/pokemon.ts:892); the tail is zero under every other kind */
+        }
         if (slot->pp == 0u) {
             r->mres |= DFI_MRES_FALSE; /* "cant nopp": the move returns false (battle-actions.ts useMoveInner) */
             return DUOFORGE_OK; /* "cant nopp"; the domain never offers it */
