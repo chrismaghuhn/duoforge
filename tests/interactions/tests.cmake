@@ -85,3 +85,4 @@ target_compile_definitions(duoforge_reference_tiebreak_pool PRIVATE DF_CONFORMAN
 target_compile_definitions(duoforge_reference_tiebreak_team_c_pool PRIVATE DF_CONFORMANCE_TEAM_C
     DF_CONFORMANCE_POOL)
 target_compile_definitions(duoforge_reference_tiebreak_pool_data PRIVATE DF_CONFORMANCE_POOL_DATA)
+duoforge_add_test(NAME duoforge.state.pool_g47 SOURCES interactions/test_pool_g47.c WHITEBOX TIMEOUT 60)
