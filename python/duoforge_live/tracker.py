@@ -202,6 +202,11 @@ class Tracker:
     """One battle room as one player sees it. feed() every message of the room in order, accepted() every
     own choice Showdown took; at a decision point (ready) observation() and domain() give DuoForge's view."""
 
+    # Class defaults: the tests build a tracker with __new__ and set only what they use (step G80 attributes below).
+    _party = None
+    _ally_move = None
+    _as_pending = None
+
     def __init__(self, data, own_text):
         self.data = data
         self.side = None
