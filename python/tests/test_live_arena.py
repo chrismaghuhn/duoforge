@@ -29,6 +29,15 @@ class Arena(unittest.TestCase):
         self.assertEqual(games, [(0, 0, pairs[0][0], pairs[0][1]), (0, 1, pairs[0][1], pairs[0][0]),
                                  (1, 0, pairs[1][0], pairs[1][1]), (1, 1, pairs[1][1], pairs[1][0])])
 
+    def test_only_teams_the_server_accepts_are_drawn(self):
+        # Owner, 2026-10-11 (after the first 400-game run: two pool teams the pinned server's validator refuses made four
+        # games unplayable): the pool is validated first (tools/live/validate_pool.js) and pairs come from the valid
+        # teams only; the refused ones are listed in the report.
+        kept, refused = arena.playable(["A", "B", "C", "D"], {"A", "C", "D", "X"})
+        self.assertEqual((kept, refused), (["A", "C", "D"], ["B"]))
+        with self.assertRaises(SystemExit):
+            arena.playable(["A", "B"], {"A"})  # fewer than two playable teams: no pair
+
     def test_the_gates_are_the_owners(self):
         self.assertEqual(arena.GATES, {"lower_bound": 0.50, "crashes": 0, "class_b": 0, "raw_fallback_share": 0.05,
                                        "deadline_share": 0.01, "tracker_stop_share": 0.01, "timer_losses": 0,
