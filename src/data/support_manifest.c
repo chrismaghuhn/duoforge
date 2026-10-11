@@ -369,6 +369,12 @@ const dfi_support_manifest dfi_support = {
             [DFI_MOVE_ALLURINGVOICE] = 1u, /* step G72b (decision 0015 5ce): the secondary's confusion on a raised target */
             [DFI_MOVE_BATONPASS] = 1u, /* step G74 (decision 0042): the user switches out at a PIVOT and copies its volatiles (Shed Tail stays refused) */
             [DFI_MOVE_DRAGONCHEER] = 1u,   /* step G72b: the volatile's crit stage (position flags) and its start line */
+            /* Batch 6 (5cq): Charge Beam (data/moves.ts:2318-2338: Special, Electric, 50, accuracy 90, a 70 percent secondary whose
+             * self raises the user's Sp. Atk; the secondary's self runs for an absorbed target too, see the Substitute fix) and
+             * Wild Charge (data/moves.ts:20873-20886: Physical, Electric, 90, accuracy 100, recoil [1, 4]; Rock Head cancels the
+             * recoil, the recoil path of the hit loop). Their rows were in the pool tables unmarked. */
+            [DFI_MOVE_CHARGEBEAM] = 1u,
+            [DFI_MOVE_WILDCHARGE] = 1u,
             [DFI_MOVE_DRAGONDARTS] = 1u,   /* step G78 (decision 0043): the split of the two hits, smartTarget; the partner by the target's side */
             /* Step G88 (decision 0046): Lash Out (x2 base power when the user's stat fell this turn, LOWERED) and Assurance (x2 when
              * the target was hurt this turn, HURT). Both need a PIVOT refusal (DUOFORGE_PUBLIC_CAUSE_TURN_HISTORY). */

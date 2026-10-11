@@ -1,0 +1,74 @@
+{
+  "name": "sub3_lava_plume_spread_unaware_hydreigon_167",
+  "purpose": "Lava Plume (allAdjacent, Fire, 80) from Armarouge (Flash Fire, SpA -2) into a Substitute (Hydreigon, Levitate) in a spread move while Skeledirge (Unaware) is the last target of the list: the pin's activeTarget is Skeledirge, so the -2 is ignored for the Substitute hit (177 with Flash Fire 265, damage 45, the Substitute breaks). Source: campaign run 9003 battle 167 step 12 (H24 camp2).",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,c5a5755234cb566616b6c5fabb2f73ba69626496f747921b21ddaf29d72e69a8",
+  "teams": [
+    "Golurk @ Choice Scarf\nAbility: Iron Fist\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Def / 0 SpD / 0 Spe\nAdamant Nature\n- Dynamic Punch\n- Headlong Rush\n- Low Sweep\n- Earthquake\n\nToxicroak (M) @ Rocky Helmet\nAbility: Poison Touch\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Def / 0 SpD / 0 Spe\nAdamant Nature\n- Dynamic Punch\n- Cross Poison\n- Low Sweep\n- Sucker Punch\n\nEmboar (M) @ Expert Belt\nAbility: Reckless\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Def / 0 SpD / 0 Spe\nAdamant Nature\n- Flare Blitz\n- Fire Punch\n- Zen Headbutt\n- Low Sweep\n\nArcanine-Hisui (M) @ Lum Berry\nAbility: Rock Head\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Def / 0 SpD / 0 Spe\nJolly Nature\n- Iron Tail\n- Close Combat\n- Crunch\n- Protect\n\nArmarouge (M) @ Focus Sash\nAbility: Flash Fire\nLevel: 50\nEVs: 0 HP / 0 Atk / 2 Def / 32 SpA / 32 Spe\nTimid Nature\n- Lava Plume\n- Acid Spray\n- Overheat\n- Protect\n\nPangoro (M) @ Life Orb\nAbility: Iron Fist\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Def / 0 SpD / 0 Spe\nJolly Nature\n- Headlong Rush\n- Close Combat\n- Low Sweep\n- Earthquake",
+    "Appletun (M) @ Light Clay\nAbility: Thick Fat\nLevel: 50\nEVs: 0 HP / 0 Atk / 2 Def / 32 SpA / 32 Spe\nBold Nature\n- Apple Acid\n- Earthquake\n- Protect\n- Substitute\n\nGardevoir (F) @ Mystic Water\nAbility: Synchronize\nLevel: 50\nEVs: 0 HP / 0 Atk / 2 Def / 32 SpA / 32 Spe\nTimid Nature\n- Zen Headbutt\n- Fire Punch\n- Thunder Punch\n- Substitute\n\nMawile (M) @ Wise Glasses\nAbility: Sheer Force\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Def / 0 SpD / 0 Spe\nAdamant Nature\n- Dynamic Punch\n- Sucker Punch\n- Crunch\n- Substitute\n\nSkeledirge (M) @ Muscle Band\nAbility: Unaware\nLevel: 50\nEVs: 0 HP / 0 Atk / 2 Def / 32 SpA / 32 Spe\nModest Nature\n- Torch Song\n- Zen Headbutt\n- Protect\n- Substitute\n\nHydreigon (M) @ Expert Belt\nAbility: Levitate\nLevel: 50\nEVs: 0 HP / 0 Atk / 2 Def / 32 SpA / 32 Spe\nModest Nature\n- Zen Headbutt\n- Iron Tail\n- Substitute\n- Protect\n\nKommo-o (M) @ Leftovers\nAbility: Soundproof\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Def / 0 SpD / 0 Spe\nJolly Nature\n- Iron Tail\n- Fire Punch\n- Poison Jab\n- Substitute"
+  ],
+  "choices": [
+    {
+      "p1": "team 4235",
+      "p2": "team 3254"
+    },
+    {
+      "p1": "move 4, move 4 2",
+      "p2": "move 1 1, move 3 2"
+    },
+    {
+      "p1": "move 1 -2, move 3 -1",
+      "p2": "move 2 1, move 4"
+    },
+    {
+      "p1": "switch 3, pass"
+    },
+    {
+      "p1": "move 1 -2, move 1 1",
+      "p2": "move 3 2, move 4"
+    },
+    {
+      "p1": "pass, switch 4"
+    },
+    {
+      "p1": "move 3 1, move 3 2",
+      "p2": "move 3 2, move 3 -1"
+    },
+    {
+      "p1": "move 1 2, move 2 1",
+      "p2": "move 4, move 2 -1"
+    },
+    {
+      "p2": "switch 3, switch 4"
+    },
+    {
+      "p1": "move 3 -2, move 2 -1",
+      "p2": "move 1 2, move 4"
+    },
+    {
+      "p1": "move 2 -2, move 2 2",
+      "p2": "move 4, move 2 -1"
+    },
+    {
+      "p1": "move 1 1, move 2 2",
+      "p2": "move 3, move 1 -1"
+    },
+    {
+      "p1": "move 3 -2, move 1",
+      "p2": "move 3, move 2 1"
+    },
+    {
+      "p1": "pass, move 4",
+      "p2": "move 3, move 4"
+    },
+    {
+      "p1": "pass, move 3 -1",
+      "p2": "move 1 -2, move 4"
+    },
+    {
+      "p1": "pass, move 1",
+      "p2": "move 1 1, move 2 -1"
+    }
+  ]
+}

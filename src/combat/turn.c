@@ -102,6 +102,9 @@ typedef struct dfi_run {
      * it). The turn runs on a working copy (src/state/request.c), so dfi_turn_run returns it at its end and nothing is
      * committed. Last in the struct: the initializers of dfi_run are positional. */
     duoforge_status deferred;
+    /* The pin's activeTarget for the Substitute hit that sub_hit marks (sim/battle-actions.ts:693, :1154). Last in the struct
+     * (positional initializers, which take 0u here). */
+    uint32_t sub_active;
 } dfi_run;
 
 #define DFI_MOVE_TARGET_NONE DFI_POSITIONS          /* no target Pokemon */
@@ -1698,10 +1701,15 @@ static duoforge_status dfi_get_damage(dfi_run *r, uint32_t user, uint32_t target
      * When the user holds it, the target's defence-side read is zeroed (def, spd, evasion of the target), so Psyshock's
      * Defense too. The two holders of one hit may both apply; each zeroes only its own side's reads. Mold Breaker is not
      * marked, so no Unaware is ignored (no Mold Breaker row is modelled). */
-    if (user != target && dfi_ability(r->b, d, DFI_ABILITY_UNAWARE)) {
+    /* The pin's Unaware reads activeTarget (data/abilities.ts:5218, :5223): the attacker-side stages are zeroed when the holder
+     * is the activeTarget, and the defender-side stages when the holder is the user and the activeTarget is the defender.
+     * activeTarget is the hit target, except in a Substitute hit of a spread move, where it is the last target that reached
+     * hitStepAccuracy (sim/battle-actions.ts:693, :1138-1146). Single hits are unchanged: the activeTarget is the target. */
+    const uint32_t pin_active = r->sub_hit ? r->sub_active : target;
+    if (pin_active != user && dfi_ability(r->b, dfi_at(r->b, pin_active), DFI_ABILITY_UNAWARE)) {
         atk_stage = DFI_BIAS6;
     }
-    if (user != target && dfi_ability(r->b, a, DFI_ABILITY_UNAWARE)) {
+    if (pin_active == target && user != target && dfi_ability(r->b, a, DFI_ABILITY_UNAWARE)) {
         def_stage = DFI_BIAS6;
     }
     uint32_t attack = 0u;
@@ -5715,7 +5723,7 @@ static duoforge_status dfi_run_baton_pass(dfi_run *r, uint32_t user)
  * user with Infiltrator are not taken. */
 static duoforge_status dfi_substitute_takes(dfi_run *r, uint32_t user, uint32_t target, uint32_t move_id,
                                             const dfi_move_data *md, uint32_t move_type, bool spread, bool status_move,
-                                            bool *taken)
+                                            bool *taken, uint32_t active)
 {
     struct duoforge_battle *b = r->b;
     uint16_t *sub = dfi_sub_hp_of(b, target);
@@ -5733,6 +5741,7 @@ static duoforge_status dfi_substitute_takes(dfi_run *r, uint32_t user, uint32_t 
     }
     uint32_t dealt = 0u;
     r->sub_hit = true;
+    r->sub_active = active;
     const duoforge_status st = dfi_get_damage(r, user, target, md, move_type, spread, &dealt);
     r->sub_hit = false;
     if (st != DUOFORGE_OK) {
@@ -5754,7 +5763,11 @@ static duoforge_status dfi_substitute_takes(dfi_run *r, uint32_t user, uint32_t 
                                           DUOFORGE_NO_POSITION);
         dfi_emit(r, &act);
     }
-    if (dealt != 0u && md->recoil[1] != 0u) {
+    /* Rock Head cancels a recoil move's recoil on the user (data/abilities.ts rockhead, onDamage with effect 'recoil' returns null,
+     * except Struggle): applyRecoilDamage calls battle.damage(recoil, pokemon, pokemon, 'recoil') (sim/battle-actions.ts:1391-1392)
+     * from the totalDamage gate of the hit loop (data/mods/champions/scripts.ts:552-553). The same gate runs for a hit that a
+     * Substitute took, so the cancel applies here as in the normal recoil path (turn.c, Rock Head, the recoil block of the hit loop). */
+    if (dealt != 0u && md->recoil[1] != 0u && !dfi_ability(b, dfi_at(b, user), DFI_ABILITY_ROCKHEAD)) {
         /* applyRecoilDamage(damage, move, source): round(damage * recoil[0] / recoil[1]), at least 1 (sim/battle-actions.ts:1384) */
         uint32_t recoil = (dealt * md->recoil[0] * 2u + md->recoil[1]) / (2u * md->recoil[1]);
         recoil = recoil < 1u ? 1u : recoil;
@@ -6459,7 +6472,7 @@ static duoforge_status dfi_bounce(dfi_run *r, uint32_t user, uint32_t holder, ui
                  * source). A taken hit is null, not false: its Updates run and the holder's result is TRUE (scripts.ts:537, :574;
                  * battle-actions.ts:605, :615), as in the move body (dfi_substitute_takes, dfi_status_hit_end). */
                 bool taken = false;
-                st = dfi_substitute_takes(r, holder, user, move_id, md, move_type, false, true, &taken);
+                st = dfi_substitute_takes(r, holder, user, move_id, md, move_type, false, true, &taken, user);
                 if (st == DUOFORGE_OK && taken) {
                     hit[0] = false;
                     st = dfi_status_hit_end(r);
@@ -7416,6 +7429,14 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
     for (uint32_t i = 0u; i < count; ++i) {
         r->mres |= hit_pre_immunity[i] && !hit[i] ? DFI_MRES_FALSE : 0u;
     }
+    /* The pin's activeTarget after hitStepAccuracy's loop (sim/battle-actions.ts:693): the last target that reached it, i.e.
+     * the last hit flag set before the accuracy check (the TryHit, type and move immunity steps above have cleared the rest). */
+    uint32_t act_target = count != 0u ? targets[0] : 0u;
+    for (uint32_t i = 0u; i < count; ++i) {
+        if (hit[i]) {
+            act_target = targets[i];
+        }
+    }
     st = dfi_accuracy_targets(r, user, targets, count, hit, md, base_accuracy, acc_compound_eyes, acc_wide_lens,
                               spread);
     if (st != DUOFORGE_OK) {
@@ -7443,7 +7464,7 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
         for (uint32_t i = 0u; i < count; ++i) {
             bool taken = false;
             if (hit[i]) {
-                st = dfi_substitute_takes(r, user, targets[i], move_id, md, move_type, spread, true, &taken);
+                st = dfi_substitute_takes(r, user, targets[i], move_id, md, move_type, spread, true, &taken, act_target);
                 if (st != DUOFORGE_OK) {
                     return st;
                 }
@@ -7638,7 +7659,7 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
             for (uint32_t i = 0u; i < count; ++i) {
                 bool taken = false;
                 if (hit[i]) {
-                    st = dfi_substitute_takes(r, user, targets[i], move_id, md, move_type, spread, false, &taken);
+                    st = dfi_substitute_takes(r, user, targets[i], move_id, md, move_type, spread, false, &taken, act_target);
                     if (st != DUOFORGE_OK) {
                         return st;
                     }
@@ -7928,7 +7949,13 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
                 if (st != DUOFORGE_OK) {
                     return st;
                 }
-                if (!hit[i] || roll >= md->sec_chance) {
+                if (roll >= md->sec_chance) {
+                    continue;
+                }
+                /* A self-boost secondary (Ancient Power, Charge Beam) acts on the user even when the target's hit went to a Substitute:
+                 * secondaries() calls moveHit for every target that is not false, and the null target still runs the secondary's
+                 * self (selfDrops, sim/battle-actions.ts:1317-1333 and :1336-1350). The target effects need a hit target. */
+                if (!hit[i] && md->sec_kind != DFI_SECONDARY_SELF_BOOST) {
                     continue;
                 }
                 if (md->sec_kind == DFI_SECONDARY_BOOST) {
@@ -10806,7 +10833,7 @@ duoforge_status dfi_turn_start(const duoforge_context *ctx, struct duoforge_batt
     if (!dfi_closure_battle_supported(&dfi_support, b)) {
         return DUOFORGE_E_UNSUPPORTED;
     }
-    dfi_run r = {ctx, b, draws, {0u, 0u, 0u, 0u}, 0u, 0u, 0u, false, DFI_RESULT_NONE, {0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u}, events, UINT32_MAX, false, DFI_MOVE_TARGET_NONE, 1u, 0u, 0u, 0u, DFI_POSITIONS, false, {0u, 0u, 0u, 0u, 0u, 0u}, false, false, DUOFORGE_OK};
+    dfi_run r = {ctx, b, draws, {0u, 0u, 0u, 0u}, 0u, 0u, 0u, false, DFI_RESULT_NONE, {0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u}, events, UINT32_MAX, false, DFI_MOVE_TARGET_NONE, 1u, 0u, 0u, 0u, DFI_POSITIONS, false, {0u, 0u, 0u, 0u, 0u, 0u}, false, false, DUOFORGE_OK, 0u};
     dfi_init_speeds(&r);
     /* The leads entered one by one (insertChoice updated each speed); their
      * entries run together. */
@@ -10924,7 +10951,7 @@ duoforge_status dfi_turn_run(const duoforge_context *ctx, struct duoforge_battle
     if (!dfi_closure_battle_supported(&dfi_support, b) || ((replacement || pivot) && dfi_support.switching == 0u)) {
         return DUOFORGE_E_UNSUPPORTED;
     }
-    dfi_run r = {ctx, b, draws, {0u, 0u, 0u, 0u}, 0u, 0u, 0u, false, DFI_RESULT_NONE, {0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u}, events, UINT32_MAX, false, DFI_MOVE_TARGET_NONE, 1u, 0u, 0u, 0u, DFI_POSITIONS, false, {0u, 0u, 0u, 0u, 0u, 0u}, false, false, DUOFORGE_OK};
+    dfi_run r = {ctx, b, draws, {0u, 0u, 0u, 0u}, 0u, 0u, 0u, false, DFI_RESULT_NONE, {0u, 0u, 0u, 0u}, {0u, 0u, 0u, 0u}, events, UINT32_MAX, false, DFI_MOVE_TARGET_NONE, 1u, 0u, 0u, 0u, DFI_POSITIONS, false, {0u, 0u, 0u, 0u, 0u, 0u}, false, false, DUOFORGE_OK, 0u};
     dfi_init_speeds(&r);
     duoforge_status st = DUOFORGE_OK;
     uint32_t exits = 0u; /* Emergency Exit after the residual action */
