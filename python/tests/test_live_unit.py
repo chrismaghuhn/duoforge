@@ -8,7 +8,7 @@ import collections
 import random
 import unittest
 
-from duoforge_live import data, teams
+from duoforge_live import data, lines, teams
 
 # The |showteam| payload of Team A as the pinned Showdown sends it at team
 # preview (open team sheets: no names, no EVs), from ps_client.js on
@@ -980,6 +980,121 @@ class TrackerPartialTrapTest(unittest.TestCase):
         again = t.observation_ext()
         self.assertEqual(again["volatiles2"].tolist(), [[0, 0], [0, 0]])
         self.assertEqual(again["sides"][1]["positions"]["volatiles"].tolist(), [0, 0])
+
+
+class AllySwitchStateTest(unittest.TestCase):
+    """Step G80 (decision 0044 section 10, lane A's H17): the tracker's Ally Switch fold mirrors dfi_swap_position_state
+    (src/combat/turn.c) field by field. What belongs to the Pokemon moves (the slot record and the whole tail position,
+    position flags 1, 2-3, 4 and 5-7, the attract byte); what is a slot's stays (Leech Seed's source slot, Healing Wish bit 0,
+    the locked target); the trap source of every position that names a swapped position follows the trapper, and so does the
+    Attract source position (derived from the member code in the engine, a tracker field here). A swap onto a pending Healing
+    Wish is E_UNSUPPORTED in the engine and an explicit stop here."""
+
+    @classmethod
+    def setUpClass(cls):
+        from duoforge_live import tracker
+        cls.tracker, cls.D = tracker, data.load(kind="pool")
+
+    def setUp(self):
+        t = TrackerStopTest.tracker()  # the positions hold the roster indexes 0 and 1 of both sides
+        t.data, t._spectator = self.D, True
+        self.t = t
+
+    def swap(self, user=0, other=1):
+        from duoforge_live.data import trace_to_c
+        self.t._event(trace_to_c.ev_tuple(trace_to_c.EV["SWAP"], user, other, trace_to_c.CAUSE["MOVE"], 0,
+                                          self.D.tables["MOVE"]["ALLYSWITCH"]))
+
+    def at(self, flat):
+        return self.t._positions[flat // 2][flat % 2]
+
+    def test_every_field_of_a_position_is_classified(self):
+        # a field added to _Position must be put on one of the two lists, deliberately: it moves or it is the slot's
+        tr = self.tracker
+        moving, slot = set(tr._SWAP_MOVES), set(tr._SWAP_SLOT)
+        self.assertFalse(moving & slot)
+        self.assertEqual(moving | slot, set(vars(tr._Position())))
+
+    def test_the_pokemons_state_moves_with_it(self):
+        # one distinct value per moving field on each of the two positions; the trap source and the Attract source position
+        # name a foe here (the relinks have their own tests)
+        tr = self.tracker
+        a, c = self.at(0), self.at(1)
+        values = {}
+        for n, name in enumerate(tr._SWAP_MOVES):
+            values[name] = (100 + n, 200 + n)
+            setattr(a, name, values[name][0])
+            setattr(c, name, values[name][1])
+        a.trap_source, c.trap_source = 3, 4  # the flat positions 2 and 3 of the foe, + 1
+        a.attract_from, c.attract_from = 2, 3
+        a.ally_level = a.ally_turns = 0  # the swap's own passed roll sets the user's counter to level 1, 2 turns first
+        c.ally_level, c.ally_turns = 3, 1
+        values["trap_source"], values["attract_from"] = (3, 4), (2, 3)
+        values["ally_level"], values["ally_turns"] = (1, 3), (2, 1)
+        self.swap(0, 1)
+        for name in tr._SWAP_MOVES:
+            self.assertEqual((getattr(a, name), getattr(c, name)), values[name][::-1], name)
+
+    def test_the_slots_own_state_stays(self):
+        # Leech Seed's source slot (the drain goes to whoever stands there), the locked target (a slot location in the pin)
+        a, c = self.at(0), self.at(1)
+        a.leech_source, c.leech_source = 3, 0
+        a.locked_target, c.locked_target = 2, 3
+        a.confused, c.confused = 1, 0  # a field that moves, for the contrast
+        self.swap(0, 1)
+        self.assertEqual((a.leech_source, c.leech_source), (3, 0))
+        self.assertEqual((a.locked_target, c.locked_target), (2, 3))
+        self.assertEqual((a.confused, c.confused), (0, 1))
+
+    def test_the_trap_source_of_every_position_follows_the_trapper(self):
+        a, c, f0, f1 = self.at(0), self.at(1), self.at(2), self.at(3)
+        f0.trap, f0.trap_source = 1, 1  # trapped by the Pokemon at flat 0 (+ 1)
+        f1.trap, f1.trap_source = 1, 2  # trapped by the one at flat 1
+        a.trap, a.trap_source = 1, 4  # trapped by the foe at flat 3: moves with the trapped Pokemon, names the same trapper
+        self.swap(0, 1)
+        self.assertEqual((f0.trap_source, f1.trap_source), (2, 1))
+        self.assertEqual((c.trap, c.trap_source), (1, 4))
+        self.assertEqual((a.trap, a.trap_source), (0, 0))
+
+    def test_an_ally_trapped_by_its_partner_follows_it(self):
+        # the trapped Pokemon moves to the trapper's slot and the trapper to its: the source names the other flat position
+        a, c = self.at(0), self.at(1)
+        c.trap, c.trap_source = 1, 1  # the Pokemon at flat 1 is trapped by the one at flat 0
+        self.swap(0, 1)
+        self.assertEqual((a.trap, a.trap_source), (1, 2))
+        self.assertEqual((c.trap, c.trap_source), (0, 0))
+
+    def test_the_attract_source_position_follows_the_source(self):
+        # the byte (the member code) moves with the infatuated Pokemon and does not change; the source's flat position follows
+        # the source to its new slot (the engine derives it from the code), also when the source is the swapped partner
+        a, c, f0 = self.at(0), self.at(1), self.at(2)
+        f0.attract, f0.attract_from = 1 + 0, 0  # infatuated by the member code 1 (side 0 roster 0), standing at flat 0
+        c.attract, c.attract_from = 1 + 0, 0  # the partner is infatuated by the same source: the swap moves both
+        a.attract, a.attract_from = 1 + 7, 3  # infatuated by the foe at flat 3
+        self.swap(0, 1)
+        self.assertEqual((f0.attract, f0.attract_from), (1, 1))  # the source now stands at flat 1
+        self.assertEqual((a.attract, a.attract_from), (1, 1))  # c's state moved to flat 0; its source stands at flat 1
+        self.assertEqual((c.attract, c.attract_from), (8, 3))  # a's state moved to flat 1; the foe source stays at flat 3
+
+    def test_a_pending_healing_wish_stops(self):
+        # dfi_ally_swap_wish_blocked: E_UNSUPPORTED when either slot holds the wish (the onSwap heal is not modelled)
+        for flat in (0, 1):
+            with self.subTest(wish_at=flat):
+                self.setUp()
+                self.at(flat).wish = 1
+                with self.assertRaises(lines.Stop) as caught:
+                    self.swap(0, 1)
+                self.assertEqual(caught.exception.reason, "ally-switch-healing-wish")
+                self.assertEqual((self.at(0).occupant, self.at(1).occupant, self.at(0).ally_level), (0, 1, 0))
+
+    def test_the_foes_swap_is_the_same_swap(self):
+        a, c = self.at(2), self.at(3)
+        a.taunt, c.taunt = 3, 0
+        a.leech_source, c.leech_source = 1, 2
+        self.at(0).trap, self.at(0).trap_source = 1, 3  # our Pokemon at flat 0 is trapped by the foe at flat 2
+        self.swap(2, 3)
+        self.assertEqual((a.taunt, c.taunt, a.leech_source, c.leech_source), (0, 3, 1, 2))
+        self.assertEqual(self.at(0).trap_source, 4)
 
 
 if __name__ == "__main__":
