@@ -10,6 +10,12 @@ Every milestone is a separate authorization boundary. A milestone may require mu
 - **CI:** the local CI (`tools/ci/local_ci.sh`, eleven jobs on Windows and WSL) is the merge gate. GitHub Actions runs nightly.
 - **Next:** M8 to M12 below. M10 is built.
 
+**Status 2026-10-11:**
+- **CI:** since 2026-10-03 the hosted GitHub CI is the merge gate; the machine lock (`tools/ci/machine_lock.sh`) is only for work that makes artifacts (recordings, regeneration, campaigns) or debugs a red run.
+- **The gate for everything else: 85 % game coverage** of the Reg M-C replay games (owner, 2026-10-10). Until then only the content expansion (M8) runs; no training. At 85 % the expansion stops, then a bottleneck review and a paper search decide the next steps; the training plan after 85 % is in M13.
+- **Coverage 2026-10-10:** 68.8 % of the games, 74.1 % usage-weighted turn coverage over the set-up games.
+- Work items are tracked as GitHub issues with the label `roadmap`.
+
 ## M0 — Workspace, build and development foundation
 
 Implement C17 CMake setup, a tiny core library, a smoke-test executable, CTest registration, documented local builds and initial CI configuration. Establish warnings, bounded execution and a minimal public version/status surface. Add source/coverage manifest scaffolding with explicit UNPINNED/UNSUPPORTED status.
@@ -96,6 +102,8 @@ Exit:
 - Each team has recorded reference battles and a clean differential run.
 - Nothing is unsupported in silence.
 
+Status 2026-10-11: in progress as the content expansion (two lanes, decision notes 0060 to 0099), measured by game coverage over the replay games; it stops at the 85 % gate above.
+
 ## M9 — Learner v2 and a multi-team training run
 
 Teach the learner many teams:
@@ -112,12 +120,14 @@ Exit:
 - A reproducible training report like `docs/learning/2026-10-02-night`: configuration, measured rates, the ladder across teams and the evaluation per team.
 - Performance claims carry measurements.
 
+Status 2026-10-11: the learner is built (PFSP league, resumable runs, encoder 6 with reserve columns, #329). Training is paused until the 85 % gate. The restart then uses encoder 6, the Bo1 data and pick hypotheses of M11 and the random teams pool; the algorithm order is in M13 ("The training algorithm after the 85 % coverage").
+
 ## M10 — Live play on Pokémon Showdown
 
 A client, `python/duoforge_live`, lets a trained bot accept challenges on the official server, in Reg M-C with open team sheets. The design is in `docs/superpowers/specs/2026-10-02-showdown-live-design.md`.
 - It builds exactly the observation DuoForge would show the player.
 - It refuses explicitly any team outside its training.
-- First version: Teams A and B, challenges only. Ladder play waits for M9.
+- First version: Teams A and B, challenges only. Ladder play waits for the owner's go; before that the live honest search (option A, #339) must pass its 400-game arena (lower bound above 0.50, no crash, raw fallbacks at most 5 %, deadline misses at most 1 %, tracker stops at most 1 %), and the bot follows the bot policy below.
 
 Exit:
 - The tracker equals DuoForge's own observation byte for byte on recorded battles.
@@ -183,7 +193,7 @@ Status of stage 1 (spec `docs/superpowers/specs/2026-10-03-m12-search-stage1-des
   - `Model.value`, the lookahead and `SearchPlayer` (plan PR D, #206).
 - **Measured (2026-10-04/05):** the oracle arena (#218/#219), then the honest public-information search (decision 0023, #222-#233). Its report (#236): E +0.39 / X +0.31 against the raw network and +0.12 to +0.20 against the panel, about 95 percent of the oracle's gain, with 2 percent raw fallbacks; about 33 ms per decision, 23 ms of it in the network on the CPU. On params-49333 the gain is X +0.27 (stage 3 P0, #242).
 - **Team preview searched (#240, report #241):** no consistent panel gain, so the preview stays with the raw network.
-- **Stage 3 (expert iteration):** spec `docs/superpowers/specs/2026-10-05-m12-expert-iteration-design.md`, decision 0024, phases P0 to P5. P0 passed; P1 (a pilot labelling one decision in eight) is being built from plans `docs/superpowers/plans/2026-10-08-stage3-p1-pilot.md` and `...-p1-learner.md`.
+- **Stage 3 (expert iteration):** spec `docs/superpowers/specs/2026-10-05-m12-expert-iteration-design.md`, decision 0024, phases P0 to P5. P0 passed. P1 (a pilot labelling one decision in eight, plans `docs/superpowers/plans/2026-10-08-stage3-p1-pilot.md` and `...-p1-learner.md`) ran on AWS on 2026-10-10: the budget-matched run 3 was INCONCLUSIVE, and the C2 repeat (distillation alone) failed, the student did not learn the teacher (held_teacher_kl_rel 0.808, argmax agreement flat). The owner then chose option A, the honest search as a play mode (#339). What comes next is in M13 ("The training algorithm after the 85 % coverage"): a C2 diagnosis first.
 
 Exit:
 - The Elo gain over the raw policy on the ladder, at a fixed time per move.
