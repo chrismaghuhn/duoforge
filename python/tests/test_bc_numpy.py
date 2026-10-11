@@ -287,6 +287,37 @@ class BcDataTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "not a complete"):
             self.bc_data.load_memmap(out)
 
+    def test_the_test_players_split_trains_only_on_rows_the_players_split_never_trains(self):
+        # the bot BC of 2026-10-11 (owner via HS): a bot for M7 whose data BC6 never saw, trained only on the test
+        # players' own rows; its own validation is a sub-bucket of the test players, so no row of a player BC6
+        # trains on is in it, and its rows and BC6's training rows do not overlap
+        from duoforge_replay import dataset, split
+        copy = self.with_manifest("test-players-split", lambda m: None)
+        part = next(iter(dataset.parts(copy)))
+        games = dataset.read_games(part)
+        sub = [a for a in range(1, 10 ** 6) if split.is_test_player(a) and (a // 20) % 20 == 0]
+        other = [a for a in range(1, 10 ** 6) if split.is_test_player(a) and (a // 20) % 20 != 0]
+        train = [a for a in range(1, 10 ** 6) if not split.is_test_player(a)][:2]
+        self.assertEqual(len(games["players"]), 2)
+        # game 0: two test players, p1 in the bot's validation bucket, p2 not; game 1: two training players
+        games["players"] = np.array([(sub[0], other[0]), tuple(train)], dtype=np.uint64)
+        dataset.write_npz(Path(part) / "games.npz", games)
+        shards = list(dataset.read(copy))
+        game = np.concatenate([s["game"] for s in shards])
+        side = np.concatenate([s["side"] for s in shards])
+        point = np.concatenate([s["point"] for s in shards])
+        bot = self.bc_data.load([copy], self.context, self.mask, split="test-players")
+        own = game == 0  # both sides of game 0 are test players' own rows
+        self.assertEqual(len(bot), int(own.sum()))
+        self.assertTrue(np.array_equal(bot.val, (side == 0)[own]))
+        self.assertTrue(bot.val.any() and not bot.val.all())
+        bc6 = self.bc_data.load([copy], self.context, self.mask, split="players")
+        self.assertEqual(len(bc6), len(game))  # no side of a test game is a training player here: nothing dropped
+        bc6_train = {(int(g), int(s), int(p)) for g, s, p, v in zip(game, side, point, bc6.val) if not v}
+        bot_rows = {(int(g), int(s), int(p)) for g, s, p in zip(game[own], side[own], point[own])}
+        self.assertTrue(bot_rows and bc6_train)
+        self.assertFalse(bot_rows & bc6_train)
+
     def test_batches_take_every_index_once_in_the_same_batches_for_a_seed(self):
         # review of #409: the default path keeps its order inside a batch (bit-equal to earlier runs); memmap rows are
         # taken sorted inside each batch, with the same batches
