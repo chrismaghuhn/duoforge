@@ -129,6 +129,8 @@ Status: built on 2026-10-02 (#93, #97 to #100, #103) and played on the official 
 - **The fix:** Learner v2 scores cut-offs with Showdown's tiebreak (`duoforge_battle_tiebreak`, #109).
 - **Report:** decision 0016.
 
+Bot policy on the ladder (recorded 2026-10-11): after a beginner's bot reached #1 on the Reg M-C ladder in about 155 games (Smogon thread "Wolfe_Alt6767: #1 ranked VGC bot"), the community discusses a bot registry, banning unregistered bots, an opt-out for human players and a bot-only ladder. Before DuoForge plays on the ladder (only with the owner's go), it follows whatever rules apply then: registered and marked as a bot where a registry exists, never hidden. A bot-only ladder would be the best place to measure against the other bots (Jaxcalibur, mikumiku37, Wolfe_Alt6767). Running cost is a design goal: mikumiku37 reports about $150 a month for its bot; DuoForge's engine and search run on CPUs with a small network, so a small VPS should do, to be measured (latency p99 within the timer) before any rental.
+
 ## M11 — Learning from human replays
 
 Use public Showdown replays of the format as the starting point for the learner:
@@ -292,6 +294,7 @@ Ideas recorded by the owner on 2026-10-11 after looking at replayreview.app (sin
   - "best" is measured against the opponent model: the equilibrium mix, and optionally the human model at the opponent's rating, since an option can be right against one and wrong against the other; an option in the support of the equilibrium mix loses nothing against it;
   - luck is reported apart from decisions: the engine knows every chance draw, so a lost game splits into the win chance given up by choices and the win chance lost to rolls, crits and misses.
   The per-option values are the same numbers that regret mining (above) trains on, so the analysis also finds the states worth training on. No such tool exists for VGC doubles. It needs the multi-turn search for decisions whose value shows only later, and it waits for the 85 % coverage like everything else here.
+- **A web page for it (owner, 2026-10-11, an end goal):** a user pastes a Showdown replay; the tracker folds it and the page shows, per decision, a tree of the options with their values, the bot's choice, the win-chance loss of the move played, and the luck apart from the decisions. The user can enter what the replay does not show (the own full team sheet with stat points, back picks never sent in, hidden sets): a marked source as M11's pick hypotheses, validated by the engine's setup, the results labelled "under your assumptions", and each player still judged only on what that player knew. The network stays on the server and is never shipped; pasted replays and player names are not stored beyond aggregate counts. Others have the same idea (Wolfe_Alt6767 plans a chess.com-style review); the difference is the exact engine, the honest per-player view and the luck split.
 
 
 ## M14 — Closed team sheets (the Bo1 ladder)
