@@ -58,8 +58,17 @@ def check_host(host):
         address = ipaddress.ip_address(host)
     except ValueError:
         raise SystemExit(f"the arena plays on a local server only, not {host!r}") from None
-    if not (address.is_loopback or address.is_private) or client.official(f"ws://{host}/"):
+    if address.is_unspecified or not (address.is_loopback or address.is_private) or client.official(f"ws://{host}/"):
         raise SystemExit(f"the arena plays on a local server only, not {host!r}")
+
+
+def server_command(host, port):
+    """(argv, env) that start the pinned Showdown server with --no-security bound to `host` only, with no change to
+    the checkout: without a port argument the server takes its address and port from cloud-env (BIND_IP, PORT;
+    server/sockets.ts listen). A --no-security server on every interface would take guests from the LAN."""
+    import os
+    check_host(host)
+    return ["node", "pokemon-showdown", "start", "--no-security"], {**os.environ, "BIND_IP": host, "PORT": str(port)}
 
 
 def _ready(url, timeout):
@@ -234,7 +243,9 @@ def main(argv=None):
     p.add_argument("--port", type=int, default=8000)
     p.add_argument("--host", default="localhost", help="the server's host (from WSL: the Windows host's address)")
     p.add_argument("--seed", type=int, default=0x2026101200000362)
-    p.add_argument("--server-dir", default=None, help="a pinned Showdown checkout to start with --no-security")
+    p.add_argument("--server-dir", default=None,
+                   help="a pinned Showdown checkout to start with --no-security, bound to --host only "
+                        "(on Windows with WSL bots: tools/live/local_server.ps1 starts it on the WSL host address)")
     args = p.parse_args(argv)
     if args.games % 2 or args.games < 2:
         raise SystemExit("the arena plays pairs: --games must be even")
@@ -252,8 +263,9 @@ def main(argv=None):
     texts = {t: (root / f"{t}.txt").read_text(encoding="utf-8") for t in {x for g in games for x in g[2:]}}
     server = None
     if args.server_dir:
-        server = subprocess.Popen(["node", "pokemon-showdown", "start", "--no-security", str(args.port)],
-                                  cwd=args.server_dir, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        argv_, env = server_command(args.host, args.port)
+        server = subprocess.Popen(argv_, env=env, cwd=args.server_dir, stdout=subprocess.DEVNULL,
+                                  stderr=subprocess.DEVNULL)
         if not _ready(f"http://{args.host}:{args.port}/", 120):
             server.terminate()
             raise SystemExit("the local server did not answer within 120 s")
