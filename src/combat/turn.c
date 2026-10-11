@@ -9725,7 +9725,9 @@ static duoforge_status dfi_residual_events_run(dfi_run *r, dfi_noorder_snapshot 
         }
         /* Leech Seed's drain (order 8, decision 0047): an entry only for a standing holder whose seed has a source */
         if (m->hp != 0u && b->tail.sides[flat / 2u].positions[flat % 2u].leech_seed_source != 0u) {
-            list[n] = (dfi_residual_entry){DFI_RES_LEECH, flat, 8u, speed, 0u, true};
+            /* Leech Seed's onResidualOrder 8 with no sub-order: a Condition on a Pokemon has subOrder 2 (sim/battle.ts:954-976:
+             * the effectTypeOrder table; the side and field overrides at :971-980 do not apply to a volatile on a Pokemon). */
+            list[n] = (dfi_residual_entry){DFI_RES_LEECH, flat, 8u, speed, 2u, true};
             n += 1u;
         }
         /* The volatiles with a duration handler of their own, in the one fixed order of residual_order.h (Heal
