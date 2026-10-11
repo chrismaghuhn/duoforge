@@ -609,9 +609,14 @@ class LinesTest(unittest.TestCase):
         cut = tracker.restrict_ext(full, 0)
         self.assertEqual((int(cut["revision"]), int(cut["epoch"])), (int(full["revision"]), int(full["epoch"])))
         self.assertEqual(cut["sides"].tobytes(), bytes(_layout.SIDE_EXT.itemsize * 2))
+        self.assertFalse(cut["volatiles2"].any())
         chop = tracker.restrict_ext(full, 1 << lines.FEATURES["THROAT_CHOP"])
         self.assertEqual(chop["sides"]["positions"]["volatiles"].tolist(),
                          (full["sides"]["positions"]["volatiles"] & tracker.EXT_THROAT_CHOP).tolist())
+        # Attract's source position (step G87): only volatiles2's bits 12-13, nothing of the sides
+        source = tracker.restrict_ext(full, 1 << lines.FEATURES["ATTRACT_SOURCE"])
+        self.assertEqual(source["volatiles2"].tolist(), (full["volatiles2"] & tracker._ATTRACT_SOURCE_BITS).tolist())
+        self.assertEqual(source["sides"].tobytes(), bytes(_layout.SIDE_EXT.itemsize * 2))
 
     def test_choice_items(self):
         self.assertEqual(lines.CHOICE_ITEMS, ("choiceband", "choicescarf", "choicespecs"))
