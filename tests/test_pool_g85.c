@@ -221,8 +221,19 @@ static const duoforge_slot_command k_move0_none = {DUOFORGE_SLOT_MOVE, 0u, DUOFO
 static const duoforge_slot_command k_move1_none = {DUOFORGE_SLOT_MOVE, 1u, DUOFORGE_TARGET_NONE, 0u, 0u, {0u, 0u, 0u}};
 static const duoforge_slot_command k_move0_foe0 = {DUOFORGE_SLOT_MOVE, 0u, 0u, 0u, 0u, {0u, 0u, 0u}};
 
-/* Pickpocket with a second priority-0 holder in the move: the spread Hyper Voice of the attacker (side 0, slot 0) hits Weavile
- * (Pickpocket, no item) and Primarina. Primarina's item is a Red Card in the refusal; the control keeps the Rocky Helmet. */
+/* The member's moves: `n` ids, and every slot after them empty (a member's unused slots must be zero). */
+static void set_moves(duoforge_member_setup *m, uint32_t n, const uint32_t *ids)
+{
+    m->move_count = n;
+    for (uint32_t k = 0; k < DUOFORGE_MAX_MOVE_SLOTS; ++k) {
+        m->moves[k].move_id = k < n ? ids[k] : 0u;
+        m->moves[k].pp_max = 0u;
+    }
+}
+
+/* Pickpocket with a second priority-0 holder in the move: the spread Hyper Voice of Salamence (side 0, slot 0, swapped with
+ * Kingambit so the Species Clause holds) hits Weavile (Pickpocket, no item) and Primarina. Primarina's item is a Red Card in
+ * the refusal; the control keeps the Rocky Helmet. */
 static void check_pickpocket_refusal(df_test *t, duoforge_context *ctx)
 {
     const df_conf_battle *cb = find("g85_pickpocket_kowtow");
@@ -232,10 +243,13 @@ static void check_pickpocket_refusal(df_test *t, duoforge_context *ctx)
     for (int red = 0; red < 2; ++red) {
         duoforge_battle_setup setup;
         build_setup(cb, &setup);
+        duoforge_member_setup tmp = setup.sides[0].members[0];
+        setup.sides[0].members[0] = setup.sides[0].members[5]; /* Salamence (the row of member 5) to the front */
+        setup.sides[0].members[5] = tmp;
         duoforge_member_setup *hv = &setup.sides[0].members[0];
-        hv->move_count = 2u;
-        hv->moves[0].move_id = DFI_MOVE_HYPERVOICE;
-        hv->moves[1].move_id = DFI_MOVE_PROTECT;
+        hv->item = 0u;
+        const uint32_t hv_moves[2] = {DFI_MOVE_HYPERVOICE, DFI_MOVE_PROTECT};
+        set_moves(hv, 2u, hv_moves);
         if (red) {
             setup.sides[1].members[1].item = (uint8_t)(1u + DFI_ITEM_REDCARD);
         }
@@ -245,8 +259,9 @@ static void check_pickpocket_refusal(df_test *t, duoforge_context *ctx)
     }
 }
 
-/* Magician with two targets of one Speed: Delphox (no item, Magician) uses the spread Dazzling Gleam on two copies of one Pokemon
- * (Pressure, no item, the same stats, so the same Speed); the control has the second one of another Speed (Primarina). */
+/* Magician with two targets of one Speed: Delphox (no item, Magician) uses the spread Dazzling Gleam on two foes of Speed 105
+ * each (Ceruledge, Serious, no Speed points; Gholdengo, Calm, 8 Speed points: base Speed 85 and 84, both 105 at level 50), so the
+ * speedSort of hitTargets draws and the engine refuses. The control keeps the sheet's Weavile and Primarina, of other Speeds. */
 static void check_magician_tie(df_test *t, duoforge_context *ctx)
 {
     const df_conf_battle *cb = find("g85_pickpocket_kowtow");
@@ -261,16 +276,26 @@ static void check_magician_tie(df_test *t, duoforge_context *ctx)
         dl->gender = DUOFORGE_GENDER_FEMALE;
         dl->ability = (uint8_t)(1u + DFI_ABILITY_MAGICIAN);
         dl->item = 0u;
-        dl->move_count = 2u;
-        dl->moves[0].move_id = DFI_MOVE_DAZZLINGGLEAM;
-        dl->moves[1].move_id = DFI_MOVE_PROTECT;
-        duoforge_member_setup *w0 = &setup.sides[1].members[0];
-        w0->item = 0u;
-        w0->ability = (uint8_t)(1u + DFI_ABILITY_SYNCHRONIZE); /* not Pickpocket: only the two targets matter here */
-        w0->move_count = 1u;
-        w0->moves[0].move_id = DFI_MOVE_SHADOWBALL;
+        const uint32_t dl_moves[2] = {DFI_MOVE_DAZZLINGGLEAM, DFI_MOVE_PROTECT};
+        set_moves(dl, 2u, dl_moves);
         if (tie) {
-            setup.sides[1].members[1] = *w0; /* the same Pokemon with the same stats: the same Speed */
+            duoforge_member_setup ceruledge = setup.sides[0].members[4];
+            ceruledge.nature = DFI_NATURE_SERIOUS;
+            ceruledge.stat_points[5] = 0u;
+            ceruledge.item = 0u;
+            const uint32_t c_moves[1] = {DFI_MOVE_BITTERBLADE};
+            set_moves(&ceruledge, 1u, c_moves);
+            duoforge_member_setup gholdengo = setup.sides[0].members[3];
+            gholdengo.nature = DFI_NATURE_CALM;
+            gholdengo.stat_points[5] = 8u;
+            gholdengo.item = 0u;
+            const uint32_t g_moves[1] = {DFI_MOVE_SHADOWBALL};
+            set_moves(&gholdengo, 1u, g_moves);
+            /* side 1 keeps its Species Clause: its Ceruledge (member 4) moves to slot 1 and its Primarina (member 1) to member 4 */
+            const duoforge_member_setup primarina = setup.sides[1].members[1];
+            setup.sides[1].members[0] = gholdengo;
+            setup.sides[1].members[1] = ceruledge;
+            setup.sides[1].members[4] = primarina;
         }
         const duoforge_slot_command cmd[2][2] = {{k_move0_none, k_move1_none}, {k_move0_foe0, k_move0_foe0}};
         const duoforge_status st = one_turn(t, ctx, &setup, cb, cmd);
@@ -293,8 +318,8 @@ static void check_magician_stone(df_test *t, duoforge_context *ctx)
         dl->gender = DUOFORGE_GENDER_FEMALE;
         dl->ability = (uint8_t)(1u + DFI_ABILITY_MAGICIAN);
         dl->item = 0u;
-        dl->move_count = 1u;
-        dl->moves[0].move_id = DFI_MOVE_MYSTICALFIRE;
+        const uint32_t dl_fire[1] = {DFI_MOVE_MYSTICALFIRE};
+        set_moves(dl, 1u, dl_fire);
         setup.sides[1].members[0].item = (uint8_t)(stone ? 1u + DFI_ITEM_DELPHOXITE : 1u + DFI_ITEM_BLACKGLASSES);
         const duoforge_slot_command cmd[2][2] = {{{DUOFORGE_SLOT_MOVE, 0u, 2u, 0u, 0u, {0u, 0u, 0u}}, k_move1_none},
                                                  {k_move0_foe0, k_move0_foe0}};

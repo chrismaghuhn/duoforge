@@ -3406,9 +3406,7 @@ static duoforge_status dfi_pickpocket(dfi_run *r, uint32_t holder, uint32_t user
         return DUOFORGE_OK; /* setItem refuses a fainted holder: the item goes back to the attacker, no line */
     }
     dfi_emit_balloon_on_receive(r, holder, yours);
-    duoforge_event left = dfi_ev(DUOFORGE_EVENT_ITEM_END, user, DUOFORGE_CAUSE_ABILITY, yours, user);
-    left.id = (uint16_t)(1u + DFI_ABILITY_PICKPOCKET); /* wide-operands-reviewed: an ability code, < 256 */
-    dfi_emit(r, &left); /* the silent -enditem of the attacker */
+    dfi_emit_item_left_by(r, user, yours, 1u + DFI_ABILITY_PICKPOCKET, user); /* the silent -enditem of the attacker */
     dfi_set_held(b, user, 0u);
     dfi_set_held(b, holder, yours);
     dfi_emit_item_received_by(r, holder, yours, 1u + DFI_ABILITY_PICKPOCKET, user);
@@ -3483,7 +3481,10 @@ static duoforge_status dfi_magician(dfi_run *r, uint32_t user, const uint32_t ta
 {
     struct duoforge_battle *b = r->b;
     dfi_member *um = dfi_at(b, user);
-    if (um == NULL || dfi_pos(b, user)->switch_flag == DFI_SWITCH_EMERGENCY_EXIT) {
+    if (um == NULL || !dfi_ability(b, um, DFI_ABILITY_MAGICIAN)) {
+        return DUOFORGE_OK; /* the user's ability is not Magician: the handler does not exist */
+    }
+    if (dfi_pos(b, user)->switch_flag == DFI_SWITCH_EMERGENCY_EXIT) {
         return DUOFORGE_OK; /* source.switchFlag === true */
     }
     if (dfi_item_code(b, um) != 0u || move_id == DFI_MOVE_FLING) {
@@ -8546,6 +8547,15 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
                 dfi_use_item(r, ejector); /* [-enditem] */
             }
         }
+        /* Pickpocket (step G85, data/abilities.ts:3239-3261): the AfterMoveSecondary of the holders the move reached, after
+         * Eject Button and before the thaw and Red Card. Its refusal reads the other priority-0 holders before any of them has
+         * used its item (a Red Card that is used up would hide it). Not gated by the attacker's Sheer Force (the Champions
+         * afterMoveSecondaryEvent, data/mods/champions/scripts.ts:594-600). Its refusals are in dfi_pickpocket_all. */
+        if (!status_move && any) {
+            st = dfi_pickpocket_all(r, user, targets, hit, count, (md->flags & DFI_MOVE_FLAG_CONTACT) != 0u);
+            if (st != DUOFORGE_OK) {
+                return st;
+            }
         /* AfterMoveSecondary: a move that thaws its target (Scald,
          * thawsTarget) cures a frozen one after the secondaries and the second
          * Update (frz.onAfterMoveSecondary, data/conditions.ts:112-116, run by
@@ -8573,14 +8583,6 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
                 }
             }
         }
-        /* Pickpocket (step G85, data/abilities.ts:3239-3261): the AfterMoveSecondary of the holders the move reached, after
-         * Red Card and before the targets' Emergency Exit. Not gated by the attacker's Sheer Force (the Champions
-         * afterMoveSecondaryEvent, data/mods/champions/scripts.ts:594-600). Its refusals are in dfi_pickpocket_all. */
-        if (!status_move && any) {
-            st = dfi_pickpocket_all(r, user, targets, hit, count, (md->flags & DFI_MOVE_FLAG_CONTACT) != 0u);
-            if (st != DUOFORGE_OK) {
-                return st;
-            }
         }
         /* After the secondaries of the hit loop: a target that fell to half
          * HP (sim/battle-actions.ts:1005-1017). A Sheer Force holder's stripped move
