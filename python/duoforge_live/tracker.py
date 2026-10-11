@@ -970,10 +970,15 @@ class Tracker:
         if action is None or self.data.kind != "pool":
             return
         from . import record
-        p, events = self._at(action["pos"]), action["events"]
-        # another occupant now, or the user fainted: the faint's clearing comes after the result
-        if p.activation == action["activation"] and not p.fainted:
-            p.result_now = record.move_result_of(self.data, action["pos"], events)
+        events = action["events"]
+        # The user may have moved during its own action (Ally Switch): the activation id belongs to the Pokemon, so the slot that
+        # now holds it gets the result (src/combat/turn.c dfi_run_move). Another occupant at every slot, or the user fainted:
+        # the faint's clearing comes after the result
+        side = action["pos"] // 2
+        for p in self._positions[side]:
+            if p.occupant != ROSTER_NONE and p.activation == action["activation"] and not p.fainted:
+                p.result_now = record.move_result_of(self.data, action["pos"], events)
+                break
         for i, e in enumerate(events):
             if e[0] == EV["MOVE"] and e[3] == trace_to_c.CAUSE["ABILITY"] and e[1] != NOPOS:
                 # Magic Bounce: the holder's result is that of the reflected run (src/combat/turn.c, the bounced move)
