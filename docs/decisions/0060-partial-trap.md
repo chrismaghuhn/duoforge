@@ -82,6 +82,16 @@ One draw site, `DFI_SITE_PARTIAL_TRAP_TURNS` = 32, `random(5, 7)`, drawn only wh
 - Grip Claw: dropped (`data/mods/champions/items.ts:422`, `isNonstandard: "Past"`). The 8-turn branch is therefore not modelled; a state that asks for it is refused.
 - Whirlpool, Magma Storm, Thunder Cage: the same class, not in this step.
 
+## 8a. Known gap: cross-Pokemon ties in the residual order (refused)
+
+The residual ambiguity check (`dfi_residual_order_ambiguous`, `src/combat/residual_order.h`) refuses a list when a Pokemon has volatile handlers of two sort keys and some pair of callbacks ties in order, speed and sub-order. Measured on the 500-battle campaign (seed 90, head before the doc commit): 28 of 500 battles are refused there, and all 28 refusals are cross-Pokemon equal-speed ties: a partial trap (order 13, sub-order 2) on two holders, usually together with Leftovers (order 5, sub-order 4) on the same two holders. No refusal has a same-Pokemon pair.
+
+Decision (lead, 2026-10-11): the refusal stays. The pin shuffles such ties (`speedSort`, `sim/battle.ts:429-460`), so the outcome is a draw the engine does not model, and the same-Pokemon restriction tried before was wrong: with it, the 500-battle campaign showed 3 divergences against the reference. The refusal therefore costs coverage (these battles are not played) and no correctness. No engine change.
+
+Why it is frequent here and rare in real games: equal speed between two trapped holders is common in the Sitrus mirror campaign teams and rare in real games.
+
+Possible later step, not started: a pin experiment with two equal-speed trap holders, to see which tie shuffles the reference produces and whether a model of those draws is exact. Until then this is the known gap of the partial trap.
+
 ## 9. Open points for the lead
 
 1. The source-left encoding of section 3 (trap_source = 0 while the trap lives on) changes one tail invariant. If the lead prefers a stored identity, that needs a byte.
