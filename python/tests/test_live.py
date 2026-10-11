@@ -526,8 +526,8 @@ def record_diff(battle_name, k, viewer, record):
 CLOSURE_OUTCOME = {"equal": 2594, "refused": 310}
 # lane B batch 5c (G71 Cute Charm, G75 cheap set): +144 equal and +2 refused records; 12 streams stop on the Attract lines
 # (unfolded:DUOFORGE_POSITION_EXT_ATTRACT, the tracker fold of the ATTRACT bit comes after G71), 4 more on Dragon Cheer (the
-# G75 crit battles).
-POOL_OUTCOME = {"equal": 10042, "refused": 489, "tracker refuses: unburden-without-item-line": 4}
+# G75 crit battles). Lane B batch 5d (G79 Cloud Nine, G81 Frisk): +170 equal and +18 refused records, no new stop.
+POOL_OUTCOME = {"equal": 10212, "refused": 507, "tracker refuses: unburden-without-item-line": 4}
 POOL_STOPS = {"feature:SUBSTITUTE": 78, "unfolded:DUOFORGE_POSITION_EXT_ATTRACT": 12, "feature:DRAGON_CHEER": 12,
               "feature:FORME_CHANGE": 10, "feature:DESTINY_BOND": 10, "feature:ROOST": 8, "line:-end": 2, "feature:ILLUSION": 2}
 
