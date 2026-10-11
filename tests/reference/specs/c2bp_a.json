@@ -1,0 +1,77 @@
+{
+  "name": "c2bp_a",
+  "purpose": "Baton Pass without a reserve (the move result false, issue 389; decision 0015 5da): a PASS battle of the campaign of run 9009 (teams P and N, main-marked moves only) where Incineroar, p1a, uses Baton Pass with no reserve (step 14) and Stomping Tantrum on the next turn (step 15), doubled by the move result: adopted as a regression fixture. The choices and the seed are those of the campaign; the trace is recorded with the pinned Showdown (b2cb775).",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,ad7383b1368a8f905d9220acc5c1941cdd76b82434b0f44379775436d7a960f7",
+  "teams": [
+    "Scolipede (M) @ Focus Sash\nAbility: Speed Boost\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Def / 0 SpD / 0 Spe\nAdamant Nature\n- Protect\n- Iron Tail\n- Skitter Smack\n- Earthquake\n\nIncineroar (M) @ Sitrus Berry\nAbility: Blaze\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Def / 0 SpD / 0 Spe\nImpish Nature\n- Baton Pass\n- Stomping Tantrum\n- Protect\n- Fake Out\n\nHeracross (M) @ Life Orb\nAbility: Moxie\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Def / 0 SpD / 0 Spe\nAdamant Nature\n- Protect\n- Close Combat\n- Bug Bite\n- Earthquake\n\nWatchog (M) @ Leftovers\nAbility: Keen Eye\nLevel: 50\nEVs: 0 HP / 0 Atk / 2 Def / 32 SpA / 32 Spe\nModest Nature\n- Protect\n- Crunch\n- Iron Tail\n- Mud Shot\n\nFarigiraf (M) @ Expert Belt\nAbility: Armor Tail\nLevel: 50\nEVs: 0 HP / 0 Atk / 2 Def / 32 SpA / 32 Spe\nModest Nature\n- Protect\n- Earthquake\n- Crunch\n- Helping Hand\n\nAriados (M) @ Wide Lens\nAbility: Swarm\nLevel: 50\nEVs: 0 HP / 0 Atk / 2 Def / 32 SpA / 32 Spe\nModest Nature\n- Protect\n- Lunge\n- Bug Bite\n- Pounce",
+    "Araquanid (M) @ Focus Sash\nAbility: Water Bubble\nLevel: 50\nEVs: 0 HP / 0 Atk / 2 Def / 32 SpA / 32 Spe\nModest Nature\n- Hydro Pump\n- Ice Beam\n- Protect\n- Liquidation\n\nKangaskhan (F) @ Chople Berry\nAbility: Scrappy\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Def / 0 SpD / 0 Spe\nAdamant Nature\n- Fire Punch\n- Earthquake\n- Protect\n- Ice Punch\n\nMilotic (M) @ Leftovers\nAbility: Competitive\nLevel: 50\nEVs: 0 HP / 0 Atk / 2 Def / 32 SpA / 32 Spe\nModest Nature\n- Hydro Pump\n- Scald\n- Protect\n- Ice Beam\n\nHydrapple (M) @ Sitrus Berry\nAbility: Sticky Hold\nLevel: 50\nEVs: 0 HP / 0 Atk / 2 Def / 32 SpA / 32 Spe\nBold Nature\n- Protect\n- Giga Drain\n- Earth Power\n- Hydro Pump\n\nGarchomp (M) @ Lum Berry\nAbility: Rough Skin\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Def / 0 SpD / 0 Spe\nJolly Nature\n- Earthquake\n- Dragon Tail\n- Protect\n- Stone Edge\n\nArmarouge (M) @ Life Orb\nAbility: Weak Armor\nLevel: 50\nEVs: 0 HP / 0 Atk / 2 Def / 32 SpA / 32 Spe\nTimid Nature\n- Flare Blitz\n- Overheat\n- Protect\n- Heat Wave"
+  ],
+  "choices": [
+    {
+      "p1": "team 5326",
+      "p2": "team 5324"
+    },
+    {
+      "p1": "move 1, move 4",
+      "p2": "move 4 1, move 3"
+    },
+    {
+      "p1": "move 2, move 3 2",
+      "p2": "move 3, move 4 2"
+    },
+    {
+      "p1": "move 1, move 3 -1",
+      "p2": "move 3, move 2 -1"
+    },
+    {
+      "p1": "move 4 -2, move 2 2",
+      "p2": "move 3, move 3"
+    },
+    {
+      "p1": "switch 3, move 4",
+      "p2": "move 4 2, move 3"
+    },
+    {
+      "p1": "pass, switch 4"
+    },
+    {
+      "p1": "move 1, move 3 2",
+      "p2": "move 2 -2, move 2 2"
+    },
+    {
+      "p1": "switch 3, pass"
+    },
+    {
+      "p2": "pass, switch 3"
+    },
+    {
+      "p1": "move 1, move 4 2",
+      "p2": "move 2 -2, move 1 -1"
+    },
+    {
+      "p1": "switch 3, move 1",
+      "p2": "move 3, move 4 2"
+    },
+    {
+      "p1": "move 3, move 2 1",
+      "p2": "move 1, move 1"
+    },
+    {
+      "p1": "pass, switch 3"
+    },
+    {
+      "p1": "move 1, move 1",
+      "p2": "move 4 -2, move 1"
+    },
+    {
+      "p1": "move 2 -2, move 4 -1",
+      "p2": "move 1, move 2 1"
+    },
+    {
+      "p1": "move 2 -2, pass",
+      "p2": "move 1, move 4 -1"
+    }
+  ]
+}
