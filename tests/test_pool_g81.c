@@ -202,14 +202,21 @@ static void check_illusion_refusal(df_test *t, const duoforge_context *ctx)
     duoforge_battle_setup frisk_setup;
     build_setup(frisk, &frisk_setup);
     /* Side 1's lead becomes a complete, legal Frisk holder: Noivern of g81_frisk_two_foes (its Focus Sash, Frisk, Hurricane, Dragon
-     * Pulse and Protect; the setup checks each of them against the forme). */
+     * Pulse and Protect; the setup checks each of them against the forme). The battle is created; the entries run in its first step
+     * (the team selection, as the replay of every recorded battle), where the Frisk line would name the disguised Zoroark. */
     setup.sides[1].members[0] = frisk_setup.sides[0].members[0];
     duoforge_battle *b = NULL;
-    DF_CHECK_EQ_U64(t, (uint64_t)duoforge_battle_create(ctx, &setup, &b), (uint64_t)DUOFORGE_E_UNSUPPORTED);
-    DF_CHECK(t, b == NULL);
-    if (b != NULL) {
-        duoforge_battle_destroy(b);
+    if (!DF_CHECK(t, duoforge_battle_create(ctx, &setup, &b) == DUOFORGE_OK && b != NULL)) {
+        return;
     }
+    const df_conf_step *st = &cb->steps[0];
+    duoforge_decision_bundle bd;
+    bundle_of(st, b, &bd);
+    duoforge_step_result res;
+    uint32_t used = 0xFFFFFFFFu;
+    const duoforge_status status = dfi_battle_step_tape(ctx, b, &bd, &conf_tape[st->tape_off], st->tape_len, &used, &res);
+    DF_CHECK_EQ_U64(t, (uint64_t)status, (uint64_t)DUOFORGE_E_UNSUPPORTED);
+    duoforge_battle_destroy(b);
 }
 
 int main(void)
