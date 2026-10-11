@@ -23,6 +23,10 @@ refused: its rows can hold fold states the encoder would not see.
 
 Rows of pick hypotheses (H > 1, format version 4; M11 pick hypotheses spec, section 5) are left out unless
 pick_hypotheses_weight W is given; then each weighs W/H. A version 3 dataset has none.
+
+split="players" holds out the games of a test player (duoforge_replay.split.of_game) for every source, not only for
+the belief sources. With memmap (a directory outside the repository) the encoded rows go into one .npy memmap per
+field there instead of memory (6.6 million rows are about 51 GB); load_memmap opens such a directory again.
 """
 import hashlib
 import json
@@ -227,14 +231,53 @@ def _hypotheses(shard, version):
     return np.ones(len(shard["game"]), np.int64)
 
 
+SPLITS = ("sheet", "players")
+# the Rows fields a memmap directory holds as .npy memmaps; fmt and replay (strings) are plain .npy files
+_MEMMAP_FIELDS = ("obs", "slots", "mask_bits", "is_team", "pair_bits", "team_bits", "reason", "z", "has_z", "weight",
+                  "val", "side", "point")
+_MEMMAP_DONE = "rows.json"
+
+
+def _alloc(memmap, name, shape, dtype):
+    if memmap is None:
+        return np.empty(shape, dtype)
+    shape = shape if isinstance(shape, tuple) else (shape,)
+    return np.lib.format.open_memmap(Path(memmap) / f"{name}.npy", mode="w+", dtype=dtype, shape=shape)
+
+
+def load_memmap(path):
+    """The Rows of a memmap directory that load wrote (read-only memmaps). ValueError for a directory without its
+    completion record (a run that did not finish writing it)."""
+    path = Path(path)
+    try:
+        done = json.loads((path / _MEMMAP_DONE).read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        raise ValueError(f"{path} is not a complete rows directory (no {_MEMMAP_DONE})") from None
+    arrays = {name: np.load(path / f"{name}.npy", mmap_mode="r") for name in _MEMMAP_FIELDS}
+    arrays.update({name: np.load(path / f"{name}.npy") for name in ("fmt", "replay")})
+    if any(len(a) != done["rows"] for a in arrays.values()):
+        raise ValueError(f"{path}: arrays of another length than its {done['rows']} rows")
+    return Rows(**arrays)
+
+
 def load(dirs, context, mask, format_weights=None, weights="rating", source_weights=None,
-         pick_hypotheses_weight=None):
+         pick_hypotheses_weight=None, split="sheet", memmap=None):
     """The Rows of every shard of the datasets `dirs`, encoded under `mask`, into arrays allocated once (no copy of
     the whole set). weights: "rating" (rating_weight) or "uniform"; format_weights: {format prefix: factor};
     source_weights: {dataset source: factor} (dataset_source; a source other than sheet must be named);
-    pick_hypotheses_weight: W above 0 takes the rows of pick hypotheses at W/H each (None leaves them out)."""
+    pick_hypotheses_weight: W above 0 takes the rows of pick hypotheses at W/H each (None leaves them out);
+    split: "sheet" (the sheet pair for sheet datasets, the players for the others) or "players" (the players for every
+    dataset); memmap: a new directory outside the repository for the arrays (module docstring)."""
     if weights not in ("rating", "uniform"):
         raise ValueError(f"weights must be 'rating' or 'uniform', not {weights!r}")
+    if split not in SPLITS:
+        raise ValueError(f"split must be one of {SPLITS}, not {split!r}")
+    if memmap is not None:
+        dataset.refuse_repository(memmap)
+        memmap = Path(memmap)
+        if memmap.exists() and any(memmap.iterdir()):
+            raise ValueError(f"the rows directory {memmap} is not empty: a run writes a new one")
+        memmap.mkdir(parents=True, exist_ok=True)
     if pick_hypotheses_weight is not None and not float(pick_hypotheses_weight) > 0:
         raise ValueError(f"pick_hypotheses_weight must be above 0 (None leaves the rows out), "
                          f"not {pick_hypotheses_weight!r}")
@@ -243,17 +286,22 @@ def load(dirs, context, mask, format_weights=None, weights="rating", source_weig
         _check_dataset(out, context)
         _check_folds(out)
     source_weight = {out: _source_weight(out, source_weights) for out in dirs}
-    by_players = {out: dataset_source(out) != "sheet" for out in dirs}  # drawn sheets change with each draw
+    # drawn sheets change with each draw: a belief dataset always splits by its players
+    by_players = {out: split == "players" or dataset_source(out) != "sheet" for out in dirs}
     n = sum(_shard_rows(out, with_hypotheses) for out in dirs)
     if n == 0:
         raise ValueError(f"no rows in {list(map(str, dirs))}")
-    rows = Rows(obs=np.empty((n, features.OBS_SIZE), np.float32),
-                slots=np.empty((n, 2, OPTIONS, features.SLOT_FEATURES), np.float32),
-                mask_bits=np.empty((n, OPTIONS * OPTIONS // 8), np.uint8), is_team=np.empty(n, bool),
-                pair_bits=np.empty((n, OPTIONS * OPTIONS // 8), np.uint8), team_bits=np.empty((n, 45), np.uint8),
-                reason=np.empty((n, 2), np.uint8), z=np.empty(n, np.float32), has_z=np.empty(n, bool),
-                weight=np.empty(n, np.float32), val=np.empty(n, bool), side=np.empty(n, np.uint8),
-                fmt=np.empty(n, object), replay=np.empty(n, object), point=np.empty(n, np.uint16))
+    m = memmap
+    rows = Rows(obs=_alloc(m, "obs", (n, features.OBS_SIZE), np.float32),
+                slots=_alloc(m, "slots", (n, 2, OPTIONS, features.SLOT_FEATURES), np.float32),
+                mask_bits=_alloc(m, "mask_bits", (n, OPTIONS * OPTIONS // 8), np.uint8),
+                is_team=_alloc(m, "is_team", n, bool),
+                pair_bits=_alloc(m, "pair_bits", (n, OPTIONS * OPTIONS // 8), np.uint8),
+                team_bits=_alloc(m, "team_bits", (n, 45), np.uint8), reason=_alloc(m, "reason", (n, 2), np.uint8),
+                z=_alloc(m, "z", n, np.float32), has_z=_alloc(m, "has_z", n, bool),
+                weight=_alloc(m, "weight", n, np.float32), val=_alloc(m, "val", n, bool),
+                side=_alloc(m, "side", n, np.uint8), fmt=np.empty(n, object), replay=np.empty(n, object),
+                point=_alloc(m, "point", n, np.uint16))
     at = 0
     for out in dirs:
         games_of = {}
@@ -302,6 +350,12 @@ def load(dirs, context, mask, format_weights=None, weights="rating", source_weig
     if at != n:
         raise ValueError(f"the manifests name {n} rows, the shards hold {at}")
     rows.fmt, rows.replay = rows.fmt.astype(str), rows.replay.astype(str)
+    if memmap is not None:
+        for name in _MEMMAP_FIELDS:
+            getattr(rows, name).flush()
+        np.save(memmap / "fmt.npy", rows.fmt)
+        np.save(memmap / "replay.npy", rows.replay)
+        (memmap / _MEMMAP_DONE).write_text(json.dumps({"rows": n, "split": split}) + "\n", encoding="utf-8")
     return rows
 
 
@@ -317,7 +371,8 @@ def check_labels(rows):
 
 
 def batches(rows, index, size, rng):
-    """Rows of `index` in a random order (rng), `size` at a time; the last batch may be smaller."""
+    """Rows of `index` in a random order (rng), `size` at a time; the last batch may be smaller. Each batch is taken
+    in index order (the loss does not depend on the order inside a batch), so a memmap reads it front to back."""
     order = np.asarray(index)[rng.permutation(len(index))]
     for start in range(0, len(order), size):
-        yield rows.take(order[start:start + size])
+        yield rows.take(np.sort(order[start:start + size]))

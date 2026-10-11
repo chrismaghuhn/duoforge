@@ -261,6 +261,58 @@ class BcDataTest(unittest.TestCase):
         v3 = self.with_manifest("v3", lambda m: m.update(format_version=3))
         self.assertEqual(len(self.bc_data.load([v3], self.context, self.mask)), len(self.rows))
 
+    def assert_rows_equal(self, a, b):
+        from dataclasses import fields
+        self.assertEqual(len(a), len(b))
+        for f in fields(a):
+            self.assertTrue(np.array_equal(np.asarray(getattr(a, f.name)), np.asarray(getattr(b, f.name))), f.name)
+
+    def test_rows_can_be_written_to_and_read_from_a_memmap_directory(self):
+        # the BC run of 2026-10-11: 6.6 million rows (about 51 GB) do not fit in memory; the encoded rows go into one
+        # .npy memmap per field on disk, and training reads them batch by batch
+        out = self.tmp / "memmap"
+        written = self.bc_data.load([self.out], self.context, self.mask, memmap=out)
+        self.assertIsInstance(written.obs, np.memmap)
+        self.assert_rows_equal(written, self.rows)
+        del written
+        again = self.bc_data.load_memmap(out)
+        self.assertIsInstance(again.slots, np.memmap)
+        self.assert_rows_equal(again, self.rows)
+        part = again.take(np.array([3, 1]))
+        self.assertTrue(np.array_equal(part.label_pairs, self.rows.label_pairs[[3, 1]]))
+        del again, part
+        with self.assertRaisesRegex(ValueError, "not empty"):
+            self.bc_data.load([self.out], self.context, self.mask, memmap=out)
+        (out / "rows.json").unlink()  # a directory a crash left half written
+        with self.assertRaisesRegex(ValueError, "not a complete"):
+            self.bc_data.load_memmap(out)
+
+    def test_a_memmap_directory_inside_the_repository_is_refused(self):
+        root = Path(__file__).resolve().parents[2]
+        with self.assertRaisesRegex(ValueError, "inside the repository"):
+            self.bc_data.load([self.out], self.context, self.mask, memmap=root / "build" / "bc-rows")
+
+    def test_the_players_split_holds_out_every_row_of_a_test_players_game(self):
+        # the BC run of 2026-10-11 (owner via HS): held out by player for every source, so that a model of human play
+        # is never validated on players it trained on; the default stays the sheet-pair split of the BC spec
+        from duoforge_replay import dataset, split
+        copy = self.with_manifest("players-split", lambda m: None)
+        part = next(iter(dataset.parts(copy)))
+        games = dataset.read_games(part)
+        test_pair = next((a, a + 1) for a in range(1, 10 ** 6) if split.of_game((a, a + 1)) == "test")
+        train_pair = next((a, a + 1) for a in range(1, 10 ** 6) if split.of_game((a, a + 1)) == "train")
+        games["players"] = np.array([test_pair if g == 0 else train_pair for g in range(len(games["players"]))],
+                                    dtype=np.uint64)
+        dataset.write_npz(Path(part) / "games.npz", games)
+        rows = self.bc_data.load([copy], self.context, self.mask, split="players")
+        game = np.concatenate([s["game"] for s in dataset.read(copy)])
+        self.assertTrue(np.array_equal(rows.val, game == 0))
+        self.assertTrue(rows.val.any() and not rows.val.all())
+        default = self.bc_data.load([copy], self.context, self.mask)  # unchanged: the sheet pair decides
+        self.assertTrue(np.array_equal(default.val, self.rows.val))
+        with self.assertRaisesRegex(ValueError, "split"):
+            self.bc_data.load([self.out], self.context, self.mask, split="nonsense")
+
     def test_rows_folded_under_other_folds_are_refused(self):
         other = self.with_manifest("folds", lambda m: m.update(tracker_folds=lines.TRACKER_FOLDS ^ 1))
         with self.assertRaisesRegex(ValueError, "other folds"):
