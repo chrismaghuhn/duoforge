@@ -5581,7 +5581,7 @@ static duoforge_status dfi_run_curse(dfi_run *r, uint32_t user, uint32_t target,
             /* onHit returns the boost's result (champions/moves.ts:185): a failed hit breaks the hit loop before its Updates (:531-532).
              * The move line of a failed hit is [still] with no target (campaign seed 84, fz_84_267: `|move|p1a: Tauros|Curse||[still]`
              * after the three zero boosts and their -fail). */
-            dfi_still(r);
+            dfi_fail_line(r, user); /* -fail on the user (the boosts printed none), then [still] with no target */
             r->mres |= DFI_MRES_FALSE;
             return DUOFORGE_OK;
         }

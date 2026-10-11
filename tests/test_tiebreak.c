@@ -260,7 +260,7 @@ int main(void)
     DF_CHECK_EQ_U64(&t, counts.ambiguous, 0u);
 #if defined(DF_CONFORMANCE_POOL_DATA)
     DF_CHECK_EQ_U64(&t, battles, 782u); /* the pool battles of test_conformance: main's 762 (G73's five Moody battles included), the eight of G84 and the twelve of G84b */
-    DF_CHECK_EQ_U64(&t, counts.stops, 4256u); /* main's 4178, the 39 stops of the eight G84 battles and the 39 of the eleven G84b battles */
+    DF_CHECK_EQ_U64(&t, counts.stops, 4263u); /* main's 4178, the 39 stops of the eight G84 battles the 39 of the eleven G84b battles and the 7 of the twelfth (g84b_nonghost_curse_fails) */
 #else
     /* Every kind of decision of the pin is among the stops (the pool battles are too few for that). */
     DF_CHECK(&t, counts.by_stage[1] > 0u && counts.by_stage[2] > 0u && counts.by_stage[3] > 0u &&
