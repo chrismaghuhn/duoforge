@@ -798,14 +798,15 @@ class PoolMoves(unittest.TestCase):
         self.assertEqual([gen_closure.SPECIAL_IDS_P.index(h) for h in gen_closure.G78_HANDLERS], [100])  # G78: Dragon Darts (decision 0043)
         self.assertEqual([gen_closure.SPECIAL_IDS_P.index(h) for h in gen_closure.G88_HANDLERS], [101, 102])  # G88: Lash Out, Assurance (decision 0046)
         self.assertEqual([gen_closure.SPECIAL_IDS_P.index(h) for h in gen_closure.G94_HANDLERS], [103])  # G94: Baneful Bunker (decision 0015 5cv)
-        self.assertEqual(gen_closure.SPECIAL_IDS_P.index('UNMODELED'), 104)
+        self.assertEqual([gen_closure.SPECIAL_IDS_P.index(h) for h in gen_closure.G82_HANDLERS], [104])  # G82: Healing Wish (decision 0045)
+        self.assertEqual(gen_closure.SPECIAL_IDS_P.index('UNMODELED'), 105)
         # Scald and Recover became data in step G10: their ids stay defined and no move maps to them.
         self.assertEqual({v[0] for k, v in gen_closure.SPECIAL_P.items() if k not in gen_closure.SPECIAL_C},
                          (set(gen_closure.G2_HANDLERS) - {'SCALD', 'RECOVER'}) | set(gen_closure.G70_HANDLERS) | set(gen_closure.G66_HANDLERS) | set(gen_closure.G72B_HANDLERS) | set(gen_closure.G74_HANDLERS) | set(gen_closure.G76_HANDLERS) | set(gen_closure.G78_HANDLERS) | set(gen_closure.G88_HANDLERS) | set(gen_closure.G64_HANDLERS) | set(gen_closure.WEATHER_HANDLERS) |
                          set(gen_closure.G16_HANDLERS) | set(gen_closure.G15_HANDLERS) | set(gen_closure.G19_HANDLERS) |
                          set(gen_closure.G20_HANDLERS) | set(gen_closure.G20_PROTECT_HANDLERS) | set(gen_closure.G94_HANDLERS) | set(gen_closure.G28_HANDLERS) |
                          set(gen_closure.G30_HANDLERS) | set(gen_closure.G32_HANDLERS) | set(gen_closure.G34_HANDLERS) |
-                         set(gen_closure.G27_HANDLERS) | set(gen_closure.G25_HANDLERS) | set(gen_closure.G26_HANDLERS) | set(gen_closure.G33_HANDLERS) | set(gen_closure.G38_HANDLERS) | set(gen_closure.G29_HANDLERS) | set(gen_closure.G39_HANDLERS) | set(gen_closure.G31_HANDLERS) | set(gen_closure.G48_HANDLERS) | set(gen_closure.G44_HANDLERS) | set(gen_closure.G50_HANDLERS) | set(gen_closure.G42_HANDLERS) | set(gen_closure.G56_HANDLERS) | set(gen_closure.G52_HANDLERS) | set(gen_closure.G54_HANDLERS) | set(gen_closure.G62_HANDLERS) | set(gen_closure.G60_HANDLERS) | set(gen_closure.G58_HANDLERS) | set(gen_closure.G68_HANDLERS) | set(gen_closure.G66_HANDLERS) | {'DARKEST_LARIAT'})
+                         set(gen_closure.G27_HANDLERS) | set(gen_closure.G25_HANDLERS) | set(gen_closure.G26_HANDLERS) | set(gen_closure.G33_HANDLERS) | set(gen_closure.G38_HANDLERS) | set(gen_closure.G29_HANDLERS) | set(gen_closure.G39_HANDLERS) | set(gen_closure.G31_HANDLERS) | set(gen_closure.G48_HANDLERS) | set(gen_closure.G44_HANDLERS) | set(gen_closure.G50_HANDLERS) | set(gen_closure.G42_HANDLERS) | set(gen_closure.G56_HANDLERS) | set(gen_closure.G52_HANDLERS) | set(gen_closure.G54_HANDLERS) | set(gen_closure.G62_HANDLERS) | set(gen_closure.G60_HANDLERS) | set(gen_closure.G58_HANDLERS) | set(gen_closure.G68_HANDLERS) | set(gen_closure.G66_HANDLERS) | set(gen_closure.G82_HANDLERS) | {'DARKEST_LARIAT'})
 
     def test_taunt_and_yawn_are_handlers_whose_conditions_are_the_pinned_text(self):
         for mid, text, special in (('taunt', TAUNT, 'TAUNT'), ('yawn', YAWN, 'YAWN')):
