@@ -844,15 +844,27 @@ static mr_family mr_family_of(uint32_t move_id, const dfi_move_data *md)
  * begins), so the events that only the residual makes never count as the move's: a side condition's end (no status move
  * of the engine ends one; Psychic Fangs is a damaging move), a field's end other than Trick Room's toggle by the Trick Room
  * move (the durations, Steel Roller's damaging hit), the weather's end (-weather|none, the duration), a Perish count
- * (Perish Song's own start is silent) and a sleep without [from] move (Yawn's; a move's sleep names the move). */
+ * (Perish Song's own start is silent) and a sleep without [from] move (Yawn's; a move's sleep names the move). A stage change
+ * that an ability announces (its -ability line right before, cause NONE: Moody and Speed Boost in the residual, a Defiant
+ * answer) is the ability's, never the move's (data/abilities.ts moody and speedboost run onResidual). */
 static bool mr_changed(const duoforge_event *body, uint32_t count, uint32_t user, uint32_t stopped, bool selfish,
                        bool trick_room)
 {
     uint32_t statused = 0u;
+    uint32_t announced = DFI_POSITIONS_MR; /* the position whose ability announced the stage changes that follow */
     for (uint32_t i = 0u; i < count; ++i) {
         const duoforge_event *e = &body[i];
         const uint32_t pos = e->position;
         const bool at = pos < DFI_POSITIONS_MR;
+        const bool boost = e->kind == DUOFORGE_EVENT_BOOST || e->kind == DUOFORGE_EVENT_UNBOOST;
+        if (e->kind == DUOFORGE_EVENT_ABILITY && e->cause == DUOFORGE_CAUSE_NONE) {
+            announced = pos;
+            continue;
+        }
+        if (boost && at && pos == announced) {
+            continue; /* the ability's stage change */
+        }
+        announced = DFI_POSITIONS_MR;
         if (at && (((stopped >> pos) & 1u) != 0u || (pos == user && !selfish))) {
             continue;
         }
@@ -1075,6 +1087,15 @@ duoforge_status duoforge_move_result(const duoforge_context *ctx, uint32_t user,
             break;
         case DUOFORGE_EVENT_DAMAGE:
             hit = hit || (other && e->cause == DUOFORGE_CAUSE_NONE);
+            break;
+        case DUOFORGE_EVENT_ACTIVATE:
+            /* -activate|X|Substitute|[damage]: the Substitute took the hit (HIT_SUBSTITUTE, data/mods/champions/scripts.ts
+             * spreadMoveHit: damage true), a hit of the move */
+            hit = hit || (other && e->cause == DUOFORGE_CAUSE_MOVE && e->id2 == DFI_MOVE_SUBSTITUTE);
+            break;
+        case DUOFORGE_EVENT_VOLATILE_END:
+            /* -end|X|Substitute: the hit broke it (dfi_substitute_takes shows only the end then), HIT_SUBSTITUTE as well */
+            hit = hit || (other && e->cause == DUOFORGE_CAUSE_NONE && e->detail == DUOFORGE_VOLATILE_SUBSTITUTE);
             break;
         case DUOFORGE_EVENT_FAIL:
             if (e->cause == DUOFORGE_CAUSE_NONE) {
