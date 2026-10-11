@@ -834,3 +834,7 @@ duoforge_add_test(NAME duoforge.state.pool_g67 SOURCES test_pool_g67.c WHITEBOX 
 # Step G71 (decision 0034, decision 0015 5bn): Attract's source bytes, the state check, the public bit, the from-view refusal and the
 # clear of the holder's byte (white-box; the volatile's draws wait for G73's site).
 duoforge_add_test(NAME duoforge.state.pool_g71 SOURCES test_pool_g71.c WHITEBOX LIBS duoforge_batch TIMEOUT 60)
+
+# Step G79 (decision 0015 5br): Cloud Nine, the weather suppression of a standing holder (its mark, Mega Sol's refusal under it, and
+# the refusal of a Trace copy of it; white-box). The recorded battles g79_* are replayed by duoforge.reference.conformance_pool_data.
+duoforge_add_test(NAME duoforge.state.pool_g79 SOURCES test_pool_g79.c WHITEBOX TIMEOUT 60)

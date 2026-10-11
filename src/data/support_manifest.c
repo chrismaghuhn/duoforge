@@ -695,6 +695,9 @@ const dfi_support_manifest dfi_support = {
             [DFI_ABILITY_BATTLEARMOR] = 1u, /* Perrserker and Falinks: no critical hit against the holder (data/abilities.ts:355-361) */
             [DFI_ABILITY_MOODY] = 1u, /* step G73: Glalie and Scovillain (the residual rise and fall, one boost of +2 and -1) */
             [DFI_ABILITY_CUTECHARM] = 1u, /* step G71 (decision 0034): Milotic (F, Cute Charm) infatuates a contact attacker of the other gender */
+            /* step G79 (decision 0015 5br): Cloud Nine suppresses the weather while a holder stands (data/abilities.ts:543-562,
+             * sim/field.ts:106-116); Altaria and Drampa; an engine row */
+            [DFI_ABILITY_CLOUDNINE] = 1u,
         },
     .items =
         {
