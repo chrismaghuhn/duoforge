@@ -14,13 +14,15 @@
 - `--policy-objective {ppo,mmd}`, default `ppo`. `ppo.OBJECTIVES` lists both, and `ppo.update` refuses any other objective with ValueError.
 - **mmd loss:** the policy loss is −(r·A) with no clip, plus `--mmd-prox-coef` times the estimate r log r − r + 1 of KL(policy ‖ behaviour) on the taken actions, with r = exp(logp − behaviour logp).
   - The estimate is never negative and is 0 at r = 1.
-  - Per row the loss is least at log r = A / prox_coef, so the step is bounded without clipping.
+  - Per row the loss is least at log r = A / prox_coef. Above log r = 3 (`KL_LOG_RATIO_MAX`), r and the estimate go on linearly with their slope at the cap, as the k3 anchor does, so one row with a large advantage can neither fill a whole clipped step nor overflow float32.
   - The value loss, the entropy bonus and the KL anchor are unchanged.
 - **Statistics:** under mmd, `ppo.update` returns `prox` (the mean proximal estimate). The log line carries `prox` and `policy_objective`. PPO's statistics and log lines stay as they were.
 - **Saved options:** only an MMD run saves `policy_objective` and `mmd_prox_coef`, so a PPO run saves exactly what it saved before. A resume keeps the objective and refuses another one.
-- **Option checks:** `--mmd-prox-coef` without mmd, or ≤ 0, stops the run.
+- **Option checks:** `--mmd-prox-coef` without mmd, or one that is not finite and > 0, stops the run. On a resume, an option that the run did not save counts as its default, so naming the default (`--policy-objective ppo`) is no change.
 - **Tests:** `python/tests/test_mmd.py` (CI module `duoforge.python.mmd`).
-  - At the behaviour policy, MMD's gradient equals PPO's.
+  - At the behaviour policy, MMD's gradient equals PPO's. That alone does not fix the proximal term's sign, which is why the following tests exist.
+  - Away from it, MMD's policy loss is the unclipped −(r·A), where PPO's clip binds.
+  - The capped terms: exact up to the cap, linear beyond, finite at log r = 100.
   - The proximal statistic matches the numpy estimate.
   - A stronger proximal term moves the policy less.
   - An unknown objective is refused.
@@ -30,16 +32,17 @@
 
 ## The run (after the restart, with the owner's go)
 
-- **Smoke first (allowed now, private, outside the repository):** 20 updates for each prox_coef in {0.3, 1, 3}, with the magnet (kl_coef 0.05, refresh 500), entropy 0.01, encoder 6 and the restart's pool. Check that `prox` stays finite, that the entropy does not collapse, and that decisions per second are within 5 % of PPO's (the loss adds no forward pass). The value to keep is the smallest prox_coef whose mean |log r| per update stays below PPO's at clip 0.2. It is fixed in the amendment before the run.
+- **Smoke first (allowed now, private, outside the repository):** 20 updates for each prox_coef in {0.3, 1, 3}, with the magnet (kl_coef 0.05, refresh 500), entropy 0.01, encoder 6 and the restart's pool. Check that `prox` stays finite, that the entropy does not collapse, and that decisions per second are within 5 % of PPO's (the loss adds no forward pass). The value to keep is the smallest prox_coef whose logged `prox` (the per-update KL estimate) has a mean at or below 0.02 over updates 11–20. It is fixed in the amendment before the run.
 - **Arms:** PPO (run 3's recipe) and MMD (the same recipe, with `--policy-objective mmd` and the fixed prox_coef). They share the commit, the start (the restart's BC prior), the pool, the budget (one compute ledger per run, the same CPU core-seconds and GPU-seconds) and **three training seeds per arm**. With one seed per arm, the result is a single-run observation, not evidence for promotion.
 - **Endpoints (M13 exit rule: measured alone, before anything is stacked on it):**
-  - **E1, Elo at a fixed time per move:** MMD against the previous best agent (the PPO arm's best, and params-49333), head to head on the registry pool. Every MMD network plays every PPO network, 512 pairs per match-up. Scoring and interval follow the random-teams plan (docs/superpowers/plans/2026-10-11-random-teams-ab.md):
+  - **Networks compared, fixed now:** each run's last snapshot at the budget stop. No snapshot is chosen after the results.
+  - **E1, Elo at a fixed time per move:** MMD against the previous best agent (the PPO arm's networks, and params-49333), head to head on the registry pool. Every MMD network plays every PPO network, 512 pairs per match-up. Scoring and interval follow the random-teams plan (docs/superpowers/plans/2026-10-11-random-teams-ab.md):
     - ties and unresolved games count 0.5;
     - the interval is a two-level cluster bootstrap over training seeds and team pairs, with 10 000 resamples;
     - each MMD seed must be on the passing side of the bound.
 
     MMD passes if the lower bound of its score is above 0.5.
-  - **E2, no cycling:** each arm's snapshots, every 500 updates, play a round robin of 256 pairs per pairing. The run cycles if a later snapshot scores below 0.5 against an earlier one after their 95 % intervals separate. The measure is the share of such inverted pairs; MMD passes if its share is at most PPO's and at most 10 %.
+  - **E2, no cycling:** every run keeps snapshots at 10 %, 20 %, … 100 % of its compute budget (CPU core-seconds by the ledger). That gives 10 snapshots in every run and 45 pairings, the same denominator in both arms. Each pairing is played with 512 pairs. A pairing is *inverted* if the later snapshot's 95 % interval (team-pair cluster bootstrap) lies entirely below 0.5. MMD passes if, summed over its seeds, its inverted pairings are at most PPO's and at most 10 % (at most 4 of 45 per run on average). With 512 pairs the interval's half-width is about 0.03, so the check finds inversions below about 0.47. The report says that smaller cycles stay undetected.
 - **Decision:**
   - **E1 and E2 pass (three seeds):** MMD becomes the default objective, by a later PR that changes the default.
   - **E2 passes and E1 does not:** report. R-NaD's reward transform is the next plan.

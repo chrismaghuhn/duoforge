@@ -21,7 +21,10 @@ The objective (#359): "ppo" (the default) is the clipped surrogate above;
 the policy loss -(r A) plus prox_coef times the estimate r log r - r + 1 of
 KL(policy || behaviour) on the taken actions, r = exp(logp - behaviour logp)
 (never negative, 0 at r = 1; per row the loss is least at log r = A /
-prox_coef). MMD's magnet is the KL anchor above (a frozen copy of the
+prox_coef). Above log r = KL_LOG_RATIO_MAX both r and the estimate go on
+linearly with their slope at the cap, as _k3 does: a row with a large
+advantage would otherwise drive r toward exp(A / prox_coef) and fill a whole
+clipped step, or overflow float32. MMD's magnet is the KL anchor above (a frozen copy of the
 learner, refreshed: --kl-ref magnet), and its entropy term the entropy bonus.
 """
 import functools
@@ -47,6 +50,16 @@ def _k3(log_r):
     return jnp.exp(capped) - 1.0 - capped + (jnp.exp(c) - 1.0) * jnp.maximum(log_r - c, 0.0)
 
 
+def _mmd_terms(log_r):
+    """(r, r log r - r + 1) of log r up to KL_LOG_RATIO_MAX, each linear
+    beyond it (same value and slope at the cap)."""
+    c = KL_LOG_RATIO_MAX
+    capped = jnp.minimum(log_r, c)
+    beyond = jnp.maximum(log_r - c, 0.0)
+    ratio = jnp.exp(capped)
+    return ratio + jnp.exp(c) * beyond, capped * ratio - ratio + 1.0 + c * jnp.exp(c) * beyond
+
+
 def optimizer(learning_rate=3e-4, max_norm=0.5):
     return optax.chain(optax.clip_by_global_norm(max_norm), optax.adam(learning_rate))
 
@@ -60,12 +73,12 @@ def _loss(params, batch, evaluate_fn, clip, entropy_coef, value_coef, kl_coef=0.
     mean = (adv * w).sum() / total
     std = jnp.sqrt((((adv - mean) ** 2) * w).sum() / total) + 1e-8
     adv = (adv - mean) / std
-    log_ratio = logp - batch["logp"]
-    ratio = jnp.exp(log_ratio)
     if objective == "mmd":  # the proximal KL to the behaviour policy in place of the clip
+        ratio, prox = _mmd_terms(logp - batch["logp"])
         surrogate = ratio * adv
-        prox_mean = ((ratio * log_ratio - ratio + 1.0) * w).sum() / total
+        prox_mean = (prox * w).sum() / total
     else:
+        ratio = jnp.exp(logp - batch["logp"])
         surrogate = jnp.minimum(ratio * adv, jnp.clip(ratio, 1.0 - clip, 1.0 + clip) * adv)
         prox_mean = jnp.float32(0.0)
     policy_loss = -(surrogate * w).sum() / total

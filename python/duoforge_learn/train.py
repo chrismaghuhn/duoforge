@@ -317,7 +317,7 @@ def _merged(args, saved):
         if name in ("resume", "out", "ext_supported"):  # ext_supported: _run compares it with the resolved mask
             continue
         new, old = getattr(args, name), saved.get(name)
-        if new == old:
+        if new == old or (name not in saved and new == defaults.get(name)):  # naming an unsaved default: no change
             continue
         if name not in _RESUMABLE:
             raise SystemExit(f"a resume cannot change {name} ({old!r} -> {new!r})")
@@ -537,7 +537,7 @@ def _run(args, pool, on_start, stop):
         raise SystemExit("--kl-coef needs --kl-ref: the reference policy of the KL anchor")
     if args.policy_objective != "mmd" and "mmd_prox_coef" in args._given:
         raise SystemExit("--mmd-prox-coef needs --policy-objective mmd")
-    if args.policy_objective == "mmd" and not args.mmd_prox_coef > 0:
+    if args.policy_objective == "mmd" and not (math.isfinite(args.mmd_prox_coef) and args.mmd_prox_coef > 0):
         raise SystemExit(f"--mmd-prox-coef {args.mmd_prox_coef} must be > 0")
     if (args.stop_cpu_core_seconds > 0 or args.stop_gpu_seconds > 0) and not args.ledger:
         raise SystemExit("--stop-cpu-core-seconds and --stop-gpu-seconds need --ledger")

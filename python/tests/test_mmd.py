@@ -71,6 +71,40 @@ class MmdLossTest(unittest.TestCase):
         _, aux = self._grad(self._batch(self.now - shift), "ppo", 1.0)
         self.assertEqual(float(aux[4]), 0.0)
 
+    def test_mmd_drops_the_clip(self):
+        # Behaviour log-probabilities far from the policy's: PPO's clip binds, MMD's surrogate is r * A unclipped.
+        shift = np.where(np.arange(self.now.shape[0]) % 2 == 0, 1.0, -1.0)
+        _, mmd = self._grad(self._batch(self.now - shift), "mmd", 1.0)
+        _, clipped = self._grad(self._batch(self.now - shift), "ppo", 0.0)
+        w = self.samples["acting"].astype(np.float64)
+        adv = self.samples["advantages"].astype(np.float64)
+        mean = (adv * w).sum() / w.sum()
+        adv = (adv - mean) / (np.sqrt((((adv - mean) ** 2) * w).sum() / w.sum()) + 1e-8)
+        want = -(np.exp(shift) * adv * w).sum() / w.sum()
+        self.assertAlmostEqual(float(mmd[0]), want, places=4)
+        self.assertGreater(abs(float(mmd[0]) - float(clipped[0])), 1e-3)
+
+    def test_the_mmd_terms_are_exact_up_to_the_cap_and_linear_beyond(self):
+        # Without a cap a row with a large advantage drives log r toward A / prox_coef: r = exp(33) at A = 10 and
+        # prox_coef 0.3 fills a whole clipped step, and float32 overflows past log r = 88. Beyond KL_LOG_RATIO_MAX
+        # both terms go on linearly with their slope at the cap, as _k3 does.
+        import jax
+        from duoforge_learn import ppo
+        c = ppo.KL_LOG_RATIO_MAX
+        x = np.array([-20.0, -1.0, 0.0, 0.5, 2.0, 3.0], dtype=np.float32)
+        ratio, prox = ppo._mmd_terms(x)
+        e = np.exp(x.astype(np.float64))
+        np.testing.assert_allclose(np.asarray(ratio), e, rtol=1e-6)
+        np.testing.assert_allclose(np.asarray(prox), x * e - e + 1.0, rtol=1e-5, atol=1e-6)
+        ratio, prox = ppo._mmd_terms(np.float32(100.0))
+        self.assertTrue(np.isfinite(float(ratio)) and np.isfinite(float(prox)))
+        self.assertAlmostEqual(float(ratio), np.exp(c) * (1.0 + 97.0), places=2)
+        self.assertAlmostEqual(float(prox), c * np.exp(c) - np.exp(c) + 1.0 + c * np.exp(c) * 97.0, places=1)
+        self.assertAlmostEqual(float(jax.grad(lambda v: ppo._mmd_terms(v)[0])(np.float32(50.0))), np.exp(c), places=3)
+        self.assertAlmostEqual(float(jax.grad(lambda v: ppo._mmd_terms(v)[1])(np.float32(50.0))), c * np.exp(c),
+                               places=3)
+        self.assertAlmostEqual(float(jax.grad(lambda v: ppo._mmd_terms(v)[1])(np.float32(1.0))), np.e, places=5)
+
     def test_an_unknown_objective_is_refused(self):
         from duoforge_learn import ppo
         with self.assertRaisesRegex(ValueError, "objective"):
@@ -132,6 +166,8 @@ class MmdTrainTest(unittest.TestCase):
         self.assertFalse({"policy_objective", "mmd_prox_coef"} & set(train))
         updates = [r for r in self._records() if "update" in r and "resume" not in r]
         self.assertFalse({"prox", "policy_objective"} & set(updates[-1]))
+        # Naming the default on a resume is no change (a run saves no default objective).
+        self.assertEqual(_train(["--resume", self.out, "--updates", "2", "--policy-objective", "ppo"]), 0)
 
     def test_the_prox_coefficient_needs_mmd_and_must_be_positive(self):
         with self.assertRaisesRegex(SystemExit, "--mmd-prox-coef"):
@@ -139,6 +175,10 @@ class MmdTrainTest(unittest.TestCase):
         with self.assertRaisesRegex(SystemExit, "--mmd-prox-coef"):
             _train(["--out", self.out, "--updates", "1", "--minutes", "0", "--policy-objective", "mmd",
                     "--mmd-prox-coef", "0"] + _SMALL)
+        for bad in ("inf", "nan"):
+            with self.assertRaisesRegex(SystemExit, "--mmd-prox-coef"):
+                _train(["--out", self.out, "--updates", "1", "--minutes", "0", "--policy-objective", "mmd",
+                        "--mmd-prox-coef", bad] + _SMALL)
 
 
 if __name__ == "__main__":
