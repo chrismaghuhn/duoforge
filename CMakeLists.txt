@@ -204,6 +204,7 @@ duoforge_configure_target(duoforge_layout_dump)
 add_executable(duoforge_state_layout_dump tools/layout/state_layout_dump.c)
 target_include_directories(duoforge_state_layout_dump PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/include"
                            "${CMAKE_CURRENT_SOURCE_DIR}/src")
+target_link_libraries(duoforge_state_layout_dump PRIVATE duoforge) # dfi_kind_limits_of: the per-kind values
 duoforge_configure_target(duoforge_state_layout_dump)
 
 set(DUOFORGE_PYTHON "" CACHE FILEPATH

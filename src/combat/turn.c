@@ -143,6 +143,13 @@ static uint32_t dfi_dragon_cheer_stage(const struct duoforge_battle *b, uint32_t
            DFI_POSFLAG_DRAGON_CHEER_SHIFT;
 }
 
+/* Step G88 (decision 0046): the turn-history bits of a position, LOWERED (Lash Out, statsLoweredThisTurn) and HURT (Assurance,
+ * hurtThisTurn). Both are zero at a turn boundary and with the occupant. */
+static bool dfi_pos_flag(const struct duoforge_battle *b, uint32_t flat, uint32_t bit)
+{
+    return (((uint32_t)b->tail.sides[flat / 2u].positions[flat % 2u].position_flags & bit) != 0u);
+}
+
 /* The brought members of a side at 0 HP: side.totalFainted, since the
  * data has no revival and faints are processed before the next action
  * (decision 0009 section 4.1; Last Respects). */
@@ -1235,6 +1242,11 @@ static bool dfi_boost(dfi_run *r, uint32_t flat, const uint8_t *boosts, uint32_t
             dfi_tail_pos *tp = &r->b->tail.sides[flat / 2u].positions[flat % 2u];
             tp->position_flags = (uint8_t)((uint32_t)tp->position_flags | DFI_POSFLAG_STATS_RAISED); /* wide-operands-reviewed */
         }
+        if (after < before && dfi_kind_limits_of(r->ctx->data_kind).pool_rules) {
+            /* statsLoweredThisTurn (sim/battle.ts:2086): a real drop of a stage, any source (step G88, decision 0046). */
+            dfi_tail_pos *tp = &r->b->tail.sides[flat / 2u].positions[flat % 2u];
+            tp->position_flags = (uint8_t)((uint32_t)tp->position_flags | DFI_POSFLAG_LOWERED); /* wide-operands-reviewed */
+        }
         const uint32_t by = after > before ? after - before : before - after;
         /* -unboost for a fall, and for any change at -6 */
         const bool down = capped[i] < DFI_BIAS6 || after == 0u;
@@ -1755,6 +1767,18 @@ static duoforge_status dfi_get_damage(dfi_run *r, uint32_t user, uint32_t target
          * of its positive stages (Pokemon.positiveBoosts, sim/pokemon.ts:1201-1208). A stage is stored biased by 6. */
         const uint32_t positive = dfi_power_trip_positive_stages(ap->stages);
         power = (uint32_t)md->base_power + 20u * positive;
+    } else if (md->special == DFI_SPECIAL_ASSURANCE) {
+        /* Assurance's basePowerCallback (step G88, data/moves.ts:648-653): doubled when the target was hurt this turn (the
+         * HURT_THIS_TURN bit, decision 0046). */
+        if (dfi_pos_flag(r->b, target, DFI_POSFLAG_HURT)) {
+            power *= 2u;
+        }
+    } else if (md->special == DFI_SPECIAL_LASH_OUT) {
+        /* Lash Out's onBasePower (step G88, data/moves.ts:10055-10059): chainModify(2) when the user's stat fell this turn
+         * (LOWERED_THIS_TURN, decision 0046). */
+        if (dfi_pos_flag(r->b, user, DFI_POSFLAG_LOWERED)) {
+            power *= 2u;
+        }
     } else if (md->special == DFI_SPECIAL_RAGE_FIST) {
         /* Rage Fist's basePowerCallback (step G48, data/moves.ts:14583-14596): 50 + 50 x the user's timesAttacked, at most 350.
          * timesAttacked counts the damaging hits the user took since it came in (the Champions loop, scripts.ts:565, and the
@@ -2217,6 +2241,11 @@ static duoforge_status dfi_deal(dfi_run *r, uint32_t flat, uint32_t amount, uint
     m->hp = (uint16_t)(hp > amount ? hp - amount : 0u); /* wide-operands-reviewed: <= hp */
     if (amount != 0u) {
         dfi_emit_hp(r, dfi_ev(DUOFORGE_EVENT_DAMAGE, flat, cause, id2, other)); /* [-damage] */
+        /* Step G88 (sim/battle.ts:2137-2138): every damage but the directDamage class (cost, Struggle's recoil) sets HURT. */
+        if (cls != DFI_DMG_DIRECT && m->hp != 0u && dfi_kind_limits_of(r->ctx->data_kind).pool_rules) {
+            dfi_tail_pos *tp = &r->b->tail.sides[flat / 2u].positions[flat % 2u];
+            tp->position_flags = (uint8_t)((uint32_t)tp->position_flags | DFI_POSFLAG_HURT); /* wide-operands-reviewed */
+        }
     }
     if (m->hp == 0u) {
         if (dfi_support.switching == 0u) {
@@ -2387,7 +2416,7 @@ static duoforge_status dfi_try_status(dfi_run *r, uint32_t flat, uint32_t status
         }
         counter = sleep_turns[v];
     } else if (status == DFI_STATUS_FRZ) {
-        counter = 3u;
+        counter = DFI_FREEZE_TURNS;
     }
     m->status = (uint8_t)status;          /* <= DFI_STATUS_TOX */
     m->status_counter = (uint8_t)counter; /* <= 3 */
@@ -3431,13 +3460,6 @@ static bool dfi_heal_blocked(const struct duoforge_battle *b, uint32_t flat)
 {
     return b->tail.sides[flat / 2u].positions[flat % 2u].heal_block_turns != 0u;
 }
-
-/* Psychic Noise's Heal Block lasts 2 turns (durationCallback, data/moves.ts:8286-8289); Throat Chop's condition has
- * duration 2 (data/moves.ts:19391-19393, DFI_TAIL_THROAT_CHOP_MAX). */
-#define DFI_HEAL_BLOCK_PSYCHIC_NOISE_TURNS 2u
-
-/* Encore's condition has duration 3 (data/moves.ts:4724-4783); onStart adds one when the target has no move queued. */
-#define DFI_ENCORE_TURNS 3u
 
 /* addVolatile('throatchop') on a standing target without it: no onRestart, so a second hit changes nothing; its
  * -start line is [silent]. */
@@ -4866,7 +4888,6 @@ static duoforge_status dfi_encore(dfi_run *r, uint32_t user, uint32_t flat, bool
  * progress (Cursed Body: pokemon is the active Pokemon and the move is not external). The line is `-start|X|Disable|MOVE`
  * with [from] ability: Cursed Body [of] holder for the ability. Struggle (last move 5) is never barred: Disable's
  * onTryHit refuses it and Cursed Body skips it. */
-#define DFI_DISABLE_TURNS 5u
 static bool dfi_disable_start(dfi_run *r, uint32_t flat, uint32_t holder, bool by_ability)
 {
     struct duoforge_battle *b = r->b;
@@ -4918,7 +4939,7 @@ static bool dfi_taunt(dfi_run *r, uint32_t user, uint32_t flat)
     }
     const uint32_t newly = dfi_kind_limits_of(r->ctx->data_kind).vol_flags_mask & DFI_VOL_NEWLY_SWITCHED;
     const bool out_a_turn = ((uint32_t)dfi_pos(b, flat)->flags & newly) == 0u;
-    const uint32_t turns = (out_a_turn && dfi_will_move(b, flat) == NULL) ? 4u : 3u;
+    const uint32_t turns = (out_a_turn && dfi_will_move(b, flat) == NULL) ? DFI_TAUNT_TURNS + 1u : DFI_TAUNT_TURNS;
     tail->taunt_turns = (uint8_t)turns; /* <= DFI_TAIL_TAUNT_MAX */
     duoforge_event e = dfi_event_make(DUOFORGE_EVENT_VOLATILE_START, flat);
     e.detail = (uint8_t)DUOFORGE_VOLATILE_TAUNT;
@@ -5003,7 +5024,7 @@ static bool dfi_yawn(dfi_run *r, uint32_t user, uint32_t flat)
         dfi_emit(r, &e);
         return false;
     }
-    tail->yawn_turns = 2u; /* DFI_TAIL_YAWN_MAX */
+    tail->yawn_turns = (uint8_t)DFI_TAIL_YAWN_MAX; /* 2 */
     duoforge_event e = dfi_event_make(DUOFORGE_EVENT_VOLATILE_START, flat);
     e.detail = (uint8_t)DUOFORGE_VOLATILE_YAWN;
     e.other = (uint8_t)user;
@@ -6060,6 +6081,16 @@ static duoforge_status dfi_protect_targets(dfi_run *r, uint32_t user, const uint
                     return st;
                 }
             }
+            /* Step G94: Baneful Bunker's contact poison, in the same onTryHit after the -activate line (data/moves.ts:1022-1024):
+             * source.trySetStatus('psn', target), the attacker poisoned by the holder as the source (its effect is the condition,
+             * so the line is a plain -status and no [from]; dfi_try_status with the OTHER origin shows no -immune or -fail line).
+             * Poison and Steel are immune (Team C's psn refusal), and the other status blockers are the existing ones. */
+            if (kind == DFI_PROTECT_BANEFUL_BUNKER && (md->flags & DFI_MOVE_FLAG_CONTACT) != 0u) {
+                st = dfi_try_status(r, user, DFI_STATUS_PSN, t, DFI_NO_SOURCE_MOVE, DFI_ORIGIN_OTHER, 0u);
+                if (st != DUOFORGE_OK) {
+                    return st;
+                }
+            }
             /* Step G66: King's Shield's contact drop, in the same onTryHit after the -activate line (data/moves.ts:9936-9941):
              * the attacker's Attack by -1, the holder as the source (Defiant, Competitive and Mirror Armor see it so). */
             if (kind == DFI_PROTECT_KINGS_SHIELD && (md->flags & DFI_MOVE_FLAG_CONTACT) != 0u) {
@@ -7056,6 +7087,9 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
     if (md->special == DFI_SPECIAL_SPIKY_SHIELD) {
         return dfi_run_protect(r, user, DFI_PROTECT_SPIKY_SHIELD);
     }
+    if (md->special == DFI_SPECIAL_BANEFUL_BUNKER) {
+        return dfi_run_protect(r, user, DFI_PROTECT_BANEFUL_BUNKER);
+    }
     if (md->special == DFI_SPECIAL_WIDE_GUARD) {
         return dfi_run_wide_guard(r, user);
     }
@@ -7263,7 +7297,8 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
         md->special != DFI_SPECIAL_SKILL_SWAP &&
         md->special != DFI_SPECIAL_ALLURING_VOICE && md->special != DFI_SPECIAL_DRAGON_CHEER &&
         md->special != DFI_SPECIAL_FINAL_GAMBIT &&
-        md->special != DFI_SPECIAL_DRAGON_DARTS) {
+        md->special != DFI_SPECIAL_DRAGON_DARTS &&
+        md->special != DFI_SPECIAL_LASH_OUT && md->special != DFI_SPECIAL_ASSURANCE) {
         return DUOFORGE_E_INVARIANT;
     }
     /* Steel Roller's onTry (step G34, data/moves.ts:17893-17913): it fails without a terrain, with -fail and [still]. */
@@ -10706,13 +10741,14 @@ static duoforge_status dfi_end_turn(dfi_run *r)
         dfi_active_slot *pos = dfi_pos(b, flat);
         pos->flags = (uint8_t)((uint32_t)pos->flags & ~DFI_VOL_NEWLY_SWITCHED); /* wide-operands-reviewed */
         /* statsRaisedThisTurn is cleared at the turn's end (sim/battle.ts:1678, endTurn): the raised bit is per turn */
-        b->tail.sides[flat / 2u].positions[flat % 2u].position_flags =
-            (uint8_t)((uint32_t)b->tail.sides[flat / 2u].positions[flat % 2u].position_flags & ~(uint32_t)DFI_POSFLAG_STATS_RAISED); /* wide-operands-reviewed */
+        dfi_tail_pos *rt = &b->tail.sides[flat / 2u].positions[flat % 2u];
+        rt->position_flags = (uint8_t)((uint32_t)rt->position_flags & ~(uint32_t)(DFI_POSFLAG_STATS_RAISED | DFI_POSFLAG_LOWERED | DFI_POSFLAG_HURT)); /* wide-operands-reviewed */
+        /* statsLoweredThisTurn (sim/battle.ts:1679) and hurtThisTurn (sim/battle.ts:1682) are cleared here too (G88) */
         /* moveLastTurnResult = moveThisTurnResult, then this turn's is undefined (sim/battle.ts:1674-1675). The unclassified
          * bit moves with the result (step G42). */
         dfi_tail_pos *tp = &b->tail.sides[flat / 2u].positions[flat % 2u];
         const uint32_t mr = tp->move_result;
-        tp->move_result = (uint8_t)(((mr & 3u) << DFI_MOVE_RESULT_LAST_SHIFT) | /* wide-operands-reviewed: <= 0x3F */
+        tp->move_result = (uint8_t)(((mr & DFI_MOVE_RESULT_VALUE_MASK) << DFI_MOVE_RESULT_LAST_SHIFT) | /* wide-operands-reviewed: <= 0x3F */
                                     ((mr & DFI_MOVE_RESULT_UNCLASSIFIED_NOW) != 0u ? DFI_MOVE_RESULT_UNCLASSIFIED_LAST : 0u));
     }
     duoforge_event e = dfi_event_make(DUOFORGE_EVENT_TURN, DUOFORGE_NO_POSITION);

@@ -428,7 +428,7 @@ duoforge_status duoforge_battle_observe_ext(const duoforge_context *ctx, const d
                 /* Step G42: move_failed is 1 iff the occupant's last move result is FALSE. It is exact only when the result is
                  * classified; an unclassified result (the bit of decision 0015 section 7) reads 0 here (documented, not refused). */
                 o.sides[s].positions[p].move_failed =
-                    ((((uint32_t)tail->move_result >> DFI_MOVE_RESULT_LAST_SHIFT) & 3u) == DFI_MOVE_RESULT_FALSE) ? 1u : 0u;
+                    ((((uint32_t)tail->move_result >> DFI_MOVE_RESULT_LAST_SHIFT) & DFI_MOVE_RESULT_VALUE_MASK) == DFI_MOVE_RESULT_FALSE) ? 1u : 0u;
                 /* Step G9, Encore: the one move slot (slot + 1) that the occupant may use, public (-start|X|Encore: the
                  * slot is the one of its last move line); the turns are never shown. */
                 o.sides[s].positions[p].encore_slot = tail->encore_slot;

@@ -1,0 +1,117 @@
+{
+  "name": "c2_cover_a",
+  "purpose": "C2 (decision 0015 entry 5cp): a PASS battle of the team campaign of run 9006 (diff_driver.py random, the C2 team set E to I), adopted as a regression fixture to show the marked moves Acid Spray, Chilling Water, Cross Poison, Dynamic Punch, Iron Tail, Low Sweep, Lunge, Mud Shot, Mud-Slap, Pounce, Skitter Smack, Water Pulse and Zen Headbutt used in a pool battle. The choices and the seed are those of the campaign; the trace is recorded with the pinned Showdown (b2cb775).",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,ab3ed47aa681a869749279342375c18d26eafc5e0cce2b56eeaaec7175e4b18f",
+  "teams": [
+    "Lucario (M) @ Expert Belt\nAbility: Inner Focus\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Def / 0 SpD / 0 Spe\nJolly Nature\n- Blaze Kick\n- Zen Headbutt\n- Low Sweep\n- Water Pulse\n\nGliscor (M) @ Focus Sash\nAbility: Hyper Cutter\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Def / 0 SpD / 0 Spe\nJolly Nature\n- Cross Poison\n- Lunge\n- Skitter Smack\n- Iron Tail\n\nMilotic (M) @ Sitrus Berry\nAbility: Competitive\nLevel: 50\nEVs: 0 HP / 0 Atk / 2 Def / 32 SpA / 32 Spe\nModest Nature\n- Chilling Water\n- Water Pulse\n- Mud Shot\n- Skitter Smack\n\nGarganacl (M) @ Leftovers\nAbility: Clear Body\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Def / 0 SpD / 0 Spe\nAdamant Nature\n- Dynamic Punch\n- Mud Shot\n- Zen Headbutt\n- Stone Edge\n\nClawitzer (M) @ Life Orb\nAbility: Mega Launcher\nLevel: 50\nEVs: 0 HP / 0 Atk / 2 Def / 32 SpA / 32 Spe\nModest Nature\n- Water Pulse\n- Chilling Water\n- Mud Shot\n- Mud-Slap\n\nAmpharos (M) @ Wide Lens\nAbility: Static\nLevel: 50\nEVs: 0 HP / 0 Atk / 2 Def / 32 SpA / 32 Spe\nModest Nature\n- Parabolic Charge\n- Thunder Punch\n- Iron Tail\n- Protect",
+    "Malamar (M) @ Leftovers\nAbility: Contrary\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Def / 0 SpD / 0 Spe\nAdamant Nature\n- Lunge\n- Zen Headbutt\n- Thunderbolt\n- Protect\n\nCinderace (M) @ Choice Scarf\nAbility: Blaze\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Def / 0 SpD / 0 Spe\nJolly Nature\n- Pyro Ball\n- Fire Punch\n- Low Sweep\n- Zen Headbutt\n\nGolisopod (M) @ Sitrus Berry\nAbility: Emergency Exit\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Def / 0 SpD / 0 Spe\nJolly Nature\n- Pounce\n- Skitter Smack\n- Protect\n- Taunt\n\nPincurchin (M) @ Wide Lens\nAbility: Lightning Rod\nLevel: 50\nEVs: 0 HP / 0 Atk / 2 Def / 32 SpA / 32 Spe\nTimid Nature\n- Zing Zap\n- Thunderbolt\n- Protect\n- Hyper Beam\n\nGengar (M) @ Life Orb\nAbility: Cursed Body\nLevel: 50\nEVs: 0 HP / 0 Atk / 2 Def / 32 SpA / 32 Spe\nTimid Nature\n- Acid Spray\n- Skitter Smack\n- Protect\n- Taunt\n\nGallade (M) @ Expert Belt\nAbility: Steadfast\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Def / 0 SpD / 0 Spe\nAdamant Nature\n- Zen Headbutt\n- Low Sweep\n- Taunt\n- Protect"
+  ],
+  "choices": [
+    {
+      "p1": "team 4523",
+      "p2": "team 6315"
+    },
+    {
+      "p1": "move 3 -2, move 4 2",
+      "p2": "move 3 2, move 4 1"
+    },
+    {
+      "p1": "move 1 1, move 2 1",
+      "p2": "move 2 -2, move 4 -1"
+    },
+    {
+      "p1": "move 1 2, move 3 2",
+      "p2": "switch 3, move 4 2"
+    },
+    {
+      "p1": "move 2 -2, move 2 -1",
+      "p2": "switch 4, move 4 -1"
+    },
+    {
+      "p1": "move 1 -2, move 2 1",
+      "p2": "move 3, move 4 2"
+    },
+    {
+      "p1": "switch 4, move 1 -1",
+      "p2": "switch 3, move 3"
+    },
+    {
+      "p1": "switch 3, move 4 -1",
+      "p2": "move 3 1, move 1 2"
+    },
+    {
+      "p1": "move 2 -2, move 2 2",
+      "p2": "move 4, move 2 2"
+    },
+    {
+      "p1": "pass, switch 4"
+    },
+    {
+      "p1": "switch 3, move 4 2",
+      "p2": "move 3 2, move 4 -1"
+    },
+    {
+      "p1": "move 2 -2, move 4 1",
+      "p2": "move 1 1, move 2 -1"
+    },
+    {
+      "p1": "pass, switch 3"
+    },
+    {
+      "p1": "move 2 2, move 3 -1",
+      "p2": "move 2 1, move 1 2"
+    },
+    {
+      "p1": "pass, move 4 2",
+      "p2": "move 2 1, move 2 -1"
+    },
+    {
+      "p2": "switch 3, pass"
+    },
+    {
+      "p1": "pass, move 1 2",
+      "p2": "move 1 1, switch 4"
+    },
+    {
+      "p1": "pass, move 2 -1",
+      "p2": "move 2 -2, move 4"
+    },
+    {
+      "p1": "pass, move 4 -1",
+      "p2": "move 4 -2, move 4"
+    },
+    {
+      "p1": "pass, move 1 -1",
+      "p2": "move 2 1, move 1 2"
+    },
+    {
+      "p1": "pass, move 4 1",
+      "p2": "move 3, move 3 -1"
+    },
+    {
+      "p1": "pass, move 4 1",
+      "p2": "move 4 1, move 2 -1"
+    },
+    {
+      "p2": "switch 4, pass"
+    },
+    {
+      "p1": "pass, move 1 2",
+      "p2": "move 4 2, move 3 2"
+    },
+    {
+      "p1": "pass, move 1 2",
+      "p2": "move 2 1, move 3 1"
+    },
+    {
+      "p1": "pass, move 2 1",
+      "p2": "move 2 -2, move 4"
+    },
+    {
+      "p1": "pass, move 3 1",
+      "p2": "move 2 1, move 2 1"
+    }
+  ]
+}

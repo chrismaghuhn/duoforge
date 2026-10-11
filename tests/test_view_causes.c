@@ -10,6 +10,10 @@
  *   equal masks, for both players.
  * - The argument checks, in the order of duoforge_battle_public, and no write on any refusal.
  * - The batch form equals the single calls for every worker count, with no allocation (as duoforge.view's batch test).
+ * - The two paths of the one predicate agree over the recorded pool corpus: at every state of every battle, for both players,
+ *   duoforge_observation_causes on the player's observation (the live record assembler's path) gives the mask of
+ *   duoforge_battle_public_causes but for the bits that the observation does not carry (a Substitute, a temporary forme, the
+ *   foe's disguise state). TURN_HISTORY (step G88) is in both, and the G88 battles reach it.
  */
 #include <stdio.h>
 #include <string.h>
@@ -21,6 +25,7 @@
 #include "data/pool_tables.h"
 #include "reference/conformance_pool.h"
 #include "state/battle_internal.h"
+#include "state/request.h"
 #include "support/check.h"
 #include "support/fixtures.h"
 #include "support/pool.h"
@@ -451,10 +456,103 @@ static void test_foe_revive_proxy(df_test *t, const duoforge_context *kp)
     duoforge_battle_destroy(o);
 }
 
+/* The two cause paths at one state, both players. Returns whether the battle path named TURN_HISTORY. */
+static bool corpus_paths_agree(df_test *t, const duoforge_context *ctx, const duoforge_battle *b, uint32_t *states)
+{
+    const uint32_t battle_only =
+        DUOFORGE_PUBLIC_CAUSE_SUBSTITUTE | DUOFORGE_PUBLIC_CAUSE_TEMP_FORME | DUOFORGE_PUBLIC_CAUSE_ILLUSION_POSSIBLE;
+    bool history = false;
+    for (uint32_t p = 0u; p < DUOFORGE_SIDE_COUNT; ++p) {
+        duoforge_observation seen;
+        uint32_t from_view = UNTOUCHED;
+        uint32_t from_battle = UNTOUCHED;
+        DF_CHECK(t, duoforge_battle_observe(ctx, b, p, &seen) == DUOFORGE_OK);
+        DF_CHECK(t, duoforge_observation_causes(ctx, &seen, &from_view) == DUOFORGE_OK);
+        DF_CHECK(t, duoforge_battle_public_causes(ctx, b, p, &from_battle) == DUOFORGE_OK);
+        DF_CHECK(t, (from_view & ~from_battle) == 0u && (from_battle & ~from_view & ~battle_only) == 0u);
+        DF_CHECK(t, (from_view & DUOFORGE_PUBLIC_CAUSE_TURN_HISTORY) == (from_battle & DUOFORGE_PUBLIC_CAUSE_TURN_HISTORY));
+        history = history || (from_battle & DUOFORGE_PUBLIC_CAUSE_TURN_HISTORY) != 0u;
+        *states += 1u;
+    }
+    return history;
+}
+
+/* Every recorded pool battle, replayed with its kept draws and recorded commands (as the conformance replay), under POOL or,
+ * for the development teams, POOL_DEV: the cause paths agree at every state. */
+static void test_corpus_paths(df_test *t)
+{
+    static duoforge_event ev_buf[2][DUOFORGE_MAX_EVENTS];
+    duoforge_context *kp = df_make_context(&df_config_pool);
+    duoforge_context *kd = df_make_context(&df_config_pool_dev);
+    uint32_t states = 0u;
+    uint32_t history = 0u;
+    uint32_t battles = 0u;
+    for (size_t bi = 0u; bi < sizeof conf_battles / sizeof conf_battles[0]; ++bi) {
+        const df_conf_battle *cb = &conf_battles[bi];
+        duoforge_battle_setup setup;
+        build_pool_setup(cb, &setup);
+        duoforge_battle *b = NULL;
+        const duoforge_context *ctx = kp;
+        if (duoforge_battle_create(kp, &setup, &b) != DUOFORGE_OK) {
+            ctx = kd;
+            if (!DF_CHECK(t, duoforge_battle_create(kd, &setup, &b) == DUOFORGE_OK)) {
+                continue;
+            }
+        }
+        ++battles;
+        for (uint32_t si = 0u; si <= cb->step_count; ++si) {
+            history += corpus_paths_agree(t, ctx, b, &states) ? 1u : 0u;
+            if (si == cb->step_count) {
+                break;
+            }
+            const df_conf_step *st = &cb->steps[si];
+            duoforge_decision_bundle bd;
+            memset(&bd, 0, sizeof bd);
+            bd.epoch = b->request_epoch;
+            bd.response_mask = (uint8_t)(st->answered0 | (st->answered1 << 1u)); /* wide-operands-reviewed */
+            for (uint32_t side = 0u; side < 2u; ++side) {
+                if ((side == 0u && !st->answered0) || (side == 1u && !st->answered1)) {
+                    continue;
+                }
+                duoforge_side_choice *r = &bd.responses[side];
+                r->epoch = b->request_epoch;
+                r->side = (uint8_t)side;
+                if (st->team) {
+                    r->kind = (uint8_t)DUOFORGE_CHOICE_TEAM_SELECTION;
+                    r->pick_count = 4u;
+                    for (uint32_t i = 0u; i < 4u; ++i) {
+                        r->picks[i] = st->picks[side][i];
+                    }
+                } else {
+                    r->kind = (uint8_t)DUOFORGE_CHOICE_SLOTS;
+                    for (uint32_t k = 0u; k < 2u; ++k) {
+                        const df_conf_cmd *c = &st->cmds[side][k];
+                        r->slots[k] = (duoforge_slot_command){c->kind, c->move_slot, c->target, c->mega, c->reserve, {0u, 0u, 0u}};
+                    }
+                }
+            }
+            duoforge_step_result res;
+            uint32_t used = 0u;
+            duoforge_event_buffer buffers[2] = {{ev_buf[0], DUOFORGE_MAX_EVENTS, 0u}, {ev_buf[1], DUOFORGE_MAX_EVENTS, 0u}};
+            const duoforge_status status =
+                dfi_battle_step_events_tape(ctx, b, &bd, &conf_tape[st->tape_off], st->tape_len, &used, &res, buffers);
+            if (status != DUOFORGE_OK) {
+                break; /* a battle that ends in a recorded refusal (its trace's own last step) */
+            }
+        }
+        duoforge_battle_destroy(b);
+    }
+    printf("corpus cause paths: %u battles, %u states, %u with TURN_HISTORY\n", battles, states, history);
+    DF_CHECK(t, battles > 0u && states > 0u && history > 0u);
+    duoforge_context_destroy(kd);
+    duoforge_context_destroy(kp);
+}
+
 int main(void)
 {
     df_test t;
     df_test_begin(&t, "duoforge.view.causes");
+    test_corpus_paths(&t);
     duoforge_context *k1 = df_make_context(&df_config_k1);
     duoforge_context *kp = df_make_context(&df_config_pool);
     test_arguments(&t);
