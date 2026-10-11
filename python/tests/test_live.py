@@ -532,6 +532,20 @@ POOL_STOPS = {"feature:SUBSTITUTE": 78, "unfolded:DUOFORGE_POSITION_EXT_ATTRACT"
               "feature:FORME_CHANGE": 10, "feature:DESTINY_BOND": 10, "feature:ROOST": 8, "line:-end": 2, "feature:ILLUSION": 2}
 
 
+INFATUATED_REFUSAL = "engine check refuses: infatuated occupant (from_view, option B)"
+
+
+def infatuated_in_engine(battle_name, k, viewer):
+    """Whether the engine's public record of `viewer` at decision point k has an Attract source (the tail5 reserve bytes)."""
+    from duoforge import state_layout
+    ref = Reference.get() if battle_name in Reference.get().publics else Reference.get().pool()
+    status, record = ref.publics[battle_name][(int(k), int(viewer))]
+    if status != 0:
+        return False
+    start, size = next((s, n) for name, s, n in state_layout.fields(pool=True) if name == "tail5.attract_source")
+    return bool(np.asarray(record["state"])[start:start + size].any())
+
+
 def record_kind(battle_name):
     """The library data kind the runner played a battle under, as the tracker's record_kind (None: the tables' kind,
     CLOSURE; CLOSURE_DEV for a battle the runner created under the DEV fallback): read from the fingerprint of the
@@ -726,6 +740,12 @@ class RecordAssemblerPoolTest(unittest.TestCase):
                     same = (parts["status"], parts["causes"], parts["record"].tobytes()) == (
                         result["engine_status"], result["engine_causes"], bytes(_layout.PUBLIC_STATE.itemsize))
                     key = "refused" if same else f"engine refuses ({result['engine_causes']}): {parts['reason']}"
+                elif parts["status"] != 0 and parts["reason"] == "engine-refuses-record":
+                    # the engine's public record of this point is status 0, but its check refuses a world with an infatuated occupant
+                    # (duoforge_battle_from_view, lead's option B, tests/test_pool_g71.c): the tracker refuses with that verdict. Only
+                    # records with an Attract source in the engine's record may take this key (infatuated_in_engine).
+                    self.assertTrue(infatuated_in_engine(name, k, player), (name, k, player))
+                    key = INFATUATED_REFUSAL
                 elif parts["status"] != 0:
                     key = f"tracker refuses: {parts['reason']}"
                 else:
@@ -738,7 +758,7 @@ class RecordAssemblerPoolTest(unittest.TestCase):
         print(f"\npool record assembler: {dict(sorted(outcome.items()))}")
         print(f"pool tracker stops: {sum(self.stops.values())} streams, {dict(self.stops.most_common())}")
         self.assertFalse(fields, {field: (n, where[field]) for field, n in fields.most_common()})
-        allowed = {"equal", "refused"} | {f"tracker refuses: {reason}" for reason in self.TRACKER_REFUSALS}
+        allowed = {"equal", "refused", INFATUATED_REFUSAL} | {f"tracker refuses: {reason}" for reason in self.TRACKER_REFUSALS}
         self.assertEqual(set(outcome) - allowed, set(), {key: where[key] for key in outcome})
         self.assertEqual(self.raised, self.OWN_PP_STOPS)
         self.assertEqual(dict(outcome), POOL_OUTCOME)
