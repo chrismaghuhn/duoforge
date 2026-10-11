@@ -838,3 +838,7 @@ duoforge_add_test(NAME duoforge.state.pool_g71 SOURCES test_pool_g71.c WHITEBOX 
 # Step G79 (decision 0015 5br): Cloud Nine, the weather suppression of a standing holder (its mark, Mega Sol's refusal under it, and
 # the refusal of a Trace copy of it; white-box). The recorded battles g79_* are replayed by duoforge.reference.conformance_pool_data.
 duoforge_add_test(NAME duoforge.state.pool_g79 SOURCES test_pool_g79.c WHITEBOX TIMEOUT 60)
+
+# Step G81 (decision 0015 entry 5bs, decision 0033): Frisk (the foes' items announced at its holder's switch-in, ITEM_SHOWN in
+# the Frisk form), the switch-in order against Intimidate, two Frisk holders, and the fold that ignores the event.
+duoforge_add_test(NAME duoforge.state.pool_g81 SOURCES test_pool_g81.c WHITEBOX TIMEOUT 120)

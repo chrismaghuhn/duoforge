@@ -917,6 +917,25 @@ function checkG47(dex) {
     return 1;
 }
 
+// Step G81, Frisk: its onStart against stubs. For each foe in foes() order that holds an item, one -item line with the foe, the
+// item's name and the Frisk user; a foe with no item prints nothing.
+function checkG81(dex) {
+    const frisk = dex.abilities.get('frisk');
+    const lines = [];
+    const foe = (name, item) => ({name, item, getItem: () => ({name: item}), toString: () => name});
+    const user = {toString: () => 'Frisker', foes: () => [foe('A', 'Air Balloon'), foe('B', '')]};
+    const b = battle(frisk, {add: (...a) => lines.push(a)});
+    call(frisk.onStart, b, [user]);
+    const shown = lines.map((l) => [l[0], l[1].name, l[2], l[3], l[4]]);
+    expect('Frisk announces the item of each foe that holds one, in foes() order', shown,
+        [['-item', 'A', 'Air Balloon', '[from] ability: Frisk', '[of] Frisker']]);
+    const none = [];
+    const quiet = battle(frisk, {add: (...a) => none.push(a)});
+    call(frisk.onStart, quiet, [{toString: () => 'Frisker', foes: () => [foe('A', ''), foe('B', '')]}]);
+    expect('Frisk against foes with no item prints nothing', none, []);
+    return 1;
+}
+
 // Step G67, Magic Guard and Air Balloon: the pinned handlers against stubs. Magic Guard blocks a damage whose effect is not a Move
 // (returns false), says -activate for an Ability's damage with the damage source as the position, and lets a Move's damage through.
 // The Air Balloon announces itself at switch-in (not with gravity), and its pop of a damaging hit and of a substitute hit prints
@@ -1760,7 +1779,7 @@ const ENGINE_ROWS = {items: ['airballoon', 'focussash', 'floettite', 'psychicsee
         'flamebody', 'clearbody', 'hospitality', 'overcoat', 'soundproof', 'unnerve', 'speedboost',
         'compoundeyes', 'ironfist', 'sharpness', 'solidrock', 'technician', 'multiscale', 'galewings', 'raindish', 'friendguard', 'cursedbody', 'mirrorarmor', 'auraguard', 'hypercutter', 'scrappy', 'infiltrator', 'queenlymajesty', 'damp', 'sturdy', 'snowcloak', 'sandveil', 'static', 'justified', 'limber', 'solarpower', 'regenerator', 'toxicdebris', 'shadowtag', 'suctioncups', 'guarddog',
         'steadfast', 'weakarmor', 'telepathy', 'voltabsorb', 'punkrock', 'moxie', 'synchronize', 'oblivious', 'keeneye', 'bigpecks', 'magicbounce', 'pressure', 'stancechange',
-        'sandforce', 'shellarmor', 'filter', 'stalwart', 'megalauncher', 'hugepower', 'thickfat', 'firemane', 'spicyspray', 'megasol', 'cloudnine', 'sheerforce', 'illusion', 'symbiosis',
+        'sandforce', 'shellarmor', 'filter', 'stalwart', 'megalauncher', 'hugepower', 'thickfat', 'firemane', 'spicyspray', 'megasol', 'cloudnine', 'sheerforce', 'illusion', 'symbiosis', 'frisk',
         'unaware', 'marvelscale', 'waterbubble', 'reckless', 'superluck', 'moody', 'purepower', 'battlearmor', 'cutecharm']};
 const ENGINE_TARGETS = new Set(['normal', 'any', 'adjacentAlly', 'adjacentFoe', 'self', 'allAdjacentFoes', 'allySide', 'all',
     'randomNormal', 'allAdjacent', 'allies', 'foeSide']); // foeSide: step G37 (the four hazards)
@@ -2146,6 +2165,7 @@ function main() {
     checkG33(dex);
     checkG41(dex);
     checkG67(dex);
+    checkG81(dex);
     const g61 = checkG61(dex, headers, moveIds, moveColumns(source, defineOf(header, 'DFI_POOL_MOVE_COUNT')), unmodeledMoves);
     checkG47(dex);
     checkG44(dex);

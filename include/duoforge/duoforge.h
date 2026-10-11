@@ -1126,9 +1126,10 @@ duoforge_status duoforge_battle_observe_ext(const duoforge_context *ctx, const d
                                               its switch-in (Air Balloon's onStart, data/items.ts:191-195, gravity off): position
                                               the holder, id2: item + 1, cause NONE, every other field 0. Public: the foe knows
                                               the item already (open team sheets), so the knowledge fold ignores it. RESERVED,
-                                              not mapped yet: the same line with `[from] ability: X|[of] Y` (Frisk), cause
-                                              ABILITY with id = the ability and other = the Frisk user; the converter refuses it
-                                              until a later step maps it. */
+                                              Mapped by step G81 (Frisk): `-item|X|Item|[from] ability: Frisk|[of] Y` (no [identify]:
+                                              the pin prints none, data/abilities.ts:1549) is ITEM_SHOWN with position the frisked
+                                              foe X, other the Frisk user Y, cause ABILITY, id = Frisk + 1, id2 = item + 1, every
+                                              other field 0. The converter accepts only that form. */
 
 /* Causes ([from] and [of] in the protocol). */
 #define DUOFORGE_CAUSE_NONE      0u /* the move or the plain mechanic */

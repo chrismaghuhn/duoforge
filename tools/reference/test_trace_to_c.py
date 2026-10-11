@@ -1607,12 +1607,24 @@ class Library(unittest.TestCase):
         self.assertEqual(e, (trace_to_c.EV['ITEM_SHOWN'], 2, trace_to_c.NOPOS, 0, 0, tables['ITEM'][trace_to_c.key('Air Balloon')] + 1,
                              0, 0, 0, 0, 0, 0, 0, 0))
         self.assertEqual(trace_to_c.EV['ITEM_SHOWN'], 48)
+        # Step G81 (decision 0033): Frisk's line `-item|X|Item|[from] ability: Frisk|[of] Y` (no [identify]: the pin prints none,
+        # data/abilities.ts:1549) is ITEM_SHOWN: position the frisked foe X, other the Frisk user Y, cause ABILITY, id = Frisk + 1,
+        # id2 = the item + 1, every other field 0.
+        (e,) = trace_to_c.step_events(['|-item|p2a: Staraptor|Sitrus Berry|[from] ability: Frisk|[of] p1a: Sneasler'], 0, roster, maxhp,
+                                      tables)
+        self.assertEqual(e, (trace_to_c.EV['ITEM_SHOWN'], 2, 0, trace_to_c.CAUSE['ABILITY'],
+                             tables['ABILITY'][trace_to_c.key('Frisk')] + 1,
+                             tables['ITEM'][trace_to_c.key('Sitrus Berry')] + 1, 0, 0, 0, 0, 0, 0, 0, 0))
         # A silent -enditem that no move caused is still no event; every other shape of these lines is refused.
         self.assertEqual(trace_to_c.step_events(['|-enditem|p2a: Staraptor|Sitrus Berry|[silent]'], 0, roster, maxhp, tables), [])
         for bad in ('|-item|p2a: Staraptor|Sitrus Berry|[from] move: Trick|[of] p1a: Sneasler',
                     '|-item|p2a: Staraptor|Sitrus Berry|[from] move: Thief',
                     '|-item|p2a: Staraptor|Sitrus Berry|[from] ability: Frisk',
                     '|-item|p2a: Staraptor|Sitrus Berry|[from] ability: Frisk|[of] p1a: Sneasler|[identify]',
+                    '|-item|p2a: Staraptor|Sitrus Berry|[from] ability: Pickpocket|[of] p1a: Sneasler',
+                    '|-item|p2a: Staraptor|Sitrus Berry|[from] ability: Trace|[of] p1a: Sneasler',
+                    '|-item|p2a: Staraptor|Sitrus Berry|[from] ability: Frisk|[of] p1a: Sneasler|[from] move: Trick',
+                    '|-item|p2a: Staraptor|Sitrus Berry|[from] ability: Frisk|[of]',
                     '|-item|p2a: Staraptor|Sitrus Berry|[identify]',
                     '|-enditem|p2a: Staraptor|Sitrus Berry|[silent]|[from] move: Trick|[of] p1a: Sneasler',
                     '|-enditem|p2a: Staraptor|Sitrus Berry|[from] move: Trick',
