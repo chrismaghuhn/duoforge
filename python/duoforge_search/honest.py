@@ -117,9 +117,10 @@ def spread_table(ctx, root=None, sources=SPREAD_SOURCES):
     return table, {s["id"]: i for i, s in enumerate(sources)}, {**counts, "sources": sources, "sha256": table.sha256()}
 
 
-# Live play's spread table (owner, 2026-10-10): every A/B/C and PP_ team of the repository registry (841 sources, 5016
-# sets, 103 species). A registry change fails until this pin is renewed; P1 and the evaluation keep SPREAD_SOURCES.
-LIVE_SPREAD_SHA256 = "292712dbe242b5021a2bf8f262a751f2ea816a9fac208a6e37c32f8f4f1b74af"
+# Live play's spread table (owner, 2026-10-10): every A/B/C and PP_ team of the repository registry (1489 sources, 8904
+# sets, 156 species; renewed 2026-10-11 when 648 pending VGCPastes teams joined: it was 841 sources, 5016 sets, 103
+# species, `292712db...`). A registry change fails until this pin is renewed; P1 and the evaluation keep SPREAD_SOURCES.
+LIVE_SPREAD_SHA256 = "91af704dd4d6175ca1401506f37bc2a17b00dacf0ae7bcad514837db34276646"
 
 
 def live_spread_table(ctx, root=None):
