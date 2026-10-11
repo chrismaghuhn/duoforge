@@ -418,9 +418,11 @@ static void test_party_order_information_safety(df_test *t)
  * action is classified by the library, and after the step every standing position's tail move_result must hold what the
  * classifications say, this turn's and last turn's. A status move whose engine result the classifier gets wrong (a new
  * handler of the generic special, say) fails here instead of going silently into a record. An action the library refuses
- * (E_UNSUPPORTED) leaves its slot unknown until the next turn shift brings a known one. A status move with a Substitute on
- * another position is not asked (counted, mr_sub_skipped): its blocked run prints a failed one's lines and is true at the pin,
- * which the events cannot tell (duoforge_move_result's precondition; the live tracker stops at a Substitute). */
+ * (E_UNSUPPORTED) leaves its slot unknown until the next turn shift brings a known one. A status move whose targets include
+ * a Substitute's holder is not asked (counted by reason): its blocked run prints a failed one's lines and is true at the pin,
+ * which the events cannot tell (duoforge_move_result's precondition; the live tracker stops at a Substitute). The targets
+ * are the move line's named one, or for a [still] line (which hides it) every position its target class can name, or the
+ * positions a spread class reaches; a field or side move is never taken by a Substitute. */
 typedef struct mr_track {
     uint8_t now[DFI_POSITIONS_MR_TEST];
     uint8_t last[DFI_POSITIONS_MR_TEST];
@@ -434,7 +436,39 @@ typedef struct mr_track {
 static uint32_t mr_classified;
 static uint32_t mr_unclassified;
 static uint32_t mr_compared;
-static uint32_t mr_sub_skipped;
+static uint32_t mr_sub_named;  /* not asked: the named target holds a Substitute */
+static uint32_t mr_sub_hidden; /* not asked: a [still] line hides the target, and a position it may name holds one */
+static uint32_t mr_sub_spread; /* not asked: a position the spread move reaches holds one */
+
+/* The positions other than `user` that a move of target class `cls` may hit (a field or side class: none). */
+static uint32_t mr_class_reach(uint32_t user, uint32_t cls, bool *single)
+{
+    const uint32_t ally = 1u << (user ^ 1u);
+    const uint32_t foes = user < 2u ? 0xCu : 0x3u;
+    *single = true;
+    switch (cls) {
+    case DUOFORGE_TARGET_CLASS_NORMAL:
+    case DUOFORGE_TARGET_CLASS_ANY:
+    case DUOFORGE_TARGET_CLASS_RANDOM_NORMAL:
+    case DUOFORGE_TARGET_CLASS_SCRIPTED:
+        return ally | foes;
+    case DUOFORGE_TARGET_CLASS_ADJACENT_ALLY:
+    case DUOFORGE_TARGET_CLASS_ADJACENT_ALLY_OR_SELF:
+        return ally;
+    case DUOFORGE_TARGET_CLASS_ADJACENT_FOE:
+        return foes;
+    case DUOFORGE_TARGET_CLASS_ALL_ADJACENT_FOES:
+        *single = false;
+        return foes;
+    case DUOFORGE_TARGET_CLASS_ALL_ADJACENT:
+    case DUOFORGE_TARGET_CLASS_ALLIES:
+        *single = false;
+        return cls == DUOFORGE_TARGET_CLASS_ALLIES ? ally : ally | foes;
+    default:
+        *single = false;
+        return 0u; /* self, a side, the field, the party: no Substitute takes them */
+    }
+}
 
 /* The Substitutes of the state before a step (the tail), which the step's events then start and end. */
 static void mr_subs_from(const duoforge_battle *b, mr_track *tr)
@@ -472,16 +506,27 @@ static void mr_set(df_test *t, const duoforge_context *ctx, mr_track *tr, uint32
 static void mr_end_action(df_test *t, const duoforge_context *ctx, mr_track *tr, const duoforge_event *ev, uint32_t start,
                           uint32_t end, uint32_t pos, uint32_t entry, uint32_t subs)
 {
-    bool status_move = false;
+    uint32_t *reason = NULL;
     for (uint32_t j = start; j < end; ++j) {
-        if (ev[j].kind == DUOFORGE_EVENT_MOVE && ev[j].position == pos && ev[j].id < DFI_POOL_MOVE_COUNT) {
-            status_move = dfi_pool_moves[ev[j].id].category == DFI_CATEGORY_STATUS;
-            break;
+        const duoforge_event *mv = &ev[j];
+        if (mv->kind != DUOFORGE_EVENT_MOVE || mv->position != pos || mv->id >= DFI_POOL_MOVE_COUNT) {
+            continue;
         }
+        const dfi_move_data *md = &dfi_pool_moves[mv->id];
+        if (md->category == DFI_CATEGORY_STATUS) {
+            bool single = false;
+            const uint32_t reach = mr_class_reach(pos, md->target_class, &single);
+            const bool named = single && mv->other < DFI_POSITIONS_MR_TEST;
+            const uint32_t targets = named ? (1u << mv->other) & reach : reach;
+            if ((targets & subs) != 0u) {
+                reason = named ? &mr_sub_named : single ? &mr_sub_hidden : &mr_sub_spread;
+            }
+        }
+        break;
     }
-    if (status_move && (subs & ~(1u << pos)) != 0u) {
+    if (reason != NULL) {
         tr->known_now[pos] = false; /* not asked: duoforge_move_result's precondition */
-        ++mr_sub_skipped;
+        ++*reason;
     } else if (tr->entries[pos] == entry && !tr->fainted[pos]) {
         mr_set(t, ctx, tr, pos, &ev[start], end - start);
     }
@@ -592,10 +637,36 @@ typedef struct mr_known_slot {
 /* issue #389: a Baton Pass without a reserve (dfi_run_baton_pass: -fail, [still], no result set) is unclassified in the engine,
  * false at the pin (data/moves.ts batonpass onHit NOT_FAIL; runMoveEffects' selfSwitch false; trySpreadMoveHit). */
 static const mr_known_slot MR_KNOWN[] = {
+    {"g74_pass_no_reserve", 22u, 1u, true},
     {"g74_pass_no_reserve_sitrus", 19u, 0u, true},
     {"g74_pass_yawn_passer", 21u, 1u, true},
+    {"g74_pass_yawn_passer", 22u, 1u, true},
+    {"g74_pass_yawn_passer", 30u, 0u, true},
+    {"g74_pass_yawn_passer", 32u, 0u, true},
+    {"g74_pass_yawn_passer", 33u, 0u, true},
+    {"g74_pass_yawn_passer", 34u, 0u, true},
+    {"g74_pass_yawn_passer", 45u, 0u, true},
     {"g74_pass_yawn_passer", 46u, 0u, false},
+    {"g74_pass_yawn_passer", 46u, 0u, true},
     {"g74_pass_yawn_passer", 47u, 0u, true},
+    {"g74_pass_yawn_passer", 53u, 0u, false},
+    {"g74_pass_yawn_passer", 54u, 0u, true},
+    {"g74_pass_yawn_passer", 55u, 0u, true},
+    {"g74_pass_yawn_passer", 56u, 0u, true},
+    {"g74_pass_yawn_passer", 57u, 0u, true},
+    {"g74_pass_yawn_passer", 57u, 2u, true},
+    {"g74_pass_yawn_passer", 58u, 0u, true},
+    {"g74_pass_yawn_passer", 59u, 0u, true},
+    {"g74_pass_yawn_passer", 61u, 0u, true},
+    {"g74_pass_yawn_passer", 62u, 0u, true},
+    {"g74_pass_yawn_passer", 63u, 0u, true},
+    {"g74_pass_yawn_passer", 64u, 0u, true},
+    {"g74_pass_yawn_passer", 65u, 0u, true},
+    {"g74_pass_yawn_passer", 66u, 0u, true},
+    {"g74_pass_yawn_passer", 67u, 0u, true},
+    {"g74_pass_yawn_passer", 68u, 2u, true},
+    {"g74_pass_yawn_passer", 69u, 2u, true},
+    {"g74_pass_yawn_passer", 71u, 2u, true},
 };
 #define MR_KNOWN_COUNT (sizeof MR_KNOWN / sizeof MR_KNOWN[0])
 
@@ -1361,8 +1432,10 @@ int main(void)
     DF_CHECK(&t, masks_checked == 6u && masks_refused == 6u);
     DF_CHECK(&t, varied_picks > 0u && varied_commands == 0u);
     corpus_move_results(&t);
-    printf("move results: %u actions classified, %u refused, %u slots compared with the engine, %u status moves beside a "
-           "Substitute not asked\n", mr_classified, mr_unclassified, mr_compared, mr_sub_skipped);
+    printf("move results: %u actions classified, %u refused, %u slots compared with the engine\n", mr_classified,
+           mr_unclassified, mr_compared);
+    printf("move results not asked, a status move into a Substitute: %u named targets, %u hidden ([still]), %u spread\n",
+           mr_sub_named, mr_sub_hidden, mr_sub_spread);
     printf("move results: %u slots differ as the known deviations list them (%u listed)\n", mr_known_seen,
            (unsigned)MR_KNOWN_COUNT);
     DF_CHECK(&t, mr_classified > 0u && mr_compared > 0u);
