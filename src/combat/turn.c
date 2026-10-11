@@ -5821,7 +5821,7 @@ static duoforge_status dfi_run_belly_drum(dfi_run *r, uint32_t user)
         return DUOFORGE_OK;
     }
     const uint32_t half = (uint32_t)m->hp_max / 2u;
-    const duoforge_status cost = dfi_deal(r, user, half, DUOFORGE_CAUSE_NONE, 0u, DUOFORGE_NO_POSITION);
+    const duoforge_status cost = dfi_deal(r, user, half, DUOFORGE_CAUSE_NONE, 0u, DUOFORGE_NO_POSITION, DFI_DMG_DIRECT);
     if (cost != DUOFORGE_OK) {
         return cost;
     }
