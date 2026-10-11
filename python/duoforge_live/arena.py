@@ -184,6 +184,7 @@ def main(argv=None):
     p.add_argument("--games", type=int, default=400)
     p.add_argument("--lanes", type=int, default=2)
     p.add_argument("--port", type=int, default=8000)
+    p.add_argument("--host", default="localhost", help="the server's host (from WSL: the Windows host's address)")
     p.add_argument("--seed", type=int, default=0x2026101200000362)
     p.add_argument("--server-dir", default=None, help="a pinned Showdown checkout to start with --no-security")
     args = p.parse_args(argv)
@@ -205,7 +206,7 @@ def main(argv=None):
         server = subprocess.Popen(["node", "pokemon-showdown", "start", "--no-security", str(args.port)],
                                   cwd=args.server_dir, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         time.sleep(15)
-    url = f"ws://localhost:{args.port}/showdown/websocket"
+    url = f"ws://{args.host}:{args.port}/showdown/websocket"
     tables = data.load(kind=policy.table_kind(config))
     net = policy.load(args.checkpoint)
     records, start = [], time.monotonic()
