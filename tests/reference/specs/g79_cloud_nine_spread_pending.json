@@ -1,0 +1,28 @@
+{
+  "name": "g79_cloud_nine_spread_pending",
+  "purpose": "G79, a faint inside a spread move: Drampa (Cloud Nine) uses Blizzard on both foes; Altaria (Cloud Nine) falls to the first hit, and Tyranitar (Rock, Sand Stream) is hit by the same move before the faint is shown, so its special defence is read with the holder still standing (no sandstorm boost).",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,000000000000000000000000000000000000000000000000790000000000000c",
+  "teams": [
+    "Drampa (M) @ Sitrus Berry\nAbility: Cloud Nine\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nModest Nature\n- Thunder\n- Hurricane\n- Blizzard\n- Protect\n\nGholdengo @ Life Orb\nAbility: Good as Gold\nLevel: 50\nEVs: 17 HP / 2 Def / 17 SpA / 16 SpD / 14 Spe\nModest Nature\n- Make It Rain\n- Shadow Ball\n- Nasty Plot\n- Protect\n\nStaraptor (F) @ Sharp Beak\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 2 SpD / 32 Spe\nJolly Nature\n- Brave Bird\n- U-turn\n- Close Combat\n- Protect\n\nKingambit (M) @ Black Belt\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Kowtow Cleave\n- Sucker Punch\n- Iron Head\n- Protect\n\nMilotic (F) @ Mystic Water\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Muddy Water\n- Ice Beam\n- Coil\n- Protect\n\nAnnihilape (M) @ Leftovers\nAbility: Defiant\nLevel: 50\nEVs: 2 HP / 32 Atk / 32 Spe\nJolly Nature\n- Close Combat\n- Ice Punch\n- Shadow Claw\n- U-turn",
+    "Altaria (F) @ Sitrus Berry\nAbility: Cloud Nine\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nModest Nature\n- Hurricane\n- Solar Beam\n- Weather Ball\n- Protect\n\nTyranitar (M) @ Smooth Rock\nAbility: Sand Stream\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Spe\nAdamant Nature\n- Thunder\n- Protect\n- Dragon Tail\n- Roar\n\nKingambit (M) @ Black Belt\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Kowtow Cleave\n- Sucker Punch\n- Iron Head\n- Protect\n\nMilotic (F) @ Mystic Water\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Muddy Water\n- Ice Beam\n- Coil\n- Protect\n\nSneasler (M) @ White Herb\nAbility: Unburden\nLevel: 50\nEVs: 2 HP / 32 Atk / 32 Spe\nAdamant Nature\n- Close Combat\n- Dire Claw\n- U-turn\n- Fake Out\n\nStaraptor (F) @ Sharp Beak\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 2 SpD / 32 Spe\nJolly Nature\n- Brave Bird\n- U-turn\n- Close Combat\n- Protect"
+  ],
+  "plan": {
+    "p1": [
+      "move 3, move 2 1",
+      "move 3, move 2 1",
+      "move 3, move 2 1",
+      "move 3, move 2 1",
+      "move 3, move 2 1",
+      "move 3, move 2 1",
+      "move 3, move 2 1",
+      "move 3, move 2 1"
+    ],
+    "p2": [
+      "move 2 1, move 1 1",
+      "move 2 1, move 1 1"
+    ],
+    "max_steps": 8
+  }
+}
