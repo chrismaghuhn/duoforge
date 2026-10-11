@@ -594,6 +594,84 @@ static void test_pad_zero_after_decode(df_test *t)
     finish(ctx, b);
 }
 
+/* The bundle of a recorded slot step (the conformance steps; the team step is start()'s). */
+static void conf_bundle(const df_conf_step *st, const duoforge_battle *b, duoforge_decision_bundle *bd)
+{
+    memset(bd, 0, sizeof *bd);
+    bd->epoch = b->request_epoch;
+    bd->response_mask = (uint8_t)(st->answered0 | (st->answered1 << 1u));
+    for (uint32_t s = 0u; s < 2u; ++s) {
+        if ((s == 0u && !st->answered0) || (s == 1u && !st->answered1)) {
+            continue;
+        }
+        duoforge_side_choice *r = &bd->responses[s];
+        r->epoch = b->request_epoch;
+        r->side = (uint8_t)s;
+        r->kind = (uint8_t)DUOFORGE_CHOICE_SLOTS;
+        for (uint32_t k = 0u; k < 2u; ++k) {
+            const df_conf_cmd *c = &st->cmds[s][k];
+            r->slots[k] = (duoforge_slot_command){c->kind, c->move_slot, c->target, c->mega, c->reserve, {0u, 0u, 0u}};
+        }
+    }
+}
+
+/* Baton Pass copies the partial trap's elapsed count with the rest of the tail (the pin: partiallytrapped has no noCopy,
+ * data/conditions.ts:222-252; copyVolatileFrom, sim/pokemon.ts:1251). The recorded pass of g74_pass_helping_hand, with a
+ * partial trap put on the passer before its pass turn: the receiver keeps the count, and the residual of that turn adds one. */
+static void test_pass_copies_elapsed(df_test *t)
+{
+    duoforge_context *ctx = NULL;
+    duoforge_battle *b = NULL;
+    duoforge_decision_bundle bd;
+    duoforge_step_result res;
+    if (!start(t, "g74_pass_helping_hand", &ctx, &b, &bd, &res)) {
+        finish(ctx, b);
+        return;
+    }
+    const df_conf_battle *cb = find_conf("g74_pass_helping_hand");
+    DF_CHECK(t, cb != NULL);
+    uint32_t pass = 0u;
+    for (uint32_t s = 1u; cb != NULL && s < cb->step_count && pass == 0u; ++s) {
+        const df_conf_cmd *c = &cb->steps[s].cmds[0][0];
+        if (c->kind == 1u && c->move_slot == 1u && cb->steps[s].answered0) {
+            pass = s;
+        }
+    }
+    DF_CHECK(t, pass != 0u);
+    static duoforge_event pe0[DUOFORGE_MAX_EVENTS];
+    static duoforge_event pe1[DUOFORGE_MAX_EVENTS];
+    for (uint32_t si = 1u; cb != NULL && si < pass; ++si) {
+        const df_conf_step *st = &cb->steps[si];
+        conf_bundle(st, b, &bd);
+        uint32_t used = 0u;
+        duoforge_step_result sr;
+        duoforge_event_buffer buf[2] = {{pe0, DUOFORGE_MAX_EVENTS, 0u}, {pe1, DUOFORGE_MAX_EVENTS, 0u}};
+        DF_CHECK(t, dfi_battle_step_events_tape(ctx, b, &bd, &conf_tape[st->tape_off], st->tape_len, &used, &sr, buf) ==
+                        DUOFORGE_OK);
+    }
+    dfi_tail_pos *tp = &b->tail.sides[0].positions[0];
+    tp->trap_turns = 5u;
+    tp->trap_source = 3u; /* side 1 position 0 (the foe), flat 2 + 1 */
+    tp->trap_move = DFI_MOVE_WRAP + 1u;
+    tp->trap_band = 0u;
+    tp->trap_elapsed = 1u;
+    DF_CHECK(t, dfi_state_check(ctx, b, NULL) == DUOFORGE_OK);
+    const uint32_t before = b->sides[0].positions[0].occupant;
+    if (cb != NULL && pass != 0u) {
+        const df_conf_step *st = &cb->steps[pass];
+        conf_bundle(st, b, &bd);
+        uint32_t used = 0u;
+        duoforge_step_result sr;
+        DF_CHECK(t, dfi_battle_step_tape(ctx, b, &bd, &conf_tape[st->tape_off], st->tape_len, &used, &sr) == DUOFORGE_OK);
+    }
+    DF_CHECK(t, b->sides[0].positions[0].occupant != before); /* the pass happened: a new occupant on the position */
+    tp = &b->tail.sides[0].positions[0];
+    DF_CHECK(t, tp->trap_turns != 0u);
+    DF_CHECK_EQ_U64(t, tp->trap_elapsed, 2u); /* 1 copied by the pass, +1 for the residual of that turn */
+    DF_CHECK(t, dfi_state_check(ctx, b, NULL) == DUOFORGE_OK);
+    finish(ctx, b);
+}
+
 int main(void)
 {
     df_test t;
@@ -607,5 +685,6 @@ int main(void)
     test_pick_revisions(&t);
     test_codec_elapsed(&t);
     test_pad_zero_after_decode(&t);
+    test_pass_copies_elapsed(&t);
     return df_test_end(&t);
 }

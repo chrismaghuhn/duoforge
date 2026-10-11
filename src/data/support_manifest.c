@@ -813,7 +813,8 @@ const dfi_support_manifest dfi_support = {
     /* Step G76 (decision 0015 5cg): Destiny Bond (bit 35: the DESTINY_BOND bit of the position's flags, public: its -singlemove
      * line; verified against the g76 battles). */
     /* Step G90 (decision 0060, hidden counters): the POSITION_EXT2 family and the partial trap's elapsed bits (4 to 6, public). */
-    .view_ext_features = ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_VOLATILES2) |
+    .view_ext_features = ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_PARTIAL_TRAP) | /* G90 (decision 0060): presence, source, move and band are public */
+                         ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_VOLATILES2) |
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_TRAP_ELAPSED) |
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_THROAT_CHOP) |
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_HEAL_BLOCK) |

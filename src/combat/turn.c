@@ -8546,6 +8546,7 @@ static void dfi_pass_give(struct duoforge_battle *b, uint32_t flat, const dfi_pa
     t->trap_turns = s->trap_turns;
     t->trap_source = s->trap_source;
     t->trap_band = s->trap_band;
+    t->trap_elapsed = s->trap_elapsed; /* the partial trap has no noCopy (pin: copyVolatileFrom, pokemon.ts:1251): the count goes too */
     t->trap_move = s->trap_move;
     t->position_flags = (uint8_t)((uint32_t)s->position_flags & DFI_POSFLAG_DRAGON_CHEER_MASK); /* wide-operands-reviewed: < 256 */
 }
