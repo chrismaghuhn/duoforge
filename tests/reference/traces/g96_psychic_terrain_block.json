@@ -337,7 +337,7 @@
         12,
         8,
         12,
-        20
+        16
        ],
        "volatiles": [],
        "locked": null
@@ -367,7 +367,7 @@
         12,
         8,
         12,
-        16
+        20
        ],
        "volatiles": [],
        "locked": null
@@ -737,7 +737,7 @@
          12,
          8,
          12,
-         20
+         16
         ],
         "volatiles": [],
         "locked": null
@@ -767,7 +767,7 @@
          12,
          8,
          12,
-         16
+         20
         ],
         "volatiles": [],
         "locked": null
@@ -1107,7 +1107,7 @@
          12,
          8,
          12,
-         20
+         16
         ],
         "volatiles": [],
         "locked": null
@@ -1137,7 +1137,7 @@
          12,
          8,
          12,
-         16
+         20
         ],
         "volatiles": [],
         "locked": null
@@ -1496,7 +1496,7 @@
          12,
          8,
          12,
-         20
+         16
         ],
         "volatiles": [],
         "locked": null
@@ -1526,7 +1526,7 @@
          12,
          8,
          12,
-         16
+         20
         ],
         "volatiles": [],
         "locked": null
@@ -1856,7 +1856,7 @@
          12,
          8,
          12,
-         20
+         16
         ],
         "volatiles": [],
         "locked": null
@@ -1886,7 +1886,7 @@
          12,
          8,
          12,
-         16
+         20
         ],
         "volatiles": [],
         "locked": null
@@ -2116,7 +2116,7 @@
          12,
          8,
          12,
-         20
+         16
         ],
         "volatiles": [],
         "locked": null
@@ -2206,7 +2206,7 @@
          12,
          8,
          12,
-         16
+         20
         ],
         "volatiles": [],
         "locked": null
@@ -2531,7 +2531,7 @@
          11,
          8,
          12,
-         20
+         16
         ],
         "volatiles": [],
         "locked": null
@@ -2621,7 +2621,7 @@
          12,
          8,
          12,
-         16
+         20
         ],
         "volatiles": [],
         "locked": null
