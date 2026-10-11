@@ -435,6 +435,9 @@ _Static_assert(DUOFORGE_MAX_ROSTER < DFI_PARTY_HIDDEN, "the hidden party entry i
  * member code of a source: 1 + side * DUOFORGE_MAX_ROSTER + roster index, so 1..DFI_ATTRACT_MEMBER_MAX. */
 #define DFI_ATTRACT_SLOTS (DUOFORGE_ACTIVE_PER_SIDE * DUOFORGE_SIDE_COUNT)
 #define DFI_ATTRACT_MEMBER_MAX (DUOFORGE_SIDE_COUNT * DUOFORGE_MAX_ROSTER)
+/* Step G87 (decision 0080): the flat position of an Attract source (member code `code`) while it stands on the field and is not
+ * fainted, DUOFORGE_NO_POSITION otherwise. Defined in combat/turn.c; the observation (POSITION_EXT2 bits 12-13) reads it too. */
+uint32_t dfi_attract_source_flat(const struct duoforge_battle *b, uint32_t code);
 
 typedef struct dfi_pool_tail {
     dfi_tail_side sides[DUOFORGE_SIDE_COUNT];

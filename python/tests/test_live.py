@@ -261,8 +261,10 @@ class BatonPassTest(unittest.TestCase):
 
 
 class SetBoostTest(unittest.TestCase):
-    """Step G86: Belly Drum's -setboost shows the Attack stage it leaves (sim/battle.ts:2051-2052); the tracker sets the
-    position's stage to it, as the engine's BOOST event of the change does (src/combat/turn.c dfi_boost)."""
+    """Steps G86 and G77: Belly Drum's and Anger Point's -setboost show the Attack stage they leave
+    (sim/battle.ts:2051-2052); the tracker sets the position's stage to it, as the engine's BOOST event of the change does
+    (src/combat/turn.c dfi_boost: cause MOVE for Belly Drum, cause ABILITY for Anger Point)."""
+    LINES = ("|-setboost|p1a: Snorlax|atk|6|[from] move: Belly Drum", "|-setboost|p1a: Primeape|atk|6|[from] ability: Anger Point")
 
     def tracker(self, stage):
         from types import SimpleNamespace
@@ -281,17 +283,19 @@ class SetBoostTest(unittest.TestCase):
     def test_the_stage_becomes_the_printed_one(self):
         from duoforge_live import tracker
         for start in (tracker.STAGE_NEUTRAL - 2, tracker.STAGE_NEUTRAL, tracker.STAGE_NEUTRAL + 3):
-            t, p = self.tracker(start)
-            t._set_boost("|-setboost|p1a: Snorlax|atk|6|[from] move: Belly Drum".split("|"))
-            self.assertEqual(p.stages[0], tracker.STAGE_NEUTRAL + 6, start)
-            self.assertEqual(p.stages[1:], [tracker.STAGE_NEUTRAL] * 6)
+            for line in self.LINES:
+                t, p = self.tracker(start)
+                t._set_boost(line.split("|"))
+                self.assertEqual(p.stages[0], tracker.STAGE_NEUTRAL + 6, (start, line))
+                self.assertEqual(p.stages[1:], [tracker.STAGE_NEUTRAL] * 6)
 
     def test_no_positive_change_stops(self):
         from duoforge_live import lines, tracker
-        t, p = self.tracker(tracker.STAGE_NEUTRAL + 6)
-        with self.assertRaises(lines.Stop) as caught:
-            t._set_boost("|-setboost|p1a: Snorlax|atk|6|[from] move: Belly Drum".split("|"))
-        self.assertEqual(caught.exception.reason, "converter:setboost-change")
+        for line in self.LINES:
+            t, p = self.tracker(tracker.STAGE_NEUTRAL + 6)
+            with self.assertRaises(lines.Stop) as caught:
+                t._set_boost(line.split("|"))
+            self.assertEqual(caught.exception.reason, "converter:setboost-change", line)
 
 
 class ClearAllBoostsTest(unittest.TestCase):
@@ -578,8 +582,10 @@ CLOSURE_OUTCOME = {"equal": 2594, "refused": 310}
 # sub-fixes-2 moves add +660 equal and +122 refused; the SUBSTITUTE stops go 78 -> 98 (the Leech Seed streams run on to a
 # later Substitute). Main (+408 equal, +28 refused): Attract #393, lane B G79/G81/G83 and the infatuated engine check.
 # Measured on the merged tree (CI 38140646950, Windows Python job): 10966 equal, 637 refused.
-POOL_OUTCOME = {"equal": 10966, "refused": 637, "engine check refuses: infatuated occupant (from_view, option B)": 42,
-                "tracker refuses: unburden-without-item-line": 4}
+# lane B G87 (the Attract source public; HS fold hs/g87-python): the 42 infatuated points build now: +42 equal, the engine-check
+# refusal is gone. Lane B G77 (crit package): +74 equal (its eight battles), no new refused record or stop. Measured on the
+# merged tree (main 0bc8d8d9 + G77 + G87): 11082 equal, 637 refused.
+POOL_OUTCOME = {"equal": 11082, "refused": 637, "tracker refuses: unburden-without-item-line": 4}
 POOL_STOPS = {"feature:SUBSTITUTE": 98, "feature:DRAGON_CHEER": 12, "feature:FORME_CHANGE": 10, "feature:DESTINY_BOND": 10,
               "feature:ROOST": 8, "line:-end": 2, "feature:ILLUSION": 2}
 

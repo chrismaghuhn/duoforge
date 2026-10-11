@@ -1,0 +1,30 @@
+{
+  "name": "g77_anger_intimidate",
+  "purpose": "G77 M03: Anger Point Tauros (p2 slot a) takes six Intimidate drops (battle start plus five switch-ins of Tauros/Staraptor on p1 slot b), reaching Attack -6. Turn 6: Farfetch'd (Leek) Night Slash is a guaranteed critical hit on Tauros, which gets +6 with -setboost, a change of 12. Tauros does not attack Farfetch'd on turn 6, so Night Slash is not preempted.",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,0000000000000000000000000000000000000000000000000000000000077101",
+  "teams": [
+    "Farfetch’d (M) @ Leek\nAbility: Keen Eye\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Spe\nAdamant Nature\n- Night Slash\n- Leaf Blade\n- Swords Dance\n- Protect\n\nStaraptor (F) @ Sharp Beak\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 2 SpD / 32 Spe\nJolly Nature\n- Brave Bird\n- U-turn\n- Close Combat\n- Protect\n\nTauros (M) @ Life Orb\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Ice Beam\n- Close Combat\n- Zen Headbutt\n- Protect\n\nSneasler (M) @ White Herb\nAbility: Unburden\nLevel: 50\nEVs: 2 HP / 32 Atk / 32 Spe\nAdamant Nature\n- Close Combat\n- Dire Claw\n- U-turn\n- Fake Out\n\nMilotic (F) @ Mystic Water\nAbility: Marvel Scale\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Coil\n- Muddy Water\n- Double-Edge\n- Protect\n\nKingambit (M) @ Black Belt\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Foul Play\n- Kowtow Cleave\n- Sucker Punch\n- Swords Dance",
+    "Tauros (M) @ Leftovers\nAbility: Anger Point\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Stone Edge\n- Close Combat\n- Zen Headbutt\n- Protect\n\nGholdengo @ Life Orb\nAbility: Good as Gold\nLevel: 50\nEVs: 17 HP / 2 Def / 17 SpA / 16 SpD / 14 Spe\nModest Nature\n- Make It Rain\n- Shadow Ball\n- Nasty Plot\n- Protect\n\nSneasler (M) @ White Herb\nAbility: Unburden\nLevel: 50\nEVs: 2 HP / 32 Atk / 32 Spe\nAdamant Nature\n- Close Combat\n- Dire Claw\n- U-turn\n- Fake Out\n\nStaraptor (F) @ Sharp Beak\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 2 SpD / 32 Spe\nJolly Nature\n- Brave Bird\n- U-turn\n- Close Combat\n- Protect\n\nMilotic (F) @ Mystic Water\nAbility: Marvel Scale\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Coil\n- Muddy Water\n- Double-Edge\n- Protect\n\nKingambit (M) @ Black Belt\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Foul Play\n- Kowtow Cleave\n- Sucker Punch\n- Swords Dance"
+  ],
+  "plan": {
+    "p1": [
+      "move 4, switch 3",
+      "move 4, switch 2",
+      "move 4, switch 3",
+      "move 4, switch 2",
+      "move 4, switch 3",
+      "move 1 1, move 4"
+    ],
+    "p2": [
+      "move 4, move 4",
+      "move 4, move 4",
+      "move 4, move 4",
+      "move 4, move 4",
+      "move 4, move 4",
+      "move 1 2, move 4"
+    ],
+    "max_steps": 7
+  }
+}
