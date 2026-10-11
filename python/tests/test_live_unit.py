@@ -334,6 +334,17 @@ class LastResortUsedTest(unittest.TestCase):
             self.move(0, "ICEBEAM")
         self.assertTrue(caught.exception.reason.startswith("structure:"), caught.exception.reason)
 
+    def test_a_move_listed_twice_on_the_sheet_stops(self):
+        # the public move line names the move, not the slot: deductPP's first match (sim/pokemon.ts:888) and the slot the
+        # engine used can differ, so the bit is not determined
+        from duoforge_live import lines
+        sheet = {"species": 1, "item": 0, "ability": 0, "gender": "", "nature": 0, "sp": [0] * 6,
+                 "moves": [self.M["PROTECT"], self.M["PROTECT"], self.M["EARTHQUAKE"]]}
+        self.t._own_members[1] = self.tracker._Member(sheet, self.D)
+        with self.assertRaises(lines.Stop) as caught:
+            self.move(1, "PROTECT")
+        self.assertTrue(caught.exception.reason.startswith("structure:"), caught.exception.reason)
+
     def test_a_cant_nopp_line_stops(self):
         from types import SimpleNamespace
         from duoforge_live import lines

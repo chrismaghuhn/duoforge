@@ -569,6 +569,8 @@ class Tracker:
                 # Step G94 (decision 0061): deductPP sets the move slot's used flag before TryMove, so a move that fails
                 # still counts. A locked turn deducts no PP (battle-actions.ts runMove), and a Magic Bounce reflection is
                 # no use of its holder (useMove, no deductPP). Struggle has no slot (move_slot 4 is past the four).
+                if m.sheet["moves"].count(ident) > 1:
+                    raise lines.Stop(f"structure:{ident} is listed twice on its user's sheet (the used bits)")
                 if ident in m.sheet["moves"]:
                     p.used |= 1 << m.sheet["moves"].index(ident)
                 elif ident != self._struggle:
