@@ -298,9 +298,14 @@ static void test_swap_position_fields(df_test *t)
     b->sides[0].sealed_cmds[0].move_slot = 4u;
     b->sides[0].sealed_cmds[1].move_slot = 5u;
     b->sides[0].requested_slots = 3u;
-    /* the trap and the leech seed of the other side name the two positions: they follow the Pokemon */
+    /* the trap of the other side names the trapper's slot (it follows the Pokemon); a seed names its slot (it stays) */
     b->tail.sides[1].positions[0].trap_source = 1u; /* flat 0 + 1 */
     b->tail.sides[1].positions[1].leech_seed_source = 2u; /* flat 1 + 1 */
+    /* Attract (step G71): the Pokemon at slot 0 is infatuated with side 0 roster 3, which stands at slot 1 (code 1 + 0 * 6 + 3 = 4) */
+    b->sides[0].members[2].hp = 100u;
+    b->sides[0].members[3].hp = 100u;
+    b->tail.attract_source[0] = 4u;
+    DF_CHECK_EQ_U64(t, dfi_attract_source_flat(b, 4u), 1u); /* G87: the source's position before the swap */
     /* a value on the other side, and a party order: the entries of the two active positions exchange */
     b->tail.sides[1].positions[0].stockpile = 77u;
     dfi_party_put(&b->tail, 0u, 0u, 1u);
@@ -348,9 +353,21 @@ static void test_swap_position_fields(df_test *t)
     DF_CHECK_EQ_U64(t, (uint32_t)tc->position_flags & (uint32_t)DFI_POSFLAG_HEALING_WISH, 0u);
     DF_CHECK_EQ_U64(t, (uint32_t)ta->position_flags & ~(uint32_t)DFI_POSFLAG_HEALING_WISH,
                     (uint32_t)before_c.position_flags & ~(uint32_t)DFI_POSFLAG_HEALING_WISH);
-    /* the references: the trapper and the seeder follow the Pokemon */
+    /* the references: the trapper follows the Pokemon; the seed stays on its slot (sourceSlot is a slot: sim/pokemon.ts:2002,
+     * data/moves.ts:10218) */
     DF_CHECK_EQ_U64(t, b->tail.sides[1].positions[0].trap_source, 2u);
-    DF_CHECK_EQ_U64(t, b->tail.sides[1].positions[1].leech_seed_source, 1u);
+    DF_CHECK_EQ_U64(t, b->tail.sides[1].positions[1].leech_seed_source, 2u);
+    /* Attract (step G71): the infatuation byte moves with the infatuated Pokemon; the member code is unchanged, and the source's
+     * position (G87, POSITION_EXT2 bits 12-13) is derived from the code: the source now stands at slot 0 */
+    DF_CHECK_EQ_U64(t, b->tail.attract_source[0], 0u);
+    DF_CHECK_EQ_U64(t, b->tail.attract_source[1], 4u);
+    DF_CHECK_EQ_U64(t, dfi_attract_source_flat(b, 4u), 0u);
+    /* Healing Wish (step G82): a pending wish on either slot blocks an Ally Switch between them (E_UNSUPPORTED in the engine,
+     * decision 0044 known gap); after the swap the wish is still on slot 0, so the block stays while it stands */
+    DF_CHECK(t, dfi_ally_swap_wish_blocked(b, 0u, 0u, 1u));
+    ta->position_flags = (uint8_t)((uint32_t)ta->position_flags & ~(uint32_t)DFI_POSFLAG_HEALING_WISH);
+    tc->position_flags = (uint8_t)((uint32_t)tc->position_flags & ~(uint32_t)DFI_POSFLAG_HEALING_WISH);
+    DF_CHECK(t, !dfi_ally_swap_wish_blocked(b, 0u, 0u, 1u));
     /* the party order entries 0 and 1 exchange, entry 2 is untouched */
     DF_CHECK_EQ_U64(t, dfi_party_entry(&b->tail, 0u, 0u), 2u);
     DF_CHECK_EQ_U64(t, dfi_party_entry(&b->tail, 0u, 1u), 1u);

@@ -514,6 +514,9 @@ struct duoforge_battle {
 /* The position-bound state of two positions a and c (slots 0..1) of one side exchanges with their occupants (step G80, Ally
  * Switch): which fields move and which stay, with the reasons, at its definition in combat/turn.c. */
 void dfi_swap_position_state(struct duoforge_battle *b, uint32_t side, uint32_t a, uint32_t c);
+/* Step G80 (decision 0044, known gap): true when a pending Healing Wish stands on slot a or c of the side (its arrival's onSwap is not
+ * modelled): an Ally Switch between them is refused with E_UNSUPPORTED. Defined in combat/turn.c. */
+bool dfi_ally_swap_wish_blocked(const struct duoforge_battle *b, uint32_t side, uint32_t a, uint32_t c);
 
 /* The move that the occupant of the position (side * 2 + slot) used last, from the tail's last_move (move slot + 1) and the
  * occupant's moves; UINT32_MAX when it has used none, used Struggle or the position is empty. The tail is zero under
