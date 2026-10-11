@@ -1,0 +1,162 @@
+{
+ "name": "fake_out_after_the_first_turn",
+ "kind": "fake_out_fails",
+ "teams": [
+  "C",
+  "B"
+ ],
+ "seed": 2316556723530235954,
+ "picks": [
+  [
+   5,
+   4,
+   1,
+   3
+  ],
+  [
+   3,
+   1,
+   0,
+   5
+  ]
+ ],
+ "prefix": [
+  [
+   [
+    {
+     "move": "lastrespects",
+     "target": 2
+    },
+    {
+     "switch": "incineroar"
+    }
+   ],
+   [
+    {
+     "move": "psychic",
+     "target": 1
+    },
+    {
+     "switch": "politoed"
+    }
+   ]
+  ],
+  [
+   [
+    {
+     "move": "lastrespects",
+     "target": 3
+    },
+    {
+     "move": "darkestlariat",
+     "target": 0
+    }
+   ],
+   [
+    {
+     "move": "protect"
+    },
+    {
+     "move": "protect"
+    }
+   ]
+  ],
+  [
+   [
+    {
+     "switch": "indeedeef"
+    },
+    {
+     "switch": "kingambit"
+    }
+   ],
+   [
+    {
+     "move": "psychic",
+     "target": 3
+    },
+    {
+     "move": "weatherball",
+     "target": 1
+    }
+   ]
+  ],
+  [
+   [
+    {
+     "switch": "incineroar"
+    },
+    {
+     "move": "suckerpunch",
+     "target": 0
+    }
+   ],
+   [
+    {
+     "move": "protect"
+    },
+    {
+     "move": "icebeam",
+     "target": 0
+    }
+   ]
+  ],
+  [
+   [
+    {
+     "switch": "basculegion"
+    },
+    {
+     "move": "kowtowcleave",
+     "target": 3
+    }
+   ],
+   [
+    {
+     "move": "psychic",
+     "target": 1
+    },
+    {
+     "move": "weatherball",
+     "target": 0
+    }
+   ]
+  ],
+  [
+   [
+    {
+     "switch": "incineroar"
+    },
+    {
+     "none": true
+    }
+   ],
+   [
+    {
+     "none": true
+    },
+    {
+     "switch": "grimmsnarl"
+    }
+   ]
+  ]
+ ],
+ "seat": 0,
+ "expected": [
+  [
+   {
+    "not": {
+     "move": "fakeout"
+    }
+   },
+   {
+    "any": true
+   }
+  ]
+ ],
+ "reason": "Turn 6: incineroar has been on the field since the last turn, so its Fake Out fails: grimmsnarl still moves with every move of normal priority. Any answer without Fake Out is better.",
+ "claim": {
+  "u": 0,
+  "fake_out_target": 3
+ }
+}

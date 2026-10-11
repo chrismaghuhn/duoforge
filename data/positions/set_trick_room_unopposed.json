@@ -1,0 +1,181 @@
+{
+ "name": "set_trick_room_unopposed",
+ "kind": "set_trick_room",
+ "teams": [
+  "C",
+  "B"
+ ],
+ "seed": 2316556723530236152,
+ "picks": [
+  [
+   0,
+   5,
+   2,
+   3
+  ],
+  [
+   2,
+   1,
+   3,
+   5
+  ]
+ ],
+ "prefix": [
+  [
+   [
+    {
+     "move": "closecombat",
+     "target": 2
+    },
+    {
+     "move": "flipturn",
+     "target": 0
+    }
+   ],
+   [
+    {
+     "move": "dragonpulse",
+     "target": 3
+    },
+    {
+     "move": "ironhead",
+     "target": 0
+    }
+   ]
+  ],
+  [
+   [
+    {
+     "none": true
+    },
+    {
+     "switch": "salamence"
+    }
+   ],
+   [
+    {
+     "any": true
+    },
+    {
+     "any": true
+    }
+   ]
+  ],
+  [
+   [
+    {
+     "move": "direclaw",
+     "target": 1
+    },
+    {
+     "move": "dracometeor",
+     "target": 3
+    }
+   ],
+   [
+    {
+     "move": "electroshot",
+     "target": 0
+    },
+    {
+     "move": "leechlife",
+     "target": 1
+    }
+   ]
+  ],
+  [
+   [
+    {
+     "any": true
+    },
+    {
+     "any": true
+    }
+   ],
+   [
+    {
+     "none": true
+    },
+    {
+     "switch": "farigiraf"
+    }
+   ]
+  ],
+  [
+   [
+    {
+     "move": "closecombat",
+     "target": 1
+    },
+    {
+     "move": "dracometeor",
+     "target": 0,
+     "mega": true
+    }
+   ],
+   [
+    {
+     "move": "electroshot",
+     "target": 0
+    },
+    {
+     "move": "psychic",
+     "target": 2
+    }
+   ]
+  ],
+  [
+   [
+    {
+     "switch": "basculegion"
+    },
+    {
+     "switch": "indeedeef"
+    }
+   ],
+   [
+    {
+     "switch": "grimmsnarl"
+    },
+    {
+     "none": true
+    }
+   ]
+  ],
+  [
+   [
+    {
+     "move": "lastrespects",
+     "target": 2
+    },
+    {
+     "move": "psychic",
+     "target": 0
+    }
+   ],
+   [
+    {
+     "move": "lightscreen"
+    },
+    {
+     "move": "protect"
+    }
+   ]
+  ]
+ ],
+ "seat": 1,
+ "expected": [
+  [
+   {
+    "any": true
+   },
+   {
+    "move": "trickroom"
+   }
+  ]
+ ],
+ "reason": "Turn 5: no Trick Room is up, and both grimmsnarl and farigiraf are slower than both basculegion and indeedeef. farigiraf's Trick Room goes up against every foe answer (no Taunt, Fake Out, Imprison or knockout of the setter stops it), so it turns the speed order for us; setting it is the clear plan.",
+ "claim": {
+  "setter": 1
+ }
+}
