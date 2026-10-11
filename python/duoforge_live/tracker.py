@@ -568,12 +568,14 @@ class Tracker:
             if self.data.kind == "pool" and e[3] != trace_to_c.CAUSE["ABILITY"] and not flags & FLAG["LOCKED"]:
                 # Step G94 (decision 0061): deductPP sets the move slot's used flag before TryMove, so a move that fails
                 # still counts. A locked turn deducts no PP (battle-actions.ts runMove), and a Magic Bounce reflection is
-                # no use of its holder (useMove, no deductPP). Struggle has no slot (move_slot 4 is past the four).
-                if m.sheet["moves"].count(ident) > 1:
-                    raise lines.Stop(f"structure:{ident} is listed twice on its user's sheet (the used bits)")
+                # no use of its holder (useMove, no deductPP). Struggle has no slot (move_slot 4 is past the four). The
+                # bits show only for a holder (Last Resort on its open sheet), so only a holder's line must name its slot.
+                holder = self.data.tables["MOVE"]["LASTRESORT"] in m.sheet["moves"]
                 if ident in m.sheet["moves"]:
+                    if holder and m.sheet["moves"].count(ident) > 1:
+                        raise lines.Stop(f"structure:{ident} is listed twice on its user's sheet (the used bits)")
                     p.used |= 1 << m.sheet["moves"].index(ident)
-                elif ident != self._struggle:
+                elif holder and ident != self._struggle:
                     raise lines.Stop(f"structure:{ident} is not on the sheet of its user (the used bits of Last Resort)")
             if ident in self._guard_moves and not flags & FLAG["LOCKED"]:
                 # Wide Guard and Quick Guard add the stall volatile when they run (data/moves.ts onHitSide

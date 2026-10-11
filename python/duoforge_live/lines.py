@@ -261,6 +261,12 @@ def _toxic(parts):
     return any(p == "tox" or p.endswith(" tox") for p in parts[2:] if not p.startswith("["))
 
 
+def _holds_last_resort(view, ident):
+    """Whether the member a protocol ident names has Last Resort on its open sheet (its used bits show, decision 0061)."""
+    sheet = view.known_sheet(ident)
+    return sheet is not None and view.data.tables["MOVE"]["LASTRESORT"] in sheet["moves"]
+
+
 def check(line, view):
     """The class of a protocol line (module docstring). `view` is the tracker: view.data, view.sheet_of(ident) (the
     member's sheet: species, item, ability ids as parse_team has them), view.ability_now(ident) (its current
@@ -296,9 +302,9 @@ def check(line, view):
         if len(args) > 1 and args[1] in UNMODELLED_SWAP_MOVES:
             _unknown(kind, args[1])
         return "fold"
-    if kind == "cant" and len(args) > 1 and args[1] == "nopp":
-        # deductPP sets the used flag before its PP test (sim/pokemon.ts:892), so a move with no PP takes a Last Resort bit
-        # with no move line; the domain never offers such a move, so the line stops here rather than guessing its slot
+    if kind == "cant" and len(args) > 1 and args[1] == "nopp" and _holds_last_resort(view, args[0]):
+        # deductPP sets the used flag before its PP test (sim/pokemon.ts:892), so a holder's move with no PP takes a Last
+        # Resort bit with no move line; the domain never offers such a move, so the line stops here rather than guessing
         _unknown(kind, "nopp")
     if kind == "-fail" and len(args) > 1 and args[1] == "unboost":
         return _kept_drop(args, attrs, view)

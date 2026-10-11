@@ -268,6 +268,7 @@ class LastResortUsedTest(unittest.TestCase):
         for side in t._positions:
             side[0].occupant, side[1].occupant = 0, 1
         self.t = t
+        self.holder_sheet = holder
 
     def move(self, pos, name, cause=0, flags=0):
         tt = self.trace_to_c
@@ -339,23 +340,41 @@ class LastResortUsedTest(unittest.TestCase):
         # engine used can differ, so the bit is not determined
         from duoforge_live import lines
         sheet = {"species": 1, "item": 0, "ability": 0, "gender": "", "nature": 0, "sp": [0] * 6,
-                 "moves": [self.M["PROTECT"], self.M["PROTECT"], self.M["EARTHQUAKE"]]}
+                 "moves": [self.M["LASTRESORT"], self.M["PROTECT"], self.M["PROTECT"], self.M["EARTHQUAKE"]]}
         self.t._own_members[1] = self.tracker._Member(sheet, self.D)
         with self.assertRaises(lines.Stop) as caught:
             self.move(1, "PROTECT")
         self.assertTrue(caught.exception.reason.startswith("structure:"), caught.exception.reason)
 
-    def test_a_cant_nopp_line_stops(self):
+    def view_stub(self):
+        """What lines.check reads of the tracker: the data, and the open sheet of a member a protocol ident names."""
         from types import SimpleNamespace
+        sheets = {"Holder": self.holder_sheet}
+        return SimpleNamespace(data=self.D, known_sheet=lambda ident: sheets.get(ident.split(": ", 1)[1]))
+
+    def test_a_cant_nopp_line_stops(self):
         from duoforge_live import lines
         with self.assertRaises(lines.Stop):
-            lines.check("|cant|p1a: Holder|nopp|Last Resort", SimpleNamespace(data=self.D))
+            lines.check("|cant|p1a: Holder|nopp|Last Resort", self.view_stub())
+
+    def test_a_cant_nopp_line_of_a_non_holder_stops_not(self):
+        from duoforge_live import lines
+        self.assertEqual(lines.check("|cant|p1a: Plain|nopp|Protect", self.view_stub()), "fold")
+
+    def test_a_non_holder_with_a_move_off_its_sheet_stops_not(self):
+        self.move(1, "ICEBEAM")  # the plain member has no Last Resort on its sheet: the bits have no effect for it
+        self.assertEqual(self.used(1), 0)
+
+    def test_a_non_holder_with_a_move_listed_twice_stops_not(self):
+        sheet = {"species": 1, "item": 0, "ability": 0, "gender": "", "nature": 0, "sp": [0] * 6,
+                 "moves": [self.M["PROTECT"], self.M["PROTECT"], self.M["EARTHQUAKE"]]}
+        self.t._own_members[1] = self.tracker._Member(sheet, self.D)
+        self.move(1, "PROTECT")
 
     def test_an_ally_switch_stops(self):
-        from types import SimpleNamespace
         from duoforge_live import lines
         with self.assertRaises(lines.Stop):
-            lines.check("|move|p1a: Holder|Ally Switch||", SimpleNamespace(data=self.D))
+            lines.check("|move|p1a: Holder|Ally Switch||", self.view_stub())
 
     def test_restrict_ext_keeps_the_slot_bits(self):
         from duoforge_live import lines
