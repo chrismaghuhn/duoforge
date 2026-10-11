@@ -10,7 +10,7 @@ All arms share the same commit, encoder 6, recipe, initial network and compute b
 
 | Arm | Team pool | Start |
 | --- | --- | --- |
-| **A** | the registry pool (the 651 teams of the 49333 training pool: 573 LL_, 76 PP_ and Teams A to C, with their weights) | BC prior from the new replay data, encoder 6 |
+| **A** | the registry pool (the 652 teams of the 49333 training pool: 573 LL_, 76 PP_ and Teams A to C, with their weights) | BC prior from the new replay data, encoder 6 |
 | **B** | A's pool, joined by a training corpus at `--random-team-share 0.25` | the same BC prior |
 | **C** (option) | A's pool | params-49333 widened to encoder 6 (`checkpoint.load_current`), no BC |
 
