@@ -24,7 +24,8 @@ def count(counters, format_id, stage, n=1):
 
 def _empty():
     return {"read": 0, "skipped": collections.Counter(), "internal": 0, "processed": 0,
-            "perspectives": {"kept": 0, "stopped": collections.Counter()}, "rows": 0}
+            "perspectives": {"kept": 0, "stopped": collections.Counter()}, "rows": 0,
+            "turns": {"total": 0, "kept": 0, "refused": 0}, "both_kept": 0}
 
 
 def report(counters):
@@ -42,6 +43,10 @@ def report(counters):
             f["skipped"][stage[len("skipped."):]] += n
         elif stage.startswith("internal:"):
             f["internal"] += n
+        elif stage == "games.both_kept":
+            f["both_kept"] += n
+        elif stage in ("turns.total", "turns.kept", "turns.refused"):
+            f["turns"][stage[len("turns."):]] += n
         elif stage == "perspectives.kept":
             f["perspectives"]["kept"] += n
         elif stage.startswith("perspectives.stopped."):
@@ -50,6 +55,8 @@ def report(counters):
             raise ValueError(f"funnel stage {stage!r} of {format_id} is no stage of the funnel")
     for f in out.values():
         f["with_sheets"] = f["read"] - f["skipped"].get("skip:format", 0) - f["skipped"].get("skip:sheets", 0)
+        selection = sum(v for k, v in f["skipped"].items() if k == "skip:has-sheets" or k.startswith("skip:split-"))
+        f["taken"] = f["with_sheets"] - selection  # what the build's mode and split take (bo1_belief: no sheets)
         f["skipped"] = dict(f["skipped"])
         f["perspectives"]["stopped"] = dict(f["perspectives"]["stopped"])
     return out
@@ -69,12 +76,18 @@ def text(report, top=8):
             lines.append(f"{format_id}: {f['read']} games, {why}")
             continue
         other = f["skipped"].get("skip:format", 0)
-        refused = {k: v for k, v in f["skipped"].items() if k not in ("skip:format", "skip:sheets")}
+        selection = {k: v for k, v in f["skipped"].items() if k == "skip:has-sheets" or k.startswith("skip:split-")}
+        refused = {k: v for k, v in f["skipped"].items()
+                   if k not in ("skip:format", "skip:sheets") and k not in selection}
         p = f["perspectives"]
         lines.append(f"{format_id}: read {f['read']}")
         if other:
             lines.append(f"  not in this build's formats {other}")
         lines.append(f"  without two sheets {f['skipped'].get('skip:sheets', 0)}, with sheets {f['with_sheets']}")
+        if selection:
+            lines.append(f"  not in this build's selection {sum(selection.values())} (has sheets, other split): "
+                         + ", ".join(f"{k} {v}" for k, v in sorted(selection.items())))
+        lines.append(f"  taken by this build {f['taken']}")
         lines.append(f"  refused {sum(refused.values())}, internal errors {f['internal']}, set up {f['processed']}")
         for reason, n in sorted(refused.items(), key=lambda kv: (-kv[1], kv[0]))[:top]:
             lines.append(f"    {n} {reason}")
@@ -83,5 +96,20 @@ def text(report, top=8):
         lines.append(f"  perspectives to the end {p['kept']} of {both}{share}, stopped {sum(p['stopped'].values())}")
         for reason, n in sorted(p["stopped"].items(), key=lambda kv: (-kv[1], kv[0]))[:top]:
             lines.append(f"    {n} {reason}")
+        t = f["turns"]
+        every = t["total"] + t["refused"]
+        if every:
+            lines.append(f"  turns without a stop, of all its games taken {t['kept']} of {every} "
+                         f"({100 * t['kept'] / every:.1f} %; a refused game's turns count, none kept)")
+        if t["total"]:
+            lines.append(f"  turns without a stop, of the games set up {t['kept']} of {t['total']} "
+                         f"({100 * t['kept'] / t['total']:.1f} %)")
+        taken = f["processed"] + f["internal"] + sum(v for k, v in f["skipped"].items()
+                                                     if k not in ("skip:format", "skip:sheets", "skip:has-sheets")
+                                                     and not k.startswith("skip:split-"))
+        if taken:
+            lines.append(f"  matches with both perspectives to the end {f['both_kept']} of {taken} taken "
+                         f"({100 * f['both_kept'] / taken:.1f} %), of {f['processed']} set up "
+                         f"({100 * f['both_kept'] / max(f['processed'], 1):.1f} %)")
         lines.append(f"  rows {f['rows']}")
     return "\n".join(lines) + "\n"

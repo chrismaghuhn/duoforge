@@ -76,7 +76,8 @@ def domain(tracker):
                 continue
             # Encore forces its slot and Disable bars its own (the view extension's encore_slot, disable_slot)
             usable = [pp[i] > 0 and (p.choice_slot == MOVE_SLOT_NONE or i == p.choice_slot)
-                      and (not p.encore_slot or i == p.encore_slot - 1) and i != p.disable_slot - 1
+                      and (p.encore_slot == 0 or i == p.encore_slot - 1)  # Encore holds it to that move (#334)
+                      and i != p.disable_slot - 1  # Disable bars its slot
                       for i in range(len(sheet_moves))]
             if not any(usable):  # no PP left, or none for the choice-locked move: Struggle
                 request["active"].append({"moves": [{"id": "struggle"}]})
