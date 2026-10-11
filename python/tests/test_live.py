@@ -733,6 +733,24 @@ class RecordAssemblerPoolTest(unittest.TestCase):
         self.assertGreater(outcome["equal"], 7900)
         self.assertGreater(outcome["refused"], 300)
 
+    def test_tracker_of_a_pool_checkpoint_assembles_pool_records(self):
+        # the live path's tables (data.for_config of a POOL checkpoint): the tracker's records are of the POOL context,
+        # its size and fingerprint, and byte-identical to the engine's
+        from duoforge import state_layout
+        from duoforge_live.tracker import Tracker
+        tables = data.for_config({"data": {"kind": "pool", "fingerprint": self.pool.data.context().fingerprint().hex()}})
+        battle = next(b for b in self.pool.battles if record_kind(b.name) is None)
+        tracker = Tracker(tables, battle.spec["teams"][0])
+        start, length = next((s, n) for name, s, n in state_layout.fields(pool=False) if name == "fingerprint")
+        for lines in battle.streams[0]:
+            tracker.feed(lines)
+            if tracker.ready:
+                break
+        parts = tracker.public_parts()
+        self.assertEqual((parts["status"], int(parts["record"]["state_size"])), (0, 1357))
+        self.assertEqual(bytes(parts["record"]["state"][start:start + length]), tables.context().fingerprint())
+        self.assertEqual(record_diff(battle.name, 0, 0, parts["record"])["fields"], [])
+
     def test_engine_gives_every_pool_record_back(self):
         import duoforge
         from duoforge_live import record

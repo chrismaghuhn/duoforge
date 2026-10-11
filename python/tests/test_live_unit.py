@@ -223,5 +223,41 @@ class TrackerStopTest(unittest.TestCase):
             self.assertEqual(caught.exception.reason, "encore-slot-unknown")
 
 
+class CheckpointTablesTest(unittest.TestCase):
+    """The live tables come from the checkpoint (data.for_config): its data kind, its fingerprint checked against the
+    library's context of that kind; anything else raises before a game."""
+
+    def config(self, kind, fingerprint=None):
+        import duoforge
+        from duoforge import _layout
+        if fingerprint is None:
+            name = {"closure": "DUOFORGE_DATA_KIND_CLOSURE", "pool": "DUOFORGE_DATA_KIND_POOL"}[kind]
+            with duoforge.Context(data_kind=_layout.CONSTANTS[name]) as ctx:
+                fingerprint = ctx.fingerprint().hex()
+        return {"format": 2, "data": {"kind": kind, "fingerprint": fingerprint}}
+
+    def test_a_pool_checkpoint_gives_pool_tables_and_records(self):
+        from duoforge import state_layout
+        tables = data.for_config(self.config("pool"))
+        self.assertEqual(tables.kind, "pool")
+        head, size = tables.record_head()
+        self.assertEqual(size, 1357)  # the POOL encoding (DUOFORGE_VIEW_STATE_MAX)
+        start, length = next((s, n) for name, s, n in state_layout.fields(pool=False) if name == "fingerprint")
+        self.assertEqual(head[start:start + length].hex(), self.config("pool")["data"]["fingerprint"])
+        self.assertEqual(data.for_config(self.config("closure")).record_head()[1], 1009)
+
+    def test_a_mismatch_raises_at_construction(self):
+        with self.assertRaisesRegex(ValueError, "fingerprint"):
+            data.for_config(self.config("pool", "00" * 32))
+        closure = self.config("closure")["data"]["fingerprint"]
+        with self.assertRaisesRegex(ValueError, "fingerprint"):
+            data.for_config(self.config("pool", closure))  # closure tables named as pool
+        with self.assertRaisesRegex(ValueError, "no live tables"):
+            data.for_config({"data": {"kind": "team_c", "fingerprint": closure}})
+        for config in ({}, {"data": {"kind": "pool"}}, None):
+            with self.assertRaisesRegex(ValueError, "names no data kind"):
+                data.for_config(config)
+
+
 if __name__ == "__main__":
     unittest.main()

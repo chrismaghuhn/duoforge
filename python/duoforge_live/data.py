@@ -221,3 +221,27 @@ class Data:
 def load(root=ROOT, kind="closure"):
     return Data(root, kind)
 
+
+def for_config(config, root=ROOT):
+    """The tables of a checkpoint's config (its "data": the kind its network was trained on and the fingerprint of that
+    context): the live tracker reads the battle with them, and its public record is of that context. The kind must be one
+    the tracker has tables for (closure, pool) and the library's context of it must have the checkpoint's fingerprint;
+    anything else raises ValueError before a game starts, never another kind."""
+    entry = config.get("data") if isinstance(config, dict) else None
+    if not isinstance(entry, dict) or "kind" not in entry or "fingerprint" not in entry:
+        raise ValueError("the checkpoint names no data kind and fingerprint (config['data']): its tables are unknown")
+    kind = entry["kind"]
+    if kind not in _KINDS:
+        raise ValueError(f"the checkpoint's data kind {kind!r} has no live tables (one of {sorted(_KINDS)})")
+    tables = Data(root, kind)
+    found = tables.context().fingerprint().hex()
+    if found != entry["fingerprint"]:
+        raise ValueError(f"the checkpoint's {kind} fingerprint {entry['fingerprint']} is not the library's {found}: "
+                         "the network was trained on other tables than these")
+    return tables
+
+
+def for_checkpoint(path, root=ROOT):
+    """for_config of the checkpoint file at `path`."""
+    from duoforge_learn import checkpoint
+    return for_config(checkpoint.load(path)[1], root)
