@@ -1,0 +1,53 @@
+Clefable (F) @ Life Orb
+Ability: Magic Guard
+Level: 50
+EVs: 32 HP / 32 SpA / 2 Spe
+Modest Nature
+- Moonblast
+- Stealth Rock
+- Protect
+- Calm Mind
+
+Reuniclus (M) @ Sitrus Berry
+Ability: Magic Guard
+Level: 50
+EVs: 32 HP / 32 SpA / 2 Spe
+Modest Nature
+- Psychic
+- Substitute
+- Protect
+
+Alakazam (M) @ Focus Sash
+Ability: Magic Guard
+Level: 50
+EVs: 32 HP / 32 SpA / 2 Spe
+Timid Nature
+- Psychic
+- Calm Mind
+- Protect
+
+Tyranitar (M) @ Smooth Rock
+Ability: Sand Stream
+Level: 50
+EVs: 32 HP / 32 Atk / 2 SpD
+Adamant Nature
+- Sandstorm
+- Rock Slide
+- Protect
+
+Staraptor (F) @ Sharp Beak
+Ability: Intimidate
+Level: 50
+EVs: 32 HP / 2 SpD / 32 Spe
+Jolly Nature
+- Brave Bird
+- Hurricane
+- Protect
+
+Milotic (F) @ Leftovers
+Ability: Competitive
+Level: 50
+EVs: 32 HP / 29 Def / 5 SpD
+Calm Nature
+- Scald
+- Protect

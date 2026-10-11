@@ -1,0 +1,20 @@
+{
+  "name": "g67_update_sitrus_tie",
+  "purpose": "Step G67 regression, the post-residual each:Update tie of two equally fast Sitrus Berry holders (mechanism 2 of campaign seed 6700000 battle 10, a follow-on error of the hit-loop Update). Both sides lead with Reuniclus (Sitrus Berry, Psychic, Protect) and Staraptor; no Substitute, no weather (Tyranitar is benched). The two Reuniclus hit each other with Psychic and both eat their Sitrus Berry in the same turn; the Updates of the turn, the last one after the residual, draw the tie of their holders.",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,000000000000000000000000000000000000000000000000a6a0",
+  "teams": [
+    "Reuniclus (M) @ Sitrus Berry\nAbility: Magic Guard\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nModest Nature\n- Psychic\n- Substitute\n- Protect\n\nStaraptor (F) @ Sharp Beak\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 2 SpD / 32 Spe\nJolly Nature\n- Brave Bird\n- Hurricane\n- Protect\n\nMilotic (F) @ Leftovers\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Scald\n- Protect\n\nAlakazam (M) @ Focus Sash\nAbility: Magic Guard\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nTimid Nature\n- Psychic\n- Calm Mind\n- Protect\n\nClefable (F) @ Life Orb\nAbility: Magic Guard\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nModest Nature\n- Moonblast\n- Stealth Rock\n- Protect\n- Calm Mind\n\nTyranitar (M) @ Smooth Rock\nAbility: Sand Stream\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Sandstorm\n- Rock Slide\n- Protect",
+    "Reuniclus (M) @ Sitrus Berry\nAbility: Magic Guard\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nModest Nature\n- Psychic\n- Substitute\n- Protect\n\nStaraptor (F) @ Sharp Beak\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 2 SpD / 32 Spe\nJolly Nature\n- Brave Bird\n- Hurricane\n- Protect\n\nMilotic (F) @ Leftovers\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Scald\n- Protect\n\nAlakazam (M) @ Focus Sash\nAbility: Magic Guard\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nTimid Nature\n- Psychic\n- Calm Mind\n- Protect\n\nClefable (F) @ Life Orb\nAbility: Magic Guard\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nModest Nature\n- Moonblast\n- Stealth Rock\n- Protect\n- Calm Mind\n\nTyranitar (M) @ Smooth Rock\nAbility: Sand Stream\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Sandstorm\n- Rock Slide\n- Protect"
+  ],
+  "plan": {
+    "p1": [
+      "move 1 1, move 1 1"
+    ],
+    "p2": [
+      "move 1 1, move 1 1"
+    ],
+    "max_steps": 12
+  }
+}
