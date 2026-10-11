@@ -1992,6 +1992,13 @@ def step_events(log, viewer, roster_of, maxhp, tables, rb_pending=None, ill=None
             if (cause != CAUSE['MOVE'] or id2 != tables['MOVE'][key('Belly Drum')] or args[1] != 'atk' or flat is None
                     or boost_pre is None or flat not in boost_pre):
                 raise ConversionError('setboost', 'trace_to_c: -setboost outside the Belly Drum rule: %r' % line, detail='setboost')
+            # The line belongs to its holder's Belly Drum (data/moves.ts bellydrum onHit: directDamage, then boost atk 12): the last
+            # move line before it is that Pokemon's Belly Drum (lane B integration of G77: an Anger Point line that names Belly
+            # Drum is refused here, not converted).
+            last_move = next((prev.split('|') for prev in reversed(log[:i]) if prev.startswith('|move|')), None)
+            if last_move is None or len(last_move) < 4 or last_move[2] != parts[2] or last_move[3] != 'Belly Drum':
+                raise ConversionError('setboost', 'trace_to_c: -setboost not after the Belly Drum of its holder: %r' % line,
+                                      detail='setboost-move')
             name_before, before, name_after, after = boost_pre[flat]
             # The stage the boost starts from: the stage at the step's start, moved by the earlier Attack lines of this step on the
             # same Pokemon (a Tickle before Belly Drum in the same step, say); a -clearallboost before it is refused.

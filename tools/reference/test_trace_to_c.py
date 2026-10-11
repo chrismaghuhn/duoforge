@@ -3048,10 +3048,12 @@ class AngerPointSetboost(unittest.TestCase):
         self.assertEqual(trace_to_c.setboost_olds(trace['steps'][1]['log'], trace['steps'][0]['state']), [0])
 
     def test_bellydrum_cause_refused(self):
+        # Since lane A's G86 a Belly Drum -setboost has its own rule; this line, with no Belly Drum of its holder before it, is
+        # refused there (rule setboost, detail setboost-move) instead of by the Anger Point rule.
         spec, trace = self.mutated(lambda l: [l.replace('[from] ability: Anger Point', '[from] move: Bellydrum')])
         with self.assertRaises(trace_to_c.ConversionError) as cm:
             convert(self.NAME, spec, trace)
-        self.assertEqual(cm.exception.rule, 'setboost-line')
+        self.assertEqual((cm.exception.rule, cm.exception.detail), ('setboost', 'setboost-move'))
 
     def test_another_stat_refused(self):
         spec, trace = self.mutated(lambda l: [l.replace('|atk|', '|def|', 1)])

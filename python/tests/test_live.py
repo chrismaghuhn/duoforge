@@ -583,8 +583,9 @@ CLOSURE_OUTCOME = {"equal": 2594, "refused": 310}
 # later Substitute). Main (+408 equal, +28 refused): Attract #393, lane B G79/G81/G83 and the infatuated engine check.
 # Measured on the merged tree (CI 38140646950, Windows Python job): 10966 equal, 637 refused.
 # lane B G87 (the Attract source public; HS fold hs/g87-python): the 42 infatuated points build now: +42 equal, the engine-check
-# refusal is gone.
-POOL_OUTCOME = {"equal": 10966, "refused": 637, "tracker refuses: unburden-without-item-line": 4}
+# refusal is gone. Lane B G77 (crit package): +74 equal (its eight battles), no new refused record or stop. Measured on the
+# merged tree (main 0bc8d8d9 + G77 + G87): 11082 equal, 637 refused.
+POOL_OUTCOME = {"equal": 11082, "refused": 637, "tracker refuses: unburden-without-item-line": 4}
 POOL_STOPS = {"feature:SUBSTITUTE": 98, "feature:DRAGON_CHEER": 12, "feature:FORME_CHANGE": 10, "feature:DESTINY_BOND": 10,
               "feature:ROOST": 8, "line:-end": 2, "feature:ILLUSION": 2}
 
