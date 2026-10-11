@@ -465,6 +465,7 @@ class AttractFoldTest(unittest.TestCase):
         self.assertEqual(p.attract, 0)
 
     def test_the_silent_end_clears_it_and_only_its_own_form_folds(self):
+        from duoforge_live import lines
         t = self.tracker()
         t._member = lambda side: self.members()
         p = self.attracted(t)
@@ -540,6 +541,34 @@ class AttractFoldTest(unittest.TestCase):
         bit = tracker_module.C["DUOFORGE_POSITION_EXT_ATTRACT"]
         self.assertIn(("attract", bit), tracker_module._PRESENCE_BITS)
         self.assertEqual(tracker_module.EXT_FIELDS["RESERVE_VOLATILES"], (("bit", bit),))
+
+
+class AttractConfusionTest(unittest.TestCase):
+    """Step G71: a confused Pokemon that is infatuated shows its confusion line, the Attract check of the user, then the roll's
+    [cant] or [move] (src/combat/turn.c). The library classifies the action as the engine does (duoforge_move_result); the
+    check is no line of the result. Needs the library (the POOL tables)."""
+
+    @classmethod
+    def setUpClass(cls):
+        cls.data = data.load(kind="pool")
+
+    def test_confusion_then_attract_is_one_classified_action(self):
+        from duoforge._state_layout import VALUES
+        from duoforge_live import record
+        from duoforge_live.data import trace_to_c
+        EV, CAUSE, NOPOS = trace_to_c.EV, trace_to_c.CAUSE, trace_to_c.NOPOS
+        moves = self.data.tables["MOVE"]
+        confused = trace_to_c.ev_tuple(EV["CONFUSED"], 2)
+        check = trace_to_c.ev_tuple(EV["ACTIVATE"], 2, 0, CAUSE["MOVE"], 0, moves["ATTRACT"])
+        cant = trace_to_c.ev_tuple(EV["CANT"], 2, NOPOS, CAUSE["ATTRACT"])
+        self.assertEqual(record.move_result_of(self.data, 2, [confused, check, cant]), VALUES["DFI_MOVE_RESULT_FALSE"])
+        move = trace_to_c.ev_tuple(EV["MOVE"], 2, 0, CAUSE["NONE"], moves["THUNDERBOLT"])
+        hit = trace_to_c.ev_tuple(EV["DAMAGE"], 0, NOPOS, CAUSE["NONE"])
+        self.assertEqual(record.move_result_of(self.data, 2, [confused, check, move, hit]), VALUES["DFI_MOVE_RESULT_TRUE"])
+        # the check of another move is no Attract's check: the action's result is not determined (None), and record.py
+        # refuses the record with a named reason (move-result-not-determined), never a silent value
+        other = trace_to_c.ev_tuple(EV["ACTIVATE"], 2, 0, CAUSE["MOVE"], 0, moves["TAILWIND"])
+        self.assertIsNone(record.move_result_of(self.data, 2, [confused, other, cant]))
 
 
 class HpDisplayTest(unittest.TestCase):

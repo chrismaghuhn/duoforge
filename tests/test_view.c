@@ -1377,6 +1377,23 @@ static void test_move_result(df_test *t)
     ev[2] = mr_ev(DUOFORGE_EVENT_VOLATILE_END, 1u, none, DUOFORGE_CAUSE_NONE, 0u, 0u);
     ev[2].detail = (uint8_t)DUOFORGE_VOLATILE_SUBSTITUTE;
     DF_CHECK(t, mr_of(t, kp, 2u, ev, 3u) == DFI_MOVE_RESULT_TRUE);
+    /* Confusion, then Attract's check of the user (step G71), then its roll: a [cant] (cause ATTRACT) is false, a [move] is
+     * classified as the move (true when it hits); the check is no line of the result, so it is not a refusal. A check that
+     * names another move, or a confusion with no line after it, is still refused. */
+    ev[0] = mr_ev(DUOFORGE_EVENT_CONFUSED, 1u, none, DUOFORGE_CAUSE_NONE, 0u, 0u);
+    ev[1] = mr_ev(DUOFORGE_EVENT_ACTIVATE, 1u, 0u, DUOFORGE_CAUSE_MOVE, 0u, DFI_MOVE_ATTRACT);
+    ev[2] = mr_ev(DUOFORGE_EVENT_CANT, 1u, none, DUOFORGE_CAUSE_ATTRACT, 0u, 0u);
+    DF_CHECK(t, mr_of(t, kp, 1u, ev, 3u) == DFI_MOVE_RESULT_FALSE);
+    ev[2] = mr_ev(DUOFORGE_EVENT_MOVE, 1u, 2u, DUOFORGE_CAUSE_NONE, DFI_MOVE_THUNDERBOLT, 0u);
+    ev[3] = mr_ev(DUOFORGE_EVENT_DAMAGE, 2u, none, DUOFORGE_CAUSE_NONE, 0u, 0u);
+    DF_CHECK(t, mr_of(t, kp, 1u, ev, 4u) == DFI_MOVE_RESULT_TRUE);
+    uint8_t out_dummy = 0x55u;
+    ev[1] = mr_ev(DUOFORGE_EVENT_ACTIVATE, 1u, 0u, DUOFORGE_CAUSE_MOVE, 0u, DFI_MOVE_TAILWIND);
+    DF_CHECK(t, duoforge_move_result(kp, 1u, ev, 4u, &out_dummy) == DUOFORGE_E_UNSUPPORTED);
+    DF_CHECK(t, out_dummy == 0x55u);
+    DF_CHECK(t, duoforge_move_result(kp, 1u, ev, 1u, &out_dummy) == DUOFORGE_E_UNSUPPORTED);
+    DF_CHECK(t, out_dummy == 0x55u);
+
     /* refusals, nothing written: a handler not mapped (Substitute), no action of the user, a context without the tail */
     uint8_t out = 0x55u;
     ev[0] = mr_ev(DUOFORGE_EVENT_MOVE, 0u, 0u, DUOFORGE_CAUSE_NONE, DFI_MOVE_SUBSTITUTE, 0u);
