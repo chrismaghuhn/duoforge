@@ -6259,8 +6259,11 @@ static duoforge_status dfi_status_effects(dfi_run *r, uint32_t user, uint32_t mo
                 if (st != DUOFORGE_OK) {
                     return st;
                 }
-                if (!terrain) {
-                    confuse_plain_fail = true; /* a target the change did not reach (already confused, or nothing changed) */
+                /* combineResults (sim/battle-actions.ts:1561-1573): a target's result is false when a boost was refused (the
+                 * PRIMARY_TARGET boost is a boolean) or when the volatile answers false; a Misty Terrain null alone is no
+                 * failure, and a null does not beat a false in the combination. So the target fails unless one of them changed. */
+                if (!(changed_i || added) && (md->boost_role == DFI_BOOST_ROLE_PRIMARY_TARGET || !terrain)) {
+                    confuse_plain_fail = true;
                 }
                 did = did || added || changed_i;
                 if (added || changed_i) {
