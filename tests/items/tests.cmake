@@ -8,3 +8,4 @@ duoforge_add_test(NAME duoforge.state.pool_g16 SOURCES items/test_pool_g16.c WHI
 duoforge_add_test(NAME duoforge.state.pool_g29 SOURCES items/test_pool_g29.c WHITEBOX TIMEOUT 60)
 # Step G49, the item rows Muscle Band, Wise Glasses and Bright Powder: the marks, the chain orders of Wide Lens and Bright Powder.
 duoforge_add_test(NAME duoforge.state.pool_g49 SOURCES items/test_pool_g49.c WHITEBOX TIMEOUT 60)
+duoforge_add_test(NAME duoforge.state.pool_g55 SOURCES items/test_pool_g55.c WHITEBOX TIMEOUT 60)
