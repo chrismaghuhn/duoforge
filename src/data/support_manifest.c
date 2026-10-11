@@ -627,6 +627,9 @@ const dfi_support_manifest dfi_support = {
             [DFI_ABILITY_WATERBUBBLE] = 1u, /* step G65: Araquanid (Fire x0.5 at the holder, Water x2, no burn) */
             [DFI_ABILITY_RECKLESS] = 1u, /* step G65: Staraptor, Rhyperior and Emboar (recoil moves x1.2) */
             [DFI_ABILITY_SUPERLUCK] = 1u, /* step G65: Absol (crit ratio +1) */
+            /* step G75, the cheap set: */
+            [DFI_ABILITY_PUREPOWER] = 1u, /* Medicham and Medicham-Mega: Attack x2 for a physical move (data/abilities.ts:3608-3617) */
+            [DFI_ABILITY_BATTLEARMOR] = 1u, /* Perrserker and Falinks: no critical hit against the holder (data/abilities.ts:355-361) */
             [DFI_ABILITY_MOODY] = 1u, /* step G73: Glalie and Scovillain (the residual rise and fall, one boost of +2 and -1) */
             [DFI_ABILITY_CUTECHARM] = 1u, /* step G71 (decision 0034): Milotic (F, Cute Charm) infatuates a contact attacker of the other gender */
         },
@@ -728,7 +731,7 @@ const dfi_support_manifest dfi_support = {
             [DFI_ITEM_CAMERUPTITE] = 1u, /* step G61: the Mega Stone of Camerupt (Camerupt-Mega: Sheer Force) */
             [DFI_ITEM_FERALIGITE] = 1u,  /* step G61: the Mega Stone of Feraligatr (Feraligatr-Mega: Dragonize) */
             /* Step G57 (Mega batch 4): Absolite (Absol-Mega, with the base's Justified) and Sablenite (Sableye-Mega, with the base's
-             * Prankster). Absolite Z is marked by G43; Clefablite stays unmarked (Clefable's abilities are unmarked). */
+             * Prankster). Absolite Z is marked by G43; Clefablite was unmarked until step G75 (Unaware, its hidden ability, is marked by G65). */
             [DFI_ITEM_ABSOLITE] = 1u,
             [DFI_ITEM_SABLENITE] = 1u,
             /* Step G63 (simple Mega abilities, mark only for the stones): six Mega Stones whose Mega ability is marked (Sand Force,
@@ -777,6 +780,9 @@ const dfi_support_manifest dfi_support = {
             [DFI_ITEM_TANGABERRY] = 1u,
             [DFI_ITEM_WACANBERRY] = 1u,
             [DFI_ITEM_YACHEBERRY] = 1u,
+            [DFI_ITEM_SCOPELENS] = 1u,  /* step G75: +1 to the holder's critical ratio (data/items.ts:5554-5565) */
+            [DFI_ITEM_MEDICHAMITE] = 1u, /* step G75: Medicham-Mega (Pure Power), the stone of 5p (data/items.ts:3865-3876) */
+            [DFI_ITEM_CLEFABLITE] = 1u,  /* step G75: Clefable-Mega (Magic Bounce), Clefable with its hidden Unaware (data/items.ts:1088-1099) */
         },    /* The POOL player-view extension (decision 0018): a bit is set by the step that implements the feature and
      * records its battles. Step G8: Throat Chop and Heal Block (the position bits of duoforge_observation_ext, public,
      * verified against g8_throat_chop, g8_heal_block, g8_heal_block_pair and _tie_a/_b step by step in

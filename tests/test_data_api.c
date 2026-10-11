@@ -795,7 +795,8 @@ static void test_support(df_test *t, const kase *c)
         DF_CHECK(t, api_supported(t, c, DUOFORGE_DATA_TABLE_MOVE, DFI_MOVE_WIDEGUARD)); /* step G7 */
         DF_CHECK(t, api_supported(t, c, DUOFORGE_DATA_TABLE_ITEM, DFI_ITEM_FLOETTITE)); /* step G12 */
         DF_CHECK(t, api_supported(t, c, DUOFORGE_DATA_TABLE_ITEM, DFI_ITEM_EXPERTBELT)); /* step G28 */
-        DF_CHECK(t, !api_supported(t, c, DUOFORGE_DATA_TABLE_ITEM, DFI_ITEM_SCOPELENS));
+        /* an item that stays unsupported (Scope Lens is marked since step G75): Quick Claw, which is UNMODELLED */
+        DF_CHECK(t, !api_supported(t, c, DUOFORGE_DATA_TABLE_ITEM, DFI_ITEM_QUICKCLAW));
     }
 }
 

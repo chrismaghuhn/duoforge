@@ -1617,8 +1617,10 @@ static duoforge_status dfi_get_damage(dfi_run *r, uint32_t user, uint32_t target
     /* ModifyCritRatio (sim/battle-actions.ts:1624): the attacker's Dragon Cheer stage and Super Luck (step G65,
      * data/abilities.ts:4703-4711, onModifyCritRatio of the user, not breakable: +1) added to the move's ratio, then the
      * clamp to 0..4 for gen 9 (sim/battle-actions.ts:1623-1633). */
+    /* Step G75: Scope Lens (data/items.ts:5554-5565, onModifyCritRatio +1) is the holder's item, one more term of the same sum. */
     uint32_t ratio = (uint32_t)md->crit_ratio + dfi_dragon_cheer_stage(r->b, user) +
-                     (dfi_ability(r->b, a, DFI_ABILITY_SUPERLUCK) ? 1u : 0u);
+                     (dfi_ability(r->b, a, DFI_ABILITY_SUPERLUCK) ? 1u : 0u) +
+                     (dfi_holds(r->b, a, DFI_ITEM_SCOPELENS) ? 1u : 0u);
     if (ratio > 4u) {
         ratio = 4u;
     }
@@ -1631,7 +1633,8 @@ static duoforge_status dfi_get_damage(dfi_run *r, uint32_t user, uint32_t target
     /* Shell Armor (step G63, data/abilities.ts:4222-4228, onCriticalHit false): the target's CriticalHit event runs after the
      * roll (sim/battle-actions.ts:1640-1646), so the draw above is taken and the hit is then not a critical one: no crit
      * modifier and no [-crit] line. Breakable; Mold Breaker is not marked. */
-    if (crit && dfi_ability(r->b, d, DFI_ABILITY_SHELLARMOR)) {
+    /* Battle Armor (step G75, data/abilities.ts:355-361, the same onCriticalHit false as Shell Armor, breakable): the same cancel. */
+    if (crit && (dfi_ability(r->b, d, DFI_ABILITY_SHELLARMOR) || dfi_ability(r->b, d, DFI_ABILITY_BATTLEARMOR))) {
         crit = false;
     }
     const bool physical = md->category == DFI_CATEGORY_PHYSICAL;
@@ -1949,7 +1952,8 @@ static duoforge_status dfi_get_damage(dfi_run *r, uint32_t user, uint32_t target
      *   Thick Fat (data/abilities.ts:5014-5030, onSourceModifyAtkPriority 6 and onSourceModifySpAPriority 5, breakable: no
      *     Mold Breaker is marked): x0.5 for an Ice or Fire move against its holder (the target, the `source` of the
      *     event), either category. */
-    if (physical && dfi_ability(r->b, a, DFI_ABILITY_HUGEPOWER)) {
+    /* Pure Power (step G75, data/abilities.ts:3608-3617, as Huge Power: onModifyAtk x2 for a physical move of its holder). */
+    if (physical && (dfi_ability(r->b, a, DFI_ABILITY_HUGEPOWER) || dfi_ability(r->b, a, DFI_ABILITY_PUREPOWER))) {
         ok = ok && dfi_chain_modify(atk_chain, 8192u, &atk_chain);
     }
     if (move_type == DFI_TYPE_FIRE && dfi_ability(r->b, a, DFI_ABILITY_FIREMANE)) {

@@ -2021,7 +2021,7 @@ const dfi_pool_item_data dfi_pool_items[DFI_POOL_ITEM_COUNT] = {
     {101u, 102u},
     /* Scolipite -- data/items.ts:5542-5553, data/mods/champions/items.ts:842-845 */
     {201u, 202u},
-    /* Scope Lens -- data/items.ts:5554-5565  [unmodelled: callback onModifyCritRatio] */
+    /* Scope Lens -- data/items.ts:5554-5565 */
     {DFI_FORME_NONE, DFI_FORME_NONE},
     /* Scovillainite -- data/items.ts:5566-5577, data/mods/champions/items.ts:846-849 */
     {333u, 334u},
@@ -2076,7 +2076,7 @@ const dfi_pool_item_data dfi_pool_items[DFI_POOL_ITEM_COUNT] = {
  *   anticipation -- data/abilities.ts:174-195  [unmodelled: callback onStart]
  *   aromaveil -- data/abilities.ts:234-248  [unmodelled: callback onAllyTryAddVolatile]
  *   auraguard -- data/abilities.ts:310-319
- *   battlearmor -- data/abilities.ts:355-361  [unmodelled: callback onCriticalHit]
+ *   battlearmor -- data/abilities.ts:355-361
  *   berserk -- data/abilities.ts:414-444, data/mods/champions/abilities.ts:8-13  [unmodelled: callback onAfterMoveSecondary; callback onDamage; callback onTryEatItem]
  *   bigpecks -- data/abilities.ts:445-459
  *   bulletproof -- data/abilities.ts:480-491  [unmodelled: callback onTryHit]
@@ -2179,7 +2179,7 @@ const dfi_pool_item_data dfi_pool_items[DFI_POOL_ITEM_COUNT] = {
  *   pressure -- data/abilities.ts:3437-3449
  *   protean -- data/abilities.ts:3497-3512  [unmodelled: callback onPrepareHit]
  *   punkrock -- data/abilities.ts:3589-3607
- *   purepower -- data/abilities.ts:3608-3617  [unmodelled: callback onModifyAtk; callback onModifyAtkPriority]
+ *   purepower -- data/abilities.ts:3608-3617
  *   purifyingsalt -- data/abilities.ts:3618-3649  [unmodelled: callback onSetStatus; callback onSourceModifyAtk; callback onSourceModifyAtkPriority; callback onSourceModifySpA; callback onSourceModifySpAPriority; callback onTryAddVolatile]
  *   queenlymajesty -- data/abilities.ts:3716-3734
  *   quickdraw -- data/abilities.ts:3735-3747  [unmodelled: callback onFractionalPriority; callback onFractionalPriorityPriority]
@@ -2798,7 +2798,7 @@ const uint8_t dfi_pool_item_handler[DFI_POOL_ITEM_COUNT] = {
     [DFI_ITEM_SCEPTILITE] = DFI_HANDLER_NONE,
     [DFI_ITEM_SCIZORITE] = DFI_HANDLER_NONE,
     [DFI_ITEM_SCOLIPITE] = DFI_HANDLER_NONE,
-    [DFI_ITEM_SCOPELENS] = DFI_HANDLER_UNMODELED,
+    [DFI_ITEM_SCOPELENS] = DFI_HANDLER_NONE,
     [DFI_ITEM_SCOVILLAINITE] = DFI_HANDLER_NONE,
     [DFI_ITEM_SCRAFTINITE] = DFI_HANDLER_NONE,
     [DFI_ITEM_SHARPEDONITE] = DFI_HANDLER_NONE,
@@ -2855,7 +2855,7 @@ const uint8_t dfi_pool_ability_handler[DFI_POOL_ABILITY_COUNT] = {
     [DFI_ABILITY_ANTICIPATION] = DFI_HANDLER_UNMODELED,
     [DFI_ABILITY_AROMAVEIL] = DFI_HANDLER_UNMODELED,
     [DFI_ABILITY_AURAGUARD] = DFI_HANDLER_NONE,
-    [DFI_ABILITY_BATTLEARMOR] = DFI_HANDLER_UNMODELED,
+    [DFI_ABILITY_BATTLEARMOR] = DFI_HANDLER_NONE,
     [DFI_ABILITY_BERSERK] = DFI_HANDLER_UNMODELED,
     [DFI_ABILITY_BIGPECKS] = DFI_HANDLER_NONE,
     [DFI_ABILITY_BULLETPROOF] = DFI_HANDLER_UNMODELED,
@@ -2958,7 +2958,7 @@ const uint8_t dfi_pool_ability_handler[DFI_POOL_ABILITY_COUNT] = {
     [DFI_ABILITY_PRESSURE] = DFI_HANDLER_NONE,
     [DFI_ABILITY_PROTEAN] = DFI_HANDLER_UNMODELED,
     [DFI_ABILITY_PUNKROCK] = DFI_HANDLER_NONE,
-    [DFI_ABILITY_PUREPOWER] = DFI_HANDLER_UNMODELED,
+    [DFI_ABILITY_PUREPOWER] = DFI_HANDLER_NONE,
     [DFI_ABILITY_PURIFYINGSALT] = DFI_HANDLER_UNMODELED,
     [DFI_ABILITY_QUEENLYMAJESTY] = DFI_HANDLER_NONE,
     [DFI_ABILITY_QUICKDRAW] = DFI_HANDLER_UNMODELED,
@@ -6998,7 +6998,6 @@ const char *const dfi_pool_item_unmodeled[DFI_POOL_ITEM_COUNT] = {
     [DFI_ITEM_PERSIMBERRY] = "callback onEat; callback onUpdate",
     [DFI_ITEM_QUICKCLAW] = "callback onFractionalPriority; callback onFractionalPriorityPriority",
     [DFI_ITEM_RAWSTBERRY] = "callback onEat; callback onUpdate",
-    [DFI_ITEM_SCOPELENS] = "callback onModifyCritRatio",
     [DFI_ITEM_SHEDSHELL] = "callback onMaybeTrapPokemon; callback onMaybeTrapPokemonPriority; callback onTrapPokemon; callback onTrapPokemonPriority",
     [DFI_ITEM_SHELLBELL] = "callback onAfterMoveSecondarySelf; callback onAfterMoveSecondarySelfPriority",
     [DFI_ITEM_ZOOMLENS] = "callback onSourceModifyAccuracy; callback onSourceModifyAccuracyPriority",
@@ -7010,7 +7009,6 @@ const char *const dfi_pool_ability_unmodeled[DFI_POOL_ABILITY_COUNT] = {
     [DFI_ABILITY_ANGERPOINT] = "callback onHit; read by id in sim/battle.ts",
     [DFI_ABILITY_ANTICIPATION] = "callback onStart",
     [DFI_ABILITY_AROMAVEIL] = "callback onAllyTryAddVolatile",
-    [DFI_ABILITY_BATTLEARMOR] = "callback onCriticalHit",
     [DFI_ABILITY_BERSERK] = "callback onAfterMoveSecondary; callback onDamage; callback onTryEatItem",
     [DFI_ABILITY_BULLETPROOF] = "callback onTryHit",
     [DFI_ABILITY_CHEEKPOUCH] = "callback onEatItem",
@@ -7072,7 +7070,6 @@ const char *const dfi_pool_ability_unmodeled[DFI_POOL_ABILITY_COUNT] = {
     [DFI_ABILITY_POISONHEAL] = "callback onDamage; callback onDamagePriority",
     [DFI_ABILITY_POISONPOINT] = "callback onDamagingHit",
     [DFI_ABILITY_PROTEAN] = "callback onPrepareHit",
-    [DFI_ABILITY_PUREPOWER] = "callback onModifyAtk; callback onModifyAtkPriority",
     [DFI_ABILITY_PURIFYINGSALT] = "callback onSetStatus; callback onSourceModifyAtk; callback onSourceModifyAtkPriority; callback onSourceModifySpA; callback onSourceModifySpAPriority; callback onTryAddVolatile",
     [DFI_ABILITY_QUICKDRAW] = "callback onFractionalPriority; callback onFractionalPriorityPriority",
     [DFI_ABILITY_QUICKFEET] = "callback onModifySpe; read by id in data/conditions.ts",
@@ -7108,10 +7105,10 @@ const char *const dfi_pool_ability_unmodeled[DFI_POOL_ABILITY_COUNT] = {
 };
 
 const uint8_t dfi_pool_table_hash[32] = {
-    0x40u, 0xe2u, 0xe4u, 0x76u, 0xb8u, 0xffu, 0x05u, 0xc4u,
-    0xf2u, 0x73u, 0x9au, 0x1fu, 0x8cu, 0x48u, 0x8cu, 0x3bu,
-    0xa4u, 0x96u, 0x9au, 0xb3u, 0x50u, 0x80u, 0xceu, 0xf6u,
-    0xd6u, 0x71u, 0x21u, 0xb5u, 0x41u, 0xedu, 0x4cu, 0x37u,
+    0xbfu, 0x59u, 0x19u, 0xbcu, 0xc1u, 0x05u, 0x22u, 0x51u,
+    0x4bu, 0x9eu, 0xc3u, 0x1eu, 0x06u, 0x07u, 0xbcu, 0xe4u,
+    0xd4u, 0x78u, 0x81u, 0x4bu, 0xadu, 0x22u, 0x97u, 0x4cu,
+    0x17u, 0xe1u, 0x34u, 0x59u, 0xdfu, 0x2du, 0x1du, 0xf4u,
 };
 
 static size_t dfi_pool_put_u16(uint8_t *out, size_t n, uint32_t v)
