@@ -7,7 +7,9 @@ the library judge each team by creating a battle of the team against
 itself; a team it refuses raises TeamError naming the team and the status.
 
 load_root loads every team of a registry or random-team corpus (tools/reference/random_teams.py), combine joins a
-corpus to a registry pool with a per-side share, and corpus_provenance is what a run records of the corpus.
+corpus to a registry pool with a per-side share, and corpus_provenance is what a run records of the corpus; load_corpus
+gives the pool and the provenance from one read of the corpus's files, and check_disjoint refuses a team id in two
+registries or corpora (a held-out corpus against a training one).
 
 A TeamPool holds the teams a run plays: their registry ids, the sha256 of
 their files ("" for teams made from setups), sampling weights and side
@@ -217,7 +219,12 @@ def load(context, ids, root="data/teams", weights=None):
     match its index hash, parse, map to ids and be accepted by the library."""
     index_path = os.path.join(root, "index.json")
     with open(index_path, encoding="utf-8") as f:
-        index = {t["id"]: t for t in json.load(f)["teams"]}
+        return _load(context, ids, root, weights, json.load(f), index_path)
+
+
+def _load(context, ids, root, weights, index_json, index_path):
+    """load's work on an index already read (index_json, the parsed index.json at index_path)."""
+    index = {t["id"]: t for t in index_json["teams"]}
     shas, sides = [], []
     for team in ids:
         if team not in index:
@@ -269,6 +276,39 @@ def corpus_provenance(root):
     """What a run records of the random-team corpus at root: its generator's pin and seed, its team count and the
     sha256 of its index.json and manifest.json. TeamError when they are missing or the manifest's teams digest is not
     the index's (an index changed after the corpus was made)."""
+    return _read_corpus(root)[1]
+
+
+def load_corpus(context, root):
+    """(pool, provenance) of the random-team corpus at root, both from one read of its index.json: load_root's pool
+    and corpus_provenance's record, so the teams a run plays are the ones it records. TeamError as theirs."""
+    index, provenance = _read_corpus(root)
+    if not index["teams"]:
+        raise TeamError(f"{root}: the corpus names no team")
+    ids = [t["id"] for t in index["teams"]]
+    return _load(context, ids, root, None, index, os.path.join(root, "index.json")), provenance
+
+
+def check_disjoint(*roots):
+    """TeamError unless no team id is in two of the registries or corpora at roots (each read from its index.json):
+    a held-out corpus shares no team with a training one. Random-team ids are content addressed (RT_<sha16>), so the
+    same team drawn twice has the same id."""
+    seen = {}
+    for root in roots:
+        index_path = os.path.join(root, "index.json")
+        try:
+            with open(index_path, encoding="utf-8") as f:
+                ids = [t["id"] for t in json.load(f)["teams"]]
+        except (OSError, ValueError, KeyError, TypeError) as err:
+            raise TeamError(f"{index_path}: not a team index ({err})") from None
+        for tid in ids:
+            if tid in seen and seen[tid] != root:
+                raise TeamError(f"team {tid} is in both {seen[tid]} and {root}")
+            seen[tid] = root
+
+
+def _read_corpus(root):
+    """(the parsed index.json, the provenance) of the corpus at root, from one read of each file."""
     try:
         with open(os.path.join(root, "index.json"), "rb") as f:
             index_raw = f.read()
@@ -282,5 +322,6 @@ def corpus_provenance(root):
     if hashlib.sha256("".join(shas).encode()).hexdigest() != digest:
         raise TeamError(f"{root}: the manifest's teams_sha256 is not the index's (the index changed after the corpus "
                         "was made)")
-    return {"pin": pin, "seed": seed, "count": len(shas), "index_sha256": hashlib.sha256(index_raw).hexdigest(),
-            "manifest_sha256": hashlib.sha256(manifest_raw).hexdigest()}
+    return index, {"pin": pin, "seed": seed, "count": len(shas),
+                   "index_sha256": hashlib.sha256(index_raw).hexdigest(),
+                   "manifest_sha256": hashlib.sha256(manifest_raw).hexdigest()}

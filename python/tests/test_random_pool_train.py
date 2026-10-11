@@ -52,6 +52,21 @@ class RandomPoolTrainTest(unittest.TestCase):
         with self.assertRaisesRegex(SystemExit, "not the run's corpus"):
             _train(["--resume", self.out, "--updates", "3"])
 
+    def test_a_resume_may_change_the_share_and_the_log_records_it(self):
+        from duoforge_learn import runstate
+        argv = ["--out", self.out, "--updates", "1", "--random-teams-root", self.root, "--random-team-share", "0.5"]
+        self.assertEqual(_train(argv + self.base), 0)
+        self.assertEqual(_train(["--resume", self.out, "--updates", "2", "--random-team-share", "0.25"]), 0)
+        state = runstate.load_state(self.out)
+        self.assertEqual(state["train"]["random_team_share"], 0.25)
+        weights = state["teams"]["weights"]
+        self.assertAlmostEqual(sum(weights[2:]) / sum(weights), 0.25)  # the corpus's share of each side's draw
+        with open(os.path.join(self.out, "log.jsonl"), encoding="utf-8") as f:
+            resumes = [r for r in (json.loads(line) for line in f) if "resume" in r]
+        self.assertEqual(resumes[-1]["resume"]["random_team_share"], [0.5, 0.25])
+        self.assertIn("teams", resumes[-1]["resume"])  # the pool's weights changed with it
+        self.assertEqual(resumes[-1]["random_teams"]["count"], 3)
+
     def test_the_options_go_together_and_a_bad_corpus_stops(self):
         with self.assertRaisesRegex(SystemExit, "go together"):
             _train(["--out", self.out, "--updates", "1", "--random-teams-root", self.root] + self.base)

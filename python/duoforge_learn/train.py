@@ -459,16 +459,16 @@ def _default_pool():
     return teams.TeamPool.from_setups(("A", "B"), duoforge.reference_setups([0])["sides"][0])
 
 
-def _pool_of_args(args, context):
-    """The pool the options name: registry teams (--teams) or Teams A and B, joined by the random-team corpus of
-    --random-teams-root at --random-team-share (teams.combine)."""
+def _pool_of_args(args, context, corpus=None):
+    """The pool the options name: registry teams (--teams) or Teams A and B, joined by the random-team corpus
+    (teams.load_corpus of --random-teams-root) at --random-team-share (teams.combine)."""
     weights = None if args.team_weights is None else [float(w) for w in args.team_weights.split(",")]
     if args.teams is None:
         pool = _default_pool() if weights is None else _default_pool().with_weights(weights)
     else:
         pool = teams.load(context, [t.strip() for t in args.teams.split(",")], root=args.teams_root, weights=weights)
-    if args.random_teams_root is not None:
-        pool = teams.combine(pool, teams.load_root(context, args.random_teams_root), args.random_team_share)
+    if corpus is not None:
+        pool = teams.combine(pool, corpus, args.random_team_share)
     return pool
 
 
@@ -529,17 +529,17 @@ def _run(args, pool, on_start, stop):
     ids = checkpoint.ids_of(context)  # what the embedded ids mean (spec 12.4), kept in the run state
     if (args.random_teams_root is None) != (args.random_team_share is None):
         raise SystemExit("--random-teams-root and --random-team-share go together")
-    random_teams = None
+    random_teams = corpus = None
     if args.random_teams_root is not None:  # the corpus a run records, and keeps across its resumes
-        try:
-            random_teams = teams.corpus_provenance(args.random_teams_root)
+        try:  # one read of its index: the teams played are the ones recorded
+            corpus, random_teams = teams.load_corpus(context, args.random_teams_root)
         except teams.TeamError as err:
             raise SystemExit(str(err)) from None
         if saved_state is not None and saved_state["train"].get("random_teams") != random_teams:
             raise SystemExit(f"--random-teams-root {args.random_teams_root} is not the run's corpus "
                              f"({saved_state['train'].get('random_teams')} -> {random_teams})")
     try:
-        pool = _pool_of_args(args, context) if pool is None else pool
+        pool = _pool_of_args(args, context, corpus) if pool is None else pool
     except (teams.TeamError, ValueError) as err:
         raise SystemExit(str(err)) from None
     if saved_state is not None:

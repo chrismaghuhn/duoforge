@@ -27,11 +27,12 @@ def _registry_ids(count):
         return [t["id"] for t in json.load(f)["teams"] if t["id"].startswith("PP_")][:count]
 
 
-def make_corpus(folder, count=3, seed="0x2026101100000017", pin="b2cb775"):
-    """A corpus in random_teams.py's form from registry pastes (POOL teams the library accepts), renamed RT_<sha16>."""
+def make_corpus(folder, count=3, seed="0x2026101100000017", pin="b2cb775", skip=0):
+    """A corpus in random_teams.py's form from registry pastes (POOL teams the library accepts, the PP_ ones after the
+    first skip), renamed RT_<sha16>."""
     os.makedirs(folder)
     entries = []
-    for tid in _registry_ids(count):
+    for tid in _registry_ids(skip + count)[skip:]:
         with open(os.path.join(REGISTRY, f"{tid}.txt"), "rb") as f:
             raw = f.read()
         rid = "RT_" + hashlib.sha256(raw).hexdigest()[:16]
@@ -108,6 +109,32 @@ class RandomPoolTest(unittest.TestCase):
                 teams.combine(registry, corpus, bad)
         with self.assertRaisesRegex(ValueError, "unique"):  # the same team in both
             teams.combine(corpus, corpus, 0.5)
+
+    def test_load_corpus_reads_the_pool_and_its_provenance_from_one_index(self):
+        pool, provenance = teams.load_corpus(self.ctx, self.root)
+        self.assertEqual(list(pool.ids), self.ids)
+        self.assertEqual(list(pool.sha256), list(teams.load_root(self.ctx, self.root).sha256))
+        self.assertEqual(provenance, teams.corpus_provenance(self.root))
+        # An index that is not the manifest's stops before a team is loaded.
+        with open(os.path.join(self.root, "index.json"), encoding="utf-8") as f:
+            index = json.load(f)
+        index["teams"] = index["teams"][:2]
+        with open(os.path.join(self.root, "index.json"), "w", encoding="utf-8") as f:
+            json.dump(index, f)
+        with self.assertRaisesRegex(teams.TeamError, "manifest"):
+            teams.load_corpus(self.ctx, self.root)
+
+    def test_check_disjoint_refuses_a_team_in_two_corpora(self):
+        held = os.path.join(self.tmp.name, "held")
+        make_corpus(held, count=2, seed="0x2026101100000018", skip=3)
+        teams.check_disjoint(self.root, held)  # a training corpus and a held-out one share no id
+        teams.check_disjoint(self.root, held, REGISTRY)
+        again = os.path.join(self.tmp.name, "again")
+        same = make_corpus(again, count=1, seed="0x2026101100000019")  # ids are content addressed: the same team
+        with self.assertRaisesRegex(teams.TeamError, same[0]):
+            teams.check_disjoint(self.root, held, again)
+        with self.assertRaises(teams.TeamError):
+            teams.check_disjoint(self.root, os.path.join(self.tmp.name, "missing"))
 
     def test_provenance(self):
         got = teams.corpus_provenance(self.root)
