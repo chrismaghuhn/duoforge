@@ -1724,7 +1724,8 @@ int main(void)
                 }
                 *tail_byte(b, k) = 0u;
             }
-            DF_CHECK_EQ_U64(&t, refused, sizeof b->tail);
+            /* every byte but the four position pads (never encoded, not state: decision 0060) is refused */
+            DF_CHECK_EQ_U64(&t, refused, sizeof b->tail - DUOFORGE_SIDE_COUNT * DUOFORGE_ACTIVE_PER_SIDE);
             DF_CHECK(&t, duoforge_battle_check(kinds[i], b) == DUOFORGE_OK);
             duoforge_battle_destroy(b);
         }
@@ -1836,7 +1837,8 @@ int main(void)
                 duoforge_battle_destroy(y);
             }
         }
-        DF_CHECK_EQ_U64(&t, refused, 2u * sizeof(dfi_tail_pos));
+        /* every byte of the position but its pad (never encoded, not state: decision 0060) is refused, for both fainted cases */
+        DF_CHECK_EQ_U64(&t, refused, 2u * (sizeof(dfi_tail_pos) - 1u));
         duoforge_battle_destroy(x);
     }
 
