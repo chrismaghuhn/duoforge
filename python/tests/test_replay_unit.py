@@ -1000,7 +1000,7 @@ class GameTest(unittest.TestCase):
                          (2 * result.record.turns, 2 * result.record.turns))
 
     def test_turn_coverage_ends_at_the_stop(self):
-        result = self.run_game(self.insert_after("|turn|2", "|-start|p2a: Politoed|move: Heal Block"))
+        result = self.run_game(self.insert_after("|turn|2", "|-start|p2a: Politoed|Substitute"))
         self.assertEqual(result.counters["turns.total"], 2 * result.record.turns)
         self.assertEqual(result.counters["turns.kept"], 2 * 1)  # turn 1 complete, turn 2 stopped
         self.assertEqual(result.counters["games.both_kept"], 0)
