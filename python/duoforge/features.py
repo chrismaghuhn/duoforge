@@ -218,7 +218,8 @@ def _own_features(prefix, exceptions=None):
 # A reserve bit's own feature is the feature of its constant's name; where the names differ (several bits of one
 # feature, as Last Resort's four slots), the family's exceptions name it: {constant suffix: feature name}. These mirror
 # DUOFORGE_VIEWEXT_RESERVE_OWN, the C encoder's list, which python/tests/test_encoder6.py compares with them.
-_RESERVE_EXCEPTIONS = {"RESERVE_VOLATILES": _VOLATILE_FEATURE, "VOLATILES2": {}, "RESERVE_GUARDS": {},
+_RESERVE_EXCEPTIONS = {"RESERVE_VOLATILES": _VOLATILE_FEATURE, "VOLATILES2": {"TRAP_ELAPSED_BIT0": "TRAP_ELAPSED", "TRAP_ELAPSED_BIT1": "TRAP_ELAPSED",
+                 "TRAP_ELAPSED_BIT2": "TRAP_ELAPSED"}, "RESERVE_GUARDS": {},
                        "SIDE_CONDITIONS": {}, "FIELD_FLAGS": {}}
 # Encoder 6's reserve families (decision 0050): (bit numbers, the family's feature, the own features of its bits).
 _RES_VOLATILES = (range(22, 32), FEATURE_BITS["RESERVE_VOLATILES"],

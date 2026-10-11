@@ -43,6 +43,7 @@ static void dfi_encode_tail_pos(const dfi_tail_pos *tp, uint8_t *po)
     po[DFI_ENC_TAIL_POS_TRAP_TURNS_OFF] = tp->trap_turns;
     po[DFI_ENC_TAIL_POS_TRAP_SOURCE_OFF] = tp->trap_source;
     po[DFI_ENC_TAIL_POS_TRAP_BAND_OFF] = tp->trap_band;
+    po[DFI_ENC_TAIL_POS_TRAP_ELAPSED_OFF] = tp->trap_elapsed;
     po[DFI_ENC_TAIL_POS_LEECH_SEED_OFF] = tp->leech_seed_source;
     po[DFI_ENC_TAIL_POS_YAWN_OFF] = tp->yawn_turns;
     po[DFI_ENC_TAIL_POS_FOCUS_ENERGY_OFF] = tp->focus_energy;
@@ -162,6 +163,7 @@ static bool dfi_tail_reserved_zero(const uint8_t *in)
 
 static void dfi_parse_tail_pos(const uint8_t *po, dfi_tail_pos *tp)
 {
+    tp->pos_pad = 0u; /* the struct's pad: never encoded, zero after every decode (the tail-kind check reads the whole tail) */
     tp->last_move = po[DFI_ENC_TAIL_POS_LAST_MOVE_OFF];
     tp->encore_slot = po[DFI_ENC_TAIL_POS_ENCORE_SLOT_OFF];
     tp->encore_turns = po[DFI_ENC_TAIL_POS_ENCORE_TURNS_OFF];
@@ -176,6 +178,7 @@ static void dfi_parse_tail_pos(const uint8_t *po, dfi_tail_pos *tp)
     tp->trap_turns = po[DFI_ENC_TAIL_POS_TRAP_TURNS_OFF];
     tp->trap_source = po[DFI_ENC_TAIL_POS_TRAP_SOURCE_OFF];
     tp->trap_band = po[DFI_ENC_TAIL_POS_TRAP_BAND_OFF];
+    tp->trap_elapsed = po[DFI_ENC_TAIL_POS_TRAP_ELAPSED_OFF];
     tp->leech_seed_source = po[DFI_ENC_TAIL_POS_LEECH_SEED_OFF];
     tp->yawn_turns = po[DFI_ENC_TAIL_POS_YAWN_OFF];
     tp->focus_energy = po[DFI_ENC_TAIL_POS_FOCUS_ENERGY_OFF];

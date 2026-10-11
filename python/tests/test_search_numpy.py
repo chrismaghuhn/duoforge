@@ -1124,13 +1124,17 @@ class SpreadSources(unittest.TestCase):
 class BeliefTable(unittest.TestCase):
     """The spread table and the world words (decision 0023, spec section 5)."""
 
-    def setUp(self):
+    @staticmethod
+    def make_table():
         a = [32, 0, 2, 0, 0, 32]
         b = [32, 32, 0, 0, 0, 2]
         c = [0, 32, 2, 0, 0, 32]
         teams = [[(1, 3, 7, a), (2, 4, 0, c)], [(1, 3, 7, a), (1, 3, 9, b)], [(1, 3, 7, b), (5, 3, 0, [0] * 6)],
                  [(1, 3, 7, a), (1, 2, 7, c)], [(1, 3, 7, c)]]
-        self.table = belief.SpreadTable.from_sides(_sides(teams))
+        return belief.SpreadTable.from_sides(_sides(teams))
+
+    def setUp(self):
+        self.table = self.make_table()
 
     def test_skips_sets_without_spreads_and_hashes(self):
         self.assertEqual(self.table.spreads.shape, (8, 6))
@@ -1206,11 +1210,86 @@ class BeliefTable(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "255"):
             b.sample([(1, 3, 7)], 1, 5, 9, attempts=counts)
 
+    def test_trap_words_are_the_worlds_own_and_shift_no_other_word(self):
+        # Step G90 (decision 0060): one word per flat position (side * 2 + position) for the duration of a hidden partial
+        # trap, k = 33..36; the engine maps it (bit 0 of its byte), Python knows no rule
+        b = belief.Belief(self.table)
+        sampled = b.sample([(1, 3, 7)], 64, seed=5, key=9)
+        self.assertEqual((belief.WORDS["trap"], sampled["trap"].shape, sampled["trap"].dtype), (33, (64, 4), np.uint64))
+        for w in (0, 17, 63):
+            words = belief.world_words(5, 9, w, np.arange(64))
+            self.assertEqual(sampled["trap"][w].tolist(), [int(words[33 + k]) for k in range(4)])
+        for k in range(4):  # the words differ across worlds, and the byte the search sends takes both parities of a uniform
+            column = sampled["trap"][:, k]
+            self.assertGreater(len(set(column.tolist())), 60)
+            self.assertEqual({int(x) >> 56 & 1 for x in column}, {0, 1})
+        self.assertEqual(belief.WORDS, {"spread": 1, "hp": 7, "bench": 13, "sleep": 14, "confusion": 26,
+                                        "charge_target": 30, "queue": 32, "trap": 33, "respread": 64})  # 33..36 were free
+        # the other draws are the same as before the trap words existed
+        self.assertEqual(sampled["hp"][2, 0].item(), int(belief.world_words(5, 9, 2, [belief.WORDS["hp"]])[0]))
+
     def test_draw_index(self):
         self.assertEqual(belief.draw_index([0.0, 1.0, 1.0], 0), 1)
         self.assertEqual(belief.draw_index([0.0, 1.0, 1.0], (1 << 64) - 1), 2)
         with self.assertRaises(ValueError):
             belief.draw_index([0.0, 0.0], 1)
+
+
+
+class TrapPicks(unittest.TestCase):
+    """Step G90 (decision 0060, hypothesis revision 3): trap_pick[flat] is a random word of the world for each position
+    whose public record shows a hidden partial trap (the tail's trap_turns is DUOFORGE_VIEW_HIDDEN), zero for every other
+    position (the engine refuses a nonzero word there); the engine maps the word to the duration, Python holds no rule."""
+
+    @staticmethod
+    def record(hidden=(), shown=(), tail=True):
+        from duoforge import _layout, state_layout
+        rec = np.zeros((), dtype=_layout.PUBLIC_STATE)
+        fields = {name: (start, size) for name, start, size in state_layout.fields(pool=True)}
+        rec["state_size"] = fields["tail5.reserved"][0] + fields["tail5.reserved"][1] if tail else state_layout.V3_SIZE
+        for flat in hidden:
+            start, _ = fields[f"tail.side{flat // 2}.position{flat % 2}.trap_turns"]
+            rec["state"][start] = _layout.CONSTANTS["DUOFORGE_VIEW_HIDDEN"]
+        for flat in shown:  # a number of turns, not the engine's mask: no hidden trap
+            start, _ = fields[f"tail.side{flat // 2}.position{flat % 2}.trap_turns"]
+            rec["state"][start] = 3
+        return rec
+
+    def test_trapped_positions_are_read_from_the_masked_tail_byte(self):
+        from duoforge_search import honest
+        self.assertEqual(honest.trapped_positions(self.record()), [False] * 4)
+        self.assertEqual(honest.trapped_positions(self.record(hidden=(1, 2))), [False, True, True, False])
+        self.assertEqual(honest.trapped_positions(self.record(hidden=(0,), shown=(3,))), [True, False, False, False])
+        self.assertEqual(honest.trapped_positions(self.record(tail=False)), [False] * 4)  # a kind without the tail
+
+    def test_a_world_gets_one_word_per_trapped_position_and_zero_elsewhere(self):
+        from duoforge_search import honest
+        words = belief.Belief(BeliefTable.make_table()).sample([(1, 3, 7)], 64, seed=5, key=9)["trap"]
+        picks = honest.trap_picks(words, self.record(hidden=(1, 2)))
+        self.assertEqual((picks.shape, picks.dtype), ((64, 4), np.uint8))
+        self.assertFalse(picks[:, [0, 3]].any())  # untrapped positions: the engine refuses a nonzero word
+        np.testing.assert_array_equal(picks[:, 1], (words[:, 1] >> np.uint64(56)).astype(np.uint8))
+        np.testing.assert_array_equal(picks[:, 2], (words[:, 2] >> np.uint64(56)).astype(np.uint8))
+        for flat in (1, 2):  # the worlds differ, and a uniform byte takes both parities (the engine reads bit 0)
+            self.assertGreater(len(set(picks[:, flat].tolist())), 32)
+            self.assertEqual({int(x) & 1 for x in picks[:, flat]}, {0, 1})
+        self.assertFalse(honest.trap_picks(words, self.record()).any())  # no hidden trap: all zero
+        self.assertFalse(honest.trap_picks(words, self.record(tail=False)).any())
+
+    def test_the_words_follow_the_decision_key_and_seed(self):
+        b = belief.Belief(BeliefTable.make_table())
+        one = b.sample([(1, 3, 7)], 8, seed=5, key=9)["trap"]
+        np.testing.assert_array_equal(one, b.sample([(1, 3, 7)], 8, seed=5, key=9)["trap"])  # deterministic
+        self.assertFalse(np.array_equal(one, b.sample([(1, 3, 7)], 8, seed=5, key=10)["trap"]))
+        self.assertFalse(np.array_equal(one, b.sample([(1, 3, 7)], 8, seed=6, key=9)["trap"]))
+
+    def test_the_hypotheses_are_revision_three(self):
+        from duoforge import _layout, view
+        h = view.hypotheses(3)
+        self.assertEqual((h["revision"] != 0).all(), True)
+        self.assertEqual(int(h["revision"][0]), 3)  # DUOFORGE_HYPOTHESIS_REVISION (trap_pick), not the NO_TRAP revision 2
+        self.assertEqual(int(h["revision"][0]), _layout.CONSTANTS["DUOFORGE_HYPOTHESIS_REVISION"])
+        self.assertEqual(h["trap_pick"].shape, (3, 4))
 
 
 if __name__ == "__main__":

@@ -207,6 +207,9 @@ class Encoder6Test(unittest.TestCase):
         self.assertNotIn(("RESERVE_VOLATILES", 21), _defined_reserve_bits())
         self.assertIn(("RESERVE_VOLATILES", 22), _defined_reserve_bits())
         self.assertIn(("RESERVE_VOLATILES", "22", "HEALING_WISH"), _x_list("DUOFORGE_VIEWEXT_RESERVE_OWN"))
+        self.assertIn(("VOLATILES2", "4", "TRAP_ELAPSED"), _x_list("DUOFORGE_VIEWEXT_RESERVE_OWN"))
+        self.assertIn(("VOLATILES2", "5", "TRAP_ELAPSED"), _x_list("DUOFORGE_VIEWEXT_RESERVE_OWN"))
+        self.assertIn(("VOLATILES2", "6", "TRAP_ELAPSED"), _x_list("DUOFORGE_VIEWEXT_RESERVE_OWN"))
 
     def test_every_lane_feature_gates_a_reserve_column(self):
         # A lane's feature (bits 43 to 58: HEALING_WISH 43, G82) is shown only through its reserve bit: each one gates
@@ -305,6 +308,27 @@ class Encoder6Test(unittest.TestCase):
                 features.as_encoder(part, obs, encoder)
         with self.assertRaises(ValueError):  # a mask bit encoder 5 has no column for
             features.encode_batch(self.obs, self.domains, base, FAMILY["VOLATILES2"], encoder=5)
+
+
+    def test_trap_elapsed_bits_are_gated_by_their_own_feature_and_refused_by_older_encoders(self):
+        # Decision 0060 (hidden counters): POSITION_EXT2 bits 4 to 6 hold the partial trap's elapsed count, feature 45.
+        # Encoder 6 shows a bit only with the family (VOLATILES2) and TRAP_ELAPSED both supported; encoders 3 to 5 refuse
+        # a set bit by the constant's name.
+        elapsed, family, own = 5, FAMILY["VOLATILES2"], 1 << features.FEATURE_BITS["TRAP_ELAPSED"]
+        base = _records(self.obs, features.ALL_FEATURES)
+        ext = base.copy()
+        ext["volatiles2"][:] = 0
+        ext["volatiles2"][0, 0, 1] = elapsed << 4  # bits 4 and 6
+        cols = {k: COL[f"ext6.{_side_name(self.obs[0], 0)}.pos1.volatile2.bit{k}"] for k in (4, 5, 6)}
+        full, _, _ = features.encode_batch(self.obs, self.domains, ext, features.ALL_FEATURES)
+        self.assertEqual([full[0, cols[k]] for k in (4, 5, 6)], [1.0, 0.0, 1.0])
+        for lacking in (own, family):
+            part, _, _ = features.encode_batch(self.obs, self.domains, ext, features.ALL_FEATURES & ~lacking)
+            self.assertEqual([part[0, cols[k]] for k in (4, 5, 6)], [0.0, 0.0, 0.0], lacking)
+        for encoder in (3, 4, 5):
+            with self.assertRaises(features.EncoderAwaitingBit, msg=encoder) as caught:
+                features.encode_batch(self.obs, self.domains, ext, features.version_features(encoder), encoder=encoder)
+            self.assertEqual(caught.exception.name, "DUOFORGE_POSITION_EXT2_TRAP_ELAPSED_BIT0")
 
 
 if __name__ == "__main__":

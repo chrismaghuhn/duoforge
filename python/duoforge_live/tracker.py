@@ -79,6 +79,8 @@ CHARGE_TURNS = 2  # twoturnmove's duration: the charge and the locked turn end i
 EXT_REVISION = C["DUOFORGE_OBSERVATION_EXT_REVISION"]
 EXT_THROAT_CHOP = C["DUOFORGE_POSITION_EXT_THROAT_CHOP"]
 EXT_CURSE = C["DUOFORGE_POSITION_EXT_CURSE"]
+EXT2_TRAP_ELAPSED = tuple(C[f"DUOFORGE_POSITION_EXT2_TRAP_ELAPSED_BIT{k}"] for k in range(3))  # the count's bits, low to high
+TRAP_ELAPSED_MAX = 5  # DFI_TAIL_TRAP_ELAPSED_MAX: residual phases a partial trap can have been through (d <= 6, the last ends it)
 ITEM_NOW_NONE = C["DUOFORGE_ITEM_NOW_NONE"]  # duoforge_member_ext.item_now: the member holds nothing
 # The view-extension fields (OBSERVATION_EXT, decision 0018) of each feature the tracker folds: what observation_ext
 # writes, and all that restrict_ext keeps of DuoForge's record for a comparison. ("bit", B): bit B of a position's
@@ -113,6 +115,10 @@ EXT_FIELDS = {
     # Ghost Curse (step G84b, decision 0063): the holder's CURSED bit, the view bit of the Curse volatile
     "CURSE": (("bit", EXT_CURSE),),
     "HEALING_WISH": (("bit", C["DUOFORGE_POSITION_EXT_HEALING_WISH"]),),  # G82: encoder 6's reserve volatile bit 22
+    "PARTIAL_TRAP": (("bit", C["DUOFORGE_POSITION_EXT_PARTIAL_TRAP"]),),
+    # POSITION_EXT2 (volatiles2), a record field of its own, and the presence bit the count hangs on: the library claims the
+    # count (45) and not the presence (18) yet, and the comparison must see both
+    "TRAP_ELAPSED": (("bit2", sum(EXT2_TRAP_ELAPSED)), ("bit", C["DUOFORGE_POSITION_EXT_PARTIAL_TRAP"])),
 }
 # The presence bits of a position's volatiles: _Position attribute -> DUOFORGE_POSITION_EXT_* bit.
 _PRESENCE_BITS = (("throat_chop", EXT_THROAT_CHOP), ("must_recharge", C["DUOFORGE_POSITION_EXT_MUST_RECHARGE"]),
@@ -121,7 +127,8 @@ _PRESENCE_BITS = (("throat_chop", EXT_THROAT_CHOP), ("must_recharge", C["DUOFORG
                   ("imprison", C["DUOFORGE_POSITION_EXT_IMPRISON"]), ("glaive_rush", C["DUOFORGE_POSITION_EXT_GLAIVE_RUSH"]),
                   ("rage_powder", C["DUOFORGE_POSITION_EXT_RAGE_POWDER"]), ("heal_block", C["DUOFORGE_POSITION_EXT_HEAL_BLOCK"]),
                    ("attract", C["DUOFORGE_POSITION_EXT_ATTRACT"]), ("cursed", EXT_CURSE),
-                   ("wish", C["DUOFORGE_POSITION_EXT_HEALING_WISH"]))
+                   ("wish", C["DUOFORGE_POSITION_EXT_HEALING_WISH"]),
+                   ("trap", C["DUOFORGE_POSITION_EXT_PARTIAL_TRAP"]))
 # DUOFORGE_FIELD_* of a terrain's FIELD_START event -> DUOFORGE_TERRAIN_* of the observation
 _TERRAIN = {1: C["DUOFORGE_TERRAIN_GRASSY"], trace_to_c.FIELD_PSYCHIC_TERRAIN: C["DUOFORGE_TERRAIN_PSYCHIC"],
             trace_to_c.FIELD_ELECTRIC_TERRAIN: C["DUOFORGE_TERRAIN_ELECTRIC"],
@@ -213,6 +220,12 @@ class _Position:
         # clearing of its byte (dfi_tail_clear_occupant, no line); its visible and silent ends are folded in _fold_event and
         # _silent_attract_end.
         self.attract = 0
+        # The partial trap (step G90, decision 0060), the engine's four tail fields without the drawn turns, which no line shows:
+        self.trap = 0  # the volatile is up (the engine's trap_turns is not zero)
+        self.trap_source = 0  # the trapper's flat position + 1; 0 once it left the field (the trap then ends at the residual)
+        self.trap_move = 0  # the trapping move + 1
+        self.trap_band = 0  # the trapper held a Binding Band at the start
+        self.trap_elapsed = 0  # TRAP_ELAPSED: residual damage lines since the start (0..5), zero without the trap
         self.type_now = (0, 0)  # the types (id + 1, 0: none) a move set until the occupant leaves (Soak, Double Shock)
         # the record's type2 of the occupant (tail rev 4): Double Shock's remaining type + 1, 0 after Soak; a Mega
         # Evolution ends type_now (the soak_type) and keeps it, as dfi_run_mega does; it ends with the occupant
@@ -322,6 +335,9 @@ class Tracker:
         self._parting_shot = data.tables["MOVE"]["PARTINGSHOT"]
         self._feint = data.tables["MOVE"].get("FEINT", -1)
         self._baton_pass = data.tables["MOVE"].get("BATONPASS", -1)  # its receiver takes the leaver's copy (G74)
+        # the moves of the engine's partial trap (G90); a closure table has none
+        self._trap_moves = {data.tables["MOVE"][trace_to_c.key(name)] for name in lines.PARTIAL_TRAP_MOVES
+                            if trace_to_c.key(name) in data.tables["MOVE"]}
         self._phantom_force = data.tables["MOVE"].get("PHANTOMFORCE", -1)  # breaks a Protect as Feint does (G58)
         self._turn_scoped = set()  # single-turn features of decision 0018 seen since the turn began (lines.TURN_SCOPED)
         self._guards = set()  # (Wide or Quick Guard feature, side) seen this turn: what a Feint breaks (step G28)
@@ -428,6 +444,13 @@ class Tracker:
         if parts[1] == "-end" and parts[3:4] == ["Attract"]:
             self._silent_attract_end(parts)
             return
+        if parts[1] == "-end" and "[partiallytrapped]" in parts and "[silent]" in parts:
+            # a partial trap's silent end (step G90: the source left, a Substitute, the residual with a fainted source); the
+            # converter skips [silent] lines, so the tracker clears the trap here. The duration's end is no silent line.
+            self._trap_silent_end(parts)
+            return
+        if parts[1] == "-damage" and "[partiallytrapped]" in parts:
+            self._trap_residual(parts)  # counts the residual phase; the damage itself folds as any damage line below
         if parts[1] == "-end" and parts[3:4] == ["move: Yawn"]:
             # Yawn's end (step G31, data/moves.ts yawn onEnd: -end|X|move: Yawn|[silent], before the sleep it brings):
             # the converter skips [silent] lines, so the tracker clears the presence bit here; any other form stops
@@ -459,6 +482,77 @@ class Tracker:
         if pos is None or parts[4:] != ["[silent]"]:
             raise lines.Stop(f"line:{parts[1]} Throat Chop")
         self._at(pos).throat_chop = THROAT_CHOP_TURNS if parts[1] == "-start" else 0
+
+    def _trap_move_id(self, name):
+        """The move id of a partial-trap line's move name, None when the tables have none."""
+        return self.data.tables["MOVE"].get(trace_to_c.key(name))
+
+    @staticmethod
+    def _trap_clear(p):
+        p.trap = p.trap_source = p.trap_move = p.trap_band = p.trap_elapsed = 0
+
+    def _trap_start(self, pos, source, move):
+        """The partial trap's start (step G90, decision 0060; `-activate|T|move: M|[of] S`, an ACTIVATE of cause MOVE): the
+        engine sets the volatile on a standing target that has none, with the source, the move, the source's Binding Band
+        at that moment and a zero elapsed count. A target that has one is refused by the engine with no line, so the
+        line cannot come then; the drawn turns are never shown."""
+        p = self._at(pos)
+        if p.trap:
+            raise lines.Stop("trap-start-on-trapped")
+        if (p.occupant == ROSTER_NONE or not 0 <= source < len(self._positions) * 2 or source == pos
+                or self._at(source).occupant == ROSTER_NONE):
+            raise lines.Stop("trap-start-source")
+        p.trap, p.trap_source, p.trap_move = 1, source + 1, move + 1
+        p.trap_band = 1 if self._holds(self._occupant(source), "BINDINGBAND") else 0
+        p.trap_elapsed = 0
+
+    def _trap_end(self, pos, move):
+        """The duration's end (`-end|T|move: M|[partiallytrapped]`, VOLATILE_END): the engine clears the trap and its count."""
+        p = self._at(pos)
+        if not p.trap:
+            raise lines.Stop("trap-end-untrapped")
+        if p.trap_move != move + 1:
+            raise lines.Stop("trap-end-move")
+        self._trap_clear(p)
+
+    def _trap_silent_end(self, parts):
+        """A partial trap's silent end, `-end|T|M|[partiallytrapped]|[silent]` (the pin prints the move bare; the converter's
+        other spelling, "move: M", is taken too): the engine cleared the trap with no event. Any other form stops."""
+        pos = lines.flat_position(parts[2]) if len(parts) > 2 else None
+        if len(parts) != 6 or parts[1] != "-end" or parts[4] != "[partiallytrapped]" or parts[5] != "[silent]" or pos is None:
+            raise lines.Stop("trap-end-line")
+        p = self._at(pos)
+        if not p.trap:
+            raise lines.Stop("trap-end-untrapped")
+        name = parts[3][len("move: "):] if parts[3].startswith("move: ") else parts[3]
+        if self._trap_move_id(name) != p.trap_move - 1:
+            raise lines.Stop("trap-end-move")
+        self._trap_clear(p)
+
+    def _trap_residual(self, parts):
+        """One residual phase of a partial trap that stays up: `-damage|T|hp|[from] move: M|[partiallytrapped]`. The engine
+        counts the phase (TRAP_ELAPSED, +1) before the damage; the phase that ends the trap shows an end line, not this one,
+        and the count stays below the duration of at most 6. Any other form stops."""
+        pos = lines.flat_position(parts[2]) if len(parts) > 2 else None
+        if (len(parts) != 6 or parts[1] != "-damage" or not parts[3] or parts[3].startswith("[") or pos is None
+                or parts[5] != "[partiallytrapped]" or not parts[4].startswith("[from] move: ")):
+            raise lines.Stop("trap-residual-line")
+        p = self._at(pos)
+        if not p.trap:
+            raise lines.Stop("trap-residual-untrapped")
+        if self._trap_move_id(parts[4][len("[from] move: "):]) != p.trap_move - 1:
+            raise lines.Stop("trap-residual-move")
+        if p.trap_elapsed >= TRAP_ELAPSED_MAX:
+            raise lines.Stop("trap-residual-count")
+        p.trap_elapsed += 1
+
+    def _trap_source_left(self, pos):
+        """The occupant of `pos` leaves (a switch, a drag or a faint): every trap it was the source of keeps its turns, move,
+        band and count but has no source any more (dfi_tail_clear_occupant), and the residual ends it silently."""
+        for side in self._positions:
+            for q in side:
+                if q.trap and q.trap_source == pos + 1:
+                    q.trap_source = 0
 
     def _extended_field(self, line):
         """A weather or terrain set by a member that holds the item lengthening it (Damp Rock, Heat Rock, Smooth
@@ -860,6 +954,11 @@ class Tracker:
         elif kind in (EV["SWITCH"], EV["DRAG"]):
             # A drag (Step G46) is a switch of the dragged-in member: the occupant is replaced and reset, the HP of the line.
             p = self._at(pos)
+            if p.trap and kind == EV["SWITCH"] and e[3] == trace_to_c.CAUSE["MOVE"] and ident2 == self._baton_pass:
+                # dfi_pass_give copies the trap's turns, source, move and band but not its elapsed count (step G90), which
+                # leaves the receiver in a state the engine's own invariant refuses: no honest fold of it exists
+                raise lines.Stop("trap-baton-pass")
+            self._trap_source_left(pos)
             if p.occupant != ROSTER_NONE:
                 self._member(pos // 2)[p.occupant].toxic_stage = 0  # the leaving member's toxic counter ends with it
             passed = None
@@ -953,6 +1052,8 @@ class Tracker:
                 if public:
                     holder.item_used = 1
                 self._item_received(e[2], ident, public)
+            elif e[3] == trace_to_c.CAUSE["MOVE"] and ident2 in self._trap_moves:
+                self._trap_start(pos, e[2], ident2)  # the partial trap's start (step G90)
             elif e[3] == trace_to_c.CAUSE["MOVE"] and ident2 in (self._feint, self._phantom_force):
                 # Feint broke something (step G28, sim/battle-actions.ts hitStepBreakProtect, printed only then; Phantom
                 # Force's `[broken]` line the same, step G58): the target's own Protect (its flag) and its stall
@@ -968,6 +1069,7 @@ class Tracker:
                         self._turn_scoped.discard(guard)
         elif kind == EV["FAINT"]:
             p = self._at(pos)
+            self._trap_source_left(pos)
             p.reset()  # a faint clears the position's conditions; the occupant stays until replaced
             p.fainted = True
             # a faint takes a pivot flag (faint(): switchFlag = false); after the residual (Perish Song's) checkFainted asks
@@ -1015,6 +1117,8 @@ class Tracker:
                 p.attract = 1 + (e[2] // 2) * C["DUOFORGE_MAX_ROSTER"] + holder.occupant
             else:
                 p.attract = 0
+        elif kind == EV["VOLATILE_END"] and detail == trace_to_c.VOLATILE_PARTIAL_TRAP:
+            self._trap_end(pos, ident)  # the duration's end (step G90): the line names the move in `ident`
         elif kind in (EV["VOLATILE_START"], EV["VOLATILE_END"]) and detail == trace_to_c.VOLATILE_HEAL_BLOCK:
             # Heal Block (step G8, Psychic Noise): -start|X|move: Heal Block and -end|X|move: Heal Block (the duration,
             # Mental Herb); the occupant's leaving ends it with no line; its count is never shown
@@ -1622,6 +1726,8 @@ class Tracker:
                     pv["volatiles"] |= C["DUOFORGE_POSITION_EXT_TYPE_CHANGED"]
                     pv["type_now"] = p.type_now
                 pv["perish"], pv["encore_slot"], pv["disable_slot"] = p.perish, p.encore_slot, p.disable_slot
+                if p.trap:  # POSITION_EXT2 bits 4 to 6: the elapsed count (zero without the trap)
+                    o["volatiles2"][side][k] = sum(bit for n, bit in enumerate(EXT2_TRAP_ELAPSED) if p.trap_elapsed >> n & 1)
                 own = self._member(side)[p.occupant].ability
                 pv["ability_now"] = p.ability_now if p.ability_now != own else 0  # shown when it differs
         return o
@@ -1655,6 +1761,8 @@ def restrict_ext(ext, folds):
                 src, dst = ext["sides"][s], out["sides"][s]
                 if where == "bit":
                     dst["positions"]["volatiles"] = dst["positions"]["volatiles"] | (src["positions"]["volatiles"] & field)
+                elif where == "bit2":
+                    out["volatiles2"][s] = out["volatiles2"][s] | (ext["volatiles2"][s] & field)
                 elif where == "side_bit":
                     name, bit = field
                     dst[name] = dst[name] | (src[name] & bit)

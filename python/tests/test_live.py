@@ -426,6 +426,7 @@ class BreakProtectTest(unittest.TestCase):
             t.data, t.side, t._spectator = D, 0, False
             t._feint = D.tables["MOVE"]["FEINT"]
             t._phantom_force = D.tables["MOVE"]["PHANTOMFORCE"]
+            t._trap_moves = set()  # the partial trap's moves (G90): the event reads them before Feint's
             target = SimpleNamespace(protecting=1, chain=2, stall=1, guard_undo=(1, 0))
             t._positions = [[SimpleNamespace(), SimpleNamespace()], [target, SimpleNamespace()]]
             t._guards = {("WIDE_GUARD", 1)}

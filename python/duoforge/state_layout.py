@@ -117,7 +117,7 @@ def fields(pool=True):
                 ("protect_kind", "TAIL_POS_PROTECT_KIND_OFF"), ("move_result", "TAIL_POS_MOVE_RESULT_OFF"),
                 ("single_turn", "TAIL_POS_SINGLE_TURN_OFF"), ("hits_taken", "TAIL_POS_HITS_TAKEN_OFF"),
                 ("ability_state", "TAIL_POS_ABILITY_STATE_OFF"), ("lock_turns", "TAIL_POS_LOCK_TURNS_OFF"),
-                ("reserved", "TAIL_POS_RESERVED_OFF"))), _o("TAIL_POS_SIZE"))
+                ("trap_elapsed", "TAIL_POS_TRAP_ELAPSED_OFF"), ("reserved", "TAIL_POS_RESERVED_OFF"))), _o("TAIL_POS_SIZE"))
         for m in range(MAX_ROSTER):
             out += _block(f"tail.side{s}.member{m}.", base + _o("TAIL_MEMBER_OFF") + m * _o("TAIL_MEMBER_SIZE"), _sub((
                 ("ability_now", "TAIL_MEMBER_ABILITY_OFF"), ("forme_now", "TAIL_MEMBER_FORME_OFF"),

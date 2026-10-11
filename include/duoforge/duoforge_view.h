@@ -55,7 +55,10 @@ extern "C" {
 #endif
 
 #define DUOFORGE_VIEW_REVISION 2u
-#define DUOFORGE_HYPOTHESIS_REVISION 2u
+#define DUOFORGE_HYPOTHESIS_REVISION 3u
+/* The revision before trap_pick (reserved2 was zero): accepted for views without an active partial trap; a trapped view with it is
+   E_UNSUPPORTED (decision 0060, hidden counters). */
+#define DUOFORGE_HYPOTHESIS_REVISION_NO_TRAP 2u
 #define DUOFORGE_VIEW_STATE_MAX 1357u /* the largest canonical state (the POOL kinds, tail rev 5) */
 #define DUOFORGE_VIEW_HIDDEN 0xFFu    /* a running counter whose value is hidden */
 #define DUOFORGE_VIEW_HIDDEN_TARGET 0xFEu
@@ -91,7 +94,9 @@ typedef struct duoforge_hypothesis {
     uint64_t charge_target[DUOFORGE_ACTIVE_PER_SIDE]; /* the foe's positions */
     duoforge_slot_command queued[DUOFORGE_ACTIVE_PER_SIDE]; /* foe MOVE commands still pending; zero otherwise */
     uint8_t queue_order[12]; /* original index of each canonical queue record; permutation at PIVOT */
-    uint8_t reserved2[4];
+    uint8_t trap_pick[4]; /* per flat position (side * 2 + position), revision 3: the word of a hidden partial trap's duration, the
+                             draw of decision 0060: bit 0 set means 6 turns, clear 5 (at elapsed 5 only 6 fits, any word); the word
+                             of a position with no hidden trap must be zero (E_INVALID_ARGUMENT otherwise) */
 } duoforge_hypothesis;
 
 /* The causes of a public refusal that the player's view decides (decision 0023; decision 0026 section 4). Bits of

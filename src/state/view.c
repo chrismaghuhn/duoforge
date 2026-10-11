@@ -585,7 +585,7 @@ static duoforge_status dfi_view_encode(const duoforge_context *ctx, const duofor
             /* Step G66: a temporary forme (Stance Change) is refused too: its forme is not in the view (the TEMP_FORME cause). */
             const uint32_t occupant = b->sides[side].positions[p].occupant;
             const bool temp_forme = occupant < DUOFORGE_MAX_ROSTER && b->tail.sides[side].forme_now[occupant] != 0u;
-            if (tp->trap_turns != 0u || maybe_locked || tp->substitute_hp != 0u || temp_forme) {
+            if (maybe_locked || tp->substitute_hp != 0u || temp_forme) {
                 return DUOFORGE_E_UNSUPPORTED;
             }
         }
@@ -605,6 +605,17 @@ static duoforge_status dfi_view_encode(const duoforge_context *ctx, const duofor
         }
     }
     memset(s + DFI_ENC_RNG_STATE_OFF, 0, 24u);
+    /* Step G90 (decision 0060, approved 2026-10-11): the partial trap's drawn turns are hidden for both viewers (the owner too:
+     * the duration is never shown, decision 0007). The presence, the source, the move and the band are public. */
+    for (uint32_t side = 0u; side < DUOFORGE_SIDE_COUNT; ++side) {
+        for (uint32_t p = 0u; p < DUOFORGE_ACTIVE_PER_SIDE; ++p) {
+            uint8_t *tt = s + DFI_ENC_TAIL_OFF + DFI_ENC_TAIL_SIDES_OFF + side * DFI_ENC_TAIL_SIDE_SIZE + DFI_ENC_TAIL_POS_OFF +
+                          p * DFI_ENC_TAIL_POS_SIZE + DFI_ENC_TAIL_POS_TRAP_TURNS_OFF;
+            if (*tt != 0u) {
+                *tt = (uint8_t)DUOFORGE_VIEW_HIDDEN;
+            }
+        }
+    }
     for (uint32_t side = 0u; side < DUOFORGE_SIDE_COUNT; ++side) {
         for (uint32_t m = 0u; m < DUOFORGE_MAX_ROSTER; ++m) {
             uint8_t *mb = member_at(s, side, m);
@@ -1276,14 +1287,14 @@ duoforge_status duoforge_battle_from_view(const duoforge_context *ctx, const duo
     if (ctx == NULL || view == NULL || hypothesis == NULL || out == NULL) {
         return DUOFORGE_E_NULL_ARGUMENT;
     }
-    if (view->revision != DUOFORGE_VIEW_REVISION || hypothesis->revision != DUOFORGE_HYPOTHESIS_REVISION) {
+    if (view->revision != DUOFORGE_VIEW_REVISION ||
+        (hypothesis->revision != DUOFORGE_HYPOTHESIS_REVISION && hypothesis->revision != DUOFORGE_HYPOTHESIS_REVISION_NO_TRAP)) {
         return DUOFORGE_E_SCHEMA_MISMATCH;
     }
     const size_t n = dfi_state_encoded_size_of(ctx);
     if (view->player >= DUOFORGE_SIDE_COUNT || view->state_size != n || !dfi_all_zero(view->reserved, sizeof view->reserved) ||
         !dfi_all_zero(view->pad, 3u) || !dfi_all_zero(view->state + n, DUOFORGE_VIEW_STATE_MAX - n) ||
-        hypothesis->reserved0 != 0u || !dfi_all_zero(hypothesis->reserved1, 6u) ||
-        !dfi_all_zero(hypothesis->reserved2, 4u)) {
+        hypothesis->reserved0 != 0u || !dfi_all_zero(hypothesis->reserved1, 6u)) {
         return DUOFORGE_E_MALFORMED;
     }
     if (!dfi_context_fingerprint_matches(ctx, view->state + DFI_ENC_FINGERPRINT_OFF)) {
@@ -1367,6 +1378,38 @@ duoforge_status duoforge_battle_from_view(const duoforge_context *ctx, const duo
             uint8_t *mv = mb + DFI_ENC_MOVE_OFF + k * DFI_ENC_MOVE_SIZE;
             const uint32_t used = kb[DFI_ENC_KNOWLEDGE_USED_OFF + k];
             mv[2] = (uint8_t)(used >= mv[3] ? 0u : mv[3] - used); /* wide-operands-reviewed: <= pp_max */
+        }
+    }
+    /* Step G90 (decision 0060, hidden counters): the partial trap's turns are hidden in the view. The duration d is 5 or 6
+     * (random(5, 7), data/conditions.ts:222-228) and the public elapsed count e leaves trap_turns = d - e >= 1, so d > e. The
+     * word hypothesis->trap_pick[flat] carries the draw: at e <= 4 both durations fit, and d = 6 when bit 0 is set, 5 when it is
+     * clear (the 1/2 : 1/2 weights of a uniform word); at e = 5 only 6 fits, whatever the word; above 5 none fits (E_MALFORMED).
+     * A revision-2 hypothesis has no words: a trapped view is E_UNSUPPORTED. A position without a hidden trap takes no word (E_INVALID_ARGUMENT
+     * otherwise). Only a pool state has the tail. */
+    const bool pool_tail = dfi_kind_limits_of(ctx->data_kind).pool_rules;
+    for (uint32_t side = 0u; side < DUOFORGE_SIDE_COUNT; ++side) {
+        for (uint32_t p = 0u; p < DUOFORGE_ACTIVE_PER_SIDE; ++p) {
+            const uint32_t flat = side * DUOFORGE_ACTIVE_PER_SIDE + p;
+            uint8_t *tb = pool_tail ? s + DFI_ENC_TAIL_OFF + DFI_ENC_TAIL_SIDES_OFF + side * DFI_ENC_TAIL_SIDE_SIZE +
+                                          DFI_ENC_TAIL_POS_OFF + p * DFI_ENC_TAIL_POS_SIZE
+                                    : NULL;
+            const bool hidden = tb != NULL && tb[DFI_ENC_TAIL_POS_TRAP_TURNS_OFF] == DUOFORGE_VIEW_HIDDEN;
+            if (!hidden) {
+                if (hypothesis->trap_pick[flat] != 0u) {
+                    return DUOFORGE_E_INVALID_ARGUMENT;
+                }
+                continue;
+            }
+            if (hypothesis->revision == DUOFORGE_HYPOTHESIS_REVISION_NO_TRAP) {
+                return DUOFORGE_E_UNSUPPORTED;
+            }
+            const uint32_t elapsed = tb[DFI_ENC_TAIL_POS_TRAP_ELAPSED_OFF];
+            if (elapsed > DFI_TAIL_TRAP_ELAPSED_MAX) {
+                return DUOFORGE_E_MALFORMED; /* no duration fits: a legal state never shows it */
+            }
+            const bool six = elapsed == DFI_TAIL_TRAP_ELAPSED_MAX || (hypothesis->trap_pick[flat] & 1u) != 0u;
+            const uint32_t duration = six ? 6u : 5u;
+            tb[DFI_ENC_TAIL_POS_TRAP_TURNS_OFF] = (uint8_t)(duration - elapsed); /* wide-operands-reviewed: 1..6 */
         }
     }
     /* the hidden counters of both sides and the foe's charging targets */
@@ -1666,6 +1709,13 @@ duoforge_status duoforge_battle_hypothesis(const duoforge_context *ctx, const du
         }
         for (uint32_t p = 0u; p < DUOFORGE_ACTIVE_PER_SIDE; ++p) {
             const dfi_active_slot *pos = &sd->positions[p];
+            /* Step G90 (decision 0060): the true duration of a hidden partial trap (the turns and the elapsed count, both known to
+             * the battle): the word that the rebuild of this hypothesis reads, bit 0 set for 6. */
+            const dfi_tail_pos *tp = &battle->tail.sides[side].positions[p];
+            if (tp->trap_turns != 0u) {
+                h.trap_pick[side * DUOFORGE_ACTIVE_PER_SIDE + p] =
+                    (uint8_t)(tp->trap_turns + tp->trap_elapsed == 6u ? 1u : 0u); /* wide-operands-reviewed: 0 or 1 */
+            }
             if (pos->confusion_turns >= 1u && pos->confusion_turns <= 5u) {
                 h.confusion[side][p] = dfi_word_of_weighted(pos->confusion_turns - 1u, dfi_confusion_weights, 5u);
             }

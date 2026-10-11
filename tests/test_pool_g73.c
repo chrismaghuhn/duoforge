@@ -37,7 +37,7 @@ static void check_facts(df_test *t)
     DF_CHECK_EQ_U64(t, dfi_pool_ability_handler[DFI_ABILITY_OPPORTUNIST], DFI_HANDLER_UNMODELED);
     /* the draw site of Moody's samples, and the count of the sites after it */
     DF_CHECK_EQ_U64(t, DFI_SITE_MOODY, 23u);
-    DF_CHECK_EQ_U64(t, DFI_SITE_COUNT, 26u); /* step G71 adds Cute Charm (24) and Attract (25) after Moody (23) */
+    DF_CHECK_EQ_U64(t, DFI_SITE_COUNT, 33u); /* step G90 adds the partial trap's turns (site 32), the count is 33 (HS ranges) */
     /* the residual kind of the entry (after the kinds of residual_order.h before it) */
     DF_CHECK_EQ_U64(t, DFI_RES_MOODY, 18u);
 }

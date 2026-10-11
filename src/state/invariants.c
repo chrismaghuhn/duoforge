@@ -344,6 +344,10 @@ static dfi_invariant dfi_check_side(const struct duoforge_context *ctx, const st
                 (b->boundary_kind == DUOFORGE_BOUNDARY_REPLACEMENT && ((uint32_t)slot->flags & residual_bits) != 0u)) {
                 return DFI_INV_VOLATILE;
             }
+            /* Step G90 (decision 0060, data/conditions.ts:234-252): a trap whose source left or fainted stays up (turns > 0,
+             * source 0) until the target's next residual, which ends it silently. onTrapPokemon tries to trap only while the
+             * source is active, so such a target is not trapped and may switch. A trap with turns and no source is legal at
+             * the TURN and REPLACEMENT boundaries. */
         }
     }
     const uint32_t occupied = dfi_side_occupied_mask(side);
@@ -683,9 +687,11 @@ static bool dfi_tail_pos_valid(const dfi_kind_limits *lim, const dfi_tail_pos *t
     /* A partial trap: turns, source (another position) and move together, the band only with them. */
     const bool trap_ok = tp->trap_turns <= DFI_TAIL_TRAP_TURNS_MAX && tp->trap_source <= DFI_TAIL_SOURCE_MAX &&
                          tp->trap_source != flat + 1u && tp->trap_move <= lim->move_count &&
-                         (tp->trap_turns == 0u) == (tp->trap_source == 0u) &&
+                         (tp->trap_turns != 0u || tp->trap_source == 0u) &&
                          (tp->trap_turns == 0u) == (tp->trap_move == 0u) && tp->trap_band <= DFI_TAIL_FLAG_MAX &&
-                         (tp->trap_turns != 0u || tp->trap_band == 0u);
+                         (tp->trap_turns != 0u || tp->trap_band == 0u) &&
+                         (tp->trap_turns != 0u ? (tp->trap_turns + tp->trap_elapsed == 5u || tp->trap_turns + tp->trap_elapsed == 6u)
+                                               : tp->trap_elapsed == 0u);
     const bool leech_ok = tp->leech_seed_source <= DFI_TAIL_SOURCE_MAX && tp->leech_seed_source != flat + 1u;
     const bool stockpile_ok = tp->stockpile <= DFI_TAIL_STOCKPILE_MAX && tp->stockpile_def <= tp->stockpile &&
                               tp->stockpile_spd <= tp->stockpile;
@@ -803,11 +809,23 @@ static bool dfi_attract_byte_ok(const struct duoforge_battle *b, uint32_t flat)
     return (g_inf == DFI_GENDER_MALE && g_src == DFI_GENDER_FEMALE) || (g_inf == DFI_GENDER_FEMALE && g_src == DFI_GENDER_MALE);
 }
 
+/* The position pads (pos_pad) are never encoded and are not state (decision 0060): a tail is zero when every other byte is. */
+static bool dfi_tail_zero_ignoring_pads(const dfi_pool_tail *t)
+{
+    dfi_pool_tail c = *t;
+    for (uint32_t s = 0u; s < DUOFORGE_SIDE_COUNT; ++s) {
+        for (uint32_t p = 0u; p < DUOFORGE_ACTIVE_PER_SIDE; ++p) {
+            c.sides[s].positions[p].pos_pad = 0u;
+        }
+    }
+    return dfi_bytes_zero(&c, sizeof c);
+}
+
 static dfi_invariant dfi_check_tail(const duoforge_context *ctx, const struct duoforge_battle *b)
 {
     const dfi_kind_limits lim = dfi_kind_limits_of(ctx->data_kind);
     if (!lim.pool_rules) {
-        return dfi_bytes_zero(&b->tail, sizeof b->tail) ? DFI_INV_NONE : DFI_INV_TAIL_KIND;
+        return dfi_tail_zero_ignoring_pads(&b->tail) ? DFI_INV_NONE : DFI_INV_TAIL_KIND;
     }
     if (b->tail.gravity_turns > DFI_TAIL_GRAVITY_MAX || b->tail.field_pad != 0u) {
         return DFI_INV_TAIL_FIELD;
@@ -868,6 +886,7 @@ static dfi_invariant dfi_check_tail(const duoforge_context *ctx, const struct du
                  * of a slot waits for its next entrant. The rest of the tail is cleared when the occupant leaves or faints. */
                 dfi_tail_pos rest = *tp;
                 rest.position_flags = 0u;
+                rest.pos_pad = 0u; /* the pad is not state (decision 0060) */
                 if (!dfi_bytes_zero(&rest, sizeof rest)) {
                     return DFI_INV_TAIL_POSITION; /* cleared when the occupant leaves or faints */
                 }

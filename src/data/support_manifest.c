@@ -391,6 +391,10 @@ const dfi_support_manifest dfi_support = {
             [DFI_MOVE_HARDPRESS] = 1u,
             [DFI_MOVE_ICESPINNER] = 1u,
             [DFI_MOVE_BELLYDRUM] = 1u,
+            /* Step G90 (decision 0060): the partial trap of six moves (the volatile partiallytrapped: the draw of its turns, the residual
+             * damage with the Binding Band divisor, the trapped flag, the silent ends and the end line). */
+            [DFI_MOVE_BIND] = 1u, [DFI_MOVE_WRAP] = 1u, [DFI_MOVE_FIRESPIN] = 1u,
+            [DFI_MOVE_SANDTOMB] = 1u, [DFI_MOVE_INFESTATION] = 1u, /* Snap Trap stays unmarked: decision 0060 section 8 */
     [DFI_MOVE_REVIVALBLESSING] = 1u,
             /* Step G84 (decision 0047): Leech Seed (the holder's volatile, the source's slot, the residual drain of order 8) and Curse
              * (a non-Ghost user's self boost; the Ghost Curse since step G84b, decision 0063). */
@@ -766,6 +770,7 @@ const dfi_support_manifest dfi_support = {
     .items =
         {
             [DFI_ITEM_LEFTOVERS] = 1u,
+            [DFI_ITEM_BINDINGBAND] = 1u, /* step G90 (decision 0060): the trap's band, read at its start (trap_band) */
             [DFI_ITEM_SITRUSBERRY] = 1u,
             [DFI_ITEM_GRASSYSEED] = 1u,
             [DFI_ITEM_LIFEORB] = 1u,
@@ -947,7 +952,11 @@ const dfi_support_manifest dfi_support = {
      * an event). Decision 0032 section 9 names the bit as supported once the step lands; verified against the g60 battles. */
     /* Step G76 (decision 0015 5cg): Destiny Bond (bit 35: the DESTINY_BOND bit of the position's flags, public: its -singlemove
      * line; verified against the g76 battles). */
-    .view_ext_features = ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_THROAT_CHOP) |
+    /* Step G90 (decision 0060, hidden counters): the POSITION_EXT2 family and the partial trap's elapsed bits (4 to 6, public). */
+    .view_ext_features = ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_PARTIAL_TRAP) | /* G90 (decision 0060): presence, source, move and band are public */
+                         ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_VOLATILES2) |
+                         ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_TRAP_ELAPSED) |
+                         ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_THROAT_CHOP) |
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_HEAL_BLOCK) |
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_TYPE_CHANGE) |
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_ENCORE) |

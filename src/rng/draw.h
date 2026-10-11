@@ -47,11 +47,12 @@
 #define DFI_SITE_LOCK_TURNS 21u    /* the lock of Outrage, Thrash and Petal Dance (POOL data, step G56): lockedmove's onStart,
                                     * random(2, 4) = 2 or 3 turns (data/conditions.ts:265) */
 #define DFI_SITE_MULTIHIT_COUNT 22u /* Scale Shot, Icicle Spear (POOL data, step G54): sample of 20 hit counts, random(20) */
+#define DFI_SITE_PARTIAL_TRAP_TURNS 32u /* the partial trap's turns (POOL data, step G90, decision 0060): random(5, 7), data/conditions.ts:222-258 */
 #define DFI_SITE_MOODY 23u         /* Moody (POOL data, step G73): sample of the stats that can rise (random(n), n = the list length, one
                                     * draw), then of the stats that can fall (random(n), no draw for an empty list); data/abilities.ts:2701-2734 */
 #define DFI_SITE_CUTE_CHARM 24u    /* Cute Charm (POOL data, step G71, decision 0034): randomChance(3, 10), random(10) < 3, per contact hit on a damaged holder */
 #define DFI_SITE_ATTRACT 25u       /* Attract (POOL data, step G71, decision 0034): randomChance(1, 2) at BeforeMove priority 2, random(2) < 1 */
-#define DFI_SITE_COUNT 26u
+#define DFI_SITE_COUNT 33u /* gaps are fine: dfi_draw checks site < COUNT (HS ranges: sites 24-31 unused, 32 G90, 33 the count) */
 
 /* The name of a draw site, for the tests and the debug paths. A new site needs its case here; the switch is the build-time guard: a
  * duplicate site value is a duplicate case value, a compile error on every compiler (see residual_order.h for the residual kinds). */
@@ -104,6 +105,8 @@ static inline const char *dfi_site_name(uint32_t site)
         return "multihit-count";
     case DFI_SITE_MOODY:
         return "moody";
+    case DFI_SITE_PARTIAL_TRAP_TURNS:
+        return "partial-trap-turns";
     default:
         return NULL;
     }

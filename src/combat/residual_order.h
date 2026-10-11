@@ -66,6 +66,9 @@
 /* lockedmove (Outrage, Thrash, Petal Dance; data/conditions.ts:253-285; step G56): no order, sub-order 2 (a condition), a
  * duration and a callback: its countdown and its end (a callback that ends in a residual of an earlier turn's lock). */
 #define DFI_RES_LOCK 17u
+/* The partial trap (step G90, decision 0060; data/conditions.ts:222-258): order 13, sub-order 2, a callback every turn (its damage
+ * line, or the end line at 0 turns). The turns go down first; a trap whose source is gone ends silently in the same handler. */
+#define DFI_RES_PARTIAL_TRAP 25u
 #define DFI_RES_MOODY 18u /* Moody's onResidual: order 28, sub-order 2 (step G73; the same key as Speed Boost), a callback that draws */
 #define DFI_RES_NO_ORDER 0xFFFFFFFFu
 
@@ -114,14 +117,16 @@ static inline const char *dfi_res_kind_name(uint32_t kind)
         return "moody";
     case DFI_RES_CURSE:
         return "curse";
+    case DFI_RES_PARTIAL_TRAP:
+        return "partial-trap";
     default:
         return NULL;
     }
 }
 
-/* The exact test's bounds: the lists of the engine have at most 3 + 4 * 2 + 22 * 4 entries, a few draws and a few
- * orders (22 per position: the count of steps G27, G31, G32, G56, G42 and G84 together, DFI_RES_PER_POSITION in turn.c). */
-#define DFI_RES_MODEL_MAX 103u /* 3 + 4 * 2 + 23 * 4: DFI_RES_PER_POSITION counts Curse (step G84b) */
+/* The exact test's bounds: the lists of the engine have at most 3 + 4 * 2 + 24 * 4 entries, a few draws and a few
+ * orders (24 per position: the count of steps G27, G31, G32, G56, G42, G84, G84b and G90 together, DFI_RES_PER_POSITION in turn.c). */
+#define DFI_RES_MODEL_MAX 107u /* 3 + 4 * 2 + 24 * 4: DFI_RES_PER_POSITION counts Curse (step G84b) and the partial trap (G90) */
 #define DFI_RES_DRAW_CAP 4096u
 #define DFI_RES_ARRANGEMENT_CAP 1024u
 #define DFI_RES_REGION_MAX 4u
@@ -157,7 +162,8 @@ static inline bool dfi_residual_is_volatile(const dfi_residual_entry *e)
 {
     return e->kind == DFI_RES_DURATION || e->kind == DFI_RES_ENCORE || e->kind == DFI_RES_TAUNT || e->kind == DFI_RES_HEAL_BLOCK ||
            e->kind == DFI_RES_YAWN || e->kind == DFI_RES_DISABLE || e->kind == DFI_RES_PERISH || e->kind == DFI_RES_LOCK ||
-           e->kind == DFI_RES_LEECH || e->kind == DFI_RES_CURSE;
+           e->kind == DFI_RES_LEECH || e->kind == DFI_RES_CURSE ||
+           e->kind == DFI_RES_PARTIAL_TRAP;
 }
 
 /* What is known about the age of a Pokemon's volatiles. The counters of the turn (Protect, the stall counter, flinch, a charge,

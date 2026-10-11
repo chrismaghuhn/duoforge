@@ -3088,7 +3088,16 @@ static const dfi_member *dfi_member_at(const struct duoforge_battle *b, uint32_t
 bool dfi_switch_trapped(const struct duoforge_battle *b, uint32_t flat)
 {
     const dfi_member *m = dfi_member_at(b, flat);
-    if (m == NULL || m->hp == 0u || dfi_ability(b, m, DFI_ABILITY_SHADOWTAG) || dfi_has_type(b, m, DFI_TYPE_GHOST)) {
+    if (m == NULL || m->hp == 0u || dfi_has_type(b, m, DFI_TYPE_GHOST)) {
+        return false; /* tryTrap refuses a Ghost type for every trap (typechart trapped: 3) */
+    }
+    /* The partial trap (step G90, decision 0060): the volatile is up and its source is on the field (a source that left has
+     * its tail source cleared, and a fainted one has ended the trap at the residual). The holder itself may have Shadow Tag. */
+    if (b->tail.sides[flat / 2u].positions[flat % 2u].trap_turns != 0u &&
+        b->tail.sides[flat / 2u].positions[flat % 2u].trap_source != 0u) {
+        return true;
+    }
+    if (dfi_ability(b, m, DFI_ABILITY_SHADOWTAG)) {
         return false;
     }
     const uint32_t foe = 1u - flat / 2u;
@@ -6109,6 +6118,17 @@ static uint16_t *dfi_sub_hp_of(struct duoforge_battle *b, uint32_t flat)
     return &b->tail.sides[flat / 2u].positions[flat % 2u].substitute_hp;
 }
 
+/* The partial trap (step G90, decision 0060): its four fields are the volatile. A silent end (the Substitute's start, a trapper that
+ * left, a fainted trapper at the residual) clears them with no line. */
+static void dfi_trap_clear(dfi_tail_pos *tp)
+{
+    tp->trap_turns = 0u;
+    tp->trap_source = 0u;
+    tp->trap_move = 0u;
+    tp->trap_band = 0u;
+    tp->trap_elapsed = 0u; /* step G90: the counter goes with the trap (decision 0060) */
+}
+
 /* The Substitute move (data/moves.ts:18314-18326 and 18328-18340): onTryHit fails in order (the Substitute is up, then the
  * user's HP is a quarter or less, or its maximum is 1), then the volatile starts with floor(maxhp / 4) HP, and onHit takes
  * directDamage(maxhp / 4) from the user (clamped to at least 1, sim/battle.ts:2215). */
@@ -6267,6 +6287,8 @@ static duoforge_status dfi_run_substitute(dfi_run *r, uint32_t user)
     e = dfi_ev(DUOFORGE_EVENT_VOLATILE_START, user, DUOFORGE_CAUSE_NONE, 0u, DUOFORGE_NO_POSITION);
     e.detail = (uint8_t)DUOFORGE_VOLATILE_SUBSTITUTE;
     dfi_emit(r, &e);
+    /* onStart (data/moves.ts:18335-18340): a partial trap on the user ends with the Substitute, silently ([silent] line). */
+    dfi_trap_clear(&b->tail.sides[user / 2u].positions[user % 2u]);
     /* onHit: the -damage line of the user has no [from] (sim/battle.ts directDamage, default branch) */
     /* onHit: the cost, inside spreadMoveHit, before the hit loop's Update (data/mods/champions/scripts.ts:537), and the
      * Update after the damage check (:574): both run on this success path, which gives the status result true. The two
@@ -7333,6 +7355,34 @@ static duoforge_status dfi_smart_targets(dfi_run *r, uint32_t user, uint32_t tar
     return DUOFORGE_OK;
 }
 
+/* The partial trap's volatile (step G90, decision 0060; runMoveEffects' volatileStatus after the damage of a hit, Champions hit
+ * loop: data/mods/champions/scripts.ts:374). addVolatile (sim/pokemon.ts:1969-2030) refuses a fainted target and a target that
+ * has the volatile already: no draw, no line, no reset (the damage stands). Otherwise the duration is drawn (random(5, 7),
+ * durationCallback before onStart), the band is the source's held Binding Band at the start, and the line is
+ * -activate|T|move: M|[of] S (an ACTIVATE with cause MOVE). A Ghost target keeps the volatile (and its damage) with no trap:
+ * dfi_switch_trapped reads that. */
+static duoforge_status dfi_partial_trap_start(dfi_run *r, uint32_t user, uint32_t target, uint32_t move_id)
+{
+    struct duoforge_battle *b = r->b;
+    dfi_tail_pos *tp = &b->tail.sides[target / 2u].positions[target % 2u];
+    if (tp->trap_turns != 0u || dfi_at(b, target)->hp == 0u) {
+        return DUOFORGE_OK;
+    }
+    uint32_t turns = 0u;
+    const duoforge_status st = dfi_draw(r->draws, DFI_SITE_PARTIAL_TRAP_TURNS, 5u, 7u, &turns);
+    if (st != DUOFORGE_OK) {
+        return st;
+    }
+    tp->trap_turns = (uint8_t)turns; /* wide-operands-reviewed: 5 or 6 */
+    tp->trap_source = (uint8_t)(user + 1u); /* wide-operands-reviewed: <= 4 */
+    tp->trap_move = (uint16_t)(move_id + 1u); /* wide-operands-reviewed: a move id + 1 */
+    tp->trap_band = dfi_holds(b, dfi_at(b, user), DFI_ITEM_BINDINGBAND) ? 1u : 0u;
+    tp->trap_elapsed = 0u; /* step G90: the residual phases counted from the start (decision 0060, hidden counters) */
+    const duoforge_event e = dfi_ev(DUOFORGE_EVENT_ACTIVATE, target, DUOFORGE_CAUSE_MOVE, move_id, user);
+    dfi_emit(r, &e);
+    return DUOFORGE_OK;
+}
+
 static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, bool *ran)
 {
     r->hit_index = 1u;
@@ -7948,7 +7998,8 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
         md->special != DFI_SPECIAL_ICE_SPINNER && md->special != DFI_SPECIAL_BELLY_DRUM &&
         md->special != DFI_SPECIAL_LEECH_SEED &&
         md->special != DFI_SPECIAL_CONFUSE && md->special != DFI_SPECIAL_OHKO &&
-        md->special != DFI_SPECIAL_MEMENTO && md->special != DFI_SPECIAL_LEVEL_DAMAGE) { /* step G84, G92 */
+        md->special != DFI_SPECIAL_MEMENTO && md->special != DFI_SPECIAL_LEVEL_DAMAGE &&
+        md->special != DFI_SPECIAL_PARTIAL_TRAP) { /* step G84, G92, G90 */
         return DUOFORGE_E_INVARIANT;
     }
     /* Steel Roller's onTry (step G34, data/moves.ts:17893-17913): it fails without a terrain, with -fail and [still]. */
@@ -8514,6 +8565,17 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
                 if (md->drain[1] != 0u && dealt != 0u) {
                     const uint32_t num = dealt * md->drain[0] * 2u + md->drain[1];
                     dfi_heal(r, user, num / (2u * md->drain[1]), DUOFORGE_CAUSE_DRAIN, 0u, targets[i]); /* round */
+                }
+            }
+        }
+        /* The partial trap (step G90): the volatile of each hit target, after the damage of the hit (runMoveEffects). */
+        if (md->special == DFI_SPECIAL_PARTIAL_TRAP) {
+            for (uint32_t i = 0u; i < count; ++i) {
+                if (hit[i]) {
+                    st = dfi_partial_trap_start(r, user, targets[i], move_id);
+                    if (st != DUOFORGE_OK) {
+                        return st;
+                    }
                 }
             }
         }
@@ -9486,6 +9548,7 @@ static void dfi_pass_give(struct duoforge_battle *b, uint32_t flat, const dfi_pa
     t->trap_turns = s->trap_turns;
     t->trap_source = s->trap_source;
     t->trap_band = s->trap_band;
+    t->trap_elapsed = s->trap_elapsed; /* the partial trap has no noCopy (pin: copyVolatileFrom, pokemon.ts:1251): the count goes too */
     t->trap_move = s->trap_move;
     /* copyVolatileFrom (sim/pokemon.ts:1246-1251): Curse has no noCopy, so the passer's Curse goes to the new occupant (step G84b). */
     t->position_flags = (uint8_t)((uint32_t)s->position_flags & (DFI_POSFLAG_DRAGON_CHEER_MASK | DFI_POSFLAG_CURSED)); /* wide-operands-reviewed: < 256 */
@@ -10401,7 +10464,7 @@ static uint8_t *dfi_side_turns(struct duoforge_battle *b, uint32_t s, uint32_t k
  * (DFI_RES_PER_POSITION) a status (burn or poison), the volatiles' handlers (seven duration ends: Protect, the stall
  * counter, flinch, a charge, Helping Hand, Follow Me and mustrecharge; Heal Block, Throat Chop, Encore, Disable (step G27),
  * Perish Song (step G26), Taunt and Yawn (step G31)), an item (Leftovers or White Herb), Speed Boost (step G32) and Grassy Terrain. */
-#define DFI_RES_PER_POSITION 23u /* 14 before Speed Boost (G32), Disable (G27), Perish Song (G26), Taunt and Yawn (G31), the lockedmove (G56), Roost's volatile (G42) Leech Seed's drain (G84) and Curse's residual (G84b) */
+#define DFI_RES_PER_POSITION 24u /* 14 before Speed Boost (G32), Disable (G27), Perish Song (G26), Taunt and Yawn (G31), the lockedmove (G56), Roost's volatile (G42), Leech Seed's drain (G84), Curse (G84b) and the partial trap (G90) */
 #define DFI_RES_MAX (3u + 4u * DUOFORGE_SIDE_COUNT + DFI_RES_PER_POSITION * DFI_POSITIONS)
 _Static_assert(DFI_RES_MAX <= DFI_RES_MODEL_MAX, "the exact test of residual_order.h must hold the whole list");
 
@@ -10792,6 +10855,11 @@ static duoforge_status dfi_residual_events_run(dfi_run *r, dfi_noorder_snapshot 
                 list[n] = (dfi_residual_entry){DFI_RES_LOCK, flat, DFI_RES_NO_ORDER, speed, 2u, true};
                 n += 1u;
             }
+            /* The partial trap (step G90, decision 0060; order 13, sub-order 2): a callback every turn, like Perish Song's count. */
+            if (vt->trap_turns != 0u) {
+                list[n] = (dfi_residual_entry){DFI_RES_PARTIAL_TRAP, flat, 13u, speed, 2u, true};
+                n += 1u;
+            }
             /* Roost's volatile (duration 1, onResidualOrder 25, data/moves.ts:15444-15455): its end is silent, the bit goes at
              * that entry (step G42). */
             if ((vt->single_turn & DFI_SINGLE_TURN_ROOST) != 0u) {
@@ -10936,6 +11004,50 @@ static duoforge_status dfi_residual_events_run(dfi_run *r, dfi_noorder_snapshot 
         dfi_member *m = dfi_at(b, e->flat);
         if (m->hp == 0u) {
             continue; /* the holder fainted */
+        }
+        if (e->kind == DFI_RES_PARTIAL_TRAP) {
+            /* The partial trap (step G90, decision 0060; data/conditions.ts:222-258). The turns go down first, and at 0 the end
+             * line shows with no damage that turn (sim/battle.ts:516-523). Otherwise a source that is gone (its position emptied
+             * or refilled: the tail's source is then 0, or its holder fainted) ends the trap silently, and the holder takes
+             * floor(maxhp / 6 with Binding Band, else 8), at least 1 (Battle.damage clamps). */
+            dfi_tail_pos *tail = &b->tail.sides[e->flat / 2u].positions[e->flat % 2u];
+            if (tail->trap_turns == 0u) {
+                continue; /* removed by an earlier handler */
+            }
+            tail->trap_turns = (uint8_t)((uint32_t)tail->trap_turns - 1u); /* wide-operands-reviewed: >= 1 */
+            const uint32_t move_id = (uint32_t)tail->trap_move - 1u;
+            if (tail->trap_turns == 0u) {
+                duoforge_event end = dfi_event_make(DUOFORGE_EVENT_VOLATILE_END, e->flat);
+                end.detail = (uint8_t)DUOFORGE_VOLATILE_PARTIAL_TRAP;
+                end.id = (uint16_t)move_id;
+                dfi_trap_clear(tail);
+                dfi_emit(r, &end);
+                continue;
+            }
+            /* One more residual phase has run with the trap up (decision 0060, hidden counters): the public counter. It stays
+             * below 6 while the trap is up (d <= 6), so the 3-bit field never saturates in a legal state. */
+            if (tail->trap_elapsed < 7u) {
+                tail->trap_elapsed = (uint8_t)(tail->trap_elapsed + 1u); /* wide-operands-reviewed: < 7 */
+            }
+            const dfi_member *src = tail->trap_source == 0u ? NULL : dfi_member_at(b, (uint32_t)tail->trap_source - 1u);
+            if (src == NULL || src->hp == 0u) {
+                dfi_trap_clear(tail); /* silent: the source is not on the field any more */
+                continue;
+            }
+            const uint32_t divisor = tail->trap_band != 0u ? 6u : 8u;
+            uint32_t amount = (uint32_t)m->hp_max / divisor;
+            if (amount == 0u) {
+                amount = 1u;
+            }
+            st = dfi_deal(r, e->flat, amount, DUOFORGE_CAUSE_MOVE, move_id, DUOFORGE_NO_POSITION, DFI_DMG_CONDITION);
+            if (st != DUOFORGE_OK) {
+                return st;
+            }
+            dfi_process_faints(r);
+            if (r->ended) {
+                return DUOFORGE_OK;
+            }
+            continue;
         }
         if (e->kind == DFI_RES_PERISH) {
             /* fieldEvent (sim/battle.ts:484-575): the duration goes down; at 0 onEnd shows -start|X|perish0 and

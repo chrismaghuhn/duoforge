@@ -871,6 +871,12 @@ duoforge_status duoforge_battle_observe(const duoforge_context *ctx, const duofo
 #define DUOFORGE_POSITION_EXT_DRAGON_CHEER 0x00000040u
 #define DUOFORGE_POSITION_EXT_MUST_RECHARGE 0x00000080u
 #define DUOFORGE_POSITION_EXT_PARTIAL_TRAP 0x00000100u
+/* POSITION_EXT2 bits 4 to 6 (duoforge_observation_ext.volatiles2, decision 0060, the hidden counters): the partial trap's elapsed
+   residual phases, a 3-bit value (0..5 while trapped, 0 without the trap). Public: every viewer sees the same. Shown under
+   DUOFORGE_VIEWEXT_FEATURE_TRAP_ELAPSED (DUOFORGE_VIEWEXT_RESERVE_OWN) and the family VOLATILES2. */
+#define DUOFORGE_POSITION_EXT2_TRAP_ELAPSED_BIT0 0x00000010u
+#define DUOFORGE_POSITION_EXT2_TRAP_ELAPSED_BIT1 0x00000020u
+#define DUOFORGE_POSITION_EXT2_TRAP_ELAPSED_BIT2 0x00000040u
 #define DUOFORGE_POSITION_EXT_GLAIVE_RUSH  0x00000200u
 #define DUOFORGE_POSITION_EXT_DESTINY_BOND 0x00000400u
 #define DUOFORGE_POSITION_EXT_CURSE        0x00000800u
@@ -902,8 +908,12 @@ duoforge_status duoforge_battle_observe(const duoforge_context *ctx, const duofo
    derives the same from the names, and python/tests/test_encoder6.py checks that the two agree). */
 /* X(family feature, bit number in the family's field, own feature): X(RESERVE_VOLATILES, 22u, HEALING_WISH) says
    DUOFORGE_POSITION_EXT_HEALING_WISH (bit 22 of volatiles) is shown only under DUOFORGE_VIEWEXT_FEATURE_HEALING_WISH as
-   well. Empty while no reserve bit has a feature of its own. */
-#define DUOFORGE_VIEWEXT_RESERVE_OWN(X) X(RESERVE_VOLATILES, 22u, HEALING_WISH)
+   well. Here: POSITION_EXT2 bits 4 to 6, the partial trap's elapsed count (decision 0060), each with VIEWEXT feature 45 (TRAP_ELAPSED). */
+#define DUOFORGE_VIEWEXT_RESERVE_OWN(X) \
+    X(RESERVE_VOLATILES, 22u, HEALING_WISH) \
+    X(VOLATILES2, 4u, TRAP_ELAPSED)     \
+    X(VOLATILES2, 5u, TRAP_ELAPSED)     \
+    X(VOLATILES2, 6u, TRAP_ELAPSED)
 /* X(family, bit number in the family's field): a defined reserve bit WITHOUT a feature of its own, shown under the family's
    feature alone (POSITION_FLAGS: the observation's position flags, always), checked by its step: the comment beside the
    entry names the decision or the evidence. Every defined reserve bit is in exactly one of the two lists
@@ -961,7 +971,9 @@ duoforge_status duoforge_battle_observe(const duoforge_context *ctx, const duofo
 #define DUOFORGE_VIEWEXT_FEATURE_MOVE_FAILED      41u
 #define DUOFORGE_VIEWEXT_FEATURE_TRANSFORM        42u
 #define DUOFORGE_VIEWEXT_FEATURE_HEALING_WISH    43u /* Healing Wish: the position's wish bit (decision 0045) */
-#define DUOFORGE_VIEWEXT_FEATURE_COUNT            44u
+/* Lane A (G90, decision 0060): the partial trap's elapsed counter, the own feature of POSITION_EXT2 bits 4 to 6 (HS registry). */
+#define DUOFORGE_VIEWEXT_FEATURE_TRAP_ELAPSED     45u
+#define DUOFORGE_VIEWEXT_FEATURE_COUNT            46u
 /* The reserve families of encoder 6 (decision 0050), outside the tiers (COUNT does not count them). */
 #define DUOFORGE_VIEWEXT_FEATURE_RESERVE_VOLATILES 59u /* duoforge_position_ext.volatiles bits 22 to 31 */
 #define DUOFORGE_VIEWEXT_FEATURE_VOLATILES2        60u /* duoforge_observation_ext.volatiles2 */
@@ -1227,6 +1239,11 @@ duoforge_status duoforge_battle_observe_ext(const duoforge_context *ctx, const d
                                               [from] ability: Cute Charm|[of] Y, other: the holder). Its end lines of Mental Herb and
                                               Oblivious are VOLATILE_END (cause ITEM or ABILITY); the silent end (the source left) is state
                                               only, with no event (decision 0015 5bn). */
+/* VOLATILE_START / VOLATILE_END (POOL kinds, step G90, decision 0060): the partial trap of Bind, Wrap, Fire Spin, Sand Tomb,
+   Snap Trap and Infestation. The start is an ACTIVATE (cause MOVE, id2 the move, other the source), the residual damage a DAMAGE
+   (cause MOVE, id2 the move), the end of the duration -end|X|move: M|[partiallytrapped] a VOLATILE_END with id = the move. The silent
+   ends (the source left, a Substitute, a fainted source) emit nothing. The turns are a drawn counter, hidden from both viewers. */
+#define DUOFORGE_VOLATILE_PARTIAL_TRAP 12u
 /* FAIL details of a Substitute, valid only with cause MOVE and id2 = the Substitute move (decision 0032). */
 #define DUOFORGE_FAIL_SUBSTITUTE_EXISTS 1u /* the user already has a Substitute: -fail|X|move: Substitute */
 #define DUOFORGE_FAIL_SUBSTITUTE_WEAK   2u /* the user's HP is a quarter of its maximum or less: -fail|X|move: Substitute|[weak] */

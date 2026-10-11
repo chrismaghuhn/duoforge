@@ -405,6 +405,9 @@ duoforge_status duoforge_battle_observe_ext(const duoforge_context *ctx, const d
                 vol |= (tail->single_turn & DFI_SINGLE_TURN_ROOST) != 0u ? (uint32_t)DUOFORGE_POSITION_EXT_ROOST : 0u;
                 /* Step G60 (decision 0032): the Substitute is up: presence only, its HP is never in the observation. */
                 vol |= tail->substitute_hp != 0u ? (uint32_t)DUOFORGE_POSITION_EXT_SUBSTITUTE : 0u;
+                /* Step G90 (decision 0060): the partial trap is up (-activate at its start, -end at its end): presence only; the
+                 * turns are drawn and hidden, the source is public (the -activate line names it). */
+                vol |= tail->trap_turns != 0u ? (uint32_t)DUOFORGE_POSITION_EXT_PARTIAL_TRAP : 0u;
                 /* Step G72b (decision 0015 5ce): Dragon Cheer's volatile is up while its stage is (-start|X|move: Dragon Cheer; a
                  * switch-out clears the stage with the position's tail, so the bit ends with it). */
                 vol |= (tail->position_flags & DFI_POSFLAG_DRAGON_CHEER_MASK) != 0u ? (uint32_t)DUOFORGE_POSITION_EXT_DRAGON_CHEER : 0u;
@@ -432,6 +435,9 @@ duoforge_status duoforge_battle_observe_ext(const duoforge_context *ctx, const d
                  * infatuated occupant and no source (the source's member is not in the view). */
                 vol |= battle->tail.attract_source[s * DUOFORGE_ACTIVE_PER_SIDE + p] != 0u ? (uint32_t)DUOFORGE_POSITION_EXT_ATTRACT : 0u;
                 o.sides[s].positions[p].volatiles = vol;
+                /* Step G90 (decision 0060, hidden counters): the partial trap's elapsed residual phases, POSITION_EXT2 bits 4 to 6.
+                 * Public (-activate and each residual line show them), zero without the trap. */
+                o.volatiles2[s][p] = tail->trap_turns != 0u ? ((uint32_t)tail->trap_elapsed << 4) : 0u;
                 /* Step G42: move_failed is 1 iff the occupant's last move result is FALSE. It is exact only when the result is
                  * classified; an unclassified result (the bit of decision 0015 section 7) reads 0 here (documented, not refused). */
                 o.sides[s].positions[p].move_failed =

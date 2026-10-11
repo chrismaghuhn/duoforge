@@ -142,7 +142,8 @@ SITES = {'SPEED_TIE': 1, 'ACCURACY': 2, 'CRIT': 3, 'DAMAGE_ROLL': 4, 'SECONDARY'
          'MULTIHIT_COUNT': 22,  # 21: step G56, the lock's count of Outrage, Thrash and Petal Dance (DFI_SITE_LOCK_TURNS)
          'MOODY': 23,  # 23: step G73, Moody's samples (DFI_SITE_MOODY), one site for both draws
          'CUTE_CHARM': 24,  # 24: step G71, Cute Charm's roll (DFI_SITE_CUTE_CHARM), randomChance(3, 10)
-         'ATTRACT': 25}  # 25: step G71, Attract's roll before the move (DFI_SITE_ATTRACT), randomChance(1, 2)
+         'ATTRACT': 25,  # 25: step G71, Attract's roll before the move (DFI_SITE_ATTRACT), randomChance(1, 2)
+         'PARTIAL_TRAP_TURNS': 32}  # 32: step G90, the partial trap's turns (DFI_SITE_PARTIAL_TRAP_TURNS)
 STATS = ['HP', 'Atk', 'Def', 'SpA', 'SpD', 'Spe']
 GENDER = {'M': 1, 'F': 2}
 GENDERLESS = 3
@@ -1019,6 +1020,9 @@ VOLATILE_CURSE = 14  # DUOFORGE_VOLATILE_CURSE (step G84b, decision 0063): START
 VOLATILE_SUBSTITUTE = 9  # DUOFORGE_VOLATILE_SUBSTITUTE (decision 0032): START and END, presence only
 VOLATILE_DRAGONCHEER = 10  # DUOFORGE_VOLATILE_DRAGONCHEER (step G72b, decision 0015 5ce): START only, presence only
 VOLATILE_ATTRACT = 11      # DUOFORGE_VOLATILE_ATTRACT (step G71, decision 0034): START, and the visible END of Mental Herb and Oblivious
+VOLATILE_PARTIAL_TRAP = 12  # DUOFORGE_VOLATILE_PARTIAL_TRAP (step G90, decision 0060): the END line; the start is an ACTIVATE
+# The six moves of the partial trap (step G90, decision 0060): the names of their lines.
+PARTIAL_TRAP_MOVES = ('Bind', 'Wrap', 'Fire Spin', 'Sand Tomb', 'Snap Trap', 'Infestation')
 FAIL_SUBSTITUTE_EXISTS = 1  # DUOFORGE_FAIL_SUBSTITUTE_EXISTS: cause MOVE + id2 Substitute only
 FAIL_SUBSTITUTE_WEAK = 2    # DUOFORGE_FAIL_SUBSTITUTE_WEAK: cause MOVE + id2 Substitute only
 MOVE_SLOT_RECHARGE = 5   # DUOFORGE_MOVE_SLOT_RECHARGE (step G17)
@@ -1086,6 +1090,10 @@ IGNORED_VOLATILES = {
     # Pool step G31: Taunt's turns are not a field of the record: the moves of the next requests (every Status move is
     # disabled), the cant lines and the start and end lines show them; Yawn's show in the start line and the sleep.
     'taunt': 'the moves of the requests, the cant lines and the start and end lines',
+    # Step G90 (decision 0060): the partial trap's turns are not a field of the record (a drawn counter, hidden from both viewers):
+    # the residual damage lines, the end line and the trapped request (no switch option) show it; the source and the band are read
+    # by duoforge.state.pool_g90 after every step, and the presence bit of the view by its own test.
+    'partiallytrapped': 'the residual damage lines, the end line and the trapped request; the turns are hidden',
     'yawn': 'the start line and the sleep that it brings',
     # Pool step G17 (the recharge turn): the volatile shows in the request of the next turn (the one candidate, the
     # recharge slot), the start line (`-mustrecharge`) and the cant line (`cant|X|recharge`), and the view bit.
@@ -1745,6 +1753,10 @@ def step_events(log, viewer, roster_of, maxhp, tables, rb_pending=None, ill=None
                 tn = ill['truth_at'].get((side, pos % 2))
                 if tn is not None and tn != name and ill['shown_at'].get((side, pos % 2)) == name:
                     shown_max = tn
+            if '[partiallytrapped]' in attrs and (kind != '-damage' or cause != CAUSE['MOVE'] or other != NOPOS):
+                # Step G90 (decision 0060, rule partial-trap-damage): the residual of a partial trap is `-damage|T|hp|[from] move: M|
+                # [partiallytrapped]`: a DAMAGE with cause MOVE and the move in id2, no [of]. Any other shape is refused.
+                raise ConversionError('partial-trap-damage', 'trace_to_c: partial trap line of another shape %r' % line, detail=line)
             hp = ev_hp(args[1], side, viewer, maxhp[side][shown_max])
             e = ev_tuple(EV['DAMAGE' if kind == '-damage' else 'HEAL'], pos, other, cause, 0, id2, *hp)
         elif kind == 'faint':
@@ -1859,7 +1871,13 @@ def step_events(log, viewer, roster_of, maxhp, tables, rb_pending=None, ill=None
         elif kind == '-activate':
             pos = ev_pos(args[0])
             what = args[1]
-            if what == 'move: Poltergeist' and len(args) == 3:
+            if what.startswith('move: ') and what[6:] in PARTIAL_TRAP_MOVES and len(args) == 2 and len(attrs) == 1 \
+                    and attrs[0].startswith('[of] '):
+                # Step G90 (decision 0060, rule partial-trap-start): `-activate|T|move: M|[of] S`, the start of the partial trap:
+                # ACTIVATE with cause MOVE, id2 = the move, other = the source (the converter's rule for the volatile's start).
+                _, _, other = ev_cause(attrs, tables)
+                e = ev_tuple(EV['ACTIVATE'], pos, other, CAUSE['MOVE'], 0, tables['MOVE'][key(what[6:])])
+            elif what == 'move: Poltergeist' and len(args) == 3:
                 # Step G64 (Poltergeist's onTryHit, data/moves.ts:13601-13604): -activate|X|move: Poltergeist|Item, an ACTIVATE of
                 # the move with no state of its own. The item is the one X holds now; the name must be an item of the tables.
                 try:
@@ -2027,6 +2045,13 @@ def step_events(log, viewer, roster_of, maxhp, tables, rb_pending=None, ill=None
                 if not (herb or oblivious) or other != NOPOS:
                     raise ConversionError('attract-end', 'trace_to_c: unknown -end %r' % line, detail='Attract end cause')
                 e = ev_tuple(EV['VOLATILE_END'], ev_pos(args[0]), NOPOS, cause, 0, id2, detail=VOLATILE_ATTRACT)
+            elif kind == '-end' and (what[6:] if what.startswith('move: ') else what) in PARTIAL_TRAP_MOVES and len(args) == 2 \
+                    and attrs == ['[partiallytrapped]']:
+                # Step G90 (decision 0060, rule partial-trap-end): `-end|T|move: M|[partiallytrapped]`, the duration's end (the
+                # residual's count at 0, no damage that turn): VOLATILE_END with the move in `ident`. The silent end has [silent]
+                # and no event (the [silent] rule).
+                e = ev_tuple(EV['VOLATILE_END'], ev_pos(args[0]), detail=VOLATILE_PARTIAL_TRAP,
+                             ident=tables['MOVE'][key(what[6:] if what.startswith('move: ') else what)])
             elif what == 'move: Heal Block':
                 e = ev_tuple(EV['VOLATILE_START' if kind == '-start' else 'VOLATILE_END'], ev_pos(args[0]),
                              detail=VOLATILE_HEAL_BLOCK)

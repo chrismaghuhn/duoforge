@@ -45,7 +45,7 @@ static const char TAIL_HEX[] =
     "000000000500000102010100000001000000000000010100000101000000000f000101000000000005002c01050c0012"
     "0100d700590112ff00ff00000000010000a6000001000000000000010000000000000000000000000000000000000000"
     "000000000000000001000001040401000300000000000000000001010000000000000000000000040003000300000000"
-    "040000000000000000000001030000000000000000000000ff0100090200000100000000000000000000000000000000"
+    "040000000000000000000001030000000000000000000000ff0100090200000104000000000000000000000000000000"
     "000000000000000001000000010000010000000000000000000000000000000000000000000000000700006400000100"
     "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
     "000000000000000000000000";
@@ -89,8 +89,8 @@ static const unsigned sweep[DFI_ENC_TAIL_SIZE][SWEEP_COLUMNS] = {
     {4, 0, 251, 0, 0, 0, 0, 0},
     {1, 0, 254, 0, 0, 0, 0, 0},
     {1, 0, 254, 0, 0, 0, 0, 0},
-    {7, 0, 248, 0, 0, 0, 0, 0},
-    {2, 0, 253, 0, 0, 0, 0, 0},
+    {1, 0, 254, 0, 0, 0, 0, 0},
+    {3, 0, 252, 0, 0, 0, 0, 0},
     {1, 0, 254, 0, 0, 0, 0, 0},
     {3, 0, 252, 0, 0, 0, 0, 0},
     {2, 0, 253, 0, 0, 0, 0, 0},
@@ -110,7 +110,7 @@ static const unsigned sweep[DFI_ENC_TAIL_SIZE][SWEEP_COLUMNS] = {
     {6, 0, 249, 0, 0, 0, 0, 0},
     {6, 0, 249, 0, 0, 0, 0, 0},
     {0, 0, 255, 0, 0, 0, 0, 0},
-    {0, 0, 0, 0, 0, 255, 0, 0},
+    {0, 0, 255, 0, 0, 0, 0, 0}, /* step G90: trap_elapsed of side 0 position 0 (trapped: 1..5 OK, the rest POSITION) */
     {0, 0, 0, 0, 0, 255, 0, 0},
     {0, 0, 0, 0, 0, 255, 0, 0},
     {0, 0, 0, 0, 0, 255, 0, 0},
@@ -146,7 +146,7 @@ static const unsigned sweep[DFI_ENC_TAIL_SIZE][SWEEP_COLUMNS] = {
     {6, 0, 249, 0, 0, 0, 0, 0},
     {6, 0, 249, 0, 0, 0, 0, 0},
     {0, 0, 255, 0, 0, 0, 0, 0},
-    {0, 0, 0, 0, 0, 255, 0, 0},
+    {0, 0, 255, 0, 0, 0, 0, 0}, /* step G90: trap_elapsed of side 0 position 1 (not trapped: only 0, POSITION otherwise) */
     {0, 0, 0, 0, 0, 255, 0, 0},
     {0, 0, 0, 0, 0, 255, 0, 0},
     {0, 0, 0, 0, 0, 255, 0, 0},
@@ -250,7 +250,7 @@ static const unsigned sweep[DFI_ENC_TAIL_SIZE][SWEEP_COLUMNS] = {
     {6, 0, 249, 0, 0, 0, 0, 0},
     {6, 0, 249, 0, 0, 0, 0, 0},
     {2, 0, 252, 0, 0, 0, 0, 1},
-    {0, 0, 0, 0, 0, 255, 0, 0},
+    {0, 0, 255, 0, 0, 0, 0, 0}, /* step G90: trap_elapsed of side 1 position 0 (not trapped) */
     {0, 0, 0, 0, 0, 255, 0, 0},
     {0, 0, 0, 0, 0, 255, 0, 0},
     {0, 0, 0, 0, 0, 255, 0, 0},
@@ -265,8 +265,8 @@ static const unsigned sweep[DFI_ENC_TAIL_SIZE][SWEEP_COLUMNS] = {
     {0, 0, 255, 0, 0, 0, 0, 0},
     {1, 0, 254, 0, 0, 0, 0, 0},
     {1, 0, 254, 0, 0, 0, 0, 0},
-    {7, 0, 248, 0, 0, 0, 0, 0},
-    {2, 0, 253, 0, 0, 0, 0, 0},
+    {1, 0, 254, 0, 0, 0, 0, 0},
+    {3, 0, 252, 0, 0, 0, 0, 0},
     {1, 0, 254, 0, 0, 0, 0, 0},
     {3, 0, 252, 0, 0, 0, 0, 0},
     {2, 0, 253, 0, 0, 0, 0, 0},
@@ -286,7 +286,7 @@ static const unsigned sweep[DFI_ENC_TAIL_SIZE][SWEEP_COLUMNS] = {
     {6, 0, 249, 0, 0, 0, 0, 0},
     {6, 0, 249, 0, 0, 0, 0, 0},
     {2, 0, 252, 0, 0, 0, 0, 1},
-    {0, 0, 0, 0, 0, 255, 0, 0},
+    {1, 0, 254, 0, 0, 0, 0, 0}, /* step G90: trap_elapsed of side 1 position 1 (trapped) */
     {0, 0, 0, 0, 0, 255, 0, 0},
     {0, 0, 0, 0, 0, 255, 0, 0},
     {0, 0, 0, 0, 0, 255, 0, 0},
@@ -597,7 +597,7 @@ static void set_example_tail(duoforge_battle *b)
                                      .heal_block_turns = 3u, .leech_seed_source = 1u, .yawn_turns = 1u, .move_result = 4u,
                                      .hits_taken = 3u, .lock_turns = 3u};
     c->positions[1] = (dfi_tail_pos){.trap_move = DFI_POOL_MOVE_COUNT, .last_move = EXAMPLE_LOCK_SLOT, .trap_turns = 1u,
-                                     .trap_source = 3u, .move_result = 9u, .single_turn = DFI_SINGLE_TURN_ROOST,
+                                     .trap_source = 3u, .trap_elapsed = 4u, .move_result = 9u, .single_turn = DFI_SINGLE_TURN_ROOST,
                                      .lock_turns = 1u};
     /* the overrides of a member on the field: side 1's lead at position 0, its member 2 */
     c->ability_now[2] = 1u;
@@ -732,10 +732,10 @@ static size_t build_settings(tail_setting *out)
                                                   W1(po + DFI_ENC_TAIL_POS_DISABLE_TURNS_OFF, 1u), NO_WRITE}};
             out[n++] = (tail_setting){"imprison", {W1(po + DFI_ENC_TAIL_POS_IMPRISON_OFF, 1u), NO_WRITE, NO_WRITE}};
             out[n++] = (tail_setting){"must_recharge", {W1(po + DFI_ENC_TAIL_POS_MUST_RECHARGE_OFF, 1u), NO_WRITE, NO_WRITE}};
-            out[n++] = (tail_setting){"trap", {W1(po + DFI_ENC_TAIL_POS_TRAP_TURNS_OFF, 1u),
+            out[n++] = (tail_setting){"trap", {W1(po + DFI_ENC_TAIL_POS_TRAP_TURNS_OFF, 5u),
                                                W1(po + DFI_ENC_TAIL_POS_TRAP_SOURCE_OFF, other),
                                                W2(po + DFI_ENC_TAIL_POS_TRAP_MOVE_OFF, 1u)}};
-            out[n++] = (tail_setting){"trap_band", {W1(po + DFI_ENC_TAIL_POS_TRAP_TURNS_OFF, 1u),
+            out[n++] = (tail_setting){"trap_band", {W1(po + DFI_ENC_TAIL_POS_TRAP_TURNS_OFF, 5u),
                                                     W1(po + DFI_ENC_TAIL_POS_TRAP_SOURCE_OFF, other),
                                                     W2(po + DFI_ENC_TAIL_POS_TRAP_MOVE_OFF, 1u),
                                                     W1(po + DFI_ENC_TAIL_POS_TRAP_BAND_OFF, 1u)}};
@@ -934,8 +934,12 @@ MUT(m_trap_no_move, {
     p0->trap_turns = 1u;
     p0->trap_source = 2u;
 })
-MUT(m_trap_no_source, {
+MUT(m_trap_no_source_no_move, {
     p0->trap_turns = 1u;
+})
+/* decision 0060: a trap whose source left keeps its turns and move (the source is 0): valid, the residual ends it silently. */
+MUT(m_trap_no_source, {
+    p0->trap_turns = 5u; /* turns + elapsed in {5, 6} (the exact rule) */
     p0->trap_move = 1u;
 })
 MUT(m_trap_turns9, {
@@ -1061,7 +1065,7 @@ MUT(v_maxima, {
     ts->positions[0] = (dfi_tail_pos){.substitute_hp = 1u, .trap_move = DFI_POOL_MOVE_COUNT, .last_move = 5u,
                                       .encore_slot = 4u, .encore_turns = 4u, .throat_chop_turns = 2u,
                                       .heal_block_turns = 5u, .perish = 4u, .taunt_turns = 4u, .disable_slot = 4u,
-                                      .disable_turns = 5u, .imprison = 1u, .must_recharge = 1u, .trap_turns = 8u,
+                                      .disable_turns = 5u, .imprison = 1u, .must_recharge = 1u, .trap_turns = 6u,
                                       .trap_source = 4u, .trap_band = 1u, .leech_seed_source = 4u, .yawn_turns = 2u,
                                       .focus_energy = 1u, .stockpile = 3u, .stockpile_def = 3u,
                                       .stockpile_spd = 3u, .charge = 1u, .glaive_rush = 1u, .move_result = 0x0Fu,
@@ -1180,7 +1184,8 @@ static const tail_case cases[] = {
     {"a trap with a source alone", DFI_INV_TAIL_POSITION, false, m_trap_source_only},
     {"a trap with a move alone", DFI_INV_TAIL_POSITION, false, m_trap_move_only},
     {"a trap without its move", DFI_INV_TAIL_POSITION, false, m_trap_no_move},
-    {"a trap without its source", DFI_INV_TAIL_POSITION, false, m_trap_no_source},
+    {"a trap whose source left is legal at a turn boundary (decision 0060, pin data/conditions.ts:234-252: it ends silently at the next residual)", DFI_INV_NONE, true, m_trap_no_source},
+    {"a trap with neither source nor move", DFI_INV_TAIL_POSITION, false, m_trap_no_source_no_move},
     {"a trap above 8 turns", DFI_INV_TAIL_POSITION, false, m_trap_turns9},
     {"a trap source above 4", DFI_INV_TAIL_POSITION, false, m_trap_source5},
     {"a trap whose source is the occupant", DFI_INV_TAIL_POSITION, false, m_trap_own},
@@ -1283,8 +1288,10 @@ int main(void)
         DF_CHECK_EQ_U64(&t, DFI_ENC_TAIL_REV4_SIZE, 288u);
         DF_CHECK_EQ_U64(&t, DFI_ENC_TAIL5_SIZE, 60u);
         DF_CHECK_EQ_U64(&t, DFI_ENC_TAIL5_RESERVED_OFF, 44u);
-        DF_CHECK_EQ_U64(&t, DFI_ENC_TAIL_RESERVED_COUNT, 41u); /* step G46: party_order takes 6 of the 7 field bytes (35 before); rev 5: 12 more (G71 takes 4 for Attract) */
+        DF_CHECK_EQ_U64(&t, DFI_ENC_TAIL_RESERVED_COUNT, 37u); /* step G46: party_order takes 6 of the 7 field bytes (35 before); step G90 takes 1 of the position block's 4 (rev 5: 16 more) */
         DF_CHECK_EQ_U64(&t, DFI_ENC_TAIL5_ATTRACT_OFF, 44u);
+        DF_CHECK_EQ_U64(&t, DFI_ENC_TAIL_POS_TRAP_ELAPSED_OFF, 32u); /* step G90 (decision 0060): the partial trap's elapsed count */
+        DF_CHECK_EQ_U64(&t, DFI_ENC_TAIL_POS_RESERVED_OFF, 33u);
         DF_CHECK_EQ_U64(&t, DFI_STATE_SCHEMA_V3, 3u);
         DF_CHECK_EQ_U64(&t, DFI_STATE_SCHEMA_POOL_TAIL_REV5, 0x0503u);
         DF_CHECK_EQ_U64(&t, DFI_STATE_SCHEMA_POOL_TAIL_REV4, 0x0403u); /* refused since rev 5 */
@@ -1301,15 +1308,17 @@ int main(void)
         DF_CHECK_EQ_U64(&t, DFI_ENC_TAIL_MEMBER_FLAGS_OFF, 8u);
         DF_CHECK(&t, DFI_STATE_SCHEMA_POOL_TAIL_REV5 != 4u); /* schema 4 stays free: certified pool teams */
         /* The tail in memory: the encoded size without the reserved bytes, and the one pad byte of the field block. */
-        DF_CHECK_EQ_U64(&t, sizeof(dfi_pool_tail), 308u); /* a position and a side have none; step G46 adds party_order (6); rev 5 adds the Illusion state, the 2 position bytes and (step G71) the 4 Attract sources */
-        DF_CHECK_EQ_U64(&t, sizeof(dfi_tail_side), 148u);
-        DF_CHECK_EQ_U64(&t, sizeof(dfi_tail_pos), 34u);
+        /* step G46 adds party_order (6); rev 5 adds the Illusion state and the 2 position bytes; step G90 adds the elapsed count
+         * (one byte of a position's reserved four) and a pad byte per position, so each position is an even 36 bytes */
+        DF_CHECK_EQ_U64(&t, sizeof(dfi_pool_tail), 316u);
+        DF_CHECK_EQ_U64(&t, sizeof(dfi_tail_side), 152u);
+        DF_CHECK_EQ_U64(&t, sizeof(dfi_tail_pos), 36u);
         DF_CHECK_EQ_U64(&t, sizeof(dfi_tail_illusion), 18u);
         unsigned reserved = 0u;
         for (size_t off = 0u; off < DFI_ENC_TAIL_SIZE; ++off) {
             reserved += is_reserved_offset(off) ? 1u : 0u;
         }
-        DF_CHECK_EQ_U64(&t, reserved, 41u); /* step G71: the 4 Attract sources of the rev 5 reserve are data, not reserved */
+        DF_CHECK_EQ_U64(&t, reserved, 37u); /* step G71: the 4 Attract sources of the rev 5 reserve are data, not reserved */
         const duoforge_context *with[] = {kp, kq};
         const duoforge_context *without[] = {k1, k2, kc, kd, c1};
         for (size_t i = 0u; i < 2u; ++i) {
@@ -1607,8 +1616,8 @@ int main(void)
             }
         }
         DF_CHECK_EQ_U64(&t, wrong, 0u);
-        DF_CHECK_EQ_U64(&t, all_reserved, 41u); /* 29 reserved bytes of the rev 4 part (the field block's +1..+6 are party_order) and 12 of rev 5 (step G71: 4 Attract sources) */
-    }
+        /* 41 reserved bytes: the field block's +1..+6 are party_order (G46), the position block's byte 32 is the elapsed count (G90) and the Attract sources (G71) are data */
+        DF_CHECK_EQ_U64(&t, all_reserved, 37u);    }
 
     /* The schema is the one of the context's kind; sizes, schema ids and truncations. */
     {
@@ -1725,7 +1734,10 @@ int main(void)
                 uint8_t dg[DUOFORGE_DIGEST_SIZE];
                 size_t written = 77u;
                 size_t size = 0u;
-                if (dfi_state_check(kinds[i], b, &inv) == DUOFORGE_E_INVARIANT && inv == DFI_INV_TAIL_KIND &&
+                /* a non-pool battle: every tail byte, the trap_turns bytes too, is refused by TAIL_KIND (the per-position trap
+                 * rules are the pool tail's; the boundary rule on the source is gone, decision 0060) */
+                const dfi_invariant want_inv = DFI_INV_TAIL_KIND;
+                if (dfi_state_check(kinds[i], b, &inv) == DUOFORGE_E_INVARIANT && inv == want_inv &&
                     duoforge_battle_check(kinds[i], b) == DUOFORGE_E_INVARIANT &&
                     duoforge_battle_encode(kinds[i], b, out, sizeof out, &written) == DUOFORGE_E_INVARIANT &&
                     duoforge_battle_digest(kinds[i], b, dg) == DUOFORGE_E_INVARIANT &&
@@ -1734,7 +1746,8 @@ int main(void)
                 }
                 *tail_byte(b, k) = 0u;
             }
-            DF_CHECK_EQ_U64(&t, refused, sizeof b->tail);
+            /* every byte but the four position pads (never encoded, not state: decision 0060) is refused */
+            DF_CHECK_EQ_U64(&t, refused, sizeof b->tail - DUOFORGE_SIDE_COUNT * DUOFORGE_ACTIVE_PER_SIDE);
             DF_CHECK(&t, duoforge_battle_check(kinds[i], b) == DUOFORGE_OK);
             duoforge_battle_destroy(b);
         }
@@ -1846,10 +1859,8 @@ int main(void)
                 duoforge_battle_destroy(y);
             }
         }
-        /* G82 (decision 0045): bit 0 of the position flags is valid at an empty position, so the byte 1 of the empty position
-         * (the fainted and the empty case) is no refusal any more: two fewer than before. */
-        DF_CHECK_EQ_U64(&t, refused, 2u * sizeof(dfi_tail_pos) - 2u);
-        duoforge_battle_destroy(x);
+        /* every byte of the position but its pad (never encoded, not state: decision 0060) is refused, for both fainted cases; the position flag bit 0 (Healing Wish, G82) is valid at an empty position: two fewer */
+        DF_CHECK_EQ_U64(&t, refused, 2u * (sizeof(dfi_tail_pos) - 1u) - 2u);        duoforge_battle_destroy(x);
     }
 
     /* What leaves with the occupant (dfi_tail_clear_occupant): the position, the soak type, the current ability and
@@ -1913,6 +1924,16 @@ int main(void)
             want.sides[s].aurora_veil_turns = (uint8_t)(want.sides[s].aurora_veil_turns != 0u ? want.sides[s].aurora_veil_turns - 1u : 0u);
             for (uint32_t p = 0u; p < DUOFORGE_ACTIVE_PER_SIDE; ++p) {
                 dfi_tail_pos *tp = &want.sides[s].positions[p];
+                /* step G90 (decision 0060): the partial trap counts down in the residual (order 13). The example's trapper (flat 2)
+                 * stands, so no source-gone clearing: the turns go down by one, and at 0 the four fields are cleared. */
+                if (tp->trap_turns != 0u) {
+                    tp->trap_turns = (uint8_t)(tp->trap_turns - 1u);
+                    if (tp->trap_turns == 0u) {
+                        tp->trap_source = 0u;
+                        tp->trap_move = 0u;
+                        tp->trap_band = 0u;
+                    }
+                }
                 tp->throat_chop_turns = (uint8_t)(tp->throat_chop_turns != 0u ? tp->throat_chop_turns - 1u : 0u);
                 tp->heal_block_turns = (uint8_t)(tp->heal_block_turns != 0u ? tp->heal_block_turns - 1u : 0u);
                 /* step G31: Taunt and Yawn count down in the residual (a Yawn that runs out puts its holder to sleep) */
@@ -1956,6 +1977,8 @@ int main(void)
                 const uint32_t mr = x->tail.sides[s].positions[p].move_result;
                 DF_CHECK_EQ_U64(&t, mr & 0xC0u, 0u);
                 want.sides[s].positions[p].move_result = (uint8_t)mr;
+                /* step G90: the partial trap's elapsed count is the battle's own (the model does not play the residuals) */
+                want.sides[s].positions[p].trap_elapsed = x->tail.sides[s].positions[p].trap_elapsed;
             }
         }
         DF_CHECK(&t, memcmp(&x->tail, &want, sizeof want) == 0);
