@@ -671,9 +671,10 @@ class RecordAssemblerPoolTest(unittest.TestCase):
 
     # unburden-without-item-line: Unburden answering a Knock Off that removes nothing (a Mega Stone) shows no line;
     # move-result-not-determined: the library cannot tell an action's result from its events (duoforge_move_result
-    # refuses); last-move-not-on-sheet: the move of a position's last line is on no slot of its sheet
+    # refuses); last-move-not-on-sheet: the move of a position's last line is on no slot of its sheet; fold-not-in-record:
+    # a view-extension fold of #342 is up whose tail fields the assembler does not write (record.unrecorded_folds)
     TRACKER_REFUSALS = {"unburden-without-item-line", "move-result-not-determined", "last-move-not-on-sheet",
-                        "own-command-unknown", "pivot-switch-reason-unknown"}
+                        "own-command-unknown", "pivot-switch-reason-unknown", "fold-not-in-record"}
     # The tracker's own-PP check (Tracker._on_request) refuses these player streams before a record: Pressure the lines
     # cannot attribute (a [still] target, a clamped extra), Dragon Darts' split, the Pressure of a disguised Illusion.
     OWN_PP_STOPS = {("g53_field_trick_room", 0), ("g53_still_pressure", 1), ("g78_ee_t", 0), ("g78_fainted_ally", 0),

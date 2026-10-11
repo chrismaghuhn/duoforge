@@ -287,13 +287,45 @@ class LinesTest(unittest.TestCase):
         return caught.exception.reason
 
     def test_feature_lines_stop(self):
-        self.assertEqual(self.stop("|-fieldstart|move: Electric Terrain|[from] ability: Electric Surge|[of] p2a: Gholdengo"),
-                         "feature:TERRAIN_ELECTRIC")
+        self.assertEqual(self.stop("|-fieldstart|move: Gravity"), "feature:GRAVITY")
+        self.assertEqual(lines.check("|-fieldstart|move: Electric Terrain|[from] ability: Electric Surge|[of] p2a: Gholdengo",
+                                     self.view), "fold")  # a base-value feature: the observation's terrain
         # Trace's copy folds (ABILITY_CHANGE); an ability source the engine does not model stops on its line
         self.assertEqual(lines.check("|-ability|p2a: Gholdengo|Intimidate|[from] ability: Trace|[of] p1a: Staraptor",
                                      self.view), "fold")
         self.assertEqual(self.stop("|-ability|p2a: Gholdengo|Pressure|Good as Gold|[from] move: Role Play|"
                                    "[of] p1a: Staraptor"), "line:-ability [from] move: Role Play")
+
+    def test_frisk_of_the_held_item_is_kept(self):
+        # Frisk names the holder's item: the one the open sheet (or item_now) shows changes no field; another stops
+        self.assertEqual(lines.check("|-item|p1a: Staraptor|Sitrus Berry|[from] ability: Frisk|[of] p2a: Gholdengo",
+                                     self.view), "keep")
+        self.assertEqual(lines.check("|-item|p1a: Staraptor|Sitrus Berry|[from] ability: Frisk|[of] p2a: Gholdengo|"
+                                     "[identify]", self.view), "keep")
+        self.assertEqual(self.stop("|-item|p1a: Staraptor|Leftovers|[from] ability: Frisk|[of] p2a: Gholdengo"),
+                         "line:-item Leftovers")
+
+    def test_type_change_lines(self):
+        # Soak (no attribute) and Double Shock (???/its other type) are the type changes the engine models (steps G11,
+        # G50); every other typechange line stops on its own line
+        self.assertEqual(lines.check("|-start|p1a: Staraptor|typechange|Water", self.view), "fold")
+        self.assertEqual(lines.check("|-start|p1a: Staraptor|typechange|???/Fighting|[from] move: Double Shock",
+                                     self.view), "fold")
+        self.assertEqual(self.stop("|-start|p1a: Staraptor|typechange|Fire|[from] ability: Protean"),
+                         "line:-start typechange [from] ability: Protean")
+        self.assertEqual(self.stop("|-start|p1a: Staraptor|typechange|[from] move: Reflect Type|[of] p2a: Gholdengo"),
+                         "line:-start typechange [from] move: Reflect Type")
+
+    def test_hazard_lines(self):
+        # Step G37: a -sidestart lays a layer (folded); of the removals only Toxic Spikes absorbed by a grounded Poison
+        # type (no [from]) is modelled, Defog, Rapid Spin, Mortal Spin and Tidy Up stop on their line
+        self.assertEqual(lines.check("|-sidestart|p1: Staraptor|move: Toxic Spikes", self.view), "fold")
+        self.assertEqual(lines.check("|-sideend|p1: Staraptor|move: Toxic Spikes|[of] p1a: Staraptor", self.view),
+                         "fold")
+        self.assertEqual(self.stop("|-sideend|p1: Staraptor|move: Toxic Spikes|[from] move: Rapid Spin|"
+                                   "[of] p1a: Staraptor"), "line:-sideend move: Toxic Spikes [from] move: Rapid Spin")
+        self.assertEqual(self.stop("|-sideend|p1: Staraptor|Spikes|[from] move: Defog|[of] p2a: Gholdengo"),
+                         "line:-sideend Spikes [from] move: Defog")
 
     def test_unmodelled_ability_changes_stop_on_their_line(self):
         # Mummy and Lingering Aroma print -activate|holder|ability: X|attacker|[ability] Old (sim/pokemon.ts setAbility,
@@ -325,7 +357,7 @@ class LinesTest(unittest.TestCase):
                          "line:-enditem [from] move: Incinerate")
         self.assertEqual(self.stop("|-item|p1a: Staraptor|Sitrus Berry|[from] move: Recycle"),
                          "line:-item [from] move: Recycle")
-        self.assertEqual(self.stop("|-start|p1a: Staraptor|move: Taunt"), "feature:TAUNT")
+        self.assertEqual(self.stop("|-start|p1a: Staraptor|move: Leech Seed"), "feature:LEECH_SEED")
         self.assertEqual(lines.check("|-start|p1a: Staraptor|Encore", self.view), "fold")  # the tracker folds Encore
         self.assertEqual(lines.check("|-status|p1a: Staraptor|tox", self.view), "fold")  # Tox folds (BC spec 5)
         self.assertEqual(self.stop("|replace|p1a: Zoroark|Zoroark-Hisui, L50, M"), "feature:ILLUSION")
@@ -377,8 +409,8 @@ class LinesTest(unittest.TestCase):
         # The Yawn fix: Electric Terrain blocks the Yawn volatile and its sleep, Misty Terrain the sleep
         # (data/moves.ts electricterrain/mistyterrain onTryAddVolatile/onSetStatus): the terrain's own feature, as
         # its -fieldstart line, not an unknown line
-        self.assertEqual(self.stop("|-activate|p2a: Gholdengo|move: Electric Terrain"), "feature:TERRAIN_ELECTRIC")
-        self.assertEqual(self.stop("|-activate|p2a: Gholdengo|move: Misty Terrain"), "feature:TERRAIN_MISTY")
+        self.assertEqual(lines.check("|-activate|p2a: Gholdengo|move: Electric Terrain", self.view), "fold")
+        self.assertEqual(lines.check("|-activate|p2a: Gholdengo|move: Misty Terrain", self.view), "fold")
 
     def test_a_line_that_does_not_fit_its_name_under_a_possible_illusion_is_the_illusion_feature(self):
         # Step I2 (decision 0026): under a disguise the lines name the disguise, so an item or ability that is not the
@@ -496,8 +528,9 @@ class LinesTest(unittest.TestCase):
         self.assertIsNone(lines.check("|c|☆x|hi|there", self.view))
 
     def test_turn_scoped(self):
-        self.assertEqual(lines.check("|-singleturn|p1a: Staraptor|move: Rage Powder", self.view), "turn:RAGE_POWDER")
-        self.assertEqual(lines.check("|-singleturn|p1a: Staraptor|Wide Guard", self.view), "turn:WIDE_GUARD")
+        self.assertEqual(lines.check("|-singleturn|p1a: Staraptor|move: Rage Powder", self.view), "fold")  # folded
+        self.assertEqual(lines.check("|-singleturn|p1a: Staraptor|Quick Guard", self.view), "turn:QUICK_GUARD")
+        self.assertEqual(lines.check("|-singleturn|p1a: Staraptor|Wide Guard", self.view), "fold")  # folded
 
     def test_the_protect_variants_single_turn_line_folds(self):
         # Spiky Shield, Baneful Bunker and Burning Bulwark print `move: Protect` (Protect and Detect print `Protect`).
@@ -516,7 +549,7 @@ class LinesTest(unittest.TestCase):
         self.assertNotEqual(other, lines.trace_to_c.NOPOS)
 
     def test_guard_blocks_are_turn_scoped(self):
-        self.assertEqual(lines.check("|-activate|p1a: Staraptor|move: Wide Guard", self.view), "turn:WIDE_GUARD")
+        self.assertEqual(lines.check("|-activate|p1a: Staraptor|move: Wide Guard", self.view), "fold")  # folded
         self.assertEqual(lines.check("|-activate|p1a: Staraptor|move: Quick Guard", self.view), "turn:QUICK_GUARD")
         self.assertEqual(lines.check("|-activate|p2a: Gholdengo|ability: Storm Drain", self.view), "fold")
 
@@ -553,11 +586,11 @@ class LinesTest(unittest.TestCase):
         self.assertEqual(lines.extract_supported(source), 1 << f["THROAT_CHOP"] | 1 << f["DESTINY_BOND"])
 
     def test_a_feature_the_tracker_does_not_fold_stops(self):
-        # the library may support a feature (G8: Heal Block), but its view-extension field stays empty until the
+        # the library may support a feature (G60: Substitute), but its view-extension field stays empty until the
         # tracker folds it: the line still stops the perspective
         self.assertEqual(lines.SUPPORTED & ~lines.TRACKER_FOLDS, 0)
-        self.assertTrue(lines.LIBRARY_SUPPORTED >> lines.FEATURES["HEAL_BLOCK"] & 1)
-        self.assertEqual(self.stop("|-start|p1a: Staraptor|move: Heal Block"), "feature:HEAL_BLOCK")
+        self.assertTrue(lines.LIBRARY_SUPPORTED >> lines.FEATURES["SUBSTITUTE"] & 1)
+        self.assertEqual(self.stop("|-start|p1a: Staraptor|Substitute"), "feature:SUBSTITUTE")
         # a folded one: Throat Chop's [silent] lines (the tracker sets and clears the presence bit)
         self.assertEqual(lines.check("|-start|p1a: Staraptor|Throat Chop|[silent]", self.view), "fold")
         self.assertEqual(lines.check("|-end|p1a: Staraptor|Throat Chop|[silent]", self.view), "fold")
@@ -621,6 +654,18 @@ class PointsTest(unittest.TestCase):
                               "|switch|p1a: Staraptor|Staraptor, L50|100/100|[from] Flip Turn", "|upkeep"]
         pivot = [pt for pt in points.find(other) if pt.boundary == points.PIVOT]
         self.assertTrue(other[pivot[0].line].startswith("|switch|"))
+
+    def test_an_emergency_exit_in_the_switch_phase_is_a_pivot(self):
+        # g37_exit: a member switched in at the TURN point takes the hazards to half and leaves by Emergency Exit before
+        # any action of the turn; the switch into its position answers a PIVOT, it is no TURN action
+        from duoforge_replay import points
+        log = self._HEAD + ["|switch|p2a: Golisopod|Golisopod, L50|100/100",
+                            "|-damage|p2a: Golisopod|40/100|[from] Stealth Rock",
+                            "|-activate|p2a: Golisopod|ability: Emergency Exit",
+                            "|switch|p2a: Milotic|Milotic, L50|100/100",
+                            "|move|p1a: Dragalge|Protect|p1a: Dragalge", "|upkeep", "|turn|2"]
+        found = [(pt.boundary, pt.run) for pt in points.find(log)]
+        self.assertEqual(found[2:], [(points.PIVOT, (2,)), (points.TURN, ())])
 
 
 class PriorTest(unittest.TestCase):
@@ -747,6 +792,40 @@ class LabelsTest(unittest.TestCase):
         got = self.label(["|move|p1b: Gholdengo|Make It Rain|p2a: Foe|[spread] p2a,p2b", "|faint|p2a: Foe",
                           "|move|p1a: Staraptor|Brave Bird|p2b: Foe2"])
         self.assertEqual(got.reasons[0], self.L.TARGET_UNKNOWN)
+
+    def _struggle_lists(self):
+        """Slot 0 with Struggle only (every move barred) and the reserves; slot 1 as in setUpClass."""
+        request = {"side": {"id": "p1", "pokemon": [
+            {"ident": "p1: a", "active": True, "condition": "100/100", "moves": ["bravebird", "closecombat", "tailwind", "protect"]},
+            {"ident": "p1: b", "active": True, "condition": "100/100", "moves": ["makeitrain"]},
+            {"ident": "p1: c", "active": False, "condition": "100/100", "moves": []},
+            {"ident": "p1: d", "active": False, "condition": "100/100", "moves": []}]},
+            "active": [{"moves": [{"id": "struggle"}]},
+                       {"moves": [{"id": "makeitrain", "pp": 8, "target": "allAdjacentFoes", "disabled": False}]}]}
+        return self.O.slot_options(request, 0, {"p1: a": 1, "p1: b": 0, "p1: c": 2, "p1: d": 3}, {})
+
+    def _cant_label(self, line, barred):
+        log = [line]
+        point = self.P.Point(1, 0, self.P.TURN, (), len(log))
+        return self.L.turn_label(log, point, 0, self._struggle_lists(), self.moves,
+                                 lambda details: self.species[details.split(",")[0]], self.tables, len(log),
+                                 barred=barred)
+
+    def test_a_disabled_move_named_by_cant_is_every_move_option_only_when_the_view_bars_it(self):
+        # g27_disable_lock: the slot's request was Struggle (its move Disabled), and cant|X|Disable|Move names the barred
+        # move, which is no option: every move option (here Struggle), MOVE_HIDDEN, but only when the tracker's view bars
+        # that slot (disable_slot or the Choice lock); otherwise the named move is no option for a reason the view does
+        # not know, and the label stays the empty set (bc_data refuses it as a labeler bug), never a silent fallback
+        lists = self._struggle_lists()
+        got = self._cant_label("|cant|p1a: Staraptor|Disable|Brave Bird", ({0}, set()))
+        self.assertEqual(got.reasons[0], self.L.MOVE_HIDDEN)
+        self.assertEqual([(lists[0][i].kind, lists[0][i].move_slot) for i in range(len(lists[0]))
+                          if got.slots[0] >> i & 1], [(self.O.MOVE, self.O.STRUGGLE)])
+        for line, barred in (("|cant|p1a: Staraptor|Disable|Brave Bird", (set(), set())),  # the view bars nothing
+                             ("|cant|p1a: Staraptor|Disable|Brave Bird", ({1}, set())),  # it bars another slot
+                             ("|cant|p1a: Staraptor|move: Taunt|Brave Bird", ({0}, set()))):  # another reason
+            got = self._cant_label(line, barred)
+            self.assertEqual(got.slots[0], 0, (line, barred))
 
     def test_paralysis_hides_the_move(self):
         got = self.label(["|cant|p1a: Staraptor|par"])
@@ -923,7 +1002,7 @@ class GameTest(unittest.TestCase):
                          (2 * result.record.turns, 2 * result.record.turns))
 
     def test_turn_coverage_ends_at_the_stop(self):
-        result = self.run_game(self.insert_after("|turn|2", "|-start|p2a: Politoed|move: Heal Block"))
+        result = self.run_game(self.insert_after("|turn|2", "|-start|p2a: Politoed|Substitute"))
         self.assertEqual(result.counters["turns.total"], 2 * result.record.turns)
         self.assertEqual(result.counters["turns.kept"], 2 * 1)  # turn 1 complete, turn 2 stopped
         self.assertEqual(result.counters["games.both_kept"], 0)
@@ -935,12 +1014,12 @@ class GameTest(unittest.TestCase):
         self.assertEqual(one.counters["games.both_kept"], 1 if one.counters["perspectives.kept"] == 2 else 0)
 
     def test_a_feature_stops_after_turn_two(self):
-        # a feature the tracker does not fold (Heal Block; Sand folds since the BC PR) ends both perspectives there:
+        # a feature the tracker does not fold (Substitute; Sand folds since the BC PR) ends both perspectives there:
         # the points before it are written, the later ones dropped
         clean = self.run_game(self.log)
-        result = self.run_game(self.insert_after("|turn|2", "|-start|p2a: Politoed|move: Heal Block"))
-        self.assertEqual(result.counters["perspectives.stopped.feature:HEAL_BLOCK"], 2)
-        self.assertGreater(result.counters["points.dropped.feature:HEAL_BLOCK"], 0)
+        result = self.run_game(self.insert_after("|turn|2", "|-start|p2a: Politoed|Substitute"))
+        self.assertEqual(result.counters["perspectives.stopped.feature:SUBSTITUTE"], 2)
+        self.assertGreater(result.counters["points.dropped.feature:SUBSTITUTE"], 0)
         turn2 = [int(r.observation["epoch"]) for r in clean.rows if int(r.observation["turn"]) == 2
                  and r.observation["boundary_kind"] == 2]
         self.assertTrue(all(int(r.observation["epoch"]) <= max(turn2) for r in result.rows))
@@ -980,15 +1059,16 @@ class GameTest(unittest.TestCase):
         self.assertEqual(record.winner, 1)
         self.assertNotEqual(record.players[0], record.players[1])
 
-    def test_rage_powder_without_pivot_passes(self):
-        result = self.run_game(self.insert_after("|turn|3", "|-singleturn|p2a: Politoed|move: Rage Powder"))
-        self.assertEqual(result.counters["turn-scoped.RAGE_POWDER"], 2)
+    def test_turn_scoped_feature_without_pivot_passes(self):
+        # a single-turn feature the tracker does not fold (Quick Guard; Rage Powder folds since its view-extension fold)
+        result = self.run_game(self.insert_after("|turn|3", "|-singleturn|p2a: Politoed|Quick Guard"))
+        self.assertEqual(result.counters["turn-scoped.QUICK_GUARD"], 2)
         self.assertEqual(result.counters["perspectives.kept"], 2)
 
-    def test_rage_powder_before_an_own_pivot_stops(self):
+    def test_turn_scoped_feature_before_an_own_pivot_stops(self):
         # turn 2: p1's Parting Shot switch is a PIVOT point of side 0
-        result = self.run_game(self.insert_after("|turn|2", "|-singleturn|p2a: Politoed|move: Rage Powder"))
-        self.assertEqual(result.counters["perspectives.stopped.feature:RAGE_POWDER"], 1)
+        result = self.run_game(self.insert_after("|turn|2", "|-singleturn|p2a: Politoed|Quick Guard"))
+        self.assertEqual(result.counters["perspectives.stopped.feature:QUICK_GUARD"], 1)
         self.assertEqual(result.counters["perspectives.kept"], 1)
 
     def test_picks_incomplete(self):
@@ -1103,11 +1183,11 @@ class GameTest(unittest.TestCase):
         tracker = self.at_turn_3()
         tracker.feed(["|move|p2a: Politoed|Wide Guard|p2a: Politoed", "|-singleturn|p2a: Politoed|Wide Guard"])
         self.assertEqual(tracker._positions[1][0].chain, 1)
-        self.assertIn("WIDE_GUARD", tracker._turn_scoped)
+        self.assertIn(("WIDE_GUARD", 1), tracker._guards)  # the side's guard (the view extension's guard_flags)
         tracker.feed(["|move|p1a: Indeedee|Feint|p2b: Farigiraf", "|-activate|p2b: Farigiraf|move: Feint"])
         self.assertEqual((tracker._positions[1][1].chain, tracker._positions[1][1].stall), (0, 0))
         self.assertEqual(tracker._positions[1][0].chain, 1)
-        self.assertNotIn("WIDE_GUARD", tracker._turn_scoped)
+        self.assertNotIn(("WIDE_GUARD", 1), tracker._guards)
 
     def test_a_move_activation_is_no_emergency_exit(self):
         # an ACTIVATE of a move whose id equals Emergency Exit's ability id + 1 (move 8, Muddy Water) asks no switch:
