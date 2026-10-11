@@ -14,8 +14,12 @@ from duoforge import _layout, privileged
 C = _layout.CONSTANTS
 
 
-def _start(seed=42):
-    b = duoforge.Batch(duoforge.Context(C["DUOFORGE_DATA_KIND_POOL"]), duoforge.reference_setups([0]), 1, seed)
+def _start(test, seed=42):
+    """A batch at its first TURN; the test closes its context and batch."""
+    ctx = duoforge.Context(C["DUOFORGE_DATA_KIND_POOL"])
+    test.addCleanup(ctx.close)
+    b = duoforge.Batch(ctx, duoforge.reference_setups([0]), 1, seed)
+    test.addCleanup(b.close)
     b.query_factored()
     choices = np.zeros((1, 2), _layout.FACTORED_CHOICE)
     choices["picks"][0, :, :4] = (0, 1, 2, 3)
@@ -38,10 +42,10 @@ def _attack(b):
 
 class StepEvents(unittest.TestCase):
     def test_a_copy_steps_as_the_batch_does_and_the_batch_is_unchanged(self):
-        a, b = _start(), _start()
+        a, b = _start(self), _start(self)
         choices = _attack(a)
         before = bytes(b.digest(0))
-        out = privileged.step_events(b, 0, choices[0])
+        out = privileged.step_events(b, 0, choices[0], rng=None)  # the batch's own stream
         self.assertEqual(out["status"], 0)
         self.assertEqual(bytes(b.digest(0)), before)  # the environment is untouched
         a.step_factored(choices)
@@ -55,7 +59,7 @@ class StepEvents(unittest.TestCase):
             self.assertTrue(moved, f"player {p} sees no move")
 
     def test_reseeded_copies_roll_apart_and_show_critical_hits(self):
-        b = _start()
+        b = _start(self)
         choices = _attack(b)
         digests, crits = set(), 0
         for k in range(64):
@@ -66,12 +70,17 @@ class StepEvents(unittest.TestCase):
         self.assertGreater(len(digests), 1)  # the damage rolls differ
         self.assertGreater(crits, 0)  # 64 turns of four attacks: about ten critical hits are expected
 
+    def test_the_random_stream_is_always_named(self):
+        b = _start(self)
+        with self.assertRaises(TypeError):
+            privileged.step_events(b, 0, _attack(b)[0])  # neither a reseed nor the batch's own stream asked for
+
     def test_a_choice_outside_the_domain_is_refused(self):
-        b = _start()
+        b = _start(self)
         choices = _attack(b)[0].copy()
         choices["slot"][0][0] = 31
         with self.assertRaisesRegex(ValueError, "not in the domain"):
-            privileged.step_events(b, 0, choices)
+            privileged.step_events(b, 0, choices, rng=(1, 2))
 
 
 if __name__ == "__main__":

@@ -1,10 +1,11 @@
 """duoforge.python.positions: the test positions are what they claim (M12 bundle 7, data/positions).
 
-Every position is reached from its teams, seed and prefix, and its claim is proven against the engine over
-positions.SAMPLES reseeded copies of the step (positions.verify): Fake Out keeps the partner standing and nothing else
-does, Protect is the only escape from a knockout, Trick Room is set (or ended) whatever the foe does, the endgame's
-exact solution is the expected answer set, a late Fake Out does not stop the foe. A proof over damage needs critical
-hits in its sample. The answers of a checkpoint are not tested here: they are a diagnosis, kept private.
+Every position is reached from its teams, seed and prefix, and its claim is checked against the engine in all of
+positions.SAMPLES reseeded copies of the step (positions.verify; statistical, 256 of 256 samples): Fake Out keeps the
+partner standing and nothing else that keeps it in and acting does, Protect is the only escape from a knockout, Trick
+Room is up (or gone) after the step whatever the foe does, the endgame's exact solution is the expected answer set.
+A check over damage needs critical hits on the Pokemon it is about in its sample. The answers
+of a checkpoint are not tested here: they are a diagnosis, kept private.
 """
 import dataclasses
 import unittest
@@ -46,6 +47,16 @@ class Positions(unittest.TestCase):
                 report = positions.verify(self.ctx, position)
                 self.assertGreater(report["expected"], 0)
                 self.assertLess(report["expected"], report["pairs"])  # a position with a wrong answer
+
+    def test_every_kind_refuses_a_position_that_is_not_one(self):
+        # Review of #353: each kind's check refuses a position whose claim does not hold, the kinds without a file in
+        # data/positions included. The Protect position, relabeled, is no Trick Room position (no Trick Room is up)
+        # and no endgame (a pair leaves the battle going).
+        base = next(p for p in self.all if p.kind == "protect_vs_ko")
+        for kind, claim, message in (("undo_trick_room", {"setter": 0}, "Trick Room has 0 turns left"),
+                                     ("endgame", {}, "does not end the battle")):
+            with self.subTest(kind=kind), self.assertRaisesRegex(positions.PositionError, message):
+                positions.verify(self.ctx, dataclasses.replace(base, kind=kind, claim=claim), n=16)
 
     def test_a_wrong_expected_answer_is_refused(self):
         # The proof checks the answers, not only the reachability: taking an answer away, or adding a wrong one, fails.

@@ -80,12 +80,13 @@ class HashNet:
             pairs.append(np.where(mask[b], logits, np.float32(-1e9)))
             teams.append((s[mask.shape[1]:mask.shape[1] + 360] / 256.0).astype(np.float32))
             values.append(np.float32((int(s[-1]) - 32768) / 32768.0))
+        self.last_teams = np.stack(teams)  # the team head's logits of the last call (the previews' margin)
         return self._log_softmax(np.stack(pairs)), self._log_softmax(np.stack(teams)), np.array(values, np.float32)
 
 
-def _searcher(ctx, mask):
+def _searcher(ctx, mask, rule="mix"):
     table = belief.SpreadTable.from_sides(duoforge.reference_setups([0, 1, 2, 3])["sides"].reshape(-1))
-    return honest.Honest(ctx, HashNet(ENCODER), None, ENCODER, mask, k=8, m=8, s=16, rule="mix", lam=0.5,
+    return honest.Honest(ctx, HashNet(ENCODER), None, ENCODER, mask, k=8, m=8, s=16, rule=rule, lam=0.5,
                          workers=2, table=table)
 
 
@@ -98,10 +99,15 @@ def _roots(ctx):
 
 
 def _decide(search, b, seed, steps, key):
-    """(the team preview records of both seats, the root's record): the previews are decided first (the search's
-    history of each seat), then the prefix is played and the requested seat decides."""
+    """(the team preview records of both seats, their margins, the root's record): the previews are decided first
+    (the search's history of each seat), then the prefix is played and the requested seat decides. A preview's margin
+    is its best team logit's distance from the second (the team head's argmax)."""
     b.query_factored()
-    previews = [search.decide(b, [0], [p], [key + p], [False])[1][0] for p in (0, 1)]
+    previews, margins = [], []
+    for p in (0, 1):
+        previews.append(search.decide(b, [0], [p], [key + p], [False])[1][0])
+        top = np.sort(search.model.last_teams[0].astype(np.float64))[::-1]
+        margins.append(float(top[0] - top[1]))
     if seed is None:  # the scripted PIVOT
         play_to_pivot(b)
     else:
@@ -113,7 +119,7 @@ def _decide(search, b, seed, steps, key):
             if b.result(0) != 0:
                 raise AssertionError("a bench prefix ended its battle")
     seat = 0 if b.requests["requested"][0, 0] else 1
-    return previews, search.decide(b, [0], [seat], [key + 2], [False])[1][0]
+    return previews, margins, search.decide(b, [0], [seat], [key + 2], [False])[1][0]
 
 
 def _discrete(record, leaves):
@@ -140,30 +146,45 @@ def _margins(record):
 
 
 class Bench(unittest.TestCase):
-    def test_bench_signature(self):
+    def signature(self, rule="mix", check=True):
+        """(rows, digest) of the bench under the search rule; check: every decision clears its margin."""
         rows = []
         with duoforge.Context(C["DUOFORGE_DATA_KIND_POOL"]) as ctx:
             with duoforge.Batch(ctx, duoforge.reference_setups([0]), 1, 1) as probe:
                 mask = int(probe.observe_ext()[0, 0]["supported"]) & features.version_features(ENCODER)
-            with _searcher(ctx, mask) as search:
+            with _searcher(ctx, mask, rule) as search:
                 for i, (name, b, seed, steps) in enumerate(_roots(ctx)):
                     with b:
                         search.clear()
                         search.model.calls = dict.fromkeys(search.model.calls, 0)
-                        previews, record = _decide(search, b, seed, steps, KEY + 16 * i)
+                        previews, preview_margins, record = _decide(search, b, seed, steps, KEY + 16 * i)
                         leaves = list(search.last[-1]["values"].shape) if record["kind"] == "searched" else None
-                        if record["kind"] == "searched":
+                        if check:
+                            self.assertGreaterEqual(min(preview_margins), MARGIN,
+                                                    f"{name}: a team preview sits near a tie: pick another root")
+                        if check and record["kind"] == "searched":
                             draw, floor, ev = _margins(record)
                             self.assertGreaterEqual(min(draw, ev), MARGIN, f"{name} sits near a tie: pick another root")
                             self.assertGreaterEqual(floor, FLOOR_MARGIN, f"{name} has a probability at the floor")
                         rows.append({"root": name, "previews": [_discrete(r, None) for r in previews],
                                      "decision": _discrete(record, leaves), "network": dict(search.model.calls)})
+        return rows, hashlib.sha256(json.dumps(rows, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
+
+    def test_bench_signature(self):
+        rows, digest = self.signature()
         kinds = [r["decision"]["kind"] for r in rows]
         boundaries = {r["decision"]["boundary"] for r in rows}
         self.assertGreaterEqual(kinds.count("searched"), 5, rows)  # the bench measures the search, not its refusals
         self.assertTrue({"TURN", "PIVOT"} <= boundaries, boundaries)
-        digest = hashlib.sha256(json.dumps(rows, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
-        self.assertEqual(digest, BENCH_SHA256, json.dumps(rows, sort_keys=True, indent=1))
+        self.assertEqual(digest, BENCH_SHA256,
+                         "the bench signature moved: a change of the search, the engine, the encoder or the data "
+                         "(any of them changes the roots or the decisions); a deliberate change updates BENCH_SHA256 "
+                         "with its reason in the commit message\n" + json.dumps(rows, sort_keys=True, indent=1))
+
+    def test_a_search_change_moves_the_digest(self):
+        # The signature is sensitive: the expected-value rule in place of the mixed one gives another digest.
+        _, digest = self.signature("ev", check=False)
+        self.assertNotEqual(digest, BENCH_SHA256)
 
 
 if __name__ == "__main__":

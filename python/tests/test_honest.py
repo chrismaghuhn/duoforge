@@ -104,7 +104,10 @@ class HonestSearch(unittest.TestCase):
                 v, st = b.public(np.full(2, seat, np.uint32))
                 self.assertEqual(v[0].tobytes(), v[1].tobytes())
                 with mock.patch.object(privileged, "hypothesis", side_effect=AssertionError("privileged")), \
+                        mock.patch.object(privileged, "step_events", side_effect=AssertionError("privileged")), \
                         mock.patch.object(b._lib, "duoforge_battle_hypothesis", side_effect=AssertionError("direct privileged ABI")), \
+                        mock.patch.object(b._lib, "duoforge_battle_step_events", side_effect=AssertionError("direct privileged ABI")), \
+                        mock.patch.object(b._lib, "duoforge_battle_clone", side_effect=AssertionError("direct privileged ABI")), \
                         mock.patch.object(b, "encode", side_effect=AssertionError("true root bytes")):
                     actions, records = search.decide(b, [0, 1], [seat, seat], [456, 456], [False, False])
                 self.assertEqual(actions[0], actions[1])
@@ -389,7 +392,9 @@ class HonestSearch(unittest.TestCase):
                     else:
                         raw[215 + 15 + 15] = 1 + e
                     self.assertEqual(decode(ctx.handle, b._battle(e), raw.ctypes.data, raw.size), 0)
-                with mock.patch.object(b._lib, "duoforge_battle_hypothesis", side_effect=AssertionError("privileged ABI")):
+                with mock.patch.object(b._lib, "duoforge_battle_hypothesis", side_effect=AssertionError("privileged ABI")), \
+                        mock.patch.object(b._lib, "duoforge_battle_step_events", side_effect=AssertionError("privileged ABI")), \
+                        mock.patch.object(b._lib, "duoforge_battle_clone", side_effect=AssertionError("privileged ABI")):
                     actions, records = search.decide(b, [0, 1], [0, 0], [456, 456], [False, False])
                 self.assertEqual(actions[0], actions[1])
                 self.assertTrue(all(r["kind"] == "unreconstructible" and r["causes"] == [cause] for r in records))
@@ -638,17 +643,26 @@ class PositionsTool(unittest.TestCase):
                                            "slot_features": list(features.SLOT_FEATURE_NAMES),
                                            "data": {"kind": "pool", "fingerprint": "00"}, "teams": {}, "update": 0,
                                            "decisions": 0, "ids": checkpoint.ids_of(ctx)})
+            inside = os.path.join(os.path.dirname(os.path.abspath(__file__)), "positions-out")  # in the repository
             with self.assertRaisesRegex(ValueError, "repository"):
-                positions.main(["--checkpoint", path, "--out", "python/tests/positions-out"])
+                positions.main(["--checkpoint", path, "--out", inside])
             report = positions.main(["--checkpoint", path, "--out", os.path.join(tmp, "out"), "--k", "2", "--m", "2",
                                      "--worlds", "2"])
-        names = [p.name for p in positions.load_all()]
-        self.assertEqual([r["name"] for r in report["positions"]], names)
-        for row in report["positions"]:
-            self.assertIn(row["raw"]["hit"], (True, False))
-            self.assertIn(row["honest"]["hit"], (True, False))
+        all_positions = positions.load_all()
+        self.assertEqual([r["name"] for r in report["positions"]], [p.name for p in all_positions])
+        for row, position in zip(report["positions"], all_positions):
             self.assertEqual("oracle" in row, row["kind"] in positions.ORACLE_KINDS)
-        self.assertEqual(set(report["hit_rates"]), {"raw", "honest", "oracle"})
+            for name in ("raw", "honest") + (("oracle",) if "oracle" in row else ()):
+                # a hit is exactly an expected answer's labels; the honest row names its search's kind
+                self.assertEqual(row[name]["hit"], positions.accepted(position.expected, row[name]["labels"]))
+            self.assertIn(row["honest"]["kind"], ("searched", "unreconstructible", "forced", "raw"))
+        rates = report["hit_rates"]
+        self.assertEqual(rates["raw"]["counted"], len(all_positions))
+        # only searched decisions are the search's answers
+        self.assertEqual(rates["honest"]["counted"],
+                         sum(r["honest"]["kind"] == "searched" for r in report["positions"]))
+        self.assertEqual(rates["honest"]["hits"],
+                         sum(r["honest"]["hit"] for r in report["positions"] if r["honest"]["kind"] == "searched"))
 
 
 class HonestArena(unittest.TestCase):
