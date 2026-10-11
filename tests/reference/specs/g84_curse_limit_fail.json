@@ -1,6 +1,6 @@
 {
   "name": "g84_curse_limit_fail",
-  "purpose": "Non-Ghost Curse at the limit: seven turns of Curse on both Tauros; the seventh fails (+6/+6/-6 at the limit) and its move line is [still] with no target (campaign seed 84, fz_84_267; the dfi_still hunk of this step).",
+  "purpose": "Non-Ghost Curse at the limit: eight turns (Protect has PP 8) of Curse on both Tauros; the Curses after the limit fail (+6/+6/-6 at the limit) and its move line is [still] with no target (campaign seed 84, fz_84_267; the dfi_still hunk of this step).",
   "data": "pool",
   "format": "gen9championsvgc2026regmc",
   "seed": "sodium,8400000000000000000000000000000000000000000000000000000000000010",
@@ -12,6 +12,10 @@
     {
       "p1": "team 1234",
       "p2": "team 1234"
+    },
+    {
+      "p1": "move 1, move 2",
+      "p2": "move 1, move 2"
     },
     {
       "p1": "move 1, move 2",

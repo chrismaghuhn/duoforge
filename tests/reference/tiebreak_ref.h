@@ -6470,8 +6470,8 @@ static const df_tb_stop tb_g84_curse_limit_fail[] = {
     {2u, 0u, 3u, 4u, {4u, 4u}, {750u, 750u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
     {3u, 0u, 3u, 4u, {4u, 4u}, {750u, 750u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
     {6u, 0u, 3u, 4u, {4u, 4u}, {750u, 750u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
-    {7u, 0u, 3u, 4u, {4u, 4u}, {750u, 750u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
     {8u, 0u, 3u, 4u, {4u, 4u}, {750u, 750u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {9u, 0u, 3u, 4u, {4u, 4u}, {750u, 750u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
 };
 static const df_tb_stop tb_g84_l1_seed_drain[] = {
     {0u, 0u, 2u, 3u, {6u, 6u}, {1112u, 1154u}, {0x4059000000000000ull, 0x4059000000000000ull}},
@@ -8780,7 +8780,7 @@ static const df_tb_battle tb_battles[] = {
     {"g7_wide_guard_pivot_own", 4u, tb_g7_wide_guard_pivot_own, sizeof tb_g7_wide_guard_pivot_own / sizeof tb_g7_wide_guard_pivot_own[0]},
     {"g7_wide_guard_pivot_own_mirror", 4u, tb_g7_wide_guard_pivot_own_mirror, sizeof tb_g7_wide_guard_pivot_own_mirror / sizeof tb_g7_wide_guard_pivot_own_mirror[0]},
     {"g84_c3_nonghost_curse", 3u, tb_g84_c3_nonghost_curse, sizeof tb_g84_c3_nonghost_curse / sizeof tb_g84_c3_nonghost_curse[0]},
-    {"g84_curse_limit_fail", 8u, tb_g84_curse_limit_fail, sizeof tb_g84_curse_limit_fail / sizeof tb_g84_curse_limit_fail[0]},
+    {"g84_curse_limit_fail", 9u, tb_g84_curse_limit_fail, sizeof tb_g84_curse_limit_fail / sizeof tb_g84_curse_limit_fail[0]},
     {"g84_l1_seed_drain", 6u, tb_g84_l1_seed_drain, sizeof tb_g84_l1_seed_drain / sizeof tb_g84_l1_seed_drain[0]},
     {"g84_l2_grass_immune", 4u, tb_g84_l2_grass_immune, sizeof tb_g84_l2_grass_immune / sizeof tb_g84_l2_grass_immune[0]},
     {"g84_l3_substitute", 4u, tb_g84_l3_substitute, sizeof tb_g84_l3_substitute / sizeof tb_g84_l3_substitute[0]},
