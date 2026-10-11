@@ -192,6 +192,11 @@ def _parser(suppress=False):
                                        "'magnet', a frozen copy of the learner refreshed every --kl-refresh updates")
     add("--kl-refresh", type=int, default=500, help="updates between the magnet's refreshes (--kl-ref magnet)")
     add("--kl-coef", type=float, default=0.0, help="the weight of KL(policy || --kl-ref) in the loss (k3 estimate)")
+    add("--policy-objective", choices=ppo.OBJECTIVES, default="ppo",
+        help="the policy update: ppo (the clipped surrogate) or mmd (Magnetic Mirror Descent, #359: no clip, a "
+             "proximal KL to the behaviour policy weighted by --mmd-prox-coef; its magnet is --kl-ref magnet)")
+    add("--mmd-prox-coef", type=float, default=1.0,
+        help="the weight of the proximal KL(policy || behaviour) under --policy-objective mmd, > 0")
     add("--entropy", type=str, default="0.01",
         help="entropy bonus: a number, or a schedule over decisions such as 0:0.02,500M:0.01,2G:0.003")
     add("--eval-every", type=int, default=25)
@@ -530,6 +535,10 @@ def _run(args, pool, on_start, stop):
     lr_scale = schedule.Schedule.parse(args.learning_rate_schedule)
     if args.kl_coef and not args.kl_ref:
         raise SystemExit("--kl-coef needs --kl-ref: the reference policy of the KL anchor")
+    if args.policy_objective != "mmd" and "mmd_prox_coef" in args._given:
+        raise SystemExit("--mmd-prox-coef needs --policy-objective mmd")
+    if args.policy_objective == "mmd" and not args.mmd_prox_coef > 0:
+        raise SystemExit(f"--mmd-prox-coef {args.mmd_prox_coef} must be > 0")
     if (args.stop_cpu_core_seconds > 0 or args.stop_gpu_seconds > 0) and not args.ledger:
         raise SystemExit("--stop-cpu-core-seconds and --stop-gpu-seconds need --ledger")
     try:
@@ -550,6 +559,9 @@ def _run(args, pool, on_start, stop):
         train_config.pop("keep_init_encoder", None)  # the saved options of a run without it are as before
     if train_config.get("learning_rate_over") == "decisions":
         del train_config["learning_rate_over"]  # its default: saved only by a budget-matched run
+    if train_config.get("policy_objective") == "ppo":  # its default: saved only by an MMD run
+        del train_config["policy_objective"]
+        train_config.pop("mmd_prox_coef", None)
     if saved_state is not None and saved_state["data"]["fingerprint"] != context.fingerprint().hex():
         # Other tables (the data kind cannot change on resume): the run goes on when every id its network embeds
         # still names the same row (spec 12.4), and is refused otherwise.
@@ -791,7 +803,8 @@ def _run(args, pool, on_start, stop):
                 params, opt_state, stats = ppo.update(params, opt_state, tx, samples, rng, net.evaluate,
                                                       epochs=args.epochs, minibatch=args.minibatch,
                                                       entropy_coef=entropy_coef, kl_coef=args.kl_coef,
-                                                      lr_scale=scale)
+                                                      lr_scale=scale, objective=args.policy_objective,
+                                                      prox_coef=args.mmd_prox_coef)
                 if controlled:
                     jax.block_until_ready(params)
             t2 = time.perf_counter()
@@ -808,6 +821,8 @@ def _run(args, pool, on_start, stop):
             record |= {k: round(v, 4) for k, v in timings.items()}
             record["t_other"] = round(max(0.0, (t1 - t0) - sum(timings.values())), 4)
             record |= {k: round(float(v), 5) for k, v in stats.items()}
+            if args.policy_objective != "ppo":
+                record["policy_objective"] = args.policy_objective
             if controlled:
                 record["update_device"] = "default" if on_default else "cpu"
                 record["act_default_calls"] = calls["default"]
