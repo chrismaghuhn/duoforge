@@ -106,12 +106,14 @@ EXT_FIELDS = {
     "ENCORE": (("position", "encore_slot"),),
     "ABILITY_CHANGE": (("position", "ability_now"),),
     "ITEM_CHANGE": (("member", "item_now"),),
+    "HEALING_WISH": (("bit", C["DUOFORGE_POSITION_EXT_HEALING_WISH"]),),  # G82: encoder 6's reserve volatile bit 22
 }
 # The presence bits of a position's volatiles: _Position attribute -> DUOFORGE_POSITION_EXT_* bit.
 _PRESENCE_BITS = (("throat_chop", EXT_THROAT_CHOP), ("must_recharge", C["DUOFORGE_POSITION_EXT_MUST_RECHARGE"]),
                   ("taunt", C["DUOFORGE_POSITION_EXT_TAUNT"]), ("yawn", C["DUOFORGE_POSITION_EXT_YAWN"]),
                   ("imprison", C["DUOFORGE_POSITION_EXT_IMPRISON"]), ("glaive_rush", C["DUOFORGE_POSITION_EXT_GLAIVE_RUSH"]),
-                  ("rage_powder", C["DUOFORGE_POSITION_EXT_RAGE_POWDER"]), ("heal_block", C["DUOFORGE_POSITION_EXT_HEAL_BLOCK"]))
+                  ("rage_powder", C["DUOFORGE_POSITION_EXT_RAGE_POWDER"]), ("heal_block", C["DUOFORGE_POSITION_EXT_HEAL_BLOCK"]),
+                  ("wish", C["DUOFORGE_POSITION_EXT_HEALING_WISH"]))
 # DUOFORGE_FIELD_* of a terrain's FIELD_START event -> DUOFORGE_TERRAIN_* of the observation
 _TERRAIN = {1: C["DUOFORGE_TERRAIN_GRASSY"], trace_to_c.FIELD_PSYCHIC_TERRAIN: C["DUOFORGE_TERRAIN_PSYCHIC"],
             trace_to_c.FIELD_ELECTRIC_TERRAIN: C["DUOFORGE_TERRAIN_ELECTRIC"],
@@ -165,6 +167,10 @@ class _Position:
         # start unless it switches (a switch-out cancels its actions, sim/battle-actions.ts switchIn); it leaves the queue
         # when it runs (its [move], [cant] or confusion line). A faint does not remove it (the action then does nothing).
         self.move_queued = False
+        # Healing Wish's slot condition (G82, decision 0045): the slot's, not the occupant's, so a faint or an entry keeps
+        # it (reset leaves it); the heal of an entrant ends it (dfi_wish_heal). The record's position flag bit 0 and the
+        # view's HEALING_WISH bit.
+        self.wish = 0
         self.reset()
 
     def reset(self):
@@ -317,6 +323,7 @@ class Tracker:
         self._guard_moves = {tables["MOVE"][k] for k in ("WIDEGUARD", "QUICKGUARD") if k in tables["MOVE"]}
         self._helping_hand = tables["MOVE"].get("HELPINGHAND")
         self._knock_off = tables["MOVE"].get("KNOCKOFF")
+        self._healing_wish = tables["MOVE"].get("HEALINGWISH")
         # the moves whose cost to their own user is directDamage, not spreadDamage (G88: no hurtThisTurn; dfi_deal_ex's
         # callers with spread false): Substitute's and Clangorous Soul's plain -damage; Struggle's recoil is the third
         self._direct_costs = {tables["MOVE"].get(k) for k in ("SUBSTITUTE", "CLANGOROUSSOUL")} - {None}
@@ -812,6 +819,10 @@ class Tracker:
                 self._own_display(m, hp, e[7])
         elif kind == EV["MOVE"]:
             p = self._at(pos)
+            if ident == self._healing_wish and e[3] == trace_to_c.CAUSE["NONE"] and not flags & FLAG["STILL"]:
+                # dfi_run_healing_wish: it runs (a reserve stands; a [still] -fail is the refusal for none) and sets the
+                # slot's wish; a second one finds it set and changes nothing
+                p.wish = 1
             if e[3] == trace_to_c.CAUSE["NONE"]:
                 # an action of the user (runMove's activeMoveActions++, dfi_run_move); a move line with cause ABILITY is
                 # Magic Bounce's reflection (useMove), no action of the holder
@@ -991,6 +1002,11 @@ class Tracker:
                 m.hp_percent, m.hp_flag = hp, hp_flag
             else:
                 self._own_display(m, hp, e[7])
+            if kind == EV["HEAL"] and e[3] == trace_to_c.CAUSE["MOVE"] and ident2 == self._healing_wish:
+                # dfi_wish_heal: the entrant's full heal ends the wish and its status (clearStatus, silent: no cure line)
+                self._at(pos).wish = 0
+                m.status, m.freeze_turns = 0, 0
+                m.toxic = m.toxic_stage = 0
         elif kind == EV["REVIVE"]:
             # Step G52 (decision 0025): Revival Blessing brings a fainted member of the user's side back at half HP,
             # its status cured; ident is its roster index (the line names it without a position)

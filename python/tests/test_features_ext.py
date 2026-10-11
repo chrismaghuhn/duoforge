@@ -26,7 +26,8 @@ C = _layout.CONSTANTS
 SEED = 0x2026100300000003
 ENVS = 4
 COL = {name: i for i, name in enumerate(features.FEATURE_NAMES)}
-ALL = (1 << C["DUOFORGE_VIEWEXT_FEATURE_COUNT"]) - 1
+# Encoder 5's features (bits 0 to 42, fixed): a lane's later feature is encoder 6's reserve (test_encoder6).
+ALL = features.ENCODER5_FEATURES
 BIT = {name[len("DUOFORGE_VIEWEXT_FEATURE_"):]: v for name, v in C.items()
        if name.startswith("DUOFORGE_VIEWEXT_FEATURE_") and name != "DUOFORGE_VIEWEXT_FEATURE_COUNT"}
 BASE_BITS = ("WEATHER_SAND", "WEATHER_SNOW", "TERRAIN_ELECTRIC", "TERRAIN_MISTY", "AILMENT_TOX")
@@ -171,7 +172,8 @@ class FeaturesExtTest(unittest.TestCase):
         self.assertEqual(bits.shape, (features.EXT5_SIZE,))
         self.assertTrue(np.array_equal(features.EXT_COLUMN_MASKS[:features.EXT5_SIZE],
                                        np.uint64(1) << bits.astype(np.uint64)))
-        self.assertEqual(set(bits.tolist()), set(range(C["DUOFORGE_VIEWEXT_FEATURE_COUNT"])))
+        self.assertEqual(set(bits.tolist()), set(range(43)))  # encoder 5's tiers; a lane's feature: test_encoder6
+        self.assertGreaterEqual(C["DUOFORGE_VIEWEXT_FEATURE_COUNT"], 43)
         want = {"ext.global.weather_sand": "WEATHER_SAND", "ext.global.terrain_misty": "TERRAIN_MISTY",
                 "ext.global.gravity_turns": "GRAVITY", "ext.foe.aurora_veil_turns": "AURORA_VEIL",
                 "ext.own.quick_guard": "QUICK_GUARD", "ext.own.pos1.volatile.must_recharge": "MUST_RECHARGE",
@@ -301,8 +303,8 @@ class FeaturesExtTest(unittest.TestCase):
         for name, bit in BIT.items():
             if name in BASE_BITS:
                 continue  # no base value in this scene: those columns are zero either way
-            if bit >= features.FEATURE_COUNT:
-                continue  # encoder 6's reserve families: test_encoder6
+            if not features.ENCODER5_FEATURES >> bit & 1:
+                continue  # a lane's feature and encoder 6's reserve families: test_encoder6
             one = features.encode_batch(ob, d, ext, 1 << bit)[0][:, 607:862]
             self.assertTrue(np.array_equal(one[:, bits == bit], full[:, bits == bit]), name)
             self.assertFalse(one[:, bits != bit].any(), name)
@@ -391,7 +393,7 @@ class FeaturesExtTest(unittest.TestCase):
                  ("sticky_web", lambda e: e["sides"]["sticky_web"].__setitem__((0, 1), 2)),
                  ("guard_flags", lambda e: e["sides"]["guard_flags"].__setitem__((0, 1), 4)),
                  ("volatiles", lambda e: e["sides"]["positions"]["volatiles"].__setitem__(
-                     (0, 1, 1), e["sides"]["positions"]["volatiles"][0, 1, 1] | (1 << 22))),  # bit 22: none yet
+                     (0, 1, 1), e["sides"]["positions"]["volatiles"][0, 1, 1] | (1 << 22))),  # encoder 6's reserve
                  ("encore_slot", lambda e: e["sides"]["positions"]["encore_slot"].__setitem__((0, 1, 1), 5)),
                  ("disable_slot", lambda e: e["sides"]["positions"]["disable_slot"].__setitem__((0, 1, 1), 5)),
                  ("stockpile", lambda e: e["sides"]["positions"]["stockpile"].__setitem__((0, 1, 1), 4)),

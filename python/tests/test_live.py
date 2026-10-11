@@ -332,6 +332,7 @@ class LockedMoveSlotTest(unittest.TestCase):
         band = next(items[k.upper()] for k in lines.CHOICE_ITEMS if k.upper() in items) + 1  # a Choice holder (#334)
         t._guard_moves, t._choice_items = set(), {band}
         t._turn, t._move_pivots = 1, {}  # the public record's folds of a move line
+        t._healing_wish = self.D.tables["MOVE"].get("HEALINGWISH")  # G82's slot condition (a move line folds it)
         t._positions = [[self.tracker._Position(), self.tracker._Position()],
                         [self.tracker._Position(), self.tracker._Position()]]
         for side in t._positions:
@@ -524,7 +525,7 @@ def record_diff(battle_name, k, viewer, record):
 # engine's (status, causes, an all-zero record), and the tracker's own named refusals; the pool streams the tracker stops
 # (lines.Stop: an unfolded feature's line), by reason.
 CLOSURE_OUTCOME = {"equal": 2594, "refused": 310}
-POOL_OUTCOME = {"equal": 9898, "refused": 487, "tracker refuses: unburden-without-item-line": 4}
+POOL_OUTCOME = {"equal": 9978, "refused": 487, "tracker refuses: unburden-without-item-line": 4}
 POOL_STOPS = {"feature:SUBSTITUTE": 78, "feature:FORME_CHANGE": 10, "feature:DESTINY_BOND": 10, "feature:DRAGON_CHEER": 8,
               "feature:ROOST": 8, "line:-end": 2, "feature:ILLUSION": 2}
 
