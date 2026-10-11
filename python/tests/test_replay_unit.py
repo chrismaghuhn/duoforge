@@ -791,6 +791,40 @@ class LabelsTest(unittest.TestCase):
                           "|move|p1a: Staraptor|Brave Bird|p2b: Foe2"])
         self.assertEqual(got.reasons[0], self.L.TARGET_UNKNOWN)
 
+    def _struggle_lists(self):
+        """Slot 0 with Struggle only (every move barred) and the reserves; slot 1 as in setUpClass."""
+        request = {"side": {"id": "p1", "pokemon": [
+            {"ident": "p1: a", "active": True, "condition": "100/100", "moves": ["bravebird", "closecombat", "tailwind", "protect"]},
+            {"ident": "p1: b", "active": True, "condition": "100/100", "moves": ["makeitrain"]},
+            {"ident": "p1: c", "active": False, "condition": "100/100", "moves": []},
+            {"ident": "p1: d", "active": False, "condition": "100/100", "moves": []}]},
+            "active": [{"moves": [{"id": "struggle"}]},
+                       {"moves": [{"id": "makeitrain", "pp": 8, "target": "allAdjacentFoes", "disabled": False}]}]}
+        return self.O.slot_options(request, 0, {"p1: a": 1, "p1: b": 0, "p1: c": 2, "p1: d": 3}, {})
+
+    def _cant_label(self, line, barred):
+        log = [line]
+        point = self.P.Point(1, 0, self.P.TURN, (), len(log))
+        return self.L.turn_label(log, point, 0, self._struggle_lists(), self.moves,
+                                 lambda details: self.species[details.split(",")[0]], self.tables, len(log),
+                                 barred=barred)
+
+    def test_a_disabled_move_named_by_cant_is_every_move_option_only_when_the_view_bars_it(self):
+        # g27_disable_lock: the slot's request was Struggle (its move Disabled), and cant|X|Disable|Move names the barred
+        # move, which is no option: every move option (here Struggle), MOVE_HIDDEN, but only when the tracker's view bars
+        # that slot (disable_slot or the Choice lock); otherwise the named move is no option for a reason the view does
+        # not know, and the label stays the empty set (bc_data refuses it as a labeler bug), never a silent fallback
+        lists = self._struggle_lists()
+        got = self._cant_label("|cant|p1a: Staraptor|Disable|Brave Bird", ({0}, set()))
+        self.assertEqual(got.reasons[0], self.L.MOVE_HIDDEN)
+        self.assertEqual([(lists[0][i].kind, lists[0][i].move_slot) for i in range(len(lists[0]))
+                          if got.slots[0] >> i & 1], [(self.O.MOVE, self.O.STRUGGLE)])
+        for line, barred in (("|cant|p1a: Staraptor|Disable|Brave Bird", (set(), set())),  # the view bars nothing
+                             ("|cant|p1a: Staraptor|Disable|Brave Bird", ({1}, set())),  # it bars another slot
+                             ("|cant|p1a: Staraptor|move: Taunt|Brave Bird", ({0}, set()))):  # another reason
+            got = self._cant_label(line, barred)
+            self.assertEqual(got.slots[0], 0, (line, barred))
+
     def test_paralysis_hides_the_move(self):
         got = self.label(["|cant|p1a: Staraptor|par"])
         self.assertEqual(got.reasons[0], self.L.MOVE_HIDDEN)
