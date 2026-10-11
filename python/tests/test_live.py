@@ -270,6 +270,8 @@ class SetBoostTest(unittest.TestCase):
         t = tracker.Tracker.__new__(tracker.Tracker)
         t.side, t._spectator, t.data = 0, False, data.load(kind="pool")
         t._last_move, t._parting_shot = None, -1
+        t._action = None  # no move action open (Tracker._segment)
+        t._herb_end = None
         p = SimpleNamespace(occupant=0, fainted=False, stages=[tracker.STAGE_NEUTRAL] * 7)
         p.stages[0] = stage
         t._positions = [[p, SimpleNamespace(occupant=1, fainted=False, stages=[6] * 7)],
