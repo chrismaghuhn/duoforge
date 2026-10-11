@@ -1,0 +1,53 @@
+Gengar (M) @ Life Orb
+Ability: Cursed Body
+Level: 50
+EVs: 32 SpA / 2 SpD / 32 Spe
+Modest Nature
+- Shadow Ball
+- Sludge Bomb
+- Thunderbolt
+- Protect
+
+Luxray (M) @ Muscle Band
+Ability: Rivalry
+Level: 50
+EVs: 32 HP / 32 Atk / 2 SpD
+Adamant Nature
+- Thunderbolt
+- Thunder Wave
+- Protect
+
+Pyroar (F) @ Sitrus Berry
+Ability: Unnerve
+Level: 50
+EVs: 32 HP / 2 SpA / 32 Spe
+Modest Nature
+- Yawn
+- Sunny Day
+- Protect
+
+Leafeon (M) @ Focus Sash
+Ability: Chlorophyll
+Level: 50
+EVs: 32 HP / 32 Atk / 2 Spe
+Adamant Nature
+- Yawn
+- Seed Bomb
+- Protect
+
+Raichu (F) @ Air Balloon
+Ability: Lightning Rod
+Level: 50
+EVs: 29 HP / 5 Def / 32 Spe
+Timid Nature
+- Thunder Wave
+- Thunderbolt
+- Protect
+
+Gholdengo @ Expert Belt
+Ability: Good as Gold
+Level: 50
+EVs: 17 HP / 2 Def / 17 SpA / 16 SpD / 14 Spe
+Modest Nature
+- Shadow Ball
+- Protect

@@ -1949,6 +1949,32 @@ G67_ITEM_FACTS = (
                     "target.item = ''; this.clearEffectState(target.itemState); "
                     "this.runEvent('AfterUseItem', target, null, null, this.dex.items.get('airballoon')); } },")),
 )
+# Step G83 (decision 0015 entry 5bt): Bulletproof, Rivalry, Leaf Guard and Iron Ball are engine rows read by id. Bulletproof's TryHit
+# stops a bullet move at its holder (dfi_try_hit_abilities); Rivalry is the base power chain (dfi_base_power, priority 24); Leaf
+# Guard refuses the statuses and the Yawn volatile in sun (dfi_try_status, dfi_yawn); Iron Ball is grounded (isGrounded, which
+# the Ground immunity reads) and halves the Speed (the item chain of dfi_speed_key). Its onEffectiveness returns 0 for the Flying
+# component of a Ground move, which the chart's immunity already counts as 0 in dfi_type_mod.
+G83_ABILITY_FACTS = (
+    ('bulletproof', ("onTryHit(pokemon, target, move) { if (move.flags['bullet']) { this.add('-immune', pokemon, '[from] ability: Bulletproof'); "
+                     "return null; } },",
+                     'flags: { breakable: 1 },')),
+    ('rivalry', ('onBasePowerPriority: 24,',
+                 "onBasePower(basePower, attacker, defender, move) { if (attacker.gender && defender.gender) { "
+                 "if (attacker.gender === defender.gender) { this.debug('Rivalry boost'); return this.chainModify(1.25); } "
+                 "else { this.debug('Rivalry weaken'); return this.chainModify(0.75); } } },",
+                 'flags: {},')),
+    ('leafguard', ("onSetStatus(status, target, source, effect) { if (['sunnyday', 'desolateland'].includes(target.effectiveWeather())) { "
+                   "if ((effect as Move)?.status) { this.add('-immune', target, '[from] ability: Leaf Guard'); } return false; } },",
+                   "onTryAddVolatile(status, target) { if (status.id === 'yawn' && ['sunnyday', 'desolateland'].includes(target.effectiveWeather())) { "
+                   "this.add('-immune', target, '[from] ability: Leaf Guard'); return null; } },",
+                   'flags: { breakable: 1 },')),
+)
+G83_ITEM_FACTS = (
+    ('ironball', ("onEffectiveness(typeMod, target, type, move) { if (!target) return; if (target.volatiles['ingrain'] || "
+                  "target.volatiles['smackdown'] || this.field.getPseudoWeather('gravity')) return; "
+                  "if (move.type === 'Ground' && target.hasType('Flying')) return 0; },",
+                  'onModifySpe(spe) { return this.chainModify(0.5); },')),
+)
 # Step G81 (decision 0015 entry 5bs): Frisk is an engine row read by id. Its onStart announces, for each foe in foes() order that
 # holds an item, `-item|X|Item|[from] ability: Frisk|[of] Y` (no [identify]: the pin prints none). The turn code emits ITEM_SHOWN
 # with the Frisk form (decision 0033), no state change.
@@ -2696,7 +2722,7 @@ G8_SECONDARIES = {
 }
 FLAGS2_BITS = {'sound': 1, 'heal': 2, 'powder': 16, 'punch': 32, 'slicing': 64}  # steps G30 (powder) and G34 (punch, slicing)
 # The third flags byte (DFI_MOVE_FLAG3_*, pool tables only): one bit per Showdown flag name, assigned centrally (HauptSession).
-FLAGS3_BITS = {'reflectable': 1, 'mustpressure': 2, 'bypasssub': 4, 'pulse': 8}  # steps G57 (Magic Bounce), G53 (Pressure), G60 (Substitute), G59 (Mega Launcher)
+FLAGS3_BITS = {'reflectable': 1, 'mustpressure': 2, 'bypasssub': 4, 'pulse': 8, 'bullet': 16}  # steps G57 (Magic Bounce), G53 (Pressure), G60 (Substitute), G59 (Mega Launcher), G83 (Bulletproof)
 # Decision 0020: the public static flags of a move (DUOFORGE_MOVE_STATIC_FLAG_*, include/duoforge/duoforge.h), one bit per
 # Showdown flag name, additive only; the generated column dfi_pool_move_static_flags holds them for every pool row and has
 # no engine reader. POWER_RULE is not a flag of the pin: the move has a basePowerCallback (its basePower is not the damage).
@@ -2840,10 +2866,10 @@ HANDLER_IDS = ['NONE', 'UNMODELED']
 # here, which changes the handler column and so the POOL table hash, as any pool change does; a row that is marked and
 # still has the UNMODELED handler fails duoforge.data.pool_tables. G4: Focus Sash, Rock Head. G12: Floettite (the Mega
 # Stone of Floette-Eternal), Flower Veil and Fairy Aura. G14: Rough Skin, Poison Touch and Thermal Exchange. G16: Sticky Hold (Knock Off reads it by id). AC1: Trace (the entry copy of a foe's ability). G15: Psychic Seed (Grassy Seed's rule for the other terrain). G22: Sand Rush, Swift Swim, Slush Rush and Chlorophyll (the doubled Speed in their weather, tools/datagen/pool_families.js ENGINE_ORDER), Sand Rush's immunity to Sandstorm, Inner Focus (no flinch, no Intimidate drop) and Liquid Voice (a sound move becomes Water). G23-C: Levitate (isGrounded and the Ground immunity). G49: Muscle Band, Wise Glasses (base power by category) and Bright Powder (the target's accuracy).
-ENGINE_ROWS = {'items': ['airballoon', 'focussash', 'floettite', 'psychicseed', 'electricseed', 'mistyseed', 'expertbelt', 'ejectbutton',
+ENGINE_ROWS = {'items': ['airballoon', 'ironball', 'focussash', 'floettite', 'psychicseed', 'electricseed', 'mistyseed', 'expertbelt', 'ejectbutton',
                          'widelens', 'muscleband', 'wiseglasses', 'brightpowder', 'redcard', 'lumberry', 'mentalherb', 'damprock', 'heatrock',
                          'smoothrock', 'icyrock', 'terrainextender', 'scopelens'],
-               'abilities': ['magicguard', 'rockhead', 'flowerveil', 'fairyaura', 'roughskin', 'poisontouch', 'thermalexchange',
+               'abilities': ['magicguard', 'bulletproof', 'rivalry', 'leafguard', 'rockhead', 'flowerveil', 'fairyaura', 'roughskin', 'poisontouch', 'thermalexchange',
                              'stickyhold', 'trace', 'levitate', 'sandrush', 'swiftswim', 'slushrush', 'chlorophyll',
                              'innerfocus', 'liquidvoice', 'flamebody', 'clearbody', 'hospitality', 'overcoat',
                              'soundproof', 'unnerve', 'speedboost', 'compoundeyes', 'ironfist', 'sharpness', 'solidrock',
@@ -3902,8 +3928,8 @@ def check_g34_facts(abil_ts, champ_abil, items_ts, champ_items):
     """Steps G34, G35, Mega batch 2 and G39: every fact of G34_ABILITY_FACTS, G35_ABILITY_FACTS, MEGA2_ABILITY_FACTS, G39_ABILITY_FACTS and G34_ITEM_FACTS is in the pinned entry, whitespace aside, and the
     Champions mod has no entry of its own for it (an override would change what the engine reads). Step G59: the Champions
     entry of a G59_INHERIT_ONLY ability may only inherit (`inherit: true`, `isNonstandard: null`), which is no override."""
-    for kind, facts_by_id, src, champ in (('ability', G34_ABILITY_FACTS + G35_ABILITY_FACTS + MEGA2_ABILITY_FACTS + G39_ABILITY_FACTS + G41_ABILITY_FACTS + G45_ABILITY_FACTS + G46_ABILITY_FACTS + G47_ABILITY_FACTS + G51_ABILITY_FACTS + G53_ABILITY_FACTS + G63_ABILITY_FACTS + G59_ABILITY_FACTS + G69_ABILITY_FACTS + G65_ABILITY_FACTS + G73_ABILITY_FACTS + G67_ABILITY_FACTS + G71_ABILITY_FACTS + G75_ABILITY_FACTS + G79_ABILITY_FACTS + G81_ABILITY_FACTS, abil_ts, champ_abil),
-                                          ('item', G34_ITEM_FACTS + G46_ITEM_FACTS + G47_ITEM_FACTS + G67_ITEM_FACTS + G75_ITEM_FACTS, items_ts, champ_items)):
+    for kind, facts_by_id, src, champ in (('ability', G34_ABILITY_FACTS + G35_ABILITY_FACTS + MEGA2_ABILITY_FACTS + G39_ABILITY_FACTS + G41_ABILITY_FACTS + G45_ABILITY_FACTS + G46_ABILITY_FACTS + G47_ABILITY_FACTS + G51_ABILITY_FACTS + G53_ABILITY_FACTS + G63_ABILITY_FACTS + G59_ABILITY_FACTS + G69_ABILITY_FACTS + G65_ABILITY_FACTS + G73_ABILITY_FACTS + G67_ABILITY_FACTS + G83_ABILITY_FACTS + G81_ABILITY_FACTS + G79_ABILITY_FACTS + G75_ABILITY_FACTS + G71_ABILITY_FACTS, abil_ts, champ_abil),
+                                          ('item', G34_ITEM_FACTS + G46_ITEM_FACTS + G47_ITEM_FACTS + G67_ITEM_FACTS + G83_ITEM_FACTS + G75_ITEM_FACTS, items_ts, champ_items)):
         for rid, facts in facts_by_id:
             e = src.entry(rid)
             if e is None:
@@ -4943,6 +4969,7 @@ extern const uint8_t dfi_pool_move_static_hits[DFI_POOL_MOVE_COUNT][2];
 #define DFI_MOVE_FLAG3_MUST_PRESSURE 2u  /* flags.mustpressure (step G53): a foe's Pressure costs PP whatever the move targets */
 #define DFI_MOVE_FLAG3_BYPASSSUB 4u      /* flags.bypasssub (step G60): a Substitute does not take the hit of the move (decision 0032) */
 #define DFI_MOVE_FLAG3_PULSE 8u          /* flags.pulse (step G59): Mega Launcher's BasePower x1.5 for the holder's pulse moves */
+#define DFI_MOVE_FLAG3_BULLET 16u        /* flags.bullet (step G83, approved by HauptSession): Bulletproof stops a bullet move at its holder */
 extern const uint8_t dfi_pool_move_flags3[DFI_POOL_MOVE_COUNT];
 extern const dfi_pool_alias dfi_pool_forme_aliases[DFI_POOL_ALIAS_COUNT];
 
@@ -5079,7 +5106,7 @@ size_t dfi_pool_canonical_bytes(uint8_t *out, size_t capacity);
           'const uint8_t dfi_pool_move_static_hits[DFI_POOL_MOVE_COUNT][2] = {']
     for m in dp['moves']:
         c.append('    [DFI_MOVE_%s] = {%du, %du}, /* %s */' % (m['id'].upper(), m['hits'][0], m['hits'][1], m['name']))
-    c += ['};', '', '/* The third flags byte (DFI_MOVE_FLAG3_*): REFLECTABLE (step G57), MUST_PRESSURE (step G53), PULSE (step G59). */',
+    c += ['};', '', '/* The third flags byte (DFI_MOVE_FLAG3_*): REFLECTABLE (step G57), MUST_PRESSURE (step G53), PULSE (step G59), BULLET (step G83). */',
           'const uint8_t dfi_pool_move_flags3[DFI_POOL_MOVE_COUNT] = {']
     for m in dp['moves']:
         if m['flags3']:
