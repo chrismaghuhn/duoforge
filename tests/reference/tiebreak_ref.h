@@ -6317,7 +6317,7 @@ static const df_tb_stop tb_g7_wide_guard_pivot[] = {
 static const df_tb_stop tb_g81_frisk_after_intimidate[] = {
     {0u, 0u, 1u, 3u, {6u, 6u}, {1201u, 1113u}, {0x4059000000000000ull, 0x4059000000000000ull}},
     {1u, 0u, 1u, 3u, {4u, 4u}, {806u, 772u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
-    {2u, 0u, 2u, 1u, {3u, 4u}, {593u, 619u}, {0x40482fa0be82fa0cull, 0x404ab15555555555ull}},
+    {2u, 0u, 2u, 2u, {4u, 4u}, {609u, 589u}, {0x4048e167daf4c128ull, 0x4049640000000000ull}},
 };
 static const df_tb_stop tb_g81_frisk_before_intimidate[] = {
     {0u, 0u, 1u, 3u, {6u, 6u}, {1201u, 1113u}, {0x4059000000000000ull, 0x4059000000000000ull}},
@@ -8688,7 +8688,7 @@ static const df_tb_battle tb_battles[] = {
     {"xr3_sheercold_sub_miss", 3u, tb_xr3_sheercold_sub_miss, sizeof tb_xr3_sheercold_sub_miss / sizeof tb_xr3_sheercold_sub_miss[0]},
 };
 
-/* 5832 stops: 157 of an ended battle; decided by the count 1424,
- * the HP percentage 1802, the total HP 2276, a tie 173;
+/* 5832 stops: 157 of an ended battle; decided by the count 1423,
+ * the HP percentage 1803, the total HP 2276, a tie 173;
  * winners: side 0 2738, side 1 2921, tie 173 */
 #endif

@@ -174,8 +174,8 @@ static void check_fold_ignores_frisk_item_shown(df_test *t, const duoforge_conte
     memset(&ev, 0, sizeof ev);
     ev.rec[0] = dfi_event_make(DUOFORGE_EVENT_ITEM_SHOWN, 2u);
     ev.rec[0].cause = DUOFORGE_CAUSE_ABILITY;
-    ev.rec[0].id = (uint16_t)(1u + DFI_ABILITY_FRISK);
-    ev.rec[0].id2 = (uint16_t)(1u + DFI_ITEM_AIRBALLOON); /* any held item: the fold ignores the event */
+    ev.rec[0].id = (uint16_t)(1u + DFI_ABILITY_FRISK); /* wide-operands-reviewed: 67, below 2^16 */
+    ev.rec[0].id2 = (uint16_t)(1u + DFI_ITEM_AIRBALLOON); /* wide-operands-reviewed: any held item, below 2^16 */
     ev.rec[0].other = 0u;
     ev.count = 1u;
     DF_CHECK(t, dfi_events_fold_knowledge(b, copy, &ev, 0u));
@@ -199,6 +199,10 @@ static void check_illusion_refusal(df_test *t, const duoforge_context *ctx)
     build_setup(cb, &setup);
     setup.sides[1].members[0].species_id = DFI_FORME_NOIVERN;
     setup.sides[1].members[0].ability = DFI_ABILITY_FRISK + 1u;
+    /* Noivern learns Protect and Hurricane (the setup checks each move of the forme): Primarina's moves are replaced. */
+    setup.sides[1].members[0].move_count = 2u;
+    setup.sides[1].members[0].moves[0].move_id = DFI_MOVE_HURRICANE;
+    setup.sides[1].members[0].moves[1].move_id = DFI_MOVE_PROTECT;
     duoforge_battle *b = NULL;
     DF_CHECK_EQ_U64(t, (uint64_t)duoforge_battle_create(ctx, &setup, &b), (uint64_t)DUOFORGE_E_UNSUPPORTED);
     DF_CHECK(t, b == NULL);

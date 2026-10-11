@@ -8940,7 +8940,7 @@ static duoforge_status dfi_frisk(dfi_run *r, uint32_t flat)
         const uint32_t code = (t != NULL && t->hp != 0u) ? dfi_item_code(b, t) : 0u;
         if (code != 0u) {
             duoforge_event e = dfi_ev(DUOFORGE_EVENT_ITEM_SHOWN, foe * 2u + slot, DUOFORGE_CAUSE_ABILITY, code, flat);
-            e.id = (uint16_t)(1u + DFI_ABILITY_FRISK); /* < 2^16 */
+            e.id = (uint16_t)(1u + DFI_ABILITY_FRISK); /* wide-operands-reviewed: 67, below 2^16 */
             dfi_emit(r, &e);
         }
     }

@@ -64,7 +64,7 @@
        "switch_flag": 0,
        "hp": 192,
        "maxhp": 192,
-       "item": "sitrusberry",
+       "item": "focussash",
        "status": "",
        "status_time": 0,
        "confusion": 0,
@@ -499,7 +499,7 @@
         "switch_flag": 0,
         "hp": 192,
         "maxhp": 192,
-        "item": "sitrusberry",
+        "item": "focussash",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -790,15 +790,36 @@
      "lo": 0,
      "hi": 16,
      "value": 14
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 3
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 3
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 7
     }
    ],
    "log": [
     "|move|p2a: Staraptor|Brave Bird|p1a: Trevenant",
     "|-supereffective|p1a: Trevenant|1",
+    "|-enditem|p1a: Trevenant|Focus Sash",
     "|split|p1",
-    "|-damage|p1a: Trevenant|0 fnt",
-    "|-damage|p1a: Trevenant|0 fnt",
-    "|faint|p1a: Trevenant",
+    "|-damage|p1a: Trevenant|1/192",
+    "|-damage|p1a: Trevenant|1/100",
     "|split|p2",
     "|-damage|p2a: Staraptor|129/192|[from] Recoil",
     "|-damage|p2a: Staraptor|67/100|[from] Recoil",
@@ -813,10 +834,19 @@
     "|-boost|p2b: Milotic|atk|1",
     "|-boost|p2b: Milotic|def|1",
     "|-boost|p2b: Milotic|accuracy|1",
-    "|upkeep"
+    "|move|p1a: Trevenant|Horn Leech|p2a: Staraptor",
+    "|-resisted|p2a: Staraptor|1",
+    "|split|p2",
+    "|-damage|p2a: Staraptor|9/192",
+    "|-damage|p2a: Staraptor|4/100",
+    "|split|p1",
+    "|-heal|p1a: Trevenant|16/192|[from] drain|[of] p2a: Staraptor",
+    "|-heal|p1a: Trevenant|8/100|[from] drain|[of] p2a: Staraptor",
+    "|upkeep",
+    "|turn|2"
    ],
    "state": {
-    "turn": 1,
+    "turn": 2,
     "ended": false,
     "winner": "",
     "weather": "",
@@ -826,13 +856,24 @@
     "trick_room": 0,
     "sides": [
      {
-      "request": "switch",
+      "request": "move",
       "conditions": [
        0,
        0,
        0
       ],
-      "enabled": [],
+      "enabled": [
+       [
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1
+       ]
+      ],
       "active": [
        0,
        1
@@ -842,16 +883,16 @@
         "species": "Trevenant",
         "set_species": "Trevenant",
         "mega": 0,
-        "switch_flag": 1,
-        "hp": 0,
+        "switch_flag": 0,
+        "hp": 16,
         "maxhp": 192,
-        "item": "sitrusberry",
-        "status": "fnt",
+        "item": "",
+        "status": "",
         "status_time": 0,
         "confusion": 0,
-        "fainted": true,
+        "fainted": false,
         "boosts": [
-         0,
+         -1,
          0,
          0,
          0,
@@ -860,7 +901,7 @@
          0
         ],
         "pp": [
-         12,
+         11,
          8,
          8
         ],
@@ -953,13 +994,22 @@
       ]
      },
      {
-      "request": "",
+      "request": "move",
       "conditions": [
        0,
        0,
        0
       ],
-      "enabled": [],
+      "enabled": [
+       [
+        1,
+        1,
+        1
+       ],
+       [
+        1
+       ]
+      ],
       "active": [
        0,
        1
@@ -970,7 +1020,7 @@
         "set_species": "Staraptor",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 39,
+        "hp": 9,
         "maxhp": 192,
         "item": "sharpbeak",
         "status": "",
