@@ -74,6 +74,12 @@ typedef struct dfi_move_slot {
 #define DFI_VOL_UNBURDEN 32u    /* Team C: Unburden's volatile, set when its holder's item is used */
 #define DFI_VOL_CHOICE_LOCK 64u /* Team C: Choice Scarf's choicelock; the move in locked_move */
 #define DFI_VOL_NEWLY_SWITCHED 128u /* Team C: pokemon.newlySwitched, from its switch-in to the end of the turn */
+/* Build-time guard (static asserts): the volatile bits are pairwise disjoint (the sum of the bits is their OR, so no two share a bit). */
+_Static_assert((DFI_VOL_FLINCH + DFI_VOL_PROTECT + DFI_VOL_FLASH_FIRE + DFI_VOL_FOLLOW_ME + DFI_VOL_HELPING_HAND + DFI_VOL_UNBURDEN +
+                DFI_VOL_CHOICE_LOCK + DFI_VOL_NEWLY_SWITCHED) ==
+                   (DFI_VOL_FLINCH | DFI_VOL_PROTECT | DFI_VOL_FLASH_FIRE | DFI_VOL_FOLLOW_ME | DFI_VOL_HELPING_HAND |
+                    DFI_VOL_UNBURDEN | DFI_VOL_CHOICE_LOCK | DFI_VOL_NEWLY_SWITCHED),
+               "the DFI_VOL_* bits are pairwise disjoint");
 #define DFI_STALL_LEVEL_MAX 6u /* success chance 1 / 3^level */
 #define DFI_STALL_TURNS_MAX 2u
 #define DFI_CONFUSION_TURNS_MAX 5u
@@ -291,6 +297,15 @@ typedef struct dfi_side {
 #define DFI_POSFLAG_LOWERED 0x20u
 #define DFI_POSFLAG_HURT 0x40u
 #define DFI_POSFLAG_VALID_MASK 0x7Fu
+/* Build-time guard (static asserts, G84 and G88): the position-flag fields are pairwise disjoint and together make the valid mask. */
+_Static_assert((DFI_POSFLAG_HEALING_WISH + DFI_POSFLAG_STATS_RAISED + DFI_POSFLAG_DRAGON_CHEER_MASK + DFI_POSFLAG_DESTINY_BOND +
+                DFI_POSFLAG_LOWERED + DFI_POSFLAG_HURT) ==
+                   (DFI_POSFLAG_HEALING_WISH | DFI_POSFLAG_STATS_RAISED | DFI_POSFLAG_DRAGON_CHEER_MASK | DFI_POSFLAG_DESTINY_BOND |
+                    DFI_POSFLAG_LOWERED | DFI_POSFLAG_HURT),
+                "the DFI_POSFLAG_* fields are pairwise disjoint");
+_Static_assert((DFI_POSFLAG_HEALING_WISH | DFI_POSFLAG_STATS_RAISED | DFI_POSFLAG_DRAGON_CHEER_MASK | DFI_POSFLAG_DESTINY_BOND |
+                DFI_POSFLAG_LOWERED | DFI_POSFLAG_HURT) == DFI_POSFLAG_VALID_MASK,
+                "the DFI_POSFLAG_* fields make the valid mask");
 /* rev 4, per side and per roster member */
 #define DFI_TAIL_QUICK_GUARD_MAX 1u     /* set by Quick Guard, ends in the residual of the turn */
 /* hazard_order: the creation order of the hazards that are up on the side (the pin's effectOrder, sim/battle.ts:994-1000), which

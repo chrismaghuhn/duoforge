@@ -450,7 +450,8 @@ def parse_move(mid, base, champ, ext=False, pool=False, unmodeled=None):
             # encoded bit holds is recorded when a modelled row reads it (flags_that_matter), and otherwise ignored.
             if fl not in POOL_FLAGS:
                 fail('move %s: unknown flag %s' % (mid, fl))
-            if fl in FLAGS_THAT_MATTER:
+            # Step G92 (decision 0062): cantusetwice (Gigaton Hammer, dropped; Blood Moon) has no reader in the turn code: unmodelled.
+            if fl in FLAGS_THAT_MATTER or fl == 'cantusetwice':
                 unmodeled.append('flag %s' % fl)
         elif fl not in IGNORED_FLAGS and not (pool and fl in G2_IGNORED_FLAGS):
             fail('move %s: unknown flag %s' % (mid, fl))
@@ -2353,6 +2354,8 @@ SPECIAL_P = dict(SPECIAL_C, **{
     'batonpass': ('BATON_PASS', {'onHit'}),                               # G74: switches the user out and copies its volatiles (decision 0042)
     'yawn': ('YAWN', {'onTryHit'}),                                       # G31: sleep at the end of the next turn
     'revivalblessing': ('REVIVAL_BLESSING', {'onTryHit'}),                # G52: the revive at the PIVOT of the user's slot
+    'leechseed': ('LEECH_SEED', {'onTryImmunity'}),                       # G84 (decision 0047): the seed; its drain is a residual
+    'curse': ('CURSE', {'onModifyMove', 'onTryHit', 'onHit'}),            # G84: non-Ghost boosts; a Ghost Curse is refused explicitly
     'roost': ('ROOST', set()),                                            # G42: heals, then the Flying type is off for the turn
     'stompingtantrum': ('STOMPING_TANTRUM', {'basePowerCallback'}),        # G42: base power x2 after a failed last move
     'auroraveil': ('AURORA_VEIL', {'onTry'}),                             # G20: a screen against both categories, in snow only
@@ -2410,6 +2413,9 @@ SPECIAL_P = dict(SPECIAL_C, **{
     'bugbite': ('BUG_BITE', {'onHit'}),                                   # G64: takes the target's berry and eats it
     'poltergeist': ('POLTERGEIST', {'onTry', 'onTryHit'}),                # G64: fails without a target item; reveals it
     'sheercold': ('SHEER_COLD', set()),                                   # G64: an OHKO move (ohko 'Ice'), see G2_OWNED_FIELDS
+    'stormthrow': ('WILL_CRIT', set()),                                   # C4: willCrit, the critical hit without a draw (sim/battle-actions.ts:1638)
+    'flowertrick': ('WILL_CRIT', set()),                                  # C4: willCrit
+    'frostbreath': ('WILL_CRIT', set()),                                  # C4: willCrit
     'haze': ('HAZE', {'onHitField'}),                                     # G62: clears every boost of the standing actives (decision 0031)
     'afteryou': ('AFTER_YOU', {'onHit'}),                                 # G62: the target's queued move goes next (decision 0015 entry 5az)
     'quash': ('QUASH', {'onHit'}),                                        # G62: the target's queued move goes last
@@ -2427,6 +2433,21 @@ SPECIAL_P = dict(SPECIAL_C, **{
     'steelbeam': ('STEEL_BEAM', {'onMoveFail'}),                          # G68: mindBlownRecoil (half the maximum HP on a hit and in MoveFail)
     'thunderwave': ('THUNDER_WAVE', set()),                               # G68: ignoreImmunity false (Ground is immune to the Electric move)
     'dragondarts': ('DRAGON_DARTS', set()),                               # G78: two hits, the second on the partner (decision 0043)
+    'heavyslam': ('HEAVY_SLAM', {'basePowerCallback', 'onTryHit'}),       # G86: base power by the user's and the target's weight
+    'hardpress': ('HARD_PRESS', {'basePowerCallback'}),                   # G86: base power by the target's current HP
+    'icespinner': ('ICE_SPINNER', {'onAfterHit', 'onAfterSubDamage'}),    # G86: clears the terrain after a hit (no onTry)
+    'bellydrum': ('BELLY_DRUM', {'onHit'}),                               # G86: half the maximum HP for +6 Attack
+    # Step G92 (decision 0062): the primary confusion of four moves (Swagger and Flatter boost first), the OHKO moves of
+    # Sheer Cold's kind with ohko true, Memento's selfdestruct, Night Shade's damage 'level'.
+    'confuseray': ('CONFUSE', set()),                                     # G92: volatileStatus confusion (G2_OWNED_FIELDS)
+    'swagger': ('CONFUSE', set()),                                        # G92: boosts atk +2 to the target, then the confusion
+    'flatter': ('CONFUSE', set()),                                        # G92: boosts spa +1 to the target, then the confusion
+    'teeterdance': ('CONFUSE', set()),                                    # G92: allAdjacent, the confusion of each adjacent foe
+    'fissure': ('OHKO', set()),                                           # G92: ohko true (no type immunity, level 50 vs 50)
+    'guillotine': ('OHKO', set()),
+    'horndrill': ('OHKO', set()),
+    'memento': ('MEMENTO', set()),                                        # G92: target atk and spa -2, then the user faints
+    'nightshade': ('LEVEL_DAMAGE', set()),                                # G92: damage 'level' (the user's level, no crit draw)
 })
 # Step G13: Detect is Protect (data/moves.ts:3526-3547 against 13961-14005): the same handler (not one of the G2 handlers,
 # so it is added to the pool's map only), and the generator checks that its stalling fields and both callbacks are,
@@ -2529,6 +2550,20 @@ G72B_DRAGON_CHEER_FACTS = (
     'this.effectState.hasDragonType = target.hasType("Dragon");',
     'return critRatio + (this.effectState.hasDragonType ? 2 : 1);', 'target: "adjacentAlly",', 'type: "Dragon",',
 )
+# Step G84 (decision 0047, lead's phase 2 approval): Leech Seed (data/moves.ts:10202-10231) and Curse (the Champions override,
+# data/mods/champions/moves.ts:165-196). The seed's residual drain is a turn-code residual of order 8; a Ghost Curse is refused.
+G84_HANDLERS = ['LEECH_SEED', 'CURSE']
+G84_LEECH_FACTS = (
+    'accuracy: 90,', 'category: "Status",', 'flags: { protect: 1, reflectable: 1, mirror: 1, metronome: 1 },',
+    "volatileStatus: 'leechseed',", "onTryImmunity(target) {", "return !target.hasType('Grass');", 'onResidualOrder: 8,',
+    'const damage = this.damage(pokemon.baseMaxhp / 8, pokemon, target);', 'this.heal(damage, target, pokemon);',
+)
+# The base entry (data/moves.ts:3266-3308) is checked here; the Champions override's boost text is pinned in turn.c's comment
+# (champions/moves.ts:165-196), since the check reads the base file.
+G84_CURSE_FACTS = (
+    'flags: { bypasssub: 1, metronome: 1 },', "volatileStatus: 'curse',", "onModifyMove(move, source, target) {",
+    'this.directDamage(source.maxhp / 2, source, source);', 'onResidualOrder: 12,', 'this.damage(pokemon.baseMaxhp / 4);',
+)
 # Step G76 (decision 0015 5cg, lead's approval 2026-10-10): Destiny Bond. The volatile is the move's volatileStatus on the
 # user; onPrepareHit fails the move while the volatile is up (removeVolatile returns true: a consecutive use fails and
 # removes it); the condition prints the -singlemove start; onBeforeMove (not for Destiny Bond itself) and onMoveAborted
@@ -2558,6 +2593,65 @@ G78_FACTS = (
     'accuracy: 100,', 'basePower: 50,', 'category: "Physical",', 'priority: 0,',
     'flags: { protect: 1, mirror: 1, metronome: 1, noparentalbond: 1 },', 'multihit: 2,', 'smartTarget: true,',
     'target: "normal",', 'type: "Dragon",',
+)
+# Step G86 (decision 0015 5cn, batch 6, the power moves): Heavy Slam (base power by the user's and the target's weight in
+# hectograms, getWeight() being an integer here; onTryHit is the Dynamax refusal, owned as Low Kick's), Hard Press (base power
+# from the target's current HP, the pin's integer formula), Ice Spinner (clears the terrain after a hit: onAfterHit runs only
+# while the user is alive, onAfterSubDamage for a Substitute absorb; no onTry, so no terrain is no failure) and Belly Drum
+# (onHit: refused at half HP or at +6 Attack, half the maximum HP as directDamage, +12 Attack capped to +6, shown as -setboost).
+G86_HANDLERS = ['HEAVY_SLAM', 'HARD_PRESS', 'ICE_SPINNER', 'BELLY_DRUM']
+G86_FACTS = (
+    ('heavyslam', ['accuracy: 100,', 'basePower: 0,', 'category: "Physical",', 'priority: 0,',
+                   'flags: { contact: 1, protect: 1, mirror: 1, nonsky: 1, metronome: 1, minimize: 1 },',
+                   'const targetWeight = target.getWeight();', 'const pokemonWeight = pokemon.getWeight();',
+                   'if (pokemonWeight >= targetWeight * 5) {', 'bp = 120;', 'if (pokemonWeight >= targetWeight * 4) {', 'bp = 100;',
+                   'if (pokemonWeight >= targetWeight * 3) {', 'bp = 80;', 'if (pokemonWeight >= targetWeight * 2) {', 'bp = 60;',
+                   'bp = 40;', 'this.debug(`BP: ${bp}`);', 'return bp;', 'pp: 10,', "if (target.volatiles['dynamax']) {",
+                   "this.add('-fail', pokemon, 'Dynamax');", 'target: "normal",', 'type: "Steel",']),
+    ('hardpress', ['accuracy: 100,', 'basePower: 0,', 'const hp = target.hp;', 'const maxHP = target.maxhp;',
+                   'const bp = Math.floor(Math.floor((100 * (100 * Math.floor(hp * 4096 / maxHP)) + 2048 - 1) / 4096) / 100) || 1;',
+                   'return bp;', 'category: "Physical",', 'priority: 0,',
+                   'flags: { contact: 1, protect: 1, mirror: 1, metronome: 1 },', 'target: "normal",', 'type: "Steel",']),
+    ('icespinner', ['accuracy: 100,', 'basePower: 80,', 'category: "Physical",', 'priority: 0,',
+                    'flags: { contact: 1, protect: 1, mirror: 1, metronome: 1 },', 'onAfterHit(target, source) {',
+                    'this.field.clearTerrain();', 'onAfterSubDamage(damage, target, source) {', 'if (source.hp) {',
+                    'target: "normal",', 'type: "Ice",']),
+    ('bellydrum', ['accuracy: true,', 'basePower: 0,', 'category: "Status",', 'priority: 0,',
+                   'flags: { snatch: 1, metronome: 1 },',
+                   'if (target.hp <= target.maxhp / 2 || target.boosts.atk >= 6 || target.maxhp === 1) {',
+                   'return false;', 'this.directDamage(target.maxhp / 2);', 'this.boost({ atk: 12 }, target);',
+                   'target: "self",', 'type: "Normal",']),
+)
+# Step G92 (decision 0062, lead's approval 2026-10-11). CONFUSE: the primary volatile confusion of Confuse Ray, Swagger, Flatter and
+# Teeter Dance (moveHit: the boosts first, then addVolatile; Misty Terrain's onTryAddVolatile prints -activate for a move without
+# secondaries). OHKO: ohko true (Fissure, Guillotine, Horn Drill; hitStepAccuracy's ohko branch with accuracy 30 and no type
+# immunity). MEMENTO: the target's boosts, then selfdestruct ifHit. LEVEL_DAMAGE: damage 'level' (Night Shade; no critical hit
+# roll, no modifiers). Gigaton Hammer (cantusetwice) is dropped (decision 0062): its only learner has no marked ability.
+G92_HANDLERS = ['CONFUSE', 'OHKO', 'MEMENTO', 'LEVEL_DAMAGE']
+G92_FACTS = (
+    ('confuseray', ['accuracy: 100,', 'basePower: 0,', 'category: "Status",', 'priority: 0,',
+                    'flags: { protect: 1, reflectable: 1, mirror: 1, metronome: 1 },', "volatileStatus: 'confusion',",
+                    'target: "normal",', 'type: "Ghost",']),
+    ('swagger', ['accuracy: 85,', 'basePower: 0,', 'category: "Status",', 'priority: 0,',
+                 'flags: { protect: 1, reflectable: 1, mirror: 1, allyanim: 1, metronome: 1 },', "volatileStatus: 'confusion',",
+                 'boosts: { atk: 2, },', 'target: "normal",', 'type: "Normal",']),
+    ('flatter', ['accuracy: 100,', 'basePower: 0,', 'category: "Status",', 'priority: 0,',
+                 'flags: { protect: 1, reflectable: 1, mirror: 1, allyanim: 1, metronome: 1 },', "volatileStatus: 'confusion',",
+                 'boosts: { spa: 1, },', 'target: "normal",', 'type: "Dark",']),
+    ('teeterdance', ['accuracy: 100,', 'basePower: 0,', 'category: "Status",', 'priority: 0,',
+                     'flags: { protect: 1, mirror: 1, dance: 1, metronome: 1 },', "volatileStatus: 'confusion',",
+                     'target: "allAdjacent",', 'type: "Normal",']),
+    ('fissure', ['accuracy: 30,', 'basePower: 0,', 'category: "Physical",', 'priority: 0,',
+                 'flags: { protect: 1, mirror: 1, nonsky: 1, metronome: 1 },', 'ohko: true,', 'target: "normal",', 'type: "Ground",']),
+    ('guillotine', ['accuracy: 30,', 'basePower: 0,', 'category: "Physical",', 'priority: 0,',
+                    'flags: { contact: 1, protect: 1, mirror: 1, metronome: 1 },', 'ohko: true,', 'target: "normal",', 'type: "Normal",']),
+    ('horndrill', ['accuracy: 30,', 'basePower: 0,', 'category: "Physical",', 'priority: 0,',
+                   'flags: { contact: 1, protect: 1, mirror: 1, metronome: 1 },', 'ohko: true,', 'target: "normal",', 'type: "Normal",']),
+    ('memento', ['accuracy: 100,', 'basePower: 0,', 'category: "Status",', 'priority: 0,',
+                 'flags: { protect: 1, mirror: 1, metronome: 1 },', 'boosts: { atk: -2, spa: -2, },',
+                 'selfdestruct: "ifHit",', 'target: "normal",', 'type: "Dark",']),
+    ('nightshade', ['accuracy: 100,', 'basePower: 0,', "damage: 'level',", 'category: "Special",', 'priority: 0,',
+                    'flags: { protect: 1, mirror: 1, metronome: 1 },', 'target: "normal",', 'type: "Ghost",']),
 )
 G58_FACTS = (
     'accuracy: 100,', 'basePower: 90,', 'category: "Physical",', 'priority: 0,', 'target: "normal",', 'type: "Ghost",',
@@ -2593,6 +2687,9 @@ G54_FACTS = (
 # berry when it is a berry and eats it, for the user), POLTERGEIST (onTry fails without a target item; onTryHit reveals it with
 # -activate) and SHEER_COLD (an OHKO move: ohko 'Ice', the accuracy and immunity of hitStepAccuracy; G2_OWNED_FIELDS owns the field).
 G64_HANDLERS = ['BEAT_UP', 'BUG_BITE', 'POLTERGEIST', 'SHEER_COLD']
+# Step C4 (decision 0015 entry 5ct): willCrit, a move that is always a critical hit and draws no critical roll (Storm Throw,
+# Flower Trick, Frost Breath). The engine reads it in the damage call (dfi_get_damage); the Shell Armor check is unchanged.
+C4_HANDLERS = ['WILL_CRIT']
 G64_FACTS = (
     ('beatup', ['move.allies = pokemon.side.pokemon.filter(ally => ally === pokemon || !ally.fainted && !ally.status);',
                 'move.multihit = move.allies.length;',
@@ -2650,7 +2747,7 @@ G68_FACTS = (
                      'flags: { protect: 1, reflectable: 1, mirror: 1, metronome: 1 },', "status: 'par',",
                      'ignoreImmunity: false,', 'target: "normal",', 'type: "Electric",']),
 )
-SPECIAL_IDS_P = SPECIAL_IDS_C + G2_HANDLERS + WEATHER_HANDLERS + G16_HANDLERS + G15_HANDLERS + G19_HANDLERS + G20_HANDLERS + G20_PROTECT_HANDLERS + G28_HANDLERS + G30_HANDLERS + G32_HANDLERS + G34_HANDLERS + G27_HANDLERS + G25_HANDLERS + G26_HANDLERS + G33_HANDLERS + G38_HANDLERS + G29_HANDLERS + G39_HANDLERS + G31_HANDLERS + G48_HANDLERS + G44_HANDLERS + G50_HANDLERS + G42_HANDLERS + G56_HANDLERS + G52_HANDLERS + G54_HANDLERS + G64_HANDLERS + G62_HANDLERS + G60_HANDLERS + G58_HANDLERS + G68_HANDLERS + G70_HANDLERS + G66_HANDLERS + G72B_HANDLERS + G74_HANDLERS + G76_HANDLERS + G78_HANDLERS + G88_HANDLERS + G94_HANDLERS + ['UNMODELED']# Step G10 made two of these handlers data: Scald (thawsTarget) and Recover (heal) are read into the second flags# byte (bit 4, thaws the target) and the heal column, and have the special NONE; their ids stay defined (the ids after
+SPECIAL_IDS_P = SPECIAL_IDS_C + G2_HANDLERS + WEATHER_HANDLERS + G16_HANDLERS + G15_HANDLERS + G19_HANDLERS + G20_HANDLERS + G20_PROTECT_HANDLERS + G28_HANDLERS + G30_HANDLERS + G32_HANDLERS + G34_HANDLERS + G27_HANDLERS + G25_HANDLERS + G26_HANDLERS + G33_HANDLERS + G38_HANDLERS + G29_HANDLERS + G39_HANDLERS + G31_HANDLERS + G48_HANDLERS + G44_HANDLERS + G50_HANDLERS + G42_HANDLERS + G56_HANDLERS + G52_HANDLERS + G54_HANDLERS + G64_HANDLERS + G62_HANDLERS + G60_HANDLERS + G58_HANDLERS + G68_HANDLERS + G70_HANDLERS + G66_HANDLERS + G72B_HANDLERS + G74_HANDLERS + G76_HANDLERS + G78_HANDLERS + G88_HANDLERS + G94_HANDLERS + G86_HANDLERS + C4_HANDLERS + G84_HANDLERS + G92_HANDLERS + ['UNMODELED']# Step G10 made two of these handlers data: Scald (thawsTarget) and Recover (heal) are read into the second flags# byte (bit 4, thaws the target) and the heal column, and have the special NONE; their ids stay defined (the ids after
 # them keep their values). First Impression and Low Kick keep theirs: the turn code implements them.
 POOL_COLUMN_KEYS = {'thawsTarget', 'heal'}
 G2_OWNED_FIELDS = {
@@ -2667,6 +2764,7 @@ G2_OWNED_FIELDS = {
     'YAWN': {'volatileStatus': "volatileStatus: 'yawn',"},
     'REVIVAL_BLESSING': {'slotCondition': "slotCondition: 'revivalblessing', // No this not a real switchout move // This is needed "
                                          "to trigger a switch protocol to choose a fainted party member // Feel free to refactor"},
+    'LEECH_SEED': {'volatileStatus': "volatileStatus: 'leechseed',"},
     'SANDSTORM': {'weather': "weather: 'Sandstorm',"},
     'SNOWSCAPE': {'weather': "weather: 'snowscape',"},
     'ELECTRIC_TERRAIN': {'terrain': "terrain: 'electricterrain',"},
@@ -2696,10 +2794,16 @@ G2_OWNED_FIELDS = {
     'SCALE_SHOT': {'multihit': 'multihit: [2, 5],', 'selfBoost': "selfBoost: { boosts: { def: -1, spe: 1, }, },"},
     'QUICK_GUARD': {'sideCondition': "sideCondition: 'quickguard',"},
     'SHEER_COLD': {'ohko': "ohko: 'Ice',"},
+    'WILL_CRIT': {'willCrit': 'willCrit: true,'},
     'STEEL_BEAM': {'mindBlownRecoil': 'mindBlownRecoil: true,'},
     'THUNDER_WAVE': {'ignoreImmunity': 'ignoreImmunity: false,'},
     'BATON_PASS': {'self': BATON_PASS_SELF},
     'DRAGON_DARTS': {'multihit': 'multihit: 2,', 'smartTarget': 'smartTarget: true,'},
+    # Step G92 (decision 0062): the primary volatile of the confusion moves, ohko true, Memento's selfdestruct, Night Shade's damage.
+    'CONFUSE': {'volatileStatus': "volatileStatus: 'confusion',"},
+    'OHKO': {'ohko': 'ohko: true,'},
+    'MEMENTO': {'selfdestruct': 'selfdestruct: "ifHit",'},
+    'LEVEL_DAMAGE': {'damage': "damage: 'level',"},
 }
 # Step G48: the empty secondary of Stone Axe and Ceaseless Edge (the Sheer Force placeholder). Without Sheer Force the pin runs
 # it for every hit target (moveHit of an empty secondary with chance undefined, sim/battle-actions.ts:1336-1349): the engine
@@ -2709,7 +2813,7 @@ G2_OWNED_SECONDARY = {'STONE_AXE': 'secondary: {}, // Sheer Force-boosted', 'CEA
                   "target.trySetStatus(status, source); }, },"}
 G2_OWNED_CONDITION = {'ROOST', 'ENCORE', 'WIDE_GUARD', 'QUICK_GUARD', 'GLAIVE_RUSH', 'AURORA_VEIL', 'SPIKY_SHIELD', 'RAGE_POWDER', 'DISABLE',
                       'ELECTRIC_TERRAIN', 'MISTY_TERRAIN', 'PERISH_SONG', 'IMPRISON', 'TAUNT', 'YAWN', 'REVIVAL_BLESSING',
-                      'SUBSTITUTE', 'PHANTOM_FORCE', 'KINGS_SHIELD', 'DRAGON_CHEER', 'DESTINY_BOND', 'BANEFUL_BUNKER'}
+                      'SUBSTITUTE', 'PHANTOM_FORCE', 'KINGS_SHIELD', 'DRAGON_CHEER', 'DESTINY_BOND', 'BANEFUL_BUNKER', 'LEECH_SEED', 'CURSE'}
 # Step G8 (Throat Chop and Psychic Noise): the two secondaries become modelled kinds, and the column that their
 # consumers read is the move's second flags byte (the first is full): the `sound` flag (Throat Chop bars the sound
 # moves) and the `heal` flag (Heal Block bars the moves that heal). Both are derived for every pool move, the prefix
@@ -3469,9 +3573,46 @@ def check_g88_facts(moves_ts):
                 fail('move %s: the entry no longer has "%s"' % (mid, fact))
 
 
+def check_g92_facts(moves_ts):
+    """Step G92: the entries of the confusion, OHKO, Memento and Night Shade moves have the pinned texts that
+    the turn code reads (data/moves.ts; the Champions mod has no override of any of them)."""
+    for mid, facts in G92_FACTS:
+        e = moves_ts.entry(mid)
+        if e is None:
+            fail('move %s not found' % mid)
+        text = norm('\n'.join(e[2]))
+        for fact in facts:
+            if norm(fact) not in text:
+                fail('move %s: the entry no longer has "%s"' % (mid, fact))
+
+
 def check_g72b_facts(moves_ts):
     """Step G72b: the Alluring Voice and Dragon Cheer entries are the pinned texts the turn code reads."""
     for mid, facts in (('alluringvoice', G72B_FACTS), ('dragoncheer', G72B_DRAGON_CHEER_FACTS)):
+        e = moves_ts.entry(mid)
+        if e is None:
+            fail('move %s not found' % mid)
+        text = norm('\n'.join(e[2]))
+        for fact in facts:
+            if norm(fact) not in text:
+                fail('move %s: the entry no longer has "%s"' % (mid, fact))
+
+
+def check_g86_facts(moves_ts):
+    """Step G86: the four handler entries are the pinned texts the turn code reads (the callbacks and the flags)."""
+    for mid, facts in G86_FACTS:
+        e = moves_ts.entry(mid)
+        if e is None:
+            fail('move %s not found' % mid)
+        text = norm('\n'.join(e[2]))
+        for fact in facts:
+            if norm(fact) not in text:
+                fail('move %s: the entry no longer has "%s"' % (mid, fact))
+
+
+def check_g84_facts(moves_ts):
+    """Step G84 (decision 0047): the Leech Seed and Curse base entries have the pinned texts the turn code reads."""
+    for mid, facts in (('leechseed', G84_LEECH_FACTS), ('curse', G84_CURSE_FACTS)):
         e = moves_ts.entry(mid)
         if e is None:
             fail('move %s not found' % mid)
@@ -4252,6 +4393,93 @@ def check_c2_facts(moves_ts, champ_moves, only=None):
                 fail('move %s: the pin has no %s' % (mid, key))
             if got[key] != want:
                 fail('move %s: %s is %r in the pin, not %r' % (mid, key, got[key], want))
+# Step C4 (cheap moves, decision 0015 entry 5ct), groups b and c: the pinned fields of the twelve data-only moves, read from
+# data/moves.ts at b2cb775 (Champions overrides merged the way parse_move merges them). `secondary` is (chance, self boosts).
+# Psyshield Bash is the one Champions override here (inherit, basePower 90); any other override fails.
+C4_IGNORED_KEYS = {'num', 'name', 'zMove', 'contestType', 'inherit', 'isNonstandard'}
+# Storm Throw's Champions entry only lifts isNonstandard (isNonstandard is not read by the tables); Psyshield Bash's raises basePower.
+C4_CHAMPION_OVERRIDES = {'psyshieldbash': {'basePower': 90}, 'stormthrow': {'isNonstandard': 'null'}}
+C4_FACTS = (
+    ('flamecharge', {'accuracy': 100, 'basePower': 50, 'category': 'Physical', 'pp': 20, 'priority': 0, 'target': 'normal',
+                     'type': 'Fire', 'flags': {'contact', 'protect', 'mirror', 'metronome'}, 'secondary': (100, {'spe': 1})}),
+    ('aquastep', {'accuracy': 100, 'basePower': 80, 'category': 'Physical', 'pp': 10, 'priority': 0, 'target': 'normal',
+                  'type': 'Water', 'flags': {'contact', 'protect', 'mirror', 'dance', 'metronome'}, 'secondary': (100, {'spe': 1})}),
+    ('trailblaze', {'accuracy': 100, 'basePower': 50, 'category': 'Physical', 'pp': 20, 'priority': 0, 'target': 'normal',
+                    'type': 'Grass', 'flags': {'contact', 'protect', 'mirror'}, 'secondary': (100, {'spe': 1})}),
+    ('steelwing', {'accuracy': 90, 'basePower': 70, 'category': 'Physical', 'pp': 25, 'priority': 0, 'target': 'normal',
+                   'type': 'Steel', 'flags': {'contact', 'protect', 'mirror', 'metronome'}, 'secondary': (10, {'def': 1})}),
+    ('psyshieldbash', {'accuracy': 90, 'basePower': 90, 'category': 'Physical', 'pp': 10, 'priority': 0, 'target': 'normal',
+                       'type': 'Psychic', 'flags': {'contact', 'protect', 'mirror', 'metronome'}, 'secondary': (100, {'def': 1})}),
+    ('scaryface', {'accuracy': 100, 'basePower': 0, 'category': 'Status', 'pp': 10, 'priority': 0, 'target': 'normal',
+                   'type': 'Normal', 'flags': {'protect', 'reflectable', 'mirror', 'allyanim', 'metronome'}, 'boosts': {'spe': -2}}),
+    ('eerieimpulse', {'accuracy': 100, 'basePower': 0, 'category': 'Status', 'pp': 15, 'priority': 0, 'target': 'normal',
+                      'type': 'Electric', 'flags': {'protect', 'reflectable', 'mirror', 'metronome'}, 'boosts': {'spa': -2}}),
+    ('screech', {'accuracy': 85, 'basePower': 0, 'category': 'Status', 'pp': 40, 'priority': 0, 'target': 'normal',
+                 'type': 'Normal', 'flags': {'protect', 'reflectable', 'mirror', 'sound', 'bypasssub', 'allyanim', 'metronome'},
+                 'boosts': {'def': -2}}),
+    ('nobleroar', {'accuracy': 100, 'basePower': 0, 'category': 'Status', 'pp': 30, 'priority': 0, 'target': 'normal',
+                   'type': 'Normal', 'flags': {'protect', 'reflectable', 'mirror', 'sound', 'bypasssub', 'metronome'},
+                   'boosts': {'atk': -1, 'spa': -1}}),
+    ('spicyextract', {'accuracy': True, 'basePower': 0, 'category': 'Status', 'pp': 15, 'priority': 0, 'target': 'normal',
+                      'type': 'Grass', 'flags': {'protect', 'reflectable', 'mirror'}, 'boosts': {'atk': 2, 'def': -2}}),
+    ('amnesia', {'accuracy': True, 'basePower': 0, 'category': 'Status', 'pp': 20, 'priority': 0, 'target': 'self',
+                 'type': 'Psychic', 'flags': {'snatch', 'metronome'}, 'boosts': {'spd': 2}}),
+    ('cosmicpower', {'accuracy': True, 'basePower': 0, 'category': 'Status', 'pp': 20, 'priority': 0, 'target': 'self',
+                     'type': 'Psychic', 'flags': {'snatch', 'metronome'}, 'boosts': {'def': 1, 'spd': 1}}),
+    # Group a (willCrit, the WILL_CRIT special): the critical hit without a roll.
+    ('stormthrow', {'accuracy': 100, 'basePower': 60, 'category': 'Physical', 'pp': 10, 'priority': 0, 'target': 'normal',
+                    'type': 'Fighting', 'flags': {'contact', 'protect', 'mirror', 'metronome'}, 'willCrit': True}),
+    ('flowertrick', {'accuracy': True, 'basePower': 70, 'category': 'Physical', 'pp': 10, 'priority': 0, 'target': 'normal',
+                     'type': 'Grass', 'flags': {'protect', 'mirror', 'metronome'}, 'willCrit': True}),
+    ('frostbreath', {'accuracy': 90, 'basePower': 60, 'category': 'Special', 'pp': 10, 'priority': 0, 'target': 'normal',
+                     'type': 'Ice', 'flags': {'protect', 'mirror', 'metronome'}, 'willCrit': True}),
+)
+
+
+def c4_value(key, text):
+    """The value of one pin field, read as c1_value reads it; `secondary` is (chance, the self boosts of its roll)."""
+    if key == 'secondary':
+        m = re.fullmatch(r'secondary: \{ chance: (\d+), self: \{ boosts: \{ ((?:\w+: -?\d+, ?)+)\}, \}, \},', norm(text))
+        if m is None:
+            fail('secondary is not a self-boost roll: %s' % norm(text))
+        return int(m.group(1)), {name: int(val) for name, val in re.findall(r'(\w+): (-?\d+)', m.group(2))}
+    if key == 'flags':
+        return set(re.findall(r'(\w+): 1\b', text))
+    if key == 'boosts':
+        return {name: int(val) for name, val in re.findall(r'(\w+): (-?\d+)', text)}
+    return scalar(text)
+
+
+def check_c4_facts(moves_ts, champ_moves, only=None):
+    """Step C4: each listed move has exactly the listed fields (nothing else but C4_IGNORED_KEYS) with its pinned value, its
+    Champions override (if any) is the one listed in C4_CHAMPION_OVERRIDES, merged the way parse_move merges it."""
+    for mid, expected in (C4_FACTS if only is None else only):
+        e = moves_ts.entry(mid)
+        if e is None:
+            fail('move %s not found' % mid)
+        got = fields(e[2])
+        ce = champ_moves.entry(mid)
+        if mid in C4_CHAMPION_OVERRIDES:
+            if ce is None:
+                fail('move %s: the Champions override is missing' % mid)
+            cf = fields(ce[2])
+            if 'inherit' not in cf:
+                fail('move %s: the Champions override does not inherit' % mid)
+            for key, want in C4_CHAMPION_OVERRIDES[mid].items():
+                if key not in cf or c4_value(key, cf[key][1]) != want:
+                    fail('move %s: the Champions %s is not %r' % (mid, key, want))
+            got.update({k: v for k, v in cf.items() if k in C4_CHAMPION_OVERRIDES[mid]})
+        elif ce is not None:
+            fail('move %s: the Champions mod overrides it; the C4 facts must be read again' % mid)
+        extra = sorted(set(got) - set(expected) - C4_IGNORED_KEYS)
+        if extra:
+            fail('move %s: the pin has fields the C4 facts do not list: %s' % (mid, ', '.join(extra)))
+        for key, want in expected.items():
+            if key not in got:
+                fail('move %s: the pin has no %s' % (mid, key))
+            have = c4_value(key, got[key][1])
+            if have != want:
+                fail('move %s: %s is %r in the pin, not %r' % (mid, key, have, want))
 
 
 def build_pool(root, repo, dx):
@@ -4268,6 +4496,7 @@ def build_pool(root, repo, dx):
     formats, learn = Source(root, 'data/mods/champions/formats-data.ts'), Source(root, 'data/mods/champions/learnsets.ts')
     legal = load_legal_pool(repo)
     check_g8_conditions(moves_ts)
+    check_c4_facts(moves_ts, champ_moves)
     check_g15_facts(moves_ts, items_ts)
     check_g30_facts(abil_ts, champ_abil)
     check_g28_items(items_ts)
@@ -4287,10 +4516,13 @@ def build_pool(root, repo, dx):
     check_g56_facts(Source(root, 'data/conditions.ts', READER_INPUTS), moves_ts)
     check_g58_facts(moves_ts)
     check_g72b_facts(moves_ts)
+    check_g84_facts(moves_ts)
     check_g76_facts(moves_ts)
     check_g78_facts(moves_ts)
     check_g88_facts(moves_ts)
     check_c2_facts(moves_ts, champ_moves)
+    check_g86_facts(moves_ts)
+    check_g92_facts(moves_ts)
     FLAGS_THAT_MATTER.clear()
     FLAGS_THAT_MATTER.update(prefix_flag_reads((items_ts, champ_items, abil_ts, champ_abil, moves_ts, champ_moves), dx)
                              - set(FLAG_BITS_C) - set(INERT_FLAG_READS) - set(FLAGS3_BITS))

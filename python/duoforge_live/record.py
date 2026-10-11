@@ -391,6 +391,7 @@ def _tail(t, s, boundary):
             s.put(ppre + "taunt_turns", p.taunt)
             s.put(ppre + "heal_block_turns", p.heal_block)
             s.put(ppre + "yawn_turns", p.yawn)
+            s.put(ppre + "leech_seed_source", p.leech_source)
             s.put(ppre + "disable_slot", p.disable_slot)
             s.put(ppre + "disable_turns", p.disable_turns)
             for field in ("imprison", "must_recharge", "glaive_rush"):

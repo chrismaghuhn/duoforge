@@ -81,7 +81,7 @@ CHOICE_ITEMS = ("choiceband", "choicescarf", "choicespecs")
 TURN_SCOPED = {"RAGE_POWDER", "WIDE_GUARD", "QUICK_GUARD"}
 
 # Kinds whose effect on the view no field holds and the fold does not apply: stops with a readable reason.
-UNREPRESENTABLE_KINDS = {"-sethp", "-clearboost", "-clearpositiveboost", "-copyboost", "-setboost",
+UNREPRESENTABLE_KINDS = {"-sethp", "-clearboost", "-clearpositiveboost", "-copyboost",
                          "-swapboost", "-invertboost", "-transform", "swap", "-endability", "-swapsideconditions",
                          "-cureteam"}
 
@@ -147,7 +147,7 @@ BASE_FOLDS = sum(1 << FEATURES[n] for n in ("WEATHER_SAND", "WEATHER_SNOW", "AIL
 ATTRACT_FOLD = 1 << FEATURES["RESERVE_VOLATILES"]
 EXT_FOLDS = sum(1 << FEATURES[n] for n in ("THROAT_CHOP", "AURORA_VEIL", "PERISH", "ENCORE", "ABILITY_CHANGE", "ITEM_CHANGE",
                                           "MUST_RECHARGE", "TOXIC_SPIKES", "TYPE_CHANGE", "TAUNT", "YAWN",
-                                          "DISABLE", "IMPRISON", "STEALTH_ROCK",
+                                          "DISABLE", "IMPRISON", "STEALTH_ROCK", "LEECH_SEED",
                                           "GLAIVE_RUSH", "RAGE_POWDER", "HEAL_BLOCK", "SPIKES",
                                           "WIDE_GUARD", "STICKY_WEB")) | ATTRACT_FOLD
 TRACKER_FOLDS = BASE_FOLDS | EXT_FOLDS
@@ -412,6 +412,9 @@ def check(line, view):
                      and args[2].startswith("???/"))
             if not (soak or shock):
                 _unknown(kind, "typechange" + (f" [from] {froms[0]}" if froms else ""))
+        if effect == "move: Leech Seed" and (kind == "-end" or attrs):
+            # the engine's seed has no end line (it ends with its holder) and no [of] on its start (dfi_leech_seed)
+            _unknown(kind, effect)
         if effect in _START:
             return _feature(_START[effect])
         _unknown(kind, effect)
@@ -494,6 +497,12 @@ def check(line, view):
         return _feature("FORME_CHANGE")
     if kind == "-formechange":
         return _feature("FORME_CHANGE")
+    if kind == "-setboost":
+        # Belly Drum (step G86, sim/battle.ts:2051-2052): the line shows the Attack stage it leaves; the tracker sets the
+        # stage (Tracker._set_boost). Any other source (Anger Point, not marked) stays unknown.
+        if len(args) == 3 and args[1] == "atk" and attrs == ["[from] move: Belly Drum"]:
+            return "fold"
+        _unknown(kind, " ".join(args[1:] + attrs))
     if kind in UNREPRESENTABLE_KINDS:
         _unknown(kind)
     return "fold"  # the converter decides: it parses what DuoForge implements and refuses the rest

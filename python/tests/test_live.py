@@ -260,6 +260,40 @@ class BatonPassTest(unittest.TestCase):
         self.assertEqual((p.occupant, p.stages, p.confused), (3, [tracker.STAGE_NEUTRAL] * 7, 0))
 
 
+class SetBoostTest(unittest.TestCase):
+    """Step G86: Belly Drum's -setboost shows the Attack stage it leaves (sim/battle.ts:2051-2052); the tracker sets the
+    position's stage to it, as the engine's BOOST event of the change does (src/combat/turn.c dfi_boost)."""
+
+    def tracker(self, stage):
+        from types import SimpleNamespace
+        from duoforge_live import tracker
+        t = tracker.Tracker.__new__(tracker.Tracker)
+        t._action = None  # no move action open (Tracker._segment)
+        t._herb_end = None
+        t.side, t._spectator, t.data = 0, False, data.load(kind="pool")
+        t._last_move, t._parting_shot = None, -1
+        p = SimpleNamespace(occupant=0, fainted=False, stages=[tracker.STAGE_NEUTRAL] * 7)
+        p.stages[0] = stage
+        t._positions = [[p, SimpleNamespace(occupant=1, fainted=False, stages=[6] * 7)],
+                        [SimpleNamespace(), SimpleNamespace()]]
+        return t, p
+
+    def test_the_stage_becomes_the_printed_one(self):
+        from duoforge_live import tracker
+        for start in (tracker.STAGE_NEUTRAL - 2, tracker.STAGE_NEUTRAL, tracker.STAGE_NEUTRAL + 3):
+            t, p = self.tracker(start)
+            t._set_boost("|-setboost|p1a: Snorlax|atk|6|[from] move: Belly Drum".split("|"))
+            self.assertEqual(p.stages[0], tracker.STAGE_NEUTRAL + 6, start)
+            self.assertEqual(p.stages[1:], [tracker.STAGE_NEUTRAL] * 6)
+
+    def test_no_positive_change_stops(self):
+        from duoforge_live import lines, tracker
+        t, p = self.tracker(tracker.STAGE_NEUTRAL + 6)
+        with self.assertRaises(lines.Stop) as caught:
+            t._set_boost("|-setboost|p1a: Snorlax|atk|6|[from] move: Belly Drum".split("|"))
+        self.assertEqual(caught.exception.reason, "converter:setboost-change")
+
+
 class ClearAllBoostsTest(unittest.TestCase):
     """Step G62 (decision 0031): Haze's CLEAR_ALL_BOOSTS returns the stages of every standing active Pokemon to
     neutral (data/moves.ts haze onHitField: getAllActive, sim/pokemon.ts clearBoosts); an empty or fainted position
@@ -524,6 +558,13 @@ def record_diff(battle_name, k, viewer, record):
 # engine's (status, causes, an all-zero record), and the tracker's own named refusals; the pool streams the tracker stops
 # (lines.Stop: an unfolded feature's line), by reason.
 CLOSURE_OUTCOME = {"equal": 2594, "refused": 310}
+# Batch 7 pins (deliberate, measured on hs/batch7-python; main had equal 9898 / refused 487 and the stops {SUBSTITUTE 78,
+# FORME_CHANGE 10, DESTINY_BOND 10, DRAGON_CHEER 8, ROOST 8, line:-end 2, ILLUSION 2}): the 865 pool battles now hold the
+# conformance battles of G84 to G92 (Leech Seed, Curse, Belly Drum, Confuse Ray, Swagger, Flatter, Teeter Dance, Memento and
+# the sub-fixes), so more decision points are compared; no "move-result-not-determined" refusal is left (the classifier maps
+# those handlers, src/state/view.c mr_family_of). The tracker folds Leech Seed (EXT_FOLDS, step G84): the 12 streams that
+# stopped on feature:LEECH_SEED run on (equal 10470 -> 10558, +88 decision points; 2 of them stop on a later Substitute,
+# 96 -> 98), and the feature has no stop of its own any more.
 # lane B batch 5c (G71 Cute Charm, G75 cheap set): +144 equal and +2 refused records; 12 streams stop on the Attract lines
 # (unfolded:DUOFORGE_POSITION_EXT_ATTRACT, the tracker fold of the ATTRACT bit comes after G71), 4 more on Dragon Cheer (the
 # G75 crit battles). Lane B batch 5d (G79 Cloud Nine, G81 Frisk): +170 equal and +18 refused records, no new stop.
@@ -533,9 +574,13 @@ CLOSURE_OUTCOME = {"equal": 2594, "refused": 310}
 # on the merged tree (CI, Linux and Windows Python jobs, identical): 10242 equal, 511 refused, 42 engine-check refusals.
 # lane B G83 (Iron Ball, Bulletproof, Rivalry, Leaf Guard): +64 equal; +4 refused, all g83_ironball_ground under the
 # visible-confusion cause (mask 2); no new stop. Measured on the merged tree (main 6c16c960 + G83): 10306 equal, 515 refused.
-POOL_OUTCOME = {"equal": 10306, "refused": 515, "engine check refuses: infatuated occupant (from_view, option B)": 42,
+# Batch 7 (base: main before batch 7, equal 9898 / refused 487): G84 Leech Seed fold, the G86, G92 and C4 moves and the
+# sub-fixes-2 moves add +660 equal and +122 refused; the SUBSTITUTE stops go 78 -> 98 (the Leech Seed streams run on to a
+# later Substitute). Main (+408 equal, +28 refused): Attract #393, lane B G79/G81/G83 and the infatuated engine check.
+# Measured on the merged tree (CI 38140646950, Windows Python job): 10966 equal, 637 refused.
+POOL_OUTCOME = {"equal": 10966, "refused": 637, "engine check refuses: infatuated occupant (from_view, option B)": 42,
                 "tracker refuses: unburden-without-item-line": 4}
-POOL_STOPS = {"feature:SUBSTITUTE": 78, "feature:DRAGON_CHEER": 12, "feature:FORME_CHANGE": 10, "feature:DESTINY_BOND": 10,
+POOL_STOPS = {"feature:SUBSTITUTE": 98, "feature:DRAGON_CHEER": 12, "feature:FORME_CHANGE": 10, "feature:DESTINY_BOND": 10,
               "feature:ROOST": 8, "line:-end": 2, "feature:ILLUSION": 2}
 
 

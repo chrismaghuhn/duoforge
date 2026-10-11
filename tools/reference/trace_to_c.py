@@ -1003,6 +1003,7 @@ EV['ITEM_SHOWN'] = 48
 CAUSE = {'NONE': 0, 'MOVE': 1, 'ITEM': 2, 'ABILITY': 3, 'RECOIL': 4, 'DRAIN': 5, 'BURN': 6, 'CONFUSION': 7,
          'TERRAIN': 8, 'PARALYSIS': 9, 'SLEEP': 10, 'FREEZE': 11, 'FLINCH': 12, 'NO_PP': 13, 'POISON': 14,
          'HEAL_BLOCK': 15, 'WEATHER': 16, 'ITEM_TAKEN': 17, 'RECHARGE': 18, 'DISABLE': 19, 'TAUNT': 20, 'IMPRISON': 21,
+         'LEECH_SEED': 22,  # LEECH_SEED: step G84, decision 0047 (the lane A block)
          'ATTRACT': 36}  # 36: DUOFORGE_CAUSE_ATTRACT (step G71, decision 0034; lane B block CAUSE_ 36-49)
 VOLATILE_HEAL_BLOCK = 1  # DUOFORGE_VOLATILE_HEAL_BLOCK: the detail of VOLATILE_START and VOLATILE_END
 VOLATILE_ENCORE = 2      # DUOFORGE_VOLATILE_ENCORE (step G9)
@@ -1012,6 +1013,7 @@ VOLATILE_PERISH = 5  # DUOFORGE_VOLATILE_PERISH (step G26)
 VOLATILE_IMPRISON = 8    # DUOFORGE_VOLATILE_IMPRISON (step G38): START only
 VOLATILE_TAUNT = 6       # DUOFORGE_VOLATILE_TAUNT (step G31)
 VOLATILE_YAWN = 7        # DUOFORGE_VOLATILE_YAWN (step G31)
+VOLATILE_LEECH_SEED = 13  # DUOFORGE_VOLATILE_LEECH_SEED (step G84, decision 0047): START only, no END line
 VOLATILE_SUBSTITUTE = 9  # DUOFORGE_VOLATILE_SUBSTITUTE (decision 0032): START and END, presence only
 VOLATILE_DRAGONCHEER = 10  # DUOFORGE_VOLATILE_DRAGONCHEER (step G72b, decision 0015 5ce): START only, presence only
 VOLATILE_ATTRACT = 11      # DUOFORGE_VOLATILE_ATTRACT (step G71, decision 0034): START, and the visible END of Mental Herb and Oblivious
@@ -1105,11 +1107,16 @@ IGNORED_VOLATILES = {
     # Pool step G72b (Dragon Cheer, decision 0015 5ce): the start line; its crit stage shows in the crit draws of the holder's
     # moves (a -crit line, or the draw's bound) and in the view bit.
     'dragoncheer': "the start line and the crit draws of the holder's moves",
+    # Step G84 (Leech Seed, decision 0047): the volatile is the tail's leech_seed_source (the view bit LEECH_SEED); its presence
+    # shows in the start line, the drain's damage line `[from] Leech Seed` and the silent heal (the HEAL event, cause LEECH_SEED).
+    'leechseed': 'the start line, the drain damage line and the silent heal of the target',
 }
 HP_EXACT, HP_PERCENT = 1, 2
 HP_FLAGS_EV = {'': 0, 'r': 1, 'y': 2, 'g': 3}
 # Lines that are not events: setup, layout, hints, and what the game does
 # not show ([silent]).
+# The OHKO moves of the pool: Sheer Cold (step G64) and the moves with ohko true (Fissure, Guillotine, Horn Drill; step G92).
+OHKO_MOVES = {'Sheer Cold', 'Fissure', 'Guillotine', 'Horn Drill'}
 NOT_EVENTS = {'', 'split', 't:', 'gametype', 'player', 'teamsize', 'gen', 'tier', 'rule', 'clearpoke', 'poke',
               'teampreview', 'start', 'uhtml', 'uhtmlchange', '-hint', 'j', 'l', 'c', 'raw', 'inactive'}
 
@@ -1124,6 +1131,18 @@ def ev_pos(text):
 def ev_tuple(kind, position=NOPOS, other=NOPOS, cause=0, ident=0, ident2=0, hp=0, hp_max=0, hp_kind=0,
              hp_flag=0, status=0, detail=0, amount=0, flags=0):
     return (kind, position, other, cause, ident, ident2, hp, hp_max, hp_kind, hp_flag, status, detail, amount, flags)
+
+
+def leech_heal_source(log, i):
+    """Step G84 (decision 0047): the silent heal at log[i] is the Leech Seed heal when the nearest preceding Leech Seed damage line
+    of this step (within three lines) names, as [of], the Pokemon that the heal goes to: the source's slot. Returns that position
+    or None. A heal with no such damage before it is not a Leech Seed heal (it stays dropped, as every other silent line)."""
+    for j in range(i - 1, max(-1, i - 4), -1):
+        p = log[j].split('|')
+        if len(p) > 2 and p[1] == '-damage' and '[from] Leech Seed' in log[j]:
+            of = [x for x in p if x.startswith('[of] ')]
+            return ev_pos(of[0][len('[of] '):]) if of else None
+    return None
 
 
 def ev_cause(attrs, tables):
@@ -1148,6 +1167,9 @@ def ev_cause(attrs, tables):
                 cause = CAUSE['POISON']  # the residual damage of tox is poison's cause too (the status in the HP field tells them apart)
             elif what == 'confusion':
                 cause = CAUSE['CONFUSION']
+            elif what == 'Leech Seed':
+                # Step G84 (decision 0047): the residual drain, `-damage|holder|hp|[from] Leech Seed|[of] source`; other = the source
+                cause = CAUSE['LEECH_SEED']
             elif what == 'Hail':
                 raise ConversionError('from-attribute', 'trace_to_c: [from] Hail: no Hail in the format', detail=what)
             elif what in WEATHER_CAUSE:
@@ -1464,7 +1486,7 @@ def swap_partners(trace, teams, roster_of, tables):
     return out
 
 
-def step_events(log, viewer, roster_of, maxhp, tables, rb_pending=None, ill=None, swap_ids=None):
+def step_events(log, viewer, roster_of, maxhp, tables, rb_pending=None, ill=None, swap_ids=None, boost_pre=None, lead=()):
     """The events `viewer` sees in one step, in protocol order.
 
     ill (decision 0026, Illusion; None = no holder in the battle): 'side' (per side: a holder is on it), 'truth_at' ((side, p) ->
@@ -1475,6 +1497,8 @@ def step_events(log, viewer, roster_of, maxhp, tables, rb_pending=None, ill=None
     rb_pending maps a side to the position of the last Revival Blessing user of that side: its revive is shown in the step that
     answers the pivot, not in the step of the move (step G52).
     swap_ids maps the line index of an ally Skill Swap to the pair of ability ids that swap_partners followed (step G70).
+    lead are the lines before `log` of the same step, read only by the look-back of the Leech Seed heal (leech_heal_source); a
+    caller that converts one line at a time (the live tracker) passes the lines it has folded since the last decision point.
     """
     ill = ill if ill is not None else {'side': [False, False], 'truth_at': {}, 'multi': {}, 'replace': {}, 'last_hp': {}, 'shown_at': {}}
     if rb_pending is None:
@@ -1502,8 +1526,10 @@ def step_events(log, viewer, roster_of, maxhp, tables, rb_pending=None, ill=None
         # it silent, step G29): the engine's ITEM_END for it is how the other player's old item_used learns that the item left.
         # Regenerator's heal (step G39, the Champions mod) is the one [silent] line that shows: no client prints a message, but the line
         # carries the holder's new HP, which the opponent's display of the member follows.
+        leech_src = leech_heal_source(list(lead) + log, len(lead) + i) if kind == '-heal' and '[silent]' in attrs else None
         if '[silent]' in attrs and not ((kind == '-enditem' and any(a.startswith('[from] move: ') for a in attrs)) or
-                                        (kind == '-heal' and '[from] ability: Regenerator' in attrs)):
+                                        (kind == '-heal' and '[from] ability: Regenerator' in attrs) or
+                                        (leech_src is not None and ev_pos(parts[2]) == leech_src)):
             continue
         args = [x for x in parts[2:] if not x.startswith('[')]
         if kind == '-activate' and len(args) == 4 and args[1] == 'Skill Swap':
@@ -1560,10 +1586,15 @@ def step_events(log, viewer, roster_of, maxhp, tables, rb_pending=None, ill=None
             # sub's event is the break, so the line is dropped here too.
             prev = log[i - 1] if i > 0 else ''
             nxt = log[i + 1] if i + 1 < len(log) else ''
-            aimed = last_move_line is not None and len(last_move_line) >= 5 and last_move_line[3] == 'Sheer Cold' and \
-                prev.startswith('|faint|') and prev.split('|')[2] == last_move_line[4]
-            sub_break = last_move_line is not None and len(last_move_line) >= 5 and last_move_line[3] == 'Sheer Cold' and \
-                prev == '|'.join(last_move_line) and nxt.split('|') == ['', '-end', last_move_line[4], 'Substitute']
+            # Step G92 (decision 0062): the OHKO moves with ohko true (Fissure, Guillotine, Horn Drill) show the same bare line.
+            ohko_move = last_move_line is not None and len(last_move_line) >= 5 and last_move_line[3] in OHKO_MOVES
+            # sim/battle-actions.ts:1000: `if (move.ohko && !targets[0].hp) this.battle.add('-ohko')` has no target argument; the
+            # faint of targets[0] is the line before it, and it may come after item damage (Rocky Helmet's, a faint of a
+            # reflected hit), so the faint's name is not the move's aim: any faint directly before it, of an OHKO move of the step.
+            # A KO that ends the battle prints `|win|` before the faints' messages are done: the bare line may follow it
+            # (faintMessages, sim/battle-actions.ts:976, then :1000; the win is the same faint phase).
+            aimed = ohko_move and (prev.startswith('|faint|') or prev.startswith('|win|'))
+            sub_break = ohko_move and prev == '|'.join(last_move_line) and nxt.split('|') == ['', '-end', last_move_line[4], 'Substitute']
             if args or attrs or not (aimed or sub_break):
                 raise ConversionError('ohko-line', 'trace_to_c: unknown -ohko %r' % line, detail=line)
             continue
@@ -1670,6 +1701,13 @@ def step_events(log, viewer, roster_of, maxhp, tables, rb_pending=None, ill=None
             e = ev_tuple(EV['REVIVE'], user, NOPOS, CAUSE['MOVE'], roster_of[side][name],
                          tables['MOVE'][key('Revival Blessing')], *hp)
             revived = (side, name)
+        elif kind == '-heal' and '[silent]' in attrs and leech_src is not None:
+            # Step G84 (decision 0047): the source's silent heal after a Leech Seed drain (data/moves.ts:10225, this.heal with no
+            # effect line): the HEAL with cause LEECH_SEED (22); the line shows the new HP only (no [from], no status).
+            pos = ev_pos(args[0])
+            side = pos // 2
+            hp = ev_hp(args[1], side, viewer, maxhp[side][args[0].split(': ', 1)[1]])
+            e = ev_tuple(EV['HEAL'], pos, NOPOS, CAUSE['LEECH_SEED'], 0, 0, *hp)
         elif kind in ('-damage', '-heal'):
             pos = ev_pos(args[0])
             side = pos // 2
@@ -1868,6 +1906,58 @@ def step_events(log, viewer, roster_of, maxhp, tables, rb_pending=None, ill=None
                 raise ConversionError('protocol-line', 'trace_to_c: -clearallboost with arguments %r' % line,
                                       detail='clearallboost')
             e = ev_tuple(EV['CLEAR_ALL_BOOSTS'])
+        elif kind == '-setboost':
+            # Belly Drum (step G86; sim/battle.ts:2051-2052): the line shows the stage the boost leaves, in place of -boost. It is
+            # the BOOST event of the change (the engine's dfi_boost, cause MOVE with the move's id). Each precondition is a named
+            # refusal: the move is Belly Drum, the stat is Attack, the occupant is the same Pokemon before and after the step, no
+            # earlier boost line of this step names the position (the stage before is then the one of the step's start), the
+            # printed stage is the stage after the step, and the change is positive.
+            cause, id2, other = ev_cause(attrs, tables)
+            flat = ev_pos(args[0])
+            if (cause != CAUSE['MOVE'] or id2 != tables['MOVE'][key('Belly Drum')] or args[1] != 'atk' or flat is None
+                    or boost_pre is None or flat not in boost_pre):
+                raise ConversionError('setboost', 'trace_to_c: -setboost outside the Belly Drum rule: %r' % line, detail='setboost')
+            name_before, before, name_after, after = boost_pre[flat]
+            # The stage the boost starts from: the stage at the step's start, moved by the earlier Attack lines of this step on the
+            # same Pokemon (a Tickle before Belly Drum in the same step, say); a -clearallboost before it is refused.
+            stage = before
+            for prev in log[:i]:
+                pp = prev.split('|')
+                if len(pp) > 1 and pp[1] == '-clearallboost':
+                    raise ConversionError('setboost', 'trace_to_c: -setboost after -clearallboost in the same step: %r' % line,
+                                          detail='setboost-clear')
+                if len(pp) < 5 or pp[2] != parts[2] or pp[3] != 'atk':
+                    continue
+                if pp[1] == '-boost':
+                    stage += int(pp[4])
+                elif pp[1] == '-unboost':
+                    stage -= int(pp[4])
+                elif pp[1] == '-setboost':
+                    stage = int(pp[4])
+            # The printed stage must reach the stage after the step with the later Attack lines of this Pokemon in the step
+            # (a Tickle after Belly Drum, say); a later -setboost is refused.
+            later = 0
+            for nxt in log[i + 1:]:
+                pn = nxt.split('|')
+                if len(pn) < 5 or pn[2] != parts[2] or pn[3] != 'atk':
+                    continue
+                if pn[1] == '-boost':
+                    later += int(pn[4])
+                elif pn[1] == '-unboost':
+                    later -= int(pn[4])
+                elif pn[1] == '-setboost':
+                    raise ConversionError('setboost', 'trace_to_c: a second -setboost of the same Pokemon in the step: %r' % line,
+                                          detail='setboost-twice')
+            # A Pokemon that faints later in the step has its stages cleared (the post-step state reads 0): the printed stage is then
+            # checked against nothing after the step, and the change stands.
+            fainted_later = any(nxt.startswith('|faint|') and nxt.split('|')[2] == parts[2] for nxt in log[i + 1:])
+            if name_before != name_after or (not fainted_later and int(args[2]) + later != after):
+                raise ConversionError('setboost', 'trace_to_c: -setboost stage %s does not reach the stage after the step (%s, same Pokemon: %s): %r'
+                                      % (args[2], after, name_before == name_after, line), detail='setboost-stage')
+            change = int(args[2]) - stage
+            if change <= 0:
+                raise ConversionError('setboost', 'trace_to_c: -setboost with no positive change: %r' % line, detail='setboost-change')
+            e = ev_tuple(EV['BOOST'], flat, other, cause, 0, id2, detail=EV_STATS.index('atk'), amount=change)
         elif kind in ('-boost', '-unboost'):
             cause, id2, other = ev_cause(attrs, tables)
             e = ev_tuple(EV['BOOST' if kind == '-boost' else 'UNBOOST'], ev_pos(args[0]), other, cause, 0, id2,
@@ -1944,6 +2034,9 @@ def step_events(log, viewer, roster_of, maxhp, tables, rb_pending=None, ill=None
                 # data/moves.ts:4056-4086 dragoncheer: `-start|X|move: Dragon Cheer` from onStart (no source, no [silent] for the
                 # move itself); no END line, and a switch-out clears it with no line (step G72b)
                 e = ev_tuple(EV['VOLATILE_START'], ev_pos(args[0]), detail=VOLATILE_DRAGONCHEER)
+            elif what == 'move: Leech Seed' and kind == '-start':
+                # Step G84 (decision 0047; data/moves.ts:10214): `-start|X|move: Leech Seed` (no [of]): VOLATILE_START, no END line
+                e = ev_tuple(EV['VOLATILE_START'], ev_pos(args[0]), NOPOS, detail=VOLATILE_LEECH_SEED)
             elif what == 'move: Yawn' and kind == '-start':
                 # data/moves.ts:21131-21162 yawn: `-start|X|move: Yawn|[of] source` from onStart; the end line is [silent]
                 # (dropped) and the sleep it brings is the ordinary STATUS line (step G31)
@@ -2310,7 +2403,19 @@ def convert_battle(name, spec, trace, tables):
             for p_i in range(2):
                 act = new_state['sides'][sd_i]['active'][p_i]
                 ill_step['truth_at'][(sd_i, p_i)] = name_of(new_state['sides'][sd_i]['pokemon'][act]) if act is not None and act >= 0 else None
-        events = [step_events(step['log'], viewer, roster_of, maxhp, tables, rb_pending, ill_step, swaps[k])
+        # The boost stages of each position before and after the step (step G86, Belly Drum's -setboost): `state` is the state
+        # before this step, `new_state` the one after it.
+        boost_pre = {}
+        for sd_i in range(2):
+            for p_i in range(2):
+                a_pre = state['sides'][sd_i]['active'][p_i]
+                a_post = new_state['sides'][sd_i]['active'][p_i]
+                if a_pre is None or a_pre < 0 or a_post is None or a_post < 0:
+                    continue
+                m_pre = state['sides'][sd_i]['pokemon'][a_pre]
+                m_post = new_state['sides'][sd_i]['pokemon'][a_post]
+                boost_pre[sd_i * 2 + p_i] = (name_of(m_pre), m_pre['boosts'][0], name_of(m_post), m_post['boosts'][0])
+        events = [step_events(step['log'], viewer, roster_of, maxhp, tables, rb_pending, ill_step, swaps[k], boost_pre)
                   for viewer in range(2)]
         for line in step['log']:  # one revive per Revival Blessing: the side's pending user ends with its revive
             if line.startswith('|-heal|') and '[from] move: Revival Blessing' in line:

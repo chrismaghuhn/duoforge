@@ -47,6 +47,12 @@ def _define(header, name):
     return int(re.search(rf"#define {name} (\d+)u", header).group(1))
 
 
+def _define_type(name):
+    """DUOFORGE_TYPE_<name> of the public header."""
+    from duoforge import _layout
+    return _layout.CONSTANTS[f"DUOFORGE_TYPE_{name}"]
+
+
 # The generated rows as duoforge_live.data read them before decision 0020 (src/data/*_tables.c): the reference of
 # GeneratedRowsTest, which shows the library's data API answering the same for every row of both kinds.
 _ROW_KINDS = {"closure": ("closure_tables.h", "closure_tables.c", "DFI_", "dfi_closure_formes[DFI_FORME_COUNT] = {",
@@ -188,6 +194,93 @@ class DataTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "target class 99 has no Showdown target type"):
             pool.target_type(0)
 
+    def test_curse_request_target_follows_the_users_types(self):
+        # G84: Showdown's getMoves gives a user that is not a Ghost the move's nonGhostTarget ("self"); the rule is the
+        # library's (duoforge_data_request_target_class), the Python side only passes the user's current types
+        T = {n: _define_type(n) for n in ("GHOST", "POISON", "NORMAL", "WATER", "FIRE", "FLYING", "GROUND")}
+        curse = self.pool.tables["MOVE"]["CURSE"]
+        self.assertEqual(self.pool.target_type(curse), "normal")  # the static class: what a Ghost user keeps
+        self.assertEqual(self.pool.request_target(curse, (T["NORMAL"],)), "self")
+        self.assertEqual(self.pool.request_target(curse, (T["FIRE"], T["FLYING"])), "self")
+        self.assertEqual(self.pool.request_target(curse, (T["WATER"],)), "self")  # a Soak-typed user
+        self.assertEqual(self.pool.request_target(curse, (T["GHOST"], T["POISON"])), "normal")
+        self.assertEqual(self.pool.request_target(curse, (T["POISON"], T["GHOST"])), "normal")
+        self.assertEqual(self.pool.request_target(curse, (T["GHOST"],)), "normal")
+        # every other move keeps its class, whatever the user's types
+        for name in ("EARTHQUAKE", "PROTECT", "TAILWIND", "SHADOWBALL"):
+            move = self.pool.tables["MOVE"][name]
+            for types in ((T["GHOST"],), (T["NORMAL"],), (T["GROUND"], T["FLYING"])):
+                self.assertEqual(self.pool.request_target(move, types), self.pool.target_type(move), (name, types))
+
+    def test_request_target_refuses_what_it_cannot_answer(self):
+        from duoforge.errors import DuoforgeError
+        curse = self.pool.tables["MOVE"]["CURSE"]
+        with self.assertRaises(DuoforgeError):
+            self.pool.request_target(curse, (99,))  # not a type
+        with self.assertRaises(DuoforgeError):
+            self.pool.request_target(self.pool.counts["MOVE"], (_define_type("GHOST"),))  # not a move
+        with self.assertRaises(ValueError):
+            self.pool.request_target(curse, ())  # a user has a type
+        with self.assertRaises(ValueError):
+            self.pool.request_target(curse, (0, 1, 2))
+
+    def test_types_of_a_member_follow_its_forme(self):
+        f, i = self.pool.tables["FORME"], self.pool.tables["ITEM"]
+        T = {n: _define_type(n) for n in ("GHOST", "POISON", "FIRE", "FLYING", "DRAGON", "GROUND")}
+        self.assertEqual(self.pool.forme_types(f["GENGAR"]), (T["GHOST"], T["POISON"]))
+        self.assertEqual(self.pool.forme_types(f["GARCHOMP"]), (T["DRAGON"], T["GROUND"]))
+        self.assertEqual(self.pool.forme_types(f["CHARIZARDMEGAY"]), (T["FIRE"], T["FLYING"]))
+        # Mega Charizard X keeps Fire and turns Dragon, which Charizard is not
+        self.assertNotIn(T["DRAGON"], self.pool.forme_types(f["CHARIZARD"]))
+        self.assertIn(T["DRAGON"], self.pool.forme_types(f["CHARIZARDMEGAX"]))
+
+    def test_the_tracker_names_the_current_types_of_a_member(self):
+        from types import SimpleNamespace
+        from duoforge_live.tracker import Tracker
+        f, i = self.pool.tables["FORME"], self.pool.tables["ITEM"]
+        view = SimpleNamespace(data=self.pool)
+        sheet = {"species": f["CHARIZARD"], "item": i["CHARIZARDITEX"] + 1}
+        member = SimpleNamespace(sheet=sheet, is_mega=0)
+        standing = SimpleNamespace(type_now=(0, 0))  # its position: no type a move set
+        base = Tracker.current_types(view, member, standing)
+        self.assertEqual(base, self.pool.forme_types(f["CHARIZARD"]))
+        member.is_mega = 1  # after the -mega line: the Mega forme of the sheet's stone
+        self.assertEqual(Tracker.current_types(view, member, standing), self.pool.forme_types(f["CHARIZARDMEGAX"]))
+        member.sheet = {"species": f["GENGAR"], "item": 0}
+        with self.assertRaisesRegex(ValueError, "Mega"):
+            Tracker.current_types(view, member, standing)  # a Mega without a stone of its forme is no state to guess from
+
+    def test_a_type_fold_must_come_with_the_current_types(self):
+        # A forme change stops on its line today (FORME_CHANGE is no tracker fold); the day it is folded,
+        # Tracker.current_types has to know it, and until then it refuses to answer rather than say the forme's types
+        from types import SimpleNamespace
+        from unittest import mock
+        from duoforge_live.tracker import Tracker
+        f = self.pool.tables["FORME"]
+        view = SimpleNamespace(data=self.pool)
+        member = SimpleNamespace(sheet={"species": f["GENGAR"], "item": 0}, is_mega=0)
+        with mock.patch.object(lines, "SUPPORTED", lines.SUPPORTED | 1 << lines.FEATURES["FORME_CHANGE"]):
+            with self.assertRaises(lines.Stop):
+                Tracker.current_types(view, member, SimpleNamespace(type_now=(0, 0)))
+
+    def test_the_current_types_follow_a_folded_type_change(self):
+        # Soak and Double Shock are folded since #342 (the position's type_now): the current types are that type, and a
+        # caller that names no position cannot see it, so it refuses while TYPE_CHANGE is folded
+        from types import SimpleNamespace
+        from unittest import mock
+        from duoforge_live.tracker import Tracker
+        f = self.pool.tables["FORME"]
+        T = {n: _define_type(n) for n in ("WATER", "GHOST")}
+        view = SimpleNamespace(data=self.pool)
+        member = SimpleNamespace(sheet={"species": f["GENGAR"], "item": 0}, is_mega=0)
+        at = lambda type_now: Tracker.current_types(view, member, SimpleNamespace(type_now=type_now))
+        self.assertEqual(at((0, 0)), self.pool.forme_types(f["GENGAR"]))
+        self.assertEqual(at((T["WATER"] + 1, 0)), (T["WATER"],))  # Soak: Water only, so no longer a Ghost
+        self.assertEqual(at((0, T["GHOST"] + 1)), (T["GHOST"],))  # Double Shock: ??? and the other type
+        with mock.patch.object(lines, "SUPPORTED", lines.SUPPORTED | 1 << lines.FEATURES["TYPE_CHANGE"]):
+            with self.assertRaises(lines.Stop):
+                Tracker.current_types(view, member)
+
 
 class AliasTest(unittest.TestCase):
     """The cosmetic aliases of the POOL tables (#118) through the library's find (BC spec section 5)."""
@@ -288,6 +381,22 @@ class LinesTest(unittest.TestCase):
             lines.check(line, self.view)
         return caught.exception.reason
 
+    def test_belly_drum_setboost_folds_and_any_other_stops(self):
+        # Step G86: Belly Drum prints -setboost (sim/battle.ts:2051-2052), the stage it leaves; only that source folds
+        self.assertEqual(lines.check("|-setboost|p1a: Staraptor|atk|6|[from] move: Belly Drum", self.view), "fold")
+        self.assertTrue(self.stop("|-setboost|p1a: Staraptor|atk|6|[from] ability: Anger Point").startswith("line:-setboost"))
+        self.assertTrue(self.stop("|-setboost|p1a: Staraptor|def|6|[from] move: Belly Drum").startswith("line:-setboost"))
+
+    def test_feature_lines_stop(self):
+        self.assertEqual(self.stop("|-fieldstart|move: Gravity"), "feature:GRAVITY")
+        self.assertEqual(lines.check("|-fieldstart|move: Electric Terrain|[from] ability: Electric Surge|[of] p2a: Gholdengo",
+                                     self.view), "fold")  # a base-value feature: the observation's terrain
+        # Trace's copy folds (ABILITY_CHANGE); an ability source the engine does not model stops on its line
+        self.assertEqual(lines.check("|-ability|p2a: Gholdengo|Intimidate|[from] ability: Trace|[of] p1a: Staraptor",
+                                     self.view), "fold")
+        self.assertEqual(self.stop("|-ability|p2a: Gholdengo|Pressure|Good as Gold|[from] move: Role Play|"
+                                   "[of] p1a: Staraptor"), "line:-ability [from] move: Role Play")
+
     def test_frisk_of_the_held_item_is_kept(self):
         # Frisk names the holder's item: the one the open sheet (or item_now) shows changes no field; another stops
         self.assertEqual(lines.check("|-item|p1a: Staraptor|Sitrus Berry|[from] ability: Frisk|[of] p2a: Gholdengo",
@@ -349,7 +458,13 @@ class LinesTest(unittest.TestCase):
                          "line:-enditem [from] move: Incinerate")
         self.assertEqual(self.stop("|-item|p1a: Staraptor|Sitrus Berry|[from] move: Recycle"),
                          "line:-item [from] move: Recycle")
-        self.assertEqual(self.stop("|-start|p1a: Staraptor|move: Leech Seed"), "feature:LEECH_SEED")
+        self.assertEqual(self.stop("|-start|p1a: Staraptor|Salt Cure"), "feature:SALT_CURE")  # a feature still unfolded
+        # Leech Seed folds (step G84, decision 0047) in the one form the engine prints: its start without attributes; the
+        # engine has no end line (it ends with its holder), so the pin's -end lines (Rapid Spin, Mortal Spin) stop
+        self.assertEqual(lines.check("|-start|p1a: Staraptor|move: Leech Seed", self.view), "fold")
+        self.assertEqual(self.stop("|-end|p1a: Staraptor|move: Leech Seed"), "line:-end move: Leech Seed")
+        self.assertEqual(self.stop("|-start|p1a: Staraptor|move: Leech Seed|[of] p2a: Gholdengo"),
+                         "line:-start move: Leech Seed")
         self.assertEqual(lines.check("|-start|p1a: Staraptor|Encore", self.view), "fold")  # the tracker folds Encore
         self.assertEqual(lines.check("|-status|p1a: Staraptor|tox", self.view), "fold")  # Tox folds (BC spec 5)
         self.assertEqual(self.stop("|replace|p1a: Zoroark|Zoroark-Hisui, L50, M"), "feature:ILLUSION")

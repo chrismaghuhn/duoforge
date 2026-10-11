@@ -93,6 +93,7 @@ _SIGNATURES = {
     "duoforge_data_ability_static": (_STATUS, (_P, _U32, _P)),
     "duoforge_data_nature_static": (_STATUS, (_P, _U32, _P)),
     "duoforge_data_type_effect": (_STATUS, (_P, _U32, _U32, ctypes.POINTER(_U32), ctypes.POINTER(_U32))),
+    "duoforge_data_request_target_class": (_STATUS, (_P, _U32, ctypes.POINTER(_U32), ctypes.POINTER(_U32))),
 }
 
 

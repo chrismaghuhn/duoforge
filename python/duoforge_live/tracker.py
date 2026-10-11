@@ -94,6 +94,7 @@ EXT_FIELDS = {
     "STICKY_WEB": (("side", "sticky_web"),),
     "TAUNT": (("bit", C["DUOFORGE_POSITION_EXT_TAUNT"]),),
     "YAWN": (("bit", C["DUOFORGE_POSITION_EXT_YAWN"]),),
+    "LEECH_SEED": (("bit", C["DUOFORGE_POSITION_EXT_LEECH_SEED"]),),
     "DISABLE": (("position", "disable_slot"),),
     "IMPRISON": (("bit", C["DUOFORGE_POSITION_EXT_IMPRISON"]),),
     "GLAIVE_RUSH": (("bit", C["DUOFORGE_POSITION_EXT_GLAIVE_RUSH"]),),
@@ -112,6 +113,7 @@ EXT_FIELDS = {
 # The presence bits of a position's volatiles: _Position attribute -> DUOFORGE_POSITION_EXT_* bit.
 _PRESENCE_BITS = (("throat_chop", EXT_THROAT_CHOP), ("must_recharge", C["DUOFORGE_POSITION_EXT_MUST_RECHARGE"]),
                   ("taunt", C["DUOFORGE_POSITION_EXT_TAUNT"]), ("yawn", C["DUOFORGE_POSITION_EXT_YAWN"]),
+                  ("leech_source", C["DUOFORGE_POSITION_EXT_LEECH_SEED"]),
                   ("imprison", C["DUOFORGE_POSITION_EXT_IMPRISON"]), ("glaive_rush", C["DUOFORGE_POSITION_EXT_GLAIVE_RUSH"]),
                   ("rage_powder", C["DUOFORGE_POSITION_EXT_RAGE_POWDER"]), ("heal_block", C["DUOFORGE_POSITION_EXT_HEAL_BLOCK"]),
                   ("attract", C["DUOFORGE_POSITION_EXT_ATTRACT"]))
@@ -121,7 +123,8 @@ _TERRAIN = {1: C["DUOFORGE_TERRAIN_GRASSY"], trace_to_c.FIELD_PSYCHIC_TERRAIN: C
             trace_to_c.FIELD_MISTY_TERRAIN: C["DUOFORGE_TERRAIN_MISTY"]}
 # The folded _Position fields that Baton Pass gives the entering member (src/combat/turn.c dfi_pass_give: Throat Chop's
 # and Perish Song's tail counters among them); Encore, the recharge, a changed type or ability stay with the leaver.
-_PASSED = ("throat_chop", "perish", "taunt", "heal_block")  # with their counts (dfi_pass_give copies the turns)
+_PASSED = ("throat_chop", "perish", "taunt", "heal_block", "leech_source")  # with their counts (dfi_pass_give copies the turns
+# and Leech Seed's source slot: the seed has no noCopy, decision 0047)
 # DUOFORGE_SIDE_* of a SIDE_START or SIDE_END event (tailwind 1, reflect 2, light screen 3, Aurora Veil 4) -> the index
 # of the side's turns in Tracker._conditions
 _SIDE_CONDITION = {1: 2, 2: 0, 3: 1, 4: 3}
@@ -131,6 +134,9 @@ _HAZARD = {5: ("stealth_rock", 1), 6: ("spikes", 3), 7: ("toxic_spikes", 2), 8: 
 STATUS = {"brn": 1, "frz": 2, "par": 3, "slp": 4, "psn": 5, "tox": 6}  # DUOFORGE_AILMENT_*
 # Why a position must switch (the encoding's switch_flag, DFI_SWITCH_*): the tracker keeps the reason, the views its presence
 SWITCH_MOVE, SWITCH_EMERGENCY_EXIT, SWITCH_FAINTED = (_ENC[f"DFI_SWITCH_{n}"] for n in ("MOVE", "EMERGENCY_EXIT", "FAINTED"))
+# The moves whose cost to their own user is directDamage, a plain -damage line of the user with no [from] (src/combat/turn.c,
+# dfi_deal with DFI_DMG_DIRECT: Substitute, Clangorous Soul, Belly Drum): it sets no hurtThisTurn (Tracker._hurt).
+DIRECT_COST_MOVES = ("SUBSTITUTE", "CLANGOROUSSOUL", "BELLYDRUM")
 # The self-switch moves and the reason they flag: a damaging one when it hit a target, its user stands and a reserve can
 # come in (src/combat/turn.c, selfSwitch of a damaging move); Baton Pass and Revival Blessing when they do not fail.
 _HIT_PIVOTS = {"UTURN": _ENC["DFI_SWITCH_UTURN"], "VOLTSWITCH": _ENC["DFI_SWITCH_VOLT_SWITCH"],
@@ -187,6 +193,8 @@ class _Position:
         self.must_recharge = 0  # a recharge move hit: the next action is cant|recharge (presence only)
         self.taunt = 0  # Taunt's turns left: the view shows its presence, the record its count (taunt_turns)
         self.yawn = 0  # Yawn's turns left until the sleep: the view shows its presence, the record its count
+        self.leech_source = 0  # Leech Seed: the flat position + 1 of the seed's source (the record's leech_seed_source; the
+        # drain's heal goes to whoever stands there), 0: none; the volatile ends with the occupant, Baton Pass copies it
         self.imprison = 0  # the occupant used Imprison (presence only, until it leaves)
         self.glaive_rush = 0  # Glaive Rush's drawback is up until the occupant's next action (presence only)
         self.rage_powder = 0  # Rage Powder draws the foes' single-target moves this turn (presence only)
@@ -326,9 +334,10 @@ class Tracker:
         self._guard_moves = {tables["MOVE"][k] for k in ("WIDEGUARD", "QUICKGUARD") if k in tables["MOVE"]}
         self._helping_hand = tables["MOVE"].get("HELPINGHAND")
         self._knock_off = tables["MOVE"].get("KNOCKOFF")
+        self._leech_seed = tables["MOVE"].get("LEECHSEED")
         # the moves whose cost to their own user is directDamage, not spreadDamage (G88: no hurtThisTurn; dfi_deal_ex's
-        # callers with spread false): Substitute's and Clangorous Soul's plain -damage; Struggle's recoil is the third
-        self._direct_costs = {tables["MOVE"].get(k) for k in ("SUBSTITUTE", "CLANGOROUSSOUL")} - {None}
+        # callers with spread false): the plain -damage of DIRECT_COST_MOVES; Struggle's recoil is the other one
+        self._direct_costs = {tables["MOVE"].get(k) for k in DIRECT_COST_MOVES} - {None}
         self._eject_button = tables["ITEM"].get("EJECTBUTTON")
         self._mental_herb = tables["ITEM"].get("MENTALHERB")
         self._hit_pivots = {tables["MOVE"][k]: v for k, v in _HIT_PIVOTS.items() if k in tables["MOVE"]}
@@ -354,6 +363,19 @@ class Tracker:
                 self._on_showteam(line)
             else:
                 self._battle_line(line)
+
+    def _set_boost(self, parts):
+        """Belly Drum's -setboost (step G86): the line shows the Attack stage it leaves; the engine's event is the BOOST of
+        the change (dfi_boost, cause MOVE with the move's id), which the tracker folds as any boost. The converter
+        computes the change from the trace state (trace_to_c, boost_pre); the tracker has the stage itself. A change
+        that is not positive is the converter's refusal setboost-change."""
+        flat = trace_to_c.ev_pos(parts[2])
+        stat = trace_to_c.EV_STATS.index(parts[3])
+        change = STAGE_NEUTRAL + int(parts[4]) - self._at(flat).stages[stat]
+        if change <= 0:
+            raise lines.Stop("converter:setboost-change")
+        self._event(trace_to_c.ev_tuple(EV["BOOST"], flat, trace_to_c.NOPOS, trace_to_c.CAUSE["MOVE"], 0,
+                                        self.data.tables["MOVE"]["BELLYDRUM"], detail=stat, amount=change))
 
     def _battle_line(self, line):
         """A battle line: classified (lines.check), then folded; a single-turn feature line is remembered for the
@@ -402,6 +424,9 @@ class Tracker:
             if pos is None or parts[4:] != ["[silent]"]:
                 raise lines.Stop("line:-end move: Yawn")
             self._at(pos).yawn = 0
+            return
+        if parts[1] == "-setboost":
+            self._set_boost(parts)
             return
         self._fold(line)
 
@@ -677,7 +702,7 @@ class Tracker:
                 swap_ids = {0: (self._ability_at(tgt) - 1, self._ability_at(src) - 1)}
         try:
             events = trace_to_c.step_events([line], viewer, self._names, maxhp, self.data.tables, self._rb_pending,
-                                            swap_ids=swap_ids)
+                                            swap_ids=swap_ids, lead=self._lines[-4:-1])  # the Leech Seed heal reads back
         except trace_to_c.ConversionError as e:  # a SystemExit: callers catch one kind of error
             detail = getattr(e, "detail", None)
             raise lines.Stop(f"converter:{e.rule}" + (f" {detail}" if detail else "")) from e
@@ -691,6 +716,29 @@ class Tracker:
 
     def _at(self, pos):
         return self._positions[pos // 2][pos % 2]
+
+    def current_types(self, member, position=None):
+        """The types of a member now, as the lines the tracker folds show them: a type a move set while it stands at
+        `position` (the position's type_now, #342: Soak's single type, or Double Shock's remaining type; a Mega Evolution
+        ends it), else those of its set's forme, or of its Mega forme once it Mega Evolved (the stone of its sheet names
+        it). A forme change stops on its own line (FORME_CHANGE is no fold of this tracker; the day it is folded this
+        has to know it, so it refuses while it is supported). Without the position a folded type change cannot be
+        seen, so it refuses then too. Trick-or-Treat and Forest's Curse stop on their lines (the converter). Lines the
+        tracker does not read cannot change them (Roost only hides Flying for a turn, which never decides a Ghost).
+        ValueError for a Mega member whose sheet has no stone of its forme."""
+        if lines.SUPPORTED >> lines.FEATURES["FORME_CHANGE"] & 1:
+            raise lines.Stop("types:FORME_CHANGE")
+        if position is not None and position.type_now != (0, 0):
+            soak, other = position.type_now  # (id + 1, 0): Soak's type; (0, id + 1): Double Shock's ??? and that type
+            return (soak - 1,) if soak else (other - 1,)
+        if position is None and lines.SUPPORTED >> lines.FEATURES["TYPE_CHANGE"] & 1:
+            raise lines.Stop("types:TYPE_CHANGE")
+        forme = member.sheet["species"]
+        if member.is_mega:
+            forme = self.data.mega_of(forme, member.sheet["item"])
+            if forme is None:
+                raise ValueError("a Mega member whose sheet has no Mega Stone of its forme")
+        return self.data.forme_types(forme)
 
     def _occupant(self, pos):
         p = self._at(pos)
@@ -987,6 +1035,13 @@ class Tracker:
                 p.disable_turns = DISABLE_TURNS - (1 if by_ability or p.move_queued else 0)
         elif kind == EV["VOLATILE_START"] and detail == trace_to_c.VOLATILE_IMPRISON:
             self._at(pos).imprison = 1  # -start|X|move: Imprison (step G38): no end line, it ends with the occupant
+        elif kind == EV["VOLATILE_START"] and detail == trace_to_c.VOLATILE_LEECH_SEED:
+            # -start|X|move: Leech Seed (step G84, decision 0047, no [of], no end line): the source is the user of the move
+            # line before (the holder of a Magic Bounce reflection); a start after any other line is no case of the engine
+            last = self._last_move
+            if last is None or last[1] != self._leech_seed or last[0] == pos:
+                raise lines.Stop("leech-seed-source-unknown")
+            self._at(pos).leech_source = last[0] + 1
         elif kind == EV["VOLATILE_START"] and detail == trace_to_c.VOLATILE_YAWN:
             self._at(pos).yawn = YAWN_TURNS  # -start|X|move: Yawn|[of] source (step G31); its end line is [silent], above
         elif kind == EV["VOLATILE_START"] and detail == trace_to_c.VOLATILE_MUST_RECHARGE:
@@ -1017,6 +1072,11 @@ class Tracker:
                     # Unburden's onTakeItem answers Knock Off before the item may refuse (a Mega Stone): the volatile can
                     # be set with no line; an -enditem that follows shows the usual case (_unburden_unseen, record.py)
                     p.unburden_unseen = True
+            if kind == EV["DAMAGE"] and e[3] == trace_to_c.CAUSE["LEECH_SEED"]:
+                # the drain (dfi_leech_drain): `[of]` names the seed's source slot; any other holder or source is no case
+                # of the engine (a seed whose start the tracker did not see)
+                if self._at(pos).leech_source == 0 or e[2] != self._at(pos).leech_source - 1:
+                    raise lines.Stop("leech-seed-drain-source")
             if kind == EV["DAMAGE"] and hp != 0:
                 self._hurt(pos, e[3])
             if kind == EV["DAMAGE"] and e[3] == trace_to_c.CAUSE["POISON"] and m.toxic:
@@ -1302,7 +1362,7 @@ class Tracker:
     def _hurt(self, pos, cause):
         """hurtThisTurn (G88, dfi_deal_ex): a spread damage that leaves its target standing. Every damage line is spread
         damage except the directDamage of a user's own cost: Struggle's recoil ([from] Recoil after a Struggle line of
-        the same position) and the plain -damage of Substitute and Clangorous Soul on their user. A plain -damage on the
+        the same position) and the plain -damage of DIRECT_COST_MOVES on their user. A plain -damage on the
         user of another move is no line the engine makes: it stops the tracker rather than guess."""
         last = self._last_move
         own = last is not None and last[0] == pos

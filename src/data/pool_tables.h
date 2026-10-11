@@ -926,7 +926,18 @@
 #define DFI_SPECIAL_LASH_OUT 101u
 #define DFI_SPECIAL_ASSURANCE 102u
 #define DFI_SPECIAL_BANEFUL_BUNKER 103u
-#define DFI_SPECIAL_UNMODELED 104u
+#define DFI_SPECIAL_HEAVY_SLAM 104u
+#define DFI_SPECIAL_HARD_PRESS 105u
+#define DFI_SPECIAL_ICE_SPINNER 106u
+#define DFI_SPECIAL_BELLY_DRUM 107u
+#define DFI_SPECIAL_WILL_CRIT 108u
+#define DFI_SPECIAL_LEECH_SEED 109u
+#define DFI_SPECIAL_CURSE 110u
+#define DFI_SPECIAL_CONFUSE 111u
+#define DFI_SPECIAL_OHKO 112u
+#define DFI_SPECIAL_MEMENTO 113u
+#define DFI_SPECIAL_LEVEL_DAMAGE 114u
+#define DFI_SPECIAL_UNMODELED 115u
 
 /* ---- the second flags byte of every move (step G8: the general byte for the flags that the first one has no room
  * for; bits 4 to 128 are free) and the secondary kinds that it comes with ---- */

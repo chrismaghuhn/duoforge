@@ -369,12 +369,33 @@ const dfi_support_manifest dfi_support = {
             [DFI_MOVE_ALLURINGVOICE] = 1u, /* step G72b (decision 0015 5ce): the secondary's confusion on a raised target */
             [DFI_MOVE_BATONPASS] = 1u, /* step G74 (decision 0042): the user switches out at a PIVOT and copies its volatiles (Shed Tail stays refused) */
             [DFI_MOVE_DRAGONCHEER] = 1u,   /* step G72b: the volatile's crit stage (position flags) and its start line */
+            /* Batch 6 (5cq): Charge Beam (data/moves.ts:2318-2338: Special, Electric, 50, accuracy 90, a 70 percent secondary whose
+             * self raises the user's Sp. Atk; the secondary's self runs for an absorbed target too, see the Substitute fix) and
+             * Wild Charge (data/moves.ts:20873-20886: Physical, Electric, 90, accuracy 100, recoil [1, 4]; Rock Head cancels the
+             * recoil, the recoil path of the hit loop). Their rows were in the pool tables unmarked. */
+            [DFI_MOVE_CHARGEBEAM] = 1u,
+            [DFI_MOVE_WILDCHARGE] = 1u,
             [DFI_MOVE_DRAGONDARTS] = 1u,   /* step G78 (decision 0043): the split of the two hits, smartTarget; the partner by the target's side */
             /* Step G88 (decision 0046): Lash Out (x2 base power when the user's stat fell this turn, LOWERED) and Assurance (x2 when
              * the target was hurt this turn, HURT). Both need a PIVOT refusal (DUOFORGE_PUBLIC_CAUSE_TURN_HISTORY). */
             [DFI_MOVE_LASHOUT] = 1u,
             [DFI_MOVE_ASSURANCE] = 1u,
+            /* Step G86 (decision 0015 5cn, batch 6). Data rows: Body Slam (paralysis at 30 percent; its minimize flag is inert, Minimize is
+             * unmarked), Razor Shell (Defense -1 at 50 percent; slicing, Sharpness), Tickle (Attack and Defense -1; reflectable, Magic
+             * Bounce's list in tests/test_pool_g57.c). Handlers: Heavy Slam (weight ratio, user and target), Hard Press (the target's HP),
+             * Ice Spinner (the terrain clears after a hit), Belly Drum (half the HP for +6 Attack). */
+            [DFI_MOVE_BODYSLAM] = 1u,
+            [DFI_MOVE_RAZORSHELL] = 1u,
+            [DFI_MOVE_TICKLE] = 1u,
+            [DFI_MOVE_HEAVYSLAM] = 1u,
+            [DFI_MOVE_HARDPRESS] = 1u,
+            [DFI_MOVE_ICESPINNER] = 1u,
+            [DFI_MOVE_BELLYDRUM] = 1u,
     [DFI_MOVE_REVIVALBLESSING] = 1u,
+            /* Step G84 (decision 0047): Leech Seed (the holder's volatile, the source's slot, the residual drain of order 8) and Curse
+             * (a non-Ghost user's self boost; a Ghost user's Curse is refused explicitly, E_UNSUPPORTED). */
+            [DFI_MOVE_LEECHSEED] = 1u,
+            [DFI_MOVE_CURSE] = 1u,
             /* Step G42: Roost (the heal, then the Flying type is off for the turn) and Stomping Tantrum (base power x2 after a
              * FALSE last move result; the move_result of tail rev 4, decision 0015 section 7). */
             [DFI_MOVE_ROOST] = 1u,
@@ -567,6 +588,42 @@ const dfi_support_manifest dfi_support = {
             [DFI_MOVE_POUNCE] = 1u,
             [DFI_MOVE_MUDSLAP] = 1u,
             [DFI_MOVE_APPLEACID] = 1u,
+            /* Step C4 (cheap moves, decision 0015 entry 5ct), group b: the self-boost secondaries (secondary self boosts, the
+             * SECONDARY_SELF role of G28; Psyshield Bash's basePower 90 is the Champions override). A Substitute-absorbed hit
+             * of these needs sub-fixes-2 (H18) on main; campaigns keep Substitute users out until then. */
+            [DFI_MOVE_FLAMECHARGE] = 1u,
+            [DFI_MOVE_AQUASTEP] = 1u,
+            [DFI_MOVE_TRAILBLAZE] = 1u,
+            [DFI_MOVE_STEELWING] = 1u,
+            [DFI_MOVE_PSYSHIELDBASH] = 1u,
+            /* Step C4, group c: the pure status boosts of one target or the user (PRIMARY_TARGET and PRIMARY_SELF). The reflectable
+             * ones (Scary Face, Eerie Impulse, Screech, Noble Roar, Spicy Extract) join the Magic Bounce handled list. */
+            [DFI_MOVE_SCARYFACE] = 1u,
+            [DFI_MOVE_EERIEIMPULSE] = 1u,
+            [DFI_MOVE_SCREECH] = 1u,
+            [DFI_MOVE_NOBLEROAR] = 1u,
+            [DFI_MOVE_SPICYEXTRACT] = 1u,
+            [DFI_MOVE_AMNESIA] = 1u,
+            [DFI_MOVE_COSMICPOWER] = 1u,
+            /* Step C4, group a (decision 0015 entry 5ct): willCrit, the critical hit without a roll (WILL_CRIT special,
+             * dfi_get_damage; the Shell Armor check still applies). Storm Throw (Champions: isNonstandard null only), Flower
+             * Trick, Frost Breath. Not reflectable, no secondary. */
+            [DFI_MOVE_STORMTHROW] = 1u,
+            [DFI_MOVE_FLOWERTRICK] = 1u,
+            [DFI_MOVE_FROSTBREATH] = 1u,
+            /* Step G92 (decision 0062). CONFUSE: the primary confusion of Confuse Ray, Swagger, Flatter and Teeter Dance (Swagger and
+             * Flatter boost the target first; Misty Terrain refuses it for a grounded target). OHKO: Fissure, Guillotine and Horn
+             * Drill (accuracy 30 flat, Sturdy, no Ice immunity). MEMENTO: the target's -2 boosts, then the user faints.
+             * LEVEL_DAMAGE: Night Shade. Gigaton Hammer is not marked (decision 0062: no learner with a marked ability). */
+            [DFI_MOVE_CONFUSERAY] = 1u,
+            [DFI_MOVE_SWAGGER] = 1u,
+            [DFI_MOVE_FLATTER] = 1u,
+            [DFI_MOVE_TEETERDANCE] = 1u,
+            [DFI_MOVE_FISSURE] = 1u,
+            [DFI_MOVE_GUILLOTINE] = 1u,
+            [DFI_MOVE_HORNDRILL] = 1u,
+            [DFI_MOVE_MEMENTO] = 1u,
+            [DFI_MOVE_NIGHTSHADE] = 1u,
         },
     .abilities =
         {
@@ -917,6 +974,7 @@ const dfi_support_manifest dfi_support = {
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_QUICK_GUARD) |
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_SUBSTITUTE) |
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_DRAGON_CHEER) |
+                         ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_LEECH_SEED) |
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_DESTINY_BOND) |
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_RESERVE_VOLATILES) |
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_VOLATILES2) |

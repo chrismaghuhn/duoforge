@@ -6,7 +6,9 @@ adapter's options.slot_options, which lists DuoForge's slot options in its
 documented order:
 
 - every sheet move whose PP left (maximum minus the uses seen) is above 0,
-  with the target type of the move's target class in the tables;
+  with the target type of the move's request for the user's current types (the library's rule,
+  Data.request_target: the target class in the tables, except a Curse of a user that is not a Ghost, which targets
+  itself); a user whose types the lines do not settle stops the point (Tracker.current_types);
 - Mega Evolution when the member holds its stone and its side has not used
   Mega Evolution; never trapped;
 - the reserves: the alive brought members on the bench (hindsight picks);
@@ -86,10 +88,11 @@ def domain(tracker):
                 continue
             struggle_too[k] = True  # effects outside the view can disable every move: the request is then Struggle
             moves = []
+            types = tracker.current_types(member, p)  # a move's request target can depend on them (Curse); Stop if unknown
             for i, move_id in enumerate(sheet_moves):
                 disabled = not usable[i]
                 moves.append({"id": _move_name(tracker, move_id), "pp": pp[i],
-                              "target": tracker.data.target_type(move_id), "disabled": disabled})
+                              "target": tracker.data.request_target(move_id, types), "disabled": disabled})
             mega = member.mega_capable and not member.is_mega and not tracker._mega_used[side]
             request["active"].append({"moves": moves, "canMegaEvo": bool(mega)})
     else:

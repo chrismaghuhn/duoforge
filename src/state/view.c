@@ -814,6 +814,12 @@ static mr_family mr_family_of(uint32_t move_id, const dfi_move_data *md)
     case DFI_SPECIAL_MISTY_TERRAIN:
     case DFI_SPECIAL_AURORA_VEIL:
     case DFI_SPECIAL_IMPRISON:
+    /* G84 Leech Seed (dfi_leech_seed: the seed that started true; a Grass target's -immune and a standing seed's -fail false),
+     * G92 Confuse Ray, Swagger, Flatter, Teeter Dance (the target's boost or its confusion true; nothing changed false) and
+     * Memento (the target's falls true, its user's faint is the move's own and shows no change at the target) */
+    case DFI_SPECIAL_LEECH_SEED:
+    case DFI_SPECIAL_CONFUSE:
+    case DFI_SPECIAL_MEMENTO:
         return MR_EFFECT;
     case DFI_SPECIAL_WIDE_GUARD:
     case DFI_SPECIAL_RAGE_POWDER:
@@ -821,6 +827,11 @@ static mr_family mr_family_of(uint32_t move_id, const dfi_move_data *md)
     case DFI_SPECIAL_PERISH_SONG:
     case DFI_SPECIAL_REVIVAL_BLESSING:
     case DFI_SPECIAL_BATON_PASS:
+    /* G86 Belly Drum (dfi_run_belly_drum) and the non-Ghost Curse (dfi_run_curse, a Ghost user's is refused by the engine): the
+     * handler returns at once, true after its effect (dfi_status_hit_end), false at its -fail with [still]; a self move reads
+     * no target step */
+    case DFI_SPECIAL_BELLY_DRUM:
+    case DFI_SPECIAL_CURSE:
         return MR_RUNS;
     case DFI_SPECIAL_PARTING_SHOT:
     case DFI_SPECIAL_HELPING_HAND:
@@ -1053,6 +1064,7 @@ duoforge_status duoforge_move_result(const duoforge_context *ctx, uint32_t user,
     uint32_t stopped = 0u;
     bool hit = false;
     bool user_fail = false;
+    bool refused_at_target = false; /* a hit target whose change Misty Terrain refused (-activate): the hit's false (below) */
     for (uint32_t j = 0u; j < n; ++j) {
         const duoforge_event *e = &body[j];
         const uint32_t pos = e->position;
@@ -1099,6 +1111,10 @@ duoforge_status duoforge_move_result(const duoforge_context *ctx, uint32_t user,
             hit = hit || (other && e->cause == DUOFORGE_CAUSE_NONE);
             break;
         case DUOFORGE_EVENT_ACTIVATE:
+            /* onTryAddVolatile / onSetStatus of Misty Terrain at a target that reached the effect (dfi_confuse_primary, the
+             * status path): the target is a hit one, so the move's result is false (a Protect beside it on a spread move is
+             * a NULL class that the hit's false beats) */
+            refused_at_target = refused_at_target || (other && e->cause == DUOFORGE_CAUSE_MOVE && e->id2 == DFI_MOVE_MISTYTERRAIN);
             /* -activate|X|Substitute|[damage]: the Substitute took the hit (HIT_SUBSTITUTE, data/mods/champions/scripts.ts
              * spreadMoveHit: damage true), a hit of the move */
             hit = hit || (other && e->cause == DUOFORGE_CAUSE_MOVE && e->id2 == DFI_MOVE_SUBSTITUTE);
@@ -1181,7 +1197,7 @@ duoforge_status duoforge_move_result(const duoforge_context *ctx, uint32_t user,
     default:
         if (mr_changed(body, n, user, stopped, selfish, md->pseudo_weather == DFI_PSEUDO_WEATHER_TRICK_ROOM)) {
             value = (uint8_t)DFI_MOVE_RESULT_TRUE;
-        } else if (user_fail || (classes & MR_FALSE) != 0u) {
+        } else if (user_fail || refused_at_target || (classes & MR_FALSE) != 0u) {
             value = (uint8_t)DFI_MOVE_RESULT_FALSE;
         } else if ((classes & MR_NULL) != 0u) {
             value = (uint8_t)DFI_MOVE_RESULT_NULL;

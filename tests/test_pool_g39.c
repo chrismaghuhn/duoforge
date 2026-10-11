@@ -56,7 +56,7 @@ static void check_marks(df_test *t)
     }
     DF_CHECK_EQ_U64(t, dfi_pool_moves[DFI_MOVE_SACREDSWORD].special, DFI_SPECIAL_DARKEST_LARIAT);
     DF_CHECK_EQ_U64(t, dfi_pool_moves[DFI_MOVE_SUPERFANG].special, DFI_SPECIAL_SUPER_FANG);
-    DF_CHECK_EQ_U64(t, DFI_SPECIAL_UNMODELED, DFI_SPECIAL_BANEFUL_BUNKER + 1u /* G94: Baneful Bunker (101) follows Dragon Darts */ /* G72b: after Alluring Voice and Dragon Cheer */) /* G62: After You and Quash (decision 0015 entry 5az) come after Strength Sap */; /* Taunt and Yawn (G31), the four of G48, the four of G44, Double Shock (G50) and Roost and Stomping Tantrum (G42) follow */
+    DF_CHECK_EQ_U64(t, DFI_SPECIAL_UNMODELED, DFI_SPECIAL_LEVEL_DAMAGE + 1u /* step G92: UNMODELED follows LEVEL_DAMAGE */ /* G72b: after Alluring Voice and Dragon Cheer */) /* G62: After You and Quash (decision 0015 entry 5az) come after Strength Sap */; /* Taunt and Yawn (G31), the four of G48, the four of G44, Double Shock (G50) and Roost and Stomping Tantrum (G42) follow */
     DF_CHECK_EQ_U64(t, dfi_pool_moves[DFI_MOVE_SUPERFANG].base_power, 0u);
     DF_CHECK_EQ_U64(t, dfi_pool_moves[DFI_MOVE_SUPERFANG].accuracy, 90u);
     DF_CHECK_EQ_U64(t, dfi_pool_moves[DFI_MOVE_CHARM].boost_role, DFI_BOOST_ROLE_PRIMARY_TARGET);
@@ -74,7 +74,8 @@ static void check_marks(df_test *t)
 static void check_inert(df_test *t)
 {
     static const char *const explosive[] = {"explosion", "selfdestruct", "mistyexplosion", "mindblown"};
-    /* Sheer Cold is no longer in this list: step G64 marks it (ohko 'Ice', decision 0015 item 5ca); the others stay unmodelled. */
+    /* Sheer Cold is no longer in this list: step G64 marks it (ohko 'Ice', decision 0015 item 5ca). Fissure, Guillotine and Horn
+     * Drill are marked by step G92 (decision 0062, the OHKO handler); Sturdy is their immunity, checked by test_pool_g92. */
     static const char *const ohko[] = {"fissure", "guillotine", "horndrill"};
     for (size_t i = 0u; i < sizeof explosive / sizeof explosive[0]; ++i) {
         const uint32_t m = move_named(explosive[i]);
@@ -85,8 +86,8 @@ static void check_inert(df_test *t)
     for (size_t i = 0u; i < sizeof ohko / sizeof ohko[0]; ++i) {
         const uint32_t m = move_named(ohko[i]);
         if (m != UINT32_MAX) {
-            DF_CHECK_EQ_U64(t, dfi_support.moves[m], 0u);
-            DF_CHECK_EQ_U64(t, dfi_pool_moves[m].special, DFI_SPECIAL_UNMODELED); /* the generator refuses the field */
+            DF_CHECK_EQ_U64(t, dfi_support.moves[m], 1u); /* step G92: marked */
+            DF_CHECK_EQ_U64(t, dfi_pool_moves[m].special, DFI_SPECIAL_OHKO);
         }
     }
     DF_CHECK_EQ_U64(t, dfi_support.abilities[DFI_ABILITY_AFTERMATH], 0u);
