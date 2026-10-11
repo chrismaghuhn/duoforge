@@ -832,6 +832,87 @@ class HonestArena(unittest.TestCase):
                         np.testing.assert_array_equal(r["pi_X"], target)
 
 
+
+class FoeArena(unittest.TestCase):
+    """M7's paired measurement (duoforge_search.foe_arena): its schedule, its predeclared gates and its guards."""
+
+    def test_each_team_pair_is_played_twice_with_the_teams_and_seats_swapped(self):
+        from duoforge_search import foe_arena
+        rows = foe_arena.games(5, 40, seed=3)
+        self.assertEqual(rows.shape, (80,))
+        np.testing.assert_array_equal(rows["side0"][0::2], rows["side0"][1::2])
+        np.testing.assert_array_equal(rows["side1"][0::2], rows["side1"][1::2])
+        np.testing.assert_array_equal(rows["learner_seat"], np.tile([0, 1], 40))
+        np.testing.assert_array_equal(rows["game"], np.repeat(np.arange(40), 2))
+        self.assertTrue((rows["side0"] != rows["side1"]).all())
+        self.assertTrue((rows["side0"] < 5).all() and (rows["side1"] < 5).all())
+        np.testing.assert_array_equal(rows, foe_arena.games(5, 40, seed=3))  # a pure function of its arguments
+        self.assertFalse(np.array_equal(rows, foe_arena.games(5, 40, seed=4)))
+        with self.assertRaises(ValueError):
+            foe_arena.games(1, 4)
+
+    def test_the_verdict_adopts_only_when_every_gate_holds(self):
+        from duoforge_search import foe_arena
+        searched = [{"kind": "searched", "wall": 0.1}] * 99 + [{"kind": "team"}]
+        better, worse = np.tile([1.0, 0.5], 50), np.tile([0.5, 0.0], 50)
+        v = foe_arena.verdict(better, worse, searched, searched, resamples=200)
+        self.assertEqual(v["pairs"], 50)
+        self.assertEqual(v["h"]["mean"], 0.75)
+        self.assertTrue(v["adopt"], v)
+        even = foe_arena.verdict(worse, worse, searched, searched, resamples=200)
+        self.assertEqual(even["h"]["95"], [0.5, 0.5])
+        self.assertFalse(even["gates"]["lower_bound"])  # the lower bound must be above 0.50, not at it
+        self.assertFalse(even["adopt"])
+        slow = [{"kind": "searched", "wall": 2.5}] * 99
+        self.assertFalse(foe_arena.verdict(better, worse, slow, searched, resamples=200)["gates"]["p99_seconds"])
+        nothing = foe_arena.verdict(better, worse, [{"kind": "team"}], searched, resamples=200)
+        self.assertIsNone(nothing["p99_seconds_f"])
+        self.assertFalse(nothing["adopt"])  # no searched decision, no latency evidence
+
+    def test_the_fallback_gate_is_the_arenas_or_the_status_quos_own_share(self):
+        from duoforge_search import foe_arena
+
+        def records(raw):  # 100 non-team decisions, raw of them unreconstructible
+            return [{"kind": "unreconstructible"}] * raw + [{"kind": "searched", "wall": 0.1}] * (100 - raw) + \
+                [{"kind": "team"}] * 7
+
+        score = np.tile([1.0, 0.0], 10)
+        self.assertEqual(foe_arena.fallback_share(records(5)), 0.05)
+        self.assertTrue(foe_arena.verdict(score, score, records(5), records(0))["gates"]["fallback_share"])
+        self.assertFalse(foe_arena.verdict(score, score, records(6), records(0))["gates"]["fallback_share"])
+        # Where the status quo M itself falls back more often, F may not add more than one point to it.
+        self.assertTrue(foe_arena.verdict(score, score, records(9), records(8))["gates"]["fallback_share"])
+        self.assertFalse(foe_arena.verdict(score, score, records(10), records(8))["gates"]["fallback_share"])
+
+    def test_the_bot_and_the_foe_model_must_be_two_networks(self):
+        from duoforge_search import foe_arena
+        with tempfile.TemporaryDirectory() as tmp:
+            paths = [os.path.join(tmp, name) for name in ("a.npz", "b.npz", "c.npz")]
+            for path, data in zip(paths, (b"one", b"one", b"two")):
+                with open(path, "wb") as f:
+                    f.write(data)
+            with self.assertRaisesRegex(SystemExit, "one network"):
+                foe_arena.check_nets(paths[0], paths[1])
+            self.assertEqual(len(foe_arena.check_nets(paths[0], paths[2])), 2)
+
+    def test_the_timed_search_decides_one_root_per_call(self):
+        from duoforge_search import foe_arena
+
+        class Search:
+            calls = []
+
+            def decide(self, roots, envs, seats, keys, last_step):
+                self.calls.append((list(envs), list(seats), list(keys), list(last_step)))
+                return np.array([10 * int(envs[0]) + int(seats[0])]), [{"kind": "searched", "env": int(envs[0])}]
+
+        timed = foe_arena.Timed(Search())
+        actions, records = timed.decide(None, np.array([3, 5]), np.array([1, 0]), np.array([7, 8], np.uint64),
+                                        np.array([False, True]))
+        self.assertEqual(actions.tolist(), [31, 50])
+        self.assertEqual(Search.calls, [([3], [1], [7], [False]), ([5], [0], [8], [True])])
+        self.assertEqual([r["env"] for r in records], [3, 5])
+        self.assertTrue(all(r["wall"] >= 0 for r in records))
+
 PINNED_OWN = [[103, 97], [289, 295], [358, 352]]
 PINNED_FOE = [[261, 293], [165, 162], [171, 165]]
 PINNED_WORDS = ["c69873953e3ce225253ca6a7f968c4093c82d78a8a9114cb00ce2f4a58b0d922",
