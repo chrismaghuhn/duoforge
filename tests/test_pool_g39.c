@@ -67,7 +67,7 @@ static void check_marks(df_test *t)
     DF_CHECK_EQ_U64(t, dfi_pool_moves[DFI_MOVE_FAKETEARS].boosts[3], 4u);
     /* Static's draw is the site 19 (Flame Body has 18, 17 is Cursed Body's) */
     DF_CHECK_EQ_U64(t, DFI_SITE_STATIC, 19u);
-    DF_CHECK_EQ_U64(t, DFI_SITE_COUNT, 24u); /* step G46 adds the drag (site 20), step G54 the multi-hit count (site 22), step G73 Moody (site 23) */
+    DF_CHECK_EQ_U64(t, DFI_SITE_COUNT, 26u); /* step G46 adds the drag (site 20), step G54 the multi-hit count (site 22), step G73 Moody (site 23), step G71 Cute Charm and Attract (24, 25) */
 }
 
 /* Damp and Sturdy are inert only while what they would act on is unmarked. */

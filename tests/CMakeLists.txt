@@ -276,7 +276,7 @@ foreach(_gen IN ITEMS
         "extended_tables.h=b2abef243fcbfdd87654940076b9fe2fe80b117d74893a7567741f26b9075a7d"
         "extended_tables.c=9e736fa467713283418c4edf8f56b8d844452e596ba422adbd52483d20f7cc17"
         "pool_tables.h=a3b0ef71ce757364e7323b84808216c010ee12a8d257eb2271a31f211cf7892b"
-        "pool_tables.c=b834efaa4301d7915812110c1d9e972ac036d568d06f4875a54d57127abe8c57")
+        "pool_tables.c=dbbbc6021e647467b90743e6dda2519bd9e52f4bd47efa0e4a5a498e838afc15")
     string(REPLACE "=" ";" _parts "${_gen}")
     list(GET _parts 0 _file)
     list(GET _parts 1 _expected)
@@ -819,6 +819,9 @@ duoforge_add_test(NAME duoforge.state.pool_g69 SOURCES test_pool_g69.c WHITEBOX 
 # rows, the recoil and crash facts Reckless reads, and the Trace refusal of Water Bubble onto a burned holder; white-box).
 duoforge_add_test(NAME duoforge.state.pool_g65 SOURCES test_pool_g65.c WHITEBOX TIMEOUT 60)
 
+# Step G75 (decision 0015 5bp): the cheap set, Pure Power, Battle Armor and Scope Lens (engine rows), the stones Medichamite and
+# Clefablite, and the two Mega pairs (white-box).
+duoforge_add_test(NAME duoforge.state.pool_g75 SOURCES test_pool_g75.c WHITEBOX TIMEOUT 60)
 
 # Step G73 (decision 0015 5bo): Moody (its residual order, its two samples on one site, the boost with the raised key first; white-box, with
 # its recorded battles g73_*, which conformance_pool_data replays).
@@ -827,3 +830,7 @@ duoforge_add_test(NAME duoforge.state.pool_g73 SOURCES test_pool_g73.c WHITEBOX 
 # Step G67 (decision 0015 entry 5bl, decision 0033): Magic Guard (the class of every indirect damage), Air Balloon (grounding, the
 # pops, the immunity, the switch-in line ITEM_SHOWN) and the fold that ignores ITEM_SHOWN.
 duoforge_add_test(NAME duoforge.state.pool_g67 SOURCES test_pool_g67.c WHITEBOX TIMEOUT 120)
+
+# Step G71 (decision 0034, decision 0015 5bn): Attract's source bytes, the state check, the public bit, the from-view refusal and the
+# clear of the holder's byte (white-box; the volatile's draws wait for G73's site).
+duoforge_add_test(NAME duoforge.state.pool_g71 SOURCES test_pool_g71.c WHITEBOX LIBS duoforge_batch TIMEOUT 60)

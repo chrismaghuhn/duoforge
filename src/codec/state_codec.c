@@ -5,7 +5,11 @@
 #include "core/alloc.h"
 #include "core/bytes.h"
 #include "core/sha256.h"
+#include "state/battle_internal.h"
 #include "state/context_internal.h"
+
+/* Step G71 (decision 0034): the Attract source bytes of the rev 5 reserve are one per flat position of the state's array. */
+_Static_assert(DFI_ENC_TAIL5_ATTRACT_SIZE == DFI_ATTRACT_SLOTS, "the Attract bytes are one per position");
 
 bool dfi_context_has_pool_tail(const struct duoforge_context *ctx)
 {
@@ -84,7 +88,10 @@ static void dfi_encode_tail5(const dfi_pool_tail *tail, uint8_t *out)
         po[DFI_ENC_TAIL5_POSITION_FLAGS_OFF] = tp->position_flags;
         po[DFI_ENC_TAIL5_FUTURE_SIGHT_OFF] = tp->future_sight;
     }
-    for (uint32_t i = 0u; i < DFI_ENC_TAIL5_RESERVED_SIZE; ++i) {
+    for (uint32_t i = 0u; i < DFI_ENC_TAIL5_ATTRACT_SIZE; ++i) { /* step G71: the Attract source of each position */
+        out[DFI_ENC_TAIL5_ATTRACT_OFF + i] = tail->attract_source[i];
+    }
+    for (uint32_t i = DFI_ENC_TAIL5_ATTRACT_SIZE; i < DFI_ENC_TAIL5_RESERVED_SIZE; ++i) {
         out[DFI_ENC_TAIL5_RESERVED_OFF + i] = 0u;
     }
 }
@@ -147,7 +154,7 @@ static bool dfi_tail_reserved_zero(const uint8_t *in)
             any |= so[DFI_ENC_TAIL_MEMBER_OFF + m * DFI_ENC_TAIL_MEMBER_SIZE + DFI_ENC_TAIL_MEMBER_RESERVED_OFF];
         }
     }
-    for (uint32_t i = 0u; i < DFI_ENC_TAIL5_RESERVED_SIZE; ++i) {
+    for (uint32_t i = DFI_ENC_TAIL5_ATTRACT_SIZE; i < DFI_ENC_TAIL5_RESERVED_SIZE; ++i) { /* step G71: the first 4 are data */
         any |= in[DFI_ENC_TAIL_REV4_SIZE + DFI_ENC_TAIL5_RESERVED_OFF + i];
     }
     return any == 0u;
@@ -209,6 +216,9 @@ static void dfi_parse_tail5(const uint8_t *in, dfi_pool_tail *tail)
         const uint8_t *po = in + DFI_ENC_TAIL5_POS_OFF + f * DFI_ENC_TAIL5_POS_SIZE;
         tp->position_flags = po[DFI_ENC_TAIL5_POSITION_FLAGS_OFF];
         tp->future_sight = po[DFI_ENC_TAIL5_FUTURE_SIGHT_OFF];
+    }
+    for (uint32_t i = 0u; i < DFI_ENC_TAIL5_ATTRACT_SIZE; ++i) { /* step G71: the Attract source per position */
+        tail->attract_source[i] = in[DFI_ENC_TAIL5_ATTRACT_OFF + i];
     }
 }
 

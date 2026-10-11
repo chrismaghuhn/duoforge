@@ -88,6 +88,10 @@ const CONDITION_SITES = {
     // are random(n) with n the length of the list, a list of one included. The SPEED_TIE shuffles of the same residual are
     // matched above (before this table), so the tie of two Moody holders stays a SPEED_TIE draw.
     'moody:Residual': 'MOODY',
+    // Cute Charm (step G71, decision 0034): its randomChance(3, 10) in onDamagingHit of the holder (data/abilities.ts:798-810).
+    'cutecharm:DamagingHit': 'CUTE_CHARM',
+    // Attract (step G71): its randomChance(1, 2) in onBeforeMove of the infatuated Pokemon (data/moves.ts:731-741, priority 2).
+    'attract:BeforeMove': 'ATTRACT',
 };
 
 // The event a draw happens in (innermost last), tracked by wrapping the

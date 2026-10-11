@@ -346,6 +346,8 @@ const ENGINE_STAT_MODIFIERS = {
     // Step G65: Water Bubble's holder, x2 for its Water moves (data/abilities.ts:5390-5399). Its onSourceModifyAtk and
     // onSourceModifySpA (x0.5 for a Fire move against the holder) are probed by g65Probes, not here.
     waterbubble: {onModifyAtk: {Water: 2}, onModifySpA: {Water: 2}},
+    // Step G75: Pure Power, x2 Attack for every move in the ModifyAtk chain (data/abilities.ts:3608-3617, as Huge Power).
+    purepower: {onModifyAtk: ALL_TYPES_X(2)},
 };
 
 // What an entry ability sets for a source Pokemon.
@@ -573,6 +575,12 @@ function checkItems(dex, rows, unmodeled) {
             // type, a resist berry exactly one resisted type. An UNMODELED row is refused whatever it does (Muscle Band
             // boosts every Physical move, Occa-like berries of other families are not in the pool).
             if (!unmodeled.has(row.id)) {
+                // Step G75: Scope Lens adds one to the holder's critical ratio (data/items.ts:5554-5565); the ratio is
+                // clamped by the caller, so the probe checks the raw term only.
+                if (row.id === 'scopelens') {
+                    expect('scopelens critical ratio 1 to 2', call(item.onModifyCritRatio, battle(item), [1]), 2);
+                    expect('scopelens critical ratio 0 to 1', call(item.onModifyCritRatio, battle(item), [0]), 1);
+                }
                 if (row.id in CATEGORY_BOOSTERS) {
                     expect(row.id + ' category booster probe', categoryBoosted(item),
                         {categories: [CATEGORY_BOOSTERS[row.id]], modifiers: ['[4505,4096]'], fired: TYPES.length});
@@ -1513,6 +1521,20 @@ const G73_PROBES = {
     },
 };
 
+// Step G75: Pure Power's Attack (the priority and the chain, as Huge Power's probe above) and Battle Armor's critical-hit
+// cancel (data/abilities.ts:355-361, the Shell Armor text). Scope Lens's ratio is probed in checkItems.
+const G75_PROBES = {
+    purepower(ability) {
+        expect('purepower onModifyAtkPriority', ability.onModifyAtkPriority, 5);
+        expect('purepower Attack of a Physical move', call(ability.onModifyAtk, battle(ability), [100]), {chain: 2});
+        expect('purepower breakable', ability.flags.breakable, undefined);
+    },
+    battlearmor(ability) {
+        expect('battlearmor onCriticalHit', ability.onCriticalHit, false);
+        expect('battlearmor breakable', ability.flags.breakable, 1);
+    },
+};
+
 // Step G65 (Reckless's crash clause): a modelled move with hasCrashDamage needs the clause, which the engine does not have.
 function checkG65(dex, moveNames, unmodeledMoves) {
     for (const id of moveNames) {
@@ -1565,6 +1587,9 @@ function checkAbilities(dex, rows, moveIds, unmodeled, unmodeledMoves) {
                 }
                 if (G73_PROBES[row.id] !== undefined) {
                     G73_PROBES[row.id](ability);
+                }
+                if (G75_PROBES[row.id] !== undefined) {
+                    G75_PROBES[row.id](ability);
                 }
             }
             continue;
@@ -1729,14 +1754,14 @@ function checkFormes(dex, validator, rows, moves, abilities) {
 // The UNMODELED markers of gen_closure.py --pool, re-derived from the pinned data in this file's own words: the
 // special column of a move, the handler column of an item and of an ability, and the lists of unmodelled features.
 // implemented in the turn code by id (G4: Focus Sash, Rock Head; G12: Floettite, Flower Veil, Fairy Aura)
-const ENGINE_ROWS = {items: ['airballoon', 'focussash', 'floettite', 'psychicseed', 'electricseed', 'mistyseed', 'expertbelt', 'ejectbutton', 'widelens', 'muscleband', 'wiseglasses', 'brightpowder', 'redcard', 'lumberry', 'mentalherb', 'damprock', 'heatrock', 'smoothrock', 'icyrock', 'terrainextender'],
+const ENGINE_ROWS = {items: ['airballoon', 'focussash', 'floettite', 'psychicseed', 'electricseed', 'mistyseed', 'expertbelt', 'ejectbutton', 'widelens', 'muscleband', 'wiseglasses', 'brightpowder', 'redcard', 'lumberry', 'mentalherb', 'damprock', 'heatrock', 'smoothrock', 'icyrock', 'terrainextender', 'scopelens'],
     abilities: ['magicguard', 'rockhead', 'flowerveil', 'fairyaura', 'roughskin', 'poisontouch', 'thermalexchange', 'stickyhold', 'trace',
         'levitate', 'sandrush', 'swiftswim', 'slushrush', 'chlorophyll', 'innerfocus', 'liquidvoice',
         'flamebody', 'clearbody', 'hospitality', 'overcoat', 'soundproof', 'unnerve', 'speedboost',
         'compoundeyes', 'ironfist', 'sharpness', 'solidrock', 'technician', 'multiscale', 'galewings', 'raindish', 'friendguard', 'cursedbody', 'mirrorarmor', 'auraguard', 'hypercutter', 'scrappy', 'infiltrator', 'queenlymajesty', 'damp', 'sturdy', 'snowcloak', 'sandveil', 'static', 'justified', 'limber', 'solarpower', 'regenerator', 'toxicdebris', 'shadowtag', 'suctioncups', 'guarddog',
         'steadfast', 'weakarmor', 'telepathy', 'voltabsorb', 'punkrock', 'moxie', 'synchronize', 'oblivious', 'keeneye', 'bigpecks', 'magicbounce', 'pressure', 'stancechange',
         'sandforce', 'shellarmor', 'filter', 'stalwart', 'megalauncher', 'hugepower', 'thickfat', 'firemane', 'spicyspray', 'megasol', 'sheerforce', 'illusion', 'symbiosis',
-        'unaware', 'marvelscale', 'waterbubble', 'reckless', 'superluck', 'moody']};
+        'unaware', 'marvelscale', 'waterbubble', 'reckless', 'superluck', 'moody', 'purepower', 'battlearmor', 'cutecharm']};
 const ENGINE_TARGETS = new Set(['normal', 'any', 'adjacentAlly', 'adjacentFoe', 'self', 'allAdjacentFoes', 'allySide', 'all',
     'randomNormal', 'allAdjacent', 'allies', 'foeSide']); // foeSide: step G37 (the four hazards)
 // The fields of a move that the tables model (gen_closure.py DATA_KEYS and IGNORED_KEYS), nothing else.
