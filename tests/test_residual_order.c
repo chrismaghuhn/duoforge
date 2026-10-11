@@ -29,6 +29,7 @@
 #include <string.h>
 
 #include "combat/residual_order.h"
+#include "rng/draw.h"
 #include "support/check.h"
 
 #define MAX_LIST 64u
@@ -474,6 +475,20 @@ static bool parse_shard_arg(const char *text, uint32_t limit, uint32_t *out)
     return true;
 }
 
+/* Every residual kind 1..19 and every draw site 1..DFI_SITE_COUNT-1 has its name (the switches of residual_order.h and draw.h are the
+ * build-time guards against duplicate values; this test makes the names used, and a new kind or site without its case is caught). */
+static void test_kinds_and_sites_have_names(df_test *t)
+{
+    for (uint32_t k = 1u; k <= DFI_RES_MOODY; ++k) {
+        DF_CHECK(t, dfi_res_kind_name(k) != NULL);
+    }
+    DF_CHECK(t, dfi_res_kind_name(DFI_RES_MOODY + 1u) == NULL);
+    for (uint32_t s = 1u; s < DFI_SITE_COUNT; ++s) {
+        DF_CHECK(t, dfi_site_name(s) != NULL);
+    }
+    DF_CHECK(t, dfi_site_name(DFI_SITE_COUNT) == NULL);
+}
+
 int main(int argc, char **argv)
 {
     uint32_t shard = 0u;
@@ -486,6 +501,7 @@ int main(int argc, char **argv)
     df_test t;
     df_test_begin(&t, "duoforge.combat.residual_order");
     test_examples(&t);
+    test_kinds_and_sites_have_names(&t);
     test_random_lists(&t, (uint32_t)((uint64_t)TRIALS * shard / count),
                       (uint32_t)((uint64_t)TRIALS * (shard + 1u) / count));
     return df_test_end(&t);

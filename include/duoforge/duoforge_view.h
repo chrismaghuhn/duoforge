@@ -150,6 +150,14 @@ duoforge_status duoforge_battle_public(const duoforge_context *ctx, const duofor
 duoforge_status duoforge_battle_public_causes(const duoforge_context *ctx, const duoforge_battle *battle, uint32_t player,
                                               uint32_t *out_mask);
 
+/* The HP display every player is shown of a Pokemon with hp of hp_max HP (the Champions percent display, sim/pokemon.ts
+   getHealth at the pin): the percent (floor, at least 1 while hp > 0) and its DUOFORGE_HP_FLAG_* colour flag (at 20 and 50
+   percent only). It is the opponent's knowledge of a member (the public record's knowledge bytes), which a player's own
+   protocol stream shows only as exact HP: the live tracker reads it here instead of holding the rule (decision 0023 section
+   4). A pure call. Checks: NULL -> E_NULL_ARGUMENT; hp_max 0 or above 65535, or hp above hp_max -> E_INVALID_ARGUMENT.
+   Nothing is written on a refusal. */
+duoforge_status duoforge_hp_display(uint32_t hp, uint32_t hp_max, uint8_t *out_percent, uint8_t *out_flag);
+
 /* The world of a public state and a hypothesis, written into *out (a battle of
    the same context, as duoforge_battle_copy's destination). Its RNG is seeded
    with (0, 0): a search reseeds every leaf (decision 0022). Checks: NULL ->
