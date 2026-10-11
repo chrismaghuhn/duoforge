@@ -1270,6 +1270,27 @@ class GameTest(unittest.TestCase):
         self.assertTrue(all(int(r.observation["epoch"]) <= max(turn2) for r in result.rows))
         self.assertLess(len(result.rows), len(clean.rows))
 
+    def test_a_game_that_brings_all_six_is_a_counted_skip(self):
+        # BC6 run 2026-10-11: a Champions doubles game whose team preview names no number brings all six, no VGC
+        # bring-four game: its team label (four of six with the leads) cannot hold, so the game is refused by name
+        log = ["|teampreview" if line.startswith("|teampreview") else line for line in self.log]
+        self.assertEqual(self.skip_reason(log), "skip:teampreview-not-4")
+
+    def test_a_label_outside_its_domain_refuses_the_game(self):
+        # BC6 run 2026-10-11: a drawn Choice item restricted a member's moves, and the logged move was none of them:
+        # the label set was empty; such a game is refused by name instead of reaching bc_data.check_labels
+        from unittest import mock
+        from duoforge_replay import labels
+        real = labels.compute
+
+        def empty_turn_label(ctx, log, point, lists, stop_line, leads, back):
+            label = real(ctx, log, point, lists, stop_line, leads, back)
+            if point.index == 3:
+                label = labels.Label((0, 0), label.team, (labels.TARGET_UNKNOWN, labels.EXACT))
+            return label
+        with mock.patch.object(labels, "compute", empty_turn_label):
+            self.assertEqual(self.skip_reason(self.log), "skip:label-outside-domain")
+
     def test_illusion_sheet_skips(self):
         lines = [line.replace("|Defiant|", "|Illusion|", 1) if line.startswith("|showteam|p1|") else line
                  for line in self.log]
@@ -2276,6 +2297,15 @@ class FactsTest(unittest.TestCase):
         self.assertEqual(f[1].moves, frozenset({"Fake Out"}))
         self.assertEqual(f[2].moves, frozenset({"Heat Wave"}))
         self.assertEqual(self.facts(*body, side=1)[0].moves, frozenset({"Weather Ball"}))  # Instruct: its own move
+
+    def test_a_move_shown_only_by_its_charge_or_its_cant_line_is_a_move(self):
+        # Bo1 rebuild 2026-10-11: Chilly Reception under Taunt shows only -prepare and the cant line naming the move; a
+        # drawn set without it made the tracker fail on the charge (the move is on no slot of the sheet)
+        f = self.facts("|-prepare|p1a: Gambit|Meteor Beam", "|cant|p1b: Roar|move: Taunt|Knock Off",
+                       "|cant|p1a: Gambit|flinch", "|-prepare|p1b: Roar|Solar Beam|[from]move: Sleep Talk",
+                       "|cant|p1a: Gambit|ability: Armor Tail|Fake Out|[of] p2a: Frog")  # the blocker: not its move
+        self.assertEqual(f[0].moves, frozenset({"Meteor Beam"}))
+        self.assertEqual(f[1].moves, frozenset({"Knock Off"}))  # a called move's charge is not its own
 
     def test_ally_switch_swaps_the_occupants(self):
         # review C1: after |swap| both positions name the other member

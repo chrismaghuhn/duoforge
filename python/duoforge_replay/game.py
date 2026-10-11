@@ -46,6 +46,8 @@ from .hindsight import pick_hypotheses as pick_tuples
 from .spectator import SpectatorTracker, feed_lines, hindsight, hindsight_picks, own_requested, walk
 
 REASONS = ("NOT_REQUESTED", "EXACT", "TARGET_UNKNOWN", "MOVE_HIDDEN", "FORCED", "UNKNOWN")
+from duoforge import _layout as _domain_layout  # noqa: E402
+C_TEAM_SELECTION = _domain_layout.CONSTANTS["DUOFORGE_CHOICE_TEAM_SELECTION"]
 
 __all__ = ["GameRecord", "GameResult", "Row", "Skip", "process"]
 
@@ -244,6 +246,9 @@ def process(replay_id, format_id, log, data, prior, stats, belief=None, seed=0, 
     extra = None
     if belief is not None:
         lines, extra = _with_drawn_sheets(replay_id, format_id, lines, data, belief, seed, draw, known_sheets)
+    if "|teampreview|4" not in lines:
+        # a preview that names no number brings all six (a doubles game, no VGC bring-four game; BC6 run 2026-10-11)
+        raise Skip("skip:teampreview-not-4")
     record, sheets = _prepass(replay_id, format_id, lines, data)
     if belief is not None:
         record = dataclasses.replace(record, draw=draw)
@@ -263,8 +268,22 @@ def process(replay_id, format_id, log, data, prior, stats, belief=None, seed=0, 
         counters["games.both_kept"] += 1
     else:
         counters["games.both_kept"] += 0  # the key is there for every game set up
+    if any(_label_outside_domain(r) for r in rows):
+        # an empty label set: the logged choice is none of the domain's options (a drawn set that contradicts the log,
+        # BC6 run 2026-10-11); bc_data.check_labels refuses such a row, so the game is refused here by name
+        raise Skip("skip:label-outside-domain")
     counters["points.written"] += sum(1 for r in rows if r.picks_hypotheses == 1)
     return GameResult(record, rows, counters)
+
+
+def _label_outside_domain(row):
+    """Whether a row's label set is empty: a team row without a tuple, a decision without a pair inside its pair mask
+    (as bc_data.check_labels reads it)."""
+    if int(row.domain["kind"]) == C_TEAM_SELECTION:
+        return not any(row.label.team)
+    s0, s1 = row.label.slots
+    allowed = row.domain["allowed"]
+    return not any(s0 >> i & 1 and int(allowed[i]) & s1 for i in range(32))
 
 
 def _fold(tracker, lines, points):

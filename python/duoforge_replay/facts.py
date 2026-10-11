@@ -136,6 +136,18 @@ def side_facts(lines, side, data):
             if m is not None and parts[3] != "Struggle" and m not in moves_done and _own_move(parts[4:]):
                 moves[m].add(parts[3])
             continue
+        if kind == "-prepare" and len(parts) > 3:
+            # a two-turn move's charge (Meteor Beam, Solar Beam) or Chilly Reception's announcement names the user's
+            # own move, also when no move line follows (Taunt, a faint); a called move's charge ([from]) is not its own
+            if m is not None and m not in moves_done and _own_move(parts[4:]):
+                moves[m].add(parts[3])
+            continue
+        if kind == "cant" and len(parts) > 4 and parts[4]:
+            # cant|X|reason|Move (Taunt, Disable, Imprison, Throat Chop, Heal Block, Gravity): the move X chose. With
+            # [of] X is the blocker (Armor Tail: cant|holder|ability: Armor Tail|Fake Out|[of] user): no move of X's
+            if m is not None and m not in moves_done and _own_move(parts[5:]) and                     not any(a.startswith("[of]") for a in parts[5:]):
+                moves[m].add(parts[4])
+            continue
         if kind == "-start" and len(parts) > 3 and parts[3] in ("Mimic", "move: Mimic"):
             moves_done.add(m)
             continue
