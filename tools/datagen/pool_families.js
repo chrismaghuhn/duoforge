@@ -1039,8 +1039,10 @@ function checkG61(dex, headers, moveIds, moveRows, unmodeledMoves) {
     const special = {stoneaxe: specialOf(headers, 'DFI_SPECIAL_STONE_AXE'),
         ceaselessedge: specialOf(headers, 'DFI_SPECIAL_CEASELESS_EDGE'), icefang: specialOf(headers, 'DFI_SPECIAL_ICE_FANG'),
         triattack: specialOf(headers, 'DFI_SPECIAL_TRI_ATTACK'), electroshot: specialOf(headers, 'DFI_SPECIAL_ELECTRO_SHOT'),
-        alluringvoice: specialOf(headers, 'DFI_SPECIAL_ALLURING_VOICE')};
-    const stripSpecials = [special.stoneaxe, special.ceaselessedge, special.icefang, special.triattack, special.alluringvoice];
+        alluringvoice: specialOf(headers, 'DFI_SPECIAL_ALLURING_VOICE'),
+        triplearrows: specialOf(headers, 'DFI_SPECIAL_TRIPLE_ARROWS')};
+    const stripSpecials = [special.stoneaxe, special.ceaselessedge, special.icefang, special.triattack, special.alluringvoice,
+                           special.triplearrows]; // step C3: two secondaries (the pin), stripped and boosted by Sheer Force
     const SECONDARY_COLUMN = 14; // sec_chance: the 15th of the 29 numbers of a dfi_move_data row
     const SPECIAL_COLUMN = 28; // special: the last number
     let checked = 0, stripped = 0, boostOnly = 0;
@@ -1136,7 +1138,7 @@ function checkG69(dex) {
 }
 
 // The pinned counts of checkG61: stripped and boost-only pool moves (marked or not), as of step G61.
-const PINNED_SF_STRIPPED = 103; // every pool move, marked or not (G72b's Alluring Voice makes 103; its secondary is stripped)
+const PINNED_SF_STRIPPED = 105; // every pool move, marked or not (G72b's Alluring Voice makes 103; step C3: Sky Attack's flinch (104) and Triple Arrows' two secondaries (105))
 const PINNED_SF_BOOST_ONLY = 1;
 
 // Step G54 (moves): the multi-hit rows and the side condition, read from the pinned data as the generator's facts read them.

@@ -25,7 +25,7 @@
 #include "support/check.h"
 
 /* The pinned counts of checkG61 (tools/datagen/pool_families.js): the pool moves that Sheer Force strips, and the boost-only one. */
-#define G61_PINNED_STRIPPED 104u /* the 511 pool moves, marked or not (step C3's Sky Attack adds one: its flinch secondary is stripped too; G72b's Alluring Voice adds one (103); 102 at G61) */
+#define G61_PINNED_STRIPPED 105u /* the 511 pool moves, marked or not (step C3: Sky Attack's flinch (104) and Triple Arrows' two secondaries (105); G72b's Alluring Voice makes 103; 102 at G61) */
 #define G61_PINNED_BOOST_ONLY 1u
 
 static void check_marks(df_test *t)
