@@ -206,7 +206,7 @@
 #define DFI_ENC_TAIL_POS_ABILITY_STATE_OFF 30u /* rev 4 */
 #define DFI_ENC_TAIL_POS_LOCK_TURNS_OFF 31u   /* rev 4 */
 #define DFI_ENC_TAIL_POS_RESERVED_OFF 32u
-/* step G97 (Metal Burst, decision 0063): bytes 33-35 of the position are its state, byte 32 stays reserved */
+/* step G97 (Metal Burst, decision 0064): bytes 33-35 of the position are its state, byte 32 stays reserved */
 #define DFI_ENC_TAIL_POS_METAL_SOURCE_OFF 33u /* u8: flat position of the foe + 1, 0 = none */
 #define DFI_ENC_TAIL_POS_METAL_DAMAGE_OFF 34u /* u16 */
 #define DFI_ENC_TAIL_POS_RESERVED_SIZE 1u
@@ -340,7 +340,7 @@ _Static_assert(DFI_ENC_TAIL5_POS_OFF + DUOFORGE_ACTIVE_PER_SIDE * DUOFORGE_SIDE_
                "the positions' rev 5 bytes end the block's data");
 _Static_assert(DFI_ENC_TAIL_RESERVED_COUNT == 33u,
                "33 of them are reserved (the field block's 1, one byte +32 per position (4), one per roster member (12), and "
-               "the 16 of rev 5; step G97 takes bytes 33-35 of each position, decision 0063)");
+               "the 16 of rev 5; step G97 takes bytes 33-35 of each position, decision 0064)");
 _Static_assert(DFI_STATE_POOL_ENCODED_SIZE == 1357u, "the state with the POOL tail is 1357 bytes");
 /* No padding: every field of the tail in memory is a byte or an aligned u16, so the structs are the encoded data
  * and nothing else (the encoded size without the reserved bytes, plus the pad byte of the field block: a position and a side

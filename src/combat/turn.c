@@ -5778,7 +5778,7 @@ static duoforge_status dfi_substitute_takes(dfi_run *r, uint32_t user, uint32_t 
 
 static duoforge_status dfi_no_target_or_try(dfi_run *r, uint32_t user, const dfi_move_data *md)
 {
-    /* Metal Burst without a record (step G97, decision 0063): no target is chosen because onTry fails first; the line is the Try's
+    /* Metal Burst without a record (step G97, decision 0064): no target is chosen because onTry fails first; the line is the Try's
      * -fail and [still] (sim/battle-actions.ts:592-596), not [notarget] (recorded: |move|p1a: Aggron|Metal Burst||[still]). */
     if (md->special == DFI_SPECIAL_METAL_BURST) {
         dfi_fail_still(r, user);

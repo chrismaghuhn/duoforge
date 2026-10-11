@@ -833,7 +833,7 @@ static dfi_invariant dfi_check_tail(const duoforge_context *ctx, const struct du
                 }
                 continue;
             }
-            /* Metal Burst (step G97, decision 0063): the record names a foe position (flat + 1), and its damage is zero whenever
+            /* Metal Burst (step G97, decision 0064): the record names a foe position (flat + 1), and its damage is zero whenever
              * it names none. A record of a fainted occupant is zero (the tail above), since the occupant can no longer use it. */
             const uint32_t metal_limit = DUOFORGE_ACTIVE_PER_SIDE * DUOFORGE_SIDE_COUNT;
             if (tp->metal_source > metal_limit || (tp->metal_source == 0u && tp->metal_damage != 0u) ||

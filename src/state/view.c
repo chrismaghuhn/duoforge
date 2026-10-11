@@ -290,7 +290,7 @@ static bool dfi_view_turn_history_risk(const duoforge_context *ctx, const duofor
             }
             const duoforge_member_view *v = &ob->sides[side].members[occ];
             for (uint32_t k = 0u; k < DUOFORGE_MAX_MOVE_SLOTS && k < v->move_count; ++k) {
-                /* Metal Burst (step G97, decision 0063): its record (the foe's damage this turn, not public) is live only mid-turn,
+                /* Metal Burst (step G97, decision 0064): its record (the foe's damage this turn, not public) is live only mid-turn,
                  * so it refuses at a PIVOT and nowhere else (the record is zero at every turn boundary, and the first decision
                  * has none). */
                 if (v->move_ids[k] == DFI_MOVE_LASHOUT || (pivot && (v->move_ids[k] == DFI_MOVE_ASSURANCE ||

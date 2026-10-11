@@ -1,6 +1,7 @@
-# 0063 - Metal Burst (G97): the foe's last hit, times 1.5
+# 0064 - Metal Burst (G97): the foe's last hit, times 1.5
 
 Status: **proposed; engine and generator done in the WIP, recordings pending the lock job** (lane A batch 7, builder H23, decision 0015 letter **5cz**, the second part after Psychic Terrain). Builds on 0046 section 6 (the first pin analysis, deferred there), 0023 (the foe's damage is not public), 0007 (the player view), 0015 (POOL kinds, the tail rev 5 position byte) and the cause 64 of 0046 section 10.
+Renumbered from 0063 (collision with the Ghost Curse note on main), 2026-10-11.
 
 Pin: Showdown b2cb775 (`C:/Dev/src/pokemon-showdown`). No Champions override of `metalburst` or of the attacked-by record (`data/mods/champions/scripts.ts` has no `gotAttacked` or `damageCallback` hook; its `modifyDamage` at `scripts.ts:196` is in the formula path, which a damage callback never reaches, see 1.1).
 
