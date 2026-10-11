@@ -3,6 +3,9 @@
     read -> other format / no two sheets -> with sheets -> refused (names, legality, Illusion, ...) / internal
     -> set up (processed) -> perspectives to the end / stopped by reason -> rows
 
+A build with pick hypotheses counts their perspectives, turns and rows apart (M11 pick hypotheses spec, section 6):
+never as turns without a stop, never in the rows column.
+
 The build counts every stage under "funnel.<format id>.<stage>" beside the totals (source.read_unit, source.select,
 build._work_unit), so the funnel of a dataset is its counters.json. Reg M-A is never built (REG_MA): its row
 says why.
@@ -25,7 +28,8 @@ def count(counters, format_id, stage, n=1):
 def _empty():
     return {"read": 0, "skipped": collections.Counter(), "internal": 0, "processed": 0,
             "perspectives": {"kept": 0, "stopped": collections.Counter()}, "rows": 0,
-            "turns": {"total": 0, "kept": 0, "refused": 0}, "both_kept": 0}
+            "turns": {"total": 0, "kept": 0, "refused": 0}, "both_kept": 0,
+            "hypotheses": {"kept": 0, "stopped": collections.Counter(), "turns": 0, "rows": 0}}
 
 
 def report(counters):
@@ -45,6 +49,14 @@ def report(counters):
             f["internal"] += n
         elif stage == "games.both_kept":
             f["both_kept"] += n
+        elif stage == "rows.hypotheses":
+            f["hypotheses"]["rows"] += n
+        elif stage == "turns.hypotheses":
+            f["hypotheses"]["turns"] += n
+        elif stage == "perspectives.hypotheses_kept":
+            f["hypotheses"]["kept"] += n
+        elif stage.startswith("perspectives.hypotheses_stopped."):
+            f["hypotheses"]["stopped"][stage[len("perspectives.hypotheses_stopped."):]] += n
         elif stage in ("turns.total", "turns.kept", "turns.refused"):
             f["turns"][stage[len("turns."):]] += n
         elif stage == "perspectives.kept":
@@ -59,6 +71,7 @@ def report(counters):
         f["taken"] = f["with_sheets"] - selection  # what the build's mode and split take (bo1_belief: no sheets)
         f["skipped"] = dict(f["skipped"])
         f["perspectives"]["stopped"] = dict(f["perspectives"]["stopped"])
+        f["hypotheses"]["stopped"] = dict(f["hypotheses"]["stopped"])
     return out
 
 
@@ -112,4 +125,14 @@ def text(report, top=8):
                          f"({100 * f['both_kept'] / taken:.1f} %), of {f['processed']} set up "
                          f"({100 * f['both_kept'] / max(f['processed'], 1):.1f} %)")
         lines.append(f"  rows {f['rows']}")
+        h = f["hypotheses"]
+        perspectives = h["kept"] + sum(h["stopped"].values())
+        if perspectives:
+            lines.append(f"  pick hypotheses (marked rows, apart from the above): perspectives {perspectives}, "
+                         f"to the end {h['kept']}, rows {h['rows']}")
+            if t["total"]:
+                lines.append(f"    turns with pick hypotheses {h['turns']} of {t['total']} "
+                             f"({100 * h['turns'] / t['total']:.1f} % of the games set up)")
+            for reason, n in sorted(h["stopped"].items(), key=lambda kv: (-kv[1], kv[0]))[:top]:
+                lines.append(f"    {n} {reason}")
     return "\n".join(lines) + "\n"

@@ -1,4 +1,6 @@
 """Pure protocol-log inference shared by openings and the spectator replay pipeline."""
+import itertools
+
 from duoforge_live import lines
 from duoforge_live.data import trace_to_c
 
@@ -41,3 +43,25 @@ def hindsight_picks(log, side, data, sheets):
     if len(back) != BROUGHT - 2:
         return None
     return leads + tuple(sorted(back))
+
+
+def pick_hypotheses(log, side, data, sheets):
+    """Every pick tuple the log allows (M11 pick hypotheses spec, section 1): the two leads, then the seen back
+    members with the missing back picks from the sheet members never seen on the field, the back sorted as in
+    hindsight_picks; in the order of itertools.combinations over the unseen members. [hindsight_picks] when the back
+    is seen; None for a side with an Illusion holder (its switch lines may name the disguise) or more seen back
+    members than the back holds."""
+    if any(trace_to_c.key(m.get("ability") or "") == "ILLUSION" for m in sheets[side]):
+        return None
+    leads, back = hindsight(log, side, data, sheets)
+    return hypotheses_of(leads, back, len(sheets[side]))
+
+
+def hypotheses_of(leads, back, members):
+    """The pick tuples of pick_hypotheses for the leads, the seen back members and a sheet of `members` members;
+    None for more seen back members than the back holds."""
+    missing = BROUGHT - 2 - len(back)
+    if missing < 0:
+        return None
+    unseen = [m for m in range(members) if m not in leads and m not in back]
+    return [tuple(leads) + tuple(sorted(set(back) | set(more))) for more in itertools.combinations(unseen, missing)]
