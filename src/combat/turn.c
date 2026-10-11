@@ -3301,6 +3301,250 @@ static duoforge_status dfi_thief(dfi_run *r, uint32_t user, uint32_t target, uin
     return DUOFORGE_OK;
 }
 
+/* ---------------------------------------------------------------------------------------------------------------------
+ * Step G85, the item thefts of two abilities (decision 0015 entry 5bu): Pickpocket (data/abilities.ts:3239-3261,
+ * onAfterMoveSecondary) and Magician (data/abilities.ts:2477-2499, onAfterMoveSecondarySelf). Both are the pin's
+ * takeItem (sim/pokemon.ts:1851-1866) and setItem (:1868-1889) of one item between two Pokemon, the same two calls as
+ * Thief and Covet, with two differences the lines show: the cause is the ability (id: ability + 1, id2: item + 1, the
+ * Pokemon it came from in other, the [of]), and Pickpocket prints the silent -enditem of the giver where Magician
+ * prints none (the giver's loss is derived by the consumers from ITEM_START's other, as Covet's is; events.c).
+ *   - takeItem(source) of the giver: the giver's ability before its item. Sticky Hold (live giver, a taker that is
+ *     another Pokemon) shows `-activate|giver|ability: Sticky Hold` and refuses; Unburden's onTakeItem adds its volatile
+ *     (a live giver); then the item's own onTakeItem refuses the Mega Stone of the giver's own species
+ *     (dfi_item_takeable).
+ *   - setItem(receiver) refuses a receiver that has fainted (the item goes back to the giver: no line, the TakeItem
+ *     effects of the giver stay). Pickpocket's restore is `source.item = id`, Magician's the same, then Magician goes on
+ *     to the next target.
+ *   - setItem runs the item's onStart: Air Balloon prints `-item|receiver|Air Balloon` (ITEM_SHOWN, before the item
+ *     lines); a White Herb with a lowered stat, a terrain seed with its terrain up, and a Mega Stone of the receiver's
+ *     own species (setItem has no TakeItem check in the pin, but the engine's mega_capable is a sheet invariant:
+ *     battle_internal.h) are refused with E_UNSUPPORTED, decided before anything changes.
+ * Pickpocket's line order: the receiver's onStart (ITEM_SHOWN), then the silent -enditem of the giver (ITEM_END), then
+ * -item of the receiver (ITEM_START). Magician's: ITEM_SHOWN, then ITEM_START. The Sheer Force gate: Pickpocket is not
+ * gated (the Champions afterMoveSecondaryEvent, data/mods/champions/scripts.ts:594-600); Magician is (the user's
+ * AfterMoveSecondarySelf is skipped, sim/battle-actions.ts:536). ------------------------------------------------------- */
+
+/* ITEM_START of an item that an ability gave: cause ABILITY, id the ability + 1, id2 the item + 1, other the giver. */
+static void dfi_emit_item_received_by(dfi_run *r, uint32_t flat, uint32_t code, uint32_t ability1, uint32_t from)
+{
+    duoforge_event e = dfi_ev(DUOFORGE_EVENT_ITEM_START, flat, DUOFORGE_CAUSE_ABILITY, code, from);
+    e.id = (uint16_t)ability1;
+    dfi_emit(r, &e); /* -item|X|Item|[from] ability: A|[of] Y */
+}
+
+/* The silent -enditem of the giver (Pickpocket): ITEM_END, cause ABILITY, id the ability + 1, id2 the item + 1, other the
+ * [of] Pokemon (the attacker, its own position). */
+static void dfi_emit_item_left_by(dfi_run *r, uint32_t flat, uint32_t code, uint32_t ability1, uint32_t of)
+{
+    duoforge_event e = dfi_ev(DUOFORGE_EVENT_ITEM_END, flat, DUOFORGE_CAUSE_ABILITY, code, of);
+    e.id = (uint16_t)ability1;
+    dfi_emit(r, &e); /* -enditem|X|Item|[silent]|[from] ability: A|[of] Y */
+}
+
+/* Air Balloon's onStart when setItem gives it (step G67, gravity unmarked): the receiver's own -item line. */
+static void dfi_emit_balloon_on_receive(dfi_run *r, uint32_t flat, uint32_t code)
+{
+    if (code == 1u + DFI_ITEM_AIRBALLOON) {
+        duoforge_event shown = dfi_ev(DUOFORGE_EVENT_ITEM_SHOWN, flat, DUOFORGE_CAUSE_NONE, code, DUOFORGE_NO_POSITION);
+        dfi_emit(r, &shown);
+    }
+}
+
+/* Whether a setItem of `code` on the member at `flat` is refused or uses the item at once: decided before anything changes.
+ * A Mega Stone of the receiver's own species is refused (E_UNSUPPORTED; the engine's mega_capable is fixed by the sheet). */
+static bool dfi_theft_unsupported(struct duoforge_battle *b, uint32_t flat, uint32_t code)
+{
+    const dfi_member *rm = dfi_at(b, flat);
+    return dfi_stone_refused_for(rm, code) || dfi_start_uses_item(b, flat, code);
+}
+
+/* Pickpocket's theft from the attacker `user` by the holder `holder` (the pin's onAfterMoveSecondary(target, source, move)
+ * with target = holder, source = user). The caller checks the move hit the holder and runs this once per holder in
+ * speed order. `contact` is the move's contact flag. */
+static duoforge_status dfi_pickpocket(dfi_run *r, uint32_t holder, uint32_t user, bool contact)
+{
+    struct duoforge_battle *b = r->b;
+    dfi_member *hm = dfi_at(b, holder);
+    dfi_member *um = dfi_at(b, user);
+    if (hm == NULL || um == NULL || holder == user || !contact) {
+        return DUOFORGE_OK; /* source !== target and move.flags.contact */
+    }
+    if (dfi_item_code(b, hm) != 0u) {
+        return DUOFORGE_OK; /* target.item: the holder holds one already */
+    }
+    if (dfi_pos(b, holder)->switch_flag != DFI_SWITCH_NONE || ((r->drag_pending >> holder) & 1u) != 0u) {
+        return DUOFORGE_OK; /* target.switchFlag || target.forceSwitchFlag */
+    }
+    if (dfi_pos(b, user)->switch_flag == DFI_SWITCH_EMERGENCY_EXIT) {
+        return DUOFORGE_OK; /* source.switchFlag === true */
+    }
+    const uint32_t yours = dfi_item_code(b, um);
+    if (yours == 0u) {
+        return DUOFORGE_OK; /* source.takeItem: no item, undefined */
+    }
+    if (um->hp != 0u && dfi_ability(b, um, DFI_ABILITY_STICKYHOLD)) {
+        const duoforge_event block = dfi_ev(DUOFORGE_EVENT_ACTIVATE, user, DUOFORGE_CAUSE_ABILITY,
+                                            1u + DFI_ABILITY_STICKYHOLD, DUOFORGE_NO_POSITION);
+        dfi_emit(r, &block); /* -activate|attacker|ability: Sticky Hold: the taker is another Pokemon */
+        return DUOFORGE_OK;
+    }
+    if (!dfi_item_takeable(b, um)) {
+        dfi_unburden_on_take(b, user); /* the TakeItem handlers ran: Unburden's volatile, then the stone refuses */
+        return DUOFORGE_OK;
+    }
+    if (hm->hp != 0u && dfi_theft_unsupported(b, holder, yours)) {
+        return DUOFORGE_E_UNSUPPORTED; /* decided before anything changes */
+    }
+    dfi_unburden_on_take(b, user);
+    if (hm->hp == 0u) {
+        return DUOFORGE_OK; /* setItem refuses a fainted holder: the item goes back to the attacker, no line */
+    }
+    dfi_emit_balloon_on_receive(r, holder, yours);
+    duoforge_event left = dfi_ev(DUOFORGE_EVENT_ITEM_END, user, DUOFORGE_CAUSE_ABILITY, yours, user);
+    left.id = (uint16_t)(1u + DFI_ABILITY_PICKPOCKET); /* wide-operands-reviewed: an ability code, < 256 */
+    dfi_emit(r, &left); /* the silent -enditem of the attacker */
+    dfi_set_held(b, user, 0u);
+    dfi_set_held(b, holder, yours);
+    dfi_emit_item_received_by(r, holder, yours, 1u + DFI_ABILITY_PICKPOCKET, user);
+    return DUOFORGE_OK;
+}
+
+/* Pickpocket for the reached targets of one move (the holders are the pin's handlers of the AfterMoveSecondary event).
+ * Two or more AfterMoveSecondary handlers of priority 0 in one move are not modelled: a Pickpocket holder with another
+ * priority-0 handler (a second Pickpocket, a Red Card holder, a frozen target, the same holder twice) is E_UNSUPPORTED,
+ * since the pin orders them by speed and draws on a tie (sim/battle.ts:404-456), and the order of their lines is not
+ * modelled either. Red Card and the thaw with each other are left as they are (decision 0015 entry 5bu, the known gap).
+ * `hit` is the reached targets (after the hit loop, as the Red Card block reads it). */
+static duoforge_status dfi_pickpocket_all(dfi_run *r, uint32_t user, const uint32_t targets[DFI_POSITIONS],
+                                          const bool hit[DFI_POSITIONS], uint32_t count, bool contact)
+{
+    struct duoforge_battle *b = r->b;
+    uint32_t holders[DFI_POSITIONS] = {0u, 0u, 0u, 0u};
+    uint32_t n = 0u;
+    uint32_t others = 0u; /* the priority-0 handlers that are not a Pickpocket holder */
+    for (uint32_t i = 0u; i < count; ++i) {
+        if (!hit[i] || targets[i] == user) {
+            continue;
+        }
+        const dfi_member *tm = dfi_at(b, targets[i]);
+        if (tm == NULL) {
+            continue;
+        }
+        if (dfi_ability(b, tm, DFI_ABILITY_PICKPOCKET)) {
+            holders[n] = targets[i];
+            n += 1u;
+        }
+        others += (dfi_holds(b, tm, DFI_ITEM_REDCARD) ? 1u : 0u) + (tm->status == DFI_STATUS_FRZ ? 1u : 0u);
+    }
+    if (n == 0u) {
+        return DUOFORGE_OK;
+    }
+    if (others != 0u || n > 1u) {
+        /* the order is not modelled: any other handler with them, or two Pickpocket holders, which is also a tie or a speed
+         * order. Two holders at one speed draw (sim/battle.ts:429-456); two holders at different speeds would be ordered by
+         * the sort, which needs the lines of both. Refused for two holders, unless their speeds differ and none has another
+         * handler: then the faster goes first. */
+        if (others != 0u) {
+            return DUOFORGE_E_UNSUPPORTED;
+        }
+        if (r->speed_seen[holders[0]] == r->speed_seen[holders[1]]) {
+            return DUOFORGE_E_UNSUPPORTED; /* an exact tie draws */
+        }
+        if (n > 2u) {
+            return DUOFORGE_E_UNSUPPORTED; /* only two holders are modelled */
+        }
+        if (r->speed_seen[holders[1]] > r->speed_seen[holders[0]]) {
+            const uint32_t t = holders[0];
+            holders[0] = holders[1];
+            holders[1] = t;
+        }
+    }
+    for (uint32_t k = 0u; k < n; ++k) {
+        const duoforge_status st = dfi_pickpocket(r, holders[k], user, contact);
+        if (st != DUOFORGE_OK) {
+            return st;
+        }
+    }
+    return DUOFORGE_OK;
+}
+
+/* Magician for the user (the pin's onAfterMoveSecondarySelf(source, target, move): the user takes an item from the first
+ * target of hitTargets, in speed order, that holds one). `reached` is the move's hitTargets (the targets that survived the
+ * hit steps, a Substitute's target included: decision 0032; sim/battle-actions.ts:605-614). The caller checks the move's
+ * result (any target reached), that the user's Sheer Force does not strip the move, and that it is not a Status move. */
+static duoforge_status dfi_magician(dfi_run *r, uint32_t user, const uint32_t targets[DFI_POSITIONS],
+                                    const bool reached[DFI_POSITIONS], uint32_t count, uint32_t move_id)
+{
+    struct duoforge_battle *b = r->b;
+    dfi_member *um = dfi_at(b, user);
+    if (um == NULL || dfi_pos(b, user)->switch_flag == DFI_SWITCH_EMERGENCY_EXIT) {
+        return DUOFORGE_OK; /* source.switchFlag === true */
+    }
+    if (dfi_item_code(b, um) != 0u || move_id == DFI_MOVE_FLING) {
+        return DUOFORGE_OK; /* source.item; fling (the user's item is the one it threw). The gem volatile: no gem is marked. */
+    }
+    uint32_t list[DFI_POSITIONS] = {0u, 0u, 0u, 0u};
+    uint32_t n = 0u;
+    for (uint32_t i = 0u; i < count; ++i) {
+        if (reached[i]) {
+            list[n] = targets[i];
+            n += 1u;
+        }
+    }
+    if (n == 0u) {
+        return DUOFORGE_OK; /* hitTargets is empty */
+    }
+    /* speedSort(hitTargets): an exact speed tie among them draws (sim/battle.ts:429-456), which is not modelled: refused. */
+    for (uint32_t i = 0u; i < n; ++i) {
+        for (uint32_t j = i + 1u; j < n; ++j) {
+            if (r->speed_seen[list[i]] == r->speed_seen[list[j]]) {
+                return DUOFORGE_E_UNSUPPORTED;
+            }
+        }
+    }
+    for (uint32_t i = 1u; i < n; ++i) { /* faster first: no ties, so the order is exact */
+        for (uint32_t j = i; j > 0u && r->speed_seen[list[j]] > r->speed_seen[list[j - 1u]]; --j) {
+            const uint32_t t = list[j];
+            list[j] = list[j - 1u];
+            list[j - 1u] = t;
+        }
+    }
+    for (uint32_t k = 0u; k < n; ++k) {
+        const uint32_t t = list[k];
+        if (t == user) {
+            continue;
+        }
+        dfi_member *tm = dfi_at(b, t);
+        const uint32_t yours = tm == NULL ? 0u : dfi_item_code(b, tm);
+        if (yours == 0u) {
+            continue; /* takeItem: no item */
+        }
+        if (tm->hp != 0u && dfi_ability(b, tm, DFI_ABILITY_STICKYHOLD)) {
+            const duoforge_event block = dfi_ev(DUOFORGE_EVENT_ACTIVATE, t, DUOFORGE_CAUSE_ABILITY,
+                                                1u + DFI_ABILITY_STICKYHOLD, DUOFORGE_NO_POSITION);
+            dfi_emit(r, &block); /* -activate|target|ability: Sticky Hold, the taker is another Pokemon */
+            continue;
+        }
+        if (!dfi_item_takeable(b, tm)) {
+            dfi_unburden_on_take(b, t); /* the TakeItem handlers ran; the stone of the target's species refuses */
+            continue;
+        }
+        if (um->hp != 0u && dfi_theft_unsupported(b, user, yours)) {
+            return DUOFORGE_E_UNSUPPORTED; /* decided before anything changes */
+        }
+        dfi_unburden_on_take(b, t);
+        if (um->hp == 0u) {
+            continue; /* setItem refuses a fainted user: the item stays with the target; the loop goes on */
+        }
+        dfi_emit_balloon_on_receive(r, user, yours);
+        dfi_set_held(b, t, 0u);
+        dfi_set_held(b, user, yours);
+        dfi_emit_item_received_by(r, user, yours, 1u + DFI_ABILITY_MAGICIAN, t);
+        return DUOFORGE_OK;
+    }
+    return DUOFORGE_OK;
+}
+
 /* White Herb's check (onStart, data/items.ts): its standing holder has a
  * lowered stat. */
 static bool dfi_herb_due(struct duoforge_battle *b, uint32_t flat)
@@ -8323,6 +8567,15 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
                 }
             }
         }
+        /* Pickpocket (step G85, data/abilities.ts:3239-3261): the AfterMoveSecondary of the holders the move reached, after
+         * Red Card and before the targets' Emergency Exit. Not gated by the attacker's Sheer Force (the Champions
+         * afterMoveSecondaryEvent, data/mods/champions/scripts.ts:594-600). Its refusals are in dfi_pickpocket_all. */
+        if (!status_move && any) {
+            st = dfi_pickpocket_all(r, user, targets, hit, count, (md->flags & DFI_MOVE_FLAG_CONTACT) != 0u);
+            if (st != DUOFORGE_OK) {
+                return st;
+            }
+        }
         /* After the secondaries of the hit loop: a target that fell to half
          * HP (sim/battle-actions.ts:1005-1017). A Sheer Force holder's stripped move
          * does not check it (step G61, data/mods/champions/scripts.ts:578, the
@@ -8366,6 +8619,16 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
     if (any && md->special == DFI_SPECIAL_SCALE_SHOT && m->hp != 0u) {
         static const uint8_t def_down_spe_up[DFI_STAT_STAGE_COUNT] = {6u, 5u, 6u, 6u, 7u, 6u, 6u};
         (void)dfi_boost(r, user, def_down_spe_up, DFI_POSITIONS, dfi_effect(DUOFORGE_CAUSE_MOVE, 0u, DFI_BOOST_SELF));
+    }
+    /* Magician (step G85, data/abilities.ts:2477-2499, onAfterMoveSecondarySelf of the user): the user without an item takes
+     * one from the reached targets, faster first. Gated like the rest of the user's AfterMoveSecondarySelf: a Sheer Force
+     * user whose move it strips is skipped (sim/battle-actions.ts:536). hitTargets is the pre-loop survivors (hit_all): a
+     * Substitute's target counts (decision 0032). A Status move is excluded by the pin. */
+    if (any && !status_move && !dfi_sf_strips(r->b, m, md)) {
+        st = dfi_magician(r, user, targets, hit_all, count, move_id);
+        if (st != DUOFORGE_OK) {
+            return st;
+        }
     }
     /* AfterMoveSecondarySelf: Life Orb takes a tenth of the holder's HP
      * (at least 1) after a damaging move that hit something, unless the holder

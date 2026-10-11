@@ -2806,7 +2806,7 @@ ENGINE_ROWS = {'items': ['airballoon', 'focussash', 'floettite', 'psychicseed', 
                              'regenerator', 'toxicdebris', 'shadowtag', 'suctioncups', 'guarddog',
                              'steadfast', 'weakarmor', 'telepathy', 'voltabsorb', 'punkrock', 'moxie', 'synchronize', 'oblivious', 'keeneye', 'bigpecks', 'magicbounce', 'pressure', 'stancechange',
                              'sandforce', 'shellarmor', 'filter', 'stalwart', 'megalauncher', 'hugepower', 'thickfat', 'firemane', 'spicyspray', 'megasol', 'sheerforce', 'illusion', 'symbiosis',
-                             'unaware', 'marvelscale', 'waterbubble', 'reckless', 'superluck', 'moody']}
+                             'unaware', 'marvelscale', 'waterbubble', 'reckless', 'superluck', 'moody', 'pickpocket', 'magician']}
 # The moves of the whole pool that the turn code pivots with a switch flag of their own (dfi_pivot_moves,
 # src/state/closure_member.c) beyond Flip Turn and U-turn, which are rows of the steps. Empty: Volt Switch comes with the
 # step that gives it a flag value, and adds its id here.
@@ -3821,11 +3821,36 @@ G69_ABILITY_FACTS = (
 )
 
 
+# Step G85, Pickpocket and Magician (data/abilities.ts:3239-3261 and :2477-2499; decision 0015 entry 5bu): the pinned texts that
+# dfi_pickpocket and dfi_magician (src/combat/turn.c) hard-code: the holder's own checks, takeItem of the other Pokemon, setItem
+# on the holder or the user, the restore when setItem refuses, the lines (the silent -enditem of Pickpocket, the -item of both).
+# The Champions mod has no entry of its own (checked by check_g34_facts for every G-step ability).
+G85_ABILITY_FACTS = (
+    ('pickpocket', ("onAfterMoveSecondary(target, source, move) {",
+                    "if (source && source !== target && move?.flags['contact']) {",
+                    "if (target.item || target.switchFlag || target.forceSwitchFlag || source.switchFlag === true) {",
+                    "const yourItem = source.takeItem(target);",
+                    "if (!target.setItem(yourItem)) {",
+                    "source.item = yourItem.id;",
+                    "this.add('-enditem', source, yourItem, '[silent]', '[from] ability: Pickpocket', `[of] ${source}`);",
+                    "this.add('-item', target, yourItem, '[from] ability: Pickpocket', `[of] ${source}`);",
+                    'flags: {},')),
+    ('magician', ("onAfterMoveSecondarySelf(source, target, move) {",
+                  "if (!move || source.switchFlag === true || !move.hitTargets || source.item || source.volatiles['gem'] ||",
+                  "move.id === 'fling' || move.category === 'Status') return;",
+                  "this.speedSort(hitTargets);",
+                  "const yourItem = pokemon.takeItem(source);",
+                  "if (!source.setItem(yourItem)) {",
+                  "pokemon.item = yourItem.id;",
+                  "this.add('-item', source, yourItem, '[from] ability: Magician', `[of] ${pokemon}`);",
+                  'flags: {},')),
+)
+
 def check_g34_facts(abil_ts, champ_abil, items_ts, champ_items):
     """Steps G34, G35, Mega batch 2 and G39: every fact of G34_ABILITY_FACTS, G35_ABILITY_FACTS, MEGA2_ABILITY_FACTS, G39_ABILITY_FACTS and G34_ITEM_FACTS is in the pinned entry, whitespace aside, and the
     Champions mod has no entry of its own for it (an override would change what the engine reads). Step G59: the Champions
     entry of a G59_INHERIT_ONLY ability may only inherit (`inherit: true`, `isNonstandard: null`), which is no override."""
-    for kind, facts_by_id, src, champ in (('ability', G34_ABILITY_FACTS + G35_ABILITY_FACTS + MEGA2_ABILITY_FACTS + G39_ABILITY_FACTS + G41_ABILITY_FACTS + G45_ABILITY_FACTS + G46_ABILITY_FACTS + G47_ABILITY_FACTS + G51_ABILITY_FACTS + G53_ABILITY_FACTS + G63_ABILITY_FACTS + G59_ABILITY_FACTS + G69_ABILITY_FACTS + G65_ABILITY_FACTS + G73_ABILITY_FACTS + G67_ABILITY_FACTS, abil_ts, champ_abil),
+    for kind, facts_by_id, src, champ in (('ability', G34_ABILITY_FACTS + G35_ABILITY_FACTS + MEGA2_ABILITY_FACTS + G39_ABILITY_FACTS + G41_ABILITY_FACTS + G45_ABILITY_FACTS + G46_ABILITY_FACTS + G47_ABILITY_FACTS + G51_ABILITY_FACTS + G53_ABILITY_FACTS + G63_ABILITY_FACTS + G59_ABILITY_FACTS + G69_ABILITY_FACTS + G65_ABILITY_FACTS + G73_ABILITY_FACTS + G67_ABILITY_FACTS + G85_ABILITY_FACTS, abil_ts, champ_abil),
                                           ('item', G34_ITEM_FACTS + G46_ITEM_FACTS + G47_ITEM_FACTS + G67_ITEM_FACTS, items_ts, champ_items)):
         for rid, facts in facts_by_id:
             e = src.entry(rid)

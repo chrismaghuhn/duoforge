@@ -33,7 +33,7 @@
 #include "reference/conformance_pool.h"
 #include "support/pool.h"
 #define DF_CONF_FORMES dfi_pool_formes
-#define DF_POOL_DATA_BATTLES 811u /* main G67 and #342 battles included (793 on main) + the recorded pool battles: the six C2 battles (three covering, pair run 9007), the three G94 Baneful Bunker battles, 762 on main, the seven G88 battles (g88_*), the two C1 battles (c1_*) */
+#define DF_POOL_DATA_BATTLES 813u /* main G67 and #342 battles included (793 on main) + the recorded pool battles: the six C2 battles (three covering, pair run 9007), the three G94 Baneful Bunker battles, 762 on main, the seven G88 battles (g88_*), the two C1 battles (c1_*), the two G85 battles (g85_*) */
 #elif defined(DF_CONFORMANCE_TEAM_C)
 #include "data/extended_tables.h"
 #include "reference/conformance_team_c.h"

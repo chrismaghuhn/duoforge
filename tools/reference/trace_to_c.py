@@ -1096,6 +1096,10 @@ def ev_pos(text):
     return None
 
 
+# Step G85: the ability forms of the item lines (Pickpocket's silent -enditem, Pickpocket's and Magician's -item).
+PICKPOCKET_FROM = '[from] ability: Pickpocket'
+MAGICIAN_FROM = '[from] ability: Magician'
+
 def ev_tuple(kind, position=NOPOS, other=NOPOS, cause=0, ident=0, ident2=0, hp=0, hp_max=0, hp_kind=0,
              hp_flag=0, status=0, detail=0, amount=0, flags=0):
     return (kind, position, other, cause, ident, ident2, hp, hp_max, hp_kind, hp_flag, status, detail, amount, flags)
@@ -1477,7 +1481,9 @@ def step_events(log, viewer, roster_of, maxhp, tables, rb_pending=None, ill=None
         # it silent, step G29): the engine's ITEM_END for it is how the other player's old item_used learns that the item left.
         # Regenerator's heal (step G39, the Champions mod) is the one [silent] line that shows: no client prints a message, but the line
         # carries the holder's new HP, which the opponent's display of the member follows.
+        # Step G85: Pickpocket's silent `-enditem|ATT|Item|[silent]|[from] ability: Pickpocket|[of] ATT` is the giver's loss (ITEM_END).
         if '[silent]' in attrs and not ((kind == '-enditem' and any(a.startswith('[from] move: ') for a in attrs)) or
+                                        (kind == '-enditem' and PICKPOCKET_FROM in attrs) or
                                         (kind == '-heal' and '[from] ability: Regenerator' in attrs)):
             continue
         args = [x for x in parts[2:] if not x.startswith('[')]
@@ -1931,6 +1937,16 @@ def step_events(log, viewer, roster_of, maxhp, tables, rb_pending=None, ill=None
                     'move: Sticky Web': 8}[args[1]]
             _, _, of = ev_cause(attrs, tables)  # -sideend|side|move: Toxic Spikes|[of] POKEMON: a grounded Poison type absorbed them
             e = ev_tuple(EV['SIDE_START' if kind == '-sidestart' else 'SIDE_END'], NOPOS, of, detail=side, amount=cond)
+        elif kind == '-enditem' and PICKPOCKET_FROM in attrs:
+            # Step G85 (Pickpocket, data/abilities.ts:3253): `-enditem|ATT|Item|[silent]|[from] ability: Pickpocket|[of] ATT`, the
+            # attacker's item that the holder took: ITEM_END with cause ABILITY, the ability + 1 in id, the item + 1 in id2, and the
+            # [of] (the attacker, which is the line's position) in other. Any other shape is refused.
+            of = [a for a in attrs if a.startswith('[of] ')]
+            extra = [a for a in attrs if a not in (PICKPOCKET_FROM, '[silent]') and not a.startswith('[of] ')]
+            if (len(of) != 1 or extra or '[silent]' not in attrs or len(args) != 2 or ev_pos(of[0][5:]) != ev_pos(args[0])):
+                raise ConversionError('enditem-line', 'trace_to_c: unknown -enditem %r' % line, detail=line)
+            e = ev_tuple(EV['ITEM_END'], ev_pos(args[0]), ev_pos(of[0][5:]), CAUSE['ABILITY'],
+                         tables['ABILITY'][key('Pickpocket')] + 1, tables['ITEM'][key(args[1])] + 1)
         elif kind == '-enditem':
             taken = [a for a in attrs if a.startswith('[from] move: ')]
             if taken:
@@ -1969,6 +1985,17 @@ def step_events(log, viewer, roster_of, maxhp, tables, rb_pending=None, ill=None
                 e = ev_tuple(EV['ITEM_END'], ev_pos(args[0]), ev_pos(of_attacker[0][5:]) if of_attacker else NOPOS, 0, 0,
                              tables['ITEM'][key(args[1])] + 1,
                              detail=1 if '[weaken]' in attrs else 0, flags=FLAG['EATEN'] if '[eat]' in attrs else 0)
+        elif kind == '-item' and any(a in (PICKPOCKET_FROM, MAGICIAN_FROM) for a in attrs):
+            # Step G85 (Pickpocket, data/abilities.ts:3257; Magician, :2491): `-item|X|Item|[from] ability: A|[of] Y`, the item that
+            # the ability gave X: ITEM_START with cause ABILITY, the ability + 1 in id, the item + 1 in id2 and the giver (Y) in
+            # other. Magician's giver shows no line of its own (its loss is derived from this event, as Covet's is).
+            ab = [a for a in attrs if a.startswith('[from] ability: ')]
+            of = [a for a in attrs if a.startswith('[of] ')]
+            extra = [a for a in attrs if a not in ab and a not in of]
+            if len(ab) != 1 or len(of) != 1 or extra or len(args) != 2:
+                raise ConversionError('item-line', 'trace_to_c: unknown -item %r' % line, detail=line)
+            e = ev_tuple(EV['ITEM_START'], ev_pos(args[0]), ev_pos(of[0][5:]), CAUSE['ABILITY'],
+                         tables['ABILITY'][key(ab[0][len('[from] ability: '):])] + 1, tables['ITEM'][key(args[1])] + 1)
         elif kind == '-item' and not attrs and len(args) == 2:
             # step G67 (decision 0033): the holder's own announcement at its switch-in (Air Balloon's onStart, items.ts:191-195):
             # ITEM_SHOWN, position the holder, id2 the item + 1, cause NONE. Only the item of the pool is looked up here.

@@ -1452,7 +1452,7 @@ class ItemAbilityFeatures(unittest.TestCase):
                                                                  'steadfast', 'weakarmor', 'telepathy', 'voltabsorb', 'punkrock', 'moxie',
                                                                  'synchronize', 'oblivious', 'keeneye', 'bigpecks', 'magicbounce', 'pressure', 'stancechange',
                                                                  'sandforce', 'shellarmor', 'filter', 'stalwart', 'megalauncher', 'hugepower', 'thickfat', 'firemane', 'spicyspray', 'megasol', 'sheerforce', 'illusion', 'symbiosis',
-                                                                 'unaware', 'marvelscale', 'waterbubble', 'reckless', 'superluck', 'moody']})
+                                                                 'unaware', 'marvelscale', 'waterbubble', 'reckless', 'superluck', 'moody', 'pickpocket', 'magician']})
 
 
 class Bounds(unittest.TestCase):

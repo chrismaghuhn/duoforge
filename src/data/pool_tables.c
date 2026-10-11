@@ -2148,7 +2148,7 @@ const dfi_pool_item_data dfi_pool_items[DFI_POOL_ITEM_COUNT] = {
  *   longreach -- data/abilities.ts:2428-2436  [unmodelled: callback onModifyMove]
  *   magicbounce -- data/abilities.ts:2437-2464
  *   magicguard -- data/abilities.ts:2465-2476
- *   magician -- data/abilities.ts:2477-2500  [unmodelled: callback onAfterMoveSecondarySelf]
+ *   magician -- data/abilities.ts:2477-2500
  *   magmaarmor -- data/abilities.ts:2501-2515  [unmodelled: callback onImmunity; callback onUpdate]
  *   marvelscale -- data/abilities.ts:2534-2545
  *   megalauncher -- data/abilities.ts:2546-2557
@@ -2169,7 +2169,7 @@ const dfi_pool_item_data dfi_pool_items[DFI_POOL_ITEM_COUNT] = {
  *   overcoat -- data/abilities.ts:3108-3123
  *   owntempo -- data/abilities.ts:3144-3169  [unmodelled: callback onHit; callback onTryAddVolatile; callback onTryBoost; callback onUpdate]
  *   parentalbond -- data/abilities.ts:3170-3188  [unmodelled: callback onPrepareHit; callback onSourceModifySecondaries; read by id in data/mods/champions/scripts.ts; read by id in sim/battle-actions.ts]
- *   pickpocket -- data/abilities.ts:3239-3261  [unmodelled: callback onAfterMoveSecondary]
+ *   pickpocket -- data/abilities.ts:3239-3261
  *   pickup -- data/abilities.ts:3262-3281  [unmodelled: callback onResidual; callback onResidualOrder; callback onResidualSubOrder; read by id in sim/battle.ts]
  *   piercingdrill -- data/abilities.ts:3282-3295, data/mods/champions/abilities.ts:59-62  [unmodelled: callback onHitProtect]
  *   plus -- data/abilities.ts:3317-3330  [unmodelled: callback onModifySpA; callback onModifySpAPriority; read by id in data/abilities.ts; read by id in data/moves.ts]
@@ -2927,7 +2927,7 @@ const uint8_t dfi_pool_ability_handler[DFI_POOL_ABILITY_COUNT] = {
     [DFI_ABILITY_LONGREACH] = DFI_HANDLER_UNMODELED,
     [DFI_ABILITY_MAGICBOUNCE] = DFI_HANDLER_NONE,
     [DFI_ABILITY_MAGICGUARD] = DFI_HANDLER_NONE,
-    [DFI_ABILITY_MAGICIAN] = DFI_HANDLER_UNMODELED,
+    [DFI_ABILITY_MAGICIAN] = DFI_HANDLER_NONE,
     [DFI_ABILITY_MAGMAARMOR] = DFI_HANDLER_UNMODELED,
     [DFI_ABILITY_MARVELSCALE] = DFI_HANDLER_NONE,
     [DFI_ABILITY_MEGALAUNCHER] = DFI_HANDLER_NONE,
@@ -2948,7 +2948,7 @@ const uint8_t dfi_pool_ability_handler[DFI_POOL_ABILITY_COUNT] = {
     [DFI_ABILITY_OVERCOAT] = DFI_HANDLER_NONE,
     [DFI_ABILITY_OWNTEMPO] = DFI_HANDLER_UNMODELED,
     [DFI_ABILITY_PARENTALBOND] = DFI_HANDLER_UNMODELED,
-    [DFI_ABILITY_PICKPOCKET] = DFI_HANDLER_UNMODELED,
+    [DFI_ABILITY_PICKPOCKET] = DFI_HANDLER_NONE,
     [DFI_ABILITY_PICKUP] = DFI_HANDLER_UNMODELED,
     [DFI_ABILITY_PIERCINGDRILL] = DFI_HANDLER_UNMODELED,
     [DFI_ABILITY_PLUS] = DFI_HANDLER_UNMODELED,
@@ -7051,7 +7051,6 @@ const char *const dfi_pool_ability_unmodeled[DFI_POOL_ABILITY_COUNT] = {
     [DFI_ABILITY_LIGHTMETAL] = "callback onModifyWeight",
     [DFI_ABILITY_LIQUIDOOZE] = "callback onSourceTryHeal",
     [DFI_ABILITY_LONGREACH] = "callback onModifyMove",
-    [DFI_ABILITY_MAGICIAN] = "callback onAfterMoveSecondarySelf",
     [DFI_ABILITY_MAGMAARMOR] = "callback onImmunity; callback onUpdate",
     [DFI_ABILITY_MERCILESS] = "callback onModifyCritRatio",
     [DFI_ABILITY_MIMICRY] = "callback onStart; callback onSwitchInPriority; callback onTerrainChange",
@@ -7063,7 +7062,6 @@ const char *const dfi_pool_ability_unmodeled[DFI_POOL_ABILITY_COUNT] = {
     [DFI_ABILITY_OPPORTUNIST] = "callback onAnyAfterMega; callback onAnyAfterMove; callback onAnyAfterTerastallization; callback onAnySwitchIn; callback onAnySwitchInPriority; callback onEnd; callback onFoeAfterBoost; callback onResidual; callback onResidualOrder",
     [DFI_ABILITY_OWNTEMPO] = "callback onHit; callback onTryAddVolatile; callback onTryBoost; callback onUpdate",
     [DFI_ABILITY_PARENTALBOND] = "callback onPrepareHit; callback onSourceModifySecondaries; read by id in data/mods/champions/scripts.ts; read by id in sim/battle-actions.ts",
-    [DFI_ABILITY_PICKPOCKET] = "callback onAfterMoveSecondary",
     [DFI_ABILITY_PICKUP] = "callback onResidual; callback onResidualOrder; callback onResidualSubOrder; read by id in sim/battle.ts",
     [DFI_ABILITY_PIERCINGDRILL] = "callback onHitProtect",
     [DFI_ABILITY_PLUS] = "callback onModifySpA; callback onModifySpAPriority; read by id in data/abilities.ts; read by id in data/moves.ts",
@@ -7106,10 +7104,10 @@ const char *const dfi_pool_ability_unmodeled[DFI_POOL_ABILITY_COUNT] = {
 };
 
 const uint8_t dfi_pool_table_hash[32] = {
-    0x19u, 0xccu, 0x16u, 0x74u, 0x76u, 0xfdu, 0xb4u, 0xaau,
-    0xa5u, 0x45u, 0xc5u, 0xe4u, 0x72u, 0xa7u, 0x69u, 0x51u,
-    0x09u, 0xb2u, 0x5au, 0x6fu, 0x13u, 0x94u, 0x21u, 0x3au,
-    0xc9u, 0x0du, 0x05u, 0xecu, 0x4bu, 0xb2u, 0xafu, 0x5cu,
+    0xb3u, 0xdeu, 0x33u, 0x1du, 0x5du, 0xabu, 0x2eu, 0xcdu,
+    0x60u, 0x34u, 0x0du, 0x14u, 0xedu, 0xadu, 0x45u, 0xaau,
+    0xb0u, 0xf1u, 0x0bu, 0x13u, 0xdcu, 0x56u, 0x0eu, 0x69u,
+    0x64u, 0xaeu, 0x8bu, 0x47u, 0x95u, 0x5cu, 0x61u, 0xe7u,
 };
 
 static size_t dfi_pool_put_u16(uint8_t *out, size_t n, uint32_t v)
