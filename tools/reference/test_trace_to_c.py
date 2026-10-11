@@ -182,6 +182,31 @@ class Refusals(unittest.TestCase):
         self.control('s2_turn_core_1', lambda spec, trace: trace['steps'][1]['log'].append('|foo|bar'),
                      'protocol-line', "trace_to_c: unknown protocol line '|foo|bar'", 'foo')
 
+    def test_an_of_side_name_resolves_through_the_slot_the_name_showed(self):
+        """Step G85: a fainted Magician target is named by its side alone in [of] (`p2: Kingambit`); the slot it showed earlier in
+        the log is its position, so the battle converts to the same events as the slot form."""
+        spec, trace = battle('g85_magician_mystical')
+        before = convert('g85_magician_mystical', spec, trace)
+        spec, trace = battle('g85_magician_mystical')
+        for step in trace['steps']:
+            step['log'] = [line.replace('[of] p2a: Kingambit', '[of] p2: Kingambit') if '[from] ability: Magician' in line else line
+                           for line in step['log']]
+        self.assertEqual(convert('g85_magician_mystical', spec, trace), before)
+
+    def test_an_of_side_name_that_showed_no_slot_is_refused(self):
+        """Step G85: an [of] that cannot be resolved (a name that showed no slot in this log) stays refused, never a None position."""
+        def mutate(spec, trace):
+            for step in trace['steps']:
+                step['log'] = [line.replace('[of] p2a: Kingambit', '[of] p2: Nobody') if '[from] ability: Magician' in line else line
+                               for line in step['log']]
+            bad = [line for step in trace['steps'] for line in step['log'] if '[of] p2: Nobody' in line]
+            self.assertEqual(len(bad), 1)
+            self.bad_line = bad[0]
+        spec, trace = battle('g85_magician_mystical')
+        mutate(spec, trace)
+        self.assert_refused(lambda: convert('g85_magician_mystical', spec, trace), 'item-line',
+                            "trace_to_c: unknown -item %r" % self.bad_line, self.bad_line)
+
     def test_a_hitcount_line_is_asserted_against_the_damage_lines_and_dropped(self):
         """`|-hitcount|P|N` (multi-hit moves, data/mods/champions/scripts.ts:427-549) is no event: N must be the number of
         -damage lines the move showed on that Pokemon. A wrong N is refused; a missing line is not an error (the Champions loop

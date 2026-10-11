@@ -1,0 +1,71 @@
+{
+  "name": "g85_magician_lifeorb_regression",
+  "purpose": "G85 regression (campaign seed fz_9850000_213): Delphox (Magician, no item) takes the Life Orb of Gholdengo with a special move (Mystical Fire) in turn 7; the Life Orb holder is not one of the handlers collected before the event, so Delphox takes no recoil that turn (the handlers are collected before any of them runs, sim/battle.ts runEvent). A mutant that reads the holding at the time of the effect instead of at the start is caught by this battle.",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,77bf5f50e4e39ff8cf8d35741ffd4fb86b3cf8cff68a47359bb372e5a3a1f0a8",
+  "teams": [
+    "Rillaboom (M) @ Miracle Seed\nAbility: Grassy Surge\nLevel: 50\nEVs: 18 HP / 32 Atk / 2 Def / 6 SpD / 8 Spe\nAdamant Nature\n- Wood Hammer\n- Grassy Glide\n- Fake Out\n- High Horsepower\n\nMilotic (F) @ Sitrus Berry\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Muddy Water\n- Coil\n- Ice Beam\n- Hypnosis\n\nGholdengo @ Life Orb\nAbility: Good as Gold\nLevel: 50\nEVs: 17 HP / 2 Def / 17 SpA / 16 SpD / 14 Spe\nModest Nature\n- Make It Rain\n- Shadow Ball\n- Nasty Plot\n- Protect\n\nCeruledge (M) @ Grassy Seed\nAbility: Flash Fire\nLevel: 50\nEVs: 31 HP / 7 Atk / 24 Def / 3 SpD / 1 Spe\nAdamant Nature\n- Bitter Blade\n- Shadow Sneak\n- Swords Dance\n- Protect\n\nRaichu (F) @ Raichunite Y\nAbility: Lightning Rod\nLevel: 50\nEVs: 29 HP / 5 Def / 32 Spe\nTimid Nature\n- Zap Cannon\n- Focus Blast\n- Fake Out\n- Protect\n\nStaraptor (F) @ Staraptite\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 2 SpD / 32 Spe\nJolly Nature\n- Brave Bird\n- Close Combat\n- Tailwind\n- Protect",
+    "Ceruledge (M) @ Expert Belt\nAbility: Flash Fire\nLevel: 50\nEVs: 31 HP / 7 Atk / 24 Def / 3 SpD / 1 Spe\nBrave Nature\n- Protect\n\nSalamence (M) @ Salamencite\nAbility: Intimidate\nLevel: 50\nEVs: 2 HP / 32 SpA / 32 Spe\nTimid Nature\n- Hyper Voice\n- Draco Meteor\n- Protect\n- Tailwind\n\nGlalie (M)\nAbility: Inner Focus\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 SpD\nModest Nature\n- Sheer Cold\n- Protect\n\nMilotic (F) @ Sitrus Berry\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Triple Axel\n- Protect\n- Coil\n\nGholdengo @ Focus Sash\nAbility: Good as Gold\nLevel: 50\nEVs: 32 HP / 2 SpA / 32 SpD\nCalm Nature\n- Shadow Ball\n- Protect\n\nDelphox (F)\nAbility: Magician\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nModest Nature\n- Mystical Fire\n- Protect"
+  ],
+  "choices": [
+    {
+      "p1": "team 4163",
+      "p2": "team 1465"
+    },
+    {
+      "p1": "move 1 -2, move 2 2",
+      "p2": "move 1, move 3"
+    },
+    {
+      "p1": "move 3, move 1 2",
+      "p2": "move 1, move 3"
+    },
+    {
+      "p2": "pass, switch 3"
+    },
+    {
+      "p1": "move 4, move 2 1",
+      "p2": "move 1, move 2"
+    },
+    {
+      "p1": "move 3, move 4 1",
+      "p2": "move 1, move 2"
+    },
+    {
+      "p1": "move 2 2, move 2 -1",
+      "p2": "move 1, move 2"
+    },
+    {
+      "p1": "move 1 2, switch 4",
+      "p2": "switch 4, move 1 2"
+    },
+    {
+      "p1": "move 2 1, move 4",
+      "p2": "move 2, switch 4"
+    },
+    {
+      "p1": "move 3, switch 3",
+      "p2": "move 2, move 1"
+    },
+    {
+      "p1": "move 1 1, move 2 1",
+      "p2": "move 1 -2, move 1"
+    },
+    {
+      "p1": "switch 4, move 2 1",
+      "p2": "switch 4, move 1"
+    },
+    {
+      "p2": "switch 4, pass"
+    },
+    {
+      "p1": "move 4 2, switch 4",
+      "p2": "move 1 2, move 1"
+    },
+    {
+      "p1": "move 2 2, move 2 1",
+      "p2": "move 1 2, pass"
+    }
+  ]
+}
