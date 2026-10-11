@@ -7615,7 +7615,31 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
         }
     }
     if (status_move) {
-        return dfi_status_effects(r, user, move_id, md, targets, hit, count);
+        const duoforge_status res = dfi_status_effects(r, user, move_id, md, targets, hit, count);
+        if (res == DUOFORGE_OK && spread) {
+            /* A primary boost (Howl) that changed no stat of any target fails the whole hit loop: no target is left for the
+             * [spread] line (sim/battle-actions.ts:614-618, hitTargets). If some stat changed, every target that reached the
+             * hit stays, including one whose own stat was already at its maximum (recorded: fz_90_7 step 21 and fz_90_37 step 8). */
+            bool changed = true;
+            if (md->boost_role == DFI_BOOST_ROLE_PRIMARY_TARGET && r->events != NULL) {
+                changed = false;
+                for (uint32_t k = r->last_move + 1u; k < r->events->count; ++k) {
+                    const duoforge_event *ev = &r->events->rec[k];
+                    if ((ev->kind == DUOFORGE_EVENT_BOOST || ev->kind == DUOFORGE_EVENT_UNBOOST) && ev->amount != 0u) {
+                        changed = true;
+                    }
+                }
+            }
+            uint32_t mask = 0u;
+            for (uint32_t i = 0u; i < count && changed; ++i) {
+                mask |= hit[i] ? 1u << targets[i] : 0u;
+            }
+            duoforge_event *mv = dfi_last_move(r);
+            if (mv != NULL) {
+                mv->amount = (uint8_t)mask; /* < 16 */
+            }
+        }
+        return res;
     }
 
     /* Psychic Fangs' and Brick Break's onTryHit (step G30, data/moves.ts:14060-14078; step G34, 1822-1840, the same text): spreadMoveHit's singleEvent TryHit, after the
