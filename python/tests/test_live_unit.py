@@ -331,9 +331,11 @@ class TrackerStopTest(unittest.TestCase):
 
     def test_the_direct_costs_are_the_engines_dfi_deal_direct_sites(self):
         # G86: Belly Drum's half-HP cost is directDamage like Substitute's and Clangorous Soul's (src/combat/turn.c
-        # dfi_run_belly_drum); the three are the plain -damage of the user's own move that sets no HURT
+        # dfi_run_belly_drum), and G84b's Ghost Curse cost is too (dfi_run_curse); the four are the plain -damage of the
+        # user's own move that sets no HURT. The engine's dfi_deal(..., DFI_DMG_DIRECT) sites on batch 8: dfi_run_clangorous_soul,
+        # dfi_run_curse, dfi_run_substitute, dfi_run_belly_drum, and Struggle's recoil (DFI_MOVE_FLAG_STRUGGLE_RECOIL, folded apart)
         from duoforge_live import tracker
-        self.assertEqual(set(tracker.DIRECT_COST_MOVES), {"SUBSTITUTE", "CLANGOROUSSOUL", "BELLYDRUM"})
+        self.assertEqual(set(tracker.DIRECT_COST_MOVES), {"SUBSTITUTE", "CLANGOROUSSOUL", "BELLYDRUM", "CURSE"})
 
     def test_leech_seed_source_comes_from_the_move_line_and_the_drain_must_agree(self):
         # G84 (decision 0047): -start|X|move: Leech Seed has no [of]; the seed's source is the user of the move line before
@@ -726,6 +728,7 @@ class TrackerPartialTrapTest(unittest.TestCase):
         tr, D = self.tracker, self.D
         t = tr.Tracker.__new__(tr.Tracker)
         t.data, t.side, t._spectator = D, 0, True  # the spectator path: every display comes from its line
+        t._action, t._herb_end, t._last_move = None, None, None  # Tracker.__init__ sets them; _segment reads them
         t._baton_pass = self.M["BATONPASS"]
         t._trap_moves = {self.M[k] for k in ("BIND", "WRAP", "FIRESPIN", "SANDTOMB", "INFESTATION")}
         t._next_activation, t._foe_leads, t._party, t._after_upkeep = 1, [tr.ROSTER_NONE] * 2, None, False
@@ -939,7 +942,7 @@ class TrackerPartialTrapTest(unittest.TestCase):
         self.residual(2, "Bind")
         self.start(1, 3, "Wrap")
         self.leave(3, "FAINT")  # the source of the second trap left
-        self.assertEqual(record.unrecorded_folds(t), [])
+        # (record.unrecorded_folds is gone since #342: the assembler writes every fold, so no refusal list is left to check)
         size = max(start + length for start, length in record._FIELDS.values())
         s = record._State(size)
         record._tail(t, s, C["DUOFORGE_BOUNDARY_PIVOT"])

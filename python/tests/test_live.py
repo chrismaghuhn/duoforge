@@ -349,6 +349,9 @@ class CurseTest(unittest.TestCase):
         t._foe_leads = [self.tracker.ROSTER_NONE, self.tracker.ROSTER_NONE]
         t._party = None
         t._baton_pass = -1
+        t._action, t._herb_end, t._last_move = None, None, None  # Tracker.__init__ sets them; _segment reads them
+        t._guards = set()
+        t._hazards = [self.tracker.collections.Counter(), self.tracker.collections.Counter()]
         return t
 
     def start(self, t, pos=2, source=0):
