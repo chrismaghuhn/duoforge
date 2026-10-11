@@ -1517,7 +1517,9 @@ int main(void)
                                                 /* step G76: Destiny Bond and Final Gambit (decision 0015 5cg) */
                                                 DFI_MOVE_DESTINYBOND, DFI_MOVE_FINALGAMBIT,
                                                 /* step G78: Dragon Darts (decision 0043) */
-                                                DFI_MOVE_DRAGONDARTS};
+                                                DFI_MOVE_DRAGONDARTS,
+                                                /* step G94: Baneful Bunker (decision 0015 5cv, protect_kind 3) */
+                                                DFI_MOVE_BANEFULBUNKER};
         uint32_t marked_count = 0u;
         for (uint32_t id = DFI_EXT_MOVE_COUNT; id < DFI_POOL_MOVE_COUNT; ++id) {
             bool want = false;
