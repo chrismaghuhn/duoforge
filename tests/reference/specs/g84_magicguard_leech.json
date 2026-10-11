@@ -1,0 +1,24 @@
+{
+  "name": "g84_magicguard_leech",
+  "purpose": "Leech Seed on a Magic Guard holder (Alakazam): the seed's residual damage is refused (no -damage, no heal of the seeder), and the seed stays (data/moves.ts leechseed onResidual; Magic Guard's onDamage refuses the non-move damage).",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,8400000000000000000000000000000000000000000000000000000000000009",
+  "teams": [
+    "Tauros (M) @ Charcoal\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Curse\n- Protect\n- Close Combat\n- Earthquake\n\nVenusaur (M) @ Sitrus Berry\nAbility: Overgrow\nLevel: 50\nEVs: 32 HP / 2 Def / 32 SpD\nCalm Nature\n- Leech Seed\n- Protect\n- Sludge Bomb\n- Energy Ball\n\nGholdengo @ Life Orb\nAbility: Good as Gold\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nTimid Nature\n- Protect\n- Shadow Ball\n- Make It Rain\n\nMeganium (F) @ Leftovers\nAbility: Overgrow\nLevel: 50\nEVs: 32 HP / 2 Def / 32 SpD\nCalm Nature\n- Leech Seed\n- Protect\n- Energy Ball\n\nChimecho (M) @ Occa Berry\nAbility: Levitate\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nModest Nature\n- Psychic\n- Protect\n- Helping Hand\n- Expanding Force\n\nKingambit (M) @ Black Glasses\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Sucker Punch\n- Iron Head\n- Protect\n- Swords Dance\n",
+    "Alakazam (M) @ Charcoal\nAbility: Magic Guard\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nTimid Nature\n- Psychic\n- Protect\n\nVenusaur (M) @ Sitrus Berry\nAbility: Overgrow\nLevel: 50\nEVs: 32 HP / 2 Def / 32 SpD\nCalm Nature\n- Leech Seed\n- Protect\n- Sludge Bomb\n- Energy Ball\n\nGholdengo @ Life Orb\nAbility: Good as Gold\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nTimid Nature\n- Protect\n- Shadow Ball\n- Make It Rain\n\nMeganium (F) @ Leftovers\nAbility: Overgrow\nLevel: 50\nEVs: 32 HP / 2 Def / 32 SpD\nCalm Nature\n- Leech Seed\n- Protect\n- Energy Ball\n\nChimecho (M) @ Occa Berry\nAbility: Levitate\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nModest Nature\n- Psychic\n- Protect\n- Helping Hand\n- Expanding Force\n\nKingambit (M) @ Black Glasses\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Sucker Punch\n- Iron Head\n- Protect\n- Swords Dance\n"
+  ],
+  "plan": {
+    "p1": [
+      "move 2, move 1 1",
+      "move 2, move 2",
+      "move 2, move 2"
+    ],
+    "p2": [
+      "move 1 1, move 2",
+      "move 2, move 2",
+      "move 2, move 2"
+    ],
+    "max_steps": 4
+  }
+}
