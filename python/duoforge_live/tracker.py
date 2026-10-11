@@ -152,9 +152,11 @@ class _Position:
         self.newly_switched = 0  # the occupant came in this turn (the record's flag under the TEAM_C and POOL kinds)
         self.turn_done = True  # no move of the occupant is left this turn (it moved, could not, or came in or fainted)
         self.unburden_unseen = False  # Knock Off hit an Unburden holder and no -enditem followed (record.py refuses)
-        # The turn of the occupant's last move action ([move] of its own or reflected, [cant], confusion), or 0: the POOL
-        # record's move_result is nonzero from it until the turn after (record.py refuses then, it is not foldable)
-        self.result_turn = 0
+        # The POOL record's move_result (tail rev 4): the result of the occupant's move action this turn and last turn,
+        # each DFI_MOVE_RESULT_* with its unclassified bit, as the library classifies the action's events
+        # (Tracker._end_action); None where the library cannot tell it from the events (record.py refuses then).
+        self.result_now = 0
+        self.result_last = 0
         self.perish = 0  # the Perish count the game showed last, 3 to 1 (0: none)
         self.last_slot = 0  # the move slot + 1 of the occupant's last move line (5: Struggle; None: not on its sheet)
         self.encore_slot = 0  # the move slot + 1 that Encore forces (0: not encored)
@@ -225,6 +227,7 @@ class Tracker:
         self._mega_used = [0, 0]
         self._next_activation = 1  # the next entry's activation id (the public record)
         self._after_upkeep = False  # the turn's residual ended (|upkeep|) and the next turn has not begun
+        self._action = None  # the move action whose events are being collected (_segment)
         # The library data kind of the public record (record.py): None for the tables' kind; a DEV kind of the same tables
         # when the game runs under it (the context's fingerprint is in the record)
         self.record_kind = None
@@ -264,6 +267,8 @@ class Tracker:
     def feed(self, lines):
         for line in lines:
             kind = _kind(line)
+            if line == "|":
+                self._end_action()  # the blank line before the residual (and before the turn's moves): an action ends
             if kind is None or kind in ROOM_LINES:
                 continue
             if kind in SESSION_LINES:
@@ -294,6 +299,8 @@ class Tracker:
             if name in ("WIDE_GUARD", "QUICK_GUARD"):
                 self._guards.add((name, trace_to_c.ev_pos(line.split("|")[2]) // 2))
             self.turn_scoped_seen[name] += 1
+            if self._foe_members is not None:
+                self._fold(line, fold=False)  # its event still belongs to its move action (_segment)
             return
         self._extended_field(line)
         if line.startswith("|-clearnegativeboost|"):
@@ -444,6 +451,7 @@ class Tracker:
         elif side != self.side:
             raise ValueError(f"a request for side {side} in the room of side {self.side}")
         self._foe_sheet()
+        self._end_action()  # the step's last action ended with it
         self.request = request
         self.epoch += 1
         self._step_lines, self._lines = self._lines, []
@@ -530,7 +538,8 @@ class Tracker:
             raise ValueError(f"{parts[2]} ({parts[3]}) is not one member of its side's sheet")
         self._names[side][name] = index[0]
 
-    def _fold(self, line):
+    def _fold(self, line, fold=True):
+        """The line's events into the tracker's fields; fold=False only collects them for the move action's result."""
         if _kind(line) in trace_to_c.NOT_EVENTS:
             return  # setup and layout lines: no event (step_events skips them too)
         if _kind(line) in ("win", "tie") and self._foe_members is None:
@@ -567,7 +576,10 @@ class Tracker:
         except (KeyError, IndexError) as e:  # a form of a known line the parser does not know (untyped, as diff_driver)
             raise lines.Stop(f"converter:untyped {_kind(line)} {type(e).__name__} {e}") from e
         for e in events:
-            self._event(e)
+            if fold:
+                self._event(e)
+            else:
+                self._segment(e)
 
     def _at(self, pos):
         return self._positions[pos // 2][pos % 2]
@@ -577,6 +589,73 @@ class Tracker:
         return None if p.occupant == ROSTER_NONE else self._member(pos // 2)[p.occupant]
 
     def _event(self, e):
+        self._segment(e)
+        self._fold_event(e)
+
+    def _segment(self, e):
+        """The events of each move action, for its result (the POOL record's move_result): an action begins with its
+        user's own [move] line, a [cant] (not an ability's block, which follows the user's [move]) or a confusion line
+        (the [move] or [cant] after it belongs to it), and ends where the next one begins, at the residual (|upkeep|),
+        at the next turn or at a decision point (_end_action)."""
+        kind, pos, cause = e[0], e[1], e[3]
+        if kind in (EV["UPKEEP"], EV["TURN"]):
+            self._end_action()
+            if kind == EV["TURN"]:
+                for side in self._positions:
+                    for p in side:
+                        # endTurn: moveLastTurnResult = moveThisTurnResult, this turn's undefined (src/combat/turn.c)
+                        p.result_last, p.result_now = p.result_now, 0
+            return
+        starts = (kind == EV["MOVE"] and cause == trace_to_c.CAUSE["NONE"]) or kind == EV["CONFUSED"] or \
+            (kind == EV["CANT"] and cause != trace_to_c.CAUSE["ABILITY"])
+        action = self._action
+        if starts and action is not None and action["pos"] == pos and action["confused"] and kind != EV["CONFUSED"]:
+            action["confused"] = False  # the move the confusion line let through, or its [cant]
+            action["events"].append(e)
+        elif starts:
+            # the lines of this action that come before its first one end the previous action's list: a wake-up or thaw
+            # ([-curestatus] [msg]), the end of a confusion, Struggle's -activate
+            lead = []
+            while action is not None and action["events"] and self._pre_action(action["events"], pos):
+                lead.insert(0, action["events"].pop())
+            self._end_action()
+            p = self._at(pos)
+            self._action = {"pos": pos, "events": lead + [e], "confused": kind == EV["CONFUSED"],
+                            "activation": p.activation}
+        elif action is not None:
+            action["events"].append(e)
+
+    def _pre_action(self, events, pos):
+        """The last of `events` is a line of `pos` that comes before its action's first line: a wake-up or a thaw
+        ([-curestatus] [msg], not a berry's cure after its -enditem), the end of its confusion, Struggle's -activate."""
+        e = events[-1]
+        if e[1] != pos:
+            return False
+        if len(events) > 1 and events[-2][0] == EV["ITEM_END"] and events[-2][1] == pos:
+            return False
+        return (e[0] == EV["CURE_STATUS"] and e[13] & FLAG["MESSAGE"] and e[3] == trace_to_c.CAUSE["NONE"]) or \
+            e[0] == EV["CONFUSION_END"] or \
+            (e[0] == EV["ACTIVATE"] and e[3] == trace_to_c.CAUSE["MOVE"] and e[5] == self._struggle)
+
+    def _end_action(self):
+        """The result of the move action that ends here, into its user's position (this turn's): the library's
+        classification of its events (record.move_result_of), None where they do not determine it."""
+        action, self._action = self._action, None
+        if action is None or self.data.kind != "pool":
+            return
+        from . import record
+        p, events = self._at(action["pos"]), action["events"]
+        # another occupant now, or the user fainted: the faint's clearing comes after the result
+        if p.activation == action["activation"] and not p.fainted:
+            p.result_now = record.move_result_of(self.data, action["pos"], events)
+        for i, e in enumerate(events):
+            if e[0] == EV["MOVE"] and e[3] == trace_to_c.CAUSE["ABILITY"] and e[1] != NOPOS:
+                # Magic Bounce: the holder's result is that of the reflected run (src/combat/turn.c, the bounced move)
+                holder = self._at(e[1])
+                if holder.occupant != ROSTER_NONE and not holder.fainted:
+                    holder.result_now = record.move_result_of(self.data, e[1], events[i:])
+
+    def _fold_event(self, e):
         kind, pos, ident, ident2 = e[0], e[1], e[4], e[5]
         hp, hp_kind, hp_flag, status, detail, amount, flags = e[6], e[8], e[9], e[10], e[11], e[12], e[13]
         foe = pos != NOPOS and pos // 2 != self.side
@@ -634,7 +713,6 @@ class Tracker:
         elif kind == EV["MOVE"]:
             p = self._at(pos)
             p.acted = 1
-            p.result_turn = self._turn
             if e[3] == trace_to_c.CAUSE["NONE"]:
                 self._move_action(p)
                 p.turn_done, p.move_queued = True, False
@@ -715,7 +793,6 @@ class Tracker:
             if not blocked:
                 self._move_action(actor)  # a block follows the user's own [move] line: the same action
             actor.turn_done, actor.move_queued = True, False
-            actor.result_turn = self._turn
             if e[3] == trace_to_c.CAUSE["FREEZE"]:
                 m = self._occupant(pos)
                 m.freeze_turns = max(m.freeze_turns - 1, 0)
@@ -725,7 +802,6 @@ class Tracker:
             self._move_action(p)
             p.confused_action = True  # the action's own move or [cant] line follows, or its self-hit
             p.turn_done, p.move_queued = True, False
-            p.result_turn = self._turn
         elif kind in (EV["DAMAGE"], EV["HEAL"]):
             m = self._occupant(pos)
             if kind == EV["DAMAGE"] and e[3] == trace_to_c.CAUSE["CONFUSION"]:

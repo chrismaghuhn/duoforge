@@ -158,6 +158,20 @@ duoforge_status duoforge_battle_public_causes(const duoforge_context *ctx, const
    Nothing is written on a refusal. */
 duoforge_status duoforge_hp_display(uint32_t hp, uint32_t hp_max, uint8_t *out_percent, uint8_t *out_flag);
 
+/* The result of one move action, from its public events (the POOL kinds' tail rev 4 move_result of the action's turn, the
+   pin's moveThisTurnResult): *out_result is the tail's value of this turn, its class in bits 0-1 (true 1, false 2, null 3) or
+   bit 4 alone for an action whose handler sets no class (Quick Guard, Haze, After You, Quash), as the engine's own rule sets
+   it (src/combat/turn.c, dfi_run_move and the move body; the values are the state encoding's, DFI_MOVE_RESULT_*, exported to
+   Python by duoforge._state_layout.VALUES, no public value). `events` are the events of the action as a player sees them (the converter's of the
+   protocol lines, decision 0007), from its user's first line (a [cant], a confusion line, its [move], or a [move] Magic Bounce
+   reflected for its holder) to the next action, the residual or the decision point; lines of other positions before that
+   first line are skipped. The live tracker keeps the record's move_result with it and holds no rule. A pure call, no heap.
+   Checks: NULL (events with a count) -> E_NULL_ARGUMENT; user above 3 -> E_INVALID_ARGUMENT; a context of no POOL kind,
+   events without the user's action, or an action the events do not determine (a move another one calls, a status move whose
+   handler is not mapped, a reflected run the engine itself would refuse) -> E_UNSUPPORTED. Nothing is written on a refusal. */
+duoforge_status duoforge_move_result(const duoforge_context *ctx, uint32_t user, const duoforge_event *events,
+                                     uint32_t count, uint8_t *out_result);
+
 /* The world of a public state and a hypothesis, written into *out (a battle of
    the same context, as duoforge_battle_copy's destination). Its RNG is seeded
    with (0, 0): a search reseeds every leaf (decision 0022). Checks: NULL ->

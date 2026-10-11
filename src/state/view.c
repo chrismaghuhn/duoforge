@@ -663,6 +663,419 @@ duoforge_status duoforge_hp_display(uint32_t hp, uint32_t hp_max, uint8_t *out_p
     return DUOFORGE_OK;
 }
 
+#define DFI_POSITIONS_MR (DUOFORGE_SIDE_COUNT * DUOFORGE_ACTIVE_PER_SIDE)
+
+/* ---- the result of a move action from its events (POOL tail rev 4 move_result; the live record assembler) ---- */
+
+/* The classes of the move body (src/combat/turn.c, DFI_MRES_* there): a hit or a change true, a literal false, a
+ * NOT_FAIL null. */
+#define MR_TRUE 1u
+#define MR_FALSE 2u
+#define MR_NULL 4u
+
+/* The first event of a move action of `user`: its [cant], its confusion line, its own [move] or a [move] Magic Bounce
+ * reflected (cause ABILITY, the holder's run). */
+static bool mr_start(const duoforge_event *e, uint32_t user)
+{
+    if (e->position != user) {
+        return false;
+    }
+    return e->kind == DUOFORGE_EVENT_CANT || e->kind == DUOFORGE_EVENT_CONFUSED ||
+           (e->kind == DUOFORGE_EVENT_MOVE && (e->cause == DUOFORGE_CAUSE_NONE || e->cause == DUOFORGE_CAUSE_ABILITY));
+}
+
+/* The abilities that take a move at their holder's TryHit and stop it there (the move's result false: the hit steps
+ * normalise their null). The line names the ability: -ability (Lightning Rod, Sap Sipper, Motor Drive, Storm Drain),
+ * -heal [from] ability (Water Absorb, Volt Absorb, Dry Skin, Earth Eater). */
+static bool mr_absorbs(uint32_t ability)
+{
+    return ability == DFI_ABILITY_LIGHTNINGROD || ability == DFI_ABILITY_SAPSIPPER || ability == DFI_ABILITY_MOTORDRIVE ||
+           ability == DFI_ABILITY_WATERABSORB || ability == DFI_ABILITY_VOLTABSORB || ability == DFI_ABILITY_DRYSKIN ||
+           ability == DFI_ABILITY_EARTHEATER;
+}
+
+/* A target class whose move acts on its user or its side: what happens to the user is the move's own effect. */
+static bool mr_selfish(uint32_t target_class)
+{
+    return target_class == DUOFORGE_TARGET_CLASS_SELF || target_class == DUOFORGE_TARGET_CLASS_ADJACENT_ALLY_OR_SELF ||
+           target_class == DUOFORGE_TARGET_CLASS_ALLY_SIDE || target_class == DUOFORGE_TARGET_CLASS_ALL ||
+           target_class == DUOFORGE_TARGET_CLASS_ALLY_TEAM || target_class == DUOFORGE_TARGET_CLASS_ALLIES ||
+           target_class == DUOFORGE_TARGET_CLASS_FOE_SIDE;
+}
+
+/* The status-move families of the engine's move body, by special (and the move ids whose special is the generic one). */
+typedef enum mr_family {
+    MR_EFFECT,       /* true when something changed (a stage, a status that stayed, a volatile, a condition...), else false */
+    MR_RUNS,         /* true once it runs: Wide Guard (a second one prints nothing), Rage Powder, Follow Me, Perish Song,
+                        Revival Blessing, Baton Pass (dfi_status_hit_end) */
+    MR_REACHES,      /* true for a target it reaches: Parting Shot's onHit always counts, Helping Hand, a forced switch's
+                        hit (Roar, Whirlwind: the reserve's) */
+    MR_UNCLASSIFIED, /* its success sets no class: Quick Guard, Haze, After You, Quash */
+    MR_HEAL_PULSE,   /* a target at full HP is NOT_FAIL: true */
+    MR_REFUSED       /* a handler this classifier does not map: refused */
+} mr_family;
+
+static mr_family mr_family_of(uint32_t move_id, const dfi_move_data *md)
+{
+    if ((dfi_pool_move_flags2[move_id] & DFI_MOVE_FLAG2_FORCE_SWITCH) != 0u && md->primary_status == DFI_STATUS_NONE) {
+        return MR_REACHES;
+    }
+    switch (md->special) {
+    case DFI_SPECIAL_NONE:
+    case DFI_SPECIAL_PROTECT:
+    case DFI_SPECIAL_SPIKY_SHIELD:
+    case DFI_SPECIAL_KINGS_SHIELD:
+    case DFI_SPECIAL_ENCORE:
+    case DFI_SPECIAL_SOAK:
+    case DFI_SPECIAL_DISABLE:
+    case DFI_SPECIAL_TRICK:
+    case DFI_SPECIAL_SWITCHEROO:
+    case DFI_SPECIAL_TAUNT:
+    case DFI_SPECIAL_YAWN:
+    case DFI_SPECIAL_DRAGON_CHEER:
+    case DFI_SPECIAL_SKILL_SWAP:
+    case DFI_SPECIAL_THUNDER_WAVE:
+    case DFI_SPECIAL_SHELL_SMASH:
+    case DFI_SPECIAL_CLANGOROUS_SOUL:
+    case DFI_SPECIAL_RECOVER:
+    case DFI_SPECIAL_ROOST:
+    case DFI_SPECIAL_STRENGTH_SAP:
+    case DFI_SPECIAL_SANDSTORM:
+    case DFI_SPECIAL_SNOWSCAPE:
+    case DFI_SPECIAL_RAIN_DANCE:
+    case DFI_SPECIAL_SUNNY_DAY:
+    case DFI_SPECIAL_ELECTRIC_TERRAIN:
+    case DFI_SPECIAL_MISTY_TERRAIN:
+    case DFI_SPECIAL_AURORA_VEIL:
+        return MR_EFFECT;
+    case DFI_SPECIAL_WIDE_GUARD:
+    case DFI_SPECIAL_RAGE_POWDER:
+    case DFI_SPECIAL_FOLLOW_ME:
+    case DFI_SPECIAL_PERISH_SONG:
+    case DFI_SPECIAL_REVIVAL_BLESSING:
+    case DFI_SPECIAL_BATON_PASS:
+        return MR_RUNS;
+    case DFI_SPECIAL_PARTING_SHOT:
+    case DFI_SPECIAL_HELPING_HAND:
+        return MR_REACHES;
+    case DFI_SPECIAL_QUICK_GUARD:
+    case DFI_SPECIAL_HAZE:
+    case DFI_SPECIAL_AFTER_YOU:
+    case DFI_SPECIAL_QUASH:
+        return MR_UNCLASSIFIED;
+    case DFI_SPECIAL_HEAL_PULSE:
+        return MR_HEAL_PULSE;
+    default:
+        return MR_REFUSED; /* Substitute, Destiny Bond, Imprison and every handler not mapped here */
+    }
+}
+
+/* A status move changed something at a position it reached (not `stopped`; the user only for a move of its own side): a
+ * stage, a status that stayed (one a berry cured in the same action did not), a volatile, a type, an item, an ability, a
+ * heal, a Protect, a side or field condition, a weather. */
+static bool mr_changed(const duoforge_event *body, uint32_t count, uint32_t user, uint32_t stopped, bool selfish)
+{
+    uint32_t statused = 0u;
+    for (uint32_t i = 0u; i < count; ++i) {
+        const duoforge_event *e = &body[i];
+        const uint32_t pos = e->position;
+        const bool at = pos < DFI_POSITIONS_MR;
+        if (at && (((stopped >> pos) & 1u) != 0u || (pos == user && !selfish))) {
+            continue;
+        }
+        const bool own_cause = e->cause == DUOFORGE_CAUSE_NONE || e->cause == DUOFORGE_CAUSE_MOVE;
+        switch (e->kind) {
+        case DUOFORGE_EVENT_BOOST:
+        case DUOFORGE_EVENT_UNBOOST:
+            if (e->cause == DUOFORGE_CAUSE_NONE && e->amount > 0u) {
+                return true;
+            }
+            break;
+        case DUOFORGE_EVENT_STATUS:
+            if (own_cause && at) {
+                statused |= 1u << pos;
+            }
+            break;
+        case DUOFORGE_EVENT_CURE_STATUS:
+            if (at) {
+                statused &= ~(1u << pos);
+            }
+            break;
+        case DUOFORGE_EVENT_VOLATILE_START:
+        case DUOFORGE_EVENT_CONFUSION_START:
+        case DUOFORGE_EVENT_TYPE_CHANGE:
+        case DUOFORGE_EVENT_SINGLE_TURN:
+        case DUOFORGE_EVENT_PROTECT:
+        case DUOFORGE_EVENT_ITEM_START:
+            if (own_cause) {
+                return true;
+            }
+            break;
+        case DUOFORGE_EVENT_HEAL:
+            if (e->cause == DUOFORGE_CAUSE_NONE) {
+                return true;
+            }
+            break;
+        case DUOFORGE_EVENT_ABILITY:
+            if (e->cause == DUOFORGE_CAUSE_MOVE) {
+                return true;
+            }
+            break;
+        case DUOFORGE_EVENT_ITEM_END:
+            if (e->cause == DUOFORGE_CAUSE_ITEM_TAKEN) {
+                return true; /* Trick, Switcheroo: the target's item went */
+            }
+            break;
+        case DUOFORGE_EVENT_SIDE_START:
+        case DUOFORGE_EVENT_SIDE_END:
+        case DUOFORGE_EVENT_FIELD_START:
+        case DUOFORGE_EVENT_FIELD_END:
+            if (e->cause == DUOFORGE_CAUSE_NONE) {
+                return true;
+            }
+            break;
+        case DUOFORGE_EVENT_WEATHER:
+            if (e->cause == DUOFORGE_CAUSE_NONE && (e->flags & DUOFORGE_EVENT_FLAG_UPKEEP) == 0u) {
+                return true;
+            }
+            break;
+        default:
+            break;
+        }
+    }
+    return statused != 0u;
+}
+
+static duoforge_status mr_value(uint32_t classes, uint8_t *out)
+{
+    if ((classes & MR_TRUE) != 0u) {
+        *out = (uint8_t)DFI_MOVE_RESULT_TRUE;
+    } else if ((classes & MR_FALSE) != 0u) {
+        *out = (uint8_t)DFI_MOVE_RESULT_FALSE;
+    } else if ((classes & MR_NULL) != 0u) {
+        *out = (uint8_t)DFI_MOVE_RESULT_NULL;
+    } else {
+        return DUOFORGE_E_UNSUPPORTED;
+    }
+    return DUOFORGE_OK;
+}
+
+duoforge_status duoforge_move_result(const duoforge_context *ctx, uint32_t user, const duoforge_event *events,
+                                     uint32_t count, uint8_t *out_result)
+{
+    if (ctx == NULL || out_result == NULL || (events == NULL && count != 0u)) {
+        return DUOFORGE_E_NULL_ARGUMENT;
+    }
+    if (user >= DFI_POSITIONS_MR) {
+        return DUOFORGE_E_INVALID_ARGUMENT;
+    }
+    if (!dfi_context_is_pool(ctx)) {
+        return DUOFORGE_E_UNSUPPORTED; /* only the POOL kinds carry the tail */
+    }
+    uint32_t i = 0u;
+    while (i < count && !mr_start(&events[i], user)) {
+        ++i; /* the lines of other positions before the action (the previous action's last ones) */
+    }
+    if (i == count) {
+        return DUOFORGE_E_UNSUPPORTED;
+    }
+    const duoforge_event *e0 = &events[i];
+    /* BeforeMove stops the action (sleep, freeze, paralysis, flinch, Taunt, Disable, ...): false; mustrecharge's null */
+    if (e0->kind == DUOFORGE_EVENT_CANT) {
+        *out_result = (uint8_t)(e0->cause == DUOFORGE_CAUSE_RECHARGE ? DFI_MOVE_RESULT_NULL : DFI_MOVE_RESULT_FALSE);
+        return DUOFORGE_OK;
+    }
+    if (e0->kind == DUOFORGE_EVENT_CONFUSED) {
+        for (uint32_t j = i + 1u; j < count; ++j) {
+            if (events[j].kind == DUOFORGE_EVENT_DAMAGE && events[j].cause == DUOFORGE_CAUSE_CONFUSION) {
+                *out_result = (uint8_t)DFI_MOVE_RESULT_FALSE; /* it hit itself: BeforeMove false */
+                return DUOFORGE_OK;
+            }
+        }
+        i += 1u;
+        if (i == count) {
+            return DUOFORGE_E_UNSUPPORTED;
+        }
+        e0 = &events[i];
+        if (e0->kind == DUOFORGE_EVENT_CANT) {
+            *out_result = (uint8_t)(e0->cause == DUOFORGE_CAUSE_RECHARGE ? DFI_MOVE_RESULT_NULL : DFI_MOVE_RESULT_FALSE);
+            return DUOFORGE_OK;
+        }
+    }
+    if (e0->kind != DUOFORGE_EVENT_MOVE || e0->id >= DFI_POOL_MOVE_COUNT) {
+        return DUOFORGE_E_UNSUPPORTED;
+    }
+    const bool reflected = e0->cause == DUOFORGE_CAUSE_ABILITY;
+    const uint32_t move_id = e0->id;
+    const dfi_move_data *md = &dfi_pool_moves[move_id];
+    const duoforge_event *body = &events[i + 1u];
+    const uint32_t n = count - i - 1u;
+    uint32_t inner = 0u;
+    bool inner_reflected = true;
+    for (uint32_t j = 0u; j < n; ++j) {
+        if (body[j].kind == DUOFORGE_EVENT_MOVE) {
+            inner += 1u;
+            inner_reflected = inner_reflected && body[j].cause == DUOFORGE_CAUSE_ABILITY;
+        }
+    }
+    if (inner != 0u) {
+        if (inner != 1u || !inner_reflected || reflected) {
+            return DUOFORGE_E_UNSUPPORTED; /* a move another one calls is not modelled here */
+        }
+        *out_result = (uint8_t)DFI_MOVE_RESULT_FALSE; /* Magic Bounce took it: its TryHit's null, normalised to false */
+        return DUOFORGE_OK;
+    }
+    if ((e0->flags & DUOFORGE_EVENT_FLAG_NOTARGET) != 0u) {
+        *out_result = (uint8_t)DFI_MOVE_RESULT_FALSE; /* no target: false */
+        return DUOFORGE_OK;
+    }
+    bool prepared = false;
+    bool fired = false;
+    for (uint32_t j = 0u; j < n; ++j) {
+        prepared = prepared || (body[j].kind == DUOFORGE_EVENT_PREPARE && body[j].position == user);
+        fired = fired || body[j].kind == DUOFORGE_EVENT_ANIMATION;
+    }
+    if (prepared && !fired) {
+        *out_result = (uint8_t)DFI_MOVE_RESULT_NULL; /* the charge turn's onTryMove: null */
+        return DUOFORGE_OK;
+    }
+    /* the hit steps of the targets */
+    uint32_t classes = 0u;
+    uint32_t stopped = 0u;
+    bool hit = false;
+    bool user_fail = false;
+    for (uint32_t j = 0u; j < n; ++j) {
+        const duoforge_event *e = &body[j];
+        const uint32_t pos = e->position;
+        const bool other = pos < DFI_POSITIONS_MR && pos != user;
+        switch (e->kind) {
+        case DUOFORGE_EVENT_MISS:
+            classes |= MR_FALSE;
+            stopped |= e->other < DFI_POSITIONS_MR ? 1u << e->other : 0u;
+            break;
+        case DUOFORGE_EVENT_IMMUNE:
+            if (other) {
+                classes |= MR_FALSE;
+                stopped |= 1u << pos;
+            }
+            break;
+        case DUOFORGE_EVENT_BLOCKED:
+            classes |= e->detail == DUOFORGE_FIELD_PSYCHIC_TERRAIN ? MR_FALSE : MR_NULL; /* Protect, Wide Guard: NOT_FAIL */
+            stopped |= pos < DFI_POSITIONS_MR ? 1u << pos : 0u;
+            break;
+        case DUOFORGE_EVENT_CANT:
+            if (e->cause == DUOFORGE_CAUSE_ABILITY) {
+                classes |= MR_FALSE; /* Armor Tail, Queenly Majesty: onFoeTryMove false */
+            }
+            break;
+        case DUOFORGE_EVENT_ABILITY:
+            if (other && e->cause == DUOFORGE_CAUSE_NONE && e->id2 != 0u && mr_absorbs((uint32_t)e->id2 - 1u)) {
+                classes |= MR_FALSE;
+                stopped |= 1u << pos;
+            }
+            break;
+        case DUOFORGE_EVENT_HEAL:
+            if (other && e->cause == DUOFORGE_CAUSE_ABILITY && e->id2 != 0u && mr_absorbs((uint32_t)e->id2 - 1u)) {
+                classes |= MR_FALSE;
+                stopped |= 1u << pos;
+            }
+            break;
+        case DUOFORGE_EVENT_FLASH_FIRE:
+            if (other) {
+                classes |= MR_FALSE; /* Flash Fire took the Fire move */
+                stopped |= 1u << pos;
+            }
+            break;
+        case DUOFORGE_EVENT_DAMAGE:
+            hit = hit || (other && e->cause == DUOFORGE_CAUSE_NONE);
+            break;
+        case DUOFORGE_EVENT_FAIL:
+            if (e->cause == DUOFORGE_CAUSE_NONE) {
+                user_fail = user_fail || pos == user; /* a target's -fail is an effect's, not the hit's (Synchronize) */
+            }
+            break;
+        default:
+            break;
+        }
+    }
+    if ((e0->flags & DUOFORGE_EVENT_FLAG_MISS) != 0u) {
+        classes |= MR_FALSE;
+    }
+    if (md->category != DFI_CATEGORY_STATUS) {
+        /* a damaging move: true for a hit target (spreadDamage returns a number), else the classes of its hit steps */
+        if (hit) {
+            classes |= MR_TRUE;
+        }
+        for (uint32_t j = 0u; j < n; ++j) {
+            if (body[j].kind == DUOFORGE_EVENT_FAIL && body[j].cause == DUOFORGE_CAUSE_NONE) {
+                classes |= MR_FALSE;
+            }
+        }
+        return mr_value(classes, out_result);
+    }
+    const mr_family family = mr_family_of(move_id, md);
+    const bool selfish = mr_selfish(md->target_class);
+    uint8_t value = 0u;
+    switch (family) {
+    case MR_REFUSED:
+        return DUOFORGE_E_UNSUPPORTED;
+    case MR_UNCLASSIFIED:
+        if (user_fail || (classes & MR_FALSE) != 0u) {
+            value = (uint8_t)DFI_MOVE_RESULT_FALSE;
+        } else if ((classes & MR_NULL) != 0u) {
+            value = (uint8_t)DFI_MOVE_RESULT_NULL;
+        } else {
+            value = (uint8_t)DFI_MOVE_RESULT_UNCLASSIFIED_NOW; /* the handler set no class */
+        }
+        break;
+    case MR_RUNS:
+        value = (uint8_t)(user_fail ? DFI_MOVE_RESULT_FALSE : DFI_MOVE_RESULT_TRUE);
+        break;
+    case MR_REACHES: {
+        if (user_fail) {
+            value = (uint8_t)DFI_MOVE_RESULT_FALSE;
+            break;
+        }
+        const uint32_t target = e0->other;
+        const bool reached = target >= DFI_POSITIONS_MR || ((stopped >> target) & 1u) == 0u;
+        if (reached && (classes & (MR_FALSE | MR_NULL)) == 0u) {
+            value = (uint8_t)DFI_MOVE_RESULT_TRUE;
+        } else if (reached) {
+            return DUOFORGE_E_UNSUPPORTED; /* reached with a failure beside it: a spread case not mapped */
+        } else {
+            value = (uint8_t)((classes & MR_FALSE) != 0u ? DFI_MOVE_RESULT_FALSE : DFI_MOVE_RESULT_NULL);
+        }
+        break;
+    }
+    case MR_HEAL_PULSE:
+        if ((classes & MR_FALSE) != 0u) {
+            value = (uint8_t)DFI_MOVE_RESULT_FALSE;
+        } else if ((classes & MR_NULL) != 0u) {
+            value = (uint8_t)DFI_MOVE_RESULT_NULL;
+        } else {
+            value = (uint8_t)DFI_MOVE_RESULT_TRUE; /* a heal, or full HP: NOT_FAIL, the hit is true */
+        }
+        break;
+    case MR_EFFECT:
+    default:
+        if (mr_changed(body, n, user, stopped, selfish)) {
+            value = (uint8_t)DFI_MOVE_RESULT_TRUE;
+        } else if (user_fail || (classes & MR_FALSE) != 0u) {
+            value = (uint8_t)DFI_MOVE_RESULT_FALSE;
+        } else if ((classes & MR_NULL) != 0u) {
+            value = (uint8_t)DFI_MOVE_RESULT_NULL;
+        } else {
+            value = (uint8_t)DFI_MOVE_RESULT_FALSE; /* a hit target that nothing changed: false (runMoveEffects) */
+        }
+        break;
+    }
+    if (reflected && (value & DFI_MOVE_RESULT_UNCLASSIFIED_NOW) != 0u) {
+        return DUOFORGE_E_UNSUPPORTED; /* a reflected run the engine does not classify is refused by the engine itself */
+    }
+    *out_result = value;
+    return DUOFORGE_OK;
+}
+
 /* ---- the world ---- */
 
 static bool dfi_all_zero(const uint8_t *p, size_t n)

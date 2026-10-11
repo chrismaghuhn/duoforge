@@ -660,13 +660,13 @@ class RecordAssemblerPoolTest(unittest.TestCase):
     """The record assembler under the POOL kind (the tracker with the pool tables), over every committed pool battle,
     both players, every decision point until the tracker stops at a line it does not fold (lines.Stop, counted by
     reason): each record is the engine's byte for byte, or refused with the engine's status and cause mask, or refused
-    by the tracker with a named reason of TRACKER_REFUSALS where the engine has a record the lines do not determine.
-    Every record refused only for its move_result (move-result-not-foldable) equals the engine's in every other field
-    (record.assemble with exact=False)."""
+    by the tracker with a named reason of TRACKER_REFUSALS where the engine has a record the lines do not determine. The
+    tail's move_result comes from the library's classification of each move action (duoforge_move_result)."""
 
-    # move-result-not-foldable: the tail's move_result is the engine's classification of each move action (record.py
-    # move_result_unknown); unburden-without-item-line: Unburden answering a Knock Off that removes nothing (a Mega Stone)
-    TRACKER_REFUSALS = {"move-result-not-foldable", "unburden-without-item-line"}
+    # unburden-without-item-line: Unburden answering a Knock Off that removes nothing (a Mega Stone) shows no line;
+    # move-result-not-determined: the library cannot tell an action's result from its events (duoforge_move_result
+    # refuses); last-move-not-on-sheet: the move of a position's last line is on no slot of its sheet
+    TRACKER_REFUSALS = {"unburden-without-item-line", "move-result-not-determined", "last-move-not-on-sheet"}
     # The tracker's own-PP check (Tracker._on_request) refuses these player streams before a record: Pressure the lines
     # cannot attribute (a [still] target, a clamped extra), Dragon Darts' split, the Pressure of a disguised Illusion.
     OWN_PP_STOPS = {("g53_field_trick_room", 0), ("g53_still_pressure", 1), ("g78_ee_t", 0), ("g78_fainted_ally", 0),
@@ -676,10 +676,10 @@ class RecordAssemblerPoolTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         import collections
-        from duoforge_live import lines as live_lines, record
+        from duoforge_live import lines as live_lines
         from duoforge_live.tracker import Tracker
         cls.pool = Reference.get().pool()
-        cls.points, cls.stops, cls.raised = {}, collections.Counter(), set()  # (battle, player) -> [(k, parts, candidate)]
+        cls.points, cls.stops, cls.raised = {}, collections.Counter(), set()  # (battle, player) -> [(k, parts)]
         for battle in cls.pool.battles:
             kind = record_kind(battle.name)
             for player in (0, 1):
@@ -693,11 +693,7 @@ class RecordAssemblerPoolTest(unittest.TestCase):
                             continue
                         done = tracker.epoch
                         k = done - 1
-                        parts = tracker.public_parts()
-                        candidate = None
-                        if parts["reason"] == "move-result-not-foldable":
-                            candidate = record.assemble(tracker, parts["observation"], exact=False)[0]
-                        out.append((k, parts, candidate))
+                        out.append((k, tracker.public_parts()))
                         step = battle.trace["steps"][k] if k < len(battle.trace["steps"]) else None
                         if step is not None and pid in step["input"]:
                             tracker.accepted(step["input"][pid])
@@ -713,20 +709,14 @@ class RecordAssemblerPoolTest(unittest.TestCase):
         import re
         outcome, fields, where = collections.Counter(), collections.Counter(), {}
         for (name, player), points in self.points.items():
-            for k, parts, candidate in points:
+            for k, parts in points:
                 result = record_diff(name, k, player, parts["record"])
                 if result["engine_status"] != 0:
-                    same = (parts["status"], parts["causes"]) == (result["engine_status"], result["engine_causes"])
+                    same = (parts["status"], parts["causes"], parts["record"].tobytes()) == (
+                        result["engine_status"], result["engine_causes"], bytes(_layout.PUBLIC_STATE.itemsize))
                     key = "refused" if same else f"engine refuses ({result['engine_causes']}): {parts['reason']}"
                 elif parts["status"] != 0:
                     key = f"tracker refuses: {parts['reason']}"
-                    if candidate is not None:
-                        rest = [f for f in record_diff(name, k, player, candidate)["fields"] if not f.endswith(".move_result")]
-                        if rest:
-                            key = "mismatch beside move_result"
-                            for field in rest:
-                                fields[re.sub(r"\d+", "#", field)] += 1
-                                where.setdefault(re.sub(r"\d+", "#", field), (name, k, player, field))
                 else:
                     key = "mismatch" if result["fields"] else "equal"
                     for field in result["fields"]:
@@ -740,7 +730,7 @@ class RecordAssemblerPoolTest(unittest.TestCase):
         allowed = {"equal", "refused"} | {f"tracker refuses: {reason}" for reason in self.TRACKER_REFUSALS}
         self.assertEqual(set(outcome) - allowed, set(), {key: where[key] for key in outcome})
         self.assertEqual(self.raised, self.OWN_PP_STOPS)
-        self.assertGreater(outcome["equal"], 2500)
+        self.assertGreater(outcome["equal"], 7900)
         self.assertGreater(outcome["refused"], 300)
 
     def test_engine_gives_every_pool_record_back(self):
@@ -756,13 +746,11 @@ class RecordAssemblerPoolTest(unittest.TestCase):
                 kind = record_kind(name)
                 picks = self.pool.battles_by_name[name].trace["steps"][0]["input"][f"p{2 - player}"]
                 brought = len(picks.split(" ")[1])  # the foe's "team 1234"
-                for k, parts, candidate in points:
-                    for rec in (parts["record"] if parts["status"] == 0 else None, candidate):
-                        if rec is not None:
-                            # a candidate (move_result left zero) is a record too: the engine takes it back as it is
-                            self.assertEqual(record.check(worlds[kind], rec, brought), (0, []), (name, k, player))
-                            checked += 1
-            self.assertGreater(checked, 7000)
+                for k, parts in points:
+                    if parts["status"] == 0:
+                        self.assertEqual(record.check(worlds[kind], parts["record"], brought), (0, []), (name, k, player))
+                        checked += 1
+            self.assertGreater(checked, 7900)
         finally:
             for w in worlds.values():
                 w.close()

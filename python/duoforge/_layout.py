@@ -330,6 +330,25 @@ REQUEST = _struct([
     ("slot_mask", _U1, 11),
 ], 12)
 
+# One event (duoforge_event, decision 0007): the converter's tuples in this order (trace_to_c.ev_tuple).
+EVENT = _struct([
+    ("kind", _U1, 0),
+    ("position", _U1, 1),
+    ("other", _U1, 2),
+    ("cause", _U1, 3),
+    ("id", _U2, 4),
+    ("id2", _U2, 6),
+    ("hp", _U2, 8),
+    ("hp_max", _U2, 10),
+    ("hp_kind", _U1, 12),
+    ("hp_flag", _U1, 13),
+    ("status", _U1, 14),
+    ("detail", _U1, 15),
+    ("amount", _U1, 16),
+    ("flags", _U1, 17),
+    ("reserved", (_U1, (2,)), 18),
+], 20)
+
 STEP_RESULT = _struct([
     ("epoch", _U4, 0),
     ("kind", _U1, 4),
@@ -584,6 +603,7 @@ BY_C_NAME = {
     "duoforge_factored_domain": FACTORED_DOMAIN,
     "duoforge_factored_choice": FACTORED_CHOICE,
     "duoforge_request": REQUEST,
+    "duoforge_event": EVENT,
     "duoforge_step_result": STEP_RESULT,
     "duoforge_member_view": MEMBER_VIEW,
     "duoforge_position_view": POSITION_VIEW,

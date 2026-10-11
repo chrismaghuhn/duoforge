@@ -20,10 +20,11 @@ Refusals: where the engine refuses a player's record (duoforge_battle_public's E
 same status, derived from public facts only (refusal below): the cause mask of duoforge_battle_public_causes, computed from
 the observation as the C predicate reads it, the Revival Blessing proxy, a possible lockedmove, and a PIVOT before moves
 or with a move still queued. A decision point the assembler cannot reproduce exactly is refused too, with its own named
-reason, never approximated: unburden-without-item-line, and under the POOL kinds move-result-not-foldable (the tail's
-move_result is the engine's classification of each move action; move_result_unknown). The POOL tail's other fields are
-the tracker's folds (party order, Aurora Veil, the position counters, item_now, the toxic stage, the raised flag); the
-features the tracker does not fold stop it at their lines (lines.check) before a record could need them.
+reason, never approximated: unburden-without-item-line, last-move-not-on-sheet, and move-result-not-determined (the
+library cannot tell an action's result from its events). The POOL tail's move_result is the library's classification of
+each move action's events (duoforge_move_result, the engine's rule; the tracker only collects the events); its other
+fields are the tracker's folds (party order, Aurora Veil, the position counters, item_now, the toxic stage, the raised
+flag). The features the tracker does not fold stop it at their lines (lines.check) before a record could need them.
 """
 import numpy as np
 
@@ -51,6 +52,7 @@ VOL_FOLLOW_ME, VOL_HELPING_HAND, VOL_UNBURDEN = (VALUES[f"DFI_VOL_{n}"] for n in
 VOL_CHOICE_LOCK, VOL_NEWLY_SWITCHED = VALUES["DFI_VOL_CHOICE_LOCK"], VALUES["DFI_VOL_NEWLY_SWITCHED"]
 PARTY_HIDDEN = 7  # DFI_PARTY_HIDDEN
 POSFLAG_STATS_RAISED = 2  # DFI_POSFLAG_STATS_RAISED
+MR_UNCLASSIFIED_NOW, MR_UNCLASSIFIED_LAST = VALUES["DFI_MOVE_RESULT_UNCLASSIFIED_NOW"], VALUES["DFI_MOVE_RESULT_UNCLASSIFIED_LAST"]
 _FIELDS = {name: (start, size) for name, start, size in state_layout.fields(pool=True)}
 
 
@@ -161,27 +163,26 @@ def refusal(tracker, observation):
     return None
 
 
-def move_result_unknown(tracker):
-    """Whether a position's move_result (POOL tail rev 4: the pin's moveThisTurnResult and moveLastTurnResult, with the
-    engine's own 'unclassified' bits, src/combat/turn.c dfi_run_move) may be nonzero: its occupant ran a move action this
-    turn or, at a TURN boundary, in the turn that just ended. Its value is the engine's classification of the action's
-    course, which the lines do not determine exactly (and holding the classifier would be a rule outside C), so such a
-    record is refused (reason move-result-not-foldable)."""
-    turn, boundary = tracker._turn, tracker.boundary()
-    recent = (turn - 1,) if boundary == TURN else (turn, turn - 1)
-    return any(p.occupant != OCCUPANT_NONE and p.result_turn and p.result_turn in recent
-               for side in tracker._positions for p in side)
+def move_result_of(data, user, events):
+    """The result of one move action (the POOL tail's move_result of this turn: DFI_MOVE_RESULT_* with
+    DFI_MOVE_RESULT_UNCLASSIFIED_NOW), classified by the library from the action's events (duoforge.view.move_result,
+    the engine's rule); None where the events do not determine it."""
+    from duoforge import view
+    return view.move_result(data.context(), user, events)
 
 
-def assemble(tracker, observation, exact=True):
+def move_result_byte(now, last):
+    """The tail's move_result byte of this turn's and last turn's results (each a value with its unclassified bit, in this
+    turn's form: DFI_MOVE_RESULT_UNCLASSIFIED_NOW): this turn in bits 0-1 and 4, last turn in bits 2-3 and 5."""
+    return (now & 3) | (now & MR_UNCLASSIFIED_NOW) | ((last & 3) << 2) | (MR_UNCLASSIFIED_LAST if last & MR_UNCLASSIFIED_NOW else 0)
+
+
+def assemble(tracker, observation):
     """(record, status, causes, reason) at the tracker's current decision point: the PUBLIC_STATE record and status 0,
-    or a zero record with E_UNSUPPORTED, the cause mask and the named reason of the refusal. exact=False (tests only)
-    skips the refusal of an unknown move_result and leaves it zero, to compare every other field with the engine's."""
+    or a zero record with E_UNSUPPORTED, the cause mask and the named reason of the refusal."""
     try:
         refusal(tracker, observation)
         record = _record(tracker, observation)  # a field it cannot reproduce exactly refuses (Refusal) too
-        if exact and int(record["state_size"]) > state_layout.V3_SIZE and move_result_unknown(tracker):
-            raise Refusal("move-result-not-foldable")
         return record, 0, 0, None
     except Refusal as r:
         return np.zeros((), dtype=_layout.PUBLIC_STATE), E_UNSUPPORTED, r.causes, r.reason
@@ -421,6 +422,9 @@ def _tail(t, s, boundary):
             if p.occupant == OCCUPANT_NONE:
                 continue
             ppre = f"{pre}position{k}."
+            if p.result_now is None or p.result_last is None:
+                raise Refusal("move-result-not-determined")  # the library could not tell an action's result from its events
+            s.put(ppre + "move_result", move_result_byte(p.result_now, p.result_last))
             if p.last_slot is None:
                 raise Refusal("last-move-not-on-sheet")  # the move of its last line is on no slot of its sheet
             s.put(ppre + "last_move", p.last_slot)

@@ -137,6 +137,10 @@ class Data:
             self._ctx = duoforge.Context(data_kind=_layout.CONSTANTS[_KINDS[self.kind]])
         return self._ctx
 
+    def context(self):
+        """The context of this kind (opened on first use and kept): the library calls of the record assembler."""
+        return self._context()
+
     def record_head(self, data_kind=None):
         """(head, state_size) of a public record under this kind (or the library data kind `data_kind`, a DEV kind of the
         same tables): the bytes of the canonical encoding before its RNG (the envelope and the context fingerprint,
@@ -216,3 +220,4 @@ class Data:
 
 def load(root=ROOT, kind="closure"):
     return Data(root, kind)
+

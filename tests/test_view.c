@@ -25,6 +25,8 @@
 #include "state/battle_internal.h"
 #include "codec/state_codec.h"
 #include "state/knowledge.h"
+#include "data/closure_tables.h"
+#include "data/pool_tables.h"
 
 #define GAMES 80u
 #define MAX_STEPS 400u
@@ -810,12 +812,105 @@ static void test_hp_display(df_test *t)
     DF_CHECK(t, pc == 0x55u && fl == 0x55u);
 }
 
+/* An event of the move-result tests. */
+static duoforge_event mr_ev(uint8_t kind, uint8_t position, uint8_t other, uint8_t cause, uint16_t id, uint16_t id2)
+{
+    duoforge_event e;
+    memset(&e, 0, sizeof e);
+    e.kind = kind;
+    e.position = position;
+    e.other = other;
+    e.cause = cause;
+    e.id = id;
+    e.id2 = id2;
+    return e;
+}
+
+static uint8_t mr_of(df_test *t, const duoforge_context *ctx, uint32_t user, const duoforge_event *ev, uint32_t n)
+{
+    uint8_t out = 0xAAu;
+    if (!DF_CHECK(t, duoforge_move_result(ctx, user, ev, n, &out) == DUOFORGE_OK)) {
+        return 0xAAu;
+    }
+    return out;
+}
+
+/* duoforge_move_result: the classes of the engine's rule on hand-built actions (the corpus comparison is the live test's,
+ * duoforge.python.live), the unclassified bit, the refusals with nothing written, the argument checks. */
+static void test_move_result(df_test *t)
+{
+    duoforge_context *kp = df_make_context(&df_config_pool);
+    duoforge_context *k1 = df_make_context(&df_config_k1);
+    const uint8_t none = (uint8_t)DUOFORGE_NO_POSITION;
+    duoforge_event ev[6];
+    /* a [cant] (paralysis): false; the recharge turn: null */
+    ev[0] = mr_ev(DUOFORGE_EVENT_CANT, 1u, none, DUOFORGE_CAUSE_PARALYSIS, 0u, 0u);
+    DF_CHECK(t, mr_of(t, kp, 1u, ev, 1u) == DFI_MOVE_RESULT_FALSE);
+    ev[0].cause = DUOFORGE_CAUSE_RECHARGE;
+    DF_CHECK(t, mr_of(t, kp, 1u, ev, 1u) == DFI_MOVE_RESULT_NULL);
+    /* a damaging move: a hit target true; a miss false; Protect null; a hit and a protected target: true */
+    ev[0] = mr_ev(DUOFORGE_EVENT_MOVE, 0u, 2u, DUOFORGE_CAUSE_NONE, DFI_MOVE_THUNDERBOLT, 0u);
+    ev[1] = mr_ev(DUOFORGE_EVENT_DAMAGE, 2u, none, DUOFORGE_CAUSE_NONE, 0u, 0u);
+    DF_CHECK(t, mr_of(t, kp, 0u, ev, 2u) == DFI_MOVE_RESULT_TRUE);
+    ev[1] = mr_ev(DUOFORGE_EVENT_MISS, 0u, 2u, DUOFORGE_CAUSE_NONE, 0u, 0u);
+    DF_CHECK(t, mr_of(t, kp, 0u, ev, 2u) == DFI_MOVE_RESULT_FALSE);
+    ev[1] = mr_ev(DUOFORGE_EVENT_BLOCKED, 2u, none, DUOFORGE_CAUSE_NONE, 0u, 0u);
+    DF_CHECK(t, mr_of(t, kp, 0u, ev, 2u) == DFI_MOVE_RESULT_NULL);
+    ev[2] = mr_ev(DUOFORGE_EVENT_DAMAGE, 3u, none, DUOFORGE_CAUSE_NONE, 0u, 0u);
+    DF_CHECK(t, mr_of(t, kp, 0u, ev, 3u) == DFI_MOVE_RESULT_TRUE);
+    /* an absorbing ability (Lightning Rod's -ability, then its boost): false, the boost is no hit */
+    ev[1] = mr_ev(DUOFORGE_EVENT_ABILITY, 2u, none, DUOFORGE_CAUSE_NONE, 0u, (uint16_t)(1u + DFI_ABILITY_LIGHTNINGROD));
+    ev[2] = mr_ev(DUOFORGE_EVENT_BOOST, 2u, none, DUOFORGE_CAUSE_NONE, 0u, 0u);
+    ev[2].amount = 1u;
+    DF_CHECK(t, mr_of(t, kp, 0u, ev, 3u) == DFI_MOVE_RESULT_FALSE);
+    /* a self boost: true when a stage rose, false at +6 (a boost of 0) */
+    ev[0] = mr_ev(DUOFORGE_EVENT_MOVE, 1u, 1u, DUOFORGE_CAUSE_NONE, DFI_MOVE_SWORDSDANCE, 0u);
+    ev[1] = mr_ev(DUOFORGE_EVENT_BOOST, 1u, none, DUOFORGE_CAUSE_NONE, 0u, 0u);
+    ev[1].amount = 2u;
+    DF_CHECK(t, mr_of(t, kp, 1u, ev, 2u) == DFI_MOVE_RESULT_TRUE);
+    ev[1].amount = 0u;
+    DF_CHECK(t, mr_of(t, kp, 1u, ev, 2u) == DFI_MOVE_RESULT_FALSE);
+    /* a status cured in the same action (a Lum Berry): the status did not change, false */
+    ev[0] = mr_ev(DUOFORGE_EVENT_MOVE, 3u, 0u, DUOFORGE_CAUSE_NONE, DFI_MOVE_WILLOWISP, 0u);
+    ev[1] = mr_ev(DUOFORGE_EVENT_STATUS, 0u, none, DUOFORGE_CAUSE_NONE, 0u, 0u);
+    DF_CHECK(t, mr_of(t, kp, 3u, ev, 2u) == DFI_MOVE_RESULT_TRUE);
+    ev[2] = mr_ev(DUOFORGE_EVENT_CURE_STATUS, 0u, none, DUOFORGE_CAUSE_NONE, 0u, 0u);
+    DF_CHECK(t, mr_of(t, kp, 3u, ev, 3u) == DFI_MOVE_RESULT_FALSE);
+    /* Haze sets no class: the unclassified bit alone */
+    ev[0] = mr_ev(DUOFORGE_EVENT_MOVE, 0u, none, DUOFORGE_CAUSE_NONE, DFI_MOVE_HAZE, 0u);
+    ev[1] = mr_ev(DUOFORGE_EVENT_CLEAR_ALL_BOOSTS, none, none, DUOFORGE_CAUSE_NONE, 0u, 0u);
+    DF_CHECK(t, mr_of(t, kp, 0u, ev, 2u) == DFI_MOVE_RESULT_UNCLASSIFIED_NOW);
+    /* a [still] -fail: false; the lines of another position before the action are skipped */
+    ev[0] = mr_ev(DUOFORGE_EVENT_DAMAGE, 3u, none, DUOFORGE_CAUSE_POISON, 0u, 0u);
+    ev[1] = mr_ev(DUOFORGE_EVENT_MOVE, 1u, none, DUOFORGE_CAUSE_NONE, DFI_MOVE_TAILWIND, 0u);
+    ev[1].flags = DUOFORGE_EVENT_FLAG_STILL;
+    ev[2] = mr_ev(DUOFORGE_EVENT_FAIL, 1u, none, DUOFORGE_CAUSE_NONE, 0u, 0u);
+    DF_CHECK(t, mr_of(t, kp, 1u, ev, 3u) == DFI_MOVE_RESULT_FALSE);
+    /* refusals, nothing written: a handler not mapped (Substitute), no action of the user, a context without the tail */
+    uint8_t out = 0x55u;
+    ev[0] = mr_ev(DUOFORGE_EVENT_MOVE, 0u, 0u, DUOFORGE_CAUSE_NONE, DFI_MOVE_SUBSTITUTE, 0u);
+    DF_CHECK(t, duoforge_move_result(kp, 0u, ev, 1u, &out) == DUOFORGE_E_UNSUPPORTED);
+    DF_CHECK(t, duoforge_move_result(kp, 2u, ev, 1u, &out) == DUOFORGE_E_UNSUPPORTED);
+    ev[0] = mr_ev(DUOFORGE_EVENT_CANT, 1u, none, DUOFORGE_CAUSE_PARALYSIS, 0u, 0u);
+    DF_CHECK(t, duoforge_move_result(k1, 1u, ev, 1u, &out) == DUOFORGE_E_UNSUPPORTED);
+    DF_CHECK(t, duoforge_move_result(kp, 1u, ev, 0u, &out) == DUOFORGE_E_UNSUPPORTED);
+    /* the argument checks */
+    DF_CHECK(t, duoforge_move_result(NULL, 1u, ev, 1u, &out) == DUOFORGE_E_NULL_ARGUMENT);
+    DF_CHECK(t, duoforge_move_result(kp, 1u, NULL, 1u, &out) == DUOFORGE_E_NULL_ARGUMENT);
+    DF_CHECK(t, duoforge_move_result(kp, 1u, ev, 1u, NULL) == DUOFORGE_E_NULL_ARGUMENT);
+    DF_CHECK(t, duoforge_move_result(kp, 4u, ev, 1u, &out) == DUOFORGE_E_INVALID_ARGUMENT);
+    DF_CHECK(t, out == 0x55u);
+    duoforge_context_destroy(k1);
+    duoforge_context_destroy(kp);
+}
+
 int main(void)
 {
     df_test t;
     df_test_begin(&t, "duoforge.view");
     test_uniforms(&t);
     test_hp_display(&t);
+    test_move_result(&t);
     test_arguments(&t);
     test_counter_information_safety(&t);
     test_batch(&t);

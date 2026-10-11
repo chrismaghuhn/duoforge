@@ -39,3 +39,21 @@ def hp_display(hp, hp_max):
     if st:
         raise DuoforgeError(status_name(st))
     return int(percent[0]), int(flag[0])
+
+
+def move_result(ctx, user, events):
+    """The tail's move_result value of one move action (duoforge_move_result): its class in bits 0-1 or the unclassified
+    bit, from the action's events (duoforge_event records, or the converter's 14-tuples in their order); None where the
+    library refuses (E_UNSUPPORTED: the events do not determine it). Any other refusal raises."""
+    if ctx.handle is None:
+        raise ValueError("the context is closed")
+    records = np.zeros(len(events), _layout.EVENT)
+    for i, e in enumerate(events):
+        records[i] = tuple(e) + ((0, 0),) if len(e) == 14 else e
+    out = np.zeros(1, np.uint8)
+    st = load_library().duoforge_move_result(ctx.handle, int(user), ptr(records), len(records), ptr(out))
+    if st == _layout.CONSTANTS["DUOFORGE_E_UNSUPPORTED"]:
+        return None
+    if st:
+        raise DuoforgeError(status_name(st))
+    return int(out[0])
