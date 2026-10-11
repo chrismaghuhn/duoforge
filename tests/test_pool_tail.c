@@ -1698,7 +1698,20 @@ int main(void)
                 uint8_t dg[DUOFORGE_DIGEST_SIZE];
                 size_t written = 77u;
                 size_t size = 0u;
-                if (dfi_state_check(kinds[i], b, &inv) == DUOFORGE_E_INVARIANT && inv == DFI_INV_TAIL_KIND &&
+                /* decision 0060: the trap_turns byte of an occupied position is judged by the per-position check of a turn
+                 * boundary (a trap whose source is 0 is refused there, before the whole-tail check), the other bytes by
+                 * TAIL_KIND. Each byte has its own expected reason; nothing else is accepted. */
+                bool trap_turns_byte = false;
+                for (uint32_t s2 = 0u; s2 < 2u; ++s2) {
+                    for (uint32_t p2 = 0u; p2 < 2u; ++p2) {
+                        if (k == (size_t)((uint8_t *)&b->tail.sides[s2].positions[p2].trap_turns - (uint8_t *)&b->tail) &&
+                            b->sides[s2].positions[p2].occupant != DFI_OCCUPANT_NONE) {
+                            trap_turns_byte = true;
+                        }
+                    }
+                }
+                const dfi_invariant want_inv = trap_turns_byte ? DFI_INV_TAIL_POSITION : DFI_INV_TAIL_KIND;
+                if (dfi_state_check(kinds[i], b, &inv) == DUOFORGE_E_INVARIANT && inv == want_inv &&
                     duoforge_battle_check(kinds[i], b) == DUOFORGE_E_INVARIANT &&
                     duoforge_battle_encode(kinds[i], b, out, sizeof out, &written) == DUOFORGE_E_INVARIANT &&
                     duoforge_battle_digest(kinds[i], b, dg) == DUOFORGE_E_INVARIANT &&
@@ -1884,6 +1897,16 @@ int main(void)
             want.sides[s].aurora_veil_turns = (uint8_t)(want.sides[s].aurora_veil_turns != 0u ? want.sides[s].aurora_veil_turns - 1u : 0u);
             for (uint32_t p = 0u; p < DUOFORGE_ACTIVE_PER_SIDE; ++p) {
                 dfi_tail_pos *tp = &want.sides[s].positions[p];
+                /* step G90 (decision 0060): the partial trap counts down in the residual (order 13). The example's trapper (flat 2)
+                 * stands, so no source-gone clearing: the turns go down by one, and at 0 the four fields are cleared. */
+                if (tp->trap_turns != 0u) {
+                    tp->trap_turns = (uint8_t)(tp->trap_turns - 1u);
+                    if (tp->trap_turns == 0u) {
+                        tp->trap_source = 0u;
+                        tp->trap_move = 0u;
+                        tp->trap_band = 0u;
+                    }
+                }
                 tp->throat_chop_turns = (uint8_t)(tp->throat_chop_turns != 0u ? tp->throat_chop_turns - 1u : 0u);
                 tp->heal_block_turns = (uint8_t)(tp->heal_block_turns != 0u ? tp->heal_block_turns - 1u : 0u);
                 /* step G31: Taunt and Yawn count down in the residual (a Yawn that runs out puts its holder to sleep) */
