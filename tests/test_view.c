@@ -636,41 +636,12 @@ typedef struct mr_known_slot {
     uint32_t expected; /* the classified value, the pin's */
 } mr_known_slot;
 
-/* issue #389: a Baton Pass without a reserve (dfi_run_baton_pass: -fail, [still], no result set) is unclassified in the engine,
- * false at the pin (data/moves.ts batonpass onHit NOT_FAIL; runMoveEffects' selfSwitch false; trySpreadMoveHit). */
+/* No known deviation is left: the issue #389 (a Baton Pass without a reserve left its result unclassified) is fixed, and the
+ * entries that listed it (the four of the first merge and the thirty of the move-result corpus) are removed. The sentinel keeps the array non-empty; the count excludes it. */
 static const mr_known_slot MR_KNOWN[] = {
-    {"g74_pass_no_reserve", 22u, 1u, true, DFI_MOVE_RESULT_UNCLASSIFIED_NOW, DFI_MOVE_RESULT_FALSE},
-    {"g74_pass_no_reserve_sitrus", 19u, 0u, true, DFI_MOVE_RESULT_UNCLASSIFIED_NOW, DFI_MOVE_RESULT_FALSE},
-    {"g74_pass_yawn_passer", 21u, 1u, true, DFI_MOVE_RESULT_UNCLASSIFIED_NOW, DFI_MOVE_RESULT_FALSE},
-    {"g74_pass_yawn_passer", 22u, 1u, true, DFI_MOVE_RESULT_UNCLASSIFIED_NOW, DFI_MOVE_RESULT_FALSE},
-    {"g74_pass_yawn_passer", 30u, 0u, true, DFI_MOVE_RESULT_UNCLASSIFIED_NOW, DFI_MOVE_RESULT_FALSE},
-    {"g74_pass_yawn_passer", 32u, 0u, true, DFI_MOVE_RESULT_UNCLASSIFIED_NOW, DFI_MOVE_RESULT_FALSE},
-    {"g74_pass_yawn_passer", 33u, 0u, true, DFI_MOVE_RESULT_UNCLASSIFIED_NOW, DFI_MOVE_RESULT_FALSE},
-    {"g74_pass_yawn_passer", 34u, 0u, true, DFI_MOVE_RESULT_UNCLASSIFIED_NOW, DFI_MOVE_RESULT_FALSE},
-    {"g74_pass_yawn_passer", 45u, 0u, true, DFI_MOVE_RESULT_UNCLASSIFIED_NOW, DFI_MOVE_RESULT_FALSE},
-    {"g74_pass_yawn_passer", 46u, 0u, false, DFI_MOVE_RESULT_UNCLASSIFIED_NOW, DFI_MOVE_RESULT_FALSE},
-    {"g74_pass_yawn_passer", 46u, 0u, true, DFI_MOVE_RESULT_UNCLASSIFIED_NOW, DFI_MOVE_RESULT_FALSE},
-    {"g74_pass_yawn_passer", 47u, 0u, true, DFI_MOVE_RESULT_UNCLASSIFIED_NOW, DFI_MOVE_RESULT_FALSE},
-    {"g74_pass_yawn_passer", 53u, 0u, false, DFI_MOVE_RESULT_UNCLASSIFIED_NOW, DFI_MOVE_RESULT_FALSE},
-    {"g74_pass_yawn_passer", 54u, 0u, true, DFI_MOVE_RESULT_UNCLASSIFIED_NOW, DFI_MOVE_RESULT_FALSE},
-    {"g74_pass_yawn_passer", 55u, 0u, true, DFI_MOVE_RESULT_UNCLASSIFIED_NOW, DFI_MOVE_RESULT_FALSE},
-    {"g74_pass_yawn_passer", 56u, 0u, true, DFI_MOVE_RESULT_UNCLASSIFIED_NOW, DFI_MOVE_RESULT_FALSE},
-    {"g74_pass_yawn_passer", 57u, 0u, true, DFI_MOVE_RESULT_UNCLASSIFIED_NOW, DFI_MOVE_RESULT_FALSE},
-    {"g74_pass_yawn_passer", 57u, 2u, true, DFI_MOVE_RESULT_UNCLASSIFIED_NOW, DFI_MOVE_RESULT_FALSE},
-    {"g74_pass_yawn_passer", 58u, 0u, true, DFI_MOVE_RESULT_UNCLASSIFIED_NOW, DFI_MOVE_RESULT_FALSE},
-    {"g74_pass_yawn_passer", 59u, 0u, true, DFI_MOVE_RESULT_UNCLASSIFIED_NOW, DFI_MOVE_RESULT_FALSE},
-    {"g74_pass_yawn_passer", 61u, 0u, true, DFI_MOVE_RESULT_UNCLASSIFIED_NOW, DFI_MOVE_RESULT_FALSE},
-    {"g74_pass_yawn_passer", 62u, 0u, true, DFI_MOVE_RESULT_UNCLASSIFIED_NOW, DFI_MOVE_RESULT_FALSE},
-    {"g74_pass_yawn_passer", 63u, 0u, true, DFI_MOVE_RESULT_UNCLASSIFIED_NOW, DFI_MOVE_RESULT_FALSE},
-    {"g74_pass_yawn_passer", 64u, 0u, true, DFI_MOVE_RESULT_UNCLASSIFIED_NOW, DFI_MOVE_RESULT_FALSE},
-    {"g74_pass_yawn_passer", 65u, 0u, true, DFI_MOVE_RESULT_UNCLASSIFIED_NOW, DFI_MOVE_RESULT_FALSE},
-    {"g74_pass_yawn_passer", 66u, 0u, true, DFI_MOVE_RESULT_UNCLASSIFIED_NOW, DFI_MOVE_RESULT_FALSE},
-    {"g74_pass_yawn_passer", 67u, 0u, true, DFI_MOVE_RESULT_UNCLASSIFIED_NOW, DFI_MOVE_RESULT_FALSE},
-    {"g74_pass_yawn_passer", 68u, 2u, true, DFI_MOVE_RESULT_UNCLASSIFIED_NOW, DFI_MOVE_RESULT_FALSE},
-    {"g74_pass_yawn_passer", 69u, 2u, true, DFI_MOVE_RESULT_UNCLASSIFIED_NOW, DFI_MOVE_RESULT_FALSE},
-    {"g74_pass_yawn_passer", 71u, 2u, true, DFI_MOVE_RESULT_UNCLASSIFIED_NOW, DFI_MOVE_RESULT_FALSE},
+    {NULL, 0u, 0u, false, 0u, 0u},
 };
-#define MR_KNOWN_COUNT (sizeof MR_KNOWN / sizeof MR_KNOWN[0])
+#define MR_KNOWN_COUNT (sizeof MR_KNOWN / sizeof MR_KNOWN[0] - 1u)
 
 static const char *mr_name = "playout"; /* the recorded battle being replayed, or the playouts */
 static uint32_t mr_step_index;
@@ -682,7 +653,7 @@ static void mr_slot(df_test *t, uint32_t pos, bool last, uint32_t engine, uint32
     if (engine == expected) {
         return;
     }
-    for (size_t k = 0u; k < MR_KNOWN_COUNT; ++k) {
+    for (size_t k = 0u; k + 1u < sizeof MR_KNOWN / sizeof MR_KNOWN[0]; ++k) { /* the sentinel is not an entry */
         const mr_known_slot *e = &MR_KNOWN[k];
         if (strcmp(e->battle, mr_name) == 0 && e->step == mr_step_index && e->pos == pos && e->last == last) {
             /* a half fix or another wrong value is no longer the listed deviation */

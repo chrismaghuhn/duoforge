@@ -578,6 +578,8 @@ CLOSURE_OUTCOME = {"equal": 2594, "refused": 310}
 # sub-fixes-2 moves add +660 equal and +122 refused; the SUBSTITUTE stops go 78 -> 98 (the Leech Seed streams run on to a
 # later Substitute). Main (+408 equal, +28 refused): Attract #393, lane B G79/G81/G83 and the infatuated engine check.
 # Measured on the merged tree (CI 38140646950, Windows Python job): 10966 equal, 637 refused.
+# The Baton Pass battle c2bp_a (issue 389) adds 34 decision points (32 equal, 2 refused by the engine at its k=8, both players);
+# batch 8 pins are placeholders until the CI log of the final head (python POOL_OUTCOME / POOL_STOPS).
 POOL_OUTCOME = {"equal": 10966, "refused": 637, "engine check refuses: infatuated occupant (from_view, option B)": 42,
                 "tracker refuses: unburden-without-item-line": 4}
 POOL_STOPS = {"feature:SUBSTITUTE": 98, "feature:DRAGON_CHEER": 12, "feature:FORME_CHANGE": 10, "feature:DESTINY_BOND": 10,
