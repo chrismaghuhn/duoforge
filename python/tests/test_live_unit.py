@@ -222,5 +222,136 @@ class TrackerStopTest(unittest.TestCase):
             self.assertEqual(caught.exception.reason, "encore-slot-unknown")
 
 
+
+class _TablesData:
+    """The converter's pool tables without the library: what the tracker reads of its data (the tables, pp_max and
+    mega_capable of a member)."""
+    kind = "pool"
+
+    def __init__(self):
+        from duoforge_live.data import trace_to_c
+        self.tables = trace_to_c.load_tables(str(data.ROOT), True)
+
+    def pp_max(self, move):
+        return 5
+
+    def mega_capable(self, species, item):
+        return False
+
+
+class LastResortUsedTest(unittest.TestCase):
+    """Step G94 (decision 0061): the used bits of Last Resort's four move slots, per position (volatiles2 bits 0 to 3,
+    slot k at bit k-1). The bit of slot k is set by the occupant's own move line of slot k: deductPP sets the flag before
+    TryMove, so a move that fails still counts; a locked turn deducts no PP; a Magic Bounce reflection (cause ABILITY) is
+    no use of its holder. The bits end with the occupant (a switch-in, a faint). The view shows them only for an occupant
+    with Last Resort on its sheet; the state keeps them for every occupant."""
+
+    def setUp(self):
+        from duoforge_live import tracker
+        from duoforge_live.data import trace_to_c
+        self.tracker, self.trace_to_c = tracker, trace_to_c
+        self.D = _TablesData()
+        self.M = self.D.tables["MOVE"]
+        holder = {"species": 1, "item": 0, "ability": 0, "gender": "", "nature": 0, "sp": [0] * 6,
+                  "moves": [self.M["LASTRESORT"], self.M["DOUBLEEDGE"], self.M["PROTECT"], self.M["EARTHQUAKE"]]}
+        plain = dict(holder, moves=[self.M["DOUBLEEDGE"], self.M["PROTECT"], self.M["EARTHQUAKE"]])
+        t = tracker.Tracker.__new__(tracker.Tracker)
+        t.data, t.side, t._spectator, t.epoch = self.D, 0, False, 1
+        t.request = {"rqid": 1}
+        t._guard_moves, t._choice_items, t._pressure = set(), set(), None
+        t._struggle, t._baton_pass, t._last_move = self.M["STRUGGLE"], -1, None
+        t._conditions = [[0] * 4, [0] * 4]
+        t._names = [{}, {}]
+        t._positions = [[tracker._Position(), tracker._Position()] for _ in (0, 1)]
+        t._own_members = [tracker._Member(s, self.D) for s in (holder, plain)]
+        t._foe_members = [tracker._Member(s, self.D) for s in (holder, plain)]
+        for side in t._positions:
+            side[0].occupant, side[1].occupant = 0, 1
+        self.t = t
+
+    def move(self, pos, name, cause=0, flags=0):
+        tt = self.trace_to_c
+        self.t._event(tt.ev_tuple(tt.EV["MOVE"], pos, tt.NOPOS, cause, self.M[name], flags=flags))
+
+    def used(self, pos):
+        return self.t._positions[pos // 2][pos % 2].used
+
+    def shown(self):
+        """volatiles2 as the view extension holds it: [own slot 0, own slot 1] and [foe slot 0, foe slot 1]."""
+        return self.t.observation_ext()["volatiles2"].tolist()
+
+    def test_a_holder_shows_the_slots_its_moves_used(self):
+        self.move(0, "PROTECT")  # slot 3
+        self.move(0, "EARTHQUAKE")  # slot 4
+        self.assertEqual(self.shown()[0][0], 0b1100)
+
+    def test_a_move_that_fails_still_uses_its_slot(self):
+        self.move(0, "LASTRESORT", flags=self.trace_to_c.FLAG["STILL"])  # deductPP runs before TryMove
+        self.assertEqual(self.shown()[0][0], 0b0001)
+
+    def test_a_locked_turn_deducts_no_pp_and_sets_no_bit(self):
+        self.move(0, "DOUBLEEDGE", flags=self.trace_to_c.FLAG["LOCKED"])
+        self.assertEqual(self.used(0), 0)
+        self.move(0, "DOUBLEEDGE")
+        self.assertEqual(self.used(0), 0b0010)
+
+    def test_a_magic_bounce_reflection_is_no_use_of_its_holder(self):
+        self.move(0, "PROTECT", cause=self.trace_to_c.CAUSE["ABILITY"])
+        self.assertEqual(self.used(0), 0)
+        self.assertEqual(self.shown()[0][0], 0)
+
+    def test_a_foe_holder_shows_its_slots(self):
+        self.move(2, "PROTECT")
+        self.assertEqual(self.shown(), [[0, 0], [0b0100, 0]])
+
+    def test_a_non_holder_keeps_its_bits_but_shows_none(self):
+        self.move(1, "PROTECT")  # the plain sheet has no Last Resort: PROTECT is its second move
+        self.assertEqual(self.used(1), 0b0010)
+        self.assertEqual(self.shown()[0][1], 0)
+
+    def test_a_switch_in_clears_the_slots(self):
+        tt = self.trace_to_c
+        self.move(0, "PROTECT")
+        self.t._event(tt.ev_tuple(tt.EV["SWITCH"], 0, tt.NOPOS, 0, 1, 0, 100, 100, 1))  # the plain member comes in
+        self.assertEqual((self.used(0), self.shown()[0][0]), (0, 0))
+        self.move(0, "PROTECT")
+        self.t._event(tt.ev_tuple(tt.EV["SWITCH"], 0, tt.NOPOS, 0, 0, 0, 100, 100, 1))  # the holder comes back
+        self.assertEqual((self.used(0), self.shown()[0][0]), (0, 0))
+
+    def test_a_faint_clears_the_slots_and_keeps_the_occupant(self):
+        tt = self.trace_to_c
+        self.move(2, "PROTECT")
+        self.t._event(tt.ev_tuple(tt.EV["FAINT"], 2))  # the tail ends with the faint (dfi_process_faints)
+        self.assertEqual((self.t._positions[1][0].occupant, self.used(2), self.shown()[1][0]), (0, 0, 0))
+
+    def test_struggle_uses_no_slot(self):
+        self.move(0, "STRUGGLE")
+        self.assertEqual(self.used(0), 0)
+
+    def test_a_move_off_the_sheet_stops(self):
+        from duoforge_live import lines
+        with self.assertRaises(lines.Stop) as caught:
+            self.move(0, "ICEBEAM")
+        self.assertTrue(caught.exception.reason.startswith("structure:"), caught.exception.reason)
+
+    def test_a_cant_nopp_line_stops(self):
+        from types import SimpleNamespace
+        from duoforge_live import lines
+        with self.assertRaises(lines.Stop):
+            lines.check("|cant|p1a: Holder|nopp|Last Resort", SimpleNamespace(data=self.D))
+
+    def test_an_ally_switch_stops(self):
+        from types import SimpleNamespace
+        from duoforge_live import lines
+        with self.assertRaises(lines.Stop):
+            lines.check("|move|p1a: Holder|Ally Switch||", SimpleNamespace(data=self.D))
+
+    def test_restrict_ext_keeps_the_slot_bits(self):
+        from duoforge_live import lines
+        self.move(0, "PROTECT")
+        kept = self.tracker.restrict_ext(self.t.observation_ext(), 1 << lines.FEATURES["LAST_RESORT_USED"])
+        self.assertEqual(kept["volatiles2"].tolist(), [[0b0100, 0], [0, 0]])
+
+
 if __name__ == "__main__":
     unittest.main()
