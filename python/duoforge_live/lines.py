@@ -317,6 +317,8 @@ def check(line, view):
     if kind == "-fail" and len(args) > 1 and args[1] == "unboost":
         return _kept_drop(args, attrs, view)
     if kind == "cant" and len(args) > 1 and args[1] == "Attract":
+        if attrs:
+            _unknown(kind, "Attract " + " ".join(attrs))  # the pin's cant names no attribute
         return _feature("RESERVE_VOLATILES")  # the infatuated occupant's stopped action (step G71): no move named
     if kind in GENERIC:
         return "fold"
@@ -330,8 +332,12 @@ def check(line, view):
     if kind in ("-activate", "-start", "-end") and effect in UNFOLDED:
         _unfolded(effect)
     if kind in ("-activate", "-start", "-end") and effect in _ATTRACT:
-        # Attract (step G71): its start, its check before a move and its ends (the visible ones, and the silent end the tracker
-        # folds itself); the converter takes exactly the forms of the pin, and refuses the rest
+        # Attract (step G71): its start, its check before a move and its ends. The converter drops every [silent] line before
+        # its branches, so only the one silent form folds: -end|X|Attract|[silent] (the source left; the tracker's
+        # _silent_attract_end). Any other [silent] Attract line stops, as it would be lost in silence; the converter takes
+        # the forms of the pin's other lines and refuses the rest.
+        if "[silent]" in attrs and not (kind == "-end" and effect == "Attract" and attrs == ["[silent]"]):
+            _unknown(kind, f"{effect} [silent]")
         return _feature("RESERVE_VOLATILES")
     if kind == "-activate":
         if effect in _FOLD_ACTIVATE:
