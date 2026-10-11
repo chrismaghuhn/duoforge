@@ -1644,7 +1644,7 @@ static duoforge_status dfi_get_damage(dfi_run *r, uint32_t user, uint32_t target
         return dfi_queue_self_faint(r, user);
     }
     /* Metal Burst's damageCallback (step G97, data/moves.ts:11657-11664): (lastDamagedBy.damage * 1.5) || 1, the record of the
-     * user (the foe's last numeric hit this turn, the onTry judged before). The float is floored by the damage's clamp
+     * user (the foe's last numeric hit this turn, the onTry judged before). The product is floored by the damage's clamp
      * (sim/battle.ts:2215, clampIntRange(damage, 1)), so the power is max(1, floor(1.5 * dealt)), with no critical hit roll,
      * no formula and no modifier (the same early return as Super Fang). Non-pool data never has the record. */
     if (md->special == DFI_SPECIAL_METAL_BURST) {
