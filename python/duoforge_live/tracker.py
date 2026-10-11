@@ -250,7 +250,7 @@ class Tracker:
     """One battle room as one player sees it. feed() every message of the room in order, accepted() every
     own choice Showdown took; at a decision point (ready) observation() and domain() give DuoForge's view."""
 
-    _theft_due = None  # the theft an Air Balloon announcement opened, until its last line (_theft_follows, step G85)
+    _theft_due = None  # the Air Balloon announcement whose item line is still due (_theft_follows, steps G85, G29)
 
     def __init__(self, data, own_text):
         self.data = data
@@ -356,13 +356,10 @@ class Tracker:
         cls = lines.check(line, self) if self._foe_members is not None else "fold"
         if cls is None:
             return
-        if cls.startswith("theft:"):
-            # an Air Balloon announcement that a theft gives its receiver (step G85): it changes no field; the theft's own
-            # lines come next, in the engine's order (_theft_follows)
-            holder = line.split("|")[2]
-            kinds = ["-enditem", "-item"] if cls[len("theft:"):] == "Pickpocket" else ["-item"]
-            self._theft_due = {"holder": holder, "ability": f"ability: {cls[len('theft:'):]}", "kinds": kinds,
-                               "giver": None}
+        if cls == "balloon":
+            # the receiver's Air Balloon announcement (lines.check): it changes no field; the line that gives the item
+            # comes next, in the engine's order (_theft_follows)
+            self._theft_due = {"holder": line.split("|")[2], "giver": None}
             cls = "fold"
         self._lines.append(line)
         if cls == "keep":
@@ -406,21 +403,16 @@ class Tracker:
         self._fold(line)
 
     def _theft_follows(self, line):
-        """The line after an Air Balloon announcement of a theft (lines.check "theft:", step G85): Pickpocket's silent loss
-        of the attacker, then the holder's -item; Magician's -item of its holder alone. Each has the item the announcement
-        names and the ability of the theft, and the holder and the attacker are those of the announcement and the loss.
-        Any other line stops: the engine prints the announcement only before its theft."""
+        """The line after an Air Balloon announcement (lines.check "balloon", step G85): the item line that gives the
+        balloon to the announced holder, with Pickpocket's silent loss of the attacker before it (lines.balloon_follow).
+        Any other line stops the tracker: the engine prints the announcement only before that item line."""
         due = self._theft_due
-        parts = lines.theft_parts(line)
-        if parts is None or parts[0] != due["kinds"][0] or parts[2] != "Air Balloon" or parts[3] != due["ability"]:
-            raise lines.Stop(f"line:{line.split('|')[1]} not the theft of an Air Balloon announcement")
-        kind, position, _, _, of = parts
-        if kind == "-enditem":
-            due["giver"] = position
-        elif position != due["holder"] or (due["giver"] is not None and of != due["giver"]):
-            raise lines.Stop("line:-item not the theft of an Air Balloon announcement")
-        due["kinds"].pop(0)
-        if not due["kinds"]:
+        got = lines.balloon_follow(line, due["holder"], due["giver"])
+        if got is None:
+            raise lines.Stop(f"line:{line.split('|')[1]} not the item an Air Balloon announcement opens")
+        if got[0] == "loss":
+            due["giver"] = line.split("|")[2]  # the attacker: the silent loss's position
+        else:
             self._theft_due = None
 
     def _throat_chop(self, parts):
@@ -497,13 +489,6 @@ class Tracker:
         a line about the holder's own item): the one a move or Symbiosis gave it, 0 after one took it, else the
         sheet's."""
         return self._item_of(self._member_of(ident))
-
-    def item_gone(self, ident):
-        """Whether the member a protocol ident names holds no item as far as the lines showed: none (taken, or none on the
-        sheet), or used up (item_consumed, set by every ITEM_END that is not a taken item, on either side; item_used is
-        refreshed from the request only on the own side). lines.check reads it for an Air Balloon announcement."""
-        member = self._member_of(ident)
-        return self._item_of(member) == 0 or member.item_consumed != 0
 
     @staticmethod
     def _item_of(member):
