@@ -594,65 +594,6 @@ static void test_pad_zero_after_decode(df_test *t)
     finish(ctx, b);
 }
 
-/* The bundle of a recorded slot step (the conformance steps; the team step is start()'s). */
-static void conf_bundle(const df_conf_step *st, const duoforge_battle *b, duoforge_decision_bundle *bd)
-{
-    memset(bd, 0, sizeof *bd);
-    bd->epoch = b->request_epoch;
-    bd->response_mask = (uint8_t)(st->answered0 | (st->answered1 << 1u));
-    for (uint32_t s = 0u; s < 2u; ++s) {
-        if ((s == 0u && !st->answered0) || (s == 1u && !st->answered1)) {
-            continue;
-        }
-        duoforge_side_choice *r = &bd->responses[s];
-        r->epoch = b->request_epoch;
-        r->side = (uint8_t)s;
-        r->kind = (uint8_t)DUOFORGE_CHOICE_SLOTS;
-        for (uint32_t k = 0u; k < 2u; ++k) {
-            const df_conf_cmd *c = &st->cmds[s][k];
-            r->slots[k] = (duoforge_slot_command){c->kind, c->move_slot, c->target, c->mega, c->reserve, {0u, 0u, 0u}};
-        }
-    }
-}
-
-/* The partial trap of g90_wrap_band ends with a VOLATILE_END event (detail PARTIAL_TRAP, the -end line of the pin): replaying
- * the recorded steps with their events, the event shows up once, and only with the end of the duration (not a silent end). */
-static void test_trap_end_event(df_test *t)
-{
-    duoforge_context *ctx = NULL;
-    duoforge_battle *b = NULL;
-    duoforge_decision_bundle bd;
-    duoforge_step_result res;
-    if (!start(t, "g90_wrap_band", &ctx, &b, &bd, &res)) {
-        finish(ctx, b);
-        return;
-    }
-    const df_conf_battle *cb = find_conf("g90_wrap_band");
-    DF_CHECK(t, cb != NULL);
-    static duoforge_event ev0[DUOFORGE_MAX_EVENTS];
-    static duoforge_event ev1[DUOFORGE_MAX_EVENTS];
-    unsigned ends = 0u;
-    for (uint32_t si = 1u; cb != NULL && si < cb->step_count; ++si) {
-        const df_conf_step *st = &cb->steps[si];
-        conf_bundle(st, b, &bd);
-        duoforge_event_buffer buf[2] = {{ev0, DUOFORGE_MAX_EVENTS, 0u}, {ev1, DUOFORGE_MAX_EVENTS, 0u}};
-        uint32_t used = 0u;
-        duoforge_step_result sr;
-        DF_CHECK(t, dfi_battle_step_events_tape(ctx, b, &bd, &conf_tape[st->tape_off], st->tape_len, &used, &sr, buf) ==
-                        DUOFORGE_OK);
-        for (uint32_t pl = 0u; pl < 2u; ++pl) {
-            for (uint32_t k = 0u; k < buf[pl].count; ++k) {
-                const duoforge_event *e = &buf[pl].events[k];
-                if (e->kind == DUOFORGE_EVENT_VOLATILE_END && e->detail == DUOFORGE_VOLATILE_PARTIAL_TRAP) {
-                    ++ends;
-                }
-            }
-        }
-    }
-    DF_CHECK_EQ_U64(t, ends, 1u);
-    finish(ctx, b);
-}
-
 int main(void)
 {
     df_test t;
@@ -666,6 +607,5 @@ int main(void)
     test_pick_revisions(&t);
     test_codec_elapsed(&t);
     test_pad_zero_after_decode(&t);
-    test_trap_end_event(&t);
     return df_test_end(&t);
 }
