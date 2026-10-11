@@ -47,6 +47,44 @@ def schedule(team_pairs):
     return [(k, g, *(pair if g == 0 else pair[::-1])) for k, pair in enumerate(team_pairs) for g in (0, 1)]
 
 
+def check_host(host):
+    """The arena logs in, challenges and turns timers on: it plays on a local server only (a loopback or private
+    address, or localhost), never on a public one (SystemExit)."""
+    import ipaddress
+    from . import client
+    if host == "localhost":
+        return
+    try:
+        address = ipaddress.ip_address(host)
+    except ValueError:
+        raise SystemExit(f"the arena plays on a local server only, not {host!r}") from None
+    if not (address.is_loopback or address.is_private) or client.official(f"ws://{host}/"):
+        raise SystemExit(f"the arena plays on a local server only, not {host!r}")
+
+
+def _ready(url, timeout):
+    """Whether the server answers at url within timeout seconds."""
+    import urllib.request
+    end = time.monotonic() + timeout
+    while time.monotonic() < end:
+        try:
+            with urllib.request.urlopen(url, timeout=5):
+                return True
+        except OSError:
+            time.sleep(1)
+    return False
+
+
+def _commit():
+    """The code's commit (the report's provenance), or None outside a git checkout."""
+    try:
+        out = subprocess.run(["git", "rev-parse", "HEAD"], cwd=Path(__file__).resolve().parent, capture_output=True,
+                             text=True, timeout=10)
+        return out.stdout.strip() or None
+    except OSError:
+        return None
+
+
 def read_game(log_path, search_name):
     """The search bot's view of one game from its private log."""
     out = {"result": None, "summary": None, "forfeit": None, "dirty": None, "timer_loss": False, "seconds": []}
@@ -70,14 +108,21 @@ def read_game(log_path, search_name):
     return out
 
 
-def evaluate(games):
-    """The gates over the played games (records of play_game with the raw bot's forfeit added)."""
+def evaluate(games, planned):
+    """The gates over the arena's game records (play_game's, with the raw bot's forfeit added), `planned` of them
+    scheduled. Every planned game must be scored: a game that does not start or does not end, a missing game (a lane
+    stopped) and a pair with fewer than two scored games fail all_played, so no game drops out of the score in silence.
+    The shares' denominator is every decision of the search bot but the team previews and the decisions of a dirty game
+    (searched, forced, raw, refused, deadline, busy, error): the raw fallbacks are the refused (class (a)) ones, the
+    deadline misses those that missed the deadline or met a search still running (busy)."""
     played = [g for g in games if g.get("result") in ("win", "loss", "tie")]
     score = {"win": 1.0, "tie": 0.5, "loss": 0.0}
     by_pair = {}
     for g in played:
         by_pair.setdefault(g["pair"], []).append(score[g["result"]])
     means = [statistics.fmean(v) for v in by_pair.values() if len(v) == 2]
+    pairs = {g["pair"] for g in games}
+    incomplete = sum(1 for k in pairs if len(by_pair.get(k, ())) < 2)
     mean = statistics.fmean(means) if means else float("nan")
     half = 1.96 * statistics.stdev(means) / math.sqrt(len(means)) if len(means) > 1 else float("inf")
     decisions = fallback_a = deadline = 0
@@ -102,6 +147,8 @@ def evaluate(games):
         "timer_losses": sum(1 for g in games if g.get("timer_loss")),
         "p99_seconds": float(sorted(seconds)[min(len(seconds) - 1, int(0.99 * len(seconds)))]) if seconds else 0.0,
         "not_started": sum(1 for g in games if g.get("result") == "not_started"),
+        "not_finished": sum(1 for g in games if g.get("result") == "not_finished"),
+        "incomplete_pairs": incomplete, "planned": planned,
     }
     out["gates"] = {
         "lower_bound": out["lower_bound"] > GATES["lower_bound"],
@@ -111,7 +158,8 @@ def evaluate(games):
         "tracker_stop_share": out["tracker_stop_share"] <= GATES["tracker_stop_share"],
         "timer_losses": out["timer_losses"] <= GATES["timer_losses"],
         "p99_seconds": out["p99_seconds"] <= GATES["p99_seconds"],
-        "all_played": out["not_started"] == 0}
+        "all_played": out["not_started"] == 0 and out["not_finished"] == 0 and incomplete == 0
+                      and len(games) == planned}
     out["pass"] = all(out["gates"].values())
     return out
 
@@ -190,6 +238,7 @@ def main(argv=None):
     args = p.parse_args(argv)
     if args.games % 2 or args.games < 2:
         raise SystemExit("the arena plays pairs: --games must be even")
+    check_host(args.host)  # before anything is loaded or connected
     from duoforge_replay.dataset import refuse_repository
     refuse_repository(args.out)
     from duoforge_learn import checkpoint
@@ -205,7 +254,9 @@ def main(argv=None):
     if args.server_dir:
         server = subprocess.Popen(["node", "pokemon-showdown", "start", "--no-security", str(args.port)],
                                   cwd=args.server_dir, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-        time.sleep(15)
+        if not _ready(f"http://{args.host}:{args.port}/", 120):
+            server.terminate()
+            raise SystemExit("the local server did not answer within 120 s")
     url = f"ws://{args.host}:{args.port}/showdown/websocket"
     tables = data.load(kind=policy.table_kind(config))
     net = policy.load(args.checkpoint)
@@ -236,7 +287,8 @@ def main(argv=None):
         if server is not None:
             server.terminate()
     report = {"checkpoint_config_teams": len(ids), "seed": args.seed, "games_planned": len(games),
-              "lanes": args.lanes, "seconds": time.monotonic() - start, **evaluate(records)}
+              "lanes": args.lanes, "seconds": time.monotonic() - start, "code": _commit(),
+              **evaluate(records, len(games))}
     (out / "games.json").write_text(json.dumps(records, indent=1), encoding="utf-8")
     (out / "arena.json").write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")
     print(json.dumps({k: v for k, v in report.items() if k != "gates"}, indent=1), json.dumps(report["gates"]))

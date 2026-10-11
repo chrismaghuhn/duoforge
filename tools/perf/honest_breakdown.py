@@ -15,6 +15,9 @@ Part 2 times the parts of a leaf expansion and of a value call in isolation, med
 - Batch.expand of the same 1024 leaves (clone + reseed + step + encode);
 - from_view of the 16 worlds.
 
+Part 3 (--paired) lets both capacities decide the very same roots: the choices' agreement, the largest leaf value
+and table differences, and the paired time ratio.
+
 Run it alone on the machine (tools/ci/machine_lock.sh --exclusive). Writes DIR/breakdown.json; DIR must lie outside
 the repository (the checkpoint is private; the report quotes aggregates only).
 """
@@ -87,6 +90,75 @@ def play(ctx, live_search, checkpoint, capacity, games, seed):
     return costs, walls
 
 
+def paired(ctx, checkpoint, games, seed, capacities=(16384, 1024)):
+    """Both capacities decide the very same roots (Part 3): the choices' agreement, the largest leaf value and table
+    differences (the float32 batch-shape effect), and the paired times. The game follows the first capacity's choice;
+    the order of the two calls alternates per decision, so neither is always the warm one."""
+    import duoforge
+    from duoforge import _layout
+    from duoforge_learn import checkpoint as ck
+    from duoforge_learn.selfplay import choices_of
+    from duoforge_search import honest
+    C = _layout.CONSTANTS
+    params, config = ck.load_trained(checkpoint)
+    model = ck.trained_model(config, params)
+    encoder, ext = ck.encoder_of(config), ck.ext_supported_of(config)
+    table, _, _ = honest.live_spread_table(ctx)
+    searches = [honest.Honest(ctx, model, params, encoder, ext, k=8, m=8, s=16, rule="mix", lam=0.5, table=table,
+                              capacity=c) for c in capacities]
+    rows = {"decisions": 0, "same_choice": 0, "same_candidates": 0, "max_abs_value_diff": 0.0,
+            "max_abs_table_diff": 0.0, "seconds": {str(c): [] for c in capacities}}
+    try:
+        setups = duoforge.reference_setups([0, 1, 2, 3])
+        for game in range(games):
+            for s in searches:
+                s.clear()
+            with duoforge.Batch(ctx, setups[game % 4:][:1], 1, seed + game) as b:
+                choices = np.zeros((1, 2), _layout.FACTORED_CHOICE)
+                for step in range(200):
+                    if b.result(0) != 0:
+                        break
+                    obs, slots, pairs_ = b.query_encoded(encoder, ext)
+                    lp, lt, _ = (np.asarray(x) for x in model.apply(params, obs[0], slots[0], pairs_[0]))
+                    team = b.domains["kind"][0] == C["DUOFORGE_CHOICE_TEAM_SELECTION"]
+                    actions = np.zeros((1, 2), np.int64)
+                    for p in (0, 1):
+                        if b.requests["requested"][0, p]:
+                            actions[0, p] = int(np.argmax(lt[p] if team[p] else lp[p]))
+                    if b.requests["requested"][0, 0]:
+                        key = (seed + game * 1000 + step) % 2 ** 64
+                        order = list(range(len(searches)))[::1 if step % 2 == 0 else -1]
+                        out = {}
+                        for i in order:
+                            t = time.perf_counter()
+                            acts, records = searches[i].decide(b, [0], [0], [key], [False])
+                            out[i] = (time.perf_counter() - t, int(acts[0]), records[0])
+                        if all(out[i][2]["kind"] == "searched" for i in out):
+                            rows["decisions"] += 1
+                            rows["same_choice"] += int(out[0][1] == out[1][1])
+                            a, c = searches[0].last[-1], searches[1].last[-1]
+                            if a["values"].shape == c["values"].shape and a["tables"].shape == c["tables"].shape:
+                                rows["same_candidates"] += 1
+                                rows["max_abs_value_diff"] = max(rows["max_abs_value_diff"], float(np.nanmax(
+                                    np.abs(a["values"].astype(np.float64) - c["values"].astype(np.float64)))))
+                                rows["max_abs_table_diff"] = max(rows["max_abs_table_diff"], float(np.nanmax(
+                                    np.abs(np.asarray(a["tables"], np.float64) - np.asarray(c["tables"], np.float64)))))
+                            for i, cap in enumerate(capacities):
+                                rows["seconds"][str(cap)].append(out[i][0])
+                        if out[0][2]["kind"] in ("searched", "team", "forced", "raw"):
+                            actions[0, 0] = out[0][1]
+                    choices_of(b, actions, choices)
+                    b.step_factored(choices)
+    finally:
+        for s in searches:
+            s.close()
+    times = rows.pop("seconds")
+    big, small = (np.asarray(times[str(c)]) for c in capacities)
+    rows["median_seconds"] = {str(c): float(np.median(times[str(c)])) for c in capacities}
+    rows["median_paired_ratio"] = float(np.median(big / small))
+    return rows
+
+
 def parts(ctx, checkpoint, capacity):
     """Median seconds of the isolated parts (Part 2)."""
     import duoforge
@@ -150,6 +222,7 @@ def main(argv=None):
     p.add_argument("--games", type=int, default=8)
     p.add_argument("--capacities", default="16384,1024")
     p.add_argument("--seed", type=int, default=0x2026101200000101)
+    p.add_argument("--paired", action="store_true", help="also Part 3: both capacities on the same roots")
     args = p.parse_args(argv)
     from duoforge_replay.dataset import refuse_repository
     refuse_repository(args.out)
@@ -165,6 +238,8 @@ def main(argv=None):
                 "fields_mean": {f: statistics.fmean(v) for f, v in costs.items()},
                 "fields_share": {f: sum(v) / sum(walls) for f, v in costs.items()}}
             report["parts"][str(capacity)] = parts(ctx, args.checkpoint, capacity)
+        if args.paired:
+            report["paired"] = paired(ctx, args.checkpoint, args.games, args.seed)
     out = Path(args.out)
     out.mkdir(parents=True, exist_ok=True)
     (out / "breakdown.json").write_text(json.dumps(report, indent=2) + "\n", encoding="utf-8")

@@ -475,6 +475,7 @@ class Honest(lookahead.Lookahead):
                         if (legal != root_mask).any():
                             own, own_p = lookahead.select(pp[d], legal, self.k)
                         result = self._decision(p, int(keys[d]), own, own_p, weights, bool(last_step[d]), costs)
+                        result["cut_pairs"] = int((root_mask & ~legal).sum())  # the root's pairs the engine refuses
                         self.last[-1]["hypotheses"] = hypotheses.copy()
                         result.update({"bench_dropped": dropped, "respreads": respreads, "exclude_team": excluded,
                                        "queue_pairs": queue_pairs})
