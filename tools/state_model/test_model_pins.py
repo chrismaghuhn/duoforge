@@ -59,7 +59,7 @@ def c_sweep_columns(text):
 
 class PoolTableHash(unittest.TestCase):
     def test_model_hash_is_the_pinned_table_hash(self):
-        pinned = re.findall(r'#define POOL_HASH_HEX "([0-9a-f]{64})"', read('tests/test_pool_tables.c'))
+        pinned = re.findall(r'#define POOL_HASH_HEX "([0-9a-f]{64})"', read('tests/data/test_pool_tables.c'))
         model = re.findall(r"^POOL_TABLE_HASH = bytes\.fromhex\('([0-9a-f]{64})'\)", read('tools/state_model/state_v3_model.py'),
                            re.M)
         self.assertEqual(len(pinned), 1, 'tests/test_pool_tables.c must pin exactly one POOL_HASH_HEX')
@@ -77,7 +77,7 @@ class PoolTailSweep(unittest.TestCase):
         finally:
             sys.path.remove(HERE)
         cls.model = model
-        cls.c_text = read('tests/test_pool_tail.c')
+        cls.c_text = read('tests/data/test_pool_tail.c')
 
     def test_envelope_is_the_models(self):
         self.assertEqual(c_hex_string(self.c_text, 'ENVELOPE_HEX'), self.model.pool_tail_envelope().hex(),
