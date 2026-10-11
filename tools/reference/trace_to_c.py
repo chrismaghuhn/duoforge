@@ -2260,10 +2260,10 @@ def magma_armor_frozen(spec, trace):
     for step in trace['steps']:
         for line in step['log']:
             parts = line.split('|')
-            if len(parts) < 4 or ': ' not in parts[2]:
-                continue
-            side = int(parts[2][1]) - 1
-            name = parts[2].split(': ', 1)[1]
+            where = re.match(r'p([12])[ab]: (.+)$', parts[2]) if len(parts) > 2 else None
+            if len(parts) < 4 or where is None:
+                continue  # a line that names no position (a message, a field, a weather) is not a freeze of a holder
+            side, name = int(where.group(1)) - 1, where.group(2)
             frozen = (parts[1] == '-status' and parts[3] == 'frz') or (
                 parts[1] in ('switch', 'drag') and len(parts) > 4 and 'frz' in parts[4].split(' ')[-1:])
             if frozen and name in holders[side]:
