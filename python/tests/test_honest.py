@@ -303,7 +303,16 @@ class HonestSearch(unittest.TestCase):
                     self.assertEqual(r["own_pairs"], PINNED_OWN[i])
                     self.assertEqual(r["foe_pairs"], [PINNED_FOE[i]] * 2)
                     last = search.last[i]
-                    raw = last["hypotheses"].tobytes() + last["choices"].tobytes() + last["samples"].astype("<u8").tobytes()
+                    # G90 (hypothesis revision 3) changed two things in a hypothesis record and nothing else: its revision word (2 -> 3)
+                    # and reserved2 -> trap_pick (4 zero bytes, filled only where a record shows a hidden partial trap: none in
+                    # A/B/C at the turn start). trap_pick reads words 33..36 of the counter-based world words (belief.world_words:
+                    # splitmix64 of seed, key, world and k, no stream), so no other draw moved. The pinned words, choices and
+                    # samples stay as pinned: the revision is checked here and written back as 2 for the hash.
+                    hypotheses = last["hypotheses"].copy()
+                    self.assertTrue((hypotheses["revision"] == C["DUOFORGE_HYPOTHESIS_REVISION"]).all())
+                    self.assertFalse(hypotheses["trap_pick"].any())
+                    hypotheses["revision"] = 2  # DUOFORGE_HYPOTHESIS_REVISION_NO_TRAP, the revision of the pin
+                    raw = hypotheses.tobytes() + last["choices"].tobytes() + last["samples"].astype("<u8").tobytes()
                     self.assertEqual(hashlib.sha256(raw).hexdigest(), PINNED_WORDS[i])
                     np.testing.assert_allclose(r["tables"], PINNED_TABLES[i], rtol=0, atol=1e-6)
                     self.assertEqual(r["exclude_team"], [1, 2, 0][i])
