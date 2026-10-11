@@ -144,7 +144,8 @@ BASE_FOLDS = sum(1 << FEATURES[n] for n in ("WEATHER_SAND", "WEATHER_SNOW", "AIL
 # Attract (step G71, decision 0034) is the encoder 6 reserve's bit POSITION_EXT_ATTRACT (decision 0050): a checked reserve bit,
 # shown under its family's feature RESERVE_VOLATILES alone (DUOFORGE_VIEWEXT_RESERVE_CHECKED). The tracker folds that one bit;
 # no other bit of the family has a line the tracker folds.
-ATTRACT_FOLD = 1 << FEATURES["RESERVE_VOLATILES"]
+# Its source position (step G87, decision 0080) is the own feature ATTRACT_SOURCE of volatiles2's bits 12-13.
+ATTRACT_FOLD = 1 << FEATURES["RESERVE_VOLATILES"] | 1 << FEATURES["ATTRACT_SOURCE"]
 EXT_FOLDS = sum(1 << FEATURES[n] for n in ("THROAT_CHOP", "AURORA_VEIL", "PERISH", "ENCORE", "ABILITY_CHANGE", "ITEM_CHANGE",
                                           "MUST_RECHARGE", "TOXIC_SPIKES", "TYPE_CHANGE", "TAUNT", "YAWN",
                                           "DISABLE", "IMPRISON", "STEALTH_ROCK", "LEECH_SEED",

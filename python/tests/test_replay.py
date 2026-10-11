@@ -265,9 +265,10 @@ class SpectatorTest(unittest.TestCase):
                 for _, obs, *_ in self.runs[(battle.name, side)]:
                     ext = battle.exts[(int(obs["epoch"]) - 1, side)]
                     for name, bit in folded.items():
-                        shown = tracker.restrict_ext(ext, 1 << bit)["sides"]
+                        cut = tracker.restrict_ext(ext, 1 << bit)
+                        shown, shown2 = cut["sides"], cut["volatiles2"]  # volatiles2: the record's own per-side words
                         for s in (0, 1):
-                            if shown[s].tobytes() != empty:
+                            if shown[s].tobytes() != empty or shown2[s].any():
                                 seen[name][(side, "own" if s == side else "foe")] += 1
         print(f"\nview extension points per fold (viewer, side): {dict(sorted(seen.items()))}")
         missing = {name: sorted(want - set(counts)) for name, counts in seen.items() if want - set(counts)}

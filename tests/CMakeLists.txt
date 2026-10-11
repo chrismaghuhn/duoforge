@@ -697,7 +697,7 @@ endif()
 # The Python package (M7, decision 0013), run with DUOFORGE_PYTHON; without
 # an interpreter each test reports skipped instead of passing silently.
 
-foreach(_py layout lib equivalence recipes policies_features example learn_numpy live_unit live_client live_search bench step_events positions replay_unit openings book expert_data expert_teacher expert_contract expert_eval ticks book_preview preview_search data batch_setups learn_v2_numpy teams features_ext encoder6 bc_numpy encode_c search_numpy search_expand repo_hygiene view vgcpastes_engine perft state_layout)
+foreach(_py layout lib equivalence recipes policies_features example learn_numpy live_unit live_client live_search bench step_events attract_faint positions replay_unit openings book expert_data expert_teacher expert_contract expert_eval ticks book_preview preview_search data batch_setups learn_v2_numpy teams features_ext encoder6 bc_numpy encode_c search_numpy search_expand repo_hygiene view vgcpastes_engine perft state_layout)
     if(DUOFORGE_PYTHON)
         add_test(NAME duoforge.python.${_py}
             COMMAND "${DUOFORGE_PYTHON}" -m unittest -v python.tests.test_${_py}
@@ -850,3 +850,8 @@ duoforge_add_test(NAME duoforge.state.pool_g81 SOURCES test_pool_g81.c WHITEBOX 
 # Step G77 (decision 0015 5bq): the crit package Magma Armor, Anger Point, Sniper and Leek (their rows, the ModifyDamage bound and
 # commutation with Sniper, the Skill Swap and Trace refusals of Magma Armor onto a frozen holder; white-box).
 duoforge_add_test(NAME duoforge.state.pool_g77 SOURCES test_pool_g77.c WHITEBOX TIMEOUT 60)
+
+# Step G87 (decision 0080): Attract's source is public: the observation's source bits (volatiles2 12-13), the from-view worlds that copy it,
+# the refusal of an inconsistent view byte, the pair invariant, and the corpus of every recorded pool battle (every decision point with an
+# infatuated occupant, both players' views built into worlds and compared with the engine).
+duoforge_add_test(NAME duoforge.state.pool_g87 SOURCES test_pool_g87.c WHITEBOX LIBS duoforge_batch TIMEOUT 600)

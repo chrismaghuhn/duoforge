@@ -4389,7 +4389,7 @@ static bool dfi_faint_shown(const dfi_run *r, uint32_t flat)
 
 /* Step G71 (decision 0034): the flat position of an Attract source (code = 1 + side * 6 + roster index) while the member stands on
  * the field and is not fainted; DUOFORGE_NO_POSITION otherwise (the pin's source.isActive, data/moves.ts:722-727). */
-static uint32_t dfi_attract_source_flat(const struct duoforge_battle *b, uint32_t code)
+uint32_t dfi_attract_source_flat(const struct duoforge_battle *b, uint32_t code)
 {
     const uint32_t side = (code - 1u) / DUOFORGE_MAX_ROSTER;
     const uint32_t src = (code - 1u) % DUOFORGE_MAX_ROSTER;
