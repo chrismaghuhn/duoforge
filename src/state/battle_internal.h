@@ -91,6 +91,17 @@ typedef struct dfi_move_slot {
 #define DFI_SWITCH_VOLT_SWITCH 6u /* Volt Switch (the POOL kinds only), step G32 */
 #define DFI_SWITCH_REVIVE_BLESSING 7u /* Revival Blessing (the POOL kinds only), decision 0025 item 6: a REVIVE answer */
 #define DFI_SWITCH_BATON_PASS 8u /* Baton Pass (the POOL kinds only), decision 0042: a PIVOT that copies the leaver's volatiles */
+/* A freeze's status counter at its start (one less at each [cant] frz; the thaw chance draws), and Encore's turns (one more
+ * when its target has no move left in the turn). */
+#define DFI_FREEZE_TURNS 3u
+#define DFI_ENCORE_TURNS 3u
+/* The durations the volatiles of the POOL extension start with (the live record assembler reads them from the state
+ * layout dump, so no copy lives outside C): Taunt 3 turns (one more when its target has been out for a turn and has no move
+ * left in the turn, DFI_TAIL_TAUNT_MAX), Disable 5 (one less when its target still has its move ahead or Cursed Body sets
+ * it), Psychic Noise's Heal Block 2 (durationCallback, data/moves.ts:8286-8289); Yawn's is DFI_TAIL_YAWN_MAX. */
+#define DFI_TAUNT_TURNS 3u
+#define DFI_DISABLE_TURNS 5u
+#define DFI_HEAL_BLOCK_PSYCHIC_NOISE_TURNS 2u
 #define DFI_REVEALED_ITEM_CONSUMED 1u
 #define DFI_REVEALED_MEGA 2u
 #define DFI_MEMBER_STAT_COUNT 5u  /* atk, def, spa, spd, spe (HP is hp_max) */
@@ -244,6 +255,7 @@ typedef struct dfi_side {
 #define DFI_MOVE_RESULT_FALSE 2u
 #define DFI_MOVE_RESULT_NULL 3u
 #define DFI_MOVE_RESULT_LAST_SHIFT 2u
+#define DFI_MOVE_RESULT_VALUE_MASK 3u /* the two bits of one turn's result */
 /* Step G42 (Stomping Tantrum, Roost): the result of the occupant's move was not classified exactly (an engine exit that
  * the classifier does not map to the pin's value, turn.c dfi_move_result_*): bit 4 while this turn runs, bit 5 for the last
  * turn once the turn ends (dfi_end_turn shifts it with the result). A set bit means the result bits of its slot are zero.

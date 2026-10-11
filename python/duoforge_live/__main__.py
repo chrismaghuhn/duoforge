@@ -35,9 +35,8 @@ def main(argv=None):
     if args.search == "honest":
         from .tracker import Tracker
         search.check_tracker(Tracker)
-    from duoforge_learn import checkpoint
-    net = policy.load(args.checkpoint)
-    tables = data.load(kind=policy.table_kind(checkpoint.load(args.checkpoint)[1]))  # the network's data kind
+    # the tables of the network's data kind, a format-2 file's fingerprint checked: a mismatch stops here, before a game
+    net, tables = policy.load(args.checkpoint), data.for_checkpoint(args.checkpoint)
     live = search.load(args.checkpoint) if args.search == "honest" else None
     bot = client.Bot(config, tables, net, search=live)  # bot.close() closes the search too
     try:

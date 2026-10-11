@@ -12,18 +12,22 @@ serialises facts; it decides no rule and no mask:
 - the values an encoded byte holds (volatile bits, switch reasons, revealed facts) come from the generated layout
   (duoforge._state_layout.VALUES); the opponent's HP display of an own member from the library (duoforge.view.hp_display).
 
-The engine checks every assembled record (check below; RecordRoots does the same in the search): a world built from it
-must give it back byte for byte (duoforge_battle_from_view, then duoforge_battle_public), so a filled field that the engine
-masks, or one that contradicts the others, is refused there (E_MALFORMED) instead of being searched.
+The engine decides every refusal of its own, and checks every record: the causes that the player's observation decides
+come from duoforge_observation_causes (the one predicate of src/state/view.c, the part the observation carries), and an
+assembled record goes through duoforge_public_record_check (a world built from it must give it back byte for byte:
+duoforge_battle_from_view, then duoforge_battle_public). A PIVOT's record carries its queue (the MOVE actions still to run,
+the foe's command hidden, and the residual), so the engine refuses a PIVOT before the moves or with a move left, a
+possible lockedmove and the Revival Blessing proxy itself (E_UNSUPPORTED, reason engine-refuses-record); a filled masked
+field or a contradiction (E_MALFORMED) is an assembler error and raises. Python holds no copy of the predicate.
 
-Refusals: where the engine refuses a player's record (duoforge_battle_public's E_UNSUPPORTED) the tracker refuses with the
-same status, derived from public facts only (refusal below): the cause mask of duoforge_battle_public_causes, computed from
-the observation as the C predicate reads it, the Revival Blessing proxy, a possible lockedmove, and a PIVOT before moves
-or with a move still queued. A decision point the assembler cannot reproduce exactly is refused too, with its own named
-reason, never approximated: unburden-without-item-line, and under the POOL kinds move-result-not-foldable (the tail's
-move_result is the engine's classification of each move action; move_result_unknown). The POOL tail's other fields are
-the tracker's folds (party order, Aurora Veil, the position counters, item_now, the toxic stage, the raised flag); the
-features the tracker does not fold stop it at their lines (lines.check) before a record could need them.
+The tracker refuses, with a named reason, only a record that the engine has and the lines do not determine:
+unburden-without-item-line, last-move-not-on-sheet, own-command-unknown, and move-result-not-determined (the library
+cannot tell an action's result from its events). The POOL tail's move_result is the library's classification of each move
+action's events (duoforge_move_result, the engine's rule; the tracker only collects the events); its other fields are the
+tracker's folds (party order, Aurora Veil, the position counters, item_now, the toxic stage, the raised flag, and the
+view-extension folds of #342: the entry hazards and their creation order, Wide Guard, Taunt, Heal Block, Yawn and Disable
+with their counts, Imprison, the recharge, Glaive Rush, Rage Powder's Follow Me flag, the type Soak or Double Shock set).
+The features the tracker does not fold stop it at their lines (lines.check) before a record could need them.
 """
 import numpy as np
 
@@ -39,20 +43,24 @@ TEAM_SELECTION, TURN, REPLACEMENT, PIVOT = (C[f"DUOFORGE_BOUNDARY_{n}"] for n in
 CAUSE_SLEEP, CAUSE_CONFUSION = C["DUOFORGE_PUBLIC_CAUSE_VISIBLE_SLEEP"], C["DUOFORGE_PUBLIC_CAUSE_VISIBLE_CONFUSION"]
 CAUSE_ILLUSION = C["DUOFORGE_PUBLIC_CAUSE_ILLUSION_POSSIBLE"]
 CAUSE_RAISED = C["DUOFORGE_PUBLIC_CAUSE_RAISED_THIS_TURN"]
-CAUSE_TURN_HISTORY = C["DUOFORGE_PUBLIC_CAUSE_TURN_HISTORY"]
-MAX_ROSTER = 6
-Q_RESIDUAL = VALUES["DFI_Q_RESIDUAL"]
-AILMENT_SLEEP = C["DUOFORGE_AILMENT_SLEEP"]
+Q_RESIDUAL, Q_MOVE = VALUES["DFI_Q_RESIDUAL"], VALUES["DFI_Q_MOVE"]
 PICK_NONE = C["DUOFORGE_VIEW_PICK_NONE"]
 OCCUPANT_NONE = VALUES["DFI_OCCUPANT_NONE"]
 STAGE_NEUTRAL = VALUES["DFI_STAGE_NEUTRAL"]
-REVEALED_ITEM_CONSUMED, REVEALED_MEGA = VALUES["DFI_REVEALED_ITEM_CONSUMED"], VALUES["DFI_REVEALED_MEGA"]
 VOL_PROTECT, VOL_FLASH_FIRE = VALUES["DFI_VOL_PROTECT"], VALUES["DFI_VOL_FLASH_FIRE"]
 VOL_FOLLOW_ME, VOL_HELPING_HAND, VOL_UNBURDEN = (VALUES[f"DFI_VOL_{n}"] for n in ("FOLLOW_ME", "HELPING_HAND", "UNBURDEN"))
 VOL_CHOICE_LOCK, VOL_NEWLY_SWITCHED = VALUES["DFI_VOL_CHOICE_LOCK"], VALUES["DFI_VOL_NEWLY_SWITCHED"]
-PARTY_HIDDEN = 7  # DFI_PARTY_HIDDEN
-POSFLAG_STATS_RAISED = 2  # DFI_POSFLAG_STATS_RAISED
-POSFLAG_LOWERED, POSFLAG_HURT = 0x20, 0x40  # DFI_POSFLAG_LOWERED, DFI_POSFLAG_HURT (G88, decision 0046)
+PARTY_HIDDEN = VALUES["DFI_PARTY_HIDDEN"]
+POSFLAG_STATS_RAISED = VALUES["DFI_POSFLAG_STATS_RAISED"]
+# the position flags the states of a kind may carry (dfi_kind_limits_of: the POOL kinds add theirs), by table kind
+VOL_FLAGS_MASK = {"closure": VALUES["VOL_FLAGS_MASK_CLOSURE"], "pool": VALUES["VOL_FLAGS_MASK_POOL"]}
+MR_UNCLASSIFIED_NOW, MR_UNCLASSIFIED_LAST = VALUES["DFI_MOVE_RESULT_UNCLASSIFIED_NOW"], VALUES["DFI_MOVE_RESULT_UNCLASSIFIED_LAST"]
+MR_VALUE_MASK, MR_LAST_SHIFT = VALUES["DFI_MOVE_RESULT_VALUE_MASK"], VALUES["DFI_MOVE_RESULT_LAST_SHIFT"]
+TAIL_FLAG, WIDE_GUARD = VALUES["DFI_TAIL_FLAG_MAX"], VALUES["DFI_TAIL_WIDE_GUARD_MAX"]  # the 0/1 tail bytes when set
+TYPE_TYPELESS = VALUES["DFI_TAIL_TYPE2_TYPELESS"]  # soak_type of Double Shock's ??? slot
+# the tail's hazard kind of each hazard field (DFI_HAZARD_*, 2 bits per slot of hazard_order)
+_HAZARD_KIND = {field: VALUES[f"DFI_HAZARD_{field.upper()}"] for field in
+                ("stealth_rock", "spikes", "toxic_spikes", "sticky_web")}
 _FIELDS = {name: (start, size) for name, start, size in state_layout.fields(pool=True)}
 
 
@@ -84,123 +92,59 @@ class _State:
         self.bytes[start:start + size] = data
 
 
-def visible_causes(observation, tables):
-    """The DUOFORGE_PUBLIC_CAUSE_* mask that the player's observation decides, read as src/state/view.c
-    dfi_view_visible_causes reads it: a member of either side shown asleep; a position of either side shown confused; a
-    foe member with Illusion on its open sheet that the player has neither seen fainted nor sees on the field under its
-    own name; at a PIVOT, an active Pokemon of either side with Alluring Voice among its moves (the view does not carry
-    statsRaisedThisTurn mid-turn). tables: the tracker's (the POOL rows; a closure table without them has no such
-    member). The Substitute and temporary forme bits need lines the tracker stops at (lines.check: SUBSTITUTE,
-    FORME_CHANGE), and the foe's disguise state is zero while no Illusion line came (ILLUSION stops too)."""
-    mask = 0
-    for side in (0, 1):
-        s = observation["sides"][side]
-        if (s["members"]["status"] == AILMENT_SLEEP).any():
-            mask |= CAUSE_SLEEP
-        if (s["positions"]["confused"] != 0).any():
-            mask |= CAUSE_CONFUSION
-    illusion = tables["ABILITY"].get("ILLUSION")
-    foe = observation["sides"][1 - int(observation["player"])]
-    for m in range(int(foe["member_count"])):
-        v = foe["members"][m]
-        if illusion is None or int(v["ability"]) != illusion + 1:
-            continue
-        fainted_seen = int(v["hp_kind"]) == C["DUOFORGE_HP_PERCENT"] and int(v["hp"]) == 0
-        if not fainted_seen and m not in (int(foe["occupant"][0]), int(foe["occupant"][1])):
-            mask |= CAUSE_ILLUSION
-    alluring = tables["MOVE"].get("ALLURINGVOICE")
-    if int(observation["boundary_kind"]) == PIVOT and alluring is not None:
-        for side in (0, 1):
-            s = observation["sides"][side]
-            for occupant in s["occupant"]:
-                if int(occupant) < MAX_ROSTER:
-                    v = s["members"][int(occupant)]
-                    if alluring in [int(x) for x in v["move_ids"][:int(v["move_count"])]]:
-                        mask |= CAUSE_RAISED
-    # step G88 (src/state/view.c dfi_view_turn_history_risk): at a PIVOT, an active Pokemon of either side that knows Lash
-    # Out or Assurance; at a decision of turn 1 (endTurn keeps the entries' LOWERED there), one that knows Lash Out
-    lash, assurance = tables["MOVE"].get("LASHOUT"), tables["MOVE"].get("ASSURANCE")
-    pivot = int(observation["boundary_kind"]) == PIVOT
-    if pivot or int(observation["turn"]) == 1:
-        for side in (0, 1):
-            s = observation["sides"][side]
-            for occupant in s["occupant"]:
-                if int(occupant) < MAX_ROSTER:
-                    v = s["members"][int(occupant)]
-                    moves = [int(x) for x in v["move_ids"][:int(v["move_count"])]]
-                    if (lash is not None and lash in moves) or (pivot and assurance is not None and assurance in moves):
-                        mask |= CAUSE_TURN_HISTORY
-    return mask
+CAUSE_NAMES = ((CAUSE_SLEEP, "visible-sleep"), (CAUSE_CONFUSION, "visible-confusion"),
+               (CAUSE_ILLUSION, "illusion-possible"), (CAUSE_RAISED, "raised-this-turn"))
 
 
-def revive_proxy(observation, tables):
-    """decision 0023's Revival Blessing proxy (src/state/view.c dfi_view_foe_revive_proxy): a foe member whose Revival
-    Blessing slot shows derived PP 0 may have revived, which the record keeps no history of; refused without a cause bit."""
-    blessing = tables["MOVE"].get("REVIVALBLESSING")
-    foe = observation["sides"][1 - int(observation["player"])]
-    for v in foe["members"]:
-        for k in range(int(v["move_count"])):
-            if blessing is not None and int(v["move_ids"][k]) == blessing and int(v["pp"][k]) == 0:
-                return True
-    return False
-
-
-def refusal(tracker, observation):
-    """None, or the Refusal of the engine's public record at this decision point, from public facts alone, in the
-    order of src/state/view.c dfi_view_encode."""
-    causes = visible_causes(observation, tracker.data.tables)
-    if causes:
-        names = [n for bit, n in ((CAUSE_SLEEP, "visible-sleep"), (CAUSE_CONFUSION, "visible-confusion"),
-                                  (CAUSE_ILLUSION, "illusion-possible"), (CAUSE_RAISED, "raised-this-turn"),
-                                  (CAUSE_TURN_HISTORY, "turn-history")) if causes & bit]
-        raise Refusal(",".join(names), causes)
-    if revive_proxy(observation, tracker.data.tables):
-        raise Refusal("revive-proxy")
-    for side in tracker._positions:
-        for p in side:
-            # a lockedmove may run while the occupant's last used move is one (src/state/knowledge.h dfi_maybe_lockedmove):
-            # its drawn length can end silently, so the engine refuses the record
-            if p.occupant != OCCUPANT_NONE and p.last_move is not None and \
-                    tracker.data.move_flags(p.last_move) & _tracker._LOCKED_MOVE:
-                raise Refusal("lockedmove-possible")
-    if tracker.boundary() == PIVOT:
-        flags = [p.protecting or p.flags & (_tracker.FLAG_FOLLOW_ME | _tracker.FLAG_HELPING_HAND)
-                 for side in tracker._positions for p in side]
-        if not any(flags):
-            raise Refusal("pivot-before-moves")
-        if any(p.move_queued for side in tracker._positions for p in side):
-            # a silent flinch may be outstanding on a position still to move (src/state/view.c): the engine refuses
-            raise Refusal("pivot-move-queued")
-    # the tracker's own refusals, where the engine has a record that the lines do not determine
+def tracker_refusal(tracker):
+    """The tracker's own refusal of a decision point whose record the engine has but the lines do not determine, or None."""
     if any(p.unburden_unseen for side in tracker._positions for p in side):
-        raise Refusal("unburden-without-item-line")  # the volatile may be up with no line (tracker, Knock Off)
+        return "unburden-without-item-line"  # the volatile may be up with no line (tracker, Knock Off)
     return None
 
 
-def move_result_unknown(tracker):
-    """Whether a position's move_result (POOL tail rev 4: the pin's moveThisTurnResult and moveLastTurnResult, with the
-    engine's own 'unclassified' bits, src/combat/turn.c dfi_run_move) may be nonzero: its occupant ran a move action this
-    turn or, at a TURN boundary, in the turn that just ended. Its value is the engine's classification of the action's
-    course, which the lines do not determine exactly (and holding the classifier would be a rule outside C), so such a
-    record is refused (reason move-result-not-foldable)."""
-    turn, boundary = tracker._turn, tracker.boundary()
-    recent = (turn - 1,) if boundary == TURN else (turn, turn - 1)
-    return any(p.occupant != OCCUPANT_NONE and p.result_turn and p.result_turn in recent
-               for side in tracker._positions for p in side)
+def move_result_of(data, user, events):
+    """The result of one move action (the POOL tail's move_result of this turn: DFI_MOVE_RESULT_* with
+    DFI_MOVE_RESULT_UNCLASSIFIED_NOW), classified by the library from the action's events (duoforge.view.move_result,
+    the engine's rule); None where the events do not determine it."""
+    from duoforge import view
+    return view.move_result(data.context(), user, events)
 
 
-def assemble(tracker, observation, exact=True):
+def move_result_byte(now, last):
+    """The tail's move_result byte of this turn's and last turn's results (each a value with its unclassified bit, in this
+    turn's form: DFI_MOVE_RESULT_UNCLASSIFIED_NOW): this turn in the low bits and UNCLASSIFIED_NOW, last turn shifted by
+    DFI_MOVE_RESULT_LAST_SHIFT and UNCLASSIFIED_LAST."""
+    return ((now & MR_VALUE_MASK) | (now & MR_UNCLASSIFIED_NOW) | ((last & MR_VALUE_MASK) << MR_LAST_SHIFT)
+            | (MR_UNCLASSIFIED_LAST if last & MR_UNCLASSIFIED_NOW else 0))
+
+
+def assemble(tracker, observation):
     """(record, status, causes, reason) at the tracker's current decision point: the PUBLIC_STATE record and status 0,
-    or a zero record with E_UNSUPPORTED, the cause mask and the named reason of the refusal. exact=False (tests only)
-    skips the refusal of an unknown move_result and leaves it zero, to compare every other field with the engine's."""
+    or a zero record with E_UNSUPPORTED, the cause mask and the named reason of the refusal. The engine decides every
+    refusal of its own: the causes from the observation (duoforge_observation_causes, the one predicate's part that the
+    observation decides), then the assembled record's verdict (duoforge_public_record_check: from_view, then public); the
+    tracker adds only the refusals of a record the lines do not determine. A record the engine does not take back for
+    another reason (a filled masked field, a contradiction) is an assembler error: ValueError."""
+    from duoforge import _lib, view
+    zero = np.zeros((), dtype=_layout.PUBLIC_STATE)
+    ctx = tracker.data.context_of(tracker.record_kind)
+    causes = view.observation_causes(ctx, observation)
+    if causes:
+        return zero, E_UNSUPPORTED, causes, ",".join(name for bit, name in CAUSE_NAMES if causes & bit)
     try:
-        refusal(tracker, observation)
         record = _record(tracker, observation)  # a field it cannot reproduce exactly refuses (Refusal) too
-        if exact and int(record["state_size"]) > state_layout.V3_SIZE and move_result_unknown(tracker):
-            raise Refusal("move-result-not-foldable")
-        return record, 0, 0, None
     except Refusal as r:
-        return np.zeros((), dtype=_layout.PUBLIC_STATE), E_UNSUPPORTED, r.causes, r.reason
+        return zero, E_UNSUPPORTED, r.causes, r.reason
+    status = view.public_record_check(ctx, record)
+    if status == E_UNSUPPORTED:
+        return zero, E_UNSUPPORTED, 0, "engine-refuses-record"
+    if status != 0:
+        raise ValueError(f"the engine does not take the assembled record back: {_lib.status_name(status)}")
+    reason = tracker_refusal(tracker)
+    if reason is not None:
+        return zero, E_UNSUPPORTED, 0, reason
+    return record, 0, 0, None
 
 
 def _record(t, observation):
@@ -210,6 +154,8 @@ def _record(t, observation):
     player, foe = t.side, 1 - t.side
     boundary = int(observation["boundary_kind"])
     request_mask = sum(1 << side for side in (0, 1) if t._requested(side, boundary)[0])
+    if boundary == PIVOT and request_mask == 0:
+        raise Refusal("pivot-switch-reason-unknown")  # a PIVOT asks someone: the lines did not show the tracker whom
     s.put("next_activation_id", t._next_activation)
     s.put("boundary", boundary)
     s.put("request_mask", request_mask)
@@ -225,12 +171,33 @@ def _record(t, observation):
         _side(t, s, side, side == player, boundary)
     if boundary != TEAM_SELECTION:
         leads = list(t._foe_leads)
-    queue = 0
+    queue, pending = 0, 0
     if boundary == PIVOT:
-        # a PIVOT the record supports has no MOVE left (refusal): the turn's residual is all its queue holds
-        s.put("queue_len", 1)
-        s.put("queue0.kind", Q_RESIDUAL)
-        queue = 1
+        # the turn's queue at a PIVOT, in its canonical order (kind, side, slot): the MOVE actions still to run (the own
+        # command the player accepted; the foe's hidden), then the residual. The engine refuses a PIVOT with a move left.
+        for side in (0, 1):
+            for k, p in enumerate(t._positions[side]):
+                if not p.move_queued:
+                    continue
+                qpre = f"queue{queue}."
+                s.put(qpre + "kind", Q_MOVE)
+                s.put(qpre + "side", side)
+                s.put(qpre + "slot", k)
+                s.put(qpre + "activation_id", p.activation)
+                if side == player:
+                    command = (t._accepted_commands or [None, None])[k]
+                    if command is None:
+                        raise Refusal("own-command-unknown")  # the accepted choice names no option of the request
+                    s.put(qpre + "move_slot", command.move_slot)
+                    s.put(qpre + "target", command.target)
+                else:
+                    s.put(qpre + "move_slot", C["DUOFORGE_VIEW_HIDDEN"])
+                    s.put(qpre + "target", C["DUOFORGE_VIEW_HIDDEN_TARGET"])
+                    pending |= 1 << k
+                queue += 1
+        s.put(f"queue{queue}.kind", Q_RESIDUAL)
+        queue += 1
+        s.put("queue_len", queue)
     if size > state_layout.V3_SIZE:
         _tail(t, s, boundary)
     rec = np.zeros((), dtype=_layout.PUBLIC_STATE)
@@ -244,6 +211,7 @@ def _record(t, observation):
     rec["foe_seen_mask"] = _seen_mask(t, foe)
     rec["foe_leads"] = leads
     rec["queue_count"] = queue
+    rec["foe_pending_mask"] = pending
     rec["state"][:size] = np.frombuffer(bytes(s.bytes), np.uint8)
     return rec
 
@@ -298,16 +266,19 @@ def _position(t, s, pre, p, side, k, own):
         flags |= VOL_PROTECT
     if p.flash_fire:
         flags |= VOL_FLASH_FIRE
-    if p.flags & _tracker.FLAG_FOLLOW_ME:
-        flags |= VOL_FOLLOW_ME
+    if p.flags & _tracker.FLAG_FOLLOW_ME or p.rage_powder:
+        flags |= VOL_FOLLOW_ME  # Rage Powder sets the same flag (dfi_run_follow_me); the observation tells them apart
     if p.flags & _tracker.FLAG_HELPING_HAND:
         flags |= VOL_HELPING_HAND
     if p.flags & _tracker.FLAG_UNBURDEN:
         flags |= VOL_UNBURDEN
     if p.choice_slot != _tracker.MOVE_SLOT_NONE:
         flags |= VOL_CHOICE_LOCK
-    if p.newly_switched and t.data.kind == "pool":
-        flags |= VOL_NEWLY_SWITCHED
+    carried = VOL_FLAGS_MASK[t.data.kind]
+    if p.newly_switched and carried & VOL_NEWLY_SWITCHED:
+        flags |= VOL_NEWLY_SWITCHED  # the closure kind's states carry no newlySwitched flag (dfi_kind_limits_of)
+    if flags & ~carried:
+        raise ValueError(f"{pre}flags {flags:#x}: bits the {t.data.kind} kind's states do not carry ({carried:#x})")
     s.put(pre + "flags", flags)
     s.put(pre + "stall_level", p.chain)
     s.put(pre + "stall_turns", p.stall)
@@ -321,8 +292,10 @@ def _position(t, s, pre, p, side, k, own):
     # switch_flag: a PIVOT shows why a position must switch; a REPLACEMENT carries no flags (its request names the
     # positions, src/combat/turn.c dfi_finish_turn), a pass keeps a flag only while its side can still answer, which asks
     # it again (dfi_pivot_pending: a PIVOT), and a TURN follows only when no flag is left
-    if t.boundary() == PIVOT and not p.fainted:
-        s.put(pre + "switch_flag", p.flag)  # a fainted position's flag goes at the PIVOT (dfi_pivot)
+    if t.boundary() == PIVOT and t._requested(side, PIVOT)[1] >> k & 1:
+        if not p.flag:
+            raise Refusal("pivot-switch-reason-unknown")  # asked to switch for a reason no line showed the tracker
+        s.put(pre + "switch_flag", p.flag)  # the PIVOT asks exactly the flagged positions (dfi_pivot)
 
 
 def _member(t, s, pre, member, own):
@@ -352,60 +325,12 @@ def _member(t, s, pre, member, own):
         s.put(mpre + "pp_max", member.pp_max[k])
 
 
-def neutral_hypotheses(record, brought):
-    """Hypotheses for a world of `record` that draw nothing in particular, for check(): the middle word of every uniform,
-    the foe's pick order of `brought` members (the leads, then the members seen, then the others in roster order; none at
-    team preview), and zero stat points but for the HP points of each foe member whose shown HP carries a colour flag
-    (an exact share of its maximum HP, which only some maxima have): each of 0 to 4 in turn. The round trip holds for
-    every hypothesis the record allows; the engine refuses one that contradicts the record (E_INVALID_ARGUMENT)."""
-    import itertools
+def check(context, record):
+    """The engine's verdict on an assembled record (duoforge_public_record_check): 0 when a world of it gives it back byte
+    for byte, E_UNSUPPORTED when the engine refuses it, E_MALFORMED for a filled masked field or a contradiction."""
     from duoforge import view
-    size = int(record["state_size"])
-    state = bytes(record["state"][:size])
-    player, foe = int(record["player"]), 1 - int(record["player"])
-    members = state[_FIELDS[f"side{foe}.member_count"][0]]
-    base = view.hypotheses(1)
-    for name in ("hp", "sleep", "confusion", "charge_target"):
-        base[name] = 1 << 63
-    flagged = []
-    if int(record["boundary"]) != TEAM_SELECTION:
-        order = [int(m) for m in record["foe_leads"] if int(m) != PICK_NONE]
-        order += [m for m in range(members) if int(record["foe_seen_mask"]) >> m & 1 and m not in order]
-        order += [m for m in range(members) if m not in order]
-        base["pick_order"][0, :brought] = order[:brought]
-        flagged = [m for m in range(members) if int(record["foe_seen_mask"]) >> m & 1
-                   and state[_FIELDS[f"side{player}.knowledge{m}.hp_flag"][0]]]
-    for points in itertools.product(range(5), repeat=len(flagged)):
-        h = base.copy()
-        for m, v in zip(flagged, points):
-            h["stat_points"][0, m, 0] = v
-        yield h
+    return view.public_record_check(context, record)
 
-
-def check(worlds, record, brought):
-    """The engine's check of an assembled record: a world built from it and a neutral hypothesis
-    (duoforge_battle_from_view; the first of neutral_hypotheses the engine accepts) gives it back byte for byte
-    (duoforge_battle_public). worlds: a duoforge.Batch of the record's context whose environment 0 is overwritten.
-    Returns (status, fields): the from_view or public status (0 when both succeed) and the differing header and state
-    fields (state_layout names; [] when byte-identical, None when a call refused)."""
-    invalid = C["DUOFORGE_E_INVALID_ARGUMENT"]
-    status = invalid
-    for h in neutral_hypotheses(record, brought):
-        status = int(worlds.from_view(np.asarray(record).reshape(1), h, 1)[0])
-        if status != invalid:
-            break
-    if status:
-        return status, None
-    players = np.zeros(worlds.envs, np.uint32)
-    players[0] = int(record["player"])
-    again, statuses = worlds.public(players)
-    if int(statuses[0]):
-        return int(statuses[0]), None
-    again = again[0]
-    header = [n for n in record.dtype.names if n not in ("state", "pad") and not np.array_equal(record[n], again[n])]
-    size = int(record["state_size"])
-    return 0, header + state_layout.diff(bytes(record["state"][:size]), bytes(again["state"][:size]),
-                                         pool=size > state_layout.V3_SIZE)
 
 
 def _party_bytes(entries):
@@ -416,35 +341,8 @@ def _party_bytes(entries):
     return list(value.to_bytes(3, "little"))
 
 
-# Folds of the view extension (decision 0018) whose tail fields this assembler does not write yet: their counters (Taunt,
-# Heal Block, Yawn, Disable), layers and creation order (the entry hazards), soak and second types, the recharge, Glaive
-# Rush, Imprison, Rage Powder's Follow Me volatile and the side's Wide Guard. While one is up the record would hold a zero
-# where the engine's has the fold, so the decision point is refused (fold-not-in-record), never approximated.
-_UNRECORDED_POSITION_FOLDS = ("must_recharge", "taunt", "yawn", "imprison", "glaive_rush", "rage_powder", "heal_block",
-                              "disable_slot")
-
-
-def unrecorded_folds(t):
-    """The names of the folded states up at the tracker's point that the record does not carry ([] when none)."""
-    names = []
-    for side in (0, 1):
-        if any(t._hazards[side].values()):
-            names.append(f"side{side}.hazards")
-        if ("WIDE_GUARD", side) in t._guards:
-            names.append(f"side{side}.wide_guard")
-        for k, p in enumerate(t._positions[side]):
-            if p.occupant == OCCUPANT_NONE:
-                continue
-            names += [f"side{side}.position{k}.{name}" for name in _UNRECORDED_POSITION_FOLDS if getattr(p, name)]
-            if p.type_now != (0, 0):
-                names.append(f"side{side}.position{k}.type_now")
-    return names
-
-
 def _tail(t, s, boundary):
     """The POOL kinds' tail (src/codec/state_codec.c dfi_encode_tail) of what the tracker folds."""
-    if unrecorded_folds(t):
-        raise Refusal("fold-not-in-record")
     party = []
     for side in (0, 1):
         entries = [0] * 6
@@ -459,11 +357,20 @@ def _tail(t, s, boundary):
     for side in (0, 1):
         pre = f"tail.side{side}."
         s.put(pre + "aurora_veil_turns", t._conditions[side][3])
+        s.put(pre + "wide_guard", WIDE_GUARD if ("WIDE_GUARD", side) in t._guards else 0)
+        order = 0
+        for n, (field, layers) in enumerate(t._hazards[side].items()):  # the kinds that are up, in creation order
+            s.put(pre + field, layers)
+            order |= _HAZARD_KIND[field] << (2 * n)
+        s.put(pre + "hazard_order", order)
         members = t._member(side)
         for k, p in enumerate(t._positions[side]):
             if p.occupant == OCCUPANT_NONE:
                 continue
             ppre = f"{pre}position{k}."
+            if p.result_now is None or p.result_last is None:
+                raise Refusal("move-result-not-determined")  # the library could not tell an action's result from its events
+            s.put(ppre + "move_result", move_result_byte(p.result_now, p.result_last))
             if p.last_slot is None:
                 raise Refusal("last-move-not-on-sheet")  # the move of its last line is on no slot of its sheet
             s.put(ppre + "last_move", p.last_slot)
@@ -472,8 +379,18 @@ def _tail(t, s, boundary):
             s.put(ppre + "throat_chop_turns", p.throat_chop)
             s.put(ppre + "perish", p.perish)
             s.put(ppre + "hits_taken", p.hits_taken)
-            s.put(f"tail5.position{side * 2 + k}.position_flags", (POSFLAG_STATS_RAISED if p.raised else 0) |
-                  (POSFLAG_LOWERED if p.lowered else 0) | (POSFLAG_HURT if p.hurt else 0))
+            s.put(ppre + "taunt_turns", p.taunt)
+            s.put(ppre + "heal_block_turns", p.heal_block)
+            s.put(ppre + "yawn_turns", p.yawn)
+            s.put(ppre + "disable_slot", p.disable_slot)
+            s.put(ppre + "disable_turns", p.disable_turns)
+            for field in ("imprison", "must_recharge", "glaive_rush"):
+                s.put(ppre + field, TAIL_FLAG if getattr(p, field) else 0)
+            mpre = f"{pre}member{p.occupant}."
+            if p.type_now != (0, 0):
+                s.put(mpre + "soak_type", p.type_now[0] or TYPE_TYPELESS)  # Soak's type + 1, or Double Shock's ???
+            s.put(mpre + "type2", p.type2)
+            s.put(f"tail5.position{side * 2 + k}.position_flags", POSFLAG_STATS_RAISED if p.raised else 0)
             if p.ability_now:
                 s.put(f"{pre}member{p.occupant}.ability_now", p.ability_now)
         for m, member in enumerate(members):
