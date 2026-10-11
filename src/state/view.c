@@ -789,6 +789,8 @@ static mr_family mr_family_of(uint32_t move_id, const dfi_move_data *md)
     case DFI_SPECIAL_PROTECT:
     case DFI_SPECIAL_SPIKY_SHIELD:
     case DFI_SPECIAL_KINGS_SHIELD:
+    /* G94a: Baneful Bunker runs dfi_run_protect as every Protect: the stall fail FALSE, the -singleturn Protect TRUE */
+    case DFI_SPECIAL_BANEFUL_BUNKER:
     case DFI_SPECIAL_ENCORE:
     case DFI_SPECIAL_SOAK:
     case DFI_SPECIAL_DISABLE:
