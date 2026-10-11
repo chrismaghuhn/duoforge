@@ -62,13 +62,25 @@ class HonestSearch(unittest.TestCase):
     def setUpClass(cls):
         cls.model, cls.params = _v2s()
 
-    def make(self, ctx, k=2, rule="mix", table=None, excluded=None, lam=0.5, species_prior=False):
+    def make(self, ctx, k=2, rule="mix", table=None, excluded=None, lam=0.5, species_prior=False, model=None,
+             foe_net=None):
         table = table or belief.SpreadTable.from_sides(duoforge.reference_setups([0])["sides"].reshape(-1))
         with duoforge.Batch(ctx, duoforge.reference_setups([0]), 1, 42) as b:
             mask = int(b.observe_ext()[0, 0]["supported"]) & features.version_features(4)  # encoder 4 (0050)
-        return honest.Honest(ctx, self.model, self.params, 4, mask, k=k, m=2, s=2, rule=rule,
+        options = {} if foe_net is None else {"foe_net": foe_net}
+        return honest.Honest(ctx, model or self.model, self.params, 4, mask, k=k, m=2, s=2, rule=rule,
                              capacity=16, workers=2, table=table, exclude_teams=excluded, lam=lam,
-                             species_prior=species_prior)
+                             species_prior=species_prior, **options)
+
+    def encoder3_net(self, ctx, key=11):
+        """(model, params, encoder, ext_supported) of an encoder-3 network with other weights (M11's BC priors are
+        encoder 3)."""
+        import jax
+        from duoforge_learn import policy
+        model = policy.make(policy.v2_config("S"), features.feature_names(3))
+        with duoforge.Batch(ctx, duoforge.reference_setups([0]), 1, 42) as b:
+            mask = int(b.observe_ext()[0, 0]["supported"]) & features.version_features(3)
+        return model, model.init(jax.random.PRNGKey(key)), 3, mask
 
     def preview(self, search, roots, seat=0):
         return search.decide(roots, list(range(roots.envs)), [seat] * roots.envs,
@@ -507,6 +519,83 @@ class HonestSearch(unittest.TestCase):
             self.assertEqual(records_[0]["cut_pairs"], int((widened & ~pairs[0, 0].astype(bool)).sum()))  # shown
             _, engine_records = search.decide(b, [0], [0], [457], [False])
             self.assertEqual(engine_records[0]["cut_pairs"], 0)  # an engine root's mask is the engine's domain
+
+    def test_a_foe_net_plays_the_worlds_and_the_main_net_the_root_and_the_leaves(self):
+        # M7 (owner 2026-10-11): a second network models the foe. Every policy call on the worlds (the foe's team draw,
+        # its queued pair and its menu) goes to it, encoded with its own encoder; the own candidates (the root's
+        # policy) and the leaf values stay with the main network.
+        class Spy:
+            def __init__(self, inner):
+                self.inner, self.rows = inner, []
+
+            def __getattr__(self, name):
+                return getattr(self.inner, name)
+
+            def apply(self, params, obs, *rest):
+                self.rows.append(np.asarray(obs).shape[0])
+                return self.inner.apply(params, obs, *rest)
+
+        with duoforge.Context(C["DUOFORGE_DATA_KIND_POOL"]) as ctx, \
+                duoforge.Batch(ctx, duoforge.reference_setups([0]), 1, 42) as b:
+            foe = self.encoder3_net(ctx)
+            spy = Spy(self.model)
+            with self.make(ctx) as plain, self.make(ctx, model=spy, foe_net=foe) as split:
+                for search in (plain, split):
+                    self.preview(search, b)
+                self.start_turn(b)
+                spy.rows.clear()
+                _, (a,) = plain.decide(b, [0], [0], [456], [False])
+                _, (r,) = split.decide(b, [0], [0], [456], [False])
+                self.assertEqual((a["kind"], r["kind"]), ("searched", "searched"))
+                self.assertEqual(r["own_pairs"], a["own_pairs"])  # the root's policy: the main network
+                self.assertEqual(r["own_probs"], a["own_probs"])
+                self.assertNotIn(2 * split.s, spy.rows)  # the main network saw no world row
+                # The foe's menu is the foe network's ranking on the built worlds (encoder 3), not the main network's.
+                menus = []
+                for net, params, encoder, mask in (foe, (self.model, self.params, 4, split.ext_supported)):
+                    o, sl, pm = split.worlds.query_encoded(encoder, mask)
+                    n = 2 * split.s
+                    pp = np.asarray(net.apply(params, o.reshape(n, -1), sl.reshape((n,) + sl.shape[2:]),
+                                              pm.reshape((n,) + pm.shape[2:]))[0]).reshape(split.s, 2, -1)
+                    probabilities = np.exp(pp[:, 1].astype(np.float64))
+                    mean = np.sum(np.asarray(r["weights"])[:, None] * probabilities, axis=0)
+                    order = np.lexsort((np.arange(mean.size), -mean))
+                    menu = [order[pm[w, 1].reshape(-1)[order] != 0][:split.m].tolist() for w in range(split.s)]
+                    menus.append((menu, probabilities))
+                (foe_menu, foe_probs), (main_menu, _) = menus
+                self.assertNotEqual(foe_menu, main_menu, "the two networks rank the foe alike: no evidence here")
+                self.assertEqual(r["foe_pairs"], foe_menu)
+                np.testing.assert_array_equal(r["foe_probs"], np.take_along_axis(foe_probs, np.array(foe_menu), axis=1))
+
+    def test_the_main_net_as_foe_net_decides_bit_for_bit_as_without(self):
+        # The second network's path changes the source of the worlds' policy only: given the main network itself, every
+        # record field and leaf is the default's.
+        with duoforge.Context(C["DUOFORGE_DATA_KIND_POOL"]) as ctx, \
+                duoforge.Batch(ctx, duoforge.reference_setups([0]), 1, 42) as b:
+            with self.make(ctx) as probe:
+                same = (self.model, self.params, 4, probe.ext_supported)
+            with self.make(ctx) as plain, self.make(ctx, foe_net=same) as split:
+                for search in (plain, split):
+                    self.preview(search, b)
+                self.start_turn(b)
+                for key in (456, 457):
+                    _, (a,) = plain.decide(b, [0], [0], [key], [False])
+                    _, (r,) = split.decide(b, [0], [0], [key], [False])
+                    self.assertEqual(a["kind"], "searched")
+                    drop = ("cost", "time")  # wall times
+                    self.assertEqual({k: v for k, v in r.items() if k not in drop},
+                                     {k: v for k, v in a.items() if k not in drop})
+                    for name in ("hypotheses", "choices", "values"):
+                        np.testing.assert_array_equal(split.last[-1][name], plain.last[-1][name])
+
+    def test_a_foe_net_must_read_its_encoders_rows(self):
+        # A foe network trained on another encoder is refused when the search is built, not at its first decision.
+        with duoforge.Context(C["DUOFORGE_DATA_KIND_POOL"]) as ctx:
+            model, params, _, mask = self.encoder3_net(ctx)
+            with self.assertRaisesRegex(ValueError, "foe network"):
+                self.make(ctx, foe_net=(model, params, 4, mask))
+            with self.assertRaisesRegex(ValueError, "foe network"):
+                self.make(ctx, foe_net=(model, params))
 
     def test_assembled_record_is_checked_and_named(self):
         # A record assembled outside the engine (the live tracker's) is not searched unless the engine accepts it and
