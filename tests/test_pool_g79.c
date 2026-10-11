@@ -178,7 +178,7 @@ static duoforge_status play_trace_lead(duoforge_context *ctx, const df_conf_batt
     *holds_cn = false;
     for (uint32_t k = 0u; k < 2u; ++k) {
         const uint32_t occ = b->sides[0].positions[k].occupant;
-        if (b->tail.sides[0].ability_now[occ] == 1u + DFI_ABILITY_CLOUDNINE) {
+        if (occ < DUOFORGE_MAX_ROSTER && b->tail.sides[0].ability_now[occ] == 1u + DFI_ABILITY_CLOUDNINE) {
             *holds_cn = true;
         }
     }
