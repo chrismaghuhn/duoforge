@@ -1,0 +1,81 @@
+{
+  "name": "c2_pair_c",
+  "purpose": "C2 pair closing (decision 0015 entry 5cp): a PASS battle of the pair campaign of run 9007 (diff_driver.py random, the teams J, K and L of the C2 part: holders of Punk Rock, Technician, Water Bubble, Mirror Armor, Defiant, Flame Body, Rough Skin, Shell Armor and Weak Armor against the C2 attackers), adopted as a regression fixture to show the meetings of its pairs. The choices and the seed are those of the campaign; the trace is recorded with the pinned Showdown (b2cb775).",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,3eb3953caa31ba3228a1c0d7dc1be3c22fcedd21682225a416e7b1d55698778f",
+  "teams": [
+    "Milotic (M) @ Mystic Water\nAbility: Competitive\nLevel: 50\nEVs: 0 HP / 0 Atk / 2 Def / 32 SpA / 32 Spe\nModest Nature\n- Chilling Water\n- Water Pulse\n- Protect\n- Mud Shot\n\nGardevoir (F) @ Focus Sash\nAbility: Synchronize\nLevel: 50\nEVs: 0 HP / 0 Atk / 2 Def / 32 SpA / 32 Spe\nTimid Nature\n- Zen Headbutt\n- Fire Punch\n- Thunder Punch\n- Protect\n\nTorterra (M) @ Light Clay\nAbility: Shell Armor\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Def / 0 SpD / 0 Spe\nAdamant Nature\n- Earthquake\n- Iron Head\n- Protect\n- Headlong Rush\n\nAmpharos (M) @ Wide Lens\nAbility: Static\nLevel: 50\nEVs: 0 HP / 0 Atk / 2 Def / 32 SpA / 32 Spe\nModest Nature\n- Parabolic Charge\n- Thunder Punch\n- Iron Tail\n- Protect\n\nClawitzer (M) @ Life Orb\nAbility: Mega Launcher\nLevel: 50\nEVs: 0 HP / 0 Atk / 2 Def / 32 SpA / 32 Spe\nModest Nature\n- Water Pulse\n- Chilling Water\n- Protect\n- Mud-Slap\n\nLucario (M) @ Expert Belt\nAbility: Inner Focus\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Def / 0 SpD / 0 Spe\nJolly Nature\n- Blaze Kick\n- Zen Headbutt\n- Low Sweep\n- Protect",
+    "Araquanid (M) @ Sitrus Berry\nAbility: Water Bubble\nLevel: 50\nEVs: 0 HP / 0 Atk / 2 Def / 32 SpA / 32 Spe\nModest Nature\n- Water Pulse\n- Chilling Water\n- Protect\n- Lunge\n\nScizor (M) @ Wide Lens\nAbility: Technician\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Def / 0 SpD / 0 Spe\nAdamant Nature\n- Pounce\n- Iron Head\n- Protect\n- Bug Bite\n\nGengar (M) @ Life Orb\nAbility: Cursed Body\nLevel: 50\nEVs: 0 HP / 0 Atk / 2 Def / 32 SpA / 32 Spe\nTimid Nature\n- Acid Spray\n- Skitter Smack\n- Protect\n- Psychic\n\nCinderace (M) @ Choice Scarf\nAbility: Blaze\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Def / 0 SpD / 0 Spe\nJolly Nature\n- Blaze Kick\n- Pyro Ball\n- Low Sweep\n- Protect\n\nMalamar (M) @ Leftovers\nAbility: Contrary\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Def / 0 SpD / 0 Spe\nAdamant Nature\n- Lunge\n- Zen Headbutt\n- Psychic\n- Protect\n\nSkeledirge (M) @ Muscle Band\nAbility: Unaware\nLevel: 50\nEVs: 0 HP / 0 Atk / 2 Def / 32 SpA / 32 Spe\nModest Nature\n- Torch Song\n- Zen Headbutt\n- Protect\n- Overheat"
+  ],
+  "choices": [
+    {
+      "p1": "team 2163",
+      "p2": "team 3546"
+    },
+    {
+      "p1": "move 2 2, move 2 2",
+      "p2": "move 2 2, move 2 1"
+    },
+    {
+      "p1": "switch 3, move 4 1",
+      "p2": "move 2 -2, move 4"
+    },
+    {
+      "p1": "move 1 2, move 2 2",
+      "p2": "move 2 2, switch 3"
+    },
+    {
+      "p2": "pass, switch 3"
+    },
+    {
+      "p1": "move 3 2, move 4 1",
+      "p2": "move 3, move 2 2"
+    },
+    {
+      "p1": "move 2 -2, switch 4",
+      "p2": "switch 4, move 1 -1"
+    },
+    {
+      "p1": "move 2 1, switch 3",
+      "p2": "move 4 -2, move 4"
+    },
+    {
+      "p1": "move 1 -2, switch 3",
+      "p2": "move 2 2, move 2 1"
+    },
+    {
+      "p1": "move 4, move 4 1",
+      "p2": "move 4 -2, move 1 -1"
+    },
+    {
+      "p2": "pass, switch 4"
+    },
+    {
+      "p1": "switch 3, move 4 -1",
+      "p2": "move 4 1, move 4 2"
+    },
+    {
+      "p1": "pass, switch 4"
+    },
+    {
+      "p1": "move 2 -2, switch 3",
+      "p2": "move 2 2, move 2 2"
+    },
+    {
+      "p1": "move 3 2, move 2 2",
+      "p2": "move 3, move 3"
+    },
+    {
+      "p1": "pass, switch 3"
+    },
+    {
+      "p1": "move 4, move 4 2",
+      "p2": "move 3, move 3"
+    },
+    {
+      "p1": "move 4, move 2 2",
+      "p2": "move 1 1, pass"
+    }
+  ]
+}

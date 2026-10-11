@@ -1,0 +1,77 @@
+{
+  "name": "c2_cover_b",
+  "purpose": "C2 (decision 0015 entry 5cp): a PASS battle of the team campaign of run 9006 (diff_driver.py random, the C2 team set E to I), adopted as a regression fixture to show the marked moves Extrasensory, Headlong Rush, Lava Plume, Pyro Ball and Zing Zap used in a pool battle. The choices and the seed are those of the campaign; the trace is recorded with the pinned Showdown (b2cb775).",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,764d14a456f5f188097e53878439dc015abc8b6d66d7571d525f034bd814945f",
+  "teams": [
+    "Meowstic-F (F) @ Wide Lens\nAbility: Competitive\nLevel: 50\nEVs: 0 HP / 0 Atk / 2 Def / 32 SpA / 32 Spe\nTimid Nature\n- Extrasensory\n- Psychic\n- Protect\n- Dark Pulse\n\nArmarouge (M) @ Focus Sash\nAbility: Flash Fire\nLevel: 50\nEVs: 0 HP / 0 Atk / 2 Def / 32 SpA / 32 Spe\nTimid Nature\n- Lava Plume\n- Acid Spray\n- Overheat\n- Protect\n\nPangoro (M) @ Life Orb\nAbility: Iron Fist\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Def / 0 SpD / 0 Spe\nJolly Nature\n- Headlong Rush\n- Close Combat\n- Low Sweep\n- Earthquake\n\nToxicroak (M) @ Rocky Helmet\nAbility: Poison Touch\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Def / 0 SpD / 0 Spe\nAdamant Nature\n- Dynamic Punch\n- Cross Poison\n- Low Sweep\n- Sucker Punch\n\nGolurk @ Choice Scarf\nAbility: Iron Fist\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Def / 0 SpD / 0 Spe\nAdamant Nature\n- Dynamic Punch\n- Headlong Rush\n- Low Sweep\n- Earthquake\n\nArcanine-Hisui (M) @ Lum Berry\nAbility: Rock Head\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Def / 0 SpD / 0 Spe\nJolly Nature\n- Iron Tail\n- Close Combat\n- Crunch\n- Protect",
+    "Golisopod (M) @ Sitrus Berry\nAbility: Emergency Exit\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Def / 0 SpD / 0 Spe\nJolly Nature\n- Pounce\n- Skitter Smack\n- Protect\n- Taunt\n\nPincurchin (M) @ Wide Lens\nAbility: Lightning Rod\nLevel: 50\nEVs: 0 HP / 0 Atk / 2 Def / 32 SpA / 32 Spe\nTimid Nature\n- Zing Zap\n- Thunderbolt\n- Protect\n- Hyper Beam\n\nGengar (M) @ Life Orb\nAbility: Cursed Body\nLevel: 50\nEVs: 0 HP / 0 Atk / 2 Def / 32 SpA / 32 Spe\nTimid Nature\n- Acid Spray\n- Skitter Smack\n- Protect\n- Taunt\n\nCinderace (M) @ Choice Scarf\nAbility: Blaze\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Def / 0 SpD / 0 Spe\nJolly Nature\n- Pyro Ball\n- Fire Punch\n- Low Sweep\n- Zen Headbutt\n\nGallade (M) @ Expert Belt\nAbility: Steadfast\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Def / 0 SpD / 0 Spe\nAdamant Nature\n- Zen Headbutt\n- Low Sweep\n- Taunt\n- Protect\n\nMalamar (M) @ Leftovers\nAbility: Contrary\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Def / 0 SpD / 0 Spe\nAdamant Nature\n- Lunge\n- Zen Headbutt\n- Thunderbolt\n- Protect"
+  ],
+  "choices": [
+    {
+      "p1": "team 1236",
+      "p2": "team 3624"
+    },
+    {
+      "p1": "move 2 1, move 1",
+      "p2": "move 3, move 2 1"
+    },
+    {
+      "p1": "move 1 2, move 4",
+      "p2": "switch 4, move 4"
+    },
+    {
+      "p1": "move 2 -2, move 4",
+      "p2": "move 4 -2, move 3 -1"
+    },
+    {
+      "p1": "move 3, move 3 1",
+      "p2": "move 4 -2, move 3 2"
+    },
+    {
+      "p1": "move 2 1, switch 3",
+      "p2": "switch 4, move 4"
+    },
+    {
+      "p2": "switch 4, pass"
+    },
+    {
+      "p1": "move 1 2, move 1 2",
+      "p2": "move 1 2, move 4"
+    },
+    {
+      "p1": "pass, switch 3"
+    },
+    {
+      "p1": "move 3, switch 4",
+      "p2": "move 1 1, move 3 -1"
+    },
+    {
+      "p1": "move 1 -2, move 4",
+      "p2": "move 1 -2, move 3 -1"
+    },
+    {
+      "p2": "pass, switch 3"
+    },
+    {
+      "p1": "move 1 -2, move 2 2",
+      "p2": "move 1 2, move 2 2"
+    },
+    {
+      "p1": "pass, switch 4"
+    },
+    {
+      "p1": "move 4 2, move 4",
+      "p2": "move 1 2, move 1 -1"
+    },
+    {
+      "p1": "move 3, move 2 1",
+      "p2": "pass, move 3"
+    },
+    {
+      "p1": "move 2 2, move 3 -1",
+      "p2": "pass, move 1 -1"
+    }
+  ]
+}
