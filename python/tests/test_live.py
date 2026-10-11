@@ -260,6 +260,38 @@ class BatonPassTest(unittest.TestCase):
         self.assertEqual((p.occupant, p.stages, p.confused), (3, [tracker.STAGE_NEUTRAL] * 7, 0))
 
 
+class SetBoostTest(unittest.TestCase):
+    """Step G86: Belly Drum's -setboost shows the Attack stage it leaves (sim/battle.ts:2051-2052); the tracker sets the
+    position's stage to it, as the engine's BOOST event of the change does (src/combat/turn.c dfi_boost)."""
+
+    def tracker(self, stage):
+        from types import SimpleNamespace
+        from duoforge_live import tracker
+        t = tracker.Tracker.__new__(tracker.Tracker)
+        t.side, t._spectator, t.data = 0, False, data.load(kind="pool")
+        t._last_move, t._parting_shot = None, -1
+        p = SimpleNamespace(occupant=0, fainted=False, stages=[tracker.STAGE_NEUTRAL] * 7)
+        p.stages[0] = stage
+        t._positions = [[p, SimpleNamespace(occupant=1, fainted=False, stages=[6] * 7)],
+                        [SimpleNamespace(), SimpleNamespace()]]
+        return t, p
+
+    def test_the_stage_becomes_the_printed_one(self):
+        from duoforge_live import tracker
+        for start in (tracker.STAGE_NEUTRAL - 2, tracker.STAGE_NEUTRAL, tracker.STAGE_NEUTRAL + 3):
+            t, p = self.tracker(start)
+            t._set_boost("|-setboost|p1a: Snorlax|atk|6|[from] move: Belly Drum".split("|"))
+            self.assertEqual(p.stages[0], tracker.STAGE_NEUTRAL + 6, start)
+            self.assertEqual(p.stages[1:], [tracker.STAGE_NEUTRAL] * 6)
+
+    def test_no_positive_change_stops(self):
+        from duoforge_live import lines, tracker
+        t, p = self.tracker(tracker.STAGE_NEUTRAL + 6)
+        with self.assertRaises(lines.Stop) as caught:
+            t._set_boost("|-setboost|p1a: Snorlax|atk|6|[from] move: Belly Drum".split("|"))
+        self.assertEqual(caught.exception.reason, "converter:setboost-change")
+
+
 class ClearAllBoostsTest(unittest.TestCase):
     """Step G62 (decision 0031): Haze's CLEAR_ALL_BOOSTS returns the stages of every standing active Pokemon to
     neutral (data/moves.ts haze onHitField: getAllActive, sim/pokemon.ts clearBoosts); an empty or fainted position

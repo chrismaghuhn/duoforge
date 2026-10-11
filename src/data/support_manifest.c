@@ -374,6 +374,17 @@ const dfi_support_manifest dfi_support = {
              * the target was hurt this turn, HURT). Both need a PIVOT refusal (DUOFORGE_PUBLIC_CAUSE_TURN_HISTORY). */
             [DFI_MOVE_LASHOUT] = 1u,
             [DFI_MOVE_ASSURANCE] = 1u,
+            /* Step G86 (decision 0015 5cn, batch 6). Data rows: Body Slam (paralysis at 30 percent; its minimize flag is inert, Minimize is
+             * unmarked), Razor Shell (Defense -1 at 50 percent; slicing, Sharpness), Tickle (Attack and Defense -1; reflectable, Magic
+             * Bounce's list in tests/test_pool_g57.c). Handlers: Heavy Slam (weight ratio, user and target), Hard Press (the target's HP),
+             * Ice Spinner (the terrain clears after a hit), Belly Drum (half the HP for +6 Attack). */
+            [DFI_MOVE_BODYSLAM] = 1u,
+            [DFI_MOVE_RAZORSHELL] = 1u,
+            [DFI_MOVE_TICKLE] = 1u,
+            [DFI_MOVE_HEAVYSLAM] = 1u,
+            [DFI_MOVE_HARDPRESS] = 1u,
+            [DFI_MOVE_ICESPINNER] = 1u,
+            [DFI_MOVE_BELLYDRUM] = 1u,
     [DFI_MOVE_REVIVALBLESSING] = 1u,
             /* Step G42: Roost (the heal, then the Flying type is off for the turn) and Stomping Tantrum (base power x2 after a
              * FALSE last move result; the move_result of tail rev 4, decision 0015 section 7). */

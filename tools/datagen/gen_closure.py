@@ -2344,6 +2344,10 @@ SPECIAL_P = dict(SPECIAL_C, **{
     'steelbeam': ('STEEL_BEAM', {'onMoveFail'}),                          # G68: mindBlownRecoil (half the maximum HP on a hit and in MoveFail)
     'thunderwave': ('THUNDER_WAVE', set()),                               # G68: ignoreImmunity false (Ground is immune to the Electric move)
     'dragondarts': ('DRAGON_DARTS', set()),                               # G78: two hits, the second on the partner (decision 0043)
+    'heavyslam': ('HEAVY_SLAM', {'basePowerCallback', 'onTryHit'}),       # G86: base power by the user's and the target's weight
+    'hardpress': ('HARD_PRESS', {'basePowerCallback'}),                   # G86: base power by the target's current HP
+    'icespinner': ('ICE_SPINNER', {'onAfterHit', 'onAfterSubDamage'}),    # G86: clears the terrain after a hit (no onTry)
+    'bellydrum': ('BELLY_DRUM', {'onHit'}),                               # G86: half the maximum HP for +6 Attack
 })
 # Step G13: Detect is Protect (data/moves.ts:3526-3547 against 13961-14005): the same handler (not one of the G2 handlers,
 # so it is added to the pool's map only), and the generator checks that its stalling fields and both callbacks are,
@@ -2476,6 +2480,34 @@ G78_FACTS = (
     'flags: { protect: 1, mirror: 1, metronome: 1, noparentalbond: 1 },', 'multihit: 2,', 'smartTarget: true,',
     'target: "normal",', 'type: "Dragon",',
 )
+# Step G86 (decision 0015 5cn, batch 6, the power moves): Heavy Slam (base power by the user's and the target's weight in
+# hectograms, getWeight() being an integer here; onTryHit is the Dynamax refusal, owned as Low Kick's), Hard Press (base power
+# from the target's current HP, the pin's integer formula), Ice Spinner (clears the terrain after a hit: onAfterHit runs only
+# while the user is alive, onAfterSubDamage for a Substitute absorb; no onTry, so no terrain is no failure) and Belly Drum
+# (onHit: refused at half HP or at +6 Attack, half the maximum HP as directDamage, +12 Attack capped to +6, shown as -setboost).
+G86_HANDLERS = ['HEAVY_SLAM', 'HARD_PRESS', 'ICE_SPINNER', 'BELLY_DRUM']
+G86_FACTS = (
+    ('heavyslam', ['accuracy: 100,', 'basePower: 0,', 'category: "Physical",', 'priority: 0,',
+                   'flags: { contact: 1, protect: 1, mirror: 1, nonsky: 1, metronome: 1, minimize: 1 },',
+                   'const targetWeight = target.getWeight();', 'const pokemonWeight = pokemon.getWeight();',
+                   'if (pokemonWeight >= targetWeight * 5) {', 'bp = 120;', 'if (pokemonWeight >= targetWeight * 4) {', 'bp = 100;',
+                   'if (pokemonWeight >= targetWeight * 3) {', 'bp = 80;', 'if (pokemonWeight >= targetWeight * 2) {', 'bp = 60;',
+                   'bp = 40;', 'this.debug(`BP: ${bp}`);', 'return bp;', 'pp: 10,', "if (target.volatiles['dynamax']) {",
+                   "this.add('-fail', pokemon, 'Dynamax');", 'target: "normal",', 'type: "Steel",']),
+    ('hardpress', ['accuracy: 100,', 'basePower: 0,', 'const hp = target.hp;', 'const maxHP = target.maxhp;',
+                   'const bp = Math.floor(Math.floor((100 * (100 * Math.floor(hp * 4096 / maxHP)) + 2048 - 1) / 4096) / 100) || 1;',
+                   'return bp;', 'category: "Physical",', 'priority: 0,',
+                   'flags: { contact: 1, protect: 1, mirror: 1, metronome: 1 },', 'target: "normal",', 'type: "Steel",']),
+    ('icespinner', ['accuracy: 100,', 'basePower: 80,', 'category: "Physical",', 'priority: 0,',
+                    'flags: { contact: 1, protect: 1, mirror: 1, metronome: 1 },', 'onAfterHit(target, source) {',
+                    'this.field.clearTerrain();', 'onAfterSubDamage(damage, target, source) {', 'if (source.hp) {',
+                    'target: "normal",', 'type: "Ice",']),
+    ('bellydrum', ['accuracy: true,', 'basePower: 0,', 'category: "Status",', 'priority: 0,',
+                   'flags: { snatch: 1, metronome: 1 },',
+                   'if (target.hp <= target.maxhp / 2 || target.boosts.atk >= 6 || target.maxhp === 1) {',
+                   'return false;', 'this.directDamage(target.maxhp / 2);', 'this.boost({ atk: 12 }, target);',
+                   'target: "self",', 'type: "Normal",']),
+)
 G58_FACTS = (
     'accuracy: 100,', 'basePower: 90,', 'category: "Physical",', 'priority: 0,', 'target: "normal",', 'type: "Ghost",',
     'flags: { contact: 1, charge: 1, mirror: 1, metronome: 1, nosleeptalk: 1, noassist: 1, failinstruct: 1 },',
@@ -2567,7 +2599,7 @@ G68_FACTS = (
                      'flags: { protect: 1, reflectable: 1, mirror: 1, metronome: 1 },', "status: 'par',",
                      'ignoreImmunity: false,', 'target: "normal",', 'type: "Electric",']),
 )
-SPECIAL_IDS_P = SPECIAL_IDS_C + G2_HANDLERS + WEATHER_HANDLERS + G16_HANDLERS + G15_HANDLERS + G19_HANDLERS + G20_HANDLERS + G20_PROTECT_HANDLERS + G28_HANDLERS + G30_HANDLERS + G32_HANDLERS + G34_HANDLERS + G27_HANDLERS + G25_HANDLERS + G26_HANDLERS + G33_HANDLERS + G38_HANDLERS + G29_HANDLERS + G39_HANDLERS + G31_HANDLERS + G48_HANDLERS + G44_HANDLERS + G50_HANDLERS + G42_HANDLERS + G56_HANDLERS + G52_HANDLERS + G54_HANDLERS + G64_HANDLERS + G62_HANDLERS + G60_HANDLERS + G58_HANDLERS + G68_HANDLERS + G70_HANDLERS + G66_HANDLERS + G72B_HANDLERS + G74_HANDLERS + G76_HANDLERS + G78_HANDLERS + G88_HANDLERS + G94_HANDLERS + ['UNMODELED']# Step G10 made two of these handlers data: Scald (thawsTarget) and Recover (heal) are read into the second flags# byte (bit 4, thaws the target) and the heal column, and have the special NONE; their ids stay defined (the ids after
+SPECIAL_IDS_P = SPECIAL_IDS_C + G2_HANDLERS + WEATHER_HANDLERS + G16_HANDLERS + G15_HANDLERS + G19_HANDLERS + G20_HANDLERS + G20_PROTECT_HANDLERS + G28_HANDLERS + G30_HANDLERS + G32_HANDLERS + G34_HANDLERS + G27_HANDLERS + G25_HANDLERS + G26_HANDLERS + G33_HANDLERS + G38_HANDLERS + G29_HANDLERS + G39_HANDLERS + G31_HANDLERS + G48_HANDLERS + G44_HANDLERS + G50_HANDLERS + G42_HANDLERS + G56_HANDLERS + G52_HANDLERS + G54_HANDLERS + G64_HANDLERS + G62_HANDLERS + G60_HANDLERS + G58_HANDLERS + G68_HANDLERS + G70_HANDLERS + G66_HANDLERS + G72B_HANDLERS + G74_HANDLERS + G76_HANDLERS + G78_HANDLERS + G88_HANDLERS + G94_HANDLERS + G86_HANDLERS + ['UNMODELED']# Step G10 made two of these handlers data: Scald (thawsTarget) and Recover (heal) are read into the second flags# byte (bit 4, thaws the target) and the heal column, and have the special NONE; their ids stay defined (the ids after
 # them keep their values). First Impression and Low Kick keep theirs: the turn code implements them.
 POOL_COLUMN_KEYS = {'thawsTarget', 'heal'}
 G2_OWNED_FIELDS = {
@@ -3398,6 +3430,18 @@ def check_g72b_facts(moves_ts):
                 fail('move %s: the entry no longer has "%s"' % (mid, fact))
 
 
+def check_g86_facts(moves_ts):
+    """Step G86: the four handler entries are the pinned texts the turn code reads (the callbacks and the flags)."""
+    for mid, facts in G86_FACTS:
+        e = moves_ts.entry(mid)
+        if e is None:
+            fail('move %s not found' % mid)
+        text = norm('\n'.join(e[2]))
+        for fact in facts:
+            if norm(fact) not in text:
+                fail('move %s: the entry no longer has "%s"' % (mid, fact))
+
+
 def check_g76_facts(moves_ts):
     """Step G76: the Destiny Bond and Final Gambit entries have the pinned texts the turn code reads (data/moves.ts)."""
     for mid, facts in (('destinybond', G76_DESTINY_BOND_FACTS), ('finalgambit', G76_FINAL_GAMBIT_FACTS)):
@@ -4174,6 +4218,7 @@ def build_pool(root, repo, dx):
     check_g78_facts(moves_ts)
     check_g88_facts(moves_ts)
     check_c2_facts(moves_ts, champ_moves)
+    check_g86_facts(moves_ts)
     FLAGS_THAT_MATTER.clear()
     FLAGS_THAT_MATTER.update(prefix_flag_reads((items_ts, champ_items, abil_ts, champ_abil, moves_ts, champ_moves), dx)
                              - set(FLAG_BITS_C) - set(INERT_FLAG_READS) - set(FLAGS3_BITS))

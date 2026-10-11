@@ -38,6 +38,7 @@ static const char *const handled[] = {
     "thunderwave", /* primary status, bounced on Hypnosis's path; lane A G68/H10 */
     /* Step C1 (decision 0015 entry 5co): Glare is a primary status, Feather Dance, Baby-Doll Eyes and Metal Sound are target boosts. */
     "glare", "featherdance", "babydolleyes", "metalsound",
+    "tickle", /* step G86: two primary stat drops (Attack and Defense -1), bounced on Charm's path (decision 0015 5cn) */
 };
 
 /* The marked reflectable moves whose bounced run is not modelled (marked by lane A's G54 batch): dfi_bounce_kind_ok refuses
@@ -100,7 +101,7 @@ static void test_marked_reflectable_moves_are_the_handled_list(df_test *t)
                                      in_list(name, refused, sizeof refused / sizeof refused[0])));
         marked += 1u;
     }
-    DF_CHECK_EQ_U64(t, marked, 28u); /* 23 on main, Thunder Wave of step G68, and Glare, Feather Dance, Baby-Doll Eyes, Metal Sound (step C1) */
+    DF_CHECK_EQ_U64(t, marked, 29u); /* 23 on main, Thunder Wave of step G68, and Glare, Feather Dance, Baby-Doll Eyes, Metal Sound (step C1) */
 }
 
 /* Every marked reflectable move is a single-target or a foeSide move: a spread one would need the TryHit of every target

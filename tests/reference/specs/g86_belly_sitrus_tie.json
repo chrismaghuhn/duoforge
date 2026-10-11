@@ -1,0 +1,16 @@
+{
+ "name": "g86_belly_sitrus_tie",
+ "purpose": "Step G86: Belly Drum on two Snorlax at the same speed, both holding Sitrus Berry: the -setboost lines, the half-HP cost, the refusal at half HP (-fail with [still]), and the Sitrus speed tie of the hit-loop Updates on both sides.",
+ "data": "pool",
+ "format": "gen9championsvgc2026regmc",
+ "seed": "sodium,00000000000000000000000000000000000000000000000000000000000a8601",
+ "teams": [
+  "Snorlax (M) @ Sitrus Berry\nAbility: Thick Fat\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Belly Drum\n- Body Slam\n- Protect\n- Heavy Slam\n\nAzumarill (F) @ Leftovers\nAbility: Huge Power\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Spe\nAdamant Nature\n- Ice Spinner\n- Tickle\n- Protect\n- Aqua Jet\n\nSlowbro (M) @ Focus Sash\nAbility: Oblivious\nLevel: 50\nEVs: 32 HP / 32 Def / 2 SpD\nBold Nature\n- Razor Shell\n- Protect\n- Psychic\n- Scald\n\nGolisopod (M) @ Life Orb\nAbility: Emergency Exit\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Close Combat\n- Protect\n- Razor Shell\n- Aqua Jet\n\nMilotic (F) @ Mystic Water\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Tickle\n- Protect\n- Ice Beam\n- Scald\n\nGholdengo @ Expert Belt\nAbility: Good as Gold\nLevel: 50\nEVs: 17 HP / 2 Def / 17 SpA / 16 SpD / 14 Spe\nModest Nature\n- Shadow Ball\n- Protect\n- Make It Rain\n- Thunderbolt",
+  "Snorlax (M) @ Sitrus Berry\nAbility: Thick Fat\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Belly Drum\n- Body Slam\n- Protect\n- Heavy Slam\n\nSylveon (F) @ Light Clay\nAbility: Pixilate\nLevel: 50\nEVs: 32 HP / 2 SpD / 32 Spe\nTimid Nature\n- Tickle\n- Protect\n- Hyper Voice\n- Dazzling Gleam\n\nGlalie (M) @ Expert Belt\nAbility: Inner Focus\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Ice Spinner\n- Protect\n- Icicle Crash\n- Earthquake\n\nDragonite (M) @ Choice Scarf\nAbility: Multiscale\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Spe\nAdamant Nature\n- Dragon Claw\n- Protect\n- Extreme Speed\n- Ice Spinner\n\nHippowdon (F) @ Leftovers\nAbility: Sand Stream\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Heavy Slam\n- Protect\n- Earthquake\n- Hard Press\n\nSwampert (M) @ Mystic Water\nAbility: Torrent\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Hard Press\n- Protect\n- Waterfall\n- Earthquake"
+ ],
+ "plan": {
+  "p1": ["move 1, move 2 1", "move 1, move 3", "move 1, move 2 1", "move 1, move 2 1"],
+  "p2": ["move 1, move 2 1", "move 1, move 3", "move 1, move 2 1", "move 1, move 2 1"],
+  "max_steps": 4
+ }
+}

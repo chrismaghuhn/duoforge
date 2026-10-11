@@ -81,7 +81,7 @@ CHOICE_ITEMS = ("choiceband", "choicescarf", "choicespecs")
 TURN_SCOPED = {"RAGE_POWDER", "WIDE_GUARD", "QUICK_GUARD"}
 
 # Kinds whose effect on the view no field holds and the fold does not apply: stops with a readable reason.
-UNREPRESENTABLE_KINDS = {"-sethp", "-clearboost", "-clearpositiveboost", "-copyboost", "-setboost",
+UNREPRESENTABLE_KINDS = {"-sethp", "-clearboost", "-clearpositiveboost", "-copyboost",
                          "-swapboost", "-invertboost", "-transform", "swap", "-endability", "-swapsideconditions",
                          "-cureteam"}
 
@@ -460,6 +460,12 @@ def check(line, view):
         return _feature("FORME_CHANGE")
     if kind == "-formechange":
         return _feature("FORME_CHANGE")
+    if kind == "-setboost":
+        # Belly Drum (step G86, sim/battle.ts:2051-2052): the line shows the Attack stage it leaves; the tracker sets the
+        # stage (Tracker._set_boost). Any other source (Anger Point, not marked) stays unknown.
+        if len(args) == 3 and args[1] == "atk" and attrs == ["[from] move: Belly Drum"]:
+            return "fold"
+        _unknown(kind, " ".join(args[1:] + attrs))
     if kind in UNREPRESENTABLE_KINDS:
         _unknown(kind)
     return "fold"  # the converter decides: it parses what DuoForge implements and refuses the rest
