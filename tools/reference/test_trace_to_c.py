@@ -2316,9 +2316,19 @@ class Library(unittest.TestCase):
                         for after in lines[i + 1:]:
                             if after.startswith('|move|') or after.startswith('|turn|'):
                                 break
-                            done = done or after.startswith(('|-damage|', '|-boost|', '|-unboost|', '|-heal|', '|-start|', '|-weather|') + (('|-status|',) if name in ('Will-O-Wisp', 'Stun Spore', 'Sleep Powder', 'Poison Powder', 'Sing') else ()))
+                            done = done or after.startswith(('|-damage|', '|-boost|', '|-heal|', '|-start|', '|-weather|') + (('|-status|',) if name in ('Will-O-Wisp', 'Stun Spore', 'Sleep Powder', 'Poison Powder', 'Sing') else ()))
                             # A status move of one target with a primary drop (Charm, Fake Tears, step G39): its -unboost line.
                             done = done or (name in ('Charm', 'Fake Tears') and after.startswith('|-unboost|'))
+                            # A stat drop of the target (Scary Face, Noble Roar, Eerie Impulse, Screech, Spicy Extract; their pin
+                            # boosts are negative, data/moves.ts:15800, 12769, 4441, 15847, 17450), counted only as the move's own
+                            # effect: the line directly after its |move| line, on the move's target or its user, and with no
+                            # [from] source (an Intimidate or an item line of another Pokemon is not the move's effect).
+                            if name in ('Scary Face', 'Noble Roar', 'Eerie Impulse', 'Screech', 'Spicy Extract') and i + 1 < len(lines) \
+                                    and lines[i + 1].startswith('|-unboost|') and '[from]' not in lines[i + 1]:
+                                fields = line.split('|')
+                                who = lines[i + 1].split('|')
+                                if len(fields) > 4 and who[2] in (fields[2], fields[4]):
+                                    done = True
                             # A forced switch (step G46: Whirlwind; Dragon Tail is damaging, so its damage line counts): the drag line.
                             done = done or (name in ('Whirlwind', 'Roar', 'Circle Throw') and after.startswith('|drag|'))
                             # Baton Pass (step G74): its switch line names it as the cause, `|switch|...|[from] Baton Pass`.
