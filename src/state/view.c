@@ -794,8 +794,14 @@ static mr_family mr_family_of(uint32_t move_id, const dfi_move_data *md)
 
 /* A status move changed something at a position it reached (not `stopped`; the user only for a move of its own side): a
  * stage, a status that stayed (one a berry cured in the same action did not), a volatile, a type, an item, an ability, a
- * heal, a Protect, a side or field condition, a weather. */
-static bool mr_changed(const duoforge_event *body, uint32_t count, uint32_t user, uint32_t stopped, bool selfish)
+ * heal, a Protect, a side or field condition that started, a weather that started, Trick Room's own end.
+ * The last action of a turn reaches the caller with the residual's events after it (no line marks where the residual
+ * begins), so the events that only the residual makes never count as the move's: a side condition's end (no status move
+ * of the engine ends one; Psychic Fangs is a damaging move), a field's end other than Trick Room's toggle by the Trick Room
+ * move (the durations, Steel Roller's damaging hit), the weather's end (-weather|none, the duration), a Perish count
+ * (Perish Song's own start is silent) and a sleep without [from] move (Yawn's; a move's sleep names the move). */
+static bool mr_changed(const duoforge_event *body, uint32_t count, uint32_t user, uint32_t stopped, bool selfish,
+                       bool trick_room)
 {
     uint32_t statused = 0u;
     for (uint32_t i = 0u; i < count; ++i) {
@@ -814,7 +820,7 @@ static bool mr_changed(const duoforge_event *body, uint32_t count, uint32_t user
             }
             break;
         case DUOFORGE_EVENT_STATUS:
-            if (own_cause && at) {
+            if (own_cause && at && !(e->detail == DFI_STATUS_SLP && e->cause == DUOFORGE_CAUSE_NONE)) {
                 statused |= 1u << pos;
             }
             break;
@@ -824,6 +830,10 @@ static bool mr_changed(const duoforge_event *body, uint32_t count, uint32_t user
             }
             break;
         case DUOFORGE_EVENT_VOLATILE_START:
+            if (own_cause && e->detail != DUOFORGE_VOLATILE_PERISH) {
+                return true;
+            }
+            break;
         case DUOFORGE_EVENT_CONFUSION_START:
         case DUOFORGE_EVENT_TYPE_CHANGE:
         case DUOFORGE_EVENT_SINGLE_TURN:
@@ -849,15 +859,19 @@ static bool mr_changed(const duoforge_event *body, uint32_t count, uint32_t user
             }
             break;
         case DUOFORGE_EVENT_SIDE_START:
-        case DUOFORGE_EVENT_SIDE_END:
         case DUOFORGE_EVENT_FIELD_START:
-        case DUOFORGE_EVENT_FIELD_END:
             if (e->cause == DUOFORGE_CAUSE_NONE) {
                 return true;
             }
             break;
+        case DUOFORGE_EVENT_FIELD_END:
+            if (e->cause == DUOFORGE_CAUSE_NONE && trick_room && e->detail == DUOFORGE_FIELD_TRICK_ROOM) {
+                return true; /* Trick Room again ends it (onFieldRestart) */
+            }
+            break;
         case DUOFORGE_EVENT_WEATHER:
-            if (e->cause == DUOFORGE_CAUSE_NONE && (e->flags & DUOFORGE_EVENT_FLAG_UPKEEP) == 0u) {
+            if (e->cause == DUOFORGE_CAUSE_NONE && (e->flags & DUOFORGE_EVENT_FLAG_UPKEEP) == 0u &&
+                e->detail != DUOFORGE_WEATHER_NONE) {
                 return true;
             }
             break;
@@ -1089,7 +1103,7 @@ duoforge_status duoforge_move_result(const duoforge_context *ctx, uint32_t user,
         break;
     case MR_EFFECT:
     default:
-        if (mr_changed(body, n, user, stopped, selfish)) {
+        if (mr_changed(body, n, user, stopped, selfish, md->pseudo_weather == DFI_PSEUDO_WEATHER_TRICK_ROOM)) {
             value = (uint8_t)DFI_MOVE_RESULT_TRUE;
         } else if (user_fail || (classes & MR_FALSE) != 0u) {
             value = (uint8_t)DFI_MOVE_RESULT_FALSE;
