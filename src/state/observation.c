@@ -412,6 +412,8 @@ duoforge_status duoforge_battle_observe_ext(const duoforge_context *ctx, const d
                 vol |= tail->leech_seed_source != 0u ? (uint32_t)DUOFORGE_POSITION_EXT_LEECH_SEED : 0u;
                 /* Step G76 (decision 0015 5cg): Destiny Bond is up until the occupant's next move attempt (-singlemove|X|Destiny Bond). */
                 vol |= (tail->position_flags & DFI_POSFLAG_DESTINY_BOND) != 0u ? (uint32_t)DUOFORGE_POSITION_EXT_DESTINY_BOND : 0u;
+                /* Step G84b (decision 0063): Curse is up on the holder (public: -start|X|Curse|[of] source; it ends with the occupant). */
+                vol |= (tail->position_flags & DFI_POSFLAG_CURSED) != 0u ? (uint32_t)DUOFORGE_POSITION_EXT_CURSE : 0u;
                 /* Step G30: Rage Powder draws the foes' single-target moves this turn ([-singleturn] move: Rage Powder), set
                  * only at a boundary inside a turn (a PIVOT: the residual ends it), as decision 0018 sections 3.4.1 and 6.1 say. */
                 if (((uint32_t)battle->sides[s].positions[p].flags & DFI_VOL_FOLLOW_ME) != 0u &&

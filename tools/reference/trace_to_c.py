@@ -1003,7 +1003,8 @@ EV['ITEM_SHOWN'] = 48
 CAUSE = {'NONE': 0, 'MOVE': 1, 'ITEM': 2, 'ABILITY': 3, 'RECOIL': 4, 'DRAIN': 5, 'BURN': 6, 'CONFUSION': 7,
          'TERRAIN': 8, 'PARALYSIS': 9, 'SLEEP': 10, 'FREEZE': 11, 'FLINCH': 12, 'NO_PP': 13, 'POISON': 14,
          'HEAL_BLOCK': 15, 'WEATHER': 16, 'ITEM_TAKEN': 17, 'RECHARGE': 18, 'DISABLE': 19, 'TAUNT': 20, 'IMPRISON': 21,
-         'LEECH_SEED': 22,  # LEECH_SEED: step G84, decision 0047 (the lane A block)
+         'LEECH_SEED': 22,  # LEECH_SEED: step G84, decision 0047 (the lane A block); CURSE: step G84b, decision 0063
+         'CURSE': 23,
          'ATTRACT': 36}  # 36: DUOFORGE_CAUSE_ATTRACT (step G71, decision 0034; lane B block CAUSE_ 36-49)
 VOLATILE_HEAL_BLOCK = 1  # DUOFORGE_VOLATILE_HEAL_BLOCK: the detail of VOLATILE_START and VOLATILE_END
 VOLATILE_ENCORE = 2      # DUOFORGE_VOLATILE_ENCORE (step G9)
@@ -1014,6 +1015,7 @@ VOLATILE_IMPRISON = 8    # DUOFORGE_VOLATILE_IMPRISON (step G38): START only
 VOLATILE_TAUNT = 6       # DUOFORGE_VOLATILE_TAUNT (step G31)
 VOLATILE_YAWN = 7        # DUOFORGE_VOLATILE_YAWN (step G31)
 VOLATILE_LEECH_SEED = 13  # DUOFORGE_VOLATILE_LEECH_SEED (step G84, decision 0047): START only, no END line
+VOLATILE_CURSE = 14  # DUOFORGE_VOLATILE_CURSE (step G84b, decision 0063): START only, the Ghost Curse's [of] source
 VOLATILE_SUBSTITUTE = 9  # DUOFORGE_VOLATILE_SUBSTITUTE (decision 0032): START and END, presence only
 VOLATILE_DRAGONCHEER = 10  # DUOFORGE_VOLATILE_DRAGONCHEER (step G72b, decision 0015 5ce): START only, presence only
 VOLATILE_ATTRACT = 11      # DUOFORGE_VOLATILE_ATTRACT (step G71, decision 0034): START, and the visible END of Mental Herb and Oblivious
@@ -1110,6 +1112,9 @@ IGNORED_VOLATILES = {
     # Step G84 (Leech Seed, decision 0047): the volatile is the tail's leech_seed_source (the view bit LEECH_SEED); its presence
     # shows in the start line, the drain's damage line `[from] Leech Seed` and the silent heal (the HEAL event, cause LEECH_SEED).
     'leechseed': 'the start line, the drain damage line and the silent heal of the target',
+    # Step G84b (Curse, decision 0063): the Ghost variant's start line (`-start|X|Curse|[of] source`), its residual damage line
+    # (`[from] Curse`, no [of]) and the user's half-HP line (a plain -damage); the variant is the user's type at execution.
+    'curse': 'the start line, the residual damage line and the half-HP line of the user (the variant shows in the moves)',
 }
 HP_EXACT, HP_PERCENT = 1, 2
 HP_FLAGS_EV = {'': 0, 'r': 1, 'y': 2, 'g': 3}
@@ -1167,6 +1172,9 @@ def ev_cause(attrs, tables):
                 cause = CAUSE['POISON']  # the residual damage of tox is poison's cause too (the status in the HP field tells them apart)
             elif what == 'confusion':
                 cause = CAUSE['CONFUSION']
+            elif what == 'Curse':
+                # Step G84b (decision 0063): the Curse residual, `-damage|holder|hp|[from] Curse` (no [of]; cause CURSE)
+                cause = CAUSE['CURSE']
             elif what == 'Leech Seed':
                 # Step G84 (decision 0047): the residual drain, `-damage|holder|hp|[from] Leech Seed|[of] source`; other = the source
                 cause = CAUSE['LEECH_SEED']
@@ -2037,6 +2045,11 @@ def step_events(log, viewer, roster_of, maxhp, tables, rb_pending=None, ill=None
             elif what == 'move: Leech Seed' and kind == '-start':
                 # Step G84 (decision 0047; data/moves.ts:10214): `-start|X|move: Leech Seed` (no [of]): VOLATILE_START, no END line
                 e = ev_tuple(EV['VOLATILE_START'], ev_pos(args[0]), NOPOS, detail=VOLATILE_LEECH_SEED)
+            elif what == 'Curse' and kind == '-start':
+                # Step G84b (decision 0063; champions/moves.ts:187-194): `-start|X|Curse|[of] source` from addVolatile (after the
+                # delete, so a refresh shows it too): VOLATILE_START, other = the source
+                _, _, other = ev_cause(attrs, tables)
+                e = ev_tuple(EV['VOLATILE_START'], ev_pos(args[0]), other, detail=VOLATILE_CURSE)
             elif what == 'move: Yawn' and kind == '-start':
                 # data/moves.ts:21131-21162 yawn: `-start|X|move: Yawn|[of] source` from onStart; the end line is [silent]
                 # (dropped) and the sleep it brings is the ordinary STATUS line (step G31)

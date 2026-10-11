@@ -293,18 +293,21 @@ typedef struct dfi_side {
 /* Step G88 (decision 0046): bit 5 LOWERED_THIS_TURN (Lash Out: a stage fell this turn, set in dfi_boost where a stage really
  * dropped; sim/battle.ts:2086) and bit 6 HURT_THIS_TURN (Assurance: a spread damage left the occupant alive this turn, set in
  * dfi_deal_ex; sim/battle.ts:2137-2138). Both are cleared at the turn boundary and with the occupant. The mask is the OR of
- * bits 0-6 (Destiny Bond, G76, bit 4 included): 0x7F. */
+ * bits 0-6 (Destiny Bond, G76, bit 4 included), bit 7 with G84b (CURSED): see below. */
 #define DFI_POSFLAG_LOWERED 0x20u
 #define DFI_POSFLAG_HURT 0x40u
-#define DFI_POSFLAG_VALID_MASK 0x7Fu
-/* Build-time guard (static asserts, G84 and G88): the position-flag fields are pairwise disjoint and together make the valid mask. */
+/* Step G84b (decision 0063, lane A block): bit 7 CURSED, the occupant's Curse volatile (the Ghost Curse's target, public as
+ * -start|X|Curse|[of] source). Per occupant: it ends with the occupant (dfi_tail_clear_occupant) and Baton Pass copies it. */
+#define DFI_POSFLAG_CURSED 0x80u
+#define DFI_POSFLAG_VALID_MASK 0xFFu
+/* Build-time guard (static asserts, G84, G88 and G84b): the position-flag fields are pairwise disjoint and together make the valid mask. */
 _Static_assert((DFI_POSFLAG_HEALING_WISH + DFI_POSFLAG_STATS_RAISED + DFI_POSFLAG_DRAGON_CHEER_MASK + DFI_POSFLAG_DESTINY_BOND +
-                DFI_POSFLAG_LOWERED + DFI_POSFLAG_HURT) ==
+                DFI_POSFLAG_LOWERED + DFI_POSFLAG_HURT + DFI_POSFLAG_CURSED) ==
                    (DFI_POSFLAG_HEALING_WISH | DFI_POSFLAG_STATS_RAISED | DFI_POSFLAG_DRAGON_CHEER_MASK | DFI_POSFLAG_DESTINY_BOND |
-                    DFI_POSFLAG_LOWERED | DFI_POSFLAG_HURT),
+                    DFI_POSFLAG_LOWERED | DFI_POSFLAG_HURT | DFI_POSFLAG_CURSED),
                 "the DFI_POSFLAG_* fields are pairwise disjoint");
 _Static_assert((DFI_POSFLAG_HEALING_WISH | DFI_POSFLAG_STATS_RAISED | DFI_POSFLAG_DRAGON_CHEER_MASK | DFI_POSFLAG_DESTINY_BOND |
-                DFI_POSFLAG_LOWERED | DFI_POSFLAG_HURT) == DFI_POSFLAG_VALID_MASK,
+                DFI_POSFLAG_LOWERED | DFI_POSFLAG_HURT | DFI_POSFLAG_CURSED) == DFI_POSFLAG_VALID_MASK,
                 "the DFI_POSFLAG_* fields make the valid mask");
 /* rev 4, per side and per roster member */
 #define DFI_TAIL_QUICK_GUARD_MAX 1u     /* set by Quick Guard, ends in the residual of the turn */

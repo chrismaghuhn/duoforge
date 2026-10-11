@@ -713,13 +713,13 @@ static bool dfi_tail_pos_valid(const dfi_kind_limits *lim, const dfi_tail_pos *t
                          tp->lock_turns <= DFI_TAIL_LOCK_TURNS_MAX &&
                          (tp->lock_turns == 0u || slot->locked_move != 0u) && /* lockedmove (G56): its move is in the slot */
                          (tp->lock_turns == 0u || lock_last_ok);
-    /* Rev 5 (lane A, G72b, decision 0015 5ce; step G76, 5cg): the position flags (bit 0 Healing Wish, never set; bit 7 is
-     * zero; the stats-raised bit, the Dragon Cheer stage, Destiny Bond (bit 4), LOWERED (bit 5) and HURT (bit 6) only with an
-     * occupant; the stage at most 2).
+    /* Rev 5 (lane A, G72b, decision 0015 5ce; step G76, 5cg): the position flags (bit 0 Healing Wish, never set; the stats-raised
+     * bit, the Dragon Cheer stage, Destiny Bond (bit 4), LOWERED (bit 5), HURT (bit 6) and Curse (bit 7) only with an occupant;
+     * the stage at most 2).
      * Future Sight stays zero. */
     const bool posflags_ok = dfi_position_flags_ok(tp->position_flags) &&
                           ((tp->position_flags & (DFI_POSFLAG_STATS_RAISED | DFI_POSFLAG_DRAGON_CHEER_MASK | DFI_POSFLAG_DESTINY_BOND |
-                                                  DFI_POSFLAG_LOWERED | DFI_POSFLAG_HURT)) == 0u ||
+                                                  DFI_POSFLAG_LOWERED | DFI_POSFLAG_HURT | DFI_POSFLAG_CURSED)) == 0u ||
                            slot->occupant < DUOFORGE_MAX_ROSTER);
     const bool rev5_ok = posflags_ok && tp->future_sight == 0u;
     return encore_ok && bars_ok && disable_ok && flags_ok && substitute_ok && trap_ok && leech_ok && stockpile_ok &&

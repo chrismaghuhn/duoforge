@@ -386,13 +386,14 @@ static const unsigned sweep[DFI_ENC_TAIL_SIZE][SWEEP_COLUMNS] = {
     {0, 255, 0, 0, 0, 0, 0, 0},
     {0, 255, 0, 0, 0, 0, 0, 0},
     {0, 255, 0, 0, 0, 0, 0, 0},
-    {47, 0, 208, 0, 0, 0, 0, 0}, /* position_flags (G76 bit 4, G88 bits 5 and 6, mask 0x7F): 47 values of the byte decode (11 before G88) */
+    {95, 0, 160, 0, 0, 0, 0, 0}, /* position_flags (G76 bit 4, G88 bits 5 and 6, G84b bit 7, mask 0xFF): 95 values of the byte decode
+     * (47 with mask 0x7F before G84b, 11 before G88); exact count from tools/state_model/state_v3_model.py --pool-tail (placeholder: recount) */
     {0, 0, 255, 0, 0, 0, 0, 0},
-    {47, 0, 208, 0, 0, 0, 0, 0},
+    {95, 0, 160, 0, 0, 0, 0, 0},
     {0, 0, 255, 0, 0, 0, 0, 0},
-    {47, 0, 208, 0, 0, 0, 0, 0},
+    {95, 0, 160, 0, 0, 0, 0, 0},
     {0, 0, 255, 0, 0, 0, 0, 0},
-    {47, 0, 208, 0, 0, 0, 0, 0},
+    {95, 0, 160, 0, 0, 0, 0, 0},
     {0, 0, 255, 0, 0, 0, 0, 0},
     {1, 0, 254, 0, 0, 0, 0, 0}, /* 332: step G71, Attract flat 0 (Rillaboom, M): the code 2 (model: attract_valid_codes) */
     {3, 0, 252, 0, 0, 0, 0, 0}, /* 333: flat 1 (Staraptor, F): the codes 1, 9 and 11 */
@@ -1034,7 +1035,7 @@ MUT(m_ill_override, ts->illusion.override[3] = 1u)
 MUT(m_ill_snapshot, ts->illusion.snapshot[8] = 1u)
 MUT(m_ill_pending, ts->illusion.pending[0] = 1u)
 MUT(m_healing_wish_bit, p0->position_flags = 1u) /* bit 0 (Healing Wish) is never set yet */
-MUT(m_position_flags_bit7, p0->position_flags = 0x80u) /* bit 7 is not defined (G76 took bit 4, G88 took bits 5 and 6) */
+MUT(m_position_flags_hw_curse, p0->position_flags = 0x81u) /* G84b: bit 7 (Curse) does not excuse bit 0 (Healing Wish, never set); every bit is defined now */
 MUT(v_destiny_bond_standing, p0->position_flags = 0x10u) /* G76: Destiny Bond at a standing lead is valid */
 MUT(m_dragon_stage_3, p0->position_flags = 0x0Cu) /* the Dragon Cheer stage 3 is invalid */
 MUT(m_future_sight, p0->future_sight = 1u)
@@ -1079,6 +1080,7 @@ MUT(v_unclass_now, p0->move_result = DFI_MOVE_RESULT_UNCLASSIFIED_NOW)
 MUT(v_unclass_both, p0->move_result = DFI_MOVE_RESULT_UNCLASSIFIED_NOW | DFI_MOVE_RESULT_UNCLASSIFIED_LAST)
 MUT(v_position_flags_raised_stage2, p0->position_flags = 0x0Au) /* G72b: stats raised and the Dragon Cheer stage 2 */
 MUT(v_position_flags_stage1, p0->position_flags = 0x04u) /* G72b: the Dragon Cheer stage 1 */
+MUT(v_position_flags_curse, p0->position_flags = 0x80u) /* G84b: Curse (bit 7) at a standing lead is valid */
 MUT(v_hazard_order_two, {
     ts->spikes = 2u;
     ts->toxic_spikes = 1u;
@@ -1216,7 +1218,7 @@ static const tail_case cases[] = {
     {"Illusion snapshot byte (rev 5)", DFI_INV_TAIL_SIDE, false, m_ill_snapshot},
     {"Illusion pending byte (rev 5)", DFI_INV_TAIL_SIDE, false, m_ill_pending},
     {"healing wish bit at a standing lead (rev 5)", DFI_INV_TAIL_POSITION, false, m_healing_wish_bit},
-    {"position flag bit 7 at a standing lead (rev 5)", DFI_INV_TAIL_POSITION, false, m_position_flags_bit7},
+    {"position flags Healing Wish with Curse at a standing lead (rev 5)", DFI_INV_TAIL_POSITION, false, m_position_flags_hw_curse},
     {"G76: Destiny Bond at a standing lead is valid", DFI_INV_NONE, false, v_destiny_bond_standing},
     {"dragon cheer stage 3 at a standing lead (rev 5)", DFI_INV_TAIL_POSITION, false, m_dragon_stage_3},
     {"Future Sight byte at a standing lead (rev 5)", DFI_INV_TAIL_POSITION, false, m_future_sight},
@@ -1234,7 +1236,8 @@ static const tail_case cases[] = {
     {"an unclassified this-turn bit with an undefined this-turn result is valid", DFI_INV_NONE, false, v_unclass_now},
     {"both unclassified bits with both results undefined are valid", DFI_INV_NONE, false, v_unclass_both},
     {"G72b: stats raised with stage 2 at a standing lead is valid", DFI_INV_NONE, false, v_position_flags_raised_stage2},
-    {"G72b: Dragon Cheer stage 1 at a standing lead is valid", DFI_INV_NONE, false, v_position_flags_stage1}};
+    {"G72b: Dragon Cheer stage 1 at a standing lead is valid", DFI_INV_NONE, false, v_position_flags_stage1},
+    {"G84b: Curse at a standing lead is valid", DFI_INV_NONE, false, v_position_flags_curse}};
 
 /* True iff the byte at `off` of the encoded tail is a reserved one (by the layout alone). */
 static bool is_reserved_offset(size_t off)

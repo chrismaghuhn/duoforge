@@ -32,8 +32,10 @@ REDIRECT_TURN = {"move: Follow Me", "move: Rage Powder", "Rage Powder", "move: S
 # Abilities whose -activate right before a move line draws it (sim: onAnyRedirectTarget).
 _REDIRECT_ABILITY = {"ability: Lightning Rod", "ability: Storm Drain"}
 # Moves whose line may name another target than the chosen one by their own rule (data/moves.ts smartTarget, step G78):
-# Dragon Darts goes to the chosen foe's ally when the chosen foe cannot be hit, and the line names the ally.
-_SMART_TARGET = {"DRAGONDARTS"}
+# Dragon Darts goes to the chosen foe's ally when the chosen foe cannot be hit, and the line names the ally. A Ghost
+# user's Curse aimed at its partner (or with no target) becomes randomNormal (data/moves.ts curse onModifyMove, step
+# G84b), so its line names a random foe; a non-Ghost Curse has no target and is labelled before this matters.
+_SMART_TARGET = {"DRAGONDARTS", "CURSE"}
 
 
 @dataclass(frozen=True)
