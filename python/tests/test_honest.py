@@ -582,7 +582,8 @@ class HonestSearch(unittest.TestCase):
                     _, (a,) = plain.decide(b, [0], [0], [key], [False])
                     _, (r,) = split.decide(b, [0], [0], [key], [False])
                     self.assertEqual(a["kind"], "searched")
-                    drop = ("cost", "time")  # wall times
+                    drop = ("cost", "time", "foe_net")  # wall times; the foe network's name, checked here
+                    self.assertEqual(r["foe_net"], {"encoder": 4, "ext_supported": probe.ext_supported})
                     self.assertEqual({k: v for k, v in r.items() if k not in drop},
                                      {k: v for k, v in a.items() if k not in drop})
                     for name in ("hypotheses", "choices", "values"):
@@ -596,6 +597,57 @@ class HonestSearch(unittest.TestCase):
                 self.make(ctx, foe_net=(model, params, 4, mask))
             with self.assertRaisesRegex(ValueError, "foe network"):
                 self.make(ctx, foe_net=(model, params))
+            with self.assertRaisesRegex(ValueError, "foe network's extension mask"):
+                self.make(ctx, foe_net=(model, params, 3, features.version_features(4)))
+
+    def test_a_foe_net_refuses_a_preview_search(self):
+        # The preview's turn-1 rollout plays both seats with the main network: with a foe network it would model the foe
+        # with two networks at once, so the combination is refused, not silently half applied (review of #415).
+        with duoforge.Context(C["DUOFORGE_DATA_KIND_POOL"]) as ctx:
+            foe = self.encoder3_net(ctx)
+            table = belief.SpreadTable.from_sides(duoforge.reference_setups([0])["sides"].reshape(-1))
+            with self.make(ctx) as probe:
+                mask = probe.ext_supported
+            for mode in ("value", "turn1"):
+                with self.subTest(mode=mode), self.assertRaisesRegex(ValueError, "preview"):
+                    honest.Honest(ctx, self.model, self.params, 4, mask, k=2, m=2, s=2, capacity=16, workers=2,
+                                  table=table, preview_mode=mode, foe_net=foe)
+
+    def test_the_foe_and_main_encodings_must_give_the_worlds_one_pair_mask(self):
+        # _prepare ranks the foe's menu on the foe encoding's mask and checks the viewer on the main encoding's rows: a
+        # mask the two encodings disagree on stops the decision explicitly.
+        with duoforge.Context(C["DUOFORGE_DATA_KIND_POOL"]) as ctx, \
+                duoforge.Batch(ctx, duoforge.reference_setups([0]), 1, 42) as b:
+            with self.make(ctx, foe_net=self.encoder3_net(ctx)) as split:
+                self.preview(split, b)
+                self.start_turn(b)
+                real = split.worlds.query_encoded
+
+                def query(version, ext=0):
+                    obs, slots, pairs = real(version, ext)
+                    if version == 4:  # the main encoding: one pair more than the foe encoding allows
+                        pairs = pairs.copy()
+                        pairs[0, 1].flat[np.flatnonzero(~pairs[0, 1])[0]] = True
+                    return obs, slots, pairs
+
+                with mock.patch.object(split.worlds, "query_encoded", side_effect=query):
+                    with self.assertRaisesRegex(honest.SearchError, "another pair mask"):
+                        split.decide(b, [0], [0], [456], [False])
+
+    def test_a_foe_nets_record_names_its_encoder(self):
+        # A stopped decision under a foe network is reproducible from its record only if the record says which encoder
+        # and mask modelled the foe; the default's records stay as they were.
+        with duoforge.Context(C["DUOFORGE_DATA_KIND_POOL"]) as ctx, \
+                duoforge.Batch(ctx, duoforge.reference_setups([0]), 1, 42) as b:
+            foe = self.encoder3_net(ctx)
+            with self.make(ctx) as plain, self.make(ctx, foe_net=foe) as split:
+                for search in (plain, split):
+                    self.preview(search, b)
+                self.start_turn(b)
+                _, (a,) = plain.decide(b, [0], [0], [456], [False])
+                _, (r,) = split.decide(b, [0], [0], [456], [False])
+            self.assertNotIn("foe_net", a)
+            self.assertEqual(r["foe_net"], {"encoder": 3, "ext_supported": foe[3]})
 
     def test_assembled_record_is_checked_and_named(self):
         # A record assembled outside the engine (the live tracker's) is not searched unless the engine accepts it and
@@ -868,6 +920,30 @@ class FoeArena(unittest.TestCase):
         nothing = foe_arena.verdict(better, worse, [{"kind": "team"}], searched, resamples=200)
         self.assertIsNone(nothing["p99_seconds_f"])
         self.assertFalse(nothing["adopt"])  # no searched decision, no latency evidence
+
+    def test_the_verdicts_interval_resamples_team_pairs_not_games(self):
+        # Within every pair F wins one game and loses the other against M: each pair's mean difference is 0, so a
+        # bootstrap over pairs has no spread at all, while one over single games would be wide.
+        from duoforge_search import foe_arena
+        searched = [{"kind": "searched", "wall": 0.1}] * 10
+        f, m = np.tile([1.0, 0.0], 100), np.tile([0.0, 1.0], 100)
+        v = foe_arena.verdict(f, m, searched, searched, resamples=500)
+        self.assertEqual(v["pairs"], 100)
+        self.assertEqual(v["h"], {"mean": 0.5, "95": [0.5, 0.5]})
+        with self.assertRaises(ValueError):
+            foe_arena.verdict(f[:-1], m[:-1], searched, searched)  # an odd row count is no set of pairs
+
+    def test_the_tool_refuses_an_output_inside_the_repository(self):
+        from duoforge_search import foe_arena
+        with tempfile.TemporaryDirectory() as tmp:
+            nets = [os.path.join(tmp, name) for name in ("a.npz", "b.npz", "c.npz")]
+            for path, data in zip(nets, (b"main", b"foe", b"bot")):
+                with open(path, "wb") as f:
+                    f.write(data)
+            inside = os.path.join(os.path.dirname(os.path.abspath(foe_arena.__file__)), "foe-arena-out")
+            with self.assertRaisesRegex(SystemExit, "inside the repository"):
+                foe_arena.main(["--checkpoint", nets[0], "--foe-net", nets[1], "--bot", nets[2], "--out", inside])
+            self.assertFalse(os.path.exists(inside))
 
     def test_the_fallback_gate_is_the_arenas_or_the_status_quos_own_share(self):
         from duoforge_search import foe_arena
