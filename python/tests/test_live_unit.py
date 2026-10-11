@@ -214,17 +214,26 @@ class TrackerStopTest(unittest.TestCase):
             self.assertEqual(caught.exception.reason, f"line:{line.split('|')[1]} Throat Chop")
 
     def test_baton_pass_gives_the_copied_volatiles(self):
-        # dfi_pass_give: Throat Chop's and Perish Song's counters go to the entering member; Encore and the recharge
-        # stay with the leaver (decision 0042)
+        # dfi_pass_give (src/combat/turn.c): Throat Chop's, Perish Song's, Taunt's and Heal Block's counters go to the
+        # entering member; Encore, Disable, Yawn, Imprison, Glaive Rush (noCopy), the recharge and a changed type stay
+        # with the leaver (decision 0042)
         from duoforge_live.data import trace_to_c
+        passed = {"throat_chop": 1, "perish": 2, "taunt": 1, "heal_block": 1}
+        kept = {"encore_slot": 3, "disable_slot": 2, "yawn": 1, "imprison": 1, "glaive_rush": 1, "must_recharge": 1,
+                "type_now": (18, 0)}
+        empty = {"encore_slot": 0, "disable_slot": 0, "yawn": 0, "imprison": 0, "glaive_rush": 0, "must_recharge": 0,
+                 "type_now": (0, 0)}
         t = self.tracker()
         t._baton_pass = 7
         p = t._positions[0][0]
-        p.throat_chop, p.perish, p.encore_slot, p.must_recharge = 1, 2, 3, 1
+        for name, value in {**passed, **kept}.items():
+            setattr(p, name, value)
         t._event(trace_to_c.ev_tuple(trace_to_c.EV["SWITCH"], 0, trace_to_c.NOPOS, trace_to_c.CAUSE["MOVE"], 4, 7))
-        self.assertEqual((p.occupant, p.throat_chop, p.perish, p.encore_slot, p.must_recharge), (4, 1, 2, 0, 0))
+        self.assertEqual(p.occupant, 4)
+        self.assertEqual({name: getattr(p, name) for name in passed}, passed)
+        self.assertEqual({name: getattr(p, name) for name in kept}, empty)
         t._event(trace_to_c.ev_tuple(trace_to_c.EV["SWITCH"], 0, trace_to_c.NOPOS, 0, 5, 0))  # a plain switch
-        self.assertEqual((p.occupant, p.throat_chop, p.perish), (5, 0, 0))
+        self.assertEqual((p.occupant, p.throat_chop, p.perish, p.taunt, p.heal_block), (5, 0, 0, 0, 0))
 
     def test_a_plain_typechange_is_soaks_only_after_a_soak_line(self):
         # Soak and Magic Powder print the same -start|X|typechange|T (no attribute): the converter gives Soak's cause to
