@@ -987,9 +987,10 @@ def ally_switch_valid(v):
 
 
 def position_flags_valid(pf):
-    """Rev 5 (G72b, G76, G88, G84b): bit 0 (Healing Wish) is zero, the Dragon Cheer stage (bits 2-3) is at most 2, bit 4 is
-    Destiny Bond (G76), bits 5 and 6 are LOWERED (0x20) and HURT (0x40, G88) and bit 7 is Curse (G84b, decision 0063)."""
-    return pf & ~0xFF == 0 and pf & 0x01 == 0 and (pf >> 2) & 3 <= 2
+    """Rev 5 (G72b, G76, G82, G88, G84b): bit 0 is Healing Wish (G82, valid: slot-bound, no occupant rule), the Dragon Cheer
+    stage (bits 2-3) is at most 2, bit 4 is Destiny Bond (G76), bits 5 and 6 are LOWERED (0x20) and HURT (0x40, G88) and bit 7
+    is Curse (G84b, decision 0063). The occupant rule of the flags is the caller's (src/state/invariants.c)."""
+    return pf & ~0xFF == 0 and (pf >> 2) & 3 <= 2
 
 
 def substitute_cap(sd):

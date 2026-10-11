@@ -1538,11 +1538,6 @@ def swap_partners(trace, teams, roster_of, tables):
                 occ[side][pos % 2] = r
                 sheet = (teams[side][r]['ability'] - 1) if teams[side][r]['ability'] else None
                 now[side][r] = None if (side, r) in mega else sheet
-            elif kind == 'swap' and len(args) == 2 and ev_pos(args[0]) is not None and args[1] in ('0', '1'):
-                # Ally Switch (step G80): the user and the ally of its side exchange their slots (the occupants move with them).
-                pos = ev_pos(args[0])
-                side, new = pos // 2, (pos // 2) * 2 + int(args[1])
-                occ[side][pos % 2], occ[side][new % 2] = occ[side][new % 2], occ[side][pos % 2]
             elif kind == 'swap' and args and ev_pos(args[0]) is not None and len(args) == 2 and args[1] in ('0', '1'):
                 # Ally Switch (step G80): the occupants of the two slots of the side exchange (the same as the line's new slot)
                 pos = ev_pos(args[0])

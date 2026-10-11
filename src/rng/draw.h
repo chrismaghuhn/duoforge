@@ -110,6 +110,10 @@ static inline const char *dfi_site_name(uint32_t site)
         return "partial-trap-turns";
     case DFI_SITE_ALLY_SWITCH:
         return "ally-switch";
+    case DFI_SITE_CUTE_CHARM:
+        return "cute-charm";
+    case DFI_SITE_ATTRACT:
+        return "attract";
     default:
         return NULL;
     }

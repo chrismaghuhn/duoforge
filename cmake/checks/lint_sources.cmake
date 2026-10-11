@@ -108,6 +108,26 @@ foreach(_file IN LISTS _files)
     endforeach()
 endforeach()
 
+# Every draw site defined in src/rng/draw.h has its case in dfi_site_name (a site without a name is a finding, the same
+# as a missing POSFLAG case): each "#define DFI_SITE_<NAME>" except DFI_SITE_COUNT needs "case DFI_SITE_<NAME>:".
+# file(STRINGS) cannot split a CRLF working copy into lines, so the defines are matched on the whole text (no group).
+if(EXISTS "${ROOT}/src/rng/draw.h")
+    file(READ "${ROOT}/src/rng/draw.h" _draw_text)
+    string(REPLACE "" "" _draw_text "${_draw_text}")
+    string(REGEX MATCHALL "#define DFI_SITE_[A-Z0-9_]+[ 	]" _site_defs "${_draw_text}")
+    foreach(_site_def IN LISTS _site_defs)
+        string(REPLACE "#define DFI_SITE_" "" _site "${_site_def}")
+        string(STRIP "${_site}" _site)
+        if(NOT "${_site}" STREQUAL "COUNT")
+            string(FIND "${_draw_text}" "case DFI_SITE_${_site}:" _case_pos)
+            if(_case_pos EQUAL -1)
+                message("src/rng/draw.h: site-case (DFI_SITE_${_site} has no case in dfi_site_name)")
+                math(EXPR _findings "${_findings} + 1")
+            endif()
+        endif()
+    endforeach()
+endif()
+
 list(LENGTH _files _file_count)
 if(_findings GREATER 0)
     message(FATAL_ERROR "lint: ${_findings} finding(s) in ${_file_count} file(s)")
