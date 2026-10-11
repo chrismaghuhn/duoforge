@@ -32,8 +32,9 @@ _TIMER_ON = "|inactive|Battle timer is ON"
 _TIMER_OFF = "|inactiveoff|"
 _NO_FALLBACK = ("searched", "forced", "raw", "team")
 # The approved spec's search (owner, 2026-10-10): X (mix, lambda 0.5) at K = M = 8 and 16 worlds over the pinned live
-# spread table, a foe species without a spread prior refused.
-HONEST_SETTINGS = {"k": 8, "m": 8, "s": 16, "rule": "mix", "lam": 0.5, "species_prior": True}
+# spread table, a foe species without a spread prior refused. The leaf buffer is the decision's K * M * S leaves: the
+# padded 16384-row value call was 93% of a decision (#355, docs/benchmarks/2026-10-11-honest-search-breakdown).
+HONEST_SETTINGS = {"k": 8, "m": 8, "s": 16, "rule": "mix", "lam": 0.5, "species_prior": True, "capacity": 1024}
 
 
 @dataclass(frozen=True)
