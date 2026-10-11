@@ -41,8 +41,8 @@
 #include "support/pool.h"
 #include "support/team_c.h"
 
-#define FP_KP_HEX "b6c0453a770dfe26a3086f6481676fb51011f668508978f1b8bdffa6ffc67b8a" /* the model fingerprint of the pool tables after the merge with main (step G67, decision 0015 entry 5bl) */
-#define FP_KPD_HEX "43057530f0468a239412692726c79832a3b50743d07cf12a74c3b9a894c0fd21"
+#define FP_KP_HEX "239cd8fc982a059919b0d1ff6b52af13b95e0fe42df43e20593e1d998bff8471" /* the model fingerprint of the pool tables after the merge with main (step G67, decision 0015 entry 5bl) */
+#define FP_KPD_HEX "229ba6018447b353f8a386635137d1c561fa70974d3bd68d3f433fb0f78ac7bf"
 
 /* The public create under `ctx` gives `gated`, and the build without the
  * support gate `ungated`. */

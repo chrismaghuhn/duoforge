@@ -2107,7 +2107,7 @@ const dfi_pool_item_data dfi_pool_items[DFI_POOL_ITEM_COUNT] = {
  *   forecast -- data/abilities.ts:1470-1503  [unmodelled: callback onStart; callback onSwitchInPriority; callback onWeatherChange]
  *   forewarn -- data/abilities.ts:1504-1532  [unmodelled: callback onStart]
  *   friendguard -- data/abilities.ts:1533-1544
- *   frisk -- data/abilities.ts:1545-1557  [unmodelled: callback onStart]
+ *   frisk -- data/abilities.ts:1545-1557
  *   furcoat -- data/abilities.ts:1578-1587  [unmodelled: callback onModifyDef; callback onModifyDefPriority]
  *   galewings -- data/abilities.ts:1588-1596
  *   gluttony -- data/abilities.ts:1618-1629  [unmodelled: callback onDamage; callback onStart; read by id in data/abilities.ts; read by id in data/items.ts]
@@ -2886,7 +2886,7 @@ const uint8_t dfi_pool_ability_handler[DFI_POOL_ABILITY_COUNT] = {
     [DFI_ABILITY_FORECAST] = DFI_HANDLER_UNMODELED,
     [DFI_ABILITY_FOREWARN] = DFI_HANDLER_UNMODELED,
     [DFI_ABILITY_FRIENDGUARD] = DFI_HANDLER_NONE,
-    [DFI_ABILITY_FRISK] = DFI_HANDLER_UNMODELED,
+    [DFI_ABILITY_FRISK] = DFI_HANDLER_NONE,
     [DFI_ABILITY_FURCOAT] = DFI_HANDLER_UNMODELED,
     [DFI_ABILITY_GALEWINGS] = DFI_HANDLER_NONE,
     [DFI_ABILITY_GLUTTONY] = DFI_HANDLER_UNMODELED,
@@ -7029,7 +7029,6 @@ const char *const dfi_pool_ability_unmodeled[DFI_POOL_ABILITY_COUNT] = {
     [DFI_ABILITY_FLUFFY] = "callback onSourceModifyDamage",
     [DFI_ABILITY_FORECAST] = "callback onStart; callback onSwitchInPriority; callback onWeatherChange",
     [DFI_ABILITY_FOREWARN] = "callback onStart",
-    [DFI_ABILITY_FRISK] = "callback onStart",
     [DFI_ABILITY_FURCOAT] = "callback onModifyDef; callback onModifyDefPriority",
     [DFI_ABILITY_GLUTTONY] = "callback onDamage; callback onStart; read by id in data/abilities.ts; read by id in data/items.ts",
     [DFI_ABILITY_GOOEY] = "callback onDamagingHit",
@@ -7110,10 +7109,10 @@ const char *const dfi_pool_ability_unmodeled[DFI_POOL_ABILITY_COUNT] = {
 };
 
 const uint8_t dfi_pool_table_hash[32] = {
-    0x21u, 0xa9u, 0xffu, 0xe3u, 0x2bu, 0x7bu, 0xfbu, 0x9au,
-    0xc9u, 0xefu, 0xf1u, 0x2fu, 0xbeu, 0xd2u, 0x98u, 0xb5u,
-    0x23u, 0xa3u, 0x34u, 0x7du, 0x4bu, 0x07u, 0xe9u, 0x23u,
-    0x39u, 0x36u, 0x5du, 0xcfu, 0x92u, 0xa5u, 0xc6u, 0xd6u,
+    0xccu, 0x38u, 0x4au, 0xfbu, 0x85u, 0x95u, 0x00u, 0xb3u,
+    0xd9u, 0x9eu, 0xcbu, 0x98u, 0x45u, 0x22u, 0x72u, 0x8du,
+    0x5du, 0x4bu, 0xdcu, 0x72u, 0x5fu, 0xc7u, 0x77u, 0xb5u,
+    0x69u, 0xfbu, 0x5du, 0x3cu, 0xb6u, 0x18u, 0x53u, 0x58u,
 };
 
 static size_t dfi_pool_put_u16(uint8_t *out, size_t n, uint32_t v)

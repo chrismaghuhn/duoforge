@@ -1931,11 +1931,18 @@ def step_events(log, viewer, roster_of, maxhp, tables, rb_pending=None, ill=None
             # step G67 (decision 0033): the holder's own announcement at its switch-in (Air Balloon's onStart, items.ts:191-195):
             # ITEM_SHOWN, position the holder, id2 the item + 1, cause NONE. Only the item of the pool is looked up here.
             e = ev_tuple(EV['ITEM_SHOWN'], ev_pos(args[0]), NOPOS, 0, 0, tables['ITEM'][key(args[1])] + 1)
+        elif kind == '-item' and len(args) == 2 and len(attrs) == 2 and attrs[0] == '[from] ability: Frisk' and \
+                attrs[1].startswith('[of] '):
+            # step G81 (decision 0033): Frisk's announcement of foe X's item, `-item|X|Item|[from] ability: Frisk|[of] Y`
+            # (data/abilities.ts:1549; the pin prints no [identify]): ITEM_SHOWN with the foe X as the position, the Frisk user Y
+            # in other, cause ABILITY, id = Frisk + 1, id2 = the item + 1. Any other `[from] ability:` form is refused below.
+            e = ev_tuple(EV['ITEM_SHOWN'], ev_pos(args[0]), ev_pos(attrs[1][5:]), CAUSE['ABILITY'],
+                         tables['ABILITY'][key('Frisk')] + 1, tables['ITEM'][key(args[1])] + 1)
         elif kind == '-item':
             # POOL (step G29): `-item|X|Item|[from] move: M[|[of] Y]` is an item that a move gave X (Trick, Switcheroo, Thief,
             # Covet): ITEM_START with the cause MOVE, the move in id, the item in id2 and, when the line says it, the Pokemon it
-            # came from ([of]) in other. Any other `-item` line is refused, including the reserved Frisk form
-            # (`[from] ability: Frisk|[of] Y|[identify]`, decision 0033): it is not mapped in this step.
+            # came from ([of]) in other. Any other `-item` line is refused (including `[from] ability: Frisk|[identify]`, which
+            # the pin never prints, and every other ability form).
             moves = [a[len('[from] move: '):] for a in attrs if a.startswith('[from] move: ')]
             of = [a for a in attrs if a.startswith('[of] ')]
             extra = [a for a in attrs if not a.startswith('[from] move: ') and a not in of]

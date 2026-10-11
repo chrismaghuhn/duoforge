@@ -8899,7 +8899,7 @@ static bool dfi_has_entry(const struct duoforge_battle *b, const dfi_member *m)
     const uint32_t now = dfi_ability_code(b, m);
     return dfi_weather_set_by_fam(fam) != DFI_WEATHER_NONE || dfi_terrain_set_by_fam(fam) != DFI_TERRAIN_NONE ||
            now == 1u + DFI_ABILITY_INTIMIDATE || now == 1u + DFI_ABILITY_FAIRYAURA || now == 1u + DFI_ABILITY_TRACE ||
-           now == 1u + DFI_ABILITY_UNNERVE || now == 1u + DFI_ABILITY_PRESSURE;
+           now == 1u + DFI_ABILITY_UNNERVE || now == 1u + DFI_ABILITY_PRESSURE || now == 1u + DFI_ABILITY_FRISK;
 }
 
 /* Trace (data/abilities.ts:5118-5148, onStart then its Update): the holder copies the ability of one of the foes that
@@ -8917,6 +8917,35 @@ static bool dfi_has_entry(const struct duoforge_battle *b, const dfi_member *m)
  * With no candidate Trace goes on seeking at every later Update (`effectState.seek`): not modelled, so the entry is
  * E_UNSUPPORTED (two Trace holders against each other, say, are the case; a battle never has no foe left). */
 static duoforge_status dfi_entry_ability(dfi_run *r, uint32_t flat);
+
+/* Frisk (step G81, data/abilities.ts:1545-1557, onStart): for each foe in foes() order (the standing foes, slot 0 then 1) that
+ * holds an item, `-item|X|Item|[from] ability: Frisk|[of] Y`: ITEM_SHOWN with the foe as the position, the Frisk user in other,
+ * cause ABILITY, id = Frisk + 1 and id2 = the item + 1 (decision 0033, the form mapped by step G81). The item is the one held
+ * now (dfi_item_code: a used-up item prints nothing, as Showdown's target.item is then empty). No state changes: the open team
+ * sheet already shows the item (the view and the knowledge are unchanged). A foe whose Illusion disguise is up (decision 0026)
+ * and that holds an item is refused (E_UNSUPPORTED) before any line is emitted: the line would name the disguise, not measured. */
+static duoforge_status dfi_frisk(dfi_run *r, uint32_t flat)
+{
+    struct duoforge_battle *b = r->b;
+    const uint32_t foe = 1u - flat / 2u;
+    for (uint32_t slot = 0u; slot < DUOFORGE_ACTIVE_PER_SIDE; ++slot) {
+        const dfi_member *t = dfi_at(b, foe * 2u + slot);
+        if (t != NULL && t->hp != 0u && dfi_item_code(b, t) != 0u &&
+            dfi_illusion_disguise_up(&b->sides[foe], &b->tail.sides[foe], slot) != 0) {
+            return DUOFORGE_E_UNSUPPORTED;
+        }
+    }
+    for (uint32_t slot = 0u; slot < DUOFORGE_ACTIVE_PER_SIDE; ++slot) {
+        const dfi_member *t = dfi_at(b, foe * 2u + slot);
+        const uint32_t code = (t != NULL && t->hp != 0u) ? dfi_item_code(b, t) : 0u;
+        if (code != 0u) {
+            duoforge_event e = dfi_ev(DUOFORGE_EVENT_ITEM_SHOWN, foe * 2u + slot, DUOFORGE_CAUSE_ABILITY, code, flat);
+            e.id = (uint16_t)(1u + DFI_ABILITY_FRISK); /* < 2^16 */
+            dfi_emit(r, &e);
+        }
+    }
+    return DUOFORGE_OK;
+}
 
 static duoforge_status dfi_trace(dfi_run *r, uint32_t flat)
 {
@@ -9040,6 +9069,8 @@ static duoforge_status dfi_entry_ability(dfi_run *r, uint32_t flat)
                           dfi_effect(DUOFORGE_CAUSE_ABILITY, 1u + DFI_ABILITY_INTIMIDATE, DFI_BOOST_SECONDARY));
             }
         }
+    } else if (a == 1u + DFI_ABILITY_FRISK) {
+        return dfi_frisk(r, flat); /* step G81: the foes' items, -item lines (ITEM_SHOWN) */
     }
     return DUOFORGE_OK;
 }

@@ -819,3 +819,7 @@ duoforge_add_test(NAME duoforge.state.pool_g65 SOURCES test_pool_g65.c WHITEBOX 
 # Step G67 (decision 0015 entry 5bl, decision 0033): Magic Guard (the class of every indirect damage), Air Balloon (grounding, the
 # pops, the immunity, the switch-in line ITEM_SHOWN) and the fold that ignores ITEM_SHOWN.
 duoforge_add_test(NAME duoforge.state.pool_g67 SOURCES test_pool_g67.c WHITEBOX TIMEOUT 120)
+
+# Step G81 (decision 0015 entry 5bs, decision 0033): Frisk (the foes' items announced at its holder's switch-in, ITEM_SHOWN in
+# the Frisk form), the switch-in order against Intimidate, two Frisk holders, and the fold that ignores the event.
+duoforge_add_test(NAME duoforge.state.pool_g81 SOURCES test_pool_g81.c WHITEBOX TIMEOUT 120)

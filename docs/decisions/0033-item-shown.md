@@ -8,9 +8,13 @@ Status: accepted by HauptSession and the lead (2026-10-10). Part of decision 001
 
 Fields: `kind` 48; `position` = the holder; `other` NO_POSITION; `cause` NONE; `id` 0; `id2` = the item + 1; every other field 0. This follows ITEM_START (42) for the position and id2 convention.
 
-## Reserved form (not mapped in this step)
+## The Frisk form (mapped by step G81)
 
-The same line with `[from] ability: X|[of] Y` (Frisk: `-item|X|Item|[from] ability: Frisk|[of] Y|[identify]`) is reserved for a later step. Its fields would be cause ABILITY with id = the ability and other = the Frisk user. The converter (`tools/reference/trace_to_c.py`) refuses this form and every other `-item` line that is not ITEM_START's move form or the plain form. A refusal is never a silent mapping.
+The line with `[from] ability: X|[of] Y` is Frisk's announcement of a foe's item: `-item|X|Item|[from] ability: Frisk|[of] Y`. The pin prints NO `[identify]` (data/abilities.ts:1549: `this.add('-item', target, target.getItem().name, '[from] ability: Frisk', `[of] ${pokemon}`)`); an earlier draft of this note had it, and it is wrong for the pin b2cb775.
+
+Fields (lead decision, HauptSession approved, step G81): `kind` 48; `position` = the frisked foe X; `other` = the Frisk user Y; `cause` ABILITY; `id` = Frisk + 1 (the ability+1 convention of the ABILITY id field, as in decision 0041; 0 stays "none"); `id2` = the item + 1; every other field 0. A foe whose Illusion disguise is up and that holds an item is refused (E_UNSUPPORTED) at the point the line would be printed.
+
+The converter (`tools/reference/trace_to_c.py`) accepts exactly this form. Every other `-item` line that is not ITEM_START's move form or the plain form (including any other `[from] ability:` form and any line with `[identify]`) is refused: a refusal is never a silent mapping.
 
 ## Why no view change
 
