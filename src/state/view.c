@@ -238,9 +238,9 @@ static bool dfi_view_ill_nonzero(const dfi_tail_illusion *il)
  * Pool data only (the move id is a pool row). Nothing here reads the engine's queue: the queue holds the foe's chosen moves, which
  * no player knows (an information leak if read). A turn boundary is not affected (the bit is zero there), and a replacement at the
  * end of a turn is the REPLACEMENT boundary, not a PIVOT. */
-static bool dfi_view_raised_risk(const duoforge_context *ctx, const duoforge_battle *b, const duoforge_observation *ob)
+static bool dfi_view_raised_risk(const duoforge_context *ctx, const duoforge_observation *ob)
 {
-    if (b->boundary_kind != DUOFORGE_BOUNDARY_PIVOT || !dfi_context_is_pool(ctx)) {
+    if (ob->boundary_kind != DUOFORGE_BOUNDARY_PIVOT || !dfi_context_is_pool(ctx)) {
         return false;
     }
     for (uint32_t side = 0u; side < DUOFORGE_SIDE_COUNT; ++side) {
@@ -260,6 +260,45 @@ static bool dfi_view_raised_risk(const duoforge_context *ctx, const duoforge_bat
     return false;
 }
 
+/* The part of the one predicate that the player's observation alone decides: a visible sleep, a visible confusion, a foe
+ * Illusion member that may be disguised, a PIVOT with Alluring Voice on the field. The battle path adds what the observation does
+ * not carry (the foe's disguise state, a Substitute, a temporary forme). duoforge_observation_causes serves this part to the live
+ * record assembler, so that no copy of it lives outside C. */
+static uint32_t dfi_view_observation_causes(const duoforge_context *ctx, const duoforge_observation *observation)
+{
+    uint32_t mask = 0u;
+    for (uint32_t side = 0u; side < DUOFORGE_SIDE_COUNT; ++side) {
+        for (uint32_t m = 0u; m < DUOFORGE_MAX_ROSTER; ++m) {
+            if (observation->sides[side].members[m].status == DUOFORGE_AILMENT_SLEEP) {
+                mask |= DUOFORGE_PUBLIC_CAUSE_VISIBLE_SLEEP;
+            }
+        }
+        for (uint32_t p = 0u; p < DUOFORGE_ACTIVE_PER_SIDE; ++p) {
+            if (observation->sides[side].positions[p].confused != 0u) {
+                mask |= DUOFORGE_PUBLIC_CAUSE_VISIBLE_CONFUSION;
+            }
+        }
+    }
+    /* Illusion (decision 0026 section 4, amended by I2, point (a)): the foe's sheet has an Illusion member that the viewer has not
+     * seen fainted under its own name and that is not shown on the field under its own name. Facts of the viewer only. */
+    const uint32_t foe = 1u - (observation->player & 1u);
+    for (uint32_t m = 0u; m < observation->sides[foe].member_count && m < DUOFORGE_MAX_ROSTER; ++m) {
+        const duoforge_member_view *v = &observation->sides[foe].members[m];
+        if (v->ability != DFI_ABILITY_ILLUSION + 1u) {
+            continue;
+        }
+        const bool fainted_seen = v->hp_kind == DUOFORGE_HP_PERCENT && v->hp == 0u;
+        const bool shown_own = observation->sides[foe].occupant[0] == m || observation->sides[foe].occupant[1] == m;
+        if (!fainted_seen && !shown_own) {
+            mask |= DUOFORGE_PUBLIC_CAUSE_ILLUSION_POSSIBLE;
+        }
+    }
+    if (dfi_view_raised_risk(ctx, observation)) {
+        mask |= DUOFORGE_PUBLIC_CAUSE_RAISED_THIS_TURN; /* step G72b: a PIVOT with Alluring Voice known on the field */
+    }
+    return mask;
+}
+
 static duoforge_status dfi_view_visible_causes(const duoforge_context *ctx, const duoforge_battle *b, uint32_t player,
                                                uint32_t *out_mask)
 {
@@ -268,38 +307,10 @@ static duoforge_status dfi_view_visible_causes(const duoforge_context *ctx, cons
     if (st != DUOFORGE_OK) {
         return st;
     }
-    uint32_t mask = 0u;
-    for (uint32_t side = 0u; side < DUOFORGE_SIDE_COUNT; ++side) {
-        for (uint32_t m = 0u; m < DUOFORGE_MAX_ROSTER; ++m) {
-            if (observation.sides[side].members[m].status == DUOFORGE_AILMENT_SLEEP) {
-                mask |= DUOFORGE_PUBLIC_CAUSE_VISIBLE_SLEEP;
-            }
-        }
-        for (uint32_t p = 0u; p < DUOFORGE_ACTIVE_PER_SIDE; ++p) {
-            if (observation.sides[side].positions[p].confused != 0u) {
-                mask |= DUOFORGE_PUBLIC_CAUSE_VISIBLE_CONFUSION;
-            }
-        }
-    }
-    /* Illusion (decision 0026 section 4, amended by I2, point (a)): the foe's sheet has an Illusion member that the viewer has not
-     * seen fainted under its own name and that is not shown on the field under its own name. The foe side's disguise state (ill_*)
-     * being nonzero counts as well. Facts of the viewer only: the observation and the state of the foe side's disguise. */
-    {
-        const uint32_t foe = 1u - player;
-        for (uint32_t m = 0u; m < observation.sides[foe].member_count && m < DUOFORGE_MAX_ROSTER; ++m) {
-            const duoforge_member_view *v = &observation.sides[foe].members[m];
-            if (v->ability != DFI_ABILITY_ILLUSION + 1u) {
-                continue;
-            }
-            const bool fainted_seen = v->hp_kind == DUOFORGE_HP_PERCENT && v->hp == 0u;
-            const bool shown_own = observation.sides[foe].occupant[0] == m || observation.sides[foe].occupant[1] == m;
-            if (!fainted_seen && !shown_own) {
-                mask |= DUOFORGE_PUBLIC_CAUSE_ILLUSION_POSSIBLE;
-            }
-        }
-        if (dfi_view_ill_nonzero(&b->tail.sides[foe].illusion)) {
-            mask |= DUOFORGE_PUBLIC_CAUSE_ILLUSION_POSSIBLE;
-        }
+    uint32_t mask = dfi_view_observation_causes(ctx, &observation);
+    /* The foe side's disguise state (ill_*) being nonzero counts for Illusion as well (decision 0026, I2 point (d)). */
+    if (dfi_view_ill_nonzero(&b->tail.sides[1u - player].illusion)) {
+        mask |= DUOFORGE_PUBLIC_CAUSE_ILLUSION_POSSIBLE;
     }
     /* Step G60 (decision 0032): a Substitute on either side is public presence (the position's volatile, VOLATILE_SUBSTITUTE); its
      * HP never is, so the presence is a function of the public record only. */
@@ -320,9 +331,6 @@ static duoforge_status dfi_view_visible_causes(const duoforge_context *ctx, cons
                 mask |= DUOFORGE_PUBLIC_CAUSE_TEMP_FORME;
             }
         }
-    }
-    if (dfi_view_raised_risk(ctx, b, &observation)) {
-        mask |= DUOFORGE_PUBLIC_CAUSE_RAISED_THIS_TURN; /* step G72b: a PIVOT with Alluring Voice known on the field */
     }
     *out_mask = mask;
     return DUOFORGE_OK;
@@ -648,6 +656,19 @@ duoforge_status duoforge_battle_public_causes(const duoforge_context *ctx, const
         return st;
     }
     *out_mask = causes;
+    return DUOFORGE_OK;
+}
+
+duoforge_status duoforge_observation_causes(const duoforge_context *ctx, const duoforge_observation *observation,
+                                            uint32_t *out_mask)
+{
+    if (ctx == NULL || observation == NULL || out_mask == NULL) {
+        return DUOFORGE_E_NULL_ARGUMENT;
+    }
+    if (observation->player >= DUOFORGE_SIDE_COUNT) {
+        return DUOFORGE_E_INVALID_ARGUMENT;
+    }
+    *out_mask = dfi_view_observation_causes(ctx, observation);
     return DUOFORGE_OK;
 }
 
@@ -1339,6 +1360,122 @@ duoforge_status duoforge_battle_from_view(const duoforge_context *ctx, const duo
     }
     *out = world;
     return DUOFORGE_OK;
+}
+
+/* A hypothesis that draws nothing in particular for a world of `view` (duoforge_public_record_check): the middle word of every
+ * uniform, the foe's pick order of the context's brought count (the leads, then the members seen, then the others in roster
+ * order; none at team selection), its pending commands the first slot at the first target its class allows, the queue in its
+ * canonical order, and zero stat points but the HP points of each seen foe member: the first of 0 to 32 under which its shown HP
+ * has an exact value. False when the view is not even of the right shape for that (from_view then names it). */
+static bool dfi_view_neutral_hypothesis(const duoforge_context *ctx, const duoforge_public_state *view,
+                                        duoforge_hypothesis *h)
+{
+    const size_t n = dfi_state_encoded_size_of(ctx);
+    if (view->player >= DUOFORGE_SIDE_COUNT || view->state_size != n) {
+        return false;
+    }
+    uint8_t s[DUOFORGE_VIEW_STATE_MAX];
+    memcpy(s, view->state, n);
+    const uint32_t player = view->player;
+    const uint32_t foe = player ^ 1u;
+    const uint32_t member_count = side_at(s, foe)[DFI_ENC_SIDE_MEMBER_COUNT_OFF];
+    if (member_count > DUOFORGE_MAX_ROSTER) {
+        return false;
+    }
+    memset(h, 0, sizeof *h);
+    h->revision = DUOFORGE_HYPOTHESIS_REVISION;
+    const uint64_t middle = (uint64_t)1u << 63;
+    for (uint32_t m = 0u; m < DUOFORGE_MAX_ROSTER; ++m) {
+        h->hp[m] = middle;
+        h->sleep[0][m] = middle;
+        h->sleep[1][m] = middle;
+        h->pick_order[m] = (uint8_t)DUOFORGE_VIEW_PICK_NONE;
+    }
+    for (uint32_t p = 0u; p < DUOFORGE_ACTIVE_PER_SIDE; ++p) {
+        h->confusion[0][p] = middle;
+        h->confusion[1][p] = middle;
+        h->charge_target[p] = middle;
+    }
+    if (view->boundary != DUOFORGE_BOUNDARY_TEAM_SELECTION) {
+        uint32_t k = 0u;
+        uint32_t used = 0u;
+        for (uint32_t i = 0u; i < 2u; ++i) {
+            const uint32_t m = view->foe_leads[i];
+            if (m < member_count && ((used >> m) & 1u) == 0u && k < ctx->brought_count) {
+                h->pick_order[k++] = (uint8_t)m;
+                used |= 1u << m;
+            }
+        }
+        for (uint32_t pass = 0u; pass < 2u; ++pass) {
+            for (uint32_t m = 0u; m < member_count && k < ctx->brought_count; ++m) {
+                const bool seen = ((uint32_t)view->foe_seen_mask >> m & 1u) != 0u;
+                if (((used >> m) & 1u) == 0u && (pass == 1u || seen)) {
+                    h->pick_order[k++] = (uint8_t)m;
+                    used |= 1u << m;
+                }
+            }
+        }
+    }
+    for (uint32_t m = 0u; m < member_count; ++m) {
+        if (((uint32_t)view->foe_seen_mask >> m & 1u) == 0u) {
+            continue;
+        }
+        const uint8_t *kb = knowledge_at(s, player, m);
+        for (uint32_t sp = 0u; sp <= 32u; ++sp) {
+            dfi_member mem;
+            dfi_member_of(member_at(s, foe, m), &mem);
+            memset(mem.stat_points, 0, DFI_STAT_POINT_COUNT);
+            mem.stat_points[0] = (uint8_t)sp;
+            uint32_t unused = 0u;
+            if (dfi_closure_member_derive(&mem) &&
+                dfi_hp_candidates(kb[0], kb[1], mem.hp_max, UINT32_MAX, &unused) != 0u) {
+                h->stat_points[m][0] = (uint8_t)sp;
+                break;
+            }
+        }
+    }
+    for (uint32_t p = 0u; p < DUOFORGE_ACTIVE_PER_SIDE; ++p) {
+        if (((uint32_t)view->foe_pending_mask >> p & 1u) == 0u) {
+            continue;
+        }
+        const uint32_t occupant = position_at(s, foe, p)[0];
+        if (occupant >= member_count) {
+            return false;
+        }
+        const uint8_t *mb = member_at(s, foe, occupant);
+        duoforge_slot_command *c = &h->queued[p];
+        c->kind = (uint8_t)DUOFORGE_SLOT_MOVE;
+        if (mb[DFI_ENC_MEMBER_MOVE_COUNT_OFF] == 0u) {
+            c->move_slot = (uint8_t)DUOFORGE_MOVE_SLOT_STRUGGLE;
+            c->target = (uint8_t)DUOFORGE_TARGET_NONE;
+            continue;
+        }
+        const uint32_t move = rd16(mb + DFI_ENC_MOVE_OFF);
+        if (move >= ctx->move_count) {
+            return false;
+        }
+        uint8_t targets[DUOFORGE_SIDE_COUNT * DUOFORGE_ACTIVE_PER_SIDE];
+        (void)dfi_target_candidates(ctx->move_target_classes[move], foe * 2u + p, targets);
+        c->move_slot = 0u;
+        c->target = targets[0];
+    }
+    for (uint32_t q = 0u; q < view->queue_count && q < DFI_QUEUE_CAPACITY; ++q) {
+        h->queue_order[q] = (uint8_t)q;
+    }
+    return true;
+}
+
+duoforge_status duoforge_public_record_check(const duoforge_context *ctx, const duoforge_public_state *record)
+{
+    if (ctx == NULL || record == NULL) {
+        return DUOFORGE_E_NULL_ARGUMENT;
+    }
+    duoforge_hypothesis h;
+    if (!dfi_view_neutral_hypothesis(ctx, record, &h)) {
+        return DUOFORGE_E_MALFORMED;
+    }
+    struct duoforge_battle world;
+    return duoforge_battle_from_view(ctx, record, &h, &world);
 }
 
 /* ---- the hypothesis of a battle (privileged) ---- */

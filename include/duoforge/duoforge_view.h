@@ -150,6 +150,24 @@ duoforge_status duoforge_battle_public(const duoforge_context *ctx, const duofor
 duoforge_status duoforge_battle_public_causes(const duoforge_context *ctx, const duoforge_battle *battle, uint32_t player,
                                               uint32_t *out_mask);
 
+/* The part of the causes of a public refusal (DUOFORGE_PUBLIC_CAUSE_*) that the player's observation alone decides: visible
+   sleep, visible confusion, a possible Illusion of the foe's sheet, raised-this-turn at a PIVOT. It is the predicate that
+   duoforge_battle_public refuses on, read from the observation (the battle path adds the bits the observation does not carry:
+   the foe's disguise state, a Substitute, a temporary forme), so a player who rebuilds its observation (the live tracker) gets
+   the engine's causes without a copy of the rule. A pure call. Checks: NULL -> E_NULL_ARGUMENT; the player above 1 ->
+   E_INVALID_ARGUMENT. *out_mask is written only on success. */
+duoforge_status duoforge_observation_causes(const duoforge_context *ctx, const duoforge_observation *observation,
+                                            uint32_t *out_mask);
+
+/* The engine's verdict on a public record that was assembled outside it (the live tracker's): duoforge_battle_from_view of
+   it with a hypothesis that draws nothing in particular (the middle of every uniform; the foe's leads, then the members seen,
+   then the others as its pick order; zero stat points but the HP points a shown HP display needs; the first legal command of
+   a pending foe position). DUOFORGE_OK: the world gives the record back byte for byte. E_UNSUPPORTED: the engine refuses the
+   record (a PIVOT before the moves or with a move queued, a possible lockedmove, the Revival Blessing proxy, a cause of
+   duoforge_battle_public_causes). E_MALFORMED: a field the engine masks is filled, or the record contradicts itself; the
+   other statuses as duoforge_battle_from_view. A pure call: no heap, no output but the status. */
+duoforge_status duoforge_public_record_check(const duoforge_context *ctx, const duoforge_public_state *record);
+
 /* The HP display every player is shown of a Pokemon with hp of hp_max HP (the Champions percent display, sim/pokemon.ts
    getHealth at the pin): the percent (floor, at least 1 while hp > 0) and its DUOFORGE_HP_FLAG_* colour flag (at 20 and 50
    percent only). It is the opponent's knowledge of a member (the public record's knowledge bytes), which a player's own

@@ -57,3 +57,23 @@ def move_result(ctx, user, events):
     if st:
         raise DuoforgeError(status_name(st))
     return int(out[0])
+
+
+def observation_causes(ctx, observation):
+    """The DUOFORGE_PUBLIC_CAUSE_* mask that the player's observation decides (duoforge_observation_causes)."""
+    if ctx.handle is None:
+        raise ValueError("the context is closed")
+    _require(observation, _layout.OBSERVATION, (), "observation")
+    out = np.zeros(1, np.uint32)
+    st = load_library().duoforge_observation_causes(ctx.handle, ptr(observation), ptr(out))
+    if st:
+        raise DuoforgeError(status_name(st))
+    return int(out[0])
+
+
+def public_record_check(ctx, record):
+    """The engine's verdict on a public record assembled outside it (duoforge_public_record_check): its status."""
+    if ctx.handle is None:
+        raise ValueError("the context is closed")
+    _require(record, PUBLIC_STATE, (), "record")
+    return int(load_library().duoforge_public_record_check(ctx.handle, ptr(record)))

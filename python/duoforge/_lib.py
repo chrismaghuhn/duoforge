@@ -33,6 +33,8 @@ _SIGNATURES = {
     "duoforge_batch_public_causes": (_STATUS, (_P, _P, _P, _P)),
     "duoforge_hp_display": (_STATUS, (_U32, _U32, _P, _P)),
     "duoforge_move_result": (_STATUS, (_P, _U32, _P, _U32, _P)),
+    "duoforge_observation_causes": (_STATUS, (_P, _P, _P)),
+    "duoforge_public_record_check": (_STATUS, (_P, _P)),
     "duoforge_batch_from_view": (_STATUS, (_P, _P, _P, _U32, _P)),
     "duoforge_battle_hypothesis": (_STATUS, (_P, _P, _U32, _P)),
     "duoforge_public_queue_mask": (_STATUS, (_P, _P, _P, _P)),

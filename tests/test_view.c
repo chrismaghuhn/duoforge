@@ -231,11 +231,33 @@ static void check_state(df_test *t, const duoforge_context *ctx, const duoforge_
         const duoforge_status st = duoforge_battle_public(ctx, b, p, &view);
         DF_CHECK(t, st == DUOFORGE_OK || st == DUOFORGE_E_UNSUPPORTED);
         DF_CHECK(t, duoforge_battle_hypothesis(ctx, b, p, &h) == st);
+        /* the observation's part of the one predicate (duoforge_observation_causes) is the battle's mask but for the bits the
+         * observation does not carry (a Substitute, a temporary forme, the foe's disguise state) */
+        {
+            duoforge_observation seen;
+            uint32_t from_view = 0xFFFFFFFFu;
+            uint32_t from_battle = 0xFFFFFFFFu;
+            DF_CHECK(t, duoforge_battle_observe(ctx, b, p, &seen) == DUOFORGE_OK);
+            DF_CHECK(t, duoforge_observation_causes(ctx, &seen, &from_view) == DUOFORGE_OK);
+            DF_CHECK(t, duoforge_battle_public_causes(ctx, b, p, &from_battle) == DUOFORGE_OK);
+            const uint32_t battle_only = DUOFORGE_PUBLIC_CAUSE_SUBSTITUTE | DUOFORGE_PUBLIC_CAUSE_TEMP_FORME |
+                                         DUOFORGE_PUBLIC_CAUSE_ILLUSION_POSSIBLE;
+            DF_CHECK(t, (from_view & ~from_battle) == 0u && (from_battle & ~from_view & ~battle_only) == 0u);
+        }
         if (st != DUOFORGE_OK) {
             ++ty->unsupported;
             continue;
         }
         ++ty->checked;
+        /* the engine's verdict on a record (duoforge_public_record_check): its own records come back; a masked field filled
+         * (the foe's exact HP of its first member) does not */
+        DF_CHECK(t, duoforge_public_record_check(ctx, &view) == DUOFORGE_OK);
+        {
+            duoforge_public_state bad = view;
+            uint8_t *hp = bad.state + DFI_ENC_SIDE_OFF + (p ^ 1u) * DFI_ENC_SIDE_SIZE + DFI_ENC_SIDE_MEMBERS_OFF + DFI_ENC_MEMBER_HP_OFF;
+            hp[0] = (uint8_t)(hp[0] ^ 1u);
+            DF_CHECK(t, duoforge_public_record_check(ctx, &bad) == DUOFORGE_E_MALFORMED);
+        }
         for (uint32_t side = 0u; side < 2u; ++side) {
             const uint8_t *sb = view.state + 215u + 397u * side;
             for (uint32_t m = 0u; m < 6u; ++m) {
@@ -900,6 +922,21 @@ static void test_move_result(df_test *t)
     DF_CHECK(t, duoforge_move_result(kp, 1u, ev, 1u, NULL) == DUOFORGE_E_NULL_ARGUMENT);
     DF_CHECK(t, duoforge_move_result(kp, 4u, ev, 1u, &out) == DUOFORGE_E_INVALID_ARGUMENT);
     DF_CHECK(t, out == 0x55u);
+    /* the argument checks of the two predicate calls */
+    duoforge_observation o;
+    memset(&o, 0, sizeof o);
+    uint32_t mask = 0x55u;
+    DF_CHECK(t, duoforge_observation_causes(NULL, &o, &mask) == DUOFORGE_E_NULL_ARGUMENT);
+    DF_CHECK(t, duoforge_observation_causes(kp, NULL, &mask) == DUOFORGE_E_NULL_ARGUMENT);
+    DF_CHECK(t, duoforge_observation_causes(kp, &o, NULL) == DUOFORGE_E_NULL_ARGUMENT);
+    o.player = 2u;
+    DF_CHECK(t, duoforge_observation_causes(kp, &o, &mask) == DUOFORGE_E_INVALID_ARGUMENT);
+    DF_CHECK(t, mask == 0x55u);
+    duoforge_public_state rec;
+    memset(&rec, 0, sizeof rec);
+    DF_CHECK(t, duoforge_public_record_check(NULL, &rec) == DUOFORGE_E_NULL_ARGUMENT);
+    DF_CHECK(t, duoforge_public_record_check(kp, NULL) == DUOFORGE_E_NULL_ARGUMENT);
+    DF_CHECK(t, duoforge_public_record_check(kp, &rec) == DUOFORGE_E_MALFORMED); /* no size: not a record of the context */
     duoforge_context_destroy(k1);
     duoforge_context_destroy(kp);
 }
