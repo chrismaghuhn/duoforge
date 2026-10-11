@@ -1,0 +1,93 @@
+{
+  "base": "618241aba44b56a57a9cec5f731b70ec7e295521",
+  "collector_rejection_controls": {
+    "passed": 7
+  },
+  "effective_final": {
+    "ctest_skipped": 0,
+    "disabled": 0,
+    "failed": 0,
+    "internal_unittest_skipped": 3,
+    "passed": 1397,
+    "unique_tests": 1397
+  },
+  "head_ci": "See the PR: the docs-only head requires a full manual dispatch before merge.",
+  "hosted_base_ci": {
+    "conclusion": "success",
+    "not_applicable_quick_guard": 1,
+    "passed_jobs": 12,
+    "url": "https://github.com/chrismaghuhn/duoforge/actions/runs/38170604683"
+  },
+  "initial_full_suite": {
+    "disabled": 0,
+    "failed": 1,
+    "internal_unittest_skips_visible_in_truncated_junit": [
+      {
+        "ctest": "duoforge.python.expert_teacher",
+        "detail": "test_two_phase_decision_bytes_pinned (python.tests.test_expert_teacher.Teacher.test_two_phase_decision_bytes_pinned) ... skipped \"two-phase decision bytes are pinned under ['Linux|AMD Ryzen 7 5800X 8-Core Processor|numpy 2.5.3', 'Windows|AMD64 Family 25 Model 33 Stepping 2, AuthenticAMD|numpy 2.5.3'], here Linux|INTEL(R) XEON(R) PLATINUM 8573C|numpy 2.5.3\""
+      },
+      {
+        "ctest": "duoforge.python.vgcpastes_engine",
+        "detail": "test_an_unsupported_second_stone_is_a_named_blocker (python.tests.test_vgcpastes_engine.EngineCheckTest.test_an_unsupported_second_stone_is_a_named_blocker) ... skipped 'every Raichu Mega is supported under this library'"
+      }
+    ],
+    "openblas_num_threads": "automatic",
+    "parallel": 4,
+    "passed": 1396,
+    "skipped": 0,
+    "tests": 1397
+  },
+  "inventory": {
+    "after": 1397,
+    "before": 1397,
+    "identical": true,
+    "sha256": "d798d326d719020f7941c9c2e718a079f26773838f16f4472abe7538b5651a9e"
+  },
+  "perft": {
+    "all_counts_and_sequence_hashes_match": true,
+    "depth_pins": 24,
+    "positions": 10
+  },
+  "public_surface": {
+    "before_after_equal": true,
+    "exported_symbols": 238,
+    "header_diff_empty": true,
+    "layout_constants": 250,
+    "layout_structs": 33
+  },
+  "python_recheck": {
+    "disabled": 0,
+    "failed": 0,
+    "internal_unittest_skips": [
+      {
+        "ctest": "duoforge.python.expert_teacher",
+        "detail": "test_two_phase_decision_bytes_pinned (python.tests.test_expert_teacher.Teacher.test_two_phase_decision_bytes_pinned) ... skipped \"two-phase decision bytes are pinned under ['Linux|AMD Ryzen 7 5800X 8-Core Processor|numpy 2.5.3', 'Windows|AMD64 Family 25 Model 33 Stepping 2, AuthenticAMD|numpy 2.5.3'], here Linux|INTEL(R) XEON(R) PLATINUM 8573C|numpy 2.5.3\""
+      },
+      {
+        "ctest": "duoforge.python.search",
+        "detail": "test_pinned_table_bytes (python.tests.test_search.LookaheadDecisions.test_pinned_table_bytes) ... skipped \"the table's bytes are pinned under {'jax': '0.11.2', 'cpu': 'Intel(R) Xeon(R) Processor @ 2.10GHz', 'xla_flags': '', 'capacity': 256}, here {'jax': '0.11.2', 'cpu': 'INTEL(R) XEON(R) PLATINUM 8573C', 'xla_flags': '', 'capacity': 256}\""
+      },
+      {
+        "ctest": "duoforge.python.vgcpastes_engine",
+        "detail": "test_an_unsupported_second_stone_is_a_named_blocker (python.tests.test_vgcpastes_engine.EngineCheckTest.test_an_unsupported_second_stone_is_a_named_blocker) ... skipped 'every Raichu Mega is supported under this library'"
+      }
+    ],
+    "openblas_num_threads": "1",
+    "parallel": 2,
+    "passed": 61,
+    "skipped": 0,
+    "tests": 61
+  },
+  "reference_capture": {
+    "conformance_steps": 11230,
+    "identical": true,
+    "independent_runs": 2,
+    "per_capture_battle_executions": 2582,
+    "tiebreak_stops": 8452,
+    "variants": 10
+  },
+  "source_provenance": {
+    "files": 31,
+    "hashes_unchanged": true
+  }
+}

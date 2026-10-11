@@ -1,0 +1,248 @@
+{
+  "binary_sha256": "e5b990cadbebc8982425312761a22e046cff026f3d6ca46284ccfeb184a835ce",
+  "errors": 0,
+  "manifest": {
+    "affinity": "none",
+    "battle_seed": 7001,
+    "battles_per_pairing": 25,
+    "build_type": "Release",
+    "c_flags": "-O3 -DNDEBUG",
+    "compiler": "GNU 14.2.0",
+    "context_fingerprint": "09d8d247c926610b2c3957002644221c01cc07d268bfa98461575c3b1c6a8306",
+    "cpu": "INTEL(R) XEON(R) PLATINUM 8573C; logical processors 5",
+    "dirty": false,
+    "engine": "duoforge 0.45.0",
+    "ipo": true,
+    "max_steps": 1000,
+    "os": "linux",
+    "pairings": [
+      "A-B",
+      "B-A",
+      "A-A",
+      "B-B"
+    ],
+    "policy": "uniform random over candidates (splitmix64)",
+    "policy_seed": 20261001,
+    "repetitions": 5,
+    "revision": "618241aba44b56a57a9cec5f731b70ec7e295521",
+    "started_utc": "2026-10-11T20:49:42Z",
+    "timer": "wall: CLOCK_MONOTONIC, cpu: process",
+    "warmup": 1,
+    "workers": 1,
+    "workload": "closure-pairings-v1"
+  },
+  "record": {
+    "battles": 100,
+    "errors": 0,
+    "side_decisions": 3174,
+    "steps": 1773,
+    "truncations": 0,
+    "turns": 1285
+  },
+  "results": [
+    {
+      "battles": 100,
+      "bytes": 0,
+      "calls": 0,
+      "cpu_ns_summary": {
+        "max": 16355555,
+        "median": 14520158,
+        "min": 14182465
+      },
+      "disturbed_repetitions": 0,
+      "errors": 0,
+      "family": "STEP_CORE",
+      "median_wall_ns": 14517894,
+      "per_second": {
+        "battles": 6888,
+        "calls": 0,
+        "side_decisions": 218626,
+        "steps": 122125,
+        "turns": 88511
+      },
+      "repetitions": 5,
+      "side_decisions": 3174,
+      "steps": 1773,
+      "truncations": 0,
+      "turns": 1285,
+      "variant": "plain",
+      "wall_ns_summary": {
+        "max": 16353003,
+        "median": 14517894,
+        "min": 14180235
+      },
+      "workers": 1
+    },
+    {
+      "battles": 100,
+      "bytes": 0,
+      "calls": 0,
+      "cpu_ns_summary": {
+        "max": 20101618,
+        "median": 15917089,
+        "min": 13647432
+      },
+      "disturbed_repetitions": 0,
+      "errors": 0,
+      "family": "STEP_CORE",
+      "median_wall_ns": 15914013,
+      "per_second": {
+        "battles": 6283,
+        "calls": 0,
+        "side_decisions": 199446,
+        "steps": 111411,
+        "turns": 80746
+      },
+      "repetitions": 5,
+      "side_decisions": 3174,
+      "steps": 1773,
+      "truncations": 0,
+      "turns": 1285,
+      "variant": "events",
+      "wall_ns_summary": {
+        "max": 20098932,
+        "median": 15914013,
+        "min": 13645768
+      },
+      "workers": 1
+    },
+    {
+      "battles": 0,
+      "bytes": 0,
+      "calls": 3546,
+      "cpu_ns_summary": {
+        "max": 10753540,
+        "median": 9660791,
+        "min": 9462774
+      },
+      "disturbed_repetitions": 0,
+      "errors": 0,
+      "family": "REQUEST",
+      "median_wall_ns": 9658945,
+      "per_second": {
+        "battles": 0,
+        "calls": 367120,
+        "side_decisions": 0,
+        "steps": 0,
+        "turns": 0
+      },
+      "repetitions": 5,
+      "side_decisions": 0,
+      "steps": 0,
+      "truncations": 0,
+      "turns": 0,
+      "variant": "request+candidates+observe",
+      "wall_ns_summary": {
+        "max": 10751577,
+        "median": 9658945,
+        "min": 9459166
+      },
+      "workers": 1
+    },
+    {
+      "battles": 0,
+      "bytes": 1009,
+      "calls": 1773,
+      "cpu_ns_summary": {
+        "max": 139322,
+        "median": 113914,
+        "min": 109792
+      },
+      "disturbed_repetitions": 0,
+      "errors": 0,
+      "family": "SNAPSHOT",
+      "median_wall_ns": 113577,
+      "per_second": {
+        "battles": 0,
+        "calls": 15610554,
+        "side_decisions": 0,
+        "steps": 0,
+        "turns": 0
+      },
+      "repetitions": 5,
+      "side_decisions": 0,
+      "steps": 0,
+      "truncations": 0,
+      "turns": 0,
+      "variant": "copy",
+      "wall_ns_summary": {
+        "max": 138702,
+        "median": 113577,
+        "min": 109465
+      },
+      "workers": 1
+    },
+    {
+      "battles": 0,
+      "bytes": 1009,
+      "calls": 1773,
+      "cpu_ns_summary": {
+        "max": 3769209,
+        "median": 3639255,
+        "min": 3337872
+      },
+      "disturbed_repetitions": 0,
+      "errors": 0,
+      "family": "SNAPSHOT",
+      "median_wall_ns": 3636838,
+      "per_second": {
+        "battles": 0,
+        "calls": 487511,
+        "side_decisions": 0,
+        "steps": 0,
+        "turns": 0
+      },
+      "repetitions": 5,
+      "side_decisions": 0,
+      "steps": 0,
+      "truncations": 0,
+      "turns": 0,
+      "variant": "codec",
+      "wall_ns_summary": {
+        "max": 3766929,
+        "median": 3636838,
+        "min": 3335929
+      },
+      "workers": 1
+    },
+    {
+      "battles": 100,
+      "bytes": 0,
+      "calls": 0,
+      "cpu_ns_summary": {
+        "max": 26932441,
+        "median": 23789193,
+        "min": 23631855
+      },
+      "disturbed_repetitions": 0,
+      "errors": 0,
+      "family": "EPISODE_NATIVE",
+      "median_part_ns": {
+        "policy": 6954775,
+        "reset": 253885,
+        "step": 14934184
+      },
+      "median_wall_ns": 23796658,
+      "per_second": {
+        "battles": 4202,
+        "calls": 0,
+        "side_decisions": 133380,
+        "steps": 74506,
+        "turns": 53999
+      },
+      "repetitions": 5,
+      "side_decisions": 3174,
+      "steps": 1773,
+      "truncations": 0,
+      "turns": 1285,
+      "variant": "uniform-random",
+      "wall_ns_summary": {
+        "max": 26929634,
+        "median": 23796658,
+        "min": 23628825
+      },
+      "workers": 1
+    }
+  ],
+  "skipped_by_time_limit": 0
+}
