@@ -10,6 +10,12 @@ Every milestone is a separate authorization boundary. A milestone may require mu
 - **CI:** the local CI (`tools/ci/local_ci.sh`, eleven jobs on Windows and WSL) is the merge gate. GitHub Actions runs nightly.
 - **Next:** M8 to M12 below. M10 is built.
 
+**Status 2026-10-11:**
+- **CI:** since 2026-10-03 the hosted GitHub CI is the merge gate; the machine lock (`tools/ci/machine_lock.sh`) is only for work that makes artifacts (recordings, regeneration, campaigns) or debugs a red run.
+- **The gate for everything else: 85 % game coverage** of the Reg M-C replay games (owner, 2026-10-10). Until then only the content expansion (M8) runs; no training. At 85 % the expansion stops, then a bottleneck review and a paper search decide the next steps; the training plan after 85 % is in M13.
+- **Coverage 2026-10-10:** 68.8 % of the games, 74.1 % usage-weighted turn coverage over the set-up games.
+- Work items are tracked as GitHub issues with the label `roadmap`.
+
 ## M0 — Workspace, build and development foundation
 
 Implement C17 CMake setup, a tiny core library, a smoke-test executable, CTest registration, documented local builds and initial CI configuration. Establish warnings, bounded execution and a minimal public version/status surface. Add source/coverage manifest scaffolding with explicit UNPINNED/UNSUPPORTED status.
@@ -96,6 +102,8 @@ Exit:
 - Each team has recorded reference battles and a clean differential run.
 - Nothing is unsupported in silence.
 
+Status 2026-10-11: in progress as the content expansion (two lanes, decision notes 0060 to 0099), measured by game coverage over the replay games; it stops at the 85 % gate above.
+
 ## M9 — Learner v2 and a multi-team training run
 
 Teach the learner many teams:
@@ -112,12 +120,14 @@ Exit:
 - A reproducible training report like `docs/learning/2026-10-02-night`: configuration, measured rates, the ladder across teams and the evaluation per team.
 - Performance claims carry measurements.
 
+Status 2026-10-11: the learner is built (PFSP league, resumable runs, encoder 6 with reserve columns, #329). Training is paused until the 85 % gate. The restart then uses encoder 6, the Bo1 data and pick hypotheses of M11 and the random teams pool; the algorithm order is in M13 ("The training algorithm after the 85 % coverage").
+
 ## M10 — Live play on Pokémon Showdown
 
 A client, `python/duoforge_live`, lets a trained bot accept challenges on the official server, in Reg M-C with open team sheets. The design is in `docs/superpowers/specs/2026-10-02-showdown-live-design.md`.
 - It builds exactly the observation DuoForge would show the player.
 - It refuses explicitly any team outside its training.
-- First version: Teams A and B, challenges only. Ladder play waits for M9.
+- First version: Teams A and B, challenges only. Ladder play waits for the owner's go; before that the live honest search (option A, #339) must pass its 400-game arena (lower bound above 0.50, no crash, raw fallbacks at most 5 %, deadline misses at most 1 %, tracker stops at most 1 %), and the bot follows the bot policy below.
 
 Exit:
 - The tracker equals DuoForge's own observation byte for byte on recorded battles.
@@ -128,6 +138,8 @@ Status: built on 2026-10-02 (#93, #97 to #100, #103) and played on the official 
 - **The first game:** The bot lost, and at the end it chose Protect turn after turn. The night run had scored a battle cut off after 500 steps as a tie, so stalling was worth more to the policy than a likely loss.
 - **The fix:** Learner v2 scores cut-offs with Showdown's tiebreak (`duoforge_battle_tiebreak`, #109).
 - **Report:** decision 0016.
+
+Bot policy on the ladder (recorded 2026-10-11): after a beginner's bot reached #1 on the Reg M-C ladder in about 155 games (Smogon thread "Wolfe_Alt6767: #1 ranked VGC bot"), the community discusses a bot registry, banning unregistered bots, an opt-out for human players and a bot-only ladder. Before DuoForge plays on the ladder (only with the owner's go), it follows whatever rules apply then: registered and marked as a bot where a registry exists, never hidden. A bot-only ladder would be the best place to measure against the other bots (Jaxcalibur, mikumiku37, Wolfe_Alt6767). Running cost is a design goal: mikumiku37 reports about $150 a month for its bot; DuoForge's engine and search run on CPUs with a small network, so a small VPS should do, to be measured (latency p99 within the timer) before any rental.
 
 ## M11 — Learning from human replays
 
@@ -181,7 +193,7 @@ Status of stage 1 (spec `docs/superpowers/specs/2026-10-03-m12-search-stage1-des
   - `Model.value`, the lookahead and `SearchPlayer` (plan PR D, #206).
 - **Measured (2026-10-04/05):** the oracle arena (#218/#219), then the honest public-information search (decision 0023, #222-#233). Its report (#236): E +0.39 / X +0.31 against the raw network and +0.12 to +0.20 against the panel, about 95 percent of the oracle's gain, with 2 percent raw fallbacks; about 33 ms per decision, 23 ms of it in the network on the CPU. On params-49333 the gain is X +0.27 (stage 3 P0, #242).
 - **Team preview searched (#240, report #241):** no consistent panel gain, so the preview stays with the raw network.
-- **Stage 3 (expert iteration):** spec `docs/superpowers/specs/2026-10-05-m12-expert-iteration-design.md`, decision 0024, phases P0 to P5. P0 passed; P1 (a pilot labelling one decision in eight) is being built from plans `docs/superpowers/plans/2026-10-08-stage3-p1-pilot.md` and `...-p1-learner.md`.
+- **Stage 3 (expert iteration):** spec `docs/superpowers/specs/2026-10-05-m12-expert-iteration-design.md`, decision 0024, phases P0 to P5. P0 passed. P1 (a pilot labelling one decision in eight, plans `docs/superpowers/plans/2026-10-08-stage3-p1-pilot.md` and `...-p1-learner.md`) ran on AWS on 2026-10-10: the budget-matched run 3 was INCONCLUSIVE, and the C2 repeat (distillation alone) failed, the student did not learn the teacher (held_teacher_kl_rel 0.808, argmax agreement flat). The owner then chose option A, the honest search as a play mode (#339). What comes next is in M13 ("The training algorithm after the 85 % coverage"): a C2 diagnosis first.
 
 Exit:
 - The Elo gain over the raw policy on the ladder, at a fixed time per move.
@@ -292,6 +304,19 @@ Ideas recorded by the owner on 2026-10-11 after looking at replayreview.app (sin
   - "best" is measured against the opponent model: the equilibrium mix, and optionally the human model at the opponent's rating, since an option can be right against one and wrong against the other; an option in the support of the equilibrium mix loses nothing against it;
   - luck is reported apart from decisions: the engine knows every chance draw, so a lost game splits into the win chance given up by choices and the win chance lost to rolls, crits and misses.
   The per-option values are the same numbers that regret mining (above) trains on, so the analysis also finds the states worth training on. No such tool exists for VGC doubles. It needs the multi-turn search for decisions whose value shows only later, and it waits for the 85 % coverage like everything else here.
+- **A web page for it (owner, 2026-10-11, an end goal):** a user pastes a Showdown replay; the tracker folds it and the page shows, per decision, a tree of the options with their values, the bot's choice, the win-chance loss of the move played, and the luck apart from the decisions. The user can enter what the replay does not show (the own full team sheet with stat points, back picks never sent in, hidden sets): a marked source as M11's pick hypotheses, validated by the engine's setup, the results labelled "under your assumptions", and each player still judged only on what that player knew. The network stays on the server and is never shipped; pasted replays and player names are not stored beyond aggregate counts. Others have the same idea (Wolfe_Alt6767 plans a chess.com-style review); the difference is the exact engine, the honest per-player view and the luck split.
+
+The training algorithm after the 85 % coverage (owner, 2026-10-11: "PPO with self-play is done as a proof of concept, everyone did it"). PPO stays only as the starting prior; the next run tests an algorithm the other bots did not use. In this order:
+1. **Diagnose C2 first (offline, no AWS):** C2 distilled the search into the network and failed (held_teacher_kl_rel 0.808, argmax agreement flat). Before any search-in-training run: can the student fit the teacher on its own training states (if not, capacity or target, not data), argmax against the solved mix as the target, and how noisy the teacher is with 16 sampled worlds.
+2. **Exact against sampled chance** (see above): whether the search is a clearly better teacher than the network at all.
+3. **Expert iteration, AlphaZero style:** the search is the teacher; the policy learns the solved mix of the matrix, the value its matrix value, by supervised learning (no advantage estimate, no GAE). Gumbel AlphaZero's policy improvement with few simulations (Danihelka et al., ICLR 2022) keeps the search affordable in training; regret mining picks the states. A pilot on AWS with predeclared gates, as P1.
+Alternatives to PPO, recorded to test against expert iteration, each as its own lever:
+- **R-NaD** (regularised Nash dynamics, DeepNash for Stratego, Perolat et al., Science 2022) and **magnetic mirror descent** (Sokota et al., ICLR 2023): model-free like PPO, but built to converge to an equilibrium in imperfect-information games instead of cycling, the failure the first night run showed (750 to 830 Elo). The smallest change from today's learner.
+- **PSRO / double oracle** (Lanctot et al., NeurIPS 2017): a population of policies and best responses solved as a meta-game; the principled form of the exploiter league (lever 5).
+- **ReBeL / Student of Games** (Brown et al., NeurIPS 2020; Schmid et al., Science Advances 2023): search and learning over public belief states, the long-term form of the belief-robust solver; needs the multi-turn search.
+- **A value network only, the policy from the search** (the Stockfish way, TD(lambda) on matrix values): simpler and stable, but without a policy prior every search over doubles' joint actions is dearer, and live play has a timer. An ablation against expert iteration, not the main path.
+Recommended order of the runs: R-NaD or magnetic mirror descent first (the cheapest to test, the learner stays almost the same, and it targets the cycling directly; it can run while steps 1 and 2 are done), then the expert-iteration pilot once step 2 shows the search is a clearly better teacher, then PSRO and ReBeL. Each run is measured as every lever above, as an Elo difference at a fixed time per move against the previous best agent.
+Target picture once each piece is measured on its own (owner, 2026-10-11): the pieces work at different levels and stack. Inside, the honest matrix search solves a KL-regularised matrix game with the network's current policy as the magnet (magnetic mirror descent at play time; the test-time RL candidate above), so it improves on the network only where the search is sure. In the middle, expert iteration distils that solution (mix and value) into the network, and the magnet moves to the new network from time to time, as R-NaD's iterations do: a regularised expert iteration that heads for an equilibrium like R-NaD but learns from the search. Outside, PSRO keeps a population of the learner's snapshots and exploiters and picks the training opponents from the meta-game, so the cycling cannot come back. With the multi-turn search and public belief states, the inside becomes ReBeL (Student of Games is this combination). Pieces are stacked only after each was measured alone, so a gain or a loss can be traced to its piece.
 
 
 ## M14 — Closed team sheets (the Bo1 ladder)

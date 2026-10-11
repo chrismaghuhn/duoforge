@@ -4,6 +4,7 @@ python -m duoforge_replay funnel DIR [--top N]
 python -m duoforge_replay corpus --source PATH... --registry REPO --out CORPUS.json [--format-prefix P...]
 python -m duoforge_replay validate-sets --source PATH... --corpus CORPUS.json --prior PRIOR.json --out REPORT.json
 python -m duoforge_replay compare-rows SHEET_DIR DROP_DIR --out REPORT.json
+python -m duoforge_replay validate-hypotheses --source PATH... --prior PRIOR.json --out REPORT.json [--workers N]
 
 prior: the stat point prior of a directory of Showdown pastes (Stat Points as EVs).
 build: the replay dataset (docs/superpowers/specs/2026-10-02-m11-replay-data-design.md). Needs NumPy, pyarrow
@@ -17,6 +18,8 @@ repository). build --mode bo1_belief takes the games without sheets, --mode drop
 with their sheets dropped (the validation), both on sets drawn from --corpus (M11 Bo1 spec,
 docs/superpowers/specs/2026-10-10-m11-bo1-belief-design.md).
 validate-sets, compare-rows: its validation (a) and (b) (duoforge_replay.validate; aggregates only).
+validate-hypotheses: the validation of the pick hypotheses (a seen back pick hidden; M11 pick hypotheses spec,
+docs/superpowers/specs/2026-10-11-m11-pick-hypotheses-design.md; aggregates only).
 """
 import argparse
 import json
@@ -49,6 +52,9 @@ def main(argv=None):
     b.add_argument("--k", type=int, default=1, help="draws per game")
     b.add_argument("--split", choices=("train", "test"), default=None,
                    help="only games of this player split (drop_sheets: test)")
+    b.add_argument("--pick-hypotheses", action="store_true",
+                   help="a sheet build: also the marked rows of each pick tuple the log allows where it does not "
+                        "show the back picks (docs/superpowers/specs/2026-10-11-m11-pick-hypotheses-design.md)")
     c = sub.add_parser("corpus", help="the set corpus of the Bo1 belief")
     c.add_argument("--source", required=True, nargs="+", type=Path)
     c.add_argument("--registry", required=True, type=Path, help="a checkout whose data/teams is the registry")
@@ -65,6 +71,14 @@ def main(argv=None):
     r.add_argument("sheet", type=Path)
     r.add_argument("drop", type=Path)
     r.add_argument("--out", required=True, type=Path)
+    h = sub.add_parser("validate-hypotheses", help="the pick hypotheses with a seen back pick hidden")
+    h.add_argument("--source", required=True, nargs="+", type=Path)
+    h.add_argument("--prior", required=True, type=Path)
+    h.add_argument("--out", required=True, type=Path)
+    h.add_argument("--workers", type=int, default=1)
+    h.add_argument("--node", default="node")
+    h.add_argument("--ps-dir", default=None)
+    h.add_argument("--format-prefix", nargs="+", default=["gen9championsvgc2026regmc"])
     f = sub.add_parser("funnel", help="where a dataset's games went, per format id (aggregates only)")
     f.add_argument("dir", type=Path, help="a replay dataset (its counters.json)")
     f.add_argument("--top", type=int, default=8, help="reasons listed per stage")
@@ -76,6 +90,14 @@ def main(argv=None):
             print(f"{args.dir}: no funnel counters (a dataset built before the funnel): rebuild it", file=sys.stderr)
             return 2
         print(funnel.text(report, top=args.top), end="")
+        return 0
+    if args.command == "validate-hypotheses":
+        from . import validate
+        if args.workers < 1:
+            parser.error("--workers must be at least 1")
+        report = validate.hypotheses(args.source, args.format_prefix, args.out, args.prior, workers=args.workers,
+                                     node=args.node, ps_dir=args.ps_dir)
+        print(json.dumps(report, indent=1))
         return 0
     if args.command in ("validate-sets", "compare-rows"):
         from . import validate
@@ -110,7 +132,7 @@ def main(argv=None):
     counters = build.build(args.source, args.prior, args.out, workers=args.workers, limit_parts=args.limit_parts,
                            format_prefix=args.format_prefix, unit_lines=args.unit_lines, node=args.node,
                            ps_dir=args.ps_dir, mode=args.mode, corpus=args.corpus, seed=args.seed, k=args.k,
-                           split_of=args.split)
+                           split_of=args.split, pick_hypotheses=args.pick_hypotheses)
     examples = counters.pop("internal.examples")
     for key, value in sorted(counters.items()):
         print(f"{key} {value}")

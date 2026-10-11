@@ -33,7 +33,7 @@
 #include "reference/conformance_pool.h"
 #include "support/pool.h"
 #define DF_CONF_FORMES dfi_pool_formes
-#define DF_POOL_DATA_BATTLES 773u /* the recorded pool battles: G73's five Moody battles (lane B batch 5) and main's 757, then G92's eleven (g92_*, the Magic Bounce one included) */
+#define DF_POOL_DATA_BATTLES 782u /* the recorded pool battles: G73's five Moody battles, the nine coverage battles of tracker folds 2, main's 757, and the eleven of G92 (decision 0062); the count is patched from the regenerated headers */
 #elif defined(DF_CONFORMANCE_TEAM_C)
 #include "data/extended_tables.h"
 #include "reference/conformance_team_c.h"
