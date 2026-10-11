@@ -745,7 +745,7 @@ def protocol_aliases(trace, roster_of, maxhp=None):
     name that two different roster members would take, or a line that matches no roster member, is refused (forme-key).
     roster_of is changed in place; maxhp (optional) gets the same aliases."""
     found = [{} for _ in range(2)]
-    for step in trace['steps']:
+    for step in trace.get('steps', []):  # a trace without steps (a roster alone) has only the static aliases
         for line in step['log']:
             parts = line.split('|')
             if len(parts) < 4 or parts[1] not in ('switch', 'drag', 'replace') or ': ' not in parts[2]:
