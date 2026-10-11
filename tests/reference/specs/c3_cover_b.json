@@ -1,0 +1,54 @@
+{
+  "name": "c3_cover_b",
+  "purpose": "C3 (decision 0015 entry 5cr): a PASS battle of the random differential campaign c3_camp2 (diff_driver.py random, seed 3032), adopted as a regression fixture: the C3 moves Bone Rush, Crabhammer, Pin Missile, Rock Blast are used in it. The choices and the seed are those of the campaign; the trace is recorded with the pinned Showdown (b2cb775).",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,84bba4224268d03264860d65a0ca39134fb9091969e4be91078182192c543a54",
+  "teams": [
+    "Scizor (M) @ Scizorite\nAbility: Swarm\nLevel: 50\nEVs: 32 HP / 32 Spe / 2 SpD\nHardy Nature\n- Bullet Punch\n- U-turn\n- Iron Head\n- Protect\n\nCrabominable (M) @ Muscle Band\nAbility: Iron Fist\nLevel: 50\nEVs: 32 HP / 32 Spe / 2 SpD\nHardy Nature\n- Crabhammer\n- Ice Hammer\n- Close Combat\n- Protect\n\nGliscor (M) @ Dragon Fang\nAbility: Hyper Cutter\nLevel: 50\nEVs: 32 HP / 32 Spe / 2 SpD\nHardy Nature\n- Crabhammer\n- Pin Missile\n- Earthquake\n- Protect\n\nAerodactyl (M) @ Aerodactylite\nAbility: Rock Head\nLevel: 50\nEVs: 32 HP / 32 Spe / 2 SpD\nHardy Nature\n- Rock Blast\n- Stone Edge\n- Rock Slide\n- Protect\n\nClawitzer (M) @ Mystic Water\nAbility: Mega Launcher\nLevel: 50\nEVs: 32 HP / 32 Spe / 2 SpD\nHardy Nature\n- Crabhammer\n- Aura Sphere\n- Hydro Pump\n- Protect\n\nSerperior (M) @ Sitrus Berry\nAbility: Overgrow\nLevel: 50\nEVs: 32 HP / 32 Spe / 2 SpD\nHardy Nature\n- Bullet Seed\n- Leaf Storm\n- Coil\n- Protect",
+    "Bastiodon (M) @ Muscle Band\nAbility: Sturdy\nLevel: 50\nEVs: 32 HP / 32 Spe / 2 SpD\nHardy Nature\n- Stealth Rock\n- Rock Blast\n- Iron Defense\n- Protect\n\nHeracross (M) @ Silk Scarf\nAbility: Swarm\nLevel: 50\nEVs: 32 HP / 32 Spe / 2 SpD\nHardy Nature\n- Rock Blast\n- Pin Missile\n- Close Combat\n- Protect\n\nMachamp (M) @ Choice Scarf\nAbility: Steadfast\nLevel: 50\nEVs: 32 HP / 32 Spe / 2 SpD\nHardy Nature\n- Cross Chop\n- Rock Blast\n- Close Combat\n- Protect\n\nLucario (M) @ Sitrus Berry\nAbility: Inner Focus\nLevel: 50\nEVs: 32 HP / 32 Spe / 2 SpD\nHardy Nature\n- Bone Rush\n- Cross Chop\n- Close Combat\n- Protect\n\nAggron (M) @ Rocky Helmet\nAbility: Sturdy\nLevel: 50\nEVs: 32 HP / 32 Spe / 2 SpD\nHardy Nature\n- Iron Head\n- Rock Blast\n- Earthquake\n- Protect\n\nTorterra (M) @ Leftovers\nAbility: Overgrow\nLevel: 50\nEVs: 32 HP / 32 Spe / 2 SpD\nHardy Nature\n- Rock Blast\n- Wood Hammer\n- Earthquake\n- Protect"
+  ],
+  "choices": [
+    {
+      "p1": "team 1362",
+      "p2": "team 1453"
+    },
+    {
+      "p1": "move 2 1 mega, move 3",
+      "p2": "move 3, move 1 1"
+    },
+    {
+      "p1": "switch 4, pass"
+    },
+    {
+      "p2": "switch 3, pass"
+    },
+    {
+      "p1": "move 3 2, move 3",
+      "p2": "switch 4, move 4"
+    },
+    {
+      "p1": "move 2 -2, move 1 2",
+      "p2": "move 3 -2, move 4"
+    },
+    {
+      "p2": "pass, switch 4"
+    },
+    {
+      "p1": "move 1 2, move 3",
+      "p2": "move 3 -2, move 4"
+    },
+    {
+      "p1": "move 4, move 3",
+      "p2": "pass, move 4"
+    },
+    {
+      "p1": "move 4, move 2 1",
+      "p2": "pass, move 1 -1"
+    },
+    {
+      "p1": "move 1 2, switch 3",
+      "p2": "pass, move 2 1"
+    }
+  ]
+}

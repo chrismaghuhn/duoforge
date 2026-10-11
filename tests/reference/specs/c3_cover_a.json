@@ -1,0 +1,79 @@
+{
+  "name": "c3_cover_a",
+  "purpose": "C3 (decision 0015 entry 5cr): a PASS battle of the random differential campaign c3_camp2 (diff_driver.py random, seed 3032), adopted as a regression fixture: the C3 moves Air Cutter, Bullet Seed, Cross Chop, Meteor Assault, Sky Attack, Solar Blade, Stored Power are used in it. The choices and the seed are those of the campaign; the trace is recorded with the pinned Showdown (b2cb775).",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,8f544d4669676f5da09034532e5382638b347ed632fc76c71b4bb28f65503d26",
+  "teams": [
+    "Hawlucha (M) @ Sitrus Berry\nAbility: Limber\nLevel: 50\nEVs: 32 HP / 32 Spe / 2 SpD\nHardy Nature\n- Sky Attack\n- Cross Chop\n- Acrobatics\n- Protect\n\nFarfetch'd (M) @ Sharp Beak\nAbility: Keen Eye\nLevel: 50\nEVs: 32 HP / 32 Spe / 2 SpD\nHardy Nature\n- Sky Attack\n- Air Cutter\n- Night Slash\n- Protect\n\nSkarmory (M) @ Rocky Helmet\nAbility: Keen Eye\nLevel: 50\nEVs: 32 HP / 32 Spe / 2 SpD\nHardy Nature\n- Sky Attack\n- Roost\n- Spikes\n- Protect\n\nTalonflame (M) @ Choice Scarf\nAbility: Gale Wings\nLevel: 50\nEVs: 32 HP / 32 Spe / 2 SpD\nHardy Nature\n- Sky Attack\n- Flare Blitz\n- Brave Bird\n- Protect\n\nNoivern (M) @ Focus Sash\nAbility: Infiltrator\nLevel: 50\nEVs: 32 HP / 32 Spe / 2 SpD\nHardy Nature\n- Sky Attack\n- Hurricane\n- Dragon Pulse\n- Protect\n\nPidgeot (M) @ Wise Glasses\nAbility: Big Pecks\nLevel: 50\nEVs: 32 HP / 32 Spe / 2 SpD\nHardy Nature\n- Sky Attack\n- Hurricane\n- Roost\n- Protect",
+    "Clefable (F) @ Leftovers\nAbility: Unaware\nLevel: 50\nEVs: 32 HP / 32 Spe / 2 SpD\nHardy Nature\n- Stored Power\n- Moonblast\n- Calm Mind\n- Protect\n\nVileplume (F) @ Sitrus Berry\nAbility: Chlorophyll\nLevel: 50\nEVs: 32 HP / 32 Spe / 2 SpD\nHardy Nature\n- Solar Blade\n- Sludge Bomb\n- Stun Spore\n- Protect\n\nMeganium (F) @ Miracle Seed\nAbility: Overgrow\nLevel: 50\nEVs: 32 HP / 32 Spe / 2 SpD\nHardy Nature\n- Solar Blade\n- Bullet Seed\n- Solar Beam\n- Protect\n\nAlakazam (M) @ Mental Herb\nAbility: Synchronize\nLevel: 50\nEVs: 32 HP / 32 Spe / 2 SpD\nHardy Nature\n- Stored Power\n- Psychic\n- Trick\n- Protect\n\nGallade (M) @ Expert Belt\nAbility: Steadfast\nLevel: 50\nEVs: 32 HP / 32 Spe / 2 SpD\nHardy Nature\n- Solar Blade\n- Close Combat\n- Psycho Cut\n- Protect\n\nSirfetch'd (M) @ Focus Sash\nAbility: Steadfast\nLevel: 50\nEVs: 32 HP / 32 Spe / 2 SpD\nHardy Nature\n- Meteor Assault\n- Brave Bird\n- Knock Off\n- Protect"
+  ],
+  "choices": [
+    {
+      "p1": "team 5312",
+      "p2": "team 1365"
+    },
+    {
+      "p1": "move 2 -2, move 3",
+      "p2": "switch 3, move 4"
+    },
+    {
+      "p1": "move 4, move 4",
+      "p2": "move 4, move 3 -1"
+    },
+    {
+      "p1": "switch 3, switch 4",
+      "p2": "move 4, move 1"
+    },
+    {
+      "p1": "move 2 -2, move 3 -1",
+      "p2": "move 1 1, move 2 -1"
+    },
+    {
+      "p1": "move 2 2, move 3 2",
+      "p2": "move 1, move 2 1"
+    },
+    {
+      "p1": "move 3 1, move 2",
+      "p2": "move 1 -2, switch 4"
+    },
+    {
+      "p2": "switch 3, pass"
+    },
+    {
+      "p1": "move 4, move 4",
+      "p2": "move 4, move 2 1"
+    },
+    {
+      "p1": "move 2 -2, move 3 2",
+      "p2": "move 4, move 4"
+    },
+    {
+      "p1": "move 4, move 3 2",
+      "p2": "move 4, move 3 1"
+    },
+    {
+      "p1": "move 4, move 1 1",
+      "p2": "move 3, move 1 1"
+    },
+    {
+      "p1": "switch 4, move 1",
+      "p2": "move 1 -2, move 1"
+    },
+    {
+      "p1": "move 1 2, move 4",
+      "p2": "move 4, move 4"
+    },
+    {
+      "p1": "move 1, move 1 1",
+      "p2": "switch 4, move 2 1"
+    },
+    {
+      "p2": "switch 4, pass"
+    },
+    {
+      "p1": "switch 3, move 1",
+      "p2": "move 1 1, pass"
+    }
+  ]
+}
