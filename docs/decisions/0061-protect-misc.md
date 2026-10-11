@@ -47,3 +47,9 @@ The flags belong to the Pokemon's `moveSlots` (the objects), not to the field po
 2. Transform (a scratch Ditto that uses Protect, then Transform on Milotic): after turn 1 the slot reads `protect:U`; after turn 2 the Ditto has one slot, `coil:-`, the new object (Transform itself is unmarked: this is the pin's behaviour only).
 
 The recorded battle `g94_lr_switch_reset` shows the same reset from the protocol side: Last Resort succeeds on turn 4, and after the switch-back it fails (`-fail|p1a: Kangaskhan`).
+
+## 6. Faint, and the holder on p2
+
+- **Faint.** C clears the used bits when the occupant faints (`dfi_tail_clear_occupant` runs at the faint, as at any change of occupant). Showdown clears `used` only at the next `switchIn` (`sim/battle-actions.ts:140`): a fainted Pokemon keeps its flags until it comes in again. The difference has no rule effect: a fainted holder does not act (no move, no Last Resort check), and the view shows an empty position as zero bits. The replacement's own switch-in resets its flags on both sides.
+- **Holder on p2.** `g94_lr_holder_p2` (the Kangaskhan team on p2, the foe team on p1, seed 0x9414): Last Resort fails on turn 1 and succeeds on turn 5, the same rule for the holder on the foreign side. The bits are public for both viewers: the view's `volatiles2` (feature 44, `DUOFORGE_VIEWEXT_FEATURE_LAST_RESORT_USED`) is set for the holder's position on either side.
+- **Known gap.** The Ally Switch transfer of the bytes (the nibbles follow the Pokemon, not the position) waits for G80's `dfi_swap_position_state` (batch 7). Until then an Ally Switch is not covered by the Last Resort rule.
