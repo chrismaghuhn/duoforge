@@ -524,7 +524,9 @@ def record_diff(battle_name, k, viewer, record):
 # engine's (status, causes, an all-zero record), and the tracker's own named refusals; the pool streams the tracker stops
 # (lines.Stop: an unfolded feature's line), by reason.
 CLOSURE_OUTCOME = {"equal": 2594, "refused": 310}
-POOL_OUTCOME = {"equal": 9908, "refused": 487, "tracker refuses: unburden-without-item-line": 4}
+# G96 (hs/g96-python): 9908 -> 9912, the 4 decision points that the refused Psychic Terrain move (no classifier mapping) kept
+# out of the equal ones; no move-result-not-determined refusal is left (src/state/view.c mr_family_of).
+POOL_OUTCOME = {"equal": 9912, "refused": 487, "tracker refuses: unburden-without-item-line": 4}
 POOL_STOPS = {"feature:SUBSTITUTE": 78, "feature:FORME_CHANGE": 10, "feature:DESTINY_BOND": 10, "feature:DRAGON_CHEER": 8,
               "feature:ROOST": 8, "line:-end": 2, "feature:ILLUSION": 2}
 

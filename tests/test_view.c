@@ -1085,6 +1085,20 @@ static void test_move_result(df_test *t)
     ev[0].flags = DUOFORGE_EVENT_FLAG_STILL;
     ev[1] = mr_ev(DUOFORGE_EVENT_FAIL, 1u, none, DUOFORGE_CAUSE_NONE, 0u, 0u);
     DF_CHECK(t, mr_of(t, kp, 1u, ev, 2u) == DFI_MOVE_RESULT_FALSE);
+    /* G96 Psychic Terrain: the move that sets it (-fieldstart, true; the same terrain again, -fail with [still], false), and a
+     * priority move it blocks at a grounded foe (-activate move: Psychic Terrain): its TryHit null, normalised to false
+     * (dfi_hit_steps, DFI_MRES_FALSE), not the null of a Protect */
+    ev[0] = mr_ev(DUOFORGE_EVENT_MOVE, 0u, none, DUOFORGE_CAUSE_NONE, DFI_MOVE_PSYCHICTERRAIN, 0u);
+    ev[1] = mr_ev(DUOFORGE_EVENT_FIELD_START, none, none, DUOFORGE_CAUSE_NONE, 0u, 0u);
+    ev[1].detail = (uint8_t)DUOFORGE_FIELD_PSYCHIC_TERRAIN;
+    DF_CHECK(t, mr_of(t, kp, 0u, ev, 2u) == DFI_MOVE_RESULT_TRUE);
+    ev[0].flags = DUOFORGE_EVENT_FLAG_STILL;
+    ev[1] = mr_ev(DUOFORGE_EVENT_FAIL, 0u, none, DUOFORGE_CAUSE_NONE, 0u, 0u);
+    DF_CHECK(t, mr_of(t, kp, 0u, ev, 2u) == DFI_MOVE_RESULT_FALSE);
+    ev[0] = mr_ev(DUOFORGE_EVENT_MOVE, 0u, 2u, DUOFORGE_CAUSE_NONE, DFI_MOVE_THUNDERBOLT, 0u);
+    ev[1] = mr_ev(DUOFORGE_EVENT_BLOCKED, 2u, none, DUOFORGE_CAUSE_NONE, 0u, 0u);
+    ev[1].detail = (uint8_t)DUOFORGE_FIELD_PSYCHIC_TERRAIN;
+    DF_CHECK(t, mr_of(t, kp, 0u, ev, 2u) == DFI_MOVE_RESULT_FALSE);
     /* a [still] -fail: false; the lines of another position before the action are skipped */
     ev[0] = mr_ev(DUOFORGE_EVENT_DAMAGE, 3u, none, DUOFORGE_CAUSE_POISON, 0u, 0u);
     ev[1] = mr_ev(DUOFORGE_EVENT_MOVE, 1u, none, DUOFORGE_CAUSE_NONE, DFI_MOVE_TAILWIND, 0u);
