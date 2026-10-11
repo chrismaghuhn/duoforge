@@ -96,7 +96,7 @@ class ReplayTeamsTest(unittest.TestCase):
         self.assertEqual((c["games"], c["games_without_sheets"], c["sheets"]), (5, 1, 8))
         # p1's sheet four times (three as is, once with members and moves in another order), p2's three times as is
         # and once with an unknown item: another team, which the engine check refuses
-        self.assertEqual((c["distinct"], c["kept"]), (3, 2))
+        self.assertEqual((c["distinct"], c["kept"], c["distinct_without_gender"], c["sheets_refused"]), (3, 2, 3, 0))
         self.assertEqual(sorted(self.manifest["frequency"].values()), [3, 4])
         self.assertEqual(sorted(self.manifest["frequency"]), sorted(t["id"] for t in self.index["teams"]))
 
@@ -104,6 +104,37 @@ class ReplayTeamsTest(unittest.TestCase):
         self.assertEqual(self.manifest["verdicts"], {"name": 1, "pool": 2})
         self.assertEqual(sum(self.manifest["reasons"].values()), 1)
         self.assertTrue(any("notanitem" in r.lower() for r in self.manifest["reasons"]), self.manifest["reasons"])
+
+    def test_the_paste_is_a_function_of_the_canonical_form(self):
+        # review of #408: two spellings of one team (an alias, another case) give one key, so they must give one paste
+        # and one id whatever sheet comes first, or check_disjoint misses a team in two corpora
+        from duoforge_live import data as live_data
+        from duoforge_live import teams as live_teams
+        from duoforge_replay.prior import Prior
+        live, prior = live_data.load(kind="pool"), Prior.load(self.prior)
+        log = FIXTURE.read_text(encoding="utf-8")
+        plain = live_teams.unpack(replay_teams.sheets_of(log)[0])
+        spelled = [dict(s, species=s["species"].lower(), item=s["item"].upper(), nature=s["nature"].lower(),
+                        moves=[m.lower() for m in reversed(s["moves"])]) for s in reversed(plain)]
+        key = replay_teams.canonical(plain, live)
+        self.assertEqual(replay_teams.canonical(spelled, live), key)
+        self.assertEqual(replay_teams.to_paste(replay_teams.canonical(spelled, live), live, prior)[0],
+                         replay_teams.to_paste(key, live, prior)[0])
+
+    def test_a_sheet_field_the_corpus_cannot_carry_is_refused(self):
+        # review of #408: unpack drops IVs, shiny and the misc field (Tera, Hidden Power); such a sheet is refused
+        log = FIXTURE.read_text(encoding="utf-8")
+
+        def tera(sets):
+            f = sets[0].split("|")
+            f[11] = ",,,,,Fairy"
+            return ["|".join(f)] + sets[1:]
+        source = self.tmp / "tera.jsonl"
+        source.write_text(json.dumps({"id": "t", "formatid": FORMAT, "log": with_sheet(log, 0, tera)}) + "\n",
+                          encoding="utf-8")
+        m = replay_teams.build([source], "gen9championsvgc2026regmc", self.prior, self.tmp / "tera", ps_dir=None)
+        self.assertEqual((m["counts"]["sheets"], m["counts"]["sheets_refused"], m["counts"]["distinct"]), (2, 1, 1))
+        self.assertTrue(any(r.startswith("sheet: ") for r in m["reasons"]), m["reasons"])
 
     def test_a_pending_team_counts_each_blocking_feature_once(self):
         from unittest import mock
@@ -124,6 +155,7 @@ class ReplayTeamsTest(unittest.TestCase):
         self.assertEqual(m["stat_points"]["members_without_prior"], 12)  # an empty prior knows no set
         self.assertIn("pin", m)
         self.assertIsNone(m["seed"])
+        self.assertEqual(len(m["code"]["commit"]), 40)
 
     def test_ids_name_the_content_and_the_build_is_deterministic(self):
         again = self.tmp / "again"

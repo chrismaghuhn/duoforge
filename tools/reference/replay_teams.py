@@ -7,8 +7,9 @@ The sources are the replay files of duoforge_replay (parquet or JSON lines); a g
 with PREFIX (one regulation per corpus: gen9championsvgc2026regmc, gen9championsvgc2026regmb; Reg M-A is refused,
 another mechanics era). Each |showteam| sheet of such a game is one team. Teams are deduplicated by a canonical form:
 the members sorted, each member's moves sorted, names as ids, the nickname dropped (what an open sheet shows, as
-duoforge_live.teams compares sheets). The number of sheets of each team is its frequency; its paste is written in
-the spelling of its first sheet in source order, the members and moves in the canonical order.
+duoforge_live.teams compares sheets). The number of sheets of each team is its frequency; its paste is written from the
+canonical form alone, so one team has one paste and one id whatever sheet or source order it came from. A sheet with
+a field a paste cannot carry (IVs, shiny, the misc field) is refused, not stripped.
 
 An open sheet shows no stat points. The paste of a team gets each member's stat points from the M11 prior (the
 VGCPastes spreads, duoforge_replay.prior), and the manifest names that source, the prior's sha256 and how many members
@@ -62,36 +63,51 @@ def pin_commit(checkout):
     return out.stdout.strip() if out.returncode == 0 else None
 
 
+def _dirty():
+    out = subprocess.run(['git', '-C', ROOT, 'status', '--porcelain', '--untracked-files=no'], capture_output=True,
+                         text=True, check=False)
+    return bool(out.stdout.strip())
+
+
 def sheets_of(log):
     """The packed sheets of a game's |showteam| lines (none for a game without sheets)."""
     return [line.rstrip('\r').split('|', 3)[3] for line in log.split('\n') if line.startswith('|showteam|')]
 
 
-def _member_key(s):
-    from duoforge import data
-    return (data.to_id(s['species']), data.to_id(s['item']), data.to_id(s['ability']), data.to_id(s['nature']),
-            s['gender'], s['level'], tuple(sorted(data.to_id(m) for m in s['moves'])))
+# The packed fields an open sheet may fill that a registry paste cannot carry (IVs, shiny, the misc field: happiness,
+# Poke Ball, Hidden Power type, Gigantamax, Dynamax level, Tera type); duoforge_live.teams.unpack drops them.
+_UNCARRIED = {8: 'IVs', 9: 'shiny', 11: 'misc'}
+
+
+def uncarried(packed):
+    """The fields of a packed sheet a registry paste cannot carry, by name (none: [])."""
+    out = set()
+    for chunk in packed.split(']'):
+        f = chunk.split('|')
+        if len(f) == 12:
+            out |= {name for k, name in _UNCARRIED.items() if f[k]}
+    return sorted(out)
 
 
 def canonical(sets, live):
-    """(key, sets) of a sheet: its canonical form, per member (species, item, ability, nature, gender, level, sorted
-    moves) with names as ids and the species canonical, the members sorted; and its sets in that order, each with its
-    moves in id order and its species canonical (the spelling the paste is written in). ValueError for a species the
-    POOL tables do not have."""
+    """A sheet's canonical form: per member (species, item, ability, nature, gender, level, sorted moves), names as
+    ids and the species canonical, the members sorted. ValueError for a species the POOL tables do not have."""
     from duoforge import data
-    named = [dict(s, species=live.canonical(s['species']),
-                  moves=sorted(s['moves'], key=data.to_id)) for s in sets]
-    named.sort(key=_member_key)
-    return tuple(_member_key(s) for s in named), named
+    return tuple(sorted((data.to_id(live.canonical(s['species'])), data.to_id(s['item']), data.to_id(s['ability']),
+                         data.to_id(s['nature']), s['gender'], s['level'],
+                         tuple(sorted(data.to_id(m) for m in s['moves']))) for s in sets))
 
 
-def to_paste(sets, prior):
-    """The registry paste of a team's sets (canonical's), the stat points from the prior; (paste, members the prior
-    knows no spread for)."""
+def to_paste(key, live, prior):
+    """The registry paste of a canonical team, written from the key alone (names as ids, the nature capitalised as the
+    paste's Nature line needs), so one team has one paste and one id whatever sheet it came from; the stat points from
+    the prior. (paste, members the prior knows no spread for)."""
     from duoforge_live import teams as live_teams
     from duoforge_replay.prior import LEVELS
     out, unknown = [], 0
-    for s in sets:
+    for species, item, ability, nature, gender, level, moves in key:
+        s = {'species': live.canonical(species), 'item': item, 'ability': ability, 'nature': nature.capitalize(),
+             'gender': gender, 'level': level, 'moves': list(moves)}
         points, prior_level = prior.lookup(s)
         unknown += prior_level == LEVELS
         out.append(dict(s, evs=list(points)))
@@ -117,7 +133,7 @@ def build(paths, format_prefix, prior_path, out, ps_dir=None):
         raise ValueError(f'{out} exists: a run writes a new directory')
     live = live_data.load(kind='pool')
     prior = Prior.load(prior_path)
-    counts, frequency, first = collections.Counter(), collections.Counter(), {}
+    counts, frequency = collections.Counter(), collections.Counter()
     verdicts, reasons = collections.Counter(), collections.Counter()
     read = collections.Counter()
     for unit in source.units(paths):
@@ -131,20 +147,28 @@ def build(paths, format_prefix, prior_path, out, ps_dir=None):
                 continue
             for sheet in packed:
                 counts['sheets'] += 1
+                fields = uncarried(sheet)
+                if fields:
+                    counts['sheets_refused'] += 1
+                    reasons['sheet: a field the paste cannot carry: ' + ', '.join(fields)] += 1
+                    continue
                 try:
-                    key, sets = canonical(live_teams.unpack(sheet), live)
+                    key = canonical(live_teams.unpack(sheet), live)
                 except ValueError as e:
-                    verdicts['name'] += 1
+                    counts['sheets_refused'] += 1
                     reasons['sheet: ' + str(e).split(':')[0][:80]] += 1
                     continue
                 frequency[key] += 1
-                first.setdefault(key, sets)  # the spelling of its first sheet, in source order
     counts['distinct'] = len(frequency)
+    counts['sheets_refused'] += 0
+    # the gender a sheet shows may be the battle's roll (a paste without one gets a random gender): the teams apart
+    # from it, so the owner can see how much gender splits them
+    counts['distinct_without_gender'] = len({tuple(m[:4] + m[5:] for m in key) for key in frequency})
     kept, unknown_members = [], 0
     with duoforge.Context(data_kind=_layout.CONSTANTS['DUOFORGE_DATA_KIND_POOL']) as context:
         check = import_vgcpastes.engine_check(context)
         for key in sorted(frequency):
-            text, unknown = to_paste(first[key], prior)
+            text, unknown = to_paste(key, live, prior)
             status, info = check(text)
             verdicts[status] += 1
             if status == 'pool':
@@ -167,6 +191,7 @@ def build(paths, format_prefix, prior_path, out, ps_dir=None):
     (out / 'teams.txt').write_text(''.join(t + '\n' for t, _, _ in kept), encoding='utf-8')
     manifest = {
         'source': 'replay open sheets', 'pin': pin_commit(ps_dir), 'seed': None, 'format_prefix': format_prefix,
+        'code': {'commit': pin_commit(ROOT), 'dirty': _dirty()},
         'sources': [{'file': Path(p).name, 'bytes': Path(p).stat().st_size, 'sha256': _sha256_file(p)}
                     for p in source.files(paths)],
         'stat_points': {'source': 'prior', 'prior_sha256': _sha256_file(prior_path),
