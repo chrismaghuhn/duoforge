@@ -9744,7 +9744,8 @@ static duoforge_status dfi_leech_drain(dfi_run *r, uint32_t holder)
         return DUOFORGE_OK;
     }
     const uint32_t before = h->hp;
-    const duoforge_status st = dfi_deal(r, holder, amount, DUOFORGE_CAUSE_LEECH_SEED, 0u, target); /* -damage [from] Leech Seed [of] */
+    /* this.damage in the volatile's onResidual: its effect is the condition (DFI_DMG_CONDITION; Magic Guard refuses it) */
+    const duoforge_status st = dfi_deal(r, holder, amount, DUOFORGE_CAUSE_LEECH_SEED, 0u, target, DFI_DMG_CONDITION); /* -damage [from] Leech Seed [of] */
     if (st != DUOFORGE_OK) {
         return st;
     }
