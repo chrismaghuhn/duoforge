@@ -251,7 +251,10 @@ class Teacher(unittest.TestCase):
                 # Privileged state and the true root bytes must never be read; the teacher has no
                 # opponent-network input at all and models the foe with its own net only.
                 with mock.patch.object(privileged, "hypothesis", side_effect=AssertionError("privileged")), \
+                        mock.patch.object(privileged, "step_events", side_effect=AssertionError("privileged")), \
                         mock.patch.object(b._lib, "duoforge_battle_hypothesis", side_effect=AssertionError("direct privileged ABI")), \
+                        mock.patch.object(b._lib, "duoforge_battle_step_events", side_effect=AssertionError("direct privileged ABI")), \
+                        mock.patch.object(b._lib, "duoforge_battle_clone", side_effect=AssertionError("direct privileged ABI")), \
                         mock.patch.object(b, "encode", side_effect=AssertionError("true root bytes")):
                     a, c = (self.label(search, b, e, seat, raw, cfg) for e in range(2))
                 self.assertIs(a.status, ex.RowStatus.TARGET)
