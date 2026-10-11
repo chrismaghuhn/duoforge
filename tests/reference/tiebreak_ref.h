@@ -1081,6 +1081,14 @@ static const df_tb_stop tb_c5_surf_cover[] = {
     {2u, 0u, 2u, 2u, {4u, 4u}, {576u, 582u}, {0x404b89e940cbcfe8ull, 0x404bd5bbeec174f5ull}},
     {3u, 0u, 1u, 2u, {4u, 4u}, {513u, 472u}, {0x40481fea827575ebull, 0x40467e7bc952208bull}},
 };
+static const df_tb_stop tb_c5b_payback[] = {
+    {0u, 0u, 1u, 3u, {6u, 6u}, {1065u, 1053u}, {0x4059000000000000ull, 0x4059000000000000ull}},
+    {1u, 0u, 1u, 3u, {4u, 4u}, {709u, 667u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {2u, 0u, 1u, 2u, {4u, 4u}, {694u, 583u}, {0x40504da4b692da4bull, 0x404cd0e9aa180dbfull}},
+    {3u, 0u, 1u, 2u, {4u, 4u}, {681u, 536u}, {0x404ffa0be82fa0bfull, 0x404a5e3eff6d6314ull}},
+    {4u, 0u, 1u, 2u, {4u, 4u}, {681u, 536u}, {0x404ffa0be82fa0bfull, 0x404a5e3eff6d6314ull}},
+    {5u, 0u, 1u, 2u, {4u, 4u}, {681u, 499u}, {0x404ffa0be82fa0bfull, 0x40484c7dfedac628ull}},
+};
 static const df_tb_stop tb_d01_noguard_accuracy_tie[] = {
     {0u, 0u, 3u, 4u, {6u, 6u}, {1111u, 1111u}, {0x4059000000000000ull, 0x4059000000000000ull}},
     {1u, 0u, 1u, 3u, {4u, 4u}, {737u, 730u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
@@ -8169,6 +8177,7 @@ static const df_tb_battle tb_battles[] = {
     {"c5_endeavor_normal", 3u, tb_c5_endeavor_normal, sizeof tb_c5_endeavor_normal / sizeof tb_c5_endeavor_normal[0]},
     {"c5_endeavor_substitute", 4u, tb_c5_endeavor_substitute, sizeof tb_c5_endeavor_substitute / sizeof tb_c5_endeavor_substitute[0]},
     {"c5_surf_cover", 3u, tb_c5_surf_cover, sizeof tb_c5_surf_cover / sizeof tb_c5_surf_cover[0]},
+    {"c5b_payback", 5u, tb_c5b_payback, sizeof tb_c5b_payback / sizeof tb_c5b_payback[0]},
     {"d01_noguard_accuracy_tie", 2u, tb_d01_noguard_accuracy_tie, sizeof tb_d01_noguard_accuracy_tie / sizeof tb_d01_noguard_accuracy_tie[0]},
     {"d02_electro_shot_lock_emergency_exit", 4u, tb_d02_electro_shot_lock_emergency_exit, sizeof tb_d02_electro_shot_lock_emergency_exit / sizeof tb_d02_electro_shot_lock_emergency_exit[0]},
     {"d03_electro_shot_lock_parting_shot", 4u, tb_d03_electro_shot_lock_parting_shot, sizeof tb_d03_electro_shot_lock_parting_shot / sizeof tb_d03_electro_shot_lock_parting_shot[0]},
@@ -9060,7 +9069,7 @@ static const df_tb_battle tb_battles[] = {
     {"xr3_sheercold_sub_miss", 3u, tb_xr3_sheercold_sub_miss, sizeof tb_xr3_sheercold_sub_miss / sizeof tb_xr3_sheercold_sub_miss[0]},
 };
 
-/* 6093 stops: 166 of an ended battle; decided by the count 1487,
- * the HP percentage 1894, the total HP 2353, a tie 193;
- * winners: side 0 2868, side 1 3032, tie 193 */
+/* 6099 stops: 166 of an ended battle; decided by the count 1487,
+ * the HP percentage 1898, the total HP 2355, a tie 193;
+ * winners: side 0 2874, side 1 3032, tie 193 */
 #endif
