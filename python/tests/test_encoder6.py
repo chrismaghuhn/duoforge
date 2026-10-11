@@ -108,7 +108,8 @@ class Encoder6Test(unittest.TestCase):
         self.assertIn("ext6.own.guard.bit7", reserve)
         self.assertNotIn("ext6.own.guard.bit1", reserve)  # bits 0 and 1 are WIDE_GUARD and QUICK_GUARD
         self.assertEqual(features.version_features(5), (1 << C["DUOFORGE_VIEWEXT_FEATURE_COUNT"]) - 1)
-        self.assertEqual(features.version_features(6) & ~features.version_features(5), FAMILIES)
+        self.assertEqual(features.version_features(6) & ~features.version_features(5),
+                         FAMILIES | (1 << C["DUOFORGE_VIEWEXT_FEATURE_LAST_RESORT_USED"]))  # step G94: feature 44 too
         self.assertEqual({features.FEATURE_BITS[n] for n in features._FAMILIES}, set(range(59, 64)))
 
     def test_encoder5_columns_are_byte_equal(self):
@@ -203,7 +204,9 @@ class Encoder6Test(unittest.TestCase):
         self.assertEqual(_defined_reserve_bits(), own | checked)
         # The parser itself: a bit 22 define would count, bit 21 (TRANSFORMED) does not.
         self.assertNotIn(("RESERVE_VOLATILES", 21), _defined_reserve_bits())
-        self.assertEqual(_x_list("DUOFORGE_VIEWEXT_RESERVE_OWN"), [])
+        # step G94 (decision 0061): the four Last Resort bits of volatiles2 are the only own gates so far
+        self.assertEqual(_x_list("DUOFORGE_VIEWEXT_RESERVE_OWN"),
+                         [("VOLATILES2", str(bit), "LAST_RESORT_USED") for bit in range(4)])
 
     def test_batch_refusals_are_the_versions(self):
         # Batch._refused re-encodes a row the C encoder refused with the version's own refusals: a reserve value under

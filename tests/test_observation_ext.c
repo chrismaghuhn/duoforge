@@ -208,7 +208,8 @@ static void test_constants(df_test *t)
                      ((uint64_t)1u << 60u) | /* VOLATILES2 */
                      ((uint64_t)1u << 61u) | /* RESERVE_GUARDS */
                      ((uint64_t)1u << 62u) | /* SIDE_CONDITIONS */
-                     ((uint64_t)1u << 63u))); /* FIELD_FLAGS */
+                     ((uint64_t)1u << 63u) | /* FIELD_FLAGS */
+                     ((uint64_t)1u << 44u))); /* step G94 (decision 0061): LAST_RESORT_USED, the holder's used bits */
 }
 
 /* The expected extension: all zero, and under POOL the header of the paired observation. */
