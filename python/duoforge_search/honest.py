@@ -13,7 +13,7 @@ import weakref
 import numpy as np
 
 import duoforge
-from duoforge import _layout, data, state_layout, teams, view
+from duoforge import _layout, data, features, state_layout, teams, view
 from duoforge_learn.selfplay import TEAM_TABLE
 
 from . import belief, lookahead, matrix, seeds
@@ -208,10 +208,29 @@ class Honest(lookahead.Lookahead):
     def __init__(self, context, model, params, encoder, ext_supported, k=8, m=8, s=16, rule="mix",
                  seed=lookahead.SEARCH_SEED, capacity=lookahead.CAPACITY, workers=8, lam=0.5,
                  table=None, exclude_teams=None, preview_mode="raw", preview_only=False, preview_steps=16,
-                 species_prior=False):
+                 species_prior=False, foe_net=None):
         # species_prior (live play, owner 2026-10-10): a foe species without a stated spread in the table refuses the
         # decision instead of drawing from the belief's nature-only or table-wide fallback (levels 4 and 5).
         self.species_prior = bool(species_prior)
+        # foe_net (M7, owner 2026-10-11): (model, params, encoder, ext_supported) of a second network that models the
+        # foe. Every policy call on the worlds (the foe's team draw, its queued pair and its menu) goes to it, encoded
+        # with its own encoder; the own candidates (the root's policy) and the leaf values stay with the main network.
+        # None: the main network models the foe, as before.
+        self.foe_net = None
+        if foe_net is not None:
+            if preview_mode != "raw":  # preview.rollout plays both seats with the main network: two foe models at once
+                raise ValueError("a foe network is not supported with a preview search (preview_mode must be raw)")
+            if len(foe_net) != 4:
+                raise ValueError("a foe network is (model, params, encoder, ext_supported)")
+            foe_model, foe_params, foe_encoder, foe_ext = foe_net
+            width = features.obs_size(foe_encoder)
+            if width != len(foe_model.feature_names):
+                raise ValueError(f"the foe network reads {len(foe_model.feature_names)} values, its encoder "
+                                 f"{foe_encoder} gives rows of {width}")
+            if int(foe_ext) & ~features.version_features(foe_encoder):
+                raise ValueError(f"the foe network's extension mask {int(foe_ext):#x} names features encoder "
+                                 f"{foe_encoder} does not have")
+            self.foe_net = (foe_model, foe_params, int(foe_encoder), int(foe_ext))
         if rule not in RULES or not 0 <= lam <= 1:
             raise ValueError("honest search needs nash/ev/mix and 0 <= lam <= 1")
         if preview_mode not in ("raw", "value", "turn1") or type(preview_steps) is not int or preview_steps < 1:
@@ -244,15 +263,18 @@ class Honest(lookahead.Lookahead):
     def clear(self):
         self.history.clear()
 
-    def _policy(self, obs, slots, pairs):
+    def _policy(self, obs, slots, pairs, net=None):
+        """The pair and team log-probabilities of the main network, or of net (a foe_net)."""
+        model, params = (self.model, self.params) if net is None else net[:2]
         inputs = (np.ascontiguousarray(obs), np.ascontiguousarray(slots), np.ascontiguousarray(pairs))
-        self.model.check(inputs[0])
+        model.check(inputs[0])
         shape = tuple(x.shape for x in inputs)
-        if shape not in self._compiled:
-            np.asarray(self.model.apply(self.params, *inputs)[0])
-            self._compiled.add(shape)
+        compiled = shape if net is None else ("foe",) + shape
+        if compiled not in self._compiled:
+            np.asarray(model.apply(params, *inputs)[0])
+            self._compiled.add(compiled)
         t = time.perf_counter()
-        pair, team, _ = self.model.apply(self.params, *inputs)
+        pair, team, _ = model.apply(params, *inputs)
         return np.asarray(pair), np.asarray(team), time.perf_counter() - t
 
     def _build(self, record, hypotheses):
@@ -265,11 +287,13 @@ class Honest(lookahead.Lookahead):
         return statuses
 
     def _world_policy(self):
+        """The worlds' policy, the foe's model: the foe network's (its encoder's rows) when one is given."""
+        encoder, ext = (self.encoder, self.ext_supported) if self.foe_net is None else self.foe_net[2:]
         start = time.perf_counter()
-        obs, slots, pairs = self.worlds.query_encoded(self.encoder, self.ext_supported)
+        obs, slots, pairs = self.worlds.query_encoded(encoder, ext)
         query_seconds = time.perf_counter() - start
         pp, pt, seconds = self._policy(obs.reshape(2 * self.s, -1), slots.reshape((2 * self.s,) + slots.shape[2:]),
-                                       pairs.reshape((2 * self.s,) + pairs.shape[2:]))
+                                       pairs.reshape((2 * self.s,) + pairs.shape[2:]), self.foe_net)
         return (pp.reshape(self.s, 2, -1), pt.reshape(self.s, 2, -1), seconds,
                 pairs.copy(), obs.copy(), slots.copy(), query_seconds)
 
@@ -433,6 +457,8 @@ class Honest(lookahead.Lookahead):
             base = {"env": e, "seat": p, "key": int(keys[d]), "epoch": int(roots.requests[e, p]["epoch"]),
                     "boundary": lookahead._BOUNDARIES[boundary], "last_step": bool(last_step[d]),
                     "search": "honest", "w": self.s, "table_sha256": self.table_info["sha256"], "lam": self.lam}
+            if self.foe_net is not None:  # which encoding modelled the foe (a reproduction needs it)
+                base["foe_net"] = {"encoder": self.foe_net[2], "ext_supported": self.foe_net[3]}
             if boundary == C["DUOFORGE_BOUNDARY_TEAM_SELECTION"]:
                 actions[d] = int(np.argmax(pt[d]))
                 result = {"kind": "team", "choice": int(actions[d])}
@@ -533,6 +559,12 @@ class Honest(lookahead.Lookahead):
         and statuses are copied out, so later roots may reuse the worlds and
         the leaf batch before this request is finished (stage 3 P2)."""
         pp, _, elapsed, masks, obs, slots, query_seconds = self._world_policy()
+        if self.foe_net is not None:  # the viewer's check below reads the main encoder's rows, as without a foe network
+            t = time.perf_counter()
+            obs, slots, own_masks = (x.copy() for x in self.worlds.query_encoded(self.encoder, self.ext_supported))
+            query_seconds += time.perf_counter() - t
+            if not np.array_equal(own_masks, masks):
+                raise SearchError("the foe network's encoder gives the worlds another pair mask")
         costs["world_builds"] += query_seconds
         costs["network"] += elapsed
         for w in range(1, self.s):

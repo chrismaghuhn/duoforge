@@ -62,13 +62,25 @@ class HonestSearch(unittest.TestCase):
     def setUpClass(cls):
         cls.model, cls.params = _v2s()
 
-    def make(self, ctx, k=2, rule="mix", table=None, excluded=None, lam=0.5, species_prior=False):
+    def make(self, ctx, k=2, rule="mix", table=None, excluded=None, lam=0.5, species_prior=False, model=None,
+             foe_net=None):
         table = table or belief.SpreadTable.from_sides(duoforge.reference_setups([0])["sides"].reshape(-1))
         with duoforge.Batch(ctx, duoforge.reference_setups([0]), 1, 42) as b:
             mask = int(b.observe_ext()[0, 0]["supported"]) & features.version_features(4)  # encoder 4 (0050)
-        return honest.Honest(ctx, self.model, self.params, 4, mask, k=k, m=2, s=2, rule=rule,
+        options = {} if foe_net is None else {"foe_net": foe_net}
+        return honest.Honest(ctx, model or self.model, self.params, 4, mask, k=k, m=2, s=2, rule=rule,
                              capacity=16, workers=2, table=table, exclude_teams=excluded, lam=lam,
-                             species_prior=species_prior)
+                             species_prior=species_prior, **options)
+
+    def encoder3_net(self, ctx, key=11):
+        """(model, params, encoder, ext_supported) of an encoder-3 network with other weights (M11's BC priors are
+        encoder 3)."""
+        import jax
+        from duoforge_learn import policy
+        model = policy.make(policy.v2_config("S"), features.feature_names(3))
+        with duoforge.Batch(ctx, duoforge.reference_setups([0]), 1, 42) as b:
+            mask = int(b.observe_ext()[0, 0]["supported"]) & features.version_features(3)
+        return model, model.init(jax.random.PRNGKey(key)), 3, mask
 
     def preview(self, search, roots, seat=0):
         return search.decide(roots, list(range(roots.envs)), [seat] * roots.envs,
@@ -508,6 +520,135 @@ class HonestSearch(unittest.TestCase):
             _, engine_records = search.decide(b, [0], [0], [457], [False])
             self.assertEqual(engine_records[0]["cut_pairs"], 0)  # an engine root's mask is the engine's domain
 
+    def test_a_foe_net_plays_the_worlds_and_the_main_net_the_root_and_the_leaves(self):
+        # M7 (owner 2026-10-11): a second network models the foe. Every policy call on the worlds (the foe's team draw,
+        # its queued pair and its menu) goes to it, encoded with its own encoder; the own candidates (the root's
+        # policy) and the leaf values stay with the main network.
+        class Spy:
+            def __init__(self, inner):
+                self.inner, self.rows = inner, []
+
+            def __getattr__(self, name):
+                return getattr(self.inner, name)
+
+            def apply(self, params, obs, *rest):
+                self.rows.append(np.asarray(obs).shape[0])
+                return self.inner.apply(params, obs, *rest)
+
+        with duoforge.Context(C["DUOFORGE_DATA_KIND_POOL"]) as ctx, \
+                duoforge.Batch(ctx, duoforge.reference_setups([0]), 1, 42) as b:
+            foe = self.encoder3_net(ctx)
+            spy = Spy(self.model)
+            with self.make(ctx) as plain, self.make(ctx, model=spy, foe_net=foe) as split:
+                for search in (plain, split):
+                    self.preview(search, b)
+                self.start_turn(b)
+                spy.rows.clear()
+                _, (a,) = plain.decide(b, [0], [0], [456], [False])
+                _, (r,) = split.decide(b, [0], [0], [456], [False])
+                self.assertEqual((a["kind"], r["kind"]), ("searched", "searched"))
+                self.assertEqual(r["own_pairs"], a["own_pairs"])  # the root's policy: the main network
+                self.assertEqual(r["own_probs"], a["own_probs"])
+                self.assertNotIn(2 * split.s, spy.rows)  # the main network saw no world row
+                # The foe's menu is the foe network's ranking on the built worlds (encoder 3), not the main network's.
+                menus = []
+                for net, params, encoder, mask in (foe, (self.model, self.params, 4, split.ext_supported)):
+                    o, sl, pm = split.worlds.query_encoded(encoder, mask)
+                    n = 2 * split.s
+                    pp = np.asarray(net.apply(params, o.reshape(n, -1), sl.reshape((n,) + sl.shape[2:]),
+                                              pm.reshape((n,) + pm.shape[2:]))[0]).reshape(split.s, 2, -1)
+                    probabilities = np.exp(pp[:, 1].astype(np.float64))
+                    mean = np.sum(np.asarray(r["weights"])[:, None] * probabilities, axis=0)
+                    order = np.lexsort((np.arange(mean.size), -mean))
+                    menu = [order[pm[w, 1].reshape(-1)[order] != 0][:split.m].tolist() for w in range(split.s)]
+                    menus.append((menu, probabilities))
+                (foe_menu, foe_probs), (main_menu, _) = menus
+                self.assertNotEqual(foe_menu, main_menu, "the two networks rank the foe alike: no evidence here")
+                self.assertEqual(r["foe_pairs"], foe_menu)
+                np.testing.assert_array_equal(r["foe_probs"], np.take_along_axis(foe_probs, np.array(foe_menu), axis=1))
+
+    def test_the_main_net_as_foe_net_decides_bit_for_bit_as_without(self):
+        # The second network's path changes the source of the worlds' policy only: given the main network itself, every
+        # record field and leaf is the default's.
+        with duoforge.Context(C["DUOFORGE_DATA_KIND_POOL"]) as ctx, \
+                duoforge.Batch(ctx, duoforge.reference_setups([0]), 1, 42) as b:
+            with self.make(ctx) as probe:
+                same = (self.model, self.params, 4, probe.ext_supported)
+            with self.make(ctx) as plain, self.make(ctx, foe_net=same) as split:
+                for search in (plain, split):
+                    self.preview(search, b)
+                self.start_turn(b)
+                for key in (456, 457):
+                    _, (a,) = plain.decide(b, [0], [0], [key], [False])
+                    _, (r,) = split.decide(b, [0], [0], [key], [False])
+                    self.assertEqual(a["kind"], "searched")
+                    drop = ("cost", "time", "foe_net")  # wall times; the foe network's name, checked here
+                    self.assertEqual(r["foe_net"], {"encoder": 4, "ext_supported": probe.ext_supported})
+                    self.assertEqual({k: v for k, v in r.items() if k not in drop},
+                                     {k: v for k, v in a.items() if k not in drop})
+                    for name in ("hypotheses", "choices", "values"):
+                        np.testing.assert_array_equal(split.last[-1][name], plain.last[-1][name])
+
+    def test_a_foe_net_must_read_its_encoders_rows(self):
+        # A foe network trained on another encoder is refused when the search is built, not at its first decision.
+        with duoforge.Context(C["DUOFORGE_DATA_KIND_POOL"]) as ctx:
+            model, params, _, mask = self.encoder3_net(ctx)
+            with self.assertRaisesRegex(ValueError, "foe network"):
+                self.make(ctx, foe_net=(model, params, 4, mask))
+            with self.assertRaisesRegex(ValueError, "foe network"):
+                self.make(ctx, foe_net=(model, params))
+            with self.assertRaisesRegex(ValueError, "foe network's extension mask"):
+                self.make(ctx, foe_net=(model, params, 3, features.version_features(4)))
+
+    def test_a_foe_net_refuses_a_preview_search(self):
+        # The preview's turn-1 rollout plays both seats with the main network: with a foe network it would model the foe
+        # with two networks at once, so the combination is refused, not silently half applied (review of #415).
+        with duoforge.Context(C["DUOFORGE_DATA_KIND_POOL"]) as ctx:
+            foe = self.encoder3_net(ctx)
+            table = belief.SpreadTable.from_sides(duoforge.reference_setups([0])["sides"].reshape(-1))
+            with self.make(ctx) as probe:
+                mask = probe.ext_supported
+            for mode in ("value", "turn1"):
+                with self.subTest(mode=mode), self.assertRaisesRegex(ValueError, "preview"):
+                    honest.Honest(ctx, self.model, self.params, 4, mask, k=2, m=2, s=2, capacity=16, workers=2,
+                                  table=table, preview_mode=mode, foe_net=foe)
+
+    def test_the_foe_and_main_encodings_must_give_the_worlds_one_pair_mask(self):
+        # _prepare ranks the foe's menu on the foe encoding's mask and checks the viewer on the main encoding's rows: a
+        # mask the two encodings disagree on stops the decision explicitly.
+        with duoforge.Context(C["DUOFORGE_DATA_KIND_POOL"]) as ctx, \
+                duoforge.Batch(ctx, duoforge.reference_setups([0]), 1, 42) as b:
+            with self.make(ctx, foe_net=self.encoder3_net(ctx)) as split:
+                self.preview(split, b)
+                self.start_turn(b)
+                real = split.worlds.query_encoded
+
+                def query(version, ext=0):
+                    obs, slots, pairs = real(version, ext)
+                    if version == 4:  # the main encoding: one pair more than the foe encoding allows
+                        pairs = pairs.copy()
+                        pairs[0, 1].flat[np.flatnonzero(~pairs[0, 1])[0]] = True
+                    return obs, slots, pairs
+
+                with mock.patch.object(split.worlds, "query_encoded", side_effect=query):
+                    with self.assertRaisesRegex(honest.SearchError, "another pair mask"):
+                        split.decide(b, [0], [0], [456], [False])
+
+    def test_a_foe_nets_record_names_its_encoder(self):
+        # A stopped decision under a foe network is reproducible from its record only if the record says which encoder
+        # and mask modelled the foe; the default's records stay as they were.
+        with duoforge.Context(C["DUOFORGE_DATA_KIND_POOL"]) as ctx, \
+                duoforge.Batch(ctx, duoforge.reference_setups([0]), 1, 42) as b:
+            foe = self.encoder3_net(ctx)
+            with self.make(ctx) as plain, self.make(ctx, foe_net=foe) as split:
+                for search in (plain, split):
+                    self.preview(search, b)
+                self.start_turn(b)
+                _, (a,) = plain.decide(b, [0], [0], [456], [False])
+                _, (r,) = split.decide(b, [0], [0], [456], [False])
+            self.assertNotIn("foe_net", a)
+            self.assertEqual(r["foe_net"], {"encoder": 3, "ext_supported": foe[3]})
+
     def test_assembled_record_is_checked_and_named(self):
         # A record assembled outside the engine (the live tracker's) is not searched unless the engine accepts it and
         # every world built from it gives it back. A filled masked field (here the foe's exact HP) is refused by the
@@ -742,6 +883,111 @@ class HonestArena(unittest.TestCase):
                         target[r["outcomes"]["ev"]] += 0.75
                         np.testing.assert_array_equal(r["pi_X"], target)
 
+
+
+class FoeArena(unittest.TestCase):
+    """M7's paired measurement (duoforge_search.foe_arena): its schedule, its predeclared gates and its guards."""
+
+    def test_each_team_pair_is_played_twice_with_the_teams_and_seats_swapped(self):
+        from duoforge_search import foe_arena
+        rows = foe_arena.games(5, 40, seed=3)
+        self.assertEqual(rows.shape, (80,))
+        np.testing.assert_array_equal(rows["side0"][0::2], rows["side0"][1::2])
+        np.testing.assert_array_equal(rows["side1"][0::2], rows["side1"][1::2])
+        np.testing.assert_array_equal(rows["learner_seat"], np.tile([0, 1], 40))
+        np.testing.assert_array_equal(rows["game"], np.repeat(np.arange(40), 2))
+        self.assertTrue((rows["side0"] != rows["side1"]).all())
+        self.assertTrue((rows["side0"] < 5).all() and (rows["side1"] < 5).all())
+        np.testing.assert_array_equal(rows, foe_arena.games(5, 40, seed=3))  # a pure function of its arguments
+        self.assertFalse(np.array_equal(rows, foe_arena.games(5, 40, seed=4)))
+        with self.assertRaises(ValueError):
+            foe_arena.games(1, 4)
+
+    def test_the_verdict_adopts_only_when_every_gate_holds(self):
+        from duoforge_search import foe_arena
+        searched = [{"kind": "searched", "wall": 0.1}] * 99 + [{"kind": "team"}]
+        better, worse = np.tile([1.0, 0.5], 50), np.tile([0.5, 0.0], 50)
+        v = foe_arena.verdict(better, worse, searched, searched, resamples=200)
+        self.assertEqual(v["pairs"], 50)
+        self.assertEqual(v["h"]["mean"], 0.75)
+        self.assertTrue(v["adopt"], v)
+        even = foe_arena.verdict(worse, worse, searched, searched, resamples=200)
+        self.assertEqual(even["h"]["95"], [0.5, 0.5])
+        self.assertFalse(even["gates"]["lower_bound"])  # the lower bound must be above 0.50, not at it
+        self.assertFalse(even["adopt"])
+        slow = [{"kind": "searched", "wall": 2.5}] * 99
+        self.assertFalse(foe_arena.verdict(better, worse, slow, searched, resamples=200)["gates"]["p99_seconds"])
+        nothing = foe_arena.verdict(better, worse, [{"kind": "team"}], searched, resamples=200)
+        self.assertIsNone(nothing["p99_seconds_f"])
+        self.assertFalse(nothing["adopt"])  # no searched decision, no latency evidence
+
+    def test_the_verdicts_interval_resamples_team_pairs_not_games(self):
+        # Within every pair F wins one game and loses the other against M: each pair's mean difference is 0, so a
+        # bootstrap over pairs has no spread at all, while one over single games would be wide.
+        from duoforge_search import foe_arena
+        searched = [{"kind": "searched", "wall": 0.1}] * 10
+        f, m = np.tile([1.0, 0.0], 100), np.tile([0.0, 1.0], 100)
+        v = foe_arena.verdict(f, m, searched, searched, resamples=500)
+        self.assertEqual(v["pairs"], 100)
+        self.assertEqual(v["h"], {"mean": 0.5, "95": [0.5, 0.5]})
+        with self.assertRaises(ValueError):
+            foe_arena.verdict(f[:-1], m[:-1], searched, searched)  # an odd row count is no set of pairs
+
+    def test_the_tool_refuses_an_output_inside_the_repository(self):
+        from duoforge_search import foe_arena
+        with tempfile.TemporaryDirectory() as tmp:
+            nets = [os.path.join(tmp, name) for name in ("a.npz", "b.npz", "c.npz")]
+            for path, data in zip(nets, (b"main", b"foe", b"bot")):
+                with open(path, "wb") as f:
+                    f.write(data)
+            inside = os.path.join(os.path.dirname(os.path.abspath(foe_arena.__file__)), "foe-arena-out")
+            with self.assertRaisesRegex(SystemExit, "inside the repository"):
+                foe_arena.main(["--checkpoint", nets[0], "--foe-net", nets[1], "--bot", nets[2], "--out", inside])
+            self.assertFalse(os.path.exists(inside))
+
+    def test_the_fallback_gate_is_the_arenas_or_the_status_quos_own_share(self):
+        from duoforge_search import foe_arena
+
+        def records(raw):  # 100 non-team decisions, raw of them unreconstructible
+            return [{"kind": "unreconstructible"}] * raw + [{"kind": "searched", "wall": 0.1}] * (100 - raw) + \
+                [{"kind": "team"}] * 7
+
+        score = np.tile([1.0, 0.0], 10)
+        self.assertEqual(foe_arena.fallback_share(records(5)), 0.05)
+        self.assertTrue(foe_arena.verdict(score, score, records(5), records(0))["gates"]["fallback_share"])
+        self.assertFalse(foe_arena.verdict(score, score, records(6), records(0))["gates"]["fallback_share"])
+        # Where the status quo M itself falls back more often, F may not add more than one point to it.
+        self.assertTrue(foe_arena.verdict(score, score, records(9), records(8))["gates"]["fallback_share"])
+        self.assertFalse(foe_arena.verdict(score, score, records(10), records(8))["gates"]["fallback_share"])
+
+    def test_the_bot_and_the_foe_model_must_be_two_networks(self):
+        from duoforge_search import foe_arena
+        with tempfile.TemporaryDirectory() as tmp:
+            paths = [os.path.join(tmp, name) for name in ("a.npz", "b.npz", "c.npz")]
+            for path, data in zip(paths, (b"one", b"one", b"two")):
+                with open(path, "wb") as f:
+                    f.write(data)
+            with self.assertRaisesRegex(SystemExit, "one network"):
+                foe_arena.check_nets(paths[0], paths[1])
+            self.assertEqual(len(foe_arena.check_nets(paths[0], paths[2])), 2)
+
+    def test_the_timed_search_decides_one_root_per_call(self):
+        from duoforge_search import foe_arena
+
+        class Search:
+            calls = []
+
+            def decide(self, roots, envs, seats, keys, last_step):
+                self.calls.append((list(envs), list(seats), list(keys), list(last_step)))
+                return np.array([10 * int(envs[0]) + int(seats[0])]), [{"kind": "searched", "env": int(envs[0])}]
+
+        timed = foe_arena.Timed(Search())
+        actions, records = timed.decide(None, np.array([3, 5]), np.array([1, 0]), np.array([7, 8], np.uint64),
+                                        np.array([False, True]))
+        self.assertEqual(actions.tolist(), [31, 50])
+        self.assertEqual(Search.calls, [([3], [1], [7], [False]), ([5], [0], [8], [True])])
+        self.assertEqual([r["env"] for r in records], [3, 5])
+        self.assertTrue(all(r["wall"] >= 0 for r in records))
 
 PINNED_OWN = [[103, 97], [289, 295], [358, 352]]
 PINNED_FOE = [[261, 293], [165, 162], [171, 165]]
