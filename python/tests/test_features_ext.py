@@ -291,6 +291,27 @@ class FeaturesExtTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "revision 0"):
             features.encode_batch(ob, d, odd, ALL)
 
+    def test_attract_bit_is_refused_by_the_encoder(self):
+        """Step G71 (decision 0034): the ATTRACT bit (DUOFORGE_POSITION_EXT_ATTRACT, bit 27: the reserve of encoder 6, decision 0050).
+        Encoder 5 cannot show it, so it raises EncoderAwaitingBit naming the constant and is never encoded silently; encoder 6
+        shows it in its reserve column; an observation without the bit encodes under encoder 5."""
+        ob, d = self.obs, self.domains
+        ext = _records(ob)
+        ext["sides"]["positions"]["volatiles"][...] = 0
+        self.assertEqual(features.encode_batch(ob, d, ext, ALL, encoder=5)[0].shape[0], ob.shape[0])
+        ext["sides"]["positions"]["volatiles"][:, 0, 0] = C["DUOFORGE_POSITION_EXT_ATTRACT"]
+        with self.assertRaises(features.EncoderAwaitingBit) as raised:
+            features.encode_batch(ob, d, ext, ALL, encoder=5)
+        self.assertEqual(raised.exception.name, "DUOFORGE_POSITION_EXT_ATTRACT")
+        features.encode_batch(ob, d, ext, ALL)  # encoder 6 shows the bit in its reserve column
+        ext["sides"]["positions"]["volatiles"][:, 0, 0] = (C["DUOFORGE_POSITION_EXT_ATTRACT"]
+                                                           | C["DUOFORGE_POSITION_EXT_TAUNT"])
+        with self.assertRaises(features.EncoderAwaitingBit) as raised:
+            features.encode_batch(ob, d, ext, ALL, encoder=5)
+        self.assertEqual(raised.exception.name, "DUOFORGE_POSITION_EXT_ATTRACT")
+        ext["sides"]["positions"]["volatiles"][...] = 0
+        self.assertEqual(features.encode_batch(ob, d, ext, ALL, encoder=5)[0].shape[0], ob.shape[0])
+
     def test_a_clear_bit_zeros_its_columns(self):
         ob, d = self.obs, self.domains
         ext = _records(ob)

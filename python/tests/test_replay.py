@@ -113,10 +113,13 @@ VIEW_REFUSED = {"FORME_CHANGE": "DUOFORGE_PUBLIC_CAUSE_TEMP_FORME"}
 
 def allowed_stop(reason):
     """A stop a committed battle may show: information only its player had, a feature of decision 0018 that the
-    library supports and this tracker does not fold yet (its rows would lack the view extension), or a feature the
-    library's view refuses with a public cause (VIEW_REFUSED)."""
+    library supports and this tracker does not fold yet (its rows would lack the view extension), a feature the
+    library's view refuses with a public cause (VIEW_REFUSED), or a view bit this tracker does not fold yet
+    (lines.UNFOLDED)."""
     if reason in HIDDEN:
         return True
+    if reason.startswith("unfolded:"):
+        return reason[len("unfolded:"):] in set(lines.UNFOLDED.values())  # a view bit the tracker does not fold yet
     name = reason[len("feature:"):] if reason.startswith("feature:") else None
     if name in VIEW_REFUSED and VIEW_REFUSED[name] in C:
         return True
