@@ -998,6 +998,10 @@ IGNORED_VOLATILES = {
     # the position bit DESTINY_BOND after every step.
     'destinybond': 'the start and KO lines and the extension bit DESTINY_BOND',
     'solarbeam': 'the locked slot and target',  # step G30: the same two-turn lock
+    # Step C3 (decision 0015 entry 5cr): Solar Blade is Solar Beam's charge (the sun skips it); Sky Attack is a charge with no
+    # weather skip and no semi-invulnerability (the -miss lines show none). Both: the locked slot and target, as Solar Beam's.
+    'solarblade': 'the locked slot and target',
+    'skyattack': 'the locked slot and target',
     # Step G58 (Phantom Force, data/moves.ts:13307-13335): the move's own volatile, which its onTryMove removes on the locked
     # turn, so the lock is twoturnmove's (remembered, as Electro Shot's) and the semi-invulnerability of the charge is shown by
     # the -miss lines of the moves against the charging user (the engine's Invulnerability step, not a field).
@@ -2255,7 +2259,7 @@ def convert_battle(name, spec, trace, tables):
                     if v not in compared and v not in IGNORED_VOLATILES:
                         raise ConversionError('unknown-volatile', 'trace_to_c: unknown volatile %r of %s' %
                                               (v, name_of(p)), detail=v)
-                for charge in ('electroshot', 'solarbeam', 'phantomforce'):
+                for charge in ('electroshot', 'solarbeam', 'phantomforce', 'solarblade', 'skyattack'):
                     if charge in p['volatiles'] and 'twoturnmove' not in p['volatiles']:
                         raise ConversionError('unknown-volatile', 'trace_to_c: %s without twoturnmove on %s' %
                                               (charge, name_of(p)), detail=charge)
