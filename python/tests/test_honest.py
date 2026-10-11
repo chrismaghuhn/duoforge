@@ -623,6 +623,34 @@ class LiveLatency(unittest.TestCase):
         self.assertEqual(report["settings"]["k"], 2)
 
 
+class PositionsTool(unittest.TestCase):
+    def test_the_tool_plays_every_position_raw_honest_and_by_oracle(self):
+        # M12 bundle 7: the test positions per checkpoint, a diagnosis written outside the repository only.
+        from duoforge_learn import checkpoint, policy as learn_policy
+        from duoforge_search import positions
+        model_config = learn_policy.v2_config("S")
+        model = learn_policy.make(model_config, features.feature_names(4))
+        params = model.init(__import__("jax").random.PRNGKey(11))
+        with duoforge.Context(C["DUOFORGE_DATA_KIND_POOL"]) as ctx, tempfile.TemporaryDirectory() as tmp:
+            path = os.path.join(tmp, "v2.npz")
+            checkpoint.save(path, params, {"model": model_config, "encoder": 4,
+                                           "features": list(features.feature_names(4)),
+                                           "slot_features": list(features.SLOT_FEATURE_NAMES),
+                                           "data": {"kind": "pool", "fingerprint": "00"}, "teams": {}, "update": 0,
+                                           "decisions": 0, "ids": checkpoint.ids_of(ctx)})
+            with self.assertRaisesRegex(ValueError, "repository"):
+                positions.main(["--checkpoint", path, "--out", "python/tests/positions-out"])
+            report = positions.main(["--checkpoint", path, "--out", os.path.join(tmp, "out"), "--k", "2", "--m", "2",
+                                     "--worlds", "2"])
+        names = [p.name for p in positions.load_all()]
+        self.assertEqual([r["name"] for r in report["positions"]], names)
+        for row in report["positions"]:
+            self.assertIn(row["raw"]["hit"], (True, False))
+            self.assertIn(row["honest"]["hit"], (True, False))
+            self.assertEqual("oracle" in row, row["kind"] in positions.ORACLE_KINDS)
+        self.assertEqual(set(report["hit_rates"]), {"raw", "honest", "oracle"})
+
+
 class HonestArena(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
