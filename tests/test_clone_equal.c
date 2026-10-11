@@ -206,6 +206,9 @@ static void copy_named_fields(duoforge_battle *x, const duoforge_battle *src)
         }
     }
     x->tail.field_pad = src->tail.field_pad;
+    for (uint32_t i = 0u; i < DFI_ATTRACT_SLOTS; ++i) {
+        x->tail.attract_source[i] = src->tail.attract_source[i]; /* step G71 (decision 0034): the rev 5 reserve's Attract sources */
+    }
 }
 
 int main(void)

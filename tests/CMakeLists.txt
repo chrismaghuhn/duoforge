@@ -697,7 +697,7 @@ endif()
 # The Python package (M7, decision 0013), run with DUOFORGE_PYTHON; without
 # an interpreter each test reports skipped instead of passing silently.
 
-foreach(_py layout lib equivalence recipes policies_features example learn_numpy live_unit live_client live_search replay_unit openings book expert_data expert_teacher expert_contract expert_eval ticks book_preview preview_search data batch_setups learn_v2_numpy teams features_ext encoder6 bc_numpy encode_c search_numpy search_expand repo_hygiene view vgcpastes_engine perft state_layout)
+foreach(_py layout lib equivalence recipes policies_features example learn_numpy live_unit live_client live_search bench step_events positions replay_unit openings book expert_data expert_teacher expert_contract expert_eval ticks book_preview preview_search data batch_setups learn_v2_numpy teams features_ext encoder6 bc_numpy encode_c search_numpy search_expand repo_hygiene view vgcpastes_engine perft state_layout)
     if(DUOFORGE_PYTHON)
         add_test(NAME duoforge.python.${_py}
             COMMAND "${DUOFORGE_PYTHON}" -m unittest -v python.tests.test_${_py}
@@ -821,6 +821,9 @@ duoforge_add_test(NAME duoforge.state.pool_g69 SOURCES test_pool_g69.c WHITEBOX 
 # rows, the recoil and crash facts Reckless reads, and the Trace refusal of Water Bubble onto a burned holder; white-box).
 duoforge_add_test(NAME duoforge.state.pool_g65 SOURCES test_pool_g65.c WHITEBOX TIMEOUT 60)
 
+# Step G75 (decision 0015 5bp): the cheap set, Pure Power, Battle Armor and Scope Lens (engine rows), the stones Medichamite and
+# Clefablite, and the two Mega pairs (white-box).
+duoforge_add_test(NAME duoforge.state.pool_g75 SOURCES test_pool_g75.c WHITEBOX TIMEOUT 60)
 
 # Step G73 (decision 0015 5bo): Moody (its residual order, its two samples on one site, the boost with the raised key first; white-box, with
 # its recorded battles g73_*, which conformance_pool_data replays).
@@ -829,3 +832,15 @@ duoforge_add_test(NAME duoforge.state.pool_g73 SOURCES test_pool_g73.c WHITEBOX 
 # Step G67 (decision 0015 entry 5bl, decision 0033): Magic Guard (the class of every indirect damage), Air Balloon (grounding, the
 # pops, the immunity, the switch-in line ITEM_SHOWN) and the fold that ignores ITEM_SHOWN.
 duoforge_add_test(NAME duoforge.state.pool_g67 SOURCES test_pool_g67.c WHITEBOX TIMEOUT 120)
+
+# Step G71 (decision 0034, decision 0015 5bn): Attract's source bytes, the state check, the public bit, the from-view refusal and the
+# clear of the holder's byte (white-box; the volatile's draws wait for G73's site).
+duoforge_add_test(NAME duoforge.state.pool_g71 SOURCES test_pool_g71.c WHITEBOX LIBS duoforge_batch TIMEOUT 60)
+
+# Step G79 (decision 0015 5br): Cloud Nine, the weather suppression of a standing holder (its mark, Mega Sol's refusal under it, and
+# the refusal of a Trace copy of it; white-box). The recorded battles g79_* are replayed by duoforge.reference.conformance_pool_data.
+duoforge_add_test(NAME duoforge.state.pool_g79 SOURCES test_pool_g79.c WHITEBOX TIMEOUT 60)
+
+# Step G81 (decision 0015 entry 5bs, decision 0033): Frisk (the foes' items announced at its holder's switch-in, ITEM_SHOWN in
+# the Frisk form), the switch-in order against Intimidate, two Frisk holders, and the fold that ignores the event.
+duoforge_add_test(NAME duoforge.state.pool_g81 SOURCES test_pool_g81.c WHITEBOX TIMEOUT 120)

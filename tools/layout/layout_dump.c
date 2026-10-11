@@ -82,6 +82,14 @@ int main(void)
     STRUCT(duoforge_step_result, false, FIELD(duoforge_step_result, epoch), FIELD(duoforge_step_result, kind),
            FIELD(duoforge_step_result, boundary_kind), FIELD(duoforge_step_result, request_mask),
            FIELD(duoforge_step_result, reserved));
+    STRUCT(duoforge_decision_bundle, false, FIELD(duoforge_decision_bundle, epoch),
+           FIELD(duoforge_decision_bundle, response_mask), FIELD(duoforge_decision_bundle, reserved),
+           FIELD(duoforge_decision_bundle, responses));
+    STRUCT(duoforge_event, false, FIELD(duoforge_event, kind), FIELD(duoforge_event, position),
+           FIELD(duoforge_event, other), FIELD(duoforge_event, cause), FIELD(duoforge_event, id), FIELD(duoforge_event, id2),
+           FIELD(duoforge_event, hp), FIELD(duoforge_event, hp_max), FIELD(duoforge_event, hp_kind),
+           FIELD(duoforge_event, hp_flag), FIELD(duoforge_event, status), FIELD(duoforge_event, detail),
+           FIELD(duoforge_event, amount), FIELD(duoforge_event, flags), FIELD(duoforge_event, reserved));
     STRUCT(duoforge_member_view, false, FIELD(duoforge_member_view, species_id), FIELD(duoforge_member_view, hp),
            FIELD(duoforge_member_view, hp_max), FIELD(duoforge_member_view, move_ids),
            FIELD(duoforge_member_view, stats), FIELD(duoforge_member_view, pp), FIELD(duoforge_member_view, pp_max),
@@ -201,6 +209,18 @@ int main(void)
     CONSTANT(DUOFORGE_SLOT_PASS, false);
     CONSTANT(DUOFORGE_SLOT_REVIVE, false);
     CONSTANT(DUOFORGE_EVENT_REVIVE, false);
+    CONSTANT(DUOFORGE_EVENT_MOVE, false);
+    CONSTANT(DUOFORGE_EVENT_DAMAGE, false);
+    CONSTANT(DUOFORGE_EVENT_FAINT, false);
+    CONSTANT(DUOFORGE_EVENT_CANT, false);
+    CONSTANT(DUOFORGE_EVENT_MISS, false);
+    CONSTANT(DUOFORGE_EVENT_CRIT, false);
+    CONSTANT(DUOFORGE_EVENT_FAIL, false);
+    CONSTANT(DUOFORGE_EVENT_FIELD_START, false);
+    CONSTANT(DUOFORGE_EVENT_FIELD_END, false);
+    CONSTANT(DUOFORGE_FIELD_TRICK_ROOM, false);
+    CONSTANT(DUOFORGE_MAX_EVENTS, false);
+    CONSTANT(DUOFORGE_NO_POSITION, false);
     CONSTANT(DUOFORGE_E_INVALID_ARGUMENT, false);
     CONSTANT(DUOFORGE_E_UNSUPPORTED, false);
     CONSTANT(DUOFORGE_BATCH_MAX_ENVS, false);
@@ -243,6 +263,7 @@ int main(void)
     CONSTANT(DUOFORGE_VOLATILE_DRAGONCHEER, false);
     CONSTANT(DUOFORGE_VOLATILE_LEECH_SEED, false);
     CONSTANT(DUOFORGE_CAUSE_LEECH_SEED, false);
+    CONSTANT(DUOFORGE_VOLATILE_ATTRACT, false);
     CONSTANT(DUOFORGE_FAIL_SUBSTITUTE_EXISTS, false);
     CONSTANT(DUOFORGE_FAIL_SUBSTITUTE_WEAK, false);
     CONSTANT(DUOFORGE_OBSERVATION_EXT_SIZE, false);
@@ -269,6 +290,7 @@ int main(void)
     CONSTANT(DUOFORGE_POSITION_EXT_ILLUSION_UP, false);
     CONSTANT(DUOFORGE_POSITION_EXT_ROOST, false);
     CONSTANT(DUOFORGE_POSITION_EXT_TRANSFORMED, false);
+    CONSTANT(DUOFORGE_POSITION_EXT_ATTRACT, false);
     CONSTANT(DUOFORGE_SIDE_GUARD_WIDE_GUARD, false);
     CONSTANT(DUOFORGE_SIDE_GUARD_QUICK_GUARD, false);
     CONSTANT(DUOFORGE_ITEM_NOW_NONE, false);

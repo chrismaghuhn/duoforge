@@ -11,7 +11,9 @@ import re
 import shutil
 import sys
 import tempfile
+import types
 import unittest
+from unittest import mock
 from pathlib import Path
 
 import numpy as np
@@ -692,10 +694,12 @@ class LinesTest(unittest.TestCase):
 
     def test_a_feature_the_tracker_does_not_fold_stops(self):
         # the library may support a feature (G60: Substitute), but its view-extension field stays empty until the
-        # tracker folds it: the line still stops the perspective
+        # tracker folds it: the line still stops the perspective. Folding SUBSTITUTE needs move_result to treat a status
+        # move into a Substitute explicitly first (duoforge_move_result's precondition: the pin counts it true)
         self.assertEqual(lines.SUPPORTED & ~lines.TRACKER_FOLDS, 0)
         self.assertTrue(lines.LIBRARY_SUPPORTED >> lines.FEATURES["SUBSTITUTE"] & 1)
-        self.assertEqual(self.stop("|-start|p1a: Staraptor|Substitute"), "feature:SUBSTITUTE")
+        self.assertEqual(self.stop("|-start|p1a: Staraptor|Substitute"), "feature:SUBSTITUTE",
+                         "folding SUBSTITUTE needs move_result to treat a status move into a Substitute explicitly first")
         # a folded one: Throat Chop's [silent] lines (the tracker sets and clears the presence bit)
         self.assertEqual(lines.check("|-start|p1a: Staraptor|Throat Chop|[silent]", self.view), "fold")
         self.assertEqual(lines.check("|-end|p1a: Staraptor|Throat Chop|[silent]", self.view), "fold")
@@ -2794,3 +2798,47 @@ class ValidateTest(_BeliefFixture, unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class AttractLinesTest(unittest.TestCase):
+    """Step G71 (decision 0034): the lines of Attract, classified without the library (lines.check reads the tables of the
+    view for the other kinds only; a stub view carries empty ones)."""
+
+    view = types.SimpleNamespace(data=types.SimpleNamespace(tables={"ABILITY": {}, "ITEM": {}, "MOVE": {}}))
+
+    def test_attract_lines_fold_under_the_reserve_family(self):
+        # Attract is POSITION_EXT_ATTRACT, a bit of the encoder 6 reserve (RESERVE_VOLATILES, shown under that family's feature
+        # alone: DUOFORGE_VIEWEXT_RESERVE_CHECKED). Every form of its lines folds; none is unfolded
+        self.assertEqual(lines.UNFOLDED, {})
+        self.assertTrue(lines.TRACKER_FOLDS >> lines.FEATURES["RESERVE_VOLATILES"] & 1)
+        self.assertTrue(lines.EXT_FOLDS >> lines.FEATURES["RESERVE_VOLATILES"] & 1)
+        for line in ("|-start|p1a: Staraptor|Attract|[from] ability: Cute Charm|[of] p2a: Gholdengo",
+                     "|-activate|p1a: Staraptor|move: Attract|[of] p2a: Gholdengo",
+                     "|cant|p1a: Staraptor|Attract",
+                     "|-end|p1a: Staraptor|Attract|[silent]",
+                     "|-end|p1a: Staraptor|move: Attract|[from] item: Mental Herb",
+                     "|-end|p1a: Staraptor|move: Attract|[from] ability: Oblivious"):
+            self.assertEqual(lines.check(line, self.view), "fold", line)
+
+    def test_a_silent_attract_line_other_than_the_silent_end_stops(self):
+        # the converter drops every [silent] line before its Attract branches: each other silent form stops by its line
+        for line in ("|-start|p1a: Staraptor|Attract|[from] ability: Cute Charm|[of] p2a: Gholdengo|[silent]",
+                     "|-activate|p1a: Staraptor|move: Attract|[of] p2a: Gholdengo|[silent]",
+                     "|-end|p1a: Staraptor|Attract|[silent]|[of] p2a: Gholdengo",
+                     "|-end|p1a: Staraptor|move: Attract|[silent]",
+                     "|-end|p1a: Staraptor|move: Attract|[from] item: Mental Herb|[silent]",
+                     "|cant|p1a: Staraptor|Attract|[silent]"):
+            with self.assertRaises(lines.Stop, msg=line) as caught:
+                lines.check(line, self.view)
+            self.assertTrue(caught.exception.reason.startswith("line:"), line)
+
+    def test_attract_lines_stop_without_the_library_bit(self):
+        # the library's support of the family is the gate: without it every Attract line stops by the feature's name
+        with mock.patch.object(lines, "SUPPORTED", 0):
+            for line in ("|-start|p1a: Staraptor|Attract|[from] ability: Cute Charm|[of] p2a: Gholdengo",
+                         "|cant|p1a: Staraptor|Attract",
+                         "|-end|p1a: Staraptor|Attract|[silent]"):
+                with self.assertRaises(lines.Stop, msg=line) as caught:
+                    lines.check(line, self.view)
+                self.assertEqual(caught.exception.reason, "feature:RESERVE_VOLATILES", line)
+

@@ -665,13 +665,13 @@ int main(void)
                 legal(&t, kp, &s, arcanine[i].supported == 1, arcanine[i].what);
             }
         }
-        /* Focus Sash is marked in G4, Scope Lens is not, and a genderless Arcanine-Hisui is not legal. */
+        /* Focus Sash is marked in G4, Quick Claw is not (Scope Lens is marked since G75), and a genderless Arcanine-Hisui is not legal. */
         s = teams;
         s.sides[1].members[0] = member_of(tpl, DFI_FORME_ARCANINEHISUI, DFI_ABILITY_INTIMIDATE, DFI_ITEM_FOCUSSASH + 1u,
                                           4u, arcanine_moves);
         legal(&t, kp, &s, true, "Arcanine-Hisui with a Focus Sash");
-        s.sides[1].members[0].item = DFI_ITEM_SCOPELENS + 1u;
-        legal(&t, kp, &s, false, "Arcanine-Hisui with a Scope Lens");
+        s.sides[1].members[0].item = DFI_ITEM_QUICKCLAW + 1u;
+        legal(&t, kp, &s, false, "Arcanine-Hisui with a Quick Claw");
         s.sides[1].members[0].item = 0u;
         legal(&t, kp, &s, true, "Arcanine-Hisui without an item");
         s.sides[1].members[0].gender = DUOFORGE_GENDER_NONE;

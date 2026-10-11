@@ -401,7 +401,9 @@ def empty_tail_side():
 
 def empty_tail():
     # party: step G46, per side the 3 bytes of party_order (entry k = roster index + 1 at bits 3k..3k+2, 0 = empty)
-    return {'gravity': 0, 'party': [[0, 0, 0], [0, 0, 0]], 'sides': [empty_tail_side(), empty_tail_side()]}
+    # Step G71 (decision 0034): the Attract source per flat position, the first 4 bytes of the rev 5 reserve (0 = none).
+    return {'gravity': 0, 'party': [[0, 0, 0], [0, 0, 0]], 'sides': [empty_tail_side(), empty_tail_side()],
+            'attract': [0, 0, 0, 0]}
 
 
 def party_entries(party_bytes):
@@ -963,7 +965,7 @@ def tail_is_zero(tail):
                 and all(v == 0 for v in ill_values(ts['ill']))
                 and all(v == 0 for f in TAIL_MEMBER_LIST_FIELDS for v in ts[f]))
     return (tail['gravity'] == 0 and all(v == 0 for p in tail['party'] for v in p)
-            and all(side_zero(ts) for ts in tail['sides']))
+            and all(side_zero(ts) for ts in tail['sides']) and all(v == 0 for v in tail.get('attract', [0] * 4)))
 
 
 def hazard_order_valid(ts):
@@ -1042,6 +1044,32 @@ def tail_pos_valid(ctx, tp, flat, mem, slot_flags=0, sub_cap=0):
             and tp['stockpile_spd'] <= tp['stockpile'])
 
 
+def attract_byte_ok(st, flat):
+    """Step G71 (decision 0034, decision 0015 5bn): the Attract source of the infatuated occupant at flat position `flat`, as
+    dfi_attract_byte_ok in src/state/invariants.c. Zero is none; else the code 1..12 names a member of its side on the field and
+    not fainted, not the infatuated occupant itself, of the opposite gender (1 and 2), and the occupant stands."""
+    code = st['tail'].get('attract', [0] * 4)[flat]
+    if code == 0:
+        return True
+    if code > 2 * MAX_ROSTER:
+        return False
+    side = flat // 2
+    sd = st['sides'][side]
+    occ = sd['pos'][flat % 2]['occ']
+    if occ >= MAX_ROSTER or occ >= sd['member_count'] or sd['members'][occ]['hp'] == 0:
+        return False
+    src_side, src = (code - 1) // MAX_ROSTER, (code - 1) % MAX_ROSTER
+    ssd = st['sides'][src_side]
+    if src >= ssd['member_count']:
+        return False
+    if src_side == side and src == occ:
+        return False
+    if not any(ssd['pos'][p]['occ'] == src and ssd['members'][src]['hp'] != 0 for p in range(2)):
+        return False
+    pair = (sd['members'][occ]['gender'], ssd['members'][src]['gender'])
+    return pair in ((1, 2), (2, 1))
+
+
 def check_tail(ctx, st):
     """The POOL tail: absent (all zero) under every other kind; under POOL each value in range, none at a position
     without a standing occupant, the member overrides only where they can be (a soak type, a current ability and a
@@ -1105,6 +1133,9 @@ def check_tail(ctx, st):
                 return 'TAIL_MEMBER'
             if tx != 0 and (tx > TAIL_TOXIC_STAGE_MAX or not on_field or mem['status'] != TAIL_TOXIC_STATUS):
                 return 'TAIL_MEMBER'
+    # Step G71: the Attract sources, one per flat position (attract_byte_ok).
+    if not all(attract_byte_ok(st, f) for f in range(4)):
+        return 'TAIL_POSITION'
     return 'OK'
 
 
@@ -1171,7 +1202,8 @@ def tail_bytes(tail):
     for flat in range(4):
         tp = tail['sides'][flat // 2]['pos'][flat % 2]
         out += bytes([tp[f] for f in TAIL_POS_REV5_FIELDS])
-    out += bytes(TAIL5_RESERVED_SIZE)
+    # Step G71: the first 4 bytes of the reserve are the Attract sources (one per flat position), the other 12 are zero.
+    out += bytes(tail.get('attract', [0] * 4)) + bytes(TAIL5_RESERVED_SIZE - 4)
     assert len(out) == TAIL_SIZE
     return bytes(out)
 
@@ -1187,8 +1219,9 @@ def tail_reserved_offsets():
         offs += [so + 80 + TAIL_MEMBER_SIZE * m + 9 for m in range(MAX_ROSTER)]
     assert len(offs) == 29
     rev5_reserve = TAIL_REV4_SIZE + TAIL5_SIZE - TAIL5_RESERVED_SIZE
-    offs += [rev5_reserve + i for i in range(TAIL5_RESERVED_SIZE)]
-    assert len(offs) == 45
+    # Step G71: the reserve's first 4 bytes are the Attract sources (data), so only its other 12 are reserved.
+    offs += [rev5_reserve + i for i in range(4, TAIL5_RESERVED_SIZE)]
+    assert len(offs) == 41
     return offs
 
 
@@ -1235,6 +1268,8 @@ def parse_tail(b):
         tp = tail['sides'][flat // 2]['pos'][flat % 2]
         q = r5 + 2 * TAIL5_SIDE_SIZE + TAIL5_POS_SIZE * flat
         tp['position_flags'], tp['future_sight'] = b[q], b[q + 1]
+    # Step G71: the Attract sources, the first 4 bytes of the reserve (r5 + 44 = rev 5 block offset 44).
+    tail['attract'] = list(b[r5 + TAIL5_SIZE - TAIL5_RESERVED_SIZE:r5 + TAIL5_SIZE - TAIL5_RESERVED_SIZE + 4])
     return tail
 
 
@@ -2008,6 +2043,15 @@ def tail_example():
     return t
 
 
+# Step G71 (decision 0034): the members' genders of the sweep's base battle, the reference pairing 0 of
+# duoforge_reference_setup (src/state/reference_teams.c, the second field of each member): side 0 is team A, side 1 is team B.
+# 1 male, 2 female, 3 genderless. Copied from that table, not chosen.
+REFERENCE_GENDERS_PAIRING0 = (
+    (1, 2, 2, 1, 2, 3),  # team A: Rillaboom M, Staraptor F, Milotic F, Ceruledge M, Raichu F, Gholdengo genderless
+    (1, 2, 1, 2, 1, 1),  # team B: Politoed M, Golisopod F, Archaludon M, Farigiraf F, Charizard M, Grimmsnarl M
+)
+
+
 def tail_model_state():
     st = empty_state(KP)
     for s, sd in enumerate(st['sides']):
@@ -2020,7 +2064,20 @@ def tail_model_state():
             mem['hp_max'] = EXAMPLE_HP_MAX[s][m]
             for k, move_id in enumerate(EXAMPLE_MOVES[s][m]):
                 mem['moves'][k]['id'] = move_id
+            mem['gender'] = REFERENCE_GENDERS_PAIRING0[s][m]
     return st
+
+
+def attract_valid_codes(st, flat):
+    """Step G71: the Attract codes (1..12) that the state accepts on flat position `flat` with everything else as it is, by the
+    model's own check (attract_byte_ok): the list the sweep counts as OK at that tail byte."""
+    codes = []
+    for code in range(1, 2 * MAX_ROSTER + 1):
+        st['tail']['attract'][flat] = code
+        if attract_byte_ok(st, flat):
+            codes.append(code)
+    st['tail']['attract'][flat] = 0
+    return codes
 
 
 def tail_outcome(raw):
@@ -2056,6 +2113,11 @@ def print_pool_tail():
         assert (off in reserved) == (counts.get('TAIL_RESERVED', 0) == 255)
         print('pool_tail_sweep %3d %s' % (off, ' '.join('%s=%d' % kv for kv in sorted(counts.items()))))
         print('pool_tail_sweep_c %3d {%s},' % (off, ', '.join(str(counts.get(c, 0)) for c in SWEEP_COLUMNS)))
+    # Step G71: the Attract codes each flat position accepts on the sweep's base (its tail's attract bytes are zero there).
+    st_attract = tail_model_state()
+    st_attract['tail'] = parse_tail(bytes(STATE_SIZE) + base_tail)
+    for flat in range(4):
+        print('pool_tail_attract_codes %d %s' % (flat, attract_valid_codes(st_attract, flat)))
     # Decode order with the tail: the schema of the artifact against the context's kind.
     for ctx_name, ctx in (('C1', C1), ('KP', KP)):
         st = empty_state(ctx)

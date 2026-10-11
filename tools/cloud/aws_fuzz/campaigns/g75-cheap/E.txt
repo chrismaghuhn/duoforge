@@ -1,0 +1,59 @@
+Absol (M) @ Scope Lens
+Ability: Super Luck
+Level: 50
+EVs: 2 HP / 32 Atk / 32 Spe
+Jolly Nature
+- Slash
+- Night Slash
+- Sucker Punch
+- Protect
+
+Medicham (M) @ Medichamite
+Ability: Pure Power
+Level: 50
+EVs: 32 HP / 32 Atk / 2 SpD
+Adamant Nature
+- Close Combat
+- Ice Punch
+- Drain Punch
+- Protect
+
+Milotic (F) @ Mystic Water
+Ability: Competitive
+Level: 50
+EVs: 32 HP / 29 Def / 5 SpD
+Calm Nature
+- Muddy Water
+- Ice Beam
+- Coil
+- Protect
+
+Falinks @ Leftovers
+Ability: Battle Armor
+Level: 50
+EVs: 32 HP / 32 Atk / 2 SpD
+Adamant Nature
+- Close Combat
+- Iron Head
+- Swords Dance
+- Protect
+
+Gholdengo @ Life Orb
+Ability: Good as Gold
+Level: 50
+EVs: 17 HP / 2 Def / 17 SpA / 16 SpD / 14 Spe
+Modest Nature
+- Make It Rain
+- Shadow Ball
+- Nasty Plot
+- Protect
+
+Skeledirge (F) @ Sitrus Berry
+Ability: Blaze
+Level: 50
+EVs: 32 HP / 32 SpA / 2 SpD
+Modest Nature
+- Will-O-Wisp
+- Shadow Ball
+- Flare Blitz
+- Protect

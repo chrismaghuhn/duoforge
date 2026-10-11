@@ -1,0 +1,108 @@
+{
+ "name": "fake_out_saves_partner",
+ "kind": "fake_out_partner",
+ "teams": [
+  "A",
+  "A"
+ ],
+ "seed": 2316556723530235913,
+ "picks": [
+  [
+   4,
+   2,
+   0,
+   1
+  ],
+  [
+   0,
+   2,
+   3,
+   4
+  ]
+ ],
+ "prefix": [
+  [
+   [
+    {
+     "move": "focusblast",
+     "target": 3,
+     "mega": true
+    },
+    {
+     "move": "hypnosis",
+     "target": 2
+    }
+   ],
+   [
+    {
+     "move": "highhorsepower",
+     "target": 1
+    },
+    {
+     "move": "hypnosis",
+     "target": 0
+    }
+   ]
+  ],
+  [
+   [
+    {
+     "move": "zapcannon",
+     "target": 3
+    },
+    {
+     "move": "hypnosis",
+     "target": 2
+    }
+   ],
+   [
+    {
+     "move": "woodhammer",
+     "target": 3
+    },
+    {
+     "move": "coil"
+    }
+   ]
+  ],
+  [
+   [
+    {
+     "switch": "rillaboom"
+    },
+    {
+     "move": "hypnosis",
+     "target": 3
+    }
+   ],
+   [
+    {
+     "move": "highhorsepower",
+     "target": 3
+    },
+    {
+     "move": "hypnosis",
+     "target": 2
+    }
+   ]
+  ]
+ ],
+ "seat": 0,
+ "expected": [
+  [
+   {
+    "move": "fakeout",
+    "target": 2
+   },
+   {
+    "any": true
+   }
+  ]
+ ],
+ "reason": "Turn 4: rillaboom has just come in and can Fake Out rillaboom. milotic can neither switch nor Protect, and the foe knocks it out against every other answer of ours (e.g. [{'move': 'woodhammer', 'target': 1}, {'move': 'muddywater'}]); with Fake Out on rillaboom it stands against every foe answer, critical hits included.",
+ "claim": {
+  "partner": 1,
+  "fake_out_user": 0,
+  "fake_out_target": 2
+ }
+}
