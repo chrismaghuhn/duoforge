@@ -390,6 +390,41 @@ class TrainerTest(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "00" * 32):
             bc.main(["--data", str(other), "--out", str(self.tmp / "cache-b"), "--epochs", "1", "--cache", str(cache)])
 
+    def test_the_rows_cache_is_a_memmap_directory_keyed_by_the_split(self):
+        # review of #409: a run builds its cache under a tmp name of its own and renames it; a dead run's tmp is
+        # removed; a second call is a hit through load_memmap (bc_data.load is not called); the split changes the key
+        import os
+        from unittest import mock
+        import duoforge
+        from duoforge import _layout
+        from duoforge_learn import bc
+        cache = self.tmp / "cache-memmap"
+        args = bc._parser().parse_args(["--data", str(self.data), "--out", str(self.tmp / "x"), "--cache", str(cache)])
+        with duoforge.Context(data_kind=_layout.CONSTANTS["DUOFORGE_DATA_KIND_POOL"]) as context:
+            mask = bc_data.bc_mask(context)
+            first = bc._rows(args, context, mask, [self.data], {})
+            [path] = [p for p in cache.iterdir() if ".tmp" not in p.name]
+            self.assertIsInstance(first.obs, np.memmap)
+            del first
+            stale = path.with_name(path.name + ".tmp-999999999-dead")  # a run that died while writing
+            stale.mkdir()
+            (stale / "obs.npy").write_bytes(b"junk")
+            with mock.patch.object(bc_data, "load", side_effect=AssertionError("a cache hit must not load")):
+                hit = bc._rows(args, context, mask, [self.data], {})
+            self.assertIsInstance(hit.obs, np.memmap)
+            del hit
+            import shutil
+            shutil.rmtree(path)  # the next call builds again and removes the dead run's tmp
+            again = bc._rows(args, context, mask, [self.data], {})
+            del again
+            if os.name == "posix":
+                self.assertFalse(stale.exists())
+            players = bc._parser().parse_args(["--data", str(self.data), "--out", str(self.tmp / "y"), "--cache",
+                                               str(cache), "--split", "players"])
+            bc._rows(players, context, mask, [self.data], {})
+        done = sorted(p.name for p in cache.iterdir() if ".tmp" not in p.name)
+        self.assertEqual(len(done), 2)  # the split is part of the key
+
     def test_format_weight_must_be_positive(self):
         # review #3: a factor of 0 leaves batches without weight (0/0, NaN parameters); a negative one is no weight
         from duoforge_learn import bc

@@ -62,6 +62,9 @@ def _parser():
     p.add_argument("--pick-hypotheses-weight", type=float, default=None, metavar="W",
                    help="take the rows of pick hypotheses at W/H each (left out unless given; M11 pick hypotheses "
                         "spec, section 5)")
+    p.add_argument("--split", choices=("sheet", "players"), default="sheet",
+                   help="the validation split: sheet (the sheet pair; belief datasets by players) or players (a test "
+                        "player's games held out for every source)")
     p.add_argument("--seed", type=int, default=0)
     p.add_argument("--cache", default=None, help="a directory (outside the repository) for the encoded rows")
     return p
@@ -109,32 +112,57 @@ def _dataset_key(dirs):
 
 
 def _rows(args, context, mask, dirs, format_weights, source_weights=None):
-    """bc_data.Rows of the datasets, through the cache when one is given."""
+    """bc_data.Rows of the datasets, through the cache when one is given: a directory of memmaps (bc_data.load's
+    memmap), so the rows never have to fit in memory; training reads them batch by batch."""
     import hashlib
     import json
-    from dataclasses import fields
+    import shutil
     from pathlib import Path
     from . import bc_data
     hyp = args.pick_hypotheses_weight
+    split = getattr(args, "split", "sheet")
     if args.cache is None:
-        return bc_data.load(dirs, context, mask, format_weights, args.weights, source_weights, hyp)
+        return bc_data.load(dirs, context, mask, format_weights, args.weights, source_weights, hyp, split)
     from duoforge import features
     for d in dirs:  # a cache hit must not skip the library check of the datasets
         bc_data._check_dataset(d, context)
-    key = hashlib.sha256(json.dumps(["rows-v2", _dataset_key(dirs), mask, args.weights, format_weights,
-                                     source_weights or {}, hyp,
+    key = hashlib.sha256(json.dumps(["rows-v3", _dataset_key(dirs), mask, args.weights, format_weights,
+                                     source_weights or {}, hyp, split,
                                      context.fingerprint().hex(), features.ENCODER, list(features.FEATURE_NAMES)],
                                     sort_keys=True).encode()).hexdigest()[:24]
-    path = Path(args.cache) / f"bc-rows-{key}.npz"
-    if path.exists():
-        with np.load(path) as z:
-            return bc_data.Rows(**{f.name: z[f.name] for f in fields(bc_data.Rows)})
-    rows = bc_data.load(dirs, context, mask, format_weights, args.weights, source_weights, hyp)
-    path.parent.mkdir(parents=True, exist_ok=True)
-    tmp = path.with_name(path.name + ".tmp.npz")
-    np.savez(tmp, **{f.name: getattr(rows, f.name) for f in fields(bc_data.Rows)})
-    tmp.replace(path)
-    return rows
+    path = Path(args.cache) / f"bc-rows-{key}"
+    if (path / "rows.json").exists():
+        return bc_data.load_memmap(path, key)
+    import os
+    import uuid
+    from duoforge_replay import dataset
+    for stale in path.parent.glob(f"{path.name}.tmp-*"):  # a run that died while writing (POSIX: its pid is gone)
+        if os.name == "posix" and not _alive(int(stale.name.split("-")[-2])):
+            shutil.rmtree(stale, ignore_errors=True)
+    tmp = path.with_name(f"{path.name}.tmp-{os.getpid()}-{uuid.uuid4().hex[:8]}")  # one run's own directory
+    rows = bc_data.load(dirs, context, mask, format_weights, args.weights, source_weights, hyp, split, memmap=tmp,
+                        key=key)
+    del rows  # close the writable memmaps before the directory is renamed
+    try:
+        tmp.rename(path)
+    except OSError:
+        if not (path / "rows.json").exists():
+            raise
+        shutil.rmtree(tmp)  # a parallel run of the same key finished first: its rows are the same
+    dataset.fsync_dir(path.parent)
+    return bc_data.load_memmap(path, key)
+
+
+def _alive(pid):
+    """Whether a POSIX process `pid` runs (signal 0 checks, sends nothing)."""
+    import os
+    try:
+        os.kill(pid, 0)
+    except ProcessLookupError:
+        return False
+    except PermissionError:
+        return True
+    return True
 
 
 def _device(rows):
@@ -199,7 +227,8 @@ def train(args):
     train_index, val_index = np.flatnonzero(~rows.val), np.flatnonzero(rows.val)
     if len(val_index) == 0 or len(train_index) == 0:
         raise ValueError(f"the split leaves {len(train_index)} training and {len(val_index)} validation rows: the "
-                         "validation set (bucket 0 of 20 of the sheet pairs) needs games on both sides")
+                         "validation set (bucket 0 of 20 of the --split's sheet pairs or players) needs games on both "
+                         "sides")
     dims = {k: getattr(args, k) for k in ("embed", "member", "position", "hidden", "layers", "option")
             if getattr(args, k) is not None}
     model_cfg = policy.v2_config(args.preset, **dims)
@@ -245,7 +274,8 @@ def train(args):
               "train": {"seed": args.seed, "bc": {
                   "datasets": _dataset_key(dirs), "format_weights": format_weights, "source_weights": source_weights,
                   "pick_hypotheses_weight": args.pick_hypotheses_weight,
-                  "split": "sheet-pair bucket 0/20", "weights": args.weights, "epochs": args.epochs,
+                  "split": ("players bucket 0/20 (either player)" if getattr(args, "split", "sheet") == "players"
+                            else "sheet-pair bucket 0/20"), "weights": args.weights, "epochs": args.epochs,
                   "best_epoch": best_epoch, "value_coef": value_coef, "learning_rate": args.learning_rate,
                   "batch": args.batch, "patience": args.patience}}}
     checkpoint.save(str(out / "bc.npz"), best_params, config)
