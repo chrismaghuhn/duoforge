@@ -13,6 +13,7 @@
  * Flat positions: side 0 slots 0 and 1 (flat 0, 1), side 1 slots 0 and 1 (flat 2, 3).
  */
 #include <stdio.h>
+#include <stdlib.h>
 #include <string.h>
 
 #include <duoforge/duoforge.h>
@@ -408,6 +409,148 @@ static void test_elapsed_determinized(df_test *t)
     finish(ctx, b);
 }
 
+/* The duration word (decision 0060, HS): at elapsed e <= 4 both durations fit and bit 0 of trap_pick picks 6 (set) or 5 (clear), so the
+ * 256 uniform words give exactly 128 of each; at e = 5 only 6 fits, whatever the word. */
+static void test_trap_pick_words(df_test *t)
+{
+    duoforge_context *ctx = NULL;
+    duoforge_battle *b = NULL;
+    if (!wrap_first_step(t, &ctx, &b)) {
+        finish(ctx, b);
+        return;
+    }
+    const df_conf_battle *cb = find_conf("g90_wrap_band");
+    DF_CHECK(t, cb != NULL);
+    duoforge_battle_setup s;
+    setup_from(cb, &s);
+    duoforge_battle *w = df_make_battle(ctx, &s);
+    DF_CHECK(t, w != NULL);
+    const size_t pos0 = DFI_ENC_TAIL_OFF + DFI_ENC_TAIL_SIDES_OFF + 1u * DFI_ENC_TAIL_SIDE_SIZE + DFI_ENC_TAIL_POS_OFF;
+    duoforge_public_state v;
+    memset(&v, 0, sizeof v);
+    DF_CHECK_EQ_U64(t, duoforge_battle_public(ctx, b, 0u, &v), DUOFORGE_OK);
+    duoforge_hypothesis h;
+    memset(&h, 0, sizeof h);
+    DF_CHECK(t, duoforge_battle_hypothesis(ctx, b, 0u, &h) == DUOFORGE_OK);
+    /* elapsed 0 and elapsed 4: both durations fit, the turns are d - e */
+    const uint32_t elapsed_cases[2] = {0u, 4u};
+    for (uint32_t c = 0u; c < 2u; ++c) {
+        const uint32_t e = elapsed_cases[c];
+        v.state[pos0 + DFI_ENC_TAIL_POS_TRAP_ELAPSED_OFF] = (uint8_t)e;
+        unsigned six = 0u;
+        unsigned five = 0u;
+        for (uint32_t word = 0u; word < 256u; ++word) {
+            h.trap_pick[2] = (uint8_t)word;
+            DF_CHECK_EQ_U64(t, duoforge_battle_from_view(ctx, &v, &h, w), DUOFORGE_OK);
+            const uint32_t turns = w->tail.sides[1].positions[0].trap_turns;
+            if (turns == 6u - e) {
+                ++six;
+            } else if (turns == 5u - e) {
+                ++five;
+            } else {
+                DF_CHECK(t, false);
+            }
+        }
+        DF_CHECK_EQ_U64(t, six, 128u);
+        DF_CHECK_EQ_U64(t, five, 128u);
+    }
+    /* elapsed 5: only 6 fits, so one turn is left whatever the word */
+    v.state[pos0 + DFI_ENC_TAIL_POS_TRAP_ELAPSED_OFF] = 5u;
+    for (uint32_t word = 0u; word < 256u; ++word) {
+        h.trap_pick[2] = (uint8_t)word;
+        DF_CHECK_EQ_U64(t, duoforge_battle_from_view(ctx, &v, &h, w), DUOFORGE_OK);
+        DF_CHECK_EQ_U64(t, w->tail.sides[1].positions[0].trap_turns, 1u);
+    }
+    /* a position without a hidden trap takes no word */
+    v.state[pos0 + DFI_ENC_TAIL_POS_TRAP_ELAPSED_OFF] = 1u;
+    h.trap_pick[2] = 0u;
+    h.trap_pick[0] = 1u;
+    DF_CHECK_EQ_U64(t, duoforge_battle_from_view(ctx, &v, &h, w), DUOFORGE_E_INVALID_ARGUMENT);
+    duoforge_battle_destroy(w);
+    finish(ctx, b);
+}
+
+/* The hypothesis revision: revision 2 (no words) rebuilds an untrapped view and refuses a trapped one (E_UNSUPPORTED). */
+static void test_pick_revisions(df_test *t)
+{
+    duoforge_context *ctx = NULL;
+    duoforge_battle *b = NULL;
+    duoforge_decision_bundle bd;
+    duoforge_step_result res;
+    if (!start(t, "g90_wrap_band", &ctx, &b, &bd, &res)) {
+        finish(ctx, b);
+        return;
+    }
+    const df_conf_battle *cb = find_conf("g90_wrap_band");
+    duoforge_battle_setup s;
+    setup_from(cb, &s);
+    duoforge_battle *w = df_make_battle(ctx, &s);
+    DF_CHECK(t, w != NULL);
+    duoforge_public_state v;
+    memset(&v, 0, sizeof v);
+    DF_CHECK_EQ_U64(t, duoforge_battle_public(ctx, b, 0u, &v), DUOFORGE_OK);
+    duoforge_hypothesis h;
+    memset(&h, 0, sizeof h);
+    DF_CHECK(t, duoforge_battle_hypothesis(ctx, b, 0u, &h) == DUOFORGE_OK);
+    h.revision = DUOFORGE_HYPOTHESIS_REVISION_NO_TRAP;
+    DF_CHECK_EQ_U64(t, duoforge_battle_from_view(ctx, &v, &h, w), DUOFORGE_OK);
+    duoforge_battle_destroy(w);
+    finish(ctx, b);
+    /* a trapped view with the old revision */
+    if (!wrap_first_step(t, &ctx, &b)) {
+        finish(ctx, b);
+        return;
+    }
+    w = df_make_battle(ctx, &s);
+    DF_CHECK(t, w != NULL);
+    memset(&v, 0, sizeof v);
+    DF_CHECK_EQ_U64(t, duoforge_battle_public(ctx, b, 0u, &v), DUOFORGE_OK);
+    memset(&h, 0, sizeof h);
+    DF_CHECK(t, duoforge_battle_hypothesis(ctx, b, 0u, &h) == DUOFORGE_OK);
+    h.revision = DUOFORGE_HYPOTHESIS_REVISION_NO_TRAP;
+    DF_CHECK_EQ_U64(t, duoforge_battle_from_view(ctx, &v, &h, w), DUOFORGE_E_UNSUPPORTED);
+    duoforge_battle_destroy(w);
+    finish(ctx, b);
+}
+
+/* The codec round trip of a trapped battle keeps the elapsed count and the turns; an elapsed count that breaks the turns is refused. */
+static void test_codec_elapsed(df_test *t)
+{
+    duoforge_context *ctx = NULL;
+    duoforge_battle *b = NULL;
+    if (!wrap_first_step(t, &ctx, &b)) {
+        finish(ctx, b);
+        return;
+    }
+    const df_conf_battle *cb = find_conf("g90_wrap_band");
+    duoforge_battle_setup s;
+    setup_from(cb, &s);
+    duoforge_battle *d = df_make_battle(ctx, &s);
+    DF_CHECK(t, d != NULL);
+    size_t size = 0u;
+    DF_CHECK_EQ_U64(t, duoforge_battle_encoded_size(ctx, b, &size), DUOFORGE_OK);
+    uint8_t *bytes = (uint8_t *)malloc(size);
+    DF_CHECK(t, bytes != NULL);
+    size_t written = 0u;
+    if (bytes != NULL) {
+        DF_CHECK_EQ_U64(t, duoforge_battle_encode(ctx, b, bytes, size, &written), DUOFORGE_OK);
+        DF_CHECK_EQ_U64(t, duoforge_battle_decode(ctx, d, bytes, written), DUOFORGE_OK);
+        free(bytes);
+    }
+    DF_CHECK_EQ_U64(t, tail_of(d, FLAT_P2A)->trap_elapsed, 1u);
+    DF_CHECK_EQ_U64(t, tail_of(d, FLAT_P2A)->trap_turns, tail_of(b, FLAT_P2A)->trap_turns);
+    bool equal = false;
+    DF_CHECK_EQ_U64(t, duoforge_battle_equal(ctx, b, d, &equal), DUOFORGE_OK);
+    DF_CHECK(t, equal);
+    /* the invariant: the turns and the elapsed count sum to the duration, 5 or 6 */
+    tail_of(b, FLAT_P2A)->trap_elapsed = 4u;
+    DF_CHECK_EQ_U64(t, dfi_state_check(ctx, b, NULL), DUOFORGE_E_INVARIANT);
+    tail_of(b, FLAT_P2A)->trap_elapsed = 1u;
+    DF_CHECK(t, dfi_state_check(ctx, b, NULL) == DUOFORGE_OK);
+    duoforge_battle_destroy(d);
+    finish(ctx, b);
+}
+
 int main(void)
 {
     df_test t;
@@ -417,5 +560,8 @@ int main(void)
     test_source_leaves(&t);
     test_view_turns_hidden(&t);
     test_elapsed_determinized(&t);
+    test_trap_pick_words(&t);
+    test_pick_revisions(&t);
+    test_codec_elapsed(&t);
     return df_test_end(&t);
 }

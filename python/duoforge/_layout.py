@@ -573,7 +573,7 @@ HYPOTHESIS = _record("duoforge_hypothesis", {
     "revision": _U4, "reserved0": _U4, "stat_points": (_U1, (6, 6)), "pick_order": (_U1, (6,)),
     "reserved1": (_U1, (6,)), "hp": (_U8, (6,)), "sleep": (_U8, (2, 6)), "confusion": (_U8, (2, 2)),
     "charge_target": (_U8, (2,)), "queued": (SLOT_COMMAND, (2,)), "queue_order": (_U1, (12,)),
-    "reserved2": (_U1, (4,)),
+    "trap_pick": (_U1, (4,)),
 })
 
 BY_C_NAME = {

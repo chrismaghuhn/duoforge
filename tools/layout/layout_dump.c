@@ -152,10 +152,11 @@ int main(void)
            FIELD(duoforge_hypothesis, stat_points), FIELD(duoforge_hypothesis, pick_order), FIELD(duoforge_hypothesis, reserved1),
            FIELD(duoforge_hypothesis, hp), FIELD(duoforge_hypothesis, sleep), FIELD(duoforge_hypothesis, confusion),
            FIELD(duoforge_hypothesis, charge_target), FIELD(duoforge_hypothesis, queued), FIELD(duoforge_hypothesis, queue_order),
-           FIELD(duoforge_hypothesis, reserved2));
+           FIELD(duoforge_hypothesis, trap_pick));
     printf("  },\n  \"constants\": {\n");
     CONSTANT(DUOFORGE_VIEW_REVISION, false);
     CONSTANT(DUOFORGE_HYPOTHESIS_REVISION, false);
+    CONSTANT(DUOFORGE_HYPOTHESIS_REVISION_NO_TRAP, false);
     CONSTANT(DUOFORGE_VIEW_STATE_MAX, false);
     CONSTANT(DUOFORGE_VIEW_HIDDEN, false);
     CONSTANT(DUOFORGE_VIEW_HIDDEN_TARGET, false);

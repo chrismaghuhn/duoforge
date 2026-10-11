@@ -1,6 +1,6 @@
 # 0060 - The partial trap (G90): Bind, Wrap, Fire Spin, Sand Tomb, Snap Trap, Infestation
 
-Status: **in progress** (H26, lane A batch 7, step 5cs). The design was approved by the coordinator on 2026-10-11 (the volatile id, the event shapes, the silent ends, the state, the information safety of section 6). Open points are listed in section 9.
+Status: **in progress** (the duration is a hypothesis word, revision 3) (H26, lane A batch 7, step 5cs). The design was approved by the coordinator on 2026-10-11 (the volatile id, the event shapes, the silent ends, the state, the information safety of section 6). Open points are listed in section 9.
 
 ## 1. Problem
 
@@ -58,12 +58,14 @@ One draw site, `DFI_SITE_PARTIAL_TRAP_TURNS` = 32, `random(5, 7)`, drawn only wh
 
 ## 6a. Hidden counters (lead decision, 2026-10-11)
 
-- Derivation of `trap_elapsed` (the public counter, engine and view): 0 at the start (`-activate`), +1 at each residual phase while the trap is up (the phase that ends it at 0 clears it), 0 at the end and whenever the trap leaves the position (the occupant's tail is cleared). Saturation at 7 in the code; a legal state never exceeds 5 while the trap is up, because the duration is at most 6 (invariant: `trap_elapsed <= 5` with `trap_turns != 0`, `trap_elapsed == 0` without).
+- Derivation of `trap_elapsed` (the public counter, engine and view): 0 at the start (`-activate`), +1 at each residual phase while the trap is up (the phase that ends it at 0 clears it), 0 at the end and whenever the trap leaves the position (the occupant's tail is cleared). A 3-bit field; the invariant above keeps it at most 5 while the trap is up and 0 without it, checked in TAIL_POSITION and mirrored in tools/state_model.
 - Posterior of the hidden turns. The duration `d` is `random(5, 7)` (`data/conditions.ts:222-228`, the pin), so `d` is 5 or 6 at 1/2 each. The public view shows `trap_turns = d - e` with the elapsed count `e`, and the trap is up, so `d > e`. Consistent durations: both for `e` at most 4 (1/2 : 1/2), only 6 at `e = 5` (one turn left), none at `e >= 6`, which is refused (`DUOFORGE_E_MALFORMED`: a legal view never shows it).
 - Grip Claw (`d = 8` on the source) is not in the Champions pool (`data/mods/champions/items.ts:422`, `isNonstandard: "Past"`), so no trapper can hold it and no duration 8 is drawn; the pool data refuses the item at battle creation, and the view has no item of the source to decide it.
 - Sleep and confusion stay refused by the rebuild (E_UNSUPPORTED, as before); the same method could apply later, a decision of the owner.
 - The determinized turns are not compared with the truth in the tests (they are hidden); the tests check the consistency set, `e = 5` giving 1, `e = 6` refused, and the public fold of `e` into POSITION_EXT2 for both viewers (`tests/test_pool_g90.c`, `test_elapsed_determinized`).
-- Open: the draw of the duration in the rebuild comes from the world's RNG, which `duoforge_battle_from_view` seeds with a constant (0, 0). A constant seed makes the choice the same bit for every view, so it is not a 1/2 : 1/2 posterior across worlds. See section 9, point 3.
+- The draw is a word of the hypothesis, not of the world's RNG (HS decision, 2026-10-11; the world RNG is seeded with a constant, so it cannot sample). `duoforge_hypothesis.trap_pick[flat]` (revision 3, the former `reserved2[4]`): with elapsed e at most 4 both durations fit, and bit 0 of the word selects 6 (set) or 5 (clear), so a uniform byte gives exactly 128 of each; with e = 5 only 6 fits and the word is ignored; e above 5 is E_MALFORMED.
+- The words: a position without a hidden trap must carry a zero word (E_INVALID_ARGUMENT otherwise). A revision-2 hypothesis (`DUOFORGE_HYPOTHESIS_REVISION_NO_TRAP`, no words) rebuilds an untrapped view and refuses a trapped one (E_UNSUPPORTED). The hypothesis builder fills the word from the true duration (turns + elapsed = 6 gives bit 0).
+- The invariant of the tail: a trap that is up has turns + elapsed = 5 or 6 (the duration); elapsed is zero without it. This implies elapsed <= 5 while the trap is up. The byte 32 is lane A's; no schema or tail revision bump (an older library refuses it through its reserved check).
 
 ## 7. Engine (summary)
 
@@ -82,4 +84,4 @@ One draw site, `DFI_SITE_PARTIAL_TRAP_TURNS` = 32, `random(5, 7)`, drawn only wh
 
 1. The source-left encoding of section 3 (trap_source = 0 while the trap lives on) changes one tail invariant. If the lead prefers a stored identity, that needs a byte.
 2. Test counts and mutants: see the step entry 5cs in decision 0015 when the step is complete.
-3. The posterior draw of section 6a. The lead's spec says "from the world RNG", but `duoforge_battle_from_view` seeds that RNG with (0, 0) and the view zeroes the RNG bytes, so the draw is one fixed bit for every view, not a sample of the posterior. The sleep and confusion counters of the same function draw from the hypothesis (`duoforge_hypothesis`, one word per hidden value), which the caller samples. The matching design is one word per trapped position in the hypothesis (a public struct change: the `reserved2[4]` bytes would become `trap_pick[4]`, and the revision would move). Decision needed before the push; the code now uses the world RNG as specified.
+3. Resolved by HS (2026-10-11): the duration is a hypothesis word, `trap_pick[4]` in revision 3 (section 6a). The Python side that fills the word from the world RNG (`honest.py`) belongs to HS and M12, after this head.

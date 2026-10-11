@@ -207,7 +207,8 @@
 #define DFI_ENC_TAIL_POS_LOCK_TURNS_OFF 31u   /* rev 4 */
 /* Step G90 (decision 0060, the hidden counters): the residual phases the partial trap has been through, 0..5 while it is up
  * (its turns are trap_turns = d - this, d in {5, 6}), zero without it. Public: the POSITION_EXT2 bits 4 to 6 show it. Taken from
- * the four reserved bytes of the block (the block stays 36 bytes). */
+ * the first of the four reserved bytes of the block (lane A, HS decision: no schema or tail revision bump; bytes 33 to 35 stay reserved,
+ * and an older library refuses byte 32 through its reserved check). */
 #define DFI_ENC_TAIL_POS_TRAP_ELAPSED_OFF 32u
 #define DFI_ENC_TAIL_POS_RESERVED_OFF 33u
 #define DFI_ENC_TAIL_POS_RESERVED_SIZE 3u
