@@ -6258,10 +6258,12 @@ static duoforge_status dfi_status_effects(dfi_run *r, uint32_t user, uint32_t mo
                 if (st != DUOFORGE_OK) {
                     return st;
                 }
-                /* combineResults (sim/battle-actions.ts:1561-1573): a target's result is false when a boost was refused (the
-                 * PRIMARY_TARGET boost is a boolean) or when the volatile answers false; a Misty Terrain null alone is no
-                 * failure, and a null does not beat a false in the combination. So the target fails unless one of them changed. */
-                if (!(changed_i || added) && (md->boost_role == DFI_BOOST_ROLE_PRIMARY_TARGET || !terrain)) {
+                /* The boost result (sim/battle.ts:2035, `let success = null`; set true only when a stat changed, :2042-2050; a
+                 * boost at the cap prints -boost 0 and stays null, :2079-2080, returned at :2088) and the volatile's (false when
+                 * already confused, true when started, null from Misty Terrain's onTryAddVolatile). combineResults
+                 * (battle-actions.ts:1561-1573): true beats any, false beats null. So a target is false only when the volatile
+                 * answers false and no boost changed: a capped boost with Misty (null + null) is null, not a failure. */
+                if (!(changed_i || added) && !terrain) {
                     confuse_plain_fail = true;
                 }
                 did = did || added || changed_i;
