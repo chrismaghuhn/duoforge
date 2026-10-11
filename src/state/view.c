@@ -882,6 +882,12 @@ static duoforge_status mr_value(uint32_t classes, uint8_t *out)
     return DUOFORGE_OK;
 }
 
+/* A [cant] that stops the action at BeforeMove: false; mustrecharge's is null. */
+static uint32_t mr_cant_result(const duoforge_event *e)
+{
+    return e->cause == DUOFORGE_CAUSE_RECHARGE ? DFI_MOVE_RESULT_NULL : DFI_MOVE_RESULT_FALSE;
+}
+
 duoforge_status duoforge_move_result(const duoforge_context *ctx, uint32_t user, const duoforge_event *events,
                                      uint32_t count, uint8_t *out_result)
 {
@@ -904,7 +910,7 @@ duoforge_status duoforge_move_result(const duoforge_context *ctx, uint32_t user,
     const duoforge_event *e0 = &events[i];
     /* BeforeMove stops the action (sleep, freeze, paralysis, flinch, Taunt, Disable, ...): false; mustrecharge's null */
     if (e0->kind == DUOFORGE_EVENT_CANT) {
-        *out_result = (uint8_t)(e0->cause == DUOFORGE_CAUSE_RECHARGE ? DFI_MOVE_RESULT_NULL : DFI_MOVE_RESULT_FALSE);
+        *out_result = (uint8_t)mr_cant_result(e0);
         return DUOFORGE_OK;
     }
     if (e0->kind == DUOFORGE_EVENT_CONFUSED) {
@@ -920,7 +926,7 @@ duoforge_status duoforge_move_result(const duoforge_context *ctx, uint32_t user,
         }
         e0 = &events[i];
         if (e0->kind == DUOFORGE_EVENT_CANT) {
-            *out_result = (uint8_t)(e0->cause == DUOFORGE_CAUSE_RECHARGE ? DFI_MOVE_RESULT_NULL : DFI_MOVE_RESULT_FALSE);
+            *out_result = (uint8_t)mr_cant_result(e0);
             return DUOFORGE_OK;
         }
     }
@@ -1050,9 +1056,11 @@ duoforge_status duoforge_move_result(const duoforge_context *ctx, uint32_t user,
             value = (uint8_t)DFI_MOVE_RESULT_UNCLASSIFIED_NOW; /* the handler set no class */
         }
         break;
-    case MR_RUNS:
-        value = (uint8_t)(user_fail ? DFI_MOVE_RESULT_FALSE : DFI_MOVE_RESULT_TRUE);
+    case MR_RUNS: {
+        const uint32_t runs = user_fail ? DFI_MOVE_RESULT_FALSE : DFI_MOVE_RESULT_TRUE;
+        value = (uint8_t)runs;
         break;
+    }
     case MR_REACHES: {
         if (user_fail) {
             value = (uint8_t)DFI_MOVE_RESULT_FALSE;
@@ -1065,7 +1073,8 @@ duoforge_status duoforge_move_result(const duoforge_context *ctx, uint32_t user,
         } else if (reached) {
             return DUOFORGE_E_UNSUPPORTED; /* reached with a failure beside it: a spread case not mapped */
         } else {
-            value = (uint8_t)((classes & MR_FALSE) != 0u ? DFI_MOVE_RESULT_FALSE : DFI_MOVE_RESULT_NULL);
+            const uint32_t missed = (classes & MR_FALSE) != 0u ? DFI_MOVE_RESULT_FALSE : DFI_MOVE_RESULT_NULL;
+            value = (uint8_t)missed;
         }
         break;
     }
