@@ -1395,7 +1395,8 @@ int main(void)
                                 id == DFI_ABILITY_UNAWARE || id == DFI_ABILITY_MARVELSCALE || id == DFI_ABILITY_WATERBUBBLE ||
                                 id == DFI_ABILITY_RECKLESS || id == DFI_ABILITY_SUPERLUCK ||
                                 /* step G73: Moody, by id (dfi_moody, the residual of order 28) */
-                                id == DFI_ABILITY_MOODY;
+                                /* step G85: Pickpocket and Magician, by id (dfi_pickpocket, dfi_magician, dfi_pickpocket_all) */
+                                id == DFI_ABILITY_MOODY || id == DFI_ABILITY_PICKPOCKET || id == DFI_ABILITY_MAGICIAN;
             DF_CHECK_EQ_U64(&t, dfi_support.abilities[id] != 0u ? 1u : 0u, (setter || terrain_setter || engine || ate) ? 1u : 0u);
             DF_CHECK_EQ_U64(&t, dfi_pool_ability_family[id].family,
                             setter ? DFI_ABILITY_FAMILY_WEATHER_SETTER
@@ -1608,7 +1609,7 @@ int main(void)
          * one is marked it must read the drag_pending bit of dfi_run for its holder (as Emergency Exit and the Eject Button
          * do). Wimp Out (abilities.ts:5495, champions :99) has no pool row; if one is added it must read the same bit. */
         DF_CHECK_EQ_U64(&t, dfi_support.items[DFI_ITEM_SHELLBELL] != 0u ? 1u : 0u, 0u);
-        DF_CHECK_EQ_U64(&t, dfi_support.abilities[DFI_ABILITY_PICKPOCKET] != 0u ? 1u : 0u, 0u);
+        DF_CHECK_EQ_U64(&t, dfi_support.abilities[DFI_ABILITY_PICKPOCKET] != 0u ? 1u : 0u, 1u); /* step G85: marked (the rule of the steps above is for the drag-in: see decision 0015 entry 5bu) */
         /* The drag-in DragOut re-check (mutant M1, step G46): a marked row may change a blocker's ability between the hit-time
          * DragOut and the drag-in. Skill Swap is marked (G70, decision 0041), and dfi_drag_blocked reads the holder's ability
          * at the drag-in (dfi_ability, the current one), so the re-check is correct, not equivalent. */

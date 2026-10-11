@@ -138,7 +138,8 @@ static void check_facts(df_test *t)
         learners += 1u;
         DF_CHECK_EQ_U64(t, forme, DFI_FORME_TINKATON);
         for (uint32_t k = 0u; k < l->ability_count; ++k) {
-            DF_CHECK(t, dfi_support.abilities[l->abilities[k]] == 0u);
+            /* Pickpocket is marked by step G85 (decision 0015 entry 5bu); every other ability of the learner stays unmarked */
+            DF_CHECK(t, dfi_support.abilities[l->abilities[k]] == 0u || l->abilities[k] == DFI_ABILITY_PICKPOCKET);
         }
     }
     DF_CHECK_EQ_U64(t, learners, 1u);

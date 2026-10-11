@@ -301,6 +301,51 @@ static void check_magician_tie(df_test *t, duoforge_context *ctx)
     }
 }
 
+/* Magician with two targets of two Speeds, both holding an item: the faster goes first (speedSort of hitTargets, no tie). Delphox
+ * takes the Black Glasses of Weavile (base Speed 125) and leaves the Rocky Helmet of Primarina (base Speed 60) where it is. */
+static void check_magician_faster_first(df_test *t, duoforge_context *ctx)
+{
+    const df_conf_battle *cb = find("g85_pickpocket_kowtow");
+    if (!DF_CHECK(t, cb != NULL)) {
+        return;
+    }
+    duoforge_battle_setup setup;
+    build_setup(cb, &setup);
+    duoforge_member_setup *dl = &setup.sides[0].members[0];
+    dl->species_id = DFI_FORME_DELPHOX;
+    dl->gender = DUOFORGE_GENDER_FEMALE;
+    dl->ability = (uint8_t)(1u + DFI_ABILITY_MAGICIAN);
+    dl->item = 0u;
+    const uint32_t dl_moves[2] = {DFI_MOVE_DAZZLINGGLEAM, DFI_MOVE_PROTECT};
+    set_moves(dl, 2u, dl_moves);
+    setup.sides[1].members[0].item = (uint8_t)(1u + DFI_ITEM_BLACKGLASSES); /* Weavile, the faster target */
+    const duoforge_slot_command cmd[2][2] = {{k_move0_none, k_move1_none}, {k_move0_foe0, k_move0_foe0}};
+    duoforge_battle *b = NULL;
+    if (!DF_CHECK(t, duoforge_battle_create(ctx, &setup, &b) == DUOFORGE_OK && b != NULL)) {
+        return;
+    }
+    duoforge_decision_bundle bd;
+    duoforge_step_result res;
+    bundle_of(&cb->steps[0], b, &bd);
+    DF_CHECK_EQ_U64(t, duoforge_battle_step(ctx, b, &bd, &res), DUOFORGE_OK);
+    memset(&bd, 0, sizeof bd);
+    bd.epoch = b->request_epoch;
+    bd.response_mask = 3u;
+    for (uint32_t s = 0; s < 2u; ++s) {
+        duoforge_side_choice *r = &bd.responses[s];
+        r->epoch = b->request_epoch;
+        r->side = (uint8_t)s;
+        r->kind = (uint8_t)DUOFORGE_CHOICE_SLOTS;
+        r->slots[0] = cmd[s][0];
+        r->slots[1] = cmd[s][1];
+    }
+    DF_CHECK_EQ_U64(t, duoforge_battle_step(ctx, b, &bd, &res), DUOFORGE_OK);
+    DF_CHECK_EQ_U64(t, b->tail.sides[0].item_now[0], G85_HELD(DFI_ITEM_BLACKGLASSES));
+    DF_CHECK_EQ_U64(t, b->tail.sides[1].item_now[0], G85_NONE);
+    DF_CHECK_EQ_U64(t, b->tail.sides[1].item_now[1], G85_SHEET); /* Primarina keeps its Rocky Helmet */
+    duoforge_battle_destroy(b);
+}
+
 /* Magician taking a Mega Stone of the user's own species (Delphoxite from Weavile): refused. The control holds Black Glasses. */
 static void check_magician_stone(df_test *t, duoforge_context *ctx)
 {
@@ -335,6 +380,7 @@ int main(void)
         check_states(&t, ctx);
         check_pickpocket_refusal(&t, ctx);
         check_magician_tie(&t, ctx);
+        check_magician_faster_first(&t, ctx);
         check_magician_stone(&t, ctx);
         duoforge_context_destroy(ctx);
     }
