@@ -20,8 +20,13 @@ The writer refuses an output directory inside the repository. Tests use only our
 ```sh
 python -m duoforge_replay prior --pastes <dir of pastes> --out <prior.json>
 python -m duoforge_replay build --source <parquet or jsonl files or dirs> --prior <prior.json> --out <dir> \
-    [--workers N] [--limit-parts N] [--unit-lines N] [--ps-dir <pinned Showdown>] [--node node]
+    [--workers N] [--limit-parts N] [--unit-lines N] [--ps-dir <pinned Showdown>] [--node node] \
+    [--format-prefix gen9championsvgc2026regmc gen9championsvgc2026regmb]
+python -m duoforge_replay funnel <dir> [--top N]
 ```
+
+A prefix that would take Reg M-A games (`gen9championsvgc2026regma`, or a shorter one) is refused. Reg M-A ran under
+another mechanics era: Showdown before Champions 1.1.0, then a mod of its own. The owner excluded it on 2026-10-10.
 
 The opening-book builder reads the same replay sources and writes count and win-rate tables:
 
@@ -197,9 +202,12 @@ Between parts the build waits while the fuzz pause file exists. A full run is an
 | Array | Content |
 |---|---|
 | `observation` | `_layout.OBSERVATION`, from the player's side. The own side shows HP as the public percentage, PP from the uses seen, and stat points and stats from the prior (`prior_level` per member) |
-| `domain` | `_layout.FACTORED_DOMAIN`: the superset slot lists and the full pair mask, or the team domain |
+| `domain` | `_layout.FACTORED_DOMAIN`: the superset slot lists and the full pair mask, or the team domain. A position under Encore offers only its Encored move (and Struggle, and its switches) |
+| `ext` | `_layout.OBSERVATION_EXT`, the tracker view's extension record at the point (decision 0018), as live. The manifest records the tracker folds (`tracker_folds`) and the record revision; `bc_data` loads only datasets of format version 3 folded under this checkout's folds |
 | `label_slots`, `label_team`, `label_reason` | the options that agree with the log, per slot (a 32-bit mask) or over the 360 team tuples (45 bytes); the reason per slot: `labels.EXACT`, `TARGET_UNKNOWN`, `MOVE_HIDDEN`, `FORCED`, `UNKNOWN`, `NOT_REQUESTED` |
 | `game`, `side`, `point` | the game's index into `games.npz`, the player, the decision point |
+
+An Encore that starts on a position before its move line may have replaced the chosen move: that slot's label is `MOVE_HIDDEN` over every move option, the Encored one too.
 
 `games.npz` holds, per game:
 - the replay id;
@@ -211,6 +219,14 @@ Between parts the build waits while the fuzz pause file exists. A full run is an
 - hashed player names and sheets.
 
 `counters.json` counts every game, perspective and point that was skipped or stopped, by reason.
+
+It also counts the **funnel** per format id, as `funnel.<format id>.<stage>`. `python -m duoforge_replay funnel <dir>`
+prints it, aggregates only:
+
+read -> not in the build's formats / without two sheets -> with sheets -> refused (names, legality, Illusion, Reg M-B PP,
+...) or internal error -> set up -> perspectives to the end / stopped by reason -> rows.
+
+Reg M-A shows as one line: its game count and "excluded".
 
 ## Stops
 

@@ -27,6 +27,7 @@
 #include "state/closure_member.h"
 #include "state/context_internal.h"
 #include "state/invariants.h"
+#include "state/knowledge.h"
 
 /* The POOL player-view extension (decision 0018): size and every offset, so that no edit moves a field unseen. */
 _Static_assert(sizeof(duoforge_field_ext) == 16u, "field ext is 16 bytes");
@@ -44,13 +45,16 @@ _Static_assert(sizeof(duoforge_side_ext) == 64u, "side ext is 64 bytes");
 _Static_assert(offsetof(duoforge_side_ext, members) == 32u, "side ext layout: members");
 _Static_assert(offsetof(duoforge_side_ext, aurora_veil_turns) == 56u, "side ext layout: aurora_veil_turns");
 _Static_assert(offsetof(duoforge_side_ext, guard_flags) == 61u, "side ext layout: guard_flags");
-_Static_assert(offsetof(duoforge_side_ext, reserved) == 62u, "side ext layout: reserved");
+_Static_assert(offsetof(duoforge_side_ext, conditions) == 62u, "side ext layout: conditions");
+_Static_assert(offsetof(duoforge_side_ext, reserved) == 63u, "side ext layout: reserved");
 _Static_assert(sizeof(duoforge_observation_ext) == DUOFORGE_OBSERVATION_EXT_SIZE, "observation ext is 192 bytes");
 _Static_assert(offsetof(duoforge_observation_ext, epoch) == 4u, "observation ext layout: epoch");
 _Static_assert(offsetof(duoforge_observation_ext, supported) == 8u, "observation ext layout: supported");
 _Static_assert(offsetof(duoforge_observation_ext, field) == 16u, "observation ext layout: field");
 _Static_assert(offsetof(duoforge_observation_ext, sides) == 32u, "observation ext layout: sides");
-_Static_assert(offsetof(duoforge_observation_ext, reserved1) == 160u, "observation ext layout: reserved1");
+_Static_assert(offsetof(duoforge_observation_ext, volatiles2) == 160u, "observation ext layout: volatiles2");
+_Static_assert(offsetof(duoforge_observation_ext, reserved1) == 176u, "observation ext layout: reserved1");
+_Static_assert(offsetof(duoforge_field_ext, flags) == 2u && sizeof(duoforge_field_ext) == 16u, "field ext layout: flags");
 
 _Static_assert(sizeof(duoforge_member_view) == 52u, "member view is 52 bytes");
 _Static_assert(offsetof(duoforge_member_view, move_ids) == 6u, "member view layout: move ids");
@@ -238,8 +242,10 @@ static void dfi_view_position(const struct duoforge_battle *b, uint32_t viewer, 
     }
     out->confused = slot->confusion_turns != 0u ? 1u : 0u;
     out->charging = slot->charge_turns != 0u ? 1u : 0u;
-    /* A lockedmove (step G56) is shown by the request alone (its one move is forced): no locked slot, as the reference has none. */
-    const bool lockedmove = b->tail.sides[s].positions[p].lock_turns != 0u;
+    /* A lockedmove (step G56) is shown by the request alone (its one move is forced): no locked slot, as the reference has none.
+     * Its owner's request shows whether it runs; the foe sees only the public last move, since the drawn count may end
+     * silently (dfi_maybe_lockedmove, view audit 2026-10-10). */
+    const bool lockedmove = s == viewer ? b->tail.sides[s].positions[p].lock_turns != 0u : dfi_maybe_lockedmove(b, s * 2u + p);
     const uint32_t locked_index =
         slot->locked_move != 0u && !lockedmove ? (uint32_t)slot->locked_move - 1u : DUOFORGE_MOVE_SLOT_NONE;
     out->locked_slot = (uint8_t)locked_index; /* <= 0xFF */
@@ -402,6 +408,8 @@ duoforge_status duoforge_battle_observe_ext(const duoforge_context *ctx, const d
                 /* Step G72b (decision 0015 5ce): Dragon Cheer's volatile is up while its stage is (-start|X|move: Dragon Cheer; a
                  * switch-out clears the stage with the position's tail, so the bit ends with it). */
                 vol |= (tail->position_flags & DFI_POSFLAG_DRAGON_CHEER_MASK) != 0u ? (uint32_t)DUOFORGE_POSITION_EXT_DRAGON_CHEER : 0u;
+                /* Step G76 (decision 0015 5cg): Destiny Bond is up until the occupant's next move attempt (-singlemove|X|Destiny Bond). */
+                vol |= (tail->position_flags & DFI_POSFLAG_DESTINY_BOND) != 0u ? (uint32_t)DUOFORGE_POSITION_EXT_DESTINY_BOND : 0u;
                 /* Step G30: Rage Powder draws the foes' single-target moves this turn ([-singleturn] move: Rage Powder), set
                  * only at a boundary inside a turn (a PIVOT: the residual ends it), as decision 0018 sections 3.4.1 and 6.1 say. */
                 if (((uint32_t)battle->sides[s].positions[p].flags & DFI_VOL_FOLLOW_ME) != 0u &&

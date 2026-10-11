@@ -23,7 +23,7 @@ from duoforge_live.lines import flat_position, line_kind
 from duoforge_live.data import trace_to_c
 from duoforge_live.game import TEAM_TABLE
 
-from .points import TEAM_SELECTION, TURN
+from .points import TEAM_SELECTION, TURN, Skip
 
 NOT_REQUESTED, EXACT, TARGET_UNKNOWN, MOVE_HIDDEN, FORCED, UNKNOWN = range(6)
 TEAM_BYTES = (len(TEAM_TABLE) + 7) // 8
@@ -31,6 +31,9 @@ TEAM_BYTES = (len(TEAM_TABLE) + 7) // 8
 REDIRECT_TURN = {"move: Follow Me", "move: Rage Powder", "Rage Powder", "move: Spotlight", "Spotlight"}
 # Abilities whose -activate right before a move line draws it (sim: onAnyRedirectTarget).
 _REDIRECT_ABILITY = {"ability: Lightning Rod", "ability: Storm Drain"}
+# Moves whose line may name another target than the chosen one by their own rule (data/moves.ts smartTarget, step G78):
+# Dragon Darts goes to the chosen foe's ally when the chosen foe cannot be hit, and the line names the ally.
+_SMART_TARGET = {"DRAGONDARTS"}
 
 
 @dataclass(frozen=True)
@@ -135,8 +138,10 @@ def _slot_label(segment, side, k, options_list, moves, member_of, tables, vacant
         if kind == "move" and flat_position(parts[2]) == position:
             if encored:
                 # Encore started on this position before it moved: a queued move of another slot is replaced by the
-                # Encored one (Champions), so the move line is not what was chosen
-                return _all(options_list), UNKNOWN
+                # Encored one (Champions), so the move line may not be what was chosen; it was some move (the
+                # Encored one too: a player who chose it sees no replacement), with the shown Mega choice
+                mask = _move_options(options_list, mega)
+                return (mask, MOVE_HIDDEN) if mask else (_all(options_list), UNKNOWN)
             return _move_label(segment, index, parts, side, options_list, moves, mega, tables, vacant)
     return None, None
 
@@ -161,7 +166,8 @@ def _move_label(segment, index, parts, side, options_list, moves, mega, tables, 
     if targets == {options.TARGET_NONE}:
         return _mask(candidates), EXACT
     shown = flat_position(parts[4]) if len(parts) > 4 else None
-    uncertain = shown is None or "[notarget]" in attrs or any(a.startswith("[spread]") for a in attrs)
+    uncertain = shown is None or "[notarget]" in attrs or any(a.startswith("[spread]") for a in attrs) \
+        or trace_to_c.key(name) in _SMART_TARGET
     if not uncertain and any(position // 2 == shown // 2 for position in vacant):
         uncertain = True  # a position of the target's side was empty at the point: Showdown retargets
     if not uncertain:
@@ -186,6 +192,24 @@ def _move_label(segment, index, parts, side, options_list, moves, mega, tables, 
     return _mask(candidates), TARGET_UNKNOWN
 
 
+def _revived(log, upto, side, name, member_of):
+    """The own member a Revival Blessing -heal line names: that line has only the nickname ("p1: <name>"), so the member
+    is the one whose switch, drag or replace lines before it carry that name (their details name the forme). Skip
+    ("skip:revive-unseen") when no such line names it, Skip("skip:revive-ambiguous") when they name two members: the
+    log does not say who came back."""
+    members = set()
+    for line in log[:upto]:
+        parts = line.split("|")
+        if line_kind(line) in ("switch", "drag", "replace") and len(parts) > 3 and parts[2].startswith(f"p{side + 1}") \
+                and parts[2].split(": ", 1)[1:] == [name]:
+            members.add(member_of(parts[3]))
+    if not members:
+        raise Skip("skip:revive-unseen")
+    if len(members) > 1:
+        raise Skip("skip:revive-ambiguous")
+    return members.pop()
+
+
 def switch_label(log, point, side, lists, member_of, stop_line):
     """The label of a REPLACEMENT or PIVOT point: per asked own slot, the switch of its run, or a pass."""
     end = min(point.end, stop_line)
@@ -205,7 +229,8 @@ def switch_label(log, point, side, lists, member_of, stop_line):
         if getattr(point, "revive", False) and position in point.run:
             # Revival Blessing's choice (step G52): the member its -heal line names
             if revives:
-                member = member_of(revives[0].split("|")[2].split(": ", 1)[1])
+                name = revives[0].split("|")[2].split(": ", 1)[1]
+                member = _revived(log, point.line + segment.index(revives[0]), side, name, member_of)
                 found = [i for i, o in enumerate(options_list) if o.kind == options.REVIVE and o.reserve == member]
             elif end < point.end:
                 found = []

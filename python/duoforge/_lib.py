@@ -18,7 +18,7 @@ import os
 
 from .errors import DuoforgeError, DuoforgeLibraryError
 
-EXPECTED_VERSION = "0.44.0"
+EXPECTED_VERSION = "0.45.0"
 
 _NAMES = ("duoforge_shared.dll", "libduoforge_shared.dll", "libduoforge_shared.so", "libduoforge_shared.dylib")
 
@@ -31,6 +31,7 @@ _STATUS = ctypes.c_uint32
 _SIGNATURES = {
     "duoforge_batch_public": (_STATUS, (_P, _P, _P, _P)),
     "duoforge_batch_public_causes": (_STATUS, (_P, _P, _P, _P)),
+    "duoforge_hp_display": (_STATUS, (_U32, _U32, _P, _P)),
     "duoforge_batch_from_view": (_STATUS, (_P, _P, _P, _U32, _P)),
     "duoforge_battle_hypothesis": (_STATUS, (_P, _P, _U32, _P)),
     "duoforge_public_queue_mask": (_STATUS, (_P, _P, _P, _P)),

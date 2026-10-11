@@ -3,7 +3,7 @@
 # runs tools/cloud/p1_pilot/run.sh of the given commit.
 #
 # usage: launch.sh --commit SHA --bucket B [--max-hours H] [--max-price P] [--types t1,t2] [--sg-name NAME]
-#                  [--resume RUN_ID | --from-run RUN_ID]
+#                  [--resume RUN_ID | --from-run RUN_ID [--pilot-part distill|generation] [--distill-preset p1|c2]]
 #                  [--i-have-owner-approval]
 #   --commit    the exact 40-digit sha of a commit on main that has tools/cloud/p1_pilot/run.sh
 #   --bucket    the results bucket (objects go under p1/<run id>/ only)
@@ -11,6 +11,11 @@
 #   --max-price the spot price ceiling in dollars per instance hour (0.10 to 1.50, default 1.50); a run costs at most
 #               max-hours x max-price in instance hours
 #   --types     candidate instance types, tried in this order until one has capacity (default g6.4xlarge,g5.4xlarge)
+#   --from-run  a new run that reads the pilot of an earlier run, read only (PILOT_RUN_ID for run.sh)
+#   --pilot-part   with --from-run: what the earlier run gives, "distill" (default: generation and distillation) or
+#               "generation" (run.sh distils again); PILOT_PART for run.sh
+#   --distill-preset  with --pilot-part generation: the distill settings of run.sh, "p1" (default) or "c2"
+#               (DISTILL_PRESET for run.sh)
 #   --sg-name   must be duoforge-fuzz (any other group is refused; the option only makes the refusal testable)
 #   --i-have-owner-approval  actually request the instance. WITHOUT it nothing is launched: the request is printed and
 #               the script exits. That is the default; the flag is for the lead, with the owner present (README).
@@ -30,6 +35,8 @@ sg_name=$DF_SG_NAME
 approved=no
 resume=
 from_run=
+pilot_part=
+distill_preset=
 while [ $# -gt 0 ]; do
     case $1 in
         --commit) [ $# -ge 2 ] || df_die '--commit needs a value'; commit=$2; shift 2 ;;
@@ -40,8 +47,10 @@ while [ $# -gt 0 ]; do
         --sg-name) [ $# -ge 2 ] || df_die '--sg-name needs a value'; sg_name=$2; shift 2 ;;
         --resume) [ $# -ge 2 ] || df_die '--resume needs a run id'; resume=$2; shift 2 ;;
         --from-run) [ $# -ge 2 ] || df_die '--from-run needs a run id'; from_run=$2; shift 2 ;;
+        --pilot-part) [ $# -ge 2 ] || df_die '--pilot-part needs a value'; pilot_part=$2; shift 2 ;;
+        --distill-preset) [ $# -ge 2 ] || df_die '--distill-preset needs a value'; distill_preset=$2; shift 2 ;;
         --i-have-owner-approval) approved=yes; shift ;;
-        -h | --help) sed -n '2,18p' "${BASH_SOURCE[0]}"; exit 0 ;;
+        -h | --help) sed -n '2,23p' "${BASH_SOURCE[0]}"; exit 0 ;;
         *) df_die "unknown argument '$1' (see --help)" ;;
     esac
 done
@@ -65,15 +74,24 @@ done
 df_check_commit_on_main "$commit"
 
 [ -z "$resume" ] || [ -z "$from_run" ] || df_die '--resume and --from-run exclude each other'
+case ${pilot_part:-distill} in distill | generation) ;; *) df_die "--pilot-part '$pilot_part': distill or generation" ;; esac
+case ${distill_preset:-p1} in p1 | c2) ;; *) df_die "--distill-preset '$distill_preset': p1 or c2" ;; esac
+[ -z "$pilot_part" ] || [ -n "$from_run" ] || df_die '--pilot-part needs --from-run (the pilot of which run?)'
+[ -z "$distill_preset" ] || [ "$pilot_part" = generation ] ||
+    df_die '--distill-preset needs --pilot-part generation (otherwise the earlier distillation is reused)'
+[ -z "$pilot_part$distill_preset" ] || df_check_run_sh_reads_c2 "$commit"
 if [ -n "$from_run" ]; then
-    # a new run that takes the pilot (generation and distillation) of an earlier run, read only (PILOT_RUN_ID)
+    # a new run that takes the pilot of an earlier run, read only (PILOT_RUN_ID): its generation and distillation, or
+    # with --pilot-part generation its generation only (run.sh distils again with DISTILL_PRESET)
     df_valid_run_id "$from_run" || df_die "--from-run '$from_run': not a run id (<12 hex>-<YYYYMMDDTHHMMSSZ>)"
-    for marker in collect-production.done distill.done; do
+    markers='collect-production.done distill.done'
+    [ "$pilot_part" != generation ] || markers=collect-production.done
+    for marker in $markers; do
         keys=$(df_aws s3api list-objects-v2 --bucket "$bucket" --prefix "$DF_S3_TOP/$from_run/markers/$marker" \
             --max-keys 1 --query 'KeyCount' --output text 2> /dev/null) ||
             df_die "--from-run '$from_run': cannot be listed"
         [[ $keys =~ ^[1-9][0-9]*$ ]] ||
-            df_die "--from-run '$from_run': no markers/$marker (generation and distillation must be done)"
+            df_die "--from-run '$from_run': no markers/$marker (the pilot part it gives must be done)"
     done
 fi
 if [ -n "$resume" ]; then
@@ -114,12 +132,14 @@ if [ ${#subnets[@]} -eq 0 ] || [ -z "${subnets[0]}" ]; then
 fi
 
 max_minutes=$((max_hours * 60))
-userdata=$(df_render_user_data "$commit" "$bucket" "$max_minutes" "$run_id" "$from_run")
+userdata=$(df_render_user_data "$commit" "$bucket" "$max_minutes" "$run_id" "$from_run" "$pilot_part" "$distill_preset")
 cap=$(df_cost_cap "$max_hours" "$max_price")
 
 echo "commit        $commit (runs tools/cloud/p1_pilot/run.sh of it)"
 echo "run id        $run_id"
 [ -z "$from_run" ] || echo "pilot from    s3://$bucket/$DF_S3_TOP/$from_run/ (read only)"
+[ "$pilot_part" != generation ] || echo "pilot part    generation (run.sh distils again)"
+[ -z "$distill_preset" ] || echo "distill       $distill_preset"
 echo "results       s3://$bucket/$DF_S3_TOP/$run_id/ (log/ every minute and at the end, out/ at the end)"
 echo "types         ${type_list[*]} (in this order; one instance, the first that has capacity)"
 echo "max hours     $max_hours (wall cap: shutdown -h +$max_minutes, behaviour terminate; the workload is stopped 5 minutes earlier)"

@@ -1478,6 +1478,17 @@ const G65_PROBES = {
     },
 };
 
+// Step G73 (Moody, the order and the flags of its onResidual; the draw and boost logic is checked by G73_ABILITY_FACTS in
+// gen_closure.py and the recorded battles): the order of Speed Boost's key, no breakable flag, and the two callbacks it has.
+const G73_PROBES = {
+    moody(ability) {
+        expect('moody onResidualOrder', ability.onResidualOrder, 28);
+        expect('moody onResidualSubOrder', ability.onResidualSubOrder, 2);
+        expect('moody flags', ability.flags, {});
+        expect('moody onResidual', typeof ability.onResidual, 'function');
+    },
+};
+
 // Step G75: Pure Power's Attack (the priority and the chain, as Huge Power's probe above) and Battle Armor's critical-hit
 // cancel (data/abilities.ts:355-361, the Shell Armor text). Scope Lens's ratio is probed in checkItems.
 const G75_PROBES = {
@@ -1541,6 +1552,9 @@ function checkAbilities(dex, rows, moveIds, unmodeled, unmodeledMoves) {
                 }
                 if (G65_PROBES[row.id] !== undefined) {
                     G65_PROBES[row.id](ability);
+                }
+                if (G73_PROBES[row.id] !== undefined) {
+                    G73_PROBES[row.id](ability);
                 }
                 if (G75_PROBES[row.id] !== undefined) {
                     G75_PROBES[row.id](ability);
@@ -1715,7 +1729,7 @@ const ENGINE_ROWS = {items: ['focussash', 'floettite', 'psychicseed', 'electrics
         'compoundeyes', 'ironfist', 'sharpness', 'solidrock', 'technician', 'multiscale', 'galewings', 'raindish', 'friendguard', 'cursedbody', 'mirrorarmor', 'auraguard', 'hypercutter', 'scrappy', 'infiltrator', 'queenlymajesty', 'damp', 'sturdy', 'snowcloak', 'sandveil', 'static', 'justified', 'limber', 'solarpower', 'regenerator', 'toxicdebris', 'shadowtag', 'suctioncups', 'guarddog',
         'steadfast', 'weakarmor', 'telepathy', 'voltabsorb', 'punkrock', 'moxie', 'synchronize', 'oblivious', 'keeneye', 'bigpecks', 'magicbounce', 'pressure', 'stancechange',
         'sandforce', 'shellarmor', 'filter', 'stalwart', 'megalauncher', 'hugepower', 'thickfat', 'firemane', 'spicyspray', 'megasol', 'sheerforce', 'illusion', 'symbiosis',
-        'unaware', 'marvelscale', 'waterbubble', 'reckless', 'superluck', 'purepower', 'battlearmor']};
+        'unaware', 'marvelscale', 'waterbubble', 'reckless', 'superluck', 'moody', 'purepower', 'battlearmor']};
 const ENGINE_TARGETS = new Set(['normal', 'any', 'adjacentAlly', 'adjacentFoe', 'self', 'allAdjacentFoes', 'allySide', 'all',
     'randomNormal', 'allAdjacent', 'allies', 'foeSide']); // foeSide: step G37 (the four hazards)
 // The fields of a move that the tables model (gen_closure.py DATA_KEYS and IGNORED_KEYS), nothing else.
@@ -1736,7 +1750,7 @@ function isBoostBlock(b) {
 // effect each. The move's handler id (G2) or its place in the prefix is decided by the caller.
 // The pool rows that carry selfSwitch and that the turn code pivots with a flag of their own (dfi_pivot_moves): U-turn
 // (a G2 row); Flip Turn is a row of the prefix.
-const ENGINE_PIVOTS = ['uturn', 'voltswitch'];
+const ENGINE_PIVOTS = ['uturn', 'voltswitch', 'batonpass'];
 // Step G13: the moves that are another move's handler under another name (gen_closure.py PROTECT_COPIES).
 const PROTECT_COPIES = {detect: 'protect'};
 // Step G46: the four forced-switch moves; their forceSwitch: true is modelled (gen_closure.py G46_FORCE_SWITCH_MOVES).

@@ -644,8 +644,23 @@ static bool dfi_position_flags_ok(uint8_t pf)
            ((pf & DFI_POSFLAG_DRAGON_CHEER_MASK) >> DFI_POSFLAG_DRAGON_CHEER_SHIFT) <= DFI_POSFLAG_DRAGON_CHEER_MAX;
 }
 
+/* A Substitute is made at a quarter of its maker's maximum HP (floor, decision 0032). A pass (decision 0042, copyVolatileFrom)
+ * moves it to another brought member of the side, so the bound of a side is the largest quarter among its brought members
+ * (decision 0042 section 5.3, lead's decision A). */
+static uint32_t dfi_substitute_cap(const dfi_side *side)
+{
+    uint32_t cap = 0u;
+    for (uint32_t m = 0u; m < DUOFORGE_MAX_ROSTER && m < side->member_count; ++m) {
+        if (((uint32_t)side->brought_mask >> m) & 1u) {
+            const uint32_t quarter = (uint32_t)side->members[m].hp_max / 4u;
+            cap = quarter > cap ? quarter : cap;
+        }
+    }
+    return cap;
+}
+
 static bool dfi_tail_pos_valid(const dfi_kind_limits *lim, const dfi_tail_pos *tp, uint32_t flat,
-                               const dfi_member *occupant, const dfi_active_slot *slot)
+                               const dfi_member *occupant, const dfi_active_slot *slot, uint32_t substitute_cap)
 {
     const uint32_t move_count = occupant->move_count;
     const bool encore_ok = tp->last_move <= DFI_TAIL_MOVE_MAX &&
@@ -662,8 +677,8 @@ static bool dfi_tail_pos_valid(const dfi_kind_limits *lim, const dfi_tail_pos *t
     const bool flags_ok = tp->imprison <= DFI_TAIL_FLAG_MAX && tp->must_recharge <= DFI_TAIL_FLAG_MAX &&
                           tp->focus_energy <= DFI_TAIL_FLAG_MAX && tp->charge <= DFI_TAIL_FLAG_MAX &&
                           tp->glaive_rush <= DFI_TAIL_FLAG_MAX;
-    /* A Substitute has at most a quarter of the maximum HP (floor), as it is made. */
-    const bool substitute_ok = tp->substitute_hp <= (uint32_t)occupant->hp_max / 4u;
+    /* A Substitute has at most the largest quarter of the side's brought members (dfi_substitute_cap): a pass moves it. */
+    const bool substitute_ok = tp->substitute_hp <= substitute_cap;
     /* A partial trap: turns, source (another position) and move together, the band only with them. */
     const bool trap_ok = tp->trap_turns <= DFI_TAIL_TRAP_TURNS_MAX && tp->trap_source <= DFI_TAIL_SOURCE_MAX &&
                          tp->trap_source != flat + 1u && tp->trap_move <= lim->move_count &&
@@ -679,6 +694,12 @@ static bool dfi_tail_pos_valid(const dfi_kind_limits *lim, const dfi_tail_pos *t
     /* Rev 4 (tail-rev4-proposal.md section 4.1): the move result is two two-bit values (bits 4-7 are zero); the single-turn
      * markers are the two defined bits, and Rage Powder's belongs to the Follow Me flag that the same move sets (both end
      * together, in the residual, on switch-out and on faint); the counters and the ability state have their bounds. */
+    /* A running lockedmove's move is the occupant's last used one (view audit 2026-10-10): the public record decides the
+     * lockedmove refusal from that last move (dfi_maybe_lockedmove), so a lock without it is a broken state here too. */
+    const uint32_t last_id = tp->last_move != 0u && tp->last_move <= move_count
+                                 ? (uint32_t)occupant->moves[tp->last_move - 1u].move_id
+                                 : UINT32_MAX;
+    const bool lock_last_ok = last_id < DFI_POOL_MOVE_COUNT && dfi_pool_moves[last_id].special == DFI_SPECIAL_LOCKED_MOVE;
     /* An unclassified bit (step G42) only with the result bits of its slot zero: the result is then not known. */
     const bool unclassified_ok =
         ((tp->move_result & DFI_MOVE_RESULT_UNCLASSIFIED_NOW) == 0u || (tp->move_result & 3u) == 0u) &&
@@ -689,11 +710,13 @@ static bool dfi_tail_pos_valid(const dfi_kind_limits *lim, const dfi_tail_pos *t
                          ((tp->single_turn & DFI_SINGLE_TURN_RAGE_POWDER) == 0u || ((uint32_t)slot->flags & DFI_VOL_FOLLOW_ME) != 0u) &&
                          tp->hits_taken <= DFI_TAIL_HITS_TAKEN_MAX && tp->ability_state <= DFI_TAIL_ABILITY_STATE_MAX &&
                          tp->lock_turns <= DFI_TAIL_LOCK_TURNS_MAX &&
-                         (tp->lock_turns == 0u || slot->locked_move != 0u); /* lockedmove (G56): its move is in the slot */
-    /* Rev 5 (lane A, G72b, decision 0015 5ce): the position flags (bit 0 Healing Wish, never set: bits 4-7 are zero; the stats-
-     * raised bit and the Dragon Cheer stage only with an occupant; the stage at most 2). Future Sight stays zero. */
+                         (tp->lock_turns == 0u || slot->locked_move != 0u) && /* lockedmove (G56): its move is in the slot */
+                         (tp->lock_turns == 0u || lock_last_ok);
+    /* Rev 5 (lane A, G72b, decision 0015 5ce; step G76, 5cg): the position flags (bit 0 Healing Wish, never set: bits 5-7 are
+     * zero; the stats-raised bit, the Dragon Cheer stage and Destiny Bond (bit 4) only with an occupant; the stage at most 2).
+     * Future Sight stays zero. */
     const bool posflags_ok = dfi_position_flags_ok(tp->position_flags) &&
-                          ((tp->position_flags & (DFI_POSFLAG_STATS_RAISED | DFI_POSFLAG_DRAGON_CHEER_MASK)) == 0u ||
+                          ((tp->position_flags & (DFI_POSFLAG_STATS_RAISED | DFI_POSFLAG_DRAGON_CHEER_MASK | DFI_POSFLAG_DESTINY_BOND)) == 0u ||
                            slot->occupant < DUOFORGE_MAX_ROSTER);
     const bool rev5_ok = posflags_ok && tp->future_sight == 0u;
     return encore_ok && bars_ok && disable_ok && flags_ok && substitute_ok && trap_ok && leech_ok && stockpile_ok &&
@@ -808,7 +831,7 @@ static dfi_invariant dfi_check_tail(const duoforge_context *ctx, const struct du
                 continue;
             }
             if (!dfi_tail_pos_valid(&lim, tp, s * DUOFORGE_ACTIVE_PER_SIDE + p, &side->members[occupant],
-                                    &side->positions[p])) {
+                                    &side->positions[p], dfi_substitute_cap(side))) {
                 return DFI_INV_TAIL_POSITION;
             }
         }

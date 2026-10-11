@@ -17,8 +17,9 @@ encodes every row once with features.encode_batch under the BC mask, and gives:
 The mask (bc_mask) is the base-value features the loaded library supports at run
 time (observe_ext's `supported`, as SelfPlay reads it). It must equal the support
 the tracker parsed when it folded the rows (lines.LIBRARY_SUPPORTED); a mismatch
-is an explicit error. The shards carry no extension records, so no record bit
-can be in the mask.
+is an explicit error. The shards carry each row's extension record (format version 3), so the mask holds every
+feature the tracker folds; a dataset built without the records (versions 1 and 2) or folded under other folds is
+refused: its rows can hold fold states the encoder would not see.
 """
 import hashlib
 import json
@@ -31,6 +32,7 @@ import duoforge
 from duoforge import _layout, features, teams
 from duoforge_live import lines
 from duoforge_replay import dataset
+from duoforge_replay import split as player_split
 
 TEAM = _layout.CONSTANTS["DUOFORGE_CHOICE_TEAM_SELECTION"]
 OPTIONS = 32
@@ -59,7 +61,7 @@ def bc_mask(context):
                          f"run-time mask {library:#x}: rebuild the library or the checkout")
     # only the bits the tracker folds: a base-value bit it does not fold never reaches a row (its lines stop), so a
     # network would keep random input rows for it and record it as learned
-    return features.BASE_VALUE_FEATURES & library & lines.TRACKER_FOLDS
+    return library & lines.TRACKER_FOLDS
 
 
 def rating_weight(rating):
@@ -151,6 +153,46 @@ def _check_dataset(out, context):
         raise ValueError(f"{out} was built under the library fingerprint {built}, the run's is {run}: rebuild it")
 
 
+def dataset_source(out):
+    """The source of a dataset (its manifest.json): what a format version 2 manifest names ("sheet", "bo1_belief",
+    "drop_sheets"), or "sheet" for format version 1, built before the source existed, when every dataset was a sheet
+    build. ValueError for a later manifest without a source: a belief dataset never passes for sheets."""
+    manifest = json.loads((Path(out) / "manifest.json").read_text(encoding="utf-8"))
+    if "source" in manifest:
+        if manifest["source"] not in dataset.SOURCES:
+            raise ValueError(f"{out}: source {manifest['source']!r} is none of {dataset.SOURCES}")
+        return manifest["source"]
+    if manifest.get("format_version") == 1:
+        return "sheet"
+    raise ValueError(f"{out}: a format version {manifest.get('format_version')} manifest that names no source")
+
+
+def _check_folds(out):
+    """ValueError unless the dataset carries the extension records (format version 3) and was folded under the
+    tracker folds of this checkout."""
+    manifest = json.loads((Path(out) / "manifest.json").read_text(encoding="utf-8"))
+    version = manifest.get("format_version")
+    if not isinstance(version, int) or version < 3:
+        raise ValueError(f"{out} was built without the extension record (format version {version}): since #334 its "
+                         "rows can hold fold states the encoder cannot see; rebuild it")
+    if manifest.get("tracker_folds") != lines.TRACKER_FOLDS:
+        raise ValueError(f"{out}: rows folded under other folds ({manifest.get('tracker_folds')!r}, this checkout "
+                         f"{lines.TRACKER_FOLDS:#x}): rebuild it")
+
+
+def _source_weight(out, source_weights):
+    """The weight of a dataset's source: as named, 1 for sheets otherwise; any other source must be named."""
+    source = dataset_source(out)
+    if source == "drop_sheets":
+        raise ValueError(f"{out}: a drop_sheets dataset holds the test split's games for validation; it never trains")
+    if source in (source_weights or {}):
+        return float(source_weights[source])
+    if source == "sheet":
+        return 1.0
+    raise ValueError(f"{out}: source {source} needs --source-weight {source}=FACTOR (M11 Bo1 spec section 5: never "
+                     "mixed with sheet rows by default)")
+
+
 def _format_weight(fmt, format_weights):
     for prefix, factor in (format_weights or {}).items():
         if fmt.startswith(prefix):
@@ -164,13 +206,17 @@ def _shard_rows(out):
                for s in json.loads((Path(part) / "manifest.json").read_text(encoding="utf-8"))["shards"])
 
 
-def load(dirs, context, mask, format_weights=None, weights="rating"):
+def load(dirs, context, mask, format_weights=None, weights="rating", source_weights=None):
     """The Rows of every shard of the datasets `dirs`, encoded under `mask`, into arrays allocated once (no copy of
-    the whole set). weights: "rating" (rating_weight) or "uniform"; format_weights: {format prefix: factor}."""
+    the whole set). weights: "rating" (rating_weight) or "uniform"; format_weights: {format prefix: factor};
+    source_weights: {dataset source: factor} (dataset_source; a source other than sheet must be named)."""
     if weights not in ("rating", "uniform"):
         raise ValueError(f"weights must be 'rating' or 'uniform', not {weights!r}")
     for out in dirs:
         _check_dataset(out, context)
+        _check_folds(out)
+    source_weight = {out: _source_weight(out, source_weights) for out in dirs}
+    by_players = {out: dataset_source(out) != "sheet" for out in dirs}  # drawn sheets change with each draw
     n = sum(_shard_rows(out) for out in dirs)
     if n == 0:
         raise ValueError(f"no rows in {list(map(str, dirs))}")
@@ -192,7 +238,7 @@ def load(dirs, context, mask, format_weights=None, weights="rating"):
             k = len(shard["game"])
             sl = slice(at, at + k)
             game, side = shard["game"].astype(np.int64), shard["side"].astype(np.int64)
-            obs, slots, pair_mask = features.encode_batch(shard["observation"], shard["domain"], ext=None,
+            obs, slots, pair_mask = features.encode_batch(shard["observation"], shard["domain"], ext=shard["ext"],
                                                           ext_supported=mask)
             is_team = shard["domain"]["kind"] == TEAM
             pairs = (_bits(shard["label_slots"][:, 0], OPTIONS)[:, :, None]
@@ -210,8 +256,11 @@ def load(dirs, context, mask, format_weights=None, weights="rating"):
             rows.has_z[sl] = has_z
             rows.z[sl] = np.where(~has_z, 0.0, np.where(winner == side, 1.0, -1.0))
             rows.weight[sl] = [(rating_weight(int(r)) if weights == "rating" else 1.0)
-                               * _format_weight(f, format_weights) for r, f in zip(rating, fmt)]
-            rows.val[sl] = [split_key(g["sheets"][i]) for i in game]
+                               * _format_weight(f, format_weights) * source_weight[out] for r, f in zip(rating, fmt)]
+            if by_players[out]:
+                rows.val[sl] = [player_split.of_game(tuple(int(h) for h in g["players"][i])) == "test" for i in game]
+            else:
+                rows.val[sl] = [split_key(g["sheets"][i]) for i in game]
             rows.side[sl], rows.fmt[sl], rows.replay[sl] = shard["side"], fmt, g["replay_id"][game]
             rows.point[sl] = shard["point"]
             at += k
