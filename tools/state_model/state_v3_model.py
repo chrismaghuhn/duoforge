@@ -304,7 +304,7 @@ KD = TeamCContext(KIND_TEAM_C_DEV, 6, 4)
 # which tests/test_pool_tables.c recomputes from the pool canonical bytes: the
 # pool layout over the pool data, then the family columns, the handler columns
 # and the moves and abilities that each forme may have.
-POOL_TABLE_HASH = bytes.fromhex('279e3b5643b95fcc4253c66bd1dd9cee712a6157cd3e5e810e088ff0904cdd69')
+POOL_TABLE_HASH = bytes.fromhex('10f8972473fef6e0e3c3a3f4c29bfd46eca685efcd773943e0671e00b5712f22')
 KIND_POOL, KIND_POOL_DEV = 6, 7
 
 
@@ -1243,7 +1243,7 @@ def tail_reserved_offsets():
     assert len(offs) == 25
     rev5_reserve = TAIL_REV4_SIZE + TAIL5_SIZE - TAIL5_RESERVED_SIZE
     offs += [rev5_reserve + i for i in range(TAIL5_ALLY_OFF + 4, TAIL5_RESERVED_SIZE)]
-    assert len(offs) == 41
+    assert len(offs) == 33
     return offs
 
 
