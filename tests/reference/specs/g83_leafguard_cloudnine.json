@@ -1,0 +1,20 @@
+{
+  "name": "g83_leafguard_cloudnine",
+  "purpose": "Step G79 x G83: a Leaf Guard holder (Meganium) under sun (Torkoal's Drought) while a Cloud Nine holder (Drampa) stands: Cloud Nine suppresses the weather for every Pokemon, so no sun reaches Leaf Guard and Drampa's Thunder Wave lands on Meganium.",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,00000000000000000000000000000000000000000000000000000000000083a9",
+  "teams": [
+    "Meganium (M) @ Miracle Seed\nAbility: Leaf Guard\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Def\nAdamant Nature\n- Seed Bomb\n- Energy Ball\n- Earthquake\n- Protect\n\nTorkoal (M) @ Leftovers\nAbility: Drought\nLevel: 50\nEVs: 32 HP / 2 Def / 32 SpA\nModest Nature\n- Earthquake\n- Sludge Bomb\n- Protect\n\nGarchomp (M) @ Life Orb\nAbility: Rough Skin\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Earthquake\n- Dragon Claw\n- Protect\n\nCeruledge (M) @ Grassy Seed\nAbility: Flash Fire\nLevel: 50\nEVs: 31 HP / 7 Atk / 24 Def / 3 SpD / 1 Spe\nAdamant Nature\n- Protect\n\nMilotic (F) @ Mystic Water\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Coil\n\nPolitoed (M) @ Expert Belt\nAbility: Drizzle\nLevel: 50\nEVs: 32 HP / 2 Def / 32 SpD\nCalm Nature\n- Earthquake\n- Focus Blast\n- Protect",
+    "Drampa (M) @ Sitrus Berry\nAbility: Cloud Nine\nLevel: 50\nEVs: 32 HP / 32 Def / 2 SpD\nCalm Nature\n- Thunder Wave\n- Protect\n- Sunny Day\n\nLeafeon (M) @ Life Orb\nAbility: Chlorophyll\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Spe\nAdamant Nature\n- Yawn\n- Seed Bomb\n- Protect\n\nGengar (M) @ Focus Sash\nAbility: Cursed Body\nLevel: 50\nEVs: 32 SpA / 2 SpD / 32 Spe\nModest Nature\n- Shadow Ball\n- Sludge Bomb\n- Thunderbolt\n- Protect\n\nClefable (F) @ Leftovers\nAbility: Magic Guard\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nModest Nature\n- Moonblast\n- Protect\n\nSharpedo (M) @ Rocky Helmet\nAbility: Rough Skin\nLevel: 50\nEVs: 32 HP / 2 Def / 32 Spe\nJolly Nature\n- Liquidation\n- Protect\n- Snarl\n\nGholdengo @ Expert Belt\nAbility: Good as Gold\nLevel: 50\nEVs: 17 HP / 2 Def / 17 SpA / 16 SpD / 14 Spe\nModest Nature\n- Shadow Ball\n- Protect"
+  ],
+  "plan": {
+    "p1": [
+      "move 2 2, move 2 2"
+    ],
+    "p2": [
+      "move 1 1, move 3"
+    ],
+    "max_steps": 3
+  }
+}

@@ -1,0 +1,20 @@
+{
+  "name": "g83_ironball_speed",
+  "purpose": "Step G83, Iron Ball and Speed (M04): a Milotic holder (Iron Ball, Speed about 101, half about 50) moves before a Torkoal (Speed about 40); at a quarter (about 25) it would move after it. The order of the Coil and the Sludge Bomb shows it.",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,00000000000000000000000000000000000000000000000000000000000083a8",
+  "teams": [
+    "Milotic (F) @ Iron Ball\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 32 Def / 2 SpD\nCalm Nature\n- Coil\n- Protect\n\nGarchomp (M) @ Life Orb\nAbility: Rough Skin\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Earthquake\n- Dragon Claw\n- Protect\n\nChesnaught (M) @ Sitrus Berry\nAbility: Bulletproof\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Seed Bomb\n- Earthquake\n- Focus Blast\n- Protect\n\nCeruledge (M) @ Grassy Seed\nAbility: Flash Fire\nLevel: 50\nEVs: 31 HP / 7 Atk / 24 Def / 3 SpD / 1 Spe\nAdamant Nature\n- Protect\n\nRaichu (F) @ Air Balloon\nAbility: Lightning Rod\nLevel: 50\nEVs: 29 HP / 5 Def / 32 Spe\nTimid Nature\n- Substitute\n- Thunderbolt\n- Protect\n\nPolitoed (M) @ Mystic Water\nAbility: Drizzle\nLevel: 50\nEVs: 32 HP / 2 Def / 32 SpD\nCalm Nature\n- Earthquake\n- Focus Blast\n- Protect",
+    "Torkoal (M) @ Sitrus Berry\nAbility: Shell Armor\nLevel: 50\nEVs: 32 HP / 2 Def / 32 SpA\nModest Nature\n- Sludge Bomb\n- Earthquake\n- Protect\n\nPolitoed (M) @ Mystic Water\nAbility: Drizzle\nLevel: 50\nEVs: 32 HP / 2 Def / 32 SpD\nCalm Nature\n- Earthquake\n- Focus Blast\n- Protect\n\nGengar (M) @ Focus Sash\nAbility: Cursed Body\nLevel: 50\nEVs: 32 SpA / 2 SpD / 32 Spe\nModest Nature\n- Shadow Ball\n- Sludge Bomb\n- Thunderbolt\n- Protect\n\nClefable (F) @ Leftovers\nAbility: Magic Guard\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nModest Nature\n- Moonblast\n- Protect\n\nSharpedo (M) @ Rocky Helmet\nAbility: Rough Skin\nLevel: 50\nEVs: 32 HP / 2 Def / 32 Spe\nJolly Nature\n- Liquidation\n- Protect\n- Snarl\n\nGholdengo @ Expert Belt\nAbility: Good as Gold\nLevel: 50\nEVs: 17 HP / 2 Def / 17 SpA / 16 SpD / 14 Spe\nModest Nature\n- Shadow Ball\n- Protect"
+  ],
+  "plan": {
+    "p1": [
+      "move 1, move 3"
+    ],
+    "p2": [
+      "move 1 1, move 3"
+    ],
+    "max_steps": 2
+  }
+}

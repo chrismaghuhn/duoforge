@@ -1,0 +1,24 @@
+{
+  "name": "g83_ironball_spikes",
+  "purpose": "Step G83, Iron Ball and Spikes: Staraptor (Flying, Iron Ball) switches in on the side that Garchomp's Spikes covers; the Iron Ball grounds it, so it takes the Spikes damage (dfi_grounded).",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,00000000000000000000000000000000000000000000000000000000000083a6",
+  "teams": [
+    "Chesnaught (M) @ Sitrus Berry\nAbility: Bulletproof\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Seed Bomb\n- Earthquake\n- Focus Blast\n- Protect\n\nGarchomp (M) @ Life Orb\nAbility: Rough Skin\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Earthquake\n- Dragon Claw\n- Protect\n\nCeruledge (M) @ Grassy Seed\nAbility: Flash Fire\nLevel: 50\nEVs: 31 HP / 7 Atk / 24 Def / 3 SpD / 1 Spe\nAdamant Nature\n- Protect\n\nStaraptor (F) @ Iron Ball\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 2 SpD / 32 Spe\nJolly Nature\n- Brave Bird\n- Hurricane\n- Protect\n\nMilotic (F) @ Leftovers\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Coil\n\nPolitoed (M) @ Mystic Water\nAbility: Drizzle\nLevel: 50\nEVs: 32 HP / 2 Def / 32 SpD\nCalm Nature\n- Earthquake\n- Focus Blast\n- Protect",
+    "Garchomp (M) @ Expert Belt\nAbility: Rough Skin\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Spikes\n- Earthquake\n- Protect\n\nPolitoed (M) @ Mystic Water\nAbility: Drizzle\nLevel: 50\nEVs: 32 HP / 2 Def / 32 SpD\nCalm Nature\n- Earthquake\n- Focus Blast\n- Protect\n\nGengar (M) @ Life Orb\nAbility: Cursed Body\nLevel: 50\nEVs: 32 SpA / 2 SpD / 32 Spe\nModest Nature\n- Shadow Ball\n- Sludge Bomb\n- Thunderbolt\n- Protect\n\nRaichu (F) @ Air Balloon\nAbility: Lightning Rod\nLevel: 50\nEVs: 29 HP / 5 Def / 32 Spe\nTimid Nature\n- Substitute\n- Thunderbolt\n- Protect\n\nSharpedo (M) @ Sitrus Berry\nAbility: Rough Skin\nLevel: 50\nEVs: 32 HP / 2 Def / 32 Spe\nJolly Nature\n- Liquidation\n- Protect\n- Snarl\n\nGholdengo @ Focus Sash\nAbility: Good as Gold\nLevel: 50\nEVs: 17 HP / 2 Def / 17 SpA / 16 SpD / 14 Spe\nModest Nature\n- Shadow Ball\n- Protect"
+  ],
+  "plan": {
+    "p1": [
+      "move 2 1, move 3",
+      "switch 4, move 3",
+      "switch 4, move 3"
+    ],
+    "p2": [
+      "move 1, move 2 1",
+      "move 3, move 3",
+      "move 3, move 3"
+    ],
+    "max_steps": 3
+  }
+}

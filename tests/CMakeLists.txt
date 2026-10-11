@@ -275,8 +275,8 @@ foreach(_gen IN ITEMS
         "closure_tables.c=490de42298e34cfd38192d979fd022367bf53693a5fa1855f1cc6ad034d8450a"
         "extended_tables.h=b2abef243fcbfdd87654940076b9fe2fe80b117d74893a7567741f26b9075a7d"
         "extended_tables.c=9e736fa467713283418c4edf8f56b8d844452e596ba422adbd52483d20f7cc17"
-        "pool_tables.h=a3b0ef71ce757364e7323b84808216c010ee12a8d257eb2271a31f211cf7892b"
-        "pool_tables.c=da28af20d084a749f620268093d0ef46c236cc6d4c8632b1e7b531fef8db17c1")
+        "pool_tables.h=6342d840a6e3c7819eb2e1addad67e84a6eb4261868f9ce7f5e34a2c17e641ce"
+        "pool_tables.c=3d87d1a612bbeeaff4bb8ecaba75ec078fd695b95eb950bbd5f809e576d6fdc9")
     string(REPLACE "=" ";" _parts "${_gen}")
     list(GET _parts 0 _file)
     list(GET _parts 1 _expected)
@@ -831,6 +831,8 @@ duoforge_add_test(NAME duoforge.state.pool_g73 SOURCES test_pool_g73.c WHITEBOX 
 # pops, the immunity, the switch-in line ITEM_SHOWN) and the fold that ignores ITEM_SHOWN.
 duoforge_add_test(NAME duoforge.state.pool_g67 SOURCES test_pool_g67.c WHITEBOX TIMEOUT 120)
 
+# Step G83 (decision 0015 entry 5bt): Bulletproof, Rivalry, Leaf Guard and Iron Ball (their rows, the five recorded battles; white-box).
+duoforge_add_test(NAME duoforge.state.pool_g83 SOURCES test_pool_g83.c WHITEBOX TIMEOUT 60)
 # Step G71 (decision 0034, decision 0015 5bn): Attract's source bytes, the state check, the public bit, the from-view refusal and the
 # clear of the holder's byte (white-box; the volatile's draws wait for G73's site).
 duoforge_add_test(NAME duoforge.state.pool_g71 SOURCES test_pool_g71.c WHITEBOX LIBS duoforge_batch TIMEOUT 60)

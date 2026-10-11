@@ -1483,7 +1483,7 @@ const ORDER_CALLBACKS = ['onModifyPriority', 'onFractionalPriority', 'onModifySp
 const ENGINE_ORDER = {
     ability: {prankster: ['onModifyPriority'], galewings: ['onModifyPriority'], unburden: ['condition.onModifySpe'], sandrush: ['onModifySpe'],
         swiftswim: ['onModifySpe'], slushrush: ['onModifySpe'], chlorophyll: ['onModifySpe']},
-    item: {choicescarf: ['onModifySpe']},
+    item: {choicescarf: ['onModifySpe'], ironball: ['onModifySpe']},
 };
 function orderCallbacks(raw) {
     return [...ORDER_CALLBACKS.filter((k) => raw[k] !== undefined),
@@ -1773,8 +1773,8 @@ function checkFormes(dex, validator, rows, moves, abilities) {
 // The UNMODELED markers of gen_closure.py --pool, re-derived from the pinned data in this file's own words: the
 // special column of a move, the handler column of an item and of an ability, and the lists of unmodelled features.
 // implemented in the turn code by id (G4: Focus Sash, Rock Head; G12: Floettite, Flower Veil, Fairy Aura)
-const ENGINE_ROWS = {items: ['airballoon', 'focussash', 'floettite', 'psychicseed', 'electricseed', 'mistyseed', 'expertbelt', 'ejectbutton', 'widelens', 'muscleband', 'wiseglasses', 'brightpowder', 'redcard', 'lumberry', 'mentalherb', 'damprock', 'heatrock', 'smoothrock', 'icyrock', 'terrainextender', 'scopelens'],
-    abilities: ['magicguard', 'rockhead', 'flowerveil', 'fairyaura', 'roughskin', 'poisontouch', 'thermalexchange', 'stickyhold', 'trace',
+const ENGINE_ROWS = {items: ['airballoon', 'ironball', 'focussash', 'floettite', 'psychicseed', 'electricseed', 'mistyseed', 'expertbelt', 'ejectbutton', 'widelens', 'muscleband', 'wiseglasses', 'brightpowder', 'redcard', 'lumberry', 'mentalherb', 'damprock', 'heatrock', 'smoothrock', 'icyrock', 'terrainextender', 'scopelens'],
+    abilities: ['magicguard', 'bulletproof', 'rivalry', 'leafguard', 'rockhead', 'flowerveil', 'fairyaura', 'roughskin', 'poisontouch', 'thermalexchange', 'stickyhold', 'trace',
         'levitate', 'sandrush', 'swiftswim', 'slushrush', 'chlorophyll', 'innerfocus', 'liquidvoice',
         'flamebody', 'clearbody', 'hospitality', 'overcoat', 'soundproof', 'unnerve', 'speedboost',
         'compoundeyes', 'ironfist', 'sharpness', 'solidrock', 'technician', 'multiscale', 'galewings', 'raindish', 'friendguard', 'cursedbody', 'mirrorarmor', 'auraguard', 'hypercutter', 'scrappy', 'infiltrator', 'queenlymajesty', 'damp', 'sturdy', 'snowcloak', 'sandveil', 'static', 'justified', 'limber', 'solarpower', 'regenerator', 'toxicdebris', 'shadowtag', 'suctioncups', 'guarddog',
