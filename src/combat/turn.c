@@ -8702,12 +8702,15 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
     }
     if (status_move) {
         const duoforge_status res = dfi_status_effects(r, user, move_id, md, targets, hit, count);
-        if (res == DUOFORGE_OK && spread) {
+        /* Only a primary boost's spread list is recomputed here (Howl). Any other status spread move keeps the list its own
+         * effects wrote: the Teeter Dance confusion sets 0 when no target was affected (dfi_status_effects, CONFUSE branch,
+         * sim/battle-actions.ts:955-974), and this recomputation would overwrite that 0 with the hit mask (step G92 vs G80). */
+        if (res == DUOFORGE_OK && spread && md->boost_role == DFI_BOOST_ROLE_PRIMARY_TARGET) {
             /* A primary boost (Howl) that changed no stat of any target fails the whole hit loop: no target is left for the
              * [spread] line (sim/battle-actions.ts:614-618, hitTargets). If some stat changed, every target that reached the
              * hit stays, including one whose own stat was already at its maximum (recorded: fz_90_7 step 21 and fz_90_37 step 8). */
             bool changed = true;
-            if (md->boost_role == DFI_BOOST_ROLE_PRIMARY_TARGET && r->events != NULL) {
+            if (r->events != NULL) {
                 changed = false;
                 for (uint32_t k = r->last_move + 1u; k < r->events->count; ++k) {
                     const duoforge_event *ev = &r->events->rec[k];
