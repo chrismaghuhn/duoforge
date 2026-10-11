@@ -10,6 +10,12 @@ against itself (duoforge.teams.check). What it accepts goes into the registry as
 but needs a mechanic the library does not support yet is pending, with its blockers; anything else is left out with its
 status. Nothing decides a rule here.
 
+    python tools/reference/import_vgcpastes.py --recheck-pending [--report FILE] [--write]
+
+The second form needs no sheet: it decides the teams of data/teams_pending again (a later engine supports more). With
+--write the teams the setup accepts now move into the registry (the same paste, the same id, an entry that says so) and
+the others stay with their current blockers, the first of which is the first refusal reason.
+
 A team the registry or an earlier row already has (the same species, items, abilities, natures and moves; EVs and genders
 aside) is a duplicate: the first one is kept, in the order Reg M-C, M-B, M-B featured, M-A, M-A featured, and within a tab
 the sheet's. A paste whose id the registry has is skipped. Without --write nothing is written; --report writes every
@@ -363,6 +369,104 @@ def pending_problems(root, tables_for):
     return found
 
 
+def first_reason(blockers):
+    """The first refusal reason of a pending team's blockers without its set number ("move Poltergeist"), the key of
+    the aggregate counts."""
+    return re.sub(r'^set \d+: ', '', blockers[0])
+
+
+def recheck_pending(root, check, known=None):
+    """The engine's present verdict on every team of data/teams_pending of `root`: a list of dicts with id, entry (the
+    pending entry as it is), sets, status ('pool' = it passes the setup now, 'pending' = still unsupported, else the
+    engine's other verdict, or 'duplicate' of a registry team added since), blockers (the current ones, the first is the
+    first refusal reason) and detail. Reads and decides only; `check(text)` is engine_check's. `known` is the
+    content_key -> id map of the registry (default: read from `root`)."""
+    path = os.path.join(root, PENDING_DIR)
+    index = read_pending(path)
+    if known is None:
+        known = {}
+        for e in team_registry.entries(root):
+            sets, _ = team_registry.read_team(root, e['id'])
+            known.setdefault(content_key(sets), e['id'])
+    out, seen = [], {}
+    for entry in index['teams']:
+        with open(os.path.join(path, entry['id'] + '.txt'), 'rb') as f:
+            data = f.read()
+        if team_registry.sha256_of(data) != entry['sha256']:
+            raise ValueError('%s.txt is not the sha256 of its entry' % entry['id'])
+        sets = team_registry.split_sets(data.decode('utf-8'))
+        d = {'id': entry['id'], 'entry': entry, 'sets': sets, 'status': None, 'blockers': None, 'detail': None}
+        out.append(d)
+        key = content_key(sets)
+        twin = known.get(key) or seen.get(key)
+        if twin is not None:
+            d['status'], d['detail'] = 'duplicate', twin
+            d['blockers'] = ['the same team as %s' % twin]
+            continue
+        verdict, info = check(data.decode('utf-8'))
+        d['status'] = verdict
+        if verdict == 'pending':
+            if not info:
+                raise ValueError('%s: the engine refuses it as unsupported, but no blocker is named' % d['id'])
+            d['blockers'] = info
+        elif verdict != 'pool':
+            d['detail'], d['blockers'] = info, [str(info)]
+        if verdict == 'pool':
+            seen[key] = d['id']
+    return out
+
+
+def moved_entry(d, today):
+    """The registry entry of a pending team that the engine accepts now: the pending entry without its blockers, its
+    notes saying that the setup refused it as unsupported at the import and accepts it on `today`."""
+    entry = {k: v for k, v in d['entry'].items() if k != 'blockers'}
+    refused = 'refuses it as unsupported (what it needs is in "blockers")'
+    if refused not in entry['notes']:
+        raise ValueError('%s: the notes do not say that the setup refuses it' % d['id'])
+    entry['notes'] = entry['notes'].replace(
+        refused, 'refused it as unsupported then (a pending team of data/teams_pending) and accepts it on %s' % today, 1)
+    return entry
+
+
+def apply_recheck(root, decisions, today, tables_for=None):
+    """Moves every 'pool' team of `decisions` (recheck_pending) from data/teams_pending into the registry of `root` (the
+    same paste, the same sha256, an entry like the one import_vgcpastes writes) and writes the pending index again with
+    the others and their current blockers; returns (moved ids, remaining ids). Every moved team is checked first as
+    write() checks it (nothing is written when one fails); a registry file is created exclusively and never changed."""
+    if tables_for is None:
+        import trace_to_c
+        cache = {}
+
+        def tables_for(team_c):
+            if team_c not in cache:
+                cache[team_c] = trace_to_c.load_tables(ROOT, team_c)
+            return cache[team_c]
+    moving = [d for d in decisions if d['status'] == 'pool']
+    bad = []
+    for d in moving:
+        try:
+            team_registry.check_new(root, d['id'])
+        except team_registry.RegistryError as e:
+            bad.append('%s: %s' % (d['id'], e))
+            continue
+        for category, message in team_registry.team_problems(team_registry.file_text(d['sets']).decode('utf-8'),
+                                                             tables_for):
+            bad.append('%s: %s: %s' % (d['id'], category, message))
+    if bad:
+        raise team_registry.RegistryError('nothing moved: ' + '; '.join(bad))
+    for d in moving:
+        team_registry.add_team(root, moved_entry(d, today), d['sets'])
+    path = os.path.join(root, PENDING_DIR)
+    remaining = [d for d in decisions if d['status'] != 'pool']
+    old = read_pending(path)
+    index = {'pending': PENDING_FORMAT, 'source': old['source'], 'date': today,
+             'teams': [{**d['entry'], 'blockers': d['blockers']} for d in remaining]}
+    for d in moving:
+        os.remove(os.path.join(path, d['id'] + '.txt'))
+    team_registry.replace_file(os.path.join(path, 'index.json'), team_registry.dumps_index(index))
+    return [d['id'] for d in moving], [d['id'] for d in remaining]
+
+
 def engine_check(context):
     """check(text) for decide: the setup of the team against itself under the context (duoforge.teams.check)."""
     from duoforge import _layout, data, teams
@@ -436,9 +540,13 @@ def engine_check(context):
 
 def main(argv=None):
     p = argparse.ArgumentParser(prog='import_vgcpastes.py', description=__doc__.split('\n')[0])
-    p.add_argument('--sheet-dir', required=True, help='the HTML export of the sheet, one file per tab')
-    p.add_argument('--pastes', required=True, help='the fetched pastes, <pokepast.es id>.txt')
-    p.add_argument('--checkout', required=True, help='the pinned Showdown checkout (ps_species.js)')
+    p.add_argument('--sheet-dir', default=None, help='the HTML export of the sheet, one file per tab')
+    p.add_argument('--pastes', default=None, help='the fetched pastes, <pokepast.es id>.txt')
+    p.add_argument('--checkout', default=None, help='the pinned Showdown checkout (ps_species.js)')
+    p.add_argument('--recheck-pending', action='store_true',
+                   help='decide the teams of data/teams_pending again (no sheet, pastes or checkout needed): with '
+                        '--write the ones the engine accepts now move into the registry and the others get their '
+                        'current blockers')
     p.add_argument('--node', default='node')
     p.add_argument('--report', default=None, help='a JSON file of every decision (outside the repository)')
     p.add_argument('--write', action='store_true', help='add the pool teams to the registry')
@@ -455,6 +563,10 @@ def main(argv=None):
     if args.report:
         refuse_repository(args.report)
     today = args.today or datetime.date.today().isoformat()
+    if args.recheck_pending:
+        return main_recheck(args, today, duoforge, _layout)
+    if not (args.sheet_dir and args.pastes and args.checkout):
+        p.error('--sheet-dir, --pastes and --checkout are required (except with --recheck-pending)')
     sheet_counts = {}
     rows = read_sheet(args.sheet_dir, sheet_counts)
     pastes = {}
@@ -490,6 +602,27 @@ def main(argv=None):
     if args.pending_dir:
         pending = write_pending(os.path.join(args.root, PENDING_DIR), decisions, today)
         print('import_vgcpastes: %d pending teams in %s' % (len(pending), PENDING_DIR))
+    return 0
+
+
+def main_recheck(args, today, duoforge, _layout):
+    with duoforge.Context(data_kind=_layout.CONSTANTS['DUOFORGE_DATA_KIND_POOL']) as context:
+        decisions = recheck_pending(args.root, engine_check(context))
+    counts, reasons = {}, {}
+    for d in decisions:
+        counts[d['status']] = counts.get(d['status'], 0) + 1
+        if d['status'] != 'pool':
+            r = first_reason(d['blockers'])
+            reasons[r] = reasons.get(r, 0) + 1
+    reasons = dict(sorted(reasons.items(), key=lambda kv: (-kv[1], kv[0])))
+    print(json.dumps({'status': counts, 'first_reason': reasons}))
+    if args.report:
+        with open(args.report, 'w', encoding='utf-8') as f:
+            json.dump([{'id': d['id'], 'status': d['status'], 'blockers': d['blockers'], 'detail': d['detail']}
+                       for d in decisions], f, indent=1)
+    if args.write:
+        moved, remaining = apply_recheck(args.root, decisions, today)
+        print('import_vgcpastes: %d teams moved into the registry, %d stay pending' % (len(moved), len(remaining)))
     return 0
 
 
