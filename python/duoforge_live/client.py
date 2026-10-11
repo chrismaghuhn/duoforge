@@ -158,6 +158,7 @@ class Bot:
         self.finished = set()  # battle rooms that ended: later lines (|deinit|) are ignored
         self.confirmed = set()  # (series room, game number) answered with /confirmready
         self.challenged = False
+        self.named = False  # the server confirmed the name (updateuser ... 1)
 
     async def run(self):
         import asyncio
@@ -216,6 +217,8 @@ class Bot:
                 assertion = self.login(self.config.name, challstr, os.environ.get("DUOFORGE_PS_PASSWORD"))
                 await self.send(f"|/trn {self.config.name},0,{assertion}")
             elif kind == "updateuser":
+                if len(parts) > 3 and parts[3] == "1":
+                    self.named = True  # logged in under the bot's name (the arena waits for it)
                 if len(parts) > 3 and parts[3] == "1" and self.config.challenge and not self.challenged:
                     self.challenged = True
                     team = self._pick_team()
