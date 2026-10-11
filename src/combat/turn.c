@@ -7440,15 +7440,10 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
         if (count != 1u) {
             return DUOFORGE_E_UNSUPPORTED;
         }
-        if (md->special == DFI_SPECIAL_MEMENTO) {
-            /* Memento's selfdestruct 'ifHit' (step G92): the absorbed target's damage is true (spreadMoveHit's
-             * HIT_SUBSTITUTE, battle-actions.ts:1062-1065), not false, so the user faints after the -fail of the Substitute
-             * (runMoveEffects' selfdestruct check, battle-actions.ts:1287). */
-            const duoforge_status fst = dfi_queue_self_faint(r, user);
-            if (fst != DUOFORGE_OK) {
-                return fst;
-            }
-        }
+        /* Memento into a Substitute does not faint its user (step G92, recorded in g92_memento_sub): the Substitute's
+         * onTryPrimaryHit returns null, spreadMoveHit leaves the target at null, which is not HIT_SUBSTITUTE, so the target is
+         * false (battle-actions.ts:1058-1070) and runMoveEffects skips it before its selfdestruct check (:1287 is inside the
+         * target loop after `if (target === false) continue`). */
         return dfi_status_hit_end(r);
     }
     if (md->special == DFI_SPECIAL_QUASH) {
