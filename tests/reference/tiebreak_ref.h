@@ -6693,6 +6693,14 @@ static const df_tb_stop tb_g94_bunker_poison[] = {
     {3u, 0u, 1u, 2u, {4u, 4u}, {735u, 723u}, {0x4050aaaaaaaaaaabull, 0x404f515d457515d4ull}},
     {4u, 0u, 2u, 2u, {4u, 4u}, {667u, 697u}, {0x404db95781e6ff75ull, 0x404e4f613d84f614ull}},
 };
+static const df_tb_stop tb_g96_psychic_terrain_block[] = {
+    {0u, 0u, 2u, 3u, {6u, 6u}, {1177u, 1216u}, {0x4059000000000000ull, 0x4059000000000000ull}},
+    {1u, 0u, 1u, 3u, {4u, 4u}, {796u, 794u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {2u, 0u, 2u, 2u, {4u, 4u}, {715u, 794u}, {0x404cad9bf43ad9bfull, 0x4050aaaaaaaaaaabull}},
+    {3u, 0u, 2u, 2u, {4u, 4u}, {697u, 667u}, {0x404bda9ec467dc8full, 0x404bfcfbb0b34944ull}},
+    {5u, 0u, 1u, 1u, {4u, 3u}, {679u, 596u}, {0x404b07a19494df5full, 0x4049000000000000ull}},
+    {6u, 0u, 1u, 1u, {4u, 3u}, {646u, 596u}, {0x4049221d2aa68719ull, 0x4049000000000000ull}},
+};
 static const df_tb_stop tb_h18_absorbed_secondary_psychic_sitrus_mirror[] = {
     {0u, 0u, 3u, 4u, {6u, 6u}, {1190u, 1190u}, {0x4059000000000000ull, 0x4059000000000000ull}},
     {1u, 0u, 2u, 3u, {4u, 4u}, {746u, 806u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
@@ -8888,6 +8896,7 @@ static const df_tb_battle tb_battles[] = {
     {"g94_bunker_already_poisoned", 4u, tb_g94_bunker_already_poisoned, sizeof tb_g94_bunker_already_poisoned / sizeof tb_g94_bunker_already_poisoned[0]},
     {"g94_bunker_noncontact", 3u, tb_g94_bunker_noncontact, sizeof tb_g94_bunker_noncontact / sizeof tb_g94_bunker_noncontact[0]},
     {"g94_bunker_poison", 4u, tb_g94_bunker_poison, sizeof tb_g94_bunker_poison / sizeof tb_g94_bunker_poison[0]},
+    {"g96_psychic_terrain_block", 6u, tb_g96_psychic_terrain_block, sizeof tb_g96_psychic_terrain_block / sizeof tb_g96_psychic_terrain_block[0]},
     {"h18_absorbed_secondary_psychic_sitrus_mirror", 27u, tb_h18_absorbed_secondary_psychic_sitrus_mirror, sizeof tb_h18_absorbed_secondary_psychic_sitrus_mirror / sizeof tb_h18_absorbed_secondary_psychic_sitrus_mirror[0]},
     {"h18_heal_pulse_full_hp_sitrus_mirror", 3u, tb_h18_heal_pulse_full_hp_sitrus_mirror, sizeof tb_h18_heal_pulse_full_hp_sitrus_mirror / sizeof tb_h18_heal_pulse_full_hp_sitrus_mirror[0]},
     {"h18_imprison_sitrus_mirror", 3u, tb_h18_imprison_sitrus_mirror, sizeof tb_h18_imprison_sitrus_mirror / sizeof tb_h18_imprison_sitrus_mirror[0]},
@@ -9024,7 +9033,7 @@ static const df_tb_battle tb_battles[] = {
     {"xr3_sheercold_sub_miss", 3u, tb_xr3_sheercold_sub_miss, sizeof tb_xr3_sheercold_sub_miss / sizeof tb_xr3_sheercold_sub_miss[0]},
 };
 
-/* 6072 stops: 166 of an ended battle; decided by the count 1486,
- * the HP percentage 1886, the total HP 2351, a tie 183;
- * winners: side 0 2867, side 1 3022, tie 183 */
+/* 6078 stops: 166 of an ended battle; decided by the count 1488,
+ * the HP percentage 1888, the total HP 2353, a tie 183;
+ * winners: side 0 2870, side 1 3025, tie 183 */
 #endif
