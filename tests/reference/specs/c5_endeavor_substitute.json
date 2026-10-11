@@ -1,6 +1,6 @@
 {
   "name": "c5_endeavor_substitute",
-  "purpose": "C5 Endeavor (decision 0015 entry 5cy): turn 1 Surf lowers Quaquaval (slot 1) below Greninja's HP and gives Greninja a Substitute; turn 2 Quaquaval uses Endeavor on Greninja: the immunity judges Greninja's real HP, and the damage (target HP minus user HP) goes to the Substitute (moves.ts:18341-18369). Mirror of team V.",
+  "purpose": "C5 Endeavor (decision 0015 entry 5cy): turn 1 Quaquaval's Endeavor on Greninja is immune (the user's 160 HP is not below Greninja's 149), Greninja has a Substitute, and the foes' Surf lowers Quaquaval; turn 2 Quaquaval's Endeavor on Greninja is not immune: the damage (target HP minus user HP) goes to the Substitute (moves.ts:18341-18369). Mirror of team V.",
   "data": "pool",
   "format": "gen9championsvgc2026regmc",
   "seed": "sodium,000000000000000000000000000000000000000000000000000000000000c5e3",
@@ -10,7 +10,7 @@
   ],
   "plan": {
     "p1": [
-      "move 4, move 1",
+      "move 1 2, move 1",
       "move 1 2, move 1"
     ],
     "p2": [
