@@ -410,7 +410,7 @@ def parse_move(mid, base, champ, ext=False, pool=False, unmodeled=None):
                 fail('move %s: %s is not the pinned text' % (mid, name))
     if pool and handled[0] == 'AURORA_VEIL' and ('onTry' not in f or norm(f['onTry'][1]) != AURORA_VEIL_ONTRY):
         fail('move %s: onTry is not the pinned text' % mid)
-    if pool and handled[0] in G20_PROTECT_HANDLERS:
+    if pool and handled[0] in G20_PROTECT_HANDLERS + G94_HANDLERS:
         punish = PROTECT_VARIANT_PUNISHMENT[handled[0]]
         if 'condition' not in f or norm(f['condition'][1]) != PROTECT_VARIANT_CONDITION % (punish, punish):
             fail('move %s: the condition is not the pinned text' % mid)
@@ -1466,7 +1466,13 @@ PROTECT_VARIANT_CONDITION = (
     "if (source.volatiles['lockedmove'].duration === 2) { delete source.volatiles['lockedmove']; } } "
     "if (this.checkMoveMakesContact(move, source, target)) { %s } return this.NOT_FAIL; }, "
     "onHit(target, source, move) { if (move.isZOrMaxPowered && this.checkMoveMakesContact(move, source, target)) { %s } }, },")
-PROTECT_VARIANT_PUNISHMENT = {'SPIKY_SHIELD': 'this.damage(source.baseMaxhp / 8, source, target);'}
+PROTECT_VARIANT_PUNISHMENT = {'SPIKY_SHIELD': 'this.damage(source.baseMaxhp / 8, source, target);',
+                              'BANEFUL_BUNKER': "source.trySetStatus('psn', target);"}
+# Step G94 (decision 0015 5cv, decision 0061): Baneful Bunker (data/moves.ts:985-1037) is the same Protect variant with poison
+# on a contact attacker; its only learner in the pool is Toxapex, whose Limber and Regenerator are marked (G39, G20-era
+# Regenerator). Its handler is a row of its own, appended after G78 (before UNMODELED). The template check above covers
+# the whole condition text with the punishment filled in; the move's copied fields are Protect's, as for Spiky Shield.
+G94_HANDLERS = ['BANEFUL_BUNKER']
 # Step G66, King's Shield: the pinned condition (data/moves.ts:9905-9955), whitespace aside. Unlike Spiky Shield's, its
 # onTryHit passes a Status move (checkMoveBypassesProtect with blockStatus false) and its contact drop is -1 Attack on the
 # attacker (both in onTryHit and in onHit for a Z-move). The move's own flags differ from Protect's (failinstruct), so only
@@ -2235,6 +2241,7 @@ SPECIAL_P = dict(SPECIAL_C, **{
     'encore': ('ENCORE', set()),                                          # G9 (implemented): last move, a volatile, a queue change
     'disable': ('DISABLE', {'onTryHit'}),                                 # G27: bars the target's last move
     'spikyshield': ('SPIKY_SHIELD', {'onPrepareHit', 'onHit'}),           # G20: Protect that damages a contact attacker
+    'banefulbunker': ('BANEFUL_BUNKER', {'onPrepareHit', 'onHit'}),       # G94: Protect that poisons a contact attacker
     'kingsshield': ('KINGS_SHIELD', {'onPrepareHit', 'onHit'}),           # G66: Protect that passes Status moves and lowers a contact attacker's Attack
     'taunt': ('TAUNT', set()),                                            # G31: bars the Status moves for three or four turns
     'substitute': ('SUBSTITUTE', {'onTryHit', 'onHit'}),                  # G60: a 1/4 HP decoy that takes the hits (decision 0032)
@@ -2539,7 +2546,7 @@ G68_FACTS = (
                      'flags: { protect: 1, reflectable: 1, mirror: 1, metronome: 1 },', "status: 'par',",
                      'ignoreImmunity: false,', 'target: "normal",', 'type: "Electric",']),
 )
-SPECIAL_IDS_P = SPECIAL_IDS_C + G2_HANDLERS + WEATHER_HANDLERS + G16_HANDLERS + G15_HANDLERS + G19_HANDLERS + G20_HANDLERS + G20_PROTECT_HANDLERS + G28_HANDLERS + G30_HANDLERS + G32_HANDLERS + G34_HANDLERS + G27_HANDLERS + G25_HANDLERS + G26_HANDLERS + G33_HANDLERS + G38_HANDLERS + G29_HANDLERS + G39_HANDLERS + G31_HANDLERS + G48_HANDLERS + G44_HANDLERS + G50_HANDLERS + G42_HANDLERS + G56_HANDLERS + G52_HANDLERS + G54_HANDLERS + G64_HANDLERS + G62_HANDLERS + G60_HANDLERS + G58_HANDLERS + G68_HANDLERS + G70_HANDLERS + G66_HANDLERS + G72B_HANDLERS + G74_HANDLERS + G76_HANDLERS + G78_HANDLERS + G88_HANDLERS + ['UNMODELED']# Step G10 made two of these handlers data: Scald (thawsTarget) and Recover (heal) are read into the second flags# byte (bit 4, thaws the target) and the heal column, and have the special NONE; their ids stay defined (the ids after
+SPECIAL_IDS_P = SPECIAL_IDS_C + G2_HANDLERS + WEATHER_HANDLERS + G16_HANDLERS + G15_HANDLERS + G19_HANDLERS + G20_HANDLERS + G20_PROTECT_HANDLERS + G28_HANDLERS + G30_HANDLERS + G32_HANDLERS + G34_HANDLERS + G27_HANDLERS + G25_HANDLERS + G26_HANDLERS + G33_HANDLERS + G38_HANDLERS + G29_HANDLERS + G39_HANDLERS + G31_HANDLERS + G48_HANDLERS + G44_HANDLERS + G50_HANDLERS + G42_HANDLERS + G56_HANDLERS + G52_HANDLERS + G54_HANDLERS + G64_HANDLERS + G62_HANDLERS + G60_HANDLERS + G58_HANDLERS + G68_HANDLERS + G70_HANDLERS + G66_HANDLERS + G72B_HANDLERS + G74_HANDLERS + G76_HANDLERS + G78_HANDLERS + G88_HANDLERS + G94_HANDLERS + ['UNMODELED']# Step G10 made two of these handlers data: Scald (thawsTarget) and Recover (heal) are read into the second flags# byte (bit 4, thaws the target) and the heal column, and have the special NONE; their ids stay defined (the ids after
 # them keep their values). First Impression and Low Kick keep theirs: the turn code implements them.
 POOL_COLUMN_KEYS = {'thawsTarget', 'heal'}
 G2_OWNED_FIELDS = {
@@ -2549,6 +2556,7 @@ G2_OWNED_FIELDS = {
     'AURORA_VEIL': {'sideCondition': "sideCondition: 'auroraveil',"},
     'DISABLE': {'volatileStatus': "volatileStatus: 'disable',"},
     'SPIKY_SHIELD': {'volatileStatus': "volatileStatus: 'spikyshield',"},
+    'BANEFUL_BUNKER': {'volatileStatus': "volatileStatus: 'banefulbunker',"},
     'TAUNT': {'volatileStatus': "volatileStatus: 'taunt',"},
     'DRAGON_CHEER': {'volatileStatus': "volatileStatus: 'dragoncheer',"},
     'SUBSTITUTE': {'volatileStatus': "volatileStatus: 'substitute',"},
@@ -2597,7 +2605,7 @@ G2_OWNED_SECONDARY = {'STONE_AXE': 'secondary: {}, // Sheer Force-boosted', 'CEA
                   "target.trySetStatus(status, source); }, },"}
 G2_OWNED_CONDITION = {'ROOST', 'ENCORE', 'WIDE_GUARD', 'QUICK_GUARD', 'GLAIVE_RUSH', 'AURORA_VEIL', 'SPIKY_SHIELD', 'RAGE_POWDER', 'DISABLE',
                       'ELECTRIC_TERRAIN', 'MISTY_TERRAIN', 'PERISH_SONG', 'IMPRISON', 'TAUNT', 'YAWN', 'REVIVAL_BLESSING',
-                      'SUBSTITUTE', 'PHANTOM_FORCE', 'KINGS_SHIELD', 'DRAGON_CHEER', 'DESTINY_BOND'}
+                      'SUBSTITUTE', 'PHANTOM_FORCE', 'KINGS_SHIELD', 'DRAGON_CHEER', 'DESTINY_BOND', 'BANEFUL_BUNKER'}
 # Step G8 (Throat Chop and Psychic Noise): the two secondaries become modelled kinds, and the column that their
 # consumers read is the move's second flags byte (the first is full): the `sound` flag (Throat Chop bars the sound
 # moves) and the `heal` flag (Heal Block bars the moves that heal). Both are derived for every pool move, the prefix

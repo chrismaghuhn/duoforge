@@ -6355,6 +6355,26 @@ static const df_tb_stop tb_g8_throat_chop_mirror[] = {
     {7u, 0u, 2u, 2u, {3u, 3u}, {425u, 532u}, {0x4041ed25b496d25cull, 0x404695a47babe744ull}},
     {8u, 0u, 2u, 2u, {3u, 3u}, {425u, 532u}, {0x4041ed25b496d25cull, 0x404695a47babe744ull}},
 };
+static const df_tb_stop tb_g94_bunker_already_poisoned[] = {
+    {0u, 0u, 2u, 3u, {6u, 6u}, {1120u, 1156u}, {0x4059000000000000ull, 0x4059000000000000ull}},
+    {1u, 0u, 2u, 3u, {4u, 4u}, {735u, 775u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {2u, 0u, 1u, 2u, {4u, 4u}, {735u, 749u}, {0x4050aaaaaaaaaaabull, 0x405029aca6b29acbull}},
+    {3u, 0u, 1u, 2u, {4u, 4u}, {735u, 723u}, {0x4050aaaaaaaaaaabull, 0x404f515d457515d4ull}},
+    {4u, 0u, 1u, 2u, {4u, 4u}, {693u, 697u}, {0x404f1aa1f864022dull, 0x404e4f613d84f614ull}},
+};
+static const df_tb_stop tb_g94_bunker_noncontact[] = {
+    {0u, 0u, 2u, 3u, {6u, 6u}, {1120u, 1156u}, {0x4059000000000000ull, 0x4059000000000000ull}},
+    {1u, 0u, 2u, 3u, {4u, 4u}, {735u, 775u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {2u, 0u, 1u, 2u, {4u, 4u}, {663u, 655u}, {0x404e5ceff27b5a68ull, 0x404c809e4cad23ddull}},
+    {3u, 0u, 1u, 1u, {4u, 3u}, {590u, 568u}, {0x404a67d0dbd215edull, 0x4049000000000000ull}},
+};
+static const df_tb_stop tb_g94_bunker_poison[] = {
+    {0u, 0u, 2u, 3u, {6u, 6u}, {1120u, 1156u}, {0x4059000000000000ull, 0x4059000000000000ull}},
+    {1u, 0u, 2u, 3u, {4u, 4u}, {735u, 775u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {2u, 0u, 1u, 2u, {4u, 4u}, {735u, 749u}, {0x4050aaaaaaaaaaabull, 0x405029aca6b29acbull}},
+    {3u, 0u, 1u, 2u, {4u, 4u}, {735u, 723u}, {0x4050aaaaaaaaaaabull, 0x404f515d457515d4ull}},
+    {4u, 0u, 2u, 2u, {4u, 4u}, {667u, 697u}, {0x404db95781e6ff75ull, 0x404e4f613d84f614ull}},
+};
 static const df_tb_stop tb_h18_absorbed_secondary_psychic_sitrus_mirror[] = {
     {0u, 0u, 3u, 4u, {6u, 6u}, {1190u, 1190u}, {0x4059000000000000ull, 0x4059000000000000ull}},
     {1u, 0u, 2u, 3u, {4u, 4u}, {746u, 806u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
@@ -8510,6 +8530,9 @@ static const df_tb_battle tb_battles[] = {
     {"g8_heal_block_tie_b", 6u, tb_g8_heal_block_tie_b, sizeof tb_g8_heal_block_tie_b / sizeof tb_g8_heal_block_tie_b[0]},
     {"g8_throat_chop", 8u, tb_g8_throat_chop, sizeof tb_g8_throat_chop / sizeof tb_g8_throat_chop[0]},
     {"g8_throat_chop_mirror", 8u, tb_g8_throat_chop_mirror, sizeof tb_g8_throat_chop_mirror / sizeof tb_g8_throat_chop_mirror[0]},
+    {"g94_bunker_already_poisoned", 4u, tb_g94_bunker_already_poisoned, sizeof tb_g94_bunker_already_poisoned / sizeof tb_g94_bunker_already_poisoned[0]},
+    {"g94_bunker_noncontact", 3u, tb_g94_bunker_noncontact, sizeof tb_g94_bunker_noncontact / sizeof tb_g94_bunker_noncontact[0]},
+    {"g94_bunker_poison", 4u, tb_g94_bunker_poison, sizeof tb_g94_bunker_poison / sizeof tb_g94_bunker_poison[0]},
     {"h18_absorbed_secondary_psychic_sitrus_mirror", 27u, tb_h18_absorbed_secondary_psychic_sitrus_mirror, sizeof tb_h18_absorbed_secondary_psychic_sitrus_mirror / sizeof tb_h18_absorbed_secondary_psychic_sitrus_mirror[0]},
     {"h18_heal_pulse_full_hp_sitrus_mirror", 3u, tb_h18_heal_pulse_full_hp_sitrus_mirror, sizeof tb_h18_heal_pulse_full_hp_sitrus_mirror / sizeof tb_h18_heal_pulse_full_hp_sitrus_mirror[0]},
     {"h18_imprison_sitrus_mirror", 3u, tb_h18_imprison_sitrus_mirror, sizeof tb_h18_imprison_sitrus_mirror / sizeof tb_h18_imprison_sitrus_mirror[0]},
@@ -8646,7 +8669,7 @@ static const df_tb_battle tb_battles[] = {
     {"xr3_sheercold_sub_miss", 3u, tb_xr3_sheercold_sub_miss, sizeof tb_xr3_sheercold_sub_miss / sizeof tb_xr3_sheercold_sub_miss[0]},
 };
 
-/* 5814 stops: 157 of an ended battle; decided by the count 1422,
- * the HP percentage 1798, the total HP 2262, a tie 175;
- * winners: side 0 2730, side 1 2909, tie 175 */
+/* 5828 stops: 157 of an ended battle; decided by the count 1423,
+ * the HP percentage 1805, the total HP 2268, a tie 175;
+ * winners: side 0 2737, side 1 2916, tie 175 */
 #endif
