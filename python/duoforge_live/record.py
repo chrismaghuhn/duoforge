@@ -274,9 +274,12 @@ def _position(t, s, pre, p, side, k, own):
         flags |= VOL_UNBURDEN
     if p.choice_slot != _tracker.MOVE_SLOT_NONE:
         flags |= VOL_CHOICE_LOCK
-    if p.newly_switched:
-        flags |= VOL_NEWLY_SWITCHED
-    s.put(pre + "flags", flags & VOL_FLAGS_MASK[t.data.kind])
+    carried = VOL_FLAGS_MASK[t.data.kind]
+    if p.newly_switched and carried & VOL_NEWLY_SWITCHED:
+        flags |= VOL_NEWLY_SWITCHED  # the closure kind's states carry no newlySwitched flag (dfi_kind_limits_of)
+    if flags & ~carried:
+        raise ValueError(f"{pre}flags {flags:#x}: bits the {t.data.kind} kind's states do not carry ({carried:#x})")
+    s.put(pre + "flags", flags)
     s.put(pre + "stall_level", p.chain)
     s.put(pre + "stall_turns", p.stall)
     s.put(pre + "charge_turns", p.charge)

@@ -243,8 +243,11 @@ def for_config(config, root=ROOT):
     from .policy import table_kind
     if not isinstance(config, dict):
         raise ValueError("the checkpoint names no data kind and fingerprint (no config)")
-    if config.get("format") != 2:
+    form = config.get("format", 1)  # a format-1 config is free and names no format (decision 0014, train.save)
+    if form == 1:
         return Data(root, table_kind(config))  # a format-1 network: the closure tables, no fingerprint to check
+    if form != 2:
+        raise ValueError(f"the checkpoint's config format {form!r} is not 1 or 2: its tables are unknown")
     entry = config.get("data")
     if not isinstance(entry, dict) or "kind" not in entry or "fingerprint" not in entry:
         raise ValueError("the checkpoint names no data kind and fingerprint (config['data']): its tables are unknown")

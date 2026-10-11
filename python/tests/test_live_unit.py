@@ -379,6 +379,10 @@ class CheckpointTablesTest(unittest.TestCase):
             with self.assertRaisesRegex(ValueError, "names no data kind"):
                 data.for_config(config)
         self.assertEqual(data.for_config({"format": 1}).kind, "closure")  # a format-1 network names no data: closure
+        self.assertEqual(data.for_config({"seed": 1}).kind, "closure")  # train.save's format-1 config names no format
+        for form in (3, 0, "2"):
+            with self.assertRaisesRegex(ValueError, "is not 1 or 2"):
+                data.for_config({"format": form})
 
 
 if __name__ == "__main__":
