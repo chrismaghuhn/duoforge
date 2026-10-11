@@ -6225,6 +6225,17 @@ static const df_tb_stop tb_g80_allyswitch_m2[] = {
     {3u, 0u, 2u, 2u, {4u, 4u}, {617u, 739u}, {0x404a5fa5fa5fa5fbull, 0x4050aaaaaaaaaaabull}},
     {4u, 0u, 2u, 2u, {4u, 4u}, {589u, 739u}, {0x4049433433433433ull, 0x4050aaaaaaaaaaabull}},
 };
+static const df_tb_stop tb_g80_allyswitch_partnerabsent_hit[] = {
+    {0u, 0u, 3u, 4u, {6u, 6u}, {1186u, 1186u}, {0x4059000000000000ull, 0x4059000000000000ull}},
+    {1u, 0u, 2u, 3u, {4u, 4u}, {809u, 829u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {2u, 0u, 1u, 2u, {4u, 4u}, {729u, 659u}, {0x404dda61bdec3e07ull, 0x404abe82fa0be830ull}},
+    {3u, 0u, 1u, 1u, {4u, 2u}, {630u, 412u}, {0x404951f136e3cd7full, 0x4040aaaaaaaaaaabull}},
+    {6u, 0u, 1u, 1u, {3u, 2u}, {601u, 412u}, {0x4047fe03f80fe040ull, 0x4040aaaaaaaaaaabull}},
+    {9u, 0u, 1u, 1u, {3u, 2u}, {456u, 275u}, {0x40420af6bedd8455ull, 0x403675d75d75d75dull}},
+    {12u, 0u, 2u, 1u, {1u, 2u}, {210u, 259u}, {0x4030aaaaaaaaaaabull, 0x403530c30c30c30cull}},
+    {13u, 0u, 2u, 1u, {1u, 2u}, {102u, 272u}, {0x402030c30c30c30cull, 0x403638e38e38e38dull}},
+    {14u, 0u, 2u, 1u, {1u, 2u}, {104u, 270u}, {0x4020820820820821ull, 0x4036104104104104ull}},
+};
 static const df_tb_stop tb_g80_allyswitch_partnerabsent_tantrum[] = {
     {0u, 0u, 3u, 4u, {6u, 6u}, {1186u, 1186u}, {0x4059000000000000ull, 0x4059000000000000ull}},
     {1u, 0u, 1u, 3u, {4u, 4u}, {802u, 782u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
@@ -8484,6 +8495,7 @@ static const df_tb_battle tb_battles[] = {
     {"g7_wide_guard_b", 5u, tb_g7_wide_guard_b, sizeof tb_g7_wide_guard_b / sizeof tb_g7_wide_guard_b[0]},
     {"g7_wide_guard_pivot", 4u, tb_g7_wide_guard_pivot, sizeof tb_g7_wide_guard_pivot / sizeof tb_g7_wide_guard_pivot[0]},
     {"g80_allyswitch_m2", 4u, tb_g80_allyswitch_m2, sizeof tb_g80_allyswitch_m2 / sizeof tb_g80_allyswitch_m2[0]},
+    {"g80_allyswitch_partnerabsent_hit", 14u, tb_g80_allyswitch_partnerabsent_hit, sizeof tb_g80_allyswitch_partnerabsent_hit / sizeof tb_g80_allyswitch_partnerabsent_hit[0]},
     {"g80_allyswitch_partnerabsent_tantrum", 24u, tb_g80_allyswitch_partnerabsent_tantrum, sizeof tb_g80_allyswitch_partnerabsent_tantrum / sizeof tb_g80_allyswitch_partnerabsent_tantrum[0]},
     {"g80_allyswitch_selftarget", 3u, tb_g80_allyswitch_selftarget, sizeof tb_g80_allyswitch_selftarget / sizeof tb_g80_allyswitch_selftarget[0]},
     {"g80_allyswitch_swap", 4u, tb_g80_allyswitch_swap, sizeof tb_g80_allyswitch_swap / sizeof tb_g80_allyswitch_swap[0]},
@@ -8635,7 +8647,7 @@ static const df_tb_battle tb_battles[] = {
     {"xr3_sheercold_sub_miss", 3u, tb_xr3_sheercold_sub_miss, sizeof tb_xr3_sheercold_sub_miss / sizeof tb_xr3_sheercold_sub_miss[0]},
 };
 
-/* 5800 stops: 155 of an ended battle; decided by the count 1409,
- * the HP percentage 1794, the total HP 2260, a tie 182;
- * winners: side 0 2714, side 1 2904, tie 182 */
+/* 5809 stops: 155 of an ended battle; decided by the count 1415,
+ * the HP percentage 1795, the total HP 2261, a tie 183;
+ * winners: side 0 2718, side 1 2908, tie 183 */
 #endif
