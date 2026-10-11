@@ -32,3 +32,18 @@ Special ids: BANEFUL_BUNKER 101, LAST_RESORT 102, UNMODELED 103 (generator order
 - **Locked turns (Outrage, charge second turns).** No deductPP (`battle-actions.ts:286-291`): no bit, as the engine's `!locked && !lock_move` block.
 - **Switches.** Every change of occupant (switch-out, faint replacement, drag, Baton Pass, Revival) clears the nibble (`dfi_tail_clear_occupant`); the pin resets `used` in `switchIn` (`battle-actions.ts:140`).
 - **Refusals.** None needed beyond setup's manifest gate: the copying and calling moves above are unmarked or have no row.
+
+## 5. Where the used flags live: Ally Switch, Baton Pass, switches and Transform
+
+The flags belong to the Pokemon's `moveSlots` (the objects), not to the field position. That decides how they move.
+
+- **Ally Switch** (`data/moves.ts:302-340`, marked in batch 7 as G80): its `onHit` calls `this.swapPosition(pokemon, newPosition, ...)`, which puts the two Pokemon objects into each other's `side.pokemon` and `side.active` entries and sets `position` (`sim/battle.ts:1588-1607`). The objects, and with them `moveSlots[].used`, go with the Pokemon. So for the engine's per-position nibble (`move_used`, bytes 8-9) an Ally Switch must exchange the two positions' nibbles. Until G80 (the central `dfi_swap_position_state`) is on this branch, the bytes are not moved and this step is not complete for Ally Switch: a field test with the swap and the nibbles goes into the function G80 builds, after its merge (batch 8).
+- **Baton Pass** (`data/moves.ts:1092`, `selfSwitch: 'copyvolatile'`): the passer's replacement comes in through `copyVolatileFrom` (`sim/pokemon.ts:1246-1266`). That copies volatiles and boosts; it does not touch `moveSlots`. The replacement is a normal switch-in, so `switchIn` resets its `used` flags (`sim/battle-actions.ts:140`). The passer keeps its own flags off the field. In the engine the incoming occupant gets a cleared nibble (`dfi_tail_clear_occupant` on the change of occupant), and the passer's nibble ends with it: the same result.
+- **Switch-out.** `clearVolatile` (`sim/pokemon.ts:1508-1519`) sets `moveSlots = baseMoveSlots.slice()`: a shallow copy, so the `used` objects survive it. Only `switchIn` resets them. The engine clears at the change of occupant, which is the same event.
+- **Transform.** `transformInto` replaces `moveSlots` with new virtual slots (`used: false`, `sim/pokemon.ts:1305-1323`). Transform is unmarked.
+
+**Probes (scratch scripts, run against the pin b2cb775; not committed).**
+1. Switch-out and switch-back (`g94_lr_switch_reset`'s plan, the pin's own Battle, the flags printed after each turn): after four turns Kangaskhan shows `lastresort:U doubleedge:U protect:U earthquake:U`. When Chesnaught comes in (turn 5) the off-field Kangaskhan still shows all four `U`. When Kangaskhan switches back in (turn 6) its flags read `-` on the first line of that turn, and on turn 7 only `lastresort:U`.
+2. Transform (a scratch Ditto that uses Protect, then Transform on Milotic): after turn 1 the slot reads `protect:U`; after turn 2 the Ditto has one slot, `coil:-`, the new object (Transform itself is unmarked: this is the pin's behaviour only).
+
+The recorded battle `g94_lr_switch_reset` shows the same reset from the protocol side: Last Resort succeeds on turn 4, and after the switch-back it fails (`-fail|p1a: Kangaskhan`).
