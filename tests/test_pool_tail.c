@@ -90,7 +90,7 @@ static const unsigned sweep[DFI_ENC_TAIL_SIZE][SWEEP_COLUMNS] = {
     {1, 0, 254, 0, 0, 0, 0, 0},
     {1, 0, 254, 0, 0, 0, 0, 0},
     {1, 0, 254, 0, 0, 0, 0, 0},
-    {2, 0, 253, 0, 0, 0, 0, 0},
+    {3, 0, 252, 0, 0, 0, 0, 0},
     {1, 0, 254, 0, 0, 0, 0, 0},
     {3, 0, 252, 0, 0, 0, 0, 0},
     {2, 0, 253, 0, 0, 0, 0, 0},
@@ -266,7 +266,7 @@ static const unsigned sweep[DFI_ENC_TAIL_SIZE][SWEEP_COLUMNS] = {
     {1, 0, 254, 0, 0, 0, 0, 0},
     {1, 0, 254, 0, 0, 0, 0, 0},
     {1, 0, 254, 0, 0, 0, 0, 0},
-    {2, 0, 253, 0, 0, 0, 0, 0},
+    {3, 0, 252, 0, 0, 0, 0, 0},
     {1, 0, 254, 0, 0, 0, 0, 0},
     {3, 0, 252, 0, 0, 0, 0, 0},
     {2, 0, 253, 0, 0, 0, 0, 0},
@@ -934,7 +934,7 @@ MUT(m_trap_no_source_no_move, {
 })
 /* decision 0060: a trap whose source left keeps its turns and move (the source is 0): valid, the residual ends it silently. */
 MUT(m_trap_no_source, {
-    p0->trap_turns = 1u;
+    p0->trap_turns = 5u; /* turns + elapsed in {5, 6} (the exact rule) */
     p0->trap_move = 1u;
 })
 MUT(m_trap_turns9, {
@@ -1174,7 +1174,7 @@ static const tail_case cases[] = {
     {"a trap with a source alone", DFI_INV_TAIL_POSITION, false, m_trap_source_only},
     {"a trap with a move alone", DFI_INV_TAIL_POSITION, false, m_trap_move_only},
     {"a trap without its move", DFI_INV_TAIL_POSITION, false, m_trap_no_move},
-    {"a trap whose source left is refused at a turn boundary (decision 0060: the residual ends it inside the turn)", DFI_INV_TAIL_POSITION, false, m_trap_no_source},
+    {"a trap whose source left is legal at a turn boundary (decision 0060, pin data/conditions.ts:234-252: it ends silently at the next residual)", DFI_INV_NONE, true, m_trap_no_source},
     {"a trap with neither source nor move", DFI_INV_TAIL_POSITION, false, m_trap_no_source_no_move},
     {"a trap above 8 turns", DFI_INV_TAIL_POSITION, false, m_trap_turns9},
     {"a trap source above 4", DFI_INV_TAIL_POSITION, false, m_trap_source5},
@@ -1702,19 +1702,9 @@ int main(void)
                 uint8_t dg[DUOFORGE_DIGEST_SIZE];
                 size_t written = 77u;
                 size_t size = 0u;
-                /* decision 0060: the trap_turns byte of an occupied position is judged by the per-position check of a turn
-                 * boundary (a trap whose source is 0 is refused there, before the whole-tail check), the other bytes by
-                 * TAIL_KIND. Each byte has its own expected reason; nothing else is accepted. */
-                bool trap_turns_byte = false;
-                for (uint32_t s2 = 0u; s2 < 2u; ++s2) {
-                    for (uint32_t p2 = 0u; p2 < 2u; ++p2) {
-                        if (k == (size_t)((uint8_t *)&b->tail.sides[s2].positions[p2].trap_turns - (uint8_t *)&b->tail) &&
-                            b->sides[s2].positions[p2].occupant != DFI_OCCUPANT_NONE) {
-                            trap_turns_byte = true;
-                        }
-                    }
-                }
-                const dfi_invariant want_inv = trap_turns_byte ? DFI_INV_TAIL_POSITION : DFI_INV_TAIL_KIND;
+                /* a non-pool battle: every tail byte, the trap_turns bytes too, is refused by TAIL_KIND (the per-position trap
+                 * rules are the pool tail's; the boundary rule on the source is gone, decision 0060) */
+                const dfi_invariant want_inv = DFI_INV_TAIL_KIND;
                 if (dfi_state_check(kinds[i], b, &inv) == DUOFORGE_E_INVARIANT && inv == want_inv &&
                     duoforge_battle_check(kinds[i], b) == DUOFORGE_E_INVARIANT &&
                     duoforge_battle_encode(kinds[i], b, out, sizeof out, &written) == DUOFORGE_E_INVARIANT &&

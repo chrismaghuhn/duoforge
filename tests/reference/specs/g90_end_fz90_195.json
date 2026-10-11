@@ -1,0 +1,63 @@
+{
+  "name": "g90_end_fz90_195",
+  "purpose": "Step G90 (decision 0060): a partial trap that expires normally (the -end line at 0 turns, no [silent]). A random battle of seed 90 (campaign), the shortest of the 170 kept ones with such an end.",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,bd0e3d9a37629b15a5d3cade2b28bbb1179fd142b970bbbdb439110ebaecafba",
+  "teams": [
+    "Tyranitar (M) @ Expert Belt\nAbility: Sand Stream\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Sand Tomb\n- Protect\n- Rock Slide\n- Crunch\n\nSteelix (M) @ Focus Sash\nAbility: Sturdy\nLevel: 50\nEVs: 32 HP / 32 Def / 2 SpD\nImpish Nature\n- Bind\n- Protect\n- Rock Slide\n- Earthquake\n\nSalamence (M) @ Leftovers\nAbility: Intimidate\nLevel: 50\nEVs: 2 HP / 32 Atk / 32 Spe\nJolly Nature\n- Fire Spin\n- Protect\n\nArchaludon (M) @ Mystic Water\nAbility: Stamina\nLevel: 50\nEVs: 32 HP / 10 Def / 24 SpD\nBold Nature\n- Iron Head\n- Protect\n\nMilotic (F) @ Binding Band\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Wrap\n- Coil\n\nDragapult (M) @ Life Orb\nAbility: Clear Body\nLevel: 50\nEVs: 32 Atk / 32 Spe / 2 HP\nAdamant Nature\n- Dragon Darts\n- Protect\n- Thunderbolt\n- Infestation",
+    "Steelix (M) @ Focus Sash\nAbility: Sturdy\nLevel: 50\nEVs: 32 HP / 32 Def / 2 SpD\nImpish Nature\n- Bind\n- Protect\n- Rock Slide\n- Earthquake\n\nMilotic (F) @ Binding Band\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Wrap\n- Coil\n\nArchaludon (M) @ Mystic Water\nAbility: Stamina\nLevel: 50\nEVs: 32 HP / 10 Def / 24 SpD\nBold Nature\n- Iron Head\n- Protect\n\nSalamence (M) @ Leftovers\nAbility: Intimidate\nLevel: 50\nEVs: 2 HP / 32 Atk / 32 Spe\nJolly Nature\n- Fire Spin\n- Protect\n\nDragapult (M) @ Life Orb\nAbility: Clear Body\nLevel: 50\nEVs: 32 Atk / 32 Spe / 2 HP\nAdamant Nature\n- Dragon Darts\n- Protect\n- Thunderbolt\n- Infestation\n\nTyranitar (M) @ Expert Belt\nAbility: Sand Stream\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Sand Tomb\n- Protect\n- Rock Slide\n- Crunch"
+  ],
+  "choices": [
+    {
+      "p1": "team 3126",
+      "p2": "team 3542"
+    },
+    {
+      "p1": "move 2, move 3",
+      "p2": "move 2, move 2"
+    },
+    {
+      "p1": "move 1 1, move 2",
+      "p2": "move 1 -2, move 4 -1"
+    },
+    {
+      "p1": "move 1 -2, move 3",
+      "p2": "move 2, move 2"
+    },
+    {
+      "p1": "move 2, switch 4",
+      "p2": "move 2, move 3 2"
+    },
+    {
+      "p1": "move 2, move 4 -1",
+      "p2": "move 1 2, move 1 2"
+    },
+    {
+      "p1": "switch 3, switch 4"
+    },
+    {
+      "p1": "move 4, move 3",
+      "p2": "move 1 1, move 1 1"
+    },
+    {
+      "p2": "pass, switch 3"
+    },
+    {
+      "p1": "move 1 -2, move 1 2",
+      "p2": "move 1 2, move 1 1"
+    },
+    {
+      "p1": "move 3, pass",
+      "p2": "move 2, move 1 2"
+    },
+    {
+      "p1": "move 3, pass",
+      "p2": "switch 4, move 1 1"
+    },
+    {
+      "p1": "move 3, pass",
+      "p2": "move 1 1, move 2"
+    }
+  ]
+}

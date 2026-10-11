@@ -6337,6 +6337,16 @@ static const df_tb_stop tb_g90_bind_steelix[] = {
     {5u, 0u, 2u, 1u, {3u, 4u}, {606u, 712u}, {0x4049000000000000ull, 0x404ead7ad7ad7ad8ull}},
     {6u, 0u, 2u, 1u, {3u, 4u}, {606u, 712u}, {0x4049000000000000ull, 0x404ead7ad7ad7ad8ull}},
 };
+static const df_tb_stop tb_g90_end_fz90_195[] = {
+    {0u, 0u, 3u, 4u, {6u, 6u}, {1125u, 1125u}, {0x4059000000000000ull, 0x4059000000000000ull}},
+    {1u, 0u, 2u, 3u, {4u, 4u}, {726u, 736u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {2u, 0u, 1u, 2u, {4u, 4u}, {726u, 726u}, {0x4050aaaaaaaaaaabull, 0x40506a052bf5a815ull}},
+    {3u, 0u, 1u, 2u, {4u, 4u}, {726u, 632u}, {0x4050aaaaaaaaaaabull, 0x404c5197a5963aacull}},
+    {6u, 0u, 2u, 1u, {2u, 4u}, {389u, 508u}, {0x4040aaaaaaaaaaabull, 0x4046a592de6fb42full}},
+    {9u, 0u, 2u, 1u, {2u, 3u}, {229u, 430u}, {0x40342f79b11cecb5ull, 0x40430918b0bb207dull}},
+    {12u, 0u, 2u, 1u, {1u, 3u}, {8u, 335u}, {0x3fe7717717717718ull, 0x403d39b4bb14211bull}},
+    {13u, 1u, 2u, 0u, {0u, 3u}, {0u, 332u}, {0x0000000000000000ull, 0x403d1f2e37a15cd1ull}},
+};
 static const df_tb_stop tb_g90_fire_source_leaves[] = {
     {0u, 0u, 2u, 3u, {6u, 6u}, {1102u, 1129u}, {0x4059000000000000ull, 0x4059000000000000ull}},
     {1u, 0u, 2u, 3u, {4u, 4u}, {741u, 770u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
@@ -8539,6 +8549,7 @@ static const df_tb_battle tb_battles[] = {
     {"g8_throat_chop", 8u, tb_g8_throat_chop, sizeof tb_g8_throat_chop / sizeof tb_g8_throat_chop[0]},
     {"g8_throat_chop_mirror", 8u, tb_g8_throat_chop_mirror, sizeof tb_g8_throat_chop_mirror / sizeof tb_g8_throat_chop_mirror[0]},
     {"g90_bind_steelix", 6u, tb_g90_bind_steelix, sizeof tb_g90_bind_steelix / sizeof tb_g90_bind_steelix[0]},
+    {"g90_end_fz90_195", 13u, tb_g90_end_fz90_195, sizeof tb_g90_end_fz90_195 / sizeof tb_g90_end_fz90_195[0]},
     {"g90_fire_source_leaves", 6u, tb_g90_fire_source_leaves, sizeof tb_g90_fire_source_leaves / sizeof tb_g90_fire_source_leaves[0]},
     {"g90_ghost_chandelure", 3u, tb_g90_ghost_chandelure, sizeof tb_g90_ghost_chandelure / sizeof tb_g90_ghost_chandelure[0]},
     {"g90_infest_switch", 8u, tb_g90_infest_switch, sizeof tb_g90_infest_switch / sizeof tb_g90_infest_switch[0]},
@@ -8681,7 +8692,7 @@ static const df_tb_battle tb_battles[] = {
     {"xr3_sheercold_sub_miss", 3u, tb_xr3_sheercold_sub_miss, sizeof tb_xr3_sheercold_sub_miss / sizeof tb_xr3_sheercold_sub_miss[0]},
 };
 
-/* 5828 stops: 155 of an ended battle; decided by the count 1412,
- * the HP percentage 1806, the total HP 2280, a tie 175;
- * winners: side 0 2718, side 1 2935, tie 175 */
+/* 5836 stops: 156 of an ended battle; decided by the count 1415,
+ * the HP percentage 1808, the total HP 2281, a tie 176;
+ * winners: side 0 2720, side 1 2940, tie 176 */
 #endif
