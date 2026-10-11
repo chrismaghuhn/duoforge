@@ -108,8 +108,12 @@ def tracker_refusal(tracker):
 def move_result_of(data, user, events):
     """The result of one move action (the POOL tail's move_result of this turn: DFI_MOVE_RESULT_* with
     DFI_MOVE_RESULT_UNCLASSIFIED_NOW), classified by the library from the action's events (duoforge.view.move_result,
-    the engine's rule); None where the events do not determine it."""
+    the engine's rule); None where the events do not determine it. An event whose position the log does not name (an
+    [of] without its slot: Shell Bell after a hit that made its target faint) leaves the result undetermined too: the
+    library takes no unknown position."""
     from duoforge import view
+    if any(field is None for e in events for field in e):
+        return None
     return view.move_result(data.context(), user, events)
 
 
