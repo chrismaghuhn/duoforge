@@ -386,13 +386,13 @@ static const unsigned sweep[DFI_ENC_TAIL_SIZE][SWEEP_COLUMNS] = {
     {0, 255, 0, 0, 0, 0, 0, 0},
     {0, 255, 0, 0, 0, 0, 0, 0},
     {0, 255, 0, 0, 0, 0, 0, 0},
-    {47, 0, 208, 0, 0, 0, 0, 0}, /* position_flags (G76 bit 4, G88 bits 5 and 6, mask 0x7F): 47 values of the byte decode (11 before G88) */
+    {95, 0, 160, 0, 0, 0, 0, 0}, /* position_flags (G82 bit 0, G76 bit 4, G88 bits 5 and 6, mask 0x7F): 95 values of the byte decode (11 before G88) */
     {0, 0, 255, 0, 0, 0, 0, 0},
-    {47, 0, 208, 0, 0, 0, 0, 0},
+    {95, 0, 160, 0, 0, 0, 0, 0},
     {0, 0, 255, 0, 0, 0, 0, 0},
-    {47, 0, 208, 0, 0, 0, 0, 0},
+    {95, 0, 160, 0, 0, 0, 0, 0},
     {0, 0, 255, 0, 0, 0, 0, 0},
-    {47, 0, 208, 0, 0, 0, 0, 0},
+    {95, 0, 160, 0, 0, 0, 0, 0},
     {0, 0, 255, 0, 0, 0, 0, 0},
     {0, 0, 0, 0, 0, 255, 0, 0},
     {0, 0, 0, 0, 0, 255, 0, 0},
@@ -1036,8 +1036,8 @@ MUT(m_ill_pending, ts->illusion.pending[0] = 1u)
 /* G82 (decision 0045): bit 0 (Healing Wish) is the slot's; it is valid at a standing lead and at an empty position. A bit that
  * ends with the occupant (the raised flag, bit 1) stays refused at an empty position. */
 MUT(v_healing_wish_bit, p0->position_flags = 0x01u)
-MUT(v_healing_wish_empty, dfi_slot_clear(&y->sides[0].positions[0]), p0->position_flags = 0x01u)
-MUT(m_empty_stats_raised, dfi_slot_clear(&y->sides[0].positions[0]), p0->position_flags = 0x02u)
+MUT(v_healing_wish_empty, dfi_slot_clear(&y->sides[0].positions[0]), y->sides[0].requested_slots = (uint8_t)(y->sides[0].requested_slots & ~1u), p0->position_flags = 0x01u) /* the empty slot is no longer requested (TURN: requested == occupied) */
+MUT(m_empty_stats_raised, dfi_slot_clear(&y->sides[0].positions[0]), y->sides[0].requested_slots = (uint8_t)(y->sides[0].requested_slots & ~1u), p0->position_flags = 0x02u)
 MUT(m_position_flags_bit7, p0->position_flags = 0x80u) /* bit 7 is not defined (G76 took bit 4, G88 took bits 5 and 6) */
 MUT(v_destiny_bond_standing, p0->position_flags = 0x10u) /* G76: Destiny Bond at a standing lead is valid */
 MUT(m_dragon_stage_3, p0->position_flags = 0x0Cu) /* the Dragon Cheer stage 3 is invalid */
