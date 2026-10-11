@@ -2083,7 +2083,7 @@ const dfi_pool_item_data dfi_pool_items[DFI_POOL_ITEM_COUNT] = {
  *   cheekpouch -- data/abilities.ts:492-500  [unmodelled: callback onEatItem]
  *   chlorophyll -- data/abilities.ts:512-522
  *   clearbody -- data/abilities.ts:523-542
- *   cloudnine -- data/abilities.ts:543-562  [unmodelled: callback onEnd; callback onStart; callback onSwitchIn; field suppressWeather]
+ *   cloudnine -- data/abilities.ts:543-562
  *   compoundeyes -- data/abilities.ts:666-677
  *   corrosion -- data/abilities.ts:691-697  [unmodelled: read by id in sim/pokemon.ts]
  *   cudchew -- data/abilities.ts:742-771  [unmodelled: callback onEatItem; callback onResidual; callback onResidualOrder; callback onResidualSubOrder; read by id in data/moves.ts]
@@ -2862,7 +2862,7 @@ const uint8_t dfi_pool_ability_handler[DFI_POOL_ABILITY_COUNT] = {
     [DFI_ABILITY_CHEEKPOUCH] = DFI_HANDLER_UNMODELED,
     [DFI_ABILITY_CHLOROPHYLL] = DFI_HANDLER_NONE,
     [DFI_ABILITY_CLEARBODY] = DFI_HANDLER_NONE,
-    [DFI_ABILITY_CLOUDNINE] = DFI_HANDLER_UNMODELED,
+    [DFI_ABILITY_CLOUDNINE] = DFI_HANDLER_NONE,
     [DFI_ABILITY_COMPOUNDEYES] = DFI_HANDLER_NONE,
     [DFI_ABILITY_CORROSION] = DFI_HANDLER_UNMODELED,
     [DFI_ABILITY_CUDCHEW] = DFI_HANDLER_UNMODELED,
@@ -7015,7 +7015,6 @@ const char *const dfi_pool_ability_unmodeled[DFI_POOL_ABILITY_COUNT] = {
     [DFI_ABILITY_BERSERK] = "callback onAfterMoveSecondary; callback onDamage; callback onTryEatItem",
     [DFI_ABILITY_BULLETPROOF] = "callback onTryHit",
     [DFI_ABILITY_CHEEKPOUCH] = "callback onEatItem",
-    [DFI_ABILITY_CLOUDNINE] = "callback onEnd; callback onStart; callback onSwitchIn; field suppressWeather",
     [DFI_ABILITY_CORROSION] = "read by id in sim/pokemon.ts",
     [DFI_ABILITY_CUDCHEW] = "callback onEatItem; callback onResidual; callback onResidualOrder; callback onResidualSubOrder; read by id in data/moves.ts",
     [DFI_ABILITY_CURIOUSMEDICINE] = "callback onStart",
@@ -7112,10 +7111,10 @@ const char *const dfi_pool_ability_unmodeled[DFI_POOL_ABILITY_COUNT] = {
 };
 
 const uint8_t dfi_pool_table_hash[32] = {
-    0xc9u, 0xdcu, 0x88u, 0xeau, 0x6au, 0x57u, 0xc6u, 0xf9u,
-    0x41u, 0xbbu, 0x0eu, 0x40u, 0xcdu, 0x26u, 0xf5u, 0x2au,
-    0xadu, 0x89u, 0x90u, 0x18u, 0x1au, 0xe5u, 0x3au, 0x3cu,
-    0x41u, 0xa4u, 0x56u, 0x08u, 0xb3u, 0x29u, 0xe2u, 0xa8u,
+    0xcfu, 0xabu, 0xb0u, 0x6eu, 0xd8u, 0x6bu, 0x62u, 0x06u,
+    0xddu, 0x34u, 0xe3u, 0x4bu, 0xc1u, 0xa3u, 0xf8u, 0xb2u,
+    0xc1u, 0x7fu, 0x78u, 0x70u, 0xd4u, 0xd4u, 0x18u, 0xe1u,
+    0x49u, 0xb2u, 0x82u, 0x46u, 0x78u, 0xb0u, 0xd0u, 0xc9u,
 };
 
 static size_t dfi_pool_put_u16(uint8_t *out, size_t n, uint32_t v)

@@ -626,6 +626,9 @@ const dfi_support_manifest dfi_support = {
             [DFI_ABILITY_WATERBUBBLE] = 1u, /* step G65: Araquanid (Fire x0.5 at the holder, Water x2, no burn) */
             [DFI_ABILITY_RECKLESS] = 1u, /* step G65: Staraptor, Rhyperior and Emboar (recoil moves x1.2) */
             [DFI_ABILITY_SUPERLUCK] = 1u, /* step G65: Absol (crit ratio +1) */
+            /* step G79 (decision 0015 5br): Cloud Nine suppresses the weather while a holder stands (data/abilities.ts:543-562,
+             * sim/field.ts:106-116); Altaria and Drampa; an engine row */
+            [DFI_ABILITY_CLOUDNINE] = 1u,
         },
     .items =
         {

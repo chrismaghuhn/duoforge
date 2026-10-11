@@ -815,3 +815,7 @@ duoforge_add_test(NAME duoforge.state.pool_g69 SOURCES test_pool_g69.c WHITEBOX 
 # Step G65 (decision 0015 5bk): the simple modifier abilities Unaware, Marvel Scale, Water Bubble, Reckless and Super Luck (their
 # rows, the recoil and crash facts Reckless reads, and the Trace refusal of Water Bubble onto a burned holder; white-box).
 duoforge_add_test(NAME duoforge.state.pool_g65 SOURCES test_pool_g65.c WHITEBOX TIMEOUT 60)
+
+# Step G79 (decision 0015 5br): Cloud Nine, the weather suppression of a standing holder (its mark, Mega Sol's refusal under it, and
+# the refusal of a Trace copy of it; white-box). The recorded battles g79_* are replayed by duoforge.reference.conformance_pool_data.
+duoforge_add_test(NAME duoforge.state.pool_g79 SOURCES test_pool_g79.c WHITEBOX TIMEOUT 60)
