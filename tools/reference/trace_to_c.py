@@ -548,12 +548,22 @@ def drop_reason(d, state, after=None, log=None):
                 index = side['active'][' ab'.index(slot[2]) - 1]
                 if index is not None and 'taunt' in side['pokemon'][index]['volatiles']:
                     raise ConversionError('oblivious-taunt', 'trace_to_c: a taunted Oblivious holder: %s' % slot, detail=slot)
+        for g in group:
+            if 'magmaarmor' in g.split(':', 3)[3].split('+'):
+                slot = g.split(':')[1]
+                side = placed['sides'][int(slot[1]) - 1]
+                index = side['active'][' ab'.index(slot[2]) - 1]
+                if index is not None and side['pokemon'][index]['status'] == 'frz':
+                    raise ConversionError('magmaarmor-frozen', 'trace_to_c: a frozen Magma Armor holder: %s' % slot, detail=slot)
         # Trace's onUpdate (step AC1) returns unless its holder is still seeking after an onStart that found no foe to
         # copy, which the engine refuses (E_UNSUPPORTED): until then it does nothing either, so it is not a holder.
         # Water Bubble's onUpdate (step G65, data/abilities.ts:5400-5405) cures a burn of its holder: no holder of it has one,
         # since onSetStatus refuses every burn of the holder, and a Trace copy onto a burned holder is refused (E_UNSUPPORTED,
         # dfi_trace), so it does nothing and is not a holder.
-        inert = {'thermalexchange', 'trace', 'limber', 'oblivious', 'waterbubble'}
+        # Magma Armor's onUpdate (step G77, data/abilities.ts:2502-2507) cures a freeze of its holder: no holder of it is frozen,
+        # since onImmunity refuses every freeze and a Trace or Skill Swap copy onto a frozen holder is refused (E_UNSUPPORTED),
+        # so it does nothing and is not a holder. A frozen holder in a converted state is refused below, never guessed.
+        inert = {'thermalexchange', 'trace', 'limber', 'oblivious', 'waterbubble', 'magmaarmor'}
         # Rain Dish's onWeather (step G35, data/abilities.ts:3759) heals only in rain (RainDance; Primordial Sea is not in the
         # format): under any other weather its holder has the handler and it does nothing, so it is not a holder. The weather is
         # the one of the upkeep, which is the one the step ends with (after) or, without it, the one it started with. Solar
