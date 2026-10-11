@@ -1617,6 +1617,16 @@ static duoforge_status dfi_get_damage(dfi_run *r, uint32_t user, uint32_t target
         *out = half < 1u ? 1u : half;
         return DUOFORGE_OK;
     }
+    /* Endeavor's damageCallback (step C5, data/moves.ts:4784-4804): getDamage returns target.getUndynamaxedHP() - pokemon.hp
+     * before the critical hit roll and the formula. Its onTryImmunity (the user's HP below the target's) was judged in
+     * hitStepTryImmunity, so the difference is at least 1; the type immunity was judged before too. */
+    if (md->special == DFI_SPECIAL_ENDEAVOR) {
+        if (d->hp <= a->hp) {
+            return DUOFORGE_E_INVARIANT;
+        }
+        *out = (uint32_t)d->hp - (uint32_t)a->hp;
+        return DUOFORGE_OK;
+    }
     /* An OHKO move (Sheer Cold, step G64): getDamage returns target.maxhp (sim/battle-actions.ts:1606) before the critical
      * hit roll, the formula and every effectiveness line; the type and Sturdy immunities were judged before. */
     if (md->special == DFI_SPECIAL_SHEER_COLD) {
@@ -7117,7 +7127,7 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
         md->special != DFI_SPECIAL_STEEL_BEAM && md->special != DFI_SPECIAL_THUNDER_WAVE &&
         md->special != DFI_SPECIAL_SKILL_SWAP &&
         md->special != DFI_SPECIAL_ALLURING_VOICE && md->special != DFI_SPECIAL_DRAGON_CHEER &&
-        md->special != DFI_SPECIAL_FINAL_GAMBIT &&
+        md->special != DFI_SPECIAL_FINAL_GAMBIT && md->special != DFI_SPECIAL_ENDEAVOR &&
         md->special != DFI_SPECIAL_DRAGON_DARTS &&
         md->special != DFI_SPECIAL_LASH_OUT && md->special != DFI_SPECIAL_ASSURANCE) {
         return DUOFORGE_E_INVARIANT;
@@ -7347,6 +7357,14 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
     for (uint32_t i = 0u; i < count; ++i) {
         if (hit[i] && (md->special == DFI_SPECIAL_TRICK || md->special == DFI_SPECIAL_SWITCHEROO) &&
             dfi_ability(r->b, dfi_at(b, targets[i]), DFI_ABILITY_STICKYHOLD)) {
+            hit[i] = false;
+            dfi_immune(r, targets[i], 0u);
+        }
+    }
+    /* hitStepTryImmunity (step C5, data/moves.ts:4796-4798): Endeavor's onTryImmunity fails a target whose HP is not above the
+     * user's: -immune with no reason (battle-actions.ts:673-675), before the accuracy check, so no accuracy draw. */
+    for (uint32_t i = 0u; i < count; ++i) {
+        if (hit[i] && md->special == DFI_SPECIAL_ENDEAVOR && m->hp >= dfi_at(b, targets[i])->hp) {
             hit[i] = false;
             dfi_immune(r, targets[i], 0u);
         }

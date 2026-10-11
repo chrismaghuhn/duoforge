@@ -570,6 +570,9 @@ const dfi_support_manifest dfi_support = {
             /* Step C5 (decision 0015 entry 5cy): Surf, a damaging spread move that also hits the ally (target allAdjacent, as
              * Earthquake of step G28). Data only: the pin's fields are checked by check_c5_facts (data/moves.ts:18526-18538). */
             [DFI_MOVE_SURF] = 1u,
+            /* Step C5 (decision 0015 entry 5cy): Endeavor (the ENDEAVOR special, the Final Gambit damage path): damage = target HP
+             * - user HP, immune when the user's HP is not below the target's (data/moves.ts:4784-4804). */
+            [DFI_MOVE_ENDEAVOR] = 1u,
         },
     .abilities =
         {

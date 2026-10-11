@@ -2327,6 +2327,7 @@ SPECIAL_P = dict(SPECIAL_C, **{
     'bugbite': ('BUG_BITE', {'onHit'}),                                   # G64: takes the target's berry and eats it
     'poltergeist': ('POLTERGEIST', {'onTry', 'onTryHit'}),                # G64: fails without a target item; reveals it
     'sheercold': ('SHEER_COLD', set()),                                   # G64: an OHKO move (ohko 'Ice'), see G2_OWNED_FIELDS
+    'endeavor': ('ENDEAVOR', {'damageCallback', 'onTryImmunity'}),       # C5 (5cy): damage = target HP - user HP; immune if user HP >= target HP
     'haze': ('HAZE', {'onHitField'}),                                     # G62: clears every boost of the standing actives (decision 0031)
     'afteryou': ('AFTER_YOU', {'onHit'}),                                 # G62: the target's queued move goes next (decision 0015 entry 5az)
     'quash': ('QUASH', {'onHit'}),                                        # G62: the target's queued move goes last
@@ -2471,6 +2472,9 @@ G76_FINAL_GAMBIT_FACTS = (
 # Step G78, Dragon Darts (decision 0043, lead's approval of 2026-10-10): the split of its two hits (smartTarget) over the
 # chosen foe and its partner; the hit count is the number 2 (no draw), the hit loop is the Champions one.
 G78_HANDLERS = ['DRAGON_DARTS']
+# Step C5 (decision 0015 entry 5cy): Endeavor, the damageCallback path of Final Gambit (G76) with an onTryImmunity (the user's HP
+# must be below the target's, else -immune). Read by parse_move from SPECIAL_P (the callbacks named there).
+C5_HANDLERS = ['ENDEAVOR']
 G78_FACTS = (
     'accuracy: 100,', 'basePower: 50,', 'category: "Physical",', 'priority: 0,',
     'flags: { protect: 1, mirror: 1, metronome: 1, noparentalbond: 1 },', 'multihit: 2,', 'smartTarget: true,',
@@ -2567,7 +2571,7 @@ G68_FACTS = (
                      'flags: { protect: 1, reflectable: 1, mirror: 1, metronome: 1 },', "status: 'par',",
                      'ignoreImmunity: false,', 'target: "normal",', 'type: "Electric",']),
 )
-SPECIAL_IDS_P = SPECIAL_IDS_C + G2_HANDLERS + WEATHER_HANDLERS + G16_HANDLERS + G15_HANDLERS + G19_HANDLERS + G20_HANDLERS + G20_PROTECT_HANDLERS + G28_HANDLERS + G30_HANDLERS + G32_HANDLERS + G34_HANDLERS + G27_HANDLERS + G25_HANDLERS + G26_HANDLERS + G33_HANDLERS + G38_HANDLERS + G29_HANDLERS + G39_HANDLERS + G31_HANDLERS + G48_HANDLERS + G44_HANDLERS + G50_HANDLERS + G42_HANDLERS + G56_HANDLERS + G52_HANDLERS + G54_HANDLERS + G64_HANDLERS + G62_HANDLERS + G60_HANDLERS + G58_HANDLERS + G68_HANDLERS + G70_HANDLERS + G66_HANDLERS + G72B_HANDLERS + G74_HANDLERS + G76_HANDLERS + G78_HANDLERS + G88_HANDLERS + G94_HANDLERS + ['UNMODELED']# Step G10 made two of these handlers data: Scald (thawsTarget) and Recover (heal) are read into the second flags# byte (bit 4, thaws the target) and the heal column, and have the special NONE; their ids stay defined (the ids after
+SPECIAL_IDS_P = SPECIAL_IDS_C + G2_HANDLERS + WEATHER_HANDLERS + G16_HANDLERS + G15_HANDLERS + G19_HANDLERS + G20_HANDLERS + G20_PROTECT_HANDLERS + G28_HANDLERS + G30_HANDLERS + G32_HANDLERS + G34_HANDLERS + G27_HANDLERS + G25_HANDLERS + G26_HANDLERS + G33_HANDLERS + G38_HANDLERS + G29_HANDLERS + G39_HANDLERS + G31_HANDLERS + G48_HANDLERS + G44_HANDLERS + G50_HANDLERS + G42_HANDLERS + G56_HANDLERS + G52_HANDLERS + G54_HANDLERS + G64_HANDLERS + G62_HANDLERS + G60_HANDLERS + G58_HANDLERS + G68_HANDLERS + G70_HANDLERS + G66_HANDLERS + G72B_HANDLERS + G74_HANDLERS + G76_HANDLERS + G78_HANDLERS + G88_HANDLERS + G94_HANDLERS + C5_HANDLERS + ['UNMODELED']# Step G10 made two of these handlers data: Scald (thawsTarget) and Recover (heal) are read into the second flags# byte (bit 4, thaws the target) and the heal column, and have the special NONE; their ids stay defined (the ids after
 # them keep their values). First Impression and Low Kick keep theirs: the turn code implements them.
 POOL_COLUMN_KEYS = {'thawsTarget', 'heal'}
 G2_OWNED_FIELDS = {
@@ -4141,10 +4145,13 @@ def check_c2_facts(moves_ts, champ_moves, only=None):
 
 # Step C5 (decision 0015 entry 5cy): the pinned fields of the data-only moves of the step, read from data/moves.ts at b2cb775.
 # Every field of the pin entry must be listed (C5_IGNORED_KEYS aside) with its value, and the Champions mod must have no entry.
-C5_IGNORED_KEYS = {'num', 'name', 'contestType'}
+C5_IGNORED_KEYS = {'num', 'name', 'contestType', 'zMove', 'maxMove', 'damageCallback', 'onTryImmunity'}
 C5_FACTS = (
     ('surf', {'accuracy': 100, 'basePower': 90, 'category': 'Special', 'pp': 15, 'priority': 0, 'target': 'allAdjacent',
               'type': 'Water', 'flags': {'protect', 'mirror', 'nonsky', 'metronome'}}),
+    # Endeavor (data/moves.ts:4784-4804): the callbacks are checked by the handler (C5_HANDLERS, SPECIAL_P), not here.
+    ('endeavor', {'accuracy': 100, 'basePower': 0, 'category': 'Physical', 'pp': 5, 'priority': 0, 'target': 'normal',
+                  'type': 'Normal', 'flags': {'contact', 'protect', 'mirror', 'metronome', 'noparentalbond'}}),
 )
 
 

@@ -1,0 +1,20 @@
+{
+  "name": "c5_endeavor_substitute",
+  "purpose": "C5 Endeavor (decision 0015 entry 5cy): Quaquaval (M) uses Endeavor on Greninja (slot 2), which has a Substitute from its own turn 1; the immunity judges Greninja's real HP, and the damage (target HP minus user HP) goes to the Substitute (moves.ts:18341-18369). Mirror of team V.",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,000000000000000000000000000000000000000000000000000000000000c5e3",
+  "teams": [
+    "Quaquaval (M) @ Expert Belt\nAbility: Moxie\nLevel: 50\nEVs: 32 Atk / 2 SpD / 32 Spe\nJolly Nature\n- Endeavor\n- Aqua Jet\n- Surf\n- Protect\n\nGreninja (M) @ Focus Sash\nAbility: Torrent\nLevel: 50\nEVs: 2 HP / 32 SpA / 32 Spe\nTimid Nature\n- Substitute\n- Surf\n- Dark Pulse\n- Protect\n\nBlastoise (M) @ Blastoisinite\nAbility: Torrent\nLevel: 50\nEVs: 2 HP / 32 SpA / 32 Spe\nModest Nature\n- Surf\n- Ice Beam\n- Flash Cannon\n- Protect\n\nMilotic (F) @ Sitrus Berry\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 32 SpD / 2 Def\nCalm Nature\n- Surf\n- Scald\n- Recover\n- Protect\n\nGholdengo @ Life Orb\nAbility: Good as Gold\nLevel: 50\nEVs: 17 HP / 2 Def / 17 SpA / 16 SpD / 14 Spe\nModest Nature\n- Surf\n- Shadow Ball\n- Thunderbolt\n- Protect\n\nAzumarill (F) @ Light Clay\nAbility: Huge Power\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Surf\n- Aqua Tail\n- Knock Off\n- Protect",
+    "Quaquaval (M) @ Expert Belt\nAbility: Moxie\nLevel: 50\nEVs: 32 Atk / 2 SpD / 32 Spe\nJolly Nature\n- Endeavor\n- Aqua Jet\n- Surf\n- Protect\n\nGreninja (M) @ Focus Sash\nAbility: Torrent\nLevel: 50\nEVs: 2 HP / 32 SpA / 32 Spe\nTimid Nature\n- Substitute\n- Surf\n- Dark Pulse\n- Protect\n\nBlastoise (M) @ Blastoisinite\nAbility: Torrent\nLevel: 50\nEVs: 2 HP / 32 SpA / 32 Spe\nModest Nature\n- Surf\n- Ice Beam\n- Flash Cannon\n- Protect\n\nMilotic (F) @ Sitrus Berry\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 32 SpD / 2 Def\nCalm Nature\n- Surf\n- Scald\n- Recover\n- Protect\n\nGholdengo @ Life Orb\nAbility: Good as Gold\nLevel: 50\nEVs: 17 HP / 2 Def / 17 SpA / 16 SpD / 14 Spe\nModest Nature\n- Surf\n- Shadow Ball\n- Thunderbolt\n- Protect\n\nAzumarill (F) @ Light Clay\nAbility: Huge Power\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Surf\n- Aqua Tail\n- Knock Off\n- Protect"
+  ],
+  "plan": {
+    "p1": [
+      "move 1 2, move 1"
+    ],
+    "p2": [
+      "move 1, move 1"
+    ],
+    "max_steps": 3
+  }
+}
