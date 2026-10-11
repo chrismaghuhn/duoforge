@@ -79,7 +79,7 @@
         0
        ],
        "pp": [
-        12,
+        20,
         8,
         8
        ],
@@ -514,7 +514,7 @@
          0
         ],
         "pp": [
-         12,
+         20,
          8,
          8
         ],
@@ -834,19 +834,16 @@
     "|-boost|p2b: Milotic|atk|1",
     "|-boost|p2b: Milotic|def|1",
     "|-boost|p2b: Milotic|accuracy|1",
-    "|move|p1a: Trevenant|Horn Leech|p2a: Staraptor",
-    "|-resisted|p2a: Staraptor|1",
+    "|move|p1a: Trevenant|Knock Off|p2a: Staraptor",
     "|split|p2",
-    "|-damage|p2a: Staraptor|9/192",
-    "|-damage|p2a: Staraptor|4/100",
-    "|split|p1",
-    "|-heal|p1a: Trevenant|16/192|[from] drain|[of] p2a: Staraptor",
-    "|-heal|p1a: Trevenant|8/100|[from] drain|[of] p2a: Staraptor",
-    "|upkeep",
-    "|turn|2"
+    "|-damage|p2a: Staraptor|0 fnt",
+    "|-damage|p2a: Staraptor|0 fnt",
+    "|-enditem|p2a: Staraptor|Sharp Beak|[from] move: Knock Off|[of] p1a: Trevenant",
+    "|faint|p2a: Staraptor",
+    "|upkeep"
    ],
    "state": {
-    "turn": 2,
+    "turn": 1,
     "ended": false,
     "winner": "",
     "weather": "",
@@ -856,24 +853,13 @@
     "trick_room": 0,
     "sides": [
      {
-      "request": "move",
+      "request": "",
       "conditions": [
        0,
        0,
        0
       ],
-      "enabled": [
-       [
-        1,
-        1,
-        1
-       ],
-       [
-        1,
-        1,
-        1
-       ]
-      ],
+      "enabled": [],
       "active": [
        0,
        1
@@ -884,7 +870,7 @@
         "set_species": "Trevenant",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 16,
+        "hp": 1,
         "maxhp": 192,
         "item": "",
         "status": "",
@@ -901,7 +887,7 @@
          0
         ],
         "pp": [
-         11,
+         19,
          8,
          8
         ],
@@ -994,22 +980,13 @@
       ]
      },
      {
-      "request": "move",
+      "request": "switch",
       "conditions": [
        0,
        0,
        0
       ],
-      "enabled": [
-       [
-        1,
-        1,
-        1
-       ],
-       [
-        1
-       ]
-      ],
+      "enabled": [],
       "active": [
        0,
        1
@@ -1019,14 +996,14 @@
         "species": "Staraptor",
         "set_species": "Staraptor",
         "mega": 0,
-        "switch_flag": 0,
-        "hp": 9,
+        "switch_flag": 1,
+        "hp": 0,
         "maxhp": 192,
-        "item": "sharpbeak",
-        "status": "",
+        "item": "",
+        "status": "fnt",
         "status_time": 0,
         "confusion": 0,
-        "fainted": false,
+        "fainted": true,
         "boosts": [
          0,
          0,

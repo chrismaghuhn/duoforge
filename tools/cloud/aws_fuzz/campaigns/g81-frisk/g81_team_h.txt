@@ -3,7 +3,7 @@ Ability: Frisk
 Level: 50
 EVs: 32 HP / 32 Atk / 2 Def
 Adamant Nature
-- Horn Leech
+- Knock Off
 - Protect
 - Trick Room
 

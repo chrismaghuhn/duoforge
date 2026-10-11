@@ -199,6 +199,7 @@ static void check_illusion_refusal(df_test *t, const duoforge_context *ctx)
     build_setup(cb, &setup);
     setup.sides[1].members[0].species_id = DFI_FORME_NOIVERN;
     setup.sides[1].members[0].ability = DFI_ABILITY_FRISK + 1u;
+    setup.sides[1].members[0].gender = DFI_GENDER_MALE;
     /* Noivern learns Protect and Hurricane (the setup checks each move of the forme): Primarina's moves are replaced. */
     setup.sides[1].members[0].move_count = 2u;
     setup.sides[1].members[0].moves[0].move_id = DFI_MOVE_HURRICANE;

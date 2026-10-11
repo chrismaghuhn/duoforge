@@ -1390,7 +1390,9 @@ int main(void)
                                 /* step G65: Unaware, Marvel Scale, Water Bubble, Reckless and Super Luck, by id (dfi_get_damage,
                                  * dfi_accuracy_check, the status setter and dfi_trace) */
                                 id == DFI_ABILITY_UNAWARE || id == DFI_ABILITY_MARVELSCALE || id == DFI_ABILITY_WATERBUBBLE ||
-                                id == DFI_ABILITY_RECKLESS || id == DFI_ABILITY_SUPERLUCK;
+                                id == DFI_ABILITY_RECKLESS || id == DFI_ABILITY_SUPERLUCK ||
+                                /* step G81: Frisk, by id (dfi_entry_ability, the switch-in ITEM_SHOWN lines of the foes' items) */
+                                id == DFI_ABILITY_FRISK;
             DF_CHECK_EQ_U64(&t, dfi_support.abilities[id] != 0u ? 1u : 0u, (setter || terrain_setter || engine || ate) ? 1u : 0u);
             DF_CHECK_EQ_U64(&t, dfi_pool_ability_family[id].family,
                             setter ? DFI_ABILITY_FAMILY_WEATHER_SETTER
