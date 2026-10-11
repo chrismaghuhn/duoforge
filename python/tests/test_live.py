@@ -527,9 +527,14 @@ CLOSURE_OUTCOME = {"equal": 2594, "refused": 310}
 # lane B batch 5c (G71 Cute Charm, G75 cheap set): +144 equal and +2 refused records; 12 streams stop on the Attract lines
 # (unfolded:DUOFORGE_POSITION_EXT_ATTRACT, the tracker fold of the ATTRACT bit comes after G71), 4 more on Dragon Cheer (the
 # G75 crit battles). Lane B batch 5d (G79 Cloud Nine, G81 Frisk): +170 equal and +18 refused records, no new stop.
-POOL_OUTCOME = {"equal": 10212, "refused": 507, "tracker refuses: unburden-without-item-line": 4}
-POOL_STOPS = {"feature:SUBSTITUTE": 78, "unfolded:DUOFORGE_POSITION_EXT_ATTRACT": 12, "feature:DRAGON_CHEER": 12,
-              "feature:FORME_CHANGE": 10, "feature:DESTINY_BOND": 10, "feature:ROOST": 8, "line:-end": 2, "feature:ILLUSION": 2}
+# PR #393 (the Attract fold, G71 on the tracker): the 12 unfolded:DUOFORGE_POSITION_EXT_ATTRACT streams are gone (the fold
+# reaches their later points): +30 equal, +4 refused, and 42 infatuated points whose tracker refusal is the engine check's
+# verdict (duoforge_public_record_check refuses a world with an infatuated occupant, lead's option B), counted apart. Measured
+# on the merged tree (CI, Linux and Windows Python jobs, identical): 10242 equal, 511 refused, 42 engine-check refusals.
+POOL_OUTCOME = {"equal": 10242, "refused": 511, "engine check refuses: infatuated occupant (from_view, option B)": 42,
+                "tracker refuses: unburden-without-item-line": 4}
+POOL_STOPS = {"feature:SUBSTITUTE": 78, "feature:DRAGON_CHEER": 12, "feature:FORME_CHANGE": 10, "feature:DESTINY_BOND": 10,
+              "feature:ROOST": 8, "line:-end": 2, "feature:ILLUSION": 2}
 
 
 INFATUATED_REFUSAL = "engine check refuses: infatuated occupant (from_view, option B)"
