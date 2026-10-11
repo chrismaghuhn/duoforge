@@ -1947,7 +1947,7 @@ const dfi_pool_item_data dfi_pool_items[DFI_POOL_ITEM_COUNT] = {
     {107u, 108u},
     /* Icy Rock -- data/items.ts:3010-3018 */
     {DFI_FORME_NONE, DFI_FORME_NONE},
-    /* Iron Ball -- data/items.ts:3050-3067  [unmodelled: callback onEffectiveness; callback onModifySpe; read by id in data/moves.ts; read by id in sim/pokemon.ts] */
+    /* Iron Ball -- data/items.ts:3050-3067 */
     {DFI_FORME_NONE, DFI_FORME_NONE},
     /* Kangaskhanite -- data/items.ts:3117-3128, data/mods/champions/items.ts:498-501 */
     {61u, 62u},
@@ -2079,7 +2079,7 @@ const dfi_pool_item_data dfi_pool_items[DFI_POOL_ITEM_COUNT] = {
  *   battlearmor -- data/abilities.ts:355-361
  *   berserk -- data/abilities.ts:414-444, data/mods/champions/abilities.ts:8-13  [unmodelled: callback onAfterMoveSecondary; callback onDamage; callback onTryEatItem]
  *   bigpecks -- data/abilities.ts:445-459
- *   bulletproof -- data/abilities.ts:480-491  [unmodelled: callback onTryHit]
+ *   bulletproof -- data/abilities.ts:480-491
  *   cheekpouch -- data/abilities.ts:492-500  [unmodelled: callback onEatItem]
  *   chlorophyll -- data/abilities.ts:512-522
  *   clearbody -- data/abilities.ts:523-542
@@ -2138,7 +2138,7 @@ const dfi_pool_item_data dfi_pool_items[DFI_POOL_ITEM_COUNT] = {
  *   justified -- data/abilities.ts:2249-2259
  *   keeneye -- data/abilities.ts:2260-2277
  *   klutz -- data/abilities.ts:2278-2290  [unmodelled: callback onStart; callback onSwitchInPriority; read by id in sim/pokemon.ts]
- *   leafguard -- data/abilities.ts:2291-2310  [unmodelled: callback onSetStatus; callback onTryAddVolatile]
+ *   leafguard -- data/abilities.ts:2291-2310
  *   levitate -- data/abilities.ts:2311-2317
  *   libero -- data/abilities.ts:2318-2333  [unmodelled: callback onPrepareHit]
  *   lightmetal -- data/abilities.ts:2334-2342  [unmodelled: callback onModifyWeight]
@@ -2190,7 +2190,7 @@ const dfi_pool_item_data dfi_pool_items[DFI_POOL_ITEM_COUNT] = {
  *   reckless -- data/abilities.ts:3799-3811
  *   regenerator -- data/abilities.ts:3833-3841, data/mods/champions/abilities.ts:63-70
  *   ripen -- data/abilities.ts:3842-3880  [unmodelled: callback onChangeBoost; callback onEatItem; callback onSourceModifyDamage; callback onSourceModifyDamagePriority; callback onTryEatItem; callback onTryEatItemPriority; callback onTryHeal; read by id in data/items.ts]
- *   rivalry -- data/abilities.ts:3881-3898  [unmodelled: callback onBasePower; callback onBasePowerPriority]
+ *   rivalry -- data/abilities.ts:3881-3898
  *   roughskin -- data/abilities.ts:3938-3949
  *   runaway -- data/abilities.ts:3950-3955, data/mods/champions/abilities.ts:71-81  [unmodelled: callback onMaybeTrapPokemon; callback onMaybeTrapPokemonPriority; callback onTrapPokemon; callback onTrapPokemonPriority]
  *   sandforce -- data/abilities.ts:3956-3973
@@ -2761,7 +2761,7 @@ const uint8_t dfi_pool_item_handler[DFI_POOL_ITEM_COUNT] = {
     [DFI_ITEM_HERACRONITE] = DFI_HANDLER_NONE,
     [DFI_ITEM_HOUNDOOMINITE] = DFI_HANDLER_NONE,
     [DFI_ITEM_ICYROCK] = DFI_HANDLER_NONE,
-    [DFI_ITEM_IRONBALL] = DFI_HANDLER_UNMODELED,
+    [DFI_ITEM_IRONBALL] = DFI_HANDLER_NONE,
     [DFI_ITEM_KANGASKHANITE] = DFI_HANDLER_NONE,
     [DFI_ITEM_KINGSROCK] = DFI_HANDLER_UNMODELED,
     [DFI_ITEM_LEEK] = DFI_HANDLER_UNMODELED,
@@ -2858,7 +2858,7 @@ const uint8_t dfi_pool_ability_handler[DFI_POOL_ABILITY_COUNT] = {
     [DFI_ABILITY_BATTLEARMOR] = DFI_HANDLER_NONE,
     [DFI_ABILITY_BERSERK] = DFI_HANDLER_UNMODELED,
     [DFI_ABILITY_BIGPECKS] = DFI_HANDLER_NONE,
-    [DFI_ABILITY_BULLETPROOF] = DFI_HANDLER_UNMODELED,
+    [DFI_ABILITY_BULLETPROOF] = DFI_HANDLER_NONE,
     [DFI_ABILITY_CHEEKPOUCH] = DFI_HANDLER_UNMODELED,
     [DFI_ABILITY_CHLOROPHYLL] = DFI_HANDLER_NONE,
     [DFI_ABILITY_CLEARBODY] = DFI_HANDLER_NONE,
@@ -2917,7 +2917,7 @@ const uint8_t dfi_pool_ability_handler[DFI_POOL_ABILITY_COUNT] = {
     [DFI_ABILITY_JUSTIFIED] = DFI_HANDLER_NONE,
     [DFI_ABILITY_KEENEYE] = DFI_HANDLER_NONE,
     [DFI_ABILITY_KLUTZ] = DFI_HANDLER_UNMODELED,
-    [DFI_ABILITY_LEAFGUARD] = DFI_HANDLER_UNMODELED,
+    [DFI_ABILITY_LEAFGUARD] = DFI_HANDLER_NONE,
     [DFI_ABILITY_LEVITATE] = DFI_HANDLER_NONE,
     [DFI_ABILITY_LIBERO] = DFI_HANDLER_UNMODELED,
     [DFI_ABILITY_LIGHTMETAL] = DFI_HANDLER_UNMODELED,
@@ -2969,7 +2969,7 @@ const uint8_t dfi_pool_ability_handler[DFI_POOL_ABILITY_COUNT] = {
     [DFI_ABILITY_RECKLESS] = DFI_HANDLER_NONE,
     [DFI_ABILITY_REGENERATOR] = DFI_HANDLER_NONE,
     [DFI_ABILITY_RIPEN] = DFI_HANDLER_UNMODELED,
-    [DFI_ABILITY_RIVALRY] = DFI_HANDLER_UNMODELED,
+    [DFI_ABILITY_RIVALRY] = DFI_HANDLER_NONE,
     [DFI_ABILITY_ROUGHSKIN] = DFI_HANDLER_NONE,
     [DFI_ABILITY_RUNAWAY] = DFI_HANDLER_UNMODELED,
     [DFI_ABILITY_SANDFORCE] = DFI_HANDLER_NONE,
@@ -5379,9 +5379,13 @@ const uint8_t dfi_pool_move_static_hits[DFI_POOL_MOVE_COUNT][2] = {
     [DFI_MOVE_ZINGZAP] = {1u, 1u}, /* Zing Zap */
 };
 
-/* The third flags byte (DFI_MOVE_FLAG3_*): REFLECTABLE (step G57), MUST_PRESSURE (step G53), PULSE (step G59). */
+/* The third flags byte (DFI_MOVE_FLAG3_*): REFLECTABLE (step G57), MUST_PRESSURE (step G53), PULSE (step G59), BULLET (step G83). */
 const uint8_t dfi_pool_move_flags3[DFI_POOL_MOVE_COUNT] = {
     [DFI_MOVE_HYPNOSIS] = 1u, /* Hypnosis */
+    [DFI_MOVE_ZAPCANNON] = 16u, /* Zap Cannon */
+    [DFI_MOVE_FOCUSBLAST] = 16u, /* Focus Blast */
+    [DFI_MOVE_SHADOWBALL] = 16u, /* Shadow Ball */
+    [DFI_MOVE_WEATHERBALL] = 16u, /* Weather Ball */
     [DFI_MOVE_DRAGONPULSE] = 8u, /* Dragon Pulse */
     [DFI_MOVE_SNARL] = 4u, /* Snarl */
     [DFI_MOVE_PARTINGSHOT] = 5u, /* Parting Shot */
@@ -5390,15 +5394,18 @@ const uint8_t dfi_pool_move_flags3[DFI_POOL_MOVE_COUNT] = {
     [DFI_MOVE_ENCORE] = 5u, /* Encore */
     [DFI_MOVE_SOAK] = 1u, /* Soak */
     [DFI_MOVE_PSYCHICNOISE] = 4u, /* Psychic Noise */
+    [DFI_MOVE_ACIDSPRAY] = 16u, /* Acid Spray */
     [DFI_MOVE_AFTERYOU] = 4u, /* After You */
     [DFI_MOVE_ALLURINGVOICE] = 4u, /* Alluring Voice */
     [DFI_MOVE_AROMATICMIST] = 4u, /* Aromatic Mist */
     [DFI_MOVE_ATTRACT] = 5u, /* Attract */
-    [DFI_MOVE_AURASPHERE] = 8u, /* Aura Sphere */
+    [DFI_MOVE_AURASPHERE] = 24u, /* Aura Sphere */
     [DFI_MOVE_BABYDOLLEYES] = 1u, /* Baby-Doll Eyes */
+    [DFI_MOVE_BEAKBLAST] = 16u, /* Beak Blast */
     [DFI_MOVE_BLOCK] = 1u, /* Block */
     [DFI_MOVE_BOOMBURST] = 4u, /* Boomburst */
     [DFI_MOVE_BUGBUZZ] = 4u, /* Bug Buzz */
+    [DFI_MOVE_BULLETSEED] = 16u, /* Bullet Seed */
     [DFI_MOVE_CHARM] = 1u, /* Charm */
     [DFI_MOVE_CLANGINGSCALES] = 4u, /* Clanging Scales */
     [DFI_MOVE_COACHING] = 4u, /* Coaching */
@@ -5413,6 +5420,8 @@ const uint8_t dfi_pool_move_flags3[DFI_POOL_MOVE_COUNT] = {
     [DFI_MOVE_DRAGONCHEER] = 4u, /* Dragon Cheer */
     [DFI_MOVE_EERIEIMPULSE] = 1u, /* Eerie Impulse */
     [DFI_MOVE_EERIESPELL] = 4u, /* Eerie Spell */
+    [DFI_MOVE_ELECTROBALL] = 16u, /* Electro Ball */
+    [DFI_MOVE_ENERGYBALL] = 16u, /* Energy Ball */
     [DFI_MOVE_ENTRAINMENT] = 1u, /* Entrainment */
     [DFI_MOVE_FAIRYLOCK] = 4u, /* Fairy Lock */
     [DFI_MOVE_FAKETEARS] = 1u, /* Fake Tears */
@@ -5422,6 +5431,7 @@ const uint8_t dfi_pool_move_flags3[DFI_POOL_MOVE_COUNT] = {
     [DFI_MOVE_GASTROACID] = 1u, /* Gastro Acid */
     [DFI_MOVE_GLARE] = 1u, /* Glare */
     [DFI_MOVE_GUARDSWAP] = 4u, /* Guard Swap */
+    [DFI_MOVE_GYROBALL] = 16u, /* Gyro Ball */
     [DFI_MOVE_HAZE] = 4u, /* Haze */
     [DFI_MOVE_HEALBELL] = 4u, /* Heal Bell */
     [DFI_MOVE_HEALPULSE] = 9u, /* Heal Pulse */
@@ -5438,18 +5448,24 @@ const uint8_t dfi_pool_move_flags3[DFI_POOL_MOVE_COUNT] = {
     [DFI_MOVE_OVERDRIVE] = 4u, /* Overdrive */
     [DFI_MOVE_PERISHSONG] = 4u, /* Perish Song */
     [DFI_MOVE_POISONPOWDER] = 1u, /* Poison Powder */
+    [DFI_MOVE_POLLENPUFF] = 16u, /* Pollen Puff */
     [DFI_MOVE_POWERSWAP] = 4u, /* Power Swap */
     [DFI_MOVE_PSYCHUP] = 4u, /* Psych Up */
+    [DFI_MOVE_PYROBALL] = 16u, /* Pyro Ball */
     [DFI_MOVE_REFLECTTYPE] = 4u, /* Reflect Type */
     [DFI_MOVE_ROAR] = 5u, /* Roar */
+    [DFI_MOVE_ROCKBLAST] = 16u, /* Rock Blast */
+    [DFI_MOVE_ROCKWRECKER] = 16u, /* Rock Wrecker */
     [DFI_MOVE_ROLEPLAY] = 4u, /* Role Play */
     [DFI_MOVE_ROUND] = 4u, /* Round */
     [DFI_MOVE_SCARYFACE] = 1u, /* Scary Face */
     [DFI_MOVE_SCREECH] = 5u, /* Screech */
+    [DFI_MOVE_SEEDBOMB] = 16u, /* Seed Bomb */
     [DFI_MOVE_SIMPLEBEAM] = 1u, /* Simple Beam */
     [DFI_MOVE_SING] = 5u, /* Sing */
     [DFI_MOVE_SKILLSWAP] = 4u, /* Skill Swap */
     [DFI_MOVE_SLEEPPOWDER] = 1u, /* Sleep Powder */
+    [DFI_MOVE_SLUDGEBOMB] = 16u, /* Sludge Bomb */
     [DFI_MOVE_SNORE] = 4u, /* Snore */
     [DFI_MOVE_SPARKLINGARIA] = 4u, /* Sparkling Aria */
     [DFI_MOVE_SPEEDSWAP] = 4u, /* Speed Swap */
@@ -5464,6 +5480,7 @@ const uint8_t dfi_pool_move_flags3[DFI_POOL_MOVE_COUNT] = {
     [DFI_MOVE_SWAGGER] = 1u, /* Swagger */
     [DFI_MOVE_SWEETKISS] = 1u, /* Sweet Kiss */
     [DFI_MOVE_SWEETSCENT] = 1u, /* Sweet Scent */
+    [DFI_MOVE_SYRUPBOMB] = 16u, /* Syrup Bomb */
     [DFI_MOVE_TAUNT] = 5u, /* Taunt */
     [DFI_MOVE_TEARFULLOOK] = 1u, /* Tearful Look */
     [DFI_MOVE_TEATIME] = 4u, /* Teatime */
@@ -6966,7 +6983,6 @@ const char *const dfi_pool_item_unmodeled[DFI_POOL_ITEM_COUNT] = {
     [DFI_ITEM_CHERIBERRY] = "callback onEat; callback onUpdate",
     [DFI_ITEM_CHESTOBERRY] = "callback onEat; callback onUpdate",
     [DFI_ITEM_FOCUSBAND] = "callback onDamage; callback onDamagePriority",
-    [DFI_ITEM_IRONBALL] = "callback onEffectiveness; callback onModifySpe; read by id in data/moves.ts; read by id in sim/pokemon.ts",
     [DFI_ITEM_KINGSROCK] = "callback onModifyMove; callback onModifyMovePriority",
     [DFI_ITEM_LEEK] = "callback onModifyCritRatio",
     [DFI_ITEM_LEPPABERRY] = "callback onEat; callback onUpdate; read by id in data/items.ts; read by id in data/moves.ts; read by id in sim/pokemon.ts",
@@ -6990,7 +7006,6 @@ const char *const dfi_pool_ability_unmodeled[DFI_POOL_ABILITY_COUNT] = {
     [DFI_ABILITY_ANTICIPATION] = "callback onStart",
     [DFI_ABILITY_AROMAVEIL] = "callback onAllyTryAddVolatile",
     [DFI_ABILITY_BERSERK] = "callback onAfterMoveSecondary; callback onDamage; callback onTryEatItem",
-    [DFI_ABILITY_BULLETPROOF] = "callback onTryHit",
     [DFI_ABILITY_CHEEKPOUCH] = "callback onEatItem",
     [DFI_ABILITY_CORROSION] = "read by id in sim/pokemon.ts",
     [DFI_ABILITY_CUDCHEW] = "callback onEatItem; callback onResidual; callback onResidualOrder; callback onResidualSubOrder; read by id in data/moves.ts",
@@ -7024,7 +7039,6 @@ const char *const dfi_pool_ability_unmodeled[DFI_POOL_ABILITY_COUNT] = {
     [DFI_ABILITY_INNARDSOUT] = "callback onDamagingHit; callback onDamagingHitOrder",
     [DFI_ABILITY_INSOMNIA] = "callback onSetStatus; callback onTryAddVolatile; callback onUpdate; read by id in data/moves.ts",
     [DFI_ABILITY_KLUTZ] = "callback onStart; callback onSwitchInPriority; read by id in sim/pokemon.ts",
-    [DFI_ABILITY_LEAFGUARD] = "callback onSetStatus; callback onTryAddVolatile",
     [DFI_ABILITY_LIBERO] = "callback onPrepareHit",
     [DFI_ABILITY_LIGHTMETAL] = "callback onModifyWeight",
     [DFI_ABILITY_LIQUIDOOZE] = "callback onSourceTryHeal",
@@ -7054,7 +7068,6 @@ const char *const dfi_pool_ability_unmodeled[DFI_POOL_ABILITY_COUNT] = {
     [DFI_ABILITY_RATTLED] = "callback onAfterBoost; callback onDamagingHit",
     [DFI_ABILITY_RECEIVER] = "callback onAllyFaint",
     [DFI_ABILITY_RIPEN] = "callback onChangeBoost; callback onEatItem; callback onSourceModifyDamage; callback onSourceModifyDamagePriority; callback onTryEatItem; callback onTryEatItemPriority; callback onTryHeal; read by id in data/items.ts",
-    [DFI_ABILITY_RIVALRY] = "callback onBasePower; callback onBasePowerPriority",
     [DFI_ABILITY_RUNAWAY] = "callback onMaybeTrapPokemon; callback onMaybeTrapPokemonPriority; callback onTrapPokemon; callback onTrapPokemonPriority",
     [DFI_ABILITY_SANDSPIT] = "callback onDamagingHit",
     [DFI_ABILITY_SAPSIPPER] = "callback onAllyTryHitSide; callback onTryHit; callback onTryHitPriority; read by id in data/moves.ts",
@@ -7083,10 +7096,10 @@ const char *const dfi_pool_ability_unmodeled[DFI_POOL_ABILITY_COUNT] = {
 };
 
 const uint8_t dfi_pool_table_hash[32] = {
-    0x04u, 0x72u, 0xc0u, 0x03u, 0x13u, 0x4fu, 0x23u, 0x82u,
-    0xdau, 0x0eu, 0x62u, 0x68u, 0x7eu, 0xeau, 0x82u, 0xeau,
-    0xe3u, 0xabu, 0xffu, 0x83u, 0x47u, 0xfcu, 0xb8u, 0xc5u,
-    0x2eu, 0x51u, 0xa0u, 0xcbu, 0x07u, 0x8cu, 0x81u, 0x16u,
+    0xf6u, 0x32u, 0xc4u, 0x76u, 0x9eu, 0x1fu, 0x9du, 0xb0u,
+    0x4eu, 0xaeu, 0x83u, 0xebu, 0xe3u, 0x18u, 0x69u, 0xf9u,
+    0x33u, 0xf2u, 0x89u, 0x26u, 0x4du, 0x49u, 0x57u, 0xe8u,
+    0x63u, 0x06u, 0x61u, 0x27u, 0x1du, 0x34u, 0x67u, 0xfbu,
 };
 
 static size_t dfi_pool_put_u16(uint8_t *out, size_t n, uint32_t v)
