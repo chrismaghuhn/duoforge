@@ -37,7 +37,9 @@ The engine stores a slot's Pokemon state in `dfi_active_slot` (`src/state/battle
 | `position_flags` bit 0 (Healing Wish, G76) | slot condition `healingwish` (`sim/side.ts:464-510`) | **stays with the slot** |
 | `locked_target`, queued move `target` (flat slot) | slot location (`data/conditions.ts:309`; `getTarget`) | **stays with the slot**; the occupant is resolved at execution |
 | side conditions: Wide Guard, Quick Guard, Tailwind, Reflect, Light Screen, hazards | `sideCondition` | **stays** (not per slot) |
-| `trap_source`, `leech_seed_source` (flat position + 1 of another Pokemon) | the source is a Pokemon object (`data/conditions.ts:235`, `data/moves.ts:12980`) | **relinked**: a swapped source gets its new flat position in the trapped or seeded Pokemon's field |
+| `trap_source` (flat position + 1 of another Pokemon) | the source is a Pokemon object (`data/conditions.ts:235`) | **relinked**: a swapped source gets its new flat position in the trapped Pokemon's field |
+| `leech_seed_source` (flat position + 1 of another Pokemon) | the drain reads `getAtSlot(sourceSlot)` (`data/moves.ts:10218`), a slot | **stays with the slot** (section 10; the row above was wrong for Leech Seed) |
+| `attract_source[a]`, `[c]` (pool tail, G71) | the source is the Pokemon that attracts; its position is derived from its member code at view time (G87, `dfi_attract_source_flat`, `src/state/observation.c`) | **the two entries of the swapped pair are exchanged** with the Pokemon; no relink (section 10) |
 | `party_order` entries 0 and 1 (the two actives) | `side.pokemon[0]`, `[1]` (`sim/battle.ts:1598-1599`) | **swapped** (the template is `dfi_party_switch`, `src/combat/turn.c:7847`) |
 | queue records of the two Pokemon (`slot`, `activation_id`) | the action holds the Pokemon (`action.pokemon`) | **the record's slot follows the Pokemon** (`activation_id` binds it); the target does not change |
 | Revival Blessing slot condition | slot (`sim/side.ts:932-965`, `sim/pokemon.ts:1183`) | stays; not reachable (a fainted partner refuses the swap) |
@@ -118,3 +120,16 @@ Mutants (one edit each, in `src/combat/turn.c`): the counter not restarted, a fa
 **Open, to check with a recorded battle:** the residual countdown of the allyswitch volatile sits after the stall countdown in the per-position residual loop. The pin's duration end is a no-order, no-callback handler; whether the reference draws a SPEED_TIE for it next to another handler of the same holder (as decision 0031 found for the Protect and stall pair) is not yet known. A battle in which such a tie can occur must be recorded and checked (not done: needs the machine lock).
 
 **Not verified yet:** the layout dump test, every C test for these rows, the recorded battles, the mutants, the campaign and the full ctest (all waiting for the machine lock).
+
+## 10. Swap fields and Healing Wish refusal (batch 8, builder H17, 2026-10-11)
+
+Code: `dfi_swap_position_state` and `dfi_ally_swap_wish_blocked` (`src/combat/turn.c`, prototypes in `src/state/battle_internal.h`); tests in `tests/test_pool_g80.c` (`test_swap_position_fields`).
+
+- **attract_source.** The two entries of the swapped pair (`attract_source[side*2+a]`, `[side*2+c]`) are exchanged with the Pokemon. The value (a flat position + 1) is unchanged. The attract volatile belongs to the infatuated Pokemon (the move entry is `data/moves.ts:706`); the swap exchanges the pair so the entries stay with the Pokemon that holds them. The pin's source reference for the infatuation is not re-read line by line in this commit; the test covers the pair exchange only.
+- **G87 attract source position is derived.** `dfi_attract_source_flat` derives the source position from the member code when it is read; nothing is stored, so the swap needs no relink.
+- **leech_seed_source stays.** Pin: the Leech Seed drain is `getAtSlot(sourceSlot)` (`data/moves.ts:10202-10231`, drain at `:10218`), a slot. A swap therefore does not relink it. The earlier row (relinked) is withdrawn.
+- **trap_source is relinked** as before (`data/conditions.ts:235`, `:250`: the trapper is a Pokemon object).
+- **Healing Wish refusal.** Healing Wish's Swap handler (`data/moves.ts:8348-8382`, `onSwap` at `:8366-8377`) heals and clears the arriving Pokemon. A swap onto a slot with a pending wish runs that handler in the pin (`sim/battle.ts:1588-1607`, the two `runEvent('Swap', ...)` calls). Batch 8 does not model that heal, so the engine returns `DUOFORGE_E_UNSUPPORTED` before any state change when either slot of the swap has `DFI_POSFLAG_HEALING_WISH` (`dfi_ally_swap_wish_blocked`). This is an explicit refusal, not a silent fallback. The Healing Wish step lifts it.
+- **Tests.** The field test covers every field of the table in this section 2 (the attract and leech rows as changed here), the attract exchange and the G87 derived source position, the leech stays on its slot, and the Healing Wish refusal (blocked while the wish is pending, unblocked after both bits are cleared).
+
+Known on 3e3ec321 (measured on the unmodified head, not caused by this change): `test_pool_g80` `test_rows` (special ids: PSYCH_UP is 0x76, expected DRAGON_DARTS + 1), six `g92_*` conformance battles (`test_conformance.c:181`), and the tiebreak pin counts (965 battles vs 920, 5318 stops vs 5072).
