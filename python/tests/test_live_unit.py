@@ -200,6 +200,25 @@ class TrackerStopTest(unittest.TestCase):
                 p.occupant = k
         return t
 
+    def test_the_record_refuses_folds_it_does_not_write(self):
+        # record.py writes the tail of the #334 folds (Throat Chop, Perish, Encore, Aurora Veil, item_now, ability_now);
+        # a #342 fold that is up has tail fields the assembler does not write yet, so the point is refused, never a zero
+        import collections
+        from duoforge_live import record
+        t = self.tracker()
+        t._hazards = [collections.Counter(), collections.Counter()]
+        t._guards = set()
+        t._positions[0][0].throat_chop, t._positions[1][1].perish = 2, 3  # recorded folds: no refusal
+        self.assertEqual(record.unrecorded_folds(t), [])
+        t._positions[1][0].taunt, t._positions[0][1].type_now = 1, (18, 0)
+        t._hazards[1]["spikes"] = 2
+        t._guards.add(("WIDE_GUARD", 0))
+        self.assertEqual(sorted(record.unrecorded_folds(t)),
+                         ["side0.position1.type_now", "side0.wide_guard", "side1.hazards", "side1.position0.taunt"])
+        with self.assertRaises(record.Refusal) as caught:
+            record._tail(t, None, 2)
+        self.assertEqual(caught.exception.reason, "fold-not-in-record")
+
     def test_throat_chop_takes_only_the_pins_silent_form(self):
         from duoforge_live import lines
         t = self.tracker()
@@ -224,8 +243,15 @@ class TrackerStopTest(unittest.TestCase):
                 "type_now": (18, 0)}
         empty = {"encore_slot": 0, "disable_slot": 0, "yawn": 0, "imprison": 0, "glaive_rush": 0, "must_recharge": 0,
                  "type_now": (0, 0)}
+        from types import SimpleNamespace
+        from duoforge_live.tracker import ROSTER_NONE
         t = self.tracker()
         t._baton_pass = 7
+        # the entry bookkeeping of the public record (#344): activation ids, the foe's leads, the own party order, the
+        # members' toxic stage; the spectator path, so the own member's display comes from the line
+        t._spectator, t._next_activation, t._foe_leads, t._party = True, 1, [ROSTER_NONE, ROSTER_NONE], None
+        members = [SimpleNamespace(toxic_stage=0, seen=False, hp_percent=0, hp_flag=0, status=0) for _ in range(6)]
+        t._member = lambda side: members
         p = t._positions[0][0]
         for name, value in {**passed, **kept}.items():
             setattr(p, name, value)
