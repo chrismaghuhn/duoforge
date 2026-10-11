@@ -881,6 +881,18 @@ class LabelsTest(unittest.TestCase):
         self.assertTrue({2, 3} <= {o.target for o in self.options_of(got, 0)})  # the chosen p2a is in the label
         self.assertEqual({(o.move_slot, o.mega) for o in self.options_of(got, 0)}, {(1, 0)})
 
+    def test_ghost_curse_line_may_name_a_random_foe(self):
+        # data/moves.ts curse onModifyMove (step G84b): a Ghost user's Curse aimed at its partner (or with no target)
+        # becomes randomNormal, so the move line names a random foe, not the chosen target; the partner stays possible
+        mv = self.tables["MOVE"]
+        moves = ([mv["BRAVEBIRD"], mv["CURSE"], mv["TAILWIND"], mv["PROTECT"]], self.moves[1])
+        log = ["|move|p1a: Staraptor|Curse|p2b: Foe2"]
+        point = self.P.Point(1, 0, self.P.TURN, (), len(log))
+        got = self.L.turn_label(log, point, 0, self.lists, moves, lambda details: self.species[details.split(",")[0]],
+                                self.tables, len(log))
+        self.assertEqual(got.reasons[0], self.L.TARGET_UNKNOWN)
+        self.assertIn(1, {o.target for o in self.options_of(got, 0)})  # the partner, the chosen target, is in the label
+
     def test_faint_earlier_makes_the_target_unknown(self):
         got = self.label(["|move|p1b: Gholdengo|Make It Rain|p2a: Foe|[spread] p2a,p2b", "|faint|p2a: Foe",
                           "|move|p1a: Staraptor|Brave Bird|p2b: Foe2"])
