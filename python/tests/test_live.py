@@ -261,8 +261,10 @@ class BatonPassTest(unittest.TestCase):
 
 
 class SetBoostTest(unittest.TestCase):
-    """Step G86: Belly Drum's -setboost shows the Attack stage it leaves (sim/battle.ts:2051-2052); the tracker sets the
-    position's stage to it, as the engine's BOOST event of the change does (src/combat/turn.c dfi_boost)."""
+    """Steps G86 and G77: Belly Drum's and Anger Point's -setboost show the Attack stage they leave
+    (sim/battle.ts:2051-2052); the tracker sets the position's stage to it, as the engine's BOOST event of the change does
+    (src/combat/turn.c dfi_boost: cause MOVE for Belly Drum, cause ABILITY for Anger Point)."""
+    LINES = ("|-setboost|p1a: Snorlax|atk|6|[from] move: Belly Drum", "|-setboost|p1a: Primeape|atk|6|[from] ability: Anger Point")
 
     def tracker(self, stage):
         from types import SimpleNamespace
@@ -281,17 +283,19 @@ class SetBoostTest(unittest.TestCase):
     def test_the_stage_becomes_the_printed_one(self):
         from duoforge_live import tracker
         for start in (tracker.STAGE_NEUTRAL - 2, tracker.STAGE_NEUTRAL, tracker.STAGE_NEUTRAL + 3):
-            t, p = self.tracker(start)
-            t._set_boost("|-setboost|p1a: Snorlax|atk|6|[from] move: Belly Drum".split("|"))
-            self.assertEqual(p.stages[0], tracker.STAGE_NEUTRAL + 6, start)
-            self.assertEqual(p.stages[1:], [tracker.STAGE_NEUTRAL] * 6)
+            for line in self.LINES:
+                t, p = self.tracker(start)
+                t._set_boost(line.split("|"))
+                self.assertEqual(p.stages[0], tracker.STAGE_NEUTRAL + 6, (start, line))
+                self.assertEqual(p.stages[1:], [tracker.STAGE_NEUTRAL] * 6)
 
     def test_no_positive_change_stops(self):
         from duoforge_live import lines, tracker
-        t, p = self.tracker(tracker.STAGE_NEUTRAL + 6)
-        with self.assertRaises(lines.Stop) as caught:
-            t._set_boost("|-setboost|p1a: Snorlax|atk|6|[from] move: Belly Drum".split("|"))
-        self.assertEqual(caught.exception.reason, "converter:setboost-change")
+        for line in self.LINES:
+            t, p = self.tracker(tracker.STAGE_NEUTRAL + 6)
+            with self.assertRaises(lines.Stop) as caught:
+                t._set_boost(line.split("|"))
+            self.assertEqual(caught.exception.reason, "converter:setboost-change", line)
 
 
 class ClearAllBoostsTest(unittest.TestCase):

@@ -846,3 +846,7 @@ duoforge_add_test(NAME duoforge.state.pool_g79 SOURCES test_pool_g79.c WHITEBOX 
 # Step G81 (decision 0015 entry 5bs, decision 0033): Frisk (the foes' items announced at its holder's switch-in, ITEM_SHOWN in
 # the Frisk form), the switch-in order against Intimidate, two Frisk holders, and the fold that ignores the event.
 duoforge_add_test(NAME duoforge.state.pool_g81 SOURCES test_pool_g81.c WHITEBOX TIMEOUT 120)
+
+# Step G77 (decision 0015 5bq): the crit package Magma Armor, Anger Point, Sniper and Leek (their rows, the ModifyDamage bound and
+# commutation with Sniper, the Skill Swap and Trace refusals of Magma Armor onto a frozen holder; white-box).
+duoforge_add_test(NAME duoforge.state.pool_g77 SOURCES test_pool_g77.c WHITEBOX TIMEOUT 60)

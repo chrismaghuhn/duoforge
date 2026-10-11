@@ -381,11 +381,14 @@ class LinesTest(unittest.TestCase):
             lines.check(line, self.view)
         return caught.exception.reason
 
-    def test_belly_drum_setboost_folds_and_any_other_stops(self):
-        # Step G86: Belly Drum prints -setboost (sim/battle.ts:2051-2052), the stage it leaves; only that source folds
+    def test_setboost_folds_for_belly_drum_and_anger_point_and_any_other_stops(self):
+        # Steps G86 (Belly Drum) and G77 (Anger Point) print -setboost (sim/battle.ts:2051-2052), the stage it leaves; only
+        # those two sources of Attack fold
         self.assertEqual(lines.check("|-setboost|p1a: Staraptor|atk|6|[from] move: Belly Drum", self.view), "fold")
-        self.assertTrue(self.stop("|-setboost|p1a: Staraptor|atk|6|[from] ability: Anger Point").startswith("line:-setboost"))
+        self.assertEqual(lines.check("|-setboost|p1a: Staraptor|atk|6|[from] ability: Anger Point", self.view), "fold")
         self.assertTrue(self.stop("|-setboost|p1a: Staraptor|def|6|[from] move: Belly Drum").startswith("line:-setboost"))
+        self.assertTrue(self.stop("|-setboost|p1a: Staraptor|def|6|[from] ability: Anger Point").startswith("line:-setboost"))
+        self.assertTrue(self.stop("|-setboost|p1a: Staraptor|atk|6|[from] move: Swords Dance").startswith("line:-setboost"))
 
     def test_feature_lines_stop(self):
         self.assertEqual(self.stop("|-fieldstart|move: Gravity"), "feature:GRAVITY")

@@ -365,17 +365,21 @@ class Tracker:
                 self._battle_line(line)
 
     def _set_boost(self, parts):
-        """Belly Drum's -setboost (step G86): the line shows the Attack stage it leaves; the engine's event is the BOOST of
-        the change (dfi_boost, cause MOVE with the move's id), which the tracker folds as any boost. The converter
-        computes the change from the trace state (trace_to_c, boost_pre); the tracker has the stage itself. A change
-        that is not positive is the converter's refusal setboost-change."""
+        """Belly Drum's (step G86) and Anger Point's (step G77) -setboost: the line shows the Attack stage it leaves; the
+        engine's event is the BOOST of the change (dfi_boost: Belly Drum with cause MOVE and the move's id, Anger Point
+        with cause ABILITY and the ability's id + 1), which the tracker folds as any boost. The converter computes the
+        change from the trace state (trace_to_c); the tracker has the stage itself. A change that is not positive is the
+        converter's refusal setboost-change (at +6 before, Anger Point's pin prints no line at all)."""
         flat = trace_to_c.ev_pos(parts[2])
         stat = trace_to_c.EV_STATS.index(parts[3])
         change = STAGE_NEUTRAL + int(parts[4]) - self._at(flat).stages[stat]
         if change <= 0:
             raise lines.Stop("converter:setboost-change")
-        self._event(trace_to_c.ev_tuple(EV["BOOST"], flat, trace_to_c.NOPOS, trace_to_c.CAUSE["MOVE"], 0,
-                                        self.data.tables["MOVE"]["BELLYDRUM"], detail=stat, amount=change))
+        if parts[5:] == ["[from] ability: Anger Point"]:
+            cause, id2 = trace_to_c.CAUSE["ABILITY"], self.data.tables["ABILITY"]["ANGERPOINT"] + 1
+        else:
+            cause, id2 = trace_to_c.CAUSE["MOVE"], self.data.tables["MOVE"]["BELLYDRUM"]
+        self._event(trace_to_c.ev_tuple(EV["BOOST"], flat, trace_to_c.NOPOS, cause, 0, id2, detail=stat, amount=change))
 
     def _battle_line(self, line):
         """A battle line: classified (lines.check), then folded; a single-turn feature line is remembered for the

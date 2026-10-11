@@ -751,6 +751,9 @@ const dfi_support_manifest dfi_support = {
             [DFI_ABILITY_WATERBUBBLE] = 1u, /* step G65: Araquanid (Fire x0.5 at the holder, Water x2, no burn) */
             [DFI_ABILITY_RECKLESS] = 1u, /* step G65: Staraptor, Rhyperior and Emboar (recoil moves x1.2) */
             [DFI_ABILITY_SUPERLUCK] = 1u, /* step G65: Absol (crit ratio +1) */
+            [DFI_ABILITY_MAGMAARMOR] = 1u, /* step G77: Camerupt (no freeze; the Trace and Skill Swap copies of a frozen holder refused) */
+            [DFI_ABILITY_ANGERPOINT] = 1u, /* step G77: Tauros and Camerupt (Attack +6 after a critical hit on the holder) */
+            [DFI_ABILITY_SNIPER] = 1u, /* step G77: Beedrill and Ariados (x1.5 on a critical hit by the holder) */
             /* step G75, the cheap set: */
             [DFI_ABILITY_PUREPOWER] = 1u, /* Medicham and Medicham-Mega: Attack x2 for a physical move (data/abilities.ts:3608-3617) */
             [DFI_ABILITY_BATTLEARMOR] = 1u, /* Perrserker and Falinks: no critical hit against the holder (data/abilities.ts:355-361) */
@@ -763,6 +766,7 @@ const dfi_support_manifest dfi_support = {
     .items =
         {
             [DFI_ITEM_LEFTOVERS] = 1u,
+            [DFI_ITEM_LEEK] = 1u, /* step G77: Farfetch'd and Sirfetch'd (crit ratio +2) */
             [DFI_ITEM_SITRUSBERRY] = 1u,
             [DFI_ITEM_GRASSYSEED] = 1u,
             [DFI_ITEM_LIFEORB] = 1u,

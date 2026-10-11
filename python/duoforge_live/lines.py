@@ -498,9 +498,9 @@ def check(line, view):
     if kind == "-formechange":
         return _feature("FORME_CHANGE")
     if kind == "-setboost":
-        # Belly Drum (step G86, sim/battle.ts:2051-2052): the line shows the Attack stage it leaves; the tracker sets the
-        # stage (Tracker._set_boost). Any other source (Anger Point, not marked) stays unknown.
-        if len(args) == 3 and args[1] == "atk" and attrs == ["[from] move: Belly Drum"]:
+        # Belly Drum (step G86) and Anger Point (step G77) (sim/battle.ts:2051-2052): the line shows the Attack stage it
+        # leaves; the tracker sets the stage (Tracker._set_boost). Any other form or source stays unknown.
+        if len(args) == 3 and args[1] == "atk" and attrs in (["[from] move: Belly Drum"], ["[from] ability: Anger Point"]):
             return "fold"
         _unknown(kind, " ".join(args[1:] + attrs))
     if kind in UNREPRESENTABLE_KINDS:

@@ -396,7 +396,8 @@ def resist_berries():
 def modify_damage_values():
     """The ModifyDamage modifier (out of 4096) of each handler that the engine chains (turn.c dfi_get_damage): by handler name."""
     values = {'lifeorb': 5324, 'expertbelt': 4915, 'reflect': 2732, 'lightscreen': 2732, 'auroraveil': 2732, 'glaiverush': 8192,
-              'solidrock': 3072, 'multiscale': 2048, 'friendguard': 3072, 'auraguard': 2048}
+              'solidrock': 3072, 'multiscale': 2048, 'friendguard': 3072, 'auraguard': 2048,
+              'sniper': 6144}  # Sniper (step G77): x1.5 on a critical hit, the attacker's ability (data/abilities.ts:4358-4369)
     values.update({berry: 2048 for berry in resist_berries()})
     return values
 
@@ -417,7 +418,8 @@ def modifier_subsets(kinds, values):
     """The modifier lists that one hit can have from the handlers `kinds`: any subset with one screen at most, one of Life Orb and
     Expert Belt, and one of Solid Rock, Multiscale and Aura Guard (Mega batch 2)."""
     import itertools
-    exclusive = (('reflect', 'lightscreen', 'auroraveil'), ('lifeorb', 'expertbelt'), ('solidrock', 'multiscale', 'auraguard'))
+    # A screen is not applied to a critical hit (turn.c, the `!crit` test), and Sniper is only on one: they never meet (step G77).
+    exclusive = (('reflect', 'lightscreen', 'auroraveil', 'sniper'), ('lifeorb', 'expertbelt'), ('solidrock', 'multiscale', 'auraguard'))
     out = []
     for r in range(1, len(kinds) + 1):
         for sub in itertools.combinations(kinds, r):
@@ -425,6 +427,56 @@ def modifier_subsets(kinds, values):
                 continue
             out.append([values[k] for k in sub])
     return out
+
+
+def setboost_olds(log, state):
+    """The Attack stage before each -setboost line of one step (step G77, Anger Point). It is the stage at the start of the step
+    (`state`, the previous snapshot), moved by the Attack changes of the lines before it: a -boost or -unboost of atk adds or
+    subtracts its amount, a -setboost of atk sets its stage, a switch into the position starts at 0, the clears set the
+    stages they clear (-clearallboost and -clearboost to 0, -clearnegativeboost to max(stage, 0), -clearpositiveboost to
+    min(stage, 0)). A copy, a swap or an invert of stages is refused: the converter does not follow it. One entry per
+    -setboost line, in order."""
+    stage = {}
+    olds = []
+
+    def slot_of(text):
+        return int(text[1]) - 1, 'ab'.index(text[2])
+
+    def current(k):
+        if k not in stage:
+            idx = state['sides'][k[0]]['active'][k[1]]
+            stage[k] = 0 if idx is None or idx < 0 else state['sides'][k[0]]['pokemon'][idx]['boosts'][0]
+        return stage[k]
+
+    for line in log:
+        parts = line.split('|')
+        if len(parts) < 2:
+            continue
+        kind = parts[1]
+        if kind in ('switch', 'drag') and len(parts) > 2 and ': ' in parts[2]:
+            stage[slot_of(parts[2])] = 0
+        elif kind in ('-copyboost', '-swapboost', '-invertboost'):  # a copy, a swap or an invert of stages: not followed
+            raise ConversionError('setboost-state', 'trace_to_c: a stage line beside an Anger Point boost: %r' % line,
+                                  detail=kind)
+        elif kind == '-clearallboost':
+            for k in ((0, 0), (0, 1), (1, 0), (1, 1)):
+                stage[k] = 0
+        elif kind == '-clearboost' and len(parts) > 2 and ': ' in parts[2]:
+            stage[slot_of(parts[2])] = 0
+        elif kind == '-clearnegativeboost' and len(parts) > 2 and ': ' in parts[2]:
+            k = slot_of(parts[2])
+            stage[k] = max(current(k), 0)  # a White Herb restore of the negative stages: Attack below 0 becomes 0
+        elif kind == '-clearpositiveboost' and len(parts) > 2 and ': ' in parts[2]:
+            k = slot_of(parts[2])
+            stage[k] = min(current(k), 0)
+        elif kind in ('-boost', '-unboost') and len(parts) > 4 and parts[3] == 'atk':
+            k = slot_of(parts[2])
+            stage[k] = current(k) + int(parts[4]) if kind == '-boost' else current(k) - int(parts[4])
+        elif kind == '-setboost' and len(parts) > 4 and parts[3] == 'atk':
+            k = slot_of(parts[2])
+            olds.append(current(k))
+            stage[k] = int(parts[4])
+    return olds
 
 
 def lock_counter_tie(group):
@@ -471,7 +523,11 @@ def each_tie_reason(ctx, group, placed):
     # Water Bubble's onUpdate (step G65, data/abilities.ts:5400-5405) cures a burn of its holder: no holder of it has one,
     # since onSetStatus refuses every burn of the holder, and a Trace copy onto a burned holder is refused (E_UNSUPPORTED,
     # dfi_trace), so it does nothing and is not a holder.
-    inert = {'thermalexchange', 'trace', 'limber', 'oblivious', 'waterbubble'}
+    # Magma Armor's onUpdate (step G77, data/abilities.ts:2502-2507) cures a freeze of its holder: no holder of it is frozen,
+    # since onImmunity refuses every freeze and a Trace or Skill Swap copy onto a frozen holder is refused (E_UNSUPPORTED),
+    # so it does nothing and is not a holder. A group names a position, so the frozen state is not read here; it is checked
+    # for the whole battle by magma_armor_frozen (called by convert_battle): a battle with a frozen Magma Armor holder is refused.
+    inert = {'thermalexchange', 'trace', 'limber', 'oblivious', 'waterbubble', 'magmaarmor'}
     # Rain Dish's onWeather (step G35, data/abilities.ts:3759) heals only in rain (RainDance; Primordial Sea is not in the
     # format): under any other weather its holder has the handler and it does nothing, so it is not a holder. The weather is
     # the one of the upkeep, which is the one the step ends with (after) or, without it, the one it started with. Solar
@@ -1486,7 +1542,8 @@ def swap_partners(trace, teams, roster_of, tables):
     return out
 
 
-def step_events(log, viewer, roster_of, maxhp, tables, rb_pending=None, ill=None, swap_ids=None, boost_pre=None, lead=()):
+def step_events(log, viewer, roster_of, maxhp, tables, rb_pending=None, ill=None, swap_ids=None, boost_pre=None, lead=(),
+                setboost_old=None):
     """The events `viewer` sees in one step, in protocol order.
 
     ill (decision 0026, Illusion; None = no holder in the battle): 'side' (per side: a holder is on it), 'truth_at' ((side, p) ->
@@ -1906,12 +1963,30 @@ def step_events(log, viewer, roster_of, maxhp, tables, rb_pending=None, ill=None
                 raise ConversionError('protocol-line', 'trace_to_c: -clearallboost with arguments %r' % line,
                                       detail='clearallboost')
             e = ev_tuple(EV['CLEAR_ALL_BOOSTS'])
+        elif kind == '-setboost' and attrs == ['[from] ability: Anger Point']:
+            # Anger Point (step G77, sim/battle.ts:2050-2053): `-setboost|X|atk|N|[from] ability: Anger Point` shows the Attack stage
+            # after the boost (N), with no -ability line. The event is the BOOST of Attack by the change, cause ABILITY, id2 Anger
+            # Point + 1 (turn.c, dfi_boost); the change is N minus the stage before the line (setboost_olds, one entry per -setboost
+            # line of the step, Belly Drum's included). Another stat or form is refused; Belly Drum is the next branch.
+            cause, id2, other = ev_cause(attrs, tables)
+            if len(args) != 3 or args[1] != 'atk' or len(attrs) != 1 or cause != CAUSE['ABILITY'] or                     id2 != tables['ABILITY'][key('Anger Point')] + 1:
+                raise ConversionError('setboost-line', 'trace_to_c: unknown -setboost %r' % line, detail=line)
+            if not setboost_old:
+                raise ConversionError('setboost-line', 'trace_to_c: no stage before -setboost %r' % line, detail=line)
+            old = setboost_old.pop(0)
+            new = int(args[2])
+            if not (-6 <= new <= 6) or new <= old:
+                raise ConversionError('setboost-line', 'trace_to_c: -setboost that does not raise the stage: %r' % line,
+                                      detail=line)
+            e = ev_tuple(EV['BOOST'], ev_pos(args[0]), other, cause, 0, id2, detail=EV_STATS.index('atk'), amount=new - old)
         elif kind == '-setboost':
             # Belly Drum (step G86; sim/battle.ts:2051-2052): the line shows the stage the boost leaves, in place of -boost. It is
             # the BOOST event of the change (the engine's dfi_boost, cause MOVE with the move's id). Each precondition is a named
             # refusal: the move is Belly Drum, the stat is Attack, the occupant is the same Pokemon before and after the step, no
             # earlier boost line of this step names the position (the stage before is then the one of the step's start), the
             # printed stage is the stage after the step, and the change is positive.
+            if setboost_old:
+                setboost_old.pop(0)  # its entry of setboost_olds (the order of the step's -setboost lines)
             cause, id2, other = ev_cause(attrs, tables)
             flat = ev_pos(args[0])
             if (cause != CAUSE['MOVE'] or id2 != tables['MOVE'][key('Belly Drum')] or args[1] != 'atk' or flat is None
@@ -2263,6 +2338,34 @@ def load_battle(root, name):
     return load_json(root, 'specs', name), load_json(root, 'traces', name)
 
 
+def magma_armor_frozen(spec, trace):
+    """Step G77, Magma Armor (data/abilities.ts:2501-2515): onImmunity refuses every freeze of its holder (pokemon.ts
+    runStatusImmunity, Immunity event, before SetStatus), and its onUpdate cures a freeze only of a holder that has one. So a
+    frozen Magma Armor holder is not a state the engine reaches (a Trace or Skill Swap copy onto a frozen holder is refused,
+    E_UNSUPPORTED, dfi_trace and dfi_skill_swap_update_due), and the Update tie of Magma Armor holders does nothing (the engine
+    has no Magma Armor handler in dfi_update). The Update tie is folded on that ground only, and this guard makes the ground a
+    check: a -status freeze, or a switch line that shows the frz status, of a Pokemon named as a Magma Armor holder of its side
+    (the team's species, its Ability line) refuses the battle, never folded. It reads the protocol lines of every step."""
+    holders = [set(), set()]
+    for side, text in enumerate(spec['teams']):
+        for block in [b for b in text.split('\n\n') if b.strip()]:
+            lines = block.split('\n')
+            species = re.match(r'^(.+?)(?: \([MF]\))?(?: @ .+)?$', lines[0]).group(1)
+            if any(line == 'Ability: Magma Armor' for line in lines):
+                holders[side].add(species)
+    for step in trace['steps']:
+        for line in step['log']:
+            parts = line.split('|')
+            where = re.match(r'p([12])[ab]: (.+)$', parts[2]) if len(parts) > 2 else None
+            if len(parts) < 4 or where is None:
+                continue  # a line that names no position (a message, a field, a weather) is not a freeze of a holder
+            side, name = int(where.group(1)) - 1, where.group(2)
+            frozen = (parts[1] == '-status' and parts[3] == 'frz') or (
+                parts[1] in ('switch', 'drag') and len(parts) > 4 and 'frz' in parts[4].split(' ')[-1:])
+            if frozen and name in holders[side]:
+                raise ConversionError('magmaarmor-frozen', 'trace_to_c: a frozen Magma Armor holder: %s' % line, detail=name)
+
+
 def convert_battle(name, spec, trace, tables):
     """One battle as plain data, in the field order of the df_conf_* types
     (conformance_types.h): {'name', 'purpose', 'member_count', 'members',
@@ -2274,6 +2377,7 @@ def convert_battle(name, spec, trace, tables):
     shared arrays; 'dropped' is the number of draws the step dropped.
     Pure: no file IO, and spec and trace are not changed. What the converter
     does not model raises ConversionError."""
+    magma_armor_frozen(spec, trace)  # step G77: no frozen Magma Armor holder in the battle (the Update tie is folded on it)
     teams = [parse_team(spec['teams'][s], tables) for s in range(2)]
     members = []
     for s in range(2):
@@ -2415,7 +2519,11 @@ def convert_battle(name, spec, trace, tables):
                 m_pre = state['sides'][sd_i]['pokemon'][a_pre]
                 m_post = new_state['sides'][sd_i]['pokemon'][a_post]
                 boost_pre[sd_i * 2 + p_i] = (name_of(m_pre), m_pre['boosts'][0], name_of(m_post), m_post['boosts'][0])
-        events = [step_events(step['log'], viewer, roster_of, maxhp, tables, rb_pending, ill_step, swaps[k], boost_pre)
+        # Anger Point's stage before each -setboost of the step (step G77); only a step with an Anger Point line is followed
+        setboost = (setboost_olds(step['log'], state)
+                    if any(l.startswith('|-setboost|') and l.endswith('|[from] ability: Anger Point') for l in step['log']) else [])
+        events = [step_events(step['log'], viewer, roster_of, maxhp, tables, rb_pending, ill_step, swaps[k], boost_pre,
+                              setboost_old=list(setboost))
                   for viewer in range(2)]
         for line in step['log']:  # one revive per Revival Blessing: the side's pending user ends with its revive
             if line.startswith('|-heal|') and '[from] move: Revival Blessing' in line:
