@@ -658,11 +658,17 @@ static void test_pass_copies_elapsed(df_test *t)
     DF_CHECK(t, dfi_state_check(ctx, b, NULL) == DUOFORGE_OK);
     const uint32_t before = b->sides[0].positions[0].occupant;
     if (cb != NULL && pass != 0u) {
-        const df_conf_step *st = &cb->steps[pass];
-        conf_bundle(st, b, &bd);
+        /* the pass is a pivot: the step stops for the replacement, the next recorded step brings the reserve in */
         uint32_t used = 0u;
         duoforge_step_result sr;
+        const df_conf_step *st = &cb->steps[pass];
+        conf_bundle(st, b, &bd);
         DF_CHECK(t, dfi_battle_step_tape(ctx, b, &bd, &conf_tape[st->tape_off], st->tape_len, &used, &sr) == DUOFORGE_OK);
+        DF_CHECK_EQ_U64(t, sr.boundary_kind, DUOFORGE_BOUNDARY_PIVOT);
+        const df_conf_step *rp = &cb->steps[pass + 1u];
+        conf_bundle(rp, b, &bd);
+        used = 0u;
+        DF_CHECK(t, dfi_battle_step_tape(ctx, b, &bd, &conf_tape[rp->tape_off], rp->tape_len, &used, &sr) == DUOFORGE_OK);
     }
     DF_CHECK(t, b->sides[0].positions[0].occupant != before); /* the pass happened: a new occupant on the position */
     tp = &b->tail.sides[0].positions[0];
