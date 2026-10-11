@@ -558,6 +558,13 @@ def record_diff(battle_name, k, viewer, record):
 # engine's (status, causes, an all-zero record), and the tracker's own named refusals; the pool streams the tracker stops
 # (lines.Stop: an unfolded feature's line), by reason.
 CLOSURE_OUTCOME = {"equal": 2594, "refused": 310}
+# Batch 7 pins (deliberate, measured on hs/batch7-python; main had equal 9898 / refused 487 and the stops {SUBSTITUTE 78,
+# FORME_CHANGE 10, DESTINY_BOND 10, DRAGON_CHEER 8, ROOST 8, line:-end 2, ILLUSION 2}): the 865 pool battles now hold the
+# conformance battles of G84 to G92 (Leech Seed, Curse, Belly Drum, Confuse Ray, Swagger, Flatter, Teeter Dance, Memento and
+# the sub-fixes), so more decision points are compared; no "move-result-not-determined" refusal is left (the classifier maps
+# those handlers, src/state/view.c mr_family_of). The tracker folds Leech Seed (EXT_FOLDS, step G84): the 12 streams that
+# stopped on feature:LEECH_SEED run on (equal 10470 -> 10558, +88 decision points; 2 of them stop on a later Substitute,
+# 96 -> 98), and the feature has no stop of its own any more.
 # lane B batch 5c (G71 Cute Charm, G75 cheap set): +144 equal and +2 refused records; 12 streams stop on the Attract lines
 # (unfolded:DUOFORGE_POSITION_EXT_ATTRACT, the tracker fold of the ATTRACT bit comes after G71), 4 more on Dragon Cheer (the
 # G75 crit battles). Lane B batch 5d (G79 Cloud Nine, G81 Frisk): +170 equal and +18 refused records, no new stop.
