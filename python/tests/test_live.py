@@ -196,6 +196,8 @@ class PressureExtraTest(unittest.TestCase):
         from duoforge_live import tracker
         cls.D = data.load(kind="pool")
         t = tracker.Tracker.__new__(tracker.Tracker)
+        t._action = None  # no move action open (Tracker._segment)
+        t._herb_end = None
         t.data = cls.D
         t._pressure = cls.D.tables["ABILITY"]["PRESSURE"] + 1
         members = [SimpleNamespace(ability=t._pressure), SimpleNamespace(ability=t._pressure)]
@@ -232,6 +234,8 @@ class BatonPassTest(unittest.TestCase):
         from types import SimpleNamespace
         D = data.load(kind="pool")
         t = tracker.Tracker.__new__(tracker.Tracker)
+        t._action = None  # no move action open (Tracker._segment)
+        t._herb_end = None
         t.data, t.side, t._spectator = D, 0, False
         t._baton_pass = D.tables["MOVE"]["BATONPASS"]
         t._next_activation, t._foe_leads, t._party = 1, [tracker.ROSTER_NONE] * 2, None  # the public record's entry folds
@@ -265,6 +269,8 @@ class ClearAllBoostsTest(unittest.TestCase):
         from types import SimpleNamespace
         from duoforge_live import tracker
         t = tracker.Tracker.__new__(tracker.Tracker)
+        t._action = None  # no move action open (Tracker._segment)
+        t._herb_end = None
         t.side, t._spectator = 0, False
         raised = [8, 4, 6, 6, 6, 9, 6]
 
@@ -287,6 +293,8 @@ class BreakProtectTest(unittest.TestCase):
         D = data.load(kind="pool")
         for move in ("FEINT", "PHANTOMFORCE"):
             t = tracker.Tracker.__new__(tracker.Tracker)
+            t._action = None  # no move action open (Tracker._segment)
+            t._herb_end = None
             t.data, t.side, t._spectator = D, 0, False
             t._feint = D.tables["MOVE"]["FEINT"]
             t._phantom_force = D.tables["MOVE"]["PHANTOMFORCE"]
@@ -316,6 +324,8 @@ class LockedMoveSlotTest(unittest.TestCase):
     def setUp(self):
         from types import SimpleNamespace
         t = self.tracker.Tracker.__new__(self.tracker.Tracker)
+        t._action = None  # no move action open (Tracker._segment)
+        t._herb_end = None
         t.data, t.side, t._spectator = self.D, 0, False
         from duoforge_live import lines
         items = self.D.tables["ITEM"]
@@ -510,6 +520,15 @@ def record_diff(battle_name, k, viewer, record):
     return out
 
 
+# The outcome of every decision point of the committed corpus (deterministic): byte-identical records, refusals equal to the
+# engine's (status, causes, an all-zero record), and the tracker's own named refusals; the pool streams the tracker stops
+# (lines.Stop: an unfolded feature's line), by reason.
+CLOSURE_OUTCOME = {"equal": 2594, "refused": 310}
+POOL_OUTCOME = {"equal": 9446, "refused": 457, "tracker refuses: unburden-without-item-line": 4}
+POOL_STOPS = {"feature:SUBSTITUTE": 76, "feature:FORME_CHANGE": 10, "feature:DESTINY_BOND": 10, "feature:DRAGON_CHEER": 8,
+              "feature:ROOST": 6, "line:-end": 2, "feature:ILLUSION": 2}
+
+
 def record_kind(battle_name):
     """The library data kind the runner played a battle under, as the tracker's record_kind (None: the tables' kind,
     CLOSURE; CLOSURE_DEV for a battle the runner created under the DEV fallback): read from the fingerprint of the
@@ -518,8 +537,7 @@ def record_kind(battle_name):
     start, size = next((s, n) for name, s, n in state_layout.fields(pool=False) if name == "fingerprint")
     ref = Reference.get() if battle_name in Reference.get().publics else Reference.get().pool()
     head = ref.data.record_head()[0]
-    # DUOFORGE_DATA_KIND_CLOSURE_DEV and _POOL_DEV (include/duoforge/duoforge.h; not in the Python constants)
-    dev = 3 if ref.data.kind == "closure" else 7
+    dev = C["DUOFORGE_DATA_KIND_CLOSURE_DEV"] if ref.data.kind == "closure" else C["DUOFORGE_DATA_KIND_POOL_DEV"]
     for status, record in ref.publics[battle_name].values():
         if status == 0:
             if bytes(record["state"][start:start + size]) == head[start:start + size]:
@@ -604,9 +622,7 @@ class RecordAssemblerTest(unittest.TestCase):
                 where.setdefault(key, (name, k, player))
         print(f"\nrecord assembler: {dict(sorted(outcome.items()))}")
         self.assertFalse(fields, {field: (n, where[field]) for field, n in fields.most_common()})
-        self.assertEqual(set(outcome) - {"equal", "refused"}, set(), {key: where[key] for key in outcome})
-        self.assertGreater(outcome["equal"], 2000)
-        self.assertGreater(outcome["refused"], 0)
+        self.assertEqual(dict(outcome), CLOSURE_OUTCOME, {key: where[key] for key in outcome})
 
     def test_request_equals_engine(self):
         for (name, player), points in self.points.items():
@@ -621,37 +637,28 @@ class RecordAssemblerTest(unittest.TestCase):
     def test_engine_gives_every_assembled_record_back(self):
         import duoforge
         from duoforge_live import record
-        dev = 3  # DUOFORGE_DATA_KIND_CLOSURE_DEV
         contexts = {kind: duoforge.Context(data_kind=C["DUOFORGE_DATA_KIND_CLOSURE"] if kind is None else kind)
-                    for kind in (None, dev)}
-        worlds = {kind: duoforge.Batch(ctx, duoforge.reference_setups([0]), 1, 0) for kind, ctx in contexts.items()}
+                    for kind in (None, C["DUOFORGE_DATA_KIND_CLOSURE_DEV"])}
         try:
             checked = refused = 0
             for (name, player), points in self.points.items():
-                kind = record_kind(name)
-                picks = self.ref.battles_by_name[name].trace["steps"][0]["input"][f"p{2 - player}"]
-                brought = len(picks.split(" ")[1])  # the foe's "team 1234"
+                ctx = contexts[record_kind(name)]
                 for k, parts in points:
                     if parts["status"] != 0:
                         continue
                     rec = parts["record"]
-                    self.assertEqual(record.check(worlds[kind], rec, brought), (0, []), (name, k, player))
+                    self.assertEqual(record.check(ctx, rec), 0, (name, k, player))
                     checked += 1
                     if int(rec["boundary"]) == C["DUOFORGE_BOUNDARY_TURN"] and refused < 50:
-                        # a field the engine masks (the foe's exact HP of a member it saw) filled: refused
-                        foe, seen = 1 - player, int(rec["foe_seen_mask"])
-                        m = (seen & -seen).bit_length() - 1
+                        # a field the engine masks (the foe's exact HP of its first member) filled: refused
                         bad = rec.copy()
-                        start = next(s for f, s, _ in state_layout_fields() if f == f"side{foe}.member{m}.hp")
-                        bad["state"][start] = 1
-                        status = record.check(worlds[kind], bad, brought)[0]
-                        self.assertEqual(duoforge.status_name(status), "DUOFORGE_E_MALFORMED", (name, k, player))
+                        start = next(s for f, s, _ in state_layout_fields() if f == f"side{1 - player}.member0.hp")
+                        bad["state"][start] ^= 1
+                        self.assertEqual(duoforge.status_name(record.check(ctx, bad)), "DUOFORGE_E_MALFORMED",
+                                         (name, k, player))
                         refused += 1
-            self.assertGreater(checked, 2000)
-            self.assertEqual(refused, 50)
+            self.assertEqual((checked, refused), (CLOSURE_OUTCOME["equal"], 50))
         finally:
-            for w in worlds.values():
-                w.close()
             for ctx in contexts.values():
                 ctx.close()
 
@@ -660,15 +667,14 @@ class RecordAssemblerPoolTest(unittest.TestCase):
     """The record assembler under the POOL kind (the tracker with the pool tables), over every committed pool battle,
     both players, every decision point until the tracker stops at a line it does not fold (lines.Stop, counted by
     reason): each record is the engine's byte for byte, or refused with the engine's status and cause mask, or refused
-    by the tracker with a named reason of TRACKER_REFUSALS where the engine has a record the lines do not determine.
-    Every record refused only for its move_result (move-result-not-foldable) equals the engine's in every other field
-    (record.assemble with exact=False)."""
+    by the tracker with a named reason of TRACKER_REFUSALS where the engine has a record the lines do not determine. The
+    tail's move_result comes from the library's classification of each move action (duoforge_move_result)."""
 
-    # move-result-not-foldable: the tail's move_result is the engine's classification of each move action (record.py
-    # move_result_unknown); unburden-without-item-line: Unburden answering a Knock Off that removes nothing (a Mega Stone);
-    # fold-not-in-record: a view-extension fold of #342 is up whose tail fields the assembler does not write yet
-    # (record.unrecorded_folds: Taunt, Heal Block, Yawn, Disable, the hazards, ...; before #342 the tracker stopped there)
-    TRACKER_REFUSALS = {"move-result-not-foldable", "unburden-without-item-line", "fold-not-in-record"}
+    # unburden-without-item-line: Unburden answering a Knock Off that removes nothing (a Mega Stone) shows no line;
+    # move-result-not-determined: the library cannot tell an action's result from its events (duoforge_move_result
+    # refuses); last-move-not-on-sheet: the move of a position's last line is on no slot of its sheet
+    TRACKER_REFUSALS = {"unburden-without-item-line", "move-result-not-determined", "last-move-not-on-sheet",
+                        "own-command-unknown", "pivot-switch-reason-unknown"}
     # The tracker's own-PP check (Tracker._on_request) refuses these player streams before a record: Pressure the lines
     # cannot attribute (a [still] target, a clamped extra), Dragon Darts' split, the Pressure of a disguised Illusion.
     OWN_PP_STOPS = {("g53_field_trick_room", 0), ("g53_still_pressure", 1), ("g78_ee_t", 0), ("g78_fainted_ally", 0),
@@ -678,10 +684,10 @@ class RecordAssemblerPoolTest(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         import collections
-        from duoforge_live import lines as live_lines, record
+        from duoforge_live import lines as live_lines
         from duoforge_live.tracker import Tracker
         cls.pool = Reference.get().pool()
-        cls.points, cls.stops, cls.raised = {}, collections.Counter(), set()  # (battle, player) -> [(k, parts, candidate)]
+        cls.points, cls.stops, cls.raised = {}, collections.Counter(), set()  # (battle, player) -> [(k, parts)]
         for battle in cls.pool.battles:
             kind = record_kind(battle.name)
             for player in (0, 1):
@@ -695,11 +701,7 @@ class RecordAssemblerPoolTest(unittest.TestCase):
                             continue
                         done = tracker.epoch
                         k = done - 1
-                        parts = tracker.public_parts()
-                        candidate = None
-                        if parts["reason"] == "move-result-not-foldable":
-                            candidate = record.assemble(tracker, parts["observation"], exact=False)[0]
-                        out.append((k, parts, candidate))
+                        out.append((k, tracker.public_parts()))
                         step = battle.trace["steps"][k] if k < len(battle.trace["steps"]) else None
                         if step is not None and pid in step["input"]:
                             tracker.accepted(step["input"][pid])
@@ -715,20 +717,14 @@ class RecordAssemblerPoolTest(unittest.TestCase):
         import re
         outcome, fields, where = collections.Counter(), collections.Counter(), {}
         for (name, player), points in self.points.items():
-            for k, parts, candidate in points:
+            for k, parts in points:
                 result = record_diff(name, k, player, parts["record"])
                 if result["engine_status"] != 0:
-                    same = (parts["status"], parts["causes"]) == (result["engine_status"], result["engine_causes"])
+                    same = (parts["status"], parts["causes"], parts["record"].tobytes()) == (
+                        result["engine_status"], result["engine_causes"], bytes(_layout.PUBLIC_STATE.itemsize))
                     key = "refused" if same else f"engine refuses ({result['engine_causes']}): {parts['reason']}"
                 elif parts["status"] != 0:
                     key = f"tracker refuses: {parts['reason']}"
-                    if candidate is not None:
-                        rest = [f for f in record_diff(name, k, player, candidate)["fields"] if not f.endswith(".move_result")]
-                        if rest:
-                            key = "mismatch beside move_result"
-                            for field in rest:
-                                fields[re.sub(r"\d+", "#", field)] += 1
-                                where.setdefault(re.sub(r"\d+", "#", field), (name, k, player, field))
                 else:
                     key = "mismatch" if result["fields"] else "equal"
                     for field in result["fields"]:
@@ -742,32 +738,122 @@ class RecordAssemblerPoolTest(unittest.TestCase):
         allowed = {"equal", "refused"} | {f"tracker refuses: {reason}" for reason in self.TRACKER_REFUSALS}
         self.assertEqual(set(outcome) - allowed, set(), {key: where[key] for key in outcome})
         self.assertEqual(self.raised, self.OWN_PP_STOPS)
-        self.assertGreater(outcome["equal"], 2500)
-        self.assertGreater(outcome["refused"], 300)
+        self.assertEqual(dict(outcome), POOL_OUTCOME)
+        self.assertEqual(dict(self.stops), POOL_STOPS)
+
+    def test_tracker_of_a_pool_checkpoint_assembles_pool_records(self):
+        # the live path's tables (data.for_config of a POOL checkpoint): the tracker's records are of the POOL context,
+        # its size and fingerprint, and byte-identical to the engine's
+        from duoforge import state_layout
+        from duoforge_live.tracker import Tracker
+        tables = data.for_config({"format": 2, "data": {"kind": "pool",
+                                                        "fingerprint": self.pool.data.context().fingerprint().hex()}})
+        battle = next(b for b in self.pool.battles if record_kind(b.name) is None)
+        tracker = Tracker(tables, battle.spec["teams"][0])
+        start, length = next((s, n) for name, s, n in state_layout.fields(pool=False) if name == "fingerprint")
+        for lines in battle.streams[0]:
+            tracker.feed(lines)
+            if tracker.ready:
+                break
+        parts = tracker.public_parts()
+        self.assertEqual((parts["status"], int(parts["record"]["state_size"])), (0, 1357))
+        self.assertEqual(bytes(parts["record"]["state"][start:start + length]), tables.context().fingerprint())
+        self.assertEqual(record_diff(battle.name, 0, 0, parts["record"])["fields"], [])
+
+    def tracker_at(self, name, boundary):
+        """A tracker of the pool battle `name` at its first decision point of `boundary` (either player's stream)."""
+        from duoforge_live.tracker import Tracker
+        battle = next(b for b in self.pool.battles if b.name == name)
+        for player in (0, 1):
+            tracker, done = Tracker(self.pool.data, battle.spec["teams"][player]), 0
+            tracker.record_kind = record_kind(name)
+            for lines in battle.streams[player]:
+                tracker.feed(lines)
+                if not (tracker.ready and tracker.epoch > done):
+                    continue
+                done = tracker.epoch
+                if tracker.boundary() == boundary and tracker._turn > 1:
+                    return tracker
+                step = battle.trace["steps"][done - 1] if done - 1 < len(battle.trace["steps"]) else None
+                if step is not None and f"p{player + 1}" in step["input"]:
+                    tracker.accepted(step["input"][f"p{player + 1}"])
+        raise AssertionError(f"{name}: no decision point of boundary {boundary}")
+
+    def assert_refusal(self, tracker, reason):
+        from duoforge_live import record
+        with self.assertRaises(record.Refusal) as caught:
+            record._record(tracker, tracker.observation())
+        self.assertEqual(caught.exception.reason, reason)
+
+    def test_the_named_refusals_the_corpus_never_reaches(self):
+        # the tracker's own refusals of TRACKER_REFUSALS that no committed battle reaches, each from a real decision
+        # point whose fold is broken in exactly that one way
+        from duoforge_live import record
+        PIVOT, TURN = C["DUOFORGE_BOUNDARY_PIVOT"], C["DUOFORGE_BOUNDARY_TURN"]
+        name = "g5_uturn_a"
+        t = self.tracker_at(name, PIVOT)
+        record._record(t, t.observation())  # the point itself assembles
+        t._requested = lambda side, boundary: (False, 0)  # a PIVOT whose asked side the lines did not show
+        self.assert_refusal(t, "pivot-switch-reason-unknown")
+        t = self.tracker_at(name, PIVOT)
+        side = next(side for side in (0, 1) if t._requested(side, PIVOT)[0])
+        k = next(k for k in (0, 1) if t._requested(side, PIVOT)[1] >> k & 1)
+        t._positions[side][k].flag = 0  # asked to switch for a reason no line showed
+        self.assert_refusal(t, "pivot-switch-reason-unknown")
+        t = self.tracker_at(name, PIVOT)
+        own = next(p for p in t._positions[t.side] if p.occupant != record.OCCUPANT_NONE and not p.fainted)
+        own.move_queued, t._accepted_commands = True, None  # an own move left whose command the accepted choice lacks
+        self.assert_refusal(t, "own-command-unknown")
+        t = self.tracker_at(name, TURN)
+        record._record(t, t.observation())
+        p = next(p for p in t._positions[t.side] if p.occupant != record.OCCUPANT_NONE)
+        p.result_now = None  # the library could not classify the action's events
+        self.assert_refusal(t, "move-result-not-determined")
+        t = self.tracker_at(name, TURN)
+        p = next(p for p in t._positions[t.side] if p.occupant != record.OCCUPANT_NONE)
+        p.last_slot = None  # the move of its last line is on no slot of its sheet
+        self.assert_refusal(t, "last-move-not-on-sheet")
+
+    def test_move_result_maps_the_librarys_refusal_to_none(self):
+        # view.move_result: E_UNSUPPORTED (a handler the classifier does not map: Substitute) is None, a class is its value
+        from duoforge import view
+        from duoforge._state_layout import VALUES
+        from duoforge_live.data import trace_to_c
+        EV, moves = trace_to_c.EV, self.pool.data.tables["MOVE"]
+        ctx = self.pool.data.context()
+        self.assertIsNone(view.move_result(ctx, 0, [trace_to_c.ev_tuple(EV["MOVE"], 0, 0, 0, moves["SUBSTITUTE"])]))
+        cant = trace_to_c.ev_tuple(EV["CANT"], 1, cause=trace_to_c.CAUSE["PARALYSIS"])
+        self.assertEqual(view.move_result(ctx, 1, [cant]), VALUES["DFI_MOVE_RESULT_FALSE"])
 
     def test_engine_gives_every_pool_record_back(self):
         import duoforge
+        from duoforge import state_layout
         from duoforge_live import record
-        kinds = (None, 7)  # POOL and POOL_DEV (DUOFORGE_DATA_KIND_POOL_DEV, include/duoforge/duoforge.h)
         contexts = {kind: duoforge.Context(data_kind=C["DUOFORGE_DATA_KIND_POOL"] if kind is None else kind)
-                    for kind in kinds}
-        worlds = {kind: duoforge.Batch(ctx, duoforge.reference_setups([0]), 1, 0) for kind, ctx in contexts.items()}
+                    for kind in (None, C["DUOFORGE_DATA_KIND_POOL_DEV"])}
+        party = next(s for f, s, _ in state_layout.fields(pool=True) if f == "tail.field.party_order")
         try:
-            checked = 0
+            checked = refused = 0
             for (name, player), points in self.points.items():
-                kind = record_kind(name)
-                picks = self.pool.battles_by_name[name].trace["steps"][0]["input"][f"p{2 - player}"]
-                brought = len(picks.split(" ")[1])  # the foe's "team 1234"
-                for k, parts, candidate in points:
-                    for rec in (parts["record"] if parts["status"] == 0 else None, candidate):
-                        if rec is not None:
-                            # a candidate (move_result left zero) is a record too: the engine takes it back as it is
-                            self.assertEqual(record.check(worlds[kind], rec, brought), (0, []), (name, k, player))
-                            checked += 1
-            self.assertGreater(checked, 7000)
+                ctx = contexts[record_kind(name)]
+                for k, parts in points:
+                    if parts["status"] != 0:
+                        continue
+                    rec = parts["record"]
+                    self.assertEqual(record.check(ctx, rec), 0, (name, k, player))
+                    checked += 1
+                    if int(rec["boundary"]) == C["DUOFORGE_BOUNDARY_TURN"] and refused < 50:
+                        # a POOL tail mask filled: the foe's first bench entry of party_order (hidden) named
+                        bad = rec.copy()
+                        start = party + 3 * (1 - player)
+                        value = int.from_bytes(bytes(bad["state"][start:start + 3]), "little")
+                        value = (value & ~(7 << 6)) | (1 << 6)  # entry 2: roster index 0 + 1 instead of hidden
+                        bad["state"][start:start + 3] = list(value.to_bytes(3, "little"))
+                        self.assertEqual(duoforge.status_name(record.check(ctx, bad)), "DUOFORGE_E_MALFORMED",
+                                         (name, k, player))
+                        refused += 1
+            self.assertEqual((checked, refused), (POOL_OUTCOME["equal"], 50))
         finally:
-            for w in worlds.values():
-                w.close()
             for ctx in contexts.values():
                 ctx.close()
 

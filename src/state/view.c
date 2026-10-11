@@ -238,9 +238,9 @@ static bool dfi_view_ill_nonzero(const dfi_tail_illusion *il)
  * Pool data only (the move id is a pool row). Nothing here reads the engine's queue: the queue holds the foe's chosen moves, which
  * no player knows (an information leak if read). A turn boundary is not affected (the bit is zero there), and a replacement at the
  * end of a turn is the REPLACEMENT boundary, not a PIVOT. */
-static bool dfi_view_raised_risk(const duoforge_context *ctx, const duoforge_battle *b, const duoforge_observation *ob)
+static bool dfi_view_raised_risk(const duoforge_context *ctx, const duoforge_observation *ob)
 {
-    if (b->boundary_kind != DUOFORGE_BOUNDARY_PIVOT || !dfi_context_is_pool(ctx)) {
+    if (ob->boundary_kind != DUOFORGE_BOUNDARY_PIVOT || !dfi_context_is_pool(ctx)) {
         return false;
     }
     for (uint32_t side = 0u; side < DUOFORGE_SIDE_COUNT; ++side) {
@@ -260,6 +260,45 @@ static bool dfi_view_raised_risk(const duoforge_context *ctx, const duoforge_bat
     return false;
 }
 
+/* The part of the one predicate that the player's observation alone decides: a visible sleep, a visible confusion, a foe
+ * Illusion member that may be disguised, a PIVOT with Alluring Voice on the field. The battle path adds what the observation does
+ * not carry (the foe's disguise state, a Substitute, a temporary forme). duoforge_observation_causes serves this part to the live
+ * record assembler, so that no copy of it lives outside C. */
+static uint32_t dfi_view_observation_causes(const duoforge_context *ctx, const duoforge_observation *observation)
+{
+    uint32_t mask = 0u;
+    for (uint32_t side = 0u; side < DUOFORGE_SIDE_COUNT; ++side) {
+        for (uint32_t m = 0u; m < DUOFORGE_MAX_ROSTER; ++m) {
+            if (observation->sides[side].members[m].status == DUOFORGE_AILMENT_SLEEP) {
+                mask |= DUOFORGE_PUBLIC_CAUSE_VISIBLE_SLEEP;
+            }
+        }
+        for (uint32_t p = 0u; p < DUOFORGE_ACTIVE_PER_SIDE; ++p) {
+            if (observation->sides[side].positions[p].confused != 0u) {
+                mask |= DUOFORGE_PUBLIC_CAUSE_VISIBLE_CONFUSION;
+            }
+        }
+    }
+    /* Illusion (decision 0026 section 4, amended by I2, point (a)): the foe's sheet has an Illusion member that the viewer has not
+     * seen fainted under its own name and that is not shown on the field under its own name. Facts of the viewer only. */
+    const uint32_t foe = 1u - (observation->player & 1u);
+    for (uint32_t m = 0u; m < observation->sides[foe].member_count && m < DUOFORGE_MAX_ROSTER; ++m) {
+        const duoforge_member_view *v = &observation->sides[foe].members[m];
+        if (v->ability != DFI_ABILITY_ILLUSION + 1u) {
+            continue;
+        }
+        const bool fainted_seen = v->hp_kind == DUOFORGE_HP_PERCENT && v->hp == 0u;
+        const bool shown_own = observation->sides[foe].occupant[0] == m || observation->sides[foe].occupant[1] == m;
+        if (!fainted_seen && !shown_own) {
+            mask |= DUOFORGE_PUBLIC_CAUSE_ILLUSION_POSSIBLE;
+        }
+    }
+    if (dfi_view_raised_risk(ctx, observation)) {
+        mask |= DUOFORGE_PUBLIC_CAUSE_RAISED_THIS_TURN; /* step G72b: a PIVOT with Alluring Voice known on the field */
+    }
+    return mask;
+}
+
 static duoforge_status dfi_view_visible_causes(const duoforge_context *ctx, const duoforge_battle *b, uint32_t player,
                                                uint32_t *out_mask)
 {
@@ -268,38 +307,10 @@ static duoforge_status dfi_view_visible_causes(const duoforge_context *ctx, cons
     if (st != DUOFORGE_OK) {
         return st;
     }
-    uint32_t mask = 0u;
-    for (uint32_t side = 0u; side < DUOFORGE_SIDE_COUNT; ++side) {
-        for (uint32_t m = 0u; m < DUOFORGE_MAX_ROSTER; ++m) {
-            if (observation.sides[side].members[m].status == DUOFORGE_AILMENT_SLEEP) {
-                mask |= DUOFORGE_PUBLIC_CAUSE_VISIBLE_SLEEP;
-            }
-        }
-        for (uint32_t p = 0u; p < DUOFORGE_ACTIVE_PER_SIDE; ++p) {
-            if (observation.sides[side].positions[p].confused != 0u) {
-                mask |= DUOFORGE_PUBLIC_CAUSE_VISIBLE_CONFUSION;
-            }
-        }
-    }
-    /* Illusion (decision 0026 section 4, amended by I2, point (a)): the foe's sheet has an Illusion member that the viewer has not
-     * seen fainted under its own name and that is not shown on the field under its own name. The foe side's disguise state (ill_*)
-     * being nonzero counts as well. Facts of the viewer only: the observation and the state of the foe side's disguise. */
-    {
-        const uint32_t foe = 1u - player;
-        for (uint32_t m = 0u; m < observation.sides[foe].member_count && m < DUOFORGE_MAX_ROSTER; ++m) {
-            const duoforge_member_view *v = &observation.sides[foe].members[m];
-            if (v->ability != DFI_ABILITY_ILLUSION + 1u) {
-                continue;
-            }
-            const bool fainted_seen = v->hp_kind == DUOFORGE_HP_PERCENT && v->hp == 0u;
-            const bool shown_own = observation.sides[foe].occupant[0] == m || observation.sides[foe].occupant[1] == m;
-            if (!fainted_seen && !shown_own) {
-                mask |= DUOFORGE_PUBLIC_CAUSE_ILLUSION_POSSIBLE;
-            }
-        }
-        if (dfi_view_ill_nonzero(&b->tail.sides[foe].illusion)) {
-            mask |= DUOFORGE_PUBLIC_CAUSE_ILLUSION_POSSIBLE;
-        }
+    uint32_t mask = dfi_view_observation_causes(ctx, &observation);
+    /* The foe side's disguise state (ill_*) being nonzero counts for Illusion as well (decision 0026, I2 point (d)). */
+    if (dfi_view_ill_nonzero(&b->tail.sides[1u - player].illusion)) {
+        mask |= DUOFORGE_PUBLIC_CAUSE_ILLUSION_POSSIBLE;
     }
     /* Step G60 (decision 0032): a Substitute on either side is public presence (the position's volatile, VOLATILE_SUBSTITUTE); its
      * HP never is, so the presence is a function of the public record only. */
@@ -320,9 +331,6 @@ static duoforge_status dfi_view_visible_causes(const duoforge_context *ctx, cons
                 mask |= DUOFORGE_PUBLIC_CAUSE_TEMP_FORME;
             }
         }
-    }
-    if (dfi_view_raised_risk(ctx, b, &observation)) {
-        mask |= DUOFORGE_PUBLIC_CAUSE_RAISED_THIS_TURN; /* step G72b: a PIVOT with Alluring Voice known on the field */
     }
     *out_mask = mask;
     return DUOFORGE_OK;
@@ -651,6 +659,19 @@ duoforge_status duoforge_battle_public_causes(const duoforge_context *ctx, const
     return DUOFORGE_OK;
 }
 
+duoforge_status duoforge_observation_causes(const duoforge_context *ctx, const duoforge_observation *observation,
+                                            uint32_t *out_mask)
+{
+    if (ctx == NULL || observation == NULL || out_mask == NULL) {
+        return DUOFORGE_E_NULL_ARGUMENT;
+    }
+    if (observation->player >= DUOFORGE_SIDE_COUNT) {
+        return DUOFORGE_E_INVALID_ARGUMENT;
+    }
+    *out_mask = dfi_view_observation_causes(ctx, observation);
+    return DUOFORGE_OK;
+}
+
 duoforge_status duoforge_hp_display(uint32_t hp, uint32_t hp_max, uint8_t *out_percent, uint8_t *out_flag)
 {
     if (out_percent == NULL || out_flag == NULL) {
@@ -660,6 +681,443 @@ duoforge_status duoforge_hp_display(uint32_t hp, uint32_t hp_max, uint8_t *out_p
         return DUOFORGE_E_INVALID_ARGUMENT;
     }
     dfi_hp_display(hp, hp_max, out_percent, out_flag);
+    return DUOFORGE_OK;
+}
+
+#define DFI_POSITIONS_MR (DUOFORGE_SIDE_COUNT * DUOFORGE_ACTIVE_PER_SIDE)
+
+/* ---- the result of a move action from its events (POOL tail rev 4 move_result; the live record assembler) ---- */
+
+/* The classes of the move body (src/combat/turn.c, DFI_MRES_* there): a hit or a change true, a literal false, a
+ * NOT_FAIL null. */
+#define MR_TRUE 1u
+#define MR_FALSE 2u
+#define MR_NULL 4u
+
+/* The first event of a move action of `user`: its [cant], its confusion line, its own [move] or a [move] Magic Bounce
+ * reflected (cause ABILITY, the holder's run). */
+static bool mr_start(const duoforge_event *e, uint32_t user)
+{
+    if (e->position != user) {
+        return false;
+    }
+    return e->kind == DUOFORGE_EVENT_CANT || e->kind == DUOFORGE_EVENT_CONFUSED ||
+           (e->kind == DUOFORGE_EVENT_MOVE && (e->cause == DUOFORGE_CAUSE_NONE || e->cause == DUOFORGE_CAUSE_ABILITY));
+}
+
+/* The abilities that take a move at their holder's TryHit and stop it there (the move's result false: the hit steps
+ * normalise their null). The line names the ability: -ability (Lightning Rod, Sap Sipper, Motor Drive, Storm Drain),
+ * -heal [from] ability (Water Absorb, Volt Absorb, Dry Skin, Earth Eater). */
+static bool mr_absorbs(uint32_t ability)
+{
+    return ability == DFI_ABILITY_LIGHTNINGROD || ability == DFI_ABILITY_SAPSIPPER || ability == DFI_ABILITY_MOTORDRIVE ||
+           ability == DFI_ABILITY_WATERABSORB || ability == DFI_ABILITY_VOLTABSORB || ability == DFI_ABILITY_DRYSKIN ||
+           ability == DFI_ABILITY_EARTHEATER;
+}
+
+/* A target class whose move acts on its user or its side: what happens to the user is the move's own effect. */
+static bool mr_selfish(uint32_t target_class)
+{
+    return target_class == DUOFORGE_TARGET_CLASS_SELF || target_class == DUOFORGE_TARGET_CLASS_ADJACENT_ALLY_OR_SELF ||
+           target_class == DUOFORGE_TARGET_CLASS_ALLY_SIDE || target_class == DUOFORGE_TARGET_CLASS_ALL ||
+           target_class == DUOFORGE_TARGET_CLASS_ALLY_TEAM || target_class == DUOFORGE_TARGET_CLASS_ALLIES ||
+           target_class == DUOFORGE_TARGET_CLASS_FOE_SIDE;
+}
+
+/* The status-move families of the engine's move body, by special (and the move ids whose special is the generic one). */
+typedef enum mr_family {
+    MR_EFFECT,       /* true when something changed (a stage, a status that stayed, a volatile, a condition...), else false */
+    MR_RUNS,         /* true once it runs: Wide Guard (a second one prints nothing), Rage Powder, Follow Me, Perish Song,
+                        Revival Blessing, Baton Pass (dfi_status_hit_end) */
+    MR_REACHES,      /* true for a target it reaches: Parting Shot's onHit always counts, Helping Hand, a forced switch's
+                        hit (Roar, Whirlwind: the reserve's) */
+    MR_UNCLASSIFIED, /* its success sets no class: Quick Guard, Haze, After You, Quash */
+    MR_HEAL_PULSE,   /* a target at full HP is NOT_FAIL: true */
+    MR_REFUSED       /* a handler this classifier does not map: refused */
+} mr_family;
+
+static mr_family mr_family_of(uint32_t move_id, const dfi_move_data *md)
+{
+    if ((dfi_pool_move_flags2[move_id] & DFI_MOVE_FLAG2_FORCE_SWITCH) != 0u && md->primary_status == DFI_STATUS_NONE) {
+        return MR_REACHES;
+    }
+    switch (md->special) {
+    case DFI_SPECIAL_NONE:
+    case DFI_SPECIAL_PROTECT:
+    case DFI_SPECIAL_SPIKY_SHIELD:
+    case DFI_SPECIAL_KINGS_SHIELD:
+    case DFI_SPECIAL_ENCORE:
+    case DFI_SPECIAL_SOAK:
+    case DFI_SPECIAL_DISABLE:
+    case DFI_SPECIAL_TRICK:
+    case DFI_SPECIAL_SWITCHEROO:
+    case DFI_SPECIAL_TAUNT:
+    case DFI_SPECIAL_YAWN:
+    case DFI_SPECIAL_DRAGON_CHEER:
+    case DFI_SPECIAL_SKILL_SWAP:
+    case DFI_SPECIAL_THUNDER_WAVE:
+    case DFI_SPECIAL_SHELL_SMASH:
+    case DFI_SPECIAL_CLANGOROUS_SOUL:
+    case DFI_SPECIAL_RECOVER:
+    case DFI_SPECIAL_ROOST:
+    case DFI_SPECIAL_STRENGTH_SAP:
+    case DFI_SPECIAL_SANDSTORM:
+    case DFI_SPECIAL_SNOWSCAPE:
+    case DFI_SPECIAL_RAIN_DANCE:
+    case DFI_SPECIAL_SUNNY_DAY:
+    case DFI_SPECIAL_ELECTRIC_TERRAIN:
+    case DFI_SPECIAL_MISTY_TERRAIN:
+    case DFI_SPECIAL_AURORA_VEIL:
+    case DFI_SPECIAL_IMPRISON:
+        return MR_EFFECT;
+    case DFI_SPECIAL_WIDE_GUARD:
+    case DFI_SPECIAL_RAGE_POWDER:
+    case DFI_SPECIAL_FOLLOW_ME:
+    case DFI_SPECIAL_PERISH_SONG:
+    case DFI_SPECIAL_REVIVAL_BLESSING:
+    case DFI_SPECIAL_BATON_PASS:
+        return MR_RUNS;
+    case DFI_SPECIAL_PARTING_SHOT:
+    case DFI_SPECIAL_HELPING_HAND:
+        return MR_REACHES;
+    case DFI_SPECIAL_QUICK_GUARD:
+    case DFI_SPECIAL_HAZE:
+    case DFI_SPECIAL_AFTER_YOU:
+    case DFI_SPECIAL_QUASH:
+        return MR_UNCLASSIFIED;
+    case DFI_SPECIAL_HEAL_PULSE:
+        return MR_HEAL_PULSE;
+    default:
+        return MR_REFUSED; /* Substitute, Destiny Bond and every handler not mapped here */
+    }
+}
+
+/* A status move changed something at a position it reached (not `stopped`; the user only for a move of its own side): a
+ * stage, a status that stayed (one a berry cured in the same action did not), a volatile, a type, an item, an ability, a
+ * heal, a Protect, a side or field condition that started, a weather that started, Trick Room's own end.
+ * The last action of a turn reaches the caller with the residual's events after it (no line marks where the residual
+ * begins), so the events that only the residual makes never count as the move's: a side condition's end (no status move
+ * of the engine ends one; Psychic Fangs is a damaging move), a field's end other than Trick Room's toggle by the Trick Room
+ * move (the durations, Steel Roller's damaging hit), the weather's end (-weather|none, the duration), a Perish count
+ * (Perish Song's own start is silent) and a sleep without [from] move (Yawn's; a move's sleep names the move). */
+static bool mr_changed(const duoforge_event *body, uint32_t count, uint32_t user, uint32_t stopped, bool selfish,
+                       bool trick_room)
+{
+    uint32_t statused = 0u;
+    for (uint32_t i = 0u; i < count; ++i) {
+        const duoforge_event *e = &body[i];
+        const uint32_t pos = e->position;
+        const bool at = pos < DFI_POSITIONS_MR;
+        if (at && (((stopped >> pos) & 1u) != 0u || (pos == user && !selfish))) {
+            continue;
+        }
+        const bool own_cause = e->cause == DUOFORGE_CAUSE_NONE || e->cause == DUOFORGE_CAUSE_MOVE;
+        switch (e->kind) {
+        case DUOFORGE_EVENT_BOOST:
+        case DUOFORGE_EVENT_UNBOOST:
+            if (e->cause == DUOFORGE_CAUSE_NONE && e->amount > 0u) {
+                return true;
+            }
+            break;
+        case DUOFORGE_EVENT_STATUS:
+            if (own_cause && at && !(e->detail == DFI_STATUS_SLP && e->cause == DUOFORGE_CAUSE_NONE)) {
+                statused |= 1u << pos;
+            }
+            break;
+        case DUOFORGE_EVENT_CURE_STATUS:
+            if (at) {
+                statused &= ~(1u << pos);
+            }
+            break;
+        case DUOFORGE_EVENT_VOLATILE_START:
+            if (own_cause && e->detail != DUOFORGE_VOLATILE_PERISH) {
+                return true;
+            }
+            break;
+        case DUOFORGE_EVENT_CONFUSION_START:
+        case DUOFORGE_EVENT_TYPE_CHANGE:
+        case DUOFORGE_EVENT_SINGLE_TURN:
+        case DUOFORGE_EVENT_PROTECT:
+        case DUOFORGE_EVENT_ITEM_START:
+            if (own_cause) {
+                return true;
+            }
+            break;
+        case DUOFORGE_EVENT_HEAL:
+            if (e->cause == DUOFORGE_CAUSE_NONE) {
+                return true;
+            }
+            break;
+        case DUOFORGE_EVENT_ABILITY:
+            if (e->cause == DUOFORGE_CAUSE_MOVE) {
+                return true;
+            }
+            break;
+        case DUOFORGE_EVENT_ITEM_END:
+            if (e->cause == DUOFORGE_CAUSE_ITEM_TAKEN) {
+                return true; /* Trick, Switcheroo: the target's item went */
+            }
+            break;
+        case DUOFORGE_EVENT_SIDE_START:
+        case DUOFORGE_EVENT_FIELD_START:
+            if (e->cause == DUOFORGE_CAUSE_NONE) {
+                return true;
+            }
+            break;
+        case DUOFORGE_EVENT_FIELD_END:
+            if (e->cause == DUOFORGE_CAUSE_NONE && trick_room && e->detail == DUOFORGE_FIELD_TRICK_ROOM) {
+                return true; /* Trick Room again ends it (onFieldRestart) */
+            }
+            break;
+        case DUOFORGE_EVENT_WEATHER:
+            if (e->cause == DUOFORGE_CAUSE_NONE && (e->flags & DUOFORGE_EVENT_FLAG_UPKEEP) == 0u &&
+                e->detail != DUOFORGE_WEATHER_NONE) {
+                return true;
+            }
+            break;
+        default:
+            break;
+        }
+    }
+    return statused != 0u;
+}
+
+static duoforge_status mr_value(uint32_t classes, uint8_t *out)
+{
+    if ((classes & MR_TRUE) != 0u) {
+        *out = (uint8_t)DFI_MOVE_RESULT_TRUE;
+    } else if ((classes & MR_FALSE) != 0u) {
+        *out = (uint8_t)DFI_MOVE_RESULT_FALSE;
+    } else if ((classes & MR_NULL) != 0u) {
+        *out = (uint8_t)DFI_MOVE_RESULT_NULL;
+    } else {
+        return DUOFORGE_E_UNSUPPORTED;
+    }
+    return DUOFORGE_OK;
+}
+
+/* A [cant] that stops the action at BeforeMove: false; mustrecharge's is null. */
+static uint32_t mr_cant_result(const duoforge_event *e)
+{
+    return e->cause == DUOFORGE_CAUSE_RECHARGE ? DFI_MOVE_RESULT_NULL : DFI_MOVE_RESULT_FALSE;
+}
+
+duoforge_status duoforge_move_result(const duoforge_context *ctx, uint32_t user, const duoforge_event *events,
+                                     uint32_t count, uint8_t *out_result)
+{
+    if (ctx == NULL || out_result == NULL || (events == NULL && count != 0u)) {
+        return DUOFORGE_E_NULL_ARGUMENT;
+    }
+    if (user >= DFI_POSITIONS_MR) {
+        return DUOFORGE_E_INVALID_ARGUMENT;
+    }
+    if (!dfi_context_is_pool(ctx)) {
+        return DUOFORGE_E_UNSUPPORTED; /* only the POOL kinds carry the tail */
+    }
+    uint32_t i = 0u;
+    while (i < count && !mr_start(&events[i], user)) {
+        ++i; /* the lines of other positions before the action (the previous action's last ones) */
+    }
+    if (i == count) {
+        return DUOFORGE_E_UNSUPPORTED;
+    }
+    const duoforge_event *e0 = &events[i];
+    /* BeforeMove stops the action (sleep, freeze, paralysis, flinch, Taunt, Disable, ...): false; mustrecharge's null */
+    if (e0->kind == DUOFORGE_EVENT_CANT) {
+        *out_result = (uint8_t)mr_cant_result(e0);
+        return DUOFORGE_OK;
+    }
+    if (e0->kind == DUOFORGE_EVENT_CONFUSED) {
+        for (uint32_t j = i + 1u; j < count; ++j) {
+            if (events[j].kind == DUOFORGE_EVENT_DAMAGE && events[j].cause == DUOFORGE_CAUSE_CONFUSION) {
+                *out_result = (uint8_t)DFI_MOVE_RESULT_FALSE; /* it hit itself: BeforeMove false */
+                return DUOFORGE_OK;
+            }
+        }
+        i += 1u;
+        if (i == count) {
+            return DUOFORGE_E_UNSUPPORTED;
+        }
+        e0 = &events[i];
+        if (e0->kind == DUOFORGE_EVENT_CANT) {
+            *out_result = (uint8_t)mr_cant_result(e0);
+            return DUOFORGE_OK;
+        }
+    }
+    if (e0->kind != DUOFORGE_EVENT_MOVE || e0->id >= DFI_POOL_MOVE_COUNT) {
+        return DUOFORGE_E_UNSUPPORTED;
+    }
+    const bool reflected = e0->cause == DUOFORGE_CAUSE_ABILITY;
+    const uint32_t move_id = e0->id;
+    const dfi_move_data *md = &dfi_pool_moves[move_id];
+    const duoforge_event *body = &events[i + 1u];
+    const uint32_t n = count - i - 1u;
+    uint32_t inner = 0u;
+    bool inner_reflected = true;
+    for (uint32_t j = 0u; j < n; ++j) {
+        if (body[j].kind == DUOFORGE_EVENT_MOVE) {
+            inner += 1u;
+            inner_reflected = inner_reflected && body[j].cause == DUOFORGE_CAUSE_ABILITY;
+        }
+    }
+    if (inner != 0u) {
+        if (inner != 1u || !inner_reflected || reflected) {
+            return DUOFORGE_E_UNSUPPORTED; /* a move another one calls is not modelled here */
+        }
+        *out_result = (uint8_t)DFI_MOVE_RESULT_FALSE; /* Magic Bounce took it: its TryHit's null, normalised to false */
+        return DUOFORGE_OK;
+    }
+    if ((e0->flags & DUOFORGE_EVENT_FLAG_NOTARGET) != 0u) {
+        *out_result = (uint8_t)DFI_MOVE_RESULT_FALSE; /* no target: false */
+        return DUOFORGE_OK;
+    }
+    bool prepared = false;
+    bool fired = false;
+    for (uint32_t j = 0u; j < n; ++j) {
+        prepared = prepared || (body[j].kind == DUOFORGE_EVENT_PREPARE && body[j].position == user);
+        fired = fired || body[j].kind == DUOFORGE_EVENT_ANIMATION;
+    }
+    if (prepared && !fired) {
+        *out_result = (uint8_t)DFI_MOVE_RESULT_NULL; /* the charge turn's onTryMove: null */
+        return DUOFORGE_OK;
+    }
+    /* the hit steps of the targets */
+    uint32_t classes = 0u;
+    uint32_t stopped = 0u;
+    bool hit = false;
+    bool user_fail = false;
+    for (uint32_t j = 0u; j < n; ++j) {
+        const duoforge_event *e = &body[j];
+        const uint32_t pos = e->position;
+        const bool other = pos < DFI_POSITIONS_MR && pos != user;
+        switch (e->kind) {
+        case DUOFORGE_EVENT_MISS:
+            classes |= MR_FALSE;
+            stopped |= e->other < DFI_POSITIONS_MR ? 1u << e->other : 0u;
+            break;
+        case DUOFORGE_EVENT_IMMUNE:
+            if (other) {
+                classes |= MR_FALSE;
+                stopped |= 1u << pos;
+            }
+            break;
+        case DUOFORGE_EVENT_BLOCKED:
+            classes |= e->detail == DUOFORGE_FIELD_PSYCHIC_TERRAIN ? MR_FALSE : MR_NULL; /* Protect, Wide Guard: NOT_FAIL */
+            stopped |= pos < DFI_POSITIONS_MR ? 1u << pos : 0u;
+            break;
+        case DUOFORGE_EVENT_CANT:
+            if (e->cause == DUOFORGE_CAUSE_ABILITY) {
+                classes |= MR_FALSE; /* Armor Tail, Queenly Majesty: onFoeTryMove false */
+            }
+            break;
+        case DUOFORGE_EVENT_ABILITY:
+            if (other && e->cause == DUOFORGE_CAUSE_NONE && e->id2 != 0u && mr_absorbs((uint32_t)e->id2 - 1u)) {
+                classes |= MR_FALSE;
+                stopped |= 1u << pos;
+            }
+            break;
+        case DUOFORGE_EVENT_HEAL:
+            if (other && e->cause == DUOFORGE_CAUSE_ABILITY && e->id2 != 0u && mr_absorbs((uint32_t)e->id2 - 1u)) {
+                classes |= MR_FALSE;
+                stopped |= 1u << pos;
+            }
+            break;
+        case DUOFORGE_EVENT_FLASH_FIRE:
+            if (other) {
+                classes |= MR_FALSE; /* Flash Fire took the Fire move */
+                stopped |= 1u << pos;
+            }
+            break;
+        case DUOFORGE_EVENT_DAMAGE:
+            hit = hit || (other && e->cause == DUOFORGE_CAUSE_NONE);
+            break;
+        case DUOFORGE_EVENT_FAIL:
+            if (e->cause == DUOFORGE_CAUSE_NONE) {
+                user_fail = user_fail || pos == user; /* a target's -fail is an effect's, not the hit's (Synchronize) */
+            }
+            break;
+        default:
+            break;
+        }
+    }
+    if ((e0->flags & DUOFORGE_EVENT_FLAG_MISS) != 0u) {
+        classes |= MR_FALSE;
+    }
+    if (md->category != DFI_CATEGORY_STATUS) {
+        /* a damaging move: true for a hit target (spreadDamage returns a number), else the classes of its hit steps */
+        if (hit) {
+            classes |= MR_TRUE;
+        }
+        for (uint32_t j = 0u; j < n; ++j) {
+            if (body[j].kind == DUOFORGE_EVENT_FAIL && body[j].cause == DUOFORGE_CAUSE_NONE) {
+                classes |= MR_FALSE;
+            }
+        }
+        return mr_value(classes, out_result);
+    }
+    const mr_family family = mr_family_of(move_id, md);
+    const bool selfish = mr_selfish(md->target_class);
+    uint8_t value = 0u;
+    switch (family) {
+    case MR_REFUSED:
+        return DUOFORGE_E_UNSUPPORTED;
+    case MR_UNCLASSIFIED:
+        if (user_fail || (classes & MR_FALSE) != 0u) {
+            value = (uint8_t)DFI_MOVE_RESULT_FALSE;
+        } else if ((classes & MR_NULL) != 0u) {
+            value = (uint8_t)DFI_MOVE_RESULT_NULL;
+        } else {
+            value = (uint8_t)DFI_MOVE_RESULT_UNCLASSIFIED_NOW; /* the handler set no class */
+        }
+        break;
+    case MR_RUNS: {
+        const uint32_t runs = user_fail ? DFI_MOVE_RESULT_FALSE : DFI_MOVE_RESULT_TRUE;
+        value = (uint8_t)runs;
+        break;
+    }
+    case MR_REACHES: {
+        if (user_fail) {
+            value = (uint8_t)DFI_MOVE_RESULT_FALSE;
+            break;
+        }
+        const uint32_t target = e0->other;
+        const bool reached = target >= DFI_POSITIONS_MR || ((stopped >> target) & 1u) == 0u;
+        if (reached && (classes & (MR_FALSE | MR_NULL)) == 0u) {
+            value = (uint8_t)DFI_MOVE_RESULT_TRUE;
+        } else if (reached) {
+            return DUOFORGE_E_UNSUPPORTED; /* reached with a failure beside it: a spread case not mapped */
+        } else {
+            const uint32_t missed = (classes & MR_FALSE) != 0u ? DFI_MOVE_RESULT_FALSE : DFI_MOVE_RESULT_NULL;
+            value = (uint8_t)missed;
+        }
+        break;
+    }
+    case MR_HEAL_PULSE:
+        if ((classes & MR_FALSE) != 0u) {
+            value = (uint8_t)DFI_MOVE_RESULT_FALSE;
+        } else if ((classes & MR_NULL) != 0u) {
+            value = (uint8_t)DFI_MOVE_RESULT_NULL;
+        } else {
+            value = (uint8_t)DFI_MOVE_RESULT_TRUE; /* a heal, or full HP: NOT_FAIL, the hit is true */
+        }
+        break;
+    case MR_EFFECT:
+    default:
+        if (mr_changed(body, n, user, stopped, selfish, md->pseudo_weather == DFI_PSEUDO_WEATHER_TRICK_ROOM)) {
+            value = (uint8_t)DFI_MOVE_RESULT_TRUE;
+        } else if (user_fail || (classes & MR_FALSE) != 0u) {
+            value = (uint8_t)DFI_MOVE_RESULT_FALSE;
+        } else if ((classes & MR_NULL) != 0u) {
+            value = (uint8_t)DFI_MOVE_RESULT_NULL;
+        } else {
+            value = (uint8_t)DFI_MOVE_RESULT_FALSE; /* a hit target that nothing changed: false (runMoveEffects) */
+        }
+        break;
+    }
+    if (reflected && (value & DFI_MOVE_RESULT_UNCLASSIFIED_NOW) != 0u) {
+        return DUOFORGE_E_UNSUPPORTED; /* a reflected run the engine does not classify is refused by the engine itself */
+    }
+    *out_result = value;
     return DUOFORGE_OK;
 }
 
@@ -926,6 +1384,122 @@ duoforge_status duoforge_battle_from_view(const duoforge_context *ctx, const duo
     }
     *out = world;
     return DUOFORGE_OK;
+}
+
+/* A hypothesis that draws nothing in particular for a world of `view` (duoforge_public_record_check): the middle word of every
+ * uniform, the foe's pick order of the context's brought count (the leads, then the members seen, then the others in roster
+ * order; none at team selection), its pending commands the first slot at the first target its class allows, the queue in its
+ * canonical order, and zero stat points but the HP points of each seen foe member: the first of 0 to 32 under which its shown HP
+ * has an exact value. False when the view is not even of the right shape for that (from_view then names it). */
+static bool dfi_view_neutral_hypothesis(const duoforge_context *ctx, const duoforge_public_state *view,
+                                        duoforge_hypothesis *h)
+{
+    const size_t n = dfi_state_encoded_size_of(ctx);
+    if (view->player >= DUOFORGE_SIDE_COUNT || view->state_size != n) {
+        return false;
+    }
+    uint8_t s[DUOFORGE_VIEW_STATE_MAX];
+    memcpy(s, view->state, n);
+    const uint32_t player = view->player;
+    const uint32_t foe = player ^ 1u;
+    const uint32_t member_count = side_at(s, foe)[DFI_ENC_SIDE_MEMBER_COUNT_OFF];
+    if (member_count > DUOFORGE_MAX_ROSTER) {
+        return false;
+    }
+    memset(h, 0, sizeof *h);
+    h->revision = DUOFORGE_HYPOTHESIS_REVISION;
+    const uint64_t middle = (uint64_t)1u << 63;
+    for (uint32_t m = 0u; m < DUOFORGE_MAX_ROSTER; ++m) {
+        h->hp[m] = middle;
+        h->sleep[0][m] = middle;
+        h->sleep[1][m] = middle;
+        h->pick_order[m] = (uint8_t)DUOFORGE_VIEW_PICK_NONE;
+    }
+    for (uint32_t p = 0u; p < DUOFORGE_ACTIVE_PER_SIDE; ++p) {
+        h->confusion[0][p] = middle;
+        h->confusion[1][p] = middle;
+        h->charge_target[p] = middle;
+    }
+    if (view->boundary != DUOFORGE_BOUNDARY_TEAM_SELECTION) {
+        uint32_t k = 0u;
+        uint32_t used = 0u;
+        for (uint32_t i = 0u; i < 2u; ++i) {
+            const uint32_t m = view->foe_leads[i];
+            if (m < member_count && ((used >> m) & 1u) == 0u && k < ctx->brought_count) {
+                h->pick_order[k++] = (uint8_t)m;
+                used |= 1u << m;
+            }
+        }
+        for (uint32_t pass = 0u; pass < 2u; ++pass) {
+            for (uint32_t m = 0u; m < member_count && k < ctx->brought_count; ++m) {
+                const bool seen = ((uint32_t)view->foe_seen_mask >> m & 1u) != 0u;
+                if (((used >> m) & 1u) == 0u && (pass == 1u || seen)) {
+                    h->pick_order[k++] = (uint8_t)m;
+                    used |= 1u << m;
+                }
+            }
+        }
+    }
+    for (uint32_t m = 0u; m < member_count; ++m) {
+        if (((uint32_t)view->foe_seen_mask >> m & 1u) == 0u) {
+            continue;
+        }
+        const uint8_t *kb = knowledge_at(s, player, m);
+        for (uint32_t sp = 0u; sp <= 32u; ++sp) {
+            dfi_member mem;
+            dfi_member_of(member_at(s, foe, m), &mem);
+            memset(mem.stat_points, 0, DFI_STAT_POINT_COUNT);
+            mem.stat_points[0] = (uint8_t)sp;
+            uint32_t unused = 0u;
+            if (dfi_closure_member_derive(&mem) &&
+                dfi_hp_candidates(kb[0], kb[1], mem.hp_max, UINT32_MAX, &unused) != 0u) {
+                h->stat_points[m][0] = (uint8_t)sp;
+                break;
+            }
+        }
+    }
+    for (uint32_t p = 0u; p < DUOFORGE_ACTIVE_PER_SIDE; ++p) {
+        if (((uint32_t)view->foe_pending_mask >> p & 1u) == 0u) {
+            continue;
+        }
+        const uint32_t occupant = position_at(s, foe, p)[0];
+        if (occupant >= member_count) {
+            return false;
+        }
+        const uint8_t *mb = member_at(s, foe, occupant);
+        duoforge_slot_command *c = &h->queued[p];
+        c->kind = (uint8_t)DUOFORGE_SLOT_MOVE;
+        if (mb[DFI_ENC_MEMBER_MOVE_COUNT_OFF] == 0u) {
+            c->move_slot = (uint8_t)DUOFORGE_MOVE_SLOT_STRUGGLE;
+            c->target = (uint8_t)DUOFORGE_TARGET_NONE;
+            continue;
+        }
+        const uint32_t move = rd16(mb + DFI_ENC_MOVE_OFF);
+        if (move >= ctx->move_count) {
+            return false;
+        }
+        uint8_t targets[DUOFORGE_SIDE_COUNT * DUOFORGE_ACTIVE_PER_SIDE];
+        (void)dfi_target_candidates(ctx->move_target_classes[move], foe * 2u + p, targets);
+        c->move_slot = 0u;
+        c->target = targets[0];
+    }
+    for (uint32_t q = 0u; q < view->queue_count && q < DFI_QUEUE_CAPACITY; ++q) {
+        h->queue_order[q] = (uint8_t)q;
+    }
+    return true;
+}
+
+duoforge_status duoforge_public_record_check(const duoforge_context *ctx, const duoforge_public_state *record)
+{
+    if (ctx == NULL || record == NULL) {
+        return DUOFORGE_E_NULL_ARGUMENT;
+    }
+    duoforge_hypothesis h;
+    if (!dfi_view_neutral_hypothesis(ctx, record, &h)) {
+        return DUOFORGE_E_MALFORMED;
+    }
+    struct duoforge_battle world;
+    return duoforge_battle_from_view(ctx, record, &h, &world);
 }
 
 /* ---- the hypothesis of a battle (privileged) ---- */

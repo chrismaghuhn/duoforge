@@ -137,6 +137,22 @@ class Data:
             self._ctx = duoforge.Context(data_kind=_layout.CONSTANTS[_KINDS[self.kind]])
         return self._ctx
 
+    def context(self):
+        """The context of this kind (opened on first use and kept): the library calls of the record assembler."""
+        return self._context()
+
+    def context_of(self, data_kind=None):
+        """The context of the library data kind `data_kind` (None: this kind; a DEV kind of the same tables), kept open:
+        the record assembler's engine calls of a record of that context."""
+        from duoforge import _layout
+        import duoforge
+        if data_kind is None or data_kind == _layout.CONSTANTS[_KINDS[self.kind]]:
+            return self._context()
+        contexts = self.__dict__.setdefault("_contexts", {})
+        if data_kind not in contexts:
+            contexts[data_kind] = duoforge.Context(data_kind=data_kind)
+        return contexts[data_kind]
+
     def record_head(self, data_kind=None):
         """(head, state_size) of a public record under this kind (or the library data kind `data_kind`, a DEV kind of the
         same tables): the bytes of the canonical encoding before its RNG (the envelope and the context fingerprint,
@@ -216,3 +232,38 @@ class Data:
 
 def load(root=ROOT, kind="closure"):
     return Data(root, kind)
+
+
+def for_config(config, root=ROOT):
+    """The tables of a checkpoint's config: its data kind (policy.table_kind: "closure" for a format-1 file, which names
+    none) and, for a format-2 file, the fingerprint of that context (its "data"), which the library's context of the kind
+    must have. The live tracker reads the battle with them, and its public record is of that context. A format-2 config
+    without its data, a kind without live tables (team_c) or another fingerprint raises ValueError before a game starts,
+    never another kind."""
+    from .policy import table_kind
+    if not isinstance(config, dict):
+        raise ValueError("the checkpoint names no data kind and fingerprint (no config)")
+    form = config.get("format", 1)  # a format-1 config is free and names no format (decision 0014, train.save)
+    if form == 1:
+        return Data(root, table_kind(config))  # a format-1 network: the closure tables, no fingerprint to check
+    if form != 2:
+        raise ValueError(f"the checkpoint's config format {form!r} is not 1 or 2: its tables are unknown")
+    entry = config.get("data")
+    if not isinstance(entry, dict) or "kind" not in entry or "fingerprint" not in entry:
+        raise ValueError("the checkpoint names no data kind and fingerprint (config['data']): its tables are unknown")
+    try:
+        kind = table_kind(config)
+    except ValueError as err:
+        raise ValueError(f"the checkpoint's data kind {entry['kind']!r} has no live tables ({err})") from None
+    tables = Data(root, kind)
+    found = tables.context().fingerprint().hex()
+    if found != entry["fingerprint"]:
+        raise ValueError(f"the checkpoint's {kind} fingerprint {entry['fingerprint']} is not the library's {found}: "
+                         "the network was trained on other tables than these")
+    return tables
+
+
+def for_checkpoint(path, root=ROOT):
+    """for_config of the checkpoint file at `path`."""
+    from duoforge_learn import checkpoint
+    return for_config(checkpoint.load(path)[1], root)
