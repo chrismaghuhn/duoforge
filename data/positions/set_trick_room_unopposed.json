@@ -1,0 +1,200 @@
+{
+ "name": "set_trick_room_unopposed",
+ "kind": "set_trick_room",
+ "teams": [
+  "A",
+  "B"
+ ],
+ "seed": 2316556723530236285,
+ "picks": [
+  [
+   0,
+   4,
+   1,
+   2
+  ],
+  [
+   3,
+   0,
+   1,
+   5
+  ]
+ ],
+ "prefix": [
+  [
+   [
+    {
+     "move": "grassyglide",
+     "target": 1
+    },
+    {
+     "move": "fakeout",
+     "target": 0,
+     "mega": true
+    }
+   ],
+   [
+    {
+     "move": "trickroom"
+    },
+    {
+     "move": "icebeam",
+     "target": 2
+    }
+   ]
+  ],
+  [
+   [
+    {
+     "move": "grassyglide",
+     "target": 2
+    },
+    {
+     "move": "zapcannon",
+     "target": 3
+    }
+   ],
+   [
+    {
+     "move": "protect"
+    },
+    {
+     "move": "muddywater"
+    }
+   ]
+  ],
+  [
+   [
+    {
+     "any": true
+    },
+    {
+     "any": true
+    }
+   ],
+   [
+    {
+     "none": true
+    },
+    {
+     "switch": "golisopod"
+    }
+   ]
+  ],
+  [
+   [
+    {
+     "move": "grassyglide",
+     "target": 1
+    },
+    {
+     "switch": "milotic"
+    }
+   ],
+   [
+    {
+     "move": "grassknot",
+     "target": 0
+    },
+    {
+     "move": "drillrun",
+     "target": 0
+    }
+   ]
+  ],
+  [
+   [
+    {
+     "move": "grassyglide",
+     "target": 1
+    },
+    {
+     "switch": "raichu"
+    }
+   ],
+   [
+    {
+     "switch": "grimmsnarl"
+    },
+    {
+     "move": "ironhead",
+     "target": 1,
+     "mega": true
+    }
+   ]
+  ],
+  [
+   [
+    {
+     "switch": "staraptor"
+    },
+    {
+     "switch": "milotic"
+    }
+   ],
+   [
+    {
+     "any": true
+    },
+    {
+     "any": true
+    }
+   ]
+  ],
+  [
+   [
+    {
+     "move": "closecombat",
+     "target": 1
+    },
+    {
+     "move": "hypnosis",
+     "target": 3
+    }
+   ],
+   [
+    {
+     "move": "partingshot",
+     "target": 3
+    },
+    {
+     "move": "leechlife",
+     "target": 1
+    }
+   ]
+  ],
+  [
+   [
+    {
+     "any": true
+    },
+    {
+     "any": true
+    }
+   ],
+   [
+    {
+     "switch": "farigiraf"
+    },
+    {
+     "none": true
+    }
+   ]
+  ]
+ ],
+ "seat": 1,
+ "expected": [
+  [
+   {
+    "move": "trickroom"
+   },
+   {
+    "any": true
+   }
+  ]
+ ],
+ "reason": "Turn 6: no Trick Room is up, and both farigiraf and golisopod are slower than both staraptor and milotic. farigiraf's Trick Room goes up against every foe answer (no Taunt, Fake Out, Imprison or knockout of the setter stops it), so it turns the speed order for us; setting it is the clear plan.",
+ "claim": {
+  "setter": 0
+ }
+}

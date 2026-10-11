@@ -90,9 +90,60 @@ class Battle:
                     k += 1
 
 
+def runner_dump(tmp, records):
+    """duoforge_diff_runner --dump-views --dump-public over tmp/records: (views, exts, publics, causes) by battle name and
+    (k, viewer), every battle a PASS."""
+    views_path = os.path.join(tmp, records + ".views")
+    public_path = os.path.join(tmp, records + ".public")
+    out = subprocess.run([os.environ["DUOFORGE_DIFF_RUNNER"], "--dump-views", views_path, "--dump-public", public_path,
+                          os.path.join(tmp, records)], capture_output=True, text=True, timeout=600)
+    results = [line.split(" ") for line in out.stdout.splitlines() if line.startswith("R ")]
+    if out.returncode != 0 or not results or any(r[2] != "PASS" for r in results):
+        raise AssertionError(f"the runner: {out.returncode} {out.stderr} {out.stdout[-2000:]}")
+    views, exts = {}, {}
+    with open(views_path, encoding="ascii") as f:
+        for line in f:
+            _, name, k, viewer, obs, dom, ext = line.split()
+            views.setdefault(name, {})[(int(k), int(viewer))] = (
+                np.frombuffer(bytes.fromhex(obs), dtype=_layout.OBSERVATION)[0],
+                np.frombuffer(bytes.fromhex(dom), dtype=_layout.FACTORED_DOMAIN)[0])
+            exts.setdefault(name, {})[(int(k), int(viewer))] = bytes.fromhex(ext)
+    # The engine's public record of each player at each state (the live search's record assembler, Task 1) and the
+    # causes of its refusal (duoforge_battle_public_causes).
+    publics, causes = {}, {}
+    with open(public_path, encoding="ascii") as f:
+        for line in f:
+            _, name, k, viewer, status, cause, record = line.split()
+            publics.setdefault(name, {})[(int(k), int(viewer))] = (
+                int(status), None if record == "-" else
+                np.frombuffer(bytes.fromhex(record), dtype=_layout.PUBLIC_STATE)[0])
+            causes.setdefault(name, {})[(int(k), int(viewer))] = int(cause)
+    if sorted(publics) != sorted(views):
+        raise AssertionError("the public records and the views name other battles")
+    return views, exts, publics, causes
+
+
+class PoolReference:
+    """The committed pool battles (pool.records): the engine's views and public records, and each player's client
+    stream, for the record assembler's POOL test. Built on first use (Reference.pool())."""
+
+    def __init__(self, tmp):
+        views, exts, self.publics, self.causes = runner_dump(tmp, "pool.records")
+        streams = {}
+        for line in node_tool(str(data.ROOT), *sorted(views)).splitlines():
+            m = json.loads(line)
+            streams.setdefault(m["battle"], ([], []))[int(m["to"][1]) - 1].append(m["lines"])
+        if sorted(streams) != sorted(views):
+            raise AssertionError("the pool client streams and the views name other battles")
+        self.battles = [Battle(name, views[name], streams[name], exts[name]) for name in sorted(views)]
+        self.battles_by_name = {b.name: b for b in self.battles}
+        self.data = data.load(kind="pool")
+
+
 class Reference:
     """Built once for the module: records, views and client streams of every committed closure battle."""
     _built = None
+    _pool = None
 
     @classmethod
     def get(cls):
@@ -106,29 +157,7 @@ class Reference:
         root = str(data.ROOT)
         subprocess.run([sys.executable, str(data.ROOT / "tools" / "reference" / "conformance_records.py"), "--all",
                         root, "--out", self.tmp], check=True, timeout=600)
-        views_path = os.path.join(self.tmp, "views.txt")
-        public_path = os.path.join(self.tmp, "public.txt")
-        out = subprocess.run([os.environ["DUOFORGE_DIFF_RUNNER"], "--dump-views", views_path, "--dump-public", public_path,
-                              os.path.join(self.tmp, "closure.records")], capture_output=True, text=True, timeout=600)
-        results = [line.split(" ") for line in out.stdout.splitlines() if line.startswith("R ")]
-        if out.returncode != 0 or not results or any(r[2] != "PASS" for r in results):
-            raise AssertionError(f"the runner: {out.returncode} {out.stderr} {out.stdout[-2000:]}")
-        views, exts = {}, {}
-        with open(views_path, encoding="ascii") as f:
-            for line in f:
-                _, name, k, viewer, obs, dom, ext = line.split()
-                views.setdefault(name, {})[(int(k), int(viewer))] = (
-                    np.frombuffer(bytes.fromhex(obs), dtype=_layout.OBSERVATION)[0],
-                    np.frombuffer(bytes.fromhex(dom), dtype=_layout.FACTORED_DOMAIN)[0])
-                exts.setdefault(name, {})[(int(k), int(viewer))] = bytes.fromhex(ext)
-        # The engine's public record of each player at each state (the live search's record assembler, Task 1).
-        self.publics = {}
-        with open(public_path, encoding="ascii") as f:
-            for line in f:
-                _, name, k, viewer, status, record = line.split()
-                self.publics.setdefault(name, {})[(int(k), int(viewer))] = (
-                    int(status), None if record == "-" else
-                    np.frombuffer(bytes.fromhex(record), dtype=_layout.PUBLIC_STATE)[0])
+        views, exts, self.publics, self.causes = runner_dump(self.tmp, "closure.records")
         streams = {}
         for line in node_tool(root, "--all").splitlines():
             m = json.loads(line)
@@ -137,9 +166,13 @@ class Reference:
             raise AssertionError("the client streams and the views name other battles")
         self.battles = [Battle(name, views[name], streams[name], exts[name]) for name in sorted(views)]
         self.battles_by_name = {b.name: b for b in self.battles}
-        if sorted(self.publics) != sorted(views):
-            raise AssertionError("the public records and the views name other battles")
         self.data = data.load()
+
+    def pool(self):
+        """The PoolReference of the same records, built once."""
+        if Reference._pool is None:
+            Reference._pool = PoolReference(self.tmp)
+        return Reference._pool
 
 
 def command(c):
@@ -163,6 +196,8 @@ class PressureExtraTest(unittest.TestCase):
         from duoforge_live import tracker
         cls.D = data.load(kind="pool")
         t = tracker.Tracker.__new__(tracker.Tracker)
+        t._action = None  # no move action open (Tracker._segment)
+        t._herb_end = None
         t.data = cls.D
         t._pressure = cls.D.tables["ABILITY"]["PRESSURE"] + 1
         members = [SimpleNamespace(ability=t._pressure), SimpleNamespace(ability=t._pressure)]
@@ -199,8 +234,11 @@ class BatonPassTest(unittest.TestCase):
         from types import SimpleNamespace
         D = data.load(kind="pool")
         t = tracker.Tracker.__new__(tracker.Tracker)
+        t._action = None  # no move action open (Tracker._segment)
+        t._herb_end = None
         t.data, t.side, t._spectator = D, 0, False
         t._baton_pass = D.tables["MOVE"]["BATONPASS"]
+        t._next_activation, t._foe_leads, t._party = 1, [tracker.ROSTER_NONE] * 2, None  # the public record's entry folds
         members = [SimpleNamespace(seen=False, hp_percent=100, hp_flag=0, status=0) for _ in range(6)]
         t._member = lambda side: members
         t._positions = [[tracker._Position(), tracker._Position()], [tracker._Position(), tracker._Position()]]
@@ -222,6 +260,40 @@ class BatonPassTest(unittest.TestCase):
         self.assertEqual((p.occupant, p.stages, p.confused), (3, [tracker.STAGE_NEUTRAL] * 7, 0))
 
 
+class SetBoostTest(unittest.TestCase):
+    """Step G86: Belly Drum's -setboost shows the Attack stage it leaves (sim/battle.ts:2051-2052); the tracker sets the
+    position's stage to it, as the engine's BOOST event of the change does (src/combat/turn.c dfi_boost)."""
+
+    def tracker(self, stage):
+        from types import SimpleNamespace
+        from duoforge_live import tracker
+        t = tracker.Tracker.__new__(tracker.Tracker)
+        t._action = None  # no move action open (Tracker._segment)
+        t._herb_end = None
+        t.side, t._spectator, t.data = 0, False, data.load(kind="pool")
+        t._last_move, t._parting_shot = None, -1
+        p = SimpleNamespace(occupant=0, fainted=False, stages=[tracker.STAGE_NEUTRAL] * 7)
+        p.stages[0] = stage
+        t._positions = [[p, SimpleNamespace(occupant=1, fainted=False, stages=[6] * 7)],
+                        [SimpleNamespace(), SimpleNamespace()]]
+        return t, p
+
+    def test_the_stage_becomes_the_printed_one(self):
+        from duoforge_live import tracker
+        for start in (tracker.STAGE_NEUTRAL - 2, tracker.STAGE_NEUTRAL, tracker.STAGE_NEUTRAL + 3):
+            t, p = self.tracker(start)
+            t._set_boost("|-setboost|p1a: Snorlax|atk|6|[from] move: Belly Drum".split("|"))
+            self.assertEqual(p.stages[0], tracker.STAGE_NEUTRAL + 6, start)
+            self.assertEqual(p.stages[1:], [tracker.STAGE_NEUTRAL] * 6)
+
+    def test_no_positive_change_stops(self):
+        from duoforge_live import lines, tracker
+        t, p = self.tracker(tracker.STAGE_NEUTRAL + 6)
+        with self.assertRaises(lines.Stop) as caught:
+            t._set_boost("|-setboost|p1a: Snorlax|atk|6|[from] move: Belly Drum".split("|"))
+        self.assertEqual(caught.exception.reason, "converter:setboost-change")
+
+
 class ClearAllBoostsTest(unittest.TestCase):
     """Step G62 (decision 0031): Haze's CLEAR_ALL_BOOSTS returns the stages of every standing active Pokemon to
     neutral (data/moves.ts haze onHitField: getAllActive, sim/pokemon.ts clearBoosts); an empty or fainted position
@@ -231,6 +303,8 @@ class ClearAllBoostsTest(unittest.TestCase):
         from types import SimpleNamespace
         from duoforge_live import tracker
         t = tracker.Tracker.__new__(tracker.Tracker)
+        t._action = None  # no move action open (Tracker._segment)
+        t._herb_end = None
         t.side, t._spectator = 0, False
         raised = [8, 4, 6, 6, 6, 9, 6]
 
@@ -253,6 +327,8 @@ class BreakProtectTest(unittest.TestCase):
         D = data.load(kind="pool")
         for move in ("FEINT", "PHANTOMFORCE"):
             t = tracker.Tracker.__new__(tracker.Tracker)
+            t._action = None  # no move action open (Tracker._segment)
+            t._herb_end = None
             t.data, t.side, t._spectator = D, 0, False
             t._feint = D.tables["MOVE"]["FEINT"]
             t._phantom_force = D.tables["MOVE"]["PHANTOMFORCE"]
@@ -282,11 +358,14 @@ class LockedMoveSlotTest(unittest.TestCase):
     def setUp(self):
         from types import SimpleNamespace
         t = self.tracker.Tracker.__new__(self.tracker.Tracker)
+        t._action = None  # no move action open (Tracker._segment)
+        t._herb_end = None
         t.data, t.side, t._spectator = self.D, 0, False
         from duoforge_live import lines
         items = self.D.tables["ITEM"]
         band = next(items[k.upper()] for k in lines.CHOICE_ITEMS if k.upper() in items) + 1  # a Choice holder (#334)
         t._guard_moves, t._choice_items = set(), {band}
+        t._turn, t._move_pivots = 1, {}  # the public record's folds of a move line
         t._positions = [[self.tracker._Position(), self.tracker._Position()],
                         [self.tracker._Position(), self.tracker._Position()]]
         for side in t._positions:
@@ -454,13 +533,16 @@ def run_tracker(battle, player, stream=None, sheet_text=None):
 def record_diff(battle_name, k, viewer, record):
     """The tracker's record assembler against the engine (live honest search, plan 2026-10-10 Task 1): the engine's
     public record of `viewer` at decision point k of a committed battle beside an assembled `record`
-    (PUBLIC_STATE). Returns {"boundary", "player", "engine_status", "fields"}: the boundary and player of the engine's
-    view, its status (0, or the refusal), and the differing header fields and state fields (duoforge.state_layout
-    names); fields == [] means byte-identical. A refused engine record compares nothing (fields None)."""
+    (PUBLIC_STATE). Returns {"boundary", "player", "engine_status", "engine_causes", "fields"}: the boundary and player of
+    the engine's view, its status (0, or the refusal), the cause mask of duoforge_battle_public_causes, and the differing
+    header fields and state fields (duoforge.state_layout names); fields == [] means byte-identical. A refused engine
+    record compares nothing (fields None)."""
     from duoforge import state_layout
-    status, want = Reference.get().publics[battle_name][(int(k), int(viewer))]
-    obs, _ = Reference.get().battles_by_name[battle_name].views[(int(k), int(viewer))]
-    out = {"boundary": int(obs["boundary_kind"]), "player": int(viewer), "engine_status": status, "fields": None}
+    ref = Reference.get() if battle_name in Reference.get().publics else Reference.get().pool()
+    status, want = ref.publics[battle_name][(int(k), int(viewer))]
+    obs, _ = ref.battles_by_name[battle_name].views[(int(k), int(viewer))]
+    out = {"boundary": int(obs["boundary_kind"]), "player": int(viewer), "engine_status": status, "fields": None,
+           "engine_causes": ref.causes[battle_name][(int(k), int(viewer))]}
     if status != 0:
         return out
     got = np.asarray(record)
@@ -470,6 +552,69 @@ def record_diff(battle_name, k, viewer, record):
                                               np.asarray(got["state"])[:size].tobytes(),
                                               pool=size > state_layout.V3_SIZE)
     return out
+
+
+# The outcome of every decision point of the committed corpus (deterministic): byte-identical records, refusals equal to the
+# engine's (status, causes, an all-zero record), and the tracker's own named refusals; the pool streams the tracker stops
+# (lines.Stop: an unfolded feature's line), by reason.
+CLOSURE_OUTCOME = {"equal": 2594, "refused": 310}
+# Batch 7 pins (deliberate, measured on hs/batch7-python; main had equal 9898 / refused 487 and the stops {SUBSTITUTE 78,
+# FORME_CHANGE 10, DESTINY_BOND 10, DRAGON_CHEER 8, ROOST 8, line:-end 2, ILLUSION 2}): the 865 pool battles now hold the
+# conformance battles of G84 to G92 (Leech Seed, Curse, Belly Drum, Confuse Ray, Swagger, Flatter, Teeter Dance, Memento and
+# the sub-fixes), so more decision points are compared; no "move-result-not-determined" refusal is left (the classifier maps
+# those handlers, src/state/view.c mr_family_of). The tracker folds Leech Seed (EXT_FOLDS, step G84): the 12 streams that
+# stopped on feature:LEECH_SEED run on (equal 10470 -> 10558, +88 decision points; 2 of them stop on a later Substitute,
+# 96 -> 98), and the feature has no stop of its own any more.
+# lane B batch 5c (G71 Cute Charm, G75 cheap set): +144 equal and +2 refused records; 12 streams stop on the Attract lines
+# (unfolded:DUOFORGE_POSITION_EXT_ATTRACT, the tracker fold of the ATTRACT bit comes after G71), 4 more on Dragon Cheer (the
+# G75 crit battles). Lane B batch 5d (G79 Cloud Nine, G81 Frisk): +170 equal and +18 refused records, no new stop.
+# PR #393 (the Attract fold, G71 on the tracker): the 12 unfolded:DUOFORGE_POSITION_EXT_ATTRACT streams are gone (the fold
+# reaches their later points): +30 equal, +4 refused, and 42 infatuated points whose tracker refusal is the engine check's
+# verdict (duoforge_public_record_check refuses a world with an infatuated occupant, lead's option B), counted apart. Measured
+# on the merged tree (CI, Linux and Windows Python jobs, identical): 10242 equal, 511 refused, 42 engine-check refusals.
+# lane B G83 (Iron Ball, Bulletproof, Rivalry, Leaf Guard): +64 equal; +4 refused, all g83_ironball_ground under the
+# visible-confusion cause (mask 2); no new stop. Measured on the merged tree (main 6c16c960 + G83): 10306 equal, 515 refused.
+# Batch 7 (base: main before batch 7, equal 9898 / refused 487): G84 Leech Seed fold, the G86, G92 and C4 moves and the
+# sub-fixes-2 moves add +660 equal and +122 refused; the SUBSTITUTE stops go 78 -> 98 (the Leech Seed streams run on to a
+# later Substitute). Main (+408 equal, +28 refused): Attract #393, lane B G79/G81/G83 and the infatuated engine check.
+# Measured on the merged tree (CI 38140646950, Windows Python job): 10966 equal, 637 refused.
+POOL_OUTCOME = {"equal": 10966, "refused": 637, "engine check refuses: infatuated occupant (from_view, option B)": 42,
+                "tracker refuses: unburden-without-item-line": 4}
+POOL_STOPS = {"feature:SUBSTITUTE": 98, "feature:DRAGON_CHEER": 12, "feature:FORME_CHANGE": 10, "feature:DESTINY_BOND": 10,
+              "feature:ROOST": 8, "line:-end": 2, "feature:ILLUSION": 2}
+
+
+INFATUATED_REFUSAL = "engine check refuses: infatuated occupant (from_view, option B)"
+
+
+def infatuated_in_engine(battle_name, k, viewer):
+    """Whether the engine's public record of `viewer` at decision point k has an Attract source (the tail5 reserve bytes)."""
+    from duoforge import state_layout
+    ref = Reference.get() if battle_name in Reference.get().publics else Reference.get().pool()
+    status, record = ref.publics[battle_name][(int(k), int(viewer))]
+    if status != 0:
+        return False
+    start, size = next((s, n) for name, s, n in state_layout.fields(pool=True) if name == "tail5.attract_source")
+    return bool(np.asarray(record["state"])[start:start + size].any())
+
+
+def record_kind(battle_name):
+    """The library data kind the runner played a battle under, as the tracker's record_kind (None: the tables' kind,
+    CLOSURE; CLOSURE_DEV for a battle the runner created under the DEV fallback): read from the fingerprint of the
+    engine's records, a constant of the context."""
+    from duoforge import state_layout
+    start, size = next((s, n) for name, s, n in state_layout.fields(pool=False) if name == "fingerprint")
+    ref = Reference.get() if battle_name in Reference.get().publics else Reference.get().pool()
+    head = ref.data.record_head()[0]
+    dev = C["DUOFORGE_DATA_KIND_CLOSURE_DEV"] if ref.data.kind == "closure" else C["DUOFORGE_DATA_KIND_POOL_DEV"]
+    for status, record in ref.publics[battle_name].values():
+        if status == 0:
+            if bytes(record["state"][start:start + size]) == head[start:start + size]:
+                return None
+            if bytes(record["state"][start:start + size]) == ref.data.record_head(dev)[0][start:start + size]:
+                return dev
+            raise AssertionError(f"{battle_name}: a record of an unknown context")
+    return None
 
 
 class RecordHarnessTest(unittest.TestCase):
@@ -494,6 +639,303 @@ class RecordHarnessTest(unittest.TestCase):
                 else:
                     self.assertIsNone(result["fields"])
         self.assertGreater(supported, 100)
+
+
+class RecordAssemblerTest(unittest.TestCase):
+    """The tracker's public record (Tracker.public_parts, duoforge_live.record; M12 option A) is the engine's, byte for
+    byte, at every decision point of both players of every committed closure battle; where the engine refuses the
+    record, the tracker refuses with the same status and the cause mask that duoforge_battle_public_causes gives. The
+    engine's own check (from_view, then public) gives every assembled record back and refuses one that fills a masked
+    field; the request is the engine's."""
+
+    @classmethod
+    def setUpClass(cls):
+        from duoforge_live.tracker import Tracker
+        cls.ref = Reference.get()
+        cls.points = {}  # (battle, player) -> [(k, parts)]
+        for battle in cls.ref.battles:
+            for player in (0, 1):
+                tracker, done, pid = Tracker(cls.ref.data, battle.spec["teams"][player]), 0, f"p{player + 1}"
+                tracker.record_kind = record_kind(battle.name)
+                out = cls.points[(battle.name, player)] = []
+                for lines in battle.streams[player]:
+                    tracker.feed(lines)
+                    if not (tracker.ready and tracker.epoch > done):
+                        continue
+                    done = tracker.epoch
+                    k = done - 1
+                    out.append((k, tracker.public_parts()))
+                    step = battle.trace["steps"][k] if k < len(battle.trace["steps"]) else None
+                    if step is not None and pid in step["input"]:
+                        tracker.accepted(step["input"][pid])
+
+    def test_record_equals_engine(self):
+        import collections
+        import re
+        outcome, fields, where = collections.Counter(), collections.Counter(), {}
+        for (name, player), points in self.points.items():
+            for k, parts in points:
+                result = record_diff(name, k, player, parts["record"])
+                if result["engine_status"] != 0:
+                    same = (parts["status"], parts["causes"], parts["record"].tobytes()) == (
+                        result["engine_status"], result["engine_causes"], bytes(_layout.PUBLIC_STATE.itemsize))
+                    key = "refused" if same else f"engine refuses ({result['engine_causes']}): {parts['reason']}"
+                elif parts["status"] != 0:
+                    key = f"tracker refuses: {parts['reason']}"
+                else:
+                    key = "mismatch" if result["fields"] else "equal"
+                    for field in result["fields"]:
+                        fields[re.sub(r"\d+", "#", field)] += 1
+                        where.setdefault(re.sub(r"\d+", "#", field), (name, k, player, field))
+                outcome[key] += 1
+                where.setdefault(key, (name, k, player))
+        print(f"\nrecord assembler: {dict(sorted(outcome.items()))}")
+        self.assertFalse(fields, {field: (n, where[field]) for field, n in fields.most_common()})
+        self.assertEqual(dict(outcome), CLOSURE_OUTCOME, {key: where[key] for key in outcome})
+
+    def test_request_equals_engine(self):
+        for (name, player), points in self.points.items():
+            for k, parts in points:
+                obs, dom = self.ref.battles_by_name[name].views[(k, player)]
+                r, where = parts["request"], (name, k, player)
+                self.assertEqual([int(r[f]) for f in ("epoch", "boundary_kind", "player", "requested", "slot_mask")],
+                                 [int(obs[f]) for f in ("epoch", "boundary_kind", "player", "requested", "slot_mask")],
+                                 where)
+                self.assertEqual(int(r["candidate_count"]), 0, where)  # not assembled (Tracker.request_record)
+
+    def test_engine_gives_every_assembled_record_back(self):
+        import duoforge
+        from duoforge_live import record
+        contexts = {kind: duoforge.Context(data_kind=C["DUOFORGE_DATA_KIND_CLOSURE"] if kind is None else kind)
+                    for kind in (None, C["DUOFORGE_DATA_KIND_CLOSURE_DEV"])}
+        try:
+            checked = refused = 0
+            for (name, player), points in self.points.items():
+                ctx = contexts[record_kind(name)]
+                for k, parts in points:
+                    if parts["status"] != 0:
+                        continue
+                    rec = parts["record"]
+                    self.assertEqual(record.check(ctx, rec), 0, (name, k, player))
+                    checked += 1
+                    if int(rec["boundary"]) == C["DUOFORGE_BOUNDARY_TURN"] and refused < 50:
+                        # a field the engine masks (the foe's exact HP of its first member) filled: refused
+                        bad = rec.copy()
+                        start = next(s for f, s, _ in state_layout_fields() if f == f"side{1 - player}.member0.hp")
+                        bad["state"][start] ^= 1
+                        self.assertEqual(duoforge.status_name(record.check(ctx, bad)), "DUOFORGE_E_MALFORMED",
+                                         (name, k, player))
+                        refused += 1
+            self.assertEqual((checked, refused), (CLOSURE_OUTCOME["equal"], 50))
+        finally:
+            for ctx in contexts.values():
+                ctx.close()
+
+
+class RecordAssemblerPoolTest(unittest.TestCase):
+    """The record assembler under the POOL kind (the tracker with the pool tables), over every committed pool battle,
+    both players, every decision point until the tracker stops at a line it does not fold (lines.Stop, counted by
+    reason): each record is the engine's byte for byte, or refused with the engine's status and cause mask, or refused
+    by the tracker with a named reason of TRACKER_REFUSALS where the engine has a record the lines do not determine. The
+    tail's move_result comes from the library's classification of each move action (duoforge_move_result)."""
+
+    # unburden-without-item-line: Unburden answering a Knock Off that removes nothing (a Mega Stone) shows no line;
+    # move-result-not-determined: the library cannot tell an action's result from its events (duoforge_move_result
+    # refuses); last-move-not-on-sheet: the move of a position's last line is on no slot of its sheet
+    TRACKER_REFUSALS = {"unburden-without-item-line", "move-result-not-determined", "last-move-not-on-sheet",
+                        "own-command-unknown", "pivot-switch-reason-unknown"}
+    # The tracker's own-PP check (Tracker._on_request) refuses these player streams before a record: Pressure the lines
+    # cannot attribute (a [still] target, a clamped extra), Dragon Darts' split, the Pressure of a disguised Illusion.
+    OWN_PP_STOPS = {("g53_field_trick_room", 0), ("g53_still_pressure", 1), ("g78_ee_t", 0), ("g78_fainted_ally", 0),
+                    ("g78_fainted_target", 0), ("g78_ko_t_hit1", 0), ("g78_partner_absent", 0), ("g78_pressure2", 0),
+                    ("g78_split", 0), ("i2_bench_swap", 0), ("i2_illusion_break", 0), ("i2_unbroken_switchout", 0)}
+
+    @classmethod
+    def setUpClass(cls):
+        import collections
+        from duoforge_live import lines as live_lines
+        from duoforge_live.tracker import Tracker
+        cls.pool = Reference.get().pool()
+        cls.points, cls.stops, cls.raised = {}, collections.Counter(), set()  # (battle, player) -> [(k, parts)]
+        for battle in cls.pool.battles:
+            kind = record_kind(battle.name)
+            for player in (0, 1):
+                tracker, done, pid = Tracker(cls.pool.data, battle.spec["teams"][player]), 0, f"p{player + 1}"
+                tracker.record_kind = kind
+                out = cls.points[(battle.name, player)] = []
+                try:
+                    for lines in battle.streams[player]:
+                        tracker.feed(lines)
+                        if not (tracker.ready and tracker.epoch > done):
+                            continue
+                        done = tracker.epoch
+                        k = done - 1
+                        out.append((k, tracker.public_parts()))
+                        step = battle.trace["steps"][k] if k < len(battle.trace["steps"]) else None
+                        if step is not None and pid in step["input"]:
+                            tracker.accepted(step["input"][pid])
+                except live_lines.Stop as stop:
+                    cls.stops[str(stop).split(" ")[0]] += 1
+                except ValueError as err:
+                    if not str(err).startswith("own PP of "):
+                        raise
+                    cls.raised.add((battle.name, player))
+
+    def test_pool_records_equal_engine(self):
+        import collections
+        import re
+        outcome, fields, where = collections.Counter(), collections.Counter(), {}
+        for (name, player), points in self.points.items():
+            for k, parts in points:
+                result = record_diff(name, k, player, parts["record"])
+                if result["engine_status"] != 0:
+                    same = (parts["status"], parts["causes"], parts["record"].tobytes()) == (
+                        result["engine_status"], result["engine_causes"], bytes(_layout.PUBLIC_STATE.itemsize))
+                    key = "refused" if same else f"engine refuses ({result['engine_causes']}): {parts['reason']}"
+                elif parts["status"] != 0 and parts["reason"] == "engine-refuses-record":
+                    # the engine's public record of this point is status 0, but its check refuses a world with an infatuated occupant
+                    # (duoforge_battle_from_view, lead's option B, tests/test_pool_g71.c): the tracker refuses with that verdict. Only
+                    # records with an Attract source in the engine's record may take this key (infatuated_in_engine).
+                    self.assertTrue(infatuated_in_engine(name, k, player), (name, k, player))
+                    key = INFATUATED_REFUSAL
+                elif parts["status"] != 0:
+                    key = f"tracker refuses: {parts['reason']}"
+                else:
+                    key = "mismatch" if result["fields"] else "equal"
+                    for field in result["fields"]:
+                        fields[re.sub(r"\d+", "#", field)] += 1
+                        where.setdefault(re.sub(r"\d+", "#", field), (name, k, player, field))
+                outcome[key] += 1
+                where.setdefault(key, (name, k, player))
+        print(f"\npool record assembler: {dict(sorted(outcome.items()))}")
+        print(f"pool tracker stops: {sum(self.stops.values())} streams, {dict(self.stops.most_common())}")
+        self.assertFalse(fields, {field: (n, where[field]) for field, n in fields.most_common()})
+        allowed = {"equal", "refused", INFATUATED_REFUSAL} | {f"tracker refuses: {reason}" for reason in self.TRACKER_REFUSALS}
+        self.assertEqual(set(outcome) - allowed, set(), {key: where[key] for key in outcome})
+        self.assertEqual(self.raised, self.OWN_PP_STOPS)
+        self.assertEqual(dict(outcome), POOL_OUTCOME)
+        self.assertEqual(dict(self.stops), POOL_STOPS)
+
+    def test_tracker_of_a_pool_checkpoint_assembles_pool_records(self):
+        # the live path's tables (data.for_config of a POOL checkpoint): the tracker's records are of the POOL context,
+        # its size and fingerprint, and byte-identical to the engine's
+        from duoforge import state_layout
+        from duoforge_live.tracker import Tracker
+        tables = data.for_config({"format": 2, "data": {"kind": "pool",
+                                                        "fingerprint": self.pool.data.context().fingerprint().hex()}})
+        battle = next(b for b in self.pool.battles if record_kind(b.name) is None)
+        tracker = Tracker(tables, battle.spec["teams"][0])
+        start, length = next((s, n) for name, s, n in state_layout.fields(pool=False) if name == "fingerprint")
+        for lines in battle.streams[0]:
+            tracker.feed(lines)
+            if tracker.ready:
+                break
+        parts = tracker.public_parts()
+        self.assertEqual((parts["status"], int(parts["record"]["state_size"])), (0, 1357))
+        self.assertEqual(bytes(parts["record"]["state"][start:start + length]), tables.context().fingerprint())
+        self.assertEqual(record_diff(battle.name, 0, 0, parts["record"])["fields"], [])
+
+    def tracker_at(self, name, boundary):
+        """A tracker of the pool battle `name` at its first decision point of `boundary` (either player's stream)."""
+        from duoforge_live.tracker import Tracker
+        battle = next(b for b in self.pool.battles if b.name == name)
+        for player in (0, 1):
+            tracker, done = Tracker(self.pool.data, battle.spec["teams"][player]), 0
+            tracker.record_kind = record_kind(name)
+            for lines in battle.streams[player]:
+                tracker.feed(lines)
+                if not (tracker.ready and tracker.epoch > done):
+                    continue
+                done = tracker.epoch
+                if tracker.boundary() == boundary and tracker._turn > 1:
+                    return tracker
+                step = battle.trace["steps"][done - 1] if done - 1 < len(battle.trace["steps"]) else None
+                if step is not None and f"p{player + 1}" in step["input"]:
+                    tracker.accepted(step["input"][f"p{player + 1}"])
+        raise AssertionError(f"{name}: no decision point of boundary {boundary}")
+
+    def assert_refusal(self, tracker, reason):
+        from duoforge_live import record
+        with self.assertRaises(record.Refusal) as caught:
+            record._record(tracker, tracker.observation())
+        self.assertEqual(caught.exception.reason, reason)
+
+    def test_the_named_refusals_the_corpus_never_reaches(self):
+        # the tracker's own refusals of TRACKER_REFUSALS that no committed battle reaches, each from a real decision
+        # point whose fold is broken in exactly that one way
+        from duoforge_live import record
+        PIVOT, TURN = C["DUOFORGE_BOUNDARY_PIVOT"], C["DUOFORGE_BOUNDARY_TURN"]
+        name = "g5_uturn_a"
+        t = self.tracker_at(name, PIVOT)
+        record._record(t, t.observation())  # the point itself assembles
+        t._requested = lambda side, boundary: (False, 0)  # a PIVOT whose asked side the lines did not show
+        self.assert_refusal(t, "pivot-switch-reason-unknown")
+        t = self.tracker_at(name, PIVOT)
+        side = next(side for side in (0, 1) if t._requested(side, PIVOT)[0])
+        k = next(k for k in (0, 1) if t._requested(side, PIVOT)[1] >> k & 1)
+        t._positions[side][k].flag = 0  # asked to switch for a reason no line showed
+        self.assert_refusal(t, "pivot-switch-reason-unknown")
+        t = self.tracker_at(name, PIVOT)
+        own = next(p for p in t._positions[t.side] if p.occupant != record.OCCUPANT_NONE and not p.fainted)
+        own.move_queued, t._accepted_commands = True, None  # an own move left whose command the accepted choice lacks
+        self.assert_refusal(t, "own-command-unknown")
+        t = self.tracker_at(name, TURN)
+        record._record(t, t.observation())
+        p = next(p for p in t._positions[t.side] if p.occupant != record.OCCUPANT_NONE)
+        p.result_now = None  # the library could not classify the action's events
+        self.assert_refusal(t, "move-result-not-determined")
+        t = self.tracker_at(name, TURN)
+        p = next(p for p in t._positions[t.side] if p.occupant != record.OCCUPANT_NONE)
+        p.last_slot = None  # the move of its last line is on no slot of its sheet
+        self.assert_refusal(t, "last-move-not-on-sheet")
+
+    def test_move_result_maps_the_librarys_refusal_to_none(self):
+        # view.move_result: E_UNSUPPORTED (a handler the classifier does not map: Substitute) is None, a class is its value
+        from duoforge import view
+        from duoforge._state_layout import VALUES
+        from duoforge_live.data import trace_to_c
+        EV, moves = trace_to_c.EV, self.pool.data.tables["MOVE"]
+        ctx = self.pool.data.context()
+        self.assertIsNone(view.move_result(ctx, 0, [trace_to_c.ev_tuple(EV["MOVE"], 0, 0, 0, moves["SUBSTITUTE"])]))
+        cant = trace_to_c.ev_tuple(EV["CANT"], 1, cause=trace_to_c.CAUSE["PARALYSIS"])
+        self.assertEqual(view.move_result(ctx, 1, [cant]), VALUES["DFI_MOVE_RESULT_FALSE"])
+
+    def test_engine_gives_every_pool_record_back(self):
+        import duoforge
+        from duoforge import state_layout
+        from duoforge_live import record
+        contexts = {kind: duoforge.Context(data_kind=C["DUOFORGE_DATA_KIND_POOL"] if kind is None else kind)
+                    for kind in (None, C["DUOFORGE_DATA_KIND_POOL_DEV"])}
+        party = next(s for f, s, _ in state_layout.fields(pool=True) if f == "tail.field.party_order")
+        try:
+            checked = refused = 0
+            for (name, player), points in self.points.items():
+                ctx = contexts[record_kind(name)]
+                for k, parts in points:
+                    if parts["status"] != 0:
+                        continue
+                    rec = parts["record"]
+                    self.assertEqual(record.check(ctx, rec), 0, (name, k, player))
+                    checked += 1
+                    if int(rec["boundary"]) == C["DUOFORGE_BOUNDARY_TURN"] and refused < 50:
+                        # a POOL tail mask filled: the foe's first bench entry of party_order (hidden) named
+                        bad = rec.copy()
+                        start = party + 3 * (1 - player)
+                        value = int.from_bytes(bytes(bad["state"][start:start + 3]), "little")
+                        value = (value & ~(7 << 6)) | (1 << 6)  # entry 2: roster index 0 + 1 instead of hidden
+                        bad["state"][start:start + 3] = list(value.to_bytes(3, "little"))
+                        self.assertEqual(duoforge.status_name(record.check(ctx, bad)), "DUOFORGE_E_MALFORMED",
+                                         (name, k, player))
+                        refused += 1
+            self.assertEqual((checked, refused), (POOL_OUTCOME["equal"], 50))
+        finally:
+            for ctx in contexts.values():
+                ctx.close()
+
+
+def state_layout_fields():
+    from duoforge import state_layout
+    return state_layout.fields(pool=False)
 
 
 class TrackerTest(unittest.TestCase):

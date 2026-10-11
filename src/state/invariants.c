@@ -637,7 +637,8 @@ static bool dfi_hazard_order_valid(const dfi_tail_side *ts)
 
 /* The tail of a standing occupant's position: the ranges, the pairs that are zero together and the sources that are
  * never the occupant itself (flat is its position, side * 2 + slot). */
-/* The position flags (tail rev 5, G72b): bit 0 (Healing Wish) and bits 4-7 are zero, and the Dragon Cheer stage is at most 2. */
+/* The position flags (tail rev 5, G72b; G76 adds bit 4, G88 adds bits 5 and 6): bit 0 (Healing Wish) and bit 7 are zero, and the Dragon
+ * Cheer stage is at most 2. */
 static bool dfi_position_flags_ok(uint8_t pf)
 {
     return (pf & ~DFI_POSFLAG_VALID_MASK) == 0u && (pf & DFI_POSFLAG_HEALING_WISH) == 0u &&
@@ -702,9 +703,9 @@ static bool dfi_tail_pos_valid(const dfi_kind_limits *lim, const dfi_tail_pos *t
     const bool lock_last_ok = last_id < DFI_POOL_MOVE_COUNT && dfi_pool_moves[last_id].special == DFI_SPECIAL_LOCKED_MOVE;
     /* An unclassified bit (step G42) only with the result bits of its slot zero: the result is then not known. */
     const bool unclassified_ok =
-        ((tp->move_result & DFI_MOVE_RESULT_UNCLASSIFIED_NOW) == 0u || (tp->move_result & 3u) == 0u) &&
+        ((tp->move_result & DFI_MOVE_RESULT_UNCLASSIFIED_NOW) == 0u || (tp->move_result & DFI_MOVE_RESULT_VALUE_MASK) == 0u) &&
         ((tp->move_result & DFI_MOVE_RESULT_UNCLASSIFIED_LAST) == 0u ||
-         ((tp->move_result >> DFI_MOVE_RESULT_LAST_SHIFT) & 3u) == 0u);
+         ((tp->move_result >> DFI_MOVE_RESULT_LAST_SHIFT) & DFI_MOVE_RESULT_VALUE_MASK) == 0u);
     const bool rev4_ok = (tp->move_result & ~DFI_TAIL_MOVE_RESULT_MASK) == 0u && unclassified_ok &&
                          (tp->single_turn & ~DFI_TAIL_SINGLE_TURN_MASK) == 0u &&
                          ((tp->single_turn & DFI_SINGLE_TURN_RAGE_POWDER) == 0u || ((uint32_t)slot->flags & DFI_VOL_FOLLOW_ME) != 0u) &&
@@ -712,11 +713,13 @@ static bool dfi_tail_pos_valid(const dfi_kind_limits *lim, const dfi_tail_pos *t
                          tp->lock_turns <= DFI_TAIL_LOCK_TURNS_MAX &&
                          (tp->lock_turns == 0u || slot->locked_move != 0u) && /* lockedmove (G56): its move is in the slot */
                          (tp->lock_turns == 0u || lock_last_ok);
-    /* Rev 5 (lane A, G72b, decision 0015 5ce; step G76, 5cg): the position flags (bit 0 Healing Wish, never set: bits 5-7 are
-     * zero; the stats-raised bit, the Dragon Cheer stage and Destiny Bond (bit 4) only with an occupant; the stage at most 2).
+    /* Rev 5 (lane A, G72b, decision 0015 5ce; step G76, 5cg): the position flags (bit 0 Healing Wish, never set; bit 7 is
+     * zero; the stats-raised bit, the Dragon Cheer stage, Destiny Bond (bit 4), LOWERED (bit 5) and HURT (bit 6) only with an
+     * occupant; the stage at most 2).
      * Future Sight stays zero. */
     const bool posflags_ok = dfi_position_flags_ok(tp->position_flags) &&
-                          ((tp->position_flags & (DFI_POSFLAG_STATS_RAISED | DFI_POSFLAG_DRAGON_CHEER_MASK | DFI_POSFLAG_DESTINY_BOND)) == 0u ||
+                          ((tp->position_flags & (DFI_POSFLAG_STATS_RAISED | DFI_POSFLAG_DRAGON_CHEER_MASK | DFI_POSFLAG_DESTINY_BOND |
+                                                  DFI_POSFLAG_LOWERED | DFI_POSFLAG_HURT)) == 0u ||
                            slot->occupant < DUOFORGE_MAX_ROSTER);
     const bool rev5_ok = posflags_ok && tp->future_sight == 0u;
     return encore_ok && bars_ok && disable_ok && flags_ok && substitute_ok && trap_ok && leech_ok && stockpile_ok &&
@@ -757,6 +760,49 @@ static bool dfi_party_side_ok(const dfi_pool_tail *t, const dfi_side *side, uint
 
 /* The POOL tail (decision 0015 section 7). Runs after the side checks, so every occupant is below the member count
  * and every move count is 1..4; each index is still bounded here. Under the other kinds the tail is absent: zero. */
+/* Step G71 (decision 0034, decision 0015 5bn): the Attract source byte of the infatuated occupant at flat position `flat`. Zero is
+ * no infatuation. A nonzero byte needs: a code of 1..12 (side * 6 + roster index + 1) that names a member of its side below the
+ * side's member count; an infatuated occupant that stands (on the field, not fainted); a source member that is not the occupant
+ * itself; the source on the field and not fainted (the pin's source.isActive); and the genders of the pair opposite (1 and 2,
+ * data/moves.ts:707-711). Anything else is refused: a bad index, a source that is the holder, a source not active, and a byte
+ * on an empty or fainted position. */
+static bool dfi_attract_byte_ok(const struct duoforge_battle *b, uint32_t flat)
+{
+    const uint32_t code = b->tail.attract_source[flat];
+    if (code == 0u) {
+        return true;
+    }
+    if (code > DFI_ATTRACT_MEMBER_MAX) {
+        return false; /* a bad member index */
+    }
+    const uint32_t side = flat / DUOFORGE_ACTIVE_PER_SIDE;
+    const uint32_t occupant = b->sides[side].positions[flat % DUOFORGE_ACTIVE_PER_SIDE].occupant;
+    if (occupant >= DUOFORGE_MAX_ROSTER || occupant >= b->sides[side].member_count || b->sides[side].members[occupant].hp == 0u) {
+        return false; /* an empty or fainted position keeps no infatuation */
+    }
+    const uint32_t src_side = (code - 1u) / DUOFORGE_MAX_ROSTER;
+    const uint32_t src = (code - 1u) % DUOFORGE_MAX_ROSTER;
+    if (src >= b->sides[src_side].member_count) {
+        return false; /* the roster index is not a member of its side */
+    }
+    if (src_side == side && src == occupant) {
+        return false; /* the source is the holder itself */
+    }
+    /* The source must be on the field and not fainted: a position of its side holds it and it has HP. */
+    bool active = false;
+    for (uint32_t p = 0u; p < DUOFORGE_ACTIVE_PER_SIDE; ++p) {
+        if (b->sides[src_side].positions[p].occupant == src && b->sides[src_side].members[src].hp != 0u) {
+            active = true;
+        }
+    }
+    if (!active) {
+        return false;
+    }
+    const uint32_t g_inf = b->sides[side].members[occupant].gender;
+    const uint32_t g_src = b->sides[src_side].members[src].gender;
+    return (g_inf == DFI_GENDER_MALE && g_src == DFI_GENDER_FEMALE) || (g_inf == DFI_GENDER_FEMALE && g_src == DFI_GENDER_MALE);
+}
+
 static dfi_invariant dfi_check_tail(const duoforge_context *ctx, const struct duoforge_battle *b)
 {
     const dfi_kind_limits lim = dfi_kind_limits_of(ctx->data_kind);
@@ -893,6 +939,12 @@ static dfi_invariant dfi_check_tail(const duoforge_context *ctx, const struct du
                  mem->status != DFI_TAIL_TOXIC_STATUS)) {
                 return DFI_INV_TAIL_MEMBER;
             }
+        }
+    }
+    /* Step G71 (decision 0034): the Attract sources of the four positions (see dfi_attract_byte_ok). */
+    for (uint32_t f = 0u; f < DFI_ATTRACT_SLOTS; ++f) {
+        if (!dfi_attract_byte_ok(b, f)) {
+            return DFI_INV_TAIL_POSITION;
         }
     }
     return DFI_INV_NONE;

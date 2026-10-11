@@ -1,0 +1,92 @@
+{
+  "name": "sub3_parabolic_charge_spread_unaware_skeledirge_72",
+  "purpose": "Parabolic Charge (allAdjacent, Electric, 65, drain) from Ampharos into a Substitute (Skeledirge, Unaware) where the last target of the list is Kommo-o (no Unaware): the pin's activeTarget is Kommo-o, so the attacker's -1 applies (122) and the damage (37) is absorbed by the Substitute of 44 HP. Source: campaign run 9003 battle 72 step 9 (H24 camp2).",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,5ead103c47a1acce08a8755a1c78116ed905b6513a1b0a196f314123c12289fb",
+  "teams": [
+    "Skeledirge (M) @ Muscle Band\nAbility: Unaware\nLevel: 50\nEVs: 0 HP / 0 Atk / 2 Def / 32 SpA / 32 Spe\nModest Nature\n- Torch Song\n- Zen Headbutt\n- Protect\n- Substitute\n\nHydreigon (M) @ Expert Belt\nAbility: Levitate\nLevel: 50\nEVs: 0 HP / 0 Atk / 2 Def / 32 SpA / 32 Spe\nModest Nature\n- Zen Headbutt\n- Iron Tail\n- Substitute\n- Protect\n\nGardevoir (F) @ Mystic Water\nAbility: Synchronize\nLevel: 50\nEVs: 0 HP / 0 Atk / 2 Def / 32 SpA / 32 Spe\nTimid Nature\n- Zen Headbutt\n- Fire Punch\n- Thunder Punch\n- Substitute\n\nAppletun (M) @ Light Clay\nAbility: Thick Fat\nLevel: 50\nEVs: 0 HP / 0 Atk / 2 Def / 32 SpA / 32 Spe\nBold Nature\n- Apple Acid\n- Earthquake\n- Protect\n- Substitute\n\nKommo-o (M) @ Leftovers\nAbility: Soundproof\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Def / 0 SpD / 0 Spe\nJolly Nature\n- Iron Tail\n- Fire Punch\n- Poison Jab\n- Substitute\n\nMawile (M) @ Wise Glasses\nAbility: Sheer Force\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Def / 0 SpD / 0 Spe\nAdamant Nature\n- Dynamic Punch\n- Sucker Punch\n- Crunch\n- Substitute",
+    "Clawitzer (M) @ Life Orb\nAbility: Mega Launcher\nLevel: 50\nEVs: 0 HP / 0 Atk / 2 Def / 32 SpA / 32 Spe\nModest Nature\n- Water Pulse\n- Chilling Water\n- Mud Shot\n- Mud-Slap\n\nGliscor (M) @ Focus Sash\nAbility: Hyper Cutter\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Def / 0 SpD / 0 Spe\nJolly Nature\n- Cross Poison\n- Lunge\n- Skitter Smack\n- Iron Tail\n\nAmpharos (M) @ Wide Lens\nAbility: Static\nLevel: 50\nEVs: 0 HP / 0 Atk / 2 Def / 32 SpA / 32 Spe\nModest Nature\n- Parabolic Charge\n- Thunder Punch\n- Iron Tail\n- Protect\n\nLucario (M) @ Expert Belt\nAbility: Inner Focus\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Def / 0 SpD / 0 Spe\nJolly Nature\n- Blaze Kick\n- Zen Headbutt\n- Low Sweep\n- Water Pulse\n\nGarganacl (M) @ Leftovers\nAbility: Clear Body\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Def / 0 SpD / 0 Spe\nAdamant Nature\n- Dynamic Punch\n- Mud Shot\n- Zen Headbutt\n- Stone Edge\n\nMilotic (M) @ Sitrus Berry\nAbility: Competitive\nLevel: 50\nEVs: 0 HP / 0 Atk / 2 Def / 32 SpA / 32 Spe\nModest Nature\n- Chilling Water\n- Water Pulse\n- Mud Shot\n- Skitter Smack"
+  ],
+  "choices": [
+    {
+      "p1": "team 4561",
+      "p2": "team 3162"
+    },
+    {
+      "p1": "move 4, move 1 -1",
+      "p2": "move 4, move 2 1"
+    },
+    {
+      "p1": "move 3, move 1 1",
+      "p2": "move 2 2, switch 4"
+    },
+    {
+      "p1": "move 1 -2, move 3 1",
+      "p2": "move 4, move 4 -1"
+    },
+    {
+      "p1": "move 4, move 1 1",
+      "p2": "move 2 -2, move 3 -1"
+    },
+    {
+      "p1": "move 2, move 1 -1",
+      "p2": "move 1, move 1 1"
+    },
+    {
+      "p1": "switch 3, pass"
+    },
+    {
+      "p1": "switch 4, move 2 2",
+      "p2": "move 3 1, switch 3"
+    },
+    {
+      "p1": "move 4, move 2 2",
+      "p2": "move 3 2, move 1 1"
+    },
+    {
+      "p1": "move 4, move 3 -1",
+      "p2": "move 1, move 4 -1"
+    },
+    {
+      "p1": "switch 4, move 2 -1",
+      "p2": "move 3 1, move 1 2"
+    },
+    {
+      "p1": "switch 4, move 2 -1",
+      "p2": "move 4, move 2 2"
+    },
+    {
+      "p1": "move 2 1, move 3 1",
+      "p2": "switch 4, move 4 -1"
+    },
+    {
+      "p1": "move 2 1, move 4",
+      "p2": "move 4 1, move 4 2"
+    },
+    {
+      "p1": "switch 4, pass",
+      "p2": "switch 4, pass"
+    },
+    {
+      "p1": "move 3 -2, move 2 1",
+      "p2": "move 1, move 2 -1"
+    },
+    {
+      "p1": "pass, move 1 1",
+      "p2": "move 3 1, move 4 1"
+    },
+    {
+      "p1": "pass, move 4",
+      "p2": "move 4, move 1 1"
+    },
+    {
+      "p1": "pass, move 4",
+      "p2": "move 2 2, switch 3"
+    },
+    {
+      "p1": "pass, move 2 2",
+      "p2": "move 1, move 2 2"
+    }
+  ]
+}

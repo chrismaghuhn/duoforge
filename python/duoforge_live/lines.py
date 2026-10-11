@@ -81,7 +81,7 @@ CHOICE_ITEMS = ("choiceband", "choicescarf", "choicespecs")
 TURN_SCOPED = {"RAGE_POWDER", "WIDE_GUARD", "QUICK_GUARD"}
 
 # Kinds whose effect on the view no field holds and the fold does not apply: stops with a readable reason.
-UNREPRESENTABLE_KINDS = {"-sethp", "-clearboost", "-clearpositiveboost", "-copyboost", "-setboost",
+UNREPRESENTABLE_KINDS = {"-sethp", "-clearboost", "-clearpositiveboost", "-copyboost",
                          "-swapboost", "-invertboost", "-transform", "swap", "-endability", "-swapsideconditions",
                          "-cureteam"}
 
@@ -134,10 +134,22 @@ LIBRARY_SUPPORTED = supported()
 # extension record (M11 BC spec section 5). Electric and Misty terrain join when the library supports them (#163),
 # with tests of their own. Every other feature still stops until its fold is here. The replay rows carry no extension
 # record yet: a BC mask keeps only the base-value features (duoforge_learn.bc_data.bc_mask).
-BASE_FOLDS = sum(1 << FEATURES[n] for n in ("WEATHER_SAND", "WEATHER_SNOW", "AILMENT_TOX"))
+BASE_FOLDS = sum(1 << FEATURES[n] for n in ("WEATHER_SAND", "WEATHER_SNOW", "AILMENT_TOX", "TERRAIN_ELECTRIC",
+                                                 "TERRAIN_MISTY"))
 # The view-extension folds (tracker.EXT_FIELDS: the record fields the tracker fills; test_replay compares them with
 # DuoForge's record byte for byte and requires each to be shown at compared points of both viewers, own and foe side).
-EXT_FOLDS = sum(1 << FEATURES[n] for n in ("THROAT_CHOP", "AURORA_VEIL", "PERISH", "ENCORE", "ABILITY_CHANGE", "ITEM_CHANGE"))
+# SUBSTITUTE is not folded, and the record's move_result relies on that: a status move that a Substitute blocks shows the
+# lines of a failed one and is true at the pin, which duoforge_move_result cannot tell from the events (its precondition).
+# Folding SUBSTITUTE first needs an explicit treatment of a status move into a Substitute for move_result.
+# Attract (step G71, decision 0034) is the encoder 6 reserve's bit POSITION_EXT_ATTRACT (decision 0050): a checked reserve bit,
+# shown under its family's feature RESERVE_VOLATILES alone (DUOFORGE_VIEWEXT_RESERVE_CHECKED). The tracker folds that one bit;
+# no other bit of the family has a line the tracker folds.
+ATTRACT_FOLD = 1 << FEATURES["RESERVE_VOLATILES"]
+EXT_FOLDS = sum(1 << FEATURES[n] for n in ("THROAT_CHOP", "AURORA_VEIL", "PERISH", "ENCORE", "ABILITY_CHANGE", "ITEM_CHANGE",
+                                          "MUST_RECHARGE", "TOXIC_SPIKES", "TYPE_CHANGE", "TAUNT", "YAWN",
+                                          "DISABLE", "IMPRISON", "STEALTH_ROCK", "LEECH_SEED",
+                                          "GLAIVE_RUSH", "RAGE_POWDER", "HEAL_BLOCK", "SPIKES",
+                                          "WIDE_GUARD", "STICKY_WEB")) | ATTRACT_FOLD
 TRACKER_FOLDS = BASE_FOLDS | EXT_FOLDS
 SUPPORTED = LIBRARY_SUPPORTED & TRACKER_FOLDS
 
@@ -159,6 +171,7 @@ _SIDE = {"move: Aurora Veil": "AURORA_VEIL", "Aurora Veil": "AURORA_VEIL", "move
          "Stealth Rock": "STEALTH_ROCK", "move: Spikes": "SPIKES", "Spikes": "SPIKES",
          "move: Toxic Spikes": "TOXIC_SPIKES", "Toxic Spikes": "TOXIC_SPIKES", "move: Sticky Web": "STICKY_WEB",
          "Sticky Web": "STICKY_WEB"}
+_HAZARDS = {"STEALTH_ROCK", "SPIKES", "TOXIC_SPIKES", "STICKY_WEB"}
 _SINGLE_TURN = {"move: Rage Powder": "RAGE_POWDER", "Rage Powder": "RAGE_POWDER", "Wide Guard": "WIDE_GUARD",
                 "move: Wide Guard": "WIDE_GUARD", "Quick Guard": "QUICK_GUARD", "move: Quick Guard": "QUICK_GUARD",
                 "move: Roost": "ROOST", "Roost": "ROOST"}  # Roost's grounded turn (G42; its residual end is silent)
@@ -172,6 +185,9 @@ _ITEM_CHANGE_FROM = {"move: Trick", "move: Switcheroo", "move: Thief", "move: Co
 # (-item). The converter checks each line's shape. Every other source of _ITEM_CHANGE_FROM stops on its line.
 _ITEM_TAKEN_FOLD = {"move: Knock Off", "move: Thief", "move: Trick", "move: Switcheroo", "stealeat"}
 _ITEM_GIVEN_FOLD = {"move: Trick", "move: Switcheroo", "move: Thief", "move: Covet"}
+# Attract's effect names (data/moves.ts attract): the start and the end print it bare, its check and the visible ends with
+# the move's prefix (Mental Herb, Oblivious); the family's feature shows them (ATTRACT_FOLD)
+_ATTRACT = {"Attract", "move: Attract"}
 # Ability changes by the holder's own ability on contact, which the engine does not model (DFI_HANDLER_UNMODELED, or
 # not in the pool): their -activate line stops.
 _ABILITY_ACTIVATE_UNMODELED = {"ability: Mummy", "ability: Lingering Aroma"}
@@ -199,6 +215,16 @@ _FOLD_END = {"confusion"}
 _FOLD_WEATHER = {"RainDance", "SunnyDay", "none"}
 _FOLD_FIELD = {"move: Grassy Terrain", "move: Psychic Terrain", "move: Trick Room"}
 _FOLD_SIDE = {"move: Tailwind", "Reflect", "move: Reflect", "move: Light Screen"}
+
+
+# Effects whose state is a view bit this tracker does not fold yet (encoder 6 has its column; the fold and its byte
+# comparison against the engine come as their own step): every line of them stops by the bit's name. None now: Attract
+# (step G71, decision 0034) is folded, as the reserve family's bit below.
+UNFOLDED = {}
+
+
+def _unfolded(effect):
+    raise Stop(f"unfolded:{UNFOLDED[effect]}")
 
 
 def _feature(name):
@@ -290,6 +316,10 @@ def check(line, view):
         return "fold"
     if kind == "-fail" and len(args) > 1 and args[1] == "unboost":
         return _kept_drop(args, attrs, view)
+    if kind == "cant" and len(args) > 1 and args[1] == "Attract":
+        if attrs:
+            _unknown(kind, "Attract " + " ".join(attrs))  # the pin's cant names no attribute
+        return _feature("RESERVE_VOLATILES")  # the infatuated occupant's stopped action (step G71): no move named
     if kind in GENERIC:
         return "fold"
     if kind == "-ohko" and not args and not attrs:
@@ -299,11 +329,23 @@ def check(line, view):
     if kind == "-clearnegativeboost" and attrs == ["[silent]"]:
         return "fold"  # White Herb (Team C): the [silent] line the converter skips; the tracker folds it
     effect = args[1] if len(args) > 1 else ""
+    if kind in ("-activate", "-start", "-end") and effect in UNFOLDED:
+        _unfolded(effect)
+    if kind in ("-activate", "-start", "-end") and effect in _ATTRACT:
+        # Attract (step G71): its start, its check before a move and its ends. The converter drops every [silent] line before
+        # its branches, so only the one silent form folds: -end|X|Attract|[silent] (the source left; the tracker's
+        # _silent_attract_end). Any other [silent] Attract line stops, as it would be lost in silence; the converter takes
+        # the forms of the pin's other lines and refuses the rest.
+        if "[silent]" in attrs and not (kind == "-end" and effect == "Attract" and attrs == ["[silent]"]):
+            _unknown(kind, f"{effect} [silent]")
+        return _feature("RESERVE_VOLATILES")
     if kind == "-activate":
         if effect in _FOLD_ACTIVATE:
             return "fold"
         if effect in _GUARD_ACTIVATE:
             return _feature(_GUARD_ACTIVATE[effect])
+        if effect == "move: Sticky Web":
+            return _feature("STICKY_WEB")  # the web slowing an entering member (step G37); its -unboost line follows
         if effect in ("move: Electric Terrain", "move: Misty Terrain"):
             return _feature(_FIELD[effect])  # the terrain blocking Yawn or its sleep: its own feature, as -fieldstart
         if effect in ("move: Skill Swap", "Skill Swap"):  # the pin prints it without "move: " (decision 0041)
@@ -360,6 +402,19 @@ def check(line, view):
             return _feature("PERISH")
         if re.fullmatch(r"stockpile[1-3]", effect):
             return _feature("STOCKPILE")
+        if effect == "typechange":
+            # the type changes the engine models: Soak (-start|X|typechange|Water, no attribute; the tracker checks that
+            # the last move line is Soak, as Magic Powder prints the same form) and Double Shock (???/its other type, step
+            # G50). Protean, Libero, Reflect Type, Burn Up and the others stop on their line.
+            froms = _froms(attrs)
+            soak = kind == "-start" and not attrs and len(args) == 3
+            shock = (kind == "-start" and froms == ["move: Double Shock"] and len(attrs) == 1 and len(args) == 3
+                     and args[2].startswith("???/"))
+            if not (soak or shock):
+                _unknown(kind, "typechange" + (f" [from] {froms[0]}" if froms else ""))
+        if effect == "move: Leech Seed" and (kind == "-end" or attrs):
+            # the engine's seed has no end line (it ends with its holder) and no [of] on its start (dfi_leech_seed)
+            _unknown(kind, effect)
         if effect in _START:
             return _feature(_START[effect])
         _unknown(kind, effect)
@@ -378,11 +433,18 @@ def check(line, view):
             return "fold"
         if field in _FIELD:
             return _feature(_FIELD[field])
+        if kind == "-fieldend" and field == "Misty Terrain":
+            return _feature("TERRAIN_MISTY")  # its onFieldEnd prints no "move: " (data/moves.ts mistyterrain)
         _unknown(kind, field)
     if kind in ("-sidestart", "-sideend"):
         if effect in _FOLD_SIDE:
             return "fold"
         if effect in _SIDE:
+            froms = _froms(attrs)
+            if kind == "-sideend" and _SIDE[effect] in _HAZARDS and (froms or _SIDE[effect] != "TOXIC_SPIKES"):
+                # a hazard's removal: the engine models only Toxic Spikes absorbed by a grounded Poison type (step G37:
+                # -sideend|side|move: Toxic Spikes|[of] holder); Defog, Rapid Spin, Mortal Spin, Tidy Up stop
+                _unknown(kind, f"{effect}" + (f" [from] {froms[0]}" if froms else ""))
             return _feature(_SIDE[effect])
         _unknown(kind, effect)
     if kind == "-ability":
@@ -414,6 +476,12 @@ def check(line, view):
         froms = _froms(attrs)
         item = tables["ITEM"].get(trace_to_c.key(effect))
         own = item is not None and item + 1 == view.item_now(args[0])
+        of = [a for a in attrs if a.startswith("[of] ")]
+        if own and froms == ["ability: Frisk"] and len(of) == 1 and len(args) == 2:
+            # Frisk (-item|holder|Item|[from] ability: Frisk|[of] frisker, [identify] or not): it names the item the
+            # holder holds as the open sheet and the lines show it, so no field changes ("keep": no event; the engine
+            # does not model Frisk, which changes no state). Another item stops below.
+            return "keep"
         if own and ("[identify]" in attrs or not froms):
             return "fold"  # Frisk, or the holder's own announcement (Air Balloon): an item the open sheet shows
         if any(f in _ITEM_CHANGE_FROM for f in froms):
@@ -429,6 +497,12 @@ def check(line, view):
         return _feature("FORME_CHANGE")
     if kind == "-formechange":
         return _feature("FORME_CHANGE")
+    if kind == "-setboost":
+        # Belly Drum (step G86, sim/battle.ts:2051-2052): the line shows the Attack stage it leaves; the tracker sets the
+        # stage (Tracker._set_boost). Any other source (Anger Point, not marked) stays unknown.
+        if len(args) == 3 and args[1] == "atk" and attrs == ["[from] move: Belly Drum"]:
+            return "fold"
+        _unknown(kind, " ".join(args[1:] + attrs))
     if kind in UNREPRESENTABLE_KINDS:
         _unknown(kind)
     return "fold"  # the converter decides: it parses what DuoForge implements and refuses the rest

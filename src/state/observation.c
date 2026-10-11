@@ -408,6 +408,8 @@ duoforge_status duoforge_battle_observe_ext(const duoforge_context *ctx, const d
                 /* Step G72b (decision 0015 5ce): Dragon Cheer's volatile is up while its stage is (-start|X|move: Dragon Cheer; a
                  * switch-out clears the stage with the position's tail, so the bit ends with it). */
                 vol |= (tail->position_flags & DFI_POSFLAG_DRAGON_CHEER_MASK) != 0u ? (uint32_t)DUOFORGE_POSITION_EXT_DRAGON_CHEER : 0u;
+                /* Step G84 (decision 0047): Leech Seed is up on the holder (the tail's source; public: the -start line). */
+                vol |= tail->leech_seed_source != 0u ? (uint32_t)DUOFORGE_POSITION_EXT_LEECH_SEED : 0u;
                 /* Step G76 (decision 0015 5cg): Destiny Bond is up until the occupant's next move attempt (-singlemove|X|Destiny Bond). */
                 vol |= (tail->position_flags & DFI_POSFLAG_DESTINY_BOND) != 0u ? (uint32_t)DUOFORGE_POSITION_EXT_DESTINY_BOND : 0u;
                 /* Step G30: Rage Powder draws the foes' single-target moves this turn ([-singleturn] move: Rage Powder), set
@@ -421,11 +423,14 @@ duoforge_status duoforge_battle_observe_ext(const duoforge_context *ctx, const d
                 if (s == viewer && dfi_illusion_disguise_up(&battle->sides[s], &battle->tail.sides[s], p) != 0) {
                     vol |= (uint32_t)DUOFORGE_POSITION_EXT_ILLUSION_UP;
                 }
+                /* Step G71 (decision 0034): Attract is public for both sides (its -start line is public); the bit names the
+                 * infatuated occupant and no source (the source's member is not in the view). */
+                vol |= battle->tail.attract_source[s * DUOFORGE_ACTIVE_PER_SIDE + p] != 0u ? (uint32_t)DUOFORGE_POSITION_EXT_ATTRACT : 0u;
                 o.sides[s].positions[p].volatiles = vol;
                 /* Step G42: move_failed is 1 iff the occupant's last move result is FALSE. It is exact only when the result is
                  * classified; an unclassified result (the bit of decision 0015 section 7) reads 0 here (documented, not refused). */
                 o.sides[s].positions[p].move_failed =
-                    ((((uint32_t)tail->move_result >> DFI_MOVE_RESULT_LAST_SHIFT) & 3u) == DFI_MOVE_RESULT_FALSE) ? 1u : 0u;
+                    ((((uint32_t)tail->move_result >> DFI_MOVE_RESULT_LAST_SHIFT) & DFI_MOVE_RESULT_VALUE_MASK) == DFI_MOVE_RESULT_FALSE) ? 1u : 0u;
                 /* Step G9, Encore: the one move slot (slot + 1) that the occupant may use, public (-start|X|Encore: the
                  * slot is the one of its last move line); the turns are never shown. */
                 o.sides[s].positions[p].encore_slot = tail->encore_slot;

@@ -243,7 +243,8 @@ static void check_marks(df_test *t)
     }
     DF_CHECK(t, dfi_support.items[DFI_ITEM_TERRAINEXTENDER] != 0u); /* step G55 marks Terrain Extender (8 turns) */
     DF_CHECK(t, dfi_support.moves[DFI_MOVE_STEELROLLER] != 0u && dfi_pool_moves[DFI_MOVE_STEELROLLER].special == DFI_SPECIAL_STEEL_ROLLER);
-    DF_CHECK_EQ_U64(t, dfi_support.moves[DFI_MOVE_ICESPINNER], 0u);
+    /* Ice Spinner is marked by step G86 (decision 0048): its terrain clear after a hit is the handler below. */
+    DF_CHECK(t, dfi_support.moves[DFI_MOVE_ICESPINNER] != 0u && dfi_pool_moves[DFI_MOVE_ICESPINNER].special == DFI_SPECIAL_ICE_SPINNER);
     DF_CHECK_EQ_U64(t, dfi_support.moves[DFI_MOVE_MISTYEXPLOSION], 0u);
     /* The step's rows: both terrain moves, Rising Voltage and Terrain Pulse with their handlers, Electric Surge (a terrain
      * setter of the family column, Electric: code 3), Electric Seed and Misty Seed (engine rows). Misty Surge is not in the

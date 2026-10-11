@@ -923,7 +923,21 @@
 #define DFI_SPECIAL_DESTINY_BOND 98u
 #define DFI_SPECIAL_FINAL_GAMBIT 99u
 #define DFI_SPECIAL_DRAGON_DARTS 100u
-#define DFI_SPECIAL_UNMODELED 101u
+#define DFI_SPECIAL_LASH_OUT 101u
+#define DFI_SPECIAL_ASSURANCE 102u
+#define DFI_SPECIAL_BANEFUL_BUNKER 103u
+#define DFI_SPECIAL_HEAVY_SLAM 104u
+#define DFI_SPECIAL_HARD_PRESS 105u
+#define DFI_SPECIAL_ICE_SPINNER 106u
+#define DFI_SPECIAL_BELLY_DRUM 107u
+#define DFI_SPECIAL_WILL_CRIT 108u
+#define DFI_SPECIAL_LEECH_SEED 109u
+#define DFI_SPECIAL_CURSE 110u
+#define DFI_SPECIAL_CONFUSE 111u
+#define DFI_SPECIAL_OHKO 112u
+#define DFI_SPECIAL_MEMENTO 113u
+#define DFI_SPECIAL_LEVEL_DAMAGE 114u
+#define DFI_SPECIAL_UNMODELED 115u
 
 /* ---- the second flags byte of every move (step G8: the general byte for the flags that the first one has no room
  * for; bits 4 to 128 are free) and the secondary kinds that it comes with ---- */
@@ -1429,6 +1443,7 @@ extern const uint8_t dfi_pool_move_static_hits[DFI_POOL_MOVE_COUNT][2];
 #define DFI_MOVE_FLAG3_MUST_PRESSURE 2u  /* flags.mustpressure (step G53): a foe's Pressure costs PP whatever the move targets */
 #define DFI_MOVE_FLAG3_BYPASSSUB 4u      /* flags.bypasssub (step G60): a Substitute does not take the hit of the move (decision 0032) */
 #define DFI_MOVE_FLAG3_PULSE 8u          /* flags.pulse (step G59): Mega Launcher's BasePower x1.5 for the holder's pulse moves */
+#define DFI_MOVE_FLAG3_BULLET 16u        /* flags.bullet (step G83, approved by HauptSession): Bulletproof stops a bullet move at its holder */
 extern const uint8_t dfi_pool_move_flags3[DFI_POOL_MOVE_COUNT];
 extern const dfi_pool_alias dfi_pool_forme_aliases[DFI_POOL_ALIAS_COUNT];
 

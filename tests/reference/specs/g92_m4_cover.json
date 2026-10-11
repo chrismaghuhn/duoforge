@@ -1,0 +1,87 @@
+{
+  "name": "g92_m4_cover",
+  "purpose": "M4 cover (decision 0062, lead, 2026-10-11): an OHKO move (Fissure, Guillotine or Horn Drill) by a non-Ice user whose accuracy roll is in [20, 30): hit at 30, miss at 20",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,12177584a3401d21417d6acc957ee4ad62f0767d1e1a35364a9749dfa447ed82",
+  "teams": [
+    "Gengar (F) @ Focus Sash\nAbility: Cursed Body\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 SpD\nTimid Nature\n- Confuse Ray\n- Night Shade\n- Protect\n\nKingambit (M) @ Black Glasses\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Swords Dance\n- Guillotine\n- Protect\n\nMr. Mime (M) @ Sitrus Berry\nAbility: Filter\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 SpD\nModest Nature\n- Teeter Dance\n- Protect\n\nExcadrill (M) @ Life Orb\nAbility: Sand Rush\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Horn Drill\n- Fissure\n- Protect\n\nGardevoir (F) @ Leftovers\nAbility: Synchronize\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 SpD\nModest Nature\n- Misty Terrain\n- Swagger\n- Memento\n- Protect\n\nFeraligatr (M) @ Rocky Helmet\nAbility: Torrent\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Flatter\n- Protect",
+    "Feraligatr (M) @ Rocky Helmet\nAbility: Torrent\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Flatter\n- Protect\n\nMr. Mime (M) @ Sitrus Berry\nAbility: Filter\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 SpD\nModest Nature\n- Teeter Dance\n- Protect\n\nGengar (F) @ Focus Sash\nAbility: Cursed Body\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 SpD\nTimid Nature\n- Confuse Ray\n- Night Shade\n- Protect\n\nExcadrill (M) @ Life Orb\nAbility: Sand Rush\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Horn Drill\n- Fissure\n- Protect\n\nKingambit (M) @ Black Glasses\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Swords Dance\n- Guillotine\n- Protect\n\nGardevoir (F) @ Leftovers\nAbility: Synchronize\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 SpD\nModest Nature\n- Misty Terrain\n- Swagger\n- Memento\n- Protect"
+  ],
+  "choices": [
+    {
+      "p1": "team 6342",
+      "p2": "team 1623"
+    },
+    {
+      "p1": "switch 3, move 1",
+      "p2": "move 2, move 1"
+    },
+    {
+      "p1": "move 3, move 2",
+      "p2": "move 2, move 3 -1"
+    },
+    {
+      "p2": "pass, switch 3"
+    },
+    {
+      "p1": "move 3, move 1",
+      "p2": "move 1 1, move 1"
+    },
+    {
+      "p1": "move 3, move 2",
+      "p2": "move 1 2, move 2"
+    },
+    {
+      "p1": "move 1 2, move 2",
+      "p2": "move 1 2, switch 4"
+    },
+    {
+      "p1": "move 3, move 1",
+      "p2": "move 2, move 1 1"
+    },
+    {
+      "p1": "move 1 2, move 2",
+      "p2": "move 1 2, switch 4"
+    },
+    {
+      "p1": "move 2 1, move 1",
+      "p2": "switch 4, move 2"
+    },
+    {
+      "p1": "move 3, move 1",
+      "p2": "move 3, move 1"
+    },
+    {
+      "p1": "move 3, move 2",
+      "p2": "move 1 1, move 1"
+    },
+    {
+      "p1": "move 1 2, move 2",
+      "p2": "move 3, move 2"
+    },
+    {
+      "p1": "move 1 -2, move 1",
+      "p2": "move 2 2, move 2"
+    },
+    {
+      "p1": "move 2 1, move 1",
+      "p2": "move 2 -2, move 2"
+    },
+    {
+      "p2": "switch 4, pass"
+    },
+    {
+      "p1": "move 2 2, move 2",
+      "p2": "move 2, move 2"
+    },
+    {
+      "p1": "move 2 1, switch 3",
+      "p2": "move 2, move 2"
+    },
+    {
+      "p1": "move 1 1, move 1 2",
+      "p2": "pass, move 2"
+    }
+  ]
+}

@@ -1,0 +1,75 @@
+{
+  "name": "c4_cover_a",
+  "purpose": "C4 coverage (decision 0015 entry 5ct), a random pool battle of run 4100 (campaign c4-campaign-y2, diff_driver random): the self-boost secondaries Flame Charge, Aqua Step, Psyshield Bash and Trailblaze (their user rises in Speed or Defense), the status boosts Scary Face, Noble Roar, Spicy Extract and Cosmic Power, and Steel Wing (the 10 percent Defense roll), with Amnesia; no Substitute user.",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,f5ca1056120eac437c9009c01ebadd2718323e0295d8095288d1cff1bd4939b0",
+  "teams": [
+    "Wyrdeer (M) @ Sitrus Berry\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 2 SpD / 32 Def\nCalm Nature\n- Psyshield Bash\n- Scary Face\n- Earthquake\n- Protect\n\nClefable (F) @ Leftovers\nAbility: Unaware\nLevel: 50\nEVs: 32 HP / 32 SpD / 2 Def\nCalm Nature\n- Cosmic Power\n- Moonblast\n- Thunder Wave\n- Protect\n\nQuaquaval (M) @ Expert Belt\nAbility: Moxie\nLevel: 50\nEVs: 32 Atk / 2 SpD / 32 Spe\nJolly Nature\n- Aqua Step\n- Close Combat\n- Knock Off\n- Protect\n\nVenusaur (M) @ Venusaurite\nAbility: Overgrow\nLevel: 50\nEVs: 32 HP / 2 SpD / 32 SpA\nBold Nature\n- Amnesia\n- Trailblaze\n- Sludge Bomb\n- Protect\n\nScizor (M) @ Scizorite\nAbility: Technician\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Trailblaze\n- Steel Wing\n- Scary Face\n- Protect\n\nCharizard (M) @ Life Orb\nAbility: Blaze\nLevel: 50\nEVs: 2 HP / 32 SpA / 32 Spe\nModest Nature\n- Flame Charge\n- Steel Wing\n- Scary Face\n- Protect",
+    "Tauros (M) @ Choice Scarf\nAbility: Intimidate\nLevel: 50\nEVs: 2 HP / 32 Atk / 32 Spe\nJolly Nature\n- Scary Face\n- Trailblaze\n- Earthquake\n- Protect\n\nPyroar (M) @ Pyroarite\nAbility: Unnerve\nLevel: 50\nEVs: 32 HP / 2 SpD / 32 SpA\nModest Nature\n- Noble Roar\n- Flame Charge\n- Hyper Voice\n- Protect\n\nSnorlax (M) @ Rocky Helmet\nAbility: Thick Fat\nLevel: 50\nEVs: 32 HP / 32 Def / 2 SpD\nCareful Nature\n- Screech\n- Trailblaze\n- Crunch\n- Protect\n\nScovillain (F) @ Scovillainite\nAbility: Chlorophyll\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 SpD\nModest Nature\n- Spicy Extract\n- Flamethrower\n- Trailblaze\n- Protect\n\nLopunny (F) @ Lopunnite\nAbility: Limber\nLevel: 50\nEVs: 2 HP / 32 Atk / 32 Spe\nJolly Nature\n- Cosmic Power\n- Quick Attack\n- Trailblaze\n- Protect\n\nMetagross @ Metagrossite\nAbility: Clear Body\nLevel: 50\nEVs: 2 HP / 32 Atk / 32 Spe\nAdamant Nature\n- Cosmic Power\n- Meteor Mash\n- Trailblaze\n- Protect"
+  ],
+  "choices": [
+    {
+      "p1": "team 5431",
+      "p2": "team 6234"
+    },
+    {
+      "p1": "move 4, move 2 -1",
+      "p2": "move 2 -2, move 2 2 mega"
+    },
+    {
+      "p1": "move 4 mega, move 4",
+      "p2": "move 1, move 3"
+    },
+    {
+      "p1": "move 2 2, move 1",
+      "p2": "move 3 1, move 1 1"
+    },
+    {
+      "p1": "move 2 2, switch 3",
+      "p2": "move 2 -2, move 2 1"
+    },
+    {
+      "p1": "move 3 -2, move 1 1",
+      "p2": "move 2 1, move 3"
+    },
+    {
+      "p1": "switch 3, pass"
+    },
+    {
+      "p1": "move 2 2, move 1 2",
+      "p2": "move 2 -2, move 4"
+    },
+    {
+      "p1": "move 1, move 1 2",
+      "p2": "move 1, switch 3"
+    },
+    {
+      "p1": "move 3 1, move 3 -1",
+      "p2": "move 2 1, move 4"
+    },
+    {
+      "p1": "switch 4, pass"
+    },
+    {
+      "p1": "move 2 -2, move 4",
+      "p2": "move 4, switch 4"
+    },
+    {
+      "p1": "move 4, move 3 1",
+      "p2": "move 1, move 3 1"
+    },
+    {
+      "p1": "move 1 1, move 3 2",
+      "p2": "move 2 1, move 1 1"
+    },
+    {
+      "p1": "move 3, move 1 1",
+      "p2": "move 4, move 3 1"
+    },
+    {
+      "p1": "move 2 -2, pass",
+      "p2": "move 2 1, move 4"
+    }
+  ]
+}

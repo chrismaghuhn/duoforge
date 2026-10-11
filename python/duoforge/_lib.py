@@ -31,6 +31,10 @@ _STATUS = ctypes.c_uint32
 _SIGNATURES = {
     "duoforge_batch_public": (_STATUS, (_P, _P, _P, _P)),
     "duoforge_batch_public_causes": (_STATUS, (_P, _P, _P, _P)),
+    "duoforge_hp_display": (_STATUS, (_U32, _U32, _P, _P)),
+    "duoforge_move_result": (_STATUS, (_P, _U32, _P, _U32, _P)),
+    "duoforge_observation_causes": (_STATUS, (_P, _P, _P)),
+    "duoforge_public_record_check": (_STATUS, (_P, _P)),
     "duoforge_batch_from_view": (_STATUS, (_P, _P, _P, _U32, _P)),
     "duoforge_battle_hypothesis": (_STATUS, (_P, _P, _U32, _P)),
     "duoforge_public_queue_mask": (_STATUS, (_P, _P, _P, _P)),
@@ -45,6 +49,9 @@ _SIGNATURES = {
     "duoforge_battle_result": (_STATUS, (_P, _P, ctypes.POINTER(_U32))),
     "duoforge_battle_tiebreak": (_STATUS, (_P, _P, ctypes.POINTER(_U32))),
     "duoforge_battle_digest": (_STATUS, (_P, _P, _P)),
+    "duoforge_battle_clone": (_STATUS, (_P, _P, ctypes.POINTER(_P))),
+    "duoforge_battle_reseed": (_STATUS, (_P, _P, _U64, _U64)),
+    "duoforge_battle_step_events": (_STATUS, (_P, _P, _P, _P, _P)),
     "duoforge_battle_encoded_size": (_STATUS, (_P, _P, ctypes.POINTER(ctypes.c_size_t))),
     "duoforge_battle_encode": (_STATUS, (_P, _P, _P, ctypes.c_size_t, ctypes.POINTER(ctypes.c_size_t))),
     "duoforge_battle_observe_ext": (_STATUS, (_P, _P, _U32, _P)),
@@ -86,6 +93,7 @@ _SIGNATURES = {
     "duoforge_data_ability_static": (_STATUS, (_P, _U32, _P)),
     "duoforge_data_nature_static": (_STATUS, (_P, _U32, _P)),
     "duoforge_data_type_effect": (_STATUS, (_P, _U32, _U32, ctypes.POINTER(_U32), ctypes.POINTER(_U32))),
+    "duoforge_data_request_target_class": (_STATUS, (_P, _U32, ctypes.POINTER(_U32), ctypes.POINTER(_U32))),
 }
 
 

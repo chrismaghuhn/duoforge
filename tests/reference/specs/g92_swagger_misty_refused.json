@@ -1,0 +1,23 @@
+{
+  "name": "g92_swagger_misty_refused",
+  "purpose": "Misty Terrain, then Swagger into a grounded Kingambit at +6 attack (Swords Dance three times): the boost is refused and the terrain refuses the confusion, so the move fails: -fail and [still] (decision 0062)",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,0000000000000000000000000000000000000000000000000000000000000001",
+  "teams": [
+    "Gardevoir (F) @ Leftovers\nAbility: Synchronize\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 SpD\nModest Nature\n- Misty Terrain\n- Swagger\n- Memento\n- Protect\n\nGengar (F) @ Focus Sash\nAbility: Cursed Body\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 SpD\nTimid Nature\n- Confuse Ray\n- Night Shade\n- Protect\n\nMilotic (F) @ Sitrus Berry\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Confuse Ray\n- Protect\n\nExcadrill (M) @ Life Orb\nAbility: Sand Rush\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Horn Drill\n- Fissure\n- Protect\n\nSteelix (M) @ Expert Belt\nAbility: Sturdy\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Fissure\n- Protect\n\nSalamence (M) @ Salamencite\nAbility: Intimidate\nLevel: 50\nEVs: 2 HP / 32 SpA / 32 Spe\nTimid Nature\n- Protect",
+    "Kingambit (M) @ Black Glasses\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Swords Dance\n- Guillotine\n- Protect\n\nUmbreon (F) @ Leftovers\nAbility: Synchronize\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Swagger\n- Protect\n\nPrimarina (F) @ Sitrus Berry\nAbility: Torrent\nLevel: 50\nEVs: 32 HP / 2 Def / 32 SpD\nCalm Nature\n- Moonblast\n- Protect\n\nRaichu (M) @ Life Orb\nAbility: Static\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 SpD\nTimid Nature\n- Thunder Wave\n- Protect\n\nFeraligatr (M) @ Rocky Helmet\nAbility: Torrent\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Flatter\n- Protect\n\nSalamence (M) @ Salamencite\nAbility: Intimidate\nLevel: 50\nEVs: 2 HP / 32 SpA / 32 Spe\nTimid Nature\n- Protect"
+  ],
+  "plan": {
+    "p1": [
+      "move 1, move 3",
+      "move 3, move 3",
+      "move 3, move 3",
+      "move 2 1, move 3"
+    ],
+    "p2": [
+      "move 1, move 2"
+    ],
+    "max_steps": 5
+  }
+}

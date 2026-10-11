@@ -18,6 +18,14 @@ of a hidden-trapped last active: Side.emitChoiceError, sim/side.ts:527-534):
 the current move request again, under a new rqid, with what the refusal
 revealed. No battle line comes between, so it is a new request epoch of the
 same decision point: the state stays, the options follow the update.
+
+The public record (public_parts, record.py; M12 option A): the tracker also
+folds the public facts the canonical public record holds and its views do not
+(entry activation ids, move actions since entry, the opponent's knowledge of
+each own member, revealed facts, a freeze's turns, the foe's leads), and
+record.assemble serialises them. duoforge.python.live proves the record equal
+to the engine's at every decision point of every committed closure battle, or
+refused with the engine's status and cause mask.
 """
 import collections
 import json
@@ -25,6 +33,7 @@ import json
 import numpy as np
 
 from duoforge import _layout
+from duoforge._state_layout import VALUES as _ENC
 
 from . import lines, options, teams
 from .data import trace_to_c
@@ -56,27 +65,84 @@ FIELD_TURNS = 5  # weather, terrain, Trick Room
 FIELD_TURNS_EXTENDED = 8  # DFI_FIELD_TURNS_MAX: a weather rock or Terrain Extender held by the setter
 TAILWIND_TURNS, SCREEN_TURNS, SCREEN_TURNS_CLAY = 4, 5, 8  # DFI_TAILWIND_TURNS_MAX, 5, DFI_SCREEN_TURNS_MAX
 STALL_DURATION, STALL_LEVEL_MAX = 2, 6  # DFI_STALL_DURATION (src/combat/turn.c), DFI_STALL_LEVEL_MAX
+FREEZE_TURNS = _ENC["DFI_FREEZE_TURNS"]  # a freeze's status counter at its start, one less per [cant] frz
+THROAT_CHOP_TURNS = _ENC["DFI_TAIL_THROAT_CHOP_MAX"]  # throatchop's duration, counted down in the residual
+ENCORE_TURNS = _ENC["DFI_ENCORE_TURNS"]  # encore's duration; one more when its target has no move left this turn
+# the durations the #342 volatiles start with (src/state/battle_internal.h), each counted down in the residual
+TAUNT_TURNS = _ENC["DFI_TAUNT_TURNS"]  # one more when its target has been out for a turn and has no move left
+DISABLE_TURNS = _ENC["DFI_DISABLE_TURNS"]  # one less when its target has its move ahead or Cursed Body sets it
+HEAL_BLOCK_TURNS = _ENC["DFI_HEAL_BLOCK_PSYCHIC_NOISE_TURNS"]  # Psychic Noise's, the one Heal Block of the pool
+YAWN_TURNS = _ENC["DFI_TAIL_YAWN_MAX"]
+TOXIC_STAGE_MAX = _ENC["DFI_TAIL_TOXIC_STAGE_MAX"]  # where the toxic counter stops
+HITS_TAKEN_MAX = _ENC["DFI_TAIL_HITS_TAKEN_MAX"]  # where Rage Fist's count stops
 CHARGE_TURNS = 2  # twoturnmove's duration: the charge and the locked turn end in the second residual
 EXT_REVISION = C["DUOFORGE_OBSERVATION_EXT_REVISION"]
 EXT_THROAT_CHOP = C["DUOFORGE_POSITION_EXT_THROAT_CHOP"]
 ITEM_NOW_NONE = C["DUOFORGE_ITEM_NOW_NONE"]  # duoforge_member_ext.item_now: the member holds nothing
 # The view-extension fields (OBSERVATION_EXT, decision 0018) of each feature the tracker folds: what observation_ext
 # writes, and all that restrict_ext keeps of DuoForge's record for a comparison. ("bit", B): bit B of a position's
-# volatiles; ("position" | "member" | "side", F): field F of every position, member or side record. The base-value
+# volatiles; ("side_bit", (F, B)): bit B of side field F; ("position" | "member" | "side", F): field F of every
+# position, member or side record. The base-value
 # features show in the base observation alone (lines.BASE_FOLDS).
 EXT_FIELDS = {
-    "WEATHER_SAND": (), "WEATHER_SNOW": (), "AILMENT_TOX": (),
+    "WEATHER_SAND": (), "WEATHER_SNOW": (), "AILMENT_TOX": (), "TERRAIN_ELECTRIC": (), "TERRAIN_MISTY": (),
     "THROAT_CHOP": (("bit", EXT_THROAT_CHOP),),
+    "MUST_RECHARGE": (("bit", C["DUOFORGE_POSITION_EXT_MUST_RECHARGE"]),),
+    "TOXIC_SPIKES": (("side", "toxic_spikes"),),
+    "STEALTH_ROCK": (("side", "stealth_rock"),),
+    "SPIKES": (("side", "spikes"),),
+    "STICKY_WEB": (("side", "sticky_web"),),
+    "TAUNT": (("bit", C["DUOFORGE_POSITION_EXT_TAUNT"]),),
+    "YAWN": (("bit", C["DUOFORGE_POSITION_EXT_YAWN"]),),
+    "LEECH_SEED": (("bit", C["DUOFORGE_POSITION_EXT_LEECH_SEED"]),),
+    "DISABLE": (("position", "disable_slot"),),
+    "IMPRISON": (("bit", C["DUOFORGE_POSITION_EXT_IMPRISON"]),),
+    "GLAIVE_RUSH": (("bit", C["DUOFORGE_POSITION_EXT_GLAIVE_RUSH"]),),
+    "RAGE_POWDER": (("bit", C["DUOFORGE_POSITION_EXT_RAGE_POWDER"]),),
+    "HEAL_BLOCK": (("bit", C["DUOFORGE_POSITION_EXT_HEAL_BLOCK"]),),
+    "WIDE_GUARD": (("side_bit", ("guard_flags", C["DUOFORGE_SIDE_GUARD_WIDE_GUARD"])),),
+    "TYPE_CHANGE": (("bit", C["DUOFORGE_POSITION_EXT_TYPE_CHANGED"]), ("position", "type_now")),
     "AURORA_VEIL": (("side", "aurora_veil_turns"),),
     "PERISH": (("position", "perish"),),
     "ENCORE": (("position", "encore_slot"),),
     "ABILITY_CHANGE": (("position", "ability_now"),),
     "ITEM_CHANGE": (("member", "item_now"),),
+    # Attract (step G71, decision 0034): the presence bit of the infatuated position; its source is the record's byte
+    "RESERVE_VOLATILES": (("bit", C["DUOFORGE_POSITION_EXT_ATTRACT"]),),
 }
+# The presence bits of a position's volatiles: _Position attribute -> DUOFORGE_POSITION_EXT_* bit.
+_PRESENCE_BITS = (("throat_chop", EXT_THROAT_CHOP), ("must_recharge", C["DUOFORGE_POSITION_EXT_MUST_RECHARGE"]),
+                  ("taunt", C["DUOFORGE_POSITION_EXT_TAUNT"]), ("yawn", C["DUOFORGE_POSITION_EXT_YAWN"]),
+                  ("leech_source", C["DUOFORGE_POSITION_EXT_LEECH_SEED"]),
+                  ("imprison", C["DUOFORGE_POSITION_EXT_IMPRISON"]), ("glaive_rush", C["DUOFORGE_POSITION_EXT_GLAIVE_RUSH"]),
+                  ("rage_powder", C["DUOFORGE_POSITION_EXT_RAGE_POWDER"]), ("heal_block", C["DUOFORGE_POSITION_EXT_HEAL_BLOCK"]),
+                  ("attract", C["DUOFORGE_POSITION_EXT_ATTRACT"]))
+# DUOFORGE_FIELD_* of a terrain's FIELD_START event -> DUOFORGE_TERRAIN_* of the observation
+_TERRAIN = {1: C["DUOFORGE_TERRAIN_GRASSY"], trace_to_c.FIELD_PSYCHIC_TERRAIN: C["DUOFORGE_TERRAIN_PSYCHIC"],
+            trace_to_c.FIELD_ELECTRIC_TERRAIN: C["DUOFORGE_TERRAIN_ELECTRIC"],
+            trace_to_c.FIELD_MISTY_TERRAIN: C["DUOFORGE_TERRAIN_MISTY"]}
+# The folded _Position fields that Baton Pass gives the entering member (src/combat/turn.c dfi_pass_give: Throat Chop's
+# and Perish Song's tail counters among them); Encore, the recharge, a changed type or ability stay with the leaver.
+_PASSED = ("throat_chop", "perish", "taunt", "heal_block", "leech_source")  # with their counts (dfi_pass_give copies the turns
+# and Leech Seed's source slot: the seed has no noCopy, decision 0047)
 # DUOFORGE_SIDE_* of a SIDE_START or SIDE_END event (tailwind 1, reflect 2, light screen 3, Aurora Veil 4) -> the index
 # of the side's turns in Tracker._conditions
 _SIDE_CONDITION = {1: 2, 2: 0, 3: 1, 4: 3}
-STATUS = {"brn": 1, "frz": 2, "par": 3, "slp": 4, "psn": 5}
+# The entry hazards of a SIDE_START or SIDE_END event (DUOFORGE_SIDE_STEALTH_ROCK 5 to _STICKY_WEB 8, step G37): the
+# duoforge_side_ext field and its most layers
+_HAZARD = {5: ("stealth_rock", 1), 6: ("spikes", 3), 7: ("toxic_spikes", 2), 8: ("sticky_web", 1)}
+STATUS = {"brn": 1, "frz": 2, "par": 3, "slp": 4, "psn": 5, "tox": 6}  # DUOFORGE_AILMENT_*
+# Why a position must switch (the encoding's switch_flag, DFI_SWITCH_*): the tracker keeps the reason, the views its presence
+SWITCH_MOVE, SWITCH_EMERGENCY_EXIT, SWITCH_FAINTED = (_ENC[f"DFI_SWITCH_{n}"] for n in ("MOVE", "EMERGENCY_EXIT", "FAINTED"))
+# The moves whose cost to their own user is directDamage, a plain -damage line of the user with no [from] (src/combat/turn.c,
+# dfi_deal with DFI_DMG_DIRECT: Substitute, Clangorous Soul, Belly Drum): it sets no hurtThisTurn (Tracker._hurt).
+DIRECT_COST_MOVES = ("SUBSTITUTE", "CLANGOROUSSOUL", "BELLYDRUM")
+# The self-switch moves and the reason they flag: a damaging one when it hit a target, its user stands and a reserve can
+# come in (src/combat/turn.c, selfSwitch of a damaging move); Baton Pass and Revival Blessing when they do not fail.
+_HIT_PIVOTS = {"UTURN": _ENC["DFI_SWITCH_UTURN"], "VOLTSWITCH": _ENC["DFI_SWITCH_VOLT_SWITCH"],
+               "FLIPTURN": _ENC["DFI_SWITCH_FLIP_TURN"]}
+_MOVE_PIVOTS = {"BATONPASS": _ENC["DFI_SWITCH_BATON_PASS"], "REVIVALBLESSING": _ENC["DFI_SWITCH_REVIVE_BLESSING"]}
+REVEALED_ITEM_CONSUMED, REVEALED_MEGA = _ENC["DFI_REVEALED_ITEM_CONSUMED"], _ENC["DFI_REVEALED_MEGA"]
 
 ROOM_LINES = lines.ROOM_LINES
 _kind = lines.line_kind  # lines of the room, not of the battle: nobody folds them
@@ -99,8 +165,15 @@ def _condition(text):
 class _Position:
     def __init__(self):
         self.occupant = ROSTER_NONE
-        self.flag = 0  # Showdown's switchFlag: asked to switch at the next switch request
+        self.flag = 0  # Showdown's switchFlag: asked to switch at the next switch request (its reason, DFI_SWITCH_*)
         self.fainted = False
+        self.activation = 0  # the activation id of the occupant's entry (the public record; switches counted in order)
+        self.move_actions = 0  # the occupant's move actions since its entry (the public record, _move_action)
+        self.confused_action = False  # a confusion -activate began the occupant's current action
+        # The position's MOVE action of this turn is still in the queue: every standing occupant queues one at the turn's
+        # start unless it switches (a switch-out cancels its actions, sim/battle-actions.ts switchIn); it leaves the queue
+        # when it runs (its [move], [cant] or confusion line). A faint does not remove it (the action then does nothing).
+        self.move_queued = False
         self.reset()
 
     def reset(self):
@@ -116,10 +189,43 @@ class _Position:
         self.protecting = 0
         self.choice_slot = MOVE_SLOT_NONE  # the move slot a Choice item locks (TEAM_C and POOL)
         # The POOL view extension (decision 0018), all ended with the occupant (a switch or a faint):
-        self.throat_chop = 0  # Throat Chop's volatile is up (presence only)
+        self.throat_chop = 0  # Throat Chop's turns left (the view shows its presence, the record its count)
+        self.must_recharge = 0  # a recharge move hit: the next action is cant|recharge (presence only)
+        self.taunt = 0  # Taunt's turns left: the view shows its presence, the record its count (taunt_turns)
+        self.yawn = 0  # Yawn's turns left until the sleep: the view shows its presence, the record its count
+        self.leech_source = 0  # Leech Seed: the flat position + 1 of the seed's source (the record's leech_seed_source; the
+        # drain's heal goes to whoever stands there), 0: none; the volatile ends with the occupant, Baton Pass copies it
+        self.imprison = 0  # the occupant used Imprison (presence only, until it leaves)
+        self.glaive_rush = 0  # Glaive Rush's drawback is up until the occupant's next action (presence only)
+        self.rage_powder = 0  # Rage Powder draws the foes' single-target moves this turn (presence only)
+        self.heal_block = 0  # Heal Block's turns left: the view shows its presence, the record its count
+        # Attract (step G71): the member code of the holder that infatuates the occupant, 1 + side * DUOFORGE_MAX_ROSTER + roster
+        # index (the record's attract_source byte of this position; 0: not infatuated). Ended with the occupant, as the engine's
+        # clearing of its byte (dfi_tail_clear_occupant, no line); its visible and silent ends are folded in _fold_event and
+        # _silent_attract_end.
+        self.attract = 0
+        self.type_now = (0, 0)  # the types (id + 1, 0: none) a move set until the occupant leaves (Soak, Double Shock)
+        # the record's type2 of the occupant (tail rev 4): Double Shock's remaining type + 1, 0 after Soak; a Mega
+        # Evolution ends type_now (the soak_type) and keeps it, as dfi_run_mega does; it ends with the occupant
+        self.type2 = 0
+        self.disable_turns = 0  # Disable's turns left (the record; the view shows only disable_slot)
+        self.encore_turns = 0  # Encore's turns left (the record)
+        self.hits_taken = 0  # damaging hits of another Pokemon's move since the entry (the record; Rage Fist)
+        self.raised = 0  # a stat of the occupant rose this turn (the record's position flag; Alluring Voice)
+        self.lowered = 0  # a stat of the occupant fell this turn (the record's position flag LOWERED; Lash Out, G88)
+        self.hurt = 0  # a spread damage left the occupant standing this turn (the record's position flag HURT; Assurance)
+        self.newly_switched = 0  # the occupant came in this turn (the record's flag under the TEAM_C and POOL kinds)
+        self.turn_done = True  # no move of the occupant is left this turn (it moved, could not, or came in or fainted)
+        self.unburden_unseen = False  # Knock Off hit an Unburden holder and no -enditem followed (record.py refuses)
+        # The POOL record's move_result (tail rev 4): the result of the occupant's move action this turn and last turn,
+        # each DFI_MOVE_RESULT_* with its unclassified bit, as the library classifies the action's events
+        # (Tracker._end_action); None where the library cannot tell it from the events (record.py refuses then).
+        self.result_now = 0
+        self.result_last = 0
         self.perish = 0  # the Perish count the game showed last, 3 to 1 (0: none)
         self.last_slot = 0  # the move slot + 1 of the occupant's last move line (5: Struggle; None: not on its sheet)
         self.encore_slot = 0  # the move slot + 1 that Encore forces (0: not encored)
+        self.disable_slot = 0  # the move slot + 1 that Disable bars (0: none)
         self.ability_now = 0  # the ability + 1 that Trace or Skill Swap gave the occupant (0: its own)
         self.flags = 0  # DUOFORGE_POSITION_FLAG_* (TEAM_C and POOL): Follow Me, Helping Hand, Unburden
         self.guard_undo = None  # (chain, stall) before a Wide or Quick Guard, until it is known to have run
@@ -136,10 +242,20 @@ class _Member:
         self.is_mega = 0
         self.item_used = 0
         self.item_now = 0  # the POOL view extension: 0 as the sheet, an item + 1 a move gave it, ITEM_NOW_NONE taken
+        # What the opponent knows of the member (the public record's knowledge): seen in battle, its last HP display, the
+        # revealed facts (DFI_REVEALED_*); the moves it used are `uses`. A foe member's from its public lines; an own
+        # member's from the own lines, its HP display from the library (duoforge.view.hp_display of the exact HP).
         self.seen = False
         self.hp_percent = 0
         self.hp_flag = 0
+        self.revealed = 0
         self.status = 0
+        # A freeze's turns (the record's status counter): 3 when it starts, one less at each [cant] frz (src/combat/turn.c:
+        # the counter is drawn by nobody; the thaw chance is). Folded for both sides from the public lines.
+        self.freeze_turns = 0
+        self.item_consumed = 0  # its item was used up (the record; a taken item is not), until it gets one
+        self.toxic = 0  # badly poisoned, from the status lines of either side (the toxic stage counts only then)
+        self.toxic_stage = 0  # the toxic counter (the POOL record): 0 at the status and at an entry, +1 per poison tick
         # The own side, from the requests.
         self.hp = 0
         self.hp_max = 0
@@ -174,9 +290,24 @@ class Tracker:
         self._terrain = self._terrain_turns = 0
         self._trick_room = 0
         self._conditions = [[0, 0, 0, 0], [0, 0, 0, 0]]  # reflect, light screen, tailwind, Aurora Veil turns per side
+        self._hazards = [collections.Counter(), collections.Counter()]  # entry hazard layers per side, by ext field
         self._mega_used = [0, 0]
+        self._next_activation = 1  # the next entry's activation id (the public record)
+        self._after_upkeep = False  # the turn's residual ended (|upkeep|) and the next turn has not begun
+        self._action = None  # the move action whose events are being collected (_segment)
+        # the position whose Mental Herb was just used: the -end lines right after its -enditem are the herb's, not the
+        # residual's (dfi_mental_herb ends taunt, encore, disable and heal block in a row, with no cause of their own)
+        self._herb_end = None
+        # The library data kind of the public record (record.py): None for the tables' kind; a DEV kind of the same tables
+        # when the game runs under it (the context's fingerprint is in the record)
+        self.record_kind = None
+        self._foe_leads = [ROSTER_NONE, ROSTER_NONE]  # the foe's members at its two positions when the battle started
         self._picks = None
+        # The own side.pokemon order (the POOL record's party_order): the picks, then every switch-in swaps the incoming
+        # member's entry with the position's (sim/battle-actions.ts switchIn)
+        self._party = None
         self._accepted = None  # the own choice accepted at the last TURN decision point (it queued the moves)
+        self._accepted_commands = None  # its options per position (accepted)
         self._last_move = None  # (position, move id, target) of the last MOVE event
         self._parting_shot = data.tables["MOVE"]["PARTINGSHOT"]
         self._feint = data.tables["MOVE"].get("FEINT", -1)
@@ -192,17 +323,32 @@ class Tracker:
         self._unburden = tables["ABILITY"]["UNBURDEN"] + 1 if "UNBURDEN" in tables["ABILITY"] else None
         self._pressure = tables["ABILITY"]["PRESSURE"] + 1 if "PRESSURE" in tables["ABILITY"] else None
         self._follow_me = tables["MOVE"].get("FOLLOWME")
+        self._rage_powder = tables["MOVE"].get("RAGEPOWDER")
+        self._wide_guard = tables["MOVE"].get("WIDEGUARD")
         self._struggle = tables["MOVE"].get("STRUGGLE")
+        self._attract = tables["MOVE"].get("ATTRACT")  # the check before an infatuated occupant's move (step G71)
+        self._soak = tables["MOVE"].get("SOAK")
         self._symbiosis = tables["ABILITY"]["SYMBIOSIS"] + 1 if "SYMBIOSIS" in tables["ABILITY"] else None
         # Protect and Detect both show "-singleturn|POKEMON|Protect"; a failed one resets the stall counter
         self._stall_moves = {tables["MOVE"][k] for k in ("PROTECT", "DETECT") if k in tables["MOVE"]}
         self._guard_moves = {tables["MOVE"][k] for k in ("WIDEGUARD", "QUICKGUARD") if k in tables["MOVE"]}
         self._helping_hand = tables["MOVE"].get("HELPINGHAND")
+        self._knock_off = tables["MOVE"].get("KNOCKOFF")
+        self._leech_seed = tables["MOVE"].get("LEECHSEED")
+        # the moves whose cost to their own user is directDamage, not spreadDamage (G88: no hurtThisTurn; dfi_deal_ex's
+        # callers with spread false): the plain -damage of DIRECT_COST_MOVES; Struggle's recoil is the other one
+        self._direct_costs = {tables["MOVE"].get(k) for k in DIRECT_COST_MOVES} - {None}
+        self._eject_button = tables["ITEM"].get("EJECTBUTTON")
+        self._mental_herb = tables["ITEM"].get("MENTALHERB")
+        self._hit_pivots = {tables["MOVE"][k]: v for k, v in _HIT_PIVOTS.items() if k in tables["MOVE"]}
+        self._move_pivots = {tables["MOVE"][k]: v for k, v in _MOVE_PIVOTS.items() if k in tables["MOVE"]}
 
     # ------------------------------------------------------------------ input
     def feed(self, lines):
         for line in lines:
             kind = _kind(line)
+            if line == "|":
+                self._end_action()  # the blank line before the residual (and before the turn's moves): an action ends
             if kind is None or kind in ROOM_LINES:
                 continue
             if kind in SESSION_LINES:
@@ -217,6 +363,19 @@ class Tracker:
                 self._on_showteam(line)
             else:
                 self._battle_line(line)
+
+    def _set_boost(self, parts):
+        """Belly Drum's -setboost (step G86): the line shows the Attack stage it leaves; the engine's event is the BOOST of
+        the change (dfi_boost, cause MOVE with the move's id), which the tracker folds as any boost. The converter
+        computes the change from the trace state (trace_to_c, boost_pre); the tracker has the stage itself. A change
+        that is not positive is the converter's refusal setboost-change."""
+        flat = trace_to_c.ev_pos(parts[2])
+        stat = trace_to_c.EV_STATS.index(parts[3])
+        change = STAGE_NEUTRAL + int(parts[4]) - self._at(flat).stages[stat]
+        if change <= 0:
+            raise lines.Stop("converter:setboost-change")
+        self._event(trace_to_c.ev_tuple(EV["BOOST"], flat, trace_to_c.NOPOS, trace_to_c.CAUSE["MOVE"], 0,
+                                        self.data.tables["MOVE"]["BELLYDRUM"], detail=stat, amount=change))
 
     def _battle_line(self, line):
         """A battle line: classified (lines.check), then folded; a single-turn feature line is remembered for the
@@ -233,6 +392,8 @@ class Tracker:
             if name in ("WIDE_GUARD", "QUICK_GUARD"):
                 self._guards.add((name, trace_to_c.ev_pos(line.split("|")[2]) // 2))
             self.turn_scoped_seen[name] += 1
+            if self._foe_members is not None:
+                self._fold(line, fold=False)  # its event still belongs to its move action (_segment)
             return
         self._extended_field(line)
         if line.startswith("|-clearnegativeboost|"):
@@ -245,7 +406,38 @@ class Tracker:
         if parts[1] in ("-start", "-end") and parts[3:4] == ["Throat Chop"]:
             self._throat_chop(parts)
             return
+        if parts[1] == "-singlemove" and parts[3:4] == ["Glaive Rush"]:
+            # Glaive Rush's drawback (step G19): its self effect shows only as -singlemove|X|Glaive Rush|[silent]
+            # (data/moves.ts glaiverush), which the converter skips; the tracker sets the presence bit here
+            pos = lines.flat_position(parts[2])
+            if pos is None or parts[4:] != ["[silent]"]:
+                raise lines.Stop("line:-singlemove Glaive Rush")
+            self._at(pos).glaive_rush = 1
+            return
+        if parts[1] == "-end" and parts[3:4] == ["Attract"]:
+            self._silent_attract_end(parts)
+            return
+        if parts[1] == "-end" and parts[3:4] == ["move: Yawn"]:
+            # Yawn's end (step G31, data/moves.ts yawn onEnd: -end|X|move: Yawn|[silent], before the sleep it brings):
+            # the converter skips [silent] lines, so the tracker clears the presence bit here; any other form stops
+            pos = lines.flat_position(parts[2])
+            if pos is None or parts[4:] != ["[silent]"]:
+                raise lines.Stop("line:-end move: Yawn")
+            self._at(pos).yawn = 0
+            return
+        if parts[1] == "-setboost":
+            self._set_boost(parts)
+            return
         self._fold(line)
+
+    def _silent_attract_end(self, parts):
+        """-end|X|Attract|[silent] (data/moves.ts attract onEnd): the infatuation of X ends with no visible line, when its source
+        has left the field (onUpdate's removeVolatile, the engine's silent clearing of its byte). The converter skips [silent]
+        lines, so the tracker clears the position here, as the Yawn's end does; any other form stops."""
+        pos = lines.flat_position(parts[2])
+        if pos is None or parts[4:] != ["[silent]"]:
+            raise lines.Stop("line:-end Attract")
+        self._at(pos).attract = 0
 
     def _throat_chop(self, parts):
         """Throat Chop's volatile (decision 0018 THROAT_CHOP, step G8; public by the owner's change): the move's
@@ -255,7 +447,7 @@ class Tracker:
         pos = lines.flat_position(parts[2])
         if pos is None or parts[4:] != ["[silent]"]:
             raise lines.Stop(f"line:{parts[1]} Throat Chop")
-        self._at(pos).throat_chop = 1 if parts[1] == "-start" else 0
+        self._at(pos).throat_chop = THROAT_CHOP_TURNS if parts[1] == "-start" else 0
 
     def _extended_field(self, line):
         """A weather or terrain set by a member that holds the item lengthening it (Damp Rock, Heat Rock, Smooth
@@ -339,6 +531,8 @@ class Tracker:
         longer gone, and a Choice item ends its lock (the item's onStart; dfi_set_held)."""
         m = self._occupant(pos)
         m.item_now = code
+        m.revealed &= ~REVEALED_ITEM_CONSUMED
+        m.item_consumed = 0
         if public:
             m.item_used = 0
         if code in self._choice_items:
@@ -354,8 +548,18 @@ class Tracker:
         """The own choice Showdown accepted at the current decision point."""
         if self.request is not None and "active" in self.request:
             self._accepted = text
+            # the commands of that choice, for the queue of a PIVOT of the turn (the public record): the options whose
+            # texts it joins (options.pair_text), None where a part names none
+            try:
+                lists = self.domain()[1]
+            except ValueError:
+                lists = None  # options the tracker cannot list (a lock without a known target): the PIVOT queue refuses
+            parts = text.split(", ")
+            self._accepted_commands = [next((o for o in lists[k] if o.text == parts[k]), None) if k < len(parts) else None
+                                       for k in range(2)] if lists is not None else None
         if text.startswith("team "):
             self._picks = [int(c) - 1 for c in text[len("team "):]]
+            self._party = list(self._picks)  # side.pokemon of the pin: the pick order, leads first
 
     @property
     def ready(self):
@@ -380,6 +584,7 @@ class Tracker:
         elif side != self.side:
             raise ValueError(f"a request for side {side} in the room of side {self.side}")
         self._foe_sheet()
+        self._end_action()  # the step's last action ended with it
         self.request = request
         self.epoch += 1
         self._step_lines, self._lines = self._lines, []
@@ -466,7 +671,8 @@ class Tracker:
             raise ValueError(f"{parts[2]} ({parts[3]}) is not one member of its side's sheet")
         self._names[side][name] = index[0]
 
-    def _fold(self, line):
+    def _fold(self, line, fold=True):
+        """The line's events into the tracker's fields; fold=False only collects them for the move action's result."""
         if _kind(line) in trace_to_c.NOT_EVENTS:
             return  # setup and layout lines: no event (step_events skips them too)
         if _kind(line) in ("win", "tie") and self._foe_members is None:
@@ -496,33 +702,145 @@ class Tracker:
                 swap_ids = {0: (self._ability_at(tgt) - 1, self._ability_at(src) - 1)}
         try:
             events = trace_to_c.step_events([line], viewer, self._names, maxhp, self.data.tables, self._rb_pending,
-                                            swap_ids=swap_ids)
+                                            swap_ids=swap_ids, lead=self._lines[-4:-1])  # the Leech Seed heal reads back
         except trace_to_c.ConversionError as e:  # a SystemExit: callers catch one kind of error
             detail = getattr(e, "detail", None)
             raise lines.Stop(f"converter:{e.rule}" + (f" {detail}" if detail else "")) from e
         except (KeyError, IndexError) as e:  # a form of a known line the parser does not know (untyped, as diff_driver)
             raise lines.Stop(f"converter:untyped {_kind(line)} {type(e).__name__} {e}") from e
         for e in events:
-            self._event(e)
+            if fold:
+                self._event(e)
+            else:
+                self._segment(e)
 
     def _at(self, pos):
         return self._positions[pos // 2][pos % 2]
+
+    def current_types(self, member, position=None):
+        """The types of a member now, as the lines the tracker folds show them: a type a move set while it stands at
+        `position` (the position's type_now, #342: Soak's single type, or Double Shock's remaining type; a Mega Evolution
+        ends it), else those of its set's forme, or of its Mega forme once it Mega Evolved (the stone of its sheet names
+        it). A forme change stops on its own line (FORME_CHANGE is no fold of this tracker; the day it is folded this
+        has to know it, so it refuses while it is supported). Without the position a folded type change cannot be
+        seen, so it refuses then too. Trick-or-Treat and Forest's Curse stop on their lines (the converter). Lines the
+        tracker does not read cannot change them (Roost only hides Flying for a turn, which never decides a Ghost).
+        ValueError for a Mega member whose sheet has no stone of its forme."""
+        if lines.SUPPORTED >> lines.FEATURES["FORME_CHANGE"] & 1:
+            raise lines.Stop("types:FORME_CHANGE")
+        if position is not None and position.type_now != (0, 0):
+            soak, other = position.type_now  # (id + 1, 0): Soak's type; (0, id + 1): Double Shock's ??? and that type
+            return (soak - 1,) if soak else (other - 1,)
+        if position is None and lines.SUPPORTED >> lines.FEATURES["TYPE_CHANGE"] & 1:
+            raise lines.Stop("types:TYPE_CHANGE")
+        forme = member.sheet["species"]
+        if member.is_mega:
+            forme = self.data.mega_of(forme, member.sheet["item"])
+            if forme is None:
+                raise ValueError("a Mega member whose sheet has no Mega Stone of its forme")
+        return self.data.forme_types(forme)
 
     def _occupant(self, pos):
         p = self._at(pos)
         return None if p.occupant == ROSTER_NONE else self._member(pos // 2)[p.occupant]
 
     def _event(self, e):
+        self._segment(e)
+        herb, self._herb_end = self._herb_end, None
+        if herb is not None and e[0] == EV["VOLATILE_END"] and e[1] == herb:
+            self._herb_end = herb  # the herb's row of -end lines goes on
+        self._fold_event(e, herb)
+
+    def _residual_end(self, e, herb, count, name):
+        """A natural end of a counted volatile (no [from], not Mental Herb's row) comes in the residual where its count
+        runs out: the tracker's count must be 1 there. Any other count is a counting error (the start's duration rule,
+        a wrong move_queued), which stops the tracker instead of writing a wrong count into the record."""
+        if e[3] == trace_to_c.CAUSE["NONE"] and e[1] != herb and count != 1:
+            raise lines.Stop(f"count:{name} ends at {count}")
+
+    def _segment(self, e):
+        """The events of each move action, for its result (the POOL record's move_result): an action begins with its
+        user's own [move] line, a [cant] (not an ability's block, which follows the user's [move]) or a confusion line
+        (the [move] or [cant] after it belongs to it), and ends where the next one begins, at the residual (|upkeep|),
+        at the next turn or at a decision point (_end_action)."""
+        kind, pos, cause = e[0], e[1], e[3]
+        if kind in (EV["UPKEEP"], EV["TURN"]):
+            self._end_action()
+            if kind == EV["TURN"]:
+                for side in self._positions:
+                    for p in side:
+                        # endTurn: moveLastTurnResult = moveThisTurnResult, this turn's undefined (src/combat/turn.c)
+                        p.result_last, p.result_now = p.result_now, 0
+            return
+        starts = (kind == EV["MOVE"] and cause == trace_to_c.CAUSE["NONE"]) or kind == EV["CONFUSED"] or \
+            (kind == EV["CANT"] and cause != trace_to_c.CAUSE["ABILITY"])
+        action = self._action
+        if starts and action is not None and action["pos"] == pos and action["confused"] and kind != EV["CONFUSED"]:
+            action["confused"] = False  # the move the confusion line let through, or its [cant]
+            action["events"].append(e)
+        elif starts:
+            # the lines of this action that come before its first one end the previous action's list: a wake-up or thaw
+            # ([-curestatus] [msg]), the end of a confusion, Struggle's -activate
+            lead = []
+            while action is not None and action["events"] and self._pre_action(action["events"], pos):
+                lead.insert(0, action["events"].pop())
+            self._end_action()
+            p = self._at(pos)
+            self._action = {"pos": pos, "events": lead + [e], "confused": kind == EV["CONFUSED"],
+                            "activation": p.activation}
+        elif action is not None:
+            action["events"].append(e)
+
+    def _pre_action(self, events, pos):
+        """The last of `events` is a line of `pos` that comes before its action's first line: a wake-up or a thaw
+        ([-curestatus] [msg], not a berry's cure after its -enditem), the end of its confusion, Struggle's -activate."""
+        e = events[-1]
+        if e[1] != pos:
+            return False
+        if len(events) > 1 and events[-2][0] == EV["ITEM_END"] and events[-2][1] == pos:
+            return False
+        return (e[0] == EV["CURE_STATUS"] and e[13] & FLAG["MESSAGE"] and e[3] == trace_to_c.CAUSE["NONE"]) or \
+            e[0] == EV["CONFUSION_END"] or \
+            (e[0] == EV["ACTIVATE"] and e[3] == trace_to_c.CAUSE["MOVE"] and e[5] == self._struggle) or \
+            (e[0] == EV["ACTIVATE"] and e[3] == trace_to_c.CAUSE["MOVE"] and e[5] == self._attract)
+
+    def _end_action(self):
+        """The result of the move action that ends here, into its user's position (this turn's): the library's
+        classification of its events (record.move_result_of), None where they do not determine it."""
+        action, self._action = self._action, None
+        if action is None or self.data.kind != "pool":
+            return
+        from . import record
+        p, events = self._at(action["pos"]), action["events"]
+        # another occupant now, or the user fainted: the faint's clearing comes after the result
+        if p.activation == action["activation"] and not p.fainted:
+            p.result_now = record.move_result_of(self.data, action["pos"], events)
+        for i, e in enumerate(events):
+            if e[0] == EV["MOVE"] and e[3] == trace_to_c.CAUSE["ABILITY"] and e[1] != NOPOS:
+                # Magic Bounce: the holder's result is that of the reflected run (src/combat/turn.c, the bounced move)
+                holder = self._at(e[1])
+                if holder.occupant != ROSTER_NONE and not holder.fainted:
+                    holder.result_now = record.move_result_of(self.data, e[1], events[i:])
+
+    def _fold_event(self, e, herb=None):
         kind, pos, ident, ident2 = e[0], e[1], e[4], e[5]
         hp, hp_kind, hp_flag, status, detail, amount, flags = e[6], e[8], e[9], e[10], e[11], e[12], e[13]
         foe = pos != NOPOS and pos // 2 != self.side
         public = foe or (self._spectator and pos != NOPOS)  # folded from the public lines
         if kind == EV["TURN"]:
             self._turn = ident
+            self._after_upkeep = False
             self._turn_scoped.clear()
             self._guards.clear()
             for side in (0, 1):
                 for p in self._positions[side]:
+                    # endTurn: newlySwitched ends, and the raised flag (statsRaisedThisTurn: not before turn 1, the
+                    # battle's start keeps its entry boosts' flag); every standing occupant has its move ahead
+                    p.newly_switched = 0
+                    if ident > 1:
+                        p.raised = p.lowered = p.hurt = 0  # statsLoweredThisTurn and hurtThisTurn as well (G88)
+                    p.move_queued = p.occupant != ROSTER_NONE and not p.fainted
+                    p.turn_done = p.occupant == ROSTER_NONE or p.fainted
                     # endTurn's DisableMove: choicelock ends for a holder without its Choice item (dfi_end_turn)
                     if p.choice_slot != MOVE_SLOT_NONE and p.occupant != ROSTER_NONE:
                         m = self._member(side)[p.occupant]
@@ -531,23 +849,53 @@ class Tracker:
         elif kind in (EV["SWITCH"], EV["DRAG"]):
             # A drag (Step G46) is a switch of the dragged-in member: the occupant is replaced and reset, the HP of the line.
             p = self._at(pos)
+            if p.occupant != ROSTER_NONE:
+                self._member(pos // 2)[p.occupant].toxic_stage = 0  # the leaving member's toxic counter ends with it
             passed = None
             if kind == EV["SWITCH"] and e[3] == trace_to_c.CAUSE["MOVE"] and ident2 == self._baton_pass:
                 # Baton Pass (step G74, decision 0042; sim/pokemon.ts copyVolatileFrom): no line shows the copy; of
-                # the base view's fields the receiver keeps the leaver's stages and confusion. The other copied
-                # volatiles are decision 0018 features, which stopped the tracker at their start lines.
-                passed = (list(p.stages), p.confused)
+                # the base view's fields the receiver keeps the leaver's stages and confusion, of the folded view
+                # extension what dfi_pass_give copies (_PASSED). The other copied volatiles are decision 0018 features,
+                # which stopped the tracker at their start lines.
+                passed = (list(p.stages), p.confused, {name: getattr(p, name) for name in _PASSED})
             p.occupant, p.flag, p.fainted = ident, 0, False
             p.reset()
             if passed is not None:
-                p.stages, p.confused = passed
+                p.stages, p.confused = passed[0], passed[1]
+                for name, value in passed[2].items():
+                    setattr(p, name, value)
+            p.activation, p.move_actions = self._next_activation, 0  # entries are numbered in the order of their lines
+            p.confused_action = False
+            p.newly_switched, p.turn_done, p.move_queued = 1, True, False
+            self._member(pos // 2)[ident].toxic_stage = 0  # tox's onSwitchIn
+            self._next_activation += 1
+            if pos // 2 != self.side and self._foe_leads[pos % 2] == ROSTER_NONE:
+                self._foe_leads[pos % 2] = ident  # the foe's pick order starts with its leads
+            if pos // 2 == self.side and self._party is not None and ident in self._party:
+                i = self._party.index(ident)
+                self._party[i], self._party[pos % 2] = self._party[pos % 2], self._party[i]
+            m = self._member(pos // 2)[ident]
             if public:
-                m = self._member(pos // 2)[ident]
                 m.seen, m.hp_percent, m.hp_flag, m.status = True, hp, hp_flag, status
+            else:
+                m.seen = True
+                self._own_display(m, hp, e[7])
         elif kind == EV["MOVE"]:
             p = self._at(pos)
-            p.acted = 1
+            if e[3] == trace_to_c.CAUSE["NONE"]:
+                # an action of the user (runMove's activeMoveActions++, dfi_run_move); a move line with cause ABILITY is
+                # Magic Bounce's reflection (useMove), no action of the holder
+                p.acted = 1
+                self._move_action(p)
+                p.turn_done, p.move_queued = True, False
+                if ident in self._move_pivots:
+                    p.flag = self._move_pivots[ident]  # a -fail line that follows takes it back
             self._last_move = (pos, ident, e[2])
+            if e[3] != trace_to_c.CAUSE["ABILITY"]:
+                # the next action ends Glaive Rush's drawback (glaiverush onBeforeMove, step G19). A move line with cause
+                # ABILITY is Magic Bounce's reflection, no action of its own; Dancer, whose copy would be one, is not
+                # modelled by the engine
+                p.glaive_rush = 0
             if e[3] == trace_to_c.CAUSE["NONE"]:
                 p.last_move = ident  # runMove's moveUsed, a locked turn too; not a move another effect makes it use
             m = self._occupant(pos)
@@ -558,7 +906,9 @@ class Tracker:
                     p.last_slot = m.sheet["moves"].index(ident) + 1
                 else:
                     p.last_slot = 5 if ident == self._struggle else None
-            if not flags & FLAG["LOCKED"] and ident in m.sheet["moves"]:
+            if not flags & FLAG["LOCKED"] and e[3] != trace_to_c.CAUSE["ABILITY"] and ident in m.sheet["moves"]:
+                # a move Magic Bounce reflects (cause ABILITY, step G57) costs its holder no PP: the pin's useMove
+                # deducts none, as DuoForge's knowledge fold
                 m.uses[m.sheet["moves"].index(ident)] += 1 + self._pressure_extra(pos, ident, e[2], flags)
             if ident in self._guard_moves and not flags & FLAG["LOCKED"]:
                 # Wide Guard and Quick Guard add the stall volatile when they run (data/moves.ts onHitSide
@@ -577,12 +927,14 @@ class Tracker:
                 p.choice_slot = m.sheet["moves"].index(ident)
         elif kind == EV["ACTIVATE"]:
             if e[3] == trace_to_c.CAUSE["ABILITY"] and ident2 == self.data.tables["ABILITY"]["EMERGENCYEXIT"] + 1:
-                self._at(pos).flag = 1  # it leaves: asked to switch (id2 names an ability only with cause ABILITY)
+                # it leaves: asked to switch (id2 names an ability only with cause ABILITY)
+                self._at(pos).flag = SWITCH_EMERGENCY_EXIT
             elif e[3] == trace_to_c.CAUSE["ABILITY"] and ident2 == self._symbiosis:
                 # Symbiosis (step G69): the holder passes its item (id: the item + 1) to its ally ([of], `other`), which
                 # has used its own up; the holder then holds nothing
                 holder = self._occupant(pos)
                 holder.item_now = ITEM_NOW_NONE
+                holder.revealed |= REVEALED_ITEM_CONSUMED
                 if public:
                     holder.item_used = 1
                 self._item_received(e[2], ident, public)
@@ -603,40 +955,172 @@ class Tracker:
             p = self._at(pos)
             p.reset()  # a faint clears the position's conditions; the occupant stays until replaced
             p.fainted = True
-            if public:
-                # a faint that no damage line announced (Perish Song's perish0, step G26): the display shows 0
-                m = self._occupant(pos)
-                m.hp_percent, m.hp_flag = 0, 0
+            # a faint takes a pivot flag (faint(): switchFlag = false); after the residual (Perish Song's) checkFainted asks
+            # for the position at once
+            p.flag = SWITCH_FAINTED if self._after_upkeep else 0
+            p.move_actions = 0
+            # a faint that no damage line announced (Perish Song's perish0, step G26): the display shows 0
+            m = self._occupant(pos)
+            m.hp_percent, m.hp_flag = 0, 0
+            m.status, m.freeze_turns = 0, 0  # a fainted member has no status (the views show none; the record holds none)
+            m.toxic = m.toxic_stage = 0
         elif kind == EV["CANT"]:
             # An ability's block (Armor Tail) names its holder; the move's user, [of], took the action.
-            self._at(e[2] if e[3] == trace_to_c.CAUSE["ABILITY"] else pos).acted = 1
-        elif kind == EV["CONFUSED"]:
-            self._at(pos).acted = 1
-        elif kind in (EV["DAMAGE"], EV["HEAL"]):
-            if public:
+            blocked = e[3] == trace_to_c.CAUSE["ABILITY"]
+            actor = self._at(e[2] if blocked else pos)
+            actor.acted = 1
+            if not blocked:
+                self._move_action(actor)  # a block follows the user's own [move] line: the same action
+            actor.turn_done, actor.move_queued = True, False
+            actor.glaive_rush = 0  # its action began: glaiverush's onBeforeMove ran first (step G19)
+            if e[3] == trace_to_c.CAUSE["RECHARGE"]:
+                self._at(pos).must_recharge = 0  # cant|X|recharge: mustrecharge's onBeforeMove ends it (step G17)
+            if e[3] == trace_to_c.CAUSE["FREEZE"]:
                 m = self._occupant(pos)
+                m.freeze_turns = max(m.freeze_turns - 1, 0)
+        elif kind == EV["TYPE_CHANGE"]:
+            # Soak's single type (detail: its id) or Double Shock's ??? (detail DUOFORGE_TYPE_NONE, amount: the other
+            # type + 1), step G11 and decision 0025, until the occupant leaves or Mega Evolves (the tail's soak_type).
+            # A plain typechange line is Soak's only after a Soak move line (Magic Powder prints the same form).
+            if e[3] == trace_to_c.CAUSE["MOVE"] and ident2 == self._soak and (
+                    self._last_move is None or self._last_move[1] != self._soak):
+                raise lines.Stop("line:-start typechange (no Soak)")
+            p = self._at(pos)
+            p.type_now = (0, amount) if detail == trace_to_c.TYPE_NONE else (detail + 1, 0)
+            p.type2 = amount if detail == trace_to_c.TYPE_NONE else 0  # setType replaces both types (Soak)
+        elif kind in (EV["VOLATILE_START"], EV["VOLATILE_END"]) and detail == trace_to_c.VOLATILE_ATTRACT:
+            # Attract (step G71, decision 0034): -start|X|Attract|[from] ability: Cute Charm|[of] Y (e[2] = Y's position) keeps Y's
+            # member code on X; the visible ends (Mental Herb's and Oblivious's rows) clear it. The silent end (the source left) comes
+            # as its own line (_silent_attract_end), and a switch or a faint of X clears it in _Position.reset.
+            p = self._at(pos)
+            if kind == EV["VOLATILE_START"]:
+                holder = self._at(e[2])
+                if holder.occupant == ROSTER_NONE:
+                    raise lines.Stop("attract-source-unknown")  # the holder of [of] is not on the field
+                p.attract = 1 + (e[2] // 2) * C["DUOFORGE_MAX_ROSTER"] + holder.occupant
+            else:
+                p.attract = 0
+        elif kind in (EV["VOLATILE_START"], EV["VOLATILE_END"]) and detail == trace_to_c.VOLATILE_HEAL_BLOCK:
+            # Heal Block (step G8, Psychic Noise): -start|X|move: Heal Block and -end|X|move: Heal Block (the duration,
+            # Mental Herb); the occupant's leaving ends it with no line; its count is never shown
+            if kind == EV["VOLATILE_END"]:
+                self._residual_end(e, herb, self._at(pos).heal_block, "heal_block")
+            self._at(pos).heal_block = HEAL_BLOCK_TURNS if kind == EV["VOLATILE_START"] else 0
+        elif kind in (EV["VOLATILE_START"], EV["VOLATILE_END"]) and detail == trace_to_c.VOLATILE_TAUNT:
+            # Taunt (step G31): -start|X|move: Taunt and -end|X|move: Taunt (the duration, Mental Herb, Oblivious); the
+            # occupant's leaving ends it with no line; the view shows its presence, the record its count: one more
+            # when the target has been out for a turn and has no move left this turn (dfi_taunt)
+            p = self._at(pos)
+            if kind == EV["VOLATILE_END"]:
+                self._residual_end(e, herb, p.taunt, "taunt")
+            p.taunt = 0
+            if kind == EV["VOLATILE_START"]:
+                p.taunt = TAUNT_TURNS + (1 if not p.newly_switched and not p.move_queued else 0)
+        elif kind in (EV["VOLATILE_START"], EV["VOLATILE_END"]) and detail == trace_to_c.VOLATILE_DISABLE:
+            # Disable (step G27): -start|X|Disable|MOVE (also [from] ability: Cursed Body) bars MOVE's slot of the open
+            # sheet; -end|X|Disable (the duration, Mental Herb) and the occupant's leaving end it; its count is never
+            # shown. A barred move that is not on the sheet stops.
+            p = self._at(pos)
+            if kind == EV["VOLATILE_END"]:
+                self._residual_end(e, herb, p.disable_turns, "disable")
+                p.disable_slot = p.disable_turns = 0
+            else:
+                moves = self._occupant(pos).sheet["moves"]
+                if ident not in moves:
+                    raise lines.Stop("disable-move-unknown")
+                p.disable_slot = moves.index(ident) + 1
+                # its count (the record): one less when the target has its move ahead or Cursed Body sets it
+                # (dfi_disable_start: the effect comes from the holder's own action in progress)
+                by_ability = e[3] == trace_to_c.CAUSE["ABILITY"]
+                p.disable_turns = DISABLE_TURNS - (1 if by_ability or p.move_queued else 0)
+        elif kind == EV["VOLATILE_START"] and detail == trace_to_c.VOLATILE_IMPRISON:
+            self._at(pos).imprison = 1  # -start|X|move: Imprison (step G38): no end line, it ends with the occupant
+        elif kind == EV["VOLATILE_START"] and detail == trace_to_c.VOLATILE_LEECH_SEED:
+            # -start|X|move: Leech Seed (step G84, decision 0047, no [of], no end line): the source is the user of the move
+            # line before (the holder of a Magic Bounce reflection); a start after any other line is no case of the engine
+            last = self._last_move
+            if last is None or last[1] != self._leech_seed or last[0] == pos:
+                raise lines.Stop("leech-seed-source-unknown")
+            self._at(pos).leech_source = last[0] + 1
+        elif kind == EV["VOLATILE_START"] and detail == trace_to_c.VOLATILE_YAWN:
+            self._at(pos).yawn = YAWN_TURNS  # -start|X|move: Yawn|[of] source (step G31); its end line is [silent], above
+        elif kind == EV["VOLATILE_START"] and detail == trace_to_c.VOLATILE_MUST_RECHARGE:
+            self._at(pos).must_recharge = 1  # -mustrecharge|X: a recharge move hit (step G17)
+        elif kind == EV["CONFUSED"]:
+            p = self._at(pos)
+            p.acted = 1
+            p.glaive_rush = 0  # the action began (a confused self-hit shows no move line)
+            self._move_action(p)
+            p.confused_action = True  # the action's own move or [cant] line follows, or its self-hit
+            p.turn_done, p.move_queued = True, False
+        elif kind in (EV["DAMAGE"], EV["HEAL"]):
+            m = self._occupant(pos)
+            if kind == EV["DAMAGE"] and e[3] == trace_to_c.CAUSE["CONFUSION"]:
+                self._at(pos).confused_action = False  # the self-hit ends the action the confusion line began
+            if kind == EV["DAMAGE"] and e[3] == trace_to_c.CAUSE["NONE"] and self._last_move is not None \
+                    and self._last_move[0] != pos:
+                # timesAttacked: a damaging hit of another Pokemon's move (a -damage line without a source)
+                user = self._at(self._last_move[0])
+                if self._last_move[1] in self._hit_pivots and user.occupant != ROSTER_NONE and not user.fainted \
+                        and self._can_switch(self._last_move[0] // 2):
+                    user.flag = self._hit_pivots[self._last_move[1]]
+                p = self._at(pos)
+                p.hits_taken = min(p.hits_taken + 1, HITS_TAKEN_MAX)
+                if (self._last_move[1] == self._knock_off and self._unburden is not None
+                        and self._ability_at(pos) == self._unburden and not p.flags & FLAG_UNBURDEN
+                        and self._item_of(m) and not m.item_used):  # takeItem of a holder without an item: no event
+                    # Unburden's onTakeItem answers Knock Off before the item may refuse (a Mega Stone): the volatile can
+                    # be set with no line; an -enditem that follows shows the usual case (_unburden_unseen, record.py)
+                    p.unburden_unseen = True
+            if kind == EV["DAMAGE"] and e[3] == trace_to_c.CAUSE["LEECH_SEED"]:
+                # the drain (dfi_leech_drain): `[of]` names the seed's source slot; any other holder or source is no case
+                # of the engine (a seed whose start the tracker did not see)
+                if self._at(pos).leech_source == 0 or e[2] != self._at(pos).leech_source - 1:
+                    raise lines.Stop("leech-seed-drain-source")
+            if kind == EV["DAMAGE"] and hp != 0:
+                self._hurt(pos, e[3])
+            if kind == EV["DAMAGE"] and e[3] == trace_to_c.CAUSE["POISON"] and m.toxic:
+                m.toxic_stage = min(m.toxic_stage + 1, TOXIC_STAGE_MAX)  # tox's residual: the stage first, then the damage
+            if public:
                 m.hp_percent, m.hp_flag = hp, hp_flag
+            else:
+                self._own_display(m, hp, e[7])
         elif kind == EV["REVIVE"]:
             # Step G52 (decision 0025): Revival Blessing brings a fainted member of the user's side back at half HP,
             # its status cured; ident is its roster index (the line names it without a position)
             m = self._member(pos // 2)[ident]
             if public:
                 m.hp_percent, m.hp_flag = hp, hp_flag
+            else:
+                self._own_display(m, hp, e[7])
             m.status = 0
-            self._rb_pending.pop(pos // 2, None)
+            user = self._rb_pending.pop(pos // 2, None)
+            if user is not None:
+                self._at(user).flag = 0  # the revive answers the request: the flag goes
         elif kind == EV["STATUS"]:
+            m = self._occupant(pos)
             if public:
-                self._occupant(pos).status = detail
+                m.status = detail
+            m.freeze_turns = FREEZE_TURNS if detail == STATUS["frz"] else 0
+            m.toxic = 1 if detail == STATUS["tox"] else 0
+            m.toxic_stage = 0  # tox's onStart
         elif kind == EV["CURE_STATUS"]:
+            m = self._occupant(pos)
             if public:
-                self._occupant(pos).status = 0
+                m.status = 0
+            m.freeze_turns = 0
+            m.toxic = m.toxic_stage = 0
         elif kind in (EV["BOOST"], EV["UNBOOST"]):
             p = self._at(pos)
             sign = 1 if kind == EV["BOOST"] else -1
             last = self._last_move
             if amount > 0 and last is not None and last[1] == self._parting_shot and last[2] == pos:
-                self._at(last[0]).flag = 1  # Parting Shot switches its user once it changes a stat (Contrary too)
+                self._at(last[0]).flag = SWITCH_MOVE  # Parting Shot switches its user once it changes a stat (Contrary too)
             p.stages[detail] = min(12, max(0, p.stages[detail] + sign * amount))
+            if kind == EV["BOOST"] and amount > 0:
+                p.raised = 1  # statsRaisedThisTurn: a stage really rose
+            if kind == EV["UNBOOST"] and amount > 0:
+                p.lowered = 1  # statsLoweredThisTurn (G88, dfi_boost): a stage really fell
         elif kind == EV["CLEAR_ALL_BOOSTS"]:
             # Haze (step G62, decision 0031; data/moves.ts haze onHitField: clearBoosts on getAllActive): every standing
             # active Pokemon's stages return to neutral
@@ -670,9 +1154,10 @@ class Tracker:
             # Mental Herb) and the occupant's leaving end it. A last move the lines do not tie to a slot stops.
             p = self._at(pos)
             if kind == EV["VOLATILE_END"]:
-                p.encore_slot = 0
+                p.encore_slot = p.encore_turns = 0
             elif p.last_slot in (1, 2, 3, 4):
                 p.encore_slot = p.last_slot
+                p.encore_turns = ENCORE_TURNS + (1 if p.turn_done else 0)  # one more when it has no move left this turn
             else:
                 raise lines.Stop("encore-slot-unknown")
         elif kind == EV["PROTECT"]:
@@ -680,6 +1165,9 @@ class Tracker:
             p.protecting = 1
             p.chain = min(p.chain + 1, STALL_LEVEL_MAX)
             p.stall = STALL_DURATION
+        elif kind == EV["FAIL"] and e[3] == trace_to_c.CAUSE["NONE"] and self._last_move is not None \
+                and self._last_move[0] == pos and self._last_move[1] in self._move_pivots:
+            self._at(pos).flag = 0  # Baton Pass or Revival Blessing failed: no switch
         elif kind == EV["FAIL"] and e[3] == trace_to_c.CAUSE["NONE"]:
             # Only the move's own failure is a failed Protect or guard. A FAIL with a cause is another effect of the
             # same position: an Intimidate that the holder's Inner Focus stopped (cause ABILITY, duoforge.h
@@ -700,12 +1188,25 @@ class Tracker:
             if detail == 2:
                 self._trick_room = FIELD_TURNS
             else:
-                self._terrain, self._terrain_turns = (1 if detail == 1 else 2), self._field_turns_next
+                # DUOFORGE_FIELD_* -> the observation's DUOFORGE_TERRAIN_*: Grassy, Psychic (Team C), Electric and Misty
+                # (POOL, step G25)
+                self._terrain, self._terrain_turns = _TERRAIN[detail], self._field_turns_next
         elif kind == EV["FIELD_END"]:
             if detail == 2:
                 self._trick_room = 0
             else:
                 self._terrain = self._terrain_turns = 0
+        elif kind in (EV["SIDE_START"], EV["SIDE_END"]) and amount in _HAZARD:
+            # an entry hazard (step G37): every -sidestart line lays one layer, up to the move's maximum; its -sideend
+            # (Toxic Spikes that a grounded Poison type absorbed, the one removal the engine models) clears it
+            field, top = _HAZARD[amount]
+            # The Counter keeps the kinds that are up in the order they were created (the record's hazard_order): a
+            # further layer keeps its place, an ended kind leaves, one put up again goes last.
+            layers = self._hazards[detail]
+            if kind == EV["SIDE_START"]:
+                layers[field] = min(layers[field] + 1, top)
+            else:
+                layers.pop(field, None)
         elif kind == EV["SIDE_START"]:
             index = _SIDE_CONDITION[amount]
             turns = TAILWIND_TURNS
@@ -719,6 +1220,14 @@ class Tracker:
             self._conditions[detail][_SIDE_CONDITION[amount]] = 0
         elif kind == EV["ITEM_END"]:
             m = self._occupant(pos)
+            m.revealed |= REVEALED_ITEM_CONSUMED
+            self._at(pos).unburden_unseen = False
+            if self._mental_herb is not None and ident2 == self._mental_herb + 1:
+                self._herb_end = pos  # its -end lines follow (dfi_mental_herb)
+            if e[3] == trace_to_c.CAUSE["NONE"] and self._eject_button is not None and ident2 == self._eject_button + 1:
+                self._at(pos).flag = SWITCH_EMERGENCY_EXIT  # Eject Button sets its holder's switchFlag, then the -enditem
+            if e[3] != trace_to_c.CAUSE["ITEM_TAKEN"]:
+                m.item_consumed = 1  # used up (useItem, eatItem); a taken item is not
             if public:
                 m.item_used = 1
             if e[3] == trace_to_c.CAUSE["ITEM_TAKEN"]:
@@ -735,6 +1244,7 @@ class Tracker:
             if e[2] != NOPOS:
                 giver = self._occupant(e[2])
                 giver.item_now = ITEM_NOW_NONE
+                giver.revealed |= REVEALED_ITEM_CONSUMED
                 if e[2] // 2 != self.side or self._spectator:
                     giver.item_used = 1
                 if self._unburden is not None and self._ability_at(e[2]) == self._unburden and not self._at(e[2]).fainted:
@@ -744,15 +1254,27 @@ class Tracker:
                 self._at(pos).flags |= FLAG_FOLLOW_ME  # this turn (c11 battles)
             elif ident == self._helping_hand:
                 self._at(pos).flags |= FLAG_HELPING_HAND  # on the boosted ally, this turn (c09 battles)
+            elif ident == self._wide_guard:
+                # Wide Guard (step G7): the side's guard for this turn (the residual ends it, a Feint breaks it), which
+                # only a PIVOT inside the turn shows
+                self._guards.add(("WIDE_GUARD", pos // 2))
+            elif ident == self._rage_powder:
+                # Rage Powder (step G30): the extension's RAGE_POWDER bit for this turn, which only a PIVOT inside the
+                # turn shows (the residual ends it); the base view's Follow Me flag stays off for it
+                self._at(pos).rage_powder = 1
         elif kind == EV["FORME"]:
             pass  # the view keeps the set's species; MEGA sets is_mega and the ability
         elif kind == EV["MEGA"]:
             self._mega_used[pos // 2] = 1
             self._at(pos).ability_now = 0  # the Mega forme's ability replaces a copied one (formeChange -> setAbility)
-            if public:
-                m = self._occupant(pos)
-                m.is_mega = 1
-                m.ability = self.data.ability_of(self.data.mega_of(m.sheet["species"], m.sheet["item"]))
+            self._at(pos).type_now = (0, 0)  # and setType(species.types) ends a type that Soak set
+            self._occupant(pos).revealed |= REVEALED_MEGA
+            self._at(pos).unburden_unseen = False  # the Mega forme's ability ends Unburden's volatile
+            # the Mega forme and its ability, at once for both sides: an own member's request shows them only at the next
+            # decision point, and the Pressure of the lines between reads the ability (_pressure_extra)
+            m = self._occupant(pos)
+            m.is_mega = 1
+            m.ability = self.data.ability_of(self.data.mega_of(m.sheet["species"], m.sheet["item"]))
         elif kind == EV["PREPARE"]:
             p = self._at(pos)
             m = self._occupant(pos)
@@ -767,10 +1289,39 @@ class Tracker:
                 p.charge, p.locked_slot, p.locked_target = 0, MOVE_SLOT_NONE, TARGET_NONE
         elif kind == EV["UPKEEP"]:
             self._upkeep()
+            self._after_upkeep = True
             self._turn_scoped.clear()
             self._guards.clear()
         elif kind == EV["RESULT"]:
             self.ended = True
+
+    def _can_switch(self, side):
+        """A member of `side` can come in (src/combat/turn.c dfi_can_switch): one brought, not fainted and not active, as
+        far as the lines showed (a member seen at 0 percent is gone; one never seen stands)."""
+        members = self._member(side)
+        brought = len(self._picks) if side == self.side and self._picks is not None else self._teamsize[side]
+        if brought is None:
+            raise ValueError(f"no brought count for side {side}")
+        gone = sum(1 for m in members if m.seen and m.hp_percent == 0)
+        standing = sum(1 for p in self._positions[side] if p.occupant != ROSTER_NONE and not p.fainted)
+        return brought - gone - standing > 0
+
+    @staticmethod
+    def _move_action(p):
+        """One move action of the occupant of `p` (the record's move_actions: every MOVE action the queue runs for a
+        standing occupant, src/combat/turn.c dfi_run_move_body): its first line, a [move], a [cant] or the confusion's
+        -activate; the line after that confusion line belongs to the same action."""
+        if p.confused_action:
+            p.confused_action = False
+            return
+        p.move_actions = min(p.move_actions + 1, 255)
+
+    @staticmethod
+    def _own_display(member, hp, hp_max):
+        """An own member's HP as its opponent is shown it (the public record's knowledge): the display of the exact HP of
+        an own line (hp of hp_max), from the library."""
+        from duoforge import view
+        member.hp_percent, member.hp_flag = view.hp_display(hp, hp_max)
 
     def _own_target(self, slot):
         """The target position the own accepted choice gave the move of `slot`."""
@@ -790,9 +1341,10 @@ class Tracker:
         self._conditions = [[down(n) for n in c] for c in self._conditions]
         for side in self._positions:
             for p in side:
-                p.flag = 1 if p.fainted else 0  # checkFainted at the end of the turn; no other flag carries over
+                p.flag = SWITCH_FAINTED if p.fainted else 0  # checkFainted at the end of the turn; no other flag carries over
                 p.protecting = 0
                 p.flags &= ~(FLAG_FOLLOW_ME | FLAG_HELPING_HAND)  # single-turn
+                p.rage_powder = 0
                 if p.stall:
                     p.stall -= 1
                     if not p.stall:
@@ -801,6 +1353,26 @@ class Tracker:
                     p.charge -= 1
                     if not p.charge:
                         p.locked_slot, p.locked_target = MOVE_SLOT_NONE, TARGET_NONE
+                p.throat_chop = down(p.throat_chop)  # its residual end is silent
+                p.encore_turns = down(p.encore_turns)
+                # the residual counts (orders 15, 17, 20, 23); each end at 0 shows its line, which the fold read already
+                p.taunt, p.heal_block, p.yawn = down(p.taunt), down(p.heal_block), down(p.yawn)
+                p.disable_turns = down(p.disable_turns)
+
+    def _hurt(self, pos, cause):
+        """hurtThisTurn (G88, dfi_deal_ex): a spread damage that leaves its target standing. Every damage line is spread
+        damage except the directDamage of a user's own cost: Struggle's recoil ([from] Recoil after a Struggle line of
+        the same position) and the plain -damage of DIRECT_COST_MOVES on their user. A plain -damage on the
+        user of another move is no line the engine makes: it stops the tracker rather than guess."""
+        last = self._last_move
+        own = last is not None and last[0] == pos
+        if own and cause == trace_to_c.CAUSE["RECOIL"] and last[1] == self._struggle:
+            return
+        if own and cause == trace_to_c.CAUSE["NONE"]:
+            if last[1] in self._direct_costs:
+                return
+            raise lines.Stop("line:-damage of the move's own user")
+        self._at(pos).hurt = 1
 
     def _pressure_extra(self, pos, move, target, flags):
         """The extra PP a move use costs for the user's standing foes with Pressure (decision 0030, step G53), counted
@@ -873,7 +1445,8 @@ class Tracker:
         for k, p in enumerate(self._positions[side]):
             if p.occupant == ROSTER_NONE or not p.flag:
                 continue
-            if reserve or (boundary == REPLACEMENT and not p.fainted):
+            # Revival Blessing's request is made with no check of a living reserve (src/combat/turn.c: the revive answers it)
+            if reserve or (boundary == REPLACEMENT and not p.fainted) or p.flag == _ENC["DFI_SWITCH_REVIVE_BLESSING"]:
                 out |= 1 << k
         return out
 
@@ -971,6 +1544,32 @@ class Tracker:
         else:
             v["hp_kind"], v["location"] = HP_UNKNOWN, UNDETERMINED
 
+    def request_record(self):
+        """The REQUEST record of the decision point as the engine sets it (duoforge_battle_request): the epoch, the
+        boundary, the player, whether it is requested and the positions that need a command. candidate_count stays 0: the
+        engine's joint domain excludes pairs by rules the tracker does not hold (its domain() pair mask is provisional), and
+        the honest search does not read it."""
+        if not self.ready:
+            raise ValueError("no decision point")
+        r = np.zeros((), dtype=_layout.REQUEST)
+        boundary = self.boundary()
+        requested, slots = self._requested(self.side, boundary)
+        r["epoch"], r["boundary_kind"], r["player"] = self.epoch, boundary, self.side
+        r["requested"], r["slot_mask"] = requested, slots
+        return r
+
+    def public_parts(self):
+        """The player's parts of the decision point for the honest search (duoforge_search.record_roots.RecordRoots):
+        dict(request, observation, record, status, causes, reason). record is the public record assembled from what the
+        tracker folded (record.assemble) with status 0, or a zero record with status E_UNSUPPORTED, the cause mask that
+        duoforge_battle_public_causes gives (0 for a refusal without a cause bit) and the named reason. An expected refusal
+        never raises; the engine checks an assembled record (record.check, and the search's own round trip)."""
+        from . import record
+        observation = self.observation()
+        rec, status, causes, reason = record.assemble(self, observation)
+        return {"request": self.request_record(), "observation": observation, "record": rec, "status": status,
+                "causes": causes, "reason": reason}
+
     def observation_ext(self):
         """The OBSERVATION_EXT record (decision 0018) DuoForge shows this player at the current decision point: the
         fields of the features this tracker folds (EXT_FIELDS), from the public lines; all zero under a kind without
@@ -985,14 +1584,20 @@ class Tracker:
         for side in (0, 1):
             v = o["sides"][side]
             v["aurora_veil_turns"] = self._conditions[side][3]
+            v["guard_flags"] = C["DUOFORGE_SIDE_GUARD_WIDE_GUARD"] if ("WIDE_GUARD", side) in self._guards else 0
+            for field, _ in _HAZARD.values():
+                v[field] = self._hazards[side][field]
             for m, member in enumerate(self._member(side)):
                 v["members"][m]["item_now"] = member.item_now
             for k, p in enumerate(self._positions[side]):
                 if p.occupant == ROSTER_NONE:
                     continue  # an empty position: all zero
                 pv = v["positions"][k]
-                pv["volatiles"] = EXT_THROAT_CHOP if p.throat_chop else 0
-                pv["perish"], pv["encore_slot"] = p.perish, p.encore_slot
+                pv["volatiles"] = sum(bit for name, bit in _PRESENCE_BITS if getattr(p, name))
+                if p.type_now != (0, 0):
+                    pv["volatiles"] |= C["DUOFORGE_POSITION_EXT_TYPE_CHANGED"]
+                    pv["type_now"] = p.type_now
+                pv["perish"], pv["encore_slot"], pv["disable_slot"] = p.perish, p.encore_slot, p.disable_slot
                 own = self._member(side)[p.occupant].ability
                 pv["ability_now"] = p.ability_now if p.ability_now != own else 0  # shown when it differs
         return o
@@ -1026,6 +1631,9 @@ def restrict_ext(ext, folds):
                 src, dst = ext["sides"][s], out["sides"][s]
                 if where == "bit":
                     dst["positions"]["volatiles"] = dst["positions"]["volatiles"] | (src["positions"]["volatiles"] & field)
+                elif where == "side_bit":
+                    name, bit = field
+                    dst[name] = dst[name] | (src[name] & bit)
                 elif where == "side":
                     dst[field] = src[field]
                 else:

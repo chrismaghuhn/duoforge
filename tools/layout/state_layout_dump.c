@@ -1,10 +1,13 @@
-/* The canonical state encoding's offsets (src/codec/state_codec.h, DFI_ENC_*) as JSON, for the generated
- * python/duoforge/_state_layout.py (tools/layout/gen_state_layout.py). The live tracker assembles a public record in
+/* The canonical state encoding's offsets (src/codec/state_codec.h, DFI_ENC_*) and the values of the encoded bytes that
+ * name something (src/state/battle_internal.h: the position's volatile bits, the switch reasons, the revealed facts, the
+ * queue kinds) as JSON, for the generated python/duoforge/_state_layout.py (tools/layout/gen_state_layout.py). The live tracker assembles a public record in
  * this layout; the engine checks it (from_view, then public, byte for byte). tests: duoforge.python.state_layout keeps
  * this list complete against the header. */
 #include <stdio.h>
 
 #include "codec/state_codec.h"
+#include "state/battle_internal.h"
+#include "state/closure_member.h"
 
 static int first = 1;
 
@@ -18,7 +21,7 @@ static void entry(const char *name, unsigned long long value)
 
 int main(void)
 {
-    printf("{");
+    printf("{\"offsets\": {");
     ENTRY(DFI_ENC_FINGERPRINT_OFF);
     ENTRY(DFI_ENC_RNG_STATE_OFF);
     ENTRY(DFI_ENC_RNG_INC_OFF);
@@ -62,6 +65,8 @@ int main(void)
     ENTRY(DFI_ENC_TAIL5_FUTURE_SIGHT_OFF);
     ENTRY(DFI_ENC_TAIL5_RESERVED_OFF);
     ENTRY(DFI_ENC_TAIL5_RESERVED_SIZE);
+    ENTRY(DFI_ENC_TAIL5_ATTRACT_OFF);
+    ENTRY(DFI_ENC_TAIL5_ATTRACT_SIZE);
     ENTRY(DFI_ENC_TAIL5_SIZE);
     ENTRY(DFI_ENC_TAIL_SIZE);
     ENTRY(DFI_ENC_TAIL_WIDE_GUARD_OFF);
@@ -167,6 +172,63 @@ int main(void)
     ENTRY(DFI_ENC_MEMBER_ABILITY_OFF);
     ENTRY(DFI_ENC_MOVE_OFF);
     ENTRY(DFI_ENC_MOVE_SIZE);
-    printf("\n}\n");
+    /* the values: what an encoded byte holds, layout only (no rule reads them here) */
+    printf("\n}, \"values\": {");
+    first = 1;
+    ENTRY(DFI_OCCUPANT_NONE);
+    ENTRY(DFI_STAGE_NEUTRAL);
+    ENTRY(DFI_VOL_FLINCH);
+    ENTRY(DFI_VOL_PROTECT);
+    ENTRY(DFI_VOL_FLASH_FIRE);
+    ENTRY(DFI_VOL_FOLLOW_ME);
+    ENTRY(DFI_VOL_HELPING_HAND);
+    ENTRY(DFI_VOL_UNBURDEN);
+    ENTRY(DFI_VOL_CHOICE_LOCK);
+    ENTRY(DFI_VOL_NEWLY_SWITCHED);
+    ENTRY(DFI_SWITCH_NONE);
+    ENTRY(DFI_SWITCH_MOVE);
+    ENTRY(DFI_SWITCH_EMERGENCY_EXIT);
+    ENTRY(DFI_SWITCH_FAINTED);
+    ENTRY(DFI_SWITCH_FLIP_TURN);
+    ENTRY(DFI_SWITCH_UTURN);
+    ENTRY(DFI_SWITCH_VOLT_SWITCH);
+    ENTRY(DFI_SWITCH_REVIVE_BLESSING);
+    ENTRY(DFI_SWITCH_BATON_PASS);
+    ENTRY(DFI_REVEALED_ITEM_CONSUMED);
+    ENTRY(DFI_REVEALED_MEGA);
+    ENTRY(DFI_MOVE_RESULT_TRUE);
+    ENTRY(DFI_MOVE_RESULT_FALSE);
+    ENTRY(DFI_MOVE_RESULT_NULL);
+    ENTRY(DFI_MOVE_RESULT_LAST_SHIFT);
+    ENTRY(DFI_MOVE_RESULT_VALUE_MASK);
+    ENTRY(DFI_MOVE_RESULT_UNCLASSIFIED_NOW);
+    ENTRY(DFI_MOVE_RESULT_UNCLASSIFIED_LAST);
+    ENTRY(DFI_PARTY_HIDDEN);
+    ENTRY(DFI_POSFLAG_STATS_RAISED);
+    ENTRY(DFI_POSFLAG_LOWERED);
+    ENTRY(DFI_POSFLAG_HURT);
+    ENTRY(DFI_TAIL_THROAT_CHOP_MAX);
+    ENTRY(DFI_TAIL_TOXIC_STAGE_MAX);
+    ENTRY(DFI_TAIL_HITS_TAKEN_MAX);
+    ENTRY(DFI_FREEZE_TURNS);
+    ENTRY(DFI_ENCORE_TURNS);
+    ENTRY(DFI_TAUNT_TURNS);
+    ENTRY(DFI_DISABLE_TURNS);
+    ENTRY(DFI_HEAL_BLOCK_PSYCHIC_NOISE_TURNS);
+    ENTRY(DFI_TAIL_YAWN_MAX);
+    ENTRY(DFI_TAIL_FLAG_MAX);
+    ENTRY(DFI_TAIL_WIDE_GUARD_MAX);
+    ENTRY(DFI_TAIL_TYPE2_TYPELESS);
+    ENTRY(DFI_HAZARD_STEALTH_ROCK);
+    ENTRY(DFI_HAZARD_SPIKES);
+    ENTRY(DFI_HAZARD_TOXIC_SPIKES);
+    ENTRY(DFI_HAZARD_STICKY_WEB);
+    /* the position flags each kind's states may carry (dfi_kind_limits_of: the TEAM_C and POOL kinds add their bits) */
+    entry("VOL_FLAGS_MASK_CLOSURE", dfi_kind_limits_of(DUOFORGE_DATA_KIND_CLOSURE).vol_flags_mask);
+    entry("VOL_FLAGS_MASK_POOL", dfi_kind_limits_of(DUOFORGE_DATA_KIND_POOL).vol_flags_mask);
+    ENTRY(DFI_Q_NONE);
+    ENTRY(DFI_Q_MOVE);
+    ENTRY(DFI_Q_RESIDUAL);
+    printf("\n}}\n");
     return 0;
 }

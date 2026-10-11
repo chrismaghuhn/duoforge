@@ -1,0 +1,56 @@
+{
+  "name": "sub3_lava_plume_spread_unaware_appletun_168",
+  "purpose": "Lava Plume (allAdjacent, Fire, 80) from Armarouge into a Substitute (Appletun, Thick Fat) with Skeledirge (Unaware) last in the target list: the pin's activeTarget is Skeledirge, so the attacker's -2 is ignored for the Substitute hit (damage 48, the Substitute breaks). Source: campaign run 9003 battle 168 step 9 (H24 camp2).",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,cd9dfa19a525395d6847e6c9105c4b4711444736f0280be58ee8335afa61c037",
+  "teams": [
+    "Kommo-o (M) @ Leftovers\nAbility: Soundproof\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Def / 0 SpD / 0 Spe\nJolly Nature\n- Iron Tail\n- Fire Punch\n- Poison Jab\n- Substitute\n\nMawile (M) @ Wise Glasses\nAbility: Sheer Force\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Def / 0 SpD / 0 Spe\nAdamant Nature\n- Dynamic Punch\n- Sucker Punch\n- Crunch\n- Substitute\n\nHydreigon (M) @ Expert Belt\nAbility: Levitate\nLevel: 50\nEVs: 0 HP / 0 Atk / 2 Def / 32 SpA / 32 Spe\nModest Nature\n- Zen Headbutt\n- Iron Tail\n- Substitute\n- Protect\n\nGardevoir (F) @ Mystic Water\nAbility: Synchronize\nLevel: 50\nEVs: 0 HP / 0 Atk / 2 Def / 32 SpA / 32 Spe\nTimid Nature\n- Zen Headbutt\n- Fire Punch\n- Thunder Punch\n- Substitute\n\nSkeledirge (M) @ Muscle Band\nAbility: Unaware\nLevel: 50\nEVs: 0 HP / 0 Atk / 2 Def / 32 SpA / 32 Spe\nModest Nature\n- Torch Song\n- Zen Headbutt\n- Protect\n- Substitute\n\nAppletun (M) @ Light Clay\nAbility: Thick Fat\nLevel: 50\nEVs: 0 HP / 0 Atk / 2 Def / 32 SpA / 32 Spe\nBold Nature\n- Apple Acid\n- Earthquake\n- Protect\n- Substitute",
+    "Golurk @ Choice Scarf\nAbility: Iron Fist\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Def / 0 SpD / 0 Spe\nAdamant Nature\n- Dynamic Punch\n- Headlong Rush\n- Low Sweep\n- Earthquake\n\nEmboar (M) @ Expert Belt\nAbility: Reckless\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Def / 0 SpD / 0 Spe\nAdamant Nature\n- Flare Blitz\n- Fire Punch\n- Zen Headbutt\n- Low Sweep\n\nArmarouge (M) @ Focus Sash\nAbility: Flash Fire\nLevel: 50\nEVs: 0 HP / 0 Atk / 2 Def / 32 SpA / 32 Spe\nTimid Nature\n- Lava Plume\n- Acid Spray\n- Overheat\n- Protect\n\nPangoro (M) @ Life Orb\nAbility: Iron Fist\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Def / 0 SpD / 0 Spe\nJolly Nature\n- Headlong Rush\n- Close Combat\n- Low Sweep\n- Earthquake\n\nToxicroak (M) @ Rocky Helmet\nAbility: Poison Touch\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Def / 0 SpD / 0 Spe\nAdamant Nature\n- Dynamic Punch\n- Cross Poison\n- Low Sweep\n- Sucker Punch\n\nArcanine-Hisui (M) @ Lum Berry\nAbility: Rock Head\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Def / 0 SpD / 0 Spe\nJolly Nature\n- Iron Tail\n- Close Combat\n- Crunch\n- Protect"
+  ],
+  "choices": [
+    {
+      "p1": "team 6451",
+      "p2": "team 3521"
+    },
+    {
+      "p1": "move 4, move 4",
+      "p2": "switch 4, switch 3"
+    },
+    {
+      "p1": "move 3, move 4",
+      "p2": "move 4, move 3 -1"
+    },
+    {
+      "p1": "move 3, move 1 1",
+      "p2": "move 4, move 3 -1"
+    },
+    {
+      "p1": "pass, switch 4",
+      "p2": "pass, switch 4"
+    },
+    {
+      "p1": "move 1 1, move 2 1",
+      "p2": "move 4, move 3 -1"
+    },
+    {
+      "p2": "switch 3, pass"
+    },
+    {
+      "p1": "move 4, move 3 1",
+      "p2": "move 3 1, move 2 -1"
+    },
+    {
+      "p1": "move 2, move 1 1",
+      "p2": "move 4 2, move 4"
+    },
+    {
+      "p1": "move 4, switch 3",
+      "p2": "move 4 -2, move 1"
+    },
+    {
+      "p1": "move 2, move 3",
+      "p2": "pass, move 2 -1"
+    }
+  ]
+}

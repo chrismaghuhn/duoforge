@@ -153,6 +153,37 @@ class Refusals(unittest.TestCase):
         self.control('w1_sand_stream', hail_damage, 'from-attribute', 'trace_to_c: [from] Hail: no Hail in the format',
                      'Hail')
 
+    def test_belly_drum_setboost_is_the_boost_of_the_change_and_its_stage_is_checked(self):
+        """Step G86: Belly Drum's `-setboost|X|atk|N|[from] move: Belly Drum` (sim/battle.ts:2051-2052) converts to a BOOST of
+        the change (N minus the stage before the line), and a wrong printed stage or another move is a named refusal."""
+        spec, trace = battle('g86_belly_sitrus_tie')
+        convert('g86_belly_sitrus_tie', spec, trace)
+        first = [line for step in trace['steps'] for line in step['log'] if line.startswith('|-setboost|')]
+        self.assertEqual(first[0], '|-setboost|p1a: Snorlax|atk|6|[from] move: Belly Drum')
+
+        def wrong_stage(spec, trace):
+            for step in trace['steps']:
+                for i, line in enumerate(step['log']):
+                    if line.startswith('|-setboost|'):
+                        step['log'][i] = line.replace('|atk|6|', '|atk|5|')
+                        return
+            self.fail('no -setboost line')
+
+        def other_move(spec, trace):
+            for step in trace['steps']:
+                for i, line in enumerate(step['log']):
+                    if line.startswith('|-setboost|'):
+                        step['log'][i] = line.replace('[from] move: Belly Drum', '[from] move: Protect')
+                        return
+            self.fail('no -setboost line')
+
+        self.control('g86_belly_sitrus_tie', wrong_stage, 'setboost',
+                     "trace_to_c: -setboost stage 5 does not reach the stage after the step (6, same Pokemon: True): "
+                     "'|-setboost|p1a: Snorlax|atk|5|[from] move: Belly Drum'", 'setboost-stage')
+        self.control('g86_belly_sitrus_tie', other_move, 'setboost',
+                     "trace_to_c: -setboost outside the Belly Drum rule: '|-setboost|p1a: Snorlax|atk|6|[from] move: Protect'",
+                     'setboost')
+
     def test_the_bare_ohko_of_a_sheer_cold_sub_break_is_dropped_only_before_that_break(self):
         """Sheer Cold into a Substitute (step G64 with decision 0032): the sub's break prints `-ohko` right after the move line
         and right before `-end|X|Substitute` (data/moves.ts:18357-18374). The line is dropped only with that exact pair in
@@ -448,6 +479,61 @@ class Refusals(unittest.TestCase):
             mon['volatiles'] = sorted(mon['volatiles'] + ['zzunknown'])
         self.control('c11_follow_me', mutate, 'unknown-volatile',
                      "trace_to_c: unknown volatile 'zzunknown' of Indeedee-F", 'zzunknown')
+
+    def test_attract_lines_are_folded_only_as_the_pin_prints_them(self):
+        """Decision 0034 (step G71): the Attract lines of the pin, each with a negative control on the committed g65_water_bubble
+        battle. A line is inserted after the first move line of the battle. The start must come from Cute Charm (`[from] ability:
+        Cute Charm|[of] Y`), the visible ends from Mental Herb or Oblivious (with the cause and no `[of]`), the source of the check
+        is named, and the cant names no move. A silent end (`[silent]`, the source left) is no event, so it converts."""
+        def insert(line):
+            def mutate(spec, trace):
+                for step in trace['steps']:
+                    for i, existing in enumerate(step['log']):
+                        if existing.startswith('|move|'):
+                            step['log'].insert(i + 1, line)
+                            return
+                self.fail('no move line')
+            return mutate
+
+        cases = [
+            ('|-start|p1a: Araquanid|Attract|[from] ability: Intimidate|[of] p2a: Incineroar', 'attract-start',
+             'trace_to_c: unknown -start %r', 'Attract source'),
+            ('|-end|p1a: Araquanid|move: Attract', 'attract-end', 'trace_to_c: unknown -end %r', 'Attract end cause'),
+            ('|-end|p1a: Araquanid|move: Attract|[from] ability: Intimidate', 'attract-end', 'trace_to_c: unknown -end %r',
+             'Attract end cause'),
+            ('|-activate|p1a: Araquanid|move: Attract', 'activate-line', 'trace_to_c: unknown -activate %r', 'Attract source'),
+            ('|cant|p1a: Araquanid|Attract|[from] move: Tackle', 'cant-line', 'trace_to_c: unknown cant %r', 'Attract line'),
+            ('|-activate|p1a: Araquanid|ability: Oblivious|[of] p2a: Incineroar', 'activate-line',
+             'trace_to_c: unknown -activate %r', 'Oblivious line'),
+        ]
+        for line, rule, template, detail in cases:
+            with self.subTest(line=line):
+                self.control('g65_water_bubble', insert(line), rule, template % line, detail)
+        spec, trace = battle('g65_water_bubble')
+        insert('|-end|p1a: Araquanid|Attract|[silent]')(spec, trace)
+        convert('g65_water_bubble', spec, trace)  # the silent end is no event: the battle still converts
+
+    def test_attract_is_an_each_tie_handler_only_with_oblivious(self):
+        """Decision 0034 (step G71), the each-event tie of Update: Attract's onUpdate (data/moves.ts:722-727) is inert in the order
+        (its source-left end is silent and no other handler reads it), so an Attract holder without Oblivious draws no tie order;
+        with Oblivious its cure prints lines, so the order shows and the tie is kept. A handler outside the known inert and effective
+        sets stays a refusal (the negative control)."""
+        # two empty sides with no active slot: the Oblivious check reads them only for an active holder
+        placed = {'sides': [{'active': [None, None], 'pokemon': []}, {'active': [None, None], 'pokemon': []}], 'weather': None}
+        ctx = 'each:Update'
+        # two Attract holders, no Oblivious: inert, one effective holder at most, the draw is dropped
+        self.assertEqual(trace_to_c.each_tie_reason(ctx, ['P:s1a:0:attract', 'P:s2a:0:attract'], placed),
+                         'each-event tie with at most one holder')
+        # an Attract holder with a Sitrus Berry holder: only the Sitrus holder counts, dropped
+        self.assertEqual(trace_to_c.each_tie_reason(ctx, ['P:s1a:0:attract', 'P:s2a:0:sitrusberry'], placed),
+                         'each-event tie with at most one holder')
+        # an Attract holder that is Oblivious (its cure prints lines) with a Sitrus Berry holder: two effective holders, kept
+        self.assertIsNone(trace_to_c.each_tie_reason(ctx, ['P:s1a:0:attract+oblivious', 'P:s2a:0:sitrusberry'], placed))
+        # negative control: a handler the converter does not know, tied with an Attract holder, is still refused
+        with self.assertRaises(SystemExit) as cm:
+            trace_to_c.each_tie_reason(ctx, ['P:s1a:0:attract+oblivious', 'P:s2a:0:zzunknown'], placed)
+        self.assertEqual(cm.exception.rule, 'each-tie-handlers')
+        self.assertEqual(cm.exception.detail, ctx + ':zzunknown')
 
     def test_two_turn_move_volatile_without_twoturnmove(self):
         def mutate(spec, trace):
@@ -1546,12 +1632,31 @@ class Library(unittest.TestCase):
                 (e,) = trace_to_c.step_events([line], 0, roster, maxhp, tables)
                 self.assertEqual(e[:6], (trace_to_c.EV['ITEM_END'], 2, other, trace_to_c.CAUSE['ITEM_TAKEN'],
                                          tables['MOVE'][trace_to_c.key(move)], tables['ITEM'][trace_to_c.key('Sitrus Berry')] + 1))
+        # Decision 0033 (step G67): the holder's own announcement, a plain -item with no attribute, is ITEM_SHOWN (cause NONE,
+        # id2 the item + 1, the holder in position); the reserved Frisk form is refused above, never mapped.
+        (e,) = trace_to_c.step_events(['|-item|p2a: Staraptor|Air Balloon'], 0, roster, maxhp, tables)
+        self.assertEqual(e, (trace_to_c.EV['ITEM_SHOWN'], 2, trace_to_c.NOPOS, 0, 0, tables['ITEM'][trace_to_c.key('Air Balloon')] + 1,
+                             0, 0, 0, 0, 0, 0, 0, 0))
+        self.assertEqual(trace_to_c.EV['ITEM_SHOWN'], 48)
+        # Step G81 (decision 0033): Frisk's line `-item|X|Item|[from] ability: Frisk|[of] Y` (no [identify]: the pin prints none,
+        # data/abilities.ts:1549) is ITEM_SHOWN: position the frisked foe X, other the Frisk user Y, cause ABILITY, id = Frisk + 1,
+        # id2 = the item + 1, every other field 0.
+        (e,) = trace_to_c.step_events(['|-item|p2a: Staraptor|Sitrus Berry|[from] ability: Frisk|[of] p1a: Sneasler'], 0, roster, maxhp,
+                                      tables)
+        self.assertEqual(e, (trace_to_c.EV['ITEM_SHOWN'], 2, 0, trace_to_c.CAUSE['ABILITY'],
+                             tables['ABILITY'][trace_to_c.key('Frisk')] + 1,
+                             tables['ITEM'][trace_to_c.key('Sitrus Berry')] + 1, 0, 0, 0, 0, 0, 0, 0, 0))
         # A silent -enditem that no move caused is still no event; every other shape of these lines is refused.
         self.assertEqual(trace_to_c.step_events(['|-enditem|p2a: Staraptor|Sitrus Berry|[silent]'], 0, roster, maxhp, tables), [])
         for bad in ('|-item|p2a: Staraptor|Sitrus Berry|[from] move: Trick|[of] p1a: Sneasler',
                     '|-item|p2a: Staraptor|Sitrus Berry|[from] move: Thief',
                     '|-item|p2a: Staraptor|Sitrus Berry|[from] ability: Frisk',
-                    '|-item|p2a: Staraptor|Sitrus Berry',
+                    '|-item|p2a: Staraptor|Sitrus Berry|[from] ability: Frisk|[of] p1a: Sneasler|[identify]',
+                    '|-item|p2a: Staraptor|Sitrus Berry|[from] ability: Pickpocket|[of] p1a: Sneasler',
+                    '|-item|p2a: Staraptor|Sitrus Berry|[from] ability: Trace|[of] p1a: Sneasler',
+                    '|-item|p2a: Staraptor|Sitrus Berry|[from] ability: Frisk|[of] p1a: Sneasler|[from] move: Trick',
+                    '|-item|p2a: Staraptor|Sitrus Berry|[from] ability: Frisk|[of]',
+                    '|-item|p2a: Staraptor|Sitrus Berry|[identify]',
                     '|-enditem|p2a: Staraptor|Sitrus Berry|[silent]|[from] move: Trick|[of] p1a: Sneasler',
                     '|-enditem|p2a: Staraptor|Sitrus Berry|[from] move: Trick',
                     '|-enditem|p2a: Staraptor|Sitrus Berry|[silent]|[from] move: Thief',
@@ -2113,7 +2218,7 @@ class Library(unittest.TestCase):
         committed traces, so the engine's tail and extension are checked against the protocol and not against
         themselves. Every silent line follows such a hit, and no battle shows it for a miss, a block or an immunity."""
         names = sorted(f[:-5] for f in os.listdir(os.path.join(ROOT, 'tests', 'reference', 'specs')) if f.startswith('g19_glaive'))
-        self.assertEqual(len(names), 5)
+        self.assertEqual(len(names), 6)  # with g19_glaive_rush_mirror (the replay tracker's coverage)
         with open(os.path.join(ROOT, 'tests', 'test_pool_g19.c'), encoding='utf-8') as f:
             source = f.read()
         rows = {}
@@ -2300,7 +2405,7 @@ class Library(unittest.TestCase):
         marked = [n for n in re.findall(r'\[DFI_MOVE_(\w+)\] = 1u', read('src', 'data', 'support_manifest.c'))
                   if n in ids and ids[n] >= ext_moves]
         self.assertEqual(len(names), ext_moves + len(ids))
-        self.assertEqual(len(marked), 201)  # G78: Dragon Darts makes 201 (200 before); G76: Destiny Bond and Final Gambit make 200 (198 before); G74: Baton Pass makes 198; G72b: Alluring Voice and Dragon Cheer make 197 (195 before); the King's Shield of G66 (decision 0015 5cb) makes 195; the Skill Swap of G70 makes 194 (decision 0041) makes 194 from 193; 189 before step G68 (decision 0015 item 5cc: Steel Beam, Thunder Wave, Fire Punch, Ice Hammer); 180 of main, the four of G64 and the three of G62 (Haze, After You, Quash)  # the four of step G64 (Poltergeist, Beat Up, Bug Bite, Sheer Cold; decision 0015 item 5ca), the seven of step G54 (Icicle Spear, Scale Shot, Quick Guard, Upper Hand, Heal Pulse, Strength Sap, Sing), and the 171 of main (Roost and Stomping Tantrum of G42, Double Shock of G50 among them)  # Roost and Stomping Tantrum (G42), Double Shock (G50), the eleven of step G44, the four of step G46, the four of step G48, Taunt and Yawn (G31) and the rows of the earlier steps as before
+        self.assertEqual(len(marked), 279)  # G92 (decision 0062): the nine marks make 279 (270 before); G84 (decision 0047): Leech Seed and Curse make 270 (268 before); batch 6 (5cq): Charge Beam and Wild Charge make 268 (266 before); C4 (decision 0015 entry 5ct): 15 more make 266 (251 before); G86 (decision 0048): the seven of this batch make 251 (244 before); C2 (decision 0015 5cp): 22 damaging moves make 244 (222 before); G94 (decision 0015 5cv): Baneful Bunker; C1 (decision 0015 entry 5co): eighteen moves make 221 (203 before); G88 (decision 0046): Lash Out and Assurance make 203 (201 before); G78: Dragon Darts makes 201 (200 before); G76: Destiny Bond and Final Gambit make 200 (198 before); G74: Baton Pass makes 198; G72b: Alluring Voice and Dragon Cheer make 197 (195 before); the King's Shield of G66 (decision 0015 5cb) makes 195; the Skill Swap of G70 makes 194 (decision 0041) makes 194 from 193; 189 before step G68 (decision 0015 item 5cc: Steel Beam, Thunder Wave, Fire Punch, Ice Hammer); 180 of main, the four of G64 and the three of G62 (Haze, After You, Quash)  # the four of step G64 (Poltergeist, Beat Up, Bug Bite, Sheer Cold; decision 0015 item 5ca), the seven of step G54 (Icicle Spear, Scale Shot, Quick Guard, Upper Hand, Heal Pulse, Strength Sap, Sing), and the 171 of main (Roost and Stomping Tantrum of G42, Double Shock of G50 among them)  # Roost and Stomping Tantrum (G42), Double Shock (G50), the eleven of step G44, the four of step G46, the four of step G48, Taunt and Yawn (G31) and the rows of the earlier steps as before
         pool = [n for n in os.listdir(os.path.join(ROOT, 'tests', 'reference', 'specs'))
                 if trace_to_c.is_pool(ROOT, n[:-5])]
         logs = []
@@ -2318,7 +2423,19 @@ class Library(unittest.TestCase):
                                 break
                             done = done or after.startswith(('|-damage|', '|-boost|', '|-heal|', '|-start|', '|-weather|') + (('|-status|',) if name in ('Will-O-Wisp', 'Stun Spore', 'Sleep Powder', 'Poison Powder', 'Sing') else ()))
                             # A status move of one target with a primary drop (Charm, Fake Tears, step G39): its -unboost line.
-                            done = done or (name in ('Charm', 'Fake Tears') and after.startswith('|-unboost|'))
+                            done = done or (name in ('Charm', 'Fake Tears', 'Tickle') and after.startswith('|-unboost|'))  # Tickle: step G86
+                            # A stat drop of the target (Scary Face, Noble Roar, Eerie Impulse, Screech, Spicy Extract; their pin
+                            # boosts are negative, data/moves.ts:15800, 12769, 4441, 15847, 17450), counted only as the move's own
+                            # effect: the line directly after its |move| line, on the move's target or its user, and with no
+                            # [from] source (an Intimidate or an item line of another Pokemon is not the move's effect).
+                            if name in ('Scary Face', 'Noble Roar', 'Eerie Impulse', 'Screech', 'Spicy Extract') and i + 1 < len(lines) \
+                                    and lines[i + 1].startswith('|-unboost|') and '[from]' not in lines[i + 1]:
+                                fields = line.split('|')
+                                who = lines[i + 1].split('|')
+                                if len(fields) > 4 and who[2] in (fields[2], fields[4]):
+                                    done = True
+                            # Memento (step G92, decision 0062): the two -unboost lines of the target before its user faints.
+                            done = done or (name == 'Memento' and after.startswith('|-unboost|'))
                             # A forced switch (step G46: Whirlwind; Dragon Tail is damaging, so its damage line counts): the drag line.
                             done = done or (name in ('Whirlwind', 'Roar', 'Circle Throw') and after.startswith('|drag|'))
                             # Baton Pass (step G74): its switch line names it as the cause, `|switch|...|[from] Baton Pass`.
@@ -2333,6 +2450,8 @@ class Library(unittest.TestCase):
                             done = done or (name == 'Detect' and after.startswith('|-singleturn|'))
                             # Spiky Shield (step G20) prints Protect's line, `move: Protect`, for its own volatile.
                             done = done or (name == 'Spiky Shield' and after.startswith('|-singleturn|'))
+                            # Baneful Bunker (step G94) prints its own Protect line the same way (data/moves.ts:1005).
+                            done = done or (name == 'Baneful Bunker' and after.startswith('|-singleturn|'))
                             # King's Shield (step G66) prints the same `-singleturn|X|Protect` line as Protect (data/moves.ts:9929).
                             done = done or (name == "King's Shield" and after.startswith('|-singleturn|'))
                             # Haze (step G62, decision 0031): its own line, the public -clearallboost.
@@ -2895,6 +3014,77 @@ class FormeStance(unittest.TestCase):
         with self.assertRaises(trace_to_c.ConversionError) as cm:
             convert(self.NAME, spec, trace)
         self.assertEqual(cm.exception.rule, 'formechange-line')
+
+
+class Forme(unittest.TestCase):
+    """The forme key (lead decision 2026-10-11): a switch line names a forme by its base species in the identifier
+    (`|switch|p2b: Decidueye|Decidueye-Hisui, L50, M|`), and the roster key stays the team species. One case each for the
+    formes whose identifier is the base name (Decidueye-Hisui, Goodra-Hisui, Stunfisk-Galar), a Mega Evolution after its
+    detailschange (the key is the team species, the Mega forme is no key), and the refusals."""
+
+    @staticmethod
+    def battle(roster, lines):
+        return {'steps': [{'log': lines}]}, [dict((name, index) for index, name in enumerate(roster[s])) for s in range(2)]
+
+    def test_decidueye_hisui_is_keyed_by_its_team_species(self):
+        trace, roster = self.battle([['Pikachu'], ['Garchomp', 'Decidueye-Hisui']],
+                                    ['|switch|p2b: Decidueye|Decidueye-Hisui, L50, M|195/195'])
+        trace_to_c.protocol_aliases(trace, roster)
+        self.assertEqual(roster[1]['Decidueye'], 1)  # the switch line of side 1 (p2, slot b) names member 1 by its base species
+        self.assertEqual(roster[1]['Decidueye-Hisui'], 1)  # the team species key is unchanged
+
+    def test_goodra_hisui_is_keyed_by_its_team_species(self):
+        trace, roster = self.battle([['Pikachu'], ['Garchomp', 'Goodra-Hisui']],
+                                    ['|switch|p2a: Goodra|Goodra-Hisui, L50, M|160/160'])
+        trace_to_c.protocol_aliases(trace, roster)
+        self.assertEqual(roster[1]['Goodra'], 1)
+        self.assertEqual(roster[1]['Goodra-Hisui'], 1)
+
+    def test_stunfisk_galar_is_keyed_by_its_team_species(self):
+        trace, roster = self.battle([['Pikachu'], ['Stunfisk-Galar']],
+                                    ['|drag|p2a: Stunfisk|Stunfisk-Galar, L50, M|200/200'])
+        trace_to_c.protocol_aliases(trace, roster)
+        self.assertEqual(roster[1]['Stunfisk'], 0)
+
+    def test_a_mega_evolution_keeps_the_team_species_key(self):
+        """detailschange names the Mega forme; the switch that brings it back names the Mega forme in its details. Both leave
+        the key of the team species (the identifier is Charizard), and the Mega forme is not a key."""
+        trace, roster = self.battle([['Charizard', 'Pikachu'], ['Garchomp']],
+                                    ['|switch|p1a: Charizard|Charizard, L50, M|200/200',
+                                     '|detailschange|p1a: Charizard|Charizard-Mega-X, L50, M',
+                                     '|switch|p1b: Pikachu|Pikachu, L50, M|100/100',
+                                     '|switch|p1a: Charizard|Charizard-Mega-X, L50, M|200/200'])
+        before = dict(roster[0])
+        trace_to_c.protocol_aliases(trace, roster)
+        self.assertEqual(roster[0]['Charizard'], 0)
+        self.assertEqual(roster[0]['Pikachu'], 1)
+        self.assertNotIn('Charizard-Mega-X', roster[0])
+        self.assertEqual(roster[0], before)
+
+    def test_an_illusion_disguise_is_keyed_by_the_disguise_member(self):
+        """Illusion (decision 0026): a Zoroark-Hisui in disguise is shown by the species of a member of its own side (the
+        disguise is a roster name), in the identifier and in the details alike. The index is the disguise's member and there
+        is no conflict: the real Zoroark-Hisui keeps its own key (the i2_illusion_break and i2_bench_swap traces use this)."""
+        trace, roster = self.battle([['Zoroark-Hisui', 'Garchomp'], ['Pikachu']],
+                                    ['|switch|p1a: Garchomp|Garchomp, L50, M|200/200'])
+        trace_to_c.protocol_aliases(trace, roster)
+        self.assertEqual(roster[0]['Garchomp'], 1)
+        self.assertEqual(roster[0]['Zoroark-Hisui'], 0)
+        self.assertNotIn('Zoroark', roster[0])
+
+    def test_a_short_name_that_two_members_take_is_refused(self):
+        trace, roster = self.battle([['Decidueye-Hisui', 'Decidueye'], ['Garchomp']],
+                                    ['|switch|p1a: Decidueye|Decidueye-Hisui, L50, M|195/195'])
+        with self.assertRaises(SystemExit) as cm:
+            trace_to_c.protocol_aliases(trace, roster)
+        self.assertEqual(cm.exception.rule, 'forme-key')
+
+    def test_a_line_that_matches_no_roster_member_is_refused(self):
+        trace, roster = self.battle([['Pikachu'], ['Garchomp']],
+                                    ['|switch|p2a: Foo|Foo-Bar, L50, M|100/100'])
+        with self.assertRaises(SystemExit) as cm:
+            trace_to_c.protocol_aliases(trace, roster)
+        self.assertEqual(cm.exception.rule, 'forme-key')
 
 
 if __name__ == '__main__':

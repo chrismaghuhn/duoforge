@@ -147,3 +147,14 @@ def type_effect(ctx, attack_type, defend_type):
                                                    uint(defend_type, 32, "defend_type"), ctypes.byref(num),
                                                    ctypes.byref(den)))
     return num.value, den.value
+
+
+def request_target_class(ctx, move_id, user_types):
+    """duoforge_data_request_target_class: the DUOFORGE_TARGET_CLASS_* a move has in the request of a user of the given
+    current types. user_types are two DUOFORGE_TYPE_* values (NONE for no type); the class is the library's, not
+    computed here: a Curse of a user without the Ghost type targets the user."""
+    types = (ctypes.c_uint32 * 2)(uint(user_types[0], 32, "user_types[0]"), uint(user_types[1], 32, "user_types[1]"))
+    out = ctypes.c_uint32()
+    check(load_library().duoforge_data_request_target_class(_handle(ctx), uint(move_id, 32, "move_id"), types,
+                                                            ctypes.byref(out)))
+    return out.value

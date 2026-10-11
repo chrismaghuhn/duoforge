@@ -54,6 +54,7 @@ class PublicCauses(unittest.TestCase):
         self.assertIn((C["DUOFORGE_PUBLIC_CAUSE_SUBSTITUTE"], "substitute"), honest._CAUSES)
         self.assertIn((C["DUOFORGE_PUBLIC_CAUSE_TEMP_FORME"], "temp_forme"), honest._CAUSES)
         self.assertIn((C["DUOFORGE_PUBLIC_CAUSE_RAISED_THIS_TURN"], "raised_this_turn"), honest._CAUSES)
+        self.assertIn((C["DUOFORGE_PUBLIC_CAUSE_TURN_HISTORY"], "turn_history"), honest._CAUSES)
 
 
 class HonestSearch(unittest.TestCase):
@@ -104,7 +105,10 @@ class HonestSearch(unittest.TestCase):
                 v, st = b.public(np.full(2, seat, np.uint32))
                 self.assertEqual(v[0].tobytes(), v[1].tobytes())
                 with mock.patch.object(privileged, "hypothesis", side_effect=AssertionError("privileged")), \
+                        mock.patch.object(privileged, "step_events", side_effect=AssertionError("privileged")), \
                         mock.patch.object(b._lib, "duoforge_battle_hypothesis", side_effect=AssertionError("direct privileged ABI")), \
+                        mock.patch.object(b._lib, "duoforge_battle_step_events", side_effect=AssertionError("direct privileged ABI")), \
+                        mock.patch.object(b._lib, "duoforge_battle_clone", side_effect=AssertionError("direct privileged ABI")), \
                         mock.patch.object(b, "encode", side_effect=AssertionError("true root bytes")):
                     actions, records = search.decide(b, [0, 1], [seat, seat], [456, 456], [False, False])
                 self.assertEqual(actions[0], actions[1])
@@ -389,7 +393,9 @@ class HonestSearch(unittest.TestCase):
                     else:
                         raw[215 + 15 + 15] = 1 + e
                     self.assertEqual(decode(ctx.handle, b._battle(e), raw.ctypes.data, raw.size), 0)
-                with mock.patch.object(b._lib, "duoforge_battle_hypothesis", side_effect=AssertionError("privileged ABI")):
+                with mock.patch.object(b._lib, "duoforge_battle_hypothesis", side_effect=AssertionError("privileged ABI")), \
+                        mock.patch.object(b._lib, "duoforge_battle_step_events", side_effect=AssertionError("privileged ABI")), \
+                        mock.patch.object(b._lib, "duoforge_battle_clone", side_effect=AssertionError("privileged ABI")):
                     actions, records = search.decide(b, [0, 1], [0, 0], [456, 456], [False, False])
                 self.assertEqual(actions[0], actions[1])
                 self.assertTrue(all(r["kind"] == "unreconstructible" and r["causes"] == [cause] for r in records))
@@ -621,6 +627,43 @@ class LiveLatency(unittest.TestCase):
             self.assertEqual(set(row["reasons"]) == set(), all(c in ("searched", "forced", "raw", "team")
                                                                 for c in row["causes"]), kind)
         self.assertEqual(report["settings"]["k"], 2)
+
+
+class PositionsTool(unittest.TestCase):
+    def test_the_tool_plays_every_position_raw_honest_and_by_oracle(self):
+        # M12 bundle 7: the test positions per checkpoint, a diagnosis written outside the repository only.
+        from duoforge_learn import checkpoint, policy as learn_policy
+        from duoforge_search import positions
+        model_config = learn_policy.v2_config("S")
+        model = learn_policy.make(model_config, features.feature_names(4))
+        params = model.init(__import__("jax").random.PRNGKey(11))
+        with duoforge.Context(C["DUOFORGE_DATA_KIND_POOL"]) as ctx, tempfile.TemporaryDirectory() as tmp:
+            path = os.path.join(tmp, "v2.npz")
+            checkpoint.save(path, params, {"model": model_config, "encoder": 4,
+                                           "features": list(features.feature_names(4)),
+                                           "slot_features": list(features.SLOT_FEATURE_NAMES),
+                                           "data": {"kind": "pool", "fingerprint": "00"}, "teams": {}, "update": 0,
+                                           "decisions": 0, "ids": checkpoint.ids_of(ctx)})
+            inside = os.path.join(os.path.dirname(os.path.abspath(__file__)), "positions-out")  # in the repository
+            with self.assertRaisesRegex(ValueError, "repository"):
+                positions.main(["--checkpoint", path, "--out", inside])
+            report = positions.main(["--checkpoint", path, "--out", os.path.join(tmp, "out"), "--k", "2", "--m", "2",
+                                     "--worlds", "2"])
+        all_positions = positions.load_all()
+        self.assertEqual([r["name"] for r in report["positions"]], [p.name for p in all_positions])
+        for row, position in zip(report["positions"], all_positions):
+            self.assertEqual("oracle" in row, row["kind"] in positions.ORACLE_KINDS)
+            for name in ("raw", "honest") + (("oracle",) if "oracle" in row else ()):
+                # a hit is exactly an expected answer's labels; the honest row names its search's kind
+                self.assertEqual(row[name]["hit"], positions.accepted(position.expected, row[name]["labels"]))
+            self.assertIn(row["honest"]["kind"], ("searched", "unreconstructible", "forced", "raw"))
+        rates = report["hit_rates"]
+        self.assertEqual(rates["raw"]["counted"], len(all_positions))
+        # only searched decisions are the search's answers
+        self.assertEqual(rates["honest"]["counted"],
+                         sum(r["honest"]["kind"] == "searched" for r in report["positions"]))
+        self.assertEqual(rates["honest"]["hits"],
+                         sum(r["honest"]["hit"] for r in report["positions"] if r["honest"]["kind"] == "searched"))
 
 
 class HonestArena(unittest.TestCase):

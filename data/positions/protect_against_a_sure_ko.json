@@ -1,0 +1,182 @@
+{
+ "name": "protect_against_a_sure_ko",
+ "kind": "protect_vs_ko",
+ "teams": [
+  "B",
+  "A"
+ ],
+ "seed": 2316556723530235905,
+ "picks": [
+  [
+   3,
+   1,
+   0,
+   2
+  ],
+  [
+   0,
+   1,
+   3,
+   2
+  ]
+ ],
+ "prefix": [
+  [
+   [
+    {
+     "move": "psychic",
+     "target": 1
+    },
+    {
+     "move": "ironhead",
+     "target": 0
+    }
+   ],
+   [
+    {
+     "move": "highhorsepower",
+     "target": 0
+    },
+    {
+     "move": "bravebird",
+     "target": 1
+    }
+   ]
+  ],
+  [
+   [
+    {
+     "none": true
+    },
+    {
+     "switch": "politoed"
+    }
+   ],
+   [
+    {
+     "any": true
+    },
+    {
+     "any": true
+    }
+   ]
+  ],
+  [
+   [
+    {
+     "move": "grassknot",
+     "target": 2
+    },
+    {
+     "move": "muddywater"
+    }
+   ],
+   [
+    {
+     "move": "highhorsepower",
+     "target": 1
+    },
+    {
+     "move": "closecombat",
+     "target": 1
+    }
+   ]
+  ],
+  [
+   [
+    {
+     "none": true
+    },
+    {
+     "switch": "archaludon"
+    }
+   ],
+   [
+    {
+     "any": true
+    },
+    {
+     "any": true
+    }
+   ]
+  ],
+  [
+   [
+    {
+     "move": "grassknot",
+     "target": 3
+    },
+    {
+     "move": "dragonpulse",
+     "target": 3
+    }
+   ],
+   [
+    {
+     "move": "woodhammer",
+     "target": 1
+    },
+    {
+     "move": "closecombat",
+     "target": 1,
+     "mega": true
+    }
+   ]
+  ],
+  [
+   [
+    {
+     "move": "psychic",
+     "target": 2
+    },
+    {
+     "move": "dragonpulse",
+     "target": 0
+    }
+   ],
+   [
+    {
+     "move": "woodhammer",
+     "target": 0
+    },
+    {
+     "move": "closecombat",
+     "target": 2
+    }
+   ]
+  ],
+  [
+   [
+    {
+     "switch": "golisopod"
+    },
+    {
+     "none": true
+    }
+   ],
+   [
+    {
+     "any": true
+    },
+    {
+     "any": true
+    }
+   ]
+  ]
+ ],
+ "seat": 0,
+ "expected": [
+  [
+   {
+    "move": "protect"
+   },
+   {
+    "any": true
+   }
+  ]
+ ],
+ "reason": "Turn 5: golisopod cannot switch out, and against every answer of ours in which it does not Protect some foe answer of rillaboom and staraptor knocks it out in every sample; Protect keeps it standing against every foe answer, critical hits included.",
+ "claim": {
+  "protector": 0
+ }
+}
