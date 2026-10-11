@@ -1546,12 +1546,19 @@ class Library(unittest.TestCase):
                 (e,) = trace_to_c.step_events([line], 0, roster, maxhp, tables)
                 self.assertEqual(e[:6], (trace_to_c.EV['ITEM_END'], 2, other, trace_to_c.CAUSE['ITEM_TAKEN'],
                                          tables['MOVE'][trace_to_c.key(move)], tables['ITEM'][trace_to_c.key('Sitrus Berry')] + 1))
+        # Decision 0033 (step G67): the holder's own announcement, a plain -item with no attribute, is ITEM_SHOWN (cause NONE,
+        # id2 the item + 1, the holder in position); the reserved Frisk form is refused above, never mapped.
+        (e,) = trace_to_c.step_events(['|-item|p2a: Staraptor|Air Balloon'], 0, roster, maxhp, tables)
+        self.assertEqual(e, (trace_to_c.EV['ITEM_SHOWN'], 2, trace_to_c.NOPOS, 0, 0, tables['ITEM'][trace_to_c.key('Air Balloon')] + 1,
+                             0, 0, 0, 0, 0, 0, 0, 0))
+        self.assertEqual(trace_to_c.EV['ITEM_SHOWN'], 48)
         # A silent -enditem that no move caused is still no event; every other shape of these lines is refused.
         self.assertEqual(trace_to_c.step_events(['|-enditem|p2a: Staraptor|Sitrus Berry|[silent]'], 0, roster, maxhp, tables), [])
         for bad in ('|-item|p2a: Staraptor|Sitrus Berry|[from] move: Trick|[of] p1a: Sneasler',
                     '|-item|p2a: Staraptor|Sitrus Berry|[from] move: Thief',
                     '|-item|p2a: Staraptor|Sitrus Berry|[from] ability: Frisk',
-                    '|-item|p2a: Staraptor|Sitrus Berry',
+                    '|-item|p2a: Staraptor|Sitrus Berry|[from] ability: Frisk|[of] p1a: Sneasler|[identify]',
+                    '|-item|p2a: Staraptor|Sitrus Berry|[identify]',
                     '|-enditem|p2a: Staraptor|Sitrus Berry|[silent]|[from] move: Trick|[of] p1a: Sneasler',
                     '|-enditem|p2a: Staraptor|Sitrus Berry|[from] move: Trick',
                     '|-enditem|p2a: Staraptor|Sitrus Berry|[silent]|[from] move: Thief',
@@ -2113,7 +2120,7 @@ class Library(unittest.TestCase):
         committed traces, so the engine's tail and extension are checked against the protocol and not against
         themselves. Every silent line follows such a hit, and no battle shows it for a miss, a block or an immunity."""
         names = sorted(f[:-5] for f in os.listdir(os.path.join(ROOT, 'tests', 'reference', 'specs')) if f.startswith('g19_glaive'))
-        self.assertEqual(len(names), 5)
+        self.assertEqual(len(names), 6)  # with g19_glaive_rush_mirror (the replay tracker's coverage)
         with open(os.path.join(ROOT, 'tests', 'test_pool_g19.c'), encoding='utf-8') as f:
             source = f.read()
         rows = {}

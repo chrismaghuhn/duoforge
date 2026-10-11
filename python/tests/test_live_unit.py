@@ -117,6 +117,16 @@ class OptionsTest(unittest.TestCase):
                    {"ident": "p1: Farigiraf", "condition": "100/224", "active": True,
                     "moves": ["psychic", "grassknot", "trickroom", "protect"]}]}}
 
+    def test_recharge_request(self):
+        # mustrecharge (step G17): the pin's request offers only Recharge, trapped: the engine's RECHARGE slot command
+        import copy
+        from duoforge_live import options
+        request = copy.deepcopy(self.REQUEST)
+        request["active"][0] = {"moves": [{"move": "Recharge", "id": "recharge"}], "trapped": True}
+        lists = options.slot_options(request, 0, {"p1: Archaludon": 2, "p1: Farigiraf": 3}, {})
+        self.assertEqual([(o.kind, o.move_slot, o.target, o.text) for o in lists[0]],
+                         [(options.MOVE, options.RECHARGE, options.TARGET_NONE, "move 1")])
+
     def test_locked_slot_without_target_raises(self):
         from duoforge_live import options
         roster = {"p1: Archaludon": 2, "p1: Farigiraf": 3}
@@ -190,6 +200,25 @@ class TrackerStopTest(unittest.TestCase):
                 p.occupant = k
         return t
 
+    def test_the_record_refuses_folds_it_does_not_write(self):
+        # record.py writes the tail of the #334 folds (Throat Chop, Perish, Encore, Aurora Veil, item_now, ability_now);
+        # a #342 fold that is up has tail fields the assembler does not write yet, so the point is refused, never a zero
+        import collections
+        from duoforge_live import record
+        t = self.tracker()
+        t._hazards = [collections.Counter(), collections.Counter()]
+        t._guards = set()
+        t._positions[0][0].throat_chop, t._positions[1][1].perish = 2, 3  # recorded folds: no refusal
+        self.assertEqual(record.unrecorded_folds(t), [])
+        t._positions[1][0].taunt, t._positions[0][1].type_now = 1, (18, 0)
+        t._hazards[1]["spikes"] = 2
+        t._guards.add(("WIDE_GUARD", 0))
+        self.assertEqual(sorted(record.unrecorded_folds(t)),
+                         ["side0.position1.type_now", "side0.wide_guard", "side1.hazards", "side1.position0.taunt"])
+        with self.assertRaises(record.Refusal) as caught:
+            record._tail(t, None, 2)
+        self.assertEqual(caught.exception.reason, "fold-not-in-record")
+
     def test_throat_chop_takes_only_the_pins_silent_form(self):
         from duoforge_live import lines
         t = self.tracker()
@@ -203,6 +232,57 @@ class TrackerStopTest(unittest.TestCase):
             with self.assertRaises(lines.Stop, msg=line) as caught:
                 t._throat_chop(line.split("|"))
             self.assertEqual(caught.exception.reason, f"line:{line.split('|')[1]} Throat Chop")
+
+    def test_baton_pass_gives_the_copied_volatiles(self):
+        # dfi_pass_give (src/combat/turn.c): Throat Chop's, Perish Song's, Taunt's and Heal Block's counters go to the
+        # entering member; Encore, Disable, Yawn, Imprison, Glaive Rush (noCopy), the recharge and a changed type stay
+        # with the leaver (decision 0042)
+        from duoforge_live.data import trace_to_c
+        passed = {"throat_chop": 1, "perish": 2, "taunt": 1, "heal_block": 1}
+        kept = {"encore_slot": 3, "disable_slot": 2, "yawn": 1, "imprison": 1, "glaive_rush": 1, "must_recharge": 1,
+                "type_now": (18, 0)}
+        empty = {"encore_slot": 0, "disable_slot": 0, "yawn": 0, "imprison": 0, "glaive_rush": 0, "must_recharge": 0,
+                 "type_now": (0, 0)}
+        from types import SimpleNamespace
+        from duoforge_live.tracker import ROSTER_NONE
+        t = self.tracker()
+        t._baton_pass = 7
+        # the entry bookkeeping of the public record (#344): activation ids, the foe's leads, the own party order, the
+        # members' toxic stage; the spectator path, so the own member's display comes from the line
+        t._spectator, t._next_activation, t._foe_leads, t._party = True, 1, [ROSTER_NONE, ROSTER_NONE], None
+        members = [SimpleNamespace(toxic_stage=0, seen=False, hp_percent=0, hp_flag=0, status=0) for _ in range(6)]
+        t._member = lambda side: members
+        p = t._positions[0][0]
+        for name, value in {**passed, **kept}.items():
+            setattr(p, name, value)
+        t._event(trace_to_c.ev_tuple(trace_to_c.EV["SWITCH"], 0, trace_to_c.NOPOS, trace_to_c.CAUSE["MOVE"], 4, 7))
+        self.assertEqual(p.occupant, 4)
+        self.assertEqual({name: getattr(p, name) for name in passed}, passed)
+        self.assertEqual({name: getattr(p, name) for name in kept}, empty)
+        t._event(trace_to_c.ev_tuple(trace_to_c.EV["SWITCH"], 0, trace_to_c.NOPOS, 0, 5, 0))  # a plain switch
+        self.assertEqual((p.occupant, p.throat_chop, p.perish, p.taunt, p.heal_block), (5, 0, 0, 0, 0))
+
+    def test_a_plain_typechange_is_soaks_only_after_a_soak_line(self):
+        # Soak and Magic Powder print the same -start|X|typechange|T (no attribute): the converter gives Soak's cause to
+        # both, so the tracker folds it only after a Soak move line; after Magic Powder it stops
+        from duoforge_live import lines
+        from duoforge_live.data import trace_to_c
+        moves = data.load(kind="pool").tables["MOVE"]
+        t = self.tracker()
+        t._soak = moves["SOAK"]
+        water, psychic = trace_to_c.TYPE_IDS["Water"], trace_to_c.TYPE_IDS["Psychic"]
+
+        def typechange(type_id):
+            return trace_to_c.ev_tuple(trace_to_c.EV["TYPE_CHANGE"], 2, trace_to_c.NOPOS, trace_to_c.CAUSE["MOVE"], 0,
+                                       moves["SOAK"], detail=type_id)
+        t._last_move = (0, moves["MAGICPOWDER"], 2)
+        with self.assertRaises(lines.Stop) as caught:
+            t._event(typechange(psychic))
+        self.assertEqual(caught.exception.reason, "line:-start typechange (no Soak)")
+        self.assertEqual(t._positions[1][0].type_now, (0, 0))
+        t._last_move = (0, moves["SOAK"], 2)
+        t._event(typechange(water))
+        self.assertEqual(t._positions[1][0].type_now, (water + 1, 0))
 
     def test_encore_takes_the_slot_of_the_last_move_line(self):
         from duoforge_live import lines
