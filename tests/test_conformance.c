@@ -33,7 +33,7 @@
 #include "reference/conformance_pool.h"
 #include "support/pool.h"
 #define DF_CONF_FORMES dfi_pool_formes
-#define DF_POOL_DATA_BATTLES 773u /* the recorded pool battles: main's 762 (G73 included), the eight G80 battles, the self-target, the partner-absent and the partner-absent hit battle (measured by the regenerated conformance headers) */
+#define DF_POOL_DATA_BATTLES 774u /* the recorded pool battles: main's 762 (G73 included), the eight G80 battles, the self-target, the partner-absent, the partner-absent hit and the Howl at-cap battle (measured by the regenerated headers) */
 #elif defined(DF_CONFORMANCE_TEAM_C)
 #include "data/extended_tables.h"
 #include "reference/conformance_team_c.h"
