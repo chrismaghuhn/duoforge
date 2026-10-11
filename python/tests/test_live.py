@@ -221,6 +221,93 @@ class BatonPassTest(unittest.TestCase):
         p = t._positions[0][0]
         self.assertEqual((p.occupant, p.stages, p.confused), (3, [tracker.STAGE_NEUTRAL] * 7, 0))
 
+    def test_the_receiver_takes_a_curse(self):
+        # copyVolatileFrom copies every volatile without noCopy, and the curse volatile has none (the condition has no
+        # entry in data/conditions.ts): the CURSED flag passes with the stages, as the C copy keeps it (turn.c)
+        t, D, tracker = self._tracker()
+        t._positions[0][0].cursed = 1
+        t._event(trace_to_c.ev_tuple(trace_to_c.EV["SWITCH"], 0, trace_to_c.NOPOS, trace_to_c.CAUSE["MOVE"], 3,
+                                     D.tables["MOVE"]["BATONPASS"], 100, 100, 1))
+        self.assertEqual(t._positions[0][0].cursed, 1)
+
+    def test_a_plain_switch_ends_a_curse(self):
+        t, D, tracker = self._tracker()
+        t._positions[0][0].cursed = 1
+        t._event(trace_to_c.ev_tuple(trace_to_c.EV["SWITCH"], 0, trace_to_c.NOPOS, 0, 3, 0, 100, 100, 1))
+        self.assertEqual(t._positions[0][0].cursed, 0)
+
+
+class CurseTest(unittest.TestCase):
+    """Step G84b (decision 0063): the Ghost Curse's volatile is the CURSED bit of its holder. VOLATILE_START sets it, and
+    observation_ext shows it as DUOFORGE_POSITION_EXT_CURSE for both viewers; the holder's switch-out or faint ends it
+    (no END line exists, turn.c dfi_tail_clear_occupant); the source's faint does not (the residual goes on)."""
+
+    @classmethod
+    def setUpClass(cls):
+        from duoforge_live import tracker
+        cls.tracker = tracker
+        cls.D = data.load(kind="pool")
+        cls.EXT = tracker.C["DUOFORGE_POSITION_EXT_CURSE"]
+
+    def tracker_of(self, side):
+        from types import SimpleNamespace
+
+        class Ready(self.tracker.Tracker):  # ready is a property of the real tracker: a decision point is complete
+            ready = True
+
+        t = Ready.__new__(Ready)
+        t.data, t.side, t._spectator, t.epoch = self.D, side, False, 4
+        t._conditions = [[0, 0, 0, 0], [0, 0, 0, 0]]
+        t._positions = [[self.tracker._Position(), self.tracker._Position()],
+                        [self.tracker._Position(), self.tracker._Position()]]
+        t._positions[0][0].occupant = 0  # the user, own side at p1a
+        t._positions[1][0].occupant = 0  # the cursed foe at p2a
+        members = [SimpleNamespace(ability=1, item_now=0, seen=True, hp_percent=100, hp_flag=0, status=0)
+                   for _ in range(6)]
+        t._member = lambda side_: members
+        return t
+
+    def start(self, t, pos=2, source=0):
+        t._event(trace_to_c.ev_tuple(trace_to_c.EV["VOLATILE_START"], pos, source, detail=trace_to_c.VOLATILE_CURSE))
+
+    def bit(self, t, side, k):
+        return int(t.observation_ext()["sides"][side]["positions"][k]["volatiles"]) & self.EXT
+
+    def test_the_start_sets_the_view_bit_of_the_cursed_position_for_both_viewers(self):
+        for viewer in (0, 1):
+            t = self.tracker_of(viewer)
+            self.start(t)
+            self.assertEqual(self.bit(t, side=1, k=0), self.EXT, viewer)
+            self.assertEqual(self.bit(t, side=0, k=0), 0, viewer)
+
+    def test_the_bit_ends_when_the_holder_switches_out(self):
+        t = self.tracker_of(0)
+        self.start(t)
+        t._event(trace_to_c.ev_tuple(trace_to_c.EV["SWITCH"], 2, trace_to_c.NOPOS, 0, 1, 0, 100, 100, 1))
+        self.assertEqual(self.bit(t, side=1, k=0), 0)
+
+    def test_the_bit_ends_when_the_holder_faints(self):
+        t = self.tracker_of(1)
+        self.start(t)
+        t._event(trace_to_c.ev_tuple(trace_to_c.EV["FAINT"], 2))
+        self.assertEqual(self.bit(t, side=1, k=0), 0)
+
+    def test_the_bit_stays_when_the_source_leaves(self):
+        # Substitute faint battle: the user faints, the residual [from] Curse goes on for the holder
+        t = self.tracker_of(0)
+        self.start(t)
+        t._event(trace_to_c.ev_tuple(trace_to_c.EV["FAINT"], 0))
+        self.assertEqual(self.bit(t, side=1, k=0), self.EXT)
+
+    def test_the_residual_damage_is_the_public_hp_of_the_holder(self):
+        t = self.tracker_of(0)
+        self.start(t)
+        (e,) = trace_to_c.step_events(["|-damage|p2a: Gholdengo|75/100|[from] Curse"], 0, [{}, {}],
+                                      [{}, {"Gholdengo": 194}], self.D.tables)
+        t._event(e)
+        self.assertEqual(t._member(1)[0].hp_percent, 75)
+        self.assertEqual(self.bit(t, side=1, k=0), self.EXT)
+
 
 class ClearAllBoostsTest(unittest.TestCase):
     """Step G62 (decision 0031): Haze's CLEAR_ALL_BOOSTS returns the stages of every standing active Pokemon to
