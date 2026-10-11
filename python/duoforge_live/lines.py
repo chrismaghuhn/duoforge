@@ -176,8 +176,15 @@ _ITEM_CHANGE_FROM = {"move: Trick", "move: Switcheroo", "move: Thief", "move: Co
 # The item changes the engine models (steps G16, G29, G64), which the tracker folds: Knock Off, Thief, Trick and
 # Switcheroo take an item (-enditem), Bug Bite steals a berry (stealeat), Trick, Switcheroo, Thief and Covet give one
 # (-item). The converter checks each line's shape. Every other source of _ITEM_CHANGE_FROM stops on its line.
-_ITEM_TAKEN_FOLD = {"move: Knock Off", "move: Thief", "move: Trick", "move: Switcheroo", "stealeat"}
-_ITEM_GIVEN_FOLD = {"move: Trick", "move: Switcheroo", "move: Thief", "move: Covet"}
+_ITEM_TAKEN_FOLD = {"move: Knock Off", "move: Thief", "move: Trick", "move: Switcheroo", "stealeat",
+                    "ability: Pickpocket"}
+_ITEM_GIVEN_FOLD = {"move: Trick", "move: Switcheroo", "move: Thief", "move: Covet", "ability: Pickpocket",
+                    "ability: Magician"}
+# Step G85, the item thefts of two abilities (decision 0015 entry 5bu). Pickpocket takes the attacker's item: the holder
+# prints the attacker's silent `-enditem|ATT|Item|[silent]|[from] ability: Pickpocket|[of] ATT`, then its own
+# `-item|H|Item|[from] ability: Pickpocket|[of] ATT`. Magician takes the target's item with its own `-item|MAG|Item|[from]
+# ability: Magician|[of] TGT` only: the target's loss shows in no line.
+THEFT_ABILITIES = {"ability: Pickpocket", "ability: Magician"}
 # Ability changes by the holder's own ability on contact, which the engine does not model (DFI_HANDLER_UNMODELED, or
 # not in the pool): their -activate line stops.
 _ABILITY_ACTIVATE_UNMODELED = {"ability: Mummy", "ability: Lingering Aroma"}
@@ -241,6 +248,25 @@ def _kept_drop(args, attrs, view):
         if ability is not None and ability + 1 == view.ability_now(args[0]):
             return "keep"
     _unknown("-fail", "unboost")
+
+
+def _theft_form(kind, args, attrs, view):
+    """Whether a Pickpocket or Magician item line has its exact form (step G85): two arguments (the position and an item of
+    the tables), one [from] ability, one [of] Pokemon and nothing else. Pickpocket's -enditem is silent and its position
+    is its [of] (the attacker); Pickpocket's -item is the holder's and names the attacker in [of]; Magician's -item is the
+    Magician's and names its target in [of]. Any other shape is False."""
+    froms = _froms(attrs)
+    of = [a[len("[of] "):] for a in attrs if a.startswith("[of] ")]
+    silent = "[silent]" in attrs
+    if len(args) != 2 or len(of) != 1 or len(froms) != 1 or len(attrs) != 2 + silent:
+        return False
+    if flat_position(args[0]) is None or flat_position(of[0]) is None:
+        return False
+    if view.data.tables["ITEM"].get(trace_to_c.key(args[1])) is None:
+        return False
+    if kind == "-enditem":
+        return froms[0] == "ability: Pickpocket" and silent and of[0] == args[0]
+    return not silent and of[0] != args[0] and froms[0] in THEFT_ABILITIES
 
 
 def _not_its_own(kind, effect, ident, view):
@@ -427,6 +453,8 @@ def check(line, view):
         froms = _froms(attrs)
         if any(f in _ITEM_CHANGE_FROM or f.startswith("move: ") for f in froms):
             if len(froms) == 1 and froms[0] in _ITEM_TAKEN_FOLD:
+                if froms[0] in THEFT_ABILITIES and not _theft_form(kind, args, attrs, view):
+                    _unknown(kind, f"[from] {froms[0]}")  # a theft's loss of another shape
                 return _feature("ITEM_CHANGE")
             _unknown(kind, f"[from] {froms[0]}")  # Incinerate, Fling, Pickpocket, ...: not modelled
         item = tables["ITEM"].get(trace_to_c.key(effect))
@@ -449,6 +477,8 @@ def check(line, view):
             return "fold"  # Frisk, or the holder's own announcement (Air Balloon): an item the open sheet shows
         if any(f in _ITEM_CHANGE_FROM for f in froms):
             if len(froms) == 1 and froms[0] in _ITEM_GIVEN_FOLD:
+                if froms[0] in THEFT_ABILITIES and not _theft_form(kind, args, attrs, view):
+                    _unknown(kind, f"[from] {froms[0]}")  # a theft's line of another shape
                 return _feature("ITEM_CHANGE")
             _unknown(kind, f"[from] {froms[0]}")  # Recycle, Harvest, Pickup, Magician, ...: not modelled
         _unknown(kind, effect)

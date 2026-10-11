@@ -1132,13 +1132,15 @@ class Tracker:
                 self._herb_end = pos  # its -end lines follow (dfi_mental_herb)
             if e[3] == trace_to_c.CAUSE["NONE"] and self._eject_button is not None and ident2 == self._eject_button + 1:
                 self._at(pos).flag = SWITCH_EMERGENCY_EXIT  # Eject Button sets its holder's switchFlag, then the -enditem
-            if e[3] != trace_to_c.CAUSE["ITEM_TAKEN"]:
-                m.item_consumed = 1  # used up (useItem, eatItem); a taken item is not
+            # a taken item is not used up: a move took it (ITEM_TAKEN: Knock Off, Thief, Trick, Switcheroo, Bug Bite; steps
+            # G16, G29, G64) or Pickpocket did (ABILITY, step G85, dfi_pickpocket: the silent -enditem of the giver)
+            taken = e[3] in (trace_to_c.CAUSE["ITEM_TAKEN"], trace_to_c.CAUSE["ABILITY"])
+            if not taken:
+                m.item_consumed = 1  # used up (useItem, eatItem)
             if public:
                 m.item_used = 1
-            if e[3] == trace_to_c.CAUSE["ITEM_TAKEN"]:
-                # a move took the item (Knock Off, Thief, Trick, Switcheroo, Bug Bite; steps G16, G29, G64): the member
-                # holds nothing, also after a switch or a faint (the tail's item_now)
+            if taken:
+                # the member holds nothing, also after a switch or a faint (the tail's item_now)
                 m.item_now = ITEM_NOW_NONE
             if self._unburden is not None and self._ability_at(pos) == self._unburden:
                 self._at(pos).flags |= FLAG_UNBURDEN  # Unburden doubles Speed once the item is gone (c08 battles)

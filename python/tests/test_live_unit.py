@@ -472,3 +472,154 @@ class CheckpointTablesTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class _ItemView:
+    """The tracker as lines.check reads it: the tables of the items and abilities named here, the item and the ability
+    + 1 of each ident (lines.check's view contract, with item_gone for a member that holds nothing)."""
+
+    ITEMS = {"Black Glasses": 5, "Air Balloon": 7, "Sitrus Berry": 9, "Mental Herb": 11}
+    ABILITIES = {"Pickpocket": 3, "Magician": 4, "Harvest": 6, "Pickup": 8, "Sticky Hold": 2}
+
+    def __init__(self, items=None, abilities=None, gone=()):
+        from duoforge_live.data import trace_to_c
+        self.data = type("Data", (), {})()
+        self.data.tables = {"ITEM": {trace_to_c.key(n): i for n, i in self.ITEMS.items()},
+                            "ABILITY": {trace_to_c.key(n): i for n, i in self.ABILITIES.items()}}
+        # item and ability values are the + 1 codes (items, abilities: id + 1)
+        self.items, self.abilities, self.gone = dict(items or {}), dict(abilities or {}), set(gone)
+
+    def item_now(self, ident):
+        return self.items.get(ident, 0)
+
+    def ability_now(self, ident):
+        return self.abilities.get(ident, 0)
+
+    def item_gone(self, ident):
+        return ident in self.gone
+
+    def side_sheets(self, ident):
+        return []
+
+
+class ItemTheftLinesTest(unittest.TestCase):
+    """Step G85: the item thefts of Pickpocket and Magician (lines.check). Each line form folds; any other shape or
+    other ability on an item line stops, and an Air Balloon announcement before a theft is pending, not an own item."""
+
+    PICKPOCKET = "p1a: Kingambit"  # the attacker: the silent -enditem of its own item
+
+    def check(self, line, view=None):
+        from duoforge_live import lines
+        return lines.check(line, view or _ItemView())
+
+    def test_pickpockets_silent_enditem_folds(self):
+        self.assertEqual(self.check("|-enditem|p1a: Kingambit|Black Glasses|[silent]|[from] ability: Pickpocket|"
+                                    "[of] p1a: Kingambit"), "fold")
+
+    def test_pickpockets_item_line_folds(self):
+        self.assertEqual(self.check("|-item|p2a: Weavile|Black Glasses|[from] ability: Pickpocket|[of] p1a: Kingambit"),
+                         "fold")
+
+    def test_magicians_item_line_folds(self):
+        self.assertEqual(self.check("|-item|p1a: Delphox|Black Glasses|[from] ability: Magician|[of] p2a: Kingambit"),
+                         "fold")
+
+    def test_theft_lines_of_any_other_shape_stop(self):
+        from duoforge_live import lines
+        stops = [
+            # Pickpocket's loss is silent and names the attacker as its position and [of]
+            "|-enditem|p1a: Kingambit|Black Glasses|[from] ability: Pickpocket|[of] p1a: Kingambit",
+            "|-enditem|p1a: Kingambit|Black Glasses|[silent]|[from] ability: Pickpocket|[of] p2a: Weavile",
+            "|-enditem|p1a: Kingambit|Black Glasses|[silent]|[from] ability: Pickpocket",
+            # Magician prints no loss line of its target
+            "|-enditem|p2a: Kingambit|Black Glasses|[silent]|[from] ability: Magician|[of] p1a: Delphox",
+            # the receiving line needs its [of], and no [silent]
+            "|-item|p2a: Weavile|Black Glasses|[from] ability: Pickpocket",
+            "|-item|p2a: Weavile|Black Glasses|[silent]|[from] ability: Pickpocket|[of] p1a: Kingambit",
+            "|-item|p1a: Delphox|Black Glasses|[from] ability: Magician|[of] p1a: Delphox",
+            "|-item|p1a: Delphox|Black Glasses|[from] ability: Magician|[of] p2a: Kingambit|[identify]",
+            "|-item|p1a: Delphox|Not An Item|[from] ability: Magician|[of] p2a: Kingambit",
+            "|-item|p1a: Delphox|Black Glasses|[from] ability: Magician|[of] p2a: Kingambit|[from] move: Thief",
+        ]
+        for line in stops:
+            with self.subTest(line=line), self.assertRaises(lines.Stop):
+                self.check(line)
+
+    def test_other_abilities_on_item_lines_still_stop(self):
+        from duoforge_live import lines
+        for line in ("|-item|p1a: Delphox|Black Glasses|[from] ability: Harvest|[of] p2a: Kingambit",
+                     "|-item|p1a: Delphox|Black Glasses|[from] ability: Pickup",
+                     "|-enditem|p1a: Delphox|Black Glasses|[from] ability: Harvest|[of] p1a: Delphox"):
+            with self.subTest(line=line), self.assertRaises(lines.Stop):
+                self.check(line)
+
+
+class ItemTheftFoldTest(unittest.TestCase):
+    """Step G85: the item events of Pickpocket and Magician fold as the engine's state (tracker._fold_event): the
+    giver's loss by Pickpocket is taken, not used up (item_consumed stays 0); the holder receives the item; Magician's
+    target loses its item with no event of its own (ITEM_START's other)."""
+
+    @staticmethod
+    def tracker(own, foe):
+        from duoforge_live import tracker
+        t = tracker.Tracker.__new__(tracker.Tracker)
+        t.side, t._spectator, t._action, t._herb_end = 0, False, None, None
+        t._unburden = t._mental_herb = t._eject_button = None
+        t._choice_items = set()
+        t._own_members, t._foe_members = own, foe
+        t._positions = [[tracker._Position(), tracker._Position()] for _ in (0, 1)]
+        for side in t._positions:
+            for k, p in enumerate(side):
+                p.occupant = k
+        return t
+
+    @staticmethod
+    def member(item=0):
+        from types import SimpleNamespace
+        return SimpleNamespace(sheet={"item": item}, item_now=0, item_used=0, item_consumed=0, revealed=0, ability=0,
+                               toxic_stage=0)
+
+    @staticmethod
+    def event(kind, pos, other, cause, ident, ident2):
+        from duoforge_live.data import trace_to_c
+        return trace_to_c.ev_tuple(trace_to_c.EV[kind], pos, other, trace_to_c.CAUSE[cause], ident, ident2)
+
+    # codes: Pickpocket 3 + 1 (ident), Magician 4 + 1, Black Glasses 5 + 1 (ident2)
+    PICKPOCKET, MAGICIAN, BLACK_GLASSES = 4, 5, 6
+
+    def test_pickpocket_takes_the_attackers_item_and_gives_it_to_the_holder(self):
+        from duoforge_live import tracker
+        own, foe = [self.member(self.BLACK_GLASSES)], [self.member()]  # own attacker p1a, foe holder p2a
+        t = self.tracker(own, foe)
+        t._fold_event(self.event("ITEM_END", 0, 0, "ABILITY", self.PICKPOCKET, self.BLACK_GLASSES))
+        self.assertEqual(own[0].item_now, tracker.ITEM_NOW_NONE)
+        self.assertEqual((own[0].item_consumed, own[0].item_used), (0, 0))  # taken, not used up; not public (own)
+        self.assertTrue(own[0].revealed & tracker.REVEALED_ITEM_CONSUMED)
+        t._fold_event(self.event("ITEM_START", 2, 0, "ABILITY", self.PICKPOCKET, self.BLACK_GLASSES))
+        self.assertEqual(tracker.Tracker._item_of(foe[0]), self.BLACK_GLASSES)
+        self.assertEqual((foe[0].item_consumed, foe[0].item_used), (0, 0))  # the holder's item is its own: not public
+        self.assertFalse(foe[0].revealed & tracker.REVEALED_ITEM_CONSUMED)
+        self.assertEqual(tracker.Tracker._item_of(own[0]), 0)
+
+    def test_a_foe_attackers_loss_is_public_and_still_not_used_up(self):
+        from duoforge_live import tracker
+        own, foe = [self.member()], [self.member(self.BLACK_GLASSES)]  # foe attacker p2a, own holder p1a
+        t = self.tracker(own, foe)
+        t._fold_event(self.event("ITEM_END", 2, 2, "ABILITY", self.PICKPOCKET, self.BLACK_GLASSES))
+        self.assertEqual((foe[0].item_used, foe[0].item_consumed), (1, 0))
+        self.assertEqual(foe[0].item_now, tracker.ITEM_NOW_NONE)
+        t._fold_event(self.event("ITEM_START", 0, 2, "ABILITY", self.PICKPOCKET, self.BLACK_GLASSES))
+        self.assertEqual(tracker.Tracker._item_of(own[0]), self.BLACK_GLASSES)
+        self.assertEqual(own[0].item_used, 0)
+
+    def test_magician_takes_the_targets_item_with_no_loss_event(self):
+        from duoforge_live import tracker
+        own, foe = [self.member()], [self.member(self.BLACK_GLASSES)]  # own Magician p1a, foe target p2a
+        t = self.tracker(own, foe)
+        t._fold_event(self.event("ITEM_START", 0, 2, "ABILITY", self.MAGICIAN, self.BLACK_GLASSES))
+        self.assertEqual(tracker.Tracker._item_of(own[0]), self.BLACK_GLASSES)
+        self.assertEqual(foe[0].item_now, tracker.ITEM_NOW_NONE)  # the target's item is gone, from this line alone
+        self.assertEqual((foe[0].item_used, foe[0].item_consumed), (1, 0))  # foe target: public, taken not consumed
+        self.assertTrue(foe[0].revealed & tracker.REVEALED_ITEM_CONSUMED)
+        self.assertEqual(tracker.Tracker._item_of(foe[0]), 0)
+
