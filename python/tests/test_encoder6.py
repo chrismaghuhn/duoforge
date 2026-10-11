@@ -206,12 +206,11 @@ class Encoder6Test(unittest.TestCase):
         # The parser itself: bit 22 (HEALING_WISH, G82) counts, bit 21 (TRANSFORMED) does not.
         self.assertNotIn(("RESERVE_VOLATILES", 21), _defined_reserve_bits())
         self.assertIn(("RESERVE_VOLATILES", 22), _defined_reserve_bits())
-        self.assertIn(("RESERVE_VOLATILES", "22", "HEALING_WISH"), _x_list("DUOFORGE_VIEWEXT_RESERVE_OWN"))
-        self.assertIn(("VOLATILES2", "4", "TRAP_ELAPSED"), _x_list("DUOFORGE_VIEWEXT_RESERVE_OWN"))
-        self.assertIn(("VOLATILES2", "5", "TRAP_ELAPSED"), _x_list("DUOFORGE_VIEWEXT_RESERVE_OWN"))
-        self.assertIn(("VOLATILES2", "6", "TRAP_ELAPSED"), _x_list("DUOFORGE_VIEWEXT_RESERVE_OWN"))
-        self.assertIn(("VOLATILES2", "12", "ATTRACT_SOURCE"), _x_list("DUOFORGE_VIEWEXT_RESERVE_OWN"))
-        self.assertIn(("VOLATILES2", "13", "ATTRACT_SOURCE"), _x_list("DUOFORGE_VIEWEXT_RESERVE_OWN"))
+        # the exact list: an entry added or lost in the C header fails here (G82, G90, G87)
+        self.assertEqual(sorted(_x_list("DUOFORGE_VIEWEXT_RESERVE_OWN")),
+                         sorted([("RESERVE_VOLATILES", "22", "HEALING_WISH"), ("VOLATILES2", "4", "TRAP_ELAPSED"),
+                                 ("VOLATILES2", "5", "TRAP_ELAPSED"), ("VOLATILES2", "6", "TRAP_ELAPSED"),
+                                 ("VOLATILES2", "12", "ATTRACT_SOURCE"), ("VOLATILES2", "13", "ATTRACT_SOURCE")]))
 
     def test_every_lane_feature_gates_a_reserve_column(self):
         # A lane's feature (bits 43 to 58: HEALING_WISH 43, G82) is shown only through its reserve bit: each one gates

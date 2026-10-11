@@ -154,7 +154,7 @@ STATUS = {"brn": 1, "frz": 2, "par": 3, "slp": 4, "psn": 5, "tox": 6}  # DUOFORG
 SWITCH_MOVE, SWITCH_EMERGENCY_EXIT, SWITCH_FAINTED = (_ENC[f"DFI_SWITCH_{n}"] for n in ("MOVE", "EMERGENCY_EXIT", "FAINTED"))
 # The moves whose cost to their own user is directDamage, a plain -damage line of the user with no [from] (src/combat/turn.c,
 # dfi_deal with DFI_DMG_DIRECT: Substitute, Clangorous Soul, Belly Drum): it sets no hurtThisTurn (Tracker._hurt).
-DIRECT_COST_MOVES = ("SUBSTITUTE", "CLANGOROUSSOUL", "BELLYDRUM")
+DIRECT_COST_MOVES = ("SUBSTITUTE", "CLANGOROUSSOUL", "BELLYDRUM", "CURSE")  # Ghost Curse: dfi_deal DFI_DMG_DIRECT (G84b)
 # The self-switch moves and the reason they flag: a damaging one when it hit a target, its user stands and a reserve can
 # come in (src/combat/turn.c, selfSwitch of a damaging move); Baton Pass and Revival Blessing when they do not fail.
 _HIT_PIVOTS = {"UTURN": _ENC["DFI_SWITCH_UTURN"], "VOLTSWITCH": _ENC["DFI_SWITCH_VOLT_SWITCH"],
@@ -226,6 +226,7 @@ class _Position:
         # clearing of its byte (dfi_tail_clear_occupant, no line); its visible and silent ends are folded in _fold_event and
         # _silent_attract_end.
         self.attract = 0
+        self.attract_from = 0  # the source's flat position while infatuated (POSITION_EXT2 ATTRACT_SOURCE, step G87)
         # The partial trap (step G90, decision 0060), the engine's four tail fields without the drawn turns, which no line shows:
         self.trap = 0  # the volatile is up (the engine's trap_turns is not zero)
         self.trap_source = 0  # the trapper's flat position + 1; 0 once it left the field (the trap then ends at the residual)
@@ -1019,8 +1020,6 @@ class Tracker:
                 # slot's wish; a second one finds it set and changes nothing
                 p.wish = 1
             self._as_pending = pos if ident == self._ally_move else None
-            p.acted = 1
-            p.result_turn = self._turn
             if e[3] == trace_to_c.CAUSE["NONE"]:
                 # an action of the user (runMove's activeMoveActions++, dfi_run_move); a move line with cause ABILITY is
                 # Magic Bounce's reflection (useMove), no action of the holder
@@ -1143,6 +1142,8 @@ class Tracker:
                 p.attract_from = e[2]  # the view's source position (step G87, decision 0080)
             else:
                 p.attract, p.attract_from = 0, 0
+        elif kind == EV["VOLATILE_END"] and detail == trace_to_c.VOLATILE_PARTIAL_TRAP:
+            self._trap_end(pos, ident)  # the duration's end (step G90): the line names the move in `ident`
         elif kind in (EV["VOLATILE_START"], EV["VOLATILE_END"]) and detail == trace_to_c.VOLATILE_HEAL_BLOCK:
             # Heal Block (step G8, Psychic Noise): -start|X|move: Heal Block and -end|X|move: Heal Block (the duration,
             # Mental Herb); the occupant's leaving ends it with no line; its count is never shown
