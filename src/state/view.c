@@ -1093,6 +1093,10 @@ duoforge_status duoforge_move_result(const duoforge_context *ctx, uint32_t user,
              * spreadMoveHit: damage true), a hit of the move */
             hit = hit || (other && e->cause == DUOFORGE_CAUSE_MOVE && e->id2 == DFI_MOVE_SUBSTITUTE);
             break;
+        case DUOFORGE_EVENT_VOLATILE_END:
+            /* -end|X|Substitute: the hit broke it (dfi_substitute_takes shows only the end then), HIT_SUBSTITUTE as well */
+            hit = hit || (other && e->cause == DUOFORGE_CAUSE_NONE && e->detail == DUOFORGE_VOLATILE_SUBSTITUTE);
+            break;
         case DUOFORGE_EVENT_FAIL:
             if (e->cause == DUOFORGE_CAUSE_NONE) {
                 user_fail = user_fail || pos == user; /* a target's -fail is an effect's, not the hit's (Synchronize) */
