@@ -291,7 +291,7 @@ static void test_swap_position_fields(df_test *t)
         ((uint8_t *)tc)[k] = (uint8_t)(0x90u + k);
     }
     ta->position_flags = (uint8_t)(ta->position_flags | (uint8_t)DFI_POSFLAG_HEALING_WISH);
-    tc->position_flags = (uint8_t)(tc->position_flags & (uint8_t)~DFI_POSFLAG_HEALING_WISH);
+    tc->position_flags = (uint8_t)((uint32_t)tc->position_flags & ~(uint32_t)DFI_POSFLAG_HEALING_WISH & 0xFFu); /* wide-operands-reviewed: one byte */
     dfi_tail_pos before_a = *ta;
     dfi_tail_pos before_c = *tc;
     /* the sealed commands and the request bits are slot-bound: they are set and must not move */
