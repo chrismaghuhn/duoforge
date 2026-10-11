@@ -104,9 +104,7 @@ EXT_FIELDS = {
     "ABILITY_CHANGE": (("position", "ability_now"),),
     "ITEM_CHANGE": (("member", "item_now"),),
     "PARTIAL_TRAP": (("bit", C["DUOFORGE_POSITION_EXT_PARTIAL_TRAP"]),),
-    # POSITION_EXT2 (volatiles2), a record field of its own, and the presence bit the count hangs on: the library claims the
-    # count (45) and not the presence (18) yet, and the comparison must see both
-    "TRAP_ELAPSED": (("bit2", sum(EXT2_TRAP_ELAPSED)), ("bit", C["DUOFORGE_POSITION_EXT_PARTIAL_TRAP"])),
+    "TRAP_ELAPSED": (("bit2", sum(EXT2_TRAP_ELAPSED)),),  # POSITION_EXT2 (volatiles2), a record field of its own
 }
 # The presence bits of a position's volatiles: _Position attribute -> DUOFORGE_POSITION_EXT_* bit.
 _PRESENCE_BITS = (("throat_chop", EXT_THROAT_CHOP), ("must_recharge", C["DUOFORGE_POSITION_EXT_MUST_RECHARGE"]),
@@ -120,7 +118,10 @@ _TERRAIN = {1: C["DUOFORGE_TERRAIN_GRASSY"], trace_to_c.FIELD_PSYCHIC_TERRAIN: C
             trace_to_c.FIELD_MISTY_TERRAIN: C["DUOFORGE_TERRAIN_MISTY"]}
 # The folded _Position fields that Baton Pass gives the entering member (src/combat/turn.c dfi_pass_give: Throat Chop's
 # and Perish Song's tail counters among them); Encore, the recharge, a changed type or ability stay with the leaver.
-_PASSED = ("throat_chop", "perish", "taunt", "heal_block")
+_PASSED = ("throat_chop", "perish", "taunt", "heal_block",
+           # the partial trap has no noCopy in the pin (pokemon.ts copyVolatileFrom): dfi_pass_give copies its turns, source, move,
+           # band and elapsed count (G90), so the receiver is trapped by the same source with the same count
+           "trap", "trap_source", "trap_move", "trap_band", "trap_elapsed")
 # DUOFORGE_SIDE_* of a SIDE_START or SIDE_END event (tailwind 1, reflect 2, light screen 3, Aurora Veil 4) -> the index
 # of the side's turns in Tracker._conditions
 _SIDE_CONDITION = {1: 2, 2: 0, 3: 1, 4: 3}
@@ -756,10 +757,6 @@ class Tracker:
         elif kind in (EV["SWITCH"], EV["DRAG"]):
             # A drag (Step G46) is a switch of the dragged-in member: the occupant is replaced and reset, the HP of the line.
             p = self._at(pos)
-            if p.trap and kind == EV["SWITCH"] and e[3] == trace_to_c.CAUSE["MOVE"] and ident2 == self._baton_pass:
-                # dfi_pass_give copies the trap's turns, source, move and band but not its elapsed count (step G90), which
-                # leaves the receiver in a state the engine's own invariant refuses: no honest fold of it exists
-                raise lines.Stop("trap-baton-pass")
             self._trap_source_left(pos)
             if p.occupant != ROSTER_NONE:
                 self._member(pos // 2)[p.occupant].toxic_stage = 0  # the leaving member's toxic counter ends with it

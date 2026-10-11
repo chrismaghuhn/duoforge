@@ -491,20 +491,28 @@ class TrackerPartialTrapTest(unittest.TestCase):
         self.leave(3, "FAINT")
         self.assertEqual(self.trap(2), (1, 1, self.M["BIND"] + 1, 1, 0))
 
-    def test_a_baton_pass_of_a_trapped_leaver_is_a_stop(self):
-        # dfi_pass_give copies the turns, the source, the move and the band but not the elapsed count, which leaves the
-        # engine's receiver with turns + elapsed outside {5, 6}: no honest fold of it exists
-        from duoforge_live import lines
+    def test_a_baton_pass_gives_the_trap_with_its_source_and_count(self):
+        # dfi_pass_give: the partial trap has no noCopy in the pin, so the receiver is trapped by the same source, with the
+        # same move, band and elapsed count (the turns stay hidden); a plain switch of the trapped one clears it
         from duoforge_live.data import trace_to_c
         self.start(2, 0, "Bind")
         self.residual(2, "Bind")
-        with self.assertRaises(lines.Stop) as caught:
-            self.leave(2, cause=trace_to_c.CAUSE["MOVE"], id2=self.M["BATONPASS"])
-        self.assertEqual(caught.exception.reason, "trap-baton-pass")
-        # an untrapped leaver passes as before
+        self.residual(2, "Bind")
+        self.leave(2, cause=trace_to_c.CAUSE["MOVE"], id2=self.M["BATONPASS"])
+        self.assertEqual(self.trap(2), (1, 1, self.M["BIND"] + 1, 1, 2))
+        self.residual(2, "Bind")  # it goes on counting
+        self.assertEqual(self.trap(2)[4], 3)
+        self.leave(2)
+        self.assertEqual(self.trap(2), (0, 0, 0, 0, 0))
+        # an untrapped leaver passes nothing, and the source's own leaving still ends the copy's source
         self.setUp()
         self.leave(2, cause=trace_to_c.CAUSE["MOVE"], id2=self.M["BATONPASS"])
         self.assertEqual(self.trap(2), (0, 0, 0, 0, 0))
+        self.setUp()
+        self.start(2, 0, "Bind")
+        self.leave(2, cause=trace_to_c.CAUSE["MOVE"], id2=self.M["BATONPASS"])
+        self.leave(0)
+        self.assertEqual(self.trap(2), (1, 0, self.M["BIND"] + 1, 1, 0))
 
     def test_a_new_occupant_can_be_trapped_at_once(self):
         self.start(2, 0, "Bind")
