@@ -848,5 +848,7 @@ const dfi_support_manifest dfi_support = {
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_VOLATILES2) |
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_RESERVE_GUARDS) |
                          ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_SIDE_CONDITIONS) |
-                         ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_FIELD_FLAGS)
+                         ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_FIELD_FLAGS) |
+                         /* step G94 (decision 0061): Last Resort's used-since-entering bits, volatiles2 bits 0 to 3 (the holder only) */
+                         ((uint64_t)1u << DUOFORGE_VIEWEXT_FEATURE_LAST_RESORT_USED)
 };

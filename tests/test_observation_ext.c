@@ -145,6 +145,8 @@ static void test_constants(df_test *t)
         seen |= (uint64_t)1u << features[i];
     }
     DF_CHECK(t, seen == (((uint64_t)1u << 43u) - 1u));
+    /* step G94: feature 44 (LAST_RESORT_USED) is outside the tiers and is claimed by the manifest (the holder's bits) */
+    DF_CHECK(t, ((dfi_support.view_ext_features >> DUOFORGE_VIEWEXT_FEATURE_LAST_RESORT_USED) & 1u) == 1u);
 
     static const uint32_t vol[] = {
         DUOFORGE_POSITION_EXT_SUBSTITUTE,    DUOFORGE_POSITION_EXT_TAUNT,         DUOFORGE_POSITION_EXT_IMPRISON,
