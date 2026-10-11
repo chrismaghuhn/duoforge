@@ -18,8 +18,10 @@ documented order:
 
 The pair mask is the provisional full one, as live. The set contains every
 option of the real request (duoforge.python.replay checks it) and may
-contain more: moves an effect outside the view disables (Fake Out after the
-first turn, Taunt, Imprison, Assault Vest), switches of a trapped position.
+contain more: moves an effect disables that the superset does not apply
+(Fake Out after the first turn, Assault Vest; Taunt and Imprison, which the
+view extension shows but the superset does not read), switches of a trapped
+position.
 """
 from duoforge_live import options
 from duoforge_live.tracker import MOVE_SLOT_NONE

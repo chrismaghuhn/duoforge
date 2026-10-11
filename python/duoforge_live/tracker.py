@@ -611,7 +611,10 @@ class Tracker:
             p.acted = 1
             self._last_move = (pos, ident, e[2])
             if e[3] != trace_to_c.CAUSE["ABILITY"]:
-                p.glaive_rush = 0  # the next action ends Glaive Rush's drawback (glaiverush onBeforeMove, step G19)
+                # the next action ends Glaive Rush's drawback (glaiverush onBeforeMove, step G19). A move line with cause
+                # ABILITY is Magic Bounce's reflection, no action of its own; Dancer, whose copy would be one, is not
+                # modelled by the engine
+                p.glaive_rush = 0
             if e[3] == trace_to_c.CAUSE["NONE"]:
                 p.last_move = ident  # runMove's moveUsed, a locked turn too; not a move another effect makes it use
             m = self._occupant(pos)
