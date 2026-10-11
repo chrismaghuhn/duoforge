@@ -1,0 +1,59 @@
+Torkoal (M) @ Heat Rock
+Ability: Drought
+Level: 50
+EVs: 32 HP / 32 SpA / 2 Spe
+Modest Nature
+- Solar Beam
+- Weather Ball
+- Sunny Day
+- Protect
+
+Pelipper (M) @ Damp Rock
+Ability: Drizzle
+Level: 50
+EVs: 32 HP / 32 SpA / 2 Spe
+Modest Nature
+- Hurricane
+- Weather Ball
+- Protect
+- Blizzard
+
+Tyranitar (M) @ Smooth Rock
+Ability: Sand Stream
+Level: 50
+EVs: 32 HP / 32 Atk / 2 Spe
+Adamant Nature
+- Thunder
+- Protect
+- Dragon Tail
+- Roar
+
+Abomasnow (M) @ Icy Rock
+Ability: Snow Warning
+Level: 50
+EVs: 32 HP / 32 SpA / 2 Spe
+Modest Nature
+- Aurora Veil
+- Blizzard
+- Weather Ball
+- Protect
+
+Gholdengo @ Life Orb
+Ability: Good as Gold
+Level: 50
+EVs: 17 HP / 2 Def / 17 SpA / 16 SpD / 14 Spe
+Modest Nature
+- Make It Rain
+- Shadow Ball
+- Nasty Plot
+- Protect
+
+Staraptor (F) @ Sharp Beak
+Ability: Intimidate
+Level: 50
+EVs: 32 HP / 2 SpD / 32 Spe
+Jolly Nature
+- Brave Bird
+- U-turn
+- Close Combat
+- Protect

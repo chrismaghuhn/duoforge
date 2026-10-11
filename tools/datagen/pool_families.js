@@ -346,6 +346,8 @@ const ENGINE_STAT_MODIFIERS = {
     // Step G65: Water Bubble's holder, x2 for its Water moves (data/abilities.ts:5390-5399). Its onSourceModifyAtk and
     // onSourceModifySpA (x0.5 for a Fire move against the holder) are probed by g65Probes, not here.
     waterbubble: {onModifyAtk: {Water: 2}, onModifySpA: {Water: 2}},
+    // Step G75: Pure Power, x2 Attack for every move in the ModifyAtk chain (data/abilities.ts:3608-3617, as Huge Power).
+    purepower: {onModifyAtk: ALL_TYPES_X(2)},
 };
 
 // What an entry ability sets for a source Pokemon.
@@ -573,6 +575,12 @@ function checkItems(dex, rows, unmodeled) {
             // type, a resist berry exactly one resisted type. An UNMODELED row is refused whatever it does (Muscle Band
             // boosts every Physical move, Occa-like berries of other families are not in the pool).
             if (!unmodeled.has(row.id)) {
+                // Step G75: Scope Lens adds one to the holder's critical ratio (data/items.ts:5554-5565); the ratio is
+                // clamped by the caller, so the probe checks the raw term only.
+                if (row.id === 'scopelens') {
+                    expect('scopelens critical ratio 1 to 2', call(item.onModifyCritRatio, battle(item), [1]), 2);
+                    expect('scopelens critical ratio 0 to 1', call(item.onModifyCritRatio, battle(item), [0]), 1);
+                }
                 if (row.id in CATEGORY_BOOSTERS) {
                     expect(row.id + ' category booster probe', categoryBoosted(item),
                         {categories: [CATEGORY_BOOSTERS[row.id]], modifiers: ['[4505,4096]'], fired: TYPES.length});
@@ -906,6 +914,57 @@ function checkG47(dex) {
     call(lum.onUpdate, battle(lum), [{status: 'par', volatiles: {}, eatItem: () => lumLog.push('eat')}]);
     call(lum.onUpdate, battle(lum), [{status: '', volatiles: {confusion: {}}, eatItem: () => lumLog.push('eat')}]);
     expect('Lum Berry is eaten for a status or a confusion, not otherwise', lumLog, ['eat', 'eat']);
+    return 1;
+}
+
+// Step G81, Frisk: its onStart against stubs. For each foe in foes() order that holds an item, one -item line with the foe, the
+// item's name and the Frisk user; a foe with no item prints nothing.
+function checkG81(dex) {
+    const frisk = dex.abilities.get('frisk');
+    const lines = [];
+    const foe = (name, item) => ({name, item, getItem: () => ({name: item}), toString: () => name});
+    const user = {toString: () => 'Frisker', foes: () => [foe('A', 'Air Balloon'), foe('B', '')]};
+    const b = battle(frisk, {add: (...a) => lines.push(a)});
+    call(frisk.onStart, b, [user]);
+    const shown = lines.map((l) => [l[0], l[1].name, l[2], l[3], l[4]]);
+    expect('Frisk announces the item of each foe that holds one, in foes() order', shown,
+        [['-item', 'A', 'Air Balloon', '[from] ability: Frisk', '[of] Frisker']]);
+    const none = [];
+    const quiet = battle(frisk, {add: (...a) => none.push(a)});
+    call(frisk.onStart, quiet, [{toString: () => 'Frisker', foes: () => [foe('A', ''), foe('B', '')]}]);
+    expect('Frisk against foes with no item prints nothing', none, []);
+    return 1;
+}
+
+// Step G67, Magic Guard and Air Balloon: the pinned handlers against stubs. Magic Guard blocks a damage whose effect is not a Move
+// (returns false), says -activate for an Ability's damage with the damage source as the position, and lets a Move's damage through.
+// The Air Balloon announces itself at switch-in (not with gravity), and its pop of a damaging hit and of a substitute hit prints
+// -enditem; a Move is the only effect that pops it (AfterSubDamage with effectType Move).
+function checkG67(dex) {
+    const guard = dex.abilities.get('magicguard');
+    const runGuard = (effect, source) => {
+        const lines = [];
+        const b = battle(guard, {add: (...a) => lines.push(a)});
+        const result = call(guard.onDamage, b, [10, {}, source, effect]);
+        return {result, lines};
+    };
+    expect('Magic Guard passes a Move damage', runGuard({effectType: 'Move'}, {}), {result: undefined, lines: []});
+    expect('Magic Guard blocks a Condition damage silently', runGuard({effectType: 'Condition'}, {}), {result: false, lines: []});
+    expect('Magic Guard blocks an Item damage silently', runGuard({effectType: 'Item'}, {}), {result: false, lines: []});
+    expect('Magic Guard blocks an Ability damage with -activate of its source', runGuard({effectType: 'Ability', name: 'Rough Skin'}, 'src'),
+        {result: false, lines: [['-activate', 'src', 'ability: Rough Skin']]});
+    const balloon = dex.items.get('airballoon');
+    const shown = (ignoring, gravity) => {
+        const lines = [];
+        const pokemon = {ignoringItem: () => ignoring};
+        const b = battle(balloon, {add: (...a) => lines.push(a),
+            field: {getPseudoWeather: (id) => (gravity && id === 'gravity' ? {} : null)}});
+        call(balloon.onStart, b, [pokemon]);
+        return lines;
+    };
+    expect('Air Balloon is announced at switch-in', shown(false, false), [['-item', {}, 'Air Balloon']]);
+    expect('Air Balloon is not announced when its holder ignores items', shown(true, false), []);
+    expect('Air Balloon is not announced under gravity', shown(false, true), []);
     return 1;
 }
 
@@ -1470,6 +1529,31 @@ const G65_PROBES = {
     },
 };
 
+// Step G73 (Moody, the order and the flags of its onResidual; the draw and boost logic is checked by G73_ABILITY_FACTS in
+// gen_closure.py and the recorded battles): the order of Speed Boost's key, no breakable flag, and the two callbacks it has.
+const G73_PROBES = {
+    moody(ability) {
+        expect('moody onResidualOrder', ability.onResidualOrder, 28);
+        expect('moody onResidualSubOrder', ability.onResidualSubOrder, 2);
+        expect('moody flags', ability.flags, {});
+        expect('moody onResidual', typeof ability.onResidual, 'function');
+    },
+};
+
+// Step G75: Pure Power's Attack (the priority and the chain, as Huge Power's probe above) and Battle Armor's critical-hit
+// cancel (data/abilities.ts:355-361, the Shell Armor text). Scope Lens's ratio is probed in checkItems.
+const G75_PROBES = {
+    purepower(ability) {
+        expect('purepower onModifyAtkPriority', ability.onModifyAtkPriority, 5);
+        expect('purepower Attack of a Physical move', call(ability.onModifyAtk, battle(ability), [100]), {chain: 2});
+        expect('purepower breakable', ability.flags.breakable, undefined);
+    },
+    battlearmor(ability) {
+        expect('battlearmor onCriticalHit', ability.onCriticalHit, false);
+        expect('battlearmor breakable', ability.flags.breakable, 1);
+    },
+};
+
 // Step G77 (crit package): the callbacks of Magma Armor and the flags of Anger Point and Sniper, against the pinned texts
 // (data/abilities.ts:2501-2515, 131-142, 4358-4369). Anger Point's onHit and Sniper's onModifyDamage need a holder and a target
 // with a crit record, which the probe helpers do not build; their texts are checked whole by check_g34_facts (G77_ABILITY_FACTS).
@@ -1539,6 +1623,12 @@ function checkAbilities(dex, rows, moveIds, unmodeled, unmodeledMoves) {
                 }
                 if (G65_PROBES[row.id] !== undefined) {
                     G65_PROBES[row.id](ability);
+                }
+                if (G73_PROBES[row.id] !== undefined) {
+                    G73_PROBES[row.id](ability);
+                }
+                if (G75_PROBES[row.id] !== undefined) {
+                    G75_PROBES[row.id](ability);
                 }
                 if (G77_PROBES[row.id] !== undefined) {
                     G77_PROBES[row.id](ability);
@@ -1706,14 +1796,14 @@ function checkFormes(dex, validator, rows, moves, abilities) {
 // The UNMODELED markers of gen_closure.py --pool, re-derived from the pinned data in this file's own words: the
 // special column of a move, the handler column of an item and of an ability, and the lists of unmodelled features.
 // implemented in the turn code by id (G4: Focus Sash, Rock Head; G12: Floettite, Flower Veil, Fairy Aura)
-const ENGINE_ROWS = {items: ['focussash', 'floettite', 'psychicseed', 'electricseed', 'mistyseed', 'expertbelt', 'ejectbutton', 'widelens', 'muscleband', 'wiseglasses', 'brightpowder', 'redcard', 'lumberry', 'mentalherb', 'damprock', 'heatrock', 'smoothrock', 'icyrock', 'terrainextender'],
-    abilities: ['rockhead', 'flowerveil', 'fairyaura', 'roughskin', 'poisontouch', 'thermalexchange', 'stickyhold', 'trace',
+const ENGINE_ROWS = {items: ['airballoon', 'focussash', 'floettite', 'psychicseed', 'electricseed', 'mistyseed', 'expertbelt', 'ejectbutton', 'widelens', 'muscleband', 'wiseglasses', 'brightpowder', 'redcard', 'lumberry', 'mentalherb', 'damprock', 'heatrock', 'smoothrock', 'icyrock', 'terrainextender', 'scopelens', 'leek'],
+    abilities: ['magicguard', 'rockhead', 'flowerveil', 'fairyaura', 'roughskin', 'poisontouch', 'thermalexchange', 'stickyhold', 'trace',
         'levitate', 'sandrush', 'swiftswim', 'slushrush', 'chlorophyll', 'innerfocus', 'liquidvoice',
         'flamebody', 'clearbody', 'hospitality', 'overcoat', 'soundproof', 'unnerve', 'speedboost',
         'compoundeyes', 'ironfist', 'sharpness', 'solidrock', 'technician', 'multiscale', 'galewings', 'raindish', 'friendguard', 'cursedbody', 'mirrorarmor', 'auraguard', 'hypercutter', 'scrappy', 'infiltrator', 'queenlymajesty', 'damp', 'sturdy', 'snowcloak', 'sandveil', 'static', 'justified', 'limber', 'solarpower', 'regenerator', 'toxicdebris', 'shadowtag', 'suctioncups', 'guarddog',
         'steadfast', 'weakarmor', 'telepathy', 'voltabsorb', 'punkrock', 'moxie', 'synchronize', 'oblivious', 'keeneye', 'bigpecks', 'magicbounce', 'pressure', 'stancechange',
-        'sandforce', 'shellarmor', 'filter', 'stalwart', 'megalauncher', 'hugepower', 'thickfat', 'firemane', 'spicyspray', 'megasol', 'sheerforce', 'illusion', 'symbiosis',
-        'unaware', 'marvelscale', 'waterbubble', 'reckless', 'superluck']};
+        'sandforce', 'shellarmor', 'filter', 'stalwart', 'megalauncher', 'hugepower', 'thickfat', 'firemane', 'spicyspray', 'megasol', 'cloudnine', 'sheerforce', 'illusion', 'symbiosis', 'frisk',
+        'unaware', 'marvelscale', 'waterbubble', 'reckless', 'superluck', 'moody', 'purepower', 'battlearmor', 'cutecharm', 'magmaarmor', 'angerpoint', 'sniper']};
 const ENGINE_TARGETS = new Set(['normal', 'any', 'adjacentAlly', 'adjacentFoe', 'self', 'allAdjacentFoes', 'allySide', 'all',
     'randomNormal', 'allAdjacent', 'allies', 'foeSide']); // foeSide: step G37 (the four hazards)
 // The fields of a move that the tables model (gen_closure.py DATA_KEYS and IGNORED_KEYS), nothing else.
@@ -2097,6 +2187,8 @@ function main() {
     checkG32(dex);
     checkG33(dex);
     checkG41(dex);
+    checkG67(dex);
+    checkG81(dex);
     const g61 = checkG61(dex, headers, moveIds, moveColumns(source, defineOf(header, 'DFI_POOL_MOVE_COUNT')), unmodeledMoves);
     checkG47(dex);
     checkG44(dex);

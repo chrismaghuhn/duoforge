@@ -13,9 +13,9 @@
  * event, HP and draw with the reference. Here are the facts that they do not show by themselves:
  *   - the marks and the handler columns: the four rows are marked engine rows (family NONE, handler NONE); Mold Breaker, which
  *     would ignore the breakable flag of Magma Armor, is not marked and stays UNMODELLED;
- *   - the ModifyDamage chain holds at most DFI_MODIFY_DAMAGE_MAX modifiers, and dfi_mods_push refuses the ninth (E_UNSUPPORTED)
- *     without writing past the list. The maximum for one hit is six (turn.c, the comment of combat/damage_chain.h): Sniper is
- *     a crit-only modifier and a screen is not applied to a crit, so the two never meet;
+ *   - the ModifyDamage chain holds at most DFI_MODIFY_DAMAGE_MAX (six) modifiers, and dfi_mods_push refuses a seventh
+ *     (E_UNSUPPORTED) without writing past the list. The maximum for one hit is six (combat/damage_chain.h): Sniper is a
+ *     crit-only modifier and a screen is not applied to a crit, so the two never meet;
  *   - the chain of a critical hit with Life Orb, a resist berry, Solid Rock and Sniper does not commute: the engine refuses that
  *     hit (E_UNSUPPORTED), and the reference orders those four by speed (a tie); the converter drops nothing of it;
  *   - Skill Swap that would hand a frozen Pokemon Magma Armor, or hand Magma Armor away from a frozen Pokemon, is refused, and the
@@ -61,7 +61,7 @@ static void check_facts(df_test *t)
 /* ---- the ModifyDamage list: the bound, and the refusal of a write past it */
 static void check_chain_bound(df_test *t)
 {
-    DF_CHECK_EQ_U64(t, DFI_MODIFY_DAMAGE_MAX, 8u);
+    DF_CHECK_EQ_U64(t, DFI_MODIFY_DAMAGE_MAX, 6u); /* the bound is six (damage_chain.h): no hit has a seventh modifier */
     uint32_t list[DFI_MODIFY_DAMAGE_MAX] = {0u};
     uint32_t mods = 0u;
     for (uint32_t i = 0u; i < DFI_MODIFY_DAMAGE_MAX; ++i) {
@@ -174,7 +174,9 @@ static void set_ability_now(duoforge_battle *b, uint32_t flat, uint32_t ability_
 
 static void set_status(duoforge_battle *b, uint32_t flat, uint8_t status)
 {
-    b->sides[flat / 2u].members[b->sides[flat / 2u].positions[flat % 2u].occupant].status = status;
+    dfi_member *m = &b->sides[flat / 2u].members[b->sides[flat / 2u].positions[flat % 2u].occupant];
+    m->status = status;
+    m->status_counter = status == DFI_STATUS_FRZ ? 3u : 0u; /* the freeze counter (dfi_try_status) */
 }
 
 /* dfi_skill_swap_decision reads the state only: a refusal changes nothing before it, so the battle is compared before and after */
@@ -275,6 +277,7 @@ static void check_trace_refusal(df_test *t, const duoforge_context *ctx)
     for (uint32_t m = 0u; m < DUOFORGE_MAX_ROSTER; ++m) {
         if (b->sides[0].members[m].species_id == DFI_FORME_GARDEVOIR) {
             b->sides[0].members[m].status = DFI_STATUS_FRZ;
+            b->sides[0].members[m].status_counter = 3u; /* a freeze starts with its counter at 3 (dfi_try_status) */
         }
     }
     duoforge_battle *before = NULL;

@@ -20,13 +20,15 @@
  * or Punk Rock: one of the four), one berry and Glaive Rush's volatile; its partner has Friend Guard; and one screen or
  * Aurora Veil counts only when the hit is not critical (turn.c, the `!crit` test of the screen modifier). A critical hit
  * therefore has at most 2 + 1 + 1 + 1 + 1 = 6 modifiers (Sniper, no screen), and a hit that is not critical has at most
- * 1 + 1 + 1 + 1 + 1 + 1 = 6 (the screen, no Sniper). The list is sized DFI_MODIFY_DAMAGE_MAX (8, a margin) and every
- * write is checked by dfi_mods_push, so an overflow would be E_UNSUPPORTED, never an out-of-bounds write.
+ * 1 + 1 + 1 + 1 + 1 + 1 = 6 (the screen, no Sniper). So six is the bound, and it is what the list is sized to: no hit
+ * has a seventh (the sets of the other modifiers are the ones above; the Sniper step of G77 adds the one that is
+ * crit-only). Every write is still checked by dfi_mods_push, so an overflow would be E_UNSUPPORTED, never an
+ * out-of-bounds write.
  */
 #include <stdbool.h>
 #include <stdint.h>
 
-#define DFI_MODIFY_DAMAGE_MAX 8u
+#define DFI_MODIFY_DAMAGE_MAX 6u
 
 /* Appends one modifier to the chain list (turn.c). False when the list is full: the caller returns E_UNSUPPORTED, so an
  * overflow is never an out-of-bounds write. */

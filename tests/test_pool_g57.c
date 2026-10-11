@@ -36,6 +36,8 @@ static const char *const handled[] = {
     "poisonpowder", "toxic", "stealthrock", "spikes", "toxicspikes", "stickyweb", "taunt", "yawn", "charm", "faketears",
     "sing",
     "thunderwave", /* primary status, bounced on Hypnosis's path; lane A G68/H10 */
+    /* Step C1 (decision 0015 entry 5co): Glare is a primary status, Feather Dance, Baby-Doll Eyes and Metal Sound are target boosts. */
+    "glare", "featherdance", "babydolleyes", "metalsound",
 };
 
 /* The marked reflectable moves whose bounced run is not modelled (marked by lane A's G54 batch): dfi_bounce_kind_ok refuses
@@ -98,7 +100,7 @@ static void test_marked_reflectable_moves_are_the_handled_list(df_test *t)
                                      in_list(name, refused, sizeof refused / sizeof refused[0])));
         marked += 1u;
     }
-    DF_CHECK_EQ_U64(t, marked, 24u); /* 23 on main, and Thunder Wave of step G68 */
+    DF_CHECK_EQ_U64(t, marked, 28u); /* 23 on main, Thunder Wave of step G68, and Glare, Feather Dance, Baby-Doll Eyes, Metal Sound (step C1) */
 }
 
 /* Every marked reflectable move is a single-target or a foeSide move: a spread one would need the TryHit of every target
@@ -122,14 +124,16 @@ static void test_magic_bounce_row(df_test *t)
     DF_CHECK(t, dfi_support.abilities[DFI_ABILITY_MAGICBOUNCE] != 0u);
 }
 
-/* Absolite and Sablenite are marked; Clefablite is not (its stone is refused while its Mega ability, Magic Bounce, passes the
- * forme gate). Absol has two Mega pairs, and each stone takes it to its own Mega (dfi_mega_of: the stone is 1 + its id, the
- * base's own link first). */
+/* Absolite and Sablenite are marked; Clefablite was unmarked by G57 (its Mega ability, Magic Bounce, passed the forme gate but its
+ * base's abilities were not), and is marked since step G75 (Clefable's hidden Unaware, marked by G65). Starminite stays unmarked
+ * (Starmie's abilities are not marked), so an unmarked stone is still refused. Absol has two Mega pairs, and each stone takes it to
+ * its own Mega (dfi_mega_of: the stone is 1 + its id, the base's own link first). */
 static void test_mega_stones(df_test *t)
 {
     DF_CHECK(t, dfi_support.items[DFI_ITEM_ABSOLITE] != 0u);
     DF_CHECK(t, dfi_support.items[DFI_ITEM_SABLENITE] != 0u);
-    DF_CHECK(t, dfi_support.items[DFI_ITEM_CLEFABLITE] == 0u);
+    DF_CHECK(t, dfi_support.items[DFI_ITEM_CLEFABLITE] != 0u); /* marked since step G75 */
+    DF_CHECK(t, dfi_support.items[DFI_ITEM_STARMINITE] == 0u); /* still unmarked: an unmarked stone is refused */
     DF_CHECK_EQ_U64(t, dfi_mega_of(DFI_FORME_ABSOL, DFI_ITEM_ABSOLITE + 1u), DFI_FORME_ABSOLMEGA);
     DF_CHECK_EQ_U64(t, dfi_mega_of(DFI_FORME_ABSOL, DFI_ITEM_ABSOLITEZ + 1u), DFI_FORME_ABSOLMEGAZ);
     DF_CHECK_EQ_U64(t, dfi_mega_of(DFI_FORME_SABLEYE, DFI_ITEM_SABLENITE + 1u), DFI_FORME_SABLEYEMEGA);

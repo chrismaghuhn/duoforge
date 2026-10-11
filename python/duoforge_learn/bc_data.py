@@ -17,8 +17,12 @@ encodes every row once with features.encode_batch under the BC mask, and gives:
 The mask (bc_mask) is the base-value features the loaded library supports at run
 time (observe_ext's `supported`, as SelfPlay reads it). It must equal the support
 the tracker parsed when it folded the rows (lines.LIBRARY_SUPPORTED); a mismatch
-is an explicit error. The shards carry no extension records, so no record bit
-can be in the mask.
+is an explicit error. The shards carry each row's extension record (format version 3), so the mask holds every
+feature the tracker folds; a dataset built without the records (versions 1 and 2) or folded under other folds is
+refused: its rows can hold fold states the encoder would not see.
+
+Rows of pick hypotheses (H > 1, format version 4; M11 pick hypotheses spec, section 5) are left out unless
+pick_hypotheses_weight W is given; then each weighs W/H. A version 3 dataset has none.
 """
 import hashlib
 import json
@@ -60,7 +64,7 @@ def bc_mask(context):
                          f"run-time mask {library:#x}: rebuild the library or the checkout")
     # only the bits the tracker folds: a base-value bit it does not fold never reaches a row (its lines stop), so a
     # network would keep random input rows for it and record it as learned
-    return features.BASE_VALUE_FEATURES & library & lines.TRACKER_FOLDS
+    return library & lines.TRACKER_FOLDS
 
 
 def rating_weight(rating):
@@ -166,6 +170,19 @@ def dataset_source(out):
     raise ValueError(f"{out}: a format version {manifest.get('format_version')} manifest that names no source")
 
 
+def _check_folds(out):
+    """ValueError unless the dataset carries the extension records (format version 3) and was folded under the
+    tracker folds of this checkout."""
+    manifest = json.loads((Path(out) / "manifest.json").read_text(encoding="utf-8"))
+    version = manifest.get("format_version")
+    if not isinstance(version, int) or version < 3:
+        raise ValueError(f"{out} was built without the extension record (format version {version}): since #334 its "
+                         "rows can hold fold states the encoder cannot see; rebuild it")
+    if manifest.get("tracker_folds") != lines.TRACKER_FOLDS:
+        raise ValueError(f"{out}: rows folded under other folds ({manifest.get('tracker_folds')!r}, this checkout "
+                         f"{lines.TRACKER_FOLDS:#x}): rebuild it")
+
+
 def _source_weight(out, source_weights):
     """The weight of a dataset's source: as named, 1 for sheets otherwise; any other source must be named."""
     source = dataset_source(out)
@@ -186,23 +203,48 @@ def _format_weight(fmt, format_weights):
     return 1.0
 
 
-def _shard_rows(out):
-    """The number of rows of every finished part's shards (their manifests)."""
-    return sum(s["rows"] for part in dataset.parts(out)
-               for s in json.loads((Path(part) / "manifest.json").read_text(encoding="utf-8"))["shards"])
+def _version(out):
+    return json.loads((Path(out) / "manifest.json").read_text(encoding="utf-8")).get("format_version")
 
 
-def load(dirs, context, mask, format_weights=None, weights="rating", source_weights=None):
+def _shard_rows(out, hypotheses=True):
+    """The number of rows of every finished part's shards (their manifests), without the rows of pick hypotheses
+    unless `hypotheses`."""
+    version = _version(out)
+    n = 0
+    for part in dataset.parts(out):
+        for s in json.loads((Path(part) / "manifest.json").read_text(encoding="utf-8"))["shards"]:
+            n += s["rows"]
+            if not hypotheses and version >= 4:
+                n -= s["hypothesis_rows"]
+    return n
+
+
+def _hypotheses(shard, version):
+    """H of each row of a shard: its picks_hypotheses (format version 4), 1 for a version 3 shard."""
+    if version >= 4:
+        return shard["picks_hypotheses"].astype(np.int64)
+    return np.ones(len(shard["game"]), np.int64)
+
+
+def load(dirs, context, mask, format_weights=None, weights="rating", source_weights=None,
+         pick_hypotheses_weight=None):
     """The Rows of every shard of the datasets `dirs`, encoded under `mask`, into arrays allocated once (no copy of
     the whole set). weights: "rating" (rating_weight) or "uniform"; format_weights: {format prefix: factor};
-    source_weights: {dataset source: factor} (dataset_source; a source other than sheet must be named)."""
+    source_weights: {dataset source: factor} (dataset_source; a source other than sheet must be named);
+    pick_hypotheses_weight: W above 0 takes the rows of pick hypotheses at W/H each (None leaves them out)."""
     if weights not in ("rating", "uniform"):
         raise ValueError(f"weights must be 'rating' or 'uniform', not {weights!r}")
+    if pick_hypotheses_weight is not None and not float(pick_hypotheses_weight) > 0:
+        raise ValueError(f"pick_hypotheses_weight must be above 0 (None leaves the rows out), "
+                         f"not {pick_hypotheses_weight!r}")
+    with_hypotheses = pick_hypotheses_weight is not None
     for out in dirs:
         _check_dataset(out, context)
+        _check_folds(out)
     source_weight = {out: _source_weight(out, source_weights) for out in dirs}
     by_players = {out: dataset_source(out) != "sheet" for out in dirs}  # drawn sheets change with each draw
-    n = sum(_shard_rows(out) for out in dirs)
+    n = sum(_shard_rows(out, with_hypotheses) for out in dirs)
     if n == 0:
         raise ValueError(f"no rows in {list(map(str, dirs))}")
     rows = Rows(obs=np.empty((n, features.OBS_SIZE), np.float32),
@@ -215,15 +257,21 @@ def load(dirs, context, mask, format_weights=None, weights="rating", source_weig
     at = 0
     for out in dirs:
         games_of = {}
+        version = _version(out)
         for shard in dataset.read(out):
             part = shard["part"]
             if part not in games_of:
                 games_of[part] = dataset.read_games(Path(out) / part)
             g = games_of[part]
+            h = _hypotheses(shard, version)
+            if not with_hypotheses:
+                keep = h == 1
+                shard = {name: (a[keep] if name != "part" else a) for name, a in shard.items()}
+                h = h[keep]
             k = len(shard["game"])
             sl = slice(at, at + k)
             game, side = shard["game"].astype(np.int64), shard["side"].astype(np.int64)
-            obs, slots, pair_mask = features.encode_batch(shard["observation"], shard["domain"], ext=None,
+            obs, slots, pair_mask = features.encode_batch(shard["observation"], shard["domain"], ext=shard["ext"],
                                                           ext_supported=mask)
             is_team = shard["domain"]["kind"] == TEAM
             pairs = (_bits(shard["label_slots"][:, 0], OPTIONS)[:, :, None]
@@ -242,6 +290,8 @@ def load(dirs, context, mask, format_weights=None, weights="rating", source_weig
             rows.z[sl] = np.where(~has_z, 0.0, np.where(winner == side, 1.0, -1.0))
             rows.weight[sl] = [(rating_weight(int(r)) if weights == "rating" else 1.0)
                                * _format_weight(f, format_weights) * source_weight[out] for r, f in zip(rating, fmt)]
+            if with_hypotheses:
+                rows.weight[sl] *= np.where(h > 1, float(pick_hypotheses_weight) / h, 1.0).astype(np.float32)
             if by_players[out]:
                 rows.val[sl] = [player_split.of_game(tuple(int(h) for h in g["players"][i])) == "test" for i in game]
             else:

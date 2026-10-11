@@ -144,6 +144,16 @@ static const struct {
     {"g37_hazards_a", 7u, {0u, 0u, 0u, 0u, 1u, 3u, 2u, 1u, 0u, 228u}},
     {"g37_hazards_a", 8u, {0u, 0u, 0u, 0u, 1u, 3u, 2u, 1u, 0u, 228u}},
     {"g37_hazards_a", 9u, {0u, 0u, 0u, 0u, 1u, 3u, 2u, 1u, 0u, 228u}},
+    {"g37_hazards_a_mirror", 0u, {0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u}},
+    {"g37_hazards_a_mirror", 1u, {1u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u}},
+    {"g37_hazards_a_mirror", 2u, {1u, 1u, 0u, 0u, 0u, 0u, 0u, 0u, 4u, 0u}},
+    {"g37_hazards_a_mirror", 3u, {1u, 2u, 1u, 0u, 0u, 0u, 0u, 0u, 36u, 0u}},
+    {"g37_hazards_a_mirror", 4u, {1u, 3u, 2u, 0u, 0u, 0u, 0u, 0u, 36u, 0u}},
+    {"g37_hazards_a_mirror", 5u, {1u, 3u, 2u, 1u, 0u, 0u, 0u, 0u, 228u, 0u}},
+    {"g37_hazards_a_mirror", 6u, {1u, 3u, 2u, 1u, 0u, 0u, 0u, 0u, 228u, 0u}},
+    {"g37_hazards_a_mirror", 7u, {1u, 3u, 2u, 1u, 0u, 0u, 0u, 0u, 228u, 0u}},
+    {"g37_hazards_a_mirror", 8u, {1u, 3u, 2u, 1u, 0u, 0u, 0u, 0u, 228u, 0u}},
+    {"g37_hazards_a_mirror", 9u, {1u, 3u, 2u, 1u, 0u, 0u, 0u, 0u, 228u, 0u}},
     {"g37_order_a", 0u, {0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u}},
     {"g37_order_a", 1u, {0u, 0u, 0u, 0u, 0u, 1u, 0u, 0u, 0u, 1u}},
     {"g37_order_a", 2u, {0u, 0u, 0u, 0u, 1u, 1u, 0u, 0u, 0u, 1u}},
@@ -194,7 +204,7 @@ static const struct {
     {"g37_toxic_spikes", 9u, {0u, 0u, 0u, 0u, 0u, 0u, 2u, 0u, 0u, 2u}},
 };
 
-static const char *const names[] = {"g37_exit", "g37_flower_veil", "g37_hazard_faint", "g37_hazards_a", "g37_order_a", "g37_order_b", "g37_sticky_web", "g37_toxic_debris", "g37_toxic_spikes"};
+static const char *const names[] = {"g37_exit", "g37_flower_veil", "g37_hazard_faint", "g37_hazards_a", "g37_hazards_a_mirror", "g37_order_a", "g37_order_b", "g37_sticky_web", "g37_toxic_debris", "g37_toxic_spikes"};
 
 int main(void)
 {

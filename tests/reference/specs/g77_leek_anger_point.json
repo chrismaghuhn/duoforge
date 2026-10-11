@@ -1,6 +1,6 @@
 {
   "name": "g77_leek_anger_point",
-  "purpose": "G77 (Leek, Anger Point): Farfetch'd (M, Leek) uses Night Slash (crit ratio 2, +2 from Leek: 4, always a critical hit) on Tauros (M, Anger Point) three times; the first crit raises Attack to +6 with -setboost, the next crits at +6 print nothing. Tauros's Stone Edge goes to Milotic (F), which protects on turn 1.",
+  "purpose": "G77 (Leek, Anger Point): Farfetch'd (M, Leek) uses Night Slash (crit ratio 2, +2 from Leek: 4, always a critical hit) on Tauros (M, Anger Point) on turns 1 and 2; the first crit raises Attack to +6 with -setboost, the next crit at +6 prints nothing. Tauros's Stone Edge goes to Milotic (F), which protects on turn 1.",
   "data": "pool",
   "format": "gen9championsvgc2026regmc",
   "seed": "sodium,0000000000000000000000000000000000000000000000000000000000077001",
@@ -11,12 +11,14 @@
   "plan": {
     "p1": [
       "move 1 1, move 4",
+      "move 1 1, move 1",
       "move 1 1, move 1"
     ],
     "p2": [
       "move 1 2, move 4",
+      "move 1 2, move 4",
       "move 1 2, move 4"
     ],
-    "max_steps": 2
+    "max_steps": 3
   }
 }

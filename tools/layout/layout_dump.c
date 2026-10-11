@@ -74,6 +74,11 @@ int main(void)
     STRUCT(duoforge_request, false, FIELD(duoforge_request, epoch), FIELD(duoforge_request, candidate_count),
            FIELD(duoforge_request, boundary_kind), FIELD(duoforge_request, player),
            FIELD(duoforge_request, requested), FIELD(duoforge_request, slot_mask));
+    STRUCT(duoforge_event, false, FIELD(duoforge_event, kind), FIELD(duoforge_event, position), FIELD(duoforge_event, other),
+           FIELD(duoforge_event, cause), FIELD(duoforge_event, id), FIELD(duoforge_event, id2), FIELD(duoforge_event, hp),
+           FIELD(duoforge_event, hp_max), FIELD(duoforge_event, hp_kind), FIELD(duoforge_event, hp_flag),
+           FIELD(duoforge_event, status), FIELD(duoforge_event, detail), FIELD(duoforge_event, amount),
+           FIELD(duoforge_event, flags), FIELD(duoforge_event, reserved));
     STRUCT(duoforge_step_result, false, FIELD(duoforge_step_result, epoch), FIELD(duoforge_step_result, kind),
            FIELD(duoforge_step_result, boundary_kind), FIELD(duoforge_step_result, request_mask),
            FIELD(duoforge_step_result, reserved));
@@ -154,6 +159,8 @@ int main(void)
            FIELD(duoforge_hypothesis, charge_target), FIELD(duoforge_hypothesis, queued), FIELD(duoforge_hypothesis, queue_order),
            FIELD(duoforge_hypothesis, reserved2));
     printf("  },\n  \"constants\": {\n");
+    CONSTANT(DUOFORGE_DATA_KIND_CLOSURE_DEV, false);
+    CONSTANT(DUOFORGE_DATA_KIND_POOL_DEV, false);
     CONSTANT(DUOFORGE_VIEW_REVISION, false);
     CONSTANT(DUOFORGE_HYPOTHESIS_REVISION, false);
     CONSTANT(DUOFORGE_VIEW_STATE_MAX, false);
@@ -166,6 +173,7 @@ int main(void)
     CONSTANT(DUOFORGE_PUBLIC_CAUSE_SUBSTITUTE, false);
     CONSTANT(DUOFORGE_PUBLIC_CAUSE_TEMP_FORME, false);
     CONSTANT(DUOFORGE_PUBLIC_CAUSE_RAISED_THIS_TURN, false);
+    CONSTANT(DUOFORGE_PUBLIC_CAUSE_TURN_HISTORY, false);
     CONSTANT(DUOFORGE_MAX_CANDIDATES, false);
     CONSTANT(DUOFORGE_MAX_SLOT_OPTIONS, false);
     CONSTANT(DUOFORGE_DIGEST_SIZE, false);
@@ -230,8 +238,10 @@ int main(void)
     CONSTANT(DUOFORGE_LOCATION_NOT_BROUGHT, false);
     CONSTANT(DUOFORGE_EVENT_DRAG, false);
     CONSTANT(DUOFORGE_EVENT_CLEAR_ALL_BOOSTS, false);
+    CONSTANT(DUOFORGE_EVENT_ITEM_SHOWN, false);
     CONSTANT(DUOFORGE_VOLATILE_SUBSTITUTE, false);
     CONSTANT(DUOFORGE_VOLATILE_DRAGONCHEER, false);
+    CONSTANT(DUOFORGE_VOLATILE_ATTRACT, false);
     CONSTANT(DUOFORGE_FAIL_SUBSTITUTE_EXISTS, false);
     CONSTANT(DUOFORGE_FAIL_SUBSTITUTE_WEAK, false);
     CONSTANT(DUOFORGE_OBSERVATION_EXT_SIZE, false);
@@ -258,6 +268,7 @@ int main(void)
     CONSTANT(DUOFORGE_POSITION_EXT_ILLUSION_UP, false);
     CONSTANT(DUOFORGE_POSITION_EXT_ROOST, false);
     CONSTANT(DUOFORGE_POSITION_EXT_TRANSFORMED, false);
+    CONSTANT(DUOFORGE_POSITION_EXT_ATTRACT, false);
     CONSTANT(DUOFORGE_SIDE_GUARD_WIDE_GUARD, false);
     CONSTANT(DUOFORGE_SIDE_GUARD_QUICK_GUARD, false);
     CONSTANT(DUOFORGE_ITEM_NOW_NONE, false);

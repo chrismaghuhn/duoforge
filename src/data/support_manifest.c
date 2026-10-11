@@ -141,7 +141,7 @@
  * Ancient Power, Blizzard, Dual Wingbeat, Feint, Life Dew, Acrobatics, Terrain Pulse and Expert Belt stay unmarked: each needs
  * logic that no column or handler has (docs/decisions/0015-content-expansion-pool.md, step G21).
  * Step G20 also marks Spiky Shield (Protect with a contact punishment, floor(max HP / 8) at the attacker; the variant is the tail's
- * protect_kind, tail rev 3). Baneful Bunker and King's Shield stay unmarked: their only learners (Toxapex, Aegislash) have no
+ * protect_kind, tail rev 3). King's Shield (G66) and Baneful Bunker (G94, marked later) were not marked here: their learners had no
  * supported ability, so no accepted battle could use them. Recorded as g20_spiky_shield_* under the POOL kind.
  * Step G31 marks Taunt (the Status moves barred for 3 turns, 4 when the target has been out a turn and has no move queued:
  * the request, the cant line with the new cause TAUNT, the end in the residual at order 15) and Yawn (the sleep at the end of
@@ -370,6 +370,10 @@ const dfi_support_manifest dfi_support = {
             [DFI_MOVE_BATONPASS] = 1u, /* step G74 (decision 0042): the user switches out at a PIVOT and copies its volatiles (Shed Tail stays refused) */
             [DFI_MOVE_DRAGONCHEER] = 1u,   /* step G72b: the volatile's crit stage (position flags) and its start line */
             [DFI_MOVE_DRAGONDARTS] = 1u,   /* step G78 (decision 0043): the split of the two hits, smartTarget; the partner by the target's side */
+            /* Step G88 (decision 0046): Lash Out (x2 base power when the user's stat fell this turn, LOWERED) and Assurance (x2 when
+             * the target was hurt this turn, HURT). Both need a PIVOT refusal (DUOFORGE_PUBLIC_CAUSE_TURN_HISTORY). */
+            [DFI_MOVE_LASHOUT] = 1u,
+            [DFI_MOVE_ASSURANCE] = 1u,
     [DFI_MOVE_REVIVALBLESSING] = 1u,
             /* Step G42: Roost (the heal, then the Flying type is off for the turn) and Stomping Tantrum (base power x2 after a
              * FALSE last move result; the move_result of tail rev 4, decision 0015 section 7). */
@@ -499,11 +503,70 @@ const dfi_support_manifest dfi_support = {
              * moves (checkMoveBypassesProtect with blockStatus false), and a contact move that it stops costs the attacker -1 Attack.
              * The learners of this move in the pool are Aegislash (its only ability is Stance Change, marked in the same step). */
             [DFI_MOVE_KINGSSHIELD] = 1u,
+            /* Step G94 (decision 0015 5cv, decision 0061): Baneful Bunker, the Protect variant with protect_kind 3: a contact move that it
+             * stops poisons its user (the Poison and Steel types are immune). Its only learner in the pool is Toxapex, with Limber or
+             * Regenerator (both marked). Its Merciless is not marked, so a Merciless Toxapex is refused. */
+            [DFI_MOVE_BANEFULBUNKER] = 1u,
             /* Step G76 (decision 0015 5cg): Destiny Bond (the user's volatile, the consecutive-use failure, the KO of a foe that
              * faints from a Move; Future Sight, the futuremove the pin excludes, is unmarked, so it cannot reach a holder). */
             [DFI_MOVE_DESTINYBOND] = 1u,
             /* Step G76 (decision 0015 5cg): Final Gambit (damage equal to the user's HP; the user faints in the damage call). */
             [DFI_MOVE_FINALGAMBIT] = 1u,
+            /* Step C1 (cheap moves, decision 0015 entry 5co): status and self-boost moves and the plain damage moves, through
+             * the existing paths only (the flags, the boosts, the status, the heal fraction of the pin, the target classes any and
+             * allAdjacent, accuracy true). Not marked: Jet Punch (its only learner, Palafin, has no marked ability), Shift Gear
+             * (its boosts are applied in the key order of the pin, spe then atk, data/moves.ts:16330-16347; the engine applies a
+             * boost in stat order except Shell Smash's special, so this needs a new order rule) and Shelter (its only learner,
+             * Goodra-Hisui, is refused by the converter: the switch identifier reads Goodra, not Goodra-Hisui). */
+            [DFI_MOVE_SLACKOFF] = 1u,
+            [DFI_MOVE_COTTONGUARD] = 1u,
+            [DFI_MOVE_GLARE] = 1u,
+            [DFI_MOVE_ACIDARMOR] = 1u,
+            [DFI_MOVE_FEATHERDANCE] = 1u,
+            [DFI_MOVE_BABYDOLLEYES] = 1u,
+            [DFI_MOVE_METALSOUND] = 1u,
+            [DFI_MOVE_ROCKPOLISH] = 1u,
+            [DFI_MOVE_AERIALACE] = 1u,
+            [DFI_MOVE_SEEDBOMB] = 1u,
+            [DFI_MOVE_MEGAHORN] = 1u,
+            [DFI_MOVE_MEGAKICK] = 1u,
+            [DFI_MOVE_DRILLPECK] = 1u,
+            [DFI_MOVE_SMARTSTRIKE] = 1u,
+            [DFI_MOVE_AQUATAIL] = 1u,
+            [DFI_MOVE_SHADOWPUNCH] = 1u,
+            [DFI_MOVE_BRUTALSWING] = 1u,
+            [DFI_MOVE_PETALBLIZZARD] = 1u,
+            /* Step C2 (cheap moves, decision 0015 entry 5cp): the damaging moves with one secondary (a status, a flinch, a stat
+             * drop of the target, a self boost, a confusion), a self drop (Headlong Rush), drains (Parabolic
+             * Charge on allAdjacent), crit ratio 2 (Blaze Kick, Cross Poison), and the flags of the pin (punch, slicing, sound,
+             * bypasssub, defrost, bullet, heal, distance, pulse). Not marked (decision 0015 entry 5cp): Fire Fang and Thunder Fang
+             * (two secondaries; the only handler of two is Ice Fang's freeze and flinch, DFI_SPECIAL_ICE_FANG; a status-parameterised
+             * handler is a new special id), Horn Leech (no learner with a marked ability), Mountain Gale (its learner Avalugg-Hisui
+             * is refused by the converter, swap_partners KeyError), Bitter Malice and Night Daze (their only learners carry Illusion,
+             * whose duplicate-name gap is open). Every field of each entry is read by check_c2_facts (gen_closure.py); the Champions
+             * base power overrides of Apple Acid, Mountain Gale and Night Daze are in the pool table already. */
+            [DFI_MOVE_ZENHEADBUTT] = 1u,
+            [DFI_MOVE_PYROBALL] = 1u,
+            [DFI_MOVE_HEADLONGRUSH] = 1u,
+            [DFI_MOVE_EXTRASENSORY] = 1u,
+            [DFI_MOVE_CHILLINGWATER] = 1u,
+            [DFI_MOVE_WATERPULSE] = 1u,
+            [DFI_MOVE_LUNGE] = 1u,
+            [DFI_MOVE_BLAZEKICK] = 1u,
+            [DFI_MOVE_ACIDSPRAY] = 1u,
+            [DFI_MOVE_PARABOLICCHARGE] = 1u,
+            [DFI_MOVE_TORCHSONG] = 1u,
+            [DFI_MOVE_LAVAPLUME] = 1u,
+            [DFI_MOVE_LOWSWEEP] = 1u,
+            [DFI_MOVE_SKITTERSMACK] = 1u,
+            [DFI_MOVE_ZINGZAP] = 1u,
+            [DFI_MOVE_IRONTAIL] = 1u,
+            [DFI_MOVE_DYNAMICPUNCH] = 1u,
+            [DFI_MOVE_MUDSHOT] = 1u,
+            [DFI_MOVE_CROSSPOISON] = 1u,
+            [DFI_MOVE_POUNCE] = 1u,
+            [DFI_MOVE_MUDSLAP] = 1u,
+            [DFI_MOVE_APPLEACID] = 1u,
         },
     .abilities =
         {
@@ -592,6 +655,7 @@ const dfi_support_manifest dfi_support = {
             [DFI_ABILITY_REGENERATOR] = 1u,
             [DFI_ABILITY_TOXICDEBRIS] = 1u, /* step G37: a Physical hit puts Toxic Spikes on the attacker's side */
             [DFI_ABILITY_SHADOWTAG] = 1u, /* step G41 */
+            [DFI_ABILITY_MAGICGUARD] = 1u, /* step G67: indirect damage is classed in the turn code */
             [DFI_ABILITY_PRESSURE] = 1u, /* step G53: a foe's move costs one more PP per standing Pressure target */
             [DFI_ABILITY_SUCTIONCUPS] = 1u, /* step G46: a DragOut blocker (the forced switch is not made) */
             [DFI_ABILITY_GUARDDOG] = 1u,    /* step G46: a DragOut blocker */
@@ -613,6 +677,7 @@ const dfi_support_manifest dfi_support = {
             [DFI_ABILITY_SHEERFORCE] = 1u,  /* step G61: the stripped secondaries and self effects, x5325/4096 (data/abilities.ts:4202-4221) */
             [DFI_ABILITY_DRAGONIZE] = 1u,   /* step G61: an -ate member, Dragon (data/abilities.ts:1036-1055), Feraligatr-Mega's */
             [DFI_ABILITY_SYMBIOSIS] = 1u,   /* step G69: the item passed to an ally that has used up its own (data/abilities.ts:4837-4856) */
+            [DFI_ABILITY_FRISK] = 1u,       /* step G81: the foes' items announced at the switch-in (data/abilities.ts:1545-1557), ITEM_SHOWN */
             [DFI_ABILITY_KEENEYE] = 1u,   /* step G51: the base ability of Pidgeot (with Pidgeotite), an engine row */
             [DFI_ABILITY_BIGPECKS] = 1u,  /* step G51: the other base ability of Pidgeot, an engine row */
             [DFI_ABILITY_MAGICBOUNCE] = 1u, /* step G57: reflects the reflectable moves (decision 0015 5bg) */
@@ -629,6 +694,14 @@ const dfi_support_manifest dfi_support = {
             [DFI_ABILITY_MAGMAARMOR] = 1u, /* step G77: Camerupt (no freeze; the Trace and Skill Swap copies of a frozen holder refused) */
             [DFI_ABILITY_ANGERPOINT] = 1u, /* step G77: Tauros and Camerupt (Attack +6 after a critical hit on the holder) */
             [DFI_ABILITY_SNIPER] = 1u, /* step G77: Beedrill and Ariados (x1.5 on a critical hit by the holder) */
+            /* step G75, the cheap set: */
+            [DFI_ABILITY_PUREPOWER] = 1u, /* Medicham and Medicham-Mega: Attack x2 for a physical move (data/abilities.ts:3608-3617) */
+            [DFI_ABILITY_BATTLEARMOR] = 1u, /* Perrserker and Falinks: no critical hit against the holder (data/abilities.ts:355-361) */
+            [DFI_ABILITY_MOODY] = 1u, /* step G73: Glalie and Scovillain (the residual rise and fall, one boost of +2 and -1) */
+            [DFI_ABILITY_CUTECHARM] = 1u, /* step G71 (decision 0034): Milotic (F, Cute Charm) infatuates a contact attacker of the other gender */
+            /* step G79 (decision 0015 5br): Cloud Nine suppresses the weather while a holder stands (data/abilities.ts:543-562,
+             * sim/field.ts:106-116); Altaria and Drampa; an engine row */
+            [DFI_ABILITY_CLOUDNINE] = 1u,
         },
     .items =
         {
@@ -673,6 +746,7 @@ const dfi_support_manifest dfi_support = {
             [DFI_ITEM_GARCHOMPITEZ] = 1u,
             [DFI_ITEM_DELPHOXITE] = 1u,
             [DFI_ITEM_GENGARITE] = 1u, /* step G41: the Mega Stone of Gengar, whose Mega has Shadow Tag */
+            [DFI_ITEM_AIRBALLOON] = 1u, /* step G67: grounding, the switch-in line, the pop on a damaging hit */
             [DFI_ITEM_REDCARD] = 1u,   /* step G46: forced switch of the attacker, without the Sheer Force gate (Champions) */
             [DFI_ITEM_GARDEVOIRITE] = 1u,
             [DFI_ITEM_ABOMASITE] = 1u,
@@ -728,7 +802,7 @@ const dfi_support_manifest dfi_support = {
             [DFI_ITEM_CAMERUPTITE] = 1u, /* step G61: the Mega Stone of Camerupt (Camerupt-Mega: Sheer Force) */
             [DFI_ITEM_FERALIGITE] = 1u,  /* step G61: the Mega Stone of Feraligatr (Feraligatr-Mega: Dragonize) */
             /* Step G57 (Mega batch 4): Absolite (Absol-Mega, with the base's Justified) and Sablenite (Sableye-Mega, with the base's
-             * Prankster). Absolite Z is marked by G43; Clefablite stays unmarked (Clefable's abilities are unmarked). */
+             * Prankster). Absolite Z is marked by G43; Clefablite was unmarked until step G75 (Unaware, its hidden ability, is marked by G65). */
             [DFI_ITEM_ABSOLITE] = 1u,
             [DFI_ITEM_SABLENITE] = 1u,
             /* Step G63 (simple Mega abilities, mark only for the stones): six Mega Stones whose Mega ability is marked (Sand Force,
@@ -777,6 +851,9 @@ const dfi_support_manifest dfi_support = {
             [DFI_ITEM_TANGABERRY] = 1u,
             [DFI_ITEM_WACANBERRY] = 1u,
             [DFI_ITEM_YACHEBERRY] = 1u,
+            [DFI_ITEM_SCOPELENS] = 1u,  /* step G75: +1 to the holder's critical ratio (data/items.ts:5554-5565) */
+            [DFI_ITEM_MEDICHAMITE] = 1u, /* step G75: Medicham-Mega (Pure Power), the stone of 5p (data/items.ts:3865-3876) */
+            [DFI_ITEM_CLEFABLITE] = 1u,  /* step G75: Clefable-Mega (Magic Bounce), Clefable with its hidden Unaware (data/items.ts:1088-1099) */
         },    /* The POOL player-view extension (decision 0018): a bit is set by the step that implements the feature and
      * records its battles. Step G8: Throat Chop and Heal Block (the position bits of duoforge_observation_ext, public,
      * verified against g8_throat_chop, g8_heal_block, g8_heal_block_pair and _tie_a/_b step by step in

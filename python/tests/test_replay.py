@@ -113,10 +113,13 @@ VIEW_REFUSED = {"FORME_CHANGE": "DUOFORGE_PUBLIC_CAUSE_TEMP_FORME"}
 
 def allowed_stop(reason):
     """A stop a committed battle may show: information only its player had, a feature of decision 0018 that the
-    library supports and this tracker does not fold yet (its rows would lack the view extension), or a feature the
-    library's view refuses with a public cause (VIEW_REFUSED)."""
+    library supports and this tracker does not fold yet (its rows would lack the view extension), a feature the
+    library's view refuses with a public cause (VIEW_REFUSED), or a view bit this tracker does not fold yet
+    (lines.UNFOLDED)."""
     if reason in HIDDEN:
         return True
+    if reason.startswith("unfolded:"):
+        return reason[len("unfolded:"):] in set(lines.UNFOLDED.values())  # a view bit the tracker does not fold yet
     name = reason[len("feature:"):] if reason.startswith("feature:") else None
     if name in VIEW_REFUSED and VIEW_REFUSED[name] in C:
         return True
@@ -269,6 +272,20 @@ class SpectatorTest(unittest.TestCase):
         print(f"\nview extension points per fold (viewer, side): {dict(sorted(seen.items()))}")
         missing = {name: sorted(want - set(counts)) for name, counts in seen.items() if want - set(counts)}
         self.assertFalse(missing, missing)
+
+    def test_terrain_folds_are_seen(self):
+        # the base-value terrains the tracker folds (lines.BASE_FOLDS) show in the observation's terrain, which
+        # test_view_equals_duoforge compares: each must be up at compared points of both viewers
+        terrains = {name: C[f"DUOFORGE_{name}"] for name in ("TERRAIN_ELECTRIC", "TERRAIN_MISTY")
+                    if lines.SUPPORTED >> lines.FEATURES[name] & 1}
+        seen = {name: set() for name in terrains}
+        for battle in self.ref.battles:
+            for side in (0, 1):
+                for _, obs, *_ in self.runs[(battle.name, side)]:
+                    for name, value in terrains.items():
+                        if int(obs["terrain"]) == value:
+                            seen[name].add(side)
+        self.assertFalse({name: v for name, v in seen.items() if v != {0, 1}}, seen)
 
     def test_stats_equal_duoforge(self):
         # test_view_equals_duoforge compares stats and stat points with the true team as the prior; this names a
