@@ -639,7 +639,7 @@ typedef struct mr_known_slot {
 /* No known deviation is left: the issue #389 (a Baton Pass without a reserve left its result unclassified) is fixed, and the
  * entries that listed it (the four of the first merge and the thirty of the move-result corpus) are removed. The sentinel keeps the array non-empty; the count excludes it. */
 static const mr_known_slot MR_KNOWN[] = {
-    {NULL, 0u, 0u, false},
+    {NULL, 0u, 0u, false, 0u, 0u},
 };
 #define MR_KNOWN_COUNT (sizeof MR_KNOWN / sizeof MR_KNOWN[0] - 1u)
 
