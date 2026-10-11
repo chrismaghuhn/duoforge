@@ -197,6 +197,7 @@ class PressureExtraTest(unittest.TestCase):
         cls.D = data.load(kind="pool")
         t = tracker.Tracker.__new__(tracker.Tracker)
         t._action = None  # no move action open (Tracker._segment)
+        t._herb_end = None
         t.data = cls.D
         t._pressure = cls.D.tables["ABILITY"]["PRESSURE"] + 1
         members = [SimpleNamespace(ability=t._pressure), SimpleNamespace(ability=t._pressure)]
@@ -234,6 +235,7 @@ class BatonPassTest(unittest.TestCase):
         D = data.load(kind="pool")
         t = tracker.Tracker.__new__(tracker.Tracker)
         t._action = None  # no move action open (Tracker._segment)
+        t._herb_end = None
         t.data, t.side, t._spectator = D, 0, False
         t._baton_pass = D.tables["MOVE"]["BATONPASS"]
         t._next_activation, t._foe_leads, t._party = 1, [tracker.ROSTER_NONE] * 2, None  # the public record's entry folds
@@ -268,6 +270,7 @@ class ClearAllBoostsTest(unittest.TestCase):
         from duoforge_live import tracker
         t = tracker.Tracker.__new__(tracker.Tracker)
         t._action = None  # no move action open (Tracker._segment)
+        t._herb_end = None
         t.side, t._spectator = 0, False
         raised = [8, 4, 6, 6, 6, 9, 6]
 
@@ -291,6 +294,7 @@ class BreakProtectTest(unittest.TestCase):
         for move in ("FEINT", "PHANTOMFORCE"):
             t = tracker.Tracker.__new__(tracker.Tracker)
             t._action = None  # no move action open (Tracker._segment)
+            t._herb_end = None
             t.data, t.side, t._spectator = D, 0, False
             t._feint = D.tables["MOVE"]["FEINT"]
             t._phantom_force = D.tables["MOVE"]["PHANTOMFORCE"]
@@ -321,6 +325,7 @@ class LockedMoveSlotTest(unittest.TestCase):
         from types import SimpleNamespace
         t = self.tracker.Tracker.__new__(self.tracker.Tracker)
         t._action = None  # no move action open (Tracker._segment)
+        t._herb_end = None
         t.data, t.side, t._spectator = self.D, 0, False
         from duoforge_live import lines
         items = self.D.tables["ITEM"]

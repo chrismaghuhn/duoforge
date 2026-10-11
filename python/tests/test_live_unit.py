@@ -195,6 +195,7 @@ class TrackerStopTest(unittest.TestCase):
         t = tracker.Tracker.__new__(tracker.Tracker)
         t.side, t._spectator = 0, False
         t._action = None  # no move action open (Tracker._segment)
+        t._herb_end = None
         t._positions = [[tracker._Position(), tracker._Position()] for _ in (0, 1)]
         for side in t._positions:
             for k, p in enumerate(side):
@@ -288,6 +289,42 @@ class TrackerStopTest(unittest.TestCase):
         self.assertEqual({name: getattr(p, name) for name in kept}, empty)
         t._event(trace_to_c.ev_tuple(trace_to_c.EV["SWITCH"], 0, trace_to_c.NOPOS, 0, 5, 0))  # a plain switch
         self.assertEqual((p.occupant, p.throat_chop, p.perish, p.taunt, p.heal_block), (5, 0, 0, 0, 0))
+
+    def test_a_natural_end_needs_a_count_of_one(self):
+        # the residual's -end of Taunt, Disable or Heal Block (no [from], not Mental Herb's row) comes where the count runs
+        # out: any other count of the tracker stops it (a wrong duration rule or move_queued is never written silently)
+        from types import SimpleNamespace
+        from duoforge_live import lines
+        from duoforge_live.data import trace_to_c
+        t = self.tracker()
+        t._mental_herb, t._eject_button, t._unburden, t._spectator = 3, None, None, True
+        members = [SimpleNamespace(revealed=0, item_consumed=0, item_used=0, item_now=0) for _ in range(6)]
+        t._member = lambda side: members
+        EV = trace_to_c.EV
+
+        def end(detail, cause=0):
+            t._event(trace_to_c.ev_tuple(EV["VOLATILE_END"], 2, cause=cause, detail=detail))
+        p = t._positions[1][0]
+        for field, detail, name in (("taunt", trace_to_c.VOLATILE_TAUNT, "taunt"),
+                                    ("disable_turns", trace_to_c.VOLATILE_DISABLE, "disable"),
+                                    ("heal_block", trace_to_c.VOLATILE_HEAL_BLOCK, "heal_block")):
+            setattr(p, field, 1)
+            end(detail)  # the residual's end at the count's last turn
+            self.assertEqual(getattr(p, field), 0)
+            setattr(p, field, 2)
+            with self.assertRaises(lines.Stop) as caught:
+                end(detail)
+            self.assertEqual(str(caught.exception).split(" ")[0], f"count:{name}")
+        # Mental Herb (-enditem, then its -end lines in a row) ends them at any count
+        p.taunt, p.disable_slot, p.disable_turns, p.heal_block = 3, 1, 4, 2
+        t._event(trace_to_c.ev_tuple(EV["ITEM_END"], 2, ident2=4))
+        for detail in (trace_to_c.VOLATILE_TAUNT, trace_to_c.VOLATILE_DISABLE, trace_to_c.VOLATILE_HEAL_BLOCK):
+            end(detail)
+        self.assertEqual((p.taunt, p.disable_slot, p.disable_turns, p.heal_block), (0, 0, 0, 0))
+        p.taunt = 2  # the row ends with the first other line
+        t._event(trace_to_c.ev_tuple(EV["FLASH_FIRE"], 0))  # a line of another position
+        with self.assertRaises(lines.Stop):
+            end(trace_to_c.VOLATILE_TAUNT)
 
     def test_a_plain_typechange_is_soaks_only_after_a_soak_line(self):
         # Soak and Magic Powder print the same -start|X|typechange|T (no attribute): the converter gives Soak's cause to

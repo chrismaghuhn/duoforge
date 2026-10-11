@@ -277,6 +277,9 @@ class Tracker:
         self._next_activation = 1  # the next entry's activation id (the public record)
         self._after_upkeep = False  # the turn's residual ended (|upkeep|) and the next turn has not begun
         self._action = None  # the move action whose events are being collected (_segment)
+        # the position whose Mental Herb was just used: the -end lines right after its -enditem are the herb's, not the
+        # residual's (dfi_mental_herb ends taunt, encore, disable and heal block in a row, with no cause of their own)
+        self._herb_end = None
         # The library data kind of the public record (record.py): None for the tables' kind; a DEV kind of the same tables
         # when the game runs under it (the context's fingerprint is in the record)
         self.record_kind = None
@@ -313,6 +316,7 @@ class Tracker:
         self._helping_hand = tables["MOVE"].get("HELPINGHAND")
         self._knock_off = tables["MOVE"].get("KNOCKOFF")
         self._eject_button = tables["ITEM"].get("EJECTBUTTON")
+        self._mental_herb = tables["ITEM"].get("MENTALHERB")
         self._hit_pivots = {tables["MOVE"][k]: v for k, v in _HIT_PIVOTS.items() if k in tables["MOVE"]}
         self._move_pivots = {tables["MOVE"][k]: v for k, v in _MOVE_PIVOTS.items() if k in tables["MOVE"]}
 
@@ -668,7 +672,17 @@ class Tracker:
 
     def _event(self, e):
         self._segment(e)
-        self._fold_event(e)
+        herb, self._herb_end = self._herb_end, None
+        if herb is not None and e[0] == EV["VOLATILE_END"] and e[1] == herb:
+            self._herb_end = herb  # the herb's row of -end lines goes on
+        self._fold_event(e, herb)
+
+    def _residual_end(self, e, herb, count, name):
+        """A natural end of a counted volatile (no [from], not Mental Herb's row) comes in the residual where its count
+        runs out: the tracker's count must be 1 there. Any other count is a counting error (the start's duration rule,
+        a wrong move_queued), which stops the tracker instead of writing a wrong count into the record."""
+        if e[3] == trace_to_c.CAUSE["NONE"] and e[1] != herb and count != 1:
+            raise lines.Stop(f"count:{name} ends at {count}")
 
     def _segment(self, e):
         """The events of each move action, for its result (the POOL record's move_result): an action begins with its
@@ -733,7 +747,7 @@ class Tracker:
                 if holder.occupant != ROSTER_NONE and not holder.fainted:
                     holder.result_now = record.move_result_of(self.data, e[1], events[i:])
 
-    def _fold_event(self, e):
+    def _fold_event(self, e, herb=None):
         kind, pos, ident, ident2 = e[0], e[1], e[4], e[5]
         hp, hp_kind, hp_flag, status, detail, amount, flags = e[6], e[8], e[9], e[10], e[11], e[12], e[13]
         foe = pos != NOPOS and pos // 2 != self.side
@@ -900,12 +914,16 @@ class Tracker:
         elif kind in (EV["VOLATILE_START"], EV["VOLATILE_END"]) and detail == trace_to_c.VOLATILE_HEAL_BLOCK:
             # Heal Block (step G8, Psychic Noise): -start|X|move: Heal Block and -end|X|move: Heal Block (the duration,
             # Mental Herb); the occupant's leaving ends it with no line; its count is never shown
+            if kind == EV["VOLATILE_END"]:
+                self._residual_end(e, herb, self._at(pos).heal_block, "heal_block")
             self._at(pos).heal_block = HEAL_BLOCK_TURNS if kind == EV["VOLATILE_START"] else 0
         elif kind in (EV["VOLATILE_START"], EV["VOLATILE_END"]) and detail == trace_to_c.VOLATILE_TAUNT:
             # Taunt (step G31): -start|X|move: Taunt and -end|X|move: Taunt (the duration, Mental Herb, Oblivious); the
             # occupant's leaving ends it with no line; the view shows its presence, the record its count: one more
             # when the target has been out for a turn and has no move left this turn (dfi_taunt)
             p = self._at(pos)
+            if kind == EV["VOLATILE_END"]:
+                self._residual_end(e, herb, p.taunt, "taunt")
             p.taunt = 0
             if kind == EV["VOLATILE_START"]:
                 p.taunt = TAUNT_TURNS + (1 if not p.newly_switched and not p.move_queued else 0)
@@ -915,6 +933,7 @@ class Tracker:
             # shown. A barred move that is not on the sheet stops.
             p = self._at(pos)
             if kind == EV["VOLATILE_END"]:
+                self._residual_end(e, herb, p.disable_turns, "disable")
                 p.disable_slot = p.disable_turns = 0
             else:
                 moves = self._occupant(pos).sheet["moves"]
@@ -1098,6 +1117,8 @@ class Tracker:
             m = self._occupant(pos)
             m.revealed |= REVEALED_ITEM_CONSUMED
             self._at(pos).unburden_unseen = False
+            if self._mental_herb is not None and ident2 == self._mental_herb + 1:
+                self._herb_end = pos  # its -end lines follow (dfi_mental_herb)
             if e[3] == trace_to_c.CAUSE["NONE"] and self._eject_button is not None and ident2 == self._eject_button + 1:
                 self._at(pos).flag = SWITCH_EMERGENCY_EXIT  # Eject Button sets its holder's switchFlag, then the -enditem
             if e[3] != trace_to_c.CAUSE["ITEM_TAKEN"]:
