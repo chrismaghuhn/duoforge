@@ -567,6 +567,9 @@ const dfi_support_manifest dfi_support = {
             [DFI_MOVE_POUNCE] = 1u,
             [DFI_MOVE_MUDSLAP] = 1u,
             [DFI_MOVE_APPLEACID] = 1u,
+            /* Step C5 (decision 0015 entry 5cy): Surf, a damaging spread move that also hits the ally (target allAdjacent, as
+             * Earthquake of step G28). Data only: the pin's fields are checked by check_c5_facts (data/moves.ts:18526-18538). */
+            [DFI_MOVE_SURF] = 1u,
         },
     .abilities =
         {

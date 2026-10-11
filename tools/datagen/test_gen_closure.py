@@ -2183,5 +2183,47 @@ class CheapMoveFactsC2(unittest.TestCase):
         self.assertEqual(gen_closure.c2_literal('{ a: [1, -2,], b: { c: true, }, }'), {'a': [1, -2], 'b': {'c': True}})
 
 
+class C5Facts(unittest.TestCase):
+    """Step C5 (decision 0015 entry 5cy): the pinned fields of Surf, rendered as the pin writes them (no checkout needed)."""
+
+    def render(self, mid, fields):
+        lines = ['\t%s: {' % mid]
+        for key, want in fields.items():
+            if key == 'flags':
+                lines.append('\t\tflags: { %s },' % ' '.join('%s: 1,' % f for f in sorted(want)))
+            elif isinstance(want, int):
+                lines.append('\t\t%s: %d,' % (key, want))
+            else:
+                lines.append('\t\t%s: "%s",' % (key, want))
+        lines.append('\t},')
+        return '\n'.join(lines)
+
+    def sources(self, change=None):
+        out = []
+        for mid, fields in gen_closure.C5_FACTS:
+            fields = dict(fields)
+            if change is not None and change[0] == mid:
+                fields[change[1]] = change[2]
+            out.append(self.render(mid, fields))
+        return TextSource('data/moves.ts', '\n'.join(out)), TextSource('data/mods/champions/moves.ts', '')
+
+    def test_the_pinned_facts_are_accepted(self):
+        gen_closure.check_c5_facts(*self.sources())
+
+    def test_a_changed_value_is_refused(self):
+        for mid, key, value in (('surf', 'basePower', 95), ('surf', 'target', 'normal'),
+                                ('surf', 'flags', {'protect', 'mirror', 'metronome'})):
+            with self.subTest(move=mid, field=key), self.assertRaises(SystemExit) as cm:
+                gen_closure.check_c5_facts(*self.sources((mid, key, value)))
+            self.assertIn('move %s' % mid, str(cm.exception.code))
+
+    def test_a_champions_override_is_refused(self):
+        base, _ = self.sources()
+        champ = TextSource('data/mods/champions/moves.ts', '\tsurf: {\n\t\tinherit: true,\n\t\tbasePower: 95,\n\t},')
+        with self.assertRaises(SystemExit) as cm:
+            gen_closure.check_c5_facts(base, champ)
+        self.assertIn('move surf: the Champions mod overrides it', str(cm.exception.code))
+
+
 if __name__ == '__main__':
     unittest.main()

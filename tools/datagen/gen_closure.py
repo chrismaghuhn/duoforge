@@ -4139,6 +4139,43 @@ def check_c2_facts(moves_ts, champ_moves, only=None):
                 fail('move %s: %s is %r in the pin, not %r' % (mid, key, got[key], want))
 
 
+# Step C5 (decision 0015 entry 5cy): the pinned fields of the data-only moves of the step, read from data/moves.ts at b2cb775.
+# Every field of the pin entry must be listed (C5_IGNORED_KEYS aside) with its value, and the Champions mod must have no entry.
+C5_IGNORED_KEYS = {'num', 'name', 'contestType'}
+C5_FACTS = (
+    ('surf', {'accuracy': 100, 'basePower': 90, 'category': 'Special', 'pp': 15, 'priority': 0, 'target': 'allAdjacent',
+              'type': 'Water', 'flags': {'protect', 'mirror', 'nonsky', 'metronome'}}),
+)
+
+
+def c5_value(key, text):
+    """The value of one pin field: a flag set or a scalar."""
+    if key == 'flags':
+        return set(re.findall(r'(\w+): 1\b', text))
+    return scalar(text)
+
+
+def check_c5_facts(moves_ts, champ_moves, only=None):
+    """Step C5: each listed move has exactly the listed fields (nothing else but C5_IGNORED_KEYS), each with its pinned value,
+    and no Champions override. `only`: a tuple of (move id, expected) for the tests."""
+    for mid, expected in (C5_FACTS if only is None else only):
+        if champ_moves.entry(mid) is not None:
+            fail('move %s: the Champions mod overrides it; the C5 facts must be read again' % mid)
+        e = moves_ts.entry(mid)
+        if e is None:
+            fail('move %s not found' % mid)
+        got = fields(e[2])
+        extra = sorted(set(got) - set(expected) - C5_IGNORED_KEYS)
+        if extra:
+            fail('move %s: the pin has fields the C5 facts do not list: %s' % (mid, ', '.join(extra)))
+        for key, want in expected.items():
+            if key not in got:
+                fail('move %s: the pin has no %s' % (mid, key))
+            have = c5_value(key, got[key][1])
+            if have != want:
+                fail('move %s: %s is %r in the pin, not %r' % (mid, key, have, want))
+
+
 def build_pool(root, repo, dx):
     """The pool tables: the extended data as the prefix, then the new rows of step P1 (POOL_ITEMS, POOL_ABILITIES),
     then those of step G2 (G2_MOVES, G2_ITEMS, G2_ABILITIES and the formes of SETS_G2), then every other move, item,
@@ -4153,6 +4190,7 @@ def build_pool(root, repo, dx):
     formats, learn = Source(root, 'data/mods/champions/formats-data.ts'), Source(root, 'data/mods/champions/learnsets.ts')
     legal = load_legal_pool(repo)
     check_g8_conditions(moves_ts)
+    check_c5_facts(moves_ts, champ_moves)
     check_g15_facts(moves_ts, items_ts)
     check_g30_facts(abil_ts, champ_abil)
     check_g28_items(items_ts)
