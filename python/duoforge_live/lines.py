@@ -183,7 +183,8 @@ _ITEM_GIVEN_FOLD = {"move: Trick", "move: Switcheroo", "move: Thief", "move: Cov
 # Step G85, the item thefts of two abilities (decision 0015 entry 5bu). Pickpocket takes the attacker's item: the holder
 # prints the attacker's silent `-enditem|ATT|Item|[silent]|[from] ability: Pickpocket|[of] ATT`, then its own
 # `-item|H|Item|[from] ability: Pickpocket|[of] ATT`. Magician takes the target's item with its own `-item|MAG|Item|[from]
-# ability: Magician|[of] TGT` only: the target's loss shows in no line.
+# ability: Magician|[of] TGT` only: the target's loss shows in no line. A theft gives an Air Balloon's receiver its
+# announcement first (dfi_emit_balloon_on_receive: `-item|R|Air Balloon`, no attribute), before the theft's lines.
 THEFT_ABILITIES = {"ability: Pickpocket", "ability: Magician"}
 # Ability changes by the holder's own ability on contact, which the engine does not model (DFI_HANDLER_UNMODELED, or
 # not in the pool): their -activate line stops.
@@ -267,6 +268,33 @@ def _theft_form(kind, args, attrs, view):
     if kind == "-enditem":
         return froms[0] == "ability: Pickpocket" and silent and of[0] == args[0]
     return not silent and of[0] != args[0] and froms[0] in THEFT_ABILITIES
+
+
+def theft_parts(line):
+    """(kind, position, item, [from] ability, [of]) of a line that is an item line of a theft by Pickpocket or Magician, or
+    None for any other line. The shape is checked by check() (_theft_form); this only reads the parts the tracker follows
+    an Air Balloon announcement with."""
+    parts = line.split("|")
+    if len(parts) < 3 or parts[1] not in ("-item", "-enditem"):
+        return None
+    attrs = [p for p in parts[2:] if p.startswith("[")]
+    args = [p for p in parts[2:] if not p.startswith("[")]
+    froms = _froms(attrs)
+    of = [a[len("[of] "):] for a in attrs if a.startswith("[of] ")]
+    if len(args) != 2 or len(froms) != 1 or froms[0] not in THEFT_ABILITIES or len(of) != 1:
+        return None
+    return parts[1], args[0], args[1], froms[0], of[0]
+
+
+def _announced_theft(ident, view):
+    """The theft an Air Balloon announcement of `ident` opens: the receiver is a Pickpocket or Magician holder that holds no
+    item now (the engine prints the announcement only for a theft's receiver). None for any other."""
+    tables = view.data.tables["ABILITY"]
+    for name in ("Pickpocket", "Magician"):
+        code = tables.get(trace_to_c.key(name))
+        if code is not None and code + 1 == view.ability_now(ident) and view.item_gone(ident):
+            return name
+    return None
 
 
 def _not_its_own(kind, effect, ident, view):
@@ -475,6 +503,10 @@ def check(line, view):
             return "keep"
         if own and ("[identify]" in attrs or not froms):
             return "fold"  # Frisk, or the holder's own announcement (Air Balloon): an item the open sheet shows
+        if not froms and not attrs and effect == "Air Balloon" and len(args) == 2:
+            theft = _announced_theft(args[0], view)
+            if theft is not None:
+                return f"theft:{theft}"  # the receiver's announcement before its theft's lines (the tracker follows them)
         if any(f in _ITEM_CHANGE_FROM for f in froms):
             if len(froms) == 1 and froms[0] in _ITEM_GIVEN_FOLD:
                 if froms[0] in THEFT_ABILITIES and not _theft_form(kind, args, attrs, view):
