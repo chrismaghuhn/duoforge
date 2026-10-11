@@ -1,0 +1,133 @@
+{
+  "name": "g84_m5_m10_mirror",
+  "purpose": "Campaign battle fz_84_10 of seed 84 (a Sitrus mirror, DD): Leech Seed drains with poison and burn residuals (order 8 before 9 and 10), and a non-Ghost Curse whose hit-loop Updates draw the Sitrus ties (each:Update).",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,e6ae1170c1cb831494ae0e0ed1a309a6c829560555bc2a26b3b3075c15477994",
+  "teams": [
+    "Gholdengo @ Life Orb\nAbility: Good as Gold\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nTimid Nature\n- Protect\n- Shadow Ball\n- Make It Rain\n\nTauros (M) @ Charcoal\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Curse\n- Protect\n- Close Combat\n- Earthquake\n\nMeganium (F) @ Leftovers\nAbility: Overgrow\nLevel: 50\nEVs: 32 HP / 2 Def / 32 SpD\nCalm Nature\n- Leech Seed\n- Protect\n- Energy Ball\n\nKingambit (M) @ Black Glasses\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Sucker Punch\n- Iron Head\n- Protect\n- Swords Dance\n\nVenusaur (M) @ Sitrus Berry\nAbility: Overgrow\nLevel: 50\nEVs: 32 HP / 2 Def / 32 SpD\nCalm Nature\n- Leech Seed\n- Protect\n- Sludge Bomb\n- Energy Ball\n\nChimecho (M) @ Occa Berry\nAbility: Levitate\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nModest Nature\n- Psychic\n- Protect\n- Helping Hand\n- Expanding Force",
+    "Kingambit (M) @ Black Glasses\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Sucker Punch\n- Iron Head\n- Protect\n- Swords Dance\n\nGholdengo @ Life Orb\nAbility: Good as Gold\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nTimid Nature\n- Protect\n- Shadow Ball\n- Make It Rain\n\nVenusaur (M) @ Sitrus Berry\nAbility: Overgrow\nLevel: 50\nEVs: 32 HP / 2 Def / 32 SpD\nCalm Nature\n- Leech Seed\n- Protect\n- Sludge Bomb\n- Energy Ball\n\nTauros (M) @ Charcoal\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Curse\n- Protect\n- Close Combat\n- Earthquake\n\nMeganium (F) @ Leftovers\nAbility: Overgrow\nLevel: 50\nEVs: 32 HP / 2 Def / 32 SpD\nCalm Nature\n- Leech Seed\n- Protect\n- Energy Ball\n\nChimecho (M) @ Occa Berry\nAbility: Levitate\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nModest Nature\n- Psychic\n- Protect\n- Helping Hand\n- Expanding Force"
+  ],
+  "choices": [
+    {
+      "p1": "team 6345",
+      "p2": "team 1345"
+    },
+    {
+      "p1": "move 4 -2, move 1 -1",
+      "p2": "move 1 -2, move 2"
+    },
+    {
+      "p1": "move 3 -2, move 1 1",
+      "p2": "move 3, move 2"
+    },
+    {
+      "p1": "move 2, move 3 1",
+      "p2": "move 4, move 3 -1"
+    },
+    {
+      "p1": "move 4 -2, move 2",
+      "p2": "move 1 -2, move 1 2"
+    },
+    {
+      "p1": "move 2, move 1 1",
+      "p2": "move 3, move 1 1"
+    },
+    {
+      "p1": "move 3 -2, move 2",
+      "p2": "move 4, move 4 -1"
+    },
+    {
+      "p1": "move 3 -2, switch 4",
+      "p2": "switch 4, move 4 2"
+    },
+    {
+      "p1": "move 1 2, move 4 2",
+      "p2": "move 1 2, move 3 1"
+    },
+    {
+      "p1": "switch 4, pass"
+    },
+    {
+      "p1": "move 1 2, move 2",
+      "p2": "switch 4, move 3 -1"
+    },
+    {
+      "p1": "move 1 2, move 3 2",
+      "p2": "move 4, switch 4"
+    },
+    {
+      "p1": "move 1 2, move 3 1",
+      "p2": "move 2 2, move 3 1"
+    },
+    {
+      "p1": "switch 3, move 1 2",
+      "p2": "move 3, move 2"
+    },
+    {
+      "p1": "move 2 1, move 1 2",
+      "p2": "move 4, move 1 -1"
+    },
+    {
+      "p1": "move 1 -2, move 2",
+      "p2": "move 1 2, move 3 1"
+    },
+    {
+      "p1": "move 2 -2, move 3 -1",
+      "p2": "move 1 1, move 3 -1"
+    },
+    {
+      "p1": "pass, switch 3"
+    },
+    {
+      "p1": "move 2 1, move 1 1",
+      "p2": "move 1 2, move 1 1"
+    },
+    {
+      "p2": "switch 4, pass"
+    },
+    {
+      "p1": "move 4, move 1 2",
+      "p2": "move 1 1, move 2"
+    },
+    {
+      "p1": "move 3, move 2",
+      "p2": "switch 3, move 3 -1"
+    },
+    {
+      "p1": "pass, move 3 -1",
+      "p2": "move 1, move 1 -1"
+    },
+    {
+      "p1": "pass, move 3 2",
+      "p2": "move 2, move 1 2"
+    },
+    {
+      "p1": "pass, move 1 2",
+      "p2": "move 2, move 2"
+    },
+    {
+      "p1": "pass, move 2",
+      "p2": "move 2, move 3 1"
+    },
+    {
+      "p1": "pass, move 1 -1",
+      "p2": "move 2, switch 3"
+    },
+    {
+      "p1": "pass, move 3 1",
+      "p2": "move 3 1, move 3 2"
+    },
+    {
+      "p2": "switch 3, pass"
+    },
+    {
+      "p1": "pass, move 1 2",
+      "p2": "move 3 1, move 3 2"
+    },
+    {
+      "p1": "pass, move 1 2",
+      "p2": "move 2, move 3 1"
+    }
+  ]
+}

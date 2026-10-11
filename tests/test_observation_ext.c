@@ -335,6 +335,35 @@ static void test_conventions(df_test *t)
     duoforge_context_destroy(pool);
 }
 
+/* Leech Seed's presence bit (DUOFORGE_POSITION_EXT_LEECH_SEED, observation.c: the tail's leech_seed_source) is shown to both viewers,
+ * on the own and on the foreign side: a seeded position has the bit in both extensions (the seed is public, the -start line), and
+ * the other positions do not. Side 1 position 0 is seeded by side 0 position 0 (the source is its flat position + 1). */
+static void test_leech_seed_bit_for_both_viewers(df_test *t)
+{
+    duoforge_context *ctx = df_make_context(&df_config_pool);
+    duoforge_battle_setup s;
+    df_setup_teams(&s);
+    duoforge_battle *b = df_make_battle(ctx, &s);
+    /* TEAM_SELECTION, then the first TURN (as test_kind). */
+    for (uint32_t stage = 0u; stage < 2u; ++stage) {
+        duoforge_decision_bundle bundle;
+        duoforge_step_result res;
+        if (!DF_CHECK(t, first_bundle(ctx, b, &bundle) && duoforge_battle_step(ctx, b, &bundle, &res) == DUOFORGE_OK)) {
+            break;
+        }
+    }
+    b->tail.sides[1].positions[0].leech_seed_source = 1u;
+    for (uint32_t viewer = 0u; viewer < 2u; ++viewer) {
+        duoforge_observation_ext got;
+        DF_CHECK(t, duoforge_battle_observe_ext(ctx, b, viewer, &got) == DUOFORGE_OK);
+        DF_CHECK(t, (got.sides[1].positions[0].volatiles & DUOFORGE_POSITION_EXT_LEECH_SEED) != 0u);
+        DF_CHECK(t, (got.sides[0].positions[0].volatiles & DUOFORGE_POSITION_EXT_LEECH_SEED) == 0u);
+        DF_CHECK(t, (got.sides[1].positions[1].volatiles & DUOFORGE_POSITION_EXT_LEECH_SEED) == 0u);
+    }
+    duoforge_battle_destroy(b);
+    duoforge_context_destroy(ctx);
+}
+
 int main(void)
 {
     df_test t;
@@ -349,5 +378,6 @@ int main(void)
     test_kind(&t, &df_config_pool_dev, "POOL_DEV", true);
     test_synthetic(&t);
     test_conventions(&t);
+    test_leech_seed_bit_for_both_viewers(&t);
     return df_test_end(&t);
 }
