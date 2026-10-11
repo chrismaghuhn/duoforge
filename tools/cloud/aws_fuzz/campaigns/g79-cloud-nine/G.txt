@@ -8,7 +8,7 @@ Timid Nature
 - Protect
 - Trick
 
-Torkoal @ Heat Rock
+Torkoal (M) @ Heat Rock
 Ability: Drought
 Level: 50
 EVs: 32 HP / 32 SpA / 2 Spe
