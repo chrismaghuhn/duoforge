@@ -1496,7 +1496,10 @@ def step_events(log, viewer, roster_of, maxhp, tables, rb_pending=None, ill=None
             nxt = log[i + 1] if i + 1 < len(log) else ''
             # Step G92 (decision 0062): the OHKO moves with ohko true (Fissure, Guillotine, Horn Drill) show the same bare line.
             ohko_move = last_move_line is not None and len(last_move_line) >= 5 and last_move_line[3] in OHKO_MOVES
-            aimed = ohko_move and prev.startswith('|faint|') and prev.split('|')[2] == last_move_line[4]
+            # sim/battle-actions.ts:1000: `if (move.ohko && !targets[0].hp) this.battle.add('-ohko')` has no target argument; the
+            # faint of targets[0] is the line before it, and it may come after item damage (Rocky Helmet's, a faint of a
+            # reflected hit), so the faint's name is not the move's aim: any faint directly before it, of an OHKO move of the step.
+            aimed = ohko_move and prev.startswith('|faint|')
             sub_break = ohko_move and prev == '|'.join(last_move_line) and nxt.split('|') == ['', '-end', last_move_line[4], 'Substitute']
             if args or attrs or not (aimed or sub_break):
                 raise ConversionError('ohko-line', 'trace_to_c: unknown -ohko %r' % line, detail=line)

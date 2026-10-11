@@ -6154,9 +6154,8 @@ static duoforge_status dfi_status_effects(dfi_run *r, uint32_t user, uint32_t mo
     const uint32_t side = user / 2u;
     const bool status_move = md->category == DFI_CATEGORY_STATUS;
     duoforge_status st = DUOFORGE_OK;
-    /* Confusion moves (step G92): the targets that the change reached (the spread list of the move line) and whether a target
-     * refused it without the terrain (a failed move: [still] and -fail, the replay of g92_cr_hit and g92_flatter_teeter). */
-    uint32_t confuse_mask = 0u;
+    /* Confusion moves (step G92): whether a target refused the change without the terrain (a failed move: [still] and -fail,
+     * the replay of g92_cr_hit and g92_flatter_teeter). */
     bool confuse_plain_fail = false;
     /* forceSwitch of a status move (Roar, Whirlwind; step G46), before its other effects (runMoveEffects, battle-actions.ts:1260). */
     if (status_move && (dfi_pool_move_flags2[move_id] & DFI_MOVE_FLAG2_FORCE_SWITCH) != 0u) {
@@ -6266,9 +6265,6 @@ static duoforge_status dfi_status_effects(dfi_run *r, uint32_t user, uint32_t mo
                     confuse_plain_fail = true;
                 }
                 did = did || added || changed_i;
-                if (added || changed_i) {
-                    confuse_mask |= 1u << targets[i];
-                }
                 continue;
             }
             if (md->special == DFI_SPECIAL_MEMENTO) {
@@ -6310,11 +6306,13 @@ static duoforge_status dfi_status_effects(dfi_run *r, uint32_t user, uint32_t mo
             did = did || dfi_at(b, targets[i])->status != before;
         }
         if (md->special == DFI_SPECIAL_CONFUSE) {
-            /* The spread list of the move line is the targets the change reached (none: the list is empty, as the replay
-             * of g92_flatter_teeter shows for a Teeter Dance whose targets were all confused already). */
+            /* The spread list of a spread move (sim/battle-actions.ts:955-974, 1299, 605): once one target is affected, the hit
+             * loop keeps every target that reached it (a refused one is damage 0, `md === true || !md ? 0 : md` at :963, which the
+             * filter at :605 keeps), so the list is the hit mask set before the effects. Only when no target is affected does the
+             * loop break (every damage false, :955) and the list is empty (:974 damage.fill(false)). */
             duoforge_event *mv = dfi_last_move(r);
-            if (mv != NULL && md->target_class == DFI_TARGET_CLASS_ALL_ADJACENT) {
-                mv->amount = (uint8_t)confuse_mask; /* < 16 */
+            if (mv != NULL && md->target_class == DFI_TARGET_CLASS_ALL_ADJACENT && !did) {
+                mv->amount = 0u;
             }
             if (!did && confuse_plain_fail) {
                 dfi_fail_still(r, user); /* -fail for the user and [still] on the move line; the result is false */
