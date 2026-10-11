@@ -510,14 +510,16 @@ static void mr_clear(mr_track *tr, uint32_t pos)
     tr->known_last[pos] = true;
 }
 
-static void mr_set(df_test *t, const duoforge_context *ctx, mr_track *tr, uint32_t pos, const duoforge_event *ev,
-                   uint32_t n)
+/* The action's events are `user`'s (its move line names that slot); the result belongs to the Pokemon, which stands in `slot`
+ * (the same, unless Ally Switch moved it during the action: the engine writes the result where the Pokemon now is). */
+static void mr_set(df_test *t, const duoforge_context *ctx, mr_track *tr, uint32_t user, uint32_t slot,
+                   const duoforge_event *ev, uint32_t n)
 {
     uint8_t out = 0u;
-    const duoforge_status st = duoforge_move_result(ctx, pos, ev, n, &out);
+    const duoforge_status st = duoforge_move_result(ctx, user, ev, n, &out);
     DF_CHECK(t, st == DUOFORGE_OK || st == DUOFORGE_E_UNSUPPORTED);
-    tr->known_now[pos] = st == DUOFORGE_OK;
-    tr->now[pos] = out;
+    tr->known_now[slot] = st == DUOFORGE_OK;
+    tr->now[slot] = out;
     if (st == DUOFORGE_OK) {
         ++mr_classified;
     } else {
@@ -528,7 +530,7 @@ static void mr_set(df_test *t, const duoforge_context *ctx, mr_track *tr, uint32
 /* The result of the action ev[start, end) of `pos` (its user still the one that began it, not fainted), and of a run
  * that Magic Bounce reflected inside it, for the holder. */
 static void mr_end_action(df_test *t, const duoforge_context *ctx, mr_track *tr, const duoforge_event *ev, uint32_t start,
-                          uint32_t end, uint32_t pos, uint32_t entry, uint32_t subs)
+                          uint32_t end, uint32_t pos, uint32_t home, uint32_t entry, uint32_t subs)
 {
     uint32_t *reason = NULL;
     for (uint32_t j = start; j < end; ++j) {
@@ -549,16 +551,16 @@ static void mr_end_action(df_test *t, const duoforge_context *ctx, mr_track *tr,
         break;
     }
     if (reason != NULL) {
-        tr->known_now[pos] = false; /* not asked: duoforge_move_result's precondition */
+        tr->known_now[home] = false; /* not asked: duoforge_move_result's precondition */
         ++*reason;
-    } else if (tr->entries[pos] == entry && !tr->fainted[pos]) {
-        mr_set(t, ctx, tr, pos, &ev[start], end - start);
+    } else if (tr->entries[home] == entry && !tr->fainted[home]) {
+        mr_set(t, ctx, tr, pos, home, &ev[start], end - start);
     }
     for (uint32_t j = start; j < end; ++j) {
         const uint32_t h = ev[j].position;
         if (ev[j].kind == DUOFORGE_EVENT_MOVE && ev[j].cause == DUOFORGE_CAUSE_ABILITY && h < DFI_POSITIONS_MR_TEST &&
             !tr->fainted[h]) {
-            mr_set(t, ctx, tr, h, &ev[j], end - j);
+            mr_set(t, ctx, tr, h, h, &ev[j], end - j);
         }
     }
 }
@@ -585,6 +587,7 @@ static void mr_step(df_test *t, const duoforge_context *ctx, mr_track *tr, const
     bool confused = false;
     uint32_t start = 0u;
     uint32_t user = 0u;
+    uint32_t home = 0u; /* the slot of the action's Pokemon now: `user` until an Ally Switch moves it */
     uint32_t entry = 0u;
     uint32_t subs = 0u;
     for (uint32_t i = 0u; i < n; ++i) {
@@ -592,7 +595,7 @@ static void mr_step(df_test *t, const duoforge_context *ctx, mr_track *tr, const
         const uint32_t pos = e->position;
         if (e->kind == DUOFORGE_EVENT_UPKEEP || e->kind == DUOFORGE_EVENT_TURN) {
             if (open) {
-                mr_end_action(t, ctx, tr, ev, start, i, user, entry, subs);
+                mr_end_action(t, ctx, tr, ev, start, i, user, home, entry, subs);
                 open = false;
             }
             if (e->kind == DUOFORGE_EVENT_TURN) {
@@ -617,17 +620,50 @@ static void mr_step(df_test *t, const duoforge_context *ctx, mr_track *tr, const
                 --first;
             }
             if (open) {
-                mr_end_action(t, ctx, tr, ev, start, first, user, entry, subs);
+                mr_end_action(t, ctx, tr, ev, start, first, user, home, entry, subs);
             }
             open = true;
             start = first;
             user = pos;
+            home = pos;
             entry = tr->entries[pos];
             subs = 0u;
             for (uint32_t p = 0u; p < DFI_POSITIONS_MR_TEST; ++p) {
                 subs |= tr->sub[p] ? 1u << p : 0u;
             }
             confused = e->kind == DUOFORGE_EVENT_CONFUSED;
+        }
+        if (e->kind == DUOFORGE_EVENT_SWAP && pos < DFI_POSITIONS_MR_TEST && e->other < DFI_POSITIONS_MR_TEST) {
+            /* Ally Switch (step G80): the two Pokemon exchange their slots and the tail goes with them (dfi_swap_position_state),
+             * move_result, this turn's and last turn's, included. The tracker's rows follow, and the action's result is written
+             * where its Pokemon now stands. */
+            const uint32_t c = e->other;
+            const uint8_t now_a = tr->now[pos];
+            const uint8_t last_a = tr->last[pos];
+            const bool kn_a = tr->known_now[pos];
+            const bool kl_a = tr->known_last[pos];
+            const bool fa_a = tr->fainted[pos];
+            const uint32_t en_a = tr->entries[pos];
+            const bool sub_a = tr->sub[pos];
+            tr->now[pos] = tr->now[c];
+            tr->last[pos] = tr->last[c];
+            tr->known_now[pos] = tr->known_now[c];
+            tr->known_last[pos] = tr->known_last[c];
+            tr->fainted[pos] = tr->fainted[c];
+            tr->entries[pos] = tr->entries[c];
+            tr->sub[pos] = tr->sub[c];
+            tr->now[c] = now_a;
+            tr->last[c] = last_a;
+            tr->known_now[c] = kn_a;
+            tr->known_last[c] = kl_a;
+            tr->fainted[c] = fa_a;
+            tr->entries[c] = en_a;
+            tr->sub[c] = sub_a;
+            if (open && home == pos) {
+                home = c;
+            } else if (open && home == c) {
+                home = pos;
+            }
         }
         if (pos < DFI_POSITIONS_MR_TEST &&
             (e->kind == DUOFORGE_EVENT_SWITCH || e->kind == DUOFORGE_EVENT_DRAG || e->kind == DUOFORGE_EVENT_FAINT)) {
@@ -644,7 +680,7 @@ static void mr_step(df_test *t, const duoforge_context *ctx, mr_track *tr, const
         }
     }
     if (open) {
-        mr_end_action(t, ctx, tr, ev, start, n, user, entry, subs);
+        mr_end_action(t, ctx, tr, ev, start, n, user, home, entry, subs);
     }
 }
 
@@ -1391,6 +1427,51 @@ static void test_move_result(df_test *t)
     DF_CHECK(t, mr_of(t, kp, 1u, ev, 3u) == DFI_MOVE_RESULT_TRUE);
     ev[1].amount = 0u;
     DF_CHECK(t, mr_of(t, kp, 1u, ev, 3u) == DFI_MOVE_RESULT_FALSE);
+    /* G80 Psych Up (dfi_psych_up): the copy (-copyboost at the user, cause MOVE with Psych Up) is the effect and is true even when
+     * the target had no stage to copy; a Protected target (null) and a move with no effect at all (false) are the failures */
+    ev[0] = mr_ev(DUOFORGE_EVENT_MOVE, 0u, 2u, DUOFORGE_CAUSE_NONE, DFI_MOVE_PSYCHUP, 0u);
+    ev[1] = mr_ev(DUOFORGE_EVENT_COPY_BOOST, 0u, 2u, DUOFORGE_CAUSE_MOVE, 0u, DFI_MOVE_PSYCHUP);
+    DF_CHECK(t, mr_of(t, kp, 0u, ev, 2u) == DFI_MOVE_RESULT_TRUE);
+    ev[1] = mr_ev(DUOFORGE_EVENT_BLOCKED, 2u, none, DUOFORGE_CAUSE_NONE, 0u, 0u);
+    DF_CHECK(t, mr_of(t, kp, 0u, ev, 2u) == DFI_MOVE_RESULT_NULL);
+    DF_CHECK(t, mr_of(t, kp, 0u, ev, 1u) == DFI_MOVE_RESULT_FALSE);
+    ev[1] = mr_ev(DUOFORGE_EVENT_MISS, 0u, 2u, DUOFORGE_CAUSE_NONE, 0u, 0u);
+    DF_CHECK(t, mr_of(t, kp, 0u, ev, 2u) == DFI_MOVE_RESULT_FALSE);
+    /* a -copyboost of another cause or position is not Psych Up's copy (Costar's has the ability as its cause) */
+    ev[1] = mr_ev(DUOFORGE_EVENT_COPY_BOOST, 0u, 2u, DUOFORGE_CAUSE_ABILITY, 0u, 0u);
+    DF_CHECK(t, mr_of(t, kp, 0u, ev, 2u) == DFI_MOVE_RESULT_FALSE);
+    /* G80 Ally Switch (dfi_run_ally_switch): |swap| from the user's slot, true; no standing partner: -fail with the move as its
+     * cause and [still] (onHit returns NOT_FAIL), null; the failed consecutive roll: the plain -fail with [still], false; no
+     * line of these is a shape of the engine, refused */
+    ev[0] = mr_ev(DUOFORGE_EVENT_MOVE, 1u, 1u, DUOFORGE_CAUSE_NONE, DFI_MOVE_ALLYSWITCH, 0u);
+    ev[1] = mr_ev(DUOFORGE_EVENT_SWAP, 1u, 0u, DUOFORGE_CAUSE_MOVE, 0u, DFI_MOVE_ALLYSWITCH);
+    DF_CHECK(t, mr_of(t, kp, 1u, ev, 2u) == DFI_MOVE_RESULT_TRUE);
+    ev[0].flags = DUOFORGE_EVENT_FLAG_STILL;
+    ev[1] = mr_ev(DUOFORGE_EVENT_FAIL, 1u, none, DUOFORGE_CAUSE_MOVE, 0u, DFI_MOVE_ALLYSWITCH);
+    DF_CHECK(t, mr_of(t, kp, 1u, ev, 2u) == DFI_MOVE_RESULT_NULL);
+    ev[1] = mr_ev(DUOFORGE_EVENT_FAIL, 1u, none, DUOFORGE_CAUSE_NONE, 0u, 0u);
+    DF_CHECK(t, mr_of(t, kp, 1u, ev, 2u) == DFI_MOVE_RESULT_FALSE);
+    uint8_t out_g80 = 0x55u;
+    DF_CHECK(t, duoforge_move_result(kp, 1u, ev, 1u, &out_g80) == DUOFORGE_E_UNSUPPORTED && out_g80 == 0x55u);
+    /* a swap of another position or another cause is not this user's */
+    ev[1] = mr_ev(DUOFORGE_EVENT_SWAP, 0u, 1u, DUOFORGE_CAUSE_MOVE, 0u, DFI_MOVE_ALLYSWITCH);
+    DF_CHECK(t, duoforge_move_result(kp, 1u, ev, 2u, &out_g80) == DUOFORGE_E_UNSUPPORTED && out_g80 == 0x55u);
+    /* G80 Howl (primary boosts of the user and its ally, target class allies; no special: the generic effect rule). A stage that
+     * rose on either one is true; the user alone (no ally) as well; both capped (-boost 0 twice: no stat changed, the hit loop
+     * fails, each target's hit false) false */
+    ev[0] = mr_ev(DUOFORGE_EVENT_MOVE, 0u, none, DUOFORGE_CAUSE_NONE, DFI_MOVE_HOWL, 0u);
+    ev[0].flags = DUOFORGE_EVENT_FLAG_SPREAD;
+    ev[1] = mr_ev(DUOFORGE_EVENT_BOOST, 0u, none, DUOFORGE_CAUSE_NONE, 0u, 0u);
+    ev[1].amount = 1u;
+    ev[2] = mr_ev(DUOFORGE_EVENT_BOOST, 1u, none, DUOFORGE_CAUSE_NONE, 0u, 0u);
+    ev[2].amount = 1u;
+    DF_CHECK(t, mr_of(t, kp, 0u, ev, 3u) == DFI_MOVE_RESULT_TRUE);
+    DF_CHECK(t, mr_of(t, kp, 0u, ev, 2u) == DFI_MOVE_RESULT_TRUE);
+    ev[1].amount = 0u; /* the user capped, the ally rose */
+    DF_CHECK(t, mr_of(t, kp, 0u, ev, 3u) == DFI_MOVE_RESULT_TRUE);
+    ev[2].amount = 0u; /* both capped */
+    DF_CHECK(t, mr_of(t, kp, 0u, ev, 3u) == DFI_MOVE_RESULT_FALSE);
+    DF_CHECK(t, mr_of(t, kp, 0u, ev, 2u) == DFI_MOVE_RESULT_FALSE);
     /* a [still] -fail: false; the lines of another position before the action are skipped */
     ev[0] = mr_ev(DUOFORGE_EVENT_DAMAGE, 3u, none, DUOFORGE_CAUSE_POISON, 0u, 0u);
     ev[1] = mr_ev(DUOFORGE_EVENT_MOVE, 1u, none, DUOFORGE_CAUSE_NONE, DFI_MOVE_TAILWIND, 0u);

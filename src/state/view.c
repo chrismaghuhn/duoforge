@@ -787,6 +787,8 @@ typedef enum mr_family {
                         hit (Roar, Whirlwind: the reserve's) */
     MR_UNCLASSIFIED, /* its success sets no class: Quick Guard, Haze, After You, Quash */
     MR_HEAL_PULSE,   /* a target at full HP is NOT_FAIL: true */
+    MR_PSYCH_UP,     /* G80: the copy (-copyboost) is true even when it copies nothing; else the effect rule (nothing changed: false) */
+    MR_ALLY_SWITCH,  /* G80: the swap true; the partner-missing fail (-fail with the move as cause) null; the roll's fail false */
     MR_REFUSED       /* a handler this classifier does not map: refused */
 } mr_family;
 
@@ -854,6 +856,10 @@ static mr_family mr_family_of(uint32_t move_id, const dfi_move_data *md)
         return MR_UNCLASSIFIED;
     case DFI_SPECIAL_HEAL_PULSE:
         return MR_HEAL_PULSE;
+    case DFI_SPECIAL_PSYCH_UP:
+        return MR_PSYCH_UP;
+    case DFI_SPECIAL_ALLY_SWITCH:
+        return MR_ALLY_SWITCH;
     default:
         return MR_REFUSED; /* Substitute, Destiny Bond and every handler not mapped here */
     }
@@ -959,6 +965,23 @@ static bool mr_changed(const duoforge_event *body, uint32_t count, uint32_t user
         }
     }
     return statused != 0u;
+}
+
+/* The result of a status move whose effect is what changed (MR_EFFECT): true when something changed at a position it reached,
+ * else the failure classes of its hit steps: a hit target that nothing changed is false (runMoveEffects), a Protect alone null. */
+static uint8_t mr_effect_value(const duoforge_event *body, uint32_t n, uint32_t user, uint32_t stopped, bool selfish,
+                               const dfi_move_data *md, bool failed, uint32_t classes)
+{
+    if (mr_changed(body, n, user, stopped, selfish, md->pseudo_weather == DFI_PSEUDO_WEATHER_TRICK_ROOM)) {
+        return (uint8_t)DFI_MOVE_RESULT_TRUE;
+    }
+    if (failed || (classes & MR_FALSE) != 0u) {
+        return (uint8_t)DFI_MOVE_RESULT_FALSE;
+    }
+    if ((classes & MR_NULL) != 0u) {
+        return (uint8_t)DFI_MOVE_RESULT_NULL;
+    }
+    return (uint8_t)DFI_MOVE_RESULT_FALSE; /* a hit target that nothing changed: false (runMoveEffects) */
 }
 
 static duoforge_status mr_value(uint32_t classes, uint8_t *out)
@@ -1204,17 +1227,48 @@ duoforge_status duoforge_move_result(const duoforge_context *ctx, uint32_t user,
             value = (uint8_t)DFI_MOVE_RESULT_TRUE; /* a heal, or full HP: NOT_FAIL, the hit is true */
         }
         break;
+    case MR_PSYCH_UP: {
+        /* Step G80 (dfi_psych_up, dfi_status_effects): the copy of the target's stages is the effect and counts as done whatever it
+         * copied (-copyboost, cause MOVE with Psych Up, at the user): the hit target is true. Without it (a Protect, nothing
+         * to copy from) the classes of the hit steps decide as for any effect: Protect null, a target that nothing changed false. */
+        bool copied = false;
+        for (uint32_t j = 0u; j < n; ++j) {
+            copied = copied || (body[j].kind == DUOFORGE_EVENT_COPY_BOOST && body[j].position == user &&
+                                body[j].cause == DUOFORGE_CAUSE_MOVE && body[j].id2 == DFI_MOVE_PSYCHUP);
+        }
+        if (copied) {
+            value = (uint8_t)DFI_MOVE_RESULT_TRUE;
+        } else {
+            value = mr_effect_value(body, n, user, stopped, selfish, md, user_fail || refused_at_target, classes);
+        }
+        break;
+    }
+    case MR_ALLY_SWITCH: {
+        /* Step G80 (dfi_run_ally_switch): the swap (|swap| at the user's slot before it, cause MOVE with Ally Switch) is true. With no
+         * standing partner onHit prints -fail|X|move: Ally Switch (cause MOVE: not the plain -fail of a failed roll) and returns
+         * NOT_FAIL: null. The failed consecutive roll is the plain -fail with [still] (user_fail): false. Any other shape is not
+         * a case of the engine and is refused. */
+        bool swapped = false;
+        bool no_partner = false;
+        for (uint32_t j = 0u; j < n; ++j) {
+            const bool mine = body[j].position == user && body[j].cause == DUOFORGE_CAUSE_MOVE && body[j].id2 == DFI_MOVE_ALLYSWITCH;
+            swapped = swapped || (mine && body[j].kind == DUOFORGE_EVENT_SWAP);
+            no_partner = no_partner || (mine && body[j].kind == DUOFORGE_EVENT_FAIL);
+        }
+        if (swapped) {
+            value = (uint8_t)DFI_MOVE_RESULT_TRUE;
+        } else if (no_partner) {
+            value = (uint8_t)DFI_MOVE_RESULT_NULL;
+        } else if (user_fail) {
+            value = (uint8_t)DFI_MOVE_RESULT_FALSE;
+        } else {
+            return DUOFORGE_E_UNSUPPORTED;
+        }
+        break;
+    }
     case MR_EFFECT:
     default:
-        if (mr_changed(body, n, user, stopped, selfish, md->pseudo_weather == DFI_PSEUDO_WEATHER_TRICK_ROOM)) {
-            value = (uint8_t)DFI_MOVE_RESULT_TRUE;
-        } else if (user_fail || refused_at_target || (classes & MR_FALSE) != 0u) {
-            value = (uint8_t)DFI_MOVE_RESULT_FALSE;
-        } else if ((classes & MR_NULL) != 0u) {
-            value = (uint8_t)DFI_MOVE_RESULT_NULL;
-        } else {
-            value = (uint8_t)DFI_MOVE_RESULT_FALSE; /* a hit target that nothing changed: false (runMoveEffects) */
-        }
+        value = mr_effect_value(body, n, user, stopped, selfish, md, user_fail || refused_at_target, classes);
         break;
     }
     if (reflected && (value & DFI_MOVE_RESULT_UNCLASSIFIED_NOW) != 0u) {
