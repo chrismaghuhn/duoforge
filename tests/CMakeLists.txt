@@ -229,6 +229,7 @@ duoforge_add_test(NAME duoforge.state.pool_g78 SOURCES test_pool_g78.c WHITEBOX 
 # DUOFORGE_PUBLIC_CAUSE_TURN_HISTORY (64); the recorded battles are duoforge.reference.conformance_pool_data.
 duoforge_add_test(NAME duoforge.state.pool_g88 SOURCES test_pool_g88.c WHITEBOX LIBS duoforge_batch TIMEOUT 60)
 duoforge_add_test(NAME duoforge.state.pool_g86 SOURCES test_pool_g86.c WHITEBOX LIBS duoforge_batch TIMEOUT 60)
+duoforge_add_test(NAME duoforge.state.pool_g92 SOURCES test_pool_g92.c WHITEBOX TIMEOUT 60)
 # Step G42: Roost and Stomping Tantrum: the move result classes (this and last) at every boundary of the g42 battles, the Roost
 # volatile (the pivot boundary inside its turn), the view bits (40 supported, 41 not), the unclassified refusal.
 duoforge_add_test(NAME duoforge.state.pool_g42 SOURCES test_pool_g42.c WHITEBOX TIMEOUT 60)

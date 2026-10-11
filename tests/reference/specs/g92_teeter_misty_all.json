@@ -1,0 +1,21 @@
+{
+  "name": "g92_teeter_misty_all",
+  "purpose": "Misty Terrain (Gardevoir, turn 1), then Teeter Dance (Mr. Mime, turn 2) with every target grounded and not confused: the terrain refuses each confusion (null, -activate), no target is affected, so the hit loop breaks and the spread list is empty with no -fail (sim/battle-actions.ts:955, 974, 1299, 1303; decision 0062)",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,0000000000000000000000000000000000000000000000000000000000000001",
+  "teams": [
+    "Mr. Mime (M) @ Focus Sash\nAbility: Filter\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 SpD\nModest Nature\n- Teeter Dance\n- Protect\n\nGardevoir (F) @ Leftovers\nAbility: Synchronize\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 SpD\nModest Nature\n- Misty Terrain\n- Swagger\n- Memento\n- Protect\n\nMilotic (F) @ Sitrus Berry\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Confuse Ray\n- Protect\n\nExcadrill (M) @ Life Orb\nAbility: Sand Rush\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Horn Drill\n- Fissure\n- Protect\n\nSteelix (M) @ Expert Belt\nAbility: Sturdy\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Fissure\n- Protect\n\nSalamence (M) @ Salamencite\nAbility: Intimidate\nLevel: 50\nEVs: 2 HP / 32 SpA / 32 Spe\nTimid Nature\n- Protect",
+    "Primarina (F) @ Sitrus Berry\nAbility: Torrent\nLevel: 50\nEVs: 32 HP / 2 Def / 32 SpD\nCalm Nature\n- Moonblast\n- Protect\n\nFeraligatr (M) @ Rocky Helmet\nAbility: Torrent\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Flatter\n- Protect\n\nUmbreon (F) @ Leftovers\nAbility: Synchronize\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Swagger\n- Protect\n\nRaichu (M) @ Life Orb\nAbility: Static\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 SpD\nTimid Nature\n- Thunder Wave\n- Protect\n\nKingambit (M) @ Black Glasses\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Swords Dance\n- Guillotine\n- Protect\n\nSalamence (M) @ Salamencite\nAbility: Intimidate\nLevel: 50\nEVs: 2 HP / 32 SpA / 32 Spe\nTimid Nature\n- Protect"
+  ],
+  "plan": {
+    "p1": [
+      "move 2, move 1",
+      "move 1, move 4"
+    ],
+    "p2": [
+      "move 1 1, move 1 2"
+    ],
+    "max_steps": 3
+  }
+}

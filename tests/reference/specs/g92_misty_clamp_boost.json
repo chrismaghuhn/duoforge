@@ -1,0 +1,163 @@
+{
+  "name": "g92_misty_clamp_boost",
+  "purpose": "Misty Terrain, then Swagger (Gardevoir) on an ally at +6 attack: the boost is at the cap (null, -boost 0), the grounded target keeps its confusion refused by the terrain (null): null + null is no failure, no -fail (sim/battle.ts:2035, :2079-2080, :2088; battle-actions.ts:1561-1573; decision 0062 addendum)",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,89725187ea74c2028cd02ebe5e720055215bf2c2b78faff8c799624fc3d7eb32",
+  "teams": [
+    "Excadrill (M) @ Life Orb\nAbility: Sand Rush\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Horn Drill\n- Fissure\n- Protect\n\nMr. Mime (M) @ Sitrus Berry\nAbility: Filter\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 SpD\nModest Nature\n- Teeter Dance\n- Protect\n\nGardevoir (F) @ Leftovers\nAbility: Synchronize\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 SpD\nModest Nature\n- Misty Terrain\n- Swagger\n- Memento\n- Protect\n\nGengar (F) @ Focus Sash\nAbility: Cursed Body\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 SpD\nTimid Nature\n- Confuse Ray\n- Night Shade\n- Protect\n\nKingambit (M) @ Black Glasses\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Swords Dance\n- Guillotine\n- Protect\n\nFeraligatr (M) @ Rocky Helmet\nAbility: Torrent\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Flatter\n- Protect",
+    "Mr. Mime (M) @ Sitrus Berry\nAbility: Filter\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 SpD\nModest Nature\n- Teeter Dance\n- Protect\n\nFeraligatr (M) @ Rocky Helmet\nAbility: Torrent\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Flatter\n- Protect\n\nKingambit (M) @ Black Glasses\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Swords Dance\n- Guillotine\n- Protect\n\nGengar (F) @ Focus Sash\nAbility: Cursed Body\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 SpD\nTimid Nature\n- Confuse Ray\n- Night Shade\n- Protect\n\nGardevoir (F) @ Leftovers\nAbility: Synchronize\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 SpD\nModest Nature\n- Misty Terrain\n- Swagger\n- Memento\n- Protect\n\nExcadrill (M) @ Life Orb\nAbility: Sand Rush\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Horn Drill\n- Fissure\n- Protect"
+  ],
+  "choices": [
+    {
+      "p1": "team 4523",
+      "p2": "team 3651"
+    },
+    {
+      "p1": "move 3, move 3",
+      "p2": "move 1, move 3"
+    },
+    {
+      "p1": "move 1 2, switch 3",
+      "p2": "move 2 1, move 1 2"
+    },
+    {
+      "p1": "move 2 2, move 1",
+      "p2": "move 2 2, move 3"
+    },
+    {
+      "p1": "move 2 1, move 1",
+      "p2": "move 1, move 2 2"
+    },
+    {
+      "p1": "move 2 -2, move 2",
+      "p2": "move 1, move 1 -1"
+    },
+    {
+      "p1": "move 1 1, move 2",
+      "p2": "move 2 1, move 2 2"
+    },
+    {
+      "p1": "move 2 2, switch 3",
+      "p2": "move 2 -2, move 3"
+    },
+    {
+      "p1": "move 2 2, move 1",
+      "p2": "move 1, move 3"
+    },
+    {
+      "p2": "pass, switch 3"
+    },
+    {
+      "p1": "move 2 2, move 1",
+      "p2": "switch 4, move 4"
+    },
+    {
+      "p1": "move 1 -2, move 1",
+      "p2": "move 1, switch 4"
+    },
+    {
+      "p1": "move 2 2, switch 3",
+      "p2": "move 2, move 2 -1"
+    },
+    {
+      "p2": "pass, switch 4"
+    },
+    {
+      "p1": "move 1 -2, move 1",
+      "p2": "move 1, move 3 1"
+    },
+    {
+      "p1": "move 3, switch 3",
+      "p2": "move 2, pass"
+    },
+    {
+      "p1": "move 2 2, move 1",
+      "p2": "move 2, pass"
+    },
+    {
+      "p1": "switch 4, move 1",
+      "p2": "move 2, pass"
+    },
+    {
+      "p1": "move 4, move 3",
+      "p2": "move 1, pass"
+    },
+    {
+      "p1": "move 1, move 1",
+      "p2": "move 2, pass"
+    },
+    {
+      "p1": "move 4, move 1",
+      "p2": "move 1, pass"
+    },
+    {
+      "p1": "move 2 -2, move 2 1",
+      "p2": "move 1, pass"
+    },
+    {
+      "p1": "move 4, switch 3",
+      "p2": "move 1, pass"
+    },
+    {
+      "p1": "move 1, move 1",
+      "p2": "move 2, pass"
+    },
+    {
+      "p1": "switch 4, move 1",
+      "p2": "move 1, pass"
+    },
+    {
+      "p1": "move 2 2, move 1",
+      "p2": "move 2, pass"
+    },
+    {
+      "p1": "move 1 1, move 1",
+      "p2": "move 2, pass"
+    },
+    {
+      "p1": "move 2 2, switch 4",
+      "p2": "move 1, pass"
+    },
+    {
+      "p1": "move 1 -2, move 4",
+      "p2": "move 1, pass"
+    },
+    {
+      "p1": "move 2 -2, move 1",
+      "p2": "move 1, pass"
+    },
+    {
+      "p1": "move 3, move 1",
+      "p2": "move 1, pass"
+    },
+    {
+      "p1": "move 1 2, move 4",
+      "p2": "move 1, pass"
+    },
+    {
+      "p1": "move 3, move 3 -1",
+      "p2": "move 1, pass"
+    },
+    {
+      "p1": "move 1 2, move 4",
+      "p2": "move 1, pass"
+    },
+    {
+      "p1": "move 2 1, move 4",
+      "p2": "move 1, pass"
+    },
+    {
+      "p1": "move 3, move 3 2",
+      "p2": "move 1, pass"
+    },
+    {
+      "p1": "switch 3, switch 4",
+      "p2": "move 1, pass"
+    },
+    {
+      "p1": "move 2 1, move 1",
+      "p2": "move 1, pass"
+    }
+  ]
+}
