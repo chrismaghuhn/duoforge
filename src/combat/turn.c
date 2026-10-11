@@ -7749,6 +7749,21 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
                 }
             }
         }
+        /* onHit of Bug Bite (step G64; data/moves.ts:1920-1930): runMoveEffects runs it right after the damage of the hit and before
+         * the self effects, the selfSwitch, the secondaries and the DamagingHit handlers (sim/battle-actions.ts:1085-1086, 1096,
+         * 1099, 1119-1121). For each target that took damage, in order (hit[] is false for a target that a Substitute absorbed, and
+         * a target that fainted from the hit keeps its hit: takeItem has no HP test). The source.hp test and the berry and
+         * Sticky Hold checks are inside dfi_bug_bite. */
+        if (md->special == DFI_SPECIAL_BUG_BITE) {
+            for (uint32_t i = 0u; i < count; ++i) {
+                if (hit[i]) {
+                    st = dfi_bug_bite(r, user, targets[i], move_id);
+                    if (st != DUOFORGE_OK) {
+                        return st;
+                    }
+                }
+            }
+        }
         /* selfSwitch of a damaging move (Flip Turn, U-turn): runMoveEffects
          * flags the user with the move's id when the move hit a target and the
          * user still stands; with no reserve the request would clear it again
@@ -8194,17 +8209,6 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
          * does not ask whether the user still stands (data/mods/champions/scripts.ts:411; the base game's test of the user's
          * HP is at sim/battle-actions.ts:1123): a user that a Rocky Helmet just knocked out takes the item all the same. It
          * comes after the DamagingHit handlers above and before the Emergency Exit check below (scripts.ts:416-418). */
-        /* onHit of Bug Bite (step G64), for each damaged target, before the AfterHit of Knock Off: takes and eats the berry. */
-        if (md->special == DFI_SPECIAL_BUG_BITE) {
-            for (uint32_t i = 0u; i < count; ++i) {
-                if (hit[i]) {
-                    st = dfi_bug_bite(r, user, targets[i], move_id);
-                    if (st != DUOFORGE_OK) {
-                        return st;
-                    }
-                }
-            }
-        }
         if (md->special == DFI_SPECIAL_KNOCK_OFF) {
             for (uint32_t i = 0u; i < count; ++i) {
                 if (hit[i]) {
