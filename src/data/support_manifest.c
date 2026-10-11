@@ -677,6 +677,7 @@ const dfi_support_manifest dfi_support = {
             [DFI_ABILITY_SHEERFORCE] = 1u,  /* step G61: the stripped secondaries and self effects, x5325/4096 (data/abilities.ts:4202-4221) */
             [DFI_ABILITY_DRAGONIZE] = 1u,   /* step G61: an -ate member, Dragon (data/abilities.ts:1036-1055), Feraligatr-Mega's */
             [DFI_ABILITY_SYMBIOSIS] = 1u,   /* step G69: the item passed to an ally that has used up its own (data/abilities.ts:4837-4856) */
+            [DFI_ABILITY_FRISK] = 1u,       /* step G81: the foes' items announced at the switch-in (data/abilities.ts:1545-1557), ITEM_SHOWN */
             [DFI_ABILITY_KEENEYE] = 1u,   /* step G51: the base ability of Pidgeot (with Pidgeotite), an engine row */
             [DFI_ABILITY_BIGPECKS] = 1u,  /* step G51: the other base ability of Pidgeot, an engine row */
             [DFI_ABILITY_MAGICBOUNCE] = 1u, /* step G57: reflects the reflectable moves (decision 0015 5bg) */
@@ -695,6 +696,9 @@ const dfi_support_manifest dfi_support = {
             [DFI_ABILITY_BATTLEARMOR] = 1u, /* Perrserker and Falinks: no critical hit against the holder (data/abilities.ts:355-361) */
             [DFI_ABILITY_MOODY] = 1u, /* step G73: Glalie and Scovillain (the residual rise and fall, one boost of +2 and -1) */
             [DFI_ABILITY_CUTECHARM] = 1u, /* step G71 (decision 0034): Milotic (F, Cute Charm) infatuates a contact attacker of the other gender */
+            /* step G79 (decision 0015 5br): Cloud Nine suppresses the weather while a holder stands (data/abilities.ts:543-562,
+             * sim/field.ts:106-116); Altaria and Drampa; an engine row */
+            [DFI_ABILITY_CLOUDNINE] = 1u,
         },
     .items =
         {
