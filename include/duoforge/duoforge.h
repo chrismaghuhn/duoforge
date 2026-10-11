@@ -1065,7 +1065,11 @@ duoforge_status duoforge_battle_observe_ext(const duoforge_context *ctx, const d
 #define DUOFORGE_EVENT_SIDE_START      27u /* [-sidestart] detail: the side, amount: DUOFORGE_SIDE_* */
 #define DUOFORGE_EVENT_SIDE_END        28u /* [-sideend] as SIDE_START */
 #define DUOFORGE_EVENT_ITEM_END        29u /* [-enditem] position, id2: item + 1; flags EATEN; detail 1: the
-                                              [weaken] line of a resist berry (Team C) */
+                                              [weaken] line of a resist berry (Team C). Step G85 (decision 0015 entry 5bu):
+                                              cause ABILITY, id = the ability + 1, id2 = the item + 1, other = the [of] Pokemon:
+                                              Pickpocket's silent `-enditem|ATT|Item|[silent]|[from] ability: Pickpocket|[of] ATT`
+                                              (the attacker's item that the holder took; other is the attacker's own position).
+                                              The ability form takes the ability in id, not id2: the item stays in id2 as above. */
 /* FORME (decision 0040, step G66): position, id: the new forme. Two meanings, by cause. Cause NONE is a PERMANENT change,
  * [detailschange] (Mega Evolution, Palafin-Hero, Mimikyu-Busted). Cause ABILITY with id2 = the ability id + 1 is a TEMPORARY
  * change, [-formechange] (Stance Change: Aegislash <-> Aegislash-Blade), which ends when the member leaves the field (the forme
@@ -1101,7 +1105,14 @@ duoforge_status duoforge_battle_observe_ext(const duoforge_context *ctx, const d
                                               item that move M gave it (Trick, Switcheroo, Thief, Covet); id2: the item + 1, cause
                                               MOVE with id: the move, other: the Pokemon it came from when the line says [of]
                                               (Thief, Covet), else DUOFORGE_NO_POSITION. The item that left the other Pokemon is
-                                              ITEM_END with the cause ITEM_TAKEN (Thief, Trick, Switcheroo), or no line (Covet) */
+                                              ITEM_END with the cause ITEM_TAKEN (Thief, Trick, Switcheroo), or no line (Covet).
+                                              Step G85 (decision 0015 entry 5bu): the same event with cause ABILITY, id = the
+                                              ability + 1 and id2 = the item + 1 (`-item|X|Item|[from] ability: A|[of] Y`):
+                                              Pickpocket (other: the attacker, whose item left with a silent ITEM_END) and
+                                              Magician (other: the target). With Magician the target loses its item WITHOUT an
+                                              event of its own: consumers derive the loss from this ITEM_START with other ([of]),
+                                              as for Covet (the engine and the converter carry the target's item state the same
+                                              way; tests/test_pool_g85.c and the conformance records). */
 #define DUOFORGE_EVENT_REVIVE          43u /* [-heal] of a revived member (decision 0025 item 9): position: the user (the line
                                                names no position, so the converter takes it from the move line before it); id: the
                                                revived member's roster index; hp, hp_max, hp_kind and hp_flag as HEAL and SWITCH

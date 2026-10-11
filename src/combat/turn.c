@@ -3216,6 +3216,7 @@ static void dfi_symbiosis(dfi_run *r, uint32_t flat)
 }
 
 static duoforge_status dfi_skill_swap(dfi_run *r, uint32_t user, uint32_t target, uint32_t move_id, bool *did);
+static void dfi_emit_balloon_on_receive(dfi_run *r, uint32_t flat, uint32_t code);
 
 /* Trick's and Switcheroo's onHit for one target (`did` is whether the move did something: a failure prints -fail and stops
  * the hit loop's end). `lines_move` is the move whose name the `[from] move:` attributes carry: the move itself. */
@@ -3251,12 +3252,17 @@ static duoforge_status dfi_trick(dfi_run *r, uint32_t user, uint32_t target, uin
     dfi_emit(r, &act); /* -activate|user|move: Trick|[of] target (Switcheroo prints Trick as well) */
     dfi_set_held(b, target, mine);
     if (mine != 0u) {
+        /* step G85 (regression of G67, decision 0033): setItem's onStart of an Air Balloon prints its own -item line before the
+         * -item of the move (the Trick battle g85_trick_balloon). Only a status move reaches this: a damaging hit pops a balloon
+         * before any item moves, so Thief and Covet never give one. */
+        dfi_emit_balloon_on_receive(r, target, mine);
         dfi_emit_item_received(r, target, mine, move_id, DUOFORGE_NO_POSITION);
     } else {
         dfi_emit_item_left(r, target, yours, move_id, DUOFORGE_NO_POSITION);
     }
     dfi_set_held(b, user, yours);
     if (yours != 0u) {
+        dfi_emit_balloon_on_receive(r, user, yours); /* the same for the user's setItem (step G85 regression of G67) */
         dfi_emit_item_received(r, user, yours, move_id, DUOFORGE_NO_POSITION);
     } else {
         dfi_emit_item_left(r, user, mine, move_id, DUOFORGE_NO_POSITION);

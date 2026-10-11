@@ -1,0 +1,20 @@
+{
+  "name": "g85_magician_stickyhold",
+  "purpose": "G85 Magician on a Sticky Hold target: Delphox's Mystical Fire hits Swalot (Sticky Hold, Leftovers); the line shows and the item stays.",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,000000000000000000000000000000000000000000000000000000000000008b",
+  "teams": [
+    "Delphox (F)\nAbility: Magician\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nModest Nature\n- Mystical Fire\n- Protect\n\nGlalie (M)\nAbility: Inner Focus\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 SpD\nModest Nature\n- Sheer Cold\n- Protect\n\nMilotic (F) @ Sitrus Berry\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Triple Axel\n- Protect\n- Coil\n\nGholdengo @ Focus Sash\nAbility: Good as Gold\nLevel: 50\nEVs: 32 HP / 2 SpA / 32 SpD\nCalm Nature\n- Shadow Ball\n- Protect\n\nCeruledge (M) @ Expert Belt\nAbility: Flash Fire\nLevel: 50\nEVs: 31 HP / 7 Atk / 24 Def / 3 SpD / 1 Spe\nBrave Nature\n- Protect\n\nSalamence (M) @ Salamencite\nAbility: Intimidate\nLevel: 50\nEVs: 2 HP / 32 SpA / 32 Spe\nTimid Nature\n- Hyper Voice\n- Draco Meteor\n- Protect\n- Tailwind",
+    "Swalot (M) @ Leftovers\nAbility: Sticky Hold\nLevel: 50\nEVs: 32 HP / 32 Def / 2 SpD\nBold Nature\n- Double-Edge\n- Protect\n- Sludge Bomb\n\nPrimarina (F) @ Rocky Helmet\nAbility: Torrent\nLevel: 50\nEVs: 32 HP / 2 Def / 32 SpD\nCalm Nature\n- Moonblast\n- Protect\n\nKingambit (M) @ Black Glasses\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 2 Atk / 32 Spe\nAdamant Nature\n- Kowtow Cleave\n- Swords Dance\n- Protect\n\nCeruledge (M) @ Expert Belt\nAbility: Flash Fire\nLevel: 50\nEVs: 31 HP / 7 Atk / 24 Def / 3 SpD / 1 Spe\nBrave Nature\n- Protect\n\nSalamence (M) @ Salamencite\nAbility: Intimidate\nLevel: 50\nEVs: 2 HP / 32 SpA / 32 Spe\nTimid Nature\n- Hyper Voice\n- Draco Meteor\n- Protect\n- Tailwind\n\nMilotic (F) @ Sitrus Berry\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Triple Axel\n- Protect\n- Coil"
+  ],
+  "plan": {
+    "p1": [
+      "move 1 1, move 2"
+    ],
+    "p2": [
+      "move 3 2, move 2"
+    ],
+    "max_steps": 2
+  }
+}

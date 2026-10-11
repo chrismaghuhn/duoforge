@@ -827,3 +827,7 @@ duoforge_add_test(NAME duoforge.state.pool_g73 SOURCES test_pool_g73.c WHITEBOX 
 # Step G67 (decision 0015 entry 5bl, decision 0033): Magic Guard (the class of every indirect damage), Air Balloon (grounding, the
 # pops, the immunity, the switch-in line ITEM_SHOWN) and the fold that ignores ITEM_SHOWN.
 duoforge_add_test(NAME duoforge.state.pool_g67 SOURCES test_pool_g67.c WHITEBOX TIMEOUT 120)
+
+# Step G85 (decision 0015 entry 5bu): Pickpocket and Magician, the item thefts (the item_now after the recorded g85_* battles, the
+# Trick balloon regression, and the refusals of a priority-0 pair, a speed tie of Magician's targets and a Mega Stone; white-box).
+duoforge_add_test(NAME duoforge.state.pool_g85 SOURCES test_pool_g85.c WHITEBOX TIMEOUT 120)
