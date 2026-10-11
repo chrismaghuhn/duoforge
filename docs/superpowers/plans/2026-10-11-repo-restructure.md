@@ -131,6 +131,37 @@ outside the repository.
   one and prints the new name. Running sessions (M11, M12, Learner v2) use these commands. The forwarders are removed
   in a later, separate PR once no session uses them.
 
+## Per-mechanic fixed costs the restructure removes (owner addition, 2026-10-11)
+
+A retro measurement of the expansion (batches 1-8, 98 PRs, about 510 mechanics) showed:
+- **engine C is the small part:** about 13 % of the hand-written change;
+- **high fixed cost per step:** the median single-step PR touched 13 of 19 artifact kinds and 41 files for about 100 engine lines; steps without any engine line still touched 7-10 kinds;
+- **regeneration:** 54 % of step commits touched pins or generated files;
+- **renumbering:** 82 merges had to renumber shared ids, and one collision reached `main` (residual kind 18 for both Leech Seed and Moody);
+- **hand-written resolutions:** 50 merges replaced the conflict list with hand-written resolution notes, so the hotspot table above undercounts;
+- **every step touched two shared files:** `docs/support/README.md` and decision 0015 (565 KB).
+
+The restructure is where these costs go. Each item is behaviour-neutral and carries the proof suite:
+
+1. **Reference data and pins per battle**, sums derived: step 2.
+2. **Numbers from one definition.** Every shared number space (`DFI_SITE_*`, `DFI_RES_*`, residual kinds, volatile and cause ids, position flag bits, tail bytes) has one definition file. The C header, `python/duoforge/_layout.py`/`_state_layout.py` and `gen_closure.py` are generated from it or checked against it. The independent state model (`tools/state_model`) keeps its own values, and a test compares them. Compile-time guards cover every frozen value, and a test fails on a duplicate value in one space. This is step 5.
+3. **Documentation per mechanic, not in shared files.**
+   - Decision 0015 is split into one file per mechanic under `docs/mechanics/<area>/<mechanic>.md`, keeping each entry's frozen id (`5ar`, `5cx`, ...) as its anchor. A redirect table in 0015 maps every old entry to its new file. Cross-cutting decisions stay in `docs/decisions/`.
+   - `docs/support/README.md` is generated from the support manifest (`src/data/support_manifest.c`) and checked with `--check`; it is no longer hand-edited.
+   - This is step 11.
+4. **Tests and CMake per folder:** steps 1 and 1b. In addition, a scaffold `tools/new_mechanic.py <area> <name>` creates the test file with its folder registration, the mechanic doc stub and the definition-file entries. It only writes new files; it changes no behaviour. This is step 12.
+5. **No central allow-list in the move body.**
+   - `dfi_run_move_body` refuses unknown specials with one condition: about 90 `md->special != DFI_SPECIAL_*` terms (`turn.c`, near the "A handler this build does not have fails explicitly" comment), which every handler step extended and which caused conflicts.
+   - It becomes a generated per-special table from the specials' definition file, for example `dfi_special_has_handler[DFI_SPECIAL_COUNT]`.
+   - The PR includes a test that enumerates every `DFI_SPECIAL_*` value and shows that the old predicate and the table agree. The same pattern applies to any other central list the area moves uncover.
+   - This is part of step 4 (moves).
+
+Behaviour-changing parts of a cheaper extension system come after the restructure, in their own spec:
+- the tracker reading durations and rules from the engine's source instead of re-implementing them;
+- effect families for abilities and items as table rows;
+- random-set differential checks against Showdown instead of hand-calculated recordings;
+- registry-based state storage instead of fixed tail bytes.
+
 ## Format axis (owner addition, 2026-10-11)
 
 Later goal (owner): the engine supports several formats, in the direction of Smogon OU (issue #413). That is feature
@@ -187,13 +218,15 @@ Rules for the restructure:
 | 1b | Python and tool tests | move `python/tests/` into the area folders and tool tests into `tools/<tool>/tests/` (rename only), per-folder registration, **CTest names kept**; then add the tier and area labels and switch the CI selection to labels | P1 inventory identical; `git diff -M100%` renames plus CMake/CI; the label run `ctest -L quick` and the CI jobs run the same tests as before (lists in the PR body) |
 | 2 | reference data and pins | generated reference data per battle (one generated file per battle under `tests/reference/battles/<set>/`, registry built from the directory) instead of the monolithic `conformance_pool.h` / `tiebreak_ref.h`; per-battle pins with the global sums derived; `test_live` record-assembler pins per battle | P2 digest of all battle records old vs new byte-equal; build time before/after measured |
 | 3 | items pilot | move the existing item families out of `turn.c` into `src/combat/items/`, then one bounded effect area | P1–P6; bench with IPO on and off |
-| 4 | abilities, mechanics, moves, forms, flow | one PR per area, same pattern; very large functions (`dfi_run_move_body`, the residual runner, `dfi_get_damage`) are cut into named phase functions one phase per PR | P1–P6 per PR |
+| 4 | abilities, mechanics, moves, forms, flow | one PR per area, same pattern; very large functions (`dfi_run_move_body`, the residual runner, `dfi_get_damage`) are cut into named phase functions one phase per PR; the moves area replaces the central `md->special != ...` allow-list with a generated per-special table (item 5 of the fixed-cost section) | P1–P6 per PR; for the allow-list, a test that old predicate and table agree for every `DFI_SPECIAL_*` value |
 | 5 | data generator and number spaces | split `gen_closure.py` by formes/Pokémon, moves, items, abilities; definition files with compile-time guards for draw sites, residual kinds and bits | P5 identical output and IDs; P2; a static-assert table of every old value |
 | 6 | names and labels | rename tests to behaviour names (old G number in a comment), split mixed tests into areas / `tests/interactions/`, add CTest labels per area so areas can be run alone | P1: every old test case still runs (map old to new names in the PR body); the full CI matrix stays the merge gate |
 | 7 | tracker | split `python/duoforge_live/tracker.py` into a package by fold family, with a re-export module | `test_live`, `test_live_unit`, `test_replay` and the per-battle pins unchanged |
 | 8 | runs | `python/duoforge_eval/`, `runs/`, `tools/coverage/`, `python/duoforge/runs.py` with the manifest, `$DUOFORGE_RUNS` defaults, the report template; one PR per kind (eval, bench, coverage, fuzz), forwarders for every old command | P1; every old command line still runs through its forwarder (one smoke run each, outputs outside the repo); a manifest is written and names the commit; `test_repo_hygiene` refuses an output inside the repo |
 | 9 | data and leftovers | `.gitattributes` generated marks and headers, `tasks/` to `docs/history/tasks/` | P1, P5 (no generated byte changes) |
 | 10 | format definition | extract the Reg M-C facts into `data/formats/reg-mc.*` (pool selection, level, team size and preview pick, clauses, timer); generator and setup read it; named constants for every format fact still in code; a short `docs/architecture/formats.md` listing what a second format would have to supply | P1–P6 unchanged; P5 byte-identical; a test that the definition file reproduces today's pool exactly |
+| 11 | docs per mechanic | split decision 0015 into `docs/mechanics/<area>/<mechanic>.md` with the frozen entry ids as anchors and a redirect table in 0015; generate `docs/support/README.md` from the support manifest (`--check`) | every 0015 entry id resolves to exactly one file; the generated README equals the hand-written one in content (diff in the PR body); P1 |
+| 12 | mechanic scaffold | `tools/new_mechanic.py <area> <name>`: test file with folder registration, doc stub, definition-file entries; documented in `AGENTS.md`-referenced docs | a scaffolded dummy mechanic builds and its empty test runs, then is removed; P1 unchanged |
 
 Order rationale: step 1 (and 1b for Python) removes the most frequent conflict for the least risk; step 2 removes the generated-header and
 pin conflicts; steps 3–4 are the only risky block and go area by area; step 5 must not change a single generated byte;
