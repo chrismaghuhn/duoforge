@@ -76,7 +76,7 @@ def main():
     with tempfile.TemporaryDirectory(prefix='reference-observer-', dir=output) as temp:
         temp = Path(temp)
         for kind in ('conformance', 'tiebreak'):
-            source = repo / 'tests' / f'test_{kind}.c'
+            source = repo / 'tests' / 'interactions' / f'test_{kind}.c'
             entries = [e for e in database if Path(e['file']).resolve() == source]
             if len(entries) != 5:
                 raise RuntimeError(f'expected five {kind} variants, got {len(entries)}')

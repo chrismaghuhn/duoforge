@@ -963,7 +963,7 @@ class Library(unittest.TestCase):
         tests/test_pool_weather.c: the weather and the turns left after each step of the nine weather battles, for
         both players) must be exactly what these lines give for the committed traces, so that the engine's view is
         checked against the protocol and not against itself."""
-        source = open(os.path.join(ROOT, 'tests', 'test_pool_weather.c'), encoding='utf-8').read()
+        source = open(os.path.join(ROOT, 'tests', 'mechanics/test_pool_weather.c'), encoding='utf-8').read()
         rows = {}
         for m in re.finditer(r'\{"(w\d_\w+)", (\d+)u, (\d)u, (\d)u\}', source):
             rows[(m.group(1), int(m.group(2)))] = (int(m.group(3)), int(m.group(4)))
@@ -999,7 +999,7 @@ class Library(unittest.TestCase):
         tests/test_pool_terrain.c: the terrain and the turns left after each step of the seven battles, for both players)
         must be exactly what these lines give for the committed traces, so that the engine's view is checked against the
         protocol and not against itself."""
-        with open(os.path.join(ROOT, 'tests', 'test_pool_terrain.c'), encoding='utf-8') as f:
+        with open(os.path.join(ROOT, 'tests', 'mechanics/test_pool_terrain.c'), encoding='utf-8') as f:
             source = f.read()
         rows = {}
         for m in re.finditer(r'\{"(g25_\w+)", (\d+)u, (\d)u, (\d)u\}', source):
@@ -1144,7 +1144,7 @@ class Library(unittest.TestCase):
         masks over side * 2 + slot) must be exactly what these lines give for the committed traces, so the engine's
         extension is checked against the protocol and not against itself."""
         names = ('g8_throat_chop', 'g8_heal_block', 'g8_heal_block_pair', 'g8_heal_block_tie_a', 'g8_heal_block_tie_b')
-        source = open(os.path.join(ROOT, 'tests', 'test_pool_g8.c'), encoding='utf-8').read()
+        source = open(os.path.join(ROOT, 'tests', 'moves/test_pool_g8.c'), encoding='utf-8').read()
         rows = {}
         for m in re.finditer(r'\{"(g8_\w+)", (\d+)u, 0x([0-9a-f])u, 0x([0-9a-f])u\}', source):
             rows[(m.group(1), int(m.group(2)))] = (int(m.group(3), 16), int(m.group(4), 16))
@@ -1189,7 +1189,7 @@ class Library(unittest.TestCase):
         `-activate|X|move: Wide Guard` is at a side whose guard is up, and every `-singleturn` Wide Guard comes
         from a move line of Wide Guard."""
         names = ('g7_wide_guard_a', 'g7_wide_guard_b', 'g7_wide_guard_ally', 'g7_wide_guard_pivot')
-        with open(os.path.join(ROOT, 'tests', 'test_pool_g7.c'), encoding='utf-8') as f:
+        with open(os.path.join(ROOT, 'tests', 'mechanics/test_pool_g7.c'), encoding='utf-8') as f:
             source = f.read()
         rows = {}
         for m in re.finditer(r'\{"(g7_\w+)", (\d+)u, 0x([0-9a-f])u\}', source):
@@ -1228,7 +1228,7 @@ class Library(unittest.TestCase):
         variant is live at a boundary inside a turn (a pivot) and never at a turn boundary. Every contact move that a
         Spiky Shield stops is followed by `-damage|attacker|hp|[from] Spiky Shield|[of] holder`, a move without contact by
         nothing of the kind."""
-        with open(os.path.join(ROOT, 'tests', 'test_pool_g20_protect.c'), encoding='utf-8') as f:
+        with open(os.path.join(ROOT, 'tests', 'mechanics/test_pool_g20_protect.c'), encoding='utf-8') as f:
             source = f.read()
         rows = {}
         for m in re.finditer(r'\{"(g20_spiky\w+)", (\d+)u, \{(\d+)u, (\d+)u, (\d+)u, (\d+)u\}\}', source):
@@ -1284,7 +1284,7 @@ class Library(unittest.TestCase):
         battles) must be exactly what these lines give for the committed traces. Every `cant|X|Disable|MOVE` is of the barred
         move, a `-start` with [from] ability: Cursed Body comes after a hit at a holder of that ability, and the next move
         line of a barred position is never of its barred move."""
-        with open(os.path.join(ROOT, 'tests', 'test_pool_g27.c'), encoding='utf-8') as f:
+        with open(os.path.join(ROOT, 'tests', 'interactions/test_pool_g27.c'), encoding='utf-8') as f:
             source = f.read()
         rows = {}
         for m in re.finditer(r'\{"(g27_\w+)", (\d+)u, \{(\d+)u, (\d+)u, (\d+)u, (\d+)u\}\}', source):
@@ -1359,7 +1359,7 @@ class Library(unittest.TestCase):
         residual damage of tox names psn as its source, so no new cause exists, and the HP field carries the status tox."""
         self.assertEqual(trace_to_c.STATUS['tox'], 6)
         self.assertEqual(trace_to_c.AILMENT['tox'], 6)
-        with open(os.path.join(ROOT, 'tests', 'test_pool_g36.c'), encoding='utf-8') as f:
+        with open(os.path.join(ROOT, 'tests', 'mechanics/test_pool_g36.c'), encoding='utf-8') as f:
             source = f.read()
         rows = {}
         for m in re.finditer(r'\{"(g36_\w+)", (\d+)u, \{(\d+)u, (\d+)u, (\d+)u, (\d+)u\}\}', source):
@@ -1422,7 +1422,7 @@ class Library(unittest.TestCase):
         self.assertEqual(trace_to_c.CAUSE['TAUNT'], 20)
         self.assertEqual(trace_to_c.VOLATILE_TAUNT, 6)
         self.assertEqual(trace_to_c.VOLATILE_YAWN, 7)
-        with open(os.path.join(ROOT, 'tests', 'test_pool_g31.c'), encoding='utf-8') as f:
+        with open(os.path.join(ROOT, 'tests', 'moves/test_pool_g31.c'), encoding='utf-8') as f:
             source = f.read()
         rows = {}
         for m in re.finditer(r'\{"(g31_\w+)", (\d+)u, \{(\d+)u, (\d+)u, (\d+)u, (\d+)u\}\}', source):
@@ -1481,7 +1481,7 @@ class Library(unittest.TestCase):
         names_ = ('stealthrock', 'spikes', 'toxicspikes', 'stickyweb')
         lines_of = {'move: Stealth Rock': 0, 'Spikes': 1, 'move: Spikes': 1, 'move: Toxic Spikes': 2, 'move: Sticky Web': 3}
         most = (1, 3, 2, 1)
-        with open(os.path.join(ROOT, 'tests', 'test_pool_g37.c'), encoding='utf-8') as f:
+        with open(os.path.join(ROOT, 'tests', 'mechanics/test_pool_g37.c'), encoding='utf-8') as f:
             source = f.read()
         rows = {}
         for m in re.finditer(r'\{"(g37_\w+)", (\d+)u, \{((?:\d+u(?:, )?){10})\}\}', source):
@@ -1532,7 +1532,7 @@ class Library(unittest.TestCase):
         tail and view extension are checked against the protocol and not against themselves. Every `-sidestart` comes from
         a move line of Aurora Veil of that side, and a `-sideend` comes with one turn left; a failed Aurora Veil (`-fail`
         after the move line) leaves the rows alone."""
-        with open(os.path.join(ROOT, 'tests', 'test_pool_g20.c'), encoding='utf-8') as f:
+        with open(os.path.join(ROOT, 'tests', 'mechanics/test_pool_g20.c'), encoding='utf-8') as f:
             source = f.read()
         rows = {}
         for m in re.finditer(r'\{"(g20_\w+)", (\d+)u, \{(\d+)u, (\d+)u\}\}', source):
@@ -1585,7 +1585,7 @@ class Library(unittest.TestCase):
         move: M` takes X's away; a used-up item and a switch change nothing. Also the converter: the lines are ITEM_START (cause
         MOVE) and ITEM_END (cause ITEM_TAKEN), and any other shape is refused."""
         names = ('g29_trick_scarf', 'g29_empty_hands', 'g29_thief_covet', 'g29_trick_fails', 'g29_edge_cases', 'g29_trick_lock_before_move', 'g29_thief_fainted')
-        source = open(os.path.join(ROOT, 'tests', 'test_pool_g29.c'), encoding='utf-8').read()
+        source = open(os.path.join(ROOT, 'tests', 'items/test_pool_g29.c'), encoding='utf-8').read()
         rows = {}
         for m in re.finditer(r'\{"(g29_\w+)", (\d+)u, \{([^}]*)\}, (\d+)u, (\d+)u\}', source):
             codes = tuple(int(x.strip().rstrip('u')) for x in m.group(3).split(','))
@@ -1694,7 +1694,7 @@ class Library(unittest.TestCase):
         refuses any other shape of a `[from] move:` item line."""
         names = ('g16_removal', 'g16_unburden', 'g16_stones', 'g16_sticky_hold', 'g16_scarf_helmet', 'g16_helmet_faint',
                  'g16_scarf_lock_stays')
-        source = open(os.path.join(ROOT, 'tests', 'test_pool_g16.c'), encoding='utf-8').read()
+        source = open(os.path.join(ROOT, 'tests', 'items/test_pool_g16.c'), encoding='utf-8').read()
         rows = {}
         for m in re.finditer(r'\{"(g16_\w+)", (\d+)u, 0x([0-9a-f]+)u, (\d+)u, (\d+)u\}', source):
             rows[(m.group(1), int(m.group(2)))] = (int(m.group(3), 16), int(m.group(4)), int(m.group(5)))
@@ -1754,7 +1754,7 @@ class Library(unittest.TestCase):
         Struggle of a request with none left."""
         names = ('g38_imprison_mask', 'g38_imprison_struggle', 'g38_imprison_cant', 'g38_imprison_encore', 'g38_imprison_choice',
                  'g38_imprison_end', 'g38_imprison_pair', 'g38_imprison_struggle_b')
-        source = open(os.path.join(ROOT, 'tests', 'test_pool_g38.c'), encoding='utf-8').read()
+        source = open(os.path.join(ROOT, 'tests', 'moves/test_pool_g38.c'), encoding='utf-8').read()
         rows = {}
         for m in re.finditer(r'\{"(g38_\w+)", (\d+)u, 0x([0-9a-f]+)u, (\d+)u, (\d+)u\}', source):
             rows[(m.group(1), int(m.group(2)))] = (int(m.group(3), 16), int(m.group(4)), int(m.group(5)))
@@ -1812,7 +1812,7 @@ class Library(unittest.TestCase):
         against the protocol and not against itself. Also: the converter reads the line as TYPE_CHANGE (the type in the
         detail, cause MOVE with Soak), and refuses one that is not a single type of the table."""
         names = ('g11_soak', 'g11_soak_mega', 'g11_soak_stab', 'g11_soak_electro')
-        source = open(os.path.join(ROOT, 'tests', 'test_pool_g11.c'), encoding='utf-8').read()
+        source = open(os.path.join(ROOT, 'tests', 'moves/test_pool_g11.c'), encoding='utf-8').read()
         rows = {}
         for m in re.finditer(r'\{"(g11_\w+)", (\d+)u, 0x([0-9a-f])u\}', source):
             rows[(m.group(1), int(m.group(2)))] = int(m.group(3), 16)
@@ -1861,7 +1861,7 @@ class Library(unittest.TestCase):
         the Encore detail."""
         names = ('g09_encore_lock', 'g09_encore_fail', 'g09_encore_late', 'g09_encore_switch', 'g09_encore_struggle',
                  'g09_encore_tie_a', 'g09_encore_tie_b', 'g09_encore_encore')
-        source = open(os.path.join(ROOT, 'tests', 'test_pool_g9.c'), encoding='utf-8').read()
+        source = open(os.path.join(ROOT, 'tests', 'moves/test_pool_g9.c'), encoding='utf-8').read()
         rows = {}
         for m in re.finditer(r'\{"(g09_\w+)", (\d+)u, \{(\d+)u, (\d+)u, (\d+)u, (\d+)u\}\}', source):
             rows[(m.group(1), int(m.group(2)))] = [int(m.group(i)) for i in (3, 4, 5, 6)]
@@ -1989,7 +1989,7 @@ class Library(unittest.TestCase):
         line of a recharge move that is not a miss or a block."""
         names = sorted(f[:-5] for f in os.listdir(os.path.join(ROOT, 'tests', 'reference', 'specs')) if f.startswith('g17_'))
         self.assertGreaterEqual(len(names), 9)
-        source = open(os.path.join(ROOT, 'tests', 'test_pool_g17.c'), encoding='utf-8').read()
+        source = open(os.path.join(ROOT, 'tests', 'moves/test_pool_g17.c'), encoding='utf-8').read()
         rows = {}
         for m in re.finditer(r'\{"(g17_\w+)", (\d+)u, \{(\d+)u, (\d+)u, (\d+)u, (\d+)u\}, \{(\d+)u, (\d+)u, (\d+)u, (\d+)u\}\}',
                              source):
@@ -2072,7 +2072,7 @@ class Library(unittest.TestCase):
         that is not Trace's, an [of] that is missing and a plain line with a [from]."""
         names = ('ac1_trace_intimidate', 'ac1_trace_defiant', 'ac1_trace_drizzle', 'ac1_trace_single',
                  'ac1_trace_switch')
-        source = open(os.path.join(ROOT, 'tests', 'test_pool_ac1.c'), encoding='utf-8').read()
+        source = open(os.path.join(ROOT, 'tests', 'abilities/test_pool_ac1.c'), encoding='utf-8').read()
         rows = {}
         for m in re.finditer(r'\{"(ac1_\w+)", (\d+)u, \{([^}]*)\}\}', source):
             cells = [c.strip() for c in m.group(3).split(',')]
@@ -2182,7 +2182,7 @@ class Library(unittest.TestCase):
         self.assertEqual(ctx.exception.rule, 'fieldactivate-line')
         names = ('g26_perish_song', 'g26_perish_recast', 'g26_perish_end', 'g26_perish_survivor_a',
                  'g26_perish_survivor_b', 'g26_perish_soundproof')
-        with open(os.path.join(ROOT, 'tests', 'test_pool_g26.c'), encoding='utf-8') as f:
+        with open(os.path.join(ROOT, 'tests', 'moves/test_pool_g26.c'), encoding='utf-8') as f:
             source = f.read()
         rows = {}
         for m in re.finditer(r'\{"(g26_\w+)", (\d+)u, \{(\d+)u, (\d+)u, (\d+)u, (\d+)u\}\}', source):
@@ -2238,7 +2238,7 @@ class Library(unittest.TestCase):
         themselves. Every silent line follows such a hit, and no battle shows it for a miss, a block or an immunity."""
         names = sorted(f[:-5] for f in os.listdir(os.path.join(ROOT, 'tests', 'reference', 'specs')) if f.startswith('g19_glaive'))
         self.assertEqual(len(names), 6)  # with g19_glaive_rush_mirror (the replay tracker's coverage)
-        with open(os.path.join(ROOT, 'tests', 'test_pool_g19.c'), encoding='utf-8') as f:
+        with open(os.path.join(ROOT, 'tests', 'moves/test_pool_g19.c'), encoding='utf-8') as f:
             source = f.read()
         rows = {}
         for m in re.finditer(r'\{"(g19_glaive\w+)", (\d+)u, \{(\d+)u, (\d+)u, (\d+)u, (\d+)u\}\}', source):

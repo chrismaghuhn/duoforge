@@ -674,7 +674,7 @@ function checkEncore(dex, repo) {
     expect('encore duration and residual order', [c.duration, c.onResidualOrder], [3, 16]);
     expect('encore flags, accuracy, target, pp', [move.flags.failencore, move.flags.bypasssub, move.flags.protect,
         move.accuracy, move.target, move.pp], [1, 1, 1, 100, 'normal', 5]);
-    const text = readText(path.join(repo, 'tests', 'test_pool_g9.c'));
+    const text = readText(path.join(repo, 'tests', 'moves/test_pool_g9.c'));
     const listed = (text.match(/failencore:begin \*\/([\s\S]*?)\/\* failencore:end/) || ['', ''])[1].match(/"[a-z]+"/g) || [];
     expect('failencore moves', dex.moves.all().filter((m) => m.flags.failencore).map((m) => m.id).sort(),
         listed.map((x) => x.slice(1, -1)));
