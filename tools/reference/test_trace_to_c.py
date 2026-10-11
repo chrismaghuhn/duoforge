@@ -2333,6 +2333,8 @@ class Library(unittest.TestCase):
                             done = done or (name == 'Detect' and after.startswith('|-singleturn|'))
                             # Spiky Shield (step G20) prints Protect's line, `move: Protect`, for its own volatile.
                             done = done or (name == 'Spiky Shield' and after.startswith('|-singleturn|'))
+                            # Baneful Bunker (step G94) prints its own Protect line the same way (data/moves.ts:1005).
+                            done = done or (name == 'Baneful Bunker' and after.startswith('|-singleturn|'))
                             # King's Shield (step G66) prints the same `-singleturn|X|Protect` line as Protect (data/moves.ts:9929).
                             done = done or (name == "King's Shield" and after.startswith('|-singleturn|'))
                             # Haze (step G62, decision 0031): its own line, the public -clearallboost.
