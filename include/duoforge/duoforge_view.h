@@ -186,7 +186,10 @@ duoforge_status duoforge_hp_display(uint32_t hp, uint32_t hp_max, uint8_t *out_p
    first line are skipped. The live tracker keeps the record's move_result with it and holds no rule. A pure call, no heap.
    Checks: NULL (events with a count) -> E_NULL_ARGUMENT; user above 3 -> E_INVALID_ARGUMENT; a context of no POOL kind,
    events without the user's action, or an action the events do not determine (a move another one calls, a status move whose
-   handler is not mapped, a reflected run the engine itself would refuse) -> E_UNSUPPORTED. Nothing is written on a refusal. */
+   handler is not mapped, a reflected run the engine itself would refuse) -> E_UNSUPPORTED. Nothing is written on a refusal.
+   Precondition: no target of a status move has a Substitute. One that a Substitute blocks prints the lines of a failed one
+   (-fail|user, [still]) and is true at the pin (TryPrimaryHit's null gives a hit damage of 0, which keeps the target), which
+   the events cannot tell apart; the live tracker stops at a Substitute (lines.check) before it asks. */
 duoforge_status duoforge_move_result(const duoforge_context *ctx, uint32_t user, const duoforge_event *events,
                                      uint32_t count, uint8_t *out_result);
 
