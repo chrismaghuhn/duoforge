@@ -635,6 +635,7 @@ const dfi_support_manifest dfi_support = {
     .items =
         {
             [DFI_ITEM_LEFTOVERS] = 1u,
+            [DFI_ITEM_BINDINGBAND] = 1u, /* step G90 (decision 0060): the trap's band, read at its start (trap_band) */
             [DFI_ITEM_SITRUSBERRY] = 1u,
             [DFI_ITEM_GRASSYSEED] = 1u,
             [DFI_ITEM_LIFEORB] = 1u,

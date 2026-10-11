@@ -1818,13 +1818,13 @@ def step_events(log, viewer, roster_of, maxhp, tables, rb_pending=None, ill=None
                 # from onEnd (the holder faints after the upkeep line). The cast's own `-start|X|perish3|[silent]` is
                 # not shown and never reaches this point.
                 e = ev_tuple(EV['VOLATILE_START'], ev_pos(args[0]), detail=VOLATILE_PERISH, amount=int(what[6]))
-            elif kind == '-end' and what.startswith('move: ') and what[6:] in PARTIAL_TRAP_MOVES and len(args) == 2 \
+            elif kind == '-end' and (what[6:] if what.startswith('move: ') else what) in PARTIAL_TRAP_MOVES and len(args) == 2 \
                     and attrs == ['[partiallytrapped]']:
                 # Step G90 (decision 0060, rule partial-trap-end): `-end|T|move: M|[partiallytrapped]`, the duration's end (the
                 # residual's count at 0, no damage that turn): VOLATILE_END with the move in `ident`. The silent end has [silent]
                 # and no event (the [silent] rule).
                 e = ev_tuple(EV['VOLATILE_END'], ev_pos(args[0]), detail=VOLATILE_PARTIAL_TRAP,
-                             ident=tables['MOVE'][key(what[6:])])
+                             ident=tables['MOVE'][key(what[6:] if what.startswith('move: ') else what)])
             elif what == 'move: Heal Block':
                 e = ev_tuple(EV['VOLATILE_START' if kind == '-start' else 'VOLATILE_END'], ev_pos(args[0]),
                              detail=VOLATILE_HEAL_BLOCK)

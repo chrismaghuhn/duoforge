@@ -1174,7 +1174,7 @@ static const tail_case cases[] = {
     {"a trap with a source alone", DFI_INV_TAIL_POSITION, false, m_trap_source_only},
     {"a trap with a move alone", DFI_INV_TAIL_POSITION, false, m_trap_move_only},
     {"a trap without its move", DFI_INV_TAIL_POSITION, false, m_trap_no_move},
-    {"a trap whose source left (source 0, decision 0060) is valid", DFI_INV_NONE, false, m_trap_no_source},
+    {"a trap whose source left is refused at a turn boundary (decision 0060: the residual ends it inside the turn)", DFI_INV_TAIL_POSITION, false, m_trap_no_source},
     {"a trap with neither source nor move", DFI_INV_TAIL_POSITION, false, m_trap_no_source_no_move},
     {"a trap above 8 turns", DFI_INV_TAIL_POSITION, false, m_trap_turns9},
     {"a trap source above 4", DFI_INV_TAIL_POSITION, false, m_trap_source5},

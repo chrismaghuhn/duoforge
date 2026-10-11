@@ -1863,7 +1863,7 @@ const dfi_pool_item_data dfi_pool_items[DFI_POOL_ITEM_COUNT] = {
     {33u, 34u},
     /* Big Root -- data/items.ts:482-497  [unmodelled: callback onTryHeal; callback onTryHealPriority] */
     {DFI_FORME_NONE, DFI_FORME_NONE},
-    /* Binding Band -- data/items.ts:498-507  [unmodelled: read by id in data/conditions.ts] */
+    /* Binding Band -- data/items.ts:498-507 */
     {DFI_FORME_NONE, DFI_FORME_NONE},
     /* Blastoisinite -- data/items.ts:556-567, data/mods/champions/items.ts:106-109 */
     {31u, 32u},
@@ -2719,7 +2719,7 @@ const uint8_t dfi_pool_item_handler[DFI_POOL_ITEM_COUNT] = {
     [DFI_ITEM_BAXCALIBRITE] = DFI_HANDLER_NONE,
     [DFI_ITEM_BEEDRILLITE] = DFI_HANDLER_NONE,
     [DFI_ITEM_BIGROOT] = DFI_HANDLER_UNMODELED,
-    [DFI_ITEM_BINDINGBAND] = DFI_HANDLER_UNMODELED,
+    [DFI_ITEM_BINDINGBAND] = DFI_HANDLER_NONE,
     [DFI_ITEM_BLASTOISINITE] = DFI_HANDLER_NONE,
     [DFI_ITEM_BLAZIKENITE] = DFI_HANDLER_NONE,
     [DFI_ITEM_BRIGHTPOWDER] = DFI_HANDLER_NONE,
@@ -6978,7 +6978,6 @@ const char *const dfi_pool_item_unmodeled[DFI_POOL_ITEM_COUNT] = {
     [DFI_ITEM_AIRBALLOON] = "callback onAfterSubDamage; callback onDamagingHit; callback onStart; read by id in sim/pokemon.ts",
     [DFI_ITEM_ASPEARBERRY] = "callback onEat; callback onUpdate",
     [DFI_ITEM_BIGROOT] = "callback onTryHeal; callback onTryHealPriority",
-    [DFI_ITEM_BINDINGBAND] = "read by id in data/conditions.ts",
     [DFI_ITEM_CHERIBERRY] = "callback onEat; callback onUpdate",
     [DFI_ITEM_CHESTOBERRY] = "callback onEat; callback onUpdate",
     [DFI_ITEM_FOCUSBAND] = "callback onDamage; callback onDamagePriority",
@@ -7106,10 +7105,10 @@ const char *const dfi_pool_ability_unmodeled[DFI_POOL_ABILITY_COUNT] = {
 };
 
 const uint8_t dfi_pool_table_hash[32] = {
-    0x67u, 0xf1u, 0xb5u, 0x71u, 0x21u, 0xceu, 0x6cu, 0x2eu,
-    0x9au, 0x2cu, 0x16u, 0xbdu, 0x09u, 0x4au, 0x43u, 0xbau,
-    0x8fu, 0x80u, 0x70u, 0xadu, 0x4eu, 0xfbu, 0x10u, 0x99u,
-    0xa4u, 0x27u, 0xe6u, 0x58u, 0xf7u, 0x9eu, 0x99u, 0x8du,
+    0x6fu, 0xf9u, 0x78u, 0xc2u, 0xd5u, 0xa6u, 0x12u, 0x7bu,
+    0xebu, 0x32u, 0xcfu, 0xecu, 0xc4u, 0x07u, 0x2du, 0xf2u,
+    0xbeu, 0xd5u, 0x16u, 0xa6u, 0x6du, 0x9bu, 0xd6u, 0x6du,
+    0xb9u, 0x2fu, 0x04u, 0x32u, 0x87u, 0x2fu, 0xbfu, 0x3au,
 };
 
 static size_t dfi_pool_put_u16(uint8_t *out, size_t n, uint32_t v)
