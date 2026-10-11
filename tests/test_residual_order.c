@@ -479,18 +479,19 @@ static bool parse_shard_arg(const char *text, uint32_t limit, uint32_t *out)
  * build-time guards against duplicate values; this test makes the names used, and a new kind or site without its case is caught). */
 static void test_kinds_and_sites_have_names(df_test *t)
 {
-    /* The defined kinds 1..18 and LEECH (19); the unused values 0 and 20 (the end of the defined range) have no name. */
+    /* The defined kinds 1..18 and LEECH (19) have a name. The unused probes are outside every lane range (lane B owns residual
+     * kinds 20-24 and sites 24-31): 0 and 255. The duplicate protection is the switch, not these probes. */
     for (uint32_t k = 1u; k <= DFI_RES_LEECH; ++k) {
         DF_CHECK(t, dfi_res_kind_name(k) != NULL);
     }
     DF_CHECK(t, dfi_res_kind_name(0u) == NULL);
-    DF_CHECK(t, dfi_res_kind_name(20u) == NULL);
-    /* The defined sites 1..DFI_SITE_COUNT-1 (no gap); 0 and DFI_SITE_COUNT have no name. */
-    for (uint32_t s = 1u; s < DFI_SITE_COUNT; ++s) {
+    DF_CHECK(t, dfi_res_kind_name(255u) == NULL);
+    /* The defined sites 1..23 have a name; 0 and 255 have none. */
+    for (uint32_t s = 1u; s <= DFI_SITE_MOODY; ++s) {
         DF_CHECK(t, dfi_site_name(s) != NULL);
     }
     DF_CHECK(t, dfi_site_name(0u) == NULL);
-    DF_CHECK(t, dfi_site_name(DFI_SITE_COUNT) == NULL);
+    DF_CHECK(t, dfi_site_name(255u) == NULL);
 }
 
 int main(int argc, char **argv)
