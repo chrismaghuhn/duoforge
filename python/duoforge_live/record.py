@@ -335,10 +335,6 @@ def _party_bytes(entries):
     return list(value.to_bytes(3, "little"))
 
 
-# Folds of the view extension (decision 0018) whose tail fields this assembler does not write yet: their counters (Taunt,
-# Heal Block, Yawn, Disable), layers and creation order (the entry hazards), soak and second types, the recharge, Glaive
-# Rush, Imprison, Rage Powder's Follow Me volatile and the side's Wide Guard. While one is up the record would hold a zero
-# where the engine's has the fold, so the decision point is refused (fold-not-in-record), never approximated.
 def _tail(t, s, boundary):
     """The POOL kinds' tail (src/codec/state_codec.c dfi_encode_tail) of what the tracker folds."""
     party = []

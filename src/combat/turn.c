@@ -3372,11 +3372,6 @@ static bool dfi_heal_blocked(const struct duoforge_battle *b, uint32_t flat)
     return b->tail.sides[flat / 2u].positions[flat % 2u].heal_block_turns != 0u;
 }
 
-/* Psychic Noise's Heal Block lasts 2 turns (durationCallback, data/moves.ts:8286-8289; DFI_HEAL_BLOCK_PSYCHIC_NOISE_TURNS);
- * Throat Chop's condition has duration 2 (data/moves.ts:19391-19393, DFI_TAIL_THROAT_CHOP_MAX). */
-
-/* Encore's condition has duration 3 (data/moves.ts:4724-4783); onStart adds one when the target has no move queued. */
-
 /* addVolatile('throatchop') on a standing target without it: no onRestart, so a second hit changes nothing; its
  * -start line is [silent]. */
 static void dfi_add_lockout(dfi_run *r, uint32_t flat)
