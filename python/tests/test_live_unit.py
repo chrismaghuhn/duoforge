@@ -247,6 +247,25 @@ class TrackerStopTest(unittest.TestCase):
                          (VALUES["DFI_TAIL_TYPE2_TYPELESS"], 7))
         self.assertEqual((get("tail.side0.member1.soak_type"), get("tail.side0.member1.type2")), (18, 0))
 
+    def test_a_bounced_move_is_no_action_of_the_holder(self):
+        # c1_cover_b step 2: |move|p2b: Espeon|Glare|p1b: Serperior|[from] ability: Magic Bounce is Magic Bounce's reflection
+        # (useMove), no action of the holder: acted (move_actions != 0, only dfi_run_move counts, as runMove's
+        # activeMoveActions++) stays 0; the user's own move line sets it. Dancer's copy, which runMove would count, is no line
+        # the converter takes (an unknown move attribute raises)
+        from types import SimpleNamespace
+        from duoforge_live.data import trace_to_c
+        t = self.tracker()
+        t._move_pivots, t._guard_moves, t._choice_items, t._struggle, t._last_move = {}, set(), set(), None, None
+        t._item_of = lambda member: None
+        t._pressure_extra = lambda pos, move, target, flags: 0
+        members = [SimpleNamespace(sheet={"moves": [7, 8]}, uses=[0, 0], item_used=0) for _ in range(6)]
+        t._member = lambda side: members
+        bounce = trace_to_c.ev_tuple(trace_to_c.EV["MOVE"], 3, 1, trace_to_c.CAUSE["ABILITY"], 8, 5)
+        t._fold_event(bounce)
+        self.assertEqual(t._positions[1][1].acted, 0)
+        t._fold_event(trace_to_c.ev_tuple(trace_to_c.EV["MOVE"], 3, 1, trace_to_c.CAUSE["NONE"], 7))
+        self.assertEqual(t._positions[1][1].acted, 1)
+
     def test_turn_history_bits_follow_the_engine(self):
         # G88 (decision 0046): LOWERED for a stage that really fell, HURT for a spread damage that leaves its target
         # standing; not for the directDamage of a user's own cost (Struggle's recoil, Substitute's and Clangorous Soul's

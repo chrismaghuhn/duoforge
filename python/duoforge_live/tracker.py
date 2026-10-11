@@ -812,8 +812,10 @@ class Tracker:
                 self._own_display(m, hp, e[7])
         elif kind == EV["MOVE"]:
             p = self._at(pos)
-            p.acted = 1
             if e[3] == trace_to_c.CAUSE["NONE"]:
+                # an action of the user (runMove's activeMoveActions++, dfi_run_move); a move line with cause ABILITY is
+                # Magic Bounce's reflection (useMove), no action of the holder
+                p.acted = 1
                 self._move_action(p)
                 p.turn_done, p.move_queued = True, False
                 if ident in self._move_pivots:
