@@ -239,13 +239,14 @@ class DataTest(unittest.TestCase):
         view = SimpleNamespace(data=self.pool)
         sheet = {"species": f["CHARIZARD"], "item": i["CHARIZARDITEX"] + 1}
         member = SimpleNamespace(sheet=sheet, is_mega=0)
-        base = Tracker.current_types(view, member)
+        standing = SimpleNamespace(type_now=(0, 0))  # its position: no type a move set
+        base = Tracker.current_types(view, member, standing)
         self.assertEqual(base, self.pool.forme_types(f["CHARIZARD"]))
         member.is_mega = 1  # after the -mega line: the Mega forme of the sheet's stone
-        self.assertEqual(Tracker.current_types(view, member), self.pool.forme_types(f["CHARIZARDMEGAX"]))
+        self.assertEqual(Tracker.current_types(view, member, standing), self.pool.forme_types(f["CHARIZARDMEGAX"]))
         member.sheet = {"species": f["GENGAR"], "item": 0}
         with self.assertRaisesRegex(ValueError, "Mega"):
-            Tracker.current_types(view, member)  # a Mega without a stone of its forme is no state to guess from
+            Tracker.current_types(view, member, standing)  # a Mega without a stone of its forme is no state to guess from
 
     def test_a_type_fold_must_come_with_the_current_types(self):
         # A forme change stops on its line today (FORME_CHANGE is no tracker fold); the day it is folded,
