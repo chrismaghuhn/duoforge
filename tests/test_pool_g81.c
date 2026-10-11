@@ -197,26 +197,35 @@ static void check_illusion_refusal(df_test *t, const duoforge_context *ctx)
     if (!DF_CHECK(t, cb != NULL && frisk != NULL)) {
         return;
     }
-    duoforge_battle_setup setup;
-    build_setup(cb, &setup);
     duoforge_battle_setup frisk_setup;
     build_setup(frisk, &frisk_setup);
-    /* Side 1's lead becomes a complete, legal Frisk holder: Noivern of g81_frisk_two_foes (its Focus Sash, Frisk, Hurricane, Dragon
-     * Pulse and Protect; the setup checks each of them against the forme). The battle is created; the entries run in its first step
-     * (the team selection, as the replay of every recorded battle), where the Frisk line would name the disguised Zoroark. */
-    setup.sides[1].members[0] = frisk_setup.sides[0].members[0];
-    duoforge_battle *b = NULL;
-    if (!DF_CHECK(t, duoforge_battle_create(ctx, &setup, &b) == DUOFORGE_OK && b != NULL)) {
-        return;
+    /* Two arrangements: the disguised Zoroark leads slot 0 (as recorded), then slot 1 (side 0's two leads swapped), so the refusal
+     * is checked for both foe slots. Side 1's lead becomes a complete, legal Frisk holder: Noivern of g81_frisk_two_foes (its Focus
+     * Sash, Frisk, Hurricane, Dragon Pulse and Protect; the setup checks each of them against the forme). The battle is created; the
+     * entries run in its first step (the team selection, as the replay of every recorded battle), where the Frisk line would name the
+     * disguised Zoroark. */
+    for (uint32_t swap = 0u; swap < 2u; ++swap) {
+        duoforge_battle_setup setup;
+        build_setup(cb, &setup);
+        setup.sides[1].members[0] = frisk_setup.sides[0].members[0];
+        if (swap != 0u) {
+            const duoforge_member_setup lead = setup.sides[0].members[0];
+            setup.sides[0].members[0] = setup.sides[0].members[1];
+            setup.sides[0].members[1] = lead;
+        }
+        duoforge_battle *b = NULL;
+        if (!DF_CHECK(t, duoforge_battle_create(ctx, &setup, &b) == DUOFORGE_OK && b != NULL)) {
+            continue;
+        }
+        const df_conf_step *st = &cb->steps[0];
+        duoforge_decision_bundle bd;
+        bundle_of(st, b, &bd);
+        duoforge_step_result res;
+        uint32_t used = 0xFFFFFFFFu;
+        const duoforge_status status = dfi_battle_step_tape(ctx, b, &bd, &conf_tape[st->tape_off], st->tape_len, &used, &res);
+        DF_CHECK_EQ_U64(t, (uint64_t)status, (uint64_t)DUOFORGE_E_UNSUPPORTED);
+        duoforge_battle_destroy(b);
     }
-    const df_conf_step *st = &cb->steps[0];
-    duoforge_decision_bundle bd;
-    bundle_of(st, b, &bd);
-    duoforge_step_result res;
-    uint32_t used = 0xFFFFFFFFu;
-    const duoforge_status status = dfi_battle_step_tape(ctx, b, &bd, &conf_tape[st->tape_off], st->tape_len, &used, &res);
-    DF_CHECK_EQ_U64(t, (uint64_t)status, (uint64_t)DUOFORGE_E_UNSUPPORTED);
-    duoforge_battle_destroy(b);
 }
 
 int main(void)
