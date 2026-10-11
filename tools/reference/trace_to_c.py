@@ -140,7 +140,8 @@ SITES = {'SPEED_TIE': 1, 'ACCURACY': 2, 'CRIT': 3, 'DAMAGE_ROLL': 4, 'SECONDARY'
          'DRAG': 20,  # 20: step G46, the drag's draw (DFI_SITE_DRAG)
          'LOCK_TURNS': 21,
          'MULTIHIT_COUNT': 22,  # 21: step G56, the lock's count of Outrage, Thrash and Petal Dance (DFI_SITE_LOCK_TURNS)
-         'ALLY_SWITCH': 23}  # 23: step G80, Ally Switch's consecutive-use roll (DFI_SITE_ALLY_SWITCH)
+         'MOODY': 23,
+         'ALLY_SWITCH': 33}  # 23: step G73, Moody's samples (DFI_SITE_MOODY), one site for both draws; 33: step G80, Ally Switch's consecutive-use roll (DFI_SITE_ALLY_SWITCH)
 STATS = ['HP', 'Atk', 'Def', 'SpA', 'SpD', 'Spe']
 GENDER = {'M': 1, 'F': 2}
 GENDERLESS = 3

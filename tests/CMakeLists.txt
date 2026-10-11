@@ -275,7 +275,7 @@ foreach(_gen IN ITEMS
         "extended_tables.h=b2abef243fcbfdd87654940076b9fe2fe80b117d74893a7567741f26b9075a7d"
         "extended_tables.c=9e736fa467713283418c4edf8f56b8d844452e596ba422adbd52483d20f7cc17"
         "pool_tables.h=97e9183d9bbbf908f387efbd3c3f14c60b380a131050a50adc7b6389a0b7747e"
-        "pool_tables.c=3bf89d996be2da5c5f09cd84c59f307e25ddcde45178ce151c1409cac8982906")
+        "pool_tables.c=8eea8ffff925369267671d1882872227ea6520091217655412d291fd64a9040b")
 
     string(REPLACE "=" ";" _parts "${_gen}")
     list(GET _parts 0 _file)
@@ -695,13 +695,13 @@ endif()
 # The Python package (M7, decision 0013), run with DUOFORGE_PYTHON; without
 # an interpreter each test reports skipped instead of passing silently.
 
-foreach(_py layout lib equivalence recipes policies_features example learn_numpy live_unit live_client replay_unit openings book expert_data expert_teacher expert_contract expert_eval ticks book_preview preview_search data batch_setups learn_v2_numpy teams features_ext encoder6 bc_numpy encode_c search_numpy search_expand repo_hygiene view vgcpastes_engine perft)
+foreach(_py layout lib equivalence recipes policies_features example learn_numpy live_unit live_client live_search replay_unit openings book expert_data expert_teacher expert_contract expert_eval ticks book_preview preview_search data batch_setups learn_v2_numpy teams features_ext encoder6 bc_numpy encode_c search_numpy search_expand repo_hygiene view vgcpastes_engine perft state_layout)
     if(DUOFORGE_PYTHON)
         add_test(NAME duoforge.python.${_py}
             COMMAND "${DUOFORGE_PYTHON}" -m unittest -v python.tests.test_${_py}
             WORKING_DIRECTORY "${PROJECT_SOURCE_DIR}")
         set_tests_properties(duoforge.python.${_py} PROPERTIES LABELS python TIMEOUT 600 ENVIRONMENT
-            "DUOFORGE_LIBRARY=$<TARGET_FILE:duoforge_shared>;DUOFORGE_LAYOUT_DUMP=$<TARGET_FILE:duoforge_layout_dump>;PYTHONPATH=${PROJECT_SOURCE_DIR}/python;PYTHONDONTWRITEBYTECODE=1")
+            "DUOFORGE_LIBRARY=$<TARGET_FILE:duoforge_shared>;DUOFORGE_LAYOUT_DUMP=$<TARGET_FILE:duoforge_layout_dump>;DUOFORGE_STATE_LAYOUT_DUMP=$<TARGET_FILE:duoforge_state_layout_dump>;PYTHONPATH=${PROJECT_SOURCE_DIR}/python;PYTHONDONTWRITEBYTECODE=1")
     else()
         add_test(NAME duoforge.python.${_py}
             COMMAND "${CMAKE_COMMAND}" -E echo "DUOFORGE_SKIP: DUOFORGE_PYTHON is empty")
@@ -818,3 +818,8 @@ duoforge_add_test(NAME duoforge.state.pool_g69 SOURCES test_pool_g69.c WHITEBOX 
 # Step G65 (decision 0015 5bk): the simple modifier abilities Unaware, Marvel Scale, Water Bubble, Reckless and Super Luck (their
 # rows, the recoil and crash facts Reckless reads, and the Trace refusal of Water Bubble onto a burned holder; white-box).
 duoforge_add_test(NAME duoforge.state.pool_g65 SOURCES test_pool_g65.c WHITEBOX TIMEOUT 60)
+
+
+# Step G73 (decision 0015 5bo): Moody (its residual order, its two samples on one site, the boost with the raised key first; white-box, with
+# its recorded battles g73_*, which conformance_pool_data replays).
+duoforge_add_test(NAME duoforge.state.pool_g73 SOURCES test_pool_g73.c WHITEBOX TIMEOUT 60)

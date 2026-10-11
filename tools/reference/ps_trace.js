@@ -87,6 +87,10 @@ const CONDITION_SITES = {
     // Ally Switch's consecutive use (step G80, decision 0044): randomChance(1, counter) in the condition's onRestart
     // (data/moves.ts:338-347). It was an UNKNOWN draw before, so the harness version stays (as above).
     'allyswitch:Restart': 'ALLY_SWITCH',
+    // Moody (step G73): its two this.sample calls in onResidual (data/abilities.ts:2701-2734), one site for both draws. Both
+    // are random(n) with n the length of the list, a list of one included. The SPEED_TIE shuffles of the same residual are
+    // matched above (before this table), so the tie of two Moody holders stays a SPEED_TIE draw.
+    'moody:Residual': 'MOODY',
 };
 
 // The event a draw happens in (innermost last), tracked by wrapping the

@@ -165,7 +165,7 @@ static void check_multihit_weights(df_test *t)
 static void check_constants(df_test *t)
 {
     DF_CHECK_EQ_U64(t, DFI_SITE_MULTIHIT_COUNT, 22u /* site 20 is the G46 drag, 21 the G56 lock */);
-    DF_CHECK_EQ_U64(t, DFI_SITE_COUNT, 24u);
+    DF_CHECK_EQ_U64(t, DFI_SITE_COUNT, 34u); /* step G73 adds Moody's sample (site 23), step G80 Ally Switch (site 33) */
     DF_CHECK_EQ_U64(t, DUOFORGE_BLOCK_QUICK_GUARD, 6u); /* decision 0029 */
     DF_CHECK_EQ_U64(t, DUOFORGE_SIDE_GUARD_QUICK_GUARD, 2u);
     DF_CHECK_EQ_U64(t, DUOFORGE_VIEWEXT_FEATURE_QUICK_GUARD, 38u);

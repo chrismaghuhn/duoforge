@@ -71,6 +71,7 @@ def domain(tracker):
                 locked[k] = p.locked_target
                 continue
             usable = [pp[i] > 0 and (p.choice_slot == MOVE_SLOT_NONE or i == p.choice_slot)
+                      and (p.encore_slot == 0 or i == p.encore_slot - 1)  # Encore holds it to that move (#334)
                       for i in range(len(sheet_moves))]
             if not any(usable):  # no PP left, or none for the choice-locked move: Struggle
                 request["active"].append({"moves": [{"id": "struggle"}]})

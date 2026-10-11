@@ -24,6 +24,7 @@
 
 #include "codec/state_codec.h"
 #include "core/sha256.h"
+#include "data/closure_tables.h"
 #include "data/pool_tables.h"
 #include "state/battle_internal.h"
 #include "state/closure_member.h"
@@ -40,29 +41,32 @@
 static const char ENVELOPE_HEX[] = "8944554f0d0a1a0a02000305030000004d050000";
 /* The model's tail bytes of the example below ("pool_tail example"). */
 static const char TAIL_HEX[] =
-    "05d10800d108000001080201030101b10102030205030403050100060301040201030203010014002500000602060603"
-    "000000000500000102010100000001000000000000010100000101000000000f000101010000000005002c01050c0012"
+    "05d108006b04000001080201030101b10102030205030403050100060301040201030203010014002500000602060600"
+    "000000000500000102010100000001000000000000010100000101000000000f000101000000000005002c01050c0012"
     "0100d700590112ff00ff00000000010000a6000001000000000000010000000000000000000000000000000000000000"
-    "000000000000000001000001040401000300000000000000000001010000000000000000000000040003000000000000"
-    "000000000000000000000001030000000000000000000000ff0100090200000000000000010000000100000100000000"
-    "000000000000000000000000000000000000000000000000000000000000000000000000000000000700006400000100"
+    "000000000000000001000001040401000300000000000000000001010000000000000000000000040003000300000000"
+    "040000000000000000000001030000000000000000000000ff0100090200000100000000000000000000000000000000"
+    "000000000000000001000000010000010000000000000000000000000000000000000000000000000700006400000100"
     "000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000"
     "000000000000000000000000";
 
-/* The maximum HP of the members 0 and 1 of both sides at the first TURN boundary (the Substitute bound is a quarter
- * of it): the model's LEAD_HP_MAX, asserted below. */
-static const unsigned lead_hp_max[2][2] = {{193, 192}, {197, 182}};
+/* The maximum HP of every member of both sides in the example battle at its first TURN boundary (the Substitute bound is the
+ * largest quarter of a side's brought members, decision 0042): the model's EXAMPLE_HP_MAX, asserted below. */
+static const unsigned example_hp_max[2][6] = {{193u, 192u, 202u, 181u, 164u, 179u}, {197u, 182u, 197u, 224u, 169u, 202u}};
 
 /* Step G50: a soak_type of 255 (Double Shock) is OK for a standing member with a second type, which moves the two soak bytes
- * (offsets 92 and 232) from 18 to 19 OK values and from 237 to 236 member refusals. For every tail byte of the example: how many of the 255 other values give OK, TAIL_SIDE, TAIL_POSITION,
- * TAIL_MEMBER, TAIL_FIELD and TAIL_RESERVED ("pool_tail_sweep_c" of the model). */
+ * (offsets 92 and 252: side 0's member 0 and side 1's member 2) from 18 to 19 OK values and from 237 to 236 member refusals.
+ * Step G56: the lock bytes of side 1's positions (offsets 187 and 223) refuse 0 as VOLATILE (the body's locked move without its
+ * owner), which the model counts as OK. For every tail byte of the example: how many of the 255 other values give OK, TAIL_SIDE,
+ * TAIL_POSITION, TAIL_MEMBER, TAIL_FIELD and TAIL_RESERVED ("pool_tail_sweep_c" of the model, with these four rows kept by
+ * hand). */
 enum { SWEEP_COLUMNS = 8 }; /* step G46: TAIL_PARTY is the seventh; step G56: a lock without its locked move is VOLATILE, the eighth */
 static const unsigned sweep[DFI_ENC_TAIL_SIZE][SWEEP_COLUMNS] = {
     {5, 0, 0, 0, 250, 0, 0, 0},
     {5, 0, 0, 0, 0, 0, 250, 0},
     {0, 0, 0, 0, 0, 0, 255, 0},
     {0, 0, 0, 0, 0, 0, 255, 0},
-    {5, 0, 0, 0, 0, 0, 250, 0},
+    {3, 0, 0, 0, 0, 0, 252, 0},
     {0, 0, 0, 0, 0, 0, 255, 0},
     {0, 0, 0, 0, 0, 0, 255, 0},
     {0, 0, 0, 0, 0, 255, 0, 0},
@@ -105,7 +109,7 @@ static const unsigned sweep[DFI_ENC_TAIL_SIZE][SWEEP_COLUMNS] = {
     {1, 0, 254, 0, 0, 0, 0, 0},
     {6, 0, 249, 0, 0, 0, 0, 0},
     {6, 0, 249, 0, 0, 0, 0, 0},
-    {2, 0, 252, 0, 0, 0, 0, 1},
+    {0, 0, 255, 0, 0, 0, 0, 0},
     {0, 0, 0, 0, 0, 255, 0, 0},
     {0, 0, 0, 0, 0, 255, 0, 0},
     {0, 0, 0, 0, 0, 255, 0, 0},
@@ -141,7 +145,7 @@ static const unsigned sweep[DFI_ENC_TAIL_SIZE][SWEEP_COLUMNS] = {
     {1, 0, 254, 0, 0, 0, 0, 0},
     {6, 0, 249, 0, 0, 0, 0, 0},
     {6, 0, 249, 0, 0, 0, 0, 0},
-    {2, 0, 252, 0, 0, 0, 0, 1},
+    {0, 0, 255, 0, 0, 0, 0, 0},
     {0, 0, 0, 0, 0, 255, 0, 0},
     {0, 0, 0, 0, 0, 255, 0, 0},
     {0, 0, 0, 0, 0, 255, 0, 0},
@@ -214,7 +218,7 @@ static const unsigned sweep[DFI_ENC_TAIL_SIZE][SWEEP_COLUMNS] = {
     {0, 255, 0, 0, 0, 0, 0, 0},
     {1, 254, 0, 0, 0, 0, 0, 0},
     {0, 255, 0, 0, 0, 0, 0, 0},
-    {5, 0, 250, 0, 0, 0, 0, 0},
+    {0, 0, 255, 0, 0, 0, 0, 0},
     {3, 0, 252, 0, 0, 0, 0, 0},
     {3, 0, 252, 0, 0, 0, 0, 0},
     {2, 0, 253, 0, 0, 0, 0, 0},
@@ -236,7 +240,7 @@ static const unsigned sweep[DFI_ENC_TAIL_SIZE][SWEEP_COLUMNS] = {
     {0, 0, 255, 0, 0, 0, 0, 0},
     {1, 0, 254, 0, 0, 0, 0, 0},
     {1, 0, 254, 0, 0, 0, 0, 0},
-    {56, 0, 199, 0, 0, 0, 0, 0}, /* G74 */
+    {49, 0, 206, 0, 0, 0, 0, 0}, /* G74 */
     {0, 0, 255, 0, 0, 0, 0, 0},
     {0, 0, 255, 0, 0, 0, 0, 0},
     {0, 0, 255, 0, 0, 0, 0, 0},
@@ -245,12 +249,12 @@ static const unsigned sweep[DFI_ENC_TAIL_SIZE][SWEEP_COLUMNS] = {
     {1, 0, 254, 0, 0, 0, 0, 0},
     {6, 0, 249, 0, 0, 0, 0, 0},
     {6, 0, 249, 0, 0, 0, 0, 0},
+    {2, 0, 252, 0, 0, 0, 0, 1},
+    {0, 0, 0, 0, 0, 255, 0, 0},
+    {0, 0, 0, 0, 0, 255, 0, 0},
+    {0, 0, 0, 0, 0, 255, 0, 0},
+    {0, 0, 0, 0, 0, 255, 0, 0},
     {0, 0, 255, 0, 0, 0, 0, 0},
-    {0, 0, 0, 0, 0, 255, 0, 0},
-    {0, 0, 0, 0, 0, 255, 0, 0},
-    {0, 0, 0, 0, 0, 255, 0, 0},
-    {0, 0, 0, 0, 0, 255, 0, 0},
-    {5, 0, 250, 0, 0, 0, 0, 0},
     {0, 0, 255, 0, 0, 0, 0, 0},
     {0, 0, 255, 0, 0, 0, 0, 0},
     {2, 0, 253, 0, 0, 0, 0, 0},
@@ -272,7 +276,7 @@ static const unsigned sweep[DFI_ENC_TAIL_SIZE][SWEEP_COLUMNS] = {
     {0, 0, 255, 0, 0, 0, 0, 0},
     {1, 0, 254, 0, 0, 0, 0, 0},
     {1, 0, 254, 0, 0, 0, 0, 0},
-    {56, 0, 199, 0, 0, 0, 0, 0}, /* G74 */
+    {49, 0, 206, 0, 0, 0, 0, 0}, /* G74 */
     {0, 0, 255, 0, 0, 0, 0, 0},
     {255, 0, 0, 0, 0, 0, 0, 0},
     {1, 0, 254, 0, 0, 0, 0, 0},
@@ -281,10 +285,30 @@ static const unsigned sweep[DFI_ENC_TAIL_SIZE][SWEEP_COLUMNS] = {
     {1, 0, 254, 0, 0, 0, 0, 0},
     {6, 0, 249, 0, 0, 0, 0, 0},
     {6, 0, 249, 0, 0, 0, 0, 0},
-    {0, 0, 255, 0, 0, 0, 0, 0},
+    {2, 0, 252, 0, 0, 0, 0, 1},
     {0, 0, 0, 0, 0, 255, 0, 0},
     {0, 0, 0, 0, 0, 255, 0, 0},
     {0, 0, 0, 0, 0, 255, 0, 0},
+    {0, 0, 0, 0, 0, 255, 0, 0},
+    {0, 0, 0, 255, 0, 0, 0, 0},
+    {0, 0, 0, 255, 0, 0, 0, 0},
+    {255, 0, 0, 0, 0, 0, 0, 0},
+    {1, 0, 0, 254, 0, 0, 0, 0},
+    {0, 0, 0, 255, 0, 0, 0, 0},
+    {167, 0, 0, 88, 0, 0, 0, 0},
+    {0, 0, 0, 255, 0, 0, 0, 0},
+    {0, 0, 0, 255, 0, 0, 0, 0},
+    {1, 0, 0, 254, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 255, 0, 0},
+    {0, 0, 0, 255, 0, 0, 0, 0},
+    {0, 0, 0, 255, 0, 0, 0, 0},
+    {255, 0, 0, 0, 0, 0, 0, 0},
+    {1, 0, 0, 254, 0, 0, 0, 0},
+    {0, 0, 0, 255, 0, 0, 0, 0},
+    {167, 0, 0, 88, 0, 0, 0, 0},
+    {0, 0, 0, 255, 0, 0, 0, 0},
+    {0, 0, 0, 255, 0, 0, 0, 0},
+    {1, 0, 0, 254, 0, 0, 0, 0},
     {0, 0, 0, 0, 0, 255, 0, 0},
     {215, 0, 0, 40, 0, 0, 0, 0},
     {0, 0, 0, 255, 0, 0, 0, 0},
@@ -294,6 +318,16 @@ static const unsigned sweep[DFI_ENC_TAIL_SIZE][SWEEP_COLUMNS] = {
     {167, 0, 0, 88, 0, 0, 0, 0},
     {0, 0, 0, 255, 0, 0, 0, 0},
     {19, 0, 0, 236, 0, 0, 0, 0},
+    {1, 0, 0, 254, 0, 0, 0, 0},
+    {0, 0, 0, 0, 0, 255, 0, 0},
+    {0, 0, 0, 255, 0, 0, 0, 0},
+    {0, 0, 0, 255, 0, 0, 0, 0},
+    {255, 0, 0, 0, 0, 0, 0, 0},
+    {1, 0, 0, 254, 0, 0, 0, 0},
+    {0, 0, 0, 255, 0, 0, 0, 0},
+    {167, 0, 0, 88, 0, 0, 0, 0},
+    {0, 0, 0, 255, 0, 0, 0, 0},
+    {0, 0, 0, 255, 0, 0, 0, 0},
     {1, 0, 0, 254, 0, 0, 0, 0},
     {0, 0, 0, 0, 0, 255, 0, 0},
     {215, 0, 0, 40, 0, 0, 0, 0},
@@ -304,36 +338,6 @@ static const unsigned sweep[DFI_ENC_TAIL_SIZE][SWEEP_COLUMNS] = {
     {167, 0, 0, 88, 0, 0, 0, 0},
     {0, 0, 0, 255, 0, 0, 0, 0},
     {19, 0, 0, 236, 0, 0, 0, 0},
-    {1, 0, 0, 254, 0, 0, 0, 0},
-    {0, 0, 0, 0, 0, 255, 0, 0},
-    {0, 0, 0, 255, 0, 0, 0, 0},
-    {0, 0, 0, 255, 0, 0, 0, 0},
-    {255, 0, 0, 0, 0, 0, 0, 0},
-    {1, 0, 0, 254, 0, 0, 0, 0},
-    {0, 0, 0, 255, 0, 0, 0, 0},
-    {167, 0, 0, 88, 0, 0, 0, 0},
-    {0, 0, 0, 255, 0, 0, 0, 0},
-    {0, 0, 0, 255, 0, 0, 0, 0},
-    {1, 0, 0, 254, 0, 0, 0, 0},
-    {0, 0, 0, 0, 0, 255, 0, 0},
-    {0, 0, 0, 255, 0, 0, 0, 0},
-    {0, 0, 0, 255, 0, 0, 0, 0},
-    {255, 0, 0, 0, 0, 0, 0, 0},
-    {1, 0, 0, 254, 0, 0, 0, 0},
-    {0, 0, 0, 255, 0, 0, 0, 0},
-    {167, 0, 0, 88, 0, 0, 0, 0},
-    {0, 0, 0, 255, 0, 0, 0, 0},
-    {0, 0, 0, 255, 0, 0, 0, 0},
-    {1, 0, 0, 254, 0, 0, 0, 0},
-    {0, 0, 0, 0, 0, 255, 0, 0},
-    {0, 0, 0, 255, 0, 0, 0, 0},
-    {0, 0, 0, 255, 0, 0, 0, 0},
-    {255, 0, 0, 0, 0, 0, 0, 0},
-    {1, 0, 0, 254, 0, 0, 0, 0},
-    {0, 0, 0, 255, 0, 0, 0, 0},
-    {167, 0, 0, 88, 0, 0, 0, 0},
-    {0, 0, 0, 255, 0, 0, 0, 0},
-    {0, 0, 0, 255, 0, 0, 0, 0},
     {1, 0, 0, 254, 0, 0, 0, 0},
     {0, 0, 0, 0, 0, 255, 0, 0},
     {0, 0, 0, 255, 0, 0, 0, 0},
@@ -429,7 +433,8 @@ static const struct {
     {"TEAM_C_DEV", "turn1", "8c1d956b020a13e14be5d7b60681f43ba9dc729753c94dd8843ca24627dd1430"}
 };
 
-static void team_bundle(duoforge_decision_bundle *bd, const duoforge_battle *b)
+/* The team selection with `picks` (the first two lead). */
+static void team_bundle_picks(duoforge_decision_bundle *bd, const duoforge_battle *b, const uint8_t picks[2][4])
 {
     memset(bd, 0, sizeof *bd);
     bd->epoch = b->request_epoch;
@@ -441,15 +446,21 @@ static void team_bundle(duoforge_decision_bundle *bd, const duoforge_battle *b)
         c->kind = (uint8_t)DUOFORGE_CHOICE_TEAM_SELECTION;
         c->pick_count = 4u;
         for (uint32_t i = 0u; i < 4u; ++i) {
-            c->picks[i] = (uint8_t)i;
+            c->picks[i] = picks[side][i];
         }
     }
 }
 
-/* Turn 1 of the reference teams' leads (valid for any items). */
-static void turn_bundle(duoforge_decision_bundle *bd, const duoforge_battle *b)
+/* Members 0 to 3 of both sides, in order. */
+static void team_bundle(duoforge_decision_bundle *bd, const duoforge_battle *b)
 {
-    static const uint8_t plan[2][2][2] = {{{0u, 2u}, {0u, 3u}}, {{0u, 0u}, {0u, 1u}}}; /* move slot, target */
+    static const uint8_t picks[2][4] = {{0u, 1u, 2u, 3u}, {0u, 1u, 2u, 3u}};
+    team_bundle_picks(bd, b, picks);
+}
+
+/* Turn 1 of the leads with the move slot and target of `plan` per side and position. */
+static void turn_bundle_plan(duoforge_decision_bundle *bd, const duoforge_battle *b, const uint8_t plan[2][2][2])
+{
     memset(bd, 0, sizeof *bd);
     bd->epoch = b->request_epoch;
     bd->response_mask = 3u;
@@ -464,6 +475,13 @@ static void turn_bundle(duoforge_decision_bundle *bd, const duoforge_battle *b)
             c->slots[slot].target = plan[side][slot][1];
         }
     }
+}
+
+/* Turn 1 of the reference teams' leads (valid for any items). */
+static void turn_bundle(duoforge_decision_bundle *bd, const duoforge_battle *b)
+{
+    static const uint8_t plan[2][2][2] = {{{0u, 2u}, {0u, 3u}}, {{0u, 0u}, {0u, 1u}}}; /* move slot, target */
+    turn_bundle_plan(bd, b, plan);
 }
 
 static void step_ok(df_test *t, const duoforge_context *ctx, duoforge_battle *b, const duoforge_decision_bundle *bd,
@@ -490,18 +508,46 @@ static duoforge_battle *turn_battle(df_test *t, const duoforge_context *ctx, boo
     return b;
 }
 
-/* The example of the model: a value in every field that a state can hold, valid for the leads 0 and 1 of both sides.
- * Flat positions: side 0 is 0 and 1, side 1 is 2 and 3. The toxic stages stay zero: no state has the status they
- * need (DFI_TAIL_TOXIC_STATUS). */
+/* The battle of the example (the model's tail_model_state()): reference setup 0 under a POOL kind, with Outrage for Protect in
+ * slot 4 of side 1's Archaludon (member 2) and Charizard (member 4), which learn it, and side 1 leading with those two. A running
+ * lockedmove's move is its occupant's last used one (step G56, view audit 2026-10-10), so the example's locks run there: no lead
+ * of side 0 learns a lockedmove move. Side 0 brings its members 0 to 3 as turn_battle does. */
+static const uint8_t example_picks[2][4] = {{0u, 1u, 2u, 3u}, {2u, 4u, 0u, 1u}};
+enum { EXAMPLE_LOCK_SLOT = 4u }; /* Outrage's slot + 1 on both side 1 leads: the example's last_move and locked_move */
+
+static duoforge_battle *example_battle(df_test *t, const duoforge_context *ctx)
+{
+    duoforge_battle_setup s;
+    df_setup_teams(&s);
+    for (uint32_t i = 0u; i < 2u; ++i) {
+        duoforge_member_setup *m = &s.sides[1].members[example_picks[1][i]];
+        DF_CHECK(t, m->moves[EXAMPLE_LOCK_SLOT - 1u].move_id == DFI_MOVE_PROTECT);
+        m->moves[EXAMPLE_LOCK_SLOT - 1u].move_id = DFI_MOVE_OUTRAGE;
+    }
+    duoforge_battle *b = df_make_battle(ctx, &s);
+    duoforge_decision_bundle bd;
+    team_bundle_picks(&bd, b, example_picks);
+    step_ok(t, ctx, b, &bd, "team selection (example)");
+    return b;
+}
+
+/* Turn 1 of the example battle's leads: side 1's Charizard uses Weather Ball (slot 2) on side 0's position 1, as Heat Wave in its
+ * slot 1 takes no target. */
+static const uint8_t example_plan[2][2][2] = {{{0u, 2u}, {0u, 3u}}, {{0u, 0u}, {1u, 1u}}}; /* move slot, target */
+
+/* The example of the model: a value in every field that a state can hold, valid for the leads of the example battle (side 0's
+ * members 0 and 1, side 1's members 2 and 4). Flat positions: side 0 is 0 and 1, side 1 is 2 and 3. The toxic stages stay zero:
+ * no state has the status they need (DFI_TAIL_TOXIC_STATUS). */
 static void set_example_tail(duoforge_battle *b)
 {
     /* step G46: the party order is the pick order of the team selection, not part of the example: kept. */
     uint8_t party[DUOFORGE_SIDE_COUNT][DFI_PARTY_BYTES_PER_SIDE];
     memcpy(party, b->tail.party_order, sizeof party);
     memset(&b->tail, 0, sizeof b->tail);
-    /* step G56: a lockedmove needs its locked move in the active slot (the invariant of the lock), here the leads' first move. */
-    b->sides[0].positions[0].locked_move = 1u;
-    b->sides[0].positions[1].locked_move = 1u;
+    /* step G56: a lockedmove needs its locked move in the active slot (the invariant of the lock), here side 1's leads' Outrage,
+     * which is also their last used move (the tail's last_move below). */
+    b->sides[1].positions[0].locked_move = EXAMPLE_LOCK_SLOT;
+    b->sides[1].positions[1].locked_move = EXAMPLE_LOCK_SLOT;
     memcpy(b->tail.party_order, party, sizeof party);
     b->tail.gravity_turns = 5u;
     dfi_tail_side *a = &b->tail.sides[0];
@@ -522,11 +568,11 @@ static void set_example_tail(duoforge_battle *b)
                                      .leech_seed_source = 4u, .yawn_turns = 2u, .focus_energy = 1u,
                                      .stockpile = 3u, .stockpile_def = 2u, .stockpile_spd = 3u, .charge = 1u,
                                      .move_result = 6u, .single_turn = DFI_SINGLE_TURN_ROOST, .hits_taken = 6u,
-                                     .ability_state = 6u, .lock_turns = 3u};
+                                     .ability_state = 6u};
     a->positions[1] = (dfi_tail_pos){.substitute_hp = 1u, .last_move = 5u, .throat_chop_turns = 1u,
                                      .heal_block_turns = 2u, .perish = 1u, .taunt_turns = 1u, .must_recharge = 1u,
                                      .stockpile = 1u, .stockpile_def = 1u, .glaive_rush = 1u, .move_result = 15u,
-                                     .hits_taken = 1u, .ability_state = 1u, .lock_turns = 1u};
+                                     .hits_taken = 1u, .ability_state = 1u};
     a->ability_now[0] = 5u;
     a->ability_now[1] = DFI_POOL_ABILITY_COUNT;
     a->forme_now[0] = 300u;
@@ -545,15 +591,19 @@ static void set_example_tail(duoforge_battle *b)
     dfi_tail_side *c = &b->tail.sides[1];
     c->spikes = 1u;
     c->hazard_order = (uint8_t)DFI_HAZARD_SPIKES;
-    c->positions[0] = (dfi_tail_pos){.last_move = 4u, .encore_slot = 4u, .encore_turns = 1u, .heal_block_turns = 3u,
-                                     .leech_seed_source = 1u, .yawn_turns = 1u, .move_result = 4u, .hits_taken = 3u};
-    c->positions[1] = (dfi_tail_pos){.trap_move = DFI_POOL_MOVE_COUNT, .trap_turns = 1u, .trap_source = 3u,
-                                     .move_result = 9u, .single_turn = DFI_SINGLE_TURN_ROOST};
-    c->ability_now[0] = 1u;
+    /* the locks: three turns left at position 0 (Archaludon), the last one at position 1 (Charizard), both on Outrage */
+    c->positions[0] = (dfi_tail_pos){.last_move = EXAMPLE_LOCK_SLOT, .encore_slot = 4u, .encore_turns = 1u,
+                                     .heal_block_turns = 3u, .leech_seed_source = 1u, .yawn_turns = 1u, .move_result = 4u,
+                                     .hits_taken = 3u, .lock_turns = 3u};
+    c->positions[1] = (dfi_tail_pos){.trap_move = DFI_POOL_MOVE_COUNT, .last_move = EXAMPLE_LOCK_SLOT, .trap_turns = 1u,
+                                     .trap_source = 3u, .move_result = 9u, .single_turn = DFI_SINGLE_TURN_ROOST,
+                                     .lock_turns = 1u};
+    /* the overrides of a member on the field: side 1's lead at position 0, its member 2 */
+    c->ability_now[2] = 1u;
     c->forme_now[5] = 7u;
-    c->soak_type[0] = 1u;
+    c->soak_type[2] = 1u;
     c->item_now[5] = 100u;
-    c->type2[0] = 1u;
+    c->type2[2] = 1u;
     c->member_flags[5] = DFI_TAIL_MEMBER_FLAG_HERO_SHOWN;
 }
 
@@ -709,7 +759,7 @@ static size_t build_settings(tail_setting *out)
             out[n++] = (tail_setting){"forme_now", {W2(mo + DFI_ENC_TAIL_MEMBER_FORME_OFF, 2u), NO_WRITE, NO_WRITE}};
             out[n++] = (tail_setting){"item_now", {W1(mo + DFI_ENC_TAIL_MEMBER_ITEM_OFF, 3u), NO_WRITE, NO_WRITE}};
             out[n++] = (tail_setting){"member_flags", {W1(mo + DFI_ENC_TAIL_MEMBER_FLAGS_OFF, DFI_TAIL_MEMBER_FLAG_HERO_SHOWN), NO_WRITE, NO_WRITE}};
-            if (m < 2u) {
+            if (m == example_picks[s][0] || m == example_picks[s][1]) { /* a lead of the example battle, on the field */
                 out[n++] = (tail_setting){"type2", {W1(mo + DFI_ENC_TAIL_MEMBER_TYPE2_OFF, DFI_TAIL_TYPE2_TYPELESS), NO_WRITE, NO_WRITE}};
                 out[n++] = (tail_setting){"ability_now", {W2(mo + DFI_ENC_TAIL_MEMBER_ABILITY_OFF, 1u), NO_WRITE, NO_WRITE}};
                 out[n++] = (tail_setting){"soak_type", {W1(mo + DFI_ENC_TAIL_MEMBER_SOAK_OFF, 1u), NO_WRITE, NO_WRITE}};
@@ -719,8 +769,8 @@ static size_t build_settings(tail_setting *out)
     return n;
 }
 
-/* The cases of the in-memory invariant test: a mutation of a tail of the first TURN boundary of a POOL battle. The
- * first lead of side 0 is `p0`, `ts` the tail of that side. A case with `short_side` uses the battle whose side 1
+/* The cases of the in-memory invariant test: a mutation of a tail of the first TURN boundary of the example battle under POOL.
+ * The first lead of side 0 is `p0`, `ts` the tail of that side. A case with `short_side` uses the battle whose side 1
  * lead has two moves. */
 typedef void (*tail_mutation)(duoforge_battle *y, dfi_tail_side *ts, dfi_tail_pos *p0);
 typedef struct tail_case {
@@ -839,8 +889,24 @@ MUT(m_single_turn_bit2, p0->single_turn = 4u)
 MUT(m_rage_no_follow_me, p0->single_turn = DFI_SINGLE_TURN_RAGE_POWDER) /* the Follow Me flag is down */
 MUT(m_hits_taken7, p0->hits_taken = 7u)
 MUT(m_ability_state7, p0->ability_state = 7u)
-MUT(m_lock_turns4, p0->lock_turns = 4u)
-MUT(m_lock_no_move, p0->lock_turns = 2u) /* a lock whose move is not in the slot (step G56): the body has none here */
+/* A lock (step G56) needs its move in the body's slot (locked_move) and that move as its occupant's last used one, a lockedmove
+ * move (view audit 2026-10-10): side 1's lead at position 0 of the example battle is Archaludon with Outrage in slot 4. */
+static void lock_outrage_lead(duoforge_battle *y, uint32_t locked_move, uint32_t last_move, uint32_t turns)
+{
+    y->sides[1].positions[0].locked_move = (uint8_t)locked_move;
+    y->tail.sides[1].positions[0].last_move = (uint8_t)last_move;
+    y->tail.sides[1].positions[0].lock_turns = (uint8_t)turns;
+}
+MUT(m_lock_turns4, lock_outrage_lead(y, EXAMPLE_LOCK_SLOT, EXAMPLE_LOCK_SLOT, 4u))
+MUT(m_lock_no_move, lock_outrage_lead(y, 0u, EXAMPLE_LOCK_SLOT, 2u)) /* Outrage used last, but the body has no locked move */
+MUT(m_lock_last_none, lock_outrage_lead(y, EXAMPLE_LOCK_SLOT, 0u, 2u)) /* no last used move */
+MUT(m_lock_last_other, lock_outrage_lead(y, EXAMPLE_LOCK_SLOT, 1u, 2u)) /* Dragon Pulse (slot 1) used last */
+MUT(m_lock_last_struggle, lock_outrage_lead(y, EXAMPLE_LOCK_SLOT, DFI_TAIL_MOVE_MAX, 2u)) /* Struggle used last */
+MUT(m_lock_not_lockedmove, { /* the old example's lock: Rillaboom's Wood Hammer (slot 1) is in the slot and used last */
+    y->sides[0].positions[0].locked_move = 1u;
+    p0->last_move = 1u;
+    p0->lock_turns = 2u;
+})
 /* G74 (decision 0042, lead's decision A): a Substitute is bounded by the largest quarter among the brought members of its side,
  * since a pass moves it to another member. The occupant's own quarter is not the bound. */
 static uint32_t brought_quarter_cap(const dfi_side *s)
@@ -970,6 +1036,7 @@ MUT(m_dragon_stage_3, p0->position_flags = 0x0Cu) /* the Dragon Cheer stage 3 is
 MUT(m_future_sight, p0->future_sight = 1u)
 MUT(m_member_flags_high, ts->member_flags[3] = 0x80u)
 /* Valid: the edges. */
+MUT(v_lock_outrage, lock_outrage_lead(y, EXAMPLE_LOCK_SLOT, EXAMPLE_LOCK_SLOT, 2u)) /* Outrage in the slot and used last */
 MUT(v_struggle, p0->last_move = 5u)
 MUT(v_encore_edge, {
     p0->encore_slot = 4u;
@@ -977,7 +1044,8 @@ MUT(v_encore_edge, {
 })
 MUT(v_maxima, {
     y->tail.gravity_turns = 5u;
-    y->sides[0].positions[0].locked_move = 1u; /* the lock of the lead's position needs its move (step G56) */
+    /* the longest lock (step G56) runs on side 1's Outrage lead: none of side 0's leads learns a lockedmove move */
+    lock_outrage_lead(y, EXAMPLE_LOCK_SLOT, EXAMPLE_LOCK_SLOT, DFI_TAIL_LOCK_TURNS_MAX);
     *ts = (dfi_tail_side){.wide_guard = 1u, .aurora_veil_turns = 8u, .toxic_spikes = 2u, .stealth_rock = 1u,
                           .spikes = 3u, .sticky_web = 1u, .quick_guard = 1u,
                           .hazard_order = (uint8_t)(DFI_HAZARD_TOXIC_SPIKES | (DFI_HAZARD_STICKY_WEB << 2u) |
@@ -989,8 +1057,7 @@ MUT(v_maxima, {
                                       .trap_source = 4u, .trap_band = 1u, .leech_seed_source = 4u, .yawn_turns = 2u,
                                       .focus_energy = 1u, .stockpile = 3u, .stockpile_def = 3u,
                                       .stockpile_spd = 3u, .charge = 1u, .glaive_rush = 1u, .move_result = 0x0Fu,
-                                      .single_turn = DFI_SINGLE_TURN_ROOST, .hits_taken = 6u, .ability_state = 6u,
-                                      .lock_turns = 3u};
+                                      .single_turn = DFI_SINGLE_TURN_ROOST, .hits_taken = 6u, .ability_state = 6u};
     ts->ability_now[0] = DFI_POOL_ABILITY_COUNT;
     ts->forme_now[5] = DFI_POOL_FORME_COUNT - 2u; /* not the Blade (forme count - 1 is the Blade's id; step G66 strict rule) */
     ts->item_now[2] = DFI_POOL_ITEM_COUNT;
@@ -1093,6 +1160,10 @@ static const tail_case cases[] = {
     {"an ability state above 6", DFI_INV_TAIL_POSITION, false, m_ability_state7},
     {"lock turns above 3", DFI_INV_TAIL_POSITION, false, m_lock_turns4},
     {"lock turns without the locked move in the slot", DFI_INV_TAIL_POSITION, false, m_lock_no_move},
+    {"lock turns without a last used move", DFI_INV_TAIL_POSITION, false, m_lock_last_none},
+    {"lock turns whose last used move is another move", DFI_INV_TAIL_POSITION, false, m_lock_last_other},
+    {"lock turns whose last used move is Struggle", DFI_INV_TAIL_POSITION, false, m_lock_last_struggle},
+    {"lock turns on a move that is not a lockedmove", DFI_INV_TAIL_POSITION, false, m_lock_not_lockedmove},
     {"a Substitute above the largest quarter of the brought members (decision 0042)", DFI_INV_TAIL_POSITION, false, m_substitute_above},
     {"a passed Substitute above the occupant's quarter but within a brought member's is valid", DFI_INV_NONE, false, v_substitute_pass},
     {"a trap with turns alone", DFI_INV_TAIL_POSITION, false, m_trap_turns_only},
@@ -1144,6 +1215,7 @@ static const tail_case cases[] = {
     {"G76: Destiny Bond at a standing lead is valid", DFI_INV_NONE, false, v_destiny_bond_standing},
     {"dragon cheer stage 3 at a standing lead (rev 5)", DFI_INV_TAIL_POSITION, false, m_dragon_stage_3},
     {"Future Sight byte at a standing lead (rev 5)", DFI_INV_TAIL_POSITION, false, m_future_sight},
+    {"a lock on Outrage, in the slot and used last, is valid", DFI_INV_NONE, false, v_lock_outrage},
     {"Struggle as the last move is valid for any move count", DFI_INV_NONE, false, v_struggle},
     {"the last Encore turn and slot 4 are valid", DFI_INV_NONE, false, v_encore_edge},
     {"every maximum at once is valid", DFI_INV_NONE, false, v_maxima},
@@ -1285,23 +1357,28 @@ int main(void)
         }
     }
 
-    /* The state of a POOL battle at its first TURN boundary, with and without the example tail. */
-    duoforge_battle *w = turn_battle(&t, kp, false);
+    /* The state of the example battle at its first TURN boundary, with and without the example tail. */
+    duoforge_battle *w = example_battle(&t, kp);
     uint8_t zero_enc[DF_STATE_ENCODED_MAX];
     uint8_t enc[DF_STATE_ENCODED_MAX];
     uint8_t d0[DUOFORGE_DIGEST_SIZE];
     uint8_t d1[DUOFORGE_DIGEST_SIZE];
     {
-        /* The example is valid because of who stands on the field: members 0 and 1 of both sides, standing, with
-         * four moves, no Mega forme and no ailment (the model's state), and the Substitute bound is a quarter of the
-         * maximum HP of those four. */
+        /* The example is valid because of who stands on the field: side 0's members 0 and 1 and side 1's members 2 and 4,
+         * standing, with four moves, no Mega forme and no ailment (the model's state), and the Substitute bound is the largest
+         * quarter of the maximum HP of a side's brought members (decision 0042). Side 1's leads have Outrage in slot 4, the
+         * move of the example's locks. */
         for (uint32_t s = 0u; s < 2u; ++s) {
             DF_CHECK_EQ_U64(&t, w->sides[s].member_count, 6u);
-            DF_CHECK(&t, w->sides[s].positions[0].occupant == 0u && w->sides[s].positions[1].occupant == 1u);
+            for (uint32_t p = 0u; p < 2u; ++p) {
+                const uint32_t lead = example_picks[s][p];
+                DF_CHECK(&t, w->sides[s].positions[p].occupant == lead);
+                DF_CHECK(&t, s == 0u || w->sides[s].members[lead].moves[EXAMPLE_LOCK_SLOT - 1u].move_id == DFI_MOVE_OUTRAGE);
+            }
             for (uint32_t m = 0u; m < 6u; ++m) {
                 DF_CHECK(&t, w->sides[s].members[m].hp != 0u && w->sides[s].members[m].move_count == 4u &&
                                  w->sides[s].members[m].is_mega == 0u && w->sides[s].members[m].status == 0u);
-                if (m < 2u && !DF_CHECK(&t, w->sides[s].members[m].hp_max == lead_hp_max[s][m])) {
+                if (!DF_CHECK(&t, w->sides[s].members[m].hp_max == example_hp_max[s][m])) {
                     fprintf(stderr, "  hp_max of side %u member %u is %u\n", (unsigned)s, (unsigned)m,
                             (unsigned)w->sides[s].members[m].hp_max);
                 }
@@ -1332,13 +1409,13 @@ int main(void)
         check_hex(&t, enc, ENVELOPE_HEX, DFI_ENVELOPE_SIZE, "envelope of a POOL state (model)");
         check_hex(&t, enc + DFI_ENC_TAIL_OFF, TAIL_HEX, DFI_ENC_TAIL_SIZE, "tail of the example (model)");
         /* The rest of the state is untouched by the tail. */
-        /* The body is the same, but for the two locked moves of the example's leads (step G56): a lock needs its move in the
-         * slot, the body's half of the pairing that the tail refuses without it (as Rage Powder's Follow Me flag). */
+        /* The body is the same, but for the two locked moves of side 1's leads (step G56): a lock needs its move in the slot,
+         * the body's half of the pairing that the tail refuses without it (as Rage Powder's Follow Me flag). */
         unsigned body_diffs = 0u;
         for (size_t k = DFI_ENVELOPE_SIZE; k < DFI_ENC_TAIL_OFF; ++k) {
             if (enc[k] != zero_enc[k]) {
                 body_diffs += 1u;
-                DF_CHECK_EQ_U64(&t, enc[k], 1u); /* the locked move: its slot plus one */
+                DF_CHECK_EQ_U64(&t, enc[k], EXAMPLE_LOCK_SLOT); /* the locked move: Outrage's slot plus one */
             }
         }
         DF_CHECK_EQ_U64(&t, body_diffs, 2u);
@@ -1376,7 +1453,7 @@ int main(void)
         DF_CHECK(&t, duoforge_battle_equal(kp, w, k, &eq) == DUOFORGE_OK && eq);
         DF_CHECK(&t, memcmp(&k->tail, &w->tail, sizeof w->tail) == 0);
         /* copy into a handle that holds another tail (the empty one), and load into one. */
-        duoforge_battle *other = turn_battle(&t, kp, false);
+        duoforge_battle *other = example_battle(&t, kp);
         DF_CHECK(&t, duoforge_battle_equal(kp, w, other, &eq) == DUOFORGE_OK && !eq); /* the tail alone differs */
         DF_CHECK(&t, duoforge_battle_copy(kp, other, w) == DUOFORGE_OK);
         DF_CHECK(&t, duoforge_battle_equal(kp, w, other, &eq) == DUOFORGE_OK && eq);
@@ -1411,7 +1488,7 @@ int main(void)
         /* 163: the lock is not a setting (step G56): its count needs the locked move in the body, which the settings
          * do not carry; the lock cases below and the example cover it (a lock is refused without its move, TAIL_POSITION). */
         DF_CHECK_EQ_U64(&t, count, 163u);
-        duoforge_battle *x = turn_battle(&t, kp, false);
+        duoforge_battle *x = example_battle(&t, kp);
         uint8_t base[DUOFORGE_DIGEST_SIZE];
         digest_of(&t, kp, x, base);
         for (size_t i = 0u; i < count; ++i) {
@@ -1640,7 +1717,7 @@ int main(void)
      * without a standing occupant, a member override where it cannot be. Each is E_INVARIANT with its id, the same
      * through the public check, and a step refuses it atomically. */
     {
-        duoforge_battle *x = turn_battle(&t, kp, false);
+        duoforge_battle *x = example_battle(&t, kp);
         duoforge_battle *short_moves = NULL; /* side 1's lead has two moves: Politoed with Weather Ball and Muddy Water */
         {
             duoforge_battle_setup s;
@@ -1672,7 +1749,11 @@ int main(void)
                 uint8_t after[DF_STATE_ENCODED_MAX];
                 const size_t n = dfi_encode_unchecked(kp, y, before);
                 duoforge_decision_bundle bd;
-                turn_bundle(&bd, y);
+                if (cases[i].short_side) {
+                    turn_bundle(&bd, y);
+                } else {
+                    turn_bundle_plan(&bd, y, example_plan);
+                }
                 duoforge_step_result res;
                 DF_CHECK(&t, duoforge_battle_step(kp, y, &bd, &res) == DUOFORGE_E_INVARIANT);
                 DF_CHECK_EQ_U64(&t, dfi_encode_unchecked(kp, y, after), n);
@@ -1681,17 +1762,36 @@ int main(void)
             duoforge_battle_destroy(y);
         }
         /* step G56: a lock without its locked move is refused by the decoder as the tail's (TAIL_POSITION), as Rage Powder's
-         * marker without its Follow Me flag: the encoded lock of a battle whose slot holds no locked move. */
+         * marker without its Follow Me flag: the encoded lock of a battle whose slot holds no locked move. So is a lock whose
+         * last used move is not its lockedmove move (view audit 2026-10-10: none, another move, Struggle), and the lock with
+         * Outrage in the slot and used last is taken. Side 1's lead at position 0 is Archaludon with Outrage in slot 4. */
         {
-            duoforge_battle *z = NULL;
-            DF_CHECK(&t, duoforge_battle_clone(kp, x, &z) == DUOFORGE_OK && z != NULL);
-            z->tail.sides[0].positions[0].lock_turns = 2u;
-            uint8_t enc_z[DF_STATE_ENCODED_MAX];
-            const size_t nz = dfi_encode_unchecked(kp, z, enc_z);
-            dfi_invariant inv_z = DFI_INV_NONE;
-            DF_CHECK_EQ_U64(&t, decode_both(&t, kp, enc_z, nz, &inv_z), DUOFORGE_E_MALFORMED);
-            DF_CHECK_EQ_U64(&t, inv_z, DFI_INV_TAIL_POSITION);
-            duoforge_battle_destroy(z);
+            static const struct {
+                uint8_t locked_move;
+                uint8_t last_move;
+                bool ok;
+            } locks[] = {{0u, EXAMPLE_LOCK_SLOT, false},
+                         {EXAMPLE_LOCK_SLOT, 0u, false},
+                         {EXAMPLE_LOCK_SLOT, 1u, false},
+                         {EXAMPLE_LOCK_SLOT, 3u, false},
+                         {EXAMPLE_LOCK_SLOT, DFI_TAIL_MOVE_MAX, false},
+                         {1u, 1u, false},
+                         {EXAMPLE_LOCK_SLOT, EXAMPLE_LOCK_SLOT, true}};
+            for (size_t i = 0u; i < sizeof locks / sizeof locks[0]; ++i) {
+                duoforge_battle *z = NULL;
+                DF_CHECK(&t, duoforge_battle_clone(kp, x, &z) == DUOFORGE_OK && z != NULL);
+                lock_outrage_lead(z, locks[i].locked_move, locks[i].last_move, 2u);
+                uint8_t enc_z[DF_STATE_ENCODED_MAX];
+                const size_t nz = dfi_encode_unchecked(kp, z, enc_z);
+                dfi_invariant inv_z = DFI_INV_NONE;
+                const duoforge_status st_z = decode_both(&t, kp, enc_z, nz, &inv_z);
+                if (!DF_CHECK(&t, locks[i].ok ? st_z == DUOFORGE_OK
+                                              : (st_z == DUOFORGE_E_MALFORMED && inv_z == DFI_INV_TAIL_POSITION))) {
+                    fprintf(stderr, "  lock with locked move %u and last move %u: %s (%s)\n", (unsigned)locks[i].locked_move,
+                            (unsigned)locks[i].last_move, duoforge_status_name(st_z), inv_name(inv_z));
+                }
+                duoforge_battle_destroy(z);
+            }
         }
         duoforge_battle_destroy(short_moves);
         duoforge_battle_destroy(x);
@@ -1726,7 +1826,7 @@ int main(void)
     /* What leaves with the occupant (dfi_tail_clear_occupant): the position, the soak type, the current ability and
      * the toxic stage of the member; the current item and forme stay. */
     {
-        duoforge_battle *x = turn_battle(&t, kp, false);
+        duoforge_battle *x = example_battle(&t, kp);
         set_example_tail(x);
         const uint32_t occupant = x->sides[0].positions[0].occupant;
         x->tail.sides[0].toxic_stage[occupant] = 7u; /* not valid as a state, but what the clearing must reach */
@@ -1754,7 +1854,7 @@ int main(void)
      * its request is the recharge turn alone). The soak types of the example (Fighting and Water on the leads, which
      * the types now read: step G11) keep the turn from ending in a knock-out before its residual. */
     {
-        duoforge_battle *x = turn_battle(&t, kp, false);
+        duoforge_battle *x = example_battle(&t, kp);
         set_example_tail(x);
         for (uint32_t s = 0u; s < DUOFORGE_SIDE_COUNT; ++s) {
             for (uint32_t p = 0u; p < DUOFORGE_ACTIVE_PER_SIDE; ++p) {
@@ -1797,7 +1897,7 @@ int main(void)
             }
         }
         duoforge_decision_bundle bd;
-        turn_bundle(&bd, x);
+        turn_bundle_plan(&bd, x, example_plan);
         /* step G48: timesAttacked, the tail's hits_taken, counts the damaging hits of a move on the position it hit (saturating
          * at 6). The hits are the step's own move damage: the public DAMAGE events with cause NONE (the events are public, so
          * player 0's buffer has every one of them). */
@@ -1817,8 +1917,9 @@ int main(void)
                 const uint32_t before_hits = want.sides[s].positions[p].hits_taken;
                 const uint32_t after_hits = before_hits + landed[s * DUOFORGE_ACTIVE_PER_SIDE + p];
                 want.sides[s].positions[p].hits_taken = (uint8_t)(after_hits > DFI_TAIL_HITS_TAKEN_MAX ? DFI_TAIL_HITS_TAKEN_MAX : after_hits);
-                /* each position that acted used slot 0 (turn_bundle's plan): last_move 1; one that did not has none */
-                DF_CHECK(&t, x->tail.sides[s].positions[p].last_move <= 1u);
+                /* each position that acted used its move of example_plan: that slot + 1; one that did not has none */
+                const uint32_t used = x->tail.sides[s].positions[p].last_move;
+                DF_CHECK(&t, used == 0u || used == example_plan[s][p][0] + 1u);
                 want.sides[s].positions[p].last_move = x->tail.sides[s].positions[p].last_move;
                 /* step G42: the move results of this turn are the actions' own (the engine writes them while the turn runs and
                  * the end of the turn shifts them to the last turn; the shift is checked by the recorded battles of
@@ -1883,7 +1984,7 @@ int main(void)
         DF_CHECK(&t, duoforge_battle_encode(kp, w, big, 1297u, &written) == DUOFORGE_E_CAPACITY); /* rev 4's size */
         DF_CHECK(&t, duoforge_battle_encode(kp, w, big, 1356u, &written) == DUOFORGE_E_CAPACITY);
         DF_CHECK(&t, duoforge_battle_encode(kp, w, big, 1357u, &written) == DUOFORGE_OK && written == 1357u);
-        duoforge_battle *q = turn_battle(&t, kq, false);
+        duoforge_battle *q = example_battle(&t, kq);
         set_example_tail(q);
         DF_CHECK(&t, duoforge_battle_encode(kq, q, big, 1357u, &written) == DUOFORGE_OK && written == 1357u);
         DF_CHECK(&t, duoforge_battle_check(kq, q) == DUOFORGE_OK);

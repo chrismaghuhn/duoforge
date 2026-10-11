@@ -1,0 +1,198 @@
+# Live honest search: implementation plan (option A, 2026-10-10)
+
+The owner chose option A after P1 and approved this spec (via HauptSession, 2026-10-10): the live bot plays TURN, REPLACEMENT and PIVOT decisions with honest search X. Team preview stays raw.
+
+**Owner decisions:**
+- **(i) Failure classes:**
+  - (a) Named public refusals fall back to raw for that decision. Each fallback is logged and counted per cause.
+  - (b) Unexpected errors also play that decision raw, mark the game dirty and play the rest of it raw. The session then takes no new challenge until reviewed.
+- **(ii) The live-path arena gate:** 400 games in 200 swapped-seat pairs from the 652-team pool. A PASS needs all of:
+  - lower 95% bound > 0.50;
+  - 0 crashes, 0 class (b) errors, 0 timer losses;
+  - class (a) fallbacks ≤ 5% of decisions, deadline fallbacks ≤ 1%;
+  - p99 latency within the budget.
+  - tracker stops (an unfolded feature's line: an explicit forfeit, counted as `stop:feature:X` with the feature's name) at most 1% of the games; they are no crashes, which stay at 0 (owner, confirmed to M12 2026-10-10). The arena runs only once the 16 missing folds of params-49333's features are on main.
+- **(iii) A foe species without a spread prior:** raw, counted. The live spread table comes from the registry's playable PP_ pastes (838), pinned by its hash. The 79 SPREAD_SOURCES stay for P1 and the evaluation. Replay aggregates stay private and unused.
+
+Ladder games run only after the owner's go.
+
+## Global constraints
+
+- **No rules in Python.** The record is built in C from public facts; the tracker supplies what a counting player knows (0023 §4).
+- **No silent fallback.** Every raw decision has a named, counted cause.
+- **No new public value** without HauptSession's assignment from M12's reserve.
+- **Determinism:** the builder is a pure function of its inputs.
+- **Privacy:** live logs and arena results stay private (AGENTS.md).
+
+## Task 1: `duoforge_public_from_parts` (C) and its equivalence test
+
+The core: a public record (`duoforge_public_state`) built from the player's knowledge instead of a true battle.
+- **Approach:** build a `duoforge_battle` from the parts, then run the existing record path (`dfi_view_encode`). Its refusals and masks stay one code path.
+- **Placeholders:** fields the player cannot know are filled with placeholders. Every one of them is masked in the record: RNG, sleep and confusion counters, the foe's charge target, bench order, exact HP, stats, stat points and PP.
+- **Placeholder check:** a test varies each placeholder and asserts the same record bytes.
+
+**Parts the builder takes**, on top of the observation and its extension (byte-exact from the tracker today):
+- **Both team sheets:**
+  - the own sheet: exact;
+  - the foe's open sheet from `|showteam|`: species, moves, items, abilities, nature, gender, level. Its stat points are a placeholder.
+- **Own exact state from the request:** HP, stats and PP per member.
+- **Bookkeeping that the tracker counts from the public history.** By encoding block:
+  - **Battle header:**
+    - `next_activation_id`;
+    - turn, `boundary_kind`, `request_mask`, `request_epoch`, result.
+  - **Queue:**
+    - TURN: empty.
+    - PIVOT: only the residual record (a PIVOT with a move left is refused).
+    - Any other queue is refused.
+  - **Per side:**
+    - `brought_mask`, `brought_order`;
+    - `requested_slots`, `mega_used`, `sealed` and the sealed commands;
+    - `seen_mask`;
+    - reflect, light screen and tailwind turns.
+  - **Per position:**
+    - `activation`, `stages`;
+    - flags without the silent flinch;
+    - `stall_level`, `stall_turns`, `charge_turns`;
+    - `locked_move`;
+    - `move_actions`, `switch_flag`.
+  - **Knowledge, both sides:** per opposing member `hp_percent`, `hp_flag`, `revealed`, `moves_used`.
+  - **Per member:**
+    - status, `item_consumed`, `is_mega`;
+    - the foe's displayed HP percent from the observation.
+  - **POOL tail, field:** `gravity_turns`.
+  - **POOL tail, per side:** `wide_guard`, `aurora_veil_turns`, the hazards and `hazard_order`, `quick_guard`.
+  - **POOL tail, per position:**
+    - `last_move`, `encore_slot`, `encore_turns`, `throat_chop_turns`, `heal_block_turns`, `perish`;
+    - `taunt_turns`, `disable_slot`, `disable_turns`, `imprison`, `must_recharge`;
+    - the trap fields, `leech_seed_source`, `yawn_turns`, `focus_energy`, the stockpile fields, `charge`, `glaive_rush`;
+    - the presence of a Substitute (refused anyway);
+    - `protect_kind`, `move_result`, `single_turn`, `hits_taken`, `ability_state`, `lock_turns` (refused while the lockedmove proxy holds).
+  - **POOL tail, per member:** `ability_now`, `forme_now`, `soak_type`, `item_now`, `toxic_stage`, `type2`, flags.
+  - **POOL tail, rev 5 block:** as `DFI_ENC_TAIL5_*`.
+
+**Equivalence test (the gate of this task), `duoforge.view.from_parts`:**
+- for engine-played games of every POOL kind, at every state where `duoforge_battle_public` succeeds, and for both players;
+- the parts are derived the way the tracker derives them (observation, extension, request, counted bookkeeping);
+- the builder's record must be byte-identical to `duoforge_battle_public`;
+- and where `public` refuses, the builder must refuse with the same status.
+
+**Tracker side (HauptSession):** keep the bookkeeping above from the protocol lines, then extend `test_view_equals_duoforge` to the parts.
+
+## Task 2: `Honest.decide_records`
+
+Search over records instead of a batch: `decide_records(records, previews, observations, keys)`. It is a refactor with the same logic and an identity test against `decide` on engine batches.
+
+## Task 3: the live spread table
+
+The live belief's sources are the registry's playable PP_ pastes, pinned by the table hash. A foe species missing from it gets the refusal cause "no spread prior" (raw, counted). `data/teams/README.md` documents the live list beside the pinned 79.
+
+## Task 4: latency
+
+Single-game latency per boundary kind: p50, p95 and p99, plus the warm-up at startup.
+- **Machine:** this one, exclusive under the machine lock (`--exclusive`).
+- **Runtime:** JAX on the CPU against NumPy `forward` for the value and policy calls; the faster one is chosen.
+- **Budget:** the deadline is min(2 s, 10% of the remaining turn time), with the timer read from `|inactive|`.
+
+**Amendment (M12, 2026-10-10):** params-49333 is model v2, and the NumPy `forward` is model v1's only, so there is no NumPy candidate: the runtime is JAX on the CPU, for the search and for the live raw ranking (`duoforge_live.policy.ModelPolicy`). A NumPy port of model v2 would be its own task with an equivalence test. The tool is `python -m duoforge_search.live_latency` (engine batches over the reference setups, no deadline during the measurement, private output).
+
+## Task 5: live wiring
+
+A play mode `--search honest` in `python -m duoforge_live`:
+- fallbacks (a) and (b) with their counters;
+- the deadline;
+- the dirty-game stop;
+- a per-game summary in the private log.
+
+**As built (M12, 2026-10-10, m12/bundle-6):**
+- `duoforge_live/search.py` holds `LiveSearch` and the outcome classes:
+  - searched;
+  - forced/raw/team without a fallback;
+  - (a) unreconstructible;
+  - deadline/busy;
+  - (b) error.
+- `game.py` plays the searched pair first and the raw ranking after it.
+- `client.py`:
+  - turns class (b) into the dirty game and the session pause (`PAUSED`);
+  - writes a per-game summary.
+- **Timer:** Showdown sends the player's `|inactive|Time left: N sec this turn | M sec total` line right after the request, so with the timer on a new decision point waits up to 1 s for it. After that it logs the line as missing and takes the 2 s cap.
+- **The tracker's parts:** `Tracker.public_parts()` (request, observation, record, status, causes) comes from HauptSession's record assembler. The Game encodes the tracker's `observation_ext()` (HauptSession, 2026-10-10). A feature the tracker does not fold stops it at its line (`lines._feature`): the bot forfeits explicitly, counted as `stop:feature:X` (gate above).
+
+## Task 6: the live-path arena
+
+- **Setup:** a local pinned Showdown server, search mode against raw mode, with the predeclared numbers above.
+- **Report:** aggregates only.
+- **Ladder:** only after the owner's go.
+
+## Deferred: visible sleep and confusion in the public record
+
+**Status (2026-10-10):** not built.
+
+The share of decisions whose public record is refused for a visible sleep or confusion was measured with params-49333 self-play on its 652-team pool: about 13,000 games, about 122,000 decisions per arm.
+- **With the pool's own weights:**
+  - turns: 2.1% (sleep 1.6%, confusion 0.5%);
+  - replacements: 1.7%;
+  - all decisions: about 2.6%.
+- **Weighted by Smogon usage:**
+  - turns: 1.5%;
+  - all decisions: about 1.9%.
+
+Both are under the 5% gate of class (a). Spore is not in the pool.
+
+Build it when Spore or another common sleep source joins the pool, or when the owner asks for it (HauptSession, 2026-10-10). The design follows.
+
+### Today
+
+- Python holds no rule. `belief.sample` passes uniform words (`h["sleep"]`, `h["confusion"]`).
+- `view.c` turns those words into counters with the engine's own tables:
+  - `dfi_sleep_weights {3,3,2}` for `sample([2,3,3])`;
+  - `dfi_confusion_weights {4,4,3,2,1}` for `random(2,6)`.
+- That is the unconditional distribution of a *running* counter. The state (schema 3) does not store elapsed attempts. That is why the public record refuses every visible sleep or confusion. The cause bits are `VISIBLE_SLEEP` and `VISIBLE_CONFUSION`, and the comment at `view.c:221` says: "never invent their posterior".
+
+### Rule at the pin
+
+- **Sleep** (`mods/champions/conditions.ts`):
+  - `startTime = sample([2,3,3])`.
+  - Every move attempt does `time--`. At `time <= 0` the Pokémon wakes up; otherwise the attempt shows a `cant|slp` line.
+  - After k slept attempts, P(remaining = t | k) ∝ P(S = t + k) for t ≥ 1. So k=0 gives {2: 1/3, 3: 2/3}, k=1 gives {1: 1/3, 2: 2/3}, and k=2 gives {1: 1}, a certain wake.
+- **Confusion** (`conditions.ts`):
+  - `time = random(min, 6)`, min = 2 (3 for Axe Kick), uniform over 2..5.
+  - Every attempt does `time--`. At 0 the confusion ends; otherwise the attempt shows an `-activate|confusion` line.
+  - The posterior has the same form: P(t | k) ∝ 1 for 2 ≤ t + k ≤ 5, t ≥ 1.
+- **Special cases** (`data.supported` = False in the pool today): Rest (time = 3 fixed), Early Bird (−2 per attempt), Sleep Talk, Axe Kick. Spore is not in the pool at all.
+  - The design refuses these explicitly: a new cause bit or `E_UNSUPPORTED`, never a posterior from the wrong distribution.
+  - Each gets its posterior once it becomes supported.
+
+### Proposal
+
+1. **State:** store the public elapsed count.
+   - Per member: `sleep_attempts` (0..2).
+   - Per active position: `confusion_attempts` (0..4).
+   - Both go into the POOL tail, using reserved bytes and a new tail revision (rev 6).
+   - The engine increments them exactly where `time--` happens and resets them at the start and end.
+   - Invariants:
+     - attempts + remaining = start ∈ the draw site's support;
+     - sleep attempts are only allowed with SLP status;
+     - confusion attempts are only allowed with confusion.
+   - HS assigns the values and offsets from M12's reserve (number blocks).
+2. **Public record:** the attempt counts are public (derivable per 0023 §4, because the start line and every `cant slp` / `-activate confusion` line are public). The remaining counter stays HIDDEN. `VISIBLE_SLEEP`/`VISIBLE_CONFUSION` are then no longer causes. They stay causes only for the unsupported special cases above.
+3. **from_view:** the remaining counter is drawn from the conditional posterior in C. It uses the same weights table that holds the draw site's constants (one source; a static assert ties it to the start draw). The word comes from the hypothesis as before, so Python is unchanged.
+4. **Tracker (HS):** fold the counts. Count `cant|slp` per member since its `-status|slp`. Count `-activate|confusion` per position since `-start|confusion`. Switching out does not reset sleep but does end confusion.
+
+### Tests
+
+- **Pairs:**
+  - Two states that differ only in the remaining counter (same attempt count) give byte-identical records for both players.
+  - Two states that differ in the attempt count give different records.
+- **Posterior:**
+  - Over a dense word grid, the drawn remaining counter after k sleep attempts has exactly the frequencies k=0 → 1/3 : 2/3 (values 2 and 3), k=1 → 1/3 : 2/3 (values 1 and 2), and k=2 → 1 (value 1).
+  - The same check for confusion with k = 0..3.
+  - The check runs on an exact integer grid, with no sampling noise.
+- **Round trip:** from_view(record) gives back public(world) = record for every attempt count. Together with honest's `_check_worlds`, this is the live path's check.
+- **Engine:** the counters run along exactly with the `cant slp` lines of the reference traces (differential against Showdown via the existing closure/pool battles with sleep).
+- **Special cases:** Rest, Early Bird, Sleep Talk and Axe Kick are refused explicitly with a pinned refusal.
+
+### Scope and order
+
+- Order: C (state, invariants, encode/decode, engine increment, view), then the Python mirror (`_layout`, `state_layout`), `state_v3_model.py` with the tail revision, golden pins, and the tracker fold (HS).
+- Its own part with review, after follow-up (A) is merged.
+- Confusion goes in with it. It is the same pattern, and the measurement shows its share.
