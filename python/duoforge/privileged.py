@@ -49,9 +49,10 @@ def _bundle(batch, env, choice):
     return bundle
 
 
-def step_events(batch, env, choice, rng=None):
+def step_events(batch, env, choice, *, rng):
     """The step of batch environment env by its factored choice (FACTORED_CHOICE (2,), as step_factored takes it, in
-    the last query's domains) on a copy of its battle, reseeded with rng = (initstate, initseq) when given
+    the last query's domains) on a copy of its battle, reseeded with rng = (initstate, initseq); rng is required, and
+    None (the environment's own stream, the step the batch would take) must be asked for explicitly
     (PRIVILEGED: the oracle and the test positions). Returns {"status", "result" (STEP_RESULT), "events" (one EVENT
     array per player, as each sees the step), "digest" (the copy's digest after the step), "battle_result" (0 before
     TERMINAL, else DUOFORGE_RESULT_*)}. The environment itself is never changed; a pair outside the domain is

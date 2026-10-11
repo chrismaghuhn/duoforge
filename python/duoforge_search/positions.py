@@ -2,10 +2,11 @@
 suite"). Diagnostic only: per the chess-programming rule, nothing is tuned on them.
 
 A position (data/positions/*.json) is reached from registry teams, a battle seed and a choice prefix, and names the
-seat to move, the acceptable answers and why. Its claim is proven against the engine by verify(): the property it
-names holds in every one of N reseeded copies of the step (privileged.step_events), so damage rolls, critical hits and
-speed ties are sampled, not enumerated (the engine has no chance enumeration). The claim holds with a critical hit too,
-and the sample must contain critical hits for that to mean anything.
+seat to move, the acceptable answers and why. Its claim is checked against the engine by verify(): the property it
+names holds in every one of N reseeded copies of the step (privileged.step_events), 256 of 256 samples: a statistical
+check, since damage rolls, critical hits and speed ties are sampled, not enumerated (the engine has no chance
+enumeration). The claim holds with a critical hit too, and the sample must contain critical hits on the Pokemon the
+claim is about for that to mean anything.
 
     python -m duoforge_search.positions --checkpoint P --out DIR
 
@@ -29,9 +30,14 @@ from duoforge import _layout, data, privileged, teams
 
 C = _layout.CONSTANTS
 ROOT = Path(__file__).resolve().parents[2] / "data" / "positions"
-KINDS = ("fake_out_partner", "protect_vs_ko", "set_trick_room", "undo_trick_room", "endgame", "fake_out_fails")
+# No "Fake Out after the first turn": Champions takes Fake Out out of the request once its user has taken a move action
+# (data/mods/champions/moves.ts, src/state/request.c), so it is never a choice to get wrong.
+KINDS = ("fake_out_partner", "protect_vs_ko", "set_trick_room", "undo_trick_room", "endgame")
 SAMPLES = 256
 RNG_BASE = (0x2026101100000A00, 0x2026101100000B00)
+# Undoing Trick Room (owner, 2026-10-11): with the reference teams a setter can fall to a rare double critical hit
+# before its Trick Room (priority -7); those samples are counted, and they must stay below this share.
+MAX_SETTER_KNOCKOUTS = 0.01
 
 
 class PositionError(AssertionError):
@@ -171,9 +177,10 @@ def reach(ctx, position, root=None, on_preview=None):
 class Outcome:
     fainted: frozenset   # flat positions whose Pokemon fainted this step
     moved: frozenset     # flat positions whose Pokemon used a move
-    crits: int
+    crits: tuple         # the flat position of every critical hit's target, in order
     result: int          # DUOFORGE_RESULT_* after the step, 0 before TERMINAL
-    trick_room: int      # +1: Trick Room started this step, -1: it ended, 0: neither
+    trick_room: int      # the net change: +1 Trick Room is up after the step and was not before, -1 the reverse, 0 none
+    failed: frozenset    # flat positions whose move failed (-fail)
 
 
 def sample(batch, env, seat, own, foe, n=SAMPLES, base=RNG_BASE):
@@ -187,11 +194,16 @@ def sample(batch, env, seat, own, foe, n=SAMPLES, base=RNG_BASE):
             raise PositionError(f"a sampled step was refused: {duoforge.status_name(step['status'])}")
         events = step["events"][seat]
         kinds = events["kind"].astype(int)
-        room = events["detail"].astype(int) == C["DUOFORGE_FIELD_TRICK_ROOM"]
-        trick_room = 1 if (room & (kinds == C["DUOFORGE_EVENT_FIELD_START"])).any() else             -1 if (room & (kinds == C["DUOFORGE_EVENT_FIELD_END"])).any() else 0
+        # the last Trick Room event decides: a second Trick Room in the same step ends the first (turn.c)
+        room = [int(k) for k, d in zip(kinds, events["detail"].astype(int)) if d == C["DUOFORGE_FIELD_TRICK_ROOM"]
+                and int(k) in (C["DUOFORGE_EVENT_FIELD_START"], C["DUOFORGE_EVENT_FIELD_END"])]
+        up_before = int(batch.observations[env, seat]["trick_room_turns"]) > 0
+        up_after = room[-1] == C["DUOFORGE_EVENT_FIELD_START"] if room else up_before
         out.append(Outcome(frozenset(int(e["position"]) for e in events[kinds == C["DUOFORGE_EVENT_FAINT"]]),
                            frozenset(int(e["position"]) for e in events[kinds == C["DUOFORGE_EVENT_MOVE"]]),
-                           int((kinds == C["DUOFORGE_EVENT_CRIT"]).sum()), step["battle_result"], trick_room))
+                           tuple(int(e["position"]) for e in events[kinds == C["DUOFORGE_EVENT_CRIT"]]),
+                           step["battle_result"], int(up_after) - int(up_before),
+                           frozenset(int(e["position"]) for e in events[kinds == C["DUOFORGE_EVENT_FAIL"]])))
     return out
 
 
@@ -205,7 +217,7 @@ def _safe(batch, seat, own, foe, flat, n, base):
             for out in sample(batch, 0, seat, o, f, n, base):
                 if flat in out.fainted:
                     return False, crits
-                crits += out.crits
+                crits += out.crits.count(flat)
     return True, crits
 
 
@@ -214,7 +226,7 @@ def _killer(batch, seat, o, foe, flat, n, base):
     for f in foe:
         outs = sample(batch, 0, seat, o, f, n, base)
         if all(flat in out.fainted for out in outs):
-            return f, sum(out.crits for out in outs)
+            return f, sum(out.crits.count(flat) for out in outs)
     return None, 0
 
 
@@ -249,12 +261,12 @@ def _endgame(b, seat, own, foe, expected, n, base, name):
             results = {out.result for out in outs}
             if len(results) != 1 or 0 in results:
                 raise PositionError(f"{name}: a pair does not end the battle with one result in all samples")
-            crits += sum(out.crits for out in outs)
+            crits += sum(len(out.crits) for out in outs)
             r = results.pop()
             row.append(1.0 if r == win else 0.5 if r == C["DUOFORGE_RESULT_TIE"] else 0.0)
         payoff.append(row)
     if crits == 0:
-        raise PositionError(f"{name}: no critical hit in the samples: the proof is too small")
+        raise PositionError(f"{name}: no critical hit in the samples: the sample is too small")
     value = matrix.solve(np.array(payoff, dtype=np.float64)).value
     secure = sorted(o for (o, _), row in zip(own, payoff) if min(row) == 1.0)
     if not secure or abs(value - 1.0) > 1e-12 or len(secure) == len(own):
@@ -265,7 +277,8 @@ def _endgame(b, seat, own, foe, expected, n, base, name):
 
 
 def verify(ctx, position, n=SAMPLES, base=RNG_BASE):
-    """Proves the position's claim against the engine (PositionError otherwise); returns a summary of the proof."""
+    """Checks the position's claim against the engine in all n samples (statistical; PositionError otherwise); returns
+    a summary of the check."""
     with reach(ctx, position) as b:
         seat, claim = position.seat, position.claim
         own, foe = pairs(b, 0, seat), pairs(b, 0, 1 - seat)
@@ -279,8 +292,12 @@ def verify(ctx, position, n=SAMPLES, base=RNG_BASE):
         if position.kind in ("fake_out_partner", "protect_vs_ko"):
             slot = claim["partner"] if position.kind == "fake_out_partner" else claim["protector"]
             flat = 2 * seat + slot
-            if not _no_escape(own, slot, allow_protect=position.kind == "protect_vs_ko"):
-                raise PositionError(f"{position.name}: the threatened Pokemon could switch out (or Protect)")
+            if position.kind == "fake_out_partner":
+                # the partner's own escapes (Protect, a switch) are no answer to check against: Fake Out is the one
+                # answer that keeps it standing while it stays in and acts (HauptSession's semantics, 2026-10-11)
+                rest = [ik for ik in rest if "switch" not in labels[ik][slot] and labels[ik][slot].get("move") != "protect"]
+            elif not _no_escape(own, slot, allow_protect=True):
+                raise PositionError(f"{position.name}: the threatened Pokemon could switch out")
             safe, crits = _safe(b, seat, expected, all_foe, flat, n, base)
             if not safe:
                 raise PositionError(f"{position.name}: an expected answer leaves the Pokemon at {flat} knocked out")
@@ -290,7 +307,7 @@ def verify(ctx, position, n=SAMPLES, base=RNG_BASE):
                     raise PositionError(f"{position.name}: {labels[o]} keeps the Pokemon at {flat} standing too")
                 crits += c
             if crits == 0:
-                raise PositionError(f"{position.name}: no critical hit in the samples: the proof is too small")
+                raise PositionError(f"{position.name}: no critical hit in the samples: the sample is too small")
             report["crits"] = crits
         elif position.kind in ("set_trick_room", "undo_trick_room"):
             want = 1 if position.kind == "set_trick_room" else -1
@@ -302,27 +319,26 @@ def verify(ctx, position, n=SAMPLES, base=RNG_BASE):
                 raise PositionError(f"{position.name}: our actives are not both slower than the foe's")
             if want == -1 and not min(ours + bench) > max(theirs):
                 raise PositionError(f"{position.name}: our actives and bench are not all faster than the foe's actives")
+            setter = 2 * seat + claim["setter"]
+            if any(lab[k].get("move") == "trickroom" for _, lab in foe for k in (0, 1)):
+                raise PositionError(f"{position.name}: a foe on the field has Trick Room too (a second one undoes it)")
+            knocked_out = total = 0
             for o in expected:
                 for f in all_foe:
-                    if not all(out.trick_room == want for out in sample(b, 0, seat, o, f, n, base)):
-                        raise PositionError(f"{position.name}: an expected answer does not "
-                                            f"{'set' if want == 1 else 'end'} Trick Room against {dict(foe)[f]}")
+                    for out in sample(b, 0, seat, o, f, n, base):
+                        total += 1
+                        if want == -1 and setter in out.fainted:
+                            knocked_out += 1  # (owner, 2026-10-11) a rare knockout of the setter first: counted
+                            continue
+                        if out.trick_room != want:
+                            raise PositionError(f"{position.name}: an expected answer does not "
+                                                f"{'set' if want == 1 else 'end'} Trick Room against {dict(foe)[f]}")
+            if knocked_out > MAX_SETTER_KNOCKOUTS * total:
+                raise PositionError(f"{position.name}: the setter falls first in {knocked_out} of {total} samples")
             report["speeds"] = {"ours": ours, "foe": theirs, "our_bench": bench}
+            report["setter_knocked_out"] = knocked_out / total
         elif position.kind == "endgame":
             report.update(_endgame(b, seat, own, foe, expected, n, base, position.name))
-        elif position.kind == "fake_out_fails":
-            u, target = claim["u"], claim["fake_out_target"]
-            fo = [ik for ik, lab in own if lab[u].get("move") == "fakeout" and lab[u].get("target") == target]
-            movers = [ik for ik, lab in foe if "move" in lab[target % 2] and lab[target % 2]["move"] != "protect"
-                      and int(data.move_static(ctx, data.find(ctx, data.TABLE_MOVE, lab[target % 2]["move"]))
-                              ["priority"]) == 0]
-            if not fo or not movers:
-                raise PositionError(f"{position.name}: no Fake Out of slot {u} at {target}, or no slower foe move")
-            for f in movers:
-                if not all(target in out.moved for out in sample(b, 0, seat, fo[0], f, n, base)):
-                    raise PositionError(f"{position.name}: Fake Out stops the foe: it is not this Pokemon's first turn")
-            if any(ik in expected for ik in fo):
-                raise PositionError(f"{position.name}: a failing Fake Out is an expected answer")
         return report
 
 
@@ -347,13 +363,16 @@ def play(ctx, position, model, params, encoder, ext, searcher=None, oracle=None)
         logp = np.asarray(model.apply(params, obs[0, s][None], slots[0, s][None], mask[0, s][None])[0])[0]
         logp = np.where(np.asarray(mask[0, s], bool).reshape(-1), logp, -np.inf)
         players = {"raw": int(np.argmax(logp))}
+        kinds = {}
         if searcher is not None:
-            players["honest"] = int(searcher.decide(b, [0], [s], [KEY + 1], [False])[0][0])
+            actions, records = searcher.decide(b, [0], [s], [KEY + 1], [False])
+            players["honest"], kinds["honest"] = int(actions[0]), records[0]["kind"]
         if oracle is not None and position.kind in ORACLE_KINDS:
             players["oracle"] = int(oracle.decide(b, [0], [s], [KEY + 1], [False])[0][0])
         for name, action in players.items():
             labels = _labels_of(b, s, action)
-            out[name] = {"labels": labels, "hit": accepted(position.expected, labels)}
+            # a refused or forced search plays the raw pair: it is no answer of the search
+            out[name] = {"labels": labels, "hit": accepted(position.expected, labels), "kind": kinds.get(name, name)}
     return out
 
 
@@ -383,8 +402,10 @@ def main(argv=None):
                 searcher.clear()
                 rows.append({"name": position.name, "kind": position.kind,
                              **play(ctx, position, model, params, encoder, ext, searcher, oracle)})
-    rates = {name: sum(r[name]["hit"] for r in rows if name in r) / max(1, sum(name in r for r in rows))
-             for name in ("raw", "honest", "oracle")}
+    def counted(r, name):
+        return name in r and (name != "honest" or r[name]["kind"] == "searched")
+    rates = {name: {"hits": sum(r[name]["hit"] for r in rows if counted(r, name)),
+                    "counted": sum(counted(r, name) for r in rows)} for name in ("raw", "honest", "oracle")}
     out = Path(args.out)
     out.mkdir(parents=True, exist_ok=True)
     report = {"checkpoint": str(args.checkpoint), "positions": rows, "hit_rates": rates}
