@@ -752,16 +752,6 @@ duoforge_status duoforge_battle_from_view(const duoforge_context *ctx, const duo
     }
     uint8_t s[DUOFORGE_VIEW_STATE_MAX];
     memcpy(s, view->state, n);
-    /* Step G90 (decision 0060, decision 0023): a view with a partial trap is not rebuilt: its turns are hidden, and the
-     * hypothesis does not draw them (no mechanic draws the turns of a trap yet). */
-    for (uint32_t side = 0u; side < DUOFORGE_SIDE_COUNT; ++side) {
-        for (uint32_t p = 0u; p < DUOFORGE_ACTIVE_PER_SIDE; ++p) {
-            if (s[DFI_ENC_TAIL_OFF + DFI_ENC_TAIL_SIDES_OFF + side * DFI_ENC_TAIL_SIDE_SIZE + DFI_ENC_TAIL_POS_OFF +
-                 p * DFI_ENC_TAIL_POS_SIZE + DFI_ENC_TAIL_POS_TRAP_TURNS_OFF] != 0u) {
-                return DUOFORGE_E_UNSUPPORTED;
-            }
-        }
-    }
     const uint32_t player = view->player;
     const uint32_t foe = player ^ 1u;
     uint8_t *fs = side_at(s, foe);
@@ -829,6 +819,38 @@ duoforge_status duoforge_battle_from_view(const duoforge_context *ctx, const duo
             uint8_t *mv = mb + DFI_ENC_MOVE_OFF + k * DFI_ENC_MOVE_SIZE;
             const uint32_t used = kb[DFI_ENC_KNOWLEDGE_USED_OFF + k];
             mv[2] = (uint8_t)(used >= mv[3] ? 0u : mv[3] - used); /* wide-operands-reviewed: <= pp_max */
+        }
+    }
+    /* Step G90 (decision 0060, hidden counters): the partial trap's turns are hidden in the view. Its duration d is 5 or 6
+     * (random(5, 7), data/conditions.ts:222-228), and the public elapsed count e (the residual phases since the start) leaves
+     * trap_turns = d - e >= 1, so d > e: both durations at e <= 4 (a draw of the world's RNG, 1/2 : 1/2), only 6 at e = 5.
+     * Only a pool state has the tail (its bytes are beyond the state otherwise). */
+    if (dfi_kind_limits_of(ctx->data_kind).pool_rules) {
+        for (uint32_t side = 0u; side < DUOFORGE_SIDE_COUNT; ++side) {
+            for (uint32_t p = 0u; p < DUOFORGE_ACTIVE_PER_SIDE; ++p) {
+                uint8_t *tb = s + DFI_ENC_TAIL_OFF + DFI_ENC_TAIL_SIDES_OFF + side * DFI_ENC_TAIL_SIDE_SIZE + DFI_ENC_TAIL_POS_OFF +
+                              p * DFI_ENC_TAIL_POS_SIZE;
+                if (tb[DFI_ENC_TAIL_POS_TRAP_TURNS_OFF] != DUOFORGE_VIEW_HIDDEN) {
+                    continue;
+                }
+                const uint32_t elapsed = tb[DFI_ENC_TAIL_POS_TRAP_ELAPSED_OFF];
+                if (elapsed > DFI_TAIL_TRAP_ELAPSED_MAX) {
+                    return DUOFORGE_E_MALFORMED; /* no duration fits: a legal state never shows it */
+                }
+                uint32_t duration = 6u;
+                if (elapsed < 5u) {
+                    uint32_t pick = 0u;
+                    const duoforge_status ps = dfi_rng_bounded_u32(&rng, 2u, &pick);
+                    if (ps != DUOFORGE_OK) {
+                        return ps;
+                    }
+                    duration = 5u + pick;
+                    wr64(s + DFI_ENC_RNG_STATE_OFF, rng.state);
+                    wr64(s + DFI_ENC_RNG_INC_OFF, rng.inc);
+                    wr64(s + DFI_ENC_RNG_DRAWS_OFF, rng.draws);
+                }
+                tb[DFI_ENC_TAIL_POS_TRAP_TURNS_OFF] = (uint8_t)(duration - elapsed); /* wide-operands-reviewed: 1..6 */
+            }
         }
     }
     /* the hidden counters of both sides and the foe's charging targets */

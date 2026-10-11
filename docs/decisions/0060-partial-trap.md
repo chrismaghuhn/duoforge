@@ -26,9 +26,11 @@ All six: target `normal`, `volatileStatus: 'partiallytrapped'`, no secondary.
 - **Trapped flag** (`sim/battle.ts:1726`, `sim/pokemon.ts:1607-1611`): recomputed at each turn boundary; `tryTrap` fails for a Ghost-type target (`data/typechart.ts:204`, `trapped: 3`), which then still takes the residual damage. A trapped Pokemon cannot choose a voluntary switch in a move request (`sim/side.ts:985-993`). Forced switches (Eject Button, Red Card, drags) and the trapped user's own U-turn (`sim/battle-actions.ts:1311`, no `trapped` check) are not blocked.
 - **Gen 1 clauses** (`battle.ts:1646`, `side.ts:691`, `pokemon.ts:1098`) do not apply to gen 9.
 
-## 3. The state (no new byte, no new bit)
+## 3. The state (one reserved byte, no new bit)
 
-The tail fields of tail rev 5 hold the trap: `trap_turns` (the remaining turns, 1 to 8), `trap_source` (flat position of the trapper + 1), `trap_move` (move id + 1), `trap_band` (0/1, the band of the start). The position bit `DUOFORGE_POSITION_EXT_PARTIAL_TRAP` (0x100) and the view feature `DUOFORGE_VIEWEXT_FEATURE_PARTIAL_TRAP` (18) already exist.
+The tail fields of tail rev 5 hold the trap: `trap_turns` (the remaining turns, 1 to 6 with d in {5, 6}), `trap_source` (flat position of the trapper + 1), `trap_move` (move id + 1), `trap_band` (0/1, the band of the start). The position bit `DUOFORGE_POSITION_EXT_PARTIAL_TRAP` (0x100) and the view feature `DUOFORGE_VIEWEXT_FEATURE_PARTIAL_TRAP` (18) already exist.
+
+**The elapsed count (hidden counters, section 6a).** `trap_elapsed` is the residual phases the trap has been through (0 to 5 while it is up, 0 without it). It is the first of the four reserved bytes of each position's rev 4 block (`DFI_ENC_TAIL_POS_TRAP_ELAPSED_OFF` = 32; the block stays 36 bytes, the reserved count of the tail goes from 45 to 41). The struct `dfi_tail_pos` gets the field and one explicit zero pad byte (`pos_pad`), because its data is 35 bytes and the uint16 members would round it to 36 with an implicit pad; the three size asserts of `state_codec.h` count the pad.
 
 **Source leaves (encoding of this step).** The pin ends the trap silently at the residual once its source is not active. The engine keeps only a flat position, so when the trapper's position is vacated or refilled (`dfi_tail_clear_occupant`, `src/state/identity.c`), every trap whose `trap_source` is that position gets `trap_source = 0`, keeping `trap_turns`, `trap_move` and `trap_band`. The residual then ends it silently. The re-hit window is exact: an existing trap (turns != 0) still refuses a new start, as the pin does. The invariant of the source changes from "turns zero iff source zero" to "turns zero implies source zero". This is the only change of the tail invariants (approved by the coordinator, 2026-10-11).
 
@@ -41,17 +43,27 @@ The tail fields of tail rev 5 hold the trap: `trap_turns` (the remaining turns, 
 - Residual damage: `DAMAGE` with cause `MOVE`, id2 = the move, other none (no new cause). The converter tells it from other `MOVE` damages by the `[partiallytrapped]` marker of the line (a named rule in `tools/reference/trace_to_c.py`).
 - End of the duration: `VOLATILE_END` with detail `PARTIAL_TRAP` and id = the move (the end line names the move).
 - Silent ends (the source left, a Substitute, the residual with a fainted source): no event; the view bit clears from the state.
+- The elapsed count: `DUOFORGE_POSITION_EXT2_TRAP_ELAPSED_BIT0..BIT2` = 0x10, 0x20, 0x40 (bits 4 to 6 of `duoforge_observation_ext.volatiles2`, the POSITION_EXT2 word; bits 0 to 3 belong to another lane). Its feature is `DUOFORGE_VIEWEXT_FEATURE_TRAP_ELAPSED` = 45 (lane A block, HS registry), listed once in `DUOFORGE_VIEWEXT_RESERVE_OWN` for each of the three bits, with the family `DUOFORGE_VIEWEXT_FEATURE_VOLATILES2` (60). Both features go into the support mask (`support_manifest.c`). Encoder 5 refuses a state with an active trap (`encode.c`: a nonzero `volatiles2` is EncoderAwaitingBit below version 6), as the HS registry accepts.
 
 ## 5. Draws
 
-One new draw site, `DFI_SITE_PARTIAL_TRAP_TURNS` = 23, `random(5, 7)`, drawn only when the volatile starts (not for a re-hit, not for a fainted target). The converter's site table gets the same number. No draw for the band.
+One draw site, `DFI_SITE_PARTIAL_TRAP_TURNS` = 32, `random(5, 7)`, drawn only when the volatile starts (not for a re-hit, not for a fainted target). The converter's site table has the same number (HS range). No draw for the band.
 
 ## 6. Information safety (approved 2026-10-11)
 
 - `trap_turns` is a drawn counter: the view writes `DUOFORGE_VIEW_HIDDEN` into it for **both** viewers, the owner included (the drawn value is never shown, decision 0007).
 - The presence bit is public. `trap_source`, `trap_move` and `trap_band` are public (the `-activate` line names the source and the move; the band is the source's held item, open information).
-- The hypothesis path (`duoforge_battle_from_view`) refuses a trapped state with E_UNSUPPORTED, as decision 0023 already does; the search does not use these views.
+- The rebuild (`duoforge_battle_from_view`) of a trapped view is no longer refused: it determinizes the hidden turns (section 6a).
 - Decision 0018 row 8 is corrected accordingly (done in this step).
+
+## 6a. Hidden counters (lead decision, 2026-10-11)
+
+- Derivation of `trap_elapsed` (the public counter, engine and view): 0 at the start (`-activate`), +1 at each residual phase while the trap is up (the phase that ends it at 0 clears it), 0 at the end and whenever the trap leaves the position (the occupant's tail is cleared). Saturation at 7 in the code; a legal state never exceeds 5 while the trap is up, because the duration is at most 6 (invariant: `trap_elapsed <= 5` with `trap_turns != 0`, `trap_elapsed == 0` without).
+- Posterior of the hidden turns. The duration `d` is `random(5, 7)` (`data/conditions.ts:222-228`, the pin), so `d` is 5 or 6 at 1/2 each. The public view shows `trap_turns = d - e` with the elapsed count `e`, and the trap is up, so `d > e`. Consistent durations: both for `e` at most 4 (1/2 : 1/2), only 6 at `e = 5` (one turn left), none at `e >= 6`, which is refused (`DUOFORGE_E_MALFORMED`: a legal view never shows it).
+- Grip Claw (`d = 8` on the source) is not in the Champions pool (`data/mods/champions/items.ts:422`, `isNonstandard: "Past"`), so no trapper can hold it and no duration 8 is drawn; the pool data refuses the item at battle creation, and the view has no item of the source to decide it.
+- Sleep and confusion stay refused by the rebuild (E_UNSUPPORTED, as before); the same method could apply later, a decision of the owner.
+- The determinized turns are not compared with the truth in the tests (they are hidden); the tests check the consistency set, `e = 5` giving 1, `e = 6` refused, and the public fold of `e` into POSITION_EXT2 for both viewers (`tests/test_pool_g90.c`, `test_elapsed_determinized`).
+- Open: the draw of the duration in the rebuild comes from the world's RNG, which `duoforge_battle_from_view` seeds with a constant (0, 0). A constant seed makes the choice the same bit for every view, so it is not a 1/2 : 1/2 posterior across worlds. See section 9, point 3.
 
 ## 7. Engine (summary)
 
@@ -70,3 +82,4 @@ One new draw site, `DFI_SITE_PARTIAL_TRAP_TURNS` = 23, `random(5, 7)`, drawn onl
 
 1. The source-left encoding of section 3 (trap_source = 0 while the trap lives on) changes one tail invariant. If the lead prefers a stored identity, that needs a byte.
 2. Test counts and mutants: see the step entry 5cs in decision 0015 when the step is complete.
+3. The posterior draw of section 6a. The lead's spec says "from the world RNG", but `duoforge_battle_from_view` seeds that RNG with (0, 0) and the view zeroes the RNG bytes, so the draw is one fixed bit for every view, not a sample of the posterior. The sleep and confusion counters of the same function draw from the hypothesis (`duoforge_hypothesis`, one word per hidden value), which the caller samples. The matching design is one word per trapped position in the hypothesis (a public struct change: the `reserved2[4]` bytes would become `trap_pick[4]`, and the revision would move). Decision needed before the push; the code now uses the world RNG as specified.

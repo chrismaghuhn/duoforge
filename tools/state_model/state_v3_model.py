@@ -63,6 +63,7 @@ TAIL_TAUNT_MAX = 4
 TAIL_DISABLE_SLOT_MAX = 4
 TAIL_DISABLE_TURNS_MAX = 5
 TAIL_TRAP_TURNS_MAX = 8
+TAIL_TRAP_ELAPSED_MAX = 5  # step G90 (decision 0060): the elapsed count while the trap is up (d <= 6)
 TAIL_SOURCE_MAX = 4
 TAIL_YAWN_MAX = 2
 TAIL_STOCKPILE_MAX = 3
@@ -104,7 +105,7 @@ TAIL_POS_BYTE_FIELDS = ['last_move', 'encore_slot', 'encore_turns', 'throat_chop
                         'disable_slot', 'disable_turns', 'imprison', 'must_recharge', 'trap_turns', 'trap_source',
                         'trap_band', 'leech_seed', 'yawn', 'focus_energy', 'stockpile', 'stockpile_def',
                         'stockpile_spd', 'charge', 'glaive_rush']
-TAIL_POS_REV4_FIELDS = ['move_result', 'single_turn', 'hits_taken', 'ability_state', 'lock_turns']
+TAIL_POS_REV4_FIELDS = ['move_result', 'single_turn', 'hits_taken', 'ability_state', 'lock_turns', 'trap_elapsed']
 # rev 5, per position (lane A; zero, nothing writes them yet) and per side (the Illusion state of decision 0026, zero)
 TAIL_POS_REV5_FIELDS = ['position_flags', 'future_sight']
 TAIL_SIDE_BYTE_FIELDS = ['wide_guard', 'aurora_veil', 'toxic_spikes', 'stealth_rock', 'spikes', 'sticky_web', 'quick_guard',
@@ -1008,7 +1009,8 @@ def tail_pos_valid(ctx, tp, flat, mem, slot_flags=0, sub_cap=0):
     if not (tp['trap_turns'] <= TAIL_TRAP_TURNS_MAX and tp['trap_source'] <= TAIL_SOURCE_MAX
             and tp['trap_source'] != flat + 1 and tp['trap_move'] <= ctx.move_count
             and (tp['trap_turns'] != 0 or tp['trap_source'] == 0) and (tp['trap_turns'] == 0) == (tp['trap_move'] == 0)
-            and tp['trap_band'] <= TAIL_FLAG_MAX and (tp['trap_turns'] != 0 or tp['trap_band'] == 0)):
+            and tp['trap_band'] <= TAIL_FLAG_MAX and (tp['trap_turns'] != 0 or tp['trap_band'] == 0)
+            and (tp['trap_elapsed'] <= TAIL_TRAP_ELAPSED_MAX if tp['trap_turns'] != 0 else tp['trap_elapsed'] == 0)):
         return False
     if not (tp['leech_seed'] <= TAIL_SOURCE_MAX and tp['leech_seed'] != flat + 1):
         return False
@@ -1165,7 +1167,7 @@ def tail_bytes(tail):
         for tp in ts['pos']:
             out += bytes([tp[f] for f in TAIL_POS_BYTE_FIELDS])
             out += struct.pack('<HH', tp['substitute_hp'], tp['trap_move']) + bytes([tp['protect_kind']])
-            out += bytes([tp[f] for f in TAIL_POS_REV4_FIELDS]) + bytes(4)
+            out += bytes([tp[f] for f in TAIL_POS_REV4_FIELDS]) + bytes(3)
         for m in range(MAX_ROSTER):
             out += struct.pack('<HH', ts['ability_now'][m], ts['forme_now'][m])
             out += bytes([ts['soak'][m], ts['item_now'][m], ts['toxic_stage'][m], ts['type2'][m], ts['member_flags'][m], 0])
@@ -1187,12 +1189,12 @@ def tail_reserved_offsets():
     for s in range(2):
         so = TAIL_FIELD_SIZE + TAIL_SIDE_SIZE * s
         for p in range(2):
-            offs += [so + 8 + TAIL_POS_SIZE * p + 32 + i for i in range(4)]
+            offs += [so + 8 + TAIL_POS_SIZE * p + 33 + i for i in range(3)]
         offs += [so + 80 + TAIL_MEMBER_SIZE * m + 9 for m in range(MAX_ROSTER)]
-    assert len(offs) == 29
+    assert len(offs) == 25
     rev5_reserve = TAIL_REV4_SIZE + TAIL5_SIZE - TAIL5_RESERVED_SIZE
     offs += [rev5_reserve + i for i in range(TAIL5_RESERVED_SIZE)]
-    assert len(offs) == 45
+    assert len(offs) == 41
     return offs
 
 

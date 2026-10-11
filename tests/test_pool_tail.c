@@ -110,7 +110,7 @@ static const unsigned sweep[DFI_ENC_TAIL_SIZE][SWEEP_COLUMNS] = {
     {6, 0, 249, 0, 0, 0, 0, 0},
     {6, 0, 249, 0, 0, 0, 0, 0},
     {0, 0, 255, 0, 0, 0, 0, 0},
-    {0, 0, 0, 0, 0, 255, 0, 0},
+    {5, 0, 250, 0, 0, 0, 0, 0}, /* step G90: trap_elapsed of side 0 position 0 (trapped: 1..5 OK, the rest POSITION) */
     {0, 0, 0, 0, 0, 255, 0, 0},
     {0, 0, 0, 0, 0, 255, 0, 0},
     {0, 0, 0, 0, 0, 255, 0, 0},
@@ -146,7 +146,7 @@ static const unsigned sweep[DFI_ENC_TAIL_SIZE][SWEEP_COLUMNS] = {
     {6, 0, 249, 0, 0, 0, 0, 0},
     {6, 0, 249, 0, 0, 0, 0, 0},
     {0, 0, 255, 0, 0, 0, 0, 0},
-    {0, 0, 0, 0, 0, 255, 0, 0},
+    {0, 0, 255, 0, 0, 0, 0, 0}, /* step G90: trap_elapsed of side 0 position 1 (not trapped: only 0, POSITION otherwise) */
     {0, 0, 0, 0, 0, 255, 0, 0},
     {0, 0, 0, 0, 0, 255, 0, 0},
     {0, 0, 0, 0, 0, 255, 0, 0},
@@ -250,7 +250,7 @@ static const unsigned sweep[DFI_ENC_TAIL_SIZE][SWEEP_COLUMNS] = {
     {6, 0, 249, 0, 0, 0, 0, 0},
     {6, 0, 249, 0, 0, 0, 0, 0},
     {2, 0, 252, 0, 0, 0, 0, 1},
-    {0, 0, 0, 0, 0, 255, 0, 0},
+    {0, 0, 255, 0, 0, 0, 0, 0}, /* step G90: trap_elapsed of side 1 position 0 (not trapped) */
     {0, 0, 0, 0, 0, 255, 0, 0},
     {0, 0, 0, 0, 0, 255, 0, 0},
     {0, 0, 0, 0, 0, 255, 0, 0},
@@ -286,7 +286,7 @@ static const unsigned sweep[DFI_ENC_TAIL_SIZE][SWEEP_COLUMNS] = {
     {6, 0, 249, 0, 0, 0, 0, 0},
     {6, 0, 249, 0, 0, 0, 0, 0},
     {2, 0, 252, 0, 0, 0, 0, 1},
-    {0, 0, 0, 0, 0, 255, 0, 0},
+    {5, 0, 250, 0, 0, 0, 0, 0}, /* step G90: trap_elapsed of side 1 position 1 (trapped) */
     {0, 0, 0, 0, 0, 255, 0, 0},
     {0, 0, 0, 0, 0, 255, 0, 0},
     {0, 0, 0, 0, 0, 255, 0, 0},
@@ -1276,7 +1276,9 @@ int main(void)
         DF_CHECK_EQ_U64(&t, DFI_ENC_TAIL_REV4_SIZE, 288u);
         DF_CHECK_EQ_U64(&t, DFI_ENC_TAIL5_SIZE, 60u);
         DF_CHECK_EQ_U64(&t, DFI_ENC_TAIL5_RESERVED_OFF, 44u);
-        DF_CHECK_EQ_U64(&t, DFI_ENC_TAIL_RESERVED_COUNT, 45u); /* step G46: party_order takes 6 of the 7 field bytes (35 before); rev 5: 16 more */
+        DF_CHECK_EQ_U64(&t, DFI_ENC_TAIL_RESERVED_COUNT, 41u); /* step G46: party_order takes 6 of the 7 field bytes (35 before); step G90 takes 1 of the position block's 4 (rev 5: 16 more) */
+        DF_CHECK_EQ_U64(&t, DFI_ENC_TAIL_POS_TRAP_ELAPSED_OFF, 32u); /* step G90 (decision 0060): the partial trap's elapsed count */
+        DF_CHECK_EQ_U64(&t, DFI_ENC_TAIL_POS_RESERVED_OFF, 33u);
         DF_CHECK_EQ_U64(&t, DFI_STATE_SCHEMA_V3, 3u);
         DF_CHECK_EQ_U64(&t, DFI_STATE_SCHEMA_POOL_TAIL_REV5, 0x0503u);
         DF_CHECK_EQ_U64(&t, DFI_STATE_SCHEMA_POOL_TAIL_REV4, 0x0403u); /* refused since rev 5 */
@@ -1293,15 +1295,17 @@ int main(void)
         DF_CHECK_EQ_U64(&t, DFI_ENC_TAIL_MEMBER_FLAGS_OFF, 8u);
         DF_CHECK(&t, DFI_STATE_SCHEMA_POOL_TAIL_REV5 != 4u); /* schema 4 stays free: certified pool teams */
         /* The tail in memory: the encoded size without the reserved bytes, and the one pad byte of the field block. */
-        DF_CHECK_EQ_U64(&t, sizeof(dfi_pool_tail), 304u); /* a position and a side have none; step G46 adds party_order (6); rev 5 adds the Illusion state and the 2 position bytes */
-        DF_CHECK_EQ_U64(&t, sizeof(dfi_tail_side), 148u);
-        DF_CHECK_EQ_U64(&t, sizeof(dfi_tail_pos), 34u);
+        /* step G46 adds party_order (6); rev 5 adds the Illusion state and the 2 position bytes; step G90 adds the elapsed count
+         * (one byte of a position's reserved four) and a pad byte per position, so each position is an even 36 bytes */
+        DF_CHECK_EQ_U64(&t, sizeof(dfi_pool_tail), 312u);
+        DF_CHECK_EQ_U64(&t, sizeof(dfi_tail_side), 152u);
+        DF_CHECK_EQ_U64(&t, sizeof(dfi_tail_pos), 36u);
         DF_CHECK_EQ_U64(&t, sizeof(dfi_tail_illusion), 18u);
         unsigned reserved = 0u;
         for (size_t off = 0u; off < DFI_ENC_TAIL_SIZE; ++off) {
             reserved += is_reserved_offset(off) ? 1u : 0u;
         }
-        DF_CHECK_EQ_U64(&t, reserved, 45u);
+        DF_CHECK_EQ_U64(&t, reserved, 41u);
         const duoforge_context *with[] = {kp, kq};
         const duoforge_context *without[] = {k1, k2, kc, kd, c1};
         for (size_t i = 0u; i < 2u; ++i) {
@@ -1580,7 +1584,7 @@ int main(void)
             }
         }
         DF_CHECK_EQ_U64(&t, wrong, 0u);
-        DF_CHECK_EQ_U64(&t, all_reserved, 45u); /* 29 reserved bytes of the rev 4 part (the field block's +1..+6 are party_order) and 16 of rev 5 */
+        DF_CHECK_EQ_U64(&t, all_reserved, 41u); /* 25 reserved bytes of the rev 4 part (the field block's +1..+6 are party_order, the position block's byte 32 the elapsed count) and 16 of rev 5 */
     }
 
     /* The schema is the one of the context's kind; sizes, schema ids and truncations. */
@@ -1950,6 +1954,8 @@ int main(void)
                 const uint32_t mr = x->tail.sides[s].positions[p].move_result;
                 DF_CHECK_EQ_U64(&t, mr & 0xC0u, 0u);
                 want.sides[s].positions[p].move_result = (uint8_t)mr;
+                /* step G90: the partial trap's elapsed count is the battle's own (the model does not play the residuals) */
+                want.sides[s].positions[p].trap_elapsed = x->tail.sides[s].positions[p].trap_elapsed;
             }
         }
         DF_CHECK(&t, memcmp(&x->tail, &want, sizeof want) == 0);

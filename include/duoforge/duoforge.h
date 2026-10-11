@@ -856,6 +856,12 @@ duoforge_status duoforge_battle_observe(const duoforge_context *ctx, const duofo
 #define DUOFORGE_POSITION_EXT_DRAGON_CHEER 0x00000040u
 #define DUOFORGE_POSITION_EXT_MUST_RECHARGE 0x00000080u
 #define DUOFORGE_POSITION_EXT_PARTIAL_TRAP 0x00000100u
+/* POSITION_EXT2 bits 4 to 6 (duoforge_observation_ext.volatiles2, decision 0060, the hidden counters): the partial trap's elapsed
+   residual phases, a 3-bit value (0..5 while trapped, 0 without the trap). Public: every viewer sees the same. Shown under
+   DUOFORGE_VIEWEXT_FEATURE_TRAP_ELAPSED (DUOFORGE_VIEWEXT_RESERVE_OWN) and the family VOLATILES2. */
+#define DUOFORGE_POSITION_EXT2_TRAP_ELAPSED_BIT0 0x00000010u
+#define DUOFORGE_POSITION_EXT2_TRAP_ELAPSED_BIT1 0x00000020u
+#define DUOFORGE_POSITION_EXT2_TRAP_ELAPSED_BIT2 0x00000040u
 #define DUOFORGE_POSITION_EXT_GLAIVE_RUSH  0x00000200u
 #define DUOFORGE_POSITION_EXT_DESTINY_BOND 0x00000400u
 #define DUOFORGE_POSITION_EXT_CURSE        0x00000800u
@@ -885,8 +891,11 @@ duoforge_status duoforge_battle_observe(const duoforge_context *ctx, const duofo
    derives the same from the names, and python/tests/test_encoder6.py checks that the two agree). */
 /* X(family feature, bit number in the family's field, own feature): X(RESERVE_VOLATILES, 22u, HEALING_WISH) says
    DUOFORGE_POSITION_EXT_HEALING_WISH (bit 22 of volatiles) is shown only under DUOFORGE_VIEWEXT_FEATURE_HEALING_WISH as
-   well. Empty while no reserve bit has a feature of its own. */
-#define DUOFORGE_VIEWEXT_RESERVE_OWN(X)
+   well. Here: POSITION_EXT2 bits 4 to 6, the partial trap's elapsed count (decision 0060), each with VIEWEXT feature 45 (TRAP_ELAPSED). */
+#define DUOFORGE_VIEWEXT_RESERVE_OWN(X) \
+    X(VOLATILES2, 4u, TRAP_ELAPSED)     \
+    X(VOLATILES2, 5u, TRAP_ELAPSED)     \
+    X(VOLATILES2, 6u, TRAP_ELAPSED)
 /* X(family, bit number in the family's field): a defined reserve bit WITHOUT a feature of its own, shown under the family's
    feature alone (POSITION_FLAGS: the observation's position flags, always), checked by its step: the comment beside the
    entry names the decision or the evidence. Every defined reserve bit is in exactly one of the two lists
@@ -942,6 +951,8 @@ duoforge_status duoforge_battle_observe(const duoforge_context *ctx, const duofo
 #define DUOFORGE_VIEWEXT_FEATURE_MOVE_FAILED      41u
 #define DUOFORGE_VIEWEXT_FEATURE_TRANSFORM        42u
 #define DUOFORGE_VIEWEXT_FEATURE_COUNT            43u
+/* Lane A (G90, decision 0060): the partial trap's elapsed counter, the own feature of POSITION_EXT2 bits 4 to 6 (HS registry). */
+#define DUOFORGE_VIEWEXT_FEATURE_TRAP_ELAPSED     45u
 /* The reserve families of encoder 6 (decision 0050), outside the tiers (COUNT does not count them). */
 #define DUOFORGE_VIEWEXT_FEATURE_RESERVE_VOLATILES 59u /* duoforge_position_ext.volatiles bits 22 to 31 */
 #define DUOFORGE_VIEWEXT_FEATURE_VOLATILES2        60u /* duoforge_observation_ext.volatiles2 */

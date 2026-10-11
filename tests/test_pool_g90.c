@@ -26,6 +26,8 @@
 #include "rng/draw.h"
 #include "state/battle_internal.h"
 #include "state/invariants.h"
+#include "codec/state_codec.h"
+#include "state/request.h"
 #include "support/check.h"
 #include "support/fixtures.h"
 #include "support/pool.h"
@@ -39,7 +41,7 @@ typedef struct g90_cmd {
 } g90_cmd;
 
 #define MV(slot, target) {DUOFORGE_SLOT_MOVE, (slot), (target), 0u}
-#define SW(reserve) {DUOFORGE_SLOT_SWITCH, 0u, DUOFORGE_TARGET_NONE, (reserve)}
+#define SW(reserve) {DUOFORGE_SLOT_SWITCH, 0u, 0u, (reserve)} /* a switch: move slot and target zero (as the records have them) */
 #define NO DUOFORGE_TARGET_NONE
 
 #define FLAT_P1A 0u
@@ -146,6 +148,20 @@ static bool begin(df_test *t, const duoforge_battle_setup *s, duoforge_context *
 }
 
 /* The recorded battle `name`, started. */
+/* Step `si` of the recorded battle `name` with the reference's kept draws (the tape of conformance_pool.h, as test_conformance.c
+ * feeds them): the hits, the misses and the damage rolls are the recorded ones. A plain step draws its own numbers and diverges. */
+static duoforge_status recorded_step(const char *name, uint32_t si, duoforge_context *ctx, duoforge_battle *b,
+                                     const duoforge_decision_bundle *bd, duoforge_step_result *res)
+{
+    const df_conf_battle *cb = find_conf(name);
+    if (cb == NULL || si >= cb->step_count) {
+        return DUOFORGE_E_INVALID_ARGUMENT;
+    }
+    const df_conf_step *st = &cb->steps[si];
+    uint32_t used = 0u;
+    return dfi_battle_step_tape(ctx, b, bd, &conf_tape[st->tape_off], st->tape_len, &used, res);
+}
+
 static bool start(df_test *t, const char *name, duoforge_context **ctx, duoforge_battle **b, duoforge_decision_bundle *bd,
                   duoforge_step_result *res)
 {
@@ -200,9 +216,10 @@ static void test_wrap_band(df_test *t)
         finish(ctx, b);
         return;
     }
-    static const g90_cmd turn1[2][2] = {{MV(1, NO), MV(0, NO)}, {MV(1, FLAT_P1B), MV(1, NO)}};
+    /* the recorded first slot step of g90_wrap_band (conformance_pool.h): Milotic on flat 1 uses move slot 0 on flat 2 */
+    static const g90_cmd turn1[2][2] = {{MV(1, NO), MV(0, FLAT_P2A)}, {MV(0, FLAT_P1A), MV(1, FLAT_P1A)}};
     turn_bundle(&bd, b, turn1);
-    DF_CHECK(t, duoforge_battle_step(ctx, b, &bd, &res) == DUOFORGE_OK);
+    DF_CHECK(t, recorded_step("g90_wrap_band", 1u, ctx, b, &bd, &res) == DUOFORGE_OK);
     const dfi_tail_pos *tp = tail_of(b, FLAT_P2A);
     DF_CHECK(t, tp->trap_turns == 4u || tp->trap_turns == 5u); /* the one draw of random(5, 7) (5 or 6), less the residual of its own turn */
     DF_CHECK(t, tp->trap_source == FLAT_P1B + 1u);
@@ -222,7 +239,7 @@ static void test_wrap_band(df_test *t)
     DF_CHECK(t, dfi_state_check(ctx, b, NULL) == DUOFORGE_OK);
     /* the second turn: the re-hit restarts nothing, the residual takes one turn off */
     turn_bundle(&bd, b, turn1);
-    DF_CHECK(t, duoforge_battle_step(ctx, b, &bd, &res) == DUOFORGE_OK);
+    DF_CHECK(t, recorded_step("g90_wrap_band", 2u, ctx, b, &bd, &res) == DUOFORGE_OK);
     DF_CHECK_EQ_U64(t, tail_of(b, FLAT_P2A)->trap_turns, turns1 - 1u);
     DF_CHECK(t, hp_of(b, FLAT_P2A) < hp1);
     DF_CHECK(t, dfi_state_check(ctx, b, NULL) == DUOFORGE_OK);
@@ -243,13 +260,14 @@ static void test_source_leaves(df_test *t)
         return;
     }
     /* step 1: Salamence (reserve 2) comes in on flat 0 */
-    static const g90_cmd turn1[2][2] = {{SW(2u), MV(1, NO)}, {MV(0, NO), MV(0, NO)}};
+    /* the recorded steps of g90_fire_source_leaves (conformance_pool.h): the foe's moves target flat 0 */
+    static const g90_cmd turn1[2][2] = {{SW(2u), MV(1, NO)}, {MV(0, FLAT_P1A), MV(1, FLAT_P1A)}};
     turn_bundle(&bd, b, turn1);
-    DF_CHECK(t, duoforge_battle_step(ctx, b, &bd, &res) == DUOFORGE_OK);
+    DF_CHECK(t, recorded_step("g90_fire_source_leaves", 1u, ctx, b, &bd, &res) == DUOFORGE_OK);
     /* step 2: Fire Spin on flat 2; the trap is up and its source is flat 0 + 1 */
-    static const g90_cmd turn2[2][2] = {{MV(0, FLAT_P2A), MV(1, NO)}, {MV(0, NO), MV(0, NO)}};
+    static const g90_cmd turn2[2][2] = {{MV(0, FLAT_P2A), MV(1, NO)}, {MV(0, FLAT_P1A), MV(1, FLAT_P1A)}};
     turn_bundle(&bd, b, turn2);
-    DF_CHECK(t, duoforge_battle_step(ctx, b, &bd, &res) == DUOFORGE_OK);
+    DF_CHECK(t, recorded_step("g90_fire_source_leaves", 2u, ctx, b, &bd, &res) == DUOFORGE_OK);
     DF_CHECK(t, tail_of(b, FLAT_P2A)->trap_turns != 0u);
     DF_CHECK_EQ_U64(t, tail_of(b, FLAT_P2A)->trap_source, FLAT_P1A + 1u);
     DF_CHECK_EQ_U64(t, tail_of(b, FLAT_P2A)->trap_move, DFI_MOVE_FIRESPIN + 1u);
@@ -259,15 +277,21 @@ static void test_source_leaves(df_test *t)
     DF_CHECK_EQ_U64(t, dfi_state_check(ctx, b, NULL), DUOFORGE_E_INVARIANT);
     tail_of(b, FLAT_P2A)->trap_source = FLAT_P1A + 1u;
     DF_CHECK(t, dfi_state_check(ctx, b, NULL) == DUOFORGE_OK);
-    /* step 3: Salamence (slot 0) switches out to reserve 0 (Dragapult); no damage on flat 2 in this turn */
-    static const g90_cmd turn3[2][2] = {{SW(0u), MV(1, NO)}, {MV(0, NO), MV(0, NO)}};
+    /* step 3: Salamence (slot 0) switches out to reserve 0 (Dragapult); the trap ends silently (its source is gone) */
+    static const g90_cmd turn3[2][2] = {{SW(0u), MV(1, NO)}, {MV(0, FLAT_P1A), MV(1, FLAT_P1A)}};
     turn_bundle(&bd, b, turn3);
-    DF_CHECK(t, duoforge_battle_step(ctx, b, &bd, &res) == DUOFORGE_OK);
+    DF_CHECK(t, recorded_step("g90_fire_source_leaves", 3u, ctx, b, &bd, &res) == DUOFORGE_OK);
     DF_CHECK_EQ_U64(t, tail_of(b, FLAT_P2A)->trap_turns, 0u);
     DF_CHECK_EQ_U64(t, tail_of(b, FLAT_P2A)->trap_source, 0u);
     DF_CHECK_EQ_U64(t, tail_of(b, FLAT_P2A)->trap_move, 0u);
     DF_CHECK_EQ_U64(t, tail_of(b, FLAT_P2A)->trap_band, 0u);
-    DF_CHECK_EQ_U64(t, hp_of(b, FLAT_P2A), hp2);
+    /* The holder's HP is the recorded one: Golisopod's Leech Life heals it this turn, and the silent end takes no residual HP. */
+    const df_conf_battle *cb3 = find_conf("g90_fire_source_leaves");
+    DF_CHECK(t, cb3 != NULL);
+    if (cb3 != NULL) {
+        DF_CHECK_EQ_U64(t, hp_of(b, FLAT_P2A), cb3->steps[3].mons[1][b->sides[1].positions[0].occupant].hp);
+    }
+    (void)hp2;
     DF_CHECK(t, dfi_state_check(ctx, b, NULL) == DUOFORGE_OK);
     finish(ctx, b);
 }
@@ -280,14 +304,15 @@ static bool wrap_first_step(df_test *t, duoforge_context **ctx, duoforge_battle 
     if (!start(t, "g90_wrap_band", ctx, b, &bd, &res)) {
         return false;
     }
-    static const g90_cmd turn1[2][2] = {{MV(1, NO), MV(0, NO)}, {MV(1, FLAT_P1B), MV(1, NO)}};
+    /* the recorded first slot step of g90_wrap_band (conformance_pool.h): Milotic on flat 1 uses move slot 0 on flat 2 */
+    static const g90_cmd turn1[2][2] = {{MV(1, NO), MV(0, FLAT_P2A)}, {MV(0, FLAT_P1A), MV(1, FLAT_P1A)}};
     turn_bundle(&bd, *b, turn1);
-    return duoforge_battle_step(*ctx, *b, &bd, &res) == DUOFORGE_OK;
+    return recorded_step("g90_wrap_band", 1u, *ctx, *b, &bd, &res) == DUOFORGE_OK;
 }
 
 /* The public view (decision 0060, section 6): two states that differ only in the drawn turns of the trap give byte-equal views
- * for both players (the turns are hidden for the owner too); a state whose trap has lost its source differs (the source is
- * public). The three states are the battle of g90_wrap_band after its first step; the copies change one field each, which is
+ * for both players (the turns are hidden for the owner too); a state whose trap has another source differs (the source is
+ * public). A trap without its source is not a boundary state (decision 0060), so the copy does not clear it. The three states are the battle of g90_wrap_band after its first step; the copies change one field each, which is
  * still a valid state (the tail invariants of invariants.c). */
 static void test_view_turns_hidden(df_test *t)
 {
@@ -302,7 +327,7 @@ static void test_view_turns_hidden(df_test *t)
     const uint32_t turns = tail_of(a, FLAT_P2A)->trap_turns;
     DF_CHECK(t, turns != 0u);
     tail_of(c, FLAT_P2A)->trap_turns = (uint8_t)(turns == 5u ? 6u : 5u); /* the other draw of random(5, 7) */
-    tail_of(d, FLAT_P2A)->trap_source = 0u;                              /* the source left: a different public fact */
+    tail_of(d, FLAT_P2A)->trap_source = FLAT_P1A + 1u;                   /* another trapper (flat 0): a different public fact */
     DF_CHECK(t, dfi_state_check(ctx_c, c, NULL) == DUOFORGE_OK);
     DF_CHECK(t, dfi_state_check(ctx_d, d, NULL) == DUOFORGE_OK);
     for (uint32_t player = 0u; player < DUOFORGE_SIDE_COUNT; ++player) {
@@ -323,6 +348,66 @@ static void test_view_turns_hidden(df_test *t)
     finish(ctx_d, d);
 }
 
+/* The hidden counters (decision 0060): the elapsed count is public and the turns are determinized in the rebuild. The duration d is
+ * 5 or 6, the turns are d - elapsed >= 1, so the elapsed 1 to 4 keep both durations, 5 keeps only 6 (one turn left) and 6 keeps
+ * none (a refusal). The POSITION_EXT2 bits 4 to 6 of both viewers show the count of the trapped foe position (flat 2). */
+static void test_elapsed_determinized(df_test *t)
+{
+    duoforge_context *ctx = NULL;
+    duoforge_battle *b = NULL;
+    if (!wrap_first_step(t, &ctx, &b)) {
+        finish(ctx, b);
+        return;
+    }
+    const df_conf_battle *cb = find_conf("g90_wrap_band");
+    DF_CHECK(t, cb != NULL);
+    duoforge_battle_setup s;
+    setup_from(cb, &s);
+    duoforge_battle *w = df_make_battle(ctx, &s);
+    DF_CHECK(t, w != NULL);
+    /* the trapped foe position is side 1, position 0: its public view bytes */
+    const size_t pos0 = DFI_ENC_TAIL_OFF + DFI_ENC_TAIL_SIDES_OFF + 1u * DFI_ENC_TAIL_SIDE_SIZE + DFI_ENC_TAIL_POS_OFF;
+    duoforge_public_state v;
+    memset(&v, 0, sizeof v);
+    DF_CHECK_EQ_U64(t, duoforge_battle_public(ctx, b, 0u, &v), DUOFORGE_OK);
+    DF_CHECK_EQ_U64(t, v.state[pos0 + DFI_ENC_TAIL_POS_TRAP_TURNS_OFF], DUOFORGE_VIEW_HIDDEN);
+    DF_CHECK_EQ_U64(t, v.state[pos0 + DFI_ENC_TAIL_POS_TRAP_ELAPSED_OFF], 1u); /* the start turn's residual */
+    duoforge_hypothesis h;
+    memset(&h, 0, sizeof h);
+    DF_CHECK(t, duoforge_battle_hypothesis(ctx, b, 0u, &h) == DUOFORGE_OK);
+    for (uint32_t e = 0u; e <= 4u; ++e) {
+        v.state[pos0 + DFI_ENC_TAIL_POS_TRAP_ELAPSED_OFF] = (uint8_t)e;
+        DF_CHECK_EQ_U64(t, duoforge_battle_from_view(ctx, &v, &h, w), DUOFORGE_OK);
+        const uint32_t turns = w->tail.sides[1].positions[0].trap_turns;
+        DF_CHECK(t, turns == 5u - e || turns == 6u - e); /* d - e for one of the two durations */
+        DF_CHECK_EQ_U64(t, w->tail.sides[1].positions[0].trap_elapsed, e);
+    }
+    v.state[pos0 + DFI_ENC_TAIL_POS_TRAP_ELAPSED_OFF] = 5u;
+    DF_CHECK_EQ_U64(t, duoforge_battle_from_view(ctx, &v, &h, w), DUOFORGE_OK);
+    DF_CHECK_EQ_U64(t, w->tail.sides[1].positions[0].trap_turns, 1u); /* only d = 6 is consistent */
+    v.state[pos0 + DFI_ENC_TAIL_POS_TRAP_ELAPSED_OFF] = 6u;
+    DF_CHECK_EQ_U64(t, duoforge_battle_from_view(ctx, &v, &h, w), DUOFORGE_E_MALFORMED); /* no duration fits */
+    /* the ext fold: POSITION_EXT2 bits 4 to 6 of the trapped position, the same for both viewers */
+    for (uint32_t viewer = 0u; viewer < DUOFORGE_SIDE_COUNT; ++viewer) {
+        duoforge_observation_ext ext;
+        memset(&ext, 0, sizeof ext);
+        DF_CHECK_EQ_U64(t, duoforge_battle_observe_ext(ctx, b, viewer, &ext), DUOFORGE_OK);
+        DF_CHECK_EQ_U64(t, ext.volatiles2[1][0] & 0x70u, 0x10u);
+        DF_CHECK_EQ_U64(t, ext.volatiles2[0][0] & 0x70u, 0u);
+        DF_CHECK_EQ_U64(t, ext.volatiles2[1][1] & 0x70u, 0u);
+    }
+    /* the invariant: a count above 5 while the trap is up, or a count without it, is an invalid state */
+    tail_of(b, FLAT_P2A)->trap_elapsed = 6u;
+    DF_CHECK_EQ_U64(t, dfi_state_check(ctx, b, NULL), DUOFORGE_E_INVARIANT);
+    tail_of(b, FLAT_P2A)->trap_elapsed = 1u;
+    DF_CHECK(t, dfi_state_check(ctx, b, NULL) == DUOFORGE_OK);
+    tail_of(b, 0u)->trap_elapsed = 1u;
+    DF_CHECK_EQ_U64(t, dfi_state_check(ctx, b, NULL), DUOFORGE_E_INVARIANT);
+    tail_of(b, 0u)->trap_elapsed = 0u;
+    duoforge_battle_destroy(w);
+    finish(ctx, b);
+}
+
 int main(void)
 {
     df_test t;
@@ -331,5 +416,6 @@ int main(void)
     test_wrap_band(&t);
     test_source_leaves(&t);
     test_view_turns_hidden(&t);
+    test_elapsed_determinized(&t);
     return df_test_end(&t);
 }

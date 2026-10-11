@@ -5515,6 +5515,7 @@ static void dfi_trap_clear(dfi_tail_pos *tp)
     tp->trap_source = 0u;
     tp->trap_move = 0u;
     tp->trap_band = 0u;
+    tp->trap_elapsed = 0u; /* step G90: the counter goes with the trap (decision 0060) */
 }
 
 /* The Substitute move (data/moves.ts:18314-18326 and 18328-18340): onTryHit fails in order (the Substitute is up, then the
@@ -6487,6 +6488,7 @@ static duoforge_status dfi_partial_trap_start(dfi_run *r, uint32_t user, uint32_
     tp->trap_source = (uint8_t)(user + 1u); /* wide-operands-reviewed: <= 4 */
     tp->trap_move = (uint16_t)(move_id + 1u); /* wide-operands-reviewed: a move id + 1 */
     tp->trap_band = dfi_holds(b, dfi_at(b, user), DFI_ITEM_BINDINGBAND) ? 1u : 0u;
+    tp->trap_elapsed = 0u; /* step G90: the residual phases counted from the start (decision 0060, hidden counters) */
     const duoforge_event e = dfi_ev(DUOFORGE_EVENT_ACTIVATE, target, DUOFORGE_CAUSE_MOVE, move_id, user);
     dfi_emit(r, &e);
     return DUOFORGE_OK;
@@ -9840,6 +9842,11 @@ static duoforge_status dfi_residual_events_run(dfi_run *r, dfi_noorder_snapshot 
                 dfi_trap_clear(tail);
                 dfi_emit(r, &end);
                 continue;
+            }
+            /* One more residual phase has run with the trap up (decision 0060, hidden counters): the public counter. It stays
+             * below 6 while the trap is up (d <= 6), so the 3-bit field never saturates in a legal state. */
+            if (tail->trap_elapsed < 7u) {
+                tail->trap_elapsed = (uint8_t)(tail->trap_elapsed + 1u); /* wide-operands-reviewed: < 7 */
             }
             const dfi_member *src = tail->trap_source == 0u ? NULL : dfi_member_at(b, (uint32_t)tail->trap_source - 1u);
             if (src == NULL || src->hp == 0u) {

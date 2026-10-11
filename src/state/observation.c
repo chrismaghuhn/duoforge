@@ -425,6 +425,9 @@ duoforge_status duoforge_battle_observe_ext(const duoforge_context *ctx, const d
                     vol |= (uint32_t)DUOFORGE_POSITION_EXT_ILLUSION_UP;
                 }
                 o.sides[s].positions[p].volatiles = vol;
+                /* Step G90 (decision 0060, hidden counters): the partial trap's elapsed residual phases, POSITION_EXT2 bits 4 to 6.
+                 * Public (-activate and each residual line show them), zero without the trap. */
+                o.volatiles2[s][p] = tail->trap_turns != 0u ? ((uint32_t)tail->trap_elapsed << 4) : 0u;
                 /* Step G42: move_failed is 1 iff the occupant's last move result is FALSE. It is exact only when the result is
                  * classified; an unclassified result (the bit of decision 0015 section 7) reads 0 here (documented, not refused). */
                 o.sides[s].positions[p].move_failed =

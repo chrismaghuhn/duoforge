@@ -218,7 +218,10 @@ def _own_features(prefix, exceptions=None):
 # Encoder 6's reserve families (decision 0050): (bit numbers, the family's feature, the own features of its bits).
 _RES_VOLATILES = (range(22, 32), FEATURE_BITS["RESERVE_VOLATILES"],
                   _own_features("DUOFORGE_POSITION_EXT_", _VOLATILE_FEATURE))
-_RES_VOLATILES2 = (range(32), FEATURE_BITS["VOLATILES2"], _own_features("DUOFORGE_POSITION_EXT2_"))
+# the partial trap's elapsed count is a 3-bit value: three bit constants, one feature (decision 0060, hidden counters)
+_RES_VOLATILES2 = (range(32), FEATURE_BITS["VOLATILES2"], _own_features(
+    "DUOFORGE_POSITION_EXT2_", {"TRAP_ELAPSED_BIT0": "TRAP_ELAPSED", "TRAP_ELAPSED_BIT1": "TRAP_ELAPSED",
+                                "TRAP_ELAPSED_BIT2": "TRAP_ELAPSED"}))
 _RES_GUARDS = (range(2, 8), FEATURE_BITS["RESERVE_GUARDS"], _own_features("DUOFORGE_SIDE_GUARD_"))
 _RES_CONDITIONS = (range(8), FEATURE_BITS["SIDE_CONDITIONS"], _own_features("DUOFORGE_SIDE_CONDITION_"))
 _RES_FIELD = (range(16), FEATURE_BITS["FIELD_FLAGS"], _own_features("DUOFORGE_FIELD_FLAG_"))

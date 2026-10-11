@@ -693,7 +693,8 @@ static bool dfi_tail_pos_valid(const dfi_kind_limits *lim, const dfi_tail_pos *t
                          tp->trap_source != flat + 1u && tp->trap_move <= lim->move_count &&
                          (tp->trap_turns != 0u || tp->trap_source == 0u) &&
                          (tp->trap_turns == 0u) == (tp->trap_move == 0u) && tp->trap_band <= DFI_TAIL_FLAG_MAX &&
-                         (tp->trap_turns != 0u || tp->trap_band == 0u);
+                         (tp->trap_turns != 0u || tp->trap_band == 0u) &&
+                         (tp->trap_turns != 0u ? tp->trap_elapsed <= DFI_TAIL_TRAP_ELAPSED_MAX : tp->trap_elapsed == 0u);
     const bool leech_ok = tp->leech_seed_source <= DFI_TAIL_SOURCE_MAX && tp->leech_seed_source != flat + 1u;
     const bool stockpile_ok = tp->stockpile <= DFI_TAIL_STOCKPILE_MAX && tp->stockpile_def <= tp->stockpile &&
                               tp->stockpile_spd <= tp->stockpile;

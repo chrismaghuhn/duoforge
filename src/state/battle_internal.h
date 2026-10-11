@@ -225,6 +225,7 @@ typedef struct dfi_side {
 #define DFI_TAIL_DISABLE_TURNS_MAX 5u /* disable: duration 5 */
 #define DFI_TAIL_TRAP_TURNS_MAX 8u    /* partiallytrapped: 5 or 6 turns, 8 with a Grip Claw */
 #define DFI_TAIL_SOURCE_MAX 4u        /* trap_source and leech_seed_source: 0 none, else flat position + 1 */
+#define DFI_TAIL_TRAP_ELAPSED_MAX 5u  /* step G90: trap_elapsed while the partial trap is up (d <= 6, so trap_turns = d - elapsed >= 1) */
 #define DFI_TAIL_YAWN_MAX 2u          /* yawn: duration 2 */
 #define DFI_TAIL_STOCKPILE_MAX 3u     /* layers; stockpile_def and stockpile_spd count the boosts the layers gave */
 #define DFI_TAIL_FLAG_MAX 1u          /* imprison, must_recharge, trap_band, focus_energy, charge, glaive_rush */
@@ -316,6 +317,8 @@ typedef struct dfi_tail_pos {
     uint8_t trap_turns;        /* partial trap: turns left; zero exactly when trap_source and trap_move are */
     uint8_t trap_source;       /* flat position of the trapper + 1 (never the occupant's own) */
     uint8_t trap_band;         /* 0/1: the trapper holds a Binding Band (1/6 per turn, not 1/8); 0 when not trapped */
+    uint8_t trap_elapsed;      /* step G90 (decision 0060): residual phases the partial trap has been through, 0..5 while it is up,
+                                * 0 without it (+1 per residual with the trap up, 0 at its start and its end); public */
     uint8_t leech_seed_source; /* flat position that gets the HP + 1, 0 = no Leech Seed (never the occupant's own) */
     uint8_t yawn_turns;        /* Yawn: turns until sleep, 0 = none */
     uint8_t focus_energy;      /* 0/1 */
@@ -335,6 +338,7 @@ typedef struct dfi_tail_pos {
                                 * writes it), bit 1 the occupant's stats were raised this turn, bits 2-3 the Dragon Cheer crit stage;
                                 * bits 4-7 are zero. The flags end with the occupant (dfi_tail_clear_occupant). */
     uint8_t future_sight;      /* tail rev 5 (lane A): 2 bits of turns, 3 bits for the source, 3 spare; zero, nothing writes it yet */
+    uint8_t pos_pad;           /* always zero, never encoded: the struct's even size (its uint16 members), as field_pad of the field block */
 } dfi_tail_pos;
 
 /* tail rev 5 (decision 0026, Illusion), per side: the foe's shown state of the holder on this side. Nothing writes it yet,
