@@ -1,0 +1,74 @@
+{
+  "name": "c4_cover_b",
+  "purpose": "C4 coverage (decision 0015 entry 5ct), a random pool battle of run 4100 (campaign c4-campaign-y2, diff_driver random): the willCrit moves Storm Throw, Flower Trick and Frost Breath (always critical, no roll), and the status boost Screech; no Substitute user.",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,a156fef1945c5b68baefc6dc3564f112b8ce48f15e9dda204967514f291cdc6c",
+  "teams": [
+    "Machamp (M) @ Choice Scarf\nAbility: No Guard\nLevel: 50\nEVs: 2 HP / 32 Atk / 32 Spe\nJolly Nature\n- Storm Throw\n- Close Combat\n- Knock Off\n- Protect\n\nGlalie (M) @ Glalitite\nAbility: Inner Focus\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 SpD\nModest Nature\n- Frost Breath\n- Spikes\n- Trailblaze\n- Protect\n\nEmboar (M) @ Muscle Band\nAbility: Blaze\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Storm Throw\n- Flare Blitz\n- Scary Face\n- Protect\n\nPangoro (M) @ Black Glasses\nAbility: Iron Fist\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Storm Throw\n- Close Combat\n- Knock Off\n- Protect\n\nMeowscarada (F) @ Focus Sash\nAbility: Overgrow\nLevel: 50\nEVs: 32 Atk / 2 SpD / 32 Spe\nJolly Nature\n- Flower Trick\n- Knock Off\n- Trailblaze\n- Protect\n\nFroslass (F) @ Froslassite\nAbility: Snow Cloak\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 SpD\nTimid Nature\n- Frost Breath\n- Thunder Wave\n- Trailblaze\n- Protect",
+    "Pyroar (M) @ Pyroarite\nAbility: Unnerve\nLevel: 50\nEVs: 32 HP / 2 SpD / 32 SpA\nModest Nature\n- Noble Roar\n- Flame Charge\n- Hyper Voice\n- Protect\n\nTauros (M) @ Choice Scarf\nAbility: Intimidate\nLevel: 50\nEVs: 2 HP / 32 Atk / 32 Spe\nJolly Nature\n- Scary Face\n- Trailblaze\n- Earthquake\n- Protect\n\nSnorlax (M) @ Rocky Helmet\nAbility: Thick Fat\nLevel: 50\nEVs: 32 HP / 32 Def / 2 SpD\nCareful Nature\n- Screech\n- Trailblaze\n- Crunch\n- Protect\n\nMetagross @ Metagrossite\nAbility: Clear Body\nLevel: 50\nEVs: 2 HP / 32 Atk / 32 Spe\nAdamant Nature\n- Cosmic Power\n- Meteor Mash\n- Trailblaze\n- Protect\n\nLopunny (F) @ Lopunnite\nAbility: Limber\nLevel: 50\nEVs: 2 HP / 32 Atk / 32 Spe\nJolly Nature\n- Cosmic Power\n- Quick Attack\n- Trailblaze\n- Protect\n\nScovillain (F) @ Scovillainite\nAbility: Chlorophyll\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 SpD\nModest Nature\n- Spicy Extract\n- Flamethrower\n- Trailblaze\n- Protect"
+  ],
+  "choices": [
+    {
+      "p1": "team 1254",
+      "p2": "team 3624"
+    },
+    {
+      "p1": "switch 4, move 4 mega",
+      "p2": "move 3 -2, move 2 2 mega"
+    },
+    {
+      "p1": "move 3 1, move 1 -1",
+      "p2": "move 3 2, move 3 -1"
+    },
+    {
+      "p1": "switch 3, move 4",
+      "p2": "move 1 1, switch 3"
+    },
+    {
+      "p1": "move 2 2, move 2",
+      "p2": "move 1 1, move 3"
+    },
+    {
+      "p2": "switch 3, pass"
+    },
+    {
+      "p1": "move 3 2, move 3 1",
+      "p2": "switch 4, move 3"
+    },
+    {
+      "p1": "move 2 1, move 1 1",
+      "p2": "move 2 2, move 3"
+    },
+    {
+      "p2": "pass, switch 4"
+    },
+    {
+      "p1": "move 1 2, move 4",
+      "p2": "pass, move 2 -1"
+    },
+    {
+      "p1": "move 3 -2, move 4",
+      "p2": "pass, move 4"
+    },
+    {
+      "p1": "move 4, move 3 2",
+      "p2": "pass, move 2 -1"
+    },
+    {
+      "p1": "move 1 -2, move 4",
+      "p2": "pass, move 1 2"
+    },
+    {
+      "p1": "move 4, move 3 -1",
+      "p2": "pass, move 1 2"
+    },
+    {
+      "p1": "pass, switch 4"
+    },
+    {
+      "p1": "move 2 2, move 1 2",
+      "p2": "pass, move 1 2"
+    }
+  ]
+}

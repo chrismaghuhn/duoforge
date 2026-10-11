@@ -1639,7 +1639,12 @@ static duoforge_status dfi_get_damage(dfi_run *r, uint32_t user, uint32_t target
     if (ratio > 4u) {
         ratio = 4u;
     }
-    if (ratio > 0u) {
+    if (md->special == DFI_SPECIAL_WILL_CRIT) {
+        /* willCrit (step C4, decision 0015 entry 5ct; Storm Throw, Flower Trick, Frost Breath): moveHit.crit = willCrit, so the
+         * critical hit is certain and no roll is drawn (sim/battle-actions.ts:1638-1643). The CriticalHit event below still
+         * runs (Shell Armor). The ratio above is read and clamped as the pin reads it; it has no draw here. */
+        crit = true;
+    } else if (ratio > 0u) {
         const duoforge_status st = dfi_draw_chance(r->draws, DFI_SITE_CRIT, 1u, crit_mult[ratio], &crit);
         if (st != DUOFORGE_OK) {
             return st;
@@ -7133,7 +7138,7 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
     /* A handler this build does not have fails explicitly; the Team C
      * specials of later steps are also kept out by the support manifest. */
     if (md->special > DFI_SPECIAL_STRUGGLE && md->special != DFI_SPECIAL_DARKEST_LARIAT &&
-        md->special != DFI_SPECIAL_LAST_RESPECTS && md->special != DFI_SPECIAL_SUCKER_PUNCH &&
+        md->special != DFI_SPECIAL_WILL_CRIT && md->special != DFI_SPECIAL_LAST_RESPECTS && md->special != DFI_SPECIAL_SUCKER_PUNCH &&
         md->special != DFI_SPECIAL_FIRST_IMPRESSION && md->special != DFI_SPECIAL_LOW_KICK &&
         md->special != DFI_SPECIAL_SOAK && md->special != DFI_SPECIAL_ENCORE && md->special != DFI_SPECIAL_DISABLE &&
         md->special != DFI_SPECIAL_KNOCK_OFF && md->special != DFI_SPECIAL_EXPANDING_FORCE &&

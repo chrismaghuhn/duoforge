@@ -578,6 +578,29 @@ const dfi_support_manifest dfi_support = {
             [DFI_MOVE_POUNCE] = 1u,
             [DFI_MOVE_MUDSLAP] = 1u,
             [DFI_MOVE_APPLEACID] = 1u,
+            /* Step C4 (cheap moves, decision 0015 entry 5ct), group b: the self-boost secondaries (secondary self boosts, the
+             * SECONDARY_SELF role of G28; Psyshield Bash's basePower 90 is the Champions override). A Substitute-absorbed hit
+             * of these needs sub-fixes-2 (H18) on main; campaigns keep Substitute users out until then. */
+            [DFI_MOVE_FLAMECHARGE] = 1u,
+            [DFI_MOVE_AQUASTEP] = 1u,
+            [DFI_MOVE_TRAILBLAZE] = 1u,
+            [DFI_MOVE_STEELWING] = 1u,
+            [DFI_MOVE_PSYSHIELDBASH] = 1u,
+            /* Step C4, group c: the pure status boosts of one target or the user (PRIMARY_TARGET and PRIMARY_SELF). The reflectable
+             * ones (Scary Face, Eerie Impulse, Screech, Noble Roar, Spicy Extract) join the Magic Bounce handled list. */
+            [DFI_MOVE_SCARYFACE] = 1u,
+            [DFI_MOVE_EERIEIMPULSE] = 1u,
+            [DFI_MOVE_SCREECH] = 1u,
+            [DFI_MOVE_NOBLEROAR] = 1u,
+            [DFI_MOVE_SPICYEXTRACT] = 1u,
+            [DFI_MOVE_AMNESIA] = 1u,
+            [DFI_MOVE_COSMICPOWER] = 1u,
+            /* Step C4, group a (decision 0015 entry 5ct): willCrit, the critical hit without a roll (WILL_CRIT special,
+             * dfi_get_damage; the Shell Armor check still applies). Storm Throw (Champions: isNonstandard null only), Flower
+             * Trick, Frost Breath. Not reflectable, no secondary. */
+            [DFI_MOVE_STORMTHROW] = 1u,
+            [DFI_MOVE_FLOWERTRICK] = 1u,
+            [DFI_MOVE_FROSTBREATH] = 1u,
         },
     .abilities =
         {

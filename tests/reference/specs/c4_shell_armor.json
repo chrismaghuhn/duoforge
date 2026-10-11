@@ -1,0 +1,21 @@
+{
+  "name": "c4_shell_armor",
+  "purpose": "C4 Shell Armor and willCrit (decision 0015 entry 5ct): on turn 1 Slowbro (M) mega-evolves to Slowbro-Mega (Shell Armor, data/abilities.ts:4222-4228, marked by G63) and is hit by Meowscarada's Flower Trick and Emboar's Storm Throw (willCrit: no critical roll is drawn, and the Shell Armor check removes the critical hit: no -crit line). Both sides have six members with unique species and items; the attacking side is team Z of run 4100 (no Substitute user).",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,000000000000000000000000000000000000000000000000000000000000c4a1",
+  "teams": [
+    "Meowscarada (F) @ Focus Sash\nAbility: Overgrow\nLevel: 50\nEVs: 32 Atk / 2 SpD / 32 Spe\nJolly Nature\n- Flower Trick\n- Knock Off\n- Trailblaze\n- Protect\n\nEmboar (M) @ Muscle Band\nAbility: Blaze\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Storm Throw\n- Flare Blitz\n- Scary Face\n- Protect\n\nMachamp (M) @ Choice Scarf\nAbility: No Guard\nLevel: 50\nEVs: 2 HP / 32 Atk / 32 Spe\nJolly Nature\n- Storm Throw\n- Close Combat\n- Knock Off\n- Protect\n\nGlalie (M) @ Glalitite\nAbility: Inner Focus\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 SpD\nModest Nature\n- Frost Breath\n- Spikes\n- Trailblaze\n- Protect\n\nFroslass (F) @ Froslassite\nAbility: Snow Cloak\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 SpD\nTimid Nature\n- Frost Breath\n- Thunder Wave\n- Trailblaze\n- Protect\n\nLuxray (M) @ Expert Belt\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 SpD\nModest Nature\n- Eerie Impulse\n- Thunderbolt\n- Crunch\n- Protect",
+    "Slowbro (M) @ Slowbronite\nAbility: Regenerator\nLevel: 50\nEVs: 32 HP / 2 SpD / 32 Def\nCalm Nature\n- Psychic\n- Protect\n\nTauros (M) @ Choice Scarf\nAbility: Intimidate\nLevel: 50\nEVs: 2 HP / 32 Atk / 32 Spe\nJolly Nature\n- Scary Face\n- Trailblaze\n- Earthquake\n- Protect\n\nSnorlax (M) @ Leftovers\nAbility: Thick Fat\nLevel: 50\nEVs: 32 HP / 32 Def / 2 SpD\nCareful Nature\n- Screech\n- Crunch\n- Trailblaze\n- Protect\n\nMetagross @ Metagrossite\nAbility: Clear Body\nLevel: 50\nEVs: 2 HP / 32 Atk / 32 Spe\nAdamant Nature\n- Cosmic Power\n- Meteor Mash\n- Trailblaze\n- Protect\n\nLopunny (F) @ Lopunnite\nAbility: Limber\nLevel: 50\nEVs: 2 HP / 32 Atk / 32 Spe\nJolly Nature\n- Cosmic Power\n- Quick Attack\n- Trailblaze\n- Protect\n\nPyroar (M) @ Pyroarite\nAbility: Unnerve\nLevel: 50\nEVs: 32 HP / 2 SpD / 32 SpA\nModest Nature\n- Noble Roar\n- Flame Charge\n- Hyper Voice\n- Protect"
+  ],
+  "plan": {
+    "p1": [
+      "move 1, move 1"
+    ],
+    "p2": [
+      "move 1 mega, move 1",
+      "move 1, move 1"
+    ],
+    "max_steps": 4
+  }
+}

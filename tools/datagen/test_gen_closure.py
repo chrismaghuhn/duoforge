@@ -740,7 +740,7 @@ class PoolMoves(unittest.TestCase):
                           'TRICK', 'SWITCHEROO', 'THIEF', 'COVET', 'SUPER_FANG', 'TAUNT', 'YAWN',
                           'RAGE_FIST', 'STONE_AXE', 'CEASELESS_EDGE', 'MULTI_HIT_10', 'POWER_TRIP', 'THUNDER', 'ICE_FANG', 'TRI_ATTACK', 'DOUBLE_SHOCK', 'ROOST', 'STOMPING_TANTRUM',
                           'LOCKED_MOVE', 'REVIVAL_BLESSING',
-                          'MULTI_HIT_2_5', 'SCALE_SHOT', 'QUICK_GUARD', 'UPPER_HAND', 'HEAL_PULSE', 'STRENGTH_SAP', 'BEAT_UP', 'BUG_BITE', 'POLTERGEIST', 'SHEER_COLD', 'HAZE', 'AFTER_YOU', 'QUASH', 'SUBSTITUTE', 'PHANTOM_FORCE', 'STEEL_BEAM', 'THUNDER_WAVE', 'SKILL_SWAP', 'KINGS_SHIELD', 'ALLURING_VOICE', 'DRAGON_CHEER', 'BATON_PASS', 'DESTINY_BOND', 'FINAL_GAMBIT', 'DRAGON_DARTS', 'LASH_OUT', 'ASSURANCE', 'BANEFUL_BUNKER', 'HEAVY_SLAM', 'HARD_PRESS', 'ICE_SPINNER', 'BELLY_DRUM', 'UNMODELED'])  # G88 (decision 0046) adds two, G94 (decision 0015 5cv) one, before UNMODELED
+                          'MULTI_HIT_2_5', 'SCALE_SHOT', 'QUICK_GUARD', 'UPPER_HAND', 'HEAL_PULSE', 'STRENGTH_SAP', 'BEAT_UP', 'BUG_BITE', 'POLTERGEIST', 'SHEER_COLD', 'HAZE', 'AFTER_YOU', 'QUASH', 'SUBSTITUTE', 'PHANTOM_FORCE', 'STEEL_BEAM', 'THUNDER_WAVE', 'SKILL_SWAP', 'KINGS_SHIELD', 'ALLURING_VOICE', 'DRAGON_CHEER', 'BATON_PASS', 'DESTINY_BOND', 'FINAL_GAMBIT', 'DRAGON_DARTS', 'LASH_OUT', 'ASSURANCE', 'BANEFUL_BUNKER', 'HEAVY_SLAM', 'HARD_PRESS', 'ICE_SPINNER', 'BELLY_DRUM', 'WILL_CRIT', 'UNMODELED'])  # G88 (decision 0046) adds two, G94 (decision 0015 5cv) one, before UNMODELED
         self.assertEqual(len(gen_closure.G2_HANDLERS), 7)
         # Step G16: Knock Off's handler is 24 in the tables; step G15's Expanding Force is 25, step G19's Glaive Rush 26,
         # step G20's Aurora Veil 27, Spiky Shield 28, the four of step G28 29 to 32, the eight of step G32 33 to 40 and
@@ -798,11 +798,12 @@ class PoolMoves(unittest.TestCase):
         self.assertEqual([gen_closure.SPECIAL_IDS_P.index(h) for h in gen_closure.G78_HANDLERS], [100])  # G78: Dragon Darts (decision 0043)
         self.assertEqual([gen_closure.SPECIAL_IDS_P.index(h) for h in gen_closure.G88_HANDLERS], [101, 102])  # G88: Lash Out, Assurance (decision 0046)
         self.assertEqual([gen_closure.SPECIAL_IDS_P.index(h) for h in gen_closure.G86_HANDLERS], [104, 105, 106, 107])  # G86 (5cn, decision 0048)
+        self.assertEqual([gen_closure.SPECIAL_IDS_P.index(h) for h in gen_closure.C4_HANDLERS], [108])  # C4 (decision 0015 5ct)
         self.assertEqual([gen_closure.SPECIAL_IDS_P.index(h) for h in gen_closure.G94_HANDLERS], [103])  # G94: Baneful Bunker (decision 0015 5cv)
-        self.assertEqual(gen_closure.SPECIAL_IDS_P.index('UNMODELED'), 108)
+        self.assertEqual(gen_closure.SPECIAL_IDS_P.index('UNMODELED'), 109)
         # Scald and Recover became data in step G10: their ids stay defined and no move maps to them.
         self.assertEqual({v[0] for k, v in gen_closure.SPECIAL_P.items() if k not in gen_closure.SPECIAL_C},
-                         (set(gen_closure.G2_HANDLERS) - {'SCALD', 'RECOVER'}) | set(gen_closure.G70_HANDLERS) | set(gen_closure.G66_HANDLERS) | set(gen_closure.G72B_HANDLERS) | set(gen_closure.G74_HANDLERS) | set(gen_closure.G76_HANDLERS) | set(gen_closure.G78_HANDLERS) | set(gen_closure.G88_HANDLERS) | set(gen_closure.G86_HANDLERS) | set(gen_closure.G64_HANDLERS) | set(gen_closure.WEATHER_HANDLERS) |
+                         (set(gen_closure.G2_HANDLERS) - {'SCALD', 'RECOVER'}) | set(gen_closure.G70_HANDLERS) | set(gen_closure.G66_HANDLERS) | set(gen_closure.G72B_HANDLERS) | set(gen_closure.G74_HANDLERS) | set(gen_closure.G76_HANDLERS) | set(gen_closure.G78_HANDLERS) | set(gen_closure.G88_HANDLERS) | set(gen_closure.G86_HANDLERS) | set(gen_closure.C4_HANDLERS) | set(gen_closure.G64_HANDLERS) | set(gen_closure.WEATHER_HANDLERS) |
                          set(gen_closure.G16_HANDLERS) | set(gen_closure.G15_HANDLERS) | set(gen_closure.G19_HANDLERS) |
                          set(gen_closure.G20_HANDLERS) | set(gen_closure.G20_PROTECT_HANDLERS) | set(gen_closure.G94_HANDLERS) | set(gen_closure.G28_HANDLERS) |
                          set(gen_closure.G30_HANDLERS) | set(gen_closure.G32_HANDLERS) | set(gen_closure.G34_HANDLERS) |
@@ -1119,6 +1120,7 @@ class PoolMoves(unittest.TestCase):
                                                                 'dualwingbeat', 'twinbeam', 'tripleaxel', 'imprison', 'batonpass',
                                                                 'trick', 'switcheroo', 'thief', 'covet', 'sacredsword', 'superfang', 'taunt', 'yawn',
                                                                 'ragefist', 'stoneaxe', 'ceaselessedge', 'populationbomb',
+                                                                'stormthrow', 'flowertrick', 'frostbreath',
                                                                 'powertrip', 'thunder', 'icefang', 'triattack', 'doubleshock', 'roost', 'stompingtantrum', 'revivalblessing',
                                                                 'iciclespear', 'scaleshot', 'quickguard', 'upperhand', 'healpulse', 'strengthsap', 'beatup', 'bugbite', 'poltergeist', 'sheercold',
                                                                 'haze', 'afteryou', 'quash', 'phantomforce',
@@ -2183,6 +2185,61 @@ class CheapMoveFactsC2(unittest.TestCase):
         with self.assertRaises(SystemExit):
             gen_closure.c2_literal('{ flags: { protect: 1 }, basePower: 1 + 2 }')
         self.assertEqual(gen_closure.c2_literal('{ a: [1, -2,], b: { c: true, }, }'), {'a': [1, -2], 'b': {'c': True}})
+class C4Facts(unittest.TestCase):
+    """Step C4: the pinned fields of the twelve data-only moves, rendered as the pin writes them (no checkout needed)."""
+
+    def render(self, mid, fields):
+        lines = ['\t%s: {' % mid]
+        for key, want in fields.items():
+            if key == 'flags':
+                lines.append('\t\tflags: { %s },' % ' '.join('%s: 1,' % f for f in sorted(want)))
+            elif key == 'secondary':
+                chance, boosts = want
+                lines.append('\t\tsecondary: {\n\t\t\tchance: %d,\n\t\t\tself: {\n\t\t\t\tboosts: {\n%s\n\t\t\t\t},\n'
+                             '\t\t\t},\n\t\t},' % (chance, '\n'.join('\t\t\t\t\t%s: %d,' % kv for kv in boosts.items())))
+            elif key == 'boosts':
+                lines.append('\t\tboosts: { %s },' % ' '.join('%s: %d,' % kv for kv in want.items()))
+            elif isinstance(want, bool):
+                lines.append('\t\t%s: %s,' % (key, 'true' if want else 'false'))
+            elif isinstance(want, int):
+                lines.append('\t\t%s: %d,' % (key, want))
+            else:
+                lines.append('\t\t%s: "%s",' % (key, want))
+        lines.append('\t},')
+        return '\n'.join(lines)
+
+    def sources(self, change=None):
+        """The pin text of every fact; `change` = (move, field, value) replaces one value."""
+        out = []
+        for mid, fields in gen_closure.C4_FACTS:
+            fields = dict(fields)
+            if change is not None and change[0] == mid:
+                fields[change[1]] = change[2]
+            out.append(self.render(mid, fields))
+        base = TextSource('data/moves.ts', '\n'.join(out))
+        champ = TextSource('data/mods/champions/moves.ts',
+                           '\n'.join(['\tpsyshieldbash: {', '\t\tinherit: true,', '\t\tbasePower: 90,', '\t},',
+                                      '\tstormthrow: {', '\t\tinherit: true,', '\t\tisNonstandard: null,', '\t},']))
+        return base, champ
+
+    def test_the_pinned_facts_are_accepted(self):
+        gen_closure.check_c4_facts(*self.sources())
+
+    def test_a_changed_value_is_refused(self):
+        for mid, key, value in (('flamecharge', 'basePower', 60), ('steelwing', 'accuracy', 100),
+                                ('screech', 'flags', {'protect', 'reflectable', 'mirror', 'metronome'}),
+                                ('spicyextract', 'boosts', {'atk': 2, 'def': -1})):
+            with self.subTest(move=mid, field=key):
+                with self.assertRaises(SystemExit) as cm:
+                    gen_closure.check_c4_facts(*self.sources((mid, key, value)))
+                self.assertIn('move %s' % mid, str(cm.exception.code))
+
+    def test_an_unlisted_champions_override_is_refused(self):
+        base, _ = self.sources()
+        champ = TextSource('data/mods/champions/moves.ts', '\tflamecharge: {\n\t\tinherit: true,\n\t},')
+        with self.assertRaises(SystemExit) as cm:
+            gen_closure.check_c4_facts(base, champ)
+        self.assertIn('move flamecharge: the Champions mod overrides it', str(cm.exception.code))
 
 
 if __name__ == '__main__':

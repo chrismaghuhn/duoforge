@@ -5,7 +5,7 @@
  * Magic Bounce (data/abilities.ts:2437-2464) bounces a reflectable move that is aimed at its holder, or a hazard that a foe
  * sets on the holder's side, back at the move's user. The bounced run is in src/combat/turn.c (dfi_bounce). The reflectable
  * moves are a bit of a generated column (DFI_MOVE_FLAG3_REFLECTABLE of dfi_pool_move_flags3, tools/datagen/gen_closure.py), checked here against the pinned Dex
- * (tests/reference/reflect_ref.h, tools/reference/reflect_ref.js). The bounce is handled for the twenty marked ones below; a
+ * (tests/reference/reflect_ref.h, tools/reference/reflect_ref.js). The bounce is handled for the marked ones below; a
  * marked reflectable move outside this list fails the guard until it has a bounced path (or is refused).
  *
  * The recorded battles of this step (tests/reference/specs/g57_*.json) are replayed by test_conformance. The refusals and the
@@ -39,6 +39,7 @@ static const char *const handled[] = {
     /* Step C1 (decision 0015 entry 5co): Glare is a primary status, Feather Dance, Baby-Doll Eyes and Metal Sound are target boosts. */
     "glare", "featherdance", "babydolleyes", "metalsound",
     "tickle", /* step G86: two primary stat drops (Attack and Defense -1), bounced on Charm's path (decision 0015 5cn) */
+    "scaryface", "eerieimpulse", "screech", "nobleroar", "spicyextract", /* step C4 (5ct): the target's boosts, the PRIMARY_TARGET path */
 };
 
 /* The marked reflectable moves whose bounced run is not modelled (marked by lane A's G54 batch): dfi_bounce_kind_ok refuses
@@ -101,7 +102,7 @@ static void test_marked_reflectable_moves_are_the_handled_list(df_test *t)
                                      in_list(name, refused, sizeof refused / sizeof refused[0])));
         marked += 1u;
     }
-    DF_CHECK_EQ_U64(t, marked, 29u); /* 23 on main, Thunder Wave of step G68, and Glare, Feather Dance, Baby-Doll Eyes, Metal Sound (step C1) */
+    DF_CHECK_EQ_U64(t, marked, 34u); /* 23 on main, Thunder Wave of step G68, and Glare, Feather Dance, Baby-Doll Eyes, Metal Sound (step C1) */
 }
 
 /* Every marked reflectable move is a single-target or a foeSide move: a spread one would need the TryHit of every target

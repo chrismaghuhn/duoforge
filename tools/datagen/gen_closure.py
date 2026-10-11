@@ -2327,6 +2327,9 @@ SPECIAL_P = dict(SPECIAL_C, **{
     'bugbite': ('BUG_BITE', {'onHit'}),                                   # G64: takes the target's berry and eats it
     'poltergeist': ('POLTERGEIST', {'onTry', 'onTryHit'}),                # G64: fails without a target item; reveals it
     'sheercold': ('SHEER_COLD', set()),                                   # G64: an OHKO move (ohko 'Ice'), see G2_OWNED_FIELDS
+    'stormthrow': ('WILL_CRIT', set()),                                   # C4: willCrit, the critical hit without a draw (sim/battle-actions.ts:1638)
+    'flowertrick': ('WILL_CRIT', set()),                                  # C4: willCrit
+    'frostbreath': ('WILL_CRIT', set()),                                  # C4: willCrit
     'haze': ('HAZE', {'onHitField'}),                                     # G62: clears every boost of the standing actives (decision 0031)
     'afteryou': ('AFTER_YOU', {'onHit'}),                                 # G62: the target's queued move goes next (decision 0015 entry 5az)
     'quash': ('QUASH', {'onHit'}),                                        # G62: the target's queued move goes last
@@ -2542,6 +2545,9 @@ G54_FACTS = (
 # berry when it is a berry and eats it, for the user), POLTERGEIST (onTry fails without a target item; onTryHit reveals it with
 # -activate) and SHEER_COLD (an OHKO move: ohko 'Ice', the accuracy and immunity of hitStepAccuracy; G2_OWNED_FIELDS owns the field).
 G64_HANDLERS = ['BEAT_UP', 'BUG_BITE', 'POLTERGEIST', 'SHEER_COLD']
+# Step C4 (decision 0015 entry 5ct): willCrit, a move that is always a critical hit and draws no critical roll (Storm Throw,
+# Flower Trick, Frost Breath). The engine reads it in the damage call (dfi_get_damage); the Shell Armor check is unchanged.
+C4_HANDLERS = ['WILL_CRIT']
 G64_FACTS = (
     ('beatup', ['move.allies = pokemon.side.pokemon.filter(ally => ally === pokemon || !ally.fainted && !ally.status);',
                 'move.multihit = move.allies.length;',
@@ -2599,7 +2605,7 @@ G68_FACTS = (
                      'flags: { protect: 1, reflectable: 1, mirror: 1, metronome: 1 },', "status: 'par',",
                      'ignoreImmunity: false,', 'target: "normal",', 'type: "Electric",']),
 )
-SPECIAL_IDS_P = SPECIAL_IDS_C + G2_HANDLERS + WEATHER_HANDLERS + G16_HANDLERS + G15_HANDLERS + G19_HANDLERS + G20_HANDLERS + G20_PROTECT_HANDLERS + G28_HANDLERS + G30_HANDLERS + G32_HANDLERS + G34_HANDLERS + G27_HANDLERS + G25_HANDLERS + G26_HANDLERS + G33_HANDLERS + G38_HANDLERS + G29_HANDLERS + G39_HANDLERS + G31_HANDLERS + G48_HANDLERS + G44_HANDLERS + G50_HANDLERS + G42_HANDLERS + G56_HANDLERS + G52_HANDLERS + G54_HANDLERS + G64_HANDLERS + G62_HANDLERS + G60_HANDLERS + G58_HANDLERS + G68_HANDLERS + G70_HANDLERS + G66_HANDLERS + G72B_HANDLERS + G74_HANDLERS + G76_HANDLERS + G78_HANDLERS + G88_HANDLERS + G94_HANDLERS + G86_HANDLERS + ['UNMODELED']# Step G10 made two of these handlers data: Scald (thawsTarget) and Recover (heal) are read into the second flags# byte (bit 4, thaws the target) and the heal column, and have the special NONE; their ids stay defined (the ids after
+SPECIAL_IDS_P = SPECIAL_IDS_C + G2_HANDLERS + WEATHER_HANDLERS + G16_HANDLERS + G15_HANDLERS + G19_HANDLERS + G20_HANDLERS + G20_PROTECT_HANDLERS + G28_HANDLERS + G30_HANDLERS + G32_HANDLERS + G34_HANDLERS + G27_HANDLERS + G25_HANDLERS + G26_HANDLERS + G33_HANDLERS + G38_HANDLERS + G29_HANDLERS + G39_HANDLERS + G31_HANDLERS + G48_HANDLERS + G44_HANDLERS + G50_HANDLERS + G42_HANDLERS + G56_HANDLERS + G52_HANDLERS + G54_HANDLERS + G64_HANDLERS + G62_HANDLERS + G60_HANDLERS + G58_HANDLERS + G68_HANDLERS + G70_HANDLERS + G66_HANDLERS + G72B_HANDLERS + G74_HANDLERS + G76_HANDLERS + G78_HANDLERS + G88_HANDLERS + G94_HANDLERS + G86_HANDLERS + C4_HANDLERS + ['UNMODELED']# Step G10 made two of these handlers data: Scald (thawsTarget) and Recover (heal) are read into the second flags# byte (bit 4, thaws the target) and the heal column, and have the special NONE; their ids stay defined (the ids after
 # them keep their values). First Impression and Low Kick keep theirs: the turn code implements them.
 POOL_COLUMN_KEYS = {'thawsTarget', 'heal'}
 G2_OWNED_FIELDS = {
@@ -2645,6 +2651,7 @@ G2_OWNED_FIELDS = {
     'SCALE_SHOT': {'multihit': 'multihit: [2, 5],', 'selfBoost': "selfBoost: { boosts: { def: -1, spe: 1, }, },"},
     'QUICK_GUARD': {'sideCondition': "sideCondition: 'quickguard',"},
     'SHEER_COLD': {'ohko': "ohko: 'Ice',"},
+    'WILL_CRIT': {'willCrit': 'willCrit: true,'},
     'STEEL_BEAM': {'mindBlownRecoil': 'mindBlownRecoil: true,'},
     'THUNDER_WAVE': {'ignoreImmunity': 'ignoreImmunity: false,'},
     'BATON_PASS': {'self': BATON_PASS_SELF},
@@ -4181,6 +4188,93 @@ def check_c2_facts(moves_ts, champ_moves, only=None):
                 fail('move %s: the pin has no %s' % (mid, key))
             if got[key] != want:
                 fail('move %s: %s is %r in the pin, not %r' % (mid, key, got[key], want))
+# Step C4 (cheap moves, decision 0015 entry 5ct), groups b and c: the pinned fields of the twelve data-only moves, read from
+# data/moves.ts at b2cb775 (Champions overrides merged the way parse_move merges them). `secondary` is (chance, self boosts).
+# Psyshield Bash is the one Champions override here (inherit, basePower 90); any other override fails.
+C4_IGNORED_KEYS = {'num', 'name', 'zMove', 'contestType', 'inherit', 'isNonstandard'}
+# Storm Throw's Champions entry only lifts isNonstandard (isNonstandard is not read by the tables); Psyshield Bash's raises basePower.
+C4_CHAMPION_OVERRIDES = {'psyshieldbash': {'basePower': 90}, 'stormthrow': {'isNonstandard': 'null'}}
+C4_FACTS = (
+    ('flamecharge', {'accuracy': 100, 'basePower': 50, 'category': 'Physical', 'pp': 20, 'priority': 0, 'target': 'normal',
+                     'type': 'Fire', 'flags': {'contact', 'protect', 'mirror', 'metronome'}, 'secondary': (100, {'spe': 1})}),
+    ('aquastep', {'accuracy': 100, 'basePower': 80, 'category': 'Physical', 'pp': 10, 'priority': 0, 'target': 'normal',
+                  'type': 'Water', 'flags': {'contact', 'protect', 'mirror', 'dance', 'metronome'}, 'secondary': (100, {'spe': 1})}),
+    ('trailblaze', {'accuracy': 100, 'basePower': 50, 'category': 'Physical', 'pp': 20, 'priority': 0, 'target': 'normal',
+                    'type': 'Grass', 'flags': {'contact', 'protect', 'mirror'}, 'secondary': (100, {'spe': 1})}),
+    ('steelwing', {'accuracy': 90, 'basePower': 70, 'category': 'Physical', 'pp': 25, 'priority': 0, 'target': 'normal',
+                   'type': 'Steel', 'flags': {'contact', 'protect', 'mirror', 'metronome'}, 'secondary': (10, {'def': 1})}),
+    ('psyshieldbash', {'accuracy': 90, 'basePower': 90, 'category': 'Physical', 'pp': 10, 'priority': 0, 'target': 'normal',
+                       'type': 'Psychic', 'flags': {'contact', 'protect', 'mirror', 'metronome'}, 'secondary': (100, {'def': 1})}),
+    ('scaryface', {'accuracy': 100, 'basePower': 0, 'category': 'Status', 'pp': 10, 'priority': 0, 'target': 'normal',
+                   'type': 'Normal', 'flags': {'protect', 'reflectable', 'mirror', 'allyanim', 'metronome'}, 'boosts': {'spe': -2}}),
+    ('eerieimpulse', {'accuracy': 100, 'basePower': 0, 'category': 'Status', 'pp': 15, 'priority': 0, 'target': 'normal',
+                      'type': 'Electric', 'flags': {'protect', 'reflectable', 'mirror', 'metronome'}, 'boosts': {'spa': -2}}),
+    ('screech', {'accuracy': 85, 'basePower': 0, 'category': 'Status', 'pp': 40, 'priority': 0, 'target': 'normal',
+                 'type': 'Normal', 'flags': {'protect', 'reflectable', 'mirror', 'sound', 'bypasssub', 'allyanim', 'metronome'},
+                 'boosts': {'def': -2}}),
+    ('nobleroar', {'accuracy': 100, 'basePower': 0, 'category': 'Status', 'pp': 30, 'priority': 0, 'target': 'normal',
+                   'type': 'Normal', 'flags': {'protect', 'reflectable', 'mirror', 'sound', 'bypasssub', 'metronome'},
+                   'boosts': {'atk': -1, 'spa': -1}}),
+    ('spicyextract', {'accuracy': True, 'basePower': 0, 'category': 'Status', 'pp': 15, 'priority': 0, 'target': 'normal',
+                      'type': 'Grass', 'flags': {'protect', 'reflectable', 'mirror'}, 'boosts': {'atk': 2, 'def': -2}}),
+    ('amnesia', {'accuracy': True, 'basePower': 0, 'category': 'Status', 'pp': 20, 'priority': 0, 'target': 'self',
+                 'type': 'Psychic', 'flags': {'snatch', 'metronome'}, 'boosts': {'spd': 2}}),
+    ('cosmicpower', {'accuracy': True, 'basePower': 0, 'category': 'Status', 'pp': 20, 'priority': 0, 'target': 'self',
+                     'type': 'Psychic', 'flags': {'snatch', 'metronome'}, 'boosts': {'def': 1, 'spd': 1}}),
+    # Group a (willCrit, the WILL_CRIT special): the critical hit without a roll.
+    ('stormthrow', {'accuracy': 100, 'basePower': 60, 'category': 'Physical', 'pp': 10, 'priority': 0, 'target': 'normal',
+                    'type': 'Fighting', 'flags': {'contact', 'protect', 'mirror', 'metronome'}, 'willCrit': True}),
+    ('flowertrick', {'accuracy': True, 'basePower': 70, 'category': 'Physical', 'pp': 10, 'priority': 0, 'target': 'normal',
+                     'type': 'Grass', 'flags': {'protect', 'mirror', 'metronome'}, 'willCrit': True}),
+    ('frostbreath', {'accuracy': 90, 'basePower': 60, 'category': 'Special', 'pp': 10, 'priority': 0, 'target': 'normal',
+                     'type': 'Ice', 'flags': {'protect', 'mirror', 'metronome'}, 'willCrit': True}),
+)
+
+
+def c4_value(key, text):
+    """The value of one pin field, read as c1_value reads it; `secondary` is (chance, the self boosts of its roll)."""
+    if key == 'secondary':
+        m = re.fullmatch(r'secondary: \{ chance: (\d+), self: \{ boosts: \{ ((?:\w+: -?\d+, ?)+)\}, \}, \},', norm(text))
+        if m is None:
+            fail('secondary is not a self-boost roll: %s' % norm(text))
+        return int(m.group(1)), {name: int(val) for name, val in re.findall(r'(\w+): (-?\d+)', m.group(2))}
+    if key == 'flags':
+        return set(re.findall(r'(\w+): 1\b', text))
+    if key == 'boosts':
+        return {name: int(val) for name, val in re.findall(r'(\w+): (-?\d+)', text)}
+    return scalar(text)
+
+
+def check_c4_facts(moves_ts, champ_moves, only=None):
+    """Step C4: each listed move has exactly the listed fields (nothing else but C4_IGNORED_KEYS) with its pinned value, its
+    Champions override (if any) is the one listed in C4_CHAMPION_OVERRIDES, merged the way parse_move merges it."""
+    for mid, expected in (C4_FACTS if only is None else only):
+        e = moves_ts.entry(mid)
+        if e is None:
+            fail('move %s not found' % mid)
+        got = fields(e[2])
+        ce = champ_moves.entry(mid)
+        if mid in C4_CHAMPION_OVERRIDES:
+            if ce is None:
+                fail('move %s: the Champions override is missing' % mid)
+            cf = fields(ce[2])
+            if 'inherit' not in cf:
+                fail('move %s: the Champions override does not inherit' % mid)
+            for key, want in C4_CHAMPION_OVERRIDES[mid].items():
+                if key not in cf or c4_value(key, cf[key][1]) != want:
+                    fail('move %s: the Champions %s is not %r' % (mid, key, want))
+            got.update({k: v for k, v in cf.items() if k in C4_CHAMPION_OVERRIDES[mid]})
+        elif ce is not None:
+            fail('move %s: the Champions mod overrides it; the C4 facts must be read again' % mid)
+        extra = sorted(set(got) - set(expected) - C4_IGNORED_KEYS)
+        if extra:
+            fail('move %s: the pin has fields the C4 facts do not list: %s' % (mid, ', '.join(extra)))
+        for key, want in expected.items():
+            if key not in got:
+                fail('move %s: the pin has no %s' % (mid, key))
+            have = c4_value(key, got[key][1])
+            if have != want:
+                fail('move %s: %s is %r in the pin, not %r' % (mid, key, have, want))
 
 
 def build_pool(root, repo, dx):
@@ -4197,6 +4291,7 @@ def build_pool(root, repo, dx):
     formats, learn = Source(root, 'data/mods/champions/formats-data.ts'), Source(root, 'data/mods/champions/learnsets.ts')
     legal = load_legal_pool(repo)
     check_g8_conditions(moves_ts)
+    check_c4_facts(moves_ts, champ_moves)
     check_g15_facts(moves_ts, items_ts)
     check_g30_facts(abil_ts, champ_abil)
     check_g28_items(items_ts)

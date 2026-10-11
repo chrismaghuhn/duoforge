@@ -2338,7 +2338,7 @@ class Library(unittest.TestCase):
         marked = [n for n in re.findall(r'\[DFI_MOVE_(\w+)\] = 1u', read('src', 'data', 'support_manifest.c'))
                   if n in ids and ids[n] >= ext_moves]
         self.assertEqual(len(names), ext_moves + len(ids))
-        self.assertEqual(len(marked), 251)  # G86 (decision 0048): the seven of this batch make 251 (244 before); C2 (decision 0015 5cp): 22 damaging moves make 244 (222 before); G94 (decision 0015 5cv): Baneful Bunker; C1 (decision 0015 entry 5co): eighteen moves make 221 (203 before); G88 (decision 0046): Lash Out and Assurance make 203 (201 before); G78: Dragon Darts makes 201 (200 before); G76: Destiny Bond and Final Gambit make 200 (198 before); G74: Baton Pass makes 198; G72b: Alluring Voice and Dragon Cheer make 197 (195 before); the King's Shield of G66 (decision 0015 5cb) makes 195; the Skill Swap of G70 makes 194 (decision 0041) makes 194 from 193; 189 before step G68 (decision 0015 item 5cc: Steel Beam, Thunder Wave, Fire Punch, Ice Hammer); 180 of main, the four of G64 and the three of G62 (Haze, After You, Quash)  # the four of step G64 (Poltergeist, Beat Up, Bug Bite, Sheer Cold; decision 0015 item 5ca), the seven of step G54 (Icicle Spear, Scale Shot, Quick Guard, Upper Hand, Heal Pulse, Strength Sap, Sing), and the 171 of main (Roost and Stomping Tantrum of G42, Double Shock of G50 among them)  # Roost and Stomping Tantrum (G42), Double Shock (G50), the eleven of step G44, the four of step G46, the four of step G48, Taunt and Yawn (G31) and the rows of the earlier steps as before
+        self.assertEqual(len(marked), 266)  # C4 (decision 0015 entry 5ct): 15 more make 266 (251 before); G86 (decision 0048): the seven of this batch make 251 (244 before); C2 (decision 0015 5cp): 22 damaging moves make 244 (222 before); G94 (decision 0015 5cv): Baneful Bunker; C1 (decision 0015 entry 5co): eighteen moves make 221 (203 before); G88 (decision 0046): Lash Out and Assurance make 203 (201 before); G78: Dragon Darts makes 201 (200 before); G76: Destiny Bond and Final Gambit make 200 (198 before); G74: Baton Pass makes 198; G72b: Alluring Voice and Dragon Cheer make 197 (195 before); the King's Shield of G66 (decision 0015 5cb) makes 195; the Skill Swap of G70 makes 194 (decision 0041) makes 194 from 193; 189 before step G68 (decision 0015 item 5cc: Steel Beam, Thunder Wave, Fire Punch, Ice Hammer); 180 of main, the four of G64 and the three of G62 (Haze, After You, Quash)  # the four of step G64 (Poltergeist, Beat Up, Bug Bite, Sheer Cold; decision 0015 item 5ca), the seven of step G54 (Icicle Spear, Scale Shot, Quick Guard, Upper Hand, Heal Pulse, Strength Sap, Sing), and the 171 of main (Roost and Stomping Tantrum of G42, Double Shock of G50 among them)  # Roost and Stomping Tantrum (G42), Double Shock (G50), the eleven of step G44, the four of step G46, the four of step G48, Taunt and Yawn (G31) and the rows of the earlier steps as before
         pool = [n for n in os.listdir(os.path.join(ROOT, 'tests', 'reference', 'specs'))
                 if trace_to_c.is_pool(ROOT, n[:-5])]
         logs = []
@@ -2357,6 +2357,16 @@ class Library(unittest.TestCase):
                             done = done or after.startswith(('|-damage|', '|-boost|', '|-heal|', '|-start|', '|-weather|') + (('|-status|',) if name in ('Will-O-Wisp', 'Stun Spore', 'Sleep Powder', 'Poison Powder', 'Sing') else ()))
                             # A status move of one target with a primary drop (Charm, Fake Tears, step G39): its -unboost line.
                             done = done or (name in ('Charm', 'Fake Tears', 'Tickle') and after.startswith('|-unboost|'))  # Tickle: step G86
+                            # A stat drop of the target (Scary Face, Noble Roar, Eerie Impulse, Screech, Spicy Extract; their pin
+                            # boosts are negative, data/moves.ts:15800, 12769, 4441, 15847, 17450), counted only as the move's own
+                            # effect: the line directly after its |move| line, on the move's target or its user, and with no
+                            # [from] source (an Intimidate or an item line of another Pokemon is not the move's effect).
+                            if name in ('Scary Face', 'Noble Roar', 'Eerie Impulse', 'Screech', 'Spicy Extract') and i + 1 < len(lines) \
+                                    and lines[i + 1].startswith('|-unboost|') and '[from]' not in lines[i + 1]:
+                                fields = line.split('|')
+                                who = lines[i + 1].split('|')
+                                if len(fields) > 4 and who[2] in (fields[2], fields[4]):
+                                    done = True
                             # A forced switch (step G46: Whirlwind; Dragon Tail is damaging, so its damage line counts): the drag line.
                             done = done or (name in ('Whirlwind', 'Roar', 'Circle Throw') and after.startswith('|drag|'))
                             # Baton Pass (step G74): its switch line names it as the cause, `|switch|...|[from] Baton Pass`.
