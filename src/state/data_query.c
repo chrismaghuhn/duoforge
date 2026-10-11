@@ -1,5 +1,6 @@
 #include "state/data_query.h"
 
+#include "combat/turn.h"
 #include "data/formulas.h"
 #include "data/pool_tables.h"
 #include "state/closure_member.h"
@@ -528,5 +529,30 @@ duoforge_status duoforge_data_type_effect(const duoforge_context *ctx, uint32_t 
     }
     *out_num = num;
     *out_den = den;
+    return DUOFORGE_OK;
+}
+
+duoforge_status duoforge_data_request_target_class(const duoforge_context *ctx, uint32_t move_id,
+                                                   const uint32_t user_types[2], uint32_t *out_class)
+{
+    if (ctx == NULL || user_types == NULL || out_class == NULL) {
+        return DUOFORGE_E_NULL_ARGUMENT;
+    }
+    const duoforge_status st = dfi_static_begin(ctx, DUOFORGE_DATA_TABLE_MOVE, move_id);
+    if (st != DUOFORGE_OK) {
+        return st;
+    }
+    uint32_t types[2];
+    for (uint32_t i = 0u; i < 2u; ++i) {
+        if (user_types[i] == DUOFORGE_TYPE_NONE || user_types[i] == DUOFORGE_DATA_NONE) {
+            types[i] = DFI_CLOSURE_NONE;
+        } else if (user_types[i] < DFI_TYPE_COUNT) {
+            types[i] = user_types[i];
+        } else {
+            return DUOFORGE_E_INVALID_ARGUMENT;
+        }
+    }
+    const dfi_move_data *m = &dfi_pool_moves[move_id];
+    *out_class = dfi_target_class_for_types(m->special, m->target_class, types);
     return DUOFORGE_OK;
 }

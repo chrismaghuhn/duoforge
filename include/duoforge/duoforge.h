@@ -470,6 +470,21 @@ duoforge_status duoforge_data_nature_static(const duoforge_context *ctx, uint32_
 duoforge_status duoforge_data_type_effect(const duoforge_context *ctx, uint32_t attack_type, uint32_t defend_type,
                                           uint32_t *out_num, uint32_t *out_den);
 
+/* The target class a move has in the request of a user of the given current types (DUOFORGE_TARGET_CLASS_* 1..
+   DUOFORGE_TARGET_CLASS_STATIC_COUNT, the numbering of duoforge_move_static.target_class). It is that static class except
+   for a move whose request target depends on its user: a Curse of a user that has no Ghost type targets the user itself
+   (DUOFORGE_TARGET_CLASS_SELF, so the request offers it with DUOFORGE_TARGET_NONE), and a Curse of a Ghost keeps the class of
+   its row (normal). It is the rule the battle's request builder applies, so a caller that rebuilds a request from public
+   facts (a replay) asks the library instead of carrying the rule itself.
+   user_types are the user's current types: two entries, each a DUOFORGE_TYPE_* value, or DUOFORGE_TYPE_NONE or
+   DUOFORGE_DATA_NONE for no type (a single-typed user, a type lost to Double Shock). They are the types after a Mega
+   Evolution or a type change, which the caller must know; the query does not guess them. Checks, in order: NULL(ctx,
+   user_types, out_class) -> E_UNSUPPORTED for a SYNTHETIC context (no tables) -> E_INVALID_ARGUMENT for a move id at or
+   beyond duoforge_data_count(MOVE) -> E_INVALID_ARGUMENT for a user type that is neither a DUOFORGE_TYPE_* (0..17) nor one
+   of the two NONE values. *out_class is untouched on an error. Pure: no allocation, no state. */
+duoforge_status duoforge_data_request_target_class(const duoforge_context *ctx, uint32_t move_id,
+                                                   const uint32_t user_types[2], uint32_t *out_class);
+
 /* ---- owned battle state: opaque, pointer-free, bound to a context by
    fingerprint (not by pointer); every call checks the fingerprint ---- */
 typedef struct duoforge_battle duoforge_battle;

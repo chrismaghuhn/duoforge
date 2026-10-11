@@ -674,10 +674,23 @@ static uint32_t dfi_effective_target_class(const struct duoforge_battle *b, cons
     return md->target_class;
 }
 
-/* The target class of a move for its user (step G84; the Curse override of data/mods/champions/moves.ts:165-196): a Curse of a
- * user without the Ghost type targets the user (onModifyMove sets 'self'), so the request offers no target and the choice has
- * none. The pool row says normal; a Ghost user keeps it (its Curse is refused by dfi_run_curse). Every other move keeps the class
- * of its row. */
+/* The target class of a move for a user of the given types (step G84; the Curse override of
+ * data/mods/champions/moves.ts:165-196, Showdown's getMoves, sim/pokemon.ts: a user that is not a Ghost gets the move's
+ * nonGhostTarget): a Curse of a user without the Ghost type targets the user (onModifyMove sets 'self'), so the request
+ * offers no target and the choice has none. The pool row says normal; a Ghost user keeps it (its Curse is refused by
+ * dfi_run_curse until the Ghost curse is modelled). Every other move keeps the class of its row. The one rule behind the
+ * request (dfi_user_target_class) and the public query duoforge_data_request_target_class, which the Python replay calls.
+ * types are the user's current types; DFI_CLOSURE_NONE marks no type. */
+uint32_t dfi_target_class_for_types(uint32_t special, uint32_t table_class, const uint32_t types[2])
+{
+    if (special != DFI_SPECIAL_CURSE) {
+        return table_class;
+    }
+    return types[0] == DFI_TYPE_GHOST || types[1] == DFI_TYPE_GHOST ? table_class : DUOFORGE_TARGET_CLASS_SELF;
+}
+
+/* The target class of a move for its user (step G84): the class of the user's current types (dfi_types_of: a Soak, a Double
+ * Shock and a Mega forme count) through dfi_target_class_for_types. */
 uint32_t dfi_user_target_class(const struct duoforge_battle *b, uint32_t user, uint32_t special, uint32_t table_class)
 {
     if (special != DFI_SPECIAL_CURSE) {
@@ -687,8 +700,9 @@ uint32_t dfi_user_target_class(const struct duoforge_battle *b, uint32_t user, u
     if (occupant >= DUOFORGE_MAX_ROSTER) {
         return table_class;
     }
-    const dfi_member *m = &b->sides[user / DUOFORGE_ACTIVE_PER_SIDE].members[occupant];
-    return dfi_has_type(b, m, DFI_TYPE_GHOST) ? table_class : DUOFORGE_TARGET_CLASS_SELF;
+    uint32_t types[2];
+    dfi_types_of(b, &b->sides[user / DUOFORGE_ACTIVE_PER_SIDE].members[occupant], types);
+    return dfi_target_class_for_types(special, table_class, types);
 }
 
 /* The type a move has when it is used (useMoveInner, sim/battle-actions.ts:430-438: the move's own onModifyType first, then
