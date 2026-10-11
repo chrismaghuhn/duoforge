@@ -5407,13 +5407,23 @@ static void dfi_run_swap_scratch(dfi_run *r, uint32_t user, uint32_t partner)
  *   - tail.sides[side].positions[a/c] (dfi_tail_pos): every field: yes (moves, Follow Me and Protect, counters, Dragon Cheer,
  *     move_result, ally_switch). position_flags bit 0 (Healing Wish): NO (a slot condition; the Swap rule of Healing Wish belongs
  *     to its own step, decision 0044).
- *   - trap_source and leech_seed_source of EVERY position that name a or c: relinked to the new flat position (a reference to the
- *     Pokemon, not to the slot).
+ *   - trap_source of EVERY position that names a or c: relinked to the new flat position (a reference to the trapper's Pokemon).
+ *     leech_seed_source is not relinked (its sourceSlot is a slot: sim/pokemon.ts:2002, data/moves.ts:10218).
+ *   - attract_source[a] and [c]: exchanged (the infatuation moves with the infatuated Pokemon; the member code is unchanged).
  *   - party_order[side] entries a and c: yes (the side.pokemon order exchanges, sim/battle.ts:1598-1599).
  * Not moved, slot-bound: sealed_cmds[a/c] and requested_slots (the request of the slot), and sides[].knowledge, ability_now,
  * forme_now, soak_type, item_now, toxic_stage, type2, member_flags, illusion, hazards and screens (per roster member or per side).
  * The run's scratch (speed_seen, residual_hp, faint queue, drag and lock bits) is dfi_run_swap_scratch, and the queued actions are
  * remapped by the caller. Field test: tests/test_pool_g80.c (dfi_swap_position_state moves every listed field and no other). */
+bool dfi_ally_swap_wish_blocked(const struct duoforge_battle *b, uint32_t side, uint32_t a, uint32_t c)
+{
+    /* Healing Wish (step G82, slotCondition 'healingwish', data/moves.ts:8348-8382): bit 0 of the slot's flags. The Swap event of
+     * sim/battle.ts:1588-1607 runs its onSwap for the Pokemon that arrives (data/moves.ts:8366-8377: a heal and the wish's end).
+     * Batch 8 does not model that: an Ally Switch onto such a slot is refused (E_UNSUPPORTED), a known gap in decision 0044. */
+    return ((uint32_t)b->tail.sides[side].positions[a].position_flags & (uint32_t)DFI_POSFLAG_HEALING_WISH) != 0u ||
+           ((uint32_t)b->tail.sides[side].positions[c].position_flags & (uint32_t)DFI_POSFLAG_HEALING_WISH) != 0u;
+}
+
 void dfi_swap_position_state(struct duoforge_battle *b, uint32_t side, uint32_t a, uint32_t c)
 {
     dfi_active_slot *sa = &b->sides[side].positions[a];
@@ -5435,6 +5445,19 @@ void dfi_swap_position_state(struct duoforge_battle *b, uint32_t side, uint32_t 
     *tc = tail_tmp;
     ta->position_flags = (uint8_t)(((uint32_t)ta->position_flags & ~hw) | hw_a); /* wide-operands-reviewed: the slot condition stays */
     tc->position_flags = (uint8_t)(((uint32_t)tc->position_flags & ~hw) | hw_c); /* wide-operands-reviewed: the slot condition stays */
+    /* Attract (step G71, rev 5 reserve bytes 0..3): the infatuation is on the infatuated Pokemon, so its byte goes with it. The byte is
+     * a member code (side * 6 + roster index), which names the source Pokemon and does not change. The source's position (G87) is
+     * derived from that code when it is read (dfi_attract_source_flat, observation.c), so nothing is stored to relink. */
+    {
+        const uint32_t fa = side * DUOFORGE_ACTIVE_PER_SIDE + a;
+        const uint32_t fc = side * DUOFORGE_ACTIVE_PER_SIDE + c;
+        const uint8_t byte_a = b->tail.attract_source[fa];
+        b->tail.attract_source[fa] = b->tail.attract_source[fc];
+        b->tail.attract_source[fc] = byte_a;
+    }
+    /* trap_source (partially trapped, data/conditions.ts:235, :238: the trapper's Pokemon object, source.isActive) follows the
+     * trapper. leech_seed_source is NOT relinked: the seed's sourceSlot is a slot (sim/pokemon.ts:2002, sourceSlot = source.getSlot();
+     * data/moves.ts:10218, the drain goes to getAtSlot(sourceSlot)), so the seed stays on the flat position it was set on. */
     const uint32_t up = side * DUOFORGE_ACTIVE_PER_SIDE + a + 1u;
     const uint32_t pp = side * DUOFORGE_ACTIVE_PER_SIDE + c + 1u;
     for (uint32_t f = 0u; f < DUOFORGE_SIDE_COUNT * DUOFORGE_ACTIVE_PER_SIDE; ++f) {
@@ -5443,11 +5466,6 @@ void dfi_swap_position_state(struct duoforge_battle *b, uint32_t side, uint32_t 
             tp->trap_source = (uint8_t)pp; /* wide-operands-reviewed: a flat position + 1 */
         } else if ((uint32_t)tp->trap_source == pp) {
             tp->trap_source = (uint8_t)up; /* wide-operands-reviewed: a flat position + 1 */
-        }
-        if ((uint32_t)tp->leech_seed_source == up) {
-            tp->leech_seed_source = (uint8_t)pp; /* wide-operands-reviewed: a flat position + 1 */
-        } else if ((uint32_t)tp->leech_seed_source == pp) {
-            tp->leech_seed_source = (uint8_t)up; /* wide-operands-reviewed: a flat position + 1 */
         }
     }
     const uint32_t e_a = dfi_party_entry(&b->tail, side, a);
@@ -5461,7 +5479,8 @@ void dfi_swap_position_state(struct duoforge_battle *b, uint32_t side, uint32_t 
  * charge, locked move, move actions, switch flag, activation id), and the position's tail (the moves, the Follow Me and Protect
  * state, the Ally Switch counter, the stats-raised flag and the Dragon Cheer stage). What stays with the slot: locked_target (a slot
  * location in the pin) and position_flags bit 0 (Healing Wish, a slot condition). A flat trapper or seeder named by another
- * position's trap_source or leech_seed_source follows the Pokemon to its new slot. party_order entries 0 and 1 of the side swap.
+ * position's trap_source follows the Pokemon to its new slot; a seed (leech_seed_source) stays on its slot. party_order entries 0 and 1
+ * of the side swap.
  * Queued moves and switches of the two Pokemon follow them (their slot); the target of a queued move is a slot and does not change.
  * `|swap|` is the event SWAP: position the user's old slot, other the new one. The Healing Wish slot bit stays with the slot (see
  * decision 0044, "Healing Wish slot bit interaction": the Swap rule belongs to the Healing Wish step). */
@@ -5522,6 +5541,11 @@ static duoforge_status dfi_run_ally_switch(dfi_run *r, uint32_t user, bool *ok, 
          * failure above is the one that returns false (dfi_fail_still). */
         r->mres |= DFI_MRES_NULL;
         return DUOFORGE_OK;
+    }
+    if (dfi_ally_swap_wish_blocked(b, user / 2u, user % 2u, partner % 2u)) {
+        /* a pending Healing Wish on either slot: the arrival's onSwap would heal it (data/moves.ts:8366-8377), not modelled in
+         * batch 8 (decision 0044, known gap): refused explicitly, never guessed */
+        return DUOFORGE_E_UNSUPPORTED;
     }
     dfi_ally_switch_swap(r, user, partner);
     *ok = true;
