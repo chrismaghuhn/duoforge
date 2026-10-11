@@ -468,7 +468,10 @@ def _pool_of_args(args, context, corpus=None):
     else:
         pool = teams.load(context, [t.strip() for t in args.teams.split(",")], root=args.teams_root, weights=weights)
     if corpus is not None:
-        pool = teams.combine(pool, corpus, args.random_team_share)
+        try:
+            pool = teams.combine(pool, corpus, args.random_team_share)
+        except ValueError as err:  # a share outside (0, 1], or a corpus team that is in the registry pool too
+            raise SystemExit(str(err)) from None
     return pool
 
 
@@ -538,10 +541,7 @@ def _run(args, pool, on_start, stop):
         if saved_state is not None and saved_state["train"].get("random_teams") != random_teams:
             raise SystemExit(f"--random-teams-root {args.random_teams_root} is not the run's corpus "
                              f"({saved_state['train'].get('random_teams')} -> {random_teams})")
-    try:
-        pool = _pool_of_args(args, context, corpus) if pool is None else pool
-    except (teams.TeamError, ValueError) as err:
-        raise SystemExit(str(err)) from None
+    pool = _pool_of_args(args, context, corpus) if pool is None else pool
     if saved_state is not None:
         if list(pool.ids) != saved_state["teams"]["ids"] or \
                 [float(w) for w in pool.weights] != saved_state["teams"]["weights"]:
