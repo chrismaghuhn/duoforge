@@ -5851,6 +5851,32 @@ static const df_tb_stop tb_g71_cute_charm_contact[] = {
     {2u, 0u, 2u, 2u, {4u, 4u}, {653u, 733u}, {0x404edbab82f50439ull, 0x4050562d9faee41full}},
     {3u, 0u, 1u, 1u, {4u, 3u}, {641u, 456u}, {0x404e5ceff27b5a68ull, 0x404567efd2b45f71ull}},
 };
+static const df_tb_stop tb_g71_faint_source_herb[] = {
+    {0u, 0u, 1u, 3u, {6u, 6u}, {1171u, 1119u}, {0x4059000000000000ull, 0x4059000000000000ull}},
+    {1u, 0u, 1u, 3u, {4u, 4u}, {758u, 753u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {2u, 0u, 1u, 2u, {4u, 4u}, {746u, 729u}, {0x40506cd4b708a831ull, 0x40502bef1a3100d8ull}},
+    {3u, 0u, 1u, 1u, {4u, 3u}, {746u, 522u}, {0x40506cd4b708a831ull, 0x4047bdc71c71c71dull}},
+    {6u, 0u, 1u, 1u, {4u, 3u}, {704u, 509u}, {0x404f1e18f4677e03ull, 0x40470d21e13345c0ull}},
+    {9u, 0u, 1u, 1u, {4u, 3u}, {531u, 275u}, {0x404824deef6aa5b4ull, 0x403a9915da9ededfull}},
+    {12u, 0u, 1u, 1u, {3u, 2u}, {380u, 149u}, {0x4041ea26c01a621cull, 0x402f65f903d0c045ull}},
+    {14u, 0u, 1u, 1u, {2u, 1u}, {301u, 5u}, {0x403d2aaaaaaaaaabull, 0x3fda67136eae0bd4ull}},
+    {15u, 1u, 1u, 0u, {2u, 0u}, {301u, 0u}, {0x403d2aaaaaaaaaabull, 0x0000000000000000ull}},
+};
+static const df_tb_stop tb_g71_faint_source_seed2[] = {
+    {0u, 0u, 3u, 4u, {6u, 6u}, {1119u, 1119u}, {0x4059000000000000ull, 0x4059000000000000ull}},
+    {1u, 0u, 1u, 3u, {4u, 4u}, {783u, 760u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {2u, 0u, 2u, 2u, {4u, 4u}, {710u, 760u}, {0x404e2a38e38e38e3ull, 0x4050aaaaaaaaaaabull}},
+    {3u, 0u, 2u, 2u, {4u, 4u}, {695u, 760u}, {0x404d838e38e38e38ull, 0x4050aaaaaaaaaaabull}},
+    {6u, 0u, 2u, 1u, {2u, 4u}, {389u, 671u}, {0x4040aaaaaaaaaaabull, 0x404d925489204c94ull}},
+    {9u, 0u, 2u, 1u, {2u, 4u}, {264u, 624u}, {0x403685ff6e43a2cdull, 0x404b508a47217aa8ull}},
+    {12u, 0u, 2u, 1u, {2u, 4u}, {141u, 533u}, {0x4027bb09262eb547ull, 0x404761588629785cull}},
+    {15u, 0u, 2u, 1u, {2u, 3u}, {161u, 386u}, {0x402b77be40ac0c99ull, 0x40412f5133a51adbull}},
+    {18u, 0u, 2u, 1u, {1u, 3u}, {57u, 288u}, {0x4012cfd7720f353aull, 0x4039dcdb4ad86e99ull}},
+    {21u, 0u, 2u, 1u, {1u, 2u}, {57u, 255u}, {0x4012cfd7720f353aull, 0x4036ff85f5831944ull}},
+    {24u, 0u, 2u, 1u, {1u, 2u}, {13u, 245u}, {0x3ff129663b24547dull, 0x4036112979907269ull}},
+    {25u, 0u, 2u, 1u, {1u, 2u}, {13u, 245u}, {0x3ff129663b24547dull, 0x4036112979907269ull}},
+    {26u, 1u, 2u, 0u, {0u, 2u}, {0u, 245u}, {0x0000000000000000ull, 0x4036112979907269ull}},
+};
 static const df_tb_stop tb_g71_genderless[] = {
     {0u, 0u, 2u, 3u, {6u, 6u}, {1092u, 1142u}, {0x4059000000000000ull, 0x4059000000000000ull}},
     {1u, 0u, 2u, 3u, {4u, 4u}, {713u, 743u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
@@ -8061,6 +8087,8 @@ static const df_tb_battle tb_battles[] = {
     {"g70_skillswap_swap_back", 4u, tb_g70_skillswap_swap_back, sizeof tb_g70_skillswap_swap_back / sizeof tb_g70_skillswap_swap_back[0]},
     {"g70_skillswap_unburden", 3u, tb_g70_skillswap_unburden, sizeof tb_g70_skillswap_unburden / sizeof tb_g70_skillswap_unburden[0]},
     {"g71_cute_charm_contact", 3u, tb_g71_cute_charm_contact, sizeof tb_g71_cute_charm_contact / sizeof tb_g71_cute_charm_contact[0]},
+    {"g71_faint_source_herb", 15u, tb_g71_faint_source_herb, sizeof tb_g71_faint_source_herb / sizeof tb_g71_faint_source_herb[0]},
+    {"g71_faint_source_seed2", 26u, tb_g71_faint_source_seed2, sizeof tb_g71_faint_source_seed2 / sizeof tb_g71_faint_source_seed2[0]},
     {"g71_genderless", 2u, tb_g71_genderless, sizeof tb_g71_genderless / sizeof tb_g71_genderless[0]},
     {"g71_herb", 2u, tb_g71_herb, sizeof tb_g71_herb / sizeof tb_g71_herb[0]},
     {"g71_moves_through", 3u, tb_g71_moves_through, sizeof tb_g71_moves_through / sizeof tb_g71_moves_through[0]},
@@ -8217,7 +8245,7 @@ static const df_tb_battle tb_battles[] = {
     {"xr3_sheercold_sub_miss", 3u, tb_xr3_sheercold_sub_miss, sizeof tb_xr3_sheercold_sub_miss / sizeof tb_xr3_sheercold_sub_miss[0]},
 };
 
-/* 5514 stops: 150 of an ended battle; decided by the count 1330,
- * the HP percentage 1721, the total HP 2169, a tie 144;
- * winners: side 0 2614, side 1 2756, tie 144 */
+/* 5536 stops: 152 of an ended battle; decided by the count 1343,
+ * the HP percentage 1724, the total HP 2172, a tie 145;
+ * winners: side 0 2624, side 1 2767, tie 145 */
 #endif

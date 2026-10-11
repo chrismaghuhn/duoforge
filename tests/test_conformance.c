@@ -33,7 +33,7 @@
 #include "reference/conformance_pool.h"
 #include "support/pool.h"
 #define DF_CONF_FORMES dfi_pool_formes
-#define DF_POOL_DATA_BATTLES 728u /* the recorded pool battles: main's 701 (lane A batches 1-4, lane B batches 1-2), I2's three, G69's four, G65's nine and two mirrored (replay tracker), G71's nine (Cute Charm, Attract; M01 a roll of exactly 3 and M02 a non-contact hit on the holder) */
+#define DF_POOL_DATA_BATTLES 730u /* the recorded pool battles: main's 701 (lane A batches 1-4, lane B batches 1-2), I2's three, G69's four, G65's nine and two mirrored (replay tracker), G71's eleven (Cute Charm, Attract; M01 a roll of exactly 3 and M02 a non-contact hit on the holder; the two faint-source battles, g71_faint_source_herb and g71_faint_source_seed2, where the Attract source faints in the action) */
 #elif defined(DF_CONFORMANCE_TEAM_C)
 #include "data/extended_tables.h"
 #include "reference/conformance_team_c.h"

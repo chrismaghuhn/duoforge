@@ -3516,14 +3516,33 @@ static duoforge_status dfi_each_order(dfi_run *r, uint32_t bearers, uint32_t lis
 /* Step G71 (decision 0034): the source member of an Attract byte (1 + side * 6 + roster index) is on the field and not fainted: the
  * pin's source.isActive (data/moves.ts:722-727). A member that switched out and came back is a new entry, but the infatuation ended
  * at the first Update after its switch-out, so the check reads the member, not the position. */
-static bool dfi_attract_source_active(const struct duoforge_battle *b, uint32_t code)
+static bool dfi_faint_shown(const dfi_run *r, uint32_t flat);
+
+static bool dfi_attract_source_active(const dfi_run *r, uint32_t code)
 {
+    /* The pin's isActive is false from the faintMessages that shows the faint (sim/battle.ts:2566), and true until then: a source at
+     * 0 HP whose faint is queued but not yet shown is still active at the Update before that faintMessages (the in-move hit loop's
+     * Update), and inactive at the Update after it (the post-announce Update, step G71 trace of seed 9720000_2 step 25). */
+    const struct duoforge_battle *b = r->b;
     const uint32_t side = (code - 1u) / DUOFORGE_MAX_ROSTER;
     const uint32_t src = (code - 1u) % DUOFORGE_MAX_ROSTER;
     for (uint32_t p = 0u; p < DUOFORGE_ACTIVE_PER_SIDE; ++p) {
-        if (b->sides[side].positions[p].occupant == src && b->sides[side].members[src].hp != 0u) {
+        if (b->sides[side].positions[p].occupant != src) {
+            continue;
+        }
+        if (b->sides[side].members[src].hp != 0u) {
             return true;
         }
+        const uint32_t flat = side * DUOFORGE_ACTIVE_PER_SIDE + p;
+        if (dfi_faint_shown(r, flat)) {
+            return false;
+        }
+        for (uint32_t i = 0u; i < r->faint_count; ++i) {
+            if (r->faint_queue[i] == flat) {
+                return true;
+            }
+        }
+        return false;
     }
     return false;
 }
@@ -3541,7 +3560,7 @@ static duoforge_status dfi_attract_update(dfi_run *r, uint32_t flat)
     if (code == 0u) {
         return DUOFORGE_OK;
     }
-    if (m == NULL || m->hp == 0u || !dfi_attract_source_active(b, code)) {
+    if (m == NULL || m->hp == 0u || !dfi_attract_source_active(r, code)) {
         b->tail.attract_source[flat] = 0u; /* silent end: the source left the field */
         return DUOFORGE_OK;
     }
