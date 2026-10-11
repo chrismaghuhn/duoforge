@@ -1,0 +1,20 @@
+{
+ "name": "g97_metal_burst_source_fainted",
+ "purpose": "Step G97: Dragonite hits Aggron with Dragon Claw, then Glalie (p1b) knocks Dragonite out with Icicle Crash before Aggron acts: the target of Metal Burst is the fainted Dragonite (not modelled as a fail: the recording decides).",
+ "data": "pool",
+ "format": "gen9championsvgc2026regmc",
+ "seed": "sodium,00000000000000000000000000000000000000000000000000000000000c9706",
+ "teams": [
+  "Aggron (M) @ Leftovers\nAbility: Sturdy\nLevel: 50\nEVs: 32 HP / 32 Def / 2 SpD\nRelaxed Nature\n- Metal Burst\n- Protect\n- Substitute\n- Earthquake\n\nGlalie (M) @ Expert Belt\nAbility: Inner Focus\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Icicle Crash\n- Protect\n- Earthquake\n- Ice Shard\n\nSnorlax (M) @ Sitrus Berry\nAbility: Thick Fat\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Crunch\n- Earthquake\n- Protect\n- Ice Beam\n\nGolisopod (M) @ Life Orb\nAbility: Emergency Exit\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Close Combat\n- Protect\n- Liquidation\n- Aqua Jet\n\nHippowdon (F) @ Focus Sash\nAbility: Sand Stream\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Stone Edge\n- Protect\n- Earthquake\n- Rock Slide\n\nSlowbro (M) @ Light Clay\nAbility: Oblivious\nLevel: 50\nEVs: 32 HP / 32 Def / 2 SpD\nBold Nature\n- Psychic\n- Protect\n- Scald\n- Calm Mind",
+  "Dragonite (M) @ Choice Scarf\nAbility: Multiscale\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Spe\nAdamant Nature\n- Extreme Speed\n- Protect\n- Dragon Claw\n- Dragon Pulse\n\nAzumarill (F) @ Leftovers\nAbility: Huge Power\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 Spe\nAdamant Nature\n- Aqua Jet\n- Waterfall\n- Protect\n- Ice Beam\n\nSylveon (F) @ Light Clay\nAbility: Pixilate\nLevel: 50\nEVs: 32 HP / 2 SpD / 32 Spe\nTimid Nature\n- Hyper Voice\n- Protect\n- Dazzling Gleam\n- Moonblast\n\nGlalie (M) @ Expert Belt\nAbility: Inner Focus\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Icicle Crash\n- Protect\n- Earthquake\n- Ice Shard\n\nHippowdon (F) @ Focus Sash\nAbility: Sand Stream\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Stone Edge\n- Protect\n- Earthquake\n- Rock Slide\n\nSwampert (M) @ Mystic Water\nAbility: Torrent\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Muddy Water\n- Protect\n- Waterfall\n- Earthquake"
+ ],
+ "plan": {
+  "p1": [
+   "move 1, move 1 1"
+  ],
+  "p2": [
+   "move 3 1, move 3"
+  ],
+  "max_steps": 1
+ }
+}
