@@ -1,6 +1,6 @@
 /*
  * duoforge.data.static (white-box): the static read API of decision 0020: duoforge_data_forme_static, _move_static,
- * _item_static, _ability_static, _nature_static and _type_effect.
+ * _item_static, _ability_static, _nature_static and _type_effect, and duoforge_data_request_target_class (step G84).
  *
  *  - Every row of every table, under every combat kind, equals the generated table's row field by field (the oracle is
  *    written here from the table structs, never from the functions under test), for the rows below the kind's count;
@@ -404,6 +404,100 @@ static void contract(df_test *t, const duoforge_context *ctx, const duoforge_con
                     memcmp(&nat, &nat_ref, sizeof nat) == 0 && a == 0xA5A5A5A5u && b == 0xA5A5A5A5u);
 }
 
+/* ------------------------------------------------- the request target class */
+
+static uint32_t request_class(df_test *t, const duoforge_context *ctx, uint32_t move, uint32_t type0, uint32_t type1)
+{
+    const uint32_t types[2] = {type0, type1};
+    uint32_t cls = 0xA5A5A5A5u;
+    DF_CHECK(t, duoforge_data_request_target_class(ctx, move, types, &cls) == DUOFORGE_OK);
+    return cls;
+}
+
+static bool has_ghost(const duoforge_forme_static *f)
+{
+    return f->types[0] == DUOFORGE_TYPE_GHOST || f->types[1] == DUOFORGE_TYPE_GHOST;
+}
+
+/* A Curse targets its user unless the user has the Ghost type (Showdown's nonGhostTarget); every other move keeps the class
+ * of its row. The expectation is written here from the move's own row, never from the function under test. */
+static void request_target_class(df_test *t, const duoforge_context *ctx, const duoforge_context *synthetic, uint32_t move_count)
+{
+    const uint32_t GH = DUOFORGE_TYPE_GHOST;
+    const uint32_t NO = DUOFORGE_DATA_NONE;
+    const uint32_t curse = id_of(t, ctx, DUOFORGE_DATA_TABLE_MOVE, "curse");
+    DF_CHECK_EQ_U64(t, curse, DFI_MOVE_CURSE);
+    duoforge_move_static row;
+    DF_CHECK(t, duoforge_data_move_static(ctx, curse, &row) == DUOFORGE_OK);
+    DF_CHECK_EQ_U64(t, row.target_class, DUOFORGE_TARGET_CLASS_NORMAL); /* the row says normal: what a Ghost keeps */
+
+    /* the user's types: a Ghost keeps the row's class, any other user targets itself */
+    DF_CHECK_EQ_U64(t, request_class(t, ctx, curse, GH, DUOFORGE_TYPE_POISON), DUOFORGE_TARGET_CLASS_NORMAL);
+    DF_CHECK_EQ_U64(t, request_class(t, ctx, curse, DUOFORGE_TYPE_POISON, GH), DUOFORGE_TARGET_CLASS_NORMAL);
+    DF_CHECK_EQ_U64(t, request_class(t, ctx, curse, GH, NO), DUOFORGE_TARGET_CLASS_NORMAL);
+    DF_CHECK_EQ_U64(t, request_class(t, ctx, curse, GH, DUOFORGE_TYPE_NONE), DUOFORGE_TARGET_CLASS_NORMAL);
+    DF_CHECK_EQ_U64(t, request_class(t, ctx, curse, DUOFORGE_TYPE_NORMAL, NO), DUOFORGE_TARGET_CLASS_SELF);
+    DF_CHECK_EQ_U64(t, request_class(t, ctx, curse, DUOFORGE_TYPE_FIRE, DUOFORGE_TYPE_FLYING), DUOFORGE_TARGET_CLASS_SELF);
+    /* no type at all (nothing the engine builds, but the answer is the non-Ghost one) */
+    DF_CHECK_EQ_U64(t, request_class(t, ctx, curse, NO, NO), DUOFORGE_TARGET_CLASS_SELF);
+    /* Soak: the user is the one type, so a soaked Ghost is a Water user and a Curse targets itself */
+    DF_CHECK_EQ_U64(t, request_class(t, ctx, curse, DUOFORGE_TYPE_WATER, NO), DUOFORGE_TARGET_CLASS_SELF);
+    /* Double Shock: the first slot is ??? (DUOFORGE_TYPE_NONE), the second is kept */
+    DF_CHECK_EQ_U64(t, request_class(t, ctx, curse, DUOFORGE_TYPE_NONE, DUOFORGE_TYPE_FIGHTING), DUOFORGE_TARGET_CLASS_SELF);
+    DF_CHECK_EQ_U64(t, request_class(t, ctx, curse, DUOFORGE_TYPE_NONE, GH), DUOFORGE_TARGET_CLASS_NORMAL);
+
+    /* Mega Evolution: the types of every forme, a Mega forme and its base alike, as the forme row has them */
+    uint32_t formes = 0u;
+    DF_CHECK(t, duoforge_data_count(ctx, DUOFORGE_DATA_TABLE_SPECIES, &formes) == DUOFORGE_OK);
+    uint32_t megas = 0u;
+    uint32_t ghost_megas = 0u;
+    for (uint32_t f = 0u; f < formes; ++f) {
+        duoforge_forme_static fs;
+        if (!DF_CHECK(t, duoforge_data_forme_static(ctx, f, &fs) == DUOFORGE_OK)) {
+            continue;
+        }
+        const uint32_t want = has_ghost(&fs) ? DUOFORGE_TARGET_CLASS_NORMAL : DUOFORGE_TARGET_CLASS_SELF;
+        DF_CHECK_EQ_U64(t, request_class(t, ctx, curse, fs.types[0], fs.types[1]), want);
+        if (fs.is_mega != 0u) {
+            ++megas;
+            ghost_megas += has_ghost(&fs) ? 1u : 0u;
+        }
+    }
+    DF_CHECK(t, megas > 0u && ghost_megas > 0u && ghost_megas < megas); /* both answers occur among the Mega formes */
+
+    /* every other move, and every move for every user type: the class of its row (a Curse of a Ghost included) */
+    for (uint32_t id = 0u; id < move_count; ++id) {
+        duoforge_move_static mv;
+        if (!DF_CHECK(t, duoforge_data_move_static(ctx, id, &mv) == DUOFORGE_OK)) {
+            continue;
+        }
+        const uint32_t users[4][2] = {{GH, NO}, {DUOFORGE_TYPE_NORMAL, NO}, {DUOFORGE_TYPE_WATER, GH}, {NO, NO}};
+        for (uint32_t u = 0u; u < 4u; ++u) {
+            const bool ghost = users[u][0] == GH || users[u][1] == GH;
+            const uint32_t want = (id == DFI_MOVE_CURSE && !ghost) ? DUOFORGE_TARGET_CLASS_SELF : mv.target_class;
+            DF_CHECK_EQ_U64(t, request_class(t, ctx, id, users[u][0], users[u][1]), want);
+        }
+    }
+
+    /* the contract: NULL, then the kind, then the move, then the types; nothing is written on an error */
+    const uint32_t ok_types[2] = {GH, NO};
+    const uint32_t bad_type[2] = {DFI_TYPE_COUNT, NO};
+    const uint32_t bad_second[2] = {GH, 0xFFFFFFFEu};
+    uint32_t out = 0xA5A5A5A5u;
+    DF_CHECK(t, duoforge_data_request_target_class(NULL, curse, ok_types, &out) == DUOFORGE_E_NULL_ARGUMENT);
+    DF_CHECK(t, duoforge_data_request_target_class(ctx, curse, NULL, &out) == DUOFORGE_E_NULL_ARGUMENT);
+    DF_CHECK(t, duoforge_data_request_target_class(ctx, curse, ok_types, NULL) == DUOFORGE_E_NULL_ARGUMENT);
+    DF_CHECK(t, duoforge_data_request_target_class(ctx, move_count, ok_types, &out) == DUOFORGE_E_INVALID_ARGUMENT);
+    DF_CHECK(t, duoforge_data_request_target_class(ctx, 0xFFFFFFFFu, ok_types, &out) == DUOFORGE_E_INVALID_ARGUMENT);
+    DF_CHECK(t, duoforge_data_request_target_class(ctx, curse, bad_type, &out) == DUOFORGE_E_INVALID_ARGUMENT);
+    DF_CHECK(t, duoforge_data_request_target_class(ctx, curse, bad_second, &out) == DUOFORGE_E_INVALID_ARGUMENT);
+    DF_CHECK(t, duoforge_data_request_target_class(ctx, move_count, bad_type, &out) == DUOFORGE_E_INVALID_ARGUMENT); /* the move first */
+    DF_CHECK(t, duoforge_data_request_target_class(synthetic, curse, ok_types, &out) == DUOFORGE_E_UNSUPPORTED);
+    DF_CHECK(t, duoforge_data_request_target_class(synthetic, 0xFFFFFFFFu, bad_type, &out) == DUOFORGE_E_UNSUPPORTED);
+    DF_CHECK(t, duoforge_data_request_target_class(NULL, curse, NULL, NULL) == DUOFORGE_E_NULL_ARGUMENT);
+    DF_CHECK_EQ_U64(t, out, 0xA5A5A5A5u);
+}
+
 static void layout(df_test *t)
 {
     DF_CHECK_EQ_U64(t, sizeof(duoforge_forme_static), 44u);
@@ -489,6 +583,7 @@ int main(void)
             const duoforge_context_config cfg = {DUOFORGE_DATA_KIND_SYNTHETIC, 6u, 4u, 3u, 3u, classes};
             if (DF_CHECK(&t, duoforge_context_create(&cfg, &synthetic) == DUOFORGE_OK)) {
                 contract(&t, ctx, synthetic, counts);
+                request_target_class(&t, ctx, synthetic, counts[DUOFORGE_DATA_TABLE_MOVE]);
                 duoforge_context_destroy(synthetic);
             }
         } else {

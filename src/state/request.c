@@ -232,7 +232,10 @@ static duoforge_status dfi_slot_candidates(const duoforge_context *ctx, const st
                 continue;
             }
             uint8_t targets[3] = {0, 0, 0};
-            const uint32_t nt = dfi_targets(ctx->move_target_classes[mv->move_id], s, slot, targets);
+            /* The class the move has for this user (step G84: a non-Ghost Curse targets the user, so no target is offered) */
+            const uint32_t user_class = dfi_user_target_class(b, s * DUOFORGE_ACTIVE_PER_SIDE + slot,
+                                                              dfi_pool_moves[mv->move_id].special, ctx->move_target_classes[mv->move_id]);
+            const uint32_t nt = dfi_targets(user_class, s, slot, targets);
             for (uint32_t ti = 0u; ti < nt; ++ti) {
                 for (uint32_t mg = 0u; mg < megas; ++mg) {
                     if (!dfi_list_push(out, DUOFORGE_SLOT_MOVE, k, targets[ti], mg, 0u)) {

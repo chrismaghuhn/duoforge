@@ -40,6 +40,7 @@ static const char *const handled[] = {
     "glare", "featherdance", "babydolleyes", "metalsound",
     "tickle", /* step G86: two primary stat drops (Attack and Defense -1), bounced on Charm's path (decision 0015 5cn) */
     "scaryface", "eerieimpulse", "screech", "nobleroar", "spicyextract", /* step C4 (5ct): the target's boosts, the PRIMARY_TARGET path */
+    "leechseed", /* step G84 (decision 0047): the seed bounces on the Yawn path (dfi_bounce_kind_ok) */
 };
 
 /* The marked reflectable moves whose bounced run is not modelled (marked by lane A's G54 batch): dfi_bounce_kind_ok refuses
@@ -102,7 +103,7 @@ static void test_marked_reflectable_moves_are_the_handled_list(df_test *t)
                                      in_list(name, refused, sizeof refused / sizeof refused[0])));
         marked += 1u;
     }
-    DF_CHECK_EQ_U64(t, marked, 34u); /* 23 on main, Thunder Wave of step G68, and Glare, Feather Dance, Baby-Doll Eyes, Metal Sound (step C1) */
+    DF_CHECK_EQ_U64(t, marked, 35u); /* 23 on main, Thunder Wave of step G68, and Glare, Feather Dance, Baby-Doll Eyes, Metal Sound (step C1) */
 }
 
 /* Every marked reflectable move is a single-target or a foeSide move: a spread one would need the TryHit of every target
@@ -517,6 +518,32 @@ static void test_unmodelled_bounces_are_refused(df_test *t)
     }
 }
 
+/* G84 (decision 0047): Curse by a Ghost user is refused explicitly (E_UNSUPPORTED). The pin's client gives no target choice
+ * for it, so its effect (the halving, the target's volatile and the residual) is not modelled. Banette (Ghost, Cursed Body;
+ * learns Curse and Protect, data/mods/champions/learnsets.ts banette) leads side 0 in place of Tauros and uses Curse at the
+ * foe in position 0 of the battle of g84_c3_nonghost_curse (Gengar is already in that team: Species Clause). */
+static void test_ghost_curse_is_refused(df_test *t)
+{
+    const df_conf_battle *cb = must_find(t, "g84_c3_nonghost_curse");
+    if (cb == NULL) {
+        return;
+    }
+    duoforge_context *ctx = df_make_context(&df_config_pool);
+    duoforge_battle_setup setup;
+    build_setup(cb, &setup);
+    const uint32_t banette[2] = {DFI_MOVE_CURSE, DFI_MOVE_PROTECT};
+    set_member(&setup, 0u, 0u, DFI_FORME_BANETTE, 1u, DFI_ABILITY_CURSEDBODY + 1u, 2u, banette);
+    duoforge_battle *b = start(t, ctx, cb, &setup);
+    if (b != NULL) {
+        /* Banette's Curse at the foe (position 0 of side 1); the others protect (Venusaur and Pawmot: move 2 is Protect). */
+        duoforge_slot_command cmd[2][2] = {{slot(0, 2), slot(1, DUOFORGE_TARGET_NONE)}, {slot(0, DUOFORGE_TARGET_NONE), slot(1, DUOFORGE_TARGET_NONE)}};
+        uint32_t bounces = 0u;
+        DF_CHECK_EQ_U64(t, turn(ctx, b, cmd, &bounces), DUOFORGE_E_UNSUPPORTED);
+        duoforge_battle_destroy(b);
+    }
+    duoforge_context_destroy(ctx);
+}
+
 int main(void)
 {
     df_test t;
@@ -534,5 +561,6 @@ int main(void)
     test_a_protecting_holder_is_not_bounced(&t);
     test_a_bounce_is_no_move_action_of_the_bouncer(&t);
     test_unmodelled_bounces_are_refused(&t);
+    test_ghost_curse_is_refused(&t);
     return df_test_end(&t);
 }

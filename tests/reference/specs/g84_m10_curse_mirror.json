@@ -1,0 +1,25 @@
+{
+  "name": "g84_m10_curse_mirror",
+  "purpose": "Non-Ghost Curse twice in a Sitrus mirror (Tauros on both sides; Venusaur on Protect): each Curse hit runs the hit-loop Updates, and the two Sitrus Venusaurs at equal speed draw each:Update SPEED_TIE (champions/moves.ts:165-196, scripts.ts:537,574).",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,8400000000000000000000000000000000000000000000000000000000000008",
+  "teams": [
+    "Tauros (M) @ Charcoal\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Curse\n- Protect\n- Close Combat\n- Earthquake\n\nVenusaur (M) @ Sitrus Berry\nAbility: Overgrow\nLevel: 50\nEVs: 32 HP / 2 Def / 32 SpD\nCalm Nature\n- Leech Seed\n- Protect\n- Sludge Bomb\n- Energy Ball\n\nGholdengo @ Life Orb\nAbility: Good as Gold\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nTimid Nature\n- Protect\n- Shadow Ball\n- Make It Rain\n\nMeganium (F) @ Leftovers\nAbility: Overgrow\nLevel: 50\nEVs: 32 HP / 2 Def / 32 SpD\nCalm Nature\n- Leech Seed\n- Protect\n- Energy Ball\n\nChimecho (M) @ Occa Berry\nAbility: Levitate\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nModest Nature\n- Psychic\n- Protect\n- Helping Hand\n- Expanding Force\n\nKingambit (M) @ Black Glasses\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Sucker Punch\n- Iron Head\n- Protect\n- Swords Dance\n",
+    "Tauros (M) @ Charcoal\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Curse\n- Protect\n- Close Combat\n- Earthquake\n\nVenusaur (M) @ Sitrus Berry\nAbility: Overgrow\nLevel: 50\nEVs: 32 HP / 2 Def / 32 SpD\nCalm Nature\n- Leech Seed\n- Protect\n- Sludge Bomb\n- Energy Ball\n\nGholdengo @ Life Orb\nAbility: Good as Gold\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nTimid Nature\n- Protect\n- Shadow Ball\n- Make It Rain\n\nMeganium (F) @ Leftovers\nAbility: Overgrow\nLevel: 50\nEVs: 32 HP / 2 Def / 32 SpD\nCalm Nature\n- Leech Seed\n- Protect\n- Energy Ball\n\nChimecho (M) @ Occa Berry\nAbility: Levitate\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nModest Nature\n- Psychic\n- Protect\n- Helping Hand\n- Expanding Force\n\nKingambit (M) @ Black Glasses\nAbility: Defiant\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Sucker Punch\n- Iron Head\n- Protect\n- Swords Dance\n"
+  ],
+  "choices": [
+    {
+      "p1": "team 1234",
+      "p2": "team 1234"
+    },
+    {
+      "p1": "move 1, move 2",
+      "p2": "move 1, move 2"
+    },
+    {
+      "p1": "move 1, move 2",
+      "p2": "move 1, move 2"
+    }
+  ]
+}

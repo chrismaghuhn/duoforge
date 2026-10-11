@@ -29,6 +29,7 @@
 #include <string.h>
 
 #include "combat/residual_order.h"
+#include "rng/draw.h"
 #include "support/check.h"
 
 #define MAX_LIST 64u
@@ -474,6 +475,25 @@ static bool parse_shard_arg(const char *text, uint32_t limit, uint32_t *out)
     return true;
 }
 
+/* Every residual kind 1..19 and every draw site 1..DFI_SITE_COUNT-1 has its name (the switches of residual_order.h and draw.h are the
+ * build-time guards against duplicate values; this test makes the names used, and a new kind or site without its case is caught). */
+static void test_kinds_and_sites_have_names(df_test *t)
+{
+    /* The defined kinds 1..18 and LEECH (19) have a name. The unused probes are outside every lane range (lane B owns residual
+     * kinds 20-24 and sites 24-31): 0 and 255. The duplicate protection is the switch, not these probes. */
+    for (uint32_t k = 1u; k <= DFI_RES_LEECH; ++k) {
+        DF_CHECK(t, dfi_res_kind_name(k) != NULL);
+    }
+    DF_CHECK(t, dfi_res_kind_name(0u) == NULL);
+    DF_CHECK(t, dfi_res_kind_name(255u) == NULL);
+    /* The defined sites 1..23 have a name; 0 and 255 have none. */
+    for (uint32_t s = 1u; s <= DFI_SITE_MOODY; ++s) {
+        DF_CHECK(t, dfi_site_name(s) != NULL);
+    }
+    DF_CHECK(t, dfi_site_name(0u) == NULL);
+    DF_CHECK(t, dfi_site_name(255u) == NULL);
+}
+
 int main(int argc, char **argv)
 {
     uint32_t shard = 0u;
@@ -486,6 +506,7 @@ int main(int argc, char **argv)
     df_test t;
     df_test_begin(&t, "duoforge.combat.residual_order");
     test_examples(&t);
+    test_kinds_and_sites_have_names(&t);
     test_random_lists(&t, (uint32_t)((uint64_t)TRIALS * shard / count),
                       (uint32_t)((uint64_t)TRIALS * (shard + 1u) / count));
     return df_test_end(&t);

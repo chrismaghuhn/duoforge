@@ -984,7 +984,8 @@ EV['CLEAR_ALL_BOOSTS'] = 47
 EV['ITEM_SHOWN'] = 48
 CAUSE = {'NONE': 0, 'MOVE': 1, 'ITEM': 2, 'ABILITY': 3, 'RECOIL': 4, 'DRAIN': 5, 'BURN': 6, 'CONFUSION': 7,
          'TERRAIN': 8, 'PARALYSIS': 9, 'SLEEP': 10, 'FREEZE': 11, 'FLINCH': 12, 'NO_PP': 13, 'POISON': 14,
-         'HEAL_BLOCK': 15, 'WEATHER': 16, 'ITEM_TAKEN': 17, 'RECHARGE': 18, 'DISABLE': 19, 'TAUNT': 20, 'IMPRISON': 21}
+         'HEAL_BLOCK': 15, 'WEATHER': 16, 'ITEM_TAKEN': 17, 'RECHARGE': 18, 'DISABLE': 19, 'TAUNT': 20, 'IMPRISON': 21,
+         'LEECH_SEED': 22}  # LEECH_SEED: step G84, decision 0047 (the lane A block)
 VOLATILE_HEAL_BLOCK = 1  # DUOFORGE_VOLATILE_HEAL_BLOCK: the detail of VOLATILE_START and VOLATILE_END
 VOLATILE_ENCORE = 2      # DUOFORGE_VOLATILE_ENCORE (step G9)
 VOLATILE_DISABLE = 4     # DUOFORGE_VOLATILE_DISABLE (step G27)
@@ -993,6 +994,7 @@ VOLATILE_PERISH = 5  # DUOFORGE_VOLATILE_PERISH (step G26)
 VOLATILE_IMPRISON = 8    # DUOFORGE_VOLATILE_IMPRISON (step G38): START only
 VOLATILE_TAUNT = 6       # DUOFORGE_VOLATILE_TAUNT (step G31)
 VOLATILE_YAWN = 7        # DUOFORGE_VOLATILE_YAWN (step G31)
+VOLATILE_LEECH_SEED = 13  # DUOFORGE_VOLATILE_LEECH_SEED (step G84, decision 0047): START only, no END line
 VOLATILE_SUBSTITUTE = 9  # DUOFORGE_VOLATILE_SUBSTITUTE (decision 0032): START and END, presence only
 VOLATILE_DRAGONCHEER = 10  # DUOFORGE_VOLATILE_DRAGONCHEER (step G72b, decision 0015 5ce): START only, presence only
 FAIL_SUBSTITUTE_EXISTS = 1  # DUOFORGE_FAIL_SUBSTITUTE_EXISTS: cause MOVE + id2 Substitute only
@@ -1080,6 +1082,9 @@ IGNORED_VOLATILES = {
     # Pool step G72b (Dragon Cheer, decision 0015 5ce): the start line; its crit stage shows in the crit draws of the holder's
     # moves (a -crit line, or the draw's bound) and in the view bit.
     'dragoncheer': "the start line and the crit draws of the holder's moves",
+    # Step G84 (Leech Seed, decision 0047): the volatile is the tail's leech_seed_source (the view bit LEECH_SEED); its presence
+    # shows in the start line, the drain's damage line `[from] Leech Seed` and the silent heal (the HEAL event, cause LEECH_SEED).
+    'leechseed': 'the start line, the drain damage line and the silent heal of the target',
 }
 HP_EXACT, HP_PERCENT = 1, 2
 HP_FLAGS_EV = {'': 0, 'r': 1, 'y': 2, 'g': 3}
@@ -1099,6 +1104,18 @@ def ev_pos(text):
 def ev_tuple(kind, position=NOPOS, other=NOPOS, cause=0, ident=0, ident2=0, hp=0, hp_max=0, hp_kind=0,
              hp_flag=0, status=0, detail=0, amount=0, flags=0):
     return (kind, position, other, cause, ident, ident2, hp, hp_max, hp_kind, hp_flag, status, detail, amount, flags)
+
+
+def leech_heal_source(log, i):
+    """Step G84 (decision 0047): the silent heal at log[i] is the Leech Seed heal when the nearest preceding Leech Seed damage line
+    of this step (within three lines) names, as [of], the Pokemon that the heal goes to: the source's slot. Returns that position
+    or None. A heal with no such damage before it is not a Leech Seed heal (it stays dropped, as every other silent line)."""
+    for j in range(i - 1, max(-1, i - 4), -1):
+        p = log[j].split('|')
+        if len(p) > 2 and p[1] == '-damage' and '[from] Leech Seed' in log[j]:
+            of = [x for x in p if x.startswith('[of] ')]
+            return ev_pos(of[0][len('[of] '):]) if of else None
+    return None
 
 
 def ev_cause(attrs, tables):
@@ -1123,6 +1140,9 @@ def ev_cause(attrs, tables):
                 cause = CAUSE['POISON']  # the residual damage of tox is poison's cause too (the status in the HP field tells them apart)
             elif what == 'confusion':
                 cause = CAUSE['CONFUSION']
+            elif what == 'Leech Seed':
+                # Step G84 (decision 0047): the residual drain, `-damage|holder|hp|[from] Leech Seed|[of] source`; other = the source
+                cause = CAUSE['LEECH_SEED']
             elif what == 'Hail':
                 raise ConversionError('from-attribute', 'trace_to_c: [from] Hail: no Hail in the format', detail=what)
             elif what in WEATHER_CAUSE:
@@ -1477,8 +1497,10 @@ def step_events(log, viewer, roster_of, maxhp, tables, rb_pending=None, ill=None
         # it silent, step G29): the engine's ITEM_END for it is how the other player's old item_used learns that the item left.
         # Regenerator's heal (step G39, the Champions mod) is the one [silent] line that shows: no client prints a message, but the line
         # carries the holder's new HP, which the opponent's display of the member follows.
+        leech_src = leech_heal_source(log, i) if kind == '-heal' and '[silent]' in attrs else None
         if '[silent]' in attrs and not ((kind == '-enditem' and any(a.startswith('[from] move: ') for a in attrs)) or
-                                        (kind == '-heal' and '[from] ability: Regenerator' in attrs)):
+                                        (kind == '-heal' and '[from] ability: Regenerator' in attrs) or
+                                        (leech_src is not None and ev_pos(parts[2]) == leech_src)):
             continue
         args = [x for x in parts[2:] if not x.startswith('[')]
         if kind == '-activate' and len(args) == 4 and args[1] == 'Skill Swap':
@@ -1645,6 +1667,13 @@ def step_events(log, viewer, roster_of, maxhp, tables, rb_pending=None, ill=None
             e = ev_tuple(EV['REVIVE'], user, NOPOS, CAUSE['MOVE'], roster_of[side][name],
                          tables['MOVE'][key('Revival Blessing')], *hp)
             revived = (side, name)
+        elif kind == '-heal' and '[silent]' in attrs and leech_src is not None:
+            # Step G84 (decision 0047): the source's silent heal after a Leech Seed drain (data/moves.ts:10225, this.heal with no
+            # effect line): the HEAL with cause LEECH_SEED (22); the line shows the new HP only (no [from], no status).
+            pos = ev_pos(args[0])
+            side = pos // 2
+            hp = ev_hp(args[1], side, viewer, maxhp[side][args[0].split(': ', 1)[1]])
+            e = ev_tuple(EV['HEAL'], pos, NOPOS, CAUSE['LEECH_SEED'], 0, 0, *hp)
         elif kind in ('-damage', '-heal'):
             pos = ev_pos(args[0])
             side = pos // 2
@@ -1927,6 +1956,9 @@ def step_events(log, viewer, roster_of, maxhp, tables, rb_pending=None, ill=None
                 # data/moves.ts:4056-4086 dragoncheer: `-start|X|move: Dragon Cheer` from onStart (no source, no [silent] for the
                 # move itself); no END line, and a switch-out clears it with no line (step G72b)
                 e = ev_tuple(EV['VOLATILE_START'], ev_pos(args[0]), detail=VOLATILE_DRAGONCHEER)
+            elif what == 'move: Leech Seed' and kind == '-start':
+                # Step G84 (decision 0047; data/moves.ts:10214): `-start|X|move: Leech Seed` (no [of]): VOLATILE_START, no END line
+                e = ev_tuple(EV['VOLATILE_START'], ev_pos(args[0]), NOPOS, detail=VOLATILE_LEECH_SEED)
             elif what == 'move: Yawn' and kind == '-start':
                 # data/moves.ts:21131-21162 yawn: `-start|X|move: Yawn|[of] source` from onStart; the end line is [silent]
                 # (dropped) and the sleep it brings is the ordinary STATUS line (step G31)

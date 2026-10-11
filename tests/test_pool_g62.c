@@ -31,7 +31,7 @@ static void check_mark(df_test *t)
     DF_CHECK_EQ_U64(t, DFI_SPECIAL_HAZE, DFI_SPECIAL_SHEER_COLD + 1u); /* after the four of G64 (batch 2 merge) */
     DF_CHECK_EQ_U64(t, DFI_SPECIAL_AFTER_YOU, DFI_SPECIAL_HAZE + 1u);
     DF_CHECK_EQ_U64(t, DFI_SPECIAL_QUASH, DFI_SPECIAL_AFTER_YOU + 1u);
-    DF_CHECK_EQ_U64(t, DFI_SPECIAL_UNMODELED, DFI_SPECIAL_WILL_CRIT + 1u /* step C4: WILL_CRIT follows Dragon Darts */ /* G72b: after Alluring Voice and Dragon Cheer */); /* step G60 (decision 0032) comes after Quash */
+    DF_CHECK_EQ_U64(t, DFI_SPECIAL_UNMODELED, DFI_SPECIAL_CURSE + 1u /* G72b: after Alluring Voice and Dragon Cheer */); /* step G60 (decision 0032) comes after Quash */
 }
 
 /* data/moves.ts:8156-8172: accuracy true (0: never misses), Status, the field target, no protect flag, priority 0, Ice. */
