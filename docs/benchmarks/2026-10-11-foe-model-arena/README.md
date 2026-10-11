@@ -71,7 +71,7 @@ Per arm, against the bot BC mc-M (2048 games each):
 
 ## Provenance
 
-- **Code:** m12/foe-net at f1fc1f84 (on main 1880d62f). The tool, the tests and these gates were committed before the run.
+- **Code:** m12/foe-net at f1fc1f84 (on main 1880d62f). The tool, the tests and these gates were committed there at 18:55, before the run. The branch was later rebased onto main as dd12bdb0, with the same content and author date.
   - The library was the Release build of that main.
   - `foe_arena.json` records `"commit": null`, because WSL git cannot resolve the Windows worktree's gitdir. The commit is recorded here by hand.
 - **Run:** 2026-10-11, 19:04 to 19:44, under `tools/ci/machine_lock.sh --exclusive`.
