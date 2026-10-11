@@ -47,7 +47,65 @@
 #define DFI_SITE_LOCK_TURNS 21u    /* the lock of Outrage, Thrash and Petal Dance (POOL data, step G56): lockedmove's onStart,
                                     * random(2, 4) = 2 or 3 turns (data/conditions.ts:265) */
 #define DFI_SITE_MULTIHIT_COUNT 22u /* Scale Shot, Icicle Spear (POOL data, step G54): sample of 20 hit counts, random(20) */
-#define DFI_SITE_COUNT 23u
+#define DFI_SITE_MOODY 23u         /* Moody (POOL data, step G73): sample of the stats that can rise (random(n), n = the list length, one
+                                    * draw), then of the stats that can fall (random(n), no draw for an empty list); data/abilities.ts:2701-2734 */
+#define DFI_SITE_COUNT 24u
+
+/* The name of a draw site, for the tests and the debug paths. A new site needs its case here; the switch is the build-time guard: a
+ * duplicate site value is a duplicate case value, a compile error on every compiler (see residual_order.h for the residual kinds). */
+static inline const char *dfi_site_name(uint32_t site)
+{
+    switch (site) {
+    case DFI_SITE_SPEED_TIE:
+        return "speed-tie";
+    case DFI_SITE_ACCURACY:
+        return "accuracy";
+    case DFI_SITE_CRIT:
+        return "crit";
+    case DFI_SITE_DAMAGE_ROLL:
+        return "damage-roll";
+    case DFI_SITE_SECONDARY:
+        return "secondary";
+    case DFI_SITE_STALL:
+        return "stall";
+    case DFI_SITE_SLEEP_TURNS:
+        return "sleep-turns";
+    case DFI_SITE_FREEZE_THAW:
+        return "freeze-thaw";
+    case DFI_SITE_FULL_PARALYSIS:
+        return "full-paralysis";
+    case DFI_SITE_CONFUSION_TURNS:
+        return "confusion-turns";
+    case DFI_SITE_CONFUSION_HIT:
+        return "confusion-hit";
+    case DFI_SITE_RANDOM_TARGET:
+        return "random-target";
+    case DFI_SITE_STATUS_PICK:
+        return "status-pick";
+    case DFI_SITE_INSERT_TIE:
+        return "insert-tie";
+    case DFI_SITE_TRACE:
+        return "trace";
+    case DFI_SITE_POISON_TOUCH:
+        return "poison-touch";
+    case DFI_SITE_CURSED_BODY:
+        return "cursed-body";
+    case DFI_SITE_FLAME_BODY:
+        return "flame-body";
+    case DFI_SITE_STATIC:
+        return "static";
+    case DFI_SITE_DRAG:
+        return "drag";
+    case DFI_SITE_LOCK_TURNS:
+        return "lock-turns";
+    case DFI_SITE_MULTIHIT_COUNT:
+        return "multihit-count";
+    case DFI_SITE_MOODY:
+        return "moody";
+    default:
+        return NULL;
+    }
+}
 
 typedef struct dfi_tape_entry {
     uint32_t site;

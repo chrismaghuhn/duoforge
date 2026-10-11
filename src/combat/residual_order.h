@@ -35,6 +35,8 @@
 #include <stddef.h>
 #include <stdint.h>
 
+/* The residual kinds (one number per kind). A new kind needs its case in dfi_res_kind_name; the switch rejects duplicate values
+ * on build (a duplicate case value is an error on every compiler), so two kinds with one number cannot build. */
 #define DFI_RES_WEATHER 1u
 #define DFI_RES_TERRAIN_END 2u
 #define DFI_RES_BURN 3u
@@ -45,7 +47,7 @@
 #define DFI_RES_POISON 8u
 /* Leech Seed's residual drain (decision 0047, data/moves.ts:10216-10226): onResidualOrder 8, a callback (the drain and the heal to
  * the source slot). It runs before poison (9) and burn (10); a tie of two holders at order 8 draws like any tie of two callbacks. */
-#define DFI_RES_LEECH 18u
+#define DFI_RES_LEECH 19u
 #define DFI_RES_WHITE_HERB 9u
 #define DFI_RES_ENCORE 10u /* Encore: order 16, a callback with a duration (step G9) */
 #define DFI_RES_SPEED_BOOST 11u /* Speed Boost's onResidual: order 28, sub-order 2 (step G32) */
@@ -60,7 +62,56 @@
 /* lockedmove (Outrage, Thrash, Petal Dance; data/conditions.ts:253-285; step G56): no order, sub-order 2 (a condition), a
  * duration and a callback: its countdown and its end (a callback that ends in a residual of an earlier turn's lock). */
 #define DFI_RES_LOCK 17u
+#define DFI_RES_MOODY 18u /* Moody's onResidual: order 28, sub-order 2 (step G73; the same key as Speed Boost), a callback that draws */
 #define DFI_RES_NO_ORDER 0xFFFFFFFFu
+
+/* The name of a residual kind, for the tests and the debug paths. The switch is the build-time guard: every kind has its case, and
+ * a duplicate value of two kinds is a duplicate case value, a compile error (every translation unit that includes this header). */
+static inline const char *dfi_res_kind_name(uint32_t kind)
+{
+    switch (kind) {
+    case DFI_RES_WEATHER:
+        return "weather";
+    case DFI_RES_TERRAIN_END:
+        return "terrain-end";
+    case DFI_RES_BURN:
+        return "burn";
+    case DFI_RES_DURATION:
+        return "duration";
+    case DFI_RES_GRASSY:
+        return "grassy";
+    case DFI_RES_FIELD_END:
+        return "field-end";
+    case DFI_RES_LEFTOVERS:
+        return "leftovers";
+    case DFI_RES_POISON:
+        return "poison";
+    case DFI_RES_LEECH:
+        return "leech";
+    case DFI_RES_WHITE_HERB:
+        return "white-herb";
+    case DFI_RES_ENCORE:
+        return "encore";
+    case DFI_RES_SPEED_BOOST:
+        return "speed-boost";
+    case DFI_RES_HEAL_BLOCK:
+        return "heal-block";
+    case DFI_RES_YAWN:
+        return "yawn";
+    case DFI_RES_DISABLE:
+        return "disable";
+    case DFI_RES_PERISH:
+        return "perish";
+    case DFI_RES_TAUNT:
+        return "taunt";
+    case DFI_RES_LOCK:
+        return "lockedmove";
+    case DFI_RES_MOODY:
+        return "moody";
+    default:
+        return NULL;
+    }
+}
 
 /* The exact test's bounds: the lists of the engine have at most 3 + 4 * 2 + 22 * 4 entries, a few draws and a few
  * orders (22 per position: the count of steps G27, G31, G32, G56, G42 and G84 together, DFI_RES_PER_POSITION in turn.c). */

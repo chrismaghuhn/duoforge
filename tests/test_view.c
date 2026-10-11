@@ -24,6 +24,7 @@
 #include "support/team_c.h"
 #include "state/battle_internal.h"
 #include "codec/state_codec.h"
+#include "state/knowledge.h"
 
 #define GAMES 80u
 #define MAX_STEPS 400u
@@ -772,11 +773,49 @@ static void test_counter_information_safety(df_test *t)
 }
 
 
+/* duoforge_hp_display: the engine's HP display (the knowledge fold's dfi_hp_display) for every exact HP of a range of maxima,
+ * the documented edge values, and the argument checks with nothing written on a refusal. */
+static void test_hp_display(df_test *t)
+{
+    for (uint32_t hp_max = 1u; hp_max <= 400u; ++hp_max) {
+        for (uint32_t hp = 0u; hp <= hp_max; ++hp) {
+            uint8_t want_pc = 0u;
+            uint8_t want_fl = 0u;
+            dfi_hp_display(hp, hp_max, &want_pc, &want_fl);
+            uint8_t pc = 0xAAu;
+            uint8_t fl = 0xAAu;
+            if (!DF_CHECK(t, duoforge_hp_display(hp, hp_max, &pc, &fl) == DUOFORGE_OK) ||
+                !DF_CHECK(t, pc == want_pc && fl == want_fl)) {
+                return;
+            }
+        }
+    }
+    uint8_t pc = 0u;
+    uint8_t fl = 0u;
+    DF_CHECK(t, duoforge_hp_display(1u, 181u, &pc, &fl) == DUOFORGE_OK && pc == 1u && fl == DUOFORGE_HP_FLAG_NONE);
+    DF_CHECK(t, duoforge_hp_display(0u, 181u, &pc, &fl) == DUOFORGE_OK && pc == 0u && fl == DUOFORGE_HP_FLAG_NONE);
+    DF_CHECK(t, duoforge_hp_display(181u, 181u, &pc, &fl) == DUOFORGE_OK && pc == 100u);
+    DF_CHECK(t, duoforge_hp_display(150u, 193u, &pc, &fl) == DUOFORGE_OK && pc == 77u); /* the record of m5_real_aa_1 */
+    DF_CHECK(t, duoforge_hp_display(20u, 100u, &pc, &fl) == DUOFORGE_OK && pc == 20u && fl == DUOFORGE_HP_FLAG_RED);
+    DF_CHECK(t, duoforge_hp_display(41u, 201u, &pc, &fl) == DUOFORGE_OK && pc == 20u && fl == DUOFORGE_HP_FLAG_YELLOW);
+    DF_CHECK(t, duoforge_hp_display(50u, 100u, &pc, &fl) == DUOFORGE_OK && pc == 50u && fl == DUOFORGE_HP_FLAG_YELLOW);
+    DF_CHECK(t, duoforge_hp_display(101u, 201u, &pc, &fl) == DUOFORGE_OK && pc == 50u && fl == DUOFORGE_HP_FLAG_GREEN);
+    pc = 0x55u;
+    fl = 0x55u;
+    DF_CHECK(t, duoforge_hp_display(1u, 2u, NULL, &fl) == DUOFORGE_E_NULL_ARGUMENT);
+    DF_CHECK(t, duoforge_hp_display(1u, 2u, &pc, NULL) == DUOFORGE_E_NULL_ARGUMENT);
+    DF_CHECK(t, duoforge_hp_display(0u, 0u, &pc, &fl) == DUOFORGE_E_INVALID_ARGUMENT);
+    DF_CHECK(t, duoforge_hp_display(3u, 2u, &pc, &fl) == DUOFORGE_E_INVALID_ARGUMENT);
+    DF_CHECK(t, duoforge_hp_display(1u, 0x10000u, &pc, &fl) == DUOFORGE_E_INVALID_ARGUMENT);
+    DF_CHECK(t, pc == 0x55u && fl == 0x55u);
+}
+
 int main(void)
 {
     df_test t;
     df_test_begin(&t, "duoforge.view");
     test_uniforms(&t);
+    test_hp_display(&t);
     test_arguments(&t);
     test_counter_information_safety(&t);
     test_batch(&t);
