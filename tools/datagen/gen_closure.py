@@ -2609,6 +2609,7 @@ G2_OWNED_FIELDS = {
     'SNOWSCAPE': {'weather': "weather: 'snowscape',"},
     'ELECTRIC_TERRAIN': {'terrain': "terrain: 'electricterrain',"},
     'MISTY_TERRAIN': {'terrain': "terrain: 'mistyterrain',"},
+    'PSYCHIC_TERRAIN': {'terrain': "terrain: 'psychicterrain',"},  # G96 (decision 0015 5cz): the terrain field of the setter
     'SHELL_SMASH': {'boosts': "boosts: { def: -1, spd: -1, atk: 2, spa: 2, spe: 2, },"},
     'FEINT': {'breaksProtect': "breaksProtect: true, // Breaking protection implemented in scripts.js"},
     'GLAIVE_RUSH': {'self': "self: { volatileStatus: 'glaiverush', },"},

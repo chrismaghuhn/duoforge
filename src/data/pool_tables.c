@@ -1408,8 +1408,8 @@ const dfi_move_data dfi_pool_moves[DFI_POOL_MOVE_COUNT] = {
     {9u, 0u, 120u, 85u, 10u, 12u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
     /* Psychic Fangs -- data/moves.ts:14060-14078 */
     {14u, 0u, 85u, 100u, 10u, 12u, 8u, 1u, 1u, 3u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 34u},
-    /* Psychic Terrain -- data/moves.ts:14095-14154  [unmodelled: field terrain] */
-    {14u, 2u, 0u, 0u, 10u, 12u, 8u, 9u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 105u},
+    /* Psychic Terrain -- data/moves.ts:14095-14154 */
+    {14u, 2u, 0u, 0u, 10u, 12u, 8u, 9u, 1u, 0u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 104u},
     /* Psycho Cut -- data/moves.ts:14173-14186 */
     {14u, 0u, 70u, 100u, 20u, 20u, 8u, 1u, 2u, 2u, {0u, 0u}, {0u, 0u}, 0u, 0u, 0u, 0u, {6u, 6u, 6u, 6u, 6u, 6u, 6u}, 0u, 0u, 0u, 0u},
     /* Psych Up -- data/moves.ts:14211-14243  [unmodelled: callback onHit] */
@@ -6911,7 +6911,6 @@ const char *const dfi_pool_move_unmodeled[DFI_POOL_MOVE_COUNT] = {
     [DFI_MOVE_POWERSPLIT] = "callback onHit",
     [DFI_MOVE_POWERSWAP] = "callback onHit",
     [DFI_MOVE_POWERTRICK] = "condition block; primary volatile powertrick",
-    [DFI_MOVE_PSYCHICTERRAIN] = "field terrain",
     [DFI_MOVE_PSYCHUP] = "callback onHit",
     [DFI_MOVE_RAGINGBULL] = "callback onModifyType; callback onTryHit",
     [DFI_MOVE_RAGINGFURY] = "self effect",
@@ -7106,10 +7105,10 @@ const char *const dfi_pool_ability_unmodeled[DFI_POOL_ABILITY_COUNT] = {
 };
 
 const uint8_t dfi_pool_table_hash[32] = {
-    0x10u, 0x15u, 0x8cu, 0x7bu, 0xdeu, 0x8au, 0xcdu, 0x88u,
-    0x81u, 0x5du, 0x5eu, 0x51u, 0x2du, 0x50u, 0xc2u, 0x1au,
-    0x9fu, 0xefu, 0xddu, 0x7eu, 0xb3u, 0xabu, 0x62u, 0x66u,
-    0x35u, 0x10u, 0x33u, 0xd5u, 0x94u, 0x4du, 0xcfu, 0xa5u,
+    0xc1u, 0x82u, 0xfau, 0x04u, 0x29u, 0xd7u, 0xc9u, 0x73u,
+    0xc2u, 0xb0u, 0x87u, 0xabu, 0x1du, 0x03u, 0xc7u, 0xaeu,
+    0x58u, 0x93u, 0x65u, 0x3du, 0xf6u, 0xf5u, 0x40u, 0x62u,
+    0x7au, 0x20u, 0x9cu, 0xe7u, 0xe7u, 0xc2u, 0x47u, 0xe3u,
 };
 
 static size_t dfi_pool_put_u16(uint8_t *out, size_t n, uint32_t v)
