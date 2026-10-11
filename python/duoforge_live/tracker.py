@@ -65,11 +65,11 @@ FIELD_TURNS = 5  # weather, terrain, Trick Room
 FIELD_TURNS_EXTENDED = 8  # DFI_FIELD_TURNS_MAX: a weather rock or Terrain Extender held by the setter
 TAILWIND_TURNS, SCREEN_TURNS, SCREEN_TURNS_CLAY = 4, 5, 8  # DFI_TAILWIND_TURNS_MAX, 5, DFI_SCREEN_TURNS_MAX
 STALL_DURATION, STALL_LEVEL_MAX = 2, 6  # DFI_STALL_DURATION (src/combat/turn.c), DFI_STALL_LEVEL_MAX
-FREEZE_TURNS = 3  # a freeze's turns at its start (src/combat/turn.c, the status counter of DFI_STATUS_FRZ)
-THROAT_CHOP_TURNS = 2  # throatchop's duration (DFI_TAIL_THROAT_CHOP_MAX), counted down in the residual
-ENCORE_TURNS = 3  # encore's duration; 4 when its target has no move left this turn (src/combat/turn.c dfi_encore)
-TOXIC_STAGE_MAX = 15  # the toxic counter stops at 15 (DFI_TAIL_TOXIC_STAGE_MAX)
-HITS_TAKEN_MAX = 6  # Rage Fist's count stops at 6 (DFI_TAIL_HITS_TAKEN_MAX)
+FREEZE_TURNS = _ENC["DFI_FREEZE_TURNS"]  # a freeze's status counter at its start, one less per [cant] frz
+THROAT_CHOP_TURNS = _ENC["DFI_TAIL_THROAT_CHOP_MAX"]  # throatchop's duration, counted down in the residual
+ENCORE_TURNS = _ENC["DFI_ENCORE_TURNS"]  # encore's duration; one more when its target has no move left this turn
+TOXIC_STAGE_MAX = _ENC["DFI_TAIL_TOXIC_STAGE_MAX"]  # where the toxic counter stops
+HITS_TAKEN_MAX = _ENC["DFI_TAIL_HITS_TAKEN_MAX"]  # where Rage Fist's count stops
 CHARGE_TURNS = 2  # twoturnmove's duration: the charge and the locked turn end in the second residual
 EXT_REVISION = C["DUOFORGE_OBSERVATION_EXT_REVISION"]
 EXT_THROAT_CHOP = C["DUOFORGE_POSITION_EXT_THROAT_CHOP"]
@@ -237,6 +237,7 @@ class Tracker:
         # member's entry with the position's (sim/battle-actions.ts switchIn)
         self._party = None
         self._accepted = None  # the own choice accepted at the last TURN decision point (it queued the moves)
+        self._accepted_commands = None  # its options per position (accepted)
         self._last_move = None  # (position, move id, target) of the last MOVE event
         self._parting_shot = data.tables["MOVE"]["PARTINGSHOT"]
         self._feint = data.tables["MOVE"].get("FEINT", -1)
@@ -424,6 +425,15 @@ class Tracker:
         """The own choice Showdown accepted at the current decision point."""
         if self.request is not None and "active" in self.request:
             self._accepted = text
+            # the commands of that choice, for the queue of a PIVOT of the turn (the public record): the options whose
+            # texts it joins (options.pair_text), None where a part names none
+            try:
+                lists = self.domain()[1]
+            except ValueError:
+                lists = None  # options the tracker cannot list (a lock without a known target): the PIVOT queue refuses
+            parts = text.split(", ")
+            self._accepted_commands = [next((o for o in lists[k] if o.text == parts[k]), None) if k < len(parts) else None
+                                       for k in range(2)] if lists is not None else None
         if text.startswith("team "):
             self._picks = [int(c) - 1 for c in text[len("team "):]]
             self._party = list(self._picks)  # side.pokemon of the pin: the pick order, leads first
@@ -1142,7 +1152,8 @@ class Tracker:
         for k, p in enumerate(self._positions[side]):
             if p.occupant == ROSTER_NONE or not p.flag:
                 continue
-            if reserve or (boundary == REPLACEMENT and not p.fainted):
+            # Revival Blessing's request is made with no check of a living reserve (src/combat/turn.c: the revive answers it)
+            if reserve or (boundary == REPLACEMENT and not p.fainted) or p.flag == _ENC["DFI_SWITCH_REVIVE_BLESSING"]:
                 out |= 1 << k
         return out
 

@@ -141,6 +141,18 @@ class Data:
         """The context of this kind (opened on first use and kept): the library calls of the record assembler."""
         return self._context()
 
+    def context_of(self, data_kind=None):
+        """The context of the library data kind `data_kind` (None: this kind; a DEV kind of the same tables), kept open:
+        the record assembler's engine calls of a record of that context."""
+        from duoforge import _layout
+        import duoforge
+        if data_kind is None or data_kind == _layout.CONSTANTS[_KINDS[self.kind]]:
+            return self._context()
+        contexts = self.__dict__.setdefault("_contexts", {})
+        if data_kind not in contexts:
+            contexts[data_kind] = duoforge.Context(data_kind=data_kind)
+        return contexts[data_kind]
+
     def record_head(self, data_kind=None):
         """(head, state_size) of a public record under this kind (or the library data kind `data_kind`, a DEV kind of the
         same tables): the bytes of the canonical encoding before its RNG (the envelope and the context fingerprint,
