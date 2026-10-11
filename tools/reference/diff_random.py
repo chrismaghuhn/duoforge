@@ -332,6 +332,7 @@ def roster_tables(trace):
         for species, protocol in trace_to_c.BASE_SPECIES_NAME.items():
             if species in roster_of[s]:
                 roster_of[s][protocol] = roster_of[s][species]
+    trace_to_c.protocol_aliases(trace, roster_of)  # the same forme key as the converter (one helper)
     return roster_of
 
 

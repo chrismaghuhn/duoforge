@@ -33,7 +33,7 @@
 #include "reference/conformance_pool.h"
 #include "support/pool.h"
 #define DF_CONF_FORMES dfi_pool_formes
-#define DF_POOL_DATA_BATTLES 759u /* step C3: c3_cover_a and c3_cover_b (two PASS battles of campaign 3032) make 759 (757 before). The recorded pool battles: main's 717, sub_sitrus_tie, the G74 and G76 battles, the thirteen G78 battles, the nine hit-loop battles of chris/expansion-hitloop-fixes, and the two mirrored replay-tracker battles of main (719 on main) */
+#define DF_POOL_DATA_BATTLES 764u /* the recorded pool battles: G73's five Moody battles (lane B batch 5), main's 757, and the two C3 cover battles c3_cover_a and c3_cover_b (764 = 762 + 2) */
 #elif defined(DF_CONFORMANCE_TEAM_C)
 #include "data/extended_tables.h"
 #include "reference/conformance_team_c.h"
