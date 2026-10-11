@@ -278,7 +278,7 @@ foreach(_gen IN ITEMS
         "extended_tables.h=b2abef243fcbfdd87654940076b9fe2fe80b117d74893a7567741f26b9075a7d"
         "extended_tables.c=9e736fa467713283418c4edf8f56b8d844452e596ba422adbd52483d20f7cc17"
         "pool_tables.h=fe6324307c0687f8aa73b6e24f48601481491807cb4c836ac004ef64b5f8f955"
-        "pool_tables.c=96b2f1eebc7b0d6f169c6d99513be034ef199fc3ab246ddf0c3803b8cde9f6d3")
+        "pool_tables.c=5417f358973d64cd13ce31bf87b0b502201ce49a5afb9d0dc76383f8ef137c40")
     string(REPLACE "=" ";" _parts "${_gen}")
     list(GET _parts 0 _file)
     list(GET _parts 1 _expected)
@@ -697,7 +697,7 @@ endif()
 # The Python package (M7, decision 0013), run with DUOFORGE_PYTHON; without
 # an interpreter each test reports skipped instead of passing silently.
 
-foreach(_py layout lib equivalence recipes policies_features example learn_numpy live_unit live_client live_search bench step_events positions replay_unit openings book expert_data expert_teacher expert_contract expert_eval ticks book_preview preview_search data batch_setups learn_v2_numpy teams features_ext encoder6 random_pool bc_numpy encode_c search_numpy search_expand repo_hygiene view vgcpastes_engine perft state_layout)
+foreach(_py layout lib equivalence recipes policies_features example learn_numpy live_unit live_client live_search bench step_events attract_faint positions replay_unit openings book expert_data expert_teacher expert_contract expert_eval ticks book_preview preview_search data batch_setups learn_v2_numpy teams features_ext encoder6 random_pool bc_numpy encode_c search_numpy search_expand repo_hygiene view vgcpastes_engine perft state_layout)
     if(DUOFORGE_PYTHON)
         add_test(NAME duoforge.python.${_py}
             COMMAND "${DUOFORGE_PYTHON}" -m unittest -v python.tests.test_${_py}
@@ -732,7 +732,7 @@ else()
 endif()
 
 # The learner pipeline (decisions 0014, 0017) needs JAX: DUOFORGE_LEARN_PYTHON.
-foreach(_learn learn learn_v2 bc search honest luck ledger pfsp value_rows distill collect_expert learner_contract p1_eval encoder6_net random_pool_train)
+foreach(_learn learn learn_v2 bc search honest luck ledger pfsp value_rows distill collect_expert learner_contract p1_eval encoder6_net random_pool_train mmd)
     if(DUOFORGE_LEARN_PYTHON)
         add_test(NAME duoforge.python.${_learn}
             COMMAND "${DUOFORGE_LEARN_PYTHON}" -m unittest -v python.tests.test_${_learn}
@@ -846,3 +846,12 @@ duoforge_add_test(NAME duoforge.state.pool_g79 SOURCES test_pool_g79.c WHITEBOX 
 # Step G81 (decision 0015 entry 5bs, decision 0033): Frisk (the foes' items announced at its holder's switch-in, ITEM_SHOWN in
 # the Frisk form), the switch-in order against Intimidate, two Frisk holders, and the fold that ignores the event.
 duoforge_add_test(NAME duoforge.state.pool_g81 SOURCES test_pool_g81.c WHITEBOX TIMEOUT 120)
+
+# Step G77 (decision 0015 5bq): the crit package Magma Armor, Anger Point, Sniper and Leek (their rows, the ModifyDamage bound and
+# commutation with Sniper, the Skill Swap and Trace refusals of Magma Armor onto a frozen holder; white-box).
+duoforge_add_test(NAME duoforge.state.pool_g77 SOURCES test_pool_g77.c WHITEBOX TIMEOUT 60)
+
+# Step G87 (decision 0080): Attract's source is public: the observation's source bits (volatiles2 12-13), the from-view worlds that copy it,
+# the refusal of an inconsistent view byte, the pair invariant, and the corpus of every recorded pool battle (every decision point with an
+# infatuated occupant, both players' views built into worlds and compared with the engine).
+duoforge_add_test(NAME duoforge.state.pool_g87 SOURCES test_pool_g87.c WHITEBOX LIBS duoforge_batch TIMEOUT 600)

@@ -885,6 +885,11 @@ duoforge_status duoforge_battle_observe(const duoforge_context *ctx, const duofo
 #define DUOFORGE_POSITION_EXT_ROOST        0x00100000u /* Roost: the Flying type is off until the end of the turn */
 #define DUOFORGE_POSITION_EXT_TRANSFORMED  0x00200000u /* Transform: the occupant is a copy of another Pokemon (decision 0028) */
 #define DUOFORGE_POSITION_EXT_ATTRACT      0x08000000u /* Attract (step G71, decision 0034): the occupant is infatuated; presence only, no source */
+/* Attract's source (step G87, decision 0080): bits 12 and 13 of duoforge_observation_ext.volatiles2 hold the flat position (0 to 3) of
+   the source of the infatuated occupant (bit 12 is the low bit). Both are 0 unless DUOFORGE_POSITION_EXT_ATTRACT is set on the same
+   position. Public for both players: the source is named in the Attract line of the protocol. */
+#define DUOFORGE_POSITION_EXT2_ATTRACT_SOURCE_LO 0x00001000u
+#define DUOFORGE_POSITION_EXT2_ATTRACT_SOURCE_HI 0x00002000u
 /* Bits of duoforge_side_ext.guard_flags (this turn only). */
 #define DUOFORGE_SIDE_GUARD_WIDE_GUARD  1u
 #define DUOFORGE_SIDE_GUARD_QUICK_GUARD 2u
@@ -901,8 +906,9 @@ duoforge_status duoforge_battle_observe(const duoforge_context *ctx, const duofo
    derives the same from the names, and python/tests/test_encoder6.py checks that the two agree). */
 /* X(family feature, bit number in the family's field, own feature): X(RESERVE_VOLATILES, 22u, HEALING_WISH) says
    DUOFORGE_POSITION_EXT_HEALING_WISH (bit 22 of volatiles) is shown only under DUOFORGE_VIEWEXT_FEATURE_HEALING_WISH as
-   well. Empty while no reserve bit has a feature of its own. */
-#define DUOFORGE_VIEWEXT_RESERVE_OWN(X)
+   well. Step G87 (decision 0080): the two bits of Attract's source (volatiles2 bits 12 and 13) are shown under ATTRACT_SOURCE
+   (one entry per bit: the macro compares the bit number exactly). */
+#define DUOFORGE_VIEWEXT_RESERVE_OWN(X)     X(VOLATILES2, 12u, ATTRACT_SOURCE)     X(VOLATILES2, 13u, ATTRACT_SOURCE)
 /* X(family, bit number in the family's field): a defined reserve bit WITHOUT a feature of its own, shown under the family's
    feature alone (POSITION_FLAGS: the observation's position flags, always), checked by its step: the comment beside the
    entry names the decision or the evidence. Every defined reserve bit is in exactly one of the two lists
@@ -960,6 +966,8 @@ duoforge_status duoforge_battle_observe(const duoforge_context *ctx, const duofo
 #define DUOFORGE_VIEWEXT_FEATURE_MOVE_FAILED      41u
 #define DUOFORGE_VIEWEXT_FEATURE_TRANSFORM        42u
 #define DUOFORGE_VIEWEXT_FEATURE_COUNT            43u
+/* The content expansion's features above the tiers (HauptSession's blocks, lane B 53-58). */
+#define DUOFORGE_VIEWEXT_FEATURE_ATTRACT_SOURCE   53u /* step G87 (decision 0080): the flat position of Attract's source, bits 12-13 of volatiles2 */
 /* The reserve families of encoder 6 (decision 0050), outside the tiers (COUNT does not count them). */
 #define DUOFORGE_VIEWEXT_FEATURE_RESERVE_VOLATILES 59u /* duoforge_position_ext.volatiles bits 22 to 31 */
 #define DUOFORGE_VIEWEXT_FEATURE_VOLATILES2        60u /* duoforge_observation_ext.volatiles2 */
@@ -1018,7 +1026,7 @@ typedef struct duoforge_observation_ext {
     duoforge_field_ext field;
     duoforge_side_ext sides[DUOFORGE_SIDE_COUNT];
     /* DUOFORGE_POSITION_EXT2_* presence bits per side (absolute, as sides[]) and position, the second word of
-       duoforge_position_ext.volatiles (decision 0050; none defined yet) */
+       duoforge_position_ext.volatiles (decision 0050; bits 12-13: Attract's source position, step G87, decision 0080) */
     uint32_t volatiles2[DUOFORGE_SIDE_COUNT][DUOFORGE_ACTIVE_PER_SIDE];
     uint8_t reserved1[16]; /* zero: room for a whole new record */
 } duoforge_observation_ext; /* DUOFORGE_OBSERVATION_EXT_SIZE bytes */

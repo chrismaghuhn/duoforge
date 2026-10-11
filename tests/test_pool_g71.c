@@ -249,8 +249,8 @@ static void test_view_bit(df_test *t)
     finish(ctx, b);
 }
 
-/* A world from a public state with an infatuated occupant is refused (E_UNSUPPORTED): the source is in the reserve and no
- * hypothesis carries it (lead's option B). Its control, the same state without the byte, is accepted. */
+/* A world from a public state with an infatuated occupant is built (step G87, decision 0080): the source byte is public and the
+ * world copies it. The consistent view (the source on the field) is accepted and the world's byte equals the engine's. */
 static void test_from_view_refused(df_test *t)
 {
     duoforge_context *ctx = NULL;
@@ -269,7 +269,8 @@ static void test_from_view_refused(df_test *t)
 
     b->tail.attract_source[G71_ARA] = code_of(1u, 1u);
     DF_CHECK_EQ_U64(t, duoforge_battle_public(ctx, b, 0u, &view), DUOFORGE_OK);
-    DF_CHECK_EQ_U64(t, duoforge_battle_from_view(ctx, &view, &hyp, world), DUOFORGE_E_UNSUPPORTED);
+    DF_CHECK_EQ_U64(t, duoforge_battle_from_view(ctx, &view, &hyp, world), DUOFORGE_OK);
+    DF_CHECK_EQ_U64(t, world->tail.attract_source[G71_ARA], code_of(1u, 1u));
     b->tail.attract_source[G71_ARA] = 0u;
     if (world != NULL) {
         duoforge_battle_destroy(world);
