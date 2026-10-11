@@ -59,6 +59,7 @@ STALL_DURATION, STALL_LEVEL_MAX = 2, 6  # DFI_STALL_DURATION (src/combat/turn.c)
 CHARGE_TURNS = 2  # twoturnmove's duration: the charge and the locked turn end in the second residual
 EXT_REVISION = C["DUOFORGE_OBSERVATION_EXT_REVISION"]
 EXT_THROAT_CHOP = C["DUOFORGE_POSITION_EXT_THROAT_CHOP"]
+EXT_CURSE = C["DUOFORGE_POSITION_EXT_CURSE"]
 ITEM_NOW_NONE = C["DUOFORGE_ITEM_NOW_NONE"]  # duoforge_member_ext.item_now: the member holds nothing
 # The view-extension fields (OBSERVATION_EXT, decision 0018) of each feature the tracker folds: what observation_ext
 # writes, and all that restrict_ext keeps of DuoForge's record for a comparison. ("bit", B): bit B of a position's
@@ -72,6 +73,7 @@ EXT_FIELDS = {
     "ENCORE": (("position", "encore_slot"),),
     "ABILITY_CHANGE": (("position", "ability_now"),),
     "ITEM_CHANGE": (("member", "item_now"),),
+    "CURSE": (("bit", EXT_CURSE),),
 }
 # DUOFORGE_SIDE_* of a SIDE_START or SIDE_END event (tailwind 1, reflect 2, light screen 3, Aurora Veil 4) -> the index
 # of the side's turns in Tracker._conditions
@@ -117,6 +119,7 @@ class _Position:
         self.choice_slot = MOVE_SLOT_NONE  # the move slot a Choice item locks (TEAM_C and POOL)
         # The POOL view extension (decision 0018), all ended with the occupant (a switch or a faint):
         self.throat_chop = 0  # Throat Chop's volatile is up (presence only)
+        self.cursed = 0  # the Ghost Curse's volatile is up (presence only; it ends with the occupant, step G84b)
         self.perish = 0  # the Perish count the game showed last, 3 to 1 (0: none)
         self.last_slot = 0  # the move slot + 1 of the occupant's last move line (5: Struggle; None: not on its sheet)
         self.encore_slot = 0  # the move slot + 1 that Encore forces (0: not encored)
@@ -534,13 +537,14 @@ class Tracker:
             passed = None
             if kind == EV["SWITCH"] and e[3] == trace_to_c.CAUSE["MOVE"] and ident2 == self._baton_pass:
                 # Baton Pass (step G74, decision 0042; sim/pokemon.ts copyVolatileFrom): no line shows the copy; of
-                # the base view's fields the receiver keeps the leaver's stages and confusion. The other copied
-                # volatiles are decision 0018 features, which stopped the tracker at their start lines.
-                passed = (list(p.stages), p.confused)
+                # the base view's fields the receiver keeps the leaver's stages and confusion. The Ghost Curse's volatile
+                # is copied too (step G84b: the curse condition has no noCopy, and turn.c's copy keeps CURSED). The other
+                # copied volatiles are decision 0018 features, which stopped the tracker at their start lines.
+                passed = (list(p.stages), p.confused, p.cursed)
             p.occupant, p.flag, p.fainted = ident, 0, False
             p.reset()
             if passed is not None:
-                p.stages, p.confused = passed
+                p.stages, p.confused, p.cursed = passed
             if public:
                 m = self._member(pos // 2)[ident]
                 m.seen, m.hp_percent, m.hp_flag, m.status = True, hp, hp_flag, status
@@ -649,6 +653,10 @@ class Tracker:
             self._at(pos).confused = 0
         elif kind == EV["FLASH_FIRE"]:
             self._at(pos).flash_fire = 1
+        elif kind == EV["VOLATILE_START"] and detail == trace_to_c.VOLATILE_CURSE:
+            # The Ghost Curse (step G84b, decision 0063): the holder's CURSED bit, shown to both viewers; the holder's
+            # leaving or faint clears it (reset), the source's does not (the residual goes on)
+            self._at(pos).cursed = 1
         elif kind == EV["VOLATILE_START"] and detail == trace_to_c.VOLATILE_PERISH:
             # Perish Song's count (step G26): the residual's -start|X|perishN, N = 3, 2, 1, then perish0 before the
             # holder faints; the cast's own perish3 line is [silent] (no event), so nothing shows until the first count
@@ -991,7 +999,7 @@ class Tracker:
                 if p.occupant == ROSTER_NONE:
                     continue  # an empty position: all zero
                 pv = v["positions"][k]
-                pv["volatiles"] = EXT_THROAT_CHOP if p.throat_chop else 0
+                pv["volatiles"] = (EXT_THROAT_CHOP if p.throat_chop else 0) | (EXT_CURSE if p.cursed else 0)
                 pv["perish"], pv["encore_slot"] = p.perish, p.encore_slot
                 own = self._member(side)[p.occupant].ability
                 pv["ability_now"] = p.ability_now if p.ability_now != own else 0  # shown when it differs
