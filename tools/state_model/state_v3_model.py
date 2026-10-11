@@ -977,9 +977,9 @@ def hazard_order_valid(ts):
 
 
 def position_flags_valid(pf):
-    """Rev 5 (G72b, G76): bit 0 (Healing Wish) and bits 5-7 are zero, the Dragon Cheer stage (bits 2-3) is at most 2, and
-    bit 4 is Destiny Bond (G76)."""
-    return pf & ~0x1F == 0 and pf & 0x01 == 0 and (pf >> 2) & 3 <= 2
+    """Rev 5 (G72b, G76, G88): bit 0 (Healing Wish) and bit 7 are zero, the Dragon Cheer stage (bits 2-3) is at most 2,
+    bit 4 is Destiny Bond (G76), and bits 5 and 6 are LOWERED (0x20) and HURT (0x40), G88."""
+    return pf & ~0x7F == 0 and pf & 0x01 == 0 and (pf >> 2) & 3 <= 2
 
 
 def substitute_cap(sd):

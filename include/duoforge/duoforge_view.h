@@ -119,6 +119,11 @@ typedef struct duoforge_hypothesis {
  * is not affected (the bit is zero there, endTurn cleared it), and neither is a REPLACEMENT at the end of a turn: the bit is
  * reset for the next turn anyway. */
 #define DUOFORGE_PUBLIC_CAUSE_RAISED_THIS_TURN 32u
+/* TURN_HISTORY (step G88, decision 0046, number from HauptSession): a PIVOT boundary while an active Pokemon of either side has
+ * Lash Out or Assurance among its known moves. Their turn-history bits (LOWERED_THIS_TURN, HURT_THIS_TURN, position_flags bits
+ * 5 and 6) are not carried by the view, and they are live mid-turn, so duoforge_battle_from_view and the public record refuse
+ * with this cause. A turn boundary is not affected (the bits are zero there). */
+#define DUOFORGE_PUBLIC_CAUSE_TURN_HISTORY 64u
 
 /* Argument errors touch no output. Otherwise statuses are per environment,
  * the return is the first failure, and each failing environment is atomic.

@@ -370,6 +370,10 @@ const dfi_support_manifest dfi_support = {
             [DFI_MOVE_BATONPASS] = 1u, /* step G74 (decision 0042): the user switches out at a PIVOT and copies its volatiles (Shed Tail stays refused) */
             [DFI_MOVE_DRAGONCHEER] = 1u,   /* step G72b: the volatile's crit stage (position flags) and its start line */
             [DFI_MOVE_DRAGONDARTS] = 1u,   /* step G78 (decision 0043): the split of the two hits, smartTarget; the partner by the target's side */
+            /* Step G88 (decision 0046): Lash Out (x2 base power when the user's stat fell this turn, LOWERED) and Assurance (x2 when
+             * the target was hurt this turn, HURT). Both need a PIVOT refusal (DUOFORGE_PUBLIC_CAUSE_TURN_HISTORY). */
+            [DFI_MOVE_LASHOUT] = 1u,
+            [DFI_MOVE_ASSURANCE] = 1u,
     [DFI_MOVE_REVIVALBLESSING] = 1u,
             /* Step G42: Roost (the heal, then the Flying type is off for the turn) and Stomping Tantrum (base power x2 after a
              * FALSE last move result; the move_result of tail rev 4, decision 0015 section 7). */

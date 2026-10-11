@@ -260,6 +260,43 @@ static bool dfi_view_raised_risk(const duoforge_context *ctx, const duoforge_bat
     return false;
 }
 
+/* Step G88 (decision 0046, cause DUOFORGE_PUBLIC_CAUSE_TURN_HISTORY = 64): at a PIVOT boundary, an active Pokemon of either side
+ * that knows Lash Out or Assurance (its move ids are open, the OTS sheet; the position is public through occupant[]). Lash Out's
+ * LOWERED_THIS_TURN and Assurance's HURT_THIS_TURN (position_flags bits 5 and 6) are live mid-turn and are not in the view, so the
+ * record and the rebuild refuse. The same predicate as the Alluring Voice one: it reads only the observation, never the queue.
+ * The bits are zero at a turn boundary (endTurn clears them). */
+static bool dfi_view_turn_history_risk(const duoforge_context *ctx, const duoforge_battle *b, const duoforge_observation *ob)
+{
+    if (!dfi_context_is_pool(ctx)) {
+        return false;
+    }
+    const bool pivot = b->boundary_kind == DUOFORGE_BOUNDARY_PIVOT;
+    /* The first decision (turn 1, after team selection, and any boundary of turn 1 before its endTurn): the entries of the battle
+     * start can have set LOWERED (Intimidate, sim/battle.ts:2086), and endTurn keeps it at turn 1 (the gate turn !== 1,
+     * sim/battle.ts:1677-1683). The view does not carry LOWERED, so the rebuilt world would be wrong there (decision 0046,
+     * section 3). HURT cannot be set before the first move: no spread damage happens at the start (entries set stages, weather
+     * and terrain; hazards are set by moves), so only Lash Out refuses at the first decision. A negative boost is not the
+     * criterion: the rule refuses whenever Lash Out is known. */
+    if (!pivot && b->turn != 1u) {
+        return false;
+    }
+    for (uint32_t side = 0u; side < DUOFORGE_SIDE_COUNT; ++side) {
+        for (uint32_t p = 0u; p < DUOFORGE_ACTIVE_PER_SIDE; ++p) {
+            const uint32_t occ = ob->sides[side].occupant[p];
+            if (occ >= DUOFORGE_MAX_ROSTER) {
+                continue;
+            }
+            const duoforge_member_view *v = &ob->sides[side].members[occ];
+            for (uint32_t k = 0u; k < DUOFORGE_MAX_MOVE_SLOTS && k < v->move_count; ++k) {
+                if (v->move_ids[k] == DFI_MOVE_LASHOUT || (pivot && v->move_ids[k] == DFI_MOVE_ASSURANCE)) {
+                    return true;
+                }
+            }
+        }
+    }
+    return false;
+}
+
 static duoforge_status dfi_view_visible_causes(const duoforge_context *ctx, const duoforge_battle *b, uint32_t player,
                                                uint32_t *out_mask)
 {
@@ -323,6 +360,9 @@ static duoforge_status dfi_view_visible_causes(const duoforge_context *ctx, cons
     }
     if (dfi_view_raised_risk(ctx, b, &observation)) {
         mask |= DUOFORGE_PUBLIC_CAUSE_RAISED_THIS_TURN; /* step G72b: a PIVOT with Alluring Voice known on the field */
+    }
+    if (dfi_view_turn_history_risk(ctx, b, &observation)) {
+        mask |= DUOFORGE_PUBLIC_CAUSE_TURN_HISTORY; /* step G88: a PIVOT with Lash Out or Assurance known on the field */
     }
     *out_mask = mask;
     return DUOFORGE_OK;

@@ -263,14 +263,20 @@ typedef struct dfi_side {
  * cleared at the turn boundary and with the occupant), bits 2-3 DFI_POSFLAG_DRAGON_CHEER_MASK (the Dragon Cheer crit stage:
  * 0 none, 1 = +1, 2 = +2 for a Dragon at start; 3 is invalid), bit 4 DFI_POSFLAG_DESTINY_BOND (step G76, decision 0015 5cg:
  * the user's Destiny Bond volatile; set by the move, ended by the user's next move attempt, a refused attempt included, and
- * with the occupant). Bits 5-7 are zero. */
+ * with the occupant). Bits 5 and 6 are LOWERED and HURT (G88, below); bit 7 is zero. */
 #define DFI_POSFLAG_HEALING_WISH 0x01u
 #define DFI_POSFLAG_STATS_RAISED 0x02u
 #define DFI_POSFLAG_DRAGON_CHEER_SHIFT 2u
 #define DFI_POSFLAG_DRAGON_CHEER_MASK 0x0Cu
 #define DFI_POSFLAG_DRAGON_CHEER_MAX 2u
 #define DFI_POSFLAG_DESTINY_BOND 0x10u
-#define DFI_POSFLAG_VALID_MASK 0x1Fu
+/* Step G88 (decision 0046): bit 5 LOWERED_THIS_TURN (Lash Out: a stage fell this turn, set in dfi_boost where a stage really
+ * dropped; sim/battle.ts:2086) and bit 6 HURT_THIS_TURN (Assurance: a spread damage left the occupant alive this turn, set in
+ * dfi_deal_ex; sim/battle.ts:2137-2138). Both are cleared at the turn boundary and with the occupant. The mask is the OR of
+ * bits 0-6 (Destiny Bond, G76, bit 4 included): 0x7F. */
+#define DFI_POSFLAG_LOWERED 0x20u
+#define DFI_POSFLAG_HURT 0x40u
+#define DFI_POSFLAG_VALID_MASK 0x7Fu
 /* rev 4, per side and per roster member */
 #define DFI_TAIL_QUICK_GUARD_MAX 1u     /* set by Quick Guard, ends in the residual of the turn */
 /* hazard_order: the creation order of the hazards that are up on the side (the pin's effectOrder, sim/battle.ts:994-1000), which
