@@ -508,6 +508,30 @@ const dfi_support_manifest dfi_support = {
             [DFI_MOVE_DESTINYBOND] = 1u,
             /* Step G76 (decision 0015 5cg): Final Gambit (damage equal to the user's HP; the user faints in the damage call). */
             [DFI_MOVE_FINALGAMBIT] = 1u,
+            /* Step C1 (cheap moves, decision 0015 entry 5co): status and self-boost moves and the plain damage moves, through
+             * the existing paths only (the flags, the boosts, the status, the heal fraction of the pin, the target classes any and
+             * allAdjacent, accuracy true). Not marked: Jet Punch (its only learner, Palafin, has no marked ability), Shift Gear
+             * (its boosts are applied in the key order of the pin, spe then atk, data/moves.ts:16330-16347; the engine applies a
+             * boost in stat order except Shell Smash's special, so this needs a new order rule) and Shelter (its only learner,
+             * Goodra-Hisui, is refused by the converter: the switch identifier reads Goodra, not Goodra-Hisui). */
+            [DFI_MOVE_SLACKOFF] = 1u,
+            [DFI_MOVE_COTTONGUARD] = 1u,
+            [DFI_MOVE_GLARE] = 1u,
+            [DFI_MOVE_ACIDARMOR] = 1u,
+            [DFI_MOVE_FEATHERDANCE] = 1u,
+            [DFI_MOVE_BABYDOLLEYES] = 1u,
+            [DFI_MOVE_METALSOUND] = 1u,
+            [DFI_MOVE_ROCKPOLISH] = 1u,
+            [DFI_MOVE_AERIALACE] = 1u,
+            [DFI_MOVE_SEEDBOMB] = 1u,
+            [DFI_MOVE_MEGAHORN] = 1u,
+            [DFI_MOVE_MEGAKICK] = 1u,
+            [DFI_MOVE_DRILLPECK] = 1u,
+            [DFI_MOVE_SMARTSTRIKE] = 1u,
+            [DFI_MOVE_AQUATAIL] = 1u,
+            [DFI_MOVE_SHADOWPUNCH] = 1u,
+            [DFI_MOVE_BRUTALSWING] = 1u,
+            [DFI_MOVE_PETALBLIZZARD] = 1u,
         },
     .abilities =
         {
