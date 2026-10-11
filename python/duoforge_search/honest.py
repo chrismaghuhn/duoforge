@@ -368,6 +368,20 @@ class Honest(lookahead.Lookahead):
             respreads += int((statuses != 0).sum())
         raise SearchError(f"a world still contradicts the public view after {MAX_RESPREADS} spread draws")
 
+    def _engine_pairs(self, p):
+        """(OPTIONS, OPTIONS) bool: the pairs the engine's domain allows seat p in the built worlds, which agree on
+        it (the seat's own side is exact in every world); SearchError if they do not."""
+        self.worlds.query_factored()
+        masks = np.zeros((self.s, lookahead.OPTIONS, lookahead.OPTIONS), bool)
+        for w in range(self.s):
+            d = self.worlds.domains[w, p]
+            bits = np.asarray(d["allowed"], np.uint64)[:int(d["slot_count"][0])]
+            for i, row in enumerate(bits):
+                masks[w, i, :int(d["slot_count"][1])] = (int(row) >> np.arange(int(d["slot_count"][1]))) & 1
+        if (masks != masks[0]).any():
+            raise SearchError("the worlds disagree on the searcher's own pairs")
+        return masks[0]
+
     def _check_worlds(self, record, costs):
         """Every world built from a record (the root, the team preview's, the turn start's) gives it back (from_view, then public, byte for byte). A
         record assembled outside the engine (the live tracker's) that fills a field the engine masks, or contradicts
@@ -453,7 +467,16 @@ class Honest(lookahead.Lookahead):
                             raise SearchError(f"public record refused: {duoforge.status_name(int(statuses[e]))}")
                         hypotheses, weights, dropped, respreads, queue_pairs = self._hypotheses(record, roots.observations[e, p], history,
                                                                          int(keys[d]), excluded, costs)
+                        # A root's pair mask may be provisional (the live tracker's: Showdown judges a pair); the own
+                        # candidates are the engine's own pairs of the worlds (the searcher's side is exact in each).
+                        root_mask = np.asarray(pairs[e, p], bool).reshape(lookahead.OPTIONS, lookahead.OPTIONS)
+                        legal = root_mask & self._engine_pairs(p)
+                        if not legal.any():
+                            raise SearchError("no pair of the root's mask is in the engine's domain")
+                        if (legal != root_mask).any():
+                            own, own_p = lookahead.select(pp[d], legal, self.k)
                         result = self._decision(p, int(keys[d]), own, own_p, weights, bool(last_step[d]), costs)
+                        result["cut_pairs"] = int((root_mask & ~legal).sum())  # the root's pairs the engine refuses
                         self.last[-1]["hypotheses"] = hypotheses.copy()
                         result.update({"bench_dropped": dropped, "respreads": respreads, "exclude_team": excluded,
                                        "queue_pairs": queue_pairs})

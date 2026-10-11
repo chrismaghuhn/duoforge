@@ -35,6 +35,7 @@ def _arguments(argv):
     p.add_argument("--k", type=int, default=None, help="tests only: another K than the live search's")
     p.add_argument("--m", type=int, default=None, help="tests only: another M than the live search's")
     p.add_argument("--worlds", type=int, default=None, help="tests only: another world count than the live search's")
+    p.add_argument("--capacity", type=int, default=None, help="measurement: another leaf capacity than the live search's")
     return p.parse_args(argv)
 
 
@@ -59,7 +60,7 @@ def main(argv=None):
     kinds = {C[name]: label for name, label in _KINDS.items()}
 
     settings = dict(live_search.HONEST_SETTINGS)
-    for name, value in (("k", args.k), ("m", args.m), ("s", args.worlds)):
+    for name, value in (("k", args.k), ("m", args.m), ("s", args.worlds), ("capacity", args.capacity)):
         if value is not None:
             settings[name] = value
     t = time.perf_counter()

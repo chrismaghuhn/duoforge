@@ -382,7 +382,10 @@ class ClientSearchTest(unittest.TestCase):
         # The live search's settings are the approved spec's: X (mix, lambda 0.5), K = M = 8, 16 worlds, the pinned
         # live spread table, a missing spread prior refused.
         self.assertEqual(search.HONEST_SETTINGS, {"k": 8, "m": 8, "s": 16, "rule": "mix", "lam": 0.5,
-                                                  "species_prior": True})
+                                                  "species_prior": True, "capacity": 1024})
+        # the leaf buffer is the decision's leaves (K * M * S): the padded 16384 rows were 93% of a decision (#355)
+        s = search.HONEST_SETTINGS
+        self.assertEqual(s["capacity"], s["k"] * s["m"] * s["s"])
 
     def test_a_missing_timer_line_takes_the_last_one_less_the_time_since(self):
         # The timer line of a new request did not come: the last known line, less the time since it, bounds the budget
