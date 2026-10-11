@@ -21,9 +21,13 @@
 #include <duoforge/duoforge.h>
 
 #include "data/pool_tables.h"
+#include "combat/damage_chain.h"
 #include "data/support_manifest.h"
 #include "reference/conformance_pool.h"
+#include "rng/draw.h"
 #include "state/battle_internal.h"
+#include "state/closure_member.h"
+#include "state/request.h"
 #include "support/check.h"
 #include "support/fixtures.h"
 #include "support/pool.h"
