@@ -305,6 +305,7 @@ Alternatives to PPO, recorded to test against expert iteration, each as its own 
 - **PSRO / double oracle** (Lanctot et al., NeurIPS 2017): a population of policies and best responses solved as a meta-game; the principled form of the exploiter league (lever 5).
 - **ReBeL / Student of Games** (Brown et al., NeurIPS 2020; Schmid et al., Science Advances 2023): search and learning over public belief states, the long-term form of the belief-robust solver; needs the multi-turn search.
 - **A value network only, the policy from the search** (the Stockfish way, TD(lambda) on matrix values): simpler and stable, but without a policy prior every search over doubles' joint actions is dearer, and live play has a timer. An ablation against expert iteration, not the main path.
+Recommended order of the runs: R-NaD or magnetic mirror descent first (the cheapest to test, the learner stays almost the same, and it targets the cycling directly; it can run while steps 1 and 2 are done), then the expert-iteration pilot once step 2 shows the search is a clearly better teacher, then PSRO and ReBeL. Each run is measured as every lever above, as an Elo difference at a fixed time per move against the previous best agent.
 
 
 ## M14 — Closed team sheets (the Bo1 ladder)
