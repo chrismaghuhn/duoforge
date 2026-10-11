@@ -301,6 +301,39 @@ class TrackerStopTest(unittest.TestCase):
         from duoforge_live import tracker
         self.assertEqual(set(tracker.DIRECT_COST_MOVES), {"SUBSTITUTE", "CLANGOROUSSOUL", "BELLYDRUM"})
 
+    def test_leech_seed_source_comes_from_the_move_line_and_the_drain_must_agree(self):
+        # G84 (decision 0047): -start|X|move: Leech Seed has no [of]; the seed's source is the user of the move line before
+        # (the engine's leech_seed_source is its flat position + 1) and the drain's [of] must name it; any other form stops
+        from duoforge_live import lines, tracker
+        from duoforge_live.data import trace_to_c
+        EV, CAUSE = trace_to_c.EV, trace_to_c.CAUSE
+        t = self.tracker()
+        t._leech_seed, t._struggle, t._direct_costs = 77, 900, set()
+        from types import SimpleNamespace
+        t._member = lambda side: [SimpleNamespace(hp_percent=100, hp_flag=0, toxic=0) for _ in range(2)]
+        start = trace_to_c.ev_tuple(EV["VOLATILE_START"], 3, trace_to_c.NOPOS, detail=trace_to_c.VOLATILE_LEECH_SEED)
+        t._last_move = (0, 78, 3)  # another move's line before the start
+        with self.assertRaises(lines.Stop) as caught:
+            t._fold_event(start)
+        self.assertEqual(caught.exception.reason, "leech-seed-source-unknown")
+        t._last_move = (3, 77, 3)  # the holder's own move line (never the seed's source)
+        with self.assertRaises(lines.Stop):
+            t._fold_event(start)
+        t._last_move = (1, 77, 3)
+        t._fold_event(start)
+        holder = t._positions[1][1]
+        self.assertEqual(holder.leech_source, 2)
+        drain = trace_to_c.ev_tuple(EV["DAMAGE"], 3, 1, CAUSE["LEECH_SEED"], hp=40, hp_kind=0)
+        t._last_move = None
+        t._fold_event(drain)  # the source named
+        other = trace_to_c.ev_tuple(EV["DAMAGE"], 3, 0, CAUSE["LEECH_SEED"], hp=30, hp_kind=0)
+        with self.assertRaises(lines.Stop) as caught:
+            t._fold_event(other)
+        self.assertEqual(caught.exception.reason, "leech-seed-drain-source")
+        holder.reset()  # the occupant leaves or faints: the volatile goes with it
+        self.assertEqual(holder.leech_source, 0)
+        self.assertIn("leech_source", tracker._PASSED)  # Baton Pass copies it (no noCopy; dfi_pass_give)
+
     def test_throat_chop_takes_only_the_pins_silent_form(self):
         from duoforge_live import lines
         t = self.tracker()

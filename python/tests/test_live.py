@@ -562,10 +562,11 @@ CLOSURE_OUTCOME = {"equal": 2594, "refused": 310}
 # FORME_CHANGE 10, DESTINY_BOND 10, DRAGON_CHEER 8, ROOST 8, line:-end 2, ILLUSION 2}): the 865 pool battles now hold the
 # conformance battles of G84 to G92 (Leech Seed, Curse, Belly Drum, Confuse Ray, Swagger, Flatter, Teeter Dance, Memento and
 # the sub-fixes), so more decision points are compared; no "move-result-not-determined" refusal is left (the classifier maps
-# those handlers, src/state/view.c mr_family_of). The tracker has no Leech Seed fold yet: its streams stop explicitly
-# (feature:LEECH_SEED 12), as Substitute's (96 now) do.
-POOL_OUTCOME = {"equal": 10470, "refused": 609, "tracker refuses: unburden-without-item-line": 4}
-POOL_STOPS = {"feature:SUBSTITUTE": 96, "feature:LEECH_SEED": 12, "feature:FORME_CHANGE": 10, "feature:DESTINY_BOND": 10,
+# those handlers, src/state/view.c mr_family_of). The tracker folds Leech Seed (EXT_FOLDS, step G84): the 12 streams that
+# stopped on feature:LEECH_SEED run on (equal 10470 -> 10558, +88 decision points; 2 of them stop on a later Substitute,
+# 96 -> 98), and the feature has no stop of its own any more.
+POOL_OUTCOME = {"equal": 10558, "refused": 609, "tracker refuses: unburden-without-item-line": 4}
+POOL_STOPS = {"feature:SUBSTITUTE": 98, "feature:FORME_CHANGE": 10, "feature:DESTINY_BOND": 10,
               "feature:DRAGON_CHEER": 8, "feature:ROOST": 8, "line:-end": 2, "feature:ILLUSION": 2}
 
 

@@ -140,7 +140,7 @@ BASE_FOLDS = sum(1 << FEATURES[n] for n in ("WEATHER_SAND", "WEATHER_SNOW", "AIL
 # DuoForge's record byte for byte and requires each to be shown at compared points of both viewers, own and foe side).
 EXT_FOLDS = sum(1 << FEATURES[n] for n in ("THROAT_CHOP", "AURORA_VEIL", "PERISH", "ENCORE", "ABILITY_CHANGE", "ITEM_CHANGE",
                                           "MUST_RECHARGE", "TOXIC_SPIKES", "TYPE_CHANGE", "TAUNT", "YAWN",
-                                          "DISABLE", "IMPRISON", "STEALTH_ROCK",
+                                          "DISABLE", "IMPRISON", "STEALTH_ROCK", "LEECH_SEED",
                                           "GLAIVE_RUSH", "RAGE_POWDER", "HEAL_BLOCK", "SPIKES",
                                           "WIDE_GUARD", "STICKY_WEB"))
 TRACKER_FOLDS = BASE_FOLDS | EXT_FOLDS
@@ -378,6 +378,9 @@ def check(line, view):
                      and args[2].startswith("???/"))
             if not (soak or shock):
                 _unknown(kind, "typechange" + (f" [from] {froms[0]}" if froms else ""))
+        if effect == "move: Leech Seed" and (kind == "-end" or attrs):
+            # the engine's seed has no end line (it ends with its holder) and no [of] on its start (dfi_leech_seed)
+            _unknown(kind, effect)
         if effect in _START:
             return _feature(_START[effect])
         _unknown(kind, effect)

@@ -94,6 +94,7 @@ EXT_FIELDS = {
     "STICKY_WEB": (("side", "sticky_web"),),
     "TAUNT": (("bit", C["DUOFORGE_POSITION_EXT_TAUNT"]),),
     "YAWN": (("bit", C["DUOFORGE_POSITION_EXT_YAWN"]),),
+    "LEECH_SEED": (("bit", C["DUOFORGE_POSITION_EXT_LEECH_SEED"]),),
     "DISABLE": (("position", "disable_slot"),),
     "IMPRISON": (("bit", C["DUOFORGE_POSITION_EXT_IMPRISON"]),),
     "GLAIVE_RUSH": (("bit", C["DUOFORGE_POSITION_EXT_GLAIVE_RUSH"]),),
@@ -110,6 +111,7 @@ EXT_FIELDS = {
 # The presence bits of a position's volatiles: _Position attribute -> DUOFORGE_POSITION_EXT_* bit.
 _PRESENCE_BITS = (("throat_chop", EXT_THROAT_CHOP), ("must_recharge", C["DUOFORGE_POSITION_EXT_MUST_RECHARGE"]),
                   ("taunt", C["DUOFORGE_POSITION_EXT_TAUNT"]), ("yawn", C["DUOFORGE_POSITION_EXT_YAWN"]),
+                  ("leech_source", C["DUOFORGE_POSITION_EXT_LEECH_SEED"]),
                   ("imprison", C["DUOFORGE_POSITION_EXT_IMPRISON"]), ("glaive_rush", C["DUOFORGE_POSITION_EXT_GLAIVE_RUSH"]),
                   ("rage_powder", C["DUOFORGE_POSITION_EXT_RAGE_POWDER"]), ("heal_block", C["DUOFORGE_POSITION_EXT_HEAL_BLOCK"]))
 # DUOFORGE_FIELD_* of a terrain's FIELD_START event -> DUOFORGE_TERRAIN_* of the observation
@@ -118,7 +120,8 @@ _TERRAIN = {1: C["DUOFORGE_TERRAIN_GRASSY"], trace_to_c.FIELD_PSYCHIC_TERRAIN: C
             trace_to_c.FIELD_MISTY_TERRAIN: C["DUOFORGE_TERRAIN_MISTY"]}
 # The folded _Position fields that Baton Pass gives the entering member (src/combat/turn.c dfi_pass_give: Throat Chop's
 # and Perish Song's tail counters among them); Encore, the recharge, a changed type or ability stay with the leaver.
-_PASSED = ("throat_chop", "perish", "taunt", "heal_block")  # with their counts (dfi_pass_give copies the turns)
+_PASSED = ("throat_chop", "perish", "taunt", "heal_block", "leech_source")  # with their counts (dfi_pass_give copies the turns
+# and Leech Seed's source slot: the seed has no noCopy, decision 0047)
 # DUOFORGE_SIDE_* of a SIDE_START or SIDE_END event (tailwind 1, reflect 2, light screen 3, Aurora Veil 4) -> the index
 # of the side's turns in Tracker._conditions
 _SIDE_CONDITION = {1: 2, 2: 0, 3: 1, 4: 3}
@@ -187,6 +190,8 @@ class _Position:
         self.must_recharge = 0  # a recharge move hit: the next action is cant|recharge (presence only)
         self.taunt = 0  # Taunt's turns left: the view shows its presence, the record its count (taunt_turns)
         self.yawn = 0  # Yawn's turns left until the sleep: the view shows its presence, the record its count
+        self.leech_source = 0  # Leech Seed: the flat position + 1 of the seed's source (the record's leech_seed_source; the
+        # drain's heal goes to whoever stands there), 0: none; the volatile ends with the occupant, Baton Pass copies it
         self.imprison = 0  # the occupant used Imprison (presence only, until it leaves)
         self.glaive_rush = 0  # Glaive Rush's drawback is up until the occupant's next action (presence only)
         self.rage_powder = 0  # Rage Powder draws the foes' single-target moves this turn (presence only)
@@ -320,6 +325,7 @@ class Tracker:
         self._guard_moves = {tables["MOVE"][k] for k in ("WIDEGUARD", "QUICKGUARD") if k in tables["MOVE"]}
         self._helping_hand = tables["MOVE"].get("HELPINGHAND")
         self._knock_off = tables["MOVE"].get("KNOCKOFF")
+        self._leech_seed = tables["MOVE"].get("LEECHSEED")
         # the moves whose cost to their own user is directDamage, not spreadDamage (G88: no hurtThisTurn; dfi_deal_ex's
         # callers with spread false): the plain -damage of DIRECT_COST_MOVES; Struggle's recoil is the other one
         self._direct_costs = {tables["MOVE"].get(k) for k in DIRECT_COST_MOVES} - {None}
@@ -675,7 +681,7 @@ class Tracker:
                 swap_ids = {0: (self._ability_at(tgt) - 1, self._ability_at(src) - 1)}
         try:
             events = trace_to_c.step_events([line], viewer, self._names, maxhp, self.data.tables, self._rb_pending,
-                                            swap_ids=swap_ids)
+                                            swap_ids=swap_ids, lead=self._lines[-4:-1])  # the Leech Seed heal reads back
         except trace_to_c.ConversionError as e:  # a SystemExit: callers catch one kind of error
             detail = getattr(e, "detail", None)
             raise lines.Stop(f"converter:{e.rule}" + (f" {detail}" if detail else "")) from e
@@ -995,6 +1001,13 @@ class Tracker:
                 p.disable_turns = DISABLE_TURNS - (1 if by_ability or p.move_queued else 0)
         elif kind == EV["VOLATILE_START"] and detail == trace_to_c.VOLATILE_IMPRISON:
             self._at(pos).imprison = 1  # -start|X|move: Imprison (step G38): no end line, it ends with the occupant
+        elif kind == EV["VOLATILE_START"] and detail == trace_to_c.VOLATILE_LEECH_SEED:
+            # -start|X|move: Leech Seed (step G84, decision 0047, no [of], no end line): the source is the user of the move
+            # line before (the holder of a Magic Bounce reflection); a start after any other line is no case of the engine
+            last = self._last_move
+            if last is None or last[1] != self._leech_seed or last[0] == pos:
+                raise lines.Stop("leech-seed-source-unknown")
+            self._at(pos).leech_source = last[0] + 1
         elif kind == EV["VOLATILE_START"] and detail == trace_to_c.VOLATILE_YAWN:
             self._at(pos).yawn = YAWN_TURNS  # -start|X|move: Yawn|[of] source (step G31); its end line is [silent], above
         elif kind == EV["VOLATILE_START"] and detail == trace_to_c.VOLATILE_MUST_RECHARGE:
@@ -1025,6 +1038,11 @@ class Tracker:
                     # Unburden's onTakeItem answers Knock Off before the item may refuse (a Mega Stone): the volatile can
                     # be set with no line; an -enditem that follows shows the usual case (_unburden_unseen, record.py)
                     p.unburden_unseen = True
+            if kind == EV["DAMAGE"] and e[3] == trace_to_c.CAUSE["LEECH_SEED"]:
+                # the drain (dfi_leech_drain): `[of]` names the seed's source slot; any other holder or source is no case
+                # of the engine (a seed whose start the tracker did not see)
+                if self._at(pos).leech_source == 0 or e[2] != self._at(pos).leech_source - 1:
+                    raise lines.Stop("leech-seed-drain-source")
             if kind == EV["DAMAGE"] and hp != 0:
                 self._hurt(pos, e[3])
             if kind == EV["DAMAGE"] and e[3] == trace_to_c.CAUSE["POISON"] and m.toxic:
