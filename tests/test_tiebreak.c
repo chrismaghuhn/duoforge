@@ -259,7 +259,7 @@ int main(void)
     /* No committed stop depends on the order of a bench. */
     DF_CHECK_EQ_U64(&t, counts.ambiguous, 0u);
 #if defined(DF_CONFORMANCE_POOL_DATA)
-    DF_CHECK_EQ_U64(&t, battles, 833u); /* the pool battles of test_conformance: main's 811 and lane B batch 5c's 22 (G71 11, G75 11) */
+    DF_CHECK_EQ_U64(&t, battles, 848u); /* the pool battles of test_conformance: G79's ten and G81's five, main's 811 and lane B batch 5c's 22 (G71 11, G75 11) */
     DF_CHECK_EQ_U64(&t, counts.stops, 4601u); /* main's 4505 + G71's 52 + G75's 44 (counted from tiebreak_ref.h) */
 #else
     /* Every kind of decision of the pin is among the stops (the pool battles are too few for that). */
