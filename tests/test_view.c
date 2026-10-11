@@ -589,15 +589,12 @@ typedef struct mr_known_slot {
     bool last;
 } mr_known_slot;
 
-/* issue #389: a Baton Pass without a reserve (dfi_run_baton_pass: -fail, [still], no result set) is unclassified in the engine,
- * false at the pin (data/moves.ts batonpass onHit NOT_FAIL; runMoveEffects' selfSwitch false; trySpreadMoveHit). */
+/* No known deviation is left: the issue #389 (a Baton Pass without a reserve left its result unclassified) is fixed, the four
+ * entries that listed it are removed. The sentinel keeps the array non-empty; the count excludes it. */
 static const mr_known_slot MR_KNOWN[] = {
-    {"g74_pass_no_reserve_sitrus", 19u, 0u, true},
-    {"g74_pass_yawn_passer", 21u, 1u, true},
-    {"g74_pass_yawn_passer", 46u, 0u, false},
-    {"g74_pass_yawn_passer", 47u, 0u, true},
+    {NULL, 0u, 0u, false},
 };
-#define MR_KNOWN_COUNT (sizeof MR_KNOWN / sizeof MR_KNOWN[0])
+#define MR_KNOWN_COUNT (sizeof MR_KNOWN / sizeof MR_KNOWN[0] - 1u)
 
 static const char *mr_name = "playout"; /* the recorded battle being replayed, or the playouts */
 static uint32_t mr_step_index;
@@ -609,7 +606,7 @@ static void mr_slot(df_test *t, uint32_t pos, bool last, uint32_t engine, uint32
     if (engine == expected) {
         return;
     }
-    for (size_t k = 0u; k < MR_KNOWN_COUNT; ++k) {
+    for (size_t k = 0u; k + 1u < sizeof MR_KNOWN / sizeof MR_KNOWN[0]; ++k) { /* the sentinel is not an entry */
         const mr_known_slot *e = &MR_KNOWN[k];
         if (strcmp(e->battle, mr_name) == 0 && e->step == mr_step_index && e->pos == pos && e->last == last) {
             ++mr_known_seen;
