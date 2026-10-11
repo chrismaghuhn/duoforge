@@ -5739,7 +5739,9 @@ static duoforge_status dfi_run_curse(dfi_run *r, uint32_t user)
     stages[DFI_STAGE_SPE] = (uint8_t)(DFI_STAGE_NEUTRAL - 1u); /* wide-operands-reviewed: a stage of 5 */
     stages[DFI_STAGE_ATK] = (uint8_t)(DFI_STAGE_NEUTRAL + 1u); /* wide-operands-reviewed: a stage of 7 */
     stages[DFI_STAGE_DEF] = (uint8_t)(DFI_STAGE_NEUTRAL + 1u); /* wide-operands-reviewed: a stage of 7 */
-    dfi_boost_effect eff = dfi_effect(DUOFORGE_CAUSE_MOVE, DFI_MOVE_CURSE, DFI_BOOST_PRIMARY);
+    /* The boosts of the non-Ghost Curse have no [from] (its boost line is a bare -boost): cause NONE, not the move. The G86 rule in
+     * dfi_boost names a move's own boost only where the line carries [from] move (Belly Drum's -setboost). */
+    dfi_boost_effect eff = dfi_effect(DUOFORGE_CAUSE_NONE, 0u, DFI_BOOST_PRIMARY);
     eff.negatives_first = true;
     const bool any = dfi_boost(r, user, stages, user, eff);
     if (!any) {
