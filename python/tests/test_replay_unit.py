@@ -239,28 +239,45 @@ class DataTest(unittest.TestCase):
         view = SimpleNamespace(data=self.pool)
         sheet = {"species": f["CHARIZARD"], "item": i["CHARIZARDITEX"] + 1}
         member = SimpleNamespace(sheet=sheet, is_mega=0)
-        base = Tracker.current_types(view, member)
+        standing = SimpleNamespace(type_now=(0, 0))  # its position: no type a move set
+        base = Tracker.current_types(view, member, standing)
         self.assertEqual(base, self.pool.forme_types(f["CHARIZARD"]))
         member.is_mega = 1  # after the -mega line: the Mega forme of the sheet's stone
-        self.assertEqual(Tracker.current_types(view, member), self.pool.forme_types(f["CHARIZARDMEGAX"]))
+        self.assertEqual(Tracker.current_types(view, member, standing), self.pool.forme_types(f["CHARIZARDMEGAX"]))
         member.sheet = {"species": f["GENGAR"], "item": 0}
         with self.assertRaisesRegex(ValueError, "Mega"):
-            Tracker.current_types(view, member)  # a Mega without a stone of its forme is no state to guess from
+            Tracker.current_types(view, member, standing)  # a Mega without a stone of its forme is no state to guess from
 
     def test_a_type_fold_must_come_with_the_current_types(self):
-        # Soak, Double Shock, Trick-or-Treat, Forest's Curse and a forme change stop on their lines today
-        # (TYPE_CHANGE, FORME_CHANGE are no tracker fold); the day one is folded, Tracker.current_types has to know
-        # it, and until then it refuses to answer rather than say the forme's types
+        # A forme change stops on its line today (FORME_CHANGE is no tracker fold); the day it is folded,
+        # Tracker.current_types has to know it, and until then it refuses to answer rather than say the forme's types
         from types import SimpleNamespace
         from unittest import mock
         from duoforge_live.tracker import Tracker
         f = self.pool.tables["FORME"]
         view = SimpleNamespace(data=self.pool)
         member = SimpleNamespace(sheet={"species": f["GENGAR"], "item": 0}, is_mega=0)
-        for feature in ("TYPE_CHANGE", "FORME_CHANGE"):
-            with mock.patch.object(lines, "SUPPORTED", lines.SUPPORTED | 1 << lines.FEATURES[feature]):
-                with self.assertRaises(lines.Stop):
-                    Tracker.current_types(view, member)
+        with mock.patch.object(lines, "SUPPORTED", lines.SUPPORTED | 1 << lines.FEATURES["FORME_CHANGE"]):
+            with self.assertRaises(lines.Stop):
+                Tracker.current_types(view, member, SimpleNamespace(type_now=(0, 0)))
+
+    def test_the_current_types_follow_a_folded_type_change(self):
+        # Soak and Double Shock are folded since #342 (the position's type_now): the current types are that type, and a
+        # caller that names no position cannot see it, so it refuses while TYPE_CHANGE is folded
+        from types import SimpleNamespace
+        from unittest import mock
+        from duoforge_live.tracker import Tracker
+        f = self.pool.tables["FORME"]
+        T = {n: _define_type(n) for n in ("WATER", "GHOST")}
+        view = SimpleNamespace(data=self.pool)
+        member = SimpleNamespace(sheet={"species": f["GENGAR"], "item": 0}, is_mega=0)
+        at = lambda type_now: Tracker.current_types(view, member, SimpleNamespace(type_now=type_now))
+        self.assertEqual(at((0, 0)), self.pool.forme_types(f["GENGAR"]))
+        self.assertEqual(at((T["WATER"] + 1, 0)), (T["WATER"],))  # Soak: Water only, so no longer a Ghost
+        self.assertEqual(at((0, T["GHOST"] + 1)), (T["GHOST"],))  # Double Shock: ??? and the other type
+        with mock.patch.object(lines, "SUPPORTED", lines.SUPPORTED | 1 << lines.FEATURES["TYPE_CHANGE"]):
+            with self.assertRaises(lines.Stop):
+                Tracker.current_types(view, member)
 
 
 class AliasTest(unittest.TestCase):

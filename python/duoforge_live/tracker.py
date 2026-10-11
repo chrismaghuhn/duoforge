@@ -631,17 +631,22 @@ class Tracker:
     def _at(self, pos):
         return self._positions[pos // 2][pos % 2]
 
-    def current_types(self, member):
-        """The types of a member now, as the lines the tracker folds show them: those of its set's forme, or of its Mega
-        forme once it Mega Evolved (the stone of its sheet names it). Every other change of types (Soak, Double Shock,
-        Trick-or-Treat, Forest's Curse, a forme change) stops on its own line, because TYPE_CHANGE and FORME_CHANGE are no
-        fold of this tracker; the day one is folded this has to know it, so it refuses while either is supported and
-        never answers with the forme's types then. Lines the tracker does not read cannot change them (Roost only
-        hides Flying for a turn, which never decides a Ghost). ValueError for a Mega member whose sheet has no stone of
-        its forme."""
-        for feature in ("TYPE_CHANGE", "FORME_CHANGE"):
-            if lines.SUPPORTED >> lines.FEATURES[feature] & 1:
-                raise lines.Stop(f"types:{feature}")
+    def current_types(self, member, position=None):
+        """The types of a member now, as the lines the tracker folds show them: a type a move set while it stands at
+        `position` (the position's type_now, #342: Soak's single type, or Double Shock's remaining type; a Mega Evolution
+        ends it), else those of its set's forme, or of its Mega forme once it Mega Evolved (the stone of its sheet names
+        it). A forme change stops on its own line (FORME_CHANGE is no fold of this tracker; the day it is folded this
+        has to know it, so it refuses while it is supported). Without the position a folded type change cannot be
+        seen, so it refuses then too. Trick-or-Treat and Forest's Curse stop on their lines (the converter). Lines the
+        tracker does not read cannot change them (Roost only hides Flying for a turn, which never decides a Ghost).
+        ValueError for a Mega member whose sheet has no stone of its forme."""
+        if lines.SUPPORTED >> lines.FEATURES["FORME_CHANGE"] & 1:
+            raise lines.Stop("types:FORME_CHANGE")
+        if position is not None and position.type_now != (0, 0):
+            soak, other = position.type_now  # (id + 1, 0): Soak's type; (0, id + 1): Double Shock's ??? and that type
+            return (soak - 1,) if soak else (other - 1,)
+        if position is None and lines.SUPPORTED >> lines.FEATURES["TYPE_CHANGE"] & 1:
+            raise lines.Stop("types:TYPE_CHANGE")
         forme = member.sheet["species"]
         if member.is_mega:
             forme = self.data.mega_of(forme, member.sheet["item"])
