@@ -780,61 +780,61 @@
   {
    "input": {
     "p1": "move 3, move 2",
-    "p2": "move 2, move 3"
+    "p2": "move 3 1, move 2 2"
    },
    "draws": [
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 68
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 2
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 14
+    },
     {
      "site": "SPEED_TIE",
      "context": "field:Residual",
      "lo": 2,
      "hi": 4,
-     "value": 3,
-     "group": [
-      "H:protect:p2a:end",
-      "H:stall:p2a:end"
-     ],
-     "start": 2
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "field:Residual",
-     "lo": 4,
-     "hi": 6,
-     "value": 4,
+     "value": 2,
      "group": [
       "H:stall:p1b:end",
       "H:protect:p1b:end"
      ],
-     "start": 4
-    },
-    {
-     "site": "SPEED_TIE",
-     "context": "field:Residual",
-     "lo": 6,
-     "hi": 8,
-     "value": 7,
-     "group": [
-      "H:stall:p2b:end",
-      "H:protect:p2b:end"
-     ],
-     "start": 6
+     "start": 2
     }
    ],
    "log": [
-    "|move|p2a: Dragonite|Protect|p2a: Dragonite",
-    "|-singleturn|p2a: Dragonite|Protect",
     "|move|p1b: Glalie|Protect|p1b: Glalie",
     "|-singleturn|p1b: Glalie|Protect",
-    "|move|p2b: Azumarill|Protect|p2b: Azumarill",
-    "|-singleturn|p2b: Azumarill|Protect",
+    "|move|p2a: Dragonite|Dragon Claw|p1a: Aggron",
+    "|-resisted|p1a: Aggron|1",
+    "|split|p1",
+    "|-damage|p1a: Aggron|159/177",
+    "|-damage|p1a: Aggron|89/100",
+    "|move|p2b: Azumarill|Waterfall|p1b: Glalie",
+    "|-activate|p1b: Glalie|move: Protect",
     "|move|p1a: Aggron|Substitute|p1a: Aggron",
     "|-start|p1a: Aggron|Substitute",
     "|split|p1",
-    "|-damage|p1a: Aggron|133/177",
-    "|-damage|p1a: Aggron|75/100",
+    "|-damage|p1a: Aggron|115/177",
+    "|-damage|p1a: Aggron|64/100",
     "|split|p1",
-    "|-heal|p1a: Aggron|144/177|[from] item: Leftovers",
-    "|-heal|p1a: Aggron|81/100|[from] item: Leftovers",
+    "|-heal|p1a: Aggron|126/177|[from] item: Leftovers",
+    "|-heal|p1a: Aggron|71/100|[from] item: Leftovers",
     "|upkeep",
     "|turn|2"
    ],
@@ -879,7 +879,7 @@
         "set_species": "Aggron",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 144,
+        "hp": 126,
         "maxhp": 177,
         "item": "leftovers",
         "status": "",
@@ -1010,8 +1010,8 @@
       "enabled": [
        [
         0,
-        1,
         0,
+        1,
         0
        ],
        [
@@ -1049,16 +1049,15 @@
         ],
         "pp": [
          8,
-         7,
-         16,
+         8,
+         15,
          12
         ],
         "volatiles": [
-         "choicelock",
-         "stall"
+         "choicelock"
         ],
         "locked": null,
-        "choice": 1
+        "choice": 2
        },
        {
         "species": "Azumarill",
@@ -1083,13 +1082,11 @@
         ],
         "pp": [
          20,
-         16,
-         7,
+         15,
+         8,
          12
         ],
-        "volatiles": [
-         "stall"
-        ],
+        "volatiles": [],
         "locked": null
        },
        {
@@ -1160,7 +1157,7 @@
   {
    "input": {
     "p1": "move 1, move 1 2",
-    "p2": "move 2, move 2 2"
+    "p2": "move 3 1, move 2 2"
    },
    "draws": [
     {
@@ -1168,13 +1165,6 @@
      "context": "resolve",
      "lo": 0,
      "hi": 2,
-     "value": 0
-    },
-    {
-     "site": "STALL",
-     "context": "StallMove",
-     "lo": 0,
-     "hi": 3,
      "value": 0
     },
     {
@@ -1186,38 +1176,31 @@
     },
     {
      "site": "CRIT",
-     "context": "",
+     "context": "TryPrimaryHit",
      "lo": 0,
      "hi": 24,
      "value": 15
     },
     {
      "site": "DAMAGE_ROLL",
-     "context": "",
+     "context": "TryPrimaryHit",
      "lo": 0,
      "hi": 16,
      "value": 13
-    },
-    {
-     "site": "SECONDARY",
-     "context": "",
-     "lo": 0,
-     "hi": 100,
-     "value": 43
     },
     {
      "site": "ACCURACY",
      "context": "",
      "lo": 0,
      "hi": 100,
-     "value": 62
+     "value": 43
     },
     {
      "site": "CRIT",
      "context": "",
      "lo": 0,
      "hi": 24,
-     "value": 15
+     "value": 14
     },
     {
      "site": "DAMAGE_ROLL",
@@ -1231,41 +1214,58 @@
      "context": "",
      "lo": 0,
      "hi": 100,
+     "value": 67
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
      "value": 42
     },
     {
-     "site": "SPEED_TIE",
-     "context": "field:Residual",
-     "lo": 2,
-     "hi": 4,
-     "value": 2,
-     "group": [
-      "H:stall:p2a:end",
-      "H:protect:p2a:end"
-     ],
-     "start": 2
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 7
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 11
+    },
+    {
+     "site": "SECONDARY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 11
     }
    ],
    "log": [
-    "|move|p2a: Dragonite|Protect|p2a: Dragonite",
-    "|-singleturn|p2a: Dragonite|Protect",
+    "|move|p2a: Dragonite|Dragon Claw|p1a: Aggron",
+    "|-resisted|p1a: Aggron|1",
+    "|-activate|p1a: Aggron|move: Substitute|[damage]",
     "|move|p1b: Glalie|Icicle Crash|p2b: Azumarill",
     "|-resisted|p2b: Azumarill|1",
     "|split|p2",
-    "|-damage|p2b: Azumarill|171/207",
+    "|-damage|p2b: Azumarill|170/207",
     "|-damage|p2b: Azumarill|82/100",
     "|move|p2b: Azumarill|Waterfall|p1b: Glalie",
     "|split|p1",
-    "|-damage|p1b: Glalie|79/187",
-    "|-damage|p1b: Glalie|42/100",
+    "|-damage|p1b: Glalie|81/187",
+    "|-damage|p1b: Glalie|43/100",
     "|move|p1a: Aggron|Metal Burst||[still]",
     "|-fail|p1a: Aggron",
     "|split|p2",
-    "|-heal|p2b: Azumarill|183/207|[from] item: Leftovers",
-    "|-heal|p2b: Azumarill|88/100|[from] item: Leftovers",
+    "|-heal|p2b: Azumarill|182/207|[from] item: Leftovers",
+    "|-heal|p2b: Azumarill|87/100|[from] item: Leftovers",
     "|split|p1",
-    "|-heal|p1a: Aggron|155/177|[from] item: Leftovers",
-    "|-heal|p1a: Aggron|87/100|[from] item: Leftovers",
+    "|-heal|p1a: Aggron|137/177|[from] item: Leftovers",
+    "|-heal|p1a: Aggron|77/100|[from] item: Leftovers",
     "|upkeep",
     "|turn|3"
    ],
@@ -1310,7 +1310,7 @@
         "set_species": "Aggron",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 155,
+        "hp": 137,
         "maxhp": 177,
         "item": "leftovers",
         "status": "",
@@ -1342,7 +1342,7 @@
         "set_species": "Glalie",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 79,
+        "hp": 81,
         "maxhp": 187,
         "item": "expertbelt",
         "status": "",
@@ -1439,8 +1439,8 @@
       "enabled": [
        [
         0,
-        1,
         0,
+        1,
         0
        ],
        [
@@ -1478,23 +1478,22 @@
         ],
         "pp": [
          8,
-         6,
-         16,
+         8,
+         14,
          12
         ],
         "volatiles": [
-         "choicelock",
-         "stall"
+         "choicelock"
         ],
         "locked": null,
-        "choice": 1
+        "choice": 2
        },
        {
         "species": "Azumarill",
         "set_species": "Azumarill",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 183,
+        "hp": 182,
         "maxhp": 207,
         "item": "leftovers",
         "status": "",
@@ -1512,8 +1511,8 @@
         ],
         "pp": [
          20,
-         15,
-         7,
+         14,
+         8,
          12
         ],
         "volatiles": [],

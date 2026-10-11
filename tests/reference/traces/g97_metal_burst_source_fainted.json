@@ -779,8 +779,8 @@
   },
   {
    "input": {
-    "p1": "move 1, move 1 1",
-    "p2": "move 3 1, move 3"
+    "p1": "move 4, move 1 1",
+    "p2": "move 3 1, move 2 2"
    },
    "draws": [
     {
@@ -791,99 +791,201 @@
      "value": 0
     },
     {
-     "site": "ACCURACY",
-     "context": "",
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
      "lo": 0,
-     "hi": 100,
-     "value": 87
+     "hi": 2,
+     "value": 1
     },
     {
-     "site": "CRIT",
-     "context": "",
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
      "lo": 0,
-     "hi": 24,
-     "value": 16
-    },
-    {
-     "site": "DAMAGE_ROLL",
-     "context": "",
-     "lo": 0,
-     "hi": 16,
-     "value": 8
+     "hi": 2,
+     "value": 1
     },
     {
      "site": "ACCURACY",
      "context": "",
      "lo": 0,
      "hi": 100,
-     "value": 23
+     "value": 50
     },
     {
      "site": "CRIT",
      "context": "",
      "lo": 0,
      "hi": 24,
-     "value": 18
+     "value": 5
     },
     {
      "site": "DAMAGE_ROLL",
      "context": "",
      "lo": 0,
      "hi": 16,
-     "value": 2
+     "value": 12
     },
     {
-     "site": "SECONDARY",
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 0
+    },
+    {
+     "site": "ACCURACY",
      "context": "",
      "lo": 0,
      "hi": 100,
      "value": 77
     },
     {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 1
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 0
+    },
+    {
+     "site": "SECONDARY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 57
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 0
+    },
+    {
      "site": "ACCURACY",
      "context": "",
      "lo": 0,
      "hi": 100,
-     "value": 7
+     "value": 42
     },
     {
-     "site": "SPEED_TIE",
-     "context": "field:Residual",
-     "lo": 2,
-     "hi": 4,
-     "value": 2,
-     "group": [
-      "H:stall:p2b:end",
-      "H:protect:p2b:end"
-     ],
-     "start": 2
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 23
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 12
+    },
+    {
+     "site": "SECONDARY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 53
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "action-speed",
+     "lo": 0,
+     "hi": 2,
+     "value": 1
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "execute:allAdjacent",
+     "lo": 0,
+     "hi": 2,
+     "value": 0
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 15
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 86
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 8
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 11
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 17
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 15
     }
    ],
    "log": [
-    "|move|p2b: Azumarill|Protect|p2b: Azumarill",
-    "|-singleturn|p2b: Azumarill|Protect",
     "|move|p2a: Dragonite|Dragon Claw|p1a: Aggron",
     "|-resisted|p1a: Aggron|1",
     "|split|p1",
-    "|-damage|p1a: Aggron|157/177",
-    "|-damage|p1a: Aggron|88/100",
+    "|-damage|p1a: Aggron|158/177",
+    "|-damage|p1a: Aggron|89/100",
     "|move|p1b: Glalie|Icicle Crash|p2a: Dragonite",
     "|-supereffective|p2a: Dragonite|2",
     "|split|p2",
-    "|-damage|p2a: Dragonite|25/198",
-    "|-damage|p2a: Dragonite|12/100",
-    "|move|p1a: Aggron|Metal Burst|p2a: Dragonite",
-    "|split|p2",
-    "|-damage|p2a: Dragonite|0 fnt",
-    "|-damage|p2a: Dragonite|0 fnt",
-    "|faint|p2a: Dragonite",
+    "|-damage|p2a: Dragonite|23/198",
+    "|-damage|p2a: Dragonite|11/100",
+    "|move|p2b: Azumarill|Waterfall|p1b: Glalie",
     "|split|p1",
-    "|-heal|p1a: Aggron|168/177|[from] item: Leftovers",
-    "|-heal|p1a: Aggron|94/100|[from] item: Leftovers",
-    "|upkeep"
+    "|-damage|p1b: Glalie|82/187",
+    "|-damage|p1b: Glalie|43/100",
+    "|move|p1a: Aggron|Earthquake|p2a: Dragonite|[spread] p1b,p2b",
+    "|-immune|p2a: Dragonite",
+    "|split|p1",
+    "|-damage|p1b: Glalie|43/187",
+    "|-damage|p1b: Glalie|22/100",
+    "|split|p2",
+    "|-damage|p2b: Azumarill|170/207",
+    "|-damage|p2b: Azumarill|82/100",
+    "|split|p2",
+    "|-heal|p2b: Azumarill|182/207|[from] item: Leftovers",
+    "|-heal|p2b: Azumarill|87/100|[from] item: Leftovers",
+    "|split|p1",
+    "|-heal|p1a: Aggron|169/177|[from] item: Leftovers",
+    "|-heal|p1a: Aggron|95/100|[from] item: Leftovers",
+    "|upkeep",
+    "|turn|2"
    ],
    "state": {
-    "turn": 1,
+    "turn": 2,
     "ended": false,
     "winner": "",
     "weather": "",
@@ -893,13 +995,26 @@
     "trick_room": 0,
     "sides": [
      {
-      "request": "",
+      "request": "move",
       "conditions": [
        0,
        0,
        0
       ],
-      "enabled": [],
+      "enabled": [
+       [
+        1,
+        1,
+        1,
+        1
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
       "active": [
        0,
        1
@@ -910,9 +1025,39 @@
         "set_species": "Aggron",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 168,
+        "hp": 169,
         "maxhp": 177,
         "item": "leftovers",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         8,
+         12,
+         11
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Glalie",
+        "set_species": "Glalie",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 43,
+        "maxhp": 187,
+        "item": "expertbelt",
         "status": "",
         "status_time": 0,
         "confusion": 0,
@@ -930,7 +1075,188 @@
          11,
          8,
          12,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Snorlax",
+        "set_species": "Snorlax",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 267,
+        "maxhp": 267,
+        "item": "sitrusberry",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         16,
+         12,
+         8,
          12
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Golisopod",
+        "set_species": "Golisopod",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 182,
+        "maxhp": 182,
+        "item": "lifeorb",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         8,
+         12,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     },
+     {
+      "request": "move",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [
+       [
+        0,
+        0,
+        1,
+        0
+       ],
+       [
+        1,
+        1,
+        1,
+        1
+       ]
+      ],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Dragonite",
+        "set_species": "Dragonite",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 23,
+        "maxhp": 198,
+        "item": "choicescarf",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         8,
+         8,
+         15,
+         12
+        ],
+        "volatiles": [
+         "choicelock"
+        ],
+        "locked": null,
+        "choice": 2
+       },
+       {
+        "species": "Azumarill",
+        "set_species": "Azumarill",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 182,
+        "maxhp": 207,
+        "item": "leftovers",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         20,
+         15,
+         8,
+         12
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Sylveon",
+        "set_species": "Sylveon",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 202,
+        "maxhp": 202,
+        "item": "lightclay",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         12,
+         8,
+         12,
+         16
         ],
         "volatiles": [],
         "locked": null
@@ -957,7 +1283,229 @@
          0
         ],
         "pp": [
+         12,
+         8,
+         12,
+         20
+        ],
+        "volatiles": [],
+        "locked": null
+       }
+      ]
+     }
+    ]
+   }
+  },
+  {
+   "input": {
+    "p1": "move 1, move 1 1",
+    "p2": "move 3 1, move 2 2"
+   },
+   "draws": [
+    {
+     "site": "RANDOM_TARGET",
+     "context": "resolve",
+     "lo": 0,
+     "hi": 2,
+     "value": 1
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 20
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 7
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 11
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 55
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 4
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 9
+    },
+    {
+     "site": "SECONDARY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 64
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 26
+    },
+    {
+     "site": "CRIT",
+     "context": "",
+     "lo": 0,
+     "hi": 24,
+     "value": 2
+    },
+    {
+     "site": "DAMAGE_ROLL",
+     "context": "",
+     "lo": 0,
+     "hi": 16,
+     "value": 7
+    },
+    {
+     "site": "SECONDARY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 3
+    },
+    {
+     "site": "RANDOM_TARGET",
+     "context": "execute:scripted",
+     "lo": 0,
+     "hi": 1,
+     "value": 0
+    },
+    {
+     "site": "ACCURACY",
+     "context": "",
+     "lo": 0,
+     "hi": 100,
+     "value": 40
+    }
+   ],
+   "log": [
+    "|move|p2a: Dragonite|Dragon Claw|p1a: Aggron",
+    "|-resisted|p1a: Aggron|1",
+    "|split|p1",
+    "|-damage|p1a: Aggron|150/177",
+    "|-damage|p1a: Aggron|84/100",
+    "|move|p1b: Glalie|Icicle Crash|p2a: Dragonite",
+    "|-supereffective|p2a: Dragonite|2",
+    "|split|p2",
+    "|-damage|p2a: Dragonite|0 fnt",
+    "|-damage|p2a: Dragonite|0 fnt",
+    "|faint|p2a: Dragonite",
+    "|move|p2b: Azumarill|Waterfall|p1b: Glalie",
+    "|split|p1",
+    "|-damage|p1b: Glalie|0 fnt",
+    "|-damage|p1b: Glalie|0 fnt",
+    "|faint|p1b: Glalie",
+    "|move|p1a: Aggron|Metal Burst|p2b: Azumarill",
+    "|split|p2",
+    "|-damage|p2b: Azumarill|154/207",
+    "|-damage|p2b: Azumarill|74/100",
+    "|split|p2",
+    "|-heal|p2b: Azumarill|166/207|[from] item: Leftovers",
+    "|-heal|p2b: Azumarill|80/100|[from] item: Leftovers",
+    "|split|p1",
+    "|-heal|p1a: Aggron|161/177|[from] item: Leftovers",
+    "|-heal|p1a: Aggron|90/100|[from] item: Leftovers",
+    "|upkeep"
+   ],
+   "state": {
+    "turn": 2,
+    "ended": false,
+    "winner": "",
+    "weather": "",
+    "weather_turns": 0,
+    "terrain": "",
+    "terrain_turns": 0,
+    "trick_room": 0,
+    "sides": [
+     {
+      "request": "switch",
+      "conditions": [
+       0,
+       0,
+       0
+      ],
+      "enabled": [],
+      "active": [
+       0,
+       1
+      ],
+      "pokemon": [
+       {
+        "species": "Aggron",
+        "set_species": "Aggron",
+        "mega": 0,
+        "switch_flag": 0,
+        "hp": 161,
+        "maxhp": 177,
+        "item": "leftovers",
+        "status": "",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": false,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
          11,
+         8,
+         12,
+         11
+        ],
+        "volatiles": [],
+        "locked": null
+       },
+       {
+        "species": "Glalie",
+        "set_species": "Glalie",
+        "mega": 0,
+        "switch_flag": 1,
+        "hp": 0,
+        "maxhp": 187,
+        "item": "expertbelt",
+        "status": "fnt",
+        "status_time": 0,
+        "confusion": 0,
+        "fainted": true,
+        "boosts": [
+         0,
+         0,
+         0,
+         0,
+         0,
+         0,
+         0
+        ],
+        "pp": [
+         10,
          8,
          12,
          20
@@ -1064,7 +1612,7 @@
         "pp": [
          8,
          8,
-         15,
+         14,
          12
         ],
         "volatiles": [],
@@ -1075,7 +1623,7 @@
         "set_species": "Azumarill",
         "mega": 0,
         "switch_flag": 0,
-        "hp": 207,
+        "hp": 166,
         "maxhp": 207,
         "item": "leftovers",
         "status": "",
@@ -1093,13 +1641,11 @@
         ],
         "pp": [
          20,
-         16,
-         7,
+         14,
+         8,
          12
         ],
-        "volatiles": [
-         "stall"
-        ],
+        "volatiles": [],
         "locked": null
        },
        {
