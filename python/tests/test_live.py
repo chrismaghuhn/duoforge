@@ -525,7 +525,7 @@ def record_diff(battle_name, k, viewer, record):
 # (lines.Stop: an unfolded feature's line), by reason.
 CLOSURE_OUTCOME = {"equal": 2594, "refused": 310}
 POOL_OUTCOME = {"equal": 9922, "refused": 487, "tracker refuses: unburden-without-item-line": 4}  # C5: c5_surf_cover (8) and the four c5_endeavor_* battles (16) add equal records
-POOL_STOPS = {"feature:SUBSTITUTE": 78, "feature:FORME_CHANGE": 10, "feature:DESTINY_BOND": 10, "feature:DRAGON_CHEER": 8,
+POOL_STOPS = {"feature:SUBSTITUTE": 86, "feature:FORME_CHANGE": 10,  # C5: +8 from the four c5_endeavor_* battles (78 before) "feature:DESTINY_BOND": 10, "feature:DRAGON_CHEER": 8,
               "feature:ROOST": 8, "line:-end": 2, "feature:ILLUSION": 2}
 
 
