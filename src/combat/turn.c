@@ -8632,6 +8632,10 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
      * one from the reached targets, faster first. Gated like the rest of the user's AfterMoveSecondarySelf: a Sheer Force
      * user whose move it strips is skipped (sim/battle-actions.ts:536). hitTargets is the pre-loop survivors (hit_all): a
      * Substitute's target counts (decision 0032). A Status move is excluded by the pin. */
+    /* The handlers of this event are collected before any of them runs (sim/battle.ts runEvent): a Life Orb that Magician takes
+     * now is not one of them, so Life Orb's recoil below reads the holding of the start of the event (g85_* divergence, the
+     * campaign of 2026-10-11: Delphox takes the Life Orb of a target and takes no recoil this turn). */
+    const bool life_orb_at_start = dfi_holds(r->b, m, DFI_ITEM_LIFEORB);
     if (any && !status_move && !dfi_sf_strips(r->b, m, md)) {
         st = dfi_magician(r, user, targets, hit_all, count, move_id);
         if (st != DUOFORGE_OK) {
@@ -8644,7 +8648,7 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
      * runs before this, sets it (drag_pending, step G46). */
     /* Sheer Force (step G61): the holder's own AfterMoveSecondarySelf is not run for a move it stripped
      * (sim/battle-actions.ts:536, useMoveInner), so no Life Orb recoil and no user Emergency Exit from it. */
-    if (any && dfi_holds(r->b, m, DFI_ITEM_LIFEORB) && ((r->drag_pending >> user) & 1u) == 0u &&
+    if (any && life_orb_at_start && ((r->drag_pending >> user) & 1u) == 0u &&
         !dfi_sf_strips(r->b, m, md)) {
         const uint32_t recoil = (uint32_t)m->hp_max / 10u;
         const uint32_t user_before = m->hp;
