@@ -4,6 +4,7 @@ Teams (packing, the open team sheets, the match against Team A and B) and
 the data the adapter reads from the converter's tables, checked against the
 library.
 """
+import collections
 import random
 import unittest
 
@@ -413,6 +414,132 @@ class TrackerStopTest(unittest.TestCase):
             with self.assertRaises(lines.Stop, msg=last) as caught:
                 t._event(start)
             self.assertEqual(caught.exception.reason, "encore-slot-unknown")
+
+
+class AttractFoldTest(unittest.TestCase):
+    """Step G71 (decision 0034): the tracker folds Attract per position. The source is the holder's member code (1 + side *
+    6 + roster index) on the infatuated position, set by the start line; the visible ends (Mental Herb, Oblivious), the silent
+    end (-end|X|Attract|[silent]: the source left) and the occupant's leaving (a switch or a faint, no line) clear it; the Baton
+    Pass copy does not carry it (noCopy, data/moves.ts attract). The record's tail writes the four bytes by flat position."""
+
+    tracker = staticmethod(TrackerStopTest.tracker)
+
+    @staticmethod
+    def members(n=6):
+        from types import SimpleNamespace
+        return [SimpleNamespace(toxic_stage=0, seen=False, hp_percent=0, hp_flag=0, status=0, freeze_turns=0, toxic=0,
+                                item_now=0, hp=0, hp_max=0) for _ in range(n)]
+
+    def attracted(self, t):
+        """Position 0 (side 0, slot 0) infatuated by the member at position 2 (side 1, slot 0, roster 0): code 1 + 6 = 7."""
+        from duoforge_live.data import trace_to_c
+        t._event(trace_to_c.ev_tuple(trace_to_c.EV["VOLATILE_START"], 0, 2, trace_to_c.CAUSE["ABILITY"], 0, 11,
+                                     detail=trace_to_c.VOLATILE_ATTRACT))
+        return t._positions[0][0]
+
+    def test_the_start_keeps_the_source_member_code(self):
+        from duoforge_live.data import trace_to_c
+        t = self.tracker()
+        t._spectator, t._mental_herb = True, 3
+        t._member = lambda side: self.members()
+        p = self.attracted(t)
+        self.assertEqual(p.attract, 1 + 1 * 6 + 0)  # side 1, roster 0 of the holder at position 2
+        t._positions[1][1].occupant = 4  # side 1, slot 1 holds roster 4: its code is 1 + 6 + 4
+        t._event(trace_to_c.ev_tuple(trace_to_c.EV["VOLATILE_START"], 1, 3, trace_to_c.CAUSE["ABILITY"], 0, 11,
+                                     detail=trace_to_c.VOLATILE_ATTRACT))
+        self.assertEqual(t._positions[0][1].attract, 1 + 6 + 4)
+
+    def test_the_visible_ends_clear_it(self):
+        from duoforge_live.data import trace_to_c
+        EV, CAUSE = trace_to_c.EV, trace_to_c.CAUSE
+        t = self.tracker()
+        t._spectator, t._mental_herb = True, 3
+        t._member = lambda side: self.members()
+        p = self.attracted(t)
+        t._event(trace_to_c.ev_tuple(EV["VOLATILE_END"], 0, cause=CAUSE["ITEM"], ident2=4,
+                                     detail=trace_to_c.VOLATILE_ATTRACT))  # Mental Herb's row
+        self.assertEqual(p.attract, 0)
+        self.attracted(t)
+        t._event(trace_to_c.ev_tuple(EV["VOLATILE_END"], 0, cause=CAUSE["ABILITY"], ident2=2,
+                                     detail=trace_to_c.VOLATILE_ATTRACT))  # Oblivious's cure
+        self.assertEqual(p.attract, 0)
+
+    def test_the_silent_end_clears_it_and_only_its_own_form_folds(self):
+        t = self.tracker()
+        t._member = lambda side: self.members()
+        p = self.attracted(t)
+        t._silent_attract_end("|-end|p1a: Ceruledge|Attract|[silent]".split("|"))  # the source left the field
+        self.assertEqual(p.attract, 0)
+        for line in ("|-end|p1a: Ceruledge|Attract", "|-end|p1a: Ceruledge|Attract|[silent]|[of] p2a: X",
+                     "|-end|p1: Ceruledge|Attract|[silent]"):
+            with self.assertRaises(lines.Stop, msg=line) as caught:
+                t._silent_attract_end(line.split("|"))
+            self.assertEqual(caught.exception.reason, "line:-end Attract", line)
+
+    def test_the_occupant_leaving_clears_it_with_no_line(self):
+        from duoforge_live.data import trace_to_c
+        from duoforge_live.tracker import ROSTER_NONE
+        t = self.tracker()
+        t._spectator, t._after_upkeep, t._next_activation = True, False, 1
+        t._foe_leads, t._party, t._baton_pass = [ROSTER_NONE, ROSTER_NONE], None, 7
+        t._member = lambda side: self.members()
+        p = self.attracted(t)
+        t._event(trace_to_c.ev_tuple(trace_to_c.EV["SWITCH"], 0, trace_to_c.NOPOS, 0, 5, 0))  # a plain switch
+        self.assertEqual((p.occupant, p.attract), (5, 0))
+        self.attracted(t)
+        t._event(trace_to_c.ev_tuple(trace_to_c.EV["FAINT"], 0))  # a faint
+        self.assertEqual(p.attract, 0)
+
+    def test_baton_pass_does_not_copy_it(self):
+        from duoforge_live.data import trace_to_c
+        t = self.tracker()
+        t._spectator, t._next_activation, t._baton_pass = True, 1, 7
+        t._foe_leads, t._party = [0xff, 0xff], None
+        t._member = lambda side: self.members()
+        p = self.attracted(t)
+        t._event(trace_to_c.ev_tuple(trace_to_c.EV["SWITCH"], 0, trace_to_c.NOPOS, trace_to_c.CAUSE["MOVE"], 4, 7))
+        self.assertEqual((p.occupant, p.attract), (4, 0))
+
+    def test_a_cant_marks_the_action_taken(self):
+        from duoforge_live.data import trace_to_c
+        t = self.tracker()
+        t._member = lambda side: self.members()
+        p = t._positions[0][0]
+        t._event(trace_to_c.ev_tuple(trace_to_c.EV["CANT"], 0, trace_to_c.NOPOS, trace_to_c.CAUSE["ATTRACT"]))
+        self.assertEqual((p.acted, p.turn_done, p.move_queued), (1, True, False))
+
+    def test_the_check_before_an_action_belongs_to_it(self):
+        # the Attract check comes before the action's roll: its -activate is the action's first event (_pre_action), so the
+        # previous action's result never counts it
+        from duoforge_live.data import trace_to_c
+        t = self.tracker()
+        t._attract, t._struggle = 40, 900
+        check = trace_to_c.ev_tuple(trace_to_c.EV["ACTIVATE"], 0, 2, trace_to_c.CAUSE["MOVE"], 0, 40)
+        self.assertTrue(t._pre_action([check], 0))
+        self.assertFalse(t._pre_action([check], 1))  # another position's check
+        other = trace_to_c.ev_tuple(trace_to_c.EV["ACTIVATE"], 0, 2, trace_to_c.CAUSE["MOVE"], 0, 41)
+        self.assertFalse(t._pre_action([other], 0))
+
+    def test_the_record_writes_the_attract_sources_by_flat_position(self):
+        from duoforge_live import record
+        t = self.tracker()
+        t._member = lambda side: self.members()
+        t._party, t._conditions = None, [[0] * 4, [0] * 4]
+        t._hazards = [collections.Counter(), collections.Counter()]
+        t._guards = set()
+        p = self.attracted(t)  # position 0: side 0 slot 0, source code 7
+        t._positions[1][1].attract = 3  # side 1 slot 1 (flat 3): the source code of side 0's roster 2
+        st = record._State(max(start + size for start, size in record._FIELDS.values()))
+        record._tail(t, st, 2)
+        start, size = record._FIELDS["tail5.attract_source"]
+        self.assertEqual(size, 4)
+        self.assertEqual(list(st.bytes[start:start + size]), [p.attract, 0, 0, 3])
+
+    def test_the_presence_bit_and_its_field(self):
+        from duoforge_live import tracker as tracker_module
+        bit = tracker_module.C["DUOFORGE_POSITION_EXT_ATTRACT"]
+        self.assertIn(("attract", bit), tracker_module._PRESENCE_BITS)
+        self.assertEqual(tracker_module.EXT_FIELDS["RESERVE_VOLATILES"], (("bit", bit),))
 
 
 class HpDisplayTest(unittest.TestCase):

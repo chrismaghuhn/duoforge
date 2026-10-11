@@ -286,17 +286,28 @@ class LinesTest(unittest.TestCase):
             lines.check(line, self.view)
         return caught.exception.reason
 
-    def test_attract_lines_stop_until_the_tracker_folds_their_bit(self):
-        # Step G71 (decision 0034): Attract is POSITION_EXT_ATTRACT, a view bit this tracker does not fold yet
-        # (lines.UNFOLDED): every Attract line stops by that name, none folds
-        reason = "unfolded:DUOFORGE_POSITION_EXT_ATTRACT"
+    def test_attract_lines_fold_under_the_reserve_family(self):
+        # Step G71 (decision 0034): Attract is POSITION_EXT_ATTRACT, a bit of the encoder 6 reserve (RESERVE_VOLATILES, shown
+        # under that family's feature alone: DUOFORGE_VIEWEXT_RESERVE_CHECKED). Every form of its lines folds; none is unfolded
+        self.assertEqual(lines.UNFOLDED, {})
+        self.assertTrue(lines.TRACKER_FOLDS >> lines.FEATURES["RESERVE_VOLATILES"] & 1)
+        self.assertTrue(lines.EXT_FOLDS >> lines.FEATURES["RESERVE_VOLATILES"] & 1)
         for line in ("|-start|p1a: Staraptor|Attract|[from] ability: Cute Charm|[of] p2a: Gholdengo",
                      "|-activate|p1a: Staraptor|move: Attract|[of] p2a: Gholdengo",
                      "|cant|p1a: Staraptor|Attract",
                      "|-end|p1a: Staraptor|Attract|[silent]",
                      "|-end|p1a: Staraptor|move: Attract|[from] item: Mental Herb",
                      "|-end|p1a: Staraptor|move: Attract|[from] ability: Oblivious"):
-            self.assertEqual(self.stop(line), reason, line)
+            self.assertEqual(lines.check(line, self.view), "fold", line)
+
+    def test_attract_lines_stop_without_the_library_bit(self):
+        # the library's support of the family is the gate: without it every Attract line stops by the feature's name
+        from unittest import mock
+        with mock.patch.object(lines, "SUPPORTED", 0):
+            for line in ("|-start|p1a: Staraptor|Attract|[from] ability: Cute Charm|[of] p2a: Gholdengo",
+                         "|cant|p1a: Staraptor|Attract",
+                         "|-end|p1a: Staraptor|Attract|[silent]"):
+                self.assertEqual(self.stop(line), "feature:RESERVE_VOLATILES", line)
 
     def test_feature_lines_stop(self):
         self.assertEqual(self.stop("|-fieldstart|move: Gravity"), "feature:GRAVITY")
