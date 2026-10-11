@@ -78,17 +78,15 @@ class ReplayTeamsTest(unittest.TestCase):
         shutil.rmtree(cls.tmp, ignore_errors=True)
 
     def test_the_corpus_loads_through_the_training_loader(self):
-        # teams.load is what load_corpus (#397) runs on every id of the index: hash, parse, ids and the library check
-        import hashlib
+        # teams.load_corpus (#397), as train reads a corpus: every team's hash, parse, ids and library check, and the
+        # manifest's teams digest against the index
         ids = [t["id"] for t in self.index["teams"]]
         with duoforge.Context(data_kind=_layout.CONSTANTS["DUOFORGE_DATA_KIND_POOL"]) as ctx:
-            pool = teams.load(ctx, ids, root=str(self.out))
+            pool, provenance = teams.load_corpus(ctx, str(self.out))
         self.assertEqual(pool.ids, tuple(ids))
+        self.assertEqual((provenance["seed"], provenance["count"]), (None, len(ids)))
         self.assertTrue(all(t.startswith("RP_") and len(t) == 3 + 16 for t in ids))
-        # load_corpus's own check: the manifest's teams digest is the index's, and the keys pin and seed are there
-        digest = hashlib.sha256("".join(t["sha256"] for t in self.index["teams"]).encode()).hexdigest()
-        self.assertEqual(self.manifest["teams_sha256"], digest)
-        self.assertIn("pin", self.manifest)
+        teams.check_disjoint(str(self.out))  # content-addressed ids: none twice
 
     def test_teams_are_counted_deduplicated_and_weighted_by_frequency(self):
         c = self.manifest["counts"]
