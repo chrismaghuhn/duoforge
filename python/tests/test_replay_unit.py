@@ -456,7 +456,13 @@ class LinesTest(unittest.TestCase):
                          "line:-enditem [from] move: Incinerate")
         self.assertEqual(self.stop("|-item|p1a: Staraptor|Sitrus Berry|[from] move: Recycle"),
                          "line:-item [from] move: Recycle")
-        self.assertEqual(self.stop("|-start|p1a: Staraptor|move: Leech Seed"), "feature:LEECH_SEED")
+        self.assertEqual(self.stop("|-start|p1a: Staraptor|Salt Cure"), "feature:SALT_CURE")  # a feature still unfolded
+        # Leech Seed folds (step G84, decision 0047) in the one form the engine prints: its start without attributes; the
+        # engine has no end line (it ends with its holder), so the pin's -end lines (Rapid Spin, Mortal Spin) stop
+        self.assertEqual(lines.check("|-start|p1a: Staraptor|move: Leech Seed", self.view), "fold")
+        self.assertEqual(self.stop("|-end|p1a: Staraptor|move: Leech Seed"), "line:-end move: Leech Seed")
+        self.assertEqual(self.stop("|-start|p1a: Staraptor|move: Leech Seed|[of] p2a: Gholdengo"),
+                         "line:-start move: Leech Seed")
         self.assertEqual(lines.check("|-start|p1a: Staraptor|Encore", self.view), "fold")  # the tracker folds Encore
         self.assertEqual(lines.check("|-status|p1a: Staraptor|tox", self.view), "fold")  # Tox folds (BC spec 5)
         self.assertEqual(self.stop("|replace|p1a: Zoroark|Zoroark-Hisui, L50, M"), "feature:ILLUSION")

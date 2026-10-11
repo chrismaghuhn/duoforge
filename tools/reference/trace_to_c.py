@@ -1461,7 +1461,7 @@ def swap_partners(trace, teams, roster_of, tables):
     return out
 
 
-def step_events(log, viewer, roster_of, maxhp, tables, rb_pending=None, ill=None, swap_ids=None, boost_pre=None):
+def step_events(log, viewer, roster_of, maxhp, tables, rb_pending=None, ill=None, swap_ids=None, boost_pre=None, lead=()):
     """The events `viewer` sees in one step, in protocol order.
 
     ill (decision 0026, Illusion; None = no holder in the battle): 'side' (per side: a holder is on it), 'truth_at' ((side, p) ->
@@ -1472,6 +1472,8 @@ def step_events(log, viewer, roster_of, maxhp, tables, rb_pending=None, ill=None
     rb_pending maps a side to the position of the last Revival Blessing user of that side: its revive is shown in the step that
     answers the pivot, not in the step of the move (step G52).
     swap_ids maps the line index of an ally Skill Swap to the pair of ability ids that swap_partners followed (step G70).
+    lead are the lines before `log` of the same step, read only by the look-back of the Leech Seed heal (leech_heal_source); a
+    caller that converts one line at a time (the live tracker) passes the lines it has folded since the last decision point.
     """
     ill = ill if ill is not None else {'side': [False, False], 'truth_at': {}, 'multi': {}, 'replace': {}, 'last_hp': {}, 'shown_at': {}}
     if rb_pending is None:
@@ -1499,7 +1501,7 @@ def step_events(log, viewer, roster_of, maxhp, tables, rb_pending=None, ill=None
         # it silent, step G29): the engine's ITEM_END for it is how the other player's old item_used learns that the item left.
         # Regenerator's heal (step G39, the Champions mod) is the one [silent] line that shows: no client prints a message, but the line
         # carries the holder's new HP, which the opponent's display of the member follows.
-        leech_src = leech_heal_source(log, i) if kind == '-heal' and '[silent]' in attrs else None
+        leech_src = leech_heal_source(list(lead) + log, len(lead) + i) if kind == '-heal' and '[silent]' in attrs else None
         if '[silent]' in attrs and not ((kind == '-enditem' and any(a.startswith('[from] move: ') for a in attrs)) or
                                         (kind == '-heal' and '[from] ability: Regenerator' in attrs) or
                                         (leech_src is not None and ev_pos(parts[2]) == leech_src)):
