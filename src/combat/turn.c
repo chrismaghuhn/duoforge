@@ -1429,11 +1429,24 @@ static duoforge_status dfi_move_targets(dfi_run *r, uint32_t user, uint32_t cls,
         if (metal == 0u) {
             return DUOFORGE_OK;
         }
-        if (!dfi_alive(r->b, (uint32_t)metal - 1u)) {
-            return DUOFORGE_E_UNSUPPORTED;
+        if (dfi_alive(r->b, (uint32_t)metal - 1u)) {
+            targets[0] = (uint32_t)metal - 1u;
+            *count = 1u;
+            return DUOFORGE_OK;
         }
-        targets[0] = (uint32_t)metal - 1u;
-        *count = 1u;
+        /* The occupant of the slot is fainted (not yet replaced: a faint is replaced at the end of the turn) or gone: getMoveTargets'
+         * default branch retargets a fainted foe, getRandomTarget (sim/pokemon.ts:821-827), whose side.randomFoe() draws over the
+         * living foes (sim/side.ts:369-373, sample: random(length), one draw even with one foe). No living foe: no target. The
+         * record's source is a foe of the user, so the new target is a foe too. */
+        uint32_t retarget = DFI_POSITIONS;
+        const duoforge_status rt = dfi_random_foe(r, user / 2u, &retarget);
+        if (rt != DUOFORGE_OK) {
+            return rt;
+        }
+        if (retarget < DFI_POSITIONS) {
+            targets[0] = retarget;
+            *count = 1u;
+        }
         return DUOFORGE_OK;
     }
     if (cls == DUOFORGE_TARGET_CLASS_NORMAL || cls == DUOFORGE_TARGET_CLASS_ANY ||

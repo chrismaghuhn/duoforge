@@ -1,6 +1,6 @@
 {
  "name": "g97_metal_burst_substitute",
- "purpose": "Step G97: Aggron takes a Substitute hit (no entry with a number, sim/battle-actions.ts:1061-1065 and the target null): its Metal Burst fails on the next turn.",
+ "purpose": "Step G97 (decision 0063), attempt 3: turn 1 Dragonite (Choice Scarf) Dragon Claw hits Aggron directly (the record), then Aggron makes a Substitute (1/4 of its HP). Turn 2 Dragonite Dragon Claw into the Substitute (no entry, sim/battle-actions.ts:1061-1065, 990-997), Aggron Metal Burst: the record of turn 1 ended with turn 1: -fail, [still].",
  "data": "pool",
  "format": "gen9championsvgc2026regmc",
  "seed": "sodium,00000000000000000000000000000000000000000000000000000000000c9705",
@@ -14,7 +14,7 @@
    "move 1, move 1 2"
   ],
   "p2": [
-   "move 2, move 3",
+   "move 3 1, move 2 2",
    "move 3 1, move 2 2"
   ],
   "max_steps": 3

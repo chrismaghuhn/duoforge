@@ -1,6 +1,6 @@
 {
  "name": "g97_metal_burst_attacker_switched",
- "purpose": "Step G97: the foe Swampert (p2b, faster than Aggron) hits Aggron with Flip Turn and switches out; the replacement at p2b is hit by Aggron's Metal Burst (getAtSlot of the slot, sim/battle.ts:1611-1617).",
+ "purpose": "Step G97 (decision 0063), attempt 3: the foe Swampert (p2b, Speed 80 against Aggron 63) hits Aggron with Flip Turn and switches out; the replacement at p2b (Azumarill, the first standing reserve) is the target of Aggron's Metal Burst (getAtSlot, sim/battle.ts:1611-1617). max_steps 3: the lead, turn 1, and the replacement request.",
  "data": "pool",
  "format": "gen9championsvgc2026regmc",
  "seed": "sodium,00000000000000000000000000000000000000000000000000000000000c9703",
@@ -15,6 +15,6 @@
   "p2": [
    "move 2, move 1 1"
   ],
-  "max_steps": 2
+  "max_steps": 3
  }
 }

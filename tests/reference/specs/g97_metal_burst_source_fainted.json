@@ -1,6 +1,6 @@
 {
  "name": "g97_metal_burst_source_fainted",
- "purpose": "Step G97: Dragonite hits Aggron with Dragon Claw, then Glalie (p1b) knocks Dragonite out with Icicle Crash before Aggron acts: the target of Metal Burst is the fainted Dragonite (not modelled as a fail: the recording decides).",
+ "purpose": "Step G97 (decision 0063), attempt 3: turn 1 Dragonite (Choice Scarf, Speed 150) Dragon Claw into Aggron (the record), Aggron Earthquake (Dragonite immune), Glalie Icicle Crash into Dragonite (25 of 198 left, Multiscale halves a full-HP hit). Turn 2 Dragonite Dragon Claw again (the record), Glalie Icicle Crash KOs Dragonite (not replaced before the end of the turn), Aggron Metal Burst: ModifyTarget gives the fainted slot, getMoveTargets retargets to a living foe with a draw (sim/pokemon.ts:821-827).",
  "data": "pool",
  "format": "gen9championsvgc2026regmc",
  "seed": "sodium,00000000000000000000000000000000000000000000000000000000000c9706",
@@ -10,11 +10,13 @@
  ],
  "plan": {
   "p1": [
+   "move 4, move 1 1",
    "move 1, move 1 1"
   ],
   "p2": [
-   "move 3 1, move 3"
+   "move 3 1, move 2 2",
+   "move 3 1, move 2 2"
   ],
-  "max_steps": 2
+  "max_steps": 3
  }
 }

@@ -77,6 +77,30 @@ The scripted target's draw (`RANDOM_TARGET`, context `resolve`) is dropped by th
 
 Attempt 1 had `max_steps` equal to the turns (the lead switch-in is step 0 of a trace), so only the switch-ins were recorded. Attempt 2 is the first with turns.
 
+### 5.2 Attempt 3, written before the run (lead-approved, one lock job)
+
+**(b) The fainted slot (source_fainted).** When the record's source has fainted and no replacement has come in:
+
+- `getTarget` (`sim/battle.ts:2436-2487`) runs first, with no chosen target: `getRandomTarget` (`sim/battle.ts:2490-2516`), which for a `scripted` move calls `side.randomFoe()` (`sim/battle.ts:2516`, `sim/side.ts:369-373`). That draw is `RANDOM_TARGET` in context `resolve`. The converter drops it: `tools/reference/trace_to_c.py:689-690`, `if site == 'RANDOM_TARGET' and ctx in ('action-speed', 'resolve'): return 'target computed for priority'`, a drop reason. The step report of `diff_random.py` writes such a draw as `dropped: target computed for priority`. The engine therefore draws nothing there (section 5.1).
+- `useMoveInner` then runs `ModifyTarget`: `onModifyTarget` sets `getAtSlot(slot)` (`sim/battle-actions.ts:416`, `data/moves.ts:11674-11681`), the fainted Dragonite, which is defined, so the random branch at `:416` does not run. The move line is added with that target (`:457`).
+- `getMoveTargets` (`sim/battle-actions.ts:470`, `sim/pokemon.ts:791`), default branch (`sim/pokemon.ts:821-827`): `if (!target || (target.fainted && !target.isAlly(this)) ...)` then `possibleTarget = this.battle.getRandomTarget(this, move)`; no possible target gives `targets: []`; otherwise the target is replaced by a random living foe. **So: a retarget with a draw, not a fail**, as long as a foe is alive. `retargetLastMove` changes the move line to the new target.
+- `randomFoe` draws even with one candidate: `PRNG.sample` is `random(items.length)` (`sim/prng.ts:132-136`). The engine's `dfi_random_foe` has the same draw (`src/combat/turn.c`, RANDOM_TARGET over the living foes).
+- A faint is replaced at the end of the turn: `makeRequest('switch')` at `sim/battle.ts:2912`, after the queue. So in the turn of the KO the fainted Dragonite is still in its slot when Aggron acts.
+
+The engine implements this in `dfi_move_targets` (SCRIPTED): an occupant that is alive is the target; otherwise `dfi_random_foe` over the user's foes (no living foe: no target). The `RANDOM_TARGET` draw of that retarget is not dropped by the converter (context `execute`, not in the dropped list), so it is a tape entry the engine must consume. Whether it is in the trace as `kept` is what the run decides.
+
+**Plan of source_fainted, by hand.** Speeds (base; Champions stats are not in the pin text, so only the order matters): Dragonite 80 with Choice Scarf (x1.5), Glalie 80, Azumarill 50, Aggron 50 with Relaxed (x0.9), Swampert 60. Order: Dragonite, Glalie, Azumarill, Aggron. Multiscale halves a hit at full HP only; Dragonite is at full HP for the first hit.
+
+- Turn 1: Dragonite Dragon Claw into Aggron (Aggron 177 to about 159, the record D1, like attempt 2). Glalie Icicle Crash into Dragonite: 4x Ice on Dragon/Flying, halved by Multiscale at full HP, 198 to 25 (attempt 2, same draws up to here). Aggron Earthquake: Dragonite is immune (Flying), Azumarill and Glalie take it (Glalie is the ally, not a record). Leftovers heals Aggron 177/16 = 11 at the end of the turn. The Earthquake is Aggron's move, so its own record is not written.
+- Turn 2: Dragonite Dragon Claw into Aggron (record D2, the damage of this hit, Leftovers already in). Glalie Icicle Crash into Dragonite at 25: **accuracy 90** (`data/moves.ts:9437-9441`), so a miss (10%) leaves Dragonite alive: then the case is not reached. If it hits, Dragonite faints. Azumarill Waterfall into Glalie (no protect, so Azumarill is a valid target). Aggron Metal Burst at the fainted slot p2a: record D2 numeric, the thisTurn rule holds, the target is retargeted to Azumarill with one draw, damage floor(1.5 D2) on Azumarill.
+- Expected sequence: `|move|p1a: Aggron|Metal Burst|p2a: Dragonite` retargeted to `p2b: Azumarill`, then `-damage|p2b: Azumarill|...` of max(1, floor(1.5 D2)).
+
+**(a) attacker_switched.** Turn 1: Swampert (Speed 80) Flip Turn into Aggron (63), Aggron's record; the switch is requested before Aggron acts (the replacement request of the U-turn-type move), Azumarill comes in at p2b as the first standing reserve; Aggron Metal Burst targets the replacement by slot (`getAtSlot`, `sim/battle.ts:1611-1617`). max_steps 3 (lead, turn, replacement).
+
+**(c) substitute, verified by hand.** The attempt-2 plan was not a harness fault: Dragonite holds **Choice Scarf**, so its turn-1 Protect locked it into Protect (the choicelock: the request offers only the locked move). Its turn-2 choice `move 3 1` (Dragon Claw) was not legal, and the plan fell back to its first usable move. The new plan has Dragonite hit Aggron on turn 1 (no Substitute yet: Dragonite acts first), then Aggron makes a Substitute; turn 2 Dragon Claw is the only legal move and hits the Substitute (`battle-actions.ts:1061-1065`, no entry), and Aggron's Metal Burst fails (`-fail`, `[still]`) because the turn-1 record ended with turn 1 (section 1.2). Sub HP is 177/4 = 44; the turn-2 Dragon Claw does about 20, so the Substitute stays up.
+
+**Mutants planned against attempt 3:** the retarget without its draw (the tape differs), the retarget of a fainted target to a fail, the record kept at turn end, the Substitute hit counted as an entry.
+
 ## 6. Tests and evidence (planned)
 
 - Recorded battles: the six traces above (`tests/reference/traces`, converted with `trace_to_c.py`), so the usage check of `test_trace_to_c.py` finds a pool battle that uses Metal Burst.
