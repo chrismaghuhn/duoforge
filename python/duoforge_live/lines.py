@@ -138,6 +138,9 @@ BASE_FOLDS = sum(1 << FEATURES[n] for n in ("WEATHER_SAND", "WEATHER_SNOW", "AIL
                                                  "TERRAIN_MISTY"))
 # The view-extension folds (tracker.EXT_FIELDS: the record fields the tracker fills; test_replay compares them with
 # DuoForge's record byte for byte and requires each to be shown at compared points of both viewers, own and foe side).
+# SUBSTITUTE is not folded, and the record's move_result relies on that: a status move that a Substitute blocks shows the
+# lines of a failed one and is true at the pin, which duoforge_move_result cannot tell from the events (its precondition).
+# Folding SUBSTITUTE first needs an explicit treatment of a status move into a Substitute for move_result.
 EXT_FOLDS = sum(1 << FEATURES[n] for n in ("THROAT_CHOP", "AURORA_VEIL", "PERISH", "ENCORE", "ABILITY_CHANGE", "ITEM_CHANGE",
                                           "MUST_RECHARGE", "TOXIC_SPIKES", "TYPE_CHANGE", "TAUNT", "YAWN",
                                           "DISABLE", "IMPRISON", "STEALTH_ROCK",
@@ -205,6 +208,16 @@ _FOLD_END = {"confusion"}
 _FOLD_WEATHER = {"RainDance", "SunnyDay", "none"}
 _FOLD_FIELD = {"move: Grassy Terrain", "move: Psychic Terrain", "move: Trick Room"}
 _FOLD_SIDE = {"move: Tailwind", "Reflect", "move: Reflect", "move: Light Screen"}
+
+
+# Effects whose state is a view bit this tracker does not fold yet (encoder 6 has its column; the fold and its byte
+# comparison against the engine come as their own step): every line of them stops by the bit's name (step G71,
+# decision 0034: Attract's start, its announcement before a move, its cant, its silent and its cured end).
+UNFOLDED = {"Attract": "DUOFORGE_POSITION_EXT_ATTRACT", "move: Attract": "DUOFORGE_POSITION_EXT_ATTRACT"}
+
+
+def _unfolded(effect):
+    raise Stop(f"unfolded:{UNFOLDED[effect]}")
 
 
 def _feature(name):
@@ -296,6 +309,8 @@ def check(line, view):
         return "fold"
     if kind == "-fail" and len(args) > 1 and args[1] == "unboost":
         return _kept_drop(args, attrs, view)
+    if kind == "cant" and len(args) > 1 and args[1] in UNFOLDED:
+        _unfolded(args[1])
     if kind in GENERIC:
         return "fold"
     if kind == "-ohko" and not args and not attrs:
@@ -305,6 +320,8 @@ def check(line, view):
     if kind == "-clearnegativeboost" and attrs == ["[silent]"]:
         return "fold"  # White Herb (Team C): the [silent] line the converter skips; the tracker folds it
     effect = args[1] if len(args) > 1 else ""
+    if kind in ("-activate", "-start", "-end") and effect in UNFOLDED:
+        _unfolded(effect)
     if kind == "-activate":
         if effect in _FOLD_ACTIVATE:
             return "fold"

@@ -869,6 +869,7 @@ duoforge_status duoforge_battle_observe(const duoforge_context *ctx, const duofo
 #define DUOFORGE_POSITION_EXT_ILLUSION_UP  0x00080000u
 #define DUOFORGE_POSITION_EXT_ROOST        0x00100000u /* Roost: the Flying type is off until the end of the turn */
 #define DUOFORGE_POSITION_EXT_TRANSFORMED  0x00200000u /* Transform: the occupant is a copy of another Pokemon (decision 0028) */
+#define DUOFORGE_POSITION_EXT_ATTRACT      0x08000000u /* Attract (step G71, decision 0034): the occupant is infatuated; presence only, no source */
 /* Bits of duoforge_side_ext.guard_flags (this turn only). */
 #define DUOFORGE_SIDE_GUARD_WIDE_GUARD  1u
 #define DUOFORGE_SIDE_GUARD_QUICK_GUARD 2u
@@ -890,8 +891,10 @@ duoforge_status duoforge_battle_observe(const duoforge_context *ctx, const duofo
 /* X(family, bit number in the family's field): a defined reserve bit WITHOUT a feature of its own, shown under the family's
    feature alone (POSITION_FLAGS: the observation's position flags, always), checked by its step: the comment beside the
    entry names the decision or the evidence. Every defined reserve bit is in exactly one of the two lists
-   (python/tests/test_encoder6.py), so no bit becomes visible only because its family counts as supported. Empty now. */
-#define DUOFORGE_VIEWEXT_RESERVE_CHECKED(X)
+   (python/tests/test_encoder6.py), so no bit becomes visible only because its family counts as supported. ATTRACT is the first
+   entry (decision 0034, step G71). */
+#define DUOFORGE_VIEWEXT_RESERVE_CHECKED(X) \
+    X(RESERVE_VOLATILES, 27u) /* ATTRACT, decision 0034, step G71 */
 /* duoforge_member_ext.item_now: the member holds nothing (Knock Off, Thief). */
 #define DUOFORGE_ITEM_NOW_NONE 255u
 
@@ -1123,9 +1126,10 @@ duoforge_status duoforge_battle_observe_ext(const duoforge_context *ctx, const d
                                               its switch-in (Air Balloon's onStart, data/items.ts:191-195, gravity off): position
                                               the holder, id2: item + 1, cause NONE, every other field 0. Public: the foe knows
                                               the item already (open team sheets), so the knowledge fold ignores it. RESERVED,
-                                              not mapped yet: the same line with `[from] ability: X|[of] Y` (Frisk), cause
-                                              ABILITY with id = the ability and other = the Frisk user; the converter refuses it
-                                              until a later step maps it. */
+                                              Mapped by step G81 (Frisk): `-item|X|Item|[from] ability: Frisk|[of] Y` (no [identify]:
+                                              the pin prints none, data/abilities.ts:1549) is ITEM_SHOWN with position the frisked
+                                              foe X, other the Frisk user Y, cause ABILITY, id = Frisk + 1, id2 = item + 1, every
+                                              other field 0. The converter accepts only that form. */
 
 /* Causes ([from] and [of] in the protocol). */
 #define DUOFORGE_CAUSE_NONE      0u /* the move or the plain mechanic */
@@ -1161,6 +1165,8 @@ duoforge_status duoforge_battle_observe_ext(const duoforge_context *ctx, const d
                                          (DUOFORGE_ITEM_NOW_NONE) */
 #define DUOFORGE_CAUSE_IMPRISON  21u /* CANT (POOL kinds): a move that the foe's Imprison forbids, queued before it was used
                                          ([cant] move: Imprison|Move); id: the stopped move, no PP is used */
+#define DUOFORGE_CAUSE_ATTRACT   36u /* CANT (POOL kinds, step G71, decision 0034): the infatuated occupant's move is stopped by
+                                         Attract ([cant] Attract); no PP is used. */
 
 #define DUOFORGE_EVENT_FLAG_STILL  1u  /* MOVE: the charge turn of a two-turn move */
 #define DUOFORGE_EVENT_FLAG_LOCKED 2u  /* MOVE: the locked turn ([from] lockedmove) */
@@ -1193,6 +1199,10 @@ duoforge_status duoforge_battle_observe_ext(const duoforge_context *ctx, const d
 #define DUOFORGE_VOLATILE_DRAGONCHEER 10u /* VOLATILE_START (POOL kinds, step G72b, decision 0015 5ce): Dragon Cheer's volatile
                                               (-start|X|move: Dragon Cheer). Presence only; no END: a switch-out removes it with no
                                               line. The crit stage it gives is in the position flags (tail rev 5), not in an event. */
+#define DUOFORGE_VOLATILE_ATTRACT    11u /* VOLATILE_START / VOLATILE_END (POOL kinds, step G71, decision 0034): Attract (-start|X|Attract|
+                                              [from] ability: Cute Charm|[of] Y, other: the holder). Its end lines of Mental Herb and
+                                              Oblivious are VOLATILE_END (cause ITEM or ABILITY); the silent end (the source left) is state
+                                              only, with no event (decision 0015 5bn). */
 /* FAIL details of a Substitute, valid only with cause MOVE and id2 = the Substitute move (decision 0032). */
 #define DUOFORGE_FAIL_SUBSTITUTE_EXISTS 1u /* the user already has a Substitute: -fail|X|move: Substitute */
 #define DUOFORGE_FAIL_SUBSTITUTE_WEAK   2u /* the user's HP is a quarter of its maximum or less: -fail|X|move: Substitute|[weak] */

@@ -134,7 +134,10 @@ def fields(pool=True):
         out += _block(f"tail5.position{flat}.", tail5 + _o("TAIL5_POS_OFF") + flat * _o("TAIL5_POS_SIZE"), _sub((
             ("position_flags", "TAIL5_POSITION_FLAGS_OFF"), ("future_sight", "TAIL5_FUTURE_SIGHT_OFF"))),
             _o("TAIL5_POS_SIZE"))
-    out.append(("tail5.reserved", tail5 + _o("TAIL5_RESERVED_OFF"), _o("TAIL5_RESERVED_SIZE")))
+    # step G71 (decision 0034): the first 4 bytes of the rev 5 reserve are Attract's source member per flat position
+    out.append(("tail5.attract_source", tail5 + _o("TAIL5_ATTRACT_OFF"), _o("TAIL5_ATTRACT_SIZE")))
+    out.append(("tail5.reserved", tail5 + _o("TAIL5_RESERVED_OFF") + _o("TAIL5_ATTRACT_SIZE"),
+                _o("TAIL5_RESERVED_SIZE") - _o("TAIL5_ATTRACT_SIZE")))
     return out
 
 

@@ -276,7 +276,7 @@ foreach(_gen IN ITEMS
         "extended_tables.h=b2abef243fcbfdd87654940076b9fe2fe80b117d74893a7567741f26b9075a7d"
         "extended_tables.c=9e736fa467713283418c4edf8f56b8d844452e596ba422adbd52483d20f7cc17"
         "pool_tables.h=6342d840a6e3c7819eb2e1addad67e84a6eb4261868f9ce7f5e34a2c17e641ce"
-        "pool_tables.c=0466ef3f9b3e97990063571a7e42a0019ac2e5781bdc7c7a671f3a3d09573c8d")
+        "pool_tables.c=3d87d1a612bbeeaff4bb8ecaba75ec078fd695b95eb950bbd5f809e576d6fdc9")
     string(REPLACE "=" ";" _parts "${_gen}")
     list(GET _parts 0 _file)
     list(GET _parts 1 _expected)
@@ -819,6 +819,9 @@ duoforge_add_test(NAME duoforge.state.pool_g69 SOURCES test_pool_g69.c WHITEBOX 
 # rows, the recoil and crash facts Reckless reads, and the Trace refusal of Water Bubble onto a burned holder; white-box).
 duoforge_add_test(NAME duoforge.state.pool_g65 SOURCES test_pool_g65.c WHITEBOX TIMEOUT 60)
 
+# Step G75 (decision 0015 5bp): the cheap set, Pure Power, Battle Armor and Scope Lens (engine rows), the stones Medichamite and
+# Clefablite, and the two Mega pairs (white-box).
+duoforge_add_test(NAME duoforge.state.pool_g75 SOURCES test_pool_g75.c WHITEBOX TIMEOUT 60)
 
 # Step G73 (decision 0015 5bo): Moody (its residual order, its two samples on one site, the boost with the raised key first; white-box, with
 # its recorded battles g73_*, which conformance_pool_data replays).
@@ -830,3 +833,14 @@ duoforge_add_test(NAME duoforge.state.pool_g67 SOURCES test_pool_g67.c WHITEBOX 
 
 # Step G83 (decision 0015 entry 5bt): Bulletproof, Rivalry, Leaf Guard and Iron Ball (their rows, the five recorded battles; white-box).
 duoforge_add_test(NAME duoforge.state.pool_g83 SOURCES test_pool_g83.c WHITEBOX TIMEOUT 60)
+# Step G71 (decision 0034, decision 0015 5bn): Attract's source bytes, the state check, the public bit, the from-view refusal and the
+# clear of the holder's byte (white-box; the volatile's draws wait for G73's site).
+duoforge_add_test(NAME duoforge.state.pool_g71 SOURCES test_pool_g71.c WHITEBOX LIBS duoforge_batch TIMEOUT 60)
+
+# Step G79 (decision 0015 5br): Cloud Nine, the weather suppression of a standing holder (its mark, Mega Sol's refusal under it, and
+# the refusal of a Trace copy of it; white-box). The recorded battles g79_* are replayed by duoforge.reference.conformance_pool_data.
+duoforge_add_test(NAME duoforge.state.pool_g79 SOURCES test_pool_g79.c WHITEBOX TIMEOUT 60)
+
+# Step G81 (decision 0015 entry 5bs, decision 0033): Frisk (the foes' items announced at its holder's switch-in, ITEM_SHOWN in
+# the Frisk form), the switch-in order against Intimidate, two Frisk holders, and the fold that ignores the event.
+duoforge_add_test(NAME duoforge.state.pool_g81 SOURCES test_pool_g81.c WHITEBOX TIMEOUT 120)

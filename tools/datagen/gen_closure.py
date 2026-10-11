@@ -1817,6 +1817,20 @@ G47_ABILITY_FACTS = (
                    "this.add('-fail', target, 'unboost', 'atk', '[from] ability: Oblivious', `[of] ${target}`); }",
                    'flags: { breakable: 1 },')),
 )
+# Step G71 (decision 0034, decision 0015 5bn): Cute Charm is an engine row (ENGINE_ROWS, once the draws of Cute Charm and Attract are
+# wired). Its pinned callback, whole: the contact test, the 3/10 roll and the infatuation of the attacker by the holder
+# (data/abilities.ts:798-810). The Attract volatile's facts (data/moves.ts:706-761) and the Oblivious and Mental Herb halves are the
+# G47 facts above. The Champions mod has no entry for Cute Charm (check_g34_facts).
+G71_ABILITY_FACTS = (
+    ('cutecharm', ('onDamagingHit(damage, target, source, move) {',
+                   'if (this.checkMoveMakesContact(move, source, target)) {',
+                   'if (this.randomChance(3, 10)) {',
+                   "source.addVolatile('attract', this.effectState.target);",
+                   '}',
+                   '}',
+                   '},',
+                   'flags: {},')),
+)
 G47_ITEM_FACTS = (
     ('lumberry', ('onAfterSetStatusPriority: -1,',
                   'onAfterSetStatus(status, pokemon) { pokemon.eatItem(); },',
@@ -1861,6 +1875,41 @@ G59_ABILITY_FACTS = (
                  'flags: {},')),
 )
 G59_INHERIT_ONLY = ('firemane', 'spicyspray', 'megasol')
+
+# Step G79 (decision 0015 5br): Cloud Nine (data/abilities.ts:543-562) suppresses the weather while a holder stands, its
+# onSwitchIn prints -ability and its onStart and onEnd only set the ending flag and run WeatherChange (no line). It is an engine
+# row (ENGINE_ROWS): the turn code reads it by id (dfi_weather_suppressed) and prints its switch-in line itself.
+G79_ABILITY_FACTS = (
+    ('cloudnine', ("this.add('-ability', pokemon, 'Cloud Nine');",
+                   'pokemon.abilityState.ending = false;',
+                   "this.eachEvent('WeatherChange', this.effect);",
+                   'pokemon.abilityState.ending = true;',
+                   'suppressWeather: true,',
+                   'flags: {},')),
+)
+# The pinned lines the suppression rests on (sim/field.ts, sim/battle.ts, sim/battle-actions.ts) and the weather's own residual
+# (data/conditions.ts): which weather handlers run while the weather is suppressed, and where the holder's end is shown.
+G79_FIELD_FACTS = (
+    ('field', ('suppressingWeather() {',
+               'if (pokemon && !pokemon.fainted && !pokemon.ignoringAbility() &&',
+               'pokemon.getAbility().suppressWeather && !pokemon.abilityState.ending) {',
+               "if (this.suppressingWeather()) return '';",
+               'const ourWeather = this.effectiveWeather();')),
+    ('battle', ("effect.effectType === 'Weather' && eventid !== 'FieldStart' && eventid !== 'FieldResidual' &&",
+                "eventid !== 'FieldEnd' && this.field.suppressingWeather()",
+                "(effect.effectType === 'Weather' || eventid === 'Weather') &&",
+                "eventid !== 'Residual' && eventid !== 'End' && this.field.suppressingWeather()",
+                "if (eventid === 'Weather' && this.gen >= 7) {",
+                "if (eventid === 'Residual' && handler.end && handler.state?.duration) {",
+                'handler.state.duration--;',
+                "this.singleEvent('End', pokemon.getAbility(), pokemon.abilityState, pokemon);",
+                'pokemon.fainted = true;')),
+    ('battle-actions', ("this.battle.singleEvent('End', oldActive.getAbility(), oldActive.abilityState, oldActive);",)),
+    ('conditions', ("this.add('-weather', 'RainDance', '[upkeep]');",
+                    "this.add('-weather', 'SunnyDay', '[upkeep]');",
+                    "if (this.field.isWeather('sandstorm')) this.eachEvent('Weather');",
+                    "if (this.field.isWeather('snowscape')) this.eachEvent('Weather');")),
+)
 
 # Step G51 (Pidgeotite: Keen Eye and Big Pecks, the base abilities of Pidgeot): both are engine rows (ENGINE_ROWS) that dfi_boost
 # (src/combat/turn.c) reads by id, Hyper Cutter's shape: the pinned TryBoost of the target itself deletes one drop that another
@@ -1926,8 +1975,16 @@ G83_ITEM_FACTS = (
                   "if (move.type === 'Ground' && target.hasType('Flying')) return 0; },",
                   'onModifySpe(spe) { return this.chainModify(0.5); },')),
 )
+# Step G81 (decision 0015 entry 5bs): Frisk is an engine row read by id. Its onStart announces, for each foe in foes() order that
+# holds an item, `-item|X|Item|[from] ability: Frisk|[of] Y` (no [identify]: the pin prints none). The turn code emits ITEM_SHOWN
+# with the Frisk form (decision 0033), no state change.
+G81_ABILITY_FACTS = (
+    ('frisk', ("onStart(pokemon) { for (const target of pokemon.foes()) { if (target.item) { "
+               "this.add('-item', target, target.getItem().name, '[from] ability: Frisk', `[of] ${pokemon}`); } } },",
+               'flags: {},')),
+)
 G34_ITEM_FACTS = (
-    ('widelens', ('onSourceModifyAccuracyPriority: -2,',
+    ('widelens',('onSourceModifyAccuracyPriority: -2,',
                   "onSourceModifyAccuracy(accuracy) { if (typeof accuracy === 'number') { return this.chainModify([4505, 4096]); } },")),
 )
 # Step G32 (small rules): eight handlers of the turn code, one per rule that the generic columns cannot hold: HP_POWER
@@ -2811,7 +2868,7 @@ HANDLER_IDS = ['NONE', 'UNMODELED']
 # Stone of Floette-Eternal), Flower Veil and Fairy Aura. G14: Rough Skin, Poison Touch and Thermal Exchange. G16: Sticky Hold (Knock Off reads it by id). AC1: Trace (the entry copy of a foe's ability). G15: Psychic Seed (Grassy Seed's rule for the other terrain). G22: Sand Rush, Swift Swim, Slush Rush and Chlorophyll (the doubled Speed in their weather, tools/datagen/pool_families.js ENGINE_ORDER), Sand Rush's immunity to Sandstorm, Inner Focus (no flinch, no Intimidate drop) and Liquid Voice (a sound move becomes Water). G23-C: Levitate (isGrounded and the Ground immunity). G49: Muscle Band, Wise Glasses (base power by category) and Bright Powder (the target's accuracy).
 ENGINE_ROWS = {'items': ['airballoon', 'ironball', 'focussash', 'floettite', 'psychicseed', 'electricseed', 'mistyseed', 'expertbelt', 'ejectbutton',
                          'widelens', 'muscleband', 'wiseglasses', 'brightpowder', 'redcard', 'lumberry', 'mentalherb', 'damprock', 'heatrock',
-                         'smoothrock', 'icyrock', 'terrainextender'],
+                         'smoothrock', 'icyrock', 'terrainextender', 'scopelens'],
                'abilities': ['magicguard', 'bulletproof', 'rivalry', 'leafguard', 'rockhead', 'flowerveil', 'fairyaura', 'roughskin', 'poisontouch', 'thermalexchange',
                              'stickyhold', 'trace', 'levitate', 'sandrush', 'swiftswim', 'slushrush', 'chlorophyll',
                              'innerfocus', 'liquidvoice', 'flamebody', 'clearbody', 'hospitality', 'overcoat',
@@ -2831,8 +2888,8 @@ ENGINE_ROWS = {'items': ['airballoon', 'ironball', 'focussash', 'floettite', 'ps
                              'solarpower',
                              'regenerator', 'toxicdebris', 'shadowtag', 'suctioncups', 'guarddog',
                              'steadfast', 'weakarmor', 'telepathy', 'voltabsorb', 'punkrock', 'moxie', 'synchronize', 'oblivious', 'keeneye', 'bigpecks', 'magicbounce', 'pressure', 'stancechange',
-                             'sandforce', 'shellarmor', 'filter', 'stalwart', 'megalauncher', 'hugepower', 'thickfat', 'firemane', 'spicyspray', 'megasol', 'sheerforce', 'illusion', 'symbiosis',
-                             'unaware', 'marvelscale', 'waterbubble', 'reckless', 'superluck', 'moody']}
+                             'sandforce', 'shellarmor', 'filter', 'stalwart', 'megalauncher', 'hugepower', 'thickfat', 'firemane', 'spicyspray', 'megasol', 'cloudnine', 'sheerforce', 'illusion', 'symbiosis', 'frisk',
+                             'unaware', 'marvelscale', 'waterbubble', 'reckless', 'superluck', 'moody', 'cutecharm', 'purepower', 'battlearmor']}
 # The moves of the whole pool that the turn code pivots with a switch flag of their own (dfi_pivot_moves,
 # src/state/closure_member.c) beyond Flip Turn and U-turn, which are rows of the steps. Empty: Volt Switch comes with the
 # step that gives it a flag value, and adds its id here.
@@ -3818,6 +3875,26 @@ G73_ABILITY_FACTS = (
 )
 
 
+# Step G75 (cheap set): Pure Power (x2 Attack, the Huge Power callback text, data/abilities.ts:3608-3617) and Battle Armor (no
+# critical hit against the holder, the Shell Armor text, :355-361) are engine rows (ENGINE_ROWS) that the turn code reads by id;
+# Scope Lens (+1 to the holder's critical ratio, data/items.ts:5554-5565) is an engine row of the items. None is overridden by
+# the Champions mod, and Mold Breaker is not marked, so no breakable flag has an interaction.
+G75_ABILITY_FACTS = (
+    ('purepower', ('onModifyAtkPriority: 5,',
+                   'onModifyAtk(atk) {',
+                   'return this.chainModify(2);',
+                   '},',
+                   'flags: {},')),
+    ('battlearmor', ('onCriticalHit: false,',
+                     'flags: { breakable: 1 },')),
+)
+G75_ITEM_FACTS = (
+    ('scopelens', ('onModifyCritRatio(critRatio) {',
+                   'return critRatio + 1;',
+                   '},')),
+)
+
+
 def check_g57_facts(abil_ts, champ_abil):
     """Step G57: the texts of Magic Bounce that the engine reproduces (G57_ABILITY_FACTS) are in the pinned entry, whitespace
     aside, and the Champions mod has no entry of its own for it."""
@@ -3851,8 +3928,8 @@ def check_g34_facts(abil_ts, champ_abil, items_ts, champ_items):
     """Steps G34, G35, Mega batch 2 and G39: every fact of G34_ABILITY_FACTS, G35_ABILITY_FACTS, MEGA2_ABILITY_FACTS, G39_ABILITY_FACTS and G34_ITEM_FACTS is in the pinned entry, whitespace aside, and the
     Champions mod has no entry of its own for it (an override would change what the engine reads). Step G59: the Champions
     entry of a G59_INHERIT_ONLY ability may only inherit (`inherit: true`, `isNonstandard: null`), which is no override."""
-    for kind, facts_by_id, src, champ in (('ability', G34_ABILITY_FACTS + G35_ABILITY_FACTS + MEGA2_ABILITY_FACTS + G39_ABILITY_FACTS + G41_ABILITY_FACTS + G45_ABILITY_FACTS + G46_ABILITY_FACTS + G47_ABILITY_FACTS + G51_ABILITY_FACTS + G53_ABILITY_FACTS + G63_ABILITY_FACTS + G59_ABILITY_FACTS + G69_ABILITY_FACTS + G65_ABILITY_FACTS + G73_ABILITY_FACTS + G67_ABILITY_FACTS + G83_ABILITY_FACTS, abil_ts, champ_abil),
-                                          ('item', G34_ITEM_FACTS + G46_ITEM_FACTS + G47_ITEM_FACTS + G67_ITEM_FACTS + G83_ITEM_FACTS, items_ts, champ_items)):
+    for kind, facts_by_id, src, champ in (('ability', G34_ABILITY_FACTS + G35_ABILITY_FACTS + MEGA2_ABILITY_FACTS + G39_ABILITY_FACTS + G41_ABILITY_FACTS + G45_ABILITY_FACTS + G46_ABILITY_FACTS + G47_ABILITY_FACTS + G51_ABILITY_FACTS + G53_ABILITY_FACTS + G63_ABILITY_FACTS + G59_ABILITY_FACTS + G69_ABILITY_FACTS + G65_ABILITY_FACTS + G73_ABILITY_FACTS + G67_ABILITY_FACTS + G83_ABILITY_FACTS + G81_ABILITY_FACTS + G79_ABILITY_FACTS + G75_ABILITY_FACTS + G71_ABILITY_FACTS, abil_ts, champ_abil),
+                                          ('item', G34_ITEM_FACTS + G46_ITEM_FACTS + G47_ITEM_FACTS + G67_ITEM_FACTS + G83_ITEM_FACTS + G75_ITEM_FACTS, items_ts, champ_items)):
         for rid, facts in facts_by_id:
             e = src.entry(rid)
             if e is None:
@@ -3897,6 +3974,18 @@ def check_g59_facts(abil_ts, champ_abil, pokemon_ts, conditions_ts):
         for fact in facts:
             if norm(fact) not in text:
                 fail('%s: the pin no longer has "%s"' % (src.rel, fact))
+
+
+def check_g79_facts(field_ts, battle_ts, actions_ts, conditions_ts):
+    """Step G79: the Cloud Nine entry (G79_ABILITY_FACTS, through check_g34_facts) and the pinned lines of the suppression
+    (G79_FIELD_FACTS: Field.suppressingWeather, the handler skips of singleEvent and runEvent, the Update of a Weather event,
+    the holder's End at a switch-out and at a faint, and the weather's upkeep lines), whitespace collapsed."""
+    srcs = {'field': field_ts, 'battle': battle_ts, 'battle-actions': actions_ts, 'conditions': conditions_ts}
+    for name, facts in G79_FIELD_FACTS:
+        text = norm(chr(10).join(srcs[name].lines))
+        for fact in facts:
+            if norm(fact) not in text:
+                fail('%s: the pin no longer has "%s"' % (srcs[name].rel, fact))
 
 
 def check_g49_facts(items_ts, champ_items):
@@ -4187,6 +4276,8 @@ def build_pool(root, repo, dx):
     check_g49_facts(items_ts, champ_items)
     check_g59_facts(abil_ts, champ_abil, Source(root, 'sim/pokemon.ts', READER_INPUTS),
                     Source(root, 'data/conditions.ts', READER_INPUTS))
+    check_g79_facts(Source(root, 'sim/field.ts', READER_INPUTS), Source(root, 'sim/battle.ts', READER_INPUTS),
+                    Source(root, 'sim/battle-actions.ts', READER_INPUTS), Source(root, 'data/conditions.ts', READER_INPUTS))
     check_g55_items(items_ts, champ_items)
     check_g37_facts(abil_ts, champ_abil)
     check_g57_facts(abil_ts, champ_abil)

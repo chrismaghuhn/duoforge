@@ -399,6 +399,58 @@ static bool dfi_ability(const struct duoforge_battle *b, const dfi_member *m, ui
     return m != NULL && dfi_ability_code(b, m) == 1u + id;
 }
 
+/* ---------------------------------------------------------------- weather (step G79)
+ *
+ * The weather that a read sees is one predicate, dfi_field_weather (Field.effectiveWeather, sim/field.ts:101-104), with the
+ * move reading of Mega Sol on top (dfi_move_weather, Pokemon#effectiveWeather, sim/pokemon.ts:2190-2212). Every read of the
+ * weather in this file goes through one of the two; the raw state b->weather is read only where the reference reads the raw
+ * field (the setters, the countdown and the upkeep, the weather's own sun/rain effects are read through the field too). */
+
+/* A faint of the current run that faintMessages has not shown yet: faint_queue[faint_announced..faint_count). */
+static bool dfi_faint_pending(const dfi_run *r, uint32_t flat)
+{
+    for (uint32_t i = r->faint_announced; i < r->faint_count; ++i) {
+        if (r->faint_queue[i] == flat) {
+            return true;
+        }
+    }
+    return false;
+}
+
+/* Cloud Nine suppresses the weather while a holder stands (data/abilities.ts:543-562; Field.suppressingWeather,
+ * sim/field.ts:106-116). A holder stands while it is not fainted (`!pokemon.fainted`, field.ts:109). The flag is set when
+ * faintMessages shows the faint (sim/battle.ts:2564), and the holder's End (:2556, the ability ends) comes in the same
+ * loop: a position with HP 0 stops suppressing once its faint is shown, and a faint that is still queued keeps suppressing
+ * (dfi_faint_pending). A switch-out ends the holder before the replacement (sim/battle-actions.ts:103), which here is the
+ * occupant that changes. The ability is read as it is now (Trace, Skill Swap and Mega Evolution change it). */
+static bool dfi_weather_suppressed(const dfi_run *r)
+{
+    for (uint32_t flat = 0u; flat < DFI_POSITIONS; ++flat) {
+        const dfi_member *m = dfi_at(r->b, flat);
+        if (dfi_ability(r->b, m, DFI_ABILITY_CLOUDNINE) && (m->hp != 0u || dfi_faint_pending(r, flat))) {
+            return true;
+        }
+    }
+    return false;
+}
+
+/* Field.effectiveWeather (sim/field.ts:101-104): the weather the field reads, NONE while it is suppressed. */
+static uint32_t dfi_field_weather(const dfi_run *r)
+{
+    return dfi_weather_suppressed(r) ? (uint32_t)DFI_WEATHER_NONE : (uint32_t)r->b->weather;
+}
+
+/* Pokemon#effectiveWeather (sim/pokemon.ts:2190-2212) as the active user's move reads it: sun while the user holds Mega Sol
+ * and the reading effect is a Move, a Weather or Mega Sol itself (step G59; `move_reads` is false for Electro Shot, which
+ * the pin excludes by id), whatever the field is. Otherwise the field's weather. */
+static uint32_t dfi_move_weather(const dfi_run *r, const dfi_member *user, bool move_reads)
+{
+    if (move_reads && dfi_ability(r->b, user, DFI_ABILITY_MEGASOL)) {
+        return DFI_WEATHER_SUN;
+    }
+    return dfi_field_weather(r);
+}
+
 /* ---------------------------------------------------------------- events */
 
 static void dfi_emit(dfi_run *r, const duoforge_event *e)
@@ -560,12 +612,15 @@ static duoforge_status dfi_staged_stat(const dfi_member *m, const dfi_active_slo
  * in a sandstorm, Slush Rush in snow (step G22; the callbacks are cited at dfi_speed_key). The weather is the
  * battle's: Hail is not in the format, and Primordial Sea and Desolate Land (also named by the Swift Swim and
  * Chlorophyll handlers) are not weathers of the state. */
-static bool dfi_weather_speed_ability(const struct duoforge_battle *b, const dfi_member *m)
+static bool dfi_weather_speed_ability(const dfi_run *r, const dfi_member *m)
 {
-    return (b->weather == DFI_WEATHER_RAIN && dfi_ability(b, m, DFI_ABILITY_SWIFTSWIM)) ||
-           (b->weather == DFI_WEATHER_SUN && dfi_ability(b, m, DFI_ABILITY_CHLOROPHYLL)) ||
-           (b->weather == DFI_WEATHER_SAND && dfi_ability(b, m, DFI_ABILITY_SANDRUSH)) ||
-           (b->weather == DFI_WEATHER_SNOW && dfi_ability(b, m, DFI_ABILITY_SLUSHRUSH));
+    /* The ability reads the field (pokemon.effectiveWeather with its own ability as the source: no Mega Sol, and
+     * Cloud Nine suppresses it, field.ts:101-104). */
+    const uint32_t w = dfi_field_weather(r);
+    return (w == DFI_WEATHER_RAIN && dfi_ability(r->b, m, DFI_ABILITY_SWIFTSWIM)) ||
+           (w == DFI_WEATHER_SUN && dfi_ability(r->b, m, DFI_ABILITY_CHLOROPHYLL)) ||
+           (w == DFI_WEATHER_SAND && dfi_ability(r->b, m, DFI_ABILITY_SANDRUSH)) ||
+           (w == DFI_WEATHER_SNOW && dfi_ability(r->b, m, DFI_ABILITY_SLUSHRUSH));
 }
 
 /* getActionSpeed of the Champions mod (data/mods/champions/scripts.ts:46-55):
@@ -578,9 +633,10 @@ static bool dfi_weather_speed_ability(const struct duoforge_battle *b, const dfi
  * or paralysis nor its side's Tailwind counts (a probe at the pin: a fainted Scarf holder under Tailwind has its raw
  * Speed), and Trick Room, which Pokemon.getActionSpeed reads itself, still applies: its queued action or its
  * replacement has the raw Speed. The same isActive decides the abilities and items in dfi_move_priority. */
-static duoforge_status dfi_speed_key(const struct duoforge_battle *b, uint32_t side, const dfi_member *m,
+static duoforge_status dfi_speed_key(const dfi_run *r, uint32_t side, const dfi_member *m,
                                      const dfi_active_slot *pos, uint32_t *out)
 {
+    const struct duoforge_battle *b = r->b;
     uint32_t spe = 0u;
     const duoforge_status st = dfi_staged_stat(m, pos, DFI_STAT_SPE - 1u, &spe);
     if (st != DUOFORGE_OK) {
@@ -609,11 +665,11 @@ static duoforge_status dfi_speed_key(const struct duoforge_battle *b, uint32_t s
     /* Sand Rush, Swift Swim, Slush Rush and Chlorophyll (step G22, POOL data): onModifySpe chainModify(2) while their
      * weather is up (data/abilities.ts:3974-3979 sandrush, 4808-4813 swiftswim, 4347-4352 slushrush, 512-517
      * chlorophyll; the Champions mod has no entry of any of them). The holder has one ability, so at most one of the
-     * four counts. Field.isWeather / pokemon.effectiveWeather read the weather that is up; no Cloud Nine, Air Lock,
-     * Utility Umbrella or Mega Sol is in a battle (unmarked or not in the pool: tests/test_pool_weather.c), so nothing
-     * suppresses it. Like the items and Unburden, only a standing holder counts: a fainted one has its raw Speed (the
+     * four counts. The weather is dfi_field_weather (Field.isWeather, sim/field.ts:118): Cloud Nine suppresses it while
+     * a holder stands (step G79); Air Lock and Utility Umbrella are not in the pool. Like the items and Unburden, only a
+     * standing holder counts: a fainted one has its raw Speed (the
      * same isActive rule as above, the ability handler of a Pokemon that is not active is ignored). */
-    if (active && dfi_weather_speed_ability(b, m)) {
+    if (active && dfi_weather_speed_ability(r, m)) {
         if (!dfi_chain_modify(chain, 8192u, &chain)) {
             return DUOFORGE_E_INVARIANT;
         }
@@ -710,8 +766,9 @@ static uint32_t dfi_effective_target_class(const struct duoforge_battle *b, cons
  * data/moves.ts:19273-19291) takes the type of the terrain for a grounded user. The redirection of Lightning Rod reads the
  * type of this call (getMoveTargets runs after ModifyType, sim/pokemon.ts:829-831), so a Terrain Pulse in Electric Terrain is
  * drawn to it, which the move's table type (Normal) would not say. */
-static uint32_t dfi_move_type_now(const struct duoforge_battle *b, const dfi_member *m, const dfi_move_data *md)
+static uint32_t dfi_move_type_now(const dfi_run *r, const dfi_member *m, const dfi_move_data *md)
 {
+    const struct duoforge_battle *b = r->b;
     uint32_t move_type = md->special == DFI_SPECIAL_STRUGGLE ? DFI_CLOSURE_NONE : md->type;
     move_type = dfi_ate_type_fam(dfi_ability_family_now(b, m), md, move_type);
     /* Liquid Voice (step G22, POOL data, data/abilities.ts:2416-2427): onModifyType (priority -1) makes a move with the
@@ -723,13 +780,15 @@ static uint32_t dfi_move_type_now(const struct duoforge_battle *b, const dfi_mem
         (dfi_pool_move_flags2[(uint32_t)(md - dfi_pool_moves)] & DFI_MOVE_FLAG2_SOUND) != 0u) { /* wide-operands-reviewed: a pointer into the move table */
         move_type = DFI_TYPE_WATER;
     }
-    if (md->special == DFI_SPECIAL_WEATHER_BALL && b->weather == DFI_WEATHER_RAIN) {
+    /* Weather Ball reads pokemon.effectiveWeather of its user (dfi_move_weather: Mega Sol's sun, else the field). */
+    const uint32_t weather = md->special == DFI_SPECIAL_WEATHER_BALL ? dfi_move_weather(r, m, true) : DFI_WEATHER_NONE;
+    if (weather == DFI_WEATHER_RAIN) {
         move_type = DFI_TYPE_WATER;
-    } else if (md->special == DFI_SPECIAL_WEATHER_BALL && b->weather == DFI_WEATHER_SUN) {
+    } else if (weather == DFI_WEATHER_SUN) {
         move_type = DFI_TYPE_FIRE;
-    } else if (md->special == DFI_SPECIAL_WEATHER_BALL && b->weather == DFI_WEATHER_SAND) {
+    } else if (weather == DFI_WEATHER_SAND) {
         move_type = DFI_TYPE_ROCK;
-    } else if (md->special == DFI_SPECIAL_WEATHER_BALL && b->weather == DFI_WEATHER_SNOW) {
+    } else if (weather == DFI_WEATHER_SNOW) {
         move_type = DFI_TYPE_ICE;
     }
     if (md->special == DFI_SPECIAL_TERRAIN_PULSE && dfi_grounded(b, m)) {
@@ -861,7 +920,7 @@ static duoforge_status dfi_key_of(dfi_run *r, const dfi_queue_record *q, dfi_key
         return DUOFORGE_E_INVARIANT;
     }
     uint32_t speed = 0u;
-    const duoforge_status st = dfi_speed_key(r->b, flat / 2u, m, dfi_pos(r->b, flat), &speed);
+    const duoforge_status st = dfi_speed_key(r, flat / 2u, m, dfi_pos(r->b, flat), &speed);
     if (st != DUOFORGE_OK) {
         return st;
     }
@@ -920,7 +979,7 @@ static duoforge_status dfi_update_position_speed(dfi_run *r, uint32_t flat)
     if (m == NULL || m->hp == 0u) {
         return DUOFORGE_OK;
     }
-    return dfi_speed_key(r->b, flat / 2u, m, dfi_pos(r->b, flat), &r->speed_seen[flat]);
+    return dfi_speed_key(r, flat / 2u, m, dfi_pos(r->b, flat), &r->speed_seen[flat]);
 }
 
 /* At the start of a step a fainted Pokemon still on the field has its raw
@@ -1646,8 +1705,10 @@ static duoforge_status dfi_get_damage(dfi_run *r, uint32_t user, uint32_t target
     /* ModifyCritRatio (sim/battle-actions.ts:1624): the attacker's Dragon Cheer stage and Super Luck (step G65,
      * data/abilities.ts:4703-4711, onModifyCritRatio of the user, not breakable: +1) added to the move's ratio, then the
      * clamp to 0..4 for gen 9 (sim/battle-actions.ts:1623-1633). */
+    /* Step G75: Scope Lens (data/items.ts:5554-5565, onModifyCritRatio +1) is the holder's item, one more term of the same sum. */
     uint32_t ratio = (uint32_t)md->crit_ratio + dfi_dragon_cheer_stage(r->b, user) +
-                     (dfi_ability(r->b, a, DFI_ABILITY_SUPERLUCK) ? 1u : 0u);
+                     (dfi_ability(r->b, a, DFI_ABILITY_SUPERLUCK) ? 1u : 0u) +
+                     (dfi_holds(r->b, a, DFI_ITEM_SCOPELENS) ? 1u : 0u);
     if (ratio > 4u) {
         ratio = 4u;
     }
@@ -1660,7 +1721,8 @@ static duoforge_status dfi_get_damage(dfi_run *r, uint32_t user, uint32_t target
     /* Shell Armor (step G63, data/abilities.ts:4222-4228, onCriticalHit false): the target's CriticalHit event runs after the
      * roll (sim/battle-actions.ts:1640-1646), so the draw above is taken and the hit is then not a critical one: no crit
      * modifier and no [-crit] line. Breakable; Mold Breaker is not marked. */
-    if (crit && dfi_ability(r->b, d, DFI_ABILITY_SHELLARMOR)) {
+    /* Battle Armor (step G75, data/abilities.ts:355-361, the same onCriticalHit false as Shell Armor, breakable): the same cancel. */
+    if (crit && (dfi_ability(r->b, d, DFI_ABILITY_SHELLARMOR) || dfi_ability(r->b, d, DFI_ABILITY_BATTLEARMOR))) {
         crit = false;
     }
     const bool physical = md->category == DFI_CATEGORY_PHYSICAL;
@@ -1727,9 +1789,9 @@ static duoforge_status dfi_get_damage(dfi_run *r, uint32_t user, uint32_t target
      * handlers' chainModify once (sim/battle.ts:2382), so the weather's 1.5 and this one are one chained modifier. */
     uint32_t dchain = 4096u;
     bool dok = true;
-    if (r->b->weather == DFI_WEATHER_SAND && def_index == DFI_STAGE_SPD && dfi_has_type(r->b, d, DFI_TYPE_ROCK)) {
+    if (dfi_field_weather(r) == DFI_WEATHER_SAND && def_index == DFI_STAGE_SPD && dfi_has_type(r->b, d, DFI_TYPE_ROCK)) {
         dok = dfi_chain_modify(dchain, 6144u, &dchain);
-    } else if (r->b->weather == DFI_WEATHER_SNOW && def_index == DFI_STAGE_DEF && dfi_has_type(r->b, d, DFI_TYPE_ICE)) {
+    } else if (dfi_field_weather(r) == DFI_WEATHER_SNOW && def_index == DFI_STAGE_DEF && dfi_has_type(r->b, d, DFI_TYPE_ICE)) {
         dok = dfi_chain_modify(dchain, 6144u, &dchain);
     }
     if (def_index == DFI_STAGE_DEF && d->status != DFI_STATUS_NONE && dfi_ability(r->b, d, DFI_ABILITY_MARVELSCALE)) {
@@ -1747,7 +1809,7 @@ static duoforge_status dfi_get_damage(dfi_run *r, uint32_t user, uint32_t target
     /* Weather Ball doubles in rain or sun (onModifyMove); Grass Knot's and
      * Low Kick's power follow the target's weight (basePowerCallback). */
     uint32_t power = md->base_power;
-    if (md->special == DFI_SPECIAL_WEATHER_BALL && r->b->weather != DFI_WEATHER_NONE) {
+    if (md->special == DFI_SPECIAL_WEATHER_BALL && dfi_move_weather(r, a, true) != DFI_WEATHER_NONE) {
         power *= 2u;
     } else if (md->special == DFI_SPECIAL_ACROBATICS) {
         /* Acrobatics' basePowerCallback (step G28, data/moves.ts:117-141): doubled while the user holds no item (the item it
@@ -1861,9 +1923,9 @@ static duoforge_status dfi_get_damage(dfi_run *r, uint32_t user, uint32_t target
     }
     /* Sand Force (step G63, data/abilities.ts:3956-3973, onBasePowerPriority 21, the same priority as Tough Claws; a holder has
      * one ability): chainModify([5325, 4096]) for a Rock, Ground or Steel move of its holder while the effective weather is
-     * Sandstorm. The weather is the battle's (Cloud Nine and Air Lock are not marked: a team that holds one is refused). The
+     * Sandstorm, the field's weather (dfi_field_weather: Cloud Nine suppresses it, step G79; Air Lock is not in the pool). The
      * type is move_type (the attack's type, after the -ate change), which is what the pin's move.type is for these moves. */
-    if (dfi_ability(r->b, a, DFI_ABILITY_SANDFORCE) && r->b->weather == DFI_WEATHER_SAND &&
+    if (dfi_ability(r->b, a, DFI_ABILITY_SANDFORCE) && dfi_field_weather(r) == DFI_WEATHER_SAND &&
         (move_type == DFI_TYPE_ROCK || move_type == DFI_TYPE_GROUND || move_type == DFI_TYPE_STEEL)) {
         ok = ok && dfi_chain_modify(bp_chain, 5325u, &bp_chain);
     }
@@ -1962,8 +2024,9 @@ static duoforge_status dfi_get_damage(dfi_run *r, uint32_t user, uint32_t target
     }
     /* Solar Beam's onBasePower (step G30, data/moves.ts:17245-17251, priority 0 like Knock Off's, after every handler
      * above): chainModify(0.5) in rain, Sandstorm or Snow; Utility Umbrella and Mega Sol are not marked. */
+    const uint32_t bp_weather = dfi_move_weather(r, a, md->special == DFI_SPECIAL_SOLAR_BEAM);
     if (md->special == DFI_SPECIAL_SOLAR_BEAM &&
-        (r->b->weather == DFI_WEATHER_RAIN || r->b->weather == DFI_WEATHER_SAND || r->b->weather == DFI_WEATHER_SNOW)) {
+        (bp_weather == DFI_WEATHER_RAIN || bp_weather == DFI_WEATHER_SAND || bp_weather == DFI_WEATHER_SNOW)) {
         ok = ok && dfi_chain_modify(bp_chain, 2048u, &bp_chain);
     }
     const uint32_t base_power = bp_chain == 4096u ? power : dfi_modify(power, bp_chain);
@@ -1982,7 +2045,7 @@ static duoforge_status dfi_get_damage(dfi_run *r, uint32_t user, uint32_t target
     /* Solar Power (step G39, data/abilities.ts:4396-4413, onModifySpA priority 5): x1.5 for the Special Attack stat in sun
      * (Desolate Land is not a weather of the state). It is the holder's one ability, so it never meets a pinch ability or
      * Flash Fire, the other chained ability modifiers. */
-    if (atk_index == DFI_STAGE_SPA && r->b->weather == DFI_WEATHER_SUN && dfi_ability(r->b, a, DFI_ABILITY_SOLARPOWER)) {
+    if (atk_index == DFI_STAGE_SPA && dfi_field_weather(r) == DFI_WEATHER_SUN && dfi_ability(r->b, a, DFI_ABILITY_SOLARPOWER)) {
         ok = ok && dfi_chain_modify(atk_chain, 6144u, &atk_chain);
     }
     /* The three step-G59 abilities of the Attack and Special Attack events, all dyadic (8192, 6144, 2048 out of 4096), so
@@ -1996,7 +2059,8 @@ static duoforge_status dfi_get_damage(dfi_run *r, uint32_t user, uint32_t target
      *   Thick Fat (data/abilities.ts:5014-5030, onSourceModifyAtkPriority 6 and onSourceModifySpAPriority 5, breakable: no
      *     Mold Breaker is marked): x0.5 for an Ice or Fire move against its holder (the target, the `source` of the
      *     event), either category. */
-    if (physical && dfi_ability(r->b, a, DFI_ABILITY_HUGEPOWER)) {
+    /* Pure Power (step G75, data/abilities.ts:3608-3617, as Huge Power: onModifyAtk x2 for a physical move of its holder). */
+    if (physical && (dfi_ability(r->b, a, DFI_ABILITY_HUGEPOWER) || dfi_ability(r->b, a, DFI_ABILITY_PUREPOWER))) {
         ok = ok && dfi_chain_modify(atk_chain, 8192u, &atk_chain);
     }
     if (move_type == DFI_TYPE_FIRE && dfi_ability(r->b, a, DFI_ABILITY_FIREMANE)) {
@@ -2030,7 +2094,7 @@ static duoforge_status dfi_get_damage(dfi_run *r, uint32_t user, uint32_t target
     }
     /* WeatherModifyDamage: rain and sun boost their type by half and halve
      * the other (data/conditions.ts raindance, sunnyday). */
-    const uint32_t weather = r->b->weather;
+    const uint32_t weather = dfi_field_weather(r);
     if (dfi_ability(r->b, a, DFI_ABILITY_MEGASOL)) {
         /* Mega Sol (step G59, data/abilities.ts:2558-2569, onWeatherModifyDamagePriority 1): the holder's own handler, first
          * of the event (the field's handlers are priority 0, and it returns the damage: a fast exit), calls sunnyday's
@@ -2320,21 +2384,22 @@ static duoforge_status dfi_try_status(dfi_run *r, uint32_t flat, uint32_t status
                                       uint32_t origin, uint32_t from_ability);
 static duoforge_status dfi_after_set_status(dfi_run *r, uint32_t flat, uint32_t status, uint32_t source, uint32_t origin);
 
-/* Leaf Guard's test (step G83, data/abilities.ts:2291-2310, which read Pokemon#effectiveWeather, sim/pokemon.ts:2190-2198): sun
- * is up. On main that is the raw weather: Cloud Nine (step G79) is not merged. Step G79 routes this test through the
- * effective-weather predicate: this helper is the one place to change. A Mega Sol holder standing on the field reads as sun for
- * the effects of its own moves, whatever the holder's own ability: Mega Meganium's base learnset has Toxic and Poison Powder, so
- * its Toxic on a Leaf Guard foe outside sun is refused by Leaf Guard in the pin. The raw weather does not show that, so while such
- * a holder stands and the raw weather is not sun the test is not modelled: E_UNSUPPORTED, never a guess. */
-static duoforge_status dfi_leaf_guard_sun(struct duoforge_battle *b, bool *sun)
+/* Leaf Guard's test (step G83, data/abilities.ts:2291-2310, which read Pokemon#effectiveWeather, sim/pokemon.ts:2190-2212): sun
+ * is up. The weather it reads is the field's (dfi_field_weather, step G79: a standing Cloud Nine holder suppresses it, so
+ * Leaf Guard does not block). Utility Umbrella is not marked (support_manifest.c), so its branch of Pokemon#effectiveWeather
+ * (sim/pokemon.ts:2199-2205) is never reached. A Mega Sol holder standing on the field reads as sun for the effects of its own
+ * moves, whatever the holder's own ability: Mega Meganium's base learnset has Toxic and Poison Powder, so its
+ * Toxic on a Leaf Guard foe outside sun is refused by Leaf Guard in the pin. The field does not show that, so while such a holder
+ * stands and the field is not sun the test is not modelled: E_UNSUPPORTED (a white-box test pins it), never a guess. */
+static duoforge_status dfi_leaf_guard_sun(const dfi_run *r, bool *sun)
 {
-    *sun = b->weather == DFI_WEATHER_SUN;
+    *sun = dfi_field_weather(r) == DFI_WEATHER_SUN;
     if (*sun) {
         return DUOFORGE_OK;
     }
     for (uint32_t p = 0u; p < DFI_POSITIONS; ++p) {
-        const dfi_member *mm = dfi_at(b, p);
-        if (mm != NULL && mm->hp != 0u && dfi_ability(b, mm, DFI_ABILITY_MEGASOL)) {
+        const dfi_member *mm = dfi_at(r->b, p);
+        if (mm != NULL && mm->hp != 0u && dfi_ability(r->b, mm, DFI_ABILITY_MEGASOL)) {
             return DUOFORGE_E_UNSUPPORTED;
         }
     }
@@ -2367,7 +2432,7 @@ static duoforge_status dfi_try_status(dfi_run *r, uint32_t flat, uint32_t status
     }
     if ((status == DFI_STATUS_BRN && dfi_has_type(r->b, m, DFI_TYPE_FIRE)) ||
         (status == DFI_STATUS_PAR && dfi_has_type(r->b, m, DFI_TYPE_ELECTRIC)) ||
-        (status == DFI_STATUS_FRZ && (dfi_has_type(r->b, m, DFI_TYPE_ICE) || r->b->weather == DFI_WEATHER_SUN)) ||
+        (status == DFI_STATUS_FRZ && (dfi_has_type(r->b, m, DFI_TYPE_ICE) || dfi_field_weather(r) == DFI_WEATHER_SUN)) ||
         ((status == DFI_STATUS_PSN || status == DFI_STATUS_TOX) && dfi_poison_immune(r->b, m))) {
         if (primary) {
             dfi_immune(r, flat, 0u);
@@ -2433,7 +2498,7 @@ static duoforge_status dfi_try_status(dfi_run *r, uint32_t flat, uint32_t status
      * as Thermal Exchange's). */
     if (dfi_ability(r->b, m, DFI_ABILITY_LEAFGUARD)) {
         bool sun = false;
-        const duoforge_status lg = dfi_leaf_guard_sun(r->b, &sun);
+        const duoforge_status lg = dfi_leaf_guard_sun(r, &sun);
         if (lg != DUOFORGE_OK) {
             return lg;
         }
@@ -2597,8 +2662,10 @@ static void dfi_volatile_end(dfi_run *r, uint32_t flat, uint32_t which)
 /* Mental Herb (step G47, data/items.ts:3889-3926, onUpdate): when its holder has a taunt, an encore, a disable or a heal
  * block, the herb is used (useItem: -enditem|X|Mental Herb with no [eat]; Unnerve does not refuse it, only TryEatItem asks),
  * and then every one of those volatiles is removed, in the pin's list order (taunt, encore, disable, heal block). The pin's
- * attract and torment are not here: no volatile of either exists in the engine (Attract is unmarked, Torment is not
- * modelled), so no state can hold them. Each removal shows its own -end line through its condition's onEnd. */
+ * torment is not here: no volatile of it exists in the engine (Torment is not modelled), so no state can hold it. Step G71
+ * (decision 0034): attract is the list's first condition, and its visible -end line is the herb's
+ * (-end|X|move: Attract|[from] item: Mental Herb, cause ITEM); its silent end from onEnd is state only. Each removal shows
+ * its own -end line through its condition's onEnd. */
 static duoforge_status dfi_mental_herb(dfi_run *r, uint32_t flat)
 {
     struct duoforge_battle *b = r->b;
@@ -2607,10 +2674,21 @@ static duoforge_status dfi_mental_herb(dfi_run *r, uint32_t flat)
     if (m == NULL || m->hp == 0u || !dfi_holds(b, m, DFI_ITEM_MENTALHERB)) {
         return DUOFORGE_OK;
     }
-    if (tail->taunt_turns == 0u && tail->encore_slot == 0u && tail->disable_slot == 0u && tail->heal_block_turns == 0u) {
+    const bool attract = b->tail.attract_source[flat] != 0u; /* step G71 (decision 0034): the list's first condition */
+    if (!attract && tail->taunt_turns == 0u && tail->encore_slot == 0u && tail->disable_slot == 0u &&
+        tail->heal_block_turns == 0u) {
         return DUOFORGE_OK;
     }
     dfi_use_item(r, flat);
+    if (attract) {
+        /* The pin's list runs attract first (data/items.ts:3899-3918): its silent -end comes from onEnd, the visible line is the
+         * herb's: -end|X|move: Attract|[from] item: Mental Herb (cause ITEM, id2 = the herb + 1). */
+        b->tail.attract_source[flat] = 0u;
+        duoforge_event end = dfi_ev(DUOFORGE_EVENT_VOLATILE_END, flat, DUOFORGE_CAUSE_ITEM, 1u + DFI_ITEM_MENTALHERB,
+                                    DUOFORGE_NO_POSITION);
+        end.detail = DUOFORGE_VOLATILE_ATTRACT;
+        dfi_emit(r, &end);
+    }
     if (tail->taunt_turns != 0u) {
         tail->taunt_turns = 0u;
         dfi_volatile_end(r, flat, DUOFORGE_VOLATILE_TAUNT);
@@ -3716,15 +3794,93 @@ static duoforge_status dfi_each_order(dfi_run *r, uint32_t bearers, uint32_t lis
 
 /* eachEvent('Update'): Sitrus Berry eats at half HP or less and heals a
  * quarter, holder by holder in eachEvent's order. */
+/* Step G71 (decision 0034): the source member of an Attract byte (1 + side * 6 + roster index) is on the field and not fainted: the
+ * pin's source.isActive (data/moves.ts:722-727). A member that switched out and came back is a new entry, but the infatuation ended
+ * at the first Update after its switch-out, so the check reads the member, not the position. */
+static bool dfi_faint_shown(const dfi_run *r, uint32_t flat);
+
+static bool dfi_attract_source_active(const dfi_run *r, uint32_t code)
+{
+    /* The pin's isActive is false from the faintMessages that shows the faint (sim/battle.ts:2566), and true until then: a source at
+     * 0 HP whose faint is queued but not yet shown is still active at the Update before that faintMessages (the in-move hit loop's
+     * Update), and inactive at the Update after it (the post-announce Update, step G71 trace of seed 9720000_2 step 25). */
+    const struct duoforge_battle *b = r->b;
+    const uint32_t side = (code - 1u) / DUOFORGE_MAX_ROSTER;
+    const uint32_t src = (code - 1u) % DUOFORGE_MAX_ROSTER;
+    for (uint32_t p = 0u; p < DUOFORGE_ACTIVE_PER_SIDE; ++p) {
+        if (b->sides[side].positions[p].occupant != src) {
+            continue;
+        }
+        if (b->sides[side].members[src].hp != 0u) {
+            return true;
+        }
+        const uint32_t flat = side * DUOFORGE_ACTIVE_PER_SIDE + p;
+        if (dfi_faint_shown(r, flat)) {
+            return false;
+        }
+        for (uint32_t i = 0u; i < r->faint_count; ++i) {
+            if (r->faint_queue[i] == flat) {
+                return true;
+            }
+        }
+        return false;
+    }
+    return false;
+}
+
+/* Step G71 (decision 0034): the volatile's onUpdate and the attract half of Oblivious's onUpdate, for the holder at flat (pin order:
+ * the volatile first, then the ability, then the item; sim/battle.ts:1107-1130). A source that is not active ends the infatuation
+ * silently: state only, no event (decision 0015 5bn, the Yawn precedent). Oblivious's holder (its ability now, a Skill Swap or
+ * a Trace copy included) prints -activate|X|ability: Oblivious, ends the infatuation silently and prints the visible
+ * -end|X|move: Attract|[from] ability: Oblivious. */
+static duoforge_status dfi_attract_update(dfi_run *r, uint32_t flat)
+{
+    struct duoforge_battle *b = r->b;
+    const uint8_t code = b->tail.attract_source[flat];
+    const dfi_member *m = dfi_at(b, flat);
+    if (code == 0u) {
+        return DUOFORGE_OK;
+    }
+    if (m == NULL || m->hp == 0u || !dfi_attract_source_active(r, code)) {
+        b->tail.attract_source[flat] = 0u; /* silent end: the source left the field */
+        return DUOFORGE_OK;
+    }
+    if (dfi_ability(b, m, DFI_ABILITY_OBLIVIOUS)) {
+        duoforge_event act = dfi_ev(DUOFORGE_EVENT_ACTIVATE, flat, DUOFORGE_CAUSE_ABILITY, 1u + DFI_ABILITY_OBLIVIOUS,
+                                    DUOFORGE_NO_POSITION);
+        dfi_emit(r, &act); /* -activate|X|ability: Oblivious */
+        b->tail.attract_source[flat] = 0u; /* the pin's removeVolatile: its -end is [silent] */
+        duoforge_event end = dfi_ev(DUOFORGE_EVENT_VOLATILE_END, flat, DUOFORGE_CAUSE_ABILITY, 1u + DFI_ABILITY_OBLIVIOUS,
+                                    DUOFORGE_NO_POSITION);
+        end.detail = DUOFORGE_VOLATILE_ATTRACT;
+        dfi_emit(r, &end); /* -end|X|move: Attract|[from] ability: Oblivious */
+    }
+    return DUOFORGE_OK;
+}
+
 static duoforge_status dfi_update(dfi_run *r)
 {
     uint32_t bearers = 0u;
     for (uint32_t flat = 0u; flat < DFI_POSITIONS; ++flat) {
-        /* the holders with an Update handler that can act: Sitrus Berry, and step G47's Lum Berry and Mental Herb */
+        /* the holders with an Update handler that can act: Sitrus Berry, and step G47's Lum Berry and Mental Herb; step G71: an
+         * infatuated occupant that is also Oblivious (its cure prints lines, so its order shows; the converter's each-tie rule, the
+         * same as this set). An Attract holder without Oblivious is inert in the order (its source-left removal is silent) and
+         * draws no tie order: dfi_attract_update below still ends it. */
+        const bool oblivious_infatuated = r->b->tail.attract_source[flat] != 0u &&
+                                          dfi_ability(r->b, dfi_at(r->b, flat), DFI_ABILITY_OBLIVIOUS);
         const bool bears = dfi_holds(r->b, dfi_at(r->b, flat), DFI_ITEM_SITRUSBERRY) ||
                            dfi_holds(r->b, dfi_at(r->b, flat), DFI_ITEM_LUMBERRY) ||
-                           dfi_holds(r->b, dfi_at(r->b, flat), DFI_ITEM_MENTALHERB);
+                           dfi_holds(r->b, dfi_at(r->b, flat), DFI_ITEM_MENTALHERB) || oblivious_infatuated;
         bearers |= bears ? 1u << flat : 0u;
+    }
+    /* the inert infatuated holders: their silent end is state only, and nothing else reads it in this update */
+    for (uint32_t flat = 0u; flat < DFI_POSITIONS; ++flat) {
+        if (r->b->tail.attract_source[flat] != 0u && ((bearers >> flat) & 1u) == 0u) {
+            const duoforge_status inert = dfi_attract_update(r, flat);
+            if (inert != DUOFORGE_OK) {
+                return inert;
+            }
+        }
     }
     if (bearers == 0u) {
         return DUOFORGE_OK;
@@ -3737,6 +3893,11 @@ static duoforge_status dfi_update(dfi_run *r)
     }
     for (uint32_t i = 0u; i < n; ++i) {
         const uint32_t flat = list[i];
+        /* step G71: the volatile's and the ability's Update handlers come before the item's (sim/battle.ts:1107-1130) */
+        const duoforge_status attract = dfi_attract_update(r, flat);
+        if (attract != DUOFORGE_OK) {
+            return attract;
+        }
         const dfi_member *m = dfi_at(r->b, flat);
         if (m->hp != 0u && dfi_holds(r->b, m, DFI_ITEM_SITRUSBERRY) && (uint32_t)m->hp * 2u <= m->hp_max &&
             !dfi_heal_blocked(r->b, flat) && !dfi_unnerved(r->b, flat)) {
@@ -4067,6 +4228,20 @@ static bool dfi_faint_shown(const dfi_run *r, uint32_t flat)
     return false;
 }
 
+/* Step G71 (decision 0034): the flat position of an Attract source (code = 1 + side * 6 + roster index) while the member stands on
+ * the field and is not fainted; DUOFORGE_NO_POSITION otherwise (the pin's source.isActive, data/moves.ts:722-727). */
+static uint32_t dfi_attract_source_flat(const struct duoforge_battle *b, uint32_t code)
+{
+    const uint32_t side = (code - 1u) / DUOFORGE_MAX_ROSTER;
+    const uint32_t src = (code - 1u) % DUOFORGE_MAX_ROSTER;
+    for (uint32_t p = 0u; p < DUOFORGE_ACTIVE_PER_SIDE; ++p) {
+        if (b->sides[side].positions[p].occupant == src && b->sides[side].members[src].hp != 0u) {
+            return side * DUOFORGE_ACTIVE_PER_SIDE + p;
+        }
+    }
+    return DUOFORGE_NO_POSITION;
+}
+
 /* ---------------------------------------------------------------- moves */
 
 /* runEvent('BeforeMove') in handler priority order: sleep and freeze (10),
@@ -4209,6 +4384,24 @@ static duoforge_status dfi_before_move(dfi_run *r, uint32_t user, uint32_t move_
                 }
                 return dfi_deal(r, user, damage, DUOFORGE_CAUSE_CONFUSION, 0u, DUOFORGE_NO_POSITION, DFI_DMG_MOVE);
             }
+        }
+    }
+    /* Attract (step G71, decision 0034; data/moves.ts:731-741, onBeforeMovePriority 2): after confusion (3), before paralysis (1).
+     * The line -activate|X|move: Attract|[of] Y comes before the roll; randomChance(1, 2) stops the move (cant, no PP). */
+    if (r->b->tail.attract_source[user] != 0u) {
+        const uint32_t src = dfi_attract_source_flat(r->b, r->b->tail.attract_source[user]);
+        const duoforge_event act = dfi_ev(DUOFORGE_EVENT_ACTIVATE, user, DUOFORGE_CAUSE_MOVE, DFI_MOVE_ATTRACT, src);
+        dfi_emit(r, &act);
+        bool stop = false;
+        st = dfi_draw_chance(r->draws, DFI_SITE_ATTRACT, 1u, 2u, &stop);
+        if (st != DUOFORGE_OK) {
+            return st;
+        }
+        if (stop) {
+            /* cant|X|Attract names no move (the line is the same for any move), so the id stays zero, as sleep's and freeze's */
+            const duoforge_event e = dfi_ev(DUOFORGE_EVENT_CANT, user, DUOFORGE_CAUSE_ATTRACT, 0u, DUOFORGE_NO_POSITION);
+            dfi_emit(r, &e); /* [cant] Attract */
+            return DUOFORGE_OK;
         }
     }
     if (m->status == DFI_STATUS_PAR) {
@@ -4415,6 +4608,53 @@ static duoforge_status dfi_flame_body(dfi_run *r, uint32_t user, uint32_t holder
  * After a contact move that hit it, randomChance(3, 10) (one draw of the site STATIC per target, also when the hit knocked
  * the holder out), then trySetStatus('par', holder) on the attacker: [-status] par [from] ability: Static [of] the holder;
  * nothing for an Electric type, an attacker with a status or down, or Limber, or a Flower Veil that covers it. */
+/* Step G71 (decision 0034): Cute Charm's addVolatile('attract', holder) on the attacker at `inf` (data/moves.ts:706-761, onStart).
+ * The caller has drawn the roll already. Silent refusals, as the pin: the attacker is down (addVolatile returns false), it is
+ * infatuated already (no onRestart), Oblivious blocks it (runStatusImmunity: an ability source, so no -immune line), and a gender
+ * pair that is not 1 and 2 fails the Start (no line). Otherwise the byte is the holder's member code and the line is
+ * -start|X|Attract|[from] ability: Cute Charm|[of] Y (VOLATILE_START, cause ABILITY, id2 = Cute Charm + 1, other = the holder).
+ * A holder that faints from the hit still starts it (the pin runs DamagingHit while the holder is active); the next Update ends
+ * it, as its source is not active (dfi_attract_update). */
+static duoforge_status dfi_attract_start(dfi_run *r, uint32_t holder, uint32_t inf)
+{
+    struct duoforge_battle *b = r->b;
+    const dfi_member *im = dfi_at(b, inf);
+    const dfi_member *hm = dfi_at(b, holder);
+    if (im == NULL || hm == NULL || im->hp == 0u || b->tail.attract_source[inf] != 0u) {
+        return DUOFORGE_OK;
+    }
+    if (dfi_ability(b, im, DFI_ABILITY_OBLIVIOUS)) {
+        return DUOFORGE_OK;
+    }
+    const bool pair = (im->gender == DFI_GENDER_MALE && hm->gender == DFI_GENDER_FEMALE) ||
+                      (im->gender == DFI_GENDER_FEMALE && hm->gender == DFI_GENDER_MALE);
+    if (!pair) {
+        return DUOFORGE_OK;
+    }
+    const uint32_t hside = holder / DUOFORGE_ACTIVE_PER_SIDE;
+    const uint32_t hmember = b->sides[hside].positions[holder % DUOFORGE_ACTIVE_PER_SIDE].occupant;
+    b->tail.attract_source[inf] = (uint8_t)(1u + hside * DUOFORGE_MAX_ROSTER + hmember); /* wide-operands-reviewed: 1..12 (side 0..1, member 0..5) */
+    duoforge_event start = dfi_ev(DUOFORGE_EVENT_VOLATILE_START, inf, DUOFORGE_CAUSE_ABILITY, 1u + DFI_ABILITY_CUTECHARM, holder);
+    start.detail = DUOFORGE_VOLATILE_ATTRACT;
+    dfi_emit(r, &start);
+    return DUOFORGE_OK;
+}
+
+/* Cute Charm (step G71, data/abilities.ts:798-810, onDamagingHit): a contact hit on a damaged holder draws randomChance(3, 10), and
+ * the draw is taken for every such hit, also when the attacker cannot be infatuated (the refusals are in dfi_attract_start). */
+static duoforge_status dfi_cute_charm(dfi_run *r, uint32_t user, uint32_t holder, const dfi_move_data *md)
+{
+    if ((md->flags & DFI_MOVE_FLAG_CONTACT) == 0u || !dfi_ability(r->b, dfi_at(r->b, holder), DFI_ABILITY_CUTECHARM)) {
+        return DUOFORGE_OK;
+    }
+    uint32_t roll = 0u;
+    const duoforge_status st = dfi_draw(r->draws, DFI_SITE_CUTE_CHARM, 0u, 10u, &roll);
+    if (st != DUOFORGE_OK || roll >= 3u) {
+        return st;
+    }
+    return dfi_attract_start(r, holder, user);
+}
+
 static duoforge_status dfi_static(dfi_run *r, uint32_t user, uint32_t holder, const dfi_move_data *md)
 {
     if ((md->flags & DFI_MOVE_FLAG_CONTACT) == 0u || !dfi_ability(r->b, dfi_at(r->b, holder), DFI_ABILITY_STATIC)) {
@@ -4494,8 +4734,8 @@ static duoforge_status dfi_run_quick_guard(dfi_run *r, uint32_t user)
 }
 
 /* Aurora Veil (POOL data, data/moves.ts:830-877; the side's turns are in the state tail). Its onTry (:840) fails the
- * move unless the weather is snow (Field.isWeather, sim/field.ts:118; nothing here suppresses a weather: Cloud Nine and
- * Air Lock are not marked): -fail with [still], as every failed side move. addSideCondition does not restart an active
+ * move unless the weather is snow (Field.isWeather, sim/field.ts:118: dfi_field_weather, so Cloud Nine suppresses it, step
+ * G79): -fail with [still], as every failed side move. addSideCondition does not restart an active
  * condition, so a second one fails the same way. The duration is 5, or 8 when the user holds Light Clay
  * (durationCallback, :842-847); the line is -sidestart|side|move: Aurora Veil (:861-863). A side move does not reach the
  * Champions hit loop (no Update), as Wide Guard's does not. */
@@ -4504,7 +4744,7 @@ static duoforge_status dfi_run_aurora_veil(dfi_run *r, uint32_t user)
     struct duoforge_battle *b = r->b;
     const uint32_t side = user / 2u;
     uint8_t *turns = &b->tail.sides[side].aurora_veil_turns;
-    if (b->weather != DFI_WEATHER_SNOW || *turns != 0u) {
+    if (dfi_field_weather(r) != DFI_WEATHER_SNOW || *turns != 0u) {
         dfi_fail_still(r, user);
         return DUOFORGE_OK;
     }
@@ -4900,7 +5140,7 @@ static duoforge_status dfi_yawn(dfi_run *r, uint32_t user, uint32_t flat, bool *
      * as the blocks below). With a Flower Veil holder on the side the order of the two is not modelled (E_UNSUPPORTED). */
     if (dfi_ability(b, tm, DFI_ABILITY_LEAFGUARD)) {
         bool sun = false;
-        const duoforge_status lg = dfi_leaf_guard_sun(b, &sun);
+        const duoforge_status lg = dfi_leaf_guard_sun(r, &sun);
         if (lg != DUOFORGE_OK) {
             return lg;
         }
@@ -5482,8 +5722,8 @@ static duoforge_status dfi_accuracy_check(dfi_run *r, uint32_t user, uint32_t ta
         }
         /* The same for the target's Snow Cloak in snow and Sand Veil in a sandstorm (step G39: 3277/4096 in the same event). */
         const dfi_member *victim = dfi_at(b, target);
-        if ((b->weather == DFI_WEATHER_SNOW && dfi_ability(b, victim, DFI_ABILITY_SNOWCLOAK)) ||
-            (b->weather == DFI_WEATHER_SAND && dfi_ability(b, victim, DFI_ABILITY_SANDVEIL))) {
+        if ((dfi_field_weather(r) == DFI_WEATHER_SNOW && dfi_ability(b, victim, DFI_ABILITY_SNOWCLOAK)) ||
+            (dfi_field_weather(r) == DFI_WEATHER_SAND && dfi_ability(b, victim, DFI_ABILITY_SANDVEIL))) {
             return DUOFORGE_E_UNSUPPORTED;
         }
         /* And the target's Bright Powder (step G49): it is the same ModifyAccuracy event, after the stages. */
@@ -6198,8 +6438,8 @@ static duoforge_status dfi_accuracy_targets(dfi_run *r, uint32_t user, const uin
                 if (acc_compound_eyes) {
                     acc_ok = dfi_chain_modify(acc_chain, 5325u, &acc_chain);
                 }
-                if ((b->weather == DFI_WEATHER_SNOW && dfi_ability(r->b, acc_target, DFI_ABILITY_SNOWCLOAK)) ||
-                    (b->weather == DFI_WEATHER_SAND && dfi_ability(r->b, acc_target, DFI_ABILITY_SANDVEIL))) {
+                if ((dfi_field_weather(r) == DFI_WEATHER_SNOW && dfi_ability(r->b, acc_target, DFI_ABILITY_SNOWCLOAK)) ||
+                    (dfi_field_weather(r) == DFI_WEATHER_SAND && dfi_ability(r->b, acc_target, DFI_ABILITY_SANDVEIL))) {
                     acc_ok = acc_ok && dfi_chain_modify(acc_chain, 3277u, &acc_chain);
                 }
                 /* The priority -2 group (step G49): Wide Lens (the attacker, data/items.ts:7719-7726) and Bright Powder (the
@@ -6489,7 +6729,7 @@ static duoforge_status dfi_bounce(dfi_run *r, uint32_t user, uint32_t holder, ui
             }
             const bool acc_compound_eyes = base_accuracy != 0u && dfi_ability(b, hm, DFI_ABILITY_COMPOUNDEYES);
             const bool acc_wide_lens = base_accuracy != 0u && dfi_holds(b, hm, DFI_ITEM_WIDELENS);
-            const uint32_t move_type = dfi_move_type_now(b, hm, md);
+            const uint32_t move_type = dfi_move_type_now(r, hm, md);
             const bool powder_move = (dfi_pool_move_flags2[move_id] & DFI_MOVE_FLAG2_POWDER) != 0u;
             const bool pre_try = hit[0];
             dfi_try_hit_abilities(r, holder, targets, count, hit, md, move_id, move_type, &base_accuracy);
@@ -6596,13 +6836,19 @@ static duoforge_status dfi_stance_change(dfi_run *r, uint32_t user, uint32_t mov
  * Hurricane (their accuracy, :19447-19460 and :20861-20866). With the field in sun the two readings agree; otherwise the move is
  * refused (E_UNSUPPORTED), not modelled. The Mega Sol holder's legal moves of those kinds are the marked ones (Meganium's
  * Solar Beam and Weather Ball; Thunder and Hurricane are not in its learnset). Refused at the move's own use, after BeforeMove. */
-static bool dfi_mega_sol_refused(struct duoforge_battle *b, uint32_t user, const dfi_move_data *md)
+static bool dfi_mega_sol_refused(const dfi_run *r, uint32_t user, const dfi_move_data *md)
 {
-    if (b->weather == DFI_WEATHER_SUN || !dfi_ability(b, dfi_at(b, user), DFI_ABILITY_MEGASOL)) {
+    if (!dfi_ability(r->b, dfi_at(r->b, user), DFI_ABILITY_MEGASOL)) {
         return false;
     }
-    return md->special == DFI_SPECIAL_SOLAR_BEAM || md->special == DFI_SPECIAL_WEATHER_BALL ||
-           md->special == DFI_SPECIAL_THUNDER || md->special == DFI_SPECIAL_HURRICANE;
+    const bool reads = md->special == DFI_SPECIAL_SOLAR_BEAM || md->special == DFI_SPECIAL_WEATHER_BALL ||
+                       md->special == DFI_SPECIAL_THUNDER || md->special == DFI_SPECIAL_HURRICANE;
+    if (dfi_weather_suppressed(r)) {
+        /* Step G79 (lead decision): with a Cloud Nine holder standing, the weather-reading moves of a Mega Sol user are
+         * refused, Electro Shot too: the -activate line of Mega Sol (sim/pokemon.ts:2193) is not modelled. */
+        return reads || md->special == DFI_SPECIAL_ELECTRO_SHOT;
+    }
+    return reads && r->b->weather != DFI_WEATHER_SUN;
 }
 
 /* step G78, Dragon Darts (decision 0043): getSmartTargets (sim/pokemon.ts:757-767), after the RedirectTarget event
@@ -6714,7 +6960,7 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
         return DUOFORGE_OK;
     }
     /* Mega Sol's weather reading (step G59): refused before the move's PP and its lines, for a move that reads the weather. */
-    if (dfi_mega_sol_refused(b, user, md)) {
+    if (dfi_mega_sol_refused(r, user, md)) {
         return DUOFORGE_E_UNSUPPORTED;
     }
     /* choicelock's onBeforeMove, reached by a holder that can move: its Choice item is gone, so the lock ends here. */
@@ -6871,7 +7117,7 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
      * sim/battle-actions.ts:142), which is the lower activation id; the
      * first handler returns its holder. This runs also when the chosen
      * target is gone (a fainted ally, no foe left). */
-    if (follow == DFI_POSITIONS && dfi_move_type_now(b, m, md) == DFI_TYPE_ELECTRIC && single) {
+    if (follow == DFI_POSITIONS && dfi_move_type_now(r, m, md) == DFI_TYPE_ELECTRIC && single) {
         uint32_t rod = DFI_POSITIONS;
         for (uint32_t flat = 0u; flat < DFI_POSITIONS; ++flat) {
             const dfi_member *holder = dfi_at(b, flat);
@@ -6948,7 +7194,9 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
         /* Step G58: Phantom Force (data/moves.ts:13307-13335) has no weather that skips its charge (no ChargeMove but Power Herb's,
          * which is unmarked): its charge always stands. */
         const uint32_t skip_weather = md->special == DFI_SPECIAL_SOLAR_BEAM ? DFI_WEATHER_SUN : DFI_WEATHER_RAIN;
-        if (md->special != DFI_SPECIAL_PHANTOM_FORCE && b->weather == skip_weather) {
+        /* Solar Beam reads its user's effectiveWeather (Mega Sol's sun); Electro Shot the field (its id is excluded). */
+        const uint32_t charge_weather = dfi_move_weather(r, dfi_at(b, user), md->special == DFI_SPECIAL_SOLAR_BEAM);
+        if (md->special != DFI_SPECIAL_PHANTOM_FORCE && charge_weather == skip_weather) {
             /* addMove('-anim'): from now on the last move line, which later
              * attributes ([miss], [notarget]) amend. */
             duoforge_event anim = dfi_event_make(DUOFORGE_EVENT_ANIMATION, user);
@@ -6957,7 +7205,7 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
             r->last_move = r->events != NULL ? r->events->count : UINT32_MAX;
             dfi_emit(r, &anim);
         }
-        if (md->special == DFI_SPECIAL_PHANTOM_FORCE || b->weather != skip_weather) {
+        if (md->special == DFI_SPECIAL_PHANTOM_FORCE || charge_weather != skip_weather) {
             pos->charge_turns = (uint8_t)DFI_CHARGE_TURNS_MAX;
             pos->locked_move = (uint8_t)((uint32_t)q->move_slot + 1u); /* wide-operands-reviewed: <= 4 */
             pos->locked_target = q->target;
@@ -7294,14 +7542,16 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
      * onModifyMove: move.accuracy = true in rain, 50 under sun (target.effectiveWeather(), which is the field's weather). */
     uint32_t base_accuracy = md->accuracy;
     if (md->special == DFI_SPECIAL_HURRICANE || md->special == DFI_SPECIAL_THUNDER) {
-        if (b->weather == DFI_WEATHER_RAIN) {
+        /* target.effectiveWeather() (sim/pokemon.ts:2190): the user's Mega Sol reads sun, else the field. */
+        const uint32_t target_weather = dfi_move_weather(r, dfi_at(b, user), true);
+        if (target_weather == DFI_WEATHER_RAIN) {
             base_accuracy = 0u;
-        } else if (b->weather == DFI_WEATHER_SUN) {
+        } else if (target_weather == DFI_WEATHER_SUN) {
             base_accuracy = 50u;
         }
     }
     /* Blizzard's onModifyMove (step G28, data/moves.ts:1491-1510): in snow it never misses. */
-    if (md->special == DFI_SPECIAL_BLIZZARD && b->weather == DFI_WEATHER_SNOW) {
+    if (md->special == DFI_SPECIAL_BLIZZARD && dfi_field_weather(r) == DFI_WEATHER_SNOW) {
         base_accuracy = 0u;
     }
     /* Toxic never misses when its user is a Poison type (gen 8 on: the accuracy step and the invulnerability step,
@@ -7321,7 +7571,7 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
     const bool acc_wide_lens = base_accuracy != 0u && dfi_holds(r->b, m, DFI_ITEM_WIDELENS);
     /* Struggle is typeless; Weather Ball turns Water in rain, Fire under sun
      * (its onModifyType, before the hit steps). */
-    uint32_t move_type = dfi_move_type_now(b, m, md);
+    uint32_t move_type = dfi_move_type_now(r, m, md);
     const bool spread = count > 1u && md->special != DFI_SPECIAL_DRAGON_DARTS; /* step G78: spreadHit is never set for smartTarget */
     /* Hit steps: Psychic Terrain and Protect (TryHit), type immunity,
      * accuracy per target. Psychic Terrain's onTryHit (Team C, priority 4,
@@ -8130,6 +8380,10 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
                 if (st != DUOFORGE_OK) {
                     return st;
                 }
+                st = dfi_cute_charm(r, user, targets[i], md); /* step G71: one ability per holder too (Cute Charm) */
+                if (st != DUOFORGE_OK) {
+                    return st;
+                }
                 st = dfi_poison_touch(r, user, targets[i], md);
                 if (st != DUOFORGE_OK) {
                     return st;
@@ -8211,6 +8465,11 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
             }
             /* Static (step G39): the target's own unordered handler, like Flame Body's. */
             st = dfi_static(r, user, targets[i], md);
+            if (st != DUOFORGE_OK) {
+                return st;
+            }
+            /* Cute Charm (step G71): the target's own handler too (one ability per holder). */
+            st = dfi_cute_charm(r, user, targets[i], md);
             if (st != DUOFORGE_OK) {
                 return st;
             }
@@ -9011,7 +9270,8 @@ static duoforge_status dfi_terrain_change(dfi_run *r)
 static bool dfi_has_switch_in(const struct duoforge_battle *b, const dfi_member *m)
 {
     return dfi_has_entry(b, m) || dfi_seed_terrain(b, m) != DFI_TERRAIN_NONE ||
-           dfi_ability(b, m, DFI_ABILITY_HOSPITALITY) || m->status == DFI_STATUS_TOX ||
+           dfi_ability(b, m, DFI_ABILITY_HOSPITALITY) || dfi_ability(b, m, DFI_ABILITY_CLOUDNINE) ||
+           m->status == DFI_STATUS_TOX ||
            dfi_holds(b, m, DFI_ITEM_AIRBALLOON); /* its onStart is a SwitchIn handler too (step G67) */
 }
 
@@ -9039,7 +9299,7 @@ static bool dfi_has_entry(const struct duoforge_battle *b, const dfi_member *m)
     const uint32_t now = dfi_ability_code(b, m);
     return dfi_weather_set_by_fam(fam) != DFI_WEATHER_NONE || dfi_terrain_set_by_fam(fam) != DFI_TERRAIN_NONE ||
            now == 1u + DFI_ABILITY_INTIMIDATE || now == 1u + DFI_ABILITY_FAIRYAURA || now == 1u + DFI_ABILITY_TRACE ||
-           now == 1u + DFI_ABILITY_UNNERVE || now == 1u + DFI_ABILITY_PRESSURE;
+           now == 1u + DFI_ABILITY_UNNERVE || now == 1u + DFI_ABILITY_PRESSURE || now == 1u + DFI_ABILITY_FRISK;
 }
 
 /* Trace (data/abilities.ts:5118-5148, onStart then its Update): the holder copies the ability of one of the foes that
@@ -9057,6 +9317,35 @@ static bool dfi_has_entry(const struct duoforge_battle *b, const dfi_member *m)
  * With no candidate Trace goes on seeking at every later Update (`effectState.seek`): not modelled, so the entry is
  * E_UNSUPPORTED (two Trace holders against each other, say, are the case; a battle never has no foe left). */
 static duoforge_status dfi_entry_ability(dfi_run *r, uint32_t flat);
+
+/* Frisk (step G81, data/abilities.ts:1545-1557, onStart): for each foe in foes() order (the standing foes, slot 0 then 1) that
+ * holds an item, `-item|X|Item|[from] ability: Frisk|[of] Y`: ITEM_SHOWN with the foe as the position, the Frisk user in other,
+ * cause ABILITY, id = Frisk + 1 and id2 = the item + 1 (decision 0033, the form mapped by step G81). The item is the one held
+ * now (dfi_item_code: a used-up item prints nothing, as Showdown's target.item is then empty). No state changes: the open team
+ * sheet already shows the item (the view and the knowledge are unchanged). A foe whose Illusion disguise is up (decision 0026)
+ * and that holds an item is refused (E_UNSUPPORTED) before any line is emitted: the line would name the disguise, not measured. */
+static duoforge_status dfi_frisk(dfi_run *r, uint32_t flat)
+{
+    struct duoforge_battle *b = r->b;
+    const uint32_t foe = 1u - flat / 2u;
+    for (uint32_t slot = 0u; slot < DUOFORGE_ACTIVE_PER_SIDE; ++slot) {
+        const dfi_member *t = dfi_at(b, foe * 2u + slot);
+        if (t != NULL && t->hp != 0u && dfi_item_code(b, t) != 0u &&
+            dfi_illusion_disguise_up(&b->sides[foe], &b->tail.sides[foe], slot) != 0) {
+            return DUOFORGE_E_UNSUPPORTED;
+        }
+    }
+    for (uint32_t slot = 0u; slot < DUOFORGE_ACTIVE_PER_SIDE; ++slot) {
+        const dfi_member *t = dfi_at(b, foe * 2u + slot);
+        const uint32_t code = (t != NULL && t->hp != 0u) ? dfi_item_code(b, t) : 0u;
+        if (code != 0u) {
+            duoforge_event e = dfi_ev(DUOFORGE_EVENT_ITEM_SHOWN, foe * 2u + slot, DUOFORGE_CAUSE_ABILITY, code, flat);
+            e.id = (uint16_t)(1u + DFI_ABILITY_FRISK); /* wide-operands-reviewed: 67, below 2^16 */
+            dfi_emit(r, &e);
+        }
+    }
+    return DUOFORGE_OK;
+}
 
 static duoforge_status dfi_trace(dfi_run *r, uint32_t flat)
 {
@@ -9100,6 +9389,10 @@ static duoforge_status dfi_trace(dfi_run *r, uint32_t flat)
     /* Oblivious's onUpdate (step G47, data/abilities.ts:3009-3016) removes a taunt of its holder with its -activate line. The
      * copy comes at the entry, where no taunt stands; a taunted holder that copies it is refused, never guessed. */
     if (copied == 1u + DFI_ABILITY_OBLIVIOUS && b->tail.sides[flat / 2u].positions[flat % 2u].taunt_turns != 0u) {
+        return DUOFORGE_E_UNSUPPORTED;
+    }
+    /* Step G79 (lead decision): a copied Cloud Nine is not modelled until there is evidence (E_UNSUPPORTED, never a guess). */
+    if (copied == 1u + DFI_ABILITY_CLOUDNINE) {
         return DUOFORGE_E_UNSUPPORTED;
     }
     b->tail.sides[flat / 2u].ability_now[dfi_pos(b, flat)->occupant] = (uint16_t)copied; /* <= the ability count */
@@ -9180,6 +9473,8 @@ static duoforge_status dfi_entry_ability(dfi_run *r, uint32_t flat)
                           dfi_effect(DUOFORGE_CAUSE_ABILITY, 1u + DFI_ABILITY_INTIMIDATE, DFI_BOOST_SECONDARY));
             }
         }
+    } else if (a == 1u + DFI_ABILITY_FRISK) {
+        return dfi_frisk(r, flat); /* step G81: the foes' items, -item lines (ITEM_SHOWN) */
     }
     return DUOFORGE_OK;
 }
@@ -9417,6 +9712,17 @@ static duoforge_status dfi_run_entries(dfi_run *r, uint32_t entering)
                         return DUOFORGE_OK;
                     }
                 }
+                if (m->hp != 0u && dfi_ability(r->b, m, DFI_ABILITY_CLOUDNINE)) {
+                    /* Cloud Nine's onSwitchIn: -ability|holder|Cloud Nine (no [from]); its onStart only clears the ending flag
+                     * and runs WeatherChange, which prints nothing (data/abilities.ts:546-553). From here the weather is
+                     * suppressed (dfi_weather_suppressed). It is not an entry of dfi_has_entry: a copy or a swap starts it
+                     * without a line (dfi_skill_swap_start, dfi_trace). */
+                    const duoforge_event cn = dfi_ev(DUOFORGE_EVENT_ABILITY, flat, DUOFORGE_CAUSE_NONE,
+                                                     1u + DFI_ABILITY_CLOUDNINE, DUOFORGE_NO_POSITION);
+                    dfi_emit(r, &cn);
+                }
+                /* The holder's own SwitchIn handlers keep their subOrder: an ability (7) before an item (8)
+                 * (sim/battle.ts effectTypeOrder), so Cloud Nine's line comes before Air Balloon's on one holder. */
                 /* Air Balloon's onStart (step G67, data/items.ts:191-195): the holder's own -item line, ITEM_SHOWN (decision
                  * 0033). Its place among the handlers is measured against recorded battles (the order of the item's onStart
                  * against the entry abilities is not pinned yet). Gravity is not modelled (unmarked). */
@@ -9953,25 +10259,34 @@ static duoforge_status dfi_residual_events_run(dfi_run *r, dfi_noorder_snapshot 
                 w.detail = b->weather;
                 w.flags = (uint8_t)DUOFORGE_EVENT_FLAG_UPKEEP;
                 dfi_emit(r, &w); /* -weather|...|[upkeep] */
-                if (b->weather == DFI_WEATHER_SAND) {
-                    st = dfi_sand_damage(r); /* eachEvent('Weather'): Sandstorm's onWeather */
-                    if (st != DUOFORGE_OK) {
-                        return st;
-                    }
-                } else if (b->weather == DFI_WEATHER_RAIN) {
-                    st = dfi_rain_dish(r); /* eachEvent('Weather'): Rain Dish's onWeather */
-                    if (st != DUOFORGE_OK) {
-                        return st;
-                    }
-                } else if (b->weather == DFI_WEATHER_SUN) {
-                    st = dfi_solar_power(r); /* eachEvent('Weather'): Solar Power's onWeather (step G39) */
-                    if (st != DUOFORGE_OK) {
-                        return st;
+                /* Cloud Nine suppresses the Weather handlers (battle.ts:618, :891): no damage and no heal here, and the
+                 * 'Update' that eachEvent('Weather') ends with is not run either, because sandstorm and snowscape call it only
+                 * while their weather is effective (conditions.ts sandstorm and snowscape onFieldResidual, isWeather). Rain and
+                 * sun call it unconditionally (conditions.ts raindance and sunnyday), so their 'Update' runs (battle.ts:472). */
+                const bool suppressed = dfi_weather_suppressed(r);
+                if (!suppressed) {
+                    if (b->weather == DFI_WEATHER_SAND) {
+                        st = dfi_sand_damage(r); /* eachEvent('Weather'): Sandstorm's onWeather */
+                        if (st != DUOFORGE_OK) {
+                            return st;
+                        }
+                    } else if (b->weather == DFI_WEATHER_RAIN) {
+                        st = dfi_rain_dish(r); /* eachEvent('Weather'): Rain Dish's onWeather */
+                        if (st != DUOFORGE_OK) {
+                            return st;
+                        }
+                    } else if (b->weather == DFI_WEATHER_SUN) {
+                        st = dfi_solar_power(r); /* eachEvent('Weather'): Solar Power's onWeather (step G39) */
+                        if (st != DUOFORGE_OK) {
+                            return st;
+                        }
                     }
                 }
-                st = dfi_update(r); /* the upkeep: eachEvent('Weather') ends with 'Update' */
-                if (st != DUOFORGE_OK) {
-                    return st;
+                if (!suppressed || b->weather == DFI_WEATHER_RAIN || b->weather == DFI_WEATHER_SUN) {
+                    st = dfi_update(r); /* the upkeep: eachEvent('Weather') ends with 'Update' */
+                    if (st != DUOFORGE_OK) {
+                        return st;
+                    }
                 }
                 dfi_process_faints(r); /* fieldEvent: faintMessages after each handler (sim/battle.ts:569-570) */
                 if (r->ended) {

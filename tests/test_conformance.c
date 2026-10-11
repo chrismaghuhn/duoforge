@@ -33,7 +33,7 @@
 #include "reference/conformance_pool.h"
 #include "support/pool.h"
 #define DF_CONF_FORMES dfi_pool_formes
-#define DF_POOL_DATA_BATTLES 819u /* the eight G83 battles (g83_*) on top of 811 */ /* main G67 and #342 battles included (793 on main) + the recorded pool battles: the six C2 battles (three covering, pair run 9007), the three G94 Baneful Bunker battles, 762 on main, the seven G88 battles (g88_*), the two C1 battles (c1_*) */
+#define DF_POOL_DATA_BATTLES 858u /* the recorded pool battles: G79's eleven Cloud Nine (incl. the Cloud Nine + Air Balloon order) and G81's five Frisk battles, main's 811 (793 + batch 6's six C2, three G94, seven G88, two C1) + lane B batch 5c's 22 (G71's eleven Cute Charm battles, G75's eleven) */
 #elif defined(DF_CONFORMANCE_TEAM_C)
 #include "data/extended_tables.h"
 #include "reference/conformance_team_c.h"

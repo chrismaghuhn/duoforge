@@ -286,6 +286,18 @@ class LinesTest(unittest.TestCase):
             lines.check(line, self.view)
         return caught.exception.reason
 
+    def test_attract_lines_stop_until_the_tracker_folds_their_bit(self):
+        # Step G71 (decision 0034): Attract is POSITION_EXT_ATTRACT, a view bit this tracker does not fold yet
+        # (lines.UNFOLDED): every Attract line stops by that name, none folds
+        reason = "unfolded:DUOFORGE_POSITION_EXT_ATTRACT"
+        for line in ("|-start|p1a: Staraptor|Attract|[from] ability: Cute Charm|[of] p2a: Gholdengo",
+                     "|-activate|p1a: Staraptor|move: Attract|[of] p2a: Gholdengo",
+                     "|cant|p1a: Staraptor|Attract",
+                     "|-end|p1a: Staraptor|Attract|[silent]",
+                     "|-end|p1a: Staraptor|move: Attract|[from] item: Mental Herb",
+                     "|-end|p1a: Staraptor|move: Attract|[from] ability: Oblivious"):
+            self.assertEqual(self.stop(line), reason, line)
+
     def test_feature_lines_stop(self):
         self.assertEqual(self.stop("|-fieldstart|move: Gravity"), "feature:GRAVITY")
         self.assertEqual(lines.check("|-fieldstart|move: Electric Terrain|[from] ability: Electric Surge|[of] p2a: Gholdengo",
@@ -587,10 +599,12 @@ class LinesTest(unittest.TestCase):
 
     def test_a_feature_the_tracker_does_not_fold_stops(self):
         # the library may support a feature (G60: Substitute), but its view-extension field stays empty until the
-        # tracker folds it: the line still stops the perspective
+        # tracker folds it: the line still stops the perspective. Folding SUBSTITUTE needs move_result to treat a status
+        # move into a Substitute explicitly first (duoforge_move_result's precondition: the pin counts it true)
         self.assertEqual(lines.SUPPORTED & ~lines.TRACKER_FOLDS, 0)
         self.assertTrue(lines.LIBRARY_SUPPORTED >> lines.FEATURES["SUBSTITUTE"] & 1)
-        self.assertEqual(self.stop("|-start|p1a: Staraptor|Substitute"), "feature:SUBSTITUTE")
+        self.assertEqual(self.stop("|-start|p1a: Staraptor|Substitute"), "feature:SUBSTITUTE",
+                         "folding SUBSTITUTE needs move_result to treat a status move into a Substitute explicitly first")
         # a folded one: Throat Chop's [silent] lines (the tracker sets and clears the presence bit)
         self.assertEqual(lines.check("|-start|p1a: Staraptor|Throat Chop|[silent]", self.view), "fold")
         self.assertEqual(lines.check("|-end|p1a: Staraptor|Throat Chop|[silent]", self.view), "fold")

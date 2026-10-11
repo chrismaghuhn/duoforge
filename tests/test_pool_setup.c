@@ -41,8 +41,8 @@
 #include "support/pool.h"
 #include "support/team_c.h"
 
-#define FP_KP_HEX "3d9a7453fbeae4bd33ec52bc174e40515040cf699e558caa2d9bf7376407f375" /* the model fingerprint of the batch tables (G83 rows included; G88 before) */
-#define FP_KPD_HEX "ba04df4f7558ac59be96783e027b6357d053118f59a1596e10059c8b22ef168b"
+#define FP_KP_HEX "a496df341564c7d5e7a76ae9b8058c85addaf5de728897e8c98693eb35eef10e" /* the model fingerprint of the batch tables (G83 rows included; G88 before) */
+#define FP_KPD_HEX "519778d8c6a9e0f68c4ebad3fae0644d4aa50ffca775cc1e1c8321a9f230984c"
 
 /* The public create under `ctx` gives `gated`, and the build without the
  * support gate `ungated`. */
@@ -665,13 +665,13 @@ int main(void)
                 legal(&t, kp, &s, arcanine[i].supported == 1, arcanine[i].what);
             }
         }
-        /* Focus Sash is marked in G4, Scope Lens is not, and a genderless Arcanine-Hisui is not legal. */
+        /* Focus Sash is marked in G4, Quick Claw is not (Scope Lens is marked since G75), and a genderless Arcanine-Hisui is not legal. */
         s = teams;
         s.sides[1].members[0] = member_of(tpl, DFI_FORME_ARCANINEHISUI, DFI_ABILITY_INTIMIDATE, DFI_ITEM_FOCUSSASH + 1u,
                                           4u, arcanine_moves);
         legal(&t, kp, &s, true, "Arcanine-Hisui with a Focus Sash");
-        s.sides[1].members[0].item = DFI_ITEM_SCOPELENS + 1u;
-        legal(&t, kp, &s, false, "Arcanine-Hisui with a Scope Lens");
+        s.sides[1].members[0].item = DFI_ITEM_QUICKCLAW + 1u;
+        legal(&t, kp, &s, false, "Arcanine-Hisui with a Quick Claw");
         s.sides[1].members[0].item = 0u;
         legal(&t, kp, &s, true, "Arcanine-Hisui without an item");
         s.sides[1].members[0].gender = DUOFORGE_GENDER_NONE;
