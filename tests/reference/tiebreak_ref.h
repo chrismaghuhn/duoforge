@@ -6701,6 +6701,38 @@ static const df_tb_stop tb_g96_psychic_terrain_block[] = {
     {5u, 0u, 1u, 1u, {4u, 3u}, {679u, 596u}, {0x404b07a19494df5full, 0x4049000000000000ull}},
     {6u, 0u, 1u, 1u, {4u, 3u}, {646u, 596u}, {0x4049221d2aa68719ull, 0x4049000000000000ull}},
 };
+static const df_tb_stop tb_g97_metal_burst_attacker_switched[] = {
+    {0u, 0u, 1u, 3u, {6u, 6u}, {1230u, 1216u}, {0x4059000000000000ull, 0x4059000000000000ull}},
+    {1u, 0u, 2u, 3u, {4u, 4u}, {813u, 814u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {2u, 0u, 2u, 2u, {4u, 4u}, {751u, 814u}, {0x404e6a1064475a27ull, 0x4050aaaaaaaaaaabull}},
+};
+static const df_tb_stop tb_g97_metal_burst_no_hit[] = {
+    {0u, 0u, 1u, 3u, {6u, 6u}, {1230u, 1216u}, {0x4059000000000000ull, 0x4059000000000000ull}},
+    {1u, 0u, 1u, 3u, {4u, 4u}, {813u, 794u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {2u, 0u, 1u, 3u, {4u, 4u}, {813u, 794u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+};
+static const df_tb_stop tb_g97_metal_burst_normal[] = {
+    {0u, 0u, 1u, 3u, {6u, 6u}, {1230u, 1216u}, {0x4059000000000000ull, 0x4059000000000000ull}},
+    {1u, 0u, 1u, 3u, {4u, 4u}, {813u, 794u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {2u, 0u, 1u, 2u, {4u, 4u}, {806u, 767u}, {0x4050807b6b82a6cfull, 0x405019364d9364d9ull}},
+    {3u, 0u, 2u, 2u, {4u, 4u}, {679u, 737u}, {0x404b5252741d1228ull, 0x404eef31219dbcc4ull}},
+};
+static const df_tb_stop tb_g97_metal_burst_partner_hit[] = {
+    {0u, 0u, 1u, 3u, {6u, 6u}, {1230u, 1216u}, {0x4059000000000000ull, 0x4059000000000000ull}},
+    {1u, 0u, 1u, 3u, {4u, 4u}, {813u, 794u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {2u, 0u, 2u, 2u, {4u, 4u}, {738u, 794u}, {0x404dcd60e76994f9ull, 0x4050aaaaaaaaaaabull}},
+};
+static const df_tb_stop tb_g97_metal_burst_source_fainted[] = {
+    {0u, 0u, 1u, 3u, {6u, 6u}, {1230u, 1216u}, {0x4059000000000000ull, 0x4059000000000000ull}},
+    {1u, 0u, 1u, 3u, {4u, 4u}, {813u, 794u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {2u, 0u, 1u, 1u, {4u, 3u}, {804u, 596u}, {0x4050746debc05c91ull, 0x4049000000000000ull}},
+};
+static const df_tb_stop tb_g97_metal_burst_substitute[] = {
+    {0u, 0u, 1u, 3u, {6u, 6u}, {1230u, 1216u}, {0x4059000000000000ull, 0x4059000000000000ull}},
+    {1u, 0u, 1u, 3u, {4u, 4u}, {813u, 794u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {2u, 0u, 2u, 2u, {4u, 4u}, {780u, 794u}, {0x404fc797dd49c341ull, 0x4050aaaaaaaaaaabull}},
+    {3u, 0u, 2u, 2u, {4u, 4u}, {683u, 770u}, {0x404b7c1673473b23ull, 0x40502efec366a5b8ull}},
+};
 static const df_tb_stop tb_h18_absorbed_secondary_psychic_sitrus_mirror[] = {
     {0u, 0u, 3u, 4u, {6u, 6u}, {1190u, 1190u}, {0x4059000000000000ull, 0x4059000000000000ull}},
     {1u, 0u, 2u, 3u, {4u, 4u}, {746u, 806u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
@@ -8897,6 +8929,12 @@ static const df_tb_battle tb_battles[] = {
     {"g94_bunker_noncontact", 3u, tb_g94_bunker_noncontact, sizeof tb_g94_bunker_noncontact / sizeof tb_g94_bunker_noncontact[0]},
     {"g94_bunker_poison", 4u, tb_g94_bunker_poison, sizeof tb_g94_bunker_poison / sizeof tb_g94_bunker_poison[0]},
     {"g96_psychic_terrain_block", 6u, tb_g96_psychic_terrain_block, sizeof tb_g96_psychic_terrain_block / sizeof tb_g96_psychic_terrain_block[0]},
+    {"g97_metal_burst_attacker_switched", 2u, tb_g97_metal_burst_attacker_switched, sizeof tb_g97_metal_burst_attacker_switched / sizeof tb_g97_metal_burst_attacker_switched[0]},
+    {"g97_metal_burst_no_hit", 2u, tb_g97_metal_burst_no_hit, sizeof tb_g97_metal_burst_no_hit / sizeof tb_g97_metal_burst_no_hit[0]},
+    {"g97_metal_burst_normal", 3u, tb_g97_metal_burst_normal, sizeof tb_g97_metal_burst_normal / sizeof tb_g97_metal_burst_normal[0]},
+    {"g97_metal_burst_partner_hit", 2u, tb_g97_metal_burst_partner_hit, sizeof tb_g97_metal_burst_partner_hit / sizeof tb_g97_metal_burst_partner_hit[0]},
+    {"g97_metal_burst_source_fainted", 2u, tb_g97_metal_burst_source_fainted, sizeof tb_g97_metal_burst_source_fainted / sizeof tb_g97_metal_burst_source_fainted[0]},
+    {"g97_metal_burst_substitute", 3u, tb_g97_metal_burst_substitute, sizeof tb_g97_metal_burst_substitute / sizeof tb_g97_metal_burst_substitute[0]},
     {"h18_absorbed_secondary_psychic_sitrus_mirror", 27u, tb_h18_absorbed_secondary_psychic_sitrus_mirror, sizeof tb_h18_absorbed_secondary_psychic_sitrus_mirror / sizeof tb_h18_absorbed_secondary_psychic_sitrus_mirror[0]},
     {"h18_heal_pulse_full_hp_sitrus_mirror", 3u, tb_h18_heal_pulse_full_hp_sitrus_mirror, sizeof tb_h18_heal_pulse_full_hp_sitrus_mirror / sizeof tb_h18_heal_pulse_full_hp_sitrus_mirror[0]},
     {"h18_imprison_sitrus_mirror", 3u, tb_h18_imprison_sitrus_mirror, sizeof tb_h18_imprison_sitrus_mirror / sizeof tb_h18_imprison_sitrus_mirror[0]},
@@ -9033,7 +9071,7 @@ static const df_tb_battle tb_battles[] = {
     {"xr3_sheercold_sub_miss", 3u, tb_xr3_sheercold_sub_miss, sizeof tb_xr3_sheercold_sub_miss / sizeof tb_xr3_sheercold_sub_miss[0]},
 };
 
-/* 6078 stops: 166 of an ended battle; decided by the count 1488,
- * the HP percentage 1888, the total HP 2353, a tie 183;
- * winners: side 0 2870, side 1 3025, tie 183 */
+/* 6098 stops: 166 of an ended battle; decided by the count 1489,
+ * the HP percentage 1894, the total HP 2366, a tie 183;
+ * winners: side 0 2884, side 1 3031, tie 183 */
 #endif

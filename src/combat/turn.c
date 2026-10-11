@@ -1422,6 +1422,8 @@ static duoforge_status dfi_move_targets(dfi_run *r, uint32_t user, uint32_t cls,
         if (!r->ctx || !dfi_kind_limits_of(r->ctx->data_kind).pool_rules) {
             return DUOFORGE_E_UNSUPPORTED;
         }
+        /* The target draw of a Metal Burst without a chosen target (getRandomTarget, the RANDOM_TARGET of context resolve) is
+         * dropped by the converter (trace_to_c.py drop_reason: target computed for priority), so the engine draws nothing here. */
         const uint8_t metal = r->b->tail.sides[user / 2u].positions[user % 2u].metal_source;
         *count = 0u;
         if (metal == 0u) {
@@ -5763,6 +5765,12 @@ static duoforge_status dfi_substitute_takes(dfi_run *r, uint32_t user, uint32_t 
 
 static duoforge_status dfi_no_target_or_try(dfi_run *r, uint32_t user, const dfi_move_data *md)
 {
+    /* Metal Burst without a record (step G97, decision 0063): no target is chosen because onTry fails first; the line is the Try's
+     * -fail and [still] (sim/battle-actions.ts:592-596), not [notarget] (recorded: |move|p1a: Aggron|Metal Burst||[still]). */
+    if (md->special == DFI_SPECIAL_METAL_BURST) {
+        dfi_fail_still(r, user);
+        return DUOFORGE_OK;
+    }
     if (md->special == DFI_SPECIAL_DOUBLE_SHOCK) {
         bool stopped = false;
         const duoforge_status ds = dfi_double_shock_try(r, user, &stopped);
@@ -7155,7 +7163,7 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
         md->special != DFI_SPECIAL_FINAL_GAMBIT &&
         md->special != DFI_SPECIAL_DRAGON_DARTS &&
         md->special != DFI_SPECIAL_LASH_OUT && md->special != DFI_SPECIAL_ASSURANCE &&
-        md->special != DFI_SPECIAL_PSYCHIC_TERRAIN) {
+        md->special != DFI_SPECIAL_PSYCHIC_TERRAIN && md->special != DFI_SPECIAL_METAL_BURST) {
         return DUOFORGE_E_INVARIANT;
     }
     /* Steel Roller's onTry (step G34, data/moves.ts:17893-17913): it fails without a terrain, with -fail and [still]. */

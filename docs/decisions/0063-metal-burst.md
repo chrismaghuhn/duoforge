@@ -64,6 +64,19 @@ Speed order (hand): Dragonite with Choice Scarf (base 80, x1.5) acts before Glal
 
 At most two attempts per case: the first is the spec as written; a second attempt only when the first does not reach the designed condition (for case 6: Dragonite survives Icicle Crash, so the case is a plain hit). Case 3's speed order rests on base Speed 60 against 50 with Relaxed; if the trace shows Aggron first, the case is recorded as it is (the Try fails) and not re-rolled.
 
+### 5.1 Recorded outcome (attempt 2, the corrected specs)
+
+- **normal (as planned):** turn 1 Dragon Claw took 18 (177 to 159), Metal Burst took 27 = floor(1.5 x 18). Turn 2 Dragon Claw took 20 (Leftovers had healed 11 in between), Metal Burst took 30 = 1.5 x 20. Conformant.
+- **no_hit (as planned):** `|move|p1a: Aggron|Metal Burst||[still]` and `|-fail|p1a: Aggron`. Conformant. The engine first wrote `[notarget]`: the Try comes before the no-target line; fixed in `dfi_no_target_or_try`.
+- **partner_hit (as planned):** Glalie's Earthquake hit Aggron (the ally) while the foes were protected; Metal Burst `-fail` `[still]`. Conformant.
+- **attacker_switched (not reached):** the replacement request comes mid-turn after Flip Turn; `max_steps` 2 stopped before Aggron moved. Needs `max_steps` 3.
+- **substitute (not reached):** on turn 2 Dragonite took its Protect, not Dragon Claw (the plan entry was not applied to its slot); no Substitute hit happened.
+- **source_fainted (not reached):** Icicle Crash left Dragonite at 25 of 198 (Multiscale halves a hit at full HP); Metal Burst then took it to 0 while it was alive. The fainted-target path is not exercised.
+
+The scripted target's draw (`RANDOM_TARGET`, context `resolve`) is dropped by the converter (`drop_reason`: target computed for priority), so the engine draws nothing there. A first version that drew it made every Metal Burst battle diverge; reverted.
+
+Attempt 1 had `max_steps` equal to the turns (the lead switch-in is step 0 of a trace), so only the switch-ins were recorded. Attempt 2 is the first with turns.
+
 ## 6. Tests and evidence (planned)
 
 - Recorded battles: the six traces above (`tests/reference/traces`, converted with `trace_to_c.py`), so the usage check of `test_trace_to_c.py` finds a pool battle that uses Metal Burst.
