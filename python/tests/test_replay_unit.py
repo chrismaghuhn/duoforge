@@ -1118,7 +1118,8 @@ class GameTest(unittest.TestCase):
         self.assertEqual(tracker._positions[1][0].flag, 0)
         tracker._event(trace_to_c.ev_tuple(trace_to_c.EV["ACTIVATE"], 2, trace_to_c.NOPOS, trace_to_c.CAUSE["ABILITY"], 0,
                                            exit_id))
-        self.assertEqual(tracker._positions[1][0].flag, 1)
+        from duoforge_live.tracker import SWITCH_EMERGENCY_EXIT
+        self.assertEqual(tracker._positions[1][0].flag, SWITCH_EMERGENCY_EXIT)  # the reason (the record's flag)
 
     def charizard_mega(self, stone, forme):
         """The committed log with Charizard (p2) holding `stone` and evolving into `forme`."""
