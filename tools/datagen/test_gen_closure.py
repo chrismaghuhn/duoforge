@@ -1819,10 +1819,10 @@ class SmallRulesG35(unittest.TestCase):
 
     def sources(self, skip=(None, None)):
         abilities = []
-        for aid, facts in gen_closure.G34_ABILITY_FACTS + gen_closure.G35_ABILITY_FACTS + gen_closure.MEGA2_ABILITY_FACTS + gen_closure.G39_ABILITY_FACTS + gen_closure.G41_ABILITY_FACTS + gen_closure.G67_ABILITY_FACTS + gen_closure.G45_ABILITY_FACTS + gen_closure.G46_ABILITY_FACTS + gen_closure.G47_ABILITY_FACTS + gen_closure.G51_ABILITY_FACTS + gen_closure.G53_ABILITY_FACTS + gen_closure.G63_ABILITY_FACTS + gen_closure.G59_ABILITY_FACTS + gen_closure.G69_ABILITY_FACTS + gen_closure.G65_ABILITY_FACTS + gen_closure.G73_ABILITY_FACTS:
+        for aid, facts in gen_closure.G34_ABILITY_FACTS + gen_closure.G35_ABILITY_FACTS + gen_closure.MEGA2_ABILITY_FACTS + gen_closure.G39_ABILITY_FACTS + gen_closure.G41_ABILITY_FACTS + gen_closure.G67_ABILITY_FACTS + gen_closure.G83_ABILITY_FACTS + gen_closure.G45_ABILITY_FACTS + gen_closure.G46_ABILITY_FACTS + gen_closure.G47_ABILITY_FACTS + gen_closure.G51_ABILITY_FACTS + gen_closure.G53_ABILITY_FACTS + gen_closure.G63_ABILITY_FACTS + gen_closure.G59_ABILITY_FACTS + gen_closure.G69_ABILITY_FACTS + gen_closure.G65_ABILITY_FACTS + gen_closure.G73_ABILITY_FACTS:
             kept = [f for i, f in enumerate(facts) if (aid, i) != skip]
             abilities.append(entry(aid, *kept))
-        items = [entry(iid, *facts) for iid, facts in gen_closure.G34_ITEM_FACTS + gen_closure.G46_ITEM_FACTS + gen_closure.G47_ITEM_FACTS + gen_closure.G67_ITEM_FACTS]
+        items = [entry(iid, *facts) for iid, facts in gen_closure.G34_ITEM_FACTS + gen_closure.G46_ITEM_FACTS + gen_closure.G47_ITEM_FACTS + gen_closure.G67_ITEM_FACTS + gen_closure.G83_ITEM_FACTS]
         return (TextSource('data/abilities.ts', '\n'.join(abilities)), TextSource('data/mods/champions/abilities.ts', ''),
                 TextSource('data/items.ts', '\n'.join(items)), TextSource('data/mods/champions/items.ts', ''))
 
@@ -1903,10 +1903,10 @@ class SmallRulesG39(unittest.TestCase):
 
     def abilities(self, skip=(None, None)):
         out = []
-        for aid, facts in gen_closure.G34_ABILITY_FACTS + gen_closure.G35_ABILITY_FACTS + gen_closure.MEGA2_ABILITY_FACTS + gen_closure.G39_ABILITY_FACTS + gen_closure.G41_ABILITY_FACTS + gen_closure.G67_ABILITY_FACTS + gen_closure.G45_ABILITY_FACTS + gen_closure.G46_ABILITY_FACTS + gen_closure.G47_ABILITY_FACTS + gen_closure.G51_ABILITY_FACTS + gen_closure.G53_ABILITY_FACTS + gen_closure.G63_ABILITY_FACTS + gen_closure.G59_ABILITY_FACTS + gen_closure.G69_ABILITY_FACTS + gen_closure.G65_ABILITY_FACTS + gen_closure.G73_ABILITY_FACTS:
+        for aid, facts in gen_closure.G34_ABILITY_FACTS + gen_closure.G35_ABILITY_FACTS + gen_closure.MEGA2_ABILITY_FACTS + gen_closure.G39_ABILITY_FACTS + gen_closure.G41_ABILITY_FACTS + gen_closure.G67_ABILITY_FACTS + gen_closure.G83_ABILITY_FACTS + gen_closure.G45_ABILITY_FACTS + gen_closure.G46_ABILITY_FACTS + gen_closure.G47_ABILITY_FACTS + gen_closure.G51_ABILITY_FACTS + gen_closure.G53_ABILITY_FACTS + gen_closure.G63_ABILITY_FACTS + gen_closure.G59_ABILITY_FACTS + gen_closure.G69_ABILITY_FACTS + gen_closure.G65_ABILITY_FACTS + gen_closure.G73_ABILITY_FACTS:
             kept = [f for i, f in enumerate(facts) if (aid, i) != skip]
             out.append(entry(aid, *kept))
-        items = [entry(iid, *facts) for iid, facts in gen_closure.G34_ITEM_FACTS + gen_closure.G46_ITEM_FACTS + gen_closure.G47_ITEM_FACTS + gen_closure.G67_ITEM_FACTS]
+        items = [entry(iid, *facts) for iid, facts in gen_closure.G34_ITEM_FACTS + gen_closure.G46_ITEM_FACTS + gen_closure.G47_ITEM_FACTS + gen_closure.G67_ITEM_FACTS + gen_closure.G83_ITEM_FACTS]
         return (TextSource('data/abilities.ts', '\n'.join(out)), TextSource('data/mods/champions/abilities.ts', ''),
                 TextSource('data/items.ts', '\n'.join(items)), TextSource('data/mods/champions/items.ts', ''))
 
@@ -1976,7 +1976,7 @@ class SmallRulesG59(unittest.TestCase):
 
     def abilities(self, skip=(None, None)):
         out = []
-        for aid, facts in gen_closure.G34_ABILITY_FACTS + gen_closure.G35_ABILITY_FACTS + gen_closure.MEGA2_ABILITY_FACTS + gen_closure.G39_ABILITY_FACTS + gen_closure.G41_ABILITY_FACTS + gen_closure.G67_ABILITY_FACTS + gen_closure.G45_ABILITY_FACTS + gen_closure.G46_ABILITY_FACTS + gen_closure.G47_ABILITY_FACTS + gen_closure.G51_ABILITY_FACTS + gen_closure.G53_ABILITY_FACTS + gen_closure.G59_ABILITY_FACTS + gen_closure.G63_ABILITY_FACTS + gen_closure.G69_ABILITY_FACTS + gen_closure.G65_ABILITY_FACTS + gen_closure.G73_ABILITY_FACTS:
+        for aid, facts in gen_closure.G34_ABILITY_FACTS + gen_closure.G35_ABILITY_FACTS + gen_closure.MEGA2_ABILITY_FACTS + gen_closure.G39_ABILITY_FACTS + gen_closure.G41_ABILITY_FACTS + gen_closure.G67_ABILITY_FACTS + gen_closure.G83_ABILITY_FACTS + gen_closure.G45_ABILITY_FACTS + gen_closure.G46_ABILITY_FACTS + gen_closure.G47_ABILITY_FACTS + gen_closure.G51_ABILITY_FACTS + gen_closure.G53_ABILITY_FACTS + gen_closure.G59_ABILITY_FACTS + gen_closure.G63_ABILITY_FACTS + gen_closure.G69_ABILITY_FACTS + gen_closure.G65_ABILITY_FACTS + gen_closure.G73_ABILITY_FACTS:
             kept = [f for i, f in enumerate(facts) if (aid, i) != skip]
             out.append(entry(aid, *kept))
         return out
@@ -1986,7 +1986,7 @@ class SmallRulesG59(unittest.TestCase):
         return TextSource('data/mods/champions/abilities.ts', '\n'.join(out + list(extra)))
 
     def sources(self, skip=(None, None), champ=None):
-        items = [entry(iid, *facts) for iid, facts in gen_closure.G34_ITEM_FACTS + gen_closure.G46_ITEM_FACTS + gen_closure.G47_ITEM_FACTS + gen_closure.G67_ITEM_FACTS]
+        items = [entry(iid, *facts) for iid, facts in gen_closure.G34_ITEM_FACTS + gen_closure.G46_ITEM_FACTS + gen_closure.G47_ITEM_FACTS + gen_closure.G67_ITEM_FACTS + gen_closure.G83_ITEM_FACTS]
         return (TextSource('data/abilities.ts', '\n'.join(self.abilities(skip))),
                 self.champ() if champ is None else champ,
                 TextSource('data/items.ts', '\n'.join(items)), TextSource('data/mods/champions/items.ts', ''))
@@ -2046,12 +2046,12 @@ class SmallRulesG53(unittest.TestCase):
         out = []
         # check_g34_facts reads every family of the facts, so the fixture carries all of them
         for aid, facts in (gen_closure.G34_ABILITY_FACTS + gen_closure.G35_ABILITY_FACTS + gen_closure.MEGA2_ABILITY_FACTS +
-                           gen_closure.G39_ABILITY_FACTS + gen_closure.G41_ABILITY_FACTS + gen_closure.G67_ABILITY_FACTS + gen_closure.G45_ABILITY_FACTS +
+                           gen_closure.G39_ABILITY_FACTS + gen_closure.G41_ABILITY_FACTS + gen_closure.G67_ABILITY_FACTS + gen_closure.G83_ABILITY_FACTS + gen_closure.G45_ABILITY_FACTS +
                            gen_closure.G46_ABILITY_FACTS + gen_closure.G47_ABILITY_FACTS + gen_closure.G51_ABILITY_FACTS +
                            gen_closure.G53_ABILITY_FACTS + gen_closure.G63_ABILITY_FACTS + gen_closure.G59_ABILITY_FACTS + gen_closure.G69_ABILITY_FACTS + gen_closure.G65_ABILITY_FACTS + gen_closure.G73_ABILITY_FACTS):
             kept = [f for i, f in enumerate(facts) if (aid, i) != skip]
             out.append(entry(aid, *kept))
-        items = [entry(iid, *facts) for iid, facts in gen_closure.G34_ITEM_FACTS + gen_closure.G46_ITEM_FACTS + gen_closure.G47_ITEM_FACTS + gen_closure.G67_ITEM_FACTS]
+        items = [entry(iid, *facts) for iid, facts in gen_closure.G34_ITEM_FACTS + gen_closure.G46_ITEM_FACTS + gen_closure.G47_ITEM_FACTS + gen_closure.G67_ITEM_FACTS + gen_closure.G83_ITEM_FACTS]
         return (TextSource('data/abilities.ts', '\n'.join(out)), TextSource('data/mods/champions/abilities.ts', ''),
                 TextSource('data/items.ts', '\n'.join(items)), TextSource('data/mods/champions/items.ts', ''))
 

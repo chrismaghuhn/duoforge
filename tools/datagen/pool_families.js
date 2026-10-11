@@ -1456,7 +1456,7 @@ const ORDER_CALLBACKS = ['onModifyPriority', 'onFractionalPriority', 'onModifySp
 const ENGINE_ORDER = {
     ability: {prankster: ['onModifyPriority'], galewings: ['onModifyPriority'], unburden: ['condition.onModifySpe'], sandrush: ['onModifySpe'],
         swiftswim: ['onModifySpe'], slushrush: ['onModifySpe'], chlorophyll: ['onModifySpe']},
-    item: {choicescarf: ['onModifySpe']},
+    item: {choicescarf: ['onModifySpe'], ironball: ['onModifySpe']},
 };
 function orderCallbacks(raw) {
     return [...ORDER_CALLBACKS.filter((k) => raw[k] !== undefined),
