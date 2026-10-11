@@ -233,6 +233,7 @@ class AllySwitchPsychUpTest(unittest.TestCase):
         D = data.load(kind="pool")
         t = tracker.Tracker.__new__(tracker.Tracker)
         t.data, t.side, t._spectator = D, 0, False
+        t._action, t._herb_end, t._healing_wish = None, None, None  # no move action open (Tracker._segment), no Healing Wish
         t._positions = [[tracker._Position(), tracker._Position()], [tracker._Position(), tracker._Position()]]
         a, b = t._positions[0]
         a.occupant, a.stages, a.confused = 0, [8, 6, 6, 6, 6, 6, 6], 1
@@ -246,9 +247,12 @@ class AllySwitchPsychUpTest(unittest.TestCase):
         a, b = t._positions[0]
         t._event(trace_to_c.ev_tuple(trace_to_c.EV["SWAP"], 0, 1, trace_to_c.CAUSE["MOVE"], 0,
                                      D.tables["MOVE"]["ALLYSWITCH"]))
-        self.assertIs(t._positions[0][0], b)
-        self.assertIs(t._positions[0][1], a)
-        self.assertEqual((t._positions[0][1].occupant, t._positions[0][1].confused), (0, 1))
+        # the pin moved deliberately with the explicit field list (decision 0044 section 10): the position objects stay at their
+        # slots and the Pokemon's fields go; the contents are what the old object swap showed
+        self.assertIs(t._positions[0][0], a)
+        self.assertIs(t._positions[0][1], b)
+        self.assertEqual((a.occupant, a.confused, a.stages), (1, 0, [6, 6, 6, 6, 4, 6, 6]))
+        self.assertEqual((b.occupant, b.confused, b.stages), (0, 1, [8, 6, 6, 6, 6, 6, 6]))
 
     def test_psych_up_copies_the_targets_stages(self):
         t, D = self._tracker()

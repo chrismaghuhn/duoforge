@@ -266,6 +266,38 @@ class _Position:
         self.last_move = None  # the move id of pokemon.moveUsed: the occupant's own last move line, none after leaving
 
 
+# Ally Switch's swap of two positions of one side (step G80, decision 0044 section 10; src/combat/turn.c dfi_swap_position_state).
+# The engine exchanges whole slot and tail records and puts back the slot's own fields; the tracker mirrors that as an explicit
+# list, so a field added to _Position has to be put on one of the two lists (AllySwitchStateTest). Everything in _SWAP_MOVES
+# belongs to the Pokemon and goes with it:
+#   - the slot record (dfi_active_slot): occupant, activation, stages, flags (protecting, flash_fire, flags, choice_slot,
+#     newly_switched), stall (chain, stall), confused, charge, locked_slot (locked_move), move_actions, flag (switch_flag);
+#   - the tail position (dfi_tail_pos), every volatile: substitute and the other tail fields the tracker does not fold are
+#     features that stop it at their lines, the folded ones are throat_chop, must_recharge, taunt, yawn, imprison, glaive_rush,
+#     rage_powder (the Follow Me flag), heal_block, attract and attract_from (the position's attract_source byte, see below),
+#     trap, trap_source, trap_move, trap_band and trap_elapsed (the partial trap), type_now and type2 (Soak and Double Shock,
+#     the roster member's soak_type and type2, which the record keys by occupant), disable_slot and disable_turns, encore_slot
+#     and encore_turns, cursed, perish, hits_taken, last_slot and last_move, result_now and result_last (move_result),
+#     ability_now (the occupant's), ally_level and ally_turns (the Ally Switch counter);
+#   - the position flags that ride on the Pokemon: STATS_RAISED (raised), LOWERED (lowered), HURT (hurt), CURSED (cursed);
+#     DRAGON_CHEER and DESTINY_BOND are features whose lines stop the tracker, so they are never up here;
+#   - the tracker's own scratch of the occupant's action and turn (confused_action, acted, move_queued, turn_done,
+#     guard_undo, unburden_unseen, fainted), which the engine keeps in the queue records and the run (they follow the Pokemon).
+_SWAP_MOVES = (
+    "occupant", "activation", "stages", "protecting", "flash_fire", "flags", "choice_slot", "newly_switched", "chain", "stall",
+    "confused", "charge", "locked_slot", "move_actions", "flag",
+    "throat_chop", "must_recharge", "taunt", "yawn", "imprison", "glaive_rush", "rage_powder", "heal_block", "attract",
+    "attract_from", "trap", "trap_source", "trap_move", "trap_band", "trap_elapsed", "type_now", "type2", "disable_slot",
+    "disable_turns", "encore_slot", "encore_turns", "cursed", "perish", "hits_taken", "last_slot", "last_move", "result_now",
+    "result_last", "ability_now", "ally_level", "ally_turns", "raised", "lowered", "hurt",
+    "confused_action", "acted", "move_queued", "turn_done", "guard_undo", "unburden_unseen", "fainted")
+# What stays at its position (the slot's, not the Pokemon's): leech_seed_source (the seed's sourceSlot is a slot, sim/pokemon.ts:
+# 2002: the drain goes to whoever stands there), Healing Wish's bit 0 (the slot condition; a swap onto a pending one is refused
+# before it gets here) and locked_target (a slot location in the pin). Requested slots and sealed commands are not _Position
+# fields: they belong to the request of the slot and the tracker keeps them by slot.
+_SWAP_SLOT = ("leech_source", "wish", "locked_target")
+
+
 class _Member:
     def __init__(self, sheet, data):
         self.sheet = sheet
@@ -1272,11 +1304,8 @@ class Tracker:
                 p.lowered = 1  # statsLoweredThisTurn (G88, dfi_boost): a stage really fell
         elif kind == EV["SWAP"]:
             # Ally Switch (step G80, decision 0044; sim/battle.ts swapPosition): the user and its partner change
-            # positions with everything that rides on the Pokemon (stages, volatiles, flags)
-            self._as_pending = None
-            self._ally_pass(self._at(pos))  # a passed consecutive roll (or the first use): the counter goes up
-            side = self._positions[pos // 2]
-            side[pos % 2], side[e[2] % 2] = side[e[2] % 2], side[pos % 2]
+            # positions with everything that rides on the Pokemon (_swap_positions: an explicit field list, not an object swap)
+            self._swap_positions(pos, e[2])
             if pos // 2 == self.side and self._party is not None:
                 # side.pokemon: the two actives exchange their entries (sim/battle.ts:1598-1599)
                 self._party[pos % 2], self._party[e[2] % 2] = self._party[e[2] % 2], self._party[pos % 2]
@@ -1501,6 +1530,32 @@ class Tracker:
         if words[0] != "move" or len(words) < 3:
             raise ValueError(f"an own two-turn move without a target: {self._accepted!r}")
         return trace_to_c.abs_target(self.side, int(words[2]))
+
+    def _swap_positions(self, user, partner):
+        """Ally Switch's exchange of the flat positions `user` and `partner` (dfi_swap_position_state, decision 0044 section 10):
+        the fields of _SWAP_MOVES go with the Pokemon, those of _SWAP_SLOT stay, and what names a swapped position follows it:
+        the trap source of every position (a trapper's flat position + 1) and the Attract source position of every infatuated
+        one (the engine derives it from the member code, which does not change). A pending Healing Wish on either slot is the
+        engine's E_UNSUPPORTED (its onSwap heal is not modelled): an explicit stop, before anything changes."""
+        a, c = self._at(user), self._at(partner)
+        if a.wish or c.wish:
+            raise lines.Stop("ally-switch-healing-wish")
+        self._as_pending = None
+        self._ally_pass(a)  # a passed consecutive roll (or the first use): the counter goes up (before the swap, as the engine)
+        for name in _SWAP_MOVES:
+            va, vc = getattr(a, name), getattr(c, name)
+            setattr(a, name, vc)
+            setattr(c, name, va)
+        for p in (p for side in self._positions for p in side):
+            if p.trap_source == user + 1:
+                p.trap_source = partner + 1
+            elif p.trap_source == partner + 1:
+                p.trap_source = user + 1
+            if p.attract:
+                if p.attract_from == user:
+                    p.attract_from = partner
+                elif p.attract_from == partner:
+                    p.attract_from = user
 
     def _ally_pass(self, p):
         """Ally Switch's counter after a passed roll: the first use starts at level 1 (no roll), a later one goes up to 6;
