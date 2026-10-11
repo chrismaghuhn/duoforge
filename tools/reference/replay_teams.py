@@ -15,7 +15,8 @@ VGCPastes spreads, duoforge_replay.prior), and the manifest names that source, t
 the prior knows no spread for (stat points 0): a stated source, not the players' spreads.
 
 The engine then decides every distinct team as import_vgcpastes does (the POOL data kind, the team against itself):
-only what it accepts is written, a refusal is counted with its reason. Nothing is changed to make a team pass.
+only what it accepts is written, a refusal is counted with its reason (a pending team once per feature that blocks it,
+whatever its member). Nothing is changed to make a team pass.
 
 The output directory (outside the repository; it must not exist) is the corpus format of tools/reference/
 random_teams.py that duoforge.teams.load_corpus reads: RP_<sha256 of the paste, 16 digits>.txt per kept team,
@@ -149,8 +150,11 @@ def build(paths, format_prefix, prior_path, out, ps_dir=None):
             if status == 'pool':
                 kept.append((team_id(text), text, frequency[key]))
                 unknown_members += unknown
+            elif status == 'pending':  # each blocker once per team, without its set's number: one count per feature
+                for blocker in sorted({b.split(': ', 1)[1] for b in info}):
+                    reasons['pending: ' + blocker] += 1
             else:
-                reasons['team %s: %s' % (status, info if isinstance(info, str) else '; '.join(info))] += 1
+                reasons['%s: %s' % (status, info)] += 1
     kept.sort()
     counts['kept'] = len(kept)
     out.mkdir(parents=True)

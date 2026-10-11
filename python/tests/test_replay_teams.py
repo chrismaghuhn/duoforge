@@ -105,6 +105,15 @@ class ReplayTeamsTest(unittest.TestCase):
         self.assertEqual(sum(self.manifest["reasons"].values()), 1)
         self.assertTrue(any("notanitem" in r.lower() for r in self.manifest["reasons"]), self.manifest["reasons"])
 
+    def test_a_pending_team_counts_each_blocking_feature_once(self):
+        from unittest import mock
+        verdict = ("pending", ["set 2: move Infestation", "set 6: move Infestation", "set 6: ability Magma Armor"])
+        with mock.patch("import_vgcpastes.engine_check", lambda ctx: lambda text: verdict):
+            m = replay_teams.build([self.source], "gen9championsvgc2026regmc", self.prior, self.tmp / "pending",
+                                   ps_dir=None)
+        self.assertEqual(m["verdicts"], {"pending": 3})
+        self.assertEqual(m["reasons"], {"pending: ability Magma Armor": 3, "pending: move Infestation": 3})
+
     def test_the_manifest_names_its_provenance_and_the_stat_point_source(self):
         m = self.manifest
         self.assertEqual(m["format_prefix"], "gen9championsvgc2026regmc")
