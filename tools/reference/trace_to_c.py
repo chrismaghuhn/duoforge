@@ -518,13 +518,6 @@ def each_tie_reason(ctx, group, placed):
             index = side['active'][' ab'.index(slot[2]) - 1]
             if index is not None and 'taunt' in side['pokemon'][index]['volatiles']:
                 raise ConversionError('oblivious-taunt', 'trace_to_c: a taunted Oblivious holder: %s' % slot, detail=slot)
-    for g in group:
-        if 'magmaarmor' in g.split(':', 3)[3].split('+'):
-            slot = g.split(':')[1]
-            side = placed['sides'][int(slot[1]) - 1]
-            index = side['active'][' ab'.index(slot[2]) - 1]
-            if index is not None and side['pokemon'][index]['status'] == 'frz':
-                raise ConversionError('magmaarmor-frozen', 'trace_to_c: a frozen Magma Armor holder: %s' % slot, detail=slot)
     # Trace's onUpdate (step AC1) returns unless its holder is still seeking after an onStart that found no foe to
     # copy, which the engine refuses (E_UNSUPPORTED): until then it does nothing either, so it is not a holder.
     # Water Bubble's onUpdate (step G65, data/abilities.ts:5400-5405) cures a burn of its holder: no holder of it has one,
@@ -532,7 +525,8 @@ def each_tie_reason(ctx, group, placed):
     # dfi_trace), so it does nothing and is not a holder.
     # Magma Armor's onUpdate (step G77, data/abilities.ts:2502-2507) cures a freeze of its holder: no holder of it is frozen,
     # since onImmunity refuses every freeze and a Trace or Skill Swap copy onto a frozen holder is refused (E_UNSUPPORTED),
-    # so it does nothing and is not a holder. A frozen holder in a converted state is refused below, never guessed.
+    # so it does nothing and is not a holder. A group names a position, so the frozen state is not read here; it is checked
+    # for the whole battle by magma_armor_frozen (called by convert_battle): a battle with a frozen Magma Armor holder is refused.
     inert = {'thermalexchange', 'trace', 'limber', 'oblivious', 'waterbubble', 'magmaarmor'}
     # Rain Dish's onWeather (step G35, data/abilities.ts:3759) heals only in rain (RainDance; Primordial Sea is not in the
     # format): under any other weather its holder has the handler and it does nothing, so it is not a holder. The weather is
@@ -2248,6 +2242,34 @@ def load_battle(root, name):
     return load_json(root, 'specs', name), load_json(root, 'traces', name)
 
 
+def magma_armor_frozen(spec, trace):
+    """Step G77, Magma Armor (data/abilities.ts:2501-2515): onImmunity refuses every freeze of its holder (pokemon.ts
+    runStatusImmunity, Immunity event, before SetStatus), and its onUpdate cures a freeze only of a holder that has one. So a
+    frozen Magma Armor holder is not a state the engine reaches (a Trace or Skill Swap copy onto a frozen holder is refused,
+    E_UNSUPPORTED, dfi_trace and dfi_skill_swap_update_due), and the Update tie of Magma Armor holders does nothing (the engine
+    has no Magma Armor handler in dfi_update). The Update tie is folded on that ground only, and this guard makes the ground a
+    check: a -status freeze, or a switch line that shows the frz status, of a Pokemon named as a Magma Armor holder of its side
+    (the team's species, its Ability line) refuses the battle, never folded. It reads the protocol lines of every step."""
+    holders = [set(), set()]
+    for side, text in enumerate(spec['teams']):
+        for block in [b for b in text.split('\n\n') if b.strip()]:
+            lines = block.split('\n')
+            species = re.match(r'^(.+?)(?: \([MF]\))?(?: @ .+)?$', lines[0]).group(1)
+            if any(line == 'Ability: Magma Armor' for line in lines):
+                holders[side].add(species)
+    for step in trace['steps']:
+        for line in step['log']:
+            parts = line.split('|')
+            if len(parts) < 4 or ': ' not in parts[2]:
+                continue
+            side = int(parts[2][1]) - 1
+            name = parts[2].split(': ', 1)[1]
+            frozen = (parts[1] == '-status' and parts[3] == 'frz') or (
+                parts[1] in ('switch', 'drag') and len(parts) > 4 and 'frz' in parts[4].split(' ')[-1:])
+            if frozen and name in holders[side]:
+                raise ConversionError('magmaarmor-frozen', 'trace_to_c: a frozen Magma Armor holder: %s' % line, detail=name)
+
+
 def convert_battle(name, spec, trace, tables):
     """One battle as plain data, in the field order of the df_conf_* types
     (conformance_types.h): {'name', 'purpose', 'member_count', 'members',
@@ -2259,6 +2281,7 @@ def convert_battle(name, spec, trace, tables):
     shared arrays; 'dropped' is the number of draws the step dropped.
     Pure: no file IO, and spec and trace are not changed. What the converter
     does not model raises ConversionError."""
+    magma_armor_frozen(spec, trace)  # step G77: no frozen Magma Armor holder in the battle (the Update tie is folded on it)
     teams = [parse_team(spec['teams'][s], tables) for s in range(2)]
     members = []
     for s in range(2):

@@ -15,7 +15,7 @@ EVs: 2 HP / 32 Atk / 32 Spe
 Jolly Nature
 - Cross Poison
 - X-Scissor
-- Pin Missile
+- Poison Jab
 - Swords Dance
 
 Sneasler (M) @ White Herb

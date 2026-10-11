@@ -3056,6 +3056,45 @@ class AngerPointSetboost(unittest.TestCase):
         self.assertEqual(trace_to_c.setboost_olds(['|-clearallboost|'] + log, trace['steps'][0]['state']), [0])
 
 
+class MagmaArmorFrozen(unittest.TestCase):
+    """NAMED RULE MAGMA-ARMOR-FROZEN (step G77, decision 0015 5bq): the Update tie of a Magma Armor holder is folded only while no
+    holder of it is frozen (magma_armor_frozen in trace_to_c.py). Negative control: the committed g77_magma_camerupt with a freeze
+    of Camerupt (a Magma Armor holder) inserted refuses the battle, and the same freeze of a Pokemon that is not a holder (Tauros)
+    converts (the tie is not the holder's). The recorded battle g77_magma_camerupt has no freeze of Camerupt."""
+
+    NAME = 'g77_magma_camerupt'
+
+    def with_line(self, line, after):
+        spec, trace = battle(self.NAME)
+        step = trace['steps'][1]
+        i = step['log'].index(after)
+        step['log'] = step['log'][:i + 1] + [line] + step['log'][i + 1:]
+        return spec, trace
+
+    def test_the_committed_battle_has_no_frozen_holder(self):
+        spec, trace = battle(self.NAME)
+        self.assertEqual(trace_to_c.magma_armor_frozen(spec, trace), None)
+        convert(self.NAME, spec, trace)
+
+    def test_a_frozen_magma_armor_holder_is_refused(self):
+        spec, trace = self.with_line('|-status|p2a: Camerupt|frz', '|move|p1a: Tauros|Ice Beam|p2a: Camerupt')
+        with self.assertRaises(trace_to_c.ConversionError) as cm:
+            convert(self.NAME, spec, trace)
+        self.assertEqual(cm.exception.rule, 'magmaarmor-frozen')
+
+    def test_a_frozen_holder_shown_by_a_switch_is_refused(self):
+        spec, trace = battle(self.NAME)
+        step = trace['steps'][1]
+        step['log'] = ['|switch|p2a: Camerupt|Camerupt, L50, F|100/177 frz'] + step['log']
+        with self.assertRaises(trace_to_c.ConversionError) as cm:
+            convert(self.NAME, spec, trace)
+        self.assertEqual(cm.exception.rule, 'magmaarmor-frozen')
+
+    def test_a_frozen_pokemon_that_is_no_holder_is_not_refused(self):
+        spec, trace = self.with_line('|-status|p2a: Staraptor|frz', '|move|p1a: Tauros|Ice Beam|p2a: Camerupt')
+        self.assertIsNone(trace_to_c.magma_armor_frozen(spec, trace))
+
+
 class SniperChain(unittest.TestCase):
     """NAMED RULE SNIPER-CHAIN (step G77): the value of Sniper in the ModifyDamage chain and its exclusion of the screens: a
     critical hit takes no screen, so the two never meet; a tie of Sniper with a set that does not commute is refused."""
