@@ -128,6 +128,9 @@ _HAZARD = {5: ("stealth_rock", 1), 6: ("spikes", 3), 7: ("toxic_spikes", 2), 8: 
 STATUS = {"brn": 1, "frz": 2, "par": 3, "slp": 4, "psn": 5, "tox": 6}  # DUOFORGE_AILMENT_*
 # Why a position must switch (the encoding's switch_flag, DFI_SWITCH_*): the tracker keeps the reason, the views its presence
 SWITCH_MOVE, SWITCH_EMERGENCY_EXIT, SWITCH_FAINTED = (_ENC[f"DFI_SWITCH_{n}"] for n in ("MOVE", "EMERGENCY_EXIT", "FAINTED"))
+# The moves whose cost to their own user is directDamage, a plain -damage line of the user with no [from] (src/combat/turn.c,
+# dfi_deal with DFI_DMG_DIRECT: Substitute, Clangorous Soul, Belly Drum): it sets no hurtThisTurn (Tracker._hurt).
+DIRECT_COST_MOVES = ("SUBSTITUTE", "CLANGOROUSSOUL", "BELLYDRUM")
 # The self-switch moves and the reason they flag: a damaging one when it hit a target, its user stands and a reserve can
 # come in (src/combat/turn.c, selfSwitch of a damaging move); Baton Pass and Revival Blessing when they do not fail.
 _HIT_PIVOTS = {"UTURN": _ENC["DFI_SWITCH_UTURN"], "VOLTSWITCH": _ENC["DFI_SWITCH_VOLT_SWITCH"],
@@ -318,8 +321,8 @@ class Tracker:
         self._helping_hand = tables["MOVE"].get("HELPINGHAND")
         self._knock_off = tables["MOVE"].get("KNOCKOFF")
         # the moves whose cost to their own user is directDamage, not spreadDamage (G88: no hurtThisTurn; dfi_deal_ex's
-        # callers with spread false): Substitute's and Clangorous Soul's plain -damage; Struggle's recoil is the third
-        self._direct_costs = {tables["MOVE"].get(k) for k in ("SUBSTITUTE", "CLANGOROUSSOUL")} - {None}
+        # callers with spread false): the plain -damage of DIRECT_COST_MOVES; Struggle's recoil is the other one
+        self._direct_costs = {tables["MOVE"].get(k) for k in DIRECT_COST_MOVES} - {None}
         self._eject_button = tables["ITEM"].get("EJECTBUTTON")
         self._mental_herb = tables["ITEM"].get("MENTALHERB")
         self._hit_pivots = {tables["MOVE"][k]: v for k, v in _HIT_PIVOTS.items() if k in tables["MOVE"]}
@@ -1307,7 +1310,7 @@ class Tracker:
     def _hurt(self, pos, cause):
         """hurtThisTurn (G88, dfi_deal_ex): a spread damage that leaves its target standing. Every damage line is spread
         damage except the directDamage of a user's own cost: Struggle's recoil ([from] Recoil after a Struggle line of
-        the same position) and the plain -damage of Substitute and Clangorous Soul on their user. A plain -damage on the
+        the same position) and the plain -damage of DIRECT_COST_MOVES on their user. A plain -damage on the
         user of another move is no line the engine makes: it stops the tracker rather than guess."""
         last = self._last_move
         own = last is not None and last[0] == pos

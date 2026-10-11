@@ -268,6 +268,8 @@ class SetBoostTest(unittest.TestCase):
         from types import SimpleNamespace
         from duoforge_live import tracker
         t = tracker.Tracker.__new__(tracker.Tracker)
+        t._action = None  # no move action open (Tracker._segment)
+        t._herb_end = None
         t.side, t._spectator, t.data = 0, False, data.load(kind="pool")
         t._last_move, t._parting_shot = None, -1
         p = SimpleNamespace(occupant=0, fainted=False, stages=[tracker.STAGE_NEUTRAL] * 7)
