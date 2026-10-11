@@ -35,6 +35,7 @@
 #include "reference/conformance_pool.h"
 #include "rng/draw.h"
 #include "state/battle_internal.h"
+#include "state/closure_member.h"
 #include "state/request.h"
 #include "support/check.h"
 #include "support/fixtures.h"
