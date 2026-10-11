@@ -30,11 +30,11 @@ static void test_marks(df_test *t)
     /* Minimize stays unmarked: the minimize flag of Body Slam and Heavy Slam is inert (no volatile can exist). */
     DF_CHECK(t, dfi_support.moves[DFI_MOVE_MINIMIZE] == 0u);
     /* The handler ids are the generated ones (gen_closure.py SPECIAL_IDS_P: after Dragon Darts, before UNMODELED). */
-    DF_CHECK_EQ_U64(t, DFI_SPECIAL_HEAVY_SLAM, 101u);
-    DF_CHECK_EQ_U64(t, DFI_SPECIAL_HARD_PRESS, 102u);
-    DF_CHECK_EQ_U64(t, DFI_SPECIAL_ICE_SPINNER, 103u);
-    DF_CHECK_EQ_U64(t, DFI_SPECIAL_BELLY_DRUM, 104u);
-    DF_CHECK_EQ_U64(t, DFI_SPECIAL_UNMODELED, 105u);
+    DF_CHECK_EQ_U64(t, DFI_SPECIAL_HEAVY_SLAM, 104u);
+    DF_CHECK_EQ_U64(t, DFI_SPECIAL_HARD_PRESS, 105u);
+    DF_CHECK_EQ_U64(t, DFI_SPECIAL_ICE_SPINNER, 106u);
+    DF_CHECK_EQ_U64(t, DFI_SPECIAL_BELLY_DRUM, 107u);
+    DF_CHECK_EQ_U64(t, DFI_SPECIAL_UNMODELED, 115u);
     DF_CHECK(t, dfi_pool_moves[DFI_MOVE_HEAVYSLAM].special == DFI_SPECIAL_HEAVY_SLAM);
     DF_CHECK(t, dfi_pool_moves[DFI_MOVE_HARDPRESS].special == DFI_SPECIAL_HARD_PRESS);
     DF_CHECK(t, dfi_pool_moves[DFI_MOVE_ICESPINNER].special == DFI_SPECIAL_ICE_SPINNER);
