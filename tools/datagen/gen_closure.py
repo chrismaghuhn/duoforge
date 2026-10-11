@@ -2347,7 +2347,7 @@ SPECIAL_P = dict(SPECIAL_C, **{
     'thunderwave': ('THUNDER_WAVE', set()),                               # G68: ignoreImmunity false (Ground is immune to the Electric move)
     'dragondarts': ('DRAGON_DARTS', set()),                               # G78: two hits, the second on the partner (decision 0043)
     'psychicterrain': ('PSYCHIC_TERRAIN', set()),                         # G96: sets the Psychic Terrain (5 turns, 8 with Terrain Extender)
-    'metalburst': ('METAL_BURST', {'damageCallback', 'onModifyTarget', 'onTry'}),  # G97: the foe's last hit, x1.5 (decision 0063)
+    'metalburst': ('METAL_BURST', {'damageCallback', 'onModifyTarget', 'onTry'}),  # G97: the foe's last hit, x1.5 (decision 0064)
 })
 # Step G13: Detect is Protect (data/moves.ts:3526-3547 against 13961-14005): the same handler (not one of the G2 handlers,
 # so it is added to the pool's map only), and the generator checks that its stalling fields and both callbacks are,
@@ -2475,7 +2475,7 @@ G76_FINAL_GAMBIT_FACTS = (
 # Step G78, Dragon Darts (decision 0043, lead's approval of 2026-10-10): the split of its two hits (smartTarget) over the
 # chosen foe and its partner; the hit count is the number 2 (no draw), the hit loop is the Champions one.
 G78_HANDLERS = ['DRAGON_DARTS']
-# Step G96 (decision 0015 5cz, decision 0063): Psychic Terrain's move, a field terrain setter like Electric and Misty. Its
+# Step G96 (decision 0015 5cz, decision 0064): Psychic Terrain's move, a field terrain setter like Electric and Misty. Its
 # condition (the priority block of grounded foes, the Psychic boost, the duration) is the engine's terrain rule (turn.c).
 G96_HANDLERS = ['PSYCHIC_TERRAIN']
 G96_TERRAIN_COMMON = ('terrain: \'psychicterrain\',', 'category: "Status",', 'accuracy: true,', 'target: "all",', 'duration: 5,',
@@ -2495,7 +2495,7 @@ G96_FACTS = (
         "onFieldEnd() { this.add('-fieldend', 'move: Psychic Terrain'); },",
     ]),
 )
-# Step G97 (Metal Burst, decision 0063): the entry is the pinned text the handler reads (the power, the try, the target, the
+# Step G97 (Metal Burst, decision 0064): the entry is the pinned text the handler reads (the power, the try, the target, the
 # flags and type). The damageCallback, onTry and onModifyTarget are the handler's own (G2 owned set above).
 G97_HANDLERS = ['METAL_BURST']
 G97_FACTS = (

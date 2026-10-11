@@ -1,5 +1,5 @@
 /*
- * duoforge.state.pool_g97 (white-box): step G97 (decision 0063), Metal Burst. The public record refuses with
+ * duoforge.state.pool_g97 (white-box): step G97 (decision 0064), Metal Burst. The public record refuses with
  * DUOFORGE_PUBLIC_CAUSE_TURN_HISTORY (64) at a PIVOT while a Metal Burst user is on the field, because the record of the
  * foe's hit is live mid-turn and not public; at a turn boundary and at the first decision it does not refuse (the record is
  * zero there). The invariant TAIL_POSITION checks the record of a standing occupant: the source is a foe (flat + 1, at most 4),

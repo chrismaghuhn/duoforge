@@ -383,7 +383,7 @@ def empty_tail_pos():
         p[f] = 0
     for f in TAIL_POS_REV5_FIELDS:
         p[f] = 0
-    p['metal_source'] = 0  # step G97 (Metal Burst, decision 0063): bytes 33-35 of the position
+    p['metal_source'] = 0  # step G97 (Metal Burst, decision 0064): bytes 33-35 of the position
     p['metal_damage'] = 0
     return p
 
@@ -1040,7 +1040,7 @@ def tail_pos_valid(ctx, tp, flat, mem, slot_flags=0, sub_cap=0):
         return False
     if tp['future_sight'] != 0:
         return False
-    # Metal Burst (step G97, decision 0063): the record names a foe position (flat + 1), zero whenever it names none
+    # Metal Burst (step G97, decision 0064): the record names a foe position (flat + 1), zero whenever it names none
     ms, md = tp.get('metal_source', 0), tp.get('metal_damage', 0)
     if ms > 4 or (ms == 0 and md != 0):
         return False
