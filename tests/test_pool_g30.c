@@ -120,7 +120,7 @@ static void check_facts(df_test *t)
     /* the numbers */
     DF_CHECK_EQ_U64(t, DFI_SITE_FLAME_BODY, 18u);
     DF_CHECK_EQ_U64(t, DFI_SITE_STATIC, 19u); /* step G39: Static's draw; the count was 19 until then */
-    DF_CHECK_EQ_U64(t, DFI_SITE_COUNT, 23u); /* step G46 adds the drag (site 20), step G54 the multi-hit count (site 21) */
+    DF_CHECK_EQ_U64(t, DFI_SITE_COUNT, 24u); /* step G46 adds the drag (site 20), step G54 the multi-hit count (site 22), step G73 Moody (site 23) */
     DF_CHECK_EQ_U64(t, DFI_SPECIAL_RAGE_POWDER, 33u);
     DF_CHECK_EQ_U64(t, DFI_SPECIAL_PSYCHIC_FANGS, 34u);
     DF_CHECK_EQ_U64(t, DFI_SPECIAL_SOLAR_BEAM, 35u);

@@ -57,6 +57,8 @@ def _parser():
     p.add_argument("--weights", choices=("rating", "uniform"), default="rating")
     p.add_argument("--format-weight", action="append", default=[], metavar="PREFIX=FACTOR",
                    help="a factor on the rows of a format prefix (repeatable)")
+    p.add_argument("--source-weight", action="append", default=[], metavar="SOURCE=FACTOR",
+                   help="a factor on the rows of a dataset source (sheet 1 unless named; bo1_belief must be named)")
     p.add_argument("--seed", type=int, default=0)
     p.add_argument("--cache", default=None, help="a directory (outside the repository) for the encoded rows")
     return p
@@ -78,6 +80,19 @@ def _format_weights(items):
     return out
 
 
+def _source_weights(items):
+    from duoforge_replay import dataset
+    out = {}
+    for item in items:
+        source, _, factor = item.partition("=")
+        if source not in dataset.SOURCES or not factor:
+            raise SystemExit(f"--source-weight takes SOURCE=FACTOR with a source of {dataset.SOURCES}, not {item!r}")
+        if not float(factor) > 0:
+            raise SystemExit(f"--source-weight {item!r}: the factor must be above 0")
+        out[source] = float(factor)
+    return out
+
+
 def _dataset_key(dirs):
     """The sha256 of every finished part's manifest of the datasets: what the rows were read from."""
     import hashlib
@@ -90,7 +105,7 @@ def _dataset_key(dirs):
     return h.hexdigest()
 
 
-def _rows(args, context, mask, dirs, format_weights):
+def _rows(args, context, mask, dirs, format_weights, source_weights=None):
     """bc_data.Rows of the datasets, through the cache when one is given."""
     import hashlib
     import json
@@ -98,18 +113,19 @@ def _rows(args, context, mask, dirs, format_weights):
     from pathlib import Path
     from . import bc_data
     if args.cache is None:
-        return bc_data.load(dirs, context, mask, format_weights, args.weights)
+        return bc_data.load(dirs, context, mask, format_weights, args.weights, source_weights)
     from duoforge import features
     for d in dirs:  # a cache hit must not skip the library check of the datasets
         bc_data._check_dataset(d, context)
     key = hashlib.sha256(json.dumps(["rows-v2", _dataset_key(dirs), mask, args.weights, format_weights,
+                                     source_weights or {},
                                      context.fingerprint().hex(), features.ENCODER, list(features.FEATURE_NAMES)],
                                     sort_keys=True).encode()).hexdigest()[:24]
     path = Path(args.cache) / f"bc-rows-{key}.npz"
     if path.exists():
         with np.load(path) as z:
             return bc_data.Rows(**{f.name: z[f.name] for f in fields(bc_data.Rows)})
-    rows = bc_data.load(dirs, context, mask, format_weights, args.weights)
+    rows = bc_data.load(dirs, context, mask, format_weights, args.weights, source_weights)
     path.parent.mkdir(parents=True, exist_ok=True)
     tmp = path.with_name(path.name + ".tmp.npz")
     np.savez(tmp, **{f.name: getattr(rows, f.name) for f in fields(bc_data.Rows)})
@@ -163,11 +179,12 @@ def train(args):
     if out.exists() and any(out.iterdir()):
         raise SystemExit(f"{out} is not empty: a BC run writes into a fresh directory")
     format_weights = _format_weights(args.format_weight)
+    source_weights = _source_weights(args.source_weight)
     dirs = [Path(d) for d in args.data]
     context = duoforge.Context(data_kind=_layout.CONSTANTS["DUOFORGE_DATA_KIND_POOL"])
     try:
         mask = bc_data.bc_mask(context)
-        rows = _rows(args, context, mask, dirs, format_weights)
+        rows = _rows(args, context, mask, dirs, format_weights, source_weights)
         bc_data.check_labels(rows)
         for prefix in format_weights:
             if not np.char.startswith(rows.fmt.astype(str), prefix).any():
@@ -222,7 +239,7 @@ def train(args):
               "data": {"kind": "pool", "fingerprint": fingerprint}, "teams": [], "update": 0,
               "decisions": int(len(train_index)), "ids": ids,
               "train": {"seed": args.seed, "bc": {
-                  "datasets": _dataset_key(dirs), "format_weights": format_weights,
+                  "datasets": _dataset_key(dirs), "format_weights": format_weights, "source_weights": source_weights,
                   "split": "sheet-pair bucket 0/20", "weights": args.weights, "epochs": args.epochs,
                   "best_epoch": best_epoch, "value_coef": value_coef, "learning_rate": args.learning_rate,
                   "batch": args.batch, "patience": args.patience}}}
