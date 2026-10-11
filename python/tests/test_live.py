@@ -524,8 +524,8 @@ def record_diff(battle_name, k, viewer, record):
 # engine's (status, causes, an all-zero record), and the tracker's own named refusals; the pool streams the tracker stops
 # (lines.Stop: an unfolded feature's line), by reason.
 CLOSURE_OUTCOME = {"equal": 2594, "refused": 310}
-POOL_OUTCOME = {"equal": 9198, "refused": 447, "tracker refuses: unburden-without-item-line": 4}
-POOL_STOPS = {"feature:SUBSTITUTE": 66, "feature:FORME_CHANGE": 10, "feature:DESTINY_BOND": 10, "feature:DRAGON_CHEER": 8,
+POOL_OUTCOME = {"equal": 9446, "refused": 457, "tracker refuses: unburden-without-item-line": 4}
+POOL_STOPS = {"feature:SUBSTITUTE": 76, "feature:FORME_CHANGE": 10, "feature:DESTINY_BOND": 10, "feature:DRAGON_CHEER": 8,
               "feature:ROOST": 6, "line:-end": 2, "feature:ILLUSION": 2}
 
 
