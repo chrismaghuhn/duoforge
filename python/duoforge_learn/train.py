@@ -48,7 +48,7 @@ _RESUMABLE = ("envs", "workers", "minutes", "updates", "self_play_share", "leagu
               "team_weights", "teams_root", "opponent_precision", "minibatch", "learning_rate_schedule", "kl_ref",
               "kl_coef", "kl_refresh", "stop_cpu_core_seconds", "stop_gpu_seconds", "update_gpu_share",
               "act_gpu_share", "league_pfsp_share", "league_anchor_share", "league_anchors", "pfsp_weighting",
-              "pfsp_min_weight", "pfsp_prior", "pfsp_prior_games")
+              "pfsp_min_weight", "pfsp_prior", "pfsp_prior_games", "random_team_share")
 # The refill options (league.Refill) and their defaults, which reproduce the uniform refills of the runs before them;
 # a run saves one only where it differs from its default, so a run without them saves what such a run saved.
 _REFILL = {"league_pfsp_share": ("pfsp_share", 0.0), "league_anchor_share": ("anchor_share", 0.0),
@@ -192,6 +192,11 @@ def _parser(suppress=False):
                                        "'magnet', a frozen copy of the learner refreshed every --kl-refresh updates")
     add("--kl-refresh", type=int, default=500, help="updates between the magnet's refreshes (--kl-ref magnet)")
     add("--kl-coef", type=float, default=0.0, help="the weight of KL(policy || --kl-ref) in the loss (k3 estimate)")
+    add("--policy-objective", choices=ppo.OBJECTIVES, default="ppo",
+        help="the policy update: ppo (the clipped surrogate) or mmd (Magnetic Mirror Descent, #359: no clip, a "
+             "proximal KL to the behaviour policy weighted by --mmd-prox-coef; its magnet is --kl-ref magnet)")
+    add("--mmd-prox-coef", type=float, default=1.0,
+        help="the weight of the proximal KL(policy || behaviour) under --policy-objective mmd, > 0")
     add("--entropy", type=str, default="0.01",
         help="entropy bonus: a number, or a schedule over decisions such as 0:0.02,500M:0.01,2G:0.003")
     add("--eval-every", type=int, default=25)
@@ -232,6 +237,13 @@ def _parser(suppress=False):
                                       "reference setups)")
     add("--team-weights", default=None, help="sampling weights of the teams, comma-separated (default: equal)")
     add("--teams-root", default="data/teams", help="the team registry")
+    add("--random-teams-root", default=None,
+        help="a random-team corpus (tools/reference/random_teams.py, outside the repository) joined to the pool: "
+             "every team loaded and checked by the library, its provenance (pin, seed, count, index and manifest "
+             "sha256) in the run's config; with --random-team-share")
+    add("--random-team-share", type=float, default=None,
+        help="the probability that a side's team is drawn from --random-teams-root (uniform within it), in (0, 1]; "
+             "the registry keeps its weights among the rest")
     add("--data-kind", choices=tuple(DATA_KINDS), default="closure", help="the data kind of the battles")
     add("--init", default=None,
         help="a checkpoint (format 2) a new run starts from, a behavior-cloning network (M11 BC spec section 8): "
@@ -312,7 +324,7 @@ def _merged(args, saved):
         if name in ("resume", "out", "ext_supported"):  # ext_supported: _run compares it with the resolved mask
             continue
         new, old = getattr(args, name), saved.get(name)
-        if new == old:
+        if new == old or (name not in saved and new == defaults.get(name)):  # naming an unsaved default: no change
             continue
         if name not in _RESUMABLE:
             raise SystemExit(f"a resume cannot change {name} ({old!r} -> {new!r})")
@@ -452,12 +464,20 @@ def _default_pool():
     return teams.TeamPool.from_setups(("A", "B"), duoforge.reference_setups([0])["sides"][0])
 
 
-def _pool_of_args(args, context):
-    """The pool the options name: registry teams (--teams) or Teams A and B."""
+def _pool_of_args(args, context, corpus=None):
+    """The pool the options name: registry teams (--teams) or Teams A and B, joined by the random-team corpus
+    (teams.load_corpus of --random-teams-root) at --random-team-share (teams.combine)."""
     weights = None if args.team_weights is None else [float(w) for w in args.team_weights.split(",")]
     if args.teams is None:
-        return _default_pool() if weights is None else _default_pool().with_weights(weights)
-    return teams.load(context, [t.strip() for t in args.teams.split(",")], root=args.teams_root, weights=weights)
+        pool = _default_pool() if weights is None else _default_pool().with_weights(weights)
+    else:
+        pool = teams.load(context, [t.strip() for t in args.teams.split(",")], root=args.teams_root, weights=weights)
+    if corpus is not None:
+        try:
+            pool = teams.combine(pool, corpus, args.random_team_share)
+        except ValueError as err:  # a share outside (0, 1], or a corpus team that is in the registry pool too
+            raise SystemExit(str(err)) from None
+    return pool
 
 
 def _check_teams(saved, pool):
@@ -515,7 +535,18 @@ def _run(args, pool, on_start, stop):
         except ValueError as err:
             raise SystemExit(f"--init {args.init}: the context's tables differ from the checkpoint's: {err}") from None
     ids = checkpoint.ids_of(context)  # what the embedded ids mean (spec 12.4), kept in the run state
-    pool = _pool_of_args(args, context) if pool is None else pool
+    if (args.random_teams_root is None) != (args.random_team_share is None):
+        raise SystemExit("--random-teams-root and --random-team-share go together")
+    random_teams = corpus = None
+    if args.random_teams_root is not None:  # the corpus a run records, and keeps across its resumes
+        try:  # one read of its index: the teams played are the ones recorded
+            corpus, random_teams = teams.load_corpus(context, args.random_teams_root)
+        except teams.TeamError as err:
+            raise SystemExit(str(err)) from None
+        if saved_state is not None and saved_state["train"].get("random_teams") != random_teams:
+            raise SystemExit(f"--random-teams-root {args.random_teams_root} is not the run's corpus "
+                             f"({saved_state['train'].get('random_teams')} -> {random_teams})")
+    pool = _pool_of_args(args, context, corpus) if pool is None else pool
     if saved_state is not None:
         if list(pool.ids) != saved_state["teams"]["ids"] or \
                 [float(w) for w in pool.weights] != saved_state["teams"]["weights"]:
@@ -530,6 +561,10 @@ def _run(args, pool, on_start, stop):
     lr_scale = schedule.Schedule.parse(args.learning_rate_schedule)
     if args.kl_coef and not args.kl_ref:
         raise SystemExit("--kl-coef needs --kl-ref: the reference policy of the KL anchor")
+    if args.policy_objective != "mmd" and "mmd_prox_coef" in args._given:
+        raise SystemExit("--mmd-prox-coef needs --policy-objective mmd")
+    if args.policy_objective == "mmd" and not (math.isfinite(args.mmd_prox_coef) and args.mmd_prox_coef > 0):
+        raise SystemExit(f"--mmd-prox-coef {args.mmd_prox_coef} must be > 0")
     if (args.stop_cpu_core_seconds > 0 or args.stop_gpu_seconds > 0) and not args.ledger:
         raise SystemExit("--stop-cpu-core-seconds and --stop-gpu-seconds need --ledger")
     try:
@@ -550,6 +585,14 @@ def _run(args, pool, on_start, stop):
         train_config.pop("keep_init_encoder", None)  # the saved options of a run without it are as before
     if train_config.get("learning_rate_over") == "decisions":
         del train_config["learning_rate_over"]  # its default: saved only by a budget-matched run
+    if train_config.get("policy_objective") == "ppo":  # its default: saved only by an MMD run
+        del train_config["policy_objective"]
+        train_config.pop("mmd_prox_coef", None)
+    if random_teams is None:  # the saved options of a run without a corpus are as before
+        train_config.pop("random_teams_root", None)
+        train_config.pop("random_team_share", None)
+    else:
+        train_config["random_teams"] = random_teams
     if saved_state is not None and saved_state["data"]["fingerprint"] != context.fingerprint().hex():
         # Other tables (the data kind cannot change on resume): the run goes on when every id its network embeds
         # still names the same row (spec 12.4), and is refused otherwise.
@@ -751,8 +794,13 @@ def _run(args, pool, on_start, stop):
     with open(os.path.join(out, "log.jsonl"), "a", encoding="utf-8") as log:
         if saved_state is None and init is not None:
             log.write(json.dumps({"init": train_config["init"]}) + chr(10))
+        if saved_state is None and random_teams is not None:
+            log.write(json.dumps({"random_teams": random_teams, "share": args.random_team_share,
+                                  "teams": len(pool.ids)}) + chr(10))
         if saved_state is not None:
             line = {"resume": changes, "at_update": update}
+            if random_teams is not None:
+                line["random_teams"] = random_teams
             if abandoned:
                 line |= {"abandoned_snapshots": abandoned, "abandoned_dir": abandoned_dir}
             log.write(json.dumps(line) + "\n")
@@ -791,7 +839,8 @@ def _run(args, pool, on_start, stop):
                 params, opt_state, stats = ppo.update(params, opt_state, tx, samples, rng, net.evaluate,
                                                       epochs=args.epochs, minibatch=args.minibatch,
                                                       entropy_coef=entropy_coef, kl_coef=args.kl_coef,
-                                                      lr_scale=scale)
+                                                      lr_scale=scale, objective=args.policy_objective,
+                                                      prox_coef=args.mmd_prox_coef)
                 if controlled:
                     jax.block_until_ready(params)
             t2 = time.perf_counter()
@@ -808,6 +857,8 @@ def _run(args, pool, on_start, stop):
             record |= {k: round(v, 4) for k, v in timings.items()}
             record["t_other"] = round(max(0.0, (t1 - t0) - sum(timings.values())), 4)
             record |= {k: round(float(v), 5) for k, v in stats.items()}
+            if args.policy_objective != "ppo":
+                record["policy_objective"] = args.policy_objective
             if controlled:
                 record["update_device"] = "default" if on_default else "cpu"
                 record["act_default_calls"] = calls["default"]
