@@ -1050,6 +1050,31 @@ static const df_tb_stop tb_c2_pair_c[] = {
     {17u, 0u, 1u, 1u, {2u, 1u}, {76u, 6u}, {0x4020588712b59e59ull, 0x3fe1e0894bcc8393ull}},
     {18u, 1u, 1u, 0u, {2u, 0u}, {76u, 0u}, {0x4020588712b59e59ull, 0x0000000000000000ull}},
 };
+static const df_tb_stop tb_c5_endeavor_ghost[] = {
+    {0u, 0u, 3u, 4u, {6u, 6u}, {1053u, 1053u}, {0x4059000000000000ull, 0x4059000000000000ull}},
+    {1u, 0u, 2u, 3u, {4u, 4u}, {667u, 697u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {2u, 0u, 2u, 2u, {4u, 4u}, {561u, 601u}, {0x404bab9454c2b869ull, 0x404cadc196055a9dull}},
+    {3u, 0u, 2u, 2u, {4u, 4u}, {459u, 507u}, {0x40463728a98570d3ull, 0x40481fc5b7b59517ull}},
+};
+static const df_tb_stop tb_c5_endeavor_immune[] = {
+    {0u, 0u, 3u, 4u, {6u, 6u}, {1053u, 1053u}, {0x4059000000000000ull, 0x4059000000000000ull}},
+    {1u, 0u, 3u, 4u, {4u, 4u}, {667u, 667u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {2u, 0u, 3u, 4u, {4u, 4u}, {630u, 630u}, {0x404f439454c2b869ull, 0x404f439454c2b869ull}},
+    {3u, 0u, 3u, 4u, {4u, 4u}, {630u, 630u}, {0x404f439454c2b869ull, 0x404f439454c2b869ull}},
+};
+static const df_tb_stop tb_c5_endeavor_normal[] = {
+    {0u, 0u, 3u, 4u, {6u, 6u}, {1053u, 1053u}, {0x4059000000000000ull, 0x4059000000000000ull}},
+    {1u, 0u, 2u, 3u, {4u, 4u}, {667u, 697u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {2u, 0u, 2u, 2u, {4u, 4u}, {602u, 697u}, {0x404dce3eff6d6314ull, 0x4050aaaaaaaaaaabull}},
+    {3u, 0u, 2u, 2u, {4u, 4u}, {577u, 697u}, {0x404c80e9aa180dbfull, 0x4050aaaaaaaaaaabull}},
+};
+static const df_tb_stop tb_c5_endeavor_substitute[] = {
+    {0u, 0u, 3u, 4u, {6u, 6u}, {1053u, 1053u}, {0x4059000000000000ull, 0x4059000000000000ull}},
+    {1u, 0u, 3u, 4u, {4u, 4u}, {667u, 667u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {2u, 0u, 2u, 2u, {4u, 4u}, {534u, 584u}, {0x404a680000000000ull, 0x404d8d47d0afbc68ull}},
+    {3u, 0u, 2u, 2u, {4u, 4u}, {510u, 584u}, {0x4049280000000000ull, 0x404d8d47d0afbc68ull}},
+    {4u, 0u, 2u, 1u, {3u, 4u}, {493u, 449u}, {0x40486c252cc7648bull, 0x404797bc68c40361ull}},
+};
 static const df_tb_stop tb_c5_surf_cover[] = {
     {0u, 0u, 3u, 4u, {6u, 6u}, {1053u, 1053u}, {0x4059000000000000ull, 0x4059000000000000ull}},
     {1u, 0u, 3u, 4u, {4u, 4u}, {697u, 697u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
@@ -8139,6 +8164,10 @@ static const df_tb_battle tb_battles[] = {
     {"c2_pair_a", 23u, tb_c2_pair_a, sizeof tb_c2_pair_a / sizeof tb_c2_pair_a[0]},
     {"c2_pair_b", 19u, tb_c2_pair_b, sizeof tb_c2_pair_b / sizeof tb_c2_pair_b[0]},
     {"c2_pair_c", 18u, tb_c2_pair_c, sizeof tb_c2_pair_c / sizeof tb_c2_pair_c[0]},
+    {"c5_endeavor_ghost", 3u, tb_c5_endeavor_ghost, sizeof tb_c5_endeavor_ghost / sizeof tb_c5_endeavor_ghost[0]},
+    {"c5_endeavor_immune", 3u, tb_c5_endeavor_immune, sizeof tb_c5_endeavor_immune / sizeof tb_c5_endeavor_immune[0]},
+    {"c5_endeavor_normal", 3u, tb_c5_endeavor_normal, sizeof tb_c5_endeavor_normal / sizeof tb_c5_endeavor_normal[0]},
+    {"c5_endeavor_substitute", 4u, tb_c5_endeavor_substitute, sizeof tb_c5_endeavor_substitute / sizeof tb_c5_endeavor_substitute[0]},
     {"c5_surf_cover", 3u, tb_c5_surf_cover, sizeof tb_c5_surf_cover / sizeof tb_c5_surf_cover[0]},
     {"d01_noguard_accuracy_tie", 2u, tb_d01_noguard_accuracy_tie, sizeof tb_d01_noguard_accuracy_tie / sizeof tb_d01_noguard_accuracy_tie[0]},
     {"d02_electro_shot_lock_emergency_exit", 4u, tb_d02_electro_shot_lock_emergency_exit, sizeof tb_d02_electro_shot_lock_emergency_exit / sizeof tb_d02_electro_shot_lock_emergency_exit[0]},
@@ -9031,7 +9060,7 @@ static const df_tb_battle tb_battles[] = {
     {"xr3_sheercold_sub_miss", 3u, tb_xr3_sheercold_sub_miss, sizeof tb_xr3_sheercold_sub_miss / sizeof tb_xr3_sheercold_sub_miss[0]},
 };
 
-/* 6076 stops: 166 of an ended battle; decided by the count 1486,
- * the HP percentage 1888, the total HP 2351, a tie 185;
- * winners: side 0 2868, side 1 3023, tie 185 */
+/* 6093 stops: 166 of an ended battle; decided by the count 1487,
+ * the HP percentage 1894, the total HP 2353, a tie 193;
+ * winners: side 0 2868, side 1 3032, tie 193 */
 #endif
