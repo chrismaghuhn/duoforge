@@ -579,10 +579,9 @@ class LinesTest(unittest.TestCase):
     def test_partial_trap_lines_fold_in_the_engines_forms_only(self):
         # Step G90 (decision 0060): the start (-activate|T|move: M|[of] S), the residual damage (-damage|T|hp|[from] move: M|
         # [partiallytrapped]) and the end (-end|T|M|[partiallytrapped], with [silent] for the silent ends) of the six moves
-        # of the engine; the tracker folds them (TRAP_ELAPSED, with PARTIAL_TRAP). Every other form stops on its line.
+        # of the engine; the tracker folds them (PARTIAL_TRAP and TRAP_ELAPSED). Every other form stops on its line.
         f = lines.FEATURES
-        self.assertTrue(lines.SUPPORTED >> f["TRAP_ELAPSED"] & 1)  # the library claims the count (45)
-        self.assertTrue(lines.TRACKER_FOLDS >> f["PARTIAL_TRAP"] & 1)  # and the tracker folds the presence (18) as well
+        self.assertTrue(lines.SUPPORTED >> f["PARTIAL_TRAP"] & 1 and lines.SUPPORTED >> f["TRAP_ELAPSED"] & 1)  # 18 and 45
         for move in ("Bind", "Wrap", "Fire Spin", "Sand Tomb", "Infestation"):
             for line in (f"|-activate|p2a: Gholdengo|move: {move}|[of] p1a: Staraptor",
                          f"|-damage|p2a: Gholdengo|83/100|[from] move: {move}|[partiallytrapped]",

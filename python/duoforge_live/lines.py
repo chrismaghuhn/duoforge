@@ -241,9 +241,9 @@ def _feature(name):
 
 
 def _trap_features():
-    """A partial-trap line (step G90): folded when the library supports the elapsed count (TRAP_ELAPSED), the feature of the
-    state the lines build. The presence bit's own feature (PARTIAL_TRAP, 18) is not in the library's mask; the tracker folds
-    it with the count (tracker.EXT_FIELDS), so a library that claims it later is compared at once."""
+    """A partial-trap line (step G90): folded when the library supports the presence (PARTIAL_TRAP, 18) and the elapsed
+    count (TRAP_ELAPSED, 45), the two features the lines build."""
+    _feature("PARTIAL_TRAP")
     return _feature("TRAP_ELAPSED")
 
 
