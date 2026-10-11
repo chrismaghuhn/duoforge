@@ -8001,6 +8001,18 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
                 pos->switch_flag = pivot->flag;
             }
         }
+        /* Anger Point (step G77, data/abilities.ts:131-142, onHit of the holder): the Hit event runs in Champions' runMoveEffects
+         * (scripts.ts:373), after the damage and before the user's self drops (scripts.ts:Champions step 4), the secondaries
+         * (scripts.ts:387) and the DamagingHit of the holder (scripts.ts:409). A critical hit that the holder took from this move's hit (crit_hit, no Substitute: hit[i] false)
+         * raises its Attack by 12, capped at +6 by the boost; a fainted holder does nothing (dfi_boost). The line is
+         * -setboost with [from] ability: Anger Point, no -ability line. */
+        for (uint32_t i = 0u; i < count; ++i) {
+            if (hit[i] && crit_hit[i] && dfi_ability(r->b, dfi_at(r->b, targets[i]), DFI_ABILITY_ANGERPOINT)) {
+                static const uint8_t atk_up12[DFI_STAT_STAGE_COUNT] = {18u, 6u, 6u, 6u, 6u, 6u, 6u}; /* Atk +12, biased by 6 */
+                dfi_boost(r, targets[i], atk_up12, targets[i],
+                          dfi_effect(DUOFORGE_CAUSE_ABILITY, 1u + DFI_ABILITY_ANGERPOINT, DFI_BOOST_PRIMARY));
+            }
+        }
         /* selfDrops: once, after the first target that was hit, a roll of
          * random(100) that always passes (no chance), then the user's own stat
          * changes (Close Combat, Make It Rain). */
@@ -8483,17 +8495,6 @@ static duoforge_status dfi_run_move_body(dfi_run *r, const dfi_queue_record *q, 
         /* The attacker's own Emergency Exit when DamagingHit (Rocky Helmet) took
          * it to half (data/mods/champions/scripts.ts:406, 419-420). */
         dfi_emergency_exit(r, user, user_before_hit);
-        /* Anger Point (step G77, data/abilities.ts:131-142, onHit of the holder): the Hit events of the targets come after the
-         * Emergency Exit check (sim/battle-actions.ts:1262-1283). A critical hit that the holder took from this move's hit
-         * (crit_hit, no Substitute: a hit that one took has hit[i] false) raises its Attack by 12, which the boost caps at +6.
-         * A fainted holder does nothing (dfi_boost). The line is -setboost with [from] ability: Anger Point, no -ability line. */
-        for (uint32_t i = 0u; i < count; ++i) {
-            if (hit[i] && crit_hit[i] && dfi_ability(r->b, dfi_at(r->b, targets[i]), DFI_ABILITY_ANGERPOINT)) {
-                static const uint8_t atk_up12[DFI_STAT_STAGE_COUNT] = {18u, 6u, 6u, 6u, 6u, 6u, 6u}; /* Atk +12, biased by 6 */
-                dfi_boost(r, targets[i], atk_up12, targets[i],
-                          dfi_effect(DUOFORGE_CAUSE_ABILITY, 1u + DFI_ABILITY_ANGERPOINT, DFI_BOOST_PRIMARY));
-            }
-        }
         any = false;
         for (uint32_t i = 0u; i < count; ++i) {
             any = any || hit[i];
