@@ -259,8 +259,8 @@ int main(void)
     /* No committed stop depends on the order of a bench. */
     DF_CHECK_EQ_U64(&t, counts.ambiguous, 0u);
 #if defined(DF_CONFORMANCE_POOL_DATA)
-    DF_CHECK_EQ_U64(&t, battles, 774u); /* main's 762 (G73 included), the eight G80 battles, the self-target, the partner-absent, the partner-absent hit and the Howl at-cap battle */
-    DF_CHECK_EQ_U64(&t, counts.stops, 4249u); /* measured by the baseline run of the regenerated tiebreak header (4242 before the Howl at-cap battle, which adds 7) */
+    DF_CHECK_EQ_U64(&t, battles, 775u); /* main's 762 (G73 included), the eight G80 battles, the self-target, the partner-absent, the partner-absent hit, the Howl at-cap and the residual Ally Switch battle */
+    DF_CHECK_EQ_U64(&t, counts.stops, 4264u); /* measured by the baseline run of the regenerated tiebreak header (4249 before the residual battle, which adds 15) */
 #else
     /* Every kind of decision of the pin is among the stops (the pool battles are too few for that). */
     DF_CHECK(&t, counts.by_stage[1] > 0u && counts.by_stage[2] > 0u && counts.by_stage[3] > 0u &&

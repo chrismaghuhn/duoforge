@@ -62,7 +62,7 @@
 
 /* The exact test's bounds: the lists of the engine have at most 3 + 4 * 2 + 19 * 4 entries, a few draws and a few
  * orders (3 + 4 * 2 + 19 * 4, the count of steps G27, G31 and G32 together). */
-#define DFI_RES_MODEL_MAX 96u
+#define DFI_RES_MODEL_MAX 100u /* 3 + 4 * 2 + 22 * 4 (Ally Switch, step G80, adds one entry per position) */
 #define DFI_RES_DRAW_CAP 4096u
 #define DFI_RES_ARRANGEMENT_CAP 1024u
 #define DFI_RES_REGION_MAX 4u
