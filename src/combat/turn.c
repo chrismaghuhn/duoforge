@@ -2729,15 +2729,18 @@ static duoforge_status dfi_add_volatile(dfi_run *r, uint32_t flat, uint32_t whic
  * line with `move: Misty Terrain`, because the effect is the move and has no secondaries; it is the line of Thunder Wave under
  * Misty Terrain (step G68). Otherwise the volatile starts with random(2, 6) turns. `*added` tells whether it did, which the
  * move's result needs (a refused confusion is false). */
-static duoforge_status dfi_confuse_primary(dfi_run *r, uint32_t flat, bool *added)
+static duoforge_status dfi_confuse_primary(dfi_run *r, uint32_t flat, bool *added, bool *terrain)
 {
     const dfi_member *m = dfi_at(r->b, flat);
     dfi_active_slot *pos = dfi_pos(r->b, flat);
     *added = false;
+    *terrain = false;
     if (m == NULL || m->hp == 0u || pos->confusion_turns != 0u) {
         return DUOFORGE_OK;
     }
     if (r->b->terrain == DFI_TERRAIN_MISTY && dfi_grounded(r->b, m) && !dfi_semi_invulnerable(r, flat)) {
+        /* onTryAddVolatile returns null (not false): the move shows no [still] line (the replay of g92_cr_misty) */
+        *terrain = true;
         const duoforge_event e =
             dfi_ev(DUOFORGE_EVENT_ACTIVATE, flat, DUOFORGE_CAUSE_MOVE, DFI_MOVE_MISTYTERRAIN, DUOFORGE_NO_POSITION);
         dfi_emit(r, &e);
@@ -6151,6 +6154,10 @@ static duoforge_status dfi_status_effects(dfi_run *r, uint32_t user, uint32_t mo
     const uint32_t side = user / 2u;
     const bool status_move = md->category == DFI_CATEGORY_STATUS;
     duoforge_status st = DUOFORGE_OK;
+    /* Confusion moves (step G92): the targets that the change reached (the spread list of the move line) and whether a target
+     * refused it without the terrain (a failed move: [still] and -fail, the replay of g92_cr_hit and g92_flatter_teeter). */
+    uint32_t confuse_mask = 0u;
+    bool confuse_plain_fail = false;
     /* forceSwitch of a status move (Roar, Whirlwind; step G46), before its other effects (runMoveEffects, battle-actions.ts:1260). */
     if (status_move && (dfi_pool_move_flags2[move_id] & DFI_MOVE_FLAG2_FORCE_SWITCH) != 0u) {
         dfi_force_switch_status(r, user, targets, hit, count);
@@ -6242,15 +6249,23 @@ static duoforge_status dfi_status_effects(dfi_run *r, uint32_t user, uint32_t mo
                  * (sim/battle-actions.ts:1197-1200, the target's, a move's own change), then the volatile, whose result
                  * joins the boosts' (:1236-1238). Swagger's attack +2 and Flatter's special attack +1 come through the
                  * PRIMARY_TARGET role, as Charm's do; a refused change does not stop the confusion. */
+                bool changed_i = false;
                 if (md->boost_role == DFI_BOOST_ROLE_PRIMARY_TARGET) {
-                    did = dfi_boost(r, targets[i], md->boosts, user, dfi_effect(DUOFORGE_CAUSE_MOVE, 0u, DFI_BOOST_PRIMARY)) || did;
+                    changed_i = dfi_boost(r, targets[i], md->boosts, user, dfi_effect(DUOFORGE_CAUSE_MOVE, 0u, DFI_BOOST_PRIMARY));
                 }
                 bool added = false;
-                st = dfi_confuse_primary(r, targets[i], &added);
+                bool terrain = false;
+                st = dfi_confuse_primary(r, targets[i], &added, &terrain);
                 if (st != DUOFORGE_OK) {
                     return st;
                 }
-                did = did || added;
+                if (!terrain) {
+                    confuse_plain_fail = true; /* a target the change did not reach (already confused, or nothing changed) */
+                }
+                did = did || added || changed_i;
+                if (added || changed_i) {
+                    confuse_mask |= 1u << targets[i];
+                }
                 continue;
             }
             if (md->special == DFI_SPECIAL_MEMENTO) {
@@ -6290,6 +6305,18 @@ static duoforge_status dfi_status_effects(dfi_run *r, uint32_t user, uint32_t mo
                 return st;
             }
             did = did || dfi_at(b, targets[i])->status != before;
+        }
+        if (md->special == DFI_SPECIAL_CONFUSE) {
+            /* The spread list of the move line is the targets the change reached (none: the list is empty, as the replay
+             * of g92_flatter_teeter shows for a Teeter Dance whose targets were all confused already). */
+            duoforge_event *mv = dfi_last_move(r);
+            if (mv != NULL && md->target_class == DFI_TARGET_CLASS_ALL_ADJACENT) {
+                mv->amount = (uint8_t)confuse_mask; /* < 16 */
+            }
+            if (!did && confuse_plain_fail) {
+                dfi_fail_still(r, user); /* -fail for the user and [still] on the move line; the result is false */
+                return DUOFORGE_OK;
+            }
         }
         if (did) {
             r->mres |= DFI_MRES_TRUE;
