@@ -33,7 +33,7 @@
 #include "reference/conformance_pool.h"
 #include "support/pool.h"
 #define DF_CONF_FORMES dfi_pool_formes
-#define DF_POOL_DATA_BATTLES 768u /* the recorded pool battles: main's 717, sub_sitrus_tie, the G74 and G76 battles, the thirteen G78 battles, the nine hit-loop battles of chris/expansion-hitloop-fixes, the two mirrored replay-tracker battles of main (719 on main), and the eleven G92 battles (g92_*, the Magic Bounce one included) */
+#define DF_POOL_DATA_BATTLES 773u /* the recorded pool battles: G73's five Moody battles (lane B batch 5) and main's 757, then G92's eleven (g92_*, the Magic Bounce one included) */
 #elif defined(DF_CONFORMANCE_TEAM_C)
 #include "data/extended_tables.h"
 #include "reference/conformance_team_c.h"

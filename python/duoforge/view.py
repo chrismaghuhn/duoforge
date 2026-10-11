@@ -29,3 +29,13 @@ def queue_mask(ctx, turn_start, view):
     if st:
         raise DuoforgeError(status_name(st))
     return out
+
+
+def hp_display(hp, hp_max):
+    """(percent, flag) of the HP display every player is shown of hp of hp_max HP (duoforge_hp_display): the opponent's
+    knowledge of a member, which a player's own protocol stream shows only as exact HP."""
+    percent, flag = np.zeros(1, np.uint8), np.zeros(1, np.uint8)
+    st = load_library().duoforge_hp_display(int(hp), int(hp_max), ptr(percent), ptr(flag))
+    if st:
+        raise DuoforgeError(status_name(st))
+    return int(percent[0]), int(flag[0])

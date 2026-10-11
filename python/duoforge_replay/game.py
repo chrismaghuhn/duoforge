@@ -11,7 +11,10 @@ Counters:
 - points.written (rows); points.dropped.<reason>: the game's decision points
   (either side) after a perspective's stop;
 - labels.<REASON> per asked slot of the rows, labels.TEAM for team rows;
-- turn-scoped.<NAME>: single-turn feature lines that stopped nothing.
+- turn-scoped.<NAME>: single-turn feature lines that stopped nothing;
+- turns.total: the game's turns, per perspective; turns.kept: the turns complete before the perspective's stop
+  (all of them without a stop): the turn coverage;
+- games.both_kept: 1 when both perspectives ran to the end without a stop.
 """
 import collections
 import dataclasses
@@ -63,6 +66,7 @@ class Row:
     prior_level: tuple  # six levels (prior.LEVELS = no paste)
     belief_level: tuple = None  # a belief game: the own six members' set levels (0 or 1), then the foe's six
     revealed: tuple = None  # a belief game: per own member, the bits of the sheet move slots the game showed
+    ext: object = None  # the OBSERVATION_EXT record of the tracker view at the point (decision 0018), as live
 
 
 @dataclass
@@ -237,15 +241,21 @@ def process(replay_id, format_id, log, data, prior, stats, belief=None, seed=0, 
         points = find(lines)
     except line_classes.Stop as stop:
         counters[f"perspectives.stopped.{stop.reason}"] += 2
+        counters["turns.total"] += 2 * record.turns
         return GameResult(record, [], counters)
     rows = []
+    kept_before = counters["perspectives.kept"]
     for side in (0, 1):
-        rows += _perspective(lines, points, side, sheets, data, prior, stats, counters, extra)
+        rows += _perspective(lines, points, side, sheets, data, prior, stats, counters, extra, record.turns)
+    if counters["perspectives.kept"] - kept_before == 2:
+        counters["games.both_kept"] += 1
+    else:
+        counters["games.both_kept"] += 0  # the key is there for every game set up
     counters["points.written"] += len(rows)
     return GameResult(record, rows, counters)
 
 
-def _perspective(lines, points, side, sheets, data, prior, stats, counters, extra=None):
+def _perspective(lines, points, side, sheets, data, prior, stats, counters, extra=None, turns=0):
     forme_names = {v: k.lower() for k, v in data.tables["FORME"].items() if k != "COUNT"}
     levels = []
     stat_points = []
@@ -265,6 +275,7 @@ def _perspective(lines, points, side, sheets, data, prior, stats, counters, extr
     except line_classes.Stop as stop:
         counters[f"perspectives.stopped.{stop.reason}"] += 1
         counters[f"points.dropped.{stop.reason}"] += len(points)
+        counters["turns.total"] += turns
         return []
     taken, stop, done = [], None, 0
     try:
@@ -272,20 +283,21 @@ def _perspective(lines, points, side, sheets, data, prior, stats, counters, extr
             done = point.line
             if own_requested(tracker):
                 domain, lists = superset.domain(tracker)
-                taken.append((point, tracker.observation().copy(), domain.copy(), lists, labels.context(tracker)))
+                taken.append((point, tracker.observation().copy(), domain.copy(), lists, labels.context(tracker),
+                              tracker.observation_ext().copy()))
         feed_lines(tracker, lines, done, len(lines))  # a stop after the last point still cuts the last labels
     except line_classes.Stop as e:
         stop = e
     stop_line = len(lines) if stop is None else stop.line
     rows = []
-    for point, observation, domain, lists, ctx in taken:
+    for point, observation, domain, lists, ctx, ext in taken:
         label = labels.compute(ctx, lines, point, lists, stop_line, leads, back)
         if extra is None:
-            rows.append(Row(observation, domain, side, point.index, label, prior_level))
+            rows.append(Row(observation, domain, side, point.index, label, prior_level, ext=ext))
         else:
             levels, revealed = extra
             rows.append(Row(observation, domain, side, point.index, label, prior_level,
-                            tuple(levels[side]) + tuple(levels[1 - side]), tuple(revealed[side])))
+                            tuple(levels[side]) + tuple(levels[1 - side]), tuple(revealed[side]), ext))
         if point.boundary == TEAM_SELECTION:
             counters["labels.TEAM"] += 1
         else:
@@ -295,6 +307,12 @@ def _perspective(lines, points, side, sheets, data, prior, stats, counters, extr
     for name, n in tracker.turn_scoped_seen.items():
         if stop is None or stop.reason != f"feature:{name}":
             counters[f"turn-scoped.{name}"] += n
+    counters["turns.total"] += turns
+    if stop is None:
+        counters["turns.kept"] += turns
+    else:
+        started = sum(1 for line in lines[:stop.line] if line_kind(line) == "turn")
+        counters["turns.kept"] += max(0, started - 1)  # the turn the stop came in is not complete
     if stop is None:
         counters["perspectives.kept"] += 1
     else:
