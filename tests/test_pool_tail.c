@@ -154,7 +154,7 @@ static const unsigned sweep[DFI_ENC_TAIL_SIZE][SWEEP_COLUMNS] = {
     {0, 0, 0, 255, 0, 0, 0, 0},
     {90, 0, 0, 165, 0, 0, 0, 0},
     {1, 0, 0, 254, 0, 0, 0, 0},
-    {18, 0, 0, 237, 0, 0, 0, 0},
+    {19, 0, 0, 236, 0, 0, 0, 0},
     {167, 0, 0, 88, 0, 0, 0, 0},
     {0, 0, 0, 255, 0, 0, 0, 0},
     {19, 0, 0, 236, 0, 0, 0, 0},
@@ -249,7 +249,7 @@ static const unsigned sweep[DFI_ENC_TAIL_SIZE][SWEEP_COLUMNS] = {
     {1, 0, 254, 0, 0, 0, 0, 0},
     {6, 0, 249, 0, 0, 0, 0, 0},
     {6, 0, 249, 0, 0, 0, 0, 0},
-    {3, 0, 252, 0, 0, 0, 0, 0},
+    {2, 0, 252, 0, 0, 0, 0, 1},
     {0, 0, 255, 0, 0, 0, 0, 0}, /* step G90: trap_elapsed of side 1 position 0 (not trapped) */
     {0, 0, 0, 0, 0, 255, 0, 0},
     {0, 0, 0, 0, 0, 255, 0, 0},
@@ -285,7 +285,7 @@ static const unsigned sweep[DFI_ENC_TAIL_SIZE][SWEEP_COLUMNS] = {
     {1, 0, 254, 0, 0, 0, 0, 0},
     {6, 0, 249, 0, 0, 0, 0, 0},
     {6, 0, 249, 0, 0, 0, 0, 0},
-    {3, 0, 252, 0, 0, 0, 0, 0},
+    {2, 0, 252, 0, 0, 0, 0, 1},
     {1, 0, 254, 0, 0, 0, 0, 0}, /* step G90: trap_elapsed of side 1 position 1 (trapped) */
     {0, 0, 0, 0, 0, 255, 0, 0},
     {0, 0, 0, 0, 0, 255, 0, 0},
@@ -314,7 +314,7 @@ static const unsigned sweep[DFI_ENC_TAIL_SIZE][SWEEP_COLUMNS] = {
     {0, 0, 0, 255, 0, 0, 0, 0},
     {255, 0, 0, 0, 0, 0, 0, 0},
     {1, 0, 0, 254, 0, 0, 0, 0},
-    {18, 0, 0, 237, 0, 0, 0, 0},
+    {19, 0, 0, 236, 0, 0, 0, 0},
     {167, 0, 0, 88, 0, 0, 0, 0},
     {0, 0, 0, 255, 0, 0, 0, 0},
     {19, 0, 0, 236, 0, 0, 0, 0},
@@ -386,14 +386,14 @@ static const unsigned sweep[DFI_ENC_TAIL_SIZE][SWEEP_COLUMNS] = {
     {0, 255, 0, 0, 0, 0, 0, 0},
     {0, 255, 0, 0, 0, 0, 0, 0},
     {0, 255, 0, 0, 0, 0, 0, 0},
-    {95, 0, 160, 0, 0, 0, 0, 0}, /* position_flags (G76 bit 4, G88 bits 5 and 6, G84b bit 7, mask 0xFF): 95 values of the byte decode
-     * (47 with mask 0x7F before G84b, 11 before G88); exact count from tools/state_model/state_v3_model.py --pool-tail (placeholder: recount) */
+    {191, 0, 64, 0, 0, 0, 0, 0}, /* position_flags (G76 bit 4, G88 bits 5 and 6, G84b bit 7, G82 bit 0, mask 0xFF): 191 values of the byte decode
+     * (47 with mask 0x7F before G84b, 11 before G88); exact count: the decoder and tools/state_model/state_v3_model.py --pool-tail agree */
     {0, 0, 255, 0, 0, 0, 0, 0},
-    {95, 0, 160, 0, 0, 0, 0, 0},
+    {191, 0, 64, 0, 0, 0, 0, 0},
     {0, 0, 255, 0, 0, 0, 0, 0},
-    {95, 0, 160, 0, 0, 0, 0, 0},
+    {191, 0, 64, 0, 0, 0, 0, 0},
     {0, 0, 255, 0, 0, 0, 0, 0},
-    {95, 0, 160, 0, 0, 0, 0, 0},
+    {191, 0, 64, 0, 0, 0, 0, 0},
     {0, 0, 255, 0, 0, 0, 0, 0},
     {1, 0, 254, 0, 0, 0, 0, 0}, /* 332: step G71, Attract flat 0 (Rillaboom, M): the code 2 (model: attract_valid_codes) */
     {3, 0, 252, 0, 0, 0, 0, 0}, /* 333: flat 1 (Staraptor, F): the codes 1, 9 and 11 */

@@ -141,7 +141,7 @@ static void finish(duoforge_context *ctx, duoforge_battle *b)
  * event numbers, the draw site and the Ally Switch byte's place in the reserve. */
 static void test_rows(df_test *t)
 {
-    DF_CHECK_EQ_U64(t, DFI_SPECIAL_PSYCH_UP, DFI_SPECIAL_DRAGON_DARTS + 1u); /* after G74, G76 and G78 (merged order) */
+    DF_CHECK_EQ_U64(t, DFI_SPECIAL_PSYCH_UP, 0x76u); /* generator order: after Endeavor (C5, 0x75), before Ally Switch (batch 8 merge order) */
     DF_CHECK_EQ_U64(t, DFI_SPECIAL_ALLY_SWITCH, DFI_SPECIAL_PSYCH_UP + 1u);
     DF_CHECK_EQ_U64(t, DFI_SPECIAL_UNMODELED, DFI_SPECIAL_ALLY_SWITCH + 1u);
     DF_CHECK_EQ_U64(t, dfi_pool_moves[DFI_MOVE_PSYCHUP].special, DFI_SPECIAL_PSYCH_UP);

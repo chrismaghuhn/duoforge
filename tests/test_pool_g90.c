@@ -190,8 +190,8 @@ static uint32_t hp_of(const duoforge_battle *b, uint32_t flat)
 /* The row: the marks, the handler id, the ids after it, and the constants of decision 0060. */
 static void test_row(df_test *t)
 {
-    DF_CHECK_EQ_U64(t, DFI_SPECIAL_PARTIAL_TRAP, DFI_SPECIAL_DRAGON_DARTS + 1u);
-    DF_CHECK_EQ_U64(t, DFI_SPECIAL_UNMODELED, DFI_SPECIAL_PARTIAL_TRAP + 1u);
+    DF_CHECK_EQ_U64(t, DFI_SPECIAL_PARTIAL_TRAP, 0x74u); /* after Healing Wish (0x73) */
+    DF_CHECK_EQ_U64(t, DFI_SPECIAL_UNMODELED, 0x78u); /* after Ally Switch (batch 8 merge order) */
     static const uint32_t moves[5] = {DFI_MOVE_BIND, DFI_MOVE_WRAP, DFI_MOVE_FIRESPIN, DFI_MOVE_SANDTOMB, DFI_MOVE_INFESTATION};
     for (uint32_t i = 0u; i < 5u; ++i) {
         DF_CHECK_EQ_U64(t, dfi_pool_moves[moves[i]].special, DFI_SPECIAL_PARTIAL_TRAP);

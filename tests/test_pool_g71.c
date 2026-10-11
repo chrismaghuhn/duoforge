@@ -142,7 +142,7 @@ static void test_constants(df_test *t)
     DF_CHECK_EQ_U64(t, DFI_SITE_MOODY, 23u);
     DF_CHECK_EQ_U64(t, DFI_SITE_CUTE_CHARM, 24u);
     DF_CHECK_EQ_U64(t, DFI_SITE_ATTRACT, 25u);
-    DF_CHECK_EQ_U64(t, DFI_SITE_COUNT, 26u);
+    DF_CHECK_EQ_U64(t, DFI_SITE_COUNT, 34u); /* the count after the G80 Ally Switch site (33) */
 }
 
 /* The source bytes are written to the reserve and read back, and the bytes after them stay zero. */
