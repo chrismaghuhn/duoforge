@@ -151,7 +151,8 @@ static void check_battles(df_test *t, const duoforge_context *ctx)
 {
     static const char *const names[] = {"g67_magic_guard_sandstorm", "g67_magic_guard_hazards", "g67_magic_guard_recoil",
                                         "g67_balloon_ground", "g67_balloon_stealth_rock", "g67_mg_sand_tie",
-                                        "g67_struggle_sub_balloon"};
+                                        "g67_struggle_sub_balloon", "g67_residual_leftovers_tie", "g67_update_sitrus_tie",
+                                        "g67_af_sub_pop_normal", "g67_mg_recoil_contact", "g67_mg_struggle"};
     for (size_t i = 0; i < sizeof names / sizeof names[0]; ++i) {
         duoforge_battle *b = replay_all(t, ctx, names[i]);
         if (b != NULL) {

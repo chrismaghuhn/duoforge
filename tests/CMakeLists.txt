@@ -273,7 +273,7 @@ foreach(_gen IN ITEMS
         "extended_tables.h=b2abef243fcbfdd87654940076b9fe2fe80b117d74893a7567741f26b9075a7d"
         "extended_tables.c=9e736fa467713283418c4edf8f56b8d844452e596ba422adbd52483d20f7cc17"
         "pool_tables.h=3f15dbd31c57a97aeeed1e9f29f80462d4fbf5c88376ef3c25968e96b9f65a35"
-        "pool_tables.c=7a88c4f1f7919e871820c0296d96c289ae0ad3a07f791846b2be12a0413bf2b7")
+        "pool_tables.c=4bd78573dd729facf69aeaa0a2e79a3eceef4b5c6b8e73f3413bc3ad7cb6e8c6")
     string(REPLACE "=" ";" _parts "${_gen}")
     list(GET _parts 0 _file)
     list(GET _parts 1 _expected)
@@ -815,6 +815,11 @@ duoforge_add_test(NAME duoforge.state.pool_g69 SOURCES test_pool_g69.c WHITEBOX 
 # Step G65 (decision 0015 5bk): the simple modifier abilities Unaware, Marvel Scale, Water Bubble, Reckless and Super Luck (their
 # rows, the recoil and crash facts Reckless reads, and the Trace refusal of Water Bubble onto a burned holder; white-box).
 duoforge_add_test(NAME duoforge.state.pool_g65 SOURCES test_pool_g65.c WHITEBOX TIMEOUT 60)
+
+
+# Step G73 (decision 0015 5bo): Moody (its residual order, its two samples on one site, the boost with the raised key first; white-box, with
+# its recorded battles g73_*, which conformance_pool_data replays).
+duoforge_add_test(NAME duoforge.state.pool_g73 SOURCES test_pool_g73.c WHITEBOX TIMEOUT 60)
 
 # Step G67 (decision 0015 entry 5bl, decision 0033): Magic Guard (the class of every indirect damage), Air Balloon (grounding, the
 # pops, the immunity, the switch-in line ITEM_SHOWN) and the fold that ignores ITEM_SHOWN.

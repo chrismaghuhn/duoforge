@@ -10,15 +10,18 @@ documented order:
 - Mega Evolution when the member holds its stone and its side has not used
   Mega Evolution; never trapped;
 - the reserves: the alive brought members on the bench (hindsight picks);
-- a charging position only its locked move with its stored target, a
+- a recharging position only the recharge; an Encored one only its forced slot, never a Disabled slot;
+  a charging position only its locked move with its stored target, a
   choice-locked one only its locked move, Struggle when no usable move has
   PP left;
 - at a REPLACEMENT or PIVOT, forceSwitch for the asked positions.
 
 The pair mask is the provisional full one, as live. The set contains every
 option of the real request (duoforge.python.replay checks it) and may
-contain more: moves an effect outside the view disables (Fake Out after the
-first turn, Taunt, Imprison, Assault Vest), switches of a trapped position.
+contain more: moves an effect disables that the superset does not apply
+(Fake Out after the first turn, Assault Vest; Taunt and Imprison, which the
+view extension shows but the superset does not read), switches of a trapped
+position.
 """
 from duoforge_live import options
 from duoforge_live.tracker import MOVE_SLOT_NONE
@@ -70,7 +73,13 @@ def domain(tracker):
                 request["active"].append({"moves": [{"id": _move_name(tracker, sheet_moves[p.locked_slot])}]})
                 locked[k] = p.locked_target
                 continue
+            if p.must_recharge:  # -mustrecharge (step G17): only the recharge, and no switch (the request is trapped)
+                request["active"].append({"moves": [{"id": "recharge"}], "trapped": True})
+                continue
+            # Encore forces its slot and Disable bars its own (the view extension's encore_slot, disable_slot)
             usable = [pp[i] > 0 and (p.choice_slot == MOVE_SLOT_NONE or i == p.choice_slot)
+                      and (p.encore_slot == 0 or i == p.encore_slot - 1)  # Encore holds it to that move (#334)
+                      and i != p.disable_slot - 1  # Disable bars its slot
                       for i in range(len(sheet_moves))]
             if not any(usable):  # no PP left, or none for the choice-locked move: Struggle
                 request["active"].append({"moves": [{"id": "struggle"}]})

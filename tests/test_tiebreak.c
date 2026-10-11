@@ -259,8 +259,8 @@ int main(void)
     /* No committed stop depends on the order of a bench. */
     DF_CHECK_EQ_U64(&t, counts.ambiguous, 0u);
 #if defined(DF_CONFORMANCE_POOL_DATA)
-    DF_CHECK_EQ_U64(&t, battles, 779u); /* the pool battles of test_conformance: main's 757, the sixteen of step G67, g67_struggle_sub_balloon and the five of step G81 */
-    DF_CHECK_EQ_U64(&t, counts.stops, 4265u); /* main's 4151 stops, those of the G67 battles and the fifteen of the five G81 battles */
+    DF_CHECK_EQ_U64(&t, battles, 798u); /* main's 793 and the five of step G81: the pool battles of test_conformance: the nine coverage battles of tracker folds 2 (main #342), G67's three targeted battles, G67's nineteen and G73's five Moody battles and main's 757: 755 of the batch and the two mirrored battles of main */
+    DF_CHECK_EQ_U64(&t, counts.stops, 4371u); /* main's 4356 and the fifteen of the five G81 battles; the coverage battles' 43 (main #342), G67's three targeted battles 21 (CI-measured on the G67 branch: 4265 -> 4286), G67's 114 (nineteen battles: 4 each for the five balloon and the seven small Magic Guard battles, 5 each for confusion, Spikes and Toxic Spikes, 15 mg_sand_tie, 8 residual_leftovers_tie, 21 struggle_sub_balloon, 7 update_sitrus_tie), G73's 27 (the three Moody battles 14, the two fainted-holder battles 13) and main's 4151: 4138 of the batch and the mirrored battles of main (13 stops) */
 #else
     /* Every kind of decision of the pin is among the stops (the pool battles are too few for that). */
     DF_CHECK(&t, counts.by_stage[1] > 0u && counts.by_stage[2] > 0u && counts.by_stage[3] > 0u &&

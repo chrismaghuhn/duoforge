@@ -1,0 +1,20 @@
+{
+  "name": "g67_mg_struggle",
+  "purpose": "Step G67 targeted battle, Struggle by a Magic Guard holder: Clefable (Magic Guard) knows only status moves (Calm Mind, Stealth Rock, Protect, Substitute) and is Taunted by Sharpedo on turn 1, so it must Struggle; the Struggle recoil is directDamage (sim/battle-actions.ts:1388-1390), not blocked by Magic Guard, so its [from] recoil line must appear.",
+  "data": "pool",
+  "format": "gen9championsvgc2026regmc",
+  "seed": "sodium,0000000000000000000000000000000000000000000067676c65",
+  "teams": [
+    "Clefable (F) @ Life Orb\nAbility: Magic Guard\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nModest Nature\n- Calm Mind\n- Stealth Rock\n- Protect\n- Substitute\n\nReuniclus (M) @ Sitrus Berry\nAbility: Magic Guard\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nModest Nature\n- Psychic\n- Substitute\n- Protect\n\nAlakazam (M) @ Focus Sash\nAbility: Magic Guard\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 Spe\nTimid Nature\n- Psychic\n- Calm Mind\n- Protect\n\nMilotic (F) @ Leftovers\nAbility: Competitive\nLevel: 50\nEVs: 32 HP / 29 Def / 5 SpD\nCalm Nature\n- Scald\n- Protect\n\nStaraptor (F) @ Sharp Beak\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 2 SpD / 32 Spe\nJolly Nature\n- Brave Bird\n- Hurricane\n- Protect\n\nGarchomp (M) @ Lum Berry\nAbility: Rough Skin\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Earthquake\n- Dragon Claw\n- Spikes\n- Protect",
+    "Sharpedo (M) @ Sitrus Berry\nAbility: Rough Skin\nLevel: 50\nEVs: 32 HP / 2 Def / 32 Spe\nJolly Nature\n- Taunt\n- Liquidation\n- Protect\n\nGarchomp (M) @ Focus Sash\nAbility: Rough Skin\nLevel: 50\nEVs: 32 HP / 32 Atk / 2 SpD\nAdamant Nature\n- Earthquake\n- Dragon Claw\n- Spikes\n- Protect\n\nStaraptor (F) @ Rocky Helmet\nAbility: Intimidate\nLevel: 50\nEVs: 32 HP / 2 SpD / 32 Spe\nJolly Nature\n- Brave Bird\n- Hurricane\n- Protect\n\nGliscor (M) @ Leftovers\nAbility: Hyper Cutter\nLevel: 50\nEVs: 32 HP / 32 Def / 2 SpD\nImpish Nature\n- Toxic Spikes\n- Earthquake\n- Protect\n\nPolitoed (M) @ Mystic Water\nAbility: Drizzle\nLevel: 50\nEVs: 32 HP / 32 SpA / 2 SpD\nModest Nature\n- Hydro Pump\n- Protect\n\nCeruledge (M) @ Grassy Seed\nAbility: Flash Fire\nLevel: 50\nEVs: 31 HP / 7 Atk / 24 Def / 3 SpD / 1 Spe\nBrave Nature\n- Shadow Ball\n- Protect"
+  ],
+  "plan": {
+    "p1": [
+      "move 1, move 3"
+    ],
+    "p2": [
+      "move 1 1, move 4"
+    ],
+    "max_steps": 10
+  }
+}

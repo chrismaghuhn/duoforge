@@ -139,7 +139,8 @@ SITES = {'SPEED_TIE': 1, 'ACCURACY': 2, 'CRIT': 3, 'DAMAGE_ROLL': 4, 'SECONDARY'
          'CURSED_BODY': 17, 'FLAME_BODY': 18, 'STATIC': 19,  # 17: step G27, 18: step G30, 19: step G39
          'DRAG': 20,  # 20: step G46, the drag's draw (DFI_SITE_DRAG)
          'LOCK_TURNS': 21,
-         'MULTIHIT_COUNT': 22}  # 21: step G56, the lock's count of Outrage, Thrash and Petal Dance (DFI_SITE_LOCK_TURNS)
+         'MULTIHIT_COUNT': 22,  # 21: step G56, the lock's count of Outrage, Thrash and Petal Dance (DFI_SITE_LOCK_TURNS)
+         'MOODY': 23}  # 23: step G73, Moody's samples (DFI_SITE_MOODY), one site for both draws
 STATS = ['HP', 'Atk', 'Def', 'SpA', 'SpD', 'Spe']
 GENDER = {'M': 1, 'F': 2}
 GENDERLESS = 3
