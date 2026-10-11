@@ -2340,7 +2340,7 @@ static duoforge_status dfi_try_status(dfi_run *r, uint32_t flat, uint32_t status
         }
         counter = sleep_turns[v];
     } else if (status == DFI_STATUS_FRZ) {
-        counter = 3u;
+        counter = DFI_FREEZE_TURNS;
     }
     m->status = (uint8_t)status;          /* <= DFI_STATUS_TOX */
     m->status_counter = (uint8_t)counter; /* <= 3 */
@@ -3377,7 +3377,6 @@ static bool dfi_heal_blocked(const struct duoforge_battle *b, uint32_t flat)
 #define DFI_HEAL_BLOCK_PSYCHIC_NOISE_TURNS 2u
 
 /* Encore's condition has duration 3 (data/moves.ts:4724-4783); onStart adds one when the target has no move queued. */
-#define DFI_ENCORE_TURNS 3u
 
 /* addVolatile('throatchop') on a standing target without it: no onRestart, so a second hit changes nothing; its
  * -start line is [silent]. */

@@ -7,6 +7,7 @@
 
 #include "codec/state_codec.h"
 #include "state/battle_internal.h"
+#include "state/closure_member.h"
 
 static int first = 1;
 
@@ -198,6 +199,16 @@ int main(void)
     ENTRY(DFI_MOVE_RESULT_NULL);
     ENTRY(DFI_MOVE_RESULT_UNCLASSIFIED_NOW);
     ENTRY(DFI_MOVE_RESULT_UNCLASSIFIED_LAST);
+    ENTRY(DFI_PARTY_HIDDEN);
+    ENTRY(DFI_POSFLAG_STATS_RAISED);
+    ENTRY(DFI_TAIL_THROAT_CHOP_MAX);
+    ENTRY(DFI_TAIL_TOXIC_STAGE_MAX);
+    ENTRY(DFI_TAIL_HITS_TAKEN_MAX);
+    ENTRY(DFI_FREEZE_TURNS);
+    ENTRY(DFI_ENCORE_TURNS);
+    /* the position flags each kind's states may carry (dfi_kind_limits_of: the TEAM_C and POOL kinds add their bits) */
+    entry("VOL_FLAGS_MASK_CLOSURE", dfi_kind_limits_of(DUOFORGE_DATA_KIND_CLOSURE).vol_flags_mask);
+    entry("VOL_FLAGS_MASK_POOL", dfi_kind_limits_of(DUOFORGE_DATA_KIND_POOL).vol_flags_mask);
     ENTRY(DFI_Q_NONE);
     ENTRY(DFI_Q_MOVE);
     ENTRY(DFI_Q_RESIDUAL);

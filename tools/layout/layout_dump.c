@@ -159,6 +159,8 @@ int main(void)
            FIELD(duoforge_hypothesis, charge_target), FIELD(duoforge_hypothesis, queued), FIELD(duoforge_hypothesis, queue_order),
            FIELD(duoforge_hypothesis, reserved2));
     printf("  },\n  \"constants\": {\n");
+    CONSTANT(DUOFORGE_DATA_KIND_CLOSURE_DEV, false);
+    CONSTANT(DUOFORGE_DATA_KIND_POOL_DEV, false);
     CONSTANT(DUOFORGE_VIEW_REVISION, false);
     CONSTANT(DUOFORGE_HYPOTHESIS_REVISION, false);
     CONSTANT(DUOFORGE_VIEW_STATE_MAX, false);

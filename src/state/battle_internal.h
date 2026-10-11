@@ -91,6 +91,10 @@ typedef struct dfi_move_slot {
 #define DFI_SWITCH_VOLT_SWITCH 6u /* Volt Switch (the POOL kinds only), step G32 */
 #define DFI_SWITCH_REVIVE_BLESSING 7u /* Revival Blessing (the POOL kinds only), decision 0025 item 6: a REVIVE answer */
 #define DFI_SWITCH_BATON_PASS 8u /* Baton Pass (the POOL kinds only), decision 0042: a PIVOT that copies the leaver's volatiles */
+/* A freeze's status counter at its start (one less at each [cant] frz; the thaw chance draws), and Encore's turns (one more
+ * when its target has no move left in the turn). */
+#define DFI_FREEZE_TURNS 3u
+#define DFI_ENCORE_TURNS 3u
 #define DFI_REVEALED_ITEM_CONSUMED 1u
 #define DFI_REVEALED_MEGA 2u
 #define DFI_MEMBER_STAT_COUNT 5u  /* atk, def, spa, spd, spe (HP is hp_max) */
