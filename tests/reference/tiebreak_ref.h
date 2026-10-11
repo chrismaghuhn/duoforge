@@ -964,6 +964,13 @@ static const df_tb_stop tb_c4_cover_c[] = {
     {25u, 0u, 1u, 1u, {2u, 1u}, {272u, 13u}, {0x4035c83cd4e93029ull, 0x3ff289cfa115728aull}},
     {26u, 1u, 1u, 0u, {2u, 0u}, {272u, 0u}, {0x4035c83cd4e93029ull, 0x0000000000000000ull}},
 };
+static const df_tb_stop tb_c4_shell_armor[] = {
+    {0u, 0u, 2u, 3u, {6u, 6u}, {1086u, 1113u}, {0x4059000000000000ull, 0x4059000000000000ull}},
+    {1u, 0u, 2u, 3u, {4u, 4u}, {722u, 778u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
+    {2u, 0u, 1u, 2u, {4u, 4u}, {722u, 718u}, {0x4050aaaaaaaaaaabull, 0x404edbab82f50439ull}},
+    {3u, 0u, 1u, 2u, {4u, 4u}, {722u, 662u}, {0x4050aaaaaaaaaaabull, 0x404c8c4036129664ull}},
+    {4u, 0u, 1u, 2u, {4u, 4u}, {722u, 612u}, {0x4050aaaaaaaaaaabull, 0x404a7c32b16cfd78ull}},
+};
 static const df_tb_stop tb_d01_noguard_accuracy_tie[] = {
     {0u, 0u, 3u, 4u, {6u, 6u}, {1111u, 1111u}, {0x4059000000000000ull, 0x4059000000000000ull}},
     {1u, 0u, 1u, 3u, {4u, 4u}, {737u, 730u}, {0x4050aaaaaaaaaaabull, 0x4050aaaaaaaaaaabull}},
@@ -7703,6 +7710,7 @@ static const df_tb_battle tb_battles[] = {
     {"c4_cover_a", 16u, tb_c4_cover_a, sizeof tb_c4_cover_a / sizeof tb_c4_cover_a[0]},
     {"c4_cover_b", 16u, tb_c4_cover_b, sizeof tb_c4_cover_b / sizeof tb_c4_cover_b[0]},
     {"c4_cover_c", 26u, tb_c4_cover_c, sizeof tb_c4_cover_c / sizeof tb_c4_cover_c[0]},
+    {"c4_shell_armor", 4u, tb_c4_shell_armor, sizeof tb_c4_shell_armor / sizeof tb_c4_shell_armor[0]},
     {"d01_noguard_accuracy_tie", 2u, tb_d01_noguard_accuracy_tie, sizeof tb_d01_noguard_accuracy_tie / sizeof tb_d01_noguard_accuracy_tie[0]},
     {"d02_electro_shot_lock_emergency_exit", 4u, tb_d02_electro_shot_lock_emergency_exit, sizeof tb_d02_electro_shot_lock_emergency_exit / sizeof tb_d02_electro_shot_lock_emergency_exit[0]},
     {"d03_electro_shot_lock_parting_shot", 4u, tb_d03_electro_shot_lock_parting_shot, sizeof tb_d03_electro_shot_lock_parting_shot / sizeof tb_d03_electro_shot_lock_parting_shot[0]},
@@ -8548,7 +8556,7 @@ static const df_tb_battle tb_battles[] = {
     {"xr3_sheercold_sub_miss", 3u, tb_xr3_sheercold_sub_miss, sizeof tb_xr3_sheercold_sub_miss / sizeof tb_xr3_sheercold_sub_miss[0]},
 };
 
-/* 5749 stops: 158 of an ended battle; decided by the count 1408,
- * the HP percentage 1778, the total HP 2234, a tie 171;
- * winners: side 0 2697, side 1 2881, tie 171 */
+/* 5754 stops: 158 of an ended battle; decided by the count 1408,
+ * the HP percentage 1781, the total HP 2236, a tie 171;
+ * winners: side 0 2700, side 1 2883, tie 171 */
 #endif
