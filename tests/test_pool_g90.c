@@ -554,6 +554,38 @@ static void test_codec_elapsed(df_test *t)
     finish(ctx, b);
 }
 
+/* The pad byte of a position is zero after a decode into memory that was not zeroed (0xFF): the decode writes the encoded fields and
+ * sets pos_pad, so the tail-kind and empty-position checks (which read the whole struct) pass. */
+static void test_pad_zero_after_decode(df_test *t)
+{
+    duoforge_context *ctx = NULL;
+    duoforge_battle *b = NULL;
+    if (!wrap_first_step(t, &ctx, &b)) {
+        finish(ctx, b);
+        return;
+    }
+    size_t size = 0u;
+    DF_CHECK_EQ_U64(t, duoforge_battle_encoded_size(ctx, b, &size), DUOFORGE_OK);
+    uint8_t *bytes = (uint8_t *)malloc(size);
+    duoforge_battle *d = (duoforge_battle *)malloc(sizeof *d);
+    DF_CHECK(t, bytes != NULL && d != NULL);
+    if (bytes != NULL && d != NULL) {
+        size_t written = 0u;
+        DF_CHECK_EQ_U64(t, duoforge_battle_encode(ctx, b, bytes, size, &written), DUOFORGE_OK);
+        memset(d, 0xFF, sizeof *d);
+        DF_CHECK_EQ_U64(t, duoforge_battle_decode(ctx, d, bytes, written), DUOFORGE_OK);
+        for (uint32_t s = 0u; s < DUOFORGE_SIDE_COUNT; ++s) {
+            for (uint32_t p = 0u; p < DUOFORGE_ACTIVE_PER_SIDE; ++p) {
+                DF_CHECK_EQ_U64(t, d->tail.sides[s].positions[p].pos_pad, 0u);
+            }
+        }
+        DF_CHECK(t, dfi_state_check(ctx, d, NULL) == DUOFORGE_OK);
+    }
+    free(bytes);
+    free(d);
+    finish(ctx, b);
+}
+
 int main(void)
 {
     df_test t;
@@ -566,5 +598,6 @@ int main(void)
     test_trap_pick_words(&t);
     test_pick_revisions(&t);
     test_codec_elapsed(&t);
+    test_pad_zero_after_decode(&t);
     return df_test_end(&t);
 }
