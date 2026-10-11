@@ -760,6 +760,71 @@ class RecordAssemblerPoolTest(unittest.TestCase):
         self.assertEqual(bytes(parts["record"]["state"][start:start + length]), tables.context().fingerprint())
         self.assertEqual(record_diff(battle.name, 0, 0, parts["record"])["fields"], [])
 
+    def tracker_at(self, name, boundary):
+        """A tracker of the pool battle `name` at its first decision point of `boundary` (either player's stream)."""
+        from duoforge_live.tracker import Tracker
+        battle = next(b for b in self.pool.battles if b.name == name)
+        for player in (0, 1):
+            tracker, done = Tracker(self.pool.data, battle.spec["teams"][player]), 0
+            tracker.record_kind = record_kind(name)
+            for lines in battle.streams[player]:
+                tracker.feed(lines)
+                if not (tracker.ready and tracker.epoch > done):
+                    continue
+                done = tracker.epoch
+                if tracker.boundary() == boundary and tracker._turn > 1:
+                    return tracker
+                step = battle.trace["steps"][done - 1] if done - 1 < len(battle.trace["steps"]) else None
+                if step is not None and f"p{player + 1}" in step["input"]:
+                    tracker.accepted(step["input"][f"p{player + 1}"])
+        raise AssertionError(f"{name}: no decision point of boundary {boundary}")
+
+    def assert_refusal(self, tracker, reason):
+        from duoforge_live import record
+        with self.assertRaises(record.Refusal) as caught:
+            record._record(tracker, tracker.observation())
+        self.assertEqual(caught.exception.reason, reason)
+
+    def test_the_named_refusals_the_corpus_never_reaches(self):
+        # the tracker's own refusals of TRACKER_REFUSALS that no committed battle reaches, each from a real decision
+        # point whose fold is broken in exactly that one way
+        from duoforge_live import record
+        PIVOT, TURN = C["DUOFORGE_BOUNDARY_PIVOT"], C["DUOFORGE_BOUNDARY_TURN"]
+        name = "g5_uturn_a"
+        t = self.tracker_at(name, PIVOT)
+        record._record(t, t.observation())  # the point itself assembles
+        t._requested = lambda side, boundary: (False, 0)  # a PIVOT whose asked side the lines did not show
+        self.assert_refusal(t, "pivot-switch-reason-unknown")
+        t = self.tracker_at(name, PIVOT)
+        side = next(side for side in (0, 1) if t._requested(side, PIVOT)[0])
+        k = next(k for k in (0, 1) if t._requested(side, PIVOT)[1] >> k & 1)
+        t._positions[side][k].flag = 0  # asked to switch for a reason no line showed
+        self.assert_refusal(t, "pivot-switch-reason-unknown")
+        t = self.tracker_at(name, PIVOT)
+        own = next(p for p in t._positions[t.side] if p.occupant != record.OCCUPANT_NONE and not p.fainted)
+        own.move_queued, t._accepted_commands = True, None  # an own move left whose command the accepted choice lacks
+        self.assert_refusal(t, "own-command-unknown")
+        t = self.tracker_at(name, TURN)
+        record._record(t, t.observation())
+        p = next(p for p in t._positions[t.side] if p.occupant != record.OCCUPANT_NONE)
+        p.result_now = None  # the library could not classify the action's events
+        self.assert_refusal(t, "move-result-not-determined")
+        t = self.tracker_at(name, TURN)
+        p = next(p for p in t._positions[t.side] if p.occupant != record.OCCUPANT_NONE)
+        p.last_slot = None  # the move of its last line is on no slot of its sheet
+        self.assert_refusal(t, "last-move-not-on-sheet")
+
+    def test_move_result_maps_the_librarys_refusal_to_none(self):
+        # view.move_result: E_UNSUPPORTED (a handler the classifier does not map: Substitute) is None, a class is its value
+        from duoforge import view
+        from duoforge._state_layout import VALUES
+        from duoforge_live.data import trace_to_c
+        EV, moves = trace_to_c.EV, self.pool.data.tables["MOVE"]
+        ctx = self.pool.data.context()
+        self.assertIsNone(view.move_result(ctx, 0, [trace_to_c.ev_tuple(EV["MOVE"], 0, 0, 0, moves["SUBSTITUTE"])]))
+        cant = trace_to_c.ev_tuple(EV["CANT"], 1, cause=trace_to_c.CAUSE["PARALYSIS"])
+        self.assertEqual(view.move_result(ctx, 1, [cant]), VALUES["DFI_MOVE_RESULT_FALSE"])
+
     def test_engine_gives_every_pool_record_back(self):
         import duoforge
         from duoforge import state_layout
