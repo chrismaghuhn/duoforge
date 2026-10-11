@@ -38,7 +38,7 @@ The CURSED bit is public to both viewers (the `-start` line shows it): `DUOFORGE
 
 - Recorded POOL battles `g84b_ghost_*` (ally_random, baton_copy, good_as_gold, p2_curses_p1, protect_cursed, self_mega, soak_flip, substitute_faint), `g84b_nonghost_curse_fails`, `g84b_residual_burn_curse`, `g84b_residual_curse_tie`, `g84b_residual_leech_order`.
 - Campaign (G84b branch head 3aaafd29): 293 PASS, 0 DIVERGENCE, 7 UNSUPPORTED (all `dfi_residual_order_ambiguous`).
-- Mutants 5 of 5 caught (09a87427).
+- Mutants 5 of 5 caught (measured by the builder on the G84b branch at head 09a87427).
 
 ## 7. Public values
 
