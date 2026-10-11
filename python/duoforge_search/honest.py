@@ -22,6 +22,9 @@ from .errors import SearchError
 C = _layout.CONSTANTS
 RULES = lookahead.RULES
 MAX_RESPREADS = 256
+# The byte of each position's trap_turns in a public record's state (state_layout field names, tail rev 5 position blocks)
+_TRAP_TURNS = [dict((name, start) for name, start, _ in state_layout.fields(pool=True))
+               [f"tail.side{flat // 2}.position{flat % 2}.trap_turns"] for flat in range(4)]
 # The stated-spread teams of the belief (decision 0023): A/B/C and the PP_ teams of the D0023 pool, pinned on
 # 2026-10-09 (79 sources, 444 sets, table sha256 1795524c...). New registry teams never widen it silently;
 # a wider belief is an owner decision with a new list.
@@ -150,6 +153,27 @@ def visible_causes(roots, env, player):
         raise SearchError(f"public causes refused: {duoforge.status_name(int(statuses[env]))}")
     mask = int(masks[env])
     return [name for bit, name in _CAUSES if mask & bit]
+
+
+def trapped_positions(record):
+    """[bool] * 4, by flat position (side * 2 + position): the positions whose public record shows a hidden partial trap,
+    the tail's trap_turns being DUOFORGE_VIEW_HIDDEN (src/state/view.c masks the drawn turns for both viewers). A record
+    of a kind without the tail shows none. Only a field of the record is read; what a trap means stays in C."""
+    size = int(record["state_size"])
+    if size <= state_layout.V3_SIZE:
+        return [False] * 4
+    state = record["state"]
+    return [int(state[_TRAP_TURNS[flat]]) == C["DUOFORGE_VIEW_HIDDEN"] for flat in range(4)]
+
+
+def trap_picks(words, record):
+    """trap_pick of the hypotheses of the worlds (hypothesis revision 3): (n, 4) uint8. A trapped position of the record takes
+    the top byte of its world's trap word (belief.WORDS["trap"]); every other position takes zero, as the engine refuses a
+    nonzero word where the record shows no hidden trap (E_INVALID_ARGUMENT). The engine maps the byte to the duration."""
+    words = np.asarray(words, dtype=np.uint64)
+    picks = (words >> np.uint64(56)).astype(np.uint8)
+    picks[:, [not trapped for trapped in trapped_positions(record)]] = 0
+    return picks
 
 
 def draw_word(probabilities, word):
@@ -314,6 +338,9 @@ class Honest(lookahead.Lookahead):
             h = view.hypotheses(self.s)
             for name in ("stat_points", "hp", "sleep", "confusion", "charge_target"):
                 h[name] = sampled[name]
+            # trap_pick (G90, hypothesis revision 3): a word only at the positions the built record shows trapped, so each
+            # build below takes the words of its own record; the preview record has no trap
+            h["trap_pick"] = trap_picks(sampled["trap"], history["preview"])
             if self._build(history["preview"], h).any():
                 raise SearchError("a sampled spread is invalid at team preview")
             self._check_worlds(history["preview"], costs)  # the preview record is assembled like the root
@@ -332,6 +359,7 @@ class Honest(lookahead.Lookahead):
             queue_pairs = []
             if queue_mask is not None:
                 t = time.perf_counter()
+                h["trap_pick"] = trap_picks(sampled["trap"], history["turn_start"])
                 st = self._build(history["turn_start"], h)
                 costs["world_builds"] += time.perf_counter() - t
                 if st.any():
@@ -354,6 +382,7 @@ class Honest(lookahead.Lookahead):
                 for w in range(self.s):
                     h[w]["queue_order"][:int(record["queue_count"])] = np.arange(int(record["queue_count"]), dtype=np.uint8)
             t = time.perf_counter()
+            h["trap_pick"] = trap_picks(sampled["trap"], record)
             statuses = self._build(record, h)
             costs["world_builds"] += time.perf_counter() - t
             if not statuses.any():
