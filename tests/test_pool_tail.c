@@ -1237,10 +1237,17 @@ static const tail_case cases[] = {
     {"G72b: Dragon Cheer stage 1 at a standing lead is valid", DFI_INV_NONE, false, v_position_flags_stage1}};
 
 /* True iff the byte at `off` of the encoded tail is a reserved one (by the layout alone). */
+/* step G94: the two bytes of the rev 5 reserve that are Last Resort's move_used (the nibbles of the four positions) */
+static bool is_move_used_offset(size_t off)
+{
+    const size_t r = DFI_ENC_TAIL_REV4_SIZE + DFI_ENC_TAIL5_RESERVED_OFF + DFI_ENC_TAIL5_LAST_RESORT_OFF;
+    return off == r || off == r + 1u;
+}
+
 static bool is_reserved_offset(size_t off)
 {
-    if (off >= DFI_ENC_TAIL_REV4_SIZE) { /* the rev 5 block: its 16 reserve bytes are the last ones */
-        return off - DFI_ENC_TAIL_REV4_SIZE >= DFI_ENC_TAIL5_RESERVED_OFF;
+    if (off >= DFI_ENC_TAIL_REV4_SIZE) { /* the rev 5 block: its 14 reserve bytes (the 16 without move_used) are the last ones */
+        return off - DFI_ENC_TAIL_REV4_SIZE >= DFI_ENC_TAIL5_RESERVED_OFF && !is_move_used_offset(off);
     }
     if (off < DFI_ENC_TAIL_FIELD_SIZE) {
         return off >= DFI_ENC_TAIL_FIELD_RESERVED_OFF;
@@ -1276,7 +1283,7 @@ int main(void)
         DF_CHECK_EQ_U64(&t, DFI_ENC_TAIL_REV4_SIZE, 288u);
         DF_CHECK_EQ_U64(&t, DFI_ENC_TAIL5_SIZE, 60u);
         DF_CHECK_EQ_U64(&t, DFI_ENC_TAIL5_RESERVED_OFF, 44u);
-        DF_CHECK_EQ_U64(&t, DFI_ENC_TAIL_RESERVED_COUNT, 45u); /* step G46: party_order takes 6 of the 7 field bytes (35 before); rev 5: 16 more */
+        DF_CHECK_EQ_U64(&t, DFI_ENC_TAIL_RESERVED_COUNT, 43u); /* step G46: party_order takes 6 of the 7 field bytes (35 before); rev 5: 14 more (bytes 8 and 9 are Last Resort's move_used, step G94) */
         DF_CHECK_EQ_U64(&t, DFI_STATE_SCHEMA_V3, 3u);
         DF_CHECK_EQ_U64(&t, DFI_STATE_SCHEMA_POOL_TAIL_REV5, 0x0503u);
         DF_CHECK_EQ_U64(&t, DFI_STATE_SCHEMA_POOL_TAIL_REV4, 0x0403u); /* refused since rev 5 */
@@ -1293,7 +1300,7 @@ int main(void)
         DF_CHECK_EQ_U64(&t, DFI_ENC_TAIL_MEMBER_FLAGS_OFF, 8u);
         DF_CHECK(&t, DFI_STATE_SCHEMA_POOL_TAIL_REV5 != 4u); /* schema 4 stays free: certified pool teams */
         /* The tail in memory: the encoded size without the reserved bytes, and the one pad byte of the field block. */
-        DF_CHECK_EQ_U64(&t, sizeof(dfi_pool_tail), 304u); /* a position and a side have none; step G46 adds party_order (6); rev 5 adds the Illusion state and the 2 position bytes */
+        DF_CHECK_EQ_U64(&t, sizeof(dfi_pool_tail), 306u); /* a position and a side have none; step G46 adds party_order (6); rev 5 adds the Illusion state and the 2 position bytes */
         DF_CHECK_EQ_U64(&t, sizeof(dfi_tail_side), 148u);
         DF_CHECK_EQ_U64(&t, sizeof(dfi_tail_pos), 34u);
         DF_CHECK_EQ_U64(&t, sizeof(dfi_tail_illusion), 18u);
@@ -1301,7 +1308,7 @@ int main(void)
         for (size_t off = 0u; off < DFI_ENC_TAIL_SIZE; ++off) {
             reserved += is_reserved_offset(off) ? 1u : 0u;
         }
-        DF_CHECK_EQ_U64(&t, reserved, 45u);
+        DF_CHECK_EQ_U64(&t, reserved, 43u);
         const duoforge_context *with[] = {kp, kq};
         const duoforge_context *without[] = {k1, k2, kc, kd, c1};
         for (size_t i = 0u; i < 2u; ++i) {
@@ -1533,6 +1540,9 @@ int main(void)
         unsigned wrong = 0u;
         unsigned all_reserved = 0u;
         for (size_t off = 0u; off < DFI_ENC_TAIL_SIZE; ++off) {
+            if (is_move_used_offset(off)) {
+                continue; /* step G94: move_used is checked by test_pool_g94 (nibbles and the occupancy rule), not by this sweep */
+            }
             unsigned got[SWEEP_COLUMNS] = {0u, 0u, 0u, 0u, 0u, 0u, 0u, 0u};
             uint8_t m[DF_STATE_ENCODED_MAX];
             memcpy(m, enc, DFI_STATE_POOL_ENCODED_SIZE);
@@ -1580,7 +1590,7 @@ int main(void)
             }
         }
         DF_CHECK_EQ_U64(&t, wrong, 0u);
-        DF_CHECK_EQ_U64(&t, all_reserved, 45u); /* 29 reserved bytes of the rev 4 part (the field block's +1..+6 are party_order) and 16 of rev 5 */
+        DF_CHECK_EQ_U64(&t, all_reserved, 43u); /* 29 reserved bytes of the rev 4 part (the field block's +1..+6 are party_order) and 14 of rev 5 (not move_used) */
     }
 
     /* The schema is the one of the context's kind; sizes, schema ids and truncations. */
@@ -1877,6 +1887,8 @@ int main(void)
             }
         }
         dfi_pool_tail want = x->tail;
+        want.move_used[0] = 0u; /* step G94: the example starts with no used bits; the step's moves set theirs below */
+        want.move_used[1] = 0u;
         for (uint32_t s = 0u; s < DUOFORGE_SIDE_COUNT; ++s) {
             want.sides[s].wide_guard = 0u;
             want.sides[s].quick_guard = 0u; /* step G54: Quick Guard lasts this turn, as Wide Guard does (the residual clears it) */
@@ -1919,6 +1931,10 @@ int main(void)
                 want.sides[s].positions[p].hits_taken = (uint8_t)(after_hits > DFI_TAIL_HITS_TAKEN_MAX ? DFI_TAIL_HITS_TAKEN_MAX : after_hits);
                 /* each position that acted used its move of example_plan: that slot + 1; one that did not has none */
                 const uint32_t used = x->tail.sides[s].positions[p].last_move;
+                /* step G94: the move that the position used sets its used-since-entering bit (Struggle, slot 5, has none) */
+                if (used >= 1u && used <= DUOFORGE_MAX_MOVE_SLOTS) {
+                    dfi_move_used_set(&want, s * DUOFORGE_ACTIVE_PER_SIDE + p, used - 1u);
+                }
                 DF_CHECK(&t, used == 0u || used == example_plan[s][p][0] + 1u);
                 want.sides[s].positions[p].last_move = x->tail.sides[s].positions[p].last_move;
                 /* step G42: the move results of this turn are the actions' own (the engine writes them while the turn runs and

@@ -417,11 +417,11 @@ static inline uint32_t dfi_move_used_bits(const dfi_pool_tail *t, uint32_t flat)
 }
 static inline void dfi_move_used_set(dfi_pool_tail *t, uint32_t flat, uint32_t slot)
 {
-    t->move_used[flat / 2u] = (uint8_t)(t->move_used[flat / 2u] | (1u << (slot + (flat % 2u) * DFI_MOVE_USED_NIBBLE_BITS)));
+    t->move_used[flat / 2u] = (uint8_t)(t->move_used[flat / 2u] | (1u << (slot + (flat % 2u) * DFI_MOVE_USED_NIBBLE_BITS))); /* wide-operands-reviewed: a nibble */
 }
 static inline void dfi_move_used_clear(dfi_pool_tail *t, uint32_t flat)
 {
-    t->move_used[flat / 2u] = (uint8_t)(t->move_used[flat / 2u] & ~(0xFu << ((flat % 2u) * DFI_MOVE_USED_NIBBLE_BITS)));
+    t->move_used[flat / 2u] = (uint8_t)(t->move_used[flat / 2u] & ~(0xFu << ((flat % 2u) * DFI_MOVE_USED_NIBBLE_BITS))); /* wide-operands-reviewed: a nibble */
 }
 
 /* The packed value of one side's party order, and one entry of it (roster index + 1, 0 = empty). */

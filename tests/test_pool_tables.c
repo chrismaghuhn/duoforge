@@ -1521,7 +1521,9 @@ int main(void)
                                                 /* step G78: Dragon Darts (decision 0043) */
                                                 DFI_MOVE_DRAGONDARTS,
                                                 /* step G94: Baneful Bunker (decision 0015 5cv, protect_kind 3) */
-                                                DFI_MOVE_BANEFULBUNKER};
+                                                DFI_MOVE_BANEFULBUNKER,
+                                                /* step G94: Last Resort (decision 0061, the used-since-entering bits) */
+                                                DFI_MOVE_LASTRESORT};
         uint32_t marked_count = 0u;
         for (uint32_t id = DFI_EXT_MOVE_COUNT; id < DFI_POOL_MOVE_COUNT; ++id) {
             bool want = false;
