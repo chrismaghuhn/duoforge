@@ -504,6 +504,37 @@ const dfi_support_manifest dfi_support = {
             [DFI_MOVE_DESTINYBOND] = 1u,
             /* Step G76 (decision 0015 5cg): Final Gambit (damage equal to the user's HP; the user faints in the damage call). */
             [DFI_MOVE_FINALGAMBIT] = 1u,
+            /* Step C2 (cheap moves, decision 0015 entry 5cp): the damaging moves with one secondary (a status, a flinch, a stat
+             * drop of the target, a self boost, a confusion), a self drop (Headlong Rush), drains (Parabolic
+             * Charge on allAdjacent), crit ratio 2 (Blaze Kick, Cross Poison), and the flags of the pin (punch, slicing, sound,
+             * bypasssub, defrost, bullet, heal, distance, pulse). Not marked (decision 0015 entry 5cp): Fire Fang and Thunder Fang
+             * (two secondaries; the only handler of two is Ice Fang's freeze and flinch, DFI_SPECIAL_ICE_FANG; a status-parameterised
+             * handler is a new special id), Horn Leech (no learner with a marked ability), Mountain Gale (its learner Avalugg-Hisui
+             * is refused by the converter, swap_partners KeyError), Bitter Malice and Night Daze (their only learners carry Illusion,
+             * whose duplicate-name gap is open). Every field of each entry is read by check_c2_facts (gen_closure.py); the Champions
+             * base power overrides of Apple Acid, Mountain Gale and Night Daze are in the pool table already. */
+            [DFI_MOVE_ZENHEADBUTT] = 1u,
+            [DFI_MOVE_PYROBALL] = 1u,
+            [DFI_MOVE_HEADLONGRUSH] = 1u,
+            [DFI_MOVE_EXTRASENSORY] = 1u,
+            [DFI_MOVE_CHILLINGWATER] = 1u,
+            [DFI_MOVE_WATERPULSE] = 1u,
+            [DFI_MOVE_LUNGE] = 1u,
+            [DFI_MOVE_BLAZEKICK] = 1u,
+            [DFI_MOVE_ACIDSPRAY] = 1u,
+            [DFI_MOVE_PARABOLICCHARGE] = 1u,
+            [DFI_MOVE_TORCHSONG] = 1u,
+            [DFI_MOVE_LAVAPLUME] = 1u,
+            [DFI_MOVE_LOWSWEEP] = 1u,
+            [DFI_MOVE_SKITTERSMACK] = 1u,
+            [DFI_MOVE_ZINGZAP] = 1u,
+            [DFI_MOVE_IRONTAIL] = 1u,
+            [DFI_MOVE_DYNAMICPUNCH] = 1u,
+            [DFI_MOVE_MUDSHOT] = 1u,
+            [DFI_MOVE_CROSSPOISON] = 1u,
+            [DFI_MOVE_POUNCE] = 1u,
+            [DFI_MOVE_MUDSLAP] = 1u,
+            [DFI_MOVE_APPLEACID] = 1u,
         },
     .abilities =
         {
